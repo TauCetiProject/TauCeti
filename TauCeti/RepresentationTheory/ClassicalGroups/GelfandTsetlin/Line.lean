@@ -40,6 +40,8 @@ these lines.
 
 ## Main results
 
+* `TauCeti.exists_intertwiningMap_ne_zero_of_mem_interlacingWeights`: an interlacing weight `μ`
+  has a nonzero intertwiner from `V_μ` to the restriction of `V_λ`.
 * `TauCeti.gtLine_succ`: the line of a pattern is the image of the line of its truncation under
   any nonzero intertwiner from the Weyl module of the second row.
 * `TauCeti.finrank_gtLine`: each Gelfand–Tsetlin line is one-dimensional.
@@ -84,7 +86,7 @@ theorem gtLine_zero (l : DominantWeight 0) (P : {P : GTPattern 0 // P.topWeight 
 variable {n : ℕ}
 
 /-- An interlacing weight `μ` has a nonzero intertwiner from `V_μ` to the restriction of `V_λ`. -/
-private theorem exists_intertwiningMap_ne_zero {l : DominantWeight (n + 1)}
+theorem exists_intertwiningMap_ne_zero_of_mem_interlacingWeights {l : DominantWeight (n + 1)}
     {m : DominantWeight n} (hm : m ∈ interlacingWeights l) :
     ∃ f : IntertwiningMap (rationalWeylRep ℂ n m)
       ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n)), f ≠ 0 := by
@@ -106,7 +108,8 @@ private theorem map_eq_map_of_ne_zero {l : DominantWeight (n + 1)} {m : Dominant
       ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n))} (hf : f ≠ 0) (hg : g ≠ 0)
     (W : Submodule ℂ (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) :
     W.map f.toLinearMap = W.map g.toLinearMap := by
-  -- Fix the additive groups of the carriers, as in `exists_intertwiningMap_ne_zero`.
+  -- Fix the additive groups of the carriers, as in
+  -- `exists_intertwiningMap_ne_zero_of_mem_interlacingWeights`.
   let _ : AddCommGroup (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule := inferInstance
   let _ : AddCommGroup (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule := inferInstance
   have hdim : finrank ℂ (IntertwiningMap (rationalWeylRep ℂ n m)
@@ -129,8 +132,8 @@ theorem gtLine_succ (l : DominantWeight (n + 1)) (P : {P : GTPattern (n + 1) // 
     have h := P.1.topWeight_truncate_mem_interlacingWeights
     rwa [P.2] at h
   rw [gtLine]
-  exact map_eq_map_of_ne_zero hm (Classical.epsilon_spec (exists_intertwiningMap_ne_zero hm))
-    hf _
+  exact map_eq_map_of_ne_zero hm
+    (Classical.epsilon_spec (exists_intertwiningMap_ne_zero_of_mem_interlacingWeights hm)) hf _
 
 /-- **Each Gelfand–Tsetlin line is a line.** -/
 @[simp]
@@ -144,7 +147,7 @@ theorem finrank_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
     have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
       have h := P.1.topWeight_truncate_mem_interlacingWeights
       rwa [P.2] at h
-    obtain ⟨f, hf⟩ := exists_intertwiningMap_ne_zero hm
+    obtain ⟨f, hf⟩ := exists_intertwiningMap_ne_zero_of_mem_interlacingWeights hm
     have hinj : Function.Injective f :=
       (IsIrreducible.injective_or_eq_zero
         (V := ↥(weylModuleOfShape ℂ n P.1.truncate.topWeight.detShiftShape).toSubmodule)

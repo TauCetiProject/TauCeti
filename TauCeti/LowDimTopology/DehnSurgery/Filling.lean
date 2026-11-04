@@ -9,6 +9,8 @@ public import TauCeti.LowDimTopology.DehnSurgery.Framing
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Exterior
 public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
+import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+
 /-!
 # Dehn fillings of knot exteriors
 
@@ -26,8 +28,11 @@ glued to `∂E` by a homeomorphism `g` of `S¹ × S¹` read in the two framings,
 (`TauCeti.IsSolidTorusNeighborhood.fillingSlope`) is `s`. The two pieces being closed, `Y` is then
 homeomorphic to the space obtained from `E` and `V` by gluing along `g`. That the homeomorphism
 type of such a `Y` depends only on `s` is the classical well-definedness of Dehn filling, through
-the mapping class group of the torus; it is not formalized here. For gluings induced by integral
-matrices it is `TauCeti.DehnFilling.nonempty_homeomorph_of_gluing_eq_torusHomeomorph`.
+the mapping class group of the torus; it is not formalized here. For gluings isotopic to gluings
+induced by integral matrices it is
+`TauCeti.DehnFilling.exists_homeomorph_of_isotopic_torusHomeomorph`. The filling slope itself only
+depends on the gluing up to homotopy
+(`TauCeti.IsSolidTorusNeighborhood.fillingSlope_eq_of_homotopic`).
 
 The slope of the gluing is computed from where `g` sends the meridian curve
 (`TauCeti.IsSolidTorusNeighborhood.fillingSlope_eq_of_apply_torusCurve`): the identity gives the
@@ -106,6 +111,21 @@ theorem fillingSlope_eq_of_apply_torusCurve (h : IsSolidTorusNeighborhood f Φ)
   rw [FramedBoundaryTorus.torusCurveClass_def, FramedBoundaryTorus.torusCurveClass_def]
   exact congrArg _ (HurewiczOne.loopClass_eq_of_apply_eq _ _ fun t ↦
     congrArg h.exteriorFrontierHomeomorph (hg t))
+
+/-- **The filling slope only depends on the gluing up to homotopy.** Homotopic gluings carry the
+meridian of the filling solid torus to homologous curves on the boundary torus of the exterior,
+so they have the same filling slope. -/
+theorem fillingSlope_eq_of_homotopic (h : IsSolidTorusNeighborhood f Φ)
+    {g g' : Circle × Circle ≃ₜ Circle × Circle}
+    (hgg' : (g : C(Circle × Circle, Circle × Circle)).Homotopic g') :
+    h.fillingSlope g = h.fillingSlope g' := by
+  refine Slope.mk_eq_mk _ _ (Or.inl ?_)
+  have hH :=
+    (ContinuousMap.Homotopic.refl (ContinuousMap.ofClass h.exteriorFrontierHomeomorph)).comp hgg'
+  rw [FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap,
+    FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, Homeomorph.coe_trans,
+    Homeomorph.coe_trans,
+    ContinuousMap.singularHomologyMap_eq_of_homotopic ℤ 1 hH]
 
 /-- Gluing by the identity has the meridian of `Φ` as filling slope. -/
 @[simp]

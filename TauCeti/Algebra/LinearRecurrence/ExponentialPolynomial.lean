@@ -65,12 +65,12 @@ theorem eval_mul_pow_mem_genEigenspace {p : R[X]} (θ : R) {k : ℕ} (hk : p.deg
           (fun n : ℕ ↦ q.eval (n : R) * θ ^ n) := by
       ext n
       simp only [LinearMap.sub_apply, LinearMap.funLeft_apply, LinearMap.smul_apply,
-        Module.End.one_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, Nat.cast_succ,
+        one_apply_eq_self, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, Nat.cast_succ,
         q, smul_eq_C_mul, eval_mul, eval_sub, taylor_apply, eval_comp, eval_add, eval_X,
         eval_C, pow_succ]
       ring
     have hk' := LinearMap.mem_ker.mp (Module.End.mem_genEigenspace_nat.mp (ih hq))
-    rw [Module.End.mem_genEigenspace_nat, LinearMap.mem_ker, pow_succ, Module.End.mul_apply,
+    rw [Module.End.mem_genEigenspace_nat, LinearMap.mem_ker, pow_succ, mul_apply_eq_comp,
       hdiff, hk']
 
 /-- A polynomial multiple of `θ ^ n` lies in the maximal generalized eigenspace of the

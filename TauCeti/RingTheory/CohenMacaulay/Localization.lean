@@ -109,4 +109,14 @@ theorem IsCohenMacaulay.localizedModule {M : Type v} [AddCommGroup M] [Module R 
     (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M))).1 (not_subsingleton _)
   exact h.localizedModule_of_depth_eq n hn.symm
 
+omit [Small.{v} R] in
+/-- A localization of a Cohen–Macaulay Noetherian local ring is Cohen–Macaulay as a ring. -/
+theorem IsCohenMacaulay.localization_atPrime (h : IsCohenMacaulay R R)
+    (p : Ideal R) [p.IsPrime] :
+    IsCohenMacaulay (Localization.AtPrime p) (Localization.AtPrime p) := by
+  let e : LocalizedModule p.primeCompl R ≃ₗ[Localization.AtPrime p] Localization.AtPrime p :=
+    (IsLocalizedModule.iso p.primeCompl (Algebra.linearMap R (Localization.AtPrime p))
+      ).extendScalarsOfIsLocalization p.primeCompl _
+  exact e.isCohenMacaulay_iff.mp (h.localizedModule p)
+
 end Module

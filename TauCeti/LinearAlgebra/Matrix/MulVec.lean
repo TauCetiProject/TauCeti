@@ -24,7 +24,8 @@ sees coordinate `i` of that vector. In particular such a matrix maps the coordin
 `{v | v i = 0}` into itself.
 
 Subtracting a matrix from a constant diagonal matrix turns its eigenvector equation into a
-homogeneous linear system, with no multiplicative identity needed.
+homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
+eigenvector of each of its powers.
 
 ## Main results
 
@@ -34,6 +35,7 @@ homogeneous linear system, with no multiplicative identity needed.
   then `(A *ᵥ v) i = A i i * v i`.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
   is the eigenvector equation `A v = a • v`.
+* `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
@@ -87,6 +89,20 @@ theorem diagonal_const_sub_mulVec_eq_zero_iff [DecidableEq n] (A : Matrix n n R)
   rw [sub_mulVec, h, sub_eq_zero, eq_comm]
 
 end NonUnitalNonAssocRing
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] [DecidableEq n]
+
+/-- An eigenvector of a square matrix is an eigenvector of each of its powers, for the
+corresponding power of the eigenvalue. -/
+theorem pow_mulVec_eq_pow_smul {A : Matrix n n R} {v : n → R} {μ : R} (h : A *ᵥ v = μ • v)
+    (k : ℕ) : (A ^ k) *ᵥ v = μ ^ k • v := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
+
+end CommSemiring
 
 section OrderedSemiring
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Chevalley.System
 public import TauCeti.Algebra.Lie.Weights.StructureConstant.Opposite
 
@@ -265,8 +266,7 @@ theorem exists_isChevalleySystem (hn : hx.IsChevalleyNormalized) :
       · -- Both lie in the Cartan subalgebra, which is abelian.
         have hvH : v ∈ H := by rwa [hAzero χ₁ (not_not.mp hχ₁)] at hv
         have hwH : w ∈ H := by rwa [hAzero χ₂ (not_not.mp hχ₂)] at hw
-        have hlie : ⁅v, w⁆ = 0 :=
-          lie_cartan_cartan_eq_zero (⟨v, hvH⟩ : H) (⟨w, hwH⟩ : H)
+        have hlie : ⁅v, w⁆ = 0 := LieSubalgebra.lie_eq_zero_of_mem hvH hwH
         rw [hlie, map_zero, hzero χ₁ (not_not.mp hχ₁) v hv, hzero χ₂ (not_not.mp hχ₂) w hw,
           neg_lie, _root_.lie_neg, neg_neg, hlie]
   have htop : ⨆ χ : Weight K H L, A χ = ⊤ :=

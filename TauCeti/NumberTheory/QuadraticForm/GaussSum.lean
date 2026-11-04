@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Matrix.DotProduct
 import TauCeti.Data.ZMod.MulCastHom.Sum
 import TauCeti.InformationTheory.Coding.CharacterSum
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Quadric
 
 /-!
@@ -121,15 +122,6 @@ end FiniteField
 section ZMod
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-omit [DecidableEq ι] in
-/-- The form of the reduction of an integer matrix, at the reduction of an integer vector, is the
-reduction of the integer value of the form: `RingHom.map_dotProduct_mulVec` for the cast. -/
-private theorem intCast_dotProduct_mulVec (R : Type*) [CommRing R] (A : Matrix ι ι ℤ)
-    (v : ι → ℤ) :
-    (fun i ↦ (v i : R)) ⬝ᵥ A.map (Int.cast : ℤ → R) *ᵥ (fun i ↦ (v i : R)) =
-      ((v ⬝ᵥ A *ᵥ v : ℤ) : R) :=
-  ((Int.castRingHom R).map_dotProduct_mulVec A v v).symm
 
 variable {A : Matrix ι ι ℤ}
 
@@ -360,12 +352,8 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_eq_jacobiSym (hA : A.IsSymm) {k 
       exact hvb.pow_left.mul_left hdet.of_mul_right_right
     rw [iha (u • A) (hA.smul u) (Nat.odd_mul.1 hodd).1 hca,
       ihb (v • A) (hA.smul v) (Nat.odd_mul.1 hodd).2 hcb, det_smul, det_smul, hι]
-    have hJ (w : ℤ) (c : ℕ) (hw : IsCoprime w c) :
-        jacobiSym ((-1) ^ k * (w ^ (2 * k) * A.det)) c = jacobiSym ((-1) ^ k * A.det) c := by
-      rw [show (-1) ^ k * (w ^ (2 * k) * A.det) = (w ^ k) ^ 2 * ((-1) ^ k * A.det) by ring,
-        jacobiSym.mul_left, jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hw.pow_left),
-        one_mul]
-    rw [hJ u a hua, hJ v b hvb, jacobiSym.mul_right]
+    rw [TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime hua,
+      TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime hvb, jacobiSym.mul_right]
     push_cast
     ring
 

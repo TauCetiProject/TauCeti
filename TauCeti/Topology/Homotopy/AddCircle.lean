@@ -24,10 +24,16 @@ Mathlib's `SimplyConnectedSpace` is phrased with based paths; this file supplies
 for free loops parametrised by the circle, which is how circles are compared in conditions such as
 simple connectivity at infinity.
 
+Null-homotopy of a loop does not depend on its constant speed: a null-homotopic loop
+`g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
+`t ↦ g (t * a)` on `AddCircle (T / |a|)` (`ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`).
+
 ## Main declarations
 
 * `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
   circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
+* `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
+  nonzero speed is null-homotopic.
 -/
 
 public section
@@ -70,5 +76,29 @@ theorem nullhomotopic_addCircle_of_simplyConnectedSpace [Fact (0 < p)] [SimplyCo
     obtain ⟨t, rfl⟩ := AddCircle.surjective_ofUnitInterval (p := p) θ
   · exact (hG 0 t).trans (F.apply_zero t)
   · exact (hG 1 t).trans (F.apply_one t)
+
+/-- **Constant-speed reparametrization of a null-homotopic loop.** If the loop
+`g : AddCircle T → X` is null-homotopic and `a ≠ 0`, then `t ↦ g (t * a)`, a loop of period
+`T / |a|` run backwards when `a < 0`, is null-homotopic. -/
+theorem Nullhomotopic.exists_addCircle_comp_mul {T a : ℝ} (hT : T ≠ 0) (ha : a ≠ 0)
+    {g : C(AddCircle T, X)} (hg : g.Nullhomotopic) :
+    ∃ g' : C(AddCircle (T / |a|), X), g'.Nullhomotopic ∧
+      ∀ t : ℝ, g' t = g ((t * a : ℝ) : AddCircle T) := by
+  -- The reparametrization `ℝ/(T/|a|)ℤ → ℝ/Tℤ`, multiplication by `|a|`.
+  let e : C(AddCircle (T / |a|), AddCircle T) :=
+    ⟨_, (AddCircle.homeomorphAddCircle (T / |a|) T (div_ne_zero hT (abs_ne_zero.2 ha))
+      hT).continuous⟩
+  have he (t : ℝ) : e t = ((t * |a| : ℝ) : AddCircle T) := by
+    rw [ContinuousMap.coe_mk, AddCircle.homeomorphAddCircle_apply_mk, inv_div,
+      div_mul_cancel₀ _ hT]
+  rcases ha.lt_or_gt with ha' | ha'
+  · -- Backwards: compose further with the reflection of the circle.
+    let n : C(AddCircle T, AddCircle T) := ⟨Neg.neg, continuous_neg⟩
+    have hn (x : AddCircle T) : n x = -x := rfl
+    refine ⟨g.comp (n.comp e), hg.comp_left _, fun t ↦ ?_⟩
+    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, he, hn, ← AddCircle.coe_neg,
+      abs_of_neg ha', mul_neg, neg_neg]
+  · refine ⟨g.comp e, hg.comp_left _, fun t ↦ ?_⟩
+    rw [ContinuousMap.comp_apply, he, abs_of_pos ha']
 
 end ContinuousMap

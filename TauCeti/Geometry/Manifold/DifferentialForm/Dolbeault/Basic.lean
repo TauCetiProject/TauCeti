@@ -28,7 +28,9 @@ evaluations of the components `∂bar ∂bar f` and `∂∂f` of `d²f = 0`, by 
 `TauCeti.Geometry.Manifold.DifferentialForm.Nijenhuis` for the components of bidegree `(-1,2)`
 and `(2,-1)` of `d` on one-forms. The component of type `(1,1)` of `d²f = 0` gives
 `∂ ∂bar f + ∂bar ∂f = 0` on every almost complex manifold. When `N_J = 0`, `∂² = 0` and
-`∂bar² = 0` on functions and `d = ∂ + ∂bar` on one-forms.
+`∂bar² = 0` on functions and `d = ∂ + ∂bar` on one-forms. Wherever `d = ∂ + ∂bar` on the forms of
+two consecutive degrees, the components of `d² = 0` give `∂² = 0`, `∂bar² = 0` and
+`∂ ∂bar + ∂bar ∂ = 0`.
 
 ## Main declarations
 
@@ -37,10 +39,20 @@ and `(2,-1)` of `d` on one-forms. The component of type `(1,1)` of `d²f = 0` gi
 * `TauCeti.SmoothForm.IsOfType.del_eq`, `TauCeti.SmoothForm.IsOfType.delBar_eq`: on a form of type
   `(p,q)`, they are the type-`(p+1,q)` and type-`(p,q+1)` components of `d`.
 * `TauCeti.SmoothForm.IsOfType.mextDerivₗ_eq_add_del_add_delBar_add`: the four bidegrees of `d`.
+* `TauCeti.SmoothAlmostComplexStructure.del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar`,
+  `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar`:
+  wherever `d = ∂ + ∂bar`, `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0`.
 * `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_apply`,
   `TauCeti.SmoothAlmostComplexStructure.del_del_apply`: the squares of `∂bar` and `∂` on functions
   through the Nijenhuis tensor.
 * `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del`: `∂ ∂bar f + ∂bar ∂f = 0`.
+* `TauCeti.SmoothAlmostComplexStructure.del_apply_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply`: on functions,
+  `∂f(v) = (df(v) - i df(J v)) / 2` and `∂bar f(v) = (df(v) + i df(J v)) / 2`.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_apply_eq_zero_iff`,
+  `TauCeti.SmoothAlmostComplexStructure.del_apply_eq_zero_iff`: `∂bar f` (respectively `∂f`)
+  vanishes at a point exactly when `df ∘ J = i df` (respectively `-i df`).
 * `TauCeti.SmoothAlmostComplexStructure.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero`:
   `d = ∂ + ∂bar` on one-forms when `N_J = 0`.
 
@@ -260,6 +272,63 @@ theorem mpullback_delBar (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J
 
 end Pullback
 
+/-! ### Squares when `d = ∂ + ∂bar` -/
+
+section DelAddDelBar
+
+variable {J}
+  (hd : ∀ φ : SmoothForm I M F k, mextDerivₗ I k φ = J.del φ + J.delBar φ)
+  (hd' : ∀ φ : SmoothForm I M F (k + 1), mextDerivₗ I (k + 1) φ = J.del φ + J.delBar φ)
+include hd hd'
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then on a `k`-form `φ` of type `(p,q)`
+the components of `d²φ = 0` of the types `(p+2,q)`, `(p+1,q+1)` and `(p,q+2)` are `∂∂φ`,
+`∂ ∂bar φ + ∂bar ∂φ` and `∂bar ∂bar φ`, so these vanish. -/
+private theorem del_del_and_delBar_delBar_of_isOfType {φ : SmoothForm I M F k} {p q : ℕ}
+    (hφ : φ.IsOfType J p q) :
+    J.del (J.del φ) = 0 ∧ J.del (J.delBar φ) + J.delBar (J.del φ) = 0 ∧
+      J.delBar (J.delBar φ) = 0 := by
+  have h : J.del (J.del φ) + J.delBar (J.del φ) + (J.del (J.delBar φ) + J.delBar (J.delBar φ)) =
+      0 := by
+    rw [← hd', ← hd', ← map_add, ← hd, ← LinearMap.comp_apply, mextDerivₗ_comp_mextDerivₗ,
+      LinearMap.zero_apply]
+  have h₂₀ := congrArg (J.typeProjection (p + 1 + 1) q) h
+  have h₀₂ := congrArg (J.typeProjection p (q + 1 + 1)) h
+  simp only [map_add, map_zero, hφ.del.del.typeProjection_self,
+    hφ.delBar.delBar.typeProjection_self,
+    hφ.del.delBar.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
+    hφ.delBar.del.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
+    hφ.delBar.delBar.typeProjection_of_ne (p' := p + 1 + 1) (q' := q) (by grind),
+    hφ.del.del.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
+    hφ.del.delBar.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
+    hφ.delBar.del.typeProjection_of_ne (p' := p) (q' := q + 1 + 1) (by grind),
+    add_zero, zero_add] at h₂₀ h₀₂
+  refine ⟨h₂₀, ?_, h₀₂⟩
+  rw [h₂₀, h₀₂, zero_add, add_zero] at h
+  exact (add_comm _ _).trans h
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then `∂∂φ = 0` for every `k`-form `φ`. -/
+theorem del_del_eq_zero_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.del (J.del φ) = 0 :=
+  J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.del)
+    (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).1) φ
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then `∂bar ∂bar φ = 0` for every
+`k`-form `φ`. -/
+theorem delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.delBar (J.delBar φ) = 0 :=
+  J.map_eq_zero_of_forall_isOfType (f := J.delBar ∘ₗ J.delBar)
+    (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.2) φ
+
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then `∂ ∂bar φ + ∂bar ∂φ = 0` for every
+`k`-form `φ`. -/
+theorem del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.del (J.delBar φ) + J.delBar (J.del φ) = 0 :=
+  J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.delBar + J.delBar ∘ₗ J.del)
+    (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.1) φ
+
+end DelAddDelBar
+
 /-! ### Functions -/
 
 /-- On functions, `d = ∂ + ∂bar`. -/
@@ -281,6 +350,53 @@ theorem del_delBar_add_delBar_del (f : SmoothForm I M F 0) :
     J.del (J.delBar f) + J.delBar (J.del f) = 0 := by
   have hf := SmoothForm.isOfType_zero_zero f J
   rw [hf.delBar.del_eq, hf.del.delBar_eq, mextDerivₗ_delBar, map_neg, neg_add_cancel]
+
+/-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
+theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.del f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v -
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
+  rw [(SmoothForm.isOfType_zero_zero f J).del_eq]
+  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_one_zero,
+    LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
+  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
+    mextDerivₗ_zero_apply]
+
+/-- **`∂bar` on functions.** For a smooth function `f`, `∂bar f(v) = (df(v) + i df(J v)) / 2`. -/
+theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.delBar f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v +
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
+  rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq]
+  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_zero_one,
+    LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
+  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
+    mextDerivₗ_zero_apply]
+
+/-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
+for `J`: `df(J v) = i df(v)`. -/
+theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
+    (J.delBar f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
+    (forall_congr' fun v ↦ ?_)
+  rw [delBar_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
+  constructor <;> intro h
+  · rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
+      _root_.neg_neg]
+  · rw [h, smul_smul, Complex.I_mul_I, neg_one_smul, add_neg_cancel]
+
+/-- `∂f` vanishes at a point exactly when the differential of `f` there is conjugate linear for
+`J`: `df(J v) = -i df(v)`. -/
+theorem del_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
+    (J.del f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
+      -Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
+    (forall_congr' fun v ↦ ?_)
+  rw [del_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
+  constructor <;> intro h
+  · rw [sub_eq_zero.1 h, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, _root_.neg_neg]
+  · rw [h, smul_smul, mul_neg, Complex.I_mul_I, _root_.neg_neg, one_smul, sub_self]
 
 variable [FiniteDimensional ℝ E]
 

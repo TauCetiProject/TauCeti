@@ -127,12 +127,6 @@ theorem yosidaLimit_zero (A : X →ₗ.[ℝ] X) (x : X) : yosidaLimit A 0 x = x 
   simp only [yosidaLimit, hconst]
   exact tendsto_const_nhds.limUnder_eq
 
-/-- Splitting the exponential of a sum of commuting times: `exp ((s + t) B) = exp (s B) exp (t B)`
-pointwise, for a bounded operator `B`. -/
-private theorem exp_add_smul_apply (B : X →L[ℝ] X) (s t : ℝ) (x : X) :
-    exp ((s + t) • B) x = exp (s • B) (exp (t • B) x) := by
-  exact DFunLike.congr_fun (TauCeti.exp_add_smul B s t) x
-
 /-! ## Shared limit-semigroup scaffolding -/
 
 omit [CompleteSpace X] in
@@ -180,7 +174,7 @@ private theorem yosidaLimit_time_add_of_tendsto_of_norm_le {A : X →ₗ.[ℝ] X
   refine tendsto_nhds_unique htend_st ?_
   have hcomp := ContinuousLinearMap.tendsto_apply_of_eventually_norm_le
     hbound_s htend_s htend_t
-  simpa only [exp_add_smul_apply] using hcomp
+  simpa only [ContinuousLinearMap.exp_add_smul_apply] using hcomp
 
 /-- The Yosida limit is continuous in time on a compact interval whenever the approximating
 exponentials converge uniformly there. -/

@@ -25,7 +25,8 @@ out because the deck group is commutative), yielding
   `FundamentalGroup (RealProjectiveSpace n) x ≃* ℤˣ`.
 
 As consequences, `RPⁿ` (for `2 ≤ n`) has a fundamental group of order 2, a nontrivial fundamental
-group, is not simply connected, not contractible, and not homeomorphic to `ℝ`.
+group, is not simply connected, not contractible, and not homotopy equivalent (in particular, not
+homeomorphic) to `ℝ`.
 
 ## Main declarations
 
@@ -45,7 +46,8 @@ group, is not simply connected, not contractible, and not homeomorphic to `ℝ`.
 * `TauCeti.RealProjectiveSpace.nontrivial_fundamentalGroup`: the fundamental group is nontrivial.
 * `TauCeti.RealProjectiveSpace.not_simplyConnectedSpace`: `RPⁿ` is not simply connected.
 * `TauCeti.RealProjectiveSpace.not_contractibleSpace`: `RPⁿ` is not contractible.
-* `TauCeti.RealProjectiveSpace.isEmpty_homeomorph_real`: `RPⁿ` is not homeomorphic to `ℝ`.
+* `TauCeti.RealProjectiveSpace.isEmpty_homotopyEquiv_real`: `RPⁿ` is not homotopy equivalent
+  to `ℝ`.
 
 ## References
 
@@ -66,6 +68,7 @@ namespace TauCeti
 namespace RealProjectiveSpace
 
 open Metric Deck
+open scoped ContinuousMap
 
 noncomputable section
 
@@ -167,11 +170,10 @@ theorem not_contractibleSpace (hn : 2 ≤ n)
     ¬ ContractibleSpace (RealProjectiveSpace n) :=
   not_contractibleSpace_of_not_simplyConnectedSpace (not_simplyConnectedSpace n hn)
 
-/-- For `2 ≤ n`, real projective space `RPⁿ` is not homeomorphic to `ℝ`. -/
-theorem isEmpty_homeomorph_real (hn : 2 ≤ n)
- :
-    IsEmpty (RealProjectiveSpace n ≃ₜ ℝ) :=
-  isEmpty_homeomorph_real_of_not_simplyConnectedSpace (not_simplyConnectedSpace n hn)
+/-- For `2 ≤ n`, real projective space `RPⁿ` is not homotopy equivalent (in particular, not
+homeomorphic) to `ℝ`. -/
+theorem isEmpty_homotopyEquiv_real (hn : 2 ≤ n) : IsEmpty (RealProjectiveSpace n ≃ₕ ℝ) :=
+  isEmpty_homotopyEquiv_real_of_not_simplyConnectedSpace (not_simplyConnectedSpace n hn)
 
 end
 

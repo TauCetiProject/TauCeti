@@ -137,11 +137,11 @@ theorem mem_range_boundedCoefficientPadding_iff (h : d ≤ e)
 
 /-- Evaluating padded coefficients gives the same vector-valued polynomial function.
 This equality does not require the scalars to be infinite. -/
-@[simp] theorem boundedEvaluation_padding (h : d ≤ e)
+@[simp] theorem tupleEvaluation_padding (h : d ≤ e)
     (a : J × {s : σ →₀ ℕ // s.degree ≤ d} → R) :
-    boundedEvaluation σ R J e
+    tupleEvaluation J (restrictTotalDegree σ R e)
         ((boundedCoefficientEquiv σ R J e).symm (boundedCoefficientPadding h a)) =
-      boundedEvaluation σ R J d ((boundedCoefficientEquiv σ R J d).symm a) := by
+      tupleEvaluation J (restrictTotalDegree σ R d) ((boundedCoefficientEquiv σ R J d).symm a) := by
   simp only [boundedCoefficientPadding, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_apply]
   funext x j

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
-public import TauCeti.Topology.Algebra.PointTopology.Basic
+public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
 /-!
 # The topological group of points of an affine group scheme
@@ -33,7 +33,9 @@ variables they form an infinite product of copies of `E`.
 The group of points is functorial in both variables, and the induced maps are continuous: a
 bialgebra map `H₁ → H₂` induces the continuous homomorphism `BialgHom.mapDomain` from the points of
 `H₂` to those of `H₁`, and a continuous algebra map `R → R'` of coefficients induces the continuous
-homomorphism `AlgHom.mapValue`.
+homomorphism `AlgHom.mapValue`. Since the group of points carries the point topology of the
+underlying homomorphisms, `AlgHom.mapValue ψ` is an embedding or a closed embedding whenever `ψ`
+is, and an open embedding when `ψ` is and the coordinate algebra is of finite type.
 
 ## Main declarations
 
@@ -45,11 +47,14 @@ homomorphism `AlgHom.mapValue`.
   group.
 * `BialgHom.continuous_mapDomain` and `AlgHom.continuous_mapValue`: functoriality of the points is
   continuous in the coordinate algebra and in continuous maps of coefficients.
+* `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
+  `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
+  or open embedding of coefficient rings.
 
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
-  Prop. 2.1 and the discussion after it, p. 2.
+  Prop. 2.1 and the discussion after it, p. 2, and Ex. 2.2–2.3, p. 3.
 -/
 
 public section
@@ -107,7 +112,7 @@ variable {k H₁ H₂ R R' : Type*} [CommSemiring k] [Semiring H₁] [Bialgebra 
   [Bialgebra k H₂] [CommSemiring R] [Algebra k R] [TopologicalSpace R] [CommSemiring R']
   [Algebra k R'] [TopologicalSpace R']
 
-open TauCeti.PointTopology
+open Topology TauCeti.PointTopology
 
 /-- Precomposition with a bialgebra map `φ : H₁ → H₂` is a continuous homomorphism from the points
 of `H₂` to those of `H₁`. -/
@@ -126,5 +131,25 @@ theorem AlgHom.continuous_mapValue {ψ : R →ₐ[k] R'} (hψ : Continuous ψ) :
   continuous_withConv_iff.2 fun h ↦ by
     simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
     exact hψ.comp (continuous_eval_ofConv _)
+
+/-- An embedding of coefficient rings induces an embedding of groups of points. -/
+theorem AlgHom.isEmbedding_mapValue {ψ : R →ₐ[k] R'} (hψ : IsEmbedding ψ) :
+    IsEmbedding (mapValue (H := H₁) ψ) := by
+  rw [← isHomeomorph_ofConv.isEmbedding.of_comp_iff, AlgHom.ofConv_comp_mapValue]
+  exact (isEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isEmbedding
+
+/-- A closed embedding of coefficient rings induces a closed embedding of groups of points. -/
+theorem AlgHom.isClosedEmbedding_mapValue {ψ : R →ₐ[k] R'} (hψ : IsClosedEmbedding ψ) :
+    IsClosedEmbedding (mapValue (H := H₁) ψ) := by
+  rw [← isHomeomorph_ofConv.isClosedEmbedding.of_comp_iff, AlgHom.ofConv_comp_mapValue]
+  exact (isClosedEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isClosedEmbedding
+
+/-- An open embedding of coefficient rings induces an open embedding of groups of points when
+the coordinate algebra is of finite type. -/
+theorem AlgHom.isOpenEmbedding_mapValue [Algebra.FiniteType k H₁] {ψ : R →ₐ[k] R'}
+    (hψ : IsOpenEmbedding ψ) : IsOpenEmbedding (mapValue (H := H₁) ψ) := by
+  rw [← IsOpenEmbedding.of_comp_iff _ isHomeomorph_ofConv.isOpenEmbedding,
+    AlgHom.ofConv_comp_mapValue]
+  exact (isOpenEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isOpenEmbedding
 
 end Functoriality

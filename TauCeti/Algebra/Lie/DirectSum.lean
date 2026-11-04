@@ -44,6 +44,8 @@ Mathlib's API for it stays reachable.
 
 * `DirectSum.lieModuleOf_apply` and `DirectSum.lieModuleComponent_apply`: the inclusion and the
   projection of an external direct sum of Lie modules are `DirectSum.of` and evaluation.
+* `DirectSum.lof_lie`: the linear inclusion `DirectSum.lof` of a summand commutes with the Lie
+  action.
 
 ## Roadmap
 
@@ -76,6 +78,13 @@ variable [∀ i, LieRingModule L (P i)]
 theorem lieModuleOf_apply [DecidableEq ι] (i : ι) (x : P i) :
     lieModuleOf R ι L P i x = of P i x :=
   (rfl)
+
+/-- **The inclusion of a summand commutes with the Lie action**: `DirectSum.lof` is the underlying
+linear map of the Lie module morphism `DirectSum.lieModuleOf`. -/
+@[simp]
+theorem lof_lie [DecidableEq ι] (i : ι) (x : L) (m : P i) :
+    lof R ι P i ⁅x, m⁆ = ⁅x, lof R ι P i m⁆ :=
+  (lieModuleOf R ι L P i).map_lie x m
 
 /-- The projection of an external direct sum of Lie modules onto a summand is evaluation. -/
 @[simp]

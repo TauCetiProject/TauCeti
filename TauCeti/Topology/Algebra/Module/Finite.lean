@@ -87,7 +87,7 @@ theorem nonarchimedeanAddGroup_moduleTopology [TopologicalSpace A]
   have _ : IsModuleTopology A M := inferInstance
   let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A M
-  exact NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap f.toAddMonoidHom
+  exact NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap f
     (IsModuleTopology.continuous_of_linearMap f).continuousAt
     (IsModuleTopology.isOpenQuotientMap_of_surjective hf).isOpenMap
 

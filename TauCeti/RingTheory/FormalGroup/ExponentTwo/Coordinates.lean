@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 import TauCeti.RingTheory.FormalGroup.AdditiveSeries
+import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
 import TauCeti.RingTheory.FormalGroup.Hom
 import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
@@ -24,6 +26,12 @@ nilpotents and the zero ring.
 classification entirely in terms of power series and their coefficients. A series occurring as
 the factor `a` has zero constant coefficient by its support condition, and hence has a
 compositional inverse because its linear coefficient is one.
+
+In particular, a formal group law of exponent two is the transport `g⁻¹ • 𝔾ₐ` of the additive
+formal group law along the inverse of its normalized logarithm `g`
+(`FormalGroup.inv_smul_𝔾ₐ_eq`). Conversely, if `2 = 0`, the normalized logarithm of `g⁻¹ • 𝔾ₐ`
+is `g` when `g` is strict without terms of degree `2ᵏ`, `k ≥ 1`
+(`FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ`).
 
 ## References
 
@@ -114,5 +122,31 @@ theorem subst_toPowerSeries_eq_add_iff_existsUnique_subst_exponentTwoLog
         (l.hasSubst_subst (PowerSeries.HasSubst.X 1)),
       PowerSeries.subst_comp_subst_apply l.hasSubst (PowerSeries.HasSubst.X 0),
       PowerSeries.subst_comp_subst_apply l.hasSubst (PowerSeries.HasSubst.X 1)]
+
+/-- **A formal group law of exponent two is determined by its normalized logarithm**: if the
+formal coordinate `φ` has series the normalized logarithm `g` of `F`, then
+`F(X, Y) = g⁻¹(g(X) + g(Y))`, that is, `F` is the transport `φ⁻¹ • 𝔾ₐ` of the additive formal
+group law. -/
+theorem inv_smul_𝔾ₐ_eq (hF : F.nsmulSeries 2 = 0) {φ : FormalCoordinate R}
+    (hφ : φ.toPowerSeries = F.exponentTwoLog hF) :
+    φ⁻¹ • 𝔾ₐ = F := by
+  rw [← (F.exponentTwoLogHom hF).smul_eq ((F.exponentTwoLogHom_toPowerSeries hF).trans hφ.symm),
+    inv_smul_smul]
+
+variable (φ : FormalCoordinate R)
+
+/-- **The normalized logarithm of a transported additive formal group law**: if `2 = 0` in `R` and
+`φ = X + ⋯` has no term of degree `2ᵏ` for `k ≥ 1`, then `φ` is the normalized logarithm of
+`φ⁻¹ • 𝔾ₐ = φ⁻¹(φ(X) + φ(Y))`. -/
+theorem exponentTwoLog_inv_smul_𝔾ₐ (h2 : (2 : R) = 0) (h₁ : PowerSeries.coeff 1 φ.toPowerSeries = 1)
+    (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) φ.toPowerSeries = 0) :
+    (φ⁻¹ • (𝔾ₐ : FormalGroup R)).exponentTwoLog
+        (nsmulSeries_smul_𝔾ₐ_eq_zero φ⁻¹ (Nat.cast_ofNat.trans h2)) =
+      φ.toPowerSeries := by
+  -- `φ` is the series of the inverse of the isomorphism `φ⁻¹ : 𝔾ₐ → φ⁻¹ • 𝔾ₐ`.
+  have hφ := (smulIso φ⁻¹ (𝔾ₐ (R := R))).invHom.hom
+  rw [smulIso_invHom_toPowerSeries, inv_inv] at hφ
+  exact ((φ⁻¹ • 𝔾ₐ).eq_exponentTwoLog _ φ.constantCoeff_toPowerSeries h₁ hp
+    ((FormalGroupHom.hom_additive_iff φ.constantCoeff_toPowerSeries).mp hφ)).symm
 
 end FormalGroup

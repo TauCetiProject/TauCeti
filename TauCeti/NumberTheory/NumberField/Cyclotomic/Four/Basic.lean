@@ -43,6 +43,8 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
   fourth root of unity;
 * `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`;
 * `TauCeti.absNorm_span_natCast_four`: the absolute norm of `q ℤ[i]` is `q²`;
+* `NumberField.RingOfIntegers.natCast_absNorm_span_singleton_of_four`: the absolute norm of
+  `x ℤ[i]` is the norm of `x`;
 * `TauCeti.prime_natCast_of_mod_four_eq_three`: a rational prime `q ≡ 3 (mod 4)` stays prime in
   `ℤ[i]`.
 
@@ -197,6 +199,30 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 theorem absNorm_span_natCast_four (q : ℕ) : absNorm (span {(q : 𝓞 K)}) = q ^ 2 := by
   rw [absNorm_span_natCast, RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 4) K
     (cyclotomic.irreducible_rat (by norm_num)), show Nat.totient 4 = 2 by decide]
+
+end TauCeti
+
+namespace NumberField.RingOfIntegers
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+
+/-- The absolute norm of `x 𝓞 K` is the norm of `x`, which is nonnegative in `𝓞 K = ℤ[i]` as a
+sum of two squares. -/
+theorem natCast_absNorm_span_singleton_of_four (x : 𝓞 K) :
+    (Ideal.absNorm (Ideal.span {x}) : ℤ) = Algebra.norm ℤ x := by
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  rw [Ideal.absNorm_span_singleton, Int.natCast_natAbs, abs_eq_self]
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four]
+  positivity
+
+end NumberField.RingOfIntegers
+
+namespace TauCeti
+
+open Ideal
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- **Rational primes `q ≡ 3 (mod 4)` are inert in `𝓞 K = ℤ[i]`.** This is the analogue for the
 ring of integers of the fourth cyclotomic field of one direction of Mathlib's

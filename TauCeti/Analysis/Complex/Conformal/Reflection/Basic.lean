@@ -18,8 +18,8 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 /-!
 # Conjugation and holomorphic domains
 
-This file records the elementary conjugation API used by the conformal-mapping roadmap's
-Schwarz-reflection layer.  Mathlib already proves the pointwise fact
+This file records the elementary conjugation API used by the Schwarz reflection principle.
+Mathlib already proves the pointwise fact
 `DifferentiableAt.conj_conj`: if `f` is complex differentiable at `conj z`, then
 `z ↦ conj (f (conj z))` is complex differentiable at `z`.  The lemmas here package the
 corresponding within-set statement for reflected images, which is the form needed before the

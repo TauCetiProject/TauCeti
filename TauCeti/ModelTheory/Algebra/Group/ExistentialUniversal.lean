@@ -29,6 +29,9 @@ coefficients with solvability statements for finite families of equation–inequ
   when one system of a finite family has a solution.
 * `FirstOrder.Language.group.universal_iff_no_solution`: a universal sentence holds exactly
   when no system of a finite family has a solution.
+* `FirstOrder.Language.group.noSolutionSentence`: conversely, for finite sets of words `E` and
+  `I` in `n` variables, a universal sentence of the group language without coefficients saying
+  that no `n`-tuple satisfies `e = 1` for `e ∈ E` and `i ≠ 1` for `i ∈ I`.
 
 The reduction of existential and universal sentences to systems of equations and inequations
 follows Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3.
@@ -217,5 +220,42 @@ example :
     List.mem_singleton, forall_eq, map_commutatorElement, EqIneqSystem.eval_of, Sum.elim_inl,
     ne_eq, commutatorElement_eq_one_iff_commute, true_and]
   exact fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
+
+/-! ### Universal sentences forbidding solutions of systems without coefficients -/
+
+/-- The equation `w = 1` for a word `w` in the bound variables `Fin n`, as an atomic formula of
+the group language without coefficients. -/
+private noncomputable def wordEqOne (w : FreeGroup (Fin n)) :
+    Language.group.BoundedFormula Empty n :=
+  Language.Term.bdEqual ((wordTerm w).relabel Sum.inr) 1
+
+/-- The universal sentence of the group language without coefficients saying that no `n`-tuple
+`x` of group elements satisfies the equations `e(x) = 1` for `e ∈ E` and the inequations
+`i(x) ≠ 1` for `i ∈ I`. -/
+noncomputable def noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
+    Language.group.Sentence :=
+  (BoundedFormula.iInf (fun e : E => wordEqOne (e : FreeGroup (Fin n))) ⊓
+    BoundedFormula.iInf (fun i : I => (wordEqOne (i : FreeGroup (Fin n))).not)).not.alls
+
+/-- The sentence `noSolutionSentence E I` is universal. -/
+theorem isUniversal_noSolutionSentence (E I : Finset (FreeGroup (Fin n))) :
+    (noSolutionSentence E I).IsUniversal :=
+  ((BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF).inf
+    (BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF.not)).not
+    |>.isUniversal.alls
+
+section NoSolution
+
+attribute [local instance] TauCeti.Group.structureOfGroup
+
+/-- A group satisfies `noSolutionSentence E I` exactly when no tuple solves the equations `E`
+and the inequations `I`. -/
+@[simp] theorem realize_noSolutionSentence {G : Type*} [Group G]
+    (E I : Finset (FreeGroup (Fin n))) :
+    G ⊨ noSolutionSentence E I ↔
+      ¬∃ x : Fin n → G, (∀ e ∈ E, FreeGroup.lift x e = 1) ∧ ∀ i ∈ I, FreeGroup.lift x i ≠ 1 := by
+  simp [noSolutionSentence, wordEqOne, Sentence.Realize]
+
+end NoSolution
 
 end FirstOrder.Language.group

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Sheaves.Cech
+public import TauCeti.Topology.Sheaves.Cech.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
 import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.CategoryTheory.Sites.EpiMono

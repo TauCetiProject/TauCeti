@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.LinearAlgebra.Orientation.Basis
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 import TauCeti.Topology.VectorBundle.Coordinates
 public import Mathlib.Topology.LocallyConstant.Basic
 
@@ -427,41 +428,45 @@ theorem orientationAt_ofVectorBundleOrientation (model : _root_.Orientation ℝ 
   rw [mapOrientation_orientationAt _ (mem_chart_source H x)]
   exact _root_.Orientation.intCast_units_smul_ite_eq _ _ hι
 
-/-- A model with corners carries every constant model orientation, with all chart signs `1`. -/
-def model (o : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :
-    OrientationLift I H ι where
-  modelOrientation := o
+/-- When the given atlas has positive transition derivatives, every model orientation is the
+model orientation of the orientation lift all of whose chart signs are `1`. On a model with
+corners, whose preferred charts are all the identity, this is the constant model orientation. -/
+def ofHasGroupoid [HasGroupoid M (orientationPreservingGroupoid I)]
+    (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :
+    OrientationLift I M ι where
+  modelOrientation := model
   card_eq := hι
   sign _ _ := 1
   locallyConstant_sign _ := IsLocallyConstant.const _
-  compatible α β x _ _ := by
-    have ht : tangentCoordChange I α β x = ContinuousLinearMap.id ℝ E := by
-      ext v
-      -- The preferred charts of a model are all the identity, so this is its self transition.
-      change tangentCoordChange I x x x v = v
-      exact tangentCoordChange_self (mem_extChartAt_source x)
-    rw [tangentCoordChange_def] at ht
-    rw [ht]
-    simp [ContinuousLinearMap.det]
+  compatible α β x hα hβ := by
+    simp only [Units.val_one, Int.cast_one, one_mul]
+    exact (isOrientedAtlas_atlas I 1 M).det_fderivWithin_pos (chart_mem_atlas H α)
+      (chart_mem_atlas H β) hα hβ
+
+section OfHasGroupoid
+
+variable [HasGroupoid M (orientationPreservingGroupoid I)]
+  (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E)
 
 @[simp]
-theorem model_modelOrientation (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) :
-    (model (I := I) o hι).modelOrientation = o := (rfl)
+theorem ofHasGroupoid_modelOrientation :
+    (ofHasGroupoid (I := I) (M := M) model hι).modelOrientation = model := (rfl)
 
 @[simp]
-theorem model_sign (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (α : H) (x) :
-    (model (I := I) o hι).sign α x = 1 := (rfl)
+theorem ofHasGroupoid_sign (α : M) (x : (chartAt H α).source) :
+    (ofHasGroupoid (I := I) (M := M) model hι).sign α x = 1 := (rfl)
 
+/-- At every point, the tangent orientation of `ofHasGroupoid model hι`, read in the preferred
+chart at that point, is the model orientation. -/
 @[simp]
-theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (x : H) :
-    (model (I := I) o hι).orientationAt x = o := by
+theorem orientationAt_ofHasGroupoid (x : M) :
+    (ofHasGroupoid (I := I) (M := M) model hι).orientationAt x = model := by
   rw [orientationAt_eq, chartOrientation_eq_ite]
-  simp only [model_sign, ite_true, model_modelOrientation]
-  -- The model's tangent space carries its model-space scalar structure.
+  simp only [ofHasGroupoid_sign, ite_true, ofHasGroupoid_modelOrientation]
+  -- The tangent space at `x` is the model space, with its own scalar structure.
   rfl
+
+end OfHasGroupoid
 
 /-- Two lifts with the same model orientation and tangent orientations have the same signs. -/
 theorem ext_of_orientationAt {o o' : OrientationLift I M ι}

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.LaurentSeries.ContinuousDerivation
-public import TauCeti.RingTheory.LaurentSeries.Substitution
+public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
 # Continuous Kähler differentials of formal Laurent series

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
 -- Proof-only: lowest homogeneous components of powers.
@@ -62,6 +63,10 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
+* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
+  has zero constant coefficient.
+* `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
+  continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
@@ -91,7 +96,8 @@ of a completed group algebra attached to two topological generators.
   through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
-* `PowerSeries.subst_X_add_of_sq_eq_zero`: `f (X + h) = f + h f'` when `h ^ 2 = 0`.
+* `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
+  its special case `PowerSeries.subst_X_add_of_sq_eq_zero`, `f (X + h) = f + h f'`.
 * `AlgHom.apply_eq_subst`: over a field, every algebra endomorphism of `K⟦X⟧` is substitution by
   its value at `X`.
 * `TauCeti.hasSubst_binomialSeries_sub_one`: `(1 + X) ^ u - 1` can be substituted.
@@ -100,6 +106,19 @@ of a completed group algebra attached to two topological generators.
 public section
 
 namespace PowerSeries
+
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution depends only on the first `n + 1` coefficients of the outer series. -/
+theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) (n : ℕ) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range (n + 1), coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst' (.of_constantCoeff_zero' hg)]
+  refine finsum_eq_sum_of_support_subset _ fun k hk ↦ ?_
+  rw [Function.mem_support] at hk
+  simp only [Finset.coe_range, Set.mem_Iio]
+  by_contra h
+  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
+    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
 
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
@@ -244,28 +263,36 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
   rw [hpoly]
 
-/-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
-`f (X + h) = f + h f'`. -/
-theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
-    f.subst (X + h) = f + h * d⁄dX f := by
-  -- `f ↦ f + h f'` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`, and it
-  -- sends `X` to `X + h`, so it is the substitution of `X + h`.
-  let T : S⟦X⟧ →ₐ[S] S⟦X⟧ :=
-    { toFun g := g + h * d⁄dX g
+/-- The first-order Taylor formula: substituting a square-zero perturbation `a + h` of a
+substitutable series `a` gives `f (a + h) = f (a) + h f' (a)`. -/
+theorem subst_add_of_sq_eq_zero {a h : S⟦X⟧} (ha : HasSubst a) (hh : h ^ 2 = 0) (f : R⟦X⟧) :
+    f.subst (a + h) = f.subst a + h * (d⁄dX f).subst a := by
+  -- `g ↦ g (a) + h g' (a)` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`,
+  -- and it sends `X` to `a + h`, so it is the substitution of `a + h`.
+  let T : R⟦X⟧ →ₐ[R] S⟦X⟧ :=
+    { toFun g := substAlgHom ha g + h * substAlgHom ha (d⁄dX g)
       map_one' := by simp
       map_mul' g₁ g₂ := by
-        simp only [Derivation.leibniz, smul_eq_mul]
-        linear_combination (-(d⁄dX g₁ * d⁄dX g₂)) * hh
+        simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add]
+        linear_combination (-(substAlgHom ha (d⁄dX g₁) * substAlgHom ha (d⁄dX g₂))) * hh
       map_zero' := by simp
       map_add' g₁ g₂ := by
         simp only [map_add]
         ring
-      commutes' r := by simp }
-  have hT (g : S⟦X⟧) : T g = g + h * d⁄dX g := rfl
-  have hTX : T X = X + h := by rw [hT, derivative_X, mul_one]
-  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ HasSubst.X'.add (.map ⟨2, hh⟩ _))) f)
+      commutes' r := by
+        simp only [Derivation.map_algebraMap, map_zero, mul_zero, add_zero, AlgHom.commutes] }
+  have hT (g : R⟦X⟧) : T g = g.subst a + h * (d⁄dX g).subst a := by
+    simp [T, coe_substAlgHom]
+  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one ha, mul_one]
+  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ ha.add (.map ⟨2, hh⟩ _))) f)
   rw [coe_substAlgHom, hTX, hT] at hσ
   exact hσ.symm
+
+/-- The first-order Taylor formula at `X`: substituting a square-zero perturbation `X + h` of
+`X` gives `f (X + h) = f + h f'`. -/
+theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
+    f.subst (X + h) = f + h * d⁄dX f := by
+  rw [subst_add_of_sq_eq_zero HasSubst.X' hh, X_subst, X_subst]
 
 /-- Substituting a series of zero constant coefficient preserves divisibility by `X ^ n`. -/
 theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f : R⟦X⟧}
@@ -404,6 +431,22 @@ theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ 
 end Perturbation
 
 end PowerSeries
+
+open scoped PowerSeries PowerSeries.WithPiTopology in
+/-- Substitution is jointly continuous for coefficientwise continuous families, provided the
+inner series always has zero constant coefficient. No discrete coefficient topology is needed. -/
+theorem Continuous.powerSeries_subst {A R S : Type*} [TopologicalSpace A]
+    [CommRing R] [TopologicalSpace R] [CommRing S] [TopologicalSpace S]
+    [IsTopologicalRing S] [Algebra R S] [ContinuousSMul R S]
+    {f : A → R⟦X⟧} {g : A → S⟦X⟧} (hf : Continuous f) (hg : Continuous g)
+    (hg₀ : ∀ a, PowerSeries.constantCoeff (g a) = 0) :
+    Continuous fun a ↦ (f a).subst (g a) := by
+  refine continuous_iff_continuousAt.mpr fun a ↦
+    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+  simp_rw [PowerSeries.coeff_subst_eq_sum_range _ (hg₀ _)]
+  exact (continuous_finsetSum _ fun k _ ↦
+    ((PowerSeries.WithPiTopology.continuous_coeff R k).comp hf).smul
+      ((PowerSeries.WithPiTopology.continuous_coeff S n).comp (hg.pow k))).continuousAt
 
 section Field
 

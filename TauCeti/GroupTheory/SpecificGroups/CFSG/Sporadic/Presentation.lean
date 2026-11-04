@@ -17,12 +17,12 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HaradaNorton
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Held
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HigmanSims
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Four
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Three
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Two
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Lyons
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyThree
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.McLaughlin
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Monster
@@ -91,6 +91,16 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
 
+/-- The presentation selected for the first Janko group is the transcribed ATLAS presentation. -/
+@[simp]
+theorem SporadicName.presentation_J1 : SporadicName.J1.presentation = Sporadic.j1Presentation :=
+  (rfl)
+
+/-- The selected Higman--Sims presentation is the transcribed ATLAS presentation `HSG1-P1`. -/
+@[simp]
+theorem SporadicName.presentation_HS : SporadicName.HS.presentation = Sporadic.hsPresentation := by
+  rfl
+
 /-- Every sporadic presentation has the relator count stated in its metadata.
 
 This is deliberately not `@[simp]`: `GroupPresentation.matchesMetadata_iff` is itself a `simp`
@@ -127,7 +137,40 @@ theorem presentation_matchesMetadata (s : SporadicName) :
   | B => exact Sporadic.BabyMonster.matchesMetadata_presentation
   | M => exact Sporadic.Monster.presentation_matchesMetadata
 
+/-- The presentation selected for `M₁₁` is the transcribed presentation
+`TauCeti.Sporadic.m11Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
+  (rfl)
+
+/-- The presentation selected for `M₁₂` is the transcribed presentation
+`TauCeti.Sporadic.m12Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic.m12Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
+
+/-- The presentation selected for `M₂₄` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.m24Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic.m24Presentation :=
+  (rfl)
+
+/-- The presentation selected for `McL` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.mclPresentation`. -/
+@[simp]
+theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic.mclPresentation :=
+  (rfl)
+
+/-- The presentation selected for `J₂` is Stoytchev's transcribed presentation
+`TauCeti.Sporadic.j2Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
+  (rfl)
 
 end TauCeti

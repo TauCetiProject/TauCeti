@@ -87,6 +87,25 @@ theorem contMDiff_sigmaMk (i : ι) : ContMDiff I I n (Sigma.mk i : M i → Σ i,
     rw [ChartedSpace.sigma_chartAt_mk_apply, (chartAt H x).right_inv hy.1, I.right_inv hy.2]
   · simp
 
+/-- A map into one component is smooth exactly when its composite with the component inclusion
+is smooth. -/
+@[simp]
+theorem contMDiffAt_sigmaMk_iff {i : ι} {f : N → M i} {x : N} :
+    ContMDiffAt J I n (Sigma.mk i ∘ f) x ↔ ContMDiffAt J I n f x := by
+  have hchart :
+      extChartAt I (⟨i, f x⟩ : Σ i, M i) ∘ (Sigma.mk i ∘ f) ∘ (extChartAt J x).symm =
+        extChartAt I (f x) ∘ f ∘ (extChartAt J x).symm :=
+    funext fun _ ↦ extChartAt_sigmaMk_apply
+  rw [contMDiffAt_iff, contMDiffAt_iff]
+  dsimp only [Function.comp_apply] at hchart ⊢
+  rw [hchart, IsOpenEmbedding.sigmaMk.isInducing.continuousAt_iff]
+
+/-- Smoothness of a map with values in a fixed component can be tested in the disjoint union. -/
+@[simp]
+theorem contMDiff_sigmaMk_iff {i : ι} {f : N → M i} :
+    ContMDiff J I n (Sigma.mk i ∘ f) ↔ ContMDiff J I n f :=
+  forall_congr' fun _ ↦ contMDiffAt_sigmaMk_iff
+
 end TauCeti
 
 /-- **Maps of disjoint unions.** A family of `C^n` maps `g i : M i → M' (f i)` induces a `C^n` map

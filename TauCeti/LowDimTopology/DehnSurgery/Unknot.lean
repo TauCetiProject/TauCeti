@@ -47,7 +47,7 @@ framing.
   has framing number `0`.
 * `TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus`: its framing is the preferred framing.
 * `TauCeti.DehnFilling.nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude`: every filling
-  along the longitude with a matrix gluing is homeomorphic to `S¹ × S²`.
+  along the longitude whose gluing is isotopic to a matrix gluing is homeomorphic to `S¹ × S²`.
 
 ## References
 
@@ -225,14 +225,20 @@ variable {Y : Type*} [TopologicalSpace Y]
 
 /-- **`0`-surgery on the unknot.** A Dehn filling of the exterior of the unknot along the longitude
 of its standard solid torus neighbourhood, the slope `0` in the preferred framing, whose gluing is
-induced by an invertible integral matrix, is homeomorphic to `S¹ × S²`. -/
+isotopic to a homeomorphism induced by an invertible integral matrix, is homeomorphic to
+`S¹ × S²`. -/
 theorem nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude
     (F : DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
       isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude Y)
-    {A : GL (Fin 2) ℤ} (hA : F.gluing = A.torusHomeomorph) :
-    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
-  F.nonempty_homeomorph_of_gluing_eq_torusHomeomorph unknotZeroDehnFilling hA
-    (by rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap])
+    {A : GL (Fin 2) ℤ}
+    (hA : Isotopic (F.gluing : C(Circle × Circle, Circle × Circle)) A.torusHomeomorph) :
+    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) := by
+  have hswap : Isotopic (unknotZeroDehnFilling.gluing : C(Circle × Circle, Circle × Circle))
+      (Matrix.GeneralLinearGroup.swap ℤ (0 : Fin 2) 1).torusHomeomorph := by
+    rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap]
+    exact Isotopic.refl _ (Homeomorph.prodComm Circle Circle).isEmbedding
+  obtain ⟨e, -⟩ := F.exists_homeomorph_of_isotopic_torusHomeomorph unknotZeroDehnFilling hA hswap
+  exact ⟨e⟩
 
 end DehnFilling
 

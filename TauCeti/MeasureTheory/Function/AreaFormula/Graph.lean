@@ -179,7 +179,7 @@ theorem _root_.LipschitzWith.surfaceMeasure_le_smul_map_volume_normalGraphEmbedd
       (↑(K + 1) : ℝ≥0∞) ^ finrank ℝ E •
         Measure.map (TauCeti.normalGraphEmbedding φ) volume := by
   refine Measure.le_iff.2 fun t ht ↦ ?_
-  rw [Measure.restrict_apply ht, Measure.smul_apply,
+  rw [Measure.restrict_apply ht, _root_.smul_apply,
     Measure.map_apply hφ.normalGraphEmbedding.continuous.measurable ht]
   rw [← image_preimage_eq_inter_range]
   exact hφ.euclideanHausdorffMeasure_normalGraphEmbedding_image_le _

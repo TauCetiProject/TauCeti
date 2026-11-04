@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.Data.Finsupp.Interval
 public import TauCeti.RingTheory.MvPolynomial.WeightedIndex
+
+import TauCeti.RingTheory.MvPolynomial.Abv.Taylor
 
 /-!
 # Upper and lower bounds for the value of an auxiliary polynomial at a rational point
@@ -157,30 +158,9 @@ theorem abs_eval_le_of_le_weightedIndex {P : MvPolynomial σ ℝ} {r : σ → �
     |eval (fun i ↦ (β i : ℝ)) P| ≤
       B * (∏ i, ((r i : ℝ) + 1)) ^ 2 * (∏ i, (2 * max 1 |a i|) ^ r i) *
         Real.exp (-(κ * D * t)) := by
-  set T := taylor a P
-  set C := B * (∏ i, ((r i : ℝ) + 1)) * ∏ i, (2 * max 1 |a i|) ^ r i
-  have hC : 0 ≤ C := by
-    have := (abs_nonneg _).trans (hB 0)
-    positivity
-  -- Every Taylor coefficient `[Y^d] P(a + Y) = (∂^d P)(a)` that is nonzero has `d ≤ r` and
-  -- weight at least `t`.
-  have hT (d) (hd : d ∈ T.support) :
-      (∀ i, d i ≤ r i) ∧ t ≤ ∑ i, (d i : ℝ) / r i := by
-    rw [mem_support_iff, coeff_taylor] at hd
-    exact le_sum_div_of_le_weightedIndex hdeg ht hd
-  have hβa : (fun i ↦ (β i : ℝ)) = (fun i ↦ (β i : ℝ) - a i) + a := by
-    ext i
-    simp
-  rw [hβa, ← eval_taylor, eval_eq']
-  refine (abs_sum_le_sum_abs _ _).trans <|
-    (Finsupp.sum_le_prod_mul_of_forall_le (C := C * Real.exp (-(κ * D * t)))
-      (fun d hd ↦ (hT d hd).1) (fun d hd ↦ ?_) (mul_nonneg hC (Real.exp_pos _).le)).trans_eq
-      (by ring)
-  rw [abs_mul, abs_prod]
-  simp only [abs_pow]
-  rw [coeff_taylor]
-  exact mul_le_mul (abs_eval_hasseDeriv_le hdeg hB a d)
-    (prod_abs_sub_pow_le_exp hκ hD hβ hr (hT d hd).1 (hT d hd).2) (by positivity) hC
+  have h := AbsoluteValue.abs.apply_eval_le_of_le_weightedIndex hdeg hB ht (fun i ↦ (β i : ℝ))
+    (Real.exp_pos _).le fun d hdr hd ↦ prod_abs_sub_pow_le_exp hκ hD hβ hr hdr hd
+  simpa only [AbsoluteValue.abs_apply, max_comm _ (1 : ℝ)] using h
 
 /-- **Upper bound for an auxiliary polynomial at a rational point**, logarithmic form: under the
 hypotheses of `TauCeti.abs_eval_le_of_le_weightedIndex`, if moreover `P(β) ≠ 0`, then

@@ -20,7 +20,8 @@ Fields take values in `EuclideanSpace ℝ (Fin 4)` and equation defects in
 The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a`.
 `phaseGauge` realizes the action of `exp (i f)`; its composition law holds for
 differentiable phases, and its first variation requires no phase regularity.
-Covariance of the equation requires `C²` phases.
+Covariance of the equation requires `C²` phases. Where the section does not vanish,
+`∂bar_a α = 0` determines the connection from the section (`eq_of_forall_section_eq`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -60,6 +61,28 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 /-- The section in the real field coordinates. -/
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
+
+/-- The section of a difference of fields is the difference of their sections. -/
+theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
+  simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
+  ring
+
+/-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
+theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  ring
+
+/-- If a field tends to zero along a filter, then so does its section. -/
+theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : Filter.Tendsto x l (nhds 0)) : Filter.Tendsto (sectionValue x) l (nhds 0) := by
+  have h : Continuous fun v : EuclideanSpace ℝ (Fin 4) ↦ 2 * ((v 2 : ℂ) + (v 3 : ℂ) * I) := by
+    fun_prop
+  have := (h.tendsto 0).comp hx
+  simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
+  exact this.congr fun z ↦ (sectionValue_apply x z).symm
 
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
@@ -145,6 +168,16 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     equation x z 2 = fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
+
+/-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
+`F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/
+theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hsol : equation x z = 0) :
+    fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I =
+      -((1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 8) := by
+  have h := congrArg (· 0) hsol
+  simp only [equation_apply_zero, PiLp.zero_apply] at h
+  linarith
 
 /-- The curvature component of the linearized equation. -/
 @[simp]
@@ -359,6 +392,34 @@ theorem equation_phaseGauge_eq_zero_iff {x : ℂ → EuclideanSpace ℝ (Fin 4)}
   · exact h₀
   · linear_combination Real.cos (f z) * h₁ + Real.sin (f z) * h₂ - equation x z 1 * htrig
   · linear_combination -Real.sin (f z) * h₁ + Real.cos (f z) * h₂ - equation x z 2 * htrig
+
+/-- **The section of a vortex determines its connection where it does not vanish.** If two fields
+satisfy the holomorphicity equation `∂bar_a α = 0`, have continuous connection components and the
+same section, and the zero set of that section has empty interior, then the fields are equal. -/
+theorem eq_of_forall_section_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx₀ : Continuous fun z ↦ x z 0) (hx₁ : Continuous fun z ↦ x z 1)
+    (hy₀ : Continuous fun z ↦ y z 0) (hy₁ : Continuous fun z ↦ y z 1)
+    (hxsol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
+    (hysol : ∀ z, equation y z 1 = 0 ∧ equation y z 2 = 0)
+    (h₂ : ∀ z, x z 2 = y z 2) (h₃ : ∀ z, x z 3 = y z 3)
+    (hdense : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0}) : x = y := by
+  -- Off the zeros of the section, the two holomorphicity equations are a nondegenerate linear
+  -- system for the difference of the connections.
+  have hb (z : ℂ) (hz : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0) : x z 0 = y z 0 ∧ x z 1 = y z 1 := by
+    obtain ⟨hx₁, hx₂⟩ := hxsol z
+    obtain ⟨hy₁, hy₂⟩ := hysol z
+    simp only [equation_apply_one, equation_apply_two, h₂, h₃] at hx₁ hx₂ hy₁ hy₂
+    have e₀ : (x z 0 - y z 0) * (y z 2 ^ 2 + y z 3 ^ 2) = 0 := by
+      linear_combination -y z 3 * (hx₁ - hy₁) + y z 2 * (hx₂ - hy₂)
+    have e₁ : (x z 1 - y z 1) * (y z 2 ^ 2 + y z 3 ^ 2) = 0 := by
+      linear_combination -y z 2 * (hx₁ - hy₁) - y z 3 * (hx₂ - hy₂)
+    exact ⟨sub_eq_zero.1 ((mul_eq_zero.1 e₀).resolve_right hz),
+      sub_eq_zero.1 ((mul_eq_zero.1 e₁).resolve_right hz)⟩
+  have h₀ := hx₀.ext_on hdense hy₀ fun z hz ↦ (hb z hz).1
+  have h₁ := hx₁.ext_on hdense hy₁ fun z hz ↦ (hb z hz).2
+  ext z i
+  fin_cases i
+  exacts [congrFun h₀ z, congrFun h₁ z, h₂ z, h₃ z]
 
 /-- Exact quadratic expansion of the vortex equation, with no higher remainder. -/
 theorem equation_add_smul {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}

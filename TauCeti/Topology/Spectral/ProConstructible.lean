@@ -176,6 +176,18 @@ theorem _root_.IsClosed.isProConstructible [PrespectralSpace X] {s : Set X} (hs 
     IsProConstructible s :=
   hs.preimage (continuous_ofTopology_withConstructibleTopology X)
 
+/-- The generalizations of a point of a prespectral space form a pro-constructible subset.
+They are the intersection of the compact open neighbourhoods of that point. -/
+theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
+    IsProConstructible {y : X | y ⤳ x} := by
+  have heq : {y : X | y ⤳ x} = ⋂₀ {U : Set X | IsOpen U ∧ IsCompact U ∧ x ∈ U} := by
+    ext y
+    simpa only [mem_ofPred_eq, mem_sInter, and_assoc] using
+      (PrespectralSpace.isTopologicalBasis (X := X)).nhds_hasBasis.specializes_iff
+        (x := y) (y := x)
+  rw [heq]
+  exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
 /-! ### Functoriality -/
 
 /-- Pro-constructible subsets pull back along spectral maps. -/

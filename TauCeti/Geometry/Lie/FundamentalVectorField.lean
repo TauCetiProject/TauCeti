@@ -39,6 +39,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_mulRightInvariantVectorField`: each orbit map `g ↦ g • x` relates the
   right-invariant vector field of `ξ` on `G` to `ξ_M`.
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
+* `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
+  `ξ_M` to `ξ_N`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
@@ -140,6 +142,19 @@ theorem fundamentalVectorField_eq_mulRightInvariantVectorField (ξ : GroupLieAlg
   -- Left multiplication `h • g` is `h * g` by definition of the action of a monoid on itself.
   rfl
 
+/-- **Equivariant maps relate fundamental vector fields.** If `f : M → N` satisfies
+`f (g • x) = g • f x` for every `g`, and `f` and the orbit map of `x` are differentiable, then the
+derivative of `f` at `x` sends `ξ_M(x)` to `ξ_N(f x)`. -/
+theorem mfderiv_fundamentalVectorField_of_map_smul {E'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N] [MulAction G N] {f : M → N} {x : M}
+    (hf : MDifferentiableAt I' I'' f x) (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1)
+    (hfx : ∀ g : G, f (g • x) = g • f x) (ξ : GroupLieAlgebra I G) :
+    mfderiv I' I'' f x (fundamentalVectorField I' ξ x) = fundamentalVectorField I'' ξ (f x) := by
+  have hcomp : (f ∘ fun g : G => g • x) = fun g : G => g • f x := funext hfx
+  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, ← hcomp]
+  exact (mfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x) ξ).symm
+
 /-- For a `C^n` action, the fundamental vector field of `ξ` is a `C^m` vector field when
 `m + 1 ≤ n`. -/
 theorem contMDiff_fundamentalVectorField {m n : ℕ∞ω} [IsManifold I 1 G] [IsManifold I' 1 M]
@@ -188,6 +203,32 @@ theorem mfderiv_smul_mulRightInvariantVectorField [ContMDiffMul I 1 G] [ContMDif
   congr 2
   funext h
   simp [mul_smul]
+
+/-- The fundamental field of a diagonal action is the product of the fundamental fields on
+its two factors. The actions are `C¹`; no Lie group regularity assumption is needed. -/
+theorem fundamentalVectorField_prod
+    {F K : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace K]
+    {J : ModelWithCorners 𝕜 F K} {N : Type*} [TopologicalSpace N] [ChartedSpace K N]
+    [MulAction G N] [ContMDiffSMul I I' 1 G M] [ContMDiffSMul I J 1 G N]
+    (ξ : GroupLieAlgebra I G) :
+    fundamentalVectorField (I'.prod J) ξ =
+      Manifold.prodVectorField (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x)
+        (fundamentalVectorField J ξ : ∀ y : N, TangentSpace J y) := by
+  funext p
+  have hM : MDifferentiableAt I I' (fun g : G ↦ g • p.1) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := 1) p.1).mdifferentiableAt
+      one_ne_zero
+  have hN : MDifferentiableAt I J (fun g : G ↦ g • p.2) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := J) (n := 1) p.2).mdifferentiableAt
+      one_ne_zero
+  have h := DFunLike.congr_fun (mfderiv_prodMk hM hN) ξ
+  -- The derivative's target tangent space is the product of the two model spaces.
+  erw [ContinuousLinearMap.prod_apply] at h
+  apply Prod.ext
+  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_fst, Prod.smul_def] using
+      congrArg Prod.fst h
+  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_snd, Prod.smul_def] using
+      congrArg Prod.snd h
 
 end Field
 
@@ -341,6 +382,19 @@ def InfinitesimalAction.fundamental : InfinitesimalAction (GroupLieAlgebra I G) 
 theorem InfinitesimalAction.fundamental_apply (ξ : GroupLieAlgebra I G) :
     InfinitesimalAction.fundamental I G I' M ξ = fundamentalVectorField I' ξ :=
   (rfl)
+
+/-- Taking the infinitesimal action by fundamental fields commutes with diagonal products. -/
+@[simp]
+theorem InfinitesimalAction.fundamental_prod
+    {F K : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [TopologicalSpace K] {J : ModelWithCorners ℝ F K} {N : Type*} [TopologicalSpace N]
+    [ChartedSpace K N] [IsManifold J ∞ N] [MulAction G N] [ContMDiffSMul I J ∞ G N] :
+    InfinitesimalAction.fundamental I G (I'.prod J) (M × N) =
+      (InfinitesimalAction.fundamental I G I' M).prod
+        (InfinitesimalAction.fundamental I G J N) := by
+  ext ξ
+  simp only [InfinitesimalAction.fundamental_apply, InfinitesimalAction.prod_apply,
+    fundamentalVectorField_prod]
 
 end InfinitesimalAction
 

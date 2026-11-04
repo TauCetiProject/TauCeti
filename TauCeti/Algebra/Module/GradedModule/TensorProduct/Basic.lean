@@ -253,6 +253,14 @@ theorem tensorProduct {G : InternalGrading R M} {H : InternalGrading R N}
     simpa only [TensorProduct.mk_apply] using hxy
   exact hle hz
 
+/-- Tensoring a homogeneous map with the identity on the right preserves its degree. -/
+theorem rTensor {G : InternalGrading R M} {G' : InternalGrading R M'} {f : M →ₗ[R] M'}
+    {a : ℤ} (hf : LinearMap.IsHomogeneous f G.piece G'.piece a) (H : InternalGrading R N) :
+    LinearMap.IsHomogeneous (f.rTensor N) (G.tensorProduct H).piece
+      (G'.tensorProduct H).piece a := by
+  simpa only [LinearMap.rTensor_def, add_zero] using
+    hf.tensorProduct (LinearMap.isHomogeneous_id (R := R) H.piece)
+
 end LinearMap.IsHomogeneous
 
 end TauCeti

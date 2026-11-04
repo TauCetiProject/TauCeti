@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.Carrier
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
+public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
@@ -58,6 +60,9 @@ it to `lᵢ φ(w)`.
   `xᵢⱼ` is killed by `Eᵢⱼ`.
 * `TauCeti.IsRationalRep.isGlHighestWeightVector_differential`: a highest weight vector for the
   transvections is a highest weight vector for `𝔤𝔩ₙ` through the differential.
+* `TauCeti.IsRationalRep.nonempty_lieModuleEquiv_glIrreducible`: an irreducible rational
+  representation with a highest weight vector of dominant weight `λ` differentiates to the named
+  irreducible `𝔤𝔩ₙ`-module `TauCeti.glIrreducible n λ`.
 
 ## References
 
@@ -176,6 +181,22 @@ theorem isGlHighestWeightVector_differential (hρ : IsRationalRep ρ) {l : Fin n
       hρ.differential_single_self_apply_of_mem_weightSpace hwl]
   · rw [LieRingModule.compLieHom_apply, Module.End.lie_apply,
       hρ.differential_single_apply_eq_zero hij.ne (hw i j hij)]
+
+/-- **An irreducible rational representation differentiates to the named irreducible
+`𝔤𝔩ₙ`-module of its highest weight**: if `ρ` is irreducible and has a highest weight vector of
+dominant weight `λ` (a nonzero vector of weight `λ` fixed by every transvection `xᵢⱼ(c)` with
+`i < j`), then `W` with the action of `𝔤𝔩ₙ(ℂ)` through `dρ` is isomorphic to
+`glIrreducible n λ`. -/
+theorem nonempty_lieModuleEquiv_glIrreducible (hρ : IsRationalRep ρ) [ρ.IsIrreducible]
+    {l : DominantWeight n} {w : W} (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l.1)
+    (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w) :
+    letI := LieRingModule.compLieHom W hρ.differential
+    Nonempty (W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ glIrreducible n fun i ↦ (l.1 i : ℂ)) := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  have _ := LieModule.compLieHom W hρ.differential
+  have _ := hρ.isIrreducible_differential
+  exact TauCeti.nonempty_lieModuleEquiv_glIrreducible (isGlDominantIntegral_intCast l.antitone)
+    (hρ.isGlHighestWeightVector_differential hw0 hwl hw)
 
 end IsRationalRep
 

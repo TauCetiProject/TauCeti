@@ -31,16 +31,21 @@ Manin relations say that `r_f` is killed by `1 + S` and by `1 + U + U²`: the pe
 in the period-polynomial space `W_w`. Since the symbols `{g∞, g0} ⊗ P` span the modular symbols,
 `r_f` determines all the periods of `f`, so the injectivity of the period map makes `f ↦ r_f`
 injective. This is the map `S_k(SL(2, ℤ)) → W_w` of the Eichler–Shimura theory, and
-`TauCeti.periodPolynomial` is stated with codomain `W_w`. Its even and odd
-parts, together with the dimension count `dim W_w = dim M_k + dim S_k` of
-`TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Finrank`, are what compare `W_w` with
-the spaces of modular forms in the period-polynomial approach to the Eichler–Selberg trace
+`TauCeti.periodPolynomial` is stated with codomain `W_w`.
+
+Its even and odd parts `r_f^± = (r_f(X, Y) ± r_f(-X, Y)) / 2`, the components of `r_f` in the
+eigenspaces `W_w^±` of the parity involution `P(X, Y) ↦ P(-X, Y)`, are the even and odd period
+polynomials of `f`. Together with the dimension count `dim W_w = dim M_k + dim S_k` of
+`TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Finrank`, they are what compare `W_w`
+with the spaces of modular forms in the period-polynomial approach to the Eichler–Selberg trace
 formula.
 
 ## Main definitions
 
 * `TauCeti.periodPolynomial hk`: the `ℂ`-linear map `f ↦ r_f` from cusp forms of weight
   `k = w + 2` on `SL(2, ℤ)` to the period-polynomial space `W_w`.
+* `TauCeti.evenPeriodPolynomial hk`, `TauCeti.oddPeriodPolynomial hk`: the `ℂ`-linear maps
+  `f ↦ r_f^±` to the even and odd period polynomials `W_w^±`.
 
 ## Main results
 
@@ -48,6 +53,10 @@ formula.
 * `TauCeti.coe_periodPolynomial_eq_binaryFormDual`: `r_f` is the binary form attached to the
   period map of `f` on the symbols `{∞, 0} ⊗ P`.
 * `TauCeti.periodPolynomial_injective`: `f ↦ r_f` is injective.
+* `TauCeti.coe_evenPeriodPolynomial_add_coe_oddPeriodPolynomial`: `r_f = r_f^+ + r_f^-`.
+* `TauCeti.binaryFormMonomialBasis_repr_evenPeriodPolynomial`,
+  `TauCeti.binaryFormMonomialBasis_repr_oddPeriodPolynomial`: the coordinates of `r_f^+` and
+  `r_f^-` in the monomial basis are those of `r_f` at even and at odd exponents of `X`.
 
 ## References
 
@@ -216,5 +225,96 @@ theorem eval_periodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) (x y : �
 theorem periodPolynomial_injective (hk : k = w + 2) :
     Function.Injective (periodPolynomial hk) :=
   fun _ _ h ↦ periodForm_injective hk (congrArg Subtype.val h)
+
+/-! ### The even and odd period polynomials -/
+
+/-- The parity involution `P(X, Y) ↦ P(-X, Y)` preserves the period polynomials of cusp forms. For
+even `w` it preserves all of `W_w`; for odd `w` there are no nonzero period polynomials. -/
+private theorem binaryFormRep_parity_periodPolynomial_mem (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
+    binaryFormRep ℂ w (op !![-1, 0; 0, 1]) (periodPolynomial hk f) ∈ periodPolynomials ℂ w := by
+  rcases Nat.even_or_odd w with hw | hw
+  · exact mem_periodPolynomials_binaryFormRep_parity hw (periodPolynomial hk f).2
+  · have h2 : Function.Injective fun r : ℂ ↦ 2 * r := mul_right_injective₀ two_ne_zero
+    have h : (periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) = 0 :=
+      (Submodule.mem_bot ℂ).1 (periodPolynomials_eq_bot_of_odd h2 hw ▸ (periodPolynomial hk f).2)
+    rw [h, map_zero]
+    exact zero_mem _
+
+/-- **The even period polynomial** `r_f^+(X, Y) = (r_f(X, Y) + r_f(-X, Y)) / 2` of a cusp form `f`
+of weight `k = w + 2` on `SL(2, ℤ)`, as a `ℂ`-linear map to the even period polynomials `W_w^+`. -/
+def evenPeriodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] evenPeriodPolynomials ℂ w :=
+  (((2 : ℂ)⁻¹ • (1 + binaryFormRep ℂ w (op !![-1, 0; 0, 1]))) ∘ₗ
+      (periodPolynomials ℂ w).subtype ∘ₗ periodPolynomial hk).codRestrict _ fun f ↦ by
+    refine mem_evenPeriodPolynomials_iff.2 ⟨Submodule.smul_mem _ _ (Submodule.add_mem _
+      (periodPolynomial hk f).2 (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
+    simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.add_apply,
+      one_apply_eq_self]
+    rw [_root_.map_smul, map_add, binaryFormRep_parity_involutive, add_comm]
+
+/-- **The odd period polynomial** `r_f^-(X, Y) = (r_f(X, Y) - r_f(-X, Y)) / 2` of a cusp form `f`
+of weight `k = w + 2` on `SL(2, ℤ)`, as a `ℂ`-linear map to the odd period polynomials `W_w^-`. -/
+def oddPeriodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] oddPeriodPolynomials ℂ w :=
+  (((2 : ℂ)⁻¹ • (1 - binaryFormRep ℂ w (op !![-1, 0; 0, 1]))) ∘ₗ
+      (periodPolynomials ℂ w).subtype ∘ₗ periodPolynomial hk).codRestrict _ fun f ↦ by
+    refine mem_oddPeriodPolynomials_iff.2 ⟨Submodule.smul_mem _ _ (Submodule.sub_mem _
+      (periodPolynomial hk f).2 (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
+    simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.sub_apply,
+      one_apply_eq_self]
+    rw [_root_.map_smul, map_sub, binaryFormRep_parity_involutive, ← neg_sub, smul_neg]
+
+/-- The even period polynomial is `r_f^+ = (r_f + r_f ∣ ε) / 2`, with `ε = !![-1, 0; 0, 1]`. -/
+theorem coe_evenPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
+    (evenPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) =
+      (2 : ℂ)⁻¹ • ((periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) +
+        binaryFormRep ℂ w (op !![-1, 0; 0, 1]) (periodPolynomial hk f)) :=
+  (rfl)
+
+/-- The odd period polynomial is `r_f^- = (r_f - r_f ∣ ε) / 2`, with `ε = !![-1, 0; 0, 1]`. -/
+theorem coe_oddPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
+    (oddPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) =
+      (2 : ℂ)⁻¹ • ((periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) -
+        binaryFormRep ℂ w (op !![-1, 0; 0, 1]) (periodPolynomial hk f)) :=
+  (rfl)
+
+/-- **The period polynomial is the sum of its even and odd parts**: `r_f = r_f^+ + r_f^-`. -/
+theorem coe_evenPeriodPolynomial_add_coe_oddPeriodPolynomial (hk : k = w + 2)
+    (f : CuspForm 𝒮ℒ k) :
+    (evenPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) + oddPeriodPolynomial hk f =
+      periodPolynomial hk f := by
+  rw [coe_evenPeriodPolynomial, coe_oddPeriodPolynomial, ← smul_add, add_add_sub_cancel,
+    ← two_smul ℂ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+
+
+/-- The coordinates of the even period polynomial `r_f^+` in the monomial basis `Xʲ Yʷ⁻ʲ`: those
+of `r_f` at even `j`, and `0` at odd `j`. -/
+theorem binaryFormMonomialBasis_repr_evenPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
+    (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis ℂ w).repr
+        (evenPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) j =
+      if Even (j : ℕ) then (binaryFormMonomialBasis ℂ w).repr (periodPolynomial hk f) j
+      else 0 := by
+  rw [coe_evenPeriodPolynomial, _root_.map_smul, map_add, Finsupp.smul_apply, Finsupp.add_apply,
+    binaryFormMonomialBasis_repr_binaryFormRep_parity, smul_eq_mul]
+  split_ifs with hj
+  · rw [hj.neg_one_pow]
+    ring
+  · rw [(Nat.not_even_iff_odd.1 hj).neg_one_pow]
+    ring
+
+/-- The coordinates of the odd period polynomial `r_f^-` in the monomial basis `Xʲ Yʷ⁻ʲ`: those
+of `r_f` at odd `j`, and `0` at even `j`. -/
+theorem binaryFormMonomialBasis_repr_oddPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
+    (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis ℂ w).repr
+        (oddPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) j =
+      if Even (j : ℕ) then 0
+      else (binaryFormMonomialBasis ℂ w).repr (periodPolynomial hk f) j := by
+  rw [coe_oddPeriodPolynomial, _root_.map_smul, map_sub, Finsupp.smul_apply, Finsupp.sub_apply,
+    binaryFormMonomialBasis_repr_binaryFormRep_parity, smul_eq_mul]
+  split_ifs with hj
+  · rw [hj.neg_one_pow]
+    ring
+  · rw [(Nat.not_even_iff_odd.1 hj).neg_one_pow]
+    ring
 
 end TauCeti

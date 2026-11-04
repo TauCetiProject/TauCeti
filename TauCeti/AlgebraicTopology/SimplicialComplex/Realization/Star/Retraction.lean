@@ -90,6 +90,18 @@ theorem setOf_support_subset_subset_openStarRealizationSet :
   obtain ⟨v, hv⟩ := K.isRelLowerSet_faces.prop_of_mem (support_mem K x)
   exact ⟨v, hx hv, Realization.pos_of_mem_support K x hv⟩
 
+/-- The complement of the polyhedron of a full subcomplex is the open star of the
+complementary vertices. -/
+theorem openStarRealizationSet_compl :
+    K.openStarRealizationSet sᶜ = {x | ¬ (x.1.support : Set ι) ⊆ s} := by
+  ext x
+  simp only [mem_openStarRealizationSet, mem_compl_iff, mem_ofPred_eq, Set.not_subset]
+  constructor
+  · rintro ⟨v, hv, hpos⟩
+    exact ⟨v, Finsupp.mem_support_iff.mpr hpos.ne', hv⟩
+  · rintro ⟨v, hv, hs⟩
+    exact ⟨v, hs, Realization.pos_of_mem_support K x hv⟩
+
 /-- The barycentric coordinates of a realization point, as a point of Mathlib's standard
 simplex. -/
 private def stdSimplex (x : Realization K) : StdSimplex ℝ ι :=

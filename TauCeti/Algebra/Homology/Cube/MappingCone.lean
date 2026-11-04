@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Data.Fintype.WithTopBot
 public import Mathlib.Order.Hom.WithTopBot
 public import TauCeti.Algebra.Homology.Cube.Basic
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Data.Finset.WithBot
 
 /-!
@@ -358,21 +359,10 @@ private lemma homOfDegreewiseSplit_faceSplitting :
 `faceShortComplex`. -/
 private def mappingConeIsoHomOfDegreewiseSplit :
     mappingCone (NatTrans.cubeComplexMap F.cubeFaceMap) ≅
-      mappingCone (homOfDegreewiseSplit _ F.faceSplitting) where
-  hom := mappingCone.map _ _ (𝟙 _)
-    ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)).inv.app _)
+      mappingCone (homOfDegreewiseSplit _ F.faceSplitting) :=
+  mappingCone.mapIso (Iso.refl _)
+    ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)).symm.app _)
     (by rw [F.homOfDegreewiseSplit_faceSplitting]; exact (Category.id_comp _).symm)
-  inv := mappingCone.map _ _ (𝟙 _)
-    ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)).hom.app _)
-    (by rw [F.homOfDegreewiseSplit_faceSplitting]; dsimp [faceShortComplex]; simp)
-  hom_inv_id := by
-    rw [← mappingCone.map_comp]
-    simp only [Category.comp_id, Iso.inv_hom_id_app]
-    exact mappingCone.map_id _
-  inv_hom_id := by
-    rw [← mappingCone.map_comp]
-    simp only [Category.comp_id, Iso.hom_inv_id_app]
-    exact mappingCone.map_id _
 
 /-- **The cube complex is a mapping cone.** For a cube `F` indexed by `WithBot ι`, the mapping
 cone of the cochain map from the totalization of the `0`-face to that of the `1`-face induced by

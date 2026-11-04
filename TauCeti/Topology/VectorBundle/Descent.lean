@@ -79,6 +79,12 @@ variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
 def fiberMap (a : CoordinateHom Z W) (x : B) : F →L[𝕜] G :=
   a.operator (Z.indexAt x) (W.indexAt x) ⟨x, Z.mem_baseSet_at x, W.mem_baseSet_at x⟩
 
+/-- The descended operator is the chart operator in the two preferred charts. -/
+theorem fiberMap_def (a : CoordinateHom Z W) (x : B) :
+    a.fiberMap x =
+      a.operator (Z.indexAt x) (W.indexAt x) ⟨x, Z.mem_baseSet_at x, W.mem_baseSet_at x⟩ :=
+  (rfl)
+
 /-- The descended operator has the prescribed expression in every pair of charts. -/
 theorem coordChange_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) {x : B}
     (hi : x ∈ Z.baseSet i) (hj : x ∈ W.baseSet j) (v : F) :
@@ -111,6 +117,9 @@ def totalSpaceMap (a : CoordinateHom Z W) (p : Z.TotalSpace) : W.TotalSpace :=
 
 @[simp] theorem totalSpaceMap_mk (a : CoordinateHom Z W) (x : B) (v : Z.Fiber x) :
     a.totalSpaceMap ⟨x, v⟩ = ⟨x, a.fiberMap x v⟩ := (rfl)
+
+theorem totalSpaceMap_def (a : CoordinateHom Z W) :
+    a.totalSpaceMap = fun p ↦ TotalSpace.mk' G p.proj (a.fiberMap p.proj p.2) := (rfl)
 
 /-- In local trivializations the descended map is precisely the given chart operator. -/
 theorem localTriv_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) (p : Z.TotalSpace)

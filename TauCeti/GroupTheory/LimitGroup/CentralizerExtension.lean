@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
+public import TauCeti.GroupTheory.HNNExtension
 public import TauCeti.GroupTheory.NoncommPiCoprod
-public import Mathlib.GroupTheory.HNNExtension
 public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.GroupTheory.PushoutI
-import TauCeti.GroupTheory.HNNExtension
 
 /-!
 # Extensions of centralizers

@@ -199,7 +199,7 @@ def linearization (hρ : IsProjectiveRep ρ (Function.curry ⇑α))
     have hmul : ρ x.right (ρ y.right v)
         = (α (x.right, y.right) : k) • ρ (x.right * y.right) v :=
       hρ.mul_apply x.right y.right v
-    simp only [LinearEquiv.mul_apply, LinearEquiv.smulOfUnit_apply, FactorSet.Extension.mul_left,
+    simp only [mul_apply_eq_comp, LinearEquiv.smulOfUnit_apply, FactorSet.Extension.mul_left,
       FactorSet.Extension.mul_right, htriv, Units.val_mul, map_smul, hmul, smul_smul, mul_assoc,
       mul_comm]
 
@@ -277,7 +277,7 @@ theorem isProjectiveRep_comp_canonicalSection (htriv : ∀ (g : G) (a : kˣ), g 
     have key : π (α.canonicalSection g₁) * π (α.canonicalSection g₂)
         = LinearEquiv.smulOfUnit (α (g₁, g₂)) * π (α.canonicalSection (g₁ * g₂)) := by
       rw [← map_mul, α.canonicalSection_mul, map_mul, hπ]
-    simpa only [LinearEquiv.mul_apply, LinearEquiv.smulOfUnit_apply, Function.curry]
+    simpa only [mul_apply_eq_comp, LinearEquiv.smulOfUnit_apply, Function.curry]
       using DFunLike.congr_fun key v
 
 /-- **The same converse for an ordinary `Representation k E_α V`**, the form in which the machinery
@@ -353,7 +353,7 @@ def isProjectiveRepEquivExtensionHom (α : FactorSet G kˣ)
     have h : π.1 (FactorSet.inl α x.left * α.canonicalSection x.right) v = π.1 x v := by
       rw [FactorSet.inl_mul_canonicalSection]
     rw [map_mul, π.2 x.left] at h
-    simpa only [IsProjectiveRep.linearization_apply, LinearEquiv.mul_apply,
+    simpa only [IsProjectiveRep.linearization_apply, mul_apply_eq_comp,
       LinearEquiv.smulOfUnit_apply] using h)
 
 /-- The bijection sends a projective representation to its linearization. -/

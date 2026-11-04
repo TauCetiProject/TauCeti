@@ -11,8 +11,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Topology.Instances.ENNReal
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -101,31 +101,10 @@ private theorem totalVariationOn_top_mul_indicator_le (hψ : ContDiff ℝ ∞ ψ
     hsupp ((h1.indicator₀ hs).locallyIntegrableOn _)).trans ?_
   rw [ENNReal.ofReal_one, one_mul, ← perimeter_def]
   gcongr
-  -- The derivative of `ψ` vanishes where `ψ` attains its maximum `1` or its minimum `0`, and is
-  -- at most `K` in the shell between.
-  have hpt (x : E) : ‖fderiv ℝ ψ x‖ₑ * ‖s.indicator (1 : E → ℝ) x‖ₑ ≤
-      (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) x := by
-    by_cases hxs : x ∈ s
-    swap
-    · simp [hxs]
-    by_cases hxA : x ∈ ball x₀ R \ ball x₀ r
-    · rw [indicator_of_mem (mem_inter hxs hxA), indicator_of_mem hxs, Pi.one_apply, enorm_one,
-        mul_one, ← ofReal_norm]
-      exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
-        ENNReal.ofReal_coe_nnreal
-    suffices fderiv ℝ ψ x = 0 by simp [this, enorm_eq_nnnorm]
-    rw [Set.mem_sdiff, not_and_or, not_not] at hxA
-    rcases hxA with hxA | hxA
-    · refine IsLocalMin.fderiv_eq_zero (Eventually.of_forall fun y => ?_)
-      rw [notMem_support.1 fun h => hxA (hψR h)]
-      exact hψ0 y
-    · refine IsLocalMax.fderiv_eq_zero (Eventually.of_forall fun y => ?_)
-      rw [hψ1 (ball_subset_closedBall hxA), Pi.one_apply]
-      exact hψle y
   calc ∫⁻ x in (⊤ : Opens E), ‖fderiv ℝ ψ x‖ₑ * ‖s.indicator (1 : E → ℝ) x‖ₑ ∂μ
       ≤ ∫⁻ x, (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) x ∂μ := by
         rw [Opens.coe_top, Measure.restrict_univ]
-        exact lintegral_mono hpt
+        exact lintegral_mono (enorm_fderiv_mul_indicator_le_indicator hψ01 hψ1 hψR hψK s)
     _ = K * μ (s ∩ (ball x₀ R \ ball x₀ r)) :=
         lintegral_indicator_const₀
           (hs.inter (measurableSet_ball.diff measurableSet_ball).nullMeasurableSet) _
@@ -155,13 +134,8 @@ private theorem perimeter_inter_closedBall_le_add_mul_liminf (hs : NullMeasurabl
     perimeter μ ⊤ (s ∩ closedBall x₀ r) ≤ perimeter μ U s +
       t * liminf (fun h => μ (s ∩ (ball x₀ (r + h) \ ball x₀ r)) / ENNReal.ofReal h) (𝓝[>] 0) := by
   -- Cutoffs between `closedBall x₀ r` and `ball x₀ (r + h)` with Lipschitz constant `t / h`.
-  have hex (h : ℝ) (hh : 0 < h) : ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
-      EqOn ψ 1 (closedBall x₀ r) ∧ support ψ ⊆ ball x₀ (r + h) ∧
-      LipschitzWith (t * h.toNNReal⁻¹) ψ := by
-    refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ hr.le (by linarith) ?_
-    rw [add_sub_cancel_left, NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hh.le]
-    exact (lt_mul_iff_one_lt_left (inv_pos.2 hh)).2 (by exact_mod_cast ht)
-  choose! ψ hψs hψ01 hψ1 hψR hψK using hex
+  choose! ψ hψs hψ01 hψ1 hψR hψK using fun h (hh : 0 < h) =>
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x₀ hr.le hh ht
   obtain ⟨δ, hδ, hδU⟩ := (isCompact_closedBall x₀ r).exists_cthickening_subset_open U.isOpen hU
   rw [cthickening_closedBall hδ.le hr.le] at hδU
   have hshell (h : ℝ) : MeasurableSet (ball x₀ (r + h) \ closedBall x₀ r) :=
@@ -231,17 +205,9 @@ theorem perimeter_inter_ball_le_add_liminf (hs : NullMeasurableSet s μ) {U : Op
       measure_mono_null (fun x hx => ?_) (Measure.addHaar_sphere_of_ne_zero μ x₀ hr.ne')⟩)
     exact mem_sphere.2 (le_antisymm (mem_closedBall.1 hx.1) (not_lt.1 hx.2))
   rw [perimeter_congr_ae hball]
-  set L := liminf (fun h => μ (s ∩ (ball x₀ (r + h) \ ball x₀ r)) / ENNReal.ofReal h) (𝓝[>] 0)
-  rcases eq_or_ne L (∞ : ℝ≥0∞) with hL | hL
-  · simp [hL]
   -- Let the factor `t > 1` of the Lipschitz constants tend to one.
-  have hlim : Tendsto (fun t : ℝ≥0 => perimeter μ U s + t * L) (𝓝[>] 1)
-      (𝓝 (perimeter μ U s + L)) := by
-    have h : Tendsto (fun t : ℝ≥0 => (t : ℝ≥0∞)) (𝓝[>] 1) (𝓝 1) := by
-      simpa using (ENNReal.continuous_coe.tendsto 1).mono_left nhdsWithin_le_nhds
-    simpa using tendsto_const_nhds.add (ENNReal.Tendsto.mul_const h (Or.inr hL))
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun t ht =>
-    perimeter_inter_closedBall_le_add_mul_liminf hs hr hU ht)
+  exact ENNReal.le_add_of_forall_one_lt_le_add_mul fun t ht =>
+    perimeter_inter_closedBall_le_add_mul_liminf hs hr hU ht
 
 /-- **Cutting by a ball at a differentiability radius.** For a null-measurable `s` and an open `U`
 containing `closedBall x₀ r`, if `m(ρ) = μ(s ∩ ball x₀ ρ)` has right derivative `D` at `r`, then
@@ -250,27 +216,8 @@ theorem perimeter_inter_ball_le_add_of_hasDerivWithinAt (hs : NullMeasurableSet 
     {U : Opens E} (hU : closedBall x₀ r ⊆ U) {D : ℝ}
     (hD : HasDerivWithinAt (fun ρ => μ.real (s ∩ ball x₀ ρ)) D (Ioi r) r) :
     perimeter μ ⊤ (s ∩ ball x₀ r) ≤ perimeter μ U s + ENNReal.ofReal D := by
-  refine (perimeter_inter_ball_le_add_liminf hs hU).trans_eq ?_
-  congr 1
-  refine Tendsto.liminf_eq ?_
-  -- The quotient is the slope of `m`, written in `ℝ≥0∞`.
-  have hshift : Tendsto (fun h => r + h) (𝓝[>] 0) (𝓝[>] r) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun h (hh : 0 < h) =>
-      lt_add_of_pos_right r hh⟩
-    exact ((continuous_const.add continuous_id).tendsto' 0 r (add_zero r)).mono_left
-      nhdsWithin_le_nhds
-  have hslope := ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl r)).1 hD).comp hshift
-  refine ((ENNReal.continuous_ofReal.tendsto D).comp hslope).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with h (hh : 0 < h)
-  have hsub : s ∩ ball x₀ r ⊆ s ∩ ball x₀ (r + h) :=
-    inter_subset_inter_right _ (ball_subset_ball (by linarith))
-  have hfin : μ (s ∩ ball x₀ (r + h)) ≠ (∞ : ℝ≥0∞) :=
-    measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
-  rw [Function.comp_apply, Function.comp_apply, slope_def_field, add_sub_cancel_left,
-    ENNReal.ofReal_div_of_pos hh, ENNReal.ofReal_sub _ measureReal_nonneg, ofReal_measureReal hfin,
-    ofReal_measureReal (measure_ne_top_of_subset hsub hfin), inter_sdiff_distrib_left,
-    measure_sdiff hsub (hs.inter measurableSet_ball.nullMeasurableSet)
-      (measure_ne_top_of_subset hsub hfin)]
+  rw [← (tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt hs hD).liminf_eq]
+  exact perimeter_inter_ball_le_add_liminf hs hU
 
 /-- **Cutting by a ball at almost every radius.** For a null-measurable `s` and almost every `r`,
 
@@ -281,13 +228,10 @@ both functions are monotone. -/
 theorem ae_perimeter_inter_ball_le (hs : NullMeasurableSet s μ) (x₀ : E) :
     ∀ᵐ r, perimeter μ ⊤ (s ∩ ball x₀ r) ≤ perimeter μ ⟨ball x₀ r, isOpen_ball⟩ s +
       ENNReal.ofReal (deriv (fun ρ => μ.real (s ∩ ball x₀ ρ)) r) := by
-  have hm : Monotone fun ρ => μ.real (s ∩ ball x₀ ρ) := fun ρ ρ' h =>
-    measureReal_mono (inter_subset_inter_right _ (ball_subset_ball h))
-      (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne)
   have hF : Monotone fun ρ => perimeter μ ⟨ball x₀ ρ, isOpen_ball⟩ s := fun ρ ρ' h =>
     perimeter_mono fun x hx => ball_subset_ball h hx
-  filter_upwards [hm.ae_differentiableAt, hF.countable_not_continuousAt.ae_notMem volume]
-    with r hdiff hcont
+  filter_upwards [(monotone_measureReal_inter_ball μ s x₀).ae_differentiableAt,
+    hF.countable_not_continuousAt.ae_notMem volume] with r hdiff hcont
   rw [not_not] at hcont
   -- Cut inside the slightly larger balls `ball x₀ (r + h)` and let `h → 0⁺`.
   have hshift : Tendsto (fun h : ℝ => r + h) (𝓝[>] 0) (𝓝 r) :=

@@ -45,6 +45,8 @@ requirements are separate matters, not treated here.
 
 * `TauCeti.Priority.mem_injuriesAt`, `TauCeti.Priority.injuriesAt_eq_empty_of_eq_none`: membership
   in an injury batch; no restraint, no injury.
+* `TauCeti.Priority.mem_iff_mem_succ_of_injuriesAt_eq_empty`: without injury, a monotone
+  transition changes no membership at or below the restraint.
 * `TauCeti.Priority.injurySet_eq_image`, `TauCeti.Priority.injuryStages_eq_image`: numbers and
   stages are the projections of the events.
 * `TauCeti.Priority.injuriesAt_mono`, `TauCeti.Priority.injuryEvents_mono`,
@@ -112,6 +114,23 @@ theorem injuriesAt_subset_fresh {s : ℕ} : injuriesAt A r e s ⊆ fresh A s :=
 theorem injuriesAt_eq_empty_of_eq_none {s : ℕ} (h : r e s = none) : injuriesAt A r e s = ∅ := by
   ext x
   simp [h]
+
+/-- **No injury, no change below the restraint.** If nothing injures `e`, with active restraint
+`b`, in the transition to stage `s + 1`, and `A s ⊆ A (s + 1)`, then `A s` and `A (s + 1)` have
+the same members at and below `b`. -/
+theorem mem_iff_mem_succ_of_injuriesAt_eq_empty {s b x : ℕ} (hA : A s ⊆ A (s + 1))
+    (hr : r e s = some b) (hI : injuriesAt A r e s = ∅) (hx : x ≤ b) :
+    x ∈ A s ↔ x ∈ A (s + 1) :=
+  ⟨@hA x, fun hxs => by
+    by_contra hxn
+    simpa [hI] using mem_injuriesAt.2 ⟨hxs, hxn, b, hr, hx⟩⟩
+
+/-- If nothing injures `e` in the transition to stage `s + 1`, no number at or below the active
+restraint enters in that transition. -/
+theorem notMem_fresh_of_injuriesAt_eq_empty {s b x : ℕ} (h : injuriesAt A r e s = ∅)
+    (hb : r e s = some b) (hx : x ≤ b) : x ∉ fresh A s := fun hx' =>
+  Finset.notMem_empty x <| h ▸
+    mem_injuriesAt.2 ⟨(mem_fresh.1 hx').1, (mem_fresh.1 hx').2, b, hb, hx⟩
 
 /-- A batch is nonempty exactly when it contains a number below the restraint bound, which is
 `b + 1` for an active restraint `some b` and `0` for no restraint. -/

@@ -120,6 +120,20 @@ theorem isClosedEmbedding_comap_of_surjective [T1Space R]
 
 end Ring
 
+/-- For a family of algebra maps out of a tensor product, continuity of evaluation on pure
+tensors implies continuity in the point topology. The algebra-map scalar ring can differ from
+the tensor-product scalar ring. -/
+theorem continuous_of_continuous_tmul {k C A B R X : Type*}
+    [CommSemiring k] [CommSemiring C] [Semiring A] [Algebra C A]
+    [Semiring B] [Algebra C B] [Algebra k (A ⊗[C] B)]
+    [Semiring R] [Algebra k R] [TopologicalSpace R] [ContinuousAdd R]
+    [TopologicalSpace X] (f : X → (A ⊗[C] B →ₐ[k] R))
+    (h : ∀ a b, Continuous fun x ↦ f x (a ⊗ₜ[C] b)) : Continuous f := by
+  refine continuous_iff.2 fun t ↦ ?_
+  induction t using TensorProduct.inductionOn with
+  | tmul a b => exact h a b
+  | add t u ht hu => simpa only [map_add] using ht.fun_add hu
+
 section TensorProduct
 
 variable {k A B R : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
@@ -137,13 +151,10 @@ noncomputable def tensorProductHomeomorph :
   right_inv x := by ext <;> simp
   continuous_toFun := (continuous_comap _).prodMk (continuous_comap _)
   continuous_invFun := by
-    refine continuous_iff.2 fun t ↦ ?_
-    induction t using TensorProduct.inductionOn with
-    | tmul a b =>
-      simpa only [Algebra.TensorProduct.lift_tmul, Function.comp_apply] using
-        ((continuous_eval a).comp continuous_fst).fun_mul
-          ((continuous_eval b).comp continuous_snd)
-    | add t u ht hu => simpa only [map_add] using ht.fun_add hu
+    refine continuous_of_continuous_tmul _ fun a b ↦ ?_
+    simpa only [Algebra.TensorProduct.lift_tmul, Function.comp_apply] using
+      ((continuous_eval a).comp continuous_fst).fun_mul
+        ((continuous_eval b).comp continuous_snd)
 
 /-- The tensor-product comparison restricts a point to the left factor. -/
 @[simp]
@@ -181,14 +192,11 @@ noncomputable def baseChangeHomeomorph :
     simpa only [Equiv.toFun_as_coe, AlgHom.liftEquiv_symm_apply] using
       (continuous_eval (k := K) (A := K ⊗[k] A) (R := R) (1 ⊗ₜ[k] a))
   continuous_invFun := by
-    refine continuous_iff.2 fun t ↦ ?_
-    induction t using TensorProduct.inductionOn with
-    | tmul c a =>
-      simpa only [Equiv.invFun_as_coe, Equiv.symm_symm, AlgHom.liftEquiv_tmul,
-        Algebra.smul_def] using
-        (continuous_const (y := algebraMap K R c)).fun_mul
-          (continuous_eval (k := k) (A := A) a)
-    | add t u ht hu => simpa only [map_add] using ht.fun_add hu
+    refine continuous_of_continuous_tmul _ fun c a ↦ ?_
+    simpa only [Equiv.invFun_as_coe, Equiv.symm_symm, AlgHom.liftEquiv_tmul,
+      Algebra.smul_def] using
+      (continuous_const (y := algebraMap K R c)).fun_mul
+        (continuous_eval (k := k) (A := A) a)
 
 /-- Restriction along base change evaluates at `1 ⊗ a`. -/
 @[simp]

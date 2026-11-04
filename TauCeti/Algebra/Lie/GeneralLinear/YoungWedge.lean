@@ -45,15 +45,13 @@ weight.
   `TauCeti.exists_isGlHighestWeightVector_natCast`: **every weakly decreasing tuple of natural
   numbers is a highest weight** of a `gl ι`-module finite over `R`.
 
-## Roadmap context
+## Use in the classification
 
-Layer 9 of the
-[highest weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md)
-asks for the finite-dimensional irreducible `gl n`-module of each dominant weight.
+In the highest weight classification of the finite-dimensional irreducible `gl n`-modules,
 `TauCeti.exists_isGlHighestWeightVector_natCast` supplies highest weight vectors for the dominant
-weights with natural number entries, the existence input to that classification;
+weights with natural number entries, the existence input;
 `TauCeti.nonempty_lieModuleEquiv_of_isGlHighestWeightVector` and
-`TauCeti.finrank_le_of_isGlHighestWeightVector` are the uniqueness half, already proved.
+`TauCeti.finrank_le_of_isGlHighestWeightVector` are the uniqueness half.
 
 ## Implementation notes
 

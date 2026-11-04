@@ -21,11 +21,14 @@ of a number field, taking the asymptotic for `ϑ` as given: if `ϑ(x) = δx + o(
 `TauCeti/Analysis/SpecialFunctions/LogIntegral.lean`.
 
 The bridge is the exact Abel-summation identity
-`TauCeti.primeCount_eq_primeTheta_div_log_add_integral` of Layer 6.1 together with the
+`TauCeti.primeCount_eq_primeTheta_div_log_add_integral` together with the
 antiderivative identity `TauCeti.Real.logIntegral_eq_div_log_sub_add` for `Li`.  Subtracting the two
 cancels the main terms and leaves
 `TauCeti.primeCount_sub_mul_logIntegral_eq`, an identity valid for every `x ≥ 2` and every `δ`,
 whose three remaining summands are each `o (x / log x)`.
+
+Nothing here uses an analytic continuation or a nonvanishing statement: the hypothesis on `ϑ` is
+taken as given, and the transfer covers the zero-density case `δ = 0` as well.
 
 ## Main results
 
@@ -36,13 +39,6 @@ whose three remaining summands are each `o (x / log x)`.
 * `TauCeti.primeCount_asymptotic_of_primeTheta`: the quotient form `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`
   for `δ ≠ 0`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where an
   asymptotic equivalence would be false and the correct statement is `π(x) = o(Li x)`.
-
-## Roadmap role
-
-This is Layer **6.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which asks for the
-transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)` "including the zero-density and `δ = 0` cases"; Layer 10.3
-exports it as `primeCount_asymptotic_of_primeTheta`.  Nothing here uses an analytic continuation or
-a nonvanishing statement: the hypothesis on `ϑ` is taken as given here, and Layer 10 supplies it.
 
 ## References
 
