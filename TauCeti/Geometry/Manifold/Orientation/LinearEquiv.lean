@@ -45,8 +45,8 @@ diffeomorphism preserves or reverses orientation according to the sign of the re
 * `TauCeti.orientationPreservingGroupoid_transContinuousLinearEquiv`,
   `TauCeti.isOrientedAtlas_transContinuousLinearEquiv_iff`: invariance of orientation-preserving
   coordinate changes and oriented atlases under `e : E ≃L[ℝ] F`.
-* `TauCeti.Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv`,
-  `TauCeti.Manifold.Orientation.orientationSign_toTransContinuousLinearEquiv`: real recharting
+* `TauCeti.Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv`,
+  `TauCeti.Manifold.Orientation.orientationSign_id_transContinuousLinearEquiv`: real recharting
   preserves the transported orientation.
 * `TauCeti.IsOrientedAtlas.orientation_transContinuousLinearEquiv`: transporting the orientation
   determined by an oriented atlas and `model` gives the orientation determined by `map e model`.
@@ -603,20 +603,6 @@ theorem map_orientationAt_id_transContinuousLinearEquiv (o : Orientation I M ι)
   rw [hDeq]
   exact map_tangentEquivTrans_orientationAt o e x
 
-/-- The derivative of `toTransContinuousLinearEquiv` carries each tangent orientation of `o` to
-that of `o.transContinuousLinearEquiv e`. -/
-theorem map_orientationAt_toTransContinuousLinearEquiv {m : ℕ∞ω}
-    (o : Orientation I M ι) (e : E ≃L[ℝ] F) (x : M)
-    (D : TangentSpace I x ≃L[ℝ] TangentSpace (I.transContinuousLinearEquiv e)
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e x))
-    (hD : (D : TangentSpace I x →L[ℝ] _) =
-      mfderiv I (I.transContinuousLinearEquiv e)
-        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x) :
-    _root_.Orientation.map ι D.toLinearEquiv (o.orientationAt x) =
-      (o.transContinuousLinearEquiv e).orientationAt
-        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e x) :=
-  map_orientationAt_id_transContinuousLinearEquiv o e x D hD
-
 /-- The identity map from `(M, I)` to `(M, I.transContinuousLinearEquiv e)` preserves the
 transported orientation at every point, including boundary and corner points. -/
 @[simp]
@@ -625,14 +611,6 @@ theorem isOrientationPreservingAt_id_transContinuousLinearEquiv (o : Orientation
     IsOrientationPreservingAt o (o.transContinuousLinearEquiv e) (id : M → M) x :=
   (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ (tangentEquivTrans I e x)
     (coe_tangentEquivTrans I e x)).2 (map_tangentEquivTrans_orientationAt o e x)
-
-/-- Real recharting preserves the transported orientation: `toTransContinuousLinearEquiv` is
-orientation-preserving at every point from `o` to `o.transContinuousLinearEquiv e`. -/
-theorem isOrientationPreservingAt_toTransContinuousLinearEquiv {m : ℕ∞ω}
-    (o : Orientation I M ι) (e : E ≃L[ℝ] F) (x : M) :
-    IsOrientationPreservingAt o (o.transContinuousLinearEquiv e)
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x :=
-  isOrientationPreservingAt_id_transContinuousLinearEquiv o e x
 
 /-- The identity map from `(M, I.transContinuousLinearEquiv e)` back to `(M, I)` preserves
 orientation from `o.transContinuousLinearEquiv e` to `o`. -/
@@ -651,14 +629,6 @@ theorem isOrientationPreservingAt_id_transContinuousLinearEquiv_symm
       I.transContinuousLinearEquiv_refl] at h
   exact (isOrientationPreservingAt_id_transContinuousLinearEquiv o e x).of_comp hcomp hid_symm
 
-/-- The inverse comparison diffeomorphism `toTransContinuousLinearEquiv.symm` preserves
-orientation from `o.transContinuousLinearEquiv e` back to `o`. -/
-theorem isOrientationPreservingAt_toTransContinuousLinearEquiv_symm {m : ℕ∞ω}
-    (o : Orientation I M ι) (e : E ≃L[ℝ] F) (x : M) :
-    IsOrientationPreservingAt (o.transContinuousLinearEquiv e) o
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e).symm x :=
-  isOrientationPreservingAt_id_transContinuousLinearEquiv_symm o e x
-
 /-- The orientation sign of `id : M → M` from `o` to `o.transContinuousLinearEquiv e` is `1`. -/
 @[simp]
 theorem orientationSign_id_transContinuousLinearEquiv (o : Orientation I M ι) (e : E ≃L[ℝ] F)
@@ -666,14 +636,6 @@ theorem orientationSign_id_transContinuousLinearEquiv (o : Orientation I M ι) (
     orientationSign o (o.transContinuousLinearEquiv e) (id : M → M) x = 1 :=
   orientationSign_of_isOrientationPreservingAt
     (isOrientationPreservingAt_id_transContinuousLinearEquiv o e x)
-
-/-- The orientation sign of `toTransContinuousLinearEquiv` from `o` to
-`o.transContinuousLinearEquiv e` is `1`. -/
-theorem orientationSign_toTransContinuousLinearEquiv {m : ℕ∞ω}
-    (o : Orientation I M ι) (e : E ≃L[ℝ] F) (x : M) :
-    orientationSign o (o.transContinuousLinearEquiv e)
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x = 1 :=
-  orientationSign_id_transContinuousLinearEquiv o e x
 
 /-- `o.transContinuousLinearEquiv e` is the unique orientation of
 `(M, I.transContinuousLinearEquiv e)` from which `id : M → M` preserves orientation everywhere. -/
@@ -684,16 +646,6 @@ theorem eq_transContinuousLinearEquiv_iff_id (o : Orientation I M ι) (e : E ≃
   refine ⟨fun h ↦ h ▸ isOrientationPreservingAt_id_transContinuousLinearEquiv o e, fun h ↦ ?_⟩
   ext x
   exact (h x).orientationAt_eq (isOrientationPreservingAt_id_transContinuousLinearEquiv o e x)
-
-/-- `o.transContinuousLinearEquiv e` is the unique orientation of
-`(M, I.transContinuousLinearEquiv e)` preserved by `toTransContinuousLinearEquiv` everywhere. -/
-theorem eq_transContinuousLinearEquiv_iff {m : ℕ∞ω}
-    (o : Orientation I M ι) (e : E ≃L[ℝ] F)
-    {o' : Orientation (I.transContinuousLinearEquiv e) M ι} :
-    o' = o.transContinuousLinearEquiv e ↔
-      ∀ x, IsOrientationPreservingAt o o'
-        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x :=
-  eq_transContinuousLinearEquiv_iff_id o e
 
 end Manifold.Orientation
 
@@ -808,7 +760,7 @@ theorem IsOrientedAtlas.isOrientationPreservingAt_toTransContinuousLinearEquiv_o
       (((isOrientedAtlas_transContinuousLinearEquiv_iff I n e).2 hA).orientation model hι)
       (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x := by
   rw [← hA.orientation_transContinuousLinearEquiv_eq_of_det_pos model hι he]
-  exact Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv _ e x
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
 
 /-- Against a separately fixed model orientation `model` on `E`, `toTransContinuousLinearEquiv`
 reverses orientation when `LinearMap.det e < 0`. -/
@@ -822,7 +774,7 @@ theorem IsOrientedAtlas.isOrientationReversingAt_toTransContinuousLinearEquiv_of
       (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x := by
   rw [← Manifold.Orientation.isOrientationPreservingAt_neg_right,
     ← hA.orientation_transContinuousLinearEquiv_eq_neg_of_det_neg model hι he]
-  exact Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv _ e x
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
 
 /-- Against a separately fixed model orientation `model` on `E`, the orientation sign of
 `toTransContinuousLinearEquiv` at every point is the sign of the real determinant of `e`. -/
@@ -898,7 +850,7 @@ theorem IsOrientedAtlas.isOrientationPreservingAt_toTransContinuousLinearEquiv_b
     congr 1
     exact hmap.symm
   rw [ho]
-  exact Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv _ e x
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
 
 /-- Given bases `bE` of `E` and `bF` of `F`, `toTransContinuousLinearEquiv` along `e : E ≃L[ℝ] F`
 reverses the orientations determined by `bE.orientation` and `bF.orientation` when the matrix of
@@ -925,7 +877,7 @@ theorem IsOrientedAtlas.isOrientationReversingAt_toTransContinuousLinearEquiv_ba
     congr 1
     exact hmap.symm
   rw [← Manifold.Orientation.isOrientationPreservingAt_neg_right, ho]
-  exact Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv _ e x
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
 
 /-- Given bases `bE` of `E` and `bF` of `F`, the orientation sign of `toTransContinuousLinearEquiv`
 between the orientations determined by `bE.orientation` and `bF.orientation` equals the sign of

@@ -83,11 +83,12 @@ complex manifold
 (`ModelWithCorners.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation`,
 `ModelWithCorners.complexManifoldOrientation_transContinuousLinearEquiv_self`). Recharting along a
 real continuous linear equivalence `e : E ≃L[ℝ] G` preserves the transported orientation
-(`Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv`); by contrast,
-comparing `I.complexManifoldOrientation M` against the orientation of the recharted manifold with a
-*separately fixed* model orientation has `orientationSign` equal to the sign of the real determinant
-of `e` (`ModelWithCorners.orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation`,
-`TauCeti.orientationSign_toTransContinuousLinearEquiv_conjCLE`). On `EuclideanSpace ℂ (Fin n)`,
+(`TauCeti.Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv`); by
+contrast, comparing `I.complexManifoldOrientation M` against the orientation of the recharted
+manifold with a *separately fixed* model orientation has `orientationSign` equal to the sign of the
+real determinant of `e`
+(`ModelWithCorners.orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation`,
+`TauCeti.orientationSign_id_conjCLE`). On `EuclideanSpace ℂ (Fin n)`,
 recharting to `TauCeti.complexEuclideanRealModel n` along
 `TauCeti.complexEuclideanRealLinearIsometryEquiv n` carries the canonical orientation to the
 standard orientation of `EuclideanSpace ℝ (Fin (2 * n))`.
@@ -126,7 +127,7 @@ standard orientation of `EuclideanSpace ℝ (Fin (2 * n))`.
   `ModelWithCorners.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation`:
   compatibility with complex continuous linear recharting.
 * `ModelWithCorners.orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation`,
-  `TauCeti.orientationSign_toTransContinuousLinearEquiv_conjCLE`: comparison with a fixed canonical
+  `TauCeti.orientationSign_id_conjCLE`: comparison with a fixed canonical
   model orientation under real continuous linear recharting has the sign of the real determinant.
 * `TauCeti.orientationAt_complexManifoldOrientation_complexEuclideanRealModel`: recharting to
   `complexEuclideanRealModel n` carries the canonical orientation to the standard Euclidean one.
@@ -812,10 +813,10 @@ theorem map_orientationAt_toTransContinuousLinearEquiv_complexManifoldOrientatio
       Orientation.reindex ℝ F (finCongr (by rw [e.toLinearEquiv.finrank_eq]))
         (((I.transContinuousLinearEquiv e).complexManifoldOrientation M).orientationAt
           (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
-            (I.restrictScalars ℝ) M (e.restrictScalars' ℝ) x)) := by
-  rw [(I.complexManifoldOrientation M).map_orientationAt_toTransContinuousLinearEquiv
-    (e.restrictScalars' ℝ) x D hD,
-    I.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation e]
+            (I.restrictScalars ℝ) M (e.restrictScalars' ℝ) x)) :=
+  ((I.complexManifoldOrientation M).map_orientationAt_id_transContinuousLinearEquiv
+    (e.restrictScalars' ℝ) x D hD).trans
+    (I.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation e x)
 
 /-- Recharting `I` along a complex continuous linear automorphism `e : E ≃L[ℂ] E` transports
 `I.complexManifoldOrientation M` along `e.restrictScalars' ℝ` directly to
@@ -871,16 +872,6 @@ theorem isOrientationPreservingAt_id_complexManifoldOrientation_transContinuousL
     I.complexManifoldOrientation_transContinuousLinearEquiv_self e]
   exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ _ x
 
-/-- For a complex continuous linear automorphism `e : E ≃L[ℂ] E`, the biholomorphism
-`ContinuousLinearEquiv.toTransContinuousLinearEquiv` preserves canonical orientations at every
-point. -/
-theorem isOrientationPreservingAt_toTransContinuousLinearEquiv_complexManifoldOrientation_self
-    {m : ℕ∞ω} (e : E ≃L[ℂ] E) (x : M) :
-    Manifold.Orientation.IsOrientationPreservingAt (I.complexManifoldOrientation M)
-      ((I.transContinuousLinearEquiv e).complexManifoldOrientation M)
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x :=
-  I.isOrientationPreservingAt_id_complexManifoldOrientation_transContinuousLinearEquiv_self e x
-
 /-- For a complex continuous linear automorphism `e : E ≃L[ℂ] E`, the orientation sign of `id`
 between canonical orientations on `(M, I)` and `(M, I.transContinuousLinearEquiv e)` is `1`. -/
 @[simp]
@@ -890,15 +881,6 @@ theorem orientationSign_id_complexManifoldOrientation_transContinuousLinearEquiv
       ((I.transContinuousLinearEquiv e).complexManifoldOrientation M) (id : M → M) x = 1 :=
   Manifold.Orientation.orientationSign_of_isOrientationPreservingAt
     (I.isOrientationPreservingAt_id_complexManifoldOrientation_transContinuousLinearEquiv_self e x)
-
-/-- For a complex continuous linear automorphism `e : E ≃L[ℂ] E`, the orientation sign of
-`ContinuousLinearEquiv.toTransContinuousLinearEquiv` between canonical orientations is `1`. -/
-theorem orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation_self
-    {m : ℕ∞ω} (e : E ≃L[ℂ] E) (x : M) :
-    Manifold.Orientation.orientationSign (I.complexManifoldOrientation M)
-      ((I.transContinuousLinearEquiv e).complexManifoldOrientation M)
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x = 1 :=
-  I.orientationSign_id_complexManifoldOrientation_transContinuousLinearEquiv_self e x
 
 end ComplexLinearEquiv
 
@@ -914,7 +896,7 @@ variable {E G H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDim
 /-- Transporting `I.complexManifoldOrientation M` along a real continuous linear equivalence
 `e : E ≃L[ℝ] G` gives the manifold orientation of `(M, (I.restrictScalars ℝ).trans e)` determined
 by the maximal holomorphic atlas and `Orientation.map _ e.toLinearEquiv (complexOrientation E)`.
-By `Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv`, the comparison
+By `Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv`, the comparison
 diffeomorphism always preserves this transported orientation with sign `1`. -/
 theorem transContinuousLinearEquiv_complexManifoldOrientation_eq (e : E ≃L[ℝ] G) :
     (I.complexManifoldOrientation M).transContinuousLinearEquiv e =
@@ -973,7 +955,7 @@ theorem isOrientationPreservingAt_toTransContinuousLinearEquiv_of_det_pos
       (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
         (I.restrictScalars ℝ) M e) x := by
   rw [← I.transContinuousLinearEquiv_complexManifoldOrientation_eq_of_det_pos he]
-  exact Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv _ e x
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
 
 /-- Against the separately fixed canonical orientation `complexOrientation E` on `E`, real
 recharting along `e : E ≃L[ℝ] E` reverses orientation when `LinearMap.det e < 0`. -/
@@ -989,7 +971,7 @@ theorem isOrientationReversingAt_toTransContinuousLinearEquiv_of_det_neg
         (I.restrictScalars ℝ) M e) x := by
   rw [← Manifold.Orientation.isOrientationPreservingAt_neg_right,
     ← I.transContinuousLinearEquiv_complexManifoldOrientation_eq_neg_of_det_neg he]
-  exact Manifold.Orientation.isOrientationPreservingAt_toTransContinuousLinearEquiv _ e x
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
 
 /-- Comparing `I.complexManifoldOrientation M` with the orientation on
 `(M, (I.restrictScalars ℝ).transContinuousLinearEquiv e)` induced by the separately fixed canonical
@@ -1140,21 +1122,6 @@ theorem orientationSign_id_conjCLE
       (id : X → X) x = -1 :=
   Manifold.Orientation.orientationSign_of_isOrientationReversingAt
     (isOrientationReversingAt_toTransContinuousLinearEquiv_conjCLE (m := 1) x)
-
-/-- On a 1-dimensional complex manifold `X` modelled on `𝓘(ℂ, ℂ)`, the orientation sign of real
-recharting along `Complex.conjCLE` against the fixed model orientation `complexOrientation ℂ` is
-`-1`. -/
-theorem orientationSign_toTransContinuousLinearEquiv_conjCLE
-    {m : ℕ∞ω} {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
-    [IsManifold 𝓘(ℂ, ℂ) 1 X] (x : X) :
-    Manifold.Orientation.orientationSign (complexManifoldOrientation ℂ X)
-      (Manifold.Orientation.mk
-        (Manifold.OrientationLift.ofHasGroupoid
-          (I := 𝓘(ℝ, ℂ).transContinuousLinearEquiv Complex.conjCLE)
-          (complexOrientation ℂ) card_fin_two_mul_finrank_complex))
-      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) 𝓘(ℝ, ℂ) X Complex.conjCLE) x =
-      -1 :=
-  orientationSign_id_conjCLE x
 
 end Conj
 
