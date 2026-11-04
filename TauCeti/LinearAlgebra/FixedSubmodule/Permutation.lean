@@ -76,6 +76,13 @@ theorem permutationFixed_apply_eq_of_quotient_eq (σ : Perm I)
     v.val i = v.val j := by
   rw [← permutationFixedEquiv_symm_apply σ v i, h, permutationFixedEquiv_symm_apply]
 
+/-- The coordinate of a cycle is the value at its chosen representative. -/
+theorem permutationFixedEquiv_symm_apply_out (σ : Perm I)
+    (v : (funCongrLeft R M σ).toLinearMap.fixedSubmodule)
+    (c : Quotient (Perm.SameCycle.setoid σ)) :
+    (permutationFixedEquiv (R := R) (M := M) σ).symm v c = v.val c.out := by
+  simpa only [Quotient.out_eq] using permutationFixedEquiv_symm_apply σ v c.out
+
 /-- The orbit indicator vectors form a basis of the fixed submodule. -/
 def permutationFixedBasis (σ : Perm I)
     [Finite (Quotient (Perm.SameCycle.setoid σ))] :

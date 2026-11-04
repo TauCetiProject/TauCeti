@@ -414,7 +414,8 @@ theorem exists_mem_evenOrthogonal_notMem_span (hrank : 3 ≤ Module.finrank ℤ 
   obtain ⟨v, huv, hv⟩ := exists_polar_eq_zero_not_mem_span_of_finrank_ge_three L.halfNorm
     (L.polarBilin_halfNorm ▸ hu₀) (L.finrank_carrier ▸ hrank)
   rw [polar_halfNorm] at huv
-  obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier v
+  obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
+    Submodule.IsLattice.span_eq_top v
   -- Doubling makes the norm even; the scalar `2 * s` is nonzero, so `w` stays off the line.
   refine ⟨(2 : ℤ) • ⟨s • v, hsv⟩, mem_evenOrthogonal_iff.mpr ⟨?_, ?_⟩, ?_⟩
   · apply Int.cast_injective (α := ℚ)
@@ -435,7 +436,8 @@ theorem infinite_specialOrthogonalGroup_of_not_anisotropic [L.IsNondegenerate]
     Infinite (specialOrthogonalGroup L) := by
   obtain ⟨v, hv, hv₀⟩ : ∃ v : V, L.norm v = 0 ∧ v ≠ 0 := by
     simpa [QuadraticMap.Anisotropic] using hiso
-  obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier v
+  obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
+    Submodule.IsLattice.span_eq_top v
   set u : L := ⟨s • v, hsv⟩
   have hsv' : (s : ℚ) • v = (u : V) := Int.cast_smul_eq_zsmul ℚ s v
   have hu₀ : L.form u ≠ 0 := by

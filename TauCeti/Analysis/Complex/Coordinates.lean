@@ -13,7 +13,8 @@ public import TauCeti.LinearAlgebra.Complex.Determinant
 # Real coordinates of the complex plane
 
 The real linear coordinate interchange is an involution with determinant `-1`, recording
-the reversal of orientation.
+the reversal of orientation. The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is linearly
+independent.
 -/
 
 public section
@@ -49,5 +50,15 @@ theorem det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.toLinearMap.det 
 @[simp]
 theorem linearEquiv_det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.det = -1 := by
   simp [← Units.val_inj]
+
+/-- The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is linearly independent. -/
+theorem linearIndependent_one_zero_I_zero_zero_one :
+    LinearIndependent ℝ ![((1 : ℂ), (0 : ℝ)), (I, 0), (0, 1)] := by
+  refine Fintype.linearIndependent_iff.2 fun g hg i ↦ ?_
+  rw [Fin.sum_univ_three] at hg
+  fin_cases i
+  · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.re) hg
+  · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
+  · simpa using congrArg Prod.snd hg
 
 end Complex

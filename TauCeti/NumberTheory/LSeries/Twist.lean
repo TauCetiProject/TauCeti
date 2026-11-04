@@ -38,12 +38,9 @@ theorem term_mul_natCast_cpow_neg (n : ℕ) :
     LSeries.term (fun n ↦ f n * (n : ℂ) ^ (-z)) s n = LSeries.term f (s + z) n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hs : (n : ℂ) ^ s ≠ 0 := by simp [Complex.cpow_eq_zero_iff, hn']
-  have hz : (n : ℂ) ^ z ≠ 0 := by simp [Complex.cpow_eq_zero_iff, hn']
-  rw [LSeries.term_of_ne_zero hn, LSeries.term_of_ne_zero hn, Complex.cpow_add _ _ hn',
-    Complex.cpow_neg]
-  field_simp
+  rw [LSeries.term_of_ne_zero hn, LSeries.term_of_ne_zero hn,
+    Complex.cpow_add _ _ (Nat.cast_ne_zero.mpr hn), Complex.cpow_neg]
+  ring
 
 /-- **Twisting a Dirichlet series by a power of the index translates it.** The series of the
 coefficients `f n * n ^ (-z)` at `s` is the series of `f` at `s + z`. -/

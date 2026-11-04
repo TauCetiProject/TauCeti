@@ -130,12 +130,12 @@ theorem tangentSpaceProdEquiv_curvatureTensor_leviCivitaConnection_prod (p : M �
           (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2) := by
   set e := tangentSpaceProdEquiv (I := I) (J := J) p
   -- Extend the components of `u`, `v` and `w` to smooth vector fields on the factors.
-  obtain ⟨X₁, hX₁, hX₁p⟩ := exists_contMDiff_section_eq I E (V := TangentSpace I) (e u).1
-  obtain ⟨X₂, hX₂, hX₂p⟩ := exists_contMDiff_section_eq J F (V := TangentSpace J) (e u).2
-  obtain ⟨Y₁, hY₁, hY₁p⟩ := exists_contMDiff_section_eq I E (V := TangentSpace I) (e v).1
-  obtain ⟨Y₂, hY₂, hY₂p⟩ := exists_contMDiff_section_eq J F (V := TangentSpace J) (e v).2
-  obtain ⟨Z₁, hZ₁, hZ₁p⟩ := exists_contMDiff_section_eq I E (V := TangentSpace I) (e w).1
-  obtain ⟨Z₂, hZ₂, hZ₂p⟩ := exists_contMDiff_section_eq J F (V := TangentSpace J) (e w).2
+  obtain ⟨X₁, hX₁, hX₁p⟩ := exists_contMDiff_section_eq I E ∞ (V := TangentSpace I) (e u).1
+  obtain ⟨X₂, hX₂, hX₂p⟩ := exists_contMDiff_section_eq J F ∞ (V := TangentSpace J) (e u).2
+  obtain ⟨Y₁, hY₁, hY₁p⟩ := exists_contMDiff_section_eq I E ∞ (V := TangentSpace I) (e v).1
+  obtain ⟨Y₂, hY₂, hY₂p⟩ := exists_contMDiff_section_eq J F ∞ (V := TangentSpace J) (e v).2
+  obtain ⟨Z₁, hZ₁, hZ₁p⟩ := exists_contMDiff_section_eq I E ∞ (V := TangentSpace I) (e w).1
+  obtain ⟨Z₂, hZ₂, hZ₂p⟩ := exists_contMDiff_section_eq J F ∞ (V := TangentSpace J) (e w).2
   have hvalue {W₁ : Π x : M, TangentSpace I x} {W₂ : Π y : N, TangentSpace J y}
       {t : TangentSpace (I.prod J) p} (h₁ : W₁ p.1 = (e t).1) (h₂ : W₂ p.2 = (e t).2) :
       prodVectorField W₁ W₂ p = t := by
