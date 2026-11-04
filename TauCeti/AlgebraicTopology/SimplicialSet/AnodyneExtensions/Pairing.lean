@@ -13,10 +13,11 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PairingC
 
 If a simplex `x` of a simplicial set is uniquely a codimension one face of a simplex `y`, the
 index `hxy.index hd` is the unique `i` with `δ i y = x`. Which horns a pairing of a subcomplex
-(in the sense of Moss) attaches is read off from these indices: a pairing only involving horns
-`Λ[n, i]` with `i ≠ n` (resp. `i ≠ 0`) exhibits a left (resp. right) anodyne extension. This file
-computes the indices of the pairings built from `PairingCore` and of opposite pairings, where
-passing to the opposite simplicial set reverses the order of the vertices and hence the index.
+(in the sense of Moss) attaches is read off from these indices: a regular pairing only involving
+horns `Λ[n, i]` with `i ≠ n` (resp. `i ≠ 0`) exhibits a left (resp. right) anodyne extension.
+This file computes the indices of the pairings built from `PairingCore` and of opposite pairings,
+where passing to the opposite simplicial set reverses the order of the vertices and hence the
+index.
 
 ## Main results
 

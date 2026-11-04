@@ -100,8 +100,7 @@ lemma rightAnodyneExtensions_unionProd_ι {m : ℕ} (k : Fin (m + 2)) (hk : 0 < 
     exact ne_of_eq_of_ne ((pairingCore _ n).index_pairing_equivII s)
       (Fin.castSucc_lt_last s.index).ne
   · obtain ⟨k, rfl⟩ := Fin.eq_castSucc_of_ne_last hk'
-    obtain ⟨k, rfl⟩ := Fin.eq_succ_of_ne_zero (Fin.pos_iff_ne_zero.mp
-      (show 0 < k from Fin.castSucc_pos_iff.mp hk))
+    obtain ⟨k, rfl⟩ := Fin.eq_succ_of_ne_zero (Fin.castSucc_pos_iff.mp hk).ne'
     exact (pairing k.castSucc.succ n).rightAnodyneExtensions
       fun x _ hd ↦ Subcomplex.Pairing.IsInner.ne_zero x hd
 
@@ -120,10 +119,9 @@ lemma hasLiftingProperty_horn_ι_pullbackObjObjπ [Mono i] {m : ℕ} (k : Fin (m
     (h : ∀ n, HasLiftingProperty (Subcomplex.unionProd.{u} Λ[m + 1, k] ∂Δ[n]).ι p) :
     HasLiftingProperty Λ[m + 1, k].ι sq₁₃.π := by
   let sq₁₂ := Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) i Λ[m + 1, k].ι
+  have e : Arrow.mk sq₁₂.ι ≅ Arrow.mk sq₁₂.flipTensor.ι := Arrow.isoMk (Iso.refl _) (β_ _ _)
   rw [← internalHomAdjunction₂.hasLiftingProperty_iff sq₁₂,
-    HasLiftingProperty.iff_of_arrow_iso_left
-      (show Arrow.mk sq₁₂.ι ≅ Arrow.mk sq₁₂.flipTensor.ι from
-        Arrow.isoMk (Iso.refl _) (β_ _ _))]
+    HasLiftingProperty.iff_of_arrow_iso_left e]
   let sq₁₃' := Functor.PullbackObjObj.ofHasPullback MonoidalClosed.internalHom Λ[m + 1, k].ι p
   rw [internalHomAdjunction₂.hasLiftingProperty_iff _ sq₁₃']
   suffices (MorphismProperty.monomorphisms _).rlp sq₁₃'.π from this _ inferInstance
