@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Orders.Basic
 public import TauCeti.Combinatorics.PermutationTriple.Regular
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Regular triples and normal subgroups of triangle groups

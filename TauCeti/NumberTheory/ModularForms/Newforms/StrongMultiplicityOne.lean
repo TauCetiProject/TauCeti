@@ -66,6 +66,10 @@ levels the fixed-level theorem then makes them the same function
   `p ∤ N M` have `N = M` (Miyake, Theorem 4.6.19, for newforms).
 * `HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq`: under the same
   hypotheses, `N = M` and the two newforms are the same function.
+* `HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq`: two newforms of levels
+  dividing `N`, with nebentypes inducing the same character modulo `N` and eigenvalues agreeing
+  at all but finitely many primes `p ∤ N`, have the same level and are the same function
+  (Miyake, Corollary 4.6.20; Diamond–Shurman, Theorem 5.8.3).
 
 ## Provenance
 
@@ -83,12 +87,13 @@ follows the `q`-new decomposition of Atkin–Lehner and Li.
 
 ## References
 
-* [T. Miyake, *Modular forms*][miyake1989], Theorem 4.6.12, and Theorem 4.6.19 for the
-  cross-level statement.
+* [T. Miyake, *Modular forms*][miyake1989], Theorem 4.6.12, Theorem 4.6.19 for the
+  cross-level statement, and Corollary 4.6.20 for the uniqueness of the associated newform.
 * W.-C. W. Li, *Newforms and functional equations*, Math. Ann. 212 (1975), 285–315, for the
   comparison across levels through the `q`-new subspaces.
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
-  Theorem 5.8.2 (the `∀ n` coprime version; the strong form is deferred to Miyake).
+  Theorem 5.8.2 (the `∀ n` coprime version; the strong form is deferred to Miyake), and
+  Theorem 5.8.3 for the uniqueness of the associated newform.
 -/
 
 public section
@@ -458,5 +463,31 @@ theorem Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq {M : �
   exact ⟨rfl, by
     rw [Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ' fun p hp hpN hpS ↦
       h p hp hpN hpN hpS]⟩
+
+/-- **Uniqueness of the newform with a given good eigensystem and nebentypus.** Let `g` and `g'`
+be newforms of levels `M` and `M'` dividing `N`, whose nebentypes induce the same character `χ`
+modulo `N`. If their eigenvalues agree at every prime `p ∤ N` outside a finite set `S`, then
+`M = M'` and `g` and `g'` are the same function. This is the uniqueness of the newform associated
+with a good Hecke eigenform (Diamond–Shurman, Theorem 5.8.3; Miyake, Corollary 4.6.20). -/
+theorem Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq {M M' : ℕ} [NeZero M] [NeZero M']
+    {χ : (ZMod N)ˣ →* ℂˣ} (g : Newform M k) (g' : Newform M' k) (hM : M ∣ N) (hM' : M' ∣ N)
+    (hgχ : g.χ.comp (ZMod.unitsMap hM) = χ) (hg'χ : g'.χ.comp (ZMod.unitsMap hM') = χ)
+    {S : Finset ℕ}
+    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N), p ∉ S →
+      g.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM) =
+        g'.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM')) :
+    M = M' ∧ ⇑g.toCuspForm = ⇑g'.toCuspForm := by
+  have hL : Nat.lcm M M' ∣ N := Nat.lcm_dvd hM hM'
+  -- both nebentypes induce `χ` at level `N`, and `(ZMod N)ˣ → (ZMod (lcm M M'))ˣ` is onto
+  have hχ : g.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_left M M')) =
+      g'.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_right M M')) := by
+    refine (MonoidHom.cancel_right (ZMod.unitsMap_surjective hL)).mp ?_
+    rw [MonoidHom.comp_assoc, MonoidHom.comp_assoc, ZMod.unitsMap_comp, ZMod.unitsMap_comp, hgχ,
+      hg'χ]
+  -- a prime outside `S` and outside the prime factors of `N` is prime to `N`
+  refine Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq g g' hχ
+    (S := S ∪ N.primeFactors) fun p hp _ _ hpS ↦ ?_
+  simp only [Finset.mem_union, Nat.mem_primeFactors, not_or, not_and] at hpS
+  exact h p hp (hp.coprime_iff_not_dvd.mpr fun hpN ↦ hpS.2 hp hpN (NeZero.ne N)) hpS.1
 
 end HeckeRing.GL2

@@ -18,7 +18,8 @@ constant term computes integer multiplication on that point.
 The addition and composition identities hold without commutativity of the formal group.
 For a commutative formal group, integer multiplication is bundled as an endomorphism.
 Multiplication series commute with coefficient base change and with every homomorphism;
-in particular an isomorphism identifies them by conjugation of coordinates.
+in particular an isomorphism identifies them by conjugation of coordinates, so isomorphic laws
+are killed by the same integers.
 
 ## References
 
@@ -152,6 +153,13 @@ noncomputable def zsmulHom [F.IsComm] (n : ℤ) : TauCeti.FormalGroupHom F F whe
 theorem zsmulHom_toPowerSeries [F.IsComm] (n : ℤ) :
     (F.zsmulHom n).toPowerSeries = F.zsmulSeries n := (rfl)
 
+/-- Integer multiplication commutes with base change as a bundled endomorphism. -/
+@[simp]
+theorem map_zsmulHom [F.IsComm] (f : R →+* S) (n : ℤ) :
+    (F.zsmulHom n).map f = (F.map f).zsmulHom n := by
+  ext : 1
+  simp
+
 /-- The bundled integer endomorphism acts by integer multiplication on points. -/
 @[simp]
 theorem zsmulHom_applyPoint [F.IsComm] {σ : Type*} (x : F.Point σ) (n : ℤ) :
@@ -202,5 +210,21 @@ theorem zsmulSeries_eq_subst (f : FormalGroupIso F G) (n : ℤ) :
   rw [f.toHom.subst_zsmulSeries,
     PowerSeries.subst_comp_subst_apply f.toHom.hasSubst f.invHom.hasSubst,
     f.subst_invHom_toHom, PowerSeries.X_subst]
+
+/-- Isomorphic formal group laws are killed by the same integers: `[n]_F = 0` exactly when
+`[n]_G = 0`. -/
+theorem zsmulSeries_eq_zero_iff (f : FormalGroupIso F G) (n : ℤ) :
+    F.zsmulSeries n = 0 ↔ G.zsmulSeries n = 0 := by
+  suffices h : ∀ {F G : FormalGroup R}, FormalGroupIso F G →
+      F.zsmulSeries n = 0 → G.zsmulSeries n = 0 from ⟨h f, h f.symm⟩
+  intro F G f hF
+  rw [f.zsmulSeries_eq_subst, hF,
+    PowerSeries.subst_zero_of_constantCoeff_zero f.toHom.zero_constantCoeff, PowerSeries.subst_zero]
+
+/-- Isomorphic formal group laws are killed by the same natural numbers: `[n]_F = 0` exactly when
+`[n]_G = 0`. -/
+theorem nsmulSeries_eq_zero_iff (f : FormalGroupIso F G) (n : ℕ) :
+    F.nsmulSeries n = 0 ↔ G.nsmulSeries n = 0 := by
+  simpa only [FormalGroup.zsmulSeries_natCast] using f.zsmulSeries_eq_zero_iff n
 
 end TauCeti.FormalGroupIso

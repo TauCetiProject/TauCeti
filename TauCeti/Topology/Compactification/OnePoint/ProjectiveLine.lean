@@ -27,7 +27,8 @@ which is possible because the scalar matrices fix every point
 
 It then equips `OnePoint K` with the action of the projective special linear group
 `PSL(2, K)`, transported from Mathlib's action of `PSL(2, K)` on `ℙ K (Fin 2 → K)` along
-`OnePoint.equivProjectivization`. The class of a matrix acts as the matrix does
+`OnePoint.equivProjectivization`, which is therefore equivariant
+(`OnePoint.equivProjectivization_psl_smul`). The class of a matrix acts as the matrix does
 (`OnePoint.pslMk_smul`); the action is faithful and transitive. For `K = ℝ` this is the action of
 `PSL(2, ℝ)` on the ideal boundary of the upper half-plane.
 
@@ -43,13 +44,16 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 
 * `OnePoint.smul_some_eq_infty_iff`: `g • (k : OnePoint K) = ∞` exactly when the denominator
   `g 1 0 * k + g 1 1` vanishes.
-* `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_forall_smul_onePoint_eq_self`:
-  a matrix fixes every point of the projective line exactly when it is scalar, whence
-  `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation representation of
-  `GL₂(F)` on the projective line.
+* `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_smul_zero_one_infty_eq_self`:
+  a scalar matrix fixes every point of the projective line, and a matrix fixing `0`, `1` and `∞`
+  is scalar, whence `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation
+  representation of `GL₂(F)` on the projective line.
 * `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
   faithfulness.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
+* `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
+  compatible with the actions.
+* `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
   class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
@@ -116,24 +120,24 @@ theorem scalar_smul_onePoint_eq_self (u : Fˣ) (x : OnePoint F) :
   | infty => exact OnePoint.smul_infty_eq_self_iff.mpr (by simp [Matrix.scalar_apply])
   | coe k => rw [OnePoint.smul_some_eq_ite]; simp [Matrix.scalar_apply]
 
-/-- **A matrix fixing every point of the projective line is central.** Fixing `∞` kills the lower
-left entry, fixing `0` then kills the upper right one, and fixing `1` makes the two diagonal
-entries agree; so the matrix is scalar, and the scalar matrices are the centre. -/
-theorem mem_center_of_forall_smul_onePoint_eq_self {g : GL (Fin 2) F}
-    (hg : ∀ x : OnePoint F, g • x = x) : g ∈ Subgroup.center (GL (Fin 2) F) := by
-  have h10 : g 1 0 = 0 := OnePoint.smul_infty_eq_self_iff.mp (hg ∞)
+/-- **A matrix fixing `0`, `1` and `∞` is central.** Fixing `∞` kills the lower left entry,
+fixing `0` then kills the upper right one, and fixing `1` makes the two diagonal entries agree; so
+the matrix is scalar, and the scalar matrices are the centre. In particular such a matrix fixes
+every point of the projective line (`TauCeti.scalar_smul_onePoint_eq_self`). -/
+theorem mem_center_of_smul_zero_one_infty_eq_self {g : GL (Fin 2) F}
+    (h0 : g • ((0 : F) : OnePoint F) = (0 : F)) (h1 : g • ((1 : F) : OnePoint F) = (1 : F))
+    (hinf : g • (∞ : OnePoint F) = ∞) : g ∈ Subgroup.center (GL (Fin 2) F) := by
+  have h10 : g 1 0 = 0 := OnePoint.smul_infty_eq_self_iff.mp hinf
   have h11 : g 1 1 ≠ 0 := by
     have hdet := g.det_ne_zero
     rw [Matrix.det_fin_two] at hdet
     exact (mul_ne_zero_iff.mp (by simpa [h10] using hdet)).2
   have h01 : g 0 1 = 0 := by
-    have h := hg ((0 : F) : OnePoint F)
-    rw [OnePoint.smul_some_eq_ite] at h
-    simpa [h10, h11, div_eq_zero_iff] using h
+    rw [OnePoint.smul_some_eq_ite] at h0
+    simpa [h10, h11, div_eq_zero_iff] using h0
   have h00 : g 0 0 = g 1 1 := by
-    have h := hg ((1 : F) : OnePoint F)
-    rw [OnePoint.smul_some_eq_ite] at h
-    simpa [h10, h01, h11, div_eq_one_iff_eq h11] using h
+    rw [OnePoint.smul_some_eq_ite] at h1
+    simpa [h10, h01, h11, div_eq_one_iff_eq h11] using h1
   rw [Matrix.GeneralLinearGroup.center_eq_range_scalar, MonoidHom.mem_range]
   refine ⟨Units.mk0 (g 1 1) h11, Units.ext ?_⟩
   rw [Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
@@ -145,9 +149,10 @@ representation of `GL₂(F)` on `OnePoint F` is the centre of `GL₂(F)`. -/
 @[simp]
 theorem ker_toPermHom_onePoint_eq_center :
     (MulAction.toPermHom (GL (Fin 2) F) (OnePoint F)).ker = Subgroup.center (GL (Fin 2) F) := by
-  refine le_antisymm (fun g hg => mem_center_of_forall_smul_onePoint_eq_self fun x => ?_)
-    (fun g hg => ?_)
-  · simpa using congrArg (fun p : Equiv.Perm (OnePoint F) => p x) (MonoidHom.mem_ker.mp hg)
+  refine le_antisymm (fun g hg => ?_) (fun g hg => ?_)
+  · have hfix (x : OnePoint F) : g • x = x := by
+      simpa using congrArg (fun p : Equiv.Perm (OnePoint F) => p x) (MonoidHom.mem_ker.mp hg)
+    exact mem_center_of_smul_zero_one_infty_eq_self (hfix _) (hfix _) (hfix _)
   · rw [Matrix.GeneralLinearGroup.center_eq_range_scalar, MonoidHom.mem_range] at hg
     obtain ⟨u, rfl⟩ := hg
     exact MonoidHom.mem_ker.mpr (Equiv.ext fun x => by simp)
@@ -180,7 +185,7 @@ instance : FaithfulSMul PGL(2, K) (OnePoint K) where
     obtain ⟨g', rfl⟩ := Matrix.ProjGenLinGroup.mk_surjective y
     have hfix : ∀ c : OnePoint K, (g'⁻¹ * g) • c = c := fun c ↦ by
       rw [mul_smul, (by simpa using h c : g • c = g' • c), ← mul_smul, inv_mul_cancel, one_smul]
-    have hcentre := TauCeti.mem_center_of_forall_smul_onePoint_eq_self hfix
+    have hcentre := TauCeti.mem_center_of_smul_zero_one_infty_eq_self (hfix _) (hfix _) (hfix _)
     have hone : Matrix.ProjGenLinGroup.mk (g'⁻¹ * g) = 1 :=
       Matrix.ProjGenLinGroup.mk_eq_one.mpr hcentre
     rw [map_mul, map_inv, inv_mul_eq_one] at hone
@@ -197,18 +202,39 @@ lemma pslMk_smul (g : SL(2, K)) (c : OnePoint K) :
     (g : PSL(2, K)) • c = (g : GL (Fin 2) K) • c :=
   (rfl)
 
+/-- The identification `OnePoint.equivProjectivization` intertwines the actions of `PSL(2, K)` on
+`OnePoint K` and on `ℙ K (Fin 2 → K)`. -/
+lemma equivProjectivization_psl_smul {g : PSL(2, K)} (x : OnePoint K) :
+    equivProjectivization K (g • x) = g • equivProjectivization K x := by
+  rw [Equiv.smul_def, Equiv.apply_symm_apply]
+
 /-- The action of `PSL(2, K)` on `OnePoint K` is faithful. -/
 instance : FaithfulSMul PSL(2, K) (OnePoint K) where
   eq_of_smul_eq_smul {g₁ g₂} h := eq_of_smul_eq_smul fun p : ℙ K (Fin 2 → K) ↦ by
-    simpa [Equiv.smul_def] using
+    simpa [equivProjectivization_psl_smul] using
       congrArg (equivProjectivization K) (h ((equivProjectivization K).symm p))
 
 /-- The action of `PSL(2, K)` on `OnePoint K` is transitive. -/
 instance : MulAction.IsPretransitive PSL(2, K) (OnePoint K) :=
   MulAction.IsPretransitive.of_surjective_map (M := PSL(2, K)) (α := ℙ K (Fin 2 → K))
-    (f := ⟨(equivProjectivization K).symm, fun g p ↦ by
-      rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]⟩)
+    (f := ⟨(equivProjectivization K).symm, fun g p ↦ (equivProjectivization K).injective <| by
+      rw [equivProjectivization_psl_smul, Equiv.apply_symm_apply, Equiv.apply_symm_apply]⟩)
     (equivProjectivization K).symm.surjective inferInstance
+
+/-- **`GL(2, K)` acts 2-transitively on the projective line**: any two distinct points of
+`OnePoint K` are carried to any two distinct points by some Möbius transformation. This is
+Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`, transported along
+`OnePoint.equivProjectivization`. -/
+instance instIsMultiplyPretransitiveGL :
+    MulAction.IsMultiplyPretransitive (GL (Fin 2) K) (OnePoint K) 2 :=
+  MulAction.IsPretransitive.of_embedding
+    (f := (⟨(equivProjectivization K).symm, fun g p ↦ by
+      rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]
+      -- The `SL(2, K)` and `GL(2, K)` actions on `ℙ K (Fin 2 → K)` are both multiplication of
+      -- representatives by the underlying matrix.
+      rfl⟩ : ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
+        OnePoint K))
+    (equivProjectivization K).symm.surjective
 
 end OnePoint
 
@@ -217,6 +243,13 @@ namespace Matrix.ProjectiveSpecialLinearGroup
 open OnePoint
 
 variable {K : Type*} [Field K] [DecidableEq K]
+
+/-- The inclusion `PSL(2, K) → PGL(2, K)` is compatible with the actions on the projective line:
+both act through the underlying matrix. -/
+@[simp]
+theorem toPGL_smul (g : PSL(2, K)) (c : OnePoint K) : toPGL g • c = g • c := by
+  induction g using QuotientGroup.induction_on with
+  | H g => simp
 
 /-- The translation `upperRightHom x` fixes `∞`. -/
 @[simp]

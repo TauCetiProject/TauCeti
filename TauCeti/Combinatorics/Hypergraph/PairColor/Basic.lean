@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Prod.Basic
 public import Mathlib.Data.Option.Basic
+public import Mathlib.Logic.Equiv.Defs
 
 /-!
 # Coherent colors on ordered distinct pairs
@@ -18,6 +19,7 @@ symmetric colors and genuinely oriented colors in the lower skeleton of a hyperg
 `PairColorSystem.colorOfPair` extends the coloring to all vertex pairs with values in `Option`:
 only diagonal pairs have color `none`. `PairColorSystem.ofRaw` makes any directed coloring
 coherent by recording its colors in both orientations, using the product palette.
+`PairColorSystem.relabel` renames the palette along an equivalence.
 `coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple.
 -/
 
@@ -113,6 +115,21 @@ theorem ofRaw_color (color : {p : V × V // p.1 ≠ p.2} → κ)
 @[simp]
 theorem ofRaw_rev (color : {p : V × V // p.1 ≠ p.2} → κ) (c : κ × κ) :
     (ofRaw color).rev c = c.swap := (rfl)
+
+/-- Rename the palette of a coherent coloring along an equivalence, conjugating the reversal. -/
+def relabel {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') : PairColorSystem κ' V where
+  color p := e (S.color p)
+  rev c := e (S.rev (e.symm c))
+  rev_involutive c := by simp [S.rev_rev]
+  color_rev p := by simp [S.color_rev]
+
+@[simp]
+theorem relabel_color {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ')
+    (p : {p : V × V // p.1 ≠ p.2}) : (S.relabel e).color p = e (S.color p) := (rfl)
+
+@[simp]
+theorem relabel_rev {κ' : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') (c : κ') :
+    (S.relabel e).rev c = e (S.rev (e.symm c)) := (rfl)
 
 end PairColorSystem
 

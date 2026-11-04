@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
@@ -80,7 +80,7 @@ theorem contraction_one :
   ext H
   rw [contraction_apply, TauCeti.traceCLM_apply,
     LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
-  simp [one_apply, real_inner_comm]
+  simp [Matrix.one_apply, real_inner_comm]
 
 /-- If every entry of `M` is at most `ε` in absolute value, then
 `|∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫| ≤ n² ε ‖H‖`. -/

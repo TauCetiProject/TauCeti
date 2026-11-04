@@ -107,7 +107,7 @@ theorem isConnected_action_iff_isTransitiveAction (A : Action (Type u) G) :
       refine ⟨(mono_action_iff_injective i).mp hm, fun a => ?_⟩
       obtain ⟨g, hg⟩ := htrans.exists_smul_eq (i.hom y₀) a
       refine ⟨g • y₀, ?_⟩
-      rw [← hg, smul_eq_ρ_apply, smul_eq_ρ_apply]
+      rw [← hg, ← Action.ρ_apply_eq_smul Y g y₀, ← Action.ρ_apply_eq_smul A g]
       simpa using ConcreteCategory.congr_hom (i.comm g) y₀
     have _ : IsIso i.hom := (CategoryTheory.isIso_iff_bijective i.hom).mpr hbij
     infer_instance

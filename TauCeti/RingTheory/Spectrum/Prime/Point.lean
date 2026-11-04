@@ -11,7 +11,9 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 # Field-valued points and residue-field data
 
 An algebra map to a field determines a prime ideal and an embedding of its
-residue field. Conversely, these data determine the algebra map.
+residue field. Conversely, these data determine the algebra map. For a map to the residue field
+`κ(P)` of a prime `P` of the base, the embedding is an isomorphism
+(`AlgHom.residueFieldMap_bijective`).
 The forward map from residue-field data is defined for any commutative target algebra.
 
 ## References
@@ -52,6 +54,28 @@ theorem existsUnique_residueEmbedding (point : S →ₐ[R] Ω) :
   intro embedding equality
   exact Ideal.ResidueField.algHom_ext
     (equality.trans point.residueEmbedding_comp.symm)
+
+/-- The kernel of an `R`-algebra map to the residue field `κ(P)` of a prime `P` of `R` lies over
+`P`. -/
+theorem comap_ker_eq_of_residueField {P : Ideal R} [P.IsPrime] (point : S →ₐ[R] P.ResidueField) :
+    (RingHom.ker point).comap (algebraMap R S) = P := by
+  ext r
+  rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.commutes, Ideal.algebraMap_residueField_eq_zero]
+
+/-- An `R`-algebra map from `S` to the residue field `κ(P)` of a prime `P` of `R` identifies
+`κ(P)` with the residue field of `S` at its kernel. -/
+theorem residueFieldMap_bijective {P : Ideal R} [P.IsPrime] (point : S →ₐ[R] P.ResidueField) :
+    Function.Bijective (Ideal.ResidueField.map P (RingHom.ker point) (algebraMap R S)
+      point.comap_ker_eq_of_residueField.symm) := by
+  let β := point.residueEmbedding
+  have hβ : β.toRingHom.comp (Ideal.ResidueField.map P (RingHom.ker point) (algebraMap R S)
+      point.comap_ker_eq_of_residueField.symm) = RingHom.id _ :=
+    Ideal.ResidueField.ringHom_ext <| RingHom.ext fun r ↦ by
+      have h := DFunLike.congr_fun point.residueEmbedding_comp (algebraMap R S r)
+      rw [AlgHom.comp_apply, IsScalarTower.toAlgHom_apply] at h
+      simp [Ideal.ResidueField.map_algebraMap, β, h]
+  refine ⟨RingHom.injective _, fun y ↦ ⟨β y, β.toRingHom.injective ?_⟩⟩
+  exact congr($hβ (β y))
 
 end AlgHom
 

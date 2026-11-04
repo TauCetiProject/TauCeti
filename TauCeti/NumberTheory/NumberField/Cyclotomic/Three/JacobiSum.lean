@@ -168,3 +168,22 @@ theorem jacobiSum_powerResidueSymbol_three_eq (hP : (absNorm P).Coprime 3) {π :
 end Eisenstein
 
 end Ideal
+
+section Examples
+
+open Ideal
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
+
+/- The primary element `π = -1 - 3ω` generates a prime of norm `(-1)² - 3 + (-3)² = 7`, and the
+Jacobi sum of the cubic residue symbol at that prime is `π` itself. -/
+example {ζ : K} (hζ : IsPrimitiveRoot ζ 3) {P : Ideal (𝓞 K)} [P.IsMaximal] [Fintype (𝓞 K ⧸ P)]
+    (hP : P = span {((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger}) :
+    jacobiSum (powerResidueSymbol P 3) (powerResidueSymbol P 3) =
+      ((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger := by
+  refine jacobiSum_powerResidueSymbol_three_eq ?_ hP
+    (by rw [hζ.isPrimaryEisenstein_add_mul_iff]; decide)
+  rw [hP, absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_three]
+  decide
+
+end Examples

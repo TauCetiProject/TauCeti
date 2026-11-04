@@ -14,8 +14,11 @@ public import Mathlib.Topology.Algebra.Module.Multilinear.Basic
 The Hochschild and cyclic operators preserve jointly continuous multilinear cochains on a
 topological algebra. This file lifts the algebraic operators to native
 `ContinuousMultilinearMap`s and proves the mixed-complex identities there. The comparison
-with algebraic cochains is given by the forgetful map `toMultilinearMap`. Preservation of
-cyclic cochains does not require associativity; the Hochschild and bar square-zero identities do.
+with algebraic cochains is given by the forgetful map `toMultilinearMap`, and on cyclic
+cochains by `continuousCyclicCochains.toCyclicCochains`. Preservation of cyclic cochains does
+not require associativity; the Hochschild and bar square-zero identities do. Continuous cyclic
+cochains pull back along continuous linear maps (`continuousCyclicCochainsMap`), functorially,
+and compatibly with the Hochschild coboundary along continuous homomorphisms of nonunital algebras.
 
 No norm, local convexity, completeness or separation is needed for preservation of continuity.
 The scalar action on the target is continuous for each fixed scalar. For a unital algebra,
@@ -486,5 +489,131 @@ theorem continuousHochschildCoboundary_connesB_add_connesB_hochschildCoboundary
     hochschildCoboundary_connesB_add_connesB_hochschildCoboundary φ.toMultilinearMap
 
 end Unital
+
+section Forget
+
+variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A] [TopologicalSpace A]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M] [ContinuousAdd M]
+  [ContinuousConstSMul R M]
+
+/-- Forgetting continuity, as a linear map from continuous cyclic cochains to cyclic cochains. -/
+def continuousCyclicCochains.toCyclicCochains (n : ℕ) :
+    continuousCyclicCochains R A M n →ₗ[R] cyclicCochains R A M n :=
+  ContinuousMultilinearMap.toMultilinearMapLinear.restrict fun _ hφ ↦
+    (mem_continuousCyclicCochains_iff R A M).1 hφ
+
+/-- Forgetting continuity keeps the underlying multilinear map. -/
+@[simp]
+theorem continuousCyclicCochains.coe_toCyclicCochains {n : ℕ}
+    (φ : continuousCyclicCochains R A M n) :
+    (toCyclicCochains R A M n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
+      (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M).toMultilinearMap :=
+  (rfl)
+
+/-- Forgetting continuity is injective. -/
+theorem continuousCyclicCochains.toCyclicCochains_injective (n : ℕ) :
+    Function.Injective (toCyclicCochains R A M n) := fun _ _ h ↦
+  Subtype.ext (ContinuousMultilinearMap.toMultilinearMap_injective (congrArg Subtype.val h))
+
+end Forget
+
+section ForgetAlgebra
+
+variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [ContinuousMul A]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+
+/-- Forgetting continuity commutes with the Hochschild coboundary. -/
+theorem continuousCyclicCochains.toCyclicCochains_continuousCyclicHochschildCoboundary {n : ℕ}
+    (φ : continuousCyclicCochains R A M n) :
+    toCyclicCochains R A M (n + 1) (continuousCyclicHochschildCoboundary R A M n φ) =
+      cyclicHochschildCoboundary R A M n (toCyclicCochains R A M n φ) := by
+  ext : 1
+  simp
+
+end ForgetAlgebra
+
+section Pullback
+
+variable {R A B C : Type*} (M : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+  [TopologicalSpace A] [AddCommMonoid B] [Module R B] [TopologicalSpace B] [AddCommMonoid C]
+  [Module R C] [TopologicalSpace C] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+  [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M]
+
+/-- The pullback `φ ↦ φ ∘ (f × ⋯ × f)` of continuous cyclic cochains along a continuous linear
+map. -/
+def continuousCyclicCochainsMap (f : A →L[R] B) (n : ℕ) :
+    continuousCyclicCochains R B M n →ₗ[R] continuousCyclicCochains R A M n where
+  toFun φ := ⟨(φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compContinuousLinearMap
+      fun _ ↦ f, (mem_continuousCyclicCochains_iff R A M).2 <|
+        compLinearMap_mem_cyclicCochains (f : A →ₗ[R] B)
+          ((mem_continuousCyclicCochains_iff R B M).1 φ.2)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+variable {M}
+
+/-- The pullback of a continuous cyclic cochain evaluates it on the images of the arguments. -/
+@[simp]
+theorem coe_continuousCyclicCochainsMap_apply (f : A →L[R] B) {n : ℕ}
+    (φ : continuousCyclicCochains R B M n) :
+    (continuousCyclicCochainsMap M f n φ : ContinuousMultilinearMap R
+        (fun _ : Fin (n + 1) ↦ A) M) =
+      (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ B) M).compContinuousLinearMap
+        fun _ ↦ f :=
+  (rfl)
+
+/-- Forgetting continuity commutes with pullback. -/
+theorem continuousCyclicCochains.toCyclicCochains_continuousCyclicCochainsMap (f : A →L[R] B)
+    {n : ℕ} (φ : continuousCyclicCochains R B M n) :
+    continuousCyclicCochains.toCyclicCochains R A M n (continuousCyclicCochainsMap M f n φ) =
+      cyclicCochainsMap M (f : A →ₗ[R] B) n
+        (continuousCyclicCochains.toCyclicCochains R B M n φ) := by
+  ext a
+  simp
+
+variable (M) in
+/-- Pulling back along the identity is the identity. -/
+@[simp]
+theorem continuousCyclicCochainsMap_id (n : ℕ) :
+    continuousCyclicCochainsMap M (ContinuousLinearMap.id R A) n = LinearMap.id := by
+  ext φ a
+  simp
+
+variable (M) in
+/-- Pulling back along a composite is the composite of the pullbacks, in the opposite order. -/
+theorem continuousCyclicCochainsMap_comp (f : A →L[R] B) (g : B →L[R] C) (n : ℕ) :
+    continuousCyclicCochainsMap M (g.comp f) n =
+      continuousCyclicCochainsMap M f n ∘ₗ continuousCyclicCochainsMap M g n := by
+  ext φ a
+  simp
+
+end Pullback
+
+section PullbackAlgebra
+
+variable {R A B M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [ContinuousMul A]
+  [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
+  [TopologicalSpace B] [ContinuousMul B] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
+
+/-- Pulling continuous cyclic cochains back along a continuous homomorphism of nonunital
+algebras commutes with the Hochschild coboundary. -/
+theorem continuousCyclicHochschildCoboundary_continuousCyclicCochainsMap (f : A →ₙₐ[R] B)
+    (hf : Continuous f) {n : ℕ} (φ : continuousCyclicCochains R B M n) :
+    continuousCyclicHochschildCoboundary R A M n
+        (continuousCyclicCochainsMap M ⟨(f : A →ₗ[R] B), hf⟩ n φ) =
+      continuousCyclicCochainsMap M ⟨(f : A →ₗ[R] B), hf⟩ (n + 1)
+        (continuousCyclicHochschildCoboundary R B M n φ) :=
+  continuousCyclicCochains.toCyclicCochains_injective R A M (n + 1) <| by
+    rw [continuousCyclicCochains.toCyclicCochains_continuousCyclicHochschildCoboundary,
+      continuousCyclicCochains.toCyclicCochains_continuousCyclicCochainsMap,
+      continuousCyclicCochains.toCyclicCochains_continuousCyclicCochainsMap,
+      continuousCyclicCochains.toCyclicCochains_continuousCyclicHochschildCoboundary]
+    exact cyclicHochschildCoboundary_cyclicCochainsMap f _
+
+end PullbackAlgebra
 
 end TauCeti

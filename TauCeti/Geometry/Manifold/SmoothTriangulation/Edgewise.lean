@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Homeomorph
-public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
+public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 
+import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Approximation
 import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Fatness
-import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 
 /-!
 # Smooth triangulations and secant maps on edgewise subdivisions
@@ -30,6 +30,14 @@ of any complex whose vertices have their entries in `σ`, the secant map of `g`,
 linear in barycentric coordinates on `ρ` and sends each vertex `a` of `ρ` to `g` at the point
 `edgewisePoint a`, is again an immersion.
 
+For a complex `K` with finitely many faces, the bounds on `k` for the individual faces of `K`
+combine into secant approximation of a whole map `f : |K| → E`, read on the `k`-th edgewise
+subdivision through the canonical map onto `|K|`. If `f` is a `C¹` immersion on every closed
+simplex, its secant map on the subdivision is an immersion on every closed simplex of the
+subdivision for all large `k`. If `f` is only continuous, its secant map is uniformly close to `f`
+for all large `k`. These are the non-degeneracy and zeroth-order parts of Munkres' secant
+approximation of a map of a finite complex (Chapter II, Section 9).
+
 It also shows that a smooth triangulation `f : |K| ≃ₜ M` stays a smooth triangulation after
 edgewise subdivision: composing `f` with the canonical homeomorphism from the realization of the
 `k`-th edgewise subdivision onto `|K|` gives a smooth triangulation of `M` of the same class. On
@@ -44,6 +52,11 @@ fat.
   subdivisions of that simplex.
 * `TauCeti.IsSmoothTriangulation.edgewiseSubdivisionRealizationHomeomorph_trans`: the edgewise
   subdivisions of a smooth triangulation are smooth triangulations of the same class.
+* `AbstractSimplicialComplex.eventually_isSimplexImmersion_secantMap_edgewiseSubdivision`: on a
+  finite complex, the secant map of a map which is a `C¹` immersion on every closed simplex is an
+  immersion on every closed simplex of all sufficiently fine edgewise subdivisions.
+* `Continuous.eventually_norm_secantMap_sub_lt_edgewiseSubdivision`: on a finite complex, the
+  secant maps of a continuous map on fine edgewise subdivisions converge to it uniformly.
 
 ## References
 
@@ -149,3 +162,107 @@ theorem edgewiseSubdivisionRealizationHomeomorph_trans {K : AbstractSimplicialCo
       (mem_univ a))
 
 end TauCeti.IsSmoothTriangulation
+
+/-! ### Secant approximation of a finite complex -/
+
+namespace AbstractSimplicialComplex
+
+open TauCeti
+
+variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {K : AbstractSimplicialComplex ι} {k : ℕ}
+
+/-- The vertex `a` of a simplex `ρ` of the edgewise subdivision, placed at `edgewisePoint a` in
+the closed simplex on a set `σ` containing the entries of all vertices of `ρ`. -/
+private noncomputable def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (a : ρ) : StandardSimplex σ :=
+  ⟨edgewisePoint a.1.1, by
+    simpa only [coe_image] using edgewisePoint_mem_convexHull a.1.ne_zero (hρσ a.1 a.2)⟩
+
+/-- The placed vertex `edgewiseVertexPoint hρσ a` has coordinates `edgewisePoint a`. -/
+private theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
+    (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (a : ρ) :
+    (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.1.1 :=
+  (rfl)
+
+/-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
+of `K`, the secant map of `f` pulled back to the subdivision is the secant map of `f` on `σ`
+through the points `edgewisePoint a` of the vertices `a` of `ρ`. -/
+private theorem secantMap_faceInclusion_edgewiseSubdivision (f : Realization K → E)
+    (ρ : Face (K.edgewiseSubdivision k)) (σ : Face K) (hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1)
+    (x : StandardSimplex ρ.1) :
+    (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
+        (faceInclusion _ ρ x) =
+      ∑ a : ρ.1, x.1 a • (f ∘ faceInclusion K σ) (edgewiseVertexPoint hρσ a) := by
+  rw [secantMap_faceInclusion]
+  refine Finset.sum_congr rfl fun a _ => congrArg (x.1 a • ·) (congrArg f (Subtype.ext ?_))
+  rw [edgewiseSubdivisionRealizationMap_vertex, faceInclusion_val, coe_edgewiseVertexPoint]
+
+/-- **Secant approximation of a finite complex.** Let `f` be a map of the realization of a
+complex `K` with finitely many faces into a normed space, a `Cⁿ` immersion on every closed
+simplex, with `1 ≤ n`. For all sufficiently large `k`, the secant map of `f` on the `k`-th
+edgewise subdivision of `K`, the map which agrees with `f` at the points `edgewisePoint u` and is
+linear on every simplex of the subdivision, is a `Cᵐ` immersion on every closed simplex of the
+subdivision, for every `m`. -/
+theorem eventually_isSimplexImmersion_secantMap_edgewiseSubdivision (hK : K.faces.Finite)
+    {n : WithTop ℕ∞} {f : Realization K → E}
+    (hf : ∀ σ : Face K, IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ)) (hn : 1 ≤ n) :
+    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (m : WithTop ℕ∞),
+      IsSimplexImmersion 𝓘(ℝ, E) m
+        ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) ∘
+          faceInclusion _ ρ) := by
+  -- There are finitely many faces of `K`, and each gives a bound on `k`.
+  have : Finite (Face K) := hK.to_subtype
+  filter_upwards [eventually_all.mpr fun σ =>
+    (hf σ).eventually_isSimplexImmersion_edgewiseSubdivision hn
+      K.toPreAbstractSimplicialComplex] with k hk ρ m
+  -- The simplex `ρ` lies in the face of `K` spanned by the entries of its vertices.
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
+  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+    mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
+  have hsecant : (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) ∘
+      faceInclusion _ ρ =
+      fun x => ∑ a : ρ.1, x.1 a • (f ∘ faceInclusion K σ) (edgewiseVertexPoint hρσ a) :=
+    funext (secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ)
+  rw [hsecant]
+  exact hk σ ρ.1 ρ.2 (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) m
+
+end AbstractSimplicialComplex
+
+namespace Continuous
+
+open TauCeti
+
+variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {K : AbstractSimplicialComplex ι}
+
+/-- **Secant approximation of a finite complex, in values.** Let `f` be a continuous map of the
+realization of a complex `K` with finitely many faces into a normed space. For all sufficiently
+large `k`, the secant map of `f` on the `k`-th edgewise subdivision of `K` is uniformly within
+`ε` of `f`, read on the subdivision through the canonical map onto `|K|`. -/
+theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K → E}
+    (hf : Continuous f) (hK : K.faces.Finite) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ x : Realization (K.edgewiseSubdivision k),
+      ‖(K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
+        f (edgewiseSubdivisionRealizationMap K k x)‖ < ε := by
+  -- There are finitely many faces of `K`, and each gives a bound on `k`.
+  have : Finite (Face K) := hK.to_subtype
+  filter_upwards [eventually_all.mpr fun σ =>
+    (hf.comp (continuous_faceInclusion K σ)).eventually_norm_sum_smul_sub_lt_edgewiseSubdivision
+      K.toPreAbstractSimplicialComplex hε] with k hk x
+  -- The point `x` lies in the closed simplex `ρ` spanned by its carrier, and `ρ` lies in the face
+  -- of `K` spanned by the entries of its vertices.
+  let ρ := carrier _ x
+  let y : StandardSimplex ρ.1 := ⟨x.1, mem_convexHull_carrier _ x⟩
+  have hy : faceInclusion _ ρ y = x := Subtype.ext (faceInclusion_val _ _ _)
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
+  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+    mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
+  rw [← hy, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ,
+    ← Function.comp_apply (f := edgewiseSubdivisionRealizationMap K k),
+    edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ]
+  refine hk σ ρ.1 ρ.2 (edgewiseVertexPoint hρσ) (coe_edgewiseVertexPoint hρσ) y _ fun i => ?_
+  rw [edgewiseSubdivisionFaceMap_apply]
+  exact (Finset.sum_coe_sort ρ.1 fun a => y.1 a * edgewisePoint a.1 i).symm
+
+end Continuous

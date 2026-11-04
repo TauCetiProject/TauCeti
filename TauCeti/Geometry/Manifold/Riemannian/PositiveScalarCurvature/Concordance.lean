@@ -140,6 +140,18 @@ theorem cylinder_inner (p : M × ℝ) (v w : TangentSpace (I.prod 𝓘(ℝ)) p) 
   -- `NormedSpace.fromTangentSpace` of each tangent space of `ℝ` with `ℝ`, which is the identity.
   exact congrArg (_ + ·) (Real.inner_apply _ _)
 
+/-- The cylinder metric `g + dt²` at `(x, s)` and at `(x, t)` is the same bilinear form. -/
+theorem cylinder_inner_mk (x : M) (s t : ℝ) :
+    g.cylinder.inner (x, s) = g.cylinder.inner (x, t) := by
+  ext v w
+  refine (cylinder_inner g (x, s) v w).trans (Eq.trans ?_ (cylinder_inner g (x, t) v w).symm)
+  rw [TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, s) v,
+    TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, s) w,
+    TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, t) v,
+    TauCeti.Manifold.tangentSpaceProdEquiv_apply (x, t) w]
+  -- `NormedSpace.fromTangentSpace` is the identity of `ℝ` at every point.
+  rfl
+
 variable [FiniteDimensional ℝ E] [T2Space M]
 
 /-- The scalar curvature of the cylinder metric `g + dt²` at `(x, t)` is that of `g` at `x`. -/

@@ -21,7 +21,10 @@ The parametrization lands in its neurovariety (`toNeurovariety`); its image ther
 the coefficient image, so it is surjective onto the neurovariety exactly when the image is
 algebraic. Corestriction to the coefficient image itself is Mathlib's `Set.rangeFactorization`,
 which is always surjective. Over finitely many coordinates, the neurovariety and the closedness
-of the image do not depend on the choice of linear coordinates.
+of the image do not depend on the choice of linear coordinates. Zero-padding the coordinates, as
+when the degree bound of a polynomial coefficient presentation is raised, transports the
+neurovariety along the padding, preserves and reflects algebraicity of the image, and the padding
+coordinates vanish on the neurovariety.
 
 The closure convention follows Finkel–Rodriguez–Wu–Yahl, *Activation degree thresholds and
 expressiveness of polynomial neural networks*,
@@ -141,5 +144,38 @@ theorem isAlgebraicImage_linearEquiv_comp_iff [Finite σ]
     IsAlgebraicImage (e ∘ c) ↔ IsAlgebraicImage c := by
   rw [isAlgebraicImage_iff_isClosed, isAlgebraicImage_iff_isClosed, Set.range_comp,
     zariskiClosure_isClosed_image_linearEquiv_iff]
+
+/-! ### Zero-padding the coordinates
+
+Raising the degree bound of a polynomial coefficient presentation embeds the old coordinates into
+the new ones and pads the extra coordinates with zero. This is extension by zero along an
+injective map of coordinate types `s : σ → τ`. -/
+
+section ExtendByZero
+
+variable {s : σ → τ}
+
+/-- Zero-padding the coordinates along an injective `s` transports the neurovariety along the
+padding. No finiteness of the coordinates is needed. -/
+theorem neurovariety_extendByZero_comp (hs : Function.Injective s) (c : W → σ → K) :
+    neurovariety (Function.ExtendByZero.linearMap K K s ∘ c) =
+      Function.ExtendByZero.linearMap K K s '' neurovariety c := by
+  rw [neurovariety_def, neurovariety_def, Set.range_comp, zariskiClosure_image_extendByZero hs]
+
+/-- Whether the coefficient image is algebraic does not change under zero-padding the coordinates
+along an injective `s`. -/
+theorem isAlgebraicImage_extendByZero_comp_iff (hs : Function.Injective s) {c : W → σ → K} :
+    IsAlgebraicImage (Function.ExtendByZero.linearMap K K s ∘ c) ↔ IsAlgebraicImage c := by
+  rw [isAlgebraicImage_iff_isClosed, isAlgebraicImage_iff_isClosed, Set.range_comp,
+    zariskiClosure_isClosed_image_extendByZero_iff hs]
+
+/-- The padding coordinates vanish on the neurovariety of a zero-padded parametrization. -/
+theorem apply_eq_zero_of_mem_neurovariety_extendByZero_comp (s : σ → τ) {c : W → σ → K}
+    {z : τ → K} (hz : z ∈ neurovariety (Function.ExtendByZero.linearMap K K s ∘ c)) {t : τ}
+    (ht : t ∉ Set.range s) : z t = 0 := by
+  rw [neurovariety_def, Set.range_comp] at hz
+  exact apply_eq_zero_of_mem_zariskiClosure_image_extendByZero s hz ht
+
+end ExtendByZero
 
 end TauCeti.Neuromanifold

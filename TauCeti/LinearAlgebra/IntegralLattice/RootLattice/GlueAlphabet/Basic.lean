@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
 
 /-!
@@ -48,6 +49,10 @@ group for even `n`.
 * `TauCeti.DynkinType.glueAlphabetIsometry_A_apply`, `glueAlphabetIsometry_D_apply_of_even`,
   `glueAlphabetIsometry_D_apply_of_odd`, `glueAlphabetIsometry_E6_apply`,
   `glueAlphabetIsometry_E7_apply`: the isometry agrees with the family-specific identifications.
+* `TauCeti.DynkinType.typeA1GlueAlphabetZModStandardIsometry`: the `A₁` glue alphabet is the
+  binary coordinate alphabet `ℤ/2` with quadratic map `x ↦ x² / 4`.
+* `TauCeti.DynkinType.glueAlphabet_congr`, `glueAlphabetIsometry_ofEq`: equal types have equal
+  alphabets, compatibly with the glue isometries and `rootLatticeIsometryOfEq`.
 * `TauCeti.DynkinType.isNondegenerate_glueAlphabet`, `natCard_glueAlphabet`: the alphabet is
   nondegenerate, of order `|det t.cartanMatrix|`.
 
@@ -119,6 +124,30 @@ theorem glueAlphabet_E7 (ht : E7.IsSimplyLaced) :
 /-- The glue alphabet of `E₈` has a single element. -/
 instance (ht : E8.IsSimplyLaced) : Subsingleton (E8.glueAlphabet ht) :=
   inferInstanceAs (Subsingleton (ZMod 1))
+
+/-- **The `A₁` glue alphabet is the binary coordinate alphabet `ℤ/2`** with quadratic map
+`x ↦ x² / 4`: both send the nonzero label to `1/4`. The underlying map is the identity of
+`ℤ/2`. -/
+noncomputable def typeA1GlueAlphabetZModStandardIsometry :
+    FiniteQuadraticModule.Isometry ((A 1).glueAlphabet (isSimplyLaced_A 1))
+      (FiniteQuadraticModule.zmodStandard 2 even_two) :=
+  FiniteQuadraticModule.cyclicIsometryOfGenerator 2
+    ((A 1).glueAlphabet (isSimplyLaced_A 1)).quadratic
+    (FiniteQuadraticModule.zmodStandard 2 even_two).quadratic (AddEquiv.refl (ZMod 2)) (by
+      have h := typeAStandardQuadraticModule_quadratic_intCast 1 1
+      have h' := FiniteQuadraticModule.zmodStandardMap_intCast 2 even_two 1
+      push_cast at h h'
+      rw [AddEquiv.refl_apply, FiniteQuadraticModule.zmodStandard_quadratic, h']
+      -- The glue alphabet of `A₁` is the cyclic model `typeAStandardQuadraticModule 1` on `ℤ/2`.
+      refine Eq.trans ?_ h.symm
+      norm_num)
+
+/-- The identification of the `A₁` glue alphabet with `ℤ/2` is the identity. -/
+@[simp]
+theorem typeA1GlueAlphabetZModStandardIsometry_apply
+    (x : (A 1).glueAlphabet (isSimplyLaced_A 1)) :
+    typeA1GlueAlphabetZModStandardIsometry x = (x : ZMod 2) :=
+  FiniteQuadraticModule.cyclicIsometryOfGenerator_apply 2 _ _ _ _ x
 
 /-! The root lattices of `Aₙ`, `E₆`, `E₇` and `E₈` are equal to the family-specific simple-root
 lattices on `Fin n → ℚ`, `Fin 6 → ℚ`, `Fin 7 → ℚ` and `Fin 8 → ℚ` (`rootLattice_A` and its
@@ -251,6 +280,28 @@ theorem glueAlphabetIsometry_E7_apply (hv : E7.Valid) (ht : E7.IsSimplyLaced) (x
         (typeE₇DiscriminantGroupEquiv x) :=
   (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
     (congrArg _ (typeE₇DiscriminantQuadraticIsometry_apply x))
+
+/-- Equal Dynkin types have equal glue alphabets. -/
+theorem glueAlphabet_congr {t s : DynkinType} (h : t = s) (ht : t.IsSimplyLaced)
+    (hs : s.IsSimplyLaced) : t.glueAlphabet ht = s.glueAlphabet hs := by
+  subst h
+  rfl
+
+/-- **The glue isometry is natural along equal types**: identifying the glue alphabets of equal
+types `t = s` corresponds, through the glue isometries, to the discriminant isometry of
+`TauCeti.DynkinType.rootLatticeIsometryOfEq`. -/
+theorem glueAlphabetIsometry_ofEq {t s : DynkinType} (h : t = s) (hv : t.Valid) (hvs : s.Valid)
+    (ht : t.IsSimplyLaced) (hs : s.IsSimplyLaced) (x : t.glueAlphabet ht) :
+    s.glueAlphabetIsometry hvs hs
+        (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr h ht hs) x) =
+      (t.rootLatticeIsometryOfEq ht h hs).discriminantQuadraticIsometry (t.isEven_rootLattice ht)
+        (t.glueAlphabetIsometry hv ht x) := by
+  subst h
+  rw [FiniteQuadraticModule.Isometry.ofEq_rfl, rootLatticeIsometryOfEq_rfl]
+  refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+  rw [Isometry.discriminantGroupEquiv_refl]
+  -- Both sides are `t.glueAlphabetIsometry hv ht x`, the validity proofs being equal.
+  rfl
 
 /-- **The glue alphabet of a valid simply-laced type is nondegenerate**, being isometric to the
 discriminant form of a nondegenerate lattice. -/

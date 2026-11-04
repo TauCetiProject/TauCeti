@@ -195,8 +195,8 @@ theorem exists_convexSection_subset_convexSection :
   have hLam : 0 < Lam := by
     refine pos_of_ne_zero fun h0 => ?_
     have hle := Measure.le_iff'.1 (hMA.trans hMA') G
-    simp only [h0, ENNReal.coe_zero, zero_smul, Measure.coe_zero, Pi.zero_apply,
-      Measure.smul_apply, smul_eq_mul, Measure.restrict_apply hGo.measurableSet,
+    simp only [h0, ENNReal.coe_zero, zero_smul, FunLike.coe_zero, Pi.zero_apply,
+      _root_.smul_apply, smul_eq_mul, Measure.restrict_apply hGo.measurableSet,
       inter_eq_left.2 hGΩ, nonpos_iff_eq_zero, mul_eq_zero, ENNReal.coe_eq_zero] at hle
     exact hle.elim hlam.ne' (hGo.measure_pos μ ⟨y, hyG⟩).ne'
   -- Subtract the plane: `v p = u p - u x - ℓ (p - x) - 2h` vanishes on the frontier of `G`.

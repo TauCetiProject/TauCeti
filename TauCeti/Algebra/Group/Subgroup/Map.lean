@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
+import Mathlib.Tactic.Group
 
 /-!
 # Maps of subgroups
@@ -33,6 +34,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.QuotientGroup.congrOfMapEq`: its coset-space companion — an isomorphism carrying `A`
   onto `B` gives a bijection `G ⧸ A ≃ H ⧸ B`. Neither subgroup need be normal, which is what
   distinguishes it from Mathlib's `QuotientGroup.congr`.
+* `TauCeti.QuotientGroup.congrComapOfSurjectiveMk`: a homomorphism `ψ : G →* H` meeting every
+  coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`.
 
 ## Main results
 
@@ -43,6 +46,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
+* `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
+  of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
@@ -332,6 +337,21 @@ theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
   simp only [Subgroup.coe_map, Subgroup.coe_inf, Subgroup.coe_comap]
   exact Set.image_inter_preimage f H K
 
+/-- The normal core of `f⁻¹(B)` is the preimage of the normal core of `B` as soon as every element
+of the target is `f x * b` with `b ∈ B`: conjugating by `f x * b` is conjugating by `f x` and
+then by `b`, and `b` normalizes `B`. -/
+theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) {B : Subgroup H}
+    (hf : ∀ g, ∃ x, ∃ b ∈ B, f x * b = g) :
+    (B.comap f).normalCore = B.normalCore.comap f := by
+  refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
+  -- Write `g⁻¹ = f y * b`, so that `g (f x) g⁻¹ = b⁻¹ f (y⁻¹ x y) b`.
+  obtain ⟨y, b, hb, hyb⟩ := hf g⁻¹
+  have hconj : g * f x * g⁻¹ = b⁻¹ * f (y⁻¹ * x * y⁻¹⁻¹) * b⁻¹⁻¹ := by
+    rw [← inv_inv g, ← hyb, map_mul, map_mul, map_inv, inv_inv]
+    group
+  rw [hconj]
+  exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
+
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
 
@@ -410,6 +430,36 @@ theorem QuotientGroup.congrOfMapEq_mk (e : G ≃* H) {A : Subgroup G} {B : Subgr
     (h : A.map (e : G →* H) = B) (a : G) :
     QuotientGroup.congrOfMapEq e h (QuotientGroup.mk a) = QuotientGroup.mk (e a) := by rfl
 
+/-- **Coset spaces transport to a preimage.** If `ψ : G →* H` meets every left coset of `B`, that
+is, `G` acts transitively on `H ⧸ B` through `ψ`, then the map `G ⧸ ψ⁻¹(B) → H ⧸ B` induced by
+`ψ` on representatives is a bijection.
+
+Injectivity holds for every `ψ`, because the denominator is the full preimage of `B`; the
+hypothesis supplies surjectivity. When `ψ` is the inclusion of a subgroup `K`, it says `KB = H`.
+Unlike `QuotientGroup.congrOfSurjectiveOfKerLe`, `ψ` itself need not be surjective, and neither
+subgroup need be normal. -/
+noncomputable def QuotientGroup.congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B := by
+  have key : ∀ a b : G, a⁻¹ * b ∈ B.comap ψ ↔ (ψ a)⁻¹ * ψ b ∈ B := fun a b ↦ by
+    rw [Subgroup.mem_comap, map_mul, map_inv]
+  refine Equiv.ofBijective (Quotient.map' ψ fun a b hab ↦
+    QuotientGroup.leftRel_apply.mpr ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))) ⟨?_, ?_⟩
+  · intro x y hxy
+    induction x using QuotientGroup.induction_on with | _ a =>
+    induction y using QuotientGroup.induction_on with | _ b =>
+    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
+  · intro q
+    obtain ⟨g, hg⟩ := hψ q
+    exact ⟨QuotientGroup.mk g, hg⟩
+
+/-- `QuotientGroup.congrComapOfSurjectiveMk` sends the coset of `a` to the coset of `ψ a`. -/
+@[simp]
+theorem QuotientGroup.congrComapOfSurjectiveMk_mk (ψ : G →* H) (B : Subgroup H)
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) (a : G) :
+    QuotientGroup.congrComapOfSurjectiveMk ψ B hψ (QuotientGroup.mk a) =
+      QuotientGroup.mk (ψ a) :=
+  (rfl)
+
 /-- **Coset spaces transport along a surjection whose kernel lies in the subgroup.** For `ψ`
 surjective with `ker ψ ≤ A` and `A.map ψ = B`, the map `G ⧸ A → H ⧸ B` induced by `ψ` on
 representatives is a bijection.
@@ -417,25 +467,15 @@ representatives is a bijection.
 Injectivity of `ψ` is not needed: `ker ψ ≤ A` makes the denominator absorb the kernel, so the
 index is unchanged. That is what lets a Hecke decomposition be carried into a group acting
 faithfully on the upper half-plane, where the collapsing of `±1` is the point rather than a
-defect. As with `QuotientGroup.congrOfMapEq`, neither subgroup need be normal. -/
+defect. As with `QuotientGroup.congrOfMapEq`, neither subgroup need be normal.
+
+This is the special case of `QuotientGroup.congrComapOfSurjectiveMk` where `ψ` is surjective:
+`ker ψ ≤ A` is exactly what makes `A` the full preimage of `B`. -/
 noncomputable def QuotientGroup.congrOfSurjectiveOfKerLe (ψ : G →* H)
     (hsurj : Function.Surjective ψ) {A : Subgroup G} {B : Subgroup H}
-    (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) : G ⧸ A ≃ H ⧸ B := by
-  classical
-  -- `ker ψ ≤ A` is exactly what makes `A` the full preimage of `B`, and membership in a preimage
-  -- is the whole content of the coset relation matching on both sides
-  have hcomap : B.comap ψ = A := hmap ▸ Subgroup.comap_map_eq_self hker
-  have key : ∀ a b : G, (a⁻¹ * b ∈ A) ↔ ((ψ a)⁻¹ * ψ b ∈ B) := fun a b ↦ by
-    rw [← hcomap, Subgroup.mem_comap, map_mul, map_inv]
-  refine Equiv.ofBijective (Quotient.map' ψ ?_) ⟨?_, ?_⟩
-  · intro a b hab
-    exact QuotientGroup.leftRel_apply.mpr
-      ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))
-  · intro x y hxy
-    induction x using QuotientGroup.induction_on with | _ a =>
-    induction y using QuotientGroup.induction_on with | _ b =>
-    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
-  · exact Quotient.map_surjective _ hsurj
+    (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) : G ⧸ A ≃ H ⧸ B :=
+  (Subgroup.quotientEquivOfEq (hmap ▸ Subgroup.comap_map_eq_self hker).symm).trans
+    (QuotientGroup.congrComapOfSurjectiveMk ψ B (QuotientGroup.mk_surjective.comp hsurj))
 
 @[simp]
 theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
@@ -443,10 +483,12 @@ theorem QuotientGroup.congrOfSurjectiveOfKerLe_mk (ψ : G →* H)
     (hker : ψ.ker ≤ A) (hmap : A.map ψ = B) (a : G) :
     QuotientGroup.congrOfSurjectiveOfKerLe ψ hsurj hker hmap (QuotientGroup.mk a) =
       QuotientGroup.mk (ψ a) := by
-  -- This lemma IS the abstraction barrier: `congrOfSurjectiveOfKerLe` is an `Equiv.ofBijective`
-  -- around `Quotient.map' ψ`, so on a class `⟦a⟧` it evaluates to `⟦ψ a⟧`.
+  -- This lemma IS the abstraction barrier: `congrOfSurjectiveOfKerLe` is a
+  -- `Subgroup.quotientEquivOfEq` followed by `congrComapOfSurjectiveMk`, so on a class `⟦a⟧` it
+  -- evaluates to `⟦ψ a⟧`.
   -- Downstream code rewrites with this lemma and never sees either wrapper, which is what
   -- keeps the implementation free to move.
-  rfl
+  rw [QuotientGroup.congrOfSurjectiveOfKerLe, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    QuotientGroup.congrComapOfSurjectiveMk_mk]
 
 end TauCeti

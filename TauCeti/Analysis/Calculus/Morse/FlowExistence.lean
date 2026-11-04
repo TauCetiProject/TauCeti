@@ -35,9 +35,10 @@ Lyapunov descent along any orbit on which `f` is differentiable.
 
 * `TauCeti.negativeGradientFlow`: the negative gradient flow of a function with globally Lipschitz
   gradient.
-* `TauCeti.contDiff_negativeGradientFlow` and `TauCeti.contDiff_negativeGradientFlow_apply`: for a
-  globally `C²` function, this flow is `C¹` jointly and at each fixed time
-  (`TauCeti.differentiable_negativeGradientFlow_apply`: each time map is differentiable).
+* `TauCeti.contDiff_negativeGradientFlow`: for a globally `C²` function, this flow is `C¹` jointly.
+  `TauCeti.contDiff_negativeGradientFlow_apply`: for a globally `C^(n+1)` function the time maps
+  are `C^n` (`TauCeti.differentiable_negativeGradientFlow_apply`: for a globally `C²` function each
+  time map is differentiable).
 * `TauCeti.hasDerivAt_fderiv_negativeGradientFlow`: the variational equation
   `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`.
 * `TauCeti.fderiv_negativeGradientFlow_apply_gradient`: `Dφₜ(x)(∇f x) = ∇f(φₜ x)`.
@@ -95,19 +96,21 @@ theorem contDiff_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇
   apply contDiff_flowOfLipschitz 0 (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
 
-/-- At every fixed time, the negative-gradient flow of a globally `C²` function is `C¹` in its
-initial condition. -/
+/-- **The time-`t` maps of the negative-gradient flow of a globally `C^(n+1)` function are `C^n`**
+(`1 ≤ n`) in the initial condition: the negative-gradient field is globally Lipschitz and `C^n`. -/
 theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
-    (hfs : ContDiff ℝ 2 f) (t : ℝ) :
-    ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
-  apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
-  exact (hfs.gradient_right (m := 1) (by norm_num)).neg
+    {n : ℕ} (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (t : ℝ) :
+    ContDiff ℝ n (negativeGradientFlow f hf t) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  apply contDiff_flowOfLipschitz_apply m (fun x ↦ -∇ f x) hf.neg
+  exact (hfs.gradient_right (m := m + 1) le_rfl).neg
 
 /-- For a globally `C²` function, each time-`t` map of the negative-gradient flow is
 differentiable. -/
 theorem differentiable_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
     (hfs : ContDiff ℝ 2 f) (t : ℝ) : Differentiable ℝ (negativeGradientFlow f hf t) :=
-  (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  (contDiff_negativeGradientFlow_apply f hf le_rfl (by simpa [one_add_one_eq_two] using hfs)
+    t).differentiable (by simp)
 
 /-- **The variational equation of the negative-gradient flow**: for a globally `C²` function,
 `d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`. -/

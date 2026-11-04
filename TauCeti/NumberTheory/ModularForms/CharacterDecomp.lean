@@ -45,6 +45,8 @@ Layer 0 of the ModularForms roadmap.
   supremum-independent.
 * `isInternal_modFormCharSpace`, `isInternal_cuspFormCharSpace`: the `DirectSum.IsInternal`
   statements.
+* `span_range_inf_modFormCharSpace`: the forms of one character in a span of forms with
+  characters are spanned by the forms of that character.
 * `iSup_inf_modFormCharSpace_of_invariant`, `iSup_inf_cuspFormCharSpace_of_invariant`:
   any diamond-invariant submodule is the supremum of its intersections with the
   character spaces, with finsupp-indexed corollaries
@@ -132,6 +134,28 @@ theorem isInternal_modFormCharSpace (k : ℤ) [DecidableEq ((ZMod N)ˣ →* ℂ�
     DirectSum.IsInternal (fun χ : (ZMod N)ˣ →* ℂˣ ↦ modFormCharSpace k χ) :=
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
     (iSupIndep_modFormCharSpace k) (iSup_modFormCharSpace_eq_top k)
+
+/-- **A span of forms with characters, cut by one character space**: if each `f i` lies in the
+character space of `χ i`, the forms of character `ψ` in the span of all the `f i` form the span
+of those `f i` with `χ i = ψ`. -/
+theorem span_range_inf_modFormCharSpace {ι : Type*}
+    (f : ι → ModularForm ((Gamma1 N).map (mapGL ℝ)) k) (χ : ι → (ZMod N)ˣ →* ℂˣ)
+    (hf : ∀ i, f i ∈ modFormCharSpace k (χ i)) (ψ : (ZMod N)ˣ →* ℂˣ) :
+    Submodule.span ℂ (Set.range f) ⊓ modFormCharSpace k ψ =
+      Submodule.span ℂ (f '' {i | χ i = ψ}) := by
+  let W (ψ' : (ZMod N)ˣ →* ℂˣ) := Submodule.span ℂ (f '' {i | χ i = ψ'})
+  have hWle (ψ' : (ZMod N)ˣ →* ℂˣ) : W ψ' ≤ modFormCharSpace k ψ' := by
+    rw [Submodule.span_le]
+    rintro _ ⟨i, hi, rfl⟩
+    exact hi ▸ hf i
+  have hsup : Submodule.span ℂ (Set.range f) = ⨆ ψ', W ψ' := by
+    refine le_antisymm ?_ (iSup_le fun ψ' ↦ Submodule.span_mono (Set.image_subset_range _ _))
+    rw [Submodule.span_le, Set.range_subset_iff]
+    exact fun i ↦ Submodule.mem_iSup_of_mem (χ i) (Submodule.subset_span ⟨i, rfl, rfl⟩)
+  -- Independence of the character spaces cuts `⨆ ψ', W ψ'` down to `W ψ`.
+  rw [hsup, iSup_split_single W ψ, sup_inf_assoc_of_le _ (hWle ψ), sup_eq_left]
+  exact ((iSupIndep_modFormCharSpace k ψ).symm.mono_left
+    (iSup₂_mono fun ψ' _ ↦ hWle ψ')).le_bot.trans bot_le
 
 /-- **The cusp-form character subspaces form an independent family.** -/
 theorem iSupIndep_cuspFormCharSpace (k : ℤ) :

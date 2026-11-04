@@ -83,7 +83,8 @@ theorem length_evenPermutations {n : ℕ} (word : Fin n → ℕ) :
 
 /-- Expand a pattern into its finite set of digit words. An empty cyclic block has one
 expansion, namely the concatenation of its fixed prefix and suffix. -/
-def expand : GluePattern → Finset (List ℕ)
+-- Exposed so that table checks in other modules can evaluate expansions by `decide`.
+@[expose] def expand : GluePattern → Finset (List ℕ)
   | literal word => {word}
   | cyclic pre block post =>
     block.cyclicPermutations.toFinset.image (fun w ↦ pre ++ w ++ post)

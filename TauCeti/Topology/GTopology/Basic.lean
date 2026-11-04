@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Coverage
+public import Mathlib.CategoryTheory.Sites.CoverPreserving
 public import Mathlib.CategoryTheory.Sites.Spaces
 
 /-!
@@ -19,14 +20,18 @@ same construction applies to bundled admissible opens as well as subtypes of set
 `GTopology.grothendieckTopology` constructs the site on the inclusion preorder of admissible
 opens. `GTopology.isSheaf_iff` identifies its sheaves with presheaves satisfying unique gluing
 on admissible covers, using Mathlib's matching families and sheaf categories throughout.
+A monotone map of admissible opens that sends admissible covers to admissible covers gives a
+cover-preserving functor of sites (`GTopology.coverPreserving_functor`).
 `GTopology.topological` recovers ordinary open covers, and its site is the usual open-set site.
 
 A G-topology is *saturated* (`GTopology.Saturated`) if it satisfies the conditions (G0)–(G2) of
 [BGR, §9.1.2]: the empty set is admissible, admissibility of a subset can be checked on the
 members of an admissible cover, and a covering by admissible opens is admissible as soon as it is
 refined by an admissible cover. The G-topology of ordinary open covers is saturated
-(`GTopology.saturated_topological`). The admissible opens of any G-topology form a basis of the
-topology they generate (`GTopology.isTopologicalBasis_range`).
+(`GTopology.saturated_topological`). Admissibility of a covering family is local on an admissible
+cover (`GTopology.Saturated.covers_iff_restriction`), and a family containing an admissible cover
+is admissible (`GTopology.Saturated.covers_of_superset`). The admissible opens of any G-topology
+form a basis of the topology they generate (`GTopology.isTopologicalBasis_range`).
 
 ## References
 
@@ -97,6 +102,61 @@ structure Saturated : Prop where
   cover refines it. -/
   covers_of_refinement : ∀ {U : B} {S R : Set B}, ⋃₀ (ι '' S) = ι U → G.Covers U R →
     (∀ W ∈ R, ∃ W' ∈ S, W ≤ W') → G.Covers U S
+
+variable {G} in
+/-- In a saturated G-topology, a family of admissible opens contained in `U` is an admissible
+cover of `U` as soon as it contains one. -/
+theorem Saturated.covers_of_superset (hG : G.Saturated) {U : B} {R S : Set B} (hR : G.Covers U R)
+    (hRS : R ⊆ S) (hS : ∀ W ∈ S, W ≤ U) : G.Covers U S := by
+  refine hG.covers_of_refinement (Set.Subset.antisymm ?_ ?_) hR fun W hW ↦ ⟨W, hRS hW, le_rfl⟩
+  · rintro x ⟨_, ⟨W, hW, rfl⟩, hx⟩
+    exact ι.monotone (hS W hW) hx
+  · rw [← G.union_eq hR]
+    exact Set.sUnion_mono (Set.image_mono hRS)
+
+variable {G} in
+/-- In a saturated G-topology, a family of admissible opens contained in `V` covers `V`
+admissibly if and only if it does so after intersection with each member of an admissible
+cover of an ambient open `U`. -/
+theorem Saturated.covers_iff_restriction (hG : G.Saturated) {U V : B} {C S : Set B}
+    (hC : G.Covers U C) (hVU : V ≤ U) :
+    G.Covers V S ↔ (∀ W ∈ S, W ≤ V) ∧
+      ∀ W ∈ C, G.Covers (V ⊓ W) ((fun Z ↦ Z ⊓ W) '' S) := by
+  constructor
+  · intro hS
+    refine ⟨G.subset hS, fun W _ ↦ ?_⟩
+    have h := G.restriction hS (V ⊓ W) inf_le_left
+    convert h using 1
+    apply Set.image_congr
+    intro Z hZ
+    simp [← inf_assoc, inf_eq_left.mpr (G.subset hS Z hZ)]
+  · rintro ⟨hSV, hlocal⟩
+    have hCV := G.restriction hC V hVU
+    let T (W : B) : Set B := (fun Z ↦ Z ⊓ W) '' S
+    have hT : ∀ W ∈ (fun Z ↦ Z ⊓ V) '' C, G.Covers W (T W) := by
+      rintro _ ⟨W, hW, rfl⟩
+      have h := hlocal W hW
+      rw [inf_comm V W] at h
+      convert h using 1
+      apply Set.image_congr
+      intro Z hZ
+      dsimp [T]
+      rw [← inf_assoc, inf_eq_left.mpr (inf_le_left.trans (hSV Z hZ))]
+    have hR := G.transitive hCV hT
+    have hRS : ∀ W ∈ ⋃ Z ∈ (fun Z ↦ Z ⊓ V) '' C, T Z,
+        ∃ W' ∈ S, W ≤ W' := by
+      intro W hW
+      simp only [Set.mem_iUnion] at hW
+      obtain ⟨Z, _, W', hW', rfl⟩ := hW
+      exact ⟨W', hW', inf_le_left⟩
+    apply hG.covers_of_refinement (R := ⋃ Z ∈ (fun Z ↦ Z ⊓ V) '' C, T Z) ?_ hR hRS
+    apply Set.Subset.antisymm
+    · exact Set.sUnion_subset fun _ ⟨W, hW, hWset⟩ ↦ hWset ▸ ι.monotone (hSV W hW)
+    · rw [← G.union_eq hR]
+      apply Set.sUnion_subset
+      rintro _ ⟨W, hW, rfl⟩
+      obtain ⟨W', hW', hWW'⟩ := hRS W hW
+      exact (ι.monotone hWW').trans (Set.subset_sUnion_of_mem ⟨W', hW', rfl⟩)
 
 section GeneratedTopology
 
@@ -186,6 +246,26 @@ theorem isSheaf_iff (P : Bᵒᵖ ⥤ Type w) :
     exact h _ ⟨S, hS, rfl⟩
   · rintro h U R ⟨S, hS, rfl⟩
     exact h U S hS
+
+section CoverPreserving
+
+variable {G} {Y : Type*} {B' : Type*} [SemilatticeInf B'] [OrderTop B'] {ι' : B' ↪o Set Y}
+  {G' : GTopology ι'}
+
+/-- A monotone map of admissible opens sending admissible covers to admissible covers induces a
+cover-preserving functor of the associated sites. -/
+theorem coverPreserving_functor {φ : B' → B} (hφ : Monotone φ)
+    (h : ∀ {V S}, G'.Covers V S → G.Covers (φ V) (φ '' S)) :
+    CoverPreserving G'.grothendieckTopology G.grothendieckTopology hφ.functor where
+  cover_preserve {V R} hR := by
+    obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff G').mp hR
+    refine (mem_grothendieckTopology_iff G).mpr ⟨_, h hS, ?_⟩
+    intro _ g hg
+    obtain ⟨W, hW, rfl⟩ := (coverPresieve_apply _ g).mp hg
+    exact ⟨W, homOfLE (G'.subset hS W hW), 𝟙 _, hSR _ _ ((coverPresieve_apply _ _).mpr hW),
+      Subsingleton.elim _ _⟩
+
+end CoverPreserving
 
 section Topological
 

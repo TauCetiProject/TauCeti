@@ -86,6 +86,10 @@ theorem derivation_single (q : ℚ) (a : K) :
     derivation K (single K q a) = single K (q - 1) (q • a) :=
   Subtype.ext <| by rw [coe_derivation, coe_single, coe_single, ratHahnSeriesDerivation_single]
 
+/-- The derivative of the parameter `t` is `1`. -/
+theorem derivation_single_one : derivation K (single K 1 1) = 1 :=
+  Subtype.ext <| by simp
+
 /-- **Chain rule on ramified levels**: on level `n`, with `u = t ^ (1 / n)`, the derivative `d/dt`
 is `(1 / n) u ^ (1 - n) d/du`. -/
 theorem derivation_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
@@ -96,7 +100,8 @@ theorem derivation_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
     ratHahnSeriesDerivation_ramifiedEmbedding, eq_ratCast, Rat.cast_inv, Rat.cast_natCast]
 
 /-- The derivative `d/dt` of Puiseux series extends the derivative of `K⸨X⸩`. -/
-@[simp]
+-- Apply the chain rule while the Laurent-series embedding is still an algebraMap.
+@[simp↓]
 theorem derivation_algebraMap_laurentSeries (f : K⸨X⸩) :
     derivation K (algebraMap K⸨X⸩ (puiseuxField K) f) =
       algebraMap K⸨X⸩ (puiseuxField K) (derivative K f) := by

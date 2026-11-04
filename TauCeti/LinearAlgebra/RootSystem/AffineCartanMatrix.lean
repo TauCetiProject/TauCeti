@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
 
 /-!
@@ -31,16 +32,32 @@ relation*: in an affine realization `α₀ = δ - θ`, the null root `δ = ∑�
 every coroot. This file proves that `A` is a generalized Cartan matrix (diagonal `2`, nonpositive
 off-diagonal entries, symmetric zero pattern) and that it is singular. For a root system its left
 kernel is exactly the line spanned by the marks, so `A` has corank one, and the marks are positive
-when the root system is reduced and irreducible. The nodes with mark `1` are the special nodes,
-among them the affine node.
+when the root system is reduced and irreducible. The nodes with mark `1` are the *special nodes*
+(`RootPairing.Base.specialNodes`), among them the affine node.
+
+A *symmetry* of `A` is a permutation `σ` of the nodes with `A (σ k) (σ l) = A k l`, an element of
+`TauCeti.matrixSymmetryGroup A`; these are the automorphisms of the extended Dynkin diagram, and
+they may move the affine node. Such a `σ` carries the left null vector `m` to the left null vector
+`m ∘ σ`, which is therefore `c • m` for a scalar `c`. Summing over the nodes, `∑ₖ mₖ` is
+`ht(θ) + 1` (`RootPairing.Base.sum_affineMarks`), which is positive, and it is unchanged by `σ`,
+so `c = 1`: every symmetry of `A` preserves the marks, and hence permutes the special nodes. In
+particular a symmetry sends the affine node to a special node. Classically, the stabilizer of the
+fundamental alcove in the extended affine Weyl group acts simply transitively on the special
+nodes, so composing with one of its elements turns any symmetry of `A` into one fixing the affine
+node, that is, into a symmetry of the finite Dynkin diagram.
 
 ## Main definitions
 
 * `RootPairing.Base.affineCartanMatrix`: the untwisted affine Cartan matrix.
+* `RootPairing.Base.affineSimpleRootIndex`: the root index of the simple root at each node, with
+  `α₀ = -θ` at the affine node.
 * `RootPairing.Base.affineMarks`: the marks, the coefficients of the null-root relation.
+* `RootPairing.Base.specialNodes`: the special nodes, those with mark `1`.
 
 ## Main results
 
+* `RootPairing.Base.affineCartanMatrix_apply`: `A k l = ⟨αₖ, αₗ^∨⟩` for the simple roots at the
+  nodes, with `α₀ = -θ`.
 * `RootPairing.Base.submatrix_affineCartanMatrix_some`: deleting the affine node recovers the
   finite Cartan matrix.
 * `RootPairing.Base.affineCartanMatrix_apply_same`,
@@ -56,6 +73,10 @@ among them the affine node.
 * `RootPairing.Base.det_affineCartanMatrix`: `A` is singular.
 * `RootPairing.Base.affineMarks_pos`: for a reduced irreducible root pairing, all marks are
   positive.
+* `RootPairing.Base.sum_affineMarks`: the marks sum to `ht(θ) + 1`.
+* `RootPairing.Base.affineMarks_apply_of_mem_matrixSymmetryGroup`: **for a root system, every
+  symmetry of `A` preserves the marks**, and `RootPairing.Base.apply_mem_specialNodes_iff`: it
+  permutes the special nodes.
 
 ## References
 
@@ -100,6 +121,43 @@ theorem affineMarks_some_eq_of_root_highestRoot_eq_sum {f : b.support → ℤ}
     Subtype.ext <| by simpa using hf
   rw [affineMarks, h, b.toWeightBasisInt.repr_sum_self]
 
+open scoped Classical in
+/-- The expansion `RootPairing.Base.root_highestRoot_eq_sum_affineMarks` as a sum over the simple
+roots indexed in `ι`, with the marks extended by zero off the base: the shape consumed by
+`RootPairing.Base.height_eq_sum` and `RootPairing.pairingIn_eq_sum_of_root_eq_sum`. -/
+private theorem root_highestRoot_eq_sum_dite :
+    P.root b.highestRoot = ∑ k ∈ b.support,
+      (if h : k ∈ b.support then b.affineMarks (some ⟨k, h⟩) else 0) • P.root k := by
+  rw [b.root_highestRoot_eq_sum_affineMarks, ← Finset.sum_coe_sort b.support]
+  simp
+
+/-- **The sum of the marks** is one more than the height of the highest root. For a reduced
+irreducible root system this is the Coxeter number. -/
+theorem sum_affineMarks : ∑ k, b.affineMarks k = b.height b.highestRoot + 1 := by
+  classical
+  rw [Fintype.sum_option, affineMarks_none, height_eq_sum b.root_highestRoot_eq_sum_dite,
+    ← Finset.sum_coe_sort b.support, add_comm]
+  simp
+
+/-- The marks have positive sum, since the highest root is a positive root. -/
+theorem sum_affineMarks_pos : 0 < ∑ k, b.affineMarks k := by
+  have := b.isPos_iff.mp b.isPos_highestRoot
+  rw [sum_affineMarks]
+  omega
+
+/-- The **special nodes** of the affine Dynkin diagram: the nodes whose mark is `1`, that is, the
+affine node together with the simple roots whose coefficient in the highest root is `1`. -/
+def specialNodes : Set (Option b.support) :=
+  {k | b.affineMarks k = 1}
+
+@[simp]
+theorem mem_specialNodes {k : Option b.support} : k ∈ b.specialNodes ↔ b.affineMarks k = 1 :=
+  Iff.rfl
+
+/-- The affine node is special. -/
+theorem none_mem_specialNodes : none ∈ b.specialNodes :=
+  b.affineMarks_none
+
 /-- **The marks are positive** for a reduced irreducible crystallographic root pairing: the highest
 root has a positive coefficient along every simple root, and the affine node has mark `1`. -/
 theorem affineMarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
@@ -113,6 +171,20 @@ theorem affineMarks_pos [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsI
     simp
 
 /-! ### The affine Cartan matrix -/
+
+/-- The root index of the simple root at a node of the affine Dynkin diagram: the simple root `αᵢ`
+at a node `i`, and the affine simple root `α₀ = -θ`, the root of index
+`P.reflectionPerm θ θ`, at the affine node. -/
+noncomputable def affineSimpleRootIndex : Option b.support → ι
+  | none => P.reflectionPerm b.highestRoot b.highestRoot
+  | some i => i
+
+@[simp]
+theorem affineSimpleRootIndex_none :
+    b.affineSimpleRootIndex none = P.reflectionPerm b.highestRoot b.highestRoot := (rfl)
+
+@[simp]
+theorem affineSimpleRootIndex_some (i : b.support) : b.affineSimpleRootIndex (some i) = i := (rfl)
 
 variable [P.IsCrystallographic]
 
@@ -157,6 +229,13 @@ theorem affineCartanMatrix_apply_same (k : Option b.support) : b.affineCartanMat
   | none => rfl
   | some i => simp
 
+/-- **The affine Cartan matrix is the matrix of Cartan integers of the affine simple roots**:
+`A k l = ⟨αₖ, αₗ^∨⟩`, with `α₀ = -θ` at the affine node. -/
+theorem affineCartanMatrix_apply (k l : Option b.support) :
+    b.affineCartanMatrix k l =
+      P.pairingIn ℤ (b.affineSimpleRootIndex k) (b.affineSimpleRootIndex l) := by
+  rcases k with _ | i <;> rcases l with _ | j <;> simp
+
 section IsDomain
 
 variable [IsDomain R]
@@ -189,13 +268,9 @@ private theorem pairingIn_highestRoot_eq_sum_affineMarks (l : ι) :
     P.pairingIn ℤ b.highestRoot l =
       ∑ i : b.support, b.affineMarks (some i) * P.pairingIn ℤ i l := by
   classical
-  -- extend the marks by zero off the support to apply the expansion over `b.support`
-  let f : ι → ℤ := fun k ↦ if h : k ∈ b.support then b.affineMarks (some ⟨k, h⟩) else 0
-  have hf : P.root b.highestRoot = ∑ k ∈ b.support, f k • P.root k := by
-    rw [b.root_highestRoot_eq_sum_affineMarks, ← Finset.sum_coe_sort b.support]
-    simp [f]
-  rw [RootPairing.pairingIn_eq_sum_of_root_eq_sum hf, ← Finset.sum_coe_sort b.support]
-  simp [f]
+  rw [RootPairing.pairingIn_eq_sum_of_root_eq_sum b.root_highestRoot_eq_sum_dite,
+    ← Finset.sum_coe_sort b.support]
+  simp
 
 /-- **The null-root relation**: the marks are a left null vector of the affine Cartan matrix,
 since `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`. In an affine realization, where `α₀ = δ - θ`, this says that
@@ -245,5 +320,36 @@ theorem vecMul_affineCartanMatrix_eq_zero_iff [IsDomain R] [P.IsRootSystem]
   rcases k with _ | i
   · exact hw0
   · exact congrFun hsome i
+
+/-! ### Symmetries of the affine Cartan matrix -/
+
+/-- **A symmetry of the affine Cartan matrix preserves the marks**: if a permutation `σ` of the
+nodes satisfies `A (σ k) (σ l) = A k l`, then `m (σ k) = m k` for every node `k`. Here `σ` may
+move the affine node, and the root system need not be reduced or irreducible. -/
+theorem affineMarks_apply_of_mem_matrixSymmetryGroup [IsDomain R] [P.IsRootSystem]
+    {σ : Equiv.Perm (Option b.support)}
+    (hσ : σ ∈ TauCeti.matrixSymmetryGroup b.affineCartanMatrix) (k : Option b.support) :
+    b.affineMarks (σ k) = b.affineMarks k := by
+  -- `m ∘ σ` is again a left null vector, so it is `c • m` with `c = m (σ 0)`
+  have hnull : (b.affineMarks ∘ σ) ᵥ* b.affineCartanMatrix = 0 := by
+    conv_lhs => rw [← TauCeti.mem_matrixSymmetryGroup_iff.mp hσ]
+    rw [submatrix_vecMul_equiv, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id,
+      affineMarks_vecMul_affineCartanMatrix, Pi.zero_comp]
+  have hc (k : Option b.support) : b.affineMarks (σ k) = b.affineMarks (σ none) * b.affineMarks k :=
+    congrFun (b.vecMul_affineCartanMatrix_eq_zero_iff.mp hnull) k
+  -- summing over the nodes gives `∑ m = c * ∑ m`, and `∑ m > 0`, so `c = 1`
+  have hsum : b.affineMarks (σ none) * ∑ k, b.affineMarks k = 1 * ∑ k, b.affineMarks k := by
+    rw [one_mul, Finset.mul_sum]
+    conv_rhs => rw [← Equiv.sum_comp σ]
+    exact Finset.sum_congr rfl fun k _ ↦ (hc k).symm
+  rw [hc, mul_right_cancel₀ b.sum_affineMarks_pos.ne' hsum, one_mul]
+
+/-- **A symmetry of the affine Cartan matrix permutes the special nodes.** In particular it sends
+the affine node to a special node. -/
+theorem apply_mem_specialNodes_iff [IsDomain R] [P.IsRootSystem]
+    {σ : Equiv.Perm (Option b.support)}
+    (hσ : σ ∈ TauCeti.matrixSymmetryGroup b.affineCartanMatrix) {k : Option b.support} :
+    σ k ∈ b.specialNodes ↔ k ∈ b.specialNodes := by
+  rw [mem_specialNodes, mem_specialNodes, b.affineMarks_apply_of_mem_matrixSymmetryGroup hσ]
 
 end RootPairing.Base

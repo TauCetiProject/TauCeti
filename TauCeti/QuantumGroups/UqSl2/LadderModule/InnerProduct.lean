@@ -19,10 +19,19 @@ ladder module has an orthogonal basis with squared lengths
 `h₀ = 1` and `hⱼ / hⱼ₋₁ = [m-j+1]_q / ([j]_q q^(m-2j))`. The resulting positive definite
 Hermitian form makes the action of the compact real form a star representation. The metric is
 packaged as named `InnerProductSpace.Core` data, without installing a global norm on the
-underlying algebraic module.
+underlying algebraic module. At a generic real parameter, every invariant sesquilinear form on
+the positive ladder module is a scalar multiple of this one (`eq_smul_invariantForm`).
 
 The diagonal form uses Mathlib's `Matrix.toLinearMapₛₗ₂` in the ladder basis. The compact
 real-form convention is `E* = KF`, not `E* = F`.
+
+## References
+
+* A. Klimyk and K. Schmüdgen, *Quantum Groups and Their Representations*, Chapter 3, for the
+  compact real form of `U_q(sl₂)` and the invariant inner products on its finite-dimensional
+  representations.
+* C. Kassel, *Quantum Groups*, Graduate Texts in Mathematics 155, Section VI.3, for the
+  finite-dimensional ladder modules and their weight bases.
 -/
 
 public noncomputable section
@@ -286,5 +295,91 @@ theorem invariantForm_k_pos {q : ℝ} (hq : 0 < q) (hd : q - q⁻¹ ≠ 0)
       (mul_pos (zpow_pos hq _) (innerWeight_pos hq hd (by omega)))⟩
 
 end Invariance
+
+/-! ### Uniqueness -/
+
+section Uniqueness
+
+variable {q : ℝ} {m : ℕ}
+
+/-- The squared lengths obey `[j + 1]_q q^(m - 2(j + 1)) hⱼ₊₁ = [m - j]_q hⱼ` over `ℂ`. -/
+private theorem quantumInteger_mul_zpow_mul_innerWeight_succ
+    (hq : IsGenericQuantumParameter (q : ℂ)) (j : ℕ) :
+    quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) *
+        (innerWeight q m (j + 1) : ℂ) =
+      quantumInteger (q : ℂ) (m - j) * (innerWeight q m j : ℂ) := by
+  have hne : quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) ≠ 0 :=
+    mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (zpow_ne_zero _ hq.ne_zero)
+  have hc (r : ℤ) : ((quantumInteger q r : ℝ) : ℂ) = quantumInteger (q : ℂ) r :=
+    Complex.ofRealHom.map_quantumInteger q r
+  rw [innerWeight_succ]
+  push_cast [hc]
+  rw [mul_div_assoc', mul_div_assoc', mul_div_cancel_left₀ _ hne, mul_comm]
+
+/-- A sequence obeying the recurrence of the squared lengths is a multiple of them. -/
+private theorem eq_mul_innerWeight (hq : IsGenericQuantumParameter (q : ℂ)) {d : ℕ → ℂ}
+    (hd : ∀ j : ℕ, quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) *
+      d (j + 1) = quantumInteger (q : ℂ) (m - j) * d j) (j : ℕ) :
+    d j = d 0 * (innerWeight q m j : ℂ) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have hne : quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) ≠ 0 :=
+      mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (zpow_ne_zero _ hq.ne_zero)
+    have hw := quantumInteger_mul_zpow_mul_innerWeight_succ (m := m) hq j
+    refine mul_left_cancel₀ hne ?_
+    linear_combination hd j + quantumInteger (q : ℂ) (m - j) * ih - d 0 * hw
+
+variable [Fact ((q : ℂ) ≠ 0)] [Fact (IsSelfAdjoint (q : ℂ))]
+
+/-- At a generic real parameter the invariant metric is unique up to a scalar: every
+sesquilinear form on the positive ladder module that is invariant for the compact real form is
+the multiple `⟪v₀, v₀⟫' • invariantForm q m`. Invariance under `K` and `E` already forces this. -/
+theorem eq_smul_invariantForm (hq : IsGenericQuantumParameter (q : ℂ))
+    (B : LadderModule (q : ℂ) m 1 →ₗ⋆[ℂ] LadderModule (q : ℂ) m 1 →ₗ[ℂ] ℂ)
+    (hB : ∀ (a : UqSl2 (q : ℂ)) (x y : LadderModule (q : ℂ) m 1),
+      B (a • x) y = B x (star a • y)) :
+    B = B (vec (q : ℂ) m 1 0) (vec (q : ℂ) m 1 0) • invariantForm q m := by
+  have hstar (z : ℝ) : star (z : ℂ) = z := Complex.conj_ofReal z
+  have hqI (r : ℤ) : star (quantumInteger (q : ℂ) r) = quantumInteger (q : ℂ) r := by
+    have hc : ((quantumInteger q r : ℝ) : ℂ) = quantumInteger (q : ℂ) r :=
+      Complex.ofRealHom.map_quantumInteger q r
+    rw [← hc]
+    exact hstar _
+  -- Invariance under `K` makes `B` diagonal in the ladder basis.
+  have hdiag : ∀ i j : ℤ, i ≠ j → B (vec (q : ℂ) m 1 i) (vec (q : ℂ) m 1 j) = 0 := by
+    intro i j hij
+    have h := hB (k (q : ℂ)) (vec (q : ℂ) m 1 i) (vec (q : ℂ) m 1 j)
+    simp only [star_k, k_smul_vec, LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul] at h
+    simp only [Units.val_one, Int.cast_one, one_mul, starRingEnd_apply, star_zpow₀, hstar] at h
+    by_contra hne
+    have h' : B (vec (q : ℂ) m 1 i) (vec (q : ℂ) m 1 j) *
+        ((q : ℂ) ^ ((m : ℤ) - 2 * i) - (q : ℂ) ^ ((m : ℤ) - 2 * j)) = 0 := by
+      linear_combination h
+    have hpow := sub_eq_zero.mp ((mul_eq_zero.mp h').resolve_left hne)
+    exact hij (by have := hq.zpow_injective hpow; omega)
+  -- Invariance under `E` makes the diagonal entries obey the recurrence of the lengths.
+  set d : ℕ → ℂ := fun j => B (vec (q : ℂ) m 1 j) (vec (q : ℂ) m 1 j) with hd_def
+  have hrec : ∀ j : ℕ, quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) *
+      d (j + 1) = quantumInteger (q : ℂ) (m - j) * d j := by
+    intro j
+    have h := hB (e (q : ℂ)) (vec (q : ℂ) m 1 (j + 1)) (vec (q : ℂ) m 1 j)
+    simp only [star_e, mul_smul, f_smul_vec, e_smul_vec, k_smul_vec,
+      smul_algebra_smul_comm (A := UqSl2 (q : ℂ)), LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul,
+      add_sub_cancel_right] at h
+    simp only [Units.val_one, Int.cast_one, one_mul, starRingEnd_apply, star_one, hqI,
+      show (m : ℤ) - (j + 1) + 1 = m - j by ring] at h
+    simp only [hd_def, Nat.cast_add_one]
+    linear_combination -h
+  have hd := eq_mul_innerWeight hq hrec
+  refine LinearMap.ext_basis (basis (q : ℂ) m 1) (basis (q : ℂ) m 1) fun i j => ?_
+  rw [LinearMap.smul_apply, LinearMap.smul_apply, invariantForm_basis, ← vec_coe, ← vec_coe,
+    smul_eq_mul]
+  split_ifs with hij
+  · subst hij
+    simpa [hd_def] using hd i
+  · rw [hdiag _ _ (by simpa [Fin.ext_iff] using hij), mul_zero]
+
+end Uniqueness
 
 end TauCeti.UqSl2.LadderModule

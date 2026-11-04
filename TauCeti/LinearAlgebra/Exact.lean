@@ -16,10 +16,14 @@ This file records elementary constructions and consequences for exact pairs of l
 including the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), the horseshoe step `TauCeti.exists_surjective_ker_exact`
 and the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
-further map, the dimension of the homology of a complex of finite-dimensional vector spaces in
-terms of the two cokernels (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of
-the alternating sum of dimensions along a long exact sequence of finite-dimensional vector spaces
-of the shape produced by a homology theory,
+further map, the isomorphisms on kernels and cokernels induced by a map of two-term complexes
+whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+(`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
+`Function.Exact.bijective_mapQ_range_of_prod_coprod`), the dimension of the homology of a
+complex of finite-dimensional vector spaces in terms of the two cokernels
+(`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
+dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
+by a homology theory,
 
 ```text
 ⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ 0,
@@ -29,6 +33,10 @@ of the shape produced by a homology theory,
 `Module.sum_neg_one_pow_finrank_eq_zero_of_exact` treats a finite exact sequence indexed by
 `Fin (n + 2)` with a single family of spaces; the long exact sequences of homology theories are
 instead indexed by `ℕ` with three families of spaces, which is the form taken here.
+
+For an exact augmented sequence with one family of spaces,
+`TauCeti.sum_range_neg_one_pow_finrank_eq_add_of_exact` records the finite alternating sum
+with its final image correction. It applies even when the full resolution is unbounded.
 -/
 
 public section
@@ -181,6 +189,57 @@ theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[
 
 end ShortExact
 
+section TwoTermComplex
+
+open LinearMap
+
+variable {R : Type*} [Ring R] {K₀ K₁ C₀ C₁ : Type*} [AddCommGroup K₀] [Module R K₀]
+  [AddCommGroup K₁] [Module R K₁] [AddCommGroup C₀] [Module R C₀] [AddCommGroup C₁] [Module R C₁]
+  {α₀ : K₀ →ₗ[R] C₀} {δ : K₀ →ₗ[R] K₁} {d : C₀ →ₗ[R] C₁} {α₁ : K₁ →ₗ[R] C₁}
+
+/-- If the sequence `K₀ → C₀ × K₁ → C₁`, given by `(α₀, δ)` and by `d - α₁`, is exact, then the
+square formed by `δ`, `d`, `α₀` and `α₁` commutes: `d ∘ α₀ = α₁ ∘ δ`. -/
+theorem _root_.Function.Exact.comp_eq_comp_of_prod_coprod
+    (h : Function.Exact (α₀.prod δ) (d.coprod (-α₁))) : d ∘ₗ α₀ = α₁ ∘ₗ δ := by
+  ext x
+  simpa [add_neg_eq_zero] using h.apply_apply_eq_zero x
+
+/-- **A two-term complex map with exact cone is an isomorphism on kernels.** If
+`0 → K₀ → C₀ × K₁ → C₁`, given by `(α₀, δ)` and by `d - α₁`, is exact, then `α₀` restricts to a
+bijection `ker δ → ker d`. -/
+theorem _root_.Function.Exact.bijective_restrict_ker_of_prod_coprod
+    (hinj : Function.Injective (α₀.prod δ)) (h : Function.Exact (α₀.prod δ) (d.coprod (-α₁))) :
+    Function.Bijective (α₀.restrict (p := ker δ) (q := ker d) fun x hx ↦ by
+      rw [mem_ker, ← comp_apply, h.comp_eq_comp_of_prod_coprod, comp_apply, mem_ker.1 hx,
+        map_zero]) := by
+  refine ⟨fun x y hxy ↦ Subtype.ext (hinj (Prod.ext (congrArg Subtype.val hxy) ?_)), ?_⟩
+  · simp [mem_ker.1 x.2, mem_ker.1 y.2]
+  · rintro ⟨c, hc⟩
+    obtain ⟨x, hx⟩ := (h (c, 0)).1 (by simpa using hc)
+    exact ⟨⟨x, mem_ker.2 (congrArg Prod.snd hx)⟩, Subtype.ext (congrArg Prod.fst hx)⟩
+
+/-- **A two-term complex map with exact cone is an isomorphism on cokernels.** If
+`K₀ → C₀ × K₁ → C₁ → 0`, given by `(α₀, δ)` and by `d - α₁`, is exact, then `α₁` induces a
+bijection `K₁ ⧸ range δ → C₁ ⧸ range d`. -/
+theorem _root_.Function.Exact.bijective_mapQ_range_of_prod_coprod
+    (h : Function.Exact (α₀.prod δ) (d.coprod (-α₁)))
+    (hsurj : Function.Surjective (d.coprod (-α₁))) :
+    Function.Bijective ((range δ).mapQ (range d) α₁ (by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨α₀ x, by rw [← comp_apply, h.comp_eq_comp_of_prod_coprod, comp_apply]⟩)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ ?_, fun y ↦ ?_⟩
+  · induction y using Submodule.Quotient.induction_on with | H k => ?_
+    obtain ⟨c, hc⟩ := (Submodule.Quotient.mk_eq_zero _).1 hy
+    obtain ⟨x, hx⟩ := (h (c, k)).1 (by simp [hc])
+    exact (Submodule.Quotient.mk_eq_zero _).2 ⟨x, congrArg Prod.snd hx⟩
+  · induction y using Submodule.Quotient.induction_on with | H c => ?_
+    obtain ⟨⟨c₀, k⟩, hck⟩ := hsurj c
+    refine ⟨Submodule.Quotient.mk (-k), (Submodule.Quotient.eq _).2 ⟨-c₀, ?_⟩⟩
+    simp only [coprod_apply] at hck
+    simp [← hck]
+
+end TwoTermComplex
+
 section Homology
 
 open Module LinearMap
@@ -204,6 +263,42 @@ theorem _root_.LinearMap.finrank_map_mkQ_ker_add_finrank [FiniteDimensional k V�
   omega
 
 end Homology
+
+section AugmentedExact
+
+open Module
+
+variable {k : Type*} [DivisionRing k] {X : ℕ → Type*} {M : Type*}
+  [∀ i, AddCommGroup (X i)] [∀ i, Module k (X i)] [AddCommGroup M] [Module k M]
+
+/-- The alternating dimension sum of an exact augmented sequence through degree `n` equals
+`dim M` plus the signed dimension of the image of the next differential. Only the terms through
+`n` need be finite-dimensional; neither the whole sequence nor its augmentation need be bounded. -/
+theorem sum_range_neg_one_pow_finrank_eq_add_of_exact
+    (d : ∀ i, X (i + 1) →ₗ[k] X i) (π : X 0 →ₗ[k] M)
+    (hπ : Function.Surjective π) (h₀ : Function.Exact (d 0) π)
+    (hd : ∀ i, Function.Exact (d (i + 1)) (d i)) (n : ℕ)
+    (hfinite : ∀ i ≤ n, Module.Finite k (X i)) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (X i) =
+      finrank k M + (-1 : ℤ) ^ n * finrank k (LinearMap.range (d n)) := by
+  induction n with
+  | zero =>
+    let _ := hfinite 0 le_rfl
+    have hdim : finrank k (X 0) = finrank k M + finrank k (LinearMap.range (d 0)) := by
+      rw [← π.finrank_range_add_finrank_ker, LinearMap.range_eq_top.mpr hπ, finrank_top,
+        h₀.linearMap_ker_eq]
+    simpa only [zero_add, Finset.sum_range_one, pow_zero, one_mul, Nat.cast_add] using
+      congrArg (Nat.cast : ℕ → ℤ) hdim
+  | succ n ih =>
+    let _ := hfinite (n + 1) le_rfl
+    have hdim : finrank k (X (n + 1)) =
+        finrank k (LinearMap.range (d n)) + finrank k (LinearMap.range (d (n + 1))) := by
+      rw [← (d n).finrank_range_add_finrank_ker, (hd n).linearMap_ker_eq]
+    rw [Finset.sum_range_succ, ih (fun i hi ↦ hfinite i (hi.trans n.le_succ)),
+      hdim, Nat.cast_add, pow_succ]
+    ring
+
+end AugmentedExact
 
 section LongExact
 

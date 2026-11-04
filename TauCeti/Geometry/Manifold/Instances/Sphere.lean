@@ -20,6 +20,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -33,7 +34,9 @@ that computations in a chart at a chosen point use: which stereographic projecti
 chart is, that the extended chart at `v` sends `v` to the origin of the model space, and that the
 inverse of a stereographic chart is a smooth embedding of the model space into the sphere. Read in
 the ambient space, the inverse of stereographic projection has injective derivative, so it is a
-regular parametrization of the sphere minus a point.
+regular parametrization of the sphere minus a point. Stereographic projection from `v` is a
+diffeomorphism from the sphere minus `v` onto the model space, and from the sphere minus `v` and
+`-v` onto the punctured model space, since it sends exactly `-v` to the origin.
 
 It then uses the charts to show that a linear isometry `ι : F →ₗᵢ[ℝ] E` restricts to a smooth
 embedding of unit spheres, `LinearIsometry.unitSphereMap`. Stereographic projection is defined
@@ -62,6 +65,15 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
   smooth embedding of the model space into the sphere.
+* `TauCeti.coe_comp_stereographic'_symm`, `TauCeti.contDiff_coe_comp_stereographic'_symm`,
+  `TauCeti.injective_fderiv_coe_comp_stereographic'_symm`: read in the ambient space, the inverse
+  of a stereographic chart is `stereoInvFunAux` precomposed with a linear isometry, so it is smooth
+  with injective derivative.
+* `TauCeti.compl_singleton_sup_compl_singleton_neg_eq_top`: the complements of two antipodal
+  points cover the sphere.
+* `TauCeti.stereographicDiffeomorph`, `TauCeti.stereographicPuncturedDiffeomorph`: stereographic
+  projection from `v` as a diffeomorphism from the sphere minus `v` onto `ℝⁿ`, and from the sphere
+  minus `v` and `-v` onto `ℝⁿ \ {0}`.
 * `LinearIsometry.stereographic'_unitSphereMap`: the stereographic charts read a linear isometry
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
@@ -169,6 +181,136 @@ theorem isSmoothEmbedding_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞
     (IsManifold.subset_maximalAtlas ⟨v, rfl⟩)
     (fun u _ ↦ (stereographic' n v).map_target (by simp)) fun u _ ↦ ?_
   simp
+
+/-- Read in the ambient space, the inverse of the stereographic chart `stereographic' n v` is the
+inverse `stereoInvFunAux v` of stereographic projection, precomposed with the linear isometry of
+`ℝⁿ` onto the hyperplane `(ℝ ∙ v)ᗮ` that the chart uses. -/
+theorem coe_comp_stereographic'_symm (v : sphere (0 : E) 1) :
+    ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
+      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘
+        (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+          (ne_zero_of_mem_unit_sphere v)).repr.symm := by
+  funext y
+  simp [stereographic'_symm_apply, smul_add]
+
+/-- Read in the ambient space, the inverse of a stereographic chart is smooth. -/
+theorem contDiff_coe_comp_stereographic'_symm (v : sphere (0 : E) 1) {k : ℕ∞ω} :
+    ContDiff ℝ k (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) := by
+  rw [coe_comp_stereographic'_symm]
+  exact contDiff_stereoInvFunAux.comp ((ℝ ∙ (v : E))ᗮ.subtypeL.contDiff.comp
+    (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+      (ne_zero_of_mem_unit_sphere v)).repr.symm.toContinuousLinearEquiv.contDiff)
+
+/-- Read in the ambient space, the inverse of a stereographic chart has injective derivative at
+every point. -/
+theorem injective_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
+    (y : EuclideanSpace ℝ (Fin n)) :
+    Injective (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y) := by
+  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+    (ne_zero_of_mem_unit_sphere v)).repr
+  rw [coe_comp_stereographic'_symm, ← Function.comp_assoc,
+    ← LinearIsometryEquiv.coe_toContinuousLinearEquiv U.symm,
+    ContinuousLinearEquiv.comp_right_fderiv]
+  exact (injective_fderiv_stereoInvFunAux_comp_coe (norm_eq_of_mem_sphere v) _).comp
+    U.symm.injective
+
+/-- Stereographic projection from `v` is a chart in the maximal atlas of the sphere, at every
+regularity. -/
+theorem stereographic'_mem_maximalAtlas (v : sphere (0 : E) 1) {k : ℕ∞ω} :
+    stereographic' n v ∈ IsManifold.maximalAtlas (𝓡 n) k (sphere (0 : E) 1) :=
+  IsManifold.subset_maximalAtlas ⟨v, rfl⟩
+
+/-- Stereographic projection from `v` sends the antipode `-v` to the origin. -/
+@[simp]
+theorem stereographic'_apply_neg (v : sphere (0 : E) 1) : stereographic' n v (-v) = 0 := by
+  simp [stereographic', stereographic_apply_neg]
+
+/-- Away from the centre `v` of projection, stereographic projection from `v` sends exactly the
+antipode `-v` to the origin. -/
+theorem stereographic'_eq_zero_iff {v x : sphere (0 : E) 1} (hx : x ≠ v) :
+    stereographic' n v x = 0 ↔ x = -v :=
+  ⟨fun h ↦ (stereographic' n v).injOn (by simpa using hx)
+    (by simpa using (ne_neg_of_mem_unit_sphere ℝ v).symm)
+    (h.trans (stereographic'_apply_neg v).symm), fun h ↦ h ▸ stereographic'_apply_neg v⟩
+
+/-- The complements of two antipodal points cover the sphere. -/
+theorem compl_singleton_sup_compl_singleton_neg_eq_top (v : sphere (0 : E) 1) :
+    (⟨{v}ᶜ, isOpen_compl_singleton⟩ ⊔ ⟨{-v}ᶜ, isOpen_compl_singleton⟩ :
+      Opens (sphere (0 : E) 1)) = ⊤ := by
+  have := HasUniqueDiv.of_isTorsionFree ℝ E
+  ext1
+  simpa using compl_singleton_union_compl_singleton_neg one_ne_zero v
+
+/-- Stereographic projection from `v`, as a smooth diffeomorphism from the sphere minus `v` onto the
+model space `ℝⁿ`. -/
+def stereographicDiffeomorph (v : sphere (0 : E) 1) :
+    (⟨{v}ᶜ, isOpen_compl_singleton⟩ : Opens (sphere (0 : E) 1)) ≃ₘ⟮𝓡 n, 𝓡 n⟯
+      EuclideanSpace ℝ (Fin n) where
+  toFun x := stereographic' n v x
+  invFun y := ⟨(stereographic' n v).symm y, by
+    simpa using (stereographic' n v).map_target (x := y) (by simp)⟩
+  left_inv x := Subtype.ext ((stereographic' n v).left_inv (by simp))
+  right_inv y := (stereographic' n v).right_inv (by simp)
+  contMDiff_toFun :=
+    (contMDiffOn_of_mem_maximalAtlas (stereographic'_mem_maximalAtlas v)).comp_contMDiff
+      contMDiff_subtype_val fun x ↦ by simp
+  contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff _ _).mp
+    (isSmoothEmbedding_stereographic'_symm v).contMDiff
+
+/-- The diffeomorphism `TauCeti.stereographicDiffeomorph v` is stereographic projection from `v`. -/
+@[simp]
+theorem stereographicDiffeomorph_apply (v : sphere (0 : E) 1)
+    (x : (⟨{v}ᶜ, isOpen_compl_singleton⟩ : Opens (sphere (0 : E) 1))) :
+    stereographicDiffeomorph v x = stereographic' n v x :=
+  (rfl)
+
+/-- The inverse of `TauCeti.stereographicDiffeomorph v` is inverse stereographic projection. -/
+@[simp]
+theorem coe_stereographicDiffeomorph_symm_apply (v : sphere (0 : E) 1)
+    (y : EuclideanSpace ℝ (Fin n)) :
+    ((stereographicDiffeomorph v).symm y : sphere (0 : E) 1) = (stereographic' n v).symm y :=
+  (rfl)
+
+/-- Stereographic projection from `v`, as a smooth diffeomorphism from the sphere minus `v` and `-v`
+onto the punctured model space `ℝⁿ \ {0}`. -/
+def stereographicPuncturedDiffeomorph (v : sphere (0 : E) 1) :
+    (⟨{v}ᶜ ∩ {-v}ᶜ, isOpen_compl_singleton.inter isOpen_compl_singleton⟩ :
+        Opens (sphere (0 : E) 1)) ≃ₘ⟮𝓡 n, 𝓘(ℝ, EuclideanSpace ℝ (Fin n))⟯
+      (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens (EuclideanSpace ℝ (Fin n))) where
+  toFun x := ⟨stereographic' n v x, fun h ↦ x.2.2 ((stereographic'_eq_zero_iff x.2.1).mp h)⟩
+  invFun y := ⟨(stereographic' n v).symm y, by
+    have hv : (stereographic' n v).symm y ≠ v := by
+      simpa using (stereographic' n v).map_target (x := y) (by simp)
+    refine ⟨hv, fun h ↦ y.2 ?_⟩
+    have := (stereographic'_eq_zero_iff (n := n) hv).mpr (mem_singleton_iff.mp h)
+    rwa [(stereographic' n v).right_inv (by simp)] at this⟩
+  left_inv x := Subtype.ext ((stereographic' n v).left_inv (by simpa using x.2.1))
+  right_inv y := Subtype.ext ((stereographic' n v).right_inv (by simp))
+  contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
+    (contMDiffOn_of_mem_maximalAtlas (stereographic'_mem_maximalAtlas v)).comp_contMDiff
+      contMDiff_subtype_val fun x ↦ by simpa using x.2.1
+  contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff _ _).mp
+    ((isSmoothEmbedding_stereographic'_symm v).contMDiff.comp contMDiff_subtype_val)
+
+/-- The diffeomorphism `TauCeti.stereographicPuncturedDiffeomorph v` is stereographic projection
+from `v`. -/
+@[simp]
+theorem coe_stereographicPuncturedDiffeomorph_apply (v : sphere (0 : E) 1)
+    (x : (⟨{v}ᶜ ∩ {-v}ᶜ, isOpen_compl_singleton.inter isOpen_compl_singleton⟩ :
+        Opens (sphere (0 : E) 1))) :
+    (stereographicPuncturedDiffeomorph v x :
+        (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens (EuclideanSpace ℝ (Fin n)))) =
+      stereographic' n v x :=
+  (rfl)
+
+/-- The inverse of `TauCeti.stereographicPuncturedDiffeomorph v` is inverse stereographic
+projection. -/
+@[simp]
+theorem coe_stereographicPuncturedDiffeomorph_symm_apply (v : sphere (0 : E) 1)
+    (y : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens (EuclideanSpace ℝ (Fin n)))) :
+    ((stereographicPuncturedDiffeomorph v).symm y : sphere (0 : E) 1) =
+      (stereographic' n v).symm y :=
+  (rfl)
 
 end TauCeti
 

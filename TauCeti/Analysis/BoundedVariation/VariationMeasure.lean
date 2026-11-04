@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
-public import Mathlib.MeasureTheory.Measure.Content
+public import TauCeti.MeasureTheory.Measure.ContentOfOpens
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The variation measure of a function of locally finite variation
@@ -25,15 +26,23 @@ function of the open set, the total variation is countably subadditive
 (`TauCeti.totalVariationOn_iSup_le_tsum`) and additive on disjoint open sets
 (`TauCeti.totalVariationOn_sup_of_disjoint`). The set function
 `K ↦ inf { |Du|(U) | K ⊆ U ⊆ Ω open }` on the compact subsets of `Ω` is therefore a content
-(`MeasureTheory.Content`), whose measure agrees with `|Du|` on open sets because a test vector
+(`TauCeti.contentOfOpens`), whose measure agrees with `|Du|` on open sets because a test vector
 field is admissible on every open neighbourhood of its compact support. Uniqueness among outer
 regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
 
 ## Main declarations
 
+* `TauCeti.forall_isCompact_exists_totalVariationOn_ne_top_iff`: along an exhaustion of `Ω` by
+  relatively compact open sets, the variation is locally finite on `Ω` exactly when it is finite
+  on each of them.
 * `TauCeti.variationMeasure μ Ω u`: the variation measure `|Du|` on `Ω`, a regular measure.
 * `TauCeti.variationMeasure_preimage_coe`: `|Du|(U) = totalVariationOn μ U u` for every open
   `U ⊆ Ω`, and `TauCeti.variationMeasure_univ`: `|Du|(Ω) = totalVariationOn μ Ω u`.
+* `TauCeti.forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral`: distributional
+  limits of locally BV functions with eventually bounded variation measures on compact subsets
+  have locally finite variation.
+* `TauCeti.enorm_integral_divergenceCLM_mul_le_variationMeasure`: a test vector field of norm at
+  most one supported in an open `U ⊆ Ω` pairs with `u` to at most `|Du|(U)`.
 * `TauCeti.eq_variationMeasure`: an outer regular measure with these values on open sets is
   the variation measure.
 * `TauCeti.variationMeasure_eq_comap_inclusion` and `TauCeti.map_inclusion_variationMeasure`:
@@ -41,6 +50,8 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
   forward to its restriction to `U`.
 * `TauCeti.variationMeasure_congr_ae`: the variation measure only depends on `u` almost
   everywhere on `Ω`.
+* `TauCeti.variationMeasure_const_sub`: against an additive Haar measure, `c - u` has the same
+  variation measure as `u`.
 
 ## References
 
@@ -56,8 +67,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set
-open scoped ENNReal
+open MeasureTheory TopologicalSpace Set TestFunction Filter
+open scoped ENNReal Distributions Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω U V : Opens E} {u v : E → ℝ}
@@ -68,113 +79,47 @@ section Content
 
 variable [OpensMeasurableSpace E]
 
-/-- The outer approximation of the variation measure on a set `K` of `Ω`: the infimum of the
-total variation over the open sets `V ⊆ Ω` containing `K`. -/
-private def variationOuter (μ : Measure E) (Ω : Opens E) (u : E → ℝ) (K : Set Ω) : ℝ≥0∞ :=
-  ⨅ V : {V : Opens E // (↑) '' K ⊆ (V : Set E) ∧ V ≤ Ω}, totalVariationOn μ V u
-
-omit [OpensMeasurableSpace E] in
-private theorem variationOuter_le {K : Set Ω} (hKV : (↑) '' K ⊆ (V : Set E)) (hV : V ≤ Ω) :
-    variationOuter μ Ω u K ≤ totalVariationOn μ V u :=
-  iInf_le_of_le ⟨V, hKV, hV⟩ le_rfl
-
-omit [OpensMeasurableSpace E] in
-private theorem le_variationOuter {K : Set Ω} {c : ℝ≥0∞}
-    (h : ∀ V : Opens E, (↑) '' K ⊆ (V : Set E) → V ≤ Ω → c ≤ totalVariationOn μ V u) :
-    c ≤ variationOuter μ Ω u K :=
-  le_iInf fun V => h V V.2.1 V.2.2
-
-omit [OpensMeasurableSpace E] in
-private theorem variationOuter_mono {K₁ K₂ : Set Ω} (h : K₁ ⊆ K₂) :
-    variationOuter μ Ω u K₁ ≤ variationOuter μ Ω u K₂ :=
-  le_variationOuter fun _ hV hVΩ => variationOuter_le ((image_mono h).trans hV) hVΩ
-
-omit [OpensMeasurableSpace E] in
-private theorem variationOuter_ne_top
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
-    {K : Set Ω} (hK : IsCompact K) : variationOuter μ Ω u K ≠ ∞ := by
-  obtain ⟨U, hKU, hU⟩ := hfin _ (hK.image continuous_subtype_val) (Subtype.coe_image_subset _ _)
-  refine ne_top_of_le_ne_top hU ((variationOuter_le (V := U ⊓ Ω) ?_ inf_le_right).trans
-    (totalVariationOn_mono inf_le_left))
-  rw [Opens.coe_inf]
-  exact subset_inter hKU (Subtype.coe_image_subset _ _)
-
-private theorem variationOuter_union_le (hu : LocallyIntegrableOn u Ω μ) (K₁ K₂ : Set Ω) :
-    variationOuter μ Ω u (K₁ ∪ K₂) ≤ variationOuter μ Ω u K₁ + variationOuter μ Ω u K₂ :=
-  ENNReal.le_iInf_add_iInf fun ⟨V₁, hKV₁, hV₁⟩ ⟨V₂, hKV₂, hV₂⟩ => by
-    refine (variationOuter_le (V := V₁ ⊔ V₂) ?_ (sup_le hV₁ hV₂)).trans
-      (totalVariationOn_sup_le (hu.mono_set (sup_le hV₁ hV₂)))
-    simpa [image_union] using union_subset_union hKV₁ hKV₂
-
-private theorem variationOuter_add_le_union (hu : LocallyIntegrableOn u Ω μ) {K₁ K₂ : Set Ω}
-    (hK₁ : IsCompact K₁) (hK₂ : IsCompact K₂) (h : Disjoint K₁ K₂) :
-    variationOuter μ Ω u K₁ + variationOuter μ Ω u K₂ ≤ variationOuter μ Ω u (K₁ ∪ K₂) := by
-  -- Separate the two compact sets by disjoint open sets `W₁` and `W₂`.
-  obtain ⟨W₁, W₂, hW₁, hW₂, hKW₁, hKW₂, hW⟩ := SeparatedNhds.of_isCompact_isCompact
-    (hK₁.image continuous_subtype_val) (hK₂.image continuous_subtype_val)
-    ((disjoint_image_iff Subtype.val_injective).2 h)
-  refine le_variationOuter fun V hKV hVΩ => ?_
-  have hKV' : (↑) '' K₁ ⊆ (V : Set E) ∧ (↑) '' K₂ ⊆ (V : Set E) := by
-    simpa [image_union] using hKV
-  let V₁ : Opens E := V ⊓ ⟨W₁, hW₁⟩
-  let V₂ : Opens E := V ⊓ ⟨W₂, hW₂⟩
-  have hV₁ : V₁ ≤ Ω := inf_le_left.trans hVΩ
-  have hV₂ : V₂ ≤ Ω := inf_le_left.trans hVΩ
-  have hdisj : Disjoint V₁ V₂ := by
-    rw [← Opens.coe_disjoint]
-    exact hW.mono inter_subset_right inter_subset_right
-  calc variationOuter μ Ω u K₁ + variationOuter μ Ω u K₂
-      ≤ totalVariationOn μ V₁ u + totalVariationOn μ V₂ u :=
-        add_le_add (variationOuter_le (subset_inter hKV'.1 hKW₁) hV₁)
-          (variationOuter_le (subset_inter hKV'.2 hKW₂) hV₂)
-    _ = totalVariationOn μ (V₁ ⊔ V₂) u :=
-        (totalVariationOn_sup_of_disjoint (hu.mono_set (sup_le hV₁ hV₂)) hdisj).symm
-    _ ≤ totalVariationOn μ V u := totalVariationOn_mono (sup_le inf_le_left inf_le_left)
-
 variable (hu : LocallyIntegrableOn u Ω μ)
   (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
-include hu hfin
 
 /-- The variation content on `Ω`: the outer approximation of the total variation on compact
 subsets of `Ω`, which is finite by local finiteness of the variation. -/
-private def variationContent : Content Ω where
-  toFun K := (variationOuter μ Ω u K).toNNReal
-  mono' K₁ K₂ h := ENNReal.toNNReal_mono (variationOuter_ne_top hfin K₂.isCompact)
-    (variationOuter_mono h)
-  sup_disjoint' K₁ K₂ h _ _ := by
-    rw [Compacts.coe_sup, ← ENNReal.toNNReal_add (variationOuter_ne_top hfin K₁.isCompact)
-      (variationOuter_ne_top hfin K₂.isCompact)]
-    exact congrArg ENNReal.toNNReal (le_antisymm (variationOuter_union_le hu _ _)
-      (variationOuter_add_le_union hu K₁.isCompact K₂.isCompact h))
-  sup_le' K₁ K₂ := by
-    rw [Compacts.coe_sup, ← ENNReal.toNNReal_add (variationOuter_ne_top hfin K₁.isCompact)
-      (variationOuter_ne_top hfin K₂.isCompact)]
-    exact ENNReal.toNNReal_mono (ENNReal.add_ne_top.2 ⟨variationOuter_ne_top hfin K₁.isCompact,
-      variationOuter_ne_top hfin K₂.isCompact⟩) (variationOuter_union_le hu _ _)
+private def variationContent : Content Ω :=
+  contentOfOpens (m := fun V => totalVariationOn μ V u) (fun _ _ h => totalVariationOn_mono h)
+    (fun _ _ hV₁ hV₂ => totalVariationOn_sup_le (hu.mono_set (sup_le hV₁ hV₂)))
+    (fun _ _ hV₁ hV₂ h => (totalVariationOn_sup_of_disjoint (hu.mono_set (sup_le hV₁ hV₂)) h).ge)
+    hfin
 
-private theorem variationContent_apply (K : Compacts Ω) :
-    variationContent hu hfin K = variationOuter μ Ω u K := by
-  simp [variationContent, ENNReal.coe_toNNReal (variationOuter_ne_top hfin K.isCompact)]
-
-/-- The inner content of the variation content on an open set `U ⊆ Ω` is the total variation
-on `U`. -/
-private theorem innerContent_variationContent (hU : U ≤ Ω) :
-    (variationContent hu hfin).innerContent
-      ⟨(↑) ⁻¹' (U : Set E), U.isOpen.preimage continuous_subtype_val⟩ =
-      totalVariationOn μ U u := by
-  simp only [Content.innerContent, variationContent_apply, Opens.coe_mk]
-  refine le_antisymm (iSup₂_le fun K hK => variationOuter_le (image_subset_iff.2 hK) hU)
-    (totalVariationOn_le_iff.mpr fun φ hφ => ?_)
+/-- The measure of the variation content on an open set `U ⊆ Ω` is the total variation on `U`. -/
+private theorem variationContent_measure_preimage_coe [BorelSpace E] (hU : U ≤ Ω) :
+    (variationContent hu hfin).measure ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u := by
+  refine contentOfOpens_measure_preimage_coe _ _ _ _ (totalVariationOn_le_iff.mpr fun φ hφ => ?_)
   -- The support of `φ` is a compact subset of `Ω`, on which the outer approximation is tested.
   have himage : ((↑) : Ω → E) '' ((↑) ⁻¹' tsupport φ) = tsupport φ :=
     image_preimage_eq_of_subset (by simpa using φ.tsupport_subset.trans hU)
   let K : Compacts Ω := ⟨(↑) ⁻¹' tsupport φ, by
     rw [Subtype.isCompact_iff, himage]
     exact φ.hasCompactSupport.isCompact⟩
-  refine le_iSup₂_of_le K (preimage_mono φ.tsupport_subset) (le_variationOuter fun V hV _ => ?_)
+  refine le_iSup₂_of_le K (preimage_mono φ.tsupport_subset) (le_opensInf fun V hV _ => ?_)
   exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ hφ (himage ▸ hV)
 
 end Content
+
+/-! ### Local finiteness of the variation -/
+
+/-- Along an exhaustion `V` of `Ω` by open sets with compact closures in `Ω`, a function has locally
+finite variation on `Ω` exactly when it has finite variation on every `V j`. -/
+theorem forall_isCompact_exists_totalVariationOn_ne_top_iff {V : ℕ → Opens E}
+    (hVc : ∀ j, IsCompact (closure (V j : Set E))) (hVΩ : ∀ j, closure (V j : Set E) ⊆ Ω)
+    (hVmono : Monotone V) (hVU : ⋃ j, (V j : Set E) = Ω) {w : E → ℝ} :
+    (∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U w ≠ ∞) ↔
+      ∀ j, totalVariationOn μ (V j) w ≠ ∞ := by
+  refine ⟨fun h j => ?_, fun h K hK hKΩ => ?_⟩
+  · obtain ⟨U, hU, hfin⟩ := h _ (hVc j) (hVΩ j)
+    exact ne_top_of_le_ne_top hfin (totalVariationOn_mono (subset_closure.trans hU))
+  · obtain ⟨j, hj⟩ := hK.elim_directed_cover (fun j => (V j : Set E)) (fun j => (V j).isOpen)
+      (hVU ▸ hKΩ) fun i j => ⟨max i j, hVmono (le_max_left i j), hVmono (le_max_right i j)⟩
+    exact ⟨V j, hj, h j⟩
 
 /-! ### The variation measure -/
 
@@ -206,10 +151,52 @@ theorem variationMeasure_preimage_coe (hu : LocallyIntegrableOn u Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
     (hU : U ≤ Ω) :
     variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u := by
-  rw [variationMeasure, dite_eq_left ⟨hu, hfin⟩,
-    Content.measure_apply _ (U.isOpen.preimage continuous_subtype_val).measurableSet,
-    Content.outerMeasure_of_isOpen _ _ (U.isOpen.preimage continuous_subtype_val),
-    innerContent_variationContent hu hfin hU]
+  rw [variationMeasure, dite_eq_left ⟨hu, hfin⟩, variationContent_measure_preimage_coe hu hfin hU]
+
+/-- A distributional limit of locally BV functions whose variation measures are eventually
+bounded on every compact subset of the domain has locally finite variation. -/
+theorem forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral
+    {ι : Type*} {l : Filter ι} [l.NeBot] {v : ι → E → ℝ}
+    (hv : ∀ i, LocallyIntegrableOn (v i) Ω μ)
+    (hvfin : ∀ i K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (v i) ≠ ∞)
+    (hbound : ∀ K, IsCompact K → K ⊆ Ω → ∃ C : ℝ,
+      ∀ᶠ i in l, (variationMeasure μ Ω (v i)).real (((↑) : Ω → E) ⁻¹' K) ≤ C)
+    (hconv : ∀ ψ : 𝓓(Ω, ℝ),
+      Tendsto (fun i => ∫ x, ψ x * v i x ∂μ) l (𝓝 (∫ x, ψ x * u x ∂μ))) :
+    ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞ := by
+  intro K hK hKΩ
+  obtain ⟨L, hL, hKL, hLΩ⟩ := exists_compact_between hK Ω.isOpen hKΩ
+  let U : Opens E := ⟨interior L, isOpen_interior⟩
+  have hUΩ : U ≤ Ω := interior_subset.trans hLΩ
+  obtain ⟨C, hC⟩ := hbound L hL hLΩ
+  have hL' : IsCompact (((↑) : Ω → E) ⁻¹' L) :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hL (by simpa using hLΩ)
+  have htv : ∀ᶠ i in l, totalVariationOn μ U (v i) ≤ ENNReal.ofReal C := by
+    filter_upwards [hC] with i hi
+    have hmass : variationMeasure μ Ω (v i) (((↑) : Ω → E) ⁻¹' L) ≤
+        ENNReal.ofReal C := by
+      rw [← ENNReal.ofReal_toReal hL'.measure_lt_top.ne]
+      exact ENNReal.ofReal_le_ofReal hi
+    rw [← variationMeasure_preimage_coe (hv i) (hvfin i) hUΩ]
+    exact (measure_mono (preimage_mono interior_subset)).trans hmass
+  refine ⟨U, hKL, ne_top_of_le_ne_top (b := ENNReal.ofReal C) ENNReal.ofReal_ne_top ?_⟩
+  refine (totalVariationOn_le_liminf_of_tendsto_integral (Ω := U) fun ψ => ?_).trans
+    (liminf_le_of_frequently_le' htv.frequently)
+  simpa only [monoCLM_apply, le_refl, hUΩ, and_self, ite_true] using
+    hconv (monoCLM ℝ ψ : 𝓓(Ω, ℝ))
+
+/-- A test vector field on `Ω` supported in an open set `U ⊆ Ω` with norm at most one pairs with
+`u` to at most `|Du|(U)`. -/
+theorem enorm_integral_divergenceCLM_mul_le_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    (hU : U ≤ Ω) (φ : 𝓓(Ω, E)) (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
+    ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) := by
+  let φU : 𝓓(U, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
+  have hdiv (x : E) : divergenceCLM φU x = divergenceCLM φ x := by simp [φU]
+  rw [variationMeasure_preimage_coe hu hfin hU, Real.enorm_eq_ofReal_abs]
+  simpa only [hdiv] using ofReal_abs_integral_le_totalVariationOn (μ := μ) (u := u) φU hφ
 
 /-- The total mass of the variation measure of a function of locally finite variation on `Ω` is
 its total variation `|Du|(Ω)`. -/
@@ -235,11 +222,8 @@ theorem eq_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
     (h : ∀ U : Opens E, U ≤ Ω → ν ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u) :
     ν = variationMeasure μ Ω u := by
   refine Measure.OuterRegular.ext_isOpen fun W hW => ?_
-  -- An open subset of `Ω` is the trace of its image, an open subset of `E` inside `Ω`.
-  let U : Opens E := ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩
-  have hU : U ≤ Ω := Subtype.coe_image_subset _ _
-  have hW' : ((↑) : Ω → E) ⁻¹' (U : Set E) = W := preimage_image_eq W Subtype.val_injective
-  rw [← hW', h U hU, variationMeasure_preimage_coe hu hfin hU]
+  obtain ⟨U, hU, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
+  rw [h U hU, variationMeasure_preimage_coe hu hfin hU]
 
 /-- **Restriction to an open subset.** For `U ⊆ Ω` open, the variation measure on `U` is the
 pullback of the variation measure on `Ω` along the inclusion `U → Ω`. -/
@@ -271,11 +255,11 @@ theorem map_inclusion_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
     (Opens.isOpenEmbedding_of_le hU).measurableEmbedding.map_comap, range_inclusion]
   rfl
 
-/-- **Locality.** The variation measure on `Ω` only depends on `u` almost everywhere on `Ω`. -/
-theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
+/-- The variation measure on `Ω` only depends on local integrability on `Ω` and on the total
+variations on open subsets of `Ω`. -/
+theorem variationMeasure_congr (hloc : LocallyIntegrableOn u Ω μ ↔ LocallyIntegrableOn v Ω μ)
+    (htv : ∀ U : Opens E, U ≤ Ω → totalVariationOn μ U u = totalVariationOn μ U v) :
     variationMeasure μ Ω u = variationMeasure μ Ω v := by
-  have htv {U : Opens E} (hU : U ≤ Ω) : totalVariationOn μ U u = totalVariationOn μ U v :=
-    totalVariationOn_congr_ae (ae_restrict_of_ae_restrict_of_subset hU h)
   -- Local finiteness of the variation only needs neighbourhoods inside `Ω`.
   have hfin {w : E → ℝ} : (∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U w ≠ ∞) ↔
@@ -289,15 +273,32 @@ theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞) ↔
       (LocallyIntegrableOn v Ω μ ∧
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U v ≠ ∞) := by
-    rw [locallyIntegrableOn_congr h, hfin, hfin]
+    rw [hloc, hfin, hfin]
     refine and_congr_right fun _ => forall₃_congr fun K _ _ => exists_congr fun U => ?_
-    exact and_congr_right fun _ => and_congr_right fun hU => by rw [htv hU]
+    exact and_congr_right fun _ => and_congr_right fun hU => by rw [htv U hU]
   by_cases hu : LocallyIntegrableOn u Ω μ ∧
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
   · have hv := hiff.1 hu
     exact eq_variationMeasure hv.1 hv.2 fun U hU => by
-      rw [variationMeasure_preimage_coe hu.1 hu.2 hU, htv hU]
+      rw [variationMeasure_preimage_coe hu.1 hu.2 hU, htv U hU]
   · rw [variationMeasure_eq_zero_of_not hu, variationMeasure_eq_zero_of_not (hiff.not.1 hu)]
+
+/-- **Locality.** The variation measure on `Ω` only depends on `u` almost everywhere on `Ω`. -/
+theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
+    variationMeasure μ Ω u = variationMeasure μ Ω v :=
+  variationMeasure_congr (locallyIntegrableOn_congr h) fun _ hU =>
+    totalVariationOn_congr_ae (ae_restrict_of_ae_restrict_of_subset hU h)
+
+/-- Against an additive Haar measure, `c - u` has the same variation measure as `u`. In
+particular the indicators of a set and of its complement have the same variation measure. -/
+@[simp]
+theorem variationMeasure_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
+    variationMeasure μ Ω (fun x => c - u x) = variationMeasure μ Ω u := by
+  have hc : LocallyIntegrableOn (fun _ : E => c) Ω μ :=
+    (locallyIntegrable_const c).locallyIntegrableOn _
+  refine variationMeasure_congr ⟨fun h => ?_, fun h => hc.sub h⟩ fun U _ =>
+    totalVariationOn_const_sub c
+  exact (locallyIntegrableOn_congr (ae_of_all _ fun x => sub_sub_cancel c (u x))).1 (hc.sub h)
 
 end Measure
 

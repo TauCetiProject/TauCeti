@@ -53,6 +53,8 @@ whether or not `b` happens to be an `𝒪_P`-basis of `𝒪'_P`.
 * `TauCeti.Place.finite_setOf_differentExponent_ne_zero` and
   `TauCeti.Place.finite_setOf_exists_differentExponent_ne_zero`: the different exponent vanishes
   at all but finitely many places of `F'`, and only finitely many places of `F` ramify.
+* `TauCeti.Place.finite_setOf_ramificationIdx_ne_one`: only finitely many places of `F'` have
+  ramification index other than one.
 * `TauCeti.Divisor.zero_le_different`: the different divisor is effective (Stichtenoth,
   Remark 3.4.4).
 * `TauCeti.Divisor.mem_support_different_iff_not_isUnramifiedAt`: its support is the set of
@@ -125,6 +127,16 @@ theorem finite_setOf_exists_differentExponent_ne_zero (hF : IsFunctionField k F)
     rintro P ⟨P', hres, hne⟩
     exact ⟨P', hne, hres⟩
   exact himg.subset hsub
+
+/-- **Almost every place of `F'` is unramified over `F`**: only finitely many places of `F'` have
+ramification index other than one, since `e(P' ∣ P) ≤ d(P' ∣ P) + 1` by Dedekind's different
+theorem. -/
+theorem finite_setOf_ramificationIdx_ne_one (hF : IsFunctionField k F) :
+    {P' : Place k' F' | ramificationIdx F P' ≠ 1}.Finite :=
+  (finite_setOf_differentExponent_ne_zero k F hF).subset fun P' hP' hd ↦ hP' <| by
+    have := ramificationIdx_le_differentExponent_add_one k F P'
+    have := ramificationIdx_pos F P'
+    omega
 
 end Finiteness
 

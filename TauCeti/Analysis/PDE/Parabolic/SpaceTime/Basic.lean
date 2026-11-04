@@ -31,6 +31,12 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.coordsHomeomorph`: the homeomorphism with ordinary `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.timeReverse`: reversal of time about `T`, an isometry.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.spatialSlice`, `TauCeti.ParabolicSpaceTime.timeSlice`: the
+  continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
+* `TauCeti.ParabolicSpaceTime.slabTimeReverse`: reversal of time about `T`, an isometry from the
+  slab `E × [T - b, T - a]` onto `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
+  `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
 
 ## References
 
@@ -129,6 +135,32 @@ theorem slab_subset_slab {a b a' b' : ℝ} (ha : a ≤ a') (hb : b' ≤ b) :
     slab (E := E) a' b' ⊆ slab a b :=
   preimage_mono (Icc_subset_Icc ha hb)
 
+/-- Including a smaller slab into a larger one keeps the coordinates of a point. -/
+@[simp]
+theorem inclusion_slabMk {a b a' b' : ℝ} (h : slab (E := E) a' b' ⊆ slab a b) (x : E)
+    (t : Icc a' b') :
+    inclusion h (slabMk x t) = slabMk x ⟨t, by simpa using h (slabMk x t).2⟩ :=
+  (rfl)
+
+/-- A spatial map `f` acting on the slab `E × [a, b]`, by `(x, t) ↦ (f x, t)`. -/
+def slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    slab (E := E') a b :=
+  slabMk (f (p : ParabolicSpaceTime E).space) (slabTime p)
+
+@[simp]
+theorem slabSpaceMap_slabMk {E' : Type*} {a b : ℝ} (f : E → E') (x : E) (t : Icc a b) :
+    slabSpaceMap f (slabMk x t) = slabMk (f x) t :=
+  (rfl)
+
+@[simp]
+theorem slabSpaceMap_id {a b : ℝ} : slabSpaceMap (a := a) (b := b) (id : E → E) = id :=
+  (rfl)
+
+@[simp]
+theorem slabSpaceMap_slabSpaceMap {E' E'' : Type*} {a b : ℝ} (f : E' → E'') (g : E → E')
+    (p : slab (E := E) a b) : slabSpaceMap f (slabSpaceMap g p) = slabSpaceMap (f ∘ g) p :=
+  (rfl)
+
 section PseudoEMetricSpace
 
 variable [PseudoEMetricSpace E]
@@ -166,6 +198,18 @@ theorem edist_time_rpow_le (p q : ParabolicSpaceTime E) :
     edist p.time q.time ^ (1 / 2 : ℝ) ≤ edist p q := by
   rw [edist_eq]
   exact le_add_self
+
+/-- A `K`-Lipschitz spatial map acts on a slab as a `max K 1`-Lipschitz map for the parabolic
+distance. -/
+theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} {K : ℝ≥0}
+    {f : E → E'} (hf : LipschitzWith K f) :
+    LipschitzWith (max K 1) (slabSpaceMap (a := a) (b := b) f) := by
+  intro p q
+  rw [← slabMk_space_slabTime p, ← slabMk_space_slabTime q, slabSpaceMap_slabMk,
+    slabSpaceMap_slabMk, edist_slabMk, edist_slabMk, mul_add]
+  gcongr
+  · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
+  · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
 
 end PseudoEMetricSpace
 
@@ -243,6 +287,22 @@ theorem continuous_slabMk {a b : ℝ} :
 theorem continuous_slabTime {a b : ℝ} : Continuous (slabTime : slab (E := E) a b → Icc a b) :=
   (continuous_time.comp continuous_subtype_val).subtype_mk _
 
+/-- The spatial slice `x ↦ (x, t)` of a slab at the time `t`, as a continuous map. -/
+def spatialSlice {a b : ℝ} (t : Icc a b) : C(E, slab (E := E) a b) :=
+  ⟨fun x => slabMk x t, continuous_slabMk.comp (continuous_id.prodMk continuous_const)⟩
+
+@[simp]
+theorem spatialSlice_apply {a b : ℝ} (t : Icc a b) (x : E) : spatialSlice t x = slabMk x t :=
+  (rfl)
+
+/-- The time slice `t ↦ (x, t)` of a slab at the position `x`, as a continuous map. -/
+def timeSlice {a b : ℝ} (x : E) : C(Icc a b, slab (E := E) a b) :=
+  ⟨slabMk x, continuous_slabMk.comp (continuous_const.prodMk continuous_id)⟩
+
+@[simp]
+theorem timeSlice_apply {a b : ℝ} (x : E) (t : Icc a b) : timeSlice x t = slabMk x t :=
+  (rfl)
+
 /-! ### Time reversal -/
 
 /-- Reversal of time about `T`, `(x, t) ↦ (x, T - t)`, an isometry of parabolic space-time. -/
@@ -281,6 +341,41 @@ theorem preimage_timeReverse_slab (T a b : ℝ) :
   ext p
   simp only [mem_preimage, mem_slab, time_timeReverse, mem_Icc]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
+/-- Reversal of time about `T`, as an isometry from the slab `E × [a', b']` onto the slab
+`E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/
+def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
+    slab (E := E) a' b' ≃ᵢ slab (E := E) a b where
+  toFun p := ⟨timeReverse T p, by
+    rw [← mem_preimage, preimage_timeReverse_slab, ← ha, ← hb]; exact p.2⟩
+  invFun q := ⟨timeReverse T q, by
+    rw [← mem_preimage, preimage_timeReverse_slab, ha, hb, sub_sub_cancel, sub_sub_cancel]
+    exact q.2⟩
+  left_inv p := Subtype.ext (timeReverse_timeReverse T (p : ParabolicSpaceTime E))
+  right_inv q := Subtype.ext (timeReverse_timeReverse T (q : ParabolicSpaceTime E))
+  isometry_toFun := Isometry.of_dist_eq fun p q =>
+    (timeReverse T).dist_eq (p : ParabolicSpaceTime E) q
+
+/-- Time reversal between slabs sends `(x, t)` to `(x, T - t)`. -/
+@[simp]
+theorem slabTimeReverse_slabMk (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (x : E) (t : Icc a' b') :
+    slabTimeReverse T ha hb (slabMk x t) = slabMk x ⟨T - t, by
+      obtain ⟨h₁, h₂⟩ := t.2
+      subst ha hb
+      constructor <;> linarith⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (p : slab (E := E) a' b') :
+    (slabTimeReverse T ha hb p : ParabolicSpaceTime E) = timeReverse T p := (rfl)
+
+/-- The inverse of time reversal between slabs is time reversal in the opposite direction. -/
+@[simp]
+theorem slabTimeReverse_symm (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
+    (slabTimeReverse (E := E) T ha hb).symm =
+      slabTimeReverse T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := (rfl)
 
 end PseudoMetricSpace
 

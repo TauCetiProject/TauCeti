@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Labels
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.CosetMinimum
+public import Mathlib.Data.List.GetD
 import Mathlib.Data.List.OfFn
 
 /-!
@@ -29,7 +30,20 @@ For a word given by its labels `List.ofFn d`, validity is the range condition on
 (`isValidGlueWord_ofFn_iff`), and decoding is natural under permutations of the components
 (`decodeGlueWord_ofFn_comp`): permuting the labels and the components together reindexes the
 decoded word through `Equiv.piCongrLeft`, the reindexing along which the glue-word isometry is
-natural.
+natural.  Replacing the components by an equal family, for instance the positions of a list of
+components by an explicitly given family, does not change digit lists
+(`encodeGlueWord_piGlueAlphabetCongr`).
+
+Sums and shortest norms of glue words can be computed on their digit words: `glueWordAdd` adds
+two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sums the shortest
+norms of the printed labels, giving the shortest norm `μ(w)` of the coset named by the word
+(`glueWordMinimum_encodeGlueWord`). Finite checks on printed glue words therefore evaluate by
+`decide`.
+
+For a constant type-`A` family, `typeAGlueWordOfDigits` reads digits modulo the alphabet size.
+`encodeGlueWord_typeA_eq` gives the encoder's residue formula, and
+`decoded_typeA_eq_image_ofDigits` identifies a set of checked decoded words with the image of
+this reader when the lists have the correct length and canonical digits.
 
 Reference: Conway and Sloane, *Sphere Packings, Lattices and Groups*, Chapter 16 §1.
 -/
@@ -51,9 +65,8 @@ theorem isValidGlueWord_iff (l : List ℕ) :
         ∀ i : Fin n, l[i.val]'(by omega) < (t i).glueLabelCount := (Iff.rfl)
 
 /-- Glue-word validity is decidable by checking length and label ranges. -/
-instance (l : List ℕ) : Decidable (IsValidGlueWord t l) := by
-  rw [isValidGlueWord_iff]
-  infer_instance
+instance (l : List ℕ) : Decidable (IsValidGlueWord t l) :=
+  decidable_of_iff _ (isValidGlueWord_iff t l).symm
 
 /-- Encode a word in the component glue alphabets by its Conway--Sloane digit labels. -/
 def encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) : List ℕ :=
@@ -85,6 +98,10 @@ theorem encodeGlueWord_def (w : ∀ i, (t i).glueAlphabet (ht i)) :
       (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   simp [encodeGlueWord]
 
+/-- The zero glue word has every label zero. -/
+@[simp] theorem encodeGlueWord_zero : encodeGlueWord t ht 0 = List.replicate n 0 := by
+  simp [encodeGlueWord, List.ofFn_const]
+
 /-- The labels of an encoded word satisfy the length and range checks. -/
 @[simp] theorem isValidGlueWord_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
     IsValidGlueWord t (encodeGlueWord t ht w) := by
@@ -114,6 +131,20 @@ theorem encodeGlueWord_injective : Function.Injective (encodeGlueWord t ht) := b
   intro w v h
   have h := congrArg (decodeGlueWord t ht) h
   simpa only [decodeGlueWord_encodeGlueWord, Option.some.injEq] using h
+
+/-- **Digits are unchanged by passing to an equal family of components**: if the components
+`s k` over `Fin m` are the components `t k` over `Fin n` read along `m = n`, then a glue word and
+its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same digit list. -/
+theorem encodeGlueWord_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (hmn : m = n) (h : ∀ k, t (finCongr hmn k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    encodeGlueWord s hs (DynkinType.piGlueAlphabetCongr t ht (finCongr hmn) h w) =
+      encodeGlueWord t ht w := by
+  subst hmn
+  rw [encodeGlueWord_def, encodeGlueWord_def]
+  exact congrArg List.ofFn (funext fun k ↦ by
+    rw [DynkinType.piGlueAlphabetCongr_apply]
+    exact DynkinType.val_glueLabelEquiv_symm_ofEq (h k) _ _ _)
 
 /-- Successful decoding determines exactly the digit list of the resulting word. -/
 @[simp] theorem decodeGlueWord_eq_some_iff (l : List ℕ)
@@ -185,5 +216,118 @@ theorem decodeGlueWord_ofFn_comp {m : ℕ} (σ : Fin m ≃ Fin n) (d : Fin n →
       hd (σ.forall_congr_right.mp h)
     rw [(decodeGlueWord_eq_none_iff _ _ _).mpr (by simpa using hdσ),
       (decodeGlueWord_eq_none_iff _ _ _).mpr (by simpa using hd), Option.map_none]
+
+/-! ### Digit arithmetic of glue words -/
+
+/-- The digit word of the sum of two glue words, computed label by label from their digit words
+with `TauCeti.DynkinType.glueLabelAdd` (`encodeGlueWord_add`); a missing label reads as `0`. -/
+@[expose] def glueWordAdd (l l' : List ℕ) : List ℕ :=
+  List.ofFn fun i : Fin n ↦ (t i).glueLabelAdd (l.getD i 0) (l'.getD i 0)
+
+/-- The shortest norm `μ(w)` of a glue word, computed from its digit word as the sum of the
+shortest norms `TauCeti.DynkinType.glueLabelMinimum` of its labels
+(`glueWordMinimum_encodeGlueWord`); a missing label reads as `0`. -/
+@[expose] def glueWordMinimum (l : List ℕ) : ℚ :=
+  ∑ i : Fin n, (t i).glueLabelMinimum (l.getD i 0)
+
+/-- A label-wise sum lists the sums of the corresponding labels. -/
+theorem glueWordAdd_def (l l' : List ℕ) :
+    glueWordAdd t l l' =
+      List.ofFn fun i : Fin n ↦ (t i).glueLabelAdd (l.getD i 0) (l'.getD i 0) :=
+  (rfl)
+
+/-- A label-wise sum has one label for each component. -/
+@[simp] theorem length_glueWordAdd (l l' : List ℕ) : (glueWordAdd t l l').length = n := by
+  simp [glueWordAdd]
+
+/-- Each label of a label-wise sum is the sum of the corresponding labels. -/
+@[simp] theorem getElem_glueWordAdd (l l' : List ℕ) (i : Fin n) :
+    (glueWordAdd t l l')[i.val]'(by simp) = (t i).glueLabelAdd (l.getD i 0) (l'.getD i 0) := by
+  simp [glueWordAdd]
+
+/-- The shortest norm of a digit word is the sum of the shortest norms of its labels. -/
+theorem glueWordMinimum_def (l : List ℕ) :
+    glueWordMinimum t l = ∑ i : Fin n, (t i).glueLabelMinimum (l.getD i 0) :=
+  (rfl)
+
+private theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
+    (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
+  rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
+
+/-- **The digit word of a sum of glue words is the label-wise sum of their digit words.** -/
+@[simp]
+theorem encodeGlueWord_add (w w' : ∀ i, (t i).glueAlphabet (ht i)) :
+    encodeGlueWord t ht (w + w') =
+      glueWordAdd t (encodeGlueWord t ht w) (encodeGlueWord t ht w') := by
+  rw [encodeGlueWord_def, glueWordAdd]
+  congr 1
+  funext i
+  rw [getD_encodeGlueWord, getD_encodeGlueWord, Pi.add_apply,
+    DynkinType.val_glueLabelEquiv_symm_add]
+
+/-- **The shortest norm of a glue word is read off its digit word**:
+`glueWordMinimum` of the digits of `w` is `μ(w) = ∑ i, μ_(t i)(w_i)`. -/
+@[simp]
+theorem glueWordMinimum_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    glueWordMinimum t (encodeGlueWord t ht w) = ∑ i, (t i).glueMinimum (ht i) (w i) := by
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [getD_encodeGlueWord, ← DynkinType.glueMinimum_glueLabelEquiv, Equiv.apply_symm_apply]
+
+/-! ### Constant type-`A` families -/
+
+/-- Read a digit list as a word in `m` copies of the type-`Aₙ` glue alphabet, reducing its
+entries modulo `n + 1` and using zero for any missing entries. Unlike `decodeGlueWord`, this
+construction does not check the digit ranges or the length. -/
+def typeAGlueWordOfDigits (n m : ℕ) (l : List ℕ) :
+    Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n) :=
+  fun i ↦ ((l.getD i 0 : ℕ) : ZMod (n + 1))
+
+/-- Each coordinate of a type-`A` digit word is the corresponding digit reduced modulo the
+alphabet size. -/
+@[simp] theorem typeAGlueWordOfDigits_apply (n m : ℕ) (l : List ℕ) (i : Fin m) :
+    typeAGlueWordOfDigits n m l i = ((l.getD i 0 : ℕ) : ZMod (n + 1)) :=
+  (rfl)
+
+/-- Encoding a word in a constant type-`A` family lists its least nonnegative residues. -/
+theorem encodeGlueWord_typeA_eq (n m : ℕ)
+    (w : Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n)) :
+    encodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
+      (fun _ ↦ DynkinType.isSimplyLaced_A n) w =
+      List.ofFn fun i ↦ ZMod.val (n := n + 1) (w i) := by
+  rw [encodeGlueWord_def (fun _ : Fin m ↦ DynkinType.A n)
+    (fun _ ↦ DynkinType.isSimplyLaced_A n) w]
+  congr 1
+  funext i
+  exact congrArg Fin.val (DynkinType.glueLabelEquiv_A_symm_apply n
+    (DynkinType.isSimplyLaced_A n) (w i))
+
+/-- Reading the encoded digits of a type-`A` word recovers the word. -/
+@[simp] theorem typeAGlueWordOfDigits_encodeGlueWord (n m : ℕ)
+    (w : Fin m → (DynkinType.A n).glueAlphabet (DynkinType.isSimplyLaced_A n)) :
+    typeAGlueWordOfDigits n m (encodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
+      (fun _ ↦ DynkinType.isSimplyLaced_A n) w) = w := by
+  funext i
+  rw [encodeGlueWord_typeA_eq n m w, typeAGlueWordOfDigits_apply,
+    List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+  exact ZMod.natCast_zmod_val (n := n + 1) (w i)
+
+/-- On a set of correctly sized lists of canonical type-`A` digits, checked decoding gives
+exactly the image of the digit-word construction. The hypothesis can be verified by finite
+computation for an explicit table of glue generators. -/
+theorem decoded_typeA_eq_image_ofDigits (n m : ℕ) (s : Set (List ℕ))
+    (hs : ∀ l ∈ s,
+      List.ofFn (fun i : Fin m ↦ (((l.getD i 0 : ℕ) : ZMod (n + 1))).val) = l) :
+    {w | ∃ l ∈ s, decodeGlueWord (fun _ : Fin m ↦ DynkinType.A n)
+        (fun _ ↦ DynkinType.isSimplyLaced_A n) l = some w} =
+      typeAGlueWordOfDigits n m '' s := by
+  ext w
+  simp only [Set.mem_ofPred_eq, decodeGlueWord_eq_some_iff, Set.mem_image]
+  constructor
+  · rintro ⟨l, hl, rfl⟩
+    exact ⟨_, hl, typeAGlueWordOfDigits_encodeGlueWord n m w⟩
+  · rintro ⟨l, hl, rfl⟩
+    refine ⟨l, hl, ?_⟩
+    rw [encodeGlueWord_typeA_eq n m (typeAGlueWordOfDigits n m l)]
+    simpa only [typeAGlueWordOfDigits_apply] using (hs l hl).symm
 
 end TauCeti

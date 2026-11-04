@@ -15,8 +15,8 @@ Mathlib's `SubmodulesBasis B` turns a family `B : ι → Submodule R M` into a t
 `SubmodulesBasis.toModuleFilterBasis`. That route leaves the neighbourhoods of `0` indexed by
 *sets* `U` carrying a proof `∃ i, U = B i` rather than by `ι`. This file adds the `ι`-indexed
 form, which Mathlib already has one level down for subgroups as
-`RingSubgroupsBasis.hasBasis_nhds_zero`, and the comparison lemma it makes routine: two
-submodule bases on the same module that are mutually cofinal induce the same topology.
+`RingSubgroupsBasis.hasBasis_nhds_zero`, and the comparison it makes routine: two submodule
+bases on the same module induce the same topology exactly when they are mutually cofinal.
 
 Neither statement mentions anything beyond `SubmodulesBasis`, so both live in that namespace
 rather than in a `TauCeti` one.
@@ -26,7 +26,8 @@ rather than in a `TauCeti` one.
 * `SubmodulesBasis.hasBasis_nhds_zero`: the family is itself a neighbourhood basis at `0` for
   the topology it induces — a set is a neighbourhood of `0` exactly when it contains some
   `B i`.
-* `SubmodulesBasis.topology_eq`: mutually cofinal submodule bases induce the same topology.
+* `SubmodulesBasis.topology_eq_iff`: two submodule bases, possibly over different scalar rings,
+  induce the same topology if and only if they are mutually cofinal.
 
 ## References
 
@@ -38,8 +39,9 @@ public section
 
 namespace SubmodulesBasis
 
-variable {ι ι' R M : Type*} [CommRing R] [TopologicalSpace R] [AddCommGroup M] [Module R M]
-  {B : ι → Submodule R M} {B' : ι' → Submodule R M}
+variable {ι ι' R R' M : Type*} [CommRing R] [TopologicalSpace R] [CommRing R']
+  [TopologicalSpace R'] [AddCommGroup M] [Module R M] [Module R' M]
+  {B : ι → Submodule R M} {B' : ι' → Submodule R' M}
 
 /-- **The family is a neighbourhood basis at `0`**, indexed by `ι`: a set is a neighbourhood of
 `0` for the induced topology exactly when it contains some `B i`.
@@ -53,17 +55,20 @@ theorem hasBasis_nhds_zero [Nonempty ι] (hB : SubmodulesBasis B) :
     (by rintro _ ⟨i, rfl⟩; exact ⟨i, trivial, subset_rfl⟩)
     (fun i _ ↦ ⟨B i, ⟨i, rfl⟩, subset_rfl⟩)
 
-/-- **Mutually cofinal submodule bases induce the same topology.** If every `B i` contains some
-`B' j` and every `B' j` contains some `B i`, the two families are neighbourhood bases at `0` for
-the same filter, and both topologies are additive group topologies, so they agree everywhere.
+/-- **Submodule bases induce the same topology exactly when they are mutually cofinal**: every
+`B i` contains some `B' j` and every `B' j` contains some `B i`. Both families are neighbourhood
+bases at `0` of additive group topologies, so equal topologies amount to equal neighbourhood
+filters at `0`, which is mutual cofinality.
 
-No relation between the two index types is needed, and neither family need be antitone: cofinality
-in both directions is the whole hypothesis. -/
-theorem topology_eq [Nonempty ι] [Nonempty ι'] (hB : SubmodulesBasis B) (hB' : SubmodulesBasis B')
-    (h : ∀ i, ∃ j, B' j ≤ B i) (h' : ∀ j, ∃ i, B i ≤ B' j) : hB.topology = hB'.topology :=
-  IsTopologicalAddGroup.ext inferInstance inferInstance <|
-    hB.hasBasis_nhds_zero.ext hB'.hasBasis_nhds_zero
-      (fun i _ ↦ (h i).imp fun _ hj ↦ ⟨trivial, SetLike.coe_subset_coe.mpr hj⟩)
-      fun j _ ↦ (h' j).imp fun _ hi ↦ ⟨trivial, SetLike.coe_subset_coe.mpr hi⟩
+The two families may be submodules over different scalar rings `R` and `R'`: only their
+underlying sets in `M` are compared. No relation between the index types is needed, and neither
+family need be antitone. -/
+theorem topology_eq_iff [Nonempty ι] [Nonempty ι'] (hB : SubmodulesBasis B)
+    (hB' : SubmodulesBasis B') : hB.topology = hB'.topology ↔
+      (∀ j, ∃ i, (B i : Set M) ⊆ B' j) ∧ ∀ i, ∃ j, (B' j : Set M) ⊆ B i := by
+  rw [IsTopologicalAddGroup.ext_iff inferInstance inferInstance, le_antisymm_iff,
+    hB.hasBasis_nhds_zero.le_basis_iff hB'.hasBasis_nhds_zero,
+    hB'.hasBasis_nhds_zero.le_basis_iff hB.hasBasis_nhds_zero]
+  simp only [forall_const, true_and]
 
 end SubmodulesBasis

@@ -50,7 +50,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
 * `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
-  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables.
+  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables, and
+  `IsPrimitiveRoot.sum_zpow_pow_eq` for an integral exponent `e` in a field.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
@@ -171,6 +172,24 @@ theorem _root_.IsPrimitiveRoot.sum_pow_pow_eq [IsDomain R] {ζ : R} {m : ℕ}
     refine (mul_eq_zero.mp ?_).resolve_left h1
     rw [mul_geom_sum, ← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow, sub_self]
 
+/-- **Orthogonality of characters, for an integral exponent.** In a field, the sum of the powers
+`(ζ ^ e) ^ a` over `a < m` of a primitive `m`-th root of unity `ζ` is `m` if `m` divides the integer
+`e`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_zpow_pow_eq {K : Type*} [Field K] {ζ : K} {m : ℕ}
+    (hζ : IsPrimitiveRoot ζ m) (e : ℤ) :
+    ∑ a : Fin m, (ζ ^ e) ^ (a : ℕ) = if (m : ℤ) ∣ e then (m : K) else 0 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · simp
+  have hr : (e % m).toNat = e % m := Int.toNat_of_nonneg (Int.emod_nonneg _ (by omega))
+  -- Reduce the exponent modulo `m`, where `ζ ^ m = 1`.
+  have he : ζ ^ e = ζ ^ (e % m).toNat := by
+    conv_lhs => rw [← Int.mul_ediv_add_emod e m]
+    rw [zpow_add₀ (hζ.ne_zero hm.ne'), zpow_mul, zpow_natCast, hζ.pow_eq_one, one_zpow, one_mul]
+    nth_rw 1 [← hr]
+    rw [zpow_natCast]
+  rw [he, hζ.sum_pow_pow_eq]
+  simp only [← Int.natCast_dvd_natCast, hr, Int.dvd_iff_emod_eq_zero, Int.emod_emod]
+
 /-- **Orthogonality of characters in several variables.** In a domain, the sum of
 `∏ᵢ (ζ ^ eᵢ) ^ jᵢ` over `j ∈ {0, …, m - 1} ^ ι`, for a primitive `m`-th root of unity `ζ`, is the
 product over `i` of `m` if `m` divides `eᵢ`, and zero otherwise. -/
@@ -268,5 +287,26 @@ def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
 theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
     (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
   (rfl)
+
+/-- The power transition at a nonzero order is the identity. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_refl {M : Type*} [CommMonoid M] {n : ℕ} [NeZero n] :
+    rootsOfUnityPowOfDvd (M := M) (dvd_refl n) = MonoidHom.id _ := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp [Nat.div_self (NeZero.pos n)]
+
+/-- Power transitions compose along divisibility of orders. -/
+@[simp]
+theorem rootsOfUnityPowOfDvd_comp {M : Type*} [CommMonoid M] {n m l : ℕ}
+    (h₁ : n ∣ m) (h₂ : m ∣ l) :
+    (rootsOfUnityPowOfDvd (M := M) h₁).comp (rootsOfUnityPowOfDvd h₂) =
+      rootsOfUnityPowOfDvd (h₁.trans h₂) := by
+  apply MonoidHom.ext
+  intro η
+  apply Subtype.ext
+  simp only [MonoidHom.comp_apply, coe_rootsOfUnityPowOfDvd_apply]
+  rw [← pow_mul, Nat.div_mul_div h₂ h₁]
 
 end TauCeti

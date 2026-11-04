@@ -31,6 +31,8 @@ its slash action gives the weight-parity sign under translation.
   `integerCuspWidth 𝒢` powers of `T` are pairwise distinct.
 * `TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty`: the integer cusp
   width is a positive integer multiple of the strict width at `∞`.
+* `TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex`: the strict width at `∞` is
+  positive.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
 * `Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
   belonging to the group at an irregular cusp.
@@ -108,8 +110,9 @@ theorem SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem
   have hs := congrFun (SlashInvariantFormClass.slash_action_eq f _ hΓ) z
   rw [← mul_neg_one (Matrix.GeneralLinearGroup.upperRightHom h),
     SlashAction.slash_mul, ModularForm.slash_neg_one] at hs
-  simp only [Pi.smul_apply, smul_eq_mul, TauCeti.ModularForm.slash_upperRightHom_apply] at hs
-  simpa only [← inv_zpow, inv_neg_one] using
+  simp only [Pi.mul_apply,
+    TauCeti.ModularForm.slash_upperRightHom_apply] at hs
+  simpa only [← _root_.inv_zpow, inv_neg_one] using
     (eq_inv_mul_iff_mul_eq₀ (zpow_ne_zero k (by norm_num : (-1 : ℂ) ≠ 0))).mpr hs
 
 section IntegerCuspWidth
@@ -258,6 +261,17 @@ lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
       pos_of_mul_pos_left (hm ▸ mod_cast Subgroup.integerCuspWidth_pos) 𝒢.strictWidthInfty_nonneg
     exact_mod_cast this
   exact ⟨m.toNat, by lia, by rw [← hm, ← Int.cast_natCast, Int.toNat_of_nonneg hm_pos.le]⟩
+
+/-- The strict width at `∞` of a subgroup of `GL(2, ℝ)` of finite relative index in `𝒮ℒ`
+with discrete strict periods is positive. -/
+lemma Subgroup.strictWidthInfty_pos_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ]
+    [DiscreteTopology 𝒢.strictPeriods] : 0 < 𝒢.strictWidthInfty := by
+  obtain ⟨m', _, hnRw⟩ :=
+    Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty (𝒢 := 𝒢)
+  refine 𝒢.strictWidthInfty_nonneg.lt_of_ne fun heq ↦ ?_
+  rw [← heq, mul_zero] at hnRw
+  exact (by exact_mod_cast Subgroup.integerCuspWidth_pos : (0 : ℝ) <
+    Subgroup.integerCuspWidth 𝒢).ne' hnRw
 
 end IntegerCuspWidth
 

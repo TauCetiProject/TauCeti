@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Analysis.Sobolev.Wkp.Zero
+import TauCeti.Topology.Algebra.Module.Trace
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
@@ -35,6 +37,8 @@ No boundedness or boundary regularity of `Ω` is used.
   function is the trace of its weak Hessian.
 * `TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`: weak and strong solutions of
   `Δu = f` agree in `W^{2,p}(Ω)`.
+* `TauCeti.Wkp.trace_iteratedGradient_ofTestFunctionₗ_ae_eq`: for a test function `φ`, regarded
+  as an element of `W^{2,p}(Ω)`, the trace of the weak Hessian is `Δφ`.
 
 ## References
 
@@ -94,5 +98,15 @@ theorem forall_integral_laplacian_smul_value_eq_iff (u : Wkp mu Omega p 2) {f : 
   · intro h φ
     rw [← setIntegral_smul_eq_integral_smul, ← setIntegral_smul_eq_integral_smul (w := f)]
     exact integral_congr_ae (h.mono fun x hx => congrArg ((φ : E → ℝ) x • ·) hx)
+
+/-- **The trace of the weak Hessian of a test function is its Laplacian**: for a test function
+`φ` on `Ω`, regarded as an element of `W^{2,p}(Ω)`, `tr D²φ = Δφ` almost everywhere in `Ω`. -/
+theorem trace_iteratedGradient_ofTestFunctionₗ_ae_eq (φ : 𝓓(Omega, ℝ)) :
+    (fun x => LinearMap.trace ℝ E
+      (iteratedGradient 1 (ofTestFunctionₗ (mu := mu) (p := p) 2 φ) x : E →L[ℝ] E))
+        =ᵐ[mu.restrict Omega] Δ (φ : E → ℝ) := by
+  filter_upwards [iteratedGradientTestFunctionLp_apply_ae (mu := mu) p 1 φ] with x hx
+  rw [iteratedGradient_ofTestFunctionₗ 1 φ, hx, iteratedGradientTestFunction_def,
+    laplacian_eq_trace_iteratedGradientChain_one]
 
 end TauCeti.Wkp

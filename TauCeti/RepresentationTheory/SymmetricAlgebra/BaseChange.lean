@@ -36,6 +36,8 @@ representation `ρ.baseChange S`. This file draws the consequences for invariant
   representation on `Sym M` is equivalent to the representation induced by `ρ.baseChange S`.
 * `Representation.symmetricAlgebraInvariantsBaseChangeEquiv`: flat scalar extension of the invariant
   subalgebra, as an algebra equivalence.
+* `Representation.exists_lTensor_val_eq_of_mem_invariants_baseChange`: for flat `S`, every invariant
+  of the scalar extension of the induced representation on `Sym M` comes from `S ⊗[R] Sym(M)^G`.
 * `Representation.coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul`: the Reynolds operator
   commutes with scalar extension.
 * `Representation.symmetricAlgebraReynolds_scalarTensorBialgEquiv`: for flat `S`, the same
@@ -117,19 +119,12 @@ variable (ρ : Representation R G M)
 
 variable [Module.Flat R S] [Finite G]
 
-/-- Every invariant of `ρ.baseChange S` is the image of the scalar extension of an invariant of
-`ρ`, when `S` is flat over `R`. -/
-private theorem exists_scalarTensorBialgEquiv_lTensor_val_eq
-    {y : SymmetricAlgebra S (S ⊗[R] M)} (hy : y ∈ (ρ.baseChange S).symmetricAlgebraInvariants) :
-    ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants, scalarTensorBialgEquiv (k := R) (K := S)
-      (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) = y := by
-  -- Pull `y` back to an invariant of the scalar extension of the induced representation, which
-  -- is the scalar extension of an invariant by flatness.
-  let e := ρ.symmetricAlgebraBaseChangeEquiv S
-  have hy' : e.symm y ∈ (ρ.symmetricAlgebra.baseChange S).invariants := by
-    have := (e.symm.invariantsLinearEquiv ⟨y, (mem_invariants _ y).2
-      (((ρ.baseChange S).mem_symmetricAlgebraInvariants y).1 hy)⟩).2
-    rwa [Equiv.coe_invariantsLinearEquiv_apply] at this
+/-- Every invariant of the scalar extension of the induced representation on `Sym M` is the
+scalar extension of an invariant of `ρ`, when `S` is flat over `R`. -/
+theorem exists_lTensor_val_eq_of_mem_invariants_baseChange {y : S ⊗[R] SymmetricAlgebra R M}
+    (hy : y ∈ (ρ.symmetricAlgebra.baseChange S).invariants) :
+    ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants,
+      Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x = y := by
   -- The invariant submodule of the induced representation is the invariant subalgebra.
   let r : ρ.symmetricAlgebra.invariants →ₗ[R] ρ.symmetricAlgebraInvariants :=
     ρ.symmetricAlgebraInvariants.toSubmoduleEquiv.toLinearMap ∘ₗ
@@ -142,11 +137,26 @@ private theorem exists_scalarTensorBialgEquiv_lTensor_val_eq
     -- `Subalgebra.toSubmoduleEquiv` and `LinearEquiv.ofEq` do not change the underlying element,
     -- and Mathlib has no simp lemma for the former.
     | tmul s a => rfl
-  obtain ⟨z, hz⟩ := (ρ.symmetricAlgebra.invariantsBaseChangeEquiv (A := S)).surjective ⟨_, hy'⟩
+  obtain ⟨z, hz⟩ := (ρ.symmetricAlgebra.invariantsBaseChangeEquiv (A := S)).surjective ⟨y, hy⟩
   have hz' := congrArg Subtype.val hz
   rw [coe_invariantsBaseChangeEquiv] at hz'
-  refine ⟨r.lTensor S z, ?_⟩
-  rw [hr, hz']
+  exact ⟨r.lTensor S z, by rw [hr, hz']⟩
+
+/-- Every invariant of `ρ.baseChange S` is the image of the scalar extension of an invariant of
+`ρ`, when `S` is flat over `R`. -/
+private theorem exists_scalarTensorBialgEquiv_lTensor_val_eq
+    {y : SymmetricAlgebra S (S ⊗[R] M)} (hy : y ∈ (ρ.baseChange S).symmetricAlgebraInvariants) :
+    ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants, scalarTensorBialgEquiv (k := R) (K := S)
+      (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) = y := by
+  -- Pull `y` back to an invariant of the scalar extension of the induced representation.
+  let e := ρ.symmetricAlgebraBaseChangeEquiv S
+  have hy' : e.symm y ∈ (ρ.symmetricAlgebra.baseChange S).invariants := by
+    have := (e.symm.invariantsLinearEquiv ⟨y, (mem_invariants _ y).2
+      (((ρ.baseChange S).mem_symmetricAlgebraInvariants y).1 hy)⟩).2
+    rwa [Equiv.coe_invariantsLinearEquiv_apply] at this
+  obtain ⟨x, hx⟩ := ρ.exists_lTensor_val_eq_of_mem_invariants_baseChange hy'
+  refine ⟨x, ?_⟩
+  rw [hx]
   exact e.apply_symm_apply y
 
 /-- **Polynomial invariants commute with flat scalar extension.** For a finite group `G` and a

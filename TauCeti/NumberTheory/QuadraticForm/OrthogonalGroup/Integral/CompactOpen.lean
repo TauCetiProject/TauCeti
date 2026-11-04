@@ -134,11 +134,8 @@ theorem eventually_localSpinorNormImage_eq_unitSquareClasses {Q : QuadraticForm 
   filter_upwards [hU, eventually_integralOrthogonalSubgroup_baseChange_eq Q b c, hodd,
     eventually_all.mpr fun i ↦ Padic.eventually_norm_rat_eq_one (hc0 i)] with p hUp hbc hp hnorm
   -- At such a prime, `c` is an orthogonal basis of `p`-adic unit norms spanning the same lattice.
-  have hcb : (associated (Q.baseChange ℚ_[p])).IsOrthoᵢ (c.baseChange ℚ_[p]) := fun i j hij ↦ by
-    refine associated_isOrtho.mpr (isOrtho_def.mpr ?_)
-    rw [Basis.baseChange_apply, Basis.baseChange_apply, ← TensorProduct.tmul_add,
-      QuadraticForm.baseChange_tmul, QuadraticForm.baseChange_tmul, QuadraticForm.baseChange_tmul,
-      isOrtho_def.mp (hc i j hij), add_smul]
+  have hcb := QuadraticForm.isOrthoᵢ_associated_baseChange (A := ℚ_[p]) fun i j hij ↦
+    associated_isOrtho.mpr (hc i j hij)
   have hcu (i : Fin (finrank ℚ V)) : ‖Q.baseChange ℚ_[p] (c.baseChange ℚ_[p] i)‖ = 1 := by
     rw [Basis.baseChange_apply, QuadraticForm.baseChange_tmul, mul_one, Rat.smul_one_eq_cast]
     exact hnorm i

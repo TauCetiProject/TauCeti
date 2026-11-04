@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.Kaehler.Separable
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 
 /-!
 # One-dimensionality of the Kähler differentials of a function field
@@ -269,10 +270,7 @@ theorem transcendental_and_isSeparable_adjoin_of_D_ne_zero (h : finrank F Ω[F�
   have : Algebra.EssFiniteType k⟮y⟯ F := .of_comp k k⟮y⟯ F
   have := isSeparable_of_finrank_kaehlerDifferential_eq_one h
     (y := IntermediateField.AdjoinSimple.gen k y) (by simpa using hy)
-  refine ⟨fun halg ↦ ?_, this⟩
-  have : FiniteDimensional k k⟮y⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
-  have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮y⟯ F
-  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
+  exact ⟨transcendental_of_isAlgebraic_adjoin, this⟩
 
 /-- **The Kähler differentials of an essentially finite type transcendental field extension
 are one-dimensional exactly when it admits a single separating element**:
@@ -332,11 +330,7 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
   refine ⟨fun hsep ↦ ?_, fun hDx ↦
     (transcendental_and_isSeparable_adjoin_of_D_ne_zero hdim hDx).2⟩
   let _ := hsep
-  apply D_ne_zero_of_separating
-  intro halg
-  have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
-  have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮x⟯ F
-  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
+  exact D_ne_zero_of_separating transcendental_of_isAlgebraic_adjoin
 
 end IsFunctionField
 

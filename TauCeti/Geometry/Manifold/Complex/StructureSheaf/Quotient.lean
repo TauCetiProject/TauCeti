@@ -163,6 +163,22 @@ theorem quotientSheaf_ext {U : Opens (Quotient s)}
   apply (quotientSheafSectionsEquiv I s U).injective
   exact Subtype.ext (holomorphicStructureSheaf.ext h)
 
+/-- Constant functions take equal values at identified points, so the quotient sections form a
+`ℂ`-algebra. -/
+instance (U : (Opens (Quotient s))ᵒᵖ) : Algebra ℂ ((quotientSheaf I s).obj.obj U) :=
+  RingHom.toAlgebra <| (quotientSheafSectionsEquiv I s U.unop).symm.toRingHom.comp <|
+    (algebraMap ℂ _).codRestrict (quotientSectionSubring I s U.unop) fun c ↦
+      (mem_quotientSectionSubring I s _ _).mpr fun _ _ _ _ _ ↦
+        (algebraMap_apply _ c _).trans (algebraMap_apply _ c _).symm
+
+/-- The constant quotient section `c` is the constant function `c` upstairs. -/
+@[simp]
+theorem quotientSheafSectionsEquiv_algebraMap (U : Opens (Quotient s)) (c : ℂ)
+    (x : (Opens.map (TopCat.quotientMk s)).obj U) :
+    (quotientSheafSectionsEquiv I s U (algebraMap ℂ ((quotientSheaf I s).obj.obj (op U)) c)).1 x =
+      c :=
+  algebraMap_apply _ c x
+
 /-- The normalization pullback includes the quotient sheaf into the direct image of the
 holomorphic structure sheaf. -/
 def quotientSheafι : quotientSheaf I s ⟶
@@ -223,6 +239,24 @@ theorem quotientStalkBranch_germ (z : Quotient s) (x : X) (hx : Quotient.mk s x 
     (TopCat.Presheaf.stalkPushforward_germ_apply CommRingCat (TopCat.quotientMk s)
       (holomorphicStructureSheaf I X).presheaf U x hz
       (quotientSheafSectionsEquiv I s U f).1)
+
+/-- Evaluating a quotient germ through a branch over its base point evaluates the section. -/
+@[simp]
+theorem eval_quotientStalkBranch_germ (z : Quotient s) (x : X) (hx : Quotient.mk s x = z)
+    (U : Opens (Quotient s)) (hz : z ∈ U) (f : (quotientSheaf I s).obj.obj (op U)) :
+    eval I X x (quotientStalkBranch I s z x hx
+      (ConcreteCategory.hom ((quotientSheaf I s).presheaf.germ U z hz) f)) =
+      (quotientSheafSectionsEquiv I s U f).1
+        ⟨x, by rw [Opens.mem_map, TopCat.quotientMk_apply, hx]; exact hz⟩ :=
+  (congrArg _ (quotientStalkBranch_germ I s z x hx U hz f)).trans (eval_germ _ _ _ _ _ _)
+
+/-- Evaluation of a quotient germ through a branch over its base point is surjective. -/
+theorem eval_comp_quotientStalkBranch_surjective (z : Quotient s) (x : X)
+    (hx : Quotient.mk s x = z) :
+    Function.Surjective ((eval I X x).comp (quotientStalkBranch I s z x hx)) := fun c ↦
+  ⟨((quotientSheaf I s).presheaf.germ ⊤ z (Set.mem_univ z)).hom (algebraMap ℂ _ c),
+    (eval_quotientStalkBranch_germ I s z x hx ⊤ _ _).trans
+      (quotientSheafSectionsEquiv_algebraMap I s ⊤ c _)⟩
 
 /-- The branch restrictions of a quotient germ have equal values at any two identified points. -/
 theorem eval_quotientStalkBranch_eq (z : Quotient s) (x y : X)

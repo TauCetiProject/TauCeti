@@ -48,6 +48,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
+  basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
   disjoint index sets multiply to the signed basis vector of the union.
 * `CliffordAlgebra.basis_insert_of_forall_lt`: for an orthogonal basis, adjoining an index below
@@ -102,6 +104,16 @@ theorem basis_repr_empty (b : Module.Basis I R M) (x : CliffordAlgebra Q) :
   rw [basis, Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
     Module.Basis.exteriorAlgebra_repr_empty, scalarTrace_apply]
 
+/-- If no weight `w i` vanishes, then the coordinates of `x` vanish at every monomial of nonzero
+weight `∏ i ∈ s, w i` exactly when `x = 0`. -/
+theorem forall_prod_ne_zero_basis_repr_eq_zero_iff {b : Module.Basis I R M} {S : Type*}
+    [CommMonoidWithZero S] [NoZeroDivisors S] [Nontrivial S] {w : I → S} (hw : ∀ i, w i ≠ 0)
+    {x : CliffordAlgebra Q} :
+    (∀ s : Finset I, (∏ i ∈ s, w i) ≠ 0 → (basis Q b).repr x s = 0) ↔ x = 0 := by
+  simp only [fun s ↦ Finset.prod_ne_zero_iff.mpr fun i (_ : i ∈ s) ↦ hw i, ne_eq,
+    not_false_eq_true, forall_const, ← Module.Basis.coord_apply,
+    Module.Basis.forall_coord_eq_zero_iff]
+
 variable {b : Module.Basis I R M}
 
 /-- The generators of a finite set of indices of an orthogonal basis, listed in increasing order,
@@ -119,6 +131,23 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- For an orthogonal basis, the grade involution multiplies the Clifford basis vector indexed by
+`s` by the sign `(-1) ^ |s|` of its degree. -/
+theorem involute_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
+    involute (basis Q b s) = (-1 : R) ^ s.card • basis Q b s := by
+  rw [basis_eq_prod_map_sort hb, involute_prod_map_ι]
+  simp
+
+/-- For an orthogonal basis, the grade involution multiplies the coordinate at `s` by the sign
+`(-1) ^ |s|`. -/
+theorem basis_repr_involute (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (x : CliffordAlgebra Q)
+    (s : Finset I) :
+    (basis Q b).repr (involute x) s = (-1 : R) ^ s.card * (basis Q b).repr x s := by
+  refine LinearMap.congr_fun ((basis Q b).ext
+    (f₁ := (basis Q b).coord s ∘ₗ involute.toLinearMap)
+    (f₂ := (-1 : R) ^ s.card • (basis Q b).coord s) fun t ↦ ?_) x
+  by_cases h : t = s <;> simp [-basis_apply, involute_basis hb, h]
 
 /-- The full-support Clifford basis vector of an odd-dimensional orthogonal basis is central. -/
 theorem basis_univ_mem_center_of_odd_card [Fintype I]
@@ -514,9 +543,7 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
   rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
-    ← (basis Q b).repr.map_eq_zero_iff]
-  exact ⟨fun h ↦ Finsupp.ext fun s ↦ h s (Finset.prod_pos fun i _ ↦ hQ i).ne',
-    fun h s _ ↦ by simp [h]⟩
+    forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hQ i).ne']
 
 end Ordered
 

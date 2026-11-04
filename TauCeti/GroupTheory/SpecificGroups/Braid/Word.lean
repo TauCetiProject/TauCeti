@@ -22,6 +22,8 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.strandIncl`: the same word on one strand more, the new strand uncrossed.
 * `TauCeti.BraidWord.stabilize`: the Markov stabilization of a word, which adds a strand and
   crosses it once with the previous last strand.
+* `TauCeti.BraidWord.connectedSum`: the word `w₁` followed by `w₂` moved up onto the strands above
+  those of `w₁` but one, whose closure is the connected sum of the closures.
 * `TauCeti.BraidWord.levelAt` and `TauCeti.BraidWord.signAt`: the level and the sign of the letter
   at a given position of a word.
 
@@ -30,9 +32,17 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.toBraid_surjective`: every braid is represented by a word.
 * `TauCeti.BraidWord.exponentSum_toBraid`: the exponent sum of the represented braid is the sum
   of the signs of the letters.
+* `TauCeti.BraidWord.toBraid_map_fst`: relabelling the letters of a word represents the image of
+  its braid under a homomorphism relabelling the elementary braids in the same way.
 * `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
   operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
   `TauCeti.IsMarkovMove`.
+* `TauCeti.BraidWord.toBraid_connectedSum`: the connected sum of words represents the product of
+  `TauCeti.BraidGroup.castAdd` and `TauCeti.BraidGroup.natAdd` of their braids.
+* `TauCeti.BraidWord.levelAt_append_singleton` and `TauCeti.BraidWord.signAt_append_singleton`:
+  appending a letter adds its level and sign at the end of the word.
+* `TauCeti.BraidWord.exists_last_levelAt`: a word with a letter of a given level has a last
+  position at that level.
 * `TauCeti.BraidWord.levelAt_stabilize_of_lt` and `TauCeti.BraidWord.signAt_stabilize_of_lt`:
   stabilization keeps the level and the sign of every letter of the original word, while
   `TauCeti.BraidWord.levelAt_stabilize_length` and `TauCeti.BraidWord.signAt_stabilize_length`
@@ -84,6 +94,17 @@ theorem toBraid_reverse_map_neg (w : BraidWord n) :
   simp only [toBraid, List.prod_inv_reverse, List.map_reverse, List.map_map, Function.comp_def,
     Units.val_neg, zpow_neg]
 
+/-- Relabelling the letters of a word by `f` represents the image of its braid under a
+homomorphism sending each elementary braid `σ i` to `σ (f i)`. -/
+theorem toBraid_map_fst {n' : ℕ} (f : Fin n → Fin n')
+    (φ : BraidGroup (n + 1) →* BraidGroup (n' + 1))
+    (hφ : ∀ i, φ (sigma i) = sigma (n := n' + 1) (f i))
+    (w : BraidWord (n + 1)) :
+    toBraid (n := n' + 1) (w.map fun x ↦ ((f x.1 : Fin n'), x.2)) = φ w.toBraid := by
+  induction w with
+  | nil => rw [List.map_nil, toBraid_nil, toBraid_nil, map_one]
+  | cons x w ih => rw [List.map_cons, toBraid_cons, ih, toBraid_cons, map_mul, map_zpow, hφ]
+
 /-- Every braid is represented by a braid word. -/
 theorem toBraid_surjective : Function.Surjective (toBraid (n := n)) := by
   intro b
@@ -132,12 +153,8 @@ theorem length_strandIncl (w : BraidWord (n + 1)) :
 /-- Adding a strand to a word adds an uncrossed strand to the braid it represents. -/
 @[simp]
 theorem toBraid_strandIncl (w : BraidWord (n + 1)) :
-    w.strandIncl.toBraid = BraidGroup.strandIncl w.toBraid := by
-  induction w with
-  | nil => rw [strandIncl_def, List.map_nil, toBraid_nil, toBraid_nil, map_one]
-  | cons x w ih =>
-    rw [strandIncl_def, List.map_cons, toBraid_cons, ← strandIncl_def, ih, toBraid_cons, map_mul,
-      map_zpow, strandIncl_sigma]
+    w.strandIncl.toBraid = BraidGroup.strandIncl w.toBraid :=
+  toBraid_map_fst _ _ strandIncl_sigma w
 
 /-- The **Markov stabilization** of a braid word with sign `ε`: add a strand and cross it once
 with the previous last strand, by the letter `σ (Fin.last n) ^ ε` placed at the top. -/
@@ -214,6 +231,18 @@ theorem levelAt_of_le {k : ℕ} (hk : w.length ≤ k) : w.levelAt k = none := by
 theorem levelAt_ne_none_iff {k : ℕ} : w.levelAt k ≠ none ↔ k < w.length := by
   simp [levelAt]
 
+/-- A position carries level `l` exactly when it holds a letter of level `l`. -/
+theorem levelAt_eq_some_iff {k l : ℕ} :
+    w.levelAt k = some l ↔ ∃ hk : k < w.length, (w[k].1 : ℕ) = l := by
+  refine ⟨fun h ↦ ?_, fun ⟨hk, h⟩ ↦ h ▸ w.levelAt_of_lt hk⟩
+  have hk : k < w.length := (levelAt_ne_none_iff w).1 (by simp [h])
+  exact ⟨hk, Option.some_inj.1 ((w.levelAt_of_lt hk).symm.trans h)⟩
+
+/-- A letter of a word on `n + 1` strands lies on a level below `n`. -/
+theorem exists_levelAt_eq_some_lt (w : BraidWord (n + 1)) {k : ℕ} (hk : k < w.length) :
+    ∃ l < n, w.levelAt k = some l :=
+  ⟨_, w[k].1.isLt, w.levelAt_of_lt hk⟩
+
 /-- The sign of a letter of the word. -/
 @[simp]
 theorem signAt_of_lt {k : ℕ} (hk : k < w.length) : w.signAt k = (w[k].2 : ℤ) := by
@@ -229,6 +258,60 @@ theorem signAt_eq_one_or_eq_neg_one {k : ℕ} (hk : k < w.length) :
     w.signAt k = 1 ∨ w.signAt k = -1 := by
   rw [signAt_of_lt w hk]
   rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
+
+/-- Appending a letter `y` puts its level at position `w.length` and keeps every other level. -/
+theorem levelAt_append_singleton (y : Fin (n - 1) × ℤˣ) (k : ℕ) :
+    (w ++ [y]).levelAt k = if k = w.length then some (y.1 : ℕ) else w.levelAt k := by
+  rw [levelAt_def, levelAt_def]
+  rcases lt_trichotomy k w.length with h | rfl | h
+  · simp [List.getElem?_append_left h, h.ne]
+  · simp
+  · simp only [h.ne', ↓reduceIte]
+    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none h.le]
+
+/-- Appending a letter `y` puts its sign at position `w.length` and keeps every other sign. -/
+theorem signAt_append_singleton (y : Fin (n - 1) × ℤˣ) (k : ℕ) :
+    (w ++ [y]).signAt k = if k = w.length then (y.2 : ℤ) else w.signAt k := by
+  rw [signAt_def, signAt_def]
+  rcases lt_trichotomy k w.length with h | rfl | h
+  · simp [List.getElem?_append_left h, h.ne]
+  · simp
+  · simp only [h.ne', ↓reduceIte]
+    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none h.le]
+
+/-- Appending a letter keeps the level of every letter of the original word. -/
+@[simp]
+theorem levelAt_append_singleton_of_lt (y : Fin (n - 1) × ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w ++ [y]).levelAt k = w.levelAt k := by
+  simp only [levelAt_append_singleton, hk.ne, ↓reduceIte]
+
+/-- Appending a letter keeps the sign of every letter of the original word. -/
+@[simp]
+theorem signAt_append_singleton_of_lt (y : Fin (n - 1) × ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w ++ [y]).signAt k = w.signAt k := by
+  simp only [signAt_append_singleton, hk.ne, ↓reduceIte]
+
+/-- The appended letter `y` of `w ++ [y]` has the level of `y`. -/
+theorem levelAt_append_singleton_length (y : Fin (n - 1) × ℤˣ) :
+    (w ++ [y]).levelAt w.length = some (y.1 : ℕ) := by
+  simp
+
+/-- The appended letter `y` of `w ++ [y]` has the sign of `y`. -/
+theorem signAt_append_singleton_length (y : Fin (n - 1) × ℤˣ) :
+    (w ++ [y]).signAt w.length = (y.2 : ℤ) := by
+  simp
+
+/-- A word with a letter of level `i` has a last position at level `i`. -/
+theorem exists_last_levelAt {i : ℕ} (h : ∃ x ∈ w, (x.1 : ℕ) = i) :
+    ∃ t < w.length, w.levelAt t = some i ∧ ∀ k, t < k → w.levelAt k ≠ some i := by
+  obtain ⟨x, hx, rfl⟩ := h
+  obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hx
+  let t := Nat.findGreatest (fun j ↦ w.levelAt j = some (w[k].1 : ℕ)) w.length
+  have htl : w.levelAt t = some (w[k].1 : ℕ) :=
+    Nat.findGreatest_spec (P := fun j ↦ w.levelAt j = some (w[k].1 : ℕ)) hk.le
+      (levelAt_of_lt w hk)
+  refine ⟨t, (levelAt_ne_none_iff w).1 (by simp [htl]), htl, fun j hj hjl ↦ ?_⟩
+  exact Nat.findGreatest_is_greatest hj ((levelAt_ne_none_iff w).1 (by simp [hjl])).le hjl
 
 /-- Stabilization keeps the level of every letter of the original word. -/
 @[simp]
@@ -253,6 +336,68 @@ theorem signAt_stabilize_length (w : BraidWord (n + 1)) (ε : ℤˣ) :
   simp [signAt, stabilize_def, length_strandIncl]
 
 end Positions
+
+/-! ### Connected sums -/
+
+section ConnectedSum
+
+variable {m : ℕ} (w₁ : BraidWord (n + 1)) (w₂ : BraidWord (m + 1))
+
+/-- The **connected sum** of braid words: `w₁` on the strands `0, …, n` followed by `w₂` moved up
+onto the strands `n, …, n + m`, so that the two braids share the strand `n`. Its closure is the
+connected sum of the closures of `w₁` and `w₂`, along the components through the shared strand. -/
+def connectedSum : BraidWord (n + m + 1) :=
+  w₁.map (fun x ↦ ((Fin.castAdd m x.1 : Fin (n + m)), x.2)) ++
+    w₂.map (fun x ↦ ((Fin.natAdd n x.1 : Fin (n + m)), x.2))
+
+/-- The defining equation of `TauCeti.BraidWord.connectedSum`. -/
+theorem connectedSum_def :
+    w₁.connectedSum w₂ = w₁.map (fun x ↦ ((Fin.castAdd m x.1 : Fin (n + m)), x.2)) ++
+      w₂.map (fun x ↦ ((Fin.natAdd n x.1 : Fin (n + m)), x.2)) :=
+  (rfl)
+
+-- The list type is written `Fin (n + m) × ℤˣ` rather than `BraidWord (n + m + 1)`, for the reason
+-- given at `TauCeti.BraidWord.length_strandIncl`.
+/-- The connected sum has the letters of both words. -/
+@[simp]
+theorem length_connectedSum :
+    List.length (α := Fin (n + m) × ℤˣ) (w₁.connectedSum w₂) = w₁.length + w₂.length := by
+  simp [connectedSum_def]
+
+/-- The connected sum of words represents the product of the braid of `w₁` on the bottom strands
+and the braid of `w₂` on the top strands, which share the strand `n`. -/
+@[simp]
+theorem toBraid_connectedSum :
+    (w₁.connectedSum w₂).toBraid =
+      BraidGroup.castAdd m w₁.toBraid * BraidGroup.natAdd n w₂.toBraid := by
+  rw [connectedSum_def, toBraid_append, toBraid_map_fst _ _ (castAdd_sigma m),
+    toBraid_map_fst _ _ (natAdd_sigma n)]
+
+/-- The letters of `w₁` keep their level in the connected sum. -/
+@[simp]
+theorem levelAt_connectedSum_of_lt {k : ℕ} (hk : k < w₁.length) :
+    (w₁.connectedSum w₂).levelAt k = w₁.levelAt k := by
+  simp [levelAt_def, connectedSum_def, List.getElem?_append_left, hk]
+
+/-- The letters of `w₂` are moved up by `n` levels in the connected sum. -/
+@[simp]
+theorem levelAt_connectedSum_add (k : ℕ) :
+    (w₁.connectedSum w₂).levelAt (w₁.length + k) = (w₂.levelAt k).map (n + ·) := by
+  simp [levelAt_def, connectedSum_def, List.getElem?_append_right, Function.comp_def]
+
+/-- The letters of `w₁` keep their sign in the connected sum. -/
+@[simp]
+theorem signAt_connectedSum_of_lt {k : ℕ} (hk : k < w₁.length) :
+    (w₁.connectedSum w₂).signAt k = w₁.signAt k := by
+  simp [signAt_def, connectedSum_def, List.getElem?_append_left, hk]
+
+/-- The letters of `w₂` keep their sign in the connected sum. -/
+@[simp]
+theorem signAt_connectedSum_add (k : ℕ) :
+    (w₁.connectedSum w₂).signAt (w₁.length + k) = w₂.signAt k := by
+  simp [signAt_def, connectedSum_def, List.getElem?_append_right, Function.comp_def]
+
+end ConnectedSum
 
 end BraidWord
 

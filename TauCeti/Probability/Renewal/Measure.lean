@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Independence.ConvolutionPower
+public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # The renewal measure and the renewal function
@@ -37,11 +38,17 @@ measure and the renewal function are the objects of the renewal limit theorems a
 
 ## Main results
 
+* `MeasureTheory.Measure.convolutionPower_le_renewalMeasure`,
+  `MeasureTheory.Measure.summable_convolutionPower_real` — each `F^{∗n}` is dominated by `U`, and
+  the masses `F^{∗n} s` are summable when `U s` is finite.
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_renewalMeasure` — `F` is locally finite when
+  `U` is.
 * `MeasureTheory.Measure.renewalMeasure_eq_dirac_add_conv` — the renewal equation
   `U = δ₀ + F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
 * `MeasureTheory.Measure.renewalMeasure_Iic` — `U [0, t] = 1 + m t`.
-* `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments.
+* `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments, and
+  `TauCeti.Probability.integral_renewalCountNat`, its real form for the natural-valued count.
 * `MeasureTheory.Measure.renewalFunction_lt_top`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_renewalMeasure` — local finiteness when
   `F {0} < 1`.
@@ -80,20 +87,48 @@ theorem renewalMeasure_def (μ : Measure α) :
 
 theorem renewalMeasure_apply (μ : Measure α) {s : Set α} (hs : MeasurableSet s) :
     μ.renewalMeasure s = ∑' n, μ.convolutionPower n s := by
-  rw [renewalMeasure_def, sum_apply _ hs]
+  rw [renewalMeasure_def, MeasureTheory.Measure.sum_apply _ hs]
+
+/-- Each convolution power is dominated by the renewal measure. -/
+theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
+    μ.convolutionPower n ≤ μ.renewalMeasure :=
+  le_sum _ n
+
+/-- An s-finite measure is dominated by its renewal measure, of which it is the term `μ^{∗1}`. -/
+theorem le_renewalMeasure [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
+    μ ≤ μ.renewalMeasure :=
+  (convolutionPower_one μ).ge.trans (convolutionPower_le_renewalMeasure μ 1)
+
+/-- An s-finite measure whose renewal measure is locally finite is itself locally finite. -/
+theorem isLocallyFiniteMeasure_of_renewalMeasure [MeasurableAdd₂ α] [TopologicalSpace α]
+    (μ : Measure α) [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure] :
+    IsLocallyFiniteMeasure μ :=
+  isLocallyFiniteMeasure_of_le (le_renewalMeasure μ)
+
+/-- The masses of a set `s` under the convolution powers are summable when the renewal measure
+gives `s` finite mass. No measurability of `s` is needed. -/
+theorem summable_convolutionPower_real {μ : Measure α} {s : Set α}
+    (hU : μ.renewalMeasure s ≠ ∞) : Summable fun n ↦ (μ.convolutionPower n).real s :=
+  ENNReal.summable_toReal (ne_top_of_le_ne_top hU (le_sum_apply _ s))
 
 /-- The renewal measure of an s-finite measure is s-finite. -/
 instance sfinite_renewalMeasure (μ : Measure α) [SFinite μ] : SFinite μ.renewalMeasure := by
   rw [renewalMeasure_def]
   infer_instance
 
+/-- Convolving the renewal measure with `μ` removes the term `μ^{∗0} = δ₀`:
+`μ ∗ U = ∑ n, μ^{∗(n + 1)}`. -/
+theorem conv_renewalMeasure [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
+    μ ∗ μ.renewalMeasure = Measure.sum fun n ↦ μ.convolutionPower (n + 1) := by
+  simp_rw [renewalMeasure_def, conv_sum, convolutionPower_succ']
+
 /-- **The renewal equation** `U = δ₀ + μ ∗ U` for the renewal measure `U` of `μ`. -/
 theorem renewalMeasure_eq_dirac_add_conv [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
     μ.renewalMeasure = dirac 0 + μ ∗ μ.renewalMeasure := by
   ext s hs
-  rw [add_apply, renewalMeasure_def, conv_sum, sum_apply _ hs, sum_apply _ hs,
-    tsum_eq_zero_add' ENNReal.summable]
-  simp_rw [← convolutionPower_succ', convolutionPower_zero]
+  rw [conv_renewalMeasure, _root_.add_apply, MeasureTheory.Measure.sum_apply _ hs,
+    renewalMeasure_apply _ hs,
+    tsum_eq_zero_add' CompleteLattice.summable, convolutionPower_zero]
 
 end RenewalMeasure
 
@@ -117,14 +152,14 @@ theorem renewalFunction_def (t : ℝ≥0) :
 powers. -/
 theorem renewalFunction_eq_tsum [SFinite μ] (t : ℝ≥0) :
     μ.renewalFunction t = ∑' n, μ.convolutionPower (n + 1) (Iic t) := by
-  rw [renewalFunction_def, renewalMeasure_def, conv_sum, sum_apply _ measurableSet_Iic]
-  simp_rw [convolutionPower_succ']
+  rw [renewalFunction_def, conv_renewalMeasure, MeasureTheory.Measure.sum_apply _ measurableSet_Iic]
 
 /-- The renewal measure of `[0, t]` is one more than the renewal function at `t`: the extra unit
 is the point mass `μ^{∗0} = δ₀`. -/
 theorem renewalMeasure_Iic [SFinite μ] (t : ℝ≥0) :
     μ.renewalMeasure (Iic t) = 1 + μ.renewalFunction t := by
-  rw [renewalMeasure_eq_dirac_add_conv, add_apply, dirac_apply_of_mem (by simp : (0 : ℝ≥0) ∈ Iic t),
+  rw [renewalMeasure_eq_dirac_add_conv, _root_.add_apply,
+    dirac_apply_of_mem (by simp : (0 : ℝ≥0) ∈ Iic t),
     renewalFunction_def]
 
 /-- The renewal function is nondecreasing in time. -/
@@ -141,30 +176,39 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → 
 
 /-- **The renewal function is the expected count.** For independent, identically distributed
 increments, the expected number of arrivals in `[0, t]` is the renewal function of the common law
-of the increments. No assumption is made on the atom of the law at zero. -/
-theorem lintegral_renewalCount (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+of the increments. No assumption is made on the atom of the law at zero, and both sides may be
+infinite. -/
+theorem lintegral_renewalCount (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t : ℝ≥0) :
     ∫⁻ ω, renewalCount T t ω ∂P = (P.map (T 0)).renewalFunction t := by
   have := hindep.isProbabilityMeasure
-  have hX : ∀ i, HasLaw (T i) (P.map (T 0)) P := fun i ↦ ⟨(hT i).aemeasurable, (hid i).map_eq⟩
-  have hmeas : ∀ n, MeasurableSet (arrival T (n + 1) ⁻¹' Iic t) := fun n ↦
-    measurable_arrival hT _ measurableSet_Iic
-  have hcount : ∀ ω, renewalCount T t ω =
-      ∑' n, (arrival T (n + 1) ⁻¹' Iic t).indicator (fun _ ↦ 1) ω := fun ω ↦ by
-    refine (renewalCount_def T t ω).trans (tsum_congr fun n ↦ ?_)
+  have hS (n : ℕ) := hasLaw_arrival hindep hid n
+  -- The `n`-th term of the series defining the count is the indicator of `{arrival ≤ t}`.
+  have hterm (n : ℕ) (ω : Ω) : (if arrival T (n + 1) ω ≤ t then (1 : ℝ≥0∞) else 0) =
+      (arrival T (n + 1) ⁻¹' Iic t).indicator (fun _ ↦ 1) ω := by
     by_cases h : arrival T (n + 1) ω ≤ t <;> simp [h]
-  simp_rw [hcount]
-  rw [lintegral_tsum fun n ↦ (measurable_const.indicator (hmeas n)).aemeasurable,
+  have hnull (n : ℕ) : NullMeasurableSet (arrival T (n + 1) ⁻¹' Iic t) P :=
+    (hS (n + 1)).aemeasurable.nullMeasurableSet_preimage measurableSet_Iic
+  simp only [renewalCount_def, hterm]
+  rw [lintegral_tsum fun n ↦ aemeasurable_const.indicator₀ (hnull n),
     Measure.renewalFunction_eq_tsum]
   refine tsum_congr fun n ↦ ?_
-  -- The `(n + 1)`-st arrival time has law the `(n + 1)`-st convolution power.
-  have hsum : ∑ i ∈ Finset.range (n + 1), T i = arrival T (n + 1) := by
-    ext ω
-    rw [Finset.sum_apply, arrival_def]
-  have hlaw := hindep.hasLaw_finset_sum_convolutionPower hX (Finset.range (n + 1))
-  rw [hsum, Finset.card_range] at hlaw
-  rw [lintegral_indicator_const (hmeas n), one_mul, ← hlaw.map_eq,
-    Measure.map_apply (measurable_arrival hT _) measurableSet_Iic]
+  rw [lintegral_indicator_const₀ (hnull n), one_mul, ← (hS (n + 1)).map_eq,
+    Measure.map_apply_of_aemeasurable (hS (n + 1)).aemeasurable measurableSet_Iic]
+
+/-- The real form of `TauCeti.Probability.lintegral_renewalCount`: for independent, identically
+distributed increments that are not almost surely zero, the mean of the natural-valued count at
+time `t` is the renewal function of the increment law. -/
+theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
+    ∫ ω, (renewalCountNat T t ω : ℝ) ∂P = ((P.map (T 0)).renewalFunction t).toReal := by
+  have hm := measurable_renewalCountNat hT t
+  rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun ω ↦ by positivity)
+    (by fun_prop), ← lintegral_renewalCount hindep hid t]
+  congr 1
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_natCast_renewalCountNat hT hindep hid hzero] with ω hω
+  rw [ENNReal.ofReal_natCast, hω t]
 
 end TauCeti.Probability
 
@@ -179,14 +223,12 @@ theorem renewalFunction_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalFunc
   -- Realize i.i.d. increments with law `μ` as the coordinates of the product measure.
   set P := Measure.infinitePi fun _ : ℕ ↦ μ
   have hT : ∀ n, Measurable fun w : ℕ → ℝ≥0 ↦ w n := measurable_pi_apply
-  have hindep : iIndepFun (fun n (w : ℕ → ℝ≥0) ↦ w n) P :=
-    iIndepFun_infinitePi (P := fun _ : ℕ ↦ μ) (X := fun _ x ↦ x) fun _ ↦ measurable_id
+  have hindep : iIndepFun _ P := TauCeti.Probability.iIndepFun_eval_infinitePi _
+  have hid (n : ℕ) : IdentDistrib _ _ P P := μ.identDistrib_eval_infinitePi n 0
   have hmap : ∀ n, P.map (fun w ↦ w n) = μ := fun n ↦ infinitePi_map_eval _ n
-  have hid : ∀ n, IdentDistrib (fun w : ℕ → ℝ≥0 ↦ w n) (fun w ↦ w 0) P P := fun n ↦
-    ⟨(hT n).aemeasurable, (hT 0).aemeasurable, by rw [hmap, hmap]⟩
   have hzero : P {w | w 0 = 0} < 1 := by
     rwa [← hmap 0, map_apply (hT 0) (measurableSet_singleton 0)] at hμ
-  rw [← hmap 0, ← TauCeti.Probability.lintegral_renewalCount hT hindep hid t]
+  rw [← hmap 0, ← TauCeti.Probability.lintegral_renewalCount hindep hid t]
   simpa using TauCeti.Probability.lintegral_renewalCount_pow_lt_top hT hindep hid hzero t 1
 
 /-- The renewal measure of a probability measure on `ℝ≥0` other than the point mass at zero is

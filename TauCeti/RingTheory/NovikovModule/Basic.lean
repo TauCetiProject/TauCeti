@@ -16,7 +16,10 @@ public import Mathlib.Tactic.Linarith
 
 For a potential `F : S → ℝ`, `NovikovModule R F` consists of coefficient functions on `S`
 with finite support above every potential threshold. It is a submodule of `S → R`, with the
-usual pointwise addition and ground-ring scalar multiplication.
+usual pointwise addition and ground-ring scalar multiplication. Finite combinations embed by
+`NovikovModule.ofFinsupp`, and `NovikovModule.trunc C a` is the finite combination keeping the
+coefficients of `a` at generators of potential `> C`. These two constructions adapt the
+approach of the unmerged TauCeti PR https://github.com/TauCetiProject/TauCeti/pull/20410.
 
 Suppose `S` is a finite disjoint union of torsors `P i` under an additive group `H`, and
 `F (h +ᵥ p) = F p - N h`. Choosing one lift in each torsor identifies this completion with
@@ -66,6 +69,25 @@ threshold. -/
 theorem mem_iff {a : S → R} : a ∈ NovikovModule R F ↔
     ∀ C : ℝ, {s | a s ≠ 0 ∧ C < F s}.Finite := Iff.rfl
 
+/-- A coefficient function with finite support is a completed combination. -/
+theorem mem_of_finite_support {a : S → R} (ha : (Function.support a).Finite) :
+    a ∈ NovikovModule R F :=
+  fun _ => ha.subset fun _ hs => hs.1
+
+/-- A point mass at a generator is a completed combination. -/
+theorem pi_single_mem [DecidableEq S] (s : S) (r : R) : Pi.single s r ∈ NovikovModule R F :=
+  mem_of_finite_support ((Set.finite_singleton s).subset Pi.support_single_subset)
+
+/-- The point mass `r` at a generator `s`, as a completed combination. -/
+def single [DecidableEq S] (s : S) (r : R) : NovikovModule R F :=
+  ⟨Pi.single s r, pi_single_mem s r⟩
+
+/-- The coefficients of a point mass. -/
+@[simp]
+theorem single_val [DecidableEq S] (s : S) (r : R) :
+    (single s r : NovikovModule R F).val = Pi.single s r :=
+  (rfl)
+
 /-- Only finitely many nonzero coefficients occur above any fixed potential threshold. -/
 theorem finite_gt (a : NovikovModule R F) (C : ℝ) :
     {s | a.val s ≠ 0 ∧ C < F s}.Finite := a.property C
@@ -93,6 +115,74 @@ theorem bddAbove_image_support (a : NovikovModule R F) :
   rcases lt_or_ge 0 (F s) with h | h
   · exact (hm ⟨s, ⟨hs, h⟩, rfl⟩).trans (le_max_left _ _)
   · exact h.trans (le_max_right _ _)
+
+variable (F) in
+/-- Finite combinations, viewed as completed combinations with the same coefficients. -/
+def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where
+  toFun a := ⟨a, mem_iff.2 fun _ => a.hasFiniteSupport.subset fun _ hs => hs.1⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem ofFinsupp_apply_val (a : S →₀ R) (s : S) : (ofFinsupp F a).val s = a s :=
+  (rfl)
+
+theorem ofFinsupp_injective : Function.Injective (ofFinsupp (R := R) F) :=
+  fun _ _ h => DFunLike.coe_injective (congrArg Subtype.val h)
+
+/-- The truncation of a completed combination above the potential cutoff `C`: the finite
+combination keeping the coefficients of the generators of potential `> C`. -/
+def trunc (C : ℝ) (a : NovikovModule R F) : S →₀ R :=
+  Finsupp.ofSupportFinite ({s | C < F s}.indicator a.val) <| by
+    rw [Set.support_indicator]
+    exact (finite_gt a C).subset fun _ hs => ⟨hs.2, hs.1⟩
+
+@[simp]
+theorem trunc_apply (C : ℝ) (a : NovikovModule R F) (s : S) :
+    trunc C a s = if C < F s then a.val s else 0 := by
+  simp [trunc, Finsupp.ofSupportFinite_coe, Set.indicator_apply]
+
+theorem trunc_apply_of_lt {C : ℝ} {a : NovikovModule R F} {s : S} (hs : C < F s) :
+    trunc C a s = a.val s := by
+  simp [trunc_apply, hs]
+
+theorem trunc_apply_of_le {C : ℝ} {a : NovikovModule R F} {s : S} (hs : F s ≤ C) :
+    trunc C a s = 0 := by
+  simp [trunc_apply, hs.not_gt]
+
+@[simp]
+theorem trunc_zero (C : ℝ) : trunc C (0 : NovikovModule R F) = 0 := by
+  ext s
+  simp
+
+@[simp]
+theorem trunc_add (C : ℝ) (a b : NovikovModule R F) :
+    trunc C (a + b) = trunc C a + trunc C b := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+@[simp]
+theorem trunc_smul (C : ℝ) (c : R) (a : NovikovModule R F) :
+    trunc C (c • a) = c • trunc C a := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+@[simp]
+theorem trunc_neg (C : ℝ) (a : NovikovModule R F) : trunc C (-a) = -trunc C a := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+@[simp]
+theorem trunc_sub (C : ℝ) (a b : NovikovModule R F) :
+    trunc C (a - b) = trunc C a - trunc C b := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+end Ring
 
 section Coordinates
 

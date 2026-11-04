@@ -93,11 +93,10 @@ enclosure statement `TauCeti.IsUniformlyLocallyConnected.exists_isConnected_supe
 middle piece. This is where the local connectedness of `∂Ω` that `Conformal/CutDiameter.lean` names
 as one of its two geometric inputs enters, the other being the length–area estimate.
 
-What is **not** proved here, and is what still separates layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md` from its milestone, is that the resulting connected set
-encloses the boundary piece: that `frontier Ω ∩ frontier A` is contained in it together with `γ`.
-Classically that is a separation argument about the closed curve formed by the image of the cut and
-the boundary set, and no part of it is claimed below.
+What is **not** proved here is that the resulting connected set encloses the boundary piece: that
+`frontier Ω ∩ frontier A` is contained in it together with `γ`. Classically that is a separation
+argument about the closed curve formed by the image of the cut and the boundary set, and no part of
+it is claimed below.
 
 ## Generality
 
@@ -114,13 +113,11 @@ statement that does use the disc is the continuum theorem
 `TauCeti.isConnected_clusterSetOn_ball_inter_sphere`, whose input is that small balls meet the
 crosscut in a subarc.
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything here is stated for maps of `ℂ`. The inputs that are
-not about conformality are stated at their own generality elsewhere: `TauCeti.diam_frontier` for an
-arbitrary real normed space, `TauCeti.IsUniformlyLocallyConnected` for an arbitrary pseudometric
-space, and the splitting of the domain by the cutting sphere
-(`TauCeti.sdiff_sphere_eq_inter_ball_union_sdiff_closedBall`) for an arbitrary set in an arbitrary
-pseudometric space, in `TauCeti/Topology/MetricSpace/Cut.lean`.
+Everything here is stated for maps of `ℂ`. The inputs that are not about conformality are stated at
+their own generality elsewhere: `TauCeti.diam_frontier` for an arbitrary real normed space,
+`TauCeti.IsUniformlyLocallyConnected` for an arbitrary pseudometric space, and the splitting of the
+domain by the cutting sphere (`TauCeti.sdiff_sphere_eq_inter_ball_union_sdiff_closedBall`) for an
+arbitrary set in an arbitrary pseudometric space, in `TauCeti/Topology/MetricSpace/Cut.lean`.
 
 ## Main results
 
@@ -146,14 +143,6 @@ pseudometric space, in `TauCeti/Topology/MetricSpace/Cut.lean`.
 * `TauCeti.exists_isConnected_subset_frontier_image_of_diam_lt` — a uniformly locally connected
   image boundary encloses the middle piece of every small cut in a small connected boundary set, at
   a rate independent of the centre and radius of the cutting circle.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no boundary correspondence for conformal maps. So this file is new Lean
-formalization rather than a temporary shim.
 
 ## References
 

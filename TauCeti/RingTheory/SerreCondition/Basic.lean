@@ -9,8 +9,10 @@ public import Mathlib.RingTheory.KrullDimension.Zero
 public import Mathlib.RingTheory.LocalProperties.Reduced
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Locus
+import TauCeti.RingTheory.CohenMacaulay.Localization
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Module
+import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
@@ -45,7 +47,9 @@ the support of `M` imposes no condition.
 * `Module.SatisfiesSerreS.localization_self` and `Ring.SatisfiesSerreR.localization`: for the ring
   itself, `(S_n)` and `(R_n)` pass to every localization, whose local rings are local rings of `R`.
 * `Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay`: a finite module satisfies `(S_n)`
-  for every `n` if and only if all of its localizations at primes are Cohen–Macaulay.
+  for every `n` if and only if all of its localizations at primes are Cohen–Macaulay; in
+  particular a finite Cohen–Macaulay module over a Noetherian local ring satisfies every `(S_n)`
+  (`Module.IsCohenMacaulay.satisfiesSerreS`).
 * `Module.satisfiesSerreS_one_iff`: a finite module satisfies `(S_1)` if and only if it has no
   embedded primes, that is, its associated primes are the minimal primes of its support (Stacks,
   Lemma 10.157.2 (031Q)).
@@ -127,6 +131,12 @@ theorem forall_satisfiesSerreS_iff_forall_isCohenMacaulay [IsNoetherianRing R]
     exact le_top
   · exact (min_le_right _ _).trans (h p).depth_eq.ge
 
+/-- A finite Cohen–Macaulay module over a Noetherian local ring satisfies `(S_n)` for every `n`,
+since its localizations at primes are Cohen–Macaulay (`Module.IsCohenMacaulay.localizedModule`). -/
+theorem IsCohenMacaulay.satisfiesSerreS [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R]
+    [Module.Finite R M] (h : IsCohenMacaulay R M) : SatisfiesSerreS n R M :=
+  forall_satisfiesSerreS_iff_forall_isCohenMacaulay.2 (fun p _ ↦ h.localizedModule p) n
+
 /-- A finite module over a Noetherian ring satisfies `(S_1)` if and only if it has no embedded
 primes: its associated primes are exactly the minimal primes of its support. Stacks,
 Lemma 10.157.2 (031Q). -/
@@ -157,9 +167,7 @@ theorem satisfiesSerreS_self_iff : SatisfiesSerreS n R R ↔ ∀ (p : Ideal R) [
     min (n : WithBot ℕ∞) (ringKrullDim (Localization.AtPrime p)) ≤
       (depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) : WithBot ℕ∞) := by
   refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
-  let e : LocalizedModule p.primeCompl R ≃ₗ[Localization.AtPrime p] Localization.AtPrime p :=
-    (IsLocalizedModule.iso p.primeCompl (Algebra.linearMap R (Localization.AtPrime p))
-      ).extendScalarsOfIsLocalization p.primeCompl _
+  let e := LocalizedModule.equivLocalization p.primeCompl
   rw [supportDim_eq_of_equiv e, supportDim_self_eq_ringKrullDim, depth_eq_of_linearEquiv e]
 
 /-- Serre's condition `(S_n)` for a Noetherian ring passes to its localizations: the local rings

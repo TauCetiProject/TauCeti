@@ -34,6 +34,8 @@ and `1` otherwise, and it is `1` for `f = 1`. This is the unit index in the clas
   quadratic field, a root of unity in `ℤ + f 𝓞 K` with `f > 1` is `±1`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.coe_range_unitsMap_intAddMulOrder`: in an
   imaginary quadratic field, the units of `ℤ + f 𝓞 K` with `f > 1` are `±1`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_units_intAddMulOrder`: in an imaginary
+  quadratic field, the order `ℤ + f 𝓞 K` with `f > 1` has exactly two units.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.index_range_unitsMap_intAddMulOrder_mul_two`: for
   `f > 1`, twice the unit index `[(𝓞 K)ˣ : O_fˣ]` is the number of roots of unity of `K`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.index_range_unitsMap_intAddMulOrder`: the unit
@@ -165,26 +167,37 @@ theorem coe_range_unitsMap_intAddMulOrder [IsTotallyComplex K] (hK : finrank ℚ
     · exact ⟨1, map_one _⟩
     · exact ⟨-1, Units.ext (by simp)⟩
 
+/-- **The order `ℤ + f 𝓞 K` has two units.** In an imaginary quadratic field, the order of
+conductor `f > 1` has exactly the two units `±1`. -/
+@[simp]
+theorem card_units_intAddMulOrder [IsTotallyComplex K] (hK : finrank ℚ K = 2) (hf : 1 < f) :
+    Nat.card (intAddMulOrder K f).toRingOfIntegersˣ = 2 := by
+  have hne : (1 : (𝓞 K)ˣ) ≠ -1 := by
+    intro h
+    have := congrArg (fun v : (𝓞 K)ˣ ↦ ((v : 𝓞 K) : K)) h
+    norm_num at this
+  set φ : (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K :=
+    ((intAddMulOrder K f).toRingOfIntegers.val : (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)
+  rw [Nat.card_congr (MonoidHom.ofInjective (Units.map_injective (f := φ)
+      Subtype.val_injective)).toEquiv, ← SetLike.coe_sort_coe, Nat.card_coe_set_eq,
+    coe_range_unitsMap_intAddMulOrder hK hf, Set.ncard_pair hne]
+
 /-- **The unit index of `ℤ + f 𝓞 K` is `w / 2`.** In an imaginary quadratic field with `w` roots
 of unity, the units of the order of conductor `f > 1` have index `w / 2` in `(𝓞 K)ˣ`. -/
 theorem index_range_unitsMap_intAddMulOrder_mul_two [IsTotallyComplex K]
     (hK : finrank ℚ K = 2) (hf : 1 < f) :
     (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
       (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index * 2 = torsionOrder K := by
-  have hne : (1 : (𝓞 K)ˣ) ≠ -1 := by
-    intro h
-    have := congrArg (fun v : (𝓞 K)ˣ ↦ ((v : 𝓞 K) : K)) h
-    norm_num at this
-  have hcard : Nat.card (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
-      (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range = 2 := by
-    rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq, coe_range_unitsMap_intAddMulOrder hK hf,
-      Set.ncard_pair hne]
-  rw [← hcard, Subgroup.index_mul_card, torsionOrder, torsion_eq_top_of_isTotallyComplex hK,
-    Subgroup.card_top]
+  set φ : (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K :=
+    ((intAddMulOrder K f).toRingOfIntegers.val : (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)
+  rw [← card_units_intAddMulOrder hK hf, Nat.card_congr (MonoidHom.ofInjective
+      (Units.map_injective (f := φ) Subtype.val_injective)).toEquiv, Subgroup.index_mul_card,
+    torsionOrder, torsion_eq_top_of_isTotallyComplex hK, Subgroup.card_top]
 
 /-- **The unit index of the order of conductor `f`.** In an imaginary quadratic field `K`, the
 index `[(𝓞 K)ˣ : O_fˣ]` of the units of `O_f = ℤ + f 𝓞 K` is `1` for `f = 1`; for `f > 1` it is
 `2` if `disc K = -4`, `3` if `disc K = -3`, and `1` otherwise. -/
+@[simp]
 theorem index_range_unitsMap_intAddMulOrder [IsTotallyComplex K] (hK : finrank ℚ K = 2) :
     (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
       (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index =
@@ -192,11 +205,7 @@ theorem index_range_unitsMap_intAddMulOrder [IsTotallyComplex K] (hK : finrank �
       else if NumberField.discr K = -4 then 2 else if NumberField.discr K = -3 then 3 else 1 := by
   split_ifs with hf h4 h3
   · subst hf
-    refine Subgroup.index_eq_one.mpr (MonoidHom.range_eq_top.mpr fun u ↦ ?_)
-    have hmem (x : 𝓞 K) : x ∈ (intAddMulOrder K 1).toRingOfIntegers :=
-      mem_toRingOfIntegers_intAddMulOrder.mpr ⟨0, x, by simp⟩
-    exact ⟨⟨⟨u, hmem _⟩, ⟨_, hmem (u⁻¹ : (𝓞 K)ˣ)⟩, Subtype.ext u.mul_inv, Subtype.ext u.inv_mul⟩,
-      Units.ext rfl⟩
+    simp
   all_goals
     have hf' : 1 < f := by
       have := NeZero.ne f

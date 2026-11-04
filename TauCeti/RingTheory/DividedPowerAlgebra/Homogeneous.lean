@@ -148,12 +148,33 @@ instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) 
   one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
   mul_mem _ _ := mul_mem_homogeneousSubmodule
 
+/-- A product `∏_{j ∈ F} dp R kⱼ mⱼ` over a finite set belongs to the homogeneous piece of its
+total degree. -/
+theorem prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq {ι : Type*} (F : Finset ι) {d : ℕ}
+    (m : ι → M) (k : ι → ℕ) (hk : ∑ j ∈ F, k j = d) :
+    ∏ j ∈ F, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+
 /-- A finite product of divided-power generators belongs to the homogeneous piece of its
 total degree. -/
 theorem prod_dp_mem_homogeneousSubmodule_of_sum_eq {ι : Type*} [Fintype ι] {d : ℕ}
     (m : ι → M) (k : ι → ℕ) (hk : ∑ j, k j = d) :
     ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
-  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+  prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq Finset.univ m k hk
+
+/-- Linear maps from a homogeneous piece agree if they agree on every product
+`∏ⱼ dp R kⱼ mⱼ` of a finite family whose indices sum to `d`. -/
+theorem homogeneousSubmodule_ext_prod_dp {d : ℕ}
+    {f g : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N}
+    (h : ∀ (n : ℕ) (m : Fin n → M) (k : Fin n → ℕ) (hk : ∑ j, k j = d),
+      f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ =
+        g ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩) :
+    f = g := by
+  refine homogeneousSubmodule_ext fun l hl ↦ ?_
+  have hk : ∑ j : Fin l.length, l[j.1].1 = d := by
+    simpa using hl
+  have hp := Fin.prod_univ_fun_getElem l (fun nm : ℕ × M ↦ dp R nm.1 nm.2)
+  simpa only [hp] using h l.length (fun j ↦ l[j.1].2) (fun j ↦ l[j.1].1) hk
 
 /-- The functorial map on divided power algebras preserves every homogeneous piece, including
 when it changes the base ring to an `R`-algebra `S`. -/
