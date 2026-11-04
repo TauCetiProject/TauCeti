@@ -247,6 +247,23 @@ lemma supportedModuleHPresheafFunctor_map_app_apply (S : Closeds X) (n : ℕ)
     ((supportedModuleHPresheafFunctor S n).map f).app W x = x.comp (Ext.mk₀ f) (add_zero n) :=
   (rfl)
 
+/-- The supported cohomology presheaf functor is additive in its coefficients. -/
+instance additive_supportedModuleHPresheafFunctor (S : Closeds X) (n : ℕ) :
+    (supportedModuleHPresheafFunctor (R := R) S n).Additive where
+  map_add {F G f g} := by
+    apply NatTrans.ext
+    funext W
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    -- Normalize the domain before introducing a class: otherwise its type retains
+    -- the opaque composite functor, hiding the Ext group from rewriting.
+    change ∀ x : F.supportedModuleH S W.unop n,
+      x.comp (Ext.mk₀ (f + g)) (add_zero n) =
+        x.comp (Ext.mk₀ f) (add_zero n) + x.comp (Ext.mk₀ g) (add_zero n)
+    intro x
+    exact (congrArg (fun a : Ext.{u} F G 0 ↦ x.comp a (add_zero n))
+      (Ext.mk₀_add f g)).trans (Ext.comp_add x _ _ _)
+
 /-- Cohomology with supports in `S` vanishes on an open `W` disjoint from `S`. -/
 theorem subsingleton_supportedModuleH_of_le_compl (S : Closeds X) {W : Opens X}
     (hW : W ≤ S.compl) (n : ℕ) : Subsingleton (F.supportedModuleH S W n) :=
