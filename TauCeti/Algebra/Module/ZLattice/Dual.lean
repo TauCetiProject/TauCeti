@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
+public import Mathlib.NumberTheory.Real.Irrational
 public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
@@ -57,6 +58,8 @@ defined from it.
   dual basis.
 * `ZLattice.dual_span_orthonormalBasis`: the `ℤ`-span of an orthonormal basis is self-dual.
 * `ZLattice.dual_span_singleton`: the dual of `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`.
+* `ZLattice.inf_dual_span_singleton_eq_bot_of_irrational_sq`: when `c²` is irrational, `c ℤ ⊆ ℝ`
+  meets its dual `c⁻¹ ℤ` only at `0`.
 * `ZLattice.dual_dual`: the dual of the dual of a full lattice is the lattice itself.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
@@ -144,6 +147,30 @@ theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
     calc (n : ℝ) * c * ((m : ℝ) * c⁻¹)
         = (m : ℝ) * (n : ℝ) * (c * c⁻¹) := by ring
       _ = (m : ℝ) * (n : ℝ) := by rw [mul_inv_cancel₀ hc, mul_one]
+
+/-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
+theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
+    (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) = ⊥ := by
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    exact hc ⟨0, by norm_num⟩
+  rw [dual_span_singleton hc0, eq_bot_iff]
+  intro x hx
+  rw [Submodule.mem_inf, Submodule.mem_span_singleton, Submodule.mem_span_singleton] at hx
+  obtain ⟨⟨m, rfl⟩, ⟨n, hn⟩⟩ := hx
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  exfalso
+  refine hc ⟨(n : ℚ) / (m : ℚ), ?_⟩
+  have hm' : (m : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hm
+  have hmc : (m : ℝ) * c = (n : ℝ) * c⁻¹ := by simpa [zsmul_eq_mul] using hn.symm
+  have hmc2 : (n : ℝ) = c ^ 2 * m := by
+    calc
+      (n : ℝ) = (n : ℝ) * c⁻¹ * c := (inv_mul_cancel_right₀ hc0 (n : ℝ)).symm
+      _ = (m : ℝ) * c * c := by rw [← hmc]
+      _ = c ^ 2 * m := by ring
+  push_cast
+  exact (div_eq_iff hm').mpr hmc2
 
 /-- The dual commutes with pulling a lattice back along a linear isometry equivalence. -/
 @[simp]

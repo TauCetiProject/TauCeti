@@ -432,69 +432,6 @@ end FullLattice
 
 section NonIntegralBoundary
 
-/-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
-theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
-    (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) = ⊥ := by
-  have hc0 : c ≠ 0 := by
-    rintro rfl
-    exact hc ⟨0, by norm_num⟩
-  rw [dual_span_singleton hc0, eq_bot_iff]
-  intro x hx
-  rw [Submodule.mem_inf, Submodule.mem_span_singleton, Submodule.mem_span_singleton] at hx
-  obtain ⟨⟨m, rfl⟩, ⟨n, hn⟩⟩ := hx
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  exfalso
-  refine hc ⟨(n : ℚ) / (m : ℚ), ?_⟩
-  have hm' : (m : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hm
-  have hmc : (m : ℝ) * c = (n : ℝ) * c⁻¹ := by simpa [zsmul_eq_mul] using hn.symm
-  have hmc2 : (n : ℝ) = c ^ 2 * m := by
-    calc
-      (n : ℝ) = (n : ℝ) * c⁻¹ * c := (inv_mul_cancel_right₀ hc0 (n : ℝ)).symm
-      _ = (m : ℝ) * c * c := by rw [← hmc]
-      _ = c ^ 2 * m := by ring
-  push_cast
-  exact (div_eq_iff hm').mpr hmc2
-
-/-- When `c²` is irrational, every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L)` of `L = c ℤ ⊆ ℝ` is
-infinite. -/
-theorem infinite_quotient_smul_dual_inf_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2))
-    (a : ℝ) :
-    Infinite (dual (span ℤ {c} : Submodule ℤ ℝ) ⧸
-      ((a • dual (span ℤ {c})) ⊓ span ℤ {c}).submoduleOf (dual (span ℤ {c}))) := by
-  have hc0 : c ≠ 0 := by
-    rintro rfl
-    exact hc ⟨0, by norm_num⟩
-  have hbot : ((a • dual (span ℤ {c} : Submodule ℤ ℝ)) ⊓ span ℤ {c}).submoduleOf
-      (dual (span ℤ {c})) = ⊥ := by
-    rw [eq_bot_iff]
-    intro x hx
-    rw [submoduleOf, Submodule.mem_comap, subtype_apply, Submodule.mem_inf] at hx
-    have hx0 : (x : ℝ) ∈ (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) := ⟨hx.2, x.2⟩
-    rw [inf_dual_span_singleton_eq_bot_of_irrational_sq hc, mem_bot] at hx0
-    exact Subtype.ext hx0
-  have : Infinite (dual (span ℤ {c} : Submodule ℤ ℝ)) := by
-    refine Infinite.of_injective
-      (fun n : ℤ ↦ (⟨n • c⁻¹, by
-        rw [dual_span_singleton hc0, Submodule.mem_span_singleton]
-        exact ⟨n, rfl⟩⟩ : dual (span ℤ {c}))) fun m n hmn ↦ ?_
-    have hmn' : (m : ℝ) * c⁻¹ = (n : ℝ) * c⁻¹ := by
-      simpa [zsmul_eq_mul] using congrArg Subtype.val hmn
-    exact Int.cast_injective (α := ℝ) (mul_right_cancel₀ (inv_ne_zero hc0) hmn')
-  exact Infinite.of_injective (quotEquivOfEqBot _ hbot).symm
-    (quotEquivOfEqBot _ hbot).symm.injective
-
-/-- When `c²` is irrational, the discriminant group of `c ℤ ⊆ ℝ` is infinite. -/
-theorem infinite_discriminantGroup_span_singleton_of_irrational_sq {c : ℝ}
-    (hc : Irrational (c ^ 2)) :
-    Infinite (DiscriminantGroup (span ℤ {c} : Submodule ℤ ℝ)) := by
-  have heq : (span ℤ {c} : Submodule ℤ ℝ).submoduleOf (dual (span ℤ {c})) =
-      (((1 : ℝ) • dual (span ℤ {c})) ⊓ span ℤ {c}).submoduleOf (dual (span ℤ {c})) := by
-    ext x
-    simp [submoduleOf]
-  rw [DiscriminantGroup, heq]
-  exact infinite_quotient_smul_dual_inf_of_irrational_sq hc 1
-
 /-- When `c²` is irrational, `signedDiscr (c ℤ) = 0`. -/
 theorem signedDiscr_span_singleton_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
     signedDiscr (span ℤ {c} : Submodule ℤ ℝ) = 0 :=
