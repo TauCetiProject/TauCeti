@@ -32,9 +32,7 @@ namespace TauCeti
 
 /-- Complex multiplication and addition are smooth over the real numbers. -/
 instance realComplexContMDiffRing {n : ℕ∞ω} : ContMDiffRing 𝓘(ℝ, ℂ) n ℂ where
-  contMDiff_add := by
-    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
-    exact contDiff_add.contMDiff
+  toContMDiffAdd := instContMDiffAddSelf
   contMDiff_mul := by
     rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
     exact contDiff_mul.contMDiff
@@ -60,9 +58,10 @@ theorem complexSmoothConstants_apply (z : ℂ) (x : M) :
 instance complexSmoothFunctionsAlgebra : Algebra ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ :=
   complexSmoothConstants.toAlgebra
 
+/-- The complex algebra map is the constant-function ring homomorphism. -/
 @[simp]
-theorem complexSmoothFunctions_algebraMap_apply (z : ℂ) (x : M) :
-    (algebraMap ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ z) x = z := by
+theorem algebraMap_eq_complexSmoothConstants :
+    algebraMap ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ = complexSmoothConstants := by
   rfl
 
 end TauCeti
@@ -109,53 +108,53 @@ theorem im_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : f.im x = (f 
   rfl
 
 /-- Inclusion of real-valued smooth functions into complex-valued ones as a real algebra map. -/
-def ofRealSmooth : C^n⟮I, M; ℝ⟯ →ₐ[ℝ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
+def ofReal : C^n⟮I, M; ℝ⟯ →ₐ[ℝ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
   toRingHom := compLeftRingHom I M Complex.ofRealHom Complex.ofRealCLM.contMDiff
   commutes' _ := by ext; rfl
 
 @[simp]
-theorem ofRealSmooth_apply (f : C^n⟮I, M; ℝ⟯) (x : M) :
-    ofRealSmooth f x = (f x : ℂ) := by
+theorem ofReal_apply (f : C^n⟮I, M; ℝ⟯) (x : M) :
+    ofReal f x = (f x : ℂ) := by
   rfl
 
 @[simp]
-theorem re_ofRealSmooth (f : C^n⟮I, M; ℝ⟯) : (ofRealSmooth f).re = f := by
+theorem re_ofReal (f : C^n⟮I, M; ℝ⟯) : (ofReal f).re = f := by
   ext x
   simp
 
 @[simp]
-theorem im_ofRealSmooth (f : C^n⟮I, M; ℝ⟯) : (ofRealSmooth f).im = 0 := by
+theorem im_ofReal (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
   ext x
   simp
 
 /-- Inclusion of real-valued functions is injective. -/
-theorem ofRealSmooth_injective :
-    Function.Injective (ofRealSmooth (I := I) (M := M) (n := n)) := by
+theorem ofReal_injective :
+    Function.Injective (ofReal (I := I) (M := M) (n := n)) := by
   intro f g h
   simpa using congrArg re h
 
 /-- Real and imaginary parts reconstruct the original smooth function. -/
-theorem ofRealSmooth_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    ofRealSmooth f.re + Complex.I • ofRealSmooth f.im = f := by
+theorem ofReal_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ofReal f.re + Complex.I • ofReal f.im = f := by
   ext x
   simpa [mul_comm] using Complex.re_add_im (f x)
 
 /-- Complex-valued real-smooth functions are uniquely pairs of real-smooth functions. -/
-def realImagEquiv :
+def equivRealProd :
     C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₗ[ℝ] C^n⟮I, M; ℝ⟯ × C^n⟮I, M; ℝ⟯ where
   toLinearMap := re.prod im
-  invFun p := ofRealSmooth p.1 + Complex.I • ofRealSmooth p.2
-  left_inv := ofRealSmooth_re_add_I_smul_im
+  invFun p := ofReal p.1 + Complex.I • ofReal p.2
+  left_inv := ofReal_re_add_I_smul_im
   right_inv p := by ext x <;> simp
 
 @[simp]
-theorem realImagEquiv_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    realImagEquiv f = (f.re, f.im) := by
+theorem equivRealProd_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    equivRealProd f = (f.re, f.im) := by
   rfl
 
 @[simp]
-theorem realImagEquiv_symm_apply (p : C^n⟮I, M; ℝ⟯ × C^n⟮I, M; ℝ⟯) :
-    realImagEquiv.symm p = ofRealSmooth p.1 + Complex.I • ofRealSmooth p.2 := by
+theorem equivRealProd_symm_apply (p : C^n⟮I, M; ℝ⟯ × C^n⟮I, M; ℝ⟯) :
+    equivRealProd.symm p = ofReal p.1 + Complex.I • ofReal p.2 := by
   rfl
 
 /-- Pointwise complex conjugation is an involutive real algebra equivalence. -/
@@ -174,7 +173,7 @@ theorem conj_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : conj f x =
   rfl
 
 @[simp]
-theorem conj_ofRealSmooth (f : C^n⟮I, M; ℝ⟯) : conj (ofRealSmooth f) = ofRealSmooth f := by
+theorem conj_ofReal (f : C^n⟮I, M; ℝ⟯) : conj (ofReal f) = ofReal f := by
   ext x
   simp
 
@@ -253,8 +252,8 @@ theorem conj_comp (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M
   rfl
 
 @[simp]
-theorem ofRealSmooth_comp (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮J, N; I, M⟯) :
-    ofRealSmooth (f.comp g) = (ofRealSmooth f).comp g := by
+theorem ofReal_comp (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮J, N; I, M⟯) :
+    ofReal (f.comp g) = (ofReal f).comp g := by
   ext x
   rfl
 
@@ -283,9 +282,9 @@ theorem conj_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ�
 
 /-- Inclusion of real functions commutes with restriction to an open subset. -/
 @[simp]
-theorem ofRealSmooth_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; ℝ⟯) :
-    ofRealSmooth (restrictRingHom I 𝓘(ℝ) ℝ h f) =
-      restrictRingHom I 𝓘(ℝ, ℂ) ℂ h (ofRealSmooth f) := by
+theorem ofReal_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; ℝ⟯) :
+    ofReal (restrictRingHom I 𝓘(ℝ) ℝ h f) =
+      restrictRingHom I 𝓘(ℝ, ℂ) ℂ h (ofReal f) := by
   ext x
   rfl
 
