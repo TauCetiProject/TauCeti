@@ -172,7 +172,7 @@ theorem batesMeasure_eq_withDensity (n : ℕ) :
     batesMeasure n = volume.withDensity (batesPDF n) := by
   by_cases hn : n = 0
   · subst n
-    rw [batesMeasure_zero, show batesPDF 0 = 0 from funext batesPDF_zero, withDensity_zero]
+    simp [funext batesPDF_zero]
   have hnR : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
   have hmap := map_affine_withDensity_volume (a := 0) (b := (n : ℝ)⁻¹)
     (irwinHallPDF n) (inv_ne_zero hnR.ne')
