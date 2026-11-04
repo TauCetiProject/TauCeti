@@ -167,9 +167,11 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_surjective :
   rw [← hcomp, _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at hsurj
   exact hsurj.of_comp
 
-/-- Every numbered root subgroup and the weight torus commute with the comparison. -/
+/-- Every numbered root subgroup and the weight torus commute with the comparison. This is the
+form of `baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom`
+for the comparison map, which needs no freeness of `K` over `k`. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom'
     (j : (Fin n ⊕ Fin n) ⊕ Unit) :
     CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift n hn k j) ≫
         (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
