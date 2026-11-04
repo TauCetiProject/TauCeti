@@ -5,13 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.Module.Submodule
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import TauCeti.Algebra.Module.ZLattice.Ker
+import TauCeti.Algebra.Module.ZLattice.Quotient
+import TauCeti.Geometry.Manifold.Immersion.Basic
 
 /-!
 # Quotients of normed spaces by discrete submodules are Lie groups
@@ -50,6 +57,16 @@ For discrete submodules `L` of `E` and `L'` of `E'`, the quotient of `E × E'` b
 identifies the complex torus of the product lattice, a full lattice by
 `Submodule.instIsZLatticeProd`, with the product of the two complex tori.
 
+Immersions descend in the same way: a map of quotients induced by a `C^n` immersion of the
+ambient spaces is a `C^n` immersion, because the orbit projections are local diffeomorphisms. For
+a subspace `V` of `E` with a closed complement, the inclusion of `V` is an immersion, so the map
+`V / (L ∩ V) → E / L` it induces is an immersion. When moreover `V / (L ∩ V)` is compact, for
+instance when `L ∩ V` is a full lattice in `V`, this map is a `C^n` embedding. For a complex
+linear map `f : E → E'` carrying a full lattice `L` into a discrete subgroup `L'`, this embeds the
+complex torus `ker f / (L ∩ ker f)` holomorphically into `E / L`, with image the identity
+component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex Lie groups
+(`Submodule.range_orbitRelQuotientMap_ker_subtype`).
+
 ## Main results
 
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
@@ -59,10 +76,19 @@ identifies the complex torus of the product lattice, a full lattice by
   induced by a `C^n` map of the ambient spaces is `C^n`.
 * `Submodule.contMDiff_orbitRelQuotientMap`: a `C^n` semilinear map carrying `L` into `L'` induces
   a `C^n` map of quotients.
+* `Submodule.isImmersion_orbitRelQuotient_of_comp_mk`: a map of quotients by discrete submodules
+  induced by a `C^n` immersion of the ambient spaces is a `C^n` immersion.
 * `Submodule.orbitRelQuotientDiffeomorph`: a semilinear equivalence carrying `L` onto `L'` which is
   `C^n` in both directions induces a `C^n` diffeomorphism of quotients, which is additive.
 * `Submodule.orbitRelQuotientProdDiffeomorph`: the quotient of `E × E'` by `L.prod L'` is `C^n`
   diffeomorphic to the product of the quotients by `L` and by `L'`, by an additive equivalence.
+* `Submodule.isImmersion_orbitRelQuotientMap_subtype`: for a subspace `V` with a closed
+  complement, the map `V / (L ∩ V) → E / L` induced by the inclusion is a `C^n` immersion.
+* `Submodule.isSmoothEmbedding_orbitRelQuotientMap_subtype`: if moreover `V / (L ∩ V)` is
+  compact, this map is a `C^n` embedding.
+* `Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype`: for a real or complex linear map
+  `f` carrying a full lattice `L` into a discrete subgroup, the torus `ker f / (L ∩ ker f)` embeds
+  into `E / L`; for complex `f` the embedding is holomorphic.
 
 ## References
 
@@ -103,6 +129,28 @@ theorem Submodule.contMDiff_orbitRelQuotient_of_comp_mk {F : Type*} [NormedAddCo
   rw [← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n)).contMDiff_comp_iff
     _root_.Quotient.mk_surjective le_rfl, hg]
   exact TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff.comp hf
+
+variable {L} in
+/-- A map `g` of quotients by discrete submodules that is induced by a `C^n` immersion `f` of the
+ambient spaces, in the sense that `g` sends the class of `x` to the class of `f x`, is a `C^n`
+immersion: near the class of `x`, `g` is `f` read through the orbit projections, which are local
+diffeomorphisms. -/
+theorem Submodule.isImmersion_orbitRelQuotient_of_comp_mk {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [LocallyCompactSpace F] {S : Type*} [Ring S] [Module S F]
+    {P : Submodule S F} [DiscreteTopology P]
+    {g : AddAction.orbitRel.Quotient L E → AddAction.orbitRel.Quotient P F} {f : E → F}
+    (hf : Manifold.IsImmersion 𝓘(𝕜, E) 𝓘(𝕜, F) n f)
+    (hg : g ∘ _root_.Quotient.mk (AddAction.orbitRel L E) =
+      _root_.Quotient.mk (AddAction.orbitRel P F) ∘ f) :
+    Manifold.IsImmersion 𝓘(𝕜, E) 𝓘(𝕜, F) n g := by
+  refine Manifold.IsImmersionOfComplement.isImmersion (F := hf.complement) fun y ↦ ?_
+  induction y using _root_.Quotient.inductionOn with | h x => ?_
+  have h := TauCeti.isImmersionAtOfComplement_isLocalDiffeomorphAt_comp
+    (TauCeti.isLocalDiffeomorph_addQuotientMk (G := P) (f x))
+    (hf.isImmersionOfComplement_complement x)
+  rw [← hg] at h
+  exact (TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff
+    (TauCeti.isLocalDiffeomorph_addQuotientMk (G := L) x)).1 h
 
 section Map
 
@@ -230,3 +278,61 @@ theorem Submodule.coe_orbitRelQuotientProdDiffeomorph_symm :
   (rfl)
 
 end Prod
+
+section Subtorus
+
+/-- For a subspace `V` of `E` with a closed complement and a discrete subgroup `L` of `E`, the map
+`V / (L ∩ V) → E / L` induced by the inclusion of `V` is a `C^n` immersion. It need not be an
+embedding: a line of irrational slope in `ℝ²` meets `ℤ²` only in `0`, and its image in `ℝ² / ℤ²` is
+dense. -/
+theorem Submodule.isImmersion_orbitRelQuotientMap_subtype (L : Submodule ℤ E) [DiscreteTopology L]
+    (V : Submodule 𝕜 E) [LocallyCompactSpace V] (hV : V.ClosedComplemented) :
+    Manifold.IsImmersion 𝓘(𝕜, V) 𝓘(𝕜, E) n
+      ((ZLattice.comap 𝕜 L V.subtype).orbitRelQuotientMap L (V.subtype.restrictScalars ℤ)
+        le_rfl) := by
+  obtain ⟨p, hp⟩ := hV
+  have hι : V.subtypeL.HasLeftInverse := ⟨p, fun x ↦ hp x⟩
+  exact Submodule.isImmersion_orbitRelQuotient_of_comp_mk hι.isImmersion <|
+    funext <| (ZLattice.comap 𝕜 L V.subtype).orbitRelQuotientMap_mk L _ le_rfl
+
+/-- For a subspace `V` of `E` with a closed complement and a discrete subgroup `L` of `E` such that
+`V / (L ∩ V)` is compact, the map `V / (L ∩ V) → E / L` induced by the inclusion of `V` is a `C^n`
+embedding, with closed image. Compactness holds when `L ∩ V` is a full lattice in a
+finite-dimensional real space `V`; for complex `V` and `n = ω`, this is a holomorphic embedding of
+the complex torus `V / (L ∩ V)` into `E / L`. -/
+theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_subtype (L : Submodule ℤ E)
+    [DiscreteTopology L] (V : Submodule 𝕜 E) [LocallyCompactSpace V]
+    [CompactSpace (AddAction.orbitRel.Quotient (ZLattice.comap 𝕜 L V.subtype) V)]
+    (hV : V.ClosedComplemented) :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, V) 𝓘(𝕜, E) n
+      ((ZLattice.comap 𝕜 L V.subtype).orbitRelQuotientMap L (V.subtype.restrictScalars ℤ)
+        le_rfl) := by
+  refine ⟨L.isImmersion_orbitRelQuotientMap_subtype V hV, ?_⟩
+  -- A continuous injection of a compact space into a Hausdorff space is an embedding.
+  refine (Continuous.isClosedEmbedding ?_ ?_).isEmbedding
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
+
+/-- Let a linear map `f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete
+subgroup `L'`. Then the map of quotients `ker f / (L ∩ ker f) → E / L` induced by the inclusion of
+`ker f` is a `C^n` embedding of the torus `ker f / (L ∩ ker f)`, whose full lattice is
+`ZLattice.isZLattice_comap_ker_subtype`. Its image is the identity component of the kernel
+`f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`
+(`Submodule.range_orbitRelQuotientMap_ker_subtype`). For `𝕜 = ℂ` and `n = ω`, this is a
+holomorphic embedding of complex tori. -/
+theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype {𝕜 : Type*} [RCLike 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
+    [FiniteDimensional ℝ E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedSpace 𝕜 E'] [IsScalarTower ℝ 𝕜 E'] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] {L' : Submodule ℤ E'} [DiscreteTopology L'] (f : E →ₗ[𝕜] E')
+    (hf : L.map (f.restrictScalars ℤ) ≤ L') :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, E) n
+      ((ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+        ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl) := by
+  have := ZLattice.isZLattice_comap_ker_subtype L f hf
+  have : FiniteDimensional ℝ (LinearMap.ker f) :=
+    .of_injective ((LinearMap.ker f).subtype.restrictScalars ℝ) (LinearMap.ker f).injective_subtype
+  have : FiniteDimensional 𝕜 (LinearMap.ker f) := .of_restrictScalars_finite ℝ 𝕜 _
+  exact L.isSmoothEmbedding_orbitRelQuotientMap_subtype _ (.of_finiteDimensional _)
+
+end Subtorus
