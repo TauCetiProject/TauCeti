@@ -7,7 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Compactly supported divergence on a vector space
@@ -15,6 +17,10 @@ import Mathlib.Analysis.Normed.Group.Bounded
 This specializes Mathlib's `MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable`
 to a globally `C¹`, compactly supported vector field. A bounding box contains its support,
 so every boundary flux vanishes and the full-space divergence integral is zero.
+
+In the plane `ℂ` the same argument needs only differentiability and an integrable divergence
+(`MeasureTheory.integral_fderiv_one_add_fderiv_I_eq_zero`), through Mathlib's rectangle
+divergence theorem on `ℝ × ℝ`.
 -/
 
 public section
@@ -67,5 +73,77 @@ theorem integral_divergence_eq_zero {n : ℕ}
   simp only [a, b, hface _ R (abs_of_pos hR),
     hface _ (-R) (by rw [abs_neg, abs_of_pos hR]), integral_zero, sub_self,
     Finset.sum_const_zero]
+
+open Complex in
+/-- **Divergence theorem in the plane for compactly supported differentiable fields.** If
+`f, g : ℂ → ℝ` are differentiable with compact support and the divergence `∂ₓ f + ∂ᵧ g` is
+integrable, then its integral vanishes. No continuity of the derivatives is assumed. -/
+theorem integral_fderiv_one_add_fderiv_I_eq_zero {f g : ℂ → ℝ}
+    (hf : Differentiable ℝ f) (hg : Differentiable ℝ g)
+    (hfc : HasCompactSupport f) (hgc : HasCompactSupport g)
+    (hi : Integrable (fun z ↦ fderiv ℝ f z 1 + fderiv ℝ g z I)) :
+    ∫ z, fderiv ℝ f z 1 + fderiv ℝ g z I = 0 := by
+  set D : ℂ → ℝ := fun z ↦ fderiv ℝ f z 1 + fderiv ℝ g z I
+  obtain ⟨R₁, hR₁, hb₁⟩ := hfc.isBounded.exists_pos_norm_lt
+  obtain ⟨R₂, hR₂, hb₂⟩ := hgc.isBounded.exists_pos_norm_lt
+  set R := max R₁ R₂
+  have hR : 0 < R := lt_max_of_lt_left hR₁
+  have hfz {z : ℂ} (hz : R ≤ ‖z‖) : z ∉ tsupport f := fun h ↦
+    (hb₁ z h).not_ge ((le_max_left _ _).trans hz)
+  have hgz {z : ℂ} (hz : R ≤ ‖z‖) : z ∉ tsupport g := fun h ↦
+    (hb₂ z h).not_ge ((le_max_right _ _).trans hz)
+  -- Transport to `ℝ × ℝ`, where Mathlib's rectangle divergence theorem applies.
+  let e : ℝ × ℝ → ℂ := fun p ↦ p.1 + p.2 * I
+  have he : e = equivRealProdCLM.symm := funext fun p ↦ (equivRealProdCLM_symm_apply p).symm
+  have hem : (measurableEquivRealProd.symm : ℝ × ℝ → ℂ) = e :=
+    funext fun p ↦ mk_eq_add_mul_I _ _
+  have hnorm (p : ℝ × ℝ) : max |p.1| |p.2| ≤ ‖e p‖ := by
+    refine max_le ?_ ?_
+    · simpa [e] using abs_re_le_norm (e p)
+    · simpa [e] using abs_im_le_norm (e p)
+  have hF (p : ℝ × ℝ) : HasFDerivAt (fun p ↦ f (e p))
+      ((fderiv ℝ f (e p)).comp (equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)) p := by
+    rw [he]; exact (hf _).hasFDerivAt.comp p equivRealProdCLM.symm.hasFDerivAt
+  have hG (p : ℝ × ℝ) : HasFDerivAt (fun p ↦ g (e p))
+      ((fderiv ℝ g (e p)).comp (equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)) p := by
+    rw [he]; exact (hg _).hasFDerivAt.comp p equivRealProdCLM.symm.hasFDerivAt
+  have hDe (p : ℝ × ℝ) : (fderiv ℝ f (e p)).comp (equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) (1, 0) +
+      (fderiv ℝ g (e p)).comp (equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) (0, 1) = D (e p) := by
+    simp [D, equivRealProdCLM_symm_apply]
+  have hint : ∫ z, D z = ∫ p : ℝ × ℝ, D (e p) := by
+    rw [← volume_preserving_equiv_real_prod.symm.integral_comp
+      measurableEquivRealProd.symm.measurableEmbedding, hem]
+  have hiR : Integrable (fun p : ℝ × ℝ ↦ D (e p)) := by
+    have := (volume_preserving_equiv_real_prod.symm.integrable_comp_emb
+      measurableEquivRealProd.symm.measurableEmbedding).2 hi
+    rwa [hem] at this
+  have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le (fun p ↦ f (e p))
+    (fun p ↦ g (e p)) _ _ (-R, -R) (R, R) ⟨neg_le_self hR.le, neg_le_self hR.le⟩
+    (Continuous.continuousOn (by
+      rw [he]; exact hf.continuous.comp equivRealProdCLM.symm.continuous))
+    (Continuous.continuousOn (by
+      rw [he]; exact hg.continuous.comp equivRealProdCLM.symm.continuous))
+    (fun p _ ↦ hF p) (fun p _ ↦ hG p) (by simpa only [hDe] using hiR.integrableOn)
+  -- Both fields vanish on the boundary of the square `[-R, R]²`.
+  have hfe {p : ℝ × ℝ} (h : |p.1| = R ∨ |p.2| = R) : f (e p) = 0 :=
+    image_eq_zero_of_notMem_tsupport (hfz (h.elim (fun h ↦ h ▸ (le_max_left _ _).trans (hnorm p))
+      (fun h ↦ h ▸ (le_max_right _ _).trans (hnorm p))))
+  have hge {p : ℝ × ℝ} (h : |p.1| = R ∨ |p.2| = R) : g (e p) = 0 :=
+    image_eq_zero_of_notMem_tsupport (hgz (h.elim (fun h ↦ h ▸ (le_max_left _ _).trans (hnorm p))
+      (fun h ↦ h ▸ (le_max_right _ _).trans (hnorm p))))
+  have habs : |R| = R := abs_of_pos hR
+  have habs' : |-R| = R := by rw [abs_neg, habs]
+  simp only [hDe] at hdiv
+  rw [hint, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Icc (-R, -R) (R, R)), hdiv]
+  · simp [hfe, hge, habs, habs']
+  · intro p hp
+    have hp' : R ≤ max |p.1| |p.2| := by
+      by_contra! h
+      exact hp ⟨⟨by linarith [neg_abs_le p.1, (max_lt_iff.1 h).1],
+        by linarith [neg_abs_le p.2, (max_lt_iff.1 h).2]⟩,
+        ⟨by linarith [le_abs_self p.1, (max_lt_iff.1 h).1],
+        by linarith [le_abs_self p.2, (max_lt_iff.1 h).2]⟩⟩
+    simp only [D, fderiv_of_notMem_tsupport ℝ (hfz (hp'.trans (hnorm p))),
+      fderiv_of_notMem_tsupport ℝ (hgz (hp'.trans (hnorm p))), zero_apply, add_zero]
 
 end MeasureTheory
