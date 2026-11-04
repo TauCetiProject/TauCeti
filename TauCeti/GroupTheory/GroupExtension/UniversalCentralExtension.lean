@@ -52,6 +52,8 @@ universal covering group of a Lie group.
 * `MonoidHom.CentralCover`: the group `[F, F] / [F, R]` of a homomorphism `π : F →* G` with
   kernel `R`, with its quotient map `MonoidHom.CentralCover.mk` and its projection
   `MonoidHom.CentralCover.projection` to `G`.
+* `MonoidHom.CentralCover.desc`: a homomorphism from `[F, F]` killing `[F, R]` descends to the
+  central cover.
 * `MonoidHom.CentralCover.quotientEquivKerProjection`: Hopf's formula
   `(R ∩ [F, F]) / [F, R] ≃* ker (U →* G)`.
 * `MonoidHom.CentralCover.lift`: for a free presentation, the homomorphism from the central cover
@@ -163,9 +165,41 @@ theorem mk_eq_mk_iff {x y : commutator F} :
     mk π x = mk π y ↔ (x : F)⁻¹ * y ∈ ⁅(⊤ : Subgroup F), π.ker⁆ := by
   rw [← inv_mul_eq_one, ← map_inv, ← map_mul, mk_eq_one_iff, coe_mul, coe_inv]
 
+variable {π} in
+/-- **Universal property of the central cover**: a homomorphism from `[F, F]` killing `[F, R]`
+descends to the central cover `[F, F] / [F, R]`. -/
+def desc {H : Type*} [Group H] (f : commutator F →* H)
+    (hf : (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (commutator F) ≤ f.ker) : π.CentralCover →* H :=
+  QuotientGroup.lift _ f hf
+
+@[simp]
+theorem desc_mk {H : Type*} [Group H] (f : commutator F →* H)
+    (hf : (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (commutator F) ≤ f.ker) (x : commutator F) :
+    desc f hf (mk π x) = f x :=
+  (rfl)
+
+@[simp]
+theorem desc_comp_mk {H : Type*} [Group H] (f : commutator F →* H)
+    (hf : (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (commutator F) ≤ f.ker) :
+    (desc f hf).comp (mk π) = f :=
+  (rfl)
+
+/-- The kernel of the descended homomorphism is the image of the kernel of `f`. -/
+theorem ker_desc {H : Type*} [Group H] (f : commutator F →* H)
+    (hf : (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (commutator F) ≤ f.ker) :
+    (desc f hf).ker = f.ker.map (mk π) :=
+  QuotientGroup.ker_lift _ _ _
+
+/-- Two homomorphisms out of the central cover agreeing on the classes of elements of `[F, F]`
+are equal. -/
+@[ext]
+theorem hom_ext {H : Type*} [Group H] {f g : π.CentralCover →* H}
+    (h : f.comp (mk π) = g.comp (mk π)) : f = g :=
+  QuotientGroup.monoidHom_ext _ h
+
 /-- The projection `[F, F] / [F, R] →* G` induced by `π`. -/
 def projection : π.CentralCover →* G :=
-  QuotientGroup.lift _ (π.domRestrict (commutator F)) <| by
+  desc (π.domRestrict (commutator F)) <| by
     rw [ker_domRestrict]
     exact subgroupOf_mono _ (commutator_le_right _ _)
 
@@ -175,8 +209,7 @@ theorem projection_mk (x : commutator F) : projection π (mk π x) = π x :=
 
 /-- The image of the central cover is the image of the commutator subgroup of `F`. -/
 theorem range_projection : (projection π).range = (commutator F).map π := by
-  have h : (projection π).comp (mk π) = π.domRestrict (commutator F) :=
-    QuotientGroup.lift_comp_mk' _ _ _
+  have h : (projection π).comp (mk π) = π.domRestrict (commutator F) := desc_comp_mk π _ _
   rw [← domRestrict_range, ← h, range_comp, range_eq_top_of_surjective _ (mk_surjective π),
     Subgroup.map_top]
 
@@ -193,7 +226,7 @@ theorem projection_surjective (hπ : Function.Surjective π) [Group.IsPerfect G]
 /-- The kernel of the projection is the image of `R ∩ [F, F]`. -/
 theorem ker_projection :
     (projection π).ker = (π.ker.subgroupOf (commutator F)).map (mk π) :=
-  (QuotientGroup.ker_lift _ _ _).trans (congrArg (map (mk π)) (ker_domRestrict _ _))
+  (ker_desc π _ _).trans (congrArg (map (mk π)) (ker_domRestrict _ _))
 
 /-- **The kernel of the projection is central.** The commutator of an element of `R` with any
 element of `F` lies in `[F, R]`. -/
@@ -314,7 +347,7 @@ kills `[F, R]` since the lifts of relations are central. For a perfect `G` it is
 homomorphism over `G` (`MonoidHom.CentralCover.isUniversalCentralExtension_projection`). -/
 noncomputable def lift (hp : p.IsCentralExtension) : π.CentralCover →* E :=
   have hψ := (FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π
-  QuotientGroup.lift _ (hψ.choose.domRestrict (commutator _)) <| by
+  desc (hψ.choose.domRestrict (commutator _)) <| by
     have h := commutator_top_ker_comp_le_ker hp.ker_le_center hψ.choose
     rw [hψ.choose_spec] at h
     rw [ker_domRestrict]
