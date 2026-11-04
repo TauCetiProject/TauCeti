@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
-import TauCeti.Topology.LocallyFinite
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Local finiteness of the translates of a compact convex polygon

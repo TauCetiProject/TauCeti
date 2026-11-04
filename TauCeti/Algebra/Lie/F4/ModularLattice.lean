@@ -680,7 +680,7 @@ theorem f4RootExponential_tmul {A : Type*} [CommRing A] [Algebra ℤ A]
     (isNilpotent_f4RootAdjointDerivation k) t 1 y
     (f4RootAdjointDerivation_pow_three_integral k y)]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero,
-    pow_one, integralDividedPower_zero, Module.End.one_apply,
+    pow_one, integralDividedPower_zero, one_apply_eq_self,
     integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie,
     f4IntegralDividedAdjointSquare, mul_one, ← TensorProduct.tmul_eq_smul_one_tmul]
 

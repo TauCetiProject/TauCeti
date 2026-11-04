@@ -138,10 +138,10 @@ theorem Lp_add_le_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p : ℝ} (hp : 1 
       (∑' i, f i ^ p) ^ (1 / p) + (∑' i, g i ^ p) ^ (1 / p) := by
   have hp0 : 0 < p := zero_lt_one.trans_le hp
   -- Bound each finite partial sum by the finite Minkowski inequality.
-  rw [one_div, rpow_inv_le_iff hp0, ENNReal.tsum_eq_iSup_sum]
+  rw [one_div, rpow_inv_le_iff hp0, _root_.tsum_eq_iSup_sum]
   refine iSup_le fun s ↦ ?_
   rw [← rpow_inv_le_iff hp0, ← one_div]
-  grw [Lp_add_le s f g hp, ENNReal.sum_le_tsum s, ENNReal.sum_le_tsum (f := fun i ↦ g i ^ p) s]
+  grw [Lp_add_le s f g hp, _root_.sum_le_tsum s, _root_.sum_le_tsum (f := fun i ↦ g i ^ p) s]
 
 /-- **Hölder's inequality** for unconditional sums in `ℝ≥0∞`: for conjugate exponents `p` and `q`,
 `∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q)`.
@@ -150,13 +150,13 @@ theorem inner_le_Lp_mul_Lq_tsum {ι : Type*} (f g : ι → ℝ≥0∞) {p q : �
     (hpq : p.HolderConjugate q) :
     ∑' i, f i * g i ≤ (∑' i, f i ^ p) ^ (1 / p) * (∑' i, g i ^ q) ^ (1 / q) := by
   -- Bound each finite partial sum by the finite Hölder inequality.
-  rw [ENNReal.tsum_eq_iSup_sum]
+  rw [_root_.tsum_eq_iSup_sum]
   refine iSup_le fun s ↦ (inner_le_Lp_mul_Lq s f g hpq).trans ?_
   gcongr
   · exact one_div_nonneg.2 hpq.nonneg
-  · exact ENNReal.sum_le_tsum s
+  · exact _root_.sum_le_tsum s
   · exact one_div_nonneg.2 hpq.symm.nonneg
-  · exact ENNReal.sum_le_tsum s
+  · exact _root_.sum_le_tsum s
 
 /-- The `ℓᵖ` norms of an `ℝ≥0∞`-valued family decrease as the exponent grows: for `0 < p ≤ q`,
 `(∑' i, f i ^ q) ^ (1 / q) ≤ (∑' i, f i ^ p) ^ (1 / p)`. No summability hypotheses are needed;
@@ -168,7 +168,7 @@ theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 <
   -- Each term is at most the `ℓᵖ` norm `S`, so `f i ^ q ≤ f i ^ p * S ^ (q - p)`.
   have hfS (i : ι) : f i ≤ S := by
     rw [hS, one_div, le_rpow_inv_iff hp]
-    exact ENNReal.le_tsum (f := fun i ↦ f i ^ p) i
+    exact _root_.le_tsum (f := fun i ↦ f i ^ p) i
   have hSp : S ^ p = ∑' i, f i ^ p := by rw [hS, one_div, rpow_inv_rpow hp.ne']
   rw [one_div, rpow_inv_le_iff (hp.trans_le hpq)]
   calc ∑' i, f i ^ q = ∑' i, f i ^ p * f i ^ (q - p) := by

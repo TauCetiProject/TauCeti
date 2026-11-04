@@ -9,7 +9,7 @@ public import Mathlib.Topology.CWComplex.Classical.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Order.ProjIcc
 public import Mathlib.Topology.UnitInterval
-public import TauCeti.Topology.MetricSpace.Isometry
+public import TauCeti.Topology.MetricSpace.Isometry.Basic
 
 /-!
 # The cylinder on a relative CW complex

@@ -175,7 +175,7 @@ private theorem hasInvariantOutsideIrreducible_of_isKilling_of_isAlgClosed :
       UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) m ∈ N := by
     intro m
     rw [casimirElement_eq_sum (Module.finBasis K L)]
-    simp only [map_sum, LinearMap.sum_apply, map_mul, Module.End.mul_apply,
+    simp only [map_sum, LinearMap.sum_apply, map_mul, mul_apply_eq_comp,
       UniversalEnvelopingAlgebra.representation_ι, LieModule.toEnd_apply_apply]
     exact sum_mem fun i _ ↦ N.lie_mem (htriv _ m)
   have hnotinj : ¬ Function.Injective

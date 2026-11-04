@@ -85,7 +85,7 @@ theorem ad_pow_apply (a b : A) (n : ℕ) :
       ∑ m ∈ range (n + 1), n.choose m • (a ^ m * b * (-a) ^ (n - m)) := by
   rw [ad_pow_eq_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  simp only [LinearMap.smul_apply, Module.End.mul_apply, LinearMap.mulLeft_apply,
+  simp only [LinearMap.smul_apply, mul_apply_eq_comp, LinearMap.mulLeft_apply,
     LinearMap.mulRight_apply, mul_assoc]
 
 /-- The adjoint action of `a` vanishes exactly when `a` is central. -/

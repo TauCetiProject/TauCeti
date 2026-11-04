@@ -27,7 +27,11 @@ This file works with an arbitrary module `M` and supplies:
   the morphisms and isomorphisms of central extensions `(x, m) ↦ (φ x, e m)` induced by a map `φ`
   of the quotients and a linear map `e` of the kernels carrying one cocycle to the other;
 * `LieAlgebra.ofTwoCocycle.derivation`: for trivial coefficients, the derivation
-  `(x, m) ↦ (D x, 0)` induced by a derivation `D` of the quotient for which the cocycle is skew.
+  `(x, m) ↦ (D x, 0)` induced by a derivation `D` of the quotient for which the cocycle is skew;
+* `LieAlgebra.ofTwoCocycle.centralElement`: for coefficients the trivial module `R`, the central
+  element `K = (0, 1)`, which is nonzero over a nontrivial ring, and in terms of which every
+  element is an element of `L` plus a multiple of `K`
+  (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`).
 
 The construction of `map` and `mapEquiv` follows Mathlib's `LieAlgebra.LieEquiv.ofCoboundary`,
 which identifies the extensions of cohomologous cocycles by acting on the coordinates of `ofProd`.
@@ -242,3 +246,45 @@ end Trivial
 end ofTwoCocycle
 
 end LieAlgebra
+
+/-! ### The central element of an extension by `R` -/
+
+namespace LieAlgebra.ofTwoCocycle
+
+variable (c : twoCocycle R L (TrivialLieModule R L R))
+
+/-- The central element `K = (0, 1)` of the central extension of a Lie algebra by `R` defined by a
+2-cocycle `c` with trivial coefficients, such as the residue cocycle of formal or of polynomial
+currents. -/
+def centralElement : ofTwoCocycle c :=
+  ofProd c (0, (TrivialLieModule.equiv R L R).symm 1)
+
+/-- The coordinates of `K` are `(0, 1)`. -/
+@[simp]
+theorem ofProd_symm_centralElement :
+    (ofProd c).symm (centralElement c) = (0, (TrivialLieModule.equiv R L R).symm 1) := by
+  rw [centralElement, Equiv.symm_apply_apply]
+
+/-- The element `K` is central. -/
+theorem centralElement_mem_center : centralElement c ∈ center R (ofTwoCocycle c) :=
+  (LieModule.mem_maxTrivSubmodule R _ _ _).2 fun v ↦ by
+    simp only [centralElement, bracket_ofTwoCocycle, Equiv.symm_apply_apply, lie_zero,
+      trivial_lie_zero, map_zero, sub_zero, add_zero]
+    exact of_zero c
+
+/-- The element `K` is nonzero over a nontrivial ring. -/
+theorem centralElement_ne_zero [Nontrivial R] : centralElement c ≠ 0 := by
+  intro h
+  have h' := congrArg (fun v ↦ TrivialLieModule.equiv R L R ((ofProd c).symm v).2) h
+  simp [centralElement] at h'
+
+/-- Every element of the extension is an element of `L` plus a multiple of `K`. -/
+theorem ofProd_eq_add_smul_centralElement (u : L) (z : TrivialLieModule R L R) :
+    ofProd c (u, z) = ofProd c (u, 0) + TrivialLieModule.equiv R L R z • centralElement c := by
+  apply (ofProd c).symm.injective
+  simp only [centralElement, of_symm_add, of_symm_smul, Equiv.symm_apply_apply, Prod.smul_mk,
+    smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
+  apply (TrivialLieModule.equiv R L R).injective
+  simp
+
+end LieAlgebra.ofTwoCocycle

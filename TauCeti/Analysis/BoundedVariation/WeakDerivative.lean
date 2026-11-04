@@ -202,18 +202,12 @@ theorem hasWeakFDerivOn_of_absolutelyContinuous [IsFiniteMeasureOnCompacts μ]
   refine hasWeakFDerivOn_iff.2 fun v => hasWeakLineDerivOn_iff_testFunction.2
     ⟨inferInstance, hu, ?_, fun φ => ?_⟩
   · simpa [Function.comp_def, real_inner_comm] using (innerSL ℝ v).locallyIntegrableOn_comp hgloc
-  -- Test the polar decomposition against the vector field `φ v`, whose divergence is `∂_v φ`.
-  set ψ := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ
-  have hψ := integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin ψ
-  rw [divergenceCLM_postcompCLM_toSpanSingleton] at hψ
-  simp only [lineDerivOp_apply] at hψ
   rw [← setIntegral_smul_eq_integral_smul φ, ← integral_subtype_comap hΩ]
   simp only [smul_eq_mul]
-  rw [hψ, ← integral_rnDeriv_smul hac, neg_inj]
+  rw [integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity hu hfin,
+    ← integral_rnDeriv_smul hac, neg_inj]
   refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  simp only [ψ, hg, hG, postcompCLM_apply, Function.comp_apply,
-    ContinuousLinearMap.toSpanSingleton_apply, innerSL_apply_apply, real_inner_smul_left,
-    smul_eq_mul]
+  simp only [hg, hG, innerSL_apply_apply, real_inner_smul_left, smul_eq_mul]
   rw [real_inner_comm]
   ring
 

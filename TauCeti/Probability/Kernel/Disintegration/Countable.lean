@@ -112,7 +112,7 @@ quantity read off `σ`; see the private uniqueness regression below. -/
     (hy : σ.fst {y} ≠ 0) (s : Set Z) :
     countableCondKernel σ y s = (σ.fst {y})⁻¹ * σ ({y} ×ˢ s) := by
   rw [countableCondKernel_apply, ite_eq_right hy, (measurableEmbedding_prodMk_left y).comap_apply,
-    Measure.smul_apply, Set.singleton_prod, smul_eq_mul]
+    _root_.smul_apply, Set.singleton_prod, smul_eq_mul]
 
 /-- `countableCondKernel σ` is a Markov kernel as soon as `σ.fst` is σ-finite, i.e. (on the
 countable space `Y`) as soon as every atom of `σ.fst` has finite mass. -/

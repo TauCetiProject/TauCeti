@@ -21,8 +21,10 @@ each point `x ∈ A`. These classes are compatible with restriction to smaller c
 
 For `M` compact, there is a unique class `o.fundamentalClass hn` of `Hₙ(M; ℤ)`, the *fundamental
 class* of `M` for the orientation `o`, whose image in `Hₙ(M, M ∖ {x}; ℤ)` is `o x` for every
-`x`. Reversing the orientation negates it. If `M` is moreover connected, the fundamental class
-generates `Hₙ(M; ℤ)` freely: `c ↦ c • o.fundamentalClass hn` is an isomorphism from `ℤ`.
+`x`. Reversing the orientation negates it. Its image under the change of coefficients `ℤ → ℝ` is
+the real fundamental class `o.realFundamentalClass hn ∈ Hₙ(M; ℝ)`. If `M` is moreover connected,
+the fundamental class generates `Hₙ(M; ℤ)` freely: `c ↦ c • o.fundamentalClass hn` is an
+isomorphism from `ℤ`, so every class of `Hₙ(M; ℤ)` is an integer multiple of it.
 
 A continuous map `f : M → X` carries the fundamental class to a class `f_*[M] ∈ Hₙ(X; ℤ)`, which
 is functorial in `f` and depends only on the homotopy class of `f`.
@@ -36,6 +38,8 @@ The fundamental class is what cohomology classes are evaluated on, through the K
   compact subset `A`.
 * `TauCeti.HomologicalOrientation.fundamentalClass`: the fundamental class of a compact oriented
   manifold.
+* `TauCeti.HomologicalOrientation.realFundamentalClass`: the image of the fundamental class in
+  `Hₙ(M; ℝ)`.
 * `TauCeti.HomologicalOrientation.fundamentalClassEquiv`: for a compact connected oriented
   manifold, the isomorphism `ℤ ≃ₗ[ℤ] Hₙ(M; ℤ)` sending `1` to the fundamental class.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass`: the image `f_*[M] ∈ Hₙ(X; ℤ)` of the
@@ -49,6 +53,8 @@ The fundamental class is what cohomology classes are evaluated on, through the K
   orientation is the negated fundamental class.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_of_homotopic`: homotopic maps carry the
   fundamental class to the same class.
+* `TauCeti.HomologicalOrientation.exists_eq_zsmul_fundamentalClass`: on a compact connected
+  oriented manifold, every top-dimensional class is a multiple of the fundamental class.
 
 ## Implementation notes
 
@@ -71,6 +77,16 @@ noncomputable section
 open CategoryTheory Module Set
 
 namespace TauCeti
+
+/-- The coefficient map `ℤ → ℝ`, from the integral coefficients `ULift ℤ` of the fundamental class
+to real coefficients, as a morphism of abelian groups. -/
+def intToRealCoeff : ModuleCat.of ℤ (ULift.{0} ℤ) ⟶ ModuleCat.of ℤ ℝ :=
+  ModuleCat.ofHom ((Int.castAddHom ℝ).toIntLinearMap ∘ₗ ULift.moduleEquiv.toLinearMap)
+
+/-- The coefficient map `ℤ → ℝ` is the cast of integers to reals. -/
+@[simp]
+theorem intToRealCoeff_apply (m : ULift.{0} ℤ) : intToRealCoeff m = (m.down : ℝ) :=
+  (rfl)
 
 namespace HomologicalOrientation
 
@@ -227,6 +243,27 @@ theorem fundamentalClass_neg : (-o).fundamentalClass hn = -o.fundamentalClass hn
     localHomologyRestriction_singularHomologyπ_fundamentalClass, neg_apply,
     LocalOrientation.coe_neg]
 
+/-- The **real fundamental class** of a compact oriented manifold: the image of the fundamental
+class in the real singular homology `Hₙ(M; ℝ)`. -/
+def realFundamentalClass :
+    ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ ℝ) n : ModuleCat.{0} ℤ) :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).map intToRealCoeff).app
+    (TopCat.of M)).hom (o.fundamentalClass hn)
+
+/-- The real fundamental class is the image of the fundamental class under the change of
+coefficients `ℤ → ℝ`. -/
+theorem realFundamentalClass_def :
+    o.realFundamentalClass hn =
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).map intToRealCoeff).app
+        (TopCat.of M)).hom (o.fundamentalClass hn) :=
+  (rfl)
+
+/-- Reversing the orientation negates the real fundamental class. -/
+@[simp]
+theorem realFundamentalClass_neg : (-o).realFundamentalClass hn = -o.realFundamentalClass hn := by
+  rw [realFundamentalClass, realFundamentalClass, fundamentalClass_neg]
+  exact map_neg _ _
+
 section Map
 
 open AlgebraicTopology
@@ -342,6 +379,15 @@ def fundamentalClassEquiv :
 theorem fundamentalClassEquiv_apply (c : ℤ) :
     o.fundamentalClassEquiv hn c = c • o.fundamentalClass hn :=
   int_smul_eq_zsmul _ c _
+
+/-- On a compact connected oriented manifold, every class of `Hₙ(M; ℤ)` is an integer multiple of
+the fundamental class. -/
+theorem exists_eq_zsmul_fundamentalClass
+    (γ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)) :
+    ∃ d : ℤ, γ = d • o.fundamentalClass hn := by
+  obtain ⟨d, rfl⟩ := (o.fundamentalClassEquiv hn).surjective γ
+  exact ⟨d, fundamentalClassEquiv_apply o hn d⟩
 
 end CompactSpace
 

@@ -114,7 +114,7 @@ theorem exists_basis_coefficientMatrix_isUpperTriangular_diag_mem_of_weight_vect
   let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
   generalize hdim : finrank k M = d
   induction d using Nat.strong_induction_on generalizing M with
-  | h d ih =>
+  | ind d ih =>
       by_cases hM : Nontrivial M
       · let _ : Nontrivial M := hM
         obtain ⟨v, c, hv, hc, hvcoact⟩ := hweight M

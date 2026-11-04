@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.Normed.Module.Alternating.Dual
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import TauCeti.Analysis.InnerProductSpace.ExteriorPower
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Abelian.FunctorCategory
+
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic

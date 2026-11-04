@@ -390,7 +390,7 @@ theorem kyFanSum_add_le (A B : E →ₗ[𝕜] F) (k : ℕ) :
   have hA := A.norm_sum_inner_le_kyFanSum hu hv
   have hB := B.norm_sum_inner_le_kyFanSum hu hv
   rw [Fintype.card_fin] at hA hB
-  simp only [add_apply, inner_add_right, sum_add_distrib]
+  simp only [LinearMap.add_apply, inner_add_right, sum_add_distrib]
   exact (norm_add_le _ _).trans
     (add_le_add (hA.trans (A.kyFanSum_mono hm)) (hB.trans (B.kyFanSum_mono hm)))
 
@@ -418,7 +418,7 @@ theorem kyFanSum_smul (c : 𝕜) (A : E →ₗ[𝕜] F) (k : ℕ) :
     refine (kyFanSum_le_iff _).mpr fun m hm u v hu hv ↦ ?_
     have hA := A.norm_sum_inner_le_kyFanSum hu hv
     rw [Fintype.card_fin] at hA
-    simp only [smul_apply, inner_smul_right, ← mul_sum, norm_mul]
+    simp only [LinearMap.smul_apply, inner_smul_right, ← mul_sum, norm_mul]
     exact mul_le_mul_of_nonneg_left (hA.trans (A.kyFanSum_mono hm)) (norm_nonneg c)
   rcases eq_or_ne c 0 with rfl | hc
   · simp

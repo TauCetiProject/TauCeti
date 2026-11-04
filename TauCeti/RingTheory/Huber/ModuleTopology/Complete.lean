@@ -72,7 +72,7 @@ theorem t2Space_of_isNoetherianRing (P : PairOfDefinition A)
     Module.Finite.exists_fg_span_eq_top P.ringOfDefinition (A := A) (M := M)
   have hbasis := P.hasBasis_nhds_zero_idealOfDefinition_pow_smul hM₀ hspan
   have : Module.Finite P.ringOfDefinition M₀ := Module.Finite.iff_fg.mpr hM₀
-  have hH := IsHausdorff.of_le_jacobson P.idealOfDefinition M₀ (IsAdicComplete.le_jacobson_bot _)
+  have hH := IsHausdorff.of_le_jacobson P.idealOfDefinition M₀ (IsAdicComplete.le_jacobson _)
   refine IsTopologicalAddGroup.t2Space_of_zero_sep fun x hx ↦ ?_
   by_contra! h
   -- `x` lies in every `Iⁿ • M₀`, so Krull's intersection theorem in `M₀` forces `x = 0`.

@@ -74,7 +74,7 @@ For `a ≠ 0` this says that `a⁻¹ • c` is a projection onto `range c` commu
 theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {a : K}
     (hc : c * c = a • c) (hcf : Commute c f)
     (hf : ∀ x ∈ _root_.LinearMap.range c, f x ∈ _root_.LinearMap.range c :=
-      fun _ ⟨y, hy⟩ => ⟨f y, by rw [← hy, ← Module.End.mul_apply, hcf.eq, Module.End.mul_apply]⟩) :
+      fun _ ⟨y, hy⟩ => ⟨f y, by rw [← hy, ← mul_apply_eq_comp, hcf.eq, mul_apply_eq_comp]⟩) :
     _root_.LinearMap.trace K M (c * f) =
       a * _root_.LinearMap.trace K (_root_.LinearMap.range c) (f.restrict hf) := by
   rcases eq_or_ne a 0 with rfl | ha
@@ -83,13 +83,13 @@ theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {
     rw [pow_two, hcf.symm.mul_mul_mul_comm, hc, zero_smul, zero_mul]
   · -- `a⁻¹ • c` fixes the range of `c` pointwise, so on that range `a⁻¹ • c * f` is `f`
     have hfix : ∀ x ∈ _root_.LinearMap.range c, (a⁻¹ • c) x = x := fun _ ⟨y, hy⟩ => by
-      rw [← hy, LinearMap.smul_apply, ← Module.End.mul_apply, hc, LinearMap.smul_apply, smul_smul,
+      rw [← hy, LinearMap.smul_apply, ← mul_apply_eq_comp, hc, LinearMap.smul_apply, smul_smul,
         inv_mul_cancel₀ ha, one_smul]
     have hmem : ∀ x, (a⁻¹ • c * f) x ∈ _root_.LinearMap.range c := fun x =>
-      ⟨a⁻¹ • f x, by rw [map_smul, Module.End.mul_apply, LinearMap.smul_apply]⟩
+      ⟨a⁻¹ • f x, by rw [map_smul, mul_apply_eq_comp, LinearMap.smul_apply]⟩
     have hres : (a⁻¹ • c * f).restrict (fun x _ => hmem x) = f.restrict hf :=
       LinearMap.ext fun x => Subtype.ext <| by
-        rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, Module.End.mul_apply,
+        rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, mul_apply_eq_comp,
           hfix _ (hf x x.2)]
     have htrace := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ (a⁻¹ • c * f) hmem
     rw [hres, smul_mul_assoc, map_smul, smul_eq_mul] at htrace
@@ -102,16 +102,16 @@ theorem LinearMap.trace_sub_mul_eq_mul_trace_restrict_ker {c f : Module.End K M}
     (hf : ∀ x ∈ _root_.LinearMap.ker c, f x ∈ _root_.LinearMap.ker c :=
       fun x hx ↦ by
         rw [_root_.LinearMap.mem_ker] at hx ⊢
-        rw [← Module.End.mul_apply, hcf.eq, Module.End.mul_apply, hx, map_zero]) :
+        rw [← mul_apply_eq_comp, hcf.eq, mul_apply_eq_comp, hx, map_zero]) :
     _root_.LinearMap.trace K M ((a • 1 - c) * f) =
       a * _root_.LinearMap.trace K (_root_.LinearMap.ker c) (f.restrict hf) := by
   have hmem : ∀ x, ((a • 1 - c) * f) x ∈ _root_.LinearMap.ker c := by
     intro x
     have hcx := congrArg (fun L : Module.End K M ↦ L (f x)) hc
-    simpa [Module.End.mul_apply] using sub_eq_zero.mpr hcx.symm
+    simpa [mul_apply_eq_comp] using sub_eq_zero.mpr hcx.symm
   have hres : ((a • 1 - c) * f).restrict (fun x _ ↦ hmem x) = a • f.restrict hf := by
     ext x
-    simp [Module.End.mul_apply, _root_.LinearMap.mem_ker.mp (hf x x.2)]
+    simp [mul_apply_eq_comp, _root_.LinearMap.mem_ker.mp (hf x x.2)]
   have h := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ ((a • 1 - c) * f) hmem
   rw [hres, map_smul, smul_eq_mul] at h
   exact h.symm
@@ -127,7 +127,7 @@ theorem LinearMap.trace_eq_mul_finrank_range {f : M →ₗ[K] M} {a : K} (hf : f
   have hone : ∀ h : ∀ x ∈ _root_.LinearMap.range f, (1 : Module.End K M) x ∈
       _root_.LinearMap.range f, (1 : Module.End K M).restrict h = 1 := fun _ =>
     LinearMap.ext fun x => Subtype.ext <| by
-      rw [LinearMap.coe_restrict_apply, Module.End.one_apply, Module.End.one_apply]
+      rw [LinearMap.coe_restrict_apply, one_apply_eq_self, one_apply_eq_self]
   rwa [mul_one, hone, _root_.LinearMap.trace_one] at h
 
 /-- **The trace of an involution determines its `-1`-eigenspace**: if `σ ^ 2 = 1`, then
@@ -176,7 +176,7 @@ projective, hence free over the local ring `A`, so Mathlib's `LinearMap.IsProj.t
 theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
     (hf : IsIdempotentElem f) :
     LinearMap.trace A N f = (finrank A (LinearMap.range f) : A) := by
-  have hfx (x : N) : f (f x) = f x := by rw [← Module.End.mul_apply, hf.eq]
+  have hfx (x : N) : f (f x) = f x := by rw [← mul_apply_eq_comp, hf.eq]
   have : Module.Projective A (LinearMap.range f) :=
     .of_split (LinearMap.range f).subtype f.rangeRestrict
       (LinearMap.ext fun ⟨_, y, rfl⟩ ↦ Subtype.ext (by simp [hfx]))

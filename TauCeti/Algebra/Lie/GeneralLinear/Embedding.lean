@@ -78,7 +78,7 @@ theorem glEmbedding_apply (f : m ↪ n) (A : Matrix m m R) :
 theorem glEmbedding_single (f : m ↪ n) (a b : m) (c : R) :
     glEmbedding R f (single a b c) = single (f a) (f b) c := by
   ext i j
-  simp only [glEmbedding_apply, mul_apply, submatrix_apply, id_eq, one_apply,
+  simp only [glEmbedding_apply, Matrix.mul_apply, submatrix_apply, id_eq, Matrix.one_apply,
     single_apply, ite_and, mul_ite, ite_mul, mul_zero, zero_mul, one_mul, mul_one]
   rw [Fintype.sum_eq_single b fun x hx => by simp [Ne.symm hx]]
   simp only [Finset.sum_ite_eq, Finset.mem_univ, ite_true]
