@@ -189,10 +189,8 @@ namespace Finsupp
 /-- In a canonically ordered additive commutative monoid, every weight functional on `σ →₀ ℕ` is
 monotone. -/
 theorem weight_mono {σ M : Type*} [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M]
-    (w : σ → M) : Monotone (weight w : (σ →₀ ℕ) →+ M) := fun _ _ hfg ↦ by
-  obtain ⟨d, rfl⟩ := le_iff_exists_add.mp hfg
-  rw [map_add]
-  exact le_self_add
+    (w : σ → M) : Monotone (weight w : (σ →₀ ℕ) →+ M) :=
+  weight_mono_of_nonneg fun _ ↦ zero_le
 
 end Finsupp
 

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Interval
-public import Mathlib.Order.Interval.Finset.Nat
+public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Sum
 public import TauCeti.RingTheory.MvPolynomial.BlockHomogenize.Basic
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
@@ -49,6 +48,8 @@ dehomogenizing `∂^(0 ⊕ β) H_d(f)` at `X_h = 1` recovers `∂^β f` over any
 * `MvPolynomial.blockHomogenize_eq_sum_support_taylor`,
   `MvPolynomial.blockHomogenize_eq_sum_blockExponents`: the centered Taylor expansion of
   `blockHomogenize b d f` around `a`.
+* `MvPolynomial.finsuppProd_X_inr_sub_C_mul_X_inl_pow`: multi-index binomial expansion of
+  `∏_j (Y_j - a_j X_{b(j)})^(γ_j)` over `β ≤ γ`.
 * `MvPolynomial.eval_one_hasseDeriv_sumElim_blockHomogenize`,
   `MvPolynomial.eval_one_hasseDeriv_sumElim_blockHomogenize_eq_sum_blockExponents`: the explicit
   formula for `(∂^(κ ⊕ β) H_d(f))(1, a)` in terms of affine Hasse jets at `a`.
@@ -219,18 +220,6 @@ section CommRing
 
 variable {R B S : Type*} [CommRing R] (b : S → B) (d : B → ℕ)
 
-/-- Every polynomial `f` equals its finite Hasse Taylor expansion around `a`:
-`f = ∑_{γ ∈ supp(taylor a f)} C((∂^γ f)(a)) ∏_j (X_j - C(a_j))^(γ_j)`. -/
-private theorem eq_sum_support_taylor_hasseDeriv (a : S → R) (f : MvPolynomial S R) :
-    f = ∑ γ ∈ (taylor a f).support,
-      C (eval a (hasseDeriv γ f)) * γ.prod fun j k ↦ (X j - C (a j)) ^ k := by
-  conv_lhs => rw [← taylor_zero f, ← neg_add_cancel a, ← taylor_taylor, (taylor a f).as_sum]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun γ _ ↦ ?_
-  rw [coeff_taylor, taylor_apply, aeval_monomial, algebraMap_eq]
-  congr 1
-  simp only [Finsupp.prod, Pi.neg_apply, map_neg, sub_eq_add_neg]
-
 /-- **Taylor expansion of a block homogenization** around an affine center `a : S → R`
 (Evertse 1995, §1, pp. 221–222): for `d`-bounded `f`,
 `H_d(f) = ∑_γ C((∂^γ f)(a)) (∏_h X_h^(d_h - t_h(γ))) ∏_j (Y_j - a_j X_{b(j)})^(γ_j)`,
@@ -272,7 +261,7 @@ theorem blockHomogenize_eq_sum_support_taylor [Fintype B] (a : S → R) {f : MvP
         (fun j ↦ γ j • w (.inr j)) fun j _ ↦ ?_
       · convert hp
         rw [← Finsupp.weight_ite_eq_mapDomain_apply b γ h, Finsupp.weight_apply, Finsupp.sum]
-        rfl
+        exact Finset.sum_congr rfl fun j _ ↦ by by_cases hbj : b j = h <;> simp [w, hbj]
       · refine ((isWeightedHomogeneous_X R w (.inr j)).sub ?_).pow (γ j)
         have hw : w (.inl (b j)) = w (.inr j) := by
           by_cases hbj : b j = h <;> simp [w, hbj]
@@ -307,143 +296,41 @@ theorem blockHomogenize_eq_sum_blockExponents [Fintype B] [Fintype S] (a : S →
     simp [hγ]
 
 open Classical in
-/-- Multiplying a polynomial in the `.inl` variables by a monomial `c X^u Y^β'` contributes to
-`[X^κ Y^β]` only when `β' = β` and `u ≤ κ`, where it selects the coefficient `[X^(κ - u)]`. -/
-private theorem coeff_rename_inl_mul_monomial_sumElim (P : MvPolynomial B R) (u κ : B →₀ ℕ)
-    (β' β : S →₀ ℕ) (c : R) :
-    (rename Sum.inl P * monomial (u.sumElim β') c).coeff (κ.sumElim β) =
-      if β' = β ∧ u ≤ κ then P.coeff (κ - u) * c else 0 := by
-  classical
-  induction P using MvPolynomial.induction_on' with
-  | monomial μ r =>
-    have hmap : μ.mapDomain (Sum.inl : B → B ⊕ S) = μ.sumElim (0 : S →₀ ℕ) := by
-      simp [sumElim_eq_add]
-    have hsum : (μ.sumElim (0 : S →₀ ℕ)) + u.sumElim β' = (μ + u).sumElim β' := by
-      ext (h | j) <;> simp
-    rw [rename_monomial, hmap, monomial_mul_monomial, hsum, coeff_monomial, coeff_monomial]
-    simp only [sumElim_inj]
-    by_cases hβ : β' = β
-    · subst hβ
-      by_cases hu : u ≤ κ
-      · by_cases hμ : μ + u = κ
-        · subst hμ
-          simp
-        · have hμ' : μ ≠ κ - u := fun h ↦ hμ (h ▸ tsub_add_cancel_of_le hu)
-          simp [hu, hμ, hμ']
-      · have hμ : μ + u ≠ κ := fun h ↦ hu (h ▸ le_add_left le_rfl)
-        simp [hu, hμ]
-    · simp [hβ]
-  | add p q hp hq =>
-    simp only [map_add, add_mul, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp, hq]
-    split_ifs <;> ring
-
-/-- The coefficient of `X^μ` in `∏_h (X_h + 1)^(m_h)` is `∏_h (m_h choose μ_h)`. -/
-private theorem coeff_prod_X_add_one_pow [Fintype B] (m : B → ℕ) (μ : B →₀ ℕ) :
-    (∏ h : B, (X h + 1 : MvPolynomial B R) ^ m h).coeff μ =
-      ∏ h : B, ((m h).choose (μ h) : R) := by
-  have heq : (∏ h : B, (X h + 1 : MvPolynomial B R) ^ m h) =
-      taylor (fun _ ↦ 1) (monomial (equivFunOnFinite.symm m) (1 : R)) := by
-    rw [taylor_apply, aeval_monomial, map_one, one_mul,
-      Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
-    simp
-  rw [heq, coeff_taylor, eval_const_hasseDeriv_monomial]
-  simp
-
-open Classical in
 /-- Binomial expansion of `∏_{j ∈ supp(γ)} (Y_j - a_j X_{b(j)})^(γ_j)` over the sub-exponents
 `β ≤ γ`: each `β` contributes the monomial `X^(t(γ - β)) Y^β`. -/
-private theorem finsuppProd_X_inr_sub_C_mul_X_inl_pow (a : S → R) (γ : S →₀ ℕ) :
+theorem finsuppProd_X_inr_sub_C_mul_X_inl_pow (a : S → R) (γ : S →₀ ℕ) :
     (γ.prod fun j k ↦ (X (.inr j) - C (a j) * X (.inl (b j)) : MvPolynomial (B ⊕ S) R) ^ k) =
       ∑ β ∈ Finset.Iic γ,
         monomial (((γ - β).mapDomain b).sumElim β)
           (γ.prod fun j k ↦ (k.choose (β j) : R) * (-a j) ^ (k - β j)) := by
   classical
-  induction γ using Finsupp.induction with
-  | zero =>
-    have h0 : Finset.Iic (0 : S →₀ ℕ) = {0} := by
-      ext x
-      simp
-    simp [h0]
-  | single_add j k s hj hk ih =>
-    have hsupp : (single j k + s).support = insert j s.support := by
-      ext i
-      rcases eq_or_ne i j with rfl | hij
-      · simp [Finsupp.mem_support_iff, Finsupp.notMem_support_iff.1 hj, hk]
-      · simp [Finsupp.mem_support_iff, hij]
-    have hprod_lhs :
-        ((single j k + s).prod fun i n ↦
-          (X (.inr i) - C (a i) * X (.inl (b i)) : MvPolynomial (B ⊕ S) R) ^ n) =
-        (X (.inr j) - C (a j) * X (.inl (b j))) ^ k *
-          s.prod fun i n ↦ (X (.inr i) - C (a i) * X (.inl (b i))) ^ n := by
-      rw [Finsupp.prod, Finsupp.prod, hsupp, Finset.prod_insert hj]
-      congr 1
-      · simp [Finsupp.notMem_support_iff.1 hj]
-      · refine Finset.prod_congr rfl fun i hi ↦ ?_
-        have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
-        simp [hij.symm]
-    have hfactor :
-        (X (.inr j) - C (a j) * X (.inl (b j)) : MvPolynomial (B ⊕ S) R) ^ k =
-          ∑ m ∈ Finset.range (k + 1),
-            monomial ((single (b j) (k - m)).sumElim (single j m))
-              ((k.choose m : R) * (-a j) ^ (k - m)) := by
-      have hterm : (X (.inr j) - C (a j) * X (.inl (b j)) : MvPolynomial (B ⊕ S) R) =
-          monomial ((0 : B →₀ ℕ).sumElim (single j 1)) 1 +
-            monomial ((single (b j) 1).sumElim (0 : S →₀ ℕ)) (-a j) := by
-        rw [X, X, C_mul_monomial, mul_one, sub_eq_add_neg, ← map_neg (monomial _)]
-        congr 1 <;> refine congrArg (monomial · _) ?_ <;>
-          (ext (h | i) <;> simp [Finsupp.single_apply])
-      rw [hterm, add_pow]
-      refine Finset.sum_congr rfl fun m _ ↦ ?_
-      rw [monomial_pow, monomial_pow, one_pow, monomial_mul_monomial, one_mul, ← C_eq_natCast,
-        mul_comm _ (C _), C_mul_monomial]
-      refine congrArg (monomial · _) ?_
-      ext (h | i) <;> simp [Finsupp.single_apply]
-    rw [hprod_lhs, hfactor, ih, Finset.sum_mul_sum, ← Finset.sum_product']
-    refine Finset.sum_bij (fun p : ℕ × (S →₀ ℕ) ↦ fun _ ↦ single j p.1 + p.2) ?_ ?_ ?_ ?_
-    · rintro ⟨m, β'⟩ hp
-      rw [Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff, Finset.mem_Iic] at hp
-      exact Finset.mem_Iic.2 (add_le_add (single_le_single.2 hp.1) hp.2)
-    · rintro ⟨m₁, β₁⟩ hp₁ ⟨m₂, β₂⟩ hp₂ heq
-      rw [Finset.mem_product, Finset.mem_Iic] at hp₁ hp₂
-      have hsj : s j = 0 := Finsupp.notMem_support_iff.1 hj
-      have hβ₁j : β₁ j = 0 := Nat.eq_zero_of_le_zero ((hp₁.2 j).trans_eq hsj)
-      have hβ₂j : β₂ j = 0 := Nat.eq_zero_of_le_zero ((hp₂.2 j).trans_eq hsj)
-      have hm : m₁ = m₂ := by
-        simpa [hβ₁j, hβ₂j] using DFunLike.congr_fun heq j
-      subst hm
-      exact Prod.ext rfl (add_left_cancel heq)
-    · intro β hβ
-      rw [Finset.mem_Iic] at hβ
-      have hsj : s j = 0 := Finsupp.notMem_support_iff.1 hj
-      refine ⟨(β j, β - single j (β j)), ?_, ?_⟩
-      · rw [Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff, Finset.mem_Iic]
-        refine ⟨by simpa [hsj] using hβ j, fun i ↦ ?_⟩
-        rcases eq_or_ne i j with rfl | hij
-        · simp
-        · simpa [hij.symm] using hβ i
-      · ext i
-        rcases eq_or_ne i j with rfl | hij
-        · simp
-        · simp
-    · rintro ⟨m, β'⟩ hp
-      rw [Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff, Finset.mem_Iic] at hp
-      have hsj : s j = 0 := Finsupp.notMem_support_iff.1 hj
-      have hβ'j : β' j = 0 := Nat.eq_zero_of_le_zero ((hp.2 j).trans_eq hsj)
-      rw [monomial_mul_monomial]
-      congr 1
-      · have htsub : (single j k + s) - (single j m + β') = single j (k - m) + (s - β') := by
-          ext i
-          rcases eq_or_ne i j with rfl | hij
-          · simp [hsj, hβ'j]
-          · simp [hij.symm]
-        rw [htsub, mapDomain_add, mapDomain_single]
-        ext (h | i); simp
-      · rw [Finsupp.prod, Finsupp.prod, hsupp, Finset.prod_insert hj]
-        congr 1
-        · simp [hsj, hβ'j]
-        · refine Finset.prod_congr rfl fun i hi ↦ ?_
-          have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
-          simp [hij.symm]
+  -- Apply the multi-index binomial theorem to `Y_j + (-a_j X_{b(j)})`, then rewrite each
+  -- coordinate factor as a monomial and combine the product via `monomial_sum_prod`.
+  have hsub : (γ.prod fun j k ↦
+      (X (.inr j) - C (a j) * X (.inl (b j)) : MvPolynomial (B ⊕ S) R) ^ k) =
+      γ.prod fun j k ↦
+        ((X (.inr j) : MvPolynomial (B ⊕ S) R) + -(C (a j) * X (.inl (b j)))) ^ k := by
+    simp only [sub_eq_add_neg]
+  have hfac (β : S →₀ ℕ) (j : S) (k : ℕ) :
+      (k.choose (β j) : MvPolynomial (B ⊕ S) R) * (X (.inr j)) ^ β j *
+          (-(C (a j) * X (.inl (b j)))) ^ (k - β j) =
+        monomial (single (.inl (b j)) (k - β j) + single (.inr j) (β j))
+          ((k.choose (β j) : R) * (-a j) ^ (k - β j)) := by
+    have hneg : (-(C (a j) * X (.inl (b j))) : MvPolynomial (B ⊕ S) R) =
+        monomial (single (.inl (b j)) 1) (-a j) := by
+      rw [X, C_mul_monomial, mul_one, ← map_neg (monomial _)]
+    rw [← C_eq_natCast, X_pow_eq_monomial, hneg, monomial_pow, C_mul_monomial, mul_one,
+      monomial_mul_monomial, smul_single', mul_one, add_comm]
+  rw [hsub, Finsupp.prod_add_pow]
+  refine Finset.sum_congr rfl fun β hβ ↦ ?_
+  simp only [Finsupp.prod, hfac, ← monomial_sum_prod]
+  refine congrArg (monomial · _) ?_
+  rw [Finset.sum_add_distrib, sumElim_eq_add, ← mapDomain_comp]
+  congr 1
+  · rw [mapDomain, sum_of_support_subset (γ - β) support_tsub _ fun _ _ ↦ single_zero _]
+    simp only [Function.comp_apply, tsub_apply]
+  · rw [mapDomain, sum_of_support_subset β (support_mono (Finset.mem_Iic.1 hβ)) _
+      fun _ _ ↦ single_zero _]
 
 open Classical in
 /-- **Homogeneous Hasse jets of a block homogenization** at the chart point `(1, a)`
@@ -481,7 +368,7 @@ theorem eval_one_hasseDeriv_sumElim_blockHomogenize [Fintype B] (a : S → R) (�
   by_cases hcond : β ≤ γ ∧ ∀ h, (γ - β).mapDomain b h ≤ κ h
   · rw [ite_eq_left hcond]
     obtain ⟨hβγ, hκ⟩ := hcond
-    have hκ' : (γ - β).mapDomain b ≤ κ := hκ
+    have hκ' : (γ - β).mapDomain b ≤ κ := Finsupp.le_def.2 hκ
     rw [Finset.sum_eq_single β]
     · rw [coeff_rename_inl_mul_monomial_sumElim, ite_eq_left ⟨rfl, hκ'⟩,
         coeff_prod_X_add_one_pow]
@@ -580,16 +467,10 @@ example :
   dsimp only
   refine ⟨by simp, ?_⟩
   have hf : ∀ e ∈ (X () ^ 2 - X () : MvPolynomial Unit ℚ).support,
-      ∀ h : Unit, e.mapDomain (fun _ : Unit ↦ ()) h ≤ 2 := by
-    intro e he h
-    rw [mem_support_iff] at he
-    by_contra! hlt
-    have he2 : single () 2 ≠ e := fun h2 ↦ by simp [← h2] at hlt
-    have he1 : single () 1 ≠ e := fun h1 ↦ by simp [← h1] at hlt
-    apply he
-    rw [X_pow_eq_monomial, X, sub_eq_add_neg, ← map_neg (monomial _),
-      AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_monomial, coeff_monomial,
-      ite_eq_right he2, ite_eq_right he1, add_zero]
+      ∀ h : Unit, e.mapDomain (fun _ : Unit ↦ ()) h ≤ 2 :=
+    mapDomain_le_of_mem_support_sub _ _
+      (mapDomain_le_of_mem_support_X_pow _ _ (by decide))
+      (mapDomain_le_of_mem_support_X _ _ (by decide))
   rw [eval_one_hasseDeriv_sumElim_blockHomogenize_eq_sum_blockExponents _ _ _ _ _ hf]
   have hmap (γ : Unit →₀ ℕ) : γ.mapDomain (fun _ : Unit ↦ ()) () = γ () := by
     have heq : (fun _ : Unit ↦ ()) = id := Subsingleton.elim _ _
@@ -617,8 +498,7 @@ example :
   have hd1 : eval (fun _ : Unit ↦ (1 : ℚ))
       (hasseDeriv (single () 1) (X () ^ 2 - X () : MvPolynomial Unit ℚ)) = 1 := by
     rw [X_pow_eq_monomial, X, map_sub, hasseDeriv_monomial, hasseDeriv_monomial, ← single_tsub]
-    simp [eval_monomial]
-    norm_num
+    norm_num [eval_monomial]
   rw [hd0, hd1]
   simp
 
@@ -652,16 +532,10 @@ example :
           (blockHomogenize (fun _ : Unit ↦ ()) (fun _ ↦ 2) f)) = 1 ∧
       eval (fun _ ↦ 1) ((pderiv ())^[2] f) = 0 := by
   have hf : ∀ e ∈ (X () ^ 2 - 1 : MvPolynomial Unit (ZMod 2)).support,
-      ∀ h : Unit, e.mapDomain (fun _ : Unit ↦ ()) h ≤ 2 := by
-    intro e he h
-    rw [mem_support_iff] at he
-    by_contra! hlt
-    have he2 : single () 2 ≠ e := fun h2 ↦ by simp [← h2] at hlt
-    have he0 : (0 : Unit →₀ ℕ) ≠ e := fun h0 ↦ by simp [← h0] at hlt
-    apply he
-    rw [X_pow_eq_monomial, ← C_1, ← monomial_zero', sub_eq_add_neg, ← map_neg (monomial _),
-      AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_monomial, coeff_monomial,
-      ite_eq_right he2, ite_eq_right he0, add_zero]
+      ∀ h : Unit, e.mapDomain (fun _ : Unit ↦ ()) h ≤ 2 :=
+    mapDomain_le_of_mem_support_sub _ _
+      (mapDomain_le_of_mem_support_X_pow _ _ (by decide))
+      (mapDomain_le_of_mem_support_one _ _)
   have hd2 : eval (fun _ : Unit ↦ (1 : ZMod 2))
       (hasseDeriv (single () 2) (X () ^ 2 - 1 : MvPolynomial Unit (ZMod 2))) = 1 := by
     simp [X_pow_eq_monomial, hasseDeriv_monomial]

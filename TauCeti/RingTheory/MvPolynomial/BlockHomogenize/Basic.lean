@@ -49,6 +49,12 @@ multihomogeneous polynomials to which the product theorem and the index estimate
   degree `d h` in block `h`.
 * `MvPolynomial.blockHomogenize_aeval_one_X`: a polynomial homogeneous of degree `d h` in every
   block is the block homogenization of its dehomogenization.
+* `MvPolynomial.mapDomain_le_of_mem_support_aeval_one_X`: dehomogenizing a polynomial homogeneous
+  of degree `d h` in every block yields a `d`-bounded affine polynomial.
+* `MvPolynomial.mapDomain_le_of_mem_support_C`, `MvPolynomial.mapDomain_le_of_mem_support_one`,
+  `MvPolynomial.mapDomain_le_of_mem_support_X_pow`, `MvPolynomial.mapDomain_le_of_mem_support_X`,
+  `MvPolynomial.mapDomain_le_of_mem_support_add`, `MvPolynomial.mapDomain_le_of_mem_support_neg`,
+  `MvPolynomial.mapDomain_le_of_mem_support_sub`: closure of block degree bounds on supports.
 * `MvPolynomial.rename_blockHomogenize_unique`: comparison with `Polynomial.homogenize`.
 
 ## References
@@ -307,7 +313,109 @@ theorem blockHomogenize_aeval_one_X {F : MvPolynomial (B ⊕ S) R}
     ite_eq_left fun h ↦ H h ▸ le_add_self,
     (blockHomogenizeExponent_eq_sumElim_iff b d (a := a)).2 fun h ↦ by have := H h; omega]
 
+omit [Fintype B] in
+/-- Dehomogenizing a polynomial `F : MvPolynomial (B ⊕ S) R` that is homogeneous of degree `d h` in
+every block `h` produces an affine polynomial whose monomials satisfy `t_h(e) ≤ d h`. -/
+theorem mapDomain_le_of_mem_support_aeval_one_X {F : MvPolynomial (B ⊕ S) R}
+    (hF : ∀ h, F.IsWeightedHomogeneous (fun v ↦ if Sum.elim id b v = h then 1 else 0) (d h))
+    {e : S →₀ ℕ} (he : e ∈ (aeval (Sum.elim (fun _ ↦ 1) (X : S → MvPolynomial S R)) F).support)
+    (h : B) :
+    e.mapDomain b h ≤ d h := by
+  classical
+  rw [mem_support_iff] at he
+  have hex : ∃ u ∈ F.support,
+      (aeval (Sum.elim (fun _ : B ↦ (1 : MvPolynomial S R)) X)
+        (monomial u (F.coeff u))).coeff e ≠ 0 := by
+    by_contra! hall
+    apply he
+    conv_lhs => rw [F.as_sum]
+    rw [map_sum, coeff_sum]
+    exact Finset.sum_eq_zero hall
+  obtain ⟨u, hu, hne⟩ := hex
+  obtain ⟨κ, e', rfl⟩ : ∃ (κ : B →₀ ℕ) (e' : S →₀ ℕ), u = κ.sumElim e' :=
+    ⟨_, _, (comapDomain_sumElim_comapDomain u).symm⟩
+  rw [aeval_def, eval₂_monomial_sumElim_of_eq_one _ _ (fun _ ↦ rfl), Sum.elim_comp_inr,
+    ← aeval_def, aeval_X_left_apply, coeff_monomial] at hne
+  have he' : e' = e := by_contra fun h' ↦ hne (ite_eq_right h')
+  subst e'
+  have hdeg : κ h + e.mapDomain b h = d h := by
+    rw [← Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply]
+    exact hF h (mem_support_iff.1 hu)
+  exact hdeg ▸ le_add_self
+
 end Weight
+
+section SupportBounds
+
+omit [Fintype B] in
+/-- Any constant polynomial `C c` satisfies every block degree bound `d`. -/
+theorem mapDomain_le_of_mem_support_C (c : R) ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (C c : MvPolynomial S R).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  rw [C_apply] at he
+  rw [Finset.mem_singleton.1 (support_monomial_subset he)]
+  simp
+
+omit [Fintype B] in
+/-- The constant polynomial `1` satisfies every block degree bound `d`. -/
+theorem mapDomain_le_of_mem_support_one ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (1 : MvPolynomial S R).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  rw [← C_1] at he
+  exact mapDomain_le_of_mem_support_C b d 1 he h
+
+omit [Fintype B] in
+/-- A power `X j ^ k` with `k ≤ d (b j)` satisfies the block degree bounds `d`. -/
+theorem mapDomain_le_of_mem_support_X_pow {j : S} {k : ℕ} (hk : k ≤ d (b j)) ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (X j ^ k : MvPolynomial S R).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  rw [X_pow_eq_monomial] at he
+  rw [Finset.mem_singleton.1 (support_monomial_subset he), mapDomain_single]
+  by_cases hbj : b j = h
+  · subst hbj
+    simpa using hk
+  · simp [hbj]
+
+omit [Fintype B] in
+/-- A variable `X j` with `1 ≤ d (b j)` satisfies the block degree bounds `d`. -/
+theorem mapDomain_le_of_mem_support_X {j : S} (hj : 1 ≤ d (b j)) ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (X j : MvPolynomial S R).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  rw [← pow_one (X j)] at he
+  exact mapDomain_le_of_mem_support_X_pow b d hj he h
+
+omit [Fintype B] in
+/-- Block degree bounds `d` on the supports of `f` and `g` carry over to `f + g`. -/
+theorem mapDomain_le_of_mem_support_add {f g : MvPolynomial S R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h)
+    (hg : ∀ e ∈ g.support, ∀ h, e.mapDomain b h ≤ d h) ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (f + g).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  classical
+  rcases Finset.mem_union.1 (support_add he) with hef | heg
+  · exact hf e hef h
+  · exact hg e heg h
+
+omit [CommSemiring R] [Fintype B] in
+/-- Block degree bounds `d` on the support of `f` carry over to `-f`. -/
+theorem mapDomain_le_of_mem_support_neg {R : Type*} [CommRing R] {f : MvPolynomial S R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (-f).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  rw [← neg_one_smul R f] at he
+  exact hf e (support_smul he) h
+
+omit [CommSemiring R] [Fintype B] in
+/-- Block degree bounds `d` on the supports of `f` and `g` carry over to `f - g`. -/
+theorem mapDomain_le_of_mem_support_sub {R : Type*} [CommRing R] {f g : MvPolynomial S R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h)
+    (hg : ∀ e ∈ g.support, ∀ h, e.mapDomain b h ≤ d h) ⦃e : S →₀ ℕ⦄
+    (he : e ∈ (f - g).support) (h : B) :
+    e.mapDomain b h ≤ d h := by
+  rw [sub_eq_add_neg] at he
+  exact mapDomain_le_of_mem_support_add b d hf (mapDomain_le_of_mem_support_neg b d hg) he h
+
+end SupportBounds
 
 /-- With one block and one affine variable, block homogenization is `Polynomial.homogenize`:
 the affine variable becomes the variable `0` and the homogenizing variable the variable `1`. -/

@@ -24,6 +24,9 @@ rule for Hasse derivatives.
   `(∂^d P)(a)`.
 * `MvPolynomial.eval_add_eq_finsum_hasseDeriv`: the finite Taylor expansion
   `P(a + y) = ∑_d (∂^d P)(a) y^d`.
+* `MvPolynomial.eq_sum_support_taylor_hasseDeriv`: the polynomial Taylor expansion
+  `P = ∑_{d ∈ supp(taylor a P)} C((∂^d P)(a)) ∏ⱼ (Xⱼ - C(aⱼ))^(dⱼ)`.
+* `MvPolynomial.coeff_prod_X_add_one_pow`: `[X^μ] ∏ᵢ (Xᵢ + 1)^(mᵢ) = ∏ᵢ (mᵢ choose μᵢ)`.
 * `MvPolynomial.hasseDeriv_mul`: the Leibniz rule `∂^d (P Q) = ∑_{a + b = d} ∂^a P · ∂^b Q`.
 * `MvPolynomial.hasseDeriv_add_single_mul_toMvPolynomial`: the Leibniz rule for a product
   `f · p(Xᵢ)` in separated variables, `∂^(d + l eᵢ) (f · p(Xᵢ)) = ∂^d f · (Dˡ p)(Xᵢ)` when
@@ -110,5 +113,30 @@ theorem eval_add_eq_finsum_hasseDeriv (P : MvPolynomial σ R) (a y : σ → R) :
   · rw [Function.mem_support] at hd
     rw [Finset.mem_coe, mem_support_iff, coeff_taylor]
     exact left_ne_zero_of_mul hd
+
+/-- The coefficient of `X^μ` in `∏ᵢ (Xᵢ + 1)^(mᵢ)` is `∏ᵢ (mᵢ choose μᵢ)`. -/
+theorem coeff_prod_X_add_one_pow [Fintype σ] (m : σ → ℕ) (μ : σ →₀ ℕ) :
+    (∏ i : σ, (X i + 1 : MvPolynomial σ R) ^ m i).coeff μ =
+      ∏ i : σ, ((m i).choose (μ i) : R) := by
+  have heq : (∏ i : σ, (X i + 1 : MvPolynomial σ R) ^ m i) =
+      taylor (fun _ ↦ 1) (monomial (Finsupp.equivFunOnFinite.symm m) (1 : R)) := by
+    rw [taylor_apply, aeval_monomial, map_one, one_mul,
+      Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
+    simp
+  rw [heq, coeff_taylor, eval_const_hasseDeriv_monomial]
+  simp
+
+/-- Every polynomial `P` over a commutative ring equals its finite Hasse Taylor expansion around
+`a`: `P = ∑_{d ∈ supp(taylor a P)} C((∂^d P)(a)) ∏ⱼ (Xⱼ - C(aⱼ))^(dⱼ)`. -/
+theorem eq_sum_support_taylor_hasseDeriv {R σ : Type*} [CommRing R] (a : σ → R)
+    (P : MvPolynomial σ R) :
+    P = ∑ d ∈ (taylor a P).support,
+      C (eval a (hasseDeriv d P)) * d.prod fun j k ↦ (X j - C (a j)) ^ k := by
+  conv_lhs => rw [← taylor_zero P, ← neg_add_cancel a, ← taylor_taylor, (taylor a P).as_sum]
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [coeff_taylor, taylor_apply, aeval_monomial, algebraMap_eq]
+  congr 1
+  simp only [Finsupp.prod, Pi.neg_apply, map_neg, sub_eq_add_neg]
 
 end MvPolynomial

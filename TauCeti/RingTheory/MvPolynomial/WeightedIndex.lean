@@ -36,6 +36,8 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
+* `MvPolynomial.weightedIndex_le`, `MvPolynomial.le_weightedIndex_of_forall`: upper and lower
+  bounds for the index in terms of the reciprocal weights of nonzero Hasse jets.
 * `MvPolynomial.ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero`: for a polynomial with
   partial degrees at most `r`, the index is at least a real threshold `t` once the jets `∂^d P`
   with `d ≤ r` and `∑ j, d j / r j < t` vanish.
@@ -96,6 +98,15 @@ theorem weightedIndex_le {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
     {d : σ →₀ ℕ} (hd : eval a (hasseDeriv d P) ≠ 0) :
     weightedIndex r a P ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
   iInf_le_of_le d (iInf_le_of_le hd le_rfl)
+
+/-- If every nonzero Hasse jet at `a` has reciprocal weight at least `t`, then the index is at
+least `t`. -/
+theorem le_weightedIndex_of_forall {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R} {t : ℝ≥0∞}
+    (h : ∀ d : σ →₀ ℕ, eval a (hasseDeriv d P) ≠ 0 →
+      t ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹)) :
+    t ≤ weightedIndex r a P :=
+  -- `weightedIndex` is not `@[expose]`, so downstream modules cannot apply `le_iInf₂` directly.
+  le_iInf₂ h
 
 /-- A nonzero jet of a polynomial with partial degrees `degreeOf i P ≤ r i` and index at least
 `t` satisfies `d ≤ r` and has weight `t ≤ ∑ᵢ dᵢ / rᵢ`, computed in `ℝ`. -/

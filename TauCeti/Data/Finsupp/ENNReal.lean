@@ -19,8 +19,10 @@ nonnegative weights with ordinary real ratios without requiring every weight to 
 
 On a product `κ × ι` of blocks indexed by `κ`, the weight giving the coordinate `(h, i₀ h)` of
 each block the reciprocal natural weight `(d h)⁻¹` and every other coordinate the weight `0` is
-the sum `∑ h, n (h, i₀ h) / d h`. More generally, for a block map `b : S → B` into finitely many
-blocks, pulling the reciprocal weights `(d h)⁻¹` back to `S` or to `B ⊕ S` sums the block degrees
+the sum `∑ h, n (h, i₀ h) / d h`. More generally, for a block map `b : S → B`, pulling the
+reciprocal weights `(d h)⁻¹` back to `S` (`Finsupp.weight_inv_natCast_comp`) or to `B ⊕ S`
+(`Finsupp.weight_inv_natCast_sumElim`) evaluates `(d h)⁻¹` on `γ.mapDomain b` or
+`κ + β.mapDomain b`, and for finitely many blocks sums the block ratios
 `γ.mapDomain b h / d h` or `(κ h + β.mapDomain b h) / d h`.
 -/
 
@@ -57,13 +59,31 @@ theorem weight_ite_inv_natCast_eq_sum_div {κ ι : Type*} [Fintype κ] [Finite �
   rw [Fintype.sum_eq_single (i₀ h) fun i hi ↦ by simp [hi]]
   simp [div_eq_mul_inv]
 
+/-- Pulling reciprocal natural weights `(d h)⁻¹` on blocks `B` back along a block map `b : S → B`
+evaluates `(d h)⁻¹` on the block-degree pushforward `γ.mapDomain b`. -/
+theorem weight_inv_natCast_comp {B S : Type*} (b : S → B) (d : B → ℕ) (γ : S →₀ ℕ) :
+    γ.weight (fun j ↦ ((d ∘ b) j : ℝ≥0∞)⁻¹) =
+      (γ.mapDomain b).weight (fun h ↦ (d h : ℝ≥0∞)⁻¹) :=
+  (weight_mapDomain (fun h ↦ (d h : ℝ≥0∞)⁻¹) b γ).symm
+
+/-- On `B ⊕ S`, reciprocal natural weights for `Sum.elim d (d ∘ b)` evaluate on `κ.sumElim β` to
+the reciprocal natural weight of `κ + β.mapDomain b` on `B`. -/
+theorem weight_inv_natCast_sumElim {B S : Type*} (b : S → B) (d : B → ℕ)
+    (κ : B →₀ ℕ) (β : S →₀ ℕ) :
+    (κ.sumElim β).weight (fun v ↦ ((Sum.elim d (d ∘ b) v : ℕ) : ℝ≥0∞)⁻¹) =
+      (κ + β.mapDomain b).weight (fun h ↦ (d h : ℝ≥0∞)⁻¹) := by
+  have hcomp : (fun v ↦ ((Sum.elim d (d ∘ b) v : ℕ) : ℝ≥0∞)⁻¹) =
+      (fun h ↦ (d h : ℝ≥0∞)⁻¹) ∘ Sum.elim id b := by
+    ext (_ | _) <;> rfl
+  rw [hcomp, ← weight_mapDomain, mapDomain_sumElim, mapDomain_id]
+
 /-- Pulling a reciprocal natural weight vector `(d h)⁻¹` on finitely many blocks `B` back along a
 block map `b : S → B` sums the block degrees `γ.mapDomain b h / d h` in `ℝ≥0∞`. -/
 theorem weight_inv_natCast_comp_eq_sum_mapDomain_div {B S : Type*} [Fintype B] (b : S → B)
     (d : B → ℕ) (γ : S →₀ ℕ) :
     γ.weight (fun j ↦ (d (b j) : ℝ≥0∞)⁻¹) = ∑ h, (γ.mapDomain b h : ℝ≥0∞) / d h := by
-  have hcomp : (fun j ↦ (d (b j) : ℝ≥0∞)⁻¹) = (fun h ↦ (d h : ℝ≥0∞)⁻¹) ∘ b := rfl
-  rw [hcomp, ← weight_mapDomain, weight_eq_sum]
+  rw [show (fun j ↦ (d (b j) : ℝ≥0∞)⁻¹) = fun j ↦ ((d ∘ b) j : ℝ≥0∞)⁻¹ from rfl,
+    weight_inv_natCast_comp b d γ, weight_eq_sum]
   simp [div_eq_mul_inv]
 
 /-- On `B ⊕ S`, giving `.inl h` and every `.inr j` with `b j = h` the reciprocal natural weight
@@ -72,10 +92,7 @@ theorem weight_inv_natCast_sumElim_eq_sum_div {B S : Type*} [Fintype B] (b : S �
     (d : B → ℕ) (κ : B →₀ ℕ) (β : S →₀ ℕ) :
     (κ.sumElim β).weight (fun v ↦ ((Sum.elim d (d ∘ b) v : ℕ) : ℝ≥0∞)⁻¹) =
       ∑ h, ((κ h + β.mapDomain b h : ℕ) : ℝ≥0∞) / d h := by
-  have hcomp : (fun v ↦ ((Sum.elim d (d ∘ b) v : ℕ) : ℝ≥0∞)⁻¹) =
-      (fun h ↦ (d h : ℝ≥0∞)⁻¹) ∘ Sum.elim id b := by
-    ext (_ | _) <;> rfl
-  rw [hcomp, ← weight_mapDomain, mapDomain_sumElim, mapDomain_id, weight_eq_sum]
+  rw [weight_inv_natCast_sumElim b d κ β, weight_eq_sum]
   simp [div_eq_mul_inv]
 
 end Finsupp
