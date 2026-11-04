@@ -22,6 +22,11 @@ coefficients have exponent two, the sign disappears and the unsigned rule holds 
 elements of the total resolution. In particular, products of invariant homogeneous cocycles
 are invariant homogeneous cocycles.
 
+Pairing on the left with an augmented coefficient commutes with the evaluation-at-`1`
+contraction of the total resolution: the projection carries it to the coefficient pairing, and
+the contracting homotopy commutes with it. This is the compatibility needed to compute classes of
+products on resolutions built from the total resolution, such as its tensor inductions.
+
 The construction extends `TauCeti.TopPairing.resolutionCupPairing` using the universal property
 of direct sums; it does not choose a different cochain product.
 
@@ -134,6 +139,71 @@ theorem gradedResolutionCupPairing_augmentation (a : X.V) (b : Y.V) :
   intro g
   rw [resolutionCupPairing_zero_zero_apply]
   rfl
+
+/-- Pairing an augmented coefficient `x` on the left with a term of the total resolution pairs
+`x` with every value of that term, in the same degree. -/
+theorem gradedResolutionCupPairing_augmentation_lof (x : X.V) (n : ℕ)
+    (F : (TopRep.resolutionX Y (n + 1)).V) :
+    P.gradedResolutionCupPairing (X.gradedResolutionAugmentation x)
+        (DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Y (k + 1)).V) n F) =
+      DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Z (k + 1)).V) n
+        (P.pointwise (n + 1) (n + 1) rfl (x, F)) := by
+  classical
+  -- the cup lands in degree `0 + n`, which is `n` only propositionally
+  have key : ∀ (i : ℕ) (hi : i = n) (hk : i + 1 = n + 1),
+      DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Z (k + 1)).V) i
+          (P.pointwise (n + 1) (i + 1) hk (x, F)) =
+        DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Z (k + 1)).V) n
+          (P.pointwise (n + 1) (n + 1) rfl (x, F)) := by
+    rintro i rfl hk
+    rfl
+  rw [TopRep.gradedResolutionAugmentation_apply, gradedResolutionCupPairing_lof,
+    resolutionCupPairing_apply, resolutionCup_zero_d_zero]
+  exact key _ (Nat.zero_add n) _
+
+/-- The projection of the total resolution carries the cup with an augmented coefficient `x` on
+the left to the coefficient pairing of `x` with the projection. -/
+theorem gradedResolutionProjection_gradedResolutionCupPairing_augmentation (x : X.V)
+    (w : Y.gradedResolutionModule) :
+    Z.gradedResolutionProjection
+        (P.gradedResolutionCupPairing (X.gradedResolutionAugmentation x) w) =
+      P.bil x (Y.gradedResolutionProjection w) := by
+  classical
+  induction w using DirectSum.induction_on with
+  | zero => simp
+  | of n F =>
+    rw [← DirectSum.lof_eq_of R, gradedResolutionCupPairing_augmentation_lof]
+    cases n with
+    | zero =>
+      rw [TopRep.gradedResolutionProjection_lof_zero, TopRep.gradedResolutionProjection_lof_zero]
+      exact (P.pointwise_succ_apply (n := 0) (k := 0) rfl x F 1).trans
+        (P.pointwise_zero_apply rfl x (F 1))
+    | succ n =>
+      rw [TopRep.gradedResolutionProjection_lof_succ, TopRep.gradedResolutionProjection_lof_succ,
+        map_zero]
+  | add w w' hw hw' => simp only [map_add, hw, hw']
+
+/-- The contracting homotopy of the total resolution commutes with the cup with an augmented
+coefficient on the left. -/
+theorem gradedResolutionHomotopy_gradedResolutionCupPairing_augmentation (x : X.V)
+    (w : Y.gradedResolutionModule) :
+    Z.gradedResolutionHomotopy
+        (P.gradedResolutionCupPairing (X.gradedResolutionAugmentation x) w) =
+      P.gradedResolutionCupPairing (X.gradedResolutionAugmentation x)
+        (Y.gradedResolutionHomotopy w) := by
+  classical
+  induction w using DirectSum.induction_on with
+  | zero => simp
+  | of n F =>
+    rw [← DirectSum.lof_eq_of R, gradedResolutionCupPairing_augmentation_lof]
+    cases n with
+    | zero =>
+      rw [TopRep.gradedResolutionHomotopy_lof_zero, TopRep.gradedResolutionHomotopy_lof_zero,
+        map_zero]
+    | succ n =>
+      rw [TopRep.gradedResolutionHomotopy_lof_succ, TopRep.gradedResolutionHomotopy_lof_succ,
+        gradedResolutionCupPairing_augmentation_lof, pointwise_succ_apply]
+  | add w w' hw hw' => simp only [map_add, hw, hw']
 
 /-- The total cup pairing is natural in both the group and the coefficients. -/
 theorem gradedResolutionCupPairing_gradedResolutionMap

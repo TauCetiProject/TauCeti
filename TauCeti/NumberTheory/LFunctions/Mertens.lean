@@ -7,20 +7,24 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 import Mathlib.Algebra.Order.Floor.Semifield
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
-# Mertens' first theorem for a number field
+# Mertens' first and second theorems for a number field
 
 Let `K` be a number field. This file proves Mertens' first theorem for `K`: the sum of
 `log N𝔭 / N𝔭` over the nonzero prime ideals `𝔭` of `𝓞 K` of norm at most `x` is `log x + O(1)`.
-Over `ℚ` this is Mertens' classical estimate `∑_{p ≤ x} log p / p = log x + O(1)`. It is the first
-step towards Mertens' product `∏_{N𝔭 ≤ x} (1 - N𝔭⁻¹)⁻¹ ~ e^γ κ_K log x` (Rosen), where it is
-summed by parts once more.
+Over `ℚ` this is Mertens' classical estimate `∑_{p ≤ x} log p / p = log x + O(1)`. Partial
+summation then gives Mertens' second theorem,
+`∑_{N𝔭 ≤ x} 1 / N𝔭 = log log x + B_K + O(1 / log x)` with a constant `B_K`. These are the first
+two steps towards Mertens' product `∏_{N𝔭 ≤ x} (1 - N𝔭⁻¹)⁻¹ ~ e^γ κ_K log x` (Rosen).
 
-The proof evaluates `∑_{N𝔞 ≤ x} log N𝔞` in two ways.
+The proof of the first theorem evaluates `∑_{N𝔞 ≤ x} log N𝔞` in two ways.
 
 * Writing `log N𝔞 = ∑_{𝔟 ∣ 𝔞} Λ_K(𝔟)` and exchanging the order of summation gives
   `∑_{N𝔟 ≤ x} Λ_K(𝔟) · #{𝔞 : N𝔞 ≤ x / N𝔟}` (`TauCeti.LFunctions.idealSummatory_log_absNorm_eq`).
@@ -38,6 +42,13 @@ from Chebyshev's bound `ψ_K(t) = O(t)` (a consequence of `TauCeti.primeIdealThe
 `∑_{N𝔟 ≤ x} Λ_K(𝔟) / N𝔟 = log x + O(1)`. The higher prime powers `𝔭 ^ k`, `k ≥ 2`, contribute
 `O(1)`, because their weighted count is `O(√t log² t)` (`TauCeti.higherPrimePowerTheta_le`).
 
+For the second theorem, write `S(t) = ∑_{N𝔭 ≤ t} log N𝔭 / N𝔭 = log t + R(t)`, so that `R` is
+bounded on `t ≥ 2` by the first theorem. Abel summation against `1 / log t`
+(`TauCeti.primeSummatory_div_log_eq_div_log_add_integral`) gives
+`∑_{N𝔭 ≤ x} 1 / N𝔭 = S(x) / log x + ∫_2^x S(t) / (t log² t) dt`. The main part `log t` of `S`
+integrates to `log log x - log log 2`, and `∫_2^∞ R(t) / (t log² t) dt` converges absolutely with
+tail `O(1 / log x)` beyond `x`. The resulting expansion is that of Lebacque, Proposition 2.
+
 ## Main results
 
 * `TauCeti.LFunctions.idealSummatory_log_absNorm_eq`: Chebyshev's identity
@@ -46,6 +57,11 @@ from Chebyshev's bound `ψ_K(t) = O(t)` (a consequence of `TauCeti.primeIdealThe
   `∑_{N(𝔭 ^ k) ≤ x} log N𝔭 / N(𝔭 ^ k) = log x + O(1)`.
 * `TauCeti.LFunctions.isBigO_primeSummatory_log_absNorm_div_sub_log`: Mertens' first theorem,
   `∑_{N𝔭 ≤ x} log N𝔭 / N𝔭 = log x + O(1)`.
+* `TauCeti.LFunctions.mertensConstant`: the constant `B_K`, the limit of
+  `∑_{N𝔭 ≤ x} 1 / N𝔭 - log log x`.
+* `TauCeti.LFunctions.isBigO_primeSummatory_inv_absNorm_sub_log_log_sub_mertensConstant` and
+  `TauCeti.LFunctions.tendsto_primeSummatory_inv_absNorm_sub_log_log`: Mertens' second theorem,
+  `∑_{N𝔭 ≤ x} 1 / N𝔭 = log log x + B_K + O(1 / log x)`.
 
 ## References
 
@@ -59,7 +75,7 @@ from Chebyshev's bound `ψ_K(t) = O(t)` (a consequence of `TauCeti.primeIdealThe
 public section
 
 open Asymptotics Filter MeasureTheory NumberField
-open scoped nonZeroDivisors NumberField
+open scoped nonZeroDivisors NumberField Topology
 
 namespace TauCeti.LFunctions
 
@@ -391,5 +407,165 @@ theorem isBigO_primeSummatory_log_absNorm_div_sub_log :
   refine ((isBigO_primePowerSummatory_div_sub_log K).sub hRO).congr_left fun x ↦ ?_
   rw [hsplit]
   ring
+
+/-! ### Mertens' second theorem -/
+
+/-- The weight `log N𝔭 / N𝔭` of Mertens' first theorem is nonnegative. -/
+private theorem log_absNorm_div_absNorm_nonneg (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) :
+    0 ≤ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal :=
+  div_nonneg (log_absNorm_asIdeal_pos v).le (Nat.cast_nonneg _)
+
+/-- **Mertens' first theorem with a uniform constant.** The error
+`∑_{N𝔭 ≤ t} log N𝔭 / N𝔭 - log t` is bounded on the whole half-line `t ≥ 2`, not only
+eventually: below the threshold of the asymptotic bound both terms are bounded by monotonicity. -/
+private theorem exists_abs_primeSummatory_log_absNorm_div_sub_log_le :
+    ∃ C, ∀ t, 2 ≤ t → |primeSummatory K
+        (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) t -
+          Real.log t| ≤ C := by
+  set S := primeSummatory K
+    (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal)
+  have hmono : Monotone S := summatory_mono _ (log_absNorm_div_absNorm_nonneg K)
+  have hS0 (t : ℝ) : 0 ≤ S t := summatory_nonneg _ (log_absNorm_div_absNorm_nonneg K) t
+  have hO := (isBigO_primeSummatory_log_absNorm_div_sub_log K).isBigO_principal_Ici (a := 2)
+    zero_lt_one (fun _ _ ↦ by simp)
+    fun Y ↦ ⟨S Y + Real.log Y, fun t ht ↦ by
+      have hlog0 : 0 ≤ Real.log t := Real.log_nonneg (by linarith [ht.1])
+      have hlog : Real.log t ≤ Real.log Y := Real.log_le_log (by linarith [ht.1]) ht.2
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [hmono ht.2, hS0 t, hS0 Y]⟩
+  obtain ⟨C, -, hC⟩ := hO.exists_nonneg
+  refine ⟨C, fun t ht ↦ ?_⟩
+  have h := isBigOWith_principal.mp hC t ht
+  rwa [Real.norm_eq_abs, norm_one, mul_one] at h
+
+/-- **Abel summation turns Mertens' first theorem into the second.** For `x ≥ 2`, writing
+`S(t) = ∑_{N𝔭 ≤ t} log N𝔭 / N𝔭`,
+`∑_{N𝔭 ≤ x} 1 / N𝔭 = S(x) / log x + log log x - log log 2 + ∫_2^x (S(t) - log t) / (t log² t) dt`.
+-/
+private theorem primeSummatory_inv_absNorm_eq {x : ℝ} (hx : 2 ≤ x) :
+    primeSummatory K (fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x =
+      primeSummatory K
+          (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) x /
+          Real.log x + (Real.log (Real.log x) - Real.log (Real.log 2)) +
+        ∫ t in Set.Ioc 2 x, (primeSummatory K
+          (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) t -
+            Real.log t) * (t⁻¹ / Real.log t ^ 2) := by
+  set S := primeSummatory K
+    (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal)
+  have hw : (fun v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) ↦
+      Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal /
+        Real.log (Ideal.absNorm v.asIdeal)) = fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := by
+    funext v
+    rw [div_right_comm, div_self (log_absNorm_asIdeal_pos v).ne', one_div]
+  have key := primeSummatory_div_log_eq_div_log_add_integral K
+    (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) x
+  rw [hw] at key
+  -- Split the integrand as `1 / (t log t)` plus the contribution of the error term.
+  have hsplit : ∫ t in Set.Ioc 2 x, S t / (t * Real.log t ^ 2) =
+      ∫ t in Set.Ioc 2 x, (t⁻¹ / Real.log t + (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2)) := by
+    refine setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
+    have ht0 : t ≠ 0 := (by linarith [ht.1] : (0 : ℝ) < t).ne'
+    have hlog : Real.log t ≠ 0 := (Real.log_pos (by linarith [ht.1])).ne'
+    field_simp
+    ring
+  have hIcc : Set.Icc 2 x ⊆ Set.Ioi 1 := fun t ht ↦ one_lt_two.trans_le ht.1
+  have hcont : ContinuousOn (fun t : ℝ ↦ t⁻¹ / Real.log t ^ 2) (Set.Icc 2 x) :=
+    (Real.continuousOn_inv_div_log_pow 2).mono hIcc
+  have hint₁ : IntegrableOn (fun t : ℝ ↦ t⁻¹ / Real.log t) (Set.Ioc 2 x) := by
+    simpa only [pow_one] using
+      ((Real.continuousOn_inv_div_log_pow 1).mono hIcc).integrableOn_Icc.mono_set
+        Set.Ioc_subset_Icc_self
+  have hint₂ : IntegrableOn (fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2))
+      (Set.Ioc 2 x) := by
+    have hS' : IntegrableOn (fun t ↦ t⁻¹ / Real.log t ^ 2 * S t) (Set.Icc 2 x) :=
+      integrableOn_mul_summatory _ _ zero_le_two (hcont.integrableOn_Icc)
+    have hlog' : IntegrableOn (fun t ↦ t⁻¹ / Real.log t ^ 2 * Real.log t) (Set.Icc 2 x) :=
+      (hcont.mul (Real.continuousOn_log.mono fun t ht ↦
+        (by linarith [ht.1] : (0 : ℝ) < t).ne')).integrableOn_Icc
+    refine ((hS'.sub hlog').mono_set Set.Ioc_subset_Icc_self).congr_fun (fun t _ ↦ ?_)
+      measurableSet_Ioc
+    simp only [Pi.sub_apply]
+    ring
+  rw [key, hsplit, integral_add hint₁ hint₂, ← intervalIntegral.integral_of_le hx,
+    integral_inv_div_log one_lt_two (by linarith)]
+  ring
+
+/-- **Mertens' second theorem with an error term.** There is a constant `B` with
+`∑_{N𝔭 ≤ x} 1 / N𝔭 = log log x + B + O(1 / log x)`. -/
+private theorem exists_isBigO_primeSummatory_inv_absNorm_sub_log_log_sub :
+    ∃ B, (fun x ↦ primeSummatory K (fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x -
+      Real.log (Real.log x) - B) =O[atTop] fun x ↦ (Real.log x)⁻¹ := by
+  obtain ⟨C, hC⟩ := exists_abs_primeSummatory_log_absNorm_div_sub_log_le K
+  set S := primeSummatory K
+    (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal) with hS
+  set R : ℝ → ℝ := fun t ↦ (S t - Real.log t) * (t⁻¹ / Real.log t ^ 2) with hR
+  -- `R` is dominated by `C / (t log² t)`, which is integrable at infinity.
+  have hRle (t : ℝ) (ht : 2 ≤ t) : ‖R t‖ ≤ C * (t⁻¹ / Real.log t ^ 2) := by
+    rw [hR, norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg
+      (div_nonneg (inv_nonneg.mpr (by linarith)) (sq_nonneg _))]
+    exact mul_le_mul_of_nonneg_right (hC t ht)
+      (div_nonneg (inv_nonneg.mpr (by linarith)) (sq_nonneg _))
+  have hRmeas : AEStronglyMeasurable R := by
+    have hSmeas : Measurable S :=
+      (summatory_mono _ (log_absNorm_div_absNorm_nonneg K)).measurable
+    exact ((hSmeas.sub Real.measurable_log).mul
+      (measurable_inv.div (Real.measurable_log.pow_const 2))).aestronglyMeasurable
+  have hRint {a : ℝ} (ha : 2 ≤ a) : IntegrableOn R (Set.Ioi a) :=
+    ((integrableOn_inv_div_log_sq_Ioi (by linarith : (1 : ℝ) < a)).const_mul C).mono'
+      hRmeas.restrict ((ae_restrict_mem measurableSet_Ioi).mono fun t ht ↦
+        hRle t (ha.trans (le_of_lt ht)))
+  refine ⟨1 - Real.log (Real.log 2) + ∫ t in Set.Ioi 2, R t, IsBigO.of_bound (2 * C) ?_⟩
+  filter_upwards [eventually_ge_atTop 2] with x hx
+  have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
+  -- Split the integral over `(2, ∞)` at `x`.
+  have hsplit : ∫ t in Set.Ioc 2 x, R t = (∫ t in Set.Ioi 2, R t) - ∫ t in Set.Ioi x, R t := by
+    rw [← Set.Ioc_union_Ioi_eq_Ioi hx, setIntegral_union Set.Ioc_disjoint_Ioi_same
+      measurableSet_Ioi ((hRint le_rfl).mono_set Set.Ioc_subset_Ioi_self) (hRint hx)]
+    ring
+  -- The tail of the integral is at most `C / log x`.
+  have htail : ‖∫ t in Set.Ioi x, R t‖ ≤ C * (Real.log x)⁻¹ := by
+    rw [← integral_inv_div_log_sq_Ioi (by linarith : (1 : ℝ) < x), ← integral_const_mul]
+    exact norm_integral_le_of_norm_le
+      ((integrableOn_inv_div_log_sq_Ioi (by linarith : (1 : ℝ) < x)).const_mul C)
+      ((ae_restrict_mem measurableSet_Ioi).mono fun t ht ↦ hRle t (hx.trans (le_of_lt ht)))
+  have hSx : |S x / Real.log x - 1| ≤ C * (Real.log x)⁻¹ := by
+    rw [← div_self hlogx.ne', ← sub_div, abs_div, abs_of_pos hlogx, div_eq_mul_inv]
+    exact mul_le_mul_of_nonneg_right (hC x hx) (inv_nonneg.mpr hlogx.le)
+  rw [primeSummatory_inv_absNorm_eq K hx, ← hS, hsplit, Real.norm_eq_abs, Real.norm_of_nonneg
+    (inv_nonneg.mpr hlogx.le)]
+  rw [Real.norm_eq_abs] at htail
+  calc _ = |(S x / Real.log x - 1) - ∫ t in Set.Ioi x, R t| := by congr 1; ring
+    _ ≤ |S x / Real.log x - 1| + |∫ t in Set.Ioi x, R t| := abs_sub _ _
+    _ ≤ 2 * C * (Real.log x)⁻¹ := by linarith
+
+/-- **Mertens' constant of a number field**: the limit `B_K` of
+`∑_{N𝔭 ≤ x} 1 / N𝔭 - log log x` as `x → ∞`, the sum over the nonzero prime ideals of `𝓞 K`.
+It exists by `tendsto_primeSummatory_inv_absNorm_sub_log_log`; over `ℚ` it is the classical
+Meissel–Mertens constant. -/
+noncomputable def mertensConstant : ℝ :=
+  limUnder atTop fun x ↦
+    primeSummatory K (fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x - Real.log (Real.log x)
+
+/-- **Mertens' second theorem for a number field.** The sum of `1 / N𝔭` over the nonzero prime
+ideals `𝔭` of `𝓞 K` of norm at most `x` is `log log x + B_K + O(1 / log x)`, where
+`B_K = mertensConstant K`. -/
+theorem isBigO_primeSummatory_inv_absNorm_sub_log_log_sub_mertensConstant :
+    (fun x ↦ primeSummatory K (fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x -
+      Real.log (Real.log x) - mertensConstant K) =O[atTop] fun x ↦ (Real.log x)⁻¹ := by
+  obtain ⟨B, hB⟩ := exists_isBigO_primeSummatory_inv_absNorm_sub_log_log_sub K
+  have hlim : Tendsto (fun x ↦ primeSummatory K (fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x -
+      Real.log (Real.log x)) atTop (𝓝 B) := by
+    have h := (hB.trans_tendsto (Real.tendsto_log_atTop.inv_tendsto_atTop)).add_const B
+    simpa using h
+  rwa [mertensConstant, hlim.limUnder_eq]
+
+/-- **Mertens' second theorem for a number field, limit form.** As `x → ∞`,
+`∑_{N𝔭 ≤ x} 1 / N𝔭 - log log x` tends to Mertens' constant `B_K = mertensConstant K`. -/
+theorem tendsto_primeSummatory_inv_absNorm_sub_log_log :
+    Tendsto (fun x ↦ primeSummatory K (fun v ↦ (Ideal.absNorm v.asIdeal : ℝ)⁻¹) x -
+      Real.log (Real.log x)) atTop (𝓝 (mertensConstant K)) := by
+  have h := ((isBigO_primeSummatory_inv_absNorm_sub_log_log_sub_mertensConstant K).trans_tendsto
+    (Real.tendsto_log_atTop.inv_tendsto_atTop)).add_const (mertensConstant K)
+  simpa using h
 
 end TauCeti.LFunctions

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.SpecialFunctions.Arsinh
 import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Analysis.Analytic.Approximation
 
 /-!
 # Analytic compressions of the height coordinate
@@ -50,6 +51,12 @@ its projection to the base.
 * `TauCeti.dist_snd_le_three_mul_dist_fst_of_mem_image_heightCompression_comp_baseScaling`: if
   `2 * k ≤ |h|` on `D` and `L * a ≤ 1`, then `g₁` produces Lipschitz constant at most `1` and
   `g₂ ∘ g₁` produces Lipschitz constant at most `3`, a bound independent of the graph.
+
+The scaling function `h` itself is chosen analytic and positive, with
+`√(t² - 1) < h t * γ t` for every `t` and, on each height interval `D` of a locally finite family
+of disjoint compact intervals, a prescribed strict lower bound and a prescribed Lipschitz constant
+(`TauCeti.exists_analyticOnNhd_sqrt_sq_sub_one_lt_mul`). Here `γ` is any function locally bounded
+below by positive constants. These are the hypotheses on `h` of the results above.
 
 Since `g₂` does not move base points, the projection of the image of a graph under `g₂ ∘ g₁` is
 the projection of its image under `g₁`. In Łojasiewicz's lemma the graphs are pieces of a
@@ -396,5 +403,51 @@ theorem analyticAt_heightCompression_symm (p : E × ℝ) :
   contDiff_heightCompression_symm.contDiffAt.analyticAt
 
 end heightCompression
+
+/-! ### Choosing the scaling function -/
+
+section scalingFunction
+
+open Filter Topology Function
+
+/-- **The scaling function of the straightening.** Let `Δ i` be pairwise disjoint compact intervals
+forming a locally finite family, and let `γ : ℝ → ℝ` be locally bounded below by positive
+constants. For any constants `M i` and positive Lipschitz constants `L i` there is a positive real
+analytic `h` with `√(t² - 1) < h t * γ t` for every `t` and, on each `Δ i`, `M i < h` and `h`
+`L i`-Lipschitz.
+
+These are the requirements on `h` of `TauCeti.mapsTo_heightCompression_comp_baseScaling` and
+of the Lipschitz estimates for `TauCeti.baseScaling`, in Łojasiewicz's choice of `h` with
+`h(t) > γ(t)⁻¹ √(t² - 1)`, `h > 2 kν` and `|h'| < aν⁻¹` on `Δν`. -/
+theorem exists_analyticOnNhd_sqrt_sq_sub_one_lt_mul {ι : Type*} {Δ : ι → Set ℝ}
+    (hΔ : ∀ i, IsCompact (Δ i)) (hΔc : ∀ i, Convex ℝ (Δ i)) (hdisj : Pairwise (Disjoint on Δ))
+    (hlf : LocallyFinite Δ) {γ : ℝ → ℝ} (hγ : ∀ x, ∃ c > 0, ∀ᶠ y in 𝓝 x, c ≤ γ y) (M : ι → ℝ)
+    {L : ι → ℝ≥0} (hL : ∀ i, 0 < L i) :
+    ∃ h : ℝ → ℝ, AnalyticOnNhd ℝ h univ ∧ (∀ t, 0 < h t) ∧ (∀ t, √(t ^ 2 - 1) < h t * γ t) ∧
+      ∀ i, (∀ t ∈ Δ i, M i < h t) ∧ LipschitzOnWith (L i) h (Δ i) := by
+  have hγ0 (t : ℝ) : 0 < γ t := by
+    obtain ⟨c, hc, hcγ⟩ := hγ t
+    exact hc.trans_le hcγ.self_of_nhds
+  -- The required lower bound `max 0 (√(t² - 1) / γ t)` is locally bounded above.
+  have hbd (x : ℝ) : ∃ C, ∀ᶠ y in 𝓝 x, max 0 (√(y ^ 2 - 1) / γ y) ≤ C := by
+    obtain ⟨c, hc, hcγ⟩ := hγ x
+    refine ⟨(|x| + 1) / c, ?_⟩
+    filter_upwards [hcγ, continuous_abs.continuousAt.eventually_lt continuousAt_const
+      (lt_add_one |x|)] with y hy hyx
+    have hs : √(y ^ 2 - 1) ≤ |x| + 1 :=
+      (sqrt_le_sqrt (by linarith)).trans ((sqrt_sq_eq_abs y).trans_le hyx.le)
+    refine max_le (by positivity) ?_
+    exact div_le_div₀ (by positivity) hs hc hy
+  obtain ⟨h, hha, hh, hΔh⟩ := exists_analyticOnNhd_lt_and_abs_deriv_lt hΔ hdisj hlf hbd M
+    (ε := fun i ↦ L i) hL
+  have hpos (t : ℝ) : 0 < h t := (le_max_left _ _).trans_lt (hh t)
+  refine ⟨h, hha, hpos, fun t ↦ ?_, fun i ↦ ⟨fun t ht ↦ (hΔh i t ht).1, ?_⟩⟩
+  · exact (div_lt_iff₀ (hγ0 t)).1 ((le_max_right _ _).trans_lt (hh t))
+  · refine (hΔc i).lipschitzOnWith_of_nnnorm_deriv_le
+      (fun t _ ↦ (hha t (mem_univ t)).differentiableAt) fun t ht ↦ ?_
+    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs]
+    exact (hΔh i t ht).2.le
+
+end scalingFunction
 
 end TauCeti

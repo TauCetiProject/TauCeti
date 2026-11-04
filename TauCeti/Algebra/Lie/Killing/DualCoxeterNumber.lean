@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.HighestWeight.Casimir
 public import TauCeti.Algebra.Lie.Killing.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.IsSimple
@@ -46,6 +47,14 @@ highest root has squared length `2` for the dual of `Φ`
 defining the critical level is `-h^∨ κ₀`
 (`RootPairing.Base.neg_inv_two_smul_killingForm_eq_neg_smul`).
 
+The dual Coxeter number is also read off the Casimir scalar `TauCeti.casimirScalar`, the scalar
+`⟨λ + ρ, λ + ρ⟩ - ⟨ρ, ρ⟩` by which the Casimir element of the Killing form acts on a highest weight
+module of highest weight `λ`. At the highest root, the highest weight of the adjoint
+representation, it is `1` (`RootPairing.Base.casimirScalar_root_highestRoot`), because the pairings
+of `θ` with the positive roots add up to `⟨θ, θ⟩ (h^∨ - 1)` and `⟨θ, θ⟩ h^∨ = 1`. Rescaling the form
+to `κ₀` multiplies the Casimir element by `2 h^∨`, so `h^∨` is half the Casimir scalar of the
+adjoint representation for `κ₀`; the Casimir element of `κ₀` itself is not constructed here.
+
 ## Main results
 
 * `RootPairing.Base.killingForm_coroot_highestRoot`: `κ(θ^∨, θ^∨) = 4 h^∨`.
@@ -53,6 +62,7 @@ defining the critical level is `-h^∨ κ₀`
 * `RootPairing.Base.killingForm_eq_smul_iff_apply_coroot_highestRoot_eq_two` and
   `RootPairing.Base.killingForm_eq_smul_iff_apply_self_eq_two`: `κ = 2 h^∨ κ₀` for the invariant
   form `κ₀` normalised by `κ₀(θ^∨, θ^∨) = 2`, or by squared length `2` of `θ` for its dual form.
+* `RootPairing.Base.casimirScalar_root_highestRoot`: the Casimir scalar of the highest root is `1`.
 
 ## Implementation notes
 
@@ -135,6 +145,22 @@ theorem inv_smul_killingForm_apply_self_eq_two {t : H}
   generalize ((2 * (b.dualCoxeterNumber : K))⁻¹ • killingForm K L) t t = x at h ⊢
   field_simp at h
   linear_combination h
+
+/-- **The Casimir scalar of the highest root is `1`**: `⟨θ + ρ, θ + ρ⟩ - ⟨ρ, ρ⟩ = 1`. This is the
+scalar by which the Casimir element of the Killing form acts on a highest weight module of highest
+weight `θ` (`TauCeti.casimir_smul_of_isHighestWeightVector_of_lieSpan_eq_top`). -/
+theorem casimirScalar_root_highestRoot :
+    TauCeti.casimirScalar b ((rootSystem H).root b.highestRoot) = 1 := by
+  have := b.cast_dualCoxeterNumber_ne_zero (R := K)
+  have hρ := TauCeti.invForm_coroot (TauCeti.weylVector (rootSystem H) b) b.highestRoot
+  rw [← TauCeti.rootSystem_coroot'_apply, b.coroot'_highestRoot_weylVector,
+    b.invForm_root_highestRoot] at hρ
+  have hs := (TauCeti.invForm_isSymm (H := H)).eq ((rootSystem H).root b.highestRoot)
+    (TauCeti.weylVector (rootSystem H) b)
+  simp only [TauCeti.casimirScalar_def, map_add, LinearMap.add_apply, b.invForm_root_highestRoot,
+    hs]
+  field_simp at hρ ⊢
+  linear_combination -hρ
 
 variable [IsAlgClosed K]
 

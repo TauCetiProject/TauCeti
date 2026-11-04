@@ -465,7 +465,7 @@ theorem exists_lipschitzWith_norm_le_integral_sub_integral_eq_transportCost_trun
   have : NeZero μ := ⟨hμ⟩
   have : IsProbabilityMeasure μ' := inferInstance
   have : IsProbabilityMeasure ν' := ⟨by
-    simp only [ν', Measure.smul_apply, smul_eq_mul, ← hmass,
+    simp only [ν', _root_.smul_apply, smul_eq_mul, ← hmass,
       ENNReal.inv_mul_cancel hμ0 hμtop]⟩
   obtain ⟨f, hf, hfb, heq⟩ :=
     exists_boundedLipschitz_maximizer_probability

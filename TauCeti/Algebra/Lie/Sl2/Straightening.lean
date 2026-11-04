@@ -38,6 +38,8 @@ combines their Cartan coefficients without division.
 
 * `TauCeti.Sl2.dividedPower_e_mul_dividedPower_f`: the rank-one Kostant straightening formula in an
   arbitrary associative `ℚ`-algebra satisfying the three displayed commutator relations.
+* `LieHom.dividedPower_map_e_mul_dividedPower_map_f`: transport of the formula through an
+  arbitrary Lie homomorphism, assuming only the three bracket relations.
 * `TauCeti.Sl2.dividedPower_ι_e_mul_dividedPower_ι_f`: its specialization to the canonical map
   into a universal enveloping algebra, stated from the corresponding Lie-bracket relations.
 
@@ -271,6 +273,43 @@ theorem dividedPower_e_mul_dividedPower_f {H E F : A}
   | zero => simp [straighteningSummand_zero_left]
   | succ m ih => exact straightening_step hef hhe hhf m n ih
 
+end TauCeti.Sl2
+
+namespace LieHom
+
+open Finset TauCeti.Associative
+
+attribute [local instance] TauCeti.moduleNNRat
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- The rank-one Kostant straightening formula transported through a Lie homomorphism into an
+associative rational algebra. Only the three bracket relations are required; the Cartan element
+and its image need not be nonzero. -/
+theorem dividedPower_map_e_mul_dividedPower_map_f
+    {R L A : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [Ring A] [Algebra ℚ A] [Algebra R A] (φ : L →ₗ⁅R⁆ A) {h e f : L}
+    (hef : ⁅e, f⁆ = h) (hhe : ⁅h, e⁆ = 2 • e) (hhf : ⁅h, f⁆ = -(2 • f))
+    (m n : ℕ) :
+    dividedPower m (φ e) * dividedPower n (φ f) =
+      ∑ k ∈ Finset.range (min m n + 1),
+        dividedPower (n - k) (φ f) *
+          Ring.choose (φ h - (m + n : ℕ) + (2 * k : ℕ)) k *
+            dividedPower (m - k) (φ e) := by
+  apply TauCeti.Sl2.dividedPower_e_mul_dividedPower_f
+  · simpa only [LieRing.of_associative_ring_bracket, hef] using (φ.map_lie e f).symm
+  · simpa only [LieRing.of_associative_ring_bracket, hhe, map_nsmul] using
+      (φ.map_lie h e).symm
+  · simpa only [LieRing.of_associative_ring_bracket, hhf, map_neg, map_nsmul] using
+      (φ.map_lie h f).symm
+
+end LieHom
+
+namespace TauCeti.Sl2
+
+open Finset Associative
+
+attribute [local instance] TauCeti.moduleNNRat
+
 section UniversalEnveloping
 
 open _root_.UniversalEnvelopingAlgebra
@@ -287,13 +326,8 @@ theorem dividedPower_ι_e_mul_dividedPower_ι_f (hef : ⁅e, f⁆ = h) (hhe : �
       ∑ k ∈ range (min m n + 1),
         dividedPower (n - k) (ι ℚ f) *
           Ring.choose (ι ℚ h - (m + n : ℕ) + (2 * k : ℕ)) k *
-            dividedPower (m - k) (ι ℚ e) := by
-  apply dividedPower_e_mul_dividedPower_f
-  · simpa only [LieRing.of_associative_ring_bracket, hef] using ((ι ℚ).map_lie e f).symm
-  · simpa only [LieRing.of_associative_ring_bracket, hhe, map_nsmul] using
-      ((ι ℚ).map_lie h e).symm
-  · simpa only [LieRing.of_associative_ring_bracket, hhf, map_neg, map_nsmul] using
-      ((ι ℚ).map_lie h f).symm
+            dividedPower (m - k) (ι ℚ e) :=
+  (ι ℚ).dividedPower_map_e_mul_dividedPower_map_f hef hhe hhf m n
 
 end UniversalEnveloping
 

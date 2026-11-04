@@ -187,7 +187,7 @@ theorem cfc_add (hT : T.IsSymmetric) (f g : ℝ → ℝ) : hT.cfc (f + g) = hT.c
 `(fg)(T) = f(T)g(T)`. -/
 theorem cfc_mul (hT : T.IsSymmetric) (f g : ℝ → ℝ) : hT.cfc (f * g) = hT.cfc f * hT.cfc g :=
   ((hT.eq_cfc_iff _).mpr fun _ _ hx ↦ by
-    rw [Module.End.mul_apply, hT.cfc_apply_of_apply_eq_smul g hx, map_smul,
+    rw [mul_apply_eq_comp, hT.cfc_apply_of_apply_eq_smul g hx, map_smul,
       hT.cfc_apply_of_apply_eq_smul f hx, smul_smul, Pi.mul_apply, RCLike.ofReal_mul,
       mul_comm]).symm
 
@@ -245,8 +245,8 @@ theorem norm_cfc_apply_sq_add_norm_cfc_apply_sq (hT : T.IsSymmetric) {f g : ℝ 
     rw [← hT.cfc_mul, ← hT.cfc_mul, ← hT.cfc_add, ← hT.cfc_one]
     exact hT.cfc_congr fun μ hμ ↦ by simpa [sq] using hfg μ hμ
   have hsq (h : ℝ → ℝ) : ‖hT.cfc h x‖ ^ 2 = RCLike.re ⟪x, (hT.cfc h * hT.cfc h) x⟫_𝕜 := by
-    rw [@norm_sq_eq_re_inner 𝕜, Module.End.mul_apply, hT.isSymmetric_cfc h]
-  simp only [hsq, ← map_add, ← inner_add_right, ← LinearMap.add_apply, h1, Module.End.one_apply,
+    rw [@norm_sq_eq_re_inner 𝕜, mul_apply_eq_comp, hT.isSymmetric_cfc h]
+  simp only [hsq, ← map_add, ← inner_add_right, ← LinearMap.add_apply, h1, one_apply_eq_self,
     @norm_sq_eq_re_inner 𝕜 _ _ _ _ x]
 
 /-- **Positivity.** If `f` is nonnegative at every eigenvalue of `T`, then `f(T)` is positive. -/
@@ -257,7 +257,7 @@ theorem isPositive_cfc (hT : T.IsSymmetric) {f : ℝ → ℝ}
     rw [← cfc_mul]
     exact hT.cfc_congr fun μ hμ ↦ (Real.mul_self_sqrt (hf μ hμ)).symm
   refine ⟨hT.isSymmetric_cfc f, fun x ↦ ?_⟩
-  rw [hR, Module.End.mul_apply, hT.isSymmetric_cfc _ _ x]
+  rw [hR, mul_apply_eq_comp, hT.isSymmetric_cfc _ _ x]
   exact inner_self_nonneg
 
 end LinearMap.IsSymmetric

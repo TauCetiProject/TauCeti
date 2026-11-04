@@ -59,9 +59,9 @@ theorem map_eval_multivariateHypergeometricMeasure (K : ι → ℕ) (n : ℕ) (i
   apply Measure.ext_of_singleton
   intro m
   rw [Measure.map_apply (by fun_prop) (MeasurableSet.singleton m),
-    multivariateHypergeometricMeasure_def, Measure.finsetSum_apply,
+    multivariateHypergeometricMeasure_def, _root_.sum_apply,
     hypergeometricMeasure_singleton hKi hn]
-  simp only [Measure.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
+  simp only [_root_.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
     Set.mem_preimage, Set.mem_singleton_iff, smul_eq_mul, mul_ite, mul_one, mul_zero]
   rw [← Finset.sum_filter]
   calc

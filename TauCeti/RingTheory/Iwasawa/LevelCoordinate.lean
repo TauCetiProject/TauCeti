@@ -140,6 +140,13 @@ noncomputable def levelTransition {m n : ℕ} (h : m ≤ n) :
       MonoidAlgebra O (Multiplicative (ZMod (p ^ m))) :=
   MonoidAlgebra.mapDomainAlgHom O O ((FiniteQuotientTower.padicTower p).t h)
 
+/-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` pushes the coefficients forward along the reduction
+`ℤ/pⁿ → ℤ/pᵐ`. -/
+theorem levelTransition_apply {m n : ℕ} (h : m ≤ n)
+    (x : MonoidAlgebra O (Multiplicative (ZMod (p ^ n)))) :
+    levelTransition p O h x = MonoidAlgebra.mapDomain ((FiniteQuotientTower.padicTower p).t h) x :=
+  (rfl)
+
 /-- The projection `O[ℤ/pⁿ] → O[ℤ/pᵐ]` sends `a · [g]` to `a` times the reduction of `g`. -/
 @[simp]
 theorem levelTransition_single {m n : ℕ} (h : m ≤ n) (g : Multiplicative (ZMod (p ^ n))) (a : O) :

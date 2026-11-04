@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+public import Mathlib.Analysis.Calculus.TangentCone.Real
+public import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -24,7 +26,14 @@ from Mathlib's maps of barycentric simplices. The bridge reuses
 last coordinate to the zeroth position. Every map of barycentric simplices induced by a map of
 vertices, read on full-dimensional simplices, is the restriction of the continuous affine map
 `simplexMapAmbient` of the ambient Euclidean spaces; the face inclusions are the case of the
-coface vertex maps `Fin.succAbove`.
+coface vertex maps `Fin.succAbove`. In coordinates, the face map omitting the vertex `e_j` inserts a
+zero `j`-th coordinate, and the face map omitting the origin puts the missing barycentric weight in
+front; a permutation of the vertices induces an affine symmetry of the simplex. Cycling the
+vertices relates the two readings of the face opposite the origin: through the coordinates other
+than the `j`-th one, and through the last coordinates as the face map does. The simplex is a
+compact convex set with nonempty interior, so derivatives within it are unique at every point
+(`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for derivatives and integrals
+of forms.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -46,6 +55,49 @@ noncomputable def fullSimplex (p : ℕ) : Set (EuclideanSpace ℝ (Fin p)) :=
 theorem mem_fullSimplex_iff {p : ℕ} {x : EuclideanSpace ℝ (Fin p)} :
     x ∈ fullSimplex p ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1 := by
   exact mem_coordinateSimplex _ _
+
+/-- The origin is the zeroth vertex of the full-dimensional simplex. -/
+theorem zero_mem_fullSimplex (p : ℕ) : 0 ∈ fullSimplex p := by
+  simp
+
+/-- The full-dimensional simplex is convex. -/
+theorem convex_fullSimplex (p : ℕ) : Convex ℝ (fullSimplex p) :=
+  (convex_coordinateSimplex (Fin p)).linear_preimage (EuclideanSpace.equiv (Fin p) ℝ).toLinearMap
+
+/-- The full-dimensional simplex is closed. -/
+theorem isClosed_fullSimplex (p : ℕ) : IsClosed (fullSimplex p) :=
+  (isClosed_coordinateSimplex (Fin p)).preimage (EuclideanSpace.equiv (Fin p) ℝ).continuous
+
+/-- The full-dimensional simplex is compact. -/
+theorem isCompact_fullSimplex (p : ℕ) : IsCompact (fullSimplex p) :=
+  (EuclideanSpace.equiv (Fin p) ℝ).toHomeomorph.isCompact_preimage.2
+    (isCompact_coordinateSimplex (Fin p))
+
+/-- The full-dimensional simplex has nonempty interior in its Euclidean space. -/
+theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Nonempty := by
+  have h :=
+    (EuclideanSpace.equiv (Fin p) ℝ).toHomeomorph.preimage_interior (coordinateSimplex (Fin p))
+  rw [ContinuousLinearEquiv.coe_toHomeomorph] at h
+  rw [fullSimplex, ← h]
+  exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
+    (EuclideanSpace.equiv (Fin p) ℝ).surjective
+
+/-- Derivatives within the full-dimensional simplex are unique at each of its points, including
+the points of its faces and corners. -/
+theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
+  uniqueDiffOn_convex (convex_fullSimplex p) (nonempty_interior_fullSimplex p)
+
+/-- The point of `ℝᵖ⁺¹` obtained by inserting `t` as the `j`-th coordinate of `y` lies in the
+full-dimensional simplex exactly when `y` lies in the coordinate simplex and `t` lies between `0`
+and the unused part `1 - ∑ k, y k` of the coordinate sum. -/
+theorem toLp_insertNth_mem_fullSimplex_iff {p : ℕ} (j : Fin (p + 1)) (t : ℝ) (y : Fin p → ℝ) :
+    WithLp.toLp 2 (j.insertNth t y) ∈ fullSimplex (p + 1) ↔
+      y ∈ coordinateSimplex (Fin p) ∧ t ∈ Set.Icc 0 (1 - ∑ k, y k) := by
+  simp only [mem_fullSimplex_iff, mem_coordinateSimplex, Set.mem_Icc, j.forall_iff_succAbove,
+    Fin.sum_univ_succAbove _ j, Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
+  constructor
+  · rintro ⟨⟨ht, hy⟩, hs⟩; exact ⟨⟨hy, by linarith⟩, ht, by linarith⟩
+  · rintro ⟨⟨hy, -⟩, ht, hs⟩; exact ⟨⟨ht, hy⟩, by linarith⟩
 
 /-- Adding the missing zeroth weight identifies the full-dimensional and barycentric simplices. -/
 noncomputable def fullSimplexEquivStdSimplex (p : ℕ) :
@@ -174,5 +226,118 @@ theorem simplexMapAmbient_coe {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1)) (x :
 theorem simplexMapAmbient_succAbove_coe {p : ℕ} (i : Fin (p + 2)) (x : fullSimplex p) :
     simplexMapAmbient i.succAbove x.val = (simplexFace p i x).val :=
   simplexMapAmbient_coe _ x
+
+/-- The ambient extension of a vertex map carries the full-dimensional simplex into the
+full-dimensional simplex. -/
+theorem mapsTo_simplexMapAmbient {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1)) :
+    Set.MapsTo (simplexMapAmbient f) (fullSimplex m) (fullSimplex n) := fun x hx ↦
+  simplexMapAmbient_coe f ⟨x, hx⟩ ▸ Subtype.prop _
+
+/-- For an injective vertex map `f`, a coordinate of the ambient extension is the affinely extended
+barycentric weight of the unique vertex sent to the corresponding vertex. -/
+theorem simplexMapAmbient_apply_of_injective {m n : ℕ} {f : Fin (m + 1) → Fin (n + 1)}
+    (hf : Function.Injective f) (x : EuclideanSpace ℝ (Fin m)) {i : Fin (m + 1)} {j : Fin n}
+    (h : f i = j.succ) :
+    simplexMapAmbient f x j = Fin.cons (α := fun _ ↦ ℝ) (1 - ∑ k, x k) (fun k ↦ x k) i := by
+  rw [simplexMapAmbient_apply, ← h]
+  simp [hf.eq_iff, Finset.filter_eq']
+
+/-- A coordinate of the ambient extension whose vertex is not in the range of the vertex map
+vanishes. -/
+theorem simplexMapAmbient_apply_of_forall_ne {m n : ℕ} {f : Fin (m + 1) → Fin (n + 1)}
+    (x : EuclideanSpace ℝ (Fin m)) {j : Fin n} (h : ∀ i, f i ≠ j.succ) :
+    simplexMapAmbient f x j = 0 := by
+  rw [simplexMapAmbient_apply]
+  simp [h]
+
+/-- The ambient extension of a permutation of the vertices maps the full-dimensional simplex onto
+itself. -/
+theorem image_simplexMapAmbient_perm {m : ℕ} (σ : Equiv.Perm (Fin (m + 1))) :
+    simplexMapAmbient σ '' fullSimplex m = fullSimplex m := by
+  refine Set.Subset.antisymm (mapsTo_simplexMapAmbient σ).image_subset fun z hz ↦ ?_
+  let w := (fullSimplexEquivStdSimplex m ⟨z, hz⟩).map σ.symm
+  refine ⟨((fullSimplexEquivStdSimplex m).symm w).val, Subtype.prop _, ?_⟩
+  simp only [w, simplexMapAmbient_coe, Homeomorph.apply_symm_apply, StdSimplex.map_map,
+    Equiv.apply_symm_apply]
+  exact congrArg Subtype.val ((congrArg _ (StdSimplex.map_id _)).trans
+    ((fullSimplexEquivStdSimplex m).symm_apply_apply _))
+
+/-! ### The faces in coordinates -/
+
+section Faces
+
+variable {p : ℕ}
+
+/-- The face map of `Δᵖ⁺¹` omitting the vertex `e_j` inserts a zero `j`-th coordinate. -/
+theorem simplexMapAmbient_succAbove_succ (j : Fin (p + 1))
+    (y : EuclideanSpace ℝ (Fin p)) :
+    simplexMapAmbient j.succ.succAbove y = WithLp.toLp 2 (j.insertNth 0 y.ofLp) := by
+  ext m
+  refine j.succAboveCases ?_ (fun k ↦ ?_) m
+  · rw [simplexMapAmbient_apply_of_forall_ne _ fun i ↦ Fin.succAbove_ne j.succ i]
+    simp
+  · rw [simplexMapAmbient_apply_of_injective (Fin.succAbove_right_injective) _
+      (Fin.succ_succAbove_succ j k)]
+    simp
+
+/-- The face map of `Δᵖ⁺¹` omitting the origin keeps the coordinates of `y` as the last `p`
+coordinates and puts the missing barycentric weight `1 - ∑ k, y k` in front. -/
+theorem simplexMapAmbient_succAbove_zero (y : EuclideanSpace ℝ (Fin p)) :
+    simplexMapAmbient (Fin.succAbove 0) y =
+      WithLp.toLp 2 (Fin.cons (α := fun _ ↦ ℝ) (1 - ∑ k, y k) y.ofLp) := by
+  ext m
+  rw [simplexMapAmbient_apply_of_injective (Fin.succAbove_right_injective) _
+    (Fin.succAbove_zero_apply m)]
+
+/-- The affine symmetry of `Δᵖ` cycling the vertices `0, …, j` reads the face of `Δᵖ⁺¹` opposite
+the origin in the coordinates obtained by deleting the `j`-th one. -/
+theorem simplexMapAmbient_cycleRange_symm (j : Fin (p + 1)) (y : EuclideanSpace ℝ (Fin p)) :
+    simplexMapAmbient j.cycleRange.symm y =
+      WithLp.toLp 2 fun k ↦ (j.insertNth (1 - ∑ k, y k) y.ofLp : Fin (p + 1) → ℝ) k.succ := by
+  ext m
+  rw [simplexMapAmbient_apply_of_injective j.cycleRange.symm.injective _
+    (j.cycleRange.symm_apply_apply m.succ)]
+  simp
+
+/-- The point of the face of `Δᵖ⁺¹` opposite the origin whose coordinates other than the `j`-th are
+those of `y` is the image under the face map of the cycled point of `Δᵖ`. -/
+theorem toLp_insertNth_eq_simplexMapAmbient (j : Fin (p + 1)) (y : EuclideanSpace ℝ (Fin p)) :
+    WithLp.toLp 2 (j.insertNth (1 - ∑ k, y k) y.ofLp) =
+      simplexMapAmbient (Fin.succAbove 0) (simplexMapAmbient j.cycleRange.symm y) := by
+  rw [simplexMapAmbient_succAbove_zero, simplexMapAmbient_cycleRange_symm]
+  set x : Fin (p + 1) → ℝ := j.insertNth (1 - ∑ k, y k) y.ofLp
+  have hx : ∑ i, x i = 1 := by
+    simp [x, Fin.sum_univ_succAbove _ j]
+  rw [Fin.sum_univ_succ] at hx
+  ext m
+  cases m using Fin.cases <;> simp [← hx]
+
+/-- The linear part of the face map omitting the vertex `e_j` sends `e_k` to `e_{j.succAbove k}`.
+-/
+theorem contLinear_simplexMapAmbient_succAbove_succ (j : Fin (p + 1)) (k : Fin p) :
+    (simplexMapAmbient j.succ.succAbove).contLinear (EuclideanSpace.single k 1) =
+      EuclideanSpace.single (j.succAbove k) 1 := by
+  have h := (simplexMapAmbient j.succ.succAbove).contLinear_apply_vsub
+    (EuclideanSpace.single k (1 : ℝ)) 0
+  rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at h
+  rw [h, simplexMapAmbient_succAbove_succ, simplexMapAmbient_succAbove_succ]
+  ext m
+  refine j.succAboveCases ?_ (fun l ↦ ?_) m
+  · simp
+  · simp [Pi.single_apply]
+
+/-- The linear part of the face map omitting the origin sends `e_k` to the edge vector
+`e_{k+1} - e_0`. -/
+theorem contLinear_simplexMapAmbient_succAbove_zero (k : Fin p) :
+    (simplexMapAmbient (Fin.succAbove 0)).contLinear (EuclideanSpace.single k 1) =
+      EuclideanSpace.single k.succ 1 - EuclideanSpace.single 0 1 := by
+  have h := (simplexMapAmbient (Fin.succAbove (0 : Fin (p + 2)))).contLinear_apply_vsub
+    (EuclideanSpace.single k (1 : ℝ)) 0
+  rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at h
+  rw [h, simplexMapAmbient_succAbove_zero, simplexMapAmbient_succAbove_zero]
+  ext m
+  cases m using Fin.cases <;> simp [Pi.single_apply]
+
+end Faces
 
 end TauCeti

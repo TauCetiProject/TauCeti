@@ -71,7 +71,7 @@ theorem single_sub_single_apply_of_lt [LinearOrder n] [AddGroup S]
     exact (not_lt_of_ge q.property.le) h
   have heq : (p.val.1 = q.val.1 ∧ p.val.2 = q.val.2) ↔ p = q :=
     ⟨fun h => Subtype.ext (Prod.ext h.1 h.2), fun h => by subst q; exact ⟨rfl, rfl⟩⟩
-  simp [sub_apply, single_apply, hrev, heq]
+  simp [single_apply, hrev, heq]
 
 /-- **The condition `Mᵀ = -M` passes to the image of the matrix** under an additive morphism of
 the entry types. -/
@@ -212,7 +212,7 @@ theorem ofStrictUpper_apply_of_lt [LinearOrder n] [AddGroup S]
 theorem ofStrictUpper_apply_of_gt [LinearOrder n] [AddGroup S]
     (b : {p : n × n // p.1 < p.2} → S) (p : {p : n × n // p.1 < p.2}) :
     ofStrictUpper b p.val.2 p.val.1 = -b p := by
-  simpa only [transpose_apply, neg_apply, ofStrictUpper_apply_of_lt] using
+  simpa only [transpose_apply, Matrix.neg_apply, ofStrictUpper_apply_of_lt] using
     congrFun (congrFun (transpose_ofStrictUpper b) p.val.1) p.val.2
 
 /-- A skew matrix is recovered from its strict-upper entries when doubling has trivial kernel. -/

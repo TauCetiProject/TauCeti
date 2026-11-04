@@ -216,7 +216,7 @@ theorem qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHom_of_one_eq_zero_of_
     (a := fun n ↦ (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff n)
     (fun p hp hpL ↦ by
     obtain ⟨c, hc⟩ := ha p hp hpL
-    exact ⟨c, _, fun m _ ↦
+    exact ⟨c, _, fun m _ _ ↦
       qExpansion_coeff_prime_mul_of_heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul hp
         (hpL.coprime_dvd_right hNL) hc m⟩) h1 n hn0 hn
 
@@ -237,7 +237,7 @@ theorem qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero
     (a := fun n ↦ (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff n)
     (fun p hp hpL ↦ by
     obtain ⟨c, hc⟩ := ha p hp hpL
-    exact ⟨c, _, fun m _ ↦
+    exact ⟨c, _, fun m _ _ ↦
       qExpansion_coeff_prime_mul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul hp
         (hpL.coprime_dvd_right hNL) hc m⟩) h1 n hn0 hn
 

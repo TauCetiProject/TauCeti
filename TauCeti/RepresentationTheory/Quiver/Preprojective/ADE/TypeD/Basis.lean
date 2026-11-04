@@ -424,7 +424,7 @@ private theorem xStep_yStep_sStep_pow (j t : ℕ) (ht : t ≤ j) :
   | zero => simp [xStep_single, yStep_single]
   | succ t ih =>
     obtain ⟨hx, hy⟩ := ih (by omega)
-    rw [pow_succ', Module.End.mul_apply, sStep_apply, hx, hy]
+    rw [pow_succ', mul_apply_eq_comp, sStep_apply, hx, hy]
     simp [bWord, xStep_single, yStep_single, show t + 1 ≤ j by omega]
 
 private theorem forkAction_turn_aux (hn : 3 ≤ n) (a : Fin (DynkinType.D n).rank)
@@ -438,7 +438,7 @@ private theorem forkAction_turn_aux (hn : 3 ≤ n) (a : Fin (DynkinType.D n).ran
   have h₁ := forkAction_arrow k hn _ a x hoa
   have h₂ := forkAction_arrow k hn a _ (dStep k (n - 3) (n - 3) a x) hoa.symm
   simp only [preprojectiveDForkVertex_val] at h₁ h₂
-  rw [map_mul, Module.End.mul_apply, h₁, h₂]
+  rw [map_mul, mul_apply_eq_comp, h₁, h₂]
 
 private theorem forkAction_turn_left (hn : 3 ≤ n) (x : ForkCoord k) :
     forkAction k hn
@@ -477,8 +477,8 @@ private theorem forkAction_turn_add_pow (hn : 3 ≤ n) (t : ℕ) (x : ForkCoord 
         (forkVector k (preprojectiveDForkVertex n hn) x) =
       forkVector k (preprojectiveDForkVertex n hn) ((sStep k (n - 3) ^ t) x) := by
   induction t generalizing x with
-  | zero => simp only [pow_zero, map_one, Module.End.one_apply]
-  | succ t ih => simp only [pow_succ, map_mul, Module.End.mul_apply, forkAction_turn_add, ih]
+  | zero => simp only [pow_zero, map_one, one_apply_eq_self]
+  | succ t ih => simp only [pow_succ, map_mul, mul_apply_eq_comp, forkAction_turn_add, ih]
 
 private theorem forkAction_branchWord (hn : 3 ≤ n) (l : Bool) (t : ℕ) (x : ForkCoord k) :
     forkAction k hn (signlessPreprojectiveDBranchWord k (preprojectiveDForkVertex n hn)
@@ -488,7 +488,7 @@ private theorem forkAction_branchWord (hn : 3 ≤ n) (l : Bool) (t : ℕ) (x : F
         ((if l then xStep k (n - 3) else yStep k (n - 3)) ((sStep k (n - 3) ^ t) x)) := by
   rw [signlessPreprojectiveDBranchWord_def]
   simp only [preprojectiveDForkVertex_val, le_refl, ite_true, Nat.sub_self, ladderValley_zero_zero,
-    mul_one, Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, map_mul, Module.End.mul_apply,
+    mul_one, Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, map_mul, mul_apply_eq_comp,
     forkAction_vertex, forkAction_turn_add_pow]
   cases l <;> simp only [Bool.false_eq_true, ite_true, ite_false, forkAction_turn_left,
     forkAction_turn_right, forkAction_vertex]

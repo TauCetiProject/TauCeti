@@ -120,7 +120,7 @@ theorem sum_card_inter_parts {ι : Type*} [DecidableEq ι] {s X : Finset ι} (P 
     (hX : X ⊆ s) : ∑ C ∈ P.parts, (X ∩ C).card = X.card := by
   have h := P.sum_restrict hX (fun C ↦ C.card) (by simp)
   rw [Finpartition.sum_card_parts] at h
-  simp_rw [h, Finset.inf_eq_inter, Finset.inter_comm]
+  simp_rw [h, Finset.inter_comm]
 
 /-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
 theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
@@ -549,7 +549,7 @@ theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
     inter_eq_left.2 fun x hx => mem_erase.2
       ⟨fun hxi => hBi (P.eq_of_mem_parts hB hi hx (hxi ▸ mem_singleton_self i)), P.le hB hx⟩
   ext B
-  simp only [parts_restrict, inf_eq_inter, mem_erase, mem_image]
+  simp only [parts_restrict, mem_erase, mem_image]
   constructor
   · rintro ⟨hB, C, hC, rfl⟩
     obtain rfl | hCi := eq_or_ne C {i}

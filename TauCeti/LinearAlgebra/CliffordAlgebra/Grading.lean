@@ -32,7 +32,9 @@ into one statement indexed by the parity. Once `2` is invertible, the two graded
 eigenspaces of the grade involution: the even part is its fixed space and the odd part its
 `-1`-eigenspace. Mathlib proves one implication of each (the two lemmas above) and leaves the
 converses as a TODO; they are recorded here. This is the form in which the grading is
-transported along maps commuting with the involution, such as extension of scalars.
+transported along maps commuting with the involution, such as extension of scalars. On a module
+over the Clifford algebra, an operator anticommuting with Clifford multiplication by every vector
+intertwines multiplication by any Clifford element with multiplication by its grade involute.
 
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
 indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basis vector is nonzero
@@ -52,6 +54,8 @@ belongs to the grading API independently of any spin representation.
   case.
 * `CliffordAlgebra.involute_eq_uzpow_smul_of_mem_evenOdd`: the grade involution acts on the graded
   piece of parity `p` by `(-1) ^ p`.
+* `CliffordAlgebra.apply_smul_eq_involute_smul`: an operator on a Clifford module anticommuting
+  with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
@@ -128,6 +132,19 @@ theorem involute_eq_uzpow_smul_of_mem_evenOdd {p : ZMod 2} {x : CliffordAlgebra 
   obtain rfl | rfl : p = 0 ∨ p = 1 := by clear hx; revert p; decide
   · rw [involute_eq_of_mem_even hx, uzpow_zero, one_smul]
   · rw [involute_eq_of_mem_odd hx, uzpow_one, Units.neg_smul, one_smul]
+
+/-- **An operator anticommuting with every vector intertwines the grade involution**: if
+`γ (c(v) ψ) = -c(v) γ ψ` for every vector `v`, then `γ (a ψ) = involute a • γ ψ` for every Clifford
+element `a`. -/
+theorem apply_smul_eq_involute_smul {E : Type*} [AddCommGroup E] [Module R E]
+    [Module (CliffordAlgebra Q) E] [IsScalarTower R (CliffordAlgebra Q) E] {γ : E →ₗ[R] E}
+    (hγ : ∀ v (ψ : E), γ (ι Q v • ψ) = -(ι Q v • γ ψ)) (a : CliffordAlgebra Q) (ψ : E) :
+    γ (a • ψ) = involute a • γ ψ := by
+  induction a using CliffordAlgebra.induction generalizing ψ with
+  | algebraMap r => rw [AlgHom.commutes, algebraMap_smul, map_smul, algebraMap_smul]
+  | ι v => rw [hγ, involute_ι, neg_smul]
+  | mul a b ha hb => rw [mul_smul, ha, hb, map_mul, mul_smul]
+  | add a b ha hb => rw [add_smul, map_add, ha, hb, map_add, add_smul]
 
 variable [Invertible (2 : R)]
 

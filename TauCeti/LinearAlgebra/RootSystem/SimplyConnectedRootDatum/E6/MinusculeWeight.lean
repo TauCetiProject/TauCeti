@@ -86,7 +86,7 @@ open Set
 Coordinates are pairings with the six Bourbaki-numbered simple coroots. The ordering begins at
 `ϖ₁ = (1, 0, 0, 0, 0, 0)` and then lists weights reached successively by simple reflections; no
 mathematical structure depends on the ordering. -/
-def e6MinusculeWeight : Fin 27 → Fin 6 → ℤ := ![
+@[expose] def e6MinusculeWeight : Fin 27 → Fin 6 → ℤ := ![
   ![1, 0, 0, 0, 0, 0], ![-1, 0, 1, 0, 0, 0], ![0, 0, -1, 1, 0, 0],
   ![0, 1, 0, -1, 1, 0], ![0, -1, 0, 0, 1, 0], ![0, 1, 0, 0, -1, 1],
   ![0, -1, 0, 1, -1, 1], ![0, 1, 0, 0, 0, -1], ![0, 0, 1, -1, 0, 1],
@@ -132,36 +132,45 @@ theorem exists_e6MinusculeWeight_apply_eq_neg_one (i : Fin 6) :
     ∃ a : Fin 27, e6MinusculeWeight a i = -1 :=
   ⟨e6MinusculeNegOneIndex i, e6MinusculeWeight_e6MinusculeNegOneIndex i⟩
 
+/-- At adjacent nodes `i`, `j`, a minuscule weight has coordinates `0`, `-1` respectively.
+Raising first at `j` and then at `i` gives a nonzero height-two root operator. -/
+theorem exists_e6MinusculeWeight_apply_eq_zero_and_eq_neg_one (i j : Fin 6)
+    (hij : CartanMatrix.E 6 i j = -1) :
+    ∃ b : Fin 27, e6MinusculeWeight b i = 0 ∧ e6MinusculeWeight b j = -1 := by
+  let b : Fin 27 := if i = 1 ∨ (i = 4 ∧ j = 3) then 8 else if i = 2 ∧ j = 0 then 12 else
+    if i = 3 ∧ j = 2 then 10 else if i = 5 ∧ j = 4 then 14 else e6MinusculeNegOneIndex j
+  refine ⟨b, ?_⟩
+  revert hij
+  fin_cases i <;> fin_cases j <;> decide
+
 /-! ## Simple reflections -/
-
-private def e6MinusculeReflectionIndex : Fin 6 → Fin 27 → Fin 27 := ![
-  ![1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 12, 11, 10, 15, 14, 13, 17, 16, 19, 18, 21, 20, 22, 23,
-    24, 25, 26],
-  ![0, 1, 2, 4, 3, 6, 5, 9, 8, 7, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 18, 19, 23, 22,
-    24, 25, 26],
-  ![0, 2, 1, 3, 4, 5, 6, 7, 10, 9, 8, 13, 12, 11, 16, 15, 14, 17, 18, 22, 20, 23, 19, 21,
-    24, 25, 26],
-  ![0, 1, 3, 2, 4, 5, 8, 7, 6, 11, 10, 9, 12, 13, 14, 15, 18, 19, 16, 17, 20, 21, 22, 24,
-    23, 25, 26],
-  ![0, 1, 2, 5, 6, 3, 4, 7, 8, 9, 10, 14, 12, 16, 11, 17, 13, 15, 18, 19, 20, 21, 22, 23,
-    25, 24, 26],
-  ![0, 1, 2, 3, 4, 7, 9, 5, 11, 6, 13, 8, 15, 10, 14, 12, 16, 17, 18, 19, 20, 21, 22, 23,
-    24, 26, 25]]
-
-private theorem e6MinusculeReflectionIndex_involutive (i : Fin 6) :
-    Function.Involutive (e6MinusculeReflectionIndex i) := by
-  fin_cases i <;> intro a <;> fin_cases a <;> decide
 
 /-- **The permutation of the twenty-seven minuscule weights induced by the `i`-th simple
 reflection.** -/
-def e6MinusculeReflection (i : Fin 6) : Equiv.Perm (Fin 27) :=
-  (e6MinusculeReflectionIndex_involutive i).toPerm
+@[expose] def e6MinusculeReflection (i : Fin 6) : Equiv.Perm (Fin 27) :=
+  let reflectionIndex : Fin 6 → Fin 27 → Fin 27 := ![
+    ![1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 12, 11, 10, 15, 14, 13, 17, 16, 19, 18, 21, 20, 22, 23,
+      24, 25, 26],
+    ![0, 1, 2, 4, 3, 6, 5, 9, 8, 7, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 18, 19, 23, 22,
+      24, 25, 26],
+    ![0, 2, 1, 3, 4, 5, 6, 7, 10, 9, 8, 13, 12, 11, 16, 15, 14, 17, 18, 22, 20, 23, 19, 21,
+      24, 25, 26],
+    ![0, 1, 3, 2, 4, 5, 8, 7, 6, 11, 10, 9, 12, 13, 14, 15, 18, 19, 16, 17, 20, 21, 22, 24,
+      23, 25, 26],
+    ![0, 1, 2, 5, 6, 3, 4, 7, 8, 9, 10, 14, 12, 16, 11, 17, 13, 15, 18, 19, 20, 21, 22, 23,
+      25, 24, 26],
+    ![0, 1, 2, 3, 4, 7, 9, 5, 11, 6, 13, 8, 15, 10, 14, 12, 16, 17, 18, 19, 20, 21, 22, 23,
+      24, 26, 25]]
+  Function.Involutive.toPerm (reflectionIndex i) (by
+    intro a
+    fin_cases i <;> fin_cases a <;> decide)
 
 /-- Applying the same simple reflection twice fixes every index in the weight table. -/
 @[simp]
 theorem e6MinusculeReflection_apply_apply (i : Fin 6) (a : Fin 27) :
-    e6MinusculeReflection i (e6MinusculeReflection i a) = a :=
-  e6MinusculeReflectionIndex_involutive i a
+    e6MinusculeReflection i (e6MinusculeReflection i a) = a := by
+  revert i a
+  decide +kernel
 
 private theorem e6MinusculeWeight_reflection_table (i : Fin 6) (a : Fin 27) :
     e6MinusculeWeight (e6MinusculeReflection i a) =
@@ -451,6 +460,16 @@ theorem e6DoubledMinusculeWeight_inr (a : Fin 27) :
 theorem neg_e6DoubledMinusculeWeight (x : Fin 27 ⊕ Fin 27) :
     -e6DoubledMinusculeWeight x = e6DoubledMinusculeWeight (Equiv.sumComm _ _ x) := by
   cases x <;> simp
+
+/-- Every pairing of a doubled weight with a simple coroot is `-1`, `0`, or `1`: both summands
+are minuscule. -/
+theorem e6DoubledMinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (x : Fin 27 ⊕ Fin 27)
+    (i : Fin 6) :
+    e6DoubledMinusculeWeight x i = -1 ∨ e6DoubledMinusculeWeight x i = 0 ∨
+      e6DoubledMinusculeWeight x i = 1 := by
+  rcases x with a | a <;>
+    rcases e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;>
+    simp [h]
 
 /-- **The fifty-four weights of `V(ϖ₁) ⊕ V(ϖ₆)` are pairwise distinct.** No minuscule weight is
 the negative of another, all twenty-seven of them lying in one nontrivial coset of the root

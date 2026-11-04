@@ -77,8 +77,8 @@ theorem secondCovariantDerivative_sub_swap (hσ : CMDiff ∞ (T% σ)) (x : M)
     (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v - cov.secondCovariantDerivative covT σ x v u =
       cov.curvatureTensor x u v (σ x) - cov σ x (covT.torsion x u v) := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   rw [secondCovariantDerivative_apply cov covT hσ x hY,
     secondCovariantDerivative_apply cov covT hσ x hX, curvatureTensor_apply cov x hX hY hσ,
     curvatureOperator_apply,

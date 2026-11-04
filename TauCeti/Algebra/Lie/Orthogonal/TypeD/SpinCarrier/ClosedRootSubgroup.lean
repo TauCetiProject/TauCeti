@@ -147,7 +147,7 @@ private theorem rep_rootGenerator_sq_apply_latticeBasis (k : Fin n ⊕ Fin n) :
       f ((latticeBasis n (basisIndex n (rootSourceSet n hn k)) : lattice n) :
         ExteriorAlgebra ℚ (polarization n).W))
     ((polarization n).typeDSpinRep_rootGenerator_sq (polarizationBasis n) hn k)
-  simpa only [rep, pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [rep, pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-- The coordinate morphism of every numbered type-`D` full-spin root subgroup is surjective. -/
 theorem rootSubgroupCoordinateMap_surjective (k : Fin n ⊕ Fin n) :

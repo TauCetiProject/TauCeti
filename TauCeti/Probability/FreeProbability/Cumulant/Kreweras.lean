@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.NoncrossingPartition.Interlace
 public import TauCeti.Probability.FreeProbability.Cumulant.Free
 
 /-!
-# Moments of products of free families
+# Moments and free cumulants of products of free families
 
 Let `φ : A →ₗ[R] R` be a normalised linear functional, and let `(aₓ)` and `(bₓ)` be two words
 indexed by a finite set `s = {x₁ < ⋯ < xₙ}` of positions, with letters in two freely independent
@@ -25,7 +25,18 @@ contribute; these are the interlaced partitions of a noncrossing partition `π` 
 and a noncrossing partition `π'` of the `b`-letters with `π' ≤ K(π)`. Summing the cumulants of
 `b` over `π' ≤ K(π)` gives the block moment `φ_{K(π)}(b)`.
 
-No traciality is needed. For `s = ∅` both sides are `1`.
+The free cumulants of the alternating product are glued from the free cumulants of both words:
+
+`κ_s(a_{x₁} b_{x₁}, …, a_{xₙ} b_{xₙ}) = ∑_{π ∈ NC(s)} κ_π(a) κ_{K(π)}(b)`.
+
+By the formula for free cumulants with products as arguments, the left-hand side is the sum of the
+cumulants of the noncrossing partitions of the interlaced positions whose join with the pairs
+`{(x, false), (x, true)}` is the partition into one part. Again only the interlaced partitions of
+`π` and `π' ≤ K(π)` contribute, and among them the join condition singles out `π' = K(π)`
+(`TauCeti.NoncrossingPartition.sup_interlacePairs_eq_top_iff`).
+
+No traciality is needed. For `s = ∅` both sides are `1`, and for `s = {x}` the cumulant formula is
+`φ (a_x b_x) = φ (a_x) φ (b_x)`.
 
 ## Main results
 
@@ -34,6 +45,8 @@ No traciality is needed. For `s = ∅` both sides are `1`.
   two distinct members of a free family of subalgebras.
 * `TauCeti.IsFreelyIndependent.apply_prod_ofFn_mul_eq_sum_partitionCumulant_mul_partitionMoment`
   — the same formula for `φ (a₁ b₁ ⋯ aₙ bₙ)`, summing over `NC(n)`.
+* `TauCeti.IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partitionCumulant` —
+  `κ_s(a_{x₁} b_{x₁}, …, a_{xₙ} b_{xₙ}) = ∑_{π ∈ NC(s)} κ_π(a) κ_{K(π)}(b)`.
 
 ## References
 
@@ -56,28 +69,24 @@ variable {R A ι α : Type*} [CommRing R] [Semiring A] [Algebra R A] [LinearOrde
 private def interlaceWord (a b : α → A) (p : α ×ₗ Bool) : A :=
   bif (ofLex p).2 then b (ofLex p).1 else a (ofLex p).1
 
+/-- Grouping the interlaced word along the first coordinate gives the letters `a x * b x`. -/
+private theorem fiberProd_interlaceWord (a b : α → A) {x : α} (hx : x ∈ s) :
+    fiberProd (interlaceWord a b) s.interlace (fun p => (ofLex p).1) x = a x * b x := by
+  rw [fiberProd_def, filter_interlace_fst_eq hx, sort_pair _
+      (show toLex (x, false) ≤ toLex (x, true) from
+        Prod.Lex.toLex_le_toLex.2 (Or.inr ⟨rfl, Bool.false_le _⟩))
+    (fun h => Bool.noConfusion (Prod.mk.inj (toLex.injective h)).2)]
+  simp [interlaceWord]
+
 /-- The product of the interlaced word along the interlaced positions of `s` is the product of the
 letters `a x * b x` along `s`. -/
 private theorem prod_map_sort_interlace (a b : α → A) :
     (s.interlace.sort.map (interlaceWord a b)).prod = (s.sort.map fun x => a x * b x).prod := by
   -- Group the interlaced positions along their first coordinate.
-  rw [prod_map_sort_eq_prod_map_sort_image (Prod.Lex.monotone_fst_ofLex.monotoneOn _)]
-  have himage : s.interlace.image (fun p => (ofLex p).1) = s := by
-    ext x
-    simp only [mem_image, mem_interlace]
-    exact ⟨fun ⟨p, hp, hpx⟩ => hpx ▸ hp, fun hx => ⟨toLex (x, false), hx, rfl⟩⟩
-  rw [himage]
-  refine congrArg List.prod (List.map_congr_left fun x hx => ?_)
-  have hx : x ∈ s := (mem_sort _).1 hx
-  have hfib : {p ∈ s.interlace | (ofLex p).1 = x} = {toLex (x, false), toLex (x, true)} := by
-    ext p
-    obtain ⟨⟨y, c⟩, rfl⟩ := toLex.surjective p
-    simp only [mem_filter, mem_interlace, ofLex_toLex, mem_insert, mem_singleton]
-    cases c <;> simp +contextual [hx]
-  rw [hfib, sort_pair _ (show toLex (x, false) ≤ toLex (x, true) from
-      Prod.Lex.toLex_le_toLex.2 (Or.inr ⟨rfl, Bool.false_le _⟩))
-    (fun h => Bool.noConfusion (Prod.mk.inj (toLex.injective h)).2)]
-  simp [interlaceWord]
+  rw [prod_map_sort_eq_prod_map_sort_image (Prod.Lex.monotone_fst_ofLex.monotoneOn _),
+    image_interlace_fst]
+  exact congrArg List.prod (List.map_congr_left fun x hx =>
+    (fiberProd_def _ _ _ x).symm.trans (fiberProd_interlaceWord a b ((mem_sort _).1 hx)))
 
 /-- The free cumulant of the interlaced word along a set of positions placed on one sheet is the
 free cumulant of the corresponding word. -/
@@ -89,6 +98,15 @@ private theorem freeCumulant_interlaceWord_image (a b : α → A) (β : Bool) (X
   congr 1
   funext x
   cases β <;> simp [interlaceWord]
+
+/-- The product of the free cumulants of the interlaced word over the parts of `P.interlace Q` is
+the product of the free cumulants of `a` over the parts of `P` times that of `b` over the parts of
+`Q`. -/
+private theorem prod_freeCumulant_interlace (a b : α → A) (P Q : Finpartition s) :
+    ∏ C ∈ (P.interlace Q).parts, freeCumulant φ (interlaceWord a b) C =
+      (∏ X ∈ P.parts, freeCumulant φ a X) * ∏ X ∈ Q.parts, freeCumulant φ b X := by
+  simp only [Finpartition.prod_parts_interlace, freeCumulant_interlaceWord_image,
+    Bool.cond_false, Bool.cond_true]
 
 /-- If the letters of `a` and `b` lie in two distinct members of a free family, a noncrossing
 partition of the interlaced positions contributes to the moment–cumulant formula of the interlaced
@@ -140,11 +158,6 @@ theorem IsFreelyIndependent.apply_prod_mul_eq_sum_partitionCumulant_mul_partitio
   rw [hR, ← prod_map_sort_interlace a b,
     apply_prod_eq_sum_prod_freeCumulant φ _
       (let ⟨x, hx⟩ := hs; ⟨toLex (x, false), toLex_mem_interlace.2 hx⟩)]
-  have hval (P Q : Finpartition s) :
-      (∏ X ∈ P.parts, freeCumulant φ a X) * ∏ X ∈ Q.parts, freeCumulant φ b X =
-        ∏ C ∈ (P.interlace Q).parts, freeCumulant φ (interlaceWord a b) C := by
-    simp only [Finpartition.prod_parts_interlace, freeCumulant_interlaceWord_image,
-      Bool.cond_false, Bool.cond_true]
   have hle : ∀ x ∈ univ.sigma fun π : NoncrossingPartition s => Iic π.kreweras,
       x.2.1 ≤ x.1.1.kreweras := fun x hx => by
     rw [← NoncrossingPartition.coe_kreweras, Subtype.coe_le_coe]
@@ -159,9 +172,57 @@ theorem IsFreelyIndependent.apply_prod_mul_eq_sum_partitionCumulant_mul_partitio
       (forall_mem_part_snd_eq_of_prod_ne_zero h hφ hij ha hb hσ)
     obtain ⟨hP, hQ, hK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.2)
     refine ⟨⟨⟨P, hP⟩, ⟨Q, hQ⟩⟩, mem_sigma.2 ⟨mem_univ _, mem_Iic.2 ?_⟩,
-      (hval P Q).trans_ne (hPQ ▸ hσ), Subtype.ext hPQ.symm⟩
+      (prod_freeCumulant_interlace a b P Q).symm.trans_ne (hPQ ▸ hσ), Subtype.ext hPQ.symm⟩
     rwa [← Subtype.coe_le_coe, NoncrossingPartition.coe_kreweras]
-  · exact hval _ _
+  · exact (prod_freeCumulant_interlace a b _ _).symm
+
+/-- *Free cumulants of products of free families*: if the letters of `a` and `b` lie in two
+distinct members `B i`, `B j` of a free family of subalgebras, for a normalised `φ`, then
+`κ_s(a_{x₁} b_{x₁}, …, a_{xₙ} b_{xₙ}) = ∑_{π ∈ NC(s)} κ_π(a) κ_{K(π)}(b)` for
+`s = {x₁ < ⋯ < xₙ}`, where `K(π)` is the Kreweras complement of `π`. -/
+theorem IsFreelyIndependent.freeCumulant_mul_eq_sum_partitionCumulant_mul_partitionCumulant
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {a b : α → A}
+    (ha : ∀ x ∈ s, a x ∈ B i) (hb : ∀ x ∈ s, b x ∈ B j) :
+    freeCumulant φ (fun x => a x * b x) s =
+      ∑ π : NoncrossingPartition s,
+        partitionCumulant φ a π * partitionCumulant φ b (NoncrossingPartition.kreweras π) := by
+  -- Group the interlaced word `a_{x₁}, b_{x₁}, …, a_{xₙ}, b_{xₙ}` along the first coordinate: the
+  -- cumulant is the sum of the cumulants of the noncrossing partitions `σ` of the interlaced
+  -- positions whose join with the pairs `{(x, false), (x, true)}` is the partition into one part.
+  have hf : MonotoneOn (fun p : α ×ₗ Bool => (ofLex p).1) s.interlace :=
+    Prod.Lex.monotone_fst_ofLex.monotoneOn _
+  have hgroup : freeCumulant φ (fun x => a x * b x) s =
+      freeCumulant φ (fiberProd (interlaceWord a b) s.interlace fun p => (ofLex p).1)
+        (s.interlace.image fun p => (ofLex p).1) := by
+    rw [image_interlace_fst]
+    exact freeCumulant_congr φ fun x hx => (fiberProd_interlaceWord a b hx).symm
+  rw [hgroup, freeCumulant_fiberProd_eq_sum_prod φ _ hf,
+    NoncrossingPartition.comap_fst_bot_eq_interlacePairs]
+  simp_rw [partitionCumulant_eq_prod_freeCumulant]
+  -- By freeness only the interlaced partitions of `π` and `π' ≤ K(π)` contribute, and their join
+  -- with the pairs is the partition into one part exactly when `π' = K(π)`.
+  have hK (π : NoncrossingPartition s) : (NoncrossingPartition.kreweras π).1 ≤ π.1.kreweras :=
+    (NoncrossingPartition.coe_kreweras π).le
+  symm
+  refine sum_bij_ne_zero (fun π _ _ => ⟨π.1.interlace (NoncrossingPartition.kreweras π).1,
+      Finpartition.isNoncrossing_interlace_iff.2 ⟨π.2, (NoncrossingPartition.kreweras π).2, hK π⟩⟩)
+    (fun π _ _ => by
+      simp only [mem_filter, mem_univ, true_and]
+      exact (NoncrossingPartition.sup_interlacePairs_eq_top_iff (P := π) rfl le_rfl).2 rfl)
+    (fun π _ _ π' _ _ hππ' => Subtype.ext (Finpartition.interlace_inj.1
+      (congrArg Subtype.val hππ')).1) (fun σ hσ hne => ?_)
+    (fun π _ _ => (prod_freeCumulant_interlace a b _ _).symm)
+  obtain ⟨P, Q, hPQ⟩ := Finpartition.exists_eq_interlace
+    (forall_mem_part_snd_eq_of_prod_ne_zero h hφ hij ha hb hne)
+  obtain ⟨hP, hQ, hQK⟩ := Finpartition.isNoncrossing_interlace_iff.1 (hPQ ▸ σ.2)
+  have hQK : (⟨Q, hQ⟩ : NoncrossingPartition s) = NoncrossingPartition.kreweras ⟨P, hP⟩ :=
+    (NoncrossingPartition.sup_interlacePairs_eq_top_iff (P := ⟨P, hP⟩) (Q := ⟨Q, hQ⟩) hPQ
+      (by rwa [← Subtype.coe_le_coe, NoncrossingPartition.coe_kreweras])).1
+      (by simpa only [mem_filter, mem_univ, true_and] using hσ)
+  refine ⟨⟨P, hP⟩, mem_univ _, ?_, Subtype.ext ?_⟩
+  · rw [← hQK]
+    exact (prod_freeCumulant_interlace a b P Q).symm.trans_ne (hPQ ▸ hne)
+  · rw [Subtype.coe_mk, hPQ, ← hQK]
 
 /-- *Moments of products of free families*, for words `a₁, …, aₙ` and `b₁, …, bₙ` with letters in
 two distinct members `B i`, `B j` of a free family of subalgebras and a normalised `φ`:

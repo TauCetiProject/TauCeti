@@ -188,7 +188,7 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
       simp only [ψ₀, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply,
         LinearEquiv.coe_coe, coindBotEquivPi_apply, LinearMap.proj_apply, map_sum]
       refine Fintype.sum_equiv (Equiv.mulRight g) _ _ fun h ↦ ?_
-      simp only [Equiv.coe_mulRight, ← Module.End.mul_apply, ← map_mul, mul_inv_rev,
+      simp only [Equiv.coe_mulRight, ← _root_.mul_apply_eq_comp, ← map_mul, mul_inv_rev,
         mul_inv_cancel_left]
       rw [Representation.coind_apply_coe_apply]
   have hfac : f = coindBotUnit A ≫ ψ := by
@@ -198,7 +198,7 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
       LinearMap.coe_comp, LinearMap.coe_proj, LinearEquiv.coe_coe, Finset.sum_apply,
       Function.comp_apply, Function.eval, coindBotEquivPi_apply, coindBotUnit_hom_apply_coe]
     exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g ↦ by simp
-  rw [hfac, Functor.map_comp, (isZero_coindBot A.V n).eq_zero_of_src
+  rw [hfac, CategoryTheory.Functor.map_comp, (isZero_coindBot A.V n).eq_zero_of_src
     ((tateCohomologyFunctor n).map ψ), Limits.comp_zero]
 
 omit X in
@@ -221,7 +221,8 @@ theorem isZero_tensor_of_forall_eq_sum {C : Rep k G} (φ : C.V →ₗ[k] C.V)
   induction x using TensorProduct.inductionOn with
   | tmul m c =>
     conv_lhs => rw [hφ c]
-    simp [TensorProduct.tmul_sum, Representation.tprod_apply, ← Module.End.mul_apply, ← map_mul]
+    simp [TensorProduct.tmul_sum, Representation.tprod_apply,
+      ← _root_.mul_apply_eq_comp, ← map_mul, -FunLike.coe_mul_eq_comp]
   | add x y hx hy =>
     conv_lhs => rw [hx, hy]
     simp only [map_add, Finset.sum_add_distrib]

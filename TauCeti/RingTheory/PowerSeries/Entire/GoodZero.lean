@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.RingTheory.PowerSeries.Entire.Division
+public import TauCeti.RingTheory.PowerSeries.Entire.Taylor
 
 /-!
 # Good zeros of entire power series
@@ -29,6 +30,12 @@ entire series (`PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`). Consequently o
 products, and when `f(0) = 1` a good zero of positive order is a unit, so the factor `(X - a)ʰ`
 may be renormalised to `(1 - a⁻¹ X)ʰ`.
 
+Over a complete normed field every zero of a nonzero entire series has a finite order
+(`PowerSeries.IsEntire.exists_isGoodZero`). The values `(Δⁿ f)(a)` are the coefficients of the
+Taylor translate of `f` at `a`, which is nonzero because Taylor translation is injective on entire
+series (`PowerSeries.IsEntire.taylor_eq_zero_iff`); the order is the first index of a nonzero
+coefficient. No discreteness of the valuation, Weierstrass product or identity theorem is used.
+
 ## Main definitions
 
 * `PowerSeries.IsGoodZero f a h`: `f` has a good zero of order `h` at `a`.
@@ -39,6 +46,8 @@ may be renormalised to `(1 - a⁻¹ X)ʰ`.
 * `PowerSeries.isGoodZero_coe_iff`, `PowerSeries.isGoodZero_coe_iff_of_field`: for polynomials
   the order is the root multiplicity, and over a ring the quotient by `(X - a)ʰ` must be a unit
   at `a`.
+* `PowerSeries.isGoodZero_iff_order_taylor_eq`: over a field, the order of a good zero at `a` is
+  the order of the Taylor translate at `a`.
 * `PowerSeries.IsEntire.isGoodZero_iff`: factorisation of an entire series at a good zero.
 * `PowerSeries.IsGoodZero.mul`: the orders of good zeros of entire series add under products.
 * `PowerSeries.IsEntire.isGoodZero_mul_iff_of_isUnit`: a factor which is a unit at `a` does not
@@ -48,6 +57,9 @@ may be renormalised to `(1 - a⁻¹ X)ʰ`.
   `G` entire, `G(0) = 1` and `G(a)` a unit.
 * `PowerSeries.IsGoodZero.map`: good zeros of entire series are preserved by continuous
   coefficient homomorphisms.
+* `PowerSeries.IsEntire.exists_isGoodZero`,
+  `PowerSeries.IsEntire.exists_pos_isGoodZero_of_evalAt_eq_zero`: over a complete normed field, a
+  nonzero entire series has a good zero of some order at every point, of positive order at a zero.
 
 ## References
 
@@ -144,6 +156,12 @@ theorem isGoodZero_coe_iff_of_field {K : Type*} [Field K] [TopologicalSpace K]
   · rintro ⟨hp, rfl⟩
     exact ⟨rfl, Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero a hp⟩
 
+/-- Over a field, `f` has a good zero of order `h` at `a` exactly when its Taylor translate at `a`
+has order `h`. -/
+theorem isGoodZero_iff_order_taylor_eq {K : Type*} [Field K] [TopologicalSpace K] {f : K⟦X⟧}
+    {a : K} {h : ℕ} : f.IsGoodZero a h ↔ (taylor a f).order = h := by
+  simp [isGoodZero_iff, order_eq_nat, isUnit_iff_ne_zero, and_comm]
+
 end TopologicalRing
 
 section Normed
@@ -239,5 +257,33 @@ theorem IsGoodZero.map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
     hfa.isUnit_evalAt_hasseDeriv.map φ⟩
 
 end Normed
+
+section Field
+
+variable {K : Type*} [NormedField K] [CompleteSpace K] {f : K⟦X⟧}
+
+/-- **Zeros of entire series over a field have finite order.** Over a complete normed field, a
+nonzero entire series `f` has a good zero at every point `a`. Its order, unique by
+`PowerSeries.IsGoodZero.unique`, is the least `h` with `(Δʰ f)(a) ≠ 0`; it is positive exactly when
+`f(a) = 0`. -/
+theorem IsEntire.exists_isGoodZero (hf : f.IsEntire) (hf0 : f ≠ 0) (a : K) :
+    ∃ h, f.IsGoodZero a h := by
+  classical
+  have hex : ∃ n, (PowerSeries.hasseDeriv n f).evalAt a ≠ 0 := by
+    by_contra! h
+    exact hf0 ((hf.taylor_eq_zero_iff a).1 (ext fun n ↦ by simpa using h n))
+  exact ⟨Nat.find hex, PowerSeries.isGoodZero_iff.2
+    ⟨fun j hj ↦ not_not.1 (Nat.find_min hex hj), (Nat.find_spec hex).isUnit⟩⟩
+
+/-- A zero of a nonzero entire series over a complete normed field is a good zero of some
+positive order. -/
+theorem IsEntire.exists_pos_isGoodZero_of_evalAt_eq_zero (hf : f.IsEntire) (hf0 : f ≠ 0)
+    {a : K} (ha : f.evalAt a = 0) : ∃ h, 0 < h ∧ f.IsGoodZero a h := by
+  obtain ⟨h, hfa⟩ := hf.exists_isGoodZero hf0 a
+  refine ⟨h, Nat.pos_of_ne_zero fun h0 ↦ ?_, hfa⟩
+  subst h0
+  exact not_isUnit_zero (ha ▸ isGoodZero_zero_iff.mp hfa)
+
+end Field
 
 end PowerSeries

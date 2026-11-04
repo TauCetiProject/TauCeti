@@ -318,7 +318,7 @@ theorem le_of_forall_mem_piece_exists_sub_X_smul_mem (hd : d ≠ 0)
   -- Downward induction on the degree `B - n`, in steps of `d`.
   have hN (n : ℕ) : ∀ x ∈ G.piece (B - n), x ∈ L → x ∈ N := by
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro x hxG hxL
       obtain ⟨y, hyG, hyL, hxy⟩ := h hxG hxL
       rw [← sub_add_cancel x ((X : k[X]) • y)]

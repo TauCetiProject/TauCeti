@@ -96,7 +96,7 @@ theorem map_iInf_eigenspace_unitHom_eq_conjNormal (N : Subgroup G) [N.Normal]
     rw [hcharacter] at hmapped
     exact hmapped
   refine ⟨ρ g⁻¹ v, hpreimage, ?_⟩
-  simp [← Module.End.mul_apply, ← map_mul]
+  simp [← mul_apply_eq_comp, ← map_mul]
 
 /-- Conjugating a character by an ambient group element preserves whether its joint weight
 space for the normal subgroup is nonzero. -/
