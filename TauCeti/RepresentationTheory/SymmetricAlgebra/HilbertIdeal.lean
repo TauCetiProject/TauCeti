@@ -112,38 +112,26 @@ theorem symmetricAlgebraHilbertIdeal_eq_span_of_surjective {ι : Type*}
     (hsurj : Function.Surjective (MvPolynomial.aeval (R := R) f)) :
     ρ.symmetricAlgebraHilbertIdeal = Ideal.span (Set.range fun i ↦
       (f i : SymmetricAlgebra R M)) := by
-  let I := Ideal.span (Set.range fun i ↦ (f i : SymmetricAlgebra R M))
-  have haug (i : ι) : SymmetricAlgebra.algebraMapInv (f i : SymmetricAlgebra R M) = 0 := by
-    have hi := hf i
-    rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv,
-      RingHom.mem_ker] at hi
-    exact hi
+  have haug (i : ι) : SymmetricAlgebra.algebraMapInv (f i : SymmetricAlgebra R M) = 0 :=
+    mem_irrelevant_iff_algebraMapInv_eq_zero.mp (hf i)
   refine le_antisymm (ρ.symmetricAlgebraHilbertIdeal_le_iff.2 ?_) ?_
   · intro p hp hp₀
     obtain ⟨P, hP⟩ := hsurj ⟨p, hp⟩
     have heval : MvPolynomial.aeval (fun i ↦ (f i : SymmetricAlgebra R M)) P = p := by
       have h := congrArg ρ.symmetricAlgebraInvariants.val hP
       simpa only [MvPolynomial.comp_aeval_apply, Subalgebra.val_apply] using h
-    have hpaug : SymmetricAlgebra.algebraMapInv p = 0 := by
-      rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv,
-        RingHom.mem_ker] at hp₀
-      exact hp₀
+    have hpaug : SymmetricAlgebra.algebraMapInv p = 0 :=
+      mem_irrelevant_iff_algebraMapInv_eq_zero.mp hp₀
     have hc : MvPolynomial.constantCoeff P = 0 := by
       rw [← heval, MvPolynomial.comp_aeval_apply] at hpaug
       simpa only [haug, MvPolynomial.aeval_zero', Algebra.algebraMap_self_apply] using hpaug
     have hPmem : P ∈ MvPolynomial.idealOfVars ι R := by
       rw [← MvPolynomial.ker_constantCoeff, RingHom.mem_ker]
       exact hc
-    have hmap : (MvPolynomial.idealOfVars ι R).map
-        (MvPolynomial.aeval (fun i ↦ (f i : SymmetricAlgebra R M))) = I := by
-      rw [MvPolynomial.idealOfVars, Ideal.map_span]
-      rw [← Set.range_comp]
-      simp only [Function.comp_def, MvPolynomial.aeval_X]
-      rfl
     rw [← heval]
     have h := Ideal.mem_map_of_mem (MvPolynomial.aeval
       (fun i ↦ (f i : SymmetricAlgebra R M))) hPmem
-    rw [hmap] at h
+    rw [MvPolynomial.map_aeval_idealOfVars] at h
     exact h
   · refine Ideal.span_le.2 ?_
     rintro _ ⟨i, rfl⟩
