@@ -344,6 +344,13 @@ theorem del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : Smooth
   J.map_eq_zero_of_forall_isOfType (f := J.del ∘ₗ J.delBar + J.delBar ∘ₗ J.del)
     (fun _ _ _ _ hψ ↦ (del_del_and_delBar_delBar_of_isOfType hd hd' hψ).2.1) φ
 
+/-- If `d = ∂ + ∂bar` on `k`-forms and on `(k+1)`-forms, then
+`∂bar ∂φ = -∂ ∂bar φ`. -/
+theorem delBar_del_of_mextDerivₗ_eq_del_add_delBar (φ : SmoothForm I M F k) :
+    J.delBar (J.del φ) = -J.del (J.delBar φ) :=
+  eq_neg_of_add_eq_zero_right
+    (del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar hd hd' φ)
+
 end DelAddDelBar
 
 /-! ### Functions -/
