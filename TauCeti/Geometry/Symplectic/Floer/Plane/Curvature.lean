@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.RingTheory.Complex
 
 /-!
 # The curvature of the perturbation on a PSS plane
@@ -27,10 +26,10 @@ In the end coordinates `(s, t)` of the plane the perturbation is the continuatio
 `β(ε s - 1) H(t) dt` (`TauCeti.Floer.PSSPlane.endComponent_I`), so its curvature there is
 `ε β'(ε s - 1) H(t)` (`SymplecticForm.hamiltonianCurvature_pssPlaneEndComponent`). It vanishes
 outside the collar `1 ≤ ε s ≤ 2`
-(`SymplecticForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`). The curvature is a two-form
-(`SymplecticForm.hamiltonianCurvature_perturbationPullback`), and the end lift
-`z ↦ exp (2π ε z)` maps a band of height one bijectively onto `ℂ ∖ {0}`. Since `β' ≥ 0` has total
-integral `1`, if `|H| ≤ B` then
+(`SymplecticForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`). The integrated curvature
+may be computed in any chart (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_image`), and the
+end lift `z ↦ exp (2π ε z)` maps a band of height one bijectively onto `ℂ ∖ {0}`. Since `β' ≥ 0`
+has total integral `1`, if `|H| ≤ B` then
 
 `∫_ℂ |R_K(z, u(z))| dz ≤ B`
 
@@ -157,29 +156,6 @@ private theorem differentiableAt_perturbation_target (hH : Periodic H 1)
   exact ((hK _).comp x ((differentiableAt_const w).prodMk differentiableAt_id)).clm_apply
     (differentiableAt_const v)
 
-/-- The curvature of the perturbation at the image of a cylinder point, multiplied by the
-Jacobian of the end lift in real coordinates, is the curvature `ε β'(ε s - 1) H(t)` in end
-coordinates. -/
-private theorem det_mul_hamiltonianCurvature_realChart (ω : SymplecticForm V) (hH : Periodic H 1)
-    (hHs : ContDiff ℝ 1 (uncurry H)) (z : ℝ × ℝ) (x : V) :
-    (fderiv ℝ (realChart p.cylindricalEndLift) z).det * ω.hamiltonianCurvature
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (realChart p.cylindricalEndLift z) x =
-      p.endSign * deriv smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
-  have hHt : DifferentiableAt ℝ (fun t ↦ H t x) z.2 :=
-    (hHs.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero z.2
-  rw [← ω.hamiltonianCurvature_perturbationPullback
-    (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
-    (differentiableAt_perturbation_domain hH hHs _ x 1)
-    (differentiableAt_perturbation_domain hH hHs _ x Complex.I)
-    (differentiableAt_perturbation_target hH hHs _ x 1)
-    (differentiableAt_perturbation_target hH hHs _ x Complex.I),
-    perturbationPullback_realChart_cylindricalEndLift,
-    perturbationPullback_realChart_cylindricalEndLift,
-    equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
-    ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt]
-
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
 private theorem injOn_realChart (p : PSSPlane) :
@@ -235,8 +211,6 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
   have hN : volume N = 0 := by
     rw [Measure.volume_eq_prod]
     exact (Set.toFinite N).measure_zero _
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   have hT : MeasurableSet ((p.endSign * ·) ⁻¹' Ioc (-1 / 2 : ℝ) (1 / 2)) :=
     measurableSet_Ioc.preimage (measurable_const.mul measurable_id)
   have hmeas : MeasurableSet (endStrip p) := MeasurableSet.univ.prod hT
@@ -251,18 +225,27 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
         rw [← setLIntegral_univ]
         exact lintegral_mono_set hcover
     _ ≤ (∫⁻ z in φ '' endStrip p, f z) + ∫⁻ z in N, f z := lintegral_union_le _ _ _
-    _ = ∫⁻ z in endStrip p, ENNReal.ofReal |(fderiv ℝ φ z).det| * f (φ z) := by
+    _ = ∫⁻ z in endStrip p, ‖ω.hamiltonianCurvature (p.endComponent H 1)
+          (p.endComponent H Complex.I) z (u (φ z))‖ₑ := by
+        -- The curvature is a two-form, and pulled back along the end lift it is the curvature in
+        -- end coordinates.
         rw [setLIntegral_measure_zero _ _ hN, add_zero,
-          lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hmeas
-            (fun z _ ↦ (hasFDerivAt_realChart
-              (p.hasDerivAt_cylindricalEndLift _)).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
-            (injOn_realChart p)]
+          ω.lintegral_enorm_hamiltonianCurvature_image hmeas (injOn_realChart p)
+            (fun z _ ↦ (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt)
+            (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
+            (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
+            (fun z _ ↦ differentiableAt_perturbation_target hH hHs _ _ 1)
+            (fun z _ ↦ differentiableAt_perturbation_target hH hHs _ _ Complex.I),
+          perturbationPullback_realChart_cylindricalEndLift,
+          perturbationPullback_realChart_cylindricalEndLift,
+          equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
     _ ≤ ∫⁻ z in endStrip p,
           ENNReal.ofReal (deriv smoothTransition (p.endSign * z.1 - 1)) * ENNReal.ofReal B := by
         refine setLIntegral_mono' hmeas fun z _ ↦ ?_
-        -- The curvature is a two-form, and in end coordinates it is `ε β'(ε s - 1) H(t)`.
-        rw [← Real.enorm_eq_ofReal_abs, ← enorm_mul,
-          det_mul_hamiltonianCurvature_realChart ω hH hHs z, Real.enorm_eq_ofReal_abs]
+        -- In end coordinates the curvature is `ε β'(ε s - 1) H(t)`.
+        have hHt : DifferentiableAt ℝ (fun t ↦ H t (u (φ z))) z.2 :=
+          (hHs.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero z.2
+        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.enorm_eq_ofReal_abs]
         simpa [abs_mul, abs_of_nonneg (hψ _), ← ENNReal.ofReal_mul (hψ _)] using
           ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB z.2 (u (φ z))) (hψ _))
     _ = ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (p.endSign * s - 1)) *
