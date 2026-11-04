@@ -465,6 +465,12 @@ theorem orbit_stabilizer_zero_one :
 
 private def pointSequence (i : ℕ) : Fin 275 := Fin.ofNat 275 i
 
+@[simp] private theorem pointSequence_zero : pointSequence 0 = 0 := rfl
+
+@[simp] private theorem pointSequence_one : pointSequence 1 = 1 := rfl
+
+@[simp] private theorem pointSequence_two : pointSequence 2 = 2 := rfl
+
 private theorem stabilizerChain_two :
     McL.stabilizerChain pointSequence 2 =
       McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275)) := by
@@ -472,8 +478,18 @@ private theorem stabilizerChain_two :
     ext i
     simp only [Set.mem_Iio, Set.mem_insert_iff, Set.mem_singleton_iff]
     omega
-  simp only [Subgroup.stabilizerChain_def, hi, Set.image_insert_eq, Set.image_singleton]
-  rfl
+  simp only [Subgroup.stabilizerChain_def, hi, Set.image_insert_eq, Set.image_singleton,
+    pointSequence_zero, pointSequence_one]
+
+private theorem stabilizerChain_three :
+    McL.stabilizerChain pointSequence 3 =
+      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)) := by
+  have hi : Set.Iio (3 : ℕ) = {0, 1, 2} := by
+    ext i
+    simp only [Set.mem_Iio, Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  simp only [Subgroup.stabilizerChain_def, hi, Set.image_insert_eq, Set.image_singleton,
+    pointSequence_zero, pointSequence_one, pointSequence_two]
 
 /-- The first two basic orbits contribute the factor `275 * 112 = 30800` to the order. -/
 theorem card_eq_30800_mul_card_fixingSubgroup :
@@ -481,13 +497,10 @@ theorem card_eq_30800_mul_card_fixingSubgroup :
       ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1} : Set (Fin 275))) := by
   have h1 : McL.stabilizerChain pointSequence 1 =
       McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275) := by
-    rw [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero]
-    rfl
-  have hb0 : pointSequence 0 = 0 := rfl
-  have hb1 : pointSequence 1 = 1 := rfl
+    simp only [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero, pointSequence_zero]
   have h := McL.prod_ncard_orbit_mul_card_stabilizerChain pointSequence 2
   simp only [Finset.prod_range_succ, Finset.range_zero, Finset.prod_empty, one_mul] at h
-  rw [Subgroup.stabilizerChain_zero, h1, stabilizerChain_two, hb0, hb1,
+  rw [Subgroup.stabilizerChain_zero, h1, stabilizerChain_two, pointSequence_zero, pointSequence_one,
     ncard_orbit_zero, ncard_orbit_stabilizer_zero_one] at h
   exact h.symm
 
@@ -580,18 +593,10 @@ theorem orbit_fixing_zero_one_two :
 theorem card_eq_2494800_mul_card_fixingSubgroup :
     Nat.card McL = 2494800 * Nat.card
       ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275))) := by
-  have hi : Set.Iio (3 : ℕ) = {0, 1, 2} := by
-    ext i
-    simp only [Set.mem_Iio, Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
-  have h3 : McL.stabilizerChain pointSequence 3 =
-      McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2} : Set (Fin 275)) := by
-    simp only [Subgroup.stabilizerChain_def, hi, Set.image_insert_eq, Set.image_singleton]
-    rfl
-  have hb2 : pointSequence 2 = 2 := rfl
   have h2 := McL.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 2
-  rw [stabilizerChain_two, h3, hb2, ncard_orbit_fixing_zero_one_two] at h2
+  rw [stabilizerChain_two, stabilizerChain_three, pointSequence_two,
+    ncard_orbit_fixing_zero_one_two] at h2
   rw [card_eq_30800_mul_card_fixingSubgroup, ← h2, ← mul_assoc]
-  rfl
+  norm_num
 
 end TauCeti.Sporadic.McL
