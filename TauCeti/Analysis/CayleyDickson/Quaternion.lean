@@ -197,7 +197,8 @@ theorem norm_toLp_tuple (x : DivisionOctonionReal) :
     ‖(!₂[x.fst.re, x.fst.imI, x.fst.imJ, x.fst.imK, x.snd.re, x.snd.imI, x.snd.imJ, x.snd.imK] :
       EuclideanSpace ℝ (Fin 8))‖ = ‖x‖ := by
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_sum]
-  simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_eight]
+  simp only [EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs, Fin.sum_univ_eight, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
   ring
 
 /-- **The eight-coordinate Euclidean model of the real octonions**: the coordinates

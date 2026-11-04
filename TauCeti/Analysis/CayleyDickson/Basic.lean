@@ -122,10 +122,7 @@ the double are induced along it. -/
 @[expose] noncomputable def linearIsometryEquivWithLp [NormedField 𝕜] [NormedSpace 𝕜 A] :
     CayleyDickson A ≃ₗᵢ[𝕜] WithLp 2 (A × A) where
   __ := addEquivWithLp A
-  map_smul' r x := by
-    change addEquivWithLp A (r • x) = r • addEquivWithLp A x
-    rw [addEquivWithLp_apply, addEquivWithLp_apply, smul_fst, smul_snd, ← Prod.smul_mk,
-      WithLp.toLp_smul]
+  map_smul' _ _ := rfl
   norm_map' := norm_addEquivWithLp
 
 /-- The double of a normed space is a normed space over the same field. -/
