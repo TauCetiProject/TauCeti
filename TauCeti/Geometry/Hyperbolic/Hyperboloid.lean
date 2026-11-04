@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.AlgebraicTopology.Singular.Straightening
 
@@ -48,7 +49,7 @@ the hyperboloid with other models of hyperbolic space is carried out here.
   Sections 3.2 (the hyperboloid model) and 4.1 (Lorentz transformations).
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -67,7 +68,7 @@ def minkowskiNormSq (v : ℝ × E) : ℝ :=
   v.1 ^ 2 - ‖v.2‖ ^ 2
 
 lemma minkowskiNormSq_def (v : ℝ × E) : minkowskiNormSq v = v.1 ^ 2 - ‖v.2‖ ^ 2 :=
-  rfl
+  (rfl)
 
 @[fun_prop]
 lemma continuous_minkowskiNormSq : Continuous (minkowskiNormSq : ℝ × E → ℝ) := by
@@ -113,22 +114,19 @@ lemma minkowskiNormSq_smul (c : ℝ) (v : ℝ × E) :
   ring
 
 lemma convex_futureCone : Convex ℝ (futureCone E) := by
-  intro v hv w hw a b ha hb hab
-  simp only [mem_futureCone, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd,
-    smul_eq_mul] at hv hw ⊢
-  rcases ha.lt_or_eq with ha | rfl
-  · calc ‖a • v.2 + b • w.2‖ ≤ a * ‖v.2‖ + b * ‖w.2‖ := by
-          refine (norm_add_le _ _).trans_eq ?_
-          rw [norm_smul, norm_smul, Real.norm_of_nonneg ha.le, Real.norm_of_nonneg hb]
-      _ < a * v.1 + b * w.1 :=
-          add_lt_add_of_lt_of_le (mul_lt_mul_of_pos_left hv ha)
-            (mul_le_mul_of_nonneg_left hw.le hb)
-  · simp_all
+  simpa [futureCone] using
+    (convexOn_univ_norm (E := E)).convex_strict_epigraph.linear_preimage
+      (LinearEquiv.prodComm ℝ ℝ E).toLinearMap
 
 /-- The **radial projection** `v ↦ v / √(minkowskiNormSq v)`, which retracts the future cone onto
 the hyperboloid. -/
 def hyperboloidNormalize (v : ℝ × E) : ℝ × E :=
   (√(minkowskiNormSq v))⁻¹ • v
+
+/-- The formula for radial projection onto the unit hyperboloid. -/
+lemma hyperboloidNormalize_def (v : ℝ × E) :
+    hyperboloidNormalize v = (√(minkowskiNormSq v))⁻¹ • v :=
+  (rfl)
 
 lemma hyperboloidNormalize_mem {v : ℝ × E} (hv : v ∈ futureCone E) :
     hyperboloidNormalize v ∈ hyperboloid E := by
@@ -150,7 +148,9 @@ lemma continuousOn_hyperboloidNormalize :
     fun _ hv ↦ (Real.sqrt_pos.2 (minkowskiNormSq_pos hv)).ne').smul continuousOn_id
 
 variable (E) in
+-- Expose the carrier so the retraction accepts points of `futureCone E` without transport.
 /-- The hyperboloid as a retract of the future cone, along the radial projection. -/
+@[expose]
 def hyperboloidConvexRetract : ConvexRetract (hyperboloid E) (ℝ × E) where
   carrier := futureCone E
   convex := convex_futureCone
@@ -162,17 +162,17 @@ def hyperboloidConvexRetract : ConvexRetract (hyperboloid E) (ℝ × E) where
   retraction_embed v := Subtype.ext (hyperboloidNormalize_of_mem v.2)
 
 lemma hyperboloidConvexRetract_carrier : (hyperboloidConvexRetract E).carrier = futureCone E :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma hyperboloidConvexRetract_embed_apply (v : hyperboloid E) :
     (hyperboloidConvexRetract E).embed v = v :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma coe_hyperboloidConvexRetract_retraction_apply (v : futureCone E) :
     ((hyperboloidConvexRetract E).retraction v : ℝ × E) = hyperboloidNormalize (v : ℝ × E) :=
-  rfl
+  (rfl)
 
 /-! ### Lorentz transformations -/
 
@@ -200,7 +200,7 @@ def hyperboloidMap : C(hyperboloid E, hyperboloid E) :=
 
 @[simp]
 lemma coe_hyperboloidMap_apply (v : hyperboloid E) : (hyperboloidMap hq hL v : ℝ × E) = L v :=
-  rfl
+  (rfl)
 
 /-- **Straightening in hyperbolic space commutes with isometries**: a continuous linear map of
 `ℝ × E` preserving the Minkowski square norm and the future cone commutes with straightening of

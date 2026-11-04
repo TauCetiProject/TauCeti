@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Combination
+public import Mathlib.Geometry.Convex.ConvexSpace.ModuleTopology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
@@ -54,7 +55,7 @@ morphism of simplicial sets.
 * M. Gromov, *Volume and bounded cohomology*, Publ. Math. IHÉS 56 (1982), 5–99, Section 2.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -87,32 +88,35 @@ structure ConvexRetract (X : Type u) [TopologicalSpace X] (V : Type v) [AddCommG
 
 namespace ConvexRetract
 
+attribute [local instance] ConvexSpace.ofModule
+
 variable {X : Type u} [TopologicalSpace X] {V : Type v} [AddCommGroup V] [Module ℝ V]
-  [TopologicalSpace V] (R : ConvexRetract X V) {ι κ : Type*} [Fintype ι] [Fintype κ]
+  [TopologicalSpace V] (R : ConvexRetract X V) {ι κ : Type*}
 
 /-! ### Straight simplices -/
 
 /-- The affine simplex in `V` whose vertices are the images under `embed` of the points `v i`:
 the barycentric coordinates `t` go to `∑ i, tᵢ • embed (v i)`. -/
 def affineSimplex (v : ι → X) (t : StdSimplex ℝ ι) : V :=
-  ∑ i, t.weights i • R.embed (v i)
+  StdSimplex.affineMapMk (R.embed ∘ v) t
 
-lemma affineSimplex_mem (v : ι → X) (t : StdSimplex ℝ ι) : R.affineSimplex v t ∈ R.carrier :=
-  R.convex.sum_mem (fun i _ ↦ t.nonneg i) (by simp) fun i _ ↦ R.embed_mem (v i)
+/-- The barycentric formula for the affine simplex. -/
+lemma affineSimplex_def [Fintype ι] (v : ι → X) (t : StdSimplex ℝ ι) :
+    R.affineSimplex v t = ∑ i, t.weights i • R.embed (v i) :=
+  StdSimplex.affineMapMk_apply_eq_sum_of_fintype _ _
+
+lemma affineSimplex_mem (v : ι → X) (t : StdSimplex ℝ ι) : R.affineSimplex v t ∈ R.carrier := by
+  simp only [affineSimplex, StdSimplex.affineMapMk_apply, iConvexComb_eq_sum, Finsupp.sum]
+  exact R.convex.sum_mem (fun i _ ↦ t.nonneg i) t.total fun i _ ↦ R.embed_mem (v i)
 
 @[simp]
 lemma affineSimplex_single (v : ι → X) (i : ι) :
-    R.affineSimplex v (.single i) = R.embed (v i) := by
-  classical
-  simp [affineSimplex, Finsupp.single_apply]
+    R.affineSimplex v (.single i) = R.embed (v i) :=
+  StdSimplex.affineMapMk_single _ _
 
 lemma affineSimplex_map (f : κ → ι) (v : ι → X) (t : StdSimplex ℝ κ) :
-    R.affineSimplex v (t.map f) = R.affineSimplex (v ∘ f) t := by
-  classical
-  simp only [affineSimplex, StdSimplex.weights_map, Function.comp_apply]
-  rw [← Finsupp.sum_fintype _ (fun i a ↦ a • R.embed (v i)) (by simp),
-    Finsupp.sum_mapDomain_index (by simp) (by simp [add_smul]),
-    Finsupp.sum_fintype _ _ (by simp)]
+    R.affineSimplex v (t.map f) = R.affineSimplex (v ∘ f) t :=
+  iConvexComb_map t f _
 
 /-- A convex combination of a point of `embed`'s range and a point of an affine simplex, with the
 weight of the second point given by the `1`-coordinate of the image of `t` under `α`, lies in the
@@ -125,9 +129,8 @@ lemma cylinderPoint_mem (x : X) (v : ι → X) (α : ι → Fin 2) (t : StdSimpl
 
 variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
 
-lemma continuous_affineSimplex (v : ι → X) : Continuous (R.affineSimplex v) := by
-  unfold affineSimplex
-  fun_prop
+lemma continuous_affineSimplex (v : ι → X) : Continuous (R.affineSimplex v) :=
+  StdSimplex.continuous_of_affineMap (StdSimplex.affineMapMk (R.embed ∘ v))
 
 /-- The **straight simplex** with vertices `v`: the retraction of the affine simplex in `V` with
 vertices `embed (v i)`. -/
@@ -137,7 +140,7 @@ def straightSimplex (v : ι → X) : C(StdSimplex ℝ ι, X) where
 
 lemma straightSimplex_apply (v : ι → X) (t : StdSimplex ℝ ι) :
     R.straightSimplex v t = R.retraction ⟨R.affineSimplex v t, R.affineSimplex_mem v t⟩ :=
-  rfl
+  (rfl)
 
 /-- The vertices of the straight simplex with vertices `v` are the points `v i`. -/
 @[simp]
@@ -166,7 +169,7 @@ def cylinderSimplex (σ : C(StdSimplex ℝ ι, X)) (v : ι → X) (α : ι → F
 lemma cylinderSimplex_apply (σ : C(StdSimplex ℝ ι, X)) (v : ι → X) (α : ι → Fin 2)
     (t : StdSimplex ℝ ι) :
     R.cylinderSimplex σ v α t = R.retraction ⟨_, R.cylinderPoint_mem (σ t) v α t⟩ :=
-  rfl
+  (rfl)
 
 lemma cylinderSimplex_comp_map (σ : C(StdSimplex ℝ ι, X)) (v : ι → X) (α : ι → Fin 2)
     (f : κ → ι) :
@@ -205,8 +208,13 @@ def straighten : toSSet.obj (.of X) ⟶ toSSet.obj (.of X) where
     apply ((TopCat.of X).toSSetObjEquiv m).injective
     simp only [TypeCat.Fun.toFun_apply, types_comp_apply, TypeCat.ofHom_apply,
       Equiv.apply_symm_apply]
-    rw [TauCeti.TopCat.toSSetObjEquiv_map, TauCeti.TopCat.toSSetObjEquiv_map,
-      Equiv.apply_symm_apply]
+    have hmap (τ : (toSSet.obj (.of X)).obj n) :
+        (TopCat.of X).toSSetObjEquiv m ((toSSet.obj (.of X)).map θ τ) =
+          ((TopCat.of X).toSSetObjEquiv n τ).comp
+            ⟨StdSimplex.map θ.unop, StdSimplex.continuous_map ℝ _⟩ := by
+      ext t
+      exact TopCat.toSSetObjEquiv_naturality_apply θ.unop τ t
+    rw [hmap, hmap, Equiv.apply_symm_apply]
     ext t
     simp [R.straightSimplex_map, Function.comp_def]
 
@@ -246,8 +254,13 @@ def cylinderMap : toSSet.obj (.of X) ⊗ Δ[1] ⟶ toSSet.obj (.of X) where
       rfl
     simp only [TypeCat.Fun.toFun_apply, types_comp_apply, TypeCat.ofHom_apply,
       Equiv.apply_symm_apply]
-    rw [TauCeti.TopCat.toSSetObjEquiv_map, Equiv.apply_symm_apply, hσ, hα,
-      R.cylinderSimplex_comp_map]
+    have hmap (τ : (toSSet.obj (.of X)).obj n) :
+        (TopCat.of X).toSSetObjEquiv m ((toSSet.obj (.of X)).map θ τ) =
+          ((TopCat.of X).toSSetObjEquiv n τ).comp
+            ⟨StdSimplex.map θ.unop, StdSimplex.continuous_map ℝ _⟩ := by
+      ext t
+      exact TopCat.toSSetObjEquiv_naturality_apply θ.unop τ t
+    rw [hmap, Equiv.apply_symm_apply, hσ, hα, R.cylinderSimplex_comp_map]
     congr 1
     funext i
     simp
@@ -287,7 +300,7 @@ def straightenHomotopy : SSet.Homotopy (𝟙 (toSSet.obj (.of X))) R.straighten 
 
 @[simp]
 lemma straightenHomotopy_h : R.straightenHomotopy.h = R.cylinderMap :=
-  rfl
+  (rfl)
 
 /-! ### Naturality -/
 
@@ -300,8 +313,9 @@ omit [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] in
 /-- An affine map carrying `embed` to `embed` carries affine simplices to affine simplices. -/
 lemma map_affineSimplex (hembed : ∀ x, L (R.embed x) = R'.embed (g x)) (v : ι → X)
     (t : StdSimplex ℝ ι) : L (R.affineSimplex v t) = R'.affineSimplex (g ∘ v) t := by
-  have ht : ∑ i ∈ Finset.univ, t.weights i = 1 := by simp
-  simp only [affineSimplex, Function.comp_apply, ← hembed]
+  have ht : ∑ i ∈ t.weights.support, t.weights i = 1 := t.total
+  simp only [affineSimplex, StdSimplex.affineMapMk_apply, iConvexComb_eq_sum,
+    Finsupp.sum, Function.comp_apply, ← hembed]
   rw [← Finset.affineCombination_eq_linear_combination _ _ _ ht,
     Finset.map_affineCombination _ _ _ ht, Finset.affineCombination_eq_linear_combination _ _ _ ht]
   rfl
