@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
 -- Unfold the coefficient complex privately, to include the filtration stages into it.
 import all TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Coefficients
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
+import TauCeti.Algebra.Homology.Subobject
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -299,7 +300,7 @@ theorem mem_range_indexSubobject_arrow_f_iff (p n : ℤ)
     (f : (m.coefficientCochainComplex hM).X n) :
     f ∈ LinearMap.range ((m.indexSubobject hM hm p).arrow.f n).hom ↔
       ∀ x, p < ind x → (m.coefficientCochainComplexXEquiv hM n f : P →₀ M) x = 0 := by
-  rw [indexSubobject_eq_mk, range_subobjectMk_arrow_f_hom]
+  rw [indexSubobject_eq_mk, Subobject.range_mk_arrow_f_hom]
   exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
     mem_rowFiniteIndexGrading_iff.trans <| and_iff_left <|
       (mem_rowFiniteTotalGrading_iff ℳ ind).mp (m.coefficientCochainComplexXEquiv hM n f).2

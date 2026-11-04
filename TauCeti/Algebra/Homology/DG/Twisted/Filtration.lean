@@ -11,6 +11,7 @@ import all TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.CategoryTheory.Subobject.Lattice
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
+import TauCeti.Algebra.Homology.Subobject
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
@@ -533,7 +534,7 @@ theorem TwistingCocycle.mem_range_twistedIndexSubobject_arrow_f_iff (p n : ℤ)
     f ∈ LinearMap.range ((m.twistedIndexSubobject hM p).arrow.f n).hom ↔
       ∀ x, p < ind x →
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
-  rw [m.twistedIndexSubobject_eq_mk, range_subobjectMk_arrow_f_hom]
+  rw [m.twistedIndexSubobject_eq_mk, Subobject.range_mk_arrow_f_hom]
   exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
     mem_twistedIndexGrading_iff.trans <| and_iff_left <| mem_twistedTotalGrading_iff.mp
       (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f).property
