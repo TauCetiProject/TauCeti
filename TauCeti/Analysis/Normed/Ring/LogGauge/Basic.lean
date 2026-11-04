@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.RingTheory.Valuation.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The logarithmic gauge of a multiplicative pseudo-uniformiser
@@ -49,6 +48,8 @@ Mathlib's `Padic.addValuation`, see `TauCeti.NumberTheory.Padics.LogGauge`.
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_zpow_mul`: `v_ϖ(ϖ ^ n * x) = n + v_ϖ(x)`.
 * `TauCeti.NormedRing.PseudoUniformizer.min_le_logGauge_add`: the ultrametric inequality.
 * `TauCeti.NormedRing.PseudoUniformizer.logGauge_mul`: additivity for a multiplicative norm.
+* `TauCeti.NormedRing.PseudoUniformizer.logGauge_eq_map_mul`: changing the pseudo-uniformiser
+  from `ϖ'` to `ϖ` multiplies the logarithmic gauge by `v_ϖ(ϖ')`.
 
 ## References
 
@@ -142,6 +143,17 @@ theorem logGauge_nonneg_iff : 0 ≤ ϖ.logGauge x ↔ ‖x‖ ≤ 1 := by
 /-- The logarithmic gauge is positive exactly on the open unit ball. -/
 theorem logGauge_pos_iff : 0 < ϖ.logGauge x ↔ ‖x‖ < 1 := by
   simpa using coe_lt_logGauge_iff (ϖ := ϖ) (x := x) (t := 0)
+
+/-- **Changing the pseudo-uniformiser** rescales the logarithmic gauge: if `v_ϖ(ϖ') = t`, then
+`v_ϖ(x) = t · v_ϖ'(x)`. -/
+theorem logGauge_eq_map_mul (ϖ' : PseudoUniformizer R) {t : ℝ}
+    (ht : ϖ.logGauge (ϖ'.unit : R) = t) (x : R) :
+    ϖ.logGauge x = (ϖ'.logGauge x).map (t * ·) := by
+  by_cases hx : ‖x‖ = 0
+  · simp [logGauge_of_norm_eq_zero hx]
+  rw [logGauge_of_norm_ne_zero ϖ'.norm_pos.ne', WithTop.coe_inj] at ht
+  rw [logGauge_of_norm_ne_zero hx, logGauge_of_norm_ne_zero hx, WithTop.map_coe, ← ht,
+    Real.mul_logb ϖ'.norm_pos.ne' ϖ'.norm_lt_one.ne (neg_one_lt_zero.trans ϖ'.norm_pos).ne']
 
 variable (ϖ)
 
