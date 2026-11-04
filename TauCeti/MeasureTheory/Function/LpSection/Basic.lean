@@ -193,24 +193,29 @@ theorem coeFn_mk (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fu
     ∀ᵐ x ∂μ, mk s hs hsp x = s x :=
   mk_eq_mk_iff.1 (mk_coeFn (mk s hs hsp))
 
+@[simp]
 theorem mk_add (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun x ↦ ‖s x‖) p μ)
     (ht : AEStronglyMeasurableSection 𝕜 F μ t) (htp : MemLp (fun x ↦ ‖t x‖) p μ) :
     mk s hs hsp + mk t ht htp =
       mk (fun x ↦ s x + t x) (hs.add ht) (memLp_norm_add hs hsp ht htp) :=
   rfl
 
+@[simp]
 theorem mk_smul (c : 𝕜) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
     c • mk s hs hsp = mk (fun x ↦ c • s x) (hs.const_smul c) (memLp_norm_smul c hs hsp) :=
   rfl
 
+@[simp]
 theorem mk_zero : mk (0 : ∀ x, E x) (.zero 𝕜 F E μ) (by simp) = (0 : LpSection 𝕜 F E p μ) :=
   rfl
 
+@[simp]
 theorem mk_neg (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
     -mk s hs hsp = mk (fun x ↦ -s x) hs.neg (by simpa only [norm_neg] using hsp) :=
   rfl
 
+@[simp]
 theorem mk_sub (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun x ↦ ‖s x‖) p μ)
     (ht : AEStronglyMeasurableSection 𝕜 F μ t) (htp : MemLp (fun x ↦ ‖t x‖) p μ) :
     mk s hs hsp - mk t ht htp =
@@ -222,16 +227,14 @@ theorem coeFn_add : ∀ᵐ x ∂μ, (f + g) x = f x + g x := by
       (f.aestronglyMeasurableSection.add g.aestronglyMeasurableSection)
       (memLp_norm_add f.aestronglyMeasurableSection f.memLp_norm g.aestronglyMeasurableSection
         g.memLp_norm) := by
-    conv_lhs => rw [← mk_coeFn f, ← mk_coeFn g]
-    rfl
+    conv_lhs => rw [← mk_coeFn f, ← mk_coeFn g, mk_add]
   rw [e]
   exact coeFn_mk _ _
 
 theorem coeFn_smul (c : 𝕜) : ∀ᵐ x ∂μ, (c • f) x = c • f x := by
   have e : c • f = mk (fun x ↦ c • f x) (f.aestronglyMeasurableSection.const_smul c)
       (memLp_norm_smul c f.aestronglyMeasurableSection f.memLp_norm) := by
-    conv_lhs => rw [← mk_coeFn f]
-    rfl
+    conv_lhs => rw [← mk_coeFn f, mk_smul]
   rw [e]
   exact coeFn_mk _ _
 
@@ -242,8 +245,7 @@ theorem coeFn_zero : ∀ᵐ x ∂μ, (0 : LpSection 𝕜 F E p μ) x = 0 := by
 theorem coeFn_neg : ∀ᵐ x ∂μ, (-f) x = -f x := by
   have e : -f = mk (fun x ↦ -f x) f.aestronglyMeasurableSection.neg
       (by simpa only [norm_neg] using f.memLp_norm) := by
-    conv_lhs => rw [← mk_coeFn f]
-    rfl
+    conv_lhs => rw [← mk_coeFn f, mk_neg]
   rw [e]
   exact coeFn_mk _ _
 
@@ -252,8 +254,7 @@ theorem coeFn_sub : ∀ᵐ x ∂μ, (f - g) x = f x - g x := by
       (f.aestronglyMeasurableSection.sub g.aestronglyMeasurableSection)
       (memLp_norm_sub f.aestronglyMeasurableSection f.memLp_norm g.aestronglyMeasurableSection
         g.memLp_norm) := by
-    conv_lhs => rw [← mk_coeFn f, ← mk_coeFn g]
-    rfl
+    conv_lhs => rw [← mk_coeFn f, ← mk_coeFn g, mk_sub]
   rw [e]
   exact coeFn_mk _ _
 

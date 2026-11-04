@@ -26,8 +26,9 @@ situations.
   `Lᵖ(E, μ|_U) ≃L[𝕜] Lp F p μ|_U` on any measurable `U ⊆ e.baseSet` on which the fibre norms are
   uniformly comparable to the norm of `F`, that is `‖e.symm x v‖ ≤ C ‖v‖` and
   `‖v‖ ≤ C' ‖e.symm x v‖` for `x ∈ U` (`Bundle.Trivialization.lpSectionEquivOfBounds`). Such bounds
-  are not available on the whole chart in general: in the frame `(e₁, 2e₂)` of a rank-two bundle
-  with its standard metric the coordinate map multiplies the norm of `e₂` by `1 / 2`.
+  are not available on the whole chart in general: for the trivial line bundle over `(0, 1)` with
+  its standard metric, read in the chart whose frame at `x` is `x • 1`, the lower bound forces
+  `C' ≥ 1 / x` for every `x`.
 -/
 
 public section
