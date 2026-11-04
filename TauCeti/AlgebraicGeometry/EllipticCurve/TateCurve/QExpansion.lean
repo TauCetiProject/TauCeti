@@ -504,21 +504,19 @@ theorem coe_integralModularFormEquivIntegralAtCusps (k : ℕ)
       integralModularFormToModularForm k f :=
   (rfl)
 
+private theorem ofNat_mul_eq_smul (R : Type*) {A : Type*} [Semiring R] [NonAssocSemiring A]
+    [Module R A] (n : ℕ) [n.AtLeastTwo] (x : A) :
+    (ofNat(n) : A) * x = (ofNat(n) : R) • x := by
+  simp [ofNat_smul_eq_nsmul]
+
 private theorem aeval_E₄_neg_E₆_discriminant_relation :
     MvPolynomial.aeval (R := ℤ)
       ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
         DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
         DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]
       (MvPolynomial.X 0 ^ 3 - MvPolynomial.X 1 ^ 2 - 1728 * MvPolynomial.X 2) = 0 := by
-  refine TauCeti.ModularForm.qExpansionRingHom_injective one_pos one_mem_strictPeriods_SL ?_
-  simp only [map_sub, map_pow, map_mul, map_ofNat, MvPolynomial.aeval_X, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, map_zero,
-    ModularForm.qExpansionRingHom_apply, FunLike.coe_neg,
-    ModularForm.qExpansion_neg one_pos one_mem_strictPeriods_SL, neg_sq,
-    ModularFormClass.coe_modularForm, CuspForm.coe_discriminant,
-    TauCeti.ModularForm.qExpansion_discriminant_eq_E₄_cube_sub_E₆_sq]
-  ext n
-  simp [coeff_ofNat_mul]
+  simp [discriminant_eq_E₄_cube_sub_E₆_sq_graded, ofNat_mul_eq_smul ℂ,
+    smul_inv_smul₀ (by norm_num : (1728 : ℂ) ≠ 0)]
 
 /-- The canonical `ℤ`-algebra homomorphism from `ℤ[c₄, c₆, Δ]` to the graded ring
 `⨁ k : ℤ, ModularForm 𝒮ℒ k` sending `c₄ ↦ E₄`, `c₆ ↦ -E₆` and `Δ ↦ Δ`, constructed directly from
@@ -704,20 +702,19 @@ private theorem modularFormsToComplexAdjoin_discriminant :
     modularFormsToComplexAdjoin
       (DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)) =
       Algebra.TensorProduct.includeRight ΔAdjoin := by
-  let B := Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}
-  have hrelA : c₄Adjoin ^ 3 - (-c₆Adjoin) ^ 2 = 1728 * ΔAdjoin := by
+  have hrel : c₄Adjoin ^ 3 - (-c₆Adjoin) ^ 2 = (1728 : ℕ) • ΔAdjoin := by
     ext1
-    simpa [c₄Adjoin, c₆Adjoin, ΔAdjoin,
-      (B.val_apply 1728).symm.trans (map_ofNat B.val 1728)] using Universal.curve.c_relation.symm
-  have h1728 : (1728 : ℂ ⊗[ℤ] B) = (1728 : ℂ) ⊗ₜ[ℤ] (1 : B) := by
-    rw [← map_ofNat (algebraMap ℂ (ℂ ⊗[ℤ] B)) 1728, Algebra.TensorProduct.algebraMap_apply,
-      map_ofNat]
-  rw [discriminant_eq_E₄_cube_sub_E₆_sq_graded, map_smul, map_sub, map_pow, map_pow,
-    modularFormsToComplexAdjoin_E₄, modularFormsToComplexAdjoin_E₆,
-    ← map_pow, ← map_pow, ← map_sub, hrelA, map_mul, map_ofNat,
-    h1728, Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.tmul_mul_tmul,
-    TensorProduct.smul_tmul', smul_eq_mul, mul_one, one_mul]
-  norm_num
+    simpa [c₄Adjoin, c₆Adjoin, ΔAdjoin] using Universal.curve.c_relation.symm
+  -- Keep `includeRight (-c₆Adjoin)` unexpanded so cancellation stays at the `AlgHom` level.
+  have hrelT :
+      (Algebra.TensorProduct.includeRight c₄Adjoin : ℂ ⊗[ℤ] _) ^ 3 -
+        Algebra.TensorProduct.includeRight (-c₆Adjoin) ^ 2 =
+        1728 * Algebra.TensorProduct.includeRight ΔAdjoin := by
+    simpa [-Algebra.TensorProduct.includeRight_apply, -map_neg, map_ofNat] using
+      congrArg (Algebra.TensorProduct.includeRight (R := ℤ) (A := ℂ)) hrel
+  simp [-Algebra.TensorProduct.includeRight_apply, -map_neg,
+    discriminant_eq_E₄_cube_sub_E₆_sq_graded, modularFormsToComplexAdjoin_E₄,
+    modularFormsToComplexAdjoin_E₆, hrelT, ofNat_mul_eq_smul ℂ]
 
 private theorem complexAdjoinToModularForms_comp_modularFormsToComplexAdjoin :
     complexAdjoinToModularForms.comp modularFormsToComplexAdjoin = AlgHom.id ℂ _ := by
