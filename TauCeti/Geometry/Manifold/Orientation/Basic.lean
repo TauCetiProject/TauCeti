@@ -15,6 +15,10 @@ A manifold orientation is a source-indexed orientation lift modulo simultaneous 
 model orientation and all chart signs. It induces an actual, locally constant orientation of the
 tangent bundle. This definition includes boundary and corner points.
 Orientability records existence; every model with corners is orientable.
+
+Reindexing along an equivalence of index types (`TauCeti.Manifold.Orientation.reindex`) reindexes
+every tangent orientation. It compares orientations indexed by `Fin (m + n)` and `Fin (n + m)`,
+such as the products of two oriented manifolds taken in either order.
 -/
 
 public section
@@ -105,6 +109,16 @@ instance : Neg (Orientation I M ι) := ⟨Orientation.neg⟩
 @[simp]
 theorem neg_mk (o : OrientationLift I M ι) : -(mk o) = mk (-o) := (rfl)
 
+/-- Reindex a manifold orientation along an equivalence of index types. -/
+def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι) : Orientation I M ι' :=
+  lift (fun l ↦ mk (l.reindex e)) (fun l ↦ by
+    rw [OrientationLift.reindex_flip]
+    exact (mk_eq_mk_iff _ _).mpr (.inr rfl)) o
+
+@[simp]
+theorem reindex_mk {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
+    (mk o).reindex e = mk (o.reindex e) := (rfl)
+
 variable [IsManifold I 1 M]
 
 /-- The induced orientation of the tangent bundle. -/
@@ -161,6 +175,15 @@ theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
   simp only [orientationAt, Orientation.toVectorBundleOrientation_neg,
     TauCeti.VectorBundleOrientation.neg_apply]
 
+/-- Reindexing a manifold orientation reindexes each of its tangent orientations. -/
+@[simp]
+theorem orientationAt_reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι)
+    (x : M) :
+    orientationAt (o.reindex e) x =
+      _root_.Orientation.reindex ℝ (TangentSpace I x) e (orientationAt o x) := by
+  induction o using Orientation.inductionOn with | h l =>
+    rw [reindex_mk, orientationAt_mk, orientationAt_mk, OrientationLift.orientationAt_reindex]
+
 /-- A manifold orientation is determined by its actual tangent orientations. -/
 @[ext]
 theorem ext {o o' : Orientation I M ι}
@@ -196,6 +219,12 @@ protected theorem neg_neg (o : Orientation I M ι) : - -o = o := by
 
 instance : InvolutiveNeg (Orientation I M ι) where
   neg_neg := Orientation.neg_neg
+
+@[simp]
+theorem reindex_neg {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι) :
+    (-o).reindex e = -o.reindex e :=
+  ext fun x ↦ by
+    simp only [orientationAt_reindex, orientationAt_neg, _root_.Orientation.reindex_neg]
 
 /-- Construct a manifold orientation from a locally constant orientation of its tangent bundle.
 The choice of model orientation affects only its representative lift. -/
