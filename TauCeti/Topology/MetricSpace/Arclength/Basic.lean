@@ -77,6 +77,15 @@ theorem naturalParameterization_toReal_eVariationOn (hγ : BoundedVariationOn γ
     hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab)
       (right_mem_Icc.2 hab)
 
+/-- If a curve of bounded variation on `[a, b]` (`a ≤ b`) has equal endpoint values `γ a = γ b`,
+then its natural parameterization takes equal values at `0` and at the length of the curve. -/
+theorem naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+    (hγ : BoundedVariationOn γ (Icc a b)) (hab : a ≤ b) (hclosed : γ a = γ b) :
+    naturalParameterization γ (Icc a b) a 0 =
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
+  (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab)).trans
+    (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
+
 /-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
 length interval. -/
 theorem image_variationOnFromTo_Icc (hγ : BoundedVariationOn γ (Icc a b))
