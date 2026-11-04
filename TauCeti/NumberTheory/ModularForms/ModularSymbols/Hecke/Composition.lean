@@ -167,7 +167,7 @@ theorem heckeSymbol_heckeSymbol_mk (x : degreeZero R ⊗[R] homogeneousSubmodule
   refine Finset.sum_congr rfl fun u _ ↦ ?_
   rw [heckeSymbol_mk]
   refine Finset.sum_congr rfl fun v _ ↦ ?_
-  rw [← Submonoid.mk_mul_mk, map_mul, Module.End.mul_apply]
+  rw [← Submonoid.mk_mul_mk, map_mul, mul_apply_eq_comp]
 
 variable {ι κ : Type*} (a : ι → GL (Fin 2) ℚ) (b : κ → GL (Fin 2) ℚ)
   (hcover₁ : doubleCoset (D₁.out : GL (Fin 2) ℚ) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) =
@@ -200,7 +200,7 @@ theorem heckeSymbol_heckeSymbol_mk_eq_sum_of_rightCosets [Fintype ι] [Fintype �
   rw [heckeSymbol_mk_eq_sum_of_rightCosets Γ₁ Γ₂ D₁ hD₁ a (mem_intEntries_of_cover 2 hD₁ hcover₁)
     hcover₁ hinj₁]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← Submonoid.mk_mul_mk, map_mul, Module.End.mul_apply]
+  rw [← Submonoid.mk_mul_mk, map_mul, mul_apply_eq_comp]
 
 variable [Finite ι] [Finite κ] (D₃ : HeckeCoset Δ (Γ₁.map (mapGL ℚ)) (Γ₃.map (mapGL ℚ)))
   [Finite (DecompQuotient (Γ₃.map (mapGL ℚ)) (Γ₁.map (mapGL ℚ)) (D₃.out : GL (Fin 2) ℚ)⁻¹)]

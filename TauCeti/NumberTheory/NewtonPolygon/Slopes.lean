@@ -126,7 +126,7 @@ theorem mem_newtonSlopes {m : ℝ} :
 variable {f v}
 
 /-- Transport of finite slopes along a matching of finite unit edges. -/
-private theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
+theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
     {φ : ℕ → ℕ} (hφ : Set.InjOn φ (finiteEdges (f.newtonPolygon v))) {t : ℝ → ℝ}
     (hedges : finiteEdges (g.newtonPolygon w) = φ '' finiteEdges (f.newtonPolygon v))
     (hslope : ∀ n ∈ finiteEdges (f.newtonPolygon v),
@@ -201,7 +201,7 @@ theorem count_newtonSlopes_of_isFiniteFace {σ : ℝ} {l u : ℕ}
 variable (f v) in
 /-- The number of finite slopes satisfying a predicate is the number of finite unit edges whose
 slope satisfies it. -/
-private theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
+theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
     ((f.newtonSlopes v).filter p).card =
       {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ p (unitSlope (f.newtonPolygon v) i)}.ncard := by
   rw [newtonSlopes_def, Multiset.filter_map, Multiset.card_map, ← Finset.filter_val,
@@ -278,7 +278,7 @@ theorem den_dvd_card_newtonSlopes (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = 
   rcases eq_or_ne f 0 with rfl | hf₀
   · simp [card_newtonSlopes (0 : R[X]) v hv]
   obtain ⟨a, ha⟩ := hint _ (leadingCoeff_ne_zero.mpr hf₀)
-  obtain ⟨b, hb⟩ := hint _ (trailingCoeff_nonzero_iff_nonzero.mpr hf₀)
+  obtain ⟨b, hb⟩ := hint _ (Polynomial.trailingCoeff_ne_zero.mpr hf₀)
   have hsum := sum_newtonSlopes f v hv
   rw [Multiset.eq_replicate_card.mpr hf, Multiset.sum_replicate, nsmul_eq_mul,
     ha, hb, WithTop.untop₀_coe, WithTop.untop₀_coe] at hsum

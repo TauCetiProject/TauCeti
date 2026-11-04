@@ -79,6 +79,14 @@ theorem continuousOn_inv_log_pow (n : ℕ) :
     Real.continuousOn_log.mono fun t ht ↦ ne_of_gt (lt_trans one_pos ht)
   exact (hlog.pow n).inv₀ fun t ht ↦ ne_of_gt (pow_pos (Real.log_pos ht) n)
 
+/-- The weight `t⁻¹ / log t ^ n` of integrals against powers of `1 / log` is continuous to the
+right of `t = 1`. -/
+theorem continuousOn_inv_div_log_pow (n : ℕ) :
+    ContinuousOn (fun t : ℝ ↦ t⁻¹ / Real.log t ^ n) (Ioi 1) := by
+  simpa only [div_eq_mul_inv] using
+    ContinuousOn.fun_mul (continuousOn_inv₀.mono fun t (ht : t ∈ Ioi 1) ↦
+      mem_compl_singleton_iff.mpr (zero_lt_one.trans ht).ne') (continuousOn_inv_log_pow n)
+
 /-- Reciprocal powers of the logarithm are interval integrable on any interval to the right
 of `1`. -/
 theorem intervalIntegrable_inv_log_pow (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :

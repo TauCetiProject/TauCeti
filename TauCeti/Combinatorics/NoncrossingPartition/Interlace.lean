@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Prod.Lex.Basic
+public import TauCeti.Combinatorics.NoncrossingPartition.Comap
 public import TauCeti.Combinatorics.NoncrossingPartition.Kreweras
 
 /-!
@@ -30,11 +31,25 @@ These partitions index the moment–cumulant expansion of the alternating produc
 mix the two families are exactly the pairs of a noncrossing partition `π` of the `a`-letters and a
 noncrossing partition of the `b`-letters below the Kreweras complement of `π`.
 
+For the free cumulants of these products, one also groups each position with the bar after it.
+For noncrossing `P` and `Q ≤ K(P)`, the join of `P.interlace Q` with the partition
+`interlacePairs s` into the pairs `{(x, false), (x, true)}` in the lattice of noncrossing partitions
+of the interlaced positions is the partition into one part exactly when `Q = K(P)`
+(`TauCeti.NoncrossingPartition.sup_interlacePairs_eq_top_iff`). If `Q = K(P)`, an interval part of
+a coarser noncrossing partition other than the one-part partition would give a nonempty interval of
+`s` other than `s` itself that is a union of parts of both `P` and `K(P)`, and there is no such
+interval (`Finpartition.exists_mem_part_kreweras_notMem`). If `Q < K(P)`, a part of `K(P)` split by
+`Q` yields an interval `(c, c']` that is a union of parts of both `P` and `Q`
+(`Finpartition.exists_lt_forall_mem_Ioc_of_lt_kreweras`), and splitting off its interlaced
+positions gives a coarser noncrossing partition with two parts.
+
 ## Main definitions
 
 * `Finset.interlace s` — the interlaced positions of `s`, a finite subset of `α ×ₗ Bool`.
 * `Finpartition.interlace P Q` — the partition of the interlaced positions of `s` with the parts of
   `P` on the positions and the parts of `Q` on the bars.
+* `TauCeti.NoncrossingPartition.interlacePairs s` — the partition of the interlaced positions of `s`
+  into the pairs `{(x, false), (x, true)}`.
 
 ## Main results
 
@@ -47,6 +62,9 @@ noncrossing partition of the `b`-letters below the Kreweras complement of `π`.
   and its image consists of the partitions none of whose parts meets both positions and bars.
 * `Finpartition.isNoncrossing_interlace_iff` — `P.interlace Q` is noncrossing exactly when `P` and
   `Q` are noncrossing and `Q ≤ P.kreweras`.
+* `TauCeti.NoncrossingPartition.sup_interlacePairs_eq_top_iff` — for noncrossing `P` and `Q ≤ K(P)`,
+  the join of `P.interlace Q` with the pairs `{(x, false), (x, true)}` is the partition into one
+  part exactly when `Q = K(P)`.
 
 ## References
 
@@ -79,6 +97,23 @@ theorem mem_interlace {s : Finset α} {p : α ×ₗ Bool} : p ∈ s.interlace �
 theorem toLex_mem_interlace {s : Finset α} {x : α} {b : Bool} :
     toLex (x, b) ∈ s.interlace ↔ x ∈ s :=
   mem_interlace
+
+/-- The interlaced positions of `s` over a position `x ∈ s` are the position `(x, false)` and the
+bar `(x, true)`. -/
+theorem filter_interlace_fst_eq [DecidableEq α] {s : Finset α} {x : α} (hx : x ∈ s) :
+    {p ∈ s.interlace | (ofLex p).1 = x} = {toLex (x, false), toLex (x, true)} := by
+  ext p
+  obtain ⟨⟨y, c⟩, rfl⟩ := toLex.surjective p
+  simp only [mem_filter, mem_interlace, ofLex_toLex, mem_insert, mem_singleton]
+  cases c <;> simp +contextual [hx]
+
+/-- The first coordinates of the interlaced positions of `s` are the positions of `s`. -/
+@[simp]
+theorem image_interlace_fst [DecidableEq α] {s : Finset α} :
+    s.interlace.image (fun p => (ofLex p).1) = s := by
+  ext x
+  simp only [mem_image, mem_interlace]
+  exact ⟨fun ⟨p, hp, hpx⟩ => hpx ▸ hp, fun hx => ⟨toLex (x, false), hx, rfl⟩⟩
 
 end Finset
 
@@ -340,3 +375,172 @@ theorem isNoncrossing_interlace_iff :
 end Noncrossing
 
 end Finpartition
+
+namespace TauCeti.NoncrossingPartition
+
+variable {α : Type*} [LinearOrder α] {s : Finset α}
+
+open Finpartition
+
+/-- The partition of the interlaced positions of `s` into the pairs `{(x, false), (x, true)}` of a
+position and the bar after it: the fibres of the first coordinate. -/
+def interlacePairs (s : Finset α) : NoncrossingPartition s.interlace :=
+  comap (s := s.interlace) (f := fun p => (ofLex p).1) (Prod.Lex.monotone_fst_ofLex.monotoneOn _) ⊥
+
+/-- `interlacePairs s` is the pullback of the finest partition of `s` along the first coordinate,
+whichever proof of monotonicity is used. -/
+theorem comap_fst_bot_eq_interlacePairs
+    (hf : MonotoneOn (fun p : α ×ₗ Bool => (ofLex p).1) s.interlace) :
+    comap hf ⊥ = interlacePairs s := by
+  rw [interlacePairs]
+
+/-- The part of `interlacePairs s` through `(x, b)` is the pair `{(x, false), (x, true)}`. -/
+@[simp]
+theorem part_interlacePairs {x : α} (hx : x ∈ s) (b : Bool) :
+    (interlacePairs s : Finpartition s.interlace).part (toLex (x, b)) =
+      {toLex (x, false), toLex (x, true)} := by
+  rw [interlacePairs, coe_comap, coe_bot, part_comap_bot (toLex_mem_interlace.2 hx), ofLex_toLex,
+    filter_interlace_fst_eq hx]
+
+/-- A noncrossing partition of the interlaced positions coarser than the pairs
+`{(x, false), (x, true)}` joins each position `(x, false)` with the bar `(x, true)`. -/
+private theorem toLex_mem_part_of_interlacePairs_le {ρ : NoncrossingPartition s.interlace}
+    (hρ : interlacePairs s ≤ ρ) {x : α} (hx : x ∈ s) (b c : Bool) :
+    toLex (x, c) ∈ ρ.1.part (toLex (x, b)) := by
+  refine part_mono (Subtype.coe_le_coe.2 hρ) _ ?_
+  rw [part_interlacePairs hx]
+  cases c <;> simp
+
+/-- For positions `c < c'` of `s`, splitting the interlaced positions over `(c, c']` off the others
+is a noncrossing partition: two interlaced positions lie in a common part exactly when their first
+coordinates both lie in `(c, c']` or both lie outside it. -/
+private theorem exists_forall_toLex_mem_part_iff {c c' : α} (hc' : c' ∈ s) (hcc' : c < c') :
+    ∃ ρ : NoncrossingPartition s.interlace, ∀ x ∈ s, ∀ y ∈ s, ∀ b b' : Bool,
+      toLex (y, b') ∈ ρ.1.part (toLex (x, b)) ↔ (c < y ∧ y ≤ c' ↔ c < x ∧ x ≤ c') := by
+  set T : Finset (α ×ₗ Bool) := {p ∈ s.interlace | c < (ofLex p).1 ∧ (ofLex p).1 ≤ c'}
+  have hT {x : α} (hx : x ∈ s) (b : Bool) : toLex (x, b) ∈ T ↔ c < x ∧ x ≤ c' := by
+    simp [T, hx]
+  have hTconv : ∀ p ∈ T, ∀ r ∈ T, ∀ q ∈ s.interlace, p < q → q < r → q ∈ T :=
+    fun p hp r hr q hq hpq hqr => by
+      simp only [T, mem_filter] at hp hr ⊢
+      exact ⟨hq, hp.2.1.trans_le (Prod.Lex.monotone_fst_ofLex hpq.le),
+        (Prod.Lex.monotone_fst_ofLex hqr.le).trans hr.2.2⟩
+  have hTne : T.Nonempty := ⟨_, (hT hc' false).2 ⟨hcc', le_rfl⟩⟩
+  refine ⟨⟨splitPartition _ T hTne (filter_subset _ _), isNoncrossing_splitPartition hTconv⟩,
+    fun x hx y hy b b' => ?_⟩
+  by_cases hxT : c < x ∧ x ≤ c'
+  · rw [part_splitPartition_of_mem ((hT hx b).2 hxT), hT hy]
+    exact ⟨fun h => iff_of_true h hxT, fun h => h.2 hxT⟩
+  · rw [part_splitPartition_of_notMem (toLex_mem_interlace.2 hx) (mt (hT hx b).1 hxT),
+      mem_sdiff, hT hy]
+    exact ⟨fun h => iff_of_false h.2 hxT, fun h => ⟨toLex_mem_interlace.2 hy, mt h.1 hxT⟩⟩
+
+/-- If `(c, c']` is a union of parts of `P` and of `Q` for positions `c < c'` of `s`, then the join
+of `P.interlace Q` with the pairs `{(x, false), (x, true)}` is not the partition into one part: it
+is finer than the partition splitting off the interlaced positions over `(c, c']`. -/
+private theorem sup_interlacePairs_ne_top {P Q : Finpartition s}
+    {σ : NoncrossingPartition s.interlace} (hσ : (σ : Finpartition s.interlace) = P.interlace Q)
+    {c c' : α} (hc : c ∈ s) (hc' : c' ∈ s) (hcc' : c < c')
+    (hPc : ∀ a, ∀ b ∈ P.part a, c < a → a ≤ c' → c < b ∧ b ≤ c')
+    (hQc : ∀ a, ∀ b ∈ Q.part a, c < a → a ≤ c' → c < b ∧ b ≤ c') :
+    σ ⊔ interlacePairs s ≠ ⊤ := by
+  obtain ⟨ρ, hρ⟩ := exists_forall_toLex_mem_part_iff hc' hcc'
+  have hle : σ ⊔ interlacePairs s ≤ ρ := by
+    refine sup_le (le_iff_forall_part_subset.2 fun p q hq => ?_)
+      (le_iff_forall_part_subset.2 fun p q hq => ?_)
+    · have hp : p ∈ s.interlace := σ.1.part_nonempty.1 ⟨q, hq⟩
+      obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
+      obtain ⟨⟨y, b'⟩, rfl⟩ := toLex.surjective q
+      have hx := toLex_mem_interlace.1 hp
+      obtain ⟨rfl, hy⟩ := (mem_part_interlace_iff hx).1 (hσ ▸ hq)
+      have hc (R : Finpartition s)
+          (hR : ∀ a, ∀ b ∈ R.part a, c < a → a ≤ c' → c < b ∧ b ≤ c') (hy : y ∈ R.part x) :
+          toLex (y, b') ∈ ρ.1.part (toLex (x, b')) :=
+        (hρ x hx y (R.part_subset x hy) _ _).2
+          ⟨fun h => hR y x (mem_part_comm.1 hy) h.1 h.2, fun h => hR x y hy h.1 h.2⟩
+      cases b'
+      exacts [hc P hPc hy, hc Q hQc hy]
+    · have hp : p ∈ s.interlace := (Finpartition.part_nonempty _).1 ⟨q, hq⟩
+      obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
+      have hx := toLex_mem_interlace.1 hp
+      rw [part_interlacePairs hx, mem_insert, mem_singleton] at hq
+      rcases hq with rfl | rfl <;> exact (hρ x hx x hx b _).2 Iff.rfl
+  -- But `ρ` is not the partition into one part: it separates `c` from `c'`.
+  intro htop
+  have hρtop : ρ = ⊤ := top_le_iff.1 (htop ▸ hle)
+  have hmem := (hρ c hc c' hc' false false).1 <| by
+    rw [hρtop, coe_top, part_top (toLex_mem_interlace.2 hc)]
+    exact toLex_mem_interlace.2 hc'
+  exact lt_irrefl c (hmem.1 ⟨hcc', le_rfl⟩).1
+
+/-- A noncrossing partition `ρ` of the interlaced positions, coarser than the pairs
+`{(x, false), (x, true)}` and other than the partition into one part, has an interval part that
+yields a nonempty interval `T` of `s` other than `s` itself: the positions `x` with `(x, false)`,
+equivalently `(x, true)`, in that part. -/
+private theorem exists_interval_of_interlacePairs_le {ρ : NoncrossingPartition s.interlace}
+    (hρ : interlacePairs s ≤ ρ) (hne : ρ ≠ ⊤) :
+    ∃ T ⊆ s, (∀ x ∈ T, ∀ z ∈ T, ∀ y ∈ s, x ≤ y → y ≤ z → y ∈ T) ∧ T.Nonempty ∧
+      (∃ x ∈ s, x ∉ T) ∧ ∀ x ∈ T, ∀ y ∈ s, ∀ b b' : Bool,
+        toLex (y, b') ∈ ρ.1.part (toLex (x, b)) → y ∈ T := by
+  rcases s.interlace.eq_empty_or_nonempty with hI | hI
+  · exact absurd ((eq_bot_of_eq_empty hI _).trans (eq_bot_of_eq_empty hI _).symm) hne
+  obtain ⟨B, hB, hBint⟩ := ρ.2.exists_interval_mem_parts hI
+  have hBρ {p : α ×ₗ Bool} (hp : p ∈ B) : ρ.1.part p = B := ρ.1.part_eq_of_mem hB hp
+  set T := {x ∈ s | toLex (x, false) ∈ B}
+  have hTB {x : α} (hx : x ∈ s) (b : Bool) : x ∈ T ↔ toLex (x, b) ∈ B := by
+    simp only [T, mem_filter, hx, true_and]
+    exact ⟨fun h => hBρ h ▸ toLex_mem_part_of_interlacePairs_le hρ hx false b,
+      fun h => hBρ h ▸ toLex_mem_part_of_interlacePairs_le hρ hx b false⟩
+  refine ⟨T, filter_subset _ s, fun x hx z hz y hy hxy hyz => ?_, ?_, ?_,
+    fun x hx y hy b b' h => ?_⟩
+  · obtain ⟨hxs, hxB⟩ := mem_filter.1 hx
+    obtain ⟨hzs, hzB⟩ := mem_filter.1 hz
+    refine mem_filter.2 ⟨hy, ?_⟩
+    rcases hxy.lt_or_eq with hxy | rfl
+    · rcases hyz.lt_or_eq with hyz | rfl
+      · exact hBint _ hxB _ hzB _ (toLex_mem_interlace.2 hy)
+          (Prod.Lex.toLex_lt_toLex.2 (Or.inl hxy)) (Prod.Lex.toLex_lt_toLex.2 (Or.inl hyz))
+      · exact hzB
+    · exact hxB
+  · obtain ⟨p, hp⟩ := ρ.1.nonempty_of_mem_parts hB
+    obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
+    exact ⟨x, (hTB (toLex_mem_interlace.1 (ρ.1.le hB hp)) b).2 hp⟩
+  · -- `B` is not everything, as `ρ` is not the partition into one part.
+    obtain ⟨p, hpI, hpB⟩ : ∃ p ∈ s.interlace, p ∉ B := by
+      by_contra! h
+      exact hne (Subtype.ext ((eq_top_of_mem_parts
+        (Subset.antisymm (ρ.1.le hB) h ▸ hB : s.interlace ∈ ρ.1.parts)).trans coe_top.symm))
+    obtain ⟨⟨x, b⟩, rfl⟩ := toLex.surjective p
+    have hx := toLex_mem_interlace.1 hpI
+    exact ⟨x, hx, fun hxT => hpB ((hTB hx b).1 hxT)⟩
+  · have hxs := (mem_filter.1 hx).1
+    exact (hTB hy b').2 (hBρ ((hTB hxs b).1 hx) ▸ h)
+
+/-- Let `P` and `Q` be noncrossing partitions of `s` with `Q ≤ K(P)`, so that their interlaced
+partition `σ = P.interlace Q` is a noncrossing partition of the interlaced positions. The join of
+`σ` in `NC(s.interlace)` with the partition into the pairs `{(x, false), (x, true)}`, the fibres of
+the first coordinate, is the partition into one part exactly when `Q = K(P)`. This is the
+combinatorial input of the formula for the free cumulants of products of two free families. -/
+theorem sup_interlacePairs_eq_top_iff {P Q : NoncrossingPartition s}
+    {σ : NoncrossingPartition s.interlace} (hσ : (σ : Finpartition s.interlace) = P.1.interlace Q.1)
+    (hQ : Q ≤ kreweras P) :
+    σ ⊔ interlacePairs s = ⊤ ↔ Q = kreweras P := by
+  refine ⟨fun htop => by_contra fun hne => ?_, fun hQK => by_contra fun hne => ?_⟩
+  · -- If `Q < K(P)`, an interval `(c, c']` that is a union of parts of `P` and of `Q` separates.
+    obtain ⟨c, hc, c', hc', hcc', hPc, hQc⟩ := exists_lt_forall_mem_Ioc_of_lt_kreweras (P := P.1)
+      Q.2 (coe_kreweras P ▸ Subtype.coe_le_coe.2 hQ)
+      fun h => hne (Subtype.ext (h.trans (coe_kreweras P).symm))
+    exact sup_interlacePairs_ne_top hσ hc hc' hcc' hPc hQc htop
+  · -- If `Q = K(P)`, an interval part of the join other than everything would give an interval of
+    -- `s` that is a union of parts of both `P` and `K(P)`, which does not exist.
+    obtain ⟨T, hTs, hconv, hTne, hsT, hρT⟩ := exists_interval_of_interlacePairs_le le_sup_right hne
+    have hσT {x y : α} (hx : x ∈ T) (b : Bool) (hy : y ∈ (bif b then Q.1 else P.1).part x) :
+        y ∈ T :=
+      hρT x hx y ((bif b then Q.1 else P.1).part_subset x hy) b b <|
+        part_mono (Subtype.coe_le_coe.2 (le_sup_left (b := interlacePairs s))) _
+          (hσ ▸ (mem_part_interlace_iff (hTs hx)).2 ⟨rfl, hy⟩)
+    obtain ⟨x, hxT, y, hy, hyT⟩ := exists_mem_part_kreweras_notMem hTs hconv hTne hsT
+      fun x hx y hy => hσT hx false hy
+    exact hyT (hσT hxT true (by rw [Bool.cond_true, hQK, coe_kreweras]; exact hy))
+
+end TauCeti.NoncrossingPartition

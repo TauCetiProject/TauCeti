@@ -110,7 +110,7 @@ theorem one_sub_ofMulAction_T_injective (hn : n ≠ 0) :
     Function.Injective
       (1 - ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) T : Module.End k _) := by
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
-  rw [LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero] at hv
+  rw [LinearMap.sub_apply, one_apply_eq_self, sub_eq_zero] at hv
   have hinv (x : TraceFormulaMatrixModule n) : v.coeff (T⁻¹ • x) = v.coeff x := by
     rw [← coeff_ofMulAction, ← hv]
   have hzpow (m : ℤ) (x : TraceFormulaMatrixModule n) : v.coeff (T ^ m • x) = v.coeff x := by
@@ -161,7 +161,7 @@ theorem exists_periodRelation (n : ℤ) : ∃ ξ, PeriodRelation k n ξ := by
       (one_sub_ofMulAction_op_upperTriangularSum_mem (k := k) (n := n) (S : PSL(2, ℤ)))
   refine ⟨-x, periodRelation_iff.2 ⟨y, ?_⟩⟩
   rw [← hxy]
-  simp only [LinearMap.sub_apply, Module.End.one_apply, LinearMap.id_apply, map_neg]
+  simp only [LinearMap.sub_apply, one_apply_eq_self, LinearMap.id_apply, map_neg]
   abel
 
 end TauCeti.TraceFormulaMatrixModule

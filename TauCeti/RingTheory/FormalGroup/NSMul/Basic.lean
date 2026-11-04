@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Multiplication by `n` on a formal group law
@@ -37,6 +38,15 @@ complete local domain, the first term can only cancel the second if `p` is divis
 `t ^ (p - 1)`; this is how `p`-torsion in the points of a formal group is bounded (Silverman
 IV.6.1).
 
+The same identity, read in degree `p - 1`, determines the coefficient of `Tᵖ` in `[p]_F` modulo
+`p` when `p` is not a zero divisor. Write `P(T) = ∑ₙ pₙ Tⁿ`. The terms of `[p]_F` and of its
+derivative below degree `p` are multiples of `p`, so `P([p]_F(T)) ≡ 1` modulo `p` and `Tᵖ`, and
+the coefficient of `Tᵖ⁻¹` gives `p · [Tᵖ] [p]_F ≡ p · pₚ₋₁` modulo `p²`. Cancelling `p`, the
+coefficient of `Tᵖ` in `[p]_F` is `pₚ₋₁` modulo `p`. In characteristic `p` that coefficient
+decides whether the height is one, so for the reduction of a formal group law defined over a ring
+without `p`-torsion, such as the formal group of a Weierstrass curve, the height-one locus is read
+off the invariant differential.
+
 ## Main definitions
 
 * `FormalGroup.nsmulSeries`: the multiplication-by-`n` series `[n]_F(T)`.
@@ -60,8 +70,14 @@ IV.6.1).
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
 * `FormalGroup.exists_nsmulSeries_eq_of_prime`: `[p]_F(T) = p T u(T) + Tᵖ h(T)` with `u(0) = 1`.
+* `FormalGroup.natCast_dvd_coeff_nsmulSeries_sub_coeff_invariantDifferential`: if `p` is not a zero
+  divisor, the coefficient of `Tᵖ` in `[p]_F` is congruent modulo `p` to the coefficient of `Tᵖ⁻¹`
+  in the invariant differential.
 * `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
   multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
+* `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order`: if `f = u T + ⋯` and
+  `[n]_F`, `[n]_G` both have order at least `q`, their coefficients `a`, `b` of `T ^ q` satisfy
+  `b u ^ q = u a`.
 
 ## References
 
@@ -338,6 +354,63 @@ theorem exists_nsmulSeries_eq_of_prime [F.IsComm] {p : ℕ} (hp : p.Prime) :
   · simp [hj.ne', hjp, hc (j + 1) (by omega) hjp]
   · simp [hj.ne', hjp.not_gt]
 
+/-- **The coefficient of `Tᵖ` in `[p]_F` modulo `p`**: for a commutative formal group law `F` over
+a ring in which the prime `p` is not a zero divisor, the coefficient of `Tᵖ` in `[p]_F(T)` is
+congruent modulo `p` to the coefficient of `Tᵖ⁻¹` in the invariant differential `P(T) dT`. -/
+theorem natCast_dvd_coeff_nsmulSeries_sub_coeff_invariantDifferential [F.IsComm] {p : ℕ}
+    (hp : p.Prime) (hpR : IsLeftRegular (p : R)) :
+    (p : R) ∣ PowerSeries.coeff p (F.nsmulSeries p) -
+      PowerSeries.coeff (p - 1) F.invariantDifferential := by
+  obtain ⟨u, h, -, hf⟩ := F.exists_nsmulSeries_eq_of_prime hp
+  set f := F.nsmulSeries p
+  set P := F.invariantDifferential
+  have hsub : PowerSeries.HasSubst f :=
+    PowerSeries.HasSubst.of_constantCoeff_zero (F.constantCoeff_nsmulSeries p)
+  -- `P(f) = 1 + f S` with `S = P₁(f)` for `P = 1 + T P₁`
+  set S := PowerSeries.subst f (PowerSeries.mk fun n ↦ PowerSeries.coeff (n + 1) P)
+  have hQ : PowerSeries.subst f P = 1 + f * S := by
+    conv_lhs => rw [P.eq_X_mul_shift_add_const]
+    rw [PowerSeries.subst_add hsub, PowerSeries.subst_mul hsub, PowerSeries.subst_X hsub,
+      PowerSeries.subst_C, constantCoeff_invariantDifferential, map_one, add_comm]
+  -- `f = p a + Tᵖ h` and `f' = p E + Tᵖ h'`
+  obtain ⟨a, hf'⟩ : ∃ a, f = (p : PowerSeries R) * a + PowerSeries.X ^ p * h :=
+    ⟨PowerSeries.X * u, by rw [hf, mul_assoc]⟩
+  set E := PowerSeries.derivative a + PowerSeries.X ^ (p - 1) * h
+  have hD : PowerSeries.derivative f =
+      (p : PowerSeries R) * E + PowerSeries.X ^ p * PowerSeries.derivative h := by
+    rw [hf']
+    simp only [E, map_add, Derivation.leibniz, smul_eq_mul, PowerSeries.derivative_pow,
+      PowerSeries.derivative_X, Derivation.map_natCast]
+    ring
+  clear_value E S
+  -- the identity `P(f) f' = p P`, read in degree `p - 1`, where the terms divisible by `Tᵖ` vanish
+  have hexp : PowerSeries.subst f P * PowerSeries.derivative f =
+      (p : PowerSeries R) * (E + (p : PowerSeries R) * (a * S * E)) +
+        PowerSeries.X ^ p * (PowerSeries.derivative h * (1 + f * S) + h * S *
+          ((p : PowerSeries R) * E)) := by
+    rw [hQ, hD]
+    linear_combination (S * (p : PowerSeries R) * E) * hf'
+  have hlow (g : PowerSeries R) : PowerSeries.coeff (p - 1) (PowerSeries.X ^ p * g) = 0 := by
+    have := hp.pos
+    rw [PowerSeries.coeff_X_pow_mul']
+    split_ifs <;> first | omega | rfl
+  have hcoeff (n : ℕ) (g : PowerSeries R) :
+      PowerSeries.coeff n ((p : PowerSeries R) * g) = p * PowerSeries.coeff n g := by
+    rw [← map_natCast PowerSeries.C, PowerSeries.coeff_C_mul]
+  have h₁ := congrArg (PowerSeries.coeff (p - 1))
+    (F.subst_nsmulSeries_invariantDifferential_mul_derivative p)
+  rw [hexp, map_add, hlow, _root_.add_zero, hcoeff, hcoeff] at h₁
+  have h₂ := congrArg (PowerSeries.coeff (p - 1)) hD
+  rw [map_add, hlow, _root_.add_zero, hcoeff, PowerSeries.coeff_derivative,
+    Nat.sub_add_cancel hp.one_le, Nat.cast_sub hp.one_le, Nat.cast_one, sub_add_cancel,
+    mul_comm] at h₂
+  -- cancelling `p` gives `cₚ = E_{p-1}` and `P_{p-1} = E_{p-1} + p (a S E)_{p-1}`
+  have h₂' := hpR h₂
+  have h₁' := hpR h₁
+  refine ⟨-PowerSeries.coeff (p - 1) (a * S * E), ?_⟩
+  rw [h₂', ← h₁', map_add, hcoeff]
+  ring
+
 end FormalGroup
 
 namespace TauCeti.FormalGroupHom
@@ -357,5 +430,18 @@ theorem subst_nsmulSeries (f : FormalGroupHom F G) (n : ℕ) :
     rw [← G.subst_nsmulSeries, applyPoint_val, FormalGroup.val_tautologicalPoint,
       PowerSeries.X_subst]
   rw [← hF, ← hG, ← applyPoint_val, ← toAddMonoidHom_apply, map_nsmul, toAddMonoidHom_apply]
+
+/-- **A homomorphism relates the leading coefficients of multiplication by `n`.** If `f` is a
+homomorphism of formal group laws from `F` to `G` with linear coefficient `u`, and `[n]_F` and
+`[n]_G` both have order at least `q`, then their coefficients `a` and `b` of `T ^ q` satisfy
+`b u ^ q = u a`. -/
+theorem coeff_nsmulSeries_mul_coeff_one_pow_of_le_order (f : FormalGroupHom F G) (n : ℕ) {q : ℕ}
+    (hF : q ≤ (F.nsmulSeries n).order) (hG : q ≤ (G.nsmulSeries n).order) :
+    PowerSeries.coeff q (G.nsmulSeries n) * PowerSeries.coeff 1 f.toPowerSeries ^ q =
+      PowerSeries.coeff 1 f.toPowerSeries * PowerSeries.coeff q (F.nsmulSeries n) := by
+  have h := congrArg (PowerSeries.coeff q) (f.subst_nsmulSeries n)
+  rw [PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries n) f.zero_constantCoeff hF,
+    PowerSeries.coeff_subst_eq_mul_pow f.zero_constantCoeff hG] at h
+  simpa using h.symm
 
 end TauCeti.FormalGroupHom

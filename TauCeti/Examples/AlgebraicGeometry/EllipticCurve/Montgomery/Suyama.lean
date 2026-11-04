@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Suyama
+import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Suyama.Point
 import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -14,7 +14,8 @@ import Mathlib.Algebra.Field.ZMod
 The rational parameter `6` gives an elliptic model, whereas `5` gives a singular one despite
 having a nonzero denominator. Modulo `11`, the parameter `2` has nonzero `B` but yields a
 singular model: the factor `9σ² - 25` is indispensable. The final example exercises the
-criterion in characteristic three.
+criterion in characteristic three. Further examples check the polynomial seed pair and its
+projective coordinate, including at a nonsingular point of a singular model.
 -/
 
 namespace TauCeti.Montgomery
@@ -50,5 +51,27 @@ end Eleven
 example : ¬ (model (suyamaA (1 : ZMod 3)) (suyamaB (1 : ZMod 3))).IsElliptic := by
   rw [isElliptic_model_suyama_iff (by decide) (by decide) (by decide)]
   norm_num
+
+-- The polynomial pair for σ = 6 is a representative of the supplied native point.
+example (hB : suyamaB (6 : ℚ) ≠ 0) :
+    (⟨31 ^ 3, 24 ^ 3⟩ : Pair ℚ).cross
+      (coordinates (suyamaA 6) (suyamaB 6) (suyamaPoint (by norm_num) hB)) = 0 := by
+  convert cross_coordinates_suyamaPoint (by norm_num) hB using 1
+  norm_num [suyamaU_def, suyamaV_def]
+
+-- σ = 3 gives A = 2, so the model is singular, but its supplied point still exists.
+example : ¬ (model (suyamaA (3 : ℚ)) (suyamaB (3 : ℚ))).IsElliptic := by
+  rw [isElliptic_model_suyama_iff (by norm_num) (by norm_num) (by norm_num)]
+  norm_num
+
+example : ∃ hB : suyamaB (3 : ℚ) ≠ 0,
+    projectiveX (suyamaA 3) hB (suyamaPoint (by norm_num) hB) =
+      (⟨4 ^ 3, 12 ^ 3⟩ : Pair ℚ).toProj (by simp [Pair.eq_zero_iff]) := by
+  have hB : suyamaB (3 : ℚ) ≠ 0 := by
+    rw [suyamaB_eq (by norm_num) (by norm_num) (by norm_num)]
+    norm_num
+  refine ⟨hB, ?_⟩
+  convert projectiveX_suyamaPoint (by norm_num) hB using 1
+  norm_num [suyamaU_def, suyamaV_def]
 
 end TauCeti.Montgomery

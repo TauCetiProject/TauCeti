@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Ramification
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Frobenius
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
+import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 
 /-!
 # Ray-class reciprocity
@@ -43,7 +44,12 @@ composed with the ray class of an ideal prime to `𝔪`, is
 (`rayClassArtinMap_comp_rayClassMk`). This is the **splitting law**: the ray-class Artin symbol
 of a prime ideal `𝔭` prime to `𝔪` is an arithmetic Frobenius at every prime of `L` above `𝔭`
 (`isArithFrobAt_rayClassArtinMap_idealClass`), and its conjugacy class is the Artin symbol of `𝔭`
-(`rayClassArtinMap_idealClass`).
+(`rayClassArtinMap_idealClass`). Since `𝔭` is unramified in `L`
+(`IsAdmissibleModulus.isUnramifiedAt_of_integralIdealsPrimeTo`), the order of this Frobenius is
+the residue degree `f` of `𝔭` in `L` (`orderOf_rayClassArtinMap_idealClass`), so `𝔭` has
+`[L : K] / f` primes above it (`ncard_primesOver_mul_orderOf_rayClassArtinMap_idealClass`). In
+particular `𝔭` splits completely in `L` exactly when its ray-class Artin symbol is trivial
+(`ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one`).
 
 ## Main definitions
 
@@ -65,6 +71,11 @@ of a prime ideal `𝔭` prime to `𝔪` is an arithmetic Frobenius at every prim
   ray-class Artin map is the ideal-theoretic Artin map.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_rayClassArtinMap_idealClass`,
   `TauCeti.ClassFieldTheory.rayClassArtinMap_idealClass`: the splitting law.
+* `TauCeti.ClassFieldTheory.orderOf_rayClassArtinMap_idealClass`,
+  `TauCeti.ClassFieldTheory.ncard_primesOver_mul_orderOf_rayClassArtinMap_idealClass`: the
+  decomposition law of a prime ideal prime to `𝔪`.
+* `TauCeti.ClassFieldTheory.ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one`:
+  a prime ideal prime to `𝔪` splits completely exactly when its ray-class Artin symbol is trivial.
 
 ## References
 
@@ -210,5 +221,46 @@ theorem rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪) [(I : Ideal
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty ((I : Ideal (𝓞 K)).primesOver (𝓞 L)))
   exact (artinSymbol_eq_mk_of_isArithFrobAt _ hur Q _
     (isArithFrobAt_rayClassArtinMap_idealClass h I Q)).symm
+
+/-! ### The decomposition law -/
+
+/-- **The order of the ray-class Artin symbol is the residue degree**: for a prime ideal `𝔭` of `K`
+prime to `𝔪` and a prime `Q` of `L` above it, the ray-class Artin symbol of the ray class of `𝔭`
+has order the inertia degree `f(Q / 𝔭)`. -/
+theorem orderOf_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
+    [(I : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
+    orderOf (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) = Q.inertiaDeg (𝓞 K) := by
+  have : Algebra.IsUnramifiedAt (𝓞 K) Q := h.isUnramifiedAt_of_integralIdealsPrimeTo I Q
+  exact Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q
+    (Ideal.ne_bot_of_liesOver_of_ne_bot (Ring.ne_bot_of_isMaximal_of_not_isField
+      ‹_› (RingOfIntegers.not_isField K)) Q)
+    (isArithFrobAt_rayClassArtinMap_idealClass h I Q)
+
+/-- **The decomposition law for an admissible modulus**: a prime ideal `𝔭` of `K` prime to `𝔪`
+has `[L : K] / f` primes above it in `L`, where `f` is the order of the ray-class Artin symbol of
+its ray class. -/
+theorem ncard_primesOver_mul_orderOf_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
+    [(I : Ideal (𝓞 K)).IsMaximal] :
+    ((I : Ideal (𝓞 K)).primesOver (𝓞 L)).ncard * orderOf (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) =
+      Module.finrank K L := by
+  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty ((I : Ideal (𝓞 K)).primesOver (𝓞 L)))
+  have : Algebra.IsUnramifiedAt (𝓞 K) Q := h.isUnramifiedAt_of_integralIdealsPrimeTo I Q
+  rw [orderOf_rayClassArtinMap_idealClass h I Q, ← IsGaloisGroup.card_eq_finrank Gal(L/K) K L,
+    ← Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn (I : Ideal (𝓞 K)) (𝓞 L)
+      Gal(L/K), Ideal.ramificationIdxIn_eq_ramificationIdx (I : Ideal (𝓞 K)) Q Gal(L/K),
+    Ideal.inertiaDegIn_eq_inertiaDeg (I : Ideal (𝓞 K)) Q Gal(L/K),
+    Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, one_mul]
+
+/-- **The splitting criterion for an admissible modulus**: a prime ideal `𝔭` of `K` prime to `𝔪`
+splits completely in `L`, that is, has `[L : K]` primes above it, exactly when the ray-class Artin
+symbol of its ray class is trivial. -/
+theorem ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one
+    (I : integralIdealsPrimeTo 𝔪) [(I : Ideal (𝓞 K)).IsMaximal] :
+    ((I : Ideal (𝓞 K)).primesOver (𝓞 L)).ncard = Module.finrank K L ↔
+      rayClassArtinMap 𝔪 h (idealClass 𝔪 I) = 1 := by
+  have hur := h.isUnramifiedAt_of_integralIdealsPrimeTo I
+  rw [← artinSymbol_eq_one_iff_ncard_primesOver_eq_finrank _ hur,
+    ← rayClassArtinMap_idealClass h I hur, ConjClasses.one_eq_mk_one,
+    ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left]
 
 end TauCeti.ClassFieldTheory

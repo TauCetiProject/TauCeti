@@ -42,6 +42,9 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
 * `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`: negated and scalar matrices
   act by `(-1)ʷ` and by the `w`th power of the scalar.
 * `TauCeti.mapHomogeneousSubmodule_binaryFormRep`: changing coefficients commutes with the action.
+* `TauCeti.binaryFormRep_parity_binaryFormMonomialBasis`,
+  `TauCeti.binaryFormMonomialBasis_repr_binaryFormRep_parity`: the parity action
+  `P(X, Y) ↦ P(-X, Y)` multiplies the monomial `Xʲ Yʷ⁻ʲ` by `(-1)ʲ`.
 * `TauCeti.trace_binaryFormRep_eq_dickson_eval`: the trace is the Dickson weight polynomial
   evaluated at the matrix trace and determinant.
 * `TauCeti.binaryFormRep_adjugate_linearFormPow`: `(xY - yX)ʷ ∣ adj M = (x'Y - y'X)ʷ` for
@@ -104,7 +107,7 @@ theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
 theorem binaryFormRep_op_mul_apply (M N : Matrix (Fin 2) (Fin 2) ℤ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (M * N)) P = binaryFormRep R w (op N) (binaryFormRep R w (op M) P) := by
-  rw [op_mul, map_mul, Module.End.mul_apply]
+  rw [op_mul, map_mul, mul_apply_eq_comp]
 
 /-- Negating the matrix multiplies a form of degree `w` by `(-1)ʷ`. -/
 theorem binaryFormRep_op_neg (M : Matrix (Fin 2) (Fin 2) ℤ) :
@@ -197,6 +200,25 @@ theorem mapHomogeneousSubmodule_binaryFormRep {S : Type*} [CommRing S] (f : S �
   congr 3
   funext a
   simp
+
+/-- The parity action `P(X, Y) ↦ P(-X, Y)` multiplies the monomial `Xʲ Yʷ⁻ʲ` by `(-1)ʲ`. -/
+@[simp]
+theorem binaryFormRep_parity_binaryFormMonomialBasis (j : Fin (w + 1)) :
+    binaryFormRep R w (op !![-1, 0; 0, 1]) (binaryFormMonomialBasis R w j) =
+      (-1 : R) ^ (j : ℕ) • binaryFormMonomialBasis R w j := by
+  apply Subtype.ext
+  simp [smul_eq_C_mul, linearSubst_X, neg_pow (X 0 : MvPolynomial (Fin 2) R), mul_assoc]
+
+/-- The coordinates of `P(-X, Y)` in the monomial basis: the coefficient of `Xʲ Yʷ⁻ʲ` is
+multiplied by `(-1)ʲ`. -/
+@[simp]
+theorem binaryFormMonomialBasis_repr_binaryFormRep_parity (P : homogeneousSubmodule (Fin 2) R w)
+    (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w).repr (binaryFormRep R w (op !![-1, 0; 0, 1]) P) j =
+      (-1) ^ (j : ℕ) * (binaryFormMonomialBasis R w).repr P j := by
+  conv_lhs => rw [← (binaryFormMonomialBasis R w).sum_repr P, map_sum]
+  simp only [map_smul, binaryFormRep_parity_binaryFormMonomialBasis, smul_smul]
+  rw [Module.Basis.repr_sum_self, mul_comm]
 
 variable (R w) in
 /-- The binary form `(xY - yX)ʷ` of degree `w`, the `w`th power of a linear form vanishing at

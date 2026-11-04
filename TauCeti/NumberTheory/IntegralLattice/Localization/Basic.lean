@@ -64,6 +64,8 @@ local data of the genus over to the rational quadratic spaces.
   of `L_p` from `ℤ_p` to `ℚ_p` along the canonical map.
 * `TauCeti.IntegralLattice.localizationToCompletion_injective`: the canonical map is injective.
 * `TauCeti.IntegralLattice.span_range_localizationToCompletion`: its image spans `V_p` over `ℚ_p`.
+* `TauCeti.IntegralLattice.mem_range_localizationToCompletion_iff`: in the rational basis of a
+  basis of `L`, its image consists of the vectors with `p`-adic integral coordinates.
 * `TauCeti.IntegralLattice.completedRationalForm_localizationToCompletion`: the localized integral
   form is the restriction of the completed rational form.
 * `TauCeti.IntegralLattice.toMatrix_localIntegralForm`: the Gram matrix of `L_p` is the image of
@@ -198,6 +200,57 @@ instance isLattice_range_localizationToCompletion :
   span_eq_top := by
     rw [LinearMap.coe_range]
     exact L.span_range_localizationToCompletion p
+
+section Coordinates
+
+variable {ι : Type*} (e : Basis ι ℤ L)
+
+/-- The canonical map `L_p → V_p` carries the scalar extension of a basis of `L` to the scalar
+extension of the corresponding rational basis of `V`. -/
+theorem localizationToCompletion_basis_baseChange (i : ι) :
+    L.localizationToCompletion p (e.baseChange ℤ_[p] i) =
+      (e.extendOfIsLattice ℚ).baseChange ℚ_[p] i := by
+  simp [Basis.baseChange_apply, Basis.extendOfIsLattice_apply]
+
+/-- The coordinates of a vector of `L_p`, read in `V_p`, are the images of its `ℤ_p`-coordinates:
+in the rational basis of a basis `e` of `L`, the image of `L_p` has `p`-adic integral
+coordinates. -/
+theorem repr_localizationToCompletion (x : L.LocalCarrier p) (i : ι) :
+    ((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr (L.localizationToCompletion p x) i =
+      ((e.baseChange ℤ_[p]).repr x i : ℚ_[p]) := by
+  classical
+  -- Both sides are `ℤ_p`-linear in `x`; compare them on the basis `e.baseChange ℤ_p`.
+  have h : (((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).coord i).restrictScalars ℤ_[p] ∘ₗ
+      L.localizationToCompletion p =
+        Algebra.linearMap ℤ_[p] ℚ_[p] ∘ₗ (e.baseChange ℤ_[p]).coord i :=
+    (e.baseChange ℤ_[p]).ext fun j ↦ by
+      simp only [LinearMap.coe_comp, Function.comp_apply,
+        localizationToCompletion_basis_baseChange, LinearMap.restrictScalars_apply,
+        Basis.coord_apply, Basis.repr_self, Algebra.linearMap_apply]
+      rw [Finsupp.single_apply, Finsupp.single_apply]
+      split_ifs <;> simp
+  exact LinearMap.congr_fun h x
+
+/-- In the rational basis of a basis `e` of `L`, the image of `L_p` in `V_p` consists of the
+vectors whose coordinates are `p`-adic integers. -/
+theorem mem_range_localizationToCompletion_iff (x : ℚ_[p] ⊗[ℚ] V) :
+    x ∈ LinearMap.range (L.localizationToCompletion p) ↔
+      ∀ i, ‖((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr x i‖ ≤ 1 := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨t, rfl⟩ i
+    rw [repr_localizationToCompletion]
+    exact (PadicInt.mem_subring_iff p).mp ((e.baseChange ℤ_[p]).repr t i).property
+  · let b := (e.extendOfIsLattice ℚ).baseChange ℚ_[p]
+    -- The `p`-adic integral coordinates of `x` are those of a vector of `L_p`.
+    refine ⟨(e.baseChange ℤ_[p]).repr.symm (Finsupp.ofSupportFinite
+      (fun i ↦ Padic.lift (b.repr x i) (h i))
+      ((b.repr x).support.finite_toSet.subset fun i hi ↦
+        Finsupp.mem_support_iff.mpr fun h0 ↦ hi (PadicInt.ext h0))), b.repr.injective ?_⟩
+    ext i
+    rw [repr_localizationToCompletion, LinearEquiv.apply_symm_apply, Finsupp.ofSupportFinite_coe,
+      PadicInt.coe_lift]
+
+end Coordinates
 
 /-- **The localized integral form is the restriction of the completed rational form** along the
 canonical map `L_p → V_p`. -/

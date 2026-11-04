@@ -69,7 +69,6 @@ The real-variable theory of Euler's beta integral that the construction rests on
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 2, "Regularized incomplete beta".
 * [NIST Digital Library of Mathematical Functions, §8.17](https://dlmf.nist.gov/8.17); the
   recurrence is [8.17.20](https://dlmf.nist.gov/8.17.E20).
 -/

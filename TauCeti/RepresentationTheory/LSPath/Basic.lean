@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.LSPath.Reparametrization
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Set.Finite.List
 import TauCeti.Data.Rat.BoundedDen
+import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 
 /-!
 # Lakshmibai–Seshadri paths
@@ -67,6 +68,8 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
   duration `1`.
 * `TauCeti.LSPath.inv_smul_mem_range_of_mem_timed`: its velocities lie in the Weyl orbit of `λ`.
 * `TauCeti.LSPath.endpoint_toPLPath`: the endpoint is `∑_j (a_{j+1} - a_j) τ_j λ`.
+* `TauCeti.LSPath.isAChain`: for dominant `λ`, every saturated chain from `τ_j` down to `τ_{j+1}`
+  is an `a_{j+1}`-chain, not only the one witnessing the definition.
 
 ## References
 
@@ -255,6 +258,37 @@ theorem time_straight (k : Fin ((straight lam : LSPath P b lam).length + 2)) :
     (straight lam : LSPath P b lam).time k = k.val := by
   fin_cases k <;> rfl
 
+/-- An LS encoding is straight exactly when its initial minimal coset representative is the
+identity. This uses the decreasing directions, not dominance of the shape. -/
+theorem eq_straight_iff_dir_zero_eq_one (π : LSPath P b lam) :
+    π = straight lam ↔ (π.dir 0).1 = 1 := by
+  constructor
+  · rintro rfl
+    simp
+  · intro h
+    have hlen : π.length = 0 := by
+      by_contra hlen
+      -- Explicit indices avoid choosing a successor in the dependent direction type.
+      have hlt := π.strictAnti_length_dir
+        (show (0 : Fin (π.length + 1)) < ⟨1, by omega⟩ by
+          simpa only [Fin.lt_def, Fin.val_zero, Fin.val_mk] using Nat.zero_lt_one)
+      dsimp only at hlt
+      rw [h, CoxeterSystem.length_one] at hlt
+      omega
+    obtain ⟨n, dir, time, hzero, hlast, hmono, hne, hchain⟩ := π
+    dsimp only at hlen
+    subst n
+    apply ext
+    · simp only [length_straight, List.ofFn_succ, List.ofFn_zero, List.cons.injEq,
+        and_true]
+      apply Subtype.ext
+      simpa only [dir_straight] using h
+    · simp only [length_straight, List.ofFn_succ, List.ofFn_zero, List.cons.injEq,
+        and_true]
+      constructor
+      · simpa using hzero
+      · simpa using hlast
+
 /-- The path of the straight Lakshmibai–Seshadri path is the straight path along `λ`. -/
 @[simp]
 theorem toPLPath_straight :
@@ -394,6 +428,24 @@ theorem finite (hlam : lam ∈ dominantChamber P b) : Finite (LSPath P b lam) :=
     simpa [e, List.map_ofFn, Function.comp_def] using this
 
 end Finite
+
+section Chains
+
+variable [P.flip.IsReduced]
+
+/-- **Every saturated chain at an internal break of a Lakshmibai–Seshadri path is an `a`-chain.**
+For dominant `λ`, every saturated chain of `W / W_λ` from `τ_j` down to `τ_{j+1}` is an
+`a_{j+1}`-chain: the definition provides one, and whether a chain is an `a`-chain depends only on
+its ends (`TauCeti.isAChain_iff_den_dvd_intervalBondGcd`). -/
+theorem isAChain (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) (j : Fin π.length)
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hhead : C.head = π.dir j.castSucc) (hlast : C.last = π.dir j.succ) :
+    IsAChain (π.time j.castSucc.succ) lam C := by
+  obtain ⟨C₀, hhead₀, hlast₀, hC₀⟩ := π.exists_isAChain j
+  rw [isAChain_iff_den_dvd_intervalBondGcd hlam] at hC₀ ⊢
+  rwa [hhead, hlast, ← hhead₀, ← hlast₀]
+
+end Chains
 
 end LSPath
 

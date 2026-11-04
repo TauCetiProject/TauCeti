@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.QuotientTower
+import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Tower
 
 /-!
 # Measures in the coordinates of a tower of finite quotients
@@ -135,37 +136,6 @@ section PadicInt
 
 variable {p : ℕ} [Fact p.Prime]
 
-omit [CompactSpace Γ] [∀ n, Finite (A n)] in
-/-- The pushforward of a compatible family to `Γ ⧸ U` does not depend on the level of the tower
-through which `Γ → Γ ⧸ U` is factored. -/
-private theorem mapDomain_toQuotient_eq {c : ∀ n, A n →₀ ℤ_[p]}
-    (hc : c ∈ T.compatibleFamilies ℤ_[p]) {U : OpenNormalSubgroup Γ} {m n : ℕ}
-    (hm : (T.ker m : Subgroup Γ) ≤ U) (hn : (T.ker n : Subgroup Γ) ≤ U) :
-    (c m).mapDomain (T.toQuotient hm) = (c n).mapDomain (T.toQuotient hn) := by
-  -- Both sides are the pushforward of the coefficients at the common deeper level `max m n`.
-  have key {k l : ℕ} (hkl : k ≤ l) (hk : (T.ker k : Subgroup Γ) ≤ U) :
-      (c k).mapDomain (T.toQuotient hk) =
-        (c l).mapDomain (T.toQuotient (le_trans (α := Subgroup Γ) (T.ker_antitone hkl) hk)) := by
-    rw [← FiniteQuotientTower.mem_compatibleFamilies.mp hc hkl, ← Finsupp.mapDomain_comp]
-    congr 1
-    ext a
-    simp
-  rw [key (le_max_left m n) hm, key (le_max_right m n) hn]
-
-/-- The family of elements of the group algebras `ℤ_p[Γ ⧸ U]` obtained by pushing a compatible
-family forward from a level of the tower contained in `U`. -/
-private def quotientFamily (c : ∀ n, A n →₀ ℤ_[p]) (U : OpenNormalSubgroup Γ) :
-    MonoidAlgebra ℤ_[p] (Γ ⧸ U.toSubgroup) :=
-  MonoidAlgebra.ofCoeff ((c (T.exists_ker_le_of_isOpen U.isOpen).choose).mapDomain
-    (T.toQuotient (T.exists_ker_le_of_isOpen U.isOpen).choose_spec))
-
-omit [∀ n, Finite (A n)] in
-private theorem coeff_quotientFamily {c : ∀ n, A n →₀ ℤ_[p]}
-    (hc : c ∈ T.compatibleFamilies ℤ_[p]) {U : OpenNormalSubgroup Γ} {n : ℕ}
-    (hn : (T.ker n : Subgroup Γ) ≤ U) :
-    (quotientFamily T c U).coeff = (c n).mapDomain (T.toQuotient hn) :=
-  mapDomain_toQuotient_eq T hc _ hn
-
 /-- **Tower coordinates are onto the compatible families.** Every compatible integral family
 along a tower is the family of finite projections of an integral measure. -/
 theorem towerCoordinates_surjective :
@@ -173,27 +143,14 @@ theorem towerCoordinates_surjective :
   have := T.isTopologicalGroup
   have := T.totallySeparatedSpace
   rintro ⟨c, hc⟩
-  -- Assemble the pushforwards of `c` to all finite quotients into an element of `ℤ_p[[Γ]]`.
-  have hx ⦃U V : OpenNormalSubgroup Γ⦄ (hUV : U ≤ V) :
-      MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE hUV) (quotientFamily T c U) =
-        quotientFamily T c V := by
-    obtain ⟨n, hn⟩ := T.exists_ker_le_of_isOpen U.isOpen
-    have hnV : (T.ker n : Subgroup Γ) ≤ V := hn.trans hUV
-    apply MonoidAlgebra.coeff_injective
-    rw [MonoidAlgebra.coeff_mapDomain, coeff_quotientFamily T hc hn,
-      coeff_quotientFamily T hc hnV, ← Finsupp.mapDomain_comp]
-    congr 1
-    ext a
-    obtain ⟨x, rfl⟩ := T.surjective_q n a
-    simp
-  obtain ⟨μ, hμ⟩ := toCompletedGroupAlgebra_surjective (completedGroupAlgebra.mk ℤ_[p] Γ _ hx)
+  obtain ⟨μ, hμ⟩ := toCompletedGroupAlgebra_surjective (completedGroupAlgebra.towerMk T c hc)
   refine ⟨μ, Subtype.ext (funext fun n ↦ Finsupp.mapDomain_injective (T.toQuotient_injective n)
     ?_)⟩
   -- At the kernel of level `n`, both families push forward to the projection of `μ`.
   have hproj := congrArg (fun y ↦ (completedGroupAlgebra.proj ℤ_[p] Γ (T.ker n) y).coeff) hμ
   simp only [proj_toCompletedGroupAlgebra, ContinuousMonoidHom.finiteProjectionAlgHom_apply,
     MonoidAlgebra.coeff_ofCoeff, finiteProjection_quotientMk T le_rfl,
-    completedGroupAlgebra.proj_mk, coeff_quotientFamily T hc le_rfl] at hproj
+    completedGroupAlgebra.proj_towerMk hc le_rfl] at hproj
   exact hproj
 
 /-- **Integral measures are the compatible families along a tower.** For a compact group with a

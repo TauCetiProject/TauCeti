@@ -363,7 +363,7 @@ variable {K : Type u} [Field K] [Invertible (2 : K)]
 /-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
 Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
 @[simp]
-theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Finite ι]
     [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
     [_root_.LieAlgebra.IsKilling K L]
     (b : Module.Basis ι K L) (i : ι) :
@@ -373,16 +373,9 @@ theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype �
           rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
           exact QuadraticMap.nondegenerate_polar_iff.mpr
             (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
-      (2 : K)⁻¹ • killingDualBasis b i := by
-  let hκ := _root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L
-  have hdual (j : ι) :
-      LinearMap.BilinForm.dualBasis (killingForm K L) hκ b j = killingDualBasis b j := by
-    apply LinearMap.ker_eq_bot.mp hκ.ker_eq_bot
-    apply b.ext
-    intro k
-    rw [LinearMap.BilinForm.apply_dualBasis_left, killingForm_killingDualBasis_left]
-    simp only [eq_comm]
-  rw [b.dualBasis_smul_apply (killingForm K L) hκ (2 : K)
-    (Invertible.ne_zero (2 : K)), hdual]
+      (2 : K)⁻¹ • killingDualBasis b i :=
+  b.dualBasis_smul_apply (killingForm K L)
+    (_root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L) (2 : K)
+    (Invertible.ne_zero (2 : K)) i
 
 end Module.Basis

@@ -207,9 +207,9 @@ theorem span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian
   refine ⟨fun h ↦ h ▸ le_sup_left, fun h ↦ le_antisymm ?_ ?_⟩
   · exact Ideal.span_le.2 <| Set.range_subset_iff.2 fun j ↦ (D j).apply_mem_of_mem_sq hf
   · -- Nakayama's lemma, for the finitely generated maximal ideal.
-    refine Submodule.le_of_le_smul_of_le_jacobson_bot (I := maximalIdeal P)
+    refine Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal P)
       (hx ▸ Submodule.fg_span (Set.finite_range x))
-      (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge ?_
+      (ringJacobson_eq_maximalIdeal P).ge ?_
     simpa [smul_eq_mul, pow_two] using h
 
 /-- **The Jacobian ideal of a nondegenerate quadratic singularity.** For `f ∈ 𝔪`, the ideal

@@ -493,7 +493,7 @@ private theorem eq_top_of_mem_genWeightSpace
         diagonal_apply_eq, diagonal_apply_eq, neg_sub]
     · simp [add_lie, ← lie_skew (upperDerivation _) (slDerivation _),
         ← lie_skew (lowerDerivation _) (slDerivation _), ← LieHom.map_lie]
-    · simpa [Ring.lie_def, mul_apply, single_apply, hij.symm] using hi
+    · simpa [Ring.lie_def, Matrix.mul_apply, single_apply, hij.symm] using hi
   -- Otherwise `x` is the special linear derivation of a diagonal matrix.
   push Not at hM
   obtain rfl : u = 0 := funext hu

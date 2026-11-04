@@ -121,7 +121,7 @@ theorem uniformMeasure_eq_smul {a b : ℝ} :
 /-- Evaluation of the uniform measure on a measurable set. -/
 theorem uniformMeasure_apply {a b : ℝ} {s : Set ℝ} (hs : MeasurableSet s) :
     uniformMeasure a b s = (ENNReal.ofReal (b - a))⁻¹ * volume (s ∩ Set.Ioc a b) := by
-  rw [uniformMeasure_eq_smul, Measure.smul_apply, smul_eq_mul, Measure.restrict_apply hs]
+  rw [uniformMeasure_eq_smul, _root_.smul_apply, smul_eq_mul, Measure.restrict_apply hs]
 
 /-- On a nondegenerate interval the uniform measure is a probability measure. -/
 theorem isProbabilityMeasure_uniformMeasure {a b : ℝ} (hab : a < b) :

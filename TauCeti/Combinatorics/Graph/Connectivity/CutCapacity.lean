@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
+public import Mathlib.Data.Set.Card
 
 /-!
 # Capacities of undirected cuts
@@ -22,6 +23,8 @@ pair of distinct ends therefore preserves every cut capacity.
 
 ## Main result
 
+* `Graph.edgeCutCapacity_one`: a unit-capacity cut has value equal to the number of crossing
+  edge identities.
 * `Graph.pairCutCapacity_pairCapacity`: aggregation preserves every cut capacity.
 * `Graph.isSubmodular_edgeCutCapacity`: an edge-capacity function nonnegative on nonloop edges has
   a submodular cut function.
@@ -56,6 +59,31 @@ theorem edgeCutCapacity_def [Fintype G.edgeSet] [AddCommMonoid K]
   intro e _
   by_cases he : e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) <;>
     simp [he]
+
+/-- Giving every actual edge capacity one makes the capacity of a cut equal to the number of
+crossing edge identities. In particular, parallel edges are counted separately. -/
+@[simp]
+theorem edgeCutCapacity_one [Fintype G.edgeSet] (S : Finset G.vertexSet) :
+    G.edgeCutCapacity (fun _ ↦ (1 : ℕ)) S =
+      (G.edgeCut (Subtype.val '' (S : Set G.vertexSet))).ncard := by
+  classical
+  rw [edgeCutCapacity_def]
+  let C : Set G.edgeSet :=
+    Subtype.val ⁻¹' G.edgeCut (Subtype.val '' (S : Set G.vertexSet))
+  calc
+    (∑ e : G.edgeSet,
+        if e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet)) then 1 else 0) =
+        #(univ.filter fun e : G.edgeSet ↦
+          e.1 ∈ G.edgeCut (Subtype.val '' (S : Set G.vertexSet))) := by
+      rw [card_filter]
+    _ = C.ncard := by
+      rw [Set.ncard_eq_toFinset_card C]
+      congr 1
+      ext e
+      simp [C]
+    _ = (G.edgeCut (Subtype.val '' (S : Set G.vertexSet))).ncard :=
+      Set.ncard_preimage_of_injective_subset_range Subtype.val_injective
+        (by simpa using G.edgeCut_subset_edgeSet)
 
 open Classical in
 /-- Aggregate edge weights by the unordered pair of their distinct ends. The capacity of every
@@ -167,7 +195,6 @@ theorem isSubmodular_edgeCutCapacity [Fintype G.edgeSet] [DecidableEq G.vertexSe
   classical
   rw [TauCeti.isSubmodular_def]
   intro S T
-  simp only [sup_eq_union, inf_eq_inter]
   simp_rw [edgeCutCapacity_def]
   rw [← sum_add_distrib, ← sum_add_distrib]
   apply sum_le_sum

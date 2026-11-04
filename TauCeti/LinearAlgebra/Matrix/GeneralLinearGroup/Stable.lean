@@ -93,8 +93,8 @@ theorem coe_stabilizeGL_apply {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) (i j 
   obtain ⟨j, rfl⟩ := e.surjective j
   simp only [stabilizeGL, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply,
     MonoidHom.inl_apply, Equiv.coe_reindexGL, coe_fromBlocksGL, submatrix_apply,
-    one_apply, e.apply_eq_iff_eq]
-  rcases i with i | i <;> rcases j with j | j <;> simp [e, one_apply]
+    Matrix.one_apply, e.apply_eq_iff_eq]
+  rcases i with i | i <;> rcases j with j | j <;> simp [e, Matrix.one_apply]
 
 /-- Stabilization to the same size is the identity. -/
 @[simp]
@@ -107,7 +107,7 @@ theorem stabilizeGL_refl (n : ℕ) : stabilizeGL A (le_refl n) = MonoidHom.id (G
 theorem stabilizeGL_stabilizeGL {k m n : ℕ} (hkm : k ≤ m) (hmn : m ≤ n) (u : GL (Fin k) A) :
     stabilizeGL A hmn (stabilizeGL A hkm u) = stabilizeGL A (hkm.trans hmn) u := by
   ext i j
-  simp only [coe_stabilizeGL_apply, one_apply, Fin.ext_iff]
+  simp only [coe_stabilizeGL_apply, Matrix.one_apply, Fin.ext_iff]
   split_ifs <;> first | rfl | omega
 
 /-- Stabilization is injective: the stabilized matrix contains `u` as its upper left block. -/
@@ -125,7 +125,7 @@ theorem stabilizeGL_eq_reindexGL_fromBlocksGL (m k : ℕ) (u : GL (Fin m) A) :
   obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
   obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
   rcases i with i | i <;> rcases j with j | j <;>
-    simp [coe_stabilizeGL_apply, one_apply, Fin.ext_iff] <;> omega
+    simp [coe_stabilizeGL_apply, Matrix.one_apply, Fin.ext_iff] <;> omega
 
 /-- Stabilization sends an elementary matrix to the elementary matrix with the same parameter at
 the same pair of indices. -/
@@ -134,7 +134,7 @@ theorem stabilizeGL_transvectionUnit {m n : ℕ} (h : m ≤ n) {i j : Fin m} (hi
       transvectionUnit ((Fin.castLE_injective h).ne hij) a := by
   ext p q
   simp only [coe_stabilizeGL_apply, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
-    one_apply, single_apply, Fin.ext_iff, Fin.val_castLE]
+    Matrix.one_apply, single_apply, Fin.ext_iff, Fin.val_castLE]
   split_ifs <;> first | rfl | omega | simp_all
 
 /-- Stabilization maps the elementary subgroup into the elementary subgroup. -/

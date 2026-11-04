@@ -90,14 +90,14 @@ theorem uniformSphereMeasure_apply (s : Set (sphere (0 : E) 1)) :
     uniformSphereMeasure E s = (volume : Measure E).toSphere s /
       ENNReal.ofReal (2 * Real.pi ^ ((Module.finrank ℝ E : ℝ) / 2) /
         Real.Gamma ((Module.finrank ℝ E : ℝ) / 2)) := by
-  rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul, toSphere_volume_apply_univ,
+  rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul, toSphere_volume_apply_univ,
     ENNReal.div_eq_inv_mul]
 
 /-- In every positive dimension the uniform law on the sphere is a probability measure. -/
 instance isProbabilityMeasure_uniformSphereMeasure [Nontrivial E] :
     IsProbabilityMeasure (uniformSphereMeasure E) where
   measure_univ := by
-    rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul]
+    rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul]
     exact ENNReal.inv_mul_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
       (measure_ne_top _ _)
 
@@ -221,7 +221,7 @@ theorem map_sphereDirection_prod_norm_withDensity (e : sphere (0 : E) 1) {φ : �
   -- The uniform law times the total surface mass recovers the surface measure.
   have hσ : ∀ s, uniformSphereMeasure E s * (volume : Measure E).toSphere univ =
       (volume : Measure E).toSphere s := fun s ↦ by
-    rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul, ← ENNReal.div_eq_inv_mul,
+    rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul, ← ENNReal.div_eq_inv_mul,
       ENNReal.div_mul_cancel hσ₀ (measure_ne_top _ _)]
   refine (Measure.prod_eq fun s t hs ht ↦ ?_).symm
   have hprod : (ν.map Φ) (s ×ˢ t) = (volume : Measure E).toSphere s * K t := by

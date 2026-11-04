@@ -222,7 +222,7 @@ theorem weakApproximation_denseRange
     (v.1.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
   have hdenseinf (w : {w : InfinitePlace K // w ∈ Sinf}) :
       DenseRange (fun x : K => algebraMap K w.1.Completion x) := by
-    -- Expose the two coercions used to construct the algebra map so `DenseRange.comp` applies.
+    simp only [InfinitePlace.Completion.algebraMap_apply]
     change DenseRange
       (((↑) : WithAbs w.1.1 → w.1.Completion) ∘ (WithAbs.equiv w.1.1).symm)
     exact (InfinitePlace.Completion.denseRange_coe (v := w.1)).comp

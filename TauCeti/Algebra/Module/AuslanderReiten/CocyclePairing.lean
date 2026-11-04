@@ -181,7 +181,7 @@ theorem auslanderReitenCocyclePairing_eq_zero_iff (f : P₁ →ₗ[A] P₀)
   rw [range_dualMap_eq_dualAnnihilator_ker, Submodule.mem_dualAnnihilator]
   constructor
   · intro hg h hh
-    simpa only [auslanderReitenCocyclePairing_apply_mk, zero_apply] using
+    simpa only [auslanderReitenCocyclePairing_apply_mk, LinearMap.zero_apply] using
       LinearMap.congr_fun hg (Submodule.Quotient.mk ⟨h, hh⟩)
   · intro hg
     apply LinearMap.ext

@@ -144,7 +144,8 @@ theorem demushkinQ_presentedProP_demushkinWordNeTwo_of_eq_pow {f : ℕ} (hq : q 
     demushkinQ hG = q := by
   subst hq
   rw [demushkinQ_presentedProP_demushkinWordNeTwo (dvd_pow_self p hf.ne')
-    (pow_ne_zero f (Fact.out : p.Prime).ne_zero) hG, padicValNat.prime_pow]
+    (pow_ne_zero f (Fact.out : p.Prime).ne_zero) hG, Nat.padicValNat_def,
+      Nat.multiplicity_prime_pow]
 
 end NeTwo
 

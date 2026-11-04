@@ -11,6 +11,7 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.MeasureTheory.Constructions.Polish.Perfect
 import Mathlib.Topology.DerivedSet
 import Mathlib.Topology.MetricSpace.Perfect
+import TauCeti.Topology.Bases
 import TauCeti.Topology.Perfect
 
 /-!
@@ -34,7 +35,8 @@ the two agree on Polish spaces.
 A Cantor antichain on `A` gives at least continuum many classes, both of `E` and of its
 restriction `E.comap ((↑) : A → X)` to `A`. The restriction is reached through
 `Setoid.hasCantorAntichainOn_subtype_iff`, which passes Cantor antichains between `A` and the whole
-subtype `↥A`.
+subtype `↥A`. A second-countable `T₀` space, in particular a Polish space, has at most continuum
+many points, so there the number of classes is exactly `𝔠`.
 
 On a Polish space, Cantor antichains are the same as uncountable Borel sets of pairwise
 inequivalent points: the range of a Cantor antichain is compact, and the perfect set theorem for
@@ -42,7 +44,8 @@ Borel sets extracts a Cantor antichain from such a set. Since a measurable embed
 sets to Borel sets, Cantor antichains and thinness transport along a measurable embedding
 `g : X → Y` of Polish spaces that pulls an equivalence relation `F` on `Y` back to `E`, with no
 Borel hypothesis on `A`, `E` or `F`. This is how antichains built in one Polish space, for
-example a space of codes, are carried to another.
+example a space of codes, are carried to another. Perfect antichains transport along any
+homeomorphism pulling `F` back to `E`, with no hypothesis on the spaces.
 
 ## Main definitions
 
@@ -58,6 +61,9 @@ example a space of codes, are carried to another.
 * `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient` and
   `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap`: at least continuum many classes,
   of `E` and of its restriction to `A`.
+* `Setoid.HasCantorAntichainOn.mk_quotient_eq_continuum` and
+  `Setoid.HasCantorAntichainOn.mk_quotient_comap_eq_continuum`: exactly continuum many classes in a
+  second-countable `T₀` space, such as a Polish space.
 * `Setoid.HasCantorAntichainOn.hasPerfectAntichainOn` (Hausdorff spaces),
   `Setoid.HasPerfectAntichainOn.hasCantorAntichainOn` (completely metrizable spaces) and
   `Setoid.hasCantorAntichainOn_iff_hasPerfectAntichainOn`.
@@ -66,6 +72,8 @@ example a space of codes, are carried to another.
   antichains.
 * `Setoid.hasCantorAntichainOn_image_iff`, `Setoid.isThinOn_image_iff`: transport along
   measurable embeddings of Polish spaces.
+* `Setoid.hasPerfectAntichainOn_image_homeomorph_iff`: transport of perfect antichains along
+  homeomorphisms of arbitrary topological spaces.
 
 ## References
 
@@ -203,6 +211,21 @@ theorem HasCantorAntichainOn.continuum_le_mk_quotient_comap (h : E.HasCantorAnti
     𝔠 ≤ #(Quotient (E.comap ((↑) : A → X))) :=
   (hasCantorAntichainOn_subtype_iff.2 h).continuum_le_mk_quotient
 
+/-- **Exactly continuum many classes.** In a second-countable `T₀` space, in particular a Polish
+space, a Cantor antichain on `A` for `E` gives `E` exactly continuum many classes. -/
+theorem HasCantorAntichainOn.mk_quotient_eq_continuum [SecondCountableTopology X] [T0Space X]
+    (h : E.HasCantorAntichainOn A) : #(Quotient E) = 𝔠 :=
+  (mk_quotient_le.trans (TauCeti.mk_le_continuum_of_secondCountableTopology X)).antisymm
+    h.continuum_le_mk_quotient
+
+/-- **Exactly continuum many classes on `A`.** In a second-countable `T₀` space, in particular a
+Polish space, a Cantor antichain on `A` for `E` gives the restriction of `E` to `A` exactly
+continuum many classes. -/
+theorem HasCantorAntichainOn.mk_quotient_comap_eq_continuum [SecondCountableTopology X]
+    [T0Space X] (h : E.HasCantorAntichainOn A) :
+    #(Quotient (E.comap ((↑) : A → X))) = 𝔠 :=
+  (hasCantorAntichainOn_subtype_iff.2 h).mk_quotient_eq_continuum
+
 /-! ### Cantor antichains and perfect antichains -/
 
 /-- **A Cantor antichain is a perfect antichain** in a Hausdorff space: its range is closed, as
@@ -305,5 +328,24 @@ theorem isThinOn_image_iff {Y : Type*} [TopologicalSpace Y] [PolishSpace X] [Mea
     F.IsThinOn (g '' A) ↔ E.IsThinOn A := by
   rw [isThinOn_iff_not_hasCantorAntichainOn, isThinOn_iff_not_hasCantorAntichainOn,
     hasCantorAntichainOn_image_iff hg hrel A]
+
+/-- **Transport of perfect antichains along a homeomorphism.** If a homeomorphism `g : X ≃ₜ Y`
+pulls `F` back to `E`, then `g '' A` carries a perfect antichain for `F` exactly when `A` carries
+one for `E`. No Polish or Borel hypothesis is made. -/
+theorem hasPerfectAntichainOn_image_homeomorph_iff {Y : Type*} [TopologicalSpace Y]
+    {F : Setoid Y} (g : X ≃ₜ Y) (hrel : ∀ x y, F (g x) (g y) ↔ E x y) (A : Set X) :
+    F.HasPerfectAntichainOn (g '' A) ↔ E.HasPerfectAntichainOn A := by
+  constructor
+  · rintro ⟨P, hP, hne, hPA, hF⟩
+    refine ⟨g.symm '' P, g.symm.perfect_image.2 hP, hne.image _, ?_, ?_⟩
+    · rintro _ ⟨y, hy, rfl⟩
+      obtain ⟨x, hx, rfl⟩ := hPA hy
+      simpa using hx
+    · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+      rw [hF x hx y hy (by simpa [← hrel] using hxy)]
+  · rintro ⟨P, hP, hne, hPA, hE⟩
+    refine ⟨g '' P, g.perfect_image.2 hP, hne.image _, image_mono hPA, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+    rw [hE x hx y hy ((hrel x y).1 hxy)]
 
 end Setoid

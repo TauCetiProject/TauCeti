@@ -55,7 +55,7 @@ def hopfDual (ρ : H →ₐ[R] Module.End R V) : H →ₐ[R] Module.End R (Dual 
     (by ext φ v; simp [Dual.transpose_apply])
     (fun a b => by
       ext φ v
-      simp [Dual.transpose_apply, antipode_mul_antidistrib, Module.End.mul_apply])
+      simp [Dual.transpose_apply, antipode_mul_antidistrib, mul_apply_eq_comp])
 
 /-- The contragredient action on a functional is precomposition with the antipode action. -/
 @[simp]
@@ -96,10 +96,10 @@ theorem unitEvalEquiv_intertwines (ρ : H →ₐ[R] Module.End R V) (g : Hˣ)
     (a : H) (v : V) :
     ρ.unitEvalEquiv g (ρ a v) = ρ.hopfDual.hopfDual a (ρ.unitEvalEquiv g v) := by
   have hcancel : ρ (↑g⁻¹ : H) (ρ (g : H) v) = v := by
-    rw [← Module.End.mul_apply, ← map_mul]
+    rw [← mul_apply_eq_comp, ← map_mul]
     simp
   ext φ
-  simp [hg, Module.End.mul_apply, hcancel]
+  simp [hg, mul_apply_eq_comp, hcancel]
 
 end AlgHom
 

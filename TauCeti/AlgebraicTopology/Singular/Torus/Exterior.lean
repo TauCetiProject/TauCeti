@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Pontryagin.Exterior
 public import TauCeti.AlgebraicTopology.Singular.Torus.Basic
@@ -192,8 +193,6 @@ private lemma surjective_pontryaginExteriorPower_add_two
   have hre : ρ ≫ e = 𝟙 _ := by
     ext x
     exact (of_mul_apply _).trans (hr x)
-  -- the unit `𝟙_ (ModuleCat k)` is `k` itself
-  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
   have := isIso_singularHomologyKunneth_of_projective_homology (TopCat.of (ULift.{u} Circle))
     (TopCat.of B) (𝟙_ (ModuleCat.{u} k)) (𝟙_ _) (n + 2)
   -- the quotient by the image of the Pontryagin map kills the image of every cross product, hence
@@ -312,7 +311,6 @@ private lemma surjective_pontryaginExteriorPower_torus (ι : Type u) [Finite ι]
       exact ⟨0, Subsingleton.elim _ _⟩
     · intro α _ ih n
       classical
-      have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
       refine surjective_pontryaginExteriorPower_add_two k (optionNoneHom α) (optionSomeHom α)
         (piOptionEquivProdHomeomorph fun _ : Option α ↦ ULift.{u} Circle :
           C(Option α → ULift.{u} Circle, ULift.{u} Circle × (α → ULift.{u} Circle)))
@@ -333,13 +331,11 @@ theorem bijective_pontryaginExteriorPower_torus (ι : Type u) [Finite ι] (n : �
       (𝟙_ _)).obj (TopCat.of (ι → ULift.{u} Circle))))
     exact ⟨Function.injective_of_subsingleton _, surjective_pontryaginExteriorPower_torus k ι n⟩
   -- both sides are free of rank `(card ι).choose n`, so the surjection is bijective
-  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
-  have : Module.Finite k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Finite k k)
-  have h₁ : Module.finrank k (𝟙_ (ModuleCat.{u} k)) = 1 := Module.finrank_self k
   refine OrzechProperty.bijective_of_surjective_of_finrank_le _
     (surjective_pontryaginExteriorPower_torus k ι n) ?_
   rw [exteriorPower.finrank_eq, finrank_singularHomology_pi_circle,
-    finrank_singularHomology_pi_circle, h₁, _root_.mul_one, _root_.mul_one, Nat.choose_one_right]
+    finrank_singularHomology_pi_circle, ModuleCat.finrank_tensorUnit, _root_.mul_one,
+    _root_.mul_one, Nat.choose_one_right]
 
 /-- **The homology of a torus is the exterior algebra on its first homology**: over any
 commutative ring `k`, the Pontryagin product induces an isomorphism `⋀ⁿ H₁(Tⁱ; k) ≃ Hₙ(Tⁱ; k)` for
