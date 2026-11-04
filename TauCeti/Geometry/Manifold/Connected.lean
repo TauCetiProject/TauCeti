@@ -111,4 +111,15 @@ theorem isConnected_compl_of_finite_of_one_lt_rank [ConnectedSpace X] (h : 1 < M
   have := ChartedSpace.t1Space E X
   isConnected_compl_of_isDiscrete_of_one_lt_rank h hs.isClosed hs.isDiscrete
 
+/-- A nonempty manifold modelled on a nontrivial real normed space has infinitely many points. -/
+theorem infinite_of_nontrivial_model [Nonempty X] [Nontrivial E] : Infinite X := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  have := Module.punctured_nhds_neBot ℝ E (chartAt E x x)
+  apply not_finite_iff_infinite.mp
+  intro hfin
+  have htarget := infinite_of_mem_nhds (chartAt E x x) (chart_target_mem_nhds E x)
+  apply htarget
+  rw [← (chartAt E x).image_source_eq_target]
+  exact (Set.toFinite _).image _
+
 end TauCeti
