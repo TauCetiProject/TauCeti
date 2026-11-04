@@ -9,11 +9,14 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Calculus.FDeriv.ClosedCover
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.ContinuousOn.ClosedCover
 
 /-!
 # Even reflection across the real axis
@@ -74,10 +77,12 @@ def evenReflection (w : ℂ → F) (z : ℂ) : F :=
   w ⟨z.re, |z.im|⟩
 
 /-- On the closed upper half-plane the even reflection of `w` is `w`. -/
+@[simp]
 theorem evenReflection_of_nonneg (hz : 0 ≤ z.im) : evenReflection w z = w z := by
   simp [evenReflection, abs_of_nonneg hz]
 
 /-- On the closed lower half-plane the even reflection of `w` is `w ∘ conj`. -/
+@[simp]
 theorem evenReflection_of_nonpos (hz : z.im ≤ 0) : evenReflection w z = w (conj z) := by
   rw [evenReflection, abs_of_nonpos hz]
   congr 1
@@ -99,54 +104,6 @@ theorem continuousOn_evenReflection [TopologicalSpace F] {s : Set ℂ} (hs : ∀
   · convert hs z hz using 1
     apply Complex.ext <;> simp [abs_of_nonpos h]
 
-/-! ### Gluing along the real axis -/
-
-section Gluing
-
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-private theorem closure_setOf_im_nonneg : closure {z : ℂ | 0 ≤ z.im} = {z | 0 ≤ z.im} :=
-  (isClosed_le continuous_const continuous_im).closure_eq
-
-private theorem closure_setOf_im_nonpos : closure {z : ℂ | z.im ≤ 0} = {z | z.im ≤ 0} :=
-  (isClosed_le continuous_im continuous_const).closure_eq
-
-private theorem setOf_im_nonneg_union : {z : ℂ | 0 ≤ z.im} ∪ {z | z.im ≤ 0} = univ :=
-  eq_univ_of_forall fun z ↦ le_total 0 z.im
-
-/-- A map with the same derivative within both closed half-planes at `z` is differentiable
-at `z`. -/
-private theorem hasFDerivAt_of_halfPlanes {f : ℂ → G} {f' : ℂ →L[ℝ] G}
-    (h₁ : 0 ≤ z.im → HasFDerivWithinAt f f' {z | 0 ≤ z.im} z)
-    (h₂ : z.im ≤ 0 → HasFDerivWithinAt f f' {z | z.im ≤ 0} z) : HasFDerivAt f f' z := by
-  have hP : HasFDerivWithinAt f f' {z | 0 ≤ z.im} z := by
-    by_cases hz : 0 ≤ z.im
-    · exact h₁ hz
-    · exact .of_notMem_closure (by rwa [closure_setOf_im_nonneg])
-  have hQ : HasFDerivWithinAt f f' {z | z.im ≤ 0} z := by
-    by_cases hz : z.im ≤ 0
-    · exact h₂ hz
-    · exact .of_notMem_closure (by rwa [closure_setOf_im_nonpos])
-  simpa [setOf_im_nonneg_union] using hP.union hQ
-
-omit [NormedSpace ℝ G] in
-/-- A map continuous within both closed half-planes at `z` is continuous at `z`. -/
-private theorem continuousAt_of_halfPlanes {f : ℂ → G}
-    (h₁ : 0 ≤ z.im → ContinuousWithinAt f {z | 0 ≤ z.im} z)
-    (h₂ : z.im ≤ 0 → ContinuousWithinAt f {z | z.im ≤ 0} z) : ContinuousAt f z := by
-  have hP : ContinuousWithinAt f {z | 0 ≤ z.im} z := by
-    by_cases hz : 0 ≤ z.im
-    · exact h₁ hz
-    · exact continuousWithinAt_of_notMem_closure (by rwa [closure_setOf_im_nonneg])
-  have hQ : ContinuousWithinAt f {z | z.im ≤ 0} z := by
-    by_cases hz : z.im ≤ 0
-    · exact h₂ hz
-    · exact continuousWithinAt_of_notMem_closure (by rwa [closure_setOf_im_nonpos])
-  have h := hP.union hQ
-  rwa [setOf_im_nonneg_union, continuousWithinAt_univ] at h
-
-end Gluing
-
 /-! ### `C²` regularity of the even reflection -/
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -158,61 +115,6 @@ private noncomputable abbrev conjPrecomp (F : Type*) [NormedAddCommGroup F] [Nor
 
 private theorem conjPrecomp_apply (L : ℂ →L[ℝ] F) (v : ℂ) : conjPrecomp F L v = L (conj v) := by
   simp [conjPrecomp]
-
-/-- A real-linear map vanishing at `I` is unchanged by precomposition with `conj`. -/
-private theorem conjPrecomp_eq_self {L : ℂ →L[ℝ] F} (hL : L I = 0) : conjPrecomp F L = L := by
-  have hdec : ∀ v : ℂ, L v = v.re • L 1 + v.im • L I :=
-    L.toLinearMap.apply_eq_re_smul_one_add_im_smul_I
-  ext v
-  rw [conjPrecomp_apply, hdec (conj v), hdec v]
-  simp [hL]
-
-/-- A bilinear map on `ℂ` with `B I 1 = B 1 I = 0` is unchanged by conjugating both
-arguments. -/
-private theorem conjPrecomp_comp_comp_conjCLE_eq_self {B : ℂ →L[ℝ] ℂ →L[ℝ] F}
-    (h₁ : B 1 I = 0) (h₂ : B I 1 = 0) :
-    (conjPrecomp F).comp (B.comp (conjCLE : ℂ →L[ℝ] ℂ)) = B := by
-  have hdec : ∀ (L : ℂ →L[ℝ] F) (v : ℂ), L v = v.re • L 1 + v.im • L I := fun L v ↦
-    L.toLinearMap.apply_eq_re_smul_one_add_im_smul_I v
-  have hdec₂ : ∀ v : ℂ, B v = v.re • B 1 + v.im • B I :=
-    B.toLinearMap.apply_eq_re_smul_one_add_im_smul_I
-  ext v e
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply,
-    conjPrecomp_apply]
-  rw [hdec₂ (conj v), hdec₂ v]
-  simp only [add_apply, smul_apply]
-  rw [hdec (B 1) (conj e), hdec (B I) (conj e), hdec (B 1) e, hdec (B I) e, h₁, h₂]
-  simp
-
-/-- If `t ↦ D (x + t) I` vanishes for real `t` near `0`, along a set `S` containing the nearby
-points of the real axis, then a derivative `D'` of `D` within `S` at `x` has `D' 1 I = 0`. -/
-private theorem apply_one_apply_I_eq_zero {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {D : ℂ → ℂ →L[ℝ] G} {D' : ℂ →L[ℝ] ℂ →L[ℝ] G} {S : Set ℂ} {x : ℂ}
-    (hD : HasFDerivWithinAt D D' S x) (hS : ∀ᶠ t : ℝ in 𝓝 0, x + t ∈ S ∧ D (x + t) I = 0) :
-    D' 1 I = 0 := by
-  have hpath : HasDerivAt (fun t : ℝ ↦ x + t) 1 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).ofReal_comp).const_add x
-  have hcomp : HasDerivWithinAt (fun t : ℝ ↦ D (x + t) I) (D' 1 I)
-      ((fun t : ℝ ↦ x + t) ⁻¹' S) 0 := by
-    have h := hD.comp_hasDerivWithinAt_of_eq (0 : ℝ)
-      (hpath.hasDerivWithinAt (s := (fun t : ℝ ↦ x + t) ⁻¹' S)) (fun t ht ↦ ht) (by simp)
-    simpa [Function.comp_def] using
-      (ContinuousLinearMap.apply ℝ G I).hasFDerivAt.comp_hasDerivWithinAt (0 : ℝ) h
-  have hzero : (fun t : ℝ ↦ D (x + t) I) =ᶠ[𝓝 0] fun _ ↦ 0 := hS.mono fun _ ht ↦ ht.2
-  exact (hcomp.hasDerivAt (hS.mono fun _ ht ↦ ht.1)).unique
-    ((hasDerivAt_const (0 : ℝ) (0 : G)).congr_of_eventuallyEq hzero)
-
-/-- A point of an open set `U` on the real axis is a limit of interior points of
-`{0 ≤ im z} ∩ U`. -/
-private theorem mem_closure_interior_inter {U : Set ℂ} (hU : IsOpen U) {x : ℂ} (hx : x ∈ U)
-    (hx0 : x.im = 0) : x ∈ closure (interior ({z : ℂ | 0 ≤ z.im} ∩ U)) := by
-  rw [interior_inter, hU.interior_eq, interior_setOfPred_le_im]
-  have hlim : Tendsto (fun t : ℝ ↦ x + t * I) (𝓝[>] 0) (𝓝 x) := by
-    have : Continuous fun t : ℝ ↦ x + t * I := by fun_prop
-    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-  refine mem_closure_of_tendsto hlim ?_
-  filter_upwards [self_mem_nhdsWithin, hlim (hU.mem_nhds hx)] with t ht htU
-  exact ⟨by simpa [hx0] using ht, htU⟩
 
 /-- **`C²` regularity of the even reflection.** Let `U` be an open set invariant under
 conjugation, and let `w` be `C²` on `{0 ≤ im z} ∩ U`, up to the real axis, with vanishing normal
@@ -240,25 +142,39 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
   have hconjS : ∀ z ∈ U, z.im ≤ 0 → conj z ∈ S := fun z hz hz' ↦
     ⟨by simpa using hz', hUc z hz⟩
   have hmaps : MapsTo conj ({z : ℂ | z.im ≤ 0} ∩ U) S := fun z hz ↦ hconjS z hz.2 hz.1
+  have hupper : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  have hlower : IsClosed {z : ℂ | z.im ≤ 0} := isClosed_le continuous_im continuous_const
+  have hcover : {z : ℂ | 0 ≤ z.im} ∪ {z | z.im ≤ 0} = univ :=
+    eq_univ_of_forall fun z ↦ le_total 0 z.im
   -- On the axis, precomposing the first two derivatives with `conj` changes nothing.
-  have hedge₁ : ∀ x ∈ U, x.im = 0 → conjPrecomp F (D₁ x) = D₁ x := fun x hx hx0 ↦
-    conjPrecomp_eq_self (hN x hx hx0)
+  have hedge₁ : ∀ x ∈ U, x.im = 0 → conjPrecomp F (D₁ x) = D₁ x := fun x hx hx0 ↦ by
+    ext v
+    rw [conjPrecomp_apply]
+    exact (D₁ x).toLinearMap.apply_conj_of_apply_I_eq_zero (hN x hx hx0) v
   have hedge₂ : ∀ x ∈ U, x.im = 0 →
       (conjPrecomp F).comp ((D₂ x).comp (conjCLE : ℂ →L[ℝ] ℂ)) = D₂ x := by
     intro x hx hx0
     have hxS : x ∈ S := ⟨hx0.ge, hx⟩
     -- The mixed derivative `∂ₛ ∂ₜ w` vanishes along the axis, where `∂ₜ w` does.
     have hmixed : D₂ x 1 I = 0 := by
-      refine apply_one_apply_I_eq_zero (hD₁S x hxS) ?_
-      have hU' : (fun t : ℝ ↦ x + t) ⁻¹' U ∈ 𝓝 (0 : ℝ) :=
-        (continuous_const.add continuous_ofReal).continuousAt.preimage_mem_nhds
-          (by simpa using hU.mem_nhds hx)
+      have hU' : ∀ᶠ t : ℝ in 𝓝 0, x + t • (1 : ℂ) ∈ U :=
+        (Continuous.tendsto' (by fun_prop) 0 x (by simp)).eventually (hU.mem_nhds hx)
+      have hline := (((ContinuousLinearMap.apply ℝ F I).hasFDerivAt.comp_hasFDerivWithinAt x
+        (hD₁S x hxS)).hasLineDerivWithinAt (1 : ℂ)).hasLineDerivAt'
+          (hU'.mono fun t ht ↦ ⟨by simp [hx0], ht⟩)
+      refine hline.unique ((hasDerivAt_const (0 : ℝ) (0 : F)).congr_of_eventuallyEq ?_)
       filter_upwards [hU'] with t ht
-      exact ⟨⟨by simp [hx0], ht⟩, hN _ ht (by simp [hx0])⟩
+      exact hN _ ht (by simp [hx0])
+    have hcl : x ∈ closure (interior S) := by
+      rw [interior_inter, hU.interior_eq, interior_setOfPred_le_im, inter_comm]
+      exact hU.inter_closure ⟨hx, by rw [closure_setOfPred_lt_im]; exact hx0.ge⟩
     have hsymm : D₂ x I 1 = D₂ x 1 I :=
-      (hw x hxS).isSymmSndFDerivWithinAt (by simp) hS (mem_closure_interior_inter hU hx hx0)
-        hxS I 1
-    exact conjPrecomp_comp_comp_conjCLE_eq_self hmixed (hsymm.trans hmixed)
+      (hw x hxS).isSymmSndFDerivWithinAt (by simp) hS hcl hxS I 1
+    ext v e
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply,
+      conjPrecomp_apply]
+    exact (D₂ x).toLinearMap₁₂.apply_conj_apply_conj_of_apply_one_I_eq_zero_of_apply_I_one_eq_zero
+      hmixed (hsymm.trans hmixed) v e
   -- The first and second derivatives of the reflection, glued along the axis.
   let G₁ : ℂ → ℂ →L[ℝ] F := fun z ↦ if 0 ≤ z.im then D₁ z else conjPrecomp F (D₁ (conj z))
   let G₂ : ℂ → ℂ →L[ℝ] ℂ →L[ℝ] F := fun z ↦
@@ -294,7 +210,8 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
       ((hD₁S (conj z) (hconjS z hz hz')).comp z (conjCLE : ℂ →L[ℝ] ℂ).hasFDerivWithinAt hmaps)
   have hderiv₁ : ∀ z ∈ U, HasFDerivAt (evenReflection w) (G₁ z) z := by
     intro z hz
-    refine hasFDerivAt_of_halfPlanes (fun hz' ↦ ?_) fun hz' ↦ ?_
+    refine hasFDerivAt_of_isClosed_of_union_eq_univ hupper hlower hcover
+      (fun (hz' : 0 ≤ z.im) ↦ ?_) fun (hz' : z.im ≤ 0) ↦ ?_
     · refine (((hasFDerivWithinAt_inter (hU.mem_nhds hz)).1 (hwS z ⟨hz', hz⟩)).congr
         (fun y hy ↦ evenReflection_of_nonneg hy) (evenReflection_of_nonneg hz')).congr_fderiv ?_
       simp only [G₁, ite_eq_left hz']
@@ -303,7 +220,8 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
         (evenReflection_of_nonpos hz')
   have hderiv₂ : ∀ z ∈ U, HasFDerivAt G₁ (G₂ z) z := by
     intro z hz
-    refine hasFDerivAt_of_halfPlanes (fun hz' ↦ ?_) fun hz' ↦ ?_
+    refine hasFDerivAt_of_isClosed_of_union_eq_univ hupper hlower hcover
+      (fun (hz' : 0 ≤ z.im) ↦ ?_) fun (hz' : z.im ≤ 0) ↦ ?_
     · refine (((hasFDerivWithinAt_inter (hU.mem_nhds hz)).1 (hD₁S z ⟨hz', hz⟩)).congr
         (fun y hy ↦ ite_eq_left hy) (ite_eq_left hz')).congr_fderiv ?_
       simp only [G₂, ite_eq_left hz']
@@ -312,7 +230,8 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
         (fun y hy ↦ hG₁_lower y hy.2 hy.1) (hG₁_lower z hz hz')
   have hcont₂ : ContinuousOn G₂ U := by
     intro z hz
-    refine (continuousAt_of_halfPlanes (f := G₂) (fun hz' ↦ ?_) fun hz' ↦ ?_).continuousWithinAt
+    refine (continuousAt_of_isClosed_of_union_eq_univ (f := G₂) hupper hlower hcover
+      (fun (hz' : 0 ≤ z.im) ↦ ?_) fun (hz' : z.im ≤ 0) ↦ ?_).continuousWithinAt
     · rw [← continuousWithinAt_inter (hU.mem_nhds hz)]
       refine (hD₂ z ⟨hz', hz⟩).congr
         (fun y hy ↦ ite_eq_left hy.1) (ite_eq_left hz')

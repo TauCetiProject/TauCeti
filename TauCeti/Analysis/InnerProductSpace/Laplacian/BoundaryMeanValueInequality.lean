@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.EvenReflection
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MeanValueInequality
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -62,14 +63,6 @@ open Complex ComplexConjugate Filter InnerProductSpace Laplacian MeasureTheory M
   Topology
 
 variable {w : ℂ → ℝ} {x₀ : ℂ} {r A : ℝ}
-
-private theorem conj_mem_ball_of_im_eq_zero (hx₀ : x₀.im = 0) {z : ℂ} (hz : z ∈ ball x₀ r) :
-    conj z ∈ ball x₀ r := by
-  rwa [mem_ball, ← conj_eq_iff_im.2 hx₀, dist_conj_conj]
-
-private theorem conj_mem_closedBall_of_im_eq_zero (hx₀ : x₀.im = 0) {z : ℂ}
-    (hz : z ∈ closedBall x₀ r) : conj z ∈ closedBall x₀ r := by
-  rwa [mem_closedBall, ← conj_eq_iff_im.2 hx₀, dist_conj_conj]
 
 /-- If `w` is `C²` up to the real axis on a disc centred on the axis, satisfies the Neumann
 condition on the axis and `Δ w ≥ -A w²` above it, then its even reflection satisfies
