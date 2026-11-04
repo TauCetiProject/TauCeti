@@ -28,9 +28,10 @@ depending only on `n`, `T`, `Λ`, `β` and `γ`, such that
 
 whenever `|u(0, x) - u(0, y)| ≤ ω(‖x - y‖)` with `ω` nondecreasing
 (`TauCeti.PDE.exists_abs_sub_le_mul_add_of_abs_sub_le_comp_dist`). The constant does not depend
-on `u`, `ω`, `G` or `F`. Consequently, for a uniformly bounded family of solutions whose initial
-values are uniformly equicontinuous, `u(·, t) → u(·, 0)` uniformly over the whole family as
-`t → 0` (`TauCeti.PDE.tendstoUniformly_nhdsWithin_zero_of_uniformEquicontinuous`). This is the
+on `u`, `ω`, `G` or `F`. Consequently, for a family of bounded solutions with a common bound `G`
+on the initial values and `F` on the forcing, whose initial values are uniformly equicontinuous,
+`u(·, t) → u(·, 0)` uniformly over the whole family as `t → 0`
+(`TauCeti.PDE.tendstoUniformly_nhdsWithin_zero_of_uniformEquicontinuous`). This is the
 estimate by which solutions with bounded uniformly continuous initial data are shown to attain
 their initial values, uniformly over data with a common modulus of continuity.
 
@@ -146,6 +147,79 @@ private theorem abs_sub_le_of_abs_initial_sub_le
   intro t ht x
   simpa only [hv] using key ht x
 
+omit [DecidableEq ι] in
+/-- **Smoothing at the parabolic scale.** There are constants `K₁, K₂ ≥ 0` such that every
+continuous `f` with `|f| ≤ G` that oscillates by at most `w` at distances below `√t` has a `C²`
+approximation `h` with `|f - h| ≤ w`, `‖Dh‖ ≤ K₁ w / √t`, `‖D²h‖ ≤ K₂ w / t` and
+`|h| ≤ G + w`. -/
+private theorem exists_contDiff_abs_sub_le_of_forall_dist_lt_sqrt :
+    ∃ K₁ K₂ : ℝ, 0 ≤ K₁ ∧ 0 ≤ K₂ ∧ ∀ ⦃f : EuclideanSpace ℝ ι → ℝ⦄ ⦃G t w : ℝ⦄, Continuous f →
+      (∀ x, |f x| ≤ G) → 0 < t → (∀ x y, dist x y < √t → |f x - f y| ≤ w) →
+      ∃ h, ContDiff ℝ 2 h ∧ (∀ x, |f x - h x| ≤ w) ∧ (∀ x, ‖fderiv ℝ h x‖ ≤ K₁ * w / √t) ∧
+        (∀ x, ‖fderiv ℝ (fderiv ℝ h) x‖ ≤ K₂ * w / t) ∧ ∀ x, |h x| ≤ G + w := by
+  obtain ⟨K, hK0, hK⟩ := exists_forall_exists_contDiff_dist_le_and_norm_iteratedFDeriv_le
+    (E := EuclideanSpace ℝ ι) (F := ℝ) (μ := MeasureTheory.volume)
+  refine ⟨K 1, K 2, hK0 1, hK0 2, fun f G t w hf hG ht0 hw ↦ ?_⟩
+  obtain ⟨h, hhc, hh⟩ := hK (Real.sqrt_pos.2 ht0) (hf.locallyIntegrable (μ := MeasureTheory.volume))
+  have hosc (y : EuclideanSpace ℝ ι) : ∀ z ∈ ball y √t, dist (f z) (f y) ≤ w :=
+    fun z hz ↦ by rw [Real.dist_eq]; exact hw z y hz
+  have h0 (y : EuclideanSpace ℝ ι) : |f y - h y| ≤ w := by
+    rw [abs_sub_comm, ← Real.dist_eq]; exact (hh y w (hosc y)).1
+  refine ⟨h, by simpa using contDiff_infty.mp hhc 2, h0, fun y ↦ ?_, fun y ↦ ?_, fun y ↦ ?_⟩
+  · simpa [norm_iteratedFDeriv_one] using (hh y w (hosc y)).2 1 one_ne_zero
+  · have h2eq : ‖iteratedFDeriv ℝ 2 h y‖ = ‖fderiv ℝ (fderiv ℝ h) y‖ := by
+      rw [← norm_iteratedFDeriv_one (f := fderiv ℝ h), norm_iteratedFDeriv_fderiv]
+    simpa [h2eq, Real.sq_sqrt ht0.le] using (hh y w (hosc y)).2 2 two_ne_zero
+  · have := abs_sub_abs_le_abs_sub (h y) (f y)
+    rw [abs_sub_comm] at this
+    linarith [h0 y, hG y]
+
+/-- **The constants at the parabolic scale.** At time `t = (√t)²`, the bound given by
+`abs_sub_le_of_abs_initial_sub_le` for the smoothing at scale `√t`, plus the smoothing error `w`,
+is at most `C (w + t (G + F))` for a `C` depending only on `n`, `T`, `Λ`, `β`, `γ`, `K₁`
+and `K₂`. -/
+private theorem exp_mul_add_add_le_mul_add {n Λ β γ K₁ K₂ T t w G F : ℝ} (hΛ : 0 ≤ Λ)
+    (hβ : 0 ≤ β) (hγ : 0 ≤ γ) (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂) (ht0 : 0 < t) (htT : t ≤ T)
+    (hw : 0 ≤ w) (hG : 0 ≤ G) (hF : 0 ≤ F) :
+    Real.exp (γ * t) * (w + t * (F + n ^ 2 * Λ * (K₂ * w / t) + β * (K₁ * w / √t) +
+        γ * (G + w))) + w ≤
+      (Real.exp (γ * T) * (2 + γ + γ * T + (n ^ 2 * Λ * K₂ + β * K₁ * √T)) + 1) *
+        (w + t * (G + F)) := by
+  set E := Real.exp (γ * T)
+  set A := n ^ 2 * Λ * K₂ + β * K₁ * √T
+  have hT : 0 ≤ T := ht0.le.trans htT
+  have hE : 0 ≤ E := (Real.exp_pos _).le
+  have hA : 0 ≤ A := by positivity
+  -- At time `t = (√t)²` the derivative bounds contribute only multiples of `w`.
+  have hinner : t * (F + n ^ 2 * Λ * (K₂ * w / t) + β * (K₁ * w / √t) + γ * (G + w)) ≤
+      A * w + γ * T * w + (1 + γ) * (t * (G + F)) := by
+    have e2 : t * (K₂ * w / t) = K₂ * w := by field_simp
+    have e1 : t * (K₁ * w / √t) = K₁ * w * √t :=
+      calc t * (K₁ * w / √t) = √t * √t * (K₁ * w / √t) := by rw [Real.mul_self_sqrt ht0.le]
+        _ = K₁ * w * √t := by field_simp
+    have hs : K₁ * w * √t ≤ K₁ * w * √T := by gcongr
+    have hγt : γ * t * w ≤ γ * T * w := by gcongr
+    have hγG : γ * t * G ≤ γ * (t * (G + F)) := by nlinarith [mul_nonneg ht0.le hF]
+    calc _ = t * F + n ^ 2 * Λ * (t * (K₂ * w / t)) + β * (t * (K₁ * w / √t)) +
+          γ * t * G + γ * t * w := by ring
+      _ ≤ t * F + n ^ 2 * Λ * (K₂ * w) + β * (K₁ * w * √T) + γ * (t * (G + F)) +
+          γ * T * w := by
+        rw [e2, e1]; gcongr
+      _ ≤ _ := by
+        simp only [A]
+        nlinarith [mul_nonneg ht0.le hG]
+  have hexp : Real.exp (γ * t) ≤ E := Real.exp_le_exp.mpr (by gcongr)
+  have htGF : 0 ≤ t * (G + F) := by positivity
+  calc _ ≤ E * (w + (A * w + γ * T * w + (1 + γ) * (t * (G + F)))) + w := by
+        refine add_le_add (mul_le_mul hexp (add_le_add le_rfl hinner) ?_ hE) le_rfl
+        positivity
+    _ = (E * (1 + γ * T + A) + 1) * w + E * (1 + γ) * (t * (G + F)) := by ring
+    _ ≤ (E * (2 + γ + γ * T + A) + 1) * w + (E * (2 + γ + γ * T + A) + 1) * (t * (G + F)) := by
+        gcongr ?_ * _ + ?_ * _
+        · nlinarith
+        · nlinarith [mul_nonneg hE (add_nonneg (mul_nonneg hγ hT) hA)]
+    _ = _ := by ring
+
 /-- **The approach to the initial value at the parabolic scale.** There is a constant `C ≥ 0`,
 depending only on `n`, `T`, `Λ`, `β` and `γ`, with the following property. Let `a` be degenerate
 elliptic with `|aⁱʲ| ≤ Λ`, `‖b‖ ≤ β` and `|c| ≤ γ` for `0 < t < T`, and let `u` be continuous and
@@ -170,90 +244,30 @@ theorem exists_abs_sub_le_mul_add_of_forall_dist_lt_sqrt (T Λ β γ : ℝ) :
       (∀ x, |u 0 x| ≤ G) →
       ∀ ⦃t w : ℝ⦄, t ∈ Ioc 0 T → (∀ x y, dist x y < √t → |u 0 x - u 0 y| ≤ w) →
       ∀ x, |u t x - u 0 x| ≤ C * (w + t * (G + F)) := by
-  obtain ⟨K, hK0, hK⟩ := exists_forall_exists_contDiff_dist_le_and_norm_iteratedFDeriv_le
-    (E := EuclideanSpace ℝ ι) (F := ℝ) (μ := MeasureTheory.volume)
-  set Λ' := max Λ 0
-  set β' := max β 0
-  set γ' := max γ 0
-  set T' := max T 0
-  set n : ℝ := (Fintype.card ι : ℝ)
-  have hΛ' : 0 ≤ Λ' := le_max_right _ _
-  have hβ' : 0 ≤ β' := le_max_right _ _
-  have hγ' : 0 ≤ γ' := le_max_right _ _
-  have hT' : 0 ≤ T' := le_max_right _ _
-  set E := Real.exp (γ' * T')
-  have hE : 0 ≤ E := (Real.exp_pos _).le
-  set A := n ^ 2 * Λ' * K 2 + β' * K 1 * √T'
-  have hA : 0 ≤ A := by have := hK0 1; have := hK0 2; positivity
-  refine ⟨E * (2 + γ' + γ' * T' + A) + 1, by positivity, ?_⟩
+  obtain ⟨K₁, K₂, hK₁, hK₂, hK⟩ := exists_contDiff_abs_sub_le_of_forall_dist_lt_sqrt (ι := ι)
+  refine ⟨Real.exp (max γ 0 * max T 0) * (2 + max γ 0 + max γ 0 * max T 0 +
+    ((Fintype.card ι : ℝ) ^ 2 * max Λ 0 * K₂ + max β 0 * K₁ * √(max T 0))) + 1,
+    by positivity, ?_⟩
   intro a b c u G F ha hΛ hb hc hcont hbdd hcd hdiff hP hG t w ht hw x
-  set C := E * (2 + γ' + γ' * T' + A) + 1
   have ht0 : 0 < t := ht.1
-  have htT' : t ≤ T' := ht.2.trans (le_max_left _ _)
-  have hε : 0 < √t := Real.sqrt_pos.2 ht0
-  have hw0 : 0 ≤ w := (abs_nonneg _).trans (hw x x (by simpa using hε))
+  have hw0 : 0 ≤ w := (abs_nonneg _).trans (hw x x (by simpa using Real.sqrt_pos.2 ht0))
   have hG0 : 0 ≤ G := (abs_nonneg _).trans (hG x)
   have hF0 : 0 ≤ F := (abs_nonneg _).trans (hP ⟨half_pos ht0, by linarith [ht.2]⟩ x)
-  -- Smooth the initial value at the parabolic scale `√t`.
+  -- Smooth the initial value at the parabolic scale `√t`, compare, and collect the constants.
   have hu0 : Continuous (u 0) := by
     simpa [Function.comp_def] using hcont.comp_continuous (continuous_const.prodMk continuous_id)
       fun y ↦ ⟨⟨le_rfl, ht0.le.trans ht.2⟩, mem_univ y⟩
-  obtain ⟨h, hhc, hh⟩ := hK hε (hu0.locallyIntegrable (μ := MeasureTheory.volume))
-  have hosc (y : EuclideanSpace ℝ ι) : ∀ z ∈ ball y √t, dist (u 0 z) (u 0 y) ≤ w :=
-    fun z hz ↦ by rw [Real.dist_eq]; exact hw z y hz
-  have h0 (y : EuclideanSpace ℝ ι) : |u 0 y - h y| ≤ w := by
-    rw [abs_sub_comm, ← Real.dist_eq]; exact (hh y w (hosc y)).1
-  have h1 (y : EuclideanSpace ℝ ι) : ‖fderiv ℝ h y‖ ≤ K 1 * w / √t := by
-    simpa [norm_iteratedFDeriv_one] using (hh y w (hosc y)).2 1 one_ne_zero
-  have h2 (y : EuclideanSpace ℝ ι) : ‖fderiv ℝ (fderiv ℝ h) y‖ ≤ K 2 * w / t := by
-    have h2eq : ‖iteratedFDeriv ℝ 2 h y‖ = ‖fderiv ℝ (fderiv ℝ h) y‖ := by
-      rw [← norm_iteratedFDeriv_one (f := fderiv ℝ h), norm_iteratedFDeriv_fderiv]
-    simpa [h2eq, Real.sq_sqrt ht0.le] using (hh y w (hosc y)).2 2 two_ne_zero
-  have hM (y : EuclideanSpace ℝ ι) : |h y| ≤ G + w := by
-    have := abs_sub_abs_le_abs_sub (h y) (u 0 y)
-    rw [abs_sub_comm] at this
-    linarith [h0 y, hG y]
+  obtain ⟨h, hh, h0, h1, h2, hM⟩ := hK hu0 hG ht0 hw
   have key := abs_sub_le_of_abs_initial_sub_le ha
     (fun s hs y i j ↦ (hΛ hs y i j).trans (le_max_left _ _))
     (fun s hs y ↦ (hb hs y).trans (le_max_left _ _))
-    (fun s hs y ↦ (hc hs y).trans (le_max_left _ _)) hΛ' hβ' hγ' hcont hbdd hcd hdiff hP
-    (by simpa using contDiff_infty.mp hhc 2) hM h1 h2 h0 ⟨ht0.le, ht.2⟩ x
-  -- At time `t = (√t)²` the derivative bounds contribute only multiples of `w`.
-  have hinner : t * (F + n ^ 2 * Λ' * (K 2 * w / t) + β' * (K 1 * w / √t) + γ' * (G + w)) ≤
-      A * w + γ' * T' * w + (1 + γ') * (t * (G + F)) := by
-    have e2 : t * (K 2 * w / t) = K 2 * w := by field_simp
-    have e1 : t * (K 1 * w / √t) = K 1 * w * √t :=
-      calc t * (K 1 * w / √t) = √t * √t * (K 1 * w / √t) := by rw [Real.mul_self_sqrt ht0.le]
-        _ = K 1 * w * √t := by field_simp
-    have hs : K 1 * w * √t ≤ K 1 * w * √T' := by
-      have := hK0 1; gcongr
-    have hγt : γ' * t * w ≤ γ' * T' * w := by gcongr
-    have hγG : γ' * t * G ≤ γ' * (t * (G + F)) := by nlinarith [mul_nonneg ht0.le hF0]
-    calc _ = t * F + n ^ 2 * Λ' * (t * (K 2 * w / t)) + β' * (t * (K 1 * w / √t)) +
-          γ' * t * G + γ' * t * w := by ring
-      _ ≤ t * F + n ^ 2 * Λ' * (K 2 * w) + β' * (K 1 * w * √T') + γ' * (t * (G + F)) +
-          γ' * T' * w := by
-        rw [e2, e1]; gcongr
-      _ ≤ _ := by
-        simp only [A]
-        nlinarith [mul_nonneg ht0.le hG0]
-  have hexp : Real.exp (γ' * t) ≤ E := Real.exp_le_exp.mpr (by gcongr)
-  have htGF : 0 ≤ t * (G + F) := by positivity
-  have htri : |u t x - u 0 x| ≤ |u t x - h x| + |u 0 x - h x| := by
-    have := abs_sub_le (u t x) (h x) (u 0 x)
-    rwa [abs_sub_comm (h x)] at this
-  calc |u t x - u 0 x| ≤ |u t x - h x| + |u 0 x - h x| := htri
-    _ ≤ E * (w + (A * w + γ' * T' * w + (1 + γ') * (t * (G + F)))) + w := by
-        refine add_le_add ?_ (h0 x)
-        refine key.trans (mul_le_mul hexp (add_le_add le_rfl hinner) ?_ hE)
-        have := hK0 1; have := hK0 2
-        positivity
-    _ = (E * (1 + γ' * T' + A) + 1) * w + E * (1 + γ') * (t * (G + F)) := by ring
-    _ ≤ C * w + C * (t * (G + F)) := by
-        gcongr ?_ * _ + ?_ * _
-        · nlinarith
-        · nlinarith [mul_nonneg hE (add_nonneg (mul_nonneg hγ' hT') hA)]
-    _ = _ := by ring
+    (fun s hs y ↦ (hc hs y).trans (le_max_left _ _)) (le_max_right _ _) (le_max_right _ _)
+    (le_max_right _ _) hcont hbdd hcd hdiff hP hh hM h1 h2 h0 ⟨ht0.le, ht.2⟩ x
+  calc |u t x - u 0 x| ≤ |u t x - h x| + |u 0 x - h x| :=
+        (abs_sub_le _ (h x) _).trans_eq (by rw [abs_sub_comm (h x)])
+    _ ≤ _ := add_le_add key (h0 x)
+    _ ≤ _ := exp_mul_add_add_le_mul_add (le_max_right _ _) (le_max_right _ _) (le_max_right _ _)
+        hK₁ hK₂ ht0 (ht.2.trans (le_max_left _ _)) hw0 hG0 hF0
 
 /-- **The approach to the initial value, with a modulus of continuity.** There is a constant
 `C ≥ 0`, depending only on `n`, `T`, `Λ`, `β` and `γ`, with the following property. Let `a` be

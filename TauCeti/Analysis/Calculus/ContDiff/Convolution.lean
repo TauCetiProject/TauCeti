@@ -49,9 +49,11 @@ For mollification by a nonnegative compactly supported kernel `ρ` of integral `
 records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
 forward differences of `u` in a direction pass to the directional derivative of `ρ ⋆ u`: this is
 how a nonsmooth subsolution of a Hamilton–Jacobi inequality, such as a Hopf–Lax function, becomes
-a smooth one. A bounded `u` has a mollification with bounded derivative, and more precisely
-every derivative of order `k ≥ 1` of `ρ ⋆ u` at `x` is controlled by the oscillation of `u` on
-`x - tsupport ρ`.
+a smooth one. And a bounded `u` has a mollification with bounded derivative.
+
+For any compactly supported `C^N` kernel `ρ`, with no sign or mass assumption, every derivative
+of order `1 ≤ k ≤ N` of `ρ ⋆ u` at `x` is bounded by the oscillation of `u` on `x - tsupport ρ`
+times `∫ ‖D^k ρ‖`.
 
 ## Main declarations
 
