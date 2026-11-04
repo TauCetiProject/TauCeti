@@ -100,7 +100,7 @@ noncomputable def iwasawaStructure :
   is_comm p := by
     have hSL : IsMulCommutative (SpecialLinearGroup.lineStab (F := F) (ι := ι) p.submodule) := by
       rw [← Projectivization.mk_rep p, Projectivization.submodule_mk]
-      exact SpecialLinearGroup.lineStab_isMulCommutative_of_span p.rep p.rep_nonzero
+      exact SpecialLinearGroup.lineStab_isMulCommutative_of_span p.rep p.rep_ne_zero
     exact Subgroup.map_isMulCommutative _ _
   is_conj g p := by
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective g
