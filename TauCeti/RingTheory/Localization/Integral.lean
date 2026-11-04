@@ -37,9 +37,9 @@ Mathlib's `IsLocalization.integralClosure` states this for the literal subalgebr
   `isScalarTower_integralClosureMapAlgebra_left` and
   `isScalarTower_integralClosureMapAlgebra_right`; this is the structure Mathlib's
   `IsLocalization.integralClosure` asks its caller to supply.
-* `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`: if `x` is regular on an `A`-algebra `R`
-  and `R_x` is integral over `A_x`, every element of `R` becomes integral over `A` after
-  multiplication by a power of `x`.
+* `TauCeti.exists_isIntegral_pow_smul_of_isLocalization`: if `R_x` is integral over `A_x` for an
+  `A`-algebra `R`, every element of `R` becomes integral over `A` after multiplication by a power
+  of `x`.
 * `TauCeti.IsLocalization.isIntegrallyClosedIn`: if `R` is integrally closed in `S`, then `M⁻¹R` is
   integrally closed in `M⁻¹S`. Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -268,19 +268,19 @@ variable {A R : Type*} [CommRing A] [CommRing R] [Algebra A R] {x : A}
   [Algebra A Rx] [Algebra R Rx] [IsScalarTower A Ax Rx] [IsScalarTower A R Rx]
   [IsLocalization.Away x Ax] [IsLocalization.Away (algebraMap A R x) Rx]
 
-/-- If `x` is regular on `R` and the localization `R_x` is integral over `A_x`, every element of
-`R` becomes integral over `A` after multiplication by a power of `x`. -/
-theorem exists_isIntegral_pow_smul_of_isLocalization [Algebra.IsIntegral Ax Rx]
-    (hx : IsSMulRegular R x) (r : R) : ∃ n : ℕ, IsIntegral A (x ^ n • r) := by
+/-- If the localization `R_x` is integral over `A_x`, every element of `R` becomes integral over
+`A` after multiplication by a power of `x`. -/
+theorem exists_isIntegral_pow_smul_of_isLocalization [Algebra.IsIntegral Ax Rx] (r : R) :
+    ∃ n : ℕ, IsIntegral A (x ^ n • r) := by
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
     (.powers x) (Rₘ := Ax) (algebraMap R Rx r) (Algebra.IsIntegral.isIntegral _)
-  refine ⟨n, (isIntegral_algHom_iff (IsScalarTower.toAlgHom A R Rx) ?_).1 ?_⟩
-  · -- `R → R_x` is injective as `x` is regular on `R`.
-    refine IsLocalization.injective Rx (M := .powers (algebraMap A R x)) (Submonoid.powers_le.2 ?_)
-    rw [mem_nonZeroDivisors_iff_right]
-    intro r hr
-    exact hx (by simpa [Algebra.smul_def, mul_comm] using hr)
-  · simpa [Submonoid.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply A R Rx] using hn
+  have : IsLocalization (Algebra.algebraMapSubmonoid R (.powers x)) Rx := by
+    rwa [Algebra.algebraMapSubmonoid_powers]
+  -- Descend integrality from `R_x` to `R` at the cost of another power of `x`.
+  obtain ⟨_, ⟨m, rfl⟩, hm⟩ := IsLocalization.exists_isIntegral_smul_of_isIntegral_map (Sₘ := Rx)
+    (.powers x) (x := x ^ n • r) <| by
+      simpa [Submonoid.smul_def, Algebra.smul_def, IsScalarTower.algebraMap_apply A R Rx] using hn
+  exact ⟨m + n, by rwa [pow_add, mul_smul]⟩
 
 end PowSMul
 

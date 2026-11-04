@@ -143,18 +143,13 @@ theorem finite_of_isWeaklyRegular_of_isLocalization [IsNoetherianRing A] [IsInte
     [Module.IsTorsionFree A R] (hxy : RingTheory.Sequence.IsWeaklyRegular A [x, y])
     [Module.Finite Ax Rx] [Algebra.Etale Ax Rx] [Module.Finite Ay Ry] :
     Module.Finite A R := by
-  have hreg {z : A} (hz : z ≠ 0) : IsSMulRegular R z :=
-    Module.IsTorsionFree.isSMulRegular (.of_ne_zero hz)
   have hx0 : x ≠ 0 := fun h ↦ one_ne_zero
     (((RingTheory.Sequence.isWeaklyRegular_cons_iff A x [y]).1 hxy).1 (by simp [h] :
       x • (1 : A) = x • 0))
   have := etale_tensorProduct_of_isLocalization (R := R) (FractionRing A) Ax Rx hx0
   refine finite_of_isWeaklyRegular_of_isIntegral_pow_smul (FractionRing A) hxy
-    (TauCeti.exists_isIntegral_pow_smul_of_isLocalization Ax Rx (hreg hx0)) fun r ↦ ?_
-  -- A weakly regular sequence may end in `0` (when `x` is a unit), and then `R_y = 0`.
-  rcases eq_or_ne y 0 with rfl | hy0
-  · exact ⟨1, by simpa using isIntegral_zero⟩
-  · exact TauCeti.exists_isIntegral_pow_smul_of_isLocalization Ay Ry (hreg hy0) r
+    (TauCeti.exists_isIntegral_pow_smul_of_isLocalization Ax Rx)
+    (TauCeti.exists_isIntegral_pow_smul_of_isLocalization Ay Ry)
 
 end Localization
 
