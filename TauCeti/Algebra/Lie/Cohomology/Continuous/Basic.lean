@@ -196,6 +196,14 @@ theorem twoCochainMap_mem_continuousTwoCochain (e : M →ₗ[R] M') {φ : L' →
   exact ⟨fun x ↦ (h₁.eventually (hc.1 (φ x))).mono fun y hy ↦ by simp [hy],
     (h₂.eventually hc.2).mono fun p (hp : c (φ p.1) (φ p.2) = 0) ↦ by simp [hp]⟩
 
+/-- Pulling a continuous one-cochain back along a continuous Lie algebra morphism preserves
+continuity with discrete coefficients. -/
+theorem comp_lieHom_mem_continuousOneCochain {φ : L' →ₗ⁅R⁆ L} (hφ : Continuous φ)
+    {f : oneCochain R L M} (hf : f ∈ continuousOneCochain R L M) :
+    f ∘ₗ φ.toLinearMap ∈ continuousOneCochain R L' M := by
+  have h₀ : Tendsto φ (𝓝 0) (𝓝 0) := by simpa using hφ.tendsto 0
+  exact h₀.eventually hf
+
 /-- Pushing a continuous one-cochain forward along a linear map `e` of coefficients gives a
 continuous one-cochain. -/
 theorem comp_mem_continuousOneCochain (e : M →ₗ[R] M') {f : oneCochain R L M}
@@ -227,6 +235,11 @@ abbrev continuousSecondCohomology := continuousTwoCocycle R L M ⧸ continuousTw
 def continuousSecondCohomologyMk :
     continuousTwoCocycle R L M →ₗ[R] continuousSecondCohomology R L M :=
   (continuousTwoCoboundary R L M).mkQ
+
+/-- The cohomology quotient map is the submodule quotient map. -/
+theorem continuousSecondCohomologyMk_eq_mkQ :
+    continuousSecondCohomologyMk R L M = (continuousTwoCoboundary R L M).mkQ :=
+  (rfl)
 
 variable {R L M}
 
