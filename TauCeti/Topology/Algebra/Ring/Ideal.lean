@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Group.Quotient
 
@@ -71,9 +72,11 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
 
 public section
 
-variable {R : Type*} [TopologicalSpace R] [CommRing R] [SeparatelyContinuousAdd R] (I : Ideal R)
-
 namespace Ideal.Quotient
+
+section Separation
+
+variable {R : Type*} [TopologicalSpace R] [CommRing R] [SeparatelyContinuousAdd R] (I : Ideal R)
 
 /-- The quotient of a topological ring by an ideal is `T1` exactly when the ideal is closed.
 This is `QuotientAddGroup.t1Space_iff` read through the identification of `R ⧸ I` with the
@@ -101,13 +104,16 @@ theorem mk_mem_closure_zero_iff {x : R} :
   rw [← hpre, ← hopen.preimage_closure_eq_closure_preimage continuous_quotient_mk',
     Set.mem_preimage]
 
-omit [SeparatelyContinuousAdd R] in
-/-- **A continuous ring homomorphism that kills `I` lifts to a continuous map on `R ⧸ I`.**
+end Separation
 
-No hypothesis on `I` is needed: closedness of `I` is what makes `R ⧸ I` separated
-(`Ideal.Quotient.instT1Space` above), which matters for maps *into* `R ⧸ I`, not for maps out
-of it. -/
-theorem continuous_lift {S : Type*} [Semiring S] [TopologicalSpace S] {f : R →+* S}
+/-- **A continuous ring homomorphism that kills a two-sided ideal `I` lifts to a continuous map on
+`R ⧸ I`.**
+
+No hypothesis on `I` beyond two-sidedness is needed: closedness of `I` is what makes `R ⧸ I`
+separated (`Ideal.Quotient.instT1Space` above), which matters for maps *into* `R ⧸ I`, not for
+maps out of it. -/
+theorem continuous_lift {R : Type*} [TopologicalSpace R] [Ring R] (I : Ideal R) [I.IsTwoSided]
+    {S : Type*} [Semiring S] [TopologicalSpace S] {f : R →+* S}
     (hf : Continuous f) (hI : ∀ a ∈ I, f a = 0) :
     Continuous (Ideal.Quotient.lift I f hI) :=
   -- `R ⧸ I` carries the coinduced topology, so continuity of a map out of it is continuity of its
