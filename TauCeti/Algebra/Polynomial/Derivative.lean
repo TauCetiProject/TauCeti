@@ -17,6 +17,8 @@ import Mathlib.Algebra.Polynomial.FieldDivision
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
+The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
+`a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
@@ -97,6 +99,16 @@ theorem _root_.Polynomial.iterate_derivative_comp_C_mul_X [CommSemiring R] (p : 
     (k : ℕ) :
     derivative^[k] (p.comp (C a * X)) = C (a ^ k) * (derivative^[k] p).comp (C a * X) := by
   simpa using p.iterate_derivative_comp_C_mul_X_add_C a 0 k
+
+/-- The derivative of the cubic `a (X - e₁)(X - e₂)(X - e₃)` at its root `e₁` is
+`a (e₁ - e₂)(e₁ - e₃)`. -/
+theorem _root_.Polynomial.eval_derivative_C_mul_X_sub_C_mul_X_sub_C_mul_X_sub_C [CommRing R]
+    (a e₁ e₂ e₃ : R) :
+    (C a * (X - C e₁) * (X - C e₂) * (X - C e₃)).derivative.eval e₁ =
+      a * (e₁ - e₂) * (e₁ - e₃) := by
+  simp only [derivative_mul, derivative_C, derivative_sub, derivative_X, eval_add, eval_mul,
+    eval_sub, eval_C, eval_X, eval_one, eval_zero]
+  ring
 
 /-- **Reciprocal-polynomial identity.** A polynomial `p` of degree at most `2 g` which is its own
 reflection at `2 g`, that is `X ^ (2 g) p (1 / X) = p (X)`, satisfies `p' (1) = g p (1)`. -/
