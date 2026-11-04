@@ -30,6 +30,7 @@ consists of pure tensors.
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
+* `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
@@ -152,6 +153,11 @@ section Repr
 
 variable {S : Type v} [Semiring S] [Algebra R S]
 variable {T : Type w} [Semiring T] [Algebra R T]
+
+/-- Scalar extension of a basis commutes with reindexing it. -/
+theorem baseChange_reindex {ι' : Type*} (b : Basis ι R M) (e : ι ≃ ι') :
+    (b.reindex e).baseChange S = (b.baseChange S).reindex e :=
+  eq_of_apply_eq fun i => by simp
 
 /-- Coordinates in a base-changed basis are natural in the scalar-extension algebra. -/
 @[simp] theorem map_baseChange_repr (b : Basis ι R M) (φ : S →ₗ[R] T)
