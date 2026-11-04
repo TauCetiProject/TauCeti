@@ -50,6 +50,25 @@ The weight-space transport family follows the generalized-weight-space API
 
 public section
 
+namespace Module.Basis
+
+open LieModule
+
+/-- A linear weight equation can be checked on a basis of the Lie algebra. -/
+theorem mem_weightSpace_iff_forall_basis
+    {R L M ι : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+    (b : Module.Basis ι R L) (χ : Module.Dual R L) (m : M) :
+    m ∈ weightSpace M (χ : L → R) ↔ ∀ i, ⁅b i, m⁆ = χ (b i) • m := by
+  rw [mem_weightSpace]
+  constructor
+  · exact fun h i => h (b i)
+  · intro h
+    have heq : (toEnd R L M).flip m = χ.smulRight m := b.ext h
+    exact fun x => LinearMap.congr_fun heq x
+
+end Module.Basis
+
 namespace LieModule
 
 variable {R L M M₂ : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
