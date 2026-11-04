@@ -226,17 +226,6 @@ theorem nondegenerate_restrict_of_isCompl_radical [Invertible (2 : R)]
     (LinearMap.BilinForm.isSymm_iff.mp Q.isSymm_polarBilin)
   simpa only [← radical_eq_ker_polarBilin] using hC.symm
 
-/-- The quadratic map that `Q` induces on the quotient by its radical has trivial radical. -/
-@[simp]
-theorem radical_lift_radical (Q : QuadraticMap R M P) :
-    (Q.lift Q.radical le_rfl).radical = ⊥ := by
-  refine (Submodule.eq_bot_iff _).mpr fun x hx => ?_
-  induction x using Submodule.Quotient.induction_on with
-  | H m =>
-    obtain ⟨h0, hadd⟩ := mem_radical_iff'.mp hx
-    refine (Submodule.Quotient.mk_eq_zero _).mpr (mem_radical_iff'.mpr ⟨h0, fun n => ?_⟩)
-    simpa only [← Submodule.Quotient.mk_add, lift_mk] using hadd (Submodule.Quotient.mk n)
-
 /-- The radical of the quadratic map induced on the quotient by a submodule `N` of the radical is
 the image of the radical. -/
 theorem radical_lift (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical) :
@@ -254,6 +243,12 @@ theorem radical_lift (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.
       refine mem_radical_iff'.mpr ⟨h0, fun n => ?_⟩
       induction n using Submodule.Quotient.induction_on with
       | H n => simpa only [Submodule.mkQ_apply, ← Submodule.Quotient.mk_add, lift_mk] using hadd n
+
+/-- The quadratic map that `Q` induces on the quotient by its radical has trivial radical. -/
+@[simp]
+theorem radical_lift_radical (Q : QuadraticMap R M P) :
+    (Q.lift Q.radical le_rfl).radical = ⊥ := by
+  rw [radical_lift, Submodule.mkQ_map_self]
 
 /-- **The quotient by the radical is nondegenerate.** When two is invertible, the form induced
 on `M ⧸ Q.radical` has no radical: a class orthogonal to every class is represented by a vector

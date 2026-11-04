@@ -527,17 +527,9 @@ theorem criticalHessian_mfderiv_eq_zero (hf : ContMDiffAt I 𝓘(ℝ) 2 f (i s))
   have hcomp := (hDg.hasFDerivAt.hasMFDerivAt.comp s hψi.hasMFDerivAt).mfderiv
   have hψi' : mfderiv J 𝓘(ℝ, E) (ψ ∘ i) s = mfderiv J I i s := by
     rw [mfderiv_comp s hψ hi, mfderiv_extChartAt_self]
-    rfl
+    exact ContinuousLinearMap.id_comp _
   rw [hzero.mfderiv_eq, mfderiv_const, hψi'] at hcomp
   exact (congr($hcomp u)).symm
-
-/-- The critical Hessian pairs every tangent vector to a family of critical points with every
-tangent vector to zero. -/
-theorem criticalHessian_apply_mfderiv_eq_zero (hf : ContMDiffAt I 𝓘(ℝ) 2 f (i s))
-    (hi : MDifferentiableAt J I i s) (hcrit : ∀ᶠ t in 𝓝 s, i t ∈ criticalPoints I f)
-    (v : TangentSpace I (i s)) (u : TangentSpace J s) :
-    criticalHessian I f (i s) v (mfderiv J I i s u) = 0 := by
-  rw [criticalHessian_apply_swap hf, criticalHessian_mfderiv_eq_zero hf hi hcrit, zero_apply]
 
 /-- The tangent directions of a family of critical points lie in the radical of the critical
 Hessian. -/

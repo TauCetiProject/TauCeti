@@ -170,8 +170,10 @@ def normalHessian : QuadraticForm ℝ (i.NormalSpace s hn) :=
 @[simp]
 theorem normalHessian_normalClass (v : TangentSpace I (i s)) :
     h.normalHessian s hn (i.normalClass s hn v) = criticalHessian I f (i s) v v := by
-  rw [normalClass_def]
-  rfl
+  rw [normalClass_def, ← ContinuousLinearMap.toBilinForm_apply,
+    ← LinearMap.BilinMap.toQuadraticMap_apply]
+  -- The normal space is the quotient by the tangent range, and the normal class is its projection.
+  exact QuadraticMap.lift_mk (h.tangentRange_le_radical s hn) v
 
 /-- The radical of the normal Hessian is the image of the kernel of the critical Hessian. -/
 theorem radical_normalHessian :
@@ -253,18 +255,17 @@ theorem isNondegenerateCriticalSubmanifold_prodMkLeft {g : M → ℝ} {c : M}
   have hsum : g ∘ Prod.snd = (fun _ : S ↦ (0 : ℝ)) ∘ Prod.fst + g ∘ Prod.snd := by
     funext p
     simp
+  have h0 (s : S) : criticalHessian J (fun _ : S ↦ (0 : ℝ)) s = 0 := by
+    rw [criticalHessian_def, Function.comp_def]
+    simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply]
+    -- The two sides differ only in reading the model space `F` as `TangentSpace J s`.
+    rfl
   have hH (s : S) (v w : F × E) :
       criticalHessian (J.prod I) (g ∘ Prod.snd) (s, c) v w = criticalHessian I g c v.2 w.2 := by
-    have hpt : extChartAt (J.prod I) (s, c) (s, c) = (extChartAt J s s, extChartAt I c c) := by
-      simp only [extChartAt_prod, PartialEquiv.prod_coe]
-    have h0 : (fun _ : S ↦ (0 : ℝ)) ∘ (extChartAt J s).symm = fun _ ↦ 0 := rfl
-    rw [criticalHessian_def, hsum, comp_fst_add_comp_snd_comp_extChartAt_prod_symm, hpt, h0]
-    have hD := fderiv_fderiv_comp_fst_add_comp_snd (φ := fun _ : F ↦ (0 : ℝ))
-      (a := extChartAt J s s) contDiffAt_const hg2.contDiffAt_comp_extChartAt_symm
-    refine congr($hD v w).trans ?_
-    simp [ContinuousLinearMap.coprodEquivL_apply_apply, criticalHessian_def]
-    -- The two sides differ only in reading the tangent space of `M` at `c` as `E`.
-    rfl
+    rw [hsum, criticalHessian_comp_fst_add_comp_snd_apply contDiffAt_const
+      hg2.contDiffAt_comp_extChartAt_symm, h0]
+    -- The zero form applied to the `S`-components, read in the model space `F`, is zero.
+    exact zero_add _
   refine ⟨⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun s ↦ ?_⟩
   · rw [ofIsSmoothEmbedding_apply]
     exact hg2.comp _ contMDiffAt_snd
