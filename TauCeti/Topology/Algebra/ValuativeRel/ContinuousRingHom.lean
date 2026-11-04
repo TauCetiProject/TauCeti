@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ValuativeRel.Completion
 public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
+import Mathlib.Topology.UniformSpace.CompleteSeparated
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
 # Continuity and compatibility of valued field homomorphisms
 
-The algebra map of a compatible valued field extension is continuous if nonzero values of the
-base field are coinitial among the nonzero values of the extension. Algebraic extensions satisfy
-this condition, with no restriction on the rank of the valuations or completeness of the fields.
-Compatibility alone does not imply continuity for transcendental extensions.
+The algebra map of a compatible valued field extension is continuous — and in fact a topological
+and uniform embedding, hence a closed embedding when the base field is complete — if nonzero
+values of the base field are coinitial among the nonzero values of the extension. Algebraic
+extensions satisfy this condition, with no restriction on the rank of the valuations or
+completeness of the fields. Compatibility alone does not imply continuity for transcendental
+extensions.
 
 Let `K` and `L` be division rings whose topologies are induced by their valuative relations, with
 archimedean value groups (that is, of rank at most one), and with the valuation of `K`
@@ -41,11 +45,17 @@ Chapter II, Proposition (3.3), for absolute values.
 
 ## Main results
 
-* `TauCeti.continuous_algebraMap_of_coinitial`: coinitiality of nonzero base-field values implies
-  continuity of the algebra map of a compatible extension.
-* `TauCeti.continuous_algebraMap_of_valuativeExtension`: the algebra map of an algebraic
-  compatible extension is continuous.
-* `TauCeti.continuous_algebraMap_integerRing`: so is its restriction to the rings of integers.
+* `TauCeti.continuous_algebraMap_of_coinitial`, `TauCeti.isEmbedding_algebraMap_of_coinitial`,
+  `TauCeti.isUniformEmbedding_algebraMap_of_coinitial`, and
+  `TauCeti.isClosedEmbedding_algebraMap_of_coinitial`: coinitiality of nonzero base-field values
+  implies that the algebra map of a compatible extension is continuous, a topological and uniform
+  embedding, and a closed embedding when the base field is complete.
+* `TauCeti.continuous_algebraMap_of_valuativeExtension`,
+  `TauCeti.isEmbedding_algebraMap_of_valuativeExtension`, and
+  `TauCeti.isClosedEmbedding_algebraMap_of_valuativeExtension`: the specializations to algebraic
+  compatible extensions.
+* `TauCeti.continuous_algebraMap_integerRing`: continuity of the restriction to the rings of
+  integers.
 * `RingHom.isEquiv_comap_valuation_of_continuous`: the pullback of the valuation of `L` along a
   continuous `f : K →+* L` is equivalent to the valuation of `K`.
 * `RingHom.map_vle_map_iff_of_continuous`: a continuous `f : K →+* L` satisfies
@@ -60,9 +70,11 @@ Chapter II, Proposition (3.3), for absolute values.
 
 public section
 
-open ValuativeRel
+open Filter Topology ValuativeRel
 
 namespace TauCeti
+
+section TopologicalSpace
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsValuativeTopology K] [DivisionRing L] [ValuativeRel L] [TopologicalSpace L]
@@ -87,6 +99,61 @@ theorem continuous_algebraMap_of_coinitial
   exact ((valuation L).vlt_iff_lt.mp (ValuativeExtension.vlt_iff_vlt.mpr hz')).trans_le
     (((valuation L).vle_iff_le.mp hxy).trans_eq hy)
 
+/-- The algebra map of a compatible extension is inducing if the nonzero base-field values are
+coinitial among the nonzero target values: every open ball in `K` is the pullback of the
+corresponding open ball in `L`. -/
+theorem isInducing_algebraMap_of_coinitial
+    (h : ∀ y : L, y ≠ 0 → ∃ x : K, x ≠ 0 ∧ algebraMap K L x ≤ᵥ y) :
+    IsInducing (algebraMap K L) := by
+  rw [IsTopologicalAddGroup.isInducing_iff_nhds_zero (f := algebraMap K L)]
+  refine le_antisymm ?_ fun U hU ↦ ?_
+  · have h0 := (continuous_algebraMap_of_coinitial K L h).tendsto 0
+    rwa [map_zero, tendsto_iff_comap] at h0
+  · obtain ⟨γ, -, hγ⟩ := (IsValuativeTopology.hasBasis_nhds_zero K).mem_iff.mp hU
+    obtain ⟨x, hx⟩ := valuation_surjective γ.val
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      exact γ.ne_zero (by simpa using hx.symm)
+    have hax0 : algebraMap K L x ≠ 0 := by
+      simpa using (algebraMap K L).injective.ne hx0
+    let δ : (ValueGroupWithZero L)ˣ := Units.mk0 (valuation L (algebraMap K L x)) (by simpa)
+    refine ⟨{w : L | valuation L w < δ},
+      (IsValuativeTopology.hasBasis_nhds_zero L).mem_of_mem (i := δ) trivial, fun z hz ↦ hγ ?_⟩
+    have hz' : algebraMap K L z <ᵥ algebraMap K L x := (valuation L).vlt_iff_lt.mpr hz
+    exact ((valuation K).vlt_iff_lt.mp (ValuativeExtension.vlt_iff_vlt.mp hz')).trans_eq hx
+
+/-- The algebra map of a compatible extension is a topological embedding if the nonzero base-field
+values are coinitial among the nonzero target values. -/
+theorem isEmbedding_algebraMap_of_coinitial
+    (h : ∀ y : L, y ≠ 0 → ∃ x : K, x ≠ 0 ∧ algebraMap K L x ≤ᵥ y) :
+    IsEmbedding (algebraMap K L) :=
+  ⟨isInducing_algebraMap_of_coinitial K L h, (algebraMap K L).injective⟩
+
+end TopologicalSpace
+
+section UniformSpace
+
+variable (K L : Type*) [Field K] [ValuativeRel K] [UniformSpace K] [IsUniformAddGroup K]
+  [IsValuativeTopology K] [DivisionRing L] [ValuativeRel L] [UniformSpace L] [IsUniformAddGroup L]
+  [IsValuativeTopology L] [Algebra K L] [ValuativeExtension K L]
+
+/-- The algebra map of a compatible extension of uniform valued fields is a uniform embedding if
+the nonzero base-field values are coinitial among the nonzero target values. -/
+theorem isUniformEmbedding_algebraMap_of_coinitial
+    (h : ∀ y : L, y ≠ 0 → ∃ x : K, x ≠ 0 ∧ algebraMap K L x ≤ᵥ y) :
+    IsUniformEmbedding (algebraMap K L) :=
+  AddMonoidHom.isUniformEmbedding_of_isEmbedding (f := (algebraMap K L).toAddMonoidHom)
+    (isEmbedding_algebraMap_of_coinitial K L h)
+
+/-- When the base field `K` is complete, the algebra map of a compatible extension with coinitial
+nonzero base-field values is a closed embedding. -/
+theorem isClosedEmbedding_algebraMap_of_coinitial [CompleteSpace K]
+    (h : ∀ y : L, y ≠ 0 → ∃ x : K, x ≠ 0 ∧ algebraMap K L x ≤ᵥ y) :
+    IsClosedEmbedding (algebraMap K L) :=
+  (isUniformEmbedding_algebraMap_of_coinitial K L h).isClosedEmbedding
+
+end UniformSpace
+
 end TauCeti
 
 /-- The algebra map of an algebraic compatible extension is continuous for the valuative
@@ -97,6 +164,26 @@ theorem TauCeti.continuous_algebraMap_of_valuativeExtension (K L : Type*)
     [Algebra K L] [ValuativeExtension K L] [Algebra.IsAlgebraic K L] :
     Continuous (algebraMap K L) :=
   continuous_algebraMap_of_coinitial K L fun y hy ↦
+    (Algebra.IsAlgebraic.isAlgebraic y).exists_ne_zero_vle hy
+
+/-- The algebra map of an algebraic compatible extension is a topological embedding for the
+valuative topologies. -/
+theorem TauCeti.isEmbedding_algebraMap_of_valuativeExtension (K L : Type*)
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuativeTopology K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
+    [Algebra K L] [ValuativeExtension K L] [Algebra.IsAlgebraic K L] :
+    IsEmbedding (algebraMap K L) :=
+  isEmbedding_algebraMap_of_coinitial K L fun y hy ↦
+    (Algebra.IsAlgebraic.isAlgebraic y).exists_ne_zero_vle hy
+
+/-- The algebra map of an algebraic compatible extension of a complete valued field is a closed
+embedding. -/
+theorem TauCeti.isClosedEmbedding_algebraMap_of_valuativeExtension (K L : Type*)
+    [Field K] [ValuativeRel K] [UniformSpace K] [IsUniformAddGroup K] [IsValuativeTopology K]
+    [CompleteSpace K] [Field L] [ValuativeRel L] [UniformSpace L] [IsUniformAddGroup L]
+    [IsValuativeTopology L] [Algebra K L] [ValuativeExtension K L] [Algebra.IsAlgebraic K L] :
+    IsClosedEmbedding (algebraMap K L) :=
+  isClosedEmbedding_algebraMap_of_coinitial K L fun y hy ↦
     (Algebra.IsAlgebraic.isAlgebraic y).exists_ne_zero_vle hy
 
 /-- The structure map of the rings of integers of an algebraic compatible extension is continuous
