@@ -38,8 +38,9 @@ shows that both conditions only depend on the stalk map `f.stalkMap x`:
 
 Both stalk conditions descend along flat morphisms: for `g : X' ⟶ X` with flat stalk map at
 `x'`, if the stalk map of `g ≫ f` at `x'` is flat (resp. formally unramified, with `f` and
-`g ≫ f` locally of finite type), then so is the stalk map of `f` at `g x'`. Hence if `f` is locally
-of finite presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is étale
+`g ≫ f` locally of finite type), then so is the stalk map of `f` at `g x'`. Hence if `g` is flat
+and surjective and `g ≫ f` is flat, then `f` is flat (`AlgebraicGeometry.Flat.of_comp_surjective`),
+and if moreover `f` is locally of finite presentation and `g ≫ f` is étale, then `f` is étale
 (`AlgebraicGeometry.Etale.of_comp_surjective`). For an étale surjective `g` this is the statement
 of Stacks, Lemma 35.31.1 (036W), that étaleness is étale local on the source, for `f` locally of
 finite presentation.
@@ -503,6 +504,14 @@ theorem map_maximalIdeal_stalkMap_of_formallyUnramified [FormallyUnramified f]
 end StalkAlgebra
 
 end Scheme.Hom
+
+/-- **Flatness descends along flat surjections.** If `g` is flat and surjective and `g ≫ f` is
+flat, then `f` is flat. -/
+theorem Flat.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [Flat g]
+    [Surjective g] [Flat (g ≫ f)] : Flat f :=
+  Flat.of_stalkMap f fun x ↦ by
+    obtain ⟨x', rfl⟩ := g.surjective x
+    exact g.flat_stalkMap_of_comp f x' (Flat.stalkMap g x') (Flat.stalkMap (g ≫ f) x')
 
 /-- **Étaleness descends along flat surjections.** Let `f` be locally of finite presentation and
 `g` flat and surjective. If `g ≫ f` is étale, then `f` is étale. For an étale surjective `g`, this
