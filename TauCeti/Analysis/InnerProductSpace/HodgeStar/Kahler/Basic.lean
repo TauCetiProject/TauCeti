@@ -266,3 +266,20 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
 end Frame
 
 end TauCeti.AlmostComplexStructure
+
+namespace OrthonormalBasis
+
+omit [FiniteDimensional ℝ V] in
+/-- An orthonormal four-frame carries a complex structure rotating its two coordinate planes:
+`J e₀ = e₁` and `J e₂ = e₃`. -/
+theorem exists_complexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
+    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
+  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
+  have hsquare : L.comp L = -LinearMap.id := by
+    apply e.toBasis.ext
+    intro i
+    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
+  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+end OrthonormalBasis

@@ -12,7 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 # Mass of the Kähler bivector
 
 For an orthogonal almost complex structure on a finite-dimensional real inner product space,
-the Kähler bivector has mass `dim V / 2`, whereas its squared Hilbert norm is `dim V / 2`.
+the Kähler bivector has mass `dim V / 2`, whereas its Hilbert norm is `√(dim V / 2)`.
 Here mass is the norm in the native dual of continuous alternating forms, through
 `exteriorPower.formDualEquiv`; no new norm is installed on the exterior power.
 
@@ -90,19 +90,6 @@ theorem norm_formDualEquiv_kahlerForm :
 end TauCeti.AlmostComplexStructure
 
 namespace OrthonormalBasis
-
-omit [FiniteDimensional ℝ V] in
-/-- An orthonormal four-frame carries a complex structure rotating its two coordinate planes.
-Only this witness is needed to apply the intrinsic Kähler mass calculation. -/
-private theorem exists_complexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
-    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
-  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
-  have hsquare : L.comp L = -LinearMap.id := by
-    apply e.toBasis.ext
-    intro i
-    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
-  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
 
 /-- The sum of the oriented unit bivectors of two orthogonal planes has dual-comass mass `2`.
 In particular this computes the mass of `e₀ ∧ e₁ + e₂ ∧ e₃` in Euclidean four-space. -/
