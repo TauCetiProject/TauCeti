@@ -155,6 +155,30 @@ theorem coeff_restrictedExpandComponent (ν μ : σ →₀ ℕ) (f : IsRestricte
       coeff (p • μ + ν) (f : MvPowerSeries σ R) :=
   coeff_apply _ μ
 
+/-- Extracting a component sends `0` to `0`. -/
+@[simp]
+theorem restrictedExpandComponent_zero (ν : σ →₀ ℕ) :
+    restrictedExpandComponent hp ht ν (0 : IsRestricted.subring (R := R) r) = 0 := by
+  ext μ : 2
+  simp
+
+/-- Extracting a component commutes with addition. -/
+@[simp]
+theorem restrictedExpandComponent_add (ν : σ →₀ ℕ)
+    (f g : IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (f + g) =
+      restrictedExpandComponent hp ht ν f + restrictedExpandComponent hp ht ν g := by
+  ext μ : 2
+  simp
+
+/-- Extracting a component commutes with finite sums. -/
+theorem restrictedExpandComponent_sum {ι : Type*} (ν : σ →₀ ℕ) (s : Finset ι)
+    (f : ι → IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (∑ i ∈ s, f i) =
+      ∑ i ∈ s, restrictedExpandComponent hp ht ν (f i) := by
+  ext μ : 2
+  simp
+
 variable [∀ i, Fact (0 < t i)]
 
 /-- **Norm estimate for the components.** The weighted norm `‖f_ν‖ r^ν` of each component is at
