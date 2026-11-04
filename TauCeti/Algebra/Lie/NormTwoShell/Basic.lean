@@ -141,6 +141,18 @@ theorem basis_inl [DecidableEq I] (i : I) : basis B (.inl i) = cartan B (Pi.sing
 theorem basis_inr (a : B.normTwoShell) : basis B (.inr a) = root B a := by
   simp [basis, root, Basis.prod_apply]
 
+/-- The coordinates of an integral root vector in the Cartan-and-root basis. -/
+@[simp]
+theorem basis_repr_root (a : B.normTwoShell) :
+    (basis B).repr (root B a) = Finsupp.single (.inr a) 1 := by
+  rw [← basis_inr, Basis.repr_self]
+
+/-- The coordinates of an integral Cartan vector vanish on every root index. -/
+@[simp]
+theorem basis_repr_cartan_inr (h : I → ℤ) (a : B.normTwoShell) :
+    (basis B).repr (cartan B h) (.inr a) = 0 := by
+  simp [basis, cartan]
+
 variable [LinearOrder I]
 
 /-- The bracket `⁅x_a, x_b⁆` of two root vectors: `ε(a, b) x_(a + b)` if `a + b` is in the norm-two
@@ -660,8 +672,8 @@ protected theorem leibniz_lie (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
   abel
 
 /-- **The signed Lie ring of the norm-two shell** of a positive definite integer matrix `B` with
-even diagonal. It is not an instance, since it depends on these two hypotheses; install it
-locally when needed. -/
+even diagonal. Install it locally from explicit hypotheses, or use `instLieRingOfFact` when the
+hypotheses are available as typeclass facts. -/
 @[expose, instance_reducible]
 noncomputable def lieRing (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) :
     LieRing (ShellLieAlgebra B) where
@@ -669,6 +681,11 @@ noncomputable def lieRing (hB : B.PosDef) (hdiag : ∀ i, Even (B i i)) :
   lie_add := ShellLieAlgebra.lie_add
   lie_self := ShellLieAlgebra.lie_self hB.isHermitian.isSymm hdiag
   leibniz_lie := ShellLieAlgebra.leibniz_lie hB hdiag
+
+/-- The signed shell Lie ring, with positivity and evenness supplied as typeclass facts. -/
+noncomputable instance instLieRingOfFact [hB : Fact B.PosDef]
+    [hev : Fact (∀ i, Even (B i i))] : LieRing (ShellLieAlgebra B) :=
+  lieRing hB.out hev.out
 
 end ShellLieAlgebra
 
