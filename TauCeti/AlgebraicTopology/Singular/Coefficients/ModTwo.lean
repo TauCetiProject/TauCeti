@@ -73,13 +73,14 @@ coefficients in the integer module `ℤ/2` is the singular homology with coeffic
 def singularHomologyModTwoIso (X : TopCat.{u}) (n : ℕ) :
     ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj X ≅
-      (ModuleCat.restrictScalars (Int.castRingHom (ZMod 2))).obj
+      (ModuleCat.restrictScalars (algebraMap ℤ (ZMod 2))).obj
         (((singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj
           (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).obj X) :=
-  ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso (ModuleCat.restrictScalarsIntCastIso
-      (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).symm).app X ≪≫
+  ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2)
+        (ULift.{u} (ZMod 2))).symm).app X ≪≫
     ((TauCeti.singularHomologyFunctorObjCompIso
-      (ModuleCat.restrictScalars.{u} (Int.castRingHom (ZMod 2)))
+      (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
         (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) n).app X).symm
 
 /-- The identification of integral `ℤ/2` homology with mod-two homology is the inverse of the
@@ -87,10 +88,11 @@ identification of `ℤ/2` with the restriction of `𝔽₂`, followed by the inv
 restricted mod-two homology with integral homology. -/
 theorem singularHomologyModTwoIso_hom (X : TopCat.{u}) (n : ℕ) :
     (X.singularHomologyModTwoIso n).hom =
-      ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map (ModuleCat.restrictScalarsIntCastIso
-          (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).inv).app X ≫
+      ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
+          (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2)
+            (ULift.{u} (ZMod 2))).inv).app X ≫
         (TauCeti.singularHomologyFunctorObjCompIso
-          (ModuleCat.restrictScalars.{u} (Int.castRingHom (ZMod 2)))
+          (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
             (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) n).inv.app X :=
   (rfl)
 
@@ -100,7 +102,7 @@ theorem singularHomologyModTwoIso_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y
     ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).map f ≫ (Y.singularHomologyModTwoIso n).hom =
       (X.singularHomologyModTwoIso n).hom ≫
-        (ModuleCat.restrictScalars (Int.castRingHom (ZMod 2))).map
+        (ModuleCat.restrictScalars (algebraMap ℤ (ZMod 2))).map
           (((singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj
             (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).map f) := by
   rw [singularHomologyModTwoIso_hom, singularHomologyModTwoIso_hom, NatTrans.naturality_assoc]
