@@ -37,9 +37,7 @@ compatible real scalar action and continuous multiplication by constant scalars.
 noncomputable def smulIEquiv : X ≃L[ℝ] X where
   toFun x := I • x
   map_add' := smul_add I
-  map_smul' r x := by
-    rw [RingHom.id_apply, ← algebraMap_smul ℂ r, ← algebraMap_smul ℂ r, smul_smul, mul_comm,
-      ← smul_smul]
+  map_smul' r x := smul_comm I r x
   invFun x := -I • x
   left_inv := neg_I_smul_I_smul
   right_inv := I_smul_neg_I_smul
