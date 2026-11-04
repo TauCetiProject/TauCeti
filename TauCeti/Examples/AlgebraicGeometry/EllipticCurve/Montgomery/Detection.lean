@@ -7,18 +7,23 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
+import TauCeti.NumberTheory.LcmUpto
 
 /-!
 # Examples of Montgomery stage-1 detection
 
-The raw pair `(21, 25)` modulo `35` represents infinity modulo `5`, but not modulo `7`.
-The distinguished point of order two over `ZMod 5` is annihilated by the stage-1 bound
-`Nat.lcmUpto 2 = 2`, whereas `(1, 3)` on `y² = x³ + x` over `ZMod 7` has additive order `4`
-(whose prime factor `2` is at most `3`, yet `4 ∤ Nat.lcmUpto 3 = 6`), so stage-1 detection at
-`B₁ = 2` certifies a proper factor. Doubling `(21, 25)` once more modulo `35` gives `(9, 0)`:
-at `m = 4` (or `B₁ = 4`, `Nat.lcmUpto 4 = 12`) both primes are annihilated and `gcd(0, 35) = 35`
-is inconclusive. The remaining examples separate the three gcd outcomes and record a proper gcd
-for a prime-power modulus.
+The raw pair `(21, 25)` modulo `35` represents infinity modulo `5`, while its denominator is
+nonzero modulo `7`. Because the distinguished two-torsion point over `ZMod 5` has additive
+order `2`, the stage-1 multiplier `Nat.lcmUpto 2 = 2` annihilates it, and nonvanishing modulo
+`7` certifies a proper factor of `35` at `B₁ = 2`.
+
+Separately, the affine point `(1, 3)` on `y² = x³ + x` over `ZMod 7` has additive order `4`:
+its only prime divisor `2` is at most `3`, yet `4` divides neither `Nat.lcmUpto 2 = 2` nor
+`Nat.lcmUpto 3 = 6`, illustrating that prime-divisor smoothness is strictly weaker than
+powersmoothness (`B₁ = 3` versus `B₁ = 4`). Doubling `(21, 25)` once more modulo `35` gives
+`(9, 0)`: at `B₁ = 4` (`Nat.lcmUpto 4 = 12`) both primes `5` and `7` are annihilated and
+`gcd(0, 35) = 35` is inconclusive. The remaining examples separate the three gcd outcomes and
+record a proper gcd for a prime-power modulus.
 -/
 
 public section
@@ -47,14 +52,9 @@ private theorem four_pointSeven : (4 : ℕ) • pointSeven = 0 := by
   simp only [h4, mul_nsmul, two_nsmul, pointSeven_double, twoTorsionPoint_add_self]
 
 private theorem addOrderOf_pointSeven : addOrderOf pointSeven = 4 := by
-  have hdvd : addOrderOf pointSeven ∣ 4 := addOrderOf_dvd_iff_nsmul_eq_zero.mpr four_pointSeven
-  have hle : addOrderOf pointSeven ≤ 4 := Nat.le_of_dvd (by decide) hdvd
-  have hpos : 0 < addOrderOf pointSeven :=
-    addOrderOf_pos_iff.mpr (isOfFinAddOrder_of_finite pointSeven)
-  have hnot2 : ¬ addOrderOf pointSeven ∣ 2 := by
-    rw [addOrderOf_dvd_iff_nsmul_eq_zero, two_nsmul, pointSeven_double]
-    exact twoTorsionPoint_ne_zero 0 (by decide)
-  interval_cases addOrderOf pointSeven <;> simp_all
+  refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointSeven
+  rw [pow_one, two_nsmul, pointSeven_double]
+  exact twoTorsionPoint_ne_zero 0 (by decide)
 
 -- The reduced pair is genuinely nonzero and represents infinity.
 example : (Pair.mk 21 25 : Pair (ZMod 35)).map
@@ -63,17 +63,19 @@ example : (Pair.mk 21 25 : Pair (ZMod 35)).map
 
 -- Stage-1 detection at B₁ = 2 (M(2) = 2): the two-torsion point over ZMod 5 has order 2 ≤ 2.
 example : 5 ∣ Nat.gcd (25 : ZMod 35).val 35 := by
-  apply prime_dvd_gcd_of_addOrderOf_le (n := 35) (p := 5) (A := 0) (B := 1) (B₁ := 2)
-    (by decide) (twoTorsionPoint 0 (by decide)) ⟨21, 25⟩ (by simp)
+  apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 5) (A := 0) (B := 1)
+    (m := (2 : ℕ).lcmUpto) (by decide) (twoTorsionPoint 0 (by decide)) ⟨21, 25⟩
+    (Nat.dvd_lcmUpto (by simp) (by simp))
   rw [Nat.lcmUpto_two, two_nsmul, twoTorsionPoint_add_self, coordinates_zero, Pair.cross_def]
   simp only [Pair.map_x, Pair.map_z]
   decide
 
 -- Nonvanishing at 7 upgrades stage-1 detection at B₁ = 2 to a proper factor certificate.
 example : 1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 35 := by
-  refine one_lt_gcd_and_gcd_lt_of_isPrimePow_dvd_addOrderOf_le
-    (n := 35) (p := 5) (A := 0) (B := 1) (B₁ := 2)
-    (by decide) (twoTorsionPoint 0 (by decide)) ⟨21, 25⟩ ?_ ?_ (q := 7) (by decide) (by decide)
+  refine one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd
+    (n := 35) (p := 5) (A := 0) (B := 1) (m := (2 : ℕ).lcmUpto)
+    (by decide) (twoTorsionPoint 0 (by decide)) ⟨21, 25⟩
+    (Nat.dvd_lcmUpto_iff.mpr ?_) ?_ (q := 7) (by decide) (by decide)
   · intro q _ hq
     rw [addOrderOf_twoTorsionPoint 0 (by decide)] at hq
     exact Nat.le_of_dvd (by decide) hq
@@ -96,18 +98,20 @@ example : double (2 : ZMod 35) 4 ⟨21, 25⟩ = ⟨9, 0⟩ ∧
     7 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
     Nat.gcd (0 : ZMod 35).val 35 = 35 := by
   refine ⟨by ext <;> norm_num [double_x, double_z] <;> decide, ?_, ?_, by decide⟩
-  · apply prime_dvd_gcd_of_addOrderOf_le (n := 35) (p := 5) (A := 0) (B := 1) (B₁ := 4)
-      (by decide) (twoTorsionPoint 0 (by decide)) ⟨9, 0⟩ (by simp)
-    have h12 : (4 : ℕ).lcmUpto • twoTorsionPoint (B := (1 : ZMod 5)) 0 (by decide) = 0 :=
-      addOrderOf_dvd_iff_nsmul_eq_zero.mp (by rw [addOrderOf_twoTorsionPoint]; decide)
-    rw [h12, coordinates_zero, Pair.cross_def]
+  · have hdvd5 :
+        addOrderOf (twoTorsionPoint (B := (1 : ZMod 5)) 0 (by decide)) ∣ (4 : ℕ).lcmUpto :=
+      Nat.dvd_lcmUpto (by simp) (by simp)
+    apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 5) (A := 0) (B := 1)
+      (m := (4 : ℕ).lcmUpto) (by decide) (twoTorsionPoint 0 (by decide)) ⟨9, 0⟩ hdvd5
+    rw [addOrderOf_dvd_iff_nsmul_eq_zero.mp hdvd5, coordinates_zero, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · apply prime_dvd_gcd_of_addOrderOf_le (n := 35) (p := 7) (A := 0) (B := 1) (B₁ := 4)
-      (by decide) pointSeven ⟨9, 0⟩ (by rw [addOrderOf_pointSeven])
-    have h12 : (4 : ℕ).lcmUpto • pointSeven = 0 :=
-      addOrderOf_dvd_iff_nsmul_eq_zero.mp (by rw [addOrderOf_pointSeven]; decide)
-    rw [h12, coordinates_zero, Pair.cross_def]
+  · have hdvd7 : addOrderOf pointSeven ∣ (4 : ℕ).lcmUpto := by
+      rw [addOrderOf_pointSeven]
+      exact Nat.dvd_lcmUpto (by decide) le_rfl
+    apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 7) (A := 0) (B := 1)
+      (m := (4 : ℕ).lcmUpto) (by decide) pointSeven ⟨9, 0⟩ hdvd7
+    rw [addOrderOf_dvd_iff_nsmul_eq_zero.mp hdvd7, coordinates_zero, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
 
