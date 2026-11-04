@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Killing.Basic
 public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
+import TauCeti.Geometry.Manifold.Riemannian.VariationField
 
 /-!
 # Infinitesimal generators of metric-preserving flows
@@ -22,8 +21,8 @@ The proof differentiates the squared length of a transported transverse velocity
 Metric compatibility and the symmetry lemma identify its derivative with
 `2 ⟪∇_u X, u⟫`. Polarization gives the Killing equation.
 
-The central formal inputs are `CovariantDerivative.alongCurve_curveVelocity_comm`, the metric
-product rule along curves, and the native maximal flow's smooth dependence on initial points.
+The central formal inputs are `hasDerivAt_norm_sq_curveVelocity`, the covariant derivative
+pullback formula, and the native maximal flow's smooth dependence on initial points.
 See Petersen, *Riemannian Geometry*, third edition, Chapter 8, for the local-flow
 characterization of Killing fields.
 -/
@@ -53,9 +52,6 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
     (hflow : ∀ᶠ t : ℝ in 𝓝 0, ‖mfderiv I I (flowOf X t) p u‖ = ‖u‖) :
     inner ℝ (leviCivitaConnection I M X p u) u = 0 := by
   have hX₁ : CMDiff 1 (T% X) := hX.of_le (by simp)
-  let cov := leviCivitaConnection I M
-  have hm := isMetricCompatible_leviCivitaConnection (M := M) I
-  have ht := torsion_leviCivitaConnection_eq_zero (M := M) I
   -- A radial geodesic realizes the arbitrary tangent vector without global completeness.
   let γ : ℝ → M := fun q ↦ riemannianExp I M p (q • u)
   have hγ₀ : γ 0 = p := by simp [γ]
@@ -74,37 +70,20 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
       (mem_flowDomain_zero hX₁ (γ 0))
   let U : ∀ t, TangentSpace I (F 0 t) :=
     fun t ↦ curveVelocity I (fun q ↦ F q t) 0
-  have hU₀ : curveVelocity I (fun q ↦ F q 0) 0 = u :=
-    (congrArg (fun c : ℝ → M ↦ curveVelocity I c 0) hF₀).trans hvel
-  have hbase : F 0 0 ∈ (trivializationAt E (TangentSpace I) (F 0 0)).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 0)
-  let : IsManifold I (minSmoothness ℝ 2) M := by
-    rw [minSmoothness_of_isRCLikeNormedField]
-    infer_instance
-  -- Exchange time and transverse derivatives; at time zero the flow is the identity.
-  have hDU : alongCurve cov (F 0) U 0 = cov X p u := by
-    have hsym := alongCurve_curveVelocity_comm cov
-      ((isTorsionFree_iff_torsion_eq_zero cov).2 ht)
-      (f := F) (u := 0) (v := 0) (by
-        simpa only [minSmoothness_of_isRCLikeNormedField] using hF)
-    have htime (q : ℝ) : curveVelocity I (F q) 0 = X (F q 0) :=
-      curveVelocity_flowOf hX₁ (mem_flowDomain_zero hX₁ (γ q))
-    have hfield : (fun q ↦ X (F q 0)) = (fun q ↦ X (γ q)) :=
-      funext fun q ↦ congrArg X (congrFun hF₀ q)
-    rw [hsym, funext htime, hfield, hF₀]
-    have hpull := alongCurve_pullback cov γ X (hasMFDerivAt_curveVelocity
-      (hγ.mdifferentiableAt (by norm_num))) (hX.mdifferentiable (by simp) (γ 0))
-    rw [hγ₀, hvel] at hpull
-    exact hpull
-  -- The metric product rule differentiates the transported squared speed.
-  have hcurve : MDifferentiableAt 𝓘(ℝ) I (F 0) 0 :=
-    (hF.comp (f := fun t : ℝ ↦ ((0 : ℝ), t)) 0
-      (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt).mdifferentiableAt (by norm_num)
-  have hd := hm.hasDerivAt_inner_alongCurve hcurve
-    (hF.differentiableAt_sectionCoord_curveVelocity_fst hbase)
-    (hF.differentiableAt_sectionCoord_curveVelocity_fst hbase)
+  -- Regard time as the variation parameter and use the transverse squared-speed formula.
+  have hd := hasDerivAt_norm_sq_curveVelocity (F := fun t q ↦ F q t) (t := 0)
+    (hF.comp (f := Prod.swap) (0, 0)
+      (contMDiff_iff_contDiff.mpr (contDiff_snd.prodMk contDiff_fst)).contMDiffAt)
+  have htime (q : ℝ) : curveVelocity I (F q) 0 = X (F q 0) :=
+    curveVelocity_flowOf hX₁ (mem_flowDomain_zero hX₁ (γ q))
+  have hfield : (fun q ↦ X (F q 0)) = (fun q ↦ X (γ q)) :=
+    funext fun q ↦ congrArg X (congrFun hF₀ q)
+  rw [variationField_def, funext htime, hfield, hF₀] at hd
+  have hpull := alongCurve_pullback (leviCivitaConnection I M) γ X (hasMFDerivAt_curveVelocity
+    (hγ.mdifferentiableAt (by norm_num))) (hX.mdifferentiable (by simp) (γ 0))
+  rw [hpull, hvel, hγ₀] at hd
   -- Norm preservation makes that scalar function locally constant, on the actual flow domain.
-  have hconst : (fun t ↦ inner ℝ (U t) (U t)) =ᶠ[𝓝 0] fun _ ↦ ‖u‖ ^ 2 := by
+  have hconst : (fun t ↦ ‖U t‖ ^ 2) =ᶠ[𝓝 0] fun _ ↦ ‖u‖ ^ 2 := by
     have hdom : ∀ᶠ t : ℝ in 𝓝 0, (t, p) ∈ flowDomain X :=
       ((isOpen_flowDomain hX₁).preimage
         (by fun_prop : Continuous fun t : ℝ ↦ (t, p))).mem_nhds
@@ -121,13 +100,11 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
       rw [hFt]
       exact congrArg (fun w : TangentSpace I (flowOf X t p) ↦ ‖w‖)
         (hmap.trans (by rw [hγ₀]))
-    rw [real_inner_self_eq_norm_sq, hnorm, hn]
+    rw [hnorm, hn]
   have heq := hd.deriv.symm.trans hconst.deriv_eq
   have hF₀₀ : F 0 0 = p := (congrFun hF₀ 0).trans hγ₀
   rw [deriv_const, hF₀₀] at heq
-  rw [hDU, hU₀] at heq
-  have hcomm := real_inner_comm (cov X p u) u
-  linarith
+  exact (mul_eq_zero.mp heq).resolve_left two_ne_zero
 
 /-- A smooth vector field is Killing if its local flow preserves tangent norms near time zero.
 The neighbourhood may depend on both the point and the tangent vector. -/
