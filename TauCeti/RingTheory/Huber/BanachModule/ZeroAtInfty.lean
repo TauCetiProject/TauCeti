@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.RingTheory.Huber.BanachModule.CompletedTensor
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.BaseChange
 
@@ -85,30 +86,6 @@ section Forward
 
 omit [DiscreteTopology I]
 
-/-- A bilinear map bounded by `C * ‖x‖ * ‖y‖` is jointly continuous. -/
-private theorem continuous_of_norm_apply_le {X Y Z : Type*} [SeminormedAddCommGroup X] [Module R X]
-    [SeminormedAddCommGroup Y] [Module R Y] [SeminormedAddCommGroup Z] [Module R Z]
-    (β : X →ₗ[R] Y →ₗ[R] Z) (C : ℝ) (hβ : ∀ x y, ‖β x y‖ ≤ C * ‖x‖ * ‖y‖) :
-    Continuous fun p : X × Y ↦ β p.1 p.2 := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  -- `β x y - β x₀ y₀ = β (x - x₀) y + β x₀ (y - y₀)`
-  have hg : Tendsto (fun q : X × Y ↦ C * ‖q.1 - p.1‖ * ‖q.2‖ + C * ‖p.1‖ * ‖q.2 - p.2‖) (𝓝 p)
-      (𝓝 0) := by
-    simpa using ((by fun_prop : Continuous fun q : X × Y ↦
-      C * ‖q.1 - p.1‖ * ‖q.2‖ + C * ‖p.1‖ * ‖q.2 - p.2‖).tendsto p)
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun q ↦ ?_) hg
-  have hsplit : β q.1 q.2 - β p.1 p.2 = β (q.1 - p.1) q.2 + β p.1 (q.2 - p.2) := by
-    simp only [map_sub, LinearMap.sub_apply]
-    abel
-  rw [hsplit]
-  exact (norm_add_le _ _).trans (add_le_add (hβ _ _) (hβ _ _))
-
-/-- A scalar action bounded by `C * ‖r‖ * ‖m‖` is continuous. -/
-private theorem continuousSMul_of_norm_smul_le {M : Type*} [SeminormedAddCommGroup M] [Module R M]
-    (h : ∃ C : ℝ≥0, ∀ (r : R) (m : M), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) : ContinuousSMul R M :=
-  h.elim fun C hC ↦ ⟨continuous_of_norm_apply_le (LinearMap.lsmul R M) C hC⟩
-
 /-- The pointwise action `x ↦ (x i • m)ᵢ` of `C₀(I, R)` on a fixed vector `m`. -/
 private noncomputable def coeffMap
     (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) (m : E) :
@@ -140,7 +117,7 @@ private theorem continuous_coeffBilin
     (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) :
     Continuous fun p : C₀(I, R) × E ↦ coeffBilin I hE p.1 p.2 := by
   obtain ⟨C, hC⟩ := hE
-  refine continuous_of_norm_apply_le _ C fun x m ↦ (norm_le (by positivity)).2 fun i ↦ ?_
+  refine LinearMap.continuous_of_norm_apply_le _ C fun x m ↦ (norm_le (by positivity)).2 fun i ↦ ?_
   rw [coeffBilin_apply]
   exact (hC _ _).trans (by gcongr; exact norm_coe_le_norm x i)
 
