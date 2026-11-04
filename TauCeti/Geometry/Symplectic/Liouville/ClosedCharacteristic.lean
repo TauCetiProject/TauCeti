@@ -118,19 +118,10 @@ theorem exists_hasContractibleClosedCharacteristic_image_flowOf {ε : ℝ} (hε 
   have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZ.of_le (by simp)
   have hψ := flowOf_eq_globalFlow hZ1 hc
   -- Every value in the band is regular: `F` grows at unit speed along the flow, so `dF(Z) = 1`.
-  have hreg : ∀ c' ∈ Ioo (c - ε) (c + ε), IsRegularValue I 𝓘(ℝ) F c' := by
-    intro c' hc'
-    rw [isRegularValue_iff]
-    rintro x rfl
-    rw [isRegularPoint_iff_mvfderiv_ne_zero]
-    intro h0
-    have h1 := mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add hZ1 hc (hF x hc') <| by
-      filter_upwards [(isOpen_Ioo.preimage (by fun_prop : Continuous fun s ↦ F x + s)).mem_nhds
-        (by simpa using hc')] with s hs
+  have hreg : ∀ c' ∈ Ioo (c - ε) (c + ε), IsRegularValue I 𝓘(ℝ) F c' :=
+    fun _ ↦ isRegularValue_of_apply_globalFlow_eq_add hZ1 hc hF fun x t hx hxt ↦ by
       rw [← hψ]
-      exact hFZ x s hc' hs
-    rw [h0] at h1
-    exact zero_ne_one h1
+      exact hFZ x t hx hxt
   -- Some nearby level `F⁻¹(c')` carries a closed characteristic contractible in `W`.
   obtain ⟨c', hc'ε, hcc'⟩ := h.exists_hasContractibleClosedCharacteristic hε hreg
   -- Flow it back to the level `c`, for time `t = c - c'`.
@@ -139,8 +130,7 @@ theorem exists_hasContractibleClosedCharacteristic_image_flowOf {ε : ℝ} (hε 
   have hct : c' + t ∈ Ioo (c - ε) (c + ε) := by
     rw [add_sub_cancel]
     exact ⟨by linarith, by linarith⟩
-  have hinv (y : M) : flowOf Z t (flowOf Z (-t) y) = y := by
-    rw [hψ, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
+  have hinv (y : M) : flowOf Z t (flowOf Z (-t) y) = y := flowOf_flowOf_neg hZ1 hc t y
   have h1 := (hZσ.hasContractibleClosedCharacteristic_image_flowOf_iff hσ hc hZ t
     fun x hx ↦ hF x (hx ▸ hc'ε)).2 hcc'
   refine h1.of_hamiltonianVectorField_eq_smul one_ne_zero (fun x hx ↦ ?_) fun x hx ↦ ?_
@@ -178,9 +168,8 @@ theorem hasContractibleClosedCharacteristic_univ {ε : ℝ}
     σ.HasContractibleClosedCharacteristic univ F c := by
   obtain ⟨t, -, ht⟩ := hZσ.exists_hasContractibleClosedCharacteristic_image_flowOf hσ hc hZ hε hF
     hFZ h
-  have hψ := flowOf_eq_globalFlow (hZ.of_le (by simp)) hc
-  rwa [image_univ_of_surjective fun y ↦ ⟨flowOf Z (-t) y, by
-    rw [hψ, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]⟩] at ht
+  rwa [image_univ_of_surjective fun y ↦
+    ⟨flowOf Z (-t) y, flowOf_flowOf_neg (hZ.of_le (by simp)) hc t y⟩] at ht
 
 end IsLiouvilleVectorField
 
@@ -230,8 +219,8 @@ theorem hasContractibleClosedCharacteristic_univ
     ω.HasContractibleClosedCharacteristic univ
       (fun x ↦ Real.log (liouvilleRadialCoordinate Z W x)) T := by
   obtain ⟨t, -, ht⟩ := h.exists_hasContractibleClosedCharacteristic_image_flowOf hZ hT hae
-  rwa [image_univ_of_surjective fun y ↦ ⟨flowOf Z (-t) y, by
-    rw [h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ]⟩] at ht
+  rwa [image_univ_of_surjective fun y ↦ ⟨flowOf Z (-t) y, flowOf_flowOf_neg
+    ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) (h.isCompleteVectorField hZ) t y⟩] at ht
 
 end IsLiouvilleCompletion
 

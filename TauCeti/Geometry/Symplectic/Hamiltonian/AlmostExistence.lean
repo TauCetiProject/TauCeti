@@ -201,15 +201,11 @@ theorem HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristi
   have hηδ : η ≤ δ := min_le_left δ ε
   have hηε : η ≤ ε := min_le_right δ ε
   -- Almost every value of the nonempty interval `(c - η, c + η)` gives such a level.
-  have : (ae (volume.restrict (Ioo (c - η) (c + η)))).NeBot := ae_neBot.2 <| by
-    rw [Ne, Measure.restrict_eq_zero, Real.volume_Ioo, ENNReal.ofReal_eq_zero, not_le]
-    linarith [lt_min hδ hε]
-  have h2 : ∀ᵐ c' ∂(volume.restrict (Ioo (c - η) (c + η))),
-      c' ∈ Ioo (c - η) (c + η) ∧ σ.HasContractibleClosedCharacteristic W F c' := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioo, ae_restrict_of_ae hae] with c' hc' h'
-    exact ⟨hc', h' ⟨by linarith [hc'.1], by linarith [hc'.2]⟩
-      (hreg c' ⟨by linarith [hc'.1], by linarith [hc'.2]⟩)⟩
-  obtain ⟨c', hc', hcc'⟩ := h2.exists
+  obtain ⟨c', hc', h'⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioo (c - η) (c + η))
+    (by rw [Real.volume_Ioo, Ne, ENNReal.ofReal_eq_zero, not_le]; linarith [lt_min hδ hε])
+    (ae_restrict_of_ae hae)
+  have hcc' := h' ⟨by linarith [hc'.1], by linarith [hc'.2]⟩
+    (hreg c' ⟨by linarith [hc'.1], by linarith [hc'.2]⟩)
   exact ⟨c', ⟨by linarith [hc'.1], by linarith [hc'.2]⟩, hcc'⟩
 
 /-- **Conformal invariance of almost existence.** For a nondegenerate form on a
