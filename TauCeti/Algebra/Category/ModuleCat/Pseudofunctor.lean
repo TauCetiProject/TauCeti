@@ -48,6 +48,12 @@ subcategory of coefficient algebras, such as the local Artinian `k`-algebras wit
 * `CommAlgCat.moduleCatBaseChangePseudofunctor k Λ`: the pseudofunctor with these unit and
   composition comparisons.
 
+## Implementation notes
+
+Only `CommAlgCat.moduleCatBaseChange` and the pseudofunctor are exposed, so that their objects
+compute to `S ⊗[R] N` and `ModuleCat (R ⊗[k] Λ)`. The comparisons are characterized by their
+component lemmas on tensors, from which the coherence laws are proved.
+
 ## References
 
 * Edward Frenkel and Dennis Gaitsgory, *Local geometric Langlands correspondence and affine
@@ -57,7 +63,7 @@ subcategory of coefficient algebras, such as the local Artinian `k`-algebras wit
   commutative rings, whose comparisons are built from adjunctions rather than tensor formulas.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Bicategory TauCeti
 open scoped TensorProduct ModuleCat.Algebra
@@ -84,7 +90,7 @@ lemma isScalarTower_toAlgebra (f : R ⟶ S) :
 
 /-- Base change along a morphism `f : R ⟶ S` of commutative `k`-algebras, from modules over
 `R ⊗[k] Λ` to modules over `S ⊗[k] Λ`: `N ↦ S ⊗[R] N`, where `S` is an `R`-algebra through `f`. -/
-noncomputable def moduleCatBaseChange (f : R ⟶ S) :
+@[expose] noncomputable def moduleCatBaseChange (f : R ⟶ S) :
     ModuleCat.{u} (R ⊗[k] Λ) ⥤ ModuleCat.{u} (S ⊗[k] Λ) :=
   letI := f.hom.toRingHom.toAlgebra
   haveI := isScalarTower_toAlgebra f
@@ -143,9 +149,11 @@ lemma moduleCatBaseChange_map_smul (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k]
   let _ := f.hom.toRingHom.toAlgebra
   have _ := isScalarTower_toAlgebra f
   refine moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_
-  simp only [ModuleCat.hom_smul, LinearMap.smul_apply, moduleCatBaseChange_map_hom_tmul]
   -- The `S`-action on a module over `S ⊗[k] Λ` is the action of `algebraMap S (S ⊗[k] Λ)`.
-  exact CoefficientBaseChange.one_tmul_smul (k := k) (Λ := Λ) r (φ.hom n)
+  change CoefficientBaseChange.map k Λ S (r • φ).hom (1 ⊗ₜ n) =
+    algebraMap S (S ⊗[k] Λ) (f.hom r) • CoefficientBaseChange.map k Λ S φ.hom (1 ⊗ₜ n)
+  rw [CoefficientBaseChange.map_tmul, CoefficientBaseChange.map_tmul, ModuleCat.hom_smul]
+  exact CoefficientBaseChange.one_tmul_smul r (φ.hom n)
 
 end Functor
 
@@ -159,17 +167,20 @@ noncomputable def moduleCatBaseChangeId : moduleCatBaseChange Λ (𝟙 R) ≅ �
   -- The `R`-algebra structure on `R` given by `𝟙 R` unfolds to `Algebra.id`, so base change
   -- along `𝟙 R` is `R ⊗[R] N` with its standard module structures.
   NatIso.ofComponents (fun N ↦ (CoefficientBaseChange.lid k Λ R N).toModuleIso) fun φ ↦
-    moduleCatBaseChange_hom_ext Λ (𝟙 R) fun n ↦
-      -- Both sides are `1 • φ n`, as `φ` commutes with the action of `algebraMap R _ 1`.
-      (φ.hom.map_smul (algebraMap R (R ⊗[k] Λ) 1) n).symm
+    moduleCatBaseChange_hom_ext Λ (𝟙 R) fun n ↦ by
+      -- Both sides are `1 • φ n`.
+      change CoefficientBaseChange.lid k Λ R _ (CoefficientBaseChange.map k Λ R φ.hom (1 ⊗ₜ n)) =
+        φ.hom (CoefficientBaseChange.lid k Λ R _ (1 ⊗ₜ n))
+      rw [CoefficientBaseChange.map_tmul, CoefficientBaseChange.lid_tmul,
+        CoefficientBaseChange.lid_tmul, one_smul, one_smul]
 
 lemma moduleCatBaseChangeId_hom_app_hom_tmul (N : ModuleCat.{u} (R ⊗[k] Λ)) (r : R) (n : N) :
     ((moduleCatBaseChangeId Λ R).hom.app N).hom (r ⊗ₜ[R] n) = r • n :=
-  rfl
+  CoefficientBaseChange.lid_tmul r n
 
 lemma moduleCatBaseChangeId_inv_app_hom (N : ModuleCat.{u} (R ⊗[k] Λ)) (n : N) :
     ((moduleCatBaseChangeId Λ R).inv.app N).hom n = (1 : R) ⊗ₜ[R] n :=
-  rfl
+  CoefficientBaseChange.lid_symm_apply n
 
 variable {R} {S T : CommAlgCat.{u} k}
 
@@ -205,7 +216,19 @@ noncomputable def moduleCatBaseChangeComp (f : R ⟶ S) (g : S ⟶ T) (fg : R �
   NatIso.ofComponents
     (fun N ↦ (CoefficientBaseChange.cancelBaseChange k Λ T
       (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N))).toModuleIso)
-    fun _ ↦ moduleCatBaseChange_hom_ext Λ fg fun _ ↦ rfl
+    fun {N N'} φ ↦ moduleCatBaseChange_hom_ext Λ fg fun n ↦ by
+      change CoefficientBaseChange.cancelBaseChange k Λ T
+          (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N'))
+          (CoefficientBaseChange.map k Λ T φ.hom (1 ⊗ₜ n)) =
+        CoefficientBaseChange.map k Λ T ((moduleCatBaseChange Λ f).map φ).hom
+          (CoefficientBaseChange.cancelBaseChange k Λ T
+            (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N)) (1 ⊗ₜ n))
+      have e (P : ModuleCat.{u} (R ⊗[k] Λ)) (t : T) (p : P) :=
+        CoefficientBaseChange.cancelBaseChange_tmul (k := k) (Λ := Λ) T
+          (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj P)) t p
+      rw [CoefficientBaseChange.map_tmul, e, e, CoefficientBaseChange.map_tmul]
+      exact congrArg (TensorProduct.tmul S (1 : T))
+        (moduleCatBaseChange_map_hom_tmul Λ f φ 1 n).symm
 
 lemma moduleCatBaseChangeComp_hom_app_hom_tmul (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T)
     (h : f ≫ g = fg) (N : ModuleCat.{u} (R ⊗[k] Λ)) (t : T) (n : N) :
@@ -214,8 +237,16 @@ lemma moduleCatBaseChangeComp_hom_app_hom_tmul (f : R ⟶ S) (g : S ⟶ T) (fg :
     letI := fg.hom.toRingHom.toAlgebra
     ((moduleCatBaseChangeComp Λ f g fg h).hom.app N).hom (t ⊗ₜ[R] n) =
       (t ⊗ₜ[S] ((1 : S) ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) :
-        (moduleCatBaseChange Λ g).obj ((moduleCatBaseChange Λ f).obj N)) :=
-  rfl
+        (moduleCatBaseChange Λ g).obj ((moduleCatBaseChange Λ f).obj N)) := by
+  let _ := f.hom.toRingHom.toAlgebra
+  let _ := g.hom.toRingHom.toAlgebra
+  let _ := fg.hom.toRingHom.toAlgebra
+  have _ := isScalarTower_toAlgebra f
+  have _ := isScalarTower_toAlgebra g
+  have _ := isScalarTower_toAlgebra fg
+  have _ := isScalarTower_toAlgebra_of_comp f g fg h
+  exact CoefficientBaseChange.cancelBaseChange_tmul T
+    (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N)) t n
 
 lemma moduleCatBaseChangeComp_inv_app_hom_tmul_tmul (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T)
     (h : f ≫ g = fg) (N : ModuleCat.{u} (R ⊗[k] Λ)) (t : T) (s : S) (n : N) :
@@ -225,7 +256,59 @@ lemma moduleCatBaseChangeComp_inv_app_hom_tmul_tmul (f : R ⟶ S) (g : S ⟶ T) 
     ((moduleCatBaseChangeComp Λ f g fg h).inv.app N).hom
         (t ⊗ₜ[S] (s ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) :
           (moduleCatBaseChange Λ g).obj ((moduleCatBaseChange Λ f).obj N)) =
-      ((g.hom s * t) ⊗ₜ[R] n : (moduleCatBaseChange Λ fg).obj N) :=
+      ((g.hom s * t) ⊗ₜ[R] n : (moduleCatBaseChange Λ fg).obj N) := by
+  let _ := f.hom.toRingHom.toAlgebra
+  let _ := g.hom.toRingHom.toAlgebra
+  let _ := fg.hom.toRingHom.toAlgebra
+  have _ := isScalarTower_toAlgebra f
+  have _ := isScalarTower_toAlgebra g
+  have _ := isScalarTower_toAlgebra fg
+  have _ := isScalarTower_toAlgebra_of_comp f g fg h
+  exact CoefficientBaseChange.cancelBaseChange_symm_tmul T
+    (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N)) t s n
+
+/-- The composition comparisons are associative: both sides send `1 ⊗ n` to
+`1 ⊗ (1 ⊗ (1 ⊗ n))`. -/
+lemma moduleCatBaseChangeComp_associativity {U : CommAlgCat.{u} k} (f : R ⟶ S) (g : S ⟶ T)
+    (h : T ⟶ U) (fg : R ⟶ T) (gh : S ⟶ U) (fgh : R ⟶ U) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
+    (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (N : ModuleCat.{u} (R ⊗[k] Λ)) :
+    (moduleCatBaseChangeComp Λ fg h fgh hfgh).hom.app N ≫
+        (moduleCatBaseChange Λ h).map ((moduleCatBaseChangeComp Λ f g fg hfg).hom.app N) =
+      (moduleCatBaseChangeComp Λ f gh fgh hfgh').hom.app N ≫
+        (moduleCatBaseChangeComp Λ g h gh hgh).hom.app ((moduleCatBaseChange Λ f).obj N) := by
+  refine moduleCatBaseChange_hom_ext Λ fgh fun n ↦ ?_
+  change ((moduleCatBaseChange Λ h).map ((moduleCatBaseChangeComp Λ f g fg hfg).hom.app N)).hom
+      (((moduleCatBaseChangeComp Λ fg h fgh hfgh).hom.app N).hom _) =
+    ((moduleCatBaseChangeComp Λ g h gh hgh).hom.app ((moduleCatBaseChange Λ f).obj N)).hom
+      (((moduleCatBaseChangeComp Λ f gh fgh hfgh').hom.app N).hom _)
+  -- The inner tensors have the carrier types of the base changes only up to unfolding
+  -- `moduleCatBaseChange`, so the rewrites match at default transparency.
+  erw [moduleCatBaseChangeComp_hom_app_hom_tmul, moduleCatBaseChange_map_hom_tmul,
+    moduleCatBaseChangeComp_hom_app_hom_tmul, moduleCatBaseChangeComp_hom_app_hom_tmul,
+    moduleCatBaseChangeComp_hom_app_hom_tmul]
+
+/-- The left unit law of the comparisons, checked against the inverse of the unit comparison:
+both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`. -/
+lemma moduleCatBaseChangeComp_left_unitality (f : R ⟶ S) (hf : 𝟙 R ≫ f = f)
+    (N : ModuleCat.{u} (R ⊗[k] Λ)) :
+    (moduleCatBaseChangeComp Λ (𝟙 R) f f hf).hom.app N ≫
+      (moduleCatBaseChange Λ f).map ((moduleCatBaseChangeId Λ R).hom.app N) = 𝟙 _ := by
+  refine ((moduleCatBaseChange Λ f).mapIso ((moduleCatBaseChangeId Λ R).app N)).comp_hom_eq_id.2
+    (moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_)
+  rw [Functor.mapIso_inv, Iso.app_inv, moduleCatBaseChangeComp_hom_app_hom_tmul,
+    moduleCatBaseChange_map_hom_tmul, moduleCatBaseChangeId_inv_app_hom]
+  rfl
+
+/-- The right unit law of the comparisons, checked against the inverse of the unit comparison:
+both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`. -/
+lemma moduleCatBaseChangeComp_right_unitality (f : R ⟶ S) (hf : f ≫ 𝟙 S = f)
+    (N : ModuleCat.{u} (R ⊗[k] Λ)) :
+    (moduleCatBaseChangeComp Λ f (𝟙 S) f hf).hom.app N ≫
+      (moduleCatBaseChangeId Λ S).hom.app ((moduleCatBaseChange Λ f).obj N) = 𝟙 _ := by
+  refine ((moduleCatBaseChangeId Λ S).app ((moduleCatBaseChange Λ f).obj N)).comp_hom_eq_id.2
+    (moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_)
+  rw [Iso.app_inv, moduleCatBaseChangeComp_hom_app_hom_tmul]
+  erw [moduleCatBaseChangeId_inv_app_hom]
   rfl
 
 end Comparison
@@ -235,19 +318,13 @@ variable (k) in
 `LocallyDiscrete (CommAlgCat k) ⥤ᵖ Cat`: `R ↦ ModuleCat (R ⊗[k] Λ)`, with the base-change
 functors `CommAlgCat.moduleCatBaseChange Λ f` and the comparisons
 `CommAlgCat.moduleCatBaseChangeId` and `CommAlgCat.moduleCatBaseChangeComp`. -/
-noncomputable def moduleCatBaseChangePseudofunctor :
+@[expose] noncomputable def moduleCatBaseChangePseudofunctor :
     LocallyDiscrete (CommAlgCat.{u} k) ⥤ᵖ Cat.{u, max (u + 1) v} :=
   LocallyDiscrete.mkCatPseudofunctor (obj := fun R ↦ Cat.of (ModuleCat.{u} (R ⊗[k] Λ)))
     (fun f ↦ moduleCatBaseChange Λ f) (moduleCatBaseChangeId Λ)
     (fun f g fg h ↦ moduleCatBaseChangeComp Λ f g fg h)
-    (fun _ _ _ _ _ fgh _ _ _ _ _ ↦ moduleCatBaseChange_hom_ext Λ fgh fun _ ↦ rfl)
-    -- The unit laws are checked against the inverse of the unit comparison, which sends `n` to
-    -- `1 ⊗ n`, so that both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ n)`.
-    (fun f _ N ↦
-      ((moduleCatBaseChange Λ f).mapIso ((moduleCatBaseChangeId Λ _).app N)).comp_hom_eq_id.2
-        (moduleCatBaseChange_hom_ext Λ f fun _ ↦ rfl))
-    (fun f _ _ ↦ ((moduleCatBaseChangeId Λ _).app _).comp_hom_eq_id.2
-      (moduleCatBaseChange_hom_ext Λ f fun _ ↦ rfl))
+    (moduleCatBaseChangeComp_associativity Λ) (moduleCatBaseChangeComp_left_unitality Λ)
+    (moduleCatBaseChangeComp_right_unitality Λ)
 
 variable (k) in
 @[simp]

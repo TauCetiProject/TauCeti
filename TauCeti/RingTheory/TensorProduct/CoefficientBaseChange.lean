@@ -45,10 +45,9 @@ categories of modules over `R ⊗[k] Λ` for varying `R`.
 
 ## Implementation notes
 
-The definitions are exposed so that the comparison isomorphisms of
-`CommAlgCat.moduleCatBaseChange` can be computed on tensors `1 ⊗ n` by unfolding, in the
-category of modules where the coefficient actions come from `ModuleCat.Algebra` rather than
-from the instances on tensor products.
+The definitions are not exposed. Downstream computations, including the comparison
+isomorphisms of `CommAlgCat.moduleCatBaseChange`, go through the evaluation lemmas on tensors
+(`map_tmul`, `lid_tmul`, `cancelBaseChange_tmul` and their inverses).
 
 ## References
 
@@ -57,7 +56,7 @@ from the instances on tensor products.
   Birkhäuser, 2006: categories of modules over a varying commutative base and their base change.
 -/
 
-@[expose] public section
+public section
 
 open scoped TensorProduct
 
@@ -149,12 +148,10 @@ noncomputable def map (φ : N →ₗ[R ⊗[k] Λ] P) : S ⊗[R] N →ₗ[S ⊗[k
   toFun := (φ.restrictScalars R).lTensor S
   map_add' := map_add _
   map_smul' t x := by
-    induction t using TensorProduct.inductionOn with
-    | tmul s l =>
-      induction x using TensorProduct.inductionOn with
-      | tmul s' n => simp
-      | add x y hx hy => simp only [smul_add, map_add, hx, hy]
-    | add t t' ht ht' => simp only [add_smul, map_add, ht, ht']
+    let _ := CentralBaseChange.module R S (R ⊗[k] Λ) N
+    let _ := CentralBaseChange.module R S (R ⊗[k] Λ) P
+    simpa only [CentralBaseChange.coe_map, CentralBaseChange.smul_def, smul_def,
+      RingHom.id_apply] using (CentralBaseChange.map S φ).map_smul ((algEquiv k Λ R S).symm t) x
 
 theorem coe_map (φ : N →ₗ[R ⊗[k] Λ] P) :
     ⇑(map k Λ S φ) = (φ.restrictScalars R).lTensor S := (rfl)
