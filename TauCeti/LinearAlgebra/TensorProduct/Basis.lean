@@ -15,7 +15,8 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 This file records how contractions against one factor of a tensor product detect equality when
 that factor is projective, and how coordinates in a basis of one factor commute with maps of the
 other.
-It also proves that the coordinates in bases obtained by scalar extension commute with a map of
+It also writes every tensor as a sum of pure tensors over a finite spanning family of the right
+factor, and proves that the coordinates in bases obtained by scalar extension commute with a map of
 the scalar-extension algebras, and that over a basis with at most one index a scalar extension
 consists of pure tensors.
 
@@ -23,6 +24,8 @@ consists of pure tensors.
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
+* `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
+  factor, every tensor is a sum of pure tensors with those right factors.
 * `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
@@ -76,6 +79,21 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
   have := congrArg (TensorProduct.map LinearMap.id (Finsupp.linearCombination R id)) hmap
   simpa only [TensorProduct.map_map, LinearMap.id_comp, hs, TensorProduct.map_id,
     LinearMap.id_apply] using this
+
+/-- If a finite family `n` spans `N`, then every element of `M ⊗[R] N` is `∑ j, mⱼ ⊗ nⱼ` for some
+family `m` of elements of `M`. -/
+theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → N}
+    (hn : Submodule.span R (Set.range n) = ⊤) (x : M ⊗[R] N) :
+    ∃ m : κ → M, x = ∑ j, m j ⊗ₜ[R] n j := by
+  induction x with
+  | tmul a y =>
+    obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun R).1
+      (hn ▸ Submodule.mem_top : y ∈ Submodule.span R (Set.range n))
+    exact ⟨fun j ↦ c j • a, by simp [tmul_sum, smul_tmul]⟩
+  | add x y hx hy =>
+    obtain ⟨m, rfl⟩ := hx
+    obtain ⟨m', rfl⟩ := hy
+    exact ⟨m + m', by simp [add_tmul, Finset.sum_add_distrib]⟩
 
 end TensorProduct
 
