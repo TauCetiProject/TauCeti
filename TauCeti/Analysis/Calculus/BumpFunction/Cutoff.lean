@@ -36,7 +36,9 @@ It also provides radial cutoffs between two concentric closed balls of radii `r 
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`).
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). Multiplying by one minus a
+bump cuts a function off near a point while keeping it `C^n` wherever it was
+(`TauCeti.exists_contDiffAt_cutoff_ball`).
 
 ## References
 
@@ -445,5 +447,25 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
   · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
+
+/-- **Cutting a function off near a point.** For `0 < a < b` and a function `v`, there is a
+function that is `C^n` wherever `v` is, vanishes near every point of the open ball of radius `a`
+about `c`, and agrees with `v` near every point at distance more than `b` from `c`. It is
+`w ↦ (1 - φ w) • v w` for a smooth bump `φ` about `c` equal to one on the closed ball of radius
+`a` and vanishing outside the ball of radius `b`. -/
+theorem exists_contDiffAt_cutoff_ball [NormedSpace ℝ E] [HasContDiffBump E] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞} (v : E → F) (c : E) {a b : ℝ}
+    (ha : 0 < a) (hab : a < b) :
+    ∃ vc : E → F, (∀ w, ContDiffAt ℝ n v w → ContDiffAt ℝ n vc w) ∧
+      (∀ w, dist w c < a → vc =ᶠ[𝓝 w] 0) ∧ ∀ w, b < dist w c → vc =ᶠ[𝓝 w] v := by
+  let φ : ContDiffBump c := ⟨a, b, ha, hab⟩
+  have hdist : Continuous fun w : E ↦ dist w c := continuous_id.dist continuous_const
+  refine ⟨fun w ↦ (1 - φ w) • v w,
+    fun w hw ↦ (contDiffAt_const.sub φ.contDiff.contDiffAt).smul hw, fun w hw ↦ ?_,
+    fun w hw ↦ ?_⟩
+  · filter_upwards [(isOpen_lt hdist continuous_const).mem_nhds hw] with w' hw'
+    simp [φ.one_of_mem_closedBall (Metric.mem_closedBall.2 hw'.le)]
+  · filter_upwards [(isOpen_lt continuous_const hdist).mem_nhds hw] with w' hw'
+    simp [φ.zero_of_le_dist hw'.le]
 
 end TauCeti

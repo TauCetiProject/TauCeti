@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Integral.Annulus
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # The energy of a pair of pants in terms of the actions of its ends
@@ -31,9 +31,10 @@ Stokes' formula for the primitive `λₓ(v) = ½ ω(x, v)` on `S_R`, the closed 
 `r ≤ ‖w‖ ≤ ρ` with the open disc of radius `r` about `1` removed. The end lifts traverse the
 three boundary circles clockwise, which accounts for the signs. To apply the annulus formula
 `TauCeti.SymplecticForm.integral_fderiv_apply_annulus`, `u` is first multiplied by a smooth
-cutoff that vanishes near `1` and equals `1` near `S_R`; the cut-off map is then smooth on the
-whole annulus, and its area over the removed disc is computed by the annulus formula about `1`,
-whose inner boundary term vanishes.
+cutoff that vanishes near `1` and equals `1` near `S_R` (`TauCeti.exists_contDiffAt_cutoff_ball`);
+the cut-off map is then smooth on the whole annulus. Its area over the removed disc, split off by
+`TauCeti.setIntegral_diff_ball_add_annulus_add_ball`, is computed by the annulus formula about
+`1`, whose inner boundary term vanishes.
 
 Hence, for `R ≥ 2`, where the perturbation is `H_q(t) dt` along the boundary circles,
 
@@ -126,35 +127,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture �
 
 section Area
 
-/-- A map that is `C²` on `S` may be cut off near `1`: there is a map that is `C²` away from `0`,
-vanishes near every point of the open disc of radius `r / 2` about `1`, and agrees with the
-given map near every point at distance more than `3r / 4` from `1`. -/
-private theorem exists_contDiffAt_eventuallyEq_zero_near_one {v : ℂ → V}
-    (hv : ∀ w : ℂ, w ≠ 0 → w ≠ 1 → ContDiffAt ℝ 2 v w) {r : ℝ} (hr : 0 < r) :
-    ∃ vc : ℂ → V, (∀ w : ℂ, w ≠ 0 → ContDiffAt ℝ 2 vc w) ∧
-      (∀ w : ℂ, ‖w - 1‖ < r / 2 → vc =ᶠ[𝓝 w] 0) ∧
-      ∀ w : ℂ, 3 * r / 4 < ‖w - 1‖ → vc =ᶠ[𝓝 w] v := by
-  let b : ContDiffBump (1 : ℂ) := ⟨r / 2, 3 * r / 4, by positivity, by linarith⟩
-  set χ : ℂ → ℝ := fun w ↦ 1 - b w
-  have hχ : ContDiff ℝ 2 χ := contDiff_const.sub b.contDiff
-  have hχ₀ {w : ℂ} (hw : ‖w - 1‖ < r / 2) : χ w = 0 := by
-    simp only [χ, sub_eq_zero]
-    exact (b.one_of_mem_closedBall (by rw [Metric.mem_closedBall, dist_eq_norm]; exact hw.le)).symm
-  have hχ₁ {w : ℂ} (hw : 3 * r / 4 < ‖w - 1‖) : χ w = 1 := by
-    simp only [χ, sub_eq_self]
-    exact b.zero_of_le_dist (by rw [dist_eq_norm]; exact hw.le)
-  have hcont : Continuous fun w : ℂ ↦ ‖w - 1‖ := continuous_norm.comp (continuous_sub_right 1)
-  have hzero (w : ℂ) (hw : ‖w - 1‖ < r / 2) : (fun w ↦ χ w • v w) =ᶠ[𝓝 w] 0 := by
-    filter_upwards [(isOpen_lt hcont continuous_const).mem_nhds hw] with w' hw'
-    simp [hχ₀ hw']
-  refine ⟨fun w ↦ χ w • v w, fun w hw ↦ ?_, hzero, fun w hw ↦ ?_⟩
-  · by_cases hw₁ : w = 1
-    · subst hw₁
-      exact contDiffAt_const.congr_of_eventuallyEq (hzero 1 (by simp; linarith))
-    · exact hχ.contDiffAt.smul (hv w hw hw₁)
-  · filter_upwards [(isOpen_lt continuous_const hcont).mem_nhds hw] with w' hw'
-    simp [hχ₁ hw']
-
 /-- The integral of the primitive `λₓ(v) = ½ ω(x, v)` along the counterclockwise circle of center
 `c` and radius `s`, as in `TauCeti.SymplecticForm.integral_fderiv_apply_annulus`. -/
 private noncomputable def circleTerm (ω : SymplecticForm V) (v : ℂ → V) (c : ℂ) (s : ℝ) : ℝ :=
@@ -166,12 +138,6 @@ private theorem circleTerm_congr (ω : SymplecticForm V) {v v' : ℂ → V} {c :
     circleTerm ω v c s = circleTerm ω v' c s := by
   simp only [circleTerm, h]
 
-/-- A lower bound for the norm in terms of the distance to `1`. -/
-private theorem one_sub_norm_sub_one_le (w : ℂ) : 1 - ‖w - 1‖ ≤ ‖w‖ := by
-  have h := norm_sub_norm_le (1 : ℂ) w
-  rw [norm_sub_rev, norm_one] at h
-  linarith
-
 /-- The radii `r = exp (-2πR) / 2` and `ρ = 2 exp (2πR)` of the boundary circles of the
 truncation satisfy `0 < r ≤ 1/2` and `2 ≤ ρ` for `R ≥ 0`. -/
 private theorem radii_bounds {R : ℝ} (hR : 0 ≤ R) :
@@ -180,56 +146,6 @@ private theorem radii_bounds {R : ℝ} (hR : 0 ≤ R) :
   have h₁ : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   have h₂ : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by positivity)
   exact ⟨by positivity, by linarith, by linarith⟩
-
-/-- **Decomposition of the annulus.** Let `0 < r ≤ 1/2` and `2 ≤ ρ`, and let `T` be the closed
-annulus `r ≤ ‖w‖ ≤ ρ` with the open disc of radius `r` about `1` removed. For a function
-integrable on the annulus, its integral over the annulus is its integral over `T`, plus its
-integral over the closed annulus `r / 4 ≤ ‖w - 1‖ ≤ r`, plus its integral over the open disc of
-radius `r / 4` about `1`. -/
-private theorem setIntegral_annulus_eq {r ρ : ℝ} (hr : 0 < r) (hr₂ : r ≤ 1 / 2) (hρ : 2 ≤ ρ)
-    {T : Set ℂ} (hT : ∀ w, w ∈ T ↔ (r ≤ ‖w‖ ∧ r ≤ ‖w - 1‖) ∧ ‖w‖ ≤ ρ) {f : ℂ → ℝ}
-    (hf : IntegrableOn f {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ}) :
-    ∫ w in {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ}, f w =
-      (∫ w in T, f w) + (∫ w in {w | r / 4 ≤ ‖w - 1‖ ∧ ‖w - 1‖ ≤ r}, f w) +
-        ∫ w in Metric.ball 1 (r / 4), f w := by
-  set D : Set ℂ := {w | r / 4 ≤ ‖w - 1‖ ∧ ‖w - 1‖ ≤ r}
-  have hcont : Continuous fun w : ℂ ↦ ‖w - 1‖ := continuous_norm.comp (continuous_sub_right 1)
-  have hAeq : {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} = T ∪ (D ∪ Metric.ball 1 (r / 4)) := by
-    ext w
-    simp only [D, mem_union, mem_ofPred_eq, Metric.mem_ball, dist_eq_norm, sub_zero, hT]
-    constructor
-    · rintro ⟨h₁, h₂⟩
-      by_cases ha : r ≤ ‖w - 1‖
-      · exact Or.inl ⟨⟨h₁, ha⟩, h₂⟩
-      · by_cases hb : r / 4 ≤ ‖w - 1‖
-        · exact Or.inr (Or.inl ⟨hb, (not_le.1 ha).le⟩)
-        · exact Or.inr (Or.inr (not_le.1 hb))
-    · rintro (⟨⟨h₁, -⟩, h₃⟩ | ⟨-, h₂⟩ | h)
-      · exact ⟨h₁, h₃⟩
-      · exact ⟨by linarith [one_sub_norm_sub_one_le w],
-          by linarith [norm_sub_norm_le w 1, norm_one (α := ℂ)]⟩
-      · exact ⟨by linarith [one_sub_norm_sub_one_le w],
-          by linarith [norm_sub_norm_le w 1, norm_one (α := ℂ)]⟩
-  have hDm : MeasurableSet D :=
-    ((isClosed_le continuous_const hcont).inter (isClosed_le hcont continuous_const)).measurableSet
-  -- The truncation meets the closed annulus about `1` only in the circle of radius `r` about `1`,
-  -- a null set.
-  have hdisj : AEDisjoint volume T (D ∪ Metric.ball 1 (r / 4)) := by
-    refine measure_mono_null (fun w ⟨hwT, hw⟩ ↦ ?_) (Measure.addHaar_sphere volume (1 : ℂ) r)
-    have h₁ := ((hT w).1 hwT).1.2
-    rw [mem_sphere_iff_norm]
-    rcases hw with hw | hw
-    · exact le_antisymm hw.2 h₁
-    · rw [Metric.mem_ball, dist_eq_norm] at hw
-      linarith
-  rw [hAeq] at hf ⊢
-  rw [setIntegral_union₀ hdisj (hDm.union Metric.isOpen_ball.measurableSet).nullMeasurableSet
-      (hf.mono_set subset_union_left) (hf.mono_set subset_union_right),
-    setIntegral_union (Set.disjoint_left.2 fun w hw hw' ↦ ?_) Metric.isOpen_ball.measurableSet
-      (hf.mono_set fun w hw ↦ Or.inr (Or.inl hw)) (hf.mono_set fun w hw ↦ Or.inr (Or.inr hw)),
-    add_assoc]
-  rw [Metric.mem_ball, dist_eq_norm] at hw'
-  linarith [hw.1]
 
 /-- **The end loops as circles.** For `R ≥ 0` and a map `v` that is `C²` on `S`, the loop area
 of the end loop of `v` at the end `q` is minus half the circle term of `v` on the circle of radius
@@ -264,11 +180,13 @@ private theorem loopArea_cylindricalEndLift_eq (ω : SymplecticForm V) {v : ℂ 
     refine ω.loopArea_circleMap_sub_two_pi_mul 0 r 0 (hdiff fun θ ↦ ?_)
     have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 hr.le θ)
     rw [sub_zero] at h
-    exact ⟨by linarith, by linarith [one_sub_norm_sub_one_le (circleMap 0 r θ)]⟩
+    exact ⟨by linarith,
+      by linarith [norm_le_norm_add_norm_sub (circleMap 0 r θ) 1, norm_one (α := ℂ)]⟩
   · simp only [h₁]
     refine ω.loopArea_circleMap_sub_two_pi_mul 1 r π (hdiff fun θ ↦ ?_)
     have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 hr.le θ)
-    exact ⟨by linarith [one_sub_norm_sub_one_le (circleMap 1 r θ)], by linarith⟩
+    exact ⟨by linarith [norm_le_norm_add_norm_sub (circleMap 1 r θ) 1, norm_one (α := ℂ)],
+      by linarith⟩
   · simp only [hinf]
     refine ω.loopArea_circleMap_sub_two_pi_mul 0 ρ 0 (hdiff fun θ ↦ ?_)
     have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 (by linarith : 0 ≤ ρ) θ)
@@ -292,14 +210,24 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
     simp [r, ρ]
   -- Cut `v` off near `1`; the cut-off map agrees with `v` on the three boundary circles of the
   -- truncation and vanishes on the circle of radius `r / 4` about `1`.
-  obtain ⟨vc, hvc, hvc₀, hvcv⟩ := exists_contDiffAt_eventuallyEq_zero_near_one hv hr
+  obtain ⟨vc, hvc', hvc₀', hvcv'⟩ :=
+    exists_contDiffAt_cutoff_ball (n := 2) (b := 3 * r / 4) v 1 (by positivity : 0 < r / 2)
+      (by linarith)
+  have hvc₀ (w : ℂ) (hw : ‖w - 1‖ < r / 2) : vc =ᶠ[𝓝 w] 0 := hvc₀' w (by rwa [dist_eq_norm])
+  have hvcv (w : ℂ) (hw : 3 * r / 4 < ‖w - 1‖) : vc =ᶠ[𝓝 w] v :=
+    hvcv' w (by rwa [dist_eq_norm])
+  have hvc (w : ℂ) (hw : w ≠ 0) : ContDiffAt ℝ 2 vc w := by
+    by_cases hw₁ : w = 1
+    · subst hw₁
+      exact contDiffAt_const.congr_of_eventuallyEq (hvc₀ 1 (by simp; linarith))
+    · exact hvc' w (hv w hw hw₁)
   have hvceq {c : ℂ} {s : ℝ} (hc : ∀ θ, 3 * r / 4 < ‖circleMap c s θ - 1‖) :
       circleTerm ω vc c s = circleTerm ω v c s :=
     circleTerm_congr ω fun θ ↦ (hvcv _ (hc θ)).eq_of_nhds
   have hC₀ : circleTerm ω vc 0 r = circleTerm ω v 0 r := hvceq fun θ ↦ by
     have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 hr.le θ)
     rw [sub_zero] at h
-    linarith [one_sub_norm_sub_one_le (circleMap 0 r θ)]
+    linarith [norm_le_norm_add_norm_sub (circleMap 0 r θ) 1, norm_one (α := ℂ)]
   have hCρ : circleTerm ω vc 0 ρ = circleTerm ω v 0 ρ := hvceq fun θ ↦ by
     have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 (by linarith : 0 ≤ ρ) θ)
     rw [sub_zero] at h
@@ -321,7 +249,8 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
   have hD : ∫ w in {w | r / 4 ≤ ‖w - 1‖ ∧ ‖w - 1‖ ≤ r}, f w =
       (1 / 2 : ℝ) * (circleTerm ω vc 1 r - circleTerm ω vc 1 (r / 4)) :=
     ω.integral_fderiv_apply_annulus 1 (by positivity) (by linarith) fun w hw ↦
-      hvc w (norm_pos_iff.1 (by linarith [one_sub_norm_sub_one_le w, hw.2]))
+      hvc w (norm_pos_iff.1
+        (by linarith [norm_le_norm_add_norm_sub w 1, norm_one (α := ℂ), hw.2]))
   -- The area density of the cut-off map is integrable on the annulus about `0`, vanishes on the
   -- disc of radius `r / 4` about `1`, and is that of `v` on the truncation.
   have hfA : IntegrableOn f {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} := by
@@ -345,7 +274,20 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
       ∫ w in truncation R, f w := by
     refine setIntegral_congr_fun (isCompact_truncation R).isClosed.measurableSet fun w hw ↦ ?_
     simp only [f, (hvcv w (by linarith [((hT w).1 hw).1.2])).fderiv_eq (𝕜 := ℝ)]
-  have hsplit := setIntegral_annulus_eq hr hr₂ hρ hT hfA
+  -- Split the annulus about `0` into the truncation, the annulus `r / 4 ≤ ‖w - 1‖ ≤ r` and the
+  -- disc of radius `r / 4` about `1`.
+  have hsub : Metric.closedBall (1 : ℂ) r ⊆ {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} := fun w hw ↦ by
+    rw [Metric.mem_closedBall, dist_eq_norm] at hw
+    rw [mem_ofPred_eq, sub_zero]
+    exact ⟨by linarith [norm_le_norm_add_norm_sub w 1, norm_one (α := ℂ)],
+      by linarith [norm_sub_norm_le w 1, norm_one (α := ℂ)]⟩
+  have hTeq : {w : ℂ | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} \ Metric.ball 1 r = truncation R := by
+    ext w
+    rw [hT, Set.mem_sdiff, mem_ofPred_eq, Metric.mem_ball, dist_eq_norm, not_lt, sub_zero]
+    tauto
+  have hsplit :=
+    setIntegral_diff_ball_add_annulus_add_ball volume (s := r / 4) (by linarith) hsub hfA
+  rw [hTeq] at hsplit
   rw [htrunc, Puncture.sum_univ, hloop₀, hloop₁, hloopinf, endSign_zero, endSign_one, endSign_inf]
   linarith
 
