@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Radial.Push
 For `0 ≤ r`, the straight-line homotopy `TauCeti.radialPush r` maps the closed unit ball into
 itself, so it restricts to a homotopy `TauCeti.TopCat.diskRadialPush r` of the disk
 `TopCat.disk n`. It starts at the identity and, for `0 < r ≤ 1`, fixes the boundary sphere at all
-times and ends by sending the shell `r ≤ ‖x‖` onto the boundary sphere. Its end map
+times and ends by sending the shell `r ≤ ‖x‖` into the boundary sphere. Its end map
 `x ↦ x / max r ‖x‖` and the reversed homotopy from it to the identity are how a map defined on the
 boundary sphere is spread over the outer shell of a disk, as in cell reattachment arguments.
 
@@ -22,7 +22,7 @@ boundary sphere is spread over the outer shell of a disk, as in cell reattachmen
 
 * `TauCeti.TopCat.diskRadialPush`: the radial push `TauCeti.radialPush r` on the disk.
 * `TauCeti.TopCat.diskRadialPush_diskBoundaryInclusion`: it fixes the boundary sphere.
-* `TauCeti.TopCat.norm_diskRadialPush_one`: at the end it sends the shell `r ≤ ‖x‖` onto the
+* `TauCeti.TopCat.norm_diskRadialPush_one`: at the end it sends the shell `r ≤ ‖x‖` into the
   boundary sphere.
 -/
 
@@ -67,7 +67,7 @@ theorem diskRadialPush_diskBoundaryInclusion (hr : 0 < r) (hr1 : r ≤ 1) (t : I
     (radialPush_of_norm_eq_one hr hr1 t
       ((mem_range_diskBoundaryInclusion_iff _).1 (Set.mem_range_self s)))))
 
-/-- At the end, the radial push on the disk sends the shell `r ≤ ‖x‖` onto the boundary sphere. -/
+/-- At the end, the radial push on the disk sends the shell `r ≤ ‖x‖` into the boundary sphere. -/
 theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤ ‖x.down.1‖) :
     ‖(diskRadialPush n hr.le (1, x)).down.1‖ = 1 := by
   rw [coe_diskRadialPush_apply_down, norm_radialPush_one hr hx]
