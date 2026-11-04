@@ -137,7 +137,7 @@ theorem existsUnique_isIdempotentElem_mk_eq (J : Ideal S) [HenselianRing S J] {t
     (ht : IsIdempotentElem t) : ∃! e : S, IsIdempotentElem e ∧ Ideal.Quotient.mk J e = t := by
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective t
   obtain ⟨e, he, hea⟩ := exists_isIdempotentElem_sub_mem J
-    (Ideal.Quotient.eq_zero_iff_mem.mp (by rw [map_sub, map_mul, ht.eq, sub_self]))
+    (Ideal.Quotient.isIdempotentElem_mk_iff.mp ht)
   refine ⟨e, ⟨he, Ideal.Quotient.eq.mpr hea⟩, fun e' ⟨he', h⟩ ↦ ?_⟩
   exact Ideal.injOn_quotient_mk_isIdempotentElem
     (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))) he' he
