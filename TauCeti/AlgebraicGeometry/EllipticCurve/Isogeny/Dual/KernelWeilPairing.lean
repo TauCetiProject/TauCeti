@@ -29,8 +29,8 @@ The maps `kerToTorsion` and `torsionToDualKer` are the native-point counterparts
 `TauCeti.Isogeny.kerCoeffToTorsionCoeff` and `TauCeti.Isogeny.torsionCoeffToDualKerCoeff`;
 `TauCeti.Isogeny.torsionShortExact` in
 `TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion` packages their
-sequence as discrete Galois modules. The pairing here is geometric, not yet a
-Galois-equivariant coefficient pairing.
+sequence as discrete Galois modules. The pairing is defined on geometric points;
+no Galois action is considered.
 
 ## References
 

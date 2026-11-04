@@ -18,7 +18,7 @@ Over a separably closed field, if `φ` is separable, the second map is surjectiv
 If `φ̂` is separable, applying this to the dual lifts every point of `ker φ` through `φ̂`
 on degree torsion.
 
-These are the native-point maps underlying `TauCeti.Isogeny.kerCoeffToTorsionCoeff` and
+These are the native-point counterparts of `TauCeti.Isogeny.kerCoeffToTorsionCoeff` and
 `TauCeti.Isogeny.torsionCoeffToDualKerCoeff` in
 `TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion`.
 There `TauCeti.Isogeny.torsionShortExact` packages the same sequence over a separable closure
