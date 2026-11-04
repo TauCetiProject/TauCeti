@@ -161,13 +161,12 @@ theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
     (hsymm : ∀ x ∈ s, (V x).toBilinForm.IsSymm) (hnd : ∀ x ∈ s, (V x).toBilinForm.Nondegenerate)
     {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
     sigNeg (V x).toBilinForm.toQuadraticMap = sigNeg (V y).toBilinForm.toQuadraticMap := by
-  refine hs.constant (f := fun x ↦ sigNeg (V x).toBilinForm.toQuadraticMap) (fun z hz ↦ ?_) hx hy
-  -- Local constancy on the subtype `s`, read as continuity within `s` into the discrete `ℕ`.
-  have h := eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := fun w : s ↦ V w)
-    (x := ⟨z, hz⟩) (Eventually.of_forall fun w ↦ hsymm w w.2)
-    (continuousOn_iff_continuous_domRestrict.1 hc).continuousAt (hnd z hz)
-  rw [ContinuousWithinAt, nhds_discrete, tendsto_pure, nhdsWithin_eq_map_subtype_coe hz,
-    eventually_map]
-  exact h
+  -- Local constancy on the subtype `s` gives continuity into the discrete `ℕ`.
+  refine hs.constant (f := fun x ↦ sigNeg (V x).toBilinForm.toQuadraticMap)
+    (continuousOn_iff_continuous_domRestrict.2 ((IsLocallyConstant.iff_eventually_eq _).2
+      fun z ↦ eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := fun w : s ↦ V w)
+        (Eventually.of_forall fun w ↦ hsymm w w.2)
+        (continuousOn_iff_continuous_domRestrict.1 hc).continuousAt (hnd z z.2)).continuous)
+    hx hy
 
 end ContinuousLinearMap

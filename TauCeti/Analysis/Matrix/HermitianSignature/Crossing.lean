@@ -65,7 +65,7 @@ crossings the path is nondegenerate, so its negative index is constant there by
   symmetric near a regular crossing is nondegenerate near it, except at the crossing itself.
 * `ContinuousLinearMap.eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`: across a
   regular crossing the negative index drops by the signature of the crossing form.
-* `ContinuousLinearMap.finite_setOf_not_nondegenerate`: a path on a compact interval with
+* `ContinuousLinearMap.finite_setOfPred_not_nondegenerate`: a path on a compact interval with
   nondegenerate endpoints and regular crossings has finitely many crossings.
 * `ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the
   regular-crossing formula, the negative index drops along such a path by the sum of the signatures
@@ -393,7 +393,7 @@ private theorem mem_Ioo_of_not_nondegenerate (ha : (V a).toBilinForm.Nondegenera
 continuous bilinear forms, continuous on `[a, b]`, with nondegenerate endpoints, and with a
 derivative `V' t` and nondegenerate crossing form at each of its crossings `t`. Then the crossings,
 the parameters `t ∈ [a, b]` at which `V t` is degenerate, form a finite set. -/
-theorem finite_setOf_not_nondegenerate (hc : ContinuousOn V (Icc a b))
+theorem finite_setOfPred_not_nondegenerate (hc : ContinuousOn V (Icc a b))
     (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm)
     (ha : (V a).toBilinForm.Nondegenerate) (hb : (V b).toBilinForm.Nondegenerate)
     (hreg : ∀ t ∈ Icc a b, ¬ (V t).toBilinForm.Nondegenerate →
@@ -403,7 +403,7 @@ theorem finite_setOf_not_nondegenerate (hc : ContinuousOn V (Icc a b))
   have hclosed : IsClosed {t ∈ Icc a b | ¬ (V t).toBilinForm.Nondegenerate} := by
     simpa only [Set.preimage_compl, Set.preimage_ofPred_eq, Set.compl_ofPred,
       Set.inter_ofPred_eq_sep] using hc.preimage_isClosed_of_isClosed isClosed_Icc
-        (TauCeti.isOpen_setOf_nondegenerate_toBilinForm ℝ E).isClosed_compl
+        (TauCeti.isOpen_setOfPred_nondegenerate_toBilinForm ℝ E).isClosed_compl
   refine (isCompact_Icc.of_isClosed_subset hclosed fun t ht ↦ ht.1).finite
     (isDiscrete_iff_nhdsNE.2 fun t ht ↦ ?_)
   have ht' := mem_Ioo_of_not_nondegenerate ha hb ht.1 ht.2
@@ -467,8 +467,8 @@ private theorem sigNeg_sub_sigNeg_eq_sum_crossingForm_of_finset (S : Finset ℝ)
 symmetric continuous bilinear forms on a finite-dimensional real space, continuous on `[a, b]`,
 with nondegenerate endpoints, and with a derivative `V' t` and nondegenerate crossing form at each
 of its crossings `t`. Then the negative index of `V a` exceeds that of `V b` by the sum, over the
-finitely many crossings `t ∈ [a, b]` (`finite_setOf_not_nondegenerate`), of the signatures of the
-crossing forms of `V t` and `V' t`.
+finitely many crossings `t ∈ [a, b]` (`finite_setOfPred_not_nondegenerate`), of the signatures of
+the crossing forms of `V t` and `V' t`.
 
 The left-hand side is the spectral flow of the path in finite dimensions: the number of
 eigenvalues passing from negative to positive, counted with sign. -/
@@ -482,7 +482,7 @@ theorem sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ 
       ∑ᶠ t ∈ {t ∈ Icc a b | ¬ (V t).toBilinForm.Nondegenerate},
         ((sigPos (crossingForm (V t) (V' t)) : ℤ) -
           sigNeg (crossingForm (V t) (V' t))) := by
-  have hfin := finite_setOf_not_nondegenerate hc hsymm ha hb hreg
+  have hfin := finite_setOfPred_not_nondegenerate hc hsymm ha hb hreg
   rw [finsum_mem_eq_finite_toFinset_sum _ hfin]
   refine sigNeg_sub_sigNeg_eq_sum_crossingForm_of_finset _ b hab hc hsymm
     (fun t ht htS ↦ ?_) fun t htS ↦ ?_

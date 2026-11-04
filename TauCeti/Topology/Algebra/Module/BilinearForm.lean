@@ -58,7 +58,7 @@ use.
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
 * `ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective` and
-  `TauCeti.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions the bilinear form of a
+  `TauCeti.isOpen_setOfPred_nondegenerate_toBilinForm`: in finite dimensions the bilinear form of a
   map into the dual is nondegenerate exactly when the map is injective, so nondegeneracy is open.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
@@ -164,7 +164,7 @@ theorem _root_.ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective
 
 variable (𝕜 E) in
 /-- In finite dimensions, the continuous bilinear forms that are nondegenerate form an open set. -/
-theorem isOpen_setOf_nondegenerate_toBilinForm :
+theorem isOpen_setOfPred_nondegenerate_toBilinForm :
     IsOpen {L : E →L[𝕜] E →L[𝕜] 𝕜 | L.toBilinForm.Nondegenerate} := by
   simpa only [ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective] using
     ContinuousLinearMap.isOpen_injective
