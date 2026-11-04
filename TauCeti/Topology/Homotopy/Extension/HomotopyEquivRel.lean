@@ -83,6 +83,22 @@ public section
 
 noncomputable section
 
+namespace ContinuousMap.HomotopyEquiv
+
+/-- **A left homotopy inverse of a homotopy equivalence is a right homotopy inverse.** If
+`e : X ≃ₕ Y` and `g : Y → X` satisfy `g ∘ e ≃ id`, then also `e ∘ g ≃ id`, since
+`e g ≃ e g e e⁻¹ ≃ e e⁻¹ ≃ id`. -/
+theorem toFun_comp_homotopic_id_of_comp_toFun_homotopic_id {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] (e : X ≃ₕ Y) {g : C(Y, X)}
+    (hg : (g.comp e.toFun).Homotopic (ContinuousMap.id X)) :
+    (e.toFun.comp g).Homotopic (ContinuousMap.id Y) := by
+  have h₁ := (Homotopic.refl (e.toFun.comp g)).comp e.right_inv.symm
+  have h₂ := (Homotopic.refl e.toFun).comp (hg.comp (Homotopic.refl e.invFun))
+  simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
+  exact (h₁.trans h₂).trans e.right_inv
+
+end ContinuousMap.HomotopyEquiv
+
 namespace TauCeti
 
 open ContinuousMap unitInterval
@@ -205,12 +221,8 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy
     ∃ (g : C(Y, X)) (H : (g.comp h.toFun).Homotopy (ContinuousMap.id X)),
       (∀ b : B, g b = g₀ b) ∧ (∀ (t : I) (a : A), H (t, a) = H₀ (t, a)) ∧
         (h.toFun.comp g).Homotopic (ContinuousMap.id Y) := by
-  -- `g₀` is also a right homotopy inverse of `h₀`: `h₀ g₀ ≃ h₀ g₀ h₀ h₀⁻¹ ≃ h₀ h₀⁻¹ ≃ id`.
-  have hg₀ : (h₀.toFun.comp g₀).Homotopic (ContinuousMap.id B) := by
-    have e₁ := (Homotopic.refl (h₀.toFun.comp g₀)).comp h₀.right_inv.symm
-    have e₂ := (Homotopic.refl h₀.toFun).comp (Homotopic.comp ⟨H₀⟩ (Homotopic.refl h₀.invFun))
-    simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at e₁ e₂
-    exact (e₁.trans e₂).trans h₀.right_inv
+  -- `g₀` is also a right homotopy inverse of `h₀`.
+  have hg₀ := h₀.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id ⟨H₀⟩
   -- On `B`, the homotopy inverse `h⁻¹` is homotopic to `g₀`: `h⁻¹ ≃ h⁻¹ h₀ g₀ = h⁻¹ h g₀ ≃ g₀`.
   have hι : (subtypeVal B).comp h₀.toFun = h.toFun.comp (subtypeVal A) :=
     ContinuousMap.ext hh₀
