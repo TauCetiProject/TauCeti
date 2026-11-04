@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Module
 
 import TauCeti.Order.Filter.Pi
 import TauCeti.RingTheory.Ideal.Operations
