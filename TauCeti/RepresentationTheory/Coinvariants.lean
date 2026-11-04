@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # The coinvariant kernel of representations
@@ -136,7 +137,7 @@ theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
       Submodule.smul_mem_smul hgen Submodule.mem_top
     refine Submodule.mem_map.2 ⟨_, hmem, ?_⟩
     simp only [LinearEquiv.coe_coe, asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply,
-      map_sub, asAlgebraHom_single_one, map_one, LinearMap.sub_apply, Module.End.one_apply]
+      map_sub, asAlgebraHom_single_one, map_one, LinearMap.sub_apply, one_apply_eq_self]
   · rw [Submodule.map_le_iff_le_comap]
     intro x hx
     apply (Coinvariants.mk_eq_zero ρ).1
@@ -219,13 +220,6 @@ theorem _root_.MonoidAlgebra.mapDomainLinearMap_orbitRel_mk_norm_ofMulAction
     mapDomainLinearMap k k (Quotient.mk (orbitRel G X)) ((ofMulAction k G X).norm v) =
       Fintype.card G • mapDomainLinearMap k k (Quotient.mk (orbitRel G X)) v := by
   simp [Representation.norm, LinearMap.sum_apply]
-
-/-- The permutation representation of a subgroup `H` on `k[X]` is the restriction of that of
-`G`. -/
-theorem ofMulAction_subgroup [Group G] [MulAction G X] (H : Subgroup G) (h : H) :
-    ofMulAction k H X h = ofMulAction k G X h := by
-  ext
-  simp [Subgroup.smul_def]
 
 end Semiring
 

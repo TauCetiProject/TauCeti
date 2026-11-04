@@ -60,8 +60,8 @@ conditions agree for homeomorphisms, and we use the simplexwise one, which is Wh
 * `TauCeti.isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval`: the standard
   one-simplex is a smooth triangulation of the unit interval, for every smoothness exponent.
 * `TauCeti.exists_contMDiff_not_isSmoothTriangulation_trans`: following that triangulation by the
-  smooth homeomorphism `t ↦ t ^ 2` of the interval does not give a smooth triangulation, so the
-  injectivity of the differential is a genuine condition.
+  analytic homeomorphism `t ↦ t ^ 2` of the interval does not give a `Cⁿ` triangulation for any
+  `n`, so the injectivity of the differential is a genuine condition.
 
 ## References
 
@@ -288,7 +288,6 @@ private theorem eq_zero_of_coordOne_eq_zero {σ : Finset (Fin 2)} {v : σ → �
   · rwa [Finset.sum_eq_single a (fun b _ hba => h1 b (key a b ha fun h => hba (Subtype.ext h)))
       (by simp)] at hv
 
-variable [Fact ((0 : ℝ) < 1)]
 
 /-- The standard one-simplex, realized as the unit interval through its second barycentric
 coordinate, is a `Cⁿ` triangulation of the unit interval for every `n`. -/
@@ -336,12 +335,11 @@ private def sqHomeomorph : unitInterval ≃ₜ unitInterval where
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
-private theorem contMDiff_sqHomeomorph : ContMDiff (𝓡∂ 1) (𝓡∂ 1) ∞ sqHomeomorph :=
+private theorem contMDiff_sqHomeomorph : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n sqHomeomorph :=
   contMDiff_iff_comp_subtypeVal_Icc.mpr
     ⟨sqHomeomorph.continuous,
       (contDiff_id.pow 2).contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))⟩
 
-omit [Fact ((0 : ℝ) < 1)] in
 /-- If `F` extends the standard triangulation of the unit interval followed by squaring on a face
 `σ`, then, read in `ℝ`, `F` is the square of the barycentric coordinate at the vertex `1` on the
 standard simplex. -/
@@ -360,14 +358,15 @@ private theorem eqOn_sq_of_trans_sqHomeomorph {σ : Face (⊤ : AbstractSimplici
   simp [sqHomeomorph, ← hi₁, Finsupp.mapDomain_apply_of_injective Subtype.val_injective t.weights]
 
 /-- Smoothness of a triangulating homeomorphism on every simplex does not make it a smooth
-triangulation: following the standard triangulation of the unit interval by the smooth
+triangulation: following the standard triangulation of the unit interval by the analytic
 homeomorphism `t ↦ t ^ 2`, whose derivative vanishes at `0`, gives a homeomorphism that is not a
 `Cⁿ` triangulation for any `n`. In particular, `IsSmoothTriangulation.trans_diffeomorph` fails for
 smooth homeomorphisms. -/
 theorem exists_contMDiff_not_isSmoothTriangulation_trans :
-    ∃ h : unitInterval ≃ₜ unitInterval, ContMDiff (𝓡∂ 1) (𝓡∂ 1) ∞ h ∧
-      ¬IsSmoothTriangulation (𝓡∂ 1) n (realizationOneSimplexHomeomorphUnitInterval.trans h) := by
-  refine ⟨sqHomeomorph, contMDiff_sqHomeomorph, fun hT => ?_⟩
+    ∃ h : unitInterval ≃ₜ unitInterval, ContMDiff (𝓡∂ 1) (𝓡∂ 1) ω h ∧
+      ∀ n, ¬IsSmoothTriangulation (𝓡∂ 1) n
+        (realizationOneSimplexHomeomorphUnitInterval.trans h) := by
+  refine ⟨sqHomeomorph, contMDiff_sqHomeomorph, fun n hT => ?_⟩
   let σ : Face (⊤ : AbstractSimplicialComplex (Fin 2)) := ⟨Finset.univ, Finset.univ_nonempty⟩
   let S := range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights
   let i₀ : σ.1 := ⟨0, Finset.mem_univ _⟩

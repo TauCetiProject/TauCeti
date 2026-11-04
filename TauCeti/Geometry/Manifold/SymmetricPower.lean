@@ -25,7 +25,7 @@ The chart at an unordered tuple `s` is assembled from three inputs, each already
   neighbourhoods `V₁, …, V_k` inside prescribed ones — here, inside the coordinate patches
   `(chartAt K z_j).source` — and `s` is the concatenation of unordered tuples of points of the
   `V_j`, with multiplicities `n₁, …, n_k` as the degrees
-  (`TauCeti.exists_mem_range_sumSubtype_of_t2`);
+  (`Finset.exists_mem_range_sumSubtype_of_t2`);
 * that concatenation is an open embedding
   `Sym^{n₁}(V₁) × ⋯ × Sym^{n_k}(V_k) ↪ Sym α n` (`TauCeti.Sym.isOpenEmbedding_sumSubtype`);
 * each factor is an open subspace of affine space, charted by the elementary symmetric functions
@@ -278,9 +278,12 @@ theorem exists_symOpenPartialHomeomorph (s : Sym α n) :
           (fun i : ↥(symChartSupport s) => chartAt K (i : α))
           V m hm hVo hVsub hVdisj e hp := by
   rw [symChartSupport]
-  obtain ⟨V, hVo, -, hVsub, hVdisj, hm, hmem⟩ :=
-    exists_mem_range_sumSubtype_of_t2 s (fun a => (chartAt K a).source)
+  obtain ⟨V, hVo, -, hVsub, hVdisj, hparts⟩ :=
+    (s : Multiset α).toFinset.exists_mem_range_sumSubtype_of_t2
+      (fun a => (chartAt K a).source)
       (fun a _ => (chartAt K a).open_source) fun a _ => mem_chart_source K a
+  obtain ⟨hm, hmem⟩ := hparts s fun a ha =>
+    Multiset.mem_toFinset.2 (_root_.Sym.mem_coe.2 ha)
   set m : ↥(s : Multiset α).toFinset → ℕ :=
     fun i => Multiset.count (i : α) (s : Multiset α)
   let e : (Σ i, Fin (m i)) ≃ Fin n := (Sym.nonempty_sigmaFinEquiv hm).some

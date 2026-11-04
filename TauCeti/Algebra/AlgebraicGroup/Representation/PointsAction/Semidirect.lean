@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
+public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.RepresentationTheory.ToMultiplicative
 
@@ -27,6 +28,13 @@ when `b` satisfies the cocycle identity `b(gh) = b(g) + g • b(h)` at `A`-point
 conjugate of the standard section by the normal-factor element `x` exactly when
 `b(g) = x - g • x`.
 
+The points semidirect products form a functor of the value algebra
+(`TauCeti.Comodule.pointSemidirectMap`). By the Yoneda lemma, a family of sections natural in the
+value algebra is the section of a single regular one-cochain: its value at the universal point
+`id : H →ₐ[R] H` (`TauCeti.Comodule.eq_pointSection_of_naturality`). Thus sections of
+`V_a ⋊ G → G` defined on the functor of points, such as those coming from closed subgroups
+complementary to `V_a`, are the sections of regular cochains.
+
 ## Main declarations
 
 * `TauCeti.Comodule.pointSection`: the section of the points semidirect product defined by a
@@ -35,6 +43,10 @@ conjugate of the standard section by the normal-factor element `x` exactly when
   identity.
 * `TauCeti.Comodule.pointSection_eq_conj_iff`: conjugacy of the section to the standard one is
   the coboundary identity.
+* `TauCeti.Comodule.pointSemidirectMap`: functoriality of the points semidirect product in the
+  value algebra.
+* `TauCeti.Comodule.eq_pointSection_of_naturality`: sections natural in the value algebra are the
+  sections of regular cochains.
 
 ## References
 
@@ -48,8 +60,9 @@ open WithConv
 
 namespace TauCeti.Comodule
 
-variable {R H V A : Type*} [CommSemiring R]
+section Points
 
+variable {R H V A : Type*} [CommSemiring R]
 
 variable [Semiring H] [HopfAlgebra R H] [AddCommGroup V] [Module R V] [Comodule R H V]
   [CommRing A] [Algebra R A]
@@ -117,5 +130,112 @@ theorem pointSection_eq_conj_iff (b : V ⊗[R] H) (x : A ⊗[R] V) (g : WithConv
   exact Multiplicative.ofAdd.injective.eq_iff
 
 end Section
+
+section Functoriality
+
+open SemidirectProduct
+
+variable {B C : Type*} [CommRing B] [Algebra R B] [CommRing C] [Algebra R C]
+
+variable (V) in
+/-- Functoriality of the points semidirect product `(A ⊗[R] V) ⋊ G(A)` in the value algebra: an
+algebra map `φ : A →ₐ[R] B` acts by `φ ⊗ id` on the normal factor and by postcomposition on the
+points of `G`. -/
+noncomputable def pointSemidirectMap (φ : A →ₐ[R] B) :
+    Multiplicative (A ⊗[R] V) ⋊[(pointsRepresentation V).toMulAut] WithConv (H →ₐ[R] A) →*
+      Multiplicative (B ⊗[R] V) ⋊[(pointsRepresentation V).toMulAut] WithConv (H →ₐ[R] B) :=
+  map (AddMonoidHom.toMultiplicative (LinearMap.rTensor V φ.toLinearMap).toAddMonoidHom)
+    (AlgHom.mapValue φ) fun g ↦ by
+      ext x
+      exact congrArg Multiplicative.ofAdd <| by
+        simpa [Representation.toMulAut_apply] using
+          LinearMap.congr_fun (rTensor_comp_endOfPoint V φ g.ofConv) x
+
+@[simp]
+theorem toAdd_pointSemidirectMap_left (φ : A →ₐ[R] B)
+    (x : Multiplicative (A ⊗[R] V) ⋊[(pointsRepresentation V).toMulAut] WithConv (H →ₐ[R] A)) :
+    (pointSemidirectMap V φ x).left.toAdd = LinearMap.rTensor V φ.toLinearMap x.left.toAdd :=
+  (rfl)
+
+@[simp]
+theorem pointSemidirectMap_right (φ : A →ₐ[R] B)
+    (x : Multiplicative (A ⊗[R] V) ⋊[(pointsRepresentation V).toMulAut] WithConv (H →ₐ[R] A)) :
+    (pointSemidirectMap V φ x).right = AlgHom.mapValue φ x.right :=
+  (rfl)
+
+@[simp]
+theorem pointSemidirectMap_inl (φ : A →ₐ[R] B) (x : A ⊗[R] V) :
+    pointSemidirectMap V φ (inl (Multiplicative.ofAdd x) :
+        Multiplicative (A ⊗[R] V) ⋊[(pointsRepresentation V).toMulAut] WithConv (H →ₐ[R] A)) =
+      inl (Multiplicative.ofAdd (LinearMap.rTensor V φ.toLinearMap x)) :=
+  map_inl _ _ _ _
+
+@[simp]
+theorem pointSemidirectMap_inr (φ : A →ₐ[R] B) (g : WithConv (H →ₐ[R] A)) :
+    pointSemidirectMap V φ (inr g) = inr (AlgHom.mapValue φ g) :=
+  map_inr _ _ _ _
+
+variable (V) in
+/-- The identity of the value algebra induces the identity of the points semidirect product. -/
+@[simp]
+theorem pointSemidirectMap_id :
+    pointSemidirectMap V (AlgHom.id R A) (H := H) = MonoidHom.id _ := by
+  ext x
+  · simp
+  · simp
+
+variable (V) in
+/-- The points semidirect product is functorial in the value algebra. -/
+theorem pointSemidirectMap_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
+    pointSemidirectMap V (ψ.comp φ) (H := H) =
+      (pointSemidirectMap V ψ).comp (pointSemidirectMap V φ) := by
+  ext x
+  · simp [← LinearMap.rTensor_comp_apply]
+  · simp [AlgHom.mapValue_comp]
+
+/-- The section of a regular cochain is natural in the value algebra. -/
+@[simp]
+theorem pointSemidirectMap_pointSection (φ : A →ₐ[R] B) (b : V ⊗[R] H)
+    (g : WithConv (H →ₐ[R] A)) :
+    pointSemidirectMap V φ (pointSection V A b g) = pointSection V B b (AlgHom.mapValue φ g) := by
+  refine SemidirectProduct.ext ?_ (by simp)
+  apply Multiplicative.toAdd.injective
+  simp
+
+end Functoriality
+
+end Points
+
+section Naturality
+
+open SemidirectProduct
+
+universe w
+
+variable {R : Type*} [CommSemiring R] {H : Type w} [CommRing H] [HopfAlgebra R H]
+  {V : Type*} [AddCommGroup V] [Module R V] [Comodule R H V]
+
+/-- **Natural sections are sections of regular cochains.** Let `s` be a family of sections of the
+projections `(A ⊗[R] V) ⋊ G(A) → G(A)`, natural in the commutative `R`-algebra `A`. Then `s` is the
+section `g ↦ (b(g), g)` of the regular cochain `b : V ⊗[R] H` read off from the value of `s` at
+the universal point `id : H →ₐ[R] H`. -/
+theorem eq_pointSection_of_naturality
+    (s : ∀ (A : Type w) [CommRing A] [Algebra R A],
+      (toGroupExtension (pointsRepresentation (R := R) (H := H) (A := A) V).toMulAut).Section)
+    (hs : ∀ (A B : Type w) [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (φ : A →ₐ[R] B) (g : WithConv (H →ₐ[R] A)),
+      pointSemidirectMap V φ (s A g) = s B (AlgHom.mapValue φ g))
+    (A : Type w) [CommRing A] [Algebra R A] (g : WithConv (H →ₐ[R] A)) :
+    s A g = pointSection V A
+      (TensorProduct.comm R H V (s H (toConv (AlgHom.id R H))).left.toAdd) g := by
+  have h := hs H A g.ofConv (toConv (AlgHom.id R H))
+  rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv] at h
+  refine SemidirectProduct.ext ?_ ?_
+  · rw [← h]
+    apply Multiplicative.toAdd.injective
+    simp
+  · exact (s A).rightHom_section g
+
+end Naturality
 
 end TauCeti.Comodule

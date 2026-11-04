@@ -159,12 +159,8 @@ def cohomologyOneLinearEquivOfIsFlasque :
       Cohomology S.X₁ 1 :=
   (Submodule.quotEquivOfEq _ _ (by
       ext x
-      have e (y : Cohomology S.X₂ 0) :
-          Scheme.Modules.cohomologyMapBaseLinear R X S.g 0 y = cohomologyMap S.g 0 y := by
-        rw [Scheme.Modules.cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-        rfl
       rw [LinearMap.mem_ker, LinearMap.mem_range, cohomologyδBaseLinear_apply]
-      simp only [e]
+      simp only [coe_cohomologyMapBaseLinear]
       exact (exact_cohomologyMap_cohomologyδ hS 0 1 rfl x).symm)).trans
     ((cohomologyδBaseLinear R X hS 0 1 rfl).quotKerEquivOfSurjective (by
       intro y

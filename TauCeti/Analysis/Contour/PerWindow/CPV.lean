@@ -110,14 +110,11 @@ private theorem log_sum_decomp {A B C D : ℂ} (hA : A ≠ 0) (hB : B ≠ 0) (hC
   ring
 
 /-- **Right annular argument limit along a right exit-time function.** If `τR ε → t₀` from the
-right (within `Ioi t₀`) as `ε → 0⁺`, and `γ` is continuous at `t₀`,
-differentiable from the right with `deriv γ → L_R` from the right, and the tangent-side chord
-`(γ (t₀ + r) - s) / L_R` lies in the slit plane, then the argument of the annular quotient
+right (within `Ioi t₀`) as `ε → 0⁺`, `γ` has right derivative `L_R` at `t₀`, and the tangent-side
+chord `(γ (t₀ + r) - s) / L_R` lies in the slit plane, then the argument of the annular quotient
 `(γ (t₀ + r) - s) / (γ (τR ε) - s)` converges as `ε → 0⁺` to `((γ (t₀ + r) - s) / L_R).arg`. -/
 private theorem arg_annular_quotient_exitTime_tendsto_right {γ : ℝ → ℂ} {s : ℂ} {t₀ r : ℝ}
-    {L_R : ℂ} {τR : ℝ → ℝ} (hγ_at : ContinuousAt γ t₀)
-    (h_diff_R : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t)
-    (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R)) (h_at : γ t₀ = s)
+    {L_R : ℂ} {τR : ℝ → ℝ} (h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀) (h_at : γ t₀ = s)
     (h_slit_plus : (γ (t₀ + r) - s) / L_R ∈ Complex.slitPlane)
     (h_toR : Tendsto τR (𝓝[>] (0 : ℝ)) (𝓝[>] t₀)) :
     Tendsto (fun ε : ℝ => Complex.arg ((γ (t₀ + r) - s) / (γ (τR ε) - s)))
@@ -129,21 +126,16 @@ private theorem arg_annular_quotient_exitTime_tendsto_right {γ : ℝ → ℂ} {
     rw [tendsto_nhdsWithin_iff]
     exact ⟨by simpa using (h_toR.mono_right nhdsWithin_le_nhds).sub_const t₀,
       hδR_pos.mono fun ε hε => mem_Ioi.mpr hε⟩
-  have h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀ :=
-    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_at h_diff_R h_tendsto_R
   refine (arg_annular_quotient_tendsto_right h_deriv_R h_at h_slit_plus hδR_pos hδR_to).congr
     fun ε => ?_
   rw [show t₀ + (τR ε - t₀) = τR ε from by ring]  -- reindex the exit time back to `τR ε`
 
 /-- **Left annular argument limit along a left exit-time function.** If `τL ε → t₀` from the left
-(within `Iio t₀`) as `ε → 0⁺`, and `γ` is continuous at `t₀`,
-differentiable from the left with `deriv γ → L_L` from the left, and the tangent-side chord
+(within `Iio t₀`) as `ε → 0⁺`, `γ` has left derivative `L_L` at `t₀`, and the tangent-side chord
 `(-L_L) / (γ (t₀ - r) - s)` lies in the slit plane, then the argument of the annular quotient
 `(γ (τL ε) - s) / (γ (t₀ - r) - s)` converges as `ε → 0⁺` to `((-L_L) / (γ (t₀ - r) - s)).arg`. -/
 private theorem arg_annular_quotient_exitTime_tendsto_left {γ : ℝ → ℂ} {s : ℂ} {t₀ r : ℝ}
-    {L_L : ℂ} {τL : ℝ → ℝ} (hγ_at : ContinuousAt γ t₀)
-    (h_diff_L : ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t)
-    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L)) (h_at : γ t₀ = s)
+    {L_L : ℂ} {τL : ℝ → ℝ} (h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀) (h_at : γ t₀ = s)
     (h_slit_minus : (-L_L) / (γ (t₀ - r) - s) ∈ Complex.slitPlane)
     (h_toL : Tendsto τL (𝓝[>] (0 : ℝ)) (𝓝[<] t₀)) :
     Tendsto (fun ε : ℝ => Complex.arg ((γ (τL ε) - s) / (γ (t₀ - r) - s)))
@@ -155,8 +147,6 @@ private theorem arg_annular_quotient_exitTime_tendsto_left {γ : ℝ → ℂ} {s
     rw [tendsto_nhdsWithin_iff]
     exact ⟨by simpa using (h_toL.mono_right nhdsWithin_le_nhds).const_sub t₀,
       hδL_pos.mono fun ε hε => mem_Ioi.mpr hε⟩
-  have h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀ :=
-    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv hγ_at h_diff_L h_tendsto_L
   refine (arg_annular_quotient_tendsto_left h_deriv_L h_at h_slit_minus hδL_pos hδL_to).congr
     fun ε => ?_
   rw [show t₀ - (t₀ - τL ε) = τL ε from by ring]  -- reindex the exit time back to `τL ε`
@@ -231,9 +221,7 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
     {L_R L_L : ℂ} {P : Set ℝ} (hlt : l < t₀) (htu : t₀ < u) (h_at : γ t₀ = s)
     (hγ_cont : ContinuousOn γ (Icc l u))
     (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
-    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
-    (h_diff_R : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t)
-    (h_diff_L : ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t) (hP : P.Countable)
+    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L)) (hP : P.Countable)
     (hγ_diffP : ∀ t ∈ Ioo l u \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume l u)
     (h_unique : ∀ t ∈ Icc l u, γ t = s → t = t₀)
@@ -256,9 +244,15 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
     exact Complex.zero_notMem_slitPlane h_slit_minus
   have hγ_at : ContinuousAt γ t₀ :=
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
+  have h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀ :=
+    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero hγ_at.continuousWithinAt hL_R
+      h_tendsto_R
+  have h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀ :=
+    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv_of_ne_zero hγ_at.continuousWithinAt hL_L
+      h_tendsto_L
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
     exists_exit_times_truncated_integral_split hlt htu h_at hγ_cont hL_R hL_L
-      h_tendsto_R h_tendsto_L h_diff_R h_diff_L h_unique (fun z => (z - s)⁻¹)
+      h_tendsto_R h_tendsto_L h_unique (fun z => (z - s)⁻¹)
       (fun ε hε a b ha hab hb => intervalIntegrable_inv_sub_truncated
         (hγ_cont.mono (by
           rw [uIcc_of_le hab]
@@ -271,13 +265,13 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
   have h_argR : Tendsto (fun ε : ℝ => Complex.arg ((γ u - s) / (γ (τR ε) - s)))
       (𝓝[>] (0 : ℝ)) (𝓝 ((γ u - s) / L_R).arg) := by
     simpa only [h_endpoint_R] using
-      arg_annular_quotient_exitTime_tendsto_right (r := u - t₀) hγ_at h_diff_R
-        h_tendsto_R h_at (by simpa only [h_endpoint_R] using h_slit_plus) h_toR
+      arg_annular_quotient_exitTime_tendsto_right (r := u - t₀) h_deriv_R h_at
+        (by simpa only [h_endpoint_R] using h_slit_plus) h_toR
   have h_argL : Tendsto (fun ε : ℝ => Complex.arg ((γ (τL ε) - s) / (γ l - s)))
       (𝓝[>] (0 : ℝ)) (𝓝 ((-L_L) / (γ l - s)).arg) := by
     simpa only [h_endpoint_L] using
-      arg_annular_quotient_exitTime_tendsto_left (r := t₀ - l) hγ_at h_diff_L
-        h_tendsto_L h_at (by simpa only [h_endpoint_L] using h_slit_minus) h_toL
+      arg_annular_quotient_exitTime_tendsto_left (r := t₀ - l) h_deriv_L h_at
+        (by simpa only [h_endpoint_L] using h_slit_minus) h_toL
   have h_ev : (fun ε : ℝ => ∫ t in l..u,
       if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) =ᶠ[𝓝[>] (0 : ℝ)]
       fun ε => ((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +

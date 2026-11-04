@@ -31,7 +31,14 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
-  number coprime to `d`, so a statement about all units may be checked on those.
+  number coprime to `d`, so a statement about all units may be checked on those, and
+  `ZMod.exists_odd_unitOfCoprime_eq` refines it to an odd such number. The odd form is what a
+  statement about the Kronecker symbol, which agrees with the Jacobi symbol only at odd
+  arguments, needs: its consumer is `DirichletCharacter.conductor_dvd_iff_forall_odd`.
+* `ZMod.exists_isCoprime_mul_intCast_eq` — a unit modulo `d` lifts to an integer coprime to
+  `n d`, for every `n ≠ 0`. Its consumers move a diamond label across `diag(1, n)` in
+  `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeCosets.lean` and
+  `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeMul.lean`.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
@@ -64,17 +71,17 @@ public section
 variable {d : ℕ}
 
 /-- **An integer is a unit mod `d` exactly when it is coprime to `d`.** The `Int.gcd` form is
-what consumers of `Nat.Coprime` want; `ZMod.coe_int_isUnit_iff_isCoprime` states the same
+what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
 equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
 theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
     IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
-  (ZMod.coe_int_isUnit_iff_isCoprime _ _).trans
+  (ZMod.isUnit_intCast_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 
 /-- An odd integer is a unit modulo any power of two, including exponent zero. -/
 theorem ZMod.isUnit_intCast_two_pow_of_odd (n : ℕ) {a : ℤ} (ha : Odd a) :
     IsUnit (a : ZMod (2 ^ n)) := by
-  apply (ZMod.coe_int_isUnit_iff_isCoprime a (2 ^ n)).mpr
+  apply (ZMod.isUnit_intCast_iff_isCoprime a (2 ^ n)).mpr
   simpa only [Nat.cast_pow, Nat.cast_ofNat] using (ha.isCoprime_two.pow_right (n := n)).symm
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
@@ -130,7 +137,7 @@ theorem IsCoprime.exists_int_lifts {a c : ZMod d}
         (a₀ : ZMod d) = a₁ ∧ (c₀ : ZMod d) = 0 ∧ IsCoprime a₀ c₀ := by
     intro a₁ hac
     have hunit : IsUnit (a₁ : ZMod d) := by rwa [isCoprime_zero_right] at hac
-    rw [ZMod.coe_int_isUnit_iff_isCoprime] at hunit
+    rw [ZMod.isUnit_intCast_iff_isCoprime] at hunit
     exact ⟨a₁, d, rfl, by simp, hunit.symm⟩
   intro n
   induction n with
@@ -155,6 +162,39 @@ A property of all units may therefore be checked on the units of this shape. -/
 theorem ZMod.exists_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
     ∃ (m : ℕ) (hm : Nat.Coprime m d), ZMod.unitOfCoprime m hm = u :=
   ⟨(u : ZMod d).val, ZMod.val_coe_unit_coprime u, ZMod.unitsEquivCoprime.symm_apply_apply u⟩
+
+/-- **Every unit of `ZMod d` is `ZMod.unitOfCoprime` of an odd natural number.** For even `d`
+every number coprime to `d` is odd; for odd `d`, one of `m` and `m + d` is odd. -/
+theorem ZMod.exists_odd_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
+    ∃ (m : ℕ) (hm : Nat.Coprime m d), Odd m ∧ ZMod.unitOfCoprime m hm = u := by
+  obtain ⟨m, hm, rfl⟩ := ZMod.exists_unitOfCoprime_eq u
+  by_cases hmo : Odd m
+  · exact ⟨m, hm, hmo, rfl⟩
+  -- `m` is even, so `d` is odd and `m + d` is an odd representative of the same class.
+  have hme : Even m := Nat.not_odd_iff_even.mp hmo
+  have hd : Odd d := Nat.not_even_iff_odd.mp fun hd ↦
+    Nat.not_coprime_of_dvd_of_dvd one_lt_two hme.two_dvd hd.two_dvd hm
+  refine ⟨m + d, Nat.coprime_add_self_left.mpr hm, hme.add_odd hd, Units.ext ?_⟩
+  simp [ZMod.coe_unitOfCoprime]
+
+/-- **A unit modulo `d` lifts to an integer coprime to `n d`**, for every `n ≠ 0`. For `d ≠ 0`
+this is the surjectivity of `ZMod.unitsMap` from `ZMod (n d)`; for `d = 0` the unit is `±1`. -/
+theorem ZMod.exists_isCoprime_mul_intCast_eq (n : ℕ) [NeZero n] (u : (ZMod d)ˣ) :
+    ∃ t : ℤ, IsCoprime t ((n * d : ℕ) : ℤ) ∧ ((t : ℤ) : ZMod d) = u := by
+  rcases eq_or_ne d 0 with rfl | hd
+  · obtain ⟨t, ht⟩ := ZMod.intCast_surjective (u : ZMod 0)
+    refine ⟨t, ?_, ht⟩
+    rw [mul_zero]
+    exact Int.isCoprime_iff_gcd_eq_one.mpr (Int.isUnit_intCast_iff_gcd_eq_one.mp (ht ▸ u.isUnit))
+  · have : NeZero d := ⟨hd⟩
+    obtain ⟨e, he⟩ := ZMod.unitsMap_surjective (Dvd.intro_left n rfl : d ∣ n * d) u
+    refine ⟨(e : ZMod (n * d)).val,
+      Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime e), ?_⟩
+    have := congrArg Units.val he
+    rw [ZMod.unitsMap_def, Units.coe_map, MonoidHom.coe_ofClass, ZMod.castHom_apply,
+      ZMod.cast_eq_val] at this
+    rw [Int.cast_natCast]
+    exact this
 
 -- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
 -- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`

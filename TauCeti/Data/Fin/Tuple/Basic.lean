@@ -18,6 +18,7 @@ the entry of an insertion at one of them in the other position, and compares upd
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
 send the last position to the last position. The image of an initial segment under `Fin.cons`
 is obtained by inserting the first entry into the corresponding image for the tail.
+A tuple of length three is determined by its three entries.
 
 ## Main results
 
@@ -31,6 +32,11 @@ is obtained by inserting the first entry into the corresponding image for the ta
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
+* `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
+  equality pattern exactly when the old patterns agree and the new entries repeat the same
+  positions.
+* `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
+  updates the corresponding entry of `u` or of `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -47,6 +53,7 @@ is obtained by inserting the first entry into the corresponding image for the ta
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
   the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
+* `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
 -/
 
 public section
@@ -100,6 +107,36 @@ theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
     snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
   rw [← cons_comp_rev, cons_self_tail]
+
+/-- Appending one entry to each of two tuples gives the same equality pattern exactly when the
+old patterns agree and the new entries repeat the same positions. -/
+theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b : Fin n → β} {x : α}
+    {y : β} :
+    (∀ i j, (snoc a x : Fin (n + 1) → α) i = (snoc a x : Fin (n + 1) → α) j ↔
+      (snoc b y : Fin (n + 1) → β) i = (snoc b y : Fin (n + 1) → β) j) ↔
+      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i, a i = x ↔ b i = y := by
+  simp only [Fin.forall_fin_succ', snoc_castSucc, snoc_last, eq_comm (a := x), eq_comm (a := y),
+    iff_self, and_true]
+  exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
+    fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
+
+/-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
+@[simp]
+theorem update_append_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin m) (a : α) :
+    Function.update (append u v) (castAdd n i) a = append (Function.update u i a) v :=
+  funext fun j ↦ addCases (fun j ↦ by simp [Function.update_apply])
+    (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp) j
+
+/-- Updating `Fin.append u v` at a position of `v` is appending `u` to the updated `v`. -/
+@[simp]
+theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i : Fin n) (a : α) :
+    Function.update (append u v) (natAdd m i) a = append u (Function.update v i a) :=
+  funext fun j ↦ addCases (fun j ↦ by
+      rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
+      simp)
+    (fun j ↦ by simp [Function.update_apply]) j
 
 section ContractNth
 
@@ -221,5 +258,16 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
 theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
     (i : Fin (n + 1)) (z : Fin n → α) : insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
   fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
+
+/-- A tuple of length three is determined by its three entries. -/
+theorem injective_apply_zero_one_two {α : Type*} :
+    Function.Injective fun x : Fin 3 → α ↦ (x 0, x 1, x 2) := by
+  intro x y h
+  simp only [Prod.mk.injEq] at h
+  funext m
+  match m with
+  | 0 => exact h.1
+  | 1 => exact h.2.1
+  | 2 => exact h.2.2
 
 end Fin

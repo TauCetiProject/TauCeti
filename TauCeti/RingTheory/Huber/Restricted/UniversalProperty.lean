@@ -13,8 +13,9 @@ public import TauCeti.Topology.Algebra.Module.Equicontinuity
 /-!
 # The universal property of restricted series with module coefficients
 
-Let `A` be a ring and `M` a topological `A`-module whose topology comes from a uniform additive
-group structure. With the topology of uniform convergence of coefficients
+Let `A` be a semiring and `M` an `A`-module whose topology comes from a uniform additive group
+structure and on which each fixed scalar acts continuously. With the topology of uniform
+convergence of coefficients
 (`TauCeti.Huber.restrictedMvPowerSeriesSubmoduleUniformSpace`), the module `M⟨T₁, …, Tₖ⟩` of
 restricted series behaves as the completed direct sum of copies of `M`, one for each monomial `Tˢ`.
 This file proves the corresponding universal property.
@@ -37,8 +38,8 @@ basic neighbourhood `{f | ∀ t, fₜ ∈ V}` of `0` as soon as `m ∈ V`. Conti
 out of `M⟨T₁, …, Tₖ⟩` therefore correspond exactly to such families.
 
 The expansion `f = ∑ₛ fₛ Tˢ`, uniqueness, and the equicontinuity of `Ψ(· Tˢ)` hold more
-generally over a semiring `A`, for `M` any uniform `A`-module with continuous addition and
-fixed-scalar multiplication; `M` need not have additive inverses. The equicontinuity statement
+generally for any uniform `A`-module `M` with continuous addition and fixed-scalar
+multiplication; `M` need not have additive inverses. The equicontinuity statement
 also needs no additive-group structure on its target. Neither completeness nor separatedness
 of `M` is used. They are needed only for `M⟨T₁, …, Tₖ⟩` itself to be complete and Hausdorff
 (`completeSpace_restrictedMvPowerSeriesSubmodule` and
@@ -233,7 +234,7 @@ theorem equicontinuousAt_comp_restrictedMvPowerSeriesSubmoduleMonomial {N : Type
 
 end Uniform
 
-variable {k : ℕ} {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
+variable {k : ℕ} {A M : Type*} [Semiring A] [AddCommGroup M] [UniformSpace M]
   [IsUniformAddGroup M] [Module A M] [ContinuousConstSMul A M]
 
 section Lift

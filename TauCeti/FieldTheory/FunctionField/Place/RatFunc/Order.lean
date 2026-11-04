@@ -373,4 +373,20 @@ theorem residue_adicOfIrreducible_eq_zero_iff {q : k[X]} (hq : Irreducible q)
   · rw [(adicOfIrreducible hq).residue_eq_zero_iff_ord_pos hf,
       ord_adicOfIrreducible_pos_iff hq hf]
 
+/-- The value of the function `t` at the place `t = a` is `a`. -/
+@[simp]
+theorem residue_X_adicOfIrreducible_X_sub_C (a : k) :
+    IsLocalRing.residue (adicOfIrreducible (irreducible_X_sub_C a)).integers
+        ⟨RatFunc.X, X_mem_integers_adicOfIrreducible _⟩ =
+      algebraMap k (adicOfIrreducible (irreducible_X_sub_C a)).ResidueField a := by
+  rw [IsScalarTower.algebraMap_apply k (adicOfIrreducible (irreducible_X_sub_C a)).integers,
+    IsLocalRing.ResidueField.algebraMap_eq, ← sub_eq_zero, ← map_sub,
+    residue_adicOfIrreducible_eq_zero_iff]
+  have h : ((⟨RatFunc.X, X_mem_integers_adicOfIrreducible _⟩ -
+      algebraMap k (adicOfIrreducible (irreducible_X_sub_C a)).integers a :
+        (adicOfIrreducible (irreducible_X_sub_C a)).integers) : RatFunc k) =
+      algebraMap k[X] (RatFunc k) (X - C a) := by
+    simp [RatFunc.algebraMap_X, RatFunc.algebraMap_C]
+  rw [h, RatFunc.num_algebraMap]
+
 end TauCeti.Place

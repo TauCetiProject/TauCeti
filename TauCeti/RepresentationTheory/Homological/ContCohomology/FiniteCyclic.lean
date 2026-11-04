@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 import TauCeti.Data.Nat.Carry
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # Cohomology of finite cyclic groups with topological coefficients
@@ -131,28 +132,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
 variable [DiscreteTopology G] [ContinuousSMul G M]
   (g : G) (hg : ∀ x : G, x ∈ Subgroup.zpowers g)
 
-private noncomputable def finEquivCyclic : Fin (orderOf g) ≃ G where
-  toFun i := g ^ (i : ℕ)
-  invFun x := ⟨cyclicLog g hg x, cyclicLog_lt g hg x⟩
-  left_inv i := Fin.ext (by simp only [cyclicLog_pow, Nat.mod_eq_of_lt i.2])
-  right_inv := pow_cyclicLog g hg
-
-include hg in
-omit [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-private theorem sum_range_pow_smul (m : M) :
-    ∑ i ∈ Finset.range (orderOf g), g ^ i • m = groupNorm G M m := by
-  rw [groupNorm_apply, ← Fin.sum_univ_eq_sum_range]
-  exact (finEquivCyclic g hg).sum_comp (fun x ↦ x • m)
-
-include hg in
-omit [DiscreteTopology G] [ContinuousSMul G M] in
-private theorem sum_range_cocycle (f : Z2 G M) :
-    ∑ i ∈ Finset.range (orderOf g), (f : G × G → M) (g ^ i, g) =
-      (sumCocycle g f : M) := by
-  rw [← Fin.sum_univ_eq_sum_range, sumCocycle_val]
-  exact (finEquivCyclic g hg).sum_comp (fun x ↦ (f : G × G → M) (x, g))
-
 private noncomputable def carryCocycle (a : H0 G M) : Z2 G M :=
   ⟨fun p ↦ if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a.1 else 0,
     mem_Z2_iff.mpr ⟨continuous_of_discreteTopology, by
@@ -231,8 +210,8 @@ private theorem cyclicPrimitive_mul (f : Z2 G M) (b : M)
     have htotal :
         ∑ i ∈ Finset.range (orderOf g),
             (g ^ i • b - (f : G × G → M) (g ^ i, g)) = 0 := by
-      rw [Finset.sum_sub_distrib, sum_range_pow_smul g hg,
-        sum_range_cocycle g hg, hb, sub_self]
+      rw [Finset.sum_sub_distrib, ← groupNorm_eq_sum_range g hg, hb, sumCocycle_val,
+        sum_range_orderOf_eq_sum g hg (fun x ↦ (f : G × G → M) (x, g)), sub_self]
     rw [← hkn] at htotal
     rw [Finset.sum_range_succ] at htotal
     dsimp only [k] at htotal ⊢
@@ -317,7 +296,7 @@ private theorem cyclicH2Map_surjective : Function.Surjective (cyclicH2Map g :
         symm
         rw [QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf]
         refine ⟨(a : M), ?_⟩
-        rw [← sum_range_pow_smul g hg, hn]
+        rw [groupNorm_eq_sum_range g hg, hn]
         simp
       · have hn' : 1 < orderOf g := by
           have := orderOf_pos g

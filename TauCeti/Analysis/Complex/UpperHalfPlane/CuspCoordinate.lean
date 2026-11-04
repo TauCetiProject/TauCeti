@@ -153,37 +153,35 @@ theorem image_qParamPuncturedUnitDisc_setOf_lt_im (w : ℝ) (hw : 0 < w) (A : �
     obtain ⟨z, rfl⟩ := qParamPuncturedUnitDisc_surjective w hw q
     exact ⟨z, (norm_qParamPuncturedUnitDisc_lt_iff w hw A z).mp hq, rfl⟩
 
+/-- The q-parameter of positive width, as a function on `ℍ`, tends to zero through nonzero
+values as the height tends to infinity. -/
+theorem tendsto_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
+    Tendsto (fun z : ℍ ↦ 𝔢 w z) atImInfty (𝓝[≠] 0) :=
+  (Function.Periodic.qParam_tendsto hw).comp tendsto_coe_atImInfty
+
 /-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
 theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))
       atImInfty (𝓝[≠] 0) := by
-  simp only [coe_qParamPuncturedUnitDisc]
-  exact (Function.Periodic.qParam_tendsto hw).comp
-    (tendsto_comap_iff.mpr tendsto_comap)
+  simpa only [coe_qParamPuncturedUnitDisc] using tendsto_qParam_atImInfty hw
 
-/-- Multiplying by the `k`th integer power of the q-parameter cancels the opposing exponential
-comparison and gives a function bounded at `i∞`. For positive width, nonnegative `k` controls
-growth, while negative `k` controls decay. -/
-theorem isBoundedAtImInfty_qParam_zpow_mul_of_isBigO (w : ℝ) (k : ℤ) {f : ℍ → ℂ}
-    (hf : f =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
-    IsBoundedAtImInfty fun z ↦ Function.Periodic.qParam w z ^ k * f z := by
-  have hq : (fun z : ℍ ↦ Function.Periodic.qParam w z ^ k) =O[atImInfty]
-      fun z ↦ Real.exp (-2 * Real.pi * (k : ℝ) * z.im / w) := by
-    apply Asymptotics.isBigO_of_le
-    intro z
-    simp only [norm_zpow, Function.Periodic.norm_qParam, Real.norm_eq_abs,
-      abs_of_pos (Real.exp_pos _)]
+/-- Multiplying by the `k`th integer power of the q-parameter is bounded at `i∞` exactly when
+the original function satisfies the opposing exponential bound. For positive width,
+nonnegative `k` controls growth, while negative `k` controls decay. -/
+theorem isBoundedAtImInfty_qParam_zpow_mul_iff (w : ℝ) (k : ℤ) {f : ℍ → ℂ} :
+    (IsBoundedAtImInfty fun z ↦ Function.Periodic.qParam w z ^ k * f z) ↔
+      f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w) := by
+  have hq (z : ℍ) : ‖Function.Periodic.qParam w z ^ k‖ =
+      (Real.exp (2 * Real.pi * (k : ℝ) * z.im / w))⁻¹ := by
+    rw [norm_zpow, Function.Periodic.norm_qParam]
     rw [← Real.rpow_intCast, ← Real.exp_mul]
-    apply le_of_eq
+    rw [← Real.exp_neg]
     congr 1
     simp only [UpperHalfPlane.coe_im]
     ring
-  rw [IsBoundedAtImInfty, BoundedAtFilter]
-  refine (hq.mul hf).congr_right fun z ↦ ?_
-  simp only [Pi.one_apply, ← Real.exp_add]
-  convert Real.exp_zero using 1
-  ring_nf
+  simp only [IsBoundedAtImInfty, BoundedAtFilter, Asymptotics.isBigO_iff, norm_mul, hq,
+    Pi.one_apply, norm_one, mul_one, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _),
+    ← div_eq_inv_mul, div_le_iff₀ (Real.exp_pos _)]
 
 /-- Two points of the upper half-plane have the same width-`w` q-parameter exactly when one is
 an integral-width translate of the other. -/

@@ -20,14 +20,16 @@ The power is the principal complex power. Its base stays in the open right half-
 is no branch-cut ambiguity. The proof analytically continues the moment-generating function from
 the real interval `(-∞, r)` to the half-plane `re z < r`, then evaluates the continuation on the
 imaginary axis.
+The same continuation gives `complexMGF_id_gammaMeasure` on the entire half-plane `re z < r`,
+which also evaluates Gamma mixtures of complex exponentials.
 
 ## Main result
 
 * `TauCeti.Probability.charFun_gammaMeasure` gives the characteristic function of the gamma law.
+* `TauCeti.Probability.complexMGF_id_gammaMeasure` gives its complex moment-generating function.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, **Gamma**.
 * The continuation step is `TauCeti.eqOn_complexMGF_of_eqOn_mgf`.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley, 1994, ch. 17.
@@ -78,6 +80,19 @@ private theorem gammaComplexMGF_ofReal (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht :
   push_cast
   rfl
 
+/-- The complex moment-generating function of a Gamma law on its half-plane of absolute
+convergence. The base of the principal complex power has positive real part. -/
+@[simp]
+theorem complexMGF_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {z : ℂ} (hz : z.re < r) :
+    complexMGF id (gammaMeasure a r) z = (1 - z / r) ^ (-(a : ℂ)) := by
+  have hsub : Set.Iio r ⊆ integrableExpSet id (gammaMeasure a r) := by
+    rw [integrableExpSet_id_gammaMeasure ha hr]
+  have hEq : Set.EqOn (complexMGF id (gammaMeasure a r)) (gammaComplexMGF a r)
+      {z : ℂ | z.re ∈ Set.Iio r} :=
+    eqOn_complexMGF_of_eqOn_mgf isOpen_Iio (convex_Iio r) hsub
+      (analyticOnNhd_gammaComplexMGF hr) fun _ hx ↦ gammaComplexMGF_ofReal ha hr hx
+  exact hEq hz
+
 /-- The characteristic function of a gamma law with positive shape `a` and positive rate `r`.
 
 The right-hand side uses the principal complex power. Since `r > 0`, the real part of
@@ -86,15 +101,7 @@ The right-hand side uses the principal complex power. Since `r > 0`, the real pa
 theorem charFun_gammaMeasure (ha : 0 < a) (hr : 0 < r) (t : ℝ) :
     charFun (gammaMeasure a r) t =
       (1 - Complex.I * t / r) ^ (-(a : ℂ)) := by
-  have hsub : Set.Iio r ⊆ integrableExpSet id (gammaMeasure a r) := by
-    rw [integrableExpSet_id_gammaMeasure ha hr]
-  have hEq : Set.EqOn (complexMGF id (gammaMeasure a r)) (gammaComplexMGF a r)
-      {z : ℂ | z.re ∈ Set.Iio r} :=
-    eqOn_complexMGF_of_eqOn_mgf isOpen_Iio (convex_Iio r) hsub
-      (analyticOnNhd_gammaComplexMGF hr) fun _ hx ↦ gammaComplexMGF_ofReal ha hr hx
-  have hit : ((t : ℂ) * Complex.I) ∈ {z : ℂ | z.re ∈ Set.Iio r} := by simpa using hr
-  have := hEq hit
-  rw [complexMGF_id_mul_I] at this
-  simpa only [gammaComplexMGF, mul_comm] using this
+  rw [← complexMGF_id_mul_I, complexMGF_id_gammaMeasure ha hr (by simpa using hr)]
+  simp only [mul_comm]
 
 end TauCeti.Probability

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.GeneratorRelations
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Matrix.Single
 public import TauCeti.Algebra.Lie.Presentation.Serre
 
 /-!
@@ -226,13 +226,13 @@ private theorem ad_sq_lie_typeBSimpleRootMatrix_last_castSucc
         (typeBSimpleRootMatrix (K := K) (Fin.last n)) ^ 2)
       ⁅typeBSimpleRootMatrix (K := K) (Fin.last n),
         typeBSimpleRootMatrix (K := K) j.castSucc⁆ = 0 := by
-  simp only [pow_two, Module.End.mul_apply, LieAlgebra.ad_apply,
+  simp only [pow_two, mul_apply_eq_comp, LieAlgebra.ad_apply,
     typeBSimpleRootMatrix_last, typeBSimpleRootMatrix_castSucc]
   rw [typeBShortRootMatrix_lie_differenceRootMatrix]
   have hlast : Fin.last n = j.succ := Fin.ext (by simp only [Fin.val_last, Fin.val_succ]; omega)
   rw [ite_eq_left hlast]
   simp only [lie_neg, neg_eq_zero]
-  simp [typeBShortRootMatrix_def, lie_sub, sub_lie, lie_single_single]
+  simp [typeBShortRootMatrix_def, lie_sub, sub_lie, Matrix.lie_single_single]
 
 private theorem lie_lie_typeBSimpleRootMatrix_castSucc_last
     (i : Fin n) (hi : i.val + 1 = n) :
@@ -270,20 +270,20 @@ theorem ad_pow_lie_typeBSimpleRootMatrix_typeBSimpleRootMatrix (i j : Fin (n + 1
       by_cases hj : j₀.val + 1 = n
       · rw [ite_eq_left hj]
         exact ad_sq_lie_typeBSimpleRootMatrix_last_castSucc (K := K) j₀ hj
-      · rw [ite_eq_right hj, pow_zero, Module.End.one_apply]
+      · rw [ite_eq_right hj, pow_zero, one_apply_eq_self]
         exact lie_typeBSimpleRootMatrix_last_castSucc_of_nonadjacent (K := K) j₀ hj
   · refine Fin.lastCases ?_ (fun j₀ ↦ ?_) j
     · rw [neg_typeBCartan_castSucc_last_toNat]
       by_cases hi : i₀.val + 1 = n
       · rw [ite_eq_left hi, pow_one, LieAlgebra.ad_apply]
         exact lie_lie_typeBSimpleRootMatrix_castSucc_last (K := K) i₀ hi
-      · rw [ite_eq_right hi, pow_zero, Module.End.one_apply]
+      · rw [ite_eq_right hi, pow_zero, one_apply_eq_self]
         exact lie_typeBSimpleRootMatrix_castSucc_last_of_nonadjacent (K := K) i₀ hi
     · rw [neg_typeBCartan_castSucc_castSucc_toNat]
       by_cases hij : i₀.val + 1 = j₀.val ∨ j₀.val + 1 = i₀.val
       · rw [ite_eq_left hij, pow_one, LieAlgebra.ad_apply]
         exact lie_lie_typeBSimpleRootMatrix_castSucc (K := K) i₀ j₀
-      · rw [ite_eq_right hij, pow_zero, Module.End.one_apply]
+      · rw [ite_eq_right hij, pow_zero, one_apply_eq_self]
         exact lie_typeBSimpleRootMatrix_castSucc_of_nonadjacent (K := K) i₀ j₀
           (not_or.mp hij).1 (not_or.mp hij).2
 

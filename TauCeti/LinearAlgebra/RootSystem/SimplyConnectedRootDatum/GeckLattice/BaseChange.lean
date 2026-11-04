@@ -212,7 +212,7 @@ noncomputable def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
       t.geckPoints ht B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (t.geckBaseChangeCoordinateIso ht A) B).trans
     (t.geckPointsPresentation ht
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- Under `geckBaseChangePointsMulEquiv`, a quotient point has the same ambient invertible matrix
 as its composite with the quotient map over `A`. -/
@@ -272,10 +272,10 @@ theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B 
   simp only [geckBaseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
     (t.geckPointsPresentation ht
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
       (t.geckPointsPresentation ht
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map χ)]
+        (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
+      ((CommAlgCat.restrictScalars (algebraMap ℤ A)).map χ)]
   -- Restricting the scalars of `χ` to `ℤ` leaves its underlying ring homomorphism unchanged.
   rfl
 
@@ -471,6 +471,16 @@ theorem mkQuotient_comp_geckWeightTorusIntegralCoordinateMap :
       GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht) := by
   rw [geckWeightTorusIntegralCoordinateMap_def]
   exact mkQuotient_comp_kostantWeightTorusToralCoordinateMap _ _ _ _ _ _ _ _
+
+/-- The underlying bialgebra map of the integral Geck weight torus factors the diagonal
+weight representation through the Geck defining ideal. -/
+theorem geckWeightTorusIntegralCoordinateMap_hom_comp_mkBialgHom :
+    (t.geckWeightTorusIntegralCoordinateMap ht).hom.comp
+        (Bialgebra.Quotient.mkBialgHom (t.geckDefiningIdeal ht).toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) (t.geckWeightFin ht) := by
+  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_geckWeightTorusIntegralCoordinateMap,
+    GeneralLinear.hom_weightTorusCoordinateMap]
 
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/

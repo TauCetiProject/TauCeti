@@ -96,7 +96,7 @@ theorem coheight_apply_eq {X Y : Scheme.{u}} (morphism : X ⟶ Y)
     exact (coheight_eq_of_isOpenImmersion htargetOpen.fromSpec).symm.trans
       (congrArg coheight (htargetOpen.fromSpec_primeIdealOf ⟨morphism point, htargetPoint⟩))
   rw [← htargetHeight, ← hcontract,
-    ← Ideal.height_eq_height_under_of_finite_of_finiteType field, hsourceHeight]
+    ← Ideal.height_eq_height_under_of_isIntegral_of_finiteType field, hsourceHeight]
 
 /-- A finite scheme-theoretically dominant morphism from an integral scheme whose target is
 locally of finite type over a field sends points of coheight one to points of coheight one. -/

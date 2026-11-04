@@ -184,6 +184,18 @@ theorem logEmbedding_eq_zero_iff {x : (S : Set (HeightOneSpectrum (𝓞 K))).uni
       x ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) := by
   rw [← logHeight₁_eq_zero_iff_logEmbedding_eq_zero, logHeight₁_eq_zero_iff]
 
+variable {S} in
+/-- The `S`-logarithmic image of `ζ * ∏ j, γ j ^ z j`, for `ζ` torsion, is
+`∑ j, z j • ℓ(γ j)`. -/
+theorem logEmbedding_mul_prod_zpow {ι : Type*} [Fintype ι]
+    {γ : ι → (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    {ζ : (S : Set (HeightOneSpectrum (𝓞 K))).unit K}
+    (hζ : ζ ∈ CommGroup.torsion ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) (z : ι → ℤ) :
+    logEmbedding S (Additive.ofMul (ζ * ∏ j, γ j ^ z j)) =
+      ∑ j, z j • logEmbedding S (Additive.ofMul (γ j)) := by
+  rw [ofMul_mul, map_add, (logEmbedding_eq_zero_iff S).mpr hζ, zero_add, ofMul_prod, map_sum]
+  simp only [ofMul_zpow, map_zsmul]
+
 /-- The kernel of the `S`-logarithmic embedding is the torsion subgroup of the `S`-units. This is
 the `S`-analogue of `NumberField.Units.dirichletUnitTheorem.logEmbedding_ker`. -/
 theorem logEmbedding_ker :

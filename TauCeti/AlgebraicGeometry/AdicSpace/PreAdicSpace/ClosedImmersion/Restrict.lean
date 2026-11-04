@@ -137,9 +137,6 @@ theorem isClosedImmersion_restrictPreimage_presentationLimitPreAdicSpaceQuotient
   let v := presentationLimitPreAdicSpaceComap (P' := Ploc)
     (P.toCompletionLocHom S hP T s L hden).toRingHom
     (P.toCompletionLocHom S hP T s L hden).continuous_toRingHom
-    (fun _ hI ↦ by
-      rw [toRingHom_toCompletionLocHom]
-      exact P.isOpen_map_toCompletionLoc T s L hden hI)
     (P.toCompletionLocHom S hP T s L hden).map_mem_plus
     S.isRingOfIntegralElements.isPowerBounded_of_mem
     Sloc.isRingOfIntegralElements.isPowerBounded_of_mem hP hPloc hsY
@@ -152,9 +149,6 @@ theorem isClosedImmersion_restrictPreimage_presentationLimitPreAdicSpaceQuotient
       hden').toRingHom
     ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
       hden').continuous_toRingHom
-    (fun _ hI ↦ by
-      rw [toRingHom_toCompletionLocHom]
-      exact (P.quotient J).isOpen_map_toCompletionLoc T' (Ideal.Quotient.mk J s) L' hden' hI)
     ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
       hden').map_mem_plus
     (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem

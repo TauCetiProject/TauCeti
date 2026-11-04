@@ -35,7 +35,7 @@ contained in the centralizer of `1 ⊗ A`, which is `L ⊗ 1` because `A` is cen
 
 * `TauCeti.Algebra.IsCentral.baseChange`: **`L ⊗[K] A` is central over `L`** when `A` is central
   over `K` and `L` is a commutative `K`-algebra free as a `K`-module. It is an instance, so
-  together with `TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right` instance search sees
+  together with `IsSimpleRing.tensorProduct_of_isCentral_right` instance search sees
   `L ⊗[K] A` as a central simple `L`-algebra with no glue.
 * `TauCeti.Algebra.IsCentral.of_baseChange`: the converse over a field `K`, so centrality is not
   merely preserved by base change but **detected** by it.

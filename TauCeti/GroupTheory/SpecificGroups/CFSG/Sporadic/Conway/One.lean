@@ -197,89 +197,44 @@ group `Co₁` on generators `a`, `b`, `c`, `d`, `e`, `f`, `g`, and `h`.
 
 The source describes this as a full presentation of the abstract group and identifies its origin
 as Praeger--Soicher. No structural property of the presented group is asserted here: this
-definition records only the cited generators and relations. -/
+definition records only the cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`, `c`, `d`, `e`, `f`, `g`, `h`.
+
+Source: R. Lindenbergh, Group Presentations Library, version 1.0; presentation attributed there to
+C. E. Praeger and L. H. Soicher, Low Rank Representations and Graphs for Sporadic Groups,
+Cambridge University Press, 1997.
+
+Source locator: GPLTable.Co1.1 in https://doris.tudelft.nl/~rlindenbergh/GPL/gpl.g;
+Praeger--Soicher, Chapter 4, doi:10.1017/CBO9780511526039.005
+
+Generator convention: The source generators are indexed alphabetically in Lean: indices 0 through
+7 are a,b,c,d,e,f,g,h. This is a relabeling of the GPL decoder's first-occurrence map
+b,h,a,c,d,f,e,g and preserves every named relation. A Coxeter path declares each node to be an
+involution, a labeled edge x-m-y declares `(x*y)^m` = 1, and an omitted edge declares `(x*y)^2` =
+1. An equality x = y compiles to `x^-1*y`, and products are read left to right.
+
+Transcription notes: Expand the paths b4h3a3b5c3d3f4c3e4a, b4g4f, and e6f6h to eight square
+relations, thirteen labeled-edge relations, and fifteen omitted-edge relations. Append the nine
+words in presdef[3], interpreting each equality as left-hand inverse times right-hand side, and
+reindex the named generators alphabetically. The expected relator count and total length are
+derived from this exact expansion. The module documentation records the completed itemized
+source-to-Lean read-through. FiniteSimpleGroups does not cover Co1, so its separate
+permutation-group comparison does not apply. -/
 def co1Presentation : GroupPresentation where
-  generatorNames := ["a", "b", "c", "d", "e", "f", "g", "h"]
-  source := "R. Lindenbergh, Group Presentations Library, version 1.0; presentation attributed \
-    there to C. E. Praeger and L. H. Soicher, Low Rank Representations and Graphs for Sporadic \
-    Groups, Cambridge University Press, 1997"
-  sourceLocator := "GPLTable.Co1.1 in \
-    https://doris.tudelft.nl/~rlindenbergh/GPL/gpl.g; Praeger--Soicher, Chapter 4, \
-    doi:10.1017/CBO9780511526039.005"
-  generatorConvention := "The source generators are indexed alphabetically in Lean: indices 0 \
-    through 7 are a,b,c,d,e,f,g,h. This is a relabeling of the GPL decoder's first-occurrence map \
-    b,h,a,c,d,f,e,g and preserves every named relation. A Coxeter path declares each node to be \
-    an involution, a labeled edge x-m-y declares (x*y)^m = 1, and an omitted edge declares \
-    (x*y)^2 = 1. An equality x = y compiles to x^-1*y, and products are read left to right."
-  transcriptionNotes := "Expand the paths b4h3a3b5c3d3f4c3e4a, b4g4f, and e6f6h to eight square \
-    relations, thirteen labeled-edge relations, and fifteen omitted-edge relations. Append the \
-    nine words in presdef[3], interpreting each equality as left-hand inverse times right-hand \
-    side, and reindex the named generators alphabetically. The expected relator count and total \
-    length are derived from this exact expansion. The module documentation records the completed \
-    itemized source-to-Lean read-through. FiniteSimpleGroups does not cover Co1, so its separate \
-    permutation-group comparison does not apply."
-  expectedGeneratorCount := 8
+  generatorCount := 8
   expectedRelatorCount := 45
   transcribed := co1NodeAndEdgeRelators ++ co1NonedgeRelators ++ co1AdditionalRelators
 
-/-- The generator names recorded for `Co₁`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `Co₁`. The row's body is sealed, so this is
+what lets a
 consumer see that it is an eight-generator presentation. -/
 @[simp]
-theorem co1Presentation_generatorNames :
-    co1Presentation.generatorNames = ["a", "b", "c", "d", "e", "f", "g", "h"] := by
-  simp [co1Presentation]
-
-/-- The source recorded for `Co₁`. The row's body is sealed, so this equation is what publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem co1Presentation_source :
-    co1Presentation.source = "R. Lindenbergh, Group Presentations Library, version 1.0; \
-      presentation attributed there to C. E. Praeger and L. H. Soicher, Low Rank Representations \
-      and Graphs for Sporadic Groups, Cambridge University Press, 1997" := by
-  simp [co1Presentation]
-
-/-- The locator recorded for `Co₁`, pointing at the presentation inside its source. -/
-@[simp]
-theorem co1Presentation_sourceLocator :
-    co1Presentation.sourceLocator = "GPLTable.Co1.1 in \
-      https://doris.tudelft.nl/~rlindenbergh/GPL/gpl.g; Praeger--Soicher, Chapter 4, \
-      doi:10.1017/CBO9780511526039.005" := by
-  simp [co1Presentation]
-
-/-- The generator convention recorded for `Co₁`, fixing which involution each relator index names
-and how a Coxeter path decodes to relations. -/
-@[simp]
-theorem co1Presentation_generatorConvention :
-    co1Presentation.generatorConvention = "The source generators are indexed alphabetically in \
-      Lean: indices 0 through 7 are a,b,c,d,e,f,g,h. This is a relabeling of the GPL decoder's \
-      first-occurrence map b,h,a,c,d,f,e,g and preserves every named relation. A Coxeter path \
-      declares each node to be an involution, a labeled edge x-m-y declares (x*y)^m = 1, and an \
-      omitted edge declares (x*y)^2 = 1. An equality x = y compiles to x^-1*y, and products are \
-      read left to right." := by
-  simp [co1Presentation]
-
-/-- The transcription notes recorded for `Co₁`. -/
-@[simp]
-theorem co1Presentation_transcriptionNotes :
-    co1Presentation.transcriptionNotes = "Expand the paths b4h3a3b5c3d3f4c3e4a, b4g4f, and e6f6h \
-      to eight square relations, thirteen labeled-edge relations, and fifteen omitted-edge \
-      relations. Append the nine words in presdef[3], interpreting each equality as left-hand \
-      inverse times right-hand side, and reindex the named generators alphabetically. The \
-      expected relator count and total length are derived from this exact expansion. The module \
-      documentation records the completed itemized source-to-Lean read-through. \
-      FiniteSimpleGroups does not cover Co1, so its separate permutation-group comparison does \
-      not apply." := by
-  simp [co1Presentation]
-
-/-- The generator count `Co₁`'s source states. With
-`TauCeti.Sporadic.co1Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.co1Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem co1Presentation_expectedGeneratorCount : co1Presentation.expectedGeneratorCount = 8 := by
+theorem co1Presentation_generatorCount : co1Presentation.generatorCount = 8 := by
   simp [co1Presentation]
 
 /-- The relator count `Co₁`'s source states; see
-`TauCeti.Sporadic.co1Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.co1Presentation_generatorCount`. -/
 @[simp]
 theorem co1Presentation_expectedRelatorCount : co1Presentation.expectedRelatorCount = 45 := by
   simp [co1Presentation]
@@ -292,7 +247,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Indices `0` through
 `7` are the involutions `a` through `h`, and the bounds come from
-`TauCeti.Sporadic.co1Presentation_generatorNames`. -/
+`TauCeti.Sporadic.co1Presentation_generatorCount`. -/
 @[simp]
 theorem co1Presentation_transcribed :
     co1Presentation.transcribed =
@@ -383,7 +338,7 @@ theorem co1Presentation_relatorLetters :
     List.map_flatten, List.map_replicate, List.reverse_cons, List.reverse_nil, Bool.not_true,
     List.cons_append, List.nil_append, List.range_succ, List.range_zero]
 
-/-- The generator and relator counts recorded for `Co₁` agree with the transcribed data. -/
+/-- The relator count recorded for `Co₁` agrees with the transcribed data. -/
 theorem co1Presentation_matchesMetadata : co1Presentation.matchesMetadata := by
   decide
 

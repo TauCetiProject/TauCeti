@@ -112,7 +112,6 @@ theorem not_hasAdditiveReduction_minimal_iff_exists_isUnit (W : WeierstrassCurve
       ∃ (W₀ : WeierstrassCurve R) (C : VariableChange K),
         (IsUnit W₀.Δ ∨ IsUnit W₀.c₄) ∧ C • W = W₀.baseChange K := by
   obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
-  have : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
   have hval (r : R) : valuation K (maximalIdeal R) (algebraMap R K r) = 1 ↔ IsUnit r :=
     (IsDiscreteValuationRing.maximalIdeal R).valuation_eq_one_iff_notMem.trans notMem_maximalIdeal
   rw [not_hasAdditiveReduction_iff_valuation_Δ_eq_one_or_valuation_c₄_eq_one]

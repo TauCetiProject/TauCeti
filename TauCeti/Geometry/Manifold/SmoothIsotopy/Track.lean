@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Prod
+public import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Topology.Maps.Proper.Basic
 public import TauCeti.Topology.Homotopy.Isotopy.Track
 
 /-!
@@ -20,7 +21,9 @@ targets, the track is also a closed topological embedding.
 These results supply the space-time image and its split tangent directions used
 when extending the velocity of an isotopy to an ambient vector field. They apply
 to manifolds with corners and infinite-dimensional models. A split differential
-is not asserted to provide an immersion normal form at boundary points.
+is not asserted to provide an immersion normal form at boundary points. For boundaryless
+manifolds and a finite-dimensional target model, `ContMDiff.isSmoothEmbedding_fst_prod`
+shows that a real-time motion through smooth embeddings has a smoothly embedded track.
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 8, §1, the proof of the
 isotopy extension theorem. The differential calculation uses Mathlib's product
@@ -80,3 +83,33 @@ theorem hasLeftInverse_mfderiv_track (F : SmoothIsotopy f₀ f₁) (hn : n ≠ 0
   exact ht.mpr hs
 
 end TauCeti.SmoothIsotopy
+
+open Manifold
+open scoped Manifold ContDiff
+
+/-- The time-preserving track of a jointly smooth motion through topological embeddings with
+split injective slice differentials, from a compact boundaryless source into a finite-dimensional
+Hausdorff boundaryless target is a smooth embedding. The source model need not be assumed
+finite-dimensional or complete. -/
+theorem ContMDiff.isSmoothEmbedding_fst_prod
+    {E E' H H' M N : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    [TopologicalSpace H] [TopologicalSpace H']
+    {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
+    {n : ℕ∞ω} [I.Boundaryless] [J.Boundaryless] [IsManifold I n M] [IsManifold J n N]
+    [CompactSpace M] [T2Space N] {G : ℝ × M → N}
+    (hG : ContMDiff (𝓘(ℝ).prod I) J n G)
+    (hslice : ∀ t, Topology.IsEmbedding (fun x => G (t, x)))
+    (hdiff : ∀ t x, IsDiffImmersionAt I J (fun x => G (t, x)) x) (hn : 1 ≤ n) :
+    IsSmoothEmbedding (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) n (fun q => (q.1, G q)) := by
+  refine ⟨TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun q => ?_,
+    (hG.continuous.isClosedEmbedding_fst_prod
+      fun t => (hslice t).injective).isEmbedding⟩
+  have hq := hdiff q.1 q.2
+  -- A slice immersion into a finite-dimensional target makes the source model finite-dimensional.
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_injective
+    (mfderiv I J (fun x => G (q.1, x)) q.2).toLinearMap hq.mfderiv_injective
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  exact hG.isImmersionAt_fst_prod hn hq

@@ -141,7 +141,7 @@ private theorem mem_stabilizer_iff_of_zmultiples_eq_cuspPeriods {c : OnePoint �
       have h := hconj w
       rw [← hm', hm1, Int.cast_one, one_mul, mul_inv_eq_iff_eq_mul] at h
       exact h
-    obtain ⟨y, hy⟩ := exists_eq_upperRightHom_of_commute hfix hw.ne' hcomm
+    obtain ⟨y, hy⟩ := exists_eq_upperRightHom_of_commute hw.ne' hcomm
     have hyP : y ∈ cuspPeriods Γ σ := by
       rw [mem_cuspPeriods, ← hy]
       simp [mul_assoc]

@@ -31,6 +31,11 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 
 ## Main results
 
+* `TauCeti.neg_mem_commutatorSubmodule` and `TauCeti.neg_one_pow_mul_mem_commutatorSubmodule`: the
+  commutator submodule is closed under negation and under multiplication by signs, even over a
+  semiring of scalars.
+* `TauCeti.mul_mem_commutatorSubmodule_comm`: a product is a sum of commutators exactly when its
+  rotation is.
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
   when it takes equal values on `x * y` and `y * x`.
 * `TauCeti.map_mem_commutatorSubmodule`: a multiplicative linear map, such as an algebra
@@ -63,6 +68,37 @@ def commutatorSubmodule : Submodule k A :=
 theorem mul_sub_mul_mem_commutatorSubmodule (x y : A) :
     x * y - y * x ∈ commutatorSubmodule k A :=
   Submodule.subset_span ⟨(x, y), rfl⟩
+
+variable {k A} in
+/-- The commutator submodule is closed under negation even when `k` is only a semiring: the
+negative of a commutator `x * y - y * x` is the commutator `y * x - x * y`. -/
+theorem neg_mem_commutatorSubmodule {x : A} (hx : x ∈ commutatorSubmodule k A) :
+    -x ∈ commutatorSubmodule k A := by
+  induction hx using Submodule.span_induction with
+  | mem z hz =>
+    obtain ⟨⟨a, b⟩, rfl⟩ := hz
+    simpa using mul_sub_mul_mem_commutatorSubmodule k A b a
+  | zero => simp
+  | add y z _ _ hy hz => rw [neg_add]; exact add_mem hy hz
+  | smul r y _ hy => simpa [smul_neg] using Submodule.smul_mem _ r hy
+
+variable {k} in
+/-- The commutator submodule is closed under multiplication by a sign `(-1) ^ e`, even when `k` is
+only a semiring. -/
+theorem neg_one_pow_mul_mem_commutatorSubmodule {B : Type*} [Ring B] [Module k B] {x : B}
+    (hx : x ∈ commutatorSubmodule k B) (e : ℕ) : (-1 : B) ^ e * x ∈ commutatorSubmodule k B := by
+  rcases neg_one_pow_eq_or B e with h | h
+  · simpa [h] using hx
+  · simpa [h] using neg_mem_commutatorSubmodule hx
+
+variable {k A} in
+/-- **Rotation**: a product lies in the commutator submodule exactly when the product of its
+factors in the other order does, since the two differ by the commutator `x * y - y * x`. -/
+theorem mul_mem_commutatorSubmodule_comm {x y : A} :
+    x * y ∈ commutatorSubmodule k A ↔ y * x ∈ commutatorSubmodule k A := by
+  constructor <;> intro h
+  · simpa using add_mem h (mul_sub_mul_mem_commutatorSubmodule k A y x)
+  · simpa using add_mem h (mul_sub_mul_mem_commutatorSubmodule k A x y)
 
 variable {k A} in
 /-- A linear map kills the commutator submodule exactly when it is invariant under exchanging the

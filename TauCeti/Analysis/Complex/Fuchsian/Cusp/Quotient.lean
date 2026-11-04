@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
+public import TauCeti.Topology.Algebra.GroupAction.Quotient
 
 /-!
 # High horodiscs in a Fuchsian quotient
@@ -52,50 +53,6 @@ theorem mem_horodiscSubMulAction {A : ℝ} {z : ℍ} :
     z ∈ horodiscSubMulAction D A ↔ z ∈ horodisc D A :=
   Iff.rfl
 
-/-- The map from the cusp-stabilizer quotient of a horodisc to the full coarse quotient. -/
-def horodiscQuotientToQuotient (A : ℝ) :
-    orbitRel.Quotient (stabilizer Γ D.cusp) (horodiscSubMulAction D A) →
-      orbitRel.Quotient Γ ℍ :=
-  Quotient.map' (↑) fun _ _ h ↦ by
-    rw [orbitRel_apply, SubMulAction.mem_orbit_subMul_iff] at h
-    exact orbitRel_apply.mpr (orbit_subgroup_subset _ _ h)
-
-@[simp]
-theorem horodiscQuotientToQuotient_mk {A : ℝ} (z : horodiscSubMulAction D A) :
-    horodiscQuotientToQuotient D A (Quotient.mk _ z) = Quotient.mk _ (z : ℍ) :=
-  Quotient.map'_mk _ _ _
-
-/-- The local quotient map of a horodisc is continuous. -/
-theorem continuous_horodiscQuotientToQuotient (A : ℝ) :
-    Continuous (horodiscQuotientToQuotient D A) :=
-  continuous_subtype_val.quotient_map' _
-
-/-- The local quotient map of a horodisc is open onto its image in the coarse quotient. -/
-theorem isOpenMap_horodiscQuotientToQuotient (A : ℝ) :
-    IsOpenMap (horodiscQuotientToQuotient D A) := by
-  intro V hV
-  have himage : horodiscQuotientToQuotient D A '' V =
-      Quotient.mk _ '' ((↑) '' (Quotient.mk _ ⁻¹' V : Set (horodiscSubMulAction D A))) := by
-    conv_lhs => rw [← image_preimage_eq V Quotient.mk_surjective]
-    simp only [image_image, horodiscQuotientToQuotient_mk]
-  rw [himage]
-  have hopen : IsOpen (horodiscSubMulAction D A : Set ℍ) := by
-    rw [coe_horodiscSubMulAction]
-    exact isOpen_horodisc D A
-  exact isOpenMap_quotient_mk'_mul _
-    (hopen.isOpenMap_subtype_val _ (hV.preimage continuous_quotient_mk'))
-
-/-- The range of the local quotient map is the image of the horodisc in the coarse quotient. -/
-theorem range_horodiscQuotientToQuotient (A : ℝ) :
-    range (horodiscQuotientToQuotient D A) = Quotient.mk (orbitRel Γ ℍ) '' horodisc D A := by
-  ext q
-  constructor
-  · rintro ⟨p, rfl⟩
-    induction p using Quotient.inductionOn with
-    | h z => exact ⟨z, z.2, rfl⟩
-  · rintro ⟨z, hz, rfl⟩
-    exact ⟨Quotient.mk _ ⟨z, hz⟩, rfl⟩
-
 /-- On a high horodisc, two points have the same image in the coarse quotient exactly when their
 q-coordinates agree. Thus the q-coordinate distinguishes the points of the punctured cusp
 neighbourhood in the coarse quotient. -/
@@ -115,22 +72,15 @@ theorem quotientMk_eq_iff_qCoordinate_eq [DiscreteTopology Γ] {A : ℝ} (hA : D
     exact Quotient.sound (orbitRel_apply.mpr ⟨D.generator ^ n, hn.symm⟩)
 
 /-- Above the cusp width, the local horodisc quotient embeds openly into the coarse quotient. -/
-theorem isOpenEmbedding_horodiscQuotientToQuotient [DiscreteTopology Γ] {A : ℝ}
+theorem isOpenEmbedding_orbitRelQuotientMap_horodiscSubMulAction [DiscreteTopology Γ] {A : ℝ}
     (hA : D.width ≤ A) :
-    IsOpenEmbedding (horodiscQuotientToQuotient D A) := by
-  refine .of_continuous_injective_isOpenMap (continuous_horodiscQuotientToQuotient D A) ?_
-    (isOpenMap_horodiscQuotientToQuotient D A)
-  rintro ⟨z⟩ ⟨z'⟩ h
-  obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact h))
-  have hgmem : g ∈ stabilizer Γ D.cusp :=
-    mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA z'.2 (by rw [hg]; exact z.2)
-  exact Quotient.sound <| orbitRel_apply.mpr <|
-    SubMulAction.mem_orbit_subMul_iff.mpr ⟨⟨g, hgmem⟩, hg⟩
+    IsOpenEmbedding (horodiscSubMulAction D A).orbitRelQuotientMap :=
+  (horodiscSubMulAction D A).isOpenEmbedding_orbitRelQuotientMap (isOpen_horodisc D A)
+    fun _ _ hy hgy ↦ mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA hy hgy
 
 /-- A horodisc has open image in the coarse quotient. -/
 theorem isOpen_image_quotientMk_horodisc (A : ℝ) :
-    IsOpen (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A) := by
-  rw [← range_horodiscQuotientToQuotient]
-  exact (isOpenMap_horodiscQuotientToQuotient D A).isOpen_range
+    IsOpen (Quotient.mk (orbitRel Γ ℍ) '' horodisc D A) :=
+  isOpenMap_quotient_mk'_mul _ (isOpen_horodisc D A)
 
 end TauCeti.Subgroup.CuspDatum

@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Group.Tannery
 public import TauCeti.Analysis.Fourier.Hardy.Basic
+public import TauCeti.MeasureTheory.Integral.Circle.Haar
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The holomorphic disk function of a Hardy function
@@ -27,6 +29,8 @@ they are bounded by `‖x‖`, so the series converges on the whole disk.
   `‖F_x w‖ ≤ ‖x‖ / √(1 - ‖w‖ ^ 2)`, from the Cauchy–Schwarz inequality in `ℓ²`.
 * `TauCeti.HardySpace.tendsto_eLpNorm_diskFunction_sub`: the circle restrictions
   `t ↦ F_x (r * e (t))` converge to `x` in `L²` as `r → 1⁻`.
+* `TauCeti.HardySpace.tendsto_circleAverage_norm_sq_diskFunction`: the squared circle means
+  of `F_x` converge to the squared boundary norm as `r → 1⁻`.
 
 ## References
 
@@ -89,6 +93,12 @@ theorem diskFunction_hardyBasis (n : ℕ) (w : ℂ) : (hardyBasis n).diskFunctio
     rw [← hardyBasis_repr, HilbertBasis.repr_self, lp.single_apply, Pi.single_eq_of_ne hm,
       zero_mul]]
   rw [← hardyBasis_repr, HilbertBasis.repr_self, lp.single_apply, Pi.single_eq_same, one_mul]
+
+/-- The disk function of the zero Hardy function vanishes identically. -/
+@[simp]
+theorem diskFunction_zero (w : ℂ) : (0 : HardySpace).diskFunction w = 0 := by
+  simp only [diskFunction, ← hardyBasis_repr, map_zero, lp.coeFn_zero, Pi.zero_apply, zero_mul,
+    tsum_zero]
 
 /-- On the open unit disk the disk function depends additively on the Hardy function. -/
 theorem diskFunction_add (y : HardySpace) (hw : ‖w‖ < 1) :
@@ -310,6 +320,47 @@ theorem tendsto_eLpNorm_diskFunction_sub :
   filter_upwards [Lp.coeFn_sub (x.radial r : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) x,
     x.coe_radial_ae_eq hr] with t ht hrad
   rw [Submodule.coe_sub, ht, Pi.sub_apply, hrad]
+
+/-- The squared circle means of the disk function converge to the squared boundary Hardy norm
+as the radius tends to one from below. -/
+theorem tendsto_circleAverage_norm_sq_diskFunction :
+    Tendsto (fun r : ℝ ↦ Real.circleAverage (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r)
+      (𝓝[<] 1) (𝓝 (‖x‖ ^ 2)) := by
+  refine (x.tendsto_radial.norm.pow 2).congr' ?_
+  have hev : ∀ᶠ r : ℝ in 𝓝[<] 1, |r| < 1 :=
+    eventually_of_mem (Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1))
+      fun _ hr ↦ abs_lt.mpr hr
+  filter_upwards [hev] with r hr
+  rw [← Submodule.norm_coe, ← Lp.integral_norm_sq_eq_norm_sq]
+  calc
+    (∫ t, ‖(x.radial r : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) t‖ ^ 2
+        ∂AddCircle.haarAddCircle) =
+        ∫ t : UnitAddCircle, ‖x.diskFunction (r * AddCircle.toCircle t)‖ ^ 2
+          ∂AddCircle.haarAddCircle :=
+      integral_congr_ae ((x.coe_radial_ae_eq hr).fun_comp (fun z : ℂ ↦ ‖z‖ ^ 2))
+    _ = Real.circleAverage (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r := by
+      simpa only [add_zero] using AddCircle.integral_haarAddCircle_comp_toCircle
+        (T := 1) (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r
+
+/-- A Hardy function is determined by its disk function: `F_x` vanishes on the open unit disk
+exactly when `x = 0`. -/
+theorem eqOn_diskFunction_zero_iff : Set.EqOn x.diskFunction 0 (Metric.ball 0 1) ↔ x = 0 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- The squared circle means of `F_x` vanish, and they converge to `‖x‖ ^ 2`.
+    have hmean : ∀ᶠ r : ℝ in 𝓝[<] 1,
+        Real.circleAverage (fun w ↦ ‖x.diskFunction w‖ ^ 2) 0 r = 0 := by
+      filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with r hr
+      rw [Real.circleAverage_congr_sphere (f₂ := fun _ ↦ 0) fun w hw ↦ ?_,
+        Real.circleAverage_const]
+      have hw1 : w ∈ Metric.ball (0 : ℂ) 1 :=
+        Metric.sphere_subset_ball (abs_lt.mpr hr) hw
+      simp [h hw1]
+    have hlim := x.tendsto_circleAverage_norm_sq_diskFunction
+    have hsq : ‖x‖ ^ 2 = 0 :=
+      tendsto_nhds_unique hlim (tendsto_const_nhds.congr' (hmean.mono fun _ h ↦ h.symm))
+    simpa using hsq
+  · rintro rfl w -
+    simp
 
 end Radial
 

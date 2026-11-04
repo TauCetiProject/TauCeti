@@ -110,10 +110,17 @@ variable {R S} in
 @[simp]
 theorem baseChangeFunctor_map {H K : FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R}
     (f : H ⟶ K) :
-    (baseChangeFunctor R S).map f =
-      eqToHom (baseChangeFunctor_obj R S H) ≫ baseChangeMap S f ≫
-        eqToHom (baseChangeFunctor_obj R S K).symm :=
+    (baseChangeFunctor R S).map f = baseChangeMap S f :=
   (rfl)
+
+variable {R S} in
+/-- The scalar-extension functor tensors underlying bialgebra morphisms with the identity. -/
+@[simp↓]
+theorem toBialgHom_baseChangeFunctor_map
+    {H K : FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R} (f : H ⟶ K) :
+    toBialgHom ((baseChangeFunctor R S).map f) =
+      Bialgebra.TensorProduct.map (BialgHom.id S S) (toBialgHom f) :=
+  rfl
 
 /-- Forgetting finite local freeness and cocommutativity turns the restricted scalar extension
 into the scalar extension of commutative Hopf algebras. -/
@@ -144,7 +151,7 @@ theorem baseChangeDualIso_hom_apply_tmul_apply_tmul
   ConvolutionDual.baseChangeBialgEquiv_tmul_apply_tmul a b phi x
 
 /-- Finite dualization and scalar extension commute naturally. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 theorem baseChangeDualIso_hom_naturality
     {H K : FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R} (f : H ⟶ K) :
     baseChangeMap S (dualMap f) ≫ (baseChangeDualIso S H).hom =
@@ -153,7 +160,7 @@ theorem baseChangeDualIso_hom_naturality
   exact (ConvolutionDual.baseChangeBialgEquiv_naturality (K := S) (toBialgHom f)).symm
 
 /-- The inverse form of `baseChangeDualIso_hom_naturality`. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 theorem baseChangeDualIso_inv_naturality
     {H K : FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R} (f : H ⟶ K) :
     (baseChangeDualIso S K).inv ≫ baseChangeMap S (dualMap f) =

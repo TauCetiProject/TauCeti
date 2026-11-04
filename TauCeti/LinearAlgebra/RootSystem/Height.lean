@@ -26,6 +26,9 @@ a base is determined by the indices of its simple roots.
 ## Main results
 
 * `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
+* `RootPairing.Base.height_eq_one_iff`: the roots of height one are exactly the simple roots.
+* `RootPairing.pairingIn_eq_sum_of_root_eq_sum` reads the Cartan integers of an integral
+  combination of roots off those of its summands.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
   on the simple roots takes the value `ht(α) • c` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
@@ -54,7 +57,47 @@ theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
   subst h
   rfl
 
+/-- **The roots of height one are exactly the simple roots.** -/
+theorem height_eq_one_iff [CharZero R] (b : P.Base) {i : ι} :
+    b.height i = 1 ↔ i ∈ b.support := by
+  classical
+  refine ⟨fun h ↦ ?_, height_one_of_mem_support⟩
+  -- Write `αᵢ = ± ∑ fⱼ αⱼ` with `fⱼ ∈ ℕ`: height one forces the sign `+` and a single `fⱼ = 1`.
+  obtain ⟨f, -, hf | hf⟩ := b.exists_root_eq_sum_nat_or_neg i
+  · have hsum : ∑ j ∈ b.support, f j = 1 := by
+      rw [height_eq_sum (f := fun j ↦ (f j : ℤ)) (by simp [hf, natCast_zsmul])] at h
+      exact_mod_cast h
+    obtain ⟨j, hj, hj0⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hsum.trans_ne one_ne_zero)
+    have hfj : f j = 1 := by
+      have := Finset.single_le_sum (f := f) (fun _ _ ↦ Nat.zero_le _) hj
+      omega
+    have hrest : ∀ k ∈ b.support, k ≠ j → f k = 0 := by
+      rw [← Finset.add_sum_erase _ _ hj, hfj, add_eq_left, Finset.sum_eq_zero_iff] at hsum
+      exact fun k hk hkj ↦ hsum k (Finset.mem_erase.mpr ⟨hkj, hk⟩)
+    have hroot : P.root i = P.root j := by
+      rw [hf, Finset.sum_eq_single_of_mem j hj fun k hk hkj ↦ by rw [hrest k hk hkj, zero_smul],
+        hfj, one_smul]
+    exact P.root.injective hroot ▸ hj
+  · rw [height_eq_sum (f := fun j ↦ -(f j : ℤ)) (by simp [hf, natCast_zsmul])] at h
+    have : ∑ j ∈ b.support, -(f j : ℤ) ≤ 0 := Finset.sum_nonpos fun _ _ ↦ by omega
+    omega
+
 end RootPairing.Base
+
+namespace RootPairing
+
+/-- **The Cartan integers of an integral combination of roots** are the matching combination of
+Cartan integers: if `αᵢ = ∑ₖ fₖ αₖ` then `⟨αᵢ, αₗ^∨⟩ = ∑ₖ fₖ ⟨αₖ, αₗ^∨⟩`. -/
+theorem pairingIn_eq_sum_of_root_eq_sum {ι R M N : Type*} [CommRing R] [CharZero R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+    [P.IsCrystallographic] {s : Finset ι} {i : ι} {f : ι → ℤ}
+    (h : P.root i = ∑ k ∈ s, f k • P.root k) (l : ι) :
+    P.pairingIn ℤ i l = ∑ k ∈ s, f k * P.pairingIn ℤ k l :=
+  FaithfulSMul.algebraMap_injective ℤ R <| by
+    simp_rw [algebraMap_pairingIn, map_sum, map_mul, algebraMap_pairingIn,
+      ← root_coroot'_eq_pairing, h, map_sum, map_zsmul, zsmul_eq_mul, eq_intCast]
+
+end RootPairing
 
 namespace TauCeti
 

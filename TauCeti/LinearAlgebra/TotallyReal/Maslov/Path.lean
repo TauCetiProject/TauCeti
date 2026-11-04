@@ -221,15 +221,8 @@ theorem continuous_maslovPhase (Λ : TotallyRealPath E) {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
     Continuous fun t => hL₀.maslovPhase (Λ.isMaximalTotallyReal t) := by
   obtain ⟨L₁, hL₁, A, hAc, hA⟩ := Λ.exists_frame
-  have hphase (t : I) : hL₀.maslovPhase (Λ.isMaximalTotallyReal t) =
-      hL₀.maslovPhase hL₁ * (LinearMap.det ((A t).toLinearEquiv : E →ₗ[ℂ] E) /
-        conj (LinearMap.det ((A t).toLinearEquiv : E →ₗ[ℂ] E))) := by
-    rw [← hL₀.maslovPhase_mul_maslovPhase hL₁ (Λ.isMaximalTotallyReal t),
-      hL₁.maslovPhase_congr (Λ.isMaximalTotallyReal t)
-        (hL₁.map_linearEquiv (A t).toLinearEquiv) (hA t),
-      IsMaximalTotallyReal.maslovPhase_map]
-  simp_rw [hphase]
-  exact continuous_const.mul (continuous_det_div_conj A hAc)
+  exact IsMaximalTotallyReal.continuous_maslovPhase_of_frame hL₀ hL₁
+    (fun t => Λ.isMaximalTotallyReal t) hAc hA
 
 /-- The Maslov phase between two paths, taken pointwise, is continuous. -/
 theorem continuous_maslovPhase_maslovPhase (Λ Γ : TotallyRealPath E) :

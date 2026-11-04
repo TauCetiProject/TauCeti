@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
-public import TauCeti.MeasureTheory.MeasurableSpace.Card
+public import Mathlib.SetTheory.Cardinal.Continuum
 
 /-!
-# The perfect set theorem for Borel sets, and cardinality bounds
+# The perfect set theorem and the cardinality of Borel sets
 
 Mathlib proves the perfect set theorem for closed sets: an uncountable closed subset of a Polish
 space contains the range of a continuous injection of Cantor space
@@ -18,17 +18,18 @@ Borel set is clopen for a finer Polish topology (`MeasurableSet.isClopenable`); 
 theorem applies there, and a map continuous for the finer topology is continuous for the
 original one.
 
-In the other direction, a countably separated measurable space, and in particular a standard
-Borel space, has at most continuum many points (`TauCeti.mk_le_continuum_of_countablySeparated`).
-Combined, an uncountable Borel subset of a Polish space has exactly `𝔠` points: Borel sets
-satisfy the continuum hypothesis.
+For cardinality, Mathlib's Borel isomorphism theorem says that an uncountable standard Borel
+space is Borel isomorphic to Cantor space (`PolishSpace.measurableEquivNatBoolOfNotCountable`), and
+a measurable subset of a standard Borel space is standard Borel (`MeasurableSet.standardBorel`).
+Hence an uncountable measurable subset of a standard Borel space, such as an uncountable Borel
+subset of a Polish space, has exactly `𝔠` points: Borel sets satisfy the continuum hypothesis.
 
 ## Main results
 
 * `MeasurableSet.exists_nat_bool_injection_of_not_countable`: an uncountable Borel subset of a
   Polish space contains the range of a continuous injection of Cantor space.
-* `MeasurableSet.mk_eq_continuum_of_not_countable`: an uncountable Borel subset of a Polish space
-  has exactly `𝔠` points.
+* `MeasurableSet.mk_eq_continuum_of_not_countable`: an uncountable measurable subset of a standard
+  Borel space has exactly `𝔠` points.
 
 ## References
 
@@ -56,13 +57,11 @@ theorem MeasurableSet.exists_nat_bool_injection_of_not_countable [TopologicalSpa
     @IsClosed.exists_nat_bool_injection_of_not_countable X t ht s hclosed hunc
   exact ⟨f, hfs, continuous_le_rng hle hf, hinj⟩
 
-/-- **Borel sets satisfy the continuum hypothesis.** An uncountable Borel subset of a Polish space
-has exactly continuum many points. -/
-theorem MeasurableSet.mk_eq_continuum_of_not_countable [TopologicalSpace X] [PolishSpace X]
-    [MeasurableSpace X] [BorelSpace X] {s : Set X} (hs : MeasurableSet s) (hunc : ¬s.Countable) :
-    #s = 𝔠 := by
-  refine le_antisymm (TauCeti.mk_le_continuum_of_countablySeparated s) ?_
-  obtain ⟨f, hfs, -, hf⟩ := hs.exists_nat_bool_injection_of_not_countable hunc
-  have hinj : Injective fun x => (⟨f x, hfs (mem_range_self x)⟩ : s) := fun x y hxy =>
-    hf (congrArg Subtype.val hxy)
-  simpa using lift_mk_le_lift_mk_of_injective hinj
+/-- **Borel sets satisfy the continuum hypothesis.** An uncountable measurable subset of a
+standard Borel space, such as an uncountable Borel subset of a Polish space, has exactly continuum
+many points. -/
+theorem MeasurableSet.mk_eq_continuum_of_not_countable [MeasurableSpace X] [StandardBorelSpace X]
+    {s : Set X} (hs : MeasurableSet s) (hunc : ¬s.Countable) : #s = 𝔠 := by
+  have := hs.standardBorel
+  simpa using lift_mk_eq'.2
+    ⟨(PolishSpace.measurableEquivNatBoolOfNotCountable (countable_coe_iff.not.2 hunc)).toEquiv⟩

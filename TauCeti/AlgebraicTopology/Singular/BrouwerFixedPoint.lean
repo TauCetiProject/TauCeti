@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.Convex.Intrinsic
-public import TauCeti.Analysis.InnerProductSpace.SphereRay
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Ray
 import TauCeti.Topology.Homeomorph.FixedPoint
 
 /-!

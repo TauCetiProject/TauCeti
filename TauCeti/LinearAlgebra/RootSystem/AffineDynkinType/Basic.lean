@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
-public import TauCeti.Combinatorics.SimpleGraph.Connected
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -92,6 +92,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 * `TauCeti.AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero`: the marks are a null vector,
   `Cδ = 0`.
 * `TauCeti.AffineDynkinType.marks_affineNode`: the mark at the affine node is `1`.
+* `SimpleGraph.exists_isContained_affineDynkinType_A_of_not_isAcyclic`: a graph with a cycle
+  contains a copy of the cycle `Aₙ` for some `n ≥ 2`.
 
 ## References
 
@@ -322,7 +324,8 @@ smaller number first. -/
 `n - 1` is joined to node `1`, and node `n` is joined to node `n - 3`, so every node other than `0`
 has a neighbour with a smaller number. -/
 private theorem graph_D_connected {n : ℕ} (hn : 4 ≤ n) : (D n).graph.Connected := by
-  refine SimpleGraph.connected_fin_of_exists_adj_lt (D n).nodes_pos fun i hi ↦ ?_
+  refine connected_of_exists_adj_lt 0 fun i hi ↦ ?_
+  replace hi : (i : ℕ) ≠ 0 := Fin.val_ne_zero_iff.2 hi
   have hi' : (i : ℕ) < n + 1 := i.isLt
   -- In each branch the neighbour is named by its node number. The `hval` equations are `rfl`, and
   -- are stated only so that the `omega` calls after them can read that number off the `Fin.mk`.
@@ -344,9 +347,9 @@ theorem graph_connected {t : AffineDynkinType} (ht : t.Valid) : t.graph.Connecte
   cases t with
   | A n => exact (graph_A n) ▸ SimpleGraph.connected_cycleGraph_add_one
   | D n => exact graph_D_connected ht
-  | E6 => exact SimpleGraph.connected_fin_of_exists_adj_lt E6.nodes_pos (by decide)
-  | E7 => exact SimpleGraph.connected_fin_of_exists_adj_lt E7.nodes_pos (by decide)
-  | E8 => exact SimpleGraph.connected_fin_of_exists_adj_lt E8.nodes_pos (by decide)
+  | E6 => exact connected_of_exists_adj_lt 0 (by decide)
+  | E7 => exact connected_of_exists_adj_lt 0 (by decide)
+  | E8 => exact connected_of_exists_adj_lt 0 (by decide)
 
 /-- Every node of a valid affine simply-laced diagram has a neighbour: the diagram is connected
 and has at least two nodes. -/
@@ -640,3 +643,20 @@ theorem cartanMatrix_mulVec_marks_eq_zero {t : AffineDynkinType} (ht : t.Valid) 
 end AffineDynkinType
 
 end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-- **A graph with a cycle contains an affine diagram `Ãₙ`**, the cycle on `n + 1 ≥ 3` nodes. -/
+theorem exists_isContained_affineDynkinType_A_of_not_isAcyclic (hG : ¬ G.IsAcyclic) :
+    ∃ n, 2 ≤ n ∧ (AffineDynkinType.A n).graph ⊑ G := by
+  rw [isAcyclic_iff_free_cycleGraph] at hG
+  push Not at hG
+  obtain ⟨n, hn, hc⟩ := hG
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  exact ⟨m, by omega, by rwa [AffineDynkinType.graph_A]⟩
+
+end SimpleGraph

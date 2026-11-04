@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+public import TauCeti.CategoryTheory.Limits.Lattice
 
 /-!
 # Open subsets of schemes
@@ -18,6 +20,17 @@ This file records general-purpose facts about open subsets of schemes.
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
+  `AlgebraicGeometry.Scheme.Hom.preimage_finite_product`: inverse images commute with finite
+  intersections, written as `Finset.inf` or as finite products of opens.
+* `AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom`: the comparison morphism from the product
+  of the inverse images to the inverse image of the product, the hypothesis of
+  `TauCeti.CategoryTheory.cechComplexCompIso` for `f⁻¹`.
+* `AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage`: along an affine morphism, the
+  inverse images of a family of opens with affine nonempty finite intersections, such as the covers
+  used to compute cohomology by Čech complexes, again have affine nonempty finite intersections.
+* `AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top`: the affine opens of `X`
+  which a morphism `X ⟶ Y` maps into an affine open of `Y` cover `X`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
@@ -25,6 +38,8 @@ This file records general-purpose facts about open subsets of schemes.
   open.
 * `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
   compatible with restriction, glue to a unique global section.
+* `AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover`: a quasi-compact open is covered by
+  finitely many affine opens contained in it, in the form used by sheaf gluing.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
   `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
   affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
@@ -36,6 +51,8 @@ This file records general-purpose facts about open subsets of schemes.
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
   finitely many basic opens `V i` is covered by `A` and one basic open inside the union of the
   `V i`.
+* `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
+  intersections of affine opens are affine.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -59,6 +76,63 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
     f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
   rw [← f.preimage_sup, hUV, f.preimage_top]
+
+/-- Taking inverse images under a morphism of schemes commutes with finite intersections. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finset_inf {Y : Scheme.{u}} (f : X ⟶ Y)
+    {ι : Type*} (s : Finset ι) (U : ι → Y.Opens) :
+    f ⁻¹ᵁ s.inf U = s.inf fun i ↦ f ⁻¹ᵁ U i :=
+  Finset.apply_inf_eq_inf_comp (f ⁻¹ᵁ ·) (fun _ _ ↦ rfl) rfl
+
+open Limits in
+/-- Taking inverse images under a morphism of schemes commutes with finite products of opens,
+which are their intersections. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finite_product {Y : Scheme.{u}} (f : X ⟶ Y)
+    {J : Type*} [Finite J] (U : J → Y.Opens) :
+    f ⁻¹ᵁ ∏ᶜ U = ∏ᶜ fun j ↦ f ⁻¹ᵁ U j := by
+  classical
+  have := Fintype.ofFinite J
+  exact (congrArg (f ⁻¹ᵁ ·) (CompleteLattice.finite_product_eq_finset_image_inf U id)).trans <|
+    (f.preimage_finset_inf _ U).trans
+      (CompleteLattice.finite_product_eq_finset_image_inf (fun j ↦ f ⁻¹ᵁ U j) id).symm
+
+open Limits in
+/-- The finite product of the inverse images of opens maps to the inverse image of their product,
+as both are the same open (`preimage_finite_product`). This is the hypothesis of
+`TauCeti.CategoryTheory.cechComplexCompIso` for the functor `f⁻¹`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom {Y : Scheme.{u}} (f : X ⟶ Y)
+    {J : Type*} [Finite J] (U : J → Y.Opens) :
+    Nonempty ((∏ᶜ fun j ↦ f ⁻¹ᵁ U j) ⟶ f ⁻¹ᵁ ∏ᶜ U) :=
+  ⟨homOfLE (f.preimage_finite_product U).ge⟩
+
+/-- Along an affine morphism, the inverse images of a family of opens whose nonempty finite
+intersections are affine again have affine nonempty finite intersections. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage {Y : Scheme.{u}}
+    (f : X ⟶ Y) [IsAffineHom f] {ι : Type*} {U : ι → Y.Opens}
+    (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (s : Finset ι) (hs : s.Nonempty) :
+    IsAffineOpen (s.inf fun i ↦ f ⁻¹ᵁ U i) :=
+  f.preimage_finset_inf s U ▸ (hU s hs).preimage f
+
+/-- For a morphism `f : X ⟶ Y`, the affine opens of `X` which `f` maps into an affine open of `Y`
+cover `X`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top {Y : Scheme.{u}}
+    (f : X ⟶ Y) :
+    ⨆ V : {V : X.affineOpens // ∃ U : Y.affineOpens, V.1 ≤ f ⁻¹ᵁ U.1}, V.1.1 = ⊤ := by
+  refine eq_top_iff.2 fun x _ ↦ ?_
+  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).2
+  exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, ⟨U, hU⟩, hVU⟩, hxV⟩
+
+/-- On a scheme with affine diagonal, for instance a separated one, a nonempty finite intersection
+of affine opens is affine. -/
+lemma _root_.AlgebraicGeometry.IsAffineOpen.finset_inf
+    [IsAffineHom (Limits.pullback.diagonal (Limits.terminal.from X))] {ι : Type*} (s : Finset ι)
+    (hs : s.Nonempty) {U : ι → X.Opens} (hU : ∀ i ∈ s, IsAffineOpen (U i)) :
+    IsAffineOpen (s.inf U) := by
+  rw [Finset.inf_eq_iInf]
+  exact IsAffineOpen.biInf _ s.finite_toSet hs hU
 
 /-- If an endomorphism `f` of `X` equals the identity, then so does each of its restriction maps
 `Γ(X, U) ⟶ Γ(X, U)`. -/
@@ -106,6 +180,18 @@ theorem _root_.AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens (X : Sch
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
     exact hs U' W.1 (W.2.trans inf_le_right)
   exact h₁.trans h₂.symm
+
+/-- A quasi-compact open `U` is covered by finitely many affine opens contained in it. This is
+`AlgebraicGeometry.isCompact_iff_finite_and_eq_biUnion_affineOpens` stated as a family of opens
+below `U` whose supremum contains `U`, the form taken by the sheaf gluing lemmas
+`TopCat.Sheaf.eq_of_locally_eq'` and `TopCat.Sheaf.existsUnique_gluing'`. -/
+theorem _root_.AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover
+    (hU : IsCompact (U : Set X)) :
+    ∃ (s : Set X.affineOpens) (_ : Finite s), (∀ i : s, (i.1 : X.Opens) ≤ U) ∧
+      U ≤ ⨆ i : s, (i.1 : X.Opens) := by
+  obtain ⟨s, hs, e⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
+  exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2,
+    by rw [e, iSup_subtype']⟩
 
 /-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
 restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`

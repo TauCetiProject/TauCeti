@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
-public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.EquivariantMap
 
 /-!
 # The singular homology of the base of a contractible free cover is group homology
@@ -31,6 +30,14 @@ with trivial coefficients is the homology of the coinvariants of any projective 
 This applies to the orbit map of a free, covering-space action of `G` on a contractible space,
 such as the universal cover of a classifying space of `G`.
 
+The chain identification is natural for maps of quotient covers equivariant along arbitrary
+group homomorphisms (`IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso_naturality`),
+and so is the comparison with group homology: for a map `b : B ⟶ C` of bases covered by a map of
+contractible total spaces equivariant along `φ : G →* H`, the map `b_*` on singular homology
+corresponds to Mathlib's change-of-group map `groupHomology.map φ` on group homology with trivial
+coefficients (`IsQuotientCoveringMap.singularHomologyIsoGroupHomology_hom_naturality`). No
+hypothesis on `φ` is needed.
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso`: the coinvariants of the
@@ -42,11 +49,14 @@ such as the universal cover of a classifying space of `G`.
 
 * `IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso_hom_f_coinvariantsTensorMk`: the
   comparison of chains sends the class of `a ⊗ c` to `a • p_* c`.
+* `IsQuotientCoveringMap.singularHomologyIsoGroupHomology_hom_naturality`,
+  `IsQuotientCoveringMap.singularHomologyIsoGroupHomology_inv_naturality`: the comparison with
+  group homology is natural in the covering and the group.
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4, Proposition 4.1, and
-  Section III.1.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4, Proposition 4.1,
+  Section III.1, and Section III.8.
 -/
 
 public section
@@ -237,5 +247,130 @@ def singularHomologyIsoGroupHomology [ContractibleSpace E] (n : ℕ) :
   ((HomologicalComplex.homologyFunctor _ _ n).mapIso
       (hG.singularChainsRepCoinvariantsTensorIso k)).symm ≪≫
     (groupHomologyIso _ n (singularChainsResolution k E G)).symm
+
+/-- **The identification of quotient-cover chains with coinvariant chains is natural.**
+An equivariant map of total spaces along any group homomorphism, lying over a continuous map
+of bases, commutes with the chain identification. -/
+@[reassoc]
+theorem singularChainsRepCoinvariantsTensorIso_naturality
+    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+    (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    singularChainsCoinvariantsMap k f hf ≫ (hH.singularChainsRepCoinvariantsTensorIso k).hom =
+      (hG.singularChainsRepCoinvariantsTensorIso k).hom ≫ (singularChains k).map b := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  apply HomologicalComplex.hom_ext
+  intro n
+  refine Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun (a : k)
+    (c : ((singularChains k).obj E).X n) ↦ ?_)
+  -- Evaluate the chain-map composites on tensor classes; the domain objects are presented
+  -- through `coinvariantsTensorObj`, so the component equations need these explicit carriers.
+  change ((hH.singularChainsRepCoinvariantsTensorIso k).hom.f n)
+      ((singularChainsCoinvariantsMap k f hf).f n
+        (Rep.coinvariantsTensorMk (Rep.trivial k G k)
+          (Rep.of (singularChainsRepresentation k E G n)) a c)) =
+    ((singularChains k).map b).f n
+      (((hG.singularChainsRepCoinvariantsTensorIso k).hom.f n)
+        (Rep.coinvariantsTensorMk (Rep.trivial k G k)
+          (Rep.of (singularChainsRepresentation k E G n)) a c))
+  rw [singularChainsCoinvariantsMap_f_mk,
+    singularChainsRepCoinvariantsTensorIso_hom_f_coinvariantsTensorMk,
+    singularChainsRepCoinvariantsTensorIso_hom_f_coinvariantsTensorMk, map_smul]
+  exact congrArg (a • ·) (by
+    simpa only [Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.comp_apply] using
+      (ConcreteCategory.congr_hom
+        (congrArg (fun t ↦ t.f n) (congrArg (singularChains k).map hb)) c).symm)
+
+/-- The inverse chain identification is natural for an equivariant map of quotient covers. -/
+@[reassoc]
+theorem singularChainsRepCoinvariantsTensorIso_inv_naturality
+    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+    (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    (singularChains k).map b ≫ (hH.singularChainsRepCoinvariantsTensorIso k).inv =
+      (hG.singularChainsRepCoinvariantsTensorIso k).inv ≫
+        singularChainsCoinvariantsMap k f hf := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  apply (cancel_mono (hH.singularChainsRepCoinvariantsTensorIso k).hom).1
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [hG.singularChainsRepCoinvariantsTensorIso_naturality k hH f hf b hb,
+    Iso.inv_hom_id_assoc]
+
+/-- The comparison with group homology unfolds to the inverse of the chain identification
+followed by the inverse of `groupHomologyIso`. -/
+private lemma singularHomologyIsoGroupHomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    letI := Classical.decEq G
+    (hG.singularHomologyIsoGroupHomology k n).hom =
+      HomologicalComplex.homologyMap (hG.singularChainsRepCoinvariantsTensorIso k).inv n ≫
+        (groupHomologyIso _ n (singularChainsResolution k E G)).inv :=
+  (rfl)
+
+/-- **The singular homology of the base of a contractible free cover is naturally group
+homology.** For quotient covers `p : E ⟶ B` and `q : F ⟶ C` with contractible total spaces, a map
+`f : E ⟶ F` equivariant along any group homomorphism `φ : G →* H` and lying over `b : B ⟶ C`, the
+identifications `Hₙ(B; k) ≅ Hₙ(G, k)` and `Hₙ(C; k) ≅ Hₙ(H, k)` carry `b_*` to the change-of-group
+map `groupHomology.map φ`, with the identity on the trivial coefficients `k`. -/
+@[reassoc]
+theorem singularHomologyIsoGroupHomology_hom_naturality [ContractibleSpace E]
+    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+    (hH : IsQuotientCoveringMap q H) [ContractibleSpace F] {φ : G →* H}
+    (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (n : ℕ) :
+    HomologicalComplex.homologyMap ((singularChains k).map b) n ≫
+        (hH.singularHomologyIsoGroupHomology k n).hom =
+      (hG.singularHomologyIsoGroupHomology k n).hom ≫
+        groupHomology.map φ (A := Rep.trivial k G k) (B := Rep.trivial k H k)
+          (𝟙 (Rep.trivial k G k)) n := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  have := hG.isCancelSMul
+  have := hH.isCancelSMul
+  let := Classical.decEq G
+  let := Classical.decEq H
+  rw [singularHomologyIsoGroupHomology_hom_eq, singularHomologyIsoGroupHomology_hom_eq]
+  -- The complex of `singularChainsResolution` is `singularChainsRep` only by unfolding, so the
+  -- steps below are assembled in term mode, where the two are identified.
+  calc _ = HomologicalComplex.homologyMap ((hG.singularChainsRepCoinvariantsTensorIso k).inv ≫
+          singularChainsCoinvariantsMap k f hf) n ≫
+        (groupHomologyIso (Rep.trivial k H k) n (singularChainsResolution k F H)).inv :=
+        (HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans
+          (congrArg (fun t ↦ HomologicalComplex.homologyMap t n ≫ _)
+            (hG.singularChainsRepCoinvariantsTensorIso_inv_naturality k hH f hf b hb))
+    _ = HomologicalComplex.homologyMap (hG.singularChainsRepCoinvariantsTensorIso k).inv n ≫
+          HomologicalComplex.homologyMap (φ.coinvariantsTensorChainMap (B := Rep.trivial k H k)
+            (𝟙 (Rep.trivial k G k)) (singularChainsRepResMap k f hf)) n ≫
+        (groupHomologyIso (Rep.trivial k H k) n (singularChainsResolution k F H)).inv := by
+        rw [singularChainsCoinvariantsMap_eq_coinvariantsTensorChainMap]
+        exact HomologicalComplex.homologyMap_comp_assoc _ _ _ _
+    _ = _ := congrArg (_ ≫ ·) (φ.groupHomologyIso_inv_naturality (A := Rep.trivial k G k)
+          (B := Rep.trivial k H k) (𝟙 (Rep.trivial k G k))
+          (singularChainsResolution k E G) (singularChainsResolution k F H)
+          (singularChainsRepResMap k f hf) (singularChainsRepResMap_f_zero_comp_augmentation k f hf)
+          n)
+    _ = _ := (Category.assoc _ _ _).symm
+
+/-- The inverse comparison with group homology is natural in the covering and the group. -/
+@[reassoc]
+theorem singularHomologyIsoGroupHomology_inv_naturality [ContractibleSpace E]
+    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+    (hH : IsQuotientCoveringMap q H) [ContractibleSpace F] {φ : G →* H}
+    (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (n : ℕ) :
+    groupHomology.map φ (A := Rep.trivial k G k) (B := Rep.trivial k H k)
+          (𝟙 (Rep.trivial k G k)) n ≫ (hH.singularHomologyIsoGroupHomology k n).inv =
+      (hG.singularHomologyIsoGroupHomology k n).inv ≫
+        HomologicalComplex.homologyMap ((singularChains k).map b) n := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    hG.singularHomologyIsoGroupHomology_hom_naturality k hH f hf b hb n, Iso.inv_hom_id_assoc]
 
 end IsQuotientCoveringMap

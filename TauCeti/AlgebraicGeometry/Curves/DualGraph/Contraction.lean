@@ -36,6 +36,12 @@ In the stable range `2g - 2 + n > 0`, a graph admits a stabilization step exactl
 stable, and iterating steps from any graph reaches a stable graph of the same genus with the same
 markings; the number of vertices decreases at every step.
 
+`TauCeti.DualGraph.LabelledStabilizationStep P` is the variant for graphs whose vertices carry
+labels: it contracts only vertices whose label satisfies `P`, and the remaining vertices keep their
+labels. Labelling the components by the degree of a map and contracting only those of degree zero
+gives map-aware stabilization, which never contracts a component on which the map is not
+constant.
+
 ## Main definitions
 
 * `TauCeti.DualGraph.attachment`: the neighbour of a vertex of valence one.
@@ -45,6 +51,8 @@ markings; the number of vertices decreases at every step.
   replaced by an edge joining its two neighbours.
 * `TauCeti.DualGraph.StabilizationStep`: contraction of a rational tail with at most one marking
   or of an unmarked rational bridge.
+* `TauCeti.DualGraph.LabelledStabilizationStep`: the same contractions on labelled graphs,
+  restricted to vertices whose label satisfies a predicate.
 
 ## Main results
 
@@ -53,10 +61,15 @@ markings; the number of vertices decreases at every step.
   the contracted vertex.
 * `TauCeti.DualGraph.logCanonicalDegree_contractTail` and
   `TauCeti.DualGraph.logCanonicalDegree_contractBridge`: the change of log-canonical degrees.
+* `TauCeti.DualGraph.IsSemistable.logCanonicalDegree_contractTail`: in a semistable graph,
+  contracting a rational tail with at most one marking leaves the other log-canonical degrees
+  unchanged.
 * `TauCeti.DualGraph.isStable_iff_forall_not_stabilizationStep`: in the stable range, a graph is
   stable exactly when it admits no stabilization step.
 * `TauCeti.DualGraph.exists_reflTransGen_stabilizationStep_isStable`: in the stable range,
   iterated stabilization steps reach a stable graph.
+* `TauCeti.DualGraph.exists_reflTransGen_labelledStabilizationStep_forall_not`: iterated labelled
+  stabilization steps reach a labelled graph admitting no further step.
 
 ## References
 
@@ -74,7 +87,7 @@ namespace DualGraph
 
 open Finset
 
-universe u v
+universe u v w
 
 variable {ι : Type v} (G : DualGraph.{u} ι)
 
@@ -139,14 +152,18 @@ noncomputable def halfEdgeOfValenceEqTwo {v : G.Vertex} (hv : G.valence v = 2) :
     Fin 2 ≃ {h : G.Edge × Fin 2 // G.endpoint h.1 h.2 = v} :=
   (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype, ← valence_def, hv])).symm
 
+/-- The two enumerated half-edges at a vertex of valence two are distinct. -/
+lemma halfEdgeOfValenceEqTwo_zero_ne_one {v : G.Vertex} (hv : G.valence v = 2) :
+    (G.halfEdgeOfValenceEqTwo hv 0).1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1 :=
+  fun h ↦ absurd ((G.halfEdgeOfValenceEqTwo hv).injective (Subtype.ext h)) (by decide)
+
 /-- At a loopless vertex of valence two, the two half-edges lie on distinct edges. -/
 lemma halfEdgeOfValenceEqTwo_fst_ne {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) :
     (G.halfEdgeOfValenceEqTwo hv 0).1.1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1.1 := by
   intro h
   have hne : (G.halfEdgeOfValenceEqTwo hv 0).1.2 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1.2 :=
-    fun h' ↦ absurd ((G.halfEdgeOfValenceEqTwo hv).injective (Subtype.ext (Prod.ext h h')))
-      (by decide)
+    fun h' ↦ halfEdgeOfValenceEqTwo_zero_ne_one hv (Prod.ext h h')
   -- The second index of a loopless edge at `v` is determined by the first.
   have hrev : (G.halfEdgeOfValenceEqTwo hv 1).1.2 = (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev := by
     revert hne
@@ -169,11 +186,83 @@ branches of its two nodes. For a rational bridge, these are the two components t
 noncomputable def bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2) (k : Fin 2) : G.Vertex :=
   G.endpoint (G.halfEdgeOfValenceEqTwo hv k).1.1 (G.halfEdgeOfValenceEqTwo hv k).1.2.rev
 
+/-- The `k`th neighbour carries the other branch of the `k`th half-edge. -/
+lemma endpoint_halfEdgeOfValenceEqTwo_rev {v : G.Vertex} (hv : G.valence v = 2) (k : Fin 2) :
+    G.endpoint (G.halfEdgeOfValenceEqTwo hv k).1.1 (G.halfEdgeOfValenceEqTwo hv k).1.2.rev =
+      G.bridgeNeighbor hv k := by
+  rw [bridgeNeighbor]
+
 /-- The neighbours of a loopless vertex are distinct from it. -/
 lemma bridgeNeighbor_ne {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) (k : Fin 2) :
     G.bridgeNeighbor hv k ≠ v :=
   endpoint_rev_ne hloop (G.halfEdgeOfValenceEqTwo hv k).2
+
+/-- The unordered pair of neighbours of a vertex of valence two does not depend on the enumeration
+of its half-edges: it is formed by the other branches of any two distinct half-edges there. -/
+lemma sym2_bridgeNeighbor_eq {v : G.Vertex} (hv : G.valence v = 2) {h h' : G.Edge × Fin 2}
+    (hh : G.endpoint h.1 h.2 = v) (hh' : G.endpoint h'.1 h'.2 = v) (hne : h ≠ h') :
+    s(G.bridgeNeighbor hv 0, G.bridgeNeighbor hv 1) =
+      s(G.endpoint h.1 h.2.rev, G.endpoint h'.1 h'.2.rev) := by
+  obtain ⟨k, rfl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv hh
+  obtain ⟨k', rfl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv hh'
+  have hk : k ≠ k' := fun hk ↦ hne (hk ▸ rfl)
+  fin_cases k <;> fin_cases k'
+  · exact absurd rfl hk
+  · rfl
+  · exact Sym2.eq_swap
+  · exact absurd rfl hk
+
+/-- If a vertex of valence one is attached to another vertex of valence one, the latter is
+attached to the former. -/
+lemma attachment_eq_of_attachment_eq {v₁ v₂ : G.Vertex} (hv₁ : G.valence v₁ = 1)
+    (hv₂ : G.valence v₂ = 1) (h : G.attachment hv₁ = v₂) : G.attachment hv₂ = v₁ := by
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence v₁)
+  have h' : G.endpoint e i.rev = v₂ := (endpoint_rev_eq_attachment hv₁ he).trans h
+  rw [← endpoint_rev_eq_attachment hv₂ h', Fin.rev_rev, he]
+
+/-- The node of a vertex `u` of valence one avoids every vertex other than `u` and its
+attachment. -/
+lemma forall_endpoint_ne_of_valence_eq_one {u v : G.Vertex} (hu : G.valence u = 1)
+    (huv : u ≠ v) (hatt : G.attachment hu ≠ v) {e : G.Edge} {i : Fin 2}
+    (he : G.endpoint e i = u) : ∀ j, G.endpoint e j ≠ v :=
+  forall_endpoint_ne_of_ne_of_rev_ne (by rw [he]; exact huv)
+    (by rw [endpoint_rev_eq_attachment hu he]; exact hatt)
+
+/-- The `k`th half-edge at a vertex `u` of valence two avoids every vertex other than `u` and its
+`k`th neighbour. -/
+lemma forall_endpoint_halfEdgeOfValenceEqTwo_ne {u v : G.Vertex} (hu : G.valence u = 2)
+    (huv : u ≠ v) {k : Fin 2} (hk : G.bridgeNeighbor hu k ≠ v) :
+    ∀ i, G.endpoint (G.halfEdgeOfValenceEqTwo hu k).1.1 i ≠ v :=
+  forall_endpoint_ne_of_ne_of_rev_ne (i := (G.halfEdgeOfValenceEqTwo hu k).1.2)
+    (by rw [(G.halfEdgeOfValenceEqTwo hu k).2]; exact huv)
+    (by rw [endpoint_halfEdgeOfValenceEqTwo_rev]; exact hk)
+
+/-- If the `k`th neighbour of a vertex `u` of valence two is a vertex `v` of valence two, then `u`
+is a neighbour of `v`. -/
+lemma exists_bridgeNeighbor_eq {u v : G.Vertex} (hu : G.valence u = 2)
+    (hv : G.valence v = 2) {k : Fin 2} (hk : G.bridgeNeighbor hu k = v) :
+    ∃ l, G.bridgeNeighbor hv l = u := by
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk
+  obtain ⟨l, hl⟩ := exists_eq_halfEdgeOfValenceEqTwo hv
+    (h := ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)) hk
+  refine ⟨l, ?_⟩
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev, hl, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hu k).2]
+
+/-- A vertex of valence one is at most one of the two neighbours of a loopless vertex of valence
+two. -/
+lemma bridgeNeighbor_rev_ne {u v : G.Vertex} (hu : G.valence u = 2)
+    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (hv : G.valence v = 1) {k : Fin 2}
+    (hk : G.bridgeNeighbor hu k = v) : G.bridgeNeighbor hu k.rev ≠ v := by
+  intro hk'
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev] at hk hk'
+  have := congrArg Prod.fst (eq_of_valence_eq_one hv
+    ((G.halfEdgeOfValenceEqTwo hu k).1.1, (G.halfEdgeOfValenceEqTwo hu k).1.2.rev)
+    ((G.halfEdgeOfValenceEqTwo hu k.rev).1.1, (G.halfEdgeOfValenceEqTwo hu k.rev).1.2.rev) hk hk')
+  have hne := halfEdgeOfValenceEqTwo_fst_ne hu hloop
+  fin_cases k
+  · exact hne this
+  · exact hne this.symm
 
 /-! ### Edges and half-edges away from a vertex -/
 
@@ -316,6 +405,63 @@ theorem valence_contractTail (u : G.Vertex) (hu : u ≠ v) :
     card_endpoint_eq_of_endpoint_eq hu he, endpoint_rev_eq_attachment hv he, valence_eq_sum]
   simp
 
+/-- Contracting a tail does not change the ends of the remaining edges. -/
+@[simp]
+lemma map_val_ends_contractTail (e : (G.contractTail hv).Edge) :
+    ((G.contractTail hv).ends e).map Subtype.val = G.ends e.1 := by
+  rw [ends_def, ends_def, Sym2.map_mk]
+
+/-- After contracting a tail `v`, a vertex of valence one whose node avoids `v` keeps its
+attachment. -/
+lemma coe_attachment_contractTail {u : G.Vertex} (hu : G.valence u = 1) (huv : u ≠ v)
+    (hatt : G.attachment hu ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 1) :
+    ((G.contractTail hv).attachment hu' : G.Vertex) = G.attachment hu := by
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence u)
+  rw [← endpoint_rev_eq_attachment hu'
+    (e := ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
+    ← endpoint_rev_eq_attachment hu he]
+
+/-- After contracting a tail `v`, a vertex of valence two whose neighbours differ from `v` keeps
+its neighbours. -/
+lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2) (huv : u ≠ v)
+    (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 2) :
+    s(((G.contractTail hv).bridgeNeighbor hu' 0 : G.Vertex),
+        ((G.contractTail hv).bridgeNeighbor hu' 1 : G.Vertex)) =
+      s(G.bridgeNeighbor hu 0, G.bridgeNeighbor hu 1) := by
+  have := congrArg (Sym2.map Subtype.val) ((G.contractTail hv).sym2_bridgeNeighbor_eq hu'
+    (h := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 0).1.2))
+    (h' := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 1).1.2))
+    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
+    fun h ↦ halfEdgeOfValenceEqTwo_zero_ne_one hu
+      (Prod.ext (congrArg (fun x ↦ x.1.1) h) (congrArg (fun x ↦ x.2) h)))
+  rw [Sym2.map_mk, Sym2.map_mk] at this
+  rw [this]
+  exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
+    (endpoint_halfEdgeOfValenceEqTwo_rev hu 1)
+
+/-- Contracting a tail does not change the valence of a vertex other than its attachment. -/
+lemma valence_contractTail_of_attachment_ne {u : G.Vertex} (hu : u ≠ v)
+    (hatt : G.attachment hv ≠ u) : (G.contractTail hv).valence ⟨u, hu⟩ = G.valence u := by
+  have := valence_contractTail hv u hu
+  rw [ite_eq_right hatt] at this
+  omega
+
+/-- After contracting a tail, a loopless vertex is still loopless. -/
+lemma forall_endpoint_one_ne_contractTail {u : G.Vertex} (hu : u ≠ v)
+    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) :
+    ∀ e, (G.contractTail hv).endpoint e 0 = ⟨u, hu⟩ → (G.contractTail hv).endpoint e 1 ≠ ⟨u, hu⟩ :=
+  fun e h₀ h₁ ↦ hloop e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
+
+/-- After contracting a tail, an unmarked vertex other than its attachment is still unmarked. -/
+lemma marking_contractTail_ne {u : G.Vertex} (hu : u ≠ v) (hm : ∀ i, G.marking i ≠ u)
+    (hatt : G.attachment hv ≠ u) (i : ι) : (G.contractTail hv).marking i ≠ ⟨u, hu⟩ := fun h ↦ by
+  rw [marking_contractTail] at h
+  split_ifs at h
+  · exact hatt (congrArg Subtype.val h)
+  · exact hm i (congrArg Subtype.val h)
+
 section Markings
 
 variable [Fintype ι]
@@ -349,6 +495,18 @@ theorem logCanonicalDegree_contractTail (u : G.Vertex) (hu : u ≠ v) :
   have hval := valence_contractTail hv u hu
   rw [logCanonicalDegree_def, logCanonicalDegree_def, numMarkings_contractTail hv u hu]
   split_ifs at hval ⊢ <;> push_cast <;> omega
+
+/-- In a semistable graph, contracting a rational tail carrying at most one marking does not change
+the log-canonical degrees of the other vertices: the tail carries exactly one marking, which moves
+to its attachment. -/
+theorem IsSemistable.logCanonicalDegree_contractTail (hG : G.IsSemistable)
+    (ht : G.IsRationalTail v) (hm : G.numMarkings v ≤ 1) (u : G.Vertex) (hu : u ≠ v) :
+    (G.contractTail (G.isRationalTail_iff.mp ht).2).logCanonicalDegree ⟨u, hu⟩ =
+      G.logCanonicalDegree u := by
+  have := ht.logCanonicalDegree_eq
+  have := G.isSemistable_iff.mp hG v
+  rw [DualGraph.logCanonicalDegree_contractTail]
+  split_ifs <;> omega
 
 end Markings
 
@@ -503,6 +661,87 @@ theorem logCanonicalDegree_contractBridge [Fintype ι] (u : G.Vertex) (hu : u �
   rw [logCanonicalDegree_def, logCanonicalDegree_def, valence_contractBridge,
     numMarkings_contractBridge]
 
+/-- After contracting a bridge, a loopless vertex which is not both neighbours of the bridge is
+still loopless. -/
+lemma forall_endpoint_one_ne_contractBridge {u : G.Vertex} (hu : u ≠ v)
+    (hloopu : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) {k : Fin 2}
+    (hk : G.bridgeNeighbor hv k ≠ u) :
+    ∀ e, (G.contractBridge hv hloop hm).endpoint e 0 = ⟨u, hu⟩ →
+      (G.contractBridge hv hloop hm).endpoint e 1 ≠ ⟨u, hu⟩ := by
+  rintro (_ | e) h₀ h₁
+  · fin_cases k
+    · exact hk (congrArg Subtype.val h₀)
+    · exact hk (congrArg Subtype.val h₁)
+  · exact hloopu e.1 (congrArg Subtype.val h₀) (congrArg Subtype.val h₁)
+
+/-- After contracting a bridge, an unmarked vertex is still unmarked. -/
+lemma marking_contractBridge_ne {u : G.Vertex} (hu : u ≠ v) (hmu : ∀ i, G.marking i ≠ u)
+    (i : ι) : (G.contractBridge hv hloop hm).marking i ≠ ⟨u, hu⟩ :=
+  fun h ↦ hmu i (congrArg Subtype.val h)
+
+/-- Contracting a bridge replaces it by a new edge joining its two neighbours. -/
+@[simp]
+lemma map_val_ends_contractBridge_none :
+    ((G.contractBridge hv hloop hm).ends none).map Subtype.val =
+      s(G.bridgeNeighbor hv 0, G.bridgeNeighbor hv 1) := by
+  simp [ends_def]
+
+/-- Contracting a bridge does not change the ends of the old edges away from it. -/
+@[simp]
+lemma map_val_ends_contractBridge_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
+    ((G.contractBridge hv hloop hm).ends (some e)).map Subtype.val = G.ends e.1 := by
+  simp [ends_def]
+
+/-- After contracting a bridge `v`, a vertex of valence one whose node avoids `v` keeps its
+attachment. -/
+lemma coe_attachment_contractBridge {u : G.Vertex} (hu : G.valence u = 1) (huv : u ≠ v)
+    (hatt : G.attachment hu ≠ v) (hu' : (G.contractBridge hv hloop hm).valence ⟨u, huv⟩ = 1) :
+    ((G.contractBridge hv hloop hm).attachment hu' : G.Vertex) = G.attachment hu := by
+  obtain ⟨⟨e, i⟩, he⟩ := exists_endpoint_eq_of_valence_pos (G := G) (by omega : 0 < G.valence u)
+  rw [← endpoint_rev_eq_attachment hu'
+    (e := some ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
+    ← endpoint_rev_eq_attachment hu he, endpoint_contractBridge_some]
+
+/-- After contracting a bridge `v`, a vertex of valence two whose neighbours differ from `v` keeps
+its neighbours. -/
+lemma sym2_coe_bridgeNeighbor_contractBridge {u : G.Vertex} (hu : G.valence u = 2) (huv : u ≠ v)
+    (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v)
+    (hu' : (G.contractBridge hv hloop hm).valence ⟨u, huv⟩ = 2) :
+    s(((G.contractBridge hv hloop hm).bridgeNeighbor hu' 0 : G.Vertex),
+        ((G.contractBridge hv hloop hm).bridgeNeighbor hu' 1 : G.Vertex)) =
+      s(G.bridgeNeighbor hu 0, G.bridgeNeighbor hu 1) := by
+  have := congrArg (Sym2.map Subtype.val) ((G.contractBridge hv hloop hm).sym2_bridgeNeighbor_eq
+    hu' (h := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 0)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 0).1.2))
+    (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
+      (G.halfEdgeOfValenceEqTwo hu 1).1.2))
+    (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
+    fun h ↦ halfEdgeOfValenceEqTwo_zero_ne_one hu (Prod.ext
+      (congrArg Subtype.val (Option.some.inj (congrArg Prod.fst h))) (congrArg (fun x ↦ x.2) h)))
+  rw [Sym2.map_mk, Sym2.map_mk] at this
+  rw [this]
+  exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
+    (endpoint_halfEdgeOfValenceEqTwo_rev hu 1)
+
+/-- After contracting a bridge `v` adjacent to a vertex `u` of valence two along a single node,
+the neighbours of `u` are the other neighbours of `v` and of `u`. -/
+lemma sym2_coe_bridgeNeighbor_contractBridge_of_bridgeNeighbor_eq {u : G.Vertex}
+    (hu : G.valence u = 2) (hne : v ≠ u) {k l : Fin 2} (hk : G.bridgeNeighbor hv k = u)
+    (hl : G.bridgeNeighbor hu l.rev ≠ v)
+    (hval : (G.contractBridge hv hloop hm).valence ⟨u, hne.symm⟩ = 2) :
+    s(((G.contractBridge hv hloop hm).bridgeNeighbor hval 0 : G.Vertex),
+        ((G.contractBridge hv hloop hm).bridgeNeighbor hval 1 : G.Vertex)) =
+      s(G.bridgeNeighbor hv k.rev, G.bridgeNeighbor hu l.rev) := by
+  have := congrArg (Sym2.map Subtype.val) ((G.contractBridge hv hloop hm).sym2_bridgeNeighbor_eq
+    hval (h := (none, k))
+    (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu hne.symm hl⟩,
+      (G.halfEdgeOfValenceEqTwo hu l.rev).1.2))
+    (Subtype.ext hk) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu l.rev).2) (by simp))
+  rw [Sym2.map_mk, Sym2.map_mk] at this
+  rw [this]
+  exact congrArg (fun b ↦ s(G.bridgeNeighbor hv k.rev, b))
+    (endpoint_halfEdgeOfValenceEqTwo_rev hu l.rev)
+
 end Bridge
 
 /-! ### Stabilization -/
@@ -571,6 +810,112 @@ theorem arithmeticGenus_eq_of_reflTransGen (h : Relation.ReflTransGen Stabilizat
   induction h with
   | refl => rfl
   | tail _ hstep ih => exact hstep.arithmeticGenus_eq.trans ih
+
+/-! ### Labelled stabilization -/
+
+section Labelled
+
+variable {α : Type w} (P : α → Prop)
+
+/-- A **labelled stabilization step**. The vertices of the dual graphs carry labels in `α`; the
+step contracts a rational tail carrying at most one marking or an unmarked rational bridge whose
+label satisfies `P`, and the remaining vertices keep their labels. Thus only vertices whose label
+satisfies `P` are ever contracted. With the degree of a map on each component as label and `P`
+saying that the degree is zero, these are the steps of map-aware stabilization; with labels in
+`Unit` and `P` always true, they are the stabilization steps
+(`TauCeti.DualGraph.StabilizationStep.labelledStabilizationStep`). -/
+inductive LabelledStabilizationStep :
+    (Σ G : DualGraph.{u} ι, G.Vertex → α) → (Σ G : DualGraph.{u} ι, G.Vertex → α) → Prop
+  /-- Contract a rational tail carrying at most one marking, whose label satisfies `P`. -/
+  | contractTail {G : DualGraph.{u} ι} (c : G.Vertex → α) {v : G.Vertex}
+      (hv : G.IsRationalTail v) (hm : G.numMarkings v ≤ 1) (hc : P (c v)) :
+      LabelledStabilizationStep ⟨G, c⟩
+        ⟨G.contractTail (G.isRationalTail_iff.mp hv).2, fun w ↦ c w.1⟩
+  /-- Contract an unmarked rational bridge whose label satisfies `P`. -/
+  | contractBridge {G : DualGraph.{u} ι} (c : G.Vertex → α) {v : G.Vertex}
+      (hv : G.IsRationalBridge v) (hm : ∀ i, G.marking i ≠ v) (hc : P (c v)) :
+      LabelledStabilizationStep ⟨G, c⟩
+        ⟨G.contractBridge (G.isRationalBridge_iff.mp hv).2.1 (G.isRationalBridge_iff.mp hv).2.2 hm,
+          fun w ↦ c w.1⟩
+
+variable {P} {x y : Σ G : DualGraph.{u} ι, G.Vertex → α}
+
+namespace LabelledStabilizationStep
+
+/-- A labelled stabilization step is a stabilization step of the underlying graphs. -/
+theorem fst (h : LabelledStabilizationStep P x y) : StabilizationStep x.1 y.1 := by
+  cases h with
+  | contractTail c hv hm => exact .contractTail _ hv hm
+  | contractBridge c hv hm => exact .contractBridge _ hv hm
+
+/-- A labelled stabilization step contracts a vertex whose label satisfies `P` and whose
+log-canonical degree is nonpositive. -/
+theorem exists_logCanonicalDegree_nonpos (h : LabelledStabilizationStep P x y) :
+    ∃ v, P (x.2 v) ∧ x.1.logCanonicalDegree v ≤ 0 := by
+  cases h with
+  | contractTail c hv hm hc => exact ⟨_, hc, by rw [hv.logCanonicalDegree_eq]; omega⟩
+  | contractBridge c hv hm hc =>
+    exact ⟨_, hc, by rw [hv.logCanonicalDegree_eq, numMarkings_def]; simp [hm]⟩
+
+/-- Since the contracted vertex has a label satisfying `P` and the other vertices keep their
+labels, all labels satisfy `P` after a labelled stabilization step exactly when they did before. -/
+theorem forall_snd_iff (h : LabelledStabilizationStep P x y) :
+    (∀ w, P (y.2 w)) ↔ ∀ v, P (x.2 v) := by
+  refine ⟨fun hy v ↦ ?_, fun hx w ↦ ?_⟩
+  · cases h with
+    | @contractTail G c u hv hm hc =>
+      by_cases hvu : v = u
+      exacts [hvu ▸ hc, hy ⟨v, hvu⟩]
+    | @contractBridge G c u hv hm hc =>
+      by_cases hvu : v = u
+      exacts [hvu ▸ hc, hy ⟨v, hvu⟩]
+  · cases h with
+    | contractTail c hv hm hc => exact hx _
+    | contractBridge c hv hm hc => exact hx _
+
+end LabelledStabilizationStep
+
+/-- The stable range condition `2g - 2 + n > 0`, required only when all labels satisfy `P`,
+persists along a labelled stabilization step. -/
+theorem LabelledStabilizationStep.two_mul_arithmeticGenus_sub_two_add_card_pos
+    (h : LabelledStabilizationStep P x y)
+    (hrange : (∀ v, P (x.2 v)) → 0 < 2 * (x.1.arithmeticGenus : ℤ) - 2 + Fintype.card ι) :
+    (∀ w, P (y.2 w)) → 0 < 2 * (y.1.arithmeticGenus : ℤ) - 2 + Fintype.card ι := fun hy ↦ by
+  rw [h.fst.arithmeticGenus_eq]
+  exact hrange (h.forall_snd_iff.mp hy)
+
+/-- A stabilization step is a labelled stabilization step for the constant labelling by `Unit`,
+in which every vertex may be contracted. -/
+theorem StabilizationStep.labelledStabilizationStep (h : StabilizationStep G H) :
+    LabelledStabilizationStep (fun _ : Unit ↦ True) ⟨G, fun _ ↦ ()⟩ ⟨H, fun _ ↦ ()⟩ := by
+  cases h with
+  | contractTail hv hm => exact .contractTail _ hv hm trivial
+  | contractBridge hv hm => exact .contractBridge _ hv hm trivial
+
+/-- Iterated stabilization steps are iterated labelled stabilization steps for the constant
+labelling by `Unit`. -/
+theorem reflTransGen_labelledStabilizationStep_of_reflTransGen
+    (h : Relation.ReflTransGen StabilizationStep G H) :
+    Relation.ReflTransGen (LabelledStabilizationStep fun _ : Unit ↦ True)
+      ⟨G, fun _ ↦ ()⟩ ⟨H, fun _ ↦ ()⟩ :=
+  h.lift (fun G : DualGraph.{u} ι ↦ (⟨G, fun _ ↦ ()⟩ : Σ G : DualGraph.{u} ι, G.Vertex → Unit))
+    fun _ _ ↦ StabilizationStep.labelledStabilizationStep
+
+/-- **Labelled stabilization terminates.** Iterating labelled stabilization steps from any
+labelled graph reaches one admitting no further step, since every step removes a vertex. -/
+theorem exists_reflTransGen_labelledStabilizationStep_forall_not
+    (x : Σ G : DualGraph.{u} ι, G.Vertex → α) :
+    ∃ y, Relation.ReflTransGen (LabelledStabilizationStep P) x y ∧
+      ∀ z, ¬ LabelledStabilizationStep P y z := by
+  induction hn : Fintype.card x.1.Vertex using Nat.strong_induction_on generalizing x with
+  | _ n ih =>
+    by_cases hx : ∃ z, LabelledStabilizationStep P x z
+    · obtain ⟨z, hz⟩ := hx
+      obtain ⟨y, hy, hys⟩ := ih _ (hn ▸ hz.fst.card_vertex_lt) z rfl
+      exact ⟨y, .head hz hy, hys⟩
+    · exact ⟨x, .refl, fun z hz ↦ hx ⟨z, hz⟩⟩
+
+end Labelled
 
 variable (G)
 

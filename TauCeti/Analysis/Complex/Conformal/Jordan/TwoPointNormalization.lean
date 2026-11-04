@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Two-point normalization of conformal maps onto unbounded Jordan domains

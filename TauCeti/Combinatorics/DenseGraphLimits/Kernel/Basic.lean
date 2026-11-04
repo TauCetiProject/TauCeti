@@ -20,11 +20,10 @@ graphons is in its domain.
 
 **Strict, not `AEEqFun`.** The kernel carries a genuine function, not an a.e.-equivalence class.
 The a.e. identification is taken once and later, at `GraphonSpace`, rather than being built into the
-basic object. Two things follow, and they are why the roadmap makes this choice. First, the strict
-kernel is a *pointwise* `ℝ`-module — `(U - W) x y = U x y - W x y` holds on the nose, so cut-norm
-estimates never carry a null-set side condition. Second, pointwise hypotheses such as
-`∀ x y, W x y ∈ Set.Icc 0 1` are stateable at all, which an a.e. class cannot support without
-choosing a representative.
+basic object. Two things follow. First, the strict kernel is a *pointwise* `ℝ`-module —
+`(U - W) x y = U x y - W x y` holds on the nose, so cut-norm estimates never carry a null-set side
+condition. Second, pointwise hypotheses such as `∀ x y, W x y ∈ Set.Icc 0 1` are stateable at all,
+which an a.e. class cannot support without choosing a representative.
 
 **The measure is a phantom parameter.** `SymmKernel Ω μ` does not mention `μ` in any field: none of
 symmetry, measurability, or boundedness refers to it. It is carried in the type so that kernels over
@@ -46,8 +45,8 @@ Consequently the algebra below needs no hypothesis on `μ` at all — in particu
 * `AddCommGroup` and `Module ℝ` instances, defined pointwise. The `coe_zero`, `coe_add`, `coe_neg`,
   `coe_sub` and `coe_smul` simp lemmas identify every operation with the corresponding operation on
   `Ω → Ω → ℝ`, so the module structure can be computed entirely by `simp`.
-* `SymmKernel.integrable_uncurry` says that a bounded kernel is integrable on the product of two
-  finite copies of its measure.
+* `SymmKernel.integrable_uncurry` says that a bounded kernel is integrable with respect to every
+  finite measure on `Ω × Ω`, such as the product of two finite copies of its measure.
 * `comap_apply` evaluates a pullback, and `comap_zero` / `comap_add` / `comap_neg` / `comap_sub` /
   `comap_smul` say that pulling back is linear, so a pullback of a difference of kernels is the
   difference of the pullbacks. `comap_id` and `comap_comap` are the functoriality laws.
@@ -65,9 +64,6 @@ formulas definitional.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the strict kernel carrier. The
-  `Graphon` structure, `cutNorm`, homomorphism densities, and the `L⁰`-to-strict representative
-  bridge are separate targets and are not built here.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013).
 -/
@@ -120,12 +116,13 @@ theorem measurable (K : SymmKernel Ω μ) : Measurable (Function.uncurry (K : Ω
 /-- A symmetric kernel is uniformly bounded. The constant is not canonical. -/
 theorem exists_bound (K : SymmKernel Ω μ) : ∃ C, ∀ x y, |K x y| ≤ C := K.bdd'
 
-/-- A bounded symmetric kernel is integrable on the product of two finite copies of its measure. -/
-theorem integrable_uncurry (μ : Measure Ω) [IsFiniteMeasure μ] (K : SymmKernel Ω μ) :
-    Integrable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) := by
+/-- A bounded symmetric kernel is integrable with respect to every finite measure on `Ω × Ω`, in
+particular on the product `μ.prod μ` of two finite copies of its measure. -/
+theorem integrable_uncurry (K : SymmKernel Ω μ) {ρ : Measure (Ω × Ω)} [IsFiniteMeasure ρ] :
+    Integrable (fun p : Ω × Ω => K p.1 p.2) ρ := by
   obtain ⟨C, hC⟩ := K.exists_bound
-  refine Integrable.of_bound K.measurable.aestronglyMeasurable C (ae_of_all _ fun p => ?_)
-  simpa [Function.uncurry_apply_pair, Real.norm_eq_abs] using hC p.1 p.2
+  refine .of_bound K.measurable.aestronglyMeasurable C (ae_of_all _ fun p => ?_)
+  simpa using hC p.1 p.2
 
 section Algebra
 
@@ -134,43 +131,36 @@ instance : Zero (SymmKernel Ω μ) :=
 
 instance : Add (SymmKernel Ω μ) :=
   ⟨fun K L => ⟨fun x y => K x y + L x y, fun x y => by rw [K.symm, L.symm],
-    by exact K.measurable.add L.measurable,
+    K.measurable.add L.measurable,
     by obtain ⟨C, hC⟩ := K.exists_bound; obtain ⟨D, hD⟩ := L.exists_bound
        exact ⟨C + D, fun x y => (abs_add_le _ _).trans (add_le_add (hC x y) (hD x y))⟩⟩⟩
 
 instance : Neg (SymmKernel Ω μ) :=
-  ⟨fun K => ⟨fun x y => -K x y, fun x y => by rw [K.symm],
-    by exact K.measurable.neg,
-    by obtain ⟨C, hC⟩ := K.exists_bound; exact ⟨C, fun x y => by simpa using hC x y⟩⟩⟩
+  ⟨fun K => ⟨fun x y => -K x y, fun x y => by rw [K.symm], K.measurable.neg,
+    K.exists_bound.imp fun _ hC x y => (abs_neg _).trans_le (hC x y)⟩⟩
 
 instance : Sub (SymmKernel Ω μ) :=
   ⟨fun K L => ⟨fun x y => K x y - L x y, fun x y => by rw [K.symm, L.symm],
-    by exact K.measurable.sub L.measurable,
+    K.measurable.sub L.measurable,
     by obtain ⟨C, hC⟩ := K.exists_bound; obtain ⟨D, hD⟩ := L.exists_bound
        exact ⟨C + D, fun x y => (abs_sub _ _).trans (add_le_add (hC x y) (hD x y))⟩⟩⟩
 
 instance : SMul ℝ (SymmKernel Ω μ) :=
-  ⟨fun c K => ⟨fun x y => c * K x y, fun x y => by rw [K.symm],
-    by exact K.measurable.const_mul c,
+  ⟨fun c K => ⟨fun x y => c * K x y, fun x y => by rw [K.symm], K.measurable.const_mul c,
     by obtain ⟨C, hC⟩ := K.exists_bound
-       exact ⟨|c| * C, fun x y => by
-         rw [abs_mul]; exact mul_le_mul_of_nonneg_left (hC x y) (abs_nonneg c)⟩⟩⟩
+       exact ⟨|c| * C, fun x y =>
+         (abs_mul _ _).trans_le (mul_le_mul_of_nonneg_left (hC x y) (abs_nonneg c))⟩⟩⟩
 
 instance : SMul ℕ (SymmKernel Ω μ) :=
-  ⟨fun n K => ⟨fun x y => n • K x y, fun x y => by rw [K.symm],
-    by exact K.measurable.const_smul (n : ℕ),
+  ⟨fun n K => ⟨fun x y => n • K x y, fun x y => by rw [K.symm], K.measurable.const_smul n,
     by obtain ⟨C, hC⟩ := K.exists_bound
-       exact ⟨n * C, fun x y => by
-         simpa [abs_mul, nsmul_eq_mul] using
-           mul_le_mul_of_nonneg_left (hC x y) (Nat.cast_nonneg (α := ℝ) n)⟩⟩⟩
+       exact ⟨n • C, fun x y => (abs_nsmul n _).trans_le (nsmul_le_nsmul_right (hC x y) n)⟩⟩⟩
 
 instance : SMul ℤ (SymmKernel Ω μ) :=
-  ⟨fun n K => ⟨fun x y => n • K x y, fun x y => by rw [K.symm],
-    by exact K.measurable.const_smul (n : ℤ),
+  ⟨fun n K => ⟨fun x y => n • K x y, fun x y => by rw [K.symm], K.measurable.const_smul n,
     by obtain ⟨C, hC⟩ := K.exists_bound
-       exact ⟨|(n : ℝ)| * C, fun x y => by
-         simpa [abs_mul, zsmul_eq_mul] using
-           mul_le_mul_of_nonneg_left (hC x y) (abs_nonneg ((n : ℝ)))⟩⟩⟩
+       exact ⟨|n| • C, fun x y =>
+         (abs_zsmul n _).trans_le (zsmul_le_zsmul_right (abs_nonneg n) (hC x y))⟩⟩⟩
 
 @[simp] theorem coe_zero : ⇑(0 : SymmKernel Ω μ) = 0 := rfl
 

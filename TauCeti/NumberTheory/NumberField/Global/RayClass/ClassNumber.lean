@@ -36,7 +36,10 @@ class exactly when it becomes congruent to one after multiplication by a global 
 (`principalRayClass_eq_one_iff`), so the kernel of `A 𝔪 → RayClassGroup 𝔪` is the image of the
 integer units, and the kernel of `(𝓞 K)ˣ → A 𝔪` is the group of units congruent to one.  That image
 is what glues the residue units, the signs and the ordinary class group together inside the ray
-class group; in general `RayClassGroup 𝔪` is not the product of the three.
+class group.  The ray class number therefore equals the order of the product of the three exactly
+when every integer unit is congruent to one modulo `𝔪`, and otherwise `RayClassGroup 𝔪` is not
+isomorphic to that product.  Since `-1` is a unit, the decomposition fails whenever `𝔪` selects a
+real place or `2` does not lie in its finite part.
 
 At the narrow modulus the residue factor is trivial and the formula becomes
 `#(RayClassGroup (narrowModulus K)) * [(𝓞 K)ˣ : (𝓞 K)ˣ⁺] = #(ClassGroup (𝓞 K)) * 2 ^ r₁`, with
@@ -49,6 +52,12 @@ At the narrow modulus the residue factor is trivial and the formula becomes
 * `TauCeti.GlobalNumberFields.card_rayClassGroup_mul_index` and
   `TauCeti.GlobalNumberFields.card_rayClassGroup`: the ray class number formula.
 * `TauCeti.GlobalNumberFields.card_rayClassGroup_narrowModulus_mul_index`: its narrow case.
+* `TauCeti.GlobalNumberFields.card_rayClassGroup_eq_iff` and
+  `TauCeti.GlobalNumberFields.nonempty_rayClassGroup_equiv_prod_iff`: the ray class number is the
+  order of the product of residue units, signs and the class group exactly when every integer unit
+  is congruent to one.
+* `TauCeti.GlobalNumberFields.isEmpty_rayClassGroup_mulEquiv_prod`: otherwise the ray class group
+  is not the direct product of the three.
 
 ## References
 
@@ -123,5 +132,39 @@ theorem card_rayClassGroup_narrowModulus_mul_index :
     -- `convert` identifies it with the one chosen here.
     convert Finset.card_univ
   rw [card_rayClassGroup_mul_index, hres, hinf, one_mul]
+
+/-! ### The ray class group is not the product of its pieces -/
+
+/-- **The ray class number equals the product of the class number, the number of residue units and
+the number of sign patterns exactly when every integer unit is congruent to one modulo `𝔪`.**
+Otherwise it is smaller by a factor of the index of the units congruent to one. -/
+theorem card_rayClassGroup_eq_iff (𝔪 : Modulus K) :
+    Nat.card (RayClassGroup 𝔪) =
+        Nat.card (ClassGroup (𝓞 K)) *
+          (Nat.card (𝓞 K ⧸ 𝔪.finitePart)ˣ * 2 ^ 𝔪.infinitePart.card) ↔
+      unitsCongruenceSubgroup 𝔪 = ⊤ := by
+  rw [← Subgroup.index_eq_one, ← card_rayClassGroup_mul_index, eq_comm,
+    Nat.mul_eq_left Finite.card_pos.ne']
+
+/-- **The ray class group is in bijection with the product of the residue units, the sign patterns
+and the class group exactly when every integer unit is congruent to one modulo `𝔪`.**  This is a
+statement about cardinalities only; it does not assert that the group extension of the class group
+by the residue units and signs splits. -/
+theorem nonempty_rayClassGroup_equiv_prod_iff (𝔪 : Modulus K) :
+    Nonempty (RayClassGroup 𝔪 ≃
+        ((𝓞 K ⧸ 𝔪.finitePart)ˣ × (𝔪.infinitePart → ℤˣ)) × ClassGroup (𝓞 K)) ↔
+      unitsCongruenceSubgroup 𝔪 = ⊤ := by
+  have : Finite (𝓞 K ⧸ 𝔪.finitePart) := Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+  rw [← Finite.card_eq, ← card_rayClassGroup_eq_iff]
+  simp [Nat.card_fun, mul_comm]
+
+/-- **The ray class group is not the direct product of the residue units, the sign patterns and the
+class group** as soon as some integer unit is not congruent to one modulo `𝔪`, for instance when `𝔪`
+selects a real place (`unitsCongruenceSubgroup_ne_top`).  The residues and signs of the integer
+units glue the three factors together. -/
+theorem isEmpty_rayClassGroup_mulEquiv_prod {𝔪 : Modulus K} (h𝔪 : unitsCongruenceSubgroup 𝔪 ≠ ⊤) :
+    IsEmpty (RayClassGroup 𝔪 ≃*
+      ((𝓞 K ⧸ 𝔪.finitePart)ˣ × (𝔪.infinitePart → ℤˣ)) × ClassGroup (𝓞 K)) :=
+  ⟨fun e ↦ h𝔪 ((nonempty_rayClassGroup_equiv_prod_iff 𝔪).mp ⟨e.toEquiv⟩)⟩
 
 end TauCeti.GlobalNumberFields

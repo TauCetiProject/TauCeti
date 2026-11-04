@@ -123,6 +123,23 @@ theorem zeroEquiv_koszulDifferential_zero (x : ⋀[R]^1 M) :
     exteriorPower.zeroEquiv R M (koszulDifferential φ 0 x) = φ (exteriorPower.oneEquiv R M x) :=
   LinearMap.congr_fun (zeroEquiv_comp_koszulDifferential_zero φ) x
 
+/-- The first Koszul differential sends a vector, viewed in `⋀¹ M`, to its value under `φ`,
+viewed in `⋀⁰ M`. -/
+@[simp]
+theorem koszulDifferential_zero_oneEquiv_symm (m : M) :
+    koszulDifferential φ 0 ((exteriorPower.oneEquiv R M).symm m) =
+      φ m • (exteriorPower.zeroEquiv R M).symm 1 := by
+  apply (exteriorPower.zeroEquiv R M).injective
+  simp
+
+/-- In degree two, the Koszul differential sends `u ∧ v` to `φ(u) v - φ(v) u`. -/
+@[simp]
+theorem oneEquiv_koszulDifferential_one (v : Fin 2 → M) :
+    exteriorPower.oneEquiv R M (koszulDifferential φ 1 (exteriorPower.ιMulti R 2 v)) =
+      φ (v 0) • v 1 - φ (v 1) • v 0 := by
+  simp [koszulDifferential_ιMulti, Fin.sum_univ_two, Fin.removeNth_apply,
+    Fin.tail, sub_eq_add_neg]
+
 /-- The image of the first Koszul differential, transported along `⋀⁰ M ≅ R`, is the image
 of `φ`. -/
 theorem map_zeroEquiv_range_koszulDifferential_zero :
@@ -214,10 +231,15 @@ theorem koszulComplex_X (n : ℕ) : (koszulComplex φ).X n = ModuleCat.of R (⋀
   (rfl)
 
 /-- The differential of the Koszul complex is the Koszul differential. -/
-@[simp]
 theorem koszulComplex_d (n : ℕ) :
     (koszulComplex φ).d (n + 1) n = ModuleCat.ofHom (koszulDifferential φ n) := by
   simp [koszulComplex]
+
+/-- The differential of the Koszul complex is the Koszul differential, elementwise. -/
+@[simp]
+theorem koszulComplex_d_apply (n : ℕ) (x : ⋀[R]^(n + 1) M) :
+    ((koszulComplex φ).d (n + 1) n).hom x = koszulDifferential φ n x :=
+  congr($(koszulComplex_d φ n).hom x)
 
 end
 

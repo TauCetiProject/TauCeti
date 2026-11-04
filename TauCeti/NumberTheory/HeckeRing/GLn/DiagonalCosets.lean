@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.Basic
 public import TauCeti.NumberTheory.HeckeRing.One
 
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!

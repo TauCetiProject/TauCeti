@@ -142,6 +142,10 @@ theorem apply_mem_carrier_iff (e : Isometry L M) (x : V) :
 theorem ext {e f : Isometry L M} (h : ∀ x, e x = f x) : e = f :=
   DFunLike.coe_injective (funext h)
 
+/-- Into a trivial ambient space there is at most one isometry. -/
+instance [Subsingleton W] : Subsingleton (Isometry L M) :=
+  ⟨fun _ _ ↦ Isometry.ext fun _ ↦ Subsingleton.elim _ _⟩
+
 /-- The identity isometry of an integral lattice. -/
 @[refl]
 def refl (L : IntegralLattice V) : Isometry L L where
@@ -165,6 +169,11 @@ theorem ofEq_apply {L M : IntegralLattice V} (h : L = M) (x : V) : ofEq h x = x 
   subst h
   rfl
 
+/-- Identifying a lattice with itself along `rfl` is the identity isometry. -/
+@[simp]
+theorem ofEq_rfl (L : IntegralLattice V) : ofEq (rfl : L = L) = refl L :=
+  ext fun x ↦ by rw [ofEq_apply, refl_apply]
+
 /-- The inverse of an integral-lattice isometry. -/
 @[symm]
 def symm (e : Isometry L M) : Isometry M L where
@@ -183,6 +192,14 @@ theorem apply_symm_apply (e : Isometry L M) (y : W) : e (e.symm y) = y :=
 /-- Inverting an isometry twice yields the original isometry. -/
 @[simp]
 theorem symm_symm (e : Isometry L M) : e.symm.symm = e := by
+  ext
+  rfl
+
+/-- The inverse of the identification of equal lattices is the identification along the reversed
+equality. -/
+@[simp]
+theorem symm_ofEq {L M : IntegralLattice V} (h : L = M) : (ofEq h).symm = ofEq h.symm := by
+  subst h
   ext
   rfl
 
@@ -418,6 +435,15 @@ theorem transportIsometry_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (x
     L.transportIsometry e x = e x := by
   -- `isometryEquivOfCompLinearEquiv B f` has underlying equivalence `f.symm`.
   rfl
+
+/-- The inverse of the canonical isometry to a transported lattice is the inverse ambient
+equivalence. -/
+@[simp]
+theorem transportIsometry_symm_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (y : W) :
+    (L.transportIsometry e).symm y = e.symm y := by
+  obtain ⟨x, rfl⟩ := e.surjective y
+  rw [← L.transportIsometry_apply e x, Isometry.symm_apply_apply, transportIsometry_apply,
+    LinearEquiv.symm_apply_apply]
 
 @[simp]
 theorem transport_refl (L : IntegralLattice V) : L.transport (LinearEquiv.refl ℚ V) = L := by

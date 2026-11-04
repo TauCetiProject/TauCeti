@@ -21,6 +21,10 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
+  element vanishes as soon as one of its coordinates does.
+* `PreTilt.coeff_eq_zero_iff`: the same for the tilt `PreTilt O p` when `O ⧸ p` is reduced.
+* `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
 public section
@@ -44,4 +48,61 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
 
+section Reduced
+
+variable {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] [IsReduced R]
+
+/-- **In the perfection of a reduced ring, each coordinate detects zero.** For `f` in the
+perfection of a reduced ring of characteristic `p`, `coeff n f = 0` if and only if `f = 0`. -/
+@[simp]
+theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  have hlater (m : ℕ) : coeff R p (n + m) f = 0 := by
+    induction m with
+    | zero => exact h
+    | succ m ih => exact IsNilpotent.eq_zero ⟨p, by rw [← add_assoc, coeff_pow_p', ih]⟩
+  ext k
+  rw [map_zero]
+  exact not_not.mp fun hk ↦ coeff_ne_zero_of_le hk (Nat.le_add_left k n) (hlater k)
+
+end Reduced
+
 end Perfection
+
+namespace PreTilt
+
+variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
+  [IsReduced (ModP O p)]
+
+/-- **If `O ⧸ p` is reduced, each coordinate of the tilt detects zero.** For `f` in
+`PreTilt O p`, `coeff n f = 0` if and only if `f = 0`. -/
+@[simp]
+theorem coeff_eq_zero_iff (n : ℕ) {f : PreTilt O p} : coeff n f = 0 ↔ f = 0 :=
+  -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
+  Perfection.coeff_eq_zero_iff (R := ModP O p) n
+
+end PreTilt
+
+namespace TauCeti
+
+section CommMonoid
+
+variable {R : Type*} [CommMonoid R] {p : ℕ} {r : ℕ → R}
+
+/-- In a compatible root sequence, every later root divides every earlier root. -/
+theorem dvd_of_compatible_roots (hr : ∀ n, r (n + 1) ^ p = r n)
+    {m n : ℕ} (hmn : m ≤ n) : r n ∣ r m := by
+  by_cases hp : p = 0
+  · have hone (n : ℕ) : r n = 1 := by
+      simpa only [hp, pow_zero] using (hr n).symm
+    simp only [hone, dvd_refl]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
+  have hpow : r (m + k) ^ p ^ k = r m := by
+    simpa only [Perfection.coeffMonoidHom_mk] using
+      Perfection.coeffMonoidHom_pow_p_pow' (⟨r, hr⟩ : Perfection R p) m k
+  rw [← hpow]
+  exact dvd_pow_self _ (pow_ne_zero k hp)
+
+end CommMonoid
+
+end TauCeti

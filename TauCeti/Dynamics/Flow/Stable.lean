@@ -27,7 +27,8 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
 * `Flow.stableSet`: points converging to a given point in forward time.
 * `Flow.unstableSet`: points converging to a given point in backward time.
 * `Flow.isInvariant_stableSet` and `Flow.isInvariant_unstableSet`: invariance
-  under time translation, and `Flow.apply_mem_stableSet_iff` and `Flow.apply_mem_unstableSet_iff`:
+  under time translation (and `Flow.isInvariant_unstableSet_inter_stableSet` for their
+  intersection), and `Flow.apply_mem_stableSet_iff` and `Flow.apply_mem_unstableSet_iff`:
   a point and its images under the flow lie in the same stable and unstable sets
   (`IsInvariant.flow_apply_mem_iff` for any invariant set).
 * `Flow.fixed_of_mem_stableSet` and `Flow.fixed_of_mem_unstableSet`: a limiting
@@ -92,6 +93,12 @@ theorem isInvariant_unstableSet (φ : _root_.Flow ℝ α) (x : α) :
   rw [mem_unstableSet] at hy ⊢
   simpa only [Function.comp_def, ← φ.map_add, id_eq] using
     hy.comp (tendsto_atBot_add_const_right atBot t tendsto_id)
+
+/-- The set of points on trajectories running from `x` to `y` is invariant under every time map of
+the flow. -/
+theorem isInvariant_unstableSet_inter_stableSet (φ : _root_.Flow ℝ α) (x y : α) :
+    IsInvariant φ (unstableSet φ x ∩ stableSet φ y) := fun t _ hz ↦
+  ⟨isInvariant_unstableSet φ x t hz.1, isInvariant_stableSet φ y t hz.2⟩
 
 /-- A point lies in a set invariant under a flow exactly when its image under a time map of the
 flow does. -/

@@ -18,6 +18,10 @@ on the signs of finitely many functions of the class.
 ## Main results
 
 * `TauCeti.exists_eq_setOf_sign_of_mem_generateSetAlgebra`: the sign-condition normal form.
+* `MeasureTheory.IsSetAlgebra.preimage`: the sets whose preimages under a fixed map lie in an
+  algebra of sets form an algebra of sets.
+* `MeasureTheory.isSetAlgebra_measurableSet`, `MeasureTheory.isSetRing_measurableSet`: the
+  measurable sets form an algebra, hence a ring, of sets.
 -/
 
 public section
@@ -53,3 +57,32 @@ theorem exists_eq_setOf_sign_of_mem_generateSetAlgebra {α R : Type*} [Zero R] [
     simp
 
 end TauCeti
+
+namespace MeasureTheory.IsSetAlgebra
+
+/-- The sets whose preimages under a map `g` lie in an algebra of sets form an algebra of sets.
+Combined with `IsSetAlgebra.generateSetAlgebra_subset`, this shows that a preimage of a member of
+a generated algebra lies in a given algebra once the preimages of the generators do. -/
+theorem preimage {α β : Type*} {𝒜 : Set (Set β)} (h𝒜 : IsSetAlgebra 𝒜) (g : β → α) :
+    IsSetAlgebra {t : Set α | g ⁻¹' t ∈ 𝒜} where
+  empty_mem := h𝒜.empty_mem
+  compl_mem _ ht := h𝒜.compl_mem ht
+  union_mem _ _ ht ht' := h𝒜.union_mem ht ht'
+
+end MeasureTheory.IsSetAlgebra
+
+namespace MeasureTheory
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- The measurable sets form an algebra of sets. -/
+theorem isSetAlgebra_measurableSet : IsSetAlgebra {s : Set α | MeasurableSet s} where
+  empty_mem := MeasurableSet.empty
+  compl_mem _ hs := hs.compl
+  union_mem _ _ hs ht := hs.union ht
+
+/-- The measurable sets form a ring of sets. -/
+theorem isSetRing_measurableSet : IsSetRing {s : Set α | MeasurableSet s} :=
+  isSetAlgebra_measurableSet.isSetRing
+
+end MeasureTheory

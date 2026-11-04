@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -42,9 +42,17 @@ kernel is `(U ⊓ V) ⊔ (Uᗮ ⊓ Vᗮ)`, the vectors on which the two projecti
   `P_U` and with the cosine angle operator.
 * `Submodule.sinAngleOperator_mul_starProjection`: `|P_U - P_V| P_U = |P_{Vᗮ} P_U|`.
 * `Submodule.norm_sinAngleOperator`: `‖|P_U - P_V|‖` is the projection gap.
+* `Submodule.singularValues_sinAngleOperator_eq_sub_starProjection`: the sine-angle
+  operator and projector difference have identical singular values.
 * `Submodule.ker_sinAngleOperator`: the kernel of the sine angle operator is
   `(U ⊓ V) ⊔ (Uᗮ ⊓ Vᗮ)`; `Submodule.sinAngleOperator_eq_zero_iff`: it vanishes exactly when
   `U = V`.
+
+## Provenance
+
+The singular-value identity is adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the
+AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## References
 
@@ -116,6 +124,19 @@ theorem norm_cosAngleOperator_apply (x : E) :
 theorem norm_sinAngleOperator_apply (x : E) :
     ‖U.sinAngleOperator V x‖ = ‖U.starProjection x - V.starProjection x‖ := by
   rw [sinAngleOperator, norm_modulus_apply, sub_apply]
+
+/-- The symmetric sine-angle operator and the difference of the two
+orthogonal projections have identical singular values. -/
+@[simp]
+theorem singularValues_sinAngleOperator_eq_sub_starProjection
+    [FiniteDimensional 𝕜 E] :
+    ((U.sinAngleOperator V : E →L[𝕜] E) : E →ₗ[𝕜] E).singularValues =
+      (((U.starProjection - V.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E)).singularValues := by
+  apply LinearMap.singularValues_eq_of_norm_apply_eq
+  intro x
+  -- Translate algebraic coercions back to continuous-map applications.
+  change ‖U.sinAngleOperator V x‖ = ‖(U.starProjection - V.starProjection) x‖
+  simpa only [sub_apply] using U.norm_sinAngleOperator_apply V x
 
 /-- The operator norm of the cosine angle operator is that of the cosine map `P_V P_U`. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
+public import TauCeti.Analysis.Normed.Ring.InfiniteProd
 public import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -34,6 +35,9 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
 * `TauCeti.tprod_one_sub_pow_ne_zero`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero.
+* `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
+  `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
+  `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))` for `‖q‖ < 1`.
 * `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
   `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
   `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
@@ -44,9 +48,15 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `0 < ‖q‖ < 1` and `w ≠ 0`.
 * `TauCeti.qTheta_neg_one`, `TauCeti.qTheta_sq_self`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` and
   `θ_{s²}(s) = (∏_{n ≥ 0} (1 - s^{2n+1}))²`.
+* `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
+  `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is
+  `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, and multiplying it by `∏_{n ≥ 1} (1 + qⁿ)`
+  gives `∏_{n ≥ 1} (1 - q^{2n})`.
 * `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow_odd`: **Euler's identity**
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
+* `TauCeti.hasDerivAt_tprod_one_sub_pow_odd`: the odd product `∏_{n ≥ 0} (1 - s^{2n+1})` has
+  derivative `-1` at `s = 0`.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
@@ -66,6 +76,17 @@ theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Summable fun n : ℕ ↦ ‖q ^ (n + 1) * w‖ := by
   simpa [norm_pow, pow_succ, mul_assoc] using
     (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
+
+/-- For `‖q‖ < 1`, `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))`. -/
+theorem norm_tprod_one_sub_pow_mul_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ‖∏' n : ℕ, (1 - q ^ (n + 1) * w)‖ ≤ Real.exp (‖q‖ * ‖w‖ / (1 - ‖q‖)) := by
+  have h := norm_tprod_one_add_le_exp_tsum (f := fun n : ℕ ↦ -(q ^ (n + 1) * w))
+    (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
+  simp only [← sub_eq_add_neg, norm_neg] at h
+  refine h.trans_eq (congrArg Real.exp ?_)
+  simp only [norm_mul, norm_pow, pow_succ]
+  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg q) hq]
+  ring
 
 /-- The **theta product** `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞`, written as
 `(1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`. The product converges for `‖q‖ < 1`; otherwise the
@@ -129,6 +150,16 @@ theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (multipliable_one_sub_pow_mul hq w).mul (multipliable_one_sub_pow_mul hq w⁻¹)
 
+/-- For `‖q‖ < 1` the theta product is bounded by
+`‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))`. -/
+theorem norm_qTheta_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ‖qTheta q w‖ ≤ ‖1 - w‖ * Real.exp (‖q‖ * (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖)) := by
+  rw [qTheta_def, (multipliable_one_sub_pow_mul hq w).tprod_mul
+    (multipliable_one_sub_pow_mul hq w⁻¹), norm_mul, norm_mul, mul_add, add_div, Real.exp_add,
+    ← norm_inv]
+  exact mul_le_mul_of_nonneg_left (mul_le_mul (norm_tprod_one_sub_pow_mul_le hq w)
+    (norm_tprod_one_sub_pow_mul_le hq w⁻¹) (norm_nonneg _) (Real.exp_pos _).le) (norm_nonneg _)
+
 /-- For `‖q‖ < 1` the theta product `θ_q(w)` is nonzero when `w` is not an integral power of
 `q`. -/
 theorem qTheta_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜} (hw : ∀ k : ℤ, w ≠ q ^ k) :
@@ -176,28 +207,32 @@ theorem tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd {q : 𝕜} (hq : ‖q‖
   rw [← (multipliable_one_sub_pow_odd hq).tprod_mul (multipliable_one_add_pow_odd hq)]
   exact tprod_congr fun n ↦ by ring
 
+/-- The Euler product `∏_{n ≥ 1} (1 - qⁿ)` split into its odd and even factors:
+`∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 - q ^ (n + 1)) =
+      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
+  have hP₂ : Multipliable fun n : ℕ ↦ 1 - (q ^ 2) ^ (n + 1) := by
+    simpa using multipliable_one_sub_pow_mul (norm_pow_lt_one hq two_ne_zero) 1
+  rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1))
+    (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
+  simp [← pow_mul, mul_add]
+
+/-- `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_add_pow_mul_tprod_one_sub_pow {q : 𝕜} (hq : ‖q‖ < 1) :
+    (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (n + 1)) =
+      ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
+  rw [← (multipliable_one_add_pow hq).tprod_mul (by simpa using multipliable_one_sub_pow_mul hq 1)]
+  exact tprod_congr fun n ↦ by ring
+
 /-- **Euler's identity** `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`. Comparing
 coefficients, partitions into distinct parts and partitions into odd parts are equinumerous. -/
 theorem tprod_one_add_pow_mul_tprod_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
     (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (2 * n + 1)) = 1 := by
-  have hq2 := norm_pow_lt_one hq two_ne_zero
-  have hP : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq 1
-  have hP₂ : Multipliable fun n : ℕ ↦ 1 - (q ^ 2) ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq2 1
-  -- Split `∏ (1 - qⁿ)` into its odd and even factors.
-  have hsplit : ∏' n : ℕ, (1 - q ^ (n + 1)) =
-      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-    rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1))
-      (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
-    simp [← pow_mul, mul_add]
-  -- `(1 + qⁿ) (1 - qⁿ) = 1 - q²ⁿ`.
-  have hmul : (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (n + 1)) =
-      ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-    rw [← (multipliable_one_add_pow hq).tprod_mul hP]
-    exact tprod_congr fun n ↦ by ring
-  rw [hsplit, ← mul_assoc] at hmul
-  exact mul_right_cancel₀ (tprod_one_sub_pow_ne_zero hq2) (hmul.trans (one_mul _).symm)
+  have hmul := tprod_one_add_pow_mul_tprod_one_sub_pow hq
+  rw [tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul hq, ← mul_assoc] at hmul
+  exact mul_right_cancel₀ (tprod_one_sub_pow_ne_zero (norm_pow_lt_one hq two_ne_zero))
+    (hmul.trans (one_mul _).symm)
 
 /-- The theta product at `w = -1`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` for `‖q‖ < 1`. -/
 theorem qTheta_neg_one {q : 𝕜} (hq : ‖q‖ < 1) :
@@ -229,6 +264,64 @@ theorem qTheta_sq_self {s : 𝕜} (hs : ‖s‖ < 1) :
   rw [h₁, h₂, sq]
 
 end NormedField
+
+section NontriviallyNormedField
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+
+open Asymptotics Filter in
+/-- Near `s = 0` the odd product is `∏_{n ≥ 0} (1 - s^{2n+1}) = 1 - s + O(s²)`: it has derivative
+`-1` at `0`. -/
+theorem hasDerivAt_tprod_one_sub_pow_odd :
+    HasDerivAt (fun s : 𝕜 ↦ ∏' n : ℕ, (1 - s ^ (2 * n + 1))) (-1) 0 := by
+  rw [hasDerivAt_iff_isLittleO_nhds_zero]
+  refine IsBigO.trans_isLittleO (g := fun s : 𝕜 ↦ s ^ 2) ?_ (isLittleO_pow_id one_lt_two)
+  refine IsBigO.of_bound 4 ?_
+  filter_upwards [Metric.closedBall_mem_nhds (0 : 𝕜) one_half_pos] with s hs
+  rw [Metric.mem_closedBall, dist_zero_right] at hs
+  have hs1 : ‖s‖ < 1 := hs.trans_lt one_half_lt_one
+  have hs2 : ‖s‖ ^ 2 < 1 := pow_lt_one₀ (norm_nonneg s) hs1 two_ne_zero
+  -- Split off the factor `1 - s`; the remaining product is `1 + O(s³)`.
+  have hsum : Summable fun n : ℕ ↦ ‖-s ^ (2 * n + 3)‖ := by
+    refine ((summable_geometric_of_lt_one (by positivity) hs2).mul_left (‖s‖ ^ 3)).congr
+      fun n ↦ ?_
+    rw [norm_neg, norm_pow, pow_add, pow_mul]
+    ring
+  have htsum : ∑' n : ℕ, ‖-s ^ (2 * n + 3)‖ ≤ 2 * ‖s‖ ^ 3 := by
+    have h : ∑' n : ℕ, ‖-s ^ (2 * n + 3)‖ = ‖s‖ ^ 3 * (1 - ‖s‖ ^ 2)⁻¹ := by
+      rw [← tsum_geometric_of_lt_one (by positivity) hs2, ← tsum_mul_left]
+      exact tsum_congr fun n ↦ by rw [norm_neg, norm_pow, pow_add, pow_mul]; ring
+    rw [h, mul_comm 2]
+    gcongr
+    rw [inv_le_comm₀ (by linarith) two_pos]
+    nlinarith [norm_nonneg s]
+  have hR : ‖∏' n : ℕ, (1 + -s ^ (2 * n + 3)) - 1‖ ≤ 4 * ‖s‖ ^ 3 := by
+    have hx : |∑' n : ℕ, ‖-s ^ (2 * n + 3)‖| ≤ 1 := by
+      rw [abs_of_nonneg (tsum_nonneg fun _ ↦ norm_nonneg _)]
+      nlinarith [pow_le_pow_left₀ (norm_nonneg s) hs 3]
+    refine (norm_tprod_one_add_sub_one_le hsum).trans ?_
+    have := Real.abs_exp_sub_one_le hx
+    rw [abs_of_nonneg (tsum_nonneg fun _ ↦ norm_nonneg _)] at this
+    linarith [le_abs_self (Real.exp (∑' n : ℕ, ‖-s ^ (2 * n + 3)‖) - 1)]
+  have hsplit : ∏' n : ℕ, (1 - s ^ (2 * n + 1)) =
+      (1 - s) * ∏' n : ℕ, (1 + -s ^ (2 * n + 3)) := by
+    rw [tprod_eq_zero_mul' (f := fun n : ℕ ↦ 1 - s ^ (2 * n + 1))
+      (by simpa [sub_eq_add_neg, mul_add, add_assoc] using
+        multipliable_one_add_of_summable hsum)]
+    simp [sub_eq_add_neg, mul_add, add_assoc]
+  have h0 : ∏' n : ℕ, (1 - (0 : 𝕜) ^ (2 * n + 1)) = 1 := by simp
+  simp only [zero_add, h0, hsplit, smul_eq_mul, mul_neg, mul_one, sub_neg_eq_add]
+  calc ‖(1 - s) * ∏' n : ℕ, (1 + -s ^ (2 * n + 3)) - 1 + s‖
+      = ‖1 - s‖ * ‖∏' n : ℕ, (1 + -s ^ (2 * n + 3)) - 1‖ := by
+        rw [← norm_mul]; congr 1; ring
+    _ ≤ 2 * (4 * ‖s‖ ^ 3) := by
+        gcongr
+        exact (norm_sub_le _ _).trans (by rw [norm_one]; linarith)
+    _ ≤ 4 * ‖s ^ 2‖ := by
+        rw [norm_pow]
+        nlinarith [mul_le_mul_of_nonneg_left hs (pow_nonneg (norm_nonneg s) 2)]
+
+end NontriviallyNormedField
 
 section LocallyUniform
 

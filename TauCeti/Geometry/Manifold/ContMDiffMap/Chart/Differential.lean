@@ -17,9 +17,11 @@ used when inverting the differential of a diffeomorphism. The proof specializes
 `ContMDiffMap.tendsto_iteratedFDerivWithin_extChartAt` to order one and uses Mathlib's
 `continuousMultilinearCurryFin1` to obtain a continuous linear operator.
 
-Second coordinate derivatives, as bilinear operators, converge uniformly on compact subsets of
-the chart target (`TauCeti.tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt`). This is the
-form of `C²` closeness used for the persistence of nondegenerate critical points.
+First coordinate derivatives, as linear operators, and second coordinate derivatives, as bilinear
+operators, converge uniformly on compact subsets of the chart target
+(`TauCeti.tendstoUniformlyOn_fderivWithin_extChartAt`,
+`TauCeti.tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt`). This is the form of `C²`
+closeness used for the persistence of nondegenerate critical points.
 -/
 
 public section
@@ -38,6 +40,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
 
+omit [LocallyCompactSpace E] [IsManifold I n M] in
+/-- On the extended chart target, the first iterated derivative is the differential, read through
+`continuousMultilinearCurryFin1`. -/
+private theorem continuousMultilinearCurryFin1_iteratedFDerivWithin_extChartAt_target {x : M}
+    (f : E → F) {w : E} (hw : w ∈ (extChartAt I x).target) :
+    continuousMultilinearCurryFin1 𝕜 E F
+        (iteratedFDerivWithin 𝕜 1 f (extChartAt I x).target w) =
+      fderivWithin 𝕜 f (extChartAt I x).target w := by
+  ext v
+  exact iteratedFDerivWithin_one_apply ((uniqueDiffOn_extChartAt_target x) w hw) _
+
 /-- Coordinate differentials vary continuously in the map and the chart point. -/
 theorem tendsto_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y : N} {w₀ : E}
     (hn : 1 ≤ n) (hw₀ : w₀ ∈ (extChartAt I x).target)
@@ -48,19 +61,28 @@ theorem tendsto_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y 
       (𝓝 f₀ ×ˢ 𝓝[(extChartAt I x).target] w₀)
       (𝓝 (fderivWithin 𝕜 (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
         (extChartAt I x).target w₀)) := by
-  let c := continuousMultilinearCurryFin1 𝕜 E F
-  have hc (f : E → F) {w : E} (hw : w ∈ (extChartAt I x).target) :
-      c (iteratedFDerivWithin 𝕜 1 f (extChartAt I x).target w) =
-        fderivWithin 𝕜 f (extChartAt I x).target w := by
-    ext v
-    exact iteratedFDerivWithin_one_apply ((uniqueDiffOn_extChartAt_target x) w hw) _
-  have h := c.continuous.continuousAt.tendsto.comp
+  have h := (continuousMultilinearCurryFin1 𝕜 E F).continuous.continuousAt.tendsto.comp
     (ContMDiffMap.tendsto_iteratedFDerivWithin_extChartAt hw₀ hf₀ hn)
-  rw [hc _ hw₀] at h
+  rw [continuousMultilinearCurryFin1_iteratedFDerivWithin_extChartAt_target _ hw₀] at h
   apply h.congr'
   filter_upwards [prod_mem_prod (Filter.univ_mem : Set.univ ∈ 𝓝 f₀)
     self_mem_nhdsWithin] with p hp
-  exact hc _ hp.2
+  exact continuousMultilinearCurryFin1_iteratedFDerivWithin_extChartAt_target _ hp.2
+
+/-- On a compact subset of a source chart target which `f₀` maps into a target chart, the
+coordinate differentials of maps near `f₀` converge uniformly to those of `f₀`. -/
+theorem tendstoUniformlyOn_fderivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M} {y : N}
+    {C : Set E} (hn : 1 ≤ n) (hC : IsCompact C) (hCx : C ⊆ (extChartAt I x).target)
+    (hCy : ∀ w ∈ C, f₀ ((extChartAt I x).symm w) ∈ (extChartAt J y).source) :
+    TendstoUniformlyOn (fun (f : C^n⟮I, M; J, N⟯) w ↦
+        fderivWithin 𝕜 (extChartAt J y ∘ f ∘ (extChartAt I x).symm) (extChartAt I x).target w)
+      (fun w ↦ fderivWithin 𝕜 (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
+        (extChartAt I x).target w) (𝓝 f₀) C := by
+  have hc (f : E → F) {w : E} (hw : w ∈ C) :=
+    continuousMultilinearCurryFin1_iteratedFDerivWithin_extChartAt_target f (hCx hw)
+  exact (((continuousMultilinearCurryFin1 𝕜 E F).isometry.uniformContinuous.comp_tendstoUniformlyOn
+    (ContMDiffMap.tendstoUniformlyOn_iteratedFDerivWithin_extChartAt hC hCx hCy hn)).congr
+      (Eventually.of_forall fun _ _ hw ↦ hc _ hw)).congr_right fun _ hw ↦ hc _ hw
 
 /-- On a compact subset of a source chart target which `f₀` maps into a target chart, the second
 coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`. -/

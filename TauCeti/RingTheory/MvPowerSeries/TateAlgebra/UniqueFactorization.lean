@@ -62,7 +62,7 @@ private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
   refine { irreducible_iff_prime := fun {f} ↦ ⟨fun hf ↦ ?_, Prime.irreducible⟩ }
   -- Make `f` distinguished in `Y`, and pass to its image `g` in `S = R⟨Y⟩`.
   obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf.ne_zero
-  let Φ : Tate (Option σ) ≃+* S := Huber.restrictedOptionEquiv
+  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv.toRingEquiv
   let E : Tate (Option σ) ≃+* S := (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Φ
   have hE : E f = Φ (e f) := by simp [E]
   rw [← MulEquiv.prime_iff E, hE]
@@ -70,7 +70,7 @@ private theorem uniqueFactorizationMonoid_option {σ : Type*} [Finite σ]
   set g : S := Φ (e f)
   -- Weierstrass preparation: `g = u * ι ω` with `u` a unit and `ω` monic.
   obtain ⟨u, ω, hu', hm, hmul⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hu zero_lt_one g.2
-  have hg : g = u * ι ω := Subtype.ext (by simpa [ι] using hmul.symm)
+  have hg : g = u * ι ω := Subtype.ext (by simpa [g, Φ, ι] using hmul.symm)
   have hassoc : Associated (ι ω) g := by
     rw [hg, mul_comm]
     exact associated_mul_unit_right _ _ hu'

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 
@@ -30,6 +31,8 @@ restriction is the composite of the embeddings. For an extension `L / k`, a plac
 a place `v` of `k` exactly when its restriction to `k` is `v`. If `w` lies over `v`, then
 `w.embedding` and its conjugate restrict to `v.embedding` and its conjugate, in one order or the
 other.
+
+An infinite place is archimedean, since it takes the value `2` at `2`.
 
 ## Main results
 
@@ -67,6 +70,7 @@ other.
 * `NumberField.InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or`: the
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
+* `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
 -/
 
 public section
@@ -309,5 +313,12 @@ theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq
   · refine .inr ⟨?_, h⟩
     rw [← h, ComplexEmbedding.conjugate_comp]
     exact (ComplexEmbedding.involutive_conjugate k _).symm
+
+/-- An infinite place is archimedean: it takes the value `2` at `2`. -/
+theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.1 := by
+  intro h
+  have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
+  rw [← InfinitePlace.coe_apply, v.map_natCast] at this
+  norm_num at this
 
 end NumberField

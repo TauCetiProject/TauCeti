@@ -43,6 +43,8 @@ polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p �
   homomorphism.
 * `Derivation.taylorExp_apply_eq_sum`: any iterate killing `a` gives a finite expansion of
   `taylorExp D a`.
+* `Derivation.taylorExp_apply_of_apply_eq_zero`: the Taylor exponential fixes the elements killed
+  by the derivation.
 * `Derivation.taylorExp_apply_mem`: the Taylor exponential preserves every ideal mapped into
   itself by the derivation.
 * `Derivation.map_taylorExp`: Taylor exponentials are natural for additive maps intertwining
@@ -106,8 +108,8 @@ private theorem coeff_taylorPolynomial (a : A) (n : ℕ) :
   · rfl
   · rw [mem_range, not_lt] at h
     have hfind : (D.toLinearMap ^ Nat.find (hD a)) a = 0 := by
-      simpa [Module.End.pow_apply] using Nat.find_spec (hD a)
-    rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hfind, smul_zero]
+      simpa [pow_apply_eq_iterate] using Nat.find_spec (hD a)
+    rw [← coeFn_coe, ← pow_apply_eq_iterate, Module.End.pow_map_zero_of_le h hfind, smul_zero]
 
 /-- The **Taylor expansion** `a ↦ ∑ (Dⁿ a / n!) Xⁿ` of a locally nilpotent derivation `D`, an
 algebra homomorphism into `A[X]`. Its evaluation at `X = 1` is the Taylor exponential. -/
@@ -149,8 +151,8 @@ theorem support_taylorExpPolynomial_subset_range {a : A} {n : ℕ} (hn : D^[n] a
   rw [mem_support_iff, coeff_taylorExpPolynomial] at hi
   rw [mem_range]
   by_contra! h
-  have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [Module.End.pow_apply] using hn
-  rw [← coeFn_coe, ← Module.End.pow_apply, Module.End.pow_map_zero_of_le h hn',
+  have hn' : (D.toLinearMap ^ n) a = 0 := by simpa [pow_apply_eq_iterate] using hn
+  rw [← coeFn_coe, ← pow_apply_eq_iterate, Module.End.pow_map_zero_of_le h hn',
     smul_zero] at hi
   exact hi rfl
 
@@ -181,6 +183,12 @@ exponential of `a` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     taylorExp D hD a = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] a := by
   simpa using D.aeval_taylorExpPolynomial_eq_sum hD 1 hn
+
+/-- **Constants of the derivation are fixed by its Taylor exponential**: if `D` kills `a`, then
+the Taylor exponential of `D` fixes `a`. -/
+theorem taylorExp_apply_of_apply_eq_zero {a : A} (ha : D a = 0) : taylorExp D hD a = a := by
+  rw [taylorExp_apply_eq_sum D hD (n := 1) (by simpa using ha)]
+  simp
 
 /-- The Taylor exponential of the zero derivation is the identity. -/
 @[simp]

@@ -17,7 +17,8 @@ or a determinant pencil `det (1 + c • (B * _))` by congruating the test matrix
 transpose instead. These identities transport Wishart trace transforms along congruence. The file
 also records the scalar regrouping that produces a congruence in the first place: expanding the
 two weights of a doubly indexed family along the rows of `M` replaces the weight matrix by its
-congruate.
+congruate. The basis substitution `r ↦ r + a + b` has determinant one when `r` differs
+from `a` and `b`; its action on a bilinear form is computed entrywise below.
 
 ## Main results
 
@@ -29,6 +30,9 @@ congruate.
   instances of the Weinstein--Aronszajn identity `Matrix.det_one_add_mul_comm`.
 * `Matrix.submatrix_one_mul_mul_submatrix_one` — congruence by a selection matrix is the
   corresponding submatrix.
+* `Matrix.det_one_add_vecMulVec_single_add_single` and
+  `Matrix.one_add_vecMulVec_single_add_single_mul_mul_transpose_apply` — the determinant and
+  entries of congruence under the basis substitution `r ↦ r + a + b`.
 
 ## References
 
@@ -114,5 +118,31 @@ theorem sum_sum_smul_congruence {m n R P : Type*} [Fintype m] [Fintype n] [CommS
         refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
         simp only [← Finset.sum_smul]
         rw [hcoef a b]
+
+section BasisSubstitution
+
+variable {R κ : Type*} [CommRing R] [Fintype κ] [DecidableEq κ]
+
+/-- Replacing the basis vector `r` by `r + a + b` is unimodular. -/
+theorem det_one_add_vecMulVec_single_add_single {r a b : κ} (ha : r ≠ a) (hb : r ≠ b) :
+    (1 + vecMulVec (Pi.single r (1 : R)) (Pi.single a 1 + Pi.single b 1)).det = 1 := by
+  rw [vecMulVec_eq Unit, det_one_add_replicateCol_mul_replicateRow, dotProduct_single]
+  simp [Ne.symm ha, Ne.symm hb]
+
+/-- The entries of a bilinear form after replacing the basis vector `r` by `r + a + b`. -/
+theorem one_add_vecMulVec_single_add_single_mul_mul_transpose_apply
+    (M : Matrix κ κ R) (r a b x y : κ) :
+    ((1 + vecMulVec (Pi.single r 1) (Pi.single a 1 + Pi.single b 1)) * M *
+        (1 + vecMulVec (Pi.single r 1) (Pi.single a 1 + Pi.single b 1))ᵀ : Matrix κ κ R) x y =
+      M x y + (if x = r then M a y + M b y else 0) + (if y = r then M x a + M x b else 0) +
+        (if x = r ∧ y = r then M a a + M a b + M b a + M b b else 0) := by
+  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, transpose_add,
+    transpose_one, transpose_vecMulVec, vecMulVec_mul, mul_vecMulVec, Matrix.add_apply,
+    vecMulVec_apply, add_vecMul, mulVec_add, single_one_vecMul, mulVec_single_one,
+    Pi.add_apply, Matrix.row, Matrix.col, Pi.single_apply, mul_one]
+  split_ifs <;> simp_all
+  ring
+
+end BasisSubstitution
 
 end Matrix

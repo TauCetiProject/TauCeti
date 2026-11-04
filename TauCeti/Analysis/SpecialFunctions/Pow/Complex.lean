@@ -11,6 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -31,21 +33,38 @@ Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
 quotient tends to half that second derivative. These coefficients describe the integrand of
 a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 
+For a nonpositive real exponent `r`, the principal power `(t + x) ^ r` of a translate of `x` along
+the positive real axis is `O(t ^ r)` for `t > 0` when `x ∈ slitPlane ∪ {0}`, and bounded, indeed
+`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. These bounds control the integrands of improper
+integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`.
+
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
+* `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
+  conjugation of the exponent.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `TauCeti.cpow_mul_inv` -- multiplying a principal power by the inverse of its base lowers the
+  exponent by one, including at the base `0`.
+* `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
+  `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
+  `r ≤ 0` along the positive real axis.
+* `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
+  continuous in the real variable `t > 0`.
+* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
+* `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
+  `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
 
 public section
 
-open Complex Filter
+open Complex ComplexConjugate Filter
 open scoped Topology
 
 namespace TauCeti
@@ -74,6 +93,13 @@ theorem ofReal_pow_cpow {r : ℝ} (hr : 0 ≤ r) (n : ℕ) (s : ℂ) :
     ((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s) := by
   have harg : (r : ℂ).arg = 0 := arg_ofReal_of_nonneg hr
   rw [cpow_nat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+
+/-- A principal complex power of a nonnegative real commutes with conjugation of the exponent:
+`(r : ℂ) ^ conj s = conj ((r : ℂ) ^ s)`.  The argument of `(r : ℂ)` is `0`, so this is
+`Complex.cpow_conj` without its branch hypothesis. -/
+theorem ofReal_cpow_conj {r : ℝ} (hr : 0 ≤ r) (s : ℂ) :
+    (r : ℂ) ^ conj s = conj ((r : ℂ) ^ s) := by
+  rw [Complex.cpow_conj _ _ (by simp [arg_ofReal_of_nonneg hr, Real.pi_pos.ne]), conj_ofReal]
 
 /-- A principal complex power with nonzero base takes a finite sum of exponents to the
 corresponding product. -/
@@ -199,6 +225,89 @@ theorem tendsto_prod_one_sub_mul_cpow_sub_linear_div_sq {ι : Type*} [Fintype ι
   field_simp
   ring
 
+/-- Multiplying a principal power by the inverse of its base lowers the exponent by one:
+`w ^ s * w⁻¹ = w ^ (s - 1)`. Away from `s = 1` this also holds at `w = 0`, where both sides
+vanish. -/
+theorem cpow_mul_inv {s : ℂ} (hs : s ≠ 1) (w : ℂ) : w ^ s * w⁻¹ = w ^ (s - 1) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · rw [inv_zero, mul_zero, zero_cpow (sub_ne_zero.mpr hs)]
+  · rw [cpow_sub _ _ hw, cpow_one, div_eq_mul_inv]
+
+/-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
+`O(t ^ r)` for `t > 0`. -/
+theorem exists_norm_ofReal_add_cpow_le_mul_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {r : ℝ}
+    (hr : r ≤ 0) : ∃ C, ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C * t ^ r := by
+  simp only [Complex.norm_cpow_real]
+  rcases hx with hx | hx
+  · obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+    refine ⟨c ^ r, fun t ht => ?_⟩
+    have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by
+      have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht.le⟩
+      rw [add_comm]
+      nlinarith
+    rw [← Real.mul_rpow hc.le ht.le]
+    exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 hr
+  · refine ⟨1, fun t ht => ?_⟩
+    rw [Set.mem_singleton_iff.mp hx, add_zero, Complex.norm_real,
+      Real.norm_of_nonneg ht.le, one_mul]
+
+/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is bounded
+for `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ} (hr : r ≤ 0) :
+    ∃ C, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C := by
+  simp only [Complex.norm_cpow_real]
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+  refine ⟨c ^ r, fun t ht => ?_⟩
+  have h1 : c ≤ ‖(t : ℂ) + x‖ := by
+    have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht⟩
+    rw [add_comm]
+    nlinarith
+  exact Real.rpow_le_rpow_of_nonpos hc h1 hr
+
+/-- For `x ∈ slitPlane` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
+`O((1 + t) ^ r)` for `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ slitPlane) {r : ℝ}
+    (hr : r ≤ 0) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + x) ^ (r : ℂ)‖ ≤ C * (1 + t) ^ r := by
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hx
+  refine ⟨c ^ r, by positivity, fun t ht => ?_⟩
+  rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
+  exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) hr
+
+/-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t > 0`. -/
+theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s : ℂ) :
+    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ioi 0) := fun _ ht =>
+  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
+    (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
+
 end TauCeti
+
+namespace Complex
+
+/-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
+theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · rw [← cpow_add _ _ hw]
+    norm_num [cpow_neg_one]
+
+/-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
+tends to `∞`. -/
+theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
+  -- `‖t + x‖ ≥ t - ‖x‖` by the triangle inequality.
+  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
+    refine tendsto_atTop_mono' atTop ?_ (tendsto_atTop_add_const_right atTop (-‖x‖) tendsto_id)
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    have h := norm_add_le ((t : ℂ) + x) (-x)
+    rw [add_neg_cancel_right, norm_neg, Complex.norm_real, Real.norm_of_nonneg ht] at h
+    simp only [id]
+    linarith
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
+  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
+  exact (tendsto_rpow_neg_atTop hs).comp hnorm
+
+end Complex
 
 end

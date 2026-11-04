@@ -63,6 +63,8 @@ results follows AINTLIB's `Bounded.lean`; its proofs were not used.
   generally monoids with zero, is bounded exactly when both of its projections are.
 * `TauCeti.Huber.IsBounded.smul`: a bounded set of scalars times a bounded subset of a module is
   bounded.
+* `Subring.not_isUnit_of_isTopologicallyNilpotent`: a topologically nilpotent element of a
+  bounded subring of a nonzero Hausdorff ring is not invertible in that subring.
 
 ## Implementation notes
 
@@ -302,6 +304,20 @@ theorem IsBounded.image_of_isOpenMap {F : Type*} [FunLike F M N] [ZeroHomClass F
 
 end Image
 
+/-- The inverse image of a bounded set under a subring inclusion is bounded for the subspace
+topology. -/
+theorem _root_.Subring.isBounded_preimage_subtype {R : Type*} [Ring R] [TopologicalSpace R]
+    (S : Subring R) {s : Set R} (hs : IsBounded s) :
+    IsBounded (Subtype.val ⁻¹' s : Set S) := by
+  rw [isBounded_iff] at hs ⊢
+  intro U hU
+  rw [nhds_induced] at hU
+  obtain ⟨W, hW, hWU⟩ := Filter.mem_comap.mp hU
+  obtain ⟨V, hV, hVW⟩ := hs W hW
+  refine ⟨Subtype.val ⁻¹' V, continuous_subtype_val.continuousAt.preimage_mem_nhds hV, ?_⟩
+  rintro _ ⟨x, hx, y, hy, rfl⟩
+  exact hWU (hVW (Set.mul_mem_mul hx hy))
+
 section Prod
 
 variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N]
@@ -371,5 +387,19 @@ theorem isBounded_image_ringEquiv_iff (e : A ≃+* B) (he : Continuous e) (he' :
     fun h ↦ h.image_ringEquiv e he he'⟩
 
 end Transport
+
+/-- A topologically nilpotent element of a bounded subring of a nonzero Hausdorff ring
+cannot be a unit of the subring. Its inverse powers would contradict boundedness. -/
+theorem _root_.Subring.not_isUnit_of_isTopologicallyNilpotent {A : Type*} [Ring A]
+    [TopologicalSpace A] [T2Space A] [Nontrivial A] (S : Subring A)
+    (hS : IsBounded (S : Set A)) {a : S} (ha : IsTopologicallyNilpotent (a : A)) :
+    ¬ IsUnit a := by
+  rintro ⟨u, rfl⟩
+  have ht := hS.tendsto_mul ha (Filter.Eventually.of_forall fun n ↦
+    (u⁻¹ ^ n).val.property)
+  have heq (n : ℕ) : ((u.val : S) : A) ^ n * (((u⁻¹ ^ n).val : S) : A) = 1 := by
+    simpa using congrArg (fun x : S ↦ (x : A)) (Units.mul_inv (u ^ n))
+  simp only [heq] at ht
+  exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds ht)
 
 end TauCeti.Huber

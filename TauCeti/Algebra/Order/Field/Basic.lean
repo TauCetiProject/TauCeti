@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-!
 # Inequalities in ordered fields
@@ -26,19 +27,31 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`.
+It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`, and how
+to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
 converts between the two usual forms of an approximation `x ≈ m / q`.
 
+It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + y δ) / b` when
+`(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, and the comparison
+`2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
+profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`.
+
 ## Main results
 
+* `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
+  `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
   `2 / b`.
 * `TauCeti.le_of_sq_div_sub_sq_div_le`: an upper bound on `a` from `a ≤ R + b` and an upper bound
   on `b² / (2τ) - a² / (2τ₀)`, for `0 < τ < τ₀`.
 * `TauCeti.mul_div_lt_self`: `d * e / a < d` for `0 < d`, `0 < a` and `e < a`.
 * `TauCeti.mul_abs_mul_sub_eq_sq_mul_abs_sub_div`: `q |q x - m| = q² |x - m / q|` for `q > 0`.
+* `TauCeti.abs_div_sub_div_le`: `|x / a - y / b| ≤ 2 (e + y δ) / b` for a relative perturbation
+  `(1 - δ) b ≤ a ≤ b` of the denominator with `δ ≤ 1 / 2` and `|x - y| ≤ e`.
+* `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
+  `0 < t` and `0 < r ≤ ρ`.
 -/
 
 public section
@@ -107,4 +120,53 @@ theorem mul_abs_mul_sub_eq_sq_mul_abs_sub_div {α : Type*} [Field α] [LinearOrd
   rw [h, abs_div, abs_of_pos hq]
   field_simp
 
+/-- A perturbation estimate for quotients: if `(1 - δ) b ≤ a ≤ b` with `δ ≤ 1 / 2` and
+`|x - y| ≤ e`, then `|x / a - y / b| ≤ 2 (e + y δ) / b`. -/
+theorem abs_div_sub_div_le {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {x y a b e δ : α} (hb : 0 < b) (hy : 0 ≤ y) (hδ : δ ≤ 1 / 2)
+    (hab : (1 - δ) * b ≤ a) (hab' : a ≤ b) (hxy : |x - y| ≤ e) :
+    |x / a - y / b| ≤ 2 * (e + y * δ) / b := by
+  have hδ0 : 0 ≤ δ := by nlinarith
+  have ha : b ≤ 2 * a := by nlinarith
+  have he : 0 ≤ e + y * δ := add_nonneg ((abs_nonneg _).trans hxy) (mul_nonneg hy hδ0)
+  have h1 : |x * b - a * y| ≤ (e + y * δ) * b := by
+    calc
+      |x * b - a * y| = |(x - y) * b + y * (b - a)| := by ring_nf
+      _ ≤ |(x - y) * b| + |y * (b - a)| := abs_add_le _ _
+      _ = |x - y| * b + y * (b - a) := by
+        rw [abs_mul, abs_of_pos hb, abs_of_nonneg (mul_nonneg hy (by linarith))]
+      _ ≤ e * b + y * (δ * b) :=
+        add_le_add (mul_le_mul_of_nonneg_right hxy hb.le)
+          (mul_le_mul_of_nonneg_left (by linarith) hy)
+      _ = (e + y * δ) * b := by ring
+  rw [div_sub_div _ _ (by linarith : a ≠ 0) hb.ne', abs_div, abs_of_pos (by nlinarith : 0 < a * b),
+    div_le_div_iff₀ (by nlinarith) hb]
+  calc
+    |x * b - a * y| * b ≤ (e + y * δ) * b * b := mul_le_mul_of_nonneg_right h1 hb.le
+    _ ≤ (e + y * δ) * b * (2 * a) := mul_le_mul_of_nonneg_left ha (mul_nonneg he hb.le)
+    _ = 2 * (e + y * δ) * (a * b) := by ring
+
+/-- For `0 < t` and `0 < r ≤ ρ`, the profile `2 t / (t² + ρ²)` of scale `t` is at most `2 t / r`
+times the profile `2 r / (r² + ρ²)` of scale `r`. -/
+theorem two_mul_div_add_sq_le_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t r ρ : α} (ht : 0 < t) (hr : 0 < r) (hρ : r ≤ ρ) :
+    2 * t / (t ^ 2 + ρ ^ 2) ≤ 2 * t / r * (2 * r / (r ^ 2 + ρ ^ 2)) := by
+  rw [div_mul_div_comm, mul_comm r, ← mul_assoc, mul_div_mul_right _ _ hr.ne',
+    div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [mul_le_mul hρ hρ hr.le (hr.le.trans hρ)]
+
 end TauCeti
+
+/-- If `w` is bounded above on `K` and every positive `ε` admits a point `z ∈ K` with
+`f z ≤ m` and `f x + ε * w x ≤ f z + ε * w z`, then `f x ≤ m`. No sign condition on the
+barrier or its upper bound is needed. -/
+theorem BddAbove.le_of_forall_pos_exists_add_mul_le {X α : Type*}
+    [Field α] [LinearOrder α] [IsStrictOrderedRing α] {K : Set X} {w : X → α}
+    (hw : BddAbove (w '' K)) {f : X → α} {m : α} {x : X}
+    (H : ∀ ε : α, 0 < ε → ∃ z ∈ K, f x + ε * w x ≤ f z + ε * w z ∧ f z ≤ m) :
+    f x ≤ m := by
+  obtain ⟨C, hC⟩ := hw
+  refine TauCeti.le_of_forall_pos_mul_le (C := C - w x) fun ε hε => ?_
+  obtain ⟨z, hzK, hxz, hfz⟩ := H ε hε
+  have hwzC := mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
+  nlinarith

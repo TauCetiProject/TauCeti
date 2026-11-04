@@ -16,29 +16,20 @@ comodules over a coalgebra over a commutative ring available from a finite-comod
 The category is a full subcategory of all comodules, so Mathlib transfers the preadditive
 structure from `ComoduleCat`. The forgetful functor to `ModuleCat R` is additive.
 
-It also records concrete simp lemmas computing the zero, addition, negation, and subtraction of
-finitely generated comodule morphisms through the underlying ambient comodule morphism `.hom`,
-and pointwise on elements, so downstream code never has to unfold the full-subcategory transfer.
-
-This is a small Layer 1 prerequisite for the reductive-groups roadmap's finite-dimensional
-representation category: additive hom-sets are needed before tensor products, duals, and
-Tannakian reconstruction can be built on finitely generated comodules.
+It also records concrete simp lemmas computing negation and subtraction through the underlying
+ambient comodule morphism `.hom` and pointwise on elements. The additive monoid, scalar
+multiplication, and their corresponding simp lemmas are available over a commutative semiring
+in `Finite.Basic`.
 
 ## Main declarations
 
-* `TauCeti.FGComoduleCat.hom_zero`, `hom_add`, `hom_neg`, `hom_sub`: the additive-group
-  operations on finitely generated comodule morphisms agree with those of the ambient
-  `ComoduleCat` morphism underneath.
-* `TauCeti.FGComoduleCat.zero_apply`, `add_apply`, `neg_apply`, `sub_apply`: the same
-  operations computed pointwise on elements.
+* `TauCeti.FGComoduleCat.hom_neg`, `hom_sub`: negation and subtraction agree with those
+  of the ambient `ComoduleCat` morphism underneath.
+* `TauCeti.FGComoduleCat.neg_apply`, `sub_apply`: the same operations computed pointwise.
 
 ## References
 
-This supplies additive-category bookkeeping for
-`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
-algebra": the finite-dimensional comodule category should have additive hom-sets before the
-rigid monoidal representation category is developed. The transfer mechanism is Mathlib's
-`ObjectProperty.FullSubcategory` preadditive instance.
+The transfer mechanism is Mathlib's `ObjectProperty.FullSubcategory` preadditive instance.
 -/
 
 public section
@@ -63,16 +54,6 @@ instance : (forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive 
 
 variable {M N : FGComoduleCat.{u, v, w} R C}
 
-/-- The ambient comodule morphism underlying the zero morphism is the zero morphism. -/
-@[simp]
-theorem hom_zero : (0 : M ⟶ N).hom = 0 :=
-  rfl
-
-/-- The ambient comodule morphism underlying a sum is the sum of the underlying morphisms. -/
-@[simp]
-theorem hom_add (f g : M ⟶ N) : (f + g).hom = f.hom + g.hom :=
-  rfl
-
 /-- The ambient comodule morphism underlying a negation is the negation of the underlying
 morphism. -/
 @[simp]
@@ -83,16 +64,6 @@ theorem hom_neg (f : M ⟶ N) : (-f).hom = -f.hom :=
 morphisms. -/
 @[simp]
 theorem hom_sub (f g : M ⟶ N) : (f - g).hom = f.hom - g.hom :=
-  rfl
-
-/-- The zero morphism acts as the zero function. -/
-@[simp]
-theorem zero_apply (m : M) : (0 : M ⟶ N) m = 0 :=
-  rfl
-
-/-- Addition of morphisms acts by pointwise addition. -/
-@[simp]
-theorem add_apply (f g : M ⟶ N) (m : M) : (f + g) m = f m + g m :=
   rfl
 
 /-- Negation of morphisms acts by pointwise negation. -/

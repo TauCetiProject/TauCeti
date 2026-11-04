@@ -136,9 +136,9 @@ finite-dimensional real Lie group carries embedded-Lie-subgroup data whose model
 the Lie algebra `TauCeti.Lie.lieSubalgebraOfSubgroup` of the subgroup. -/
 theorem nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     Nonempty (EmbeddedLieSubgroupData I K (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   obtain ⟨q, Φ, _, h1, hslice, hΦ, hΦsymm⟩ :=
     exists_isSliceChart_of_isClosed_subgroup (I := I) hK
@@ -156,7 +156,7 @@ group is an embedded Lie subgroup: it is a Lie group for its subspace topology, 
 is smooth with everywhere split differential. -/
 theorem isEmbeddedLieSubgroup_of_isClosed {K : Subgroup G} (hK : IsClosed (K : Set G)) :
     IsEmbeddedLieSubgroup (I := I) K := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
   exact d.isEmbeddedLieSubgroup
 

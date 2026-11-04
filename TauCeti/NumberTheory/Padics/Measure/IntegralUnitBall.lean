@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients
+public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Basic
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.NumberTheory.Padics.Measure.Dirac

@@ -13,14 +13,8 @@ public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Basic
 This file packages the standard unit-disc automorphisms from
 `TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Basic` as homeomorphisms of
 `Complex.UnitDisc`.  The underlying map is the existing equivalence
-`unitDiscStandardAutomorphismEquiv`; this file adds the continuity API needed before treating
-the disc automorphisms as a topological automorphism group in the Schwarz--Pick layer of the
-conformal-mapping roadmap.
-
-This L2 material is coordinated with the upstream Mathlib RMT effort in
-leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
-work in `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`;
-this file only packages Tau Ceti's existing unit-disc automorphism formulas topologically.
+`unitDiscStandardAutomorphismEquiv`; this file adds the continuity API needed to treat
+the disc automorphisms as a topological automorphism group.
 -/
 
 public section

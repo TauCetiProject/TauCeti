@@ -59,11 +59,15 @@ irreducible by.
   algebra map exhausts the endomorphisms is irreducible.
 * `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
   representation whose equivariant endomorphisms are the scalars is irreducible.
+* `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one`: Schur's lemma for an
+  involutive equivariant endomorphism, over any field.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
 * `Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`: consequently the
   monoid algebra, acting on the left factor of a nonzero tensor in `V ⊗ M`, reaches every
   `v ⊗ m` for one fixed nonzero `m`.
+* `Representation.exists_ne_zero_forall_tmul_mem`: so a nonzero subspace of `V ⊗ M` stable under
+  the action on the left factor contains every `v ⊗ m` for one fixed nonzero `m`.
 * `Representation.exists_isAtom_le`: every nonzero finite-dimensional subrepresentation
   contains an atom, so the atom criterion always has something to apply to.
 * `Representation.exists_isAtom`: in particular a nonzero finite-dimensional
@@ -206,7 +210,7 @@ theorem isIrreducible_of_finrank_intertwiningMap_self_eq_one {ρ : Representatio
   -- an idempotent endomorphism is a scalar `c` with `c * c = c`, hence `0` or `1`
   refine (isIndecomposableModule_of_forall_isIdempotentElem fun f hf => ?_).isSimpleModule
   let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' _ hid).mp h (e.symm f)
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hid).mp h (e.symm f)
   have hf' : f = algebraMap k _ c := by
     rw [← e.apply_symm_apply f, ← hc, ← AlgEquiv.commutes e, IntertwiningMap.algebraMap_apply]
   have hcc : IsIdempotentElem c := by
@@ -215,6 +219,18 @@ theorem isIrreducible_of_finrank_intertwiningMap_self_eq_one {ρ : Representatio
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcc with rfl | rfl
   · exact Or.inl (by simp [hf'])
   · exact Or.inr (by simp [hf'])
+
+/-- **An involutive equivariant endomorphism of an irreducible representation is `±1`.** By Schur's
+lemma the equivariant endomorphisms of an irreducible representation form a division ring, in which
+`f * f = 1` forces `f = 1` or `f = -1`. No algebraic closure or finite dimension is needed. -/
+theorem IsIrreducible.eq_one_or_eq_neg_one_of_mul_self_eq_one {ρ : Representation k G V}
+    (hρ : ρ.IsIrreducible) {f : IntertwiningMap ρ ρ} (hf : f * f = 1) : f = 1 ∨ f = -1 := by
+  classical
+  let := hρ
+  let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
+  have he : e f * e f = 1 := by rw [← map_mul, hf, map_one]
+  exact (mul_self_eq_one_iff.mp he).imp
+    (fun h ↦ e.injective (by simpa using h)) fun h ↦ e.injective (by simpa using h)
 
 open scoped MonoidAlgebra in
 /-- **Burnside density theorem.** The monoid algebra of a finite-dimensional irreducible
@@ -285,6 +301,30 @@ theorem exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul
     | tmul x m => simp [_root_.TensorProduct.smul_tmul]
     | add w w' hw hw' => simp only [map_add, hw, hw', _root_.TensorProduct.tmul_add]
   exact ⟨r, by rw [hr, key]⟩
+
+/-- **Burnside density inside an invariant subspace.** Let `ρ` be a finite-dimensional irreducible
+representation over an algebraically closed field and `M` any vector space. A nonzero subspace `P`
+of `V ⊗ M` stable under every `ρ g ⊗ 1` contains every pure tensor `v ⊗ m` with one fixed nonzero
+`m`. -/
+theorem exists_ne_zero_forall_tmul_mem
+    [IsAlgClosed k] [FiniteDimensional k V] (ρ : Representation k G V) (hρ : ρ.IsIrreducible)
+    {M : Type*} [AddCommGroup M] [Module k M] {P : Submodule k (V ⊗[k] M)}
+    (hP : ∀ g, ∀ z ∈ P, (ρ g).rTensor M z ∈ P) {z : V ⊗[k] M} (hzP : z ∈ P) (hz : z ≠ 0) :
+    ∃ m : M, m ≠ 0 ∧ ∀ v : V, v ⊗ₜ m ∈ P := by
+  -- The monoid algebra, acting on the left factor, preserves `P`.
+  have hr (r : MonoidAlgebra k G) : (ρ.asAlgebraHom r).rTensor M z ∈ P := by
+    induction r using MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add a b ha hb =>
+      rw [map_add, LinearMap.rTensor_add, LinearMap.add_apply]
+      exact P.add_mem ha hb
+    | single g c =>
+      rw [asAlgebraHom_single, LinearMap.rTensor_smul, LinearMap.smul_apply]
+      exact P.smul_mem c (hP g z hzP)
+  obtain ⟨m, hm, hm'⟩ := exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul ρ hρ hz
+  refine ⟨m, hm, fun v ↦ ?_⟩
+  obtain ⟨r, hrv⟩ := hm' v
+  exact hrv ▸ hr r
 
 /-! ### Atoms exist in finite dimensions -/
 

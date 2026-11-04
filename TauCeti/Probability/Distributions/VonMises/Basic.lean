@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Tilted
 public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.Fourier.ExpCos
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
+
+import TauCeti.MeasureTheory.Measure.Tilted
 
 /-!
 # The von Mises distribution
@@ -19,7 +23,9 @@ The von Mises law is the circular analogue of the Gaussian law. For a location `
 against `haarAddCircle` is integrating over one period of the angle against `dθ / (2π)`, so the
 normalizer is the circle integral `(2π)⁻¹ ∫_{-π}^{π} e^{κ cos θ} dθ = I₀(κ)`.
 
-This file defines the law, proves that it is a probability measure with full support, identifies
+The law is defined as Mathlib's exponential tilt `MeasureTheory.Measure.tilted` of
+`haarAddCircle` by `θ ↦ κ cos (θ - m)`, so the tilted-measure API applies to it directly. This file
+defines the law, proves that it is a probability measure with full support, identifies
 its density and Radon–Nikodym derivative, and proves joint measurability in the location and the
 concentration, rotational equivariance, and the reduction to Haar measure at zero concentration.
 It computes the integer Fourier moments `E[e^{i n θ}] = e^{i n m} I_{|n|}(κ) / I₀(κ)`. The first
@@ -34,10 +40,13 @@ representatives.
 
 * `TauCeti.Probability.vonMisesPDFReal`, `TauCeti.Probability.vonMisesPDF`: the density with
   respect to `AddCircle.haarAddCircle`.
-* `TauCeti.Probability.vonMisesMeasure m κ`: the von Mises law, totalized to zero for `κ < 0`.
+* `TauCeti.Probability.vonMisesMeasure m κ`: the von Mises law, the exponential tilt of
+  `haarAddCircle` by `θ ↦ κ cos (θ - m)`, totalized to zero for `κ < 0`.
 
 ## Main results
 
+* `TauCeti.Probability.vonMisesMeasure_of_nonneg`: for `0 ≤ κ` the law has density
+  `vonMisesPDF m κ` with respect to `haarAddCircle`.
 * `TauCeti.Probability.isProbabilityMeasure_vonMisesMeasure`: for `0 ≤ κ` it is a probability
   measure; `TauCeti.Probability.support_vonMisesMeasure`: its topological support is the whole
   circle.
@@ -63,7 +72,7 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+local instance factTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 variable {m : AddCircle (2 * π)} {κ : ℝ}
 
@@ -127,13 +136,6 @@ theorem continuous_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
     Continuous (vonMisesPDFReal m κ) :=
   continuous_uncurry_vonMisesPDFReal.comp (Continuous.prodMk_right (m, κ))
 
-/-- The von Mises density is jointly measurable in the location, the concentration and the
-angle. -/
-theorem measurable_uncurry_vonMisesPDF :
-    Measurable fun p : (AddCircle (2 * π) × ℝ) × AddCircle (2 * π) =>
-      vonMisesPDF p.1.1 p.1.2 p.2 :=
-  ENNReal.measurable_ofReal.comp continuous_uncurry_vonMisesPDFReal.measurable
-
 /-- The von Mises density is measurable in the angle. -/
 @[fun_prop]
 theorem measurable_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
@@ -168,17 +170,24 @@ theorem lintegral_vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) :
 
 /-! ### The law -/
 
-/-- The von Mises law on `AddCircle (2 * π)` with location `m` and concentration `κ`: the Haar
-probability measure weighted by `vonMisesPDF m κ`. Negative concentrations give the zero
-measure. -/
+/-- The von Mises law on `AddCircle (2 * π)` with location `m` and concentration `κ`: the
+exponential tilt of the Haar probability measure by `θ ↦ κ cos (θ - m)`, which has density
+`vonMisesPDF m κ` (`vonMisesMeasure_of_nonneg`). Negative concentrations give the zero measure. -/
 def vonMisesMeasure (m : AddCircle (2 * π)) (κ : ℝ) : Measure (AddCircle (2 * π)) :=
-  if 0 ≤ κ then haarAddCircle.withDensity (vonMisesPDF m κ) else 0
+  if 0 ≤ κ then haarAddCircle.tilted fun θ => κ * cos_periodic.lift (θ - m) else 0
+
+/-- For a nonnegative concentration, the von Mises law is the exponential tilt of the Haar
+probability measure by `θ ↦ κ cos (θ - m)`. -/
+theorem vonMisesMeasure_eq_tilted (hκ : 0 ≤ κ) :
+    vonMisesMeasure m κ = haarAddCircle.tilted fun θ => κ * cos_periodic.lift (θ - m) := by
+  rw [vonMisesMeasure, ite_eq_left hκ]
 
 /-- For a nonnegative concentration, the von Mises law is the Haar probability measure weighted by
-the von Mises density. -/
+the von Mises density: the normalizer of the tilt is `I₀(κ)`. -/
 theorem vonMisesMeasure_of_nonneg (hκ : 0 ≤ κ) :
     vonMisesMeasure m κ = haarAddCircle.withDensity (vonMisesPDF m κ) := by
-  rw [vonMisesMeasure, ite_eq_left hκ]
+  rw [vonMisesMeasure_eq_tilted hκ, Measure.tilted, integral_exp_mul_cos_sub, vonMisesPDF_def,
+    vonMisesPDFReal_def]
 
 /-- A negative concentration gives the zero measure. -/
 @[simp]
@@ -187,9 +196,12 @@ theorem vonMisesMeasure_of_neg (hκ : κ < 0) : vonMisesMeasure m κ = 0 := by
 
 /-- For a nonnegative concentration, the von Mises law is a probability measure. -/
 theorem isProbabilityMeasure_vonMisesMeasure (m : AddCircle (2 * π)) (hκ : 0 ≤ κ) :
-    IsProbabilityMeasure (vonMisesMeasure m κ) :=
-  ⟨by rw [vonMisesMeasure_of_nonneg hκ, withDensity_apply _ MeasurableSet.univ,
-    Measure.restrict_univ, lintegral_vonMisesPDF]⟩
+    IsProbabilityMeasure (vonMisesMeasure m κ) := by
+  have h : Continuous fun θ : AddCircle (2 * π) => exp (κ * cos_periodic.lift (θ - m)) :=
+    continuous_exp.comp (continuous_const.mul
+      (Real.Angle.continuous_cos.comp (continuous_id.sub continuous_const)))
+  rw [vonMisesMeasure_eq_tilted hκ]
+  exact isProbabilityMeasure_tilted (h.integrable_of_hasCompactSupport (.of_compactSpace _))
 
 /-- The von Mises law is a probability measure exactly for nonnegative concentrations. -/
 @[simp]
@@ -198,7 +210,7 @@ theorem isProbabilityMeasure_vonMisesMeasure_iff :
   refine ⟨fun h => ?_, isProbabilityMeasure_vonMisesMeasure m⟩
   by_contra hκ
   rw [vonMisesMeasure_of_neg (not_le.mp hκ)] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure (AddCircle (2 * π))) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- For a nonnegative concentration, the von Mises law has topological support the whole circle,
 since its density is positive and continuous. -/
@@ -220,18 +232,21 @@ concentration. -/
 @[fun_prop]
 theorem measurable_vonMisesMeasure :
     Measurable fun p : AddCircle (2 * π) × ℝ => vonMisesMeasure p.1 p.2 := by
+  have h : Continuous fun q : (AddCircle (2 * π) × ℝ) × AddCircle (2 * π) =>
+      q.1.2 * cos_periodic.lift (q.2 - q.1.1) :=
+    (continuous_snd.comp continuous_fst).mul
+      (Real.Angle.continuous_cos.comp (continuous_snd.sub (continuous_fst.comp continuous_fst)))
+  have hm := TauCeti.measurable_tilted (Kernel.const (AddCircle (2 * π) × ℝ) haarAddCircle)
+    (f := fun p θ => p.2 * cos_periodic.lift (θ - p.1)) h.measurable
+  simp only [Kernel.const_apply] at hm
   unfold vonMisesMeasure
-  exact Measurable.ite (measurableSet_le measurable_const measurable_snd)
-    (measurable_withDensity measurable_uncurry_vonMisesPDF) measurable_const
+  exact Measurable.ite (measurableSet_le measurable_const measurable_snd) hm measurable_const
 
 /-- At zero concentration the von Mises law is the Haar probability measure. -/
 @[simp]
 theorem vonMisesMeasure_zero_concentration (m : AddCircle (2 * π)) :
     vonMisesMeasure m 0 = haarAddCircle := by
-  have hpdf : vonMisesPDF m 0 = 1 := by
-    funext θ
-    simp [vonMisesPDF, vonMisesPDFReal]
-  rw [vonMisesMeasure_of_nonneg le_rfl, hpdf, withDensity_one]
+  simp [vonMisesMeasure_eq_tilted le_rfl]
 
 /-- **Rotational equivariance.** Rotating a von Mises law by `a` rotates its location by `a`. -/
 @[simp]
@@ -252,10 +267,8 @@ integer `n`, `E[e^{i n θ}] = e^{i n m} I_{|n|}(κ) / I₀(κ)`. -/
 theorem integral_fourier_vonMisesMeasure (m : AddCircle (2 * π)) (hκ : 0 ≤ κ) (n : ℤ) :
     ∫ θ, fourier n θ ∂vonMisesMeasure m κ =
       fourier n m * (besselI n.natAbs κ / besselI 0 κ : ℝ) := by
-  rw [vonMisesMeasure_of_nonneg hκ, integral_withDensity_eq_integral_toReal_smul
-    (measurable_vonMisesPDF m κ) (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
-  simp only [toReal_vonMisesPDF, vonMisesPDFReal, Complex.real_smul, Complex.ofReal_div,
-    div_mul_eq_mul_div]
+  rw [vonMisesMeasure_eq_tilted hκ, integral_tilted, integral_exp_mul_cos_sub]
+  simp only [Complex.real_smul, Complex.ofReal_div, div_mul_eq_mul_div]
   rw [integral_div, integral_exp_mul_cos_sub_mul_fourier]
   ring
 
@@ -278,8 +291,6 @@ end TauCeti.Probability
 namespace ProbabilityTheory
 
 open TauCeti.Probability
-
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → AddCircle (2 * π)}
   {m : AddCircle (2 * π)} {κ : ℝ}

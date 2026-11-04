@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
+public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Iterate
 
 /-!
@@ -19,8 +19,14 @@ division. Conversely, `washnitzerAlgebra.optionC` views an overconvergent series
 `Option σ` that is constant in `Y`; along it, `washnitzerAlgebra.polynomialToOption` evaluates
 polynomials over the coefficient ring at `Y`. No claim is made that an arbitrary series of
 overconvergent coefficients is itself overconvergent: the coefficients must satisfy a common
-radius bound. The split polyradius `splitRadius r ρ`, with radius `r` in `Y` and `ρ` elsewhere,
-is the unequal-radius setting in which overconvergent preparation and division are carried out.
+radius bound. The split polyradius `MvPowerSeries.splitRadius r ρ`, with radius `r` in `Y` and
+`ρ` elsewhere, is the unequal-radius setting in which overconvergent preparation and division
+are carried out. By `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`, separating `Y`
+in a series restricted at `r` gives a series in `Y` restricted at `r` over the series restricted
+at `ρ ≤ r`.
+
+The Gauss norm of a series in `Option σ` is the unit-radius Gauss norm of its separated series over
+the Tate algebra, so `optionC` preserves Gauss norms.
 
 ## References
 
@@ -42,7 +48,7 @@ theorem coeff_optionEquivLeft_mem_washnitzerAlgebra {f : MvPowerSeries (Option �
     PowerSeries.coeff m (optionEquivLeft σ R f) ∈ washnitzerAlgebra σ R := by
   obtain ⟨ρ, hρ, hf⟩ := mem_washnitzerAlgebra.mp hf
   exact mem_washnitzerAlgebra.mpr
-    ⟨ρ, hρ, Huber.isRestricted_coeff_optionEquivLeft (zero_lt_one.trans hρ) hf m⟩
+    ⟨ρ, hρ, isRestricted_coeff_optionEquivLeft (zero_lt_one.trans hρ) hf m⟩
 
 /-- An overconvergent series in `σ`, viewed as a series in `Option σ` constant in the separated
 variable `Y = X none`, is overconvergent. -/
@@ -51,33 +57,12 @@ theorem optionEquivLeft_symm_C_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
     (optionEquivLeft σ R).symm (PowerSeries.C f) ∈ washnitzerAlgebra (Option σ) R := by
   obtain ⟨ρ, hρ, hf⟩ := mem_washnitzerAlgebra.mp hf
   have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
-  let g := (Huber.restrictedOptionEquiv (c := fun _ : Option σ ↦ ρ)).symm
+  let g := (restrictedOptionEquiv (c := fun _ : Option σ ↦ ρ)).symm
     ⟨PowerSeries.C ⟨f, hf⟩, PowerSeries.isRestricted_C _ _⟩
   refine mem_washnitzerAlgebra.mpr ⟨ρ, hρ, ?_⟩
   have hg : (g : MvPowerSeries (Option σ) R) = (optionEquivLeft σ R).symm (PowerSeries.C f) := by
     simp [g]
   exact hg ▸ g.2
-
-/-- The split polyradius on `Option σ`: radius `r` in the separated variable `Y = X none` and
-radius `ρ` in the remaining variables. -/
-abbrev splitRadius (r ρ : ℝ) : Option σ → ℝ
-  | none => r
-  | some _ => ρ
-
-/-- For `ρ ≤ r`, the split polyradius is bounded below by `ρ`. -/
-theorem le_splitRadius {r ρ : ℝ} (h : ρ ≤ r) : ∀ i : Option σ, ρ ≤ splitRadius r ρ i
-  | none => h
-  | some _ => le_rfl
-
-/-- For `ρ ≤ r`, the split polyradius is bounded above by `r`. -/
-theorem splitRadius_le {r ρ : ℝ} (h : ρ ≤ r) : ∀ i : Option σ, splitRadius r ρ i ≤ r
-  | none => le_rfl
-  | some _ => h
-
-/-- For `0 < ρ ≤ r`, the split polyradius is positive. -/
-theorem splitRadius_pos {r ρ : ℝ} (hρ : 0 < ρ) (h : ρ ≤ r) (i : Option σ) :
-    0 < splitRadius r ρ i :=
-  hρ.trans_le (le_splitRadius h i)
 
 namespace washnitzerAlgebra
 
@@ -188,6 +173,15 @@ theorem optionSeries_optionC (f : washnitzerAlgebra σ R) :
 theorem optionC_X (i : σ) : optionC (X σ R i) = X (Option σ) R (some i) :=
   optionSeries_injective (by simp)
 
+/-- On polynomials, `optionC` is renaming the variables along `some`. -/
+@[simp]
+theorem optionC_ofMvPolynomial (p : MvPolynomial σ R) :
+    optionC (ofMvPolynomial σ R p) = ofMvPolynomial (Option σ) R (MvPolynomial.rename some p) := by
+  have h : optionC.comp (ofMvPolynomial σ R) =
+      (ofMvPolynomial (Option σ) R).comp (MvPolynomial.rename some) :=
+    MvPolynomial.algHom_ext fun i ↦ by simp
+  exact AlgHom.congr_fun h p
+
 /-- `optionC` is injective. -/
 theorem optionC_injective : Function.Injective (optionC (σ := σ) (R := R)) := fun f g h ↦
   PowerSeries.C_injective (by simpa using congrArg optionSeries h)
@@ -230,11 +224,11 @@ the restricted-series iteration. -/
 theorem map_toTate_optionSeries (f : washnitzerAlgebra (Option σ) R) :
     PowerSeries.map (toTate σ R : washnitzerAlgebra σ R →+*
       IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) (optionSeries f) =
-      (Huber.restrictedOptionEquiv (toTate (Option σ) R f) :
+      (restrictedOptionEquiv (toTate (Option σ) R f) :
         PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
   ext m : 1
   apply Subtype.ext
-  rw [PowerSeries.coeff_map, Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
+  rw [PowerSeries.coeff_map, coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
     coe_toTate]
   exact (coe_toTate _).trans (coe_coeff_optionSeries f m)
 
@@ -243,13 +237,28 @@ along `toTate`. -/
 @[simp]
 theorem restrictedOptionEquiv_toTate_polynomialToOption
     (p : Polynomial (washnitzerAlgebra σ R)) :
-    (Huber.restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
+    (restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
       PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) =
       (p.map (toTate σ R).toRingHom :
         PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
   rw [← map_toTate_optionSeries, optionSeries_polynomialToOption]
   ext m : 1
   simp [Polynomial.coeff_coe]
+
+/-- The Gauss norm of a series in `R⟨X, Y⟩†` is the Gauss norm at unit radius of its separated
+series in `Y`, with coefficients in the Tate algebra in the variables `X`. -/
+theorem norm_eq_gaussNorm_map_optionSeries (f : washnitzerAlgebra (Option σ) R) :
+    ‖f‖ = (PowerSeries.map (toTate σ R : washnitzerAlgebra σ R →+*
+      IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) (optionSeries f)).gaussNorm norm 1 := by
+  rw [map_toTate_optionSeries, ← TauCeti.PowerSeries.norm_eq_gaussNorm,
+    norm_restrictedOptionEquiv, norm_toTate]
+
+/-- Adjoining the variable `Y` preserves Gauss norms. -/
+@[simp]
+theorem norm_optionC (f : washnitzerAlgebra σ R) : ‖optionC f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm_map_optionSeries, optionSeries_optionC, PowerSeries.map_C,
+    ← norm_toTate]
+  exact TauCeti.PowerSeries.norm_C (c := 1) _
 
 end washnitzerAlgebra
 

@@ -32,12 +32,8 @@ far side on the other; the winding-number two-sidedness theorem
 (`Contour.mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton`) puts one end in the
 filled hull. No Jordan curve theorem is used.
 
-This is the planar-separation step of the `ConformalMapping` roadmap (L5).
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, and Mathlib has no boundary correspondence for
-conformal maps, so this is new Lean formalization rather than a temporary shim.
+This is the planar-separation step of Carathéodory's boundary correspondence: it decides which of
+the two pieces cut off by a short image crosscut is enclosed.
 
 ## Main results
 

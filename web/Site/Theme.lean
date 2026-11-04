@@ -1,6 +1,23 @@
 import VersoBlog
 open Verso Genre Blog Site Syntax
 
+/-- Front-page sections appear below the hero; its preamble supplies the maths carousel. -/
+private def splitFrontContent : Output.Html → Output.Html × Output.Html
+  | .seq items =>
+    let parts := items.map splitFrontContent
+    (.seq (parts.map Prod.fst), .seq (parts.map Prod.snd))
+  | node@(.tag "section" _ _) => (node, .empty)
+  | other => (.empty, other)
+
+open Output Html in
+/-- The header follows the generated blog contents on every page. -/
+private def blogNav : Template := do
+  let .page _ _ directories := (← read).site | return .empty
+  let hasPosts := directories.any fun
+    | .blog "blog" _ _ posts => !posts.isEmpty
+    | _ => false
+  return if hasPosts then {{<a href="blog/">"Blog"</a>}} else .empty
+
 open Output Html Template Theme in
 def theme : Theme := { Theme.default with
   primaryTemplate := do
@@ -30,13 +47,16 @@ def theme : Theme := { Theme.default with
                 <a href="statistics">"Statistics"</a>
                 <a href="progress">"Progress"</a>
                 <a href="ci">"CI"</a>
+                {{← blogNav}}
                 <a href="about">"About"</a>
+                <a href="team">"Team"</a>
                 <a href="https://github.com/TauCetiProject/TauCeti">"GitHub"</a>
               </nav>
             </div>
           </header>
           <main>
             {{ (← param "content") }}
+            {{ (← param? "posts") |>.getD .empty }}
           </main>
           <footer class="site-footer">
             <div class="foot-inner">
@@ -54,6 +74,7 @@ def theme : Theme := { Theme.default with
     }}
   }
   |>.override #[] ⟨do
+    let (introduction, examples) := splitFrontContent (← param "content")
     return {{
       <div class="frontpage">
         <section class="hero">
@@ -68,6 +89,10 @@ def theme : Theme := { Theme.default with
               <a class="cta secondary" href="docs/">"Read the docs →"</a>
             </div>
           </div>
+        </section>
+
+        <section class="band worker-start">
+          {{ introduction }}
         </section>
 
         <section class="pillars">
@@ -128,7 +153,7 @@ def theme : Theme := { Theme.default with
           <div class="carousel">
             <button class="carousel-arrow prev" type="button" aria-label="Previous example">"‹"</button>
             <div class="carousel-track">
-              {{← param "content" }}
+              {{ examples }}
             </div>
             <button class="carousel-arrow next" type="button" aria-label="Next example">"›"</button>
           </div>

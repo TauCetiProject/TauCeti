@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Finite
 public import TauCeti.AlgebraicGeometry.Curves.AffineCover
 public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -117,11 +118,9 @@ again has finite-dimensional `H¹`. -/
 theorem finiteDimensional_cohomology_one_of_epi_of_isCurveOver {M N : X.Modules}
     [M.IsQuasicoherent] [N.IsQuasicoherent] (f : M ⟶ N) [Epi f]
     [FiniteDimensional k (Cohomology M 1)] : FiniteDimensional k (Cohomology N 1) := by
-  refine Module.Finite.of_surjective (cohomologyMapBaseLinear k X f 1) fun y ↦ ?_
-  obtain ⟨x, hx⟩ := cohomologyMap_one_surjective_of_epi_of_isCurveOver k f y
-  refine ⟨x, ?_⟩
-  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-  exact hx
+  apply Module.Finite.of_surjective (cohomologyMapBaseLinear k X f 1)
+  simpa only [coe_cohomologyMapBaseLinear] using
+    cohomologyMap_one_surjective_of_epi_of_isCurveOver k f
 
 /-- **Finiteness of coherent cohomology on a curve.** On a proper integral curve over a field `k`
 whose codimension-one local rings are discrete valuation rings, the cohomology of a quasi-coherent
@@ -166,9 +165,7 @@ theorem finiteDimensional_cohomology_of_smooth [IsProper (X ↘ Spec (.of k))]
   have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
     isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
   have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
-  have : X.IsCurveOver k :=
-    { topologicalKrullDim_eq_one :=
-        topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)) }
+  have := IsCurveOver.of_smooth k X
   exact finiteDimensional_cohomology_of_isCurveOver k M n
 
 end AlgebraicGeometry.Scheme.Modules

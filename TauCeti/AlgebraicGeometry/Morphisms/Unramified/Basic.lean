@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 
 /-!
 # Unramified morphisms
@@ -15,7 +16,11 @@ unramified. This packages the two conditions as a morphism property, so geometri
 constructions such as the singular subscheme of a nodal family can state the usual
 unramifiedness condition directly. Since the diagonal of an unramified morphism is an open
 immersion, open immersions cancel against unramified morphisms on the right
-(`TauCeti.AlgebraicGeometry.Unramified.isOpenImmersion_hasOfPostcompProperty`).
+(`TauCeti.AlgebraicGeometry.Unramified.isOpenImmersion_hasOfPostcompProperty`). In particular, in
+a pullback square along an unramified morphism, the lift of an open immersion is an open immersion
+(`TauCeti.AlgebraicGeometry.isOpenImmersion_lift_of_isPullback`). Both conditions satisfy fpqc
+descent, hence so does unramifiedness
+(`TauCeti.AlgebraicGeometry.Unramified.descendsAlong_surjective_inf_flat_inf_quasicompact`).
 
 ## Main definition
 
@@ -117,6 +122,24 @@ instance (f : X ⟶ Y) (U : X.Opens) (V : Y.Opens) (e) [Unramified f] :
   delta Scheme.Hom.resLE
   infer_instance
 
+/-- **Unramified morphisms satisfy fpqc descent**, since both being locally of finite type and
+being formally unramified do. -/
+instance descendsAlong_surjective_inf_flat_inf_quasicompact :
+    MorphismProperty.DescendsAlong @Unramified.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
+  rw [unramified_eq]
+  exact MorphismProperty.DescendsAlong.inf (P := @LocallyOfFiniteType) (W := @FormallyUnramified)
+
 end Unramified
+
+/-- In a pullback square along an unramified morphism `f : Y ⟶ S`, the lift of an open immersion
+`ι : W ⟶ Z` together with a compatible `j : W ⟶ Y` is an open immersion: it is a section over `W`
+of the projection `p : Z' ⟶ Z`, which is unramified as a base change of `f`. -/
+theorem isOpenImmersion_lift_of_isPullback {Z S Z' W : Scheme.{u}} {g : Z ⟶ S} {f : Y ⟶ S}
+    [Unramified f] {p : Z' ⟶ Z} {g' : Z' ⟶ Y} (H : IsPullback p g' g f) {ι : W ⟶ Z}
+    [IsOpenImmersion ι] {j : W ⟶ Y} (hcomm : ι ≫ g = j ≫ f) :
+    IsOpenImmersion (H.lift ι j hcomm) := by
+  have : Unramified p := MorphismProperty.of_isPullback (P := @Unramified) H.flip inferInstance
+  have : IsOpenImmersion (H.lift ι j hcomm ≫ p) := by rwa [H.lift_fst]
+  exact MorphismProperty.of_postcomp @IsOpenImmersion (W' := @Unramified) _ p ‹_› ‹_›
 
 end TauCeti.AlgebraicGeometry

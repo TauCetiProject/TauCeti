@@ -88,9 +88,9 @@ private theorem ringKrullDim_quotient_span_le_option {σ : Type*} [Finite σ] (f
     (hf : f ≠ 0) : ringKrullDim (Tate (Option σ) ⧸ Ideal.span {f}) ≤ ringKrullDim (Tate σ) := by
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let Φ : Tate (Option σ) ≃+* S := Huber.restrictedOptionEquiv
+  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv.toRingEquiv
   obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf
-  have := hd.finite_quotient zero_lt_one hu
+  have := (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩).finite_quotient zero_lt_one
   have : Algebra.IsIntegral R (S ⧸ Ideal.span {Φ (e f)}) := Algebra.IsIntegral.of_finite R _
   let E : Tate (Option σ) ≃+* S := (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Φ
   rw [ringKrullDim_eq_of_ringEquiv (Ideal.quotientEquiv (Ideal.span {f})
@@ -114,7 +114,8 @@ theorem ringKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
           ringKrullDim (Tate (Option σ) ⧸ Ideal.span {f}) ≤ ((Nat.card σ : ℕ∞) : WithBot ℕ∞) :=
         (ringKrullDim_quotient_span_le_option f hf).trans_eq (h.trans (WithBot.coe_natCast _).symm)
       exact ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le hle
-    · rw [← h, ringKrullDim_eq_of_ringEquiv (Huber.restrictedOptionEquiv (σ := σ) (R := K))]
+    · rw [← h, ringKrullDim_eq_of_ringEquiv
+        (restrictedOptionEquiv (σ := σ) (R := K)).toRingEquiv]
       exact PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring 1
 
 /-- The Tate algebra in finitely many variables has finite Krull dimension. -/
@@ -150,33 +151,22 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
   let E : Tate (Option σ) ≃+* S :=
-    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Huber.restrictedOptionEquiv
+    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans restrictedOptionEquiv.toRingEquiv
   let g : S := E f
   let N : Ideal S := M.comap E.symm
   have hgN : g ∈ N := by simpa [N, g] using hfM
-  -- `S ⧸ (g)` is finite free over `R`, so going down bounds the height of the image of `N`
-  -- below by the height of its contraction to `R`, a maximal ideal.
+  -- `S ⧸ (g)` is finite free over `R`, so it is integral with going down; as `g` is a
+  -- non-zero-divisor, `N` has height at least one more than some maximal ideal of `R`.
   let B := S ⧸ Ideal.span {g}
-  have : Module.Free R B := hd.free_quotient zero_lt_one hu
-  have : Module.Finite R B := hd.finite_quotient zero_lt_one hu
-  have : IsNoetherianRing R := isNoetherianRing_isRestricted_subring
-  have : IsNoetherianRing B := IsNoetherianRing.of_finite R B
+  have hd' := PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩
+  have : Module.Free R B := hd'.free_quotient zero_lt_one
+  have : Module.Finite R B := hd'.finite_quotient zero_lt_one
   have : Algebra.IsIntegral R B := Algebra.IsIntegral.of_finite R B
-  let Nb : Ideal B := N.map (Ideal.Quotient.mk _)
-  have : Nb.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
-    (by simpa [Ideal.mk_ker, Ideal.span_singleton_le_iff_mem] using hgN)
-  let p := Nb.under R
-  have : p.IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal Nb
-  have hNb : p.height ≤ Nb.height := by
-    rw [Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p Nb]
-    exact le_self_add
-  -- Quotienting by the non-zero-divisor `g` lowers the height of `N` by one.
   have hg : g ∈ S⁰ := mem_nonZeroDivisors_of_ne_zero (by simpa [g] using hf)
-  rw [← RingEquiv.height_comap E.symm M]
-  refine le_trans ?_ (Ideal.height_map_quotientMk_span_singleton_add_one_le hg N hgN)
-  rw [Finite.card_option, Nat.cast_add, Nat.cast_one]
-  gcongr
-  exact (IH p).trans hNb
+  obtain ⟨p, _, hp⟩ :=
+    N.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient (R := R) hgN hg (RingEquiv.refl B)
+  rw [← RingEquiv.height_comap E.symm M, Finite.card_option, Nat.cast_add, Nat.cast_one]
+  exact le_trans (by gcongr; exact IH p) hp
 
 /-- **Heights of maximal ideals of Tate algebras.** Over a complete nonarchimedean field, every
 maximal ideal of the Tate algebra `K⟨X₁, …, Xₙ⟩` has height `n`, its Krull dimension. -/

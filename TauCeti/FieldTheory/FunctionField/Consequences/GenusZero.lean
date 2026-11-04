@@ -43,6 +43,9 @@ Over a perfect constant field this converse rules out inseparable subextensions 
 in a function field of positive genus: if `F / k(x)` has prime degree and is inseparable, then
 `x = y ^ p` with `F = k(y)` (Stichtenoth, Proposition 3.10.2), so `F` has genus zero.
 
+Without a degree-one divisor, a genus-zero function field still has an effective divisor of degree
+two in the anticanonical class, whose Riemann–Roch space has dimension three.
+
 ## Main results
 
 * `TauCeti.exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and
@@ -55,6 +58,8 @@ in a function field of positive genus: if `F / k(x)` has prime degree and is ins
   over `k` has genus zero.
 * `TauCeti.isSeparable_adjoin_of_finrank_prime`: over a perfect field, a rational subfield of
   prime index in a function field of positive genus has separable index.
+* `TauCeti.exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero`: a genus-zero function field
+  with exact constant field has an effective divisor `B` of degree two with `ℓ(B) ≥ 3`.
 
 ## References
 
@@ -176,7 +181,9 @@ theorem genus_eq_zero_of_adjoin_eq_top {x : F} (hx : Transcendental k x)
     rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx]
     exact_mod_cast hfinrank
   set l : ℕ := 2 * genus k F with hl
-  have hlow := Divisor.succ_le_dim_nsmul_poles hF (Units.mk0 x hx0) hx l
+  have hlow : l + 1 ≤ Divisor.dim (l • Divisor.poles hF (Units.mk0 x hx0)) := by
+    simpa only [natCast_zsmul] using
+      le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := l + 1) (m := (l : ℤ)) (by omega)
   have hdeg : Divisor.degree (l • Divisor.poles hF (Units.mk0 x hx0)) = (l : ℤ) := by
     rw [map_nsmul, hpoles, nsmul_eq_mul, mul_one]
   have heq := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hF hex
@@ -226,5 +233,26 @@ theorem isSeparable_adjoin_of_finrank_prime [PerfectField k] (hg : genus k F ≠
     |>.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable p hx hprime hsep
   exact hg (genus_eq_zero_of_adjoin_eq_top (fun h ↦ hx (hyx ▸ (h.isIntegral.pow p).isAlgebraic))
     htop)
+
+/-- **A function field of genus zero with exact constant field has an effective divisor of degree
+two whose Riemann–Roch space has dimension at least three.**  Such a divisor lies in the
+anticanonical class, and `ℓ(B) = deg B + 1 - g = 3`. -/
+theorem exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) :
+    ∃ B : Divisor k F, 0 ≤ B ∧ Divisor.degree B = 2 ∧ 3 ≤ Divisor.dim B := by
+  obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex
+  have hdegW : Divisor.degree W = -2 := by simpa [hg] using hW.degree_eq hF hex
+  have hdimW : (3 : ℤ) ≤ Divisor.dim (-W) := by
+    have := Divisor.degree_add_one_sub_genus_le_dim hF (-W)
+    rw [Divisor.degree_neg, hdegW, hg] at this
+    simpa using this
+  obtain ⟨B, hB, hequiv⟩ := (riemannRochSpace_ne_bot_iff hF (D := -W)).mp (by
+    rw [ne_eq, ← Divisor.dim_eq_zero_iff_riemannRochSpace_eq_bot hF]
+    omega)
+  refine ⟨B, hB, ?_, ?_⟩
+  · rw [← Divisor.degree_eq_of_linearlyEquivalent hF hequiv, Divisor.degree_neg, hdegW]
+    rfl
+  · rw [← Divisor.dim_eq_of_linearlyEquivalent hF hequiv]
+    omega
 
 end TauCeti

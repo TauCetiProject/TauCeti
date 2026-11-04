@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Logistic.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -111,7 +112,7 @@ theorem isProbabilityMeasure_logLogisticMeasure_iff :
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_logLogisticMeasure h.1 h.2⟩
   by_contra hab
   rw [logLogisticMeasure_of_not_pos hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- **The log-logistic law from a logistic variable.** If `Y` is logistic with location `log a`
 and scale `b⁻¹`, then `exp Y` has the log-logistic law with scale `a` and shape `b`. -/

@@ -42,7 +42,8 @@ families indexed by the unit interval into one is pure reparametrisation, so `Ta
 carries values in an arbitrary sort and is specialised to germs only where continuations are
 concatenated. The two halves are compared at the junction, where `TauCeti.transFamily` takes the
 value coming from `γ`; the hypothesis of `TauCeti.IsAnalyticContinuationAlong.trans` is exactly
-that the germ `γ` delivers there agrees with the germ `δ` starts from.
+that the germ `γ` delivers there agrees with the germ `δ` starts from. The `Path.trans`
+concatenation and its `Path.extend` calculus are consumed from Mathlib rather than rebuilt.
 
 ## Moving the base point
 
@@ -82,17 +83,6 @@ Germs of maps `ℂ → E` into a complex Banach space, as in `Continuation/Basic
 choice is discussed; the conformal-mapping consumers instantiate `E = ℂ`. `TauCeti.transFamily` is
 pure reparametrisation and is stated for values in an arbitrary sort, and the two restriction
 lemmas need no completeness, being reparametrisations as well.
-
-## Coordination with upstream Mathlib
-
-This is basic API for layer **L4** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`), analytic continuation and the reflection
-principle. Mathlib has no analytic continuation along a path, and L4 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. So
-nothing here is a shim under the roadmap's shim-deletion clause, which covers L0–L3 only. The
-`Path.trans` concatenation and its `Path.extend` calculus are consumed from Mathlib rather than
-rebuilt.
 
 ## References
 

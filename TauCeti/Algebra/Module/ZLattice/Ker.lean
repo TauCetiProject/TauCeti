@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
+public import TauCeti.Algebra.Module.ZLattice.Basic
 import Mathlib.LinearAlgebra.Dimension.Localization
 import TauCeti.Algebra.Module.ZLattice.Rank
 
@@ -17,16 +18,17 @@ linear map, over a normed field `K` such as `ℝ` or `ℂ`, which carries `L` in
 `L'` of `E'`. Then `L ∩ ker f` is a full lattice in the subspace `ker f`.
 
 For complex tori this is the lattice of the identity component of the kernel: when `f` is
-complex linear, the kernel of the induced homomorphism `E / L → E' / L'` has identity component
-the complex torus `ker f / (L ∩ ker f)`, and this file supplies its full lattice.
+complex linear, the kernel `f⁻¹(L') / L` of the induced homomorphism `E / L → E' / L'` has
+identity component the complex torus `ker f / (L ∩ ker f)`, and this file supplies its full
+lattice. That identity component is the image of `ker f / (L ∩ ker f) → E / L`
+(`Submodule.range_orbitRelQuotientMap_ker_subtype`), and this map is a closed embedding
+(`Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`) once `L ∩ ker f` is a full lattice.
 
 The hypothesis on `f` cannot be dropped: an irrational line through the lattice `ℤ²` in `ℝ²` is
 the kernel of a linear form, and it meets the lattice only in `0`.
 
 ## Main results
 
-* `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
-  to a subspace `V` is discrete.
 * `ZLattice.isZLattice_comap_ker_subtype`: if `f(L) ⊆ L'` with `L'` discrete, then `L ∩ ker f`
   is a full lattice in `ker f`.
 
@@ -41,19 +43,6 @@ public section
 open Module Submodule
 
 namespace ZLattice
-
-section Subspace
-
-variable {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E] [NormedSpace K E]
-  (L : Submodule ℤ E) [DiscreteTopology L]
-
-/-- The restriction `L ∩ V` of a discrete subgroup `L` to a subspace `V`, viewed as a subgroup of
-`V`, is discrete. -/
-instance instDiscreteTopologyComapSubtype (V : Submodule K E) :
-    DiscreteTopology (ZLattice.comap K L V.subtype) :=
-  comap_discreteTopology K L continuous_subtype_val V.injective_subtype
-
-end Subspace
 
 variable {K : Type*} [NormedField K] [NormedSpace ℝ K]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace K E] [IsScalarTower ℝ K E]

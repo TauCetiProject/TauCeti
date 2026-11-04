@@ -14,7 +14,7 @@ import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
+public import TauCeti.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import TauCeti.Order.Northcott.Basic
@@ -22,9 +22,8 @@ public import TauCeti.Order.Northcott.Basic
 /-!
 # Counting carriers for ideals and prime ideals
 
-Every estimate in the arithmetic-Dirichlet-series roadmap counts objects whose absolute norm does
-not exceed a *real* cutoff `x`, and always inclusively: an object of norm exactly `x` is counted.
-This file fixes that convention once.
+This file counts nonzero integral ideals, height-one primes, and prime-power ideals by absolute
+norm, using an inclusive *real* cutoff `x`: an object of norm exactly `x` is counted.
 
 The common core is Mathlib's `Northcott` property: a function `N : ι → ℕ` is Northcott when each
 set `{i | N i ≤ B}` is finite.  For such an `N`:
@@ -35,8 +34,7 @@ set `{i | N i ≤ B}` is finite.  For such an `N`:
 Two instances of this core carry the arithmetic content, `TauCeti.idealsLE` for the nonzero
 integral ideals of `𝓞 K` and `TauCeti.primesLE` for the height-one primes, with
 `TauCeti.idealSummatory`, `TauCeti.primeSummatory`, and `TauCeti.primePowerSummatory` the associated
-summatory functions.  The
-weighted prime counts of the roadmap are the two named specializations
+summatory functions. The two named prime-counting specializations are
 `TauCeti.primeTheta`, the logarithmically weighted count, and `TauCeti.primeCount`, the
 unweighted one; both are restricted to a set `S` of height-one primes through `Set.indicator`,
 so no decidability hypothesis is needed on `S`.
@@ -79,13 +77,8 @@ eventually constant amount to `ϑ_K`, hence `o(x)`: an exceptional set can be di
 counting argument outright, not merely from a density. Its `ψ` companion is
 `TauCeti.primePsi_isLittleO_of_finite`.
 
-## Roadmap role
-
-This is Layer **4** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`: the finite cutoff
-carriers of 4.1, the generic summatory functions on ideals, primes, and prime powers of 4.2, and the
-weighted prime counts `primeTheta` and `primeCount` of 4.3. Layer 5 supplies the actual size
-estimates for these counts, and consumes the prime base and exponent of a prime-power ideal to
-fibre those estimates over the primes.
+These locally finite carriers support ideal-counting and prime-counting estimates. The prime
+base and exponent allow sums over prime powers to be grouped by their underlying prime.
 
 ## References
 
@@ -103,17 +96,6 @@ open scoped nonZeroDivisors NumberField
 open IsDedekindDomain
 
 /-! ### Ideals and height-one primes of bounded absolute norm -/
-
-/-- The absolute norm on nonzero ideals of an infinite Dedekind domain with finite quotients is
-Northcott, by `Ring.HasFiniteQuotients.finite_absNorm_le`. Mathlib already supplies the
-corresponding instance on height-one primes. -/
-instance instNorthcottAbsNormNonZeroDivisors {R : Type*} [CommRing R] [IsDedekindDomain R]
-    [Infinite R] [Ring.HasFiniteQuotients R] :
-    Northcott (fun I : (Ideal R)⁰ ↦ Ideal.absNorm (I : Ideal R)) := by
-  constructor
-  intro B
-  exact (Ring.HasFiniteQuotients.finite_absNorm_le (S := R) B).preimage
-    Subtype.val_injective.injOn
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -584,7 +566,7 @@ private theorem idealsLE_filter_absNorm_eq {n : ℕ} {x : ℝ} (hn : n ≤ ⌊x�
 the nonzero integral ideals of absolute norm at most `x` is the sum, over the natural numbers
 `n ≤ ⌊x⌋₊`, of the total mass of the weight on the norm fibre at `n`.
 
-This is the finite form of the Layer 1 regrouping: it reads a summatory function over ideals as a
+This is the finite form of norm regrouping: it reads a summatory function over ideals as a
 partial sum of the `ArithmeticFunction` obtained from the same weight by `TauCeti.normCoeff`. -/
 theorem idealSummatory_eq_sum_range_normFiber {M : Type*} [AddCommMonoid M]
     (w : (Ideal (𝓞 K))⁰ → M) (x : ℝ) :
@@ -867,8 +849,8 @@ theorem primeTheta_le_primeCount_mul_log (S : Set (HeightOneSpectrum (𝓞 K))) 
     exact Real.log_le_log (absNorm_asIdeal_real_pos v) hv
   · rw [Set.indicator_of_notMem hS, Set.indicator_of_notMem hS, zero_mul]
 
-/-- A finite set of primes has eventually constant count, namely its cardinality.  This is the
-input to the Layer 7 statement that a finite set of primes has Dirichlet density zero. -/
+/-- A finite set of primes has eventually constant count, namely its cardinality. This is used to
+prove that finite sets of primes have Dirichlet density zero. -/
 theorem eventually_primeCount_eq_card (hS : S.Finite) :
     ∀ᶠ x in Filter.atTop, primeCount K S x = S.ncard := by
   filter_upwards [eventually_summatory_eq_sum

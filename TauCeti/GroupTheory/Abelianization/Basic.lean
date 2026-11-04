@@ -13,7 +13,8 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 Conjugate elements have the same image in the abelianization (`Abelianization.of_inv_mul_mul`),
 and written additively, the abelianization map sends products to sums in either order
 (`Abelianization.ofMul_of_add_ofMul_of`). An element has trivial image exactly when it lies in
-the commutator subgroup (`Abelianization.of_eq_one_iff`), and isomorphisms out of an
+the commutator subgroup (`Abelianization.of_eq_one_iff`), so the abelianization map of a
+commutative group is injective (`Abelianization.of_injective`), and isomorphisms out of an
 abelianization are determined by their values on classes (`Abelianization.mulEquiv_ext`).
 -/
 
@@ -40,6 +41,10 @@ subgroup. -/
 @[simp]
 theorem of_eq_one_iff {g : G} : of g = 1 ↔ g ∈ commutator G := by
   rw [← MonoidHom.mem_ker, ker_of]
+
+/-- The abelianization map of a commutative group is injective. -/
+theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
+  (MonoidHom.ker_eq_bot_iff _).1 (by rw [ker_of, commutator_eq_bot])
 
 /-- Two isomorphisms out of an abelianization agree if they agree on the classes of elements. -/
 theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Abelianization G ≃* M}

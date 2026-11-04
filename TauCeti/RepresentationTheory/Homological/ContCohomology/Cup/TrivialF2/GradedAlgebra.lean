@@ -155,7 +155,7 @@ theorem trivialF2Map_one {H : Type u} [Group H] [TopologicalSpace H] [IsTopologi
     trivialF2Map_def, ContinuousCohomology.map_degreeZeroClass]
   congr 1
   apply (trivialF2Equiv H).injective
-  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ), trivialF2Equiv_cast,
+  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ.toMonoidHom), trivialF2Equiv_cast,
     AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
 
 end TauCeti

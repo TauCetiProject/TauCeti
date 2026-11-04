@@ -65,6 +65,9 @@ after their stronger level-preserving notion of non-ambient isotopy (Definition 
 * `TauCeti.AmbientIsotopy.final_trans` / `TauCeti.AmbientIsotopy.symm_final_final` /
   `TauCeti.AmbientIsotopy.final_symm_final`: the final maps of the composite and inverse ambient
   isotopies, and that the inverse final map undoes the original on both sides.
+* `TauCeti.AmbientIsotopy.symm_apply_apply_slice` /
+  `TauCeti.AmbientIsotopy.apply_symm_apply_slice`: at every time `t`, the slices of an ambient
+  isotopy and of its inverse undo each other on both sides.
 -/
 
 public section
@@ -420,6 +423,20 @@ theorem homeomorph_symm (t : I) : Φ.symm.homeomorph t = (Φ.homeomorph t).symm 
   simp only [homeomorph_apply, symm_apply]
   rw [hpair]
   exact (Prod.ext_iff.mp happ).2.symm
+
+/-- The inverse ambient isotopy undoes the original at every time `t`. -/
+@[simp↓ 1100]
+theorem symm_apply_apply_slice (t : I) (y : Y) :
+    Φ.symm.toContinuousMap (t, Φ.toContinuousMap (t, y)) = y := by
+  rw [← homeomorph_apply Φ.symm t, homeomorph_symm, ← homeomorph_apply Φ t,
+    Homeomorph.symm_apply_apply]
+
+/-- The original ambient isotopy undoes its inverse at every time `t`. -/
+@[simp↓ 1100]
+theorem apply_symm_apply_slice (t : I) (y : Y) :
+    Φ.toContinuousMap (t, Φ.symm.toContinuousMap (t, y)) = y := by
+  rw [← homeomorph_apply Φ.symm t, homeomorph_symm, ← homeomorph_apply Φ t,
+    Homeomorph.apply_symm_apply]
 
 /-- The final homeomorphism of the inverse ambient isotopy is the inverse final homeomorphism. -/
 @[simp]

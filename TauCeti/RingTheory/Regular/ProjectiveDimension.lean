@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
+public import Mathlib.RingTheory.Regular.IsSMulRegular
 import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 import Mathlib.Algebra.Category.ModuleCat.Projective
-import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Regular.Category
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+import TauCeti.Algebra.Module.Projective.Quotient
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Projective dimension along the quotient by a nonzerodivisor
@@ -26,6 +29,13 @@ Let `x` be a nonzerodivisor of a commutative ring `R`. A module `L` over `R ⧸ 
 pd_R L ≤ pd_{R ⧸ (x)} L + 1.
 ```
 
+In the other direction, reducing an `R`-module `M` on which `x` is regular does not increase the
+projective dimension:
+
+```text
+pd_{R ⧸ (x)} (M ⧸ x M) ≤ pd_R M.
+```
+
 A projective `R ⧸ (x)`-module is a retract of `G ⧸ x G` for a projective `R`-module `G`, and
 `0 → G → G → G ⧸ x G → 0`, the first map being multiplication by `x`, shows that `G ⧸ x G` has
 projective dimension at most one over `R`. Dimension shifting along a projective presentation over
@@ -35,6 +45,12 @@ This is the change-of-rings step in the induction proving that every module over
 ring of dimension `d` has projective dimension at most `d`: there `x` is a parameter and
 `R ⧸ (x)` is regular of dimension `d - 1`.
 
+For the reduction, a projective presentation `0 → K → P → M → 0` stays short exact modulo `x`,
+because `x` is regular on `M`; the reduction of the projective module `P` is projective over
+`R ⧸ (x)`, and `x` is again regular on `K ⊆ P`, so induction on the projective dimension applies.
+This is the change-of-rings step in Serre's theorem that a Noetherian local ring whose residue
+field has finite projective dimension is regular.
+
 ## Main results
 
 * `ModuleCat.hasProjectiveDimensionLT_restrictScalars_of_projective`: a projective
@@ -43,8 +59,15 @@ ring of dimension `d` has projective dimension at most `d`: there `x` is a param
   projective dimension at most `n`, then it has projective dimension at most `n + 1` over `R`.
 * `ModuleCat.hasProjectiveDimensionLE_of_isScalarTower_quotient`: the same bound for an
   `R`-module carrying a compatible `R ⧸ (x)`-module structure.
+* `ModuleCat.hasProjectiveDimensionLE_quotient_smul_top`: if `x` is regular on an `R`-module `M`
+  of projective dimension at most `n`, then `M ⧸ x M` has projective dimension at most `n` over
+  `R ⧸ (x)`.
 
-No finiteness or locality is assumed: the bound holds for every `R ⧸ (x)`-module.
+No finiteness or locality is assumed: the bounds hold for all modules.
+
+## References
+
+* H. Matsumura, *Commutative Ring Theory*, Section 19, the lemmas preceding Theorem 19.2.
 -/
 
 public section
@@ -138,5 +161,42 @@ theorem hasProjectiveDimensionLE_of_isScalarTower_quotient (hx : x ∈ nonZeroDi
     HasProjectiveDimensionLE (of R L) (n + 1) :=
   have := hasProjectiveDimensionLE_restrictScalars_quotient hx n (of (R ⧸ span {x}) L)
   hasProjectiveDimensionLT_of_iso (restrictScalarsAlgebraMapIso (S := R ⧸ span {x}) L) (n + 2)
+
+/-- **Change of rings for projective dimension, by reduction.** If `x` is a nonzerodivisor of `R`
+which is regular on an `R`-module `M` of projective dimension at most `n`, then `M ⧸ x M` has
+projective dimension at most `n` over `R ⧸ (x)`. -/
+theorem hasProjectiveDimensionLE_quotient_smul_top (hx : x ∈ nonZeroDivisors R) (n : ℕ)
+    (M : ModuleCat.{v} R) (hM : IsSMulRegular M x) [HasProjectiveDimensionLE M n] :
+    HasProjectiveDimensionLE (of (R ⧸ span {x}) (M ⧸ span {x} • (⊤ : Submodule R M))) n := by
+  induction n generalizing M with
+  | zero =>
+    have : Projective M := projective_iff_hasProjectiveDimensionLT_one.mpr ‹_›
+    have : Module.Projective R M := M.projective_of_module_projective
+    have : Module.Projective (R ⧸ span {x}) (M ⧸ span {x} • (⊤ : Submodule R M)) :=
+      .quotient_smul_top _ Ideal.Quotient.mk_surjective (Ideal.mk_ker (I := span {x})).ge
+        fun _ _ ↦ rfl
+    exact projective_iff_hasProjectiveDimensionLT_one.mp inferInstance
+  | succ n ih =>
+    -- Reduce a projective presentation `0 → K → P → M → 0` modulo `x`.
+    have hS := M.shortExact_projectiveShortComplex
+    let S := M.projectiveShortComplex
+    have : Module.Projective R S.X₂ := S.X₂.projective_of_module_projective
+    have : Module.Projective (R ⧸ span {x}) (S.X₂ ⧸ span {x} • (⊤ : Submodule R S.X₂)) :=
+      .quotient_smul_top _ Ideal.Quotient.mk_surjective (Ideal.mk_ker (I := span {x})).ge
+        fun _ _ ↦ rfl
+    have hK : IsSMulRegular S.X₁ x :=
+      (Module.Flat.isSMulRegular_of_nonZeroDivisors hx).of_injective S.f.hom hS.injective_f
+    have : HasProjectiveDimensionLE S.X₁ n :=
+      hS.hasProjectiveDimensionLT_X₁ (n + 1) inferInstance ‹_›
+    have := ih S.X₁ hK
+    have hSex := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).mp hS.exact
+    have hex := (span {x}).mapQSMulTop_exact hSex hS.surjective_g
+    have hT := shortComplex_shortExact
+      (shortComplexOfCompEqZero ((span {x}).mapQSMulTop S.f.hom) ((span {x}).mapQSMulTop S.g.hom)
+        (LinearMap.ext fun k ↦ hex.apply_apply_eq_zero k)) hex
+      (mapQSMulTop_span_singleton_injective hSex hS.injective_f hM)
+      ((span {x}).mapQSMulTop_surjective hS.surjective_g)
+    exact hT.hasProjectiveDimensionLT_X₃ (n + 1) inferInstance
+      (hasProjectiveDimensionLT_of_ge _ 1 _ (by omega))
 
 end ModuleCat

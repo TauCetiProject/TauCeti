@@ -5,12 +5,12 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import TauCeti.Analysis.Bochner.CharFun.Basic
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Distributions.Poisson.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
-public import TauCeti.MeasureTheory.Group.ConvolutionPower
+public import TauCeti.MeasureTheory.Group.Convolution.Power
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
@@ -121,7 +121,7 @@ theorem compoundPoissonMeasure_apply_eq_tsum (r : ℝ≥0) (μ : Measure α) {s 
     compoundPoissonMeasure r μ s =
       ∑' n, ENNReal.ofReal (exp (-r) * r ^ n / n !) * μ.convolutionPower n s := by
   rw [compoundPoissonMeasure_eq_sum, Measure.sum_apply _ hs]
-  simp_rw [Measure.smul_apply, smul_eq_mul]
+  simp_rw [_root_.smul_apply, smul_eq_mul]
 
 /-- The Poisson-weighted series of convolution-power probabilities converges to the compound
 probability of every measurable set. Its nonnegative terms also give absolute convergence. -/
@@ -129,7 +129,7 @@ theorem hasSum_compoundPoissonMeasure_real_apply (r : ℝ≥0) (μ : Measure α)
     [IsProbabilityMeasure μ] {s : Set α} (hs : MeasurableSet s) :
     HasSum (fun n : ℕ => (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
       (μ.convolutionPower n).real s) ((compoundPoissonMeasure r μ).real s) := by
-  have hsum := (ENNReal.summable.hasSum_iff.mpr
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr
     (compoundPoissonMeasure_apply_eq_tsum r μ hs).symm).toReal (measure_ne_top _ _)
   rw [← measureReal_def] at hsum
   convert hsum using 1
@@ -233,8 +233,7 @@ theorem charFun_compoundPoissonMeasure {E : Type*} [NormedAddCommGroup E] [Inner
     [IsProbabilityMeasure μ] (t : E) :
     charFun (compoundPoissonMeasure r μ) t = Complex.exp (r * (charFun μ t - 1)) := by
   have hint : Integrable (fun x => Complex.exp (inner ℝ x t * Complex.I))
-      (compoundPoissonMeasure r μ) :=
-    (integrable_const (1 : ℝ)).mono (by fun_prop) (by simp)
+      (compoundPoissonMeasure r μ) := integrable_exp_inner_mul_I t
   rw [charFun_apply]
   rw [compoundPoissonMeasure_eq_sum] at hint ⊢
   rw [integral_sum_measure hint]

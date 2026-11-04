@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
-public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Algebra.Polynomial.Laurent.Roots
 public import Mathlib.RingTheory.Algebraic.Basic
 
 /-!
@@ -17,6 +16,10 @@ commutative semiring, provided that the coefficient homomorphism is injective. T
 particular to reconstructing a polynomial from specializations of an invertible variable to
 successive powers of an indeterminate. Evaluation at a single transcendental unit also detects
 Laurent polynomials over a commutative ring.
+
+As a consequence, an endomorphism of a field that fixes infinitely many elements and agrees with a
+Laurent polynomial at every unit is the identity (`RingHom.eq_id_of_forall_eval₂_eq`). For
+instance complex conjugation is not a Laurent polynomial function on `ℂˣ`.
 -/
 
 public section
@@ -26,43 +29,6 @@ namespace LaurentPolynomial
 open scoped Polynomial
 
 variable {R S : Type*} [CommSemiring R] [CommRing S]
-
-section Infinite
-
-variable [IsDomain S]
-
-/-- Laurent polynomials over a commutative semiring that agree at infinitely many units
-of an integral domain are equal, provided the coefficient homomorphism is injective. -/
-theorem eq_of_infinite_eval₂_eq (p q : LaurentPolynomial R) (f : R →+* S)
-    (hf : Function.Injective f)
-    (h : Set.Infinite {u : Sˣ | eval₂ f u p = eval₂ f u q}) : p = q := by
-  obtain ⟨n, g, hg⟩ := p.exists_T_pow
-  obtain ⟨m, k, hk⟩ := q.exists_T_pow
-  have hg' : Polynomial.toLaurent (g * Polynomial.X ^ m) =
-      p * T ((n : ℤ) + m) := by simp [map_mul, hg]
-  have hk' : Polynomial.toLaurent (k * Polynomial.X ^ n) =
-      q * T ((n : ℤ) + m) := by simp [map_mul, hk, add_comm]
-  have hevals : Set.Infinite {x : S |
-      ((g * Polynomial.X ^ m).map f).eval x = ((k * Polynomial.X ^ n).map f).eval x} := by
-    refine (h.image Units.val_injective.injOn).mono ?_
-    rintro x ⟨u, hu, rfl⟩
-    have he := congrArg (· * (u ^ ((n : ℤ) + m)).val) hu
-    simpa only [Set.mem_ofPred_eq, ← Polynomial.eval₂_eq_eval_map, ← eval₂_toLaurent,
-      hg', hk', map_mul, eval₂_T] using he
-  have hgk := Polynomial.map_injective f hf <|
-    Polynomial.eq_of_infinite_eval_eq _ _ hevals
-  apply (isUnit_T (R := R) ((n : ℤ) + m)).mul_left_inj.mp
-  rw [← hg', ← hk', hgk]
-
-/-- A Laurent polynomial over a commutative semiring vanishing at infinitely many units
-of an integral domain is zero, provided the coefficient homomorphism is injective. -/
-theorem eq_zero_of_infinite_eval₂_eq_zero (p : LaurentPolynomial R) (f : R →+* S)
-    (hf : Function.Injective f)
-    (h : Set.Infinite {u : Sˣ | eval₂ f u p = 0}) : p = 0 := by
-  apply p.eq_of_infinite_eval₂_eq 0 f hf
-  simpa only [map_zero] using h
-
-end Infinite
 
 end LaurentPolynomial
 
@@ -78,11 +44,36 @@ is injective. The index type need not be countable, and the family need not be i
 theorem laurent_eval₂_family_injective {ι : Type*} (f : R →+* S)
     (hf : Function.Injective f) (u : ι → Sˣ) (hu : Set.Infinite (Set.range u)) :
     Function.Injective (fun p : LaurentPolynomial R ↦ fun i ↦ eval₂ f (u i) p) := by
+  let _ := f.toAlgebra
+  let _ : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).mpr <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hf
   intro p q hpq
-  apply p.eq_of_infinite_eval₂_eq q f hf
+  apply LaurentPolynomial.eq_of_infinite_smeval_eq (S := S)
   refine hu.mono ?_
   rintro x ⟨i, rfl⟩
-  exact congrFun hpq i
+  rw [Set.mem_ofPred_eq]
+  simpa only [← LaurentPolynomial.eval₂_eq_smeval,
+    RingHom.algebraMap_toAlgebra] using congrFun hpq i
+
+/-- **A field endomorphism that is a Laurent polynomial on units is the identity**, provided it
+fixes infinitely many elements: if `σ u = p(u)` for every unit `u` of `K`, then `σ = id`. -/
+theorem eq_id_of_forall_eval₂_eq {K : Type*} [Field K] (σ : K →+* K)
+    (hσ : {x : K | σ x = x}.Infinite) (p : LaurentPolynomial K)
+    (h : ∀ u : Kˣ, eval₂ (RingHom.id K) u p = σ u) : σ = RingHom.id K := by
+  have hfix : {u : Kˣ | σ u = u}.Infinite := by
+    refine Set.Infinite.of_image Units.val ((hσ.sdiff (Set.finite_singleton 0)).mono ?_)
+    rintro x ⟨hx, hx0⟩
+    exact ⟨Units.mk0 x hx0, hx, rfl⟩
+  -- `p` agrees with `T` at the infinitely many nonzero fixed points of `σ`, so `p = T`.
+  have hp : p = T 1 := by
+    refine LaurentPolynomial.eq_of_infinite_smeval_eq (S := K) (hfix.mono ?_)
+    intro u hu
+    rw [Set.mem_ofPred_eq, ← eval₂_eq_smeval, ← eval₂_eq_smeval]
+    simp [h, hu.out]
+  ext x
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · simpa [hp] using (h (Units.mk0 x hx)).symm
 
 end RingHom
 

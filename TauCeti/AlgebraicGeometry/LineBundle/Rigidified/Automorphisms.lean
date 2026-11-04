@@ -125,9 +125,6 @@ lemma unitsGlobalSectionsMulEquivAut_mem_autSubgroup_iff (u : Γ(Y, ⊤)ˣ) :
     unitsGlobalSectionsMulEquivAut P.lineBundle.obj u ∈ P.autSubgroup ↔ s.appTop u = 1 := by
   rw [mem_autSubgroup_iff, unitsGlobalSectionsMulEquivAut_apply_hom,
     pullback_map_globalSectionsSmul, globalSectionsSmul_naturality]
-  -- `isInvertible_unit` is stated at `SheafOfModules.unit T.ringCatSheaf`, which instance
-  -- resolution does not recognise as `𝟙_ T.Modules`.
-  have : SheafOfModules.isInvertible T (𝟙_ T.Modules) := SheafOfModules.isInvertible_unit T
   refine ⟨fun h ↦ globalSectionsAction_injective (𝟙_ T.Modules) ?_,
     fun h ↦ by rw [h, globalSectionsSmul_one, Category.comp_id]⟩
   rw [globalSectionsAction_apply, globalSectionsAction_apply, globalSectionsSmul_one]
@@ -276,7 +273,6 @@ lemma exists_smul_eq_of_toLineBundleClass_eq {a b : RigidifiedLineBundleClass s}
   rw [toLineBundleClass_mk, toLineBundleClass_mk, LineBundleClass.mk_eq_mk_iff] at h
   obtain ⟨e⟩ := h
   -- The unit comparing the two trivializations through `e`.
-  have : SheafOfModules.isInvertible T (𝟙_ T.Modules) := SheafOfModules.isInvertible_unit T
   obtain ⟨v, hv⟩ := (unitsGlobalSectionsMulEquivAut (𝟙_ T.Modules)).surjective
     (Aut.of (P.rigidification.symm ≪≫ (Scheme.Modules.pullback s).mapIso e ≪≫ Q.rigidification))
   have hv' := congrArg (·.asIso.hom) hv
@@ -302,7 +298,6 @@ lemma stabilizer_eq_range (a : RigidifiedLineBundleClass s) :
     (P.rigidification ≪≫ asIso (globalSectionsSmul (𝟙_ T.Modules) v)) P.rigidification).trans ?_
   simp only [Iso.trans_hom, asIso_hom, cancel_epi, Units.ext_iff, Units.coe_map,
     MonoidHom.coe_ofClass]
-  have : SheafOfModules.isInvertible T (𝟙_ T.Modules) := SheafOfModules.isInvertible_unit T
   constructor
   · rintro ⟨u, hu⟩
     exact ⟨u, (globalSectionsAction_injective (𝟙_ T.Modules) (by

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Tilted
 public import Mathlib.Probability.Kernel.WithDensity
 
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Densities, masses, and parameter measurability of exponentially tilted measures
@@ -17,6 +18,8 @@ Mathlib's `MeasureTheory.Measure.tilted` sends a measure `μ` and a potential `f
 measure `(∫ exp f ∂μ)⁻¹ • exp f • μ`. This file adds the facts used to identify tilted
 members of concrete families of distributions.
 
+* `MeasureTheory.Measure.map_tilted` transports a tilt by a statistic on the target through
+  a measurable pushforward.
 * `TauCeti.tilted_withDensity`: tilting a measure with density `g` multiplies `g` by the
   normalized weight, so a tilted law with a density again has an explicit density.
 * `TauCeti.tilted_singleton`: the mass of a singleton under a tilted measure, which identifies
@@ -80,3 +83,18 @@ theorem measurable_tilted_mul (μ : Measure α) [SFinite μ] {X : α → ℝ} (h
   measurable_tilted (Kernel.const ℝ μ) (f := fun t x ↦ t * X x) (by fun_prop)
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- Pushing an exponential tilt forward commutes with tilting by a statistic on the target. -/
+theorem map_tilted {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) {f : α → β} {g : β → ℝ} (hf : Measurable f) (hg : Measurable g) :
+    (μ.tilted (g ∘ f)).map f = (μ.map f).tilted g := by
+  rw [Measure.tilted, Measure.tilted, integral_map hf.aemeasurable
+    (hg.exp.stronglyMeasurable.aestronglyMeasurable)]
+  apply map_withDensity_eq_withDensity (jac := fun _ ↦ 1) hf measurable_const
+    ((hg.exp.div_const _).ennreal_ofReal)
+  · simp
+  · exact ae_of_all _ fun _ ↦ by simp
+
+end MeasureTheory.Measure

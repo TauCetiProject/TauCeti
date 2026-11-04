@@ -15,7 +15,7 @@ A closed piecewise-`C¹` curve drawn inside a set `Ω` that is star-shaped about
 number `0` about every point outside `Ω`. The proof is the straight-line contraction of the curve
 to the constant curve at the centre: for each parameter `t` the segment from `γ t` to `x` lies in
 `Ω` by star-convexity, hence misses every `w ∉ Ω`, so
-`TauCeti.Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` equates `n_w(γ)` with the
+`TauCeti.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` equates `n_w(γ)` with the
 winding number of a constant curve, which is `0`.
 
 This discharges the `TauCeti.Contour.IsNullHomologous` hypothesis carried by the homology form of

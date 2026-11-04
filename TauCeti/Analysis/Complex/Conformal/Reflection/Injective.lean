@@ -20,13 +20,13 @@ injective on the closed upper part and sends the open upper part into the open u
 then the reflected extension `schwarzReflection f` is injective on all of `Ω` — hence conformal at
 every point of `Ω`, with a holomorphic inverse on its image.
 
-This is the form layer **L5** of `ConformalMapping/README.md` consumes: the boundary
-correspondence extends a Riemann map across an *analytic boundary arc* by reflecting it, and what
-that step needs is not merely a holomorphic continuation but a conformal one — a continuation that
-is again injective, and whose derivative therefore does not vanish *on the boundary arc itself*.
-That last point is the payoff: `f` is not assumed differentiable at the real points of `Ω` at all,
-only continuous there from above, yet `conformalAt_schwarzReflection_of_symmetric` produces a
-nonvanishing derivative there for the extension.
+This is the form the boundary correspondence consumes: it extends a Riemann map across an *analytic
+boundary arc* by reflecting it, and what that step needs is not merely a holomorphic continuation
+but a conformal one — a continuation that is again injective, and whose derivative therefore does
+not vanish *on the boundary arc itself*. That last point is the payoff: `f` is not assumed
+differentiable at the real points of `Ω` at all, only continuous there from above, yet
+`conformalAt_schwarzReflection_of_symmetric` produces a nonvanishing derivative there for the
+extension.
 
 ## The proof
 
@@ -65,14 +65,6 @@ ones (`hupper` and `hinj`); the holomorphy of the extension is quoted from
   so the extension is a biholomorphism onto its image.
 * `TauCeti.exists_differentiableOn_injOn_eqOn_conj_of_symmetric` — the packaged form: a conformal
   map of the upper part extends to a conformal map of `Ω` obeying the reflection symmetry.
-
-## Coordination with upstream Mathlib
-
-Layer L4 (reflection) and layer L5 (boundary correspondence) are absent from the in-progress
-Mathlib Riemann-mapping draft
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505),
-so this is new Lean formalization rather than a shim; the shared L0--L3 infrastructure it consumes
-(`Conformal/Biholomorph.lean`, `Conformal/Inverse/Function.lean`) carries its own shim notice.
 
 ## References
 

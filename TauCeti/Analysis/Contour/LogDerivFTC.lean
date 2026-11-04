@@ -145,8 +145,8 @@ theorem integral_deriv_div_sub_eq_log {γ γ' : ℝ → ℂ} {w : ℂ} {a b : �
 /-- **Winding-integrand form of the contour log-derivative FTC.** The `γ' = deriv γ` specialization
 of `integral_deriv_div_sub_eq_log`, stated with the winding-integral integrand
 `(γ t - w)⁻¹ * deriv γ t` in both the integrability hypothesis and the conclusion (matching the
-`g (γ t) * deriv γ t` shape of `integral_comp_mul_deriv_eq_sub_of_hasDerivAt` and the winding API),
-so a downstream winding sum can apply it per segment without rearranging the integrand. -/
+`g (γ t) * deriv γ t` shape of the winding API), so a downstream winding sum can apply it per
+segment without rearranging the integrand. -/
 theorem integral_inv_sub_mul_deriv_eq_log {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
     (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)

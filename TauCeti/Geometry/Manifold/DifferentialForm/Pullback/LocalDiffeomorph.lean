@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -25,8 +26,14 @@ this gives `IsLocalDiffeomorph.isSmoothForm_mpullback_iff`, and, since pullback 
 exterior derivative, a smooth form is closed exactly when its pullback is
 (`IsLocalDiffeomorph.isClosed_mpullback_iff`).
 
-These facts are what let forms on a covering space that are invariant under the deck group
-descend to the base.
+These facts are what let forms on a covering space whose deck group acts transitively on each
+fibre descend to the base when they are invariant under the deck group. Given a family of
+self-maps of the source lying over `f` and transitive on its fibres, a form invariant under the
+family is basic for `f` (`IsLocalDiffeomorph.isBasic_of_mpullback_eq`), so it is the pullback of
+its descent `TauCeti.RoughForm.descendedForm`. Hence a form is a pullback along `f` exactly
+when it is invariant under the family (`IsLocalDiffeomorph.exists_mpullback_eq_iff`). For a
+surjective smooth local diffeomorphism the descended form of a smooth form is smooth
+(`IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`).
 
 ## Main results
 
@@ -37,6 +44,12 @@ descend to the base.
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
 * `IsLocalDiffeomorph.isClosed_mpullback_iff`: a smooth form is closed exactly when its pullback
   along a surjective smooth local diffeomorphism is.
+* `IsLocalDiffeomorph.isBasic_of_mpullback_eq`: a form invariant under a family of maps over a
+  local diffeomorphism that is transitive on its fibres is basic for it.
+* `IsLocalDiffeomorph.exists_mpullback_eq_iff`,
+  `IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`: a (smooth) form is the pullback of a
+  (smooth) form along a local diffeomorphism exactly when it is invariant under a family of maps
+  over it that is transitive on its fibres.
 
 ## References
 
@@ -65,12 +78,50 @@ open TauCeti
 forms. -/
 theorem IsLocalDiffeomorph.mpullback_injective (hf : IsLocalDiffeomorph I I' n f) (hn : n ≠ 0)
     (hsurj : Function.Surjective f) :
-    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) := by
-  intro ω η h
-  funext y
-  obtain ⟨x, rfl⟩ := hsurj y
-  exact (mpullback_apply_eq_mpullback_apply_iff
-    ((hf.isInvertible_mfderiv hn x).surjective)).mp (congrFun h x)
+    Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) :=
+  mpullback_injective_of_surjective hsurj fun x ↦ (hf.isInvertible_mfderiv hn x).surjective
+
+section Descent
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+
+/-- Let `f` be a `C^n` local diffeomorphism, `n ≠ 0`, and let `σ` be a family of differentiable
+self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the fibres of `f`. Then a form
+invariant under every `σ i` is basic for `f`. -/
+theorem IsLocalDiffeomorph.isBasic_of_mpullback_eq {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
+    (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
+    (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
+    {α : RoughForm I M V k} (hα : ∀ i, mpullback I I (σ i) α = α) : RoughForm.IsBasic I' f α := by
+  refine RoughForm.isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
+  have hinj (z : M) := (hf.isInvertible_mfderiv hn z).injective
+  -- `x` is `y` or `σ i y` for some `i`; `tangentSpaceCast` is the identity of the model space.
+  rcases hσf y x hxy.symm with rfl | ⟨i, rfl⟩
+  · exact congrArg _ (funext fun j ↦ hinj _ (hvw j))
+  · rw [← congrFun (hα i) y, mpullback_apply]
+    refine congrArg _ (funext fun j ↦ hinj _ ?_)
+    -- By the chain rule, `df_y` factors through the derivative of `σ i`.
+    have hcomp := mfderiv_comp y (hf.mdifferentiable hn (σ i y)) (hσ i y)
+    rw [hfσ i] at hcomp
+    exact (hvw j).trans (congrArg (· (w j)) hcomp)
+
+/-- **Descent of forms along a local diffeomorphism.** Let `f` be a `C^n` local diffeomorphism,
+`n ≠ 0`, and let `σ` be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that
+is transitive on the fibres of `f`: two points with the same image are equal or are related by
+some `σ i`. Then a form on `M` is the pullback of a form on `M'` exactly when it is invariant
+under every `σ i`. For a covering map whose deck transformations act transitively on each fibre,
+one can take the `σ i` to be the deck transformations. -/
+theorem IsLocalDiffeomorph.exists_mpullback_eq_iff {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
+    (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
+    (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
+    {α : RoughForm I M V k} :
+    (∃ ω : RoughForm I' M' V k, mpullback I I' f ω = α) ↔ ∀ i, mpullback I I (σ i) α = α := by
+  refine ⟨?_, fun hα ↦ (RoughForm.exists_mpullback_eq_iff_isBasic fun x ↦
+    .of_isInvertible (hf.isInvertible_mfderiv hn x)).mpr
+      (hf.isBasic_of_mpullback_eq hn hσ hfσ hσf hα)⟩
+  rintro ⟨ω, rfl⟩ i
+  rw [← mpullback_comp (hσ i) (hf.mdifferentiable hn), hfσ i]
+
+end Descent
 
 /-- For a `C^n` local diffeomorphism `f` at `x` and `m + 1 ≤ n`, a form is a `C^m` section near
 `f x` exactly when its pullback along `f` is a `C^m` section near `x`. -/
@@ -80,27 +131,11 @@ theorem IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff [IsManifold I 1 M]
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (mpullback I I' f ω y)) x ↔
       ContMDiffAt I' (I'.prod 𝓘(ℝ, E' [⋀^Fin k]→L[ℝ] F)) m
-        (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f x) := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    exact absurd hmn (by simp)
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mpullback_form hf.contMDiffAt hmn⟩
-  -- Near `f x`, the form `ω` is the pullback of `f^* ω` along a local inverse `s` of `f`.
-  set s := hf.localInverse
-  have hsx : s (f x) = x := hf.localInverse_left_inv hf.localInverse_mem_target
-  have hs : ContMDiffAt I' I n s (f x) := hf.contMDiffAt_localInverse
-  have hpull := (hsx ▸ h).mpullback_form hs hmn
-  refine hpull.congr_of_eventuallyEq ?_
-  have hfs : ∀ᶠ y in 𝓝 (f x), IsLocalDiffeomorphAt I I' n f (s y) :=
-    hf.continuousAt_localInverse.tendsto.eventually (by rw [hsx]; exact hf.eventually)
-  filter_upwards [hfs, hf.localInverse_open_source.mem_nhds hf.localInverse_mem_source]
-    with y hy hys
-  have hsy : MDifferentiableAt I' I s y :=
-    (hf.contMDiffOn_localInverse.contMDiffAt
-      (hf.localInverse_open_source.mem_nhds hys)).mdifferentiableAt hn
-  have hid : f ∘ s =ᶠ[𝓝 y] id :=
-    eventuallyEq_of_mem (hf.localInverse_open_source.mem_nhds hys) hf.localInverse_eqOn_right
-  rw [← mpullback_comp_at hsy (hy.mdifferentiableAt hn), hid.mpullback_eq, mpullback_id]
+        (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f x) :=
+  -- Near `f x`, the form `ω` is the pullback of `f^* ω` along the local inverse of `f`.
+  contMDiffAt_mpullback_form_iff_of_section hf.localInverse_open_source hf.localInverse_mem_source
+    (hf.localInverse_left_inv hf.localInverse_mem_target) hf.contMDiffOn_localInverse
+    (fun _ hy ↦ hf.localInverse_right_inv hy) hf.contMDiffAt hmn
 
 /-- For a surjective `C^n` local diffeomorphism `f` and `m + 1 ≤ n`, a form is `C^m` exactly when
 its pullback along `f` is. -/
@@ -114,11 +149,29 @@ theorem IsLocalDiffeomorph.isSmoothForm_mpullback_iff [IsManifold I 1 M] [IsMani
   exact ((hf x).contMDiffAt_mpullback_form_iff hmn).mp (h x)
 
 open scoped ContDiff in
+/-- **Descent of smooth forms along a surjective local diffeomorphism.** For a surjective smooth
+local diffeomorphism `f` and a family of smooth self-maps `σ i` of `M` over `f` that is transitive
+on the fibres of `f`, a smooth form on `M` is the pullback of a smooth form on `M'` exactly when it
+is invariant under every `σ i`. -/
+theorem IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff [IsManifold I ∞ M]
+    [IsManifold I' ∞ M'] {ι : Type*} (hf : IsLocalDiffeomorph I I' ∞ f)
+    (hsurj : Function.Surjective f) {σ : ι → M → M} (hσ : ∀ i, ContMDiff I I ∞ (σ i))
+    (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
+    {α : SmoothForm I M F k} :
+    (∃ β : SmoothForm I' M' F k, SmoothForm.mpullback f hf.contMDiff β = α) ↔
+      ∀ i, SmoothForm.mpullback (σ i) (hσ i) α = α := by
+  simp only [Subtype.ext_iff, SmoothForm.coe_mpullback]
+  rw [← hf.exists_mpullback_eq_iff (by simp) (fun i ↦ (hσ i).mdifferentiable (by simp)) hfσ hσf]
+  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.1, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
+  -- The descended rough form is smooth because its pullback `α` is.
+  exact IsSmoothForm.mem_smoothBundleForms
+    ((hf.isSmoothForm_mpullback_iff hsurj (by simp)).mp (hβ ▸ α.isSmoothForm))
+
+open scoped ContDiff in
 /-- For a surjective smooth local diffeomorphism `f`, a smooth form is closed exactly when its
 pullback along `f` is. -/
 theorem IsLocalDiffeomorph.isClosed_mpullback_iff [IsManifold I 2 M] [IsManifold I' 2 M']
     (hf : IsLocalDiffeomorph I I' ∞ f) (hsurj : Function.Surjective f)
-    {φ : SmoothForm I' M' F k} : (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed := by
-  rw [SmoothForm.isClosed_def, SmoothForm.isClosed_def, ← mextDerivₗ_apply,
-    SmoothForm.mextDerivₗ_mpullback, SmoothForm.coe_mpullback, mextDerivₗ_apply]
-  exact (hf.mpullback_injective (by simp) hsurj).eq_iff' (mpullback_zero f)
+    {φ : SmoothForm I' M' F k} : (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed :=
+  SmoothForm.isClosed_mpullback_iff_of_surjective hf.contMDiff hsurj
+    fun x ↦ (hf.isInvertible_mfderiv (by simp) x).surjective

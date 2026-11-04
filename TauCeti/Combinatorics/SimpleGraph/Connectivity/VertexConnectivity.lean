@@ -1,0 +1,567 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
+public import TauCeti.Data.ENat.Lattice
+
+/-!
+# Vertex reachability and vertex connectivity of simple graphs
+
+Two vertices `u, v` of a simple graph `G` are `k`-vertex-reachable, `G.IsVertexReachable k u v`,
+when they remain reachable after deleting any set of fewer than `k` vertices other than `u` and
+`v`; deletion of a set `s` is the subgraph `G.induce sᶜ` induced on the remaining vertices. The
+graph is `k`-vertex-connected, `G.IsVertexConnected k`, when it has at least `k + 1` vertices (more
+than `k` for finite `k`, infinitely many for `k = ⊤`) and any two vertices are
+`k`-vertex-reachable. Thus a single vertex is `0`- but not `1`-vertex-connected,
+and the complete graph on `n ≥ 1` vertices is `(n - 1)`- but not `n`-vertex-connected. The numerical
+vertex connectivity `G.vertexConnectivity` is the supremum in `ℕ∞` of the natural thresholds at
+which `G` is vertex-connected; it is `0` on the empty vertex type and finite on a finite one.
+
+Adjacent vertices are `k`-vertex-reachable for every `k`, since no deletion of other vertices can
+separate them. Vertex reachability is therefore not transitive, and for adjacent vertices it
+says nothing about internally disjoint paths. For distinct nonadjacent vertices on a finite
+vertex type, Menger's theorem identifies `k`-vertex-reachability with the existence of `k` paths
+pairwise sharing no vertex other than their ends. On a finite graph with more than `k` vertices,
+`k`-vertex-connectivity is the existence of `k` such paths between every two distinct vertices,
+adjacent ones included.
+
+Whitney's inequality compares the two connectivity notions: deleting fewer than `k` edges can
+be simulated by deleting fewer than `k` vertices, one end of each deleted edge, so a
+`k`-vertex-connected graph is `k`-edge-connected and `G.vertexConnectivity ≤ G.edgeConnectivity`.
+Together with `SimpleGraph.edgeConnectivity_le_minDegree`, this bounds vertex connectivity by
+edge connectivity and edge connectivity by minimum degree on a finite graph with at least two
+vertices. The inequality is due to H. Whitney, *Congruent
+graphs and the connectivity of graphs*, Amer. J. Math. 54 (1932), 150–168; the proof follows
+R. Diestel, *Graph Theory*, Proposition 1.4.2, made local to a pair of vertices.
+
+The definitions follow the proposal
+[mathlib4#33355](https://github.com/leanprover-community/mathlib4/pull/33355), and their shape
+and API follow Mathlib's `SimpleGraph.IsEdgeReachable` and `SimpleGraph.IsEdgeConnected`. The
+numerical invariant follows the multigraph `Graph.edgeConnectivity` in
+`TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity`, a supremum in `ℕ∞` of natural
+thresholds. The vertex count condition is the usual one, as in R. Diestel, *Graph Theory*, 5th
+ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
+
+## Main definitions
+
+* `SimpleGraph.IsVertexReachable G k u v`: `u` and `v` stay reachable after deleting fewer than
+  `k` other vertices.
+* `SimpleGraph.IsVertexConnected G k`: `G` has at least `k + 1` vertices, any two of which are
+  `k`-vertex-reachable.
+* `SimpleGraph.vertexConnectivity G`: the supremum in `ℕ∞` of the natural thresholds at which `G`
+  is vertex-connected.
+
+## Main results
+
+* `SimpleGraph.isVertexReachable_one`, `SimpleGraph.isVertexConnected_one`: the threshold `1` is
+  reachability, respectively connectedness on at least two vertices.
+* `SimpleGraph.isVertexConnected_two_iff`: 2-vertex-connectivity is connectedness on at least
+  three vertices with no cut vertex.
+* `SimpleGraph.Iso.isVertexReachable_iff`, `SimpleGraph.Iso.isVertexConnected_iff`: vertex
+  reachability and connectivity are invariant under graph isomorphism.
+* `SimpleGraph.isVertexConnected_iff`: `G` is `k`-vertex-connected exactly when it has at least
+  `k + 1` vertices and stays preconnected after deleting fewer than `k` vertices.
+* `SimpleGraph.isVertexReachable_of_pairwise_internallyDisjoint`: `k` walks pairwise sharing no
+  vertex other than their ends make their ends `k`-vertex-reachable.
+* `SimpleGraph.isVertexConnected_iff_le_vertexConnectivity`: on a nonempty vertex type, the
+  numerical invariant records exactly the thresholds at which `G` is vertex-connected.
+* `SimpleGraph.vertexConnectivity_add_one_le_card`: on a nonempty vertex type, `κ + 1` is at
+  most the number of vertices, where `κ` is the vertex connectivity.
+* `SimpleGraph.vertexConnectivity_top`: the complete graph has vertex connectivity
+  `ENat.card V - 1`.
+* `SimpleGraph.IsVertexConnected.isEdgeConnected`,
+  `SimpleGraph.vertexConnectivity_le_edgeConnectivity`: **Whitney's inequality**: a
+  `k`-vertex-connected graph is `k`-edge-connected, so vertex connectivity is at most edge
+  connectivity. No finiteness assumption is needed.
+* `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
+  nonadjacent vertices.
+* `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
+  theorem**: on a finite vertex type with more than `k` vertices, `k`-vertex-connectivity is the
+  existence of `k` distinct internally disjoint paths between every two distinct vertices.
+
+## Implementation notes
+
+The Menger statements are derived from the witness forms in
+`TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger`. For adjacent vertices `s` and `t` of a
+`k`-vertex-connected graph, `SimpleGraph.exists_paths_vertexSeparator_card_add_one_eq` gives
+`#X + 1` paths together with a set `X` separating `s` from `t` after the edge `s(s, t)` is deleted.
+If `#X + 1 < k`, some vertex `w` lies outside `X ∪ {s, t}`, and deleting `X` together with `t`, or
+with `s`, leaves `w` reachable from `s`, or from `t`, by walks avoiding the edge `s(s, t)`; so `X`
+does not separate `s` from `t`. Hence `k ≤ #X + 1`.
+-/
+
+public section
+
+open Finset
+
+universe u
+
+namespace SimpleGraph
+
+variable {V : Type u} {G H : SimpleGraph V} {k l : ℕ∞} {u v w : V}
+
+/-! ### Vertex reachability -/
+
+variable (G k u v) in
+/-- Two vertices are `k`-vertex-reachable if they remain reachable after deleting any set of fewer
+than `k` vertices other than themselves. -/
+def IsVertexReachable : Prop :=
+  ∀ ⦃s : Set V⦄, s.encard < k → (hu : u ∉ s) → (hv : v ∉ s) →
+    (G.induce sᶜ).Reachable ⟨u, hu⟩ ⟨v, hv⟩
+
+theorem isVertexReachable_def : G.IsVertexReachable k u v ↔
+    ∀ ⦃s : Set V⦄, s.encard < k → (hu : u ∉ s) → (hv : v ∉ s) →
+      (G.induce sᶜ).Reachable ⟨u, hu⟩ ⟨v, hv⟩ :=
+  Iff.rfl
+
+/-- Vertex reachability through walks: after deleting fewer than `k` vertices other than `u` and
+`v`, some walk from `u` to `v` avoids the deleted vertices. -/
+theorem isVertexReachable_iff_exists_walk : G.IsVertexReachable k u v ↔
+    ∀ ⦃s : Set V⦄, s.encard < k → u ∉ s → v ∉ s → ∃ p : G.Walk u v, ∀ x ∈ p.support, x ∉ s := by
+  simp only [isVertexReachable_def, reachable_induce_iff, Set.mem_compl_iff]
+
+@[refl, simp]
+protected theorem IsVertexReachable.rfl : G.IsVertexReachable k u u :=
+  fun _ _ _ _ ↦ .rfl
+
+protected theorem IsVertexReachable.refl (u : V) : G.IsVertexReachable k u u := .rfl
+
+@[symm]
+theorem IsVertexReachable.symm (h : G.IsVertexReachable k u v) : G.IsVertexReachable k v u :=
+  fun _ hs hv hu ↦ (h hs hu hv).symm
+
+theorem isVertexReachable_comm : G.IsVertexReachable k u v ↔ G.IsVertexReachable k v u :=
+  ⟨.symm, .symm⟩
+
+/-- Vertex reachability at a smaller threshold follows from vertex reachability at a larger
+one. -/
+@[gcongr]
+theorem IsVertexReachable.anti (hkl : k ≤ l) (h : G.IsVertexReachable l u v) :
+    G.IsVertexReachable k u v :=
+  fun _ hs ↦ h (hs.trans_le hkl)
+
+/-- Vertex reachability is monotone in the graph. -/
+@[gcongr]
+theorem IsVertexReachable.mono (hGH : G ≤ H) (h : G.IsVertexReachable k u v) :
+    H.IsVertexReachable k u v :=
+  fun _ hs hu hv ↦ (h hs hu hv).mono (comap_monotone _ hGH)
+
+@[simp]
+protected theorem IsVertexReachable.zero : G.IsVertexReachable 0 u v := by
+  simp [isVertexReachable_def]
+
+/-- Reachability is `1`-vertex-reachability. -/
+@[simp]
+theorem isVertexReachable_one : G.IsVertexReachable 1 u v ↔ G.Reachable u v := by
+  simp [isVertexReachable_iff_exists_walk, Reachable]
+
+theorem IsVertexReachable.reachable (hk : k ≠ 0) (h : G.IsVertexReachable k u v) :
+    G.Reachable u v :=
+  isVertexReachable_one.mp (h.anti (Order.one_le_iff_ne_zero.mpr hk))
+
+/-- Adjacent vertices are `k`-vertex-reachable for every `k`. -/
+theorem Adj.isVertexReachable (h : G.Adj u v) : G.IsVertexReachable k u v :=
+  isVertexReachable_iff_exists_walk.2 fun _ _ hu hv ↦ ⟨h.toWalk, by simp [hu, hv]⟩
+
+/-- **Weak duality for vertex reachability.** If there are `n` walks from `u` to `v` pairwise
+sharing no vertex other than `u` and `v`, then `u` and `v` are `n`-vertex-reachable. No finiteness
+assumption on `V` is needed. -/
+theorem isVertexReachable_of_pairwise_internallyDisjoint {n : ℕ} {P : Fin n → G.Walk u v}
+    (hP : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) : G.IsVertexReachable n u v := by
+  -- A set of fewer than `n` vertices is finite, so weak duality for internally disjoint walks
+  -- (`SimpleGraph.card_le_card_of_not_reachable_induce`) applies to it.
+  intro s hs hu hv
+  lift s to Finset V using Set.encard_lt_top_iff.1 (hs.trans (ENat.natCast_lt_top n))
+  by_contra h
+  have hle := card_le_card_of_not_reachable_induce hP hu hv h
+  rw [Fintype.card_fin] at hle
+  rw [Set.encard_coe_eq_coe_finsetCard, Nat.cast_lt] at hs
+  exact hs.not_ge hle
+
+/-- Injective graph homomorphisms preserve vertex reachability. -/
+theorem IsVertexReachable.map {W : Type*} {H : SimpleGraph W}
+    (h : G.IsVertexReachable k u v) (f : G →g H) (hf : Function.Injective f) :
+    H.IsVertexReachable k (f u) (f v) := by
+  rw [isVertexReachable_iff_exists_walk] at h ⊢
+  intro S hS hu hv
+  have hpre : (f ⁻¹' S).encard ≤ S.encard :=
+    Set.encard_le_encard_of_injOn (Set.mapsTo_preimage f S) hf.injOn
+  obtain ⟨p, hp⟩ := h (hpre.trans_lt hS) (by simpa using hu) (by simpa using hv)
+  refine ⟨p.map f, ?_⟩
+  simp only [Walk.support_map, List.mem_map]
+  rintro _ ⟨x, hx, rfl⟩
+  simpa using hp x hx
+
+namespace Iso
+
+/-- Vertex reachability is invariant under graph isomorphism. -/
+theorem isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) (u v : V) :
+    H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v :=
+  ⟨fun h ↦ by simpa using h.map e.symm.toHom e.symm.injective,
+    fun h ↦ h.map e.toHom e.injective⟩
+
+end Iso
+
+/-! ### Vertex connectivity -/
+
+variable (G k) in
+/-- A graph is `k`-vertex-connected if it has at least `k + 1` vertices and any two vertices are
+`k`-vertex-reachable. For finite `k` this asks for more than `k` vertices; for `k = ⊤` it asks for
+infinitely many. -/
+def IsVertexConnected : Prop :=
+  k + 1 ≤ ENat.card V ∧ ∀ u v, G.IsVertexReachable k u v
+
+theorem isVertexConnected_def :
+    G.IsVertexConnected k ↔ k + 1 ≤ ENat.card V ∧ ∀ u v, G.IsVertexReachable k u v :=
+  Iff.rfl
+
+/-- A graph is `k`-vertex-connected exactly when it has at least `k + 1` vertices and stays
+preconnected after deleting any set of fewer than `k` vertices. -/
+theorem isVertexConnected_iff : G.IsVertexConnected k ↔
+    k + 1 ≤ ENat.card V ∧ ∀ ⦃s : Set V⦄, s.encard < k → (G.induce sᶜ).Preconnected :=
+  and_congr_right fun _ ↦ ⟨fun h _ hs ⟨u, hu⟩ ⟨v, hv⟩ ↦ h u v hs hu hv,
+    fun h u v _ hs hu hv ↦ h hs ⟨u, hu⟩ ⟨v, hv⟩⟩
+
+theorem IsVertexConnected.add_one_le_card (h : G.IsVertexConnected k) : k + 1 ≤ ENat.card V :=
+  h.1
+
+theorem IsVertexConnected.isVertexReachable (h : G.IsVertexConnected k) (u v : V) :
+    G.IsVertexReachable k u v :=
+  h.2 u v
+
+namespace Iso
+
+/-- Vertex connectivity is invariant under graph isomorphism. -/
+theorem isVertexConnected_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.IsVertexConnected k ↔ G.IsVertexConnected k := by
+  rw [isVertexConnected_def, isVertexConnected_def, ENat.card_congr e.toEquiv]
+  simp only [e.isVertexReachable_iff, e.surjective.forall]
+
+end Iso
+
+theorem IsVertexConnected.nonempty (h : G.IsVertexConnected k) : Nonempty V :=
+  (ENat.one_le_card_iff_nonempty V).1 (le_add_self.trans h.1)
+
+/-- Vertex connectivity at a smaller threshold follows from vertex connectivity at a larger
+one. -/
+@[gcongr]
+theorem IsVertexConnected.anti (hkl : k ≤ l) (h : G.IsVertexConnected l) :
+    G.IsVertexConnected k :=
+  ⟨le_trans (by gcongr) h.1, fun u v ↦ (h.2 u v).anti hkl⟩
+
+/-- Vertex connectivity is monotone in the graph. -/
+@[gcongr]
+theorem IsVertexConnected.mono (hGH : G ≤ H) (h : G.IsVertexConnected k) :
+    H.IsVertexConnected k :=
+  ⟨h.1, fun u v ↦ (h.2 u v).mono hGH⟩
+
+/-- A graph is `0`-vertex-connected exactly when its vertex type is nonempty. -/
+@[simp]
+theorem isVertexConnected_zero : G.IsVertexConnected 0 ↔ Nonempty V := by
+  simp [isVertexConnected_def, ENat.one_le_card_iff_nonempty]
+
+/-- A graph is `1`-vertex-connected exactly when it is connected and has at least two
+vertices. -/
+@[simp]
+theorem isVertexConnected_one : G.IsVertexConnected 1 ↔ G.Connected ∧ Nontrivial V := by
+  rw [isVertexConnected_def, ENat.add_one_le_iff ENat.one_ne_top, ENat.one_lt_card_iff_nontrivial,
+    connected_iff]
+  simp only [isVertexReachable_one]
+  exact ⟨fun ⟨_, h⟩ ↦ ⟨⟨h, inferInstance⟩, inferInstance⟩, fun ⟨⟨h, _⟩, _⟩ ↦ ⟨‹_›, h⟩⟩
+
+/-- A simple graph is 2-vertex-connected exactly when it has at least three vertices, is
+connected, and has no cut vertex. -/
+theorem isVertexConnected_two_iff : G.IsVertexConnected 2 ↔
+    3 ≤ ENat.card V ∧ G.Connected ∧ ∀ v, ¬G.IsCutVertex v := by
+  constructor
+  · intro h
+    have hcard := h.add_one_le_card
+    norm_num at hcard
+    refine ⟨hcard, (connected_iff G).2 ⟨fun u v ↦ (h.2 u v).reachable (by simp), h.nonempty⟩,
+      fun x hx ↦ ?_⟩
+    rw [isCutVertex_iff_exists_forall_walk_mem_support] at hx
+    obtain ⟨u, w, hux, hwx, -, hall⟩ := hx
+    obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.mp (h.isVertexReachable u w)
+      (s := {x}) (by simp) (by simpa) (by simpa)
+    exact hp x (hall p) (by simp)
+  · rintro ⟨hcard, hconn, hcut⟩
+    rw [isVertexConnected_iff]
+    refine ⟨by norm_num at hcard ⊢; exact hcard, fun {s} hs ↦ ?_⟩
+    have hsle : s.encard ≤ 1 := ENat.lt_two_iff.mp hs
+    have hsub : s.Subsingleton := Set.encard_le_one_iff_subsingleton.mp hsle
+    intro u v
+    by_cases hsempty : s = ∅
+    · obtain ⟨p⟩ := hconn.preconnected u.1 v.1
+      exact ⟨p.induce sᶜ fun _ _ ↦ by simp [hsempty]⟩
+    · obtain ⟨x, hxs⟩ := Set.nonempty_iff_ne_empty.mpr hsempty
+      have hu : u.1 ∉ s := u.2
+      have hv : v.1 ∉ s := v.2
+      obtain ⟨p, hp⟩ :=
+        (hconn.preconnected u.1 v.1).exists_walk_notMem_support_of_not_isCutVertex (hcut x)
+          (fun hux ↦ hu (hux ▸ hxs)) (fun hvx ↦ hv (hvx ▸ hxs))
+      exact ⟨p.induce sᶜ fun y hy hys ↦ hp (hsub hys hxs ▸ hy)⟩
+
+theorem IsVertexConnected.preconnected (hk : k ≠ 0) (h : G.IsVertexConnected k) :
+    G.Preconnected :=
+  fun u v ↦ (h.2 u v).reachable hk
+
+theorem IsVertexConnected.connected (hk : k ≠ 0) (h : G.IsVertexConnected k) : G.Connected :=
+  (connected_iff G).2 ⟨h.preconnected hk, h.nonempty⟩
+
+/-- The complete graph is `k`-vertex-connected exactly when it has at least `k + 1` vertices. -/
+@[simp]
+theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k ↔
+    k + 1 ≤ ENat.card V := by
+  refine ⟨And.left, fun h ↦ ⟨h, fun u v ↦ ?_⟩⟩
+  obtain rfl | huv := eq_or_ne u v
+  · exact .rfl
+  · exact ((top_adj u v).2 huv).isVertexReachable
+
+/-! ### The numerical invariant -/
+
+variable (G) in
+/-- The vertex connectivity of a simple graph: the supremum in `ℕ∞` of the natural thresholds `k`
+at which it is `k`-vertex-connected. It is `0` on the empty vertex type. -/
+noncomputable def vertexConnectivity : ℕ∞ :=
+  ⨆ (k : ℕ) (_ : G.IsVertexConnected k), (k : ℕ∞)
+
+/-- Vertex connectivity is the supremum of the natural connectivity thresholds. -/
+theorem vertexConnectivity_def :
+    G.vertexConnectivity = ⨆ (k : ℕ) (_ : G.IsVertexConnected k), (k : ℕ∞) := (rfl)
+
+/-- Vertex connectivity is invariant under graph isomorphism. -/
+theorem Iso.vertexConnectivity_eq {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.vertexConnectivity = G.vertexConnectivity := by
+  simp only [vertexConnectivity, e.isVertexConnected_iff]
+
+/-- On a nonempty vertex type, vertex connectivity records exactly the thresholds at which the
+graph is vertex-connected. -/
+theorem isVertexConnected_iff_le_vertexConnectivity [Nonempty V] (k : ℕ) :
+    G.IsVertexConnected k ↔ k ≤ G.vertexConnectivity :=
+  (Antitone.natCast_le_iSup_iff
+    (fun _ _ hkl (h : G.IsVertexConnected _) ↦ h.anti (Nat.cast_le.2 hkl))
+    (by simpa using ‹Nonempty V›)).symm
+
+@[simp]
+theorem vertexConnectivity_of_isEmpty [IsEmpty V] : G.vertexConnectivity = 0 :=
+  le_antisymm (iSup₂_le fun _ hk ↦ isEmptyElim hk.nonempty.some) bot_le
+
+/-- Vertex connectivity is monotone in the graph. -/
+@[gcongr]
+theorem vertexConnectivity_mono (hGH : G ≤ H) : G.vertexConnectivity ≤ H.vertexConnectivity :=
+  iSup_mono fun _ ↦ iSup_mono' fun hk ↦ ⟨hk.mono hGH, le_rfl⟩
+
+theorem vertexConnectivity_le_card : G.vertexConnectivity ≤ ENat.card V :=
+  iSup₂_le fun _ hk ↦ le_self_add.trans hk.1
+
+/-- The vertex connectivity of a graph on a finite vertex type is finite. -/
+@[simp]
+theorem vertexConnectivity_ne_top [Finite V] : G.vertexConnectivity ≠ ⊤ :=
+  ne_top_of_le_ne_top ENat.card_lt_top_of_finite.ne vertexConnectivity_le_card
+
+/-- On a nonempty vertex type, the vertex connectivity plus one is at most the number of
+vertices, so the vertex connectivity is strictly less than it when `V` is finite. -/
+theorem vertexConnectivity_add_one_le_card [Nonempty V] :
+    G.vertexConnectivity + 1 ≤ ENat.card V := by
+  cases finite_or_infinite V
+  · obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 G.vertexConnectivity_ne_top
+    rw [← hn]
+    exact ((isVertexConnected_iff_le_vertexConnectivity n).2 hn.le).1
+  · rw [ENat.card_eq_top_of_infinite]
+    exact le_top
+
+/-- Vertex connectivity is at most the number of vertices minus one. -/
+theorem vertexConnectivity_le_card_sub_one :
+    G.vertexConnectivity ≤ ENat.card V - 1 := by
+  cases isEmpty_or_nonempty V
+  · rw [vertexConnectivity_of_isEmpty]
+    exact bot_le
+  · exact ((ENat.addLECancellable_of_ne_top ENat.one_ne_top).le_tsub_iff_right
+      ((ENat.one_le_card_iff_nonempty V).2 ‹_›)).mpr vertexConnectivity_add_one_le_card
+
+/-- A graph on at most one vertex has vertex connectivity zero. -/
+@[simp]
+theorem vertexConnectivity_of_subsingleton [Subsingleton V] : G.vertexConnectivity = 0 := by
+  cases isEmpty_or_nonempty V
+  · exact vertexConnectivity_of_isEmpty
+  · exact le_antisymm (vertexConnectivity_le_card_sub_one.trans
+      (tsub_eq_zero_of_le ENat.card_le_one).le) bot_le
+
+/-- The complete graph on `V` has vertex connectivity `ENat.card V - 1`. -/
+@[simp]
+theorem vertexConnectivity_top : (⊤ : SimpleGraph V).vertexConnectivity = ENat.card V - 1 := by
+  cases isEmpty_or_nonempty V
+  · simp [(ENat.card_eq_zero_iff_empty V).2 ‹_›]
+  · refine ENat.eq_of_forall_natCast_le_iff fun k ↦ ?_
+    rw [← isVertexConnected_iff_le_vertexConnectivity, isVertexConnected_top_iff,
+      (ENat.addLECancellable_of_ne_top ENat.one_ne_top).le_tsub_iff_right
+        ((ENat.one_le_card_iff_nonempty V).2 ‹_›)]
+
+/-! ### Menger's theorem -/
+
+/-- **Menger's theorem for vertex reachability.** Two distinct nonadjacent vertices `s` and `t` of
+a simple graph on a finite vertex type are `k`-vertex-reachable exactly when there are `k` paths
+from `s` to `t` pairwise sharing no vertex other than `s` and `t`. -/
+theorem isVertexReachable_iff_exists_paths [Finite V] {s t : V} (hst : s ≠ t) (hadj : ¬G.Adj s t)
+    (k : ℕ) :
+    G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
+      Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) :=
+  ⟨fun h ↦ (forall_reachable_induce_iff_exists_paths hst hadj k).1 fun X hs ht hX ↦
+      h (by simpa using hX) hs ht,
+    fun ⟨_, _, hP⟩ ↦ isVertexReachable_of_pairwise_internallyDisjoint hP⟩
+
+/-- If `x` and `w` stay reachable after deleting `y` and the vertices of `X`, they stay reachable
+after deleting the edge `s(x, y)` and the vertices of `X`. -/
+private theorem reachable_induce_deleteEdges_of_isVertexReachable {x y : V} {X : Finset V}
+    (h : G.IsVertexReachable k x w) (hk : (#X + 1 : ℕ∞) < k) (hxy : x ≠ y) (hwy : w ≠ y)
+    (hx : x ∉ X) (hw : w ∉ X) :
+    ((G.deleteEdges {s(x, y)}).induce (X : Set V)ᶜ).Reachable ⟨x, hx⟩ ⟨w, hw⟩ := by
+  obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 h (s := insert y (X : Set V))
+    ((Set.encard_insert_le _ _).trans_lt (by simpa [add_comm] using hk)) (by simp [hxy, hx])
+    (by simp [hwy, hw])
+  refine reachable_induce_iff.2 ⟨p.toDeleteEdges {s(x, y)} fun e he hey ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [Set.mem_singleton_iff] at hey
+    subst hey
+    exact hp y (p.snd_mem_support_of_mem_edges he) (Set.mem_insert _ _)
+  · rw [Walk.support_transfer] at hz
+    exact fun hzX ↦ hp z hz (Set.mem_insert_of_mem _ hzX)
+
+/-- **The global form of Menger's theorem.** A simple graph on a finite vertex type with more than
+`k` vertices is `k`-vertex-connected exactly when every two distinct vertices `s` and `t`,
+adjacent or not, are joined by `k` distinct paths pairwise sharing no vertex other than `s` and
+`t`. -/
+theorem isVertexConnected_iff_forall_exists_paths [Finite V] {k : ℕ} (hk : k < Nat.card V) :
+    G.IsVertexConnected k ↔ ∀ s t, s ≠ t → ∃ P : Fin k → G.Walk s t, Function.Injective P ∧
+      (∀ i, (P i).IsPath) ∧ Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
+  have hcard : (k : ℕ∞) + 1 ≤ ENat.card V := by
+    have := Fintype.ofFinite V
+    rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card]
+    exact_mod_cast Nat.succ_le_of_lt hk
+  refine ⟨fun h s t hst ↦ ?_, fun h ↦ ⟨hcard, fun s t ↦ ?_⟩⟩
+  · -- It suffices to find `n ≥ k` such paths; keep the first `k` of them.
+    suffices ∃ (n : ℕ) (P : Fin n → G.Walk s t), k ≤ n ∧ Function.Injective P ∧
+        (∀ i, (P i).IsPath) ∧ Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) by
+      obtain ⟨n, P, hkn, hinj, hP, hdisj⟩ := this
+      exact ⟨P ∘ Fin.castLE hkn, hinj.comp (Fin.castLE_injective hkn), fun i ↦ hP _,
+        fun i j hij ↦ hdisj ((Fin.castLE_injective hkn).ne hij)⟩
+    by_cases hadj : G.Adj s t
+    · obtain ⟨n, P, X, hinj, hP, hdisj, -, hs, ht, hX, rfl⟩ :=
+        exists_paths_vertexSeparator_card_add_one_eq hadj
+      refine ⟨#X + 1, P, ?_, hinj, hP, hdisj⟩
+      by_contra! hlt
+      -- A vertex `w` outside `X ∪ {s, t}` is separated from `s` or from `t` after deleting `X`
+      -- and the edge `s(s, t)`, while deleting the other end and `X` keeps it reachable.
+      classical
+      have := Fintype.ofFinite V
+      obtain ⟨w, -, hw⟩ := exists_mem_notMem_of_card_lt_card (s := insert s (insert t X))
+        (t := univ) (by
+          rw [card_univ, ← Nat.card_eq_fintype_card]
+          exact (card_insert_le _ _).trans_lt
+            (Nat.add_lt_of_lt_sub ((card_insert_le _ _).trans_lt (by omega))))
+      simp only [mem_insert, not_or] at hw
+      obtain ⟨hws, hwt, hwX⟩ := hw
+      have hk' : (#X + 1 : ℕ∞) < k := by exact_mod_cast hlt
+      refine hX ((reachable_induce_deleteEdges_of_isVertexReachable (h.2 s w) hk' hst hwt hs
+        hwX).trans ?_)
+      rw [Sym2.eq_swap]
+      exact (reachable_induce_deleteEdges_of_isVertexReachable (h.2 t w) hk' hst.symm hws ht
+        hwX).symm
+    · obtain ⟨n, P, X, hinj, hP, hdisj, hs, ht, hX, rfl⟩ :=
+        exists_paths_vertexSeparator_card_eq hst hadj
+      refine ⟨#X, P, ?_, hinj, hP, hdisj⟩
+      by_contra! hlt
+      exact hX (h.2 s t (by simpa using hlt) hs ht)
+  · obtain rfl | hst := eq_or_ne s t
+    · exact .rfl
+    · obtain ⟨P, -, -, hP⟩ := h s t hst
+      exact isVertexReachable_of_pairwise_internallyDisjoint hP
+
+/-! ### Whitney's inequality -/
+
+/-- For a set `F` of edges and two vertices `u, v`, a set of at most `|F \ {s(u, v)}|` vertices,
+none of them `u` or `v`, contains an end of every edge of `G` in `F` other than `s(u, v)`. -/
+private theorem exists_endpoints_of_edges (F : Set (Sym2 V)) (u v : V) :
+    ∃ S : Set V, u ∉ S ∧ v ∉ S ∧ S.encard ≤ (F \ {s(u, v)}).encard ∧
+      ∀ ⦃x y⦄, G.Adj x y → s(x, y) ∈ F → s(x, y) ≠ s(u, v) → x ∈ S ∨ y ∈ S := by
+  classical
+  let pick : Sym2 V → V := fun e ↦ if h : ∃ z ∈ e, z ≠ u ∧ z ≠ v then h.choose else u
+  have hpick {e : Sym2 V} (h : ∃ z ∈ e, z ≠ u ∧ z ≠ v) : pick e ∈ e ∧ pick e ≠ u ∧ pick e ≠ v := by
+    simpa [pick, h] using h.choose_spec
+  refine ⟨pick '' {e ∈ F \ {s(u, v)} | ∃ z ∈ e, z ≠ u ∧ z ≠ v}, ?_, ?_,
+    (Set.encard_image_le _ _).trans (Set.encard_le_encard fun _ he ↦ he.1), ?_⟩
+  · rintro ⟨e, ⟨-, he⟩, hu⟩
+    exact (hpick he).2.1 hu
+  · rintro ⟨e, ⟨-, he⟩, hv⟩
+    exact (hpick he).2.2 hv
+  · intro x y hxy hF hne
+    -- An edge other than `s(u, v)` has an end other than `u` and `v`.
+    have he : ∃ z ∈ s(x, y), z ≠ u ∧ z ≠ v := by
+      by_contra! h
+      simp only [Sym2.mem_iff, forall_eq_or_imp, forall_eq] at h
+      refine hne (Sym2.eq_iff.2 ?_)
+      have := hxy.ne
+      by_cases hxu : x = u <;> by_cases hyu : y = u <;> grind
+    have hmem : pick s(x, y) ∈ pick '' {e ∈ F \ {s(u, v)} | ∃ z ∈ e, z ≠ u ∧ z ≠ v} :=
+      ⟨_, ⟨⟨hF, hne⟩, he⟩, rfl⟩
+    rcases Sym2.mem_iff.1 (hpick he).1 with h | h <;> rw [h] at hmem
+    exacts [.inl hmem, .inr hmem]
+
+/-- A walk avoiding a set `S` of vertices that contains an end of every edge of `G` in `F` other
+than `s(u, v)` survives the deletion of `F`, provided it does not use `s(u, v) ∈ F`. -/
+private theorem reachable_deleteEdges_of_walk {F : Set (Sym2 V)} {S : Set V} {a b : V}
+    (hS : ∀ ⦃x y⦄, G.Adj x y → s(x, y) ∈ F → s(x, y) ≠ s(u, v) → x ∈ S ∨ y ∈ S)
+    (p : G.Walk a b) (hp : ∀ x ∈ p.support, x ∉ S) (huv : s(u, v) ∈ p.edges → s(u, v) ∉ F) :
+    (G.deleteEdges F).Reachable a b := by
+  refine ⟨p.toDeleteEdges F fun e he heF ↦ ?_⟩
+  induction e with | h x y => ?_
+  by_cases hne : s(x, y) = s(u, v)
+  · exact huv (hne ▸ he) (hne ▸ heF)
+  · rcases hS (p.adj_of_mem_edges he) heF hne with hx | hy
+    · exact hp x (p.fst_mem_support_of_mem_edges he) hx
+    · exact hp y (p.snd_mem_support_of_mem_edges he) hy
+
+/-- **Whitney's inequality**, predicate form: a `k`-vertex-connected graph is
+`k`-edge-connected. -/
+theorem IsVertexConnected.isEdgeConnected (h : G.IsVertexConnected k) : G.IsEdgeConnected k := by
+  intro u v F hF
+  -- Pick an end other than `u` and `v` of every edge of `F` other than `s(u, v)`; a walk from `u`
+  -- to `v` avoiding the set `S` of picked vertices uses no edge of `F` except possibly `s(u, v)`.
+  obtain ⟨S, hu, hv, hSF, hS⟩ := exists_endpoints_of_edges (G := G) F u v
+  by_cases huv : s(u, v) ∈ F ∧ G.Adj u v
+  · -- The edge `s(u, v)` is deleted, so `S` has fewer than `k - 1` vertices. Route through a
+    -- vertex `w` outside `S ∪ {u, v}`, avoiding `v` before `w` and `u` after it.
+    have hS1 : S.encard + 1 ≤ F.encard :=
+      (add_le_add hSF le_rfl).trans_eq (Set.encard_sdiff_singleton_add_one huv.1)
+    have hvS : (insert v S).encard < k := ((Set.encard_insert_le _ _).trans hS1).trans_lt hF
+    have huS : (insert u S).encard < k := ((Set.encard_insert_le _ _).trans hS1).trans_lt hF
+    obtain ⟨w, hw⟩ := (Set.ne_univ_iff_exists_notMem (insert u (insert v S))).1 fun heq ↦ by
+      have := (Set.encard_insert_le (insert v S) u).trans_lt
+        ((ENat.add_lt_add_iff_right ENat.one_ne_top).2 hvS)
+      rw [heq, Set.encard_univ] at this
+      exact this.not_ge h.add_one_le_card
+    simp only [Set.mem_insert_iff, not_or] at hw
+    obtain ⟨hwu, hwv, hwS⟩ := hw
+    obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 (h.2 u w) hvS
+      (by simp [huv.2.ne, hu]) (by simp [hwv, hwS])
+    obtain ⟨q, hq⟩ := isVertexReachable_iff_exists_walk.1 (h.2 w v) huS
+      (by simp [hwu, hwS]) (by simp [huv.2.ne', hv])
+    refine (reachable_deleteEdges_of_walk hS p (fun x hx hxS ↦ hp x hx (.inr hxS)) fun he _ ↦
+      hp v (p.snd_mem_support_of_mem_edges he) (.inl rfl)).trans
+      (reachable_deleteEdges_of_walk hS q (fun x hx hxS ↦ hq x hx (.inr hxS)) fun he _ ↦
+        hq u (q.fst_mem_support_of_mem_edges he) (.inl rfl))
+  · obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.1 (h.2 u v)
+      ((hSF.trans (Set.encard_le_encard Set.sdiff_subset)).trans_lt hF) hu hv
+    exact reachable_deleteEdges_of_walk hS p hp fun he hF ↦ huv ⟨hF, p.adj_of_mem_edges he⟩
+
+/-- **Whitney's inequality**: the vertex connectivity of a simple graph is at most its edge
+connectivity. -/
+theorem vertexConnectivity_le_edgeConnectivity : G.vertexConnectivity ≤ G.edgeConnectivity :=
+  iSup₂_le fun _ hk ↦ isEdgeConnected_iff_le_edgeConnectivity.1 hk.isEdgeConnected
+
+end SimpleGraph

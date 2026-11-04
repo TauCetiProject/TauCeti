@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Algebra.Star.ProjectionFamily
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # A complete family of orthogonal idempotents decomposes every module
@@ -301,8 +302,9 @@ theorem projectionFamilyOverlap_injective (hPsum : ∑ i, P i = 1)
   intro x y hxy
   have hcomponents (i : ι) : P i x = P i y := by
     apply hPQ i (LinearMap.mem_range_self _ _) (LinearMap.mem_range_self _ _)
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← hQ.mul_projectionFamilyOverlap P i]
-    simpa only [Module.End.mul_apply] using congrArg (Q i) hxy
+    rw [← _root_.mul_apply_eq_comp, ← _root_.mul_apply_eq_comp,
+      ← hQ.mul_projectionFamilyOverlap P i]
+    simpa only [_root_.mul_apply_eq_comp] using congrArg (Q i) hxy
   rw [← sum_smul_eq_self_of_sum_eq_one hPsum x,
     ← sum_smul_eq_self_of_sum_eq_one hPsum y]
   simp only [Module.End.smul_def]

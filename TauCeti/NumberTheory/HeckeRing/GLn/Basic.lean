@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.HeckeRing.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DoubleCoset
 
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+
 /-!
 # The arithmetic Hecke triple for `GL_n`
 
@@ -397,22 +399,6 @@ lemma SLnZ_le_posDetInt : (SLnZ n).toSubmonoid ≤ posDetInt n := by
 lemma SLnZ_le_glpos : SLnZ n ≤ Matrix.GLPos (Fin n) ℚ := fun _ h ↦
   posDetInt_le_glpos n (SLnZ_le_posDetInt n h)
 
-/-- Kernel element of `SL_n(ℤ) → SL_n(ℤ/dℤ)` has entries congruent to identity mod d. -/
-private lemma ker_entry_dvd (d : ℕ) (γ : SpecialLinearGroup (Fin n) ℤ)
-    (hγ : γ ∈ (SpecialLinearGroup.map (Int.castRingHom (ZMod d))).ker) (i j : Fin n) :
-    (d : ℤ) ∣ (γ.val i j - (1 : Matrix (Fin n) (Fin n) ℤ) i j) := by
-  rw [MonoidHom.mem_ker] at hγ
-  have h0 := congr_arg Subtype.val hγ
-  rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
-    SpecialLinearGroup.coe_one] at h0
-  have h := congr_fun₂ h0 i j
-  rw [Matrix.map_apply, Int.coe_castRingHom] at h
-  rw [Matrix.one_apply] at h ⊢
-  split_ifs at h ⊢
-  · exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (by simp [h])
-  · rw [sub_zero]
-    exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp h
-
 /-- When `d | (gamma - I)` entry-wise, decompose `gamma = I + d * M`. -/
 private lemma gamma_decompose (d : ℤ) (gamma : Matrix (Fin n) (Fin n) ℤ)
     (hgamma : ∀ i j : Fin n, d ∣ (gamma i j - (1 : Matrix (Fin n) (Fin n) ℤ) i j)) :
@@ -507,7 +493,9 @@ lemma inv_conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n)
     g⁻¹ * (γ : GL (Fin n) ℚ) * g ∈ SLnZ n := by
   have hAdet : A.det ≠ 0 := det_ne_zero_of_val_eq n g hA
   have h_entry : ∀ i j, A.det ∣ (γ.val i j - (1 : Matrix _ _ ℤ) i j) :=
-    fun i j ↦ Int.natAbs_dvd.mp (ker_entry_dvd n A.det.natAbs γ hγ i j)
+    fun i j ↦ by
+      rw [Matrix.one_apply]
+      exact Int.natAbs_dvd.mp (SpecialLinearGroup.mem_ker_map_intCast_zmod_iff.mp hγ i j)
   have hdvd := adjugate_conj_dvd n A γ.val h_entry
   set delta_mat := Matrix.of fun i j ↦ (A.adjugate * γ.val * A) i j / A.det
   have hdelta_det : delta_mat.det = 1 := conj_mat_det_one n A γ.val γ.prop hdvd hAdet
@@ -606,7 +594,9 @@ lemma conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n) (Fi
     g * (γ : GL (Fin n) ℚ) * g⁻¹ ∈ SLnZ n := by
   have hAdet : A.det ≠ 0 := det_ne_zero_of_val_eq n g hA
   have h_entry : ∀ i j, A.det ∣ (γ.val i j - (1 : Matrix _ _ ℤ) i j) :=
-    fun i j ↦ Int.natAbs_dvd.mp (ker_entry_dvd n A.det.natAbs γ hγ i j)
+    fun i j ↦ by
+      rw [Matrix.one_apply]
+      exact Int.natAbs_dvd.mp (SpecialLinearGroup.mem_ker_map_intCast_zmod_iff.mp hγ i j)
   have hdvd := conj_dvd_reverse n A γ.val h_entry
   set delta_mat := Matrix.of fun i j ↦ (A * γ.val * A.adjugate) i j / A.det
   have hdelta_det : delta_mat.det = 1 :=

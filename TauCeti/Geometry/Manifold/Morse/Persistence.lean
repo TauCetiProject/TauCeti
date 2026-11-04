@@ -37,10 +37,24 @@ Both statements are read off from the vector-space theorem
 chart, using that nondegeneracy, criticality and the Morse index may be computed in any chart of
 the maximal atlas.
 
+Nondegeneracy of all critical points in a compact set `K` is likewise stable: if every critical
+point of `f` in `K` is nondegenerate, then so is every critical point in `K` of each map near `f`
+(`TauCeti.eventually_forall_isManifoldNondegenerateCriticalPoint`). Near a point of `K` all
+critical points of `f` are nondegenerate, since a regular point has a neighbourhood free of
+critical points and a nondegenerate critical point is isolated. On a closed coordinate ball around
+it, the vector-space theorem
+`TauCeti.HasNondegenerateCriticalPointsOn.exists_pos_forall_hasNondegenerateCriticalPointsOn`
+applies to the uniformly `C²`-close coordinate expressions of nearby maps, and finitely many such
+balls cover `K`. Consequently the smooth functions which are Morse on `K` form an open set
+(`TauCeti.isOpen_setOf_isMorseOn`), and on a compact manifold so do the Morse functions
+(`TauCeti.isOpen_setOf_isMorse`). This is the openness half of the genericity of Morse functions.
+
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 1.
+* M. Hirsch, *Differential Topology*, Graduate Texts in Mathematics 33, Springer, 1976,
+  Chapter 6, §1, for the openness of Morse functions on compact sets.
 * J. Milnor, *Lectures on the h-cobordism theorem*, Princeton University Press, 1965, §2.
 -/
 
@@ -129,6 +143,39 @@ open scoped TauCeti.ManifoldWeakWhitney
 
 variable {n : ℕ∞ω} [IsManifold I n M]
 
+/-- On a closed coordinate ball in the preferred chart target, the first and second coordinate
+derivatives of every map near a `C^n` function `f`, `n ≥ 2`, in the weak Whitney topology are
+within `δ` of those of `f`. -/
+private theorem eventually_forall_norm_fderiv_sub_le {f : C^n⟮I, M; 𝓘(ℝ), ℝ⟯} (hn : 2 ≤ n)
+    {r : ℝ} (hr : closedBall (extChartAt I x x) r ⊆ (extChartAt I x).target) {δ : ℝ}
+    (hδ : 0 < δ) :
+    ∀ᶠ g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ in 𝓝 f, ∀ z ∈ closedBall (extChartAt I x x) r,
+      ‖fderiv ℝ (g ∘ (extChartAt I x).symm) z - fderiv ℝ (f ∘ (extChartAt I x).symm) z‖ ≤ δ ∧
+      ‖fderiv ℝ (fderiv ℝ (g ∘ (extChartAt I x).symm)) z -
+        fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) z‖ ≤ δ := by
+  have hT : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
+  -- On the compact ball, coordinate derivatives of nearby maps converge uniformly.
+  have h₀ : ∀ w ∈ closedBall (extChartAt I x x) r,
+      f ((extChartAt I x).symm w) ∈ (extChartAt 𝓘(ℝ) (0 : ℝ)).source := by
+    simp
+  have h₁ := tendstoUniformlyOn_fderivWithin_extChartAt (one_le_two.trans hn)
+    (isCompact_closedBall _ r) hr h₀
+  have h₂ := tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt hn
+    (isCompact_closedBall _ r) hr h₀
+  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp] at h₁ h₂
+  filter_upwards [(Metric.tendstoUniformlyOn_iff (α := E →L[ℝ] ℝ)).1 h₁ δ hδ,
+    (Metric.tendstoUniformlyOn_iff (α := E →L[ℝ] E →L[ℝ] ℝ)).1 h₂ δ hδ] with g hg₁ hg₂ z hz
+  have h₁z := hg₁ z hz
+  have h₂z := hg₂ z hz
+  -- On the open chart target, derivatives within the target are ordinary derivatives.
+  rw [fderivWithin_of_isOpen hT (hr hz), fderivWithin_of_isOpen hT (hr hz), dist_comm] at h₁z
+  rw [fderivWithin_fderivWithin_eq_of_mem_nhds (hT.mem_nhds (hr hz)),
+    fderivWithin_fderivWithin_eq_of_mem_nhds (hT.mem_nhds (hr hz)), dist_comm] at h₂z
+  exact ⟨((dist_eq_norm (fderiv ℝ (g ∘ (extChartAt I x).symm) z)
+      (fderiv ℝ (f ∘ (extChartAt I x).symm) z)).symm.trans_lt h₁z).le,
+    ((dist_eq_norm (fderiv ℝ (fderiv ℝ (g ∘ (extChartAt I x).symm)) z)
+      (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) z)).symm.trans_lt h₂z).le⟩
+
 /-- For a `C^n` function `f` with `n ≥ 2` whose coordinate differential vanishes at the chart
 image of `x` in the preferred chart, every map near `f` in the weak Whitney topology satisfies the
 `δ`-hypotheses of the chart persistence theorem on a closed coordinate ball in the chart target. -/
@@ -156,24 +203,9 @@ private theorem eventually_perturbation_hypotheses {f : C^n⟮I, M; 𝓘(ℝ), �
     simp only [Function.comp_apply, id_eq, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.id_comp]
     exact fderivWithin_of_isOpen hT (mem_extChartAt_target x)
-  -- On the compact ball, second coordinate derivatives of nearby maps converge uniformly.
-  have h2 : TendstoUniformlyOn (fun (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) w ↦
-      fderivWithin ℝ (fderivWithin ℝ (g ∘ (extChartAt I x).symm) (extChartAt I x).target)
-        (extChartAt I x).target w)
-      (fun w ↦ fderivWithin ℝ (fderivWithin ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x).target)
-        (extChartAt I x).target w) (𝓝 f) (closedBall (extChartAt I x x) r) := by
-    simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp] using
-      tendstoUniformlyOn_fderivWithin_fderivWithin_extChartAt (f₀ := f) (y := (0 : ℝ)) hn
-        (isCompact_closedBall _ r) hr (by simp)
   filter_upwards [h1.eventually (closedBall_mem_nhds 0 hδ),
-    (Metric.tendstoUniformlyOn_iff (α := E →L[ℝ] E →L[ℝ] ℝ)).1 h2 δ hδ] with g hg1 hg2
-  refine ⟨by simpa using hg1, fun z hz ↦ ?_⟩
-  have := hg2 z hz
-  -- On the open chart target, derivatives within the target are ordinary derivatives.
-  rw [fderivWithin_fderivWithin_eq_of_mem_nhds (hT.mem_nhds (hr hz)),
-    fderivWithin_fderivWithin_eq_of_mem_nhds (hT.mem_nhds (hr hz)), dist_comm] at this
-  exact ((dist_eq_norm (fderiv ℝ (fderiv ℝ (g ∘ (extChartAt I x).symm)) z)
-    (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) z)).symm.trans_lt this).le
+    eventually_forall_norm_fderiv_sub_le hn hr hδ] with g hg1 hg2
+  exact ⟨by simpa using hg1, fun z hz ↦ (hg2 z hz).2⟩
 
 /-- **Persistence of a nondegenerate critical point in the weak Whitney topology.**
 
@@ -227,6 +259,103 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mem_nhds_eventually_critical
   obtain rfl := huniq y' (image_mono hr'r hy'K) hy'.mem_criticalPoints
   obtain ⟨z, hz, rfl⟩ := hy'K
   exact ⟨_, ⟨hyK, (hr'U hz).1⟩, hpab hga (hr'U hz).2, hy, hyind, huniq⟩
+
+/-- If all critical points of a `C^n` function `f`, `n ≥ 2`, near `x` are nondegenerate, then
+there is a neighbourhood `U` of `x` such that every map near `f` in the weak Whitney topology has
+only nondegenerate critical points in `U`. -/
+private theorem exists_mem_nhds_eventually_forall_isManifoldNondegenerateCriticalPoint
+    {f : C^n⟮I, M; 𝓘(ℝ), ℝ⟯} (hn : 2 ≤ n)
+    (hf : ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y) :
+    ∃ U ∈ 𝓝 x, ∀ᶠ g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ in 𝓝 f,
+      ∀ y ∈ U, y ∈ criticalPoints I g → IsManifoldNondegenerateCriticalPoint I g y := by
+  have : IsManifold I 2 M := IsManifold.of_le hn
+  set φ := extChartAt I x
+  have hT : IsOpen φ.target := isOpen_extChartAt_target x
+  have he₂ : chartAt H x ∈ IsManifold.maximalAtlas I 2 M := IsManifold.chart_mem_maximalAtlas x
+  -- Coordinate expressions of `C^n` maps are `C^n` on the chart target, and on the chart source
+  -- criticality and nondegeneracy may be read in the chart.
+  have hC (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) : ContDiffOn ℝ n (g ∘ φ.symm) φ.target :=
+    contMDiffOn_iff_contDiffOn.1 (g.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))
+  have hsrc {y : M} (hy : y ∈ φ.source) : y ∈ (chartAt H x).source := by
+    rwa [extChartAt_source] at hy
+  have hcrit (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) {y : M} (hy : y ∈ φ.source) :
+      y ∈ criticalPoints I g ↔ fderiv ℝ (g ∘ φ.symm) (φ y) = 0 :=
+    mem_criticalPoints.trans <| mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he₂) (hsrc hy)
+      ((g.contMDiff.of_le (one_le_two.trans hn)).mdifferentiableAt one_ne_zero)
+  have hnd (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) {y : M} (hy : y ∈ φ.source) :
+      IsManifoldNondegenerateCriticalPoint I g y ↔
+        IsNondegenerateCriticalPoint (g ∘ φ.symm) (φ y) :=
+    isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he₂ (hsrc hy)
+  -- A closed coordinate ball `B` in the chart target, on which `f` has only nondegenerate
+  -- critical points in coordinates.
+  obtain ⟨r, hr, hB⟩ := nhds_basis_closedBall.mem_iff.1 (inter_mem
+    (hT.mem_nhds (mem_extChartAt_target x))
+    ((continuousAt_extChartAt_symm x).preimage_mem_nhds (by rwa [extChartAt_to_inv])))
+  have hBT : closedBall (φ x) r ⊆ φ.target := fun z hz ↦ (hB hz).1
+  have hfB : HasNondegenerateCriticalPointsOn (f ∘ φ.symm) (closedBall (φ x) r) := by
+    refine hasNondegenerateCriticalPointsOn_iff.2 fun z hz hz₀ ↦ ?_
+    have hzs := φ.map_target (hBT hz)
+    have hzr := φ.right_inv (hBT hz)
+    simpa only [hzr] using (hnd f hzs).1 ((hB hz).2 ((hcrit f hzs).2 (by rwa [hzr])))
+  obtain ⟨δ, hδ, hpert⟩ := hfB.exists_pos_forall_hasNondegenerateCriticalPointsOn
+    (isCompact_closedBall _ r)
+    (((hC f).continuousOn_fderiv_of_isOpen hT (one_le_two.trans hn)).mono hBT)
+    ((((hC f).fderiv_of_isOpen hT (one_add_one_eq_two.trans_le hn)).continuousOn_fderiv_of_isOpen
+      hT le_rfl).mono hBT)
+  refine ⟨φ.source ∩ φ ⁻¹' ball (φ x) r, inter_mem (extChartAt_source_mem_nhds x)
+    ((continuousAt_extChartAt x).preimage_mem_nhds (ball_mem_nhds _ hr)), ?_⟩
+  filter_upwards [eventually_forall_norm_fderiv_sub_le hn hBT hδ] with g hg y ⟨hys, hyr⟩ hy
+  exact (hnd g hys).2 (hasNondegenerateCriticalPointsOn_iff.1 (hpert (g ∘ φ.symm)
+    (fun z hz ↦ ((hC g).contDiffAt (hT.mem_nhds (hBT hz))).of_le hn) (fun z hz ↦ (hg z hz).1)
+    (fun z hz ↦ (hg z hz).2)) (ball_subset_closedBall hyr) ((hcrit g hys).1 hy))
+
+/-- **Nondegeneracy on a compact set persists in the weak Whitney topology.**
+
+Let `f` be a `C^n` function, `n ≥ 2`, on a boundaryless finite-dimensional manifold, all of whose
+critical points in a compact set `K` are nondegenerate. Then every map near `f` in the weak
+Whitney topology again has only nondegenerate critical points in `K`. -/
+theorem eventually_forall_isManifoldNondegenerateCriticalPoint {f : C^n⟮I, M; 𝓘(ℝ), ℝ⟯}
+    (hn : 2 ≤ n) {K : Set M} (hK : IsCompact K)
+    (hf : ∀ x ∈ K, x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x) :
+    ∀ᶠ g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ in 𝓝 f,
+      ∀ x ∈ K, x ∈ criticalPoints I g → IsManifoldNondegenerateCriticalPoint I g x := by
+  have : IsManifold I 1 M := IsManifold.of_le (one_le_two.trans hn)
+  -- Near each point of `K` all critical points of `f` are nondegenerate: a regular point has a
+  -- neighbourhood free of critical points, and a nondegenerate critical point is isolated.
+  have hloc (x : M) (hx : x ∈ K) :
+      ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y := by
+    by_cases hxc : x ∈ criticalPoints I f
+    · filter_upwards [eventually_nhdsWithin_iff.1
+        (hf x hx hxc).eventually_notMem_criticalPoints] with y hy hyc
+      by_cases hyx : y = x
+      · exact hyx ▸ hf x hx hxc
+      · exact absurd hyc (hy hyx)
+    · filter_upwards [(isClosed_criticalPoints
+        (f.contMDiff.of_le (one_le_two.trans hn))).isOpen_compl.mem_nhds hxc] with y hy hyc
+      exact absurd hyc hy
+  choose! U hU hUg using fun x hx ↦
+    exists_mem_nhds_eventually_forall_isManifoldNondegenerateCriticalPoint hn (hloc x hx)
+  obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hU
+  filter_upwards [(eventually_all_finset t).2 fun x hx ↦ hUg x (htK x hx)] with g hg y hy hcrit
+  obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (hKt hy)
+  exact hg x hxt y hyx hcrit
+
+/-- For a compact set `K`, the smooth functions which are Morse on `K` form an open set in the
+weak Whitney topology. -/
+theorem isOpen_setOf_isMorseOn [IsManifold I ∞ M] {K : Set M} (hK : IsCompact K) :
+    IsOpen {f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ | IsMorseOn I f K} := by
+  simp only [isMorseOn_iff_criticalPoints]
+  refine isOpen_iff_mem_nhds.2 fun f hf ↦ ?_
+  filter_upwards [eventually_forall_isManifoldNondegenerateCriticalPoint (by simp) hK hf.2]
+    with g hg
+  exact ⟨g.contMDiff.contMDiffOn, hg⟩
+
+/-- **Morse functions on a compact manifold form an open set** in the weak Whitney topology on
+smooth functions. -/
+theorem isOpen_setOf_isMorse [IsManifold I ∞ M] [CompactSpace M] :
+    IsOpen {f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ | IsMorse I f} := by
+  simpa only [isMorseOn_univ] using isOpen_setOf_isMorseOn (I := I) isCompact_univ
 
 end WeakWhitney
 

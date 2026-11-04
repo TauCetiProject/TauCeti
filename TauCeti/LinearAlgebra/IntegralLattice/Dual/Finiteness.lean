@@ -81,8 +81,7 @@ private theorem eq_zero_of_forall_form_eq_zero_of_moduleFinite_dualCarrier
     exact Submodule.zero_mem _⟩
   let b := Module.Free.chooseBasis ℤ L.dualCarrier
   have hcoord (j) : b.repr xd j = 0 := by
-    apply Int.eq_zero_of_dvd_all_primes_ne (p := 2)
-    intro p hp _
+    refine Int.eq_zero_of_eventually_prime_dvd <| .of_forall fun p hp ↦ ?_
     let yd : L.dualCarrier := ⟨(p : ℚ)⁻¹ • x, by
       rw [LinearMap.BilinForm.mem_dualSubmodule]
       intro y _

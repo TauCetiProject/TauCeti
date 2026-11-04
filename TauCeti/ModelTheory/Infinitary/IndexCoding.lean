@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Encodable.Basic
 public import Mathlib.Logic.Embedding.Basic
+public import Mathlib.Data.Set.Lattice.Indexed
 
 /-!
 # Index codings
@@ -258,6 +259,19 @@ theorem exists_pad_false_iff (c : IndexCoding ι κ) (p : ι → Prop) :
     | some i => exact ⟨i, by simpa only [pad_of_decode_some c hd] using hk⟩
   · rintro ⟨i, hi⟩
     exact ⟨c.encode i, by simpa only [pad_encode] using hi⟩
+
+/-- Taking the union of sets assigned to a padded family preserves the original union
+when the default is assigned the empty set. -/
+@[simp]
+theorem iUnion_pad_of_eq_empty {β : Sort*} {γ : Type*} (c : IndexCoding ι κ)
+    {g : β → Set γ} {d : β} (hd : g d = ∅) (f : ι → β) :
+    (⋃ k, g (c.pad d f k)) = ⋃ i, g (f i) := by
+  ext x
+  simp only [Set.mem_iUnion]
+  have hpad := congrFun (c.comp_pad (fun b => x ∈ g b) d f)
+  simp only [Function.comp_apply, hd, Set.mem_empty_iff_false] at hpad
+  simp_rw [hpad]
+  exact c.exists_pad_false_iff _
 
 end IndexCoding
 

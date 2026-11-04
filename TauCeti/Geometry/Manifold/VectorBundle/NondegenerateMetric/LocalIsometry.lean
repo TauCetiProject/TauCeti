@@ -45,6 +45,9 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
 * `isLocalIsometry_ofRiemannianBundle_iff`: for Riemannian metrics, local isometries are the local
   Riemannian isometries.
 * `IsLocalIsometry.koszul_mpullback`: the Koszul expression is natural under local isometries.
+* `IsLocalIsometry.two_apply_mfderiv_eq_koszul`: the Koszul formula of a Levi-Civita connection of
+  the source metric, read in the target through the differential; it needs no connection of the
+  target metric.
 * `IsLocalIsometry.mfderiv_apply_mpullback_of_isLeviCivitaConnection`: **naturality of
   Levi-Civita connections** under local isometries.
 * `IsLocalIsometry.mpullback_apply_mpullback_of_isLeviCivitaConnection`: the vector-field form
@@ -181,9 +184,25 @@ theorem koszul_mpullback [CompleteSpace E] (hf : g.IsLocalIsometry g' f)
   rw [koszul_apply, koszul_apply]
   simpa only [koszulBilinear_apply] using h
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-  {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
-  {cov' : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
+variable [FiniteDimensional ℝ E] {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+
+/-- **The Koszul formula through a local isometry.** Let `∇` be a Levi-Civita connection of `g`
+and `f` a local isometry from `g` to `g'`. For vector fields `X`, `Y`, `Z` on `N` differentiable
+at `f x` with `X (f x) = df_x v`, `2 g'(df_x (∇_v (f^* Y)), Z)` at `f x` is the Koszul expression
+of `g'` on `X`, `Y`, `Z` at `f x`. No Levi-Civita connection of `g'` is needed. -/
+theorem two_apply_mfderiv_eq_koszul (hf : g.IsLocalIsometry g' f)
+    (h : g.IsLeviCivitaConnection cov) (hX : MDiffAt (T% X) (f x)) (hY : MDiffAt (T% Y) (f x))
+    (hZ : MDiffAt (T% Z) (f x)) {v : TangentSpace I x} (hXv : X (f x) = mfderiv I J f x v) :
+    2 * g' (f x) (mfderiv I J f x (cov (mpullback I J f Y) x v)) (Z (f x)) =
+      g'.koszul X Y Z (f x) := by
+  have hXx : mpullback I J f X x = v := by
+    rw [mpullback_apply, hXv, (hf.isInvertible_mfderiv x).inverse_apply_self]
+  have hk := h.two_apply_eq_koszul (hf.mdifferentiableAt_mpullback hX)
+    (hf.mdifferentiableAt_mpullback hY) (hf.mdifferentiableAt_mpullback hZ)
+  rw [hf.koszul_mpullback hX hY hZ, hXx] at hk
+  rw [← hk, ← hf.apply_mfderiv, hf.mfderiv_apply_mpullback]
+
+variable [FiniteDimensional ℝ F] {cov' : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
 
 /-- **Naturality of Levi-Civita connections under local isometries.** If `∇` and `∇'` are
 Levi-Civita connections of the nondegenerate metrics `g` and `g'` and `f` is a local isometry from
@@ -193,22 +212,15 @@ theorem mfderiv_apply_mpullback_of_isLeviCivitaConnection (hf : g.IsLocalIsometr
     (h : g.IsLeviCivitaConnection cov) (h' : g'.IsLeviCivitaConnection cov')
     (hY : MDiffAt (T% Y) (f x)) (v : TangentSpace I x) :
     mfderiv I J f x (cov (mpullback I J f Y) x v) = cov' Y (f x) (mfderiv I J f x v) := by
-  -- Realize the direction `df_x v` by a vector field on `N` whose pullback takes the value `v`.
+  -- Realize the direction `df_x v` by a vector field on `N` and compare both Koszul formulas.
   set X : Π y : N, TangentSpace J y := extend F (mfderiv I J f x v)
   have hX : MDiffAt (T% X) (f x) := mdifferentiableAt_extend J F _
   have hXv : X (f x) = mfderiv I J f x v := extend_apply_self F _
-  have hXx : mpullback I J f X x = v := by
-    rw [mpullback_apply, hXv, (hf.isInvertible_mfderiv x).inverse_apply_self]
   refine g'.injective_apply_mdifferentiableAt_vectorField (f x) ?_
   ext Z hZ
-  have hk := h.two_apply_eq_koszul (hf.mdifferentiableAt_mpullback hX)
-    (hf.mdifferentiableAt_mpullback hY) (hf.mdifferentiableAt_mpullback hZ)
+  have hk := hf.two_apply_mfderiv_eq_koszul h hX hY hZ hXv
   have hk' := h'.two_apply_eq_koszul hX hY hZ
-  rw [hf.koszul_mpullback hX hY hZ, hXx] at hk
   rw [hXv] at hk'
-  have hpair : g' (f x) (mfderiv I J f x (cov (mpullback I J f Y) x v)) (Z (f x)) =
-      g x (cov (mpullback I J f Y) x v) (mpullback I J f Z x) := by
-    rw [← hf.apply_mfderiv, hf.mfderiv_apply_mpullback]
   dsimp only
   linarith
 

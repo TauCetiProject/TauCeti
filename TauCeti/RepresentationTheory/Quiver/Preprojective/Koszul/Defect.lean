@@ -349,7 +349,7 @@ theorem finrank_ker_preprojectiveKoszulLeft [FiniteDimensional k Π] (v : Q) :
   -- The kernel is the line through `y`.
   let y' : LinearMap.ker (preprojectiveKoszulLeft k v) :=
     ⟨⟨y, (mem_preprojectiveRightProjective_iff k _ y).2 hyv⟩, (hmem _).2 hyb⟩
-  refine (finrank_eq_one_iff_of_nonzero' y' fun h => hy0 (congrArg
+  refine (finrank_eq_one_iff_of_ne_zero' y' fun h => hy0 (congrArg
     (fun x : LinearMap.ker (preprojectiveKoszulLeft k v) =>
       ((x : preprojectiveRightProjective k (Symmetrify.of.obj v)) : Π)) h)).2 fun x => ?_
   obtain ⟨t, ht⟩ := hz x (by

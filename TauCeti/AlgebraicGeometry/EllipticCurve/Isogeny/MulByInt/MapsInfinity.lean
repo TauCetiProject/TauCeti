@@ -85,7 +85,7 @@ private theorem isIntegralElem_genericX [W.IsElliptic] {n : ℤ}
   refine ⟨(W.map (algebraMap F W.CoordinateRing)).Φ n -
       C (AdjoinRoot.of W.polynomial X) * (W.map (algebraMap F W.CoordinateRing)).ΨSq n,
     WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq _ n _, ?_⟩
-  refine WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero _ ?_
+  refine (WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero_iff _).mpr ?_
   have hx : algebraMap W.CoordinateRing W.FunctionField (AdjoinRoot.of W.polynomial X) =
       mulByIntX W n := mulByIntPullback_X W hn
   simp only [hx, _root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_Φ,

@@ -52,7 +52,7 @@ within the model range, at every point of the chart target. -/
 theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
     (form : SmoothForm I M F k) :
     form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
-      extDerivWithin (form.1.inChartAt x₀) (Set.range I) z = 0 := by
+      extDerivWithin (RoughForm.inChartAt form.1 x₀) (Set.range I) z = 0 := by
   have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
   constructor
   · intro h x₀ z hz
@@ -64,6 +64,12 @@ theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
     funext x
     rw [mextDeriv_def]
     exact h x (extChartAt I x x) (mem_extChartAt_target x)
+
+/-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed, since there are
+no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/
+theorem isClosed_of_finrank_le [FiniteDimensional ℝ E] (h : Module.finrank ℝ E ≤ k)
+    (form : SmoothForm I M F k) : form.IsClosed :=
+  mextDeriv_eq_zero_of_finrank_le h form.1
 
 /-- Closedness can equivalently be checked pointwise on the exterior derivative. -/
 theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) :
@@ -135,6 +141,17 @@ theorem isClosed_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rw [hconst]
   exact mextDeriv_const A
 
+/-- The coordinate one-form `dz` of the real line is closed. -/
+theorem isClosed_realLineCoordForm : realLineCoordForm.IsClosed := by
+  -- `dz` agrees pointwise with a constant form, which is closed.
+  have h : realLineCoordForm = SmoothForm.const
+      (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ)) := by
+    ext z v
+    rw [realLineCoordForm_apply, const_apply]
+    rfl
+  rw [h]
+  exact isClosed_const _
+
 section Pullback
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -146,6 +163,16 @@ theorem IsClosed.mpullback {φ : SmoothForm I' M' F k} (hφ : φ.IsClosed) (f : 
     (hf : ContMDiff I I' ∞ f) : (mpullback f hf φ).IsClosed := by
   rw [isClosed_def, ← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback, mextDerivₗ_apply,
     (isClosed_def φ).mp hφ, TauCeti.mpullback_zero]
+
+/-- Along a surjective smooth map whose derivatives are all surjective, a smooth form is closed
+exactly when its pullback is. -/
+theorem isClosed_mpullback_iff_of_surjective {φ : SmoothForm I' M' F k} {f : M → M'}
+    (hf : ContMDiff I I' ∞ f) (hsurj : Function.Surjective f)
+    (hdf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
+    (mpullback f hf φ).IsClosed ↔ φ.IsClosed := by
+  rw [isClosed_def, isClosed_def, ← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback,
+    mextDerivₗ_apply]
+  exact (TauCeti.mpullback_injective_of_surjective hsurj hdf).eq_iff' (TauCeti.mpullback_zero f)
 
 end Pullback
 

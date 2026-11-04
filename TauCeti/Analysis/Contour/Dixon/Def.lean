@@ -34,8 +34,8 @@ body opaque.
   `dixonH1 f γ a b w = dixonH2 f γ a b w - 2πi · n(γ, w) · f w`, where `n(γ, w)` is the generalized
   `windingNumber`. This is what makes `dixonFunction` well-glued across `∂U`.
 
-These are the building blocks of the `homologyCauchyTheorem` roadmap target
-(`TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3, proved by Dixon's argument).
+These are the building blocks of Dixon's proof of the homology form of Cauchy's theorem,
+recorded as `TauCeti.Contour.homologyCauchyTheorem`.
 
 ## Provenance
 

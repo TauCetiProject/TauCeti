@@ -188,7 +188,7 @@ noncomputable def rep :
 theorem rep_ι_apply (x : sl (Fin (r + 1)) ℚ) (v : Fin (r + 1) → ℚ) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply _ x v
+  LieSubalgebra.matrixRepresentation_ι_apply x v
 
 /-- A numbered root generator reads off one coordinate and writes it into another. -/
 theorem rep_rootGenerator_apply (k : Fin r ⊕ Fin r) (v : Fin (r + 1) → ℚ) :
@@ -215,7 +215,7 @@ theorem rep_rootGenerator_rep_rootGenerator_eq_zero (k : Fin r ⊕ Fin r) (v : F
 theorem pow_two_rep_rootGenerator_eq_zero (k : Fin r ⊕ Fin r) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r k)) ^ 2 = 0 := by
   refine LinearMap.ext fun v => ?_
-  rw [pow_two, Module.End.mul_apply, rep_rootGenerator_rep_rootGenerator_eq_zero,
+  rw [pow_two, mul_apply_eq_comp, rep_rootGenerator_rep_rootGenerator_eq_zero,
     LinearMap.zero_apply]
 
 /-- Every numbered root generator acts nilpotently. -/

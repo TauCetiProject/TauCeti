@@ -27,6 +27,8 @@ Frobenius twists and finite-field Frobenius morphisms.
   schemes commutes with every iterate.
 * `AlgebraicGeometry.Scheme.iterateFrobenius_appTop_apply`: the iterate raises global sections to
   their `p ^ n`-th powers.
+* `AlgebraicGeometry.Scheme.frobenius_spec_zmod`: the absolute Frobenius of `Spec 𝔽_p` is the
+  identity.
 * `AlgebraicGeometry.Scheme.qPowerFrobenius`: the absolute `q`-power map of a scheme over a finite
   field of cardinality `q`.
 
@@ -132,6 +134,14 @@ theorem Spec_map_iterateFrobenius (R : Type u) [CommRing R] [CharP R p] (n : ℕ
     simpa only [_root_.iterateFrobenius_one] using
       congrArg CommRingCat.ofHom (_root_.iterateFrobenius_add R p n 1)
 
+/-- The absolute Frobenius of `Spec 𝔽_p` is the identity, since `a ^ p = a` for every `a ∈ 𝔽_p`. -/
+theorem frobenius_spec_zmod :
+    (Spec (.of (ULift.{u} (ZMod p)))).frobenius p (natCast_spec_eq_zero (p := p) _) = 𝟙 _ := by
+  rw [← Spec_map_powRingHom _ (CharP.cast_eq_zero (ULift.{u} (ZMod p)) p)]
+  convert Spec.map_id (CommRingCat.of (ULift.{u} (ZMod p)))
+  ext x
+  simp [TauCeti.powRingHom_apply, ZMod.pow_card]
+
 /-- Every morphism of schemes in characteristic `p` commutes with every absolute Frobenius
 iterate. -/
 @[reassoc]
@@ -181,6 +191,18 @@ theorem qPowerFrobenius_naturality (k : Type u) [Field k] [CharP k p]
     (natCast_eq_zero_of_hom fX (natCast_spec_eq_zero (CommRingCat.of k)))
     (natCast_eq_zero_of_hom fY (natCast_spec_eq_zero (CommRingCat.of k))) g a
 
+/-- The `a`-fold absolute Frobenius of the spectrum of a field with `p ^ a` elements
+is the identity. -/
+theorem iterateFrobenius_spec_eq_id (k : Type u) [Field k] [Finite k] [CharP k p]
+    (a : ℕ) (ha : Nat.card k = p ^ a) :
+    (Spec (CommRingCat.of k)).iterateFrobenius p
+      (natCast_spec_eq_zero (CommRingCat.of k)) a = 𝟙 _ := by
+  rw [← Spec_map_iterateFrobenius]
+  let _ : Fintype k := Fintype.ofFinite k
+  have ha' : Fintype.card k = p ^ a := by simpa using ha
+  rw [_root_.iterateFrobenius_eq_pow, FiniteField.frobenius_pow ha']
+  exact Spec.map_id _
+
 /-- The finite-field `q`-power Frobenius is a morphism over the given finite field. -/
 @[reassoc (attr := simp)]
 theorem qPowerFrobenius_over (k : Type u) [Field k] [Finite k] [CharP k p]
@@ -190,14 +212,7 @@ theorem qPowerFrobenius_over (k : Type u) [Field k] [Finite k] [CharP k p]
   rw [qPowerFrobenius_eq_iterated,
     iterateFrobenius_naturality
       (natCast_eq_zero_of_hom f (natCast_spec_eq_zero (CommRingCat.of k)))
-      (natCast_spec_eq_zero (CommRingCat.of k)) f a]
-  suffices (Spec (CommRingCat.of k)).iterateFrobenius p
-      (natCast_spec_eq_zero (CommRingCat.of k)) a = 𝟙 _ by
-    rw [this, Category.comp_id]
-  rw [← Spec_map_iterateFrobenius]
-  let _ : Fintype k := Fintype.ofFinite k
-  have ha' : Fintype.card k = p ^ a := by simpa using ha
-  rw [_root_.iterateFrobenius_eq_pow, FiniteField.frobenius_pow ha']
-  exact Spec.map_id _
+      (natCast_spec_eq_zero (CommRingCat.of k)) f a,
+    iterateFrobenius_spec_eq_id k a ha, Category.comp_id]
 
 end AlgebraicGeometry.Scheme

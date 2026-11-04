@@ -45,6 +45,17 @@ no analytic convergence hypothesis enters.
 * `TauCeti.IdealArithmeticFunction.normCoeff_eq_eulerProduct`: the norm coefficients of a
   multiplicative ideal arithmetic function are Mathlib's formal Euler product of its canonical
   local factors.
+* `TauCeti.IdealArithmeticFunction.IsMultiplicative.normCoeff`: consequently, the norm
+  coefficients of a multiplicative ideal arithmetic function form a multiplicative arithmetic
+  function.
+* `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor`:
+  at a power `p ^ k` of a rational prime, the norm coefficient is read off from the finitely many
+  local factors at the primes above `p`;
+  `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_localArithmeticFactor` is the case
+  of a single prime above `p`.
+* `TauCeti.IdealArithmeticFunction.localArithmeticFactor_one_apply_pow` and
+  `TauCeti.IdealArithmeticFunction.localArithmeticFactor_one_mul_apply_pow`: the local factors of
+  the trivial function at one prime, and the convolution of those at two primes of norm `p`.
 
 ## Implementation notes
 
@@ -86,50 +97,14 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K]
 
-/-- The `e`-th power of a height-one prime of `𝓞 K`, as a nonzero integral ideal. -/
-def primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) : (Ideal (𝓞 K))⁰ :=
-  ⟨P.asIdeal ^ e, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero e P.ne_bot)⟩
-
-/-- A prime power, as a nonzero integral ideal, has the expected underlying ideal. -/
-@[simp]
-theorem coe_primeIdealPow (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
-    (primeIdealPow P e : Ideal (𝓞 K)) = P.asIdeal ^ e :=
-  (rfl)
-
 /-- The absolute norm is multiplicative on prime powers. -/
 theorem absNorm_primeIdealPow [IsDedekindDomain (𝓞 K)] (P : HeightOneSpectrum (𝓞 K)) (e : ℕ) :
     Ideal.absNorm (primeIdealPow P e : Ideal (𝓞 K)) = Ideal.absNorm P.asIdeal ^ e := by
   rw [coe_primeIdealPow, map_pow]
 
-/-- Distinct primes give distinct first powers, so a family indexed by the primes is a subfamily
-of one indexed by the nonzero ideals. -/
-theorem primeIdealPow_one_injective :
-    Function.Injective fun P : HeightOneSpectrum (𝓞 K) ↦ primeIdealPow P 1 := fun P Q h ↦
-  HeightOneSpectrum.asIdeal_injective
-    (by simpa only [coe_primeIdealPow, pow_one] using
-      congrArg (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) h)
-
-/-- Distinct exponents give distinct prime powers. -/
-theorem primeIdealPow_injective [IsDedekindDomain (𝓞 K)] (P : HeightOneSpectrum (𝓞 K)) :
-    Function.Injective (primeIdealPow P) := fun m n h ↦
-  pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
-    (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
-
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
-
-/-- Every nonzero ideal is eventually supported: a sufficiently large finite set of height-one
-primes contains all its finitely many prime divisors. -/
-theorem eventually_isPrimeTo_compl {K : Type*} [Field K] [IsDedekindDomain (𝓞 K)]
-    (A : (Ideal (𝓞 K))⁰) :
-    ∀ᶠ S : Finset (HeightOneSpectrum (𝓞 K)) in Filter.atTop,
-      Ideal.IsPrimeTo (A : Ideal (𝓞 K)) (S : Set (HeightOneSpectrum (𝓞 K)))ᶜ := by
-  classical
-  have hfinite := Ideal.finite_factors (nonZeroDivisors.coe_ne_zero A)
-  filter_upwards [Filter.eventually_ge_atTop hfinite.toFinset] with S hS
-  rw [Ideal.isPrimeTo_iff]
-  exact ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hPdvd ↦ hP (hS (hfinite.mem_toFinset.mpr hPdvd))⟩
 
 namespace IdealArithmeticFunction
 
@@ -154,9 +129,7 @@ theorem coeff_localPowerSeries (f : IdealArithmeticFunction K)
 theorem constantCoeff_localPowerSeries (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) :
     (localPowerSeries f P).constantCoeff = f 1 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff]
-  rw [coeff_localPowerSeries]
-  exact congrArg f (Subtype.ext (pow_zero P.asIdeal))
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff, coeff_localPowerSeries, P.primeIdealPow_zero]
 
 /-- Conjugating ideal coefficients conjugates the coefficients of every local power series. -/
 @[simp]
@@ -270,7 +243,9 @@ theorem localPowerSeries_delta (P : HeightOneSpectrum (𝓞 K)) :
       · simp
       · intro hpow
         have hunit : IsUnit P.asIdeal :=
-          IsUnit.of_pow_eq_one (congrArg Subtype.val hpow) (Nat.succ_ne_zero n)
+          IsUnit.of_pow_eq_one
+            (by simpa only [P.coe_primeIdealPow, Submonoid.coe_one] using
+              congrArg Subtype.val hpow) (Nat.succ_ne_zero n)
         exact P.isPrime.ne_top (Ideal.isUnit_iff.mp hunit)
 
 section IsDedekindDomain
@@ -508,7 +483,7 @@ theorem eventually_normCoeff_supportedPart_eq (f : IdealArithmeticFunction K) (n
       normCoeff K (supportedPart f (S : Set (HeightOneSpectrum (𝓞 K)))) n =
         normCoeff K f n := by
   filter_upwards [(Filter.eventually_all_finset (normFiber K n)).mpr
-    fun A _ ↦ eventually_isPrimeTo_compl A] with S hS
+    fun A _ ↦ Ideal.eventually_isPrimeTo_compl (nonZeroDivisors.coe_ne_zero A)] with S hS
   rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
   exact Finset.sum_congr rfl fun A hA ↦ supportedPart_apply_of_isPrimeTo_compl (hS A hA)
 
@@ -523,6 +498,65 @@ theorem normCoeff_eq_eulerProduct (hf : f.IsMultiplicative) :
     (tendsTo_eulerProduct_localArithmeticFactor f hf.map_one n)).exists
   rw [normCoeff_supportedPart hf S] at hcoeff
   exact hcoeff.symm.trans hprod
+
+/-- The norm coefficients of a multiplicative ideal arithmetic function form a multiplicative
+arithmetic function. -/
+theorem IsMultiplicative.normCoeff (hf : f.IsMultiplicative) : (normCoeff K f).IsMultiplicative :=
+  normCoeff_eq_eulerProduct hf ▸ isMultiplicative_eulerProduct hf.map_one
+
+/-- **The local Euler factor at a rational prime.** For a multiplicative ideal arithmetic function
+and a rational prime `p`, the norm coefficient at `p ^ k` is the coefficient at `p ^ k` of the
+product of the local factors over any finite set `S` of height-one primes containing every prime
+above `p`: an ideal of norm `p ^ k` has only prime factors above `p`. -/
+theorem normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor (hf : f.IsMultiplicative)
+    {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hS : ∀ P : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ P.asIdeal → P ∈ S) (k : ℕ) :
+    normCoeff K f (p ^ k) = (∏ P ∈ S, localArithmeticFactor f P) (p ^ k) := by
+  rw [← normCoeff_supportedPart hf, normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
+  refine Finset.sum_congr rfl fun A hA ↦ (supportedPart_apply_of_isPrimeTo_compl ?_).symm
+  refine Ideal.isPrimeTo_iff.mpr ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hdvd ↦ hP (hS P ?_)⟩
+  -- `N(P)` divides `N(A) = p ^ k`, so it is a positive power of `p`, and `p ∈ P`.
+  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).mp
+    ((mem_normFiber K).mp hA ▸ map_dvd Ideal.absNorm hdvd)
+  have hj0 : j ≠ 0 := by
+    rintro rfl
+    exact P.isPrime.ne_top (Ideal.absNorm_eq_one_iff.mp (by simpa using hj))
+  have hmem := Ideal.absNorm_mem P.asIdeal
+  rw [hj, Nat.cast_pow] at hmem
+  exact P.isPrime.mem_of_pow_mem _ hmem
+
+/-- If `P` is the only height-one prime containing the rational prime `p`, the norm coefficient
+of a multiplicative ideal arithmetic function at `p ^ k` is the coefficient at `p ^ k` of the
+local factor at `P`. -/
+theorem normCoeff_apply_prime_pow_eq_localArithmeticFactor (hf : f.IsMultiplicative)
+    {p : ℕ} (hp : p.Prime) (P : HeightOneSpectrum (𝓞 K))
+    (hP : ∀ Q : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ Q.asIdeal → Q = P) (k : ℕ) :
+    normCoeff K f (p ^ k) = localArithmeticFactor f P (p ^ k) := by
+  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor hf hp {P}
+    (fun Q hQ ↦ Finset.mem_singleton.mpr (hP Q hQ)), Finset.prod_singleton]
+
+/-- At a prime of norm `q`, the local factor of the trivial function is `1` at every power of
+`q`. -/
+theorem localArithmeticFactor_one_apply_pow {P : HeightOneSpectrum (𝓞 K)} {q : ℕ}
+    (hP : Ideal.absNorm P.asIdeal = q) (k : ℕ) :
+    (1 : IdealArithmeticFunction K).localArithmeticFactor P (q ^ k) = 1 := by
+  rw [← hP, localArithmeticFactor_apply_pow, Pi.one_apply]
+
+/-- The local factors of the trivial function at two primes of norm `p` convolve to `k + 1` at
+`p ^ k`, the number of ways to write `p ^ k` as a product of two powers of `p`. -/
+theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ} (hp : p.Prime)
+    {P Q : HeightOneSpectrum (𝓞 K)} (hP : Ideal.absNorm P.asIdeal = p)
+    (hQ : Ideal.absNorm Q.asIdeal = p) (k : ℕ) :
+    ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
+  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
+    (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b),
+    Nat.sum_divisors_prime_pow hp]
+  rw [Finset.sum_congr rfl fun i hi ↦ by
+    rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hp.pos,
+      localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
+  simp
 
 end IdealArithmeticFunction
 

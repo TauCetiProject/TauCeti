@@ -66,6 +66,7 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
   (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa U'.plus))
     (presentationLimitPresheaf P' U'.plus))
 
+include hφ in
 /-- **A finite-type morphism over a Huber ring restricts over rational subsets**: let
 `φ : (A, A⁺) → (B, B⁺)` be topologically of finite type, with `A` a Huber ring and `Spa(B, B⁺)`
 sheafy. For a rational subset `R(T/s)` of `Spa(A, A⁺)`, with `T`
@@ -85,7 +86,7 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap_
         (presentationLimitPresheaf (P.completionLocalization T s L hden)
           (P.rationalLocalizationPair U hP T s L hden).plus)) :
     LocallyOfFiniteType ((presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-      (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+      φ.map_mem_plus
       U.isRingOfIntegralElements.isPowerBounded_of_mem
       U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf).restrictPreimage
         (spaBasicOpen U.plus T s)) := by
@@ -114,6 +115,7 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap_
     T s L hden L' (@LocallyOfFiniteType.{u}) hden' hT hsheafU).mpr ?_
   exact locallyOfFiniteType_presentationLimitPreAdicSpaceComap _ _ _ _ _ _ hψ
 
+include hφ in
 /-- **A finite-type morphism over a Huber ring restricts over every open of a sheafy target**: let
 `φ : (A, A⁺) → (B, B⁺)` be topologically of finite type, with `A` a Huber ring and both `Spa(A, A⁺)`
 and `Spa(B, B⁺)` sheafy. Then for every open `W` of `Spa(A, A⁺)`, the restriction
@@ -126,11 +128,11 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
     (W : Opens (presentationLimitPreAdicSpace P U.plus
       U.isRingOfIntegralElements.isPowerBounded_of_mem hP)) :
     LocallyOfFiniteType ((presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-      (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+      φ.map_mem_plus
       U.isRingOfIntegralElements.isPowerBounded_of_mem
       U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf).restrictPreimage W) := by
   set f := presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-    (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+    φ.map_mem_plus
     U.isRingOfIntegralElements.isPowerBounded_of_mem
     U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
   refine Hom.prop_restrictPreimage_of_forall_exists_le f (@LocallyOfFiniteType.{u})

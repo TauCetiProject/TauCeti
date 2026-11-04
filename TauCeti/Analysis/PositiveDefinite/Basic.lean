@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Algebra.BigOperators.Fin
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 /-!
 # Positive-definite functions on an involutive additive monoid

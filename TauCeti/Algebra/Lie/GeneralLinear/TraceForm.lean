@@ -36,9 +36,9 @@ The factors of two are then pinned once and for all on the matrix units. Writing
 `ι (Eᵢⱼ)`, the Clifford relation `ι v * ι v = Q v` polarizes to the anticommutation relations
 `d_ij d_kl + d_kl d_ij = 2 δ_jk δ_li`, `d_ij d_ij = δ_ij`.
 These are relations in the Clifford algebra of the trace form, and nothing beyond that is claimed of
-them here. Reading them, as the roadmap does, as the relations of a CAR algebra would need a
-splitting of the generators into creation and annihilation operators, an involution, and an
-identification of this Clifford algebra with a CAR algebra; none of that is supplied.
+them here. Reading them as the relations of a CAR algebra would need a splitting of the generators
+into creation and annihilation operators, an involution, and an identification of this Clifford
+algebra with a CAR algebra; none of that is supplied.
 
 ## Main definitions
 
@@ -54,7 +54,7 @@ identification of this Clifford algebra with a CAR algebra; none of that is supp
 * `TauCeti.traceBilinForm_nondegenerate`: it is nondegenerate over any commutative semiring, a
   matrix being determined by the traces of its products.
 * `TauCeti.polarBilin_traceQuadraticForm`: the polar form of the trace quadratic form is
-  `2 * trace (X * Y)`, the normalization the roadmap pins;
+  `2 * trace (X * Y)`;
   `TauCeti.polarBilin_traceQuadraticForm_eq_two_smul` is the same statement as an equality of
   bilinear forms, `2 • traceBilinForm`.
 * `TauCeti.traceQuadraticForm_nondegenerate`: the quadratic form is nondegenerate when `2` is
@@ -69,8 +69,8 @@ identification of this Clifford algebra with a CAR algebra; none of that is supp
 
 ## Implementation notes
 
-The roadmap pins these declarations over `ℂ` for `Matrix (Fin N) (Fin N) ℂ`. Nothing in the
-statements or proofs asks for that: the form, its symmetry and its nondegeneracy are stated over an
+The motivating case is `Matrix (Fin N) (Fin N) ℂ`, but nothing in the statements or proofs asks
+for it: the form, its symmetry and its nondegeneracy are stated over an
 arbitrary commutative semiring and an arbitrary finite index type, exactly as for the Killing form
 in `TauCeti/Algebra/Lie/SkewAdjoint.lean`. Additive inverses are assumed only where the
 construction being made needs them: the commutator bracket, `QuadraticMap.polarBilin` and
@@ -96,15 +96,6 @@ counterparts in `TauCeti/Algebra/Lie/SkewAdjoint.lean` are applications of them.
 
 Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, as in
 `Mathlib/Algebra/Lie/Matrix.lean`, it is a local instance here.
-
-## References
-
-This is the opening of the `gl_N` worked instance ("the CAR algebra") of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`: *"its form is the trace form
-`Q X = tr (X²)` (nondegenerate where the Killing form is not) ... the generators `d_ab = ι (E_ab)`
-satisfy the CAR relations `d_ab d_cd + d_cd d_ab = 2 δ_bc δ_ad` (pinned as the polar-form
-equation)"*, together with the trace-form instance of the layer's adjoint homomorphism
-`ad : 𝔤 →ₗ⁅K⁆ 𝔰𝔬(𝔤, B)`.
 -/
 
 public section
@@ -113,41 +104,39 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {R : Type*} {n : Type*} [Fintype n]
+variable (R : Type*) (n : Type*) [Fintype n]
 
 section BilinForm
 
 section
 variable [CommSemiring R]
 
-variable (R n) in
 /-- **The trace form of `gl n R`**, `(X, Y) ↦ trace (X * Y)`: the trace form of the standard
 representation, which is nondegenerate where the Killing form of `gl n R` is not. -/
 def traceBilinForm : LinearMap.BilinForm R (Matrix n n R) :=
   LinearMap.compr₂ (LinearMap.mul R (Matrix n n R)) (Matrix.traceLinearMap n R R)
 
-@[simp]
-theorem traceBilinForm_apply (X Y : Matrix n n R) :
-    traceBilinForm R n X Y = (X * Y).trace := (rfl)
-
-variable (R n) in
 /-- The trace form is its own flip, by cyclicity of the trace. -/
 @[simp]
 theorem traceBilinForm_flip : LinearMap.flip (traceBilinForm R n) = traceBilinForm R n := by
   ext X Y
-  simp [Matrix.trace_mul_comm Y X]
+  simp [traceBilinForm, Matrix.trace_mul_comm Y X]
 
-variable (R n) in
 /-- The trace form is symmetric, the predicate form of `TauCeti.traceBilinForm_flip`. -/
 theorem traceBilinForm_isSymm : LinearMap.BilinForm.IsSymm (traceBilinForm R n) :=
   LinearMap.BilinForm.isSymm_iff_flip.mpr (traceBilinForm_flip R n)
 
-variable (R n) in
 /-- **The trace form is nondegenerate**, over any commutative semiring and any finite index type: a
 matrix is determined by the traces of its products. -/
 theorem traceBilinForm_nondegenerate : (traceBilinForm R n).Nondegenerate :=
-  ⟨fun _ hX => Matrix.ext_iff_trace_mul_right.mpr fun Y => by simpa using hX Y,
-    fun _ hY => Matrix.ext_iff_trace_mul_left.mpr fun X => by simpa using hY X⟩
+  ⟨fun _ hX => Matrix.ext_iff_trace_mul_right.mpr fun Y => by simpa [traceBilinForm] using hX Y,
+    fun _ hY => Matrix.ext_iff_trace_mul_left.mpr fun X => by simpa [traceBilinForm] using hY X⟩
+
+variable {R n}
+
+@[simp]
+theorem traceBilinForm_apply (X Y : Matrix n n R) :
+    traceBilinForm R n X Y = (X * Y).trace := (rfl)
 
 variable [DecidableEq n]
 
@@ -165,7 +154,6 @@ end
 
 variable [CommRing R] [DecidableEq n]
 
-variable (R n) in
 /-- **The trace form is invariant**: `trace (⁅X, Y⁆ * Z) = -trace (Y * ⁅X, Z⁆)`, which is cyclicity
 of the trace after expanding both brackets. Invariance is what makes the adjoint action skew-adjoint
 for the form, hence what produces `TauCeti.traceAdjointSO`. -/
@@ -183,15 +171,16 @@ section QuadraticForm
 section
 variable [CommSemiring R]
 
-variable (R n) in
 /-- **The trace quadratic form of `gl n R`**, `X ↦ trace (X * X)`. Its Clifford algebra is the one
 whose generators satisfy the anticommutation relations
 `TauCeti.traceQuadraticForm_ι_single_mul_ι_single_add_swap`. -/
 def traceQuadraticForm : QuadraticForm R (Matrix n n R) :=
   LinearMap.BilinMap.toQuadraticMap (traceBilinForm R n)
 
-/-- The trace quadratic form evaluates at `X` to `trace (X * X)`. This is the equation the roadmap
-pins `TauCeti.traceQuadraticForm` by. -/
+variable {R n}
+
+/-- The trace quadratic form evaluates at `X` to `trace (X * X)`. This is the equation that
+characterizes `TauCeti.traceQuadraticForm`. -/
 @[simp]
 theorem traceQuadraticForm_apply (X : Matrix n n R) :
     traceQuadraticForm R n X = (X * X).trace :=
@@ -201,7 +190,6 @@ end
 
 variable [CommRing R]
 
-variable (R n) in
 /-- **The polar form of the trace quadratic form is `2 • ⟨·, ·⟩`**, the trace form being symmetric.
 Every factor of two in the anticommutation relations comes from this one equation. -/
 @[simp]
@@ -210,16 +198,6 @@ theorem polarBilin_traceQuadraticForm_eq_two_smul :
   rw [traceQuadraticForm]
   exact LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip (traceBilinForm_flip R n)
 
-/-- **The polar form of the trace quadratic form, read pointwise**: `2 * trace (X * Y)`. This is the
-normalization the roadmap pins, and the equation from which the anticommutation relations follow;
-`TauCeti.polarBilin_traceQuadraticForm_eq_two_smul` is the same statement for the forms
-themselves. -/
-theorem polarBilin_traceQuadraticForm (X Y : Matrix n n R) :
-    QuadraticMap.polarBilin (traceQuadraticForm R n) X Y = 2 * (X * Y).trace := by
-  rw [polarBilin_traceQuadraticForm_eq_two_smul]
-  simp
-
-variable (R n) in
 /-- **The trace quadratic form is nondegenerate** over a ring in which `2` is invertible. What
 `TauCeti.traceBilinForm_nondegenerate` controls is the trace form `B` itself; `2` must be invertible
 both to transfer nondegeneracy from `B` to the polar form `2 • B` and to pass from the polar form
@@ -230,9 +208,22 @@ theorem traceQuadraticForm_nondegenerate [Invertible (2 : R)] :
   exact LinearMap.BilinForm.Nondegenerate.toQuadraticMap (traceBilinForm_nondegenerate R n)
     (traceBilinForm_flip R n)
 
+section
+variable {R n}
+
+/-- **The polar form of the trace quadratic form, read pointwise**: `2 * trace (X * Y)`. This is the
+equation from which the anticommutation relations follow;
+`TauCeti.polarBilin_traceQuadraticForm_eq_two_smul` is the same statement for the forms
+themselves. -/
+theorem polarBilin_traceQuadraticForm (X Y : Matrix n n R) :
+    QuadraticMap.polarBilin (traceQuadraticForm R n) X Y = 2 * (X * Y).trace := by
+  rw [polarBilin_traceQuadraticForm_eq_two_smul]
+  simp
+
+end
+
 variable [DecidableEq n]
 
-variable (R n) in
 /-- **The adjoint homomorphism of `gl n R` for the trace form**: `ad : gl n R →ₗ⁅R⁆ 𝔰𝔬(gl n R, Q)`,
 the trace-form instance of `TauCeti.LieAlgebra.adjointSO`. Composing it with the quadratic
 realization inside the Clifford algebra of `TauCeti.traceQuadraticForm R n` would give the adjoint
@@ -242,13 +233,6 @@ def traceAdjointSO :
       skewAdjointLieSubalgebra (QuadraticMap.polarBilin (traceQuadraticForm R n)) :=
   LieAlgebra.adjointSO (traceBilinForm R n) (traceBilinForm_lieInvariant R n)
 
-/-- The trace-form adjoint homomorphism is `ad` with its codomain restricted. -/
-@[simp]
-theorem coe_traceAdjointSO (X : Matrix n n R) :
-    (traceAdjointSO R n X : Module.End R (Matrix n n R)) = _root_.LieAlgebra.ad R _ X :=
-  LieAlgebra.coe_adjointSO (traceBilinForm R n) (traceBilinForm_lieInvariant R n) X
-
-variable (R n) in
 /-- The kernel of the trace-form adjoint homomorphism is the centre of `gl n R`, which for nonempty
 `n` over a nontrivial ring is nonzero: the map is not injective, and the adjoint representation of
 `gl n R` is therefore unfaithful — the reason the form here is the trace form of the standard
@@ -259,17 +243,24 @@ theorem ker_traceAdjointSO :
     (traceAdjointSO R n).ker = _root_.LieAlgebra.center R (Matrix n n R) :=
   LieAlgebra.ker_adjointSO (traceBilinForm R n) (traceBilinForm_lieInvariant R n)
 
+variable {R n}
+
+/-- The trace-form adjoint homomorphism is `ad` with its codomain restricted. -/
+@[simp]
+theorem coe_traceAdjointSO (X : Matrix n n R) :
+    (traceAdjointSO R n X : Module.End R (Matrix n n R)) = _root_.LieAlgebra.ad R _ X :=
+  LieAlgebra.coe_adjointSO (traceBilinForm R n) (traceBilinForm_lieInvariant R n) X
+
 end QuadraticForm
 
 section CAR
 
 open CliffordAlgebra
 
-variable [CommRing R] [DecidableEq n]
+variable {R n} [CommRing R]
 
 attribute [local instance] Classical.decEq
 
-omit [DecidableEq n] in
 /-- **The anticommutation relation in the Clifford algebra of the trace form**: any two generators
 anticommute up to `2 trace (X * Y)`, the polar-form normalization. -/
 theorem traceQuadraticForm_ι_mul_ι_add_swap (X Y : Matrix n n R) :
@@ -277,6 +268,9 @@ theorem traceQuadraticForm_ι_mul_ι_add_swap (X Y : Matrix n n R) :
       + ι (traceQuadraticForm R n) Y * ι (traceQuadraticForm R n) X
       = algebraMap R _ (2 * (X * Y).trace) := by
   rw [ι_mul_ι_add_swap, ← QuadraticMap.polarBilin_apply_apply, polarBilin_traceQuadraticForm]
+
+section
+variable [DecidableEq n]
 
 /-- **The anticommutation relations of the matrix-unit generators**: writing `d_ij` for
 `ι (Eᵢⱼ)` in the Clifford algebra of the trace quadratic form,
@@ -313,51 +307,44 @@ theorem traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired (i j k l :
   rw [eq_neg_iff_add_eq_zero, traceQuadraticForm_ι_single_mul_ι_single_add_swap]
   simp [h]
 
+end
+
 /-! ### Matrix-unit Clifford generators -/
 
-omit [DecidableEq n] in
 /-- The Clifford generator associated to the matrix unit `Eᵢⱼ`.
 
 This is the common CAR generator used by the highest-weight, occupation, Casimir, and weight
 multiplicity calculations. -/
-noncomputable def carGenerator {K : Type*} [CommRing K] {m : Type*} [Fintype m]
-    (i j : m) : CliffordAlgebra (traceQuadraticForm K m) :=
-  ι (traceQuadraticForm K m) (Matrix.single i j 1)
+noncomputable def carGenerator (i j : n) : CliffordAlgebra (traceQuadraticForm R n) :=
+  ι (traceQuadraticForm R n) (Matrix.single i j 1)
 
-omit [DecidableEq n] in
 /-- The matrix-unit formula for `carGenerator`, at any decidable-equality instance on the
 indices. -/
-theorem carGenerator_def {K : Type*} [CommRing K] {m : Type*} [Fintype m] [DecidableEq m]
-    (i j : m) :
-    carGenerator (K := K) i j =
-      ι (traceQuadraticForm K m) (Matrix.single i j 1) := by
-  rw [carGenerator, Subsingleton.elim (Classical.decEq m) ‹_›]
+theorem carGenerator_def [DecidableEq n] (i j : n) :
+    carGenerator (R := R) i j =
+      ι (traceQuadraticForm R n) (Matrix.single i j 1) := by
+  rw [carGenerator, Subsingleton.elim (Classical.decEq n) ‹_›]
 
-omit [DecidableEq n] in
 /-- The matrix-unit generators satisfy the CAR anticommutation relation. -/
 @[simp]
-theorem carGenerator_mul_add_swap {K : Type*} [CommRing K] {m : Type*} [Fintype m]
-    (i j k l : m) :
-    carGenerator (K := K) i j * carGenerator k l + carGenerator k l * carGenerator i j =
-      algebraMap K _ (if j = k ∧ l = i then 2 else 0) := by
+theorem carGenerator_mul_add_swap (i j k l : n) :
+    carGenerator (R := R) i j * carGenerator k l + carGenerator k l * carGenerator i j =
+      algebraMap R _ (if j = k ∧ l = i then 2 else 0) := by
   rw [carGenerator_def, carGenerator_def,
     traceQuadraticForm_ι_single_mul_ι_single_add_swap]
   simp
 
-omit [DecidableEq n] in
 /-- The square of a matrix-unit generator is zero off the diagonal and scalar on the diagonal. -/
 @[simp]
-theorem carGenerator_mul_self {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j : m) :
-    carGenerator (K := K) i j * carGenerator i j =
-      algebraMap K _ (if i = j then 1 else 0) := by
+theorem carGenerator_mul_self (i j : n) :
+    carGenerator (R := R) i j * carGenerator i j =
+      algebraMap R _ (if i = j then 1 else 0) := by
   rw [carGenerator_def, traceQuadraticForm_ι_single_mul_self]
   simp
 
-omit [DecidableEq n] in
 /-- Non-paired matrix-unit generators anticommute. -/
-theorem carGenerator_mul_comm_of_not_paired {K : Type*} [CommRing K] {m : Type*} [Fintype m]
-    (i j k l : m) (h : ¬(j = k ∧ l = i)) :
-    carGenerator (K := K) i j * carGenerator k l =
+theorem carGenerator_mul_comm_of_not_paired (i j k l : n) (h : ¬(j = k ∧ l = i)) :
+    carGenerator (R := R) i j * carGenerator k l =
       -(carGenerator k l * carGenerator i j) := by
   rw [carGenerator_def, carGenerator_def,
     traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired _ _ _ _ 1 1 h]

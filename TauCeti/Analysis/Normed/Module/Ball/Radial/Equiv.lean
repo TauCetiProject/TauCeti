@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # Radial coordinates in a seminormed space
@@ -25,13 +26,15 @@ embedding `(u, y) ↦ ρ y • u` of `sphere (0 : E) 1 × Y` into `E`
 (`Topology.IsOpenEmbedding.smul_coe_sphere`). With `Y = ℝ` and `ρ` an increasing homeomorphism
 onto an interval of radii, such as `t ↦ r * exp t` or the logistic sigmoid, this is a product
 neighbourhood of a round sphere: a bicollar whose zero slice is the sphere of radius `ρ 0`.
+`TauCeti.polar` uses the exponential radius `exp (t - 1)`, so that time `1` corresponds to the
+unit sphere and times at most `1` parametrize the punctured closed unit ball.
 -/
 
 public section
 
 namespace TauCeti
 
-open Metric Set
+open Metric Set Topology
 
 variable (E : Type*) [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -122,5 +125,46 @@ theorem _root_.Topology.IsOpenEmbedding.smul_coe_sphere {Y : Type*} [Topological
   exact (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
     ((homeomorphUnitSphereProdOfNormPos E).symm.isOpenEmbedding.comp
       (Topology.IsOpenEmbedding.id.prodMap hρ'))
+
+/-! ### Exponential polar coordinates -/
+
+section Exponential
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- Polar coordinates on the complement of the origin, with time `t` on the sphere of radius
+`exp (t - 1)`: time `1` is the unit sphere, and the times `t ≤ 1` fill the punctured closed unit
+ball. -/
+noncomputable def polar (q : sphere (0 : V) 1 × ℝ) : V :=
+  Real.exp (q.2 - 1) • (q.1 : V)
+
+/-- The value of the exponential polar-coordinate map. -/
+theorem polar_apply (q : sphere (0 : V) 1 × ℝ) :
+    polar q = Real.exp (q.2 - 1) • (q.1 : V) :=
+  (rfl)
+
+/-- The radius in exponential polar coordinates. -/
+@[simp]
+theorem norm_polar (q : sphere (0 : V) 1 × ℝ) : ‖polar q‖ = Real.exp (q.2 - 1) := by
+  rw [polar_apply, norm_smul, norm_eq_of_mem_sphere q.1, mul_one, Real.norm_eq_abs,
+    abs_of_pos (Real.exp_pos _)]
+
+/-- Exponential polar coordinates avoid the origin. -/
+theorem polar_ne_zero (q : sphere (0 : V) 1 × ℝ) : polar q ≠ 0 := by
+  rw [← norm_pos_iff, norm_polar]
+  exact Real.exp_pos _
+
+/-- Exponential polar coordinates embed the sphere times the real line openly. -/
+theorem isOpenEmbedding_polar : IsOpenEmbedding (polar (V := V)) :=
+  (Real.isOpenEmbedding_exp.comp (Homeomorph.subRight (1 : ℝ)).isOpenEmbedding).smul_coe_sphere
+    fun _ => Real.exp_pos _
+
+/-- Every nonzero vector has exponential polar coordinates. -/
+theorem mem_range_polar {v : V} (hv : v ≠ 0) : v ∈ range (polar (V := V)) := by
+  have hv' : 0 < ‖v‖ := norm_pos_iff.2 hv
+  refine ⟨(⟨‖v‖⁻¹ • v, by simp [norm_smul, hv'.ne']⟩, 1 + Real.log ‖v‖), ?_⟩
+  simp [polar_apply, Real.exp_log hv', smul_smul, hv'.ne']
+
+end Exponential
 
 end TauCeti

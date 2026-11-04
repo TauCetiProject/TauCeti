@@ -27,6 +27,12 @@ generally a pure polynomial of degree `d` with nonzero constant coefficient whos
 denominator `e` has at most `d / e` irreducible factors, counted with multiplicity. Purity alone
 does not imply irreducibility, nor does a polygon with a single segment.
 
+An Eisenstein polynomial of degree `d` is pure of slope `-1 / d`, by
+`Polynomial.newtonSlopes_eq_replicate_of_eisenstein`, and `-1` is coprime to `d`, so the
+criterion recovers the Eisenstein criterion over the field. Mathlib's
+`Polynomial.irreducible_of_eisenstein_criterion` is the corresponding statement over a ring for
+a prime ideal, for primitive polynomials.
+
 ## Main results
 
 * `Polynomial.den_dvd_natDegree_of_dvd`: the denominator of the slope of a pure polynomial with
@@ -37,11 +43,15 @@ does not imply irreducibility, nor does a polygon with a single segment.
 * `Polynomial.card_normalizedFactors_mul_den_le_natDegree`: a pure polynomial of degree `d` with
   nonzero constant coefficient whose slope has denominator `e` has at most `d / e` irreducible
   factors, counted with multiplicity.
+* `Polynomial.irreducible_of_eisenstein`: the Eisenstein criterion over a field with a valuation
+  taking integer values on nonzero elements, as a consequence of the Newton polygon
+  irreducibility criterion.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Grundlehren 322, Springer, 1999, Chapter II §6, for
-  Newton polygons over discretely valued fields.
+  Newton polygons over discretely valued fields, and Proposition 6.3 and its corollary for
+  Eisenstein polynomials.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
   Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
 -/
@@ -87,27 +97,13 @@ theorem irreducible_of_forall_mem_newtonSlopes_eq
     {q : ℚ} (hq : ∀ m ∈ f.newtonSlopes v, m = q) (hden : q.den = f.natDegree) :
     Irreducible f := by
   have hdeg : 0 < f.natDegree := hden ▸ q.den_pos
-  refine ⟨fun hu => hdeg.ne' (natDegree_eq_zero_of_isUnit hu), fun g h hgh => ?_⟩
-  have hf₀ : f ≠ 0 := ne_zero_of_natDegree_gt hdeg
-  have hg₀ : g ≠ 0 := by
-    rintro rfl
-    exact hf₀ (by rw [hgh, zero_mul])
-  have hh₀ : h ≠ 0 := by
-    rintro rfl
-    exact hf₀ (by rw [hgh, mul_zero])
-  have hdeg_mul : g.natDegree + h.natDegree = f.natDegree := by
-    rw [hgh, natDegree_mul hg₀ hh₀]
-  -- The degree of `g` is a multiple of `deg f` that is at most `deg f`.
-  obtain ⟨k, hk⟩ := den_dvd_natDegree_of_dvd hint hf hq ⟨h, hgh⟩
-  rw [hden] at hk
-  have hk₁ : k ≤ 1 := by
-    by_contra! hk₁
-    nlinarith
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hk₁ with rfl | rfl
-  · exact Or.inl (isUnit_iff_degree_eq_zero.mpr
-      ((degree_eq_iff_natDegree_eq (n := 0) hg₀).mpr (by simpa using hk)))
-  · exact Or.inr (isUnit_iff_degree_eq_zero.mpr
-      ((degree_eq_iff_natDegree_eq (n := 0) hh₀).mpr (by omega)))
+  refine (irreducible_iff_lt_natDegree_lt (ne_zero_of_natDegree_gt hdeg)
+    fun hu => hdeg.ne' (natDegree_eq_zero_of_isUnit hu)).mpr fun g _ hg hgf => ?_
+  obtain ⟨k, hk⟩ := den_dvd_natDegree_of_dvd hint hf hq hgf
+  rw [Finset.mem_Ioc, hk, hden] at hg
+  rcases k with _ | k
+  · simp at hg
+  · nlinarith [Nat.div_mul_le_self f.natDegree 2]
 
 /-- **Newton polygon irreducibility criterion**, coprime form. If the valuation takes integer
 values on nonzero elements, a polynomial `f` of degree `d > 0` with nonzero constant coefficient
@@ -138,6 +134,24 @@ theorem card_normalizedFactors_mul_den_le_natDegree [DecidableEq K]
   refine Multiset.sum_map_le_sum_map _ _ fun p hp => Nat.le_of_dvd ?_ ?_
   · exact (irreducible_of_normalized_factor p hp).natDegree_pos
   · exact den_dvd_natDegree_of_dvd hint hf hq (dvd_of_mem_normalizedFactors hp)
+
+/-- **Eisenstein criterion.** If the valuation takes integer values on nonzero elements, a
+polynomial whose leading coefficient has valuation zero, whose constant coefficient has
+valuation one, and whose other coefficients below the degree have valuation at least one, is
+irreducible. This is the Newton polygon irreducibility criterion for the single slope `-1 / d`. -/
+theorem irreducible_of_eisenstein (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
+    {f : K[X]} (hlead : v f.leadingCoeff = 0) (h0 : v (f.coeff 0) = 1)
+    (hmem : ∀ n, 0 < n → n < f.natDegree → 1 ≤ v (f.coeff n)) : Irreducible f := by
+  have hc0 : f.coeff 0 ≠ 0 := fun h => by simp [h] at h0
+  have hd : 0 < f.natDegree := Nat.pos_of_ne_zero fun hd => by
+    rw [leadingCoeff, hd, h0] at hlead
+    exact one_ne_zero hlead
+  refine irreducible_of_forall_mem_newtonSlopes_eq_div hint hc0 hd (a := -1) (by simp)
+    fun m hm => ?_
+  rw [newtonSlopes_eq_replicate_of_eisenstein hlead h0 hmem] at hm
+  rw [Multiset.eq_of_mem_replicate hm]
+  push_cast
+  ring
 
 end Field
 

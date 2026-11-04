@@ -51,8 +51,14 @@ the integral root--coroot span.
 * `TauCeti.IsChevalleySystem.involutive`: compatibility on the root vectors forces the
   automorphism to be an involution on all of `L`.
 * `TauCeti.IsChevalleySystem.symm_eq`: the automorphism is its own inverse.
+* `TauCeti.IsChevalleySystem.smul`: rescaling by signs that agree on opposite roots gives a
+  Chevalley system for the same automorphism.
+* `TauCeti.IsChevalleySystem.eq_or_eq_neg`: conversely, two Chevalley systems for the same
+  automorphism agree up to sign at every weight.
 * `TauCeti.IsChevalleySystem.structureConstant_eq_natCast_or_eq_neg_natCast`: every genuine
   root-sum structure constant is `p + 1` or its negative.
+* `TauCeti.IsChevalleySystem.inv_smul_lie_eq_or_eq_neg`: dividing a root-sum bracket by `p + 1`
+  gives the root vector of the sum up to sign.
 * `TauCeti.IsChevalleySystem.exists_int_lie_eq_smul`: every root-sum bracket has an integral
   coefficient.
 * `TauCeti.IsChevalleySystem.intStructureConstant`: that coefficient, named as an integer, with
@@ -170,6 +176,44 @@ theorem symm_eq : ω.symm = ω := by
   change ω (ω.symm z) = ω (ω z)
   rw [ω.apply_symm_apply, hx.involutive z]
 
+omit [CharZero K] in
+/-- **Rescaling a Chevalley system by signs.** Multiplying the root vectors by scalars that are
+inverse to, and equal to, the scalars at the opposite roots gives a Chevalley system for the same
+automorphism. Together the two conditions say that the scalar at each root is `1` or `-1`, the
+same at `α` and at `-α`. -/
+theorem smul (u : Weight K H L → K) (hu : ∀ α, α.IsNonZero → u α * u (-α) = 1)
+    (hneg : ∀ α, α.IsNonZero → u (-α) = u α) :
+    IsChevalleySystem ω fun α ↦ u α • x α where
+  toIsSl2System := hx.toIsSl2System.smul u hu
+  map_root α := by
+    by_cases hα : α.IsNonZero
+    · rw [map_smul, hx.map_root, hneg α hα, smul_neg]
+    · rw [hx.toIsSl2System.eq_zero_of_isZero α (not_not.1 hα),
+        hx.toIsSl2System.eq_zero_of_isZero (-α) (not_not.1 hα).neg, smul_zero, smul_zero,
+        map_zero, neg_zero]
+
+/-- **Two Chevalley systems for the same automorphism agree up to sign.** At each weight the root
+vectors of two Chevalley systems for `ω` are equal or opposite: the root spaces are lines, the
+normalisation makes the scalars at `α` and `-α` inverse to each other, and compatibility with `ω`
+makes them equal. -/
+theorem eq_or_eq_neg {y : Weight K H L → L} (hy : IsChevalleySystem ω y) (α : Weight K H L) :
+    y α = x α ∨ y α = -x α := by
+  by_cases hα : α.IsNonZero
+  · obtain ⟨c, -, hc⟩ := hx.toIsSl2System.exists_ne_zero_eq_smul α hy.toIsSl2System hα
+    obtain ⟨d, -, hd⟩ := hx.toIsSl2System.exists_ne_zero_eq_smul (-α) hy.toIsSl2System hα.neg
+    have hcd : c * d = 1 :=
+      hx.toIsSl2System.mul_eq_one_of_eq_smul α hy.toIsSl2System hα hc hd
+    have hdc : d = c := by
+      have h := hy.map_root α
+      rw [hc, map_smul, hx.map_root, hd, smul_neg, neg_inj] at h
+      exact smul_left_injective K (hx.toIsSl2System.ne_zero (-α) hα.neg) h.symm
+    rcases mul_self_eq_one_iff.mp (hdc ▸ hcd : c * c = 1) with h | h
+    · exact .inl (by rw [hc, h, one_smul])
+    · exact .inr (by rw [hc, h, neg_one_smul])
+  · rw [hx.toIsSl2System.eq_zero_of_isZero α (not_not.1 hα),
+      hy.toIsSl2System.eq_zero_of_isZero α (not_not.1 hα), neg_zero]
+    exact .inl rfl
+
 /-- **Chevalley normalization of structure constants.** If `γ = α + β` is a genuine root sum,
 then the structure constant of a Chevalley system is `p + 1` or its negative, where
 `p = chainBotCoeff α β`.
@@ -186,6 +230,20 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast
   hx.toIsSl2System.structureConstant_eq_natCast_or_eq_neg_natCast_of_killingForm_ratio
     α β γ hα hβ hγ hαβ ω.toLieHom (hx.map_root α) (hx.map_root β) (hx.map_root γ)
     (hx.toIsSl2System.chainTopCoeff_mul_killingForm_root_neg_eq α β γ hα hβ hγ hαβ)
+
+/-- **Root vectors from brackets.** If `γ = α + β` is a genuine root sum, then dividing the bracket
+`⁅x α, x β⁆` by `p + 1`, where `p = chainBotCoeff α β`, gives `x γ` up to sign. This is the step
+that builds the root vectors of a Chevalley system out of those of the simple roots. -/
+theorem inv_smul_lie_eq_or_eq_neg
+    (α β γ : Weight K H L) (hα : α.IsNonZero) (hβ : β.IsNonZero) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    ((chainBotCoeff α β + 1 : ℕ) : K)⁻¹ • ⁅x α, x β⁆ = x γ ∨
+      ((chainBotCoeff α β + 1 : ℕ) : K)⁻¹ • ⁅x α, x β⁆ = -x γ := by
+  have hp : ((chainBotCoeff α β + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero _)
+  rw [hx.toIsSl2System.lie_eq_structureConstant_smul α β γ hγ hαβ, smul_smul]
+  rcases hx.structureConstant_eq_natCast_or_eq_neg_natCast α β γ hα hβ hγ hαβ with hN | hN
+  · exact .inl (by rw [hN, inv_mul_cancel₀ hp, one_smul])
+  · exact .inr (by rw [hN, mul_neg, inv_mul_cancel₀ hp, neg_one_smul])
 
 /-- The structure constant of a genuine root-sum bracket in a Chevalley system is the cast of an
 integer. The preceding theorem identifies that integer more precisely as `±(p + 1)`. -/

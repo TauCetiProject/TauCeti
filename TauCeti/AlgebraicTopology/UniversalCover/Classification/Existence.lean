@@ -157,14 +157,15 @@ def subgroupCoverFiberEquivSubgroupQuotient [LocallyPathConnectedSpace X]
     simp only [Set.mem_preimage, Set.mem_singleton_iff]
     rw [subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H e]).toEquiv
 
-/-- On underlying points, fibre transport applies the characteristic homeomorphism. -/
+/-- On underlying points, fibre transport applies the characteristic homeomorphism. This
+identifies equations in the bundled fibre with equations on the quotient total space. -/
 @[simp]
-private theorem subgroupCoverFiberEquivSubgroupQuotient_apply_coe [LocallyPathConnectedSpace X]
+theorem subgroupCoverFiberEquivSubgroupQuotient_apply_coe [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (x₀ : X)
     (H : Subgroup (FundamentalGroup X x₀)) (e : ⇑(subgroupCover x₀ H).proj ⁻¹' {x₀}) :
     (subgroupCoverFiberEquivSubgroupQuotient x₀ H e : SubgroupQuotient x₀ H) =
       subgroupCoverTotalSpaceHomeomorph x₀ H e :=
-  rfl
+  (rfl)
 
 /-- Fibre transport commutes with monodromy. -/
 @[simp]

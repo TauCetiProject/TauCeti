@@ -42,6 +42,8 @@ terms used in Eisenstein series with character.
 * `DirichletCharacter.generalizedBernoulli_one_of_ne_one` and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one` give the two useful forms
   of `B₁,χ` for a nontrivial character.
+* `DirichletCharacter.generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg` gives `Bₖ,χ = 0` when
+  `k ≠ 1` and the parities of `χ` and `k` differ.
 
 ## References
 
@@ -176,5 +178,45 @@ theorem natCast_mul_generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [← map_natCast (algebraMap ℚ R) N, mul_left_comm, ← map_mul,
     mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne N)), map_natCast]
+
+/-- The generalized Bernoulli number `Bₖ,χ` vanishes when `k ≠ 1` and
+`χ (-1) = -(-1) ^ k`. -/
+@[simp]
+theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
+    {χ : DirichletCharacter R N} {k : ℕ} (hk : k ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
+    χ.generalizedBernoulli k = 0 := by
+  have hN : (N : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  -- `β a` is the Bernoulli factor `Bₖ(ã / N)` of the residue `a`
+  set β : ZMod N → ℚ := fun a ↦
+    (Polynomial.bernoulli k).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N) with hβ
+  -- Reflection `a ↦ -a` multiplies each summand by `χ (-1) * (-1) ^ k = -1`.
+  -- At the zero residue, `Bₖ(0) = Bₖ(1)` because `k ≠ 1`.
+  -- Thus `β (-a) = (-1) ^ k * β a` also at zero.
+  have hβneg (a : ZMod N) : β (-a) = (-1) ^ k * β a := by
+    by_cases ha : a = 0
+    · subst a
+      simp only [hβ, neg_zero, ↓reduceIte]
+      rw [div_self hN, ← bernoulli_eval_one_sub, sub_self, bernoulli_eval_zero,
+        bernoulli_eval_one, bernoulli_eq_bernoulli'_of_ne_one hk]
+    · have : NeZero a := ⟨ha⟩
+      simp only [hβ, neg_eq_zero, ha, ↓reduceIte]
+      rw [ZMod.val_neg_of_ne_zero, Nat.cast_sub a.val_le, sub_div, div_self hN,
+        bernoulli_eval_one_sub]
+  -- so each summand `χ a * β a` is odd in `a`
+  have hneg (a : ZMod N) :
+      χ (-a) * algebraMap ℚ R (β (-a)) = -(χ a * algebraMap ℚ R (β a)) := by
+    have hχa : χ (-a) = -(-1) ^ k * χ a := by rw [neg_eq_neg_one_mul a, map_mul, hχ]
+    have hsq : ((-1 : R) ^ k) * (-1) ^ k = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+    rw [hχa, hβneg, map_mul, map_pow, map_neg, map_one]
+    linear_combination (-(χ a * algebraMap ℚ R (β a))) * hsq
+  have hS : ∑ a, χ a * algebraMap ℚ R (β a) = 0 := by
+    have h := Equiv.sum_comp (Equiv.neg (ZMod N)) fun a ↦ χ a * algebraMap ℚ R (β a)
+    simp only [Equiv.neg_apply, hneg, Finset.sum_neg_distrib] at h
+    -- `R` is a `ℚ`-algebra, so `-S = S` forces `S = 0`
+    have h2 : (2 : R) * ∑ a, χ a * algebraMap ℚ R (β a) = 0 := by linear_combination -h
+    rw [← one_mul (∑ a, _), ← map_one (algebraMap ℚ R), ← inv_mul_cancel₀ (two_ne_zero' ℚ),
+      map_mul, map_ofNat, mul_assoc, h2, mul_zero]
+  rw [generalizedBernoulli_def]
+  exact (congrArg (_ * ·) hS).trans (mul_zero _)
 
 end DirichletCharacter

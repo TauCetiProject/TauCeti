@@ -79,7 +79,7 @@ private theorem uniqueFactorizationMonoid_option [Finite σ] [UniqueFactorizatio
     rw [← hg, map_mul, map_mul, Subring.coe_mul,
       restrictedOptionEquiv_toTate_polynomialToOption] at hd
     exact hd.of_isUnit_mul one_pos
-      ((hu'.map (toTate _ K)).map Huber.restrictedOptionEquiv.toRingHom)
+      ((hu'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
   have hassoc : Associated (polynomialToOption ω) g := by
     rw [← hg, mul_comm]
     exact associated_mul_unit_right _ _ hu'

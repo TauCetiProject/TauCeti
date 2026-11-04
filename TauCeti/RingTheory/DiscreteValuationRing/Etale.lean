@@ -35,6 +35,9 @@ unchanged.
   valuation ring.
 * `TauCeti.IsDiscreteValuationRing.irreducible_algebraMap_of_map_maximalIdeal_eq`: a uniformizer
   of `R` remains a uniformizer in such an extension.
+* `TauCeti.IsDiscreteValuationRing.exists_isDiscreteValuationRing_of_etale`: a local étale
+  extension of a discrete valuation ring, with local structure map, is a discrete valuation ring
+  in which every uniformizer of `R` remains a uniformizer.
 * `TauCeti.IsDiscreteValuationRing.exists_etale_residueField_algEquiv`: every finite separable
   extension of the residue field is the residue field of a finite étale extension of discrete
   valuation rings in which every uniformizer of `R` remains a uniformizer.
@@ -88,6 +91,20 @@ theorem irreducible_algebraMap_of_map_maximalIdeal_eq [IsDomain S] [IsDiscreteVa
   rw [IsDiscreteValuationRing.irreducible_iff_uniformizer, ← h, hπ.maximalIdeal_eq,
     Ideal.map_span, Set.image_singleton]
 
+/-- **A local étale extension of a discrete valuation ring is a discrete valuation ring.** If `S`
+is an étale `R`-algebra which is a local ring, and `R → S` is a local homomorphism, then `S` is a
+discrete valuation ring in which every uniformizer of `R` remains a uniformizer. -/
+theorem exists_isDiscreteValuationRing_of_etale [IsLocalRing S] [Algebra.Etale R S]
+    [IsLocalHom (algebraMap R S)] :
+    ∃ (_ : IsDomain S) (_ : IsDiscreteValuationRing S),
+      ∀ π : R, Irreducible π → Irreducible (algebraMap R S π) := by
+  have : IsNoetherianRing S := Algebra.FiniteType.isNoetherianRing R S
+  have h := Algebra.FormallyUnramified.map_maximalIdeal (R := R) (S := S)
+  have : _root_.IsRegularLocalRing S := IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq h
+  have : IsDiscreteValuationRing S := of_flat_of_map_maximalIdeal_eq h
+  exact ⟨inferInstance, inferInstance,
+    fun _ hπ ↦ irreducible_algebraMap_of_map_maximalIdeal_eq h hπ⟩
+
 /-- **Every finite separable extension of the residue field of a discrete valuation ring lifts to
 an étale extension of discrete valuation rings.** For a discrete valuation ring `R` with residue
 field `k` and a finite separable field extension `L / k`, there is a discrete valuation ring `R'`
@@ -104,11 +121,8 @@ theorem exists_etale_residueField_algEquiv (R : Type u) [CommRing R] [IsDomain R
         (∀ π : R, Irreducible π → Irreducible (algebraMap R R' π)) ∧
         Nonempty (ResidueField R' ≃ₐ[ResidueField R] L) := by
   obtain ⟨R', _, _, _, _, hfin, hetale, he⟩ := IsLocalRing.exists_etale_residueField_algEquiv R L
-  have : IsNoetherianRing R' := Algebra.FiniteType.isNoetherianRing R R'
-  have h := Algebra.FormallyUnramified.map_maximalIdeal (R := R) (S := R')
-  have : _root_.IsRegularLocalRing R' := IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq h
-  have : IsDiscreteValuationRing R' := of_flat_of_map_maximalIdeal_eq h
+  obtain ⟨_, _, hπ⟩ := exists_isDiscreteValuationRing_of_etale (R := R) (S := R')
   exact ⟨R', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, hfin,
-    hetale, fun _ hπ ↦ irreducible_algebraMap_of_map_maximalIdeal_eq h hπ, he⟩
+    hetale, hπ, he⟩
 
 end TauCeti.IsDiscreteValuationRing

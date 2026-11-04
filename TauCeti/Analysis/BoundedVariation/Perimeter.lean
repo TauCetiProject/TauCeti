@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The perimeter of a set in an open set
@@ -88,7 +89,7 @@ theorem perimeter_mono (h : Ω' ≤ Ω) : perimeter μ Ω' s ≤ perimeter μ Ω
 
 /-- **Inner continuity in the open set.** The perimeter in the union of a directed family of open
 sets is the supremum of the perimeters in its members. -/
-theorem perimeter_iSup {ι : Type*} [Nonempty ι] {Ω : ι → Opens E} (hΩ : Directed (· ≤ ·) Ω) :
+theorem perimeter_iSup {ι : Type*} {Ω : ι → Opens E} (hΩ : Directed (· ≤ ·) Ω) :
     perimeter μ (⨆ i, Ω i) s = ⨆ i, perimeter μ (Ω i) s :=
   totalVariationOn_iSup hΩ
 
@@ -124,15 +125,14 @@ end Haar
 measure in `Ω`, that is `μ ((s i ∆ s₀) ∩ K) → 0` for every compact `K ⊆ Ω`, then
 `P(s₀; Ω) ≤ liminf P(s i; Ω)`. -/
 theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {s : ι → Set E} {s₀ : Set E}
+    {l : Filter ι} {s : ι → Set E} {s₀ : Set E}
     (hs : ∀ᶠ i in l, NullMeasurableSet (s i) μ) (hs₀ : NullMeasurableSet s₀ μ)
     (h : ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun i => μ ((s i ∆ s₀) ∩ K)) l (𝓝 0)) :
     perimeter μ Ω s₀ ≤ liminf (fun i => perimeter μ Ω (s i)) l := by
   -- The indicator of a null-measurable set is locally integrable.
   have hli {t : Set E} (ht : NullMeasurableSet t μ) :
       LocallyIntegrableOn (t.indicator (1 : E → ℝ)) Ω μ :=
-    (((locallyIntegrable_const 1).indicator (measurableSet_toMeasurable μ t)).congr
-      (indicator_ae_eq_of_ae_eq_set ht.toMeasurable_ae_eq)).locallyIntegrableOn _
+    locallyIntegrableOn_indicator_const (ht.mono Measure.restrict_le_self) 1
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
     (fun _ => zero_le) fun i => ?_

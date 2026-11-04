@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Algebra.Rat
+public import Mathlib.Algebra.Group.Commutator
+public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.Tactic.NoncommRing
@@ -14,15 +16,19 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Commutators in semirings and rings
 
-This file records identities for translating a commutator eigenvector relation and for moving
-elements past powers when the two elements almost commute. Integer translation needs only a
-nonassociative ring; the power and nilpotency identities use associativity.
+This file records identities for translating a commutator eigenvector relation, moving elements
+past powers when the two elements almost commute, and commuting successive correction terms.
+Integer translation needs only a nonassociative ring; the other results use associativity.
 
 Over a semiring the hypothesis is written as a relation, `x * y = y * x + z`, since there is no
 subtraction to form a commutator with: the power identities need only that `z` commutes with the
 element being powered, and the nilpotency results additionally need a `ℚ`-algebra structure, to
 divide by the multiplicity a power releases. Over a ring the same `z` is the commutator
 `x * y - y * x`, which is the form the integer-eigenvector results take.
+
+The last section computes the group commutator of two units of the form `1 + A` and `1 + B` with
+square-zero `A`, `B` and vanishing products `A * B * A`, `B * A * B`: it is `1 + ⁅A, B⁆`, for the
+Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
 
 ## Main results
 
@@ -43,9 +49,51 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
   commutator is a nonzero natural multiple of the element.
+* `Commute.of_commutator_eq_of_commutator_eq_smul_left`: commutation with the second
+  correction term, deduced from commutation with the first.
+* `Commute.of_commutator_eq_of_commutator_eq_smul`: commutation of the two successive
+  correction terms when the second coefficient is a unit.
+* `Units.val_inv_eq_one_sub`: a unit `1 + A` with `A * A = 0` has inverse `1 - A`.
+* `Units.val_commutatorElement_eq_one_add_lie`: the group commutator of two such units is
+  `1 + ⁅A, B⁆` once the products `A * B * A` and `B * A * B` vanish.
 -/
 
 public section
+
+namespace Commute
+
+/-- If `z` is the commutator of `x` and `y`, `y` commutes with `z`, and the commutator
+of `x` and `z` is a unit scalar multiple of `w`, then `y` commutes with `w`. -/
+theorem of_commutator_eq_of_commutator_eq_smul_left
+    {R A : Type*} [CommRing R] [Semiring A] [Algebra R A] {x y z w : A} {c : R}
+    (hyz : Commute y z) (hxy : x * y = y * x + z) (hxz : x * z = z * x + c • w)
+    (hc : IsUnit c) : Commute y w := by
+  let : Ring A := Algebra.semiringToRing R
+  let : LieRing A := LieRing.ofAssociativeRing
+  have hxy' : ⁅x, y⁆ = z := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - y * x) hxy
+  have hxz' : ⁅x, z⁆ = c • w := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - z * x) hxz
+  have h : c • ⁅y, w⁆ = 0 := by
+    simpa [hxy', hxz', commute_iff_lie_eq.mp hyz] using (lie_lie x y z).symm
+  exact commute_iff_lie_eq.mpr (hc.smul_eq_zero.mp h)
+
+/-- If `x * y = y * x + z` and `x * z = z * x + c • w`, where `c` is a unit scalar,
+`x` commutes with `w`, and `y` commutes with `z`, then `z` commutes with `w`. -/
+theorem of_commutator_eq_of_commutator_eq_smul
+    {R A : Type*} [CommRing R] [Semiring A] [Algebra R A] {x y z w : A} {c : R}
+    (hxw : Commute x w) (hxy : x * y = y * x + z) (hxz : x * z = z * x + c • w)
+    (hyz : Commute y z) (hc : IsUnit c) : Commute z w := by
+  -- The scalar ring supplies subtraction even when `A` is presented as a semiring.
+  let : Ring A := Algebra.semiringToRing R
+  let : LieRing A := LieRing.ofAssociativeRing
+  have hxy' : ⁅x, y⁆ = z := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - y * x) hxy
+  have hyw := hyz.of_commutator_eq_of_commutator_eq_smul_left hxy hxz hc
+  rw [commute_iff_lie_eq, ← hxy', lie_lie]
+  simp [commute_iff_lie_eq.mp hyw, commute_iff_lie_eq.mp hxw]
+
+end Commute
 
 namespace TauCeti
 
@@ -211,5 +259,39 @@ theorem isNilpotent_of_commutator_eq_nsmul {n : ℕ} (hn : n ≠ 0)
 end CentralCommutator
 
 end Associative
+
+section SquareZeroUnits
+
+open scoped commutatorElement
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {S : Type*} [Ring S]
+
+/-- A unit of the form `1 + A` with `A * A = 0` has inverse `1 - A`. -/
+theorem _root_.Units.val_inv_eq_one_sub (u : Sˣ) (A : S) (hu : (u : S) = 1 + A)
+    (hA : A * A = 0) : (↑u⁻¹ : S) = 1 - A := by
+  apply Units.inv_eq_of_mul_eq_one_right
+  rw [hu]
+  calc
+    (1 + A) * (1 - A) = 1 - A * A := by noncomm_ring
+    _ = 1 := by rw [hA, sub_zero]
+
+/-- **The group commutator of two square-zero unipotent units is `1` plus the Lie bracket of
+their nilpotent parts**: if `u = 1 + A` and `v = 1 + B` with `A * A = 0`, `B * B = 0`,
+`A * B * A = 0` and `B * A * B = 0`, then `⁅u, v⁆ = 1 + ⁅A, B⁆`, in every ring. -/
+theorem _root_.Units.val_commutatorElement_eq_one_add_lie (u v : Sˣ) (A B : S)
+    (hu : (u : S) = 1 + A) (hv : (v : S) = 1 + B)
+    (hA : A * A = 0) (hB : B * B = 0) (hABA : A * B * A = 0)
+    (hBAB : B * A * B = 0) : (↑⁅u, v⁆ : S) = 1 + ⁅A, B⁆ := by
+  rw [commutatorElement_def, Units.val_mul, Units.val_mul, Units.val_mul,
+    Units.val_inv_eq_one_sub u A hu hA, Units.val_inv_eq_one_sub v B hv hB, hu, hv, Ring.lie_def]
+  calc
+    (1 + A) * (1 + B) * (1 - A) * (1 - B) =
+        1 + A * B - B * A - A * A - B * B - A * (B * B) + (A * A) * B -
+          A * B * A + B * A * B + (A * B * A) * B := by noncomm_ring
+    _ = 1 + (A * B - B * A) := by rw [hA, hB, hABA, hBAB]; simp [sub_eq_add_neg, add_assoc]
+
+end SquareZeroUnits
 
 end TauCeti

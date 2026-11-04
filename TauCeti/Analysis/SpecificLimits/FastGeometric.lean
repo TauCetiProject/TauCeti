@@ -42,6 +42,8 @@ The general statement `TauCeti.le_geom_of_le_mul_pow_mul_rpow` only asks for a r
   tends to zero.
 * `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow`: convergence at the classical threshold
   when `b > 1`.
+* `TauCeti.strictAnti_of_eq_one_add_mul_sq_sub_one`: strict decrease for a quadratic recurrence
+  starting above one with a sufficiently small coefficient.
 
 ## References
 
@@ -160,5 +162,23 @@ theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : �
     rpow_neg_inv_pow_ratio_conditions hY hC (zero_lt_one.trans hb) hα h0
   exact tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY (zero_lt_one.trans hb).le
     (Real.rpow_nonneg (zero_lt_one.trans hb).le _) hq hα.le hbq hq0 hrec
+
+/-- A real sequence with `cₙ₊₁ = 1 + κ (cₙ² - 1)`, where `κ > 0`, `c₀ > 1` and `κ (1 + c₀) < 1`,
+decreases strictly: while `1 < cₙ ≤ c₀`, the step `cₙ₊₁ - 1 = κ (cₙ + 1) (cₙ - 1)` multiplies
+`cₙ - 1 > 0` by `κ (cₙ + 1) < 1`. -/
+theorem strictAnti_of_eq_one_add_mul_sq_sub_one {c : ℕ → ℝ} {κ : ℝ} (hκ : 0 < κ)
+    (hc₀ : 1 < c 0) (hlt : κ * (1 + c 0) < 1) (hrec : ∀ n, c (n + 1) = 1 + κ * (c n ^ 2 - 1)) :
+    StrictAnti c := by
+  have hstep (n : ℕ) (h₁ : 1 < c n) (h₀ : c n ≤ c 0) : 1 < c (n + 1) ∧ c (n + 1) < c n := by
+    have hκc : κ * (c n + 1) < 1 := by nlinarith
+    have hpos : 0 < κ * ((c n + 1) * (c n - 1)) := mul_pos hκ (by nlinarith)
+    constructor <;> nlinarith [hrec n]
+  have hdec (n : ℕ) : 1 < c n ∧ c n ≤ c 0 := by
+    induction n with
+    | zero => exact ⟨hc₀, le_rfl⟩
+    | succ n ih =>
+        have := hstep n ih.1 ih.2
+        exact ⟨this.1, this.2.le.trans ih.2⟩
+  exact strictAnti_nat_of_succ_lt fun n ↦ (hstep n (hdec n).1 (hdec n).2).2
 
 end TauCeti

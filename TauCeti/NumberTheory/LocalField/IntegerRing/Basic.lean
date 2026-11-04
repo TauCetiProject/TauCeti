@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.AdicCompletion.Pi
 public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 
 /-!
 # The ring of integers of an extension of local fields is a finite free module
@@ -37,6 +38,8 @@ inverting only the nonzero elements of `𝒪[K]`.
 * `TauCeti.integerRingIsQuadraticExtension`: `𝒪[L]` is a quadratic extension of `𝒪[K]` when
   `L/K` is quadratic.
 * `TauCeti.finite_of_valuativeExtension`: `L` is a finite extension of `K`.
+* `TauCeti.ramificationIndex_eq_ramificationIdx_integralClosure`: the intrinsic ramification
+  index agrees with the ideal-theoretic index in the integral closure of `𝒪[K]` in `L`.
 
 ## References
 
@@ -160,5 +163,30 @@ instance integerRingIsQuadraticExtension [Algebra.IsQuadraticExtension K L] :
 theorem finite_of_valuativeExtension : Module.Finite K L :=
   have := isLocalization_integerRing K L
   .of_isLocalization 𝒪[K] 𝒪[L] (nonZeroDivisors 𝒪[K])
+
+/-- The intrinsic ramification index of a compatible extension of nonarchimedean local fields
+is the ramification index of the maximal ideal of the integral closure of `𝒪[K]` in `L`.
+The local-ring structure on the integral closure may be any supplied instance. -/
+theorem ramificationIndex_eq_ramificationIdx_integralClosure
+    [IsLocalRing (integralClosure 𝒪[K] L)] :
+    ramificationIndex K L =
+      (maximalIdeal (integralClosure 𝒪[K] L)).ramificationIdx 𝒪[K] := by
+  have := finite_of_valuativeExtension K L
+  let e := integerRingEquivIntegralClosure K L
+  have : IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
+    IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
+  have : (maximalIdeal (integralClosure 𝒪[K] L)).LiesOver 𝓂[K] :=
+    ⟨(IsLocalRing.eq_maximalIdeal
+      (Ideal.IsMaximal.under 𝒪[K] (maximalIdeal (integralClosure 𝒪[K] L)))).symm⟩
+  rw [ramificationIndex_eq_ramificationIdx,
+    ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K]
+      (maximalIdeal (integralClosure 𝒪[K] L)) (IsDiscreteValuationRing.not_a_field 𝒪[K]),
+    ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] 𝓂[L]
+      (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+  have hcomap : (maximalIdeal (integralClosure 𝒪[K] L)).comap e = 𝓂[L] :=
+    IsLocalRing.eq_maximalIdeal
+      (Ideal.comap_isMaximal_of_surjective e e.surjective)
+  simpa only [hcomap] using
+    𝓂[K].ramificationIdx'_comap_eq e (maximalIdeal (integralClosure 𝒪[K] L))
 
 end TauCeti

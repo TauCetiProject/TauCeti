@@ -13,7 +13,9 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 An open partial homeomorphism identifies a neighbourhood of a point of its source with a
 neighbourhood of its image, so a point of the source is not isolated as soon as its image is not
 (`OpenPartialHomeomorph.nhdsNE_neBot`). For instance, no point in the source of a chart into a
-nontrivially normed field is isolated.
+nontrivially normed field is isolated. Being injective and continuous on its source, it sends the
+punctured neighbourhoods of a point of its source to those of the image
+(`OpenPartialHomeomorph.tendsto_nhdsNE`).
 -/
 
 public section
@@ -33,5 +35,12 @@ theorem nhdsNE_neBot (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.sourc
   refine (hmap ▸ hne).mono (nhdsWithin_mono _ ?_)
   rintro _ ⟨w, ⟨hw, hwx⟩, rfl⟩ hwx'
   exact hwx (by rw [← mem_singleton_iff.1 hwx', e.right_inv hw]; exact mem_singleton w)
+
+/-- An open partial homeomorphism sends the punctured neighbourhoods of a point of its source to
+the punctured neighbourhoods of its image. -/
+theorem tendsto_nhdsNE (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source) :
+    Tendsto e (𝓝[≠] x) (𝓝[≠] (e x)) :=
+  tendsto_nhdsWithin_iff.mpr
+    ⟨(e.continuousAt hx).tendsto.mono_left nhdsWithin_le_nhds, e.eventually_ne_nhdsWithin hx⟩
 
 end OpenPartialHomeomorph

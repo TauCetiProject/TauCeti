@@ -25,7 +25,8 @@ multiple of `c_t`, and Maschke's theorem says that `ℚ[Sₙ]` is semisimple.  T
 
 * If `c_t w = 0` for every `w ∈ W`, then `W` is square-zero: an element of `W` is `a c_t` by
   hypothesis, so a product of two elements of `W` is `a (c_t w) = 0`.  A square-zero left ideal
-  of a semisimple ring vanishes (`TauCeti.Submodule.eq_bot_of_forall_mul_eq_zero`), so `W = ⊥`.
+  is nil, and a nil left ideal of a semisimple ring vanishes
+  (`Submodule.eq_bot_of_forall_isNilpotent`), so `W = ⊥`.
 * Otherwise `c_t w ≠ 0` for some `w = a c_t ∈ W`, and `c_t w = c_t a c_t` is `κ • c_t` with
   `κ ≠ 0`.  It lies in `W`, hence so does `c_t`, hence so does the whole ideal it generates, and
   `W` is everything.
@@ -83,10 +84,10 @@ semisimple. -/
 private theorem eq_bot_of_forall_youngSymmetrizer_mul_eq_zero (t : YoungTableau μ)
     {W : Submodule (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
       (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))}
-    (hle : W ≤ spechtIdeal t) (h : ∀ w ∈ W, youngSymmetrizer t * w = 0) : W = ⊥ :=
-  Submodule.eq_bot_of_forall_mul_eq_zero fun x hx y hy => by
+    (hle : W ≤ spechtIdeal t) (h : ∀ w ∈ W, youngSymmetrizer (R := ℚ) t * w = 0) : W = ⊥ :=
+  Submodule.eq_bot_of_forall_isNilpotent fun x hx => ⟨2, by
     obtain ⟨a, rfl⟩ := (mem_spechtIdeal_iff t x).mp (hle hx)
-    rw [mul_assoc, h y hy, mul_zero]
+    rw [sq, mul_assoc, h _ hx, mul_zero]⟩
 
 /-- **The Young symmetrizer does not sandwich to zero**: some `c_t a c_t` is nonzero.  If they all
 vanished, the Specht ideal would be square-zero, hence zero, and it is not.  This is the raw form
@@ -94,7 +95,7 @@ of `TauCeti.YoungTableau.exists_ne_zero_eq_smul_youngSymmetrizer_mul_mul`, which
 to use. -/
 private theorem exists_youngSymmetrizer_mul_mul_ne_zero (t : YoungTableau μ) :
     ∃ a : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)),
-      youngSymmetrizer t * a * youngSymmetrizer t ≠ 0 := by
+      youngSymmetrizer (R := ℚ) t * a * youngSymmetrizer (R := ℚ) t ≠ 0 := by
   by_contra hall
   push Not at hall
   refine spechtIdeal_ne_bot t
@@ -107,7 +108,8 @@ private theorem exists_youngSymmetrizer_mul_mul_ne_zero (t : YoungTableau μ) :
 element of the group algebra the scalar it sandwiches the Young symmetrizer by is nonzero. -/
 theorem exists_ne_zero_eq_smul_youngSymmetrizer_mul_mul (t : YoungTableau μ) :
     ∃ (a : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) (κ : ℚ), κ ≠ 0 ∧
-      youngSymmetrizer t * a * youngSymmetrizer t = κ • youngSymmetrizer t := by
+      youngSymmetrizer (R := ℚ) t * a * youngSymmetrizer (R := ℚ) t = κ • youngSymmetrizer (R :=
+        ℚ) t := by
   obtain ⟨a, ha⟩ := exists_youngSymmetrizer_mul_mul_ne_zero t
   obtain ⟨κ, hκ⟩ := exists_eq_smul_youngSymmetrizer_mul_mul t a
   exact ⟨a, κ, fun h => ha (by rw [hκ, h, zero_smul]), hκ⟩
@@ -118,23 +120,23 @@ theorem isAtom_spechtIdeal (t : YoungTableau μ) : IsAtom (spechtIdeal t) := by
   refine ⟨spechtIdeal_ne_bot t, fun W hW => ?_⟩
   by_contra hWne
   -- some element of `W` survives multiplication by the symmetrizer, else `W` is square-zero
-  obtain ⟨w, hwW, hcw⟩ : ∃ w ∈ W, youngSymmetrizer t * w ≠ 0 := by
+  obtain ⟨w, hwW, hcw⟩ : ∃ w ∈ W, youngSymmetrizer (R := ℚ) t * w ≠ 0 := by
     by_contra hall
     push Not at hall
     exact hWne (eq_bot_of_forall_youngSymmetrizer_mul_eq_zero t hW.le hall)
   -- that element sandwiches the symmetrizer to a nonzero multiple of itself, which lies in `W`
   obtain ⟨a, ha⟩ := (mem_spechtIdeal_iff t w).mp (hW.le hwW)
   obtain ⟨κ, hκ⟩ := exists_eq_smul_youngSymmetrizer_mul_mul t a
-  have hcw' : youngSymmetrizer t * w = κ • youngSymmetrizer t := by
+  have hcw' : youngSymmetrizer (R := ℚ) t * w = κ • youngSymmetrizer (R := ℚ) t := by
     rw [← ha, ← mul_assoc]
     exact hκ
   have hκne : κ ≠ 0 := fun h => hcw (by rw [hcw', h, zero_smul])
-  have hmem : κ • youngSymmetrizer t ∈ W := by
+  have hmem : κ • youngSymmetrizer (R := ℚ) t ∈ W := by
     rw [← hcw', ← smul_eq_mul]
     exact W.smul_mem _ hwW
   -- so the symmetrizer itself lies in `W`, and with it the whole ideal it generates
-  have hc : youngSymmetrizer t ∈ W := by
-    have hinv : κ⁻¹ • (κ • youngSymmetrizer t) ∈ W := by
+  have hc : youngSymmetrizer (R := ℚ) t ∈ W := by
+    have hinv : κ⁻¹ • (κ • youngSymmetrizer (R := ℚ) t) ∈ W := by
       rw [← algebraMap_smul (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) κ⁻¹]
       exact W.smul_mem _ hmem
     rwa [smul_smul, inv_mul_cancel₀ hκne, one_smul] at hinv

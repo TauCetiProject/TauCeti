@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Diffeomorph.Cotangent
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 
 /-!
 # Cotangent lifts preserve the Liouville and canonical symplectic forms
@@ -24,7 +25,15 @@ with pullback, the canonical symplectic forms `ω = -dλ` are preserved as well:
 `(T*h)^* ω_N = ω_M` (`Diffeomorph.mpullback_cotangent_symplecticForm`).
 
 So every diffeomorphism of the base gives an exact symplectomorphism of cotangent bundles. The base
-may have boundary or corners and need not be finite-dimensional.
+may have boundary or corners and need not be finite-dimensional. In particular, cotangent lifts
+carry exact Lagrangian maps for `λ_M` to exact Lagrangian maps for `λ_N` with the same primitive
+(`Diffeomorph.isExactLagrangianMap_cotangent_comp_iff`).
+
+In particular, if a group `G` acts on `M` by smooth maps, its cotangent-lifted action on `T*M`
+(`TauCeti.CotangentBundle.instMulAction`) preserves `λ` and `ω`
+(`TauCeti.CotangentBundle.mpullback_smul_liouvilleForm`,
+`TauCeti.CotangentBundle.mpullback_smul_symplecticForm`): it is an action by exact
+symplectomorphisms.
 
 ## References
 
@@ -63,19 +72,8 @@ theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
   apply Subtype.ext
   funext z
   ext v
-  rw [SmoothForm.mpullback_apply, liouvilleForm_apply, liouvilleForm_apply]
-  -- The lift covers `h`, so `dπ_N ∘ d(T*h) = d(π_N ∘ T*h) = d(h ∘ π_M) = dh ∘ dπ_M`.
-  have hproj : π (F →L[ℝ] ℝ) (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) ∘ h.cotangent =
-      h ∘ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
-    funext (proj_cotangent h)
-  have hN := mfderiv_comp_apply z
-    ((contMDiff_proj (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
-    (h.cotangent.mdifferentiable (by simp) z) (v 0)
-  have hM := mfderiv_comp_apply z (h.mdifferentiable (by simp) z.proj)
-    ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
-    (v 0)
-  rw [hproj, hM] at hN
-  rw [← hN]
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq h.cotangent.contMDiff
+    (proj_cotangent h) z (h.mdifferentiable (by simp) z.proj), liouvilleForm_apply]
   exact cotangent_snd_apply_mfderiv h z _
 
 end Liouville
@@ -93,6 +91,50 @@ theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
   rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
     ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
 
+/-- **Cotangent lifts preserve exact Lagrangian maps.** For a smooth diffeomorphism `h : M → N`
+and a differentiable map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for
+the Liouville form of `T*N`, with primitive `u`, exactly when `f` is one for the Liouville form of
+`T*M`, with the same primitive. -/
+theorem isExactLagrangianMap_cotangent_comp_iff {E'' H'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type*}
+    [TopologicalSpace P] [ChartedSpace H'' P] (h : M ≃ₘ⟮I, J⟯ N)
+    {f : P → CotangentBundle I M} (hf : MDifferentiable K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) f)
+    {u : P → ℝ} :
+    (isSymplectic_symplecticForm (I := J) (M := N)).isNondegenerate.IsExactLagrangianMap K
+        (liouvilleForm J N) (h.cotangent ∘ f) u ↔
+      (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap K
+        (liouvilleForm I M) f u :=
+  h.cotangent.isExactLagrangianMap_comp_iff_of_mpullback_eq (mpullback_cotangent_symplecticForm h)
+    (mpullback_cotangent_liouvilleForm h) hf
+
 end Symplectic
 
 end Diffeomorph
+
+namespace TauCeti.CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- **The cotangent-lifted action preserves the Liouville form.** For a group acting on `M` by
+smooth maps, each element acting on `T*M` by the cotangent-lifted action pulls the Liouville form
+back to itself. -/
+@[simp]
+theorem mpullback_smul_liouvilleForm [IsManifold I 2 M] (g : G) :
+    SmoothForm.mpullback (fun z : CotangentBundle I M ↦ g • z) (contMDiff_const_smul g)
+      (liouvilleForm I M) = liouvilleForm I M := by
+  simp only [smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).mpullback_cotangent_liouvilleForm
+
+/-- **The cotangent-lifted action is symplectic.** For a group acting on `M` by smooth maps, each
+element acting on `T*M` by the cotangent-lifted action pulls the canonical symplectic form back to
+itself. -/
+@[simp]
+theorem mpullback_smul_symplecticForm [IsManifold I ∞ M] (g : G) :
+    SmoothForm.mpullback (fun z : CotangentBundle I M ↦ g • z) (contMDiff_const_smul g)
+      (symplecticForm I M) = symplecticForm I M := by
+  simp only [smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).mpullback_cotangent_symplecticForm
+
+end TauCeti.CotangentBundle

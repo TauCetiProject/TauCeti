@@ -199,7 +199,7 @@ theorem eigenvalue_mul (f : Eigenform N k) {m n : ℕ+} (hmn : Nat.Coprime m n) 
     f.eigenvalue (m * n) = f.eigenvalue m * f.eigenvalue n := by
   refine f.eq_of_smul_eq ?_
   rw [← f.isEigen (m * n), PNat.mul_coe, heckeTCompositeGamma0_mul_of_coprime N hmn, map_mul]
-  simp only [Module.End.mul_apply, f.isEigen, map_smul, smul_smul, mul_comm]
+  simp only [mul_apply_eq_comp, f.isEigen, map_smul, smul_smul, mul_comm]
 
 /-- At a bad prime, the power identity for Hecke operators acts on a full eigenform by the
 product of the eigenvalues at `p` and `p ^ (r + 1)`. -/
@@ -215,7 +215,7 @@ private theorem heckeRingHomCuspCharSpace_prime_pow_add_two_of_not_coprime
     rw [heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN,
       heckeTCompositeGamma0_prime_pow_of_not_coprime N hp hpN, heckeTCompositeGamma0_prime N hp,
       ← pow_succ']
-  rw [hT, map_mul, Module.End.mul_apply, ← PNat.pow_coe]
+  rw [hT, map_mul, mul_apply_eq_comp, ← PNat.pow_coe]
   simp only [f.isEigen, map_smul, smul_smul, mul_comm]
 
 /-- **The recurrence along the powers of a prime**:

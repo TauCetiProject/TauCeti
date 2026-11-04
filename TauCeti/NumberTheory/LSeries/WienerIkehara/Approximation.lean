@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Chebyshev
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Asymptotics.SumWindow
+import TauCeti.Analysis.Asymptotics.Sum.Window
 
 /-!
 # Approximating the test function in the smoothed Wiener--Ikehara asymptotic
@@ -59,7 +60,7 @@ the integral of the weight is bounded on finite intervals by the fundamental the
 rather than evaluated on `(0, ∞)`, and the approximation hypothesis is stated for an arbitrary
 weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a Schwartz function `g`
 (`limiting_cor_schwartz` there) the approximants are the truncations `χ (R⁻¹ • ·) • g`, which
-converge to `g` in the Schwartz topology (`SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop`);
+converge to `g` in the Schwartz topology (Mathlib's `SchwartzMap.tendsto_smulLeftCLM_comp_smul`);
 the weighted sup norm of a Fourier transform is bounded by two Schwartz seminorms, so it is the
 continuity of the Fourier transform on `𝓢(ℝ, ℂ)` that makes the truncation error small.
 
@@ -402,11 +403,9 @@ theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
   -- hence so do their Fourier transforms.
   let b : ContDiffBump (0 : ℝ) := ⟨1, 2, one_pos, one_lt_two⟩
   set u : ℝ → 𝓢(ℝ, ℂ) := fun R ↦ SchwartzMap.smulLeftCLM ℂ (fun y ↦ b (R⁻¹ • y)) g
-  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i b x‖ ≤ B :=
-    (b.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-      (b.hasCompactSupport.iteratedFDeriv i)
-  have hu : Tendsto u atTop (𝓝 g) := SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop
-    b.contDiff hbdd b.eventuallyEq_one g
+  have hu : Tendsto u atTop (𝓝 g) :=
+    (SchwartzMap.tendsto_smulLeftCLM_comp_smul b.contDiff b.hasCompactSupport
+      b.eventuallyEq_one g).comp tendsto_inv_atTop_zero
   have hFu : Tendsto (fun R ↦ 𝓕 (u R)) atTop (𝓝 (𝓕 g)) :=
     (ContinuousFourier.continuous_fourier.tendsto g).comp hu
   rw [(schwartz_withSeminorms ℝ ℝ ℂ).tendsto_nhds] at hFu

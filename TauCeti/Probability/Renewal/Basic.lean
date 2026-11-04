@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.Probability.BorelCantelli
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
+public import TauCeti.Probability.Independence.ConvolutionPower
 
 /-!
 # Arrival times and counts of an ordinary renewal process
@@ -34,10 +35,10 @@ The probabilistic part shows that the process does not explode: if the increment
 and identically distributed and not almost surely zero, then almost surely the arrival times tend
 to infinity, and hence almost surely `renewalCount T t` is finite simultaneously for all `t`. The
 proof applies the second Borel–Cantelli lemma to the events `{a ≤ T n}` for a threshold `a > 0` of
-positive probability. Finally, the law of each count depends only on the common law `F` of the
-increments: it is the law of the count of the coordinate process under the product measure
-`Measure.infinitePi (fun _ ↦ F)`, on which Mathlib's `iIndepFun_infinitePi` constructs the
-increments.
+positive probability. For i.i.d. increments with common law `F`, the `n`-th arrival time has law
+the convolution power `F^{∗n}`. Finally, the law of each count depends only on `F`: it is the law
+of the count of the coordinate process under the product measure `Measure.infinitePi (fun _ ↦ F)`,
+on which Mathlib's `iIndepFun_infinitePi` constructs the increments.
 
 ## Main definitions
 
@@ -53,6 +54,9 @@ increments.
 * `TauCeti.Probability.tendsto_arrival_atTop_iff` — nonexplosion is finiteness of every count.
 * `TauCeti.Probability.ae_tendsto_arrival_atTop`, `TauCeti.Probability.ae_renewalCount_lt_top` —
   i.i.d. increments that are not almost surely zero do not explode.
+* `TauCeti.Probability.hasLaw_arrival` — for i.i.d. increments with law `F`, the `n`-th arrival
+  time has law the convolution power `F^{∗n}`, and `TauCeti.Probability.hasLaw_arrival_shift`, the
+  same for the process restarted at the `m`-th arrival.
 * `TauCeti.Probability.map_renewalCount_eq_infinitePi_map` — the law of a count is computed on the
   canonical product space.
 
@@ -89,15 +93,26 @@ lemma arrival_zero (ω : Ω) : arrival T 0 ω = 0 := by
 lemma arrival_succ (n : ℕ) (ω : Ω) : arrival T (n + 1) ω = arrival T n ω + T n ω := by
   simp [arrival_def, Finset.sum_range_succ]
 
+/-- The `(m + k)`-th arrival time is the `m`-th one plus the `k`-th arrival time of the renewal
+process restarted at the `m`-th arrival, whose increments are `T m, T (m + 1), …`. -/
+lemma arrival_add (m k : ℕ) (ω : Ω) :
+    arrival T (m + k) ω = arrival T m ω + arrival (fun i ↦ T (m + i)) k ω := by
+  simp [arrival_def, Finset.sum_range_add]
+
 /-- The arrival times are nondecreasing. -/
 lemma monotone_arrival (ω : Ω) : Monotone fun n ↦ arrival T n ω :=
   monotone_nat_of_le_succ fun n ↦ by simp [arrival_succ]
 
+/-- The `n`-th arrival time is measurable as soon as the increments `T 0, …, T (n - 1)` are. -/
+lemma measurable_arrival_of_lt {_ : MeasurableSpace Ω} {T : ℕ → Ω → ℝ≥0} {n : ℕ}
+    (hT : ∀ i < n, Measurable (T i)) : Measurable (arrival T n) := by
+  simp only [funext (arrival_def T n)]
+  exact Finset.measurable_fun_sum _ fun i hi ↦ hT i (Finset.mem_range.1 hi)
+
 @[fun_prop]
 lemma measurable_arrival [MeasurableSpace Ω] {T : ℕ → Ω → ℝ≥0} (hT : ∀ n, Measurable (T n))
-    (n : ℕ) : Measurable (arrival T n) := by
-  simp only [funext (arrival_def T n)]
-  exact Finset.measurable_fun_sum _ fun i _ ↦ hT i
+    (n : ℕ) : Measurable (arrival T n) :=
+  measurable_arrival_of_lt fun i _ ↦ hT i
 
 /-! ### The counting process -/
 
@@ -145,7 +160,7 @@ lemma natCast_le_renewalCount_iff {t : ℝ≥0} {ω : Ω} {n : ℕ} :
       _ = ∑ k ∈ Finset.range n, if arrival T (k + 1) ω ≤ t then 1 else 0 :=
         Finset.sum_congr rfl fun k hk ↦
           (ite_eq_left <| (monotone_arrival T ω (Finset.mem_range.1 hk)).trans h).symm
-      _ ≤ renewalCount T t ω := ENNReal.sum_le_tsum _
+      _ ≤ renewalCount T t ω := sum_le_tsum _
 
 /-- The count at time `t` equals `n` exactly when `arrival T n ω ≤ t < arrival T (n + 1) ω`. -/
 lemma renewalCount_eq_natCast_iff {t : ℝ≥0} {ω : Ω} {n : ℕ} :
@@ -191,7 +206,7 @@ lemma exists_renewalCount_eq_natCast {t : ℝ≥0} {ω : Ω} (h : renewalCount T
 lemma monotone_renewalCount (ω : Ω) : Monotone fun t ↦ renewalCount T t ω := by
   intro s t hst
   simp only [renewalCount_def]
-  refine ENNReal.tsum_le_tsum fun n ↦ ?_
+  refine tsum_le_tsum fun n ↦ ?_
   by_cases h : arrival T (n + 1) ω ≤ s
   · simp [h, h.trans hst]
   · simp [h]
@@ -276,6 +291,27 @@ theorem ae_renewalCount_lt_top (hT : ∀ n, Measurable (T n)) (hindep : iIndepFu
     ∀ᵐ ω ∂P, ∀ t, renewalCount T t ω < ⊤ := by
   filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
   exact tendsto_arrival_atTop_iff.1 hω
+
+/-- For independent increments with common law `F = P.map (T 0)`, the `n`-th arrival time
+`arrival T n` has law the convolution power `F^{∗n}`. -/
+theorem hasLaw_arrival (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+    (n : ℕ) : HasLaw (arrival T n) ((P.map (T 0)).convolutionPower n) P := by
+  have := hindep.isProbabilityMeasure
+  have hsum : arrival T n = ∑ i ∈ Finset.range n, T i := by
+    ext ω
+    simp [arrival_def]
+  simpa [hsum] using
+    hindep.hasLaw_finset_sum_convolutionPower (fun i ↦ ⟨(hid i).aemeasurable_fst, (hid i).map_eq⟩)
+      (Finset.range n)
+
+/-- For independent increments with common law `F = P.map (T 0)`, the renewal process restarted at
+the `m`-th arrival, with increments `T m, T (m + 1), …`, has the same arrival-time laws: its `k`-th
+arrival time `arrival T (m + k) - arrival T m` has law `F^{∗k}`. -/
+theorem hasLaw_arrival_shift (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+    (m k : ℕ) : HasLaw (arrival (fun i ↦ T (m + i)) k) ((P.map (T 0)).convolutionPower k) P := by
+  have h := hasLaw_arrival (hindep.precomp (g := (m + ·)) (add_right_injective m))
+    (fun i ↦ (hid (m + i)).trans (hid (m + 0)).symm) k
+  rwa [(hid (m + 0)).map_eq] at h
 
 /-- **Transfer to the canonical product space.** For independent, identically distributed
 increments, the law of `renewalCount T t` is the law of the count of the coordinate process under

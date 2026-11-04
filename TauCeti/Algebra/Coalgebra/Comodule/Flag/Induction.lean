@@ -17,11 +17,10 @@ finite-dimensional comodule has a basis whose coefficient matrix is upper unitri
 the weight-vector induction of `TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular` with the
 weights confined to `{1}`.
 
-This is the fixed-vector case of the induction common to the Kolchin arguments in Layer 5 of the
-ReductiveGroups roadmap. Lie–Kolchin supplies eigenlines for solvable groups; for a unipotent
-group every resulting character is trivial, so the lines are fixed. The theorem here turns that
-fixed-vector statement into the complete flag needed to embed a faithful representation into an
-upper-unitriangular group.
+This is the fixed-vector case of the induction common to the Kolchin arguments. Lie–Kolchin
+supplies eigenlines for solvable groups; for a unipotent group every resulting character is
+trivial, so the lines are fixed. The theorem here turns that fixed-vector statement into the
+complete flag needed to embed a faithful representation into an upper-unitriangular group.
 
 ## Main declarations
 

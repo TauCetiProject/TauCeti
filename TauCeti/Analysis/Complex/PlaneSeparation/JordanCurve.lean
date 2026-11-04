@@ -188,16 +188,11 @@ theorem IsJordanCurve.disjoint_of_isOpen_of_subset_filledHull {C U : Set ℂ} (h
     (hU : IsOpen U) (hUC : U ⊆ filledHull C) : Disjoint U C := by
   refine disjoint_left.mpr fun z hzU hzC => ?_
   -- a point outside the bounded filled hull lies in an unbounded component
-  obtain ⟨x, hx⟩ : ∃ x, x ∉ filledHull C := by
-    by_contra! hcon
-    exact NormedSpace.unbounded_univ ℝ ℂ
-      ((isBounded_filledHull.mpr h.isCompact.isBounded).subset fun z _ => hcon z)
+  obtain ⟨x, hx⟩ := nonempty_compl_filledHull h.isCompact.isBounded
   -- `z ∈ C` is adherent to that unbounded component, which `U` therefore meets
   obtain ⟨u, huU, hux⟩ := _root_.mem_closure_iff.mp
     (h.subset_closure_connectedComponentIn (fun hxC => hx (subset_filledHull hxC)) hzC)
     _ hU hzU
-  refine hx ?_
-  rw [mem_filledHull_iff, connectedComponentIn_eq hux]
-  exact mem_filledHull_iff.mp (hUC huU)
+  exact hx ((mem_filledHull_iff_of_mem_connectedComponentIn hux).mp (hUC huU))
 
 end TauCeti

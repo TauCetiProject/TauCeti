@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
-public import TauCeti.Combinatorics.Graph.Connectivity.Bridge
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
 public import TauCeti.Combinatorics.Graph.Incidence
@@ -39,10 +39,16 @@ actual vertex set.
   `k`-edge-connected exactly when it stays connected after deleting fewer than `k` edges.
 * `Graph.IsLink.isBridge_iff_not_isEdgeReachable_two`: an edge is a bridge exactly when its ends
   are not `2`-edge-reachable.
+* `Graph.isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge`: a multigraph is
+  `2`-edge-connected exactly when its actual vertices are pairwise reachable and it has no bridge.
+  `Graph.forall_reachable_isEdgeReachable_two_iff_forall_not_isBridge` is the componentwise form,
+  and `Graph.preconnected_and_forall_not_isBridge_ofSimpleGraph_iff` compares the criterion on
+  `Graph.ofSimpleGraph` with Mathlib's `SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge`.
 * `Graph.isEdgeReachable_ofSimpleGraph_iff`, `Graph.isEdgeConnected_ofSimpleGraph_iff`: agreement
   with the simple-graph predicates.
 * `Graph.isEdgeReachable_iff_le_edgeReachability`, `Graph.isEdgeConnected_iff_le_edgeConnectivity`:
   the numerical invariants record exactly the thresholds at which the predicates hold.
+* `Graph.edgeConnectivity_ofSimpleGraph`: agreement with the simple-graph edge connectivity.
 * `Graph.edgeConnectivity_eq_iInf_edgeReachability`: edge connectivity is the least local edge
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
@@ -209,6 +215,42 @@ theorem IsLink.isBridge_iff_not_isEdgeReachable_two (h : G.IsLink e x y) :
     · exact hre
     · exact IsLink.reachable (e := e) (by simpa [deleteEdges_isLink] using ⟨h, hfe.symm⟩)
 
+/-- In a multigraph without bridges, any two vertices reachable from each other are
+`2`-edge-reachable. -/
+theorem Reachable.isEdgeReachable_two (h : ∀ e, ¬ G.IsBridge e) (hxy : G.Reachable x y) :
+    G.IsEdgeReachable 2 x y := by
+  intro F hF
+  obtain rfl | ⟨f, rfl⟩ := encard_le_one_iff_eq.mp (ENat.lt_two_iff.mp hF)
+  · simpa using hxy
+  · exact (reachable_deleteEdges_iff_of_not_isBridge (h f)).mpr hxy
+
+/-- Any two vertices of a multigraph reachable from each other are `2`-edge-reachable exactly when
+the multigraph has no bridge; that is, every connected component is `2`-edge-connected exactly when
+there is no bridge. -/
+theorem forall_reachable_isEdgeReachable_two_iff_forall_not_isBridge :
+    (∀ ⦃x y⦄, G.Reachable x y → G.IsEdgeReachable 2 x y) ↔ ∀ e, ¬ G.IsBridge e := by
+  refine ⟨fun h e he ↦ ?_, fun h _ _ ↦ Reachable.isEdgeReachable_two h⟩
+  obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+  exact he.not_isEdgeReachable_two hl (h hl.reachable)
+
+/-- A multigraph is `2`-edge-connected exactly when any two of its actual vertices are reachable
+from each other and it has no bridge. No finiteness is assumed; when there is no actual vertex,
+both sides hold. -/
+theorem isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge :
+    G.IsEdgeConnected 2 ↔
+      (∀ ⦃x⦄, x ∈ V(G) → ∀ ⦃y⦄, y ∈ V(G) → G.Reachable x y) ∧ ∀ e, ¬ G.IsBridge e := by
+  rw [← isEdgeConnected_one, ← forall_reachable_isEdgeReachable_two_iff_forall_not_isBridge]
+  refine ⟨fun h ↦ ⟨h.anti one_le_two, fun x y hxy ↦ h hxy.left_mem hxy.right_mem⟩,
+    fun ⟨h₁, h₂⟩ x hx y hy ↦ h₂ (h₁.isEdgeReachable hx hy |>.reachable one_ne_zero)⟩
+
+/-- A multigraph with an actual vertex is `2`-edge-connected exactly when it is connected and has
+no bridge. -/
+theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Nonempty) :
+    G.IsEdgeConnected 2 ↔ G.Connected ∧ ∀ e, ¬ G.IsBridge e := by
+  rw [isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge,
+    connected_iff_forall_reachable, and_iff_right hV]
+  exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
+
 /-! ### Graphs from simple graphs -/
 
 /-- Edge reachability in `Graph.ofSimpleGraph H` is simple-graph edge reachability in `H`. -/
@@ -222,6 +264,18 @@ theorem isEdgeReachable_ofSimpleGraph_iff (H : SimpleGraph α) (k : ℕ) (x y : 
 theorem isEdgeConnected_ofSimpleGraph_iff (H : SimpleGraph α) (k : ℕ) :
     (Graph.ofSimpleGraph H).IsEdgeConnected k ↔ H.IsEdgeConnected k := by
   simp [isEdgeConnected_def, SimpleGraph.IsEdgeConnected]
+
+/-- On `Graph.ofSimpleGraph H`, the multigraph bridge criterion for `2`-edge-connectivity agrees
+with Mathlib's simple-graph criterion `SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge`.
+The simple-graph criterion needs no separate reachability condition because
+`SimpleGraph.IsBridge` also holds for a non-edge joining distinct components, whereas multigraph
+bridges are actual edges. -/
+theorem preconnected_and_forall_not_isBridge_ofSimpleGraph_iff (H : SimpleGraph α) :
+    (H.Preconnected ∧ ∀ e, ¬ (Graph.ofSimpleGraph H).IsBridge e) ↔ ∀ e, ¬ H.IsBridge e := by
+  rw [← SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge, ← Nat.cast_ofNat,
+    ← isEdgeConnected_ofSimpleGraph_iff,
+    isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge]
+  simp [SimpleGraph.Preconnected]
 
 /-! ### Numerical invariants -/
 
@@ -246,6 +300,14 @@ theorem isEdgeConnected_iff_le_edgeConnectivity (k : ℕ) :
     G.IsEdgeConnected k ↔ k ≤ G.edgeConnectivity :=
   (Antitone.natCast_le_iSup_iff (fun _ _ hkl (h : G.IsEdgeConnected _) ↦ h.anti hkl)
     IsEdgeConnected.zero).symm
+
+/-- The edge connectivity of `Graph.ofSimpleGraph H` is the edge connectivity of `H`. -/
+@[simp]
+theorem edgeConnectivity_ofSimpleGraph (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).edgeConnectivity = H.edgeConnectivity :=
+  ENat.eq_of_forall_natCast_le_iff fun k ↦ by
+    rw [← isEdgeConnected_iff_le_edgeConnectivity,
+      ← SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity, isEdgeConnected_ofSimpleGraph_iff]
 
 theorem edgeReachability_comm (x y : α) : G.edgeReachability x y = G.edgeReachability y x :=
   ENat.eq_of_forall_natCast_le_iff fun k ↦ by
@@ -278,13 +340,13 @@ theorem edgeConnectivity_eq_top_of_subsingleton (hG : V(G).Subsingleton) :
 /-! ### Bounds by incident edges -/
 
 /-- If distinct points are `k`-edge-reachable, then the first one has at least `k` incident
-nonloop edges, provided it has finitely many incident edges. -/
+nonloop edges, provided it has finitely many nonloop incident edges. -/
 theorem IsEdgeReachable.le_nonloopIncidenceCount (h : G.IsEdgeReachable k x y) (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) : k ≤ G.nonloopIncidenceCount x := by
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) : k ≤ G.nonloopIncidenceCount x := by
   by_contra! hlt
   set F := G.incidenceSet x \ G.loopSet x
   have hF : F.encard < k := by
-    rw [← (hfin.sdiff (t := G.loopSet x)).cast_ncard_eq, ← nonloopIncidenceCount_def]
+    rw [← hfin.cast_ncard_eq, ← nonloopIncidenceCount_def]
     exact Nat.cast_lt.mpr hlt
   obtain ⟨p, hp⟩ := (h hF).exists_isPath
   cases p with
@@ -297,17 +359,17 @@ theorem IsEdgeReachable.le_nonloopIncidenceCount (h : G.IsEdgeReachable k x y) (
     exact hp.2 ((hf.right_unique hloop) ▸ q.start_mem_support)
 
 /-- The local edge reachability between distinct points is at most the number of nonloop edges
-incident with the first, provided it has finitely many incident edges. -/
+incident with the first, provided it has finitely many nonloop incident edges. -/
 theorem edgeReachability_le_nonloopIncidenceCount (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) :
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
     G.edgeReachability x y ≤ G.nonloopIncidenceCount x :=
   ENat.forall_natCast_le_iff_le.mp fun _ hk ↦ Nat.cast_le.mpr
     (((isEdgeReachable_iff_le_edgeReachability _).mpr hk).le_nonloopIncidenceCount hxy hfin)
 
 /-- The edge connectivity of a multigraph with two distinct actual vertices is at most the number
-of nonloop edges at the first, provided it has finitely many incident edges. -/
+of nonloop edges at the first, provided it has finitely many nonloop incident edges. -/
 theorem edgeConnectivity_le_nonloopIncidenceCount (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) :
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
     G.edgeConnectivity ≤ G.nonloopIncidenceCount x :=
   (edgeConnectivity_le_edgeReachability hx hy).trans
     (edgeReachability_le_nonloopIncidenceCount hxy hfin)
@@ -318,7 +380,8 @@ theorem edgeConnectivity_eq_top_iff [Finite E(G)] :
     G.edgeConnectivity = ⊤ ↔ V(G).Subsingleton := by
   refine ⟨fun h x hx y hy ↦ ?_, edgeConnectivity_eq_top_of_subsingleton⟩
   by_contra hxy
-  have hle := edgeConnectivity_le_nonloopIncidenceCount hx hy hxy (G.finite_incidenceSet x)
+  have hle := edgeConnectivity_le_nonloopIncidenceCount hx hy hxy
+    ((G.finite_incidenceSet x).sdiff (t := G.loopSet x))
   rw [h, top_le_iff] at hle
   exact ENat.natCast_ne_top _ hle
 

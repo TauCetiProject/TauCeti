@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.TotallyReal.Loop
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Phase
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Continuity
 public import TauCeti.Topology.Circle.Degree
 
 /-!
@@ -33,6 +32,11 @@ Its **Maslov index** `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex`) is the deg
   (`TauCeti.TotallyRealLoop.sub_eq_maslovIndex_mul_pi`).
 * It is invariant under homotopies of loops given by continuous two-parameter frames
   (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_homotopy`).
+* The Maslov phase relative to a fixed maximal totally real subspace varies continuously along
+  any continuous frame over a topological space
+  (`TauCeti.IsMaximalTotallyReal.continuous_maslovPhase_of_frame`), in particular along a loop
+  (`TauCeti.TotallyRealLoop.continuous_maslovPhase`), which is why `maslovPhasePath` is well
+  defined.
 * It is normalized: the half-turn `t ↦ e^{iπt} L₀`, which closes up since `-L₀ = L₀`, has Maslov
   index `n = dim_ℂ E` (`TauCeti.TotallyRealLoop.maslovIndex_rotation`); for `E = ℂ` and `L₀ = ℝ`
   this is the loop `e^{iπt} ℝ` of Maslov index one. The constant loop has Maslov index zero
@@ -69,15 +73,7 @@ theorem continuous_maslovPhase {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
     Continuous fun t => hL₀.maslovPhase (Λ.isMaximalTotallyReal t) := by
   obtain ⟨L₁, hL₁, A, hAc, hA⟩ := Λ.exists_frame
-  have hphase (t : I) : hL₀.maslovPhase (Λ.isMaximalTotallyReal t) =
-      hL₀.maslovPhase hL₁ * (LinearMap.det ((A t).toLinearEquiv : E →ₗ[ℂ] E) /
-        conj (LinearMap.det ((A t).toLinearEquiv : E →ₗ[ℂ] E))) := by
-    rw [← hL₀.maslovPhase_mul_maslovPhase hL₁ (Λ.isMaximalTotallyReal t),
-      hL₁.maslovPhase_congr (Λ.isMaximalTotallyReal t)
-        (hL₁.map_linearEquiv (A t).toLinearEquiv) (hA t),
-      IsMaximalTotallyReal.maslovPhase_map]
-  simp_rw [hphase]
-  exact continuous_const.mul (continuous_det_div_conj A hAc)
+  exact IsMaximalTotallyReal.continuous_maslovPhase_of_frame hL₀ hL₁ (Λ.isMaximalTotallyReal) hAc hA
 
 /-- The loop of Maslov phases `t ↦ ρ(Λ 0, Λ t)`, as a loop in the circle based at `1`. -/
 noncomputable def maslovPhasePath : Path (1 : Circle) 1 where

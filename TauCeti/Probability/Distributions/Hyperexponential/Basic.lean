@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Exponential.Measurability
 import TauCeti.MeasureTheory.Measure.WithDensity
 
@@ -65,22 +66,22 @@ theorem hyperexponentialMeasure_eq_bind [MeasurableSpace ι] [MeasurableSingleto
     (hr : ∀ i, 0 < p.weights i → 0 < r i) :
     hyperexponentialMeasure p r = (categoricalMeasure p).bind (fun i ↦ expMeasure (r i)) := by
   ext s hs
-  rw [hyperexponentialMeasure_of_pos hr, Measure.finsetSum_apply,
+  rw [hyperexponentialMeasure_of_pos hr, _root_.sum_apply,
     Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
-  simp only [categoricalMeasure_singleton, Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [categoricalMeasure_singleton, _root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- Valid hyperexponential laws have total mass one, including weights equal to zero. -/
 theorem isProbabilityMeasure_hyperexponentialMeasure
     (hr : ∀ i, 0 < p.weights i → 0 < r i) :
     IsProbabilityMeasure (hyperexponentialMeasure p r) := by
   constructor
-  rw [hyperexponentialMeasure_of_pos hr, Measure.finsetSum_apply]
+  rw [hyperexponentialMeasure_of_pos hr, _root_.sum_apply]
   have hterm (i : ι) : (p.weights i : ℝ≥0∞) * expMeasure (r i) univ = p.weights i := by
     by_cases hi : p.weights i = 0
     · simp [hi]
     · let _ := isProbabilityMeasure_expMeasure (hr i (pos_iff_ne_zero.mpr hi))
       simp
-  simp only [Measure.smul_apply, smul_eq_mul, hterm]
+  simp only [_root_.smul_apply, smul_eq_mul, hterm]
   exact_mod_cast p.total_of_fintype
 
 /-- Every totalized hyperexponential law is finite. -/
@@ -99,9 +100,8 @@ theorem isProbabilityMeasure_hyperexponentialMeasure_iff :
       ∀ i, 0 < p.weights i → 0 < r i := by
   refine ⟨fun h ↦ ?_, isProbabilityMeasure_hyperexponentialMeasure⟩
   by_contra hr
-  let _ := h
-  exact (IsProbabilityMeasure.ne_zero (hyperexponentialMeasure p r))
-    (hyperexponentialMeasure_of_not_pos hr)
+  rw [hyperexponentialMeasure_of_not_pos hr] at h
+  exact not_isProbabilityMeasure_zero h
 
 /-- The real density of a hyperexponential law, with value zero off the positive half-line
 and outside the valid parameter range. -/
@@ -197,7 +197,7 @@ theorem measurable_hyperexponentialMeasure :
   intro i hi
   apply Measure.measurable_measure.mpr
   intro s hs
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
   exact (measurable_coe_nnreal_ennreal.comp ((hw i).comp measurable_fst)).mul
     ((Measure.measurable_coe hs).comp
       (measurable_expMeasure.comp ((measurable_pi_apply i).comp measurable_snd)))
@@ -311,10 +311,10 @@ theorem cdf_hyperexponentialMeasure_eq (hr : ∀ i, 0 < p.weights i → 0 < r i)
     by_cases hi : p.weights i = 0
     · simp [hi]
     · let _ := isProbabilityMeasure_expMeasure (hr i (pos_iff_ne_zero.mpr hi))
-      rw [Measure.smul_apply, smul_eq_mul]
+      rw [_root_.smul_apply, smul_eq_mul]
       exact ENNReal.mul_ne_top ENNReal.coe_ne_top (measure_ne_top _ _)
   rw [cdf_eq_real, measureReal_def, hyperexponentialMeasure_of_pos hr,
-    Measure.finsetSum_apply, ENNReal.toReal_sum (fun i _ ↦ hfinite i)]
+    _root_.sum_apply, ENNReal.toReal_sum (fun i _ ↦ hfinite i)]
   have hterm (i : ι) :
       (((p.weights i : ℝ≥0∞) • expMeasure (r i)) (Iic x)).toReal =
         (p.weights i : ℝ) * (if 0 ≤ x then 1 - exp (-(r i * x)) else 0) := by
@@ -361,15 +361,7 @@ theorem hyperexponentialMeasure_const (p : StdSimplex ℝ≥0 ι) (a : ℝ) :
   · rw [hyperexponentialMeasure_of_pos (fun _ _ ↦ ha), ← Finset.sum_smul]
     have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
     rw [hw, one_smul]
-  · have hpdf : exponentialPDF a = 0 := by
-      funext x
-      rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
-      split_ifs
-      · exact mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt ha) (exp_nonneg _)
-      · exact le_rfl
-    have hmeasure : expMeasure a = 0 := by
-      rw [expMeasure_eq_withDensity, hpdf, withDensity_zero]
-    simp [hyperexponentialMeasure, hmeasure]
+  · simp [hyperexponentialMeasure, expMeasure_of_nonpos (le_of_not_gt ha)]
 
 section Integration
 

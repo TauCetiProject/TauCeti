@@ -22,7 +22,7 @@ X₁ ⊞ X₂  --(i₁ ⊞ 1)-->  Y₁ ⊞ X₂  --(1 ⊞ i₂)-->  Y₁ ⊞ Y�
 
 The dual argument applies to deflations.  Finally, the direct sum of the two underlying
 kernel--cokernel pairs identifies the cokernel supplied by E1 with the componentwise direct sum,
-so the componentwise short complex `TauCeti.shortComplexBiprod` itself is a conflation.
+so the componentwise short complex `CategoryTheory.ShortComplex.biprod` itself is a conflation.
 
 ## Main declarations
 
@@ -116,13 +116,13 @@ theorem isDeflation_biprod (E : ExactStructure C)
 /-- A binary direct sum of conflations is a conflation. -/
 theorem conflation_biprod (E : ExactStructure C) {S₁ S₂ : ShortComplex C}
     (hS₁ : E.Conflation S₁) (hS₂ : E.Conflation S₂) :
-    E.Conflation (shortComplexBiprod S₁ S₂) :=
+    E.Conflation (S₁.biprod S₂) :=
   E.conflation_of_isKernelCokernelPair_of_isInflation
     ((E.isKernelCokernelPair S₁ hS₁).biprod (E.isKernelCokernelPair S₂ hS₂))
     (by
       -- Rewriting cannot key through the unexposed `IsInflation` abbrev.
-      change E.inflations (shortComplexBiprod S₁ S₂).f
-      rw [shortComplexBiprod_f]
+      change E.inflations (S₁.biprod S₂).f
+      rw [ShortComplex.biprod_f]
       exact E.isInflation_biprod (E.isInflation_f hS₁) (E.isInflation_f hS₂))
 
 end ExactStructure

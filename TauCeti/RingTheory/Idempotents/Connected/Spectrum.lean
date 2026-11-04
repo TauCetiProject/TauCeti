@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Clopen
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Connected prime spectra and idempotents
@@ -18,69 +19,52 @@ coordinate rings of geometrically connected affine schemes.
 
 ## Main declarations
 
-* `TauCeti.eq_zero_or_eq_one_of_isIdempotentElem`: an idempotent is zero or one when `Spec R`
-  is connected.
+* `IsIdempotentElem.eq_zero_or_eq_one_of_preconnectedSpace`: an idempotent is zero or one when
+  `Spec R` is preconnected.
 * `TauCeti.connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one`: `Spec R` is connected
   if and only if every idempotent of `R` is zero or one.
-* `TauCeti.connectedSpace_primeSpectrum_of_injective`: connectedness descends along an
-  injective ring homomorphism.
+* `TauCeti.connectedSpace_primeSpectrum_of_isLocalRing`: the prime spectrum of a local ring is
+  connected.
+
+Descent of connectedness along ring homomorphisms with nil kernel is general spectral topology and
+lives in `TauCeti.RingTheory.Spectrum.Prime.Topology`.
 -/
 
 public section
 
-namespace TauCeti
+section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- An idempotent in a commutative ring with connected prime spectrum is zero or one. -/
-theorem eq_zero_or_eq_one_of_isIdempotentElem [ConnectedSpace (PrimeSpectrum R)]
-    {e : R} (he : IsIdempotentElem e) : e = 0 ∨ e = 1 := by
-  let : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  have hconnected := (connectedSpace_iff_clopen.mp
-    (inferInstance : ConnectedSpace (PrimeSpectrum R))).2
-  rcases hconnected (PrimeSpectrum.basicOpen e)
-      ((PrimeSpectrum.isClopen_iff).2 ⟨e, he, rfl⟩) with hempty | huniv
-  · left
-    apply PrimeSpectrum.basicOpen_injOn_isIdempotentElem he IsIdempotentElem.zero
-    rw [PrimeSpectrum.basicOpen_zero]
-    exact TopologicalSpace.Opens.ext hempty
-  · right
-    apply PrimeSpectrum.basicOpen_injOn_isIdempotentElem he IsIdempotentElem.one
-    rw [PrimeSpectrum.basicOpen_one]
-    exact TopologicalSpace.Opens.ext huniv
+/-- An idempotent in a commutative ring with preconnected prime spectrum is zero or one. -/
+theorem IsIdempotentElem.eq_zero_or_eq_one_of_preconnectedSpace
+    [PreconnectedSpace (PrimeSpectrum R)] {e : R} (he : IsIdempotentElem e) :
+    e = 0 ∨ e = 1 := by
+  rcases isClopen_iff.mp (PrimeSpectrum.isClopen_iff.mpr ⟨e, he, rfl⟩) with h | h
+  · exact .inl <| PrimeSpectrum.basicOpen_injOn_isIdempotentElem he .zero <| by
+      simp [← SetLike.coe_set_eq, h]
+  · exact .inr <| PrimeSpectrum.basicOpen_injOn_isIdempotentElem he .one <| by
+      simp [← SetLike.coe_set_eq, h]
 
-variable [Nontrivial R]
+namespace TauCeti
 
 /-- **The prime spectrum of a nontrivial commutative ring is connected exactly when its only
 idempotents are zero and one.** -/
-theorem connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one :
+theorem connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one [Nontrivial R] :
     ConnectedSpace (PrimeSpectrum R) ↔
       ∀ e : R, IsIdempotentElem e → e = 0 ∨ e = 1 := by
-  constructor
-  · intro h
-    let := h
-    exact fun _ he ↦ eq_zero_or_eq_one_of_isIdempotentElem he
-  · intro hidempotent
-    rw [connectedSpace_iff_clopen]
-    refine ⟨inferInstance, ?_⟩
-    intro s hs
-    obtain ⟨e, he, rfl⟩ := (PrimeSpectrum.isClopen_iff).1 hs
-    rcases hidempotent e he with rfl | rfl
-    · simp
-    · simp
+  refine ⟨fun _ _ he ↦ he.eq_zero_or_eq_one_of_preconnectedSpace, fun h ↦ ?_⟩
+  refine connectedSpace_iff_clopen.mpr ⟨inferInstance, fun s hs ↦ ?_⟩
+  obtain ⟨e, he, rfl⟩ := PrimeSpectrum.isClopen_iff.mp hs
+  rcases h e he with rfl | rfl <;> simp
 
-variable {S : Type*} [CommRing S]
-
-omit [Nontrivial R] in
-/-- Connectedness of prime spectra descends along injective ring homomorphisms. -/
-theorem connectedSpace_primeSpectrum_of_injective [ConnectedSpace (PrimeSpectrum S)]
-    (f : R →+* S) (hf : Function.Injective f) : ConnectedSpace (PrimeSpectrum R) := by
-  let : Nontrivial S := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  let : Nontrivial R := f.domain_nontrivial
-  rw [connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one]
-  intro e he
-  rcases eq_zero_or_eq_one_of_isIdempotentElem (he.map f) with hzero | hone
-  · exact Or.inl (hf (hzero.trans f.map_zero.symm))
-  · exact Or.inr (hf (hone.trans f.map_one.symm))
+/-- **The prime spectrum of a local ring is connected**: the only idempotents of a local ring are
+zero and one. -/
+instance connectedSpace_primeSpectrum_of_isLocalRing [IsLocalRing R] :
+    ConnectedSpace (PrimeSpectrum R) :=
+  connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr fun _ he ↦
+    he.eq_zero_or_eq_one_of_isLocalRing
 
 end TauCeti
+
+end CommRing

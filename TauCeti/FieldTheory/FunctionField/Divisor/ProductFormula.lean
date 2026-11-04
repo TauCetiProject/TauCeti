@@ -29,13 +29,13 @@ strictly stronger than nonconstancy.
 
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
+  Consequently `TauCeti.Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace` bounds
+  `[F : k(x)]` by `deg W` for a transcendental `x` in `L(W)` with `W` effective.
 * `TauCeti.Divisor.degree_principal` is the product formula, and
   `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
   zero and pole divisors.
 * `TauCeti.Place.finrank_adjoin_eq_mul_degree_of_ord_eq_neg`: `[F : k(z)] = n * deg P` for a
   function `z` whose only pole is `P`, of order `n`.
-* `TauCeti.Divisor.succ_le_dim_nsmul_poles` is the growth estimate for the powers of one
-  transcendental function, `ℓ(l (x)_∞) ≥ l + 1`.
 * `TauCeti.Divisor.degreeClass` descends degree to the divisor class group, with
   `TauCeti.Divisor.ker_degreeClass_eq_picZero` identifying its kernel `Cl⁰(F)` with the abstract
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
@@ -138,21 +138,6 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   rw [Divisor.dim_def]
   simpa using hcard
 
-/-- **`ℓ(l (x)_∞) ≥ l + 1`** for a function `x` transcendental over `k`: the Riemann--Roch
-space of `l` times the pole divisor of `x` has dimension at least `l + 1`.  Compared against
-Riemann--Roch in large degree, this is the lower bound behind the product formula and behind
-the vanishing of the genus of a rational function field. -/
-theorem Divisor.succ_le_dim_nsmul_poles (hF : IsFunctionField k F) (x : Fˣ)
-    (hx : Transcendental k (x : F)) (l : ℕ) :
-    l + 1 ≤ Divisor.dim (l • Divisor.poles hF x) := by
-  -- The powers `1, x, …, xˡ` are `k`-linearly independent and have no poles outside those of
-  -- `x`: this is the growth estimate above for the single function `1`.
-  have hone : Divisor.poles hF (1 : Fˣ) = 0 := WeilDivisor.ext fun P ↦ by simp
-  have hc : LinearIndependent k⟮(x : F)⟯ fun _ : Unit ↦ ((1 : Fˣ) : F) :=
-    linearIndependent_unique_iff.mpr (by simp)
-  simpa using Divisor.card_mul_succ_le_dim_nsmul_poles_add hF x hx (fun _ : Unit ↦ (1 : Fˣ)) hc
-    (C := 0) (fun _ ↦ hone.le) l
-
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
 private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F}
@@ -253,6 +238,16 @@ theorem degree_zeros (hF : IsFunctionField k F) (z : Fˣ)
   rw [poles_eq_zeros_inv, inv_inv, Units.val_inv_eq_inv_val,
     IntermediateField.adjoin_simple_inv] at h
   exact h
+
+/-- A function `x` transcendental over `k` in the Riemann–Roch space `L(W)` of an effective
+divisor `W` has degree `[F : k(x)] ≤ deg W`: its pole divisor lies below `W`. -/
+theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k F)
+    {W : Divisor k F} (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W)
+    (hxt : Transcendental k x) :
+    (Module.finrank k⟮x⟯ F : ℤ) ≤ degree W := by
+  have hdeg := degree_le_of_le ((poles_le_iff_mem_riemannRochSpace hF
+    (WeilDivisor.isEffective_iff_zero_le.mpr hW) (Units.mk0 x hxt.ne_zero)).mpr hxW)
+  rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
 every principal divisor has degree zero. -/

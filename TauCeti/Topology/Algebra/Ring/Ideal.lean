@@ -12,8 +12,9 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 /-!
 # The quotient of a topological ring by an ideal
 
-Two things about `R ⧸ I` that its algebraic theory does not record. It is `T1` exactly when `I` is
-closed, and hence `T0`; and when `f : R →+* S` presents `S` as a topological quotient of `R`, the
+Three things about `R ⧸ I` that its algebraic theory does not record. It is `T1` exactly when
+`I` is closed, and hence `T0`; the closure of zero in it is the image of the closure of `I`; and
+when `f : R →+* S` presents `S` as a topological quotient of `R`, the
 first isomorphism theorem `R ⧸ ker f ≃+* S` is a homeomorphism, so `S` carries the quotient
 topology and not merely a coarser one.
 
@@ -41,7 +42,7 @@ continuous surjection can land on a strictly coarser topology than the quotient 
 bijection is continuous but need not be open. What closes the gap is exactly the hypothesis that
 `f` is a *quotient map*, and with it the algebraic isomorphism becomes a homeomorphism.
 
-Over a Tate ring the quotient-map hypothesis is `TauCeti.Huber.IsTateRing.isQuotientMap`, an open
+Over a Tate ring the quotient-map hypothesis is `LinearMap.isQuotientMap_of_isTateRing`, an open
 mapping theorem.
 
 Note that closedness of `ker f` comes for free once `S` is `T1`, since a kernel is the preimage of
@@ -53,6 +54,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
 * `Ideal.Quotient.t1Space_iff`: `T1Space (R ⧸ I) ↔ IsClosed (I : Set R)`.
 * `Ideal.Quotient.instT1Space`: the instance form, so that `T0Space (R ⧸ I)` is found
   automatically once `I` is known to be closed.
+* `Ideal.Quotient.mk_mem_closure_zero_iff`: the image of `x` in `R ⧸ I` lies in the closure of
+  zero exactly when `x` lies in the closure of `I`.
 * `Ideal.Quotient.continuous_lift`: a continuous ring homomorphism annihilating `I` induces a
   *continuous* homomorphism on `R ⧸ I`, with no hypothesis on `I`.
 * `RingHom.isHomeomorph_kerLift`: the map `R ⧸ ker f →+* S` induced by `f` is a homeomorphism when
@@ -83,6 +86,20 @@ instance, with the closedness of `I` as an instance argument, so that the separa
 is available to instance search wherever `I` is known to be closed; this follows
 `Ideal.Quotient.normedCommRing`, which takes `IsClosed (I : Set R)` the same way. -/
 instance instT1Space [IsClosed (I : Set R)] : T1Space (R ⧸ I) := (t1Space_iff I).mpr ‹_›
+
+/-- The image of `x` in `R ⧸ I` lies in the closure of zero exactly when `x` lies in the closure
+of `I`. -/
+@[simp]
+theorem mk_mem_closure_zero_iff {x : R} :
+    Ideal.Quotient.mk I x ∈ closure ({0} : Set (R ⧸ I)) ↔ x ∈ closure (I : Set R) := by
+  -- The quotient map is open and continuous, so preimages commute with closures, and the
+  -- preimage of zero is `I`.
+  have hopen : IsOpenMap (Ideal.Quotient.mk I) := QuotientAddGroup.isOpenMap_coe
+  have hpre : Ideal.Quotient.mk I ⁻¹' ({0} : Set (R ⧸ I)) = (I : Set R) := by
+    ext a
+    simp [Ideal.Quotient.eq_zero_iff_mem]
+  rw [← hpre, ← hopen.preimage_closure_eq_closure_preimage continuous_quotient_mk',
+    Set.mem_preimage]
 
 omit [SeparatelyContinuousAdd R] in
 /-- **A continuous ring homomorphism that kills `I` lifts to a continuous map on `R ⧸ I`.**

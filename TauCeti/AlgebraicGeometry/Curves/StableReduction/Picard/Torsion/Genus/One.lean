@@ -111,7 +111,7 @@ theorem finrank_torsion_le_one_of_genus_eq_one (hg : T.arithmeticGenus = 1)
     h _ T rfl hg
   intro n
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro T hn hg
     by_cases hT : T.IsMinimal
     · by_cases hcard : Fintype.card T.Component = 1

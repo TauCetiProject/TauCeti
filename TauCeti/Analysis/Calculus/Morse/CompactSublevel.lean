@@ -62,8 +62,7 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
   have hγ : IsIntegralCurveOn (fun t ↦ φ t y) (fun _ x ↦ -∇ f x) (Ici 0) :=
     ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).isIntegralCurveOn _
   obtain ⟨q, -, hq, hlim⟩ :=
-    IsIntegralCurveOn.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
-      hγ hcompact hmaps
+    hγ.exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn hcompact hmaps
       (fun _ _ ↦ hfs.differentiable (by norm_num) _)
       (hfs.continuous_fderiv (by norm_num)).continuousOn
       (hM.mono (subset_univ _))
@@ -96,8 +95,7 @@ theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
   have hγ : IsIntegralCurveOn (fun t ↦ φ t y) (fun _ x ↦ -∇ f x) (Iic 0) :=
     ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).isIntegralCurveOn _
   obtain ⟨a, -, ha, hlim⟩ :=
-    IsIntegralCurveOn.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
-      hγ hcompact hmaps
+    hγ.exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn hcompact hmaps
       (fun _ _ ↦ hfs.differentiable (by norm_num) _)
       (hfs.continuous_fderiv (by norm_num)).continuousOn
       (hM.mono (subset_univ _))

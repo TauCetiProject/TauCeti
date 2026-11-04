@@ -308,6 +308,11 @@ theorem one_mem_dualNumberIntegerGrade_zero :
   rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero,
     TrivSqZeroExt.snd_one]
 
+/-- The dual-number generator has integer degree two. -/
+theorem eps_mem_dualNumberIntegerGrade_two :
+    DualNumber.eps ∈ dualNumberIntegerGrade R 2 := by
+  simpa using dualNumberIntegerGrade_ofNat R 2 ▸ eps_mem_dualNumberGrade_two R
+
 /-- **Integer degree zero is the line through `1`.** -/
 theorem dualNumberIntegerGrade_zero_eq_span_one :
     dualNumberIntegerGrade R 0 = R ∙ (1 : DualNumber R) := by

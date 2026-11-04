@@ -198,8 +198,7 @@ residue. This is why the lift is unambiguous. -/
 theorem eq_of_intCast_eq_of_natAbs_le_sqrt (hp : IsGoodDixonPrime G p) {z w : ℤ}
     (hz : z.natAbs ≤ Nat.sqrt (Nat.card G)) (hw : w.natAbs ≤ Nat.sqrt (Nat.card G))
     (h : (z : ZMod p) = w) : z = w :=
-  ZMod.eq_of_intCast_eq_of_two_mul_natAbs_lt (hp.two_mul_natAbs_lt_of_natAbs_le_sqrt hz)
-    (hp.two_mul_natAbs_lt_of_natAbs_le_sqrt hw) h
+  ZMod.eq_of_intCast_eq_of_natAbs_sub_lt (by have := hp.two_mul_sqrt_lt; omega) h
 
 /-! #### Representations over `ZMod p` -/
 

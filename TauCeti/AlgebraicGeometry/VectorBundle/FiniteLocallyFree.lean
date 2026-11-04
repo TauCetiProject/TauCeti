@@ -50,7 +50,9 @@ presented; the corresponding inclusions of full subcategories are fully faithful
   `AlgebraicGeometry.Scheme.Modules.isClosedUnderFiniteProducts_isFiniteLocallyFree`, from which
   `FiniteLocallyFreeSheaf X` has finite biproducts;
 * `FiniteLocallyFreeSheaf.toFinitelyPresented` and `InvertibleSheaf.toFiniteLocallyFree`: the
-  fully faithful inclusions.
+  fully faithful inclusions;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.trivialIsoFree X`: the trivial invertible sheaf is the
+  free sheaf on `PUnit`.
 
 ## References
 
@@ -137,9 +139,17 @@ instance (E : FiniteLocallyFreeSheaf X) : E.obj.IsQuasicoherent :=
 instance : HasFiniteBiproducts (FiniteLocallyFreeSheaf X) :=
   HasFiniteBiproducts.of_hasFiniteProducts
 
+/-- The category of finite locally free sheaves has binary biproducts `E ⊞ F`, computed in
+`X.Modules`. -/
+instance : HasBinaryBiproducts (FiniteLocallyFreeSheaf X) :=
+  hasBinaryBiproducts_of_finite_biproducts _
+
 variable (X)
 
+-- Exposed so that the underlying sheaf is definitionally Mathlib's free sheaf, whose basis
+-- inclusions `SheafOfModules.ιFree` are morphisms into it.
 /-- The free sheaf on a finite type, as a finite locally free sheaf. -/
+@[expose]
 def free (I : Type u) [Finite I] : FiniteLocallyFreeSheaf X :=
   ⟨_root_.SheafOfModules.free (R := X.ringCatSheaf) I, inferInstance,
     SheafOfModules.isFinitePresentation_free I⟩
@@ -170,10 +180,8 @@ lemma pullback_obj_obj {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeShea
 variable {X} in
 /-- Pullback of a free sheaf, expressed in the finite locally free category. -/
 noncomputable def pullbackFreeIso {Y : Scheme.{u}} (f : X ⟶ Y) (J : Type u) [Finite J] :
-    (pullback f).obj (free Y J) ≅ free X J := by
-  letI : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
-  exact ObjectProperty.isoMk _
+    (pullback f).obj (free Y J) ≅ free X J :=
+  ObjectProperty.isoMk _
     (eqToIso (by rw [pullback_obj_obj, free_obj]; rfl) ≪≫
       SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J ≪≫
       eqToIso (free_obj X J).symm)
@@ -221,6 +229,13 @@ instance : (InvertibleSheaf.toFiniteLocallyFree X).Full :=
 
 instance : (InvertibleSheaf.toFiniteLocallyFree X).Faithful :=
   ObjectProperty.faithful_ιOfLE _
+
+/-- The trivial invertible sheaf, as a finite locally free sheaf, is the free sheaf on `PUnit`. -/
+def InvertibleSheaf.trivialIsoFree :
+    (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅
+      FiniteLocallyFreeSheaf.free X PUnit :=
+  ObjectProperty.isoMk _ (eqToIso ((InvertibleSheaf.trivial_obj X).trans
+    (FiniteLocallyFreeSheaf.free_obj X PUnit).symm))
 
 end
 

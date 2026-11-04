@@ -30,6 +30,7 @@ occupied grid points of a grid state.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking-square sets.
 * Relabeling, swapping, transposition, and marking-swap operations for grid states and diagrams.
+* `TauCeti.GridDiagram.cast`: transport of a grid diagram along an equality of grid numbers.
 
 ## References
 
@@ -803,6 +804,22 @@ theorem swapColumns_O (a b : Fin n) : (G.swapColumns a b).O = G.O.swapColumns a 
 theorem swapColumns_X (a b : Fin n) : (G.swapColumns a b).X = G.X.swapColumns a b :=
   rfl
 
+/-- Exchanging two rows and the same two columns conjugates the `X`-permutation by the
+transposition. -/
+theorem swapRows_swapColumns_X_toPerm (a b : Fin n) :
+    ((G.swapRows a b).swapColumns a b).X.toPerm =
+      Equiv.swap a b * G.X.toPerm * Equiv.swap a b := by
+  ext c
+  simp
+
+/-- Exchanging two rows and the same two columns conjugates the `O`-permutation by the
+transposition. -/
+theorem swapRows_swapColumns_O_toPerm (a b : Fin n) :
+    ((G.swapRows a b).swapColumns a b).O.toPerm =
+      Equiv.swap a b * G.O.toPerm * Equiv.swap a b := by
+  ext c
+  simp
+
 /-- Row swaps transport the `O` marking set by the row transposition. -/
 theorem mem_OSet_swapRows (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapRows a b).OSet ↔ (p.1, Equiv.swap a b p.2) ∈ G.OSet := by
@@ -979,6 +996,32 @@ theorem swapColumns_swapMarkings (a b : Fin n) :
 /-- The marking swap commutes with the diagonal reflection of a grid diagram. -/
 @[simp]
 theorem swapMarkings_transpose : G.swapMarkings.transpose = G.transpose.swapMarkings :=
+  rfl
+
+/-- Transport a grid diagram along an equality of grid numbers. Both marking states are
+reindexed along `Fin.cast`, as computed by `cast_O_apply` and `cast_X_apply`. -/
+def cast {m : ℕ} (h : n = m) (G : GridDiagram n) : GridDiagram m :=
+  h ▸ G
+
+/-- Transporting a grid diagram along the reflexive equality does nothing. -/
+@[simp]
+theorem cast_rfl : G.cast rfl = G :=
+  rfl
+
+/-- The `O` marking of a transported grid diagram in a column is the transported `O` marking of
+the transported column. -/
+@[simp]
+theorem cast_O_apply {m : ℕ} (h : n = m) (c : Fin m) :
+    (G.cast h).O c = Fin.cast h (G.O (Fin.cast h.symm c)) := by
+  subst h
+  rfl
+
+/-- The `X` marking of a transported grid diagram in a column is the transported `X` marking of
+the transported column. -/
+@[simp]
+theorem cast_X_apply {m : ℕ} (h : n = m) (c : Fin m) :
+    (G.cast h).X c = Fin.cast h (G.X (Fin.cast h.symm c)) := by
+  subst h
   rfl
 
 end GridDiagram

@@ -79,8 +79,8 @@ theorem IsNegativeGradient.mem_stableSet_of_forall_mem_closedBall (hφ : IsNegat
     (hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) (closedBall x r)) (hcrit : ∀ y ∈ closedBall x r, ∇ f y = 0 → y = x)
     {w : E} (hw : ∀ t, 0 ≤ t → φ t w ∈ closedBall x r) : w ∈ stableSet φ x := by
-  obtain ⟨p, hp, hp0, hlim⟩ := TauCeti.IsIntegralCurveOn.exists_tendsto_atTop
-    ((hφ.isIntegralCurve w).isIntegralCurveOn _) (isCompact_closedBall x r) hw hdiff hgrad
+  obtain ⟨p, hp, hp0, hlim⟩ := ((hφ.isIntegralCurve w).isIntegralCurveOn _).exists_tendsto_atTop
+    (isCompact_closedBall x r) hw hdiff hgrad
     ((finite_singleton x).subset fun y hy ↦ hcrit y hy.1 hy.2)
   exact mem_stableSet.2 (hcrit p hp hp0 ▸ hlim)
 
@@ -90,8 +90,8 @@ theorem IsNegativeGradient.mem_unstableSet_of_forall_mem_closedBall (hφ : IsNeg
     (hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) (closedBall x r)) (hcrit : ∀ y ∈ closedBall x r, ∇ f y = 0 → y = x)
     {w : E} (hw : ∀ t, t ≤ 0 → φ t w ∈ closedBall x r) : w ∈ unstableSet φ x := by
-  obtain ⟨p, hp, hp0, hlim⟩ := TauCeti.IsIntegralCurveOn.exists_tendsto_atBot
-    ((hφ.isIntegralCurve w).isIntegralCurveOn _) (isCompact_closedBall x r) hw hdiff hgrad
+  obtain ⟨p, hp, hp0, hlim⟩ := ((hφ.isIntegralCurve w).isIntegralCurveOn _).exists_tendsto_atBot
+    (isCompact_closedBall x r) hw hdiff hgrad
     ((finite_singleton x).subset fun y hy ↦ hcrit y hy.1 hy.2)
   exact mem_unstableSet.2 (hcrit p hp hp0 ▸ hlim)
 
@@ -278,7 +278,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         l.length + morseIndex f q ≤ morseIndex f x := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
         intro x hxn hx hqx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
@@ -362,7 +362,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         l.length + morseIndex f x ≤ morseIndex f p := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
         intro x hxn hx hpx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=

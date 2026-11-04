@@ -190,7 +190,7 @@ theorem eulerClass_eq_zero_of_forall_ne_zero [IsManifold I 1 M] {s : ∀ x, F.di
   let := F.isContMDiffDistribution.fiberBundle
   have := F.isContMDiffDistribution.vectorBundle
   rw [eulerClass_def, TauCeti.eulerClass_eq_zero_of_forall_ne_zero (Fin k → ℝ) _
-    (continuous_induced_rng.2 hs) hs₀, zero_comp]
+    ((isEmbedding_totalSpace_subbundle E _ F.distribution).continuous_iff.2 hs) hs₀, zero_comp]
 
 /-- If the tangent field of `F` has a continuous nowhere-vanishing section, then every Euler
 class of `F` is zero. -/

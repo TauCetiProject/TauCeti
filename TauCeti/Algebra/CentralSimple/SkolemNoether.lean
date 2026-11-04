@@ -37,10 +37,10 @@ automorphism of a finite-dimensional central simple algebra is inner.
 The proof is the classical module-theoretic one. A homomorphism `f : B →ₐ[K] A` makes `A` into a
 module over `R = B ⊗[K] Aᵐᵒᵖ`, with `B` acting on the left through `f` and `A` on the right by
 multiplication; this is `TauCeti.Bimodule f`. Because `B` is central simple and `Aᵐᵒᵖ` is
-simple, `R` is a simple ring (`TauCeti.IsSimpleRing.tensorProduct`), and it is finite-dimensional
+simple, `R` is a simple ring (`IsSimpleRing.tensorProduct`), and it is finite-dimensional
 over `K`, hence Artinian. The two modules `Bimodule f` and `Bimodule g` are carried by one and the
 same `K`-vector space `A`, so they have equal dimension, so they are isomorphic `R`-modules
-(`TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`). An `R`-linear isomorphism is in
+(`IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`). An `R`-linear isomorphism is in
 particular linear for the right action of `A`, hence is multiplication on the left by the unit
 `u = φ 1`, and its linearity for the left action of `B` is exactly `u * f x = g x * u`.
 
@@ -56,7 +56,7 @@ particular linear for the right action of `A`, hence is multiplication on the le
 ## Implementation notes
 
 Centrality is asked of the **source** `B`, not of the target `A`: what the proof needs is that
-`B ⊗[K] Aᵐᵒᵖ` is simple, and `TauCeti.IsSimpleRing.tensorProduct` gets that from `B` central simple
+`B ⊗[K] Aᵐᵒᵖ` is simple, and `IsSimpleRing.tensorProduct` gets that from `B` central simple
 and `A` simple. So the statement here is slightly stronger than the usual one, which asks `A` to be
 central simple as well; the roadmap's central simple form is the case `Algebra.IsCentral K A`, which
 the statement covers because a central simple algebra is in particular simple. Finite-dimensionality

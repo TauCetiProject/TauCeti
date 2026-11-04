@@ -1,10 +1,11 @@
 name: pick-runner
 
 # Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
-# advertise class, permanent machine, and ephemeral instance labels. All limits
-# are approximate: concurrent pickers can observe the same free capacity.
-# Full or unknown cloud capacity queues on GitHub instead of bypassing the
-# Namespace cap. Picker/control jobs do not count towards the build-job cap.
+# advertise capacity through registered runners with class, permanent machine,
+# and ephemeral instance labels. Concurrent pickers can observe the same free slot.
+# Capacity observations are advisory. A partial Namespace count below its cap
+# cannot establish spare capacity; unknown pools retain native GitHub fallback.
+# Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
   workflow_call:
@@ -49,9 +50,10 @@ on:
 
 jobs:
   pick:
-    # Bors selection must not wait behind the GitHub builds it is trying to
-    # dispatch. Reuse the existing small, high-priority Namespace control profile.
-    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
+    # Every picker must reach the fleet without first waiting for a GitHub build slot.
+    # Keep control work small, high priority, and isolated to this workflow run.
+    # An operator can recover selection during a Namespace outage without a PR.
+    runs-on: ${{ vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -73,10 +75,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9e1b2a7406f4c3db79888a670cf12fa44d34b8d0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          tools-ref: 9e1b2a7406f4c3db79888a670cf12fa44d34b8d0
           project-directory: .
       - name: Select destination in configured preference order
         id: pick

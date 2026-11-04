@@ -100,17 +100,9 @@ theorem structureConstant_neg_add_mul_killingForm_eq :
         rw [Weight.coe_neg, hαβ]
         abel) * killingForm K L (x β) (x (-β)) =
       hx.structureConstant α β γ hγ hαβ * killingForm K L (x γ) (x (-γ)) := by
-  have hγα : (β : H → K) = (γ : H → K) + (-α : Weight K H L) := by
-    rw [Weight.coe_neg, hαβ]
-    abel
-  have hαγ : (β : H → K) = (-α : Weight K H L) + (γ : H → K) := by
-    rw [Weight.coe_neg, hαβ]
-    abel
-  have hcyclic := hx.structureConstant_mul_killingForm_eq γ (-α) β hβ hγα hγ
-  have hskew := hx.structureConstant_skew (-α) γ β hβ hαγ
-  have hneg := hx.structureConstant_neg_neg_of_hom α β γ hγ hαβ e heα heβ heγ
-  rw [hskew, hneg] at hcyclic
-  simpa only [neg_mul, neg_inj] using hcyclic
+  have h := hx.structureConstant_neg_neg_mul_killingForm_eq α β γ hγ hαβ hβ
+  rw [hx.structureConstant_neg_neg_of_hom α β γ hγ hαβ e heα heβ heγ] at h
+  simpa only [neg_mul, neg_inj] using h.symm
 
 include hα
 

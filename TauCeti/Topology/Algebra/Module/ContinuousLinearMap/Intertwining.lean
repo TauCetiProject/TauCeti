@@ -8,12 +8,13 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
-# Intertwining linear maps up to continuous errors
+# Intertwining linear maps
 
 A linear map `T : E →ₗ[R] F` between topological modules, possibly discontinuous, is
 intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuous error when
 `Q ∘ T - T ∘ P` is continuous. This file shows that such intertwining pairs are closed under
-taking products.
+taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`
+and their powers.
 
 ## Main results
 
@@ -22,6 +23,29 @@ taking products.
 -/
 
 public section
+
+namespace Function.Semiconj
+
+variable {R M N : Type*} [CommRing R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+  [ContinuousConstSMul R N]
+  {f : M →ₗ[R] N} {u : M →L[R] M} {v : N →L[R] N}
+
+/-- A linear intertwiner also intertwines the associated spectral operators. -/
+theorem one_sub_smul (hf : Function.Semiconj f u v) (a : R) :
+    Function.Semiconj f (1 - a • u : M →L[R] M) (1 - a • v : N →L[R] N) := by
+  intro x
+  simp only [sub_apply, one_apply_eq_self, smul_apply, map_sub, map_smul, hf x]
+
+/-- A linear intertwiner intertwines every power of the associated spectral operators. -/
+theorem one_sub_smul_pow (hf : Function.Semiconj f u v) (a : R) (n : ℕ) :
+    Function.Semiconj f ((1 - a • u) ^ n : M →L[R] M)
+      ((1 - a • v) ^ n : N →L[R] N) := by
+  simpa only [FunLike.coe_pow_eq_iterate] using (hf.one_sub_smul a).iterate_right n
+
+end Function.Semiconj
 
 namespace LinearMap
 

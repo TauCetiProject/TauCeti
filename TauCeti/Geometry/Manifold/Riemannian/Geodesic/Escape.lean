@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
-public import TauCeti.Topology.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!

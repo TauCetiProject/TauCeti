@@ -81,7 +81,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 a subgroup of index two in `Kˣ` for every `a` that is not a square. -/
 theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
-  have : Fact (¬IsSquare (a : K)) := ⟨isSquare_units_val_iff.not.mpr ha⟩
+  have : Fact (¬IsSquare (a : K)) := ⟨Units.isSquare_coe_iff.not.mpr ha⟩
   have h := two_mul_index_quadraticNormSubgroup_mul_card_squareClass a h2
   rw [card_squareClass_eq_four_mul_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,
     card_squareClass h2] at h
@@ -141,6 +141,13 @@ theorem hilbertSymbol_zpow_left (h2 : (2 : K) ≠ 0)
     hilbertSymbol (a ^ n) b = hilbertSymbol a b ^ n := by
   have : Invertible (2 : K) := invertibleOfNonzero h2
   rw [hilbertSymbol_comm, hilbertSymbol_zpow_right h2, hilbertSymbol_comm]
+
+/-- The Hilbert symbol is multiplicative on natural-number powers of its first argument. -/
+@[simp]
+theorem hilbertSymbol_pow_left (h2 : (2 : K) ≠ 0)
+    (a b : Kˣ) (n : ℕ) :
+    hilbertSymbol (a ^ n) b = hilbertSymbol a b ^ n := by
+  simpa only [zpow_natCast] using hilbertSymbol_zpow_left h2 a b n
 
 /-- **Nondegeneracy of the local Hilbert symbol.** If `2 ≠ 0` in `K`, then for every nonsquare `a`
 there is a `b ∈ Kˣ` with `(a, b)_K = -1`. It is the field-level consequence

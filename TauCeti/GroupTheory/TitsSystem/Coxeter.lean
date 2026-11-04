@@ -21,6 +21,19 @@ The construction combines `TitsSystem.exists_eraseIdx_prod_eq_of_wordLength_lt_r
 exchange condition obtained from Bruhat cells, with `CoxeterSystem.ofExchange`, the recognition
 theorem for Coxeter presentations. No additional relations or exchange axioms are assumed.
 
+The Weyl group is **irreducible**, `TauCeti.TitsSystem.IsIrreducible`, if every subset `J` of
+the simple reflections `S` that commutes elementwise with its complement is empty or all of `S`.
+For nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connected.
+
+## Main definitions
+
+* `TauCeti.TitsSystem.coxeterMatrix`: the Coxeter matrix of the simple reflections.
+* `TauCeti.TitsSystem.coxeterSystem`: the Coxeter system on the Weyl group.
+* `TauCeti.TitsSystem.IsIrreducible`: every set of simple reflections commuting elementwise with
+  its complement is empty or everything.
+* `TauCeti.TitsSystem.isIrreducible_of_subsingleton_simple`: a Tits system with at most one simple
+  reflection is irreducible.
+
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter IV, §2, no. 4,
@@ -32,7 +45,7 @@ public section
 
 namespace TauCeti.TitsSystem
 
-universe u
+universe u v
 
 variable {G : Type u} [Group G] (T : TitsSystem G)
 
@@ -62,6 +75,47 @@ def coxeterMatrix : CoxeterMatrix T.simple where
 theorem coxeterMatrix_apply (s t : T.simple) :
     T.coxeterMatrix s t = orderOf ((s : T.WeylGroup) * t) :=
   (rfl)
+
+/-- The Weyl group of a Tits system is **irreducible** if every set `J` of simple reflections that
+commutes elementwise with its complement is empty or all of `S`. For nonempty `S` this says exactly
+that the Coxeter graph of `(W, S)` is connected. -/
+def IsIrreducible : Prop :=
+  ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) → J = ∅ ∨ J = Set.univ
+
+/-- Unfolds `TauCeti.TitsSystem.IsIrreducible`. -/
+theorem isIrreducible_iff : T.IsIrreducible ↔
+    ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
+      J = ∅ ∨ J = Set.univ :=
+  Iff.rfl
+
+/-- A Tits system with at most one simple reflection is irreducible. -/
+theorem isIrreducible_of_subsingleton_simple (h : T.simple.Subsingleton) : T.IsIrreducible :=
+  fun J _ ↦ by
+    have : Subsingleton T.simple := h.coe_sort
+    exact J.eq_empty_or_nonempty.imp_right fun ⟨s, hs⟩ ↦
+      Set.eq_univ_of_forall fun t ↦ Subsingleton.elim s t ▸ hs
+
+/-- Irreducibility transfers along an isomorphism of Weyl groups identifying the simple
+reflections. -/
+theorem IsIrreducible.of_mulEquiv {T : TitsSystem G} (hirr : T.IsIrreducible) {H : Type v}
+    [Group H] {T' : TitsSystem H} (e : T'.WeylGroup ≃* T.WeylGroup)
+    (he : e ⁻¹' T.simple = T'.simple) : T'.IsIrreducible := by
+  have hmem : ∀ w, w ∈ T'.simple ↔ e w ∈ T.simple := fun w ↦ by rw [← he, Set.mem_preimage]
+  refine T'.isIrreducible_iff.mpr fun J hJ ↦ ?_
+  -- Transport `J` to the simple reflections of `T`, where irreducibility applies.
+  let J₀ : Set T.simple := {s | ∃ t ∈ J, e t = s}
+  have hJ₀ : ∀ s ∈ J₀, ∀ t ∉ J₀, (s : T.WeylGroup) * t = t * s := by
+    rintro s ⟨s', hs', hs⟩ t ht
+    have ht' : (⟨e.symm t, (hmem _).mpr (by simp)⟩ : T'.simple) ∉ J :=
+      fun h ↦ ht ⟨_, h, by simp⟩
+    simpa [hs] using congrArg e (hJ s' hs' _ ht')
+  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.2⟩ : T.simple) ∈ J₀ := by
+    refine fun s ↦ ⟨fun hs ↦ ⟨s, hs, rfl⟩, ?_⟩
+    rintro ⟨t, ht, hts⟩
+    rwa [← Subtype.ext (e.injective hts)]
+  rcases T.isIrreducible_iff.mp hirr J₀ hJ₀ with h | h
+  · exact Or.inl (Set.eq_empty_of_forall_notMem fun s hs ↦ by simpa [h] using (hmemJ₀ s).mp hs)
+  · exact Or.inr (Set.eq_univ_of_forall fun s ↦ (hmemJ₀ s).mpr (by simp [h]))
 
 /-- The canonical map from the Coxeter presentation to the Weyl quotient. -/
 private def coxeterPresentationHom : T.coxeterMatrix.Group →* T.WeylGroup :=

@@ -61,35 +61,10 @@ theorem isAlgebraic_of_constantCompositum_eq_top
 set for `F / k` also generates `F' / k'`, since the two fields generate the compositum. -/
 theorem essFiniteType_of_constantCompositum_eq_top [Algebra.EssFiniteType k F]
     (h : constantCompositum F k' F' = ⊤) : Algebra.EssFiniteType k' F' := by
-  classical
   obtain ⟨S, hS⟩ := IntermediateField.fg_top k F
-  let T : Set F' := (algebraMap F F') '' (S : Set F)
-  let K : IntermediateField k' F' := IntermediateField.adjoin k' T
-  have hmap : (IsScalarTower.toAlgHom k F F').fieldRange ≤ K.restrictScalars k := by
-    rw [AlgHom.fieldRange_eq_map, ← hS, IntermediateField.adjoin_map]
-    exact IntermediateField.adjoin_le_iff.mpr (fun x hx ↦
-      IntermediateField.subset_adjoin k' T hx)
-  have hmap' (f : F) : algebraMap F F' f ∈ K := by
-    apply (IntermediateField.mem_restrictScalars k).1
-    apply hmap
-    exact (AlgHom.mem_fieldRange).2 ⟨f, rfl⟩
-  have hle : (constantCompositum F k' F' : Set F') ⊆ (K : Set F') := by
-    rw [constantCompositum_def]
-    refine (IntermediateField.adjoin_subset_adjoin_iff F).2 ?_
-    constructor
-    · rintro x ⟨f, rfl⟩
-      exact hmap' f
-    · rintro x ⟨c, rfl⟩
-      exact K.algebraMap_mem c
-  have hK : K = ⊤ := by
-    apply eq_top_iff.mpr
-    intro x _
-    exact hle (by simp [h])
-  have hT : T.Finite := S.finite_toSet.image _
-  have hfg : (⊤ : IntermediateField k' F').FG := by
-    rw [← hK]
-    exact IntermediateField.fg_adjoin_of_finite hT
-  exact IntermediateField.fg_top_iff.mp hfg
+  apply IntermediateField.fg_top_iff.mp
+  rw [← adjoin_image_eq_top_of_constantCompositum_eq_top hS h]
+  exact IntermediateField.fg_adjoin_of_finite (S.finite_toSet.image _)
 
 /-- Adjoining an arbitrary algebraic extension of constants to a function field gives a
 function field over the enlarged constants, provided the ambient field is their compositum.

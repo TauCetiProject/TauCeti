@@ -161,6 +161,15 @@ lemma pushforward_μ_app_tmul (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   restrictScalarsTensor_app_tmul α ((PresheafOfModulesOfCommRing.pushforward₀ F R).obj M)
     ((PresheafOfModulesOfCommRing.pushforward₀ F R).obj N) X m n
 
+/-- Precomposition of module presheaves preserves pure tensors on sections. -/
+lemma pushforward₀_μ_app_tmul (F : C ⥤ D) (R : Dᵒᵖ ⥤ CommRingCat.{u})
+    (M N : PresheafOfModulesOfCommRing.{u} R) (X : Cᵒᵖ)
+    (m : M.obj (Opposite.op (F.obj X.unop))) (n : N.obj (Opposite.op (F.obj X.unop))) :
+    (Functor.LaxMonoidal.μ (_root_.PresheafOfModules.pushforward₀OfCommRingCat F R) M N).app' X
+      (m ⊗ₜ[R.obj (Opposite.op (F.obj X.unop))] n) =
+      m ⊗ₜ[R.obj (Opposite.op (F.obj X.unop))] n :=
+  (rfl)
+
 /-- Pushforward of presheaves of modules preserves the symmetric braiding. -/
 instance pushforwardLaxBraided (F : C ⥤ D) {R : Dᵒᵖ ⥤ CommRingCat.{u}}
     {S : Cᵒᵖ ⥤ CommRingCat.{u}}

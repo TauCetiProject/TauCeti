@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
-public import TauCeti.Geometry.Manifold.Instances.MappingTorus
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Map
 
 /-!
 # The time form and fiber forms of a smooth mapping torus
@@ -31,6 +30,9 @@ direction.
 For a symplectic form `σ` preserved by `φ`, the fiber form is the closed two-form `ω_v` of the
 symplectic suspension of `φ`.
 
+Along the flow lines `t ↦ [t, x]` of the suspension flow, the time form integrates to the elapsed
+time.
+
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.timeForm φ`: the time form `dt` of the mapping torus.
@@ -39,6 +41,8 @@ symplectic suspension of `φ`.
 
 ## Main results
 
+* `TauCeti.SmoothMappingTorus.timeForm_apply`: the time form is the differential of the
+  projection to the circle.
 * `TauCeti.SmoothMappingTorus.isClosed_timeForm`,
   `TauCeti.SmoothMappingTorus.mpullback_mk_timeForm`: the time form is closed and vanishes on the
   fibers.
@@ -55,6 +59,12 @@ symplectic suspension of `φ`.
   fiber.
 * `TauCeti.SmoothMappingTorus.isClosed_fiberForm_iff`: the fiber form is closed exactly when `σ`
   is.
+* `TauCeti.SmoothMappingTorus.mpullback_map_timeForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_map_fiberForm`: the map `[t, x] ↦ [t, g x]` induced by a
+  smooth map `g` intertwining `φ` and `ψ` pulls the time form back to the time form, and the fiber
+  form of `τ` back to the fiber form of `g^* τ`.
+* `TauCeti.SmoothMappingTorus.pathIntegral_timeForm_mk`: the time form integrates to `b - a` along
+  the flow line `t ↦ [t, x]` from `a` to `b`.
 
 ## References
 
@@ -98,6 +108,12 @@ def timeForm : SmoothForm (𝓘(ℝ).prod I) (SmoothMappingTorus φ) ℝ 1 :=
 theorem timeForm_def :
     timeForm φ = SmoothForm.mpullback (proj φ) (contMDiff_proj φ) (AddCircle.timeForm 1) :=
   (rfl)
+
+/-- The time form `dt` of the mapping torus is the differential of the projection
+`p : Y_φ → ℝ / ℤ`, read in the real tangent lines of the circle. -/
+theorem timeForm_apply (y : SmoothMappingTorus φ) (v : Fin 1 → TangentSpace (𝓘(ℝ).prod I) y) :
+    (timeForm φ).1 y v = mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y (v 0) := by
+  rw [timeForm_def, SmoothForm.coe_mpullback, mpullback_apply, AddCircle.timeForm_apply]
 
 /-- The time form of the mapping torus is closed. -/
 theorem isClosed_timeForm : (timeForm φ).IsClosed :=
@@ -222,12 +238,13 @@ theorem mpullback_mk_fiberForm (t : ℝ) :
 theorem eval₂_fiberForm_mfderiv_uncurry_mk {τ : SmoothForm I M F 2}
     {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (t : ℝ) (x : M)
     (w w' : TangentSpace (𝓘(ℝ).prod I) (t, x)) :
-    (fiberForm φ τ hτ).eval₂ (mk φ t x)
+    SmoothBundleForm.eval₂ (fiberForm φ τ hτ) (mk φ t x)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x) w') =
-      τ.eval₂ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
+      SmoothBundleForm.eval₂ τ x (Manifold.tangentSpaceProdEquiv (t, x) w).2
         (Manifold.tangentSpaceProdEquiv (t, x) w').2 := by
-  have h := congrArg (fun β ↦ β.eval₂ (t, x) w w') (mpullback_uncurry_mk_fiberForm (hσ := hτ))
+  have h := congrArg (fun β ↦ SmoothBundleForm.eval₂ β (t, x) w w')
+    (mpullback_uncurry_mk_fiberForm (hσ := hτ))
   simp only [SmoothForm.eval₂_mpullback, mfderiv_snd] at h
   rw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
   -- `uncurry (mk φ) (t, x)` is `mk φ t x`, and `ContinuousLinearMap.snd` is `Prod.snd`.
@@ -239,6 +256,58 @@ theorem isClosed_fiberForm_iff : (fiberForm φ σ hσ).IsClosed ↔ σ.IsClosed 
   refine ⟨fun h ↦ ?_, fun h ↦ SmoothForm.isClosed_descend_iff.mpr (h.mpullback _ _)⟩
   rw [← mpullback_mk_fiberForm (hσ := hσ) 0]
   exact h.mpullback _ _
+
+/-! ### Naturality under maps of mapping tori -/
+
+section Map
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*}
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N]
+  [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N] [LocallyCompactSpace N]
+  (φ) (ψ : N ≃ₘ⟮J, J⟯ N) {g : M → N} (h : Semiconj g φ ψ) (hg : ContMDiff I J ∞ g)
+
+/-- The map `[t, x] ↦ [t, g x]` of mapping tori pulls the time form back to the time form. -/
+@[simp]
+theorem mpullback_map_timeForm :
+    SmoothForm.mpullback (map φ ψ g h) (contMDiff_map φ ψ g h hg) (timeForm ψ) = timeForm φ := by
+  rw [timeForm_def, timeForm_def, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+  simp only [proj_comp_map]
+
+variable {φ ψ}
+
+/-- The map `[t, x] ↦ [t, g x]` of mapping tori pulls the fiber form of `τ` back to the fiber form
+of `σ = g^* τ`. -/
+theorem mpullback_map_fiberForm {τ : SmoothForm J N F k}
+    (hτ : SmoothForm.mpullback ψ ψ.contMDiff τ = τ)
+    (hgτ : SmoothForm.mpullback g hg τ = σ) :
+    SmoothForm.mpullback (map φ ψ g h) (contMDiff_map φ ψ g h hg) (fiberForm ψ τ hτ) =
+      fiberForm φ σ hσ := by
+  have hsnd : Prod.snd ∘ Prod.map id g = g ∘ (Prod.snd : ℝ × M → M) := rfl
+  rw [eq_fiberForm_iff, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
+  simp only [map_comp_uncurry_mk]
+  rw [SmoothForm.mpullback_comp _ _ (contMDiff_id.prodMap hg) (contMDiff_uncurry_mk ψ),
+    LinearMap.comp_apply, mpullback_uncurry_mk_fiberForm, ← LinearMap.comp_apply,
+    ← SmoothForm.mpullback_comp]
+  simp only [hsnd]
+  rw [SmoothForm.mpullback_comp _ _ contMDiff_snd hg, LinearMap.comp_apply, hgτ]
+
+end Map
+
+/-! ### Flow lines -/
+
+/-- The time form integrates to `b - a` along the flow line `t ↦ [t, x]` of the suspension flow
+from `a` to `b`. -/
+@[simp]
+theorem pathIntegral_timeForm_mk (x : M) (a b : ℝ) :
+    pathIntegral (timeForm φ).1 (fun t ↦ mk φ t x) a b = b - a := by
+  have hcomp : proj φ ∘ (fun t ↦ mk φ t x) = ((↑) : ℝ → UnitAddCircle) :=
+    funext fun t ↦ proj_mk φ t x
+  have hline : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ fun t ↦ mk φ t x :=
+    (contMDiff_uncurry_mk φ).comp (contMDiff_id.prodMk contMDiff_const)
+  rw [timeForm_def, SmoothForm.coe_mpullback,
+    pathIntegral_mpullback _ (fun t _ ↦ ((contMDiff_proj φ).mdifferentiable (by simp)) _)
+      (fun t _ ↦ (hline.mdifferentiable (by simp)) t),
+    hcomp, AddCircle.pathIntegral_timeForm_coe]
 
 end SmoothMappingTorus
 

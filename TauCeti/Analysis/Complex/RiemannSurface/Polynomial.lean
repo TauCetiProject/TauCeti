@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.CriticalValues
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.Algebra.Polynomial.Reverse
-public import TauCeti.Analysis.Complex.RiemannSurface.BranchValues
+public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 public import TauCeti.Analysis.Polynomial.Order
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Compactification.OnePoint.Map

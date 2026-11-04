@@ -50,6 +50,10 @@ characteristic.
   carries the structure induced by `x` to the structure induced by `f x`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental`: the structure extends the given
   `k`-algebra structure.
+* `TauCeti.adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top`: if `z` and `x` generate `F` over `k`,
+  then `z` generates `F` over `k(X)`.
+* `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap`: an algebra map `F → F'` is
+  `k(X)`-linear for the structures induced by `x` and by its image.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
 * `TauCeti.finiteDimensional_ratFuncAlgebraOfTranscendental`: finite-dimensionality over `k⟮x⟯`
@@ -160,6 +164,34 @@ theorem isScalarTower_ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
   let _ := ratFuncAlgebraOfTranscendental hx
   exact .of_algebraMap_eq fun c ↦
     ((k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom).commutes c).symm
+
+/-- **One generator over `k(X)`**: if `z` and the transcendental `x` generate `F` over `k`, then
+`z` generates `F` over `k(X)`, for the structure in which `X` acts as `x`. -/
+theorem adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top (hx : Transcendental k x) {z : F}
+    (hgen : k⟮z, x⟯ = ⊤) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    (RatFunc k)⟮z⟯ = ⊤ := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  have := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  refine top_le_iff.mp ?_
+  rw [← IntermediateField.adjoin_eq_top_of_adjoin_eq_top (E := RatFunc k) k hgen,
+    IntermediateField.adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
+  exact ⟨IntermediateField.mem_adjoin_simple_self _ _, by
+    simpa using IntermediateField.algebraMap_mem (RatFunc k)⟮z⟯ RatFunc.X⟩
+
+/-- **An algebra map is `k(X)`-linear along `X ↦ x`**: an algebra map `F → F'` of fields over `k`
+is `k(X)`-linear when `X` acts as `x` on `F` and as its image on `F'`. -/
+theorem isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap {F' : Type*} [Field F']
+    [Algebra k F'] [Algebra F F'] [IsScalarTower k F F'] (hx : Transcendental k x) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    letI := ratFuncAlgebraOfTranscendental
+      ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
+    IsScalarTower (RatFunc k) F F' := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := ratFuncAlgebraOfTranscendental
+    ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
+  exact .of_algebraMap_eq fun r ↦ (map_algebraMap_ratFuncAlgebraOfTranscendental
+    (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective hx r).symm
 
 /-- Separability over `k(x)` transfers to the rational-function algebra structure induced by
 `x`. -/

@@ -35,6 +35,8 @@ homomorphisms in positive dimensions.
   to the cube boundary is homotopy of the corresponding paths.
 * `HomotopyGroup.map_eq_of_homotopicRel`: pointed-homotopic maps induce the same map on
   homotopy groups.
+* `FundamentalGroup.mapOfEq_eq_of_homotopicRel`: pointed-homotopic maps induce the same
+  homomorphism of fundamental groups.
 -/
 
 public section
@@ -106,3 +108,19 @@ theorem mapHom_eq_of_homotopicRel [DecidableEq N] [Nonempty N] {f g : C(X, Y)}
   MonoidHom.ext fun a ↦ congrFun (map_eq_of_homotopicRel hf hx H) a
 
 end HomotopyGroup
+
+namespace FundamentalGroup
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
+
+/-- Continuous maps homotopic relative to a set containing the basepoint induce the same
+homomorphism of fundamental groups. -/
+theorem mapOfEq_eq_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y) {S : Set X}
+    (hx : x ∈ S) (H : f.HomotopicRel g S) :
+    mapOfEq f hf = mapOfEq g hg := by
+  ext a
+  obtain ⟨b, rfl⟩ := HomotopyGroup.pi1EquivFundamentalGroup.surjective a
+  rw [← HomotopyGroup.pi1EquivFundamentalGroup_map, ← HomotopyGroup.pi1EquivFundamentalGroup_map,
+    HomotopyGroup.map_eq_of_homotopicRel hf hx H]
+
+end FundamentalGroup

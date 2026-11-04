@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FiniteSupport.Defs
 public import Mathlib.Algebra.Group.Pointwise.Finset.Scalar
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+public import TauCeti.GroupTheory.Amenable.Foelner
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 import TauCeti.MeasureTheory.Integral.LayerCake
 
@@ -42,6 +43,8 @@ measure, the `ℓ¹` distance between `p` and its translate is the integral over
   total boundary `∑_{g ∈ K} |g • F ∆ F|` is less than `ε |F|`.
 * `TauCeti.exists_finset_card_smul_symmDiff_lt_of_sum_tsum_lt`: the same set satisfies
   `|g • F ∆ F| < ε |F|` for each `g ∈ K`.
+* `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`: a group satisfying Reiter's
+  condition, for its left regular action, has Følner sets.
 
 ## References
 
@@ -157,5 +160,18 @@ theorem exists_finset_card_smul_symmDiff_lt_of_sum_tsum_lt {p : X → ℝ} (hp :
   obtain ⟨F, hF, hlt⟩ := exists_finset_sum_card_smul_symmDiff_lt_of_sum_tsum_lt hp hfin h
   exact ⟨F, hF, fun g hg ↦ (single_le_sum (f := fun g ↦ (#((g • F) ∆ F) : ℝ))
     (fun _ _ ↦ Nat.cast_nonneg _) hg).trans_lt hlt⟩
+
+/-- A group satisfying **Reiter's condition** has Følner sets: if for every finite `K` and
+`ε > 0` there is a finitely supported probability density `p` with
+`∑_{g ∈ K} ∑_x |p (g⁻¹ x) - p x| < ε`, then `G` has Følner sets. -/
+theorem hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt
+    (h : ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
+      ∃ p : G → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+        ∑ g ∈ K, ∑' x, |p (g⁻¹ * x) - p x| < ε) :
+    HasFoelnerSets G := by
+  classical
+  refine hasFoelnerSets_iff.2 fun K ε hε ↦ ?_
+  obtain ⟨p, hp0, hpfin, hp1, hp⟩ := h K ε hε
+  exact exists_finset_card_smul_symmDiff_lt_of_sum_tsum_lt hp0 hpfin (by simpa [hp1] using hp)
 
 end TauCeti

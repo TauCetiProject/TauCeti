@@ -35,6 +35,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   subgroup presented by generators is tested on those generators.
 * `TauCeti.commutator_le_iff_map_mk'_eq_bot`: `⁅A, B⁆ ≤ N` for a normal `N` says that the images
   of `A` and `B` in `G ⧸ N` commute.
+* `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: a normal subgroup that normalizes `U`
+  and meets it trivially centralizes `U`.
 * `QuotientGroup.commute_mk_iff`: two classes in `G ⧸ N` commute exactly when the commutator of
   representatives lies in `N`.
 * `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
@@ -222,9 +224,9 @@ theorem commute_commutatorElement_of_inv_mul_mul_mem_zpowers {g x y : G}
     simpa using (conj_zpow (a := z⁻¹) (b := g) (i := m)).symm
   -- Conjugating `g` by `y * x` and by `x * y` both give `g ^ (i * k)`.
   have hxk : x⁻¹ * g ^ k * x = g ^ (i * k) := by
-    rw [hpow, ← hi, ← zpow_mul]
+    rw [hpow, ← hi, ← _root_.zpow_mul]
   have hyi : y⁻¹ * g ^ i * y = g ^ (i * k) := by
-    rw [hpow, ← hk, ← zpow_mul, mul_comm i k]
+    rw [hpow, ← hk, ← _root_.zpow_mul, mul_comm i k]
   have key : (y * x)⁻¹ * g * (y * x) = (x * y)⁻¹ * g * (x * y) := by
     calc (y * x)⁻¹ * g * (y * x) = x⁻¹ * (y⁻¹ * g * y) * x := by group
       _ = g ^ (i * k) := by rw [← hk, hxk]
@@ -322,6 +324,13 @@ theorem commutator_le_iff_map_mk'_eq_bot {A B : Subgroup G} [N.Normal] :
     ⁅A, B⁆ ≤ N ↔ ⁅A.map (QuotientGroup.mk' N), B.map (QuotientGroup.mk' N)⁆ = ⊥ := by
   rw [← map_commutator, map_eq_bot_iff, QuotientGroup.ker_mk']
 
+/-- A normal subgroup `Z` that normalizes a subgroup `U` and meets it trivially centralizes `U`:
+the commutator `⁅Z, U⁆` lies in `Z` by normality and in `U` because `Z` normalizes `U`. -/
+theorem le_centralizer_of_le_normalizer_of_inf_eq_bot {Z U : Subgroup G} [Z.Normal]
+    (hZU : Z ≤ normalizer (U : Set G)) (hinf : Z ⊓ U = ⊥) : Z ≤ centralizer (U : Set G) :=
+  commutator_eq_bot_iff_le_centralizer.mp <| eq_bot_iff.mpr <| hinf ▸
+    le_inf (commutator_le_left Z U) (le_normalizer_iff_commutator_le_right.mp hZU)
+
 /-- Two classes in `G ⧸ N` commute exactly when the commutator of representatives lies in `N`. -/
 theorem _root_.QuotientGroup.commute_mk_iff [N.Normal] {a b : G} :
     Commute (a : G ⧸ N) (b : G ⧸ N) ↔ ⁅a, b⁆ ∈ N := by
@@ -398,7 +407,7 @@ theorem mem_of_adjacent_of_commutator (H : Subgroup G)
     exact this (Nat.dist i.val j.val) i j hij rfl a
   intro d
   induction d using Nat.strong_induction_on with
-  | h d ih =>
+  | ind d ih =>
       intro i j hij hdist a
       by_cases hforward : i.val + 1 = j.val
       · exact hadjacent hij a (Or.inl hforward)

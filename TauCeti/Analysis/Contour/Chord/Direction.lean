@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
+public import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # The direction of a chord at a point the curve passes through
@@ -51,21 +51,13 @@ open Filter Set Topology
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable {γ : ℝ → V} {z₀ L : V} {t₀ : ℝ}
 
-/-- Normalising a slope with a non-zero limit converges to the normalised limit. -/
-private theorem tendsto_normalize_slope {l : Filter ℝ} (hL : L ≠ 0)
-    (hslope : Tendsto (slope γ t₀) l (𝓝 L)) :
-    Tendsto (fun t => NormedSpace.normalize (slope γ t₀ t)) l
-      (𝓝 (NormedSpace.normalize L)) := by
-  simp only [NormedSpace.normalize]
-  exact (hslope.norm.inv₀ (norm_ne_zero_iff.mpr hL)).smul hslope
-
 /-- **The outgoing chord direction.** As `t → t₀⁺` the direction of `γ t - z₀` tends to that
 of the one-sided slope limit. -/
 theorem tendsto_normalize_sub_nhdsGT (hcross : γ t₀ = z₀) (hL : L ≠ 0)
     (hslope : Tendsto (slope γ t₀) (𝓝[>] t₀) (𝓝 L)) :
     Tendsto (fun t => NormedSpace.normalize (γ t - z₀)) (𝓝[>] t₀)
       (𝓝 (NormedSpace.normalize L)) := by
-  refine (tendsto_normalize_slope hL hslope).congr' ?_
+  refine (hslope.normalize hL).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t ht
   rw [← hcross, ← vsub_eq_sub (γ t) (γ t₀), ← sub_smul_slope γ t₀ t,
     NormedSpace.normalize_smul_of_pos (sub_pos.mpr ht)]
@@ -76,7 +68,7 @@ theorem tendsto_normalize_sub_nhdsLT (hcross : γ t₀ = z₀) (hL : L ≠ 0)
     (hslope : Tendsto (slope γ t₀) (𝓝[<] t₀) (𝓝 L)) :
     Tendsto (fun t => NormedSpace.normalize (γ t - z₀)) (𝓝[<] t₀)
       (𝓝 (-NormedSpace.normalize L)) := by
-  refine ((tendsto_normalize_slope hL hslope).neg).congr' ?_
+  refine (hslope.normalize hL).neg.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t ht
   rw [← hcross, ← vsub_eq_sub (γ t) (γ t₀), ← sub_smul_slope γ t₀ t,
     NormedSpace.normalize_smul_of_neg (sub_neg.mpr ht)]

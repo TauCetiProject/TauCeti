@@ -22,9 +22,8 @@ measures: it is exactly the obstruction to `x` being integral, in the sense that
 The forward direction holds for any denominator; the converse is where being in *lowest terms*
 matters, and it is the reason this is an `Iff` rather than a one-way bound.
 
-Mathlib's existing `den` API answers adjacent questions — `isInteger_of_isUnit_den` when the
-denominator is a unit, `isUnit_den_iff` for the converse of that, `num_mul_den_eq_num_iff_eq` for
-the defining relation — but none of them relates divisibility of `den` to integrality of a multiple.
+Mathlib's `isUnit_den_iff` is the case `d = 1`: `den x` is a unit exactly when `x` itself is
+integral.
 
 The statement is in the `*`-form `algebraMap R K d * x` rather than the `•`-form `d • x` that
 Mathlib's `isInteger_smul` uses. The two are equal (`Algebra.smul_def`), and the choice follows the
@@ -40,25 +39,17 @@ variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- **The reduced denominator is exactly the obstruction to integrality**: `d * x` lies in the
-image of `R` if and only if `den x` divides `d`.
-
-The forward direction is a bound on how far `x` is from being integral, and holds for any `d` that
-`den x` divides. The converse needs the fraction to be in lowest terms: `d * x = s` clears to
-`d * num x = s * den x`, so `den x ∣ d * num x`, and `num x` and `den x` being relatively prime
-leaves `den x ∣ d`. -/
+image of `R` if and only if `den x` divides `d`. -/
 theorem den_dvd_iff_isInteger_mul {x : K} {d : R} :
     (den R x : R) ∣ d ↔ IsLocalization.IsInteger R (algebraMap R K d * x) := by
-  have hx : x * algebraMap R K (den R x : R) = algebraMap R K (num R x) :=
-    (num_mul_den_eq_num_iff_eq (A := R) (x := x) (y := x)).2 rfl
-  constructor
-  · rintro ⟨e, he⟩
-    refine ⟨e * num R x, ?_⟩
-    rw [he, map_mul, map_mul, ← hx]
+  have hx : x * algebraMap R K (den R x) = algebraMap R K (num R x) :=
+    num_mul_den_eq_num_iff_eq.2 rfl
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨e * num R x, ?_⟩, fun ⟨s, hs⟩ ↦ ?_⟩
+  · rw [he, map_mul, map_mul, ← hx]
     ring
-  · rintro ⟨s, hs⟩
-    have hR : d * num R x = s * (den R x : R) := by
-      refine IsFractionRing.injective R K ?_
-      rw [map_mul, map_mul, ← hx, ← mul_assoc, hs]
-    exact (num_den_reduced R x).symm.dvd_of_dvd_mul_right ⟨s, by rw [hR, mul_comm]⟩
+  -- `d * x = s` clears to `d * num x = den x * s`; coprimality of `num x` and `den x` finishes.
+  refine (num_den_reduced R x).symm.dvd_of_dvd_mul_right ⟨s, IsFractionRing.injective R K ?_⟩
+  rw [map_mul, map_mul, ← hx, hs]
+  ring
 
 end IsFractionRing

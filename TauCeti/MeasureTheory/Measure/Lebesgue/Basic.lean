@@ -19,6 +19,9 @@ An order-connected subset of the real line of positive finite volume agrees almo
 with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): finite volume
 bounds it, and it lies between the open and the closed interval spanned by its infimum and
 supremum.
+
+On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
+preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 -/
 
 public section
@@ -45,6 +48,18 @@ theorem volume_eball_sdiff_le (s u : Set ℝ) :
     · rw [measure_sdiff (Metric.eball_subset_eball (ENNReal.div_le_div_right h 2))
         Metric.isOpen_eball.measurableSet.nullMeasurableSet (by rwa [hlength]), hlength, hlength]
       exact le_measure_sdiff
+
+/-- A permutation of the coordinates combined with sign changes, `x ↦ fun i => c i * x (e i)`
+with `|c i| = 1`, preserves Lebesgue measure on `ι → ℝ`. -/
+theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm ι) (c : ι → ℝ)
+    (hc : ∀ i, |c i| = 1) :
+    MeasurePreserving (fun (x : ι → ℝ) i => c i * x (e i)) := by
+  have hmul : MeasurePreserving (fun (y : ι → ℝ) i => c i * y i) :=
+    volume_preserving_pi fun i => ⟨measurable_const_mul _, by
+      rw [Real.map_volume_mul_left fun h0 => by simpa [h0] using hc i,
+        abs_inv, hc i, inv_one, ENNReal.ofReal_one, one_smul]⟩
+  exact hmul.comp
+    (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
 
 end TauCeti
 

@@ -114,6 +114,13 @@ theorem isometryQuotientEquiv_symm_isometryClass (f : V ≃ₗ[ℚ] W) (M : Inte
     (isometryQuotientEquiv f).symm M.isometryClass = (M.transport f.symm).isometryClass :=
   (rfl)
 
+/-- The transport along `f` of the representative of a class is isometric to the representative
+of the transported class. -/
+theorem IsometryQuotient.nonempty_isometry_transport_out (c : IsometryQuotient V)
+    (f : V ≃ₗ[ℚ] W) : Nonempty (Isometry (c.out.transport f) (isometryQuotientEquiv f c).out) := by
+  rw [← isometryClass_eq_isometryClass_iff, isometryClass_out,
+    ← isometryQuotientEquiv_isometryClass, isometryClass_out]
+
 end IsometryQuotient
 
 end TauCeti.IntegralLattice

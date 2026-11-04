@@ -33,7 +33,11 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `TauCeti.exact_precompOfLinear₁` (respectively `TauCeti.exact_precomp₃` and
   `TauCeti.exact_precompOfLinear₃`) are the same repackaging one step further along the
   contravariant sequence, where the outgoing (respectively incoming) map is precomposition with
-  the extension class.
+  the extension class;
+* extension of morphisms along a short exact sequence `S` whose cokernel `S.X₃` has
+  `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`).
+* the vanishing of morphisms from `X` placed in degree `n` to `Y` placed in degree zero in the
+  derived category when `Extⁿ(X, Y) = 0` (`DerivedCategory.singleFunctor_hom_eq_zero_of_ext`).
 
 The exactness statements are `CategoryTheory.Abelian.Ext.covariant_sequence_exact₂` and
 `CategoryTheory.Abelian.Ext.contravariant_sequence_exact₂` with the vanishing of the composite
@@ -297,3 +301,43 @@ theorem exact_precompOfLinear₁ (R : Type t) [CommRing R] [Linear R C] (hS : S.
   exact exact_precomp₁ hS Y n₀ n₁ h
 
 end TauCeti
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open CategoryTheory.Abelian
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {S : ShortComplex C}
+  (hS : S.ShortExact)
+include hS
+
+/-- **Extension along a monomorphism with orthogonal cokernel**: if `S` is short exact and
+`Ext¹(S.X₃, Y) = 0`, every morphism `S.X₁ ⟶ Y` extends along `S.f`. -/
+lemma exists_f_comp_eq_of_ext_eq_zero {Y : C} (h : ∀ x : Ext.{w} S.X₃ Y 1, x = 0)
+    (ψ : S.X₁ ⟶ Y) : ∃ g : S.X₂ ⟶ Y, S.f ≫ g = ψ := by
+  obtain ⟨x, hx⟩ := Ext.contravariant_sequence_exact₁ hS Y (Ext.mk₀ ψ) (n₁ := 1) rfl (h _)
+  refine ⟨Ext.addEquiv₀ x, Ext.homEquiv₀.symm.injective ?_⟩
+  rw [← Ext.mk₀_addEquiv₀_apply x, Ext.mk₀_comp_mk₀] at hx
+  exact hx
+
+end CategoryTheory.ShortComplex.ShortExact
+
+namespace DerivedCategory
+
+open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] [HasDerivedCategory.{t} C]
+
+/-- If `Extⁿ(X, Y) = 0`, there are no nonzero morphisms from `X` placed in degree `n` to `Y` placed
+in degree zero. -/
+lemma singleFunctor_hom_eq_zero_of_ext {X Y : C} {n : ℕ} (h : ∀ e : Ext.{w} X Y n, e = 0)
+    (f : (singleFunctor C n).obj X ⟶ (singleFunctor C 0).obj Y) : f = 0 := by
+  -- Shifting by `n` turns `f` into a morphism `X ⟶ Y⟦n⟧`, which is the image of an `Ext` class.
+  apply (shiftFunctor (DerivedCategory C) (n : ℤ)).map_injective
+  obtain ⟨e, he⟩ := Ext.homEquiv.surjective
+    (((singleFunctors C).shiftIso (n : ℤ) 0 n (add_zero _)).inv.app X ≫
+      (shiftFunctor (DerivedCategory C) (n : ℤ)).map f)
+  rw [h e, ← Ext.hom, Ext.zero_hom] at he
+  rw [Functor.map_zero, ← cancel_epi (((singleFunctors C).shiftIso (n : ℤ) 0 n
+    (add_zero _)).inv.app X), ← he, comp_zero]
+
+end DerivedCategory

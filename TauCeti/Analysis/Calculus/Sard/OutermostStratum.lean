@@ -133,7 +133,8 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
     refine measure_union_null (addHaar_image_eq_zero_of_fderiv_eq_zero ν hknum
       (fun x hx ↦ hf x hx.1) (fun x hx ↦ hx.2)) ?_
     -- The outermost stratum, one point at a time.
-    refine measure_image_null_of_locally_null fun a ha ↦ ?_
+    refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
+      fun a ha ↦ ?_
     obtain ⟨⟨haU, _⟩, hane⟩ := ha
     -- A direction on which the derivative does not vanish, and a functional dual to its image.
     obtain ⟨v₀, hv₀⟩ : ∃ v, fderiv ℝ f a v ≠ 0 := by
@@ -193,7 +194,7 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
     have hmapC : ContDiffAt ℝ (k : ℕ∞ω) hmap a :=
       (φ.contDiff.comp_contDiffAt a (hf a haU)).prodMk π.contDiff.contDiffAt
     have hstrict : HasStrictFDerivAt hmap (eE : E →L[ℝ] ℝ × ↥Ek) a :=
-      hmapC.hasStrictFDerivAt' hmapd hkne
+      hmapC.hasStrictFDerivAt hmapd hkne
     obtain ⟨Θ, hΘC, hΘleft, hΘright⟩ :
         ∃ Θ : ℝ × ↥Ek → E, ContDiffAt ℝ (k : ℕ∞ω) Θ (hmap a) ∧
           (∀ᶠ x in 𝓝 a, Θ (hmap x) = x) ∧ (∀ᶠ p in 𝓝 (hmap a), hmap (Θ p) = p) :=
@@ -347,7 +348,8 @@ theorem addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x)
     (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
     ν (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = 0 := by
-  refine measure_image_null_of_locally_null fun a ha ↦ ?_
+  refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
+    fun a ha ↦ ?_
   -- Finite-order smoothness at `a` supplies an open smooth neighbourhood for the induction.
   let k : ℕ := finrank ℝ E * finrank ℝ E + 1
   have hkfinite : (k : ℕ∞ω) ≠ ∞ := by simp

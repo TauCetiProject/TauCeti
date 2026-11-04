@@ -29,6 +29,8 @@ norm group exactly when `u < v`. At the unramified break `-1` the conductor is z
 
 * `TauCeti.LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`:
   the conductor criterion at any prime-degree upper break, including the unramified break `-1`.
+* `unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_of_finrank_prime`:
+  in prime degree, `U(K,v)` lies in the norm group exactly when `G^v = 1`.
 
 ## References
 
@@ -200,6 +202,32 @@ theorem UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime
   · have hu_eq : u = ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ := Subtype.ext hut
     subst u
     simpa only [Nat.cast_lt] using unitFiltration_le_normGroup_iff hdegree hu
+
+/-- **The prime-degree conductor in the upper numbering.** For a Galois extension of prime degree,
+the step `U(K,v)` lies in the norm group exactly when the upper ramification group `G^v` is
+trivial. -/
+theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_of_finrank_prime
+    (hdegree : (Module.finrank K L).Prime) (v : ℕ) :
+    unitFiltration K v ≤ normGroup K L ↔
+      upperRamificationGroup K L ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥ := by
+  refine ⟨fun h ↦ ?_, unitFiltration_le_normGroup_of_upperRamificationGroup_eq_bot⟩
+  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime := ⟨IsGalois.card_aut_eq_finrank K L ▸ hdegree⟩
+  rw [upperRamificationGroup_natCast]
+  -- In the unramified case `G^v ≤ G_0` is already trivial.
+  by_cases h0 : lowerRamificationGroup K L 0 = ⊥
+  · exact eq_bot_iff.2 (h0 ▸ lowerRamificationGroup_antitone K L (Int.natCast_nonneg _))
+  -- Otherwise the unique upper break `t` lies below `v`, so `G^v` is a proper subgroup of the
+  -- group `G^t` of prime order.
+  obtain ⟨N, hN⟩ := exists_forall_upperRamificationGroup_natCast_eq_bot K L
+  obtain ⟨t, -, ht⟩ := exists_lt_upperJump_of_finrank_prime hdegree
+    ((upperRamificationGroup_natCast K L N).symm.trans (hN N le_rfl)) h0
+  have htv : t < v := Nat.cast_lt (α := ℝ).1
+    ((ht.unitFiltration_le_normGroup_iff_of_finrank_prime hdegree v).1 h)
+  have hlt := (upperJump_iff K L _).1 ht ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩
+    (Subtype.mk_lt_mk.2 (by exact_mod_cast htv))
+  rw [upperRamificationGroup_natCast] at hlt
+  exact (lowerRamificationGroup K L _).eq_bot_or_eq_top_of_prime_card.resolve_right
+    (hlt.trans_le le_top).ne
 
 end LocalFieldsRamification
 

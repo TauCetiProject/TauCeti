@@ -47,6 +47,8 @@ in particular over fields, where every module is flat.
   the codomain is.
 * `TauCeti.HopfIdeal.kerOfSurjective_mkBialgHom`: the kernel of the quotient morphism by `I`
   is `I`.
+* `TauCeti.HopfIdeal.ofIsHopfIdeal`: a two-sided ideal satisfying Mathlib's `Ideal.IsHopfIdeal`,
+  as a `HopfIdeal`.
 
 ## References
 
@@ -287,6 +289,40 @@ theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
   ext x
   refine (mem_kerOfSurjective _ _).trans ?_
   rw [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
+
+variable (R) in
+/-- A two-sided ideal which is a Hopf ideal in Mathlib's sense (`Ideal.IsHopfIdeal`), as a
+`HopfIdeal`. This is the converse of the bridge instance `HopfIdeal.instIsHopfIdeal`. -/
+def ofIsHopfIdeal (I : Ideal H) [I.IsTwoSided] [I.IsHopfIdeal R] : HopfIdeal R H :=
+  ofIdeal I
+    (fun x hx ↦ by
+      have h := (kerOfSurjective (Bialgebra.Quotient.mkBialgHom (R := R) I)
+        (Bialgebra.Quotient.mkBialgHom_surjective I)).comul_mem (x := x)
+          (by simpa using (Ideal.Quotient.eq_zero_iff_mem).2 hx)
+      have hker : (kerOfSurjective (Bialgebra.Quotient.mkBialgHom (R := R) I)
+          (Bialgebra.Quotient.mkBialgHom_surjective I)).toIdeal = I := by
+        ext y
+        simp [Ideal.Quotient.eq_zero_iff_mem]
+      rwa [hker] at h)
+    (fun _ hx ↦ Submodule.IsCoideal.counit_eq_zero (I := I.restrictScalars R) hx)
+    (fun _ hx ↦ Ideal.IsHopfIdeal.antipode_mem hx)
+
+/-- The underlying ideal of `HopfIdeal.ofIsHopfIdeal R I` is `I`. -/
+@[simp]
+theorem ofIsHopfIdeal_toIdeal (I : Ideal H) [I.IsTwoSided] [I.IsHopfIdeal R] :
+    (ofIsHopfIdeal R I).toIdeal = I :=
+  (rfl)
+
+/-- The elements of `HopfIdeal.ofIsHopfIdeal R I` are those of `I`. -/
+@[simp]
+theorem mem_ofIsHopfIdeal {I : Ideal H} [I.IsTwoSided] [I.IsHopfIdeal R] {x : H} :
+    x ∈ ofIsHopfIdeal R I ↔ x ∈ I :=
+  Iff.rfl
+
+/-- A Hopf ideal is recovered from its underlying ideal by `HopfIdeal.ofIsHopfIdeal`. -/
+@[simp]
+theorem ofIsHopfIdeal_toIdeal_eq (I : HopfIdeal R H) : ofIsHopfIdeal R I.toIdeal = I :=
+  ext fun _ ↦ Iff.rfl
 
 end Hopf
 

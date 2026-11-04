@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Basic
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Rat
+import TauCeti.Data.Finset.Basic
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -130,6 +131,15 @@ theorem sum_pairColorDensity [Fintype κ] [DecidableEq V]
   rw [← sum_div, ← Nat.cast_sum, hcount]
   exact div_self (Nat.cast_ne_zero.mpr h.card_pos.ne')
 
+/-- Palette densities sum to at most one: to one on nonempty distinct-pair support, and to zero
+otherwise. -/
+theorem sum_pairColorDensity_le_one [Fintype κ] (S : PairColorSystem κ V) (s t : Finset V) :
+    ∑ c, pairColorDensity S c s t ≤ 1 := by
+  classical
+  by_cases h : ((s ×ˢ t).filter fun p => p.1 ≠ p.2).Nonempty
+  · exact (sum_pairColorDensity S s t h).le
+  · simp [pairColorDensity_eq_zero_of_support_eq_empty S _ s t (not_nonempty_iff_eq_empty.1 h)]
+
 /-- Reversing both the ordered cells and the palette color preserves density. -/
 theorem pairColorDensity_swap (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
     pairColorDensity S (S.rev c) t s = pairColorDensity S c s t := by
@@ -139,10 +149,6 @@ theorem pairColorDensity_swap (S : PairColorSystem κ V) (c : κ) (s t : Finset 
     apply card_equiv (Equiv.prodComm V V)
     intro p
     simp [and_comm, ← S.colorOfPair_swap_eq_some_iff p.2 p.1 c]
-  have hsupport : #((t ×ˢ s).filter fun p => p.1 ≠ p.2) =
-      #((s ×ˢ t).filter fun p => p.1 ≠ p.2) := by
-    apply card_equiv (Equiv.prodComm V V)
-    simp [and_comm, ne_comm]
-  simp only [pairColorDensity_def, hcolor, hsupport]
+  simp only [pairColorDensity_def, hcolor, card_filter_ne_product_comm t s]
 
 end TauCeti

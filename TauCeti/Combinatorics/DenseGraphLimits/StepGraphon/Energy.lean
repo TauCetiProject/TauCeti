@@ -114,9 +114,9 @@ private theorem rectIntegral_eq_of_le_left_right {P R Q : Finpartition (Set.univ
     Finpartition.measurableSet_of_mem_of_le hQ hQR r.property
   rw [SymmKernel.rectIntegral_def, SymmKernel.rectIntegral_def,
     Finpartition.setIntegral_prod_eq_sum_parts μ Q hQ hp hr
-      (SymmKernel.integrable_uncurry μ K).integrableOn,
+      K.integrable_uncurry.integrableOn,
     Finpartition.setIntegral_prod_eq_sum_parts μ Q hQ hp hr
-      (SymmKernel.integrable_uncurry μ L).integrableOn]
+      L.integrable_uncurry.integrableOn]
   refine Finset.sum_congr rfl fun rs _ => ?_
   rcases Finpartition.inter_part_eq_self_or_eq_empty_of_le hQP rs.1.property p.property with
     h1 | h1

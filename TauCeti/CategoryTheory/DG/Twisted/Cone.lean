@@ -41,6 +41,14 @@ morphism `P ⟶ P⟦1⟧` is a degree `-1` inverse of the twisting entry `P⟦1�
 isomorphism, and in particular `Cone(id_P)`, is contractible: it is a zero object of the
 homotopy category.
 
+The shift of a cone is the cone of the shifted morphism: for `n : ℤ`, the closed degree-zero
+isomorphism `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` (`TauCeti.DGTwistedObject.shiftConeHom`) is the shift of
+the projection onto `Q` on the summand `Q⟦n⟧`, and `(-1)^n` times the comparison
+`P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧` of `TauCeti.DGTwistedObject.shiftCommHom` on the summand `P⟦1⟧⟦n⟧`.  It is
+closed because the shift by `n` of the twisting entry `P⟦1⟧ ⟶ P ⟶ Q` of `cone u` is `(-1)^n`
+times this comparison followed by the twisting entry `P⟦n⟧⟦1⟧ ⟶ P⟦n⟧ ⟶ Q⟦n⟧` of `cone (u⟦n⟧)`
+(`TauCeti.DGTwistedObject.dgMap_coneMorphism`).
+
 ## Main definitions
 
 * `TauCeti.DGTwistedObject.coneMorphism`: a degree-zero morphism `P ⟶ Q` as the degree-one
@@ -48,6 +56,11 @@ homotopy category.
 * `TauCeti.DGTwistedObject.cone`: the cone of a closed degree-zero morphism.
 * `TauCeti.DGTwistedObject.coneIsoOfHomotopy`: the isomorphism in the homotopy category between
   the cones of homotopic morphisms.
+* `TauCeti.DGTwistedObject.shiftConeHom` and `TauCeti.DGTwistedObject.shiftConeInv`: the mutually
+  inverse closed degree-zero morphisms `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` and
+  `cone (u⟦n⟧) ⟶ (cone u)⟦n⟧`.
+* `TauCeti.DGTwistedObject.shiftConeIso`: the induced isomorphism `(cone u)⟦n⟧ ≅ cone (u⟦n⟧)` in
+  the homotopy category.
 
 ## Main results
 
@@ -67,11 +80,18 @@ homotopy category.
 * `TauCeti.DGTwistedObject.isZero_of_cone`: the cone of an isomorphism is a zero object of the
   homotopy category.
 * `TauCeti.DGTwistedObject.isZero_of_cone_dgId`: `Cone(id_P)` is contractible.
+* `TauCeti.DGTwistedObject.dgMap_coneMorphism`: the shift of the twisting entry of a cone.
+* `TauCeti.DGTwistedObject.dgComp_shiftConeHom_shiftConeInv` and
+  `TauCeti.DGTwistedObject.dgComp_shiftConeInv_shiftConeHom`: the comparisons of cones are
+  inverse.
 
 ## References
 
 * A. I. Bondal and M. M. Kapranov, *Enhanced triangulated categories*, Section 1.
 * V. Drinfeld, *DG quotients of DG categories*, Section 2.4.
+* `Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated`, whose isomorphism
+  `CochainComplex.mappingCone.shiftIso` between shifted mapping cones and mapping cones of shifted
+  morphisms is followed for the shifts of cones.
 -/
 
 public section
@@ -270,6 +290,247 @@ theorem isZero_of_cone_dgId :
   isZero_of_cone _ (dgComp_dgId R _) (dgComp_dgId R _)
 
 end contractible
+
+/-! ### Shifts of cones -/
+
+section shiftCone
+
+open DGHomotopyCategory
+
+/-- **The shift of the twisting entry of a cone**: the shift by `n` of the degree-one morphism
+`P⟦1⟧ ⟶ P ⟶ Q` underlying `u` is `(-1)^n` times the comparison `P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧` followed by
+the degree-one morphism `P⟦n⟧⟦1⟧ ⟶ P⟦n⟧ ⟶ Q⟦n⟧` underlying the shift of `u`. -/
+theorem dgMap_coneMorphism (u : DGHom R 0 P Q) (n : ℤ) :
+    (shiftFunctor R n).dgMap 1 (coneMorphism R u) =
+      n.negOnePow • dgComp R (shiftCommHom P 1 n)
+        (coneMorphism R ((shiftFunctor R n).dgMap 0 u)) (zero_add 1) := by
+  rw [coneMorphism_def, coneMorphism_def, EnrichedFunctor.dgMap_dgComp, dgMap_fromShift,
+    one_mul, units_smul_dgComp, dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) (by omega)]
+
+variable {u : DGHom R 0 P Q} (hu : dgDifferential R 0 u = 0) (n : ℤ)
+
+/-- The comparison `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)`: the shift of the projection onto `Q` followed by
+the inclusion of `Q⟦n⟧`, plus `(-1)^n` times the shift of the projection onto `P⟦1⟧` followed by
+the comparison `P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧` and the inclusion of `P⟦n⟧⟦1⟧`.  It is a closed isomorphism
+with inverse `TauCeti.DGTwistedObject.shiftConeInv`. -/
+noncomputable def shiftConeHom :
+    DGHom R 0 ((shiftFunctor R n).obj (cone u hu))
+      (cone ((shiftFunctor R n).dgMap 0 u) ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)) :=
+  dgComp R ((shiftFunctor R n).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu)))
+      (extensionInl R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0) +
+    n.negOnePow • dgComp R ((shiftFunctor R n).dgMap 0
+        (extensionSnd R (dgDifferential_coneMorphism hu)))
+      (dgComp R (shiftCommHom P 1 n) (extensionInr R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0)) (add_zero 0)
+
+/-- The comparison `cone (u⟦n⟧) ⟶ (cone u)⟦n⟧`: the projection onto `Q⟦n⟧` followed by the shift
+of the inclusion of `Q`, plus `(-1)^n` times the projection onto `P⟦n⟧⟦1⟧` followed by the
+comparison `P⟦n⟧⟦1⟧ ⟶ P⟦1⟧⟦n⟧` and the shift of the inclusion of `P⟦1⟧`. -/
+noncomputable def shiftConeInv :
+    DGHom R 0
+      (cone ((shiftFunctor R n).dgMap 0 u) ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))
+      ((shiftFunctor R n).obj (cone u hu)) :=
+  dgComp R (extensionFst R (dgDifferential_coneMorphism
+      ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)))
+      ((shiftFunctor R n).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu))) (add_zero 0) +
+    n.negOnePow • dgComp R (extensionSnd R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)))
+      (dgComp R (shiftCommHom P n 1)
+        ((shiftFunctor R n).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+        (add_zero 0)) (add_zero 0)
+
+theorem shiftConeHom_def :
+    shiftConeHom hu n =
+      dgComp R ((shiftFunctor R n).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu)))
+          (extensionInl R (dgDifferential_coneMorphism
+            ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0) +
+        n.negOnePow • dgComp R ((shiftFunctor R n).dgMap 0
+            (extensionSnd R (dgDifferential_coneMorphism hu)))
+          (dgComp R (shiftCommHom P 1 n) (extensionInr R (dgDifferential_coneMorphism
+            ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0)) (add_zero 0) :=
+  (rfl)
+
+theorem shiftConeInv_def :
+    shiftConeInv hu n =
+      dgComp R (extensionFst R (dgDifferential_coneMorphism
+          ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)))
+          ((shiftFunctor R n).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
+          (add_zero 0) +
+        n.negOnePow • dgComp R (extensionSnd R (dgDifferential_coneMorphism
+            ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)))
+          (dgComp R (shiftCommHom P n 1)
+            ((shiftFunctor R n).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+            (add_zero 0)) (add_zero 0) :=
+  (rfl)
+
+/-- The shift of the inclusion of `Q` into `cone u` followed by the comparison
+`(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` is the inclusion of `Q⟦n⟧`. -/
+@[simp↓]
+theorem dgComp_dgMap_extensionInl_shiftConeHom :
+    dgComp R ((shiftFunctor R n).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
+        (shiftConeHom hu n) (add_zero 0) =
+      extensionInl R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)) := by
+  simp only [shiftConeHom_def, dgComp_add, dgComp_units_smul,
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_dgId (dgComp_extensionInl_extensionFst R _),
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_zero (dgComp_extensionInl_extensionSnd R _),
+    smul_zero, add_zero]
+
+/-- The shift of the inclusion of `P⟦1⟧` into `cone u` followed by the comparison
+`(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` is `(-1)^n` times the comparison `P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧` followed by
+the inclusion of `P⟦n⟧⟦1⟧`. -/
+@[simp↓]
+theorem dgComp_dgMap_extensionInr_shiftConeHom :
+    dgComp R ((shiftFunctor R n).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+        (shiftConeHom hu n) (add_zero 0) =
+      n.negOnePow • dgComp R (shiftCommHom P 1 n) (extensionInr R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0) := by
+  simp only [shiftConeHom_def, dgComp_add, dgComp_units_smul,
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_zero (dgComp_extensionInr_extensionFst R _),
+    (shiftFunctor R n).dgMap_dgComp_dgMap_assoc_of_eq_dgId (dgComp_extensionInr_extensionSnd R _),
+    zero_add]
+
+/-- The comparison `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` followed by the projection onto `P⟦n⟧⟦1⟧` is
+`(-1)^n` times the shift of the projection onto `P⟦1⟧` followed by the comparison
+`P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧`. -/
+@[simp↓]
+theorem dgComp_shiftConeHom_extensionSnd :
+    dgComp R (shiftConeHom hu n) (extensionSnd R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (add_zero 0) =
+      n.negOnePow • dgComp R ((shiftFunctor R n).dgMap 0
+        (extensionSnd R (dgDifferential_coneMorphism hu))) (shiftCommHom P 1 n) (add_zero 0) := by
+  simp only [shiftConeHom_def, add_dgComp, units_smul_dgComp,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, dgComp_dgId,
+    zero_add]
+
+/-- The inclusion of `Q⟦n⟧` into `cone (u⟦n⟧)` followed by the comparison
+`cone (u⟦n⟧) ⟶ (cone u)⟦n⟧` is the shift of the inclusion of `Q`. -/
+@[simp↓]
+theorem dgComp_extensionInl_shiftConeInv :
+    dgComp R (extensionInl R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (shiftConeInv hu n) (add_zero 0) =
+      (shiftFunctor R n).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)) := by
+  simp only [shiftConeInv_def, dgComp_add, dgComp_units_smul,
+    dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc, smul_zero,
+    add_zero]
+
+/-- The inclusion of `P⟦n⟧⟦1⟧` into `cone (u⟦n⟧)` followed by the comparison
+`cone (u⟦n⟧) ⟶ (cone u)⟦n⟧` is `(-1)^n` times the comparison `P⟦n⟧⟦1⟧ ⟶ P⟦1⟧⟦n⟧` followed by the
+shift of the inclusion of `P⟦1⟧`. -/
+@[simp↓]
+theorem dgComp_extensionInr_shiftConeInv :
+    dgComp R (extensionInr R (dgDifferential_coneMorphism
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu))) (shiftConeInv hu n) (add_zero 0) =
+      n.negOnePow • dgComp R (shiftCommHom P n 1)
+        ((shiftFunctor R n).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+        (add_zero 0) := by
+  simp only [shiftConeInv_def, dgComp_add, dgComp_units_smul,
+    dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, zero_add]
+
+/-- Morphisms out of `(cone u)⟦n⟧` are determined by their composites with the shifts of the
+inclusions of `Q` and of `P⟦1⟧`. -/
+private theorem shiftFunctor_cone_dgHom_ext
+    {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {m : ℤ}
+    {f f' : DGHom R m ((shiftFunctor R n).obj (cone u hu)) Z}
+    (hl : dgComp R ((shiftFunctor R n).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
+      f (zero_add m) =
+      dgComp R ((shiftFunctor R n).dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
+        f' (zero_add m))
+    (hr : dgComp R ((shiftFunctor R n).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+      f (zero_add m) =
+      dgComp R ((shiftFunctor R n).dgMap 0 (extensionInr R (dgDifferential_coneMorphism hu)))
+        f' (zero_add m)) :
+    f = f' := by
+  rw [← dgId_dgComp R f, ← dgId_dgComp R f', ← EnrichedFunctor.dgMap_dgId,
+    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R
+      (dgDifferential_coneMorphism hu),
+    map_add, EnrichedFunctor.dgMap_dgComp, EnrichedFunctor.dgMap_dgComp, add_dgComp, add_dgComp,
+    dgComp_assoc R _ _ f (add_zero 0) (zero_add m) (by omega),
+    dgComp_assoc R _ _ f (add_zero 0) (zero_add m) (by omega),
+    dgComp_assoc R _ _ f' (add_zero 0) (zero_add m) (by omega),
+    dgComp_assoc R _ _ f' (add_zero 0) (zero_add m) (by omega), hl, hr]
+
+/-- The comparisons `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧) ⟶ (cone u)⟦n⟧` compose to the identity. -/
+@[simp↓]
+theorem dgComp_shiftConeHom_shiftConeInv :
+    dgComp R (shiftConeHom hu n) (shiftConeInv hu n) (add_zero 0) = dgId R _ := by
+  refine shiftFunctor_cone_dgHom_ext hu n ?_ ?_ <;>
+    rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0), dgComp_dgId]
+  · rw [dgComp_dgMap_extensionInl_shiftConeHom, dgComp_extensionInl_shiftConeInv]
+  · rw [dgComp_dgMap_extensionInr_shiftConeHom, units_smul_dgComp,
+      dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+      dgComp_extensionInr_shiftConeInv,
+      units_smul_dgComp_shiftCommHom_units_smul_dgComp_shiftCommHom]
+
+/-- The comparisons `cone (u⟦n⟧) ⟶ (cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` compose to the identity. -/
+@[simp↓]
+theorem dgComp_shiftConeInv_shiftConeHom :
+    dgComp R (shiftConeInv hu n) (shiftConeHom hu n) (add_zero 0) = dgId R _ := by
+  refine extension_dgHom_ext ?_ ?_ <;>
+    rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0), dgComp_dgId]
+  · rw [dgComp_extensionInl_shiftConeInv, dgComp_dgMap_extensionInl_shiftConeHom]
+  · rw [dgComp_extensionInr_shiftConeInv, units_smul_dgComp,
+      dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+      dgComp_dgMap_extensionInr_shiftConeHom,
+      units_smul_dgComp_shiftCommHom_units_smul_dgComp_shiftCommHom]
+
+/-- **The comparison `(cone u)⟦n⟧ ⟶ cone (u⟦n⟧)` is closed.** -/
+@[simp↓]
+theorem dgDifferential_shiftConeHom : dgDifferential R 0 (shiftConeHom hu n) = 0 := by
+  -- Both terms are the shift of the projection onto `P⟦1⟧`, followed by the comparison
+  -- `P⟦1⟧⟦n⟧ ⟶ P⟦n⟧⟦1⟧`, the twisting entry of `cone (u⟦n⟧)` and the inclusion of `Q⟦n⟧`,
+  -- with opposite signs.
+  have hfst : dgDifferential R 0
+      ((shiftFunctor R n).dgMap 0 (extensionFst R (dgDifferential_coneMorphism hu))) =
+      -(n.negOnePow • dgComp R
+        ((shiftFunctor R n).dgMap 0 (extensionSnd R (dgDifferential_coneMorphism hu)))
+        (dgComp R (shiftCommHom P 1 n) (coneMorphism R ((shiftFunctor R n).dgMap 0 u))
+          (zero_add 1)) (zero_add 1)) := by
+    rw [← EnrichedFunctor.dgMap_dgDifferential, dgDifferential_extensionFst, map_neg,
+      EnrichedFunctor.dgMap_dgComp, dgMap_coneMorphism, dgComp_units_smul]
+  have hsnd : dgDifferential R 0
+      ((shiftFunctor R n).dgMap 0 (extensionSnd R (dgDifferential_coneMorphism hu))) = 0 :=
+    (shiftFunctor R n).dgDifferential_dgMap_eq_zero (dgDifferential_extensionSnd R _)
+  simp -proj only [shiftConeHom_def, map_add, map_zsmul_unit, dgDifferential_dgComp, hfst, hsnd,
+    dgDifferential_extensionInl, dgDifferential_shiftCommHom, dgDifferential_extensionInr,
+    zero_dgComp, dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
+  rw [neg_dgComp, units_smul_dgComp, dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) (by omega),
+    dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) (by omega), neg_add_cancel]
+
+/-- The comparison `cone (u⟦n⟧) ⟶ (cone u)⟦n⟧` is closed, as the inverse of a closed
+morphism. -/
+@[simp↓]
+theorem dgDifferential_shiftConeInv : dgDifferential R 0 (shiftConeInv hu n) = 0 :=
+  dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_shiftConeHom hu n) (add_zero 0)
+    (dgComp_shiftConeHom_shiftConeInv hu n) (dgComp_shiftConeInv_shiftConeHom hu n)
+
+/-- **The shift of a cone is the cone of the shift**: in the homotopy category, `(cone u)⟦n⟧` is
+isomorphic to `cone (u⟦n⟧)`, through the comparisons `TauCeti.DGTwistedObject.shiftConeHom` and
+`TauCeti.DGTwistedObject.shiftConeInv`. -/
+noncomputable def shiftConeIso :
+    DGHomotopyCategory.of R ((shiftFunctor R n).obj (cone u hu)) ≅
+      DGHomotopyCategory.of R (cone ((shiftFunctor R n).dgMap 0 u)
+        ((shiftFunctor R n).dgDifferential_dgMap_eq_zero hu)) where
+  hom := homOf R (shiftConeHom hu n) ((mem_dgCycles R).mpr (dgDifferential_shiftConeHom hu n))
+  inv := homOf R (shiftConeInv hu n) ((mem_dgCycles R).mpr (dgDifferential_shiftConeInv hu n))
+  hom_inv_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_shiftConeHom_shiftConeInv hu n)
+  inv_hom_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ (dgComp_shiftConeInv_shiftConeHom hu n)
+
+@[simp]
+theorem shiftConeIso_hom :
+    (shiftConeIso hu n).hom =
+      homOf R (shiftConeHom hu n) ((mem_dgCycles R).mpr (dgDifferential_shiftConeHom hu n)) :=
+  (rfl)
+
+@[simp]
+theorem shiftConeIso_inv :
+    (shiftConeIso hu n).inv =
+      homOf R (shiftConeInv hu n) ((mem_dgCycles R).mpr (dgDifferential_shiftConeInv hu n)) :=
+  (rfl)
+
+end shiftCone
 
 end DGTwistedObject
 

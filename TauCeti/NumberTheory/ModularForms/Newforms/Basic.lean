@@ -38,6 +38,8 @@ subspace at primes coprime to the level.
 
 ## Main definitions
 
+* `TauCeti.cuspFormsOldOf`: the span of the level-raises from the levels satisfying a given
+  condition. The old subspace is the case of the proper divisor levels.
 * `TauCeti.cuspFormsOld`: the old subspace `S_k(Γ₁(N))ᵒˡᵈ`.
 * `TauCeti.cuspFormsNew`: the new subspace `S_k(Γ₁(N))ⁿᵉʷ`, the Petersson-orthogonal complement
   of the old one.
@@ -47,6 +49,9 @@ subspace at primes coprime to the level.
 
 ## Main results
 
+* `TauCeti.levelRaise_mem_cuspFormsOldOf`, `TauCeti.cuspFormsOldOf_le` and
+  `TauCeti.mem_peterssonOrthogonal_cuspFormsOldOf_iff`: the introduction and elimination rules
+  for `cuspFormsOldOf`, and the test for orthogonality to it on the level-raises.
 * `TauCeti.levelRaise_mem_cuspFormsOld` and `TauCeti.cuspFormsOld_le`: the introduction and
   elimination rules for the old subspace.
 * `TauCeti.levelRaise_mem_cuspFormsOldMultiples` and `TauCeti.cuspFormsOldMultiples_le`: the
@@ -99,6 +104,73 @@ open _root_.CuspForm
 
 variable {k : ℤ}
 
+/-! ### Old subspaces from a family of levels -/
+
+/-- The span of the level-raises `V_d : S_k(Γ₁(M)) → S_k(Γ₁(N))` over the pairs `(M, d)` with
+`d * M ∣ N` and `P M`, for a condition `P` on the source level `M`. The old subspace
+`cuspFormsOld` is the case `P M := M ≠ N`; taking `P M := q * M ∣ N` gives the old subspace at a
+prime `q`. -/
+def cuspFormsOldOf (N : ℕ) [NeZero N] (k : ℤ) (P : ℕ → Prop) :
+    Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+  ⨆ (M : ℕ) (d : ℕ) (h : d * M ∣ N ∧ P M),
+    have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
+    LinearMap.range (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd h.1))
+
+variable {M d N : ℕ} {P : ℕ → Prop}
+
+/-- **Introduction rule for `cuspFormsOldOf`**: every level-raise from a level `M` with `P M`
+lies in `cuspFormsOldOf N k P`. -/
+theorem levelRaise_mem_cuspFormsOldOf [NeZero N] (h : d * M ∣ N) (hP : P M)
+    (k : ℤ) (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
+    CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f ∈ cuspFormsOldOf N k P :=
+  let _ := NeZero.of_dvd (dvd_of_mul_right_dvd h)
+  Submodule.mem_iSup_of_mem M (Submodule.mem_iSup_of_mem d
+    (Submodule.mem_iSup_of_mem ⟨h, hP⟩ ⟨f, CuspForm.levelRaiseₗ_apply d _ f⟩))
+
+/-- **Elimination rule for `cuspFormsOldOf`**: a subspace containing every level-raise from a
+level `M` with `P M` contains `cuspFormsOldOf N k P`. -/
+theorem cuspFormsOldOf_le [NeZero N] {V : Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k)}
+    (hV : ∀ (M d : ℕ) (h : d * M ∣ N), P M →
+      ∀ f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
+        haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
+        CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f ∈ V) :
+    cuspFormsOldOf N k P ≤ V := by
+  refine iSup_le fun M ↦ iSup_le fun d ↦ iSup_le fun h ↦ ?_
+  have := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
+  rintro _ ⟨f, rfl⟩
+  rw [CuspForm.levelRaiseₗ_apply]
+  exact hV M d h.1 h.2 f
+
+/-- The restriction to level `N` of a cusp form of a level `M ∣ N` with `P M` lies in
+`cuspFormsOldOf N k P`: it is the level-raise `V₁`. -/
+theorem restrict_mem_cuspFormsOldOf [NeZero N] (h : M ∣ N) (hP : P M) (k : ℤ)
+    (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
+      cuspFormsOldOf N k P := by
+  have h1 : 1 * M ∣ N := by rwa [one_mul]
+  have := levelRaise_mem_cuspFormsOldOf h1 hP k f
+  -- At `d = 1`, level-raising is exactly restriction along the subgroup inclusion.
+  rwa [_root_.CuspForm.levelRaise_one] at this
+
+/-- **Orthogonality to `cuspFormsOldOf` is tested on the level-raises.** A cusp form of level
+`N` is Petersson-orthogonal to `cuspFormsOldOf N k P` exactly when it is orthogonal to `V_d g`
+for every cusp form `g` of a level `M` with `P M`. -/
+theorem mem_peterssonOrthogonal_cuspFormsOldOf_iff [NeZero N]
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} :
+    f ∈ CuspForm.peterssonOrthogonal (cuspFormsOldOf N k P) ↔
+      ∀ (M d : ℕ) (h : d * M ∣ N), P M →
+        ∀ g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
+          haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
+          peterssonInnerCosets
+            (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g) f = 0 := by
+  refine ⟨fun hf M d h hP g ↦ CuspForm.mem_peterssonOrthogonal_iff.mp hf _
+    (levelRaise_mem_cuspFormsOldOf h hP k g), fun h ↦ ?_⟩
+  rw [CuspForm.mem_peterssonOrthogonal_iff_le_ker]
+  refine cuspFormsOldOf_le fun M d hdvd hP g ↦ ?_
+  rw [LinearMap.mem_ker, CuspForm.peterssonInnerCosetsₛₗ_apply_apply,
+    ← peterssonInnerCosets_conj_symm, h M d hdvd hP g, map_zero]
+
 /-! ### The old subspace -/
 
 /-- The **old subspace** `S_k(Γ₁(N))ᵒˡᵈ`: the subspace of `S_k(Γ₁(N))` spanned by the images of
@@ -107,11 +179,12 @@ the level-raising operators `V_d : S_k(Γ₁(M)) → S_k(Γ₁(N))` over all pai
 condition `M ≠ N` removes exactly the identity operator at level `N`. -/
 def cuspFormsOld (N : ℕ) [NeZero N] (k : ℤ) :
     Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
-  ⨆ (M : ℕ) (d : ℕ) (h : d * M ∣ N ∧ M ≠ N),
-    have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
-    LinearMap.range (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd h.1))
+  cuspFormsOldOf N k (· ≠ N)
 
-variable {M d N : ℕ}
+/-- Defining equation for the sealed `cuspFormsOld`: it is `cuspFormsOldOf` for the proper
+divisor levels. -/
+lemma cuspFormsOld_def (N : ℕ) [NeZero N] (k : ℤ) :
+    cuspFormsOld N k = cuspFormsOldOf N k (· ≠ N) := (rfl)
 
 /-- **Introduction rule for the old subspace**: every level-raise from a proper divisor level
 is old. -/
@@ -119,9 +192,7 @@ theorem levelRaise_mem_cuspFormsOld [NeZero N] (h : d * M ∣ N) (hM : M ≠ N)
     (k : ℤ) (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
     haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
     CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f ∈ cuspFormsOld N k :=
-  let _ := NeZero.of_dvd (dvd_of_mul_right_dvd h)
-  Submodule.mem_iSup_of_mem M (Submodule.mem_iSup_of_mem d
-    (Submodule.mem_iSup_of_mem ⟨h, hM⟩ ⟨f, CuspForm.levelRaiseₗ_apply d _ f⟩))
+  levelRaise_mem_cuspFormsOldOf h hM k f
 
 /-- **Elimination rule for the old subspace**: a subspace containing every level-raise from a
 proper divisor level contains the whole old subspace. -/
@@ -130,23 +201,16 @@ theorem cuspFormsOld_le [NeZero N] {V : Submodule ℂ (CuspForm ((Gamma1 N).map 
       ∀ f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
         haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
         CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f ∈ V) :
-    cuspFormsOld N k ≤ V := by
-  refine iSup_le fun M ↦ iSup_le fun d ↦ iSup_le fun h ↦ ?_
-  have := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
-  rintro _ ⟨f, rfl⟩
-  rw [CuspForm.levelRaiseₗ_apply]
-  exact hV M d h.1 h.2 f
+    cuspFormsOld N k ≤ V :=
+  cuspFormsOldOf_le hV
 
 /-- The restriction to level `N` of a cusp form of proper divisor level `M` is old: it is the
 level-raise `V₁`. -/
 theorem restrict_mem_cuspFormsOld [NeZero N] (h : M ∣ N) (hM : M ≠ N) (k : ℤ)
     (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
     _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
-      cuspFormsOld N k := by
-  have h1 : 1 * M ∣ N := by rwa [one_mul]
-  have := levelRaise_mem_cuspFormsOld h1 hM k f
-  -- At `d = 1`, level-raising is exactly restriction along the subgroup inclusion.
-  rwa [_root_.CuspForm.levelRaise_one] at this
+      cuspFormsOld N k :=
+  restrict_mem_cuspFormsOldOf h hM k f
 
 /-- **Level one has no oldforms**: `1` has no proper divisors. -/
 @[simp]
@@ -220,13 +284,8 @@ theorem mem_cuspFormsNew_iff [NeZero N] {f : CuspForm ((Gamma1 N).map (mapGL ℝ
         haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
         peterssonInnerCosets
           (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g) f = 0 := by
-  rw [cuspFormsNew]
-  refine ⟨fun hf M d h hM g ↦ CuspForm.mem_peterssonOrthogonal_iff.mp hf _
-    (levelRaise_mem_cuspFormsOld h hM k g), fun h ↦ ?_⟩
-  rw [CuspForm.mem_peterssonOrthogonal_iff_le_ker]
-  refine cuspFormsOld_le fun M d hdvd hM g ↦ ?_
-  rw [LinearMap.mem_ker, CuspForm.peterssonInnerCosetsₛₗ_apply_apply,
-    ← peterssonInnerCosets_conj_symm, h M d hdvd hM g, map_zero]
+  rw [cuspFormsNew_def, cuspFormsOld_def]
+  exact mem_peterssonOrthogonal_cuspFormsOldOf_iff
 
 /-- **The old and new subspaces meet only in `0`**, by positive definiteness of the Petersson
 product. -/

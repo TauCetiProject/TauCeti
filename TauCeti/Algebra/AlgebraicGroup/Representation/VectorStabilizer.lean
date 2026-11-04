@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
@@ -52,6 +54,10 @@ zero that the centralizer has dimension `dim ker (ad x)`.
 * `TauCeti.Comodule.matrixCoefficient_sub_algebraMap_mem_stabilizerHopfIdeal` and
   `TauCeti.Comodule.stabilizerHopfIdeal_le_iff`: its defining equations, and its universal property
   among Hopf ideals.
+* `TauCeti.Comodule.basePointsRepresentation_prodTrivial`: rational points act on `M × k`
+  through `M`, fixing the trivial coordinate.
+* `TauCeti.Comodule.stabilizerHopfIdeal_basePointsRepresentation`: acting on the vector
+  conjugates its scheme-theoretic stabilizer.
 * `TauCeti.Comodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `v` is fixed.
 * `TauCeti.Comodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff` and
   `TauCeti.Comodule.lieSubalgebra_stabilizerHopfIdeal`: its Lie algebra is the annihilator of `v`
@@ -135,25 +141,43 @@ private theorem baseChange_snd_endOfPoint {A : Type*} [CommRing A] [Algebra k A]
   let : Comodule k H k := trivial
   simpa [endOfPoint_trivial] using LinearMap.congr_fun (baseChange_comp_endOfPoint sndHom g) x
 
+/-- Points act on the first factor of `M × k` through their action on `M`. -/
+private theorem baseChange_fst_endOfPoint {A : Type*} [CommRing A] [Algebra k A]
+    (g : H →ₐ[k] A) (x : A ⊗[k] (M × k)) :
+    (LinearMap.fst k M k).baseChange A (endOfPoint (M × k) g x) =
+      endOfPoint M g ((LinearMap.fst k M k).baseChange A x) :=
+  LinearMap.congr_fun (baseChange_comp_endOfPoint fstHom g) x
+
+/-- A rational point acts on `M × k` through its action on `M`, fixing the trivial
+coordinate. -/
+@[simp]
+theorem basePointsRepresentation_prodTrivial (g : WithConv (H →ₐ[k] k)) (v : M) (c : k) :
+    basePointsRepresentation (H := H) (M × k) g (v, c) =
+      (basePointsRepresentation (H := H) M g v, c) := by
+  have hfst := baseChange_fst_endOfPoint g.ofConv (1 ⊗ₜ[k] (v, c))
+  have hsnd := baseChange_snd_endOfPoint g.ofConv (1 ⊗ₜ[k] (v, c))
+  simp only [endOfPoint_tmul, one_smul, endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation,
+    LinearMap.baseChange_tmul, LinearMap.fst_apply, LinearMap.snd_apply] at hfst hsnd
+  exact Prod.ext (by simpa using congrArg (TensorProduct.lid k M) hfst)
+    (by simpa using congrArg (TensorProduct.lid k k) hsnd)
+
 /-- The vector `v` is fixed by the action of an `A`-point exactly when `(v, 1)` is. -/
 private theorem endOfPoint_prodTrivial_eq_iff (v : M) {A : Type*} [CommRing A] [Algebra k A]
     (g : H →ₐ[k] A) :
     endOfPoint (M × k) g (1 ⊗ₜ[k] (v, 1)) = 1 ⊗ₜ[k] (v, 1) ↔
       endOfPoint M g (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
   let : Comodule k H k := trivial
-  have hfst (x : A ⊗[k] (M × k)) :
-      (LinearMap.fst k M k).baseChange A (endOfPoint (M × k) g x) =
-        endOfPoint M g ((LinearMap.fst k M k).baseChange A x) :=
-    LinearMap.congr_fun (baseChange_comp_endOfPoint fstHom g) x
   -- The two projections jointly detect equality, through `A ⊗ (M × k) ≃ (A ⊗ M) × (A ⊗ k)`.
   have hprod (x : A ⊗[k] (M × k)) : TensorProduct.prodRight k k A M k x =
       ((LinearMap.fst k M k).baseChange A x, (LinearMap.snd k M k).baseChange A x) := by
     induction x using TensorProduct.inductionOn with
     | tmul a m => simp
     | add x y hx hy => simp [hx, hy]
-  refine ⟨fun h ↦ by simpa using (hfst _).symm.trans congr((LinearMap.fst k M k).baseChange A $h),
+  refine ⟨fun h ↦ by
+      simpa using (baseChange_fst_endOfPoint g _).symm.trans
+        congr((LinearMap.fst k M k).baseChange A $h),
     fun h ↦ (TensorProduct.prodRight k k A M k).injective ?_⟩
-  rw [hprod, hprod, hfst, baseChange_snd_endOfPoint]
+  rw [hprod, hprod, baseChange_fst_endOfPoint, baseChange_snd_endOfPoint]
   simpa using h
 
 /-- An algebra-valued point lies in the stabilizer of `v` exactly when it fixes `1 ⊗ v`. -/
@@ -176,16 +200,23 @@ theorem stabilizerHopfIdeal_le_ker_iff (v : M) {A : Type*} [CommRing A] [Algebra
   have ha1 : a = 1 := by simpa using congrArg (TensorProduct.rid k A) h1
   rw [← ha, ha1, one_smul]
 
+/-- An algebra-valued point lies in the stabilizer precisely when it fixes the constant
+extension of the vector. The value algebra may be nonreduced. -/
+theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint (v : M)
+    {A : Type*} [CommRing A] [Algebra k A] (g : WithConv (H →ₐ[k] A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+        (stabilizerHopfIdeal k H v) (CommAlgCat.of k A) ↔
+      endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, ← stabilizerHopfIdeal_le_ker_iff]
+  exact ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
+
 /-- A rational point lies in the stabilizer of `v` exactly when it fixes `v`. -/
 theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff (v : M)
     (g : WithConv (H →ₐ[k] k)) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
         (stabilizerHopfIdeal k H v) (CommAlgCat.of k k) ↔
       basePointsRepresentation (H := H) M g v = v := by
-  have hker : (∀ h ∈ stabilizerHopfIdeal k H v, g.ofConv h = 0) ↔
-      (stabilizerHopfIdeal k H v).toIdeal ≤ RingHom.ker g.ofConv :=
-    ⟨fun h _ hx ↦ h _ hx, fun h _ hx ↦ h hx⟩
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, hker, stabilizerHopfIdeal_le_ker_iff,
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
     basePointsRepresentation_apply, ← (TensorProduct.lid k M).injective.eq_iff,
     TensorProduct.lid_tmul, one_smul]
 
@@ -277,6 +308,36 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (v : M)
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
     rw [map_smul, hd, h, Prod.mk_zero_zero, smul_zero]
     exact zero_mem _
+
+/-- Acting on a vector by a rational point conjugates its scheme-theoretic stabilizer.
+This is an equality of defining Hopf ideals, including their equations on nonreduced
+coefficient algebras. -/
+theorem stabilizerHopfIdeal_basePointsRepresentation (v : M)
+    (g : WithConv (H →ₐ[k] k)) :
+    stabilizerHopfIdeal k H (basePointsRepresentation (H := H) M g v) =
+      (stabilizerHopfIdeal k H v).conjugate g := by
+  apply HopfIdeal.eq_conjugate_of_forall_mem_iff g
+  intro A p
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]
+  have hconj (q : WithConv (H →ₐ[k] A)) (a : WithConv (H →ₐ[k] k)) :
+      (AlgHom.mapValue (H := H) (Algebra.ofId k A) a * q *
+        (AlgHom.mapValue (H := H) (Algebra.ofId k A) a)⁻¹).ofConv =
+      q.ofConv.comp (HopfAlgebra.pointConjugationAlgHom a) := by
+    exact congrArg WithConv.ofConv (HopfAlgebra.comp_pointConjugationAlgHom a q).symm
+  constructor
+  · intro hp
+    rw [hconj] at hp
+    have hp' := endOfPoint_one_tmul_basePointsRepresentation_of_conj
+      (V := M) p.ofConv g⁻¹ (y := 1) (by simpa only [inv_inv] using hp)
+    simpa only [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
+      one_apply_eq_self] using hp'
+  · intro hp
+    apply endOfPoint_one_tmul_basePointsRepresentation_of_conj
+      (V := M) _ g (y := 1)
+    rw [← hconj]
+    simpa only [map_inv, inv_inv, mul_assoc, inv_mul_cancel_left, inv_mul_cancel,
+      mul_one] using hp
 
 section Orbit
 

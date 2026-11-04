@@ -6,14 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import TauCeti.Algebra.Homology.HomotopyCategory.PreservesHomology
+public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
 /-!
-# Additivity of right derived functors
+# Additivity of right derived functors and commutation with exact functors
 
 Injective resolutions are additive after passing to the homotopy category: the sum of
 two lifts is a lift of the sum, and lifts of the same morphism are homotopic. Thus right
 derived functors of additive functors are additive. If the functor is exact, its
 positive right derived functors vanish.
+
+Right derived functors also commute with exact functors which preserve injective objects
+(`CategoryTheory.Functor.rightDerivedCompIso`): if `F ⋙ G ≅ H ⋙ F'` where `G` preserves
+homology and `H` preserves homology and injective objects, then `RⁿF ⋙ G ≅ H ⋙ RⁿF'`.
 
 The proof uses Mathlib's `InjectiveResolution.descHomotopy`, the uniqueness theorem for
 lifts between injective resolutions.
@@ -58,5 +64,33 @@ theorem Functor.isZero_rightDerived_succ (F : C ⥤ D) [F.Additive] [F.Preserves
     ← HomologicalComplex.exactAt_iff_isZero_homology,
     HomologicalComplex.exactAt_iff' _ q (q + 1) (q + 1 + 1) (by simp) (by simp)]
   exact (I.exact_succ q).map F
+
+/-- **Right derived functors commute with exact functors preserving injective objects.**
+Let `F : C ⥤ D` and `F' : C' ⥤ D'` be additive functors, `G : D ⥤ D'` an additive functor
+preserving homology, and `H : C ⥤ C'` an additive functor preserving homology and injective
+objects, with `F ⋙ G ≅ H ⋙ F'`. Then `RⁿF ⋙ G ≅ H ⋙ RⁿF'` for every `n`.
+
+Indeed `H` sends an injective resolution of `X` to an injective resolution of `H.obj X`, and `G`
+commutes with taking homology. -/
+noncomputable def Functor.rightDerivedCompIso {C' : Type*} [Category* C'] [Abelian C']
+    [HasInjectiveResolutions C'] {D' : Type*} [Category* D'] [Abelian D']
+    (F : C ⥤ D) [F.Additive] (G : D ⥤ D') [G.Additive] [G.PreservesHomology]
+    (H : C ⥤ C') [H.Additive] [H.PreservesInjectiveObjects] [H.PreservesHomology]
+    (F' : C' ⥤ D') [F'.Additive] (e : F ⋙ G ≅ H ⋙ F') (n : ℕ) :
+    F.rightDerived n ⋙ G ≅ H ⋙ F'.rightDerived n :=
+  -- `RⁿF` is `injectiveResolutions C ⋙ F.mapHomotopyCategory _ ⋙ homologyFunctor _ _ n`
+  Functor.associator _ _ _ ≪≫
+    isoWhiskerLeft (injectiveResolutions C ⋙ F.mapHomotopyCategory _)
+      (G.mapHomotopyCategoryCompHomologyFunctorIso _ n).symm ≪≫
+    Functor.associator _ _ _ ≪≫
+    isoWhiskerLeft (injectiveResolutions C)
+      ((Functor.associator _ _ _).symm ≪≫
+        isoWhiskerRight (Functor.mapHomotopyCategoryCompIso e _ ≪≫
+          (Functor.mapHomotopyCategoryCompIso (Iso.refl (H ⋙ F')) _).symm) _ ≪≫
+        Functor.associator _ _ _) ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    isoWhiskerRight H.injectiveResolutionsCompIso _ ≪≫
+    Functor.associator _ _ _ ≪≫
+    isoWhiskerLeft H (Functor.associator _ _ _).symm
 
 end CategoryTheory

@@ -40,6 +40,8 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
 
 ## Main results
 
+* `TauCeti.Assignment.map_walkAssignment`: additive changes of coefficients commute with
+  weighting a walk.
 * `TauCeti.excessAt_walkAssignment`: a walk from `s` to `t` weighted by `q` has excess `q` at `t`
   and `-q` at `s`.
 * `TauCeti.walkAssignment_mem_Icc`: a walk repeating no arrow, weighted by `q`, lies between zero
@@ -93,6 +95,15 @@ open Classical in
 theorem walkAssignment_apply {s t : V} (p : ArrowWalk Q s t) (q : K) {x y : V} (e : Q x y) :
     walkAssignment p q e = p.arrows.count ⟨_, _, e⟩ • q :=
   (rfl)
+
+/-- Additive coefficient maps commute with weighting a walk. -/
+@[simp]
+theorem Assignment.map_walkAssignment {L F : Type*} [AddMonoid L] [FunLike F K L]
+    [AddMonoidHomClass F K L] (φ : F) {s t : V} (p : ArrowWalk Q s t) (q : K) :
+    (walkAssignment p q).map φ = walkAssignment p (φ q) := by
+  classical
+  funext x y e
+  simp [walkAssignment_apply]
 
 @[simp]
 theorem walkAssignment_nil (s : V) (q : K) :

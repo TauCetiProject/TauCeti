@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.ContinuousOn
+public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
@@ -50,6 +51,8 @@ such a family of affine pieces.
 * `TauCeti.IsPiecewiseAffineOn`: a finite polyhedral decomposition on whose cells the map is
   affine.
 * `TauCeti.IsPLOn`: the localisation of the previous predicate, the piecewise-linear property.
+* `TauCeti.IsPLWithinAt`: its germ at a point, the property lifted to charted spaces in
+  `TauCeti.Geometry.Manifold.PLGroupoid.Map` to define PL maps between PL manifolds.
 
 ## Main results
 
@@ -61,8 +64,15 @@ such a family of affine pieces.
   argument.
 * `TauCeti.IsPLOn.mono`, `TauCeti.IsPLOn.congr`, `TauCeti.isPLOn_of_locally`,
   `TauCeti.IsPLOn.comp`: the four closure properties a `Pregroupoid` property must have.
+* `TauCeti.isPLOn_iff_forall_isPLWithinAt`, `TauCeti.isPLWithinAt_inter`,
+  `TauCeti.IsPLWithinAt.congr`, `TauCeti.IsPLWithinAt.comp`: the germ form and the closure
+  properties which make it a local invariant property of charted spaces.
 * `ContinuousAffineMap.isPLOn_affineGraph`: the graph of a continuous affine map is piecewise
   affine on every subset of its domain.
+* `TauCeti.IsPLOn.exists_eqOn_Icc`: a piecewise-linear map of the line is affine on each side of
+  every point of the interior of its domain.
+* `TauCeti.IsPLOn.exists_image_Icc_eq_affineSegment`: near each point, an injective
+  piecewise-linear curve is two segments from the image of the point, meeting only there.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
@@ -249,6 +259,97 @@ theorem IsPLOn.comp {t : Set F} (hg : IsPLOn g t) (hf : IsPLOn f s) (hst : s ⊆
   exact ⟨V ∩ (s ∩ f ⁻¹' W), inter_mem hV (inter_mem self_mem_nhdsWithin hpre),
     hPAg.comp (hPAf.mono inter_subset_left) fun _ hy => hy.2.2⟩
 
+/-! ### Piecewise linearity at a point
+
+The germ form of `TauCeti.IsPLOn`, as `ContDiffWithinAt` is to `ContDiffOn`: `f` is piecewise
+affine on a neighbourhood of `x` within `insert x s`. Asking for `insert x s` rather than `s` pins
+down the value of `f` at `x` even when `x ∉ s`, which is what the lift of the property to charted
+spaces needs (`TauCeti.PLWithinAtProp`). -/
+
+/-- `IsPLWithinAt f s x` says that `f` is piecewise affine on a neighbourhood of `x` within
+`insert x s`. -/
+def IsPLWithinAt (f : E → F) (s : Set E) (x : E) : Prop :=
+  ∃ V ∈ 𝓝[insert x s] x, IsPiecewiseAffineOn f V
+
+/-- Piecewise linearity at a point, unfolded: a piecewise affine neighbourhood of `x` within `s`
+which contains `x`. -/
+theorem isPLWithinAt_iff {x : E} :
+    IsPLWithinAt f s x ↔ ∃ V, x ∈ V ∧ V ∈ 𝓝[s] x ∧ IsPiecewiseAffineOn f V := by
+  simp only [IsPLWithinAt, mem_nhdsWithin_insert]
+  exact ⟨fun ⟨V, ⟨hx, hV⟩, h⟩ => ⟨V, hx, hV, h⟩, fun ⟨V, hx, hV, h⟩ => ⟨V, ⟨hx, hV⟩, h⟩⟩
+
+/-- Piecewise linearity within the whole space at a point: a piecewise affine neighbourhood. -/
+theorem isPLWithinAt_univ {x : E} :
+    IsPLWithinAt f univ x ↔ ∃ V ∈ 𝓝 x, IsPiecewiseAffineOn f V := by
+  rw [IsPLWithinAt, insert_eq_of_mem (mem_univ x), nhdsWithin_univ]
+
+/-- A map piecewise linear on `s` is piecewise linear within `s` at each point of `s`. -/
+theorem IsPLOn.isPLWithinAt {x : E} (h : IsPLOn f s) (hx : x ∈ s) : IsPLWithinAt f s x := by
+  rw [IsPLWithinAt, insert_eq_of_mem hx]
+  exact h x hx
+
+/-- Piecewise linearity on a set is piecewise linearity within the set at each of its points. -/
+theorem isPLOn_iff_forall_isPLWithinAt : IsPLOn f s ↔ ∀ x ∈ s, IsPLWithinAt f s x :=
+  ⟨fun h _ hx => h.isPLWithinAt hx, fun h x hx => by
+    simpa only [IsPLWithinAt, insert_eq_of_mem hx] using h x hx⟩
+
+/-- A continuous affine map is piecewise linear within every set at every point. -/
+theorem _root_.ContinuousAffineMap.isPLWithinAt (A : E →ᴬ[ℝ] F) (s : Set E) (x : E) :
+    IsPLWithinAt (⇑A) s x :=
+  ⟨univ, univ_mem, isPiecewiseAffineOn_continuousAffineMap A univ⟩
+
+/-- A map piecewise linear within `s` at `x` is continuous within `insert x s` at `x`. -/
+theorem IsPLWithinAt.continuousWithinAt_insert {x : E} (h : IsPLWithinAt f s x) :
+    ContinuousWithinAt f (insert x s) x := by
+  obtain ⟨V, hV, hPA⟩ := h
+  exact (hPA.continuousOn x (mem_of_mem_nhdsWithin (mem_insert x s) hV)).mono_of_mem_nhdsWithin hV
+
+/-- A map piecewise linear within `s` at `x` is continuous within `s` at `x`. -/
+theorem IsPLWithinAt.continuousWithinAt {x : E} (h : IsPLWithinAt f s x) :
+    ContinuousWithinAt f s x :=
+  continuousWithinAt_insert_self.1 h.continuousWithinAt_insert
+
+/-- Piecewise linearity within `s` at `x` passes to any set `t` of which `s` is a neighbourhood
+within at `x`. -/
+theorem IsPLWithinAt.mono_of_mem_nhdsWithin {x : E} (h : IsPLWithinAt f s x)
+    (hst : s ∈ 𝓝[t] x) : IsPLWithinAt f t x := by
+  obtain ⟨V, hV, hPA⟩ := h
+  refine ⟨V, ?_, hPA⟩
+  rw [nhdsWithin_insert] at hV ⊢
+  exact (sup_le_sup_left (nhdsWithin_le_of_mem hst) _) hV
+
+/-- Piecewise linearity within a set at a point passes to subsets. -/
+theorem IsPLWithinAt.mono {x : E} (h : IsPLWithinAt f s x) (hts : t ⊆ s) : IsPLWithinAt f t x :=
+  h.mono_of_mem_nhdsWithin (mem_of_superset self_mem_nhdsWithin hts)
+
+/-- Piecewise linearity within `s` at `x` is unchanged by intersecting `s` with a neighbourhood
+of `x`. -/
+theorem isPLWithinAt_inter {x : E} {u : Set E} (hu : u ∈ 𝓝 x) :
+    IsPLWithinAt f (s ∩ u) x ↔ IsPLWithinAt f s x :=
+  ⟨fun h => h.mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds hu)),
+    fun h => h.mono inter_subset_left⟩
+
+/-- Piecewise linearity within `s` at `x` only depends on the values of the map on `s` and at
+`x`. -/
+theorem IsPLWithinAt.congr {x : E} (h : IsPLWithinAt f s x) (h₁ : EqOn f' f s) (hx : f' x = f x) :
+    IsPLWithinAt f' s x := by
+  obtain ⟨V, hV, hPA⟩ := h
+  refine ⟨V ∩ insert x s, inter_mem hV self_mem_nhdsWithin,
+    (hPA.mono inter_subset_left).congr fun y hy => ?_⟩
+  rcases hy.2 with rfl | hy
+  · exact hx
+  · exact h₁ hy
+
+/-- Maps piecewise linear at a point compose. -/
+theorem IsPLWithinAt.comp {x : E} {t : Set F} (hg : IsPLWithinAt g t (f x))
+    (hf : IsPLWithinAt f s x) (hst : MapsTo f s t) : IsPLWithinAt (g ∘ f) s x := by
+  have hpre : ∀ W ∈ 𝓝[insert (f x) t] (f x), f ⁻¹' W ∈ 𝓝[insert x s] x := fun _ hW =>
+    hf.continuousWithinAt_insert.tendsto_nhdsWithin (hst.insert x) hW
+  obtain ⟨V, hV, hPAf⟩ := hf
+  obtain ⟨W, hW, hPAg⟩ := hg
+  exact ⟨V ∩ f ⁻¹' W, inter_mem hV (hpre W hW),
+    hPAg.comp (hPAf.mono inter_subset_left) fun _ hy => hy.2⟩
+
 section AffineTransport
 
 variable {E' F' : Type*} [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
@@ -302,10 +403,12 @@ theorem isPLOn_of_locallyFinite {ι : Type*} {C : ι → Set E} {A : ι → (E �
 
 /-! ### Piecewise-linear maps of the line
 
-The two-piece criterion on `ℝ`, and the absolute value as a piecewise-linear map that is not
-affine. The criterion is what the concrete examples of the PL groupoid are built from, and the
-absolute value pins down that `TauCeti.IsPLOn` is strictly weaker than affineness rather than a
-roundabout way of saying it. -/
+The two-piece criterion on `ℝ`, its local converse, and the absolute value as a piecewise-linear
+map that is not affine. The criterion is what the concrete examples of the PL groupoid are built
+from; the converse, that a piecewise-linear map of the line has two affine pieces at each point, is
+the local picture of a piecewise-linear curve, which for an injective curve is two segments meeting
+only at the point; and the absolute value pins down that `TauCeti.IsPLOn` is strictly weaker than
+affineness rather than a roundabout way of saying it. -/
 
 /-- A map of `ℝ` that agrees with a continuous affine map on each of the two closed half-lines is
 piecewise linear. -/
@@ -336,6 +439,76 @@ theorem isPLOn_of_eqOn_Iic_of_eqOn_Ici {h : ℝ → ℝ} {A B : ℝ →ᴬ[ℝ] 
   · rintro (_ | _) x ⟨-, hx⟩
     · exact hB hx
     · exact hA hx
+
+/-- **A piecewise-linear map of the line is affine on each side of a point.** If `g` is piecewise
+linear on a neighbourhood of `t`, then for some `ε > 0` it agrees with a continuous affine map on
+`[t - ε, t]` and with another on `[t, t + ε]`. -/
+theorem IsPLOn.exists_eqOn_Icc {g : ℝ → F} {s : Set ℝ} {t : ℝ} (hg : IsPLOn g s)
+    (hs : s ∈ 𝓝 t) :
+    ∃ ε > 0, ∃ A B : ℝ →ᴬ[ℝ] F, EqOn g A (Icc (t - ε) t) ∧ EqOn g B (Icc t (t + ε)) := by
+  obtain ⟨V, hV, n, C, A, hC, hcov, heq⟩ := hg t (mem_of_mem_nhds hs)
+  rw [nhdsWithin_eq_nhds.2 hs] at hV
+  obtain ⟨δ, hδ, hδV⟩ := Metric.mem_nhds_iff.1 hV
+  rw [Real.ball_eq_Ioo] at hδV
+  -- Along either one-sided neighbourhood filter of `t` some cell is met frequently; being closed,
+  -- that cell contains `t`.
+  have key (l : Filter ℝ) (hl : l ≤ 𝓝 t) (hlt : Ioo (t - δ) (t + δ) ∈ l) [l.NeBot] :
+      ∃ i, t ∈ C i ∧ ∃ᶠ x in l, x ∈ Ioo (t - δ) (t + δ) ∩ C i := by
+    have hev : ∀ᶠ x in l, ∃ i, x ∈ Ioo (t - δ) (t + δ) ∩ C i :=
+      mem_of_superset hlt fun x hx => (mem_iUnion.1 (hcov (hδV hx))).imp fun _ hi => ⟨hx, hi⟩
+    obtain ⟨i, hi⟩ := frequently_exists.1 hev.frequently
+    exact ⟨i, (hC i).isClosed.mem_of_frequently_of_tendsto (hi.mono fun _ h => h.2) hl, hi⟩
+  -- Being convex, a cell containing `t` and a nearby point `x` contains the interval between
+  -- them, on which `g` is therefore affine.
+  have hcell {i : Fin n} {x : ℝ} (ht : t ∈ C i) (hx : x ∈ Ioo (t - δ) (t + δ) ∩ C i) :
+      EqOn g (A i) (uIcc t x) := fun y hy =>
+    heq i ⟨hδV ((ordConnected_Ioo.uIcc_subset ⟨by linarith, by linarith⟩ hx.1) hy),
+      (convex_iff_ordConnected.1 (hC i).convex).uIcc_subset ht hx.2 hy⟩
+  have hIoo : Ioo (t - δ) (t + δ) ∈ 𝓝 t := Ioo_mem_nhds (by linarith) (by linarith)
+  obtain ⟨i, hti, hi⟩ := key (𝓝[<] t) nhdsWithin_le_nhds (nhdsWithin_le_nhds hIoo)
+  obtain ⟨j, htj, hj⟩ := key (𝓝[>] t) nhdsWithin_le_nhds (nhdsWithin_le_nhds hIoo)
+  obtain ⟨a, ha, hat⟩ := (hi.and_eventually self_mem_nhdsWithin).exists
+  obtain ⟨b, hb, htb⟩ := (hj.and_eventually self_mem_nhdsWithin).exists
+  refine ⟨min (t - a) (b - t), lt_min (sub_pos.2 hat) (sub_pos.2 htb), A i, A j, ?_, ?_⟩
+  · refine (hcell hti ha).mono fun y hy => ?_
+    rw [uIcc_of_ge (le_of_lt hat)]
+    exact ⟨by linarith [hy.1, min_le_left (t - a) (b - t)], hy.2⟩
+  · refine (hcell htj hb).mono fun y hy => ?_
+    rw [uIcc_of_le (le_of_lt htb)]
+    exact ⟨hy.1, by linarith [hy.2, min_le_right (t - a) (b - t)]⟩
+
+/-- **An injective piecewise-linear curve is two segments near each point.** If `g` is piecewise
+linear and injective near `t`, then for some `ε > 0` it maps `[t - ε, t]` and `[t, t + ε]` onto
+two nondegenerate segments from `g t` meeting only at `g t`. -/
+theorem IsPLOn.exists_image_Icc_eq_affineSegment {g : ℝ → F} {s D : Set ℝ} {t : ℝ}
+    (hg : IsPLOn g s) (hs : s ∈ 𝓝 t) (hD : D ∈ 𝓝 t) (hinj : InjOn g D) :
+    ∃ ε > 0, Icc (t - ε) (t + ε) ⊆ D ∧
+      g '' Icc (t - ε) t = affineSegment ℝ (g t) (g (t - ε)) ∧
+      g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) ∧
+      g (t - ε) ≠ g t ∧ g (t + ε) ≠ g t ∧
+      affineSegment ℝ (g t) (g (t - ε)) ∩ affineSegment ℝ (g t) (g (t + ε)) = {g t} := by
+  obtain ⟨ε₁, hε₁, A, B, hA, hB⟩ := hg.exists_eqOn_Icc hs
+  obtain ⟨r, hr, hrD⟩ := Metric.mem_nhds_iff.1 hD
+  set ε := min ε₁ (r / 2)
+  have hε : 0 < ε := lt_min hε₁ (half_pos hr)
+  have hεε₁ : ε ≤ ε₁ := min_le_left _ _
+  have hεr : ε ≤ r / 2 := min_le_right _ _
+  have hmem {u : ℝ} (h₁ : t - ε ≤ u) (h₂ : u ≤ t + ε) : u ∈ D :=
+    hrD <| by rw [Real.ball_eq_Ioo]; exact ⟨by linarith, by linarith⟩
+  have himA : g '' Icc (t - ε) t = affineSegment ℝ (g t) (g (t - ε)) := by
+    rw [(hA.mono (Icc_subset_Icc (by linarith) le_rfl)).image_Icc_eq_segment (by linarith),
+      affineSegment_eq_segment, segment_symm]
+  have himB : g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) := by
+    rw [(hB.mono (Icc_subset_Icc le_rfl (by linarith))).image_Icc_eq_segment (by linarith),
+      affineSegment_eq_segment]
+  have hsub : Icc (t - ε) (t + ε) ⊆ D := fun u hu => hmem hu.1 hu.2
+  refine ⟨ε, hε, hsub, himA, himB,
+    hinj.ne (hmem le_rfl (by linarith)) (hmem (by linarith) (by linarith)) (by linarith),
+    hinj.ne (hmem (by linarith) le_rfl) (hmem (by linarith) (by linarith)) (by linarith), ?_⟩
+  rw [← himA, ← himB, ← hinj.image_inter
+      ((Icc_subset_Icc le_rfl (by linarith)).trans hsub)
+      ((Icc_subset_Icc (by linarith) le_rfl).trans hsub),
+    Icc_inter_Icc_eq_singleton (by linarith) (by linarith), image_singleton]
 
 /-- A map that fails to send a midpoint to the corresponding midpoint agrees with no continuous
 affine map. This is the certificate used below to show that a piecewise-linear map need not be

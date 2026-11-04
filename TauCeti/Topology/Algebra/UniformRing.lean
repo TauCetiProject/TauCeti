@@ -7,13 +7,15 @@ module
 
 public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.Topology.Algebra.UniformRing
+public import TauCeti.Topology.Algebra.Star.Completion
 
 /-!
 # Completions of uniform topological rings
 
 Results about `UniformSpace.Completion` as a ring: extensionality for continuous ring
-homomorphisms, comparison across equal uniformities, and the identification of a complete
-Hausdorff ring with its completion.
+homomorphisms, comparison across equal uniformities, the identification of a complete
+Hausdorff ring with its completion, and the ring and star structures on completions of nonunital
+rings.
 
 `UniformSpace.Completion.ringHom_ext_of_continuous` is `UniformSpace.Completion.ext` for ring
 homomorphisms: two continuous ring homomorphisms out of `Completion R` that agree after composing
@@ -37,6 +39,21 @@ uniformly continuous because it *is* the canonical map into the completion. Over
 `UniformSpace.Completion.completeAlgEquivSelf`. Uniform continuity of the action is not a
 convenience: it is what makes the completion an `R`-algebra in the first place, since that is
 what `UniformSpace.Completion.algebra` requires.
+
+## Completions of nonunital rings and star structures
+
+Mathlib's `UniformSpace.Completion.ring` completes unital topological rings. Completions of
+nonunital rings arise as soon as an algebra without unit is completed, for example the convolution
+algebra of compactly supported functions on a noncompact group. Following Mathlib's construction
+for rings, multiplication extends by continuity to the completion of any uniform space with a
+multiplication, `UniformSpace.Completion.instMul`, and the inclusion is multiplicative when
+multiplication is continuous, `UniformSpace.Completion.coe_mul'`. The axioms of a nonunital
+topological ring, and compatibility with scalars, pass to the completion. For a ring with unit
+the multiplication is Mathlib's.
+
+The star operation on the completion of a uniform additive group, and its star monoid and star
+module laws, are in `TauCeti.Topology.Algebra.Star.Completion`. For a nonunital topological ring
+with continuous star, the star ring law passes to the completion as well.
 
 ## Comparison across equal uniformities
 
@@ -76,6 +93,9 @@ maps from a fixed commutative ring into completions.
 * `UniformSpace.Completion.coe_completeRingEquivSelf` and
   `UniformSpace.Completion.coe_completeRingEquivSelf_symm`: the isomorphism is
   `UniformCompletion.completeEquivSelf` and its inverse is the coercion into the completion.
+* `UniformSpace.Completion.instNonUnitalRing` and `UniformSpace.Completion.instStarRing`: the
+  completion of a nonunital topological ring is a nonunital ring, and a star ring when the star
+  operation is continuous.
 * `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf` and
   `UniformSpace.Completion.uniformContinuous_completeRingEquivSelf_symm`: both directions are
   uniformly continuous, hence continuous by `UniformContinuous.continuous`.
@@ -143,6 +163,113 @@ theorem continuous_mapRingEquiv_symm (f : α ≃+* β) (hf : Continuous f) (hf' 
   continuous_map.congr fun x ↦ (mapRingEquiv_symm_apply f hf hf' x).symm
 
 end MapRingEquiv
+
+/-! ## Completions of nonunital rings and star structures -/
+
+noncomputable section NonUnital
+
+open IsDenseInducing Function
+
+/-! ### Multiplication -/
+
+section Mul
+
+variable {α : Type*} [UniformSpace α]
+
+/-- Multiplication on the completion: the extension by continuity of multiplication on the dense
+image of `α`. For a ring with unit it is Mathlib's `UniformSpace.Completion.mul`. -/
+instance instMul [Mul α] : Mul (Completion α) :=
+  ⟨curry <| (isDenseInducing_coe.prodMap isDenseInducing_coe).extend ((↑) ∘ uncurry (· * ·))⟩
+
+/-- The inclusion into the completion is multiplicative, without assuming a unit. -/
+@[norm_cast]
+theorem coe_mul' [Mul α] [ContinuousMul α] (a b : α) :
+    ((a * b : α) : Completion α) = a * b :=
+  ((isDenseInducing_coe.prodMap isDenseInducing_coe).extend_eq
+      ((continuous_coe α).comp continuous_mul) (a, b)).symm
+
+variable [NonUnitalNonAssocRing α] [IsTopologicalRing α] [IsUniformAddGroup α]
+
+/-- Multiplication on the completion of a nonunital topological ring is continuous. -/
+instance instContinuousMulOfNonUnital : ContinuousMul (Completion α) where
+  continuous_mul := by
+    let m := (AddMonoidHom.mul : α →+ α →+ α).compr₂ toCompl
+    have : Continuous fun p : α × α => m p.1 p.2 := (continuous_coe α).comp continuous_mul
+    have di : IsDenseInducing (toCompl : α → Completion α) := isDenseInducing_coe
+    exact (di.extend_Z_bilin di this :)
+
+/-- The completion of a nonunital, nonassociative topological ring is a nonunital,
+nonassociative ring. -/
+instance instNonUnitalNonAssocRing : NonUnitalNonAssocRing (Completion α) where
+  zero_mul a :=
+    Completion.induction_on a (isClosed_eq (by fun_prop) continuous_const)
+      fun a => by rw [← coe_zero, ← coe_mul', zero_mul]
+  mul_zero a :=
+    Completion.induction_on a (isClosed_eq (by fun_prop) continuous_const)
+      fun a => by rw [← coe_zero, ← coe_mul', mul_zero]
+  left_distrib a b c :=
+    Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b c => by rw [← coe_add, ← coe_mul', ← coe_mul', ← coe_mul', ← coe_add, mul_add]
+  right_distrib a b c :=
+    Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b c => by rw [← coe_add, ← coe_mul', ← coe_mul', ← coe_mul', ← coe_add, add_mul]
+
+/-- The completion of a nonunital topological ring is a topological ring. -/
+instance instIsTopologicalRing : IsTopologicalRing (Completion α) where
+
+/-- Scalars that associate with multiplication on `α` associate with it on the completion. -/
+instance instIsScalarTowerMul {R : Type*} [Monoid R] [DistribMulAction R α]
+    [UniformContinuousConstSMul R α] [IsScalarTower R α α] :
+    IsScalarTower R (Completion α) (Completion α) where
+  smul_assoc r a b :=
+    Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b => by
+        simp only [smul_eq_mul]
+        rw [← coe_smul, ← coe_mul', ← coe_mul', ← coe_smul, smul_mul_assoc]
+
+/-- Scalars that commute with multiplication on `α` commute with it on the completion. -/
+instance instSMulCommClassMul {R : Type*} [Monoid R] [DistribMulAction R α]
+    [UniformContinuousConstSMul R α] [SMulCommClass R α α] :
+    SMulCommClass R (Completion α) (Completion α) where
+  smul_comm r a b :=
+    Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b => by
+        simp only [smul_eq_mul]
+        rw [← coe_smul, ← coe_mul', ← coe_mul', ← coe_smul, mul_smul_comm]
+
+end Mul
+
+section NonUnitalRing
+
+variable {α : Type*} [UniformSpace α] [NonUnitalRing α] [IsTopologicalRing α]
+  [IsUniformAddGroup α]
+
+/-- The completion of a nonunital topological ring is a nonunital ring. -/
+instance instNonUnitalRing : NonUnitalRing (Completion α) where
+  __ : NonUnitalNonAssocRing (Completion α) := inferInstance
+  mul_assoc a b c :=
+    Completion.induction_on₃ a b c (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b c => by rw [← coe_mul', ← coe_mul', ← coe_mul', ← coe_mul', mul_assoc]
+
+end NonUnitalRing
+
+/-! ### Star rings -/
+
+section StarRing
+
+variable {α : Type*} [UniformSpace α] [NonUnitalNonAssocRing α] [IsTopologicalRing α]
+  [IsUniformAddGroup α] [StarRing α] [ContinuousStar α]
+
+/-- The completion of a nonunital topological star ring with continuous star is a star ring. -/
+instance instStarRing : StarRing (Completion α) where
+  star_add := star_add
+  star_mul a b :=
+    Completion.induction_on₂ a b (isClosed_eq (by fun_prop) (by fun_prop))
+      fun a b => by rw [← coe_mul', ← coe_star, ← coe_star, ← coe_star, ← coe_mul', star_mul]
+
+end StarRing
+
+end NonUnital
 
 variable (S : Type*) [Ring S] [UniformSpace S] [IsTopologicalRing S] [IsUniformAddGroup S]
   [CompleteSpace S] [T0Space S]

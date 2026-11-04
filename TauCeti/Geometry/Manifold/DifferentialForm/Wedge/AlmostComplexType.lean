@@ -88,6 +88,48 @@ theorem IsOfType.wedgeWith (hμ₁ : ∀ (c : ℂ) a b, μ (c • a) b = c • �
     simp only [coe_wedgeWith, RoughForm.wedgeWith_apply']
     exact (hφ.apply x).pairedWedge hμ₁ hμ₂ (hψ.apply x)⟩
 
+/-- If the right factor has pure type, projecting the wedge shifts the type projection of
+its left factor by that type. -/
+theorem IsOfType.typeProjection_wedgeWith_left
+    (hψ : ψ.IsOfType J p' q')
+    (hμ₁ : ∀ (c : ℂ) a b, μ (c • a) b = c • μ a b)
+    (hμ₂ : ∀ (c : ℂ) a b, μ a (c • b) = c • μ a b)
+    (hpq : p + q = k) (φ : SmoothForm I M F₁ k) :
+    J.typeProjection (p + p') (q + q') (SmoothForm.wedgeWith μ φ ψ) =
+      SmoothForm.wedgeWith μ (J.typeProjection p q φ) ψ := by
+  conv_lhs => rw [← J.sum_typeProjection φ]
+  simp only [map_sum, LinearMap.sum_apply]
+  rw [Finset.sum_eq_single (p, q)]
+  · exact ((J.isOfType_typeProjection hpq φ).wedgeWith hμ₁ hμ₂ hψ).typeProjection_self
+  · intro pq hpq' hne
+    exact ((J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hpq') φ).wedgeWith
+      hμ₁ hμ₂ hψ).typeProjection_of_ne (by
+        intro h
+        obtain ⟨h₁, h₂⟩ := Prod.mk.inj h
+        exact hne (Prod.ext (by omega) (by omega)))
+  · exact fun h ↦ absurd (Finset.mem_antidiagonal.2 hpq) h
+
+/-- If the left factor has pure type, projecting the wedge shifts the type projection of
+its right factor by that type. -/
+theorem IsOfType.typeProjection_wedgeWith_right
+    (hφ : φ.IsOfType J p q)
+    (hμ₁ : ∀ (c : ℂ) a b, μ (c • a) b = c • μ a b)
+    (hμ₂ : ∀ (c : ℂ) a b, μ a (c • b) = c • μ a b)
+    (hpq : p' + q' = l) (ψ : SmoothForm I M F₂ l) :
+    J.typeProjection (p + p') (q + q') (SmoothForm.wedgeWith μ φ ψ) =
+      SmoothForm.wedgeWith μ φ (J.typeProjection p' q' ψ) := by
+  conv_lhs => rw [← J.sum_typeProjection ψ]
+  simp only [map_sum]
+  rw [Finset.sum_eq_single (p', q')]
+  · exact (hφ.wedgeWith hμ₁ hμ₂ (J.isOfType_typeProjection hpq ψ)).typeProjection_self
+  · intro pq hpq' hne
+    exact (hφ.wedgeWith hμ₁ hμ₂
+      (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hpq') ψ)).typeProjection_of_ne (by
+        intro h
+        obtain ⟨h₁, h₂⟩ := Prod.mk.inj h
+        exact hne (Prod.ext (by omega) (by omega)))
+  · exact fun h ↦ absurd (Finset.mem_antidiagonal.2 hpq) h
+
 end SmoothForm
 
 namespace SmoothAlmostComplexStructure

@@ -11,7 +11,8 @@ public import TauCeti.Algebra.Module.GradedModule.Quotient
 /-!
 # The grading of the homology of a homogeneous endomorphism
 
-Let `G` be an internal grading of a module `M` over a ring `R`, indexed by an additive group.
+Let `G` be an internal grading of a module `M` over a ring `R`,
+indexed by an additive monoid with right cancellation.
 Let `d` be a square-zero endomorphism of `M`, linear over a ring `S` acting compatibly with `R`,
 which is homogeneous of some degree `r` for `G`. Then its homology `ker d ⧸ im d` inherits an
 internal grading over `R`: the kernel of `d` carries the grading `TauCeti.InternalGrading.ker`,
@@ -34,7 +35,8 @@ moves every homogeneous piece of the homology by the same degree
 * `TauCeti.InternalGrading.mem_homology_piece_iff`: a homology class is homogeneous of degree `p`
   exactly when it is the class of a cycle of degree `p`, and
   `TauCeti.InternalGrading.homologyπ_mem_homology_piece`: the class of a homogeneous cycle is
-  homogeneous of the same degree.
+  homogeneous of the same degree, so the quotient map from the cycles has degree zero
+  (`TauCeti.InternalGrading.isHomogeneous_homologyπ`).
 * `TauCeti.InternalGrading.smul_mem_homology_piece`: a scalar moving the degree of `M` by `q`
   moves the degree of the homology by `q`.
 -/
@@ -45,7 +47,7 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {ι : Type} [DecidableEq ι] [AddGroup ι] {R S M : Type*}
+variable {ι : Type} [DecidableEq ι] [AddRightCancelMonoid ι] {R S M : Type*}
 
 section Semiring
 
@@ -89,6 +91,13 @@ theorem mem_homology_piece_iff {p : ι} {y : d.homology hd} :
 theorem homologyπ_mem_homology_piece {p : ι} {z : _root_.LinearMap.ker d}
     (hz : (z : M) ∈ G.piece p) : d.homologyπ hd z ∈ (G.homology hhom hd).piece p :=
   (G.mem_homology_piece_iff hhom hd).mpr ⟨z, hz, rfl⟩
+
+/-- The quotient map from the cycles onto the homology has degree zero. -/
+theorem isHomogeneous_homologyπ :
+    LinearMap.IsHomogeneous (d.homologyπ hd) (G.ker hhom).piece (G.homology hhom hd).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ z hz ↦ by
+    rw [add_zero]
+    exact G.homologyπ_mem_homology_piece hhom hd ((G.mem_ker_piece hhom).1 hz)
 
 /-- An element of the ring of `d` which moves every homogeneous piece of `M` up by `q` moves every
 homogeneous piece of the homology of `d` up by `q`. -/

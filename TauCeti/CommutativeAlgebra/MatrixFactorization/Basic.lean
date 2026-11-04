@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Duplex
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.RingTheory.Flat.TorsionFree
+public import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
 # Finite-projective matrix factorizations
@@ -19,7 +21,10 @@ the closed even maps of curved duplexes, and its forgetful functor is fully fait
 The parity shift preserves matrix factorizations. The elementary factorization
 `P --𝟙--> P --w--> P` supplies contractible objects whenever `P` is finitely generated
 projective. These constructions are used in the homotopy and triangulated categories of
-matrix factorizations.
+matrix factorizations. An injective map `f : P → Q` of finitely generated projective modules
+whose cokernel is killed by `w` is the even differential of Eisenbud's factorization
+`P --f--> Q --d₁--> P`, where `f ∘ d₁ = w`
+(`TauCeti.MatrixFactorization.ofInjective`).
 
 The matrix-factorization equations follow D. Eisenbud, *Homological algebra on a complete
 intersection, with an application to group representations*, Trans. Amer. Math. Soc. **260**
@@ -69,6 +74,13 @@ theorem d₀_comp_d₁_apply (X : MatrixFactorization S w) (x : X.obj.X₀) :
 theorem d₁_comp_d₀_apply (X : MatrixFactorization S w) (y : X.obj.X₁) :
     X.obj.d₀.hom.hom (X.obj.d₁.hom.hom y) = w • y :=
   congrArg (fun k ↦ k.hom.hom y) X.obj.d₁_comp_d₀
+
+/-- For a non-zero-divisor potential, the even-to-odd differential is injective: `d₁ ∘ d₀` is
+multiplication by `w`, which is injective on the projective, hence flat, even component. -/
+theorem d₀_injective (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    Function.Injective X.obj.d₀.hom.hom := fun x x' h ↦
+  Module.Flat.isSMulRegular_of_nonZeroDivisors (M := X.obj.X₀) hw <| by
+    simp only [← d₀_comp_d₁_apply, h]
 
 /-- On elements, a morphism of matrix factorizations commutes with the even-to-odd
 differentials. -/
@@ -226,6 +238,56 @@ Its components are finite free, with no regularity assumption on `S` or `w`. -/
 
 @[simp] theorem rankOne_X₁ (a b : S) (h : a * b = w) :
     (rankOne a b h).obj.X₁ = FGModuleCat.of S S := rfl
+
+/-! ### The matrix factorization of an injective map -/
+
+section OfInjective
+
+variable {P Q : FGModuleCat.{u} S} [Module.Projective S P] [Module.Projective S Q]
+  (f : P ⟶ Q) (hf : Function.Injective f.hom.hom)
+  (hw : ∀ y : Q, w • y ∈ LinearMap.range f.hom.hom)
+
+/-- **Eisenbud's matrix factorization.** An injective map `f : P → Q` of finitely generated
+projective modules whose cokernel is killed by `w` is the even-to-odd differential of a unique
+matrix factorization `P --f--> Q --d₁--> P` of `w`: multiplication by `w` on `Q` lands in the
+image of `f`, and `d₁` is its quotient by `f`
+(`TauCeti.MatrixFactorization.ofInjective_obj_d₁_eq_iff`). -/
+@[expose] noncomputable def ofInjective : MatrixFactorization S w :=
+  let d₁ : Q ⟶ P := ObjectProperty.homMk <| ModuleCat.ofHom <|
+    LinearMap.codRestrictOfInjective (w • LinearMap.id) f.hom.hom hf hw
+  have hd₁ (y : Q) : f.hom.hom (d₁.hom.hom y) = w • y := by
+    simp [d₁]
+  ofCurvedDuplex
+    { X₀ := P
+      X₁ := Q
+      d₀ := f
+      d₁ := d₁
+      d₀_comp_d₁ := by
+        ext x
+        apply hf
+        simp [hd₁]
+      d₁_comp_d₀ := by
+        ext y
+        simp [hd₁] }
+    ‹_› ‹_›
+
+@[simp] theorem ofInjective_obj_X₀ : (ofInjective f hf hw).obj.X₀ = P := rfl
+
+@[simp] theorem ofInjective_obj_X₁ : (ofInjective f hf hw).obj.X₁ = Q := rfl
+
+@[simp] theorem ofInjective_obj_d₀ : (ofInjective f hf hw).obj.d₀ = f := rfl
+
+/-- The odd-to-even differential of `ofInjective` is characterized by `f ∘ d₁ = w`. -/
+theorem ofInjective_obj_d₁_eq_iff (d : Q ⟶ P) :
+    (ofInjective f hf hw).obj.d₁ = d ↔ d ≫ f = w • 𝟙 Q := by
+  refine ⟨fun h ↦ h ▸ (ofInjective f hf hw).obj.d₁_comp_d₀, fun h ↦ ?_⟩
+  have hd (y : Q) : f.hom.hom (d.hom.hom y) = w • y := by
+    simpa using LinearMap.congr_fun (congrArg (·.hom.hom) h) y
+  ext y
+  apply hf
+  exact (d₁_comp_d₀_apply (ofInjective f hf hw) y).trans (hd y).symm
+
+end OfInjective
 
 /-! ### Homotopies -/
 

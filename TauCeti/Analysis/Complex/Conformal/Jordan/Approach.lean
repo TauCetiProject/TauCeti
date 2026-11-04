@@ -45,7 +45,9 @@ for the Riemann map of a Jordan domain, and with `closureHomeomorph` from
 * `TauCeti.injOn_closedBall_of_isJordanCurve_frontier`
   — injectivity on the closed disc for the Riemann map, Jordan case.
 * `TauCeti.exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier`
-  — the Riemann map extends to a homeomorphism of the closures.
+  — the Riemann map extends to a homeomorphism of the closures;
+  `TauCeti.exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier_of_mem` also sends the
+  centre of the disc to a prescribed point of the domain.
 
 ## References
 
@@ -210,16 +212,18 @@ theorem injOn_closedBall_of_isJordanCurve_frontier (hr : 0 < r)
   exact hJ.injOn_closedBall_of_conformal hr hf hinj hFc hFf
 
 /-- **The Riemann map of a Jordan domain extends to a homeomorphism of the
-closures.** -/
-theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier {Ω : Set ℂ}
+closures**, with the centre of the disc sent to any prescribed point `p` of the domain. -/
+theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier_of_mem {Ω : Set ℂ}
     (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
-    (hΩJ : IsJordanCurve (frontier Ω)) :
+    (hΩJ : IsJordanCurve (frontier Ω)) {p : ℂ} (hp : p ∈ Ω) :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
-      BijOn g (ball 0 1) Ω ∧
+      BijOn g (ball 0 1) Ω ∧ g 0 = p ∧
       ∃ e : closedBall (0 : ℂ) 1 ≃ₜ closure Ω,
         ∀ z : closedBall (0 : ℂ) 1, (e z : ℂ) = g z := by
-  obtain ⟨g, hgc, hgd, hgbij⟩ :=
-    exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier hΩo hΩc hΩb hΩJ
+  have := hΩJ.locallyConnectedSpace
+  obtain ⟨g, hgc, hgd, hgbij, hg0⟩ :=
+    exists_continuousOn_closedBall_bijOn_ball_of_locallyConnectedSpace_frontier_of_mem hΩo
+      (IsJordanDomain.mk hΩo hΩc hΩb hΩJ).isSimplyConnected hΩb hp
   have himg : g '' ball 0 1 = Ω := hgbij.image_eq
   have hgi : InjOn g (closedBall 0 1) :=
     injOn_closedBall_of_isJordanCurve_frontier one_pos hgd hgbij.injOn (himg ▸ hΩb)
@@ -228,10 +232,24 @@ theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier {Ω : Set
   have hgc' : ContinuousOn g (closure (ball (0 : ℂ) 1)) := by rwa [hcl]
   have hgi' : InjOn g (closure (ball (0 : ℂ) 1)) := by rwa [hcl]
   have himg' : closure (g '' ball 0 1) = closure Ω := by rw [himg]
-  refine ⟨g, hgc, hgd, hgbij, (Homeomorph.setCongr hcl.symm).trans
+  refine ⟨g, hgc, hgd, hgbij, hg0, (Homeomorph.setCongr hcl.symm).trans
     ((closureHomeomorph isBounded_ball hgc' (fun _ _ => rfl) hgi').trans
       (Homeomorph.setCongr himg')), fun z => ?_⟩
   simp only [Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact coe_closureHomeomorph_apply isBounded_ball hgc' (fun _ _ => rfl) hgi' _
+
+/-- **The Riemann map of a Jordan domain extends to a homeomorphism of the
+closures.** -/
+theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier {Ω : Set ℂ}
+    (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
+    (hΩJ : IsJordanCurve (frontier Ω)) :
+    ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
+      BijOn g (ball 0 1) Ω ∧
+      ∃ e : closedBall (0 : ℂ) 1 ≃ₜ closure Ω,
+        ∀ z : closedBall (0 : ℂ) 1, (e z : ℂ) = g z :=
+  have ⟨g, hgc, hgd, hgbij, _, he⟩ :=
+    exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier_of_mem hΩo hΩc hΩb hΩJ
+      hΩc.nonempty.some_mem
+  ⟨g, hgc, hgd, hgbij, he⟩
 
 end TauCeti

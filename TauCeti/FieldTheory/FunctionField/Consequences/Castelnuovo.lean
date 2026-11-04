@@ -7,14 +7,17 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.Nonspecial
 public import TauCeti.FieldTheory.FunctionField.Consequences.RiemannInequality
+public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.AlmostEverywhere
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import Mathlib.FieldTheory.Normal.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.ResidueField
+import TauCeti.FieldTheory.FunctionField.Different.Separating
+import TauCeti.FieldTheory.FunctionField.Different.Tame
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
@@ -28,17 +31,25 @@ subfields of `F` containing `k`, of genera `g₁`, `g₂`, over which `F` is fin
 
 This file proves it first whenever `F₁` has a place `P₁` that splits completely in `F` into places
 whose restrictions to `F₂` are pairwise distinct and rational, and `F₂` has at least `g₂` further
-rational places. Over a perfect constant field, with `F / F₁` separable and `F = F₁ F₂`, the
-inequality then holds unconditionally. Write a primitive element `y` of `F / F₁` as `∑ cᵢ zᵢ` with
-`cᵢ ∈ F₁` and `zᵢ ∈ F₂`, and take a place `P₁` of `F₁` at which the minimal polynomial of `y` has
-separable reduction, the `cᵢ` are regular, and the `zᵢ` are regular at every place above. Pass to
-a finite constant field extension `F · k'`, over which `F · k'`, `F₁ · k'` and `F₂ · k'` have the
-genera of `F`, `F₁` and `F₂`, and `[F · k' : Fᵢ · k'] = [F : Fᵢ]`. There every place above `P₁` is
-rational and `F₂ · k'` has enough rational places. Kummer's theorem then gives `n₁` places over
-`P₁` at which `y` takes distinct constant values. The presentation of `y` computes each of these
-values from the restrictions of the place to `F₁` and to `F₂`, so the places have distinct
-restrictions to `F₂`. This finite extension replaces Stichtenoth's passage to an algebraic closure
-of `k`.
+rational places. When `F` has a separating element, with `F = F₁ F₂`, the inequality then holds
+unconditionally; this covers every function field over a perfect constant field, and the
+separably generated ones over an imperfect constant field. At least one of `F / F₁` and `F / F₂`
+is separable: otherwise the universal `k`-differential vanishes on both subfields, hence on `F`,
+contradicting `dim_F Ω[F⁄k] = 1`.
+After interchanging the subfields if necessary, write a primitive element `y` of `F / F₁` as
+`∑ cᵢ zᵢ` with `cᵢ ∈ F₁` and `zᵢ ∈ F₂`, and take a place `P₁` of `F₁` at which the minimal
+polynomial of `y` has separable reduction, the `cᵢ` are regular, the `zᵢ` are regular at every
+place above, and `F / F₁` is unramified at every place above. A separating element supplies
+infinitely many places of `F` with residue field separable over `k`, so `P₁` can be taken among
+their restrictions to `F₁`; then every place above `P₁` has residue field separable over `k`, and
+so do `g₂ + n₁` places of `F₂`, chosen the same way. Pass to a finite Galois constant field
+extension `F · k'` into which all these residue fields embed, over which `F · k'`, `F₁ · k'` and
+`F₂ · k'` have the genera of `F`, `F₁` and `F₂`, and `[F · k' : Fᵢ · k'] = [F : Fᵢ]`. There every
+place above `P₁` is rational and `F₂ · k'` has enough rational places. Kummer's theorem then
+gives `n₁` places over `P₁` at which `y` takes distinct constant values. The presentation of `y`
+computes each of these values from the restrictions of the place to `F₁` and to `F₂`, so the
+places have distinct restrictions to `F₂`. This finite separable extension replaces Stichtenoth's
+passage to an algebraic closure of `k`, which over an imperfect field could lower the genus.
 
 The proof chooses an `F₁`-basis of `F` made of functions of `F₂` with few poles, and feeds it to
 the bound `g ≤ 1 + n₁ (g₁ - 1) + deg C` for a basis of `F / F₁` inside `L(C)`
@@ -62,7 +73,10 @@ elements of `F₂`. The hypothesis enters the general theorem only through the p
   **Castelnuovo's inequality** `g ≤ n₁ g₁ + n₂ g₂ + (n₁ - 1) (n₂ - 1)`, from a place of `F₁`
   splitting completely in `F` with distinct rational restrictions to `F₂`.
 * `TauCeti.genus_le_finrank_mul_genus_add_finrank_mul_genus_add`: **Castelnuovo's inequality**
-  over a perfect field, for `F = F₁ F₂` with `F / F₁` separable.
+  for `F = F₁ F₂` with a separating element, over any constant field, without a separability
+  hypothesis on either subextension.
+* `TauCeti.genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_perfectField`: the same over a
+  perfect constant field, where a separating element always exists.
 
 ## References
 
@@ -271,10 +285,7 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
   obtain ⟨s, hs, hsP⟩ := Place.exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one
     (k' := k) hF₁ P₁ hP₁ y hmin hsep hsplit
   have hsdeg : s.card = Module.finrank F₁ F := by
-    rw [hs, ← _root_.Polynomial.natDegree_map_eq_of_injective
-      (IsFractionRing.injective P₁.integers F₁), hmin,
-      ← IntermediateField.adjoin.finrank (IsIntegral.of_finite F₁ y), hy,
-      IntermediateField.finrank_top']
+    rw [hs, Place.natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
   have : Nonempty (Place k F) := (Place.infinite hF).nonempty
   choose! R hR hRv using hsP
   -- The places over `P₁` restrict to rational places of `F₂`.
@@ -315,36 +326,41 @@ private theorem genus_le_of_forall_degree_eq_one (hF : IsFunctionField k F)
   exact (ENat.add_le_add_iff_right (ENat.natCast_ne_top _)).mp this
 
 omit [Algebra k F₂] [IsScalarTower k F₂ F] [FiniteDimensional F₂ F] in
-/-- For `y ∈ F`, with `F / F₁` separable, and finitely many `cᵢ ∈ F₁` and `zᵢ ∈ F₂`, all but
-finitely many places `P₁` of `F₁` have the following properties: the minimal polynomial of `y` has
-separable reduction at `P₁`, the `cᵢ` are regular at `P₁`, and the `zᵢ` are regular at every place
-of `F` above `P₁`. -/
+/-- For `y ∈ F`, with `F / F₁` separable, finitely many `cᵢ ∈ F₁` and `zᵢ ∈ F₂`, and an infinite
+set `S` of places of `F₁`, some `P₁ ∈ S` has the following properties: the minimal polynomial of
+`y` has separable reduction at `P₁`, the `cᵢ` are regular at `P₁`, the `zᵢ` are regular at every
+place of `F` above `P₁`, and every place of `F` above `P₁` has different exponent zero. -/
 private theorem exists_place_separable_reduction (hF : IsFunctionField k F)
-    [Algebra.IsSeparable F₁ F] (y : F) {ι : Type*} [Finite ι] (c : ι → F₁) (z : ι → F₂) :
-    ∃ (P₁ : Place k F₁) (φ : P₁.integers[X]), φ.map (algebraMap P₁.integers F₁) = minpoly F₁ y ∧
+    [Algebra.IsSeparable F₁ F] (y : F) {ι : Type*} [Finite ι] (c : ι → F₁) (z : ι → F₂)
+    {S : Set (Place k F₁)} (hS : S.Infinite) :
+    ∃ P₁ ∈ S, ∃ φ : P₁.integers[X], φ.map (algebraMap P₁.integers F₁) = minpoly F₁ y ∧
       (φ.map (IsLocalRing.residue P₁.integers)).Separable ∧ (∀ i, c i ∈ P₁.integers) ∧
-        ∀ i, ∀ R : Place k F, R.restrict k F₁ = P₁ → algebraMap F₂ F (z i) ∈ R.integers := by
+        (∀ i, ∀ R : Place k F, R.restrict k F₁ = P₁ → algebraMap F₂ F (z i) ∈ R.integers) ∧
+        ∀ R : Place k F, R.restrict k F₁ = P₁ → Place.differentExponent k F₁ R = 0 := by
   have : Algebra.IsAlgebraic F₁ F := Algebra.IsAlgebraic.of_finite F₁ F
   have hF₁ : IsFunctionField k F₁ := hF.of_isAlgebraic_top
   have hbad : ({P : Place k F₁ | ¬ ∃ φ : P.integers[X],
       φ.map (algebraMap P.integers F₁) = minpoly F₁ y ∧
         (φ.map (IsLocalRing.residue P.integers)).Separable} ∪
       (⋃ i, {P : Place k F₁ | P.ord (c i) < 0}) ∪
-      ⋃ i, (fun R : Place k F ↦ R.restrict k F₁) ''
-        {R : Place k F | R.ord (algebraMap F₂ F (z i)) < 0}).Finite :=
-    ((Place.finite_setOf_not_exists_map_eq_and_separable hF₁ (minpoly F₁ y)
+      (⋃ i, (fun R : Place k F ↦ R.restrict k F₁) ''
+        {R : Place k F | R.ord (algebraMap F₂ F (z i)) < 0}) ∪
+      {P : Place k F₁ | ∃ R : Place k F,
+        R.restrict k F₁ = P ∧ Place.differentExponent k F₁ R ≠ 0}).Finite :=
+    (((Place.finite_setOf_not_exists_map_eq_and_separable hF₁ (minpoly F₁ y)
       (Algebra.IsSeparable.isSeparable F₁ y)).union
       (Set.finite_iUnion fun i ↦ Place.finite_setOf_ord_neg hF₁ (c i))).union
-      (Set.finite_iUnion fun i ↦ (Place.finite_setOf_ord_neg hF _).image _)
-  have := Place.infinite hF₁
-  obtain ⟨P₁, hP₁⟩ := hbad.infinite_compl.nonempty
-  rw [Set.mem_compl_iff, Set.mem_union, Set.mem_union, not_or, not_or] at hP₁
-  obtain ⟨⟨hgood, hc⟩, hz⟩ := hP₁
+      (Set.finite_iUnion fun i ↦ (Place.finite_setOf_ord_neg hF _).image _)).union
+      (Place.finite_setOf_exists_differentExponent_ne_zero (k' := k) (F' := F) k F₁ hF₁)
+  obtain ⟨P₁, hP₁S, hP₁⟩ := (hS.sdiff hbad).nonempty
+  rw [Set.mem_union, Set.mem_union, Set.mem_union, not_or, not_or, not_or] at hP₁
+  obtain ⟨⟨⟨hgood, hc⟩, hz⟩, hd⟩ := hP₁
   obtain ⟨φ, hmin, hsep⟩ := not_not.mp hgood
-  exact ⟨P₁, φ, hmin, hsep,
+  exact ⟨P₁, hP₁S, φ, hmin, hsep,
     fun i ↦ P₁.mem_integers_iff_ord_nonneg.mpr (not_lt.mp fun h ↦ hc (Set.mem_iUnion.mpr ⟨i, h⟩)),
     fun i R hR ↦ R.mem_integers_iff_ord_nonneg.mpr
-      (not_lt.mp fun h ↦ hz (Set.mem_iUnion.mpr ⟨i, R, h, hR⟩))⟩
+      (not_lt.mp fun h ↦ hz (Set.mem_iUnion.mpr ⟨i, R, h, hR⟩)),
+    fun R hR ↦ not_not.mp fun h ↦ hd ⟨R, hR, h⟩⟩
 
 omit [Algebra k F₂] [Algebra F₂ F] [IsScalarTower k F₂ F] [FiniteDimensional F₂ F] in
 /-- A subfield `F₁` of `F` after a finite separable constant field extension `F' = F · k'`: the
@@ -377,15 +393,16 @@ private theorem constantCompositum_subfield {k' F' : Type*} [Field k'] [Field F'
     Module.finite_of_finrank_pos (hn ▸ Module.finrank_pos), hn,
     genus_eq_genus_of_constantCompositum_eq_top hF₁ hex₁ hcc⟩
 
-/-- Castelnuovo's inequality after a constant field extension. Let `F' = F · k'` for a finite normal
+/-- Castelnuovo's inequality after a constant field extension. Let `F' = F · k'` for a finite Galois
 extension `k' / k`, let `P₁` be a place of `F₁` at which a primitive element `y = ∑ cᵢ zᵢ` of
 `F / F₁` has separable reduction, with `cᵢ ∈ F₁` regular at `P₁` and `zᵢ ∈ F₂` regular above `P₁`.
 If the residue fields of the places of `F` over `P₁`, and those of `g(F₂) + [F : F₁]` places of
 `F₂`, embed into `k'`, then the inequality holds for `F`. -/
-private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : Type*} [Field k']
-    [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F']
-    [IsScalarTower k F F'] [FiniteDimensional k k'] [Normal k k'] (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) {y : F}
+private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k'] [Field F']
+    [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F']
+    [IsScalarTower k F F'] [FiniteDimensional k k'] [Normal k k'] [Algebra.IsSeparable k k']
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
+    {y : F}
     (hy : F₁⟮y⟯ = ⊤) {P₁ : Place k F₁} {φ : P₁.integers[X]}
     (hmin : φ.map (algebraMap P₁.integers F₁) = minpoly F₁ y)
     (hsep : (φ.map (IsLocalRing.residue P₁.integers)).Separable) {ι : Type*} [Fintype ι]
@@ -408,7 +425,6 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
   have hex₂ : IsIntegrallyClosedIn k F₂ :=
     (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
-  have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
   have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hex' : IsIntegrallyClosedIn k' F' := hex.of_constantCompositum_eq_top h
@@ -493,32 +509,19 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
     hrat
   rwa [hg, hg₁, hg₂, hn₁, hn₂] at key
 
-/-- A field `K` generated over `k` by an integral element `x` embeds into every extension `k'` of
-`k` over which some nonzero multiple of the minimal polynomial of `x` splits. -/
-private theorem nonempty_algHom_of_minpoly_dvd {K k' : Type*} [Field K] [Field k'] [Algebra k K]
-    [Algebra k k'] {x : K} (hx : k⟮x⟯ = ⊤) (hint : IsIntegral k x) {f : k[X]} (hf0 : f ≠ 0)
-    (hdvd : minpoly k x ∣ f) (hsplit : (f.map (algebraMap k k')).Splits) :
-    Nonempty (K →ₐ[k] k') := by
-  refine IntermediateField.nonempty_algHom_of_adjoin_splits (S := {x}) (fun s hs ↦ ?_) hx
-  rw [Set.mem_singleton_iff.mp hs]
-  exact ⟨hint, hsplit.of_dvd (Polynomial.map_ne_zero hf0) (Polynomial.map_dvd _ hdvd)⟩
-
-/-- **Castelnuovo's inequality** (Stichtenoth, Theorem 3.11.3). Let `F / k` be a function field
-over a perfect field `k`, with exact constant field `k`, and let `F₁`, `F₂` be subfields of `F`
-containing `k` with `F = F₁ F₂`, `F` finite over both, and `F / F₁` separable. Then
+/-- Castelnuovo's inequality when `F / F₁` is separable. Let `F / k` have exact constants and a
+separating element, and let `F₁`, `F₂` be subfields of `F` containing `k` with `F = F₁ F₂`, `F`
+finite over both, and `F / F₁` separable. Then
 
 `g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`. -/
-theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) [Algebra.IsSeparable F₁ F]
+private theorem genus_le_of_isSeparable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] [Algebra.IsSeparable F₁ F]
     (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
     genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
       (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
-  classical
-  have : Algebra.IsAlgebraic F₁ F := Algebra.IsAlgebraic.of_finite F₁ F
-  have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
-  have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
   /- A primitive element `y` of `F / F₁`, written as an `F₁`-linear combination of elements of
-  `F₂`, and a place `P₁` of `F₁` of separable reduction for `y`. -/
+  `F₂`, and a place `P₁` of `F₁` of separable reduction for `y`, with residue field separable over
+  `k`, above which `F / F₁` is unramified. -/
   obtain ⟨y, hy⟩ := Field.exists_primitive_element F₁ F
   have hspan : y ∈ Submodule.span F₁ (Set.range (algebraMap F₂ F)) := by
     rw [IntermediateField.span_range_eq_top_of_adjoin_range_eq_top htop]
@@ -528,32 +531,63 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add [PerfectField k]
   have hyz : y = ∑ i, algebraMap F₁ F (c i) * algebraMap F₂ F (z i) := by
     rw [← hyz']
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hz, Algebra.smul_def]
-  obtain ⟨P₁, φ, hmin, hsep, hc, hz'⟩ := exists_place_separable_reduction hF y c z
-  /- The residue fields to be made rational: those of the places of `F` over `P₁`, and those of
-  `g(F₂) + [F : F₁]` places of `F₂`. Each is generated over `k` by one element, `k` being
-  perfect, and `f` is the product of the minimal polynomials of these generators. -/
+  obtain ⟨P₁, hP₁sep, φ, hmin, hsep, hc, hz', hd⟩ := exists_place_separable_reduction hF y c z
+    (Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional (E := F₁) hF hx)
+  /- The places of `F` over `P₁` are unramified, so their residue fields are separable over that
+  of `P₁`, hence over `k`. -/
+  have hsepR (R : Place k F) (hR : R.restrict k F₁ = P₁) :
+      Algebra.IsSeparable k R.ResidueField := by
+    have := (Place.ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt k F₁ R).mpr
+      ((Place.differentExponent_eq_zero_iff k F₁ R).mp (hd R hR)) |>.2
+    have : Algebra.IsSeparable k (R.restrict k F₁).ResidueField := hR ▸ hP₁sep
+    exact Algebra.IsSeparable.trans k (R.restrict k F₁).ResidueField R.ResidueField
+  /- The residue fields to be made rational, those of the places of `F` over `P₁` and those of
+  `g(F₂) + [F : F₁]` places of `F₂` with residue field separable over `k`, embed into a finite
+  Galois extension `k'` of `k`. -/
   have hSR := Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁
-  have := Place.infinite hF₂
-  obtain ⟨TQ, hTQ⟩ :=
-    Infinite.exists_subset_card_eq (Place k F₂) (genus k F₂ + Module.finrank F₁ F)
-  choose α hα hαint using fun R : Place k F ↦
-    letI := R.finiteDimensional_residueField hF
-    ((Field.exists_primitive_element k R.ResidueField).imp fun a ha ↦ ⟨ha, .of_finite k a⟩ :
-      ∃ a : R.ResidueField, k⟮a⟯ = ⊤ ∧ IsIntegral k a)
-  choose β hβ hβint using fun Q : Place k F₂ ↦
-    letI := Q.finiteDimensional_residueField hF₂
-    ((Field.exists_primitive_element k Q.ResidueField).imp fun b hb ↦ ⟨hb, .of_finite k b⟩ :
-      ∃ b : Q.ResidueField, k⟮b⟯ = ⊤ ∧ IsIntegral k b)
-  set f : k[X] := (∏ R ∈ hSR.toFinset, minpoly k (α R)) * ∏ Q ∈ TQ, minpoly k (β Q)
-  have hf0 : f ≠ 0 := mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun R _ ↦ minpoly.ne_zero (hαint R))
-    (Finset.prod_ne_zero_iff.mpr fun Q _ ↦ minpoly.ne_zero (hβint Q))
-  obtain ⟨F', k', _, _, hsplit, -, h⟩ :=
-    exists_finiteDimensional_normal_splits_constantCompositum_eq_top F f
-  -- The residue fields of the chosen places embed into `k'`, since `f` splits in `k'`.
+  obtain ⟨TQ, hTQsep, hTQ⟩ := (Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional
+    (E := F₂) hF hx).exists_subset_card_eq (genus k F₂ + Module.finrank F₁ F)
+  obtain ⟨F', k', _, _, _, h, hembR, hembQ⟩ :=
+    Place.exists_constantCompositum_eq_top_nonempty_algHom hF hF.of_isAlgebraic_top hSR.toFinset
+      TQ (fun R hR ↦ hsepR R (hSR.mem_toFinset.mp hR)) fun Q hQ ↦ hTQsep hQ
   exact genus_le_of_constantCompositum_eq_top hF hex h hy hmin hsep c z hyz hc hz'
-    (fun R hR ↦ nonempty_algHom_of_minpoly_dvd (hα R) (hαint R) hf0
-      ((Finset.dvd_prod_of_mem _ (hSR.mem_toFinset.mpr hR)).mul_right _) hsplit) hTQ
-    (fun Q hQ ↦ nonempty_algHom_of_minpoly_dvd (hβ Q) (hβint Q) hf0
-      ((Finset.dvd_prod_of_mem _ hQ).mul_left _) hsplit)
+    (fun R hR ↦ hembR R (hSR.mem_toFinset.mpr hR)) hTQ hembQ
+
+/-- **Castelnuovo's inequality** (Stichtenoth, Theorem 3.11.3). Let `F / k` be a function field
+with exact constants and a separating element `x`, and let `F₁`, `F₂` be subfields of `F`
+containing `k` with `F = F₁ F₂` and `F` finite over both. Then
+`g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`.
+The constant field `k` may be imperfect, and neither subextension is assumed separable. -/
+theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {x : F} (hx : Transcendental k x)
+    [Algebra.IsSeparable k⟮x⟯ F]
+    (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
+    genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
+      (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
+  have hdim := finrank_kaehlerDifferential_eq_one_of_separating hx
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  have : Algebra.EssFiniteType F₁ F := .of_comp k F₁ F
+  have : Algebra.EssFiniteType F₂ F := .of_comp k F₂ F
+  rcases isSeparable_left_or_right_of_adjoin_eq_top hdim htop with h₁ | h₂
+  · have := h₁
+    exact genus_le_of_isSeparable hF hex hx htop
+  · have := h₂
+    have htop' : IntermediateField.adjoin F₂ (Set.range (algebraMap F₁ F)) = ⊤ := by
+      apply IntermediateField.toSubfield_injective
+      simpa only [IntermediateField.adjoin_toSubfield, IntermediateField.top_toSubfield,
+        Set.union_comm] using congrArg IntermediateField.toSubfield htop
+    simpa [add_comm, mul_comm] using genus_le_of_isSeparable hF hex hx htop'
+
+/-- **Castelnuovo's inequality** over a perfect constant field (Stichtenoth, Theorem 3.11.3): if
+`F = F₁ F₂` is finite over both subfields and has exact constants, then
+`g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`.
+Over a perfect field every function field has a separating element. -/
+theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_perfectField [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
+    genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
+      (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
+  obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+  exact genus_le_finrank_mul_genus_add_finrank_mul_genus_add hF hex hx htop
 
 end TauCeti

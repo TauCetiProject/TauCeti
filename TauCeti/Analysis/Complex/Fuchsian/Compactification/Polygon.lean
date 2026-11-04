@@ -24,8 +24,9 @@ vertices as representatives, nor agree with the scalings chosen at those vertice
 If there are finitely many cusp orbits, these compact representatives imply compactness of
 the cusp compactification. In particular, this applies to a cofinite group with such a polygon.
 The polygon need only meet every orbit: neither uniqueness of representatives nor a
-side pairing is needed for this compactness argument. Existence of a polygon for an arbitrary
-cofinite group is not asserted here.
+side pairing is needed for this compactness argument. Existence of such a polygon for an
+arbitrary cofinite group, and hence compactness, is proved separately from its Dirichlet domain
+(`Subgroup.IsCofinite.compactSpace_compactifiedQuotient`).
 
 A side-paired polygon whose translates under a group `Γ` containing the side-pairing maps form a
 locally finite family satisfies these hypotheses. Its translates cover `ℍ`, and each ideal vertex

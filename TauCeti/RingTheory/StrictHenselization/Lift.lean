@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.StrictHenselization.Algebra
+public import TauCeti.RingTheory.StrictHenselization.Local
+public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.Henselian
 import TauCeti.RingTheory.Henselian.Etale
 
@@ -16,7 +17,9 @@ A point of an étale neighbourhood lifts uniquely to a henselian local algebra o
 target algebra to the residue field is fixed. The compatible lifts at all stages give the
 universal map from the colimit constructed in `StrictHenselization.Algebra`. For a local base and
 a separable closure of its residue field, this is the universal property of the strict
-henselization.
+henselization. When `S` is moreover strictly henselian, a map from the separable closure to the
+residue field of `S` always exists, so every local map from the base to `S` extends to a local map
+out of the strict henselization.
 
 ## Main results
 
@@ -30,6 +33,10 @@ henselization.
   neighbourhood, `lift` is the unique lift of the induced point.
 * `TauCeti.StrictHenselization.existsUnique_lift`: the universal property for a ring map
   `Ω → κ(S)` compatible with `R`.
+* `TauCeti.StrictHenselization.isLocalHom_lift`: when `Ω` is a field, `lift` is local.
+* `TauCeti.StrictHenselization.exists_isLocalHom_lift`: a local homomorphism from a local ring
+  to a strictly henselian local ring extends to a local homomorphism out of the colimit, for `Ω`
+  separable algebraic over the residue field of the base.
 
 ## Implementation notes
 
@@ -53,6 +60,8 @@ open CategoryTheory IsLocalRing
 universe u v
 
 namespace TauCeti.StrictHenselization
+
+section HenselianTarget
 
 variable (R Ω : Type u) {S : Type v} [CommRing R] [CommRing Ω] [Algebra R Ω]
   [CommRing S] [Algebra R S] [HenselianLocalRing S]
@@ -167,5 +176,39 @@ theorem existsUnique_lift (φ : Ω →+* ResidueField S)
     fun x ↦ (residue_lift R Ω pointMap x).trans (hpoint _),
     fun f hf ↦ eq_lift R Ω pointMap (AlgHom.ext fun x ↦ by
       simpa [IsScalarTower.toAlgHom_apply, ResidueField.algebraMap_eq, hpoint] using hf x)⟩
+
+end HenselianTarget
+
+section FieldTarget
+
+variable (R : Type u) {Ω : Type u} {S : Type v} [CommRing R] [Field Ω] [Algebra R Ω]
+  [CommRing S] [Algebra R S] [HenselianLocalRing S]
+
+/-- When the target `Ω` is a field, `lift` is a local homomorphism. -/
+instance isLocalHom_lift (pointMap : Ω →ₐ[R] ResidueField S) :
+    IsLocalHom (lift R Ω pointMap) where
+  map_nonunit x hx := by
+    -- If `lift x` is a unit, then its reduction `pointMap (toTarget x)` is nonzero, so
+    -- `toTarget x` is a unit in the field `Ω`, and hence so is `x`.
+    rw [isUnit_iff_isUnit_toTarget, isUnit_iff_ne_zero]
+    intro h
+    apply (residue_ne_zero_iff_isUnit _).mpr hx
+    rw [residue_lift, h, map_zero]
+
+/-- **Local maps to strictly henselian rings.** Let `R` be a local ring and `Ω` a separable
+algebraic extension of its residue field, such as a separable closure. A local homomorphism
+`R → S` into a strictly henselian local ring `S` extends to a local homomorphism from the colimit
+of pointed étale neighbourhoods, that is, from the strict henselization when `Ω` is a separable
+closure. -/
+theorem exists_isLocalHom_lift [IsLocalRing R] [Algebra (ResidueField R) Ω]
+    [IsScalarTower R (ResidueField R) Ω] [Algebra.IsSeparable (ResidueField R) Ω]
+    [IsSepClosed (ResidueField S)] [IsLocalHom (algebraMap R S)] :
+    ∃ f : algebra R Ω →ₐ[R] S, IsLocalHom f :=
+  -- Embed `Ω` into the separably closed residue field of `S` over the residue field of `R`;
+  -- `lift` along this embedding is local.
+  ⟨lift R Ω ((IsSepClosed.lift : Ω →ₐ[ResidueField R] ResidueField S).restrictScalars R),
+    inferInstance⟩
+
+end FieldTarget
 
 end TauCeti.StrictHenselization

@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
+public import Mathlib.RingTheory.Derivation.Basic
 public import Mathlib.RingTheory.PowerSeries.Log
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Evaluation
+public import TauCeti.Topology.Algebra.Nonarchimedean.GeometricSeries
 public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
@@ -38,7 +40,11 @@ nilpotent and in every ideal containing `a`. The functional equation
 `exp (a + b) = exp a * exp b` is the Cauchy product of the exponential series in the complete
 nonarchimedean ring `S`, matched coefficientwise with Mathlib's
 `PowerSeries.exp_mul_exp_eq_exp_add`; its proof follows that of Mathlib's
-`NormedSpace.exp_add_of_commute_of_mem_ball`.
+`NormedSpace.exp_add_of_commute_of_mem_ball`. Since `exp a - 1` lies in every open ideal
+containing `a`, the exponential is continuous on an ideal of topologically nilpotent elements, so
+it carries convergent sums to convergent products, as Mathlib's `HasSum.exp` does for complete
+normed algebras. A continuous derivation differentiates the
+logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (log u) = D u`.
 
 ## Main definitions
 
@@ -58,6 +64,11 @@ nonarchimedean ring `S`, matched coefficientwise with Mathlib's
   identities.
 * `IsTopologicallyNilpotent.exp_add`, `IsTopologicallyNilpotent.log_mul`: the functional
   equations.
+* `IsTopologicallyNilpotent.hasSum_log_one_sub`: `log (1 - a) = -∑ aⁿ⁺¹ / (n + 1)`.
+* `HasSum.exp_of_mem_ideal`: inside an ideal of topologically nilpotent elements, the exponential
+  turns convergent sums into convergent products.
+* `IsTopologicallyNilpotent.mul_derivation_log`: a continuous derivation `D` satisfies
+  `u * D (log u) = D u`.
 -/
 
 public section
@@ -197,7 +208,82 @@ theorem log_mul (hu : IsTopologicallyNilpotent (u - 1)) (hv : IsTopologicallyNil
     NormedSpace.log (u * v) = NormedSpace.log u + NormedSpace.log v := by
   rw [← (hu.log.add hv.log).log_exp, hu.log.exp_add hv.log, hu.exp_log, hv.exp_log]
 
+/-- For a topologically nilpotent `a`, the logarithm of `1 - a` is `-∑ₙ aⁿ⁺¹ / (n + 1)`. -/
+theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
+    HasSum (fun n : ℕ => -(((n + 1 : ℕ) : ℚ)⁻¹ • a ^ (n + 1))) (NormedSpace.log (1 - a)) := by
+  have h := hasSum_log (u := 1 - a) (by rw [sub_sub_cancel_left]; exact ha.neg)
+  rw [← hasSum_nat_add_iff' 1] at h
+  convert h using 1
+  · funext n
+    have hneg : (-a) ^ (n + 1) = ((-1 : ℚ) ^ (n + 1)) • a ^ (n + 1) := by
+      simp [neg_pow a, Algebra.smul_def]
+    -- The sign of the `(n + 1)`-th term of the logarithm series cancels that of `(-a) ^ (n + 1)`.
+    have hsign : (-1 : ℚ) ^ (n + 1 + 1) / (n + 1 : ℕ) * (-1) ^ (n + 1) = -((n + 1 : ℕ) : ℚ)⁻¹ := by
+      rw [div_mul_eq_mul_div, ← pow_add, Odd.neg_one_pow ⟨n + 1, by ring⟩, neg_div, one_div]
+    rw [sub_sub_cancel_left, hneg]
+    simp only [smul_smul, hsign, neg_smul]
+  · simp
+
+/-- A continuous derivation `D` differentiates the logarithm as `D (log u) = u⁻¹ * D u`, in the
+form `u * D (log u) = D u`, when `u - 1` is topologically nilpotent. -/
+theorem mul_derivation_log {R : Type*} [CommSemiring R] [Algebra R S] (D : Derivation R S S)
+    (hD : Continuous D) (hu : IsTopologicallyNilpotent (u - 1)) :
+    u * D (NormedSpace.log u) = D u := by
+  -- The derivative of the `n + 1`-st term of the logarithm series is `(1 - u) ^ n * D u`.
+  have hterm (n : ℕ) : D (((-1) ^ (n + 1 + 1) / (n + 1 : ℕ) : ℚ) • (u - 1) ^ (n + 1)) =
+      (-(u - 1)) ^ n * D (u - 1) := by
+    have hq : ((-1) ^ (n + 1 + 1) / (n + 1 : ℕ) : ℚ) * (n + 1 : ℕ) = (-1) ^ n := by
+      field_simp
+      ring
+    rw [map_rat_smul, Derivation.leibniz_pow, Nat.add_sub_cancel, ← Nat.cast_smul_eq_nsmul ℚ,
+      smul_smul, hq, neg_pow (u - 1), mul_assoc]
+    simp [Algebra.smul_def]
+  have hlog : HasSum (fun n : ℕ => (-(u - 1)) ^ n * D (u - 1)) (D (NormedSpace.log u)) := by
+    have h := (hasSum_nat_add_iff' 1).2 (hu.hasSum_log.map D hD)
+    rw [Finset.sum_range_one] at h
+    convert h using 1
+    · exact funext fun n => (hterm n).symm
+    · simp
+  have := IsLinearTopology.nonarchimedeanAddGroup S (M := S)
+  have hgeom := hu.neg.summable_pow
+  rw [hlog.unique (hgeom.hasSum.mul_right _), ← mul_assoc]
+  -- Write the remaining factor `u` as `1 - q` with `q = -(u - 1)`, so that the geometric series
+  -- identity `(1 - q) * ∑ qⁿ = 1` applies.
+  nth_rw 1 [show u = 1 - -(u - 1) by ring]
+  rw [hgeom.one_sub_mul_tsum_pow, one_mul, map_sub, Derivation.map_one_eq_zero, sub_zero]
+
 end IsTopologicallyNilpotent
+
+/-- **The exponential of a sum is the product of the exponentials.** If `f` has sum `a`, with all
+`f i` and `a` in an ideal `I` of topologically nilpotent elements, then `exp ∘ f` has product
+`exp a`. -/
+theorem HasSum.exp_of_mem_ideal [Algebra ℚ S] {ι : Type*} {I : Ideal S}
+    (hI : ∀ a ∈ I, IsTopologicallyNilpotent a) {f : ι → S} {a : S} (h : HasSum f a)
+    (hf : ∀ i, f i ∈ I) (ha : a ∈ I) :
+    HasProd (NormedSpace.exp ∘ f) (NormedSpace.exp a) := by
+  have hs (s : Finset ι) : ∑ i ∈ s, f i ∈ I := I.sum_mem fun i _ => hf i
+  have hprod (s : Finset ι) :
+      ∏ i ∈ s, NormedSpace.exp (f i) = NormedSpace.exp (∑ i ∈ s, f i) := by
+    classical
+    induction s using Finset.induction_on with
+    | empty => simp [NormedSpace.exp_zero]
+    | @insert i s hi ih =>
+      rw [Finset.prod_insert hi, Finset.sum_insert hi, ih,
+        (hI _ (hf i)).exp_add (hI _ (hs s))]
+  -- Near `a`, `exp (∑ i ∈ s, f i) - exp a = exp a * (exp (∑ i ∈ s, f i - a) - 1)` lies in any
+  -- open ideal containing `∑ i ∈ s, f i - a`.
+  have hexp : Tendsto (fun s : Finset ι => NormedSpace.exp (∑ i ∈ s, f i)) atTop
+      (𝓝 (NormedSpace.exp a)) := by
+    rw [← tendsto_sub_nhds_zero_iff]
+    have h' := tendsto_sub_nhds_zero_iff.2 h
+    refine IsLinearTopology.hasBasis_ideal.tendsto_right_iff.2 fun J hJ => ?_
+    filter_upwards [h'.eventually (IsLinearTopology.hasBasis_ideal.mem_of_mem hJ)] with s hsJ
+    have hsI : ∑ i ∈ s, f i - a ∈ I := sub_mem (hs s) ha
+    have heq : ∑ i ∈ s, f i = a + (∑ i ∈ s, f i - a) := by abel
+    rw [SetLike.mem_coe, heq, (hI _ ha).exp_add (hI _ hsI), ← _root_.mul_sub_one]
+    exact J.mul_mem_left _ ((hI _ hsI).exp_sub_one_mem hsJ)
+  -- As for Mathlib's `HasSum.exp`, the partial products are the exponentials of partial sums.
+  exact Tendsto.congr (fun s => (hprod s).symm) hexp
 
 namespace Ideal
 

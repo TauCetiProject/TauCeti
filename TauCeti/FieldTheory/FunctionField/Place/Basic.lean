@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 public import TauCeti.RingTheory.Valuation.IsTrivialOn
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Places of an algebraic function field
@@ -298,17 +299,14 @@ theorem linearIndependent_of_injective_ord {ι : Type*} {f : ι → F} (hf : ∀
 /-- **Normalizing a family of coefficients.** A finite family in `F` that does not vanish
 identically has a nonzero member by which the whole family can be divided without leaving `𝒪_P`;
 a member of least order at `P` is one. This is what turns a relation with coefficients in `F`
-into a relation with coefficients in `𝒪_P`, one of which is a unit. -/
+into a relation with coefficients in `𝒪_P`, one of which is a unit. This is the case
+`s = Finset.univ` of `ValuationSubring.exists_ne_zero_and_div_mem` for `𝒪_P`. -/
 theorem exists_ne_zero_forall_div_mem_integers {ι : Type*} [Finite ι] (c : ι → F) {i₁ : ι}
     (hi₁ : c i₁ ≠ 0) : ∃ i₀, c i₀ ≠ 0 ∧ ∀ i, c i / c i₀ ∈ P.integers := by
-  obtain ⟨i₀, hi₀, hmin⟩ :=
-    Set.exists_min_image {i | c i ≠ 0} (fun i ↦ P.ord (c i)) (Set.toFinite _) ⟨i₁, hi₁⟩
-  refine ⟨i₀, hi₀, fun i ↦ ?_⟩
-  rcases eq_or_ne (c i) 0 with h | h
-  · simp [h]
-  · rw [P.mem_integers_iff_ord_nonneg, P.ord_div h hi₀]
-    have := hmin i h
-    omega
+  have := Fintype.ofFinite ι
+  obtain ⟨i₀, -, hi₀, hdiv⟩ := P.integers.exists_ne_zero_and_div_mem (s := Finset.univ)
+    ⟨i₁, Finset.mem_univ _, hi₁⟩
+  exact ⟨i₀, hi₀, fun i ↦ hdiv i (Finset.mem_univ i)⟩
 
 section Constants
 
@@ -423,6 +421,16 @@ theorem mem_maximalIdeal_iff_ord_pos {f : P.integers} (hf : (f : F) ≠ 0) :
     f ∈ IsLocalRing.maximalIdeal P.integers ↔ 0 < P.ord (f : F) :=
   Valuation.mem_maximalIdeal_iff_ord_pos P.valuation hf
 
+/-- Multiplying by a function `s` of order `d` at `P` clears exactly the poles of order at most
+`d`: `s * x ∈ 𝒪_P` if and only if `v_P(x) ≤ exp d`. -/
+theorem mul_mem_integers_iff {P : Place k F} {s x : F} {d : ℤ} (hs0 : s ≠ 0)
+    (hs : P.ord s = d) : s * x ∈ P.integers ↔ P.valuation x ≤ WithZero.exp d := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [P.mem_integers_iff_ord_nonneg, P.ord_mul hs0 hx, P.valuation_eq_exp_neg_ord hx,
+    WithZero.exp_le_exp, hs]
+  omega
+
 /-- The valuation ring of a place is a proper subring of `F` (Stichtenoth,
 Definition 1.1.4). -/
 theorem integers_ne_top : P.integers ≠ ⊤ :=
@@ -524,6 +532,21 @@ theorem residue_aeval (p : Polynomial k) (y : P.integers) :
     IsLocalRing.residue P.integers (Polynomial.aeval y p) =
       Polynomial.aeval (IsLocalRing.residue P.integers y) p := by
   rw [← IsLocalRing.ResidueField.algebraMap_eq, Polynomial.aeval_algebraMap_apply]
+
+/-- **A function is regular wherever a nonconstant polynomial in it is**: if `q(y) ∈ 𝒪_P` for a
+nonconstant `q ∈ k[X]`, then `y ∈ 𝒪_P`, since `y` is a root of the monic polynomial
+`(q(X) - q(y)) / lc(q)` with coefficients in `𝒪_P`. -/
+theorem mem_integers_of_aeval_mem_integers {q : Polynomial k} (hq : q.natDegree ≠ 0) {y : F}
+    (hy : Polynomial.aeval y q ∈ P.integers) : y ∈ P.integers := by
+  have hq0 : q.leadingCoeff ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr (by rintro rfl; simp at hq)
+  have hm : (Polynomial.C q.leadingCoeff⁻¹ * q).Monic :=
+    Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ hq0)
+  refine P.mem_integers_of_isIntegral (R := P.integers) (fun r ↦ r.2)
+    (IsIntegral.of_aeval_monic (hm.map (algebraMap k P.integers)) ?_ ?_)
+  · rwa [hm.natDegree_map, Polynomial.natDegree_C_mul (inv_ne_zero hq0)]
+  · rw [Polynomial.aeval_map_algebraMap, map_mul, Polynomial.aeval_C]
+    have h := mul_mem (P.algebraMap_mem_integers q.leadingCoeff⁻¹) hy
+    simpa using isIntegral_algebraMap (R := P.integers) (A := F) (x := ⟨_, h⟩)
 
 /-- The **degree** `deg P = [F_P : k]` of a place (Stichtenoth, Definition 1.1.14). Its
 finiteness, which guards the junk value of `Module.finrank`, holds whenever `F/k` is a function

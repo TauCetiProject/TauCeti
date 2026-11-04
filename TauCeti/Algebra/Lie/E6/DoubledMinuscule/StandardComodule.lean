@@ -129,7 +129,7 @@ noncomputable def specializedPointsMulEquiv :
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso R)
       (CommAlgCat.of R R)).trans
     (pointsPresentation
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ R) (CommAlgCat.of R R))).mulEquiv
 
 /-- Under the specialized point equivalence, the quotient point is represented by the carrier
 point's ambient general-linear matrix. -/
@@ -174,6 +174,15 @@ theorem points_mulVec_mem
 /-- The weight-torus character of a doubled minuscule coordinate. -/
 noncomputable abbrev minusculeCharacter (a : Fin 54) : Multiplicative (Fin 6 →₀ ℤ) :=
   SplitTorus.weightCharacter (matrixWeight a)
+
+/-- The fifty-four doubled minuscule coordinates have distinct integral torus characters. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+  intro a b h
+  apply matrixIndexEquiv.symm.injective
+  apply DynkinType.e6DoubledMinusculeWeight_injective
+  funext i
+  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter, matrixWeight_apply] using
+    congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
 
 /-- Restriction of the standard comodule to the weight torus gives its fifty-four weight lines,
 over every commutative ring. -/

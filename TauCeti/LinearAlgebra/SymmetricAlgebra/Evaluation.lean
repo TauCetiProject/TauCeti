@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Funext
+public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 
 /-!
@@ -41,6 +42,9 @@ time.
 * `Module.Basis.lift_apply_eq_eval_equivMvPolynomial`: in the coordinates of a basis,
   the evaluation at a linear form is the evaluation of a polynomial at the values of the form on
   the basis.
+* `Module.Basis.lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis`: dually, an element of
+  `S(M*)`, a polynomial function on `M`, is a polynomial in the coordinates of a finite basis of
+  `M`, and its value at `x : M` is that polynomial evaluated at the coordinates of `x`.
 * `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
   linear forms, the evaluations of an element of `S(M)` are the values of a polynomial.
 * `TauCeti.SymmetricAlgebra.eq_zero_of_forall_lift_eq_zero`: an element of `S(M)` vanishing at
@@ -66,6 +70,18 @@ theorem lift_apply_eq_eval_equivMvPolynomial (b : Module.Basis ι R M) (f : M �
       (SymmetricAlgebra.equivMvPolynomial b : SymmetricAlgebra R M →ₐ[R] MvPolynomial ι R) :=
     SymmetricAlgebra.algHom_ext <| b.ext fun i ↦ by simp
   rw [h, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← MvPolynomial.aeval_eq_eval]
+
+/-- **Polynomial functions in coordinates.** For a finite basis `b` of `M`, an element `p` of the
+algebra `S(M*)` of polynomial functions on `M` is a polynomial in the coordinate functions of `b`
+(through the dual basis), and its value at `x : M` is that polynomial evaluated at the
+coordinates `b.equivFun x` of `x`. -/
+theorem lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis [Finite ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) (x : M) (p : SymmetricAlgebra R (Module.Dual R M)) :
+    SymmetricAlgebra.lift (Module.Dual.eval R M x) p =
+      MvPolynomial.eval (b.equivFun x) (SymmetricAlgebra.equivMvPolynomial b.dualBasis p) := by
+  have hx : (fun i ↦ Module.Dual.eval R M x (b.dualBasis i)) = b.equivFun x :=
+    funext fun i ↦ by simp
+  rw [b.dualBasis.lift_apply_eq_eval_equivMvPolynomial, hx]
 
 end Module.Basis
 

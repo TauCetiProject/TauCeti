@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.BadPrimeCoset
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CosetMap
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.Data.ZMod.Units
 import Mathlib.Data.Nat.Prime.Int
 
@@ -134,13 +134,15 @@ variable (N : ℕ)
 /-- `ι(g) = w · gᵀ · w⁻¹`, as a homomorphism to the opposite group. -/
 private noncomputable def atkinLehnerHom : GL (Fin 2) ℚ →* (GL (Fin 2) ℚ)ᵐᵒᵖ where
   toFun g := MulOpposite.op (natDiagGL 2 ![1, N] *
-    (transposeGLEquiv 2 g).unop * (natDiagGL 2 ![1, N])⁻¹)
+    (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop *
+      (natDiagGL 2 ![1, N])⁻¹)
   map_one' := by simp
   map_mul' a b := by
     apply MulOpposite.unop_injective
     simp only [MulOpposite.unop_op, MulOpposite.unop_mul]
-    have h1 : (transposeGLEquiv 2 (a * b)).unop =
-        (transposeGLEquiv 2 b).unop * (transposeGLEquiv 2 a).unop := by
+    have h1 : (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) (a * b)).unop =
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) b).unop *
+          (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) a).unop := by
       simp only [map_mul, MulOpposite.unop_mul]
     rw [h1]; group
 
@@ -148,25 +150,34 @@ private noncomputable def atkinLehnerHom : GL (Fin 2) ℚ →* (GL (Fin 2) ℚ)�
 lemma do not each rely on unfolding the definition. -/
 @[simp] private lemma atkinLehnerHom_unop (g : GL (Fin 2) ℚ) :
     (atkinLehnerHom N g).unop =
-      natDiagGL 2 ![1, N] * (transposeGLEquiv 2 g).unop * (natDiagGL 2 ![1, N])⁻¹ := (rfl)
+      natDiagGL 2 ![1, N] *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop *
+          (natDiagGL 2 ![1, N])⁻¹ := (rfl)
 
 /-- `ι` is involutive: transposition is, and the two conjugations by `w` cancel because
 transposition fixes `w`. -/
 private lemma atkinLehnerHom_involutive (g : GL (Fin 2) ℚ) :
     (atkinLehnerHom N (atkinLehnerHom N g).unop).unop = g := by
   simp only [atkinLehnerHom_unop]
-  have h_tr : (transposeGLEquiv 2 (natDiagGL 2 ![1, N] *
-      (transposeGLEquiv 2 g).unop * (natDiagGL 2 ![1, N])⁻¹)).unop =
-      (transposeGLEquiv 2 (natDiagGL 2 ![1, N])⁻¹).unop *
-        (transposeGLEquiv 2 (transposeGLEquiv 2 g).unop).unop *
-        (transposeGLEquiv 2 (natDiagGL 2 ![1, N])).unop := by
+  have h_tr : (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+      (natDiagGL 2 ![1, N] *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop *
+          (natDiagGL 2 ![1, N])⁻¹)).unop =
+      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+        (natDiagGL 2 ![1, N])⁻¹).unop *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+          (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) g).unop).unop *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+          (natDiagGL 2 ![1, N])).unop := by
     rw [map_mul, map_mul]
     simp only [MulOpposite.unop_mul]
     group
-  have h_inv : (transposeGLEquiv 2 (natDiagGL 2 ![1, N])⁻¹).unop =
+  have h_inv : (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2)
+      (natDiagGL 2 ![1, N])⁻¹).unop =
       (natDiagGL 2 ![1, N])⁻¹ := by
-    rw [map_inv, MulOpposite.unop_inv, transposeGLEquiv_natDiagGL 2 ![1, N]]
-  rw [h_tr, transposeGLEquiv_transposeGLEquiv, transposeGLEquiv_natDiagGL 2 ![1, N], h_inv]
+    rw [map_inv, MulOpposite.unop_inv, transposeMulEquiv_natDiagGL 2 ![1, N]]
+  rw [h_tr, Matrix.GeneralLinearGroup.transposeMulEquiv_transposeMulEquiv,
+    transposeMulEquiv_natDiagGL 2 ![1, N], h_inv]
   group
 
 /-- The ambient Atkin–Lehner anti-involution as an equivalence with the opposite group. -/
@@ -217,7 +228,7 @@ private lemma atkinLehnerHom_unop_val [NeZero N] (g : GL (Fin 2) ℚ)
   have hcast : ((A 1 0 : ℤ) : ℚ) = (N : ℚ) * ((c : ℤ) : ℚ) := by
     exact_mod_cast congrArg (Int.cast : ℤ → ℚ) hc
   simp only [atkinLehnerHom_unop, atkinLehnerEntries, Units.val_mul, hw, hwinv,
-    transposeGLEquiv_coe, hA]
+    Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv, hA]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Matrix.diagonal_apply, Matrix.map_apply,
@@ -301,7 +312,8 @@ noncomputable def atkinLehnerAutomorphism : GL (Fin 2) ℚ ≃* GL (Fin 2) ℚ :
 -- matrix entries are wanted.
 lemma atkinLehnerAutomorphism_apply (x : GL (Fin 2) ℚ) :
     atkinLehnerAutomorphism N x = natDiagGL 2 ![1, N] *
-      (transposeGLEquiv 2 x⁻¹).unop * (natDiagGL 2 ![1, N])⁻¹ :=
+      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) x⁻¹).unop *
+        (natDiagGL 2 ![1, N])⁻¹ :=
   (rfl)
 
 /-- Coercing the ambient automorphism to a monoid hom does not change its value. -/
@@ -344,7 +356,9 @@ private lemma atkinLehnerAutomorphism_toMonoidHom_apply (x : GL (Fin 2) ℚ) :
 definition. -/
 @[simp] lemma atkinLehnerAntiInvolution_bar [NeZero N] {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
     (atkinLehnerAntiInvolution N).bar x hx =
-      natDiagGL 2 ![1, N] * (transposeGLEquiv 2 x).unop * (natDiagGL 2 ![1, N])⁻¹ :=
+      natDiagGL 2 ![1, N] *
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin 2) x).unop *
+          (natDiagGL 2 ![1, N])⁻¹ :=
   HeckeAntiInvolution.ofAmbient_bar _ _ _ _ x hx
 
 /-- On an inverse from `Δ₀(N)`, the ambient automorphism is the restricted Atkin–Lehner bar. -/
@@ -372,7 +386,8 @@ private lemma atkinLehnerHom_unop_det (x : GL (Fin 2) ℚ) :
     (((atkinLehnerHom N x).unop : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det =
       (x : Matrix (Fin 2) (Fin 2) ℚ).det := by
   simp only [atkinLehnerHom, MonoidHom.coe_mk, OneHom.coe_mk, MulOpposite.unop_op,
-    Units.val_mul, Matrix.det_units_conj, transposeGLEquiv_coe, Matrix.det_transpose]
+    Units.val_mul, Matrix.det_units_conj,
+    Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv, Matrix.det_transpose]
 
 /-- **The bar preserves the determinant**, so a determinant hypothesis on `x` transfers to
 `bar x` unchanged. -/

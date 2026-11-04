@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.Analysis.Calculus.ContDiff.Integrable
-public import TauCeti.Analysis.Convolution
+public import TauCeti.Analysis.Convolution.Basic
 
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 

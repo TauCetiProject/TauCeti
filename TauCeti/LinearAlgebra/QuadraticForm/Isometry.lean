@@ -20,6 +20,7 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 
 ## Main results
 
+* `QuadraticMap.Isometry.neg`: an isometry also preserves the negatives of the quadratic maps.
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
@@ -30,6 +31,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
+  `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
   of squares along an equivalence of index types gives an isometric quadratic form.
 * `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
@@ -45,6 +48,23 @@ namespace TauCeti
 open QuadraticMap
 
 universe u v w
+
+/-- An isometry of quadratic maps, regarded as an isometry of their negatives. The underlying
+linear map is unchanged. -/
+def _root_.QuadraticMap.Isometry.neg {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (f : Q₁ →qᵢ Q₂) : (-Q₁) →qᵢ (-Q₂) where
+  __ := f.toLinearMap
+  map_app' x := by simp
+
+/-- Negating both quadratic maps does not change the isometry on vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.Isometry.neg_apply {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (f : Q₁ →qᵢ Q₂) (x : M₁) : f.neg x = f x :=
+  (rfl)
 
 /-- An isometry preserves the polarization of a quadratic map. -/
 @[simp]
@@ -168,6 +188,44 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+section Neg
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] {Q Q' : QuadraticMap R M N} {u : R}
+
+/-- If `u * u = -1`, multiplication by `u` is an isometry from `Q` to `Q' = -Q`, with inverse
+multiplication by `-u`. -/
+def _root_.QuadraticMap.isometryEquivNeg (h : Q' = -Q) (hu : u * u = -1) :
+    Q.IsometryEquiv Q' where
+  toLinearEquiv := LinearEquiv.smulOfUnit ⟨u, -u, by rw [mul_neg, hu, neg_neg],
+    by rw [neg_mul, hu, neg_neg]⟩
+  map_app' m := by
+    simp [LinearEquiv.smulOfUnit, h, QuadraticMap.map_smul, hu]
+
+/-- The isometry `QuadraticMap.isometryEquivNeg` multiplies each vector by `u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    QuadraticMap.isometryEquivNeg h hu m = u • m :=
+  -- The parentheses keep the proof opaque, so the definition need not be exposed.
+  (rfl)
+
+/-- The inverse of `QuadraticMap.isometryEquivNeg` for `u` is the same construction for `-u`, in
+the opposite direction. -/
+theorem _root_.QuadraticMap.isometryEquivNeg_symm (h : Q' = -Q) (hu : u * u = -1) :
+    (QuadraticMap.isometryEquivNeg h hu).symm =
+      QuadraticMap.isometryEquivNeg (by rw [h, neg_neg]) (u := -u) (by rw [neg_mul_neg, hu]) := by
+  dsimp only [IsometryEquiv.symm, QuadraticMap.isometryEquivNeg]
+  congr 1
+  exact LinearEquiv.ext fun _ ↦ rfl
+
+/-- The inverse of `QuadraticMap.isometryEquivNeg` multiplies each vector by `-u`. -/
+@[simp]
+theorem _root_.QuadraticMap.isometryEquivNeg_symm_apply (h : Q' = -Q) (hu : u * u = -1) (m : M) :
+    (QuadraticMap.isometryEquivNeg h hu).symm m = -(u • m) := by
+  rw [QuadraticMap.isometryEquivNeg_symm, QuadraticMap.isometryEquivNeg_apply, neg_smul]
+
+end Neg
 
 section Reindex
 

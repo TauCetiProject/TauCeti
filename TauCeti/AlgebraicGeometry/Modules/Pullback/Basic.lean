@@ -10,8 +10,9 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
-public import TauCeti.AlgebraicGeometry.Modules.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 
@@ -24,11 +25,11 @@ natural transformations. This file records them on components, in the forms used
 iterated pullbacks of a single module, and shows that pullback preserves the structure sheaf
 `𝒪` compatibly with identities and composition.
 
-For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullback `f^* M` to
-`f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f ∣_ V`. This compatibility lets
-local properties of modules, expressed on open covers, be transported along scheme morphisms.
-Being an isomorphism is such a local property: a morphism of modules is an isomorphism exactly
-when its pullbacks to the members of an open cover are.
+For a scheme morphism `f : X ⟶ Y` and an open `V ⊆ Y`, restricting the pullback `f^* M` to an
+open `W ⊆ f⁻¹ V` agrees with pulling back the restriction `M|_V` along `f.resLE V W e`. This
+compatibility lets local properties of modules, expressed on open covers, be transported along
+scheme morphisms. Being an isomorphism is such a local property: a morphism of modules is an
+isomorphism exactly when its pullbacks to the members of an open cover are.
 
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
@@ -65,8 +66,8 @@ local data on the preimage cover.
 * `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
   `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
   without its inverse;
-* `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
-  pullbacks;
+* `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
+  an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
   isomorphism exactly when its pullbacks to the members of an open cover are;
 * `AlgebraicGeometry.Scheme.Modules.pullbackOver`: pullback read on the slice sites over `V` and
@@ -79,6 +80,10 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.overIsoFreeOfRestrictIsoFree`), and a trivialization of the
   pullback along an open immersion `f` is one of the restriction to `f.opensRange`
   (`AlgebraicGeometry.Scheme.Modules.restrictOpensRangeIsoFree`);
+* `AlgebraicGeometry.Scheme.Modules.ιFree_pullbackObjFreeIso_inv`: through Mathlib's
+  `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the pullback of a basis section is the basis section; multiplied by a
+  global function `r`, it is the basis section multiplied by the pullback of `r`
+  (`pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom`);
 * `SheafOfModules.LocalGeneratorsData.pullback` and `SheafOfModules.QuasicoherentData.pullback`:
   local generators and quasi-coherent data carried along `f`;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pullback`,
@@ -104,6 +109,13 @@ universe w u
 noncomputable section
 
 variable {X Y : Scheme.{u}}
+
+/-- Mathlib's site-level pushforward along a morphism of schemes is a right adjoint. Mathlib's
+statements about pullbacks of sheaves of modules ask for this by instance, while the adjunction is
+recorded for `Scheme.Modules.pushforward`, which instance search does not unfold. -/
+instance isRightAdjoint_sheafOfModulesPushforward (f : X ⟶ Y) :
+    (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+  inferInstanceAs (pushforward f).IsRightAdjoint
 
 section Coherence
 
@@ -197,11 +209,8 @@ variable {Z : Scheme.{u}}
 /-- Pullback along a morphism of schemes preserves the structure sheaf: `f^* 𝒪_Y ≅ 𝒪_X`, the
 isomorphism being Mathlib's comparison `SheafOfModules.pullbackObjUnitToUnit`. -/
 def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ 𝟙_ X.Modules :=
-  -- Mathlib's invertibility of `pullbackObjUnitToUnit` is stated for pushforwards known to be
-  -- right adjoints; the adjunction is recorded for `Scheme.Modules.pushforward`. Instance search
-  -- does not find the resulting `IsIso` instance, so it is passed explicitly.
-  let : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
+  -- Instance search does not find Mathlib's `IsIso` instance for `pullbackObjUnitToUnit`, so it
+  -- is passed explicitly.
   have : IsIso (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) :=
     SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _
   @asIso _ _ _ _ (SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) this
@@ -209,10 +218,7 @@ def pullbackObjUnitIso (f : X ⟶ Y) : (pullback f).obj (𝟙_ Y.Modules) ≅ �
 /-- The hom of `pullbackObjUnitIso` is Mathlib's structure sheaf comparison map. -/
 @[simp]
 lemma pullbackObjUnitIso_hom (f : X ⟶ Y) :
-    (pullbackObjUnitIso f).hom =
-      (letI : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-        inferInstanceAs (pushforward f).IsRightAdjoint
-       SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom) := by
+    (pullbackObjUnitIso f).hom = SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom := by
   rfl
 
 /-- The transpose of `f^* 𝒪_Y ≅ 𝒪_X` is the map `𝒪_Y ⟶ f_* 𝒪_X` given by `f` on sections. -/
@@ -372,12 +378,6 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
-  -- The site-level statement asks for the right adjoints by instance; for schemes they are
-  -- recorded on `Scheme.Modules.pushforward`.
-  have : (SheafOfModules.pushforward g.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward g).IsRightAdjoint
-  have : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f).IsRightAdjoint
   TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
@@ -408,14 +408,25 @@ section Over
 
 variable (f : X ⟶ Y)
 
-/-- Pullback commutes with restriction to opens: for an open `V ⊆ Y`, the restriction of
-`f^* M` to the preimage `f⁻¹ V` is the pullback of `M|_V` along `f ∣_ V : f⁻¹ V ⟶ V`. -/
-def restrictPullbackObjIso (V : Y.Opens) (M : Y.Modules) :
-    ((pullback f).obj M).restrict (f ⁻¹ᵁ V).ι ≅ (pullback (f ∣_ V)).obj (M.restrict V.ι) :=
-  (restrictFunctorIsoPullback (f ⁻¹ᵁ V).ι).app _ ≪≫ (pullbackComp (f ⁻¹ᵁ V).ι f).app M ≪≫
-    (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
-    ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
-    (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm
+/-- Pullback commutes with restriction to opens, naturally in the module: for opens `V ⊆ Y` and
+`W ⊆ f⁻¹ V`, the restriction of `f^* M` to `W` is the pullback of `M|_V` along
+`f.resLE V W e : W ⟶ V`. -/
+def restrictPullbackIso (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ V) :
+    pullback f ⋙ restrictFunctor W.ι ≅ restrictFunctor V.ι ⋙ pullback (f.resLE V W e) :=
+  Functor.isoWhiskerLeft (pullback f) (restrictFunctorIsoPullback W.ι) ≪≫
+    pullbackComp W.ι f ≪≫ pullbackCongr (f.resLE_comp_ι e).symm ≪≫
+    (pullbackComp (f.resLE V W e) V.ι).symm ≪≫
+    Functor.isoWhiskerRight (restrictFunctorIsoPullback V.ι).symm (pullback (f.resLE V W e))
+
+/-- The components of `restrictPullbackIso`: both restrictions are identified with pullbacks along
+the open immersions, and `W.ι ≫ f = f.resLE V W e ≫ V.ι`. -/
+lemma restrictPullbackIso_hom_app (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹ᵁ V) (M : Y.Modules) :
+    (restrictPullbackIso f V W e).hom.app M =
+      (restrictFunctorIsoPullback W.ι).hom.app ((pullback f).obj M) ≫
+        (pullbackComp W.ι f).hom.app M ≫ (pullbackCongr (f.resLE_comp_ι e).symm).hom.app M ≫
+        (pullbackComp (f.resLE V W e) V.ι).inv.app M ≫
+        (pullback (f.resLE V W e)).map ((restrictFunctorIsoPullback V.ι).inv.app M) :=
+  (rfl)
 
 variable (V : Y.Opens)
 
@@ -440,10 +451,18 @@ def pullbackOverUnitIso :
 
 /-- Pullback read on slice sites computes the restriction of the pullback: it sends `M.over V`
 to `(f^* M).over (f⁻¹ V)`. -/
+-- The middle composite is the component of `restrictPullbackIso f V (f ⁻¹ᵁ V) le_rfl` at `M`,
+-- spelled out along `f ∣_ V` rather than transported along `Scheme.Hom.resLE_eq_morphismRestrict`:
+-- with that transport, elaborating the finiteness instance for `QuasicoherentData.pullback` below
+-- exceeds the maximum recursion depth.
 def pullbackOverObjIso (M : Y.Modules) :
     (pullbackOver f V).obj (M.over V) ≅ ((pullback f).obj M).over (f ⁻¹ᵁ V) :=
   ((overEquiv (f ⁻¹ᵁ V)).inverse.mapIso
-      ((overFunctorEquiv (f ⁻¹ᵁ V)).app _ ≪≫ restrictPullbackObjIso f V M ≪≫
+      ((overFunctorEquiv (f ⁻¹ᵁ V)).app _ ≪≫
+        ((restrictFunctorIsoPullback (f ⁻¹ᵁ V).ι).app _ ≪≫ (pullbackComp (f ⁻¹ᵁ V).ι f).app M ≪≫
+          (pullbackCongr (morphismRestrict_ι f V).symm).app M ≪≫
+          ((pullbackComp (f ∣_ V) V.ι).app M).symm ≪≫
+          (pullback (f ∣_ V)).mapIso ((restrictFunctorIsoPullback V.ι).app M).symm) ≪≫
         (pullback (f ∣_ V)).mapIso ((overFunctorEquiv V).app M).symm)).symm ≪≫
     ((overEquiv (f ⁻¹ᵁ V)).unitIso.app _).symm
 
@@ -507,13 +526,47 @@ the restriction of `M` to the open image of `f`. -/
 def restrictOpensRangeIsoFree (M : Y.Modules) (f : X ⟶ Y) [IsOpenImmersion f] {I : Type u}
     (e : (pullback f).obj M ≅ SheafOfModules.free I) :
     M.restrict f.opensRange.ι ≅ SheafOfModules.free I :=
-  letI : (SheafOfModules.pushforward.{u} f.isoOpensRange.inv.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (pushforward f.isoOpensRange.inv).IsRightAdjoint
   (restrictFunctorIsoPullback f.opensRange.ι).app M ≪≫
     (pullbackCongr f.isoOpensRange_inv_comp).symm.app M ≪≫
     ((pullbackComp f.isoOpensRange.inv f).app M).symm ≪≫
     (pullback f.isoOpensRange.inv).mapIso e ≪≫
     SheafOfModules.pullbackObjFreeIso f.isoOpensRange.inv.toRingCatSheafHom I
+
+section PullbackFree
+
+variable (f : X ⟶ Y) {I : Type u}
+
+/-- Through `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the basis section `ιFree i` of `𝒪_X^I` is the pullback along `f`
+of the basis section `ιFree i` of `𝒪_Y^I`. -/
+@[reassoc]
+lemma ιFree_pullbackObjFreeIso_inv (i : I) :
+    SheafOfModules.ιFree i ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).inv =
+      (pullbackObjUnitIso f).inv ≫ (pullback f).map (SheafOfModules.ιFree i) :=
+  -- Composites with Mathlib's `ιFree` and `pullbackObjFreeIso` are not reducibly composites in
+  -- `X.Modules`, so `rw [Category.assoc]` finds no match and they are rewritten by `Eq.trans`.
+  (Iso.comp_inv_eq _).2 ((Category.assoc _ _ _).trans ((congrArg ((pullbackObjUnitIso f).inv ≫ ·)
+    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans
+      (by rw [← pullbackObjUnitIso_hom]; exact Iso.inv_hom_id_assoc _ _))).symm
+
+/-- Through `f^* 𝒪_Y^I ≅ 𝒪_X^I`, pulling back along `f` the basis section `ιFree i` of `𝒪_Y^I`
+multiplied by a global function `r` gives the basis section `ιFree i` of `𝒪_X^I` multiplied by
+the pullback of `r`. -/
+@[reassoc]
+lemma pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom (r : Γ(Y, ⊤))
+    (i : I) :
+    (pullback f).map (globalSectionsSmul (𝟙_ Y.Modules) r ≫ SheafOfModules.ιFree i) ≫
+        (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).hom =
+      (pullbackObjUnitIso f).hom ≫ globalSectionsSmul (𝟙_ X.Modules) (f.appTop r) ≫
+        SheafOfModules.ιFree i := by
+  -- Composites with Mathlib's `pullbackObjFreeIso` are not reducibly composites in `X.Modules`,
+  -- so the first two steps are rewritten by `Eq.trans` rather than `rw`.
+  refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
+  refine (congrArg (_ ≫ ·)
+    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans ?_
+  rw [pullback_map_globalSectionsSmul, ← pullbackObjUnitIso_hom]
+  exact globalSectionsSmul_naturality_assoc _ _ _
+
+end PullbackFree
 
 end Free
 

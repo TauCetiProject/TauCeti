@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Verschiebung
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Verschiebung.Basic
 -- Proof-only: separability is invariant under base change.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 -- Proof-only: `deg [n] = n ²`.

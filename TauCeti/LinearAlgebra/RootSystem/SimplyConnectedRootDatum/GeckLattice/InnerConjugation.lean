@@ -31,7 +31,7 @@ On points over a commutative ring it sends `x` to `g x g⁻¹`. -/
 def geckInnerConjugation (g : t.geckPoints ht ℤ) : Aut (t.geckGroupScheme ht) :=
   .of <| (eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).trans
     ((hopfSpec (CommRingCat.of ℤ)).mapIso
-      (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
+      ((t.geckCoordinateHopfAlgebra ht).innerConjugationIso
         (t.geckCoordinatePoint ht g)).op) |>.trans
     (eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).symm
 
@@ -40,7 +40,7 @@ theorem geckInnerConjugation_def (g : t.geckPoints ht ℤ) :
     t.geckInnerConjugation ht g = .of
       (((eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).trans
         ((hopfSpec (CommRingCat.of ℤ)).mapIso
-          (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
+          ((t.geckCoordinateHopfAlgebra ht).innerConjugationIso
             (t.geckCoordinatePoint ht g)).op)).trans
           (eqToIso (t.geckGroupScheme_eq_hopfSpec ht)).symm) :=
   (rfl)
@@ -55,7 +55,7 @@ theorem geckGroupSchemePointMulEquiv_comp_geckInnerConjugation
         (t.geckInnerConjugation ht g).asIso.hom.hom.hom =
       t.geckGroupSchemePointMulEquiv ht A
         ((CommHopfAlgCat.Hom.mapPointsFunctor
-          (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
+          ((t.geckCoordinateHopfAlgebra ht).innerConjugationIso
             (t.geckCoordinatePoint ht g)).hom).app (CommAlgCat.of ℤ A) q) := by
   rw [geckInnerConjugation_def]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain (R := ℤ) A
@@ -63,7 +63,7 @@ theorem geckGroupSchemePointMulEquiv_comp_geckInnerConjugation
     (t.geckGroupSchemePointMulEquiv ht A) (t.geckGroupSchemePointMulEquiv ht A)
     (t.geckGroupSchemePointMulEquiv_apply_left ht A)
     (t.geckGroupSchemePointMulEquiv_apply_left ht A)
-    (CommHopfAlgCat.innerConjugationIso (t.geckCoordinateHopfAlgebra ht)
+    ((t.geckCoordinateHopfAlgebra ht).innerConjugationIso
       (t.geckCoordinatePoint ht g)).hom q
 
 /-- **On scheme-valued points, inner conjugation by an integral point is conjugation by its
@@ -82,7 +82,7 @@ theorem geckSchemePointsMulEquiv_comp_geckInnerConjugation
           (Int.castRingHom A) g)⁻¹ := by
   obtain ⟨q, rfl⟩ := (t.geckGroupSchemePointMulEquiv ht A).surjective p
   rw [t.geckGroupSchemePointMulEquiv_comp_geckInnerConjugation ht g A]
-  rw [CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
+  rw [_root_.CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom,
     HopfAlgebra.innerConjugationPointNatIso_hom_app_apply]
   rw [geckSchemePointsMulEquiv_groupSchemePointMulEquiv,
     geckSchemePointsMulEquiv_groupSchemePointMulEquiv]
@@ -97,7 +97,7 @@ theorem geckInnerConjugation_one :
   have hpoint : t.geckCoordinatePoint ht 1 = 1 := by
     apply (t.geckCoordinatePointMulEquiv ht ℤ).injective
     rw [geckCoordinatePointMulEquiv_geckCoordinatePoint, map_one]
-  rw [hpoint, CommHopfAlgCat.innerConjugationIso_one]
+  rw [hpoint, _root_.CommHopfAlgCat.innerConjugationIso_one]
   ext
   simp
 

@@ -47,8 +47,7 @@ private theorem kernelHopfIdeal_comap_evaluationIso :
         (CommHopfAlgCat.evaluationIso hK).hom.hom
         (ConcreteCategory.bijective_of_isIso (CommHopfAlgCat.evaluationIso hK).hom).2 =
       CommHopfAlgCat.kernelHopfIdeal
-        (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k
-          (TauCeti.GroupLike.map f.hom))) := by
+        (CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k f.hom.mapGroupLike)) := by
   have h := congrArg CommHopfAlgCat.kernelHopfIdeal
     (CommHopfAlgCat.evaluationIso_naturality hH hK f)
   rw [CommHopfAlgCat.kernelHopfIdeal_comp_of_surjective _
@@ -62,12 +61,12 @@ algebra of the cokernel of its intrinsic character map. -/
 noncomputable def kernelGroupLikeCoordinateIso :
     CommHopfAlgCat.quotient K (CommHopfAlgCat.kernelHopfIdeal f) ≅
       CommHopfAlgCat.of k
-        (MonoidAlgebra k (_root_.GroupLike k K ⧸ (TauCeti.GroupLike.map f.hom).range)) :=
+        (MonoidAlgebra k (_root_.GroupLike k K ⧸ f.hom.mapGroupLike.range)) :=
   (CommHopfAlgCat.quotientIsoOfIso (CommHopfAlgCat.evaluationIso hK)
       (CommHopfAlgCat.kernelHopfIdeal f)).symm ≪≫
     eqToIso (congrArg (CommHopfAlgCat.quotient _)
       (kernelHopfIdeal_comap_evaluationIso hH hK f)) ≪≫
-    kernelCoordinateIso k (TauCeti.GroupLike.map f.hom)
+    kernelCoordinateIso k f.hom.mapGroupLike
 
 /-- The intrinsic kernel comparison commutes with the quotient coordinate maps. The
 ambient element is first expressed in its intrinsic character coordinates. -/
@@ -77,13 +76,13 @@ theorem mkQuotient_comp_kernelGroupLikeCoordinateIso_hom :
         (kernelGroupLikeCoordinateIso hH hK f).hom =
       (CommHopfAlgCat.evaluationIso hK).inv ≫
         CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom k
-          (QuotientGroup.mk' (TauCeti.GroupLike.map f.hom).range)) := by
+          (QuotientGroup.mk' f.hom.mapGroupLike.range)) := by
   simp only [kernelGroupLikeCoordinateIso, Iso.trans_hom, Iso.symm_hom, eqToIso.hom]
   simp only [← Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfIso_inv]
   simp only [Category.assoc]
   congr 1
   rw [← Category.assoc, CommHopfAlgCat.mkQuotient_comp_eqToHom
     (kernelHopfIdeal_comap_evaluationIso hH hK f).symm]
-  exact mkQuotient_comp_kernelCoordinateIso_hom k (TauCeti.GroupLike.map f.hom)
+  exact mkQuotient_comp_kernelCoordinateIso_hom k f.hom.mapGroupLike
 
 end TauCeti.DiagonalizableGroup

@@ -17,9 +17,10 @@ This file expresses completeness through the joint maximal-flow domain and relat
 pointwise maximal intervals and to the existence of global integral curves.
 
 Compactly supported `C¹` vector fields on boundaryless Banach manifolds are complete. In
-particular, every `C¹` vector field on a compact boundaryless Banach manifold is complete. These
-criteria make completeness available without choosing a global flow or assuming finite
-dimensionality.
+particular, every `C¹` vector field on a compact boundaryless Banach manifold is complete. So is
+every `C¹` vector field admitting a proper map that is constant along its integral curves, such
+as a Hamiltonian vector field with a proper family of first integrals. These criteria make
+completeness available without choosing a global flow or assuming finite dimensionality.
 
 ## Main declarations
 
@@ -35,6 +36,8 @@ dimensionality.
 * `TauCeti.isCompleteVectorField_of_isCompact_of_eq_zero_off`: compactly supported fields are
   complete.
 * `TauCeti.isCompleteVectorField_of_compactSpace`: fields on compact manifolds are complete.
+* `TauCeti.isCompleteVectorField_of_isProperMap`: fields whose maximal integral curves stay in
+  the fibres of a proper map are complete.
 
 ## References
 
@@ -155,5 +158,20 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) isCompact_univ fun _ _ ↦ mem_univ _
+
+/-- **A `C¹` vector field with a proper invariant map is complete.** If a proper map `G` is
+constant along every maximal integral curve of `v`, then each maximal integral curve stays in the
+compact fibre of `G` through its initial point, so it is defined for all time. No regularity of
+the fibres is needed. -/
+theorem isCompleteVectorField_of_isProperMap {Y : Type*} [TopologicalSpace Y]
+    {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    {G : M → Y} (hG : IsProperMap G)
+    (hGv : ∀ x, ∀ t ∈ maximalIntegralCurveInterval v x, G (maximalIntegralCurve v x t) = G x) :
+    IsCompleteVectorField v := by
+  rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
+  exact fun x ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
+    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
+    (hG.isCompact_preimage isCompact_singleton) (hGv x)
 
 end TauCeti

@@ -17,7 +17,9 @@ generators whose indices sum to `d`. In particular, `dp R d m` belongs to the de
 
 A linear map `M →ₗ[R] N` restricts the functorial map on divided power algebras to every
 homogeneous piece. These restricted maps preserve divided-power generators and satisfy the
-identity and composition laws.
+identity and composition laws. For a second module `N`, the product
+`x ⊗ y ↦ Γ(inl)(x) Γ(inr)(y)` maps `Γ^d_R(M) ⊗[R] Γ^e_R(N)` to `Γ^{d + e}_R(M × N)`
+(`DividedPowerAlgebra.homogeneousProdMul`), naturally in both modules.
 
 The construction follows Roby's grading of the divided power algebra.
 The ambient `DividedPowerAlgebra`, its generators and its functorial map are the Mathlib
@@ -146,12 +148,33 @@ instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) 
   one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
   mul_mem _ _ := mul_mem_homogeneousSubmodule
 
+/-- A product `∏_{j ∈ F} dp R kⱼ mⱼ` over a finite set belongs to the homogeneous piece of its
+total degree. -/
+theorem prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq {ι : Type*} (F : Finset ι) {d : ℕ}
+    (m : ι → M) (k : ι → ℕ) (hk : ∑ j ∈ F, k j = d) :
+    ∏ j ∈ F, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+
 /-- A finite product of divided-power generators belongs to the homogeneous piece of its
 total degree. -/
 theorem prod_dp_mem_homogeneousSubmodule_of_sum_eq {ι : Type*} [Fintype ι] {d : ℕ}
     (m : ι → M) (k : ι → ℕ) (hk : ∑ j, k j = d) :
     ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
-  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+  prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq Finset.univ m k hk
+
+/-- Linear maps from a homogeneous piece agree if they agree on every product
+`∏ⱼ dp R kⱼ mⱼ` of a finite family whose indices sum to `d`. -/
+theorem homogeneousSubmodule_ext_prod_dp {d : ℕ}
+    {f g : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N}
+    (h : ∀ (n : ℕ) (m : Fin n → M) (k : Fin n → ℕ) (hk : ∑ j, k j = d),
+      f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ =
+        g ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩) :
+    f = g := by
+  refine homogeneousSubmodule_ext fun l hl ↦ ?_
+  have hk : ∑ j : Fin l.length, l[j.1].1 = d := by
+    simpa using hl
+  have hp := Fin.prod_univ_fun_getElem l (fun nm : ℕ × M ↦ dp R nm.1 nm.2)
+  simpa only [hp] using h l.length (fun j ↦ l[j.1].2) (fun j ↦ l[j.1].1) hk
 
 /-- The functorial map on divided power algebras preserves every homogeneous piece, including
 when it changes the base ring to an `R`-algebra `S`. -/
@@ -229,5 +252,49 @@ theorem mapHomogeneousSubmodule_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P) (d 
       mapHomogeneousSubmodule (g.comp f) d := by
   ext x
   simp [map_comp]
+
+section Prod
+
+open TensorProduct
+
+variable {M' N' : Type*} [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+
+variable (R M N) in
+/-- The product `x ⊗ y ↦ Γ(inl)(x) Γ(inr)(y)` of homogeneous pieces, from
+`Γ^d_R(M) ⊗[R] Γ^e_R(N)` to `Γ^{d + e}_R(M × N)`. -/
+def homogeneousProdMul (d e : ℕ) :
+    homogeneousSubmodule (R := R) (M := M) d ⊗[R] homogeneousSubmodule (R := R) (M := N) e →ₗ[R]
+      homogeneousSubmodule (R := R) (M := M × N) (d + e) :=
+  TensorProduct.lift <| LinearMap.mk₂ R
+    (fun x y ↦ ⟨map R (LinearMap.inl R M N) x * map R (LinearMap.inr R M N) y,
+      mul_mem_homogeneousSubmodule (map_mem_homogeneousSubmodule _ x.2)
+        (map_mem_homogeneousSubmodule _ y.2)⟩)
+    (fun _ _ _ ↦ Subtype.ext <| by simp [add_mul])
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+    (fun _ _ _ ↦ Subtype.ext <| by simp [mul_add])
+    (fun _ _ _ ↦ Subtype.ext <| by simp)
+
+/-- The product of homogeneous pieces sends `x ⊗ y` to `Γ(inl)(x) Γ(inr)(y)`. -/
+@[simp]
+theorem coe_homogeneousProdMul_tmul (d e : ℕ) (x : homogeneousSubmodule (R := R) (M := M) d)
+    (y : homogeneousSubmodule (R := R) (M := N) e) :
+    (homogeneousProdMul R M N d e (x ⊗ₜ y) : DividedPowerAlgebra R (M × N)) =
+      map R (LinearMap.inl R M N) x * map R (LinearMap.inr R M N) y := by
+  simp [homogeneousProdMul]
+
+/-- The product of homogeneous pieces is natural in both modules. -/
+theorem homogeneousProdMul_comp_map (d e : ℕ) (f : M →ₗ[R] M') (g : N →ₗ[R] N') :
+    homogeneousProdMul R M' N' d e ∘ₗ
+        TensorProduct.map (mapHomogeneousSubmodule f d) (mapHomogeneousSubmodule g e) =
+      mapHomogeneousSubmodule (f.prodMap g) (d + e) ∘ₗ homogeneousProdMul R M N d e := by
+  have hinl : f.prodMap g ∘ₗ LinearMap.inl R M N = LinearMap.inl R M' N' ∘ₗ f := by
+    ext <;> simp
+  have hinr : f.prodMap g ∘ₗ LinearMap.inr R M N = LinearMap.inr R M' N' ∘ₗ g := by
+    ext <;> simp
+  refine TensorProduct.ext' fun x y ↦ Subtype.ext ?_
+  simp only [LinearMap.comp_apply, TensorProduct.map_tmul, coe_homogeneousProdMul_tmul,
+    coe_mapHomogeneousSubmodule_apply, map_mul, ← AlgHom.comp_apply, ← map_comp, hinl, hinr]
+
+end Prod
 
 end DividedPowerAlgebra

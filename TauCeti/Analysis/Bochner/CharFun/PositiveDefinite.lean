@@ -46,13 +46,12 @@ variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The characteristic function of a finite measure is positive definite for any additive-group
 involution that is explicitly negation. This is the generic-predicate form of
-`charFun_fintype_sum_mul_conj_nonneg`, using
+`charFun_sum_mul_conj_nonneg`, using
 `F (vᵢ + star vⱼ) = charFun μ (vᵢ - vⱼ)`. -/
 theorem charFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E] (hstar : ∀ x : E, star x = -x) :
     IsPositiveDefinite (MeasureTheory.charFun μ) := by
   intro n c v
-  have h := charFun_fintype_sum_mul_conj_nonneg (μ := μ) c v
-  refine le_of_le_of_eq h ?_
+  refine le_of_le_of_eq (charFun_sum_mul_conj_nonneg (μ := μ) Finset.univ c v) ?_
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   simp [hstar, sub_eq_add_neg]
 

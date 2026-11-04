@@ -88,6 +88,15 @@ theorem twist_inv_tensor (X Y : C) : (twist (C := C)).inv.app (X ⊗ Y) =
   rw [← cancel_epi ((twist (C := C)).hom.app (X ⊗ Y)), Iso.hom_inv_id_app, twist_tensor]
   simp
 
+/-- On a morphism out of the unit, balancing replaces an inverse crossing by a crossing
+and the twists of the two tensor factors. -/
+@[reassoc]
+theorem comp_inv_braiding {X Y : C} (f : 𝟙_ C ⟶ X ⊗ Y) :
+    f ≫ (β_ Y X).inv = f ≫ (twist.hom.app X ⊗ₘ twist.hom.app Y) ≫ (β_ X Y).hom := by
+  apply (Iso.comp_inv_eq _).mpr
+  simpa only [Functor.id_map, Functor.id_obj, twist_hom_app_unit, twist_tensor,
+    Category.id_comp, Category.assoc] using (twist (C := C)).hom.naturality f |>.symm
+
 end BalancedCategory
 
 end TauCeti

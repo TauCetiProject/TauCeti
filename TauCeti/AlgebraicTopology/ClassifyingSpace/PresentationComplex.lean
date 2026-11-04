@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
 public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
 import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
-import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
@@ -74,6 +73,8 @@ vertex, its `1`-cells are the circles of the generators
   group to the fundamental group of the presentation complex is injective and surjective.
 * `TauCeti.PresentationComplex.fundamentalGroupMulEquiv_mapOfEq_expLoop`: the isomorphism sends
   the loop around the `s`-th circle to the generator `s`.
+* `TauCeti.PresentationComplex.fundamentalGroupMulEquiv_map_incl`: the inclusion of the wedge of
+  circles induces the quotient map from the free group to the presented group.
 * `TauCeti.PresentationComplex.skeletonLT_one`, `TauCeti.PresentationComplex.isEmpty_cell`: the
   `0`-skeleton is the vertex, and there are no cells of dimension at least `3`.
 
@@ -166,7 +167,7 @@ theorem fundamentalGroupHom_of (s : S) :
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)) := by
   rw [fundamentalGroupHom, PresentedGroup.toGroup.of,
     (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_expLoop s).symm,
-    ← TauCeti.FundamentalGroup.mapOfEq_rfl, TauCeti.FundamentalGroup.mapOfEq_comp]
+    ← FundamentalGroup.mapOfEq_rfl, FundamentalGroup.mapOfEq_comp]
 
 /-- **Homomorphisms out of the presented group are induced by based maps.** For a pointed space
 `(Z, z)`, every homomorphism `ψ` from the presented group to `π₁(Z, z)` is the map induced on
@@ -193,21 +194,21 @@ theorem exists_mapOfEq_comp_fundamentalGroupHom {Z : Type v} [TopologicalSpace Z
       fun s => ?_) w
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
       (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_expLoop s).symm,
-      TauCeti.FundamentalGroup.mapOfEq_comp,
-      TauCeti.FundamentalGroup.mapOfEq_congr (f₂ := (δ s).toCircle)
+      FundamentalGroup.mapOfEq_comp,
+      FundamentalGroup.mapOfEq_congr (f₂ := (δ s).toCircle)
         (ContinuousMap.ext fun _ => WedgeSum.lift_incl _ _ _ s _) _ (δ s).toCircle_one,
       Circle.mapOfEq_toCircle_expLoop, hδ]
   -- So `f₀` makes every relator nullhomotopic, and extends over the 2-cells.
   obtain ⟨f, hf⟩ := (TwoCellAttachment.exists_comp_incl_eq_iff f₀).2 fun r : R =>
-    (TauCeti.FundamentalGroup.mapOfEq_fromPath_eq_one_iff f₀ hf₀ _).1 <| by
+    (FundamentalGroup.mapOfEq_fromPath_eq_one_iff f₀ hf₀ _).1 <| by
       rw [← (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_attachingLoop r.1).symm,
         key, PresentedGroup.one_of_mem r.2, map_one]
   have hfb : f (basepoint R) = z := by
     rw [← ContinuousMap.comp_apply, hf, hf₀]
   refine ⟨f, hfb, MonoidHom.ext fun g => ?_⟩
   obtain ⟨w, rfl⟩ := PresentedGroup.mk_surjective R g
-  rw [MonoidHom.comp_apply, fundamentalGroupHom_mk, ← TauCeti.FundamentalGroup.mapOfEq_rfl,
-    TauCeti.FundamentalGroup.mapOfEq_comp, TauCeti.FundamentalGroup.mapOfEq_congr hf _ hf₀, key]
+  rw [MonoidHom.comp_apply, fundamentalGroupHom_mk, ← FundamentalGroup.mapOfEq_rfl,
+    FundamentalGroup.mapOfEq_comp, FundamentalGroup.mapOfEq_congr hf _ hf₀, key]
 
 /-- **The presented group injects into the fundamental group of the presentation complex.** The
 homomorphism `fundamentalGroupHom R` has a left inverse, induced by a based map from the
@@ -256,6 +257,19 @@ theorem fundamentalGroupMulEquiv_mapOfEq_expLoop (s : S) :
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))) =
       PresentedGroup.of s := by
   rw [← fundamentalGroupHom_of, fundamentalGroupMulEquiv_fundamentalGroupHom]
+
+/-- **The inclusion of the wedge of circles induces the quotient map of the free group.** Under
+the identifications of the fundamental group of the wedge of circles with the free group on `S`
+and of that of the presentation complex with the presented group, the inclusion of the wedge
+induces `PresentedGroup.mk R`. -/
+@[simp]
+theorem fundamentalGroupMulEquiv_map_incl
+    (a : FundamentalGroup (WedgeSum fun _ : S => (1 : Circle)) (base _)) :
+    fundamentalGroupMulEquiv R (FundamentalGroup.map (incl R) _ a) =
+      PresentedGroup.mk R (circleFundamentalGroupMulEquiv S a) := by
+  have h := fundamentalGroupHom_mk (R := R) (circleFundamentalGroupMulEquiv S a)
+  rw [MulEquiv.symm_apply_apply] at h
+  rw [← h, fundamentalGroupMulEquiv_fundamentalGroupHom]
 
 /-! ### The CW structure -/
 

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Perimeter and outer Minkowski content
@@ -43,6 +44,8 @@ semicontinuity of the total variation concludes.
 
 * `TauCeti.perimeter_closure_le_liminf_measure_thickening_sdiff_div`: the perimeter of the closure
   is at most the lower outer Minkowski content.
+* `IsCompact.tendsto_measure_cthickening_sdiff_div`: if the parallel volume of a compact set
+  has right derivative `D` at zero, its outer shells have volume `D t + o(t)`.
 * `IsCompact.perimeter_le_of_hasDerivWithinAt`: the perimeter of a compact set is at most the
   right derivative at zero of the volume of its outer parallel sets.
 
@@ -211,30 +214,34 @@ end TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- **The perimeter of a compact set is at most the first variation of its parallel volume.**
-If the volume of the outer parallel sets `K + t • closedBall 0 1` of a compact set `K` has right
-derivative `D` at `t = 0`, then `P(K) ≤ D`. -/
-theorem IsCompact.perimeter_le_of_hasDerivWithinAt {K : Set E} (hK : IsCompact K) {D : ℝ}
+/-- If the volume of the outer parallel sets `K + t • closedBall 0 1` of a compact set `K` has
+right derivative `D` at `t = 0`, then the shells `cthickening t K \ K` have volume `D t + o(t)`
+as `t → 0⁺`. -/
+theorem IsCompact.tendsto_measure_cthickening_sdiff_div {K : Set E} (hK : IsCompact K) {D : ℝ}
     (hD : HasDerivWithinAt (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1)) D (Ioi 0) 0) :
-    TauCeti.perimeter μ ⊤ K ≤ ENNReal.ofReal D := by
-  -- For `t > 0` the outer parallel set is the closed `t`-thickening of `K`.
-  have hpar {t : ℝ} (ht : 0 ≤ t) : K + t • closedBall (0 : E) 1 = cthickening t K := by
-    rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
+    Tendsto (fun t : ℝ => μ (cthickening t K \ K) / ENNReal.ofReal t) (𝓝[>] 0)
+      (𝓝 (ENNReal.ofReal D)) := by
   -- For `t > 0` the difference quotient of the parallel volume is the shell measure over `t`.
   have hshell {t : ℝ} (ht : 0 < t) :
       ENNReal.ofReal (slope (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1)) 0 t) =
         μ (cthickening t K \ K) / ENNReal.ofReal t := by
     have hfin : μ (cthickening t K) ≠ ∞ := (hK.cthickening (r := t)).measure_lt_top.ne
-    rw [slope_def_field, sub_zero, hpar ht.le, hpar le_rfl, cthickening_zero,
+    rw [slope_def_field, sub_zero, hK.add_smul_closedBall_eq_cthickening ht.le,
+      hK.add_smul_closedBall_eq_cthickening le_rfl, cthickening_zero,
       hK.isClosed.closure_eq, ENNReal.ofReal_div_of_pos ht,
       ← measureReal_sdiff (self_subset_cthickening K) hK.measurableSet hfin,
       ofReal_measureReal (measure_ne_top_of_subset sdiff_subset hfin)]
-  have hslope : Tendsto (fun t : ℝ => μ (cthickening t K \ K) / ENNReal.ofReal t) (𝓝[>] 0)
-      (𝓝 (ENNReal.ofReal D)) := by
-    refine (ENNReal.tendsto_ofReal ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl 0)).1
-      hD)).congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    exact hshell ht
+  refine (ENNReal.tendsto_ofReal ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl 0)).1
+    hD)).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  exact hshell ht
+
+/-- **The perimeter of a compact set is at most the first variation of its parallel volume.**
+If the volume of the outer parallel sets `K + t • closedBall 0 1` of a compact set `K` has right
+derivative `D` at `t = 0`, then `P(K) ≤ D`. -/
+theorem IsCompact.perimeter_le_of_hasDerivWithinAt {K : Set E} (hK : IsCompact K) {D : ℝ}
+    (hD : HasDerivWithinAt (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1)) D (Ioi 0) 0) :
+    TauCeti.perimeter μ ⊤ K ≤ ENNReal.ofReal D :=
   calc TauCeti.perimeter μ ⊤ K
       = TauCeti.perimeter μ ⊤ (closure K) := by rw [hK.isClosed.closure_eq]
     _ ≤ liminf (fun t => μ ((thickening t K \ closure K) ∩ (⊤ : Opens E)) / ENNReal.ofReal t)
@@ -244,4 +251,4 @@ theorem IsCompact.perimeter_le_of_hasDerivWithinAt {K : Set E} (hK : IsCompact K
         rw [hK.isClosed.closure_eq, Opens.coe_top, inter_univ]
         gcongr
         exact thickening_subset_cthickening t K
-    _ = ENNReal.ofReal D := hslope.liminf_eq
+    _ = ENNReal.ofReal D := (hK.tendsto_measure_cthickening_sdiff_div hD).liminf_eq

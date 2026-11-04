@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.FreeMonoid.Basic
+public import Mathlib.Combinatorics.Quiver.Path.Weight
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
@@ -22,6 +25,11 @@ parallel edge identities and supplies the directed paths needed for graph path g
 * `Graph.toSerreGraph`: the Serre graph of the actual vertices and edges of a multigraph.
 * `Graph.toSerreGraph_isLink`: its dart incidence agrees with multigraph incidence.
 * `Graph.Walk.toSerrePath`: a multigraph walk lifted to a Serre path.
+* `Graph.serrePathToWalk`: the projection back to multigraph walks, preserving edge identities.
+* `Graph.nonempty_serrePath_iff_reachable`: agreement of the two reachability relations.
+
+Every native walk between actual vertices lifts. The two directions of a loop can project to
+the same walk, so the projection need not be injective.
 
 ## References
 
@@ -36,7 +44,7 @@ variable {V : Type*} {E : Type*} (G : Graph V E)
 
 /-- The Serre graph of a multigraph. Its darts are an actual edge and a Boolean direction.
 The choice of direction uses an arbitrary ordering of each edge's two endpoints. -/
-@[expose] noncomputable def toSerreGraph : TauCeti.SerreGraph where
+@[expose, instance_reducible] noncomputable def toSerreGraph : TauCeti.SerreGraph where
   V := G.vertexSet
   E := G.edgeSet × Bool
   src := fun e => if e.2 then (G.edgeEnds e.1).out.1 else (G.edgeEnds e.1).out.2
@@ -177,5 +185,109 @@ noncomputable def toSerrePath {x y : V} (p : G.Walk x y)
   simp [toSerrePath]
 
 end Walk
+
+/-- Forget dart directions in an indexed Serre path, keeping each original edge identity. -/
+def serrePathToWalk {x : G.vertexSet} :
+    ∀ {y : G.vertexSet}, G.toSerreGraph.Path x y → G.Walk x.1 y.1
+  | _, .nil => .nil
+  | _, .cons p f =>
+    (serrePathToWalk p).append ((G.toSerreGraph_isLink f.1 _ _).mpr (.inl f.2)).toWalk
+
+@[simp] theorem serrePathToWalk_nil (x : G.vertexSet) :
+    G.serrePathToWalk (Quiver.Path.nil : G.toSerreGraph.Path x x) = .nil := (rfl)
+
+/-- Appending a dart appends the one-edge native walk. -/
+@[simp] theorem serrePathToWalk_cons {x y z : G.vertexSet}
+    (p : G.toSerreGraph.Path x y)
+    (f : @Quiver.Hom G.toSerreGraph.V G.toSerreGraph.toQuiver y z) :
+    G.serrePathToWalk (p.cons f) =
+      (G.serrePathToWalk p).append ((G.toSerreGraph_isLink f.1 _ _).mpr (.inl f.2)).toWalk := (rfl)
+
+/-- Path composition projects to native walk concatenation. -/
+@[simp] theorem serrePathToWalk_comp {x y z : G.vertexSet}
+    (p : G.toSerreGraph.Path x y) (q : G.toSerreGraph.Path y z) :
+    G.serrePathToWalk (p.comp q) =
+      (G.serrePathToWalk p).append (G.serrePathToWalk q) := by
+  induction q with
+  | nil => simp [serrePathToWalk]
+  | cons q f ih => simp [serrePathToWalk, ih, Walk.append_assoc]
+
+/-- Reversing a Serre path reverses its native walk. The original edge identity is unchanged
+when a dart is reversed, including for loops. -/
+@[simp] theorem serrePathToWalk_reverse {x y : G.vertexSet}
+    (p : G.toSerreGraph.Path x y) :
+    G.serrePathToWalk p.reverse = (G.serrePathToWalk p).reverse := by
+  let := G.toSerreGraph.toQuiver
+  let := G.toSerreGraph.toQuiverHasInvolutiveReverse
+  induction p with
+  | nil => simp [serrePathToWalk]
+  | cons p f ih =>
+    rw [Quiver.Path.reverse, serrePathToWalk_comp]
+    have he : (Quiver.reverse f).1.1.1 = f.1.1.1 := by
+      rw [G.toSerreGraph.reverse_val f, toSerreGraph_rev]
+    simp [serrePathToWalk, Quiver.Hom.toPath, ih, he, IsLink.reverse_toWalk]
+
+/-- Projection preserves the number of traversals, including loops. -/
+@[simp] theorem length_serrePathToWalk {x y : G.vertexSet}
+    (p : G.toSerreGraph.Path x y) : (G.serrePathToWalk p).length = p.length := by
+  induction p with
+  | nil => simp [serrePathToWalk]
+  | cons p f ih => simp [serrePathToWalk, ih]
+
+/-- The edge sequence of the projected walk is the path's ordered word of original edges.
+The free-monoid weight forgets only the dart signs. -/
+theorem edges_serrePathToWalk {x y : G.vertexSet} (p : G.toSerreGraph.Path x y) :
+    (G.serrePathToWalk p).edges =
+      (p.weight (fun {a b} (f : @Quiver.Hom G.toSerreGraph.V G.toSerreGraph.toQuiver a b) =>
+        FreeMonoid.of f.1.1.1)).toList := by
+  induction p with
+  | nil => simp [serrePathToWalk]
+  | cons p f ih => simp [serrePathToWalk, ih]
+
+namespace Walk
+
+variable {G}
+
+/-- Projecting the lift of a native walk recovers that walk, including its edge identities. -/
+@[simp] theorem serrePathToWalk_toSerrePath {x y : V} (p : G.Walk x y)
+    (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) :
+    G.serrePathToWalk (p.toSerrePath hx hy) = p := by
+  induction p with
+  | nil => simp
+  | cons e h p ih =>
+    simp [toSerrePath_cons, Quiver.Hom.toPath, ih, IsLink.toWalk_eq_cons]
+
+end Walk
+
+/-- Every native walk between actual vertices is the projection of a Serre path. In the loop
+case the lift chooses one of the two available directions without identifying them. -/
+theorem serrePathToWalk_surjective {x y : V} (hx : x ∈ G.vertexSet)
+    (hy : y ∈ G.vertexSet) :
+    Function.Surjective (G.serrePathToWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩)) :=
+  fun p => ⟨p.toSerrePath hx hy, p.serrePathToWalk_toSerrePath hx hy⟩
+
+/-- Serre path reachability agrees with native reachability on the actual vertices. -/
+theorem nonempty_serrePath_iff_reachable (x y : G.vertexSet) :
+    Nonempty (G.toSerreGraph.Path x y) ↔ G.Reachable x.1 y.1 := by
+  constructor
+  · rintro ⟨p⟩
+    exact (G.serrePathToWalk p).reachable x.property
+  · intro h
+    obtain ⟨_, ⟨p⟩⟩ := reachable_def.mp h
+    obtain ⟨q, _⟩ := G.serrePathToWalk_surjective x.property y.property p
+    exact ⟨q⟩
+
+/-- Native connectedness is nonemptiness together with pairwise Serre path reachability. -/
+theorem connected_iff_nonempty_serrePath :
+    G.Connected ↔ Nonempty G.toSerreGraph.V ∧
+      ∀ x y : G.toSerreGraph.V, Nonempty (G.toSerreGraph.Path x y) := by
+  rw [connected_iff_forall_reachable]
+  constructor
+  · rintro ⟨hne, h⟩
+    exact ⟨Set.nonempty_coe_sort.mpr hne, fun x y =>
+      (G.nonempty_serrePath_iff_reachable x y).mpr (h x.property y.property)⟩
+  · rintro ⟨hne, h⟩
+    exact ⟨Set.nonempty_coe_sort.mp hne, fun {_ _} hx hy =>
+      (G.nonempty_serrePath_iff_reachable ⟨_, hx⟩ ⟨_, hy⟩).mp (h _ _)⟩
 
 end Graph

@@ -32,7 +32,7 @@ standard law `levyMeasure 0 1`.
 * `isProbabilityMeasure_levyMeasure` and `ae_lt_levyMeasure` give normalization and the
   almost-sure carrier `(m, ∞)`;
 * `levyMeasure_eq_withDensity`, `hasPDF_of_hasLaw_levyMeasure` and `rnDeriv_levyMeasure` identify
-  the density;
+  the density, and `lintegral_levyPDF_eq_one` and `integral_levyPDFReal_eq_one` normalize it;
 * `map_affine_levyMeasure` and `hasLaw_affine_levyMeasure` give positive affine transport, and
   `levyMeasure_eq_map_affine_levyMeasure_zero_one` writes every law as an image of the standard one;
 * `measurable_levyMeasure` proves joint measurability in the parameters.
@@ -196,6 +196,20 @@ theorem levyMeasure_eq_withDensity (m c : ℝ) :
   congr 1
   funext x
   rw [levyPDF_eq_ofReal, levyPDFReal_eq_inverseGammaPDFReal, inverseGammaPDF_eq_ofReal]
+
+/-- The `ℝ≥0∞`-valued Lévy density has total mass `1` at positive scale. -/
+theorem lintegral_levyPDF_eq_one (hc : 0 < c) (m : ℝ) : ∫⁻ x, levyPDF m c x = 1 := by
+  have := isProbabilityMeasure_levyMeasure hc m
+  have h : levyMeasure m c univ = 1 := measure_univ
+  rwa [levyMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
+    Measure.restrict_univ] at h
+
+/-- The real-valued Lévy density has integral `1` at positive scale. -/
+theorem integral_levyPDFReal_eq_one (hc : 0 < c) (m : ℝ) : ∫ x, levyPDFReal m c x = 1 := by
+  simp_rw [← toReal_levyPDF]
+  rw [integral_toReal (measurable_levyPDF m c).aemeasurable
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
+    lintegral_levyPDF_eq_one hc m, ENNReal.toReal_one]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 

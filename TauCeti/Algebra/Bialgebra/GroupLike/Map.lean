@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import Mathlib.RingTheory.Bialgebra.GroupLike
 public import TauCeti.Algebra.Coalgebra.GroupLike.Map
-public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
 
 /-!
 # Functoriality of group-like elements
@@ -19,128 +18,76 @@ bialgebra equivalence induces a multiplicative equivalence of group-like element
 
 ## Main declarations
 
-* `TauCeti.GroupLike.map`: the homomorphism on group-like elements induced by a bialgebra map.
-* `TauCeti.GroupLike.groupLikeSetSpan_eq_top_of_surjective`: a surjective bialgebra map preserves
-  spanning by group-like elements.
-* `TauCeti.GroupLike.mapEquiv`: the equivalence induced by a bialgebra equivalence.
+* `BialgHom.mapGroupLike`: the monoid homomorphism of group-like elements induced by a bialgebra
+  morphism, compatible with `BialgHom.id` and `BialgHom.comp`.
+* `BialgEquiv.mapGroupLike`: the multiplicative equivalence of group-like elements induced by a
+  bialgebra equivalence, upgrading `CoalgEquiv.mapGroupLike` and compatible with
+  `BialgEquiv.refl`, `BialgEquiv.trans` and `BialgEquiv.symm`.
 -/
 
 public section
 
-namespace TauCeti
+variable {R A B C : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Semiring C]
+  [Bialgebra R A] [Bialgebra R B] [Bialgebra R C]
 
-universe u v w
-
-namespace GroupLike
-
-variable {R : Type u} {A : Type v} {B : Type w}
-variable [CommSemiring R] [Semiring A] [Semiring B]
-variable [Bialgebra R A] [Bialgebra R B]
+namespace BialgHom
 
 /-- A bialgebra morphism induces a monoid homomorphism on group-like elements. -/
-def map (f : A →ₐc[R] B) : _root_.GroupLike R A →* _root_.GroupLike R B where
+def mapGroupLike (f : A →ₐc[R] B) : GroupLike R A →* GroupLike R B where
   toFun x := ⟨f x.val, x.isGroupLikeElem_val.map f⟩
-  map_one' := _root_.GroupLike.val_injective (map_one f)
-  map_mul' x y := _root_.GroupLike.val_injective (map_mul f x.val y.val)
+  map_one' := GroupLike.val_injective (map_one f)
+  map_mul' x y := GroupLike.val_injective (map_mul f x.val y.val)
 
 /-- The underlying value of the image of a group-like element is its image under the bialgebra
 morphism. -/
 @[simp]
-theorem val_map (f : A →ₐc[R] B) (x : _root_.GroupLike R A) :
-    (map f x).val = f x.val :=
+theorem val_mapGroupLike (f : A →ₐc[R] B) (x : GroupLike R A) :
+    (f.mapGroupLike x).val = f x.val :=
   (rfl)
 
 /-- Mapping group-like elements respects identity bialgebra morphisms. -/
 @[simp]
-theorem map_id : map (_root_.BialgHom.id R A) = MonoidHom.id (_root_.GroupLike R A) := by
-  ext x
-  rfl
+theorem mapGroupLike_id : (BialgHom.id R A).mapGroupLike = MonoidHom.id _ :=
+  (rfl)
 
 /-- Mapping group-like elements respects composition of bialgebra morphisms. -/
 @[simp]
-theorem map_comp {C : Type*} [Semiring C] [Bialgebra R C]
-    (g : B →ₐc[R] C) (f : A →ₐc[R] B) :
-    map (g.comp f) = (map g).comp (map f) := by
-  ext x
-  rfl
+theorem mapGroupLike_comp (g : B →ₐc[R] C) (f : A →ₐc[R] B) :
+    (g.comp f).mapGroupLike = g.mapGroupLike.comp f.mapGroupLike :=
+  (rfl)
 
-/-- A surjective bialgebra morphism preserves spanning by group-like elements. -/
-theorem groupLikeSetSpan_eq_top_of_surjective (f : A →ₐc[R] B)
-    (hf : Function.Surjective f)
-    (hA : Subcoalgebra.groupLikeSetSpan (R := R) (C := A) Set.univ = ⊤) :
-    Subcoalgebra.groupLikeSetSpan (R := R) (C := B) Set.univ = ⊤ := by
-  rw [Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top] at hA ⊢
-  apply top_unique
-  intro b _
-  obtain ⟨a, rfl⟩ := hf b
-  have ha : a ∈ Submodule.span R
-      (Set.range (_root_.GroupLike.val (R := R) (A := A))) := by
-    rw [hA]
-    trivial
-  apply Submodule.span_induction (R := R) (M := A)
-      (s := Set.range (_root_.GroupLike.val (R := R) (A := A)))
-      (p := fun x _ ↦ f x ∈ Submodule.span R
-        (Set.range (_root_.GroupLike.val (R := R) (A := B))))
-      (x := a)
-  · intro x hx
-    obtain ⟨g, rfl⟩ := hx
-    exact Submodule.subset_span ⟨map f g, by simp⟩
-  · simp
-  · intro x y _ _ hx hy
-    rw [map_add]
-    exact Submodule.add_mem _ hx hy
-  · intro r x _ hx
-    rw [map_smul]
-    exact Submodule.smul_mem _ r hx
-  · exact ha
+end BialgHom
 
-/-- A bialgebra equivalence induces a multiplicative equivalence of group-like elements. -/
-def mapEquiv (e : A ≃ₐc[R] B) :
-    _root_.GroupLike R A ≃* _root_.GroupLike R B where
-  __ := equivOfCoalgEquiv e.toCoalgEquiv
-  map_mul' x y := by
-    apply _root_.GroupLike.val_injective
-    simp only [Equiv.toFun_as_coe, val_equivOfCoalgEquiv, _root_.GroupLike.val_mul]
-    rw [_root_.BialgEquiv.toCoalgEquiv_eq_coe]
+namespace BialgEquiv
+
+/-- A bialgebra equivalence induces a multiplicative equivalence of group-like elements: the
+coalgebra transport `CoalgEquiv.mapGroupLike` is multiplicative. -/
+def mapGroupLike (e : A ≃ₐc[R] B) : GroupLike R A ≃* GroupLike R B :=
+  MulEquiv.mk' e.toCoalgEquiv.mapGroupLike fun x y ↦ GroupLike.val_injective <| by
+    simp only [CoalgEquiv.val_mapGroupLike, GroupLike.val_mul]
     exact map_mul e x.val y.val
 
-/-- The underlying value of `mapEquiv` is the original bialgebra equivalence. -/
+/-- The underlying value of the image of a group-like element is its image under the bialgebra
+equivalence. -/
 @[simp]
-theorem val_mapEquiv (e : A ≃ₐc[R] B) (x : _root_.GroupLike R A) :
-    (mapEquiv e x).val = e x.val :=
-  val_equivOfCoalgEquiv e.toCoalgEquiv x
+theorem val_mapGroupLike (e : A ≃ₐc[R] B) (x : GroupLike R A) :
+    (e.mapGroupLike x).val = e x.val :=
+  e.toCoalgEquiv.val_mapGroupLike x
 
 /-- Mapping group-like elements along the identity equivalence is the identity equivalence. -/
 @[simp]
-theorem mapEquiv_refl : mapEquiv (_root_.BialgEquiv.refl R A) = MulEquiv.refl _ := by
-  ext x
-  simp
+theorem mapGroupLike_refl : (BialgEquiv.refl R A).mapGroupLike = MulEquiv.refl _ :=
+  MulEquiv.toEquiv_injective CoalgEquiv.mapGroupLike_refl
 
 /-- Mapping group-like elements along a composite equivalence is the composite of the maps. -/
 @[simp]
-theorem mapEquiv_trans {C : Type*} [Semiring C] [Bialgebra R C]
-    (e : A ≃ₐc[R] B) (f : B ≃ₐc[R] C) :
-    mapEquiv (e.trans f) = (mapEquiv e).trans (mapEquiv f) := by
-  ext x
-  calc
-    (mapEquiv (e.trans f) x).val = (e.trans f) x.val := val_mapEquiv (e.trans f) x
-    _ = f (e x.val) := BialgEquiv.trans_apply e f x.val
-    _ = f (mapEquiv e x).val := congrArg f (val_mapEquiv e x).symm
-    _ = (mapEquiv f (mapEquiv e x)).val := (val_mapEquiv f (mapEquiv e x)).symm
+theorem mapGroupLike_trans (e : A ≃ₐc[R] B) (f : B ≃ₐc[R] C) :
+    (e.trans f).mapGroupLike = e.mapGroupLike.trans f.mapGroupLike :=
+  MulEquiv.toEquiv_injective (e.toCoalgEquiv.mapGroupLike_trans f.toCoalgEquiv)
 
 /-- The inverse of the induced equivalence is induced by the inverse equivalence. -/
 @[simp]
-theorem mapEquiv_symm (e : A ≃ₐc[R] B) :
-    (mapEquiv e).symm = mapEquiv e.symm := by
-  ext x
-  apply e.injective
-  calc
-    e ((mapEquiv e).symm x).val = (mapEquiv e ((mapEquiv e).symm x)).val :=
-      (val_mapEquiv e _).symm
-    _ = x.val := congrArg _ ((mapEquiv e).apply_symm_apply x)
-    _ = e (e.symm x.val) := (e.apply_symm_apply x.val).symm
-    _ = e (mapEquiv e.symm x).val := congrArg e (val_mapEquiv e.symm x).symm
+theorem mapGroupLike_symm (e : A ≃ₐc[R] B) : e.mapGroupLike.symm = e.symm.mapGroupLike :=
+  MulEquiv.toEquiv_injective e.toCoalgEquiv.mapGroupLike_symm
 
-end GroupLike
-
-end TauCeti
+end BialgEquiv

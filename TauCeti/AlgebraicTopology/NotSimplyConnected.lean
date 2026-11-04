@@ -13,17 +13,17 @@ public import Mathlib.Analysis.Convex.Contractible
 
 A space whose fundamental group at some basepoint is nontrivial is not simply connected, and a
 non-simply-connected space inherits the standard topological obstructions: it is not
-contractible, and it is not homeomorphic to any simply connected space — in particular not to
-any real topological vector space nor to `ℝ`.
+contractible, and it is not homotopy equivalent (in particular, not homeomorphic) to any simply
+connected space — for instance to any real topological vector space, such as `ℝ`.
 
 These facts use the space only through the (non-)triviality of its fundamental group, so they are
-stated once here for an arbitrary space and then specialised to concrete circles (`AddCircle.*`,
-`UnitAddCircle.*`, `Circle.*`). Non-simple-connectivity follows because a simply connected space
-has a subsingleton fundamental group; the homeomorphism statements consume Mathlib's transfer of
-`SimplyConnectedSpace` along a homotopy equivalence
-(`ContinuousMap.HomotopyEquiv.simplyConnectedSpace`, via
-`Homeomorph.toHomotopyEquiv`) and the contractibility of a real topological vector space
-(`RealTopologicalVectorSpace.contractibleSpace`). No Mathlib code is vendored.
+stated once here for an arbitrary space and then specialised to concrete spaces such as circles
+and real projective spaces. Non-simple-connectivity follows because a simply connected space
+has a subsingleton fundamental group; the homotopy-equivalence statements consume Mathlib's
+transfer of `SimplyConnectedSpace` along a homotopy equivalence
+(`ContinuousMap.HomotopyEquiv.simplyConnectedSpace`) and the contractibility of a real
+topological vector space (`RealTopologicalVectorSpace.contractibleSpace`). A homeomorphism `e`
+is turned into a homotopy equivalence by `e.toHomotopyEquiv`.
 
 ## Main declarations
 
@@ -31,44 +31,41 @@ has a subsingleton fundamental group; the homeomorphism statements consume Mathl
   fundamental group at some basepoint is not simply connected.
 * `TauCeti.not_contractibleSpace_of_not_simplyConnectedSpace`: a non-simply-connected space is
   not contractible.
-* `TauCeti.isEmpty_homeomorph_of_not_simplyConnectedSpace`,
-  `TauCeti.isEmpty_homeomorph_real_of_not_simplyConnectedSpace`: a non-simply-connected space is
-  not homeomorphic to a simply connected space, or to `ℝ`.
+* `TauCeti.isEmpty_homotopyEquiv_of_not_simplyConnectedSpace`,
+  `TauCeti.isEmpty_homotopyEquiv_real_of_not_simplyConnectedSpace`: a non-simply-connected space
+  is not homotopy equivalent to a simply connected space, or to `ℝ`.
 -/
 
 public section
+
+open scoped ContinuousMap
 
 namespace TauCeti
 
 /-- A space with a nontrivial fundamental group at some basepoint is **not simply connected**: a
 simply connected space has a subsingleton fundamental group. -/
 theorem not_simplyConnectedSpace_of_nontrivial_fundamentalGroup {X : Type*} [TopologicalSpace X]
-    (x : X) [Nontrivial (FundamentalGroup X x)] : ¬ SimplyConnectedSpace X := by
-  intro h
-  have := h
-  exact false_of_nontrivial_of_subsingleton (FundamentalGroup X x)
+    (x : X) [Nontrivial (FundamentalGroup X x)] : ¬ SimplyConnectedSpace X :=
+  fun _ => false_of_nontrivial_of_subsingleton (FundamentalGroup X x)
 
 /-- A **not simply connected** space is **not contractible**: a contractible space is simply
 connected. -/
 theorem not_contractibleSpace_of_not_simplyConnectedSpace {X : Type*} [TopologicalSpace X]
-    (h : ¬ SimplyConnectedSpace X) : ¬ ContractibleSpace X := by
-  intro hc
-  have := hc
-  exact h inferInstance
+    (h : ¬ SimplyConnectedSpace X) : ¬ ContractibleSpace X :=
+  fun _ => h inferInstance
 
-/-- A **not simply connected** space is not homeomorphic to any simply connected space: a
-homeomorphism is in particular a homotopy equivalence, and simple connectivity transfers along
-homotopy equivalences. -/
-theorem isEmpty_homeomorph_of_not_simplyConnectedSpace {X : Type*} [TopologicalSpace X]
+/-- A **not simply connected** space is not homotopy equivalent (in particular, not
+homeomorphic) to any simply connected space, since simple connectivity transfers along homotopy
+equivalences. -/
+theorem isEmpty_homotopyEquiv_of_not_simplyConnectedSpace {X : Type*} [TopologicalSpace X]
     (h : ¬ SimplyConnectedSpace X) (Y : Type*) [TopologicalSpace Y] [SimplyConnectedSpace Y] :
-    IsEmpty (X ≃ₜ Y) := by
-  refine ⟨fun e => ?_⟩
-  exact h e.toHomotopyEquiv.simplyConnectedSpace
+    IsEmpty (X ≃ₕ Y) :=
+  ⟨fun e => h e.simplyConnectedSpace⟩
 
-/-- A **not simply connected** space is not homeomorphic to the real line: `ℝ` is contractible,
-hence simply connected. -/
-theorem isEmpty_homeomorph_real_of_not_simplyConnectedSpace {X : Type*} [TopologicalSpace X]
-    (h : ¬ SimplyConnectedSpace X) : IsEmpty (X ≃ₜ ℝ) :=
-  isEmpty_homeomorph_of_not_simplyConnectedSpace h ℝ
+/-- A **not simply connected** space is not homotopy equivalent (in particular, not
+homeomorphic) to the real line: `ℝ` is contractible, hence simply connected. -/
+theorem isEmpty_homotopyEquiv_real_of_not_simplyConnectedSpace {X : Type*} [TopologicalSpace X]
+    (h : ¬ SimplyConnectedSpace X) : IsEmpty (X ≃ₕ ℝ) :=
+  isEmpty_homotopyEquiv_of_not_simplyConnectedSpace h ℝ
 
 end TauCeti

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
@@ -25,6 +25,10 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
 smooth right inverse, such as a vector bundle projection, is injective.
+
+Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
+through `x`, a form is `C^m` near `f x` exactly when its pullback along `f` is `C^m` near `x`,
+for `m + 1 ≤ n` (`TauCeti.contMDiffAt_mpullback_form_iff_of_section`).
 
 In tangent coordinates, pullback precomposes the form's coordinates with those of Mathlib's
 `mfderivWithin`, via `ContinuousAlternatingMap.compContinuousLinearMap`. This expresses
@@ -155,6 +159,34 @@ theorem _root_.ContMDiffAt.mpullback_form
       hω.contMDiffWithinAt hf.contMDiffWithinAt hmn (mapsTo_univ _ _) (mem_univ x)
       uniqueMDiffOn_univ
 
+/-- Let `f` be `C^n` at `x`, `m + 1 ≤ n`, and let `s` be a `C^n` local section of `f` through `x`
+over an open neighbourhood `U` of `f x`. Then a form is a `C^m` section near `f x` exactly when its
+pullback along `f` is a `C^m` section near `x`: near `f x`, the form is the pullback of its
+pullback along `s`. Local inverses of local diffeomorphisms and local sections of submersions are
+such sections. -/
+theorem contMDiffAt_mpullback_form_iff_of_section {s : M' → M} {U : Set M'} (hU : IsOpen U)
+    (hxU : f x ∈ U) (hsx : s (f x) = x) (hs : ContMDiffOn I' I n s U)
+    (hfs : ∀ y ∈ U, f (s y) = y) (hf : ContMDiffAt I I' n f x) (hmn : m + 1 ≤ n) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
+        (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (mpullback I I' f ω y)) x ↔
+      ContMDiffAt I' (I'.prod 𝓘(ℝ, E' [⋀^Fin k]→L[ℝ] F)) m
+        (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f x) := by
+  have h1n : 1 ≤ n := le_add_self.trans hmn
+  have hn : n ≠ 0 := (zero_lt_one.trans_le h1n).ne'
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mpullback_form hf hmn⟩
+  have hsc : ContMDiffAt I' I n s (f x) := hs.contMDiffAt (hU.mem_nhds hxU)
+  refine ((hsx ▸ h).mpullback_form hsc hmn).congr_of_eventuallyEq ?_
+  -- `f` is `C^1`, hence differentiable, near `x`, so at `s y` for `y` near `f x`.
+  have hfd : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I' f y :=
+    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp (hf.of_le h1n)).mono fun _ hy ↦
+      hy.mdifferentiableAt one_ne_zero
+  have hfs' : ∀ᶠ y in 𝓝 (f x), MDifferentiableAt I I' f (s y) :=
+    hsc.continuousAt.tendsto.eventually (by rw [hsx]; exact hfd)
+  filter_upwards [hfs', hU.mem_nhds hxU] with y hy hyU
+  have hsy : MDifferentiableAt I' I s y := (hs.contMDiffAt (hU.mem_nhds hyU)).mdifferentiableAt hn
+  have hid : f ∘ s =ᶠ[𝓝 y] id := eventually_of_mem (hU.mem_nhds hyU) hfs
+  rw [← mpullback_comp_at hsy hy, hid.mpullback_eq, mpullback_id]
+
 /-- Pullback of a fixed-coefficient `C^m` form along a `C^n` map is `C^m` for `m + 1 ≤ n`.
 In particular, smooth maps pull smooth forms back to smooth forms. -/
 theorem IsSmoothBundleForm.mpullback
@@ -179,15 +211,15 @@ open scoped ContDiff
 /-- Pullback along a smooth map, as a linear map on smooth fixed-coefficient forms. -/
 def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) :
     SmoothForm I' M' F k →ₗ[ℝ] SmoothForm I M F k where
-  toFun φ := ⟨TauCeti.mpullback I I' f φ.1,
-    mem_smoothForms.mpr ((mem_smoothForms.mp φ.2).mpullback hf (by simp))⟩
-  map_add' φ ψ := Subtype.ext (TauCeti.mpullback_add f φ.1 ψ.1)
-  map_smul' c φ := Subtype.ext (TauCeti.mpullback_smul f c φ.1)
+  toFun φ := ⟨TauCeti.mpullback (F := F) I I' f φ.1,
+    mem_smoothBundleForms.mpr (φ.isSmoothBundleForm.mpullback hf (by simp))⟩
+  map_add' φ ψ := Subtype.ext (TauCeti.mpullback_add (F := F) f φ.1 ψ.1)
+  map_smul' c φ := Subtype.ext (TauCeti.mpullback_smul (F := F) f c φ.1)
 
 /-- The underlying rough form of smooth pullback is rough pullback. -/
 @[simp]
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' F k) :
-    (mpullback f hf φ).1 = TauCeti.mpullback I I' f φ.1 := (rfl)
+    (mpullback f hf φ).1 = TauCeti.mpullback (F := F) I I' f φ.1 := (rfl)
 
 /-- Evaluation of smooth pullback on tangent vectors. Simplification also obtains this from
 `coe_mpullback` and the rough pullback's application law. -/
@@ -196,11 +228,33 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).1 x v = φ.1 (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
+injective. -/
+theorem mpullback_injective_of_surjective {f : M → M'} (hf : ContMDiff I I' ∞ f)
+    (hsurj : Function.Surjective f) (hdf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
+    Function.Injective (mpullback (F := F) (k := k) f hf) := fun _ _ h ↦
+  Subtype.ext <| TauCeti.mpullback_injective_of_surjective hsurj hdf
+    (by simpa only [coe_mpullback] using congrArg Subtype.val h)
+
+/-- A pullback equation `mpullback f hf φ' = c • φ` of smooth forms, read at the point `x` as an
+equation of the underlying rough forms. -/
+theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {hf : ContMDiff I I' ∞ f}
+    {φ' : SmoothForm I' M' F k} {φ : SmoothForm I M F k} {c : ℝ}
+    (h : mpullback f hf φ' = c • φ) (x : M) :
+    TauCeti.mpullback (F := F) I I' f φ'.1 x = c • φ.1 x := by
+  have h := congrFun (congrArg Subtype.val h) x
+  rwa [coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+
 /-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 2) (x : M) (v w : TangentSpace I x) :
-    (mpullback f hf φ).eval₂ x v w = φ.eval₂ (f x) (mfderiv I I' f x v) (mfderiv I I' f x w) := by
-  rw [eval₂_apply, eval₂_apply, mpullback_apply]
+    SmoothBundleForm.eval₂
+        (mpullback f hf φ) x v w =
+      SmoothBundleForm.eval₂
+        φ
+        (f x) (mfderiv I I' f x v) (mfderiv I I' f x w) := by
+  rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply]
+  rw [mpullback_apply]
   congr 1
   ext i
   fin_cases i <;> rfl
@@ -231,8 +285,8 @@ theorem mpullback_snd_apply (φ : SmoothForm I' M' F k) (p : M × M')
 vectors, reads their first components. -/
 theorem eval₂_mpullback_fst (φ : SmoothForm I M F 2) (p : M × M')
     (v w : TangentSpace (I.prod I') p) :
-    (mpullback Prod.fst contMDiff_fst φ).eval₂ p v w =
-      φ.eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1
+    SmoothBundleForm.eval₂ (mpullback Prod.fst contMDiff_fst φ) p v w =
+      SmoothBundleForm.eval₂ φ p.1 (Manifold.tangentSpaceProdEquiv p v).1
         (Manifold.tangentSpaceProdEquiv p w).1 := by
   rw [eval₂_mpullback, mfderiv_fst]
   simp only [Manifold.tangentSpaceProdEquiv_apply]
@@ -243,8 +297,8 @@ theorem eval₂_mpullback_fst (φ : SmoothForm I M F 2) (p : M × M')
 vectors, reads their second components. -/
 theorem eval₂_mpullback_snd (φ : SmoothForm I' M' F 2) (p : M × M')
     (v w : TangentSpace (I.prod I') p) :
-    (mpullback Prod.snd contMDiff_snd φ).eval₂ p v w =
-      φ.eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
+    SmoothBundleForm.eval₂ (mpullback Prod.snd contMDiff_snd φ) p v w =
+      SmoothBundleForm.eval₂ φ p.2 (Manifold.tangentSpaceProdEquiv p v).2
         (Manifold.tangentSpaceProdEquiv p w).2 := by
   rw [eval₂_mpullback, mfderiv_snd]
   simp only [Manifold.tangentSpaceProdEquiv_apply]
@@ -271,14 +325,21 @@ theorem mpullback_comp (f : M → M') (g : M' → M'')
   ext φ : 1
   apply Subtype.ext
   simp only [coe_mpullback, LinearMap.comp_apply]
-  exact TauCeti.mpullback_comp (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
+  exact TauCeti.mpullback_comp (F := F)
+    (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)) φ.1
+
+/-- Pulling a form back along `g` and then along `f` is pulling it back along `g ∘ f`. -/
+theorem mpullback_mpullback (f : M → M') (g : M' → M'') (hf : ContMDiff I I' ∞ f)
+    (hg : ContMDiff I' I'' ∞ g) (β : SmoothForm I'' M'' F k) :
+    mpullback f hf (mpullback g hg β) = mpullback (g ∘ f) (hg.comp hf) β :=
+  (LinearMap.congr_fun (mpullback_comp f g hf hg) β).symm
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
     Function.Injective (mpullback (F := F) (k := k) f hf) := by
   refine Function.LeftInverse.injective (g := mpullback g hg) fun φ ↦ ?_
-  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  rw [mpullback_mpullback]
   simp only [hfg.comp_eq_id, mpullback_id, LinearMap.id_apply]
 
 /-- Pullback along the projection of a smooth vector bundle is injective: the zero section is a
@@ -290,6 +351,28 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
     Function.Injective
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
+
+/-- If a diffeomorphism `φ` pulls `β` back to `α`, then its inverse pulls `α` back to `β`. -/
+theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}
+    {β : SmoothForm I' M' F k} (h : mpullback φ φ.contMDiff β = α) :
+    mpullback φ.symm φ.symm.contMDiff α = β := by
+  rw [← h, mpullback_mpullback]
+  have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
+  simp only [hid, mpullback_id, LinearMap.id_apply]
+
+/-- Pulling a form back along the inverse of a diffeomorphism `φ` and then along `φ` gives the form
+back. -/
+@[simp]
+theorem mpullback_mpullback_symm (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I M F k) :
+    mpullback φ φ.contMDiff (mpullback φ.symm φ.symm.contMDiff β) = β :=
+  mpullback_symm_eq_of_mpullback_eq (φ := φ.symm) rfl
+
+/-- Pulling a form back along a diffeomorphism `φ` and then along its inverse gives the form back.
+-/
+@[simp]
+theorem mpullback_symm_mpullback (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I' M' F k) :
+    mpullback φ.symm φ.symm.contMDiff (mpullback φ φ.contMDiff β) = β :=
+  mpullback_symm_eq_of_mpullback_eq rfl
 
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
@@ -303,10 +386,7 @@ theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M 
         rw [mpullback_comp χ ψ χ.contMDiff ψ.contMDiff, LinearMap.comp_apply, hψ, hχ]
       inv_mem' := fun {ψ} hψ ↦ by
         simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hψ ⊢
-        conv_lhs => rw [← hψ]
-        rw [← LinearMap.comp_apply, ← mpullback_comp]
-        have hid : ⇑ψ ∘ ⇑ψ.symm = id := funext ψ.apply_symm_apply
-        simp only [hid, mpullback_id, LinearMap.id_apply] }
+        exact mpullback_symm_eq_of_mpullback_eq hψ }
   exact S.zpow_mem (x := φ) hσ j
 
 variable {F₁ F₂ F₃ : Type*}

@@ -18,6 +18,9 @@ kills it. Taking `S` to be the nonzerodivisors, a module is torsion exactly when
 the total ring of fractions vanishes. For abelian groups this is the classical characterization of
 torsion groups as the groups `G` with `ℚ ⊗ G = 0`.
 
+Localizing a torsion module at any submonoid gives a torsion module over the localized ring, since
+non-zero-divisors stay non-zero-divisors after localization.
+
 ## Main results
 
 * `Submonoid.isTorsion'_iff_subsingleton_tensorProduct`: `M` is `S`-torsion if and only if
@@ -26,6 +29,7 @@ torsion groups as the groups `G` with `ℚ ⊗ G = 0`.
   `K ⊗[R] M` is trivial, for the total ring of fractions `K` of `R`.
 * `TauCeti.isAddTorsion_iff_subsingleton_rat_tensorProduct`: an abelian group `G` is torsion if
   and only if `ℚ ⊗[ℤ] G` is trivial.
+* `Module.IsTorsion.localizedModule`: the localization of a torsion module is torsion.
 -/
 
 public section
@@ -62,3 +66,20 @@ theorem isAddTorsion_iff_subsingleton_rat_tensorProduct {G : Type*} [AddCommGrou
   isAddTorsion_iff_isTorsion_int.trans (Module.isTorsion_iff_subsingleton_tensorProduct ℚ)
 
 end TauCeti
+
+namespace Module.IsTorsion
+
+/-- The localization of a torsion module at a submonoid `S` is torsion over `Localization S`. -/
+theorem localizedModule {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
+    (hM : Module.IsTorsion R M) (S : Submonoid R) :
+    Module.IsTorsion (Localization S) (LocalizedModule S M) := by
+  intro x
+  induction x using LocalizedModule.induction_on with
+  | h m s =>
+    obtain ⟨⟨a, ha⟩, ham⟩ := @hM m
+    rw [Submonoid.smul_def] at ham
+    refine ⟨⟨algebraMap R _ a,
+      IsLocalization.map_nonZeroDivisors_le S _ (Submonoid.mem_map_of_mem _ ha)⟩, ?_⟩
+    rw [Submonoid.mk_smul, algebraMap_smul, LocalizedModule.smul'_mk, ham, LocalizedModule.zero_mk]
+
+end Module.IsTorsion

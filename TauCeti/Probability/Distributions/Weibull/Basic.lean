@@ -9,6 +9,7 @@ public import TauCeti.Probability.Density
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Exponential
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
 

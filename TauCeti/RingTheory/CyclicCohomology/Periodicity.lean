@@ -39,6 +39,9 @@ model. Over a ring containing `ℚ`, the total cohomology is cyclic cohomology
 (`TauCeti.quasiIso_cyclicCochainComplexToTotal`), and the composite of this identification with
 `I` is the map `TauCeti.cyclicCohomology.toHochschild`.
 
+The shift of total cochains and the projection onto column zero, together with their support
+formulas, require only additive commutative monoids of coefficients.
+
 The periodicity map here is the shift of columns of the bicomplex. Connes' operator `S` is
 instead normalized as the exterior product with the cyclic `2`-cocycle `(a₀, a₁, a₂) ↦ a₀a₁a₂`;
 no comparison of the two normalizations is made here.
@@ -93,7 +96,7 @@ universe u
 
 section Cochains
 
-variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
+variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid M]
   [Module R M]
 
 variable (R A M) in
@@ -130,16 +133,6 @@ theorem mem_range_cyclicTotalPeriodicity_iff {m : ℕ} {x : cyclicTotalCochains 
     · exact h₂
     · exact mem_cyclicTotalCochains_iff.1 x.2 q hq
 
-/-- Moving the component of a total cochain of degree `m` in row `k` two columns to the right
-does not change its horizontal differential. -/
-private theorem cyclicBicomplexHorizontal_sub_apply {m : ℕ} (x : cyclicTotalCochains R A M m)
-    (k : ℕ) :
-    cyclicBicomplexHorizontal R A M (m + 2 - k) k (x.1 k) =
-      cyclicBicomplexHorizontal R A M (m - k) k (x.1 k) := by
-  by_cases hk : k ≤ m
-  · rw [Nat.sub_add_comm hk, cyclicBicomplexHorizontal_add_two]
-  · rw [mem_cyclicTotalCochains_iff.1 x.2 k (by omega), map_zero, map_zero]
-
 /-! ### The projection onto column zero -/
 
 variable (R A M) in
@@ -155,12 +148,6 @@ theorem cyclicTotalToHochschild_apply {m : ℕ} (x : cyclicTotalCochains R A M m
     cyclicTotalToHochschild R A M m x = x.1 m :=
   (rfl)
 
-/-- The projection onto column zero of a cyclic cochain included into column zero is the cochain
-itself. -/
-theorem cyclicTotalToHochschild_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCochains R A M m) :
-    cyclicTotalToHochschild R A M m (cyclicCochainsToTotal R A M m φ) = φ := by
-  rw [cyclicTotalToHochschild_apply, coe_cyclicCochainsToTotal_apply, Pi.single_eq_same]
-
 /-- The projection onto column zero vanishes on the image of the periodicity map. -/
 theorem cyclicTotalToHochschild_cyclicTotalPeriodicity {m : ℕ}
     (x : cyclicTotalCochains R A M m) :
@@ -169,9 +156,32 @@ theorem cyclicTotalToHochschild_cyclicTotalPeriodicity {m : ℕ}
 
 end Cochains
 
+section CyclicOperators
+
+variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
+  [Module R M]
+
+/-- The projection onto column zero of a cyclic cochain included into column zero is the cochain
+itself. -/
+theorem cyclicTotalToHochschild_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCochains R A M m) :
+    cyclicTotalToHochschild R A M m (cyclicCochainsToTotal R A M m φ) = φ := by
+  rw [cyclicTotalToHochschild_apply, coe_cyclicCochainsToTotal_apply, Pi.single_eq_same]
+
+/-- Moving the component of a total cochain of degree `m` in row `k` two columns to the right
+does not change its horizontal differential. -/
+private theorem cyclicBicomplexHorizontal_sub_apply {m : ℕ} (x : cyclicTotalCochains R A M m)
+    (k : ℕ) :
+    cyclicBicomplexHorizontal R A M (m + 2 - k) k (x.1 k) =
+      cyclicBicomplexHorizontal R A M (m - k) k (x.1 k) := by
+  by_cases hk : k ≤ m
+  · rw [Nat.sub_add_comm hk, cyclicBicomplexHorizontal_add_two]
+  · rw [mem_cyclicTotalCochains_iff.1 x.2 k (by omega), map_zero, map_zero]
+
+end CyclicOperators
+
 section Differential
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- Moving the component of a total cochain of degree `m` in row `k` two columns to the right
@@ -273,14 +283,14 @@ private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m 
       simp [c]
     have hb := LinearMap.congr_fun
       (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (m + 1)) χ
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, Module.End.one_apply, hχ] at hb
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, one_apply_eq_self, hχ] at hb
     simp only [cyclicTotalDifferential_apply_succ, Submodule.coe_zero, Pi.zero_apply] at hx'
     -- the rows `m + 1` and `m + 2` of a total cochain of degree `m + 2` sit in columns one and zero
     have h₁ : m + 2 - (m + 1) = 1 := by omega
     have h₀ : m + 2 - (m + 1 + 1) = 0 := Nat.sub_self _
     rw [h₁, h₀, cyclicBicomplexVertical_of_odd odd_one,
       cyclicBicomplexHorizontal_of_even Even.zero] at hx'
-    simp only [LinearMap.neg_apply, LinearMap.sub_apply, Module.End.one_apply] at hx'
+    simp only [LinearMap.neg_apply, LinearMap.sub_apply, one_apply_eq_self] at hx'
     simp only [y, Submodule.coe_sub, Pi.sub_apply, map_sub, hc₁, ← hb]
     exact sub_eq_zero.2 (neg_add_eq_zero.1 hx')
   -- killing column one of `y` leaves a total cochain in the image of the periodicity map

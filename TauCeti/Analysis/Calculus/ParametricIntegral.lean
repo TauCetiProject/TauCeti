@@ -23,6 +23,14 @@ real parameter `x` at a point `x₀`, assuming only that `G` is `C¹` on an open
 compact segment `{x₀} × [a, b]`: the derivative is the integral of the partial derivative of `G`
 in `x`.
 
+Iterated derivatives also pass under an interval integral `x ↦ ∫ s in a..b, u s x` of a family of
+`C^N` functions, provided each derivative `D^k (u s) x`, `k ≤ N`, is measurable in `s` and bounded
+uniformly in `x` by an integrable function of `s`
+(`TauCeti.iteratedFDeriv_intervalIntegral`, `TauCeti.contDiff_intervalIntegral`). No joint
+regularity in `(s, x)` is needed, and the bounds may blow up at the ends of the interval. This is
+the form needed for time integrals of heat-kernel convolutions, whose derivatives are singular at
+the final time.
+
 For a compact parameter space `α` mapped continuously into a topological space `P` by `ι`, an
 integrable weight `g` on `α` preserves integrability and continuity of the integrand in a
 topological parameter space `E`. No countability assumption on these spaces is needed.
@@ -103,6 +111,123 @@ theorem hasDerivAt_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
   · exact Filter.Eventually.of_forall fun t ht x hx ↦
       hC (x, t) ⟨hx, Set.uIoc_subset_uIcc ht⟩
   · exact Filter.Eventually.of_forall fun t ht x hx ↦ hdiff t ht x hx
+
+/-! ### Iterated derivatives under an interval integral -/
+
+section IteratedFDeriv
+
+variable [CompleteSpace F] {μ : Measure ℝ} {a b : ℝ} {u : ℝ → E → F}
+
+/-- **Differentiating an iterated derivative under an interval integral.** Let `u s` be `C^(m+1)`
+for almost every `s ∈ Ι a b`, with `m`-th and `(m+1)`-st derivatives measurable in `s` and bounded
+uniformly in `x` by integrable functions of `s`. Then `x ↦ ∫ s in a..b, D^m (u s) x` has derivative
+`∫ s in a..b, D^(m+1) (u s) x`, curried in its first variable. -/
+theorem hasFDerivAt_intervalIntegral_iteratedFDeriv {m : ℕ}
+    (hu : ∀ᵐ s ∂μ.restrict (Ι a b), ContDiff ℝ (m + 1) (u s))
+    (hmeas₀ : ∀ x,
+      AEStronglyMeasurable (fun s ↦ iteratedFDeriv ℝ m (u s) x) (μ.restrict (Ι a b)))
+    (hmeas : ∀ x,
+      AEStronglyMeasurable (fun s ↦ iteratedFDeriv ℝ (m + 1) (u s) x) (μ.restrict (Ι a b)))
+    {bound₀ bound : ℝ → ℝ} (hb₀ : IntervalIntegrable bound₀ μ a b)
+    (hb : IntervalIntegrable bound μ a b)
+    (hub₀ : ∀ᵐ s ∂μ.restrict (Ι a b), ∀ x, ‖iteratedFDeriv ℝ m (u s) x‖ ≤ bound₀ s)
+    (hub : ∀ᵐ s ∂μ.restrict (Ι a b), ∀ x, ‖iteratedFDeriv ℝ (m + 1) (u s) x‖ ≤ bound s)
+    (x : E) :
+    HasFDerivAt (fun x ↦ ∫ s in a..b, iteratedFDeriv ℝ m (u s) x ∂μ)
+      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (m + 1) ↦ E) F
+        (∫ s in a..b, iteratedFDeriv ℝ (m + 1) (u s) x ∂μ)) x := by
+  set e := continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (m + 1) ↦ E) F
+  have hcomm : e (∫ s in a..b, iteratedFDeriv ℝ (m + 1) (u s) x ∂μ) =
+      ∫ s in a..b, e (iteratedFDeriv ℝ (m + 1) (u s) x) ∂μ := by
+    -- The spaces are named explicitly: with `Fin`-indexed multilinear maps, unification does
+    -- not otherwise match the two normed-group instances on the domain of `e`.
+    have := LinearIsometry.intervalIntegral_comp_comm (𝕜 := ℝ) (μ := μ) (a := a) (b := b)
+      (E := ContinuousMultilinearMap ℝ (fun _ : Fin (m + 1) ↦ E) F)
+      (F := E →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin m ↦ E) F)
+      e.toLinearIsometry fun s ↦ iteratedFDeriv ℝ (m + 1) (u s) x
+    exact this.symm
+  rw [ae_restrict_iff' measurableSet_uIoc] at hu hub
+  rw [hcomm]
+  -- The derivative of `D^m (u s)` is `D^(m+1) (u s)` up to the currying isometry `e`.
+  refine intervalIntegral.hasFDerivAt_integral_of_dominated_of_fderiv_le (s := Set.univ)
+    (F' := fun y s ↦ e (iteratedFDeriv ℝ (m + 1) (u s) y)) Filter.univ_mem
+    (Filter.Eventually.of_forall hmeas₀) (hb₀.mono_fun' (hmeas₀ x) (hub₀.mono fun s hs ↦ hs x))
+    (e.continuous.comp_aestronglyMeasurable (hmeas x)) ?_ hb ?_
+  · filter_upwards [hub] with s hs hsI y _
+    rw [LinearIsometryEquiv.norm_map]
+    exact hs hsI y
+  · filter_upwards [hu] with s hs hsI y _
+    exact ((hs hsI).differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self m)
+      y).hasFDerivAt
+
+omit [CompleteSpace F] in
+/-- **Continuity of an interval integral of iterated derivatives.** If `u s` is `C^k` for almost
+every `s ∈ Ι a b` and `D^k (u s) x` is measurable in `s` and bounded uniformly in `x` by an
+integrable function of `s`, then `x ↦ ∫ s in a..b, D^k (u s) x` is continuous. -/
+theorem continuous_intervalIntegral_iteratedFDeriv {k : ℕ}
+    (hu : ∀ᵐ s ∂μ.restrict (Ι a b), ContDiff ℝ k (u s))
+    (hmeas : ∀ x,
+      AEStronglyMeasurable (fun s ↦ iteratedFDeriv ℝ k (u s) x) (μ.restrict (Ι a b)))
+    {bound : ℝ → ℝ} (hb : IntervalIntegrable bound μ a b)
+    (hub : ∀ᵐ s ∂μ.restrict (Ι a b), ∀ x, ‖iteratedFDeriv ℝ k (u s) x‖ ≤ bound s) :
+    Continuous fun x ↦ ∫ s in a..b, iteratedFDeriv ℝ k (u s) x ∂μ := by
+  rw [ae_restrict_iff' measurableSet_uIoc] at hu hub
+  refine intervalIntegral.continuous_of_dominated_interval hmeas (fun x ↦ ?_) hb ?_
+  · filter_upwards [hub] with s hs hsI using hs hsI x
+  · filter_upwards [hu] with s hs hsI using (hs hsI).continuous_iteratedFDeriv le_rfl
+
+/-- **Iterated derivatives under an interval integral.** If, for almost every `s ∈ Ι a b`, `u s`
+is `C^N` and each derivative `D^k (u s) x` with `k ≤ N` is measurable in `s` and bounded uniformly
+in `x` by an integrable function of `s`, then for `k ≤ N` the `k`-th derivative of
+`x ↦ ∫ s in a..b, u s x` is `x ↦ ∫ s in a..b, D^k (u s) x`. -/
+theorem iteratedFDeriv_intervalIntegral {N : ℕ}
+    (hu : ∀ᵐ s ∂μ.restrict (Ι a b), ContDiff ℝ N (u s))
+    (hmeas : ∀ k ≤ N, ∀ x,
+      AEStronglyMeasurable (fun s ↦ iteratedFDeriv ℝ k (u s) x) (μ.restrict (Ι a b)))
+    {bound : ℕ → ℝ → ℝ} (hb : ∀ k ≤ N, IntervalIntegrable (bound k) μ a b)
+    (hub : ∀ k ≤ N, ∀ᵐ s ∂μ.restrict (Ι a b), ∀ x, ‖iteratedFDeriv ℝ k (u s) x‖ ≤ bound k s)
+    {k : ℕ} (hk : k ≤ N) :
+    iteratedFDeriv ℝ k (fun x ↦ ∫ s in a..b, u s x ∂μ) =
+      fun x ↦ ∫ s in a..b, iteratedFDeriv ℝ k (u s) x ∂μ := by
+  induction k with
+  | zero =>
+    funext x
+    simp_rw [iteratedFDeriv_zero_eq_comp, Function.comp_apply]
+    exact ((continuousMultilinearCurryFin0 ℝ E F).symm.toLinearIsometry.intervalIntegral_comp_comm
+      _).symm
+  | succ k ih =>
+    funext x
+    have hu' : ∀ᵐ s ∂μ.restrict (Ι a b), ContDiff ℝ (k + 1) (u s) :=
+      hu.mono fun s hs ↦ hs.of_le (by exact_mod_cast hk)
+    rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, ih (by omega),
+      (hasFDerivAt_intervalIntegral_iteratedFDeriv hu' (hmeas k (by omega)) (hmeas (k + 1) hk)
+        (hb k (by omega)) (hb (k + 1) hk) (hub k (by omega)) (hub (k + 1) hk) x).fderiv,
+      LinearIsometryEquiv.symm_apply_apply]
+
+/-- **Smoothness of an interval integral of a smooth family.** If, for almost every `s ∈ Ι a b`,
+`u s` is `C^N` and each derivative `D^k (u s) x` with `k ≤ N` is measurable in `s` and bounded
+uniformly in `x` by an integrable function of `s`, then `x ↦ ∫ s in a..b, u s x` is `C^N`. The
+bounds may blow up at the ends of the interval, as long as they stay integrable. -/
+theorem contDiff_intervalIntegral {N : ℕ}
+    (hu : ∀ᵐ s ∂μ.restrict (Ι a b), ContDiff ℝ N (u s))
+    (hmeas : ∀ k ≤ N, ∀ x,
+      AEStronglyMeasurable (fun s ↦ iteratedFDeriv ℝ k (u s) x) (μ.restrict (Ι a b)))
+    {bound : ℕ → ℝ → ℝ} (hb : ∀ k ≤ N, IntervalIntegrable (bound k) μ a b)
+    (hub : ∀ k ≤ N, ∀ᵐ s ∂μ.restrict (Ι a b), ∀ x, ‖iteratedFDeriv ℝ k (u s) x‖ ≤ bound k s) :
+    ContDiff ℝ N fun x ↦ ∫ s in a..b, u s x ∂μ := by
+  refine contDiff_iff_continuous_differentiable.2 ⟨fun k hk ↦ ?_, fun k hk ↦ ?_⟩
+  · have hk' : k ≤ N := by exact_mod_cast hk
+    rw [iteratedFDeriv_intervalIntegral hu hmeas hb hub hk']
+    exact continuous_intervalIntegral_iteratedFDeriv
+      (hu.mono fun s hs ↦ hs.of_le (by exact_mod_cast hk')) (hmeas k hk') (hb k hk') (hub k hk')
+  · have hk' : k + 1 ≤ N := by exact_mod_cast Order.add_one_le_of_lt hk
+    rw [iteratedFDeriv_intervalIntegral hu hmeas hb hub (by omega)]
+    exact fun x ↦ (hasFDerivAt_intervalIntegral_iteratedFDeriv
+      (hu.mono fun s hs ↦ hs.of_le (by exact_mod_cast hk')) (hmeas k (by omega))
+      (hmeas (k + 1) hk') (hb k (by omega)) (hb (k + 1) hk') (hub k (by omega)) (hub (k + 1) hk')
+      x).differentiableAt
+
+end IteratedFDeriv
 
 /-! ### Integration against a weight over a compact parameter space -/
 

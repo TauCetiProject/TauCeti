@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 
 /-!
 # Quotients of topological modules
@@ -30,7 +31,11 @@ provide.
 The orbit space `AddAction.orbitRel.Quotient p M` of translation by a submodule, the standard
 carrier for quotients such as complex tori, is second countable when `M` is
 (`Submodule.instSecondCountableTopologyOrbitRelQuotient`), by Mathlib's
-`ContinuousConstVAdd.secondCountableTopology`.
+`ContinuousConstVAdd.secondCountableTopology`. It is a topological additive group when `M` is
+(`Submodule.instIsTopologicalAddGroupOrbitRelQuotient`), and it is isomorphic to `M ⧸ p` as a
+topological additive group (`Submodule.orbitRelQuotientContinuousAddEquiv`). The map of orbit
+spaces induced by a continuous semilinear map is continuous
+(`Submodule.continuous_orbitRelQuotientMap`).
 -/
 
 public section
@@ -59,6 +64,70 @@ instance Submodule.instSecondCountableTopologyOrbitRelQuotient {R M : Type*} [Ri
     [SecondCountableTopology M] (p : Submodule R M) :
     SecondCountableTopology (AddAction.orbitRel.Quotient p M) :=
   ContinuousConstVAdd.secondCountableTopology
+
+/-- The orbit space of translation by a submodule of a topological additive group, with the group
+structure of `M ⧸ p` (`Submodule.instAddCommGroupOrbitRelQuotient`), is a topological additive
+group: the orbit projection is an open quotient map, so its square is a quotient map. -/
+instance Submodule.instIsTopologicalAddGroupOrbitRelQuotient {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    (p : Submodule R M) : IsTopologicalAddGroup (AddAction.orbitRel.Quotient p M) where
+  continuous_add :=
+    (AddAction.isOpenQuotientMap_quotientMk.prodMap
+        AddAction.isOpenQuotientMap_quotientMk).isQuotientMap.continuous_iff.2 <|
+      (continuous_quotient_mk'.comp continuous_add).congr fun x ↦
+        (p.orbitRelQuotient_mk_add x.1 x.2).symm
+  continuous_neg :=
+    AddAction.isOpenQuotientMap_quotientMk.isQuotientMap.continuous_iff.2 <|
+      (continuous_quotient_mk'.comp continuous_neg).congr fun x ↦ (p.orbitRelQuotient_mk_neg x).symm
+
+/-- `Submodule.orbitRelQuotientAddEquiv` as an isomorphism of topological additive groups: the
+orbit space of translation by `p` and `M ⧸ p` are both quotients of `M` by the same relation. -/
+def Submodule.orbitRelQuotientContinuousAddEquiv {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (p : Submodule R M) :
+    AddAction.orbitRel.Quotient p M ≃ₜ+ M ⧸ p where
+  __ := p.orbitRelQuotientAddEquiv
+  continuous_toFun := isQuotientMap_quotient_mk'.continuous_iff.2 <|
+    continuous_quotient_mk'.congr fun x ↦ (p.orbitRelQuotientAddEquiv_mk x).symm
+  continuous_invFun := p.isQuotientMap_mkQ.continuous_iff.2 <|
+    continuous_quotient_mk'.congr fun x ↦ (p.orbitRelQuotientAddEquiv_symm_mk x).symm
+
+/-- `Submodule.orbitRelQuotientContinuousAddEquiv` sends the orbit of `x` to the class of `x`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientContinuousAddEquiv_mk {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (p : Submodule R M) (x : M) :
+    p.orbitRelQuotientContinuousAddEquiv (_root_.Quotient.mk (AddAction.orbitRel p M) x) =
+      Submodule.Quotient.mk x :=
+  p.orbitRelQuotientAddEquiv_mk x
+
+/-- The inverse of `Submodule.orbitRelQuotientContinuousAddEquiv` sends the class of `x` to the
+orbit of `x`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientContinuousAddEquiv_symm_mk {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] (p : Submodule R M) (x : M) :
+    p.orbitRelQuotientContinuousAddEquiv.symm (Submodule.Quotient.mk x) =
+      _root_.Quotient.mk (AddAction.orbitRel p M) x :=
+  p.orbitRelQuotientAddEquiv_symm_mk x
+
+/-- If a closed submodule `S` contains `p`, its image `S / p` in the orbit space of translation by
+`p` is closed. -/
+theorem Submodule.isClosed_orbitRelQuotient_mk_image {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] {p S : Submodule R M} (hpS : p ≤ S)
+    (hS : IsClosed (S : Set M)) :
+    IsClosed (_root_.Quotient.mk (AddAction.orbitRel p M) '' S) := by
+  rw [← isQuotientMap_quotient_mk'.isClosed_preimage]
+  convert hS using 1
+  refine Set.Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (Set.subset_preimage_image _ _)
+  simpa using S.sub_mem hy (hpS (p.orbitRel_apply_iff_sub_mem.1 (_root_.Quotient.exact hyx)))
+
+/-- The map of orbit spaces induced by a continuous semilinear map `f` carrying `p` into `q` is
+continuous. -/
+theorem Submodule.continuous_orbitRelQuotientMap {R M R₂ M₂ : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [Ring R₂] [AddCommGroup M₂] [Module R₂ M₂]
+    [TopologicalSpace M₂] (p : Submodule R M) (q : Submodule R₂ M₂) {τ₁₂ : R →+* R₂}
+    {f : M →ₛₗ[τ₁₂] M₂} (h : p ≤ q.comap f) (hf : Continuous f) :
+    Continuous (p.orbitRelQuotientMap q f h) :=
+  isQuotientMap_quotient_mk'.continuous_iff.2 <|
+    (continuous_quotient_mk'.comp hf).congr fun x ↦ (p.orbitRelQuotientMap_mk q f h x).symm
 
 namespace ContinuousLinearEquiv
 

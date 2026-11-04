@@ -13,8 +13,7 @@ import Mathlib.Data.Set.Card.Arithmetic
 # The open-mapping degree
 
 The local mapping theorem: near a point `z₀` at which `f - f z₀` vanishes to order `n`, every
-value `w` close enough to `f z₀` is attained exactly `n` times, counted with multiplicity. This is
-the third target of layer **L0 (the local-mapping engine)** of the conformal-mapping roadmap.
+value `w` close enough to `f z₀` is attained exactly `n` times, counted with multiplicity.
 
 This strengthens the open mapping theorem quantitatively. That theorem says the image of an open
 set is open — every nearby value is attained *at least* once. The degree says how many times:
@@ -51,15 +50,6 @@ converse is Mathlib's inverse function theorem
 * `TauCeti.exists_injOn_nhds_iff_deriv_ne_zero` — the local injectivity criterion.
 * `TauCeti.deriv_ne_zero_of_injOn` — the derivative of a holomorphic injection of
   an open set vanishes nowhere on it.
-
-## Coordination with upstream Mathlib
-
-Per the *Coordination with upstream Mathlib* section of `ConformalMapping/README.md`, L0 material
-overlaps [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the
-in-progress human-curated Riemann-mapping-theorem effort. **This file is therefore a temporary
-shim**: once corresponding Mathlib lemmas land, these statements should be backed by them — or
-deleted and their consumers refactored — rather than maintained as independent re-proofs. What Tau
-Ceti adds at L0 is named, discoverable API, not first proof.
 
 ## References
 

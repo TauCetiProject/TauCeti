@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
-public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Basic
+public import TauCeti.Geometry.Euclidean.Inversion
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Add
 
@@ -25,10 +25,9 @@ fractional-linear coordinate, then uses the conjugation-composition lemma from
 `Reflection/Basic.lean`. The accompanying involution theorem records that applying the operation
 again recovers the original map when both radii are nonzero.
 
-This is a prerequisite for the circle case of layer L4 in the conformal-mapping roadmap: Schwarz
-reflection "across an analytic arc / circle by Möbius reduction". The construction follows the
-standard circle-reflection formula; see Ahlfors, *Complex Analysis*, Chapters 4--6. This L4
-material is absent from the upstream Mathlib Riemann-mapping draft mathlib4#33505.
+It is the analytic input to the circle case of the Schwarz reflection principle, proved by Möbius
+reduction in `Reflection/Circle/Principle.lean`. The construction follows the
+standard circle-reflection formula; see Ahlfors, *Complex Analysis*, Chapters 4--6.
 -/
 
 public section
@@ -94,11 +93,8 @@ private noncomputable def circleReflectionCoord (c : ℂ) (r : ℝ) (z : ℂ) : 
 
 private lemma conj_circleReflectionCoord (c : ℂ) (r : ℝ) (z : ℂ) :
     (starRingEnd ℂ) (circleReflectionCoord c r z) = inversion c r z := by
-  rw [circleReflectionCoord, map_add, map_div₀, map_pow, map_sub,
-    starRingEnd_self_apply]
-  rw [starRingEnd_apply, Complex.star_def, Complex.conj_ofReal]
-  rw [← map_sub]
-  exact (inversion_eq_conj_reciprocal c r z).symm
+  rw [inversion_eq_conj_reciprocal, RCLike.ofReal_eq_complex_ofReal]
+  simp [circleReflectionCoord]
 
 private lemma differentiableOn_circleReflectionCoord {c : ℂ} {r : ℝ} {S : Set ℂ}
     (hc : c ∉ S) : DifferentiableOn ℂ (circleReflectionCoord c r) S := by
@@ -148,7 +144,7 @@ theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ}
     intro z _
     rw [circleReflectionConjugate_apply, inversion_eq_conj_reciprocal,
       map_sub]
-    simp only [g, q, conj_circleReflectionCoord]
+    simp only [g, q, conj_circleReflectionCoord, RCLike.ofReal_eq_complex_ofReal]
   have hdiff : DifferentiableOn ℂ
       (fun z => d + (s : ℂ) ^ 2 / (g (q z) - (starRingEnd ℂ) d)) S := by
     intro z hz

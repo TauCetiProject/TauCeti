@@ -1,0 +1,527 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import TauCeti.Geometry.Manifold.Instances.Cylinder
+public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
+public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Rotational
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Radial
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
+
+/-!
+# The torpedo metric
+
+The *torpedo metric* of Gromov and Lawson is a rotationally symmetric metric of positive scalar
+curvature on `ℝⁿ`, `n ≥ 3`, which is a round spherical cap near the centre and the product cylinder
+`ℝ × S^(n - 1)` outside a ball. Torpedo metrics are the building blocks of the Gromov–Lawson
+surgery construction, where they are glued in along a product boundary collar.
+
+Here the metric is built in conformal coordinates. On a real inner product space `F` of dimension
+`n`, `TauCeti.torpedoMetric F` is the Euclidean metric multiplied by `e^(2 Φ(‖y‖))`, with
+`Φ = TauCeti.torpedoExponent`. In the logarithmic radial variable `s = log ‖y‖` the Euclidean metric
+is `e^(2 s) (ds² + g_(S^(n - 1)))`, so the torpedo metric is `e^(2 w(s)) (ds² + g_(S^(n - 1)))`
+with the *torpedo profile* `w = TauCeti.torpedoProfile`, `Φ(ρ) = w(log ρ) - log ρ`:
+
+* for `s ≤ -2`, `w(s) = log R - log (cosh s)` with `R = TauCeti.torpedoCapRadius`, and the metric
+  is the round metric `(2 R / (1 + ‖y‖²))² ⟪ξ, η⟫` (on tangent vectors `ξ`, `η`) of the sphere of
+  radius `R` in stereographic coordinates;
+* for `s ≥ -1`, `w(s) = 0`, and the metric is the cylinder metric `‖y‖⁻² ⟪ξ, η⟫ = ds² + dθ²`.
+
+The slope `v = w' = TauCeti.torpedoSlope` is `-tanh s` on the cap, cut off by a smooth step, so it
+is antitone with `0 ≤ v < 1`. By the conformal change formula, away from the centre the scalar
+curvature is `(n - 1) e^(-2 w) ((n - 2) (1 - v²) - 2 v')`, which is positive for `n ≥ 3`; it is
+`(n - 1) (n - 2)` on the cylindrical end. A compactness argument on the transition region gives a
+uniform positive lower bound. In every dimension the scalar curvature is nonnegative. In the
+arclength radial coordinate `r = ∫ e^w ds` the metric takes the form `dr² + f(r)² g_(S^(n - 1))`,
+`f = e^w`, in which it is usually described.
+
+## Main definitions
+
+* `TauCeti.torpedoSlope`, `TauCeti.torpedoProfile`: the slope `v` and the profile `w`.
+* `TauCeti.torpedoCapRadius`: the radius `R` of the round cap.
+* `TauCeti.torpedoExponent`: the conformal exponent `Φ`.
+* `TauCeti.torpedoMetric`: the torpedo metric on `F`.
+
+## Main results
+
+* `TauCeti.torpedoMetric_inner_of_le`, `TauCeti.torpedoMetric_inner_of_ge`: the round cap and the
+  cylindrical end.
+* `TauCeti.scalarCurvature_torpedoMetric_of_ne_zero`: the scalar curvature away from the centre.
+* `TauCeti.scalarCurvature_torpedoMetric_of_ge`: the scalar curvature of the cylindrical end.
+* `TauCeti.scalarCurvature_torpedoMetric_nonneg`: the scalar curvature is nonnegative in every
+  dimension.
+* `TauCeti.exists_pos_le_scalarCurvature_torpedoMetric`: a uniform positive lower bound for the
+  scalar curvature in dimension at least `3`.
+* `TauCeti.hasPositiveScalarCurvature_torpedoMetric`: the torpedo metric has positive scalar
+  curvature in dimension at least `3`.
+* `TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace`: the product of the torpedo
+  metric with a metric of positive scalar curvature has positive scalar curvature, in every
+  dimension.
+* `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere`: the torpedo metric in polar
+  coordinates `y = e^t u` is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, and
+  `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge`: on its cylindrical end `t ≥ -1`
+  it is the cylinder metric `g_(Sⁿ) + dt²`.
+
+## References
+
+* M. Gromov, H. B. Lawson, *The classification of simply connected manifolds of positive scalar
+  curvature*, Ann. of Math. 111 (1980), 423–434.
+* M. Walsh, *Metrics of positive scalar curvature and generalised Morse functions, Part I*,
+  Mem. Amer. Math. Soc. 209 (2011), no. 983, Section 1.
+-/
+
+public section
+
+noncomputable section
+
+open Real Set
+open scoped ContDiff Manifold InnerProductSpace
+open Bundle
+
+namespace TauCeti
+
+/-! ### The torpedo profile -/
+
+/-- The slope `v = w'` of the torpedo profile `w`, in the logarithmic radial variable
+`s = log ‖y‖`: it is `-tanh s` for `s ≤ -2`, the slope of the round metric, and `0` for
+`s ≥ -1`, the slope of the cylinder; in between `-tanh s` is cut off by a smooth step. -/
+def torpedoSlope (s : ℝ) : ℝ :=
+  -tanh s * (1 - smoothTransition (s + 2))
+
+/-- The defining formula of the slope: `-tanh s` cut off by a smooth step. -/
+theorem torpedoSlope_def (s : ℝ) :
+    torpedoSlope s = -tanh s * (1 - smoothTransition (s + 2)) := by
+  rw [torpedoSlope]
+
+/-- On the round cap the slope is `-tanh s`, the slope of `-log (cosh s)`. -/
+theorem torpedoSlope_of_le {s : ℝ} (hs : s ≤ -2) : torpedoSlope s = -tanh s := by
+  rw [torpedoSlope, smoothTransition.zero_of_nonpos (by linarith), sub_zero, mul_one]
+
+/-- On the cylindrical end the slope vanishes. -/
+theorem torpedoSlope_of_ge {s : ℝ} (hs : -1 ≤ s) : torpedoSlope s = 0 := by
+  rw [torpedoSlope, smoothTransition.one_of_one_le (by linarith), sub_self, mul_zero]
+
+/-- The slope is smooth. -/
+theorem contDiff_torpedoSlope : ContDiff ℝ ∞ torpedoSlope :=
+  Real.contDiff_tanh.neg.mul (contDiff_const.sub (smoothTransition.contDiff.comp
+    (contDiff_id.add contDiff_const)))
+
+/-- The slope is nonnegative. -/
+theorem torpedoSlope_nonneg (s : ℝ) : 0 ≤ torpedoSlope s := by
+  rcases le_or_gt (-1) s with hs | hs
+  · rw [torpedoSlope_of_ge hs]
+  · refine mul_nonneg ?_ (sub_nonneg.2 (smoothTransition.le_one _))
+    linarith [tanh_neg_iff.2 (by linarith : s < 0)]
+
+/-- The slope is less than `1`, so `1 - v²` is positive. -/
+theorem torpedoSlope_lt_one (s : ℝ) : torpedoSlope s < 1 := by
+  have h1 : -tanh s < 1 := by linarith [neg_one_lt_tanh s]
+  rcases le_or_gt (-tanh s) 0 with h | h
+  · rw [torpedoSlope]
+    nlinarith [smoothTransition.nonneg (s + 2), smoothTransition.le_one (s + 2)]
+  · calc torpedoSlope s ≤ -tanh s := mul_le_of_le_one_right h.le (by
+          linarith [smoothTransition.nonneg (s + 2)])
+      _ < 1 := h1
+
+/-- The slope is antitone: it decreases from `-tanh s` on the cap to `0` on the cylindrical
+end. -/
+theorem antitone_torpedoSlope : Antitone torpedoSlope := by
+  intro a b hab
+  rcases le_or_gt (-1) b with hb | hb
+  · rw [torpedoSlope_of_ge hb]
+    exact torpedoSlope_nonneg a
+  · have hta : tanh b < 0 := tanh_neg_iff.2 (by linarith)
+    refine mul_le_mul (neg_le_neg (tanh_strictMono.monotone hab))
+      (sub_le_sub_left (smoothTransition.monotone (by linarith)) _)
+      (sub_nonneg.2 (smoothTransition.le_one _)) ?_
+    have := tanh_strictMono.monotone hab
+    linarith
+
+/-- The derivative of the slope is nonpositive. -/
+theorem deriv_torpedoSlope_nonpos (s : ℝ) : deriv torpedoSlope s ≤ 0 :=
+  ((contDiff_torpedoSlope.differentiable (by simp)) s).hasDerivAt.nonpos_of_antitone
+    antitone_torpedoSlope
+
+/-- The slope is stationary on the cylindrical end, where it attains its minimum `0`. -/
+theorem deriv_torpedoSlope_of_ge {s : ℝ} (hs : -1 ≤ s) : deriv torpedoSlope s = 0 := by
+  refine IsLocalMin.deriv_eq_zero (Filter.Eventually.of_forall fun τ ↦ ?_)
+  rw [torpedoSlope_of_ge hs]
+  exact torpedoSlope_nonneg τ
+
+/-- The torpedo profile `w`: the primitive of the slope `TauCeti.torpedoSlope` vanishing at `-1`,
+hence on the whole cylindrical end `[-1, ∞)`. -/
+def torpedoProfile (s : ℝ) : ℝ :=
+  ∫ τ in (-1 : ℝ)..s, torpedoSlope τ
+
+/-- The defining formula of the torpedo profile: the integral of the slope from `-1`. -/
+theorem torpedoProfile_def (s : ℝ) : torpedoProfile s = ∫ τ in (-1 : ℝ)..s, torpedoSlope τ := by
+  rw [torpedoProfile]
+
+/-- The torpedo profile is a primitive of the slope. -/
+theorem hasDerivAt_torpedoProfile (s : ℝ) : HasDerivAt torpedoProfile (torpedoSlope s) s :=
+  (contDiff_torpedoSlope.continuous.integral_hasStrictDerivAt (-1) s).hasDerivAt
+
+/-- The derivative of the torpedo profile is the slope. -/
+@[simp]
+theorem deriv_torpedoProfile : deriv torpedoProfile = torpedoSlope :=
+  funext fun s ↦ (hasDerivAt_torpedoProfile s).deriv
+
+/-- The torpedo profile is smooth. -/
+theorem contDiff_torpedoProfile : ContDiff ℝ ∞ torpedoProfile :=
+  contDiff_infty_iff_deriv.2 ⟨fun s ↦ (hasDerivAt_torpedoProfile s).differentiableAt,
+    deriv_torpedoProfile ▸ contDiff_torpedoSlope⟩
+
+/-- The torpedo profile vanishes on the cylindrical end. -/
+theorem torpedoProfile_of_ge {s : ℝ} (hs : -1 ≤ s) : torpedoProfile s = 0 := by
+  rw [torpedoProfile, intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)),
+    intervalIntegral.integral_zero]
+  intro τ hτ
+  rw [uIcc_of_le hs] at hτ
+  exact torpedoSlope_of_ge hτ.1
+
+/-- The radius `R` of the round cap of the torpedo metric, the constant for which
+`w(s) = log R - log (cosh s)` on the cap `s ≤ -2`. -/
+def torpedoCapRadius : ℝ :=
+  cosh 2 * exp (torpedoProfile (-2))
+
+/-- The defining formula of the radius of the round cap. -/
+theorem torpedoCapRadius_def : torpedoCapRadius = cosh 2 * exp (torpedoProfile (-2)) := by
+  rw [torpedoCapRadius]
+
+/-- The radius of the round cap is positive. -/
+theorem torpedoCapRadius_pos : 0 < torpedoCapRadius :=
+  mul_pos (cosh_pos 2) (exp_pos _)
+
+/-- On the round cap the torpedo profile is `log R - log (cosh s)`, so that the metric
+`e^(2 w(s)) (ds² + g_(S^(n - 1)))` is the round metric of radius `R`. -/
+theorem torpedoProfile_of_le {s : ℝ} (hs : s ≤ -2) :
+    torpedoProfile s = log torpedoCapRadius - log (cosh s) := by
+  have hint : IntervalIntegrable torpedoSlope MeasureTheory.volume (-1) (-2) :=
+    contDiff_torpedoSlope.continuous.intervalIntegrable _ _
+  have hint' : IntervalIntegrable torpedoSlope MeasureTheory.volume (-2) s :=
+    contDiff_torpedoSlope.continuous.intervalIntegrable _ _
+  have hcap : ∫ τ in (-2 : ℝ)..s, torpedoSlope τ = -log (cosh s) - -log (cosh (-2)) := by
+    refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun τ ↦ -log (cosh τ))
+      (fun τ hτ ↦ ?_) hint'
+    rw [uIcc_of_ge hs] at hτ
+    rw [torpedoSlope_of_le hτ.2, tanh_eq_sinh_div_cosh]
+    simpa [neg_div] using ((hasDerivAt_cosh τ).log (cosh_pos τ).ne').fun_neg
+  rw [torpedoProfile, ← intervalIntegral.integral_add_adjacent_intervals hint hint', hcap,
+    torpedoCapRadius, log_mul (cosh_pos 2).ne' (exp_pos _).ne', log_exp, cosh_neg]
+  simp only [torpedoProfile]
+  ring
+
+/-! ### The conformal exponent -/
+
+/-- The exponent `Φ` of the conformal factor `e^(2 Φ(‖y‖))` of the torpedo metric, as a function of
+the radius `ρ = ‖y‖`: `Φ(ρ) = w(log ρ) - log ρ` for `ρ ≠ 0`, with the torpedo profile `w`, and
+`Φ(0) = log (2 R)`, with `R` the radius of the round cap. -/
+def torpedoExponent (ρ : ℝ) : ℝ :=
+  if ρ = 0 then log (2 * torpedoCapRadius) else torpedoProfile (log ρ) - log ρ
+
+/-- Away from the centre the conformal exponent is `w(log ρ) - log ρ`. -/
+theorem torpedoExponent_of_ne_zero {ρ : ℝ} (hρ : ρ ≠ 0) :
+    torpedoExponent ρ = torpedoProfile (log ρ) - log ρ := by
+  simp [torpedoExponent, hρ]
+
+/-- At the centre the conformal exponent is `log (2 R)`. -/
+@[simp]
+theorem torpedoExponent_zero : torpedoExponent 0 = log (2 * torpedoCapRadius) := by
+  simp [torpedoExponent]
+
+/-- On the round cap `ρ ≤ e⁻²` the conformal factor `e^(2 Φ(ρ))` is `(2 R / (1 + ρ²))²`, that of
+the round sphere of radius `R` in stereographic coordinates. -/
+theorem torpedoExponent_of_le {ρ : ℝ} (h₀ : 0 ≤ ρ) (h : ρ ≤ exp (-2)) :
+    torpedoExponent ρ = log (2 * torpedoCapRadius / (1 + ρ ^ 2)) := by
+  rcases h₀.eq_or_lt with rfl | hρ
+  · simp
+  have hR := torpedoCapRadius_pos
+  have hc : 0 < (ρ + ρ⁻¹) / 2 := by positivity
+  have hfrac : 2 * torpedoCapRadius / (1 + ρ ^ 2) = torpedoCapRadius / ((ρ + ρ⁻¹) / 2 * ρ) := by
+    field_simp
+    ring
+  rw [torpedoExponent_of_ne_zero hρ.ne', torpedoProfile_of_le ((log_le_iff_le_exp hρ).2 h),
+    cosh_log hρ, hfrac, log_div hR.ne' (by positivity), log_mul hc.ne' hρ.ne']
+  ring
+
+/-- On the cylindrical end `e⁻¹ ≤ ρ` the conformal factor `e^(2 Φ(ρ))` is `ρ⁻²`. -/
+theorem torpedoExponent_of_ge {ρ : ℝ} (h : exp (-1) ≤ ρ) : torpedoExponent ρ = -log ρ := by
+  have hρ : 0 < ρ := (exp_pos _).trans_le h
+  rw [torpedoExponent_of_ne_zero hρ.ne', torpedoProfile_of_ge ((le_log_iff_exp_le hρ).2 h),
+    zero_sub]
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+open Filter Topology in
+/-- The conformal exponent `y ↦ Φ(‖y‖)` is smooth, also at the centre. -/
+theorem contDiff_torpedoExponent_norm : ContDiff ℝ ∞ fun y : F ↦ torpedoExponent ‖y‖ := by
+  rw [contDiff_iff_contDiffAt]
+  intro y
+  rcases eq_or_ne y 0 with rfl | hy
+  · -- Near the centre the exponent is `log (2 R / (1 + ‖y‖²))`.
+    have hev : (fun z : F ↦ torpedoExponent ‖z‖) =ᶠ[𝓝 0]
+        fun z ↦ log (2 * torpedoCapRadius / (1 + ‖z‖ ^ 2)) := by
+      filter_upwards [Metric.closedBall_mem_nhds (0 : F) (exp_pos (-2))] with z hz
+      exact torpedoExponent_of_le (norm_nonneg z) (by simpa using hz)
+    have hR := torpedoCapRadius_pos
+    refine ContDiffAt.congr_of_eventuallyEq ?_ hev
+    exact ((contDiff_const.div (contDiff_const.add (contDiff_norm_sq ℝ))
+      fun z ↦ by positivity).log fun z ↦ (div_pos (mul_pos two_pos hR) (by positivity)).ne'
+      ).contDiffAt
+  · have hev : (fun z : F ↦ torpedoExponent ‖z‖) =ᶠ[𝓝 y]
+        fun z ↦ torpedoProfile (log ‖z‖) - log ‖z‖ := by
+      filter_upwards [isOpen_ne.mem_nhds hy] with z hz
+      exact torpedoExponent_of_ne_zero (norm_ne_zero_iff.2 hz)
+    have hlog : ContDiffAt ℝ ∞ (fun z : F ↦ log ‖z‖) y :=
+      (contDiffAt_log.2 (norm_ne_zero_iff.2 hy)).comp y (contDiffAt_norm ℝ hy)
+    exact ((contDiff_torpedoProfile.contDiffAt.comp y hlog).sub hlog).congr_of_eventuallyEq hev
+
+/-! ### The torpedo metric -/
+
+variable (F) in
+/-- The **torpedo metric** on a real inner product space `F`: the Euclidean metric multiplied by
+the conformal factor `e^(2 Φ(‖y‖))`. It is the round metric of radius `torpedoCapRadius` in
+stereographic coordinates on the ball of radius `e⁻²`, and the cylinder metric `‖y‖⁻² ⟪ξ, η⟫` of
+`ℝ × S^(n - 1)` outside the ball of radius `e⁻¹`. -/
+def torpedoMetric : ContMDiffRiemannianMetric 𝓘(ℝ, F) ∞ F (fun y : F ↦ TangentSpace 𝓘(ℝ, F) y) :=
+  ((riemannianMetricVectorSpace F).ofLE le_top).rescale (fun y ↦ exp (2 * torpedoExponent ‖y‖))
+    (contDiff_const.mul contDiff_torpedoExponent_norm).exp.contMDiff fun _ ↦ exp_pos _
+
+/-- The torpedo metric is the Euclidean metric multiplied by `e^(2 Φ(‖y‖))`. -/
+theorem torpedoMetric_inner (y : F) (v w : TangentSpace 𝓘(ℝ, F) y) :
+    (torpedoMetric F).inner y v w = exp (2 * torpedoExponent ‖y‖) *
+      ⟪NormedSpace.fromTangentSpace y v, NormedSpace.fromTangentSpace y w⟫_ℝ := by
+  rw [torpedoMetric, ContMDiffRiemannianMetric.rescale_inner,
+    ContMDiffRiemannianMetric.ofLE_inner]
+  -- The standard metric `riemannianMetricVectorSpace` has `innerSL ℝ` as its inner product on
+  -- each fibre, and `TangentSpace` is a type synonym for `F` whose canonical identification
+  -- `fromTangentSpace` is the identity, so both sides agree definitionally; this is the same
+  -- transport as in `TauCeti.Manifold.inner_tangentSpace_vectorSpace`.
+  rfl
+
+/-- On the ball of radius `e⁻²` the torpedo metric is `(2 R / (1 + ‖y‖²))² ⟪v, w⟫`, the round
+metric of the sphere of radius `R = torpedoCapRadius` in stereographic coordinates. -/
+theorem torpedoMetric_inner_of_le {y : F} (h : ‖y‖ ≤ exp (-2)) (v w : TangentSpace 𝓘(ℝ, F) y) :
+    (torpedoMetric F).inner y v w = (2 * torpedoCapRadius / (1 + ‖y‖ ^ 2)) ^ 2 *
+      ⟪NormedSpace.fromTangentSpace y v, NormedSpace.fromTangentSpace y w⟫_ℝ := by
+  have hR := torpedoCapRadius_pos
+  have ha : 0 < 2 * torpedoCapRadius / (1 + ‖y‖ ^ 2) := by positivity
+  rw [torpedoMetric_inner, torpedoExponent_of_le (norm_nonneg y) h, mul_comm (2 : ℝ), exp_mul,
+    exp_log ha, rpow_two]
+
+/-- Outside the ball of radius `e⁻¹` the torpedo metric is the cylinder metric `‖y‖⁻² ⟪v, w⟫`:
+in the coordinates `y = e^s θ`, with `s ∈ ℝ` and `θ` in the unit sphere, it is `ds² + dθ²`. -/
+theorem torpedoMetric_inner_of_ge {y : F} (h : exp (-1) ≤ ‖y‖) (v w : TangentSpace 𝓘(ℝ, F) y) :
+    (torpedoMetric F).inner y v w = (‖y‖ ^ 2)⁻¹ *
+      ⟪NormedSpace.fromTangentSpace y v, NormedSpace.fromTangentSpace y w⟫_ℝ := by
+  have hρ : 0 < ‖y‖ := (exp_pos _).trans_le h
+  rw [torpedoMetric_inner, torpedoExponent_of_ge h, mul_neg, exp_neg, mul_comm (2 : ℝ), exp_mul,
+    exp_log hρ, rpow_two]
+
+/-! ### Scalar curvature -/
+
+section ScalarCurvature
+
+open Module
+
+variable [FiniteDimensional ℝ F]
+
+/-- **Scalar curvature of the torpedo metric.** Away from the centre, with `s = log ‖y‖`, the
+torpedo profile `w` and its slope `v = w'`, the scalar curvature of the torpedo metric on a space
+of dimension `n` is `(n - 1) e^(-2 w(s)) ((n - 2) (1 - v(s)²) - 2 v'(s))`. -/
+theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
+    (torpedoMetric F).scalarCurvature y =
+      (finrank ℝ F - 1) * exp (-2 * torpedoProfile (log ‖y‖)) *
+        ((finrank ℝ F - 2) * (1 - torpedoSlope (log ‖y‖) ^ 2) -
+          2 * deriv torpedoSlope (log ‖y‖)) := by
+  rw [torpedoMetric, scalarCurvature_rescale_exp_radial contDiff_torpedoExponent_norm hy
+    (contDiff_torpedoProfile.contDiffAt.of_le (by simp)), deriv_torpedoProfile]
+  filter_upwards [isOpen_ne.mem_nhds hy] with z hz
+  exact torpedoExponent_of_ne_zero (norm_ne_zero_iff.2 hz)
+
+/-- On the cylindrical end the torpedo metric has the scalar curvature `(n - 1) (n - 2)` of the
+cylinder `ℝ × S^(n - 1)`. -/
+theorem scalarCurvature_torpedoMetric_of_ge {y : F} (h : exp (-1) ≤ ‖y‖) :
+    (torpedoMetric F).scalarCurvature y = (finrank ℝ F - 1) * (finrank ℝ F - 2) := by
+  have hρ : 0 < ‖y‖ := (exp_pos _).trans_le h
+  have hs : -1 ≤ log ‖y‖ := (le_log_iff_exp_le hρ).2 h
+  rw [scalarCurvature_torpedoMetric_of_ne_zero (norm_pos_iff.1 hρ), torpedoProfile_of_ge hs,
+    torpedoSlope_of_ge hs, deriv_torpedoSlope_of_ge hs]
+  simp
+
+/-- A lower bound for the scalar curvature away from the centre extends to the centre, by continuity
+of the scalar curvature, since the punctured space is dense. -/
+private theorem le_scalarCurvature_torpedoMetric_of_forall_ne_zero [Nontrivial F] {c : ℝ}
+    (h : ∀ y : F, y ≠ 0 → c ≤ (torpedoMetric F).scalarCurvature y) (y : F) :
+    c ≤ (torpedoMetric F).scalarCurvature y := by
+  have hy : y ∈ closure ({0}ᶜ : Set F) := by rw [closure_compl_singleton]; trivial
+  exact le_on_closure (fun z hz ↦ h z hz) continuous_const.continuousOn
+    (torpedoMetric F).continuous_scalarCurvature.continuousOn hy
+
+/-- **The torpedo metric has nonnegative scalar curvature** in every dimension, including the
+dimensions `n ≤ 2` in which it does not have positive scalar curvature. -/
+theorem scalarCurvature_torpedoMetric_nonneg (y : F) : 0 ≤ (torpedoMetric F).scalarCurvature y := by
+  rcases subsingleton_or_nontrivial F with hF | hF
+  · -- In dimension zero the Ricci tensor is a bilinear form on the zero space, of trace zero.
+    let _ : RiemannianBundle (fun z : F ↦ TangentSpace 𝓘(ℝ, F) z) :=
+      ⟨(torpedoMetric F).toRiemannianMetric⟩
+    have : Subsingleton (TangentSpace 𝓘(ℝ, F) y) := inferInstanceAs (Subsingleton F)
+    rw [ContMDiffRiemannianMetric.scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
+      Subsingleton.elim (CovariantDerivative.ricciTensor _ y) 0, map_zero]
+  refine le_scalarCurvature_torpedoMetric_of_forall_ne_zero (fun z hz ↦ ?_) y
+  -- Away from the centre, `(n - 1) e^(-2 w) ((n - 2) (1 - v²) - 2 v')` has a vanishing first
+  -- factor when `n = 1` and only nonnegative factors when `n ≥ 2`.
+  rw [scalarCurvature_torpedoMetric_of_ne_zero hz]
+  have hn : (1 : ℝ) ≤ finrank ℝ F := by exact_mod_cast finrank_pos (R := ℝ) (M := F)
+  rcases hn.eq_or_lt with hn | hn
+  · simp [← hn]
+  have hn : (2 : ℝ) ≤ finrank ℝ F := by
+    have : 1 < finrank ℝ F := by exact_mod_cast hn
+    exact_mod_cast this
+  have h1 := torpedoSlope_nonneg (log ‖z‖)
+  have h2 := torpedoSlope_lt_one (log ‖z‖)
+  have h3 := deriv_torpedoSlope_nonpos (log ‖z‖)
+  refine mul_nonneg (mul_nonneg (by linarith) (exp_pos _).le) ?_
+  nlinarith [mul_nonneg (sub_nonneg.2 hn) (by nlinarith : (0 : ℝ) ≤ 1 - torpedoSlope (log ‖z‖) ^ 2)]
+
+/-- A uniform positive lower bound for the positive factor `e^(-2 w) (1 - v²)` of the scalar
+curvature: it is `R⁻²` on the round cap, `1` on the cylindrical end, and positive on the compact
+transition interval. -/
+private theorem exists_pos_le_exp_mul_one_sub_torpedoSlope_sq :
+    ∃ c > 0, ∀ s, c ≤ exp (-2 * torpedoProfile s) * (1 - torpedoSlope s ^ 2) := by
+  set m := fun s ↦ exp (-2 * torpedoProfile s) * (1 - torpedoSlope s ^ 2)
+  have hm_pos : ∀ s, 0 < m s := fun s ↦ mul_pos (exp_pos _) (by
+    nlinarith [torpedoSlope_nonneg s, torpedoSlope_lt_one s])
+  have hm_cont : Continuous m :=
+    ((continuous_const.mul contDiff_torpedoProfile.continuous).rexp).mul
+      (continuous_const.sub (contDiff_torpedoSlope.continuous.pow 2))
+  obtain ⟨s₀, -, hs₀⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 (by norm_num : (-2 : ℝ) ≤ -1))
+    hm_cont.continuousOn
+  have hR := torpedoCapRadius_pos
+  refine ⟨min (m s₀) (min 1 (torpedoCapRadius ^ 2)⁻¹), lt_min (hm_pos s₀) (lt_min one_pos
+    (by positivity)), fun s ↦ ?_⟩
+  rcases le_or_gt s (-2) with hs | hs
+  · -- On the round cap `e^(-2 w) = cosh² s / R²` and `1 - v² = 1 / cosh² s`.
+    refine (min_le_right _ _).trans ((min_le_right _ _).trans_eq ?_)
+    have hc := cosh_pos s
+    simp only [torpedoProfile_of_le hs, torpedoSlope_of_le hs, neg_sq, tanh_eq_sinh_div_cosh]
+    have harg : -2 * (log torpedoCapRadius - log (cosh s)) =
+        log (cosh s ^ 2) - log (torpedoCapRadius ^ 2) := by
+      rw [log_pow, log_pow]
+      push_cast
+      ring
+    rw [harg, exp_sub, exp_log (by positivity), exp_log (by positivity)]
+    field_simp
+    linear_combination (-1 : ℝ) * cosh_sq s
+  rcases le_or_gt (-1) s with hs' | hs'
+  · refine (min_le_right _ _).trans ((min_le_left _ _).trans_eq ?_)
+    simp [torpedoProfile_of_ge hs', torpedoSlope_of_ge hs']
+  · exact (min_le_left _ _).trans (hs₀ ⟨hs.le, hs'.le⟩)
+
+/-- **The torpedo metric has uniformly positive scalar curvature** in dimension `n ≥ 3`: its scalar
+curvature is bounded below by a positive constant. -/
+theorem exists_pos_le_scalarCurvature_torpedoMetric (hn : 3 ≤ finrank ℝ F) :
+    ∃ c > 0, ∀ y, c ≤ (torpedoMetric F).scalarCurvature y := by
+  obtain ⟨c, hc, hle⟩ := exists_pos_le_exp_mul_one_sub_torpedoSlope_sq
+  have hn' : (3 : ℝ) ≤ finrank ℝ F := by exact_mod_cast hn
+  refine ⟨(finrank ℝ F - 1) * (finrank ℝ F - 2) * c, by
+    have : (0 : ℝ) < (finrank ℝ F - 1) * (finrank ℝ F - 2) := by nlinarith
+    positivity, ?_⟩
+  -- The bound holds away from the centre, by the formula for the scalar curvature.
+  have hne : ∀ y : F, y ≠ 0 →
+      (finrank ℝ F - 1) * (finrank ℝ F - 2) * c ≤ (torpedoMetric F).scalarCurvature y := by
+    intro y hy
+    rw [scalarCurvature_torpedoMetric_of_ne_zero hy]
+    have h1 := hle (log ‖y‖)
+    have h2 := deriv_torpedoSlope_nonpos (log ‖y‖)
+    have h3 := exp_pos (-2 * torpedoProfile (log ‖y‖))
+    have h4 : 0 ≤ (finrank ℝ F - 1 : ℝ) := by linarith
+    have h5 : 0 ≤ (finrank ℝ F - 2 : ℝ) := by linarith
+    nlinarith [mul_le_mul_of_nonneg_left h1 (mul_nonneg h4 h5),
+      mul_nonneg h4 (mul_nonneg h3.le (neg_nonneg.2 h2))]
+  -- It extends to the centre by continuity.
+  have : Nontrivial F := Module.nontrivial_of_finrank_pos (lt_of_lt_of_le (by norm_num) hn)
+  exact le_scalarCurvature_torpedoMetric_of_forall_ne_zero hne
+
+/-- **The torpedo metric has positive scalar curvature** in dimension `n ≥ 3`. -/
+theorem hasPositiveScalarCurvature_torpedoMetric (hn : 3 ≤ finrank ℝ F) :
+    (torpedoMetric F).HasPositiveScalarCurvature := by
+  obtain ⟨c, hc, hle⟩ := exists_pos_le_scalarCurvature_torpedoMetric hn
+  exact (ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff _).2 fun y ↦ hc.trans_le (hle y)
+
+section Prod
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {J : ModelWithCorners ℝ E H}
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H N] [IsManifold J ∞ N]
+  {g : ContMDiffRiemannianMetric J ∞ E (fun x : N ↦ TangentSpace J x)}
+
+/-- The product of the torpedo metric on `F` with a metric `g` of positive scalar curvature has
+positive scalar curvature, in every dimension of `F`: the torpedo factor contributes nonnegative
+scalar curvature. -/
+theorem hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace
+    (hg : g.HasPositiveScalarCurvature) :
+    ((torpedoMetric F).prodTangentSpace g).HasPositiveScalarCurvature :=
+  hg.prodTangentSpace_of_nonneg_left scalarCurvature_torpedoMetric_nonneg
+
+end Prod
+
+end ScalarCurvature
+
+/-! ### The torpedo metric in polar coordinates -/
+
+section Polar
+
+open Metric Module
+open TauCeti.Manifold (tangentSpaceProdEquiv)
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
+  [Fact (finrank ℝ V = n + 1)]
+
+/-- **The torpedo metric in polar coordinates.** In the coordinates `y = e^t u`, with `t ∈ ℝ` and
+`u` in the unit sphere, the torpedo metric is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, where `w` is the torpedo
+profile: the rotationally symmetric metric `TauCeti.rotationalMetric` with profile `w`. -/
+theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
+    (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    (torpedoMetric V).inner (exp p.2 • (p.1 : V))
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p v)
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p w) =
+      (rotationalMetric (n := n) V contDiff_torpedoProfile).inner p v w := by
+  have hnorm : ‖exp p.2 • (p.1 : V)‖ = exp p.2 := by
+    rw [norm_smul, norm_eq_of_mem_sphere p.1, mul_one, norm_of_nonneg (exp_pos _).le]
+  rw [rotationalMetric_inner, torpedoMetric_inner, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+    ← mvfderiv_apply_eq_mfderiv_apply, inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc,
+    ← exp_add, hnorm, torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
+  ring_nf
+
+/-- On the cylindrical end `t ≥ -1`, the torpedo metric in polar coordinates `y = e^t u` is the
+cylinder metric `g_(Sⁿ) + dt²`. -/
+theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge {p : sphere (0 : V) 1 × ℝ}
+    (hp : -1 ≤ p.2) (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    (torpedoMetric V).inner (exp p.2 • (p.1 : V))
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p v)
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p w) =
+      ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
+  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, rotationalMetric_inner,
+    torpedoProfile_of_ge hp, mul_zero, exp_zero, one_mul]
+
+end Polar
+
+end TauCeti

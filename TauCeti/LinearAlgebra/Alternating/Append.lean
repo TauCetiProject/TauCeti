@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Alternating.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
@@ -18,6 +19,10 @@ blocks `y` and `z` permutes the arguments by a block swap, which has `b * c` inv
 `f (x, z, y, w) = (-1) ^ (b * c) • f (x, y, z, w)`
 (`AlternatingMap.map_append_append_comm`). This is the Koszul sign rule for reordering two blocks
 of vectors in a determinant, as in the multiplicativity of the torsion of chain complexes.
+
+Similarly, negating the last block `y` of a concatenation `(x, y)` of families of lengths `a` and
+`b` multiplies the value of an alternating map by `(-1) ^ b` (`AlternatingMap.map_append_neg`), as
+for the negated differential of a shifted chain complex.
 -/
 
 public section
@@ -84,5 +89,16 @@ theorem map_append_append_comm (f : M [⋀^Fin (a + b + (c + d))]→ₗ[R] N) (x
     | left q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₁, h₂] <;> simp
     | right q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₃, h₄] <;> simp
   rw [← hv, f.map_perm, hsign]
+
+/-- Negating the last block of arguments, of length `b`, of an alternating map evaluated on a
+concatenation of two families multiplies its value by `(-1) ^ b`. -/
+theorem map_append_neg {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {a b : ℕ} (f : M [⋀^Fin (a + b)]→ₗ[R] N) (x : Fin a → M)
+    (y : Fin b → M) : f (Fin.append x (-y)) = (-1 : R) ^ b • f (Fin.append x y) := by
+  have hv : Fin.append x (-y) = fun k ↦ Fin.append (1 : Fin a → R) (-1) k • Fin.append x y k := by
+    ext k
+    induction k using Fin.addCases <;> simp
+  rw [hv, map_smul_univ, Fin.prod_univ_add]
+  simp
 
 end AlternatingMap

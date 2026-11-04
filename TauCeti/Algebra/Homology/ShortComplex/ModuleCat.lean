@@ -20,7 +20,8 @@ two finiteness consequences of that description:
 
 * over a ring for which the middle module is noetherian, the homology is finitely generated;
 * over a division ring, when the middle term is finite-dimensional, the dimension of the homology
-  plus the dimension of the range of the first map is the dimension of the kernel of the second.
+  plus the dimension of the range of the first map is the dimension of the kernel of the second,
+  so in particular the homology has dimension at most that of the middle term.
 
 ## References
 
@@ -60,6 +61,14 @@ theorem finrank_homology_add_finrank_range_f (S : ShortComplex (ModuleCat.{v} k)
   -- `LinearMap.subtype_comp_codRestrict` fails because Mathlib's corestriction proof is only
   -- well-typed up to unfolding the concrete-category coercions.
   rfl
+
+/-- The homology of a short complex of vector spaces with finite-dimensional middle term has
+dimension at most that of the middle term. -/
+theorem finrank_homology_le_finrank_X₂ (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
+    finrank k S.homology ≤ finrank k S.X₂ := by
+  have := S.finrank_homology_add_finrank_range_f
+  have := (LinearMap.ker S.g.hom).finrank_le
+  omega
 
 section LeftHomologyData
 

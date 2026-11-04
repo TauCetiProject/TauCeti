@@ -7,7 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Algebra.Group.TermWord
 public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem
-public import Mathlib.ModelTheory.Complexity
+public import TauCeti.ModelTheory.Complexity
 
 /-!
 # Quantifier-free group formulas as finite families of word systems

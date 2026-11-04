@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import TauCeti.MeasureTheory.Group.ConvolutionSupport
+public import TauCeti.MeasureTheory.Group.Convolution.Support
 public import TauCeti.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.Prod
@@ -43,6 +43,8 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 
 * `TauCeti.CStarAction.support_convolution_subset`: the support of a twisted convolution lies in
   the product of the supports.
+* `TauCeti.CStarAction.smul_convolution`: left multiplication by a coefficient commutes with
+  twisted convolution.
 * `TauCeti.CStarAction.convolution_assoc`: twisted convolution is associative.
 * `TauCeti.CStarAction.integral_norm_convolution_le`: the `L¹` norm is submultiplicative.
 -/
@@ -81,7 +83,8 @@ private theorem continuous_integrand :
   rw [uncurry_def]
   fun_prop
 
-private theorem integrable_integrand [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
+/-- The twisted convolution integrand is integrable against any measure finite on compact sets. -/
+theorem integrable_integrand [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] (s : G) : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
   ((continuous_integrand α f g).comp (.prodMk_right s)).integrable_of_hasCompactSupport
     (f.hasCompactSupport.mono' fun _ hr => (mem_tsupport_of_integrand_ne_zero α f g hr).1)
@@ -134,6 +137,14 @@ theorem convolution_apply (s : G) :
 /-- A twisted convolution is supported in the product of the supports. -/
 theorem support_convolution_subset : support (α.convolution μ f g) ⊆ support f * support g :=
   support_integral_subset_mul μ fun _ _ => mem_support_of_integrand_ne_zero α f g
+
+/-- Left multiplication by a coefficient commutes with twisted convolution:
+`(a • f) ⋆ g = a • (f ⋆ g)`. -/
+theorem smul_convolution (a : A) : α.convolution μ (a • f) g = a • α.convolution μ f g := by
+  ext s
+  simp only [convolution_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
+    mul_assoc]
+  exact integral_const_mul_of_integrable (integrable_integrand α f g μ s)
 
 /-! ### Left-invariant measures -/
 

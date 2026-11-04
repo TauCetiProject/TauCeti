@@ -5,18 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 
 /-!
-# Generic lemmas for iterated derivatives within sets
+# Derivatives of iterated derivatives within a set
 
-This file records calculus lemmas about `iteratedDerivWithin` that are independent of any
-completely-monotone or Bernstein-function structure.
+At a point `x` with `s ∈ 𝓝 x`, the `k`-th iterated derivative within a
+unique-differentiability set `s` of a function that is `C^n` with `k < n` has an ordinary
+derivative at `x`, namely the `(k+1)`-th iterated derivative within `s`. This upgrades
+Mathlib's `ContDiffWithinAt.differentiableWithinAt_iteratedDerivWithin` to a `HasDerivAt`
+statement with an explicit derivative.
 
 ## Main declarations
 
-* `TauCeti.ContDiffOn.hasDerivAt_iteratedDerivWithin`: differentiability of an
-  `iteratedDerivWithin` on a neighbourhood inside a unique-differentiability set.
+* `ContDiffWithinAt.hasDerivAt_iteratedDerivWithin`: the pointwise statement.
+* `ContDiffOn.hasDerivAt_iteratedDerivWithin`: the same, from smoothness on all of `s`.
+
 For the plain fundamental-theorem identity on a compact interval use Mathlib's
 `intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc` together with
 `iteratedDerivWithin_one`.
@@ -24,21 +28,26 @@ For the plain fundamental-theorem identity on a compact interval use Mathlib's
 
 public section
 
-open Set Filter
+open Set
 open scoped ContDiff Topology
 
-namespace TauCeti
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {g : 𝕜 → E} {s : Set 𝕜} {x : 𝕜} {n : ℕ∞ω} {k : ℕ}
 
-/-- At a point `x` in the interior of a unique-differentiability set `s` (`s ∈ 𝓝 x`),
-the derivative of the `k`-th iterated derivative-within-`s` of a `C^(k+1)` function is the
-`(k+1)`-th iterated derivative-within-`s`. -/
-theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {g : 𝕜 → E} {s : Set 𝕜} {k : ℕ} (hf : ContDiffOn 𝕜 ((k + 1 : ℕ) : WithTop ℕ∞) g s)
-    (hs : UniqueDiffOn 𝕜 s) {x : 𝕜} (hx : s ∈ nhds x) :
+/-- If `g` is `C^n` within a unique-differentiability set `s` at a point `x` with `s ∈ 𝓝 x`,
+then for `k < n` the `k`-th iterated derivative within `s` has derivative at `x` equal to the
+`(k+1)`-th iterated derivative within `s`. -/
+theorem ContDiffWithinAt.hasDerivAt_iteratedDerivWithin (hg : ContDiffWithinAt 𝕜 n g s x)
+    (hk : k < n) (hs : UniqueDiffOn 𝕜 s) (hx : s ∈ 𝓝 x) :
     HasDerivAt (iteratedDerivWithin k g s) (iteratedDerivWithin (k + 1) g s x) x := by
-  rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
-  exact (hf.differentiableOn_iteratedDerivWithin
-    (by exact_mod_cast Nat.lt_succ_self k) hs).hasDerivAt hx
+  rw [iteratedDerivWithin_succ]
+  exact (hg.differentiableWithinAt_iteratedDerivWithin hk
+    (by rwa [insert_eq_of_mem (mem_of_mem_nhds hx)])).hasDerivWithinAt.hasDerivAt hx
 
-end TauCeti
+/-- If `g` is `C^n` on a unique-differentiability set `s` and `s ∈ 𝓝 x`, then for `k < n` the
+`k`-th iterated derivative within `s` has derivative at `x` equal to the `(k+1)`-th iterated
+derivative within `s`. -/
+theorem ContDiffOn.hasDerivAt_iteratedDerivWithin (hg : ContDiffOn 𝕜 n g s) (hk : k < n)
+    (hs : UniqueDiffOn 𝕜 s) (hx : s ∈ 𝓝 x) :
+    HasDerivAt (iteratedDerivWithin k g s) (iteratedDerivWithin (k + 1) g s x) x :=
+  (hg x (mem_of_mem_nhds hx)).hasDerivAt_iteratedDerivWithin hk hs hx

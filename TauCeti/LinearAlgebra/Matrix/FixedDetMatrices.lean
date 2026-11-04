@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 
 /-!
@@ -30,6 +31,9 @@ bounded by a given constant.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
 * `FixedDetMatrices.finite_setOf_abs_le`: there are only finitely many integral matrices of
   determinant `n` whose entries are at most `B` in absolute value.
+* `FixedDetMatrices.toGL`: for `n ≠ 0`, an integral matrix of determinant `n` as an element of
+  `GL(m, ℚ)`, on which left multiplication by `SL(m, ℤ)` is multiplication by its image
+  (`FixedDetMatrices.toGL_smul`).
 
 ## References
 
@@ -61,7 +65,7 @@ theorem exists_smul_mem_reps (hn : n ≠ 0) (A : FixedDetMatrix (Fin 2) ℤ n) :
 theorem smul_coe_apply {R : Type*} [CommRing R] {m : R} (g : SpecialLinearGroup (Fin 2) R)
     (A : FixedDetMatrix (Fin 2) R m) (i j : Fin 2) :
     (g • A).1 i j = g i 0 * A.1 0 j + g i 1 * A.1 1 j := by
-  rw [smul_coe, mul_apply, Fin.sum_univ_two]
+  rw [smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
 
 private lemma unitriangular_of_smul_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n} {g : SL(2, ℤ)}
     (hA : A ∈ reps n) (hgA : g • A ∈ reps n) : g 0 0 = 1 ∧ g 1 0 = 0 ∧ g 1 1 = 1 := by
@@ -172,5 +176,40 @@ theorem finite_setOf_abs_le {m : Type*} [Fintype m] [DecidableEq m] (n B : ℤ) 
   ((Set.Finite.pi' fun _ ↦ Set.Finite.pi' fun _ ↦ Set.finite_Icc (-B) B).preimage
     (f := fun A : FixedDetMatrix m ℤ n ↦ (A.1 : m → m → ℤ))
     Subtype.val_injective.injOn).subset fun _ hA i j ↦ abs_le.mp (hA i j)
+
+/-! ### Integral matrices of nonzero determinant as rational invertible matrices -/
+
+section ToGL
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- For `n ≠ 0`, an integral matrix of determinant `n` as an invertible rational matrix, the form
+in which it acts on the upper half-plane and on the cusps `ℙ¹(ℚ)`. -/
+noncomputable def toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) : GL m ℚ :=
+  .mkOfDetNeZero (A.1.map (Int.cast : ℤ → ℚ)) (by rw [← Int.cast_det, A.2]; exact_mod_cast hn)
+
+/-- The underlying matrix of `toGL hn A` is the entrywise cast of `A`. -/
+@[simp]
+theorem coe_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    (toGL hn A : Matrix m m ℚ) = A.1.map (Int.cast : ℤ → ℚ) := (rfl)
+
+/-- The determinant of `toGL hn A` is `n`. -/
+theorem det_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    (toGL hn A : Matrix m m ℚ).det = n := by
+  rw [coe_toGL, ← Int.cast_det, A.2]
+
+/-- `toGL hn` is injective: the cast `ℤ → ℚ` is. -/
+theorem toGL_injective (hn : n ≠ 0) : Function.Injective (toGL (m := m) hn) := fun A B h ↦
+  Subtype.ext <| Matrix.map_injective Int.cast_injective <| by
+    simpa only [coe_toGL] using congrArg Units.val h
+
+/-- Left multiplication by `g ∈ SL(m, ℤ)` becomes multiplication by its image in `GL(m, ℚ)`. -/
+theorem toGL_smul (hn : n ≠ 0) (g : SpecialLinearGroup m ℤ) (A : FixedDetMatrix m ℤ n) :
+    toGL hn (g • A) = SpecialLinearGroup.mapGL ℚ g * toGL hn A := by
+  ext : 1
+  simpa [smul_coe] using
+    Matrix.map_mul (f := Int.castRingHom ℚ) (L := (g : Matrix m m ℤ)) (M := A.1)
+
+end ToGL
 
 end FixedDetMatrices

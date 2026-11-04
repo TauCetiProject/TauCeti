@@ -15,7 +15,7 @@ module
 -- `Mₚ(Mᵩ(R)) ≃ₐ Mₚ˟ᵩ(R)` used in a proof below; that is why none of those is imported again here.
 public import TauCeti.Algebra.BrauerGroup.Basic
 -- `TauCeti.Algebra.CentralSimple.End` is imported publicly: its simplicity instance
--- `TauCeti.IsSimpleRing.moduleEnd_of_field`, together with the centrality instance it re-exports
+-- `IsSimpleRing.moduleEnd_of_field`, together with the centrality instance it re-exports
 -- from `Mathlib.Algebra.Central.End`, is what bundles `End_K V` as a term of `CSA K` in the
 -- statements below.
 public import TauCeti.Algebra.CentralSimple.End

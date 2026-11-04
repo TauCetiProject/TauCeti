@@ -7,6 +7,7 @@ module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 /-!
 # Local inverse of the Lie-group exponential
 
@@ -31,6 +32,8 @@ tangent-space exponential.
 * `isLocalDiffeomorphAt_mulInvariantExpChart_zero`: the fully charted exponential is a local
   `C∞` local diffeomorphism at zero.
 * `exists_injOn_mulInvariantExp_modelSpace`: exponential is injective near zero.
+* `TauCeti.exists_contMDiffMap_eventually_apply_lieExp_eq`: every smooth germ on the Lie algebra
+  at zero is the pullback along `lieExp` of a globally smooth function on the group.
 
 ## References
 
@@ -45,7 +48,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [IsManifold I 1 G]
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 private theorem smoothOrder_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by
   simp
@@ -646,3 +649,27 @@ theorem isLocalDiffeomorphAt_lieExp_zero [FiniteDimensional ℝ E]
     rw [Function.comp_apply, lieExp_eq_mulInvariantExp,
       leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply]]
   exact hcomp
+
+namespace TauCeti
+
+/-- **Smooth functions with a prescribed germ along the exponential.** Every smooth function `φ`
+on the Lie algebra is, near `0`, the composite of a globally smooth function on `G` with the
+exponential. -/
+theorem exists_contMDiffMap_eventually_apply_lieExp_eq [FiniteDimensional ℝ E]
+    [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] {φ : LeftInvariantDerivation I G → ℝ}
+    (hφ : ContDiff ℝ ∞ φ) :
+    ∃ f : C^∞⟮I, G; ℝ⟯, ∀ᶠ Y in 𝓝 (0 : LeftInvariantDerivation I G), f (lieExp Y) = φ Y := by
+  have hd := isLocalDiffeomorphAt_lieExp_zero (I := I) (G := G)
+  have h1 : (1 : G) ∈ hd.localInverse.source := by
+    simpa only [lieExp_zero] using hd.localInverse_mem_source
+  obtain ⟨f, hf⟩ := (hφ.contMDiff.comp_contMDiffOn
+    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq hd.localInverse_open_source h1
+  refine ⟨f, ?_⟩
+  have hexp : Tendsto (lieExp (I := I) (G := G)) (𝓝 0) (𝓝 1) := by
+    simpa only [lieExp_zero] using
+      ((contMDiff_lieExp (I := I) (G := G)).continuous.tendsto (0 : LeftInvariantDerivation I G))
+  filter_upwards [hexp.eventually hf, hd.localInverse_eventuallyEq_left] with Y hY hY'
+  rw [hY, comp_apply]
+  exact congrArg φ hY'
+
+end TauCeti

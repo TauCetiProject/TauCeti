@@ -92,7 +92,7 @@ private theorem spec_map_ofHom_congr {A A' : Type u} [CommRing A] [CommRing A'] 
   rw [RingHom.ext h]
 
 /-- `Spec (S ⊗[R] B)` is the fibre product of `Spec S ⟶ Spec R` and `Spec B ⟶ Spec S ⟶ Spec R`. -/
-private theorem isPullback_spec_tensorProduct (R S B : Type u) [CommRing R] [CommRing S]
+theorem isPullback_spec_tensorProduct (R S B : Type u) [CommRing R] [CommRing S]
     [Algebra R S] [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B] :
     IsPullback
       (Spec.map (CommRingCat.ofHom

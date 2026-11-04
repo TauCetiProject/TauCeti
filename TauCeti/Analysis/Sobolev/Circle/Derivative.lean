@@ -34,6 +34,8 @@ order is what governs the differentiability of reparametrizations of boundary ma
 ## Main statements
 
 * `TauCeti.CircleSobolev.norm_derivative_le`: `‖derivative T h a‖ ≤ 2π/T ‖a‖`.
+* `TauCeti.CircleSobolev.norm_sq_le_of_derivative`: conversely, the `H^(s + 1)` norm is
+  controlled by the `H^s` norms of a function and of its derivative.
 * `TauCeti.CircleSobolev.derivative_eq_zero_iff`: the kernel of the derivative consists of the
   constant functions.
 * `TauCeti.CircleSobolev.hasDerivAt_toContinuousMap`: for `s > 1/2`, the continuous representative
@@ -102,6 +104,30 @@ theorem opNorm_derivative_le (h : s + 1 ≤ t) :
     ‖(derivative T h : CircleSobolev t E →L[ℂ] CircleSobolev s E)‖ ≤ 2 * π / T :=
   ContinuousLinearMap.opNorm_le_bound _ (div_nonneg (by positivity) hT.out.le)
     (norm_derivative_le T h)
+
+/-- Conversely, for `t = s + 1` the norm of `H^t` is controlled by the `H^s` norms of a function
+and of its derivative: `‖a‖² ≤ 2 ‖a‖²_{H^s} + 2 (T/2π)² ‖a'‖²_{H^s}`. -/
+theorem norm_sq_le_of_derivative (h : s + 1 = t) (a : CircleSobolev t E) :
+    ‖a‖ ^ 2 ≤ 2 * ‖inclusion (show s ≤ t by linarith) a‖ ^ 2 +
+      2 * (T / (2 * π)) ^ 2 * ‖derivative T h.le a‖ ^ 2 := by
+  subst h
+  refine hasSum_le (fun n ↦ ?_) (hasSum_sq_weight_mul_norm_coeff a)
+    (((hasSum_sq_weight_mul_norm_coeff (inclusion (show s ≤ s + 1 by linarith) a)).mul_left 2).add
+      ((hasSum_sq_weight_mul_norm_coeff (derivative T le_rfl a)).mul_left
+        (2 * (T / (2 * π)) ^ 2)))
+  have hk : T / (2 * π) * (2 * π / T) = 1 := by
+    field_simp [hT.out.ne']
+  rw [coeff_inclusion, coeff_derivative, norm_smul, norm_two_pi_I_mul_intCast_div hT.out,
+    weight_add, weight_def 1, Real.rpow_one]
+  calc (weight s n * (1 + |(n : ℝ)|) * ‖a.coeff n‖) ^ 2
+      = (weight s n * ‖a.coeff n‖) ^ 2 * (1 + |(n : ℝ)|) ^ 2 := by ring
+    _ ≤ (weight s n * ‖a.coeff n‖) ^ 2 * (2 * (1 + |(n : ℝ)| ^ 2)) := by
+        gcongr
+        nlinarith [sq_nonneg (1 - |(n : ℝ)|)]
+    _ = 2 * (weight s n * ‖a.coeff n‖) ^ 2 + 2 * (T / (2 * π)) ^ 2 *
+          (weight s n * (2 * π / T * |(n : ℝ)| * ‖a.coeff n‖)) ^ 2 := by
+        linear_combination (-2 * (weight s n * ‖a.coeff n‖) ^ 2 * |(n : ℝ)| ^ 2 *
+          (T / (2 * π) * (2 * π / T) + 1)) * hk
 
 @[simp]
 theorem derivative_single (h : s + 1 ≤ t) (n : ℤ) (x : E) :

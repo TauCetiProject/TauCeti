@@ -146,9 +146,23 @@ theorem pdf_eq_logitNormalPDF_of_hasLaw_logitNormalMeasure (hv : v ≠ 0)
   pdf_eq_of_hasLaw_withDensity (measurable_logitNormalPDF m v).aemeasurable
     (by rwa [logitNormalMeasure_eq_withDensity m hv] at hX)
 
-/-- The Radon–Nikodym derivative against volume is the named density. -/
-theorem rnDeriv_logitNormalMeasure (m : ℝ) (hv : v ≠ 0) :
+/-- The zero-variance boundary is singular with respect to Lebesgue measure. -/
+theorem mutuallySingular_logitNormalMeasure_zero_var (m : ℝ) :
+    logitNormalMeasure m 0 ⟂ₘ volume := by
+  rw [logitNormalMeasure_zero_var]
+  exact mutuallySingular_dirac _ _
+
+/-- The Radon–Nikodym derivative against volume is the named density, including the
+zero-variance boundary, where both vanish almost everywhere. -/
+theorem rnDeriv_logitNormalMeasure (m : ℝ) :
     (logitNormalMeasure m v).rnDeriv volume =ᵐ[volume] logitNormalPDF m v := by
+  by_cases hv : v = 0
+  · subst v
+    have hzero : logitNormalPDF m 0 = 0 := by
+      funext x
+      simp [logitNormalPDF]
+    rw [hzero]
+    exact (Measure.rnDeriv_eq_zero _ _).2 (mutuallySingular_logitNormalMeasure_zero_var m)
   rw [logitNormalMeasure_eq_withDensity m hv]
   exact Measure.rnDeriv_withDensity volume (measurable_logitNormalPDF m v)
 
@@ -165,10 +179,5 @@ theorem support_logitNormalMeasure (m : ℝ) (hv : v ≠ 0) :
     exact iff_of_true (logitNormalPDFReal_pos m hv hx) hx
   · simp [Function.mem_support, logitNormalPDF, hx]
 
-/-- The zero-variance boundary is singular with respect to Lebesgue measure. -/
-theorem mutuallySingular_logitNormalMeasure_zero_var (m : ℝ) :
-    logitNormalMeasure m 0 ⟂ₘ volume := by
-  rw [logitNormalMeasure_zero_var]
-  exact mutuallySingular_dirac _ _
 
 end TauCeti.Probability

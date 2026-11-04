@@ -44,7 +44,38 @@ variable {E H M E' H' M' F : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-  [IsManifold I 2 M] [IsManifold I' 2 M']
+
+/-- At a point where `f` and `g` are differentiable, pullback by `f` of the exterior derivative
+of `g` is the exterior derivative of the composite. -/
+theorem mpullback_mextDeriv_ofFunction_apply {f : M → M'} {x : M} (hf : MDifferentiableAt I I' f x)
+    {g : M' → F} (hg : MDifferentiableAt I' 𝓘(ℝ, F) g (f x)) :
+    mpullback I I' f (mextDeriv (RoughForm.ofFunction I' g)) x =
+      mextDeriv (RoughForm.ofFunction I (g ∘ f)) x := by
+  ext v
+  simp only [mpullback_apply, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply]
+  rw [mfderiv_comp x hg hf]
+  -- `NormedSpace.fromTangentSpace` is the identity of `F`
+  rfl
+
+/-- Pullback by a differentiable map of the exterior derivative of a differentiable function is
+the exterior derivative of the composite. -/
+theorem mpullback_mextDeriv_ofFunction {f : M → M'} (hf : MDifferentiable I I' f) {g : M' → F}
+    (hg : MDifferentiable I' 𝓘(ℝ, F) g) :
+    mpullback I I' f (mextDeriv (RoughForm.ofFunction I' g)) =
+      mextDeriv (RoughForm.ofFunction I (g ∘ f)) := by
+  ext x : 1
+  exact mpullback_mextDeriv_ofFunction_apply (hf x) (hg _)
+
+/-- The pullback of the coordinate one-form `dz` of the real line along a real function `h` is
+the differential `dh`. -/
+theorem SmoothForm.mpullback_realLineCoordForm (h : M → ℝ) :
+    TauCeti.mpullback I 𝓘(ℝ) h realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction I h) := by
+  ext x v
+  rw [TauCeti.mpullback_apply, realLineCoordForm_apply, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+variable [IsManifold I 2 M] [IsManifold I' 2 M']
 
 private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     (hf : ContMDiffAt I I' 2 f x) (φ : RoughForm I' M' F k) :

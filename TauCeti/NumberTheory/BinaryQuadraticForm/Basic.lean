@@ -61,6 +61,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   `Module S (TauCeti.BinaryQuadraticForm R)` whenever `R` is an `S`-module.
 * `TauCeti.BinaryQuadraticForm.discrim`: its discriminant `b² - 4 a c`.
 * `TauCeti.BinaryQuadraticForm.eval`: its value `a x² + b x y + c y²` at `(x, y)`.
+* `TauCeti.BinaryQuadraticForm.map`: the form with coefficients mapped along a ring homomorphism,
+  for instance an integral form read over `ℤ_p` or `ℚ`.
 * The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
   `γ • f = f ∘ γ⁻¹`, for a commutative ring `R`.
 * `TauCeti.BinaryQuadraticForm.posDef D`: for `D ≠ 0`, the positive definite integral forms of
@@ -72,6 +74,9 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
 * `TauCeti.BinaryQuadraticForm.eval_smul`: `γ • f` is `f ∘ γ⁻¹`.
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
+* `TauCeti.BinaryQuadraticForm.smul_map`: mapping coefficients is equivariant for the entrywise
+  map `SL(2, R) →* SL(2, S)`, so automorphs map to automorphs
+  (`TauCeti.BinaryQuadraticForm.map_mem_stabilizer_map`).
 * `TauCeti.BinaryQuadraticForm.T_zpow_smul`, `TauCeti.BinaryQuadraticForm.T_smul` and
   `TauCeti.BinaryQuadraticForm.S_smul`: the action of `T ^ k`, `T` and `S` on coefficients.
 * `TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a coordinate change
@@ -299,6 +304,44 @@ def evalLinearMap (x y : R) : BinaryQuadraticForm R →ₗ[R] R where
     (n • f).eval x y = n • f.eval x y :=
   map_nsmul (evalLinearMap x y) n f
 
+section Map
+
+variable {S T : Type*} [Semiring S] [Semiring T]
+
+/-- The form `φ(a) x² + φ(b) x y + φ(c) y²` obtained by applying `φ : R →+* S` to the
+coefficients of `f = a x² + b x y + c y²`. -/
+def map (φ : R →+* S) (f : BinaryQuadraticForm R) : BinaryQuadraticForm S :=
+  ⟨φ f.a, φ f.b, φ f.c⟩
+
+@[simp]
+theorem map_a (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).a = φ f.a :=
+  (rfl)
+
+@[simp]
+theorem map_b (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).b = φ f.b :=
+  (rfl)
+
+@[simp]
+theorem map_c (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).c = φ f.c :=
+  (rfl)
+
+@[simp]
+theorem map_id (f : BinaryQuadraticForm R) : f.map (RingHom.id R) = f :=
+  (rfl)
+
+@[simp]
+theorem map_map (φ : R →+* S) (ψ : S →+* T) (f : BinaryQuadraticForm R) :
+    (f.map φ).map ψ = f.map (ψ.comp φ) :=
+  (rfl)
+
+/-- Mapping the coefficients maps the values: `(f.map φ)(φ x, φ y) = φ (f(x, y))`. -/
+@[simp]
+theorem eval_map (φ : R →+* S) (f : BinaryQuadraticForm R) (x y : R) :
+    (f.map φ).eval (φ x) (φ y) = φ (f.eval x y) := by
+  simp [eval_def]
+
+end Map
+
 end Semiring
 
 section Ring
@@ -444,6 +487,40 @@ theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).di
     (r • f).discrim = r ^ 2 * f.discrim := by
   simp only [discrim_def, discrim, smul_a', smul_b', smul_c', smul_eq_mul]
   ring
+
+/-- A form `g • f` has discriminant `-D` exactly when `f` has discriminant `-D / g²`. -/
+theorem discrim_natCast_smul_eq_neg_iff {D g : ℕ} (hg : g ^ 2 ∣ D) (hg0 : g ≠ 0)
+    (f : BinaryQuadraticForm ℤ) :
+    ((g : ℤ) • f).discrim = -D ↔ f.discrim = -(D / g ^ 2 : ℕ) := by
+  obtain ⟨m, rfl⟩ := hg
+  rw [Nat.mul_div_cancel_left _ (by positivity), discrim_smul', Nat.cast_mul, Nat.cast_pow,
+    ← mul_neg, mul_right_inj' (by positivity)]
+
+section Map
+
+variable {S : Type*} [CommRing S]
+
+/-- Mapping the coefficients maps the discriminant. -/
+@[simp]
+theorem discrim_map (φ : R →+* S) (f : BinaryQuadraticForm R) :
+    (f.map φ).discrim = φ f.discrim := by
+  simp [discrim_def, discrim, map_ofNat]
+
+/-- Mapping the coefficients is equivariant for the action of `SL(2, R)` on forms, through the
+entrywise map `SL(2, R) →* SL(2, S)`. -/
+@[simp]
+theorem smul_map (φ : R →+* S) (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
+    SpecialLinearGroup.map φ γ • f.map φ = (γ • f).map φ := by
+  ext <;> simp [map_ofNat]
+
+/-- An automorph of `f` over `R` maps to an automorph of `f.map φ` over `S`. -/
+theorem map_mem_stabilizer_map (φ : R →+* S) {f : BinaryQuadraticForm R} {γ : SL(2, R)}
+    (hγ : γ ∈ MulAction.stabilizer SL(2, R) f) :
+    SpecialLinearGroup.map φ γ ∈ MulAction.stabilizer SL(2, S) (f.map φ) := by
+  rw [MulAction.mem_stabilizer_iff] at hγ ⊢
+  rw [smul_map, hγ]
+
+end Map
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.LinearIndependent.Defs
-public import Mathlib.RingTheory.Valuation.Basic
+public import TauCeti.RingTheory.Valuation.LinearIndependent
 
 /-!
 # Valuations trivial on a base ring
@@ -16,9 +15,8 @@ algebras over it. The restriction changes where the valuation is evaluated but n
 constants, because an algebra map fixes them.
 
 A valuation trivial on a base ring also sees the base as scalars of size one, so a family of
-elements with pairwise distinct nonzero valuations is linearly independent over the base: in a
-linear combination with a nonzero coefficient, the summand of largest valuation dominates and the
-combination cannot vanish.
+elements with pairwise distinct nonzero valuations is linearly independent over the base, by
+`Valuation.linearIndependent_of_map_smul_ne`.
 
 ## Main results
 
@@ -47,35 +45,18 @@ instance IsTrivialOn.comap {A B C : Type*} [CommSemiring A] [Ring B] [Ring C] [A
   eq_one a ha := by simpa using Valuation.IsTrivialOn.eq_one (v := v) a ha
 
 /-- **Elements of pairwise distinct nonzero valuations are linearly independent** over a base ring
-on which the valuation is trivial. A nontrivial linear combination has, among its summands with
-nonzero coefficient, a unique one of largest valuation, and that summand dictates the valuation of
-the sum, which is therefore nonzero. -/
+on which the valuation is trivial. Such a valuation gives each nonzero multiple `a • f i` the
+valuation of `f i`, so this is the case of `Valuation.linearIndependent_of_map_smul_ne` with
+trivial scalars. -/
 theorem linearIndependent_of_injective {A B : Type*} [CommRing A] [Ring B] [Algebra A B]
     (v : Valuation B Γ₀) [v.IsTrivialOn A] {ι : Type*} {f : ι → B} (hf : ∀ i, v (f i) ≠ 0)
     (hinj : Function.Injective (v ∘ f)) : LinearIndependent A f := by
-  classical
-  rw [linearIndependent_iff']
-  intro s g hsum i hi
-  by_contra hgi
-  -- Restrict to the summands with nonzero coefficient; they have the same sum.
-  set t := s.filter fun i ↦ g i ≠ 0 with ht
-  have hit : i ∈ t := Finset.mem_filter.mpr ⟨hi, hgi⟩
-  have hsum' : ∑ i ∈ t, g i • f i = 0 := by
-    rw [← hsum, ht]
-    exact Finset.sum_filter_of_ne fun i _ h hg ↦ h (by rw [hg, zero_smul])
-  -- Each remaining summand has the valuation of the vector it scales.
-  have hval : ∀ i ∈ t, v (g i • f i) = v (f i) := fun i hi ↦ by
-    rw [Algebra.smul_def, v.map_mul, IsTrivialOn.eq_one (v := v) _ (Finset.mem_filter.mp hi).2,
-      one_mul]
-  -- The summand of largest valuation is unique, so it dictates the valuation of the sum.
-  obtain ⟨j, hjt, hmax⟩ := t.exists_max_image (fun i ↦ v (f i)) ⟨i, hit⟩
-  have hlt : ∀ i ∈ t \ {j}, v (g i • f i) < v (g j • f j) := fun i hi ↦ by
-    rw [Finset.mem_sdiff, Finset.mem_singleton] at hi
-    rw [hval i hi.1, hval j hjt]
-    exact lt_of_le_of_ne (hmax i hi.1) fun h ↦ hi.2 (hinj h)
-  have h := v.map_sum_eq_of_lt hjt hlt
-  rw [hsum', v.map_zero, hval j hjt] at h
-  exact hf j h.symm
+  have hval : ∀ i (a : A), a ≠ 0 → v (a • f i) = v (f i) := fun i a ha ↦ by
+    rw [Algebra.smul_def, v.map_mul, IsTrivialOn.eq_one (v := v) a ha, one_mul]
+  refine v.linearIndependent_of_map_smul_ne (fun i a ha ↦ by rw [hval i a ha]; exact hf i)
+    fun i j hij a b ha hb ↦ ?_
+  rw [hval i a ha, hval j b hb]
+  exact fun h ↦ hij (hinj h)
 
 end Valuation
 

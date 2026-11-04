@@ -142,7 +142,7 @@ the top weight space is the line spanned by the generator, by
 `TauCeti.genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_top`. -/
 theorem formalCharacter_coeff_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top :
     (formalCharacter K H M).coeff lam = 1 := by
-  rw [formalCharacter_coeff, ← finrank_toSubmodule,
+  rw [formalCharacter_coeff, ← LieSubmodule.finrank_toSubmodule,
     genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen,
     finrank_span_singleton hv.ne_zero, Nat.cast_one]
 

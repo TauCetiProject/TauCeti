@@ -317,6 +317,17 @@ instance : (discreteModules.{v} A).IsClosedUnderFiniteLimits where
     exact this ▸ isOpen_iInter_of_finite fun k =>
       discreteModules_iff_isOpen.1 (p.prop_diag_obj k) _ _⟩
 
+/-- The product of two discrete modules, with the componentwise action, is discrete. -/
+theorem discreteModules_prod {M : ModuleCat.{v} A} {N : ModuleCat.{v'} A}
+    (hM : discreteModules A M) (hN : discreteModules A N) :
+    discreteModules A (ModuleCat.of A (M × N)) := by
+  rw [discreteModules_iff_isOpen] at hM hN ⊢
+  intro m x
+  have : {a : A | a • m = x} = {a | a • m.1 = x.1} ∩ {a | a • m.2 = x.2} := by
+    ext a
+    simp [Prod.ext_iff]
+  exact this ▸ (hM m.1 x.1).inter (hN m.2 x.2)
+
 /-- The discrete modules form an abelian category. -/
 example : Abelian (discreteModules.{v} A).FullSubcategory :=
   inferInstance
@@ -381,3 +392,20 @@ theorem discreteModules_restrictScalars {B : Type u'} [Ring B] [TopologicalSpace
 end Discrete
 
 end TauCeti
+
+namespace ModuleCat
+
+/-- The action annihilator of a discrete module is closed. -/
+theorem isClosed_annihilator_of_discreteModules {A : Type u} [Ring A] [TopologicalSpace A]
+    (M : ModuleCat.{v} A) (hM : TauCeti.discreteModules A M) :
+    IsClosed (Module.annihilator A M : Set A) := by
+  let : TopologicalSpace M := ⊥
+  let : DiscreteTopology M := ⟨rfl⟩
+  have heq : (Module.annihilator A M : Set A) = ⋂ m : M, {a : A | a • m = 0} := by
+    ext a
+    simp [Module.mem_annihilator]
+  rw [heq]
+  exact isClosed_iInter fun m =>
+    isClosed_eq ((TauCeti.discreteModules_iff.mp hM) m) continuous_const
+
+end ModuleCat

@@ -13,6 +13,8 @@ public import TauCeti.Algebra.Module.ZLattice.Dual
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
+import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+
 /-!
 # The covolume of a lattice in an inner product space
 
@@ -55,6 +57,8 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
 
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
   any `ℤ`-basis of `L`.
+* `ZLattice.covolume_span_sq_eq_det_gram`: in particular `covolume (span ℤ (range b)) ^ 2` is the
+  Gram determinant of the basis `b` of the ambient space.
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
 * `ZLattice.covolume_comap_continuousLinearEquiv`: the covolume of the pullback of `L` along a
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
@@ -253,16 +257,16 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
     rw [← ZLattice.rank ℝ L, finrank_eq_card_basis b]
   let o : OrthonormalBasis ι ℝ E :=
     (stdOrthonormalBasis ℝ E).reindex (Fintype.equivFinOfCardEq hcard.symm).symm
-  -- The Gram matrix is `Mᵀ M`, where `M` is the matrix of the lattice basis in orthonormal
-  -- coordinates.
-  have hM : o.toBasis.toMatrix ((↑) ∘ b) = Matrix.of fun i j ↦ o.repr (b j : E) i := by
-    ext i j
-    simp [Basis.toMatrix_apply]
-  have hgram : (Matrix.gram ℝ fun i ↦ (b i : E)).det = o.toBasis.det ((↑) ∘ b) ^ 2 := by
-    rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
-      star_trivial, Basis.det_apply, hM, sq]
   rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis,
-    o.volume_real_fundamentalDomain, hgram, mul_one, sq_abs]
+    o.volume_real_fundamentalDomain, mul_one, o.det_gram_eq_norm_det_sq]
+  simp [Function.comp_def]
+
+/-- The square of the covolume of the `ℤ`-span of a basis of a finite-dimensional real inner
+product space is the determinant of the Gram matrix of the basis. -/
+theorem _root_.ZLattice.covolume_span_sq_eq_det_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι ℝ E) : ZLattice.covolume (span ℤ (Set.range b)) ^ 2 = (Matrix.gram ℝ b).det := by
+  rw [ZLattice.covolume_sq_eq_det_gram _ (b.restrictScalars ℤ)]
+  simp only [Basis.restrictScalars_apply]
 
 /-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
 @[simp]

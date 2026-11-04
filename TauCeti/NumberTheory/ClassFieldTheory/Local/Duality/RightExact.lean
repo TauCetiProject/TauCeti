@@ -59,7 +59,8 @@ theorem coeffMap_two_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     Function.Surjective (ContinuousCohomology.coeffMap f 2).hom := by
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   have : Finite C.V := Finite.of_surjective f.hom hf
-  have : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective f hf Fact.out⟩
+  have : Fact (IsSmoothDiscrete (ZMod n) C) :=
+    ⟨.of_surjective f hf (IsSmoothDiscrete.stabilizer_isOpen Fact.out)⟩
   let tr := h2MuEquivZMod F hn
   let ι := (ContinuousCohomology.coeffMap (tateDualMap f) 0).hom.toAddMonoidHom
   -- On H⁰ the dual map is its restriction to invariants, hence is injective.
@@ -109,12 +110,14 @@ theorem explicitCoeff2_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     (φ : B.V →+[Field.absoluteGaloisGroup F] C.V) (hφ : ∀ b, φ b = g.hom b) :
     haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
     haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
-    haveI := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
+    haveI := (IsSmoothDiscrete.of_surjective g hg
+      (IsSmoothDiscrete.stabilizer_isOpen Fact.out)).continuousSMul
     Function.Surjective
       (explicitCoeff2 (Field.absoluteGaloisGroup F) B.V φ continuous_of_discreteTopology) := by
   have := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
   have := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
-  have := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
+  have := (IsSmoothDiscrete.of_surjective g hg
+    (IsSmoothDiscrete.stabilizer_isOpen Fact.out)).continuousSMul
   intro y
   obtain ⟨x, hx⟩ := coeffMap_two_surjective hn g hg
     (C.explicitH2AddEquivContinuousCohomologyOfDiscrete y)

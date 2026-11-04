@@ -11,7 +11,14 @@ public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Analytic inversion, its isometry compatibility, and orientation
+# Inversion: the punctured space, analyticity, isometries, and orientation
+
+Inversion in a sphere of positive radius exchanges the punctured open ball with the exterior of the
+closed ball (`TauCeti.dist_inversion_center_lt_iff`, `TauCeti.lt_dist_inversion_center_iff`). For a
+nonzero radius it restricts to an involutive self-homeomorphism of the complement of its centre
+(`TauCeti.inversionHomeomorph`). In an `RCLike` field it is given by the conjugate-reciprocal
+formula `c + R ^ 2 / conj (z - c)`, which in `ℂ` is the classical formula for reflection in a
+circle.
 
 Inversion is analytic away from its centre (`EuclideanGeometry.contDiffAt_inversion`). This
 extends the smooth regularity provided by Mathlib's `ContDiffAt.inversion` to the analytic order.
@@ -23,8 +30,10 @@ isometry fixing the centre commutes with the inversion. This is the compatibilit
 inversion charts of the closed unit balls of two inner product spaces along a linear isometry.
 
 For a nonzero radius `R`, the derivative of the inversion at a point `x ≠ c` is a positive
-multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`), so
-in finite dimension its determinant is negative: inversion reverses orientation. A transition
+multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`). So
+inversion is conformal, and it preserves the metric `⟪u, v⟫ / dist x c ^ 2` on the complement of
+`c`, the product metric of a cylinder in polar coordinates about `c`. In finite dimension the
+determinant of the derivative is negative: inversion reverses orientation. A transition
 between two inversion charts whose linear isometries lie in the same orientation class is a
 composite of two inversions and a linear isometry of positive determinant, so it preserves
 orientation. This is how the inversion charts of the closed unit ball attached to the isometries
@@ -32,11 +41,25 @@ of one orientation class give an oriented atlas.
 
 ## Main results
 
+* `TauCeti.inversionHomeomorph`: inversion as a self-homeomorphism of the complement of its centre.
+* `TauCeti.inversion_eq_conj_reciprocal`: inversion in an `RCLike` field is
+  `z ↦ c + R ^ 2 / conj (z - c)`.
 * `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
 * `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
+* `EuclideanGeometry.norm_inversion_zero`, `EuclideanGeometry.norm_inversion_zero_one`: the norm
+  of the inversion about the origin.
+* `EuclideanGeometry.inv_lt_norm_inversion_iff`, `EuclideanGeometry.norm_inversion_lt_inv_iff`:
+  the inversion about the origin in the unit sphere exchanges the regions `‖v‖ < r` and
+  `r⁻¹ < ‖w‖`.
+* `EuclideanGeometry.inner_fderiv_inversion`: inversion is conformal, its derivative scales inner
+  products by `(R / dist x c) ^ 4`.
+* `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
+  `⟪u, v⟫ / dist x c ^ 2`.
+* `LinearIsometryEquiv.map_inversion_zero`: a linear isometry equivalence commutes with inversion
+  in a sphere about `0`.
 * `EuclideanGeometry.det_fderiv_inversion_neg`: the derivative of an inversion has negative
   determinant.
 -/
@@ -44,7 +67,7 @@ of one orientation class give an oriented atlas.
 public section
 
 open EuclideanGeometry
-open scoped ContDiff
+open scoped ComplexConjugate ContDiff
 
 namespace EuclideanGeometry
 
@@ -75,6 +98,12 @@ theorem LinearIsometry.map_inversion (f : V →ₗᵢ[ℝ] V₂) (c : V) (R : �
     f (inversion c R x) = inversion (f c) R (f x) :=
   f.toAffineIsometry.map_inversion c R x
 
+/-- A linear isometry equivalence fixes `0`, so it commutes with the inversion in a sphere about
+`0`. -/
+theorem LinearIsometryEquiv.map_inversion_zero (f : V ≃ₗᵢ[ℝ] V₂) (R : ℝ) (x : V) :
+    f (inversion 0 R x) = inversion 0 R (f x) := by
+  simpa using f.toLinearIsometry.map_inversion 0 R x
+
 namespace EuclideanGeometry
 
 /-- The derivative of inversion away from its centre is a continuous linear equivalence. -/
@@ -93,6 +122,55 @@ theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
   ext v
   -- Reflection followed by scalar multiplication evaluates to Mathlib’s derivative formula.
   rfl
+
+/-- The norm of the inversion about the origin in a sphere of radius `R`. -/
+@[simp]
+theorem norm_inversion_zero {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (R : ℝ) (x : V) : ‖inversion (0 : V) R x‖ = R ^ 2 / ‖x‖ := by
+  simpa only [dist_zero_right] using dist_inversion_center (0 : V) x R
+
+/-- The norm of the inversion about the origin in the unit sphere is the inverse norm. -/
+theorem norm_inversion_zero_one {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (x : V) : ‖inversion (0 : V) 1 x‖ = ‖x‖⁻¹ := by
+  rw [norm_inversion_zero, one_pow, one_div]
+
+/-- The inversion about the origin in the unit sphere carries the region `‖v‖ < r` onto
+`r⁻¹ < ‖w‖`. -/
+theorem inv_lt_norm_inversion_iff {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {r : ℝ} (hr : 0 < r) {v : V} (hv : v ≠ 0) :
+    r⁻¹ < ‖inversion (0 : V) 1 v‖ ↔ ‖v‖ < r := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ hr (norm_pos_iff.2 hv)]
+
+/-- The inversion about the origin in the unit sphere carries the region `r < ‖v‖` onto
+`‖w‖ < r⁻¹`. -/
+theorem norm_inversion_lt_inv_iff {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {r : ℝ} (hr : 0 < r) {v : V} (hv : v ≠ 0) :
+    ‖inversion (0 : V) 1 v‖ < r⁻¹ ↔ r < ‖v‖ := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ (norm_pos_iff.2 hv) hr]
+
+/-- **Inversion is conformal**: its derivative at `x` multiplies inner products by
+`(R / dist x c) ^ 4`. At the centre both sides vanish. -/
+theorem inner_fderiv_inversion {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (c x : V) (R : ℝ) (u v : V) :
+    inner ℝ (fderiv ℝ (inversion c R) x u) (fderiv ℝ (inversion c R) x v) =
+      (R / dist x c) ^ 4 * inner ℝ u v := by
+  simp only [fderiv_inversion, FunLike.coe_smul, Pi.smul_apply,
+    real_inner_smul_left, real_inner_smul_right, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.inner_map_map]
+  ring
+
+/-- **Inversion preserves the cylinder metric.** The metric `⟪u, v⟫ / dist x c ^ 2` on the
+complement of `c`, which in polar coordinates about `c` is the product metric of the cylinder
+`ℝ × S`, is invariant under the inversion in a sphere of nonzero radius about `c`. -/
+theorem inner_fderiv_inversion_div_dist_sq {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (c x : V) {R : ℝ} (hR : R ≠ 0) (u v : V) :
+    inner ℝ (fderiv ℝ (inversion c R) x u) (fderiv ℝ (inversion c R) x v) /
+        dist (inversion c R x) c ^ 2 =
+      inner ℝ u v / dist x c ^ 2 := by
+  rw [inner_fderiv_inversion, dist_inversion_center]
+  rcases eq_or_ne (dist x c) 0 with hx | hx
+  · simp [hx]
+  · field_simp
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
@@ -125,5 +203,58 @@ theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
     (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
       (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
   simp [EuclideanGeometry.inversion]
+
+/-- Inversion in a sphere of positive radius sends a point other than the centre into the open
+ball exactly when the point lies outside the closed ball. -/
+@[simp]
+theorem dist_inversion_center_lt_iff {c x : P} {R : ℝ} (hR : 0 < R) (hx : x ≠ c) :
+    dist (inversion c R x) c < R ↔ R < dist x c := by
+  rw [dist_inversion_center, div_lt_iff₀ (dist_pos.2 hx), sq, mul_lt_mul_iff_right₀ hR]
+
+/-- Inversion in a sphere of positive radius sends a point other than the centre outside the
+closed ball exactly when the point lies in the open ball. -/
+@[simp]
+theorem lt_dist_inversion_center_iff {c x : P} {R : ℝ} (hR : 0 < R) (hx : x ≠ c) :
+    R < dist (inversion c R x) c ↔ dist x c < R := by
+  rw [dist_inversion_center, lt_div_iff₀ (dist_pos.2 hx), sq, mul_lt_mul_iff_right₀ hR]
+
+/-- Inversion in a sphere of nonzero radius restricts to a self-homeomorphism of the complement of
+its centre. -/
+noncomputable def inversionHomeomorph (c : P) {R : ℝ} (hR : R ≠ 0) :
+    ({c}ᶜ : Set P) ≃ₜ ({c}ᶜ : Set P) where
+  toFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.2⟩
+  invFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.2⟩
+  left_inv x := Subtype.ext (inversion_inversion c hR x)
+  right_inv x := Subtype.ext (inversion_inversion c hR x)
+  continuous_toFun :=
+    (continuousOn_const.inversion continuousOn_const continuousOn_id fun _ ↦ id).domRestrict
+      |>.subtype_mk _
+  continuous_invFun :=
+    (continuousOn_const.inversion continuousOn_const continuousOn_id fun _ ↦ id).domRestrict
+      |>.subtype_mk _
+
+/-- The restricted inversion homeomorphism acts by inversion. -/
+@[simp]
+theorem coe_inversionHomeomorph_apply (c : P) {R : ℝ} (hR : R ≠ 0) (x : ({c}ᶜ : Set P)) :
+    (inversionHomeomorph c hR x : P) = inversion c R x :=
+  (rfl)
+
+/-- The restricted inversion homeomorphism is its own inverse. -/
+@[simp]
+theorem inversionHomeomorph_symm (c : P) {R : ℝ} (hR : R ≠ 0) :
+    (inversionHomeomorph c hR).symm = inversionHomeomorph c hR :=
+  Homeomorph.ext fun x ↦ (inversionHomeomorph c hR).symm_apply_eq.2 <|
+    Subtype.ext (inversion_inversion c hR x).symm
+
+/-- In an `RCLike` field, inversion in the sphere of centre `c` and radius `R` is given by the
+conjugate-reciprocal formula; in `ℂ` this is the standard formula for reflection in a circle. -/
+theorem inversion_eq_conj_reciprocal {𝕜 : Type*} [RCLike 𝕜] (c : 𝕜) (R : ℝ) (z : 𝕜) :
+    inversion c R z = c + (R : 𝕜) ^ 2 / conj (z - c) := by
+  simp only [inversion, vsub_eq_sub, vadd_eq_add, dist_eq_norm, RCLike.real_smul_eq_coe_mul]
+  push_cast
+  rw [add_comm, div_pow, ← RCLike.conj_mul]
+  rcases eq_or_ne (z - c) 0 with h | h
+  · simp [h]
+  · field_simp
 
 end TauCeti

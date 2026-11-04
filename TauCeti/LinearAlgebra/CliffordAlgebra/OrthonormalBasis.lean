@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
--- Private: the ordered-product and square formulas are used only inside proofs.
+-- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -28,10 +29,13 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   product.
 * `OrthonormalBasis.isOrthoᵢ_associated`: an orthonormal basis is orthogonal for the polar form
   of `Q`.
-* `OrthonormalBasis.pairwise_isOrtho_map`: distinct orthonormal basis vectors are pairwise
-  orthogonal for `Q`.
+* `OrthonormalBasis.isOrtho_apply`, `OrthonormalBasis.pairwise_isOrtho_map`: distinct orthonormal
+  basis vectors are pairwise orthogonal for `Q`.
+* `OrthonormalBasis.map_apply_mul_map_apply`: `Q (bᵢ) Q (bⱼ) = 1` for orthonormal basis vectors.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
+* `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
+  `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -61,11 +65,18 @@ theorem isOrthoᵢ_associated : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis
   fun _ _ hij ↦ QuadraticMap.associated_isOrtho.2
     ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 (by simpa using b.orthonormal.2 hij))
 
+/-- For `Q v = -‖v‖²`, distinct orthonormal basis vectors are orthogonal for `Q`. -/
+theorem isOrtho_apply {i j : ι} (hij : i ≠ j) : Q.IsOrtho (b i) (b j) :=
+  (QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 (b.orthonormal.2 hij)
+
 /-- For `Q v = -‖v‖²`, the members of a list of distinct orthonormal basis vectors are pairwise
 orthogonal for `Q`. -/
 theorem pairwise_isOrtho_map {l : List ι} (hl : l.Nodup) : (l.map b).Pairwise Q.IsOrtho :=
-  List.pairwise_map.mpr <| hl.imp fun hij ↦
-    (QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 (b.orthonormal.2 hij)
+  List.pairwise_map.mpr <| hl.imp (b.isOrtho_apply hQ)
+
+/-- For `Q v = -‖v‖²`, the product of the values of `Q` at two orthonormal basis vectors is one. -/
+theorem map_apply_mul_map_apply (i j : ι) : Q (b i) * Q (b j) = 1 := by
+  simp [hQ, b.orthonormal.1 i, b.orthonormal.1 j]
 
 /-- For `Q v = -‖v‖²`, `Q` takes the value `-1` at every member of a list of orthonormal basis
 vectors. -/
@@ -78,6 +89,14 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
 end OrthonormalBasis
 
 namespace CliffordAlgebra
+
+/-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
+    (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
+  rw [even_ι_bilin_add_swap]
+  congr 1
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
 
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies

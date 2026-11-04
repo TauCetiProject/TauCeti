@@ -68,7 +68,7 @@ theorem connectedSpace_of_connected_kernel (f : Q ⟶ G)
   obtain ⟨a, haidem, ha'⟩ := f.exists_map_eq_identityComponentIdempotent hf
   -- Connectedness of the target makes the descended identity-component idempotent one.
   have heone : e = 1 := by
-    rcases eq_zero_or_eq_one_of_isIdempotentElem haidem with hzero | hone
+    rcases haidem.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
     · have hε : (Bialgebra.counitAlgHom k G) e = 1 :=
         AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one
           (Bialgebra.counitAlgHom k G)

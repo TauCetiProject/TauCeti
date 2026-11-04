@@ -34,6 +34,8 @@ commutative monoid separate elements only in a commutative group, is
 * `CommGroup.sum_monoidHom_apply_eq_ite`'s tagged form,
   `CommGroup.sum_inv_mul_monoidHom_apply_eq_ite`: summing `(χ σ)⁻¹ * χ g` isolates the single
   element `σ`, giving `Nat.card G` when `g = σ` and `0` otherwise.
+* `CommGroup.sum_inv_smul_sum_smul`: Fourier inversion with coefficients in a module, the tagged
+  relation applied termwise to an expansion `∑ g, χ g • u g`.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field
   sums to `-1` over the nonzero elements, even after multiplication by a unit.
 * `TauCeti.sum_monoidHom_apply_eq_card_of_mem_commutator`: at an element of the commutator
@@ -185,6 +187,21 @@ theorem sum_inv_mul_monoidHom_apply_eq_ite [DecidableEq G] (σ g : G) :
   have key : ∀ χ : G →* Mˣ, (((χ σ)⁻¹ : Mˣ) : M) * ((χ g : Mˣ) : M) = ((χ (σ⁻¹ * g) : Mˣ) : M) :=
     fun χ ↦ by rw [map_mul, map_inv, Units.val_mul]
   simp only [key, sum_monoidHom_apply_eq_ite, inv_mul_eq_one, eq_comm]
+
+/-- **Fourier inversion on a finite commutative group.** For a family `u : G → V` in an
+`M`-module, summing `(χ σ)⁻¹` against the transform `∑ g, χ g • u g` over all characters `χ`
+recovers `Nat.card G • u σ`. This is `sum_inv_mul_monoidHom_apply_eq_ite` with coefficients in a
+module: it inverts any expansion of a family of vectors indexed by characters in terms of
+vectors indexed by group elements. -/
+theorem sum_inv_smul_sum_smul [Fintype G] {V : Type*} [AddCommMonoid V] [Module M V]
+    (u : G → V) (σ : G) :
+    ∑ χ : G →* Mˣ, (((χ σ)⁻¹ : Mˣ) : M) • ∑ g, ((χ g : Mˣ) : M) • u g =
+      (Nat.card G : M) • u σ := by
+  classical
+  simp_rw [Finset.smul_sum, smul_smul]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.sum_smul, sum_inv_mul_monoidHom_apply_eq_ite, ite_smul, zero_smul]
+  simp
 
 end CommGroup
 

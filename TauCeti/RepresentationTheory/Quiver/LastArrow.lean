@@ -15,7 +15,9 @@ public import Mathlib.SetTheory.Cardinal.Finite
 
 A path `i → b` in a quiver is either trivial, which forces `i = b`, or a path `i → a` followed by a
 last arrow `a ⟶ b`. This file records that dichotomy as an equivalence and reads off the resulting
-recursion for the number of paths out of a fixed vertex.
+recursion for the number of paths out of a fixed vertex. That recursion is the combinatorial input
+to evaluating the Euler form of a finite quiver against a path-count vector, in
+`TauCeti.RepresentationTheory.Quiver.EulerForm`.
 
 ## Main definitions
 
@@ -42,12 +44,6 @@ The dual decomposition, by the *first* arrow of a path, is not available in this
 recursion of `Quiver.Path` is on the target vertex, so the first arrow is not visible to a match.
 It is built instead by an explicit recursion over the path, in
 `TauCeti.RepresentationTheory.Quiver.FirstArrow`.
-
-## References
-
-The path count is the combinatorial input to the Euler-form identity for the projective
-representation at a vertex, Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section
@@ -69,10 +65,7 @@ def pathLastArrowEquiv (i b : V) :
     | Sum.inl ⟨rfl⟩ => Quiver.Path.nil
     | Sum.inr ⟨_, q, e⟩ => q.cons e
   left_inv p := by cases p <;> rfl
-  right_inv x := by
-    cases x with
-    | inl h => cases h with | up h => subst h; rfl
-    | inr y => obtain ⟨a, p, e⟩ := y; rfl
+  right_inv := by rintro (⟨⟨rfl⟩⟩ | ⟨a, p, e⟩) <;> rfl
 
 /-- The trivial path is the left summand of the last-arrow decomposition. -/
 @[simp]
@@ -99,27 +92,23 @@ theorem pathLastArrowEquiv_symm_inr {i b : V} (a : V) (p : Quiver.Path i a) (e :
   (rfl)
 
 /-- **The last-arrow recursion for path counts.** The paths `i → b` are the trivial one, present
-exactly when `i = b`, together with a path `i → a` and an arrow `a ⟶ b`. All three cardinalities
-are honest counts only when the paths out of `i` are finite, which is what the hypothesis
-`[∀ a, Finite (Quiver.Path i a)]` provides. The only arrows counted are those into `b`, so
-`[∀ a, Finite (a ⟶ b)]` suffices for the arrow factors.
+exactly when `i = b`, together with a path `i → a` and an arrow `a ⟶ b`. Only the paths `i → b`
+need to be finite. A single factor `#(i → a)` or `#(a ⟶ b)` may then be the junk value `0` of an
+infinite type, but each summand `#(i → a) * #(a ⟶ b)` is still an honest count: if either type is
+nonempty, the other one injects into the paths `i → b`, so an infinite factor only occurs alongside
+an empty one.
 
 This is the mirror image of `TauCeti.card_path_eq_ite_add_sum_firstArrow`. -/
-theorem card_path_eq_ite_add_sum_lastArrow [DecidableEq V] [Fintype V] (i : V)
-    [∀ a : V, Finite (Quiver.Path i a)] (b : V) [∀ a : V, Finite (a ⟶ b)] :
+theorem card_path_eq_ite_add_sum_lastArrow [DecidableEq V] [Fintype V] (i b : V)
+    [Finite (Quiver.Path i b)] :
     Nat.card (Quiver.Path i b)
       = (if i = b then 1 else 0)
         + ∑ a : V, Nat.card (Quiver.Path i a) * Nat.card (a ⟶ b) := by
-  have hsub : Subsingleton (PLift (i = b)) := ⟨fun x y ↦ by cases x; cases y; rfl⟩
-  have : Finite (PLift (i = b)) := Finite.of_subsingleton
-  have hcard : Nat.card (PLift (i = b)) = if i = b then 1 else 0 := by
-    by_cases h : i = b
-    · rw [ite_eq_left h]
-      exact Nat.card_eq_one_iff_unique.mpr ⟨hsub, ⟨⟨h⟩⟩⟩
-    · rw [ite_eq_right h]
-      have : IsEmpty (PLift (i = b)) := ⟨fun x ↦ h x.down⟩
-      exact Nat.card_of_isEmpty
-  rw [Nat.card_congr (pathLastArrowEquiv i b), Nat.card_sum, hcard, Nat.card_sigma]
-  exact congrArg _ (Finset.sum_congr rfl fun a _ ↦ Nat.card_prod _ _)
+  have : Finite (Σ a : V, Quiver.Path i a × (a ⟶ b)) :=
+    .of_injective _ ((pathLastArrowEquiv i b).symm.injective.comp Sum.inr_injective)
+  have (a : V) : Finite (Quiver.Path i a × (a ⟶ b)) :=
+    .of_injective (Sigma.mk (β := fun a ↦ Quiver.Path i a × (a ⟶ b)) a) sigma_mk_injective
+  rw [Nat.card_congr (pathLastArrowEquiv i b), Nat.card_sum, Nat.card_sigma]
+  split_ifs with h <;> simp [h]
 
 end TauCeti

@@ -17,9 +17,10 @@ public import TauCeti.Topology.Category.TopCat.Action
 # The topological simplices and the singular simplices of a space
 
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
-lift, hence contractible and in particular simply connected, and locally path connected.  This
-file also names its initial vertex, and the continuous map on the topological `n`-simplex that
-underlies a singular `n`-simplex of a space.
+lift, hence contractible and in particular simply connected, and locally path connected. The
+geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it, is
+contractible as well.  This file also names its initial vertex, and the continuous map on the
+topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
@@ -47,6 +48,12 @@ namespace SimplexCategory
 finite nonempty type. -/
 instance contractibleSpace (n : SimplexCategory) : ContractibleSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).contractibleSpace
+
+/-- The geometric realization `|Δ[n]|` of every standard simplex is contractible, being
+homeomorphic to a standard simplex on a finite nonempty type. -/
+instance contractibleSpace_toTop_stdSimplex (n : SimplexCategory) :
+    ContractibleSpace |SSet.stdSimplex.{u}.obj n| :=
+  n.toTopHomeo.contractibleSpace
 
 /-- Every topological simplex is locally path connected, being a universe lift of a standard
 simplex on a finite type. -/
@@ -139,6 +146,13 @@ of topological simplices. -/
 lemma simplexMap_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     simplexMap ((TopCat.toSSet.obj X).map α σ) =
       (simplexMap σ).comp (SimplexCategory.toTop.map α.unop).hom := rfl
+
+/-- The image of a reindexed singular simplex, for instance of a face, lies in the image of the
+original simplex. -/
+lemma range_simplexMap_map_subset (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    Set.range (simplexMap ((TopCat.toSSet.obj X).map α σ)) ⊆ Set.range (simplexMap σ) := by
+  rw [simplexMap_map, ContinuousMap.coe_comp]
+  exact Set.range_comp_subset_range _ _
 
 /-- Pushing a singular simplex forward along a continuous map postcomposes the underlying
 continuous map with that map. -/

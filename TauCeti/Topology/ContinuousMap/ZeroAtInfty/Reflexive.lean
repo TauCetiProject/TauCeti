@@ -70,7 +70,8 @@ theorem not_surjective_inclusionInDoubleDual [Infinite ι] :
   classical
   -- The functional `Λ ↦ ∑' i, Λ (single i 1)` takes the value `1` on every evaluation.
   let Φ : StrongDual 𝕜 (StrongDual 𝕜 C₀(ι, 𝕜)) :=
-    (lp.dualOneEquiv 𝕜 ι 1).comp (dualEquiv 𝕜 ι).symm.toContinuousLinearEquiv.toContinuousLinearMap
+    (lp.dualEquiv 𝕜 ι ∞ 1 ENNReal.one_ne_top 1).comp
+      (dualEquiv 𝕜 ι).symm.toContinuousLinearEquiv.toContinuousLinearMap
   rintro hJ
   obtain ⟨f, hf⟩ := hJ Φ
   have hone (i : ι) : f i = 1 := by

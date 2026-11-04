@@ -107,8 +107,9 @@ theorem eq_of_le_of_finrank_quotientLie_le (hIJ : I ≤ J)
 /-- A member of maximal Lie dimension in a family of smooth connected closed subgroups is a
 maximal member of that family.
 
-Only the members contained in the given one need to be dimension-dominated by it, which is what
-makes the statement usable for families cut out by an auxiliary containment condition. -/
+Only the members containing the given subgroup (the Hopf ideals `K` with `K ≤ I`) need to be
+dimension-dominated by it, which is what makes the statement usable for families cut out by an
+auxiliary containment condition. -/
 theorem minimal_of_finrank_quotientLie_maximal (P : HopfIdeal k H → Prop)
     (smooth : ∀ {K : HopfIdeal k H}, P K → smoothCommHopfAlgProperty k
       (_root_.CommHopfAlgCat.of k (H ⧸ K.toIdeal)))

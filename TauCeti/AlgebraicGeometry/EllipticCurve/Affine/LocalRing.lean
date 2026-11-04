@@ -31,26 +31,17 @@ what this file contributes is that both of its hypotheses hold at such an ideal 
 `XYIdeal_isMaximal` and non-vanishing from `XYIdeal_ne_bot` — over a coordinate ring already known
 to be Dedekind.
 
-No valuation is defined here: the result gives the `IsDiscreteValuationRing` structure, which is
-what an order-of-vanishing and uniformiser API would be built on.
-
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0** (the function field, places, and divisors).
-That layer's §Places asks for the affine places as the maximal ideals of the coordinate ring, "for
-elliptic `W` a Dedekind domain — itself a worthwhile lemma", together with an API of `ord_v`,
-uniformisers and residue fields; this supplies the local rings that such an API is stated over. The
-layer says its own place types are new API to be built there rather than pinned, and it seeds no
-declaration this competes with; it also records that the design is coordinated with D. Angdinata's
-in-flight upstream `CoordinateRing` work.
+No valuation is defined here: the result gives the `IsDiscreteValuationRing` structure at each
+affine place, which is what an order-of-vanishing, uniformiser and residue-field API at the places
+of the curve is built on.
 
 ## Provenance
 
 The statement is that of `localRing_isDVR` in the AINTLIB `HasseWeil` project
-(`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by that roadmap at
-`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/Valuation.lean`. Its proof is not ported: with the
-coordinate ring already known to be a Dedekind domain, Mathlib's
-`IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain` gives the conclusion directly.
+(`github.com/CBirkbeck/AINTLIB @ 513e83879e2f`, branch `dev/hasse-weil`, Apache-2.0),
+`HasseWeil/Valuation.lean`. Its proof is not ported: with the coordinate ring already known to be
+a Dedekind domain, Mathlib's `IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain`
+gives the conclusion directly.
 The source's hypothesis is nonsingularity of the point; here the curve equation suffices, matching
 the weakening already made for `XYIdeal_isMaximal_of_equation`.
 -/

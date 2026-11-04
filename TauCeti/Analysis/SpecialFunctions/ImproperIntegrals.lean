@@ -11,10 +11,13 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 # Improper-integral asymptotics and logarithmic decay
 
 This file extends Mathlib's improper-integral estimates with an asymptotic estimate for weighted
-integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability at infinity
-of `(t (1 + log t) ^ 2)⁻¹`, and the closed form `∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
+integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
+`(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
+closed form `∫_A^∞ dy / y² = 1 / A` as a Lebesgue integral.
 
 ## Main declarations
+
+* `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
 
 * `TauCeti.lintegral_Ioi_inv_sq`: `∫⁻ y in Ioi A, (1 / ‖y‖₊) ^ 2 = ofReal A⁻¹` for `0 < A`, the
   integrand being the density of the hyperbolic area measure.
@@ -34,6 +37,15 @@ namespace TauCeti
 
 open Asymptotics Filter MeasureTheory Set
 open scoped Topology
+
+/-- The inverse quadratic `x ↦ (x ^ 2 + c ^ 2)⁻¹` is integrable when `c ≠ 0`. -/
+theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
+    Integrable (fun x : ℝ ↦ (x ^ 2 + c ^ 2)⁻¹) := by
+  have hscale (x : ℝ) : (c ^ 2)⁻¹ * (1 + (x / c) ^ 2)⁻¹ = (x ^ 2 + c ^ 2)⁻¹ := by
+    field_simp [hc]
+    ring
+  exact ((integrable_inv_one_add_sq.comp_div hc).const_mul (c ^ 2)⁻¹).congr
+    (Eventually.of_forall hscale)
 
 /-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E` is
 interval integrable above `1` and `E t = o(t)`, then for every exponent `τ > -1` the weighted

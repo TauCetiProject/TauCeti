@@ -110,8 +110,11 @@ private theorem flow_neg_apply_eq_sum (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
         hT.eigenvalues hn i • hT.eigenvectorBasis hn i :=
       hT.apply_eigenvectorBasis hn i
     simpa using congrArg (fun w : E ↦ -w) hi'
+  have hti : (t • -T) (hT.eigenvectorBasis hn i) =
+      (t * -hT.eigenvalues hn i) • hT.eigenvectorBasis hn i := by
+    rw [_root_.smul_apply, hi, smul_smul]
   rw [OrthonormalBasis.coe_toBasis, map_smul,
-    ContinuousLinearMap.exp_smul_apply_of_apply_eq_smul (-T) hi t, ← Real.exp_eq_exp_ℝ]
+    ContinuousLinearMap.exp_apply_of_apply_eq_smul _ hti, ← Real.exp_eq_exp_ℝ]
   simp only [mul_neg, smul_smul]
   rw [mul_comm ((hT.eigenvectorBasis hn).toBasis.repr v i)]
 

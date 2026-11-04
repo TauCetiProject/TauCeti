@@ -216,6 +216,15 @@ theorem edist_mk_point (K : GromovWassersteinPresentation.{u} p Z) (z : Z) :
       eLpNorm (fun q ↦ edist (K.kernel q) z) p (K.measure.prod K.measure) := by
   rw [point, edist_mk, GromovWassersteinPresentation.gromovWassersteinEDist_point]
 
+/-- A measured-kernel presentation is the one-point class at `z` exactly when its kernel
+is almost everywhere equal to `z`. -/
+@[simp]
+theorem mk_eq_point_iff {K : GromovWassersteinPresentation.{u} p Z} {z : Z} :
+    mk K = point z ↔ K.kernel =ᵐ[K.measure.prod K.measure] fun _ ↦ z := by
+  rw [← edist_eq_zero, edist_mk_point, eLpNorm_eq_zero_iff
+    (ne_of_gt (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p)))]
+  simp only [Filter.EventuallyEq, Pi.zero_apply, edist_eq_zero]
+
 /-- One-point classes recover the ground extended distance, without a normalization factor. -/
 @[simp]
 theorem edist_point (z w : Z) : edist (point (p := p) z) (point (p := p) w) = edist z w := by

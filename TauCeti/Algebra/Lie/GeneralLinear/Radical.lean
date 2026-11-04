@@ -34,7 +34,7 @@ Bracketing against a diagonal matrix rescales a matrix unit,
 `⁅diagonal d, Eₚq c⁆ = Eₚq ((dₚ - d_q) c)` (`TauCeti.lie_single_of_mem_diagonalCartan`, from the
 diagonal Cartan subalgebra file), which extracts `Eₚq` from any diagonal element separating the
 indices `p` and `q`. Bracketing twice against `Eⱼᵢ` annihilates everything except one entry,
-`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` (`TauCeti.lie_single_lie_single_of_ne`), which extracts `Eⱼᵢ` from any
+`(ad Eⱼᵢ)² x = Eⱼᵢ (-2 xᵢⱼ)` (`Matrix.lie_single_lie_single_of_ne`), which extracts `Eⱼᵢ` from any
 element with a nonzero `(i, j)` entry. A non-central matrix is either non-diagonal, and then the
 second bracket applies, or diagonal with two distinct entries, and then the first does. Once one
 off-diagonal matrix unit lies in the ideal, so does the difference of diagonal units
@@ -65,14 +65,14 @@ statement is proved uniformly in the index type, the case of at most one index b
 one, where the radical and the centre are both everything.
 
 Only the results about ideals are stated over a field, because the generation argument divides by an
-arbitrary nonzero matrix entry. The two bracket identities in `Basic.lean` need only a ring, and
+arbitrary nonzero matrix entry. The matrix-unit bracket identities need only a ring, and
 perfectness of `sl n R` — which divides by `2` alone — is stated over a commutative ring in which
 `2` is a unit, non-solvability adding only `Nontrivial R`; the radical computation specialises these
 to a field.
 
 The bracket against a diagonal matrix comes from `TauCeti.lie_single_of_mem_diagonalCartan`.
-The matrix-unit bracket identities live alongside the other ring-level computations in
-`TauCeti/Algebra/Lie/GeneralLinear/Basic.lean`.
+The matrix-unit bracket identities are supplied by
+`TauCeti/Algebra/Lie/Matrix/Single.lean`.
 
 ## References
 
@@ -128,7 +128,7 @@ theorem single_mem_of_apply_ne_zero (htwo : (2 : K) ≠ 0) {x : Matrix n n K} (h
   have hne : -(2 * x i j) ≠ 0 := neg_ne_zero.mpr (mul_ne_zero htwo hxij)
   have hmem : single j i (-(2 * x i j)) ∈ I := by
     have h := I.lie_mem (x := single j i (1 : K)) (I.lie_mem (x := single j i (1 : K)) hx)
-    rwa [lie_single_lie_single_of_ne hij] at h
+    rwa [Matrix.lie_single_lie_single_of_ne hij] at h
   have hscal : ((-(2 * x i j))⁻¹ * c) * (-(2 * x i j)) = c := by
     rw [mul_comm ((-(2 * x i j))⁻¹) c, mul_assoc, inv_mul_cancel₀ hne, mul_one]
   have h := SMulMemClass.smul_mem ((-(2 * x i j))⁻¹ * c) hmem
@@ -141,7 +141,7 @@ theorem slIdeal_le_of_single_mem (htwo : (2 : K) ≠ 0) {a b : n} (hab : a ≠ b
   -- The difference of diagonal units `E_bb - Eₐₐ` lies in the ideal.
   have hsub : single b b (1 : K) - single a a (1 : K) ∈ I := by
     have h := I.lie_mem (x := single b a (1 : K)) hmem
-    rwa [lie_single_single_eq_sub b a 1] at h
+    rwa [Matrix.lie_single_single_eq_sub b a 1] at h
   -- Hence every matrix unit in the row and in the column of `b`.
   have hrow : ∀ p : n, p ≠ b → ∀ c : K, single b p c ∈ I ∧ single p b c ∈ I := by
     intro p hpb c
@@ -170,7 +170,7 @@ theorem slIdeal_le_of_single_mem (htwo : (2 : K) ≠ 0) {a b : n} (hab : a ≠ b
       · rw [hpb]
         simp
       · have h := I.lie_mem (x := single p b c) (hrow p hpb 1).1
-        rwa [lie_single_single_eq_sub p b c] at h
+        rwa [Matrix.lie_single_single_eq_sub p b c] at h
     intro p q c
     have h := sub_mem (key p c) (key q c)
     rwa [sub_sub_sub_cancel_right] at h
@@ -248,7 +248,7 @@ theorem lie_slIdeal_slIdeal (htwo : IsUnit (2 : R)) :
     have hx : single p p (1 : R) - single q q (1 : R) ∈ slIdeal R n := by simp [mem_slIdeal_iff]
     have hy : single p q (t * c) ∈ slIdeal R n := by simp [mem_slIdeal_iff, hpq]
     have h := LieSubmodule.lie_mem_lie hx hy
-    rw [lie_single_self_sub_single_self_single hpq, ← mul_assoc, mul_comm (2 : R) t, ht,
+    rw [Matrix.lie_single_self_sub_single_self_single hpq, ← mul_assoc, mul_comm (2 : R) t, ht,
       one_mul] at h
     exact h
   · intro p q c
@@ -257,7 +257,7 @@ theorem lie_slIdeal_slIdeal (htwo : IsUnit (2 : R)) :
     have hx : single p q c ∈ slIdeal R n := by simp [mem_slIdeal_iff, hpq]
     have hy : single q p (1 : R) ∈ slIdeal R n := by simp [mem_slIdeal_iff, hpq.symm]
     have h := LieSubmodule.lie_mem_lie hx hy
-    rw [lie_single_single_eq_sub p q c] at h
+    rw [Matrix.lie_single_single_eq_sub p q c] at h
     exact h
 
 /-- `sl n R` is nonzero over a nontrivial ring as soon as there are two indices. -/

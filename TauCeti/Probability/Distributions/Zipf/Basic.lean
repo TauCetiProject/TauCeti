@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.Dirichlet
@@ -29,15 +28,17 @@ parameter measurability. The moments are in `TauCeti.Probability.Distributions.Z
   `zipfMeasure_singleton_ne_zero_iff` identifies the support as the positive integers;
 * `measurable_zipfMeasure` proves parameter measurability of the totalized family.
 
-The distributional convention follows N. L. Johnson, A. W. Kemp, and S. Kotz,
-*Univariate Discrete Distributions*, 3rd ed., Wiley, 2005, on zeta distributions.
+## References
+
+* N. L. Johnson, A. W. Kemp, and S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
+  2005, on zeta distributions.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti

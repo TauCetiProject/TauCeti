@@ -39,6 +39,10 @@ radius `b ^ σ`, and the width of the face counts those on the sphere of that ra
   polynomial splits.
 * `Polynomial.newtonSlopes_eq_replicate`: if all nonzero roots have the same valuation `-m`,
   every finite slope equals `m`.
+* `Polynomial.neg_untop₀_mem_newtonSlopes_of_isRoot`: the negated valuation of any nonzero root is
+  a finite slope, without assuming that the polynomial splits.
+* `Polynomial.addValuation_eq_neg_of_forall_mem_newtonSlopes_eq`: if every finite slope equals
+  `q`, every nonzero root in a valued extension has valuation `-q`.
 * `Polynomial.card_filter_roots_lt_addValuation`,
   `Polynomial.card_filter_roots_le_addValuation` and
   `Polynomial.card_filter_roots_addValuation_eq`: the left endpoint, the right endpoint and
@@ -78,6 +82,26 @@ theorem newtonSlopes_multiset_prod_X_sub_C [DecidableEq R] (hv : ∀ x, v x = �
     by_cases ha : a = 0
     · simp [ha, ← monomial_one_one_eq_X]
     · simp [newtonSlopes_X_sub_C v (mt (hv a) ha), ha, Multiset.singleton_add]
+
+/-- If only zero has infinite valuation, the negated valuation `-v α` of a nonzero root `α` of a
+nonzero polynomial is one of its finite slopes. The polynomial need not split. -/
+theorem neg_untop₀_mem_newtonSlopes_of_isRoot (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (hf : f ≠ 0)
+    {α : R} (hα : α ≠ 0) (hroot : f.IsRoot α) : -(v α).untop₀ ∈ f.newtonSlopes v := by
+  have hle := newtonSlopes_le_of_dvd hv hf (dvd_iff_isRoot.mpr hroot)
+  rw [newtonSlopes_X_sub_C v (mt (hv α) hα)] at hle
+  exact Multiset.singleton_le.mp hle
+
+/-- If every finite slope of `f` equals `q`, then every nonzero root `α` of `f` in a valued
+extension `L` whose valuation `w` restricts to `v` has valuation `w α = -q`. Only zero may have
+infinite valuation in `L`, and `f` need not split there. -/
+theorem addValuation_eq_neg_of_forall_mem_newtonSlopes_eq {K L : Type*} [Ring K] [CommRing L]
+    {v : AddValuation K (WithTop ℝ)} {w : AddValuation L (WithTop ℝ)}
+    (hw : ∀ x, w x = ⊤ → x = 0) (φ : K →+* L) (hφ : ∀ x, w (φ x) = v x) {f : K[X]}
+    (hf : f.map φ ≠ 0) {q : ℝ} (hq : ∀ m ∈ f.newtonSlopes v, m = q) {α : L} (hα : α ≠ 0)
+    (hroot : (f.map φ).IsRoot α) : w α = ((-q : ℝ) : WithTop ℝ) := by
+  have hmem := neg_untop₀_mem_newtonSlopes_of_isRoot hw hf hα hroot
+  rw [newtonSlopes_map f v φ hφ] at hmem
+  rw [← WithTop.coe_untop₀_of_ne_top (mt (hw α) hα), ← hq _ hmem, neg_neg]
 
 variable [IsDomain R]
 

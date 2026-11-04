@@ -294,6 +294,25 @@ lemma forget_μ (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     ← sheafificationForgetAdjunction_counit_app]
   rfl
 
+/-- The tensor comparison of the original sheafification adjunction agrees with the
+canonical tensor comparison of the forgetful functor. This identifies the comparison data
+even when the right adjoint is presented with restriction of scalars along the identity. -/
+theorem _root_.SheafOfModules.sheafificationAdjunction_μ_eq_forget_μ
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    letI := (PresheafOfModules.sheafificationAdjunction
+      (𝟙 (ringCatSheaf R).obj)).rightAdjointLaxMonoidal
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R) ⋙
+        PresheafOfModules.restrictScalars (𝟙 (ringCatSheaf R).obj)) M N =
+      @Functor.LaxMonoidal.μ _ _ _ _ _ _
+        (_root_.SheafOfModules.forget (ringCatSheaf R)) (forgetLaxMonoidal R) M N := by
+  let := (PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf R).obj)).rightAdjointLaxMonoidal
+  rw [Adjunction.rightAdjointLaxMonoidal_μ, Adjunction.homEquiv_unit, forget_μ,
+    sheafificationForgetAdjunction, SheafOfModules.tensorUnderlyingIso_inv,
+    sheafificationIso_hom, sheafificationIso_hom]
+  -- Restriction of scalars along the identity acts definitionally as the identity on morphisms.
+  rfl
+
 variable {R}
 
 /-- A morphism out of `M ⊗ N`, precomposed on underlying presheaves with the tensor map

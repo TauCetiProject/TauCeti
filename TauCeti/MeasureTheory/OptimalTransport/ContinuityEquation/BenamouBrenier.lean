@@ -192,21 +192,25 @@ private theorem ofReal_kantorovichDualValue_le
     _ ≤ _ := by gcongr
 
 /-- **The Benamou–Brenier lower bound.** Let `t ↦ νₜ` be a curve of finite measures, narrowly
-continuous on `[a, b]` with `a < b`, solving the continuity equation with velocity `v` on
-`(a, b)`, whose endpoint laws `ν_a` and `ν_b` are probability measures. Then for `1 ≤ p < ∞` the
-`p`-Wasserstein distance between the endpoint laws is controlled by the `p`-action of `v`:
-`W_p (ν_a, ν_b) ^ p ≤ (b - a) ^ (p - 1) * ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt`.
+continuous on `[a, b]` with `a ≤ b`, solving the continuity equation with velocity `v` on
+`(a, b)`, whose initial law `ν_a` is a probability measure (by conservation of mass, so is `ν_b`).
+Then for `1 ≤ p < ∞` the `p`-Wasserstein distance between the endpoint laws is controlled by the
+`p`-action of `v`: `W_p (ν_a, ν_b) ^ p ≤ (b - a) ^ (p - 1) * ∫_a^b ∫ ‖vₜ‖ ^ p dνₜ dt`.
 
 On `[0, 1]` the factor is `1`, and this is the inequality `W_p (ν₀, ν₁) ^ p ≤ ∫₀¹ ∫ ‖vₜ‖ ^ p dνₜ dt`
 of the Benamou–Brenier formula. -/
 theorem wassersteinEDist_rpow_le (h : IsContinuityEquation (fun t ↦ (ν t : Measure E)) v a b)
-    (hν : ContinuousOn ν (Icc a b)) (hab : a < b) [IsProbabilityMeasure (ν a : Measure E)]
-    [IsProbabilityMeasure (ν b : Measure E)] {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
+    (hν : ContinuousOn ν (Icc a b)) (hab : a ≤ b) [IsProbabilityMeasure (ν a : Measure E)]
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
     wassersteinEDist p (ν a : Measure E) (ν b) ^ p.toReal ≤
       ENNReal.ofReal ((b - a) ^ (p.toReal - 1)) *
         ∫⁻ t in Ioo a b, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hp₁ : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+  obtain rfl | hab := hab.eq_or_lt
+  · simp [ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hp₁)]
+  have : IsProbabilityMeasure (ν b : Measure E) :=
+    ⟨(h.measure_univ_eq hν (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le)).trans measure_univ⟩
   rw [wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp_top]
   refine (isLUB_ofReal_kantorovichDualValue_boundedContinuous_of_lowerSemicontinuous
     (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous
@@ -238,7 +242,7 @@ theorem isLeast_lintegral_isContinuityEquation {μ₀ μ₁ : Measure E} [IsProb
         ContinuousOn ν (Icc 0 1) ∧ (ν 0 : Measure E) = μ₀ ∧ (ν 1 : Measure E) = μ₁ ∧
         ∫⁻ t in Ioo 0 1, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) = A} := by
     rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
-    simpa using hce.wassersteinEDist_rpow_le hν zero_lt_one hp hp_top
+    simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
   refine ⟨?_, hlow⟩
   -- The displacement interpolation of an optimal coupling attains the bound.
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ₀ μ₁
@@ -281,7 +285,7 @@ theorem wassersteinEDist_rpow_eq_sInf_lintegral_isContinuityEquation {μ₀ μ�
   by_cases hfin : wassersteinEDist p μ₀ μ₁ = ∞
   · refine le_antisymm (le_sInf ?_) ?_
     · rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
-      simpa using hce.wassersteinEDist_rpow_le hν zero_lt_one hp hp_top
+      simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
     · rw [hfin, ENNReal.top_rpow_of_pos (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top)]
       exact le_top
   · exact (isLeast_lintegral_isContinuityEquation hp hp_top hfin).csInf_eq.symm

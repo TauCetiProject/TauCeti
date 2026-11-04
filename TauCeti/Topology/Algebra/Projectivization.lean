@@ -6,6 +6,7 @@ Authors: Zayn Blore, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Analysis.RCLike.Lemmas
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Basic
@@ -27,7 +28,10 @@ line exactly when `f v * g w = f w * g v` for all continuous linear forms `f` an
 closed conditions, so the relation is closed and `ℙ K V` is Hausdorff. Over `ℝ` or `ℂ` every
 line meets the unit sphere, so for finite-dimensional `V` the projective space is a continuous
 image of a compact sphere and is compact. Second countability passes to `ℙ K V` along the open
-quotient map.
+quotient map. When `V` has real dimension greater than one, its nonzero vectors form a
+path-connected space, so `ℙ K V` is path-connected; over `ℝ` or `ℂ` the only other nonzero case is
+a real line, whose projectivization is a point. Hence `ℙ 𝕜 V` is path-connected, and in particular
+connected, for every nonzero normed space `V` over `ℝ` or `ℂ`.
 
 Finally, over a field with continuous multiplication and inversion, the standard affine charts
 `Projectivization.affineChart i` of `ℙ K (Fin (n + 1) → K)` are homeomorphisms from the open sets
@@ -45,6 +49,8 @@ of projective space.
   `mk' K` is.
 * `Projectivization.continuous_mk`, `Projectivization.continuous_map`: `Projectivization.mk`
   and `Projectivization.map` are continuous.
+* `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
+  not vanish form an open set.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -53,6 +59,10 @@ of projective space.
 * `Projectivization.instCompactSpace`: `ℙ 𝕜 V` is compact for a finite-dimensional normed space
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.instSecondCountableTopology`: `ℙ K V` is second countable when `V` is.
+* `Projectivization.pathConnectedSpace_of_one_lt_rank`: `ℙ K V` is path-connected when `V` has
+  real dimension greater than one, for any division ring `K`.
+* `Projectivization.instPathConnectedSpace`: `ℙ 𝕜 V` is path-connected for a nonzero normed space
+  `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
   homeomorphism from `U_i` onto `Fin n → K`.
@@ -111,6 +121,16 @@ theorem continuous_map {σ : K →+* L} {f : V →ₛₗ[σ] W} (hf : Function.I
   continuous_iff.2 <| continuous_mk (hfc.comp continuous_subtype_val) _
 
 end Map
+
+/-- The set of points at which a continuous linear map does not vanish, the domain of
+`Projectivization.linearProjection G`, is open. -/
+theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
+    [TopologicalSpace W] [T1Space W] {G : V →ₗ[K] W} (hG : Continuous G) :
+    IsOpen (linearProjectionDomain G) := by
+  rw [← isQuotientMap_mk'.isOpen_preimage]
+  convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
+  ext v
+  simp [mk'_eq_mk]
 
 variable [ContinuousConstSMul Kˣ V]
 
@@ -185,10 +205,10 @@ variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜
 /-- Every point of `ℙ 𝕜 V` is spanned by a unit vector. -/
 theorem exists_norm_eq_one_mk_eq (x : ℙ 𝕜 V) :
     ∃ (v : V) (hv : v ≠ 0), ‖v‖ = 1 ∧ mk 𝕜 v hv = x := by
-  refine ⟨(‖x.rep‖⁻¹ : 𝕜) • x.rep, smul_ne_zero (by simpa using x.rep_nonzero) x.rep_nonzero,
-    norm_smul_inv_norm x.rep_nonzero, ?_⟩
+  refine ⟨(‖x.rep‖⁻¹ : 𝕜) • x.rep, smul_ne_zero (by simpa using x.rep_ne_zero) x.rep_ne_zero,
+    norm_smul_inv_norm x.rep_ne_zero, ?_⟩
   conv_rhs => rw [← x.mk_rep]
-  exact (mk_eq_mk_iff' 𝕜 _ _ _ x.rep_nonzero).2 ⟨_, rfl⟩
+  exact (mk_eq_mk_iff' 𝕜 _ _ _ x.rep_ne_zero).2 ⟨_, rfl⟩
 
 /-- **Projective space is compact** for a finite-dimensional normed space over `ℝ` or `ℂ`: it is
 the image of the compact unit sphere. -/
@@ -203,6 +223,42 @@ instance instCompactSpace [FiniteDimensional 𝕜 V] : CompactSpace (ℙ 𝕜 V)
   exact ⟨⟨v, mem_sphere_zero_iff_norm.2 hv⟩, rfl⟩
 
 end RCLike
+
+/-! ### Connectedness -/
+
+section Connected
+
+/-- Projective space is path-connected when `V`, as a real topological vector space, has
+dimension greater than one: it is then the continuous image of the path-connected space of
+nonzero vectors. The division ring `K` is arbitrary, so this applies equally to real, complex and
+quaternionic projective spaces. -/
+theorem pathConnectedSpace_of_one_lt_rank {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [TopologicalSpace V] [Module ℝ V] [ContinuousAdd V] [ContinuousSMul ℝ V]
+    (h : 1 < Module.rank ℝ V) : PathConnectedSpace (ℙ K V) := by
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_compl_singleton_of_one_lt_rank h (0 : V))
+  exact Function.Surjective.pathConnectedSpace
+    (f := fun v : ({0}ᶜ : Set V) ↦ mk K (v : V) (mem_compl_singleton_iff.1 v.2))
+    (fun x ↦ ⟨⟨x.rep, mem_compl_singleton_iff.2 x.rep_ne_zero⟩, x.mk_rep⟩)
+    (continuous_mk continuous_subtype_val _)
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- **Projective space is path-connected** for a nonzero normed space `V` over `ℝ` or `ℂ`, hence
+connected. In real dimension greater than one this is `pathConnectedSpace_of_one_lt_rank`;
+otherwise `V` is a line and `ℙ 𝕜 V` is a single point. In particular `ℂℙⁿ` and `ℝℙⁿ` are
+connected for every `n`, including the point `n = 0`. -/
+instance instPathConnectedSpace [Nontrivial V] : PathConnectedSpace (ℙ 𝕜 V) := by
+  let _ : NormedSpace ℝ V := .restrictScalars ℝ 𝕜 V
+  by_cases h : 1 < Module.rank ℝ V
+  · exact pathConnectedSpace_of_one_lt_rank h
+  -- A real spanning vector of `V` also spans it over `𝕜`.
+  obtain ⟨v₀, hv₀⟩ := rank_le_one_iff.1 (not_lt.1 h)
+  have := subsingleton_of_rank_le_one (K := 𝕜) (rank_le_one_iff.2
+    ⟨v₀, fun v ↦ (hv₀ v).imp' (algebraMap ℝ 𝕜) fun r hr ↦ by rw [algebraMap_smul, hr]⟩)
+  exact ⟨inferInstance, fun x y ↦ Subsingleton.elim x y ▸ Joined.refl x⟩
+
+end Connected
 
 /-! ### The standard affine charts -/
 

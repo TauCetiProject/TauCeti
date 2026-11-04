@@ -67,9 +67,9 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   finitely generated semisimple module `M` to a simple module `S` number `#End(S) ^ [M : S]`.
 * `TauCeti.natCard_linearMap_pi_eq_prod_pow`: maps from `M` into a finite product of simple
   modules `N i` number `∏ i, #End(N i) ^ [M : N i]`.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
   finitely generated semisimple modules with the same Jordan-Hölder multiplicities are isomorphic.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
   finite semisimple modules `M` and `N` with `#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are
   isomorphic.
 * `TauCeti.finrank_linearMap_pos_iff_exists_nonempty_linearEquiv`: the multiplicity is positive
@@ -236,13 +236,9 @@ module `S` into `M` exactly when `S` occurs among the simple factors of `M`. -/
 theorem finrank_linearMap_pos_iff_exists_nonempty_linearEquiv {M : Type*} [AddCommGroup M]
     [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     0 < Module.finrank k (S →ₗ[A] M) ↔ ∃ i, Nonempty (S ≃ₗ[A] N i) := by
-  have : Module.Finite k (Module.End A S) :=
-    finiteDimensional_linearMap_of_isSimpleModule
   have : Nontrivial S := IsSimpleModule.nontrivial A S
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
-    mul_pos_iff_of_pos_right
-      (Module.finrank_pos : 0 < Module.finrank k (Module.End A S)), Nat.card_pos_iff,
-    nonempty_subtype]
+    mul_pos_iff_of_pos_right (finrank_end_pos (k := k)), Nat.card_pos_iff, nonempty_subtype]
   exact and_iff_left inferInstance
 
 end Multiplicity
@@ -324,7 +320,7 @@ variable {R : Type u} [Ring R]
 /-- A finitely generated semisimple module is a finite product of quotients of the ring by maximal
 left ideals. This is `IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp` with each simple summand
 replaced by an isomorphic cyclic module, so that all the factors live in the universe of `R`. -/
-theorem IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
     [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
     ∃ (n : ℕ) (m : Fin n → Ideal R), (∀ i, (m i).IsMaximal) ∧
       Nonempty (M ≃ₗ[R] ∀ i, R ⧸ m i) := by
@@ -396,7 +392,7 @@ module is isomorphic to a quotient of `R`.
 Over a semisimple ring this is `TauCeti.nonempty_linearEquiv_pi_of_natCard_eq`, where the simple
 modules are indexed by the simple left ideals of `R`; in general a simple module need not embed in
 `R`, and the factors are matched by isomorphism directly. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N]
     [Module.Finite R N]
@@ -445,7 +441,7 @@ Writing `a_S` and `b_S` for the multiplicities of a simple module `S` in `M` and
 `∏ q_S ^ (a_S ^ 2)` and `∏ q_S ^ (b_S ^ 2)`, so the hypothesis says `∏ q_S ^ ((a_S - b_S) ^ 2) = 1`.
 This form of the comparison applies when only maps between `M` and `N` themselves can be counted,
 for instance when `M` and `N` are reductions of lattices whose hom modules are known. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Finite M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Finite N]
     (h : Nat.card (M →ₗ[R] N) * Nat.card (N →ₗ[R] M) =
@@ -590,12 +586,7 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
       let _ : IsSimpleModule A S := hS
       let _ : Module.Finite k S :=
         Module.Finite.of_injective (S.subtype.restrictScalars k) Subtype.val_injective
-      let _ : Module.Finite k (Module.End A S) :=
-        .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
-      have hendpos : 0 < Module.finrank k (Module.End A S) := by
-        let _ : Nontrivial S := IsSimpleModule.nontrivial A S
-        let _ : Nontrivial (Module.End A S) := inferInstance
-        exact Module.finrank_pos
+      have hendpos := finrank_end_pos (k := k) (A := A) (S := S)
       have hpredM (i : Fin n) : simpleModuleClass A (SM i) =
           SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SM i) := by
         rw [simpleModuleClass_eq_mk_iff]

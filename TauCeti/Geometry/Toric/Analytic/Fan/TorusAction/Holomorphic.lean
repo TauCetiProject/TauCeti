@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Holomorphic
+public import TauCeti.Geometry.Toric.Analytic.Fan.DenseTorus
 public import TauCeti.Geometry.Toric.Analytic.Fan.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Fan.TorusAction.Basic
 
@@ -20,12 +21,15 @@ complex structure of the torus given by any free presentation of its character l
 Holomorphy is local. Near a point of the image of the affine chart of a cone `σ`, the action is the
 affine torus action on that chart, conjugated by the inclusion of the chart, which is a
 biholomorphism onto its open image. The affine action is holomorphic for the complex structure of
-an integral basis extending the primitive ray generators of `σ`.
+an integral basis extending the primitive ray generators of `σ`. Consequently the canonical
+inclusion of the complex torus into the realization of a nonempty regular fan, the orbit map of the
+distinguished point of the zero cone, is holomorphic.
 
 ## Main declarations
 
 * `TauCeti.Toric.Fan.contMDiffSMul_complexTorus_analyticRealization`: the complex torus acts
   holomorphically on the analytic realization of a regular fan.
+* `TauCeti.Toric.Fan.contMDiff_analyticTorusι`: the canonical torus inclusion is holomorphic.
 
 ## References
 
@@ -43,7 +47,9 @@ namespace TauCeti.Toric.Fan
 universe u
 
 variable {N V : Type u} {ι : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] [Fintype ι]
-  {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular) (e : IntegralCharacter N ≃+ (ι →₀ ℤ))
+  {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
+
+variable (hΦ0 : Nonempty Φ.cones) (e : IntegralCharacter N ≃+ (ι →₀ ℤ))
 
 /-- The coordinate-free complex torus acts holomorphically on the analytic realization of a
 regular fan. The torus carries the complex structure of a free presentation of its character
@@ -91,5 +97,18 @@ theorem contMDiffSMul_complexTorus_analyticRealization (n : ℕ∞ω) :
   simp only [Function.comp_apply, hPy, smul_analyticAffineChartι]
   -- The torus action on the chart is, by construction, the action on its complex points.
   rfl
+
+/-- The canonical torus inclusion into the realization of a nonempty regular fan is holomorphic,
+for any finite free presentation of the character lattice: it is the orbit map of the
+distinguished point of the zero cone under the holomorphic torus action. -/
+theorem contMDiff_analyticTorusι (n : ℕ∞ω) :
+    let _ := complexTorusChartedSpace e
+    letI := Φ.analyticChartedSpace hΦ
+    ContMDiff 𝓘(ℂ, ι → ℂ) 𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (Φ.analyticTorusι hΦ hΦ0) := by
+  let _ := complexTorusChartedSpace e
+  let _ := Φ.analyticChartedSpace hΦ
+  have hsmul := (Φ.contMDiffSMul_complexTorus_analyticRealization hΦ e n).contMDiff_smul
+  exact (hsmul.comp (contMDiff_id.prodMk contMDiff_const)).congr fun t ↦
+    Φ.analyticTorusι_def hΦ hΦ0 t
 
 end TauCeti.Toric.Fan

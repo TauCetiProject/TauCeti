@@ -82,8 +82,9 @@ Artinian ring, in the indecomposable-projective and simple bases.
   generated projectives is the split one.
 * `TauCeti.finiteModulesExactStructure_eq_abelian`: over a noetherian ring, the exact structure of
   the finitely generated modules is the canonical one of the abelian category `FGModuleCat R`.
-* `TauCeti.finiteModulesExactK0Equiv`: the explicit comparison between the named finite-module
-  exact structure and the structure induced directly from all modules.
+* `TauCeti.finiteModulesExactK0Equiv` and `TauCeti.finiteProjectiveModulesExactK0Equiv`: the
+  explicit comparisons between the two named exact structures and the structures induced directly
+  from all modules.
 * `TauCeti.exactK0_fgModuleCat_prod`: in `G₀(mod R)`, the class of a product of two finitely
   generated modules is the sum of their classes.
 * `TauCeti.exactK0_of_eq_range_add_range`: in `G₀(mod R)`, the class of the middle term of an
@@ -200,6 +201,11 @@ theorem finiteProjectiveModules_le_isProjective :
   intro M hM
   have : Module.Projective R M := (finiteProjectiveModules_iff.mp hM).2
   exact (ExactStructure.abelian_isProjective_iff M).2 inferInstance
+
+/-- A finitely generated projective module is a projective object of `ModuleCat R`. -/
+theorem finiteProjectiveModules_le_categoryTheory_isProjective :
+    finiteProjectiveModules R ≤ CategoryTheory.isProjective (ModuleCat.{u} R) := fun M hM ↦
+  (ExactStructure.abelian_isProjective_iff M).mp (finiteProjectiveModules_le_isProjective R M hM)
 
 instance : (ModuleCat.isFG.{u} R).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_finiteModules R).isClosedUnderBinaryProducts
@@ -381,6 +387,24 @@ theorem exactK0_add_add_eq_add_add_of_exact {M₁ M₂ M₃ M₄ M₅ M₆ : Typ
     (P := finiteProjectiveModules R) (ExactStructure.isExtensionClosed_of_le_isProjective
       (finiteProjectiveModules_le_isProjective R)) S).trans
     (ExactStructure.abelian_conflation _)
+
+/-- The exact Grothendieck group defined using `finiteProjectiveModulesExactStructure` agrees with
+the one defined directly from the exact structure induced from all modules. This is the
+projective counterpart of `TauCeti.finiteModulesExactK0Equiv`, and it keeps the implementation of
+`finiteProjectiveModulesExactStructure` opaque in the same way. -/
+noncomputable def finiteProjectiveModulesExactK0Equiv :
+    ExactK0.{u} (finiteProjectiveModulesExactStructure R) ≃+
+      ExactK0.{u} ((ExactStructure.abelian (ModuleCat.{u} R)).fullSubcategory _
+        (ExactStructure.isExtensionClosed_of_le_isProjective
+          (finiteProjectiveModules_le_isProjective R))) :=
+  ExactK0.ofLEEquiv fun S ↦ by
+    rw [finiteProjectiveModulesExactStructure_conflation_iff,
+      ExactStructure.fullSubcategory_conflation_iff, ExactStructure.abelian_conflation]
+
+@[simp]
+theorem finiteProjectiveModulesExactK0Equiv_of (X : (finiteProjectiveModules R).FullSubcategory) :
+    finiteProjectiveModulesExactK0Equiv R (ExactK0.of.{u} X) = ExactK0.of.{u} X :=
+  ExactK0.ofLEEquiv_of.{u} _ X
 
 /-! ### The Cartan map -/
 

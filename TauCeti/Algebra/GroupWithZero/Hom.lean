@@ -14,7 +14,7 @@ public import Mathlib.Algebra.GroupWithZero.Defs
 A multiplicative map need not preserve `1`, and the zero map shows it need not. Where
 multiplication in the codomain is left-cancellative away from zero there is nothing in between:
 such a map is identically zero or unital, the zero map being the only non-unital one. A unital
-one is promoted to a bundled unital map by `AlgHom.ofLinearMap` or `RingHom.mk'`.
+one can then be rebundled as a unital map, for instance by `AlgHom.ofLinearMap`.
 
 This is the dichotomy that lets a type of multiplicative maps carry a zero without adjoining one.
 
@@ -43,15 +43,12 @@ namespace MulHomClass
 -- cancels from `p 1 * p 1 = p 1 * 1`.
 theorem forall_apply_eq_zero_or_map_one (p : G) : (∀ x, p x = 0) ∨ p 1 = 1 := by
   by_cases h1 : p 1 = 0
-  · exact Or.inl fun x => by rw [← mul_one x, map_mul, h1, mul_zero]
-  · refine Or.inr (mul_left_cancel₀ h1 ?_)
-    rw [← map_mul, mul_one, mul_one]
+  · exact .inl fun x => by rw [← mul_one x, map_mul, h1, mul_zero]
+  · exact .inr <| mul_left_cancel₀ h1 <| by rw [← map_mul, mul_one, mul_one]
 
 /-- **A multiplicative map that is somewhere nonzero is unital.** -/
 theorem map_one_of_exists_apply_ne_zero {p : G} (hp : ∃ x, p x ≠ 0) : p 1 = 1 :=
-  (forall_apply_eq_zero_or_map_one p).resolve_left fun h => by
-    obtain ⟨x, hx⟩ := hp
-    exact hx (h x)
+  (forall_apply_eq_zero_or_map_one p).resolve_left (not_forall.2 hp)
 
 end MulHomClass
 

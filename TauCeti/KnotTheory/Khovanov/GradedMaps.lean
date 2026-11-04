@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.CategoryTheory.GradedObject.Braiding
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.GradedObject
 import Mathlib.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.CategoryTheory.GradedObject.MonObj
 
@@ -134,6 +135,38 @@ theorem quantumTensorEval_quantumTensor {p q n : ℤ} (h : p + q = n)
   unfold quantumTensorEval quantumTensor
   rw [← ModuleCat.comp_apply, ι_tensorObjDesc]
   rfl
+
+/-- Evaluation of a native quantum tensor is the internal tensor comparison followed by the
+inclusion of its homogeneous piece. -/
+theorem quantumTensorEval_eq_tensorProductGradedObjectIso (n : ℤ) :
+    quantumTensorEval R n =
+      ((quantumGrading R).tensorProductGradedObjectIso (quantumGrading R)).hom n ≫
+        ModuleCat.ofHom
+          (((quantumGrading R).tensorProduct (quantumGrading R)).piece n).subtype := by
+  apply quantumTensor_hom_ext
+  intro p q h x y
+  rw [quantumTensorEval_quantumTensor]
+  exact ((quantumGrading R).tensorProductGradedObjectIso_hom_tmul
+    (quantumGrading R) h x y).symm
+
+/-- The underlying tensor remembers every element of a native quantum tensor component. -/
+theorem quantumTensorEval_injective (n : ℤ) : Function.Injective (quantumTensorEval R n) := by
+  rw [quantumTensorEval_eq_tensorProductGradedObjectIso]
+  exact Subtype.val_injective.comp
+    (((GradedObject.eval n).mapIso
+      ((quantumGrading R).tensorProductGradedObjectIso (quantumGrading R))).toLinearEquiv.injective)
+
+/-- The image of a native quantum tensor component is exactly the corresponding homogeneous
+piece of the underlying tensor product. -/
+theorem range_quantumTensorEval (n : ℤ) :
+    LinearMap.range (quantumTensorEval R n).hom =
+      ((quantumGrading R).tensorProduct (quantumGrading R)).piece n := by
+  have he := ((GradedObject.eval n).mapIso ((quantumGrading R).tensorProductGradedObjectIso
+    (quantumGrading R))).toLinearEquiv.range
+  simp only [Iso.toLinearMap_toLinearEquiv, Functor.mapIso_hom, GradedObject.eval_map] at he
+  rw [quantumTensorEval_eq_tensorProductGradedObjectIso]
+  rw [ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+    LinearMap.range_comp_of_range_eq_top _ he, Submodule.range_subtype]
 
 /-- The native symmetry interchanges labels without a quantum Koszul sign. -/
 @[simp]

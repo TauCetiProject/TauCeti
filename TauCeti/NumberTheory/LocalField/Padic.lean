@@ -33,6 +33,9 @@ concrete p-adic norm and valuation APIs.
   it on `p ^ n`, and `Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq` on units of `ℤ_[p]`.
 * `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
   the additive-group uniformity, so completeness arguments can use the canonical group structure.
+* `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
+  `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
+  on `ℚ_[p]` with Mathlib's norm.
 * `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
   `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
@@ -47,6 +50,7 @@ concrete p-adic norm and valuation APIs.
   the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
   with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
   uniformizer of `ℚ_[p]`.
+* `TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le`: `𝓂 ^ i` is the disc `‖x‖ ≤ p ^ (-i)`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
@@ -114,6 +118,30 @@ theorem toAdd_normalizedValuation_eq_zero_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]
     (ha : (a : ℚ_[p]) = u) : (TauCeti.normalizedValuation ℚ_[p] a).toAdd = 0 := by
   rw [toAdd_normalizedValuation_eq_valuation, ha, PadicInt.valuation_coe,
     PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero]
+
+variable {p} in
+/-- On `ℚ_[p]` the valuation of the valuative relation and the norm induce the same order. -/
+theorem valuation_le_valuation_iff_norm_le {x y : ℚ_[p]} :
+    ValuativeRel.valuation ℚ_[p] x ≤ ValuativeRel.valuation ℚ_[p] y ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [(isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation) x y, ← not_lt, ← not_lt,
+    Padic.norm_lt_norm_iff_mulValuation_lt]
+
+variable {p} in
+/-- On `ℚ_[p]` two elements have the same valuation for the valuative relation exactly when they
+have the same norm. -/
+theorem valuation_eq_valuation_iff_norm_eq {x y : ℚ_[p]} :
+    ValuativeRel.valuation ℚ_[p] x = ValuativeRel.valuation ℚ_[p] y ↔ ‖x‖ = ‖y‖ := by
+  simp only [le_antisymm_iff, valuation_le_valuation_iff_norm_le]
+
+variable {p} in
+/-- On `ℚ_[p]` the valuation of `x` is at most that of `p ^ i` exactly when
+`‖x‖ ≤ p ^ (-i)`. -/
+theorem valuation_le_valuation_natCast_pow_iff {x : ℚ_[p]} {i : ℕ} :
+    ValuativeRel.valuation ℚ_[p] x ≤
+        ValuativeRel.valuation ℚ_[p] (((p : 𝒪[ℚ_[p]]) : ℚ_[p])) ^ i ↔
+      ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
+  rw [← map_pow, valuation_le_valuation_iff_norm_le]
+  simp
 
 /-- The ring of integers of `ℚ_[p]` for its valuative relation is Mathlib's subring of elements
 of norm at most `1`. -/
@@ -202,20 +230,21 @@ theorem natCastValuation_eq_padicValNat (n : ℕ) (hn : (n : ℚ_[p]) ≠ 0) :
     rw [← toAdd_ofAdd ((TauCeti.natCastValuation ℚ_[p] n hn : ℕ) : ℤ),
       ← TauCeti.normalizedValuation_natCast ℚ_[p] n hn,
       toAdd_normalizedValuation_eq_valuation]
-    simp
+    simp [Nat.padicValNat_def]
   exact_mod_cast h
 
 /-- The normalized valuation of the residue prime `p` in `ℚ_[p]` is `1`; equivalently, `ℚ_[p]`
 is absolutely unramified. -/
 theorem natCastValuation_self :
     TauCeti.natCastValuation ℚ_[p] p (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) = 1 := by
-  rw [natCastValuation_eq_padicValNat, padicValNat.self (Fact.out : p.Prime).one_lt]
+  rw [natCastValuation_eq_padicValNat, Nat.padicValNat_def,
+    Nat.multiplicity_self (Fact.out : p.Prime).one_lt]
 
 /-- The normalized valuation of `2` in `ℚ_[p]` vanishes for every odd `p`. -/
 theorem natCastValuation_two (hp : p ≠ 2) :
     TauCeti.natCastValuation ℚ_[p] 2 (Nat.cast_ne_zero.mpr two_ne_zero) = 0 := by
-  rw [natCastValuation_eq_padicValNat]
-  exact padicValNat.eq_zero_of_not_dvd fun h ↦
+  rw [natCastValuation_eq_padicValNat, Nat.padicValNat_def]
+  exact multiplicity_eq_zero_of_not_dvd fun h ↦
     hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
 
 variable {p} in
@@ -230,13 +259,13 @@ over `ℚ_[p]` for such primes. -/
 theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     ¬ IsSquare (-1 : ℚ_[p]) := by
   intro hs0
-  have hs : IsSquare (-1 : ℚ_[p]ˣ) := TauCeti.isSquare_units_val_iff.mp hs0
+  have hs : IsSquare (-1 : ℚ_[p]ˣ) := Units.isSquare_coe_iff.mp hs0
   have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
   have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
     have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
     exact (by simpa using h (by simpa using hs))
   have hs' : IsSquare (-1 : 𝓀[ℚ_[p]]) :=
-    TauCeti.isSquare_units_val_iff.mpr hsres
+    Units.isSquare_coe_iff.mpr hsres
   let : Fintype 𝓀[ℚ_[p]] := Fintype.ofFinite _
   have hcard : Fintype.card 𝓀[ℚ_[p]] = p := by
     simpa only [Nat.card_eq_fintype_card] using natCard_residueField p
@@ -289,6 +318,15 @@ namespace TauCeti.Padic
 theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+variable {p} in
+/-- An element of the integer ring of `ℚ_[p]` lies in `𝓂 ^ i` exactly when its norm is at most
+`p ^ (-i)`. -/
+theorem mem_maximalIdeal_pow_iff_norm_le {x : 𝒪[ℚ_[p]]} {i : ℕ} :
+    x ∈ IsLocalRing.maximalIdeal 𝒪[ℚ_[p]] ^ i ↔ ‖(x : ℚ_[p])‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
+  rw [← _root_.Padic.valuation_le_valuation_natCast_pow_iff]
+  exact Set.ext_iff.mp ((irreducible_natCast_self p).maximalIdeal_pow_eq_setOfPred_le_v_coe_pow
+    (ValuativeRel.valuation ℚ_[p]) i) x
 
 variable {p} in
 /-- The product of `p` with an integer prime to `p` is a uniformizer of the integer ring of

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
@@ -44,6 +45,9 @@ algebraic closedness, and the answer names the basis vectors involved.
   basis vectors it contains.
 * `Module.Basis.exists_apply_eq_and_mem_span_singleton`: a nonzero eigenvector of `f` is a
   multiple of a single basis vector, whose eigenvalue is its eigenvalue.
+* `Module.Basis.eigenspace_eq_span_image` and `Module.Basis.finrank_eigenspace_eq_card`: with
+  repeated eigenvalues allowed, the `μ`-eigenspace is spanned by the basis vectors of eigenvalue
+  `μ`, and its dimension is their number.
 -/
 
 public section
@@ -210,5 +214,38 @@ theorem _root_.Module.Basis.exists_apply_eq_and_mem_span_singleton (b : Module.B
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
 
 end CancelMulZero
+
+/-! ### Eigenspaces are coordinate subspaces -/
+
+section Eigenspace
+
+variable [CommRing K] [IsCancelMulZero K] [AddCommGroup V] [Module K V] {f : Module.End K V}
+  {a : ι → K}
+
+/-- **The eigenspaces of an endomorphism diagonal in a basis are coordinate subspaces**: the
+`μ`-eigenspace is spanned by the basis vectors of eigenvalue `μ`. The eigenvalues need not be
+pairwise distinct. -/
+theorem _root_.Module.Basis.eigenspace_eq_span_image (b : Module.Basis ι K V)
+    (hf : ∀ i, f (b i) = a i • b i) (μ : K) :
+    f.eigenspace μ = Submodule.span K (b '' {i | a i = μ}) := by
+  refine le_antisymm (fun w hw => b.mem_span_image.mpr fun i hi => ?_) (Submodule.span_le.mpr ?_)
+  · have h := b.repr_apply_of_apply_basis hf w i
+    rw [Module.End.mem_eigenspace_iff.mp hw, map_smul, Finsupp.smul_apply, smul_eq_mul] at h
+    exact (mul_right_cancel₀ (Finsupp.mem_support_iff.mp hi) h).symm
+  · rintro _ ⟨i, hi, rfl⟩
+    rw [SetLike.mem_coe, Module.End.mem_eigenspace_iff, hf i, Set.mem_ofPred_eq.mp hi]
+
+/-- **The eigenspace dimensions of an endomorphism diagonal in a basis count basis vectors**: the
+`μ`-eigenspace has dimension the number of basis vectors of eigenvalue `μ`. Only that fibre has
+to be finite. -/
+theorem _root_.Module.Basis.finrank_eigenspace_eq_card [Nontrivial K] (b : Module.Basis ι K V)
+    (hf : ∀ i, f (b i) = a i • b i) (μ : K) [Finite {i // a i = μ}] :
+    Module.finrank K (f.eigenspace μ) = Nat.card {i // a i = μ} := by
+  have := Fintype.ofFinite {i // a i = μ}
+  rw [b.eigenspace_eq_span_image hf μ, ← Subtype.range_coe_subtype, ← Set.range_comp,
+    finrank_span_eq_card (b.linearIndependent.comp _ Subtype.val_injective),
+    Nat.card_eq_fintype_card]
+
+end Eigenspace
 
 end TauCeti

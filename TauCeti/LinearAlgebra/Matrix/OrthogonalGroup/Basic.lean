@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Scalar, diagonal and determinant facts for orthogonal matrices
@@ -16,6 +17,9 @@ symmetric form only when `c ^ 2 = 1`. For an empty index type every scalar quali
 Over a ring without zero divisors an orthogonal matrix has determinant `1` or `-1`, and both values
 occur as soon as the index type is nonempty: the diagonal reflection negating one coordinate is an
 orthogonal matrix of determinant `-1`.
+
+Permutation matrices are orthogonal. For a trivial star operation the unitary elements of the
+general linear group are the orthogonal matrices.
 
 ## Main definitions
 
@@ -28,6 +32,9 @@ orthogonal matrix of determinant `-1`.
 * `TauCeti.det_eq_one_or_neg_one_of_mem_orthogonalGroup`: the determinant of an orthogonal matrix
   is `1` or `-1`.
 * `TauCeti.det_orthogonalDiagonalReflection`: the diagonal reflection has determinant `-1`.
+* `Matrix.permMatrix_mem_orthogonalGroup`: a permutation matrix is orthogonal.
+* `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
+  operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
 
 public section
@@ -85,3 +92,25 @@ theorem det_orthogonalDiagonalReflection (i : n) :
 end DiagonalReflection
 
 end TauCeti
+
+namespace Matrix
+
+/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitaryGroup` for the
+trivial star operation `starRingOfComm`, which defines `Matrix.orthogonalGroup`. -/
+theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (R : Type*)
+    [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
+  letI := starRingOfComm (R := R)
+  permMatrix_mem_unitaryGroup σ
+
+end Matrix
+
+namespace Matrix.GeneralLinearGroup
+
+/-- For a trivial star operation, the unitary elements of `GL n R` are the orthogonal matrices. -/
+theorem mem_unitarySubgroup_iff_mem_orthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] [TrivialStar R] {M : GL n R} :
+    M ∈ unitarySubgroup (GL n R) ↔ (M : Matrix n n R) ∈ orthogonalGroup n R := by
+  rw [mem_orthogonalGroup_iff, ← conjTranspose_eq_transpose_of_trivial]
+  simp [Units.unitary_eq, mem_unitaryGroup_iff, star_eq_conjTranspose]
+
+end Matrix.GeneralLinearGroup

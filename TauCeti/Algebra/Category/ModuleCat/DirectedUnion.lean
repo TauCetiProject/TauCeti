@@ -16,7 +16,7 @@ A monotone family of submodules over a directed preorder defines a diagram in `M
 the submodule inclusions as transition maps. If its supremum is a submodule `T`, the inclusions
 into `T` exhibit `ModuleCat.of R T` as the colimit of this diagram.
 
-The universal map is the linear map `TauCeti.Submodule.iSupLift` glued from the legs of an
+The universal map is the linear map `Submodule.iSupLift` glued from the legs of an
 arbitrary cocone.
 
 ## Main declarations

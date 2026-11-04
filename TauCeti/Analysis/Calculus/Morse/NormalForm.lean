@@ -145,13 +145,35 @@ theorem hessianAverage_zero (f : E → F) (x : E) :
   rw [hI, one_smul]
 
 omit [CompleteSpace F] in
+/-- The averaged fiber Hessian of a jointly `C^{n+2}` family is jointly `C^n` in the parameter
+and the fiber displacement. -/
+theorem contDiff_hessianAverage_param
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : ℕ∞} {g : P × E → F} (hg : ContDiff ℝ (n + 2) g) (x : E) :
+    ContDiff ℝ n (fun p : P × E ↦ hessianAverage (fun y ↦ g (p.1, y)) x p.2) := by
+  have hD : ContDiff ℝ (n + 1)
+      (fun p : P × E ↦ fderiv ℝ (fun y ↦ g (p.1, y)) p.2) := by
+    apply ContDiff.fderiv (f := fun p : P × E ↦ fun y : E ↦ g (p.1, y))
+    · exact hg.comp (by fun_prop)
+    · fun_prop
+    · norm_num [add_assoc]
+  have hDD : ContDiff ℝ n
+      (fun p : P × E ↦ fderiv ℝ (fderiv ℝ (fun y ↦ g (p.1, y))) p.2) := by
+    apply ContDiff.fderiv
+      (f := fun p : P × E ↦ fderiv ℝ (fun y ↦ g (p.1, y)))
+    · exact hD.comp (by fun_prop :
+        ContDiff ℝ (n + 1) (fun p : (P × E) × E ↦ (p.1.1, p.2)))
+    · fun_prop
+    · exact le_rfl
+  exact hDD.contDiff_segmentAverage_param
+    ((by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).intervalIntegrable 0 1) x
+
+omit [CompleteSpace F] in
 /-- The averaged Hessian of a `C^{n+2}` function is `C^n` in the direction. -/
 theorem contDiff_hessianAverage {n : ℕ∞} (hf : ContDiff ℝ (n + 2) f) (x : E) :
     ContDiff ℝ n (hessianAverage f x) := by
-  have hd : ContDiff ℝ n (fderiv ℝ (fderiv ℝ f)) :=
-    (hf.fderiv_right (m := n + 1) (by norm_num [add_assoc])).fderiv_right (m := n) (by simp)
-  exact hd.contDiff_segmentAverage
-    ((by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).intervalIntegrable 0 1) x
+  exact (contDiff_hessianAverage_param (hf.comp contDiff_snd) x).comp
+    (contDiff_const.prodMk contDiff_id : ContDiff ℝ n (fun v : E ↦ ((0 : E), v)))
 
 omit [CompleteSpace F] in
 private theorem continuous_hessianAverage_integrand (hf : ContDiff ℝ 2 f) (x v : E) :

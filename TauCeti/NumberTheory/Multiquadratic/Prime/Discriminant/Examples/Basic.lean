@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Examples
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Splitting
-import TauCeti.NumberTheory.NumberField.Internal.PrimeDivisibility
 
 /-!
 # Complete splitting criteria for the first genus-field examples
@@ -53,7 +52,8 @@ private theorem forall_not_dvd_negFourFivePrimeDiscriminants {p : ℕ} [Fact p.P
   intro i
   fin_cases i
   · exact not_intCast_prime_dvd_neg_four hodd
-  · exact Internal.not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 5) hfive
+  · simpa [Int.natCast_dvd, Nat.prime_dvd_prime_iff_eq (p := p) Fact.out Nat.prime_five]
+      using hfive
 
 private theorem forall_not_dvd_negFourNegThreeNegSevenPrimeDiscriminants {p : ℕ} [Fact p.Prime]
     (hodd : p ≠ 2) (hthree : p ≠ 3) (hseven : p ≠ 7) :
@@ -62,8 +62,10 @@ private theorem forall_not_dvd_negFourNegThreeNegSevenPrimeDiscriminants {p : �
   intro i
   fin_cases i
   · exact not_intCast_prime_dvd_neg_four hodd
-  · simpa using Internal.not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 3) hthree
-  · simpa using Internal.not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 7) hseven
+  · simpa [Int.natCast_dvd, Nat.prime_dvd_prime_iff_eq (p := p) Fact.out Nat.prime_three]
+      using hthree
+  · simpa [Int.natCast_dvd, Nat.prime_dvd_prime_iff_eq (p := p) Fact.out Nat.prime_seven]
+      using hseven
 
 /-- **Complete splitting for the `ℚ(√-5)` genus-field generator list.** Let `K` be generated
 by square roots of the radicands attached to `[-4, 5]`, namely `-1` and `5`. An odd prime

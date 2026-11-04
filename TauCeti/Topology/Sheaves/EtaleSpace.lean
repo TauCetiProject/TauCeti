@@ -26,8 +26,6 @@ public section
 
 open CategoryTheory Function Set TopologicalSpace
 
-namespace TauCeti
-
 namespace TopCat.Presheaf.EtaleSpace
 
 universe v u w
@@ -45,7 +43,7 @@ noncomputable def germSection (F : X.Presheaf C) (U : Opens X)
   fun x ↦ ⟨x, F.germ U x x.2 s⟩
 
 /-- The germ section written out: over `x`, it is the pair of `x` and the germ of `s` at `x`.
-This is the characteristic property of `TauCeti.TopCat.Presheaf.EtaleSpace.germSection`, and the
+This is the characteristic property of `TopCat.Presheaf.EtaleSpace.germSection`, and the
 form in which a concrete germ map is identified with it. -/
 @[simp]
 theorem germSection_apply (U : Opens X) (s : ToType (F.obj (Opposite.op U))) (x : U) :
@@ -79,7 +77,7 @@ theorem mem_sectionRange_iff {U : Opens X} {s : ToType (F.obj (Opposite.op U))} 
     refine ⟨⟨g.base, h⟩, ?_⟩
     cases g
     simp only [germSection, TopCat.Presheaf.EtaleSpace.mk.injEq]
-    exact ⟨trivial, heq_of_eq hg.symm⟩
+    exact ⟨True.intro, heq_of_eq hg.symm⟩
 
 /-- The germs of a section form an open subset of the étalé space. -/
 theorem isOpen_sectionRange (U : Opens X) (s : ToType (F.obj (Opposite.op U))) :
@@ -172,5 +170,3 @@ theorem isLocalHomeomorph_base (F : X.Presheaf C) :
     exact (sectionOpenPartialHomeomorph_apply F U s ⟨g.base, hgU⟩ (g := g') hg).symm
 
 end TopCat.Presheaf.EtaleSpace
-
-end TauCeti

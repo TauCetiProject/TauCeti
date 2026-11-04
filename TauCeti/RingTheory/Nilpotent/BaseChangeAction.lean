@@ -40,6 +40,8 @@ characteristic.
 * `TauCeti.baseChange_integralDividedPower_eq_zero_of_le`: a restricted divided power
   vanishes on base change above the nilpotency index.
 * `TauCeti.baseChangeExp`: the finite divided-power exponential on `R ⊗[ℤ] M` for an element of `A`.
+* `TauCeti.commute_baseChangeExp`: exponentials of commuting elements commute, without nilpotence
+  hypotheses.
 * `TauCeti.map_baseChangeExp`: naturality of the exponential under a map of parameter rings.
 * `TauCeti.baseChangeExp_add`: its one-parameter group law.
 * `TauCeti.baseChangeExpLinearEquiv`: the resulting linear automorphism.
@@ -119,6 +121,7 @@ theorem mul_integralDividedPower (x : A) (M : S)
     integralDividedPower x M m hm * integralDividedPower x M n hn =
       Nat.choose (m + n) m • integralDividedPower x M (m + n) hmn := by
   ext v
+  rw [mul_apply_eq_comp]
   dsimp [integralDividedPower]
   rw [smul_smul, Associative.mul_dividedPower, smul_assoc]
 
@@ -245,6 +248,23 @@ noncomputable def baseChangeExp (x : A) (M : S)
     Module.End R (R ⊗[ℤ] M) :=
   ∑ n ∈ range (nilpotencyClass x),
     t ^ n • (integralDividedPower x M n (hM n)).baseChange R
+
+/-- The finite base-changed divided-power exponentials of commuting elements commute.
+This commutation identity does not require either element to be nilpotent. -/
+theorem commute_baseChangeExp {x y : A} (M : S) (hxy : Commute x y)
+    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
+    (t u : R) :
+    Commute (baseChangeExp x M hMx t) (baseChangeExp y M hMy u) := by
+  unfold baseChangeExp
+  refine Commute.sum_left _ _ _ fun m _ => Commute.sum_right _ _ _ fun n _ => ?_
+  refine Commute.smul_left (Commute.smul_right ?_ _) _
+  have hcomm : Commute (integralDividedPower x M m (hMx m))
+      (integralDividedPower y M n (hMy n)) := by
+    ext v
+    simp only [_root_.mul_apply_eq_comp, coe_integralDividedPower_apply, ← mul_smul]
+    rw [(Associative.commute_dividedPower_dividedPower hxy m n).eq]
+  exact hcomm.map (Module.End.baseChangeHom ℤ R M)
 
 /-- The base-changed exponential acts on a pure tensor by the expected finite divided-power
 formula. -/
@@ -540,7 +560,7 @@ theorem baseChange_integralUnitRestrict_conj_baseChangeExp (x : A) (M : S) (u : 
   refine LinearMap.ext fun z => ?_
   induction z using TensorProduct.inductionOn with
   | tmul r v =>
-      rw [Module.End.mul_apply, Module.End.mul_apply, LinearMap.baseChange_tmul,
+      rw [_root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp, LinearMap.baseChange_tmul,
         baseChangeExp_tmul_of_pow_eq_zero x M hM hk,
         baseChangeExp_tmul_of_pow_eq_zero ((u : A) * x * ↑u⁻¹) M hM' hk', map_sum]
       refine Finset.sum_congr rfl fun n _ => ?_

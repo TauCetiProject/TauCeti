@@ -21,6 +21,8 @@ the ring-theoretic properties of `algebra R Ω` to those of its base ring `R` an
   unit of `algebra R Ω`;
 * `isUnit_iff_isUnit_toTarget`: an element of `algebra R Ω` is a unit exactly when its
   image in `Ω` is a unit;
+* `ker_toTarget_le_jacobson`: the kernel of `toTarget` lies in the Jacobson radical of
+  `algebra R Ω`;
 * `isLocalHom_toTarget`, an instance: `toTarget` is a local homomorphism;
 * `isLocalRing`: hence `algebra R Ω` is a local ring as soon as `Ω` is;
 * `ker_toTarget_eq_maximalIdeal`: when `Ω` is a field, the kernel of `toTarget` is the
@@ -54,8 +56,8 @@ variable (R Ω : Type u) [CommRing R] [CommRing Ω] [Algebra R Ω]
 unit of the colimit: localizing that neighbourhood at the element is a further pointed
 neighbourhood in which the element is a unit. -/
 theorem isUnit_stage_of_isUnit_point (B : Neighbourhood R Ω) (b : B.obj.left)
-    (hpoint : IsUnit (B.obj.hom.hom b)) : IsUnit (stage R Ω B b) := by
-  obtain ⟨target, refinement, hunit⟩ := Neighbourhood.exists_refinement_isUnit R Ω B b hpoint
+    (hpoint : IsUnit (B.point b)) : IsUnit (stage R Ω B b) := by
+  obtain ⟨target, refinement, hunit⟩ := Neighbourhood.exists_refinement_isUnit B b hpoint
   rw [← stage_hom_apply R Ω refinement b]
   exact hunit.map (stage R Ω target).toRingHom
 
@@ -64,16 +66,23 @@ under the induced map `toTarget` is a unit. -/
 theorem isUnit_iff_isUnit_toTarget (x : algebra R Ω) : IsUnit x ↔ IsUnit (toTarget R Ω x) := by
   refine ⟨fun h ↦ h.map (toTarget R Ω).toRingHom, fun h ↦ ?_⟩
   obtain ⟨B, b, rfl⟩ := exists_stage_eq R Ω x
-  have hdown : IsUnit ((B.obj.hom.hom b).down) := by
-    rwa [toTarget_stage_apply] at h
-  have hpoint : IsUnit (B.obj.hom.hom b) :=
-    (MulEquiv.isUnit_map (ULift.ringEquiv (R := Ω))).mp hdown
-  exact isUnit_stage_of_isUnit_point R Ω B b hpoint
+  exact isUnit_stage_of_isUnit_point R Ω B b (by rwa [toTarget_stage_apply] at h)
 
 /-- The map induced by the pointings of the pointed étale neighbourhoods is a local
 homomorphism. -/
 instance isLocalHom_toTarget : IsLocalHom (toTarget R Ω) where
   map_nonunit x hx := (isUnit_iff_isUnit_toTarget R Ω x).mpr hx
+
+/-- The kernel of `toTarget` lies in the Jacobson radical of the colimit of pointed étale
+neighbourhoods. -/
+theorem ker_toTarget_le_jacobson :
+    RingHom.ker (toTarget R Ω).toRingHom ≤ Ideal.jacobson ⊥ := by
+  -- If `toTarget x = 0`, then `toTarget (1 + x * y) = 1` for every `y`, so `1 + x * y` is a unit.
+  intro x hx
+  have hx0 : toTarget R Ω x = 0 := RingHom.mem_ker.mp hx
+  rw [Ideal.jacobson_bot]
+  refine Ring.mem_jacobson_iff.mpr fun y ↦ (isUnit_iff_isUnit_toTarget R Ω _).mpr ?_
+  simp [hx0]
 
 /-- The colimit of pointed étale neighbourhoods is a local ring when the target is local. -/
 @[stacks 04GP "(2), local"]

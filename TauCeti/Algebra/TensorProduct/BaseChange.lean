@@ -26,6 +26,8 @@ with passing to the opposite algebra, and composes in stages:
 
 * `LinearMap.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
   distributing scalar extension over a tensor product.
+* `AlgHom.liftEquiv_toLinearMap`: the algebra map out of a scalar extension attached to `f` is
+  the scalar extension `LinearMap.liftBaseChange` of `f`, as a linear map.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.mulBaseChange`: the map
@@ -38,9 +40,12 @@ with passing to the opposite algebra, and composes in stages:
   `(L ⊗[K] A) ⊗[L] M ≃ₐ[M] A ⊗[K] M`.
 * `TauCeti.Algebra.TensorProduct.baseChangeAutHom`: the base change `σ ↦ id ⊗ σ` of
   automorphisms of `L` along a commutative algebra `A`, acting on `A ⊗[K] L`.
+* `Algebra.TensorProduct.rightMulSemiringAction`: a monoid acting on `L` by
+  `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right factor; for automorphisms of
+  `L` it is `baseChangeAutHom` (`rightMulSemiringAction_smul_eq_baseChangeAutHom`).
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
-* `TauCeti.ScalarAut.instMulSemiringAction`: scalar automorphisms act on a scalar extension
-  through its scalar factor.
+* `TauCeti.ScalarAut.toAlgAut` and `TauCeti.ScalarAut.instMulSemiringAction`: scalar
+  automorphisms act on a scalar extension through its scalar factor, by algebra automorphisms.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
 
@@ -88,6 +93,14 @@ theorem _root_.LinearMap.lid_rTensor_distribBaseChange_symm
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
     simp [TensorProduct.smul_tmul']
+
+/-- The algebra map `S ⊗[R] A →ₐ[S] B` attached to `f : A →ₐ[R] B`, as a linear map, is the scalar
+extension of `f`. -/
+theorem _root_.AlgHom.liftEquiv_toLinearMap {R S A B : Type*} [CommSemiring R] [CommSemiring S]
+    [Semiring A] [Semiring B] [Algebra R A] [Algebra S B] [Algebra R S] [Algebra R B]
+    [IsScalarTower R S B] (f : A →ₐ[R] B) :
+    (AlgHom.liftEquiv R S A B f).toLinearMap = f.toLinearMap.liftBaseChange S :=
+  rfl
 
 namespace Algebra.TensorProduct
 
@@ -372,22 +385,33 @@ end Module
 variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
+-- Exposed so that `instMulSemiringAction` stays definitionally the left-factor action of Mathlib
+-- (`smul_tmul`, `smul_def`) in importing modules.
+/-- Scalar automorphisms act on a scalar extension by `K`-algebra automorphisms through the scalar
+factor, `σ ↦ σ ⊗ id`. -/
+@[expose] noncomputable def toAlgAut : (L ≃ₐ[K] L) →* (L ⊗[K] A ≃ₐ[K] L ⊗[K] A) where
+  toFun σ := Algebra.TensorProduct.congr σ .refl
+  map_one' := Algebra.TensorProduct.congr_refl
+  map_mul' σ τ := by
+    -- Multiplication of algebra equivalences is composition in the opposite textual order;
+    -- expose that representation so `congr_trans` can state the required compatibility.
+    change Algebra.TensorProduct.congr (τ.trans σ) .refl =
+      (Algebra.TensorProduct.congr τ (.refl : A ≃ₐ[K] A)).trans
+        (Algebra.TensorProduct.congr σ .refl)
+    convert Algebra.TensorProduct.congr_trans τ σ (.refl : A ≃ₐ[K] A) .refl using 1
+    ext
+    rfl
+
+/-- The algebra automorphism attached to a scalar automorphism, on a pure tensor. -/
+@[simp]
+theorem toAlgAut_tmul (σ : L ≃ₐ[K] L) (a : L) (x : A) :
+    toAlgAut (A := A) σ (a ⊗ₜ[K] x) = σ a ⊗ₜ[K] x :=
+  (rfl)
+
 /-- Scalar automorphisms act on a scalar extension through the scalar factor. -/
 noncomputable instance instMulSemiringAction :
     MulSemiringAction (L ≃ₐ[K] L) (L ⊗[K] A) :=
-  let congrHom : (L ≃ₐ[K] L) →* (L ⊗[K] A ≃ₐ[K] L ⊗[K] A) :=
-    { toFun σ := Algebra.TensorProduct.congr σ .refl
-      map_one' := Algebra.TensorProduct.congr_refl
-      map_mul' σ τ := by
-        -- Multiplication of algebra equivalences is composition in the opposite textual order;
-        -- expose that representation so `congr_trans` can state the required compatibility.
-        change Algebra.TensorProduct.congr (τ.trans σ) .refl =
-          (Algebra.TensorProduct.congr τ (.refl : A ≃ₐ[K] A)).trans
-            (Algebra.TensorProduct.congr σ .refl)
-        convert Algebra.TensorProduct.congr_trans τ σ (.refl : A ≃ₐ[K] A) .refl using 1
-        ext
-        rfl }
-  MulSemiringAction.compHom _ congrHom
+  MulSemiringAction.compHom _ (toAlgAut (A := A))
 
 /-- Scalar multiplication on a base change is the tensor-product congruence. -/
 theorem smul_def (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
@@ -406,3 +430,62 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
 end ScalarAut
 
 end TauCeti
+
+/-! The right-factor action lives in Mathlib's root `Algebra.TensorProduct` namespace, since its
+API is stated about the Mathlib type `A ⊗[K] L`. -/
+
+open scoped TensorProduct
+
+namespace Algebra.TensorProduct
+
+variable {K : Type*} [CommSemiring K] (A L G : Type*) [CommSemiring A] [Algebra K A] [Semiring L]
+  [Algebra K L] [Monoid G] [MulSemiringAction G L] [SMulCommClass G K L]
+
+/-- A monoid acting on `L` by `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right
+factor, by `A`-algebra endomorphisms: `g • (a ⊗ x) = a ⊗ (g • x)`.
+
+This is not a global instance: when `G` also acts on `A`, Mathlib's action through the left factor
+would make the action of `G` on `A ⊗[K] L` ambiguous. -/
+noncomputable abbrev rightMulSemiringAction : MulSemiringAction G (A ⊗[K] L) where
+  smul g := Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
+  one_smul := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (MulSemiringAction.toAlgHom K L (1 : G))) (g := AlgHom.id A _)
+    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp)
+  mul_smul g h := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (MulSemiringAction.toAlgHom K L (g * h)))
+    (g := (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).comp
+      (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h)))
+    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [mul_smul])
+  smul_zero _ := map_zero _
+  smul_add _ := map_add _
+  smul_one _ := map_one _
+  smul_mul _ := map_mul _
+
+attribute [local instance] rightMulSemiringAction
+
+variable {A L G}
+
+/-- The right-factor action of `g` is the `A`-algebra map `id ⊗ g`. -/
+theorem rightMulSemiringAction_smul_def (g : G) (z : A ⊗[K] L) :
+    g • z = Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g) z :=
+  rfl
+
+/-- The right-factor action on a pure tensor. -/
+@[simp]
+theorem rightMulSemiringAction_smul_tmul (g : G) (a : A) (x : L) :
+    g • (a ⊗ₜ[K] x) = a ⊗ₜ (g • x) :=
+  rfl
+
+/-- The right-factor action is by `A`-linear maps. -/
+instance rightMulSemiringAction_smulCommClass : SMulCommClass G A (A ⊗[K] L) where
+  smul_comm g a z := by
+    simp only [rightMulSemiringAction_smul_def, map_smul]
+
+/-- For `L`-automorphisms acting on `L`, the right-factor action is `baseChangeAutHom`. -/
+theorem rightMulSemiringAction_smul_eq_baseChangeAutHom (σ : L ≃ₐ[K] L) (z : A ⊗[K] L) :
+    σ • z = TauCeti.Algebra.TensorProduct.baseChangeAutHom A L σ z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a x => simp
+  | add x y hx hy => simp only [smul_add, map_add, hx, hy]
+
+end Algebra.TensorProduct

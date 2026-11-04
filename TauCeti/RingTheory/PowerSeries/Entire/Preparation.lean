@@ -110,9 +110,11 @@ private theorem IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq
     (u.isUnit.map (algebraMap R _)).mul h.isUnit,
     ⟨by rw [Polynomial.natDegree_smul_of_smul_regular P (IsSMulRegular.all _), h.natDegree_eq],
       Polynomial.monic_of_isUnit_leadingCoeff_inv_smul h.isUnit_leadingCoeff⟩, ?_, ?_⟩
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, hu, smul_eq_C_mul]
-  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, ← smul_eq_C_mul, Units.smul_def,
-      Polynomial.coe_smul, smul_mul_smul_comm, u.mul_inv, one_smul, mul_comm]
+  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
+      hu, smul_eq_C_mul]
+  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
+      ← smul_eq_C_mul, Units.smul_def, Polynomial.coe_smul,
+      smul_mul_smul_comm, u.mul_inv, one_smul, mul_comm]
     exact h.eq_mul.symm
 
 /-- **The normalised preparation rescales every unit-times-monic factorization.** Let `F` be
@@ -197,7 +199,7 @@ theorem IsMulDistinguished.exists_isEntirePreparation [CompleteSpace R]
       eq_mul := ?_ }⟩
   · convert ((v⁻¹).isUnit.map (algebraMap R (IsRestricted.subring (R := R) c))).mul he using 1
     refine Subtype.ext ?_
-    rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring]
+    rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply]
     exact smul_eq_C_mul _ _
   · rw [Units.smul_def, Polynomial.coe_smul, smul_mul_smul_comm, v.mul_inv, one_smul, mul_comm,
       heω]

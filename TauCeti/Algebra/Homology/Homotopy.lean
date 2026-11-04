@@ -8,14 +8,18 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Homotopy
+public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Constructions on chain homotopies
 
-Four constructions of chain homotopies: two produce new homotopies from old ones, and the
-other two assemble a null-homotopy from components given all at once.
+Constructions of chain homotopies, including composition of homotopy-commutative squares,
+transport and iteration of homotopies, and assembly of null-homotopies from components.
+
+`Homotopy.compSquare` composes specified square homotopies by postcomposing the first
+and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -47,9 +51,18 @@ index is a difference.
 `Homotopy.comm_zero_apply` and `Homotopy.comm_succ_apply` are the homotopy identities of a
 homotopy between maps of `ℕ`-indexed chain complexes of modules, evaluated on elements.
 
+`CochainComplex.nonempty_homotopy_mkHomToSingle_zero_iff` characterizes null-homotopic chain maps
+from a cochain complex `K` to an object `A` placed in degree `i`: the map given by `φ : Kⁱ ⟶ A` is
+null-homotopic if and only if `φ` factors through the differential `Kⁱ ⟶ Kⁱ⁺¹`. It is Mathlib's
+criterion `CochainComplex.HomComplex.Cocycle.toSingleMk_mem_coboundaries_iff`, translated from
+coboundaries to homotopies.
+
 `Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
 homotopic maps as a factorization through a term of the target complex. In particular, these
 maps agree after passing to a stable category that kills that term.
+
+`Homotopy.acyclic` says that a contractible complex, one whose identity is null-homotopic, is
+acyclic.
 -/
 
 @[expose] public section
@@ -61,6 +74,32 @@ open CategoryTheory Limits
 universe v u
 
 namespace Homotopy
+
+section Squares
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+  {ι : Type*} {c : ComplexShape ι}
+  {K₁ L₁ K₂ L₂ K₃ L₃ : HomologicalComplex C c}
+  {φ₁ : K₁ ⟶ L₁} {φ₂ : K₂ ⟶ L₂} {φ₃ : K₃ ⟶ L₃}
+  {a : K₁ ⟶ K₂} {b : L₁ ⟶ L₂} {a' : K₂ ⟶ K₃} {b' : L₂ ⟶ L₃}
+
+/-- Compose two specified homotopy-commutative squares. The homotopy is the sum of the
+postcomposition of the first homotopy and the precomposition of the second. -/
+def compSquare (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+    (H' : Homotopy (φ₂ ≫ b') (a' ≫ φ₃)) :
+    Homotopy (φ₁ ≫ (b ≫ b')) ((a ≫ a') ≫ φ₃) :=
+  (Homotopy.ofEq (Category.assoc _ _ _).symm).trans
+    ((H.compRight b').trans
+      ((Homotopy.ofEq (Category.assoc _ _ _)).trans
+        ((H'.compLeft a).trans (Homotopy.ofEq (Category.assoc _ _ _).symm))))
+
+@[simp]
+lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+    (H' : Homotopy (φ₂ ≫ b') (a' ≫ φ₃)) (p q : ι) :
+    (H.compSquare H').hom p q = H.hom p q ≫ b'.f q + a.f p ≫ H'.hom p q := by
+  simp [compSquare]
+
+end Squares
 
 /-- On cycles, the difference of homotopic maps factors through the preceding target term.
 This identity does not require exactness of either complex. -/
@@ -74,6 +113,14 @@ theorem cyclesMap_sub_eq {C : Type u} [Category.{v} C] [Preadditive C]
     HomologicalComplex.toCycles_i]
   rw [h.comm i]
   simp [dNext, prevD, Preadditive.comp_add, ← Category.assoc]
+
+/-- A contractible complex is acyclic. -/
+lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {K : HomologicalComplex C c} [∀ i, K.HasHomology i]
+    (h : Homotopy (𝟙 K) 0) : K.Acyclic := fun i ↦ by
+  rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
+  simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
+    h.homologyMap_eq i
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}
@@ -271,3 +318,30 @@ theorem comm_succ_apply (h : Homotopy e e') (n : ℕ) (x : P.X (n + 1)) :
 end Homotopy
 
 end ModuleCat
+
+namespace CochainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+
+open HomComplex in
+/-- **Null-homotopic chain maps to an object in one degree**: the chain map from `K` to `A`
+placed in degree `i` given by `φ : Kⁱ ⟶ A` is null-homotopic if and only if `φ` factors through
+the differential `Kⁱ ⟶ Kʲ`, where `j = i + 1`. -/
+lemma nonempty_homotopy_mkHomToSingle_zero_iff (K : CochainComplex C ℤ) {i j : ℤ}
+    (hij : i + 1 = j) {A : C} (φ : K.X i ⟶ A)
+    (hφ : ∀ k, (ComplexShape.up ℤ).Rel k i → K.d k i ≫ φ = 0) :
+    Nonempty (Homotopy (HomologicalComplex.mkHomToSingle φ hφ) 0) ↔
+      ∃ g : K.X j ⟶ A, K.d i j ≫ g = φ := by
+  have hφ' : K.d (i - 1) i ≫ φ = 0 := hφ _ (by simp)
+  rw [← Cocycle.toSingleMk_mem_coboundaries_iff φ (add_zero i) (i - 1) (by lia) hφ' j hij,
+    mem_coboundaries_iff _ (-1) (by simp)]
+  -- The cocycle of `Cocycle.toSingleMk` is the zero-cochain of the chain map.
+  have h : (Cocycle.toSingleMk φ (add_zero i) (i - 1) (by lia) hφ' : Cochain _ _ 0) =
+      Cochain.ofHom (HomologicalComplex.mkHomToSingle φ hφ) :=
+    (Cochain.toSingleEquiv (add_zero i)).injective (by
+      simp [Cochain.toSingleEquiv, HomologicalComplex.mkHomToSingle_f])
+  rw [h]
+  exact ⟨fun ⟨ho⟩ ↦ ⟨Cochain.ofHomotopy ho, by simp [δ_ofHomotopy]⟩,
+    fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
+
+end CochainComplex
