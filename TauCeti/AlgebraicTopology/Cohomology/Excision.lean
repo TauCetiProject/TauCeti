@@ -58,7 +58,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Topology TauCeti.ChainComplex
+open CategoryTheory Limits Topology
 
 universe w v u
 
@@ -79,36 +79,6 @@ theorem quasiIso_cochainComplexMap_smallSingularSubcomplex_ι :
   rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, smallSingularChainHomotopyEquiv_hom] at this
 
 end TauCeti
-
-namespace SSetPair
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
-  {k : Type*} [Ring k] [Linear k C] {M : C}
-
-/-- A map of simplicial-set pairs that bijects the ambient simplices outside the subspaces in
-every degree induces an isomorphism of relative cochain complexes. -/
-theorem isIso_cochainComplexMap_of_relativeSimplex_equiv {P P' : SSetPair.{w}} (f : P ⟶ P')
-    (e : ∀ n, P.RelativeSimplex n ≃ P'.RelativeSimplex n)
-    (he : ∀ n (x : P.RelativeSimplex n),
-      (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1) :
-    IsIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
-  have := isIso_chainComplexMap_of_relativeSimplex_equiv f R e he
-  exact (linearYonedaFunctor k M).map_isIso (chainComplexMap f R).op
-
-/-- If restricting cochains along the inclusions of a subcomplex `S` of the ambient simplicial set
-of a pair `P` and of its preimage in the subcomplex of `P` are quasi-isomorphisms, then so is
-restricting relative cochains along the inclusion of the restricted pair. -/
-lemma quasiIso_cochainComplexMap_restrictι {P : SSetPair.{w}} (S : P.right.Subcomplex)
-    (h₁ : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (S.preimage P.hom).ι))
-    (h₂ : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) S.ι)) :
-    QuasiIso (cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S)) := by
-  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S).left) := by
-    rwa [restrictι_left]
-  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S).right) := by
-    rwa [restrictι_right]
-  exact quasiIso_cochainComplexMap _
-
-end SSetPair
 
 namespace TopPair
 
