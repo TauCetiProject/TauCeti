@@ -112,6 +112,10 @@ theorem isGorensteinProjective_of_isCompleteResolutionStep (L R : ObjectProperty
   let S : ℤ → ShortComplex (ModuleCat.{v} A) := fun n ↦ match n with
     | .ofNat n => fR (Rn n).1 (Rn n).2
     | .negSucc n => fL (Ln n).1 (Ln n).2
+  -- The branches type-check by computation: `Int.ofNat n + 1`, `Int.negSucc 0 + 1` and
+  -- `Int.negSucc (n + 1) + 1` reduce to `.ofNat (n + 1)`, `.ofNat 0` and `.negSucc n`, and `Rn 0`,
+  -- `Ln 0` reduce to `M` through `Nat.rec`. The same splicing pattern is used by
+  -- `TauCeti.ExactStructure.IsFrobenius.completeResolution`.
   let e : ∀ n, (S n).X₃ ≅ (S (n + 1)).X₁ := fun n ↦ match n with
     | .ofNat n => (Classical.choice (eR (Rn (n + 1)).1 (Rn (n + 1)).2)).symm
     | .negSucc 0 => Classical.choice (eL (Ln 0).1 (Ln 0).2) ≪≫
