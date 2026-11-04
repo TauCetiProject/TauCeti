@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Coeff
 public import Mathlib.Algebra.Polynomial.Monic
 import TauCeti.Algebra.BigOperators.AlternatingSum
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Abel
 
 /-!
 # Multiples of `1 + X` and alternating partial sums
 
-For a finite sequence `d₀, …, d_N` in a commutative ring, write
+For a finite sequence `d₀, …, d_N` in a ring, write
 `qₙ = dₙ - dₙ₋₁ + ⋯ ± d₀ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` for its alternating partial sums. Telescoping gives
 the decomposition `∑ᵢ₌₀ᴺ dᵢ Xⁱ = (1 + X) ∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ + q_N X^N`
 (`Polynomial.sum_range_monomial_eq_one_add_X_mul_add_monomial`). So `1 + X` divides the polynomial
@@ -40,9 +40,9 @@ open Finset
 
 namespace Polynomial
 
-section CommRing
+section Ring
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [Ring R]
 
 /-- **Telescoping against `1 + X`.** `∑ᵢ₌₀ᴺ dᵢ Xⁱ = (1 + X) ∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ + q_N X^N`, where
 `qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ`. This is not division with remainder by the monic `1 + X` (whose
@@ -58,7 +58,8 @@ theorem sum_range_monomial_eq_one_add_X_mul_add_monomial (d : ℕ → R) (N : �
     rw [sum_range_succ (fun i ↦ monomial i (d i)), ih,
       sum_range_succ (fun n ↦ monomial n (∑ i ∈ range (n + 1), (-1 : R) ^ (n - i) * d i)) N,
       TauCeti.sum_range_succ_neg_one_pow_sub_mul, monomial_sub]
-    linear_combination (X_mul_monomial N (∑ i ∈ range (N + 1), (-1 : R) ^ (N - i) * d i)).symm
+    rw [mul_add, add_mul 1 X (monomial N _), one_mul, X_mul_monomial]
+    abel
 
 /-- `1 + X` divides `∑ᵢ₌₀ᴺ dᵢ Xⁱ`, with quotient `Q`, exactly when the alternating sum
 `q_N = ∑ᵢ₌₀ᴺ (-1)ᴺ⁻ⁱ dᵢ` vanishes and `Q = ∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ`. -/
@@ -74,8 +75,9 @@ theorem sum_range_monomial_eq_one_add_X_mul_iff (d : ℕ → R) (N : ℕ) {Q : R
     -- Evaluating at `-1` kills the multiples of `1 + X`, leaving `q (-1)ᴺ = 0`.
     have hq : q = 0 := by
       have he := congrArg (eval (-1)) h
-      simpa only [eval_add, eval_mul, eval_one, eval_X, add_neg_cancel, zero_mul, zero_add,
-        eval_monomial, eq_comm (a := (0 : R)), mul_neg_one_pow_eq_zero_iff] using he
+      simpa only [add_mul, one_mul, (commute_X _).eq, eval_add, eval_mul_X, mul_neg_one,
+        add_neg_cancel, zero_add, eval_monomial, eq_comm (a := (0 : R)),
+        mul_neg_one_pow_eq_zero_iff] using he
     refine ⟨hq, ?_⟩
     rw [hq, map_zero, add_zero] at h
     have hmonic : (1 + X : R[X]).Monic := by
@@ -84,7 +86,7 @@ theorem sum_range_monomial_eq_one_add_X_mul_iff (d : ℕ → R) (N : ℕ) {Q : R
   · rintro ⟨hq, rfl⟩
     rw [hq, map_zero, add_zero]
 
-end CommRing
+end Ring
 
 section Nat
 
