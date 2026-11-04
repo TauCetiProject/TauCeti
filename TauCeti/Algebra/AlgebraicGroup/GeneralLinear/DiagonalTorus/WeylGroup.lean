@@ -86,6 +86,22 @@ private theorem genericDiagonal_injective [Nontrivial R] :
   have := MonoidAlgebra.single_left_injective (R := R) one_ne_zero hc
   simpa using Finsupp.single_left_injective one_ne_zero (Multiplicative.ofAdd.injective this)
 
+/-- The diagonal entries of the generic point of the diagonal torus, mapped along the coordinate
+map of a character automorphism `w`. -/
+private noncomputable def mapGenericDiagonal
+    (w : Multiplicative (ULift.{u} (Fin N) →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) :
+    Fin N → (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))ˣ := fun i ↦
+  Units.map (MonoidAlgebra.domCongr R R w :
+    MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →*
+      MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) (genericDiagonal i)
+
+private theorem coe_mapGenericDiagonal
+    (w : Multiplicative (ULift.{u} (Fin N) →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin N) →₀ ℤ))
+    (i : Fin N) :
+    (mapGenericDiagonal (R := R) w i : MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) =
+      MonoidAlgebra.single (w (Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1))) 1 := by
+  simp [mapGenericDiagonal, coe_genericDiagonal]
+
 /-- The generic point of the diagonal torus, read as a matrix over the coordinate ring of the
 torus, is the diagonal matrix of the coordinate characters. -/
 private theorem pointsMulEquiv_toConv_diagonalTorusCoordinateMap :
@@ -108,18 +124,13 @@ private theorem pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap
     (w : Multiplicative (ULift.{u} (Fin N) →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) :
     pointsMulEquiv N (toConv ((MonoidAlgebra.domCongr R R w).toAlgHom.comp
         (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)) =
-      diagGL fun i ↦ Units.map
-        (((MonoidAlgebra.domCongr R R w).toAlgHom :
-            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →+*
-              MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) :
-          MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →*
-            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))
-        (genericDiagonal (R := R) i) := by
+      diagGL (mapGenericDiagonal w) := by
   have hmap := pointsMulEquiv_mapValue (R := R) (n := N)
     (MonoidAlgebra.domCongr R R w).toAlgHom
     (toConv (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)
   rw [AlgHom.mapValue_apply, ofConv_toConv] at hmap
   rw [hmap, pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_diagGL]
+  rfl
 
 /-- **The normalization equation on the generic point.** If inverse conjugation by a rational
 point `g` restricts to the diagonal torus as the coordinate map of `w`, then conjugating the
@@ -139,13 +150,7 @@ private theorem map_inv_mul_diagGL_genericDiagonal_mul_of_comp_eq
         (Matrix.GeneralLinearGroup.map
           (algebraMap R (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))))
           (pointsMulEquiv (R := R) (A := R) N g)⁻¹)⁻¹ =
-      diagGL fun i ↦ Units.map
-        (((MonoidAlgebra.domCongr R R w).toAlgHom :
-            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →+*
-              MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) :
-          MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →*
-            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))
-        (genericDiagonal (R := R) i) := by
+      diagGL (mapGenericDiagonal w) := by
   have hpoints := congrArg (fun φ ↦ pointsMulEquiv (R := R)
     (A := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) N (toConv φ)) hg
   have hg' : g⁻¹ = (pointsMulEquiv (R := R) (A := R) N).symm
@@ -187,7 +192,7 @@ theorem diagonalTorusCoordinateMap_comp_pointConjugationAlgHom_permutationGL
   congr 1
   funext i
   apply Units.ext
-  simp [coe_genericDiagonal]
+  simp [coe_genericDiagonal, coe_mapGenericDiagonal]
 
 section WeylGroup
 
@@ -275,8 +280,7 @@ theorem exists_characterRelabel_eq_of_mem_weylGroup_diagonalTorusCoordinateMap
   have hent (i : Fin N) : w (Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1)) =
       Multiplicative.ofAdd (Finsupp.single (ULift.up (ρ⁻¹ i)) 1) := by
     have hi := congrArg Units.val (congrFun (diagGL_injective (hconj.symm.trans hpt)) i)
-    rw [Units.coe_map, coe_genericDiagonal, coe_genericDiagonal, MonoidHom.coe_ofClass,
-      RingHom.coe_coe, AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_single] at hi
+    rw [coe_genericDiagonal, coe_mapGenericDiagonal] at hi
     exact (MonoidAlgebra.single_left_injective (R := R) one_ne_zero hi).symm
   -- The coordinate characters generate the character lattice.
   refine ⟨ρ⁻¹, MulEquiv.ext fun x ↦ ?_⟩
