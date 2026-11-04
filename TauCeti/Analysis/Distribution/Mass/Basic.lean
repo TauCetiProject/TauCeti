@@ -31,6 +31,9 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.mass`, `Distribution.localMass`: the extended mass and local mass.
 * `Distribution.enorm_apply_le_localMass_mul`: for linear `T`,
   `‖T φ‖ₑ ≤ localMass T U * ‖φ‖_∞` when `φ` is supported in `U`.
+* `Distribution.localMass_comp_le_of_enorm_apply_le`,
+  `Distribution.HasLocallyFiniteMass.comp_of_norm_apply_le`: precomposition with a pointwise
+  bounded map of test functions that does not enlarge supports.
 * `Distribution.mass_eq_zero_iff`: a linear map has mass zero exactly when it vanishes.
 * `Distribution.localMass_add_localMass_le`: for a real-valued linear map, the local masses on
   disjoint sets add up to at most the local mass on their union.
@@ -59,7 +62,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Set
-open scoped BoundedContinuousFunction ENNReal Distributions Topology
+open scoped BoundedContinuousFunction NNReal ENNReal Distributions Topology
 
 namespace Distribution
 
@@ -148,8 +151,27 @@ theorem localMass_neg : localMass (-f) U = localMass f U := by
 theorem mass_neg : mass (-f) = mass f := by
   simpa using localMass_neg (f := f) (U := univ)
 
+theorem localMass_sub_le : localMass (f - g) U ≤ localMass f U + localMass g U := by
+  simpa [sub_eq_add_neg] using localMass_add_le (f := f) (g := -g) (U := U)
+
 theorem mass_sub_le : mass (f - g) ≤ mass f + mass g := by
   simpa [sub_eq_add_neg] using mass_add_le (f := f) (g := -g)
+
+/-- Changing the values of test functions by a linear isometric equivalence preserves mass. -/
+@[simp]
+theorem mass_comp_postcompCLM_linearIsometryEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : 𝓓^{n}(Ω, F) → V) (e : G ≃ₗᵢ[ℝ] F) :
+    mass (f ∘ TestFunction.postcompCLM e.toContinuousLinearEquiv.toContinuousLinearMap) =
+      mass f := by
+  refine le_antisymm (mass_le_iff.2 fun ψ hψ => ?_) (mass_le_iff.2 fun φ hφ => ?_)
+  · exact enorm_le_mass (f := f) (by simpa using hψ)
+  · let ψ := TestFunction.postcompCLM e.symm.toContinuousLinearEquiv.toContinuousLinearMap φ
+    have hψ : ∀ x, ‖ψ x‖ ≤ 1 := by simpa [ψ] using hφ
+    have hφ' : TestFunction.postcompCLM e.toContinuousLinearEquiv.toContinuousLinearMap ψ = φ :=
+      TestFunction.ext fun x => by simp [ψ]
+    simpa [Function.comp_apply, hφ'] using
+      (enorm_le_mass (f := f ∘
+        TestFunction.postcompCLM e.toContinuousLinearEquiv.toContinuousLinearMap) hψ)
 
 end Basic
 
@@ -187,9 +209,31 @@ theorem enorm_apply_le_localMass_mul_of_forall_enorm_le (T : 𝓕) (hφU : tsupp
   rw [BoundedContinuousFunction.enorm_eq_iSup_enorm]
   exact iSup_le hφc
 
+/-- **Order-zero operators and local mass.** If a map `L` of test functions does not enlarge
+supports and satisfies `‖L ψ x‖ₑ ≤ b x ‖ψ x‖ₑ` with `b ≤ c` on `U ∩ Ω`, then precomposition with
+`L` multiplies the local mass on `U` by at most `c`. -/
+theorem localMass_comp_le_of_enorm_apply_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (T : 𝓕) {L : 𝓓^{n}(Ω, G) → 𝓓^{n}(Ω, F)} (hLs : ∀ ψ, tsupport (L ψ) ⊆ tsupport ψ)
+    {b : E → ℝ≥0∞} (hL : ∀ ψ x, ‖L ψ x‖ₑ ≤ b x * ‖ψ x‖ₑ) (hbc : ∀ x ∈ U ∩ Ω, b x ≤ c) :
+    localMass (T ∘ L) U ≤ c * localMass T U := by
+  refine localMass_le_iff.2 fun ψ hψU hψ => ?_
+  rw [mul_comm]
+  refine enorm_apply_le_localMass_mul_of_forall_enorm_le T ((hLs ψ).trans hψU) fun x => ?_
+  refine (hL ψ x).trans ?_
+  by_cases hx : x ∈ tsupport ψ
+  · have hψx : ‖ψ x‖ₑ ≤ 1 := by simpa [← ofReal_norm] using hψ x
+    simpa using mul_le_mul' (hbc x ⟨hψU hx, ψ.tsupport_subset hx⟩) hψx
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
 theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by
   simpa using enorm_apply_le_localMass_mul T (subset_univ (tsupport φ))
+
+/-- A finite mass bound controls each evaluation by the supremum norm of the test. -/
+theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
+    (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ := by
+  have h := (enorm_apply_le_mass_mul T φ).trans (mul_le_mul' hT le_rfl)
+  simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-- **Mass zero iff current zero.** -/
 theorem mass_eq_zero_iff (T : 𝓕) : mass T = 0 ↔ ⇑T = 0 := by
@@ -340,12 +384,45 @@ theorem HasLocallyFiniteMass.add (hf : HasLocallyFiniteMass f) (hg : HasLocallyF
   exact ⟨C + D, add_nonneg hC hD, fun φ hφ => (norm_add_le _ _).trans <| by
     rw [add_mul]; exact add_le_add (hfC φ hφ) (hgD φ hφ)⟩
 
+theorem HasLocallyFiniteMass.neg (hf : HasLocallyFiniteMass f) : HasLocallyFiniteMass (-f) :=
+  fun K hK hKΩ => by simpa using hf K hK hKΩ
+
+theorem HasLocallyFiniteMass.sub (hf : HasLocallyFiniteMass f) (hg : HasLocallyFiniteMass g) :
+    HasLocallyFiniteMass (f - g) := by
+  simpa [sub_eq_add_neg] using hf.add hg.neg
+
 theorem HasLocallyFiniteMass.smul [NormedSpace ℝ V] (hf : HasLocallyFiniteMass f) (a : ℝ) :
     HasLocallyFiniteMass (a • f) := fun K hK hKΩ => by
   obtain ⟨C, hC, hfC⟩ := hf K hK hKΩ
   refine ⟨‖a‖ * C, mul_nonneg (norm_nonneg a) hC, fun φ hφ => ?_⟩
   rw [Pi.smul_apply, norm_smul, mul_assoc]
   exact mul_le_mul_of_nonneg_left (hfC φ hφ) (norm_nonneg a)
+
+/-- **Order-zero operators preserve local finiteness.** Precomposition with a map `L` of test
+functions that does not enlarge supports and satisfies a pointwise bound `‖L ψ x‖ ≤ b x ‖ψ x‖`
+by a continuous weight `b` preserves locally finite mass. -/
+theorem HasLocallyFiniteMass.comp_of_norm_apply_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {T : 𝓓^{n}(Ω, F) → V} (hT : HasLocallyFiniteMass T)
+    {L : 𝓓^{n}(Ω, G) → 𝓓^{n}(Ω, F)} (hLs : ∀ ψ, tsupport (L ψ) ⊆ tsupport ψ) {b : E → ℝ}
+    (hb : Continuous b) (hL : ∀ ψ x, ‖L ψ x‖ ≤ b x * ‖ψ x‖) : HasLocallyFiniteMass (T ∘ L) := by
+  rw [hasLocallyFiniteMass_def] at hT ⊢
+  intro K hK hKΩ
+  obtain ⟨C, hC, hTC⟩ := hT K hK hKΩ
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hb.continuousOn
+  refine ⟨C * max M 0, by positivity, fun ψ hψ => ?_⟩
+  -- On the support of `ψ` the weight is at most `max M 0`; off it both sides vanish.
+  have hLψ : ‖(L ψ : E →ᵇ F)‖ ≤ max M 0 * ‖(ψ : E →ᵇ G)‖ := by
+    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x => ?_
+    refine (hL ψ x).trans ?_
+    by_cases hx : x ∈ tsupport ψ
+    · have hbx : b x ≤ max M 0 := (le_abs_self _).trans <| (hM x (hψ hx)).trans (le_max_left _ _)
+      exact mul_le_mul hbx (BoundedContinuousFunction.norm_coe_le_norm (ψ : E →ᵇ G) x)
+        (norm_nonneg _) (le_max_right _ _)
+    · rw [image_eq_zero_of_notMem_tsupport hx, norm_zero, mul_zero]
+      positivity
+  calc ‖(T ∘ L) ψ‖ ≤ C * ‖(L ψ : E →ᵇ F)‖ := hTC _ ((hLs ψ).trans hψ)
+    _ ≤ C * (max M 0 * ‖(ψ : E →ᵇ G)‖) := by gcongr
+    _ = C * max M 0 * ‖(ψ : E →ᵇ G)‖ := (mul_assoc _ _ _).symm
 
 variable [NormedSpace ℝ V] {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) V]
   [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V]

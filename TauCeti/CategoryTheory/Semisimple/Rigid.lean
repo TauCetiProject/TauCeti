@@ -45,6 +45,9 @@ No pivotal structure is used: the dual class is formed with right duals througho
 
 * `TauCeti.nonempty_iso_rightDual_rightDual`: a simple object is isomorphic to its double dual.
 * `TauCeti.SimpleClasses.dual_dual`: duality of simple classes is an involution.
+* `TauCeti.exists_nonzero_to_tensor_rightDual_of_nonzero_from_simple` and
+  `TauCeti.exists_nonzero_rightDual_of_nonzero_from_simple`: Frobenius reciprocity and duality
+  for simple constituents.
 * `TauCeti.SplitK0.dual_simpleBasis` and `TauCeti.SplitK0.dual_dual`: the duality of the
   Grothendieck ring permutes the simple basis and is an involution.
 * `TauCeti.fusionCoeff_dual_left`, `TauCeti.fusionCoeff_dual_right` and
@@ -97,11 +100,34 @@ theorem nonempty_iso_rightDual_rightDual (X : C) [Simple X] : Nonempty (X ≅ (X
       rw [← (tensorRightHomEquiv X Xᘁ (Xᘁ)ᘁ (𝟙_ C)).symm_apply_apply r, h']
       simp [tensorRightHomEquiv]
     have h0 : η_ X Xᘁ ≫ r = 0 := by rw [hr, comp_zero]
-    exact id_nonzero (𝟙_ C) (by rw [← IsSplitMono.id (η_ X Xᘁ)]; exact h0)
+    exact CategoryTheory.id_ne_zero (𝟙_ C) (by rw [← IsSplitMono.id (η_ X Xᘁ)]; exact h0)
   have := isIso_of_hom_simple hg
   exact ⟨asIso g⟩
 
 end DoubleDual
+
+section Constituents
+
+variable [IsFiniteSemisimpleCategory C]
+
+/-- Frobenius reciprocity for simple constituents: if a simple object `U` maps nontrivially to
+`X ⊗ Y`, then `X` maps nontrivially to `U ⊗ Yᘁ`. -/
+theorem exists_nonzero_to_tensor_rightDual_of_nonzero_from_simple {U X Y : C} [Simple U]
+    {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : ∃ g : X ⟶ U ⊗ Yᘁ, g ≠ 0 := by
+  obtain ⟨g, hg⟩ := exists_nonzero_from_simple_iff_exists_nonzero_to_simple.1 ⟨f, hf⟩
+  refine ⟨tensorRightHomEquiv X Y Yᘁ U g, fun h ↦ hg ?_⟩
+  rw [← (tensorRightHomEquiv X Y Yᘁ U).symm_apply_apply g, h]
+  simp [tensorRightHomEquiv]
+
+/-- Right duality preserves simple constituents: a nonzero morphism from a simple object `U` to
+`Y` gives a nonzero morphism `Uᘁ ⟶ Yᘁ`. -/
+theorem exists_nonzero_rightDual_of_nonzero_from_simple {U Y : C} [Simple U] {f : U ⟶ Y}
+    (hf : f ≠ 0) : ∃ g : Uᘁ ⟶ Yᘁ, g ≠ 0 := by
+  have := isSplitMono_of_nonzero_from_simple hf
+  refine ⟨(retraction f)ᘁ, fun h ↦ CategoryTheory.id_ne_zero Uᘁ ?_⟩
+  rw [← rightAdjointMate_id, ← IsSplitMono.id f, comp_rightAdjointMate, h, zero_comp]
+
+end Constituents
 
 namespace SimpleClasses
 

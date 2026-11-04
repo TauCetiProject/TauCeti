@@ -66,6 +66,8 @@ topology, not on the chosen ideal of definition.
   `TauCeti.AdicRing.CompletedAway.isUnit_algebraMap_self`: the canonical map `A → A_{f}` is
   continuous and sends `f` to a unit.
 * `TauCeti.AdicRing.CompletedAway.denseRange_algebraMap`: the image of `A_f` is dense.
+* `TauCeti.AdicRing.CompletedAway.exists_sub_mem_map`: every element of `A_{f}` is congruent
+  modulo `I A_{f}` to an element of `A_f`.
 * `TauCeti.AdicRing.CompletedAway.ringHom_ext`: continuous ring homomorphisms out of `A_{f}` into
   a Hausdorff ring agreeing on `A` are equal.
 * `TauCeti.AdicRing.CompletedAway.existsUnique_lift`: the universal property of `A_{f}`.
@@ -185,6 +187,14 @@ theorem denseRange_algebraMap :
       (algebraMap A (Localization.Away f))) (Localization.Away f)) :=
     inferInstanceAs (TopologicalSpace (CompletedAway A f))
   AdicCompletion.denseRange_algebraMap (fg_map A f) (map_algebraMap_eq A f ▸ isAdic A f)
+
+/-- Every element of the completed localisation `A_{f}` is congruent modulo `I A_{f}` to the image
+of an element of `A_f`. -/
+theorem exists_sub_mem_map (x : CompletedAway A f) :
+    ∃ y : Localization.Away f, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
+      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) := by
+  rw [map_algebraMap_eq, ← pow_one (Ideal.map _ (IsAdicRing.ideal A))]
+  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) 1 x
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/
@@ -375,9 +385,9 @@ theorem isUnit_algebraMap_of_mem_radical
   have := (isAdic A g).isAdicComplete
   -- the image of `i` lies in the ideal of definition of `A_{g}`, hence in its Jacobson radical
   have hi' :=
-    IsAdicComplete.le_jacobson_bot _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
+    IsAdicComplete.le_jacobson _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
   obtain ⟨u, hu⟩ := (isUnit_algebraMap_self A g).pow n
-  have hunit := Ideal.mem_jacobson_bot.mp (neg_mem hi') ↑u⁻¹
+  have hunit := Ring.mem_jacobson_iff.mp (neg_mem hi') ↑u⁻¹
   have hai' := congrArg (algebraMap A (CompletedAway A g)) hai
   rw [map_add, map_mul, map_pow, ← hu] at hai'
   refine isUnit_of_mul_isUnit_right (x := algebraMap A (CompletedAway A g) a) ?_
@@ -396,11 +406,7 @@ theorem mem_radical_of_isUnit_algebraMap
   set K := Ideal.span {f} ⊔ IsAdicRing.ideal A
   -- approximate the inverse `v` of `f` in `A_{g}` modulo `I A_{g}` by some `y ∈ A_g`
   obtain ⟨v, hv⟩ := h.exists_right_inv
-  have hopen : IsOpen ((v - ·) ⁻¹'
-      ((IsAdicRing.ideal A).map (algebraMap A (CompletedAway A g)) : Set (CompletedAway A g))) :=
-    (by simpa using (isAdic_iff.mp (isAdic A g)).1 1 : IsOpen _).preimage
-      (continuous_const.sub continuous_id)
-  obtain ⟨y, hy⟩ := (denseRange_algebraMap A g).exists_mem_open hopen ⟨v, by simp⟩
+  obtain ⟨y, hy⟩ := exists_sub_mem_map A g v
   -- then `f y - 1` lies in `I A_g`
   have hfy : algebraMap A (Localization.Away g) f * y - 1 ∈ J := by
     rw [← pow_one J, ← algebraMap_mem_pow_iff A g 1, pow_one]

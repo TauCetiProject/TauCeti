@@ -9,8 +9,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Conjugation
-public import TauCeti.LinearAlgebra.Complex.Eigenspace
-public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct
+public import TauCeti.LinearAlgebra.Eigenspace.ComplexStructure
+public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Basic
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -50,6 +50,12 @@ vanishes on the vectors of type `(1,0)`.
 * `TauCeti.AlmostComplexStructure.baseChange_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.baseChange_antiholomorphicPart`: the complexified complex
   structure commutes with taking the `(1,0)`- and `(0,1)`-parts.
+* `TauCeti.AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff` and
+  `TauCeti.AlmostComplexStructure.one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff`: the
+  vector `1 ⊗ v + I ⊗ w` has type `(1,0)` exactly when `w = -J v`, and type `(0,1)` exactly when
+  `w = J v`.
+* `TauCeti.AlmostComplexStructure.eigenspace_neg_baseChange_I`: the vectors of type `(1,0)` for
+  `-J` are the vectors of type `(0,1)` for `J`.
 * `TauCeti.AlmostComplexStructure.tmulConj_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.tmulConj_antiholomorphicPart`: conjugation of the
   complexification exchanges the `(1,0)`- and `(0,1)`-parts.
@@ -91,7 +97,8 @@ complementary. -/
 theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
     IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) :=
-  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id _ J.baseChange_comp_self
+  Module.End.isCompl_eigenspace_eigenspace_neg_of_comp_self_eq_neg_id (Ne.isUnit two_ne_zero)
+    Complex.I_mul_I _ J.baseChange_comp_self
 
 /-! ## The `(1,0)` and `(0,1)` parts of a real vector -/
 
@@ -162,6 +169,40 @@ theorem antiholomorphicPart_mem_eigenspace_baseChange_neg_I (v : V) :
     J.antiholomorphicPart v ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
   rw [Module.End.mem_eigenspace_iff, baseChange_antiholomorphicPart,
     antiholomorphicPart_apply_apply]
+
+/-! ## Vectors of type `(1,0)` and `(0,1)` in real coordinates -/
+
+/-- The vector `1 ⊗ v + I ⊗ w` of the complexification has type `(1,0)`, that is, lies in the
+`i`-eigenspace of the complexified complex structure, exactly when `w = -J v`. -/
+theorem one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff (v w : V) :
+    (1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w ∈
+        Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I ↔ w = -J v := by
+  rw [Module.End.mem_eigenspace_iff, I_smul_one_tmul_add_I_tmul]
+  simp only [map_add, LinearMap.baseChange_tmul, one_tmul_add_I_tmul_inj]
+  refine ⟨fun h ↦ by rw [← neg_neg w, ← h.1], ?_⟩
+  rintro rfl
+  simp
+
+/-- The vector `1 ⊗ v + I ⊗ w` of the complexification has type `(0,1)`, that is, lies in the
+`-i`-eigenspace of the complexified complex structure, exactly when `w = J v`. -/
+theorem one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff (v w : V) :
+    (1 : ℂ) ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w ∈
+        Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) ↔ w = J v := by
+  rw [Module.End.mem_eigenspace_iff, neg_smul, I_smul_one_tmul_add_I_tmul]
+  simp only [map_add, LinearMap.baseChange_tmul, neg_add, ← TensorProduct.tmul_neg, neg_neg,
+    one_tmul_add_I_tmul_inj]
+  refine ⟨fun h ↦ h.1.symm, ?_⟩
+  rintro rfl
+  simp
+
+/-- The vectors of type `(1,0)` for `-J` are the vectors of type `(0,1)` for `J`. -/
+theorem eigenspace_neg_baseChange_I :
+    Module.End.eigenspace ((-J).toLinearMap.baseChange ℂ) Complex.I =
+      Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) := by
+  ext u
+  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart _ u,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff, neg_apply, neg_neg]
 
 /-! ## Conjugation of the `(1,0)` and `(0,1)` parts -/
 

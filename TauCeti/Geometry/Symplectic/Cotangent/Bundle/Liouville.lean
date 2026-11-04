@@ -241,6 +241,31 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → Co
   rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z mdifferentiableAt_id,
     mfderiv_id, ContinuousLinearMap.id_apply]
 
+variable {G H'' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H'']
+  {K : ModelWithCorners ℝ G H''} {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  [IsManifold K 1 P] in
+/-- **Rescaling covectors rescales the pulled-back Liouville form.** If a map `φ` into the
+cotangent bundle multiplies each covector `ψ y` of a map `ψ` by a scalar `c y`, keeping its base
+point, then `φ^*λ = c • ψ^*λ`. The scalar function `c` need not be smooth or nonzero. -/
+theorem mpullback_liouvilleForm_apply_of_eq_smul {φ ψ : P → CotangentBundle I M}
+    (hφ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ φ)
+    (hψ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ψ) (c : P → ℝ)
+    (hφψ : ∀ y, φ y = TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).2)) (y : P) :
+    (SmoothForm.mpullback φ hφ (liouvilleForm I M)).1 y =
+      c y • (SmoothForm.mpullback ψ hψ (liouvilleForm I M)).1 y := by
+  obtain rfl : φ = fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).2) := funext hφψ
+  ext v
+  rw [ContinuousAlternatingMap.smul_apply, SmoothForm.mpullback_apply,
+    SmoothForm.mpullback_apply, liouvilleForm_apply, liouvilleForm_apply]
+  -- Both maps cover the same map `y ↦ (ψ y).proj`, so `dπ` sends their differentials to the same
+  -- tangent vector of `M`.
+  have hπ (z : CotangentBundle I M) : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
+      (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z :=
+    (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) z).mdifferentiableAt one_ne_zero
+  rw [← mfderiv_comp_apply y (hπ _) ((hφ y).mdifferentiableAt (by simp)),
+    ← mfderiv_comp_apply y (hπ _) ((hψ y).mdifferentiableAt (by simp))]
+  rfl
+
 end Liouville
 
 section Symplectic

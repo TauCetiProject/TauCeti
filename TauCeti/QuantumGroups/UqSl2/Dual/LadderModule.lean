@@ -40,7 +40,7 @@ theorem hopfDual_f_apply_vec (φ : Dual ℂ (LadderModule q m ε)) (i : ℤ) :
       (-(ε : ℂ) * q ^ ((m : ℤ) - 2 * i) * quantumInteger q (i + 1)) *
         φ (vec q m ε (i + 1)) := by
   rw [AlgHom.hopfDual_apply, antipode_f]
-  simp only [map_neg, map_mul, LinearMap.neg_apply, Module.End.mul_apply, ← smul_def]
+  simp only [map_neg, map_mul, LinearMap.neg_apply, mul_apply_eq_comp, ← smul_def]
   rw [k_smul_vec, smul_comm, f_smul_vec]
   simp only [map_smul, smul_eq_mul]
   ring
@@ -50,7 +50,7 @@ private theorem hopfDual_e_apply_vec (φ : Dual ℂ (LadderModule q m ε)) (i : 
       (-(ε * quantumInteger q (m - i + 1)) * (ε * q ^ (2 * (i - 1) - m))) *
         φ (vec q m ε (i - 1)) := by
   rw [AlgHom.hopfDual_apply, antipode_e]
-  simp only [map_neg, map_mul, LinearMap.neg_apply, Module.End.mul_apply, ← smul_def]
+  simp only [map_neg, map_mul, LinearMap.neg_apply, mul_apply_eq_comp, ← smul_def]
   rw [e_smul_vec, smul_comm, kInv_smul_vec]
   simp only [map_smul, smul_eq_mul]
   ring
@@ -64,7 +64,7 @@ theorem hopfDual_f_pow_apply_vec (φ : Dual ℂ (LadderModule q m ε)) (n : ℕ)
   induction n generalizing φ with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, map_mul, Module.End.mul_apply, ih, hopfDual_f_apply_vec,
+    rw [pow_succ, map_mul, mul_apply_eq_comp, ih, hopfDual_f_apply_vec,
       Finset.prod_range_succ, Nat.cast_succ]
     simp only [mul_assoc, add_assoc]
 

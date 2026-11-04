@@ -156,7 +156,7 @@ theorem eventually_pow_dvd_finrank_adicCompletion_of_finrank_le {ℓ : ℕ} (h�
     (Ideal.inertiaDeg_pos P (𝓞 E))
   have had : a ≤ d := by
     refine (TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank
-      w.asIdeal P).trans ?_
+      (𝓞 E) P).trans ?_
     rwa [← IsFractionRing.finrank_eq (𝓞 E) E (𝓞 F) F]
   -- Multiplicativity in the tower `𝓞 K ⊆ 𝓞 E ⊆ 𝓞 F` gives `ℓ ^ (j + d) ∣ a * b`; as `a < ℓ ^ d`,
   -- at most `d` factors `ℓ` lie in `a`.
@@ -169,11 +169,12 @@ theorem eventually_pow_dvd_finrank_adicCompletion_of_finrank_le {ℓ : ℕ} (h�
   · rw [hb]
     exact dvd_zero _
   have : Fact ℓ.Prime := ⟨hℓ⟩
-  rw [padicValNat_dvd_iff_le hb]
-  rw [padicValNat_dvd_iff_le (mul_ne_zero ha.ne' hb), padicValNat.mul ha.ne' hb] at hab
-  have hlt : padicValNat ℓ a < d :=
+  rw [multiplicity_dvd_iff_le hb]
+  rw [multiplicity_dvd_iff_le (mul_ne_zero ha.ne' hb), Nat.multiplicity_mul ha.ne' hb] at hab
+  have hlt : multiplicity ℓ a < d :=
     (Nat.pow_lt_pow_iff_right hℓ.one_lt).mp <|
-      (Nat.le_of_dvd ha pow_padicValNat_dvd).trans_lt (had.trans_lt (Nat.lt_pow_self hℓ.one_lt))
+      (Nat.le_of_dvd ha (pow_multiplicity_dvd ℓ a)).trans_lt
+        (had.trans_lt (Nat.lt_pow_self hℓ.one_lt))
   omega
 
 end IsCyclotomicExtension
