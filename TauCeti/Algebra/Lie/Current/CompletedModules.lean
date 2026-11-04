@@ -60,7 +60,7 @@ public section
 noncomputable section
 
 open CategoryTheory TauCeti.UniversalEnvelopingAlgebra
-
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 namespace TauCeti.CurrentAlgebra
 
@@ -99,7 +99,7 @@ theorem smoothModulesEquivalence_functor_obj_smul
 through the canonical map `U → Û`. -/
 theorem smoothModulesEquivalence_inverse_obj_smul
     (M : (discreteModules.{v} (CompletedEnveloping Φ hΦ hΦs a)).FullSubcategory)
-    (b : CentralQuotient R (centralElement Φ hΦ hΦs) a)
+    (b : CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a)
     (m : ((smoothModulesEquivalence Φ hΦ hΦs a).inverse.obj M).obj) :
     b • m = toCompletedEnveloping Φ hΦ hΦs a b • show M.obj from m := by
   rw [coe_toCompletedEnveloping]
