@@ -120,23 +120,11 @@ section Helpers
 
 variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
-private theorem finset_prod_rpow {ι : Type*} (s : Finset ι) {f : ι → ℝ}
-    (hf : ∀ i ∈ s, 0 ≤ f i) (a : ℝ) :
-    (∏ i ∈ s, f i) ^ a = ∏ i ∈ s, f i ^ a := by
-  classical
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons i s hi ih =>
-    rw [Finset.prod_cons, Finset.prod_cons,
-      Real.mul_rpow (hf i (Finset.mem_cons_self i s))
-        (Finset.prod_nonneg fun j hj ↦ hf j (Finset.mem_cons_of_mem hj)),
-      ih fun j hj ↦ hf j (Finset.mem_cons_of_mem hj)]
-
 /-- Weight identity `(μ.prod (c · ^ ·)) ^ a = μ.prod ((c · ^ a) ^ ·)` for positive polyradii. -/
 private theorem prod_rpow_eq_prod_pow {c : σ → ℝ} [∀ i, Fact (0 < c i)] (a : ℝ) (μ : σ →₀ ℕ) :
     (μ.prod (c · ^ ·)) ^ a = μ.prod (fun i k ↦ (c i ^ a) ^ k) := by
   change (∏ i ∈ μ.support, c i ^ μ i) ^ a = ∏ i ∈ μ.support, (c i ^ a) ^ μ i
-  rw [finset_prod_rpow _ fun i _ ↦ pow_nonneg (Fact.out : 0 < c i).le _]
+  rw [← Real.finsetProd_rpow _ _ fun i _ ↦ pow_nonneg (Fact.out : 0 < c i).le _]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   have hc : 0 ≤ c i := (Fact.out : 0 < c i).le
   rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul hc, ← Real.rpow_mul hc, mul_comm]

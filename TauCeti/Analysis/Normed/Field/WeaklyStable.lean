@@ -173,12 +173,8 @@ theorem IsWeaklyStable.exists_bound_spectralNorm {K : Type u} [NormedField K]
   let e : Shrink.{u} L ≃ₐ[K] L := Shrink.algEquiv K L
   obtain ⟨C, hC⟩ := hK (Shrink.{u} L) (φ.comp e.toLinearMap)
   refine ⟨C, fun y ↦ ?_⟩
-  have hspec : spectralNorm K L (e (e.symm y)) = spectralNorm K (Shrink.{u} L) (e.symm y) :=
-    (RingEquiv.refl K).spectralNorm_eq_of_norm_eq (fun _ ↦ rfl) e.toRingEquiv
-      (by ext x; exact (e.commutes x).symm) (e.symm y)
-  rw [AlgEquiv.apply_symm_apply] at hspec
   simpa only [AlgEquiv.apply_symm_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    ← hspec] using hC (e.symm y)
+    spectralNorm, minpoly.algEquiv_eq] using hC (e.symm y)
 
 /-- **Purely inseparable criterion for weak stability.** An ultrametric normed field `K` is weakly
 stable as soon as every `K`-linear functional on each finite purely inseparable extension of `K` is
