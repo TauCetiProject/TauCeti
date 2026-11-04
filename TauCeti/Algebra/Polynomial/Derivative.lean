@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
+import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
 # Polynomial derivatives
@@ -37,6 +38,8 @@ basic example.
 
 For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
 iterates preserve the degree of a polynomial and have trivial kernel.
+
+Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a)` at `a`.
 -/
 
 public section
@@ -198,3 +201,14 @@ theorem _root_.Polynomial.iterate_derivative_add_C_mul_eq_zero_iff (hδ : δ ≠
 end ShiftedDerivative
 
 end TauCeti
+
+namespace Polynomial
+
+/-- The quotient of `p` by `X - a` takes the value `p' (a)` at `a`, over any commutative ring.
+Note that `a` need not be a root of `p`. -/
+@[simp]
+theorem eval_divByMonic_X_sub_C_self {R : Type*} [CommRing R] (p : R[X]) (a : R) :
+    (p /ₘ (X - C a)).eval a = p.derivative.eval a := by
+  simpa using congrArg (eval a) (divByMonic_add_X_sub_C_mul_derivative_divByMonic_eq_derivative p a)
+
+end Polynomial
