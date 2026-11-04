@@ -93,6 +93,24 @@ def universalGSpaceCellularChainComplexIso :
   cellularChainComplexRealizationIso (indexedJoin fun _ : ℕ => G) k ≪≫
     (universalGSpaceChainComplexForget₂Iso k G).symm
 
+/-- In each degree the chain comparison is the scaled cellular-basis comparison, up to the
+canonical identification of the cellular chain group. -/
+theorem universalGSpaceCellularChainComplexIso_hom_f (n : ℕ) :
+    (universalGSpaceCellularChainComplexIso k G).hom.f n =
+      eqToHom (cellularChainComplex_X _ _ n) ≫
+        (universalGSpaceCellularChainLinearEquiv k G n).toModuleIso.hom := by
+  -- The exposed ordered-chain terms are permutation modules, so only the cellular source
+  -- needs a transport. Cancel the coefficient comparison before simplifying its components.
+  apply (cancel_mono ((universalGSpaceChainComplexForget₂Iso k G).hom.f n)).mp
+  simp only [universalGSpaceCellularChainComplexIso, Iso.trans_hom, Iso.symm_hom,
+    ← HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  simp only [cellularChainComplexRealizationIso_hom_f,
+    universalGSpaceChainComplexForget₂Iso_hom_f, universalGSpaceCellularChainLinearEquiv]
+  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X]
+  apply ModuleCat.hom_ext
+  ext x
+  simp [LinearEquiv.trans_apply]
+
 /-- Evaluating the chain comparison gives the linear comparison after identifying the cellular
 chain group. The target is the underlying permutation module of the ordered-chain complex. -/
 -- Specify the target of `Hom.hom` to keep the implicit codomain in simp normal form.
@@ -105,40 +123,7 @@ theorem universalGSpaceCellularChainComplexIso_hom_f_apply (n : ℕ)
       ((universalGSpaceCellularChainComplexIso k G).hom.f n) x =
       universalGSpaceCellularChainLinearEquiv k G n
         (eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n) x) := by
-  have h : (universalGSpaceCellularChainComplexIso k G).hom.f n ≫
-      (universalGSpaceChainComplexForget₂Iso k G).hom.f n =
-        (cellularChainComplexRealizationIso (indexedJoin fun _ : ℕ => G) k).hom.f n := by
-    rw [universalGSpaceCellularChainComplexIso, Iso.trans_hom, HomologicalComplex.comp_f,
-      Iso.symm_hom, Category.assoc, ← HomologicalComplex.comp_f, Iso.inv_hom_id,
-      HomologicalComplex.id_f, Category.comp_id]
-  rw [universalGSpaceChainComplexForget₂Iso_hom_f,
-    cellularChainComplexRealizationIso_hom_f] at h
-  -- The exposed ordered-chain terms are definitionally permutation modules. Giving the
-  -- coefficient map its canonical module type avoids rewriting dependent object transports.
-  have h' : (universalGSpaceCellularChainComplexIso k G).hom.f n ≫
-      (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.hom =
-        eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n) ≫
-          (cellularChainRealizationLinearEquiv (indexedJoin fun _ : ℕ => G) k n).toModuleIso.hom :=
-    (cancel_mono (eqToHom (orderedSimplicialChainComplex_X k n).symm)).mp h
-  have hx := ConcreteCategory.congr_hom h' x
-  simp only [ConcreteCategory.comp_apply] at hx
-  apply (MonoidAlgebra.coeffLinearEquiv k).injective
-  simp only [universalGSpaceCellularChainLinearEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.apply_symm_apply]
-  exact hx
-
-/-- In each degree the chain comparison is the scaled cellular-basis comparison, up to the
-canonical identification of the cellular chain group. -/
-theorem universalGSpaceCellularChainComplexIso_hom_f (n : ℕ) :
-    (universalGSpaceCellularChainComplexIso k G).hom.f n =
-      eqToHom (cellularChainComplex_X _ _ n) ≫
-        (universalGSpaceCellularChainLinearEquiv k G n).toModuleIso.hom := by
-  -- The exposed ordered-chain complex has permutation representations as its terms, so its
-  -- underlying module needs no transport; only the cellular chain group needs identification.
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro x
-  exact universalGSpaceCellularChainComplexIso_hom_f_apply k G n x
+  exact ConcreteCategory.congr_hom (universalGSpaceCellularChainComplexIso_hom_f k G n) x
 
 /-- The cellular comparison preserves augmentation: in degree zero both augmentations send
 each vertex to `1`. -/
@@ -168,9 +153,10 @@ theorem universalGSpaceCellularChainComplexIso_comp_augmentation :
       eqToHom (cellularChainComplex_X _ _ 0) ≫
         cellularAugmentation (univ : Set (universalGSpace G)) (ModuleCat.of k k) := by
   rw [universalGSpaceAugmentation_f_zero, universalGSpaceCellularChainComplexIso_hom_f]
-  exact (Category.assoc _ _ _).trans
-    (congrArg (fun f ↦ eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) 0) ≫ f)
-      (universalGSpaceCellularChainLinearEquiv_comp_permutationAugmentation k G))
+  -- Normalize the source and target terms before rewriting composition in `ModuleCat`.
+  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X,
+    ChainComplex.single₀_obj_zero]
+  rw [Category.assoc, universalGSpaceCellularChainLinearEquiv_comp_permutationAugmentation]
 
 variable {G}
 
@@ -281,27 +267,12 @@ theorem universalGSpaceCellularChainComplexIso_translation (g : G) :
   apply ModuleCat.hom_ext
   apply LinearMap.ext
   intro x
-  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    HomologicalComplex.repTranslation_f]
-  calc
-    _ = universalGSpaceCellularChainLinearEquiv k G n
-        (eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n)
-          ((cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation g)
-            (ModuleCat.of k k)).f n x)) :=
-      universalGSpaceCellularChainComplexIso_hom_f_apply k G n _
-    _ = (Rep.ofMulAction k G ((indexedJoin fun _ : ℕ => G).RealizationCell n)).ρ g
-        (universalGSpaceCellularChainLinearEquiv k G n
-          (eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n) x)) := by
-      rw [cellularChainComplexMap_f]
-      have h (y : (cellularChainGroup (univ : Set (universalGSpace G))
-          (ModuleCat.of k k) n : ModuleCat k)) :
-          eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n)
-            (eqToHom (cellularChainComplex_X univ (ModuleCat.of k k) n).symm y) = y := by
-        rw [← ConcreteCategory.comp_apply, eqToHom_trans, eqToHom_refl, ModuleCat.id_apply]
-      simp only [ConcreteCategory.comp_apply, h]
-      exact universalGSpaceCellularChainLinearEquiv_translation k g n _
-    _ = _ := congrArg
-      ((Rep.ofMulAction k G ((indexedJoin fun _ : ℕ => G).RealizationCell n)).ρ g)
-      (universalGSpaceCellularChainComplexIso_hom_f_apply k G n x).symm
+  simp only [HomologicalComplex.comp_f, universalGSpaceCellularChainComplexIso_hom_f,
+    cellularChainComplexMap_f, HomologicalComplex.repTranslation_f]
+  -- Normalize the forgotten permutation-module terms before canceling the cellular transports.
+  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    ModuleCat.hom_comp]
+  exact universalGSpaceCellularChainLinearEquiv_translation k g n _
 
 end TauCeti
