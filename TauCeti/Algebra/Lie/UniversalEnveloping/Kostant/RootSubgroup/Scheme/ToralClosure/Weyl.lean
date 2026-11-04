@@ -246,6 +246,26 @@ theorem kostantToralWeylPoint_conj_weightTorusPoints
   simpa only [map_mul, map_inv, MulEquiv.toMonoidHom_eq_coe,
     basisMatrix_kostantTorusPoints] using hmatrix
 
+include hT in
+/-- Conjugation by a Weyl representative reflects weight-torus points when the root-generator
+weights at the two chosen indices are `α` and `-α`. This form accepts a uniform family of
+Cartan bracket equations, as supplied by the numbered generators of concrete carriers. -/
+theorem kostantToralWeylPoint_conj_weightTorusPoints_of_rootWeight
+    [DecidableEq κ] (rootWeight : I → κ → ℤ)
+    (hroot : ∀ k q, ⁅h q, e k⁆ = (rootWeight k q : ℚ) • e k)
+    (hpos : ∀ q, rootWeight i q = α q) (hneg : ∀ q, rootWeight j q = -α q)
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    (A : Type v) [CommRing A] (s : κ → Aˣ) :
+    kostantToralWeylPoint e h ρ M hM hnil b wt i j A *
+        kostantToralWeightTorusPoints e h ρ M hM hnil b wt A s *
+        (kostantToralWeylPoint e h ρ M hM hnil b wt i j A)⁻¹ =
+      kostantToralWeightTorusPoints e h ρ M hM hnil b wt A
+        (weylReflectTorusPoint α c s) := by
+  exact kostantToralWeylPoint_conj_weightTorusPoints e h ρ M hM hnil b wt hT
+    (fun q ↦ by simpa only [hpos q] using hroot i q)
+    (fun q ↦ by simpa only [hneg q, Int.cast_neg, neg_smul] using hroot j q)
+    hwt A s
+
 include hT hα hαneg in
 /-- The Weyl representative is in the normalizer of the represented weight torus inside the
 Kostant toral closure. -/
