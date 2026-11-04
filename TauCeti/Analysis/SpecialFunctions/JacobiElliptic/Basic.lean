@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -37,6 +38,7 @@ We prove the basic theory:
   differential equation `(sn′)² = (1 - sn²)(1 - k² sn²)`;
 * the antiperiods `2K` of `sn` and `cn`, hence their period `4K`, the period `2K` of `dn`, and the
   values at `u = K`;
+* the points where `sn = 1`, and hence that `4K` is the least positive period of `sn`;
 * the degeneration at modulus `0`: `am = id`, `sn = sin`, `cn = cos`, `dn = 1`.
 
 Here `K = legendreK k` is the complete integral of the first kind.
@@ -366,5 +368,30 @@ theorem jacobiCn_legendreK {k : ℝ} (hk : k ^ 2 < 1) : jacobiCn k (legendreK k)
 @[simp]
 theorem jacobiDn_legendreK {k : ℝ} (hk : k ^ 2 < 1) : jacobiDn k (legendreK k) = √(1 - k ^ 2) := by
   rw [jacobiDn_def, jacobiSn_legendreK hk, one_pow, mul_one]
+
+/-- `sn` attains the value `1` exactly at the points `K + 4 n K`, `n ∈ ℤ`. -/
+theorem jacobiSn_eq_one_iff {k : ℝ} (hk : k ^ 2 < 1) {u : ℝ} :
+    jacobiSn k u = 1 ↔ ∃ n : ℤ, legendreK k + n * (4 * legendreK k) = u := by
+  rw [jacobiSn_def, sin_eq_one_iff]
+  refine exists_congr fun n ↦ ?_
+  have h := legendreF_add_int_mul_pi hk (π / 2) (2 * n)
+  push_cast at h
+  have hn : π / 2 + n * (2 * π) = π / 2 + 2 * n * π := by ring
+  rw [eq_comm, jacobiAm_eq_iff hk, hn, h,
+    ← legendreK_def]
+  constructor <;> rintro rfl <;> ring
+
+/-- `4K` is the least positive period of `sn` (DLMF §22.4(i)). For `k = 0` it is the least
+positive period `2π` of `sin`. -/
+theorem isLeast_jacobiSn_period {k : ℝ} (hk : k ^ 2 < 1) :
+    IsLeast {p | 0 < p ∧ Function.Periodic (jacobiSn k) p} (4 * legendreK k) := by
+  have hK := legendreK_pos hk
+  refine ⟨⟨by positivity, jacobiSn_periodic hk⟩, fun p ⟨hp, hper⟩ ↦ ?_⟩
+  obtain ⟨n, hn⟩ := (jacobiSn_eq_one_iff hk).1 ((hper _).trans (jacobiSn_legendreK hk))
+  have hn0 : (0 : ℝ) < n := by nlinarith
+  have hn1 : (1 : ℝ) ≤ n := by
+    have := Int.cast_pos.1 hn0
+    exact_mod_cast (by omega : (1 : ℤ) ≤ n)
+  nlinarith
 
 end TauCeti.Real
