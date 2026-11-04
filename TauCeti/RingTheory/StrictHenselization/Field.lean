@@ -72,6 +72,12 @@ theorem toTarget_algEquivOfField_symm (x : Ω) :
     toTarget K Ω ((algEquivOfField K Ω).symm x) = x :=
   (algEquivOfField K Ω).apply_symm_apply x
 
+/-- The inverse of the field computation recovers each element from its pointing. -/
+@[simp]
+theorem algEquivOfField_symm_toTarget (x : algebra K Ω) :
+    (algEquivOfField K Ω).symm (toTarget K Ω x) = x :=
+  (algEquivOfField K Ω).symm_apply_apply x
+
 /-- The structure map to the pointed étale colimit is bijective exactly when the chosen
 separable algebraic extension is trivial. -/
 theorem algebraMap_bijective_iff_of_field :
