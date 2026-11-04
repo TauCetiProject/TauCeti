@@ -109,7 +109,7 @@ theorem _root_.ContDiffOn.firstJetPullback {n : ℕ∞ω} {u : Set X}
       hb).congr ?_
     intro x _
     ext v
-    rfl
+    simp [flip_apply, apply_apply]
   simpa only [firstJetPullback_apply, Function.comp_apply] using
     (ha.clm_apply hj.fst).prodMk (hterm.add (ha.clm_comp (hj.snd.clm_comp hc)))
 
@@ -119,36 +119,34 @@ namespace ContinuousLinearEquiv
 
 /-- The first-jet coordinate equivalence for invertible fibre and base maps.
 The off-diagonal coefficient `b` is arbitrary. -/
-def firstJetEquiv (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G) (c : E' ≃L[𝕜] E) :
+def firstJetPullback (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G) (c : E' ≃L[𝕜] E) :
     (F × (E →L[𝕜] F)) ≃L[𝕜] G × (E' →L[𝕜] G) :=
   a.skewProd (c.symm.arrowCongr a) b.flip
 
 @[simp]
-theorem firstJetEquiv_toContinuousLinearMap (a : F ≃L[𝕜] G)
+theorem coe_firstJetPullback (a : F ≃L[𝕜] G)
     (b : E' →L[𝕜] F →L[𝕜] G) (c : E' ≃L[𝕜] E) :
-    (a.firstJetEquiv b c).toContinuousLinearMap =
+    (a.firstJetPullback b c : _ →L[𝕜] _) =
       a.toContinuousLinearMap.firstJetPullback b c.toContinuousLinearMap := by
   apply ContinuousLinearMap.ext
   intro j
   apply Prod.ext
   · rfl
   · ext v
-    simp [firstJetEquiv, skewProd_apply, add_comm]
+    simp [firstJetPullback, skewProd_apply, add_comm]
 
 @[simp]
-theorem firstJetEquiv_apply (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G)
+theorem firstJetPullback_apply (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G)
     (c : E' ≃L[𝕜] E) (j : F × (E →L[𝕜] F)) :
-    a.firstJetEquiv b c j =
+    a.firstJetPullback b c j =
       (a j.1, b.flip j.1 + a.toContinuousLinearMap.comp (j.2.comp c.toContinuousLinearMap)) := by
-  apply Prod.ext
-  · rfl
-  · ext v
-    simp [firstJetEquiv, skewProd_apply, add_comm]
+  simpa only [ContinuousLinearMap.firstJetPullback_apply, coe_coe] using
+    congrArg (fun f ↦ f j) (coe_firstJetPullback a b c)
 
 @[simp]
-theorem firstJetEquiv_symm_apply (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G)
+theorem firstJetPullback_symm_apply (a : F ≃L[𝕜] G) (b : E' →L[𝕜] F →L[𝕜] G)
     (c : E' ≃L[𝕜] E) (j : G × (E' →L[𝕜] G)) :
-    (a.firstJetEquiv b c).symm j =
+    (a.firstJetPullback b c).symm j =
       (a.symm j.1, a.symm.toContinuousLinearMap.comp
         ((j.2 - b.flip (a.symm j.1)).comp c.symm.toContinuousLinearMap)) :=
   (rfl)
