@@ -340,6 +340,16 @@ theorem mpullback_smul {S : Type*} [Monoid S] [DistribMulAction S F]
     (ω : RoughForm I' M' F k) : mpullback I I' f (c • ω) = c • mpullback I I' f ω :=
   bundleMpullback_smul f c ω
 
+/-- Pullback of a form multiplied pointwise by a real function multiplies the pullback by the
+composite function. -/
+@[simp]
+theorem mpullback_fun_smul [ContinuousConstSMul ℝ F] (f : M → M') (c : M' → ℝ)
+    (ω : RoughForm I' M' F k) :
+    mpullback I I' f (fun y ↦ c y • ω y) = fun x ↦ c (f x) • mpullback I I' f ω x := by
+  funext x
+  ext v
+  simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply]
+
 /-- Within-set pullback by the identity fixes forms wherever the derivative is unique. -/
 @[simp]
 theorem mpullbackWithin_id {s : Set M} {x : M} (hs : UniqueMDiffWithinAt I s x)
