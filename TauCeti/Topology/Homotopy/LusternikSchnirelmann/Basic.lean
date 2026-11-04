@@ -39,6 +39,11 @@ of a categorical open set to a single point, so such a set meets at most one sum
 count of the whole union is the sum of the counts of the summands. On a manifold with several
 components, this lets the critical-point bound be computed one component at a time.
 
+Compact subsets of locally contractible spaces have finite categorical-cover count, even on
+an open neighborhood. Here local contractibility has Mathlib's meaning: small neighborhoods
+contract inside larger neighborhoods, not necessarily inside themselves. The finite count and
+its attainment give actual finite categorical covers of compact locally contractible spaces.
+
 ## Main declarations
 
 * `TauCeti.LSCategoricalCover X A n`: a cover of `A` by `n` open subsets of `X` with nullhomotopic
@@ -393,6 +398,27 @@ theorem lsCategoryCount_le_one [ContractibleSpace X] (A : Set X) : lsCategoryCou
   rw [ContinuousMap.id_comp] at h
   simpa using (LSCategoricalCover.single (A := A) ⊤ (by simp) h).lsCategoryCount_le
 
+/-- On a nonempty space, a cover by one categorical open exists exactly when the space
+is contractible. -/
+theorem lsCategoryCount_univ_le_one_iff [Nonempty X] :
+    lsCategoryCount X univ ≤ 1 ↔ ContractibleSpace X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ @lsCategoryCount_le_one X _ h univ⟩
+  obtain ⟨c⟩ := (nonempty_lsCategoricalCover_iff (n := 1)).mpr h
+  have hU : (c.opens 0 : Set X) = univ := by
+    apply eq_univ_of_forall
+    intro x
+    obtain ⟨i, hi⟩ := mem_iUnion.mp (c.subset_iUnion (mem_univ x))
+    simpa only [Fin.eq_zero i] using hi
+  have hnull := c.nullhomotopic 0
+  rw [hU] at hnull
+  -- The inclusion of the whole-space subtype, composed with its canonical inverse,
+  -- is the identity of X.
+  have hid : (subtypeVal (univ : Set X)).comp
+      ((Homeomorph.Set.univ X).symm : C(X, (univ : Set X))) = ContinuousMap.id X :=
+    ContinuousMap.ext fun _ ↦ rfl
+  exact (contractible_iff_id_nullhomotopic X).mpr
+    (hid ▸ hnull.comp_left ((Homeomorph.Set.univ X).symm : C(X, (univ : Set X))))
+
 /-- In a locally contractible space every point has an open neighbourhood of
 Lusternik–Schnirelmann count at most `1`: the interior of a neighbourhood whose inclusion is
 nullhomotopic. -/
@@ -421,6 +447,35 @@ theorem exists_isOpen_superset_lsCategoryCount_le_encard (hX : LocallyContractib
         ≤ ∑ x ∈ hS.toFinset, lsCategoryCount X (U x) := lsCategoryCount_biUnion_le _ _
       _ ≤ ∑ x ∈ hS.toFinset, 1 := Finset.sum_le_sum fun x _ ↦ hU x
       _ = S.encard := by simp [hS.encard_eq_coe_toFinset_card]
+
+/-- A compact subset of a locally contractible space has an open neighborhood with finite
+categorical-cover count. -/
+theorem exists_isOpen_superset_lsCategoryCount_lt_top {K : Set X} (hK : IsCompact K)
+    (hX : LocallyContractibleSpace X) :
+    ∃ U, IsOpen U ∧ K ⊆ U ∧ lsCategoryCount X U < ⊤ := by
+  classical
+  choose U hU hxU hcat using exists_isOpen_mem_lsCategoryCount_le_one hX
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover U hU fun x _ ↦
+    mem_iUnion.mpr ⟨x, hxU x⟩
+  refine ⟨⋃ x ∈ s, U x, isOpen_biUnion fun x _ ↦ hU x, hs, ?_⟩
+  calc
+    lsCategoryCount X (⋃ x ∈ s, U x) ≤ ∑ x ∈ s, lsCategoryCount X (U x) :=
+      lsCategoryCount_biUnion_le _ _
+    _ ≤ ∑ _x ∈ s, (1 : ℕ∞) := Finset.sum_le_sum fun x _ ↦ hcat x
+    _ = (s.card : ℕ∞) := by simp
+    _ < ⊤ := ENat.natCast_lt_top _
+
+/-- Compact subsets of locally contractible spaces have finite categorical-cover count. -/
+theorem _root_.IsCompact.lsCategoryCount_lt_top {K : Set X} (hK : IsCompact K)
+    (hX : LocallyContractibleSpace X) : lsCategoryCount X K < ⊤ := by
+  obtain ⟨U, _, hKU, hU⟩ := exists_isOpen_superset_lsCategoryCount_lt_top hK hX
+  exact (lsCategoryCount_mono hKU).trans_lt hU
+
+/-- A compact locally contractible space has finite categorical-cover count, including when
+it is empty. -/
+theorem lsCategoryCount_univ_lt_top [CompactSpace X] (hX : LocallyContractibleSpace X) :
+    lsCategoryCount X univ < ⊤ :=
+  isCompact_univ.lsCategoryCount_lt_top hX
 
 /-- A contractible space, in particular a point, has Lusternik–Schnirelmann count `1`. -/
 @[simp]
