@@ -5,10 +5,6 @@ inputs:
   project-dir:
     description: Directory containing lean-toolchain and lake-manifest.json.
     required: true
-  cache-dir:
-    description: Cache directory; defaults to $GITHUB_WORKSPACE/.mathlib-ltar-cache.
-    required: false
-    default: ""
   cold:
     description: Skip restoration while still selecting the shared key and cache directory.
     required: false
@@ -24,6 +20,9 @@ outputs:
   cache-dir:
     description: Selected cache directory, also exported as MATHLIB_CACHE_DIR for later steps.
     value: ${{ steps.cache_dir.outputs.path }}
+  cache-path:
+    description: Workspace-relative archive glob; use verbatim for both restore and save.
+    value: ${{ steps.cache_dir.outputs.pattern }}
 
 runs:
   using: composite
@@ -34,14 +33,16 @@ runs:
       id: cache_dir
       shell: bash
       env:
-        CONFIGURED_CACHE_DIR: ${{ inputs.cache-dir }}
         CACHE_KEY_PREFIX: mathlib-ltar-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/lean-toolchain', inputs.project-dir)) }}-
         MANIFEST_HASH: ${{ hashFiles(format('{0}/lake-manifest.json', inputs.project-dir)) }}
       run: |
         set -euo pipefail
-        cache_dir="${CONFIGURED_CACHE_DIR:-$GITHUB_WORKSPACE/.mathlib-ltar-cache}"
+        cache_dir="$GITHUB_WORKSPACE/.mathlib-ltar-cache"
         echo "MATHLIB_CACHE_DIR=$cache_dir" >> "$GITHUB_ENV"
         echo "path=$cache_dir" >> "$GITHUB_OUTPUT"
+        # GitHub hashes the literal path into its cache version. Absolute workspace
+        # paths differ between hosted and fleet runners, even for the same key.
+        echo 'pattern=.mathlib-ltar-cache/*.ltar' >> "$GITHUB_OUTPUT"
         echo "prefix=$CACHE_KEY_PREFIX" >> "$GITHUB_OUTPUT"
         echo "key=$CACHE_KEY_PREFIX$MANIFEST_HASH" >> "$GITHUB_OUTPUT"
 
@@ -54,7 +55,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         # Cache only content-addressed artifacts, never cache-tool scratch files or executables.
-        path: ${{ steps.cache_dir.outputs.path }}/*.ltar
+        path: ${{ steps.cache_dir.outputs.pattern }}
         key: ${{ steps.cache_dir.outputs.key }}
         restore-keys: |
           ${{ steps.cache_dir.outputs.prefix }}

@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
-import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import all TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Curvature of the upper-half-space metric

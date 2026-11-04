@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.AdjointAction.GradingAut
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+import TauCeti.Algebra.Lie.Dual
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Eigenspace
 import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 import TauCeti.LinearAlgebra.Dual.Exp
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Exp
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 
 /-!
-# Lie invariants of symmetric algebras are invariant under inner automorphisms
+# Lie invariants of symmetric algebras are invariant under inner and grading automorphisms
 
 A Lie algebra `L` acts on the symmetric algebra `S(M)` of a Lie module `M` by derivations, and
 `TauCeti.SymmetricAlgebra.lieInvariants` is the subalgebra they kill. If `x : L` acts nilpotently
@@ -35,6 +38,15 @@ conjugates of a Cartan subalgebra under `Int L`
 (`LieSubalgebra.polynomial_eq_zero_of_invariant_of_cartan`) to Lie-invariant polynomial
 functions, such as the trace-power polynomials `TauCeti.tracePowerPolynomial`.
 
+Invariance also holds for the grading automorphisms `TauCeti.gradingAut hh s`, which act on the
+integer eigenspaces `L(j)` of `ad h` by `s ^ j` and are the adjoint action of the cocharacter
+integrating `h` when there is one. Over a field that is not algebraically closed these need not be
+inner, so this does not follow from the previous paragraph. Instead, the integer eigenspaces of the
+coadjoint action of `h` span `L*` (`TauCeti.LieModule.iSup_eigenspace_toEnd_dual_eq_top`), the
+transpose of `gradingAut hh s` acts on the weight `j` functionals by `s⁻¹ ^ j`, and an element of
+`S(L*)` killed by `h` has weight zero for the induced decomposition
+(`SymmetricAlgebra.map_apply_of_derivationOfEnd_eq_smul`).
+
 ## Main results
 
 * `TauCeti.SymmetricAlgebra.map_exp_toEnd_apply_of_mem_lieInvariants`: if `x` acts nilpotently on
@@ -45,6 +57,10 @@ functions, such as the trace-power polynomials `TauCeti.tracePowerPolynomial`.
   automorphism fixes the Lie invariants of `S(L*)`.
 * `TauCeti.SymmetricAlgebra.lift_eval_smul_of_mem_intLieAlgebra`: a Lie-invariant polynomial
   function on `L` is invariant under the inner automorphisms.
+* `TauCeti.SymmetricAlgebra.map_dualMap_gradingAut_apply` and
+  `TauCeti.SymmetricAlgebra.lift_eval_gradingAut_apply`: the transposes of the grading
+  automorphisms attached to `h` fix the elements of `S(L*)` killed by `h`, so a polynomial
+  function on `L` killed by `h` is invariant under the grading automorphisms.
 
 ## References
 
@@ -144,5 +160,64 @@ theorem lift_eval_smul_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K 
     refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
     simp [Units.smul_def]
   rw [h, AlgHom.comp_apply, map_dualMap_apply_of_mem_intLieAlgebra hg hp]
+
+section Grading
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] {h : L}
+  (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K))
+
+include hh in
+/-- **The transposes of the grading automorphisms fix the polynomial functions killed by `h`.**
+If `L` is the internal direct sum of the integer eigenspaces of `ad h`, then the algebra
+automorphism of `S(L*)` induced by the transpose of `TauCeti.gradingAut hh s` fixes every `p`
+killed by the coadjoint action of `h`, in particular every Lie invariant. -/
+theorem map_dualMap_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
+    (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) :
+    map K (gradingAut hh s : L →ₗ[K] L).dualMap p = p := by
+  -- A functional of weight `j` for the coadjoint action of `h` vanishes outside `L(-j)`, so the
+  -- transpose of the grading automorphism at `s` scales it by `s⁻¹ ^ j`.
+  have hg (j : ℤ) (φ : Dual K L)
+      (hφ : φ ∈ (LieModule.toEnd K L (Dual K L) h).eigenspace (j : K)) :
+      (gradingAut hh s : L →ₗ[K] L).dualMap φ = ((s⁻¹ ^ j : Kˣ) : K) • φ := by
+    refine LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top fun k y hy ↦ ?_
+    have hφy : -φ ⁅h, y⁆ = (j : K) * φ y := by
+      simpa using LinearMap.congr_fun (Module.End.mem_eigenspace_iff.1 hφ) y
+    rw [Module.End.mem_eigenspace_iff, ad_apply] at hy
+    rw [hy, map_smul, smul_eq_mul, ← neg_mul, ← sub_eq_zero, ← sub_mul] at hφy
+    rw [LinearMap.dualMap_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
+      gradingAut_apply_of_mem hh s (Module.End.mem_eigenspace_iff.2 (by rwa [ad_apply])),
+      map_smul, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul]
+    rcases mul_eq_zero.1 hφy with hjk | hy0
+    · have : j = -k := by
+        have : ((j + k : ℤ) : K) = 0 := by push_cast; linear_combination -hjk
+        have := Int.cast_eq_zero.mp this
+        omega
+      subst this
+      simp
+    · rw [hy0, mul_zero, mul_zero]
+  have hw : derivationOfEnd K (Dual K L) (LieModule.toEnd K L (Dual K L) h) p =
+      ((0 : ℤ) : K) • p := by
+    rw [← lieModuleDerivation_apply, hp, Int.cast_zero, zero_smul]
+  simpa using map_apply_of_derivationOfEnd_eq_smul
+    (TauCeti.LieModule.iSup_eigenspace_toEnd_dual_eq_top hh) hg hw
+
+include hh in
+/-- **Polynomial functions killed by `h` are invariant under the grading automorphisms.** If `L`
+is the internal direct sum of the integer eigenspaces of `ad h` and `p ∈ S(L*)` is killed by the
+coadjoint action of `h`, then `p (gradingAut hh s x) = p x` for every unit `s` and every `x : L`.
+This applies to every Lie-invariant polynomial function, although the grading automorphisms need
+not be inner over a field that is not algebraically closed. -/
+theorem lift_eval_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
+    (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) (x : L) :
+    lift (Dual.eval K L (gradingAut hh s x)) p = lift (Dual.eval K L x) p := by
+  -- Evaluation at `gradingAut hh s x` is evaluation at `x` after the transpose.
+  have h : lift (Dual.eval K L (gradingAut hh s x)) =
+      (lift (Dual.eval K L x)).comp (map K (gradingAut hh s : L →ₗ[K] L).dualMap) := by
+    refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
+    simp
+  rw [h, AlgHom.comp_apply, map_dualMap_gradingAut_apply hh hp]
+
+end Grading
 
 end TauCeti.SymmetricAlgebra
