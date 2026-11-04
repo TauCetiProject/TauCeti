@@ -18,9 +18,9 @@ import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.Analysis.Normed.Group.BallSphere
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -457,11 +457,8 @@ theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.
   have hslit : (z : ℂ) ∈ Complex.slitPlane :=
     Complex.mem_slitPlane_iff_arg.2 ⟨fun h => by simp [h, abs_of_pos Real.pi_pos] at hz,
       Circle.coe_ne_zero z⟩
-  have h : ContDiffAt ℝ n (fun x : ℂ => (Complex.log x).im) z :=
-    Complex.imCLM.contDiff.contDiffAt.comp _ ((Complex.contDiffAt_log hslit).restrict_scalars ℝ)
   have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) n (fun w : Circle => (w : ℂ)) := contMDiff_coe_sphere
-  exact (h.contMDiffAt.comp z hc.contMDiffAt).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun w => (Complex.log_im w).symm)
+  exact (Complex.contDiffAt_arg hslit).contMDiffAt.comp z hc.contMDiffAt
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 

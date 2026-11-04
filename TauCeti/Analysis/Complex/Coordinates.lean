@@ -13,8 +13,10 @@ public import TauCeti.LinearAlgebra.Complex.Determinant
 # Real coordinates of the complex plane
 
 The real linear coordinate interchange is an involution with determinant `-1`, recording
-the reversal of orientation. The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is linearly
-independent.
+the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
+`u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
+(`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
+linearly independent.
 -/
 
 public section
@@ -50,6 +52,15 @@ theorem det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.toLinearMap.det 
 @[simp]
 theorem linearEquiv_det_coordinateSwapCLE : coordinateSwapCLE.toLinearEquiv.det = -1 := by
   simp [← Units.val_inj]
+
+/-- A vector `v` in polar coordinates at a point `r * u` with `u ≠ 0`, `r ≠ 0`: its components
+along the radial direction `u` and the angular direction `r * u * I`. -/
+theorem eq_re_mul_add_im_div_mul {u : ℂ} (hu : u ≠ 0) {r : ℝ} (hr : r ≠ 0) (v : ℂ) :
+    v = ((v / u).re : ℂ) * u + (((v / u).im / r : ℝ) : ℂ) * (r * u * I) := by
+  have hr' : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 hr
+  conv_lhs => rw [← div_mul_cancel₀ v hu, ← re_add_im (v / u)]
+  push_cast
+  field_simp
 
 /-- The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is linearly independent. -/
 theorem linearIndependent_one_zero_I_zero_zero_one :

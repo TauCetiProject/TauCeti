@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
+import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
 # Interpolating circle diffeomorphisms to the identity
@@ -274,24 +275,18 @@ private theorem contDiff_interpolate (hw : ContDiff ℝ n w) (hF : ContDiff ℝ 
 
 omit [Fact (0 < T)] in
 private theorem interpolate_add_period (hper : ∀ x, F (x + T) = F x + T) (s x : ℝ) :
-    interpolate w F (s, x + T) = interpolate w F (s, x) + T := by
-  simp only [interpolate, hper]
-  ring
+    interpolate w F (s, x + T) = interpolate w F (s, x) + T :=
+  add_mul_sub_add_period hper (w s) x
 
 /-- For a weight in `[0, 1]`, the interpolating lifts have positive derivative
-`(1 - w s) + w s * F'`. -/
+`1 - w s + w s * F'` (`AddCircle.one_sub_add_mul_pos`). -/
 private theorem deriv_interpolate_pos (hw : ∀ s, w s ∈ Icc 0 1) (hF : ContDiff ℝ n F)
     (hn : n ≠ 0) (hpos : ∀ x, 0 < deriv F x) (s x : ℝ) :
     0 < deriv (fun y ↦ interpolate w F (s, y)) x := by
-  have hd : HasDerivAt (fun y ↦ interpolate w F (s, y)) (1 + w s * (deriv F x - 1)) x :=
-    (hasDerivAt_id x).add
-      ((((hF.differentiable hn) x).hasDerivAt.sub (hasDerivAt_id x)).const_mul (w s))
+  have hd : HasDerivAt (fun y ↦ interpolate w F (s, y)) (1 - w s + w s * deriv F x) x :=
+    hasDerivAt_add_mul_sub ((hF.differentiable hn) x).hasDerivAt (w s)
   rw [hd.deriv]
-  obtain ⟨hw₀, hw₁⟩ := hw s
-  rcases hw₁.eq_or_lt with h | h
-  · rw [h]
-    linarith [hpos x]
-  · nlinarith [mul_nonneg hw₀ (hpos x).le]
+  exact one_sub_add_mul_pos (hw s).1 (hw s).2 (hpos x)
 
 /-- The weight `sin (π t / 2) ^ 2`, rising analytically from `0` at `t = 0` to `1` at `t = 1`. -/
 private def sinSqWeight (t : ℝ) : ℝ := Real.sin (Real.pi * t / 2) ^ 2
