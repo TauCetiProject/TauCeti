@@ -42,6 +42,10 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
   `algebraMap R S` gives back its compatible `R`-module structure.
+* `ModuleCat.restrictScalarsIntCastIso`: restricting the scalars of an `S`-module along
+  `ℤ → S` gives back its underlying abelian group with the canonical action of `ℤ`. The two
+  integer actions agree only propositionally, so this isomorphism, rather than an equality of
+  objects, transports statements between them.
 
 ## Main results
 
@@ -233,6 +237,36 @@ theorem restrictScalarsAlgebraMapIso_hom_apply (M : Type v) [AddCommGroup M] [Mo
 theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Module R M]
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
+  (rfl)
+
+end ModuleCat
+
+namespace ModuleCat
+
+variable (M : ModuleCat.{v} S)
+
+/-- A module over `S` with its scalars restricted along `ℤ → S` is its underlying abelian group with
+the canonical action of `ℤ`. Both maps are the identity of the underlying abelian group. -/
+noncomputable def restrictScalarsIntCastIso :
+    (restrictScalars (Int.castRingHom S)).obj M ≅ ModuleCat.of ℤ M where
+  -- the integers act on the restriction through `ℤ → S`, by definition of restriction of scalars
+  hom := ofHom (X := (restrictScalars (Int.castRingHom S)).obj M)
+    { toFun := id
+      map_add' _ _ := rfl
+      map_smul' n x := Int.cast_smul_eq_zsmul S n x }
+  inv := ofHom (Y := (restrictScalars (Int.castRingHom S)).obj M)
+    { toFun := id
+      map_add' _ _ := rfl
+      map_smul' n x := (Int.cast_smul_eq_zsmul S n x).symm }
+
+@[simp]
+lemma restrictScalarsIntCastIso_hom_apply (x : (restrictScalars (Int.castRingHom S)).obj M) :
+    (restrictScalarsIntCastIso M).hom x = (x : M) :=
+  (rfl)
+
+@[simp]
+lemma restrictScalarsIntCastIso_inv_apply (x : M) :
+    (restrictScalarsIntCastIso M).inv x = x :=
   (rfl)
 
 end ModuleCat

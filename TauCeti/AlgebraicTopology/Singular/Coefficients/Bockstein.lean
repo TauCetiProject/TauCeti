@@ -48,8 +48,8 @@ The cohomological counterpart is `TopCat.singularCohomologyBockstein`.
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.E (Bockstein homomorphisms) and Section 2.2 (the long exact sequence of a short
-  exact sequence of chain complexes).
+  Section 3.E (Bockstein homomorphisms) and Section 2.1, Theorem 2.16 (the long exact sequence
+  of a short exact sequence of chain complexes).
 -/
 
 public section

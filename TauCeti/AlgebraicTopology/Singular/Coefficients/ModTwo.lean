@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
-public import TauCeti.Algebra.Category.ModuleCat.Int
+public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.Bockstein
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
