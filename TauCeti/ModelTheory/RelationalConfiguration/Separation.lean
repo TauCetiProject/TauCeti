@@ -95,41 +95,38 @@ variable {L : Language.{u, v}} [L.IsRelational] {V : Type w}
 
 section ForcedTree
 
-/-- First projection of a finite list of pairs as a tuple of length `w.length`. -/
-private def tupleFst (w : List (V × V)) (i : Fin w.length) : V :=
-  (w[i]).1
+/-- Projection of a finite list of pairs along `g : V × V → V` as a tuple of length `w.length`. -/
+private def tupleMap (g : V × V → V) (w : List (V × V)) (i : Fin w.length) : V :=
+  g w[i]
 
-/-- Second projection of a finite list of pairs as a tuple of length `w.length`. -/
-private def tupleSnd (w : List (V × V)) (i : Fin w.length) : V :=
-  (w[i]).2
+@[simp]
+private theorem tupleMap_nil (g : V × V → V) :
+    tupleMap g ([] : List (V × V)) = Fin.elim0 :=
+  funext fun i => Fin.elim0 i
 
-private theorem tupleFst_append_singleton (w : List (V × V)) (p : V × V) :
-    tupleFst (w ++ [p]) =
-      Fin.snoc (tupleFst w) p.1 ∘ Fin.cast (by simp : (w ++ [p]).length = w.length + 1) := by
+private theorem tupleMap_append_singleton (g : V × V → V) (w : List (V × V)) (p : V × V) :
+    tupleMap g (w ++ [p]) =
+      Fin.snoc (tupleMap g w) (g p) ∘ Fin.cast (by simp : (w ++ [p]).length = w.length + 1) := by
   funext i
   rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.2 : i.1 < w.length + 1) with hlt | heq
   · have hi : Fin.cast (by simp : (w ++ [p]).length = w.length + 1) i = Fin.castSucc ⟨i.1, hlt⟩ :=
       by ext; rfl
     rw [Function.comp_apply, hi, Fin.snoc_castSucc]
-    simp [tupleFst, List.getElem_append_left hlt]
+    simp [tupleMap, List.getElem_append_left hlt]
   · have hlast : Fin.cast (by simp : (w ++ [p]).length = w.length + 1) i = Fin.last w.length := by
       ext; exact heq
     rw [Function.comp_apply, hlast, Fin.snoc_last]
-    simp [tupleFst, heq]
+    simp [tupleMap, heq]
 
-private theorem tupleSnd_append_singleton (w : List (V × V)) (p : V × V) :
-    tupleSnd (w ++ [p]) =
-      Fin.snoc (tupleSnd w) p.2 ∘ Fin.cast (by simp : (w ++ [p]).length = w.length + 1) := by
+private theorem tupleMap_eq_comp_append_singleton (g : V × V → V) (w : List (V × V)) (p : V × V) :
+    tupleMap g w = tupleMap g (w ++ [p]) ∘ fun i : Fin w.length => ⟨i.1, by simp⟩ := by
   funext i
-  rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.2 : i.1 < w.length + 1) with hlt | heq
-  · have hi : Fin.cast (by simp : (w ++ [p]).length = w.length + 1) i = Fin.castSucc ⟨i.1, hlt⟩ :=
-      by ext; rfl
-    rw [Function.comp_apply, hi, Fin.snoc_castSucc]
-    simp [tupleSnd, List.getElem_append_left hlt]
-  · have hlast : Fin.cast (by simp : (w ++ [p]).length = w.length + 1) i = Fin.last w.length := by
-      ext; exact heq
-    rw [Function.comp_apply, hlast, Fin.snoc_last]
-    simp [tupleSnd, heq]
+  simp [tupleMap, List.getElem_append_left i.2]
+
+private theorem tupleMap_ofFn_comp_cast (g : V × V → V) {N : ℕ} (f : Fin N → V × V) :
+    tupleMap g (List.ofFn f) ∘ Fin.cast List.length_ofFn.symm = fun i => g (f i) := by
+  funext i
+  simp [tupleMap]
 
 /-- Schedule constraint along an enumeration `enum : ℕ → V`: even positions prescribe the left
 entry `enum (i / 2)` and odd positions prescribe the right entry `enum (i / 2)`. -/
@@ -140,23 +137,19 @@ private def bfSchedule (enum : ℕ → V) (w : List (V × V)) : Prop :=
 is respected and the projected tuples have the same atomic type in `c` and `d`. -/
 private def bfNode (enum : ℕ → V) (c d : RelationalConfiguration L V) (w : List (V × V)) : Prop :=
   bfSchedule enum w ∧
-    @SameAtomicType L w.length V V c.toStructure d.toStructure _ (tupleFst w) (tupleSnd w)
+    @SameAtomicType L w.length V V c.toStructure d.toStructure _
+      (tupleMap Prod.fst w) (tupleMap Prod.snd w)
 
 private theorem bfNode_of_append_singleton {enum : ℕ → V} {c d : RelationalConfiguration L V}
     {w : List (V × V)} {p : V × V} (h : bfNode enum c d (w ++ [p])) : bfNode enum c d w := by
   refine ⟨fun i => ?_, ?_⟩
   · have hi := h.1 ⟨i.1, by simp⟩
     simpa [List.getElem_append_left i.2] using hi
-  · let g : Fin w.length → Fin (w ++ [p]).length := fun i => ⟨i.1, by simp⟩
-    have hfst : tupleFst w = tupleFst (w ++ [p]) ∘ g := by
-      funext i
-      simp [tupleFst, g, List.getElem_append_left i.2]
-    have hsnd : tupleSnd w = tupleSnd (w ++ [p]) ∘ g := by
-      funext i
-      simp [tupleSnd, g, List.getElem_append_left i.2]
-    rw [hfst, hsnd]
+  · rw [tupleMap_eq_comp_append_singleton Prod.fst w p,
+      tupleMap_eq_comp_append_singleton Prod.snd w p]
     exact @SameAtomicType.comp L (w ++ [p]).length V V c.toStructure d.toStructure _
-      (tupleFst (w ++ [p])) (tupleSnd (w ++ [p])) h.2 w.length g
+      (tupleMap Prod.fst (w ++ [p])) (tupleMap Prod.snd (w ++ [p])) h.2 w.length
+      fun i => ⟨i.1, by simp⟩
 
 /-- The forced back-and-forth descriptive tree of `(c, d)` along `enum : ℕ → V`. -/
 private def bfTree (enum : ℕ → V) (c d : RelationalConfiguration L V) : Descriptive.tree (V × V) :=
@@ -176,8 +169,8 @@ private theorem isClosed_setOf_mem_bfTree (enum : ℕ → V) (w : List (V × V))
       w ∈ bfTree enum q.1 q.2} =
       {q | bfSchedule enum w} ∩
         ⋂ idx : AtomicIdx L w.length,
-          {q | @AtomicIdx.Holds L w.length V q.1.toStructure idx (tupleFst w) ↔
-            @AtomicIdx.Holds L w.length V q.2.toStructure idx (tupleSnd w)} := by
+          {q | @AtomicIdx.Holds L w.length V q.1.toStructure idx (tupleMap Prod.fst w) ↔
+            @AtomicIdx.Holds L w.length V q.2.toStructure idx (tupleMap Prod.snd w)} := by
     ext q
     simp [bfNode, @sameAtomicType_def L w.length V V q.1.toStructure q.2.toStructure]
   rw [heq]
@@ -191,56 +184,72 @@ private theorem isClosed_setOf_mem_bfTree (enum : ℕ → V) (w : List (V × V))
     exact isClosed_eq ((continuous_eval _).comp continuous_fst)
       ((continuous_eval _).comp continuous_snd)
 
+/-- If every finite prefix of `f` belongs to `bfTree enum c d`, then for each `N` the first `N`
+projected entries of `f` have the same atomic type in `c` and `d`. -/
+private theorem sameAtomicType_ofFn_of_forall_mem_bfTree {enum : ℕ → V}
+    {c d : RelationalConfiguration L V} {f : ℕ → V × V}
+    (hf : ∀ n, List.ofFn (fun i : Fin n => f i) ∈ bfTree enum c d) (N : ℕ) :
+    @SameAtomicType L N V V c.toStructure d.toStructure _
+      (fun i : Fin N => (f i).1) (fun i : Fin N => (f i).2) := by
+  let w := List.ofFn (fun i : Fin N => f i)
+  have hcomp := @SameAtomicType.comp L w.length V V c.toStructure d.toStructure _
+    (tupleMap Prod.fst w) (tupleMap Prod.snd w) (mem_bfTree.mp (hf N)).2 N
+    (Fin.cast List.length_ofFn.symm)
+  rwa [tupleMap_ofFn_comp_cast, tupleMap_ofFn_comp_cast] at hcomp
+
+/-- Reindexing an infinite branch of `bfTree enum c d` along any finite tuple of indices `idx`
+preserves atomic type between `c` and `d`. -/
+private theorem sameAtomicType_of_forall_mem_bfTree {enum : ℕ → V}
+    {c d : RelationalConfiguration L V} {f : ℕ → V × V}
+    (hf : ∀ n, List.ofFn (fun i : Fin n => f i) ∈ bfTree enum c d) {k : ℕ} (idx : Fin k → ℕ) :
+    @SameAtomicType L k V V c.toStructure d.toStructure _
+      (fun m => (f (idx m)).1) (fun m => (f (idx m)).2) :=
+  let N := Finset.univ.sup idx + 1
+  @SameAtomicType.comp L N V V c.toStructure d.toStructure _
+    (fun i : Fin N => (f i).1) (fun i : Fin N => (f i).2)
+    (sameAtomicType_ofFn_of_forall_mem_bfTree hf N) k
+    fun m => ⟨idx m, Nat.lt_succ_of_le (Finset.le_sup (Finset.mem_univ m))⟩
+
+private theorem schedule_of_forall_mem_bfTree {enum : ℕ → V}
+    {c d : RelationalConfiguration L V} {f : ℕ → V × V}
+    (hf : ∀ n, List.ofFn (fun i : Fin n => f i) ∈ bfTree enum c d) (i : ℕ) :
+    if Even i then (f i).1 = enum (i / 2) else (f i).2 = enum (i / 2) := by
+  let idx : Fin (List.ofFn fun j : Fin (i + 1) => f j).length :=
+    ⟨i, by rw [List.length_ofFn]; exact Nat.lt_succ_self i⟩
+  simpa only [Fin.getElem_fin, List.getElem_ofFn, idx] using (mem_bfTree.mp (hf (i + 1))).1 idx
+
+private theorem exists_fst_eq_of_schedule {enum : ℕ → V} (henum : Function.Surjective enum)
+    {f : ℕ → V × V}
+    (hsched : ∀ i, if Even i then (f i).1 = enum (i / 2) else (f i).2 = enum (i / 2)) (x : V) :
+    ∃ i : ℕ, (f i).1 = x := by
+  obtain ⟨m, rfl⟩ := henum x
+  exact ⟨2 * m, by simpa [even_two_mul m] using hsched (2 * m)⟩
+
+private theorem exists_snd_eq_of_schedule {enum : ℕ → V} (henum : Function.Surjective enum)
+    {f : ℕ → V × V}
+    (hsched : ∀ i, if Even i then (f i).1 = enum (i / 2) else (f i).2 = enum (i / 2)) (y : V) :
+    ∃ j : ℕ, (f j).2 = y := by
+  obtain ⟨m, rfl⟩ := henum y
+  have hdiv : (2 * m + 1) / 2 = m := by omega
+  exact ⟨2 * m + 1, by simpa [hdiv] using hsched (2 * m + 1)⟩
+
 /-- An infinite branch through `bfTree enum c d` along a surjective enumeration `enum : ℕ → V`
 induces an isomorphism between `c` and `d`. -/
 private theorem isoSetoid_of_not_isWellFounded_bfTree {enum : ℕ → V}
     (henum : Function.Surjective enum) {c d : RelationalConfiguration L V}
     (h : ¬ IsWellFounded (bfTree enum c d)) : isoSetoid L V c d := by
+  -- Extract an infinite branch `f` and choose preimages on each side from the schedule.
   obtain ⟨f, hf⟩ := not_isWellFounded_iff.mp h
-  have hsched (i : ℕ) :
-      if Even i then (f i).1 = enum (i / 2) else (f i).2 = enum (i / 2) := by
-    let idx : Fin (List.ofFn fun j : Fin (i + 1) => f j).length :=
-      ⟨i, by rw [List.length_ofFn]; exact Nat.lt_succ_self i⟩
-    have hi := (mem_bfTree.mp (hf (i + 1))).1 idx
-    simpa only [Fin.getElem_fin, List.getElem_ofFn, idx] using hi
-  have hN (N : ℕ) : ∀ idx : AtomicIdx L N,
-      @AtomicIdx.Holds L N V c.toStructure idx (fun i : Fin N => (f i).1) ↔
-        @AtomicIdx.Holds L N V d.toStructure idx (fun i : Fin N => (f i).2) := by
-    let w := List.ofFn (fun i : Fin N => f i)
-    have hw := (mem_bfTree.mp (hf N)).2
-    have hcomp := @SameAtomicType.comp L w.length V V c.toStructure d.toStructure _
-      (tupleFst w) (tupleSnd w) hw N (Fin.cast List.length_ofFn.symm)
-    have hfst : tupleFst w ∘ Fin.cast List.length_ofFn.symm = fun i : Fin N => (f i).1 := by
-      funext i; simp [tupleFst, w]
-    have hsnd : tupleSnd w ∘ Fin.cast List.length_ofFn.symm = fun i : Fin N => (f i).2 := by
-      funext i; simp [tupleSnd, w]
-    rw [hfst, hsnd] at hcomp
-    exact (@sameAtomicType_def L N V V c.toStructure d.toStructure _ _ _).mp hcomp
+  have hsched := schedule_of_forall_mem_bfTree hf
+  choose idx₁ hidx₁ using exists_fst_eq_of_schedule henum hsched
+  choose idx₂ hidx₂ using exists_snd_eq_of_schedule henum hsched
+  -- Equality agreement along `f` makes the chosen correspondences mutually inverse.
   have heq (i j : ℕ) : (f i).1 = (f j).1 ↔ (f i).2 = (f j).2 := by
-    simpa only [AtomicIdx.holds_eq] using hN (max i j + 1) (.eq ⟨i, by omega⟩ ⟨j, by omega⟩)
-  have hrel {k : ℕ} (R : L.Relations k) (idx : Fin k → ℕ) :
-      @Structure.RelMap L V c.toStructure k R (fun m => (f (idx m)).1) ↔
-        @Structure.RelMap L V d.toStructure k R (fun m => (f (idx m)).2) := by
-    let N := Finset.univ.sup idx + 1
-    let g : Fin k → Fin N := fun m => ⟨idx m, Nat.lt_succ_of_le (Finset.le_sup (Finset.mem_univ m))⟩
-    simpa only [AtomicIdx.holds_rel, Function.comp_def] using hN N (.rel R g)
-  have hsurj₁ (x : V) : ∃ i : ℕ, (f i).1 = x := by
-    obtain ⟨m, rfl⟩ := henum x
-    refine ⟨2 * m, ?_⟩
-    have hm := hsched (2 * m)
-    have heven : Even (2 * m) := even_two_mul m
-    simpa [heven] using hm
-  have hsurj₂ (y : V) : ∃ j : ℕ, (f j).2 = y := by
-    obtain ⟨m, rfl⟩ := henum y
-    refine ⟨2 * m + 1, ?_⟩
-    have hm := hsched (2 * m + 1)
-    have hodd : ¬ Even (2 * m + 1) := by simp
-    have hdiv : (2 * m + 1) / 2 = m := by omega
-    simpa [hodd, hdiv] using hm
-  choose idx₁ hidx₁ using hsurj₁
-  choose idx₂ hidx₂ using hsurj₂
+    simpa using @SameAtomicType.eq_iff L 2 V V c.toStructure d.toStructure _ _ _
+      (sameAtomicType_of_forall_mem_bfTree hf ![i, j]) 0 1
   let toFun : V → V := fun x => (f (idx₁ x)).2
   let invFun : V → V := fun y => (f (idx₂ y)).1
+  -- Assemble the `L`-isomorphism using relation agreement on finite index tuples.
   refine isoSetoid_apply.mpr ⟨@Language.Equiv.mk L V V c.toStructure d.toStructure
     { toFun := toFun
       invFun := invFun
@@ -250,7 +259,8 @@ private theorem isoSetoid_of_not_isWellFounded_bfTree {enum : ℕ → V}
     (fun R x => by
       dsimp [toFun, Function.comp_def]
       conv_rhs => rw [funext fun m => (hidx₁ (x m)).symm]
-      exact (hrel R (fun m => idx₁ (x m))).symm)⟩
+      exact (@SameAtomicType.rel_iff L _ V V c.toStructure d.toStructure _ _ _
+        (sameAtomicType_of_forall_mem_bfTree hf fun m => idx₁ (x m)) _ R id).symm)⟩
 
 /-- Contrapositively, when `c` and `d` are non-isomorphic, `bfTree enum c d` is well-founded. -/
 private theorem isWellFounded_bfTree_of_not_isoSetoid {enum : ℕ → V}
@@ -266,7 +276,8 @@ private theorem not_bfEquiv_of_rank_subAt_bfTree_le {enum : ℕ → V}
     {γ : Ordinal.{w}} :
     ∀ {w : List (V × V)}, w ∈ bfTree enum c d →
       Tree.rank (Tree.subAt (bfTree enum c d) w) ≤ γ →
-      ¬ @BFEquiv L _ V V c.toStructure d.toStructure γ w.length (tupleFst w) (tupleSnd w) := by
+      ¬ @BFEquiv L _ V V c.toStructure d.toStructure γ w.length
+        (tupleMap Prod.fst w) (tupleMap Prod.snd w) := by
   induction γ using WellFoundedLT.induction with
   | ind γ ih =>
     intro w hw hrank hbf
@@ -274,16 +285,16 @@ private theorem not_bfEquiv_of_rank_subAt_bfTree_le {enum : ℕ → V}
     set δ : Ordinal.{w} := ⨆ p : V × V, Tree.rank (Tree.subAt (bfTree enum c d) (w ++ [p]))
     have hδlt : δ < γ := (Order.lt_add_one_iff.mpr le_rfl).trans_le hrank
     have hbf' : @BFEquiv L _ V V c.toStructure d.toStructure (δ + 1) w.length
-        (tupleFst w) (tupleSnd w) :=
-      @BFEquiv.mono L _ V V c.toStructure d.toStructure w.length (tupleFst w) (tupleSnd w)
-        (δ + 1) γ hbf hrank
+        (tupleMap Prod.fst w) (tupleMap Prod.snd w) :=
+      @BFEquiv.mono L _ V V c.toStructure d.toStructure w.length
+        (tupleMap Prod.fst w) (tupleMap Prod.snd w) (δ + 1) γ hbf hrank
     obtain ⟨_, hforth, hback⟩ :=
       (@BFEquiv.add_one L _ V V c.toStructure d.toStructure w.length δ
-        (tupleFst w) (tupleSnd w)).mp hbf'
+        (tupleMap Prod.fst w) (tupleMap Prod.snd w)).mp hbf'
     have hex : ∃ p : V × V,
         (if Even w.length then p.1 = enum (w.length / 2) else p.2 = enum (w.length / 2)) ∧
         @BFEquiv L _ V V c.toStructure d.toStructure δ (w.length + 1)
-          (Fin.snoc (tupleFst w) p.1) (Fin.snoc (tupleSnd w) p.2) := by
+          (Fin.snoc (tupleMap Prod.fst w) p.1) (Fin.snoc (tupleMap Prod.snd w) p.2) := by
       by_cases heven : Even w.length
       · obtain ⟨y, hy⟩ := hforth (enum (w.length / 2))
         exact ⟨(enum (w.length / 2), y), by simp [heven], hy⟩
@@ -291,18 +302,18 @@ private theorem not_bfEquiv_of_rank_subAt_bfTree_le {enum : ℕ → V}
         exact ⟨(x, enum (w.length / 2)), by simp [heven], hx⟩
     obtain ⟨p, hpsched, hpbf⟩ := hex
     have hpbf' : @BFEquiv L _ V V c.toStructure d.toStructure δ (w ++ [p]).length
-        (tupleFst (w ++ [p])) (tupleSnd (w ++ [p])) := by
-      rw [tupleFst_append_singleton, tupleSnd_append_singleton]
+        (tupleMap Prod.fst (w ++ [p])) (tupleMap Prod.snd (w ++ [p])) := by
+      rw [tupleMap_append_singleton, tupleMap_append_singleton]
       exact @BFEquiv.comp L _ V V c.toStructure d.toStructure (w.length + 1)
-        (Fin.snoc (tupleFst w) p.1) (Fin.snoc (tupleSnd w) p.2) δ hpbf (w ++ [p]).length
-        (Fin.cast (by simp))
+        (Fin.snoc (tupleMap Prod.fst w) p.1) (Fin.snoc (tupleMap Prod.snd w) p.2) δ hpbf
+        (w ++ [p]).length (Fin.cast (by simp))
     have hmem : w ++ [p] ∈ bfTree enum c d := by
       refine ⟨fun i => ?_, ?_⟩
       · rcases Nat.lt_succ_iff_lt_or_eq.mp (by simpa using i.2 : i.1 < w.length + 1) with hlt | heq
         · simpa [List.getElem_append_left hlt] using hw.1 ⟨i.1, hlt⟩
         · simpa [heq] using hpsched
       · exact @BFEquiv.sameAtomicType L _ V V c.toStructure d.toStructure (w ++ [p]).length
-          (tupleFst (w ++ [p])) (tupleSnd (w ++ [p])) δ hpbf'
+          (tupleMap Prod.fst (w ++ [p])) (tupleMap Prod.snd (w ++ [p])) δ hpbf'
     have hple : Tree.rank (Tree.subAt (bfTree enum c d) (w ++ [p])) ≤ δ :=
       Ordinal.le_iSup (fun q : V × V => Tree.rank (Tree.subAt (bfTree enum c d) (w ++ [q]))) p
     exact ih δ hδlt hmem hple hpbf'
@@ -313,21 +324,17 @@ private theorem not_bfEquivSetoid_of_rank_bfTree_le {enum : ℕ → V}
     {c d : RelationalConfiguration L V} (hwf : IsWellFounded (bfTree enum c d))
     {γ : Ordinal.{w}} (hrank : Tree.rank (bfTree enum c d) ≤ γ) :
     ¬ bfEquivSetoid L V γ c d := by
-  have hfst : tupleFst ([] : List (V × V)) = Fin.elim0 := funext fun i => Fin.elim0 i
-  have hsnd : tupleSnd ([] : List (V × V)) = Fin.elim0 := funext fun i => Fin.elim0 i
   by_cases hnil : ([] : List (V × V)) ∈ bfTree enum c d
   · intro hbf
     have h0 : @BFEquiv L _ V V c.toStructure d.toStructure γ ([] : List (V × V)).length
-        (tupleFst []) (tupleSnd []) := by
-      rw [hfst, hsnd]
-      exact bfEquivSetoid_apply.mp hbf
+        (tupleMap Prod.fst []) (tupleMap Prod.snd []) := by
+      simpa only [List.length_nil, tupleMap_nil] using bfEquivSetoid_apply.mp hbf
     exact not_bfEquiv_of_rank_subAt_bfTree_le hwf hnil (by simpa using hrank) h0
   · intro hbf
-    apply hnil
-    refine ⟨fun i => Fin.elim0 i, ?_⟩
-    rw [hfst, hsnd]
-    exact @BFEquiv.sameAtomicType L _ V V c.toStructure d.toStructure 0 Fin.elim0 Fin.elim0 γ
-      (bfEquivSetoid_apply.mp hbf)
+    refine hnil ⟨fun i => Fin.elim0 i, ?_⟩
+    simpa only [List.length_nil, tupleMap_nil] using
+      @BFEquiv.sameAtomicType L _ V V c.toStructure d.toStructure 0 Fin.elim0 Fin.elim0 γ
+        (bfEquivSetoid_apply.mp hbf)
 
 end ForcedTree
 
@@ -353,9 +360,11 @@ theorem exists_uniform_bfSeparation [Countable V]
       rwa [Ordinal.lift_eq_omega_one.mpr rfl]
     obtain ⟨β₀, hβ₀, hβ₀_eq⟩ := Ordinal.lt_lift_iff.mp hβw'
     refine ⟨Ordinal.lift.{o, 0} β₀, Ordinal.lift_lt_omega_one.mpr hβ₀, fun p hp hbf => ?_⟩
-    rw [bfEquivSetoid_lift, ← bfEquivSetoid_lift.{u, v, w, 0, w}, hβ₀_eq] at hbf
-    exact not_bfEquivSetoid_of_rank_bfTree_le
-      (isWellFounded_bfTree_of_not_isoSetoid henum (hdisj p hp)) (hbound p hp).le hbf
+    have hnot := not_bfEquivSetoid_of_rank_bfTree_le
+      (isWellFounded_bfTree_of_not_isoSetoid henum (hdisj p hp)) (hbound p hp).le
+    rw [← hβ₀_eq, bfEquivSetoid_lift] at hnot
+    rw [bfEquivSetoid_lift] at hbf
+    exact hnot hbf
 
 /-! ### Asymptotic saturation of analytic and Borel splits -/
 

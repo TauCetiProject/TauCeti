@@ -152,9 +152,7 @@ theorem IsWellFounded.exists_notMem (hT : IsWellFounded T) (f : ℕ → A) :
     dsimp [u]
     rw [List.ofFn_succ', List.concat_eq_append]
     simp
-  have hfalse : ∀ x : T, Acc (ChildRel T) x → ∀ n, u n = x → False := fun x hx =>
-    hx.recOn fun x _ ih n hnx => ih (u (n + 1)) (hnx ▸ hstep n) (n + 1) rfl
-  exact hfalse (u 0) (hT.apply (u 0)) 0 rfl
+  exact (wellFounded_iff_isEmpty_descending_chain.mp hT).false ⟨u, hstep⟩
 
 /-- **Infinite-branch characterization of ill-foundedness.** A descriptive tree fails to be
 well-founded precisely when some `f : ℕ → A` has every finite initial segment in `T`. -/
@@ -168,28 +166,15 @@ theorem not_isWellFounded_iff :
     have hnil : [] ∈ T := mem_of_prefix List.nil_prefix u₀.2
     have hroot : ¬ Acc (ChildRel T) ⟨[], hnil⟩ :=
       not_acc_of_append (x := []) (l := u₀.1) (by simp) (by simp [hu₀])
-    -- Every inaccessible node has an inaccessible one-step child; iterate from the root `[]`.
-    have hstep : ∀ s : {u : T // ¬ Acc (ChildRel T) u},
-        ∃ (a : A) (ha : s.1.1 ++ [a] ∈ T), ¬ Acc (ChildRel T) ⟨s.1.1 ++ [a], ha⟩ := by
-      intro s
-      by_contra! hall
-      refine s.2 (Acc.intro s.1 fun v ⟨a, hv⟩ => ?_)
-      have ha : s.1.1 ++ [a] ∈ T := hv ▸ v.2
-      have hacc := hall a ha
-      have hv' : (⟨s.1.1 ++ [a], ha⟩ : T) = v := Subtype.ext hv.symm
-      rwa [hv'] at hacc
-    choose nextElem nextMem nextInacc using hstep
-    let next : {u : T // ¬ Acc (ChildRel T) u} → {u : T // ¬ Acc (ChildRel T) u} :=
-      fun s => ⟨⟨s.1.1 ++ [nextElem s], nextMem s⟩, nextInacc s⟩
-    let root : {u : T // ¬ Acc (ChildRel T) u} := ⟨⟨[], hnil⟩, hroot⟩
-    let f : ℕ → A := fun n => nextElem (next^[n] root)
-    have hpath (n : ℕ) : (next^[n] root).1.1 = List.ofFn (fun i : Fin n => f i) := by
+    obtain ⟨c, hc0, hstep⟩ := not_acc_iff_exists_descending_chain.mp hroot
+    choose f hf using hstep
+    have hpath (n : ℕ) : (c n).1 = List.ofFn (fun i : Fin n => f i) := by
       induction n with
-      | zero => simp [root]
+      | zero => simp [hc0]
       | succ n ih =>
-        rw [Function.iterate_succ_apply', List.ofFn_succ', List.concat_eq_append]
-        simp [next, ih, f]
-    exact ⟨f, fun n => hpath n ▸ (next^[n] root).1.2⟩
+        rw [hf n, ih, List.ofFn_succ', List.concat_eq_append]
+        simp
+    exact ⟨f, fun n => hpath n ▸ (c n).2⟩
   · obtain ⟨n, hn⟩ := hT.exists_notMem f
     exact hn (hf n)
 
