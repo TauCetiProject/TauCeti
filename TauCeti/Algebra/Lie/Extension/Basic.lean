@@ -17,7 +17,8 @@ Mathlib's `LieAlgebra.ofTwoCocycle c` is this Lie algebra, and Mathlib packages 
 (`LieAlgebra.Extension.ofTwoCocycle`) only when `M` is itself given the structure of an abelian Lie
 algebra.
 
-This file works with an arbitrary module `M` and supplies:
+This file supplies cocycle-model constructions for arbitrary coefficient modules `M`,
+and comparisons with extensions whose kernels are themselves abelian Lie algebras:
 
 * `LieAlgebra.ofProdLinearEquiv`: the identification `LieAlgebra.ofProd` with `L × M` as a linear
   equivalence, so that finiteness transfers to `LieAlgebra.ofTwoCocycle c`;
@@ -31,7 +32,9 @@ This file works with an arbitrary module `M` and supplies:
 * `LieAlgebra.ofTwoCocycle.centralElement`: for coefficients the trivial module `R`, the central
   element `K = (0, 1)`, which is nonzero over a nontrivial ring, and in terms of which every
   element is an element of `L` plus a multiple of `K`
-  (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`).
+  (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`);
+* `LieAlgebra.Extension.ofTwoCocycleEquiv`: the comparison of an extension with abelian kernel
+  and a linear section with the model of Mathlib's native `Extension.twoCocycleOf`.
 
 The construction of `map` and `mapEquiv` follows Mathlib's `LieAlgebra.LieEquiv.ofCoboundary`,
 which identifies the extensions of cohomologous cocycles by acting on the coordinates of `ofProd`.
@@ -42,6 +45,10 @@ applied to the sheared Lie algebra, for instance to show that a 2-cocycle is a c
 morphisms of central extensions compare the extensions attached to proportional cocycles, and an
 extension with its restriction to a subalgebra. The degree-one counterpart, the module sheared by
 a Lie derivation, is `LieDerivation.ShearedModule` in `TauCeti.Algebra.Lie.Derivation.Cocycle`.
+
+## References
+
+* E. Frenkel, *Langlands Correspondence for Loop Groups*, §1.3, for cocycle models of extensions.
 -/
 
 public section
@@ -244,6 +251,146 @@ end Derivation
 end Trivial
 
 end ofTwoCocycle
+
+namespace Extension
+
+noncomputable section
+
+open Function
+
+variable {M : Type*} [LieRing M] [LieAlgebra R M] (E : Extension R M L)
+
+/-- The kernel equivalence is the inclusion on underlying elements. -/
+@[simp]
+theorem coe_toKer (m : M) : (E.toKer m : E.L) = E.incl m := (rfl)
+
+/-- Inverting the kernel equivalence recovers the underlying element by inclusion. -/
+@[simp]
+theorem incl_toKer_symm (v : E.proj.ker) : E.incl (E.toKer.symm v) = v := by
+  rw [← coe_toKer, LieEquiv.apply_symm_apply]
+
+variable {s : L →ₗ[R] E.L} (hs : LeftInverse E.proj s)
+
+/-- The kernel coordinate relative to a linear section, namely `x - s (proj x)`. -/
+def splittingCoordinate : E.L →ₗ[R] M :=
+  E.toKer.symm.toLinearMap.comp
+    ((LinearMap.id - s.comp E.proj.toLinearMap).codRestrict E.proj.ker.toSubmodule
+      (fun x ↦ by simp [hs.eq]))
+
+/-- Evaluate the kernel coordinate by inverting the kernel equivalence on the difference
+from the section. -/
+theorem splittingCoordinate_apply (x : E.L) :
+    E.splittingCoordinate hs x =
+      E.toKer.symm ⟨x - s (E.proj x), by simp [hs.eq]⟩ := by
+  -- Evaluation of the composite and its codomain restriction gives this kernel element.
+  rfl
+
+/-- Including the kernel coordinate gives the difference from the section. -/
+@[simp]
+theorem incl_splittingCoordinate (x : E.L) :
+    E.incl (E.splittingCoordinate hs x) = x - s (E.proj x) := by
+  rw [splittingCoordinate_apply, incl_toKer_symm]
+
+/-- The kernel coordinate vanishes on the section. -/
+@[simp]
+theorem splittingCoordinate_section (x : L) : E.splittingCoordinate hs (s x) = 0 := by
+  apply E.incl_injective
+  simp [hs x]
+
+/-- The kernel coordinate is a retraction of the inclusion. -/
+@[simp]
+theorem splittingCoordinate_incl (m : M) : E.splittingCoordinate hs (E.incl m) = m := by
+  apply E.incl_injective
+  simp
+
+variable [IsLieAbelian M]
+
+/-- Including the native cocycle gives the defect of the section from preserving brackets. -/
+theorem incl_twoCocycleOf (x y : L) :
+    letI := E.ringModuleOf
+    letI := E.lieModuleOf
+    E.incl ((E.twoCocycleOf hs : L →ₗ[R] L →ₗ[R] M) x y) = ⁅s x, s y⁆ - s ⁅x, y⁆ := by
+  -- Mathlib's native cocycle is the kernel-valued bracket defect composed with `toKer.symm`.
+  simp only [twoCocycleOf_coe_coe, LinearMap.compr₂_apply, LinearEquiv.coe_coe,
+    LieEquiv.coe_toLinearEquiv, incl_toKer_symm]
+  -- The underlying value of Mathlib's private `twoCocycleAux` is this bracket defect.
+  rfl
+
+/-- The induced quotient action is computed by the bracket with the lift along any linear
+section. -/
+theorem incl_lie (hs : LeftInverse E.proj s) (x : L) (m : M) :
+    letI := E.ringModuleOf
+    E.incl ⁅x, m⁆ = ⁅s x, E.incl m⁆ := by
+  let := E.ringModuleOf
+  have h := E.ringModuleOf_bracket_proj m (s x)
+  rw [hs x] at h
+  rw [h, incl_toKer_symm, LieSubmodule.coe_bracket, lie_toKer_apply]
+
+/-- A split extension with abelian kernel is isomorphic to the model of its native cocycle.
+The coordinates are `s x + incl m`; the section itself need not preserve brackets. -/
+def ofTwoCocycleEquiv :
+    letI := E.ringModuleOf
+    letI := E.lieModuleOf
+    LieAlgebra.ofTwoCocycle (E.twoCocycleOf hs) ≃ₗ⁅R⁆ E.L := by
+  letI := E.ringModuleOf
+  letI := E.lieModuleOf
+  let c := E.twoCocycleOf hs
+  exact
+    { toFun v := s ((ofProd c).symm v).1 + E.incl ((ofProd c).symm v).2
+      invFun x := ofProd c (E.proj x, E.splittingCoordinate hs x)
+      map_add' _ _ := by simp; abel
+      map_smul' _ _ := by simp [smul_add]
+      left_inv v := by
+        apply (ofProd c).symm.injective
+        simp [hs.eq]
+      right_inv x := by simp
+      map_lie' {v w} := by
+        simp only [bracket_ofTwoCocycle, c, Equiv.symm_apply_apply, map_sub, map_add]
+        rw [E.incl_twoCocycleOf hs, E.incl_lie hs, E.incl_lie hs]
+        simp only [lie_add, add_lie, ← LieHom.map_lie, trivial_lie_zero M M, map_zero,
+          add_zero]
+        rw [← lie_skew (s ((ofProd c).symm w).1) (E.incl ((ofProd c).symm v).2)]
+        abel }
+
+/-- The comparison sends product coordinates to the section plus the inclusion. -/
+@[simp]
+theorem ofTwoCocycleEquiv_ofProd (x : L) (m : M) :
+    letI := E.ringModuleOf
+    letI := E.lieModuleOf
+    E.ofTwoCocycleEquiv hs (ofProd (E.twoCocycleOf hs) (x, m)) = s x + E.incl m := (rfl)
+
+/-- The inverse comparison consists of the projection and the kernel coordinate. -/
+@[simp]
+theorem ofTwoCocycleEquiv_symm_apply (x : E.L) :
+    letI := E.ringModuleOf
+    letI := E.lieModuleOf
+    (E.ofTwoCocycleEquiv hs).symm x =
+      ofProd (E.twoCocycleOf hs) (E.proj x, E.splittingCoordinate hs x) := (rfl)
+
+/-- The comparison is over the identity on the quotient. -/
+@[simp]
+theorem proj_ofTwoCocycleEquiv :
+    letI := E.ringModuleOf
+    letI := E.lieModuleOf
+    ∀ v, E.proj (E.ofTwoCocycleEquiv hs v) = ofTwoCocycle.proj (E.twoCocycleOf hs) v := by
+  let := E.ringModuleOf
+  let := E.lieModuleOf
+  intro v
+  obtain ⟨⟨x, m⟩, rfl⟩ := (ofProd (E.twoCocycleOf hs)).surjective v
+  simp [hs x]
+
+/-- The native cocycle is the kernel coordinate of the bracket of section elements. -/
+theorem twoCocycleOf_eq_splittingCoordinate (x y : L) :
+    letI := E.ringModuleOf
+    letI := E.lieModuleOf
+    (E.twoCocycleOf hs : L →ₗ[R] L →ₗ[R] M) x y =
+      E.splittingCoordinate hs ⁅s x, s y⁆ := by
+  apply E.incl_injective
+  simp [hs.eq, LieHom.map_lie]
+
+end
+
+end Extension
 
 end LieAlgebra
 
