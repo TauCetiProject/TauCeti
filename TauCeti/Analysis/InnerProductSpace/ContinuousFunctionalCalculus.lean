@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
 
@@ -224,5 +225,11 @@ theorem restrictScalars_cfc (f : ℝ → ℝ) (T : E →L[𝕜] E)
 attribute [instance] instStarOrderedRingRCLike
 
 end RCLike
+
+/-- The inner product of two images under a positive operator's square root. -/
+theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) (u v : X) :
+    ⟪CFC.sqrt T u, CFC.sqrt T v⟫_ℝ = ⟪T u, v⟫_ℝ := by
+  rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
+    ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
 end ContinuousLinearMap

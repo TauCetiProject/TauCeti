@@ -104,9 +104,9 @@ public theorem frickeScalar_eq (k : ℤ) :
     frickeScalar N k = (-1) ^ k * (N : ℂ) ^ (k - 2) := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hneg : ((-1 : ℂ)) ^ (-k) = (-1 : ℂ) ^ k := by
-    rw [zpow_neg]
+    rw [_root_.zpow_neg]
     refine inv_eq_of_mul_eq_one_right ?_
-    rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, zpow_mul]
+    rw [← zpow_add₀ (by norm_num : (-1 : ℂ) ≠ 0), ← two_mul, _root_.zpow_mul]
     norm_num
   -- `frickeScalar_def` leaves the sign trapped inside the base of `(-N) ^ (-k)`. Splitting it off
   -- as `-1 * N` is what lets `mul_zpow` separate the two factors, so that `hneg` can turn

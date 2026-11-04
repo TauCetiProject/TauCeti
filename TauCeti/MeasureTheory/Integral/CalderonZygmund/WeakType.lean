@@ -179,7 +179,7 @@ private theorem mul_volume_biUnion_closedBall_le (c : ℝ) (g : (ι → ℝ) →
         mul_le_mul_right (measure_biUnion_le _ (to_countable _) _) _
     _ ≤ t * ∑' q : calderonZygmundCubes g t,
           ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.1.1 q.1.2) :=
-        mul_le_mul_right (ENNReal.tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _) _
+        mul_le_mul_right (tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _) _
     _ = ENNReal.ofReal c ^ Fintype.card ι *
           (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by
         rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
@@ -279,7 +279,7 @@ private theorem setLIntegral_compl_enorm_calderonZygmundBad_le [Nonempty ι]
     _ = ∑' q : 𝒬, ∫⁻ x in Ωᶜ, ‖T (b q) x‖ₑ :=
         lintegral_tsum fun q => (Lp.aestronglyMeasurable _).enorm.restrict
     _ ≤ ∑' q : 𝒬, B * (2 * ∫⁻ x in dyadicCube q.1.1 q.1.2, ‖f x‖ₑ) :=
-        ENNReal.tsum_le_tsum fun q => (lintegral_mono_set
+        tsum_le_tsum fun q => (lintegral_mono_set
           (compl_subset_compl.2 (subset_biUnion_of_mem (u := fun q : ℤ × (ι → ℤ) =>
             closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) q.2))).trans
           (hb q)

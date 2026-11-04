@@ -80,7 +80,7 @@ end Splits
 /-- **`X ^ 2 + 1` is irreducible over an ordered field**: a square is never `-1`. -/
 theorem irreducible_X_sq_add_one (K : Type*) [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] : Irreducible (X ^ 2 + 1 : K[X]) := by
-  have h := X_pow_sub_C_irreducible_of_prime Nat.prime_two (a := (-1 : K))
+  have h := _root_.irreducible_X_pow_sub_C_of_prime Nat.prime_two (a := (-1 : K))
     fun b hb ↦ by nlinarith [sq_nonneg b]
   simpa [sub_eq_add_neg] using h
 

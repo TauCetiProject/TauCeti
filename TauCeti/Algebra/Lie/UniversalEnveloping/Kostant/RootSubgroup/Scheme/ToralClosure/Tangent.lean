@@ -91,7 +91,7 @@ theorem kostantRootGeneratorIntMatrix_eq_zero_of_weight_ne (i : I) {α : κ → 
   classical
   have := Fintype.ofFinite η
   rw [kostantRootGeneratorIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
-  exact repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt
+  exact repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
     (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i hα (hwt s))
     fun hr ↦ hrs (sub_eq_iff_eq_add'.mpr hr)
 

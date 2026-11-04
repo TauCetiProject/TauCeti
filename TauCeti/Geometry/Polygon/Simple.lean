@@ -55,6 +55,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
 * `Polygon.isSimple_reverse_iff`: reversing the order of the vertices keeps a polygon simple.
 * `Polygon.boundaryParam_reverse`: the reversal traverses the boundary backwards.
+* `Polygon.IsSimple.apply_notMem_edgeSet`: a vertex of a simple polygon lies on no edge other
+  than the two edges through it.
 * `Polygon.isSimple_map_iff`: an injective affine map preserves and reflects simplicity.
 * `Polygon.IsSimple.insertVertex`: an intersection criterion for insertion to preserve simplicity.
 * `Polygon.IsSimple.three_le`: a nonempty simple polygon over a densely ordered ring acting
@@ -139,6 +141,15 @@ theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ po
         ⟨e, rfl⟩ | ⟨e, rfl⟩
       · exact .inl ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
       · exact .inr ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
+
+/-- A vertex of a simple polygon lies on no edge other than the two edges through it. -/
+theorem IsSimple.apply_notMem_edgeSet {poly : Polygon P n} (hs : poly.IsSimple R) {k j : Fin n}
+    (hkj : k ≠ j) (hkj' : k ≠ finRotate n j) : poly k ∉ poly.edgeSet R j := by
+  intro h
+  rcases hs.eq_vertex_of_mem_edgeSet hkj (apply_mem_edgeSet_self R poly k) h with ⟨rfl, he⟩ |
+    ⟨h', -⟩
+  · exact hs.hasNondegenerateEdges k he
+  · exact hkj' h'
 
 omit [ZeroLEOneClass R] in
 variable [IsOrderedRing R] in

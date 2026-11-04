@@ -101,7 +101,8 @@ theorem isSemialgebraic_projectorLocus [LinearOrder K] :
         ⋂ p : ι × ι, {a | eval a (∑ k, X (p.1, k) * X (k, p.2)) = eval a (X p)}) ∩
         {a | eval a (∑ i, X (i, i)) = eval a 1} := by
     ext a
-    simp [IsSymm, IsIdempotentElem, ← Matrix.ext_iff, mul_apply, trace, Prod.forall, and_assoc]
+    simp [IsSymm, IsIdempotentElem, ← Matrix.ext_iff, Matrix.mul_apply, trace, Prod.forall,
+      and_assoc]
   rw [h]
   exact ((IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_eval_eq _ _).inter
     (IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_eval_eq _ _)).inter

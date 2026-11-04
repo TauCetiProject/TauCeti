@@ -113,6 +113,13 @@ lemma _root_.RootPairing.mem_wallIndices {x : M} {i : b.support} :
     i ∈ P.wallIndices b x ↔ P.coroot' i x = 0 :=
   Iff.rfl
 
+/-- A nonzero scalar multiple of a weight lies on exactly the same simple walls. -/
+@[simp]
+lemma _root_.RootPairing.wallIndices_smul [NoZeroDivisors R] {c : R} (hc : c ≠ 0) (x : M) :
+    P.wallIndices b (c • x) = P.wallIndices b x := by
+  ext i
+  simp [map_smul, hc]
+
 /-- Adding a weight `χ` killed by the simple coroots, such as a central weight, does not change
 the walls through a weight. -/
 lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
@@ -418,15 +425,7 @@ theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg
   have hdy : (weylCoxeterSystem P b).IsLeftDescent y i := by
     by_contra hd
     exact (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hy
-  have := (weylCoxeterSystem P b).isLeftDescent_iff.mp hdx
-  have := (weylCoxeterSystem P b).isLeftDescent_iff.mp hdy
-  have := h.length_add_one_eq
-  -- Both lengths go down by one, and the lifting property gives `sᵢ y ≤ sᵢ x`.
-  exact CoxeterSystem.minimalCosetRepCovBy_iff.mpr
-    ⟨isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_left hy.ne,
-      isMinimalCosetRep_simple_mul_of_coroot'_ne_zero h.isMinimalCosetRep_right hx.ne,
-      (h.bruhatLE.simple_mul_of_isLeftDescent i hdx).bruhatLE_simple_mul
-        ((weylCoxeterSystem P b).isLeftDescent_iff_not_isLeftDescent_mul.mp hdy), by omega⟩
+  exact h.simple_mul_of_isLeftDescent hdy hdx
 
 /-- **A cover leaving the nonpositive side of a simple wall is given by the simple reflection.** If
 `y ⋖ x` in `W / W_λ` with `⟨x λ, αᵢ^∨⟩ ≤ 0 < ⟨y λ, αᵢ^∨⟩`, then `x = sᵢ y`. -/

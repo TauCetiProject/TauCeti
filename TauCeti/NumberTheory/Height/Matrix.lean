@@ -102,7 +102,7 @@ theorem logHeight_def (A : Matrix m n K) :
 
 @[simp]
 theorem mulHeight_zero : (0 : Matrix m n K).mulHeight = 1 :=
-  by simpa only [mulHeight_def, zero_apply, Pi.zero_def, Pi.zero_apply] using
+  by simpa only [mulHeight_def, Matrix.zero_apply, Pi.zero_def, Pi.zero_apply] using
     (Height.mulHeight_zero : Height.mulHeight (0 : m × n → K) = 1)
 
 @[simp]
@@ -111,7 +111,7 @@ theorem logHeight_zero : (0 : Matrix m n K).logHeight = 0 := by
 
 @[simp]
 theorem mulHeight_neg (A : Matrix m n K) : (-A).mulHeight = A.mulHeight :=
-  by simpa only [mulHeight_def, neg_apply, Pi.neg_def, Pi.neg_apply] using
+  by simpa only [mulHeight_def, Matrix.neg_apply, Pi.neg_def, Pi.neg_apply] using
     Height.mulHeight_neg (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
@@ -180,7 +180,7 @@ theorem logHeight_nonneg (A : Matrix m n K) : 0 ≤ A.logHeight :=
 @[simp]
 theorem mulHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
     (c • A).mulHeight = A.mulHeight :=
-  by simpa only [mulHeight_def, smul_apply, Pi.smul_def, Pi.smul_apply] using
+  by simpa only [mulHeight_def, Matrix.smul_apply, Pi.smul_def, Pi.smul_apply] using
     mulHeight_smul_eq_mulHeight (fun q : m × n ↦ A q.1 q.2) hc
 
 /-- Multiplication by a nonzero scalar preserves logarithmic entry height. -/
@@ -195,8 +195,8 @@ theorem mulHeight_one [DecidableEq n] : (1 : Matrix n n K).mulHeight = 1 := by
   rw [mulHeight_def, Height.mulHeight_eq_mulHeight_restrict_support]
   convert Height.mulHeight_one with q
   obtain ⟨⟨i, j⟩, hq⟩ := q
-  simp only [Function.mem_support, one_apply] at hq
-  simpa [one_apply] using hq
+  simp only [Function.mem_support, Matrix.one_apply] at hq
+  simpa [Matrix.one_apply] using hq
 
 @[simp]
 theorem logHeight_one [DecidableEq n] : (1 : Matrix n n K).logHeight = 0 := by
@@ -227,7 +227,7 @@ private theorem mul_entries_eq_linearMap_apply [Fintype n] (A : Matrix m n K)
       ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) (q, j) *
         (1 : n → K) j := by
   ext q
-  simp [mul_apply]
+  simp [Matrix.mul_apply]
 
 /-- The pointwise product of the subtuples of the entries of `A` and of `B` appearing in
 `mul_entries_eq_linearMap_apply` has height at most the product of the entry heights of `A` and
@@ -304,7 +304,7 @@ theorem absLogHeight_eq_log_absMulHeight (A : Matrix m n F) :
 /-- The zero matrix has absolute multiplicative entry height one. -/
 @[simp]
 theorem absMulHeight_zero : (0 : Matrix m n F).absMulHeight = 1 := by
-  simpa only [absMulHeight, zero_apply, Pi.zero_def, Pi.zero_apply] using
+  simpa only [absMulHeight, Matrix.zero_apply, Pi.zero_def, Pi.zero_apply] using
     (TauCeti.absoluteProjectiveTupleHeight_zero :
       TauCeti.absoluteProjectiveTupleHeight (0 : m × n → F) = 1)
 
@@ -329,7 +329,7 @@ theorem absLogHeight_nonneg (A : Matrix m n F) : 0 ≤ A.absLogHeight :=
 @[simp]
 theorem absMulHeight_smul (A : Matrix m n F) {c : F} (hc : c ≠ 0)
     (hcalg : IsAlgebraic ℚ c) : (c • A).absMulHeight = A.absMulHeight := by
-  simpa only [absMulHeight, smul_apply, Pi.smul_def] using
+  simpa only [absMulHeight, Matrix.smul_apply, Pi.smul_def] using
     TauCeti.absoluteProjectiveTupleHeight_smul (fun q : m × n ↦ A q.1 q.2) hc hcalg
 
 /-- A nonzero algebraic scalar preserves absolute logarithmic entry height. -/
@@ -515,7 +515,7 @@ example (A : Matrix (Fin 0) (Fin 3) ℚ) : A.mulHeight = 1 := by
 -- `(#n) ^ totalWeight ℚ = 0 ^ 1 = 0`.
 example (A : Matrix (Fin 1) (Fin 0) ℚ) (B : Matrix (Fin 0) (Fin 1) ℚ) :
     ¬ (A * B).mulHeight ≤ Nat.card (Fin 0) ^ totalWeight ℚ * A.mulHeight * B.mulHeight := by
-  have hAB : A * B = 0 := by ext i k; simp [mul_apply]
+  have hAB : A * B = 0 := by ext i k; simp [Matrix.mul_apply]
   simp [hAB, NumberField.totalWeight_eq_finrank]
 
 -- The row `[1 2]` has entry height `2` over `ℚ`, and `2 ^ [L : ℚ]` over a number field `L`, for
@@ -549,7 +549,7 @@ example : !![(1 : ℚ), 1].mulHeight = 1 ∧ !![(1 : ℚ), 0; 1, 1].mulHeight = 
       (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))
   have hAB : (!![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1]).mulHeight = 2 := by
     have h : !![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1] = !![(2 : ℤ), 1].map (↑) := by
-      ext i j; fin_cases i; fin_cases j <;> norm_num [mul_apply, Fin.sum_univ_two]
+      ext i j; fin_cases i; fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two]
     rw [h, mulHeight_map_intCast_eq (by decide)]
     exact_mod_cast le_antisymm (ciSup_le (by decide))
       (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))

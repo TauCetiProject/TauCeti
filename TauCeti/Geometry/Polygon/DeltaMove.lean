@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
+public import TauCeti.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.Simple
+public import TauCeti.LinearAlgebra.AffineSpace.Triangle.Chart
 
 /-!
 # Δ-moves and combinatorial equivalence of polygons
@@ -44,6 +46,11 @@ the last kind of elementary move on `TauCeti.SimplePolygon`. The equivalence rel
 by the three, `TauCeti.SimplePolygon.CombinatoriallyEquivalent`, is combinatorial equivalence of
 oriented polygonal knots when the ambient space is `ℝ³`. For example, a triangle becomes the
 parallelogram it spans by a Δ-move (`Affine.Triangle.isDeltaMove_parallelogram`).
+
+The condition can be checked in coordinates on the plane of the triangle: through an injective
+affine map `R × R →ᵃ[R] P` (`Polygon.isDeltaMove_of_chart`), and in particular through the chart
+`TauCeti.triangleChart`, which sends the standard triangle onto the triangle of the move
+(`Polygon.IsDeltaMove.closedInterior_eq_image`).
 
 ## Main definitions
 
@@ -410,6 +417,46 @@ theorem IsDeltaMove.of_mem_closedInterior (h : poly.IsDeltaMove R i c) {c' : V}
   exact hsub hx.2
 
 end Apex
+
+/-! ### Δ-moves in a chart of the plane -/
+
+section Chart
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
+  [AddTorsor V P]
+
+/-- A Δ-move read in a chart of the plane: the vertices of the edge and the new vertex are the
+images under an injective affine map `φ` of affinely independent points `x`, `y`, `z`, and every
+other edge meets the image of their convex hull only at the images of `x` and `y`. -/
+theorem isDeltaMove_of_chart {m : ℕ} {q : Polygon P m} {j : Fin m} {w : P}
+    {φ : R × R →ᵃ[R] P} (hφ : Injective φ) {x y z : R × R}
+    (hx : q j = φ x) (hy : q (finRotate m j) = φ y) (hz : w = φ z)
+    (hind : AffineIndependent R ![x, y, z])
+    (hedge : ∀ k ≠ j, q.edgeSet R k ∩ φ '' convexHull R {x, y, z} ⊆ φ '' {x, y}) :
+    q.IsDeltaMove R j w := by
+  have hind' : AffineIndependent R ![q j, q (finRotate m j), w] := by
+    rw [hx, hy, hz]
+    convert hind.map' φ hφ using 1
+    funext k
+    fin_cases k <;> rfl
+  refine ⟨hind', fun k hk => ?_⟩
+  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ hφ (x := x) (y := y) (z := z)
+    (by rw [← hx, ← hy, ← hz]), hx, hy, ← image_pair]
+  exact hedge k hk
+
+variable {poly : Polygon P n} {i : Fin n} {c : P}
+
+/-- The triangle of a Δ-move is the image of the standard triangle under the chart
+`TauCeti.triangleChart` of its plane. -/
+theorem IsDeltaMove.closedInterior_eq_image (h : poly.IsDeltaMove R i c) :
+    h.triangle.closedInterior = TauCeti.triangleChart R (poly i) (poly (finRotate n i)) c ''
+      convexHull R {((0 : R), (0 : R)), (1, 0), (0, 1)} :=
+  Affine.Triangle.closedInterior_eq_image_convexHull _
+    (TauCeti.triangleChart_injective h.affineIndependent)
+    (by rw [IsDeltaMove.triangle_points, TauCeti.triangleChart_apply_zero_zero,
+      TauCeti.triangleChart_apply_one_zero, TauCeti.triangleChart_apply_zero_one])
+
+end Chart
 
 end Polygon
 

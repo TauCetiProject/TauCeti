@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.ComponentAut
-public import TauCeti.Geometry.Diffeomorphism.Congr
+public import TauCeti.Geometry.Diffeomorphism.RelativeCongr
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FixingSubgroup
 
 /-!
@@ -102,12 +102,8 @@ torus `E / L` of positive dimension, the marked curve has infinitely many automo
 every label: the translations of `G` act on the component. -/
 theorem infinite_ordered_of_specialPoints_eq_empty (i : ι) (e : X i ≃ₘ^n⟮I, I'⟯ G)
     (h : m.specialPoints i = ∅) : Infinite (ordered I n m) := by
-  have : Infinite (X i ≃ₘ^n⟮I, I⟯ X i) :=
-    (Diffeomorph.diffCongr e).toEquiv.infinite_iff.mpr
-      (Diffeomorph.infinite_of_faithfulVAdd (G := G))
-  have : Infinite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) := by
-    rw [h, Diffeomorph.fixingSubgroup_empty]
-    exact Subgroup.topEquiv.toEquiv.infinite_iff.mpr ‹_›
+  have : Infinite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) :=
+    h ▸ e.infinite_fixingSubgroup_empty
   exact infinite_ordered_of_infinite_fixingSubgroup i
 
 /-- **Elliptic components of a curve with finite automorphism group are stable.** If the marked

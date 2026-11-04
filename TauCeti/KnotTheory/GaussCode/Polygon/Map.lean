@@ -106,39 +106,13 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
       g '' poly.doublePoints ℝ (projAlong ℝ p₀ d) := by
     rw [doublePoints_eq_image_of_boundary_eq_image hg hbd]
     exact congrArg _ (doublePoints_congr fun x _ y _ ↦ hfib x y)
-  have hm : (poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2 =
-      (poly'.doublePoints ℝ (projAlong ℝ q₀ d')).ncard / 2 := by
-    rw [hDP, ncard_image_of_injective _ hg]
-  have h2 : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
-      2 * ((poly'.doublePoints ℝ (projAlong ℝ q₀ d')).ncard / 2) := by
-    rw [hm]
-  -- The two traversals have the same crossing times, hence their visits at the same times.
+  -- The two traversals have the same crossing times.
   have hct : poly'.crossingTimes q₀ d' = poly.crossingTimes p₀ d := by
     ext t
     rw [mem_crossingTimes, mem_crossingTimes, hbp, hDP, hg.mem_set_image]
-  have hvt (j) : visitTime hs' hπ' (Fin.cast h2 j) = visitTime hs hπ j :=
-    visitTime_cast_eq_of_crossingTimes_eq hs hπ hs' hπ' strictMono_id (by rw [hct, image_id])
-      h2 j
-  -- The partner visits correspond, since `g` carries partner points to partner points.
-  have hpartner (j) : (gaussCode hs' hπ' b').partner.val (Fin.cast h2 j) =
-      Fin.cast h2 ((gaussCode hs hπ b).partner.val j) :=
-    gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs' hπ' hg.injOn
-      (fun _ hx ↦ hbd ▸ mem_image_of_mem g (doublePoints_subset_boundary hx))
-      (fun x _ y _ ↦ (hfib x y).2) h2 (Equiv.refl _)
-      (fun k ↦ by rw [hvt, hbp, Equiv.refl_apply]) j
-  have hover' (j) : (gaussCode hs' hπ' b').over (Fin.cast h2 j) = (gaussCode hs hπ b).over j := by
-    rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner, hvt,
-      hvt, hbp, hbp, hover]
-  have hsign' (j) (hj : (gaussCode hs hπ b).over j = true) :
-      (gaussCode hs' hπ' b').sign ((gaussCode hs' hπ' b').visit (Fin.cast h2 j)) =
-        (gaussCode hs hπ b).sign ((gaussCode hs hπ b).visit j) := by
-    refine Units.ext ?_
-    rw [gaussCode_sign_visit b' hs' hπ' (by rw [hover', hj]), gaussCode_sign_visit b hs hπ hj,
-      hpartner, hvt, hvt, hsign]
-  refine (BasedOrientedGaussCode.sigma_mk_eq_of_visit_lt_visit_iff hm (fun j k ↦ ?_)
-    (fun j ↦ (hover' j).symm) (fun j hj ↦ (hsign' j hj).symm)).symm
-  rw [gaussCode_visit_lt_visit_iff, gaussCode_visit_lt_visit_iff, hpartner, hpartner, hvt, hvt,
-    hvt, hvt]
+  exact gaussCode_eq_of_strictMonoOn b hs hπ b' hs' hπ' (φ := id) (strictMono_id.strictMonoOn _)
+    (by rw [hct, image_id]) (fun t _ ↦ hbp t) hg.injOn (fun x _ y _ ↦ (hfib x y).2)
+    (fun x _ y _ ↦ (hover x y).2) fun t _ t' _ _ ↦ hsign _ _
 
 /-! ### Affine maps -/
 

@@ -23,8 +23,9 @@ these tensor constituents. If the category is rigid and finite semisimple with s
 every group element is the degree of a simple object. In particular the group is finite if
 there are only finitely many simple classes.
 
-This file constructs the group and its universal degree assignment. It does not identify
-the objects of neutral degree with the adjoint subcategory.
+This file constructs the group and its universal degree assignment. The simple objects of
+neutral degree are identified with the adjoint subcategory in
+`TauCeti/CategoryTheory/Monoidal/Grading/Adjoint.lean`.
 
 ## References
 
@@ -141,7 +142,7 @@ theorem degree_unit : degree (SimpleClasses.classOf (𝟙_ C)) = 1 := by
   let a : I.repr ≅ I.repr ⊗ I.repr := e ≪≫ (λ_ (𝟙_ C)).symm ≪≫ (e.symm ⊗ᵢ e.symm)
   have ha : a.hom ≠ 0 := by
     intro h
-    exact id_nonzero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
+    exact CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
   have h := degree_mul I I I a.hom ha
   exact (mul_eq_left.mp h.symm)
 
@@ -183,24 +184,11 @@ theorem degree_surjective :
         exact ⟨S.dual, degree_dual S⟩
       mul_mem' := by
         rintro _ _ ⟨S, rfl⟩ ⟨T, rfl⟩
-        obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ :=
-          IsFiniteSemisimpleCategory.exists_biproduct_simples (S.repr ⊗ T.repr)
-        let := hι
-        let := ha
-        let := hba
-        have hi : Nonempty ι := by
-          by_contra h
-          have : IsEmpty ι := not_nonempty_iff.mp h
-          have hz : IsZero (⨁ a) := (IsZero.iff_id_eq_zero _).2 (by ext i; exact isEmptyElim i)
-          exact not_isZero_tensorObj (Simple.not_isZero S.repr) (Simple.not_isZero T.repr)
-            (hz.of_iso e)
-        obtain ⟨i⟩ := hi
-        let b := SimpleClasses.classOfReprIso (a i)
-        have hf : b.hom ≫ biproduct.ι a i ≫ e.inv ≠ 0 := by
-          intro h
-          have h' := b.inv ≫= h =≫ (e.hom ≫ biproduct.π a i)
-          exact id_nonzero (a i) (by simpa using h')
-        exact ⟨SimpleClasses.classOf (a i), degree_mul S T _ _ hf⟩ }
+        obtain ⟨W, _, f, hf⟩ := exists_simple_hom_ne_zero
+          (not_isZero_tensorObj (Simple.not_isZero S.repr) (Simple.not_isZero T.repr))
+        let b := SimpleClasses.classOfReprIso W
+        have hbf : b.hom ≫ f ≠ 0 := fun h ↦ hf (by simpa using b.inv ≫= h)
+        exact ⟨SimpleClasses.classOf W, degree_mul S T _ _ hbf⟩ }
   intro x
   exact PresentedGroup.generated_by _ H (fun S ↦ ⟨S, rfl⟩) x
 

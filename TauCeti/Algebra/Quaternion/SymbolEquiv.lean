@@ -81,7 +81,7 @@ private def completeSquareInvBasis (a b c : R) :
     ext <;> simp
   j_mul_i := by
     ext <;> simp
-    all_goals try ring
+    ring
 
 /-- The lift associated with `completeSquareBasis`, in coordinates. -/
 private theorem completeSquareBasis_liftHom_apply (a b c : R) (x : ℍ[R,a,b,c]) :
@@ -128,7 +128,7 @@ def QuaternionAlgebra.completeSquareEquiv (a b c : R) :
         rw [completeSquareInvBasis_liftHom_apply a b c
           (⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])]
         ext <;> simp only [mul_invOf_self', mul_zero, sub_self]
-        all_goals ring
+        ring
       · -- Both changes fix the second quaternion generator.
         simp only [AlgHom.comp_apply, AlgHom.id_apply, QuaternionAlgebra.Basis.j_self]
         rw [completeSquareBasis_liftHom_apply a b c (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])]

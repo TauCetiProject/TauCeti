@@ -643,7 +643,7 @@ private lemma exists_affineE8 (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht :
   all_goals norm_num [Fin.lt_def] at huv
   all_goals norm_num [AffineDynkinType.graph_E8_adj] at h
   all_goals simp [p]
-  all_goals omega
+  omega
 
 /-- Two distinct leaves `x` and `y` outside a chain `c` meeting interior chain components `c r`
 and `c s` (`0 < r ≤ s` and `s + 1 < t`) either sit at the same component (forming a four-leaf

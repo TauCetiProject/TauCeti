@@ -213,7 +213,7 @@ theorem characterMonoidalAut_injective :
   have hS := congrArg
     (fun a ↦ (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr) h
   simp only [characterMonoidalAut_app_of_simple, SimpleClasses.classOf_repr] at hS
-  exact smul_left_injective k (id_nonzero S.repr) hS
+  exact smul_left_injective k (CategoryTheory.id_ne_zero S.repr) hS
 
 end Injective
 
