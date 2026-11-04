@@ -44,6 +44,7 @@ for which both cancellation laws hold on either side.
 
 ## Main results
 
+* `TauCeti.CayleyDickson.trace_surjective`: when `2` is invertible, the trace is onto.
 * `TauCeti.CayleyDickson.self_mul_star` and `TauCeti.CayleyDickson.self_add_star`: the norm and the
   trace are the scalars `x * star x` and `x + star x`.
 * `TauCeti.CayleyDickson.normSq_mul`: the norm is **multiplicative**.
@@ -51,6 +52,8 @@ for which both cancellation laws hold on either side.
   inverse properties.
 * `TauCeti.CayleyDickson.left_alternative`, `TauCeti.CayleyDickson.right_alternative`,
   `TauCeti.CayleyDickson.flexible`: the double of the quaternions is **alternative**.
+* `TauCeti.CayleyDickson.re_mul_comm` and `TauCeti.CayleyDickson.re_mul_mul`: the real part of a
+  product is invariant under exchanging two factors and under reassociating three.
 * `TauCeti.CayleyDickson.normSq_eq_zero`: over a linearly ordered ring the norm is definite, and
   the double has no zero divisors.
 * `TauCeti.CayleyDickson.mul_inv_cancel₀`, `TauCeti.CayleyDickson.inv_mul_cancel₀` and the four
@@ -152,6 +155,11 @@ theorem trace_one : trace (1 : CayleyDickson ℍ[R]) = 2 := by simp
 `TauCeti.CayleyDickson.trace_one`. -/
 theorem trace_star : trace (star x) = trace x := by simp
 
+/-- When `2` is invertible, the trace is onto: `T (r • ⅟2 • 1) = r`. -/
+theorem trace_surjective [Invertible (2 : R)] :
+    Function.Surjective (trace : CayleyDickson ℍ[R] →ₗ[R] R) :=
+  fun r => ⟨r • ⅟(2 : R) • (1 : CayleyDickson ℍ[R]), by simp⟩
+
 /-! ### The norm and the trace as products and sums with the involution -/
 
 /-- An element times its conjugate is its norm. -/
@@ -215,6 +223,23 @@ theorem right_alternative : x * y * y = x * (y * y) := by
 /-- **The flexible law** of the octonions. -/
 theorem flexible : x * y * x = x * (y * x) := by
   ext <;> simp <;> ring
+
+/-! ### Real parts of products -/
+
+/-- The real part of a product does not depend on the order of the factors. -/
+theorem re_mul_comm : (x * y).fst.re = (y * x).fst.re := by
+  simp
+  ring
+
+/-- The real part of a triple product does not depend on how it is bracketed. -/
+theorem re_mul_mul : (x * y * z).fst.re = (x * (y * z)).fst.re := by
+  simp
+  ring
+
+/-- The norm of a sum is the sum of the norms plus twice the real part of `x * star y`. -/
+theorem normSq_add : normSq (x + y) = normSq x + normSq y + 2 * (x * star y).fst.re := by
+  simp [normSq_def, Quaternion.normSq_def']
+  ring
 
 end CommRing
 
