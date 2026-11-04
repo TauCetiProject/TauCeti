@@ -10,9 +10,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 
-import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Topology.Algebra.Module.CompactQuotient
 import TauCeti.Topology.Algebra.Module.Quotient
 
@@ -234,9 +232,11 @@ theorem isSmoothEmbedding_ofQuotientHamiltonianFlowStabilizer
     mfderiv_comp v (hf.mdifferentiableAt (by simp)) (hq.mdifferentiableAt (by simp))] at hinj
   exact Injective.of_comp_right hinj (hq.mfderivToContinuousLinearEquiv (by simp)).surjective
 
-/-- **Regular components of a level are Lagrangian tori.** On a manifold of dimension `2 · |ι|`,
-if every point of the connected component `L` of `x` in its level is a regular point of `F`, the
-map `[v] ↦ v • x` from `(ι → ℝ) / Λ` is a Lagrangian embedding with range `L`. -/
+/-- **Regular components of a level are Lagrangian embeddings of `(ι → ℝ) / Λ`.** On a manifold of
+dimension `2 · |ι|`, if every point of the connected component `L` of `x` in its level is a regular
+point of `F`, the map `[v] ↦ v • x` from `(ι → ℝ) / Λ` is a Lagrangian embedding with range `L`.
+When `L` is compact, `Λ` is a full lattice (`isZLattice_hamiltonianFlowStabilizer`) and
+`(ι → ℝ) / Λ` is a torus. -/
 theorem isLagrangianEmbedding_ofQuotientHamiltonianFlowStabilizer
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
