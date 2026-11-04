@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
 public import TauCeti.Data.ENat.Lattice
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Vertex reachability and vertex connectivity of simple graphs
@@ -230,6 +231,14 @@ theorem isVertexConnected_iff : G.IsVertexConnected k ↔
 
 theorem IsVertexConnected.add_one_le_card (h : G.IsVertexConnected k) : k + 1 ≤ ENat.card V :=
   h.1
+
+/-- A vertex-connected graph on a finite vertex type has more vertices than its finite
+connectivity threshold. -/
+theorem IsVertexConnected.add_one_le_natCard [Finite V] {n : ℕ}
+    (h : G.IsVertexConnected n) : n + 1 ≤ Nat.card V := by
+  have hcard := h.add_one_le_card
+  rw [ENat.card_eq_coe_natCard] at hcard
+  exact_mod_cast hcard
 
 theorem IsVertexConnected.isVertexReachable (h : G.IsVertexConnected k) (u v : V) :
     G.IsVertexReachable k u v :=
