@@ -43,33 +43,6 @@ section Subgroup
 
 variable [CommSemiring R] {K : AddSubgroup H}
 
-/-- Restricting to a subgroup and then including recovers a series supported on that subgroup. -/
-theorem algebraMap_comap_subtype_of_support_subset (a : NovikovSeries R H N)
-    (ha : a.support ⊆ (K : Set H)) :
-    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N)
-      (comap K.subtype (exists_period_rescale_subtype K)
-        (by simp [K.subtype.ker_eq_bot K.subtype_injective]) a) = a := by
-  ext h
-  by_cases hh : h ∈ K
-  · exact (coeff_algebraMap_addSubgroup_coe _ ⟨h, hh⟩).trans (coeff_comap _ _ _ _ _)
-  · rw [coeff_algebraMap_addSubgroup_of_notMem _ hh]
-    symm
-    by_contra hc
-    exact hh (ha (mem_support.2 hc))
-
-/-- A series comes from the subgroup Novikov ring exactly when its support lies in the subgroup. -/
--- Rewrite before the generic simp rule that expands membership in a range to an existential.
-@[simp high]
-theorem mem_range_algebraMap_addSubgroup_iff (a : NovikovSeries R H N) :
-    a ∈ Set.range (algebraMap (NovikovSeries R K (N.comp K.subtype))
-      (NovikovSeries R H N)) ↔ a.support ⊆ (K : Set H) := by
-  constructor
-  · rintro ⟨b, rfl⟩ h hh
-    by_contra hK
-    exact (mem_support.1 hh) (coeff_algebraMap_addSubgroup_of_notMem b hK)
-  · intro ha
-    exact ⟨_, algebraMap_comap_subtype_of_support_subset a ha⟩
-
 /-- Inclusion of a subgroup of exponents preserves nonzerodivisors. -/
 theorem algebraMap_addSubgroup_mem_nonZeroDivisors
     {a : NovikovSeries R K (N.comp K.subtype)} (ha : a ∈ (NovikovSeries R K (N.comp K.subtype))⁰) :
@@ -99,7 +72,7 @@ theorem algebraMap_addSubgroup_mem_nonZeroDivisors_iff
 
 /-- If the period map is injective on a subgroup, every nonzero series from that subgroup
 is a nonzerodivisor in the ambient completion. -/
-theorem algebraMap_addSubgroup_mem_nonZeroDivisors_of_injective_period [IsDomain R]
+theorem algebraMap_addSubgroup_mem_nonZeroDivisors_of_injective_period [NoZeroDivisors R]
     (hN : Function.Injective (N.comp K.subtype))
     {a : NovikovSeries R K (N.comp K.subtype)} (ha : a ≠ 0) :
     algebraMap _ (NovikovSeries R H N) a ∈ (NovikovSeries R H N)⁰ := by
@@ -109,7 +82,7 @@ theorem algebraMap_addSubgroup_mem_nonZeroDivisors_of_injective_period [IsDomain
 
 /-- A nonzero series supported on a subgroup on which periods are injective is a nonzerodivisor.
 The ambient period map may have a kernel, and the ambient group may have torsion. -/
-theorem mem_nonZeroDivisors_of_support_subset_of_injective_period [IsDomain R]
+theorem mem_nonZeroDivisors_of_support_subset_of_injective_period [NoZeroDivisors R]
     (hN : Function.Injective (N.comp K.subtype)) {a : NovikovSeries R H N}
     (haK : a.support ⊆ (K : Set H)) (ha : a ≠ 0) : a ∈ (NovikovSeries R H N)⁰ := by
   obtain ⟨b, rfl⟩ := (mem_range_algebraMap_addSubgroup_iff a).2 haK
@@ -118,7 +91,7 @@ theorem mem_nonZeroDivisors_of_support_subset_of_injective_period [IsDomain R]
 
 /-- A nonzero series in the variable `e^h`, for `N h ≠ 0`, is a nonzerodivisor. This includes
 Laurent series with negative powers and does not require the ambient group to be torsion-free. -/
-theorem mem_nonZeroDivisors_of_support_subset_zmultiples [IsDomain R] {h : H}
+theorem mem_nonZeroDivisors_of_support_subset_zmultiples [NoZeroDivisors R] {h : H}
     (hh : N h ≠ 0) {a : NovikovSeries R H N}
     (haH : a.support ⊆ (AddSubgroup.zmultiples h : Set H)) (ha : a ≠ 0) :
     a ∈ (NovikovSeries R H N)⁰ := by
