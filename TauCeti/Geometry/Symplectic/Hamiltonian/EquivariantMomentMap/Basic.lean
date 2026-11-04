@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+import TauCeti.Geometry.Lie.Subgroup.Stabilizer
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -53,6 +54,15 @@ Shifting `μ` by a constant `ν ∈ 𝔤*` changes the defect by the coboundary 
 maps of an action are exactly the shifts of any one of them by coadjoint-invariant constants
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isEquivariantMomentMap_iff_exists_eq_add`).
 
+Where the form is nondegenerate, the differential `dμ_x` of a moment map is surjective exactly when
+the isotropy algebra `𝔤_x` vanishes
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff`). For the fundamental vector
+fields of a group action, `𝔤_x` is the Lie algebra of the stabilizer `G_x`, so `dμ_x` is
+surjective exactly when `G_x` is discrete
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff_discreteTopology_stabilizer`). In
+particular every point with trivial stabilizer is a regular point of `μ`: for a symplectic form and
+a free action, every value of `μ` is a regular value.
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap σ μ`: `μ` is a coadjoint-equivariant moment map
@@ -77,6 +87,10 @@ maps of an action are exactly the shifts of any one of them by coadjoint-invaria
 * `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: for a
   preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
   cocycle vanishes at one point is coadjoint-equivariant.
+* `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff_discreteTopology_stabilizer`: at a
+  point where the form is nondegenerate, `dμ_x` is surjective exactly when the stabilizer of `x` is
+  discrete; `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_of_stabilizer_eq_bot` is the
+  case of a trivial stabilizer.
 
 ## References
 
@@ -127,7 +141,7 @@ theorem momentDefect_eq_zero_iff {g : G} {x : M} :
 theorem momentDefect_mul (g h : G) (x : M) :
     momentDefect μ (g * h) x =
       momentDefect μ g (h • x) + Lie.coadjointRepresentation 𝕜 I G g (momentDefect μ h x) := by
-  simp only [momentDefect_def, map_sub, map_mul, Module.End.mul_apply, mul_smul]
+  simp only [momentDefect_def, map_sub, map_mul, mul_apply_eq_comp, mul_smul]
   abel
 
 /-- Shifting `μ` by a constant `ν ∈ 𝔤*` changes its defect by the coboundary `ν - Ad*_g ν`. -/
@@ -383,6 +397,33 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
     ← LieModule.Cohomology.twoCochain_val_apply]
   -- The zero two-cochain, read as a bilinear map, vanishes.
   simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply, map_zero, zero_apply]
+
+/-! ### Locally free points are regular -/
+
+variable [T2Space M] [BoundarylessManifold I' M] [FiniteDimensional ℝ E']
+
+/-- **Locally free points are regular points of a moment map.** At a point where the form is
+nondegenerate, the differential `dμ_x` of a moment map of a smooth action is surjective exactly when
+the stabilizer `G_x` is discrete, that is, when the action is locally free at `x`. -/
+theorem differential_surjective_iff_discreteTopology_stabilizer
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {x : M}
+    (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    Function.Surjective (h.differential x) ↔ DiscreteTopology (MulAction.stabilizer G x) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  rw [h.differential_surjective_iff hσ,
+    Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')]
+
+/-- **Freeness implies regularity.** At a point with trivial stabilizer where the form is
+nondegenerate, the differential `dμ_x` of a moment map of a smooth action is surjective. So for a
+symplectic form and a free action, every value of `μ` is a regular value. -/
+theorem differential_surjective_of_stabilizer_eq_bot
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {x : M}
+    (hσ : (σ.bilinFormAt x).Nondegenerate) (hx : MulAction.stabilizer G x = ⊥) :
+    Function.Surjective (h.differential x) := by
+  have : Subsingleton (MulAction.stabilizer G x) := by
+    rw [hx]
+    infer_instance
+  exact (h.differential_surjective_iff_discreteTopology_stabilizer hσ).2 inferInstance
 
 end IsMomentMap
 

@@ -6,15 +6,21 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# Double-angle sine identities for arcsine
+# Arcsine: double-angle identities and a sine substitution
 
 For every real `s`, the double-angle sine `sin (2 * arcsin s)` equals
 `2 * s * √(1 - s²)`. Outside `[-1, 1]` both sides vanish. For `-1 ≤ s ≤ 1`,
 squaring gives the polynomial `4 * s² * (1 - s²)`.
+
+Inverting the sine also shows that for `0 < φ ≤ π / 2` the map `θ ↦ sin² φ / sin² θ - 1`
+sends `(0, φ)` onto `(0, ∞)`; this substitution turns Legendre's elliptic integrals into
+Carlson's symmetric integrals.
 
 ## Provenance
 
@@ -53,3 +59,38 @@ theorem sin_two_mul_arcsin_sq {s : ℝ} (h₀ : -1 ≤ s) (h₁ : s ≤ 1) :
   ring
 
 end Real
+
+namespace TauCeti
+
+open Real Set
+
+/-- For `0 < φ ≤ π / 2`, the substitution `θ ↦ sin² φ / sin² θ - 1` maps `(0, φ)` onto
+`(0, ∞)`. -/
+theorem image_sin_sq_div_sin_sq_sub_one_Ioo {φ : ℝ} (hφ0 : 0 < φ) (hφ : φ ≤ π / 2) :
+    (fun θ ↦ sin φ ^ 2 / sin θ ^ 2 - 1) '' Ioo 0 φ = Ioi 0 := by
+  have hs : 0 < sin φ := sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])
+  have hs1 : sin φ ≤ 1 := sin_le_one φ
+  ext t
+  constructor
+  · rintro ⟨θ, ⟨hθ0, hθ⟩, rfl⟩
+    have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
+    have hus : sin θ < sin φ := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
+    rw [mem_Ioi, sub_pos, one_lt_div (by positivity)]
+    exact pow_lt_pow_left₀ hus hu.le two_ne_zero
+  · intro ht
+    have ht : (0 : ℝ) < t := ht
+    have hr : 1 < √(t + 1) := by
+      rw [lt_sqrt zero_le_one]
+      linarith
+    set x := sin φ / √(t + 1) with hx
+    have hx0 : 0 < x := div_pos hs (by linarith)
+    have hxs : x < sin φ := div_lt_self hs hr
+    refine ⟨arcsin x, ⟨arcsin_pos.mpr hx0, ?_⟩, ?_⟩
+    · calc arcsin x < arcsin (sin φ) := arcsin_lt_arcsin (by linarith) hxs (by linarith)
+        _ = φ := arcsin_sin (by linarith [pi_pos]) hφ
+    · simp only
+      rw [sin_arcsin (by linarith) (by linarith), hx, div_pow, sq_sqrt (by linarith)]
+      field_simp
+      ring
+
+end TauCeti

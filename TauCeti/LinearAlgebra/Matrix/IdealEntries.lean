@@ -85,7 +85,7 @@ theorem mul_eq_zero_of_sq_eq_bot [Semiring S] [Fintype m] {I : Ideal S} (hI : I 
 theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F : Type*}
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
-  simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, zero_apply]
+  simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, Matrix.zero_apply]
 
 /-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
 lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/

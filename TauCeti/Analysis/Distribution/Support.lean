@@ -64,6 +64,14 @@ namespace Distribution
 variable {E F V 𝓕 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
 
+/-- The support of a point evaluation followed by an additive map lies in that singleton. -/
+theorem dsupport_apply_apply_subset [AddZeroClass V] {x : E} (ℓ : F →+ V) :
+    dsupport (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) ⊆ {x} := by
+  refine compl_subset_compl.1 fun y hy ↦ ?_
+  rw [mem_compl_iff, notMem_dsupport_iff]
+  refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
+  simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
+
 section Localization
 
 variable [FiniteDimensional ℝ E] [AddCommMonoid V] [FunLike 𝓕 𝓓^{n}(Ω, F) V]
@@ -296,11 +304,7 @@ theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F
     augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) c = ℓ c := by
   let A : 𝓓^{n}(Ω, F) →+ V :=
     { toFun φ := ℓ (φ x), map_zero' := by simp, map_add' φ ψ := by simp }
-  have hA : dsupport A ⊆ {x} := by
-    refine compl_subset_compl.1 fun y hy ↦ ?_
-    rw [mem_compl_iff, notMem_dsupport_iff]
-    refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
-    simp [A, image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
+  have hA : dsupport A ⊆ {x} := dsupport_apply_apply_subset ℓ
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) isCompact_singleton
     (singleton_subset_iff.2 hx)
   have hχx : χ x = 1 := hχ.self_of_nhdsSet x rfl

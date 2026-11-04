@@ -1006,7 +1006,7 @@ theorem exists_mul_eq_of_mem_Gamma1_gcd {a b : ℕ} {γ : SL(2, ℤ)}
   obtain ⟨y, hy, z, hz, hyz⟩ := hδ
   refine ⟨ModularGroup.T ^ (γ 0 1) * y,
     mul_mem (T_zpow_mem_Gamma1 a _) (Gamma_le_Gamma1 a hy), z, Gamma_le_Gamma1 b hz, ?_⟩
-  rw [mul_assoc, hyz, ← mul_assoc, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]
+  rw [mul_assoc, hyz, ← mul_assoc, ← _root_.zpow_add, add_neg_cancel, _root_.zpow_zero, one_mul]
 
 /-- **`Γ₁(gcd a b) = Γ₁(a) ⊔ Γ₁(b)`**, the `Γ₁` counterpart of `Gamma_gcd_eq_sup`. -/
 theorem Gamma1_gcd_eq_sup (a b : ℕ) : Gamma1 (Nat.gcd a b) = Gamma1 a ⊔ Gamma1 b := by

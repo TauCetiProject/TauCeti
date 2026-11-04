@@ -11,6 +11,7 @@ import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Ramification
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 
 /-!
 # Base change of algebraic Belyi pairs
@@ -37,9 +38,10 @@ algebraic Belyi pair over `k'`, but its constants over `k` are all of `k'`. Rami
 (`TauCeti.Place.ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top`). Finally the three
 marked places correspond: a place of `F'` lies over one of `t = 0`, `t = 1`, `t = ∞` of `k'(t)`
 exactly when the place of `F` below it lies over one of the marked places of `k(t)`
-(`TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff`), because the marked places are the zeros
-and poles of `t` and `t - 1`, and ramification indices are positive. This needs only that `t` acts
-on `F'` as it does on `F`.
+(`TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff`), and indeed over the marked place with the
+same number (`TauCeti.Place.restrict_restrict_eq_markedPlace_iff`), because the marked places are
+the zeros and poles of `t` and `t - 1`, and ramification indices are positive. This needs only
+that `t` acts on `F'` as it does on `F`.
 In the descending direction every place of `F` has a place of `F'` above it, `F'` being a
 function field algebraic over `F`.
 
@@ -49,6 +51,8 @@ produced by descent, is again unramified outside `0`, `1` and `∞`.
 
 ## Main results
 
+* `TauCeti.Place.restrict_restrict_eq_markedPlace_iff`: base change matches the places over each
+  marked place.
 * `TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff`: base change matches the places over the
   marked places.
 * `TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`: the base change of `F` to `k'`
@@ -77,6 +81,33 @@ namespace Place
 
 variable [Algebra.IsIntegral (RatFunc k) F] [Algebra.IsIntegral (RatFunc k') F']
 
+/-- Under base change, a function of `k(t)` and one of `k'(t)` with the same image in `F'` have a
+zero at the places below `Q'` together, because all the ramification indices are positive. -/
+private theorem ord_restrict_restrict_pos_iff [Algebra.IsIntegral F F'] (Q' : Place k' F')
+    {f : RatFunc k} {f' : RatFunc k'}
+    (h : algebraMap F F' (algebraMap (RatFunc k) F f) = algebraMap (RatFunc k') F' f') :
+    0 < ((Q'.restrict k F).restrict k (RatFunc k)).ord f ↔
+      0 < (Q'.restrict k' (RatFunc k')).ord f' := by
+  rw [← ord_algebraMap_pos_iff k' (RatFunc k') Q', ← h, ord_algebraMap_pos_iff k F Q',
+    ord_algebraMap_pos_iff k (RatFunc k)]
+
+/-- **Base change keeps each marked fibre**: if `t` acts on `F'` as it does on `F`, then a place
+`Q'` of `F'` lies over the marked place of `k'(t)` numbered `i` exactly when the place of `F` below
+it lies over the marked place of `k(t)` numbered `i`. -/
+theorem restrict_restrict_eq_markedPlace_iff [Algebra.IsIntegral F F']
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) (Q' : Place k' F') (i : Fin 3) :
+    (Q'.restrict k F).restrict k (RatFunc k) = markedPlace k i ↔
+      Q'.restrict k' (RatFunc k') = markedPlace k' i := by
+  fin_cases i
+  · simp only [Fin.zero_eta, markedPlace_zero, ← ord_X_pos_iff]
+    exact ord_restrict_restrict_pos_iff Q' hX
+  · simp only [Fin.mk_one, markedPlace_one, ← ord_X_sub_C_pos_iff]
+    exact ord_restrict_restrict_pos_iff Q' (by simp only [map_one, map_sub, hX])
+  · simp only [Fin.reduceFinMk, markedPlace_two, ← X_notMem_integers_iff_eq_infty]
+    rw [mem_integers_restrict_iff k (RatFunc k), mem_integers_restrict_iff k F,
+      mem_integers_restrict_iff k' (RatFunc k'), hX]
+
 /-- **Base change matches the marked places**: if `t` acts on `F'` as it does on `F`, then a
 place `Q'` of `F'` lies over one of the marked places `t = 0`, `t = 1`, `t = ∞` of `k'(t)` exactly
 when the place of `F` below it lies over one of those of `k(t)`. -/
@@ -85,21 +116,8 @@ theorem restrict_restrict_mem_zeroOneInfty_iff [Algebra.IsIntegral F F']
       algebraMap (RatFunc k') F' RatFunc.X) (Q' : Place k' F') :
     (Q'.restrict k F).restrict k (RatFunc k) ∈ zeroOneInfty k ↔
       Q'.restrict k' (RatFunc k') ∈ zeroOneInfty k' := by
-  -- A function of `k(t)` and one of `k'(t)` with the same image in `F'` vanish together at the
-  -- places below `Q'`, since all the ramification indices are positive.
-  have key {f : RatFunc k} {f' : RatFunc k'}
-      (h : algebraMap F F' (algebraMap (RatFunc k) F f) = algebraMap (RatFunc k') F' f') :
-      ((Q'.restrict k F).restrict k (RatFunc k)).ord f = 0 ↔
-        (Q'.restrict k' (RatFunc k')).ord f' = 0 := by
-    have h := congrArg Q'.ord h
-    rw [ord_algebraMap_restrict k F Q', ord_algebraMap_restrict k (RatFunc k) (Q'.restrict k F),
-      ord_algebraMap_restrict k' (RatFunc k') Q'] at h
-    have he₁ := (ramificationIdx_pos F Q').ne'
-    have he₂ := (ramificationIdx_pos (RatFunc k) (Q'.restrict k F)).ne'
-    have he₃ := (ramificationIdx_pos (RatFunc k') Q').ne'
-    constructor <;> intro h₀ <;> rw [h₀] at h <;> simp_all
-  rw [← not_iff_not, notMem_zeroOneInfty_iff, notMem_zeroOneInfty_iff, key hX,
-    key (f := RatFunc.X - 1) (f' := RatFunc.X - 1) (by simp only [map_sub, map_one, hX])]
+  simp only [← range_markedPlace, Set.mem_range, eq_comm (b := Place.restrict _ _ _),
+    restrict_restrict_eq_markedPlace_iff hX]
 
 end Place
 

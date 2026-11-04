@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
@@ -20,6 +21,8 @@ where the inverse of the differential `dh_x` is the differential of `h⁻¹` at 
 (`Diffeomorph.cotangent`). It is characterized by covering `h`
 (`Diffeomorph.proj_cotangent`) and by preserving the pairing of covectors with tangent vectors:
 the lifted covector, evaluated on `dh_x v`, is `p v` (`Diffeomorph.cotangent_snd_apply_mfderiv`).
+It is linear on fibres (`Diffeomorph.cotangent_mk_smul`), so it sends exactly the zero covectors
+to zero covectors (`Diffeomorph.cotangent_snd_eq_zero_iff`).
 Smoothness of the lift is the smoothness of pulling covectors back along a map,
 `TauCeti.CotangentBundle.contMDiff_mk_comp_mfderiv`.
 
@@ -37,7 +40,9 @@ By functoriality, a group `G` acting on `M` by smooth maps (`ContMDiffConstSMul 
 `g • (x, p) = (g • x, p ∘ (dg_x)⁻¹)`
 
 (`TauCeti.CotangentBundle.instMulAction`), again by smooth maps
-(`TauCeti.CotangentBundle.instContMDiffConstSMul`). This **cotangent-lifted action** covers the
+(`TauCeti.CotangentBundle.instContMDiffConstSMul`). For a smooth action of a Lie group the lifted
+action is jointly smooth on `G × T*M` (`TauCeti.CotangentBundle.instContMDiffSMul`), since the
+differential of `x ↦ g⁻¹ • x` depends smoothly on `g`. This **cotangent-lifted action** covers the
 action on `M` (`TauCeti.CotangentBundle.proj_smul`), preserves the pairing of covectors with
 tangent vectors (`TauCeti.CotangentBundle.smul_snd_apply_mfderiv`) and the zero section, and the
 cotangent lift of each `x ↦ g • x` is the action of `g` on `T*M`
@@ -158,6 +163,24 @@ theorem cotangent_zeroSection (h : M ≃ₘ⟮I, J⟯ N) (x : M) :
       zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) (h x) :=
   CotangentBundle.ext rfl fun _ ↦ rfl
 
+/-- **Cotangent lifts are linear on fibres:** rescaling a covector before lifting it rescales the
+lifted covector by the same scalar. -/
+theorem cotangent_mk_smul (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBundle I M) (c : 𝕜) :
+    h.cotangent (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj (c • z.2)) =
+      TotalSpace.mk' (F →L[𝕜] 𝕜) (h.cotangent z).proj (c • (h.cotangent z).2) :=
+  CotangentBundle.ext rfl fun _ ↦ rfl
+
+/-- The cotangent lift of `h` sends a covector to zero exactly when the covector is zero. -/
+@[simp]
+theorem cotangent_snd_eq_zero_iff (h : M ≃ₘ⟮I, J⟯ N) {z : CotangentBundle I M} :
+    (h.cotangent z).2 = 0 ↔ z.2 = 0 := by
+  refine ⟨fun hz ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun hz ↦ ?_⟩
+  · have hv := cotangent_snd_apply_mfderiv h z v
+    rw [hz] at hv
+    exact hv.symm
+  · ext w
+    exact (cotangent_snd_apply h z w).trans (by rw [hz]; rfl)
+
 /-- The inverse of a cotangent lift is the cotangent lift of the inverse diffeomorphism. -/
 @[simp]
 theorem cotangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
@@ -265,6 +288,26 @@ instance instMulAction : MulAction G (CotangentBundle I M) where
 instance instContMDiffConstSMul :
     ContMDiffConstSMul (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ G (CotangentBundle I M) where
   contMDiff_const_smul g := (Diffeomorph.constSmul I ∞ g).cotangent.contMDiff.congr (smul_def g)
+
+/-- **The cotangent lift of a smooth Lie group action is smooth.** If a Lie group `G` acts
+smoothly on `M`, then `(g, p) ↦ g • p` is smooth on `G × T*M`: the covector `g • p` is `p`
+pulled back along the differential of `x ↦ g⁻¹ • x`, which depends smoothly on `g`. -/
+instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 𝕜 EG]
+    [TopologicalSpace HG] {IG : ModelWithCorners 𝕜 EG HG} [TopologicalSpace G] [ChartedSpace HG G]
+    [LieGroup IG ∞ G] [ContMDiffSMul IG I ∞ G M] :
+    ContMDiffSMul IG (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ G (CotangentBundle I M) where
+  contMDiff_smul p := by
+    have hπ : ContMDiff (IG.prod (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))) I ∞
+        fun q : G × CotangentBundle I M ↦ q.2.proj :=
+      (contMDiff_proj _).comp contMDiff_snd
+    -- The covector `g • p` is `p` pulled back along the differential of `x ↦ g⁻¹ • x`.
+    refine (contMDiffAt_mk_comp_mfderiv_uncurry (Ψ := Prod.snd) (n := ∞)
+      (g := fun q : G × CotangentBundle I M ↦ q.1 • q.2.proj)
+      (f := fun q x ↦ q.1⁻¹ • x) (fun q ↦ (inv_smul_smul q.1 q.2.proj).symm) contMDiffAt_snd
+      (contMDiff_fst.smul hπ p) ?_ (by simp)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun q ↦ smul_eq_mk q.1 q.2)
+    exact (((contMDiff_inv IG ∞).comp (contMDiff_fst.comp contMDiff_fst)).smul
+      contMDiff_snd).contMDiffAt
 
 end TauCeti.CotangentBundle
 

@@ -66,6 +66,8 @@ and `e^T - 1`.
   coefficient maps.
 * `FormalGroup.natCast_mul_coeff_log_mem_range`: each logarithm coefficient becomes integral
   after multiplication by its degree.
+* `FormalGroup.subst_toPowerSeries_eq_add_of_derivative_eq`: over a ring without additive
+  torsion, a power series with no constant term whose derivative is `P` is additive along `F`.
 * `FormalGroup.subst_toPowerSeries_log`: `log_F(F(X, Y)) = log_F(X) + log_F(Y)`.
 * `FormalGroup.subst_subst_toPowerSeries_log`: the same at any pair of power series that can be
   substituted.
@@ -77,6 +79,8 @@ and `e^T - 1`.
   base change along homomorphisms of `ℚ`-algebras.
 * `FormalGroup.derivative_exp`: `exp_F'(T) = F_X(0, exp_F(T))`.
 * `FormalGroup.toPowerSeries_eq_subst_exp`: `F(X, Y) = exp_F(log_F(X) + log_F(Y))`.
+* `FormalGroup.invariantDifferential_injective`: over a `ℚ`-algebra, a formal group law is
+  determined by its invariant differential.
 * `FormalGroup.logIso`: the strict isomorphism from `F` to the additive formal group, with
   forward homomorphism `FormalGroup.logHom` and inverse `FormalGroup.expHom`.
 * `FormalGroup.eq_logIso`: this is the unique strict isomorphism to the additive formal group.
@@ -290,6 +294,35 @@ theorem invariantDifferential_𝔾ₘ :
   refine left_inv_eq_right_inv (by simpa using h) ?_
   rw [mul_comm, PowerSeries.mk_neg_one_pow_mul_one_add_eq_one]
 
+/-! ### Antiderivatives of the invariant differential -/
+
+/-- **An antiderivative of the invariant differential is additive along `F`**: over a ring without
+additive torsion, a power series `g` with no constant term and `g' = P` satisfies
+`g(F(X, Y)) = g(X) + g(Y)`. Over a `ℚ`-algebra, `g` is the logarithm (`FormalGroup.log`); the
+hypotheses can also hold over a ring not containing `ℚ`, for instance for the rescaled logarithm
+`FormalGroup.rescaleLog`. -/
+theorem subst_toPowerSeries_eq_add_of_derivative_eq [HasUniqueDiv R] {g : PowerSeries R}
+    (hg₀ : PowerSeries.constantCoeff g = 0)
+    (hg : PowerSeries.derivative g = F.invariantDifferential) :
+    PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
+  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.zero_X
+  rw [← sub_eq_zero]
+  apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
+  -- the derivative in `X` is `P(F(X, Y)) · F_X(X, Y) - P(X) = 0`
+  · rw [map_sub, map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),
+      PowerSeries.pderiv_subst (hX 1), hg, subst_invariantDifferential_mul_pderiv,
+      pderiv_X_self, pderiv_X_of_ne (by decide), mul_one, mul_zero, _root_.add_zero, sub_self]
+  -- at `X = 0` it is `g(Y) - g(0) - g(Y) = 0`
+  · have hX₀ : Function.update X 0 0 = (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := by
+      funext s; fin_cases s <;> simp
+    rw [hX₀, subst_sub hb, subst_add hb, subst_powerSeriesSubst hb hF,
+      subst_powerSeriesSubst hb (hX 0), subst_powerSeriesSubst hb (hX 1), F.zero_add (hX 1),
+      subst_X hb, subst_X hb]
+    simp [hg₀]
+
 /-! ### The logarithm -/
 
 variable [Algebra ℚ R]
@@ -352,24 +385,9 @@ theorem invariantDerivation_log : F.invariantDerivation F.log = 1 := by
 `log_F(F(X, Y)) = log_F(X) + log_F(Y)`. -/
 theorem subst_toPowerSeries_log :
     PowerSeries.subst F.toPowerSeries F.log =
-      PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.zero_X
+      PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log :=
   have : HasUniqueDiv R := .of_isTorsionFree ℚ R
-  rw [← sub_eq_zero]
-  apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
-  -- the derivative in `X` is `P(F(X, Y)) · F_X(X, Y) - P(X) = 0`
-  · rw [map_sub, map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),
-      PowerSeries.pderiv_subst (hX 1), derivative_log, subst_invariantDifferential_mul_pderiv,
-      pderiv_X_self, pderiv_X_of_ne (by decide), mul_one, mul_zero, _root_.add_zero, sub_self]
-  -- at `X = 0` it is `log_F(Y) - log_F(0) - log_F(Y) = 0`
-  · have hX₀ : Function.update X 0 0 = (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := by
-      funext s; fin_cases s <;> simp
-    rw [hX₀, subst_sub hb, subst_add hb, subst_powerSeriesSubst hb hF,
-      subst_powerSeriesSubst hb (hX 0), subst_powerSeriesSubst hb (hX 1), F.zero_add (hX 1),
-      subst_X hb, subst_X hb]
-    simp
+  F.subst_toPowerSeries_eq_add_of_derivative_eq F.constantCoeff_log F.derivative_log
 
 /-- **The logarithm is additive along `F`** at any pair of power series `f₀, f₁` that can be
 substituted: `log_F(F(f₀, f₁)) = log_F(f₀) + log_F(f₁)`. -/
@@ -511,6 +529,21 @@ theorem toPowerSeries_eq_subst_exp :
       PowerSeries.subst (PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log) F.exp := by
   rw [← subst_toPowerSeries_log,
     F.subst_subst_log_exp (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff)]
+
+/-- **A formal group law over a `ℚ`-algebra is determined by its invariant differential**: the
+invariant differential determines `log_F`, hence `exp_F`, and
+`F(X, Y) = exp_F(log_F(X) + log_F(Y))`. -/
+theorem invariantDifferential_injective :
+    Function.Injective (invariantDifferential : FormalGroup R → PowerSeries R) := by
+  intro F G h
+  have hlog : F.log = G.log := by
+    ext n
+    rw [coeff_log, coeff_log, h]
+  have hexp : F.exp = G.exp :=
+    G.eq_exp_of_subst_log_eq_X (.of_constantCoeff_zero' F.constantCoeff_exp)
+      (by rw [← hlog, subst_exp_log])
+  refine FormalGroup.ext ?_
+  rw [F.toPowerSeries_eq_subst_exp, G.toPowerSeries_eq_subst_exp, hlog, hexp]
 
 /-- The logarithm, bundled as a homomorphism to the additive formal group. -/
 noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where

@@ -269,7 +269,8 @@ private theorem withDensity_noncentralBetaPDF (ha : 0 ≤ a) (hb : 0 < b) (l : �
   have hfun : noncentralBetaPDF a b l =
       ∑' j : ℕ, poissonMeasure (l / 2) {j} • betaPDF (a + j) b := by
     ext x
-    rw [noncentralBetaPDF_eq_tsum ha hb, Pi.tsum_apply (Pi.summable.2 fun _ ↦ ENNReal.summable)]
+    rw [noncentralBetaPDF_eq_tsum ha hb,
+      Pi.tsum_apply (Pi.summable.2 fun _ ↦ CompleteLattice.summable)]
     simp only [Pi.smul_apply, smul_eq_mul]
   rw [hfun, withDensity_tsum fun j ↦ (measurable_betaPDF _ _).const_smul _]
   refine congrArg Measure.sum (funext fun j ↦ ?_)
@@ -292,7 +293,7 @@ theorem noncentralBetaMeasure_zero_shape_eq_atom_add_withDensity (hb : 0 < b) (l
   congr 1
   ext s hs
   rw [Measure.sum_apply _ hs, Measure.sum_apply _ hs]
-  conv_rhs => rw [tsum_eq_zero_add' ENNReal.summable]
+  conv_rhs => rw [tsum_eq_zero_add' CompleteLattice.summable]
   simp
 
 /-- The continuous part has mass one at positive first shape. -/
@@ -308,8 +309,8 @@ theorem lintegral_noncentralBetaPDF_zero_shape (hb : 0 < b) (l : ℝ≥0) :
     ∫⁻ x, noncentralBetaPDF 0 b l x = 1 - ENNReal.ofReal (exp (-(l : ℝ) / 2)) := by
   have := isProbabilityMeasure_noncentralBetaMeasure le_rfl hb l
   have h : noncentralBetaMeasure 0 b l univ = 1 := measure_univ
-  rw [noncentralBetaMeasure_zero_shape_eq_atom_add_withDensity hb, Measure.add_apply,
-    Measure.smul_apply, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
+  rw [noncentralBetaMeasure_zero_shape_eq_atom_add_withDensity hb, _root_.add_apply,
+    _root_.smul_apply, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
   simp only [smul_eq_mul, measure_univ, mul_one] at h
   exact ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top (by rwa [add_comm])
 

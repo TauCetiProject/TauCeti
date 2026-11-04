@@ -205,7 +205,7 @@ theorem tendsto_inv_sq_add_smul_mul {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
 theorem measurable_covariancePseudoInverse :
     Measurable (covariancePseudoInverse : Matrix ι ι ℝ → Matrix ι ι ℝ) := by
   classical
-  exact Measurable.ite posSemidef_is_closed.measurableSet
+  exact Measurable.ite isClosed_setOfPred_posSemidef.measurableSet
     (TauCeti.measurable_matrix_cfc_of_tendsto
       (F := fun k x ↦ x / (x ^ 2 + 1 / (k + 1)))
       (fun _ ↦ continuous_id.div ((continuous_id.pow 2).add continuous_const)

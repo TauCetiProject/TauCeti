@@ -66,6 +66,6 @@ theorem classificationStatement_iff :
 /-- The universe-zero classification statement implies the statement in every universe. -/
 theorem classificationStatement_of_zero (h : ClassificationStatement.{0}) :
     ClassificationStatement.{u} :=
-  exists_mulEquiv_of_forall_finite_isSimpleGroup_zero CFSGIndex.Group h
+  exists_mulEquiv_of_forall_finite_isSimpleGroup CFSGIndex.Group h
 
 end TauCeti

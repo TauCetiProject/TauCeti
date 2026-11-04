@@ -255,7 +255,7 @@ theorem weightStringSubmodule_le_eigenspace_sl2Casimir (P : t.HasPrimitiveVector
     induction i with
     | zero => simpa using sl2Casimir_apply_of_hasPrimitiveVectorWith P
     | succ i ih =>
-      rw [pow_succ' (toEnd K L M f), Module.End.mul_apply, toEnd_apply_apply,
+      rw [pow_succ' (toEnd K L M f), mul_apply_eq_comp, toEnd_apply_apply,
         ← lie_f_sl2Casimir t, ih, lie_smul]
   rw [weightStringSubmodule_toSubmodule, Submodule.span_le]
   rintro _ ⟨i, rfl⟩

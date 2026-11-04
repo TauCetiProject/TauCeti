@@ -30,6 +30,8 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
 ## Main results
 
 * `TauCeti.Manifold.integral_divergence_eq_zero`: the divergence theorem `∫ div X dV = 0`.
+* `TauCeti.Manifold.integral_laplaceBeltrami_eq_zero`: `∫ Δf dV = 0` for a compactly supported
+  `C²` function `f`.
 * `TauCeti.Manifold.integral_mul_divergence`,
   `TauCeti.Manifold.integral_mul_divergence_of_hasCompactSupport_right`:
   `∫ f div X dV = -∫ df(X) dV` when `f` or `X` has compact support.
@@ -295,6 +297,16 @@ theorem integral_mul_divergence_of_hasCompactSupport_right {f : M → ℝ}
       (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
       (hXc.divergence I).mul_left)
 
+/-- The Laplace--Beltrami operator of a compactly supported `C²` function on a manifold
+without boundary has integral zero against the Riemannian volume. -/
+theorem integral_laplaceBeltrami_eq_zero {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hfc : HasCompactSupport f) :
+    ∫ x, laplaceBeltrami I f x ∂riemannianVolume I M = 0 := by
+  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
+  simp only [laplaceBeltrami_def]
+  exact integral_divergence_eq_zero
+    (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two])) (hfc.mgradient I)
+
 /-- **Green's first identity** on a manifold without boundary: for a compactly supported `C¹`
 function `f` and a `C²` function `g`, `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`. -/
 theorem integral_mul_laplaceBeltrami {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
@@ -304,6 +316,21 @@ theorem integral_mul_laplaceBeltrami {f g : M → ℝ} (hf : ContMDiff I 𝓘(�
   have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
   simp only [laplaceBeltrami_def, inner_mgradient]
   exact integral_mul_divergence hf hfc (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two]))
+
+/-- The energy identity for a compactly supported `C²` eigenfunction of the scalar Laplacian
+on a manifold without boundary, using the convention `Δf = -λ f`. -/
+theorem integral_norm_sq_mgradient_eq_mul_integral_sq_of_laplaceBeltrami_eq_neg_mul
+    {f : M → ℝ} {lam : ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfc : HasCompactSupport f)
+    (heig : ∀ x, laplaceBeltrami I f x = -lam * f x) :
+    ∫ x, ‖mgradient I f x‖ ^ 2 ∂riemannianVolume I M =
+      lam * ∫ x, f x ^ 2 ∂riemannianVolume I M := by
+  have h := integral_mul_laplaceBeltrami (hf.of_le (by norm_num)) hfc hf
+  simp only [heig, real_inner_self_eq_norm_sq] at h
+  have hfun : (fun x ↦ f x * (-lam * f x)) = fun x ↦ -lam * f x ^ 2 := by
+    ext x
+    ring
+  rw [hfun, integral_const_mul] at h
+  linarith
 
 /-- **Green's second identity** on a manifold without boundary: for a compactly supported `C²`
 function `f` and a `C²` function `g`, `∫ f Δg dV = ∫ (Δf) g dV`. -/

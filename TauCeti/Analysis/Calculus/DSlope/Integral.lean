@@ -39,6 +39,7 @@ open Set intervalIntegral
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
   [IsScalarTower ℝ 𝕜 E] [CompleteSpace E] {f : 𝕜 → E}
 
+omit [IsScalarTower ℝ 𝕜 E] in
 /-- **The `dslope` integral representation.** When `f` is continuously differentiable on an open
 set `U` containing the segment `[c, w]`, `dslope f c w` equals the integral of the derivative of `f`
 along the segment. -/

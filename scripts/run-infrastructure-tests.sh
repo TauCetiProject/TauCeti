@@ -22,6 +22,9 @@ python3 scripts/pr_status/test_zulip.py
 python3 scripts/pr_status/test_conflicts.py
 python3 scripts/test_structure_nudge.py
 python3 scripts/test_workflow_pins.py
+python3 scripts/test_control_batch_workflows.py
+python3 scripts/test_control_batch_budget.py
+python3 scripts/test_control_batch_merge.py
 python3 scripts/test_queue_release.py
 python3 scripts/test_pick_runner.py
 python3 scripts/test_fleet_runner.py
@@ -36,6 +39,7 @@ python3 scripts/test_build_lint_driver.py
 python3 scripts/test_lint_env_locations.py
 python3 scripts/test_elan_pin.py
 python3 scripts/test_dependency_warm.py
+python3 scripts/test_dependency_prefill.py
 python3 scripts/test_toolchain_install_retry.py
 python3 scripts/test_duplicate_audit_workflow.py
 python3 scripts/test_ci_host_resources.py

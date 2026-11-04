@@ -147,7 +147,7 @@ private theorem mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add {A : M
     simp only [X, g, W, hs2', hUs, smul_add, smul_smul]
     match_scalars
     all_goals field_simp
-    all_goals ring
+    ring
   have hB : -(1 - p)⁻¹ * matrixBilinearForm A (((p - 1) * s) • X) G =
       matrixBilinearForm A X g := by
     simp only [g, map_smul, _root_.smul_apply, smul_eq_mul]

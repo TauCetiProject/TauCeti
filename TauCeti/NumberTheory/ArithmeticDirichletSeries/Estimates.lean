@@ -97,7 +97,7 @@ variable (K : Type*) [Field K] [NumberField K]
 /-- The nonzero integral ideals of absolute norm at most a real cutoff form a finite set. -/
 theorem finite_setOf_absNorm_real_le (x : ℝ) :
     {I : (Ideal (𝓞 K))⁰ | (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x}.Finite :=
-  (Ideal.finite_setOfPred_absNorm_le₀ ⌊x⌋₊).subset fun _ hI ↦ Nat.le_floor hI
+  (Ring.HasFiniteQuotients.finite_absNorm_le₀ ⌊x⌋₊).subset fun _ hI ↦ Nat.le_floor hI
 
 /-- The number of nonzero integral ideals of bounded absolute norm is monotone in the cutoff. -/
 theorem card_absNorm_real_le_mono {x y : ℝ} (h : x ≤ y) :

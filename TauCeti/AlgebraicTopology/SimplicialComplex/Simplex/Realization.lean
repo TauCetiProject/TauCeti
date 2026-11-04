@@ -110,6 +110,34 @@ def standardSimplexHomeomorph (σ : Finset α) : StandardSimplex σ ≃ₜ Conve
 theorem standardSimplexHomeomorph_weights (σ : Finset α) (x : StandardSimplex σ) (a : σ) :
     (standardSimplexHomeomorph σ x).weights a = x.1 a := (rfl)
 
+/-- A closed coordinate simplex is homeomorphic to the set of its finite barycentric coordinate
+vectors. The target inherits the metric on functions when a metric is needed. -/
+def standardSimplexCoordinatesHomeomorph (σ : Finset α) :
+    StandardSimplex σ ≃ₜ Set.range (fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) :=
+  (standardSimplexHomeomorph σ).trans
+    (Convexity.StdSimplex.isEmbedding_toFun_comp_weights ℝ σ).toHomeomorph
+
+/-- The coordinate homeomorphism reads the original coordinates on the finite vertex set. -/
+@[simp]
+theorem standardSimplexCoordinatesHomeomorph_val (σ : Finset α) (x : StandardSimplex σ) :
+    (standardSimplexCoordinatesHomeomorph σ x).1 = fun a : σ => x.1 a := by
+  simp only [standardSimplexCoordinatesHomeomorph, Homeomorph.trans_apply,
+    Topology.IsEmbedding.toHomeomorph_apply_coe]
+  exact funext fun a => standardSimplexHomeomorph_weights σ x a
+
+/-- The coordinate vectors of a closed simplex are exactly the weight vectors of Mathlib's
+standard simplex on its vertex set. -/
+theorem range_standardSimplex_coordinates (σ : Finset α) :
+    Set.range (fun x : StandardSimplex σ => fun a : σ => x.1 a) =
+      Set.range (fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) := by
+  ext u
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact (standardSimplexCoordinatesHomeomorph σ x).2
+  · intro hu
+    obtain ⟨x, hx⟩ := (standardSimplexCoordinatesHomeomorph σ).surjective ⟨u, hu⟩
+    exact ⟨x, congrArg Subtype.val hx⟩
+
 /-- The inverse finite-simplex comparison extends the finite coordinate vector by zero. -/
 @[simp]
 theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
