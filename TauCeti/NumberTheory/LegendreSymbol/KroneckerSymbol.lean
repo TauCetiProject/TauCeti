@@ -286,12 +286,14 @@ theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd
   rw [← sq]
   exact kroneckerSym_sq_one (Nat.eq_one_of_dvd_one (h ▸ Int.gcd_dvd_gcd_of_dvd_left b ⟨s, rfl⟩))
 
-/-- Multiplying a nonzero numerator `a` by a nonzero square `u²` coprime to `b` leaves `(a / b)`
-unchanged. Neither `a ≠ 0` nor `u ≠ 0` can be dropped: at `a = -1`, `u = 0`, `b = -1` the left side
-is `(0 / -1) = 1` and the right side is `-1`. -/
-theorem kroneckerSym_mul_sq {a u b : ℤ} (ha : a ≠ 0) (hu : u ≠ 0) (hub : u.gcd b = 1) :
+/-- Multiplying a numerator `a` by a nonzero square `u²` coprime to `b` leaves `(a / b)` unchanged.
+The hypothesis `u ≠ 0` cannot be dropped: at `a = -1`, `u = 0`, `b = -1` the left side is
+`(0 / -1) = 1` and the right side is `-1`. -/
+theorem kroneckerSym_mul_sq {a u b : ℤ} (hu : u ≠ 0) (hub : u.gcd b = 1) :
     kroneckerSym (a * u ^ 2) b = kroneckerSym a b := by
-  rw [kroneckerSym_mul_left ha (pow_ne_zero 2 hu), kroneckerSym_sq_one hub, mul_one]
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [zero_mul]
+  · rw [kroneckerSym_mul_left ha (pow_ne_zero 2 hu), kroneckerSym_sq_one hub, mul_one]
 
 /-! ### The Kronecker symbol of a discriminant -/
 
@@ -522,7 +524,7 @@ theorem changeLevel_kroneckerChar_sq_mul {m : ℤ} (hm : m ≠ 0) :
     rw [Int.cast_natCast, ZMod.natCast_zmod_val]
   rw [hu, DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _
       (Nat.isCoprime_iff_coprime.mpr hcop), kroneckerChar_intCast, kroneckerChar_intCast,
-    mul_comm (m ^ 2) D, kroneckerSym_mul_sq hD₀ hm hcop_m]
+    mul_comm (m ^ 2) D, kroneckerSym_mul_sq hm hcop_m]
 
 /-- Multiplying a discriminant `D` by a nonzero square `m²` leaves the conductor of its Kronecker
 character unchanged. -/

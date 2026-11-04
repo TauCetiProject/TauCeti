@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Real.Irrational
 public import TauCeti.Algebra.Module.ZLattice.FrickePartner
 public import TauCeti.Algebra.Module.ZLattice.Milgram
 public import TauCeti.LinearAlgebra.IntegralLattice.RationalInvariants
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
+public import TauCeti.NumberTheory.Real.Irrational
 
 /-!
 # The signed discriminant of a lattice and its Kronecker character
@@ -43,14 +43,10 @@ with the signed discriminant of its Fricke partner `√(level L) • L^∨` is t
 
 At the non-integral boundary, for any `c : ℝ` with `c²` irrational — in particular for
 `c = 2 ^ (1 / 4 : ℝ)` — the rank-one lattice `c ℤ ⊆ ℝ` has dual `c⁻¹ ℤ` meeting `c ℤ` only at `0`,
-so its discriminant group and every quotient `L^∨ ⧸ (a L^∨ ∩ L)` are infinite and `D_L = 0`.
+so its discriminant group and every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L)` are infinite and `D_L = 0`.
 
 ## Main definitions
 
-* `ZLattice.dualComapEquiv`, `ZLattice.discriminantGroupComapEquiv`: the `ℤ`-linear identifications
-  of dual lattices and discriminant groups induced by a linear isometry equivalence.
-* `ZLattice.dualOrthSumEquiv`, `ZLattice.discriminantGroupOrthSumEquiv`: the `ℤ`-linear
-  identifications `(L ⊕ M)^∨ ≃ₗ[ℤ] L^∨ × M^∨` and `A_{L ⊕ M} ≃ₗ[ℤ] A_L × A_M`.
 * `ZLattice.signedDiscr L`: the signed discriminant `(-1) ^ (finrank ℝ E / 2) * |A_L|`.
 
 ## Main statements
@@ -86,135 +82,13 @@ so its discriminant group and every quotient `L^∨ ⧸ (a L^∨ ∩ L)` are inf
 
 public section
 
-open Module Submodule WithLp
+open Module Submodule
 open scoped Pointwise RealInnerProductSpace
 
 namespace ZLattice
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-! ### Functoriality and products of discriminant groups -/
-
-section DiscriminantGroup
-
-/-- A linear isometry equivalence `e : F ≃ₗᵢ[ℝ] E` identifies the dual of the pullback of `L` with
-the dual of `L`. -/
-noncomputable def dualComapEquiv (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
-    dual (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) ≃ₗ[ℤ] dual L where
-  toFun x := ⟨e x, (dual_comap L e).le x.2⟩
-  invFun y := ⟨e.symm y, (dual_comap L e).ge (by simp)⟩
-  map_add' x y := Subtype.ext (map_add e (x : F) (y : F))
-  map_smul' m x := Subtype.ext (map_zsmul e m (x : F))
-  left_inv x := Subtype.ext (e.symm_apply_apply x)
-  right_inv y := Subtype.ext (e.apply_symm_apply y)
-
-@[simp]
-theorem coe_dualComapEquiv_apply (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E)
-    (x : dual (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap)) :
-    (dualComapEquiv L e x : E) = e x :=
-  (rfl)
-
-@[simp]
-theorem coe_dualComapEquiv_symm_apply (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) (y : dual L) :
-    ((dualComapEquiv L e).symm y : F) = e.symm y :=
-  (rfl)
-
-/-- A linear isometry equivalence `e : F ≃ₗᵢ[ℝ] E` identifies the discriminant group of the
-pullback of `L` with the discriminant group of `L`. -/
-noncomputable def discriminantGroupComapEquiv (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
-    DiscriminantGroup (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) ≃ₗ[ℤ] DiscriminantGroup L :=
-  Submodule.Quotient.equiv _ _ (dualComapEquiv L e) <| by
-    ext y
-    simp only [Submodule.mem_map, submoduleOf, Submodule.mem_comap, subtype_apply]
-    refine ⟨?_, fun hy ↦ ⟨(dualComapEquiv L e).symm y, by simpa using hy,
-      (dualComapEquiv L e).apply_symm_apply y⟩⟩
-    rintro ⟨x, hx, rfl⟩
-    simpa using hx
-
-@[simp]
-theorem discriminantGroupComapEquiv_mk (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E)
-    (x : dual (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap)) :
-    discriminantGroupComapEquiv L e (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (dualComapEquiv L e x) :=
-  (rfl)
-
-/-- The order of the discriminant group is invariant under linear isometry equivalences. -/
-@[simp]
-theorem card_discriminantGroup_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
-    Nat.card (DiscriminantGroup (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap)) =
-      Nat.card (DiscriminantGroup L) :=
-  Nat.card_congr (discriminantGroupComapEquiv L e).toEquiv
-
-/-- As a `ℤ`-module, the dual of an orthogonal direct sum `L ⊕ M` is `L^∨ × M^∨`. -/
-noncomputable def dualOrthSumEquiv (L : Submodule ℤ E) (M : Submodule ℤ F) :
-    dual (orthSum L M) ≃ₗ[ℤ] dual L × dual M :=
-  (LinearEquiv.ofEq _ _ (dual_orthSum L M)).trans (orthSumEquivProd (dual L) (dual M))
-
-@[simp]
-theorem coe_dualOrthSumEquiv_apply_fst (L : Submodule ℤ E) (M : Submodule ℤ F)
-    (x : dual (orthSum L M)) :
-    ((dualOrthSumEquiv L M x).1 : E) = (x : WithLp 2 (E × F)).fst := by
-  simp [dualOrthSumEquiv]
-
-@[simp]
-theorem coe_dualOrthSumEquiv_apply_snd (L : Submodule ℤ E) (M : Submodule ℤ F)
-    (x : dual (orthSum L M)) :
-    ((dualOrthSumEquiv L M x).2 : F) = (x : WithLp 2 (E × F)).snd := by
-  simp [dualOrthSumEquiv]
-
-@[simp]
-theorem coe_dualOrthSumEquiv_symm_apply (L : Submodule ℤ E) (M : Submodule ℤ F)
-    (p : dual L × dual M) :
-    ((dualOrthSumEquiv L M).symm p : WithLp 2 (E × F)) = toLp 2 ((p.1 : E), (p.2 : F)) := by
-  simp [dualOrthSumEquiv]
-
-/-- The discriminant group of an orthogonal direct sum `L ⊕ M` is the product of the discriminant
-groups of `L` and `M`. -/
-noncomputable def discriminantGroupOrthSumEquiv (L : Submodule ℤ E) (M : Submodule ℤ F) :
-    DiscriminantGroup (orthSum L M) ≃ₗ[ℤ] DiscriminantGroup L × DiscriminantGroup M :=
-  let f := ((L.submoduleOf (dual L)).mkQ.prodMap (M.submoduleOf (dual M)).mkQ) ∘ₗ
-    (dualOrthSumEquiv L M).toLinearMap
-  have hf : Function.Surjective f :=
-    (Function.Surjective.prodMap (mkQ_surjective _) (mkQ_surjective _)).comp
-      (dualOrthSumEquiv L M).surjective
-  have hker : LinearMap.ker f = (orthSum L M).submoduleOf (dual (orthSum L M)) := by
-    ext x
-    change (Submodule.Quotient.mk (dualOrthSumEquiv L M x).1,
-      Submodule.Quotient.mk (dualOrthSumEquiv L M x).2) =
-      (0 : DiscriminantGroup L × DiscriminantGroup M) ↔ _
-    rw [Prod.mk_eq_zero, discriminantGroup_mk_eq_zero_iff, discriminantGroup_mk_eq_zero_iff]
-    simp [submoduleOf]
-  (quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
-
-@[simp]
-theorem discriminantGroupOrthSumEquiv_mk (L : Submodule ℤ E) (M : Submodule ℤ F)
-    (x : dual (orthSum L M)) :
-    discriminantGroupOrthSumEquiv L M (Submodule.Quotient.mk x) =
-      (Submodule.Quotient.mk (dualOrthSumEquiv L M x).1,
-        Submodule.Quotient.mk (dualOrthSumEquiv L M x).2) :=
-  (rfl)
-
-/-- The order of the discriminant group of `L ⊕ M` is the product of the orders of the discriminant
-groups of `L` and `M`. -/
-@[simp]
-theorem card_discriminantGroup_orthSum (L : Submodule ℤ E) (M : Submodule ℤ F) :
-    Nat.card (DiscriminantGroup (orthSum L M)) =
-      Nat.card (DiscriminantGroup L) * Nat.card (DiscriminantGroup M) := by
-  rw [Nat.card_congr (discriminantGroupOrthSumEquiv L M).toEquiv, Nat.card_prod]
-
-/-- A unimodular lattice has trivial discriminant group. -/
-theorem IsUnimodular.subsingleton_discriminantGroup {L : Submodule ℤ E} (h : IsUnimodular L) :
-    Subsingleton (DiscriminantGroup L) :=
-  subsingleton_discriminantGroup_iff.mpr h.dual_eq.le
-
-/-- The discriminant group of a unimodular lattice has order `1`. -/
-theorem IsUnimodular.card_discriminantGroup_eq_one {L : Submodule ℤ E} (h : IsUnimodular L) :
-    Nat.card (DiscriminantGroup L) = 1 :=
-  have := h.subsingleton_discriminantGroup
-  Nat.card_unique
-
-end DiscriminantGroup
 
 /-! ### Definition and general properties of the signed discriminant -/
 
@@ -348,17 +222,6 @@ theorem IsEven.signedDiscr_eq_one_of_isUnimodular (h : IsEven L) (hU : IsUnimodu
   rw [hU.signedDiscr_eq_neg_one_pow, show finrank ℝ E / 2 = 2 * m by omega, pow_mul, neg_one_sq,
     one_pow]
 
-/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
-discriminant group by `mⁿ`. -/
-theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
-    Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
-      m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
-  borelize E
-  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
-  refine Nat.cast_injective (R := ℝ) ?_
-  rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L hm,
-    h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
-
 /-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies its signed
 discriminant by `mⁿ`. -/
 theorem IsIntegral.signedDiscr_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
@@ -389,18 +252,6 @@ theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
   rw [hu.isIntegral.signedDiscr_sqrt_smul hm, hu.signedDiscr_eq_neg_one_pow,
     Module.finrank_eq_card_basis b.toBasis, mul_comm]
 
-/-- For an integral full lattice `L` of rank `n` and level `N`, the orders of the discriminant
-groups of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/
-theorem IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual (h : IsIntegral L) :
-    Nat.card (DiscriminantGroup L) * Nat.card (DiscriminantGroup (√(level L : ℝ) • dual L)) =
-      level L ^ finrank ℝ E := by
-  borelize E
-  have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr h.level_pos)⟩
-  refine Nat.cast_injective (R := ℝ) ?_
-  rw [Nat.cast_mul, Nat.cast_pow, ← h.det_eq_card_discriminantGroup,
-    ← isIntegral_sqrt_level_smul_dual.det_eq_card_discriminantGroup, h.det_sqrt_level_smul_dual,
-    mul_div_cancel₀ _ (det_pos L).ne']
-
 /-- **Fricke partner product identity.** For an integral full lattice `L` of rank `n` and level `N`,
 the signed discriminants of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/
 theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
@@ -427,14 +278,6 @@ theorem IsIntegral.isSquare_mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral
 
 /-! ### Comparison with the rational and real models -/
 
-/-- The determinant of the rational model of an integral full lattice is the order of its
-discriminant group. -/
-theorem IsIntegral.determinant_ratModel_eq_card_discriminantGroup (hL : IsIntegral L) :
-    (ratModel hL).determinant = Nat.card (DiscriminantGroup L) := by
-  borelize E
-  refine Int.cast_injective (α := ℝ) ?_
-  rw [determinant_ratModel, hL.det_eq_card_discriminantGroup, Int.cast_natCast]
-
 /-- The signed discriminant of an integral full lattice agrees with the signed determinant of its
 rational model. -/
 theorem IsIntegral.signedDiscr_eq_ratModel (hL : IsIntegral L) :
@@ -460,11 +303,6 @@ theorem IsIntegral.signedDiscr_rationalFormClass_ratModel (hL : IsIntegral L) :
     ← TauCeti.squareClass_pow, Nat.neg_one_pow_choose_two, ← TauCeti.squareClass_mul, hu]
 
 /-! ### Level coprimality and the Kronecker character -/
-
-/-- Any natural number coprime to `level L` is coprime to the order of `DiscriminantGroup L`. -/
-theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprime (level L)) :
-    a.Coprime (Nat.card (DiscriminantGroup L)) :=
-  (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
 /-- Any natural number coprime to `level L` is coprime to `|signedDiscr L|`. -/
 theorem coprime_natAbs_signedDiscr_of_coprime_level {a : ℕ} (ha : a.Coprime (level L)) :
@@ -594,13 +432,6 @@ end FullLattice
 
 section NonIntegralBoundary
 
-/-- The dual of the rank-one lattice `c ℤ ⊆ ℝ` (`c ≠ 0`) is `c⁻¹ ℤ`. -/
-theorem dual_span_singleton {c : ℝ} (hc : c ≠ 0) :
-    dual (span ℤ {c} : Submodule ℤ ℝ) = span ℤ {c⁻¹} := by
-  have hspan : ∀ r : ℝ, (span ℤ {r} : Submodule ℤ ℝ) = r • span ℤ {1} := fun r ↦ by
-    rw [smul_span, Set.smul_set_singleton, smul_eq_mul, mul_one]
-  rw [hspan c, dual_smul _ hc, isUnimodular_span_one.dual_eq, ← hspan c⁻¹]
-
 /-- When `c²` is irrational, the rank-one lattice `c ℤ ⊆ ℝ` meets its dual `c⁻¹ ℤ` only at `0`. -/
 theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2)) :
     (span ℤ {c} : Submodule ℤ ℝ) ⊓ dual (span ℤ {c}) = ⊥ := by
@@ -625,7 +456,8 @@ theorem inf_dual_span_singleton_eq_bot_of_irrational_sq {c : ℝ} (hc : Irration
   push_cast
   exact (div_eq_iff hm').mpr hmc2
 
-/-- When `c²` is irrational, every quotient `L^∨ ⧸ (a L^∨ ∩ L)` of `L = c ℤ ⊆ ℝ` is infinite. -/
+/-- When `c²` is irrational, every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L)` of `L = c ℤ ⊆ ℝ` is
+infinite. -/
 theorem infinite_quotient_smul_dual_inf_of_irrational_sq {c : ℝ} (hc : Irrational (c ^ 2))
     (a : ℝ) :
     Infinite (dual (span ℤ {c} : Submodule ℤ ℝ) ⧸
@@ -668,38 +500,32 @@ theorem signedDiscr_span_singleton_of_irrational_sq {c : ℝ} (hc : Irrational (
     signedDiscr (span ℤ {c} : Submodule ℤ ℝ) = 0 :=
   signedDiscr_eq_zero_iff.mpr (infinite_discriminantGroup_span_singleton_of_irrational_sq hc)
 
-private theorem irrational_two_rpow_one_quarter_sq :
-    Irrational (((2 : ℝ) ^ ((1 : ℝ) / 4)) ^ 2) := by
-  have hsq : (((2 : ℝ) ^ ((1 : ℝ) / 4)) ^ 2 : ℝ) = √2 := by
-    rw [← Real.rpow_natCast _ 2, ← Real.rpow_mul zero_le_two,
-      show (1 : ℝ) / 4 * (2 : ℕ) = 1 / (2 : ℝ) by norm_num, ← Real.sqrt_eq_rpow]
-  exact hsq ▸ irrational_sqrt_two
-
 /-- **Non-integral boundary check:** `L = 2 ^ (1 / 4) ℤ ⊆ ℝ` meets its dual `2 ^ (-1 / 4) ℤ` only
 at `0`. -/
 theorem inf_dual_span_two_rpow_one_quarter :
     (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)} : Submodule ℤ ℝ) ⊓
       dual (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)}) = ⊥ :=
-  inf_dual_span_singleton_eq_bot_of_irrational_sq irrational_two_rpow_one_quarter_sq
+  inf_dual_span_singleton_eq_bot_of_irrational_sq TauCeti.irrational_two_rpow_one_quarter_sq
 
 /-- **Non-integral boundary check:** `L = 2 ^ (1 / 4) ℤ ⊆ ℝ` has infinite discriminant group. -/
 theorem infinite_discriminantGroup_span_two_rpow_one_quarter :
     Infinite (DiscriminantGroup (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)} : Submodule ℤ ℝ)) :=
-  infinite_discriminantGroup_span_singleton_of_irrational_sq irrational_two_rpow_one_quarter_sq
+  infinite_discriminantGroup_span_singleton_of_irrational_sq
+    TauCeti.irrational_two_rpow_one_quarter_sq
 
 /-- **Non-integral boundary check:** for `L = 2 ^ (1 / 4) ℤ ⊆ ℝ` and every `a : ℝ`, the quotient
-`L^∨ ⧸ (a L^∨ ∩ L)` is infinite. -/
+`L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L)` is infinite. -/
 theorem infinite_quotient_smul_dual_inf_span_two_rpow_one_quarter (a : ℝ) :
     Infinite (dual (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)} : Submodule ℤ ℝ) ⧸
       ((a • dual (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)})) ⊓
         span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)}).submoduleOf
         (dual (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)}))) :=
-  infinite_quotient_smul_dual_inf_of_irrational_sq irrational_two_rpow_one_quarter_sq a
+  infinite_quotient_smul_dual_inf_of_irrational_sq TauCeti.irrational_two_rpow_one_quarter_sq a
 
 /-- **Non-integral boundary check:** `L = 2 ^ (1 / 4) ℤ ⊆ ℝ` has `signedDiscr L = 0`. -/
 theorem signedDiscr_span_two_rpow_one_quarter :
     signedDiscr (span ℤ {(2 : ℝ) ^ ((1 : ℝ) / 4)} : Submodule ℤ ℝ) = 0 :=
-  signedDiscr_span_singleton_of_irrational_sq irrational_two_rpow_one_quarter_sq
+  signedDiscr_span_singleton_of_irrational_sq TauCeti.irrational_two_rpow_one_quarter_sq
 
 end NonIntegralBoundary
 
@@ -708,15 +534,6 @@ end ZLattice
 namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
-
-/-- The determinant of a positive definite rational integral lattice is the order of its
-discriminant group. -/
-theorem IsPosDef.determinant_eq_card_discriminantGroup {M : IntegralLattice V} (hM : M.IsPosDef) :
-    M.determinant = Nat.card M.DiscriminantGroup := by
-  borelize (M.RealModelSpace hM)
-  refine Int.cast_injective (α := ℝ) ?_
-  rw [← M.det_realModel hM, (M.isIntegral_realModel hM).det_eq_card_discriminantGroup,
-    M.natCard_discriminantGroup_realModel hM, Int.cast_natCast]
 
 /-- The signed discriminant of the real model of a positive definite rational lattice `M` is
 `(-1) ^ ⌊finrank ℤ M / 2⌋ * M.determinant`. -/
