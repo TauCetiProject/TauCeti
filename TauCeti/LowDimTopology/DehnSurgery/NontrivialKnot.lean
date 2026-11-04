@@ -196,8 +196,7 @@ theorem not_hasPropertyR_unknot
   have hlong :
       (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus h₁ h₂).longitude =
         isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude :=
-    eq_of_heq (congr_arg_heq FramedBoundaryTorus.longitude
-      (preferredFramedBoundaryTorus_unknotSolidTorus h₁ h₂))
+    preferredFramedBoundaryTorus_unknotSolidTorus_longitude h₁ h₂
   exact (hR.isEmpty_homeomorph (hlong ▸ unknotZeroDehnFilling)).false (Homeomorph.refl _)
 
 /-! ### Knots in `S³` -/
