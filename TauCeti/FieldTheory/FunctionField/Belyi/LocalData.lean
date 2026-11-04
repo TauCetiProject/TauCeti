@@ -54,7 +54,6 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
   classical
   let := isAlgebraic_of_constantCompositum_eq_top (k := k) hcomp
   have hF : IsFunctionField k F := (IsFunctionField.ratFunc k).finite_extension
-  have hF' : IsFunctionField k' F' := (IsFunctionField.ratFunc k').finite_extension
   let s := (finite_setOf_restrict_eq (k' := k) (F' := F) k (RatFunc k)
     (markedPlace k i)).toFinset
   let s' := (finite_setOf_restrict_eq (k' := k') (F' := F') k' (RatFunc k')
@@ -75,7 +74,7 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
         markedPlace_zero, markedPlace_one, markedPlace_two, degree_adicOfIrreducible,
         Polynomial.natDegree_X, Polynomial.C_1, hlinear, degree_infty]
     simpa only [hQ', hmark, one_mul] using h.symm
-  -- Count the geometric points over each original place by preservation of divisor degree.
+  -- Use the constant-extension splitting theorem to count points over each original place.
   -- Since the marked base place is rational, that count is the relative residue degree.
   have hcard (Q : Place k F) (hQ : Q ∈ s) :
       (s'.filter fun Q' => Q'.restrict k F = Q).card = relativeDegree k (RatFunc k) Q := by
@@ -86,10 +85,11 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
       rw [hmem]
       exact and_iff_right_of_imp fun h => h ▸ hQ
     rw [hs, hdeg Q hQ]
-    have hsum := finsum_degree_restrict_eq_degree_of_constantCompositum_eq_top hF hex hcomp Q
-    rw [finsum_mem_eq_finite_toFinset_sum _ hf] at hsum
-    simpa only [degree_eq_one_of_isAlgClosed_of_isFunctionField _ hF',
-      Finset.sum_const, smul_eq_mul, mul_one] using hsum
+    let := Q.finiteDimensional_residueField hF
+    let : IsAlgClosure k k' := ⟨inferInstance, inferInstance⟩
+    simpa only [Set.ncard_eq_toFinset_card _ hf] using
+      ncard_setOf_restrict_eq_eq_degree_of_constantCompositum_eq_top hF hex hcomp Q
+        (IsAlgClosed.lift : Q.ResidueField →ₐ[k] k')
   have he (Q' : Place k' F') :
       ramificationIdx (RatFunc k') Q' = ramificationIdx (RatFunc k) (Q'.restrict k F) :=
     ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top hcomp hX Q'
