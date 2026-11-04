@@ -104,7 +104,8 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (hf : I
   rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn,
     sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hfin.toFinset hfin.coe_toFinset hn,
     totalCriticalCount_def, hfin.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
-    Finset.card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
+    Finset.card_eq_sum_ones]
+  push_cast
   refine (Int.ModEq.sum fun x _ ↦ ?_).mul_left _
   simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x))
 

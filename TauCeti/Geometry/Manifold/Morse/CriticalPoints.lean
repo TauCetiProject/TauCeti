@@ -438,8 +438,9 @@ theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (s : Finset M)
       ↑({x ∈ s | manifoldMorseIndex I f x = i} : Finset M) := by
     ext x
     simp [← hs]
-  rw [Finset.sum_congr rfl fun x hx ↦ by rw [(Finset.mem_filter.1 hx).2], Finset.sum_const,
-    nsmul_eq_mul, mul_comm, criticalCount_def, hi, encard_coe_eq_coe_finsetCard, ENat.toNat_natCast]
+  rw [Finset.sum_congr rfl fun x hx ↦ by rw [(Finset.mem_filter.1 hx).2], criticalCount_def, hi,
+    encard_coe_eq_coe_finsetCard]
+  simp [mul_comm]
 
 /-- Terms of index above the dimension of `M` do not contribute to a signed count
 `∑ᵢ (-1)ⁱ cᵢ` of critical points, so it may be truncated at `dim M`. -/
