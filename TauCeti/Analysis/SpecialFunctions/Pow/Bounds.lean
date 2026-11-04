@@ -13,6 +13,9 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Elementary bounds on real powers
 
+If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
+powers of a level confined to an interval bounded away from zero.
+
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
 denominator `1 - y ^ (-s)` stays bounded below.
@@ -60,6 +63,7 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 
 ## Main results
 
+* `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
