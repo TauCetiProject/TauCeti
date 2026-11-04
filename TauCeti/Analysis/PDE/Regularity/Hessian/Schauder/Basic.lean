@@ -57,6 +57,8 @@ both slots, which costs the factor `‖e⁻¹‖^(2+α) ≤ λ^(-1-α/2)`
 
 * `TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_laplacian`: the interior Schauder
   estimate for `C²` solutions of Poisson's equation.
+* `TauCeti.PDE.exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian`: a `C²` function
+  with locally `α`-Hölder Laplacian has locally `α`-Hölder second derivatives.
 * `TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv`: the interior
   Schauder estimate for `C²` solutions of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f`, with explicit dependence on `λ`
   and `Λ`.
@@ -75,7 +77,7 @@ public section
 noncomputable section
 
 open InnerProductSpace Laplacian MeasureTheory Metric Set TopologicalSpace TauCeti.MeasureTheory
-open scoped Gradient InnerProductSpace NNReal ENNReal
+open scoped Gradient InnerProductSpace NNReal ENNReal Topology
 
 namespace TauCeti
 
@@ -210,6 +212,26 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         push_cast
         ring
+
+/-- **Local `C^{2,α}` regularity for Poisson's equation.** Let `0 < α < 1`, and let `u` be of class
+`C²` on an open set `U ⊆ ℝ^{n+1}` whose Laplacian is locally `α`-Hölder on `U`. Then `D²u` is
+locally `α`-Hölder on `U`: every point of `U` has a neighbourhood on which `D²u` is `α`-Hölder. -/
+theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α < 1) {U : Set E} {u : E → ℝ} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
+    (hΔ : ∀ x ∈ U, ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α (Δ u) T) {x : E} (hx : x ∈ U) :
+    ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ 2 u) T := by
+  obtain ⟨C, -, hC⟩ := exists_holderOnWith_iteratedFDeriv_two_of_laplacian (n := n) hα hα1
+  obtain ⟨T, hT, K, hK⟩ := hΔ x hx
+  obtain ⟨r, hr, hrUT⟩ := nhds_basis_closedBall.mem_iff.1 (Filter.inter_mem (hU.mem_nhds hx) hT)
+  have hr2 : 0 < r / 2 := half_pos hr
+  -- Apply the interior estimate to `S = B(x, r / 2)`, whose `r / 2`-thickenings lie in
+  -- `closedBall x r ⊆ U ∩ T`.
+  refine ⟨ball x (r / 2), ball_mem_nhds x hr2, _, hC hU hu isBounded_ball hr2 ?_ (hK.mono ?_)⟩
+  · rw [cthickening_ball hr2.le hr2, add_halves]
+    exact hrUT.trans inter_subset_left
+  · refine (thickening_ball x _ _).trans ?_
+    rw [add_halves]
+    exact ball_subset_closedBall.trans (hrUT.trans inter_subset_right)
 
 /-- The bookkeeping of the powers of `λ`, `Λ` and `R` in the transfer of the interior Schauder
 estimate from the Laplacian to an operator with ellipticity constants `λ ≤ Λ`. -/
