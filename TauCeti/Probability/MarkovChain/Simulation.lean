@@ -1,12 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Antigravity (Gemini 4 Carbon)
 -/
 module
 
 public import TauCeti.Probability.Process.MarkovChain
-public import TauCeti.Probability.Kernel.Randomization
+public import TauCeti.Probability.Kernel.CountableSampler
 public import Mathlib.Probability.Independence.InfinitePi
 
 /-!
@@ -18,20 +18,25 @@ initial law, and `f x` samples the transition law from `x`, the whole path has l
 `markovChainLaw`. The result applies on any probability space and to any measurable state
 space admitting such samplers.
 
-For nonempty standard Borel state spaces, Mathlib's kernel randomization theorem supplies
-the samplers from uniform noise on the closed unit interval. Thus the existence result
-includes finite and countably infinite state spaces, with no positivity requirement on
-individual transition weights. The uniform representation is an existence result, with
-no prescribed enumeration or inverse-cdf endpoint convention.
+Two uniform constructions specialize this general principle:
+* For countable measurable-singleton state spaces equipped with an injective enumeration
+  `e : α ↪ ℕ` (including finite `Fin n` and countably infinite `ℕ` state spaces), the explicit
+  cumulative-weight samplers `Measure.countableSampler` and `Kernel.countableSampler` use
+  half-open cumulative intervals on `Set.Ico (0 : ℝ) 1`, require no topology or positivity
+  assumption on transition weights, and generate `markovChainLaw` from independent uniform
+  variables on `Set.Ico (0 : ℝ) 1`.
+* For arbitrary nonempty standard Borel state spaces, Mathlib's kernel randomization theorem
+  supplies abstract measurable samplers from uniform noise on the closed unit interval.
 
 The proof uses the existing prefix-recursion uniqueness theorem for `markovChainLaw` and
 `Kernel.map_prod_eq_compProd_of_map` for a single randomized transition.
 
 ## References
 
-* J. R. Norris, *Markov Chains* (1997), §1.1, for constructing a chain from independent noise.
+* J. R. Norris, *Markov Chains* (1997), §1.1, Theorem 1.1.2, for constructing a countable-state
+  chain from independent uniform variables on `[0, 1)`.
 * O. Kallenberg, *Foundations of Modern Probability*, 3rd ed., Lemma 4.22, for the uniform
-  representation of kernels, supplied by Mathlib.
+  representation of kernels on standard Borel spaces, supplied by Mathlib.
 -/
 
 public section
@@ -170,5 +175,91 @@ theorem exists_uniform_randomizedChain [StandardBorelSpace α] [Nonempty α]
     (iIndepFun_infinitePi (X := fun _ x => x) fun _ => measurable_id)
     (fun i => ⟨(measurable_pi_apply i).aemeasurable, Measure.infinitePi_map_eval _ i⟩)
     ν κ hg_map hf_map
+
+section CountableSampler
+
+/-- Iterating the explicit cumulative-weight samplers `ν.countableSampler e` and
+`κ.countableSampler e` with independent random variables of law `volume.restrict (Set.Ico 0 1)`
+produces a trajectory with law `markovChainLaw ν κ`. -/
+theorem hasLaw_randomizedChain_countableSampler [Nonempty α] [MeasurableSingletonClass α]
+    (e : α ↪ ℕ) (ν : Measure α) [IsProbabilityMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
+    {U : ℕ → Ω → ℝ} {P : Measure Ω} (hU : ∀ i, Measurable (U i)) (hindep : iIndepFun U P)
+    (hlaw : ∀ i, HasLaw (U i) (volume.restrict (Set.Ico (0 : ℝ) 1)) P) :
+    HasLaw (fun ω => randomizedChain (ν.countableSampler e) (κ.countableSampler e) (fun i => U i ω))
+      (markovChainLaw ν κ) P :=
+  hasLaw_randomizedChain (ν.measurable_countableSampler e) (κ.measurable_uncurry_countableSampler e)
+    hU hindep hlaw ν κ (ν.map_countableSampler_volume_Ico e) (κ.map_countableSampler_volume_Ico e)
+
+/-- Iterating `ν.countableSampler e` and `κ.countableSampler e` with independent random variables
+uniform on `Set.Ico (0 : ℝ) 1` produces a trajectory with law `markovChainLaw ν κ`. -/
+theorem hasLaw_randomizedChain_countableSampler_of_isUniform [Nonempty α]
+    [MeasurableSingletonClass α] (e : α ↪ ℕ) (ν : Measure α) [IsProbabilityMeasure ν]
+    (κ : Kernel α α) [IsMarkovKernel κ] {U : ℕ → Ω → ℝ} {P : Measure Ω}
+    (hU : ∀ i, Measurable (U i)) (hindep : iIndepFun U P)
+    (hunif : ∀ i, pdf.IsUniform (U i) (Set.Ico (0 : ℝ) 1) P) :
+    HasLaw (fun ω => randomizedChain (ν.countableSampler e) (κ.countableSampler e) (fun i => U i ω))
+      (markovChainLaw ν κ) P := by
+  refine hasLaw_randomizedChain_countableSampler e ν κ hU hindep fun i => ?_
+  have hi := hunif i
+  rwa [pdf.IsUniform, Measure.cond_volume_Ico_zero_one] at hi
+
+/-- On the canonical infinite product of uniform laws on `Set.Ico (0 : ℝ) 1`, iterating
+`ν.countableSampler e` and `κ.countableSampler e` has law `markovChainLaw ν κ`. -/
+theorem hasLaw_randomizedChain_countableSampler_infinitePi [Nonempty α]
+    [MeasurableSingletonClass α] (e : α ↪ ℕ) (ν : Measure α) [IsProbabilityMeasure ν]
+    (κ : Kernel α α) [IsMarkovKernel κ] :
+    HasLaw (randomizedChain (ν.countableSampler e) (κ.countableSampler e))
+      (markovChainLaw ν κ)
+      (Measure.infinitePi fun _ : ℕ => volume.restrict (Set.Ico (0 : ℝ) 1)) := by
+  have : IsProbabilityMeasure (volume.restrict (Set.Ico (0 : ℝ) 1)) := ⟨by simp⟩
+  exact hasLaw_randomizedChain_countableSampler e ν κ (fun i => measurable_pi_apply i)
+    (iIndepFun_infinitePi (X := fun _ x => x) fun _ => measurable_id)
+    (fun i => ⟨(measurable_pi_apply i).aemeasurable, Measure.infinitePi_map_eval _ i⟩)
+
+/-- Iterating `ν.natSampler` and `κ.natSampler` with independent random variables of law
+`volume.restrict (Set.Ico 0 1)` produces `markovChainLaw ν κ` on `ℕ`. -/
+theorem hasLaw_randomizedChain_natSampler (ν : Measure ℕ) [IsProbabilityMeasure ν]
+    (κ : Kernel ℕ ℕ) [IsMarkovKernel κ] {U : ℕ → Ω → ℝ} {P : Measure Ω}
+    (hU : ∀ i, Measurable (U i)) (hindep : iIndepFun U P)
+    (hlaw : ∀ i, HasLaw (U i) (volume.restrict (Set.Ico (0 : ℝ) 1)) P) :
+    HasLaw (fun ω => randomizedChain ν.natSampler κ.natSampler (fun i => U i ω))
+      (markovChainLaw ν κ) P := by
+  simpa only [Measure.countableSampler_refl, Kernel.countableSampler_refl] using
+    hasLaw_randomizedChain_countableSampler (.refl ℕ) ν κ hU hindep hlaw
+
+/-- Iterating `ν.natSampler` and `κ.natSampler` with independent random variables uniform on
+`Set.Ico (0 : ℝ) 1` produces `markovChainLaw ν κ` on `ℕ`. -/
+theorem hasLaw_randomizedChain_natSampler_of_isUniform (ν : Measure ℕ) [IsProbabilityMeasure ν]
+    (κ : Kernel ℕ ℕ) [IsMarkovKernel κ] {U : ℕ → Ω → ℝ} {P : Measure Ω}
+    (hU : ∀ i, Measurable (U i)) (hindep : iIndepFun U P)
+    (hunif : ∀ i, pdf.IsUniform (U i) (Set.Ico (0 : ℝ) 1) P) :
+    HasLaw (fun ω => randomizedChain ν.natSampler κ.natSampler (fun i => U i ω))
+      (markovChainLaw ν κ) P := by
+  simpa only [Measure.countableSampler_refl, Kernel.countableSampler_refl] using
+    hasLaw_randomizedChain_countableSampler_of_isUniform (.refl ℕ) ν κ hU hindep hunif
+
+/-- On the canonical infinite product of uniform laws on `Set.Ico (0 : ℝ) 1`, iterating
+`ν.natSampler` and `κ.natSampler` has law `markovChainLaw ν κ`. -/
+theorem hasLaw_randomizedChain_natSampler_infinitePi (ν : Measure ℕ) [IsProbabilityMeasure ν]
+    (κ : Kernel ℕ ℕ) [IsMarkovKernel κ] :
+    HasLaw (randomizedChain ν.natSampler κ.natSampler) (markovChainLaw ν κ)
+      (Measure.infinitePi fun _ : ℕ => volume.restrict (Set.Ico (0 : ℝ) 1)) := by
+  simpa only [Measure.countableSampler_refl, Kernel.countableSampler_refl] using
+    hasLaw_randomizedChain_countableSampler_infinitePi (.refl ℕ) ν κ
+
+/-- Every nonempty countable measurable-singleton state space admits an injective enumeration
+`e : α ↪ ℕ` whose explicit cumulative-weight samplers on `Set.Ico (0 : ℝ) 1` generate
+`markovChainLaw ν κ`, without requiring any topology on `α`. -/
+theorem exists_countable_uniform_Ico_randomizedChain [Countable α] [Nonempty α]
+    [MeasurableSingletonClass α] (ν : Measure α) [IsProbabilityMeasure ν]
+    (κ : Kernel α α) [IsMarkovKernel κ] :
+    ∃ e : α ↪ ℕ,
+      HasLaw (randomizedChain (ν.countableSampler e) (κ.countableSampler e))
+        (markovChainLaw ν κ)
+        (Measure.infinitePi fun _ : ℕ => volume.restrict (Set.Ico (0 : ℝ) 1)) := by
+  obtain ⟨f, hf⟩ := exists_injective_nat α
+  exact ⟨⟨f, hf⟩, hasLaw_randomizedChain_countableSampler_infinitePi ⟨f, hf⟩ ν κ⟩
+
+end CountableSampler
 
 end TauCeti.Probability
