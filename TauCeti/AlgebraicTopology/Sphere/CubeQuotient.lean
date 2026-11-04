@@ -67,6 +67,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
   boundary of the cube is homotopy relative to the north pole, and `πₙ(X, x)` is the set of pointed
   homotopy classes of maps `Sⁿ → X`, the classes of `TauCeti.pointedHomotopySetoid`.
+* `TauCeti.GenLoop.HomotopyAlong.homotopic_toSphere`: a homotopy of generalized loops along a path
+  is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
 
@@ -550,6 +552,28 @@ theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
         (Set.mem_singleton_iff.2 (cubeToSphere_eq_sphereNorthPole_iff.2 hz))
 
 end GenLoop
+
+namespace TauCeti.GenLoop.HomotopyAlong
+
+variable {n : ℕ} [NeZero n] {X : Type*} [TopologicalSpace X] {x y : X}
+
+/-- **A homotopy of generalized loops along a path is a free homotopy of maps out of the
+sphere.** If `h` is a homotopy from `f` to `g` whose boundary traces a path from the base point of
+`f` to that of `g`, then the corresponding maps out of the sphere are homotopic. -/
+theorem homotopic_toSphere {γ : Path x y} {f : Ω^ (Fin n) X x} {g : Ω^ (Fin n) X y}
+    (h : HomotopyAlong γ f g) :
+    (_root_.GenLoop.toSphere f).Homotopic (_root_.GenLoop.toSphere g) := by
+  -- At each time the homotopy is constant on the boundary of the cube, so it descends to the
+  -- product of `I` with the sphere.
+  refine ⟨⟨liftProdCubeToSphere h.toContinuousMap
+    (fun t y hy z hz ↦ (h.map_boundary t y hy).trans (h.map_boundary t z hz).symm),
+    fun s ↦ ?_, fun s ↦ ?_⟩⟩
+  · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+    simp
+  · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+    simp
+
+end TauCeti.GenLoop.HomotopyAlong
 
 namespace GenLoop
 
