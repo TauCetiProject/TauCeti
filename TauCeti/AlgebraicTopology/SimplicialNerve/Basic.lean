@@ -167,9 +167,9 @@ def toFunctor (F : EnrichedFunctor SSet (SimplicialThickening J) C) : J ⥤ C wh
     rw [pathVertex_refl, EnrichedFunctor.map_id, ← eHomEquiv_id, Equiv.symm_apply_apply]
   map_comp {i j k} f g := by
     apply (eHomEquiv SSet).injective
-    rw [eHomEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply, Equiv.apply_symm_apply,
-      ← pathVertex_comp (leOfHom f) (leOfHom g), Category.assoc, Category.assoc,
-      EnrichedFunctor.map_comp, tensorHom_comp_tensorHom_assoc]
+    simp only [eHomEquiv_comp, Equiv.apply_symm_apply]
+    rw [← pathVertex_comp (leOfHom f) (leOfHom g)]
+    simp [EnrichedFunctor.map_comp, tensorHom_comp_tensorHom_assoc]
 
 @[simp]
 lemma toFunctor_obj (F : EnrichedFunctor SSet (SimplicialThickening J) C) (i : J) :
