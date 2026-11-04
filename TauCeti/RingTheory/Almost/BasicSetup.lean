@@ -72,7 +72,9 @@ pseudouniformiser.
   ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
   `m` makes the setup classical.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
-  condition (B).
+  condition (B); `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.exists_le_span_singleton`: under
+  condition (A), every finitely generated ideal inside `m` lies in a principal ideal `(z)` with
+  `z ∈ m`.
 * `Submodule.mulMap_top_top_bijective`: the multiplication map `R ⊗[R] R → R` is bijective; it
   makes `(V, V)` a basic setup.
 
@@ -286,6 +288,27 @@ theorem isAlmostZero_quotient_smul_top (M : Type*) [AddCommGroup M] [Module V M]
 @[simp]
 theorem isAlmostZero_quotient : S.IsAlmostZero (V ⧸ S.ideal) :=
   (Module.isTorsionBySet_quotient_iff _ _).mpr fun _ _ hε ↦ S.ideal.mul_mem_right _ hε
+
+variable {S} in
+/-- An almost zero module is killed by every ideal contained in `m`. -/
+theorem IsAlmostZero.smul_top_eq_bot {M : Type*} [AddCommGroup M] [Module V M]
+    (h : S.IsAlmostZero M) {I : Ideal V} (hI : I ≤ S.ideal) : I • (⊤ : Submodule V M) = ⊥ :=
+  Submodule.le_annihilator_iff.mp <| by
+    rw [Submodule.annihilator_top]
+    exact hI.trans (isAlmostZero_iff_le_annihilator.mp h)
+
+variable {S} in
+/-- An almost zero submodule is killed by every ideal contained in `m`. -/
+theorem IsAlmostZero.smul_eq_bot {M : Type*} [AddCommGroup M] [Module V M] {p : Submodule V M}
+    (h : S.IsAlmostZero p) {I : Ideal V} (hI : I ≤ S.ideal) : I • p = ⊥ :=
+  Submodule.le_annihilator_iff.mp (hI.trans (isAlmostZero_iff_le_annihilator.mp h))
+
+variable {S} in
+/-- If `M ⧸ p` is almost zero, then every ideal contained in `m` multiplies `M` into `p`. -/
+theorem IsAlmostZero.smul_top_le {M : Type*} [AddCommGroup M] [Module V M] {p : Submodule V M}
+    (h : S.IsAlmostZero (M ⧸ p)) {I : Ideal V} (hI : I ≤ S.ideal) :
+    I • (⊤ : Submodule V M) ≤ p :=
+  Submodule.smul_le.mpr fun _ hε x _ ↦ (Module.isTorsionBySet_quotient_iff _ _).mp h x _ (hI hε)
 
 variable {S} in
 /-- A module that embeds into an almost zero module is almost zero; in particular, so is every
@@ -594,6 +617,23 @@ theorem IsFilteredPrincipal.exists_pow_dvd (h : S.IsFilteredPrincipal) :
       obtain ⟨z, hz, hzz₁, hzz₂⟩ := h z₁ hz₁ z₂ hz₂
       exact ⟨z, hz, dvd_add ((pow_dvd_pow_of_dvd hzz₁ _).trans hz₁x)
         ((pow_dvd_pow_of_dvd hzz₂ _).trans hz₂y)⟩
+
+/-- Under condition (A), a finitely generated ideal contained in `m` lies in the principal ideal
+of a single element of `m`. -/
+theorem IsFilteredPrincipal.exists_le_span_singleton (h : S.IsFilteredPrincipal) {K : Ideal V}
+    (hK : K.FG) (hKm : K ≤ S.ideal) : ∃ z ∈ S.ideal, K ≤ Ideal.span {z} := by
+  classical
+  obtain ⟨s, rfl⟩ := hK
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, S.ideal.zero_mem, by simp⟩
+  | insert x s _ ih =>
+    rw [Finset.coe_insert, Ideal.span_insert] at hKm ⊢
+    obtain ⟨z', hz', hsz'⟩ := ih (le_sup_right.trans hKm)
+    obtain ⟨z, hz, hzx, hzz'⟩ :=
+      h x (hKm (Submodule.mem_sup_left (Ideal.mem_span_singleton_self x))) z' hz'
+    refine ⟨z, hz, sup_le ?_ (hsz'.trans ?_)⟩ <;>
+      rw [Ideal.span_singleton_le_span_singleton]
+    exacts [hzx, hzz']
 
 /-- Condition (A) implies condition (B) for the idempotent ideal of a basic setup
 (Gabber–Ramero (2.1.6)): an element of `m = m ^ k` is divisible by `z ^ k` for some `z ∈ m`. -/

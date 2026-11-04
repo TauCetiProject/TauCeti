@@ -9,6 +9,8 @@ public import TauCeti.Topology.Grassmannian.Map
 public import TauCeti.Topology.Grassmannian.Orthonormal
 public import TauCeti.Topology.Grassmannian.Plucker
 public import TauCeti.LinearAlgebra.Submodule.Fin
+public import TauCeti.LinearAlgebra.ExtendByZero
+public import TauCeti.Topology.Algebra.Module.ExtendByZero
 
 /-!
 # Coordinate stabilization of finite Grassmannians
@@ -138,18 +140,15 @@ theorem mem_ambientStabilization (V : finiteGrassmannian 𝕜 r N) (v : Fin (N +
   rw [coe_ambientStabilization, Submodule.mem_map]
   constructor
   · rintro ⟨w, hw, rfl⟩
-    constructor
-    · convert hw using 1
-      ext i
-      exact (Fin.castSucc_injective N).extend_apply w 0 i
-    · exact Function.extend_apply' _ _ _ (by simp)
+    exact ⟨(Function.ExtendByZero.init_linearMap_castSucc 𝕜 w).symm ▸ hw,
+      Function.ExtendByZero.linearMap_castSucc_last 𝕜 w⟩
   · rintro ⟨hv, hlast⟩
     refine ⟨Fin.init v, hv, funext fun i ↦ ?_⟩
-    refine Fin.lastCases ?_ (fun j ↦ ?_) i
-    · rw [Function.ExtendByZero.linearMap_apply,
-        Function.extend_apply' _ _ _ (by simp : ¬∃ j : Fin N, j.castSucc = Fin.last N)]
-      exact hlast.symm
-    · exact (Fin.castSucc_injective N).extend_apply (Fin.init v) 0 j
+    cases i using Fin.lastCases with
+    | last => rw [Function.ExtendByZero.linearMap_castSucc_last 𝕜, hlast]
+    | cast i =>
+      rw [Function.ExtendByZero.linearMap_apply_of_injective 𝕜 (Fin.castSucc_injective N),
+        Fin.init]
 
 /-- Rank and ambient stabilization commute as actual maps, with no intervening
 coordinate permutation or homotopy. -/
@@ -189,18 +188,8 @@ theorem continuous_rankStabilization [TopologicalSpace 𝕜] :
 /-- Appending the last coordinate is continuous for the frame-quotient topologies. -/
 @[fun_prop]
 theorem continuous_ambientStabilization [TopologicalSpace 𝕜] :
-    Continuous (ambientStabilization : finiteGrassmannian 𝕜 r N → _) := by
-  apply continuous_map
-  apply continuous_pi
-  intro i
-  by_cases hi : ∃ j : Fin N, j.castSucc = i
-  · obtain ⟨j, rfl⟩ := hi
-    simpa only [Function.ExtendByZero.linearMap_apply,
-      (Fin.castSucc_injective N).extend_apply]
-      using (continuous_apply j : Continuous fun v : Fin N → 𝕜 ↦ v j)
-  · simpa only [Function.ExtendByZero.linearMap_apply,
-      Function.extend_apply' _ _ _ hi, Pi.zero_apply]
-      using (continuous_const : Continuous fun _ : Fin N → 𝕜 ↦ (0 : 𝕜))
+    Continuous (ambientStabilization : finiteGrassmannian 𝕜 r N → _) :=
+  continuous_map _ _ (Function.ExtendByZero.continuous_linearMap 𝕜 Fin.castSucc)
 
 /-- A plane is in the image of rank stabilization exactly when it contains the new
 first coordinate vector. -/
@@ -214,12 +203,10 @@ theorem mem_range_rankStabilization (W : finiteGrassmannian 𝕜 (r + 1) (N + 1)
     let t := LinearMap.funLeft 𝕜 𝕜 (Fin.succ : Fin N → Fin (N + 1))
     have hker : LinearMap.ker t ≤ W.1 := by
       intro v hv
-      have heq : v = v 0 • Pi.single 0 1 := by
-        ext i
-        refine Fin.cases (by simp) (fun i ↦ ?_) i
-        have hi := congrFun (LinearMap.mem_ker.1 hv) i
-        simpa [t] using hi
-      rw [heq]
+      have htail : Fin.tail v = 0 :=
+        funext fun i ↦ by simpa [t, Fin.tail] using congrFun (LinearMap.mem_ker.1 hv) i
+      rw [Function.ExtendByZero.eq_smul_single_zero_add_linearMap_succ_tail v, htail, map_zero,
+        add_zero]
       exact W.1.smul_mem _ hW
     have hcomap : (W.1.map t).comap t = W.1 := Submodule.comap_map_eq_self hker
     have hdim := (W.1.map t).finConsEquiv.finrank_eq
