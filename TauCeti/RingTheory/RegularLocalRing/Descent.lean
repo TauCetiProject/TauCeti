@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import TauCeti.RingTheory.Flat.Noetherian
 
 /-!
 # Descent of regularity along flat local homomorphisms
@@ -43,9 +44,7 @@ Noetherianity of the source follow from faithful flatness, rather than being hyp
 theorem of_faithfullyFlat [IsRegularLocalRing S]
     [Module.FaithfullyFlat R S] : IsRegularLocalRing R := by
   have := Module.FaithfullyFlat.isLocalRing R S
-  have : IsNoetherianRing R :=
-    Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-      (R := R) (A := S) (M := R) inferInstance
+  have : IsNoetherianRing R := .of_faithfullyFlat S
   apply (isRegularLocalRing_iff_projectiveDimension_ne_top (R := R)).mpr
   exact ((IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat
     (R := S) (Shrink.{u} (R ⧸ maximalIdeal R))).trans_lt
