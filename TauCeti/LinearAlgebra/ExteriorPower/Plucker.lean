@@ -168,6 +168,56 @@ theorem plucker_sum_smul (A : Matrix (Fin p) (Fin p) R) (x : Fin p → ι → R)
   ext i j
   simp [Matrix.mul_apply]
 
+/-- Applying row operations separately to two concatenated families scales their
+maximal minors by the product of the two determinants. -/
+theorem _root_.Matrix.plucker_append_mul {q : ℕ}
+    (A : Matrix (Fin p) (Fin p) R) (B : Matrix (Fin q) (Fin q) R)
+    (x : Matrix (Fin p) ι R) (y : Matrix (Fin q) ι R) (s) :
+    plucker (Fin.append (A * x).row (B * y).row) s =
+      A.det * B.det * plucker (Fin.append x.row y.row) s := by
+  let C := (Matrix.fromBlocks A 0 0 B).submatrix finSumFinEquiv.symm finSumFinEquiv.symm
+  have hC : C * Matrix.of (Fin.append x.row y.row) =
+      Matrix.of (Fin.append (A * x).row (B * y).row) := by
+    ext i j
+    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
+    rcases i with i | i <;>
+      simp [C, Matrix.mul_apply, ← Equiv.sum_comp finSumFinEquiv]
+  have hd : C.det = A.det * B.det := by
+    rw [Matrix.det_submatrix_equiv_self, Matrix.det_fromBlocks_zero₂₁]
+  have hf : (C * Matrix.of (Fin.append x.row y.row)).row =
+      fun i ↦ ∑ k, C i k • Fin.append x.row y.row k := by
+    ext i j
+    simp [Matrix.mul_apply]
+  have h := plucker_sum_smul C (Fin.append x.row y.row) s
+  rw [← hf, hC, hd] at h
+  exact h
+
+/-- Subtracting combinations of a first row block from a second block leaves
+all maximal minors of their concatenation unchanged. -/
+theorem _root_.Matrix.plucker_append_sub_mul {q : ℕ} (x : Matrix (Fin p) ι R)
+    (y : Matrix (Fin q) ι R) (C : Matrix (Fin q) (Fin p) R) (s) :
+    plucker (Fin.append x.row (y - C * x).row) s =
+      plucker (Fin.append x.row y.row) s := by
+  let L := (Matrix.fromBlocks (1 : Matrix (Fin p) (Fin p) R) 0 (-C)
+    (1 : Matrix (Fin q) (Fin q) R)).submatrix
+    finSumFinEquiv.symm finSumFinEquiv.symm
+  have hL : L * Matrix.of (Fin.append x.row y.row) =
+      Matrix.of (Fin.append x.row (y - C * x).row) := by
+    ext i j
+    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
+    rcases i with i | i <;>
+      simp [L, Matrix.mul_apply, Matrix.one_apply, ← Equiv.sum_comp finSumFinEquiv,
+        sub_eq_add_neg, add_comm]
+  have hd : L.det = 1 := by
+    rw [Matrix.det_submatrix_equiv_self, Matrix.det_fromBlocks_zero₁₂]
+    simp
+  have hf : (L * Matrix.of (Fin.append x.row y.row)).row =
+      fun i ↦ ∑ k, L i k • Fin.append x.row y.row k := by
+    ext i j
+    simp [Matrix.mul_apply]
+  have h := plucker_sum_smul L (Fin.append x.row y.row) s
+  rwa [← hf, hL, hd, one_mul] at h
+
 /-- The Plücker coordinates of `x` are the coordinates of the exterior product of `x` in the basis
 of `⋀[R]^p (ι → R)` induced by the standard basis of `ι → R`. -/
 theorem plucker_eq_repr_ιMulti [Finite ι] (x : Fin p → ι → R) (s : powersetCard ι p) :
