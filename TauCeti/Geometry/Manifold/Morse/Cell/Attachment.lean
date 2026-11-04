@@ -404,7 +404,7 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
           ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}}) := by
   have := Fintype.ofFinite ι
   -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.
-  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq⟩ :=
+  obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq, -⟩ :=
     exists_contDiff_antitone_cutoff (by linarith : ε < 2 * ε) (by positivity : 0 ≤ 2 * ε)
   set F := milnorFunction ψ f c μ
   set S := {x | f x ≤ c - ε} ∪

@@ -64,7 +64,7 @@ nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, 
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
-  `(-∞, a]` down to `0` on `[b, ∞)`.
+  `(-∞, a]` down to `0` on `[b, ∞)`, with slope `O(v / (b - a))`.
 -/
 
 public section
@@ -337,20 +337,31 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
     exact (hK t htm.le).trans (le_max_right _ _)
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
-antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. -/
+antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. Its slope is at most
+`C v / (b - a)` for every bound `C` on the derivative of `Real.smoothTransition`. -/
 theorem exists_contDiff_antitone_cutoff {a b v : ℝ} (hab : a < b) (hv : 0 ≤ v) :
     ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ Antitone μ ∧ (∀ r, 0 ≤ μ r) ∧ (∀ r, b ≤ r → μ r = 0) ∧
-      ∀ r ≤ a, μ r = v := by
+      (∀ r ≤ a, μ r = v) ∧ ∀ C, (∀ x, ‖deriv Real.smoothTransition x‖ ≤ C) →
+        ∀ r, |deriv μ r| ≤ C * v / (b - a) := by
   have hba : 0 < b - a := sub_pos.2 hab
   refine ⟨fun r ↦ v * (1 - Real.smoothTransition ((r - a) / (b - a))),
     contDiff_const.mul (contDiff_const.sub (Real.smoothTransition.contDiff.comp (by fun_prop))),
     fun r s hrs ↦ mul_le_mul_of_nonneg_left (sub_le_sub_left (Real.smoothTransition.monotone
       (div_le_div_of_nonneg_right (by linarith) hba.le)) _) hv,
     fun r ↦ mul_nonneg hv (sub_nonneg.2 (Real.smoothTransition.le_one _)),
-    fun r hr ↦ ?_, fun r hr ↦ ?_⟩
+    fun r hr ↦ ?_, fun r hr ↦ ?_, fun C hC r ↦ ?_⟩
   · have h : 1 ≤ (r - a) / (b - a) := (one_le_div hba).2 (by linarith)
     simp only [Real.smoothTransition.one_of_one_le h, sub_self, mul_zero]
   · have h : (r - a) / (b - a) ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hba.le
     simp only [Real.smoothTransition.zero_of_nonpos h, sub_zero, mul_one]
+  · have hd : HasDerivAt (fun r ↦ v * (1 - Real.smoothTransition ((r - a) / (b - a))))
+        (v * -(deriv Real.smoothTransition ((r - a) / (b - a)) * (1 / (b - a)))) r :=
+      ((((hasDerivAt_id r).sub_const a).div_const (b - a)).smoothTransition.const_sub 1).const_mul v
+    rw [hd.deriv, abs_mul, abs_of_nonneg hv, abs_neg, abs_mul, abs_of_pos (one_div_pos.2 hba)]
+    calc v * (|deriv Real.smoothTransition ((r - a) / (b - a))| * (1 / (b - a)))
+        ≤ v * (C * (1 / (b - a))) := by
+          gcongr
+          exact hC _
+      _ = C * v / (b - a) := by ring
 
 end TauCeti
