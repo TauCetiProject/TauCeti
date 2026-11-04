@@ -236,25 +236,26 @@ theorem contDiffAt_re_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter)
 
 section Periodic
 
-variable {E G M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+variable {E G M E' G' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace G']
+  {I' : ModelWithCorners ℝ E' G'} [TopologicalSpace F] [ChartedSpace G' F]
 
 /-- A smooth family `f t x` of period one in `t`, evaluated at the angular coordinate of an end,
 is smooth away from the center of the end, jointly with the parameter `x` in a manifold. The
 angular coordinate itself jumps by `1` across a ray; periodicity removes the jump. -/
 theorem contMDiffAt_comp_im_endCoord (q : Puncture) {n : WithTop ℕ∞} {f : ℝ → M → F}
     (hf : Function.Periodic f 1)
-    (hfs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, F) n (Function.uncurry f)) {w : ℂ}
+    (hfs : ContMDiff (𝓘(ℝ, ℝ).prod I) I' n (Function.uncurry f)) {w : ℂ}
     (hw : w ≠ q.endCenter) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, F) n (fun p : ℂ × M => f (q.endCoord p.1).im p.2)
+    ContMDiffAt (𝓘(ℝ, ℂ).prod I) I' n (fun p : ℂ × M => f (q.endCoord p.1).im p.2)
       (w, x) := by
   set u : ℂ → ℂ := fun w => (w - q.endCenter) / q.endScale
   have hu : ContDiffAt ℝ n u w := (contDiffAt_id.sub contDiffAt_const).div_const _
   have h₀ : u w ≠ 0 := div_ne_zero (sub_ne_zero.2 hw) q.endScale_ne_zero
   -- Evaluating `f` at a function of `w` that is smooth at `w` gives a smooth function.
   have hcomp (g : ℂ → ℝ) (hg : ContDiffAt ℝ n g w) :
-      ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, F) n (fun p : ℂ × M => f (g p.1) p.2) (w, x) :=
+      ContMDiffAt (𝓘(ℝ, ℂ).prod I) I' n (fun p : ℂ × M => f (g p.1) p.2) (w, x) :=
     hfs.contMDiffAt.comp (I' := 𝓘(ℝ, ℝ).prod I) (w, x)
       ((hg.contMDiffAt.comp (w, x) contMDiffAt_fst).prodMk contMDiffAt_snd)
   -- The angular coordinate of a smooth function is smooth where it takes slit-plane values.
