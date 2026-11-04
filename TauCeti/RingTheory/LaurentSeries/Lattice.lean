@@ -41,6 +41,8 @@ is the analogue for a discrete coefficient module of the valuation topology of a
 field. It is a Hausdorff linear topology, and the lattices are open. Finite sums of monomials
 are dense, so continuous linear maps out of `V((t))` are determined by their values on monomials,
 and a linear map to a discrete module is continuous exactly when it vanishes on some lattice.
+The associated additive uniformity is complete for every coefficient module: Cauchy filters
+stabilize all coefficients below each exponent bound.
 Applying a linear map to every coefficient gives `LinearMap.hahnModuleMap`, a continuous map
 preserving every lattice; these maps respect identities, composition, and monomials.
 
@@ -485,6 +487,14 @@ noncomputable instance instTopologicalSpace : TopologicalSpace (HahnModule ℤ R
 instance : IsTopologicalAddGroup (HahnModule ℤ R V) :=
   (latticeFilterBasis R V).isTopologicalAddGroup
 
+/-- The additive uniformity associated to the lattice topology. -/
+noncomputable instance instUniformSpace : UniformSpace (HahnModule ℤ R V) :=
+  IsTopologicalAddGroup.rightUniformSpace _
+
+/-- The lattice uniformity makes module-valued Laurent series a uniform additive group. -/
+instance instIsUniformAddGroup : IsUniformAddGroup (HahnModule ℤ R V) :=
+  isUniformAddGroup_of_addCommGroup
+
 /-- The lattices `U_a(V)` form a basis of neighbourhoods of zero in `HahnModule ℤ R V`. -/
 theorem hasBasis_nhds_zero_lattice :
     (𝓝 (0 : HahnModule ℤ R V)).HasBasis (fun _ : ℤ ↦ True)
@@ -498,6 +508,49 @@ theorem hasBasis_nhds_zero_lattice :
 theorem lattice_mem_nhds_zero (a : ℤ) :
     (lattice R V a : Set (HahnModule ℤ R V)) ∈ 𝓝 0 :=
   (hasBasis_nhds_zero_lattice R V).mem_of_mem trivial
+
+/-- A Cauchy filter eventually agrees with a fixed series below each exponent bound. -/
+private theorem cauchy_exists_approx {ℱ : Filter (HahnModule ℤ R V)} (hℱ : Cauchy ℱ) :
+    ∃ x : ℤ → HahnModule ℤ R V, ∀ a, ∀ᶠ y in ℱ,
+      ∀ n < a, ((of R).symm y).coeff n = ((of R).symm (x a)).coeff n := by
+  have := hℱ.1
+  have ht := hℱ.2
+  rw [uniformity_eq_comap_nhds_zero, ← tendsto_iff_comap] at ht
+  have h (a : ℤ) : ∃ x : HahnModule ℤ R V, ∀ᶠ y in ℱ,
+      ∀ n < a, ((of R).symm y).coeff n = ((of R).symm x).coeff n := by
+    obtain ⟨x, hx⟩ := (ht.eventually (lattice_mem_nhds_zero R V a)).curry.exists
+    exact ⟨x, hx.mono fun y hy ↦ by
+      simpa only [of_symm_sub, coeff_sub, sub_eq_zero] using
+        (TauCeti.HahnModule.mem_lattice_iff R V).mp hy⟩
+  exact Classical.axiomOfChoice h
+
+/-- Module-valued Laurent series are complete for the lattice uniformity, with no finiteness
+or freeness assumption on the coefficient module. -/
+instance instCompleteSpace : CompleteSpace (HahnModule ℤ R V) where
+  complete {ℱ} hℱ := by
+    classical
+    have := hℱ.1
+    obtain ⟨x, hx⟩ := cauchy_exists_approx R V hℱ
+    let c (n : ℤ) := ((of R).symm (x (n + 1))).coeff n
+    have hc (a n : ℤ) (hn : n < a) : c n = ((of R).symm (x a)).coeff n := by
+      obtain ⟨y, hy, hya⟩ := ((hx (n + 1)).and (hx a)).exists
+      exact (hy n (Int.lt_succ n)).symm.trans (hya n hn)
+    -- Below zero the limit agrees with one Laurent series, so its support is bounded below.
+    have hb : BddBelow (Function.support c) := by
+      refine ⟨min 0 ((of R).symm (x 0)).order, fun n hn ↦ le_of_not_gt fun h ↦ ?_⟩
+      exact hn ((hc 0 n (lt_of_lt_of_le h (min_le_left _ _))).trans
+        (coeff_eq_zero_of_lt_order (lt_of_lt_of_le h (min_le_right _ _))))
+    let z : HahnSeries ℤ V := HahnSeries.ofSuppBddBelow c hb
+    refine ⟨of R z, ?_⟩
+    apply (tendsto_sub_nhds_zero_iff).mp
+    apply (hasBasis_nhds_zero_lattice R V).tendsto_right_iff.mpr
+    intro a _
+    filter_upwards [hx a] with y hy
+    rw [SetLike.mem_coe, TauCeti.HahnModule.mem_lattice_iff R V]
+    intro n hn
+    simp only [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, z, coeff_ofSuppBddBelow,
+      sub_eq_zero]
+    exact (hy n hn).trans (hc a n hn).symm
 
 /-- Every lattice `U_a(V)` is open in `HahnModule ℤ R V`. -/
 theorem isOpen_lattice (a : ℤ) : IsOpen (lattice R V a : Set (HahnModule ℤ R V)) :=
