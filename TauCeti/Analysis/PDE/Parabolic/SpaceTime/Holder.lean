@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Analysis.Holder.Interpolation
+public import TauCeti.Analysis.Holder.Normed
 
 /-!
 # Parabolic Hölder seminorms on time slabs
@@ -32,6 +33,10 @@ the temporal `(1 + α) / 2` seminorm of the spatial gradient `D_x u` on a slab i
 the parabolic `α` seminorms of the Hessian `D_x² u` and of the time derivative `∂ₜ u`. Thus this
 seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the other top-order terms.
 
+Finally, a bounded `α`-Hölder field on space is a time-independent bounded parabolically
+`α`-Hölder field on any slab, since the spatial position is `1`-Lipschitz for the parabolic
+distance.
+
 ## Main declarations
 
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_eq_iSup_dist_add_sqrt`: the parabolic seminorm is the
@@ -50,6 +55,8 @@ seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the othe
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
   temporal seminorm of the spatial gradient.
+* `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
+  Hölder field on a slab.
 
 ## References
 
@@ -230,3 +237,25 @@ theorem timeEHolderNorm_le_eHolderNorm_add_eHolderNorm (α : ℝ≥0)
     (add_le_add (timeEHolderNorm_div_two_le_eHolderNorm α _) (spaceEHolderNorm_le_eHolderNorm α _))
 
 end TauCeti.ParabolicSpaceTime
+
+namespace TauCeti.HolderSpace
+
+/-! ### Time-independent Hölder fields on a slab -/
+
+variable {α : ℝ≥0} {E Y : Type*} [MetricSpace E] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+  {a b : ℝ}
+
+open ParabolicSpaceTime
+
+/-- A bounded `α`-Hölder field on space, viewed as a time-independent bounded parabolically
+`α`-Hölder field on the slab `E × [a, b]`: precomposition with the spatial position, which is
+`1`-Lipschitz for the parabolic distance. -/
+def compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y :=
+  compLipschitzL _ lipschitzWith_slabSpace
+
+@[simp]
+theorem compSlabSpaceL_apply (f : HolderSpace α E Y) (p : slab (E := E) a b) :
+    compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
+  compLipschitzL_apply _ _ _
+
+end TauCeti.HolderSpace
