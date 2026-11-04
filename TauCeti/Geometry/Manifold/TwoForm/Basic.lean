@@ -90,6 +90,17 @@ theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
       ((NormedSpace.fromTangentSpace x).symm w))
 
 
+/-- The bilinear expansion of a two-form on a pair of combinations of two tangent vectors: the
+coefficient is the determinant `a d - b c` of the coefficient matrix. -/
+theorem eval₂_smul_add_smul (form : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x)
+    (a b c d : ℝ) :
+    SmoothBundleForm.eval₂ form x (a • v + b • w) (c • v + d • w) =
+      (a * d - b * c) * SmoothBundleForm.eval₂ form x v w := by
+  have hB := SmoothForm.isAlt_bilinFormAt form x
+  simp only [← SmoothForm.bilinFormAt_apply, map_add, map_smul, LinearMap.add_apply,
+    LinearMap.smul_apply, smul_eq_mul, hB.self_eq_zero, ← hB.neg_eq v w]
+  ring
+
 end SmoothTwoForm
 
 end TauCeti

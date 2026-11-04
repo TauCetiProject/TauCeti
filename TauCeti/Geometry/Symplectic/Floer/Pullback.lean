@@ -47,6 +47,8 @@ domain.
 
 * `TauCeti.Floer.perturbationPullback_comp`: pullback is compatible with composition of
   coordinate changes.
+* `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
+  part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -153,6 +155,35 @@ theorem fderiv_perturbationPullback_apply {φ : ℝ × ℝ → ℝ × ℝ} {Ks K
     ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
   ring
 
+/-- **The domain part of the curvature is a two-form.** For a `C²` change of coordinates `φ`, the
+exterior derivative `∂_s (φ^*K)_t - ∂_t (φ^*K)_s` of the pulled-back datum at a fixed target point
+is the Jacobian determinant of `φ` times `∂_s K_t - ∂_t K_s` at `φ w`. The terms involving second
+derivatives of `φ` cancel by the symmetry of `d²φ`. No structure on the target is involved. -/
+theorem fderiv_perturbationPullback_sub_fderiv_perturbationPullback {φ : ℝ × ℝ → ℝ × ℝ}
+    {Ks Kt : ℝ × ℝ → X → ℝ} {w : ℝ × ℝ} {x : X} (hφ : ContDiffAt ℝ 2 φ w)
+    (hKs : DifferentiableAt ℝ (fun z ↦ Ks z x) (φ w))
+    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (φ w)) :
+    fderiv ℝ (fun w' ↦ perturbationPullback φ Ks Kt stdComplexLineImag w' x) w
+        stdComplexLineReal -
+      fderiv ℝ (fun w' ↦ perturbationPullback φ Ks Kt stdComplexLineReal w' x) w
+        stdComplexLineImag =
+      (fderiv ℝ φ w).det * (fderiv ℝ (fun z ↦ Kt z x) (φ w) stdComplexLineReal -
+        fderiv ℝ (fun z ↦ Ks z x) (φ w) stdComplexLineImag) := by
+  have hφ₁ : DifferentiableAt ℝ φ w := hφ.differentiableAt (by norm_num)
+  have hφ₂ : DifferentiableAt ℝ (fderiv ℝ φ) w :=
+    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hsymm : fderiv ℝ (fderiv ℝ φ) w stdComplexLineReal stdComplexLineImag =
+      fderiv ℝ (fderiv ℝ φ) w stdComplexLineImag stdComplexLineReal :=
+    hφ.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) _ _
+  -- Expand the derivatives of `K_s` and `K_t` on the columns of `dφ_w`.
+  have hκ (κ : ℝ × ℝ →L[ℝ] ℝ) (e : ℝ × ℝ) : κ (fderiv ℝ φ w e) =
+      (fderiv ℝ φ w e).1 * κ stdComplexLineReal + (fderiv ℝ φ w e).2 * κ stdComplexLineImag := by
+    simpa using (κ : ℝ × ℝ →ₗ[ℝ] ℝ).apply_stdComplexLine (fderiv ℝ φ w e)
+  simp only [fderiv_perturbationPullback_apply hφ₂ hφ₁ hKs hKt, hsymm, hκ]
+  simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
+    stdComplexLineReal_eq, stdComplexLineImag_eq]
+  ring
+
 end Floer
 
 namespace SymplecticForm
@@ -229,34 +260,13 @@ theorem hamiltonianCurvature_perturbationPullback (ω : SymplecticForm V)
     ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w x =
       (fderiv ℝ φ w).det * ω.hamiltonianCurvature Ks Kt (φ w) x := by
-  have hφ₁ : DifferentiableAt ℝ φ w := hφ.differentiableAt (by norm_num)
-  have hφ₂ : DifferentiableAt ℝ (fderiv ℝ φ) w :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hsymm : fderiv ℝ (fderiv ℝ φ) w stdComplexLineReal stdComplexLineImag =
-      fderiv ℝ (fderiv ℝ φ) w stdComplexLineImag stdComplexLineReal :=
-    hφ.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) _ _
   -- The Poisson bracket term scales by `det dφ`.
   have hbracket : ω.poissonBracket (perturbationPullback φ Ks Kt stdComplexLineReal w)
       (perturbationPullback φ Ks Kt stdComplexLineImag w) x =
         (fderiv ℝ φ w).det * ω.poissonBracket (Ks (φ w)) (Kt (φ w)) x := by
     simp only [poissonBracket_def, ω.hamiltonianVectorField_perturbationPullback hKs' hKt']
     exact ω.apply_smul_add_smul_det (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
-  -- The derivative terms scale by `det dφ`: the second derivatives of `φ` cancel by `hsymm`,
-  -- after expanding the derivatives of `K_s` and `K_t` on the columns of `dφ_w`.
-  have hκ (κ : ℝ × ℝ →L[ℝ] ℝ) (e : ℝ × ℝ) : κ (fderiv ℝ φ w e) =
-      (fderiv ℝ φ w e).1 * κ stdComplexLineReal + (fderiv ℝ φ w e).2 * κ stdComplexLineImag := by
-    simpa using (κ : ℝ × ℝ →ₗ[ℝ] ℝ).apply_stdComplexLine (fderiv ℝ φ w e)
-  have hderiv :
-      fderiv ℝ (fun w' ↦ perturbationPullback φ Ks Kt stdComplexLineImag w' x) w
-          stdComplexLineReal -
-        fderiv ℝ (fun w' ↦ perturbationPullback φ Ks Kt stdComplexLineReal w' x) w
-          stdComplexLineImag =
-        (fderiv ℝ φ w).det * (fderiv ℝ (fun z ↦ Kt z x) (φ w) stdComplexLineReal -
-          fderiv ℝ (fun z ↦ Ks z x) (φ w) stdComplexLineImag) := by
-    simp only [fderiv_perturbationPullback_apply hφ₂ hφ₁ hKs hKt, hsymm, hκ]
-    simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
-      stdComplexLineReal_eq, stdComplexLineImag_eq]
-    ring
+  have hderiv := fderiv_perturbationPullback_sub_fderiv_perturbationPullback hφ hKs hKt
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def]
   linear_combination hderiv - hbracket
 
