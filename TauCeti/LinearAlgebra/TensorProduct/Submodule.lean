@@ -101,7 +101,10 @@ theorem exists_fg_baseChange_eq_top [Module.Finite A (A ⊗[R] M)] :
   rw [← hs, span_le]
   intro x hx
   obtain ⟨y, hy⟩ := hPs hx
-  exact ⟨y, hy⟩
+  rw [Submodule.baseChange, SetLike.mem_coe, LinearMap.mem_range]
+  refine ⟨y, ?_⟩
+  rw [LinearMap.baseChange_eq_lTensor]
+  exact hy
 
 end Finiteness
 
