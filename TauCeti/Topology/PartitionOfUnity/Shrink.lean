@@ -48,38 +48,21 @@ variable {ι X : Type*} [TopologicalSpace X]
 
 section OfExistsPos
 
-private theorem finsum_pos_of_exists_pos {f : ι → C(X, ℝ)}
-    (hlf : LocallyFinite fun i ↦ support (f i)) (hnn : ∀ i x, 0 ≤ f i x)
-    (hpos : ∀ x, ∃ i, 0 < f i x) (x : X) :
-    0 < ∑ᶠ j, f j x := by
-  obtain ⟨i, hi⟩ := hpos x
-  exact hi.trans_le (single_le_finsum i (hlf.point_finite x) fun j ↦ hnn j x)
-
-private theorem finsum_div_finsum_eq_one {f : ι → C(X, ℝ)}
-    (hlf : LocallyFinite fun i ↦ support (f i)) (hnn : ∀ i x, 0 ≤ f i x)
-    (hpos : ∀ x, ∃ i, 0 < f i x) (x : X) :
-    ∑ᶠ i, f i x / (∑ᶠ j, f j x) = 1 := by
-  classical
-  set S := (hlf.point_finite x).toFinset
-  have hS : support (fun i ↦ f i x) ⊆ S := fun i hi ↦ (hlf.point_finite x).mem_toFinset.2 hi
-  have hSdiv : support (fun i ↦ f i x / ∑ᶠ j, f j x) ⊆ S := fun i hi ↦
-    hS fun h0 ↦ hi (by simp [h0])
-  have hsum_pos : 0 < ∑ᶠ j, f j x := finsum_pos_of_exists_pos hlf hnn hpos x
-  rw [finsum_eq_sum_of_support_subset _ hSdiv]
-  simp_rw [div_eq_mul_inv]
-  rw [← Finset.sum_mul, ← finsum_eq_sum_of_support_subset _ hS, mul_inv_cancel₀ hsum_pos.ne']
-
 /-- Normalize a locally finite family of nonnegative continuous functions that is positive at every
 point into a partition of unity on `X`. -/
 noncomputable def ofExistsPos (f : ι → C(X, ℝ)) (hlf : LocallyFinite fun i ↦ support (f i))
     (hnn : ∀ i x, 0 ≤ f i x) (hpos : ∀ x, ∃ i, 0 < f i x) : PartitionOfUnity ι X where
   toFun i := ⟨fun x ↦ f i x / ∑ᶠ j, f j x,
     (f i).continuous.div (continuous_finsum (fun j ↦ (f j).continuous) hlf)
-      fun x ↦ (finsum_pos_of_exists_pos hlf hnn hpos x).ne'⟩
-  locallyFinite' := hlf.subset fun i x hx ↦ fun h0 ↦ hx (by simp [h0])
+      fun x ↦ (finsum_pos (hnn · x) (hpos x) (hlf.point_finite x)).ne'⟩
+  locallyFinite' := hlf.subset fun i x hx h0 ↦ hx (by simp [h0])
   nonneg' i x := div_nonneg (hnn i x) (finsum_nonneg fun j ↦ hnn j x)
-  sum_eq_one' x _ := finsum_div_finsum_eq_one hlf hnn hpos x
-  sum_le_one' x := (finsum_div_finsum_eq_one hlf hnn hpos x).le
+  sum_eq_one' x _ := by
+    simp only [ContinuousMap.coe_mk, div_eq_mul_inv]
+    rw [← finsum_mul, mul_inv_cancel₀ (finsum_pos (hnn · x) (hpos x) (hlf.point_finite x)).ne']
+  sum_le_one' x := by
+    simp only [ContinuousMap.coe_mk, div_eq_mul_inv]
+    rw [← finsum_mul, mul_inv_cancel₀ (finsum_pos (hnn · x) (hpos x) (hlf.point_finite x)).ne']
 
 /-- Each weight of `PartitionOfUnity.ofExistsPos` is `f i x` divided by the finite sum
 `∑ᶠ j, f j x`. -/
@@ -94,7 +77,7 @@ weight is positive. -/
 theorem ofExistsPos_pos_iff (f : ι → C(X, ℝ)) (hlf : LocallyFinite fun i ↦ support (f i))
     (hnn : ∀ i x, 0 ≤ f i x) (hpos : ∀ x, ∃ i, 0 < f i x) (i : ι) (x : X) :
     0 < ofExistsPos f hlf hnn hpos i x ↔ 0 < f i x :=
-  div_pos_iff_of_pos_right (finsum_pos_of_exists_pos hlf hnn hpos x)
+  div_pos_iff_of_pos_right (finsum_pos (hnn · x) (hpos x) (hlf.point_finite x))
 
 /-- Normalization via `PartitionOfUnity.ofExistsPos` preserves open supports. -/
 @[simp]
@@ -104,7 +87,7 @@ theorem support_ofExistsPos (f : ι → C(X, ℝ)) (hlf : LocallyFinite fun i �
   ext x
   simp only [mem_support, ofExistsPos_apply]
   exact ⟨fun h h0 ↦ h (by simp [h0]),
-    fun h ↦ div_ne_zero h (finsum_pos_of_exists_pos hlf hnn hpos x).ne'⟩
+    fun h ↦ div_ne_zero h (finsum_pos (hnn · x) (hpos x) (hlf.point_finite x)).ne'⟩
 
 /-- Normalization via `PartitionOfUnity.ofExistsPos` preserves closed supports. -/
 @[simp]

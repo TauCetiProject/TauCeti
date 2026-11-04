@@ -100,10 +100,6 @@ private theorem segEndpt_sub (m : ℕ) (k : Fin (m + 1)) :
   simp only [segEndpt, Fin.val_succ, Fin.val_castSucc, Nat.cast_add, Nat.cast_one]
   ring
 
-private instance instCompactSpaceSeg (m : ℕ) (k : Fin (m + 1)) :
-    CompactSpace (Icc (segEndpt m k.castSucc) (segEndpt m k.succ)) :=
-  isCompact_iff_compactSpace.mp isCompact_Icc
-
 private instance instNonemptySeg (m : ℕ) (k : Fin (m + 1)) :
     Nonempty (Icc (segEndpt m k.castSucc) (segEndpt m k.succ)) :=
   (nonempty_Icc.2 (segEndpt_mono m k.castSucc_le_succ)).to_subtype
@@ -707,24 +703,9 @@ private theorem hlp_nested_open {A : Type w} [TopologicalSpace A] {p : E → B} 
     (hlift : ∀ W : Set A, IsOpen W →
       HasHomotopyLiftingProperty (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) W)
     {S : Set A} (hS : IsOpen S) {O : Set S} (hO : IsOpen O) :
-    HasHomotopyLiftingProperty (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) O := by
-  let W : Set A := Subtype.val '' O
-  have hW : IsOpen W := hS.isOpenMap_subtype_val O hO
-  have hmemS : ∀ y : W, y.1 ∈ S := fun y ↦ by obtain ⟨x, -, hx⟩ := y.2; exact hx ▸ x.2
-  have hmemO : ∀ y : W, (⟨y.1, hmemS y⟩ : S) ∈ O := fun y ↦ by
-    obtain ⟨x, hxO, hx⟩ := y.2
-    have hxy : (⟨y.1, hmemS y⟩ : S) = x := Subtype.ext hx.symm
-    exact hxy ▸ hxO
-  let e : O ≃ₜ W :=
-    { toFun x := ⟨x.1.1, ⟨x.1, x.2, rfl⟩⟩
-      invFun y := ⟨⟨y.1, hmemS y⟩, hmemO y⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun :=
-        (continuous_subtype_val.comp continuous_subtype_val).subtype_mk fun x ↦ ⟨x.1, x.2, rfl⟩
-      continuous_invFun :=
-        (continuous_subtype_val.subtype_mk hmemS).subtype_mk hmemO }
-  exact (hlift W hW).of_homeomorph e
+    HasHomotopyLiftingProperty (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) O :=
+  (hlift (Subtype.val '' O) (hS.isOpenMap_subtype_val O hO)).of_homeomorph
+    (Topology.IsEmbedding.subtypeVal.homeomorphImage O)
 
 /-- Advance a `PartialLift` across `m + 1` uniform segments on an open stratum `S ⊆ A` where each
 segment `[k/(m+1), (k+1)/(m+1)]` maps into `{b | 0 < ρ (α k) b} ⊆ U (α k)`. -/

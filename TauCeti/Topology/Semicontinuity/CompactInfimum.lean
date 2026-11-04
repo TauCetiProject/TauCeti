@@ -101,13 +101,5 @@ function of the second variable. -/
 theorem Continuous.iInf_of_compactSpace [CompactSpace X] [TopologicalSpace β] [OrderTopology β]
     {f : X × Y → β} (hf : Continuous f) :
     Continuous fun y => ⨅ x, f (x, y) := by
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
-  · simpa only [iInf_of_isEmpty] using continuous_const
-  have hbdd : ∀ y, BddBelow (range fun x => f (x, y)) := fun y => by
-    have : Nonempty β := ⟨f (x₀, y)⟩
-    exact image_univ ▸ ((hf.lowerSemicontinuous.comp
-      (Continuous.prodMk_left y)).lowerSemicontinuousOn univ).bddBelow_of_isCompact isCompact_univ
-  exact continuous_iff_lower_upperSemicontinuous.2
-    ⟨hf.lowerSemicontinuous.iInf_of_compactSpace,
-      upperSemicontinuous_ciInf hbdd fun x =>
-        (hf.comp (Continuous.prodMk_right x)).upperSemicontinuous⟩
+  simpa only [image_univ, sInf_range] using
+    isCompact_univ.continuous_sInf (f := fun y x => f (x, y)) (hf.comp continuous_swap)

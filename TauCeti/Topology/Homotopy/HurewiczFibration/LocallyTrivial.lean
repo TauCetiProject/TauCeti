@@ -92,16 +92,6 @@ section Trivializations
 variable {ι : Type*} {E : Type u} {B : Type v} {F : Type uF}
   [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace F] {p : E → B}
 
-private theorem continuous_of_forall_exists_trivialization (e : ι → Trivialization F p)
-    (hcov : ∀ b, ∃ i, b ∈ (e i).baseSet) :
-    Continuous p := by
-  refine continuous_iff_continuousAt.2 fun x ↦ ?_
-  obtain ⟨i, hi⟩ := hcov (p x)
-  have hx : x ∈ (e i).source := (e i).mem_source.2 hi
-  have hOn : ContinuousOn p (e i).source :=
-    (continuous_fst.comp_continuousOn (e i).continuousOn_toFun).congr (e i).eqOn.symm
-  exact hOn.continuousAt ((e i).open_source.mem_nhds hx)
-
 /-- A map equipped with a numerable trivializing cover — a family of trivializations `e i` and a
 partition of unity `ρ` on `B` with `support (ρ i) ⊆ (e i).baseSet` — has the homotopy lifting
 property with respect to every space `A`. -/
@@ -119,9 +109,9 @@ theorem isHurewiczFibration_of_partitionOfUnity_trivialization
     (e : ι → Trivialization F p) (ρ : PartitionOfUnity ι B)
     (hρ : ∀ i, support (ρ i) ⊆ (e i).baseSet) :
     IsHurewiczFibration.{w} p := by
-  have hp : Continuous p := continuous_of_forall_exists_trivialization e fun b ↦ by
-    obtain ⟨i, hi⟩ := ρ.exists_pos (mem_univ b)
-    exact ⟨i, hρ i hi.ne'⟩
+  have hp : Continuous p := continuous_iff_continuousAt.2 fun x ↦
+    let ⟨i, hi⟩ := ρ.exists_pos (mem_univ (p x))
+    (e i).continuousAt_proj ((e i).mem_source.2 (hρ i hi.ne'))
   exact isHurewiczFibration_of_partitionOfUnity hp ρ hρ
     fun i ↦ (e i).isHurewiczFibration_restrict
 
@@ -153,7 +143,8 @@ theorem isHurewiczFibration_of_exists_trivialization
     (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet) :
     IsHurewiczFibration.{w} p := by
   choose e he using h
-  have hp : Continuous p := continuous_of_forall_exists_trivialization e fun b ↦ ⟨b, he b⟩
+  have hp : Continuous p := continuous_iff_continuousAt.2 fun x ↦
+    (e (p x)).continuousAt_proj ((e (p x)).mem_source.2 (he (p x)))
   exact isHurewiczFibration_of_isOpenCover hp
     (fun b ↦ (e b).open_baseSet) (fun b ↦ ⟨b, he b⟩)
     fun b ↦ (e b).isHurewiczFibration_restrict
