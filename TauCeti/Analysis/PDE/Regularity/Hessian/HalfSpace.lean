@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Sobolev
 public import TauCeti.Analysis.Sobolev.Trace.OddReflection
 import TauCeti.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.PDE.Regularity.Hessian.VariableCoefficient
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -33,8 +34,9 @@ The constant does not depend on the position `a` of the boundary.
 The estimate extends to strong solutions of the non-divergence-form equation `tr (A ∘ D²u) = f`
 whose coefficient field `A` is uniformly close to a positive multiple of the identity,
 `‖A x - μ • 1‖ ≤ δ μ` with `δ` depending only on `E` and `p`: then `‖D²u‖ ≤ (C / μ) ‖f‖`
-(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHalfSpace`). As in
-the whole-space estimate for coefficients of small oscillation, the coefficients need only be
+(in namespace `TauCeti`,
+`exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfSpace`).
+As in the whole-space estimate for coefficients of small oscillation, the coefficients need only be
 controlled on a closed set `s` outside which `u` vanishes, which is the situation after cutting
 `u` off near a boundary point. A general constant elliptic matrix is not covered: unlike on the
 whole space, the linear change of variables turning it into the Laplacian must also preserve the
@@ -60,7 +62,8 @@ For variable coefficients, freeze them at `μ • 1`:
 `μ tr D²u = f - tr ((A - μ • 1) ∘ D²u)`. The weak Hessian vanishes where `u` does, and on `s` the
 error term is at most `dim (ℝ × E) · δ μ ‖D²u‖` pointwise (`TauCeti.norm_traceCLM_le`). The
 estimate for the Laplacian then gives `‖D²u‖ ≤ (C₀ / μ) (‖f‖ + dim (ℝ × E) δ μ ‖D²u‖)`, and the
-choice of `δ` makes the coefficient of `‖D²u‖` on the right at most `1 / 2`, so it is absorbed.
+choice of `δ` makes the coefficient of `‖D²u‖` on the right at most `1 / 2`, so it is absorbed
+(`TauCeti.PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add`).
 
 ## References
 
@@ -247,30 +250,6 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq_o
     (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
   rw [hx, traceCLM_apply, htr]
 
-/-- The absorption step of the perturbation argument: if `d ≤ C g` and `μ g ≤ f + N ε d`, where
-`ε` is small compared with `μ / (C N)`, then `d ≤ (2 C / μ) f`. -/
-private theorem le_two_mul_div_mul_of_le_mul_of_mul_le_add {C N ε μ d g f : ℝ} (hμ : 0 < μ)
-    (hC : 0 ≤ C) (hN : 0 ≤ N) (hε : ε ≤ 1 / (2 * (C + 1) * (N + 1)) * μ) (hd : 0 ≤ d)
-    (hdg : d ≤ C * g) (hg : μ * g ≤ f + N * ε * d) : d ≤ 2 * C / μ * f := by
-  -- The error coefficient `C N ε / μ` is at most `1 / 2`.
-  have hK : C / μ * (N * ε) ≤ 1 / 2 := by
-    have hδ : C * N * (1 / (2 * (C + 1) * (N + 1))) ≤ 1 / 2 := by
-      rw [mul_one_div, div_le_div_iff₀ (by positivity) two_pos]
-      nlinarith
-    calc C / μ * (N * ε) ≤ C / μ * (N * (1 / (2 * (C + 1) * (N + 1)) * μ)) := by gcongr
-      _ = C * N * (1 / (2 * (C + 1) * (N + 1))) * (μ / μ) := by ring
-      _ ≤ 1 / 2 := by rw [div_self hμ.ne', mul_one]; exact hδ
-  have hg' : g ≤ (f + N * ε * d) / μ := by
-    rw [le_div_iff₀ hμ, mul_comm]
-    exact hg
-  have habs : d ≤ C / μ * f + 1 / 2 * d := by
-    calc d ≤ C * g := hdg
-      _ ≤ C * ((f + N * ε * d) / μ) := by gcongr
-      _ = C / μ * f + C / μ * (N * ε) * d := by ring
-      _ ≤ C / μ * f + 1 / 2 * d := by gcongr
-  have h2 : 2 * C / μ * f = 2 * (C / μ * f) := by ring
-  linarith
-
 /-- **The Calderón–Zygmund estimate on a half-space for coefficients of small oscillation.** Let
 `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `E` and `p`, with the
 following property. Let `H = {x | a < x.fst}` be a half-space of `ℝ × E`, let `s` be a closed set,
@@ -286,7 +265,8 @@ where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the op
 endomorphisms of `ℝ × E`. Since the weak Hessian is symmetric, in an orthonormal basis
 `tr (A ∘ D²u) = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, where `aᵢⱼ` are the matrix entries of `A`. No measurability or
 continuity of `A` is assumed. -/
-theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHalfSpace
+theorem
+    exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfSpace
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ (a : ℝ)
       {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
@@ -305,8 +285,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
     exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq_of_normalHalfSpace (E := E)
       hp hp_top
   set N : ℝ := (Module.finrank ℝ (WithLp 2 (ℝ × E)) : ℝ)
-  have hN : 0 ≤ N := Nat.cast_nonneg _
-  refine ⟨2 * C, 1 / (2 * (C + 1) * (N + 1)), by positivity,
+  have hN : 0 < N := Nat.cast_pos.2 Module.finrank_pos
+  refine ⟨2 * C, 1 / (2 * (C + 1) * N), by positivity,
     fun a {A s μ ε} hμ hs hε hA u f hu hus hf => ?_⟩
   set D := Wkp.iteratedGradient 1 u
   set g := (traceCLM ℝ (WithLp 2 (ℝ × E))).compLpL p _ D
@@ -349,12 +329,12 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
         _ = N * ε * ‖D x‖ := by ring
     · rw [hDx hxs]
       simp
-  -- Hence `μ ‖g‖ ≤ ‖f‖ + N ε ‖D²u‖`, and the error term is absorbed on the left.
-  have hμg : μ * ‖g‖ ≤ ‖f‖ + N * ε * ‖D‖ := by
-    have h := norm_sub_norm_le (μ • g) f
-    rw [norm_smul, Real.norm_of_nonneg hμ.le] at h
-    linarith
+  -- Hence `‖μ • g‖ ≤ ‖f‖ + N ε ‖D²u‖`, and the error term is absorbed on the left.
+  have hDμg : ‖D‖ ≤ C / μ * ‖μ • g‖ := by
+    rw [norm_smul, Real.norm_of_nonneg hμ.le, ← mul_assoc, div_mul_cancel₀ _ hμ.ne']
+    exact hDg
   rw [NNReal.coe_mul, NNReal.coe_ofNat]
-  exact le_two_mul_div_mul_of_le_mul_of_mul_le_add hμ C.coe_nonneg hN hε (norm_nonneg _) hDg hμg
+  exact PDE.le_two_mul_div_mul_of_le_div_mul_of_le_add hμ C.coe_nonneg hN hε (norm_nonneg _) hDμg
+    (by linarith [norm_sub_norm_le (μ • g) f])
 
 end TauCeti
