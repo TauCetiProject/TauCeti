@@ -58,7 +58,8 @@ theorem sum_norm_koszulDifferential_sq (n : ℕ) (x : ⋀[ℝ]^(n + 1) V) :
     real_inner_smul_left, Nat.cast_add, Nat.cast_one] using h
 
 /-- Summing double-contraction squared norms over all ordered pairs gives the
-degree times one less than the degree. Diagonal contractions vanish automatically. -/
+degree times one less than the degree, times the squared norm of the vector. Diagonal
+contractions vanish automatically. -/
 theorem sum_sum_norm_koszulDifferential_sq (n : ℕ) (x : ⋀[ℝ]^(n + 2) V) :
     ∑ j, ∑ i, ‖koszulDifferential (innerₗ V (b i)) n
       (koszulDifferential (innerₗ V (b j)) (n + 1) x)‖ ^ 2 =

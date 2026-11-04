@@ -21,8 +21,9 @@ For an orthonormal basis the contractions are adjoints of exterior multiplicatio
 The identities then give the one- and two-contraction norm sums used in curvature
 estimates on differential forms.
 
-The proof uses `TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis`, the
-occupation projection on the exterior-algebra basis, and Mathlib's
+The proof uses `TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis` and
+`TauCeti.ExteriorAlgebra.ι_mul_ι_mul_contractLeft_contractLeft_coord_basis`, the single and pair
+occupation projections on the exterior-algebra basis, and Mathlib's
 `Finset.card_product_filter_lt` to count increasing pairs.
 
 ## References
@@ -59,27 +60,6 @@ theorem sum_wedgeLeft_comp_koszulDifferential_coord (n : ℕ) :
   simp only [← Finset.sum_filter, Finset.sum_const,
     Finset.filter_mem_eq_inter, Finset.univ_inter, Set.powersetCard.card_eq]
 
-omit [Fintype ι] in
-private theorem pair_occupation_basis (i j : ι) (s : Finset ι) (hij : i ≠ j) :
-    _root_.ExteriorAlgebra.ι R (b j) *
-        (_root_.ExteriorAlgebra.ι R (b i) *
-          contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i)
-            (contractLeft (Q := (0 : QuadraticForm R M)) (b.coord j)
-              (b.ExteriorAlgebra s))) =
-      if i ∈ s ∧ j ∈ s then b.ExteriorAlgebra s else 0 := by
-  classical
-  by_cases hj : j ∈ s
-  · rw [ExteriorAlgebra.contractLeft_coord_basis, ite_eq_left hj,
-      map_zsmul_unit, mul_smul_comm, mul_smul_comm,
-      ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
-    by_cases hi : i ∈ s
-    · rw [ite_eq_left (Finset.mem_erase.mpr ⟨hij, hi⟩), ite_eq_left ⟨hi, hj⟩]
-      have h := ExteriorAlgebra.ι_mul_contractLeft_coord_basis b j s
-      simpa only [ExteriorAlgebra.contractLeft_coord_basis, ite_eq_left hj,
-        mul_smul_comm] using h
-    · simp [hi]
-  · simp [ExteriorAlgebra.contractLeft_coord_basis, hj]
-
 /-- The increasing-pair creation/contraction sum is multiplication by the binomial
 coefficient of the degree. The ordering counts each unordered pair exactly once. -/
 theorem sum_wedgeLeft_wedgeLeft_koszulDifferential_coord (n : ℕ) :
@@ -97,8 +77,9 @@ theorem sum_wedgeLeft_wedgeLeft_koszulDifferential_coord (n : ℕ) :
     ExteriorAlgebra.coe_wedgeLeft_apply, coe_koszulDifferential_apply,
     ← _root_.ExteriorAlgebra.basis_eq_coe_basis, LinearMap.smul_apply,
     LinearMap.id_apply, Submodule.coe_smul_of_tower]
-  rw [Finset.sum_congr rfl fun ij hij ↦ b.pair_occupation_basis ij.1 ij.2 s.val
-    (Finset.mem_filter.mp hij).2.ne]
+  rw [Finset.sum_congr rfl fun ij hij ↦
+    ExteriorAlgebra.ι_mul_ι_mul_contractLeft_contractLeft_coord_basis b
+      (Finset.mem_filter.mp hij).2.ne s.val]
   have hfilter : (Finset.univ.filter
       (fun ij : ι × ι ↦ ij.1 < ij.2)).filter (fun ij ↦ ij.1 ∈ s.val ∧ ij.2 ∈ s.val) =
       (s.val ×ˢ s.val).filter (fun ij ↦ ij.1 < ij.2) := by
