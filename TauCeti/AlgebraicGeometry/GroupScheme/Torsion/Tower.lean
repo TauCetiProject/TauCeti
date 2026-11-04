@@ -110,6 +110,22 @@ noncomputable def torsionTowerFunctor (S : Scheme.{u}) (p : ℕ) :
   obj G := G.torsionTower p
   map f := torsionTowerMap f p
 
+/-- The torsion-tower functor sends a group scheme to its torsion tower. -/
+@[simp]
+theorem torsionTowerFunctor_obj (G : CommGrp (Over S)) (p : ℕ) :
+    (torsionTowerFunctor S p).obj G = G.torsionTower p :=
+  (rfl)
+
+/-- The torsion-tower functor sends a homomorphism to its levelwise restrictions. -/
+@[simp]
+theorem torsionTowerFunctor_map (f : G ⟶ H) (p : ℕ) :
+    (torsionTowerFunctor S p).map f =
+      eqToHom (torsionTowerFunctor_obj G p) ≫ torsionTowerMap f p ≫
+        eqToHom (torsionTowerFunctor_obj H p).symm := by
+  -- Normalize the object transports; simp alone cannot unfold the hidden functor here.
+  change torsionTowerMap f p = 𝟙 _ ≫ torsionTowerMap f p ≫ 𝟙 _
+  simp
+
 variable (G p)
 
 /-- Base change of the whole torsion tower, including all its inclusion arrows. -/
