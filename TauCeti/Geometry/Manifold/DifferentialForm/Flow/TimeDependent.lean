@@ -27,8 +27,8 @@ time:
 At the base time itself, the flow `u ↦ φ_{t,u}` is a jointly `C²` family of maps which is the
 identity at time `t` and moves with velocity `X t` there, so
 `d/du|_{u = t} (φ_{t,u}^* α) = L_{X_t} α` is an instance of
-`TauCeti.hasDerivAt_mpullback_of_eq_id`. The two-time composition law
-`φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` moves this to an arbitrary base time `s`.
+`TauCeti.hasDerivAt_mpullback_of_eq_id`; this step is local and holds without completeness. The
+two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` moves this to an arbitrary base time `s`.
 
 Integrating the identity: the time-dependent flow preserves a differentiable form `α` at all
 times exactly when `L_{X_t} α = 0` for every `t`
@@ -79,10 +79,11 @@ variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hc hX
 
+omit hc in
 /-- **The Lie derivative is the velocity of pulled-back forms at the base time.** For a jointly
-`C²` time-dependent vector field `X` with complete suspension and a form `α` differentiable at
-`y`, the pullbacks by the time-dependent flow from time `t` satisfy
-`d/du|_{u = t} (φ_{t,u}^* α)_y = (L_{X_t} α)_y`. -/
+`C²` time-dependent vector field `X` and a form `α` differentiable at `y`, the pullbacks by the
+time-dependent flow from time `t` satisfy `d/du|_{u = t} (φ_{t,u}^* α)_y = (L_{X_t} α)_y`. No
+completeness is needed: the flow is `C²` on its open domain, which contains `((t, t), y)`. -/
 theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)) y) :
@@ -90,11 +91,14 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
       (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y)
       (mlieDerivForm (X t) α y) t := by
   have hX₁ := hX.of_le (m := 1) one_le_two
-  have hflow := contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX
+  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I 2
+      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((t, t), y) :=
+    (contMDiffOn_timeDependentFlowOf (n := 2) (by norm_num) hX).contMDiffAt
+      ((isOpen_timeDependentFlowDomain hX₁).mem_nhds (mem_timeDependentFlowDomain_self hX₁ t y))
   exact hasDerivAt_mpullback_of_eq_id (ψ := timeDependentFlowOf X t) (V := X t) y
     (Eventually.of_forall (timeDependentFlowOf_self hX₁ t))
-    (hflow.comp (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
-      contMDiff_snd)).contMDiffAt
+    (hflow.comp (t, y) (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt)
     (Eventually.of_forall fun x ↦
       hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x)) hα
 
@@ -130,7 +134,7 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
     rw [mpullback_apply]
     rfl
   have h := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
-    (hasDerivAt_mpullback_timeDependentFlowOf_self hc hX t _ hα)
+    (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ hshift u)).congr_deriv ?_
   ext v
   -- As in `hshift`, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
@@ -152,7 +156,7 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
   · -- The pullbacks by the flow from `t` are constant, so their velocity at `t` vanishes.
     intro h t
     funext y
-    have hd := hasDerivAt_mpullback_timeDependentFlowOf_self hc hX t y (hα y)
+    have hd := hasDerivAt_mpullback_timeDependentFlowOf_self hX t y (hα y)
     have hconst : (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y) = fun _ ↦ α y :=
       funext fun u ↦ congrFun (h t u) y
     rw [hconst] at hd

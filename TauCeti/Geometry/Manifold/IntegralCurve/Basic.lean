@@ -27,9 +27,9 @@ continuously differentiable.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
-* `HasMFDerivAt.hasDerivAt_extChartAt_comp`: conversely, a curve read in a fixed extended chart
-  has the coordinate expression of its velocity as velocity, so an integral curve solves the
-  coordinate equation there.
+  Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
+  extended chart has the coordinate expression of its velocity as velocity, so an integral curve
+  solves the coordinate equation there.
 * `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`: uniqueness of integral curves on an open
   interval, with the field regular in one fixed chart only.
 
@@ -177,25 +177,6 @@ theorem IsMIntegralCurveAt.of_extChartAt_symm
   rw [show (extChartAt I x₀).symm (f t) = xₜ from rfl]
   rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
   exact hasFDerivWithinAt_model_tangent_spaces hd'
-
-/-- A curve with velocity `w` at time `t`, read in any fixed extended chart containing its value,
-has velocity the coordinate expression of `w` in that chart. For an integral curve this is the
-converse direction of `IsMIntegralCurveAt.of_extChartAt_symm`: read in the chart, it solves the
-coordinate ODE. -/
-theorem HasMFDerivAt.hasDerivAt_extChartAt_comp
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    {γ : ℝ → M} {x : M} {t : ℝ} {w : TangentSpace I (γ t)}
-    (hγ : HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight w))
-    (hsrc : γ t ∈ (extChartAt I x).source) :
-    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t := by
-  replace hsrc := extChartAt_source I x ▸ hsrc
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
-  convert hderiv using 1
-  simp only [mvfderiv]
-  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hsrc]
-  rfl
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a
