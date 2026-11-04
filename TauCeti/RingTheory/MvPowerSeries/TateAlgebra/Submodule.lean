@@ -21,7 +21,7 @@ the coordinates. Every submodule `N ≤ T^ι`:
   combination `∑ x ∈ F, a x • x` with `‖a x‖ * ‖x‖ ≤ ‖y‖`
   (`Submodule.exists_finset_eq_sum_smul_isRestricted_subring`), normalisable to norm one at unit
   polyradius (`Submodule.exists_finset_norm_eq_one_isRestricted_subring`);
-* is closed in `T^ι` (`TauCeti.MvPowerSeries.isClosed_submodule_pi_isRestrictedSubring`), making
+* is closed in `T^ι` (`Submodule.isClosed_pi_isRestricted_subring`), making
   `(ι → T) ⧸ N` a complete ultrametric normed group under its quotient norm;
 * is *strictly closed*: every coset of `N` has a vector of least norm
   (`Submodule.exists_norm_sub_le_isRestricted_subring`), equivalently every class in `(ι → T) ⧸ N`
@@ -260,7 +260,7 @@ omit [Fintype ι] in
 /-- Every submodule of a finite free module `ι → K⟨X/c⟩` over a finite-variable Tate algebra over a
 complete nonarchimedean field is closed for the product (equivalently maximum Gauss-norm)
 topology. -/
-instance isClosed_submodule_pi_isRestrictedSubring [Finite ι]
+instance _root_.Submodule.isClosed_pi_isRestricted_subring [Finite ι]
     (N : Submodule (IsRestricted.subring (R := K) c) (ι → IsRestricted.subring (R := K) c)) :
     IsClosed (N : Set (ι → IsRestricted.subring (R := K) c)) := by
   let _ := Fintype.ofFinite ι

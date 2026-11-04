@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Analysis.Normed.Group.Constructions
 import TauCeti.Analysis.Normed.Group.OpenMapping
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
@@ -64,16 +65,14 @@ private theorem exists_isOpenQuotientMap_of_exists_finset_eq_sum_smul {N : Submo
       ∀ y ∈ N, ∃ a : M → A, y = ∑ x ∈ F, a x • x ∧ ∀ x ∈ F, ‖a x‖ * ‖x‖ ≤ ‖y‖) :
     ∃ (F : Finset M) (Φ : (F → A) →ₗ[A] N), IsOpenQuotientMap Φ := by
   obtain ⟨F, hFN, hF⟩ := hN
-  let Φ : (F → A) →ₗ[A] N :=
-    { toFun b := ⟨∑ x : F, b x • (x : M), N.sum_mem fun x _ ↦ N.smul_mem _ (hFN x.1 x.2).1⟩
-      map_add' b₁ b₂ := Subtype.ext (by simp [add_smul, Finset.sum_add_distrib])
-      map_smul' c b := Subtype.ext (by simp [Pi.smul_apply, mul_smul, Finset.smul_sum]) }
+  let Φ : (F → A) →ₗ[A] N := Fintype.linearCombination A fun x : F ↦ ⟨x.1, (hFN x.1 x.2).1⟩
   let K : ℝ := ∑ x ∈ F, ‖x‖⁻¹
   have hK : 0 ≤ K := Finset.sum_nonneg fun x _ ↦ inv_nonneg.mpr (norm_nonneg x)
   have hlift (y : N) : ∃ b : F → A, Φ b = y ∧ ‖b‖ ≤ K * ‖y‖ := by
     obtain ⟨a, hy, ha⟩ := hF y.1 y.2
     refine ⟨fun x ↦ a x.1, Subtype.ext ?_, ?_⟩
-    · simp only [Φ, LinearMap.coe_mk, AddHom.coe_mk, Finset.univ_eq_attach]
+    · simp only [Φ, Fintype.linearCombination_apply, Submodule.coe_sum, SetLike.val_smul,
+        Finset.univ_eq_attach]
       rw [Finset.sum_attach F fun x ↦ a x • x, ← hy]
     · refine (pi_norm_le_iff_of_nonneg (mul_nonneg hK (norm_nonneg y))).mpr fun x ↦ ?_
       have hxpos : 0 < ‖x.1‖ := norm_pos_iff.mpr (hFN x.1 x.2).2
@@ -97,27 +96,6 @@ theorem isModuleTopology_of_exists_finset_eq_sum_smul {N : Submodule A M}
   exact ⟨hquot.isQuotientMap.eq_coinduced.trans
     (ModuleTopology.eq_coinduced_of_surjective hquot.surjective).symm⟩
 
-omit [Module A M] [IsBoundedSMul A M] in
-private theorem exists_sum_smul_norm_le
-    {M₀ : Type*} [SeminormedAddCommGroup M₀] [Module A M₀] [IsBoundedSMul A M₀]
-    {F : Finset M} (hF0 : ∀ y ∈ F, y ≠ 0) (u : M → M₀) :
-    ∃ C : ℝ, 0 < C ∧ ∀ (z : M) (a : M → A),
-      (∀ y ∈ F, ‖a y‖ * ‖y‖ ≤ ‖z‖) → ‖∑ y ∈ F, a y • u y‖ ≤ C * ‖z‖ := by
-  refine ⟨1 + ∑ y ∈ F, ‖u y‖ * ‖y‖⁻¹,
-    add_pos_of_pos_of_nonneg one_pos
-      (Finset.sum_nonneg fun _ _ ↦ mul_nonneg (norm_nonneg _) (inv_nonneg.mpr (norm_nonneg _))),
-    fun z a ha ↦ ?_⟩
-  calc ‖∑ y ∈ F, a y • u y‖
-      ≤ ∑ y ∈ F, ‖a y • u y‖ := norm_sum_le F _
-    _ ≤ ∑ y ∈ F, ‖a y‖ * ‖u y‖ := Finset.sum_le_sum fun _ _ ↦ norm_smul_le _ _
-    _ ≤ ∑ y ∈ F, ‖u y‖ * ‖y‖⁻¹ * ‖z‖ := Finset.sum_le_sum fun y hy ↦ by
-        have hypos : 0 < ‖y‖ := norm_pos_iff.mpr (hF0 y hy)
-        rw [show ‖u y‖ * ‖y‖⁻¹ * ‖z‖ = ‖z‖ / ‖y‖ * ‖u y‖ by ring]
-        exact mul_le_mul_of_nonneg_right ((le_div_iff₀ hypos).mpr (ha y hy)) (norm_nonneg _)
-    _ = (∑ y ∈ F, ‖u y‖ * ‖y‖⁻¹) * ‖z‖ := (Finset.sum_mul F _ ‖z‖).symm
-    _ ≤ (1 + ∑ y ∈ F, ‖u y‖ * ‖y‖⁻¹) * ‖z‖ :=
-        mul_le_mul_of_nonneg_right (le_add_of_nonneg_left zero_le_one) (norm_nonneg z)
-
 omit [IsBoundedSMul A M] in
 /-- **Uniformly bounded preimages from strict generators of the range.** If the range of a linear
 map `f : M₀ →ₗ[A] M` from a seminormed `A`-module into a normed `A`-module has a finite strict
@@ -130,12 +108,19 @@ theorem _root_.LinearMap.exists_preimage_norm_le_of_exists_finset_eq_sum_smul
     ∃ C : ℝ, 0 < C ∧ ∀ z ∈ LinearMap.range f, ∃ x : M₀, f x = z ∧ ‖x‖ ≤ C * ‖z‖ := by
   obtain ⟨F, hFr, hF⟩ := hr
   choose! u hu using fun y (hy : y ∈ F) ↦ (hFr y hy).1
-  obtain ⟨C, hC, hbound⟩ := exists_sum_smul_norm_le (A := A) (fun y hy ↦ (hFr y hy).2) u
-  refine ⟨C, hC, fun z hz ↦ ?_⟩
+  refine ⟨1 + ∑ y ∈ F, ‖u y‖ / ‖y‖,
+    add_pos_of_pos_of_nonneg one_pos
+      (Finset.sum_nonneg fun _ _ ↦ div_nonneg (norm_nonneg _) (norm_nonneg _)),
+    fun z hz ↦ ?_⟩
   obtain ⟨a, hza, ha⟩ := hF z hz
-  refine ⟨∑ y ∈ F, a y • u y, ?_, hbound z a ha⟩
-  rw [map_sum, hza]
-  exact Finset.sum_congr rfl fun y hy ↦ by rw [map_smul, hu y hy]
+  refine ⟨∑ y ∈ F, a y • u y, ?_, ?_⟩
+  · rw [map_sum, hza]
+    exact Finset.sum_congr rfl fun y hy ↦ by rw [map_smul, hu y hy]
+  · calc ‖∑ y ∈ F, a y • u y‖
+        ≤ (∑ y ∈ F, ‖u y‖ / ‖y‖) * ‖z‖ :=
+          TauCeti.norm_sum_smul_le_sum_div_mul (fun y hy ↦ norm_pos_iff.mpr (hFr y hy).2) ha
+      _ ≤ (1 + ∑ y ∈ F, ‖u y‖ / ‖y‖) * ‖z‖ :=
+          mul_le_mul_of_nonneg_right (le_add_of_nonneg_left zero_le_one) (norm_nonneg z)
 
 omit [IsBoundedSMul A M] in
 /-- **Uniformly bounded preimages into a quotient from strict generators and exact
@@ -154,15 +139,23 @@ theorem _root_.LinearMap.exists_preimage_norm_le_quotient_of_exists_finset_eq_su
   obtain ⟨F, hFr, hF⟩ := hr
   choose! u hu using fun y (hy : y ∈ F) ↦
     LinearMap.mem_range.mp (Submodule.mem_comap.mp (hFr y hy).1)
-  obtain ⟨C, hC, hbound⟩ := exists_sum_smul_norm_le (A := A) (fun y hy ↦ (hFr y hy).2) u
-  refine ⟨C, hC, fun q hq ↦ ?_⟩
+  refine ⟨1 + ∑ y ∈ F, ‖u y‖ / ‖y‖,
+    add_pos_of_pos_of_nonneg one_pos
+      (Finset.sum_nonneg fun _ _ ↦ div_nonneg (norm_nonneg _) (norm_nonneg _)),
+    fun q hq ↦ ?_⟩
   obtain ⟨w, hwq, hwnorm⟩ := hrep q hq
   have hw : w ∈ (LinearMap.range f).comap N.mkQ := by
     simpa [Submodule.mem_comap, Submodule.mkQ_apply, hwq] using hq
   obtain ⟨a, hwa, ha⟩ := hF w hw
-  refine ⟨∑ y ∈ F, a y • u y, ?_, (hbound w a ha).trans_eq (by rw [hwnorm])⟩
-  rw [map_sum, ← hwq, ← N.mkQ_apply, hwa, map_sum]
-  exact Finset.sum_congr rfl fun y hy ↦ by rw [map_smul, hu y hy, map_smul]
+  refine ⟨∑ y ∈ F, a y • u y, ?_, ?_⟩
+  · rw [map_sum, ← hwq, ← N.mkQ_apply, hwa, map_sum]
+    exact Finset.sum_congr rfl fun y hy ↦ by rw [map_smul, hu y hy, map_smul]
+  · rw [← hwnorm]
+    calc ‖∑ y ∈ F, a y • u y‖
+        ≤ (∑ y ∈ F, ‖u y‖ / ‖y‖) * ‖w‖ :=
+          TauCeti.norm_sum_smul_le_sum_div_mul (fun y hy ↦ norm_pos_iff.mpr (hFr y hy).2) ha
+      _ ≤ (1 + ∑ y ∈ F, ‖u y‖ / ‖y‖) * ‖w‖ :=
+          mul_le_mul_of_nonneg_right (le_add_of_nonneg_left zero_le_one) (norm_nonneg w)
 
 /-- **Completeness from strict generators.** Over a complete seminormed ring, every submodule of a
 normed module admitting a finite strict generating system is complete in the induced norm. -/

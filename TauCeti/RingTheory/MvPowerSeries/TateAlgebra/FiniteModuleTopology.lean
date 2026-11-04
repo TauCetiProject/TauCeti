@@ -48,10 +48,10 @@ nontrivially normed, spherically complete, or discretely valued:
   `LinearMap.exists_preimage_norm_le_quotient_isRestricted_subring`).
 
 When `K` is nontrivially normed, `TauCeti.Huber.IsTateRing.of_normedAlgebra` and
-`TauCeti.Huber.IsTateRing.isModuleTopology` supply `IsModuleTopology T M` for any complete
-Hausdorff first-countable topological `T`-module `M`. Over a trivially normed field (`K` discrete),
-requiring `IsModuleTopology T M` directly is sharp: a vector space over a discrete field equipped
-with a nondiscrete norm does not carry the module topology.
+`TauCeti.Huber.IsTateRing.isModuleTopology` supply `IsModuleTopology T M` for any finitely
+generated complete Hausdorff first-countable topological `T`-module `M`. Over a trivially normed
+field (`K` discrete), requiring `IsModuleTopology T M` directly is sharp: a vector space over a
+discrete field equipped with a nondiscrete norm does not carry the module topology.
 
 ## References
 
