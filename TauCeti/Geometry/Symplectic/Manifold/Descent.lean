@@ -93,10 +93,9 @@ submersion `f` is symplectic exactly when `σ` is closed and, at every point `x`
 theorem isSymplectic_descendedForm_iff :
     IsSymplectic (SmoothForm.descendedForm hf hsurj σ hσ) ↔
       SmoothForm.IsClosed σ ∧
-        ∀ x, LinearMap.ker (σ.bilinFormAt x) = (mfderiv I I' f x).ker := by
-  rw [← isNondegenerate_descendedForm_iff (hf := hf) (hsurj := hsurj) (hσ := hσ),
-    ← SmoothForm.isClosed_descendedForm_iff (hf := hf) (hsurj := hsurj) (hα := hσ)]
-  exact ⟨fun h ↦ ⟨h.isClosed, h.isNondegenerate⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂⟩⟩
+        ∀ x, LinearMap.ker (σ.bilinFormAt x) = (mfderiv I I' f x).ker :=
+  isSymplectic_iff_of_mpullback_eq hf.contMDiff hsurj (hf.surjective_mfderiv (by simp))
+    SmoothForm.mpullback_descendedForm
 
 end Descent
 
@@ -114,7 +113,7 @@ variable [I.Boundaryless]
 /-- **Existence and uniqueness of the descended symplectic form.** For a surjective smooth
 submersion `p` out of a manifold whose model has no boundary, and a closed basic two-form `σ`
 whose null space at every point is the kernel of the derivative of `p`, there is exactly one
-two-form `η` with `p^* η = σ`, and it is symplectic. -/
+symplectic two-form `η` with `p^* η = σ`. -/
 theorem existsUnique_isSymplectic_mpullback_eq (hp : IsSubmersion I J ∞ p)
     (hsurj : Surjective p) (hσ : σ.IsClosed)
     (hbasic : RoughForm.IsBasic (V := ℝ) (k := 2) J p σ.1)

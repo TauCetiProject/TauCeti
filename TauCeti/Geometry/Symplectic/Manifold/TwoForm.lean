@@ -43,16 +43,16 @@ example.
   symplectic forms by the differential of a symplectomorphism.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
   diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
+* `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
+  local diffeomorphism the converse holds as well.
+* `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
+  two-form back to a symplectic form exactly when the form is symplectic.
 * `TauCeti.SmoothTwoForm.ker_bilinFormAt_mpullback`: the kernel of a pullback is the preimage of
   the kernel when the derivative is surjective.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_forall_ker_bilinFormAt_mpullback`: nondegeneracy
   characterized by pullback kernels along a surjective smooth map with surjective derivatives.
 * `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of such a map is
   symplectic exactly when its pullback is closed and has kernel equal to the derivative’s kernel.
-* `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
-  local diffeomorphism the converse holds as well.
-* `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
-  two-form back to a symplectic form exactly when the form is symplectic.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
