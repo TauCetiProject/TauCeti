@@ -337,6 +337,12 @@ theorem cofreeEquiv_symm_apply [Comodule R C P] (g : P →ₗ[R] M) :
     (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm g = cofreeLift (C := C) g :=
   rfl
 
+/-- The cofree lift is additive. -/
+@[simp]
+theorem cofreeLift_add [Comodule R C P] (g g' : P →ₗ[R] M) :
+    cofreeLift (C := C) (g + g') = cofreeLift (C := C) g + cofreeLift (C := C) g' :=
+  map_add (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm g g'
+
 /-- Applying the counit to the `C` factor of the cofree lift of `g` recovers `g`. -/
 theorem rid_comp_lTensor_counit_comp_cofreeLift [Comodule R C P] (g : P →ₗ[R] M) :
     (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ

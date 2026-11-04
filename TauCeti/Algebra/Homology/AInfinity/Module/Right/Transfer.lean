@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
 public import TauCeti.Algebra.Homology.Contraction.Linear.TensorProduct
@@ -279,27 +278,9 @@ private theorem pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod (k : M
 part is locally nilpotent, since it strictly lowers the length of the algebra word. -/
 theorem exists_pow_higherBarDifferential_comp_rTensor_apply_eq_zero (k : Module.End R M)
     (z : M ⊗[R] TensorWords R A) :
-    ∃ n, ((MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)) ^ n) z = 0 := by
-  set f : Module.End R (M ⊗[R] TensorWords R A) :=
-    MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)
-  -- The vectors killed by a power of `f` form the submodule `P`.
-  let P := Module.End.maxGenEigenspace f 0
-  have hmem (z) : z ∈ P ↔ ∃ n, (f ^ n) z = 0 := by
-    simp only [P, Module.End.mem_maxGenEigenspace, zero_smul, sub_zero]
-  have hP : ∀ z, z ∈ P := by
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => exact P.add_mem hz hz'
-    | tmul x w =>
-      have h : P.mkQ ∘ₗ TensorProduct.mk R M (TensorWords R A) x = 0 :=
-        TensorWords.linearMap_ext R A fun n a ↦ by
-          rw [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-            Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, hmem]
-          exact ⟨n + 1, MM.pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod k n x a⟩
-      have hw := LinearMap.congr_fun h w
-      rwa [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hw
-  exact (hmem z).1 (hP z)
+    ∃ n, ((MM.higherBarDifferential ∘ₗ k.rTensor (TensorWords R A)) ^ n) z = 0 :=
+  exists_pow_apply_eq_zero_of_forall_tmul_of_tprod _
+    (fun n x a ↦ ⟨n + 1, MM.pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod k n x a⟩) z
 
 /-- The unit required by the perturbation lemma: `1 + δ (k ⊗ 1)` is invertible. -/
 theorem isUnit_one_add_higherBarDifferential_mul_rTensor (k : Module.End R M) :

@@ -5,21 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Transfer
 public import TauCeti.Algebra.Homology.Contraction.Linear.Homology
 
 /-!
-# Minimal modules and minimal models of right A-infinity modules
-
-A right `A∞` module is **minimal** when its unary operation `m₁` vanishes
-(`TauCeti.AInfinityRightModule.IsMinimal`).  Every element of a minimal module is then a cycle and
-no nonzero element is a boundary, so the module is its own cohomology.  The map induced on
-cohomology by a morphism between minimal modules is therefore its linear part, and a
-quasi-isomorphism between minimal modules is an isomorphism of right `A∞` modules
-(`TauCeti.AInfinityRightModuleHom.IsQuasiIso.isIso`), by the inverse of a morphism with bijective
-linear part constructed in `TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso`.  This holds
-over any commutative ring.
+# Minimal models of right A-infinity modules
 
 Let `M` be a right `A∞` module over an `A∞` algebra `A` over a field.  Its unary operation `m₁` is
 a square-zero endomorphism of degree one, and the graded vector space `M` contracts onto the
@@ -40,13 +31,13 @@ model is a module over `A` itself, with all of its higher operations transferred
 `M`.  The minimal model is unique up to isomorphism: composing with the projection onto, or the
 inclusion of, the minimal model turns a quasi-isomorphism into `M` from a minimal module, or out of
 `M` to a minimal module, into an isomorphism of right `A∞` modules.  The isomorphism depends on
-the chosen quasi-isomorphism and is not canonical.
+the chosen quasi-isomorphism and is not canonical.  It comes from the fact that a
+quasi-isomorphism between minimal modules is an isomorphism
+(`TauCeti.AInfinityRightModuleHom.IsQuasiIso.isIso`, in
+`TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic`).
 
 ## Main definitions
 
-* `TauCeti.AInfinityRightModule.IsMinimal`: a right `A∞` module with zero unary operation.
-* `TauCeti.AInfinityRightModule.IsMinimal.cohomologyEquiv`: the identification of a minimal module
-  with its cohomology.
 * `TauCeti.AInfinityRightModule.minimalModel`: the transferred right `A∞` module structure on the
   homology of the unary operation.
 * `TauCeti.AInfinityRightModule.minimalModelInclusion`: the quasi-isomorphism from the minimal
@@ -56,8 +47,6 @@ the chosen quasi-isomorphism and is not canonical.
 
 ## Main results
 
-* `TauCeti.AInfinityRightModuleHom.isQuasiIso_iff_isIso`: between minimal modules, a morphism is
-  a quasi-isomorphism exactly when it is an isomorphism.
 * `TauCeti.AInfinityRightModule.isMinimal_minimalModel`: the minimal model is minimal, that is,
   it has zero unary operation.
 * `TauCeti.AInfinityRightModule.isQuasiIso_minimalModelInclusion` and
@@ -86,105 +75,7 @@ public section
 
 namespace TauCeti
 
-universe uR uK uA uM uN
-
-/-! ### Minimal modules -/
-
-section Minimal
-
-variable {R : Type uR} {A : Type uA} {M : Type uM} {N : Type uN} [CommRing R] [AddCommGroup A]
-  [Module R A] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {AA : AInfinityAlgebra R A}
-
-namespace AInfinityRightModule
-
-/-- A right `A∞` module is **minimal** when its unary operation `m₁` vanishes. -/
-def IsMinimal (MM : AInfinityRightModule AA M) : Prop :=
-  MM.differential = 0
-
-/-- A right `A∞` module is minimal exactly when its differential vanishes. -/
-theorem isMinimal_def (MM : AInfinityRightModule AA M) :
-    MM.IsMinimal ↔ MM.differential = 0 :=
-  Iff.rfl
-
-/-- A right `A∞` module is minimal exactly when every element is a cycle. -/
-theorem isMinimal_iff_cycles_eq_top (MM : AInfinityRightModule AA M) :
-    MM.IsMinimal ↔ MM.cycles = ⊤ := by
-  rw [isMinimal_def, cycles_def, LinearMap.ker_eq_top]
-
-/-- A right `A∞` module is minimal exactly when zero is its only boundary. -/
-theorem isMinimal_iff_boundaries_eq_bot (MM : AInfinityRightModule AA M) :
-    MM.IsMinimal ↔ MM.boundaries = ⊥ := by
-  rw [isMinimal_def, boundaries_def, LinearMap.range_eq_bot]
-
-namespace IsMinimal
-
-variable {MM : AInfinityRightModule AA M}
-
-/-- Every element of a minimal module is a cycle. -/
-theorem mem_cycles (h : MM.IsMinimal) (x : M) : x ∈ MM.cycles := by
-  rw [(isMinimal_iff_cycles_eq_top MM).1 h]
-  exact Submodule.mem_top
-
-/-- In a minimal module, the boundaries inside the cycles are trivial. -/
-theorem boundariesInCycles_eq_bot (h : MM.IsMinimal) : MM.boundariesInCycles = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro x hx
-  rw [mem_boundariesInCycles, (isMinimal_iff_boundaries_eq_bot MM).1 h, Submodule.mem_bot] at hx
-  exact Subtype.ext hx
-
-/-- A minimal module is linearly equivalent to its cohomology: every element is a cycle, and no
-nonzero element is a boundary. -/
-noncomputable def cohomologyEquiv (h : MM.IsMinimal) : M ≃ₗ[R] MM.Cohomology :=
-  (LinearEquiv.ofTop MM.cycles ((isMinimal_iff_cycles_eq_top MM).1 h)).symm ≪≫ₗ
-    (Submodule.quotEquivOfEqBot _ h.boundariesInCycles_eq_bot).symm
-
-/-- The identification of a minimal module with its cohomology sends an element to its class. -/
-@[simp]
-theorem cohomologyEquiv_apply (h : MM.IsMinimal) (x : M) :
-    h.cohomologyEquiv x = MM.cohomologyClass (h.mem_cycles x) := by
-  rw [cohomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.ofTop_symm_apply,
-    Submodule.quotEquivOfEqBot_symm_apply, cohomologyClass_eq_mk]
-
-end IsMinimal
-
-end AInfinityRightModule
-
-namespace AInfinityRightModuleHom
-
-variable {MM : AInfinityRightModule AA M} {NN : AInfinityRightModule AA N}
-
-/-- Between minimal modules, the map induced on cohomology is the linear part, transported along
-the identifications of the modules with their cohomology. -/
-theorem cohomologyMap_cohomologyEquiv (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    (f : AInfinityRightModuleHom MM NN) (x : M) :
-    f.cohomologyMap (hM.cohomologyEquiv x) = hN.cohomologyEquiv (f.linearPart x) := by
-  simp only [AInfinityRightModule.IsMinimal.cohomologyEquiv_apply, cohomologyMap_cohomologyClass]
-
-/-- A morphism between minimal modules is a quasi-isomorphism exactly when its linear part is
-bijective. -/
-theorem isQuasiIso_iff_linearPart_bijective (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    (f : AInfinityRightModuleHom MM NN) :
-    f.IsQuasiIso ↔ Function.Bijective f.linearPart := by
-  have hcomm : ⇑f.cohomologyMap ∘ ⇑hM.cohomologyEquiv = ⇑hN.cohomologyEquiv ∘ ⇑f.linearPart :=
-    funext (cohomologyMap_cohomologyEquiv hM hN f)
-  rw [isQuasiIso_def, ← EquivLike.bijective_comp hM.cohomologyEquiv, hcomm,
-    EquivLike.comp_bijective]
-
-/-- Between minimal modules, a morphism is a quasi-isomorphism exactly when it is an isomorphism
-of right `A∞` modules. -/
-theorem isQuasiIso_iff_isIso (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    (f : AInfinityRightModuleHom MM NN) : f.IsQuasiIso ↔ f.IsIso := by
-  rw [isQuasiIso_iff_linearPart_bijective hM hN, isIso_iff_linearPart_bijective]
-
-/-- A quasi-isomorphism between minimal modules is an isomorphism of right `A∞` modules. -/
-theorem IsQuasiIso.isIso (hM : MM.IsMinimal) (hN : NN.IsMinimal)
-    {f : AInfinityRightModuleHom MM NN} (hf : f.IsQuasiIso) : f.IsIso :=
-  (isQuasiIso_iff_isIso hM hN f).1 hf
-
-end AInfinityRightModuleHom
-
-end Minimal
+universe uK uA uM uN
 
 /-! ### The minimal model over a field -/
 
@@ -218,7 +109,7 @@ theorem differential_minimalModel : MM.minimalModel.differential = 0 :=
 
 /-- The minimal model is a minimal module. -/
 theorem isMinimal_minimalModel : MM.minimalModel.IsMinimal :=
-  MM.differential_minimalModel
+  (isMinimal_def _).2 MM.differential_minimalModel
 
 /-- Every element of the minimal model is a cycle. -/
 theorem mem_cycles_minimalModel

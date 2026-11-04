@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Basic
 
 /-!
@@ -15,6 +16,8 @@ module-morphism identities.  The first compares a composite of two suspended Tay
 the corresponding composite of their unsuspended components.  The second compares a term in
 which the algebra bar differential collapses a block with the corresponding unsuspended term.
 Both rest on the expansions of a cofree lift and of the algebra bar differential over a pure word.
+The expansion of a cofree lift also shows that the cofree lift of a map vanishing on the empty
+algebra word strictly shortens algebra words, so it is locally nilpotent.
 
 The component index is the number of algebra inputs; the distinguished module input comes first.
 If the inner family in a composite has degree `q - n` on `n` algebra inputs, moving from the
@@ -36,6 +39,10 @@ morphisms (`q = 0`).
   of module-first Taylor maps.
 * `TauCeti.AInfinityRightModule.cofreeLift_tmul_of_tprod`: the cofree lift of a map, expanded
   over the cuts of a pure word.
+* `TauCeti.AInfinityRightModule.exists_pow_apply_eq_zero_of_forall_tmul_of_tprod`: an
+  endomorphism of `M ⊗ Tᶜ(A)` is locally nilpotent once each pure word is killed by a power of it.
+* `TauCeti.AInfinityRightModule.exists_pow_cofreeLift_apply_eq_zero`: the cofree lift of a map
+  vanishing on the empty algebra word is locally nilpotent.
 * `TauCeti.AInfinityRightModule.apply_coaugmentedBarDifferential_of_tprod`: the algebra bar
   differential expanded after an arbitrary linear map on a module tensor factor.
 * `TauCeti.AInfinityRightModule.apply_algebra_splice_of_mem`: the suspension sign when an algebra
@@ -220,6 +227,58 @@ theorem cofreeLift_tmul_of_tprod (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n
     comul_eq_deconcatenation, of_tprod_eq_subword, deconcatenation_subword]
   simp only [TensorProduct.tmul_sum, map_sum, TensorProduct.assoc_symm_tmul,
     LinearMap.rTensor_tmul, Nat.zero_add]
+
+/-- **Local nilpotence from pure words.**  An endomorphism of `M ⊗ Tᶜ(A)` is locally nilpotent as
+soon as some power of it kills each pure word `x ⊗ a₀ ⊗ ⋯ ⊗ aₙ₋₁`. -/
+theorem exists_pow_apply_eq_zero_of_forall_tmul_of_tprod
+    (f : Module.End R (M ⊗[R] TensorWords R A))
+    (hf : ∀ (n : ℕ) (x : M) (a : Fin n → A),
+      ∃ k, (f ^ k) (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0)
+    (z : M ⊗[R] TensorWords R A) : ∃ k, (f ^ k) z = 0 := by
+  -- The vectors killed by a power of `f` form the submodule `S`.
+  let S := Module.End.maxGenEigenspace f 0
+  have hmem (z) : z ∈ S ↔ ∃ k, (f ^ k) z = 0 := by
+    simp only [S, Module.End.mem_maxGenEigenspace, zero_smul, sub_zero]
+  have hS : ∀ z, z ∈ S := by
+    intro z
+    induction z using TensorProduct.inductionOn with
+    | add z z' hz hz' => exact S.add_mem hz hz'
+    | tmul x w =>
+      have h : S.mkQ ∘ₗ TensorProduct.mk R M (TensorWords R A) x = 0 :=
+        TensorWords.linearMap_ext R A fun n a ↦ by
+          rw [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
+            Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, hmem]
+          exact hf n x a
+      have hw := LinearMap.congr_fun h w
+      rwa [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
+        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hw
+  exact (hmem z).1 (hS z)
+
+/-- On a pure word of length `n`, the cofree lift of a map vanishing on the empty algebra word only
+produces shorter algebra words, so by strong induction its `(n + 1)`-st power kills the word. -/
+private theorem pow_succ_cofreeLift_tmul_of_tprod (ψ : (M ⊗[R] TensorWords R A) →ₗ[R] M)
+    (hψ : ∀ x : M, ψ (x ⊗ₜ[R] (1 : TensorWords R A)) = 0) (n : ℕ) (x : M) (a : Fin n → A) :
+    ((Comodule.Hom.cofreeLift (C := TensorWords R A) ψ).toLinearMap ^ (n + 1))
+      (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0 := by
+  induction n using Nat.strong_induction_on generalizing x with
+  | _ n ih =>
+    rw [pow_succ, mul_apply_eq_comp, cofreeLift_tmul_of_tprod,
+      Finset.sum_range_succ', TensorWords.subword_length_zero R a (Nat.zero_le n), hψ,
+      TensorProduct.zero_tmul, add_zero, map_sum]
+    refine Finset.sum_eq_zero fun k hk ↦ ?_
+    have hk : k < n := Finset.mem_range.1 hk
+    rw [TensorWords.subword_eq_of_tprod R a (show k + 1 + (n - (k + 1)) ≤ n by omega)]
+    exact Module.End.pow_map_zero_of_le (k := n - (k + 1) + 1) (by omega)
+      (ih (n - (k + 1)) (by omega) _ _)
+
+/-- **Local nilpotence of cofree lifts.**  The cofree lift `sM ⊗ Tᶜ(sA) ⟶ sM ⊗ Tᶜ(sA)` of a
+linear map `ψ` vanishing on the empty algebra word is locally nilpotent: it strictly shortens the
+algebra word. -/
+theorem exists_pow_cofreeLift_apply_eq_zero (ψ : (M ⊗[R] TensorWords R A) →ₗ[R] M)
+    (hψ : ∀ x : M, ψ (x ⊗ₜ[R] (1 : TensorWords R A)) = 0) (z : M ⊗[R] TensorWords R A) :
+    ∃ n, ((Comodule.Hom.cofreeLift (C := TensorWords R A) ψ).toLinearMap ^ n) z = 0 :=
+  exists_pow_apply_eq_zero_of_forall_tmul_of_tprod _
+    (fun n x a ↦ ⟨n + 1, pow_succ_cofreeLift_tmul_of_tprod ψ hψ n x a⟩) z
 
 /-- Applying a linear map after tensoring a module element with the algebra bar differential
 expands as the sum over all nonempty blocks collapsed by the algebra Taylor map. -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Category
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
@@ -31,18 +30,20 @@ of `f₁`.
 
 Every isomorphism is a quasi-isomorphism.  Between modules with zero unary operation the converse
 holds, which gives the uniqueness of minimal models of modules; see
-`TauCeti.Algebra.Homology.AInfinity.Module.Right.MinimalModel`.
+`TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic`.
 
 ## Main definitions
 
+* `TauCeti.AInfinityRightModuleHom.barEquiv`: the bar map of a module morphism with bijective
+  linear part, as a linear equivalence.
 * `TauCeti.AInfinityRightModuleHom.inverse`: the inverse of a module morphism with bijective
   linear part.
 * `TauCeti.AInfinityRightModuleHom.IsIso`: a module morphism with a two-sided inverse.
 
 ## Main results
 
-* `TauCeti.AInfinityRightModule.exists_pow_cofreeLift_apply_eq_zero`: the cofree lift of a map
-  vanishing on the empty algebra word is locally nilpotent.
+* `TauCeti.AInfinityRightModuleHom.barMap_inverse`: the bar map of the inverse is the inverse of
+  `TauCeti.AInfinityRightModuleHom.barEquiv`.
 * `TauCeti.AInfinityRightModuleHom.inverse_comp_cancel` and
   `TauCeti.AInfinityRightModuleHom.comp_inverse_cancel`: the inverse is a two-sided inverse, and
   `TauCeti.AInfinityRightModuleHom.linearPart_inverse`: its linear part is the inverse linear
@@ -78,53 +79,6 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
 
 attribute [local instance] Comodule.cofree
-
-namespace AInfinityRightModule
-
-/-- On a pure word of length `n`, the cofree lift of a map vanishing on the empty algebra word only
-produces shorter algebra words, so by strong induction its `(n + 1)`-st power kills the word. -/
-private theorem pow_succ_cofreeLift_tmul_of_tprod (ψ : (M ⊗[R] TensorWords R A) →ₗ[R] M)
-    (hψ : ∀ x : M, ψ (x ⊗ₜ[R] (1 : TensorWords R A)) = 0) (n : ℕ) (x : M) (a : Fin n → A) :
-    ((Comodule.Hom.cofreeLift (C := TensorWords R A) ψ).toLinearMap ^ (n + 1))
-      (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) = 0 := by
-  induction n using Nat.strong_induction_on generalizing x with
-  | _ n ih =>
-    rw [pow_succ, mul_apply_eq_comp, cofreeLift_tmul_of_tprod,
-      Finset.sum_range_succ', TensorWords.subword_length_zero R a (Nat.zero_le n), hψ,
-      TensorProduct.zero_tmul, add_zero, map_sum]
-    refine Finset.sum_eq_zero fun k hk ↦ ?_
-    have hk : k < n := Finset.mem_range.1 hk
-    rw [TensorWords.subword_eq_of_tprod R a (show k + 1 + (n - (k + 1)) ≤ n by omega)]
-    exact Module.End.pow_map_zero_of_le (k := n - (k + 1) + 1) (by omega)
-      (ih (n - (k + 1)) (by omega) _ _)
-
-/-- **Local nilpotence of cofree lifts.**  The cofree lift `sM ⊗ Tᶜ(sA) ⟶ sM ⊗ Tᶜ(sA)` of a
-linear map `ψ` vanishing on the empty algebra word is locally nilpotent: it strictly shortens the
-algebra word. -/
-theorem exists_pow_cofreeLift_apply_eq_zero (ψ : (M ⊗[R] TensorWords R A) →ₗ[R] M)
-    (hψ : ∀ x : M, ψ (x ⊗ₜ[R] (1 : TensorWords R A)) = 0) (z : M ⊗[R] TensorWords R A) :
-    ∃ n, ((Comodule.Hom.cofreeLift (C := TensorWords R A) ψ).toLinearMap ^ n) z = 0 := by
-  set K := (Comodule.Hom.cofreeLift (C := TensorWords R A) ψ).toLinearMap
-  -- The vectors killed by a power of `K` form the submodule `S`.
-  let S := Module.End.maxGenEigenspace K 0
-  have hmem (z) : z ∈ S ↔ ∃ n, (K ^ n) z = 0 := by
-    simp only [S, Module.End.mem_maxGenEigenspace, zero_smul, sub_zero]
-  have hS : ∀ z, z ∈ S := by
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => exact S.add_mem hz hz'
-    | tmul x w =>
-      have h : S.mkQ ∘ₗ TensorProduct.mk R M (TensorWords R A) x = 0 :=
-        TensorWords.linearMap_ext R A fun n a ↦ by
-          rw [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-            Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, hmem]
-          exact ⟨n + 1, pow_succ_cofreeLift_tmul_of_tprod ψ hψ n x a⟩
-      have hw := LinearMap.congr_fun h w
-      rwa [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.zero_apply,
-        Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hw
-  exact (hmem z).1 (hS z)
-
-end AInfinityRightModule
 
 namespace AInfinityRightModuleHom
 
@@ -167,13 +121,14 @@ private theorem unipotentBarHom_toLinearMap :
   have hid := Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp (R := R)
     (C := TensorWords R A) (Comodule.Hom.id R (TensorWords R A) (M ⊗[R] TensorWords R A))
   rw [Comodule.Hom.id_toLinearMap, LinearMap.comp_id] at hid
-  rw [unipotentBarHom, hF, Comodule.Hom.cofreeMap_comp_cofreeLift,
-    ← sub_add_cancel ((LinearEquiv.ofBijective f.linearPart hf).symm.toLinearMap ∘ₗ f.taylor)
-      ((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M),
-    ← unipotentTaylorDiff, ← Comodule.Hom.cofreeEquiv_symm_apply, map_add,
-    Comodule.Hom.cofreeEquiv_symm_apply, Comodule.Hom.cofreeEquiv_symm_apply, hid,
-    Comodule.Hom.add_toLinearMap, Comodule.Hom.id_toLinearMap, add_comm, Module.End.one_eq_id]
+  -- The Taylor map of `(f₁⁻¹ ⊗ 1) F` is the Taylor map of the identity plus the difference.
+  have hsplit : (LinearEquiv.ofBijective f.linearPart hf).symm.toLinearMap ∘ₗ f.taylor =
+      unipotentTaylorDiff f hf + (TensorProduct.rid R M).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M := by
+    rw [unipotentTaylorDiff, sub_add_cancel]
+  rw [unipotentBarHom, hF, Comodule.Hom.cofreeMap_comp_cofreeLift, hsplit,
+    Comodule.Hom.cofreeLift_add, hid, Comodule.Hom.add_toLinearMap, Comodule.Hom.id_toLinearMap,
+    add_comm, Module.End.one_eq_id]
 
 private theorem isUnit_unipotentBarHom : IsUnit (unipotentBarHom f hf).toLinearMap := by
   rw [unipotentBarHom_toLinearMap]
@@ -212,14 +167,24 @@ private theorem barMap_comp_inverseBarHom :
       ((unipotentBarHom f hf).toLinearMap), h, LinearMap.id_comp, ← LinearMap.rTensor_comp,
     e.comp_symm, LinearMap.rTensor_id]
 
+/-- The bar map of a module morphism with bijective linear part, as a linear equivalence. -/
+noncomputable def barEquiv : (M ⊗[R] TensorWords R A) ≃ₗ[R] N ⊗[R] TensorWords R A :=
+  LinearEquiv.ofLinearMap f.barMap (inverseBarHom f hf).toLinearMap
+    (barMap_comp_inverseBarHom f hf) (inverseBarHom_comp_barMap f hf)
+
+/-- The linear equivalence `barEquiv` acts as the bar map. -/
+@[simp]
+theorem barEquiv_apply (z : M ⊗[R] TensorWords R A) : f.barEquiv hf z = f.barHom z := (rfl)
+
+/-- The underlying linear map of `barEquiv` is the bar map. -/
+theorem coe_barEquiv : (f.barEquiv hf).toLinearMap = f.barMap :=
+  LinearMap.ext (f.barEquiv_apply hf)
+
 private theorem isHomogeneous_inverseBarHom :
     LinearMap.IsHomogeneous (inverseBarHom f hf).toLinearMap
       (AInfinityRightModule.barGrading AA NN.grading).piece
-      (AInfinityRightModule.barGrading AA MM.grading).piece 0 := by
-  let e : (M ⊗[R] TensorWords R A) ≃ₗ[R] N ⊗[R] TensorWords R A :=
-    LinearEquiv.ofLinearMap f.barMap (inverseBarHom f hf).toLinearMap
-      (barMap_comp_inverseBarHom f hf) (inverseBarHom_comp_barMap f hf)
-  exact LinearMap.IsHomogeneous.linearEquiv_symm (e := e) f.isHomogeneous_barMap
+      (AInfinityRightModule.barGrading AA MM.grading).piece 0 :=
+  LinearMap.IsHomogeneous.linearEquiv_symm (e := f.barEquiv hf) f.isHomogeneous_barMap
 
 /-- The **inverse** of a module morphism with bijective linear part.  Its bar map is the inverse of
 the bar map of the morphism, which is again a degree-zero comodule morphism intertwining the bar
@@ -236,6 +201,22 @@ noncomputable def inverse : AInfinityRightModuleHom NN MM where
           simp only [LinearMap.comp_assoc]
       _ = V ∘ₗ NN.barDifferential := by
           rw [LinearMap.comp_assoc, barMap_comp_inverseBarHom, LinearMap.comp_id]
+
+/-- The bar map of the inverse is the inverse of `barEquiv`. -/
+@[simp]
+theorem barMap_inverse : (f.inverse hf).barMap = (f.barEquiv hf).symm.toLinearMap := (rfl)
+
+/-- The inverse of `barEquiv` undoes the bar map. -/
+@[simp]
+theorem barEquiv_symm_barMap (z : M ⊗[R] TensorWords R A) :
+    (f.barEquiv hf).symm (f.barHom z) = z := by
+  rw [← barEquiv_apply f hf, LinearEquiv.symm_apply_apply]
+
+/-- The bar map undoes the inverse of `barEquiv`. -/
+@[simp]
+theorem barMap_barEquiv_symm (w : N ⊗[R] TensorWords R A) :
+    f.barHom ((f.barEquiv hf).symm w) = w := by
+  rw [← barEquiv_apply f hf, LinearEquiv.apply_symm_apply]
 
 /-- The inverse is a left inverse. -/
 @[simp]
