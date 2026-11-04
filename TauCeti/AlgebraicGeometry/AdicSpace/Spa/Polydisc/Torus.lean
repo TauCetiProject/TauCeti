@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Pair
+
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Integral
 
 /-!
 # The affinoid relative torus inside the relative closed polydisc
@@ -31,7 +34,9 @@ Translating coordinates by `a : Fin n → S.plus` via `TauCeti.Huber.Pair.polydi
 automorphisms of `S.polydisc n` over `S`. In dimension `1`, the unit circle `S.torusLocus 1`
 (`|T| = 1`) and its translate by `1` (`|T + 1| = 1`) cover the whole relative closed unit disc
 `spa (S.polydiscPlus 1)` (`TauCeti.Huber.Pair.torusLocus_union_preimage_taylorHom_eq_spa`), since
-`1 = (T + 1) - T` prevents both `|T| < 1` and `|T + 1| < 1` at any nonarchimedean valuation.
+`1 = (T + 1) - T` prevents both `|T| < 1` and `|T + 1| < 1` at any nonarchimedean valuation. None
+of the results in this file require completeness, Hausdorffness, or a uniform structure on the base
+ring `A`.
 
 ## Main definitions
 
@@ -64,11 +69,9 @@ namespace TauCeti.Huber
 
 open TauCeti.ValuationSpectrum
 
-/-! ### The torus locus and its pointwise description -/
-
-section Locus
-
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+
+/-! ### The torus locus and its pointwise description -/
 
 /-- **The relative torus locus inside `Spa(A⟨T₁, …, Tₙ⟩, A⁺⟨T₁, …, Tₙ⟩)`**: the rational subset
 `R({1} / (T₁ ⋯ Tₙ))` where every coordinate variable has valuation `1`. -/
@@ -115,7 +118,7 @@ theorem Pair.mem_torusLocus_iff_forall_one_vle (S : Pair A) {n : ℕ}
       v ∈ spa (S.polydiscPlus n) ∧
         ∀ i : Fin n, v.toValuativeRel.vle 1 (Pair.polydiscVar n A i) := by
   rw [Pair.torusLocus_def, mem_rationalSubset_iff]
-  refine ⟨fun ⟨hv, hT, _⟩ ↦ ⟨hv, fun i ↦ ?_⟩, fun ⟨hv, hcoords⟩ ↦ ⟨hv, fun t ht ↦ ?_, ?_⟩⟩
+  refine ⟨fun ⟨hv, hT, _⟩ ↦ ⟨hv, fun i ↦ ?_⟩, fun ⟨hv, hcoords⟩ ↦ ?_⟩
   · have hprod : 1 ≤ v.valuation (∏ j, Pair.polydiscVar n A j) := by
       simpa only [map_one] using
         (valuation_le_iff v 1 _).mpr (hT 1 (Finset.mem_singleton_self 1))
@@ -132,21 +135,17 @@ theorem Pair.mem_torusLocus_iff_forall_one_vle (S : Pair A) {n : ℕ}
         _ ≤ v.valuation (Pair.polydiscVar n A i) * 1 := mul_le_mul_right herase_le _
         _ = v.valuation (Pair.polydiscVar n A i) := mul_one _
     exact (valuation_le_iff v 1 _).mp (by simpa only [map_one] using hi)
-  · obtain rfl : t = 1 := Finset.mem_singleton.mp ht
-    have hprod : 1 ≤ v.valuation (∏ i, Pair.polydiscVar n A i) := by
-      rw [map_prod]
-      exact Finset.one_le_prod fun i _ ↦ by
-        simpa only [map_one] using (valuation_le_iff v 1 _).mpr (hcoords i)
-    exact (valuation_le_iff v 1 _).mp (by simpa only [map_one] using hprod)
   · have hprod : v.toValuativeRel.vle 1 (∏ i, Pair.polydiscVar n A i) := by
       have h1 : 1 ≤ v.valuation (∏ i, Pair.polydiscVar n A i) := by
         rw [map_prod]
         exact Finset.one_le_prod fun i _ ↦ by
           simpa only [map_one] using (valuation_le_iff v 1 _).mpr (hcoords i)
       exact (valuation_le_iff v 1 _).mp (by simpa only [map_one] using h1)
-    intro hv0
-    exact @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ v.toValuativeRel _ isUnit_one
-      (v.toValuativeRel.vle_trans hprod hv0)
+    refine ⟨hv, fun t ht ↦ ?_, fun hv0 ↦
+      @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ v.toValuativeRel _ isUnit_one
+        (v.toValuativeRel.vle_trans hprod hv0)⟩
+    obtain rfl : t = 1 := Finset.mem_singleton.mp ht
+    exact hprod
 
 /-- **Coordinatewise characterization of `S.torusLocus n` by valuation equalities**: a point lies
 in `S.torusLocus n` if and only if it lies in `spa (S.polydiscPlus n)` and every coordinate `Tᵢ`
@@ -173,21 +172,14 @@ theorem Pair.notMem_torusLocus_of_mem_supp (S : Pair A) {n : ℕ}
   exact @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ v.toValuativeRel _ isUnit_one
     (v.toValuativeRel.vle_trans h1 h0)
 
-end Locus
-
 /-! ### Universal property of the relative torus and the two-torus cover -/
-
-section CompleteBase
-
-variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-  [IsHuberRing A]
 
 /-- If every coordinate `h(Tᵢ)` of a Huber-pair morphism `h : S.polydisc n → U` is a unit whose
 inverse lies in `U.plus`, then `h.spaComap` lands in `S.torusLocus n` (with no completeness or
 Hausdorffness hypothesis on `U`). -/
 theorem Pair.spaComap_mem_torusLocus_of_forall_exists_unit {C : Type*} [CommRing C]
     [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
-    (S : Pair A) [CompleteSpace A] [T0Space A] {U : Pair C} (n : ℕ)
+    (S : Pair A) {U : Pair C} (n : ℕ)
     (h : Pair.Hom (S.polydisc n) U)
     (hu : ∀ i, ∃ u : Cˣ, (u : C) = h.toRingHom (Pair.polydiscVar n A i) ∧
       ((u⁻¹ : Cˣ) : C) ∈ U.plus)
@@ -200,7 +192,7 @@ theorem Pair.spaComap_mem_torusLocus_of_forall_exists_unit {C : Type*} [CommRing
     rw [map_prod, ← Finset.prod_mul_distrib]
     refine Finset.prod_eq_one fun i _ ↦ ?_
     rw [← hu_eq i, Units.mul_inv]
-  rw [Pair.torusLocus_def, ← S.polydisc_plus n, Pair.Hom.spaComap_val]
+  rw [Pair.torusLocus_def, Pair.Hom.spaComap_val]
   exact comap_mem_rationalSubset h.continuous_toRingHom h.map_mem_plus {1}
     (∏ i, Pair.polydiscVar n A i) hmul
     (fun t ht ↦ by
@@ -216,8 +208,7 @@ variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopo
 `S.torusLocus n`**: `h.spaComap` maps every point of `spa U.plus` into `S.torusLocus n` if and only
 if each `h(Tᵢ)` is a unit of `C` whose inverse lies in `U.plus`. -/
 theorem Pair.mem_torusLocus_iff
-    (S : Pair A) [CompleteSpace A] [T0Space A]
-    {U : Pair C} (n : ℕ) (h : Pair.Hom (Pair.polydisc S n) U) :
+    (S : Pair A) {U : Pair C} (n : ℕ) (h : Pair.Hom (Pair.polydisc S n) U) :
     (∀ v : spa U.plus, (h.spaComap v).1 ∈ Pair.torusLocus S n) ↔
       ∀ i, ∃ u : Cˣ, (u : C) = h.toRingHom (Pair.polydiscVar n A i) ∧
         ((u⁻¹ : Cˣ) : C) ∈ U.plus := by
@@ -226,8 +217,7 @@ theorem Pair.mem_torusLocus_iff
       comap h.toRingHom w ∈
         rationalSubset (S.polydisc n).plus {1} (∏ j, Pair.polydiscVar n A j) :=
     fun w hw ↦ by
-      simpa only [Pair.torusLocus_def, S.polydisc_plus n, Pair.Hom.spaComap_val] using
-        hfac ⟨w, hw⟩
+      simpa only [Pair.torusLocus_def, Pair.Hom.spaComap_val] using hfac ⟨w, hw⟩
   have hs : IsUnit (h.toRingHom (∏ j, Pair.polydiscVar n A j)) :=
     isUnit_of_forall_comap_mem_rationalSubset {1} U.isRingOfIntegralElements hfac'
   have := U.isRingOfIntegralElements.isIntegrallyClosedIn
@@ -240,7 +230,7 @@ theorem Pair.mem_torusLocus_iff
     (∏ j ∈ Finset.univ.erase i, h.toRingHom (Pair.polydiscVar n A j)) * ↑hs.unit⁻¹
   have hr_plus : r ∈ U.plus :=
     mul_mem
-      (prod_mem fun j _ ↦ h.map_mem_plus _ (S.polydiscVar_mem_polydisc_plus n j))
+      (prod_mem fun j _ ↦ h.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n j))
       hinv_plus
   have hmul : h.toRingHom (Pair.polydiscVar n A i) * r = 1 := by
     calc h.toRingHom (Pair.polydiscVar n A i) * r
@@ -258,42 +248,39 @@ theorem Pair.mem_torusLocus_iff
 
 /-- **Morphisms `S.polydisc n → U` over `z : Pair.Hom S U` whose `spaComap` lands in
 `S.torusLocus n` correspond bijectively to `n`-tuples of units `(U.plus)ˣ`.** -/
-noncomputable def Pair.polydisc.torusHomEquiv {S : Pair A} [CompleteSpace A] [T0Space A]
+noncomputable def Pair.polydisc.torusHomEquiv {S : Pair A}
     {U : Pair C} (z : Pair.Hom S U) (n : ℕ) :
     {h : Pair.Hom (S.polydisc n) U //
-      h.comp (Pair.polydisc.proj S n) = z ∧
+      h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z ∧
         ∀ v : spa U.plus, (h.spaComap v).1 ∈ S.torusLocus n} ≃
       (Fin n → (U.plus)ˣ) where
-  toFun h i := by
-    have hex := (S.mem_torusLocus_iff n h.1).mp h.2.2 i
+  toFun h i :=
+    let hex := (S.mem_torusLocus_iff n h.1).mp h.2.2 i
     let u := hex.choose
-    exact
-      { val := ⟨h.1.toRingHom (Pair.polydiscVar n A i),
-          h.1.map_mem_plus _ (S.polydiscVar_mem_polydisc_plus n i)⟩
-        inv := ⟨((u⁻¹ : Cˣ) : C), hex.choose_spec.2⟩
-        val_inv := Subtype.ext <| by
-          change h.1.toRingHom (Pair.polydiscVar n A i) * ((u⁻¹ : Cˣ) : C) = 1
-          rw [← hex.choose_spec.1, Units.mul_inv]
-        inv_val := Subtype.ext <| by
-          change ((u⁻¹ : Cˣ) : C) * h.1.toRingHom (Pair.polydiscVar n A i) = 1
-          rw [← hex.choose_spec.1, Units.inv_mul] }
+    { val := ⟨h.1.toRingHom (Pair.polydiscVar n A i),
+        h.1.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
+      inv := ⟨((u⁻¹ : Cˣ) : C), hex.choose_spec.2⟩
+      val_inv := Subtype.ext <|
+        (congrArg (· * ((u⁻¹ : Cˣ) : C)) hex.choose_spec.1.symm).trans u.mul_inv
+      inv_val := Subtype.ext <|
+        (congrArg (((u⁻¹ : Cˣ) : C) * ·) hex.choose_spec.1.symm).trans u.inv_mul }
   invFun u :=
     { val := Pair.polydisc.evalHom z (fun i ↦ (u i : U.plus))
-      property := ⟨Pair.polydisc.evalHom_comp_proj z _,
+      property := ⟨Pair.polydisc.evalHom_comp_weightedCompletionHom z _,
         (S.mem_torusLocus_iff n _).mpr fun i ↦
           ⟨Units.map U.plus.subtype.toMonoidHom (u i),
             by simp, (u i)⁻¹.1.2⟩⟩ }
   left_inv h := Subtype.ext <| Pair.polydisc.hom_ext
-    ((Pair.polydisc.evalHom_comp_proj z _).trans h.2.1.symm)
+    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.2.1.symm)
     fun i ↦ Pair.polydisc.toRingHom_evalHom_polydiscVar z _ i
   right_inv u := funext fun i ↦ Units.ext <| Subtype.ext <|
     Pair.polydisc.toRingHom_evalHom_polydiscVar z (fun j ↦ (u j : U.plus)) i
 
 @[simp]
-theorem Pair.polydisc.torusHomEquiv_apply_coe {S : Pair A} [CompleteSpace A] [T0Space A]
+theorem Pair.polydisc.torusHomEquiv_apply_coe {S : Pair A}
     {U : Pair C} (z : Pair.Hom S U) (n : ℕ)
     (h : {h : Pair.Hom (S.polydisc n) U //
-      h.comp (Pair.polydisc.proj S n) = z ∧
+      h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z ∧
         ∀ v : spa U.plus, (h.spaComap v).1 ∈ S.torusLocus n})
     (i : Fin n) :
     (((Pair.polydisc.torusHomEquiv z n h i : (U.plus)ˣ) : U.plus) : C) =
@@ -301,7 +288,7 @@ theorem Pair.polydisc.torusHomEquiv_apply_coe {S : Pair A} [CompleteSpace A] [T0
   (rfl)
 
 @[simp]
-theorem Pair.polydisc.torusHomEquiv_symm_apply_val {S : Pair A} [CompleteSpace A] [T0Space A]
+theorem Pair.polydisc.torusHomEquiv_symm_apply_val {S : Pair A}
     {U : Pair C} (z : Pair.Hom S U) (n : ℕ) (u : Fin n → (U.plus)ˣ) :
     ((Pair.polydisc.torusHomEquiv z n).symm u).1 =
       Pair.polydisc.evalHom z (fun i ↦ (u i : U.plus)) :=
@@ -314,8 +301,7 @@ end CompleteTarget
 /-- **The two-torus cover of the relative closed unit disc** (Scholze, *Étale cohomology of
 diamonds*, Proposition 24.4): the relative closed unit disc `spa (S.polydiscPlus 1)` is covered by
 the unit torus `S.torusLocus 1` (`|T| = 1`) and its translate by `1` (`|T + 1| = 1`). -/
-theorem Pair.torusLocus_union_preimage_taylorHom_eq_spa (S : Pair A) [CompleteSpace A]
-    [T0Space A] :
+theorem Pair.torusLocus_union_preimage_taylorHom_eq_spa (S : Pair A) :
     spa (S.polydiscPlus 1) =
       S.torusLocus 1 ∪
         comap (Pair.polydisc.taylorHom S (fun _ : Fin 1 ↦ (1 : S.plus))).toRingHom ⁻¹'
@@ -329,9 +315,9 @@ theorem Pair.torusLocus_union_preimage_taylorHom_eq_spa (S : Pair A) [CompleteSp
         _ ≤ max (v.valuation (T + 1)) (v.valuation T) := v.valuation.map_sub (T + 1) T
     rcases le_max_iff.mp h1 with hT1 | hT
     · refine Or.inr ?_
-      rw [Set.mem_preimage, S.mem_torusLocus_iff_forall_one_vle, ← S.polydisc_plus 1]
-      refine ⟨comap_mem_spa τ.continuous_toRingHom τ.map_mem_plus
-        (by rwa [S.polydisc_plus 1]), Fin.forall_fin_one.mpr ?_⟩
+      rw [Set.mem_preimage, S.mem_torusLocus_iff_forall_one_vle]
+      refine ⟨comap_mem_spa τ.continuous_toRingHom τ.map_mem_plus hv,
+        Fin.forall_fin_one.mpr ?_⟩
       rw [comap_vle, map_one]
       have hτT : τ.toRingHom T = T + 1 := by
         rw [Pair.polydisc.toRingHom_taylorHom_polydiscVar, OneMemClass.coe_one, map_one]
@@ -340,9 +326,8 @@ theorem Pair.torusLocus_union_preimage_taylorHom_eq_spa (S : Pair A) [CompleteSp
     · refine Or.inl (S.mem_torusLocus_iff_forall_one_vle.mpr ⟨hv, Fin.forall_fin_one.mpr ?_⟩)
       exact (valuation_le_iff v 1 T).mp (by simpa only [map_one] using hT)
   · refine Set.union_subset (S.torusLocus_subset_spa 1) fun v hv ↦ ?_
-    have hv_spa : comap τ.toRingHom v ∈ spa (S.polydisc 1).plus := by
-      rw [S.polydisc_plus 1]
-      exact S.torusLocus_subset_spa 1 hv
+    have hv_spa : comap τ.toRingHom v ∈ spa (S.polydisc 1).plus :=
+      S.torusLocus_subset_spa 1 hv
     have hcomp : τ.comp τ_inv = Pair.Hom.id (S.polydisc 1) := by
       have h0 : (fun _ : Fin 1 ↦ (1 : S.plus)) + (fun _ : Fin 1 ↦ (-1 : S.plus)) = 0 := by
         ext
@@ -351,9 +336,7 @@ theorem Pair.torusLocus_union_preimage_taylorHom_eq_spa (S : Pair A) [CompleteSp
     have hid : comap τ_inv.toRingHom (comap τ.toRingHom v) = v := by
       rw [← Function.comp_apply (f := comap _), ← comap_comp, ← Pair.Hom.toRingHom_comp, hcomp,
         Pair.Hom.toRingHom_id, ValuationSpectrum.comap_id, id]
-    rw [← S.polydisc_plus 1, ← hid]
+    rw [← hid]
     exact comap_mem_spa τ_inv.continuous_toRingHom τ_inv.map_mem_plus hv_spa
-
-end CompleteBase
 
 end TauCeti.Huber

@@ -11,8 +11,6 @@ public import TauCeti.RingTheory.Valuation.Continuous.Basic
 import Mathlib.Data.Finsupp.Lex
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.Huber.Continuous.ValuativeCriterion
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenIdeal
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.RingTheory.Valuation.LtAddSubgroup
 
 /-!
@@ -321,9 +319,7 @@ theorem weightedGaussValuation_monomial (hv : v.IsContinuous) (ν : Fin k →₀
       coeff_le_weightedGaussValuation hv
         (weightedPolynomialHom _ isWeightFamily_one_weight (MvPolynomial.monomial ν a)) ν
 
-/-- **The unit-radius Gauss valuation of a continuous valuation is continuous.** For any series `g`
-with nonzero Gauss valuation, that value equals `v b` for some coefficient `b` of `g`, so the
-sublevel set `{f | W f < W g}` coincides with the open neighbourhood `{a | v a < v b}⟨X⟩`. -/
+/-- **The unit-radius Gauss valuation of a continuous valuation is continuous.** -/
 theorem isContinuous_weightedGaussValuation (hv : v.IsContinuous) :
     (weightedGaussValuation k hv).IsContinuous := by
   rw [Valuation.isContinuous_iff_forall_ne_zero]
@@ -352,14 +348,7 @@ variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalR
   [IsHuberRing A]
 
 /-- **If `R` is an open integrally closed subring of a Huber ring `A`, then `R⟨X₁, …, Xₖ⟩` is
-integrally closed in `A⟨X₁, …, Xₖ⟩`.**
-
-Given `f` integral over `R⟨X₁, …, Xₖ⟩` and a continuous valuation `v` on `A` bounded by `1` on `R`,
-the Gauss valuation `W` extending `v` is bounded by `1` on `R⟨X₁, …, Xₖ⟩`. Since `W.integer` is
-integrally closed (`Valuation.Integers.mem_of_integral`), `W f ≤ 1`, so every coefficient of `f`
-has `v`-valuation at most `1`. By Wedhorn's Proposition 7.18(1)
-(`TauCeti.Huber.isIntegral_of_forall_continuous_valuation_le_one`), every coefficient of `f` is
-integral over `R`, hence lies in `R`. -/
+integrally closed in `A⟨X₁, …, Xₖ⟩`.** -/
 theorem isIntegrallyClosedIn_weightedSubring_one_weight {R : Subring A}
     (hR : IsOpen (R : Set A)) [IsIntegrallyClosedIn R A] :
     IsIntegrallyClosedIn

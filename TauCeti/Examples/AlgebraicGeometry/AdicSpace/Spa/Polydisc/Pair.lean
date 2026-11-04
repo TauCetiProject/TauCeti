@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Torus
-public import TauCeti.RingTheory.Huber.Padic.Field
+
+import TauCeti.RingTheory.Huber.Padic.Field
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Pair
 
 /-!
 # Checks for relative closed polydiscs and tori over Huber pairs
@@ -14,15 +16,16 @@ public import TauCeti.RingTheory.Huber.Padic.Field
 We exercise `Pair.polydisc`, `Pair.polydisc.evalHom`, `Pair.polydisc.closedPolydiscHomeomorph`,
 `Pair.torusLocus`, `Pair.polydisc.torusHomEquiv`, and
 `Pair.torusLocus_union_preimage_taylorHom_eq_spa` across Tate fields (`ℚ_[p]`), non-Tate integral
-bases (`ℤ_[p]`), zero variables (`n = 0`), negative controls separating polydisc evaluations from
-torus evaluations (`p` and `0` vs units), and the zero ring `ZMod 1`.
+bases (`ℤ_[p]`), zero variables (`n = 0`), `(m + n)` iteration via `Pair.iterateSplitHom` and
+`Pair.iterateJoinHom`, negative controls separating polydisc evaluations from torus evaluations
+(`p` and `0` vs units), and the zero ring `ZMod 1` without a uniform structure.
 -/
 
 public section
 
 open TauCeti TauCeti.Huber TauCeti.ValuationSpectrum
 
-namespace PolydiscPairChecks
+namespace TauCeti.Examples.PolydiscPair
 
 section Padic
 
@@ -90,43 +93,46 @@ example (x : spa (Pair.powerBounded ℚ_[p]).plus) :
         comap (Pair.polydisc.taylorHom (Pair.powerBounded ℚ_[p])
             (fun _ : Fin 1 ↦ (1 : (Pair.powerBounded ℚ_[p]).plus))).toRingHom ⁻¹'
           Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 := by
-  refine ⟨fun h0 ↦ ?_, ?_⟩
-  · refine Pair.notMem_torusLocus_of_mem_supp (Pair.powerBounded ℚ_[p]) (i := 0) ?_ h0
+  intro e0
+  have hnot : (e0.spaComap x).1 ∉ Pair.torusLocus (Pair.powerBounded ℚ_[p]) 1 := by
+    refine Pair.notMem_torusLocus_of_mem_supp (Pair.powerBounded ℚ_[p]) (i := 0) ?_
     rw [Pair.Hom.spaComap_val, mem_supp_iff, comap_vle]
-    simp [Pair.polydisc.toRingHom_evalHom_polydiscVar]
-  · have hcov := Pair.torusLocus_union_preimage_taylorHom_eq_spa (Pair.powerBounded ℚ_[p])
-    have hmem : ((Pair.polydisc.evalHom (Pair.Hom.id (Pair.powerBounded ℚ_[p]))
-        (fun _ : Fin 1 ↦ (0 : (Pair.powerBounded ℚ_[p]).plus))).spaComap x).1 ∈
-        spa ((Pair.powerBounded ℚ_[p]).polydiscPlus 1) := by
-      rw [← Pair.polydisc_plus]
-      exact ((Pair.polydisc.evalHom (Pair.Hom.id (Pair.powerBounded ℚ_[p]))
-        (fun _ : Fin 1 ↦ (0 : (Pair.powerBounded ℚ_[p]).plus))).spaComap x).2
-    rw [hcov] at hmem
-    refine hmem.resolve_left fun h0 ↦ ?_
-    refine Pair.notMem_torusLocus_of_mem_supp (Pair.powerBounded ℚ_[p]) (i := 0) ?_ h0
-    rw [Pair.Hom.spaComap_val, mem_supp_iff, comap_vle]
-    simp [Pair.polydisc.toRingHom_evalHom_polydiscVar]
+    simp [e0, Pair.polydisc.toRingHom_evalHom_polydiscVar]
+  have hcov := Pair.torusLocus_union_preimage_taylorHom_eq_spa (Pair.powerBounded ℚ_[p])
+  exact ⟨hnot, (hcov.subset (e0.spaComap x).2).resolve_left hnot⟩
 
-/-- Degenerate `n = 0` check over `ℤ_[p]`: `zeroInvHom` and `proj` invert one another, and
-`torusLocus` is the full adic spectrum. -/
+/-- Degenerate `n = 0` check over `ℤ_[p]`: `zeroInvHom` and `weightedCompletionHom` invert one
+another, and `torusLocus` is the full adic spectrum. -/
 example :
     (Pair.polydisc.zeroInvHom (Pair.powerBounded ℤ_[p])).comp
-        (Pair.polydisc.proj (Pair.powerBounded ℤ_[p]) 0) =
+        ((Pair.powerBounded ℤ_[p]).weightedCompletionHom isWeightFamily_one_weight) =
       Pair.Hom.id (Pair.powerBounded ℤ_[p]) ∧
     Pair.torusLocus (Pair.powerBounded ℤ_[p]) 0 =
       spa ((Pair.powerBounded ℤ_[p]).polydiscPlus 0) :=
-  ⟨Pair.polydisc.zeroInvHom_comp_proj _, Pair.torusLocus_zero _⟩
+  ⟨Pair.polydisc.zeroInvHom_comp_weightedCompletionHom _, Pair.torusLocus_zero _⟩
+
+/-- Iteration check on `Pair.polydisc`: `Pair.iterateSplitHom` and `Pair.iterateJoinHom` invert one
+another between `S.polydisc (m + n)` and `(S.polydisc m).polydisc n`. -/
+example (m n : ℕ) :
+    ((Pair.powerBounded ℤ_[p]).iterateJoinHom (k := m) (m := n)
+        isWeightFamily_one_weight isWeightFamily_one_weight isWeightFamily_one_weight
+        (fun _ ↦ rfl) (fun _ ↦ by simp)).comp
+      ((Pair.powerBounded ℤ_[p]).iterateSplitHom (k := m) (m := n)
+        isWeightFamily_one_weight isWeightFamily_one_weight isWeightFamily_one_weight
+        (fun _ ↦ rfl) (fun _ ↦ by simp)) =
+      Pair.Hom.id ((Pair.powerBounded ℤ_[p]).polydisc (m + n)) :=
+  Pair.iterateJoinHom_comp_iterateSplitHom ..
 
 end Padic
 
 section ZeroRing
 
-/-- Discrete uniformity on the concrete zero ring `ZMod 1`. -/
-local instance zmodOneUniformSpace : UniformSpace (ZMod 1) := ⊥
+/-- Discrete topology on the concrete zero ring `ZMod 1` (with no `UniformSpace` instance). -/
+local instance zmodOneTopologicalSpace : TopologicalSpace (ZMod 1) := ⊥
 local instance : DiscreteTopology (ZMod 1) := ⟨rfl⟩
 
 /-- Degenerate zero-ring check: `Pair.polydisc` and `Pair.torusLocus` instantiate on `ZMod 1`
-without nontriviality hypotheses, and its adic spectrum is empty. -/
+without nontriviality or uniform-space hypotheses, and its adic spectrum is empty. -/
 example (n : ℕ) :
     spa (((Pair.discrete (ZMod 1)).polydisc n).plus) = ∅ := by
   ext v
@@ -140,4 +146,4 @@ example (n : ℕ) :
 
 end ZeroRing
 
-end PolydiscPairChecks
+end TauCeti.Examples.PolydiscPair
