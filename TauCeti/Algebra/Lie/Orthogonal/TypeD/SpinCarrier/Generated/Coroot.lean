@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.StandardComodule
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.WeightTorus
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
-import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.WeightTorus
 
 /-!
 # Simple-coroot differentials of the generated type-D spin group
@@ -99,102 +98,82 @@ theorem tangentMatrix_derivationComp_generatedCorootCocharacter (i : Fin n)
     GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
   simp
 
-/-- The differential of a numbered simple coroot at the multiplicative unit tangent vector. -/
-def generatedCorootVector (i : Fin n) :
+/-- The numbered Cartan vector: the simple-coroot differential at the unit tangent vector. -/
+def generatedCartanVector (i : Fin n) :
     Derivation R (generatedCoordinateHopfAlgebra n hn R)
       (Bialgebra.CounitAlgebra R (generatedCoordinateHopfAlgebra n hn R) B) :=
   derivationComp (generatedCorootCocharacter n hn R i)
     ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)
 
-/-- The coroot vector uses the tangent parameter normalized to one. -/
-theorem generatedCorootVector_def (i : Fin n) :
-    generatedCorootVector n hn R (B := B) i =
+/-- The Cartan vector uses the tangent parameter normalized to one. -/
+theorem generatedCartanVector_def (i : Fin n) :
+    generatedCartanVector n hn R (B := B) i =
       derivationComp (generatedCorootCocharacter n hn R i)
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) :=
   (rfl)
 
-/-- The normalized simple-coroot vector has the integral spin weights as diagonal entries. -/
+/-- The Cartan vector has the integral spin weights as diagonal entries. -/
 @[simp]
-theorem tangentMatrix_generatedCorootVector (i : Fin n) :
+theorem tangentMatrix_generatedCartanVector (i : Fin n) :
     GeneralLinear.tangentMatrix (dimension n)
         (derivationComp (generatedCoordinateMap n hn R).hom
-          (generatedCorootVector n hn R (B := B) i)) =
+          (generatedCartanVector n hn R (B := B) i)) =
       Matrix.diagonal (fun a ↦ (basisWeight n a i : B)) := by
-  rw [generatedCorootVector_def, tangentMatrix_derivationComp_generatedCorootCocharacter,
+  rw [generatedCartanVector_def, tangentMatrix_derivationComp_generatedCorootCocharacter,
     LinearEquiv.apply_symm_apply]
   simp only [zsmul_eq_mul, mul_one]
 
-/-- The coordinate cocharacter differential is the normalized simple-coroot vector. -/
+/-- The coordinate cocharacter differential is the numbered Cartan vector. -/
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : Fin n) :
     derivationCompLieHom
         ((generatedWeightTorusCoordinateMap n hn R).hom.cocharacter
           (Finsupp.applyAddHom i).toMultiplicative)
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) =
-      generatedCorootVector n hn R (B := B) i := by
-  rw [derivationCompLieHom_apply, generatedCorootVector_def, generatedCorootCocharacter_def]
+      generatedCartanVector n hn R (B := B) i := by
+  rw [derivationCompLieHom_apply, generatedCartanVector_def, generatedCorootCocharacter_def]
 
 /-- The differential of the torus generator sends its coordinate tangent basis to the
-numbered simple-coroot vectors. -/
+numbered Cartan vectors. -/
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis (i : Fin n) :
     derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom
         (SplitTorus.tangentBasis (R := R) (B := B) i) =
-      generatedCorootVector n hn R (B := B) i := by
+      generatedCartanVector n hn R (B := B) i := by
   rw [SplitTorus.derivationCompLieHom_tangentBasis,
     derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter]
 
-/-- The toral tangent image is exactly the span of the numbered simple-coroot vectors. -/
+/-- The toral tangent image is exactly the span of the numbered Cartan vectors. -/
 theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_eq_span :
     LinearMap.range
         (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom).toLinearMap =
-      Submodule.span B (Set.range (generatedCorootVector n hn R (B := B))) := by
+      Submodule.span B (Set.range (generatedCartanVector n hn R (B := B))) := by
   simpa only [derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter n hn R
     (B := B)] using
     SplitTorus.range_derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom
 
-/-- The weight torus is a closed subgroup of the generated group: its coordinate map is
-surjective because the full-spin weights span the character lattice. -/
-theorem generatedWeightTorusCoordinateMap_surjective :
-    Function.Surjective (generatedWeightTorusCoordinateMap n hn R).hom := by
-  have h := (weightTorusToBaseChangeCoordinateMap_surjective n hn R).comp
-    (coordinateMap_surjective n hn R)
-  rw [← BialgHom.coe_comp, ← _root_.CommHopfAlgCat.hom_comp,
-    coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
-    ← generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap] at h
-  exact Function.Surjective.of_comp
-    (by simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
-
-/-- The weight-torus differential is injective over every commutative coefficient algebra. -/
-theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
-    (B : Type v) [CommRing B] [Algebra R B] :
-    Function.Injective
-      (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom) :=
-  derivationCompLieHom_injective_of_surjective _
-    (generatedWeightTorusCoordinateMap_surjective n hn R)
-
-/-- Simple-coroot differentials are independent over every commutative coefficient algebra,
-including in characteristic two, because the full-spin weights span the character lattice. -/
-theorem linearIndependent_generatedCorootVector :
-    LinearIndependent B (generatedCorootVector n hn R (B := B)) := by
+/-- Cartan vectors are independent over every commutative coefficient algebra, including in
+characteristic two, because the full-spin weights span the character lattice. -/
+theorem linearIndependent_generatedCartanVector :
+    LinearIndependent B (generatedCartanVector n hn R (B := B)) := by
   simpa only [derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter n hn R
     (B := B)] using
     SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
       (generatedWeightTorusCoordinateMap n hn R).hom
       (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective n hn R B)
 
-/-- The simple-coroot differentials form a basis of their span, the toral tangent image. -/
-def generatedCorootBasis :
+/-- The Cartan vectors form a basis of their span, the toral tangent image. -/
+def generatedCartanBasis :
     Module.Basis (Fin n) B
-      (Submodule.span B (Set.range (generatedCorootVector n hn R (B := B)))) :=
-  Module.Basis.span (linearIndependent_generatedCorootVector n hn R)
+      (Submodule.span B (Set.range (generatedCartanVector n hn R (B := B)))) :=
+  Module.Basis.span (linearIndependent_generatedCartanVector n hn R)
 
-/-- Including a coroot basis vector into the tangent algebra recovers its numbered vector. -/
+/-- Including a Cartan basis vector into the tangent algebra recovers its numbered vector. -/
 @[simp]
-theorem coe_generatedCorootBasis (i : Fin n) :
-    (generatedCorootBasis n hn R (B := B) i :
+theorem coe_generatedCartanBasis (i : Fin n) :
+    (generatedCartanBasis n hn R (B := B) i :
       Derivation R (generatedCoordinateHopfAlgebra n hn R)
         (Bialgebra.CounitAlgebra R (generatedCoordinateHopfAlgebra n hn R) B)) =
-      generatedCorootVector n hn R (B := B) i :=
-  Module.Basis.coe_span_apply (linearIndependent_generatedCorootVector n hn R) i
+      generatedCartanVector n hn R (B := B) i :=
+  Module.Basis.coe_span_apply (linearIndependent_generatedCartanVector n hn R) i
 
 end
 
