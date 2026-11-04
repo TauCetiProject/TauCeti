@@ -78,6 +78,7 @@ multiple `t` of the level prime to `a`.
 
 ## Main statements
 
+* `ZLattice.norm_gaussSumTwisted_le`: `‖G_L(a, c; m)‖ ≤ |L / cL|`.
 * `ZLattice.gaussSumTwisted_eq_of_modEq`, `ZLattice.gaussSum_eq_of_modEq`: the Gauss sums depend
   on `a` only modulo `c`.
 * `ZLattice.gaussSumTwisted_one`, `ZLattice.gaussSum_one`: `G_L(a, 1; m) = G_L(a, 1) = 1`.
@@ -164,6 +165,13 @@ theorem gaussTerm_mk (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L) (v : L) :
       cexp (2 * π * I * (((a * ‖(v : E)‖ ^ 2 / 2 + ⟪(v : E), (m : E)⟫) / c : ℝ) : ℂ)) :=
   (rfl)
 
+/-- The Gauss summand has absolute value `1`. -/
+@[simp]
+theorem norm_gaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
+    (y : L ⧸ ((c : ℝ) • L).submoduleOf L) : ‖gaussTerm L hL a c m y‖ = 1 := by
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [gaussTerm_mk, norm_exp_two_pi_mul_I_mul_ofReal]
+
 end GaussTerm
 
 /-! ### Gauss sums -/
@@ -190,6 +198,11 @@ theorem gaussSumTwisted_def (a : ℤ) (c : ℕ) [Fintype (L ⧸ ((c : ℝ) • L
 theorem gaussSum_def (a : ℤ) (c : ℕ) [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] :
     gaussSum L hL a c = ∑ y, gaussTerm L hL a c 0 y :=
   (rfl)
+
+/-- The twisted Gauss sum is bounded by the number of classes of `L / cL`. -/
+theorem norm_gaussSumTwisted_le (a : ℤ) (c : ℕ) [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
+    (m : dual L) : ‖gaussSumTwisted L hL a c m‖ ≤ Fintype.card (L ⧸ ((c : ℝ) • L).submoduleOf L) :=
+  (norm_sum_le _ _).trans_eq <| by simp
 
 /-- The twisted Gauss sum at `m = 0` is the Gauss sum. -/
 @[simp]
