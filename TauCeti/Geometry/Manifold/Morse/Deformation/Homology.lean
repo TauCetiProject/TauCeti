@@ -50,16 +50,7 @@ theorem isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff 
   obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
   have e : sublevelInclusion f a b hab = .inclusion (sublevel_mono f hab) := by ext; simp
   rw [e] at G
-  -- The identity of the pair is homotopic to the retraction, which factors through `{f ≤ a}`.
-  refine TopPair.isZero_singularHomology_of_homotopy (f := TopPair.ofInclusionMap
-      (X := TopCat.of M) (sublevel_mono f hab) (sublevel_mono f hab)
-      ((ContinuousMap.inclusion (sublevel_mono f hab)).comp r) fun x _ ↦ (r x).2)
-    ?_ (TopCat.ofHom r) (by ext x; exact (TopPair.ofInclusionMap_fst_apply
-      (hst := sublevel_mono f hab) (hst' := sublevel_mono f hab) _ _ x).symm) R n
-  rw [← TopPair.ofInclusionMap_id]
-  refine TopPair.ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
-  have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
-  rw [h]
-  exact hx
+  exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel (X := TopCat.of M)
+    (sublevel_mono f hab) r G R n
 
 end TauCeti

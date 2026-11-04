@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
-public import TauCeti.Geometry.Manifold.Morse.Deformation
+public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 public import TauCeti.Geometry.Manifold.Morse.Exhaustion
 import TauCeti.Data.Finset.Basic
 
@@ -19,12 +19,10 @@ import TauCeti.Data.Finset.Basic
 Let `f` be a Morse function on a boundaryless manifold `M`, and write `M_b = {f ≤ b}`. Crossing a
 single critical level attaches one cell for each critical point of the level, of dimension its
 index (`TauCeti.IsMorse.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le`),
-while across a band without critical points the sublevels deformation retract onto each other.
+while across a compact band without critical points the relative homology of `(M_b, M_a)` vanishes
+(`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
 This file assembles these steps along finitely many critical levels, and then along an exhaustion.
 
-* Across a compact band `f⁻¹[a, b]` without critical points the relative singular homology of
-  `(M_b, M_a)` vanishes in every degree
-  (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
 * If `a` and `b` are regular values, the band `f⁻¹[a, b]` is compact, and every critical point in
   it has index at most `d`, then `Hₙ(M_b, M_a)` vanishes for `n > d`
   (`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le`). The band
@@ -67,22 +65,6 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {a b : ℝ}
   {C : Type v} [Category.{w} C]
-
-/-- **A band without critical points carries no relative homology.** If the band `f⁻¹[a, b]` is
-compact and contains no critical point of the smooth function `f`, the relative singular homology
-of the sublevel pair `({f ≤ b}, {f ≤ a})` vanishes in every degree. -/
-theorem isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero [HasCoproducts.{u} C]
-    [Preadditive C] [CategoryWithHomology C] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a ≤ b)
-    (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) (R : C) (n : ℕ) :
-    IsZero ((sublevelPair f hab).singularHomology R n) := by
-  obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
-  have hincl : sublevelInclusion f a b hab = ContinuousMap.inclusion (sublevel_mono f hab) := by
-    ext
-    simp
-  rw [hincl] at G
-  exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel (X := TopCat.of M)
-    (sublevel_mono f hab) r G R n
 
 omit [T2Space M] in
 /-- Vanishing of the relative homology of the sublevel pairs over `[a, b]` and over `[b, c]`
