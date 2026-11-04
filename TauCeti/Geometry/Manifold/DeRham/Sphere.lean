@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.MayerVietoris
 public import TauCeti.Geometry.Manifold.DeRham.Punctured
 import TauCeti.AlgebraicTopology.Sphere.Zero
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.Analysis.Normed.Module.Connected

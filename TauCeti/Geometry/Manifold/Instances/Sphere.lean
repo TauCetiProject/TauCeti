@@ -59,8 +59,6 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 
 * `TauCeti.finrank_euclideanSpace_fin_succ_fact`: the dimension of `ℝⁿ⁺¹`, in the form the
   stereographic charts of its unit sphere take it.
-* `TauCeti.nonempty_sphere`: the unit sphere of an `(n + 1)`-dimensional real inner product space
-  is nonempty.
 * `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
   from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
@@ -155,13 +153,6 @@ end Stereographic
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-variable (n) in
-include n in
-/-- The unit sphere of an `(n + 1)`-dimensional real inner product space is nonempty. -/
-theorem nonempty_sphere : Nonempty (sphere (0 : E) 1) :=
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out (p := finrank ℝ E = n + 1))
-  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :

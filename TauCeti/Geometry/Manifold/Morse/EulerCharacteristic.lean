@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Algebra.Field.ULift
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!

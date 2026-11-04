@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
+public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
@@ -25,8 +26,9 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 `norm_pos_iff` and `norm_ne_zero_iff` respectively.
 
 The range formula identifies a positive real scaling of the unit sphere with the sphere
-of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
-centered at zero lie on the same line exactly when they are equal or antipodal.
+of that radius in a seminormed real vector space. The unit sphere of an `(n + 1)`-dimensional
+real normed space is nonempty (`TauCeti.nonempty_sphere`). Two points on a sphere of nonzero
+radius centered at zero lie on the same line exactly when they are equal or antipodal.
 
 The normalization lemmas compute the norm of `R⁻¹ • z` when `R ≥ 0` and characterize the unit
 norm conditions for `R⁻¹ • z` when `R > 0`.
@@ -122,6 +124,20 @@ theorem compl_singleton_inter_compl_singleton_neg_eq (p : Metric.sphere (0 : E) 
   simp [not_or]
 
 end Sphere
+
+section NonemptySphere
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (n : ℕ)
+  [Fact (Module.finrank ℝ E = n + 1)]
+
+include n in
+/-- The unit sphere of an `(n + 1)`-dimensional real normed space is nonempty. -/
+theorem nonempty_sphere : Nonempty (Metric.sphere (0 : E) 1) :=
+  have : Nontrivial E :=
+    Module.nontrivial_of_finrank_eq_succ (Fact.out (p := Module.finrank ℝ E = n + 1))
+  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+
+end NonemptySphere
 
 section Normalization
 
