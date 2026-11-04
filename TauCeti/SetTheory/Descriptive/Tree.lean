@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.SetTheory.Cardinal.Regular
 public import Mathlib.SetTheory.Descriptive.Tree
 public import Mathlib.SetTheory.Ordinal.Rank
+import Mathlib.Data.Fin.Tuple.Take
 import Mathlib.Topology.MetricSpace.PiNat
 import Mathlib.Topology.MetricSpace.Polish
 
@@ -360,16 +361,6 @@ theorem IsWellFounded.rank_lt_omega_one [Countable A] (hT : IsWellFounded T) : r
 
 /-! ### Boundedness for Baire-indexed and analytic families of well-founded trees -/
 
-/-- Shorter initial segments `List.ofFn` of a sequence `f : ℕ → A` are prefixes of longer ones. -/
-private theorem ofFn_prefix_of_le {n m : ℕ} (h : n ≤ m) (f : ℕ → A) :
-    List.ofFn (fun i : Fin n => f i) <+: List.ofFn (fun i : Fin m => f i) := by
-  induction m, h using Nat.le_induction with
-  | base => exact List.prefix_refl _
-  | succ m _ ih =>
-    refine ih.trans ⟨[f m], ?_⟩
-    rw [List.ofFn_succ', List.concat_eq_append]
-    simp
-
 /-- Unboundedness of subtree ranks at a node `u` across a Baire-space cylinder `PiNat.cylinder z n`.
 -/
 private def RankUnboundedOnCylinder (F : (ℕ → ℕ) → tree A) (z : ℕ → ℕ) (n : ℕ) (u : List A) :
@@ -486,7 +477,7 @@ theorem exists_rank_lt_omega_one_of_nat_nat [Countable A] (F : (ℕ → ℕ) →
   have hall (n : ℕ) : List.ofFn (fun i : Fin n => branch i) ∈ F zStar := by
     refine (hcl _).mem_of_tendsto htend ?_
     filter_upwards [eventually_ge_atTop n] with m hm
-    exact mem_of_prefix (ofFn_prefix_of_le hm branch) (hw_mem m)
+    exact Fin.ofFn_take_eq_take_ofFn hm (fun i : Fin m => branch i) ▸ take_mem ⟨_, hw_mem m⟩
   obtain ⟨n, hn⟩ := (hwf zStar).exists_notMem branch
   exact hn (hall n)
 
