@@ -80,21 +80,6 @@ namespace TauCeti
 
 section BorelHelpers
 
-/-- Every open set is measurable in `borel X`, without assuming an ambient `MeasurableSpace X`. -/
-private theorem isOpen_measurableSet_borel {X : Type*} [TopologicalSpace X] {s : Set X}
-    (hs : IsOpen s) : MeasurableSet[borel X] s :=
-  MeasurableSpace.measurableSet_generateFrom hs
-
-/-- Any continuous map is measurable between explicit `borel` σ-algebras, avoiding typeclass
-clashes when the codomain or domain already carries another `MeasurableSpace` instance. -/
-private theorem continuous_measurable_borel {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {f : X → Y} (hf : Continuous f) : @Measurable X Y (borel X) (borel Y) f := by
-  let _ : MeasurableSpace X := borel X
-  let _ : MeasurableSpace Y := borel Y
-  have : BorelSpace X := ⟨rfl⟩
-  have : BorelSpace Y := ⟨rfl⟩
-  exact hf.measurable
-
 /-- Construct a simple function on an abstract measurable space `Q` from a finite list of values
 `l : List β` and corresponding measurable sets `A : β → Set Q`. -/
 private noncomputable def liftSimpleList {Q β : Type*} [MeasurableSpace Q] (A : β → Set Q)
@@ -166,14 +151,12 @@ private theorem measure_mul_right_null_of_sigmaCompact (g : G) {s : Set G} :
     μ ((· * g) ⁻¹' s) = 0 ↔ μ s = 0 := by
   rcases eq_or_ne μ 0 with rfl | hμ0
   · simp
-  · have : μ.IsOpenPosMeasure := ⟨fun U hU ⟨x₀, hx₀⟩ hU0 ↦ hμ0 <| by
-      rw [← Measure.measure_univ_eq_zero, ← iUnion_compactCovering G]
-      refine measure_iUnion_null fun n ↦ ?_
-      obtain ⟨t, ht⟩ := (isCompact_compactCovering G n).elim_finite_subcover
-        (fun c : G ↦ ((x₀ * c⁻¹) * ·) ⁻¹' U) (fun c ↦ hU.preimage (continuous_const_mul _))
-        fun c _ ↦ mem_iUnion.mpr ⟨c, by simp [hx₀]⟩
-      refine measure_mono_null ht ((measure_biUnion_null_iff t.countable_toSet).mpr fun c _ ↦ ?_)
-      rw [measure_preimage_mul, hU0]⟩
+  · have ⟨n, hn⟩ : ∃ n, μ (compactCovering G n) ≠ 0 := by
+      by_contra! h
+      exact hμ0 (Measure.measure_univ_eq_zero.mp
+        (iUnion_compactCovering G ▸ measure_iUnion_null h))
+    have : μ.IsOpenPosMeasure :=
+      isOpenPosMeasure_of_mulLeftInvariant_of_compact _ (isCompact_compactCovering G n) hn
     have : μ.IsHaarMeasure := {}
     have hmap := (MeasurableEquiv.mulRight g).map_apply (μ := μ) s
     rw [MeasurableEquiv.coe_mulRight, Measure.map_right_mul_eq_modularCharacterFun_smul μ g,
@@ -191,12 +174,12 @@ private theorem measure_preimage_image_diff_eq_zero {K : Subgroup G} [K.Normal]
     μ ((QuotientGroup.mk : G → G ⧸ K) ⁻¹' ((QuotientGroup.mk : G → G ⧸ K) '' U \ A')) = 0 := by
   let π : G → G ⧸ K := QuotientGroup.mk
   have hB' : MeasurableSet[borel (G ⧸ K)] (π '' U) :=
-    isOpen_measurableSet_borel (QuotientGroup.isOpenMap_coe (N := K) U hU)
+    MeasurableSpace.measurableSet_generateFrom (QuotientGroup.isOpenMap_coe (N := K) U hU)
   let S : Set G := π ⁻¹' (π '' U \ A')
   have h_borelG : (‹MeasurableSpace G› : MeasurableSpace G) = borel G := BorelSpace.measurable_eq
   have hS_meas : MeasurableSet S := by
     rw [h_borelG]
-    exact continuous_measurable_borel (QuotientGroup.continuous_mk (N := K)) (hB'.diff hA')
+    exact (QuotientGroup.continuous_mk (N := K)).borel_measurable (hB'.diff hA')
   -- Every `K`-translate of `U` meets `S` inside a `K`-translate of the null set `U \ π ⁻¹' A'`.
   have htrans {k : G} (hk : k ∈ K) : μ (((· * k⁻¹) ⁻¹' U) ∩ S) = 0 := by
     refine measure_mono_null (fun x ⟨hxU, hxS⟩ ↦ ?_)
@@ -270,9 +253,10 @@ private theorem isQuotientSandwiched_of_isOpen_lt_top {U : Set G} (hU : IsOpen U
   let A' : Set (G ⧸ K) := ⋃ j : ℕ, {q : G ⧸ K | g j q < 1}
   let B' : Set (G ⧸ K) := π '' U
   have hA'_meas : MeasurableSet[borel (G ⧸ K)] A' :=
-    isOpen_measurableSet_borel (isOpen_iUnion fun j ↦ isOpen_lt (hg_cont j) continuous_const)
+    MeasurableSpace.measurableSet_generateFrom
+      (isOpen_iUnion fun j ↦ isOpen_lt (hg_cont j) continuous_const)
   have hB'_meas : MeasurableSet[borel (G ⧸ K)] B' :=
-    isOpen_measurableSet_borel (QuotientGroup.isOpenMap_coe (N := K) U hU)
+    MeasurableSpace.measurableSet_generateFrom (QuotientGroup.isOpenMap_coe (N := K) U hU)
   have hpreA' : π ⁻¹' A' ⊆ U := by
     rintro x hx
     obtain ⟨j, hj⟩ := mem_iUnion.mp hx
@@ -331,7 +315,7 @@ private theorem exists_forall_of_isQuotientSandwiched {ι : Type*} [Countable ι
   have hp_meas (i : ι) :
       @Measurable (G ⧸ K) (G ⧸ L i) (borel (G ⧸ K)) (borel (G ⧸ L i)) (p i) := by
     have := hL_norm i
-    exact continuous_measurable_borel (QuotientGroup.continuous_mapOfLE (hKL i))
+    exact (QuotientGroup.continuous_mapOfLE (hKL i)).borel_measurable
   have hp_mk (i : ι) : (p i : G ⧸ K → G ⧸ L i) ∘ (QuotientGroup.mk : G → G ⧸ K) =
       (QuotientGroup.mk : G → G ⧸ L i) := by
     have := hL_norm i

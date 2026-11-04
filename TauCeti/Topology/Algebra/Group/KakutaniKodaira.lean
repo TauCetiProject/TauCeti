@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Topology.Algebra.Group.Metrizable
+import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Topology.UniformSpace.Separation
 
 /-!
@@ -32,8 +33,6 @@ From this basic existence result we deduce two consequences:
 
 * `IsCompact.exists_nhds_one_conj_subset` / `IsCompact.exists_nhds_zero_conj_subset`:
   equicontinuity of conjugation over a compact set at the identity.
-* `IsCompact.exists_nhds_one_mul_mem_uniformity` / `IsCompact.exists_nhds_zero_add_mem_uniformity`:
-  uniform right equicontinuity of a continuous map into a uniform space over a compact set.
 * `QuotientGroup.instSigmaCompactSpace` / `QuotientAddGroup.instSigmaCompactSpace`:
   quotients of σ-compact topological groups are σ-compact.
 * `TauCeti.exists_compact_normal_subgroup_quotient_metrizable` /
@@ -77,28 +76,6 @@ theorem IsCompact.exists_nhds_one_conj_subset {G : Type*} [Group G] [Topological
     generalized_tube_lemma hC isCompact_singleton (isOpen_interior.preimage hφ) hsub
   refine ⟨B, hBo.mem_nhds (singleton_subset_iff.mp h1B), fun x hx y hy ↦ ?_⟩
   exact interior_subset (mem_preimage.mp (hAB (mk_mem_prod (hCA hx) hy)))
-
-/-- A continuous map `f` from a topological monoid into a uniform space is uniformly right
-equicontinuous over any compact set `C`: for every entourage `s ∈ 𝓤 Y` there is an identity
-neighbourhood `V` such that `(f (x * u), f x) ∈ s` for all `x ∈ C` and `u ∈ V`. -/
-@[to_additive /-- A continuous map `f` from a topological additive monoid into a uniform space is
-uniformly right equicontinuous over any compact set `C`: for every entourage `s ∈ 𝓤 Y` there is a
-zero neighbourhood `V` such that `(f (x + u), f x) ∈ s` for all `x ∈ C` and `u ∈ V`. -/]
-theorem IsCompact.exists_nhds_one_mul_mem_uniformity {G Y : Type*} [Monoid G] [TopologicalSpace G]
-    [ContinuousMul G] [UniformSpace Y] {C : Set G} (hC : IsCompact C) {f : G → Y}
-    (hf : Continuous f) {s : Set (Y × Y)} (hs : s ∈ 𝓤 Y) :
-    ∃ V ∈ 𝓝 (1 : G), ∀ x ∈ C, ∀ u ∈ V, (f (x * u), f x) ∈ s := by
-  obtain ⟨t, ⟨ht_mem, ht_open⟩, hts⟩ := uniformity_hasBasis_open.mem_iff.mp hs
-  let ψ : G × G → Y × Y := fun p ↦ (f (p.1 * p.2), f p.1)
-  have hψ : Continuous ψ := (hf.comp continuous_mul).prodMk (hf.comp continuous_fst)
-  have hsub : C ×ˢ ({1} : Set G) ⊆ ψ ⁻¹' t := by
-    rintro ⟨x, y⟩ ⟨_, hy⟩
-    simp only [mem_singleton_iff] at hy
-    simpa [ψ, hy] using refl_mem_uniformity ht_mem
-  obtain ⟨A, B, _, hBo, hCA, h1B, hAB⟩ :=
-    generalized_tube_lemma hC isCompact_singleton (ht_open.preimage hψ) hsub
-  refine ⟨B, hBo.mem_nhds (singleton_subset_iff.mp h1B), fun x hx u hu ↦ ?_⟩
-  exact hts (mem_preimage.mp (hAB (mk_mem_prod (hCA hx) hu)))
 
 /-- Any quotient of a σ-compact group by a subgroup is σ-compact. -/
 @[to_additive /-- Any quotient of a σ-compact additive group by an additive subgroup is
@@ -305,8 +282,12 @@ theorem exists_compact_normal_subgroup_factor_continuous {ι : Type*} [Countable
   have hW (p : ι × ℕ × ℕ) : ∃ W ∈ 𝓝 (1 : G), ∀ x ∈ compactCovering G p.2.1, ∀ z ∈ W,
       (f p.1 (x * z), f p.1 x) ∈ E p.1 p.2.2 := by
     let _ : UniformSpace (Y p.1) := u p.1
-    exact (isCompact_compactCovering G p.2.1).exists_nhds_one_mul_mem_uniformity (hf p.1)
+    obtain ⟨W, hW_mem, hW_ent⟩ := (isCompact_compactCovering G p.2.1).mem_uniformity_of_prod
+      (f := fun z x ↦ f p.1 (x * z)) (s := univ) (q := 1)
+      (((hf p.1).comp (continuous_snd.mul continuous_fst)).continuousOn) (mem_univ 1)
       ((hE p.1).mem p.2.2)
+    exact ⟨W, nhdsWithin_univ (1 : G) ▸ hW_mem,
+      fun x hx z hz ↦ by simpa only [mul_one] using hW_ent z hz x hx⟩
   choose W hW_mem hW_ent using hW
   obtain ⟨K, hK_norm, hK_cp, hK_cl, hK_sub, hK_cg, hK_met, hK_sc⟩ :=
     exists_compact_normal_subgroup_quotient_metrizable W hW_mem

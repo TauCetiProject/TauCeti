@@ -77,15 +77,6 @@ open scoped ENNReal Topology
 
 section QuotientBorelHelpers
 
-/-- A continuous map from an `OpensMeasurableSpace` into any topological space `Y` is measurable
-when `Y` is equipped explicitly with `borel Y`. -/
-private theorem continuous_measurable_borel {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {q : X → Y} (hq : Continuous q) :
-    @Measurable X Y ‹MeasurableSpace X› (borel Y) q := by
-  let _ : MeasurableSpace Y := borel Y
-  have : BorelSpace Y := ⟨rfl⟩
-  exact hq.measurable
-
 /-- On an abstract second-countable topological group `Q` equipped explicitly with `borel Q`,
 `(x ↦ (v x)⁻¹ * u x)` is measurable whenever `u` and `v` are `borel Q`-measurable. Taking `Q`
 without an ambient `MeasurableSpace` avoids the `QuotientGroup.measurableSpace` diamond on
@@ -133,7 +124,8 @@ theorem AEStronglyMeasurable.comp_inv_mul_prod {β : Type*} [TopologicalSpace β
     hf.exists_compact_normal_subgroup_quotient_eq_off_null
   let π : G → G ⧸ K := QuotientGroup.mk
   have hπ_meas : @Measurable G (G ⧸ K) ‹MeasurableSpace G› (borel (G ⧸ K)) π :=
-    continuous_measurable_borel (QuotientGroup.continuous_mk (N := K))
+    (QuotientGroup.continuous_mk (N := K)).borel_measurable.mono OpensMeasurableSpace.borel_le
+      le_rfl
   let Φ : G × G → G ⧸ K := fun p ↦ (π p.2)⁻¹ * π p.1
   have hΦ_meas : @Measurable (G × G) (G ⧸ K) inferInstance (borel (G ⧸ K)) Φ :=
     measurable_borel_inv_mul (hπ_meas.comp measurable_fst) (hπ_meas.comp measurable_snd)
@@ -165,7 +157,8 @@ theorem AEStronglyMeasurable.comp_mul_prod {β : Type*} [TopologicalSpace β]
     hf.exists_compact_normal_subgroup_quotient_eq_off_null
   let π : G → G ⧸ K := QuotientGroup.mk
   have hπ_meas : @Measurable G (G ⧸ K) ‹MeasurableSpace G› (borel (G ⧸ K)) π :=
-    continuous_measurable_borel (QuotientGroup.continuous_mk (N := K))
+    (QuotientGroup.continuous_mk (N := K)).borel_measurable.mono OpensMeasurableSpace.borel_le
+      le_rfl
   let Ψ : G × G → G ⧸ K := fun p ↦ π p.1 * π p.2
   have hΨ_meas : @Measurable (G × G) (G ⧸ K) inferInstance (borel (G ⧸ K)) Ψ :=
     measurable_borel_mul (hπ_meas.comp measurable_fst) (hπ_meas.comp measurable_snd)
@@ -345,13 +338,6 @@ theorem Integrable.smul_comp_inv_mul_prod {h : G → 𝕜} (hh : Integrable h μ
           ((hf.comp_mul_left y⁻¹).norm.const_mul _) (.of_forall fun _ ↦ norm_smul_le _ _)
     _ = ‖h y‖ * ∫ x, ‖f (y⁻¹ * x)‖ ∂μ := integral_const_mul _ _
     _ = ‖h y‖ * ∫ x, ‖f x‖ ∂μ := by rw [integral_mul_left_eq_self (fun x ↦ ‖f x‖) y⁻¹]
-
-/-- For integrable `h` and `f` on a σ-compact locally compact group, `y ↦ h y • f (y⁻¹ * x)` is
-`μ`-integrable for `μ`-almost every `x`. -/
-theorem Integrable.ae_integrable_smul_comp_inv_mul {h : G → 𝕜} (hh : Integrable h μ) {f : G → E}
-    (hf : Integrable f μ) :
-    ∀ᵐ x ∂μ, Integrable (fun y ↦ h y • f (y⁻¹ * x)) μ :=
-  (hh.smul_comp_inv_mul_prod hf).prod_right_ae
 
 /-- Pointwise convolution of two integrable functions on a σ-compact locally compact group is
 integrable. -/
