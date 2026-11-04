@@ -58,6 +58,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
+  nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
@@ -137,6 +139,15 @@ theorem fourier_neg_one_coe_apply (t : ℝ) :
     ring
   rw [fourier_coe_apply, this, Complex.exp_mul_I]
   simp [sub_eq_add_neg]
+
+/-- The Fourier monomials take values in the unit circle, so they vanish nowhere. -/
+theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 := by
+  rw [fourier_apply]
+  exact Circle.coe_ne_zero _
+
+/-- The monomial `fourier (-n)` is the pointwise inverse of `fourier n`. -/
+theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
+  rw [← fourier_add, neg_add_cancel, fourier_zero]
 
 /-- **The `n`-th Fourier monomial as a bundled additive character of the circle.** It is Mathlib's
 `AddCircle.toCircle_addChar` precomposed with multiplication by `n` and postcomposed with the
