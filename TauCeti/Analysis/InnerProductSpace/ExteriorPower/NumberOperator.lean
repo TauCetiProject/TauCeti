@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.LinearAlgebra.ExteriorPower.NumberOperator
 import Mathlib.Data.Nat.Choose.Cast
 
@@ -48,11 +49,10 @@ to its degree times its squared norm. -/
 theorem sum_norm_koszulDifferential_sq (n : ℕ) (x : ⋀[ℝ]^(n + 1) V) :
     ∑ i, ‖koszulDifferential (innerₗ V (b i)) n x‖ ^ 2 =
       (n + 1 : ℝ) * ‖x‖ ^ 2 := by
-  have hcoord (i : ι) : b.toBasis.coord i = innerₗ V (b i) :=
-    LinearMap.ext fun v ↦ (b.coe_toBasis_repr_apply v i).trans (b.repr_apply_apply v i)
   have h := congrArg (fun A : Module.End ℝ (⋀[ℝ]^(n + 1) V) ↦ ⟪A x, x⟫)
     (b.toBasis.sum_wedgeLeft_comp_koszulDifferential_coord n)
-  simpa only [LinearMap.sum_apply, LinearMap.comp_apply, b.coe_toBasis, hcoord,
+  simpa only [LinearMap.sum_apply, LinearMap.comp_apply, b.coe_toBasis,
+    fun i ↦ show b.toBasis.coord i = innerₗ V (b i) from b.toBasis_coord i,
     sum_inner, inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_self_eq_norm_sq,
     ← Nat.cast_smul_eq_nsmul ℝ, LinearMap.smul_apply, LinearMap.id_apply,
     real_inner_smul_left, Nat.cast_add, Nat.cast_one] using h
@@ -78,11 +78,10 @@ theorem sum_norm_koszulDifferential_koszulDifferential_sq [LinearOrder ι] (n : 
       ‖koszulDifferential (innerₗ V (b ij.1)) n
         (koszulDifferential (innerₗ V (b ij.2)) (n + 1) x)‖ ^ 2 =
       ((n + 2).choose 2 : ℝ) * ‖x‖ ^ 2 := by
-  have hcoord (i : ι) : b.toBasis.coord i = innerₗ V (b i) :=
-    LinearMap.ext fun v ↦ (b.coe_toBasis_repr_apply v i).trans (b.repr_apply_apply v i)
   have h := congrArg (fun A : Module.End ℝ (⋀[ℝ]^(n + 2) V) ↦ ⟪A x, x⟫)
     (b.toBasis.sum_wedgeLeft_wedgeLeft_koszulDifferential_coord n)
-  simpa only [LinearMap.sum_apply, LinearMap.comp_apply, b.coe_toBasis, hcoord,
+  simpa only [LinearMap.sum_apply, LinearMap.comp_apply, b.coe_toBasis,
+    fun i ↦ show b.toBasis.coord i = innerₗ V (b i) from b.toBasis_coord i,
     sum_inner, inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_self_eq_norm_sq,
     ← Nat.cast_smul_eq_nsmul ℝ, LinearMap.smul_apply, LinearMap.id_apply,
     real_inner_smul_left] using h
