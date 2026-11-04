@@ -75,6 +75,16 @@ theorem basisTw_repr_parabolicEigenSum (a : R) (w : W) :
     · simp
   · simp [hw, show ∀ v : cs.parabolic J, (v : W) ≠ w from fun v h ↦ hw (h ▸ v.property)]
 
+variable {cs J} in
+/-- The identity PBW coefficient recovers the scalar multiplying a parabolic weighted sum.
+Thus this parametrization of the line is injective over every coefficient ring. -/
+theorem smul_parabolicEigenSum_injective (a : R) :
+    Function.Injective (fun r : R => r • parabolicEigenSum (q := q) cs J a) := by
+  intro r s h
+  have hc := congrArg (fun x => (basisTw q cs).repr x 1) h
+  simpa only [map_smul, Finsupp.smul_apply, basisTw_repr_parabolicEigenSum,
+    Subgroup.one_mem, ite_true, cs.length_one, pow_zero, smul_eq_mul, mul_one] using hc
+
 /-- A parabolic weighted sum is nonzero over every nontrivial coefficient ring. -/
 theorem parabolicEigenSum_ne_zero [Nontrivial R] (a : R) :
     parabolicEigenSum (q := q) cs J a ≠ 0 := by
@@ -196,5 +206,26 @@ theorem parabolicEigenSum_neg_inv_mul_self [Fintype (cs.parabolic J)] :
       ((q : R) - ↑q⁻¹) * (-(↑q⁻¹ : R)) + 1 := by simp [sub_mul]
   rw [parabolicEigenSum_mul_self cs J ha]
   simp [pow_mul]
+
+/-- The full weighted sum has quasi-idempotence scalar indexed by the original Coxeter
+carrier, rather than by the full parabolic subgroup subtype. -/
+theorem parabolicEigenSum_univ_mul_self [Fintype W] {a : R}
+    (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1) :
+    parabolicEigenSum (q := q) cs Set.univ a * parabolicEigenSum cs Set.univ a =
+      (∑ w : W, a ^ (2 * cs.length w)) • parabolicEigenSum cs Set.univ a := by
+  let := Fintype.ofFinite (cs.parabolic Set.univ)
+  rw [parabolicEigenSum_mul_self cs Set.univ ha,
+    cs.sum_parabolic_univ (fun w => a ^ (2 * cs.length w))]
+
+/-- A unit full-sum normalization gives an idempotent without reindexing to the parabolic
+subgroup subtype. -/
+theorem isIdempotentElem_smul_parabolicEigenSum_univ [Fintype W] {a : R}
+    (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1)
+    (h : IsUnit (∑ w : W, a ^ (2 * cs.length w))) :
+    IsIdempotentElem ((↑h.unit⁻¹ : R) • parabolicEigenSum (q := q) cs Set.univ a) := by
+  let := Fintype.ofFinite (cs.parabolic Set.univ)
+  have hidem := isIdempotentElem_smul_parabolicEigenSum cs Set.univ ha
+  rw [cs.sum_parabolic_univ (fun w => a ^ (2 * cs.length w))] at hidem
+  exact hidem h
 
 end TauCeti.TypeAHeckeAlgebra
