@@ -115,21 +115,6 @@ private theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
   simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
   simp [algebraMap_int_eq]
 
-private theorem smeval_sum_single (s : Finset ℤ) (c : ℤ → ℂ) (w : ℂˣ) :
-    (∑ j ∈ s, AddMonoidAlgebra.single j (c j) : ℂ[T;T⁻¹]).smeval w =
-      ∑ j ∈ s, c j * (w : ℂ) ^ j := by
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, LaurentPolynomial.smeval_add,
-      LaurentPolynomial.smeval_single, ih, smul_eq_mul, Units.val_zpow_eq_zpow_val]
-
-private theorem coeff_sum_single_of_mem {s : Finset ℤ} {k : ℤ} (hk : k ∈ s) (c : ℤ → ℂ) :
-    (∑ j ∈ s, AddMonoidAlgebra.single j (c j) : ℂ[T;T⁻¹]).coeff k = c k := by
-  simp only [AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single]
-  rw [← Finsupp.lapply_apply (R := ℕ), map_sum]
-  simp [Finsupp.single_apply, hk]
-
 /-- **Linear independence of slash-invariant forms across weights.** When `Γ` has finite-index
 intersection with `SL₂(ℤ)`, the evaluation `evalDirectSum` into `ℍ → ℂ` is injective. -/
 theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
@@ -159,7 +144,9 @@ theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
       mul_right_cancel₀ z.im_ne_zero (by simpa using him)
     exact Nat.eq_of_mul_eq_mul_left hn (Nat.cast_injective hmul)
   have hd_root (m : ℕ) : p.smeval (d m) = 0 := by
-    rw [smeval_sum_single]
+    rw [← LaurentPolynomial.leval_apply (R := ℂ), map_sum]
+    simp only [LaurentPolynomial.leval_apply, LaurentPolynomial.smeval_single, smul_eq_mul,
+      Units.val_zpow_eq_zpow_val]
     have hslash (j : ℤ) : x j (γ m • z) = x j z * (d m : ℂ) ^ j := by
       have hact := slash_action_eqn (x j) (γ m) (hγ_mem m).1
       simpa [d, ModularForm.slash_def, UpperHalfPlane.σ,
@@ -179,9 +166,12 @@ theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
     (Set.infinite_range_of_injective hd_inj).mono <| by
       rintro _ ⟨m, rfl⟩
       exact hd_root m
+  have hp_coeff : p.coeff k = if k ∈ x.support then x k z else 0 := by
+    simp only [p, AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single,
+      Finsupp.finsetSum_apply, Finsupp.single_apply, Finset.sum_ite_eq']
+  have hk0 : p.coeff k = 0 := by simp [hp0]
   by_cases hkx : k ∈ x.support
-  · rw [← coeff_sum_single_of_mem hkx (x · z)]
-    exact (congrArg (fun q : ℂ[T;T⁻¹] ↦ q.coeff k) hp0).trans rfl
+  · simpa [hp_coeff, hkx] using hk0
   · simp [DFinsupp.notMem_support_iff.mp hkx]
 
 @[simp]
