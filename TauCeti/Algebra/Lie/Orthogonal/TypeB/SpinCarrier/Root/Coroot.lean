@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Root.Coordinates
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Root.Differential
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.WeightTorus
 
@@ -69,12 +70,7 @@ theorem corootCocharacter_eq_cocharacter_coroot_simpleIndex
             ((DynkinType.B (n + 1)).simpleIndex ht i))) := by
   rw [corootCocharacter_def]
   congr 1
-  apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin (n + 1) → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans ((DynkinType.B (n + 1)).coroot_simpleIndex ht i).symm
+  exact (cocharEquiv_symm_coroot_simpleIndex n ht i).symm
 
 /-- The coroot differential has diagonal entries equal to the spin weights paired with that
 simple coroot, multiplied by the multiplicative tangent parameter. -/
