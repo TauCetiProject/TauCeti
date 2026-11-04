@@ -314,14 +314,38 @@ theorem morleyTheory_model :
   let := morleyExpansion (A : Set (Σ n, L.BoundedFormulaω Empty n)) M
   refine ⟨fun σ hσ => ?_⟩
   obtain ⟨n, φ, hφ, hσ⟩ := (mem_morleyTheory_iff A).1 hσ
-  cases φ <;>
-    simp only [morleyAxioms, Set.mem_singleton_iff, Set.mem_range] at hσ
-  all_goals first | subst σ | obtain ⟨k, rfl⟩ := hσ
-  all_goals
-    rw [Sentence.realize_alls]
-    simp [BoundedFormulaInf.realize_equal,
-      BoundedFormulaInf.realize_rel]
-  all_goals grind
+  have h : M ⊨ morleyAxioms A φ hφ := by
+    cases φ with
+    | falsum =>
+      apply (model_morleyAxioms_falsum_iff A hφ).2
+      intro a
+      simp only [morleyExpansion_relMap_morleyRel, BoundedFormulaInf.realize_falsum,
+        not_false_eq_true]
+    | equal t₁ t₂ =>
+      exact (model_morleyAxioms_equal_iff A t₁ t₂ hφ).2 fun a =>
+        (morleyExpansion_relMap_morleyRel hφ a).trans BoundedFormulaInf.realize_equal
+    | rel R ts =>
+      exact (model_morleyAxioms_rel_iff A R ts hφ).2 fun a =>
+        (morleyExpansion_relMap_morleyRel hφ a).trans BoundedFormulaInf.realize_rel
+    | imp φ ψ =>
+      apply (model_morleyAxioms_imp_iff A φ ψ hφ).2
+      intro a
+      simp only [morleyExpansion_relMap_morleyRel, BoundedFormulaInf.realize_imp]
+    | all φ =>
+      apply (model_morleyAxioms_all_iff A φ hφ).2
+      intro a
+      simp only [morleyExpansion_relMap_morleyRel, BoundedFormulaInf.realize_all]
+    | iSup φs =>
+      apply (model_morleyAxioms_iSup_iff A φs hφ).2
+      intro k a hk
+      rw [morleyExpansion_relMap_morleyRel, BoundedFormulaInf.realize_iSup]
+      exact ⟨k, (morleyExpansion_relMap_morleyRel (A.iSup_mem hφ k) a).1 hk⟩
+    | iInf φs =>
+      apply (model_morleyAxioms_iInf_iff A φs hφ).2
+      intro k a ha
+      rw [morleyExpansion_relMap_morleyRel, BoundedFormulaInf.realize_iInf] at ha
+      exact (morleyExpansion_relMap_morleyRel (A.iInf_mem hφ k) a).2 (ha k)
+  exact h.realize_of_mem σ hσ
 
 omit [L.Structure M] in
 /-- Omitting a conjunction obstruction supplies the missing implication to the conjunction's
@@ -354,7 +378,7 @@ theorem omitsType_morleySupType_iff [S : (morleyize L A).Structure M] {n : ℕ}
   simp only [or_iff_not_imp_left, not_not]
 
 /-- The canonical expansion omits every obstruction type. -/
-theorem morleyExpansion_omits_morleyTypes
+theorem morleyExpansion_omitsType_of_mem_morleyTypes
     {p : Σ n, Set ((morleyize L A).BoundedFormula Empty n)} (hp : p ∈ morleyTypes A) :
     let := morleyExpansion (A : Set (Σ n, L.BoundedFormulaω Empty n)) M
     OmitsType M (BoundedFormula.toOmega '' p.2) := by
@@ -368,7 +392,7 @@ variable [S : (morleyize L A).Structure M]
 
 /-- In an expansion satisfying the Morley theory and omitting its obstruction types, every
 first-order name has the intended infinitary meaning. -/
-theorem realize_morleyAtom_of_model_omitting (hT : M ⊨ morleyTheory A)
+theorem realize_morleyAtom_of_model_morleyTheory_of_omitsType (hT : M ⊨ morleyTheory A)
     (hP : ∀ p ∈ morleyTypes A, OmitsType M (BoundedFormula.toOmega '' p.2)) :
     ∀ {n : ℕ} (φ : L.BoundedFormulaω Empty n) (hφ : ⟨n, φ⟩ ∈ A) (a : Fin n → M),
       (morleyAtom A φ hφ).Realize Empty.elim a ↔ φ.Realize Empty.elim a := by
@@ -433,10 +457,10 @@ theorem model_morleyTheory_and_omitsType_iff_eq_morleyExpansion :
     apply eq_morleyExpansion_of_model_definingTheory
     refine (model_definingTheory_iff S).2 fun φ hφ a => ?_
     exact (realize_morleyAtom A hφ a).symm.trans
-      (realize_morleyAtom_of_model_omitting A hT hP φ hφ a)
+      (realize_morleyAtom_of_model_morleyTheory_of_omitsType A hT hP φ hφ a)
   · intro h
     subst S
-    exact ⟨morleyTheory_model A, fun _ hp => morleyExpansion_omits_morleyTypes A hp⟩
+    exact ⟨morleyTheory_model A, fun _ hp => morleyExpansion_omitsType_of_mem_morleyTypes A hp⟩
 
 end Semantics
 
@@ -458,7 +482,7 @@ theorem realize_iff_exists_model_morleyTheory_omitsType {φ : L.Sentenceω} (hφ
     let := morleyExpansion (A : Set (Σ n, L.BoundedFormulaω Empty n)) M
     refine ⟨morleyExpansion (A : Set (Σ n, L.BoundedFormulaω Empty n)) M,
       inferInstance, Theory.model_insert_iff.2 ⟨?_, morleyTheory_model A⟩,
-      fun _ hp => morleyExpansion_omits_morleyTypes A hp⟩
+      fun _ hp => morleyExpansion_omitsType_of_mem_morleyTypes A hp⟩
     rw [Sentence.realize_alls]
     intro a
     simpa only [realize_morleyAtom, morleyExpansion_relMap_morleyRel,
@@ -469,7 +493,8 @@ theorem realize_iff_exists_model_morleyTheory_omitsType {φ : L.Sentenceω} (hφ
     obtain ⟨ha, hT⟩ := Theory.model_insert_iff.1 hS
     rw [Sentence.realize_alls] at ha
     rw [SentenceInf.realize_def, FormulaInf.realize_def]
-    exact (realize_morleyAtom_of_model_omitting A hT hP φ hφ default).1 (ha default)
+    exact (realize_morleyAtom_of_model_morleyTheory_of_omitsType A hT hP φ hφ default).1
+      (ha default)
 
 end Sentence
 
