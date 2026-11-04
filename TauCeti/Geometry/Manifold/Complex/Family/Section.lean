@@ -42,7 +42,7 @@ specializations:
   `TauCeti.ComplexStructureFamily.isPseudoholomorphic_graph_iff`: characterization of
   pseudoholomorphic sections via `sectionTerm`.
 * `TauCeti.ComplexStructureFamily.sectionTerm_eq_two_smul_complexAntilinearPart_add`: decomposition
-  into `2 • ∂̄ σ + α ∘ i`.
+  into `2 • ∂bar σ + α ∘ i`.
 * `TauCeti.ComplexStructureFamily.isPseudoholomorphicAt_graph_const_iff`: a constant section
   `x ↦ (x, v₀)` is pseudoholomorphic at `b` iff `α(b, v₀) = 0`.
 
@@ -77,16 +77,12 @@ def sectionTerm (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V) (j : B × V 
   fderiv ℝ σ b a + j (b, σ b) (fderiv ℝ σ b (i a)) + α (b, σ b) (i a)
 
 theorem sectionTermWithin_def (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V)
-    (σ : B → V) (s : Set B) (b a : B) :
-    sectionTermWithin i α j σ s b a =
-      fderivWithin ℝ σ s b a + j (b, σ b) (fderivWithin ℝ σ s b (i a)) + α (b, σ b) (i a) :=
-  (rfl)
+    (σ : B → V) (s : Set B) (b a : B) : sectionTermWithin i α j σ s b a =
+      fderivWithin ℝ σ s b a + j (b, σ b) (fderivWithin ℝ σ s b (i a)) + α (b, σ b) (i a) := (rfl)
 
 theorem sectionTerm_def (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V)
-    (σ : B → V) (b a : B) :
-    sectionTerm i α j σ b a =
-      fderiv ℝ σ b a + j (b, σ b) (fderiv ℝ σ b (i a)) + α (b, σ b) (i a) :=
-  (rfl)
+    (σ : B → V) (b a : B) : sectionTerm i α j σ b a =
+      fderiv ℝ σ b a + j (b, σ b) (fderiv ℝ σ b (i a)) + α (b, σ b) (i a) := (rfl)
 
 @[simp]
 theorem sectionTermWithin_univ (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V)
@@ -96,22 +92,18 @@ theorem sectionTermWithin_univ (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] 
 
 theorem _root_.Filter.EventuallyEq.sectionTerm_eq {σ₁ σ₂ : B → V} {b : B}
     (hσ : σ₁ =ᶠ[𝓝 b] σ₂) (i : B →L[ℝ] B) (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V)
-    (a : B) :
-    sectionTerm i α j σ₁ b a = sectionTerm i α j σ₂ b a := by
+    (a : B) : sectionTerm i α j σ₁ b a = sectionTerm i α j σ₂ b a := by
   simp only [sectionTerm_def, hσ.fderiv_eq, hσ.self_of_nhds]
 
-/-- Express `sectionTerm` via the complex-antilinear part `∂̄` of `fderiv ℝ σ b`:
-`sectionTerm i α j σ b a = 2 • ∂̄(dσ_b) a + α(b, σ b)(i a)`. -/
+/-- Express `sectionTerm` via the complex-antilinear part `∂bar` of `fderiv ℝ σ b`:
+`sectionTerm i α j σ b a = 2 • ∂bar(dσ_b) a + α(b, σ b)(i a)`. -/
 theorem sectionTerm_eq_two_smul_complexAntilinearPart_add (i : B →L[ℝ] B)
     (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V) (σ : B → V) (b a : B) :
     sectionTerm i α j σ b a =
       (2 : ℝ) • complexAntilinearPart i.toLinearMap (j (b, σ b)).toLinearMap
-          (fderiv ℝ σ b).toLinearMap a +
-        α (b, σ b) (i a) := by
+          (fderiv ℝ σ b).toLinearMap a + α (b, σ b) (i a) := by
   rw [sectionTerm_def, complexAntilinearPart_apply]
-  simp only [ContinuousLinearMap.coe_coe]
-  rw [smul_smul]
-  norm_num
+  simp only [ContinuousLinearMap.coe_coe]; rw [smul_smul]; norm_num
 
 /-! ### Equivalence with pseudoholomorphy of the section graph -/
 
@@ -123,21 +115,15 @@ private theorem graph_intertwine_iff {i : B →L[ℝ] B} (hi : ∀ a, i (i a) = 
     (∀ a : B, (i a, L (i a)) = blockEndomorphism i α j p (a, L a)) ↔
       ∀ a : B, L a + j p (L (i a)) + α p (i a) = 0 := by
   simp only [blockEndomorphism_apply, Prod.mk.injEq, true_and]
-  constructor
-  · intro h a
-    have hia := h (i a)
-    rw [hi a, map_neg] at hia
-    have hsum : L a + (j p (L (i a)) + α p (i a)) = L a + (-L a) := by
-      rw [add_comm (j p _) (α p _), ← hia]
-    simpa [add_assoc] using hsum
-  · intro h a
-    have hnia := h (-i a)
-    have hi_nia : i (-i a) = a := by rw [map_neg, hi a, neg_neg]
-    rw [map_neg, hi_nia] at hnia
+  refine ⟨fun h a ↦ ?_, fun h a ↦ ?_⟩
+  · have hia := h (i a); rw [hi a, map_neg] at hia
+    simpa [add_assoc] using (show L a + (j p (L (i a)) + α p (i a)) = L a + (-L a) by
+      rw [add_comm (j p _) (α p _), ← hia])
+  · have hnia := h (-i a)
+    rw [map_neg, map_neg, hi a, neg_neg] at hnia
     exact eq_of_sub_eq_zero (by
-      calc L (i a) - (α p a + j p (L a))
-          = -((-L (i a)) + j p (L a) + α p a) := by abel
-        _ = 0 := by rw [hnia, neg_zero])
+      rw [show L (i a) - (α p a + j p (L a)) = -((-L (i a)) + j p (L a) + α p a) by abel,
+        hnia, neg_zero])
 
 /-- Within a set `s` of unique differentiability at `b`, the graph `x ↦ (x, σ x)` is
 `(i, J)`-pseudoholomorphic within `s` at `b` if and only if `σ` is differentiable within `s` at `b`
@@ -156,39 +142,29 @@ theorem isPseudoholomorphicWithinAt_graph_iff
   constructor
   · intro h
     obtain ⟨u', hu', hlin⟩ := (isJHolomorphicWithinAt_iff _ _ _ _ _).1 h
-    have hfst : HasFDerivWithinAt (fun x : B ↦ x)
-        ((ContinuousLinearMap.fst ℝ B V).comp u') s b :=
-      (ContinuousLinearMap.fst ℝ B V).hasFDerivAt.comp_hasFDerivWithinAt b hu'
-    have hsnd : HasFDerivWithinAt σ
-        ((ContinuousLinearMap.snd ℝ B V).comp u') s b :=
+    have hsnd : HasFDerivWithinAt σ ((ContinuousLinearMap.snd ℝ B V).comp u') s b :=
       (ContinuousLinearMap.snd ℝ B V).hasFDerivAt.comp_hasFDerivWithinAt b hu'
     have hu1 : (ContinuousLinearMap.fst ℝ B V).comp u' = ContinuousLinearMap.id ℝ B :=
-      hs.eq hfst (hasFDerivWithinAt_id b s)
-    have hu2 : (ContinuousLinearMap.snd ℝ B V).comp u' = fderivWithin ℝ σ s b :=
-      (hsnd.fderivWithin hs).symm
+      hs.eq ((ContinuousLinearMap.fst ℝ B V).hasFDerivAt.comp_hasFDerivWithinAt b hu')
+        (hasFDerivWithinAt_id b s)
     have hu_eq : u' = (ContinuousLinearMap.id ℝ B).prod (fderivWithin ℝ σ s b) := by
-      ext a <;> [exact congrArg (fun L : B →L[ℝ] B ↦ L a) hu1;
-        exact congrArg (fun L : B →L[ℝ] V ↦ L a) hu2]
+      ext a <;> [exact congrArg (· a) hu1; exact congrArg (· a) (hsnd.fderivWithin hs).symm]
     refine ⟨hsnd.differentiableWithinAt, ?_⟩
     simp only [sectionTermWithin_def]
-    rw [← graph_intertwine_iff hi α j (b, σ b) (fderivWithin ℝ σ s b)]
-    intro a
+    refine (graph_intertwine_iff hi α j (b, σ b) (fderivWithin ℝ σ s b)).1 fun a ↦ ?_
     have ha := (isComplexLinearMap_iff_apply _ _ _).1 hlin a
     simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
       ContinuousLinearMap.coe_coe] at ha
-    -- Unfold model-space `TangentSpace` coercions so `const_toEndomorphism_apply` and `hJ` apply.
     change u' ((SmoothAlmostComplexStructure.const i hi).toEndomorphism b a) =
       (J.toEndomorphism (b, σ b) : (B × V) →L[ℝ] B × V) (u' a) at ha
-    rw [SmoothAlmostComplexStructure.const_toEndomorphism_apply, hJ, hu_eq] at ha
-    exact ha
+    rwa [SmoothAlmostComplexStructure.const_toEndomorphism_apply, hJ, hu_eq] at ha
   · rintro ⟨hσ, hsec⟩
     refine (isJHolomorphicWithinAt_iff _ _ _ _ _).2
       ⟨(ContinuousLinearMap.id ℝ B).prod (fderivWithin ℝ σ s b),
-        (hasFDerivWithinAt_id b s).prodMk hσ.hasFDerivWithinAt, ?_⟩
-    refine (isComplexLinearMap_iff_apply _ _ _).2 fun a ↦ ?_
+        (hasFDerivWithinAt_id b s).prodMk hσ.hasFDerivWithinAt,
+        (isComplexLinearMap_iff_apply _ _ _).2 fun a ↦ ?_⟩
     simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
       ContinuousLinearMap.coe_coe]
-    -- Unfold model-space `TangentSpace` coercions so `const_toEndomorphism_apply` and `hJ` apply.
     change ((ContinuousLinearMap.id ℝ B).prod (fderivWithin ℝ σ s b))
         ((SmoothAlmostComplexStructure.const i hi).toEndomorphism b a) =
       (J.toEndomorphism (b, σ b) : (B × V) →L[ℝ] B × V)
@@ -222,15 +198,12 @@ theorem isPseudoholomorphicOn_graph_iff
     IsPseudoholomorphicOn (SmoothAlmostComplexStructure.const i hi) J (fun x ↦ (x, σ x)) s ↔
       DifferentiableOn ℝ σ s ∧ ∀ b ∈ s, ∀ a, sectionTermWithin i α j σ s b a = 0 := by
   rw [isPseudoholomorphicOn_iff, DifferentiableOn]
-  constructor
-  · intro h
-    refine ⟨fun b hb ↦ ((isPseudoholomorphicWithinAt_graph_iff J i hi α j (hs b hb)
+  exact ⟨fun h ↦ ⟨fun b hb ↦ ((isPseudoholomorphicWithinAt_graph_iff J i hi α j (hs b hb)
         (hJ b hb)).1 (h b hb)).1,
       fun b hb ↦ ((isPseudoholomorphicWithinAt_graph_iff J i hi α j (hs b hb)
-        (hJ b hb)).1 (h b hb)).2⟩
-  · rintro ⟨hσ, hsec⟩ b hb
-    exact (isPseudoholomorphicWithinAt_graph_iff J i hi α j (hs b hb) (hJ b hb)).2
-      ⟨hσ b hb, hsec b hb⟩
+        (hJ b hb)).1 (h b hb)).2⟩,
+    fun ⟨hσ, hsec⟩ b hb ↦ (isPseudoholomorphicWithinAt_graph_iff J i hi α j (hs b hb)
+      (hJ b hb)).2 ⟨hσ b hb, hsec b hb⟩⟩
 
 /-- Global characterization: `x ↦ (x, σ x)` is `(i, J)`-pseudoholomorphic if and only if `σ` is
 differentiable everywhere and `sectionTerm i α j σ b a = 0` for all `b, a`. -/
@@ -242,13 +215,8 @@ theorem isPseudoholomorphic_graph_iff
       blockEndomorphism i α j (b, σ b)) :
     IsPseudoholomorphic (SmoothAlmostComplexStructure.const i hi) J (fun x ↦ (x, σ x)) ↔
       Differentiable ℝ σ ∧ ∀ b a, sectionTerm i α j σ b a = 0 := by
-  rw [isPseudoholomorphic_iff, Differentiable]
-  constructor
-  · intro h
-    exact ⟨fun b ↦ ((isPseudoholomorphicAt_graph_iff J i hi α j (hJ b)).1 (h b)).1,
-      fun b ↦ ((isPseudoholomorphicAt_graph_iff J i hi α j (hJ b)).1 (h b)).2⟩
-  · rintro ⟨hσ, hsec⟩ b
-    exact (isPseudoholomorphicAt_graph_iff J i hi α j (hJ b)).2 ⟨hσ b, hsec b⟩
+  rw [isPseudoholomorphic_iff, Differentiable, ← forall_and]
+  exact forall_congr' fun b ↦ isPseudoholomorphicAt_graph_iff J i hi α j (hJ b)
 
 /-- Specialization of `isPseudoholomorphicAt_graph_iff` when the base `B` is a complex normed space
 equipped with `SmoothAlmostComplexStructure.ofComplexManifold B B`. -/
@@ -262,20 +230,16 @@ theorem isPseudoholomorphicAt_ofComplexManifold_graph_iff
         (fun x ↦ (x, σ x)) b ↔
       DifferentiableAt ℝ σ b ∧
         ∀ a, sectionTerm (Complex.I • ContinuousLinearMap.id ℝ C) α j σ b a = 0 := by
-  have hi : ∀ a : C, (Complex.I • ContinuousLinearMap.id ℝ C)
-      ((Complex.I • ContinuousLinearMap.id ℝ C) a) = -a := fun a ↦ by
-    simp [smul_smul, Complex.I_mul_I]
+  have hi (a : C) : (Complex.I • ContinuousLinearMap.id ℝ C)
+      ((Complex.I • ContinuousLinearMap.id ℝ C) a) = -a := by simp [smul_smul, Complex.I_mul_I]
   have heq : SmoothAlmostComplexStructure.ofComplexManifold C C =
       SmoothAlmostComplexStructure.const (Complex.I • ContinuousLinearMap.id ℝ C) hi := by
-    apply SmoothAlmostComplexStructure.toEndomorphism_injective
-    ext x v
+    apply SmoothAlmostComplexStructure.toEndomorphism_injective; ext x v
     let v' : C := v
-    exact (congrArg (fun L : C →L[ℝ] C ↦ L v')
+    exact (congrArg (· v')
       (SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold (E := C) x)).trans
-      (congrArg (fun L : C →L[ℝ] C ↦ L v')
-        (SmoothAlmostComplexStructure.const_toEndomorphism_apply _ hi x)).symm
-  rw [heq]
-  exact isPseudoholomorphicAt_graph_iff J _ hi α j hJ
+      (congrArg (· v') (SmoothAlmostComplexStructure.const_toEndomorphism_apply _ hi x)).symm
+  rw [heq]; exact isPseudoholomorphicAt_graph_iff J _ hi α j hJ
 
 /-! ### Split families and constant sections -/
 
@@ -294,9 +258,7 @@ theorem isPseudoholomorphicAt_graph_iff_isComplexLinear_of_connection_eq_zero
         IsComplexLinear i.toLinearMap (j (b, σ b)).toLinearMap (fderiv ℝ σ b).toLinearMap := by
   rw [isPseudoholomorphicAt_graph_iff J i hi α j hJ]
   refine and_congr_right fun _ ↦ ?_
-  have hJj : (j (b, σ b)).toLinearMap ∘ₗ (j (b, σ b)).toLinearMap = -LinearMap.id :=
-    LinearMap.ext hj
-  rw [isComplexLinear_iff_complexAntilinearPart_eq_zero hJj _, LinearMap.ext_iff]
+  rw [isComplexLinear_iff_complexAntilinearPart_eq_zero (LinearMap.ext hj) _, LinearMap.ext_iff]
   refine forall_congr' fun a ↦ ?_
   rw [sectionTerm_eq_two_smul_complexAntilinearPart_add, hα, zero_apply,
     add_zero, LinearMap.zero_apply, smul_eq_zero, or_iff_right (two_ne_zero' ℝ)]
@@ -320,13 +282,7 @@ theorem isPseudoholomorphicAt_graph_const_iff
       α (b, v₀) = 0 := by
   rw [isPseudoholomorphicAt_graph_iff J i hi α j hJ]
   simp only [differentiableAt_const, true_and, sectionTerm_const]
-  constructor
-  · intro h
-    ext a
-    have ha := h (-i a)
-    have hi_nia : i (-i a) = a := by rw [map_neg, hi a, neg_neg]
-    rwa [hi_nia] at ha
-  · intro h a
-    simp [h]
+  exact ⟨fun h ↦ ContinuousLinearMap.ext fun a ↦ by simpa [hi a] using h (-i a),
+    fun h a ↦ by simp [h]⟩
 
 end TauCeti.ComplexStructureFamily

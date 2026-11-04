@@ -82,67 +82,55 @@ def lieDerivEndomorphism (V : E → E) (A : E → E →L[𝕜] E) (x : E) : E �
   fderiv 𝕜 A x (V x) + (A x).comp (fderiv 𝕜 V x) - (fderiv 𝕜 V x).comp (A x)
 
 theorem lieDerivEndomorphismWithin_def (V : E → E) (A : E → E →L[𝕜] E) (s : Set E) (x : E) :
-    lieDerivEndomorphismWithin V A s x =
-      fderivWithin 𝕜 A s x (V x) +
-        (A x).comp (fderivWithin 𝕜 V s x) - (fderivWithin 𝕜 V s x).comp (A x) :=
-  (rfl)
+    lieDerivEndomorphismWithin V A s x = fderivWithin 𝕜 A s x (V x) +
+      (A x).comp (fderivWithin 𝕜 V s x) - (fderivWithin 𝕜 V s x).comp (A x) := (rfl)
 
 theorem lieDerivEndomorphism_def (V : E → E) (A : E → E →L[𝕜] E) (x : E) :
     lieDerivEndomorphism V A x =
-      fderiv 𝕜 A x (V x) + (A x).comp (fderiv 𝕜 V x) - (fderiv 𝕜 V x).comp (A x) :=
-  (rfl)
+      fderiv 𝕜 A x (V x) + (A x).comp (fderiv 𝕜 V x) - (fderiv 𝕜 V x).comp (A x) := (rfl)
 
 @[simp]
 theorem lieDerivEndomorphismWithin_univ (V : E → E) (A : E → E →L[𝕜] E) :
     lieDerivEndomorphismWithin V A univ = lieDerivEndomorphism V A := by
-  ext x w
-  simp [lieDerivEndomorphismWithin_def, lieDerivEndomorphism_def]
+  ext x w; simp [lieDerivEndomorphismWithin_def, lieDerivEndomorphism_def]
 
 /-- Pointwise evaluation of `lieDerivEndomorphismWithin` on a vector `w`. -/
 theorem lieDerivEndomorphismWithin_apply (V : E → E) (A : E → E →L[𝕜] E) (s : Set E) (x w : E) :
-    lieDerivEndomorphismWithin V A s x w =
-      fderivWithin 𝕜 A s x (V x) w +
-        A x (fderivWithin 𝕜 V s x w) - fderivWithin 𝕜 V s x (A x w) :=
-  (rfl)
+    lieDerivEndomorphismWithin V A s x w = fderivWithin 𝕜 A s x (V x) w +
+      A x (fderivWithin 𝕜 V s x w) - fderivWithin 𝕜 V s x (A x w) := (rfl)
 
 /-- Pointwise evaluation of `lieDerivEndomorphism` on a vector `w`. -/
 theorem lieDerivEndomorphism_apply (V : E → E) (A : E → E →L[𝕜] E) (x w : E) :
     lieDerivEndomorphism V A x w =
-      fderiv 𝕜 A x (V x) w + A x (fderiv 𝕜 V x w) - fderiv 𝕜 V x (A x w) :=
-  (rfl)
+      fderiv 𝕜 A x (V x) w + A x (fderiv 𝕜 V x w) - fderiv 𝕜 V x (A x w) := (rfl)
 
 /-! ### Algebraic properties and locality -/
 
 @[simp]
 theorem lieDerivEndomorphismWithin_zero (V : E → E) (s : Set E) (x : E) :
     lieDerivEndomorphismWithin V (0 : E → E →L[𝕜] E) s x = 0 := by
-  ext w
-  simp [lieDerivEndomorphismWithin_apply]
+  ext w; simp [lieDerivEndomorphismWithin_apply]
 
 @[simp]
 theorem lieDerivEndomorphism_zero (V : E → E) :
     lieDerivEndomorphism V (0 : E → E →L[𝕜] E) = 0 := by
-  rw [← lieDerivEndomorphismWithin_univ]
-  exact funext (lieDerivEndomorphismWithin_zero V univ)
+  rw [← lieDerivEndomorphismWithin_univ]; exact funext (lieDerivEndomorphismWithin_zero V univ)
 
 @[simp]
 theorem lieDerivEndomorphismWithin_zero_left (A : E → E →L[𝕜] E) (s : Set E) (x : E) :
     lieDerivEndomorphismWithin (0 : E → E) A s x = 0 := by
-  ext w
-  simp [lieDerivEndomorphismWithin_apply]
+  ext w; simp [lieDerivEndomorphismWithin_apply]
 
 @[simp]
 theorem lieDerivEndomorphism_zero_left (A : E → E →L[𝕜] E) :
     lieDerivEndomorphism (0 : E → E) A = 0 := by
-  rw [← lieDerivEndomorphismWithin_univ]
-  exact funext (lieDerivEndomorphismWithin_zero_left A univ)
+  rw [← lieDerivEndomorphismWithin_univ]; exact funext (lieDerivEndomorphismWithin_zero_left A univ)
 
 /-- The Lie derivative of a constant endomorphism field `A₀` is the commutator `[A₀, DV]`. -/
 theorem lieDerivEndomorphismWithin_const (V : E → E) (A₀ : E →L[𝕜] E) (s : Set E) (x : E) :
     lieDerivEndomorphismWithin V (fun _ ↦ A₀) s x =
       A₀.comp (fderivWithin 𝕜 V s x) - (fderivWithin 𝕜 V s x).comp A₀ := by
-  ext w
-  simp [lieDerivEndomorphismWithin_apply]
+  ext w; simp [lieDerivEndomorphismWithin_apply]
 
 /-- The Lie derivative of a constant endomorphism field `A₀` is the commutator `[A₀, DV]`. -/
 theorem lieDerivEndomorphism_const (V : E → E) (A₀ : E →L[𝕜] E) (x : E) :
@@ -153,14 +141,12 @@ theorem lieDerivEndomorphism_const (V : E → E) (A₀ : E →L[𝕜] E) (x : E)
 @[simp]
 theorem lieDerivEndomorphismWithin_const_id (V : E → E) (s : Set E) (x : E) :
     lieDerivEndomorphismWithin V (fun _ ↦ ContinuousLinearMap.id 𝕜 E) s x = 0 := by
-  ext w
-  simp [lieDerivEndomorphismWithin_const]
+  ext w; simp [lieDerivEndomorphismWithin_const]
 
 @[simp]
 theorem lieDerivEndomorphism_const_id (V : E → E) (x : E) :
     lieDerivEndomorphism V (fun _ ↦ ContinuousLinearMap.id 𝕜 E) x = 0 := by
-  ext w
-  simp [lieDerivEndomorphism_const]
+  ext w; simp [lieDerivEndomorphism_const]
 
 theorem lieDerivEndomorphismWithin_add (hs : UniqueDiffWithinAt 𝕜 s x)
     (hA : DifferentiableWithinAt 𝕜 A s x) (hB : DifferentiableWithinAt 𝕜 B s x) :
@@ -181,18 +167,14 @@ theorem lieDerivEndomorphism_add (hA : DifferentiableAt 𝕜 A x) (hB : Differen
 theorem lieDerivEndomorphismWithin_neg (V : E → E) (A : E → E →L[𝕜] E)
     (hs : UniqueDiffWithinAt 𝕜 s x) :
     lieDerivEndomorphismWithin V (-A) s x = -lieDerivEndomorphismWithin V A s x := by
-  ext w
-  rw [lieDerivEndomorphismWithin_apply, fderivWithin_neg hs]
-  simp only [Pi.neg_apply, neg_apply, map_neg, lieDerivEndomorphismWithin_apply]
-  abel
+  ext w; rw [lieDerivEndomorphismWithin_apply, fderivWithin_neg hs]
+  simp only [Pi.neg_apply, neg_apply, map_neg, lieDerivEndomorphismWithin_apply]; abel
 
 @[simp]
 theorem lieDerivEndomorphism_neg (V : E → E) (A : E → E →L[𝕜] E) :
     lieDerivEndomorphism V (-A) = -lieDerivEndomorphism V A := by
   ext x w
-  simpa only [lieDerivEndomorphismWithin_univ, Pi.neg_apply, neg_apply] using
-    congrArg (fun L : E →L[𝕜] E ↦ L w)
-      (lieDerivEndomorphismWithin_neg V A (x := x) uniqueDiffWithinAt_univ)
+  simp only [lieDerivEndomorphism_apply, fderiv_neg, Pi.neg_apply, neg_apply, map_neg]; abel
 
 theorem lieDerivEndomorphismWithin_sub (hs : UniqueDiffWithinAt 𝕜 s x)
     (hA : DifferentiableWithinAt 𝕜 A s x) (hB : DifferentiableWithinAt 𝕜 B s x) :
@@ -212,32 +194,25 @@ theorem lieDerivEndomorphism_sub (hA : DifferentiableAt 𝕜 A x) (hB : Differen
 theorem lieDerivEndomorphismWithin_smul (c : 𝕜) (A : E → E →L[𝕜] E)
     (hs : UniqueDiffWithinAt 𝕜 s x) :
     lieDerivEndomorphismWithin V (c • A) s x = c • lieDerivEndomorphismWithin V A s x := by
-  ext w
-  rw [lieDerivEndomorphismWithin_apply, fderivWithin_const_smul_field (f := A) c hs]
+  ext w; rw [lieDerivEndomorphismWithin_apply, fderivWithin_const_smul_field (f := A) c hs]
   simp [lieDerivEndomorphismWithin_apply, smul_sub, smul_add]
 
 @[simp]
 theorem lieDerivEndomorphism_smul (c : 𝕜) (A : E → E →L[𝕜] E) :
     lieDerivEndomorphism V (c • A) = c • lieDerivEndomorphism V A := by
-  ext x w
-  simpa only [lieDerivEndomorphismWithin_univ, Pi.smul_apply] using
-    congrArg (fun L : E →L[𝕜] E ↦ L w)
-      (lieDerivEndomorphismWithin_smul (V := V) (x := x) c A uniqueDiffWithinAt_univ)
+  ext x w; rw [lieDerivEndomorphism_apply, fderiv_const_smul_field (f := A) c]
+  simp [lieDerivEndomorphism_apply, smul_sub, smul_add]
 
 theorem lieDerivEndomorphism_add_left (hU : DifferentiableAt 𝕜 U x)
     (hV : DifferentiableAt 𝕜 V x) :
     lieDerivEndomorphism (U + V) A x =
       lieDerivEndomorphism U A x + lieDerivEndomorphism V A x := by
   ext w
-  simp only [lieDerivEndomorphism_apply, fderiv_add hU hV, Pi.add_apply,
-    add_apply, map_add]
-  abel
+  simp only [lieDerivEndomorphism_apply, fderiv_add hU hV, Pi.add_apply, add_apply, map_add]; abel
 
 theorem lieDerivEndomorphism_neg_left (V : E → E) (A : E → E →L[𝕜] E) (x : E) :
     lieDerivEndomorphism (-V) A x = -lieDerivEndomorphism V A x := by
-  ext w
-  simp only [lieDerivEndomorphism_apply, fderiv_neg, Pi.neg_apply, neg_apply, map_neg]
-  abel
+  ext w; simp only [lieDerivEndomorphism_apply, fderiv_neg, Pi.neg_apply, neg_apply, map_neg]; abel
 
 theorem lieDerivEndomorphism_sub_left (hU : DifferentiableAt 𝕜 U x)
     (hV : DifferentiableAt 𝕜 V x) :
@@ -291,10 +266,7 @@ theorem lieDerivEndomorphismWithin_apply_vectorField (hs : UniqueDiffWithinAt �
     (hA : DifferentiableWithinAt 𝕜 A s x) (hW : DifferentiableWithinAt 𝕜 W s x) :
     lieDerivEndomorphismWithin V A s x (W x) =
       lieBracketWithin 𝕜 V (fun y ↦ A y (W y)) s x - A x (lieBracketWithin 𝕜 V W s x) := by
-  have hd : fderivWithin 𝕜 (fun y ↦ A y (W y)) s x =
-      (A x).comp (fderivWithin 𝕜 W s x) + (fderivWithin 𝕜 A s x).flip (W x) :=
-    fderivWithin_clm_apply hs hA hW
-  simp only [lieBracketWithin_eq, hd, lieDerivEndomorphismWithin_apply,
+  simp only [lieBracketWithin_eq, fderivWithin_clm_apply hs hA hW, lieDerivEndomorphismWithin_apply,
     add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply, map_sub]
   abel
 
@@ -322,13 +294,12 @@ theorem lieDerivEndomorphismWithin_comp (hs : UniqueDiffWithinAt 𝕜 s x)
     lieDerivEndomorphismWithin V (fun y ↦ (A y).comp (B y)) s x =
       (lieDerivEndomorphismWithin V A s x).comp (B x) +
         (A x).comp (lieDerivEndomorphismWithin V B s x) := by
-  have hd : fderivWithin 𝕜 (fun y ↦ (A y).comp (B y)) s x (V x) =
-      (A x).comp (fderivWithin 𝕜 B s x (V x)) + (fderivWithin 𝕜 A s x (V x)).comp (B x) := by
-    have h := (hA.hasFDerivWithinAt.clm_comp hB.hasFDerivWithinAt).fderivWithin hs
-    exact congrArg (fun D ↦ D (V x)) h
+  have hd := congrArg (· (V x))
+    ((hA.hasFDerivWithinAt.clm_comp hB.hasFDerivWithinAt).fderivWithin hs)
   ext w
   simp only [lieDerivEndomorphismWithin_def, hd, add_apply, sub_apply,
-    ContinuousLinearMap.comp_apply, map_add, map_sub]
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.flip_apply, map_add, map_sub]
   abel
 
 /-- **Derivation rule** on composition: `L_V (A ∘ B) = (L_V A) ∘ B + A ∘ (L_V B)`. -/
@@ -360,9 +331,8 @@ theorem lieDerivEndomorphism_lieBracket {n : ℕ∞ω} (hn : minSmoothness 𝕜 
       lieDerivEndomorphism U (lieDerivEndomorphism V A) x -
         lieDerivEndomorphism V (lieDerivEndomorphism U A) x := by
   have h1n : (1 : ℕ∞ω) ≤ n := (one_le_two.trans le_minSmoothness).trans hn
-  have h2n : (2 : ℕ∞ω) ≤ n := le_minSmoothness.trans hn
-  have h11 : (1 + 1 : ℕ∞ω) = 2 := by norm_cast
-  have h11n : (1 + 1 : ℕ∞ω) ≤ n := h11.trans_le h2n
+  have h11n : (1 + 1 : ℕ∞ω) ≤ n := (by norm_cast : (1 + 1 : ℕ∞ω) = 2).trans_le
+    (le_minSmoothness.trans hn)
   have hAx : DifferentiableAt 𝕜 A x := (hA.of_le h1n).differentiableAt one_ne_zero
   have hA_ev : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 A y :=
     ((hA.of_le h1n).eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
@@ -370,62 +340,33 @@ theorem lieDerivEndomorphism_lieBracket {n : ℕ∞ω} (hn : minSmoothness 𝕜 
       DifferentiableAt 𝕜 (lieDerivEndomorphism Z A) x :=
     (contDiffAt_lieDerivEndomorphism hZ hA h11n).differentiableAt one_ne_zero
   ext w
-  -- Evaluate both sides on `fun _ ↦ w` and reduce via the bracket Leibniz identity
-  -- `[U, [V, ·]] - [V, [U, ·]] = [[U, V], ·]`.
   have hc : ContDiffAt 𝕜 n (fun _ : E ↦ w) x := contDiffAt_const
-  have hAw : ContDiffAt 𝕜 n (fun y ↦ A y w) x := hA.clm_apply hc
-  have hbrZ (Z : E → E) :
-      lieBracket 𝕜 Z (fun y ↦ A y w) =ᶠ[𝓝 x]
-        ((fun y ↦ lieDerivEndomorphism Z A y w) +
-          fun y ↦ A y (lieBracket 𝕜 Z (fun _ ↦ w) y)) :=
+  have hbrZ (Z : E → E) : lieBracket 𝕜 Z (fun y ↦ A y w) =ᶠ[𝓝 x]
+      ((fun y ↦ lieDerivEndomorphism Z A y w) + fun y ↦ A y (lieBracket 𝕜 Z (fun _ ↦ w) y)) :=
     hA_ev.mono fun y hy ↦ by
-      simp only [Pi.add_apply]
-      rw [lieDerivEndomorphism_apply_eq_lieBracket hy w, sub_add_cancel]
+      simp only [Pi.add_apply, lieDerivEndomorphism_apply_eq_lieBracket hy w, sub_add_cancel]
   have hZ_diff (Z : E → E) (hZ : ContDiffAt 𝕜 n Z x) :
       DifferentiableAt 𝕜 (lieBracket 𝕜 Z (fun _ ↦ w)) x := by
-    have heq : lieBracket 𝕜 Z (fun _ ↦ w) = fun y ↦ -(fderiv 𝕜 Z y w) := by
-      ext y
-      simp [lieBracket_eq]
-    rw [heq]
+    rw [show lieBracket 𝕜 Z (fun _ ↦ w) = fun y ↦ -(fderiv 𝕜 Z y w) by ext y; simp [lieBracket_eq]]
     exact (((hZ.fderiv_right h11n).clm_apply contDiffAt_const).differentiableAt one_ne_zero).neg
-  have hUV_Aw : lieBracket 𝕜 U (lieBracket 𝕜 V (fun y ↦ A y w)) x =
-      lieDerivEndomorphism U (lieDerivEndomorphism V A) x w +
-        lieDerivEndomorphism V A x (lieBracket 𝕜 U (fun _ ↦ w) x) +
-        lieDerivEndomorphism U A x (lieBracket 𝕜 V (fun _ ↦ w) x) +
-        A x (lieBracket 𝕜 U (lieBracket 𝕜 V (fun _ ↦ w)) x) := by
-    rw [(Filter.EventuallyEq.refl (𝓝 x) U).lieBracket_vectorField_eq (hbrZ V),
-      lieBracket_add_right ((hLA V hV).clm_apply (differentiableAt_const w))
-        (hAx.clm_apply (hZ_diff V hV))]
-    have h1 := lieDerivEndomorphism_apply_eq_lieBracket (V := U) (hLA V hV) w
-    have h2 := lieDerivEndomorphism_apply_vectorField (V := U) hAx (hZ_diff V hV)
-    rw [eq_add_of_sub_eq h1.symm, eq_add_of_sub_eq h2.symm]
+  have hstep {Y Z : E → E} (hZ : ContDiffAt 𝕜 n Z x) :
+      lieBracket 𝕜 Y (lieBracket 𝕜 Z (fun y ↦ A y w)) x =
+        lieDerivEndomorphism Y (lieDerivEndomorphism Z A) x w +
+          lieDerivEndomorphism Z A x (lieBracket 𝕜 Y (fun _ ↦ w) x) +
+          lieDerivEndomorphism Y A x (lieBracket 𝕜 Z (fun _ ↦ w) x) +
+          A x (lieBracket 𝕜 Y (lieBracket 𝕜 Z (fun _ ↦ w)) x) := by
+    rw [(Filter.EventuallyEq.refl (𝓝 x) Y).lieBracket_vectorField_eq (hbrZ Z),
+      lieBracket_add_right ((hLA Z hZ).clm_apply (differentiableAt_const w))
+        (hAx.clm_apply (hZ_diff Z hZ)),
+      eq_add_of_sub_eq (lieDerivEndomorphism_apply_eq_lieBracket (V := Y) (hLA Z hZ) w).symm,
+      eq_add_of_sub_eq (lieDerivEndomorphism_apply_vectorField (V := Y) hAx (hZ_diff Z hZ)).symm]
     abel
-  have hVU_Aw : lieBracket 𝕜 V (lieBracket 𝕜 U (fun y ↦ A y w)) x =
-      lieDerivEndomorphism V (lieDerivEndomorphism U A) x w +
-        lieDerivEndomorphism U A x (lieBracket 𝕜 V (fun _ ↦ w) x) +
-        lieDerivEndomorphism V A x (lieBracket 𝕜 U (fun _ ↦ w) x) +
-        A x (lieBracket 𝕜 V (lieBracket 𝕜 U (fun _ ↦ w)) x) := by
-    rw [(Filter.EventuallyEq.refl (𝓝 x) V).lieBracket_vectorField_eq (hbrZ U),
-      lieBracket_add_right ((hLA U hU).clm_apply (differentiableAt_const w))
-        (hAx.clm_apply (hZ_diff U hU))]
-    have h1 := lieDerivEndomorphism_apply_eq_lieBracket (V := V) (hLA U hU) w
-    have h2 := lieDerivEndomorphism_apply_vectorField (V := V) hAx (hZ_diff U hU)
-    rw [eq_add_of_sub_eq h1.symm, eq_add_of_sub_eq h2.symm]
-    abel
-  have hJ_Aw := VectorField.leibniz_identity_lieBracket hn hU hV hAw
-  have hJ_c := VectorField.leibniz_identity_lieBracket hn hU hV hc
-  have hLHS := lieDerivEndomorphism_apply_eq_lieBracket (V := lieBracket 𝕜 U V) hAx w
-  have hA_Jc : A x (lieBracket 𝕜 (lieBracket 𝕜 U V) (fun _ ↦ w) x) =
-      A x (lieBracket 𝕜 U (lieBracket 𝕜 V (fun _ ↦ w)) x) -
-        A x (lieBracket 𝕜 V (lieBracket 𝕜 U (fun _ ↦ w)) x) := by
-    rw [← map_sub]
-    exact congrArg (A x) (eq_sub_of_add_eq hJ_c.symm)
-  have hAw_sub : lieBracket 𝕜 (lieBracket 𝕜 U V) (fun y ↦ A y w) x =
-      lieBracket 𝕜 U (lieBracket 𝕜 V (fun y ↦ A y w)) x -
-        lieBracket 𝕜 V (lieBracket 𝕜 U (fun y ↦ A y w)) x :=
-    eq_sub_of_add_eq hJ_Aw.symm
+  have hJ_Aw := eq_sub_of_add_eq
+    (VectorField.leibniz_identity_lieBracket hn hU hV (hA.clm_apply hc)).symm
+  have hJ_c := eq_sub_of_add_eq (VectorField.leibniz_identity_lieBracket hn hU hV hc).symm
   simp only [sub_apply]
-  rw [hLHS, hAw_sub, hUV_Aw, hVU_Aw, hA_Jc]
+  rw [lieDerivEndomorphism_apply_eq_lieBracket (V := lieBracket 𝕜 U V) hAx w,
+    hJ_Aw, hJ_c, hstep hV, hstep hU, map_sub]
   abel
 
 /-- **Source-bracket commutator identity**: for the opposite bracket
@@ -436,10 +377,9 @@ theorem lieDerivEndomorphism_fderiv_sub_fderiv {n : ℕ∞ω} (hn : minSmoothnes
     lieDerivEndomorphism (fun y ↦ fderiv 𝕜 U y (V y) - fderiv 𝕜 V y (U y)) A x =
       lieDerivEndomorphism V (lieDerivEndomorphism U A) x -
         lieDerivEndomorphism U (lieDerivEndomorphism V A) x := by
-  have hneg : (fun y ↦ fderiv 𝕜 U y (V y) - fderiv 𝕜 V y (U y)) = -lieBracket 𝕜 U V := by
-    ext y
-    simp [lieBracket_eq]
-  rw [hneg, lieDerivEndomorphism_neg_left, lieDerivEndomorphism_lieBracket hn hU hV hA, neg_sub]
+  rw [show (fun y ↦ fderiv 𝕜 U y (V y) - fderiv 𝕜 V y (U y)) = -lieBracket 𝕜 U V by
+      ext y; simp [lieBracket_eq],
+    lieDerivEndomorphism_neg_left, lieDerivEndomorphism_lieBracket hn hU hV hA, neg_sub]
 
 /-! ### Nijenhuis–Lie-derivative identities -/
 

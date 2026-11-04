@@ -136,18 +136,16 @@ vector `v` and its image `J v` span the module. -/
 theorem span_pair_eq_top_of_finrank_eq_two (J : AlmostComplexStructure V)
     (hV : Module.finrank ℝ V = 2) {v : V} (hv : v ≠ 0) :
     Submodule.span ℝ {v, J v} = ⊤ := by
-  have hspan := (J.linearIndependent_pair hv).span_eq_top_of_card_eq_finrank
-    (by simpa using hV.symm)
-  simpa [Matrix.range_cons_cons_empty, Set.pair_comm] using hspan
+  simpa [Matrix.range_cons_cons_empty, Set.pair_comm] using
+    (J.linearIndependent_pair hv).span_eq_top_of_card_eq_finrank (by simpa using hV.symm)
 
 /-- On a finite-dimensional real module of dimension at most two carrying an almost complex
 structure `J`, every nonzero vector `v` and its image `J v` span the module. -/
 theorem span_pair_eq_top_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)
     (hV : Module.finrank ℝ V ≤ 2) {v : V} (hv : v ≠ 0) :
-    Submodule.span ℝ {v, J v} = ⊤ := by
-  have hle : 2 ≤ Module.finrank ℝ V := by
-    simpa using (J.linearIndependent_pair hv).fintype_card_le_finrank
-  exact J.span_pair_eq_top_of_finrank_eq_two (le_antisymm hV hle) hv
+    Submodule.span ℝ {v, J v} = ⊤ :=
+  J.span_pair_eq_top_of_finrank_eq_two
+    (hV.antisymm (by simpa using (J.linearIndependent_pair hv).fintype_card_le_finrank)) hv
 
 /-- On a finite-dimensional real module of dimension at most two carrying an almost complex
 structure `J`, any bilinear map vanishing on `(v, v)` and `(v, J v)` for every `v` vanishes
@@ -159,11 +157,8 @@ theorem bilin_eq_zero_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostCom
   ext v w
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  · have hw : w ∈ Submodule.span ℝ {v, J v} := by
-      rw [J.span_pair_eq_top_of_finrank_le_two hV hv]
-      trivial
-    rw [Submodule.mem_span_pair] at hw
-    rcases hw with ⟨a, b, rfl⟩
+  · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1
+      ((J.span_pair_eq_top_of_finrank_le_two hV hv).symm ▸ Submodule.mem_top (x := w))
     simp [hself v, hJ v]
 
 /-- On a two-dimensional real module carrying an almost complex structure `J`, any bilinear map
@@ -171,9 +166,9 @@ vanishing on `(v, v)` and `(v, J v)` for every `v` vanishes identically. -/
 theorem bilin_eq_zero_of_finrank_eq_two (J : AlmostComplexStructure V)
     (hV : Module.finrank ℝ V = 2) {W : Type*} [AddCommGroup W] [Module ℝ W]
     {B : V →ₗ[ℝ] V →ₗ[ℝ] W} (hself : ∀ v, B v v = 0) (hJ : ∀ v, B v (J v) = 0) :
-    B = 0 := by
-  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
-  exact J.bilin_eq_zero_of_finrank_le_two hV.le hself hJ
+    B = 0 :=
+  have := Module.finite_of_finrank_eq_succ hV
+  J.bilin_eq_zero_of_finrank_le_two hV.le hself hJ
 
 end AlmostComplexStructure
 

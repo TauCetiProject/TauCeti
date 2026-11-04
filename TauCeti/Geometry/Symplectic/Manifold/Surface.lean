@@ -94,12 +94,9 @@ theorem nijenhuis_eq_zero_of_finrank_le_two [FiniteDimensional ℝ E]
     (J : SmoothAlmostComplexStructure I M) (hE : Module.finrank ℝ E ≤ 2) :
     J.nijenhuis = 0 := by
   ext x v w
-  -- `TangentSpace I x` is the model space `E` by definition.
-  have hx : Module.finrank ℝ (TangentSpace I x) ≤ 2 := hE
   have hB : (J.nijenhuis x).toLinearMap₁₂ = 0 :=
-    (J.almostComplexStructureAt x).bilin_eq_zero_of_finrank_le_two hx
-      (fun u ↦ J.nijenhuis_self u)
-      (fun u ↦ by simp)
+    (J.almostComplexStructureAt x).bilin_eq_zero_of_finrank_le_two
+      (hE : Module.finrank ℝ (TangentSpace I x) ≤ 2) (fun u ↦ J.nijenhuis_self u) (by simp)
   exact LinearMap.congr_fun₂ hB v w
 
 /-- **Every almost complex structure on a surface has vanishing Nijenhuis tensor.** -/
