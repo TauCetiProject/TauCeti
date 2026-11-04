@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # The Riesz isomorphism and the positive dual metric
@@ -55,6 +56,17 @@ theorem continuousLinearMapOfBilin_innerSL {E : Type*} [NormedAddCommGroup E]
     continuousLinearMapOfBilin (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = 1 := by
   ext v
   exact ext_inner_right ℝ fun w ↦ by simp
+
+/-- The Riesz operator depends smoothly on a bounded real bilinear form on a Hilbert space.
+No finite-dimensionality or positivity is required. -/
+theorem contDiff_continuousLinearMapOfBilin {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} :
+    ContDiff ℝ n (continuousLinearMapOfBilin : (E →L[ℝ] E →L[ℝ] ℝ) → E →L[ℝ] E) := by
+  -- The Riesz operator is composition with the fixed inverse Riesz map.
+  unfold continuousLinearMapOfBilin
+  exact (ContinuousLinearMap.compL ℝ E (StrongDual ℝ E) E
+    (toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap).contDiff
+      (𝕜 := ℝ) (E := E →L[ℝ] StrongDual ℝ E) (F := E →L[ℝ] E)
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
