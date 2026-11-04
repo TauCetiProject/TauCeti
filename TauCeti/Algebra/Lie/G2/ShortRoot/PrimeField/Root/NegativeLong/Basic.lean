@@ -43,25 +43,30 @@ private def rankOneWord (i : Fin 2) : points (ZMod 3) :=
     rootSubgroupPoints (.inl i) (ZMod 3) (Multiplicative.ofAdd (-1)) *
       rootSubgroupPoints (.inr i) (ZMod 3) (Multiplicative.ofAdd 1)
 
-private def conjugator (i : Fin 2) : points (ZMod 3) :=
+/-- The explicit product of rank-one root words transporting the negative simple long root
+to `-(3α₁ + α₂)` at index zero and `-(3α₁ + 2α₂)` at index one. -/
+def negativeLongConjugator (i : Fin 2) : points (ZMod 3) :=
   if i = 0 then rankOneWord 0 else rankOneWord 1 * rankOneWord 0
 
 /-- The tangent vector at `-(3α₁ + α₂)` (index zero) or `-(3α₁ + 2α₂)` (index one),
 obtained by conjugating the negative simple long-root vector by explicit rank-one root words. -/
 def negativeLongRootVector (i : Fin 2) :
     Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra) :=
-  conjugateTangent (conjugator i) (rootVector (.inr 1))
+  conjugateTangent (negativeLongConjugator i) (rootVector (.inr 1))
 
-/-- The negative long-root vectors are conjugates of the negative simple long-root vector
-by the indicated products of rank-one root words. -/
-theorem negativeLongRootVector_eq_conjugateTangent (i : Fin 2) :
+/-- The vector is obtained by the same explicit conjugator as its root subgroup. -/
+theorem negativeLongRootVector_def (i : Fin 2) :
+    negativeLongRootVector i =
+      conjugateTangent (negativeLongConjugator i) (rootVector (.inr 1)) := (rfl)
+
+/-- The conjugators as explicit products of numbered root points. -/
+theorem negativeLongConjugator_def (i : Fin 2) :
     let w := fun j : Fin 2 =>
       rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1) *
         rootSubgroupPoints (.inl j) (ZMod 3) (Multiplicative.ofAdd (-1)) *
           rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1)
-    negativeLongRootVector i =
-      conjugateTangent (if i = 0 then w 0 else w 1 * w 0) (rootVector (.inr 1)) := by
-  simp only [negativeLongRootVector, conjugator, rankOneWord]
+    negativeLongConjugator i = (if i = 0 then w 0 else w 1 * w 0) := by
+  simp only [negativeLongConjugator, rankOneWord]
 
 /-- The two negative nonsimple long roots, in fundamental-weight coordinates. -/
 def negativeLongRootWeight (i : Fin 2) : Fin 2 → ℤ :=
@@ -105,7 +110,7 @@ theorem tangentMatrix_negativeLongRootVector (i : Fin 2) :
       if i = 0 then Matrix.single 4 0 (-1) + Matrix.single 6 2 1
       else Matrix.single 5 0 (-1) + Matrix.single 6 1 (-1) := by
   rw [negativeLongRootVector, tangentMatrix_conjugateTangent, tangentMatrix_rootVector]
-  unfold conjugator
+  unfold negativeLongConjugator
   split_ifs <;>
     simp only [rankOneWord,
       Subgroup.coe_mul, Units.val_mul, mul_inv_rev,
