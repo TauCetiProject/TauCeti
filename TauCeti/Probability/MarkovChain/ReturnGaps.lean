@@ -94,7 +94,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- For any realization of a recurrent chain, the sequence of return gaps has the
 infinite product of the excursion-length-plus-one law. -/
-theorem returnGaps_markovChainLaw
+theorem returnGap_infinitePi
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw (Measure.dirac a) κ) P)
     (ha : markovChainLaw (Measure.dirac a) κ
       {x | hittingAfter (fun n x => x n) {a} 1 x ≠ ⊤} = 1) :
@@ -108,7 +108,7 @@ theorem returnGaps_markovChainLaw
 
 /-- In any realization, the cast of each return gap has precisely the positive
 first-return law, with infinity retained in that law's codomain. -/
-theorem natCast_returnGap_markovChainLaw
+theorem natCast_returnGap_map_hittingAfter
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw (Measure.dirac a) κ) P)
     (ha : markovChainLaw (Measure.dirac a) κ
       {x | hittingAfter (fun n x => x n) {a} 1 x ≠ ⊤} = 1) (k : ℕ) :
