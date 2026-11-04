@@ -142,10 +142,6 @@ protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
     mk I x = mk I y ↔ x - y ∈ I := by
   rw [← sub_eq_zero, ← map_sub, eq_zero_iff_mem]
 
-theorem mk_eq_mk_iff_sub_mem {I : TwoSidedIdeal A} (x y : A) :
-    mk I x = mk I y ↔ x - y ∈ I :=
-  Quotient.eq
-
 @[simp]
 theorem ker_mk (I : TwoSidedIdeal A) : TwoSidedIdeal.ker (mk I) = I := by
   ext x

@@ -532,7 +532,7 @@ noncomputable def quotientKerEquivRange : A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[�
         obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) y
         rw [TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk,
           TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk] at hxy
-        rw [TwoSidedIdeal.Quotient.mk_eq_mk_iff_sub_mem, TwoSidedIdeal.mem_ker, map_sub,
+        rw [TwoSidedIdeal.Quotient.eq, TwoSidedIdeal.mem_ker, map_sub,
           sub_eq_zero]
         exact congrArg Subtype.val hxy,
      fun ⟨_, a, ha⟩ => ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a,
@@ -560,7 +560,7 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₐ[ℂ] B} (hφ : 
         obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) y
         rw [TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk,
           TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk] at hxy
-        rw [TwoSidedIdeal.Quotient.mk_eq_mk_iff_sub_mem, TwoSidedIdeal.mem_ker, map_sub,
+        rw [TwoSidedIdeal.Quotient.eq, TwoSidedIdeal.mem_ker, map_sub,
           sub_eq_zero]
         exact hxy,
      fun b => by
