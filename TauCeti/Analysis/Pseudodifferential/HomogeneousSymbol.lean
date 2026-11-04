@@ -30,7 +30,8 @@ The file develops:
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
-  `m - |β|`, together with their product rule for `HomogeneousSymbol.comp`;
+  `m - |β|` after transport along `HomogeneousSymbol.castDegree`, together with their product
+  rule for `HomogeneousSymbol.comp`;
 * the growth bound `HomogeneousSymbol.exists_norm_coefficient_le`: on a compact set of positions,
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖` by
@@ -191,6 +192,31 @@ instance : Module ℂ (HomogeneousSymbol X E V W m) :=
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
+/-! ### Changing the degree -/
+
+/-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
+degrees `m' + m - 1` and `m' - 1 + m`, which are equal but not definitionally so. -/
+def castDegree (h : m = m') (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E V W m' where
+  coefficient := a.coefficient
+  zero_covector := a.zero_covector
+  contDiffOn_coefficient := a.contDiffOn_coefficient
+  homogeneous := h ▸ a.homogeneous
+
+@[simp]
+theorem coefficient_castDegree (h : m = m') (a : HomogeneousSymbol X E V W m) :
+    (a.castDegree h).coefficient = a.coefficient :=
+  (rfl)
+
+@[simp]
+theorem castDegree_rfl (a : HomogeneousSymbol X E V W m) : a.castDegree rfl = a :=
+  (rfl)
+
+@[simp]
+theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
+    (a : HomogeneousSymbol X E V W m) :
+    (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
+  (rfl)
+
 /-! ### Composition -/
 
 /-- The pointwise composition of homogeneous symbols of degrees `m'` and `m` is a homogeneous
@@ -231,6 +257,26 @@ theorem comp_zero (b : HomogeneousSymbol X E W U m') :
 theorem zero_comp (a : HomogeneousSymbol X E V W m) :
     (0 : HomogeneousSymbol X E W U m').comp a = 0 := by
   ext1; funext p; simp
+
+@[simp]
+theorem comp_neg (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    b.comp (-a) = -b.comp a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem neg_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (-b).comp a = -b.comp a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem comp_sub (b : HomogeneousSymbol X E W U m') (a₁ a₂ : HomogeneousSymbol X E V W m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ := by
+  ext1; funext p; simp [ContinuousLinearMap.comp_sub]
+
+@[simp]
+theorem sub_comp (b₁ b₂ : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a := by
+  ext1; funext p; simp [ContinuousLinearMap.sub_comp]
 
 @[simp]
 theorem comp_smul (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
@@ -331,6 +377,17 @@ theorem smul_spatialDeriv {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
     simp [spatialDeriv, hξ, fderiv_const_smul (a.differentiableAt_coefficient (p := (x, ξ)) hξ)]
 
 @[simp]
+theorem neg_spatialDeriv (v : X) : (-a).spatialDeriv v = -a.spatialDeriv v :=
+  ext_of_ne_zero fun x ξ hξ ↦ by simp [spatialDeriv, hξ, fderiv_neg]
+
+@[simp]
+theorem sub_spatialDeriv (b : HomogeneousSymbol X E V W m) (v : X) :
+    (a - b).spatialDeriv v = a.spatialDeriv v - b.spatialDeriv v :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [spatialDeriv, hξ, fderiv_sub (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
+      (b.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+
+@[simp]
 theorem zero_spatialDeriv (v : X) : (0 : HomogeneousSymbol X E V W m).spatialDeriv v = 0 :=
   ext_of_ne_zero fun x ξ hξ ↦ by simp [spatialDeriv, hξ]
 
@@ -362,6 +419,17 @@ theorem smul_frequencyDeriv {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
     (c • a).frequencyDeriv w = c • a.frequencyDeriv w :=
   ext_of_ne_zero fun x ξ hξ ↦ by
     simp [frequencyDeriv, hξ, fderiv_const_smul (a.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+
+@[simp]
+theorem neg_frequencyDeriv (w : E) : (-a).frequencyDeriv w = -a.frequencyDeriv w :=
+  ext_of_ne_zero fun x ξ hξ ↦ by simp [frequencyDeriv, hξ, fderiv_neg]
+
+@[simp]
+theorem sub_frequencyDeriv (b : HomogeneousSymbol X E V W m) (w : E) :
+    (a - b).frequencyDeriv w = a.frequencyDeriv w - b.frequencyDeriv w :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [frequencyDeriv, hξ, fderiv_sub (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
+      (b.differentiableAt_coefficient (p := (x, ξ)) hξ)]
 
 @[simp]
 theorem zero_frequencyDeriv (w : E) :
@@ -410,15 +478,15 @@ theorem spatialDeriv_comp (v : X) :
   ext_of_ne_zero fun x ξ hξ ↦ by
     simp [spatialDeriv, hξ, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
 
-/-- The product rule for the frequency derivative of a composition, stated on coefficients
-since the degrees `m' + m - 1`, `m' - 1 + m` and `m' + (m - 1)` are not definitionally equal. -/
-theorem coefficient_frequencyDeriv_comp (w : E) :
-    ((b.comp a).frequencyDeriv w).coefficient =
-      ((b.frequencyDeriv w).comp a).coefficient + (b.comp (a.frequencyDeriv w)).coefficient := by
-  funext ⟨x, ξ⟩
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · simp
-  · simp [frequencyDeriv, hξ, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
+/-- The product rule for the frequency derivative of a composition. The degrees `m' - 1 + m`
+and `m' + (m - 1)` of the two terms are transported to the degree `m' + m - 1` of the left side,
+since they are equal but not definitionally so. -/
+theorem frequencyDeriv_comp (w : E) :
+    (b.comp a).frequencyDeriv w =
+      ((b.frequencyDeriv w).comp a).castDegree (by ring) +
+        (b.comp (a.frequencyDeriv w)).castDegree (by ring) :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [frequencyDeriv, hξ, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
 
 end CompDeriv
 
