@@ -65,43 +65,13 @@ this functor is fully faithful with adic image morphisms.
 * [Stacks Project, Definition 87.9.9](https://stacks.math.columbia.edu/tag/0AIF).
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
 universe u
 
 namespace TauCeti.AlgebraicGeometry
-
-/-- Pulling the ideal sheaf of a composite of closed immersions `i ≫ j` back along `j` recovers the
-ideal sheaf of `i`, since `j` is a monomorphism so the square expressing `i` as the pullback of
-`i ≫ j` along `j` is cartesian. -/
-private lemma ker_eq_comap_of_comp_isClosedImmersion {Z Y W : Scheme.{u}}
-    (i : Z ⟶ Y) (j : Y ⟶ W) [IsClosedImmersion i] [IsClosedImmersion j] :
-    i.ker = (i ≫ j).ker.comap j := by
-  have hsq : IsPullback i (𝟙 Z) j (i ≫ j) :=
-    (IsPullback.of_horiz_isIso_mono (fst := 𝟙 Z) (snd := i) (f := i ≫ j) (g := j) ⟨by simp⟩).flip
-  exact Scheme.IdealSheafData.ker_eq_comap_of_isPullback (i ≫ j) hsq
-
-/-- If `j : Y ⟶ W` is a closed immersion whose ideal sheaf is contained in `J`, and `i : Z ⟶ Y` is
-a closed immersion cut out by `J.comap j`, then `i ≫ j` has ideal sheaf `J`. -/
-private lemma ker_comp_eq_of_ker_eq_comap {Z Y W : Scheme.{u}}
-    (i : Z ⟶ Y) (j : Y ⟶ W) [IsClosedImmersion i] [IsClosedImmersion j]
-    {J : W.IdealSheafData} (hi : i.ker = J.comap j) (hj : j.ker ≤ J) :
-    (i ≫ j).ker = J := by
-  let u : J.subscheme ⟶ Y :=
-    IsClosedImmersion.lift j J.subschemeι (hj.trans_eq J.ker_subschemeι.symm)
-  have hu : u ≫ j = J.subschemeι :=
-    IsClosedImmersion.lift_fac j J.subschemeι (hj.trans_eq J.ker_subschemeι.symm)
-  have : IsClosedImmersion (u ≫ j) := hu.symm ▸ inferInstance
-  have : IsClosedImmersion u := .of_comp_isClosedImmersion u j
-  have huker : u.ker = i.ker := by
-    rw [ker_eq_comap_of_comp_isClosedImmersion u j, hu, J.ker_subschemeι, hi]
-  let e : Z ⟶ J.subscheme := IsClosedImmersion.lift u i huker.le
-  have : IsIso e := IsClosedImmersion.isIso_lift u i huker
-  have he : e ≫ J.subschemeι = i ≫ j := by
-    rw [← hu, ← Category.assoc, IsClosedImmersion.lift_fac]
-  rw [← he, Scheme.Hom.ker_comp_of_isIso, J.ker_subschemeι]
 
 /-- The level maps `X 0 ⟶ X n` of a tower of schemes `(X, ι)`. -/
 def levelMap (X : ℕ → Scheme.{u}) (ι : ∀ n, X n ⟶ X (n + 1)) : ∀ n, X 0 ⟶ X n
@@ -111,12 +81,12 @@ def levelMap (X : ℕ → Scheme.{u}) (ι : ∀ n, X n ⟶ X (n + 1)) : ∀ n, X
 @[simp]
 theorem levelMap_zero (X : ℕ → Scheme.{u}) (ι : ∀ n, X n ⟶ X (n + 1)) :
     levelMap X ι 0 = 𝟙 (X 0) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem levelMap_succ (X : ℕ → Scheme.{u}) (ι : ∀ n, X n ⟶ X (n + 1)) (n : ℕ) :
     levelMap X ι (n + 1) = levelMap X ι n ≫ ι n :=
-  rfl
+  (rfl)
 
 /-- If every transition of a tower is a thickening, then every level map `X 0 ⟶ X n` is a
 thickening. -/
@@ -158,7 +128,7 @@ def reduction (n : ℕ) : Scheme.{u} :=
 
 @[simp]
 theorem reduction_eq (n : ℕ) : 𝔛.reduction n = 𝔛.X n :=
-  rfl
+  (rfl)
 
 /-- The canonical thickening `X 0 ⟶ X n` from the initial level to level `n`. -/
 def levelMap (n : ℕ) : 𝔛.X 0 ⟶ 𝔛.X n :=
@@ -166,10 +136,10 @@ def levelMap (n : ℕ) : 𝔛.X 0 ⟶ 𝔛.X n :=
 
 @[simp]
 theorem levelMap_zero : 𝔛.levelMap 0 = 𝟙 (𝔛.X 0) :=
-  rfl
+  (rfl)
 
 theorem levelMap_succ (n : ℕ) : 𝔛.levelMap (n + 1) = 𝔛.levelMap n ≫ 𝔛.ι n :=
-  rfl
+  (rfl)
 
 instance isThickening_levelMap (n : ℕ) : IsThickening (𝔛.levelMap n) :=
   TauCeti.AlgebraicGeometry.isThickening_levelMap 𝔛.isThickening n
@@ -184,17 +154,15 @@ theorem ker_ι (n : ℕ) : (𝔛.ι n).ker = (𝔛.levelMap (n + 1)).ker ^ (n + 
 @[simp]
 theorem ker_levelMap_comap_ι (n : ℕ) :
     (𝔛.levelMap (n + 1)).ker.comap (𝔛.ι n) = (𝔛.levelMap n).ker :=
-  (ker_eq_comap_of_comp_isClosedImmersion (𝔛.levelMap n) (𝔛.ι n)).symm
+  Scheme.Hom.comap_ker_comp_of_isClosedImmersion (𝔛.levelMap n) (𝔛.ι n)
 
 /-- The ideal sheaf cutting out `X 0` in `X n` has `(n + 1)`-st power zero: its `(n + 1)`-st power
 is the inverse image along `ι n` of `(levelMap (n + 1)).ker ^ (n + 1) = (ι n).ker`, which vanishes
 on `X n`. -/
 @[simp]
 theorem ker_levelMap_pow_succ_eq_bot (n : ℕ) : (𝔛.levelMap n).ker ^ (n + 1) = ⊥ := by
-  have hself : (𝔛.ι n).ker.comap (𝔛.ι n) = ⊥ := by
-    have h := ker_eq_comap_of_comp_isClosedImmersion (𝟙 (𝔛.X n)) (𝔛.ι n)
-    simpa using h.symm
-  rw [← 𝔛.ker_levelMap_comap_ι n, ← Scheme.IdealSheafData.comap_pow, ← 𝔛.ker_ι n, hself]
+  rw [← 𝔛.ker_levelMap_comap_ι n, ← Scheme.IdealSheafData.comap_pow, ← 𝔛.ker_ι n,
+    Scheme.Hom.comap_ker_self]
 
 /-- Every transition `ι n : X n ⟶ X (n + 1)` of an adic thickening system is a first-order
 thickening, because `(n + 1) + (n + 1) ≥ n + 2` and `(levelMap (n + 1)).ker ^ (n + 2) = ⊥`. -/
@@ -275,11 +243,9 @@ theorem ker_transition {m n : ℕ} (h : m ≤ n) :
   | succ n ih =>
     by_cases h' : m ≤ n
     · have hh : 𝔛.transition h = 𝔛.transition h' ≫ 𝔛.ι n := 𝔛.transition_succ_of_le h'
-      rw [hh]
-      refine ker_comp_eq_of_ker_eq_comap (𝔛.transition h') (𝔛.ι n) ?_ ?_
-      · rw [ih h', Scheme.IdealSheafData.comap_pow, 𝔛.ker_levelMap_comap_ι]
-      · rw [𝔛.ker_ι]
-        exact pow_le_pow_of_le_one bot_le le_top (Nat.succ_le_succ h')
+      rw [hh, Scheme.Hom.ker_comp, ih h', ← 𝔛.ker_levelMap_comap_ι n,
+        ← Scheme.IdealSheafData.comap_pow, Scheme.IdealSheafData.map_comap_of_isClosedImmersion,
+        𝔛.ker_ι n, sup_eq_left.mpr (pow_le_pow_of_le_one bot_le le_top (Nat.succ_le_succ h'))]
     · obtain rfl : m = n + 1 := by omega
       rw [𝔛.transition_refl, Scheme.Hom.ker_eq_bot_of_isIso, 𝔛.ker_levelMap_pow_succ_eq_bot]
 
@@ -325,12 +291,12 @@ theorem hom_ext {𝔛 𝔜 : AdicThickeningSystem.{u}} {f g : 𝔛 ⟶ 𝔜}
 @[simp]
 theorem id_app (𝔛 : AdicThickeningSystem.{u}) (n : ℕ) :
     (𝟙 𝔛 : 𝔛 ⟶ 𝔛).app n = 𝟙 (𝔛.X n) :=
-  rfl
+  (rfl)
 
 @[reassoc, simp]
 theorem comp_app {𝔛 𝔜 𝔚 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔚) (n : ℕ) :
     (f ≫ g).app n = f.app n ≫ g.app n :=
-  rfl
+  (rfl)
 
 @[reassoc]
 theorem Hom.transition_app {𝔛 𝔜 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ 𝔜)
@@ -354,7 +320,6 @@ theorem Hom.levelMap_app {𝔛 𝔜 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ �
 
 /-- Construct an isomorphism of adic thickening systems from compatible levelwise scheme
 isomorphisms. -/
-@[simps]
 def isoMk {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : ∀ n, 𝔛.X n ≅ 𝔜.X n)
     (h : ∀ n, 𝔛.ι n ≫ (e (n + 1)).hom = (e n).hom ≫ 𝔜.ι n := by cat_disch) : 𝔛 ≅ 𝔜 where
   hom :=
@@ -365,13 +330,34 @@ def isoMk {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : ∀ n, 𝔛.X n ≅ 𝔜.X
       naturality n := by
         rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp, h n] }
 
+@[simp]
+theorem isoMk_hom_app {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : ∀ n, 𝔛.X n ≅ 𝔜.X n)
+    (h : ∀ n, 𝔛.ι n ≫ (e (n + 1)).hom = (e n).hom ≫ 𝔜.ι n) (n : ℕ) :
+    (isoMk e h).hom.app n = (e n).hom :=
+  (rfl)
+
+@[simp]
+theorem isoMk_inv_app {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : ∀ n, 𝔛.X n ≅ 𝔜.X n)
+    (h : ∀ n, 𝔛.ι n ≫ (e (n + 1)).hom = (e n).hom ≫ 𝔜.ι n) (n : ℕ) :
+    (isoMk e h).inv.app n = (e n).inv :=
+  (rfl)
+
 /-- The component isomorphism at level `n` induced by an isomorphism of adic thickening systems. -/
-@[simps]
 def appIso {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : 𝔛 ≅ 𝔜) (n : ℕ) : 𝔛.X n ≅ 𝔜.X n where
   hom := e.hom.app n
   inv := e.inv.app n
   hom_inv_id := by rw [← comp_app, e.hom_inv_id, id_app]
   inv_hom_id := by rw [← comp_app, e.inv_hom_id, id_app]
+
+@[simp]
+theorem appIso_hom {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : 𝔛 ≅ 𝔜) (n : ℕ) :
+    (appIso e n).hom = e.hom.app n :=
+  (rfl)
+
+@[simp]
+theorem appIso_inv {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : 𝔛 ≅ 𝔜) (n : ℕ) :
+    (appIso e n).inv = e.inv.app n :=
+  (rfl)
 
 instance isIso_app_of_isIso {𝔛 𝔜 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ 𝔜) [IsIso f] (n : ℕ) :
     IsIso (f.app n) :=
@@ -444,7 +430,7 @@ end IsAdicHom
 
 /-- A scheme `S` viewed as the constant adic thickening system with `X n = S` and `ι n = 𝟙 S`,
 functorially in `S`. -/
-@[simps]
+@[expose, simps]
 def ofScheme : Scheme.{u} ⥤ AdicThickeningSystem.{u} where
   obj S :=
     { X _ := S
@@ -480,6 +466,12 @@ def ofSchemeFullyFaithful : ofScheme.{u}.FullyFaithful where
       rw [Category.id_comp, Category.comp_id] at h
       exact ih.trans h.symm
   preimage_map _ := rfl
+
+@[simp]
+theorem ofSchemeFullyFaithful_preimage {S T : Scheme.{u}}
+    (f : ofScheme.obj S ⟶ ofScheme.obj T) :
+    ofSchemeFullyFaithful.preimage f = f.app 0 :=
+  (rfl)
 
 instance : ofScheme.{u}.Full := ofSchemeFullyFaithful.full
 instance : ofScheme.{u}.Faithful := ofSchemeFullyFaithful.faithful

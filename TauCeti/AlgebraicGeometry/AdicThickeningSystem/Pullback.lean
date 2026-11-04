@@ -46,7 +46,7 @@ tower of reductions `(X ×_{Spec A} Spec (A ⧸ I ^ (n + 1)))_n` as an adic thic
   pullback square in the category `AdicThickeningSystem`.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
@@ -109,13 +109,15 @@ private lemma isPullback_levelMap_pullback_fst (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶
       (Limits.pullback.fst (f.app m) (g.app m)) (𝔛.levelMap m) := by
   induction m with
   | zero =>
+    rw [TauCeti.AlgebraicGeometry.levelMap_zero, 𝔛.levelMap_zero]
     exact IsPullback.of_horiz_isIso
       (fst := 𝟙 (Limits.pullback (f.app 0) (g.app 0))) (g := 𝟙 (𝔛.X 0)) ⟨by simp⟩
   | succ m ih =>
+    rw [TauCeti.AlgebraicGeometry.levelMap_succ, 𝔛.levelMap_succ]
     exact ih.paste_horiz (isPullback_pullbackMap_fst f g m)
 
 /-- The levelwise fibre product of `f : 𝔛 ⟶ 𝔖` along an adic morphism `g : 𝔜 ⟶ 𝔖`. -/
-@[simps X ι]
+@[expose, simps X ι]
 noncomputable def pullback (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] :
     AdicThickeningSystem.{u} where
   X n := Limits.pullback (f.app n) (g.app n)
@@ -132,22 +134,31 @@ noncomputable def pullback (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g]
     rw [hι, hlev, 𝔛.ker_ι n, Scheme.IdealSheafData.comap_pow]
 
 theorem pullback_reduction (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) :
-    (pullback f g).reduction n = Limits.pullback (f.app n) (g.app n) :=
+    (pullback f g).reduction n = Limits.pullback (f.app n) (g.app n) := by
+  rw [reduction_eq]
   rfl
 
 namespace pullback
 
 /-- The first projection `pullback f g ⟶ 𝔛` of the levelwise fibre product. -/
-@[simps]
 noncomputable def fst (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] : pullback f g ⟶ 𝔛 where
   app n := Limits.pullback.fst (f.app n) (g.app n)
   naturality n := by simp [AdicThickeningSystem.pullback]
 
+@[simp]
+theorem fst_app (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) :
+    (fst f g).app n = Limits.pullback.fst (f.app n) (g.app n) :=
+  (rfl)
+
 /-- The second projection `pullback f g ⟶ 𝔜` of the levelwise fibre product. -/
-@[simps]
 noncomputable def snd (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] : pullback f g ⟶ 𝔜 where
   app n := Limits.pullback.snd (f.app n) (g.app n)
   naturality n := by simp [AdicThickeningSystem.pullback]
+
+@[simp]
+theorem snd_app (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) :
+    (snd f g).app n = Limits.pullback.snd (f.app n) (g.app n) :=
+  (rfl)
 
 @[reassoc]
 theorem condition (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] :
@@ -156,7 +167,6 @@ theorem condition (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] :
   exact Limits.pullback.condition
 
 /-- Universal lift into the levelwise fibre product `pullback f g`. -/
-@[simps]
 noncomputable def lift {𝔚 : AdicThickeningSystem.{u}} {f : 𝔛 ⟶ 𝔖} {g : 𝔜 ⟶ 𝔖} [IsAdicHom g]
     (u : 𝔚 ⟶ 𝔛) (v : 𝔚 ⟶ 𝔜) (h : u ≫ f = v ≫ g) : 𝔚 ⟶ pullback f g where
   app n := Limits.pullback.lift (u.app n) (v.app n) (congrArg (fun k ↦ k.app n) h)
@@ -164,6 +174,13 @@ noncomputable def lift {𝔚 : AdicThickeningSystem.{u}} {f : 𝔛 ⟶ 𝔖} {g 
     refine Limits.pullback.hom_ext ?_ ?_
     · simp [AdicThickeningSystem.pullback]
     · simp [AdicThickeningSystem.pullback]
+
+@[simp]
+theorem lift_app {𝔚 : AdicThickeningSystem.{u}} {f : 𝔛 ⟶ 𝔖} {g : 𝔜 ⟶ 𝔖} [IsAdicHom g]
+    (u : 𝔚 ⟶ 𝔛) (v : 𝔚 ⟶ 𝔜) (h : u ≫ f = v ≫ g) (n : ℕ) :
+    (lift u v h).app n =
+      Limits.pullback.lift (u.app n) (v.app n) (congrArg (fun k ↦ k.app n) h) :=
+  (rfl)
 
 @[reassoc (attr := simp)]
 theorem lift_fst {𝔚 : AdicThickeningSystem.{u}} {f : 𝔛 ⟶ 𝔖} {g : 𝔜 ⟶ 𝔖} [IsAdicHom g]

@@ -47,6 +47,8 @@ the morphism induced by `φ` is adic (`IsAdicHom`) if and only if
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.spfHomEquiv`,
   `TauCeti.AlgebraicGeometry.Spf.homEquiv`: equivalence between `Spf B ⟶ Spf A` and
   `{φ : A →+* B // I ≤ J.comap φ}` when `B` is `J`-adically complete.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.uniqueSpfMaximalIdeal`: for a local ring `R`,
+  every level of `spf (IsLocalRing.maximalIdeal R)` has a unique point.
 
 ## Main results
 
@@ -64,7 +66,7 @@ the morphism induced by `φ` is adic (`IsAdicHom`) if and only if
   87.9.9](https://stacks.math.columbia.edu/tag/0AIF).
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits Opposite AlgebraicGeometry
 
@@ -98,11 +100,11 @@ abbrev ofBot (R : Type u) [CommRing R] : AdicRing.{u} where
 
 @[simp]
 theorem ofBot_carrier (R : Type u) [CommRing R] : (ofBot R).carrier = R :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem ofBot_ideal (R : Type u) [CommRing R] : (ofBot R).ideal = ⊥ :=
-  rfl
+  (rfl)
 
 end AdicRing
 
@@ -148,7 +150,7 @@ private lemma isFirstOrderThickening_spfι (I : Ideal R) (n : ℕ) :
 
 /-- The tower of affine thickenings `Spec (R ⧸ I ^ (n + 1))` associated to any ideal `I` of a
 commutative ring `R`. Stacks, Definition 87.9.9 (0AIF). -/
-@[stacks 0AIF, simps X ι]
+@[stacks 0AIF, expose, simps X ι]
 noncomputable def spf (I : Ideal R) : AdicThickeningSystem.{u} where
   X n := Spec (CommRingCat.of (R ⧸ I ^ (n + 1)))
   ι n := Spec.map (CommRingCat.ofHom
@@ -163,7 +165,8 @@ noncomputable def spf (I : Ideal R) : AdicThickeningSystem.{u} where
       ← Ideal.map_pow, ← Ideal.map_pow]
 
 theorem spf_reduction (I : Ideal R) (n : ℕ) :
-    (spf I).reduction n = Spec (CommRingCat.of (R ⧸ I ^ (n + 1))) :=
+    (spf I).reduction n = Spec (CommRingCat.of (R ⧸ I ^ (n + 1))) := by
+  rw [reduction_eq]
   rfl
 
 /-- For `m ≤ n`, the composite transition `(spf I).transition h` is `Spec.map` of the quotient
@@ -198,7 +201,6 @@ theorem spf_transition (I : Ideal R) {m n : ℕ} (h : m ≤ n) :
 
 /-- The canonical morphism `spf I ⟶ ofScheme.obj (Spec R)` assembled from the closed immersions
 `Spec (R ⧸ I ^ (n + 1)) ⟶ Spec R`. -/
-@[simps]
 noncomputable def spfToSpec (I : Ideal R) :
     spf I ⟶ ofScheme.obj (Spec (CommRingCat.of R)) where
   app n := Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (I ^ (n + 1))))
@@ -206,6 +208,11 @@ noncomputable def spfToSpec (I : Ideal R) :
     dsimp only [spf, ofScheme]
     rw [Category.comp_id, ← Spec.map_comp]
     congr 1
+
+@[simp]
+theorem spfToSpec_app (I : Ideal R) (n : ℕ) :
+    (spfToSpec I).app n = Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (I ^ (n + 1)))) :=
+  (rfl)
 
 /-- When `I = ⊥`, the formal spectrum `spf I` is canonically isomorphic to the constant system
 `ofScheme.obj (Spec R)`. -/
@@ -228,12 +235,17 @@ noncomputable def spfIsoOfEqBot {I : Ideal R} (hI : I = ⊥) :
 @[simp]
 theorem spfIsoOfEqBot_hom {I : Ideal R} (hI : I = ⊥) :
     (spfIsoOfEqBot hI).hom = spfToSpec I :=
-  rfl
+  (rfl)
 
 /-- For the zero ideal `⊥`, `spf ⊥` is canonically isomorphic to the constant system of `Spec R`. -/
 noncomputable def spfBotIso (R : Type u) [CommRing R] :
     spf (⊥ : Ideal R) ≅ ofScheme.obj (Spec (CommRingCat.of R)) :=
   spfIsoOfEqBot rfl
+
+@[simp]
+theorem spfBotIso_hom (R : Type u) [CommRing R] :
+    (spfBotIso R).hom = spfToSpec (⊥ : Ideal R) :=
+  (rfl)
 
 /-- If `R` is Noetherian, then every quotient `R ⧸ I ^ (n + 1)` is Noetherian, so `spf I` is
 locally Noetherian. -/
@@ -245,7 +257,6 @@ instance isLocallyNoetherian_spf (I : Ideal R) [IsNoetherianRing R] :
 
 /-- A ring homomorphism `φ : R →+* S` carrying `I` into `J` induces a level-preserving morphism of
 formal spectra `spf J ⟶ spf I`. -/
-@[simps]
 noncomputable def spfMap {I : Ideal R} {J : Ideal S} (φ : R →+* S) (hφ : I ≤ J.comap φ) :
     spf J ⟶ spf I where
   app n := Spec.map (CommRingCat.ofHom
@@ -259,10 +270,18 @@ noncomputable def spfMap {I : Ideal R} {J : Ideal S} (φ : R →+* S) (hφ : I �
     rfl
 
 @[simp]
+theorem spfMap_app {I : Ideal R} {J : Ideal S} (φ : R →+* S) (hφ : I ≤ J.comap φ) (n : ℕ) :
+    (spfMap φ hφ).app n = Spec.map (CommRingCat.ofHom
+      (Ideal.quotientMap (J ^ (n + 1)) φ
+        ((Ideal.pow_right_mono hφ (n + 1)).trans (Ideal.le_comap_pow φ (n + 1))))) :=
+  (rfl)
+
+@[simp]
 theorem spfMap_id (I : Ideal R) :
     spfMap (I := I) (J := I) (RingHom.id R) le_rfl = 𝟙 (spf I) := by
   ext n
-  dsimp only [spfMap, spf, id_app]
+  rw [id_app]
+  dsimp only [spfMap, spf]
   have hid : CommRingCat.ofHom
       (Ideal.quotientMap (I ^ (n + 1)) (RingHom.id R)
         ((Ideal.pow_right_mono (I := I) (J := I.comap (RingHom.id R)) le_rfl (n + 1)).trans
@@ -275,7 +294,8 @@ theorem spfMap_comp {I : Ideal R} {J : Ideal S} {K : Ideal T}
     (φ : R →+* S) (hφ : I ≤ J.comap φ) (ψ : S →+* T) (hψ : J ≤ K.comap ψ) :
     spfMap (ψ.comp φ) (hφ.trans (Ideal.comap_mono hψ)) = spfMap ψ hψ ≫ spfMap φ hφ := by
   ext n
-  dsimp only [spfMap, spf, comp_app]
+  rw [comp_app]
+  dsimp only [spfMap, spf]
   rw [← Spec.map_comp]
   congr 1
   ext x
@@ -323,7 +343,7 @@ theorem isAdicHom_spfMap_iff {I : Ideal R} {J : Ideal S} (φ : R →+* S) (hφ :
 
 /-- Cone over `Ideal.quotientPowSuccDiagram J` with apex `R` extracted from a morphism
 `f : spf J ⟶ spf I`. -/
-noncomputable def spfHomCone {I : Ideal R} {J : Ideal S} (f : spf J ⟶ spf I) :
+private noncomputable def spfHomCone {I : Ideal R} {J : Ideal S} (f : spf J ⟶ spf I) :
     Cone (Ideal.quotientPowSuccDiagram J) where
   pt := CommRingCat.of R
   π.app n :=
@@ -388,7 +408,7 @@ noncomputable def spfHomEquiv (I : Ideal R) (J : Ideal S) [IsAdicComplete J S] :
 theorem spfHomEquiv_symm_apply {I : Ideal R} {J : Ideal S} [IsAdicComplete J S]
     (φ : {φ : R →+* S // I ≤ J.comap φ}) :
     (spfHomEquiv I J).symm φ = spfMap φ.1 φ.2 :=
-  rfl
+  (rfl)
 
 theorem mk_comp_spfHomEquiv_apply {I : Ideal R} {J : Ideal S} [IsAdicComplete J S]
     (f : spf J ⟶ spf I) (n : ℕ) :
@@ -402,13 +422,27 @@ theorem mk_comp_spfHomEquiv_apply {I : Ideal R} {J : Ideal S} [IsAdicComplete J 
 
 end Unbundled
 
+/-- For a local ring `R`, every level of `spf (IsLocalRing.maximalIdeal R)` has a unique point:
+level `0` is isomorphic to the spectrum of the residue field, and all levels are homeomorphic. -/
+@[instance_reducible]
+noncomputable def uniqueSpfMaximalIdeal (R : Type u) [CommRing R] [IsLocalRing R] (n : ℕ) :
+    Unique ((spf (IsLocalRing.maximalIdeal R)).X n) := by
+  let e : R ⧸ IsLocalRing.maximalIdeal R ^ 1 ≃+* IsLocalRing.ResidueField R :=
+    Ideal.quotEquivOfEq (pow_one (IsLocalRing.maximalIdeal R))
+  let iso₀ : (spf (IsLocalRing.maximalIdeal R)).X 0 ≅
+      Spec (.of (IsLocalRing.ResidueField R)) :=
+    Scheme.Spec.mapIso e.symm.toCommRingCatIso.op
+  letI : Unique ((spf (IsLocalRing.maximalIdeal R)).X 0) :=
+    (IsUniversalHomeomorphism.isHomeomorph iso₀.hom).homeomorph.toEquiv.unique
+  exact ((spf (IsLocalRing.maximalIdeal R)).homeomorphLevel n).symm.toEquiv.unique
+
 end AdicThickeningSystem
 
 /-! ### Formal spectrum of a bundled `AdicRing` -/
 
 /-- The formal spectrum of an adic ring `A` as the adic thickening system of affine reductions
 `Spec (A ⧸ I ^ (n + 1))`. Stacks, Definition 87.9.9 (0AIF). -/
-@[stacks 0AIF]
+@[stacks 0AIF, expose]
 noncomputable def Spf (A : AdicRing.{u}) : AdicThickeningSystem.{u} :=
   AdicThickeningSystem.spf A.ideal
 
@@ -417,17 +451,18 @@ namespace Spf
 @[simp]
 theorem X_eq (A : AdicRing.{u}) (n : ℕ) :
     (Spf A).X n = Spec (CommRingCat.of (A.carrier ⧸ A.ideal ^ (n + 1))) :=
-  rfl
+  (rfl)
 
 theorem reduction_eq (A : AdicRing.{u}) (n : ℕ) :
-    (Spf A).reduction n = Spec (CommRingCat.of (A.carrier ⧸ A.ideal ^ (n + 1))) :=
+    (Spf A).reduction n = Spec (CommRingCat.of (A.carrier ⧸ A.ideal ^ (n + 1))) := by
+  rw [AdicThickeningSystem.reduction_eq]
   rfl
 
 @[simp]
 theorem ι_eq (A : AdicRing.{u}) (n : ℕ) :
     (Spf A).ι n = Spec.map (CommRingCat.ofHom
       (Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.le_succ (n + 1))))) :=
-  rfl
+  (rfl)
 
 /-- The canonical morphism `Spf A ⟶ ofScheme.obj (Spec A)` assembled from the closed immersions of
 the levels `Spec (A ⧸ I ^ (n + 1))` into `Spec A`. -/
@@ -438,7 +473,7 @@ noncomputable def toSpec (A : AdicRing.{u}) :
 @[simp]
 theorem toSpec_app (A : AdicRing.{u}) (n : ℕ) :
     (toSpec A).app n = Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (A.ideal ^ (n + 1)))) :=
-  rfl
+  (rfl)
 
 /-- When the chosen ideal of `A` is `⊥`, `Spf A` is canonically isomorphic to the constant system
 `ofScheme.obj (Spec A)`. -/
@@ -446,11 +481,21 @@ noncomputable def isoOfIdealEqBot (A : AdicRing.{u}) (hI : A.ideal = ⊥) :
     Spf A ≅ AdicThickeningSystem.ofScheme.obj (Spec (CommRingCat.of A.carrier)) :=
   AdicThickeningSystem.spfIsoOfEqBot hI
 
+@[simp]
+theorem isoOfIdealEqBot_hom (A : AdicRing.{u}) (hI : A.ideal = ⊥) :
+    (isoOfIdealEqBot A hI).hom = toSpec A :=
+  (rfl)
+
 /-- For a discrete ring `R` equipped with the zero ideal, `Spf (AdicRing.ofBot R)` is canonically
 isomorphic to `ofScheme.obj (Spec R)`. -/
 noncomputable def ofScheme (R : Type u) [CommRing R] :
     Spf (AdicRing.ofBot R) ≅ AdicThickeningSystem.ofScheme.obj (Spec (CommRingCat.of R)) :=
   AdicThickeningSystem.spfBotIso R
+
+@[simp]
+theorem ofScheme_hom (R : Type u) [CommRing R] :
+    (ofScheme R).hom = toSpec (AdicRing.ofBot R) :=
+  (rfl)
 
 /-- Functoriality of `Spf` along level-preserving ring homomorphisms `φ : A →+* B` with
 `A.ideal ≤ B.ideal.comap φ`. -/
@@ -464,7 +509,7 @@ theorem map_app {A B : AdicRing.{u}} (φ : A.carrier →+* B.carrier)
     (map φ hφ).app n = Spec.map (CommRingCat.ofHom
       (Ideal.quotientMap (B.ideal ^ (n + 1)) φ
         ((Ideal.pow_right_mono hφ (n + 1)).trans (Ideal.le_comap_pow φ (n + 1))))) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem map_id (A : AdicRing.{u}) :
@@ -495,7 +540,12 @@ noncomputable def homEquiv (A B : AdicRing.{u}) :
 theorem homEquiv_symm_apply (A B : AdicRing.{u})
     (φ : {φ : A.carrier →+* B.carrier // A.ideal ≤ B.ideal.comap φ}) :
     (homEquiv A B).symm φ = map φ.1 φ.2 :=
-  rfl
+  (rfl)
+
+theorem mk_comp_homEquiv_apply {A B : AdicRing.{u}} (f : Spf B ⟶ Spf A) (n : ℕ) :
+    (Ideal.Quotient.mk (B.ideal ^ (n + 1))).comp (homEquiv A B f).1 =
+      (Spec.preimage (f.app n)).hom.comp (Ideal.Quotient.mk (A.ideal ^ (n + 1))) :=
+  AdicThickeningSystem.mk_comp_spfHomEquiv_apply f n
 
 /-- For a Noetherian adic ring `A`, `Spf A` is locally Noetherian. -/
 instance isLocallyNoetherian (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :

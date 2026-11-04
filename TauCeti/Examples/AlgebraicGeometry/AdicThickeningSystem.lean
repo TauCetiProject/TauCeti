@@ -15,6 +15,7 @@ public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.PowerSeries.AdicComplete
 public import TauCeti.RingTheory.RegularLocalRing.PowerSeries
+public import TauCeti.RingTheory.Spectrum.Prime.Finite
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
@@ -42,15 +43,15 @@ This file illustrates the definitions and sharpness of `AdicThickeningSystem`, `
 * `not_levelPreserving_powerSeries`: the identity of `k⟦t⟧` is continuous from the `(t)`-adic to
   the `(t²)`-adic topology because `(t)² = (t²)`, yet `(t) ⊈ (t²)`, so it does not correspond to a
   level-preserving morphism `Spf (k⟦t⟧, (t²)) ⟶ Spf (k⟦t⟧, (t))`.
-* `locallyNoetherian_padic`: `Spf A` is locally Noetherian whenever `A` is Noetherian, in
-  particular for `ℤ_[p]` and `k⟦t⟧`.
+* `locallyNoetherian_padic`: `Spf ℤ_[p]` and `Spf k⟦t⟧` are locally Noetherian, as concrete
+  instances of `Spf.isLocallyNoetherian`.
 
 ## References
 
 * [Stacks Project, Definition 87.9.9](https://stacks.math.columbia.edu/tag/0AIF).
 -/
 
-@[expose] public section
+public section
 
 universe u
 
@@ -91,36 +92,19 @@ theorem adic_tower_cubic_rejected (k : Type u) [Field k] :
     · exact isThickening_cube k
     · exact inferInstanceAs (IsThickening (𝟙 (Spec (.of A))))
   · exact Scheme.Hom.ker_eq_bot_of_isIso (ι 1)
-  · have hlev : levelMap X ι 2 = ι 0 := by simp [levelMap, X, ι]
+  · have hlev : levelMap X ι 2 = ι 0 := by simp [X, ι]
     rw [hlev, pow_two]
     intro hsq
     have : IsClosedImmersion (ι 0) := (isThickening_cube k).toIsClosedImmersion
     exact not_isFirstOrderThickening_cube k ⟨hsq⟩
   · intro heq
     rw [Scheme.Hom.ker_eq_bot_of_isIso (ι 1)] at heq
-    have hlev : levelMap X ι 2 = ι 0 := by simp [levelMap, X, ι]
+    have hlev : levelMap X ι 2 = ι 0 := by simp [X, ι]
     rw [hlev, pow_two] at heq
     have : IsClosedImmersion (ι 0) := (isThickening_cube k).toIsClosedImmersion
     exact not_isFirstOrderThickening_cube k ⟨heq.symm⟩
 
-/-! ### 2. Points of formal spectra of local rings, `ℤ_[p]`, and `k⟦t⟧` -/
-
-/-- For a local ring `R`, every level of `AdicThickeningSystem.spf (maximalIdeal R)` has a unique
-point: level `0` is isomorphic to the spectrum of the residue field, and all levels are
-homeomorphic. -/
-@[instance_reducible]
-noncomputable def AdicThickeningSystem.uniqueSpfMaximalIdeal (R : Type u) [CommRing R]
-    [IsLocalRing R] (n : ℕ) :
-    Unique ((AdicThickeningSystem.spf (IsLocalRing.maximalIdeal R)).X n) := by
-  let e : R ⧸ IsLocalRing.maximalIdeal R ^ 1 ≃+* IsLocalRing.ResidueField R :=
-    Ideal.quotEquivOfEq (pow_one (IsLocalRing.maximalIdeal R))
-  let iso₀ : (AdicThickeningSystem.spf (IsLocalRing.maximalIdeal R)).X 0 ≅
-      Spec (.of (IsLocalRing.ResidueField R)) :=
-    Scheme.Spec.mapIso e.symm.toCommRingCatIso.op
-  letI : Unique ((AdicThickeningSystem.spf (IsLocalRing.maximalIdeal R)).X 0) :=
-    (IsUniversalHomeomorphism.isHomeomorph iso₀.hom).homeomorph.toEquiv.unique
-  exact ((AdicThickeningSystem.spf (IsLocalRing.maximalIdeal R)).homeomorphLevel
-    n).symm.toEquiv.unique
+/-! ### 2. Points of formal spectra of `ℤ_[p]` and `k⟦t⟧` -/
 
 /-- The ring of `p`-adic integers `ℤ_[p]` as an `AdicRing` with its maximal ideal `(p)`. -/
 noncomputable abbrev AdicRing.padicInt (p : ℕ) [Fact p.Prime] : AdicRing.{0} where
@@ -156,36 +140,6 @@ noncomputable abbrev AdicRing.powerSeries (k : Type u) [Field k] : AdicRing.{u} 
       infer_instance
     infer_instance
 
-/-- The spectrum of a discrete valuation ring has exactly two points: the generic point `(0)` and
-the closed point `𝔪`. -/
-theorem natCard_spec_of_isDiscreteValuationRing (R : Type u) [CommRing R] [IsDomain R]
-    [IsDiscreteValuationRing R] :
-    Nat.card (Spec (.of R)) = 2 := by
-  let pts : Bool → PrimeSpectrum R
-    | false => ⟨⊥, inferInstance⟩
-    | true => ⟨IsLocalRing.maximalIdeal R, inferInstance⟩
-  have hinj : Function.Injective pts := by
-    rintro (_ | _) (_ | _) h
-    · rfl
-    · exact False.elim (IsDiscreteValuationRing.not_a_field R
-        (congrArg PrimeSpectrum.asIdeal h).symm)
-    · exact False.elim (IsDiscreteValuationRing.not_a_field R (congrArg PrimeSpectrum.asIdeal h))
-    · rfl
-  have hsurj : Function.Surjective pts := by
-    intro P
-    by_cases hP : P.asIdeal = ⊥
-    · exact ⟨false, PrimeSpectrum.ext hP.symm⟩
-    · obtain ⟨Q, -, hQ⟩ :=
-        ((IsDiscreteValuationRing.iff_pid_with_one_nonzero_prime R).mp inferInstance).2
-      have h1 := hQ P.asIdeal ⟨hP, P.isPrime⟩
-      have h2 := hQ (IsLocalRing.maximalIdeal R)
-        ⟨IsDiscreteValuationRing.not_a_field R, inferInstance⟩
-      exact ⟨true, PrimeSpectrum.ext (h2.trans h1.symm)⟩
-  -- `Spec (.of R)` has underlying type `PrimeSpectrum R`.
-  have heq : Nat.card (Spec (.of R)) = Nat.card (PrimeSpectrum R) := rfl
-  rw [heq, Nat.card_congr (Equiv.ofBijective pts ⟨hinj, hsurj⟩).symm]
-  simp
-
 /-- Every level of `Spf k⟦t⟧` has `1` point while `Spec k⟦t⟧` has `2` points, so `Spf k⟦t⟧` is not
 isomorphic to the constant system `Spec k⟦t⟧`. -/
 theorem Spf.not_spec_powerSeries (k : Type u) [Field k] :
@@ -198,7 +152,7 @@ theorem Spf.not_spec_powerSeries (k : Type u) [Field k] :
       AdicThickeningSystem.uniqueSpfMaximalIdeal (PowerSeries k) n
     exact Nat.card_unique
   have hcard2 : Nat.card (Spec (.of (PowerSeries k))) = 2 :=
-    natCard_spec_of_isDiscreteValuationRing (PowerSeries k)
+    PrimeSpectrum.natCard_of_krullDimLE_one PowerSeries.not_isField
   refine ⟨hcard1, hcard2, ⟨fun e ↦ ?_⟩⟩
   have h := Nat.card_congr
     (IsUniversalHomeomorphism.isHomeomorph (e.hom.app 0)).homeomorph.toEquiv
@@ -208,19 +162,8 @@ theorem Spf.not_spec_powerSeries (k : Type u) [Field k] :
 
 /-! ### 3. Endomorphisms of `Spf ℤ_[p]` -/
 
-/-- Every ring endomorphism of `ℤ_[p]` is the identity: any ring homomorphism preserves natural
-numbers and divisibility by `p ^ n`, so it preserves truncations in `ZMod (p ^ n)` for all `n`. -/
-theorem padicInt_ringHom_eq_id (p : ℕ) [Fact p.Prime] (φ : ℤ_[p] →+* ℤ_[p]) :
-    φ = RingHom.id ℤ_[p] := by
-  refine PadicInt.toZModPow_eq_iff_ext.mp fun n ↦ ?_
-  ext x
-  simp only [RingHom.comp_apply, RingHom.id_apply, PadicInt.toZModPow_eq_iff_dvd_sub]
-  have h1 : (p : ℤ_[p]) ^ n ∣ x - x.appr n := PadicInt.dvd_sub_appr x n
-  have h2 : (p : ℤ_[p]) ^ n ∣ φ x - x.appr n := by simpa using map_dvd φ h1
-  simpa using dvd_sub h1 h2
-
-/-- Because `ℤ_[p]` has only the identity ring endomorphism, `Spf ℤ_[p]` has a unique endomorphism
-in `AdicThickeningSystem`. -/
+/-- Because `ℤ_[p]` has only the identity ring endomorphism (`PadicInt.ringHom_eq_id`), `Spf ℤ_[p]`
+has a unique endomorphism in `AdicThickeningSystem`. -/
 @[instance_reducible]
 noncomputable def Spf.homEquivPadic (p : ℕ) [Fact p.Prime] :
     Unique (Spf (AdicRing.padicInt p) ⟶ Spf (AdicRing.padicInt p)) where
@@ -228,7 +171,7 @@ noncomputable def Spf.homEquivPadic (p : ℕ) [Fact p.Prime] :
   uniq f := by
     apply (Spf.homEquiv (AdicRing.padicInt p) (AdicRing.padicInt p)).injective
     ext1
-    exact (padicInt_ringHom_eq_id p _).trans (padicInt_ringHom_eq_id p _).symm
+    exact Subsingleton.elim _ _
 
 /-! ### 4. The `p`-adic formal affine line -/
 
@@ -390,8 +333,8 @@ theorem not_levelPreserving_powerSeries (k : Type u) [Field k] :
 
 /-! ### 7. Locally Noetherian formal spectra -/
 
-/-- `Spf A` is locally Noetherian for every Noetherian adic ring `A`, in particular for `ℤ_[p]` and
-`k⟦t⟧`. -/
+/-- `Spf ℤ_[p]` and `Spf k⟦t⟧` are locally Noetherian, as concrete instances of
+`Spf.isLocallyNoetherian`. -/
 theorem locallyNoetherian_padic (p : ℕ) [Fact p.Prime] (k : Type u) [Field k] :
     (Spf (AdicRing.padicInt p)).IsLocallyNoetherian ∧
     (Spf (AdicRing.powerSeries k)).IsLocallyNoetherian :=
