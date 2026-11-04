@@ -156,10 +156,9 @@ theorem tendsto_cotangentHamiltonianAction_of_tendstoUniformlyOn
       (𝓝 (∫ t in (0 : ℝ)..1, (x t).2 (deriv x t).1)) :=
     TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn
       (hγc.and hγc' |>.mono fun i hi ↦ hi.1.snd.clm_apply hi.2)
-      (ContinuousAt.comp_tendstoUniformlyOn_of_isCompact
+      ((isCompact_uIcc.image_of_continuousOn (hx.snd.prodMk hx')).comp_tendstoUniformlyOn
         (g := fun p : StrongDual ℝ V × V ↦ p.1 p.2)
-        (fun _ _ ↦ isBoundedBilinearMap_apply.continuous.continuousAt)
-        (isCompact_uIcc.image_of_continuousOn (hx.snd.prodMk hx')) hpair)
+        (fun _ _ ↦ isBoundedBilinearMap_apply.continuous.continuousAt) hpair)
   -- The Hamiltonian integrands converge uniformly, as `H` is continuous.
   have hid : TendstoUniformlyOn (fun (_ : ι) (t : ℝ) ↦ t) id l [[0, 1]] :=
     fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
@@ -169,8 +168,8 @@ theorem tendsto_cotangentHamiltonianAction_of_tendstoUniformlyOn
       (𝓝 (∫ t in (0 : ℝ)..1, H t (x t))) :=
     TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn
       (hγc.mono fun i hi ↦ hH.comp_continuousOn (continuousOn_id.prodMk hi))
-      (ContinuousAt.comp_tendstoUniformlyOn_of_isCompact (fun _ _ ↦ hH.continuousAt)
-        (isCompact_uIcc.image_of_continuousOn (continuousOn_id.prodMk hx)) hgraph)
+      ((isCompact_uIcc.image_of_continuousOn (continuousOn_id.prodMk hx)).comp_tendstoUniformlyOn
+        (fun _ _ ↦ hH.continuousAt) hgraph)
   have hstart : Tendsto (fun i ↦ h₀ (γ i 0).1) l (𝓝 (h₀ (x 0).1)) :=
     hh₀.tendsto.comp (continuousAt_fst.tendsto.comp (hγ.tendsto_at (by simp)))
   have hend : Tendsto (fun i ↦ h₁ (γ i 1).1) l (𝓝 (h₁ (x 1).1)) :=

@@ -30,8 +30,8 @@ variable {α β γ ι : Type*} [UniformSpace β] [UniformSpace γ]
 /-- Composing a family converging uniformly on `s` with a map continuous at every value of the
 limit on `s` preserves uniform convergence on `s`, provided the values of the limit on `s` form a
 compact set. -/
-theorem ContinuousAt.comp_tendstoUniformlyOn_of_isCompact (hg : ∀ y ∈ f '' s, ContinuousAt g y)
-    (hf : IsCompact (f '' s)) (h : TendstoUniformlyOn F f p s) :
+theorem IsCompact.comp_tendstoUniformlyOn (hf : IsCompact (f '' s))
+    (hg : ∀ y ∈ f '' s, ContinuousAt g y) (h : TendstoUniformlyOn F f p s) :
     TendstoUniformlyOn (fun i x ↦ g (F i x)) (fun x ↦ g (f x)) p s := fun _ hu ↦ by
   filter_upwards [h _ (hf.uniformContinuousAt_of_continuousAt g hg hu)] with i hi x hx
   exact hi x hx (mem_image_of_mem f hx)
