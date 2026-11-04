@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Semisimple.Defs
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
@@ -124,11 +125,7 @@ lemma pow_ad_apply_eq_zero_of_weight_neg_nat
     (ad K L e ^ (n + 1)) y = 0 := by
   -- Both powers iterate the same bracket function, independently of the scalar ring.
   have powers (m : ℕ) : (LieModule.toEnd ℚ L L e ^ m) y = (ad K L e ^ m) y := by
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      simpa only [pow_succ', mul_apply_eq_comp, LieModule.toEnd_apply_apply, ad_apply]
-        using congrArg (fun z ↦ ⁅e, z⁆) ih
+    rw [← ad_eq_toEnd, TauCeti.ad_pow_apply_eq_ad_pow_apply ℚ K]
   obtain ⟨N, hN⟩ := he
   have top : (ad K L e ^ (N + (n + 1))) y = 0 := by
     simp [pow_add, hN]
