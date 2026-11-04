@@ -340,10 +340,12 @@ theorem mpullback_smul {S : Type*} [Monoid S] [DistribMulAction S F]
     (ω : RoughForm I' M' F k) : mpullback I I' f (c • ω) = c • mpullback I I' f ω :=
   bundleMpullback_smul f c ω
 
-/-- Pullback of a form multiplied pointwise by a real function multiplies the pullback by the
-composite function. -/
+/-- Pullback of a form multiplied pointwise by a scalar function multiplies the pullback by the
+composite function, for any scalars acting continuously on the coefficient space and commuting
+with the real action. -/
 @[simp]
-theorem mpullback_fun_smul [ContinuousConstSMul ℝ F] (f : M → M') (c : M' → ℝ)
+theorem mpullback_fun_smul {S : Type*} [Monoid S] [DistribMulAction S F]
+    [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (c : M' → S)
     (ω : RoughForm I' M' F k) :
     mpullback I I' f (fun y ↦ c y • ω y) = fun x ↦ c (f x) • mpullback I I' f ω x := by
   funext x
