@@ -50,6 +50,8 @@ Lipschitz test function.
   the integral vanishes.
 * `TauCeti.integral_fderiv_apply_eq_zero_of_hasCompactSupport`: the integral of a directional
   derivative of a compactly supported `C¹` map vanishes.
+  `TauCeti.integral_fderiv_eq_zero_of_hasCompactSupport` is the same statement for the whole
+  derivative.
 * `TauCeti.integral_lineDeriv_mul_eq_neg_of_contDiffOn`: integration by parts between a function
   `C¹` on an open set and a Lipschitz function with compact support in it.
 
@@ -133,6 +135,14 @@ theorem integral_fderiv_apply_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 
     (fun _ _ ↦ differentiableAt_const _)
     (fun _ _ ↦ (hu.differentiable one_ne_zero).differentiableAt)
   simpa using h
+
+/-- The integral of the derivative of a compactly supported `C¹` map vanishes. -/
+theorem integral_fderiv_eq_zero_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u) : ∫ x, fderiv ℝ u x ∂μ = 0 := by
+  ext v
+  rw [ContinuousLinearMap.integral_apply ((hu.continuous_fderiv one_ne_zero)
+    |>.integrable_of_hasCompactSupport (hsupp.fderiv (𝕜 := ℝ))) v,
+    integral_fderiv_apply_eq_zero_of_hasCompactSupport hu hsupp v, zero_apply]
 
 variable [FiniteDimensional ℝ V]
 

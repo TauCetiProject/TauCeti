@@ -157,6 +157,20 @@ theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :
       (by intro m hm z hz; exact False.elim hz)
   · exact apply_nonneg _ _
 
+/-- The compact chart `C^k` seminorm only sees a map near the points represented by its compact
+coordinate set: it vanishes on a map which is zero near each of them. -/
+theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n)
+    {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    (hf : ∀ z ∈ K, (f : M → F) =ᶠ[𝓝 ((extChartAt I x).symm z)] 0) :
+    chartCkSeminorm x K k hk f = 0 := by
+  refine le_antisymm ((chartCkSeminorm_le_iff x K k hk f le_rfl).mpr fun m hm z hz ↦ ?_)
+    (apply_nonneg _ _)
+  have hz : f ∘ (extChartAt I x).symm =ᶠ[𝓝[(extChartAt I x).target] (z : E)] fun _ ↦ 0 :=
+    (hf z hz).comp_tendsto (continuousOn_extChartAt_symm x (z : E) z.2)
+  rw [chartIteratedFDeriv_self_target_apply, hz.iteratedFDerivWithin_eq (hz.eq_of_nhdsWithin z.2),
+    iteratedFDerivWithin_fun_zero, Pi.zero_apply, norm_zero]
+
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate
 derivative through order `k`. -/
 theorem chartCkSeminorm_lt_iff (x : M)

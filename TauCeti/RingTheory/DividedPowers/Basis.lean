@@ -96,10 +96,18 @@ theorem dividedPowerSpan_eq_span_pow (x : A) :
     rw [← factorial_smul_dividedPower_eq_pow]
     exact smul_mem _ _ (dividedPower_mem_dividedPowerSpan x n)
 
-private noncomputable def invFactorialUnit (n : ℕ) : ℚˣ :=
+/-- The rational unit `1 / n!` used to normalize ordinary powers to divided powers. -/
+noncomputable def invFactorialUnit (n : ℕ) : ℚˣ :=
   Units.mk0 (n.factorial : ℚ)⁻¹ <| inv_ne_zero <| by exact_mod_cast n.factorial_ne_zero
 
-private theorem invFactorialUnit_smul_pow (x : A) (n : ℕ) :
+/-- The value of the inverse-factorial unit is the inverse rational factorial. -/
+@[simp]
+theorem coe_invFactorialUnit (n : ℕ) :
+    (invFactorialUnit n : ℚ) = (n.factorial : ℚ)⁻¹ := by
+  rfl
+
+/-- Scaling an ordinary power by the inverse-factorial unit gives its divided power. -/
+theorem invFactorialUnit_smul_pow (x : A) (n : ℕ) :
     invFactorialUnit n • x ^ n = dividedPower n x := by
   rw [Units.smul_def, invFactorialUnit, Units.val_mk0, dividedPower_def]
 
