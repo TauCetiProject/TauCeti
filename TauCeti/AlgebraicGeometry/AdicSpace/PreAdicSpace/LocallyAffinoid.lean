@@ -97,6 +97,12 @@ theorem isLocallyAffinoid_iff_sSup_eq_top : isLocallyAffinoid X ↔ sSup X.affin
   · rw [h]
     exact Opens.mem_top x
 
+/-- For a locally affinoid object `X`, the indexed supremum of its open affinoid subspaces is
+`⊤`. -/
+theorem isLocallyAffinoid.iSup_affinoidOpens_eq_top {X : PreAdicSpace.{u}}
+    (hX : isLocallyAffinoid X) : ⨆ O : X.affinoidOpens, O.1 = ⊤ :=
+  (sSup_eq_iSup' _).symm.trans ((isLocallyAffinoid_iff_sSup_eq_top X).mp hX)
+
 /-- Affinoid pre-adic spaces are locally affinoid. -/
 theorem isLocallyAffinoid_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
     isLocallyAffinoid X :=
