@@ -125,6 +125,19 @@ theorem IsContactForm.exists_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsCon
     ∃ v : TangentSpace I x, α.1 x ![v] ≠ 0 :=
   (isContactForm_iff.1 hα x).1
 
+/-- A contact form vanishes nowhere. -/
+theorem IsContactForm.apply_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
+    α.1 x ≠ 0 := fun h ↦
+  let ⟨_, hv⟩ := hα.exists_ne_zero x
+  hv (by simp [h])
+
+/-- Two one-forms with the same kernels vanish at the same points: a covector vanishes exactly
+when its kernel is the whole tangent space. -/
+theorem apply_eq_zero_iff_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1}
+    (hker : β.kerDistribution = α.kerDistribution) (x : M) : β.1 x = 0 ↔ α.1 x = 0 := by
+  rw [← RoughForm.ker_eq_top_iff, ← RoughForm.ker_eq_top_iff]
+  exact Eq.congr_left (congrFun hker x)
+
 /-- If `β = f α` for a nowhere vanishing function `f`, then `α` and `β` have the same kernel. -/
 theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
     (hf₀ : ∀ x, f x ≠ 0) (hβ : ∀ x, β.1 x = f x • α.1 x) :
