@@ -18,9 +18,9 @@ of a single weight `k`. On the full graded ring `⨁ k : ℤ, ModularForm Γ k`,
 
 For every `x : ⨁ k : ℤ, ModularForm Γ k` and `τ : ℍ`, the power series
 `ModularForm.qExpansionRingHom h hh hΓ x` converges at `Function.Periodic.qParam h τ` to the
-pointwise sum `TauCeti.ModularForm.evalDirectSum x τ`
+pointwise sum `ModularForm.evalDirectSum x τ`
 (`TauCeti.ModularForm.hasSum_qExpansionRingHom`). Combined with linear independence of modular forms
-across weights (`TauCeti.ModularForm.evalDirectSum_injective`), this proves that
+across weights (`ModularForm.evalDirectSum_injective`), this proves that
 `ModularForm.qExpansionRingHom` and `ModularForm.qExpansionAlgHom` are injective whenever
 `[Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]`.
 
@@ -41,7 +41,7 @@ across weights (`TauCeti.ModularForm.evalDirectSum_injective`), this proves that
 
 public noncomputable section
 
-open UpperHalfPlane PowerSeries
+open UpperHalfPlane PowerSeries ModularForm
 open scoped DirectSum MatrixGroups
 
 namespace TauCeti.ModularForm
