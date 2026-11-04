@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Topology.UniformSpace.DiscreteUniformity
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
+public import Mathlib.Topology.UniformSpace.Completion
 
 /-!
 # Discrete topological groups have the discrete uniformity
 
 A complement to Mathlib's `DiscreteUniformity`: a right-uniform additive group whose topology is
 discrete has the discrete uniformity, since its uniformity is the comap of the (discrete)
-neighbourhood filter of zero.
+neighbourhood filter of zero. The separated completion of a space with the discrete uniformity is
+discrete, since such a space is already complete and Hausdorff.
 
 ## Main results
 
@@ -22,6 +24,8 @@ neighbourhood filter of zero.
   `DiscreteUniformity → DiscreteTopology` instance it would form a resolution cycle. It lives
   in the root `DiscreteUniformity` namespace it extends, following this repository's
   convention for lemmas about external types.
+* `UniformSpace.Completion.discreteTopology_of_discreteUniformity` : the completion of a space with
+  the discrete uniformity is discrete, registered as an instance.
 -/
 
 public section
@@ -41,3 +45,13 @@ theorem of_discreteTopology {G : Type*} [AddGroup G] [UniformSpace G]
   simpa [SetRel.id, sub_eq_zero, eq_comm] using hp
 
 end DiscreteUniformity
+
+namespace UniformSpace.Completion
+
+/-- **The completion of a space with the discrete uniformity is discrete.** Such a space is complete
+and Hausdorff, so the canonical map into its completion is a homeomorphism. -/
+instance discreteTopology_of_discreteUniformity {α : Type*} [UniformSpace α]
+    [DiscreteUniformity α] : DiscreteTopology (Completion α) :=
+  (UniformCompletion.completeEquivSelf (α := α)).toHomeomorph.symm.discreteTopology
+
+end UniformSpace.Completion
