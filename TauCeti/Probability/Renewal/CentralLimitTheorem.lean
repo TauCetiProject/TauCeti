@@ -167,7 +167,7 @@ private lemma tendsto_sqrt_div_sqrt_index_one {μ σ : ℝ} (hμ : 0 < μ) (x : 
     tendsto_inv_atTop_zero.comp hw
   have hinv_s : Tendsto (fun s : ℝ ↦ (s / μ)⁻¹) atTop (𝓝 0) :=
     tendsto_inv_atTop_zero.comp (tendsto_id.atTop_div_const hμ)
-  -- First show `m s / (s / μ) → 1` by sandwiching `m s` between `u s` and `u s + 1`.
+  -- First show `m s / (s / μ) → 1` from `⌊u s⌋₊ / u s → 1` and `u s / (s / μ) → 1`.
   have hu_ratio : Tendsto (fun s : ℝ ↦ u s / (s / μ)) atTop (𝓝 1) := by
     have hlim :
         Tendsto (fun s : ℝ ↦ 1 + x * σ / μ * (√(s / μ))⁻¹) atTop (𝓝 (1 + x * σ / μ * 0)) :=
@@ -175,30 +175,22 @@ private lemma tendsto_sqrt_div_sqrt_index_one {μ σ : ℝ} (hμ : 0 < μ) (x : 
     rw [mul_zero, add_zero] at hlim
     refine hlim.congr' ?_
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with s hs
-    have hw_ne : √(s / μ) ≠ 0 := (Real.sqrt_pos.2 (div_pos hs hμ)).ne'
-    have hdiv_w : √(s / μ) / (s / μ) = (√(s / μ))⁻¹ := by
-      nth_rw 2 [← Real.mul_self_sqrt (div_pos hs hμ).le]
-      rw [div_mul_eq_div_div, div_self hw_ne, one_div]
     have hmul_assoc :
         x * σ * (√(s / μ) / μ) / (s / μ) = x * σ / μ * (√(s / μ) / (s / μ)) := by ring
     dsimp only [u]
-    rw [add_div, div_self (div_pos hs hμ).ne', sqrt_div_cube_eq hμ hs.le, hmul_assoc, hdiv_w]
+    rw [add_div, div_self (div_pos hs hμ).ne', sqrt_div_cube_eq hμ hs.le, hmul_assoc,
+      Real.sqrt_div_self]
   have hm_ratio : Tendsto (fun s : ℝ ↦ (m s : ℝ) / (s / μ)) atTop (𝓝 1) := by
-    have hupper : Tendsto (fun s : ℝ ↦ u s / (s / μ) + (s / μ)⁻¹) atTop (𝓝 1) := by
-      simpa using hu_ratio.add hinv_s
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hu_ratio hupper ?_ ?_
-    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with s hs
-      refine div_le_div_of_nonneg_right ?_ (div_pos hs hμ).le
-      dsimp only [m]
-      push_cast
-      exact (Nat.lt_floor_add_one (u s)).le
-    · filter_upwards [eventually_gt_atTop (0 : ℝ),
-        (tendsto_target_atTop (σ := σ) hμ x).eventually_ge_atTop 0] with s hs hu0
-      rw [← one_div, ← add_div]
-      refine div_le_div_of_nonneg_right ?_ (div_pos hs hμ).le
-      dsimp only [m]
-      push_cast
-      linarith [Nat.floor_le hu0]
+    have hfloor : Tendsto (fun s : ℝ ↦ (⌊u s⌋₊ : ℝ) / u s) atTop (𝓝 1) :=
+      tendsto_nat_floor_div_atTop.comp (tendsto_target_atTop (σ := σ) hμ x)
+    have hcomb :
+        Tendsto (fun s : ℝ ↦ (⌊u s⌋₊ : ℝ) / u s * (u s / (s / μ)) + (s / μ)⁻¹) atTop (𝓝 1) := by
+      simpa using (hfloor.mul hu_ratio).add hinv_s
+    refine hcomb.congr' ?_
+    filter_upwards [(tendsto_target_atTop (σ := σ) hμ x).eventually_gt_atTop 0] with s hu_pos
+    dsimp only [m]
+    push_cast
+    rw [div_mul_div_cancel₀ hu_pos.ne', ← one_div, ← add_div]
   -- Invert and take square roots to pass from `m s / (s / μ) → 1` to `√(s / μ) / √(m s) → 1`.
   have hinv_ratio : Tendsto (fun s : ℝ ↦ ((m s : ℝ) / (s / μ))⁻¹) atTop (𝓝 1) := by
     simpa using hm_ratio.inv₀ one_ne_zero
