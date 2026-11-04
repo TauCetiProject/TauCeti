@@ -54,7 +54,7 @@ ring, including in characteristic two, and for `r = 0`, where the chart is a poi
 * `Module.Grassmannian.isotropicLocus_chartBasisEquiv_symm_eq_bot_iff` and
   `Module.Grassmannian.baseChange_chartGraphVector`: isotropy of a chart point in terms of its
   matrix.
-* `Module.Grassmannian.isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartSym`:
+* `Module.Grassmannian.isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartDualBlock`:
   **a point of the standard chart is isotropic exactly when `S - Sᵀ = c J cᵀ`**.
 * `Module.Grassmannian.map_isotropicChartEquiv_symm`: the affine coordinates are natural in `A`.
 * `Module.Grassmannian.card_isotropicChart_coordinates`: **the number of coordinates is
@@ -102,7 +102,7 @@ theorem baseChange_chartGraphVector (Φ : Matrix ι (Fin k) A) (l l' : ι) :
         ∑ j, Φ l' j * algebraMap R A (ω (b (.inl l)) (b (.inr j))) -
         ∑ j, Φ l j * algebraMap R A (ω (b (.inr j)) (b (.inl l'))) +
         ∑ j, ∑ j', Φ l j * Φ l' j' * algebraMap R A (ω (b (.inr j)) (b (.inr j'))) := by
-  simp only [chartGraphVector, map_sub, map_sum, map_smul, LinearMap.sub_apply,
+  simp only [chartGraphVector_def, map_sub, map_sum, map_smul, LinearMap.sub_apply,
     LinearMap.BilinForm.baseChange_tmul, mul_one, Algebra.smul_def, LinearMap.coe_sum,
     LinearMap.coe_smul, Finset.sum_apply, Pi.mul_apply, Pi.algebraMap_apply,
     Algebra.algebraMap_self, RingHom.id_apply]
@@ -166,21 +166,21 @@ theorem symplecticChartBasis_inr_symm_inr (i : Fin r ⊕ κ) :
 
 variable {A : Type w}
 
-/-- The coefficients of the graph vectors of a chart point on the vectors `b (inr (inl l'))` dual
-to the base point. -/
-def symplecticChartSym (Φ : Matrix (Fin r) (Fin k) A) : Matrix (Fin r) (Fin r) A :=
+/-- The block of the chart matrix `Φ` on the vectors `b (inr (inl l'))` dual to the base point; the
+graph vectors have coefficients `-Φ`. -/
+def symplecticChartDualBlock (Φ : Matrix (Fin r) (Fin k) A) : Matrix (Fin r) (Fin r) A :=
   Matrix.of fun l l' ↦ Φ l (e.symm (.inr (.inl l')))
 
-/-- The coefficients of the graph vectors of a chart point on the remaining vectors
-`b (inl (inr q))` and `b (inr (inr q))`. -/
+/-- The block of the chart matrix `Φ` on the remaining vectors `b (inl (inr q))` and
+`b (inr (inr q))`; the graph vectors have coefficients `-Φ`. -/
 def symplecticChartFree (Φ : Matrix (Fin r) (Fin k) A) : Matrix (Fin r) (κ ⊕ κ) A :=
   Matrix.of fun l t ↦ Φ l (e.symm (Sum.elim .inl (fun q ↦ .inr (.inr q)) t))
 
 /-- The blocks of a chart matrix are compatible with applying a function to its entries. -/
 @[simp]
-theorem symplecticChartSym_map {B : Type*} (f : A → B)
+theorem symplecticChartDualBlock_map {B : Type*} (f : A → B)
     (Φ : Matrix (Fin r) (Fin k) A) :
-    symplecticChartSym e (Φ.map f) = (symplecticChartSym e Φ).map f :=
+    symplecticChartDualBlock e (Φ.map f) = (symplecticChartDualBlock e Φ).map f :=
   (rfl)
 
 /-- The blocks of a chart matrix are compatible with applying a function to its entries. -/
@@ -194,26 +194,26 @@ variable {e} in
 /-- A chart matrix is determined by its two coordinate blocks. -/
 theorem symplecticChart_ext {Φ Ψ : Matrix (Fin r) (Fin k) A}
     (h₁ : symplecticChartFree e Φ = symplecticChartFree e Ψ)
-    (h₂ : symplecticChartSym e Φ = symplecticChartSym e Ψ) : Φ = Ψ := by
+    (h₂ : symplecticChartDualBlock e Φ = symplecticChartDualBlock e Ψ) : Φ = Ψ := by
   ext l j
   obtain ⟨t, rfl⟩ := e.symm.surjective j
   rcases t with q | l' | q
   · simpa [symplecticChartFree] using congrFun (congrFun h₁ l) (.inl q)
-  · simpa [symplecticChartSym] using congrFun (congrFun h₂ l) l'
+  · simpa [symplecticChartDualBlock] using congrFun (congrFun h₂ l) l'
   · simpa [symplecticChartFree] using congrFun (congrFun h₁ l) (.inr q)
 
 /-- The splitting of a chart matrix into its two coordinate blocks. -/
 private def symplecticChartSplit :
     Matrix (Fin r) (Fin k) A ≃ Matrix (Fin r) (κ ⊕ κ) A × Matrix (Fin r) (Fin r) A where
-  toFun Φ := (symplecticChartFree e Φ, symplecticChartSym e Φ)
+  toFun Φ := (symplecticChartFree e Φ, symplecticChartDualBlock e Φ)
   invFun p := Matrix.of fun l j ↦
     Sum.elim (fun q ↦ p.1 l (.inl q)) (Sum.elim (fun l' ↦ p.2 l l') fun q ↦ p.1 l (.inr q)) (e j)
   left_inv Φ := symplecticChart_ext (e := e) (by ext l (q | q) <;> simp [symplecticChartFree])
-    (by ext l l'; simp [symplecticChartSym])
+    (by ext l l'; simp [symplecticChartDualBlock])
   right_inv p := by
     ext l t
     · rcases t with q | q <;> simp [symplecticChartFree]
-    · simp [symplecticChartSym]
+    · simp [symplecticChartDualBlock]
 
 variable [CommRing A] [Algebra R A] [Fintype κ] [DecidableEq κ]
 
@@ -227,7 +227,7 @@ theorem baseChange_chartGraphVector_symplecticChartBasis (Φ : Matrix (Fin r) (F
     (l l' : Fin r) :
     ω.baseChange A (chartGraphVector (symplecticChartBasis b e) Φ l)
         (chartGraphVector (symplecticChartBasis b e) Φ l') =
-      symplecticChartSym e Φ l' l - symplecticChartSym e Φ l l' +
+      symplecticChartDualBlock e Φ l' l - symplecticChartDualBlock e Φ l l' +
         (symplecticChartFree e Φ * Matrix.J κ A * (symplecticChartFree e Φ)ᵀ) l l' := by
   have hω (i j) : ω (b i) (b j) = Matrix.J (Fin r ⊕ κ) R i j := by
     rw [← LinearMap.BilinForm.toMatrix_apply, hb]
@@ -235,17 +235,17 @@ theorem baseChange_chartGraphVector_symplecticChartBasis (Φ : Matrix (Fin r) (F
   rw [baseChange_chartGraphVector]
   simp only [hsum, Fintype.sum_sum_type, symplecticChartBasis_inl,
     symplecticChartBasis_inr_symm_inl, symplecticChartBasis_inr_symm_inr, hω]
-  simp [Matrix.J, Matrix.mul_apply, Fintype.sum_sum_type, symplecticChartSym,
+  simp [Matrix.J, Matrix.mul_apply, Fintype.sum_sum_type, symplecticChartDualBlock,
     symplecticChartFree, Matrix.one_apply]
   ring
 
 /-- **Isotropy in the standard chart.** A point of the standard chart is isotropic exactly when the
 block `S` of its matrix on the dual vectors of the base point satisfies `S - Sᵀ = c J cᵀ`, where `c`
 is the block on the remaining vectors and `J` the standard alternating matrix. -/
-theorem isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartSym
+theorem isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartDualBlock
     (Φ : Matrix (Fin r) (Fin k) A) :
     ((chartBasisEquiv (symplecticChartBasis b e) A).symm Φ).1.isotropicLocus ω = ⊥ ↔
-      symplecticChartSym e Φ - (symplecticChartSym e Φ)ᵀ =
+      symplecticChartDualBlock e Φ - (symplecticChartDualBlock e Φ)ᵀ =
         symplecticChartFree e Φ * Matrix.J κ A * (symplecticChartFree e Φ)ᵀ := by
   rw [isotropicLocus_chartBasisEquiv_symm_eq_bot_iff]
   simp only [baseChange_chartGraphVector_symplecticChartBasis b e hb]
@@ -269,9 +269,9 @@ noncomputable def isotropicChartEquiv :
         N.1.isotropicLocus ω = ⊥} ≃
       Matrix (Fin r) (κ ⊕ κ) A × (Sym2 (Fin r) → A) :=
   ((chartBasisEquiv (symplecticChartBasis b e) A).subtypeEquiv (q := fun Φ ↦
-      symplecticChartSym e Φ - (symplecticChartSym e Φ)ᵀ =
+      symplecticChartDualBlock e Φ - (symplecticChartDualBlock e Φ)ᵀ =
         symplecticChartFree e Φ * Matrix.J κ A * (symplecticChartFree e Φ)ᵀ) fun N ↦ by
-      rw [← isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartSym b e hb,
+      rw [← isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartDualBlock b e hb,
         Equiv.symm_apply_apply]).trans <|
     ((symplecticChartSplit e).subtypeEquiv (q := fun p ↦ p.2 - p.2ᵀ = p.1 * Matrix.J κ A * p.1ᵀ)
       fun _ ↦ Iff.rfl).trans <|
@@ -296,8 +296,8 @@ private theorem isotropicChartEquiv_apply_snd
     (isotropicChartEquiv b e A hb N).2 =
       Matrix.subTransposeEqEquiv (Matrix.transpose_mul_J_mul_transpose _)
         (Matrix.mul_J_mul_transpose_apply_self _)
-        ⟨symplecticChartSym e (chartBasisEquiv (symplecticChartBasis b e) A N.1),
-          (isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartSym b e hb _).1 <| by
+        ⟨symplecticChartDualBlock e (chartBasisEquiv (symplecticChartBasis b e) A N.1),
+          (isotropicLocus_chartBasisEquiv_symm_eq_bot_iff_symplecticChartDualBlock b e hb _).1 <| by
             rw [Equiv.symm_apply_apply]; exact N.2⟩ :=
   (rfl)
 
@@ -307,7 +307,7 @@ theorem isotropicChartEquiv_apply_snd_mk_of_le
     (N : {N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] symplecticChartBasis b e (.inr j)) //
       N.1.isotropicLocus ω = ⊥}) {l l' : Fin r} (h : l ≤ l') :
     (isotropicChartEquiv b e A hb N).2 s(l, l') =
-      symplecticChartSym e (chartBasisEquiv (symplecticChartBasis b e) A N.1) l l' :=
+      symplecticChartDualBlock e (chartBasisEquiv (symplecticChartBasis b e) A N.1) l l' :=
   Matrix.subTransposeEqEquiv_apply_mk_of_le _ _ _ h
 
 /-- The block `c` of the isotropic chart point with coordinates `(c, g)` is `c`. -/
@@ -321,14 +321,14 @@ theorem symplecticChartFree_isotropicChartEquiv_symm_apply
 
 /-- The block `S` of the isotropic chart point with coordinates `(c, g)` has entries `g s(l, l')`
 on and above the diagonal, and `g s(l, l') + (c J cᵀ) l l'` below it. -/
-theorem symplecticChartSym_isotropicChartEquiv_symm_apply
+theorem symplecticChartDualBlock_isotropicChartEquiv_symm_apply
     (p : Matrix (Fin r) (κ ⊕ κ) A × (Sym2 (Fin r) → A)) (l l' : Fin r) :
-    symplecticChartSym e
+    symplecticChartDualBlock e
         (chartBasisEquiv (symplecticChartBasis b e) A ((isotropicChartEquiv b e A hb).symm p).1)
         l l' =
       p.2 s(l, l') + if l' < l then (p.1 * Matrix.J κ A * p.1ᵀ) l l' else 0 := by
   set N := (isotropicChartEquiv b e A hb).symm p
-  have key : symplecticChartSym e (chartBasisEquiv (symplecticChartBasis b e) A N.1) =
+  have key : symplecticChartDualBlock e (chartBasisEquiv (symplecticChartBasis b e) A N.1) =
       ((Matrix.subTransposeEqEquiv
         (Matrix.transpose_mul_J_mul_transpose
           (symplecticChartFree e (chartBasisEquiv (symplecticChartBasis b e) A N.1)))
@@ -354,9 +354,9 @@ theorem map_isotropicChartEquiv_symm (f : A →ₐ[R] B)
   refine symplecticChart_ext (e := e) ?_ (Matrix.ext fun l l' ↦ ?_)
   · rw [symplecticChartFree_map, symplecticChartFree_isotropicChartEquiv_symm_apply,
       symplecticChartFree_isotropicChartEquiv_symm_apply]
-  · rw [symplecticChartSym_map, Matrix.map_apply,
-      symplecticChartSym_isotropicChartEquiv_symm_apply,
-      symplecticChartSym_isotropicChartEquiv_symm_apply]
+  · rw [symplecticChartDualBlock_map, Matrix.map_apply,
+      symplecticChartDualBlock_isotropicChartEquiv_symm_apply,
+      symplecticChartDualBlock_isotropicChartEquiv_symm_apply]
     have hQ : (p.1 * Matrix.J κ A * p.1ᵀ).map f = p.1.map f * Matrix.J κ B * (p.1.map f)ᵀ := by
       simp [Matrix.transpose_map]
     simp [apply_ite f, ← hQ]

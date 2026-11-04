@@ -303,6 +303,13 @@ noncomputable def linearMapBasisEquiv :
     ext l j
     simp only [Basis.constr_basis, Sum.elim_inl]
 
+/-- The matrix of a linear map `ψ` records its values on the basis vectors `b (inl l)`. -/
+@[simp]
+theorem linearMapBasisEquiv_apply
+    (ψ : {ψ : M →ₗ[R] Fin k → A // ∀ j, ψ (b (Sum.inr j)) = Pi.single j 1}) (l : ι) :
+    linearMapBasisEquiv b A ψ l = ψ.1 (b (Sum.inl l)) :=
+  (rfl)
+
 /-- The linear map with matrix `Φ` sends `b (inl l)` to the row `Φ l` and `b (inr j)` to `eⱼ`. -/
 theorem coe_linearMapBasisEquiv_symm_apply (Φ : Matrix ι (Fin k) A) :
     ((linearMapBasisEquiv b A).symm Φ).1 =
@@ -332,8 +339,14 @@ theorem chartBasisEquiv_apply (N : chart A (fun j ↦ (1 : A) ⊗ₜ[R] b (Sum.i
 
 /-- The vector `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))` of `A ⊗[R] M`. These vectors span the
 point of the chart with matrix `Φ`: it is the graph of `-Φ`. -/
-@[expose] noncomputable def chartGraphVector (Φ : Matrix ι (Fin k) A) (l : ι) : A ⊗[R] M :=
+noncomputable def chartGraphVector (Φ : Matrix ι (Fin k) A) (l : ι) : A ⊗[R] M :=
   (1 : A) ⊗ₜ b (Sum.inl l) - ∑ j, Φ l j • (1 : A) ⊗ₜ[R] b (Sum.inr j)
+
+/-- The defining formula of the graph vector `chartGraphVector b Φ l`. -/
+theorem chartGraphVector_def (Φ : Matrix ι (Fin k) A) (l : ι) :
+    chartGraphVector b Φ l =
+      (1 : A) ⊗ₜ b (Sum.inl l) - ∑ j, Φ l j • (1 : A) ⊗ₜ[R] b (Sum.inr j) :=
+  (rfl)
 
 /-- **The point of the chart with matrix `Φ` is the graph of `-Φ`**: it is spanned by the graph
 vectors `1 ⊗ b (inl l) - ∑ⱼ Φ l j • (1 ⊗ b (inr j))`. -/
