@@ -60,7 +60,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 In the namespace `OrthonormalBasis`:
 
-* `exists_complexStructure_finFour`: every orthonormal four-frame carries an almost complex
+* `exists_almostComplexStructure_finFour`: every orthonormal four-frame carries an almost complex
   structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
 
 ## References
@@ -277,9 +277,9 @@ end TauCeti.AlmostComplexStructure
 namespace OrthonormalBasis
 
 omit [FiniteDimensional ℝ V] in
-/-- An orthonormal four-frame carries a complex structure rotating its two coordinate planes:
-`J e₀ = e₁` and `J e₂ = e₃`. -/
-theorem exists_complexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
+/-- An orthonormal four-frame carries an almost complex structure rotating its two coordinate
+planes: `J e₀ = e₁` and `J e₂ = e₃`. -/
+theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
     ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
   let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
   have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i

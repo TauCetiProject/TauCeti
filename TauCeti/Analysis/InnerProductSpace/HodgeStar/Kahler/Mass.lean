@@ -95,7 +95,7 @@ namespace OrthonormalBasis
 In particular this computes the mass of `e₀ ∧ e₁ + e₂ ∧ e₃` in Euclidean four-space. -/
 theorem norm_formDualEquiv_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
     ‖formDualEquiv ℝ V 2 (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])‖ = 2 := by
-  obtain ⟨J, h₀, h₂⟩ := exists_complexStructure_finFour e
+  obtain ⟨J, h₀, h₂⟩ := exists_almostComplexStructure_finFour e
   rw [← J.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂,
     J.norm_formDualEquiv_kahlerForm (J.inner_apply_apply_of_orthonormalBasis h₀ h₂)]
   norm_num [Module.finrank_eq_card_basis e.toBasis]
@@ -103,7 +103,7 @@ theorem norm_formDualEquiv_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fi
 /-- The same sum of orthogonal unit bivectors has Hilbert norm `√2`, not its mass `2`. -/
 theorem norm_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
     ‖ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3]‖ = √2 := by
-  obtain ⟨J, h₀, h₂⟩ := exists_complexStructure_finFour e
+  obtain ⟨J, h₀, h₂⟩ := exists_almostComplexStructure_finFour e
   rw [← J.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, norm_eq_sqrt_real_inner,
     J.inner_kahlerForm_self (J.inner_apply_apply_of_orthonormalBasis h₀ h₂)]
   norm_num [Module.finrank_eq_card_basis e.toBasis]
