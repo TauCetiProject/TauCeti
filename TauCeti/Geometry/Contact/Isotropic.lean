@@ -9,7 +9,6 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
-import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
@@ -23,12 +22,10 @@ immersion parametrizes an immersed isotropic submanifold. The source is an arbit
 and `f` need not be injective, so embedded and immersed submanifolds are treated alike.
 
 The Levi form `L_ξ(u, v) = -[U, V] mod ξ` of a `C¹` hyperplane field vanishes on the tangent
-images of every `C²` horizontal map
-(`TauCeti.IsHorizontalMap.distributionLeviForm_eq_zero`). The proof pulls back a local defining
-form `α` of `ξ` near `f y`: since `f^* α` vanishes near `y`, so does `f^* dα = d(f^* α)`, and
-`α` carries the Levi form to `dα` on `ξ`. Since the Levi form of a contact structure is a
-nondegenerate alternating form with values in the line `TM ⧸ ξ`, a tangent image on which it
-vanishes has at most half the dimension of `ξ`. So an isotropic map with injective differential
+images of every `C²` horizontal map (`TauCeti.IsHorizontalMap.distributionLeviForm_eq_zero`, in
+`TauCeti.Geometry.Contact.Levi`). Since the Levi form of a contact structure is a nondegenerate
+alternating form with values in the line `TM ⧸ ξ`, a tangent image on which it vanishes has at
+most half the dimension of `ξ`. So an isotropic map with injective differential
 into a contact manifold of dimension `2 n + 1` has a source of dimension at most `n`
 (`TauCeti.IsHorizontalMap.two_mul_finrank_add_one_le`). None of this uses a coorientation of `ξ`.
 
@@ -44,8 +41,6 @@ the image of a Legendrian immersion may have self-intersections.
 
 ## Main declarations
 
-* `TauCeti.IsHorizontalMap.distributionLeviForm_eq_zero`: the Levi form vanishes on the tangent
-  images of a horizontal map.
 * `TauCeti.IsHorizontalMap.two_mul_finrank_add_one_le`: the dimension bound `2 dim N + 1 ≤ dim M`
   for isotropic maps into a contact manifold with injective differential at some point.
 * `TauCeti.IsLegendrianImmersion`, `TauCeti.IsLegendrianEmbedding`: Legendrian immersions and
@@ -73,55 +68,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M}
 
-/-! ### The Levi form on tangent images -/
+/-! ### The dimension bound -/
 
-section Levi
+section DimensionBound
 
 variable [CompleteSpace E] [FiniteDimensional ℝ E] [IsManifold I 2 M] [IsManifold J 2 N]
   {n : ℕ∞ω} {k : ℕ}
-
-/-- **The Levi form vanishes on horizontal tangent images.** Let `D` be a `C^n` hyperplane field,
-with `1 ≤ n`, and let `f` be horizontal for `D` and of class `C²` at `y`. Then the Levi form
-`L_D (u, v) = -[U, V] mod D` vanishes on any two vectors of the tangent image `df_y(T_y N)`. -/
-theorem IsHorizontalMap.distributionLeviForm_eq_zero [IsManifold I (n + 1) M]
-    (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank ℝ E) (hn : 1 ≤ n)
-    (hf : IsHorizontalMap J D f) {y : N} (hfy : ContMDiffAt J I 2 f y) (v w : TangentSpace J y) :
-    distributionLeviForm D (f y) ⟨mfderiv J I f y v, hf.mfderiv_mem y v⟩
-      ⟨mfderiv J I f y w, hf.mfderiv_mem y w⟩ = 0 := by
-  obtain ⟨U, hU, hyU, α, hα, hαD⟩ := hD.exists_roughForm_ker_eq hk (f y)
-  have hαy : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) 1
-      (fun x ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) x (α x)) (f y) :=
-    ((hα _ hyU).contMDiffAt (hU.mem_nhds hyU)).of_le hn
-  -- The pulled-back form `f^* α` vanishes near `y`, since `f` maps into `D = ker α` there.
-  have hpull : ∀ᶠ y' in 𝓝 y, mpullback J I f α y' = 0 := by
-    filter_upwards [hfy.continuousAt.preimage_mem_nhds (hU.mem_nhds hyU)] with y' hy'
-    ext u
-    rw [mpullback_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-    have hu : (fun i ↦ mfderiv J I f y' (u i)) = ![mfderiv J I f y' (u 0)] := by
-      ext i
-      fin_cases i
-      rfl
-    rw [hu, ← RoughForm.mem_ker, (hαD _ hy').2]
-    exact hf.mfderiv_mem y' (u 0)
-  -- Hence `dα` vanishes on the tangent image at `y`.
-  have hdα : mextDeriv α (f y) ![mfderiv J I f y v, mfderiv J I f y w] = 0 := by
-    have h := congr($(mpullback_mextDeriv_at hfy hαy) ![v, w])
-    rw [mextDeriv_congr_of_eventuallyEq (η := 0) hpull, mextDeriv_zero, Pi.zero_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply, mpullback_apply] at h
-    rw [← h]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  -- The defining form carries the Levi form to `dα`, and is injective on `TM ⧸ D`.
-  obtain ⟨V, hV, hyV, X, hX⟩ := isContMDiffDistribution_iff.1 hD (f y)
-  obtain ⟨z, hz⟩ := (D (f y)).mkQ_surjective (distributionLeviForm D (f y)
-    ⟨mfderiv J I f y v, hf.mfderiv_mem y v⟩ ⟨mfderiv J I f y w, hf.mfderiv_mem y w⟩)
-  have hαz := RoughForm.apply_eq_mextDeriv_of_mkQ_eq_distributionLeviForm (hX.of_le hn)
-    (hV.mem_nhds hyV) (hαy.mdifferentiableAt one_ne_zero)
-    (eventually_of_mem (hU.mem_nhds hyU) fun x hx ↦ (hαD x hx).2.ge) hz
-  rw [hdα, ← RoughForm.mem_ker, (hαD _ hyU).2] at hαz
-  rw [← hz, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  exact hαz
 
 /-- **Isotropic maps into a contact manifold have at most half the dimension of the contact
 hyperplanes.** If `D` is a `C^n` contact structure, with `1 ≤ n`, on a manifold of dimension
@@ -149,7 +101,7 @@ theorem IsHorizontalMap.two_mul_finrank_add_one_le [IsManifold I (n + 1) M]
   have := hD.finrank_add_one (f y)
   omega
 
-end Levi
+end DimensionBound
 
 /-! ### Legendrian immersions and embeddings -/
 
