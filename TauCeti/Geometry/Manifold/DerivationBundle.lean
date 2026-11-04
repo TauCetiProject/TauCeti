@@ -104,7 +104,7 @@ theorem tangentToPointDerivation_apply (x : M) (v : TangentSpace I x)
 
 /-- **A globally smooth map with the germ of the extended chart.** There is a `C^∞` map `M → E`
 that agrees with `extChartAt I x` on a neighbourhood of `x`. -/
-private theorem exists_contMDiffMap_eventuallyEq_extChartAt
+theorem exists_contMDiffMap_eventuallyEq_extChartAt
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] (x : M) :
@@ -146,7 +146,7 @@ theorem tangentToPointDerivation_injective
 function as a combination of the coordinate functions of any finitely-indexed basis, each taken
 relative to its own value at `x`, with smooth coefficients. At the base point those coefficients
 are the directional derivatives along the basis. -/
-private theorem exists_contMDiffMap_hadamard_coords {E : Type*} [NormedAddCommGroup E]
+theorem exists_contMDiffMap_hadamard_coords {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {ι : Type*} [Fintype ι]
     (f : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯) (x : E) (b : Module.Basis ι ℝ E) :
     ∃ a : ι → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
@@ -351,7 +351,7 @@ theorem tangentToPointDerivation_mfderiv (f : C^∞⟮I, M; I', M'⟯) (x : M)
 /-- **A smooth function factors through the chart near an interior point.** If `F` has the germ of
 the extended chart at an interior point `x`, then every `f : C^∞⟮I, M; ℝ⟯` agrees near `x` with
 `g' ∘ F` for some `C^∞` function `g'` on the model space. -/
-private theorem exists_contMDiffMap_comp_eventuallyEq
+theorem exists_contMDiffMap_comp_eventuallyEq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
