@@ -140,6 +140,9 @@ weights of the representations occurring in tensor powers of the standard repres
 opposed to the general rational ones, which need a negative power of the determinant. -/
 def IsPolynomial (l : DominantWeight n) : Prop := ∀ i, 0 ≤ l.1 i
 
+/-- Unfold `IsPolynomial` to its entrywise nonnegativity condition. -/
+theorem isPolynomial_def (l : DominantWeight n) : l.IsPolynomial ↔ ∀ i, 0 ≤ l.1 i := Iff.rfl
+
 /-- Since a dominant weight decreases, only its last entry has to be tested for polynomiality.
 This is not a `simp` lemma: rewriting `IsPolynomial` away would put the `simp` lemmas whose
 statement or hypothesis mentions it — `TauCeti.isPolynomial_weightOfShape` and
