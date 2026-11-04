@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The cotangent bundle of a manifold

@@ -64,6 +64,8 @@ so the height is defined over fields.
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
 * `TauCeti.FormalGroupHom.order_nsmulSeries_eq`: over an integral domain, if there is a nonzero
   homomorphism from `F` to `G`, then `[n]_F` and `[n]_G` have the same order.
+* `TauCeti.FormalGroupIso.order_nsmulSeries_eq`: over any commutative ring, isomorphic formal
+  group laws have multiplication series of the same order.
 * `TauCeti.FormalGroupHom.height_eq` and `TauCeti.FormalGroupIso.height_eq`: formal group laws
   related by a nonzero homomorphism, in particular isomorphic ones, have the same height.
 * `FormalGroup.height_smul`: the height is unchanged by a change of coordinate.
@@ -316,6 +318,28 @@ theorem height_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (p : ℕ
   simp only [FormalGroup.height, ← PowerSeries.order_eq_top, f.order_nsmulSeries_eq hf]
 
 end FormalGroupHom
+
+/-- **An isomorphism preserves the order of multiplication by `n`.** Over any commutative ring, if
+`e` is an isomorphism of formal group laws from `F` to `G`, then `[n]_F` and `[n]_G` have the same
+order, since `[n]_G = e ∘ [n]_F ∘ e⁻¹` and substitution into or of a series without constant term
+does not lower the order. -/
+theorem FormalGroupIso.order_nsmulSeries_eq {R : Type*} [CommRing R] {F G : FormalGroup R}
+    (e : FormalGroupIso F G) (n : ℕ) : (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
+  suffices h : ∀ {F G : FormalGroup R} (e : FormalGroupIso F G),
+      (F.nsmulSeries n).order ≤ (G.nsmulSeries n).order from le_antisymm (h e) (h e.symm)
+  intro F G e
+  have hn₀ := F.constantCoeff_nsmulSeries n
+  have hg₀ := e.invHom.zero_constantCoeff
+  -- `[n]_G(X) = e([n]_F(e⁻¹(X)))`
+  have he : G.nsmulSeries n = PowerSeries.subst
+      (PowerSeries.subst e.invHom.toPowerSeries (F.nsmulSeries n)) e.toHom.toPowerSeries := by
+    rw [← PowerSeries.subst_comp_subst_apply (.of_constantCoeff_zero' hn₀) e.invHom.hasSubst,
+      e.toHom.subst_nsmulSeries,
+      PowerSeries.subst_comp_subst_apply e.toHom.hasSubst e.invHom.hasSubst,
+      e.subst_invHom_toHom, PowerSeries.X_subst]
+  rw [he]
+  exact (PowerSeries.le_order_subst_left' hg₀).trans (PowerSeries.le_order_subst_right'
+    (PowerSeries.constantCoeff_subst_eq_zero hg₀ _ hn₀) e.toHom.zero_constantCoeff)
 
 /-- **Coordinate independence of height**: isomorphic formal group laws over a field have the same
 height. -/
