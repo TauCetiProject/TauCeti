@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Hartogs
 public import TauCeti.RingTheory.Etale.Normal
+import TauCeti.RingTheory.Localization.Integral
 import Mathlib.RingTheory.LocalProperties.Reduced
 
 /-!
@@ -63,39 +64,9 @@ namespace TauCeti.AlgebraicGeometry.Spec
 variable {B : Type u} [CommRing B] {T : Submonoid B} {E : Type*} [CommRing E] [Algebra B E]
   [IsLocalization T E]
 
-/-- Let `q` be a prime of `B` with `B_q` an integrally closed domain, and `x / t` an element of a
-localization of `B` at nonzerodivisors which is integral over `B`. Then `x / t` lies in `B_q`:
-there are `b, u, w ∈ B` with `u, w ∉ q` and `w b t = w u x`. -/
-private theorem exists_mul_eq_mul_of_isIntegral (hT : T ≤ B⁰) (x : B) (t : T)
-    (hx : IsIntegral B (IsLocalization.mk' E x t)) (q : Ideal B) [q.IsPrime]
-    [IsDomain (Localization.AtPrime q)] [IsIntegrallyClosed (Localization.AtPrime q)] :
-    ∃ b u w : B, u ∉ q ∧ w ∉ q ∧ w * (b * t) = w * (u * x) := by
-  let Bq := Localization.AtPrime q
-  let K := FractionRing Bq
-  -- Elements of `T` stay nonzero in the domain `B_q`, so they become units in its fraction field.
-  have hunit (s : T) : IsUnit (algebraMap B K s) := by
-    rw [IsScalarTower.algebraMap_apply B Bq K, isUnit_iff_ne_zero,
-      map_ne_zero_iff _ (IsFractionRing.injective Bq K)]
-    intro h
-    obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.primeCompl Bq _).mp h
-    exact c.2 (by rw [(mem_nonZeroDivisors_iff_right.mp (hT s.2)) c hc]; exact q.zero_mem)
-  let φ : E →ₐ[B] K := IsLocalization.liftAlgHom (M := T) (f := Algebra.ofId B K) hunit
-  -- The image of `x / t` in the fraction field of `B_q` is integral, hence lies in `B_q`.
-  obtain ⟨y, hy⟩ := (IsIntegrallyClosed.isIntegral_iff (R := Bq) (K := K)).mp
-    ((hx.map φ).tower_top (A := Bq))
-  obtain ⟨⟨b, u⟩, rfl⟩ := IsLocalization.mk'_surjective q.primeCompl y
-  have hxt : φ (IsLocalization.mk' E x t) * algebraMap B K t = algebraMap B K x := by
-    rw [← φ.commutes, ← map_mul, IsLocalization.mk'_spec, φ.commutes]
-  rw [← hy, IsScalarTower.algebraMap_apply B Bq K, IsScalarTower.algebraMap_apply B Bq K,
-    ← map_mul, (IsFractionRing.injective Bq K).eq_iff] at hxt
-  have hbt : algebraMap B Bq (b * t) = algebraMap B Bq (u * x) := by
-    rw [map_mul, map_mul, ← hxt, ← mul_assoc, mul_comm (algebraMap B Bq u),
-      IsLocalization.mk'_spec_mk]
-  obtain ⟨w, hw⟩ := (IsLocalization.eq_iff_exists q.primeCompl Bq).mp hbt
-  exact ⟨b, u, w, u.2, w.2, hw⟩
-
 /-- Two solutions `b / u` of the equation `t z = x` near a prime `q`, in the sense of
-`exists_mul_eq_mul_of_isIntegral`, agree in `B_q`, because `t` is a nonzerodivisor. -/
+`TauCeti.IsLocalization.exists_mul_eq_mul_of_isIntegral_mk'`, agree in `B_q`, because `t` is a
+nonzerodivisor. -/
 private theorem mul_mul_eq_of_mul_eq_mul {t x b₁ u₁ w₁ b₂ u₂ w₂ : B} (ht : t ∈ B⁰)
     (h₁ : w₁ * (b₁ * t) = w₁ * (u₁ * x)) (h₂ : w₂ * (b₂ * t) = w₂ * (u₂ * x)) :
     w₁ * w₂ * (b₁ * u₂) = w₁ * w₂ * (b₂ * u₁) := by
@@ -117,7 +88,7 @@ private theorem isIntegrallyClosedIn_of_toOpenₗ_bijective (hT : T ≤ B⁰)
   have key (q : U) : ∃ b u w : B, u ∉ q.1.asIdeal ∧ w ∉ q.1.asIdeal ∧
       w * (b * t) = w * (u * x) := by
     obtain ⟨_, _⟩ := hU q.1 q.2
-    exact exists_mul_eq_mul_of_isIntegral hT x t he q.1.asIdeal
+    exact IsLocalization.exists_mul_eq_mul_of_isIntegral_mk' hT x t he q.1.asIdeal
   choose b u w hu hw hbu using key
   -- These fractions glue to a section of `Spec B` over `U`.
   let s : (structureSheafInType B B).1.obj (op U) :=
@@ -165,9 +136,9 @@ theorem isIntegrallyClosedIn_of_presheaf_map_leTop_bijective (hT : T ≤ B⁰)
     ((Spec.presheaf_map_leTop_bijective_iff W).mp hbij)
 
 /-- Let `W` be an open subset of `Spec B` such that restriction of sections of `Spec B` to `W` is
-injective and `B_q` is a domain at every point `q` of `W`. Then `B` is reduced. -/
+injective and `B_q` is reduced at every point `q` of `W`. Then `B` is reduced. -/
 theorem isReduced_of_presheaf_map_leTop_injective (W : (Spec (.of B)).Opens)
-    (hW : ∀ p : PrimeSpectrum B, p ∈ W → IsDomain (Localization.AtPrime p.asIdeal))
+    (hW : ∀ p : PrimeSpectrum B, p ∈ W → IsReduced (Localization.AtPrime p.asIdeal))
     (hinj : Function.Injective ((Spec (.of B)).presheaf.map W.leTop.op)) : IsReduced B := by
   -- The map `B → 𝒪(W)` is restriction precomposed with the isomorphism `B ≅ 𝒪(Spec B)`.
   have hinj' : Function.Injective (toOpenₗ B B (W : Opens (PrimeSpectrum.Top B))) :=
@@ -225,8 +196,8 @@ theorem isDomain_and_isIntegrallyClosed_localization_atPrime_of_isEtaleAt {A : T
       (Module.IsTorsionFree.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr ha))
         (by simpa [Algebra.smul_def, mul_comm] using hb)
   have : IsArtinianRing E := IsArtinianRing.of_finite K E
-  have : IsReduced B := isReduced_of_presheaf_map_leTop_injective W (fun p hp ↦ (hW p hp).1)
-    hbij.1
+  have : IsReduced B := isReduced_of_presheaf_map_leTop_injective W
+    (fun p hp ↦ have := (hW p hp).1; inferInstance) hbij.1
   have : IsReduced E := isReduced_of_injective
     (IsLocalization.algEquiv (Algebra.algebraMapSubmonoid B A⁰) E
       (Localization (Algebra.algebraMapSubmonoid B A⁰))).toRingHom
