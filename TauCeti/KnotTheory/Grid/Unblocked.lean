@@ -72,6 +72,8 @@ assignment, which `SignAssignment/Differential.lean` does.
 
 * `TauCeti.GridDiagram.card_OColumns`: the number of covered `O`-columns is the number of
   `O`-markings among the covered squares.
+* `TauCeti.GridDiagram.prod_OColumnsOfSquares_union_inter`: the `O`-markings two sets of squares
+  carry, counted with multiplicity, depend only on their union and their intersection.
 * `TauCeti.GridDiagram.totalDegree_OMonomial`: the weight of a rectangle is a squarefree monomial
   whose degree is the number of `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
@@ -432,6 +434,30 @@ theorem prod_OColumnsOfSquares_univ_erase_product_singleton {M : Type*} [CommMon
   have h : G.O.transpose s = c ↔ G.O c = s := by
     rw [GridState.transpose_apply, Equiv.symm_apply_eq, eq_comm]
   simp only [Finset.mem_erase, Finset.mem_univ, and_true, ne_eq, h, ite_not]
+
+/-- The `O`-markings covered by a union of sets of squares are those covered by either set. -/
+@[simp]
+theorem OColumnsOfSquares_union (A B : Finset (Fin n × Fin n)) :
+    G.OColumnsOfSquares (A ∪ B) = G.OColumnsOfSquares A ∪ G.OColumnsOfSquares B := by
+  ext c
+  simp only [Finset.mem_union, mem_OColumnsOfSquares]
+
+/-- The `O`-markings covered by an intersection of sets of squares are those covered by both
+sets. -/
+@[simp]
+theorem OColumnsOfSquares_inter (A B : Finset (Fin n × Fin n)) :
+    G.OColumnsOfSquares (A ∩ B) = G.OColumnsOfSquares A ∩ G.OColumnsOfSquares B := by
+  ext c
+  simp only [Finset.mem_inter, mem_OColumnsOfSquares]
+
+/-- A product over the covered `O`-columns of two sets of squares, counted with multiplicity, is
+the product over the covered `O`-columns of their union and of their intersection. So the
+`O`-markings two sets of squares carry depend only on their union and their intersection. -/
+theorem prod_OColumnsOfSquares_union_inter {M : Type*} [CommMonoid M] (f : Fin n → M)
+    (A B : Finset (Fin n × Fin n)) :
+    (∏ c ∈ G.OColumnsOfSquares (A ∪ B), f c) * ∏ c ∈ G.OColumnsOfSquares (A ∩ B), f c =
+      (∏ c ∈ G.OColumnsOfSquares A, f c) * ∏ c ∈ G.OColumnsOfSquares B, f c := by
+  rw [OColumnsOfSquares_union, OColumnsOfSquares_inter, Finset.prod_union_inter]
 
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
