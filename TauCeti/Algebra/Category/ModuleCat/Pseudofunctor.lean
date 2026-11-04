@@ -85,7 +85,7 @@ variable {R S : CommAlgCat.{u} k}
 @[expose] noncomputable def moduleCatBaseChange (f : R ⟶ S) :
     ModuleCat.{u} (R ⊗[k] Λ) ⥤ ModuleCat.{u} (S ⊗[k] Λ) :=
   letI := f.hom.toRingHom.toAlgebra
-  haveI := isScalarTower_toAlgebra f
+  haveI := IsScalarTower.of_algHom f.hom
   { obj N := ModuleCat.of _ (S ⊗[R] N)
     map φ := ModuleCat.ofHom (CoefficientBaseChange.map k Λ S φ.hom)
     map_id _ := ModuleCat.hom_ext CoefficientBaseChange.map_id
@@ -93,13 +93,13 @@ variable {R S : CommAlgCat.{u} k}
 
 lemma moduleCatBaseChange_obj (f : R ⟶ S) (N : ModuleCat.{u} (R ⊗[k] Λ)) :
     letI := f.hom.toRingHom.toAlgebra
-    haveI := isScalarTower_toAlgebra f
+    haveI := IsScalarTower.of_algHom f.hom
     (moduleCatBaseChange Λ f).obj N = ModuleCat.of (S ⊗[k] Λ) (S ⊗[R] N) :=
   rfl
 
 lemma moduleCatBaseChange_map_hom (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k] Λ)} (φ : N ⟶ N') :
     letI := f.hom.toRingHom.toAlgebra
-    haveI := isScalarTower_toAlgebra f
+    haveI := IsScalarTower.of_algHom f.hom
     ((moduleCatBaseChange Λ f).map φ).hom = CoefficientBaseChange.map k Λ S φ.hom :=
   rfl
 
@@ -110,7 +110,7 @@ lemma moduleCatBaseChange_map_hom_tmul (f : R ⟶ S) {N N' : ModuleCat.{u} (R �
     ((moduleCatBaseChange Λ f).map φ).hom (s ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N) =
       (s ⊗ₜ[R] φ.hom n : (moduleCatBaseChange Λ f).obj N') := by
   let _ := f.hom.toRingHom.toAlgebra
-  have _ := isScalarTower_toAlgebra f
+  have _ := IsScalarTower.of_algHom f.hom
   exact CoefficientBaseChange.map_tmul _ _ _
 
 /-- A morphism out of a base change is determined by its values on the tensors `1 ⊗ n`. -/
@@ -121,14 +121,14 @@ lemma moduleCatBaseChange_hom_ext (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)
         ψ.hom ((1 : S) ⊗ₜ[R] n : (moduleCatBaseChange Λ f).obj N)) :
     φ = ψ := by
   let _ := f.hom.toRingHom.toAlgebra
-  have _ := isScalarTower_toAlgebra f
+  have _ := IsScalarTower.of_algHom f.hom
   exact ModuleCat.hom_ext (CoefficientBaseChange.hom_ext h)
 
 /-- The base-change functor is additive. -/
 instance (f : R ⟶ S) : (moduleCatBaseChange Λ f).Additive where
   map_add {_ _ _ _} := by
     let _ := f.hom.toRingHom.toAlgebra
-    have _ := isScalarTower_toAlgebra f
+    have _ := IsScalarTower.of_algHom f.hom
     exact ModuleCat.hom_ext (CoefficientBaseChange.map_add _ _)
 
 /-- Base change is semilinear along `f` on morphisms: it sends `r • φ` to `f r • ` its image of
@@ -139,7 +139,7 @@ lemma moduleCatBaseChange_map_smul (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k]
     (φ : N ⟶ N') :
     (moduleCatBaseChange Λ f).map (r • φ) = f.hom r • (moduleCatBaseChange Λ f).map φ := by
   let _ := f.hom.toRingHom.toAlgebra
-  have _ := isScalarTower_toAlgebra f
+  have _ := IsScalarTower.of_algHom f.hom
   refine moduleCatBaseChange_hom_ext Λ f fun n ↦ ?_
   -- The `S`-action on a module over `S ⊗[k] Λ` is the action of `algebraMap S (S ⊗[k] Λ)`.
   change CoefficientBaseChange.map k Λ S (r • φ).hom (1 ⊗ₜ n) =
@@ -187,9 +187,9 @@ noncomputable def moduleCatBaseChangeComp (f : R ⟶ S) (g : S ⟶ T) (fg : R �
   letI := f.hom.toRingHom.toAlgebra
   letI := g.hom.toRingHom.toAlgebra
   letI := fg.hom.toRingHom.toAlgebra
-  haveI := isScalarTower_toAlgebra f
-  haveI := isScalarTower_toAlgebra g
-  haveI := isScalarTower_toAlgebra fg
+  haveI := IsScalarTower.of_algHom f.hom
+  haveI := IsScalarTower.of_algHom g.hom
+  haveI := IsScalarTower.of_algHom fg.hom
   haveI := isScalarTower_toAlgebra_of_comp f g fg h
   NatIso.ofComponents
     (fun N ↦ (CoefficientBaseChange.cancelBaseChange k Λ T
@@ -225,9 +225,9 @@ lemma moduleCatBaseChangeComp_hom_app_hom_tmul (f : R ⟶ S) (g : S ⟶ T) (fg :
   let _ := f.hom.toRingHom.toAlgebra
   let _ := g.hom.toRingHom.toAlgebra
   let _ := fg.hom.toRingHom.toAlgebra
-  have _ := isScalarTower_toAlgebra f
-  have _ := isScalarTower_toAlgebra g
-  have _ := isScalarTower_toAlgebra fg
+  have _ := IsScalarTower.of_algHom f.hom
+  have _ := IsScalarTower.of_algHom g.hom
+  have _ := IsScalarTower.of_algHom fg.hom
   have _ := isScalarTower_toAlgebra_of_comp f g fg h
   exact CoefficientBaseChange.cancelBaseChange_tmul T
     (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N)) t n
@@ -244,15 +244,16 @@ lemma moduleCatBaseChangeComp_inv_app_hom_tmul_tmul (f : R ⟶ S) (g : S ⟶ T) 
   let _ := f.hom.toRingHom.toAlgebra
   let _ := g.hom.toRingHom.toAlgebra
   let _ := fg.hom.toRingHom.toAlgebra
-  have _ := isScalarTower_toAlgebra f
-  have _ := isScalarTower_toAlgebra g
-  have _ := isScalarTower_toAlgebra fg
+  have _ := IsScalarTower.of_algHom f.hom
+  have _ := IsScalarTower.of_algHom g.hom
+  have _ := IsScalarTower.of_algHom fg.hom
   have _ := isScalarTower_toAlgebra_of_comp f g fg h
   exact CoefficientBaseChange.cancelBaseChange_symm_tmul T
     (LinearEquiv.refl (S ⊗[k] Λ) ((moduleCatBaseChange Λ f).obj N)) t s n
 
-/-- The composition comparisons are associative: both sides send `1 ⊗ n` to
-`1 ⊗ (1 ⊗ (1 ⊗ n))`. -/
+/-- The composition comparisons are associative: the two composites of composition comparisons
+from the base change along `fgh` to the base change along `h` of the base change along `g` of the
+base change along `f` agree. -/
 lemma moduleCatBaseChangeComp_associativity {U : CommAlgCat.{u} k} (f : R ⟶ S) (g : S ⟶ T)
     (h : T ⟶ U) (fg : R ⟶ T) (gh : S ⟶ U) (fgh : R ⟶ U) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
     (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (N : ModuleCat.{u} (R ⊗[k] Λ)) :
@@ -260,6 +261,7 @@ lemma moduleCatBaseChangeComp_associativity {U : CommAlgCat.{u} k} (f : R ⟶ S)
         (moduleCatBaseChange Λ h).map ((moduleCatBaseChangeComp Λ f g fg hfg).hom.app N) =
       (moduleCatBaseChangeComp Λ f gh fgh hfgh').hom.app N ≫
         (moduleCatBaseChangeComp Λ g h gh hgh).hom.app ((moduleCatBaseChange Λ f).obj N) := by
+  -- Both sides send `1 ⊗ n` to `1 ⊗ (1 ⊗ (1 ⊗ n))`.
   refine moduleCatBaseChange_hom_ext Λ fgh fun n ↦ ?_
   change ((moduleCatBaseChange Λ h).map ((moduleCatBaseChangeComp Λ f g fg hfg).hom.app N)).hom
       (((moduleCatBaseChangeComp Λ fg h fgh hfgh).hom.app N).hom _) =

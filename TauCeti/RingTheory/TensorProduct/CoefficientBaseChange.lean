@@ -41,7 +41,7 @@ categories of modules over `R ⊗[k] Λ` for varying `R`.
 * `TauCeti.CoefficientBaseChange.lid`: the `R ⊗[k] Λ`-linear isomorphism `R ⊗[R] N ≃ N`.
 * `TauCeti.CoefficientBaseChange.cancelBaseChange`: for a tower `R → S → T` and a module `M`
   over `S ⊗[k] Λ` identified with `S ⊗[R] N`, the `T ⊗[k] Λ`-linear isomorphism
-  `T ⊗[R] N ≃ T ⊗[S] M`, `t ⊗ n ↦ t ⊗ (1 ⊗ n)`.
+  `T ⊗[R] N ≃ T ⊗[S] M`, `t ⊗ n ↦ t ⊗ e (1 ⊗ n)` for the identification `e`.
 
 ## Implementation notes
 

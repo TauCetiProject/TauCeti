@@ -11,13 +11,12 @@ public import Mathlib.Algebra.Category.CommAlgCat.Basic
 # Scalar towers from morphisms of commutative algebras
 
 A morphism `f : R ⟶ S` of commutative `k`-algebras makes `S` an `R`-algebra through
-`f.hom.toRingHom.toAlgebra`. This file records the scalar towers carried by these algebra
-structures: `k → R → S` for a single morphism, and `R → S → T` for morphisms `f : R ⟶ S`,
-`g : S ⟶ T` and `fg : R ⟶ T` with `f ≫ g = fg`.
+`f.hom.toRingHom.toAlgebra`. This file records the scalar tower `R → S → T` carried by these
+algebra structures for morphisms `f : R ⟶ S`, `g : S ⟶ T` and `fg : R ⟶ T` with `f ≫ g = fg`.
+The scalar tower `k → R → S` of a single morphism is Mathlib's `IsScalarTower.of_algHom f.hom`.
 
 ## Main statements
 
-* `CommAlgCat.isScalarTower_toAlgebra`: the scalar tower `k → R → S`.
 * `CommAlgCat.isScalarTower_toAlgebra_of_comp`: the scalar tower `R → S → T`.
 -/
 
@@ -30,14 +29,6 @@ universe v u
 namespace CommAlgCat
 
 variable {k : Type u} [CommRing k] {R S T : CommAlgCat.{v} k}
-
-/-- The scalar tower `k → R → S` of the `R`-algebra structure on `S` given by a morphism
-`f : R ⟶ S` of commutative `k`-algebras. -/
-lemma isScalarTower_toAlgebra (f : R ⟶ S) :
-    letI := f.hom.toRingHom.toAlgebra
-    IsScalarTower k R S :=
-  letI := f.hom.toRingHom.toAlgebra
-  IsScalarTower.of_algebraMap_eq' f.hom.comp_algebraMap.symm
 
 /-- The scalar tower `R → S → T` of the algebra structures given by morphisms `f : R ⟶ S`,
 `g : S ⟶ T` and `fg : R ⟶ T` with `f ≫ g = fg`. -/
