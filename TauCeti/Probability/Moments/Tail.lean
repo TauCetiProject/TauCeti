@@ -71,6 +71,20 @@ namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-- The right tail of a sum is bounded by the right tail of its first summand and the
+absolute tail of its second summand, with arbitrary real thresholds. -/
+theorem measureReal_add_gt_le [IsFiniteMeasure μ] {X Y : Ω → ℝ} {x y : ℝ} :
+    μ.real {ω | x + y < X ω + Y ω} ≤
+      μ.real {ω | x < X ω} + μ.real {ω | y < |Y ω|} := by
+  have hsub : {ω | x + y < X ω + Y ω} ⊆
+      {ω | x < X ω} ∪ {ω | y < |Y ω|} := by
+    intro ω (hω : x + y < X ω + Y ω)
+    by_cases hY : y < |Y ω|
+    · exact Or.inr hY
+    · have hX : x < X ω := by linarith only [hω, le_of_not_gt hY, le_abs_self (Y ω)]
+      exact Or.inl hX
+  exact (measureReal_mono (μ := μ) hsub).trans (measureReal_union_le _ _)
+
 /-- A finite absolute moment of order `α > 0` makes the normalized absolute tail vanish,
 also at every fixed positive multiple of the threshold. -/
 theorem tendsto_rpow_mul_measureReal_abs_gt {Y : Ω → ℝ} {α c : ℝ} (hα : 0 < α)
@@ -106,15 +120,14 @@ theorem tendsto_rpow_mul_measureReal_add_gt [IsFiniteMeasure μ] {X Y : Ω → �
     have hl := (hX.rpow_mul_comp_const_mul hc0).sub he
     simp only [sub_zero] at hl
     filter_upwards [hl.eventually (lt_mem_nhds hac), eventually_gt_atTop (0 : ℝ)] with x hx hx0
-    have hsub : {ω | c * x < X ω} ⊆
-        {ω | x < X ω + Y ω} ∪ {ω | (c - 1) * x < |Y ω|} := by
-      intro ω hω
-      by_cases he : (c - 1) * x < |Y ω|
-      · exact Or.inr he
-      · exact Or.inl (by have := neg_abs_le (Y ω); simp only [mem_ofPred_eq] at *; nlinarith)
-    have hm := (measureReal_mono (μ := μ) hsub).trans (measureReal_union_le _ _)
+    have hm : μ.real {ω | c * x < X ω} ≤
+        μ.real {ω | x < X ω + Y ω} + μ.real {ω | (c - 1) * x < |Y ω|} := by
+      have hcx : x + (c - 1) * x = c * x := by ring
+      simpa only [hcx, add_neg_cancel_right, abs_neg] using
+        measureReal_add_gt_le (μ := μ) (X := fun ω ↦ X ω + Y ω) (Y := fun ω ↦ -Y ω)
+          (x := x) (y := (c - 1) * x)
     have hp := mul_le_mul_of_nonneg_left hm (rpow_nonneg hx0.le α)
-    exact hx.trans_le (by nlinarith)
+    exact hx.trans_le (by linarith)
   · intro b hb
     -- A threshold slightly below x bounds the perturbed tail from above.
     have hcIoo : ∀ᶠ c : ℝ in 𝓝[<] 1, c ∈ Ioo 0 1 := Ioo_mem_nhdsLT zero_lt_one
@@ -125,15 +138,13 @@ theorem tendsto_rpow_mul_measureReal_add_gt [IsFiniteMeasure μ] {X Y : Ω → �
     have hu := (hX.rpow_mul_comp_const_mul hc.1).add he
     simp only [add_zero] at hu
     filter_upwards [hu.eventually (gt_mem_nhds hcb), eventually_gt_atTop (0 : ℝ)] with x hx hx0
-    have hsub : {ω | x < X ω + Y ω} ⊆
-        {ω | c * x < X ω} ∪ {ω | (1 - c) * x < |Y ω|} := by
-      intro ω hω
-      by_cases he : (1 - c) * x < |Y ω|
-      · exact Or.inr he
-      · exact Or.inl (by have := le_abs_self (Y ω); simp only [mem_ofPred_eq] at *; nlinarith)
-    have hm := (measureReal_mono (μ := μ) hsub).trans (measureReal_union_le _ _)
+    have hm : μ.real {ω | x < X ω + Y ω} ≤
+        μ.real {ω | c * x < X ω} + μ.real {ω | (1 - c) * x < |Y ω|} := by
+      have hcx : c * x + (1 - c) * x = x := by ring
+      simpa only [hcx] using
+        measureReal_add_gt_le (μ := μ) (X := X) (Y := Y) (x := c * x) (y := (1 - c) * x)
     have hp := mul_le_mul_of_nonneg_left hm (rpow_nonneg hx0.le α)
-    exact lt_of_le_of_lt (by nlinarith) hx
+    exact lt_of_le_of_lt (by linarith) hx
 
 /-- Adding a perturbation with a finite absolute `α`th moment preserves a finite left-tail
 constant of exponent `α > 0`, without requiring independence. -/
