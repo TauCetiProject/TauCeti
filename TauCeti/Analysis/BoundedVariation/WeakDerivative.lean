@@ -235,9 +235,9 @@ theorem MemBV.exists_hasWeakFDerivOn_integrableOn [IsFiniteMeasureOnCompacts μ]
     (hu : MemBV μ Ω u) (hac : variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E)) :
     ∃ g : E → E, HasWeakFDerivOn μ Ω u (fun x => innerSL ℝ (g x)) ∧ IntegrableOn g Ω μ := by
   have hΩ := Ω.isOpen.measurableSet
-  have hloc := (memBV_iff.1 hu).1.locallyIntegrableOn
+  have hloc := hu.integrableOn.locallyIntegrableOn
   have hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧
-      totalVariationOn μ U u ≠ ∞ := fun _ _ hKΩ => ⟨Ω, hKΩ, (memBV_iff.1 hu).2.ne⟩
+      totalVariationOn μ U u ≠ ∞ := fun _ _ hKΩ => ⟨Ω, hKΩ, hu.totalVariationOn_lt_top.ne⟩
   have hg := hasWeakFDerivOn_of_absolutelyContinuous hloc hfin hac
   refine ⟨_, hg, hg.locallyIntegrableOn_gradient.aestronglyMeasurable, ?_⟩
   -- `∫_Ω ‖g‖ dμ ≤ |Du|(Ω) = TV(u, Ω) < ∞`.
@@ -247,6 +247,6 @@ theorem MemBV.exists_hasWeakFDerivOn_integrableOn [IsFiniteMeasureOnCompacts μ]
   refine (setLIntegral_enorm_rnDeriv_smul_polarDensity_le hloc hfin hac
     MeasurableSet.univ).trans_lt ?_
   rw [variationMeasure_univ hloc hfin]
-  exact (memBV_iff.1 hu).2
+  exact hu.totalVariationOn_lt_top
 
 end TauCeti
