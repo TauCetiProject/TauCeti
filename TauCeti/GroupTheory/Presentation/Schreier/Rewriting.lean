@@ -181,13 +181,13 @@ theorem actionPerm_symm_apply (f : α → G) (a : α) (q : Q) :
 Mathlib's convention that the rightmost factor acts first. -/
 theorem trace_actionPerm (f : α → G) (q : Q) (w : PresentationWord α) :
     trace (actionPerm f) q w = (FreeGroup.lift f (FreeGroup.mk w))⁻¹ • q := by
-  have hcomp : (MulAction.toPermHom G Q).comp (FreeGroup.lift f) =
-      FreeGroup.lift (fun a => (actionPerm f a)⁻¹) := by
-    apply FreeGroup.ext_hom
-    intro a
-    simp only [MonoidHom.comp_apply, FreeGroup.lift_apply_of, actionPerm,
-      ← MulAction.coe_toPermHom, map_inv, inv_inv]
-  rw [trace_eq_lift, ← hcomp]
+  rw [trace_eq_lift, ← FreeGroup.lift_unique
+    (f := fun a => (actionPerm f a)⁻¹)
+    ((MulAction.toPermHom G Q).comp (FreeGroup.lift f))
+    (by
+      intro a
+      simp only [MonoidHom.comp_apply, FreeGroup.lift_apply_of, actionPerm,
+        ← MulAction.coe_toPermHom, map_inv, inv_inv])]
   simp
 
 /-- Rewriting a relation from any state yields a relation among the edge generators.
@@ -199,15 +199,21 @@ theorem lift_rewrite_eq_one (f : α → G) (r : Q → G) (q : Q)
   rw [lift_rewrite, trace_actionPerm, hw]
   simp
 
+/-- Schreier edge generators fix the base point when the representatives send it to the
+corresponding states under the inverse action. -/
+theorem generator_actionPerm_mem_stabilizer (f : α → G) (b : Q) (r : Q → G)
+    (hr : ∀ q, (r q)⁻¹ • b = q) (e : Q × α) :
+    generator (actionPerm f) f r e ∈ MulAction.stabilizer G b := by
+  rw [MulAction.mem_stabilizer_iff]
+  simp only [generator, actionPerm_apply, mul_smul, hr]
+  rw [smul_inv_smul]
+  exact (inv_smul_eq_iff.mp (hr e.1)).symm
+
 /-- Schreier edge generators, as elements of the actual stabilizer of the base point.
 Representatives satisfy `(r q)⁻¹ • b = q`; no faithfulness or finiteness is required. -/
 def stabilizerGenerator (f : α → G) (b : Q) (r : Q → G)
     (hr : ∀ q, (r q)⁻¹ • b = q) (e : Q × α) : MulAction.stabilizer G b :=
-  ⟨generator (actionPerm f) f r e, by
-    rw [MulAction.mem_stabilizer_iff]
-    simp only [generator, actionPerm_apply, mul_smul, hr]
-    rw [smul_inv_smul]
-    exact (inv_smul_eq_iff.mp (hr e.1)).symm⟩
+  ⟨generator (actionPerm f) f r e, generator_actionPerm_mem_stabilizer f b r hr e⟩
 
 @[simp]
 theorem coe_stabilizerGenerator (f : α → G) (b : Q) (r : Q → G)
@@ -225,15 +231,12 @@ theorem coe_lift_stabilizerGenerator_rewrite (f : α → G) (b : Q) (r : Q → G
   have hend : trace (actionPerm f) b w = b := by
     rw [trace_actionPerm]
     exact MulAction.mem_stabilizer_iff.mp ((MulAction.stabilizer G b).inv_mem hw)
-  have hcomp : (MulAction.stabilizer G b).subtype.comp
-      (FreeGroup.lift (stabilizerGenerator f b r hr)) =
-      FreeGroup.lift (generator (actionPerm f) f r) := by
-    apply FreeGroup.ext_hom
-    intro a
-    simp
-  have heval := DFunLike.congr_fun hcomp (FreeGroup.mk (rewrite (actionPerm f) b w))
-  simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, lift_rewrite, hend, hb,
-    one_mul, inv_one, mul_one] using heval
+  calc
+    _ = FreeGroup.lift (generator (actionPerm f) f r)
+        (FreeGroup.mk (rewrite (actionPerm f) b w)) :=
+      FreeGroup.lift_unique ((MulAction.stabilizer G b).subtype.comp
+        (FreeGroup.lift (stabilizerGenerator f b r hr))) (by intro e; simp)
+    _ = _ := by rw [lift_rewrite, hend, hb]; simp
 
 end Action
 
