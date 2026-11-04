@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.CoefficientApproximateUnit
+public import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Nondegeneracy of the canonical coefficient map
@@ -46,30 +47,13 @@ theorem tendsto_coefficientMultiplier_fst [PartialOrder A] {l : Filter A}
       Tendsto (fun e => (coefficientMultiplier α μ e).fst (of α μ f)) l (𝓝 (of α μ f)) := by
     simpa only [coefficientMultiplier_fst_of, Function.comp_def] using
       (continuous_of.tendsto f).comp (ConvolutionAlgebra.tendsto_coefficientMul hl f)
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨f, hf⟩ := (denseRange_of (α := α) (μ := μ)).exists_dist_lt x (by positivity : 0 < ε / 3)
-  filter_upwards [hl.eventually_norm, Metric.tendsto_nhds.1 (hd f) (ε / 3) (by positivity)]
-    with e he hconv
-  have hnorm : ‖(coefficientMultiplier α μ e).fst‖ ≤ 1 := by
+  refine ContinuousLinearMap.tendsto_apply_of_dense (denseRange_of (α := α) (μ := μ))
+    (g := ContinuousLinearMap.id ℂ _) (C := 1) ?_ ?_ x
+  · filter_upwards [hl.eventually_norm] with e he
     rw [DoubleCentralizer.norm_fst]
     exact (NonUnitalStarAlgHom.norm_apply_le _ e).trans he
-  have hdist : dist ((coefficientMultiplier α μ e).fst x)
-      ((coefficientMultiplier α μ e).fst (of α μ f)) ≤ dist x (of α μ f) := by
-    simp only [dist_eq_norm, ← map_sub]
-    exact ((coefficientMultiplier α μ e).fst.le_opNorm _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) hnorm)
-  calc
-    dist ((coefficientMultiplier α μ e).fst x) x
-        ≤ dist ((coefficientMultiplier α μ e).fst x)
-            ((coefficientMultiplier α μ e).fst (of α μ f)) +
-          dist ((coefficientMultiplier α μ e).fst (of α μ f)) (of α μ f) +
-          dist (of α μ f) x := dist_triangle4 _ _ _ _
-    _ < ε / 3 + ε / 3 + ε / 3 := by
-      gcongr
-      · exact hdist.trans_lt hf
-      · rwa [dist_comm]
-    _ = ε := by ring
+  · rintro _ ⟨f, rfl⟩
+    exact hd f
 
 /-- Coefficient approximate units act as the identity in norm on the right of the full crossed
 product. Together with `tendsto_coefficientMultiplier_fst`, this is strict convergence to one. -/
