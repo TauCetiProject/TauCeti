@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.Projection
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Trans
+import TauCeti.Geometry.Manifold.SmoothIsotopy.Extension
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Deriv.Projection
 import TauCeti.Analysis.Calculus.Deriv.EqLine
@@ -41,22 +42,26 @@ The isotopy is the concatenation of two explicit straight-line motions.
   intermediate times, and where the arc is the line the velocity is `e` plus a multiple of `d`.
 
 The projection step is Whitney's projection argument (Hirsch, Chapter 1, §3). By the isotopy
-extension theorem (`TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq`), the isotopy is realized on
-every compact part of the line by a compactly supported ambient diffeotopy; this is how an arc in a
-manifold of dimension at least four, read in a chart, is moved onto a straight arc. In dimension
-three the theorem fails: an arc with a knot tied in a compact region is not isotopic to a straight
-line by an isotopy fixed near infinity.
+extension theorem, in the form keeping fixed the part of the line that the isotopy does not move
+(`TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem`), the isotopy is realized by a
+compactly supported ambient diffeomorphism carrying the arc onto the line
+(`TauCeti.exists_diffeomorph_apply_eq_line_of_four_le_finrank`); this is how an arc in a manifold
+of dimension at least four, read in a chart, is moved onto a straight arc. In dimension three the
+theorem fails: an arc with a knot tied in a compact region is not isotopic to a straight line by an
+isotopy fixed near infinity.
 
 ## Main results
 
 * `TauCeti.exists_smoothIsotopy_line_of_four_le_finrank`: an injective `C^n` immersion of the
   line in a real normed space of dimension at least four, agreeing with an affine line outside a
   compact set, is smoothly isotopic to it by an isotopy fixed outside a compact set.
+* `TauCeti.exists_diffeomorph_apply_eq_line_of_four_le_finrank`: such an arc is carried onto the
+  line by a diffeomorphism of the ambient space equal to the identity outside a compact set.
 
 ## References
 
 * M. W. Hirsch, *Differential Topology*, Graduate Texts in Mathematics 33, Springer (1976),
-  Chapter 1, §3 (projections of embeddings).
+  Chapter 1, §3 (projections of embeddings), and Chapter 8, §1 (isotopy extension).
 * H. Whitney, *Differentiable manifolds*, Ann. of Math. 37 (1936), 645–680.
 -/
 
@@ -64,10 +69,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Function Module Set Topology Filter Manifold
 open scoped Manifold ContDiff
+
+namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -330,5 +335,73 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
   refine SmoothIsotopy.trans_apply_mem F₁ F₂ hn (s := {ℓ s}) (fun t => ?_) (fun t => ?_) t
   · exact (hF₁ t s ((le_max_left _ _).trans hs)).trans (hline s ((le_max_left _ _).trans hs))
   · exact hF₂ t s ((le_max_right _ _).trans hs)
+
+/-- **Ambient unknotting of smooth arcs in dimension at least four.** Let `V` be a
+finite-dimensional real normed space of dimension at least four, and `γ : ℝ → V` an injective `C^n`
+immersion which agrees with the affine line `ℓ : s ↦ p + s • e` for `|s| ≥ R`. Then some `C^m`
+diffeomorphism `Φ` of `V`, equal to the identity outside a compact set, carries `γ` onto `ℓ`:
+`Φ (γ s) = p + s • e` for every `s`. Here `1 ≤ m` and `m + 1 ≤ n`.
+
+The isotopy of `TauCeti.exists_smoothIsotopy_line_of_four_le_finrank` is extended to an ambient
+diffeotopy by `TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem`, which keeps
+the far part of the line, where the isotopy does not move, fixed. -/
+theorem exists_diffeomorph_apply_eq_line_of_four_le_finrank {n m : ℕ∞} (hm : 1 ≤ m)
+    (hmn : m + 1 ≤ n) (hV : 4 ≤ finrank ℝ V) (γ : C^n⟮𝓘(ℝ, ℝ), ℝ; 𝓘(ℝ, V), V⟯) {p e : V}
+    (hinj : Injective γ) (hγ' : ∀ s, deriv γ s ≠ 0) {R : ℝ}
+    (hline : ∀ s, R ≤ |s| → γ s = p + s • e) :
+    ∃ (Φ : V ≃ₘ^m⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V) (K : Set V), IsCompact K ∧ (∀ y ∉ K, Φ y = y) ∧
+      ∀ s, Φ (γ s) = p + s • e := by
+  have hn₂ : (2 : ℕ∞ω) ≤ n := by
+    have h2 : (2 : ℕ∞) ≤ m + 1 := by
+      calc (2 : ℕ∞) = 1 + 1 := by norm_num
+        _ ≤ m + 1 := by gcongr
+    exact WithTop.coe_le_coe.mpr (h2.trans hmn)
+  let ℓ : C^n⟮𝓘(ℝ, ℝ), ℝ; 𝓘(ℝ, V), V⟯ :=
+    ⟨fun s => p + s • e, (contDiff_const.add (contDiff_id.smul contDiff_const)).contMDiff⟩
+  have hℓ : ∀ s, ℓ s = p + s • e := fun s => rfl
+  obtain ⟨H, R', hH⟩ := exists_smoothIsotopy_line_of_four_le_finrank hn₂
+    (by exact_mod_cast le_top) hV γ ℓ hℓ hinj hγ' (R := R) fun s hs => hline s hs
+  have hRs : R < |(|R| + 1)| := by
+    rw [abs_of_pos (by positivity)]
+    linarith [le_abs_self R]
+  have he : e ≠ 0 := by
+    have := hγ' (|R| + 1)
+    rwa [(hasDerivAt_of_eq_line hline hRs).deriv] at this
+  -- Outside `[-c, c]` the isotopy is the line at all times, so `γ` is the line there too.
+  set c := max R' 0
+  have hHc : ∀ t s, c ≤ |s| → H (t, s) = p + s • e := fun t s hs =>
+    hH t s ((le_max_left _ _).trans hs)
+  have hγc : ∀ s, c ≤ |s| → γ s = p + s • e := fun s hs => by
+    rw [← H.apply_zero]
+    exact hHc 0 s hs
+  /- Extend the isotopy, keeping fixed the part `C` of the line beyond `c + 1 / 2`, which the
+  motion of `[-c, c]` never meets because every time slice is injective. -/
+  have hC : IsClosed ((fun s : ℝ => p + s • e) '' {s | c + 1 / 2 ≤ |s|}) :=
+    ((Homeomorph.addLeft p).isClosedMap.comp (isClosedEmbedding_smul_left he).isClosedMap) _
+      (isClosed_le continuous_const continuous_abs)
+  obtain ⟨Φ, K, hK, hΦK, hΦ, hΦC⟩ := H.exists_diffeotopy_apply_eq_of_forall_notMem
+    (A₀ := Icc (-c) c) (A := Icc (-(c + 1)) (c + 1)) isCompact_Icc isCompact_Icc hC
+    (fun t x hx => by
+      rintro ⟨s, hs, hxs⟩
+      have hs' : c ≤ |s| := by linarith [show c + 1 / 2 ≤ |s| from hs]
+      have hxs' : x = s :=
+        (H.isSmoothEmbedding t).isEmbedding.injective (hxs.symm.trans (hHc t s hs').symm)
+      have : |x| ≤ c := abs_le.2 hx
+      linarith [show c + 1 / 2 ≤ |x| from hxs' ▸ hs])
+    (fun t x _ hx => by
+      have hcx : c ≤ |x| := by
+        by_contra h
+        exact hx (abs_le.1 (not_le.1 h).le)
+      rw [hHc t x hcx, hγc x hcx])
+    hm hmn
+  refine ⟨Φ.final, K, hK, fun y hy => by rw [Diffeotopy.final_apply, hΦK 1 y hy], fun s => ?_⟩
+  rw [Diffeotopy.final_apply]
+  by_cases hs : |s| ≤ c + 1
+  · have h₁ : (⟨Real.smoothTransition ((1 : unitInterval) : ℝ), Real.smoothTransition.nonneg _,
+        Real.smoothTransition.le_one _⟩ : unitInterval) = 1 := Subtype.ext (by simp)
+    rw [hΦ 1 s (abs_le.1 hs), h₁, H.apply_one, hℓ]
+  · have hcs : c ≤ |s| := by linarith
+    rw [hγc s hcs]
+    exact hΦC 1 _ ⟨s, (by linarith : c + 1 / 2 ≤ |s|), rfl⟩
 
 end TauCeti

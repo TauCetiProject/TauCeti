@@ -52,8 +52,8 @@ a parameter likewise acts smoothly on the sphere.
 
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
 loop and its lift to `ℝ` have the same tangent lines, and its local inverse, the argument, is smooth
-away from `-1`. A differentiable loop in a sphere of dimension
-at least two omits a point, allowing the entire loop to be read in one stereographic chart.
+away from `-1`. A differentiable path or loop in a sphere of dimension at least two omits a point,
+allowing the entire path or loop to be read in one stereographic chart.
 
 ## Main results
 
@@ -99,8 +99,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   immersive.
 * `TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`: two loops in a sphere through the same point
   with the same velocity there, read along `Circle.exp`, have the same derivative.
-* `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
-  at least two omits a point.
+* `TauCeti.exists_notMem_range_real_sphere`, `TauCeti.exists_notMem_range_circle_sphere`: a
+  differentiable path or loop in a sphere of dimension at least two omits a point.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
@@ -610,19 +610,18 @@ end SphereLoop
 
 /-! ### Points omitted by differentiable loops -/
 
-/-- A differentiable loop in a sphere of dimension at least two omits a point.
+/-- A differentiable path `ℝ → Sⁿ` in a sphere of dimension at least two omits a point.
 No immersion or injectivity assumption is needed. -/
-theorem exists_notMem_range_circle_sphere
+theorem exists_notMem_range_real_sphere
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
-    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    {f : ℝ → sphere (0 : E) 1} (hf : MDifferentiable 𝓘(ℝ) (𝓡 n) f) :
     ∃ p : sphere (0 : E) 1, p ∉ range f := by
-  -- The cone over the loop is the image of a differentiable map from a plane.
-  have hγ : Differentiable ℝ (fun t => (f (Circle.exp t) : E)) :=
+  -- The cone over the path is the image of a differentiable map from a plane.
+  have hγ : Differentiable ℝ (fun t => (f t : E)) :=
     mdifferentiable_iff_differentiable.mp <|
-      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp
-        (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
-  let F : ℝ × ℝ → E := fun q => q.1 • (f (Circle.exp q.2) : E)
+      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp hf
+  let F : ℝ × ℝ → E := fun q => q.1 • (f q.2 : E)
   have hF : Differentiable ℝ F := differentiable_fst.smul (hγ.comp differentiable_snd)
   obtain ⟨a, ha⟩ := (hF.dense_compl_range_of_finrank_lt_finrank (by
     rw [Module.finrank_prod, Module.finrank_self, (Fact.out : finrank ℝ E = n + 1)]
@@ -632,11 +631,21 @@ theorem exists_notMem_range_circle_sphere
     exact ha ⟨(0, 0), by simp [F]⟩
   have hnorm : ‖‖a‖⁻¹ • a‖ = 1 := norm_smul_inv_norm ha0
   refine ⟨⟨‖a‖⁻¹ • a, mem_sphere_zero_iff_norm.mpr hnorm⟩, ?_⟩
-  rintro ⟨z, hz⟩
-  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  have hz' := congrArg Subtype.val hz
+  rintro ⟨t, ht⟩
   refine ha ⟨(‖a‖, t), ?_⟩
-  simp only [F, hz', smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+  simp only [F, ht, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+
+/-- A differentiable loop in a sphere of dimension at least two omits a point.
+No immersion or injectivity assumption is needed. -/
+theorem exists_notMem_range_circle_sphere
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
+    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    ∃ p : sphere (0 : E) 1, p ∉ range f := by
+  obtain ⟨p, hp⟩ := exists_notMem_range_real_sphere hn
+    (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
+  rw [range_comp, Circle.exp_surjective.range_eq, image_univ] at hp
+  exact ⟨p, hp⟩
 
 /-! ### The unit sphere in the punctured space -/
 
