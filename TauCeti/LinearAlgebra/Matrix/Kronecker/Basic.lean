@@ -26,7 +26,18 @@ open scoped Kronecker
 
 namespace Matrix
 
-variable {R l m : Type*} [CommSemiring R] [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m]
+variable {R l m : Type*} [Semiring R] [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m]
+
+omit [DecidableEq m] in
+/-- Two block matrices multiply blockwise when the first block ends where the second starts.
+Unlike `Matrix.mul_kronecker_mul`, this needs no commutativity: the entries of a matrix unit are
+central. -/
+private theorem single_one_kronecker_mul_single_one_kronecker (i j k : l) (X Y : Matrix m m R) :
+    (single i j (1 : R) ⊗ₖ X) * (single j k 1 ⊗ₖ Y) = single i k 1 ⊗ₖ (X * Y) := by
+  ext ⟨i', a⟩ ⟨k', c⟩
+  rw [Matrix.mul_apply, Fintype.sum_prod_type]
+  simp [single_apply, Matrix.mul_apply, ite_and]
+  split_ifs <;> rfl
 
 /-- **A product of block matrices along a chain.** If each block `X t` sits in the block from `b t`
 to `a t`, and each starts where the next one ends, then the product is the block of the product of
@@ -42,6 +53,6 @@ theorem list_prod_ofFn_single_kronecker {n : ℕ} (a b : Fin (n + 1) → l)
     -- Peel off the first block only, so that `ih` applies to the remaining chain.
     rw [List.ofFn_succ, List.prod_cons, ih (fun i ↦ a i.succ) (fun i ↦ b i.succ)
       (fun i ↦ X i.succ) (fun i ↦ h i.succ)]
-    simp [← mul_kronecker_mul, h0]
+    simp [h0, single_one_kronecker_mul_single_one_kronecker, List.ofFn_succ]
 
 end Matrix
