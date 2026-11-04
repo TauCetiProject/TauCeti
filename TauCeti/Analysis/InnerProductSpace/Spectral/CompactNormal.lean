@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
+public import TauCeti.Analysis.InnerProductSpace.NormalOperator
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -22,12 +23,11 @@ A bounded operator `T` on a Hilbert space is *normal* when it commutes with its 
 have trivial mutual orthogonal complement. This file extends it to compact normal operators on
 complex Hilbert spaces.
 
-*Eigenspaces of normal operators.* For normal `T`, `‖(T - μ) x‖ = ‖(T - μ)† x‖`, so `T x = μ x`
-exactly when `T† x = conj μ x` (`IsStarNormal.adjoint_apply_eq_smul_iff`). Consequently the
-eigenspaces of `T` are mutually orthogonal (`IsStarNormal.orthogonalFamily_eigenspaces`), and the
-orthogonal complement of all of them is invariant under both `T` and `T†`. Over `ℂ`, the eigenspace
-of `T` at `μ` is the joint eigenspace of its real part `ℜ T` at `re μ` and its imaginary part
-`ℑ T` at `im μ`.
+*Eigenspaces of normal operators.* The eigenspaces of a normal operator are mutually orthogonal
+(`IsStarNormal.orthogonalFamily_eigenspaces`), and the orthogonal complement of all of them is
+invariant under both `T` and `T†`. Over `ℂ`, the eigenspace of `T` at `μ` is the joint eigenspace
+of its real part `ℜ T` at `re μ` and its imaginary part `ℑ T` at `im μ`. These general facts live
+in `TauCeti.Analysis.InnerProductSpace.NormalOperator`.
 
 *Compact normal operators.* In a C⋆-algebra the spectral radius of a normal element is its norm,
 and the nonzero spectral values of a compact operator are eigenvalues; hence a compact normal
@@ -47,9 +47,6 @@ operator without eigenvectors.
 
 ## Main results
 
-* `IsStarNormal.adjoint_apply_eq_smul_iff`: for normal `T`, `T† x = conj μ • x ↔ T x = μ • x`.
-* `IsStarNormal.orthogonalFamily_eigenspaces`: the eigenspaces of a normal operator are mutually
-  orthogonal.
 * `IsStarNormal.orthogonalComplement_iSup_eigenspaces_eq_bot`: **the spectral theorem for compact
   normal operators**, the eigenspaces have trivial mutual orthogonal complement.
 * `IsStarNormal.orthogonalComplement_iSup_iSup_eigenspace_inf_eigenspace_eq_bot`: the joint
@@ -72,85 +69,10 @@ open scoped InnerProductSpace ComplexConjugate
 
 namespace IsStarNormal
 
-section Normal
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E] {T : E →L[𝕜] E}
-
-/-- A vector is an eigenvector of the adjoint of a normal operator `T` with eigenvalue `conj μ`
-exactly when it is an eigenvector of `T` with eigenvalue `μ`. -/
-theorem adjoint_apply_eq_smul_iff (hT : IsStarNormal T) (μ : 𝕜) (x : E) :
-    adjoint T x = conj μ • x ↔ T x = μ • x := by
-  have hc : Commute T (star (μ • 1 : E →L[𝕜] E)) := by
-    rw [star_smul, star_one]
-    exact (Commute.one_right T).smul_right _
-  have hN : IsStarNormal (T - μ • 1) := hc.isStarNormal_sub
-  have h := ContinuousLinearMap.IsStarNormal.adjoint_apply_eq_zero_iff hN x
-  rwa [← star_eq_adjoint, star_sub, star_smul, star_one, star_eq_adjoint, sub_apply, sub_apply,
-    smul_apply, smul_apply, sub_eq_zero, sub_eq_zero, ← starRingEnd_apply] at h
-
-/-- The eigenspace of the adjoint of a normal operator at `conj μ` is the eigenspace of the
-operator at `μ`. -/
-theorem eigenspace_adjoint (hT : IsStarNormal T) (μ : 𝕜) :
-    eigenspace (adjoint T : Module.End 𝕜 E) (conj μ) = eigenspace (T : Module.End 𝕜 E) μ := by
-  ext x
-  simpa only [mem_eigenspace_iff, coe_coe] using hT.adjoint_apply_eq_smul_iff μ x
-
-/-- The eigenspaces of a normal operator are mutually orthogonal. -/
-theorem orthogonalFamily_eigenspaces (hT : IsStarNormal T) :
-    OrthogonalFamily 𝕜 (fun μ ↦ eigenspace (T : Module.End 𝕜 E) μ)
-      fun μ ↦ (eigenspace (T : Module.End 𝕜 E) μ).subtypeₗᵢ := by
-  rintro μ ν hμν ⟨v, hv⟩ ⟨w, hw⟩
-  rw [mem_eigenspace_iff, coe_coe] at hv hw
-  have h := adjoint_inner_left T w v
-  rw [(hT.adjoint_apply_eq_smul_iff μ v).2 hv, hw, inner_smul_left, inner_smul_right,
-    RCLike.conj_conj] at h
-  exact (mul_eq_mul_right_iff.mp h).resolve_left hμν
-
-/-- The orthogonal complement of the eigenspaces of a normal operator is invariant under the
-operator. -/
-theorem orthogonalComplement_iSup_eigenspaces_invariant (hT : IsStarNormal T) ⦃v : E⦄
-    (hv : v ∈ (⨆ μ, eigenspace (T : Module.End 𝕜 E) μ)ᗮ) :
-    T v ∈ (⨆ μ, eigenspace (T : Module.End 𝕜 E) μ)ᗮ := by
-  rw [← Submodule.iInf_orthogonal, Submodule.mem_iInf] at hv ⊢
-  intro μ
-  rw [Submodule.mem_orthogonal]
-  intro u hu
-  rw [← adjoint_inner_left, (hT.adjoint_apply_eq_smul_iff μ u).2 (mem_eigenspace_iff.mp hu),
-    inner_smul_left, Submodule.inner_right_of_mem_orthogonal hu (hv μ), mul_zero]
-
-end Normal
-
 section Complex
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
   {T : E →L[ℂ] E}
-
-/-- The eigenspace of a normal operator at `μ` is the joint eigenspace of its real part at
-`re μ` and its imaginary part at `im μ`. -/
-theorem eigenspace_eq_eigenspace_realPart_inf_eigenspace_imaginaryPart (hT : IsStarNormal T)
-    (μ : ℂ) :
-    eigenspace (T : Module.End ℂ E) μ =
-      eigenspace ((ℜ T : E →L[ℂ] E) : Module.End ℂ E) μ.re ⊓
-        eigenspace ((ℑ T : E →L[ℂ] E) : Module.End ℂ E) μ.im := by
-  ext x
-  simp only [Submodule.mem_inf, mem_eigenspace_iff, coe_coe]
-  constructor
-  · intro hx
-    have hx' := (hT.adjoint_apply_eq_smul_iff μ x).2 hx
-    simp only [realPart_apply_coe, imaginaryPart_apply_coe, star_eq_adjoint, add_apply, sub_apply,
-      smul_apply, hx, hx', ← add_smul, ← sub_smul, Complex.add_conj, Complex.sub_conj, smul_smul,
-      ← Complex.coe_smul]
-    constructor
-    · congr 1
-      push_cast
-      ring
-    · congr 1
-      push_cast
-      linear_combination (-(μ.im : ℂ)) * Complex.I_sq
-  · rintro ⟨hre, him⟩
-    rw [← realPart_add_I_smul_imaginaryPart T, add_apply, smul_apply, hre, him, smul_smul,
-      ← add_smul, mul_comm, Complex.re_add_im]
 
 /-- A compact normal operator on a complex Hilbert space is zero exactly when its only eigenvalue
 is zero. -/
