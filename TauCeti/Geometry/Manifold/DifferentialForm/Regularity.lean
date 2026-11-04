@@ -48,6 +48,8 @@ differentiation commutes with this extension.
   function is as regular as the function, pointwise and globally.
 * `TauCeti.mdifferentiableAt_ofFunction`: the `0`-form of a differentiable function is a
   differentiable section.
+* `TauCeti.mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self`: a form whose
+  coordinate expression in its own preferred chart is differentiable is a differentiable section.
 
 ## References
 
@@ -335,12 +337,20 @@ theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
   rw [contMDiffAt_section x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
-  have heq : (fun z ↦ (trivializationAt (E [⋀^Fin k]→L[ℝ] F)
-      (fun y ↦ TangentSpace I y [⋀^Fin k]→L[ℝ] F) x
-        ⟨(extChartAt I x).symm z, φ ((extChartAt I x).symm z)⟩).2) =ᶠ[
-          𝓝[range I] (extChartAt I x x)] φ.inChartAt x := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    exact (φ.inChartAt_eq_trivializationAt x hz).symm
+  have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
+  exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
+    (extChartAt_target_subset_range x (mem_extChartAt_target x)))
+
+/-- Differentiability of a form's coordinate expression in its own preferred chart, within the
+full model range, implies differentiability of its bundle section at the point. -/
+theorem mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self [IsManifold I 1 M]
+    {φ : RoughForm I M F k} {x : M}
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x) (range I) (extChartAt I x x)) :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
+  rw [mdifferentiableAt_section, mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
+    mdifferentiableWithinAt_iff_differentiableWithinAt]
+  have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
   exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
     (extChartAt_target_subset_range x (mem_extChartAt_target x)))
 
