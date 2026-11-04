@@ -110,6 +110,21 @@ theorem flowOf_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   exact maximalIntegralCurve_zero (mem_flowDomain.mp (mem_flowDomain_zero hv x))
 
 omit [CompleteSpace E] in
+/-- The velocity of a maximal-flow trajectory is the vector field at the current point,
+whenever the trajectory is in its domain. -/
+theorem curveVelocity_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    Manifold.curveVelocity I (fun s ↦ flowOf v s x) t = v (flowOf v t x) := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  have hc := (isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom
+  simpa only [Manifold.curveVelocityWithin_univ] using
+    Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+      hc.hasMFDerivAt.hasMFDerivWithinAt uniqueDiffWithinAt_univ
+
+omit [CompleteSpace E] in
 /-- In finite dimensions, the domain of the maximal flow is jointly open in time and initial
 point. -/
 theorem isOpen_flowDomain [FiniteDimensional ℝ E] [IsManifold I 1 M]
