@@ -25,6 +25,8 @@ shuffle sign that carries the moved coordinate to the front: contraction erases 
 from the index set, and left multiplication inserts it, each vanishing when the index set is on
 the wrong side of that move. Creation after contraction at distinct coordinates therefore
 replaces an occupied coordinate with an unoccupied one, with the product of their shuffle signs.
+Two creations after contractions at distinct coordinates, in reverse order, project onto the
+exterior basis vectors containing both coordinates.
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
@@ -402,6 +404,26 @@ theorem ι_mul_contractLeft_coord_basis {I : Type w} [LinearOrder I]
       norm_num
     rw [basisEraseSign_eq_neg_one_pow_card_filter_lt, smul_smul, hsignSq, one_smul]
   · rw [mul_zero]
+
+/-- Creation of two distinct basis coordinates after contracting them in the reverse order is the
+projection onto exterior basis vectors containing both coordinates. -/
+theorem ι_mul_ι_mul_contractLeft_contractLeft_coord_basis {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) {i j : I} (hij : i ≠ j) (s : Finset I) :
+    ExteriorAlgebra.ι R (b j) *
+        (ExteriorAlgebra.ι R (b i) *
+          contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i)
+            (contractLeft (Q := (0 : QuadraticForm R M)) (b.coord j) (b.ExteriorAlgebra s))) =
+      if i ∈ s ∧ j ∈ s then b.ExteriorAlgebra s else 0 := by
+  classical
+  by_cases hj : j ∈ s
+  · rw [contractLeft_coord_basis, ite_eq_left hj, map_zsmul_unit, mul_smul_comm, mul_smul_comm,
+      ι_mul_contractLeft_coord_basis]
+    by_cases hi : i ∈ s
+    · rw [ite_eq_left (Finset.mem_erase.mpr ⟨hij, hi⟩), ite_eq_left ⟨hi, hj⟩]
+      have h := ι_mul_contractLeft_coord_basis b j s
+      simpa only [contractLeft_coord_basis, ite_eq_left hj, mul_smul_comm] using h
+    · simp [hi]
+  · simp [hj]
 
 /-! ### Exterior powers under the grade involution and contraction -/
 
