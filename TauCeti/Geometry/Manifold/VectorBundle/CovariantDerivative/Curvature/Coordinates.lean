@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Frame
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
+import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -26,16 +27,18 @@ Only `C¹` regularity of the connection on the chosen chart is required. The man
 as prescribed by `minSmoothness`. No metric or torsion hypothesis is needed. The formulas
 hold on chart sources, including boundary points.
 
-For a smooth connection on a smooth real manifold, the pointwise curvature tensor has the
-same expansion in terms of the model-space Christoffel map `Γ` of the chart: on vectors with
+For a smooth connection on a smooth real vector bundle (and in particular on the tangent bundle),
+the pointwise curvature tensor has the same expansion in terms of the model-space Christoffel map
+`Γ` (`TauCeti.Manifold.bundleChristoffelMap` / `TauCeti.Manifold.christoffelMap`): on vectors with
 coordinates `a`, `c` and `w`, the curvature `R(a, c)w` has coordinates
 
 `dΓ(a)(w, c) - dΓ(c)(w, a) + Γ(Γ(w, c), a) - Γ(Γ(w, a), c)`,
 
-where `Γ(v, u)` is the coordinate vector of `∇_u` applied to the field with constant
-coordinates `v` (`CovariantDerivative.curvatureTensor_symm_trivializationAt`). Covariant
-derivatives along curves and parametrized surfaces are computed with `Γ` as a bilinear map
-rather than through its scalar symbols, so this is the form in which their commutators are
+where `Γ(v, u)` is the coordinate vector of `∇_u` applied to the section with constant coordinates
+`v` (`CovariantDerivative.curvatureTensor_symm_trivializationAt_bundle` and
+`CovariantDerivative.curvatureTensor_symm_trivializationAt`). Covariant derivatives along curves,
+parametrized surfaces, and Frobenius total differential systems are computed with `Γ` as a bilinear
+map rather than through its scalar symbols, so this is the form in which their commutators are
 compared with the curvature.
 
 The sign convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
@@ -47,7 +50,7 @@ public section
 
 noncomputable section
 
-open Bundle Module
+open Bundle FiberBundle Module Set TauCeti
 open scoped ContDiff Manifold Topology
 
 namespace CovariantDerivative
@@ -118,6 +121,93 @@ theorem localFrameCoeff_curvatureOperator {x : M}
 
 end Frame
 
+section BundleTensor
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+  (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+  {ι : Type*} [Fintype ι] (b : Basis ι ℝ F) (x₀ : M)
+
+/-- **The curvature tensor of a vector-bundle connection in preferred trivializations**, in terms
+of `Γ = bundleChristoffelMap b (trivializationAt E (TangentSpace I) x₀) ∇`. On tangent vectors with
+coordinates `a` and `c` and a fibre vector with coordinates `w`, the curvature `R(a, c)w` has
+coordinates `dΓ(a)(w, c) - dΓ(c)(w, a) + Γ(Γ(w, c), a) - Γ(Γ(w, a), c)`. -/
+theorem curvatureTensor_symm_trivializationAt_bundle {x : M}
+    (hxV : x ∈ (trivializationAt F V x₀).baseSet)
+    (hx : x ∈ (extChartAt I x₀).source) (a c : E) (w : F) :
+    letI eV := trivializationAt F V x₀
+    letI eT := trivializationAt E (TangentSpace I) x₀
+    letI Γ := bundleChristoffelMap b eT (cov.isCovariantDerivativeOn (s := eV.baseSet))
+    cov.curvatureTensor x (eT.symm x a) (eT.symm x c) (eV.symm x w) =
+      eV.symm x (mvfderiv I Γ x (eT.symm x a) w c - mvfderiv I Γ x (eT.symm x c) w a +
+        Γ x (Γ x w c) a - Γ x (Γ x w a) c) := by
+  set eV := trivializationAt F V x₀
+  set eT := trivializationAt E (TangentSpace I) x₀
+  let O := eV.baseSet ∩ eT.baseSet
+  have hxT : x ∈ eT.baseSet := by simpa [eT] using hx
+  have hxO : x ∈ O := ⟨hxV, hxT⟩
+  have hOopen : IsOpen O := eV.open_baseSet.inter eT.open_baseSet
+  have hcov := cov.isCovariantDerivativeOn (s := eV.baseSet)
+  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun eV.baseSet :=
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov eV.open_baseSet
+  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
+  have : ContMDiffVectorBundle (∞ + 1) F V I := by
+    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  set Γ := bundleChristoffelMap b eT hcov
+  have hΓ : MDifferentiableAt I 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) Γ x :=
+    ((contMDiffOn_bundleChristoffelMap (n := ∞) b eT hcov).contMDiffAt
+      (hOopen.mem_nhds hxO)).mdifferentiableAt (by simp)
+  have hX (u : E) : CMDiff[O] ∞ (T% (fun y ↦ eT.symm y u)) :=
+    (contMDiffOn_symm_baseSet u).mono inter_subset_right
+  have hσw : CMDiff[O] ∞ (T% (fun y ↦ eV.symm y w)) :=
+    (contMDiffOn_symm_baseSet w).mono inter_subset_left
+  -- Coordinate vector fields commute, so curvature reduces to a commutator of covariant
+  -- derivatives.
+  have h := cov.curvatureTensor_apply_of_contMDiffOn x hOopen hxO (hX a) (hX c) hσw
+  have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
+  rw [h, curvatureOperator_apply, mlieBracket_symm_trivializationAt x₀ hx a c, map_zero, sub_zero]
+  -- Compute each iterated derivative via `covariantDerivative_symm_comp_apply_symm_bundle`.
+  have hinner (v v' : E) :
+      cov (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v')) x (eT.symm x v) =
+        eV.symm x (mvfderiv I Γ x (eT.symm x v) w v' + Γ x (Γ x w v') v) := by
+    have hL_diff : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ Γ y w v') x :=
+      (hΓ.clm_apply mdifferentiableAt_const).clm_apply mdifferentiableAt_const
+    have hL_mv : mvfderiv I (fun y ↦ Γ y w v') x (eT.symm x v) =
+        mvfderiv I Γ x (eT.symm x v) w v' :=
+      mvfderiv_clm_apply_const_apply₂ hΓ w v' (eT.symm x v)
+    have hsmooth : CMDiff[O] ∞
+        (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) :=
+      ContMDiffOn.clm_bundle_apply
+        ((ContMDiffCovariantDerivativeOn.contMDiff
+          (contMDiffOn_symm_baseSet (e := eV) (n := ∞ + 1) w)).mono inter_subset_left)
+        (hX v')
+    have heq : ∀ᶠ y in 𝓝 x, cov (fun z ↦ eV.symm z w) y (eT.symm y v') = eV.symm y (Γ y w v') :=
+      Filter.eventually_of_mem (hOopen.mem_nhds hxO) fun y hy ↦
+        covariantDerivative_symm_apply_symm_bundle b eT hcov hy.1 hy.2 w v'
+    have hd₁ : MDiffAt (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) x :=
+      (hsmooth.contMDiffAt (hOopen.mem_nhds hxO)).mdifferentiableAt (by simp)
+    have hd₂ : MDiffAt (T% (fun y ↦ eV.symm y (Γ y w v'))) x :=
+      hd₁.congr_of_eventuallyEq (heq.mono fun y hy ↦ by simp only [hy])
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hd₁ hd₂ Filter.univ_mem heq,
+      covariantDerivative_symm_comp_apply_symm_bundle b eT hcov hxV hxT hL_diff v, hL_mv]
+  have hsub (A B : F) : eV.symm x A - eV.symm x B = eV.symm x (A - B) := by
+    simp only [← eV.symmL_apply (R := ℝ) hxV, map_sub]
+  rw [hinner a c, hinner c a, hsub]
+  congr 1
+  abel
+
+end BundleTensor
+
 section Tensor
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -139,59 +229,11 @@ theorem curvatureTensor_symm_trivializationAt {x : M} (hx : x ∈ (extChartAt I 
     cov.curvatureTensor x ((e).symm x a) ((e).symm x c) ((e).symm x w) =
       (e).symm x (mvfderiv I Γ x ((e).symm x a) w c - mvfderiv I Γ x ((e).symm x c) w a +
         Γ x (Γ x w c) a - Γ x (Γ x w a) c) := by
-  have hxb : x ∈ (e).baseSet := by simpa using hx
-  have hcov := cov.isCovariantDerivativeOn (s := (e).baseSet)
-  have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun (e).baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov (e).open_baseSet
-  have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  set Γ := christoffelMap b hcov
-  have hΓ : MDifferentiableAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) Γ x :=
-    ((contMDiffOn_christoffelMap (n := ∞) b hcov).contMDiffAt
-      ((e).open_baseSet.mem_nhds hxb)).mdifferentiableAt (by simp)
-  have hX (v : E) : CMDiff[(e).baseSet] ∞ (T% (fun y ↦ (e).symm y v)) :=
-    contMDiffOn_symm_baseSet v
-  -- The vector fields with constant coordinates commute, so curvature is a commutator of
-  -- covariant derivatives on them.
-  have h := cov.curvatureTensor_apply_of_contMDiffOn x (e).open_baseSet hxb (hX a) (hX c) (hX w)
-  have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-  rw [h, curvatureOperator_apply, mlieBracket_symm_trivializationAt x₀ hx a c, map_zero,
-    sub_zero]
-  -- Each iterated derivative is computed by the coordinate formula for covariant derivatives.
-  have hinner (v v' : E) :
-      cov (fun y ↦ cov (fun z ↦ (e).symm z w) y ((e).symm y v')) x ((e).symm x v) =
-        (e).symm x (mvfderiv I Γ x ((e).symm x v) w v' + Γ x (Γ x w v') v) := by
-    let φ : (E →L[ℝ] E →L[ℝ] E) →L[ℝ] E :=
-      (ContinuousLinearMap.apply ℝ E v').comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) w)
-    have hg : MDifferentiableAt I 𝓘(ℝ, E) (fun y ↦ Γ y w v') x :=
-      φ.mdifferentiableAt.comp x hΓ
-    have hsmooth : CMDiff[(e).baseSet] ∞
-        (T% (fun y ↦ cov (fun z ↦ (e).symm z w) y ((e).symm y v'))) :=
-      ContMDiffOn.clm_bundle_apply (ContMDiffCovariantDerivativeOn.contMDiff (hX w)) (hX v')
-    have heq : (fun y ↦ cov (fun z ↦ (e).symm z w) y ((e).symm y v')) =ᶠ[𝓝 x]
-        fun y ↦ (e).symm y (Γ y w v') :=
-      Filter.eventually_of_mem ((e).open_baseSet.mem_nhds hxb) fun y hy ↦
-        covariantDerivative_symm_apply_symm b hcov hy w v'
-    have hd₁ : MDiffAt (T% (fun y ↦ cov (fun z ↦ (e).symm z w) y ((e).symm y v'))) x :=
-      (hsmooth.contMDiffAt ((e).open_baseSet.mem_nhds hxb)).mdifferentiableAt (by simp)
-    have hd₂ : MDiffAt (T% (fun y ↦ (e).symm y (Γ y w v'))) x :=
-      hd₁.congr_of_eventuallyEq (heq.mono fun y hy ↦ by simp only [hy])
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hd₁ hd₂ Filter.univ_mem heq,
-      covariantDerivative_symm_comp_apply_symm b hcov hxb hg v]
-    -- Evaluation at `(w, v')` is linear, so it commutes with differentiation.
-    have hL : HasMFDerivAt I 𝓘(ℝ, E) (fun y ↦ Γ y w v') x
-        (φ.comp (mfderiv I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E) Γ x)) :=
-      φ.hasMFDerivAt.comp x hΓ.hasMFDerivAt
-    rw [mvfderiv, mvfderiv, hL.mfderiv]
-    -- `NormedSpace.fromTangentSpace` is the identity of the model space, so both sides are the
-    -- value at `(w, v')` of the same derivative.
-    rfl
-  have hsub (A B : E) : (e).symm x A - (e).symm x B = (e).symm x (A - B) := by
-    simp only [← (e).symmL_apply (R := ℝ) hxb, map_sub]
-  rw [hinner a c, hinner c a, hsub]
-  congr 1
-  abel
+  rw [christoffelMap_eq_bundleChristoffelMap]
+  exact cov.curvatureTensor_symm_trivializationAt_bundle b x₀ (by simpa using hx) hx a c w
 
 end Tensor
 

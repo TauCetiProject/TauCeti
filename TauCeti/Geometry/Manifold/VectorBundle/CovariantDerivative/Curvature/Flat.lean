@@ -15,11 +15,10 @@ import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.ODE.Frobenius
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Coordinates
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 
 /-!
 # Flat connections and local parallel frames
@@ -162,7 +161,39 @@ theorem curvatureTensor_eq_zero_of_isLocalFrameOn {ι : Type*} {s : ι → Π y 
 
 end VanishingFromParallel
 
-/-! ### Coordinate Christoffel map and Frobenius integrability on a general bundle -/
+/-! ### Frobenius integrability and local parallel sections -/
+
+/-- For a differentiable bilinear-map-valued field `ΓE : E → F →L[ℝ] E →L[ℝ] F`, vanishing of the
+coordinate curvature expression `dΓE(a)(w, c) - dΓE(c)(w, a) + ΓE(ΓE(w, c), a) - ΓE(ΓE(w, a), c)`
+at `(z, w)` implies Frobenius integrability of `p ↦ -ΓE p.1 p.2` at `(z, w)`. -/
+private theorem isFrobeniusIntegrableAt_neg_clm_apply
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ΓE : E → F →L[ℝ] E →L[ℝ] F} {z : E} (w : F)
+    (hΓE_diff : DifferentiableAt ℝ ΓE z)
+    (hcurv : ∀ a c : E,
+      fderiv ℝ ΓE z a w c - fderiv ℝ ΓE z c w a +
+        ΓE z (ΓE z w c) a - ΓE z (ΓE z w a) c = 0) :
+    IsFrobeniusIntegrableAt (fun p : E × F ↦ -ΓE p.1 p.2) (z, w) := by
+  let f : E × F → E →L[ℝ] F := fun p ↦ -ΓE p.1 p.2
+  have hf_deriv : HasFDerivAt f
+      (-((ΓE z).comp (ContinuousLinearMap.snd ℝ E F) +
+        ((fderiv ℝ ΓE z).comp (ContinuousLinearMap.fst ℝ E F)).flip w)) (z, w) :=
+    ((hΓE_diff.hasFDerivAt.comp (z, w) hasFDerivAt_fst).clm_apply hasFDerivAt_snd).neg
+  change IsFrobeniusIntegrableAt f (z, w)
+  rw [isFrobeniusIntegrableAt_iff, hf_deriv.fderiv]
+  intro a c
+  have heval (ξ η : E) :
+      ((-((ΓE z).comp (ContinuousLinearMap.snd ℝ E F) +
+        ((fderiv ℝ ΓE z).comp (ContinuousLinearMap.fst ℝ E F)).flip w)) (ξ, f (z, w) ξ)) η =
+        -fderiv ℝ ΓE z ξ w η + ΓE z (ΓE z w ξ) η := by
+    simp only [f, neg_apply, add_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+      map_neg]
+    abel
+  rw [heval a c, heval c a, ← sub_eq_zero]
+  convert neg_eq_zero.2 (hcurv a c) using 1
+  abel
 
 section FrobeniusCoordinates
 
@@ -177,203 +208,89 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
 
-/-- The Christoffel form of `cov` in the preferred trivializations at `x₀`, transported to a
-continuous bilinear map `F →L[ℝ] E →L[ℝ] F`. -/
-private def bundleChristoffelMap (x₀ : M) (x : M) : F →L[ℝ] E →L[ℝ] F :=
+omit [FiniteDimensional ℝ E] [T2Space M] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [∀ (x : M), AddCommGroup (V x)] [∀ (x : M), Module ℝ (V x)]
+  [∀ (x : M), IsTopologicalAddGroup (V x)] [∀ (x : M), ContinuousSMul ℝ (V x)]
+  [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I] cov
+  [ContMDiffCovariantDerivative cov ∞] in
+private theorem isOpen_inter_preimage_baseSet_extChartAt_symm (x₀ : M) :
+    IsOpen (interior (extChartAt I x₀).target ∩
+      (extChartAt I x₀).symm ⁻¹' (trivializationAt F V x₀).baseSet) :=
+  ((contMDiffOn_extChartAt_symm (n := ∞) x₀).mono
+    interior_subset).continuousOn.isOpen_inter_preimage isOpen_interior
+    (trivializationAt F V x₀).open_baseSet
+
+private theorem contMDiffOn_bundleChristoffelMap_comp_extChartAt_symm (x₀ : M) :
+    letI eV := trivializationAt F V x₀
+    letI eT := trivializationAt E (TangentSpace I) x₀
+    ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) ∞
+      (fun ζ ↦ bundleChristoffelMap (Module.finBasis ℝ F) eT
+        (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm ζ))
+      (interior (extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹' eV.baseSet) := by
   let eV := trivializationAt F V x₀
   let eT := trivializationAt E (TangentSpace I) x₀
-  let bF := Module.finBasis ℝ F
-  let hcov := cov.isCovariantDerivativeOn (s := eV.baseSet)
-  ((eV.continuousLinearMap (RingHom.id ℝ) (eT.continuousLinearMap (RingHom.id ℝ) eV))
-    ⟨x, christoffelForm bF hcov x⟩).2
+  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun eV.baseSet :=
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov eV.open_baseSet
+  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
+  have : ContMDiffVectorBundle (∞ + 1) F V I := by
+    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  exact (contMDiffOn_bundleChristoffelMap (n := ∞) (Module.finBasis ℝ F) eT
+      (cov.isCovariantDerivativeOn (s := eV.baseSet))).comp
+    ((contMDiffOn_extChartAt_symm (n := ∞) x₀).mono (inter_subset_left.trans interior_subset))
+    fun ζ hζ ↦ ⟨hζ.2, by simpa [eT] using (extChartAt I x₀).map_target (interior_subset hζ.1)⟩
 
-omit [FiniteDimensional ℝ E] [T2Space M] [cov.ContMDiffCovariantDerivative ∞] in
-private theorem bundleChristoffelMap_apply (x₀ : M) {x : M}
-    (hxV : x ∈ (trivializationAt F V x₀).baseSet)
-    (hxT : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet) (w : F) (u : E) :
-    bundleChristoffelMap cov x₀ x w u =
-      (trivializationAt F V x₀).continuousLinearMapAt ℝ x
-        (christoffelForm (Module.finBasis ℝ F)
-          (cov.isCovariantDerivativeOn (s := (trivializationAt F V x₀).baseSet)) x
-          ((trivializationAt F V x₀).symmL ℝ x w)
-          ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x u)) := by
-  have hxe : x ∈ ((trivializationAt E (TangentSpace I) x₀).continuousLinearMap
-      (RingHom.id ℝ) (trivializationAt F V x₀)).baseSet := ⟨hxT, hxV⟩
-  simp only [bundleChristoffelMap, Bundle.Trivialization.continuousLinearMap_apply,
-    ContinuousLinearMap.comp_apply]
-  rw [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ)
-    ((trivializationAt E (TangentSpace I) x₀).continuousLinearMap
-      (RingHom.id ℝ) (trivializationAt F V x₀)) hxe]
-  simp only [Bundle.Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [cov.ContMDiffCovariantDerivative ∞] in
-private theorem covariantDerivative_symm_apply_symm_bundle (x₀ : M) {x : M}
-    (hxV : x ∈ (trivializationAt F V x₀).baseSet)
-    (hxT : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet) (w : F) (u : E) :
-    cov (fun y ↦ (trivializationAt F V x₀).symm y w) x
-        ((trivializationAt E (TangentSpace I) x₀).symm x u) =
-      (trivializationAt F V x₀).symm x (bundleChristoffelMap cov x₀ x w u) := by
-  set eV := trivializationAt F V x₀
-  set eT := trivializationAt E (TangentSpace I) x₀
-  let bF := Module.finBasis ℝ F
-  let hcov := cov.isCovariantDerivativeOn (s := eV.baseSet)
-  rw [covariantDerivative_symm_eq_christoffelForm bF hcov hxV,
-    bundleChristoffelMap_apply cov x₀ hxV hxT,
-    eV.symmL_apply (R := ℝ) hxV, eT.symmL_apply (R := ℝ) hxT,
-    Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ eV hxV]
-  exact (eV.symm_apply_apply_mk hxV _).symm
-
-omit [FiniteDimensional ℝ E] [T2Space M] [cov.ContMDiffCovariantDerivative ∞] in
-private theorem covariantDerivative_symm_comp_apply_symm_bundle (x₀ : M) {x : M}
-    (hxV : x ∈ (trivializationAt F V x₀).baseSet)
-    (hxT : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet)
-    {g : M → F} (hg : MDifferentiableAt I 𝓘(ℝ, F) g x) (u : E) :
-    cov (fun y ↦ (trivializationAt F V x₀).symm y (g y)) x
-        ((trivializationAt E (TangentSpace I) x₀).symm x u) =
-      (trivializationAt F V x₀).symm x
-        (mvfderiv I g x ((trivializationAt E (TangentSpace I) x₀).symm x u) +
-          bundleChristoffelMap cov x₀ x (g x) u) := by
-  set eV := trivializationAt F V x₀
-  set eT := trivializationAt E (TangentSpace I) x₀
-  let bF := Module.finBasis ℝ F
-  let hcov := cov.isCovariantDerivativeOn (s := eV.baseSet)
-  have hread : ∀ᶠ y in 𝓝 x, (eV ⟨y, eV.symm y (g y)⟩).2 = g y :=
-    eventually_of_mem (eV.open_baseSet.mem_nhds hxV) fun y hy ↦ by rw [eV.apply_mk_symm hy]
-  have hσ : MDiffAt (T% (fun y ↦ eV.symm y (g y))) x :=
-    (eV.mdifferentiableAt_section_iff I _ hxV).2 (hg.congr_of_eventuallyEq hread)
-  rw [covariantDerivative_eq_add_christoffelForm bF hcov hxV hσ, add_apply,
-    ← eV.symmL_apply (R := ℝ) hxV (_ + _), map_add,
-    bundleChristoffelMap_apply cov x₀ hxV hxT,
-    eV.symmL_continuousLinearMapAt (R := ℝ) hxV,
-    eV.symmL_apply (R := ℝ) hxV, eV.symmL_apply (R := ℝ) hxV, eT.symmL_apply (R := ℝ) hxT]
-  congr 1
-  rw [frameCovariantDerivative_apply]
-  have hcoeff (i : Fin (Module.finrank ℝ F)) :
-      mvfderiv I ((LinearMap.piApply (eV.localFrameCoeff I bF i))
-        (fun y ↦ eV.symm y (g y))) x (eT.symm x u) =
-        bF.coord i (mvfderiv I g x (eT.symm x u)) := by
-    have heq : (LinearMap.piApply (eV.localFrameCoeff I bF i)) (fun y ↦ eV.symm y (g y)) =ᶠ[𝓝 x]
-        fun y ↦ bF.coord i (g y) := by
-      filter_upwards [hread, eV.open_baseSet.mem_nhds hxV] with y hy hyb
-      rw [LinearMap.piApply_apply_apply,
-        eV.localFrameCoeff_eq_coeff (I := I) (b := bF) (s := fun y ↦ eV.symm y (g y)) hyb, hy,
-        Basis.coord_apply]
-    have hL : HasMFDerivAt I 𝓘(ℝ, ℝ) (fun y ↦ bF.coord i (g y)) x
-        ((LinearMap.toContinuousLinearMap (bF.coord i)).comp (mfderiv I 𝓘(ℝ, F) g x)) :=
-      (LinearMap.toContinuousLinearMap (bF.coord i)).hasMFDerivAt.comp x hg.hasMFDerivAt
-    rw [mvfderiv, (hL.congr_of_eventuallyEq heq).mfderiv]
-    -- `NormedSpace.fromTangentSpace` is the identity on `ℝ` and `F`.
+/-- Chain rule for `bundleChristoffelMap` composed with `(extChartAt I x₀).symm` at an interior
+target point `z`. -/
+private theorem fderiv_bundleChristoffelMap_comp_extChartAt_symm (x₀ : M) {z : E}
+    (hz : z ∈ interior (extChartAt I x₀).target)
+    (hzV : (extChartAt I x₀).symm z ∈ (trivializationAt F V x₀).baseSet) (a : E) :
+    letI eV := trivializationAt F V x₀
+    letI eT := trivializationAt E (TangentSpace I) x₀
+    letI Γ := bundleChristoffelMap (Module.finBasis ℝ F) eT
+      (cov.isCovariantDerivativeOn (s := eV.baseSet))
+    fderiv ℝ (fun ζ ↦ Γ ((extChartAt I x₀).symm ζ)) z a =
+      mvfderiv I Γ ((extChartAt I x₀).symm z) (eT.symm ((extChartAt I x₀).symm z) a) := by
+  let eV := trivializationAt F V x₀
+  let eT := trivializationAt E (TangentSpace I) x₀
+  set y := (extChartAt I x₀).symm z with hy_def
+  have hzt : z ∈ (extChartAt I x₀).target := interior_subset hz
+  have hysrc : y ∈ (extChartAt I x₀).source := (extChartAt I x₀).map_target hzt
+  have hyT : y ∈ eT.baseSet := by simpa [eT] using hysrc
+  have hyz : extChartAt I x₀ y = z := (extChartAt I x₀).right_inv hzt
+  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun eV.baseSet :=
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov eV.open_baseSet
+  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
+  have : ContMDiffVectorBundle (∞ + 1) F V I := by
+    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  let Γ := bundleChristoffelMap (Module.finBasis ℝ F) eT
+    (cov.isCovariantDerivativeOn (s := eV.baseSet))
+  have hΓ_mdiff : MDifferentiableAt I 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) Γ y :=
+    ((contMDiffOn_bundleChristoffelMap (n := ∞) (Module.finBasis ℝ F) eT
+        (cov.isCovariantDerivativeOn (s := eV.baseSet))).contMDiffAt
+      ((eV.open_baseSet.inter eT.open_baseSet).mem_nhds ⟨hzV, hyT⟩)).mdifferentiableAt (by simp)
+  have hsymm_mdiff : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x₀).symm z :=
+    (((contMDiffOn_extChartAt_symm (n := ∞) x₀).mono interior_subset).contMDiffAt
+      (isOpen_interior.mem_nhds hz)).mdifferentiableAt (by simp)
+  have hcomp := mvfderiv_comp_apply_of_eq z hΓ_mdiff hsymm_mdiff hy_def.symm
+    ((NormedSpace.fromTangentSpace z).symm a)
+  have hsymmL : eT.symm y a =
+      mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm z ((NormedSpace.fromTangentSpace z).symm a) := by
+    have hchart : y ∈ (chartAt H x₀).source := by simpa using hysrc
+    rw [← eT.symmL_apply (R := ℝ) hyT, TangentBundle.symmL_trivializationAt hchart, hyz,
+      mfderivWithin_of_mem_nhds
+        (mem_of_superset (isOpen_interior.mem_nhds hz)
+          (interior_subset.trans (extChartAt_target_subset_range x₀)))]
+    -- `y` is definitionally `(extChartAt I x₀).symm z`, and `NormedSpace.fromTangentSpace z`
+    -- is the identity on `TangentSpace 𝓘(ℝ, E) z = E`.
     rfl
-  simp_rw [hcoeff, ← symmL_basis_eq_localFrame bF hxV, ← map_smul, ← map_sum]
-  simp only [Basis.coord_apply, bF.sum_repr, eV.symmL_apply (R := ℝ) hxV]
-
-private theorem contMDiffOn_bundleChristoffelMap (x₀ : M) :
-    CMDiff[(trivializationAt F V x₀).baseSet ∩ (trivializationAt E (TangentSpace I) x₀).baseSet] ∞
-      (bundleChristoffelMap cov x₀) := by
-  let eV := trivializationAt F V x₀
-  let eT := trivializationAt E (TangentSpace I) x₀
-  let bF := Module.finBasis ℝ F
-  let hcov := cov.isCovariantDerivativeOn (s := eV.baseSet)
-  let O := eV.baseSet ∩ eT.baseSet
-  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun eV.baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov eV.open_baseSet
-  have : ContMDiffVectorBundle (∞ + 1) F V I := by
-    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  let eTV := eT.continuousLinearMap (RingHom.id ℝ) eV
-  let eh := eV.continuousLinearMap (RingHom.id ℝ) eTV
-  have hmaps : MapsTo (id : M → M) O (eV.baseSet ∩ eTV.baseSet) := fun y hy ↦
-    ⟨hy.1, ⟨hy.2, hy.1⟩⟩
-  have hframeEval (j : Fin (Module.finrank ℝ F)) :
-      ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y
-          (christoffelForm bF hcov y (eV.localFrame bF j y))) O := by
-    have hj : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y
-          (cov (eV.localFrame bF j) y)) eV.baseSet :=
-      ContMDiffCovariantDerivativeOn.contMDiff (eV.contMDiffOn_localFrame_baseSet (∞ + 1) bF j)
-    refine (hj.mono inter_subset_left).congr fun y hy ↦ ?_
-    congr 1
-    rw [christoffelForm_apply bF hcov hy.1]
-    simp [localFrameCoeff_localFrame bF hy.1]
-  have hsec : ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F)) ∞
-      (fun y ↦ TotalSpace.mk' (F →L[ℝ] E →L[ℝ] F)
-        (E := fun z ↦ V z →L[ℝ] TangentSpace I z →L[ℝ] V z) y
-        (christoffelForm bF hcov y)) O :=
-    contMDiffOn_hom_of_localFrame (e' := eTV) bF contMDiffOn_id hmaps hframeEval
-  exact ((eh.contMDiffOn_iff fun y hy ↦ eh.mem_source.mpr (hmaps hy)).1 hsec).2
-
-/-- In the preferred trivializations at `x₀`, the curvature tensor of `cov` has the coordinate
-formula `dΓ(a)(w, c) - dΓ(c)(w, a) + Γ(Γ(w, c), a) - Γ(Γ(w, a), c)`. -/
-private theorem curvatureTensor_symm_trivializationAt_bundle (x₀ : M) {x : M}
-    (hxV : x ∈ (trivializationAt F V x₀).baseSet)
-    (hxchart : x ∈ (extChartAt I x₀).source) (a c : E) (w : F) :
-    let Γ := bundleChristoffelMap cov x₀
-    cov.curvatureTensor x
-        ((trivializationAt E (TangentSpace I) x₀).symm x a)
-        ((trivializationAt E (TangentSpace I) x₀).symm x c)
-        ((trivializationAt F V x₀).symm x w) =
-      (trivializationAt F V x₀).symm x
-        (mvfderiv I Γ x ((trivializationAt E (TangentSpace I) x₀).symm x a) w c -
-          mvfderiv I Γ x ((trivializationAt E (TangentSpace I) x₀).symm x c) w a +
-          Γ x (Γ x w c) a - Γ x (Γ x w a) c) := by
-  set eV := trivializationAt F V x₀
-  set eT := trivializationAt E (TangentSpace I) x₀
-  let O := eV.baseSet ∩ eT.baseSet
-  have hxT : x ∈ eT.baseSet := by simpa [eT] using hxchart
-  have hxO : x ∈ O := ⟨hxV, hxT⟩
-  have hOopen : IsOpen O := eV.open_baseSet.inter eT.open_baseSet
-  set Γ := bundleChristoffelMap cov x₀
-  have hΓ : MDifferentiableAt I 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) Γ x :=
-    ((contMDiffOn_bundleChristoffelMap cov x₀).contMDiffAt
-      (hOopen.mem_nhds hxO)).mdifferentiableAt (by simp)
-  have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun eV.baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov eV.open_baseSet
-  have : ContMDiffVectorBundle (∞ + 1) F V I := by
-    simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  have hX (u : E) : CMDiff[O] ∞ (T% (fun y ↦ eT.symm y u)) :=
-    (contMDiffOn_symm_baseSet u).mono inter_subset_right
-  have hσw : CMDiff[O] ∞ (T% (fun y ↦ eV.symm y w)) :=
-    (contMDiffOn_symm_baseSet w).mono inter_subset_left
-  have h := cov.curvatureTensor_apply_of_contMDiffOn x hOopen hxO (hX a) (hX c) hσw
-  have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-  rw [h, curvatureOperator_apply, mlieBracket_symm_trivializationAt x₀ hxchart a c, map_zero,
-    sub_zero]
-  have hinner (v v' : E) :
-      cov (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v')) x (eT.symm x v) =
-        eV.symm x (mvfderiv I Γ x (eT.symm x v) w v' + Γ x (Γ x w v') v) := by
-    have hL_diff : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ Γ y w v') x :=
-      (hΓ.clm_apply mdifferentiableAt_const).clm_apply mdifferentiableAt_const
-    have hL_mv : mvfderiv I (fun y ↦ Γ y w v') x (eT.symm x v) =
-        mvfderiv I Γ x (eT.symm x v) w v' :=
-      mvfderiv_clm_apply_const_apply₂ hΓ w v' (eT.symm x v)
-    have hsmooth : CMDiff[O] ∞
-        (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) :=
-      ContMDiffOn.clm_bundle_apply
-        ((ContMDiffCovariantDerivativeOn.contMDiff
-          (contMDiffOn_symm_baseSet (e := eV) (n := ∞ + 1) w)).mono inter_subset_left)
-        (hX v')
-    have heq : ∀ᶠ y in 𝓝 x, cov (fun z ↦ eV.symm z w) y (eT.symm y v') = eV.symm y (Γ y w v') :=
-      eventually_of_mem (hOopen.mem_nhds hxO) fun y hy ↦
-        covariantDerivative_symm_apply_symm_bundle cov x₀ hy.1 hy.2 w v'
-    have hd₁ : MDiffAt (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) x :=
-      (hsmooth.contMDiffAt (hOopen.mem_nhds hxO)).mdifferentiableAt (by simp)
-    have hd₂ : MDiffAt (T% (fun y ↦ eV.symm y (Γ y w v'))) x :=
-      hd₁.congr_of_eventuallyEq (heq.mono fun y hy ↦ by simp only [hy])
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hd₁ hd₂ univ_mem heq,
-      covariantDerivative_symm_comp_apply_symm_bundle cov x₀ hxV hxT hL_diff v, hL_mv]
-  have hsub (A B : F) : eV.symm x A - eV.symm x B = eV.symm x (A - B) := by
-    simp only [← eV.symmL_apply (R := ℝ) hxV, map_sub]
-  rw [hinner a c, hinner c a, hsub]
-  congr 1
-  abel
+  rw [Function.comp_def, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ← hsymmL] at hcomp
+  simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using hcomp
 
 /-- Vanishing of `cov.curvatureTensor` at `(extChartAt I x₀).symm z` implies Frobenius
 integrability of the total differential equation `D u z = -Γ((extChartAt I x₀).symm z)(u z)` at
@@ -382,89 +299,100 @@ private theorem isFrobeniusIntegrableAt_neg_bundleChristoffelMap (x₀ : M) {z :
     (hz : z ∈ interior (extChartAt I x₀).target)
     (hzV : (extChartAt I x₀).symm z ∈ (trivializationAt F V x₀).baseSet)
     (hflat : cov.curvatureTensor ((extChartAt I x₀).symm z) = 0) (w : F) :
+    letI eV := trivializationAt F V x₀
+    letI eT := trivializationAt E (TangentSpace I) x₀
     IsFrobeniusIntegrableAt
-      (fun p : E × F ↦ -bundleChristoffelMap cov x₀ ((extChartAt I x₀).symm p.1) p.2) (z, w) := by
-  set eV := trivializationAt F V x₀
-  set eT := trivializationAt E (TangentSpace I) x₀
-  set y := (extChartAt I x₀).symm z with hy_def
-  have hzt : z ∈ (extChartAt I x₀).target := interior_subset hz
-  have hysrc : y ∈ (extChartAt I x₀).source := (extChartAt I x₀).map_target hzt
-  have hyT : y ∈ eT.baseSet := by simpa [eT] using hysrc
-  have hyz : extChartAt I x₀ y = z := (extChartAt I x₀).right_inv hzt
-  set Γ := bundleChristoffelMap cov x₀
-  set ΓE : E → F →L[ℝ] E →L[ℝ] F := fun ζ ↦ Γ ((extChartAt I x₀).symm ζ) with hΓE_def
-  -- Smoothness of `ΓE` at `z` comes from `Γ` on `eV.baseSet ∩ eT.baseSet` and the inverse
-  -- extended chart on `interior (extChartAt I x₀).target`.
-  let OE : Set E := interior (extChartAt I x₀).target ∩
-    (extChartAt I x₀).symm ⁻¹' eV.baseSet
-  have hφsymm : CMDiff[interior (extChartAt I x₀).target] ∞ (extChartAt I x₀).symm :=
-    (contMDiffOn_extChartAt_symm x₀).mono interior_subset
-  have hOEopen : IsOpen OE :=
-    hφsymm.continuousOn.isOpen_inter_preimage isOpen_interior eV.open_baseSet
-  have hzOE : z ∈ OE := ⟨hz, hzV⟩
-  have hΓE_mdiffOn : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) ∞ ΓE OE :=
-    (contMDiffOn_bundleChristoffelMap cov x₀).comp (hφsymm.mono inter_subset_left) fun ζ hζ ↦
-      ⟨hζ.2, by simpa [eT] using (extChartAt I x₀).map_target (interior_subset hζ.1)⟩
-  have hΓE_diff : DifferentiableAt ℝ ΓE z :=
-    (((contMDiffOn_iff_contDiffOn.1 hΓE_mdiffOn).contDiffAt
-      (hOEopen.mem_nhds hzOE)).differentiableAt (by simp))
-  -- Relate `fderiv ℝ ΓE z a` to `mvfderiv I Γ y (eT.symm y a)`.
-  have hΓ_mdiff : MDifferentiableAt I 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) Γ y :=
-    ((contMDiffOn_bundleChristoffelMap cov x₀).contMDiffAt
-      ((eV.open_baseSet.inter eT.open_baseSet).mem_nhds ⟨hzV, hyT⟩)).mdifferentiableAt (by simp)
-  have hsymm_mdiff : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x₀).symm z :=
-    (hφsymm.contMDiffAt (isOpen_interior.mem_nhds hz)).mdifferentiableAt (by simp)
-  have hfderiv_ΓE (a : E) : fderiv ℝ ΓE z a = mvfderiv I Γ y (eT.symm y a) := by
-    have hcomp := mvfderiv_comp_apply_of_eq z hΓ_mdiff hsymm_mdiff hy_def.symm
-      ((NormedSpace.fromTangentSpace z).symm a)
-    have hsymmL : eT.symm y a =
-        mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm z ((NormedSpace.fromTangentSpace z).symm a) := by
-      have hchart : y ∈ (chartAt H x₀).source := by simpa using hysrc
-      rw [← eT.symmL_apply (R := ℝ) hyT, TangentBundle.symmL_trivializationAt hchart, hyz,
-        mfderivWithin_of_mem_nhds
-          (mem_of_superset (isOpen_interior.mem_nhds hz)
-            (interior_subset.trans (extChartAt_target_subset_range x₀)))]
-      rfl
-    rw [Function.comp_def, ← hΓE_def, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
-      ← hsymmL] at hcomp
-    simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using hcomp
-  -- Compute `fderiv ℝ f (z, w)` by the product rule for continuous linear map application.
-  let f : E × F → E →L[ℝ] F := fun p ↦ -ΓE p.1 p.2
-  have hf_deriv : HasFDerivAt f
-      (-((ΓE z).comp (ContinuousLinearMap.snd ℝ E F) +
-        ((fderiv ℝ ΓE z).comp (ContinuousLinearMap.fst ℝ E F)).flip w)) (z, w) := by
-    have h1 : HasFDerivAt (ΓE ∘ Prod.fst)
-        ((fderiv ℝ ΓE z).comp (ContinuousLinearMap.fst ℝ E F)) (z, w) :=
-      hΓE_diff.hasFDerivAt.comp (z, w) hasFDerivAt_fst
-    have h2 : HasFDerivAt (fun p : E × F ↦ p.2) (ContinuousLinearMap.snd ℝ E F) (z, w) :=
-      hasFDerivAt_snd
-    exact (h1.clm_apply h2).neg
-  rw [isFrobeniusIntegrableAt_iff]
-  intro a c
-  have hcurv := curvatureTensor_symm_trivializationAt_bundle cov x₀ hzV hysrc a c w
+      (fun p : E × F ↦ -bundleChristoffelMap (Module.finBasis ℝ F) eT
+        (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm p.1) p.2)
+      (z, w) := by
+  let eV := trivializationAt F V x₀
+  let eT := trivializationAt E (TangentSpace I) x₀
+  have hysrc : (extChartAt I x₀).symm z ∈ (extChartAt I x₀).source :=
+    (extChartAt I x₀).map_target (interior_subset hz)
+  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
+  have hΓE_diff : DifferentiableAt ℝ
+      (fun ζ ↦ bundleChristoffelMap (Module.finBasis ℝ F) eT
+        (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm ζ)) z :=
+    (((contMDiffOn_iff_contDiffOn.1
+      (contMDiffOn_bundleChristoffelMap_comp_extChartAt_symm cov x₀)).contDiffAt
+        ((isOpen_inter_preimage_baseSet_extChartAt_symm (F := F) (V := V) x₀).mem_nhds
+          ⟨hz, hzV⟩)).differentiableAt (by simp))
+  refine isFrobeniusIntegrableAt_neg_clm_apply w hΓE_diff fun a c ↦ ?_
+  rw [fderiv_bundleChristoffelMap_comp_extChartAt_symm cov x₀ hz hzV a,
+    fderiv_bundleChristoffelMap_comp_extChartAt_symm cov x₀ hz hzV c]
+  have hcurv := cov.curvatureTensor_symm_trivializationAt_bundle (Module.finBasis ℝ F) x₀
+    hzV hysrc a c w
   simp only [hflat, LinearMap.zero_apply] at hcurv
-  have hinj : mvfderiv I Γ y (eT.symm y a) w c - mvfderiv I Γ y (eT.symm y c) w a +
-      Γ y (Γ y w c) a - Γ y (Γ y w a) c = 0 := by
-    have h0 := congrArg (eV.continuousLinearMapAt ℝ y) hcurv.symm
-    rw [map_zero] at h0
-    dsimp only [eV, eT, Γ] at h0 ⊢
-    rwa [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ
-      (trivializationAt F V x₀) hzV, (trivializationAt F V x₀).apply_mk_symm hzV] at h0
-  rw [hf_deriv.fderiv]
-  have heval (ξ η : E) :
-      ((-((ΓE z).comp (ContinuousLinearMap.snd ℝ E F) +
-        ((fderiv ℝ ΓE z).comp (ContinuousLinearMap.fst ℝ E F)).flip w)) (ξ, f (z, w) ξ)) η =
-        -mvfderiv I Γ y (eT.symm y ξ) w η + Γ y (Γ y w ξ) η := by
-    simp only [f, neg_apply, add_apply, ContinuousLinearMap.flip_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
-      map_neg, hfderiv_ΓE]
-    dsimp only [ΓE, y]
-    abel
-  rw [heval a c, heval c a, ← sub_eq_zero]
-  convert neg_eq_zero.2 hinj using 1
-  abel
+  have h0 := congrArg (eV.continuousLinearMapAt ℝ ((extChartAt I x₀).symm z)) hcurv.symm
+  rwa [map_zero, Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ eV hzV,
+    eV.apply_mk_symm hzV] at h0
 
-/-! ### Local parallel sections and frames from vanishing curvature -/
+omit [FiniteDimensional ℝ E] [T2Space M] [cov.ContMDiffCovariantDerivative ∞] in
+/-- Pull back a local coordinate solution `u₀` of `D u₀ z = -Γ((extChartAt I x₀).symm z)(u₀ z)`
+around an interior point `x₀` to a local smooth section of `V` parallel on an open neighbourhood of
+`x₀`. -/
+private theorem exists_contMDiffOn_parallel_of_fderiv_solution {x₀ : M}
+    (hx₀ : I.IsInteriorPoint x₀) {WE : Set E} (hWE : IsOpen WE) (hz₀WE : extChartAt I x₀ x₀ ∈ WE)
+    {u₀ : E → F} (hu₀_smooth : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ u₀ WE) (w₀ : V x₀)
+    (hu₀_x₀ : u₀ (extChartAt I x₀ x₀) = (trivializationAt F V x₀).continuousLinearMapAt ℝ x₀ w₀)
+    (husol : ∀ z ∈ WE,
+      letI eV := trivializationAt F V x₀
+      letI eT := trivializationAt E (TangentSpace I) x₀
+      HasFDerivAt u₀
+        (-bundleChristoffelMap (Module.finBasis ℝ F) eT
+          (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm z) (u₀ z)) z) :
+    ∃ (WM : Set M) (σloc : Π y : M, V y),
+      IsOpen WM ∧ x₀ ∈ WM ∧ CMDiff[WM] ∞ (T% σloc) ∧ σloc x₀ = w₀ ∧
+      ∀ y ∈ WM, cov σloc y = 0 := by
+  let eV := trivializationAt F V x₀
+  let eT := trivializationAt E (TangentSpace I) x₀
+  let φ := extChartPartialDiffeomorph I ∞ x₀
+  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
+  have hx₀V : x₀ ∈ eV.baseSet := mem_baseSet_trivializationAt F V x₀
+  have hx₀φ : x₀ ∈ φ.source := (mem_extChartPartialDiffeomorph_source I ∞ x₀).2 hx₀
+  have hφto : CMDiff[φ.source] ∞ (extChartAt I x₀) := by
+    simpa only [φ, coe_extChartPartialDiffeomorph] using φ.contMDiffOn_toFun
+  let WM : Set M := eV.baseSet ∩ (φ.source ∩ extChartAt I x₀ ⁻¹' WE)
+  have hWM : IsOpen WM :=
+    eV.open_baseSet.inter (hφto.continuousOn.isOpen_inter_preimage φ.open_source hWE)
+  have hx₀WM : x₀ ∈ WM := ⟨hx₀V, hx₀φ, hz₀WE⟩
+  set g : M → F := fun y ↦ u₀ (extChartAt I x₀ y) with hg_def
+  have hg_smooth : CMDiff[WM] ∞ g :=
+    hu₀_smooth.comp (hφto.mono fun _ hy ↦ hy.2.1) fun _ hy ↦ hy.2.2
+  let σloc : Π y : M, V y := fun y ↦ eV.symm y (g y)
+  have hσloc_smooth : CMDiff[WM] ∞ (T% σloc) :=
+    (eV.contMDiffOn_section_iff hWM inter_subset_left).2 <|
+      hg_smooth.congr fun y hy ↦ congrArg Prod.snd (eV.apply_mk_symm hy.1 (g y))
+  have hσloc_x₀ : σloc x₀ = w₀ := by
+    simp only [σloc, g, hu₀_x₀]
+    rw [← eV.symmL_apply (R := ℝ) hx₀V, eV.symmL_continuousLinearMapAt hx₀V]
+  refine ⟨WM, σloc, hWM, hx₀WM, hσloc_smooth, hσloc_x₀, fun y hy ↦ ?_⟩
+  have hysrc : y ∈ (extChartAt I x₀).source :=
+    ((extChartPartialDiffeomorph_source I ∞ x₀) ▸ hy.2.1).1
+  have hyT : y ∈ eT.baseSet := by simpa [eT] using hysrc
+  have hychart : y ∈ (chartAt H x₀).source := by simpa using hysrc
+  have hg_diff : MDifferentiableAt I 𝓘(ℝ, F) g y :=
+    (hg_smooth.contMDiffAt (hWM.mem_nhds hy)).mdifferentiableAt (by simp)
+  ext w
+  rw [← eT.symmL_continuousLinearMapAt (R := ℝ) hyT w, eT.symmL_apply (R := ℝ) hyT]
+  set a := eT.continuousLinearMapAt ℝ y w
+  rw [covariantDerivative_symm_comp_apply_symm_bundle (Module.finBasis ℝ F) eT
+    (cov.isCovariantDerivativeOn (s := eV.baseSet)) hy.1 hyT hg_diff a]
+  have hsol_y := husol (extChartAt I x₀ y) hy.2.2
+  have hclm : mvfderiv I (extChartAt I x₀) y (eT.symm y a) = a := by
+    have h : eT.continuousLinearMapAt ℝ y (eT.symm y a) = a := by
+      rw [← eT.symmL_apply (R := ℝ) hyT, eT.continuousLinearMapAt_symmL (R := ℝ) hyT]
+    rw [TangentBundle.continuousLinearMapAt_trivializationAt hychart] at h
+    exact (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans h
+  have hmv : mvfderiv I g y (eT.symm y a) =
+      -bundleChristoffelMap (Module.finBasis ℝ F) eT
+        (cov.isCovariantDerivativeOn (s := eV.baseSet)) y (g y) a := by
+    have hchain := mvfderiv_comp_apply_of_differentiableAt hsol_y.differentiableAt
+      (mdifferentiableAt_extChartAt hychart) (eT.symm y a)
+    rw [Function.comp_def, ← hg_def, hclm, hsol_y.fderiv] at hchain
+    dsimp only [eV, eT, g] at hchain ⊢
+    rwa [(extChartAt I x₀).left_inv hysrc, neg_apply] at hchain
+  rw [hmv, neg_add_cancel, ← eV.symmL_apply (R := ℝ) hy.1, map_zero, zero_apply]
 
 /-- **Existence of local smooth parallel sections at an interior point.** If the curvature tensor
 of `cov` vanishes on a neighbourhood of an interior point `x₀`, then every fibre vector `w₀ : V x₀`
@@ -476,102 +404,49 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
     ∃ σ : Π y : M, V y, CMDiff ∞ (T% σ) ∧ σ x₀ = w₀ ∧ ∀ᶠ y in 𝓝 x₀, cov σ y = 0 := by
   let eV := trivializationAt F V x₀
   let eT := trivializationAt E (TangentSpace I) x₀
-  let φ := extChartPartialDiffeomorph I ∞ x₀
   let z₀ : E := extChartAt I x₀ x₀
   let y₀ : F := eV.continuousLinearMapAt ℝ x₀ w₀
+  have : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le (n := ∞) (by simp)
   have hx₀V : x₀ ∈ eV.baseSet := mem_baseSet_trivializationAt F V x₀
   have hz₀ : z₀ ∈ interior (extChartAt I x₀).target := I.isInteriorPoint_iff.1 hx₀
-  have hx₀φ : x₀ ∈ φ.source := (mem_extChartPartialDiffeomorph_source I ∞ x₀).2 hx₀
   let OE : Set E := interior (extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹' eV.baseSet
-  have hφsymm : CMDiff[interior (extChartAt I x₀).target] ∞ (extChartAt I x₀).symm :=
-    (contMDiffOn_extChartAt_symm x₀).mono interior_subset
-  have hOE : IsOpen OE :=
-    hφsymm.continuousOn.isOpen_inter_preimage isOpen_interior eV.open_baseSet
+  have hOE : IsOpen OE := isOpen_inter_preimage_baseSet_extChartAt_symm (F := F) (V := V) x₀
   have hz₀OE : z₀ ∈ OE := ⟨hz₀, by simpa [z₀] using hx₀V⟩
-  set Γ := bundleChristoffelMap cov x₀
-  let ΓE : E → F →L[ℝ] E →L[ℝ] F := fun ζ ↦ Γ ((extChartAt I x₀).symm ζ)
+  let ΓE : E → F →L[ℝ] E →L[ℝ] F := fun ζ ↦ bundleChristoffelMap (Module.finBasis ℝ F) eT
+    (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm ζ)
   have hΓE : ContDiffOn ℝ ((⊤ : ℕ∞) + 1) ΓE OE :=
-    contMDiffOn_iff_contDiffOn.1 <|
-      (contMDiffOn_bundleChristoffelMap cov x₀).comp (hφsymm.mono inter_subset_left) fun ζ hζ ↦
-        ⟨hζ.2, by simpa [eT] using (extChartAt I x₀).map_target (interior_subset hζ.1)⟩
+    contMDiffOn_iff_contDiffOn.1 (contMDiffOn_bundleChristoffelMap_comp_extChartAt_symm cov x₀)
   let f : E × F → E →L[ℝ] F := fun p ↦ -ΓE p.1 p.2
   have hf : ContDiffOn ℝ ((⊤ : ℕ∞) + 1) f (OE ×ˢ univ) :=
     ((hΓE.comp (contDiffOn_fst (s := OE ×ˢ univ)) fun _ hp ↦ hp.1).clm_apply contDiffOn_snd).neg
   have hint : ∀ᶠ p in 𝓝 (z₀, y₀), IsFrobeniusIntegrableAt f p := by
     have hcont : ContinuousAt ((extChartAt I x₀).symm ∘ Prod.fst) (z₀, y₀) :=
       ContinuousAt.comp (g := (extChartAt I x₀).symm) (f := Prod.fst)
-        (hφsymm.continuousOn.continuousAt (isOpen_interior.mem_nhds hz₀)) continuousAt_fst
+        (((contMDiffOn_extChartAt_symm (n := ∞) x₀).mono interior_subset).continuousOn.continuousAt
+          (isOpen_interior.mem_nhds hz₀)) continuousAt_fst
     have hflat' : ∀ᶠ p in 𝓝 (z₀, y₀), cov.curvatureTensor ((extChartAt I x₀).symm p.1) = 0 :=
       hcont.eventually (by simpa [z₀] using hflat)
     filter_upwards [(hOE.prod isOpen_univ).mem_nhds ⟨hz₀OE, mem_univ _⟩, hflat']
       with ⟨z, w⟩ ⟨hzE, _⟩ hzf
     exact isFrobeniusIntegrableAt_neg_bundleChristoffelMap cov x₀ hzE.1 hzE.2 hzf w
-  -- Solve the total differential equation `D u = f` smoothly near `(z₀, y₀)`.
   obtain ⟨u, U, hU, hp₀U, husmooth, hu₀, -, husol⟩ :=
     exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt hf
       ((hOE.prod isOpen_univ).mem_nhds ⟨hz₀OE, mem_univ _⟩) hint
   let WE : Set E := (fun z ↦ (z, y₀)) ⁻¹' U ∩ OE
   have hWE : IsOpen WE := (hU.preimage (continuous_id.prodMk continuous_const)).inter hOE
-  have hz₀WE : z₀ ∈ WE := ⟨hp₀U, hz₀OE⟩
-  let u₀ : E → F := fun z ↦ u (z, y₀)
-  have hu₀_smooth : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ u₀ WE :=
+  have hu₀_smooth : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ (fun z ↦ u (z, y₀)) WE :=
     contMDiffOn_iff_contDiffOn.2 <|
       husmooth.comp (contDiff_id.prodMk contDiff_const).contDiffOn fun _ hz ↦ hz.1
-  -- Pull the local coordinate solution back to an open neighbourhood `WM` of `x₀` in `M`.
-  let WM : Set M := eV.baseSet ∩ (φ.source ∩ extChartAt I x₀ ⁻¹' WE)
-  have hφto : CMDiff[φ.source] ∞ (extChartAt I x₀) := by
-    simpa only [φ, coe_extChartPartialDiffeomorph] using φ.contMDiffOn_toFun
-  have hWM : IsOpen WM :=
-    eV.open_baseSet.inter (hφto.continuousOn.isOpen_inter_preimage φ.open_source hWE)
-  have hx₀WM : x₀ ∈ WM := ⟨hx₀V, hx₀φ, hz₀WE⟩
-  set g : M → F := fun y ↦ u₀ (extChartAt I x₀ y) with hg_def
-  have hg_smooth : CMDiff[WM] ∞ g :=
-    hu₀_smooth.comp (hφto.mono fun _ hy ↦ hy.2.1) fun _ hy ↦ hy.2.2
-  let σloc : Π y : M, V y := fun y ↦ eV.symm y (g y)
-  have hσloc_smooth : CMDiff[WM] ∞ (T% σloc) :=
-    (eV.contMDiffOn_section_iff hWM inter_subset_left).2 <|
-      hg_smooth.congr fun y hy ↦ congrArg Prod.snd (eV.apply_mk_symm hy.1 (g y))
-  have hσloc_par (y : M) (hy : y ∈ WM) : cov σloc y = 0 := by
-    have hysrc : y ∈ (extChartAt I x₀).source :=
-      ((extChartPartialDiffeomorph_source I ∞ x₀) ▸ hy.2.1).1
-    have hyT : y ∈ eT.baseSet := by simpa [eT] using hysrc
-    have hychart : y ∈ (chartAt H x₀).source := by simpa using hysrc
-    have hg_diff : MDifferentiableAt I 𝓘(ℝ, F) g y :=
-      (hg_smooth.contMDiffAt (hWM.mem_nhds hy)).mdifferentiableAt (by simp)
-    ext w
-    rw [← eT.symmL_continuousLinearMapAt (R := ℝ) hyT w, eT.symmL_apply (R := ℝ) hyT]
-    set a := eT.continuousLinearMapAt ℝ y w
-    rw [covariantDerivative_symm_comp_apply_symm_bundle cov x₀ hy.1 hyT hg_diff a]
-    -- By the chain rule and `TangentBundle.continuousLinearMapAt_trivializationAt`, the
-    -- coordinate directional derivative along `eT.symm y a` evaluates `D u₀` on `a`.
-    have hsol_y : HasFDerivAt u₀ (f (extChartAt I x₀ y, u₀ (extChartAt I x₀ y)))
-        (extChartAt I x₀ y) := husol _ hy.2.2.1
-    have hchart_diff : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I x₀) y :=
-      mdifferentiableAt_extChartAt hychart
-    have hclm : mvfderiv I (extChartAt I x₀) y (eT.symm y a) = a := by
-      calc mvfderiv I (extChartAt I x₀) y (eT.symm y a)
-        _ = eT.continuousLinearMapAt ℝ y (eT.symmL ℝ y a) := by
-            rw [eT.symmL_apply (R := ℝ) hyT,
-              TangentBundle.continuousLinearMapAt_trivializationAt hychart]
-            rfl
-        _ = a := eT.continuousLinearMapAt_symmL (R := ℝ) hyT a
-    have hmv : mvfderiv I g y (eT.symm y a) = -Γ y (g y) a := by
-      have hchain := mvfderiv_comp_apply_of_differentiableAt hsol_y.differentiableAt
-        hchart_diff (eT.symm y a)
-      rw [Function.comp_def, ← hg_def, hclm, hsol_y.fderiv] at hchain
-      dsimp only [f, ΓE, g] at hchain ⊢
-      rwa [(extChartAt I x₀).left_inv hysrc, neg_apply] at hchain
-    rw [hmv, neg_add_cancel, ← eV.symmL_apply (R := ℝ) hy.1, map_zero, zero_apply]
+  obtain ⟨WM, σloc, hWM, hx₀WM, hσloc_smooth, hσloc_x₀, hσloc_par⟩ :=
+    exists_contMDiffOn_parallel_of_fderiv_solution cov hx₀ hWE ⟨hp₀U, hz₀OE⟩ hu₀_smooth w₀ hu₀
+      fun z hz ↦ husol (z, y₀) hz.1
   -- Cut `σloc` off by a smooth bump function supported in `WM`.
   obtain ⟨χ, -, hχsub⟩ :=
     (SmoothBumpFunction.nhds_basis_tsupport (I := I) x₀).mem_iff.mp (hWM.mem_nhds hx₀WM)
   let σ : Π y : M, V y := fun y ↦ χ y • σloc y
   have hσ_smooth : CMDiff ∞ (T% σ) :=
     χ.contMDiff.contMDiffOn.smul_section_of_tsupport hWM hχsub hσloc_smooth
-  have hσ_x₀ : σ x₀ = w₀ := by
-    simp only [σ, χ.eq_one, one_smul, σloc, g, u₀, hu₀, y₀]
-    rw [← eV.symmL_apply (R := ℝ) hx₀V, eV.symmL_continuousLinearMapAt hx₀V]
-  refine ⟨σ, hσ_smooth, hσ_x₀, ?_⟩
+  refine ⟨σ, hσ_smooth, by simp [σ, hσloc_x₀], ?_⟩
   have heq : ∀ᶠ y in 𝓝 x₀, σ y = σloc y :=
     χ.eventuallyEq_one.mono fun y hy ↦ by simp [σ, hy]
   filter_upwards [hWM.mem_nhds hx₀WM, heq.eventually_nhds] with y hyWM hy_eq

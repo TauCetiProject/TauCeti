@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Covariant derivatives read in a local frame
@@ -27,9 +28,12 @@ form `christoffelForm` of `∇` in the frame: `∇` is the flat derivative plus 
 For an arbitrary local frame, `IsLocalFrameOn.covariantDerivative_eq_sum` gives the same product
 rule directly in its native coefficients.
 
-Specializing to the tangent bundle and expanding `∇_{eᵢ} eⱼ` again in the frame gives the scalar
-Christoffel symbols `christoffelSymbol`; they are `C^∞` on `e.baseSet` for a `C^∞` covariant
-derivative, and they give the classical coordinate formula for `∇ σ` along a frame direction.
+Pairing `e` with a trivialization `eT` of the tangent bundle transports `christoffelForm` to a
+model-space continuous bilinear map `bundleChristoffelMap`, which gives the coordinate formula
+`dg + Γ(g, ·)` for differentiating a section of `V` along a coordinate tangent vector.
+Specializing to the tangent bundle (`eT = e`) yields `christoffelMap` and the scalar Christoffel
+symbols `christoffelSymbol`; they are `C^∞` on `e.baseSet` for a `C^∞` covariant derivative, and
+they give the classical coordinate formula for `∇ σ` along a frame direction.
 
 ## Main definitions and results
 
@@ -45,22 +49,24 @@ derivative, and they give the classical coordinate formula for `∇ σ` along a 
   frame, with `TauCeti.Manifold.christoffelForm_apply` computing it and
   `TauCeti.Manifold.covariantDerivative_eq_add_christoffelForm` expressing the covariant
   derivative as the flat one plus it.
-* `TauCeti.Manifold.covariantDerivative_symm_eq_christoffelForm` and
+* `TauCeti.Manifold.bundleChristoffelMap` and `TauCeti.Manifold.christoffelMap`: the Christoffel
+  form transported to a continuous bilinear map on the model spaces (for a general vector bundle
+  and for the tangent bundle), with `TauCeti.Manifold.bundleChristoffelMap_apply`,
+  `TauCeti.Manifold.christoffelMap_apply`, `TauCeti.Manifold.contMDiffOn_bundleChristoffelMap`,
+  and `TauCeti.Manifold.contMDiffOn_christoffelMap`.
+* `TauCeti.Manifold.covariantDerivative_symm_eq_christoffelForm`,
+  `TauCeti.Manifold.covariantDerivative_symm_apply_symm_bundle`, and
   `TauCeti.Manifold.covariantDerivative_symm_apply_symm`: a covariant derivative differentiates a
-  section with constant coordinates in the trivialization by the Christoffel form, and on the
-  tangent bundle by the Christoffel map.
-* `TauCeti.Manifold.covariantDerivative_symm_comp_apply_symm`: on the tangent bundle, the
-  covariant derivative of the vector field with coordinates `g` in the trivialization has
-  coordinates `dg + Γ(g, ·)`.
+  section with constant coordinates in the trivialization by the Christoffel form / map.
+* `TauCeti.Manifold.covariantDerivative_symm_comp_apply_symm_bundle` and
+  `TauCeti.Manifold.covariantDerivative_symm_comp_apply_symm`: the covariant derivative of a
+  section with coordinates `g` in the trivialization has coordinates `dg + Γ(g, ·)`.
 * `TauCeti.Manifold.christoffelSymbol`: the scalar Christoffel symbols of a covariant derivative
   on the tangent bundle in a local frame, with
   `TauCeti.Manifold.covariantDerivative_localFrame_eq_sum_christoffelSymbol` expanding
   `∇_{eᵢ} eⱼ`, `TauCeti.Manifold.contMDiffOn_christoffelSymbol` their smoothness, and
   `TauCeti.Manifold.christoffelForm_localFrame_apply` identifying them with the frame components
   of the Christoffel form.
-* `TauCeti.Manifold.christoffelMap`: the Christoffel form transported to a continuous bilinear map
-  on the model space, with `TauCeti.Manifold.christoffelMap_apply` reading it back as the
-  Christoffel form and `TauCeti.Manifold.contMDiffOn_christoffelMap` proving its smoothness.
 * `TauCeti.Manifold.covariantDerivative_apply_localFrame_eq_sum`: the classical coordinate
   formula `(∇_{eᵢ} σ)ᵏ = dσᵏ(eᵢ) + ∑ j, σʲ Γᵏᵢⱼ`.
 
@@ -192,7 +198,7 @@ theorem isCovariantDerivativeOn_frameCovariantDerivative :
           g * (LinearMap.piApply (e.localFrameCoeff I b i)) σ := by
         ext y; simp
       rw [hsplit, mvfderiv_mul hg (hcoeff i)]
-      simp [mul_comm]
+      simp [-mvfderiv_apply_eq_mfderiv_apply, mul_comm]
     ext v
     simp only [frameCovariantDerivative_apply, add_apply, smul_apply,
       ContinuousLinearMap.smulRight_apply, key, add_smul, mul_smul, Finset.sum_add_distrib,
@@ -286,6 +292,118 @@ theorem covariantDerivative_symm_eq_christoffelForm
   rw [hzero]
   simp
 
+section BundleChristoffelMap
+
+variable [IsManifold I 1 M]
+  (eT : Trivialization E (TotalSpace.proj : TangentBundle I M → M)) [MemTrivializationAtlas eT]
+
+/-- The Christoffel form of a covariant derivative on `V`, transported through the bundle
+trivialization `e` and a tangent-bundle trivialization `eT` to a continuous bilinear map
+`F →L[𝕜] E →L[𝕜] F`. -/
+def bundleChristoffelMap (hcov : IsCovariantDerivativeOn F cov e.baseSet) (x : M) :
+    F →L[𝕜] E →L[𝕜] F :=
+  ((e.continuousLinearMap (RingHom.id 𝕜) (eT.continuousLinearMap (RingHom.id 𝕜) e))
+    ⟨x, christoffelForm b hcov x⟩).2
+
+/-- The bundle Christoffel map is the Christoffel form read in the trivializations `e` and `eT`:
+it acts on the coordinates of a fibre vector and of a tangent direction, returning the coordinates
+of the value of the Christoffel form on them. -/
+theorem bundleChristoffelMap_apply (hcov : IsCovariantDerivativeOn F cov e.baseSet)
+    (hx : x ∈ e.baseSet) (hxT : x ∈ eT.baseSet) (v : F) (u : E) :
+    bundleChristoffelMap b eT hcov x v u =
+      e.continuousLinearMapAt 𝕜 x
+        (christoffelForm b hcov x (e.symmL 𝕜 x v) (eT.symmL 𝕜 x u)) := by
+  have hxe : x ∈ (eT.continuousLinearMap (RingHom.id 𝕜) e).baseSet := ⟨hxT, hx⟩
+  simp only [bundleChristoffelMap, Bundle.Trivialization.continuousLinearMap_apply,
+    ContinuousLinearMap.comp_apply]
+  rw [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem
+    (R := 𝕜) (eT.continuousLinearMap (RingHom.id 𝕜) e) hxe]
+  simp only [Bundle.Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply]
+
+/-- A covariant derivative on `V` differentiates the section with constant coordinates `v` in `e`,
+along the tangent vector with coordinates `u` in `eT`, by `bundleChristoffelMap`. -/
+theorem covariantDerivative_symm_apply_symm_bundle
+    (hcov : IsCovariantDerivativeOn F cov e.baseSet) (hx : x ∈ e.baseSet) (hxT : x ∈ eT.baseSet)
+    (v : F) (u : E) :
+    cov (fun y ↦ e.symm y v) x (eT.symm x u) =
+      e.symm x (bundleChristoffelMap b eT hcov x v u) := by
+  rw [covariantDerivative_symm_eq_christoffelForm b hcov hx,
+    bundleChristoffelMap_apply b eT hcov hx hxT]
+  simp only [e.symmL_apply hx, eT.symmL_apply hxT,
+    Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e hx]
+  exact (e.symm_apply_apply_mk hx _).symm
+
+/-- **The coordinate formula for a covariant derivative on a vector bundle.** The covariant
+derivative of the section with coordinates `g` in `e`, along the tangent vector with coordinates
+`u` in `eT`, has coordinates `dg(u) + Γ(g, u)`, where `Γ = bundleChristoffelMap b eT hcov`. -/
+theorem covariantDerivative_symm_comp_apply_symm_bundle
+    (hcov : IsCovariantDerivativeOn F cov e.baseSet) (hx : x ∈ e.baseSet) (hxT : x ∈ eT.baseSet)
+    {g : M → F} (hg : MDifferentiableAt I 𝓘(𝕜, F) g x) (u : E) :
+    cov (fun y ↦ e.symm y (g y)) x (eT.symm x u) =
+      e.symm x (mvfderiv I g x (eT.symm x u) + bundleChristoffelMap b eT hcov x (g x) u) := by
+  have hread : ∀ᶠ y in 𝓝 x, (e ⟨y, e.symm y (g y)⟩).2 = g y :=
+    Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦ by rw [e.apply_mk_symm hy]
+  have hσ : MDiffAt (T% (fun y ↦ e.symm y (g y))) x :=
+    (e.mdifferentiableAt_section_iff I _ hx).2 (hg.congr_of_eventuallyEq hread)
+  have hcoeff (i : ι) : mvfderiv I ((LinearMap.piApply (e.localFrameCoeff I b i))
+      (fun y ↦ e.symm y (g y))) x (eT.symm x u) = b.coord i (mvfderiv I g x (eT.symm x u)) := by
+    have heq : (LinearMap.piApply (e.localFrameCoeff I b i)) (fun y ↦ e.symm y (g y)) =ᶠ[𝓝 x]
+        ((b.coord i).toContinuousLinearMap ∘ g) := by
+      filter_upwards [hread, e.open_baseSet.mem_nhds hx] with y hy hyb
+      simp [e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y (g y)) hyb, hy]
+    rw [heq.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt
+      (b.coord i).toContinuousLinearMap.differentiableAt hg, ContinuousLinearMap.fderiv,
+      LinearMap.coe_toContinuousLinearMap']
+  have hframe : frameCovariantDerivative I b e (fun y ↦ e.symm y (g y)) x (eT.symm x u) =
+      e.symm x (mvfderiv I g x (eT.symm x u)) := by
+    rw [frameCovariantDerivative_apply]
+    simp_rw [hcoeff, ← symmL_basis_eq_localFrame b hx, ← map_smul, ← map_sum]
+    simp only [Basis.coord_apply, b.sum_repr, e.symmL_apply (R := 𝕜) hx]
+  have hchris : christoffelForm b hcov x (e.symm x (g x)) (eT.symm x u) =
+      e.symm x (bundleChristoffelMap b eT hcov x (g x) u) := by
+    rw [bundleChristoffelMap_apply b eT hcov hx hxT, e.symmL_apply (R := 𝕜) hx,
+      eT.symmL_apply (R := 𝕜) hxT,
+      Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e hx,
+      e.symm_apply_apply_mk hx]
+  rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_apply, hframe, hchris,
+    ← e.symmL_apply (R := 𝕜) hx, ← e.symmL_apply (R := 𝕜) hx, ← e.symmL_apply (R := 𝕜) hx,
+    map_add]
+
+/-- The bundle Christoffel map of a `C^n` covariant derivative is `C^n` on the intersection of the
+base sets of `e` and `eT`. -/
+theorem contMDiffOn_bundleChristoffelMap {n : ℕ∞ω}
+    (hcov : IsCovariantDerivativeOn F cov e.baseSet)
+    [ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I]
+    [ContMDiffVectorBundle n F V I]
+    [ContMDiffVectorBundle (n + 1) F V I]
+    [ContMDiffCovariantDerivativeOn F n cov e.baseSet] :
+    CMDiff[e.baseSet ∩ eT.baseSet] n (bundleChristoffelMap b eT hcov) := by
+  let O := e.baseSet ∩ eT.baseSet
+  let eTV := eT.continuousLinearMap (RingHom.id 𝕜) e
+  let eh := e.continuousLinearMap (RingHom.id 𝕜) eTV
+  have hmaps : MapsTo (id : M → M) O (e.baseSet ∩ eTV.baseSet) := fun _ hy ↦ ⟨hy.1, hy.2, hy.1⟩
+  have hframeEval (j : ι) :
+      ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+        (fun y ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun z ↦ TangentSpace I z →L[𝕜] V z) y
+          (christoffelForm b hcov y (e.localFrame b j y))) O := by
+    have hj : ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+        (fun y ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun z ↦ TangentSpace I z →L[𝕜] V z) y
+          (cov (e.localFrame b j) y)) e.baseSet :=
+      ContMDiffCovariantDerivativeOn.contMDiff (e.contMDiffOn_localFrame_baseSet (n + 1) b j)
+    refine (hj.mono inter_subset_left).congr fun y hy ↦ ?_
+    congr 1
+    rw [christoffelForm_apply b hcov hy.1]
+    classical
+    simp [localFrameCoeff_localFrame b hy.1]
+  have hsec : ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] E →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] E →L[𝕜] F)
+        (E := fun z ↦ V z →L[𝕜] TangentSpace I z →L[𝕜] V z) y
+        (christoffelForm b hcov y)) O :=
+    contMDiffOn_hom_of_localFrame (e' := eTV) b contMDiffOn_id hmaps hframeEval
+  exact ((eh.contMDiffOn_iff fun _ hy ↦ eh.mem_source.mpr (hmaps hy)).1 hsec).2
+
+end BundleChristoffelMap
+
 end GeneralFibre
 
 /-! ### Christoffel symbols on the tangent bundle -/
@@ -336,29 +454,17 @@ theorem covariantDerivative_localFrame_eq_sum_christoffelSymbol [Fintype ι] (hx
   rw [extend_apply_self] at hexp
   exact hexp
 
-variable (I) in
-private def christoffelMapOfSymbols [Fintype ι]
-    (e : Trivialization E (TotalSpace.proj : TangentBundle I M → M)) [MemTrivializationAtlas e]
-    (cov : (Π x : M, TangentSpace I x) →
-      (Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x))
-    (x : M) : E →L[𝕜] E →L[𝕜] E :=
-  ∑ j, ∑ i, ∑ k, christoffelSymbol I b e cov i j k x •
-    (b.coord j).toContinuousLinearMap.smulRight
-      ((b.coord i).toContinuousLinearMap.smulRight (b k))
-
-private theorem christoffelMapOfSymbols_apply_basis [Fintype ι] (i j : ι) :
-    christoffelMapOfSymbols I b e cov x (b j) (b i) =
-      ∑ k, christoffelSymbol I b e cov i j k x • b k := by
-  classical
-  simp [christoffelMapOfSymbols, Basis.coord_apply, Finsupp.single_apply]
-
 /-- The Christoffel form transported through the tangent-bundle trivialization to a
 model-space-valued continuous bilinear map. -/
 def christoffelMap [Fintype ι] (hcov : IsCovariantDerivativeOn E cov e.baseSet) (x : M) :
     E →L[𝕜] E →L[𝕜] E :=
-  ((e.continuousLinearMap (RingHom.id 𝕜)
-      (e.continuousLinearMap (RingHom.id 𝕜) e))
-    ⟨x, christoffelForm b hcov x⟩).2
+  bundleChristoffelMap b e hcov x
+
+/-- On the tangent bundle, `christoffelMap` is `bundleChristoffelMap` with `eT = e`. -/
+theorem christoffelMap_eq_bundleChristoffelMap [Fintype ι]
+    (hcov : IsCovariantDerivativeOn E cov e.baseSet) :
+    christoffelMap b hcov = bundleChristoffelMap b e hcov :=
+  (rfl)
 
 /-- The model-space Christoffel map is the Christoffel form read in the trivialization: it acts
 on the coordinates of a fibre vector and of a tangent direction, and returns the coordinates of
@@ -367,24 +473,16 @@ theorem christoffelMap_apply [Fintype ι] (hcov : IsCovariantDerivativeOn E cov 
     (hx : x ∈ e.baseSet) (v w : E) :
     christoffelMap b hcov x v w =
       e.continuousLinearMapAt 𝕜 x
-        (christoffelForm b hcov x (e.symmL 𝕜 x v) (e.symmL 𝕜 x w)) := by
-  have hxe : x ∈ (e.continuousLinearMap (RingHom.id 𝕜) e).baseSet := by simp [hx]
-  simp only [christoffelMap, Bundle.Trivialization.continuousLinearMap_apply,
-    ContinuousLinearMap.comp_apply]
-  rw [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem
-    (R := 𝕜) (e.continuousLinearMap (RingHom.id 𝕜) e) hxe]
-  simp only [Bundle.Trivialization.continuousLinearMap_apply,
-    ContinuousLinearMap.comp_apply]
+        (christoffelForm b hcov x (e.symmL 𝕜 x v) (e.symmL 𝕜 x w)) :=
+  bundleChristoffelMap_apply b e hcov hx hx v w
 
 /-- A covariant derivative on the tangent bundle differentiates the vector field with constant
 coordinates `v` in the trivialization `e`, in the direction with coordinates `u`, by the Christoffel
 map: the result has coordinates `christoffelMap b hcov x v u`. -/
 theorem covariantDerivative_symm_apply_symm [Fintype ι]
     (hcov : IsCovariantDerivativeOn E cov e.baseSet) (hx : x ∈ e.baseSet) (v u : E) :
-    cov (fun y ↦ e.symm y v) x (e.symm x u) = e.symm x (christoffelMap b hcov x v u) := by
-  rw [covariantDerivative_symm_eq_christoffelForm b hcov hx, christoffelMap_apply b hcov hx]
-  simp only [e.symmL_apply hx, Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e hx]
-  exact (e.symm_apply_apply_mk hx _).symm
+    cov (fun y ↦ e.symm y v) x (e.symm x u) = e.symm x (christoffelMap b hcov x v u) :=
+  covariantDerivative_symm_apply_symm_bundle b e hcov hx hx v u
 
 /-- **The coordinate formula for a covariant derivative on the tangent bundle.**  The covariant
 derivative of the vector field with coordinates `g` in the trivialization `e`, in the direction
@@ -393,35 +491,8 @@ theorem covariantDerivative_symm_comp_apply_symm [Fintype ι]
     (hcov : IsCovariantDerivativeOn E cov e.baseSet) (hx : x ∈ e.baseSet) {g : M → E}
     (hg : MDifferentiableAt I 𝓘(𝕜, E) g x) (u : E) :
     cov (fun y ↦ e.symm y (g y)) x (e.symm x u) =
-      e.symm x (mvfderiv I g x (e.symm x u) + christoffelMap b hcov x (g x) u) := by
-  have hread : ∀ᶠ y in 𝓝 x, (e ⟨y, e.symm y (g y)⟩).2 = g y :=
-    Filter.eventually_of_mem (e.open_baseSet.mem_nhds hx) fun y hy ↦ by rw [e.apply_mk_symm hy]
-  have hσ : MDiffAt (T% (fun y ↦ e.symm y (g y))) x :=
-    (e.mdifferentiableAt_section_iff I _ hx).2 (hg.congr_of_eventuallyEq hread)
-  rw [covariantDerivative_eq_add_christoffelForm b hcov hx hσ, add_apply,
-    ← e.symmL_apply (R := 𝕜) hx (_ + _), map_add, christoffelMap_apply b hcov hx,
-    e.symmL_continuousLinearMapAt (R := 𝕜) hx, e.symmL_apply (R := 𝕜) hx,
-    e.symmL_apply (R := 𝕜) hx, e.symmL_apply (R := 𝕜) hx]
-  congr 1
-  rw [frameCovariantDerivative_apply]
-  -- The `i`-th frame coefficient of the field is the `i`-th coordinate of `g` near `x`.
-  have hcoeff (i : ι) : mvfderiv I ((LinearMap.piApply (e.localFrameCoeff I b i))
-      (fun y ↦ e.symm y (g y))) x (e.symm x u) = b.coord i (mvfderiv I g x (e.symm x u)) := by
-    have heq : (LinearMap.piApply (e.localFrameCoeff I b i)) (fun y ↦ e.symm y (g y)) =ᶠ[𝓝 x]
-        fun y ↦ b.coord i (g y) := by
-      filter_upwards [hread, e.open_baseSet.mem_nhds hx] with y hy hyb
-      rw [LinearMap.piApply_apply_apply,
-        e.localFrameCoeff_eq_coeff (I := I) (b := b) (s := fun y ↦ e.symm y (g y)) hyb, hy,
-        Basis.coord_apply]
-    have hL : HasMFDerivAt I 𝓘(𝕜, 𝕜) (fun y ↦ b.coord i (g y)) x
-        ((LinearMap.toContinuousLinearMap (b.coord i)).comp (mfderiv I 𝓘(𝕜, E) g x)) :=
-      (LinearMap.toContinuousLinearMap (b.coord i)).hasMFDerivAt.comp x hg.hasMFDerivAt
-    rw [mvfderiv, (hL.congr_of_eventuallyEq heq).mfderiv]
-    -- `NormedSpace.fromTangentSpace` is the identity of the model space, so both sides apply
-    -- `b.coord i` to the same vector.
-    rfl
-  simp_rw [hcoeff, ← symmL_basis_eq_localFrame b hx, ← map_smul, ← map_sum]
-  simp only [Basis.coord_apply, b.sum_repr, e.symmL_apply (R := 𝕜) hx]
+      e.symm x (mvfderiv I g x (e.symm x u) + christoffelMap b hcov x (g x) u) :=
+  covariantDerivative_symm_comp_apply_symm_bundle b e hcov hx hx hg u
 
 /-- The Christoffel symbols of a `C^n` covariant derivative are `C^n` on the base set of the
 trivialization defining the frame. -/
@@ -484,18 +555,6 @@ theorem coord_christoffelMap_apply_basis [Fintype ι]
   rw [christoffelMap_apply_basis b hcov hx i j]
   simp [Basis.coord_apply, Finsupp.single_apply]
 
-private theorem christoffelMap_eq_of_mem [Fintype ι]
-    (hcov : IsCovariantDerivativeOn E cov e.baseSet) (hx : x ∈ e.baseSet) :
-    christoffelMap b hcov x = christoffelMapOfSymbols I b e cov x := by
-  -- Both sides are continuous linear maps, so they are determined by their underlying linear
-  -- maps (`ContinuousLinearMap.coe_injective`), hence by their values on the basis `b`; the
-  -- coercion is transparent on applications by `ContinuousLinearMap.coe_coe`.
-  refine ContinuousLinearMap.coe_injective (b.ext fun j ↦ ?_)
-  simp only [ContinuousLinearMap.coe_coe]
-  refine ContinuousLinearMap.coe_injective (b.ext fun i ↦ ?_)
-  simp only [ContinuousLinearMap.coe_coe]
-  rw [christoffelMap_apply_basis b hcov hx i j, christoffelMapOfSymbols_apply_basis b i j]
-
 /-- The model-space Christoffel map of a `C^n` covariant derivative is `C^n` on the base set of
 the trivialization defining its coordinates. -/
 theorem contMDiffOn_christoffelMap [Fintype ι] {n : ℕ∞ω}
@@ -503,18 +562,8 @@ theorem contMDiffOn_christoffelMap [Fintype ι] {n : ℕ∞ω}
     [ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I]
     [ContMDiffVectorBundle (n + 1) E (TangentSpace I : M → Type _) I]
     [ContMDiffCovariantDerivativeOn E n cov e.baseSet] :
-    CMDiff[e.baseSet] n (christoffelMap b hcov) := by
-  classical
-  have hsymbols : CMDiff[e.baseSet] n (christoffelMapOfSymbols I b e cov) := by
-    unfold christoffelMapOfSymbols
-    apply contMDiffOn_finsetSum
-    intro j _
-    apply contMDiffOn_finsetSum
-    intro i _
-    apply contMDiffOn_finsetSum
-    intro k _
-    exact (contMDiffOn_christoffelSymbol b i j k).smul contMDiffOn_const
-  exact hsymbols.congr fun y hy ↦ christoffelMap_eq_of_mem b hcov hy
+    CMDiff[e.baseSet] n (christoffelMap b hcov) :=
+  Set.inter_self e.baseSet ▸ contMDiffOn_bundleChristoffelMap b e hcov
 
 /-- The classical coordinate formula for a covariant derivative on the tangent bundle: along the
 frame direction `eᵢ`, the `k`-th component of `∇ σ` is the derivative of the `k`-th coefficient of

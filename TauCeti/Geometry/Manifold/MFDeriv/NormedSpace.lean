@@ -211,16 +211,13 @@ the sum of their derivatives. -/
 theorem mvfderiv_sum {ι : Type*} {t : Finset ι} {g : ι → M → F} {x : M}
     (hg : ∀ i ∈ t, MDiffAt (g i) x) :
     mvfderiv I (∑ i ∈ t, g i) x = ∑ i ∈ t, mvfderiv I (g i) x := by
-  have hsum : MDiffAt (∑ i ∈ t, g i) x := MDifferentiableAt.sum hg
-  rw [hsum.mvfderiv, Finset.sum_congr rfl fun i hi ↦ (hg i hi).mvfderiv]
-  have hd : ∀ i ∈ t, DifferentiableWithinAt 𝕜 (fun z ↦ g i ((extChartAt I x).symm z))
-      (Set.range I) (extChartAt I x x) := by
-    intro i hi
-    simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.comp_def, id] using (hg i hi).differentiableWithinAt_writtenInExtChartAt
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    Function.comp_def, id, Finset.sum_apply]
-  exact fderivWithin_fun_sum I.uniqueDiffWithinAt_image hd
+  classical
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, mvfderiv_add (hg i (Finset.mem_insert_self i s))
+      (MDifferentiableAt.sum fun j hj ↦ hg j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj ↦ hg j (Finset.mem_insert_of_mem hj), Finset.sum_insert hi]
 
 /-- The derivative of a pointwise finite sum of vector-valued functions, read in the target space,
 is the sum of their derivatives. -/
