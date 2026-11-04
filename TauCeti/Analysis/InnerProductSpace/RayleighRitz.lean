@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
@@ -152,3 +152,31 @@ theorem map_sylvester_compression_le_map_sylvester (N : UnitarilyInvariantSemino
   exact N.map_starProjection_comp_le _ _
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- The Ritz residual of a finite-dimensional isometric trial map is orthogonal to the trial
+space: `X† (A X - X (X† A X)) = 0`.
+
+This is the linear-map form of `ContinuousLinearMap.adjoint_comp_sylvester_compression`.
+The corresponding DKPS statement is in
+`ForTauCeti/Analysis/InnerProductSpace/Residual/Ritz.lean` (Jon Crall and GPT 5.6 High;
+Kitware, Apache-2.0); the proof here uses the accepted continuous-map theorem. -/
+theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
+    (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by
+  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have h := ContinuousLinearMap.adjoint_comp_sylvester_compression
+    A.toContinuousLinearMap (X := X.toContinuousLinearMap) X.isometry
+  simpa only [ContinuousLinearMap.compression_def, ContinuousLinearMap.sylvester_apply,
+    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_sub,
+    ← ContinuousLinearMap.adjoint_toLinearMap, LinearIsometry.toLinearMap_toContinuousLinearMap,
+    LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_zero] using congrArg
+      ContinuousLinearMap.toLinearMap h
+
+end LinearMap
