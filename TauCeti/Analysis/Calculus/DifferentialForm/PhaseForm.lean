@@ -45,6 +45,12 @@ theorem phaseForm_apply (α : E → ℂ) (x : E) (v : Fin 1 → E) :
     phaseForm α x v = ((α x)⁻¹ * fderiv ℝ α x (v 0)).im := by
   simp [phaseForm]
 
+/-- The phase form vanishes at a zero of `α`. -/
+@[simp]
+theorem phaseForm_of_eq_zero (h : α x = 0) : phaseForm α x = 0 := by
+  ext v
+  simp [h]
+
 /-- The continuous linear map `L ↦ Im ∘ L`, with values in one-forms. -/
 private def imOneForm : (E →L[ℝ] ℂ) →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ :=
   (ofSubsingletonLIE (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap ∘L
@@ -89,9 +95,10 @@ theorem extDeriv_phaseForm (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0) :
     ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     ofSubsingletonLIE_apply, ofSubsingleton_apply_apply, ContinuousLinearMap.compL_apply,
     imCLM_apply, smul_eq_mul, hsymm.eq (v 0) (v 1)]
-  rw [← sub_im]
-  ring_nf
-  simp
+  -- The `α⁻¹ d²α` terms cancel by the symmetry of `d²α`, and so do the `-α⁻² dα ⊗ dα` terms.
+  rw [← sub_im, coe_zero, Pi.zero_apply]
+  convert zero_im using 2
+  ring
 
 /-- The phase form of a product of functions that do not vanish at `x` is the sum of their
 phase forms. -/

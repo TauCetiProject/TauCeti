@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm
 public import TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential
+public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -129,16 +130,21 @@ def covariantPhaseForm (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) :
   phaseForm α + b
 
 /-- The covariant phase form at a point is `Im (α⁻¹ dα) + b`. -/
+@[simp]
 theorem covariantPhaseForm_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     covariantPhaseForm b α x = phaseForm α x + b x := (rfl)
+
+/-- A nonzero complex number has `re ^ 2 + im ^ 2 ≠ 0`, the form of `|z|² ≠ 0` used by
+`field_simp` after expanding real and imaginary parts. -/
+private theorem re_sq_add_im_sq_ne_zero {z : ℂ} (h : z ≠ 0) : z.re ^ 2 + z.im ^ 2 ≠ 0 := by
+  rw [sq, sq, ← normSq_apply]
+  exact normSq_eq_zero.not.2 h
 
 /-- Away from the zeros of `α`, the covariant phase form is `Im (conj α ∇_a α) / |α|²`. -/
 theorem covariantPhaseForm_apply_eq_div (h : α x ≠ 0) (v : E) :
     covariantPhaseForm b α x (fun _ ↦ v) =
       (conj (α x) * covariantDeriv b α x v).im / normSq (α x) := by
-  have hn : (α x).re ^ 2 + (α x).im ^ 2 ≠ 0 := by
-    rw [sq, sq, ← normSq_apply]
-    exact normSq_eq_zero.not.2 h
+  have hn := re_sq_add_im_sq_ne_zero h
   rw [covariantPhaseForm_apply, ContinuousAlternatingMap.add_apply, phaseForm_apply,
     covariantDeriv_apply]
   simp only [add_re, add_im, mul_im, mul_re, conj_re, conj_im, ofReal_re, ofReal_im, I_re, I_im,
@@ -164,6 +170,7 @@ def cutoffPhaseForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (�
   χ (normSq (α x)) • covariantPhaseForm b α x
 
 /-- The cutoff phase form at a point is `χ(|α|²) τ`. -/
+@[simp]
 theorem cutoffPhaseForm_apply (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     cutoffPhaseForm χ b α x = χ (normSq (α x)) • covariantPhaseForm b α x := (rfl)
 
@@ -182,7 +189,7 @@ theorem cutoffPhaseForm_eventuallyEq_zero (hα : ContinuousAt α x)
     (hχ : χ =ᶠ[𝓝 (normSq (α x))] 0) : cutoffPhaseForm χ b α =ᶠ[𝓝 x] 0 := by
   filter_upwards [(continuous_normSq.continuousAt.comp hα).tendsto.eventually hχ] with y hy
   rw [Pi.zero_apply, Function.comp_apply] at hy
-  simp [cutoffPhaseForm_apply, hy]
+  simp [hy]
 
 /-- Near a point where `χ` is `1` near `|α|²`, the cutoff phase form is the covariant phase
 form. -/
@@ -190,7 +197,7 @@ theorem cutoffPhaseForm_eventuallyEq_covariantPhaseForm (hα : ContinuousAt α x
     (hχ : χ =ᶠ[𝓝 (normSq (α x))] 1) : cutoffPhaseForm χ b α =ᶠ[𝓝 x] covariantPhaseForm b α := by
   filter_upwards [(continuous_normSq.continuousAt.comp hα).tendsto.eventually hχ] with y hy
   rw [Pi.one_apply, Function.comp_apply] at hy
-  simp [cutoffPhaseForm_apply, hy]
+  simp [hy]
 
 /-- The cutoff phase form of a `C^(n+1)` section and a `C^n` connection form is `C^n`, for a
 `C^n` cutoff vanishing near `0`. -/
@@ -316,7 +323,7 @@ theorem integral_cutoffCurrent_closedBall {α : ℂ → ℂ} {b : ℂ → ℂ [�
     integral_extDeriv_closedBall hr fun z _ ↦ hb.contDiffAt,
     ← intervalIntegral.integral_sub (hcirc hτ.continuous) (hcirc hb.continuous)]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
-  simp [cutoffPhaseForm_apply, hbd θ, covariantPhaseForm_apply]
+  simp [hbd θ]
 
 /-! ### The modulus potential -/
 
@@ -383,17 +390,33 @@ def covariantDBar (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E
     I • (covariantDeriv b α x).comp (LinearMap.toContinuousLinearMap J.toLinearMap))
 
 /-- `∂bar_a α` evaluated on a vector. -/
+@[simp]
 theorem covariantDBar_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
     covariantDBar J b α x v = (covariantDeriv b α x v + I * covariantDeriv b α x (J v)) / 2 := by
   simp [covariantDBar, div_eq_inv_mul, mul_add]
 
+/-- `∂bar_a α` is the complex-antilinear part `TauCeti.complexAntilinearPart` of `∇_a α`, for the
+structure `J` on `E` and multiplication by `I` on `ℂ`. -/
+theorem coe_covariantDBar_eq_complexAntilinearPart (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
+    (x : E) :
+    ⇑(covariantDBar J b α x) =
+      complexAntilinearPart J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+        (covariantDeriv b α x : E →ₗ[ℝ] ℂ) := by
+  ext v
+  simp only [covariantDBar_apply, complexAntilinearPart_apply, ContinuousLinearMap.coe_coe,
+    DistribSMul.toLinearMap_apply, smul_eq_mul, real_smul, ofReal_inv, ofReal_ofNat]
+  ring
+
 /-- `∂bar_a α` is `J`-antilinear: `∂bar_a α (J v) = -i ∂bar_a α v`. -/
 theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x v : E) :
     covariantDBar J b α x (J v) = -I * covariantDBar J b α x v := by
-  rw [covariantDBar_apply, covariantDBar_apply, J.apply_apply, map_neg]
-  ring_nf
-  rw [I_sq]
-  ring
+  have hI : DistribSMul.toLinearMap ℝ ℂ I ∘ₗ DistribSMul.toLinearMap ℝ ℂ I = -LinearMap.id := by
+    ext z
+    simp [← mul_assoc]
+  have h := (complexAntilinearPart_isComplexAntilinear J.square_neg hI
+    (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
+  rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
+  rw [h, smul_eq_mul, neg_mul]
 
 /-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`. -/
 def cutoffDBarForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
@@ -438,17 +461,14 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     exact hH.comp_hasFDerivAt x hα.hasFDerivAt.norm_sq
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = fun _ ↦ w := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  rw [ContinuousAlternatingMap.add_apply, J.twistedDifferential_apply, cutoffDBarForm_apply,
+  simp only [ContinuousAlternatingMap.add_apply, J.twistedDifferential_apply, cutoffDBarForm_apply,
     hd.fderiv, covariantDBar_apply, J.apply_apply, map_neg, cutoffPhaseForm_apply,
-    ContinuousAlternatingMap.smul_apply, covariantPhaseForm_apply,
-    ContinuousAlternatingMap.add_apply, phaseForm_apply]
-  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-    Complex.inner, covariantDeriv_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
+    ContinuousAlternatingMap.smul_apply, covariantPhaseForm_apply, phaseForm_apply,
+    _root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
+    covariantDeriv_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
   by_cases h : α x = 0
   · simp [h, hχ]
-  · have hn : (α x).re ^ 2 + (α x).im ^ 2 ≠ 0 := by
-      rw [sq, sq, ← normSq_apply]
-      exact normSq_eq_zero.not.2 h
+  · have hn := re_sq_add_im_sq_ne_zero h
     simp only [mul_re, mul_im, add_re, add_im, neg_re, neg_im, conj_re, conj_im, ofReal_re,
       ofReal_im, I_re, I_im, div_ofNat_re, div_ofNat_im, inv_re, inv_im, normSq_apply]
     field_simp
