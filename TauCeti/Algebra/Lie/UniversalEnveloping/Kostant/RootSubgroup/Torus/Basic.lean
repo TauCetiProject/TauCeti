@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
@@ -77,6 +77,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
   index.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_injective`: weights generating the whole
   character lattice make the torus a monomorphism on points.
+* `TauCeti.UniversalEnvelopingAlgebra.basisMatrix_kostantTorusPoints_mem_upperTriangular`: a
+  torus point is diagonal, hence upper triangular, in every ordering of a weight basis.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusPoints`: naturality in the value ring.
 * `TauCeti.UniversalEnvelopingAlgebra.mapScalarExtensionAutomorphisms_kostantTorusPoints`:
   scalar extension of a torus point is the torus point with mapped parameter.
@@ -677,6 +679,28 @@ theorem map_kostantTorusMatrix {B : Type*} [CommRing B] [Algebra ℤ B] (φ : A 
   · exact map_zero φ
 
 end Matrix
+
+section Triangular
+
+variable {κ : Type*} [Fintype κ]
+variable {V : Type v} [AddCommGroup V]
+variable (M : AddSubgroup V)
+variable {η : Type*} [Fintype η] [LinearOrder η] (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
+
+/-- A torus point acts diagonally on a weight basis, so its matrix is upper triangular for every
+order on the basis. -/
+theorem basisMatrix_kostantTorusPoints_mem_upperTriangular (A : Type*) [CommRing A]
+    (s : κ → Aˣ) :
+    Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
+        (kostantTorusPoints M b wt A s) ∈ upperTriangularGroup η A := by
+  rw [UpperTriangularGroup.mem_iff]
+  intro r s' (hsr : s' < r)
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, MulEquiv.coe_mk, AlgEquiv.toEquiv_eq_coe,
+    EquivLike.coe_coe, LinearMap.toMatrixAlgEquiv_apply, Module.Basis.baseChange_apply,
+    kostantTorusPoints_tmul_basis, Module.Basis.baseChange_repr_tmul, Module.Basis.repr_self]
+  simp [hsr.ne]
+
+end Triangular
 
 section Representation
 
