@@ -9,13 +9,14 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import Mathlib.Analysis.Calculus.FDeriv.Prod
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Loops with square-integrable defect accumulate at periodic orbits
@@ -39,7 +40,8 @@ The second statement is an application of the Arzelà–Ascoli theorem: by the C
 inequality (`TauCeti.integral_le_sqrt_mul_sqrt_integral_sq`), once the squared defect integrals
 are at most `1` the loops have the common modulus of continuity `B h + √h`, where `B` bounds `X`
 on the compact set, and the integral equation `x(t) - x(0) = ∫₀ᵗ X(τ, x(τ)) dτ` passes to the limit
-because the integral of the defect tends to `0`.
+because the integral of the defect tends to `0`
+(`TauCeti.sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect`).
 
 This is the step of the asymptotic analysis of Floer trajectories that produces the periodic orbit
 at an end: for a solution of the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on a
@@ -65,23 +67,10 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {X : ℝ → V → V} {u : ℝ × ℝ → V} {a : ℝ}
 
-section Slice
-
-/-- The `t`-slices of a map differentiable at `z` have derivative `∂_t u(z) = du(z)(0, 1)`. -/
-theorem _root_.DifferentiableAt.hasDerivAt_slice_snd {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z) :
-    HasDerivAt (fun t ↦ u (z.1, t)) (fderiv ℝ u z (0, 1)) z.2 := by
-  have hc : HasDerivAt (fun t : ℝ ↦ (z.1, t)) (0, 1) z.2 :=
-    (hasDerivAt_const z.2 z.1).prodMk (hasDerivAt_id z.2)
-  exact hu.hasFDerivAt.comp_hasDerivAt z.2 hc
-
-/-- On the half-cylinder `s > a`, a `C¹` map has continuous partial derivative
-`∂_t u(z) = du(z)(0, 1)`. -/
-private theorem continuousOn_fderiv_apply_slice (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) :
-    ContinuousOn (fun z ↦ fderiv ℝ u z (0, 1)) (Ioi a ×ˢ univ) :=
-  ((hu.continuousOn_fderiv_of_isOpen (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply
-    continuousOn_const)
-
-end Slice
+/-- On the half-cylinder `s > a`, the loops `t ↦ f(s, t)` of a continuous map are continuous. -/
+theorem continuous_slice_of_continuousOn {Y : Type*} [TopologicalSpace Y] {f : ℝ × ℝ → Y}
+    (hf : ContinuousOn f (Ioi a ×ˢ univ)) {s : ℝ} (hs : a < s) : Continuous fun t ↦ f (s, t) :=
+  hf.comp_continuous (continuous_const.prodMk continuous_id) fun t ↦ ⟨hs, mem_univ t⟩
 
 /-- The defect `∂_t u(z) - X(t, u(z))` of a map `u` from solving the time-dependent equation
 `x' = X(t, x)` along its `t`-slices, at `z = (s, t)`. -/
@@ -95,16 +84,29 @@ theorem sliceDefect_def (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ ×
 /-- The defect of a `C¹` map is continuous on the half-cylinder, for a continuous vector field. -/
 theorem continuousOn_sliceDefect (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hX : Continuous (uncurry X)) : ContinuousOn (sliceDefect X u) (Ioi a ×ˢ univ) :=
-  (continuousOn_fderiv_apply_slice hu).sub <|
-    hX.comp_continuousOn (continuousOn_snd.prodMk hu.continuousOn)
+  ((hu.continuousOn_fderiv_of_isOpen (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply
+    continuousOn_const).sub <| hX.comp_continuousOn (continuousOn_snd.prodMk hu.continuousOn)
+
+/-- The defect along one loop of a `C¹` map is continuous in `t`. -/
+theorem continuous_sliceDefect_slice (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
+    (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s) :
+    Continuous fun t ↦ sliceDefect X u (s, t) :=
+  continuous_slice_of_continuousOn (continuousOn_sliceDefect hu hX) hs
 
 /-- The squared norm of the defect along one loop is continuous in `t`. -/
 theorem continuous_norm_sliceDefect_sq (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s) :
-    Continuous fun t ↦ ‖sliceDefect X u (s, t)‖ ^ 2 := by
-  have h := (continuousOn_sliceDefect hu hX).comp_continuous
-    (continuous_const.prodMk continuous_id) fun t ↦ ⟨hs, mem_univ t⟩
-  exact (h.norm.pow 2)
+    Continuous fun t ↦ ‖sliceDefect X u (s, t)‖ ^ 2 :=
+  (continuous_sliceDefect_slice hu hX hs).norm.pow 2
+
+/-- Along the loop at `s > a`, a map differentiable on the half-cylinder has `t`-derivative
+`X(t, u(s, t))` plus the defect. -/
+theorem hasDerivAt_slice_add_sliceDefect (hu : DifferentiableOn ℝ u (Ioi a ×ˢ univ)) {s : ℝ}
+    (hs : a < s) (t : ℝ) :
+    HasDerivAt (fun t ↦ u (s, t)) (X t (u (s, t)) + sliceDefect X u (s, t)) t := by
+  rw [sliceDefect_def, add_sub_cancel]
+  have hmem : (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hs, mem_univ t⟩
+  exact (hu.differentiableAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds hmem)).hasDerivAt_slice_snd
 
 section Selection
 
@@ -167,43 +169,91 @@ theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect [CompleteSpace V]
     {B t₁ t₂ : ℝ} (ht : t₁ ≤ t₂) (hB : ∀ t ∈ Icc t₁ t₂, ‖X t (u (s, t))‖ ≤ B) :
     ‖u (s, t₂) - u (s, t₁)‖ ≤
       B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) := by
-  have hmem : ∀ t : ℝ, (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := fun t ↦ ⟨hs, mem_univ t⟩
-  have hderiv : ∀ t, HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t := fun t ↦
-    ((hu.differentiableOn one_ne_zero).differentiableAt
-      ((isOpen_Ioi.prod isOpen_univ).mem_nhds (hmem t))).hasDerivAt_slice_snd
-  have hcont : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
-    (continuousOn_fderiv_apply_slice hu).comp_continuous
-      (continuous_const.prodMk continuous_id) hmem
-  have hd : Continuous fun t ↦ ‖sliceDefect X u (s, t)‖ :=
-    ((continuousOn_sliceDefect hu hX).comp_continuous
-      (continuous_const.prodMk continuous_id) hmem).norm
-  rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hderiv t)
-    (hcont.intervalIntegrable _ _)]
-  calc ‖∫ t in t₁..t₂, fderiv ℝ u (s, t) (0, 1)‖
-      ≤ ∫ t in t₁..t₂, ‖fderiv ℝ u (s, t) (0, 1)‖ :=
+  have hXc : Continuous fun t ↦ X t (u (s, t)) :=
+    hX.comp (continuous_id.prodMk (continuous_slice_of_continuousOn hu.continuousOn hs))
+  have hd := continuous_sliceDefect_slice hu hX hs
+  rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t _ ↦ hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs t)
+    ((hXc.add hd).intervalIntegrable _ _)]
+  calc ‖∫ t in t₁..t₂, (X t (u (s, t)) + sliceDefect X u (s, t))‖
+      ≤ ∫ t in t₁..t₂, ‖X t (u (s, t)) + sliceDefect X u (s, t)‖ :=
         intervalIntegral.norm_integral_le_integral_norm ht
     _ ≤ ∫ t in t₁..t₂, (B + ‖sliceDefect X u (s, t)‖) := by
-        refine intervalIntegral.integral_mono_on ht (hcont.norm.intervalIntegrable _ _)
-          (continuous_const.add hd |>.intervalIntegrable _ _) fun t htI ↦ ?_
-        have h : fderiv ℝ u (s, t) (0, 1) = X t (u (s, t)) + sliceDefect X u (s, t) := by
-          rw [sliceDefect_def, add_sub_cancel]
-        rw [h]
+        refine intervalIntegral.integral_mono_on ht ((hXc.add hd).norm.intervalIntegrable _ _)
+          (continuous_const.add hd.norm |>.intervalIntegrable _ _) fun t htI ↦ ?_
         exact (norm_add_le _ _).trans (add_le_add_left (hB t htI) _)
     _ = B * (t₂ - t₁) + ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ := by
-        rw [intervalIntegral.integral_add intervalIntegrable_const (hd.intervalIntegrable _ _),
-          intervalIntegral.integral_const, smul_eq_mul, mul_comm]
+        rw [intervalIntegral.integral_add intervalIntegrable_const
+          (hd.norm.intervalIntegrable _ _), intervalIntegral.integral_const, smul_eq_mul, mul_comm]
     _ ≤ B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
         add_le_add le_rfl (integral_le_sqrt_mul_sqrt_integral_sq ht (fun t _ ↦ norm_nonneg _)
-          (hd.intervalIntegrable _ _) ((hd.pow 2).intervalIntegrable _ _))
+          ((hd.norm.pow 2).intervalIntegrable _ _))
+
+/-- **The defect integral is controlled by its `L²` norm.** Over a subinterval `[t₁, t₂]` of
+`[0, 1]`, the integral of the norm of the defect along the loop at `s > a` is at most the `L²` norm
+of the defect over `[0, 1]`. -/
+theorem integral_norm_sliceDefect_le_sqrt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
+    (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s) {t₁ t₂ : ℝ} (h₀ : 0 ≤ t₁) (ht : t₁ ≤ t₂)
+    (h₁ : t₂ ≤ 1) :
+    ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ≤
+      √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (s, t)‖ ^ 2) := by
+  have hd := continuous_norm_sliceDefect_sq hu hX hs
+  calc ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖
+      ≤ √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
+        integral_le_sqrt_mul_sqrt_integral_sq ht (fun t _ ↦ norm_nonneg _)
+          (hd.intervalIntegrable _ _)
+    _ ≤ 1 * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (s, t)‖ ^ 2) := by
+        gcongr
+        · exact Real.sqrt_le_one.mpr (by linarith)
+        · exact intervalIntegral.integral_mono_interval h₀ ht h₁
+            (Eventually.of_forall fun t ↦ sq_nonneg _) (hd.intervalIntegrable _ _)
+    _ = _ := one_mul _
 
 end Modulus
 
 section Limit
 
-/-- A `1`-periodic function takes the same value at `t` and at its fractional part. -/
-theorem _root_.Function.Periodic.apply_fract {β : Type*} {f : ℝ → β} (hf : Periodic f 1)
-    (t : ℝ) : f (Int.fract t) = f t := by
-  simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+/-- **The integral equation passes to the limit.** Let `X` be continuous and let `u` be `C¹` on
+the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a` converge
+pointwise to `x` and the `L²` norms of their defects tend to `0`, then
+`x(t) - x(0) = ∫₀ᵗ X(τ, x(τ)) dτ` for `t ∈ [0, 1]`. -/
+theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect [CompleteSpace V]
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) {K : Set V} (hK : IsCompact K)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X)) {ι : Type*}
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {φ : ι → ℝ} (hφa : ∀ i, a < φ i)
+    (hφ : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2) l (𝓝 0))
+    {x : ℝ → V} (hx : ∀ t, Tendsto (fun i ↦ u (φ i, t)) l (𝓝 (x t))) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) :
+    x t - x 0 = ∫ τ in (0 : ℝ)..t, X τ (x τ) := by
+  have hloop : ∀ i, Continuous fun τ ↦ u (φ i, τ) := fun i ↦
+    continuous_slice_of_continuousOn hu.continuousOn (hφa i)
+  -- Along the sequence, `u(s, t) - u(s, 0) = ∫₀ᵗ X(τ, u(s, τ)) dτ + ∫₀ᵗ (defect)`.
+  have hsplit : ∀ i, u (φ i, t) - u (φ i, 0) =
+      (∫ τ in (0 : ℝ)..t, X τ (u (φ i, τ))) + ∫ τ in (0 : ℝ)..t, sliceDefect X u (φ i, τ) := by
+    intro i
+    have hX' : Continuous fun τ ↦ X τ (u (φ i, τ)) := hX.comp (continuous_id.prodMk (hloop i))
+    have hd := continuous_sliceDefect_slice hu hX (hφa i)
+    rw [← intervalIntegral.integral_add (hX'.intervalIntegrable _ _) (hd.intervalIntegrable _ _)]
+    exact (intervalIntegral.integral_eq_sub_of_hasDerivAt
+      (fun τ _ ↦ hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) (hφa i) τ)
+      ((hX'.add hd).intervalIntegrable _ _)).symm
+  -- The first integral converges by dominated convergence.
+  have hA : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, X τ (u (φ i, τ))) l
+      (𝓝 (∫ τ in (0 : ℝ)..t, X τ (x τ))) :=
+    tendsto_intervalIntegral_comp_of_tendsto (Φ := uncurry X) (y := fun i τ ↦ u (φ i, τ)) hX hK
+      (fun i ↦ (hloop i).continuousOn) (fun i τ _ ↦ huK _ (hφa i) τ) fun τ _ ↦ hx τ
+  -- The second integral tends to `0` by the Cauchy–Schwarz inequality.
+  have hD : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, sliceDefect X u (φ i, τ)) l (𝓝 0) := by
+    have hsq : Tendsto (fun i ↦
+        √(∫ τ in (0 : ℝ)..1, ‖sliceDefect X u (φ i, τ)‖ ^ 2)) l (𝓝 0) := by
+      have h := (Real.continuous_sqrt.tendsto 0).comp hφ
+      rw [Real.sqrt_zero] at h
+      exact h
+    exact squeeze_zero_norm (fun i ↦ (intervalIntegral.norm_integral_le_integral_norm ht.1).trans
+      (integral_norm_sliceDefect_le_sqrt hu hX (hφa i) le_rfl ht.1 ht.2)) hsq
+  have hL : Tendsto (fun i ↦ u (φ i, t) - u (φ i, 0)) l (𝓝 (x t - x 0)) := (hx t).sub (hx 0)
+  simp_rw [hsplit] at hL
+  simpa using (tendsto_nhds_unique (hA.add hD) hL).symm
 
 /-- **Loops with small defect converge to periodic orbits.** Let `X` be a continuous,
 `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with
@@ -218,10 +268,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral [Complet
     (hφ : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2) atTop (𝓝 0)) :
     ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
       TendstoUniformly (fun n t ↦ u (φ (ψ n), t)) x atTop := by
-  have hmem : ∀ s, a < s → ∀ t : ℝ, (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) :=
-    fun s hs t ↦ ⟨hs, mem_univ t⟩
   have hloop : ∀ s, a < s → Continuous fun t ↦ u (s, t) := fun s hs ↦
-    hu.continuousOn.comp_continuous (continuous_const.prodMk continuous_id) (hmem s hs)
+    continuous_slice_of_continuousOn hu.continuousOn hs
   -- A bound for `X` on `[0, 1] × K`.
   obtain ⟨B, hB⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hX.continuousOn
   have hBu : ∀ s, a < s → ∀ t ∈ Icc (0 : ℝ) 1, ‖X t (u (s, t))‖ ≤ B := fun s hs t ht ↦
@@ -284,95 +332,13 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral [Complet
   have hpt : ∀ t, Tendsto (fun n ↦ u (φ (ψ n), t)) atTop (𝓝 (x t)) := hux.tendsto_at
   have hdef : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ (ψ n), t)‖ ^ 2) atTop
       (𝓝 0) := hφ.comp (tendsto_atTop_mono (fun n ↦ Nat.le_add_left _ N) hψ'.tendsto_atTop)
-  -- The integral equation on `[0, 1]`.
-  set Y : ℝ → V := fun t ↦ X t (x t)
-  have hYcont : Continuous Y := hX.comp (continuous_id.prodMk hxcont)
-  have hint : ∀ t ∈ Icc (0 : ℝ) 1, x t - x 0 = ∫ τ in (0 : ℝ)..t, Y τ := by
-    intro t ht
-    -- Along the sequence, `u(s, t) - u(s, 0) = ∫₀ᵗ X(τ, u(s, τ)) dτ + ∫₀ᵗ (defect)`.
-    have hsplit : ∀ n, u (φ (ψ n), t) - u (φ (ψ n), 0) =
-        (∫ τ in (0 : ℝ)..t, X τ (u (φ (ψ n), τ))) +
-          ∫ τ in (0 : ℝ)..t, sliceDefect X u (φ (ψ n), τ) := by
-      intro n
-      have hs := hφa (ψ n)
-      have hX' : Continuous fun τ ↦ X τ (u (φ (ψ n), τ)) :=
-        hX.comp (continuous_id.prodMk (hloop _ hs))
-      have hd : Continuous fun τ ↦ sliceDefect X u (φ (ψ n), τ) :=
-        (continuousOn_sliceDefect hu hX).comp_continuous
-          (continuous_const.prodMk continuous_id) (hmem _ hs)
-      rw [← intervalIntegral.integral_add (hX'.intervalIntegrable _ _)
-        (hd.intervalIntegrable _ _)]
-      refine (intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun τ ↦ u (φ (ψ n), τ))
-        (f' := fun τ ↦ X τ (u (φ (ψ n), τ)) + sliceDefect X u (φ (ψ n), τ))
-        (fun τ _ ↦ ?_) ?_).symm
-      · simp only [sliceDefect_def, add_sub_cancel]
-        exact ((hu.differentiableOn one_ne_zero).differentiableAt
-          ((isOpen_Ioi.prod isOpen_univ).mem_nhds (hmem _ hs τ))).hasDerivAt_slice_snd
-      · exact (hX'.add hd).intervalIntegrable _ _
-    -- The first integral converges by dominated convergence.
-    have hA : Tendsto (fun n ↦ ∫ τ in (0 : ℝ)..t, X τ (u (φ (ψ n), τ))) atTop
-        (𝓝 (∫ τ in (0 : ℝ)..t, Y τ)) := by
-      refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ B)
-        (Eventually.of_forall fun n ↦ (hX.comp (continuous_id.prodMk
-          (hloop _ (hφa (ψ n))))).aestronglyMeasurable)
-        (Eventually.of_forall fun n ↦ Eventually.of_forall fun τ hτ ↦ ?_)
-        intervalIntegrable_const
-        (Eventually.of_forall fun τ _ ↦ ((hX.tendsto (τ, x τ)).comp
-          (tendsto_const_nhds.prodMk_nhds (hpt τ))))
-      rw [uIoc_of_le ht.1] at hτ
-      exact hBu _ (hφa _) τ ⟨hτ.1.le, hτ.2.trans ht.2⟩
-    -- The second integral tends to `0` by the Cauchy–Schwarz inequality.
-    have hD : Tendsto (fun n ↦ ∫ τ in (0 : ℝ)..t, sliceDefect X u (φ (ψ n), τ)) atTop (𝓝 0) := by
-      have hsq : Tendsto (fun n ↦
-          √(∫ τ in (0 : ℝ)..1, ‖sliceDefect X u (φ (ψ n), τ)‖ ^ 2)) atTop (𝓝 0) := by
-        have h := (Real.continuous_sqrt.tendsto 0).comp hdef
-        rw [Real.sqrt_zero] at h
-        exact h
-      refine squeeze_zero_norm (fun n ↦ ?_) hsq
-      have hs := hφa (ψ n)
-      have hd : Continuous fun τ ↦ ‖sliceDefect X u (φ (ψ n), τ)‖ :=
-        ((continuousOn_sliceDefect hu hX).comp_continuous
-          (continuous_const.prodMk continuous_id) (hmem _ hs)).norm
-      calc ‖∫ τ in (0 : ℝ)..t, sliceDefect X u (φ (ψ n), τ)‖
-          ≤ ∫ τ in (0 : ℝ)..t, ‖sliceDefect X u (φ (ψ n), τ)‖ :=
-            intervalIntegral.norm_integral_le_integral_norm ht.1
-        _ ≤ √(t - 0) * √(∫ τ in (0 : ℝ)..t, ‖sliceDefect X u (φ (ψ n), τ)‖ ^ 2) :=
-            integral_le_sqrt_mul_sqrt_integral_sq ht.1 (fun τ _ ↦ norm_nonneg _)
-              (hd.intervalIntegrable _ _) ((hd.pow 2).intervalIntegrable _ _)
-        _ ≤ 1 * √(∫ τ in (0 : ℝ)..1, ‖sliceDefect X u (φ (ψ n), τ)‖ ^ 2) := by
-            gcongr
-            · exact Real.sqrt_le_one.mpr (by linarith [ht.2])
-            · exact intervalIntegral.integral_mono_interval le_rfl ht.1 ht.2
-                (Eventually.of_forall fun τ ↦ sq_nonneg _) ((hd.pow 2).intervalIntegrable _ _)
-        _ = _ := one_mul _
-    have hL : Tendsto (fun n ↦ u (φ (ψ n), t) - u (φ (ψ n), 0)) atTop (𝓝 (x t - x 0)) :=
-      (hpt t).sub (hpt 0)
-    simp_rw [hsplit] at hL
-    simpa using (tendsto_nhds_unique (hA.add hD) hL).symm
-  -- The integral equation on all of `ℝ`, by periodicity.
-  have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hxper t, hXper (x t) t]
-  have hint1 : ∫ τ in (0 : ℝ)..1, Y τ = 0 := by
-    rw [← hint 1 ⟨zero_le_one, le_rfl⟩, show (1 : ℝ) = 0 + 1 by ring, hxper 0, sub_self]
-  have hall : ∀ t, x t = x 0 + ∫ τ in (0 : ℝ)..t, Y τ := by
-    set Φ : ℝ → V := fun t ↦ x 0 + (∫ τ in (0 : ℝ)..t, Y τ) - x t
-    have hΦper : Periodic Φ 1 := fun t ↦ by
-      have h := hYper.intervalIntegral_add_eq t 0
-      rw [zero_add, hint1] at h
-      simp only [Φ, hxper t]
-      rw [← intervalIntegral.integral_add_adjacent_intervals (hYcont.intervalIntegrable 0 t)
-        (hYcont.intervalIntegrable t (t + 1)), h, add_zero]
-    intro t
-    have h0 : Φ (Int.fract t) = 0 := by
-      have h := hint (Int.fract t) ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-      simp only [Φ]
-      rw [← h]
-      abel
-    rw [hΦper.apply_fract] at h0
-    exact (sub_eq_zero.1 h0).symm
-  refine ⟨ψ, hψ, x, hxper, fun t ↦ ?_, hux⟩
-  have h := ((intervalIntegral.integral_hasDerivAt_right (hYcont.intervalIntegrable 0 t)
-    (hYcont.stronglyMeasurableAtFilter _ _) hYcont.continuousAt).const_add (x 0))
-  exact h.congr_of_eventuallyEq (Eventually.of_forall hall)
+  -- The limit solves the integral equation on `[0, 1]`, hence `x' = X(t, x)` by periodicity.
+  have hint : ∀ t ∈ Icc (0 : ℝ) 1, x t - x 0 = ∫ τ in (0 : ℝ)..t, X τ (x τ) := fun t ht ↦
+    sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect hu hK huK hX (fun n ↦ hφa (ψ n)) hdef
+      hpt ht
+  refine ⟨ψ, hψ, x, hxper, hasDerivAt_of_periodic_of_sub_eq_integral one_pos hxper
+    (hX.comp (continuous_id.prodMk hxcont)) (fun t ↦ by simp only [hxper t, hXper (x t) t]) hint,
+    hux⟩
 
 /-- **Loops with square-integrable defect accumulate at periodic orbits.** Let `X` be a
 continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder

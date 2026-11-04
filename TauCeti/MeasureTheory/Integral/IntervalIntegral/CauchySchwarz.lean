@@ -33,12 +33,16 @@ namespace TauCeti
 /-- **The Cauchy–Schwarz inequality on an interval.** For a nonnegative function `g` on `[a, b]`
 with `g²` integrable, `∫ₐᵇ g ≤ √(b - a) √(∫ₐᵇ g²)`. -/
 theorem integral_le_sqrt_mul_sqrt_integral_sq {g : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hg : ∀ t ∈ Icc a b, 0 ≤ g t) (hgi : IntervalIntegrable g volume a b)
-    (hg2 : IntervalIntegrable (fun t ↦ g t ^ 2) volume a b) :
+    (hg : ∀ t ∈ Icc a b, 0 ≤ g t) (hg2 : IntervalIntegrable (fun t ↦ g t ^ 2) volume a b) :
     ∫ t in a..b, g t ≤ √(b - a) * √(∫ t in a..b, g t ^ 2) := by
+  -- On `(a, b]` the nonnegative `g` is `√(g²)`, hence measurable.
+  have hgm : AEStronglyMeasurable g (volume.restrict (Ioc a b)) :=
+    (Real.continuous_sqrt.comp_aestronglyMeasurable hg2.1.aestronglyMeasurable).congr
+      ((ae_restrict_iff' measurableSet_Ioc).2 (Filter.Eventually.of_forall fun t ht ↦
+        Real.sqrt_sq (hg t (Ioc_subset_Icc_self ht))))
   have hmem : MemLp g (ENNReal.ofReal 2) (volume.restrict (Ioc a b)) := by
     rw [ENNReal.ofReal_ofNat]
-    exact (memLp_two_iff_integrable_sq hgi.1.aestronglyMeasurable).2 hg2.1
+    exact (memLp_two_iff_integrable_sq hgm).2 hg2.1
   have hone : MemLp (fun _ ↦ (1 : ℝ)) (ENNReal.ofReal 2) (volume.restrict (Ioc a b)) :=
     memLp_const 1
   have h := integral_mul_le_Lp_mul_Lq_of_nonneg Real.HolderConjugate.two_two

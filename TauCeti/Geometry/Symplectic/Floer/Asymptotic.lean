@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Symplectic.Floer.Action
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders
@@ -28,12 +28,15 @@ On such an end, the defect `∂_t u - X_{H_t}(u)` of the loops from Hamilton's e
 half-cylinder is bounded by `(1 + M²) / c` times the energy
 (`TauCeti.SymplecticForm.lintegral_norm_sq_sliceDefect_le`). Consequently, if the energy is finite:
 
-* there are `s_n → ∞` such that the loops `t ↦ u(s_n, t)` converge uniformly to a `1`-periodic
-  orbit `x` of the Hamiltonian vector field, `x' = X_{H_t}(x)`
+* there are `s_n → ∞`, with `s_n > a`, such that the loops `t ↦ u(s_n, t)` converge uniformly to
+  a `1`-periodic orbit `x` of the Hamiltonian vector field, `x' = X_{H_t}(x)`
   (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`);
-* if `u` is `C²`, the actions `A_H(u(s, ·))` of the loops increase to the action `A_H(x)` of such
-  an orbit as `s → ∞`
-  (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer`);
+* if `u` is `C²`, the actions `A_H(u(s, ·))` of the loops increase with `s`
+  (`TauCeti.SymplecticForm.monotoneOn_hamiltonianAction_of_floer`), and they tend to the action
+  `A_H(x)` of such an orbit as `s → ∞`
+  (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer`), since
+  the actions of loops with vanishing defect converge to the action of their limit
+  (`TauCeti.SymplecticForm.tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect`);
 * the energy of `u` over `[b, ∞) × [0, 1]` is then `A_H(x) - A_H(u(b, ·))`
   (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_Ici_eq_of_tendsto_hamiltonianAction`).
 
@@ -93,9 +96,9 @@ theorem lintegral_norm_sq_sliceDefect_le {U : Set (ℝ × ℝ)} (hU : Measurable
 Hamiltonian, `1`-periodic in time, and let `u` be `C¹` on the half-cylinder `s > a`, with
 `1`-periodic loops `t ↦ u(s, t)` in a compact set `K`, solving the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `(a, ∞) × [0, 1]` for uniformly tame almost complex
-structures `J z`. If the energy of `u` over `(a, ∞) × [0, 1]` is finite, then there are `s_n → ∞`
-such that the loops `t ↦ u(s_n, t)` converge uniformly to a `1`-periodic orbit `x` of the
-Hamiltonian vector field. -/
+structures `J z`. If the energy of `u` over `(a, ∞) × [0, 1]` is finite, then there are
+`s_n → ∞`, with `s_n > a`, such that the loops `t ↦ u(s_n, t)` converge uniformly to a
+`1`-periodic orbit `x` of the Hamiltonian vector field. -/
 theorem exists_periodic_hasDerivAt_tendstoUniformly_of_floer (hH : ContDiff ℝ 1 (uncurry H))
     (hHper : Periodic H 1) (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
     (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
@@ -107,14 +110,15 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_floer (hH : ContDiff ℝ 
     (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
-      ∃ φ : ℕ → ℝ, Tendsto φ atTop atTop ∧ TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop := by
+      ∃ φ : ℕ → ℝ, (∀ n, a < φ n) ∧ Tendsto φ atTop atTop ∧
+        TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop := by
   have hfin := (lintegral_norm_sq_sliceDefect_le (measurableSet_Ioi.prod measurableSet_Icc) hc
     hJc hJM hfloer).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hE.lt_top)
-  obtain ⟨x, hxper, hx, φ, -, hφ, hux, -⟩ :=
+  obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, -⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top hu hper hK huK
       (ω.continuous_hamiltonianVectorField_uncurry hH)
       (fun v t ↦ by simp only [hHper t]) hfin.ne
-  exact ⟨x, hxper, hx, φ, hφ, hux⟩
+  exact ⟨x, hxper, hx, φ, hφa, hφ, hux⟩
 
 /-- **The energy of a Floer half-cylinder.** Let `u` be a `C²` solution of the Floer equation on
 `(a, ∞) × [0, 1]` with `1`-periodic loops and tame almost complex structures. If the actions
@@ -168,11 +172,106 @@ theorem setLIntegral_floerEnergyDensity_Ici_eq_of_tendsto_hamiltonianAction
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((hL.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
 
+/-- **The action increases along a Floer half-cylinder.** Let `u` be a `C²` solution of the
+Floer equation on `(a, ∞) × [0, 1]` with `1`-periodic loops and tame almost complex structures.
+Then the action `A_H(u(s, ·))` of the loop at `s` is monotone in `s > a`. -/
+theorem monotoneOn_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncurry H))
+    (hu : ContDiffOn ℝ 2 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    MonotoneOn (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) (Ioi a) := by
+  intro s₁ hs₁ s₂ _ hs
+  have hs₁ : a < s₁ := hs₁
+  have hR : Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ Icc 0 1 :=
+    Set.prod_mono (fun s h ↦ hs₁.trans_le h.1) le_rfl
+  exact ω.hamiltonianAction_le_hamiltonianAction (fun z hz ↦ hJ z (hR hz)) hH
+    (isOpen_Ioi.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
+    (fun s h ↦ by simpa using hper s (hs₁.trans_le h.1) 0) fun z hz ↦ by
+      simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
+
+/-- **The action along loops with vanishing defect.** Let `H` be a `C¹` Hamiltonian and let `u` be
+`C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a`
+converge pointwise to a solution `x` of `x' = X_{H_t}(x)` and the `L²` norms of their defects
+`∂_t u - X_{H_t}(u)` tend to `0`, then their actions tend to the action of `x`. -/
+theorem tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect
+    (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hK : IsCompact K)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {φ : ι → ℝ} (hφa : ∀ i, a < φ i)
+    (hdef : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1,
+      ‖sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (φ i, t)‖ ^ 2) l (𝓝 0))
+    {x : ℝ → V} (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hux : ∀ t, Tendsto (fun i ↦ u (φ i, t)) l (𝓝 (x t))) :
+    Tendsto (fun i ↦ ω.hamiltonianAction H (fun t ↦ u (φ i, t))) l
+      (𝓝 (ω.hamiltonianAction H x)) := by
+  set X : ℝ → V → V := fun t ↦ ω.hamiltonianVectorField (H t)
+  have hX : Continuous (uncurry X) := ω.continuous_hamiltonianVectorField_uncurry hH
+  have hloop : ∀ i, Continuous fun t ↦ u (φ i, t) := fun i ↦
+    continuous_slice_of_continuousOn hu.continuousOn (hφa i)
+  have hdefc : ∀ i, Continuous fun t ↦ sliceDefect X u (φ i, t) := fun i ↦
+    continuous_sliceDefect_slice hu hX (hφa i)
+  -- Integrals of continuous functions of `(t, u(s_i, t))` over a period converge.
+  have hdct : ∀ Φ : ℝ × V → ℝ, Continuous Φ →
+      Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, Φ (t, u (φ i, t))) l
+        (𝓝 (∫ t in (0 : ℝ)..1, Φ (t, x t))) := fun Φ hΦ ↦
+    tendsto_intervalIntegral_comp_of_tendsto (y := fun i t ↦ u (φ i, t)) hΦ hK
+      (fun i ↦ (hloop i).continuousOn) (fun i t _ ↦ huK _ (hφa i) t) fun t _ ↦ hux t
+  -- The pairing of the loops with their defects tends to `0`.
+  obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuousOn_id
+  set Bω := ω.toBilinForm.toContinuousBilinearMap
+  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
+    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
+      Bω.le_opNorm₂ v w
+  have hpair : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ω (u (φ i, t)) (sliceDefect X u (φ i, t)))
+      l (𝓝 0) := by
+    have hsq : Tendsto (fun i ↦ ‖Bω‖ * R *
+        √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2)) l (𝓝 0) := by
+      have h := ((Real.continuous_sqrt.tendsto 0).comp hdef).const_mul (‖Bω‖ * R)
+      rw [Real.sqrt_zero, mul_zero] at h
+      exact h
+    refine squeeze_zero_norm (fun i ↦ ?_) hsq
+    have hd : Continuous fun t ↦ ‖sliceDefect X u (φ i, t)‖ := (hdefc i).norm
+    have hR0 : 0 ≤ R := (norm_nonneg _).trans (hR _ (huK _ (hφa i) 0))
+    calc ‖∫ t in (0 : ℝ)..1, ω (u (φ i, t)) (sliceDefect X u (φ i, t))‖
+        ≤ ∫ t in (0 : ℝ)..1, ‖Bω‖ * R * ‖sliceDefect X u (φ i, t)‖ := by
+          refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
+            (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul hd).intervalIntegrable _ _)
+          rw [Real.norm_eq_abs]
+          refine (hω _ _).trans ?_
+          gcongr
+          exact hR _ (huK _ (hφa i) t)
+      _ = ‖Bω‖ * R * ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ :=
+          intervalIntegral.integral_const_mul _ _
+      _ ≤ ‖Bω‖ * R * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2) := by
+          gcongr
+          exact integral_norm_sliceDefect_le_sqrt hu hX (hφa i) le_rfl zero_le_one le_rfl
+  -- Hence the actions converge.
+  have hω1 := hdct (fun p ↦ ω p.2 (X p.1 p.2)) (ω.continuous_apply_comp continuous_snd hX)
+  have hH1 := hdct (uncurry H) hH.continuous
+  have hlim := ((hω1.add hpair).const_mul (1 / 2 : ℝ)).add hH1
+  have hxd : ∀ t, deriv x t = X t (x t) := fun t ↦ (hx t).deriv
+  have hxA : ω.hamiltonianAction H x = 1 / 2 * ((∫ t in (0 : ℝ)..1, ω (x t) (X t (x t))) + 0) +
+      ∫ t in (0 : ℝ)..1, H t (x t) := by
+    rw [add_zero, hamiltonianAction_def, loopArea_def]
+    simp only [hxd]
+  rw [hxA]
+  refine hlim.congr fun i ↦ ?_
+  have hs := hφa i
+  have hderiv : ∀ t, deriv (fun t ↦ u (φ i, t)) t = X t (u (φ i, t)) + sliceDefect X u (φ i, t) :=
+    fun t ↦ (hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs t).deriv
+  have hi₁ : IntervalIntegrable (fun t ↦ ω (u (φ i, t)) (X t (u (φ i, t)))) volume 0 1 :=
+    (ω.continuous_apply_comp (hloop i) (hX.comp (continuous_id.prodMk (hloop i)))
+      ).intervalIntegrable _ _
+  have hi₂ : IntervalIntegrable (fun t ↦ ω (u (φ i, t)) (sliceDefect X u (φ i, t))) volume 0 1 :=
+    (ω.continuous_apply_comp (hloop i) (hdefc i)).intervalIntegrable _ _
+  simp only [hamiltonianAction_def, loopArea_def, hderiv, map_add,
+    intervalIntegral.integral_add hi₁ hi₂, uncurry_apply_pair]
+
 /-- **The asymptotic action of a finite-energy Floer half-cylinder.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`, if `u` is moreover
 `C²`, then there is a `1`-periodic orbit `x` of the Hamiltonian vector field such that the loops
-`t ↦ u(s_n, t)` converge uniformly to `x` along some `s_n → ∞`, and the actions `A_H(u(s, ·))`
-tend to the action `A_H(x)` as `s → ∞`. -/
+`t ↦ u(s_n, t)` converge uniformly to `x` along some `s_n → ∞` with `s_n > a`, and the actions
+`A_H(u(s, ·))` tend to the action `A_H(x)` as `s → ∞`. -/
 theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
     (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) (hu : ContDiffOn ℝ 2 u (Ioi a ×ˢ univ))
     (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
@@ -184,118 +283,30 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
     (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
-      (∃ φ : ℕ → ℝ, Tendsto φ atTop atTop ∧ TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop) ∧
+      (∃ φ : ℕ → ℝ, (∀ n, a < φ n) ∧ Tendsto φ atTop atTop ∧
+        TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop) ∧
       Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atTop
         (𝓝 (ω.hamiltonianAction H x)) := by
-  set X : ℝ → V → V := fun t ↦ ω.hamiltonianVectorField (H t)
-  have hX : Continuous (uncurry X) := ω.continuous_hamiltonianVectorField_uncurry hH
   have hfin := (lintegral_norm_sq_sliceDefect_le (measurableSet_Ioi.prod measurableSet_Icc) hc
     hJc hJM hfloer).trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hE.lt_top)
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (hu.of_le one_le_two) hper hK
-      huK hX (fun v t ↦ by simp only [X, hHper t]) hfin.ne
-  refine ⟨x, hxper, hx, ⟨φ, hφ, hux⟩, ?_⟩
-  have hmem : ∀ s, a < s → ∀ t : ℝ, (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) :=
-    fun s hs t ↦ ⟨hs, mem_univ t⟩
-  have hu1 : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ) := hu.of_le one_le_two
-  have hloop : ∀ s, a < s → Continuous fun t ↦ u (s, t) := fun s hs ↦
-    hu1.continuousOn.comp_continuous (continuous_const.prodMk continuous_id) (hmem s hs)
-  have hdefc : ∀ s, a < s → Continuous fun t ↦ sliceDefect X u (s, t) := fun s hs ↦
-    (continuousOn_sliceDefect hu1 hX).comp_continuous (continuous_const.prodMk continuous_id)
-      (hmem s hs)
-  have hxcont : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  have hpt : ∀ t, Tendsto (fun n ↦ u (φ n, t)) atTop (𝓝 (x t)) := hux.tendsto_at
-  -- Integrals of continuous functions of `(t, u(s_n, t))` over a period converge.
-  have hdct : ∀ Φ : ℝ × V → ℝ, Continuous Φ →
-      Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, Φ (t, u (φ n, t))) atTop
-        (𝓝 (∫ t in (0 : ℝ)..1, Φ (t, x t))) := by
-    intro Φ hΦ
-    obtain ⟨C, hC⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hΦ.continuousOn
-    refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ C)
-      (Eventually.of_forall fun n ↦ (hΦ.comp (continuous_id.prodMk
-        (hloop _ (hφa n)))).aestronglyMeasurable)
-      (Eventually.of_forall fun n ↦ Eventually.of_forall fun t ht ↦ ?_) intervalIntegrable_const
-      (Eventually.of_forall fun t _ ↦
-        (hΦ.tendsto (t, x t)).comp (tendsto_const_nhds.prodMk_nhds (hpt t)))
-    rw [uIoc_of_le zero_le_one] at ht
-    exact hC _ ⟨⟨ht.1.le, ht.2⟩, huK _ (hφa n) t⟩
-  -- The pairing of the loops with their defects tends to `0`.
-  obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuousOn_id
-  set Bω := ω.toBilinForm.toContinuousBilinearMap
-  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
-    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
-      Bω.le_opNorm₂ v w
-  have hpair : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ω (u (φ n, t)) (sliceDefect X u (φ n, t)))
-      atTop (𝓝 0) := by
-    have hsq : Tendsto (fun n ↦ ‖Bω‖ * R *
-        √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2)) atTop (𝓝 0) := by
-      have h := ((Real.continuous_sqrt.tendsto 0).comp hdef).const_mul (‖Bω‖ * R)
-      rw [Real.sqrt_zero, mul_zero] at h
-      exact h
-    refine squeeze_zero_norm (fun n ↦ ?_) hsq
-    have hd : Continuous fun t ↦ ‖sliceDefect X u (φ n, t)‖ := (hdefc _ (hφa n)).norm
-    have hR0 : 0 ≤ R := (norm_nonneg _).trans (hR _ (huK _ (hφa n) 0))
-    calc ‖∫ t in (0 : ℝ)..1, ω (u (φ n, t)) (sliceDefect X u (φ n, t))‖
-        ≤ ∫ t in (0 : ℝ)..1, ‖Bω‖ * R * ‖sliceDefect X u (φ n, t)‖ := by
-          refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
-            (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul hd).intervalIntegrable _ _)
-          rw [Real.norm_eq_abs]
-          refine (hω _ _).trans ?_
-          gcongr
-          exact hR _ (huK _ (hφa n) t)
-      _ = ‖Bω‖ * R * ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ :=
-          intervalIntegral.integral_const_mul _ _
-      _ ≤ ‖Bω‖ * R * (√(1 - 0) * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2)) := by
-          gcongr
-          exact integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg _)
-            (hd.intervalIntegrable _ _) ((hd.pow 2).intervalIntegrable _ _)
-      _ = ‖Bω‖ * R * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2) := by
-          rw [sub_zero, Real.sqrt_one, one_mul]
-  -- The actions converge along the sequence.
-  have hderiv : ∀ s, a < s → ∀ t, deriv (fun t ↦ u (s, t)) t =
-      X t (u (s, t)) + sliceDefect X u (s, t) := fun s hs t ↦ by
-    rw [sliceDefect_def, add_sub_cancel]
-    exact ((hu1.differentiableOn one_ne_zero).differentiableAt
-      ((isOpen_Ioi.prod isOpen_univ).mem_nhds (hmem s hs t))).hasDerivAt_slice_snd.deriv
-  have hseq : Tendsto (fun n ↦ ω.hamiltonianAction H (fun t ↦ u (φ n, t))) atTop
-      (𝓝 (ω.hamiltonianAction H x)) := by
-    have hω1 := hdct (fun p ↦ ω p.2 (X p.1 p.2)) (ω.continuous_apply_comp continuous_snd hX)
-    have hH1 := hdct (uncurry H) hH.continuous
-    have hlim := ((hω1.add hpair).const_mul (1 / 2 : ℝ)).add hH1
-    have hxd : ∀ t, deriv x t = X t (x t) := fun t ↦ (hx t).deriv
-    have hxA : ω.hamiltonianAction H x = 1 / 2 * ((∫ t in (0 : ℝ)..1, ω (x t) (X t (x t))) + 0) +
-        ∫ t in (0 : ℝ)..1, H t (x t) := by
-      rw [add_zero, hamiltonianAction_def, loopArea_def]
-      simp only [hxd]
-    rw [hxA]
-    refine hlim.congr fun n ↦ ?_
-    have hs := hφa n
-    have hi₁ : IntervalIntegrable (fun t ↦ ω (u (φ n, t)) (X t (u (φ n, t)))) volume 0 1 :=
-      (ω.continuous_apply_comp (hloop _ hs) (hX.comp (continuous_id.prodMk (hloop _ hs)))
-        ).intervalIntegrable _ _
-    have hi₂ : IntervalIntegrable (fun t ↦ ω (u (φ n, t)) (sliceDefect X u (φ n, t))) volume 0 1 :=
-      (ω.continuous_apply_comp (hloop _ hs) (hdefc _ hs)).intervalIntegrable _ _
-    simp only [hamiltonianAction_def, loopArea_def, hderiv _ hs, map_add,
-      intervalIntegral.integral_add hi₁ hi₂, uncurry_apply_pair]
-  -- The actions increase along the end, so the limit along the sequence is the limit.
-  set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
+      huK (ω.continuous_hamiltonianVectorField_uncurry hH) (fun v t ↦ by simp only [hHper t])
+      hfin.ne
+  refine ⟨x, hxper, hx, ⟨φ, hφa, hφ, hux⟩, ?_⟩
+  have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH
+    (hu.of_le one_le_two) hK huK hφa hdef hx hux.tendsto_at
+  -- The actions increase along the end, so their limit along `s_n` is their limit as `s → ∞`.
   have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
     (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
-  have hmono : ∀ s₁ s₂, a < s₁ → s₁ ≤ s₂ → A s₁ ≤ A s₂ := by
-    intro s₁ s₂ hs₁ hs
-    have hR : Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ Icc 0 1 :=
-      Set.prod_mono (fun s h ↦ hs₁.trans_le h.1) le_rfl
-    exact ω.hamiltonianAction_le_hamiltonianAction (fun z hz ↦ hJ z (hR hz)) hH
-      (isOpen_Ioi.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
-      (fun s h ↦ by simpa using hper s (hs₁.trans_le h.1) 0) fun z hz ↦ by
-        simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
-  have hle : ∀ s, a < s → A s ≤ ω.hamiltonianAction H x := fun s hs ↦
-    ge_of_tendsto hseq ((hφ.eventually_ge_atTop s).mono fun n hn ↦ hmono s _ hs hn)
-  refine tendsto_order.2 ⟨fun l hl ↦ ?_, fun l hl ↦ ?_⟩
-  · obtain ⟨n, hn⟩ := (hseq.eventually (lt_mem_nhds hl)).exists
-    filter_upwards [eventually_ge_atTop (φ n)] with s hs
-    exact hn.trans_le (hmono _ _ (hφa n) hs)
-  · filter_upwards [eventually_gt_atTop a] with s hs
-    exact (hle s hs).trans_lt hl
+  have hmono := monotoneOn_hamiltonianAction_of_floer hH hu hper hJ hfloer
+  set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
+  have hb : ∀ s, a < max s (a + 1) := fun s ↦ (lt_add_one a).trans_le (le_max_right _ _)
+  have hAmono : Monotone fun s ↦ A (max s (a + 1)) := fun s₁ s₂ h ↦
+    hmono (hb s₁) (hb s₂) (max_le_max h le_rfl)
+  have hAeq : (fun s ↦ A (max s (a + 1))) =ᶠ[atTop] A :=
+    (eventually_ge_atTop (a + 1)).mono fun s hs ↦ by simp only [max_eq_left hs]
+  refine (tendsto_congr' hAeq).1 ((tendsto_iff_tendsto_subseq_of_monotone hAmono hφ).2 ?_)
+  exact hseq.congr' (hφ.eventually hAeq.symm)
 
 end TauCeti.SymplecticForm

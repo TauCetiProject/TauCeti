@@ -15,7 +15,9 @@ This file packages the common application of dominated convergence in which a pa
 family is controlled and converges pointwise away from one exceptional point. When that point has
 measure zero, the pointwise hypotheses supply the almost-everywhere hypotheses of the dominated
 convergence theorem. It also records the convergence of integrals against cutoffs
-which equal one on a closed ball and are supported in shrinking larger balls.
+which equal one on a closed ball and are supported in shrinking larger balls, and the convergence
+of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` with values in
+a compact set which converge pointwise.
 
 ## Main declarations
 
@@ -24,6 +26,9 @@ which equal one on a closed ball and are supported in shrinking larger balls.
 * `TauCeti.tendsto_integral_smul_of_cutoff`: integrals against cutoffs equal to one on
   `closedBall x r` and vanishing off `ball x (r + h)` tend to the integral over `closedBall x r` as
   `h → 0⁺`.
+* `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
+  `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` stay in a compact set and converge
+  pointwise.
 -/
 
 public section
@@ -100,5 +105,27 @@ theorem tendsto_integral_smul_of_cutoff {E G : Type*} [PseudoMetricSpace E] [Mea
     · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 (not_le.1 hy))] with h hh
       simp [indicator_of_notMem (mt mem_preimage.1 hy),
         hψ0 h hh.1 (f y) fun h' => (mem_ball.1 h').not_ge (by linarith [hh.2])]
+
+/-- **Dominated convergence for continuous functions of converging maps.** Let `Φ : ℝ × V → E`
+be continuous, and let the maps `y i : ℝ → V` be continuous on `[t₁, t₂]` with values there in a
+compact set `K`. If the `y i` converge pointwise on `[t₁, t₂]` to `x`, then
+`∫_{t₁}^{t₂} Φ(t, y i t) dt` tends to `∫_{t₁}^{t₂} Φ(t, x t) dt`. -/
+theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] [TopologicalSpace V] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Φ : ℝ × V → E} (hΦ : Continuous Φ) {K : Set V} (hK : IsCompact K) {y : ι → ℝ → V}
+    {x : ℝ → V} {t₁ t₂ : ℝ} (hy : ∀ i, ContinuousOn (y i) (uIcc t₁ t₂))
+    (hyK : ∀ i, ∀ t ∈ uIcc t₁ t₂, y i t ∈ K)
+    (hyx : ∀ t ∈ uIcc t₁ t₂, Tendsto (fun i ↦ y i t) l (𝓝 (x t))) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ (t, y i t)) l (𝓝 (∫ t in t₁..t₂, Φ (t, x t))) := by
+  obtain ⟨C, hC⟩ := (isCompact_uIcc.prod hK).exists_bound_of_continuousOn hΦ.continuousOn
+  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ C)
+    (Eventually.of_forall fun i ↦ ?_)
+    (Eventually.of_forall fun i ↦ Eventually.of_forall fun t ht ↦
+      hC _ ⟨uIoc_subset_uIcc ht, hyK i t (uIoc_subset_uIcc ht)⟩)
+    intervalIntegrable_const
+    (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
+      (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
+  exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
+    measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
 
 end TauCeti

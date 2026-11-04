@@ -39,6 +39,8 @@ variable vanishes everywhere is constant along every horizontal line.
   derivatives of its summands.
 * `TauCeti.hasDerivAt_prodMk_left`, `TauCeti.hasDerivAt_prodMk_right`: the coordinate lines
   through a point have velocities `(1, 0)` and `(0, 1)`.
+* `DifferentiableAt.hasDerivAt_slice_snd`: the derivative of a second-variable slice through a
+  point is the derivative in the direction `(0, 1)`.
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
@@ -185,6 +187,13 @@ theorem hasDerivAt_prodMk_left (s : 𝕜) (b : F) :
 theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
+
+/-- The second-variable slices of a map differentiable at `z` have derivative
+`∂_t u(z) = du(z)(0, 1)`. -/
+theorem _root_.DifferentiableAt.hasDerivAt_slice_snd {u : E × 𝕜 → G} {z : E × 𝕜}
+    (hu : DifferentiableAt 𝕜 u z) :
+    HasDerivAt (fun t ↦ u (z.1, t)) (fderiv 𝕜 u z (0, 1)) z.2 :=
+  hu.hasFDerivAt.comp_hasDerivAt z.2 (hasDerivAt_prodMk_right z.1 z.2)
 
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/
