@@ -196,54 +196,6 @@ end Cylinder
 
 variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → ℝ} {c ε : ℝ}
 
-section Glue
-
-open unitInterval
-
-variable (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
-  (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε) (hball : ∀ i, closedBall 0 √ε ⊆ (φ i).target)
-  (hf : ∀ i, ∀ y ∈ (φ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ i y j ^ 2)
-  {Y : Type u} [TopologicalSpace Y] (L : C(I × {x | f x ≤ c - ε}, Y))
-  (C : ∀ i, C(I × TopCat.disk.{u} (k i), Y))
-  (hC : ∀ i t s, C i (t, TopCat.diskBoundaryInclusion (k i) s) =
-    L (t, (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s))
-
-/-- The map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → C(I, Y)` glued from the curried maps `L` and `C i`. -/
-private def morseCellAttachmentCurriedGlue :
-    morseCellAttachment φ k hk hε hball hf ⟶ TopCat.of C(I, Y) :=
-  morseCellAttachmentDesc φ k hk hε hball hf (TopCat.ofHom (L.comp ContinuousMap.prodSwap).curry)
-    (fun i ↦ TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry)
-    fun i ↦ by ext s t; exact (hC i t s).symm
-
-/-- The map `I × (M_{c-ε} ∪_α ⨆ᵢ D^{k i}) → Y` glued from a map `L : I × M_{c-ε} → Y` and maps
-`C i : I × D^{k i} → Y` that agree with `L` along the attaching maps. Since `I` is locally compact,
-it is the uncurried map out of the attachment glued from the curried maps into `C(I, Y)`. -/
-private def morseCellAttachmentProdGlue : C(I × morseCellAttachment φ k hk hε hball hf, Y) :=
-  ⟨fun p ↦ morseCellAttachmentCurriedGlue φ k hk hε hball hf L C hC p.2 p.1,
-    continuous_eval.comp
-      (((morseCellAttachmentCurriedGlue φ k hk hε hball hf L C hC).hom.continuous.comp
-        continuous_snd).prodMk continuous_fst)⟩
-
-private theorem morseCellAttachmentProdGlue_apply_incl (t : I) (x : {x | f x ≤ c - ε}) :
-    morseCellAttachmentProdGlue φ k hk hε hball hf L C hC
-        (t, morseCellAttachmentIncl φ k hk hε hball hf x) = L (t, x) := by
-  have hx : morseCellAttachmentCurriedGlue φ k hk hε hball hf L C hC
-      (morseCellAttachmentIncl φ k hk hε hball hf x) = (L.comp ContinuousMap.prodSwap).curry x :=
-    ConcreteCategory.congr_hom (morseCellAttachmentIncl_desc _ _ _ _ _ _ _ _ _) x
-  exact congrArg (fun g : C(I, Y) ↦ g t) hx
-
-private theorem morseCellAttachmentProdGlue_apply_cell (t : I) (i : ι)
-    (w : TopCat.disk.{u} (k i)) :
-    morseCellAttachmentProdGlue φ k hk hε hball hf L C hC
-        (t, morseCellAttachmentCell φ k hk hε hball hf i w) = C i (t, w) := by
-  have hw : morseCellAttachmentCurriedGlue φ k hk hε hball hf L C hC
-      (morseCellAttachmentCell φ k hk hε hball hf i w) =
-        ((C i).comp ContinuousMap.prodSwap).curry w :=
-    ConcreteCategory.congr_hom (morseCellAttachmentCell_desc _ _ _ _ _ _ _ _ _ i) w
-  exact congrArg (fun g : C(I, Y) ↦ g t) hw
-
-end Glue
-
 section Reattachment
 
 open unitInterval
@@ -444,7 +396,7 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
   -- The homotopy is constant on the lower sublevel. On the disc of `i` it is the homotopy `K i`
   -- read along the straight-line homotopy in the cylinder `I × D^{k i}` from
   -- `x ↦ (diskTime x, diskRadial x)` to `x ↦ (0, x)`, which fixes the boundary sphere.
-  let G := morseCellAttachmentProdGlue φ₁ k hk hε hball₁ hf₁
+  let G := morseCellAttachmentProdDesc φ₁ k hk hball₁ hf₁ hε
     ((sublevelInclusion f (c - ε) (c + ε) hab).comp ContinuousMap.snd)
     (fun i ↦ ⟨fun p ↦ K i (diskCylinderPath (p.2, p.1)),
       (K i).continuous.comp (continuous_diskCylinderPath.comp continuous_swap)⟩)
@@ -456,11 +408,11 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
         (hball₁ i) (hf₁ i) (hk i) hε s
   have hG₀ (t : I) (x : {x | f x ≤ c - ε}) :
       (G (t, morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁ x) : M) = x :=
-    (congrArg Subtype.val (morseCellAttachmentProdGlue_apply_incl ..)).trans
+    (congrArg Subtype.val (morseCellAttachmentProdDesc_morseCellAttachmentIncl ..)).trans
       (coe_sublevelInclusion_apply f hab x)
   have hG₁ (t : I) (i : ι) (w : TopCat.disk.{u} (k i)) :
       G (t, morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) = K i (diskCylinderPath (w, t)) :=
-    morseCellAttachmentProdGlue_apply_cell ..
+    morseCellAttachmentProdDesc_morseCellAttachmentCell ..
   have hcover :=
     range_morseCellAttachmentIncl_union_iUnion_range_morseCellAttachmentCell φ₁ k hk hball₁ hf₁ hε
   refine ⟨{ toFun := G
