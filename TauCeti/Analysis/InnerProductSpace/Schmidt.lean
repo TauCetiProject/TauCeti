@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
@@ -29,12 +30,13 @@ at least `√2 ε` once their norms are at least `ε`, so only finitely many `s�
 threshold. The values `sᵢ` therefore tend to zero along the cofinite filter, and the Schmidt
 series converges to `T` in operator norm.
 
-Such a basis exists for every compact operator between Hilbert spaces: an orthonormal basis of
+Such a basis exists for every compact operator from a Hilbert space: an orthonormal basis of
 eigenvectors of the compact positive operator `T† T`, provided by
 `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector`, has pairwise orthogonal images,
-since `⟪T bᵢ, T bⱼ⟫ = ⟪bᵢ, T† T bⱼ⟫`. The `sᵢ` are then the square roots of the eigenvalues of
-`T† T`, the singular values of `T`, and `(bᵢ)` and `(fᵢ)` are its right and left singular
-vectors.
+since `⟪T bᵢ, T bⱼ⟫ = ⟪bᵢ, T† T bⱼ⟫`. The target need not be complete: the adjoint is taken
+after embedding `F` in its completion, which does not change inner products. The `sᵢ` are then
+the square roots of the eigenvalues of `T† T`, the singular values of `T`, and `(bᵢ)` and `(fᵢ)`
+are its right and left singular vectors.
 
 ## Main declarations
 
@@ -52,8 +54,8 @@ vectors.
   `‖T vᵢ‖` exceed any positive threshold.
 * `HilbertBasis.hasSum_rankOne`: for compact `T`, the Schmidt series
   `∑ᵢ ⟪bᵢ, ·⟫ T bᵢ` converges to `T` in operator norm.
-* `IsCompactOperator.exists_hilbertBasis_pairwise_inner_eq_zero`: a compact operator between
-  Hilbert spaces sends some Hilbert basis to pairwise orthogonal vectors.
+* `IsCompactOperator.exists_hilbertBasis_pairwise_inner_eq_zero`: a compact operator from a
+  Hilbert space sends some Hilbert basis to pairwise orthogonal vectors.
 
 ## References
 
@@ -79,7 +81,7 @@ namespace Orthonormal
 variable {v : ι → E} (hv : Orthonormal 𝕜 v) {T : E →L[𝕜] F}
 include hv
 
-/-- **Finitely many large singular values.** If `T` is compact and sends the orthonormal
+/-- **Finitely many large images.** If `T` is compact and sends the orthonormal
 family `(vᵢ)` to pairwise orthogonal vectors, then only finitely many `‖T vᵢ‖` are at least a
 given `ε > 0`. -/
 theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T)
@@ -113,9 +115,9 @@ theorem finite_setOf_le_norm_apply (hTc : IsCompactOperator T)
   rw [dist_eq_norm] at hdist
   exact hlt.not_ge (pow_le_pow_left₀ (norm_nonneg _) hdist.le 2)
 
-/-- **The singular values of a compact operator tend to zero.** If `T` is compact and sends the
-orthonormal family `(vᵢ)` to pairwise orthogonal vectors, then `‖T vᵢ‖ → 0` along the cofinite
-filter. -/
+/-- **The images of an orthonormal family under a compact operator tend to zero.** If `T` is
+compact and sends the orthonormal family `(vᵢ)` to pairwise orthogonal vectors, then `‖T vᵢ‖ → 0`
+along the cofinite filter. -/
 theorem tendsto_norm_apply_cofinite (hTc : IsCompactOperator T)
     (hT : Pairwise fun i j ↦ ⟪T (v i), T (v j)⟫_𝕜 = 0) :
     Tendsto (fun i ↦ ‖T (v i)‖) cofinite (𝓝 0) :=
@@ -251,15 +253,18 @@ theorem hasSum_rankOne (hTc : IsCompactOperator T)
 
 end HilbertBasis
 
-/-- **Existence of a Schmidt basis.** A compact operator between Hilbert spaces sends some
-Hilbert basis of its source to pairwise orthogonal vectors: any orthonormal basis of eigenvectors
-of `T† T` does, because `⟪T bᵢ, T bⱼ⟫ = ⟪bᵢ, T† T bⱼ⟫`. -/
+/-- **Existence of a Schmidt basis.** A compact operator from a Hilbert space to an inner
+product space sends some Hilbert basis of its source to pairwise orthogonal vectors: any
+orthonormal basis of eigenvectors of `T† T` does, because `⟪T bᵢ, T bⱼ⟫ = ⟪bᵢ, T† T bⱼ⟫`. The
+adjoint is taken after embedding the target in its completion. -/
 theorem IsCompactOperator.exists_hilbertBasis_pairwise_inner_eq_zero [CompleteSpace E]
-    [CompleteSpace F] {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
+    {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E), ⇑b = ((↑) : s → E) ∧
       Pairwise fun i j ↦ ⟪T (b i), T (b j)⟫_𝕜 = 0 := by
-  set A : E →L[𝕜] E := ContinuousLinearMap.adjoint T ∘L T
-  have hA : IsCompactOperator A := hT.clm_comp _
+  set ι : F →L[𝕜] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  set T' : E →L[𝕜] UniformSpace.Completion F := ι ∘L T
+  set A : E →L[𝕜] E := ContinuousLinearMap.adjoint T' ∘L T'
+  have hA : IsCompactOperator A := (hT.clm_comp ι).clm_comp _
   have hA' : (A : E →ₗ[𝕜] E).IsSymmetric := fun x y ↦ by
     simp [A, ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right]
   obtain ⟨s, b, nu, hb, hev⟩ := ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector hA hA'
@@ -267,6 +272,8 @@ theorem IsCompactOperator.exists_hilbertBasis_pairwise_inner_eq_zero [CompleteSp
   have hj : A (b j) = nu j • b j := by
     rw [hb]
     exact Module.End.mem_eigenspace_iff.mp (hev j).1
-  calc ⟪T (b i), T (b j)⟫_𝕜 = ⟪b i, A (b j)⟫_𝕜 :=
-        (ContinuousLinearMap.adjoint_inner_right T (b i) (T (b j))).symm
+  -- `T' x` is the image of `T x` in the completion, and the embedding preserves inner products.
+  calc ⟪T (b i), T (b j)⟫_𝕜 = ⟪T' (b i), T' (b j)⟫_𝕜 :=
+        (UniformSpace.Completion.inner_coe _ _).symm
+    _ = ⟪b i, A (b j)⟫_𝕜 := (ContinuousLinearMap.adjoint_inner_right T' (b i) (T' (b j))).symm
     _ = 0 := by rw [hj, inner_smul_right, b.orthonormal.inner_eq_zero hij, mul_zero]

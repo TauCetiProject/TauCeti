@@ -24,7 +24,7 @@ complement of their span, so `aₙ(T) ≤ rₙ`. Below `rₙ` every threshold is
 indices, and `T` is coercive with that constant on their span, so `rₙ ≤ aₙ(T)`. Neither bound
 uses compactness or completeness.
 
-For a compact operator between Hilbert spaces such a basis exists, and combining this with the
+For a compact operator from a Hilbert space such a basis exists, and combining this with the
 Schmidt series gives its singular value decomposition: countable orthonormal families `(eᵢ)` and
 `(fᵢ)` and positive numbers `σᵢ → 0` with `T = ∑ᵢ σᵢ ⟪eᵢ, ·⟫ fᵢ` in operator norm, whose
 decreasing rearrangement is the sequence of approximation numbers of `T`.
@@ -37,7 +37,7 @@ decreasing rearrangement is the sequence of approximation numbers of `T`.
 * `HilbertBasis.singularValue_eq_decreasingRearrangement`: `aₙ(T)` is the `n`-th term of the
   decreasing rearrangement of `i ↦ ‖T bᵢ‖`.
 * `IsCompactOperator.exists_orthonormal_hasSum_rankOne`: the singular value decomposition of a
-  compact operator between Hilbert spaces.
+  compact operator from a Hilbert space.
 
 ## References
 
@@ -139,13 +139,12 @@ section SingularValueDecomposition
 universe u
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-  [CompleteSpace F]
 
-/-- **Singular value decomposition of a compact operator.** A compact operator `T` between
-Hilbert spaces is the operator-norm sum `T = ∑ᵢ σᵢ ⟪eᵢ, ·⟫ fᵢ` of a countable family of rank-one
-maps, where `(eᵢ)` and `(fᵢ)` are orthonormal families and the singular values `σᵢ` are positive
-and tend to zero. Their decreasing rearrangement is the sequence of approximation numbers of
-`T`. -/
+/-- **Singular value decomposition of a compact operator.** A compact operator `T` from a
+Hilbert space to an inner product space is the operator-norm sum `T = ∑ᵢ σᵢ ⟪eᵢ, ·⟫ fᵢ` of a
+countable family of rank-one maps, where `(eᵢ)` and `(fᵢ)` are orthonormal families and the
+singular values `σᵢ` are positive and tend to zero. Their decreasing rearrangement is the sequence
+of approximation numbers of `T`. -/
 theorem IsCompactOperator.exists_orthonormal_hasSum_rankOne {T : E →L[𝕜] F}
     (hTc : IsCompactOperator T) :
     ∃ (ι : Type u) (e : ι → E) (f : ι → F) (σ : ι → ℝ), Countable ι ∧ Orthonormal 𝕜 e ∧
