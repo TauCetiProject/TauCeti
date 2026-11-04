@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
+public import TauCeti.Data.Finset.Inversions
 
 /-!
 # Strand diagrams
@@ -53,7 +54,7 @@ product is associative in the form needed for the associativity of the strands a
   Definition 3.2 (the strands algebra `A(n, k)`).
 -/
 
-@[expose] public section
+public section
 
 open Finset
 
@@ -106,7 +107,7 @@ protected def trans (φ ψ : StrandDiagram α) : StrandDiagram α where
 @[simp]
 theorem toPEquiv_trans (φ ψ : StrandDiagram α) :
     (φ.trans ψ).toPEquiv = φ.toPEquiv.trans ψ.toPEquiv :=
-  rfl
+  (rfl)
 
 theorem mem_trans {φ ψ : StrandDiagram α} {i k : α} :
     k ∈ φ.trans ψ i ↔ ∃ j, j ∈ φ i ∧ k ∈ ψ j :=
@@ -123,7 +124,7 @@ def idOn (s : Finset α) : StrandDiagram α where
 
 @[simp]
 theorem idOn_apply (s : Finset α) (i : α) : idOn s i = if i ∈ s then some i else none :=
-  rfl
+  (rfl)
 
 theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈ s := by
   rw [Option.mem_def, idOn_apply]
@@ -200,19 +201,33 @@ theorem trans_idOn_of_target_eq {s : Finset α} {φ : StrandDiagram α} (h : φ.
   exact h ▸ mem_target.2 ⟨i, hk⟩
 
 /-- The inversions of a strand diagram: the pairs `i < j` of starting points whose strands cross,
-`φ j < φ i`. -/
+`φ j < φ i`. These are the inversions (`Finset.inversions`) of `φ` on its source. -/
 def inversions (φ : StrandDiagram α) : Finset (α × α) :=
-  {p | p.1 < p.2 ∧ ∃ a ∈ φ p.1, ∃ b ∈ φ p.2, b < a}
+  φ.source.inversions fun i ↦ (φ i).getD i
+
+theorem inversions_def (φ : StrandDiagram α) :
+    φ.inversions = φ.source.inversions fun i ↦ (φ i).getD i :=
+  (rfl)
 
 @[simp]
 theorem mem_inversions {φ : StrandDiagram α} {p : α × α} :
     p ∈ φ.inversions ↔ p.1 < p.2 ∧ ∃ a ∈ φ p.1, ∃ b ∈ φ p.2, b < a := by
-  simp [inversions]
+  rw [inversions_def, Finset.mem_inversions, mem_source, mem_source]
+  constructor
+  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, h⟩
+    rw [Option.mem_def] at ha hb
+    exact ⟨hab, a, ha, b, hb, by simpa [ha, hb] using h⟩
+  · rintro ⟨hab, a, ha, b, hb, h⟩
+    rw [Option.mem_def] at ha hb
+    exact ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, by simpa [ha, hb] using h⟩
 
 /-- The number of crossings of a strand diagram, written `inv(φ)` by Lipshitz, Ozsváth and
 Thurston. -/
 def inversionCount (φ : StrandDiagram α) : ℕ :=
   #φ.inversions
+
+theorem inversionCount_def (φ : StrandDiagram α) : φ.inversionCount = #φ.inversions :=
+  (rfl)
 
 @[simp]
 theorem inversions_idOn (s : Finset α) : (idOn s).inversions = ∅ := by
@@ -223,7 +238,7 @@ theorem inversions_idOn (s : Finset α) : (idOn s).inversions = ∅ := by
 
 @[simp]
 theorem inversionCount_idOn (s : Finset α) : (idOn s).inversionCount = 0 := by
-  simp [inversionCount]
+  simp [inversionCount_def]
 
 /-- **Inversion counts are subadditive.** Every crossing of the concatenation of two strand
 diagrams comes from a crossing of one of them: either the two strands already cross in `φ`, or
@@ -232,7 +247,7 @@ theorem inversionCount_trans_le (φ ψ : StrandDiagram α) :
     (φ.trans ψ).inversionCount ≤ φ.inversionCount + ψ.inversionCount := by
   classical
   set I := (φ.trans ψ).inversions
-  rw [inversionCount, ← card_filter_add_card_filter_not (s := I) (· ∈ φ.inversions)]
+  rw [inversionCount_def, ← card_filter_add_card_filter_not (s := I) (· ∈ φ.inversions)]
   refine Nat.add_le_add (card_le_card fun p hp ↦ (mem_filter.1 hp).2) ?_
   -- A crossing of the composite that is not a crossing of `φ` is the image under `φ` of a
   -- crossing of `ψ`.
@@ -268,8 +283,13 @@ composite when they are composable and zero otherwise. -/
 def Composable (φ ψ : StrandDiagram α) : Prop :=
   φ.target = ψ.source ∧ (φ.trans ψ).inversionCount = φ.inversionCount + ψ.inversionCount
 
+theorem composable_iff {φ ψ : StrandDiagram α} :
+    φ.Composable ψ ↔
+      φ.target = ψ.source ∧ (φ.trans ψ).inversionCount = φ.inversionCount + ψ.inversionCount :=
+  (Iff.rfl)
+
 instance (φ ψ : StrandDiagram α) : Decidable (φ.Composable ψ) :=
-  inferInstanceAs (Decidable (_ ∧ _))
+  decidable_of_iff _ composable_iff.symm
 
 theorem Composable.target_eq {φ ψ : StrandDiagram α} (h : φ.Composable ψ) :
     φ.target = ψ.source :=
@@ -289,7 +309,7 @@ theorem trans_composable_and_composable_iff (φ ψ χ : StrandDiagram α) :
   have h₃ := inversionCount_trans_le (φ.trans ψ) χ
   have h₄ := inversionCount_trans_le φ (ψ.trans χ)
   rw [trans_assoc] at h₃
-  unfold Composable
+  simp only [composable_iff]
   rw [trans_assoc]
   constructor
   · rintro ⟨⟨hT, hI⟩, hT', hI'⟩
@@ -299,11 +319,13 @@ theorem trans_composable_and_composable_iff (φ ψ χ : StrandDiagram α) :
     rw [source_trans_of_target_eq hT'] at hT
     refine ⟨⟨by rw [target_trans_of_target_eq hT, hT'], by omega⟩, hT, by omega⟩
 
+@[simp]
 theorem composable_idOn_left_iff {s : Finset α} {φ : StrandDiagram α} :
     (idOn s).Composable φ ↔ s = φ.source := by
   refine ⟨fun h ↦ by simpa using h.target_eq, fun h ↦ ⟨by simpa using h, ?_⟩⟩
   rw [idOn_trans_of_eq_source h, inversionCount_idOn, zero_add]
 
+@[simp]
 theorem composable_idOn_right_iff {s : Finset α} {φ : StrandDiagram α} :
     φ.Composable (idOn s) ↔ φ.target = s := by
   refine ⟨fun h ↦ by simpa using h.target_eq, fun h ↦ ⟨by simpa using h, ?_⟩⟩

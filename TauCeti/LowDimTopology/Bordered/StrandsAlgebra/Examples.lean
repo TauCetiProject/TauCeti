@@ -21,7 +21,7 @@ over `𝔽₂`, with points `1, …, n` written `0, …, n - 1`.
 * In `A(3, 1)` the product of `(1 ↦ 2)` and `(2 ↦ 3)` is `(1 ↦ 3)`: no diagram has a crossing.
 -/
 
-open TauCeti StrandsAlgebra
+open TauCeti StrandsAlgebra StrandDiagram
 
 example :
     let φ : StrandDiagram (Fin 4) :=
@@ -31,9 +31,32 @@ example :
     φ.inversionCount = 1 ∧ ψ.inversionCount = 1 ∧ (φ.trans ψ).inversionCount = 0 ∧
       φ.target = ψ.source ∧ (of φ * of ψ : StrandsAlgebra (ZMod 2) (Fin 4)) = 0 := by
   intro φ ψ
-  have h : ¬φ.Composable ψ := by decide
-  refine ⟨by decide, by decide, by decide, by decide,
-    of_mul_of_of_not_composable h⟩
+  have hφ : φ.inversions = {(0, 1)} := by
+    ext p
+    rw [mem_inversions, Finset.mem_singleton]
+    revert p
+    decide
+  have hψ : ψ.inversions = {(1, 2)} := by
+    ext p
+    rw [mem_inversions, Finset.mem_singleton]
+    revert p
+    decide
+  have hφψ : (φ.trans ψ).inversions = ∅ := by
+    ext p
+    simp only [mem_inversions, mem_trans, Finset.notMem_empty, iff_false]
+    revert p
+    decide
+  have hT : φ.target = ψ.source := by
+    ext j
+    simp only [mem_target, mem_source]
+    revert j
+    decide
+  have h₁ : φ.inversionCount = 1 := by rw [inversionCount_def, hφ, Finset.card_singleton]
+  have h₂ : ψ.inversionCount = 1 := by rw [inversionCount_def, hψ, Finset.card_singleton]
+  have h₃ : (φ.trans ψ).inversionCount = 0 := by rw [inversionCount_def, hφψ, Finset.card_empty]
+  refine ⟨h₁, h₂, h₃, hT, of_mul_of_of_not_composable fun h ↦ ?_⟩
+  have := h.inversionCount_trans
+  omega
 
 example :
     let single (i j : Fin 3) (h : i ≤ j) : StrandDiagram (Fin 3) :=
@@ -43,6 +66,18 @@ example :
     (of (single 0 1 (by decide)) * of (single 1 2 (by decide)) :
       StrandsAlgebra (ZMod 2) (Fin 3)) = of (single 0 2 (by decide)) := by
   intro single
-  rw [of_mul_of_of_composable (by decide)]
+  have hinv (χ : StrandDiagram (Fin 3))
+      (h : ∀ p : Fin 3 × Fin 3, ¬(p.1 < p.2 ∧ ∃ a ∈ χ p.1, ∃ b ∈ χ p.2, b < a)) :
+      χ.inversionCount = 0 := by
+    rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+    simpa only [mem_inversions] using h
+  have hT : (single 0 1 (by decide)).target = (single 1 2 (by decide)).source := by
+    ext j
+    simp only [mem_target, mem_source]
+    revert j
+    decide
+  rw [of_mul_of_of_composable (composable_iff.2 ⟨hT, ?_⟩)]
+  swap
+  · rw [hinv _ (by simp only [mem_trans]; decide), hinv _ (by decide), hinv _ (by decide)]
   congr 1
-  exact StrandDiagram.toPEquiv_injective (PEquiv.single_trans_single _ _ _)
+  exact toPEquiv_injective <| (toPEquiv_trans _ _).trans (PEquiv.single_trans_single _ _ _)

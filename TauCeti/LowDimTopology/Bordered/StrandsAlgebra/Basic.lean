@@ -67,7 +67,6 @@ variable (R α : Type*) [CommSemiring R] [LinearOrder α]
 `R`-module on the strand diagrams of `α`, multiplied by concatenating composable diagrams. For
 `α = Fin n` and `R = ZMod 2` it is the strands algebra `A(n)` of Lipshitz, Ozsváth and Thurston,
 the direct sum of their algebras `A(n, k)` over the number `k` of strands. -/
-@[expose]
 def StrandsAlgebra : Type _ :=
   StrandDiagram α →₀ R
 
@@ -97,7 +96,7 @@ def basis : Module.Basis (StrandDiagram α) R (StrandsAlgebra R α) :=
 theorem basis_apply (φ : StrandDiagram α) : basis R α φ = of φ :=
   congrFun Finsupp.coe_basisSingleOne φ
 
-theorem single_eq_smul_of (φ : StrandDiagram α) (r : R) :
+private theorem single_eq_smul_of (φ : StrandDiagram α) (r : R) :
     (Finsupp.single φ r : StrandsAlgebra R α) = r • of φ :=
   (Finsupp.smul_single_one φ r).symm
 
@@ -161,6 +160,8 @@ theorem of_mul_of_of_not_composable {φ ψ : StrandDiagram α} (h : ¬φ.Composa
     (of φ * of ψ : StrandsAlgebra R α) = 0 := by
   simp [of_mul_of, h]
 
+/-- Multiplying a basis element `φ` on the left by `I(s)` projects onto the diagrams starting at
+`s`: the product is `φ` when `s` is the source of `φ` and zero otherwise. -/
 theorem idem_mul_of (s : Finset α) (φ : StrandDiagram α) :
     (idem s * of φ : StrandsAlgebra R α) = if s = φ.source then of φ else 0 := by
   rw [idem_def, of_mul_of]
@@ -169,6 +170,8 @@ theorem idem_mul_of (s : Finset α) (φ : StrandDiagram α) :
   · rw [StrandDiagram.idOn_trans_of_eq_source h]
   · rfl
 
+/-- Multiplying a basis element `φ` on the right by `I(t)` projects onto the diagrams ending at
+`t`: the product is `φ` when `t` is the target of `φ` and zero otherwise. -/
 theorem of_mul_idem (φ : StrandDiagram α) (t : Finset α) :
     (of φ * idem t : StrandsAlgebra R α) = if φ.target = t then of φ else 0 := by
   rw [idem_def, of_mul_of]
@@ -187,6 +190,8 @@ theorem of_mul_idem_target (φ : StrandDiagram α) :
     (of φ * idem φ.target : StrandsAlgebra R α) = of φ := by
   simp [of_mul_idem]
 
+/-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
+otherwise. -/
 theorem idem_mul_idem (s t : Finset α) :
     (idem s * idem t : StrandsAlgebra R α) = if s = t then idem s else 0 := by
   rw [idem_def t, idem_mul_of, StrandDiagram.source_idOn]
