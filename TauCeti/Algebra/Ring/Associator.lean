@@ -25,6 +25,8 @@ subalgebra.
 
 * `TauCeti.associator_add_left`, `TauCeti.associator_smul_left` and their `middle` and `right`
   versions: the associator is linear in each argument.
+* `TauCeti.associator_zero_left`, `TauCeti.associator_zero_middle` and
+  `TauCeti.associator_zero_right`: the associator vanishes as soon as one argument is `0`.
 * `TauCeti.associator_one_left`, `TauCeti.associator_one_middle` and
   `TauCeti.associator_one_right`: in a unital ring the associator vanishes as soon as one argument
   is `1`.
@@ -56,6 +58,21 @@ theorem associator_add_right :
     associator a b (c + c') = associator a b c + associator a b c' := by
   simp only [associator_apply, mul_add]
   abel
+
+/-- The associator vanishes when its first argument is `0`. -/
+@[simp]
+theorem associator_zero_left : associator 0 b c = 0 := by
+  simp [associator_apply]
+
+/-- The associator vanishes when its second argument is `0`. -/
+@[simp]
+theorem associator_zero_middle : associator a 0 c = 0 := by
+  simp [associator_apply]
+
+/-- The associator vanishes when its third argument is `0`. -/
+@[simp]
+theorem associator_zero_right : associator a b 0 = 0 := by
+  simp [associator_apply]
 
 end Ring
 
@@ -116,13 +133,13 @@ theorem associator_eq_zero_of_mem_span (h : ∀ a ∈ s, ∀ b ∈ s, ∀ c ∈ 
     | mem b hb =>
       induction hc using Submodule.span_induction with
       | mem c hc => exact h a ha b hb c hc
-      | zero => simp [associator_apply]
+      | zero => exact associator_zero_right a b
       | add c c' _ _ h₁ h₂ => rw [associator_add_right, h₁, h₂, add_zero]
       | smul r c _ h₁ => rw [associator_smul_right, h₁, smul_zero]
-    | zero => simp [associator_apply]
+    | zero => exact associator_zero_middle a c
     | add b b' _ _ h₁ h₂ => rw [associator_add_middle, h₁ hc, h₂ hc, add_zero]
     | smul r b _ h₁ => rw [associator_smul_middle, h₁ hc, smul_zero]
-  | zero => simp [associator_apply]
+  | zero => exact associator_zero_left b c
   | add a a' _ _ h₁ h₂ => rw [associator_add_left, h₁ hb hc, h₂ hb hc, add_zero]
   | smul r a _ h₁ => rw [associator_smul_left, h₁ hb hc, smul_zero]
 
