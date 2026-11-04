@@ -151,19 +151,6 @@ variable {E F M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimen
   [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [TopologicalSpace M] [ChartedSpace E M] {i : M → F} {x : M}
 
-omit [NormedSpace ℂ E] [FiniteDimensional ℂ E] [InnerProductSpace ℂ F] in
-private theorem manifoldSecondFundamentalForm_self_apply {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E]
-    [FiniteDimensional 𝕜 E] [InnerProductSpace 𝕜 F] (i : M → F) (x : M) (v w : E) :
-    manifoldSecondFundamentalForm 𝓘(𝕜, E) i x v w =
-      secondFundamentalForm 𝕜 (i ∘ (chartAt E x).symm) (chartAt E x x) v w := by
-  have hext : ((extChartAt 𝓘(𝕜, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
-  -- On `𝓘(𝕜, E)`, `TangentSpace 𝓘(𝕜, E) x` is `E` and `tangentSpaceCastModel` is the identity.
-  refine (manifoldSecondFundamentalForm_eq_secondFundamentalForm_comp_extChartAt_symm
-    (I := 𝓘(𝕜, E)) (i := i) (x := x) v w).trans ?_
-  rw [hext, hext']
-  rfl
-
 private theorem manifoldShapeOperator_self_apply (i : M → F) (x : M) (ν : F) (v : E) :
     tangentSpaceCastModel 𝓘(ℝ, E) x (manifoldShapeOperator 𝓘(ℝ, E) i x ν v) =
       shapeOperator (i ∘ (chartAt E x).symm) (chartAt E x x) ν v := by
@@ -183,9 +170,10 @@ the complex second fundamental form `manifoldSecondFundamentalForm 𝓘(ℂ, E) 
 theorem _root_.ContMDiffAt.manifoldSecondFundamentalForm_restrictScalars_apply
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) (v w : E) :
     manifoldSecondFundamentalForm 𝓘(ℝ, E) i x v w =
-      manifoldSecondFundamentalForm 𝓘(ℂ, E) i x v w := by
-  rw [manifoldSecondFundamentalForm_self_apply, manifoldSecondFundamentalForm_self_apply,
-    hi.contDiffAt_comp_chartAt_symm.secondFundamentalForm_restrictScalars_apply]
+      manifoldSecondFundamentalForm 𝓘(ℂ, E) i x v w :=
+  (secondFundamentalForm_comp_chartAt_symm (𝕜 := ℝ) (g := i) (y := x) v w).symm.trans <|
+    (hi.contDiffAt_comp_chartAt_symm.secondFundamentalForm_restrictScalars_apply v w).trans
+      (secondFundamentalForm_comp_chartAt_symm (𝕜 := ℂ) (g := i) (y := x) v w)
 
 /-- For a `C²` holomorphic map, `B(I • v, w) = I • B(v, w)`. -/
 @[simp]
@@ -194,8 +182,10 @@ theorem _root_.ContMDiffAt.manifoldSecondFundamentalForm_I_smul_left
     manifoldSecondFundamentalForm 𝓘(ℝ, E) i x (I • v) w =
       I • manifoldSecondFundamentalForm 𝓘(ℝ, E) i x v w := by
   rw [hi.manifoldSecondFundamentalForm_restrictScalars_apply,
-    hi.manifoldSecondFundamentalForm_restrictScalars_apply,
-    manifoldSecondFundamentalForm_self_apply, manifoldSecondFundamentalForm_self_apply]
+    hi.manifoldSecondFundamentalForm_restrictScalars_apply]
+  refine ((secondFundamentalForm_comp_chartAt_symm (𝕜 := ℂ) (g := i) (y := x) (I • v) w).symm.trans
+    ?_).trans
+    (congrArg (I • ·) (secondFundamentalForm_comp_chartAt_symm (𝕜 := ℂ) (g := i) (y := x) v w))
   simp
 
 /-- For a `C²` holomorphic map, `B(v, I • w) = I • B(v, w)`. -/
@@ -205,8 +195,10 @@ theorem _root_.ContMDiffAt.manifoldSecondFundamentalForm_I_smul_right
     manifoldSecondFundamentalForm 𝓘(ℝ, E) i x v (I • w) =
       I • manifoldSecondFundamentalForm 𝓘(ℝ, E) i x v w := by
   rw [hi.manifoldSecondFundamentalForm_restrictScalars_apply,
-    hi.manifoldSecondFundamentalForm_restrictScalars_apply,
-    manifoldSecondFundamentalForm_self_apply, manifoldSecondFundamentalForm_self_apply]
+    hi.manifoldSecondFundamentalForm_restrictScalars_apply]
+  refine ((secondFundamentalForm_comp_chartAt_symm (𝕜 := ℂ) (g := i) (y := x) v (I • w)).symm.trans
+    ?_).trans
+    (congrArg (I • ·) (secondFundamentalForm_comp_chartAt_symm (𝕜 := ℂ) (g := i) (y := x) v w))
   simp
 
 /-- For a `C²` holomorphic map, `B(I • v, I • w) = -B(v, w)`. -/

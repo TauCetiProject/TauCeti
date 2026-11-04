@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.ShapeOperator
+import TauCeti.Analysis.InnerProductSpace.PointSpectrum.Transport
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
@@ -124,18 +125,6 @@ private theorem isSymmetric_conj_shapeOperator (hi : ContDiffAt ℝ 2 i x)
   rw [Submodule.coe_inner, Submodule.coe_inner, LinearEquiv.conj_apply_apply,
     LinearEquiv.conj_apply_apply, coe_eR, coe_eR, hu, hw]
   exact hi.inner_fderiv_shapeOperator_apply_comm ν (eR.symm u) (eR.symm w)
-
-omit [FiniteDimensional ℝ V] in
-/-- Transporting `pointSpectralSubspace` along a linear equivalence via `LinearEquiv.conj`. -/
-private theorem map_pointSpectralSubspace_conj {W : Type*} [AddCommGroup W] [Module ℝ W]
-    (e : V ≃ₗ[ℝ] W) (S : Module.End ℝ V) (Ω : Set ℝ) :
-    (S.pointSpectralSubspace Ω).map e.toLinearMap = (e.conj S).pointSpectralSubspace Ω := by
-  rw [pointSpectralSubspace_eq_iSup, pointSpectralSubspace_eq_iSup, Submodule.map_iSup]
-  refine iSup_congr fun μ ↦ ?_
-  rw [Submodule.map_iSup]
-  refine iSup_congr fun _ ↦ ?_
-  rw [eigenspace_eq_comap_of_intertwine (e := e) (f := S) (g := e.conj S) (fun v ↦ by simp)
-    (RCLike.ofReal μ), Submodule.map_comap_eq_self (by simp)]
 
 /-- **Spectral formula for the Morse index of squared distance.** At any critical point `x` of
 `y ↦ ‖i y - a‖²` along a `C²` immersion `i` (degenerate or not), the Morse index equals the

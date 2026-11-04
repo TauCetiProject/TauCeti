@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.ShapeOperator
 public import TauCeti.Geometry.Manifold.Immersion.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+import TauCeti.Analysis.InnerProductSpace.PointSpectrum.Transport
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
@@ -440,18 +441,9 @@ private theorem finrank_pointSpectralSubspace_manifoldShapeOperator (ν : V) (Ω
       finrank ℝ
         ((shapeOperator (i ∘ (extChartAt I x).symm) (extChartAt I x x) ν).pointSpectralSubspace
           Ω) := by
-  let e := (tangentSpaceCastModel I x).toLinearEquiv
-  have hmap : ((shapeOperator (i ∘ (extChartAt I x).symm) (extChartAt I x x)
-      ν).pointSpectralSubspace Ω).map e.symm.toLinearMap =
-      (manifoldShapeOperator I i x ν).pointSpectralSubspace Ω := by
-    rw [pointSpectralSubspace_eq_iSup, pointSpectralSubspace_eq_iSup, Submodule.map_iSup]
-    refine iSup_congr fun μ ↦ ?_
-    rw [Submodule.map_iSup]
-    refine iSup_congr fun _ ↦ ?_
-    rw [eigenspace_eq_comap_of_intertwine (e := e.symm)
-      (g := manifoldShapeOperator I i x ν) (fun u ↦ by simp [manifoldShapeOperator, e])
-      (RCLike.ofReal μ), Submodule.map_comap_eq_self (by simp)]
-  rw [← hmap, LinearEquiv.finrank_map_eq]
+  rw [manifoldShapeOperator,
+    ← map_pointSpectralSubspace_conj (tangentSpaceCastModel I x).toLinearEquiv.symm,
+    LinearEquiv.finrank_map_eq]
 
 /-- **Critical Hessian of squared distance in terms of `manifoldSecondFundamentalForm`.** At a
 critical point (`i x - a ∈ normalSubspace I i x`) of `y ↦ ‖i y - a‖²` along a map `i : M → V`
