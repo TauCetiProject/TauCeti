@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Comparison
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # Connes' operator `B` and the exactness of the SBI sequence
@@ -495,12 +496,9 @@ theorem cyclicCohomology.exact_connesB_periodicity (m : ℕ) :
     Function.Exact (hochschildCohomology.connesB R A M m)
       (cyclicCohomology.periodicity R A M m) := by
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
-  have hunit : IsUnit (-((m + 1 : R) * (m + 2 : R))) := by
-    refine IsUnit.neg (IsUnit.mul ?_ ?_)
-    · simpa using (Nat.cast_add_one_ne_zero (R := ℚ) m).isUnit.map (algebraMap ℚ R)
-    · convert (Nat.cast_add_one_ne_zero (R := ℚ) (m + 1)).isUnit.map (algebraMap ℚ R) using 1
-      push_cast; ring
-  obtain ⟨u, hu⟩ := hunit
+  obtain ⟨u, hu⟩ := ((isUnit_natCast_add_one (K := R) m).mul
+    (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
+  rw [Nat.cast_ofNat] at hu
   refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
   · have hc' : cyclicTotalHomologyPeriodicity R A M m
         (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by

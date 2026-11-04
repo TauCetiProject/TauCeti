@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Basic
 public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Cochain
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
@@ -213,16 +214,6 @@ theorem periodicity_comp_toHochschild (n : ℕ) :
     cyclicTotalHomologyPeriodicity_comp_homologyMap_cyclicTotalComplexToHochschild,
     Limits.comp_zero, smul_zero]
 
-/-- The scalar `-((m + 1) * (m + 2))` comparing `periodicity` with `cyclicTotalHomologyPeriodicity`
-is a unit in any `ℚ`-algebra. -/
-private theorem isUnit_neg_add_one_mul_add_two (m : ℕ) :
-    IsUnit (-((m + 1 : R) * (m + 2 : R))) := by
-  refine IsUnit.neg (IsUnit.mul ?_ ?_)
-  · simpa using (Nat.cast_add_one_ne_zero (R := ℚ) m).isUnit.map (algebraMap ℚ R)
-  · convert (Nat.cast_add_one_ne_zero (R := ℚ) (m + 1)).isUnit.map (algebraMap ℚ R) using 1
-    push_cast
-    ring
-
 /-- **Exactness of `HCᵐ →S HCᵐ⁺² →I HHᵐ⁺²`.** For a unital algebra over a ring containing `ℚ`, a
 cyclic cohomology class in degree `m + 2` lies in the image of Connes' periodicity map `S` if and
 only if its image under `I : HCᵐ⁺² → HHᵐ⁺²` vanishes. -/
@@ -230,7 +221,9 @@ theorem exact_periodicity_toHochschild (m : ℕ) :
     Function.Exact (periodicity R A M m) (toHochschild R A M (m + 2)) := by
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
   have hbij₂ := bijective_homologyMap_cyclicCochainComplexToTotal R A M (m + 2)
-  obtain ⟨u, hu⟩ := isUnit_neg_add_one_mul_add_two (R := R) m
+  obtain ⟨u, hu⟩ := ((isUnit_natCast_add_one (K := R) m).mul
+    (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
+  rw [Nat.cast_ofNat] at hu
   intro x
   refine ⟨fun hx ↦ ?_, ?_⟩
   · have hx' : HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 2)

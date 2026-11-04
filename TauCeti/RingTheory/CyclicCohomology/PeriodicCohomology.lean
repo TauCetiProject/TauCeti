@@ -75,9 +75,9 @@ sending the calibrated ground-ring class `[m! (a₀ ⋯ a_(2m)) • x]` in `HC^(
   `TauCeti.periodicCyclicCohomology.exists_fromCyclicCohomology_eq`,
   `TauCeti.periodicCyclicCohomology.fromCyclicCohomology_eq_zero_iff`: `HP^n(A; M)` is the direct
   limit of `HC^(n+2k)(A; M)` under Connes' operator `S`.
-* `TauCeti.cyclicCohomology.periodicity_mkPiRing`,
+* `TauCeti.cyclicCohomology.periodicTransition_zero_mkPiRing`,
   `TauCeti.periodicCyclicCohomology.fromCyclicCohomology_factorial_smul_mkPiRing`: ground-ring
-  action of `S` and scalar calibration in `HP^0(R; M)`.
+  action of `S^m` and scalar calibration in `HP^0(R; M)`.
 
 ## References
 
@@ -673,19 +673,6 @@ section GroundRingCalibration
 open scoped Nat
 
 variable (R : Type u) (M : Type v) [CommRing R] [Algebra ℚ R] [AddCommGroup M] [Module R M]
-
-/-- On the ground ring `R`, Connes' periodicity operator sends the even-degree product class
-`mkPiRing R M n hn x` to `n / 2 + 1` times `mkPiRing R M (n + 2) _ x`. -/
-@[simp]
-theorem cyclicCohomology.periodicity_mkPiRing {n : ℕ} (hn : Even n) (x : M) :
-    cyclicCohomology.periodicity R R M n (cyclicCohomology.mkPiRing R M n hn x) =
-      ((n / 2 + 1 : ℕ) : R) • cyclicCohomology.mkPiRing R M (n + 2) (hn.add even_two) x := by
-  rw [cyclicCohomology.mkPiRing_apply, cyclicCohomology.periodicity_mk, ← map_smul,
-    cyclicCohomology.mkPiRing_apply]
-  refine congrArg (cyclicCohomology.mk R R M (n + 2))
-    (Subtype.ext <| Subtype.ext <| MultilinearMap.ext fun a ↦ ?_)
-  simp only [coe_cyclicCocyclesPeriodicity_apply, cochainPeriodicity_mkPiRing,
-    Nat.cast_smul_eq_nsmul R]
 
 /-- Iterating Connes' periodicity operator `m` times from degree zero sends `[a₀ ↦ a₀ • x]` to the
 calibrated product class `[m! (a₀ ⋯ a_(2m)) • x]`. -/

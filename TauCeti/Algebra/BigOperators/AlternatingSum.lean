@@ -17,10 +17,11 @@ import Mathlib.Tactic.Ring
 # Alternating sums
 
 This file gives a telescoping formula for alternating sums of consecutive pairs in an additive
-commutative group, and the cancellation of alternating double sums whose terms satisfy the
-simplicial identity, which is the combinatorial core of `d ∘ d = 0` for alternating face map
-differentials. It also provides finite Euler sums for explicitly supported `ℤ`-graded families,
-including support independence, additivity, and translation of the grading.
+commutative group, the evaluation of the alternating triangular double sum
+`∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r) = n / 2 + 1`, and the cancellation of alternating double sums
+whose terms satisfy the simplicial identity, which is the combinatorial core of `d ∘ d = 0` for
+alternating face map differentials. It also provides finite Euler sums for explicitly supported
+`ℤ`-graded families, including support independence, additivity, and translation of the grading.
 -/
 
 public section
@@ -149,5 +150,34 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
       Fin.val_castLT, ← neg_smul]
     congr 1
     ring
+
+/-- In any ring, the alternating triangular double sum `∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r)` equals
+`n / 2 + 1`: the inner sum is `1` when `j` is even and `0` when `j` is odd. -/
+theorem sum_Iic_neg_one_pow_sub {R : Type*} [Ring R] (n : ℕ) :
+    ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j, (-1 : R) ^ ((j : ℕ) - r) = (n / 2 + 1 : ℕ) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Fin.sum_univ_castSucc]
+    have hinit : (∑ i : Fin (n + 1), ∑ r ∈ Finset.Iic i.castSucc,
+        (-1 : R) ^ ((i.castSucc : ℕ) - r)) = (n / 2 + 1 : ℕ) := by
+      simp_rw [Fin.sum_Iic_castSucc, Fin.val_castSucc]
+      exact ih
+    have hlast : (∑ r ∈ Finset.Iic (Fin.last (n + 1)),
+        (-1 : R) ^ ((Fin.last (n + 1) : ℕ) - r)) = if Even (n + 2) then 0 else 1 := by
+      rw [← Fin.top_eq_last, Finset.Iic_top, Fin.top_eq_last, Fin.val_last,
+        ← Equiv.sum_comp Fin.revPerm]
+      refine (Finset.sum_congr rfl fun x _ ↦ ?_).trans (Fin.sum_neg_one_pow R (n + 2))
+      simp only [Fin.revPerm_apply, Fin.val_rev]
+      congr 1
+      omega
+    rw [hinit, hlast]
+    rcases Nat.even_or_odd n with ⟨k, rfl⟩ | ⟨k, rfl⟩
+    · have heven : Even (k + k + 2) := ⟨k + 1, by omega⟩
+      rw [ite_eq_left heven, add_zero, show (k + k + 1) / 2 = (k + k) / 2 by omega]
+    · have hodd : ¬Even (2 * k + 1 + 2) := fun ⟨m, hm⟩ ↦ by omega
+      rw [ite_eq_right hodd, show (2 * k + 1 + 1) / 2 + 1 = (2 * k + 1) / 2 + 1 + 1 by omega]
+      push_cast
+      abel
 
 end TauCeti

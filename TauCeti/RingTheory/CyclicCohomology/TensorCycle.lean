@@ -378,24 +378,16 @@ private theorem cochainPeriodicity_cycleForm_succ (hd₁ : IsDGAlgebra 𝒜₁ d
   refine congrArg₂ (· + ·) ?_ ?_
   · rw [cochainPeriodicity_apply, Finset.sum_mul]
     refine Finset.sum_congr rfl fun j₀ _ ↦ ?_
-    rw [Finset.sum_mul]
-    refine (Finset.sum_bij (fun (r₀ : Fin (n + 1)) _ ↦ r₀.castSucc) ?_ ?_ ?_ ?_).symm
-    · intro r₀ hr₀
-      exact Finset.mem_Iic.2 (Fin.castSucc_le_castSucc_iff.2 (Finset.mem_Iic.1 hr₀))
-    · intro r₁ _ r₂ _ h
-      exact Fin.castSucc_inj.1 h
-    · intro r hr
-      have hrle : (r : ℕ) ≤ j₀ := Fin.le_def.1 (Finset.mem_Iic.1 hr)
-      exact ⟨⟨r, lt_of_le_of_lt hrle j₀.2⟩, Finset.mem_Iic.2 hrle, Fin.ext rfl⟩
-    · intro r₀ _
-      rw [Fin.val_castSucc, Fin.val_castSucc, smul_mul_assoc]
-      congr 1
-      conv_rhs =>
-        rw [Fin.succ_castSucc, hochschildFace_castSucc, hochschildFace_castSucc,
-          cycleForm_succ_apply, Fin.init_contractNth_castSucc, Fin.init_contractNth_castSucc,
-          Fin.contractNth_castSucc_castSucc_apply_last,
-          Fin.contractNth_castSucc_castSucc_apply_last, ← hochschildFace_castSucc,
-          ← hochschildFace_castSucc]
+    rw [Fin.sum_Iic_castSucc, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun r₀ _ ↦ ?_
+    rw [Fin.val_castSucc, Fin.val_castSucc, smul_mul_assoc]
+    congr 1
+    conv_lhs =>
+      rw [Fin.succ_castSucc, hochschildFace_castSucc, hochschildFace_castSucc,
+        cycleForm_succ_apply, Fin.init_contractNth_castSucc, Fin.init_contractNth_castSucc,
+        Fin.contractNth_castSucc_castSucc_apply_last,
+        Fin.contractNth_castSucc_castSucc_apply_last, ← hochschildFace_castSucc,
+        ← hochschildFace_castSucc]
   · have hIic : Finset.Iic (Fin.last (n + 1)) = Finset.univ :=
       Finset.ext fun r ↦ by simp [Fin.le_last]
     rw [hIic, Fin.succ_last]

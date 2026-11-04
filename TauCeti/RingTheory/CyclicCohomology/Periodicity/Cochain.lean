@@ -8,7 +8,8 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Cohomology
 public import TauCeti.RingTheory.CyclicCohomology.RowExactness
 import Mathlib.Algebra.Module.BigOperators
-import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
@@ -27,25 +28,25 @@ This file develops `S₀`, Connes' averaged operator `S = (n + 3)⁻¹ N S₀` o
 induced periodicity map on cyclic cohomology:
 
 * **Simplicial and row-homotopy decomposition.** Write
-  `H' = ∑_{j ≤ n+1} ∑_{k < j} λᵏ` for the unscaled numerator of `TauCeti.cyclicRowHomotopy` in
-  degree `n + 1`, satisfying `(1 - λ) H' = H' (1 - λ) = (n + 2) - N`. On a cyclic `n`-cochain `φ`,
-  `b (H' (b' φ))` differs from `S₀ φ` by `-∑_{r ≤ n} (n + 1 - r) (-1)ʳ dᵣ*(b φ)`. In particular,
-  for every cyclic cocycle `φ`, `S₀ φ = b (H' (b' φ))` identically over any commutative ring.
+  `H' = ∑_{j ≤ n+1} ∑_{k < j} λᵏ` (`TauCeti.cyclicRowHomotopySum`) for the unscaled numerator of
+  `TauCeti.cyclicRowHomotopy` in degree `n + 1`, satisfying
+  `(1 - λ) H' = H' (1 - λ) = (n + 2) - N`. On a cyclic `n`-cochain `φ`, `b (H' (b' φ))` differs
+  from `S₀ φ` by `-∑_{r ≤ n} (n + 1 - r) (-1)ʳ dᵣ*(b φ)`. In particular, for every cyclic cocycle
+  `φ`, `S₀ φ = b (H' (b' φ))` identically over any commutative ring.
 * **Cocycle preservation and Connes' Proposition 12.** From `S₀ φ = b (H' (b' φ))` and the cyclic
   bicomplex relations `(1 - λ) b = b' (1 - λ)` and `b N = N b'`, `S₀` maps cyclic `n`-cocycles into
   cyclic `(n + 2)`-cocycles over every commutative ring, and on every cyclic `n`-cochain `ψ`,
   `b (N (S₀ ψ)) = (n + 1) • S₀ (b ψ)`. When `n + 3` is invertible in `R`, Connes' operator
   `S = (n + 3)⁻¹ N S₀` restricts to `S₀` on cyclic cocycles and satisfies
   `(n + 3) • b (S ψ) = (n + 1) • S (b ψ)`.
-* **Descent to cyclic cohomology.** When every `q + 1` with `q < n` is invertible in `R` (in
-  particular in degree zero over any commutative ring, and in all degrees when `R` is a
-  `ℚ`-algebra), `S₀` maps cyclic coboundaries into cyclic coboundaries. For a `ℚ`-algebra this
-  yields `TauCeti.cyclicCohomology.periodicity : HCⁿ(A; M) ⟶ HCⁿ⁺²(A; M)`.
+* **Descent to cyclic cohomology.** When `n = 0` or `n` is invertible in `R` (in particular in
+  degree zero over any commutative ring, and in all degrees when `R` is a `ℚ`-algebra), `S₀` maps
+  cyclic coboundaries into cyclic coboundaries. For a `ℚ`-algebra this yields
+  `TauCeti.cyclicCohomology.periodicity : HCⁿ(A; M) ⟶ HCⁿ⁺²(A; M)`.
 
 ## Main definitions
 
 * `TauCeti.cochainPeriodicity`: the double-face operator `S₀ : Cⁿ → Cⁿ⁺²`.
-* `TauCeti.cyclicRowHomotopySum`: the unscaled row homotopy `∑_{j ≤ n} ∑_{k < j} λᵏ`.
 * `TauCeti.cyclicCocyclesPeriodicity`: `S₀` restricted to cyclic cocycles, over any commutative
   ring.
 * `TauCeti.connesS`: Connes' averaged operator `(n + 3)⁻¹ N S₀` on cyclic cochains when `n + 3` is
@@ -59,6 +60,8 @@ induced periodicity map on cyclic cohomology:
   φ(e, …, e)` for an idempotent `e`.
 * `TauCeti.hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCocycles`:
   `b (H' (b' φ)) = S₀ φ` for every cyclic cocycle `φ`.
+* `TauCeti.one_sub_cyclicOperator_hochschildCoboundary_cyclicRowHomotopySum_barCoboundary`:
+  `(1 - λ) (b (H' (b' ψ))) = -(n + 1) • b' (b ψ)` for every cyclic `n`-cochain `ψ`.
 * `TauCeti.hochschildCoboundary_cyclicNorm_cochainPeriodicity`: `b (N (S₀ ψ)) = (n + 1) • S₀ (b ψ)`
   for every cyclic `n`-cochain `ψ`.
 * `TauCeti.smul_cyclicHochschildCoboundary_connesS`: `(n + 3) • b (S ψ) = (n + 1) • S (b ψ)`.
@@ -132,47 +135,6 @@ theorem compMultilinearMap_cochainPeriodicity {N : Type*} [AddCommGroup N] [Modu
       cochainPeriodicity R A N n (g.compMultilinearMap φ) := by
   ext a
   simp [LinearMap.compMultilinearMap_apply, map_sum, map_zsmul]
-
-/-- The alternating double sum `∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r)` equals `n / 2 + 1`. -/
-private theorem sum_Iic_neg_one_pow_sub (n : ℕ) :
-    (∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j, (-1 : ℤ) ^ ((j : ℕ) - r)) = (n / 2 + 1 : ℕ) := by
-  have hinner (m : ℕ) :
-      (∑ r ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - r)) = if Even m then 1 else 0 := by
-    have hcongr : (∑ r ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - r)) =
-        ∑ r ∈ Finset.range (m + 1), (-1 : ℤ) ^ r := by
-      rw [← Finset.sum_range_reflect (fun k ↦ (-1 : ℤ) ^ k) (m + 1)]
-      simp
-    rw [hcongr, neg_one_geom_sum]
-    split_ifs <;> simp_all [Nat.even_add_one]
-  have hfin (j : Fin (n + 1)) :
-      (∑ r ∈ Finset.Iic j, (-1 : ℤ) ^ ((j : ℕ) - r)) = if Even (j : ℕ) then 1 else 0 := by
-    rw [← hinner j]
-    refine Finset.sum_bij (fun r _ ↦ (r : ℕ)) ?_ ?_ ?_ ?_
-    · intro r hr
-      exact Finset.mem_range.2 (Nat.lt_succ_of_le (Fin.le_def.1 (Finset.mem_Iic.1 hr)))
-    · intro r₁ _ r₂ _ h
-      exact Fin.ext h
-    · intro k hk
-      have hkj : k ≤ j := Nat.le_of_lt_succ (Finset.mem_range.1 hk)
-      exact ⟨⟨k, lt_of_le_of_lt hkj j.2⟩, Finset.mem_Iic.2 hkj, rfl⟩
-    · intro _ _
-      rfl
-  simp_rw [hfin]
-  clear hfin hinner
-  rw [Fin.sum_univ_eq_sum_range (fun k ↦ if Even k then (1 : ℤ) else 0) (n + 1)]
-  induction n with
-  | zero => decide
-  | succ n ih =>
-    rw [Finset.sum_range_succ, ih]
-    rcases Nat.even_or_odd n with ⟨k, rfl⟩ | ⟨k, rfl⟩
-    · have hodd : ¬Even (k + k + 1) := fun ⟨m, hm⟩ ↦ by omega
-      rw [ite_eq_right hodd]
-      push_cast
-      omega
-    · have heven : Even (2 * k + 1 + 1) := ⟨k + 1, by omega⟩
-      rw [ite_eq_left heven]
-      push_cast
-      omega
 
 /-- Evaluating `cochainPeriodicity` on a constant tuple with idempotent entry multiplies the value
 by `n / 2 + 1`. -/
@@ -350,60 +312,8 @@ end Semigroup
 
 section RowHomotopy
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R]
-
-section Additive
-
-variable [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M]
-
-/-- The unscaled cyclic row homotopy `H' = ∑_{j ≤ n} ∑_{k < j} λᵏ` on `n`-cochains. When `n + 1` is
-invertible in `R`, `TauCeti.cyclicRowHomotopy` is `⅟(n + 1 : R) • cyclicRowHomotopySum`. -/
-def cyclicRowHomotopySum (n : ℕ) :
-    Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
-  ∑ j ∈ Finset.range (n + 1), ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k
-
-variable {R A M} {n : ℕ}
-
-/-- `(1 - λ) H' = (n + 1) - N` on `n`-cochains, without any invertibility hypothesis on `R`. -/
-theorem one_sub_cyclicOperator_mul_cyclicRowHomotopySum :
-    (1 - cyclicOperator R A M n) * cyclicRowHomotopySum R A M n =
-      (n + 1 : R) • 1 - cyclicNorm R A M n := by
-  rw [cyclicRowHomotopySum, Finset.mul_sum]
-  simp only [mul_neg_geom_sum, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_range, ← cyclicNorm_def]
-  simp [← Nat.cast_smul_eq_nsmul R]
-
-/-- `H' (1 - λ) = (n + 1) - N` on `n`-cochains, without any invertibility hypothesis on `R`. -/
-theorem cyclicRowHomotopySum_mul_one_sub_cyclicOperator :
-    cyclicRowHomotopySum R A M n * (1 - cyclicOperator R A M n) =
-      (n + 1 : R) • 1 - cyclicNorm R A M n := by
-  rw [cyclicRowHomotopySum, Finset.sum_mul]
-  simp only [geom_sum_mul_neg, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_range, ← cyclicNorm_def]
-  simp [← Nat.cast_smul_eq_nsmul R]
-
-/-- Pointwise form of `one_sub_cyclicOperator_mul_cyclicRowHomotopySum`. -/
-theorem one_sub_cyclicOperator_apply_cyclicRowHomotopySum
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
-    (1 - cyclicOperator R A M n) (cyclicRowHomotopySum R A M n φ) =
-      (n + 1 : R) • φ - cyclicNorm R A M n φ := by
-  simpa only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self] using
-    LinearMap.congr_fun one_sub_cyclicOperator_mul_cyclicRowHomotopySum φ
-
-/-- Pointwise form of `cyclicRowHomotopySum_mul_one_sub_cyclicOperator`. -/
-theorem cyclicRowHomotopySum_apply_one_sub_cyclicOperator
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
-    cyclicRowHomotopySum R A M n ((1 - cyclicOperator R A M n) φ) =
-      (n + 1 : R) • φ - cyclicNorm R A M n φ := by
-  simpa only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self] using
-    LinearMap.congr_fun cyclicRowHomotopySum_mul_one_sub_cyclicOperator φ
-
-end Additive
-
-section Algebra
-
-variable {R A M} [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
-  [AddCommGroup M] [Module R M] {n : ℕ}
+variable {R : Type*} {A : Type u} {M : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M] {n : ℕ}
 
 /-- Iterating `λ` on the bar coboundary of a cyclic cochain `φ` shifts the missing coface down:
 `λᵏ (b' φ) = b φ - (-1)^(n + 1 - k) δ_{n + 1 - k} φ` for `k ≤ n + 1`. -/
@@ -441,7 +351,7 @@ private theorem cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCochains
     {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n) :
     cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n φ) =
       ((n + 1) * (n + 2) / 2 : ℕ) • hochschildCoboundary R A M n φ + cupOneSelf n φ := by
-  rw [cyclicRowHomotopySum, LinearMap.sum_apply]
+  rw [cyclicRowHomotopySum_def, LinearMap.sum_apply]
   set T : ℕ → MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M := fun k ↦
     if hk : k < n + 2 then (-1 : ℤ) ^ (n + 1 - k) • hochschildCoface R A M ⟨n + 1 - k, by omega⟩ φ
     else 0
@@ -503,19 +413,27 @@ theorem hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCoc
   have hb : hochschildCoboundary R A M n φ = 0 := (mem_cyclicCocycles_iff R A M).1 hφ
   simpa [hb] using hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_add φ.2
 
+/-- For every cyclic `n`-cochain `ψ`, `(1 - λ) (b (H' (b' ψ))) = -(n + 1) • b' (b ψ)`. -/
+theorem one_sub_cyclicOperator_hochschildCoboundary_cyclicRowHomotopySum_barCoboundary
+    (ψ : cyclicCochains R A M n) :
+    (1 - cyclicOperator R A M (n + 2))
+        (hochschildCoboundary R A M (n + 1)
+          (cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n ψ))) =
+      -((n + 1 : R) • barCoboundary R A M (n + 1) (hochschildCoboundary R A M n ψ)) := by
+  rw [← LinearMap.comp_apply, one_sub_cyclicOperator_comp_hochschildCoboundary,
+    LinearMap.comp_apply, one_sub_cyclicOperator_apply_cyclicRowHomotopySum, map_sub, map_smul,
+    barCoboundary_barCoboundary, smul_zero, zero_sub,
+    ← LinearMap.comp_apply (cyclicNorm R A M (n + 1)), ← hochschildCoboundary_comp_cyclicNorm,
+    LinearMap.comp_apply, cyclicNorm_apply_of_mem_cyclicCochains ψ.2, map_smul, map_smul]
+
 /-- For every cyclic cocycle `φ`, `S₀ φ` is a cyclic cochain. -/
 theorem cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCocycles R A M n) :
     cochainPeriodicity R A M n φ ∈ cyclicCochains R A M (n + 2) := by
   rw [← ker_one_sub_cyclicOperator, LinearMap.mem_ker,
     ← hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCocycles hφ,
-    ← LinearMap.comp_apply, one_sub_cyclicOperator_comp_hochschildCoboundary,
-    LinearMap.comp_apply, one_sub_cyclicOperator_apply_cyclicRowHomotopySum, map_sub, map_smul,
-    barCoboundary_barCoboundary, smul_zero, zero_sub,
-    ← LinearMap.comp_apply (cyclicNorm R A M (n + 1)),
-    ← hochschildCoboundary_comp_cyclicNorm, LinearMap.comp_apply,
-    cyclicNorm_apply_of_mem_cyclicCochains φ.2, map_smul,
-    (mem_cyclicCocycles_iff R A M).1 hφ, smul_zero, map_zero, neg_zero]
+    one_sub_cyclicOperator_hochschildCoboundary_cyclicRowHomotopySum_barCoboundary φ,
+    (mem_cyclicCocycles_iff R A M).1 hφ, map_zero, smul_zero, neg_zero]
 
 /-- For every cyclic cocycle `φ`, `S₀ φ` is a Hochschild cocycle. -/
 theorem hochschildCoboundary_cochainPeriodicity_of_mem_cyclicCocycles
@@ -546,44 +464,6 @@ theorem coe_cyclicCocyclesPeriodicity_apply (φ : cyclicCocycles R A M n) :
 
 /-! ### Connes' Proposition 12 and coboundary preservation -/
 
-/-- For a cyclic `m`-cochain `φ`, the cyclic norm of every signed coface `(-1)ⁱ δᵢ φ` equals the
-Hochschild coboundary `b φ`. -/
-private theorem cyclicNorm_hochschildCoface_of_mem_cyclicCochains {m : ℕ}
-    {φ : MultilinearMap R (fun _ : Fin (m + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M m)
-    (i : Fin (m + 2)) :
-    (-1 : ℤ) ^ (i : ℕ) • cyclicNorm R A M (m + 1) (hochschildCoface R A M i φ) =
-      hochschildCoboundary R A M m φ := by
-  have hcyc : cyclicOperator R A M m φ = φ :=
-    mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ
-  have hface (j : Fin (m + 2)) :
-      (-1 : ℤ) ^ (j : ℕ) • hochschildCoface R A M j φ =
-        (cyclicOperator R A M (m + 1) ^ (m + 1 - j + 1)) (hochschildCoface R A M 0 φ) := by
-    rcases j with ⟨j, hj⟩
-    have hpow : cyclicOperator R A M (m + 1) ^ (m + 1 - j + 1) *
-        cyclicOperator R A M (m + 1) ^ j = 1 := by
-      rw [← pow_add, show m + 1 - j + 1 + j = m + 1 + 1 by omega, cyclicOperator_pow_eq_one]
-    have hcyc_pow : (cyclicOperator R A M m ^ j) φ = φ := by
-      rw [pow_apply_eq_iterate, Function.iterate_fixed hcyc]
-    conv_lhs =>
-      rw [← one_apply_eq_self (F := Module.End R _) (hochschildCoface R A M ⟨j, hj⟩ φ), ← hpow]
-    rw [mul_apply_eq_comp, cyclicOperator_pow_hochschildCoface, hcyc_pow, map_zsmul, smul_smul,
-      ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
-  have hsum : ∑ j ∈ Finset.range (m + 2), cyclicOperator R A M (m + 1) ^ (m + 1 - j + 1) =
-      cyclicNorm R A M (m + 1) := by
-    rw [← Finset.sum_range_reflect, ← cyclicOperator_mul_cyclicNorm, cyclicNorm_def, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [← pow_succ', show m + 1 - (m + 2 - 1 - j) = j by
-      have := Finset.mem_range.1 hj; omega]
-  have hb : hochschildCoboundary R A M m φ =
-      cyclicNorm R A M (m + 1) (hochschildCoface R A M 0 φ) := by
-    have heq : hochschildCoboundary R A M m φ =
-        ∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) • hochschildCoface R A M j φ := by
-      ext a; simp
-    rw [heq, Finset.sum_congr rfl fun j _ ↦ hface j,
-      Fin.sum_univ_eq_sum_range (fun j ↦ (cyclicOperator R A M (m + 1) ^ (m + 1 - j + 1))
-        (hochschildCoface R A M 0 φ)), ← LinearMap.sum_apply, hsum]
-  rw [hb, ← map_zsmul, hface i, ← mul_apply_eq_comp, cyclicNorm_mul_cyclicOperator_pow]
-
 /-- **Connes' Proposition 12 (unscaled form).** For every cyclic `n`-cochain `ψ`,
 `b (N (S₀ ψ)) = (n + 1) • S₀ (b ψ)`. -/
 theorem hochschildCoboundary_cyclicNorm_cochainPeriodicity (ψ : cyclicCochains R A M n) :
@@ -599,20 +479,11 @@ theorem hochschildCoboundary_cyclicNorm_cochainPeriodicity (ψ : cyclicCochains 
   have hN_cup : cyclicNorm R A M (n + 2) (cupOneLeft n (hochschildCoboundary R A M n ψ)) = 0 := by
     simp only [cupOneLeft, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul]
     refine Finset.sum_eq_zero fun r _ ↦ ?_
-    have hr := cyclicNorm_hochschildCoface_of_mem_cyclicCochains hbψ_cyc r.castSucc.castSucc
-    simp only [Fin.val_castSucc] at hr
-    rw [hr, hochschildCoboundary_hochschildCoboundary, smul_zero]
+    rw [cyclicNorm_hochschildCoface_of_mem_cyclicCochains hbψ_cyc,
+      hochschildCoboundary_hochschildCoboundary, smul_zero, smul_zero, smul_zero]
   -- Decompose `N (S₀ ψ)` via `H' (1 - λ) = (n + 3) - N`.
-  have h1op : (1 - cyclicOperator R A M (n + 2))
-      (hochschildCoboundary R A M (n + 1)
-        (cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n ψ))) =
-      -((n + 1 : R) • barCoboundary R A M (n + 1) (hochschildCoboundary R A M n ψ)) := by
-    rw [← LinearMap.comp_apply, one_sub_cyclicOperator_comp_hochschildCoboundary,
-      LinearMap.comp_apply, one_sub_cyclicOperator_apply_cyclicRowHomotopySum, map_sub, map_smul,
-      barCoboundary_barCoboundary, smul_zero, zero_sub,
-      ← LinearMap.comp_apply (cyclicNorm R A M (n + 1)), ← hochschildCoboundary_comp_cyclicNorm,
-      LinearMap.comp_apply, cyclicNorm_apply_of_mem_cyclicCochains ψ.2, map_smul, map_smul]
-  have hH := congrArg (cyclicRowHomotopySum R A M (n + 2)) h1op
+  have hH := congrArg (cyclicRowHomotopySum R A M (n + 2))
+    (one_sub_cyclicOperator_hochschildCoboundary_cyclicRowHomotopySum_barCoboundary ψ)
   rw [cyclicRowHomotopySum_apply_one_sub_cyclicOperator, map_neg, map_smul] at hH
   have hNS₀ : cyclicNorm R A M (n + 2) (cochainPeriodicity R A M n ψ) =
       ((n + 2 : ℕ) + 1 : R) • hochschildCoboundary R A M (n + 1)
@@ -671,10 +542,10 @@ theorem smul_cyclicHochschildCoboundary_connesS [Invertible (n + 3 : R)]
 
 end ConnesS
 
-/-- When every `q + 1` with `q < n` is invertible in `R` (vacuously for `n = 0`, and using
-`IsUnit (n : R)` for `n = m + 1`), `cyclicCocyclesPeriodicity` preserves cyclic coboundaries. -/
+/-- When `n = 0` or `(n : R)` is a unit in `R`, `cyclicCocyclesPeriodicity` preserves cyclic
+coboundaries. -/
 theorem cyclicCocyclesPeriodicity_mem_cyclicCoboundaries
-    (hR : ∀ q < n, IsUnit ((q : R) + 1)) (φ : cyclicCocycles R A M n)
+    (hR : n = 0 ∨ IsUnit (n : R)) (φ : cyclicCocycles R A M n)
     (hφ : (φ : cyclicCochains R A M n) ∈ cyclicCoboundaries R A M n) :
     (cyclicCocyclesPeriodicity R A M n φ : cyclicCochains R A M (n + 2)) ∈
       cyclicCoboundaries R A M (n + 2) := by
@@ -686,7 +557,8 @@ theorem cyclicCocyclesPeriodicity_mem_cyclicCoboundaries
     exact zero_mem _
   | succ m =>
     obtain ⟨ψ, hψ⟩ := (mem_cyclicCoboundaries_succ_iff R A M).1 hφ
-    obtain ⟨u, hu⟩ := hR m (Nat.lt_succ_self m)
+    obtain ⟨u, hu⟩ := hR.resolve_left m.succ_ne_zero
+    rw [Nat.cast_add, Nat.cast_one] at hu
     rw [mem_cyclicCoboundaries_succ_iff]
     refine ⟨(↑u⁻¹ : R) • ⟨cyclicNorm R A M (m + 2) (cochainPeriodicity R A M m ψ),
       cyclicNorm_mem_cyclicCochains _⟩, ?_⟩
@@ -695,8 +567,6 @@ theorem cyclicCocyclesPeriodicity_mem_cyclicCoboundaries
       Subtype.coe_mk, hochschildCoboundary_cyclicNorm_cochainPeriodicity, ← hu,
       smul_smul, Units.inv_mul, one_smul, coe_cyclicCocyclesPeriodicity_apply, ← hψ,
       coe_cyclicHochschildCoboundary_apply]
-
-end Algebra
 
 end RowHomotopy
 
@@ -719,9 +589,7 @@ def periodicity (n : ℕ) :
     desc n (mk R A M (n + 2) ∘ₗ cyclicCocyclesPeriodicity R A M n) fun φ hφ ↦
       (mk_eq_zero_iff R A M (n + 2) _).2 <|
         cyclicCocyclesPeriodicity_mem_cyclicCoboundaries
-          (fun q _ ↦ by
-            simpa using (Nat.cast_add_one_ne_zero (R := ℚ) q).isUnit.map (algebraMap ℚ R))
-          φ hφ
+          ((eq_or_ne n 0).imp_right isUnit_natCast_of_ne_zero) φ hφ
 
 variable {R A M} {n : ℕ}
 
