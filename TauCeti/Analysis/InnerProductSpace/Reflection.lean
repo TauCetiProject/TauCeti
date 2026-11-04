@@ -1,7 +1,8 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
+  OpenAI GPT-6
 -/
 module
 
@@ -559,3 +560,60 @@ theorem exists_contDiff_path_of_det_eq_one [FiniteDimensional ℝ F] (e : F ≃�
   exact (isJoinedToOne_list_prod l).1 he
 
 end LinearIsometryEquiv
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Full off-diagonality is anticommutation with the source reflection.
+
+Adapted from `reflection_anticommutes_of_maps_orthogonal` in
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). -/
+theorem reflection_comp_eq_neg_comp_of_maps_orthogonal
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (H : E →L[𝕜] E)
+    (hHU : ∀ x ∈ U, H x ∈ Uᗮ)
+    (hHUperp : ∀ x ∈ Uᗮ, H x ∈ U) :
+    (U.reflection : E →L[𝕜] E) ∘L H = -(H ∘L (U.reflection : E →L[𝕜] E)) := by
+  apply ContinuousLinearMap.ext
+  intro x
+  let p : E := U.starProjection x
+  let m : E := x - U.starProjection x
+  have hp : p ∈ U := U.starProjection_apply_mem x
+  have hm : m ∈ Uᗮ := U.sub_starProjection_mem_orthogonal x
+  have hxpm : x = p + m := by simp only [p, m]; abel
+  have hHp : H p ∈ Uᗮ := hHU p hp
+  have hHm : H m ∈ U := hHUperp m hm
+  have hJp : (U.reflection : E →L[𝕜] E) p = p := by
+    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
+      Submodule.starProjection_eq_self_iff.mpr hp]
+    module
+  have hJm : (U.reflection : E →L[𝕜] E) m = -m := by
+    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
+      (Submodule.starProjection_apply_eq_zero_iff U).mpr hm]
+    module
+  have hJHp : (U.reflection : E →L[𝕜] E) (H p) = -(H p) := by
+    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
+      (Submodule.starProjection_apply_eq_zero_iff U).mpr hHp]
+    module
+  have hJHm : (U.reflection : E →L[𝕜] E) (H m) = H m := by
+    rw [LinearIsometryEquiv.coe_coe'', Submodule.reflection_apply,
+      Submodule.starProjection_eq_self_iff.mpr hHm]
+    module
+  simp only [ContinuousLinearMap.comp_apply, neg_apply]
+  calc
+    (U.reflection : E →L[𝕜] E) (H x) = (U.reflection : E →L[𝕜] E) (H p + H m) := by
+      rw [hxpm, map_add]
+    _ = (U.reflection : E →L[𝕜] E) (H p) + (U.reflection : E →L[𝕜] E) (H m) := map_add _ _ _
+    _ = -(H p) + H m := by rw [hJHp, hJHm]
+    _ = -(H (p - m)) := by
+      have hmap : H (p - m) = H p - H m := map_sub H p m
+      rw [hmap]
+      abel
+    _ = -(H ((U.reflection : E →L[𝕜] E) x)) := by
+      have hJx : (U.reflection : E →L[𝕜] E) x = p - m := by
+        rw [hxpm, map_add, hJp, hJm]
+        module
+      rw [hJx]
+
+end Submodule
