@@ -87,6 +87,8 @@ theorem nonempty_homeomorph_unitAddTorus
   set Λ := hσ.hamiltonianFlowStabilizer hF hcomm hc x
   have : DiscreteTopology Λ := hσ.discreteTopology_hamiltonianFlowStabilizer hF hcomm hc
     (hreg x (mem_connectedComponentIn (by simp)))
+  -- AddSubgroup.toIntSubmodule keeps the same carrier, so the subtypes and their induced
+  -- topologies agree definitionally, allowing reuse of the discreteness instance.
   have : DiscreteTopology Λ.toIntSubmodule := ‹DiscreteTopology Λ›
   have : IsZLattice ℝ Λ.toIntSubmodule :=
     ⟨hσ.span_hamiltonianFlowStabilizer_eq_top hF hcomm hc hreg hdim hK⟩
