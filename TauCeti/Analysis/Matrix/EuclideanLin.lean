@@ -31,7 +31,8 @@ inverse is the map of the inverse matrix. That is the form a substitution needs:
 inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
 
 Conversely, every continuous linear automorphism of Euclidean space is the map of an invertible
-matrix, and this matrix depends continuously on the automorphism.
+matrix. This correspondence is a group isomorphism, and the matrix depends continuously on the
+automorphism.
 
 A square matrix is unitary exactly when its continuous linear map preserves the inner product.
 
@@ -49,8 +50,9 @@ A square matrix is unitary exactly when its continuous linear map preserves the 
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
   `apply`, `symm_apply`, coercion and determinant lemmas;
-* `Matrix.GeneralLinearGroup.ofEuclideanCLE` — the invertible matrix of a continuous linear
-  automorphism, inverse to `Matrix.toEuclideanCLE`; both directions are continuous in families
+* `Matrix.GeneralLinearGroup.ofEuclideanCLE` — the group isomorphism taking a continuous linear
+  automorphism to its invertible matrix, inverse to `Matrix.toEuclideanCLE`; both directions are
+  continuous in families
   (`Matrix.GeneralLinearGroup.continuous_ofEuclideanCLE`,
   `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`).
 -/
@@ -164,6 +166,7 @@ theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0)
     one_apply_eq_self]
 
 /-- The equivalence, as a continuous linear map, is the continuous linear map of the matrix. -/
+@[simp]
 theorem coe_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
     (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) =
       toEuclideanCLM (𝕜 := 𝕜) A :=
@@ -178,18 +181,19 @@ theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
       = A.toEuclideanLin := LinearMap.ext fun x => A.toEuclideanCLE_apply hA x
   rw [hcoe, LinearMap.det_toLpLin]
 
-/-- **The invertible matrix of a continuous linear automorphism** of `EuclideanSpace 𝕜 ι`. It is
-inverse to `Matrix.toEuclideanCLE`. -/
-noncomputable def GeneralLinearGroup.ofEuclideanCLE
-    (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) : GL ι 𝕜 :=
-  Units.map ((toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm :
-    (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →* Matrix ι ι 𝕜) D.toUnit
+/-- **The invertible matrix of a continuous linear automorphism** of `EuclideanSpace 𝕜 ι`, as a
+group isomorphism. Its inverse is `Matrix.toEuclideanCLE`
+(`Matrix.GeneralLinearGroup.ofEuclideanCLE_symm_apply`). -/
+noncomputable def GeneralLinearGroup.ofEuclideanCLE :
+    (EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) ≃* GL ι 𝕜 :=
+  (ContinuousLinearEquiv.unitsEquiv 𝕜 (EuclideanSpace 𝕜 ι)).symm.trans
+    (Units.mapEquiv (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm.toMulEquiv)
 
 /-- The matrix of a continuous linear automorphism is the matrix of its continuous linear map. -/
 theorem GeneralLinearGroup.coe_ofEuclideanCLE (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) :
     (GeneralLinearGroup.ofEuclideanCLE D : Matrix ι ι 𝕜) =
       (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm (D : EuclideanSpace 𝕜 ι →L[𝕜] _) := by
-  simp [ofEuclideanCLE, ContinuousLinearEquiv.toUnit]
+  rfl
 
 /-- The continuous linear map of the matrix of an automorphism is the automorphism. -/
 @[simp]
@@ -212,6 +216,14 @@ theorem GeneralLinearGroup.toEuclideanCLE_ofEuclideanCLE
 theorem GeneralLinearGroup.ofEuclideanCLE_toEuclideanCLE (A : GL ι 𝕜) :
     GeneralLinearGroup.ofEuclideanCLE ((A : Matrix ι ι 𝕜).toEuclideanCLE A.det_ne_zero) = A :=
   Units.ext <| by rw [coe_ofEuclideanCLE, coe_toEuclideanCLE, StarAlgEquiv.symm_apply_apply]
+
+/-- The inverse of `Matrix.GeneralLinearGroup.ofEuclideanCLE` is the continuous linear equivalence
+of an invertible matrix. -/
+@[simp]
+theorem GeneralLinearGroup.ofEuclideanCLE_symm_apply (A : GL ι 𝕜) :
+    GeneralLinearGroup.ofEuclideanCLE.symm A =
+      (A : Matrix ι ι 𝕜).toEuclideanCLE A.det_ne_zero :=
+  (MulEquiv.symm_apply_eq _).2 (ofEuclideanCLE_toEuclideanCLE A).symm
 
 open scoped Matrix.Norms.L2Operator in
 /-- The matrix of a continuous family of automorphisms depends continuously on the parameter. -/

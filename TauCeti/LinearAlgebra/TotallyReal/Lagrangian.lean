@@ -21,7 +21,8 @@ subspaces of `ℂⁿ` with a continuous frame to loops of Lagrangian subspaces.
 The homotopy has two stages. The closedness of the path says `M 1 = M 0 G` for a real invertible
 matrix `G` (`Matrix.exists_eq_mul_map_ofReal`).
 
-* **Orthonormalization.** Replacing `M` by `B = M Re (Mᴴ M) ^ (-1/2)` does not change the real
+* **Orthonormalization.** Replacing `M` by `B = M Re (Mᴴ M) ^ (-1/2)`
+  (`Matrix.GeneralLinearGroup.realOrthonormalize`) does not change the real
   spans `M t ℝⁿ`, because the correction is real and invertible, and it makes the columns of
   `B t` orthonormal for the real inner product `Re ⟪·, ·⟫`. Two such frames with the same real
   span differ by a real orthogonal matrix (`Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`),
@@ -37,6 +38,8 @@ contraction of `M` need not close up.
 
 ## Main declarations
 
+* `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
+  real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -56,37 +59,33 @@ noncomputable section
 open Matrix
 open scoped MatrixOrder ComplexOrder Matrix.Norms.L2Operator unitInterval
 
-namespace TauCeti
+namespace Matrix.GeneralLinearGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-! ### Orthonormalizing a frame by a real change of basis -/
 
-/-- The real Gram matrix `Re (Mᴴ M)` of the columns of `M`, for the real inner product
-`Re ⟪v, w⟫` of `ℂⁿ`. -/
-private abbrev realGram (M : Matrix n n ℂ) : Matrix n n ℝ := (Mᴴ * M).map Complex.re
-
-/-- The real Gram matrix of an invertible complex matrix is positive definite. -/
-private theorem posDef_realGram (M : GL n ℂ) : (realGram (M : Matrix n n ℂ)).PosDef :=
-  PosDef.map_re_conjTranspose_mul_self _ (mulVec_injective_of_isUnit M.isUnit)
-
 /-- The real matrix `Re (Mᴴ M) ^ (-1/2)`. Multiplying `M` by it on the right makes the columns
 orthonormal for `Re ⟪·, ·⟫`. -/
 private abbrev gramNormalizer (M : GL n ℂ) : Matrix n n ℝ :=
-  realGram (M : Matrix n n ℂ) ^ (-(1 / 2) : ℝ)
+  ((M : Matrix n n ℂ)ᴴ * M).map Complex.re ^ (-(1 / 2) : ℝ)
+
+private theorem isStrictlyPositive_map_re (M : GL n ℂ) :
+    IsStrictlyPositive (((M : Matrix n n ℂ)ᴴ * M).map Complex.re) :=
+  isStrictlyPositive_iff_posDef.2 <|
+    PosDef.map_re_conjTranspose_mul_self _ (mulVec_injective_of_isUnit M.isUnit)
 
 private theorem posDef_gramNormalizer (M : GL n ℂ) : (gramNormalizer M).PosDef :=
-  isStrictlyPositive_iff_posDef.1 <|
-    IsStrictlyPositive.rpow _ _ (isStrictlyPositive_iff_posDef.2 (posDef_realGram M))
+  isStrictlyPositive_iff_posDef.1 <| IsStrictlyPositive.rpow _ _ (isStrictlyPositive_map_re M)
 
 private theorem gramNormalizer_mul_realGram_mul (M : GL n ℂ) :
-    (gramNormalizer M)ᵀ * realGram (M : Matrix n n ℂ) * gramNormalizer M = 1 := by
-  have hH := isStrictlyPositive_iff_posDef.2 (posDef_realGram M)
+    (gramNormalizer M)ᵀ * ((M : Matrix n n ℂ)ᴴ * M).map Complex.re * gramNormalizer M = 1 := by
   have hT : (gramNormalizer M)ᵀ = gramNormalizer M := by
     exact (by simpa [conjTranspose_eq_transpose_of_trivial] using (posDef_gramNormalizer M).1 :
       (gramNormalizer M).IsSymm).eq
+  have hH := isStrictlyPositive_map_re M
   rw [hT, gramNormalizer]
-  nth_rw 2 [← CFC.rpow_one (realGram (M : Matrix n n ℂ)) hH.nonneg]
+  nth_rw 2 [← CFC.rpow_one (((M : Matrix n n ℂ)ᴴ * M).map Complex.re) hH.nonneg]
   rw [← CFC.rpow_add hH.isUnit, ← CFC.rpow_add hH.isUnit]
   norm_num [CFC.rpow_zero _ hH.nonneg]
 
@@ -94,35 +93,52 @@ private theorem isUnit_gramNormalizer_map (M : GL n ℂ) :
     IsUnit ((gramNormalizer M).map ((↑) : ℝ → ℂ)) :=
   (posDef_gramNormalizer M).isUnit.map Complex.ofRealHom.mapMatrix
 
-/-- The frame `M Re (Mᴴ M) ^ (-1/2)`. It spans the same real subspace as `M`, and its columns are
-orthonormal for `Re ⟪·, ·⟫`. -/
-private def orthoFrame (M : GL n ℂ) : GL n ℂ :=
+/-- **The real orthonormalization of a frame**: `M Re (Mᴴ M) ^ (-1/2)`. It spans the same real
+subspace as `M` (`Matrix.GeneralLinearGroup.realImage_realOrthonormalize`), its columns are
+orthonormal for the real inner product `Re ⟪·, ·⟫`
+(`Matrix.GeneralLinearGroup.map_re_conjTranspose_mul_self_realOrthonormalize`), and it depends
+continuously on `M` (`Matrix.GeneralLinearGroup.continuous_realOrthonormalize`). -/
+def realOrthonormalize (M : GL n ℂ) : GL n ℂ :=
   M * (isUnit_gramNormalizer_map M).unit
 
-private theorem coe_orthoFrame (M : GL n ℂ) :
-    (orthoFrame M : Matrix n n ℂ) = M * (gramNormalizer M).map ((↑) : ℝ → ℂ) :=
-  rfl
+/-- The real orthonormalization of `M` is `M Re (Mᴴ M) ^ (-1/2)`. -/
+theorem coe_realOrthonormalize (M : GL n ℂ) :
+    (realOrthonormalize M : Matrix n n ℂ) =
+      M * (((M : Matrix n n ℂ)ᴴ * M).map Complex.re ^ (-(1 / 2) : ℝ)).map ((↑) : ℝ → ℂ) := by
+  rw [realOrthonormalize, Units.val_mul, IsUnit.unit_spec]
 
-private theorem realImage_orthoFrame (M : GL n ℂ) :
-    (orthoFrame M : Matrix n n ℂ).realImage = (M : Matrix n n ℂ).realImage := by
-  rw [coe_orthoFrame]
+/-- The real orthonormalization of `M` spans the same real subspace `M ℝⁿ` as `M`. -/
+@[simp]
+theorem realImage_realOrthonormalize (M : GL n ℂ) :
+    (realOrthonormalize M : Matrix n n ℂ).realImage = (M : Matrix n n ℂ).realImage := by
+  rw [coe_realOrthonormalize]
   exact realImage_mul_map_ofReal _ (posDef_gramNormalizer M).isUnit
 
-private theorem realGram_orthoFrame (M : GL n ℂ) :
-    realGram (orthoFrame M : Matrix n n ℂ) = 1 := by
-  rw [coe_orthoFrame, realGram, map_re_conjTranspose_mul_self_mul_map_ofReal,
+/-- The columns of the real orthonormalization of `M` are orthonormal for `Re ⟪·, ·⟫`: its real
+Gram matrix is the identity. -/
+@[simp]
+theorem map_re_conjTranspose_mul_self_realOrthonormalize (M : GL n ℂ) :
+    ((realOrthonormalize M : Matrix n n ℂ)ᴴ * realOrthonormalize M).map Complex.re = 1 := by
+  rw [coe_realOrthonormalize, map_re_conjTranspose_mul_self_mul_map_ofReal,
     gramNormalizer_mul_realGram_mul]
 
-private theorem continuous_orthoFrame {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
-    (hM : Continuous M) : Continuous fun x ↦ orthoFrame (M x) := by
+/-- The real orthonormalization of a continuous family of frames is continuous. -/
+theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
+    (hM : Continuous M) : Continuous fun x ↦ realOrthonormalize (M x) := by
   refine Units.isOpenEmbedding_val.continuous_iff.2 ?_
   have hval : Continuous fun x ↦ (M x : Matrix n n ℂ) := Units.continuous_val.comp hM
-  have hG : Continuous fun x ↦ realGram (M x : Matrix n n ℂ) :=
+  have hG : Continuous fun x ↦ ((M x : Matrix n n ℂ)ᴴ * M x).map Complex.re :=
     (hval.matrix_conjTranspose.mul hval).matrix_map Complex.continuous_re
   have hQ : Continuous fun x ↦ gramNormalizer (M x) :=
     (Matrix.contDiffOn_rpow (𝕜 := ℝ) (n := n) (-(1 / 2)) (k := 0)).continuousOn.comp_continuous
-      hG fun x ↦ posDef_realGram (M x)
+      hG fun x ↦ isStrictlyPositive_iff_posDef.1 (isStrictlyPositive_map_re (M x))
   exact hval.mul (hQ.matrix_map Complex.continuous_ofReal)
+
+end Matrix.GeneralLinearGroup
+
+namespace TauCeti
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-! ### The deformation to unitary frames -/
 
@@ -138,19 +154,22 @@ theorem exists_realImage_homotopy_unitaryGroup {M : I → GL n ℂ} (hM : Contin
       (∀ t, (F (0, t) : Matrix n n ℂ).realImage = (M t : Matrix n n ℂ).realImage) ∧
       (∀ s, (F (s, 0) : Matrix n n ℂ).realImage = (F (s, 1) : Matrix n n ℂ).realImage) ∧
       ∀ t, (F (1, t) : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
-  obtain ⟨O, hOO, hO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal (M := orthoFrame (M 0))
-    (M' := orthoFrame (M 1)) (by rw [realImage_orthoFrame, realImage_orthoFrame, h01])
-    (realGram_orthoFrame _) (realGram_orthoFrame _)
+  obtain ⟨O, hOO, hO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
+    (M := GeneralLinearGroup.realOrthonormalize (M 0))
+    (M' := GeneralLinearGroup.realOrthonormalize (M 1)) (by simp [h01])
+    (GeneralLinearGroup.map_re_conjTranspose_mul_self_realOrthonormalize _)
+    (GeneralLinearGroup.map_re_conjTranspose_mul_self_realOrthonormalize _)
   have hOu := map_ofReal_mem_unitaryGroup hOO
-  have hO1 : orthoFrame (M 1) = orthoFrame (M 0) * Unitary.toUnits ⟨_, hOu⟩ := Units.ext hO
+  have hO1 : GeneralLinearGroup.realOrthonormalize (M 1) =
+      GeneralLinearGroup.realOrthonormalize (M 0) * Unitary.toUnits ⟨_, hOu⟩ := Units.ext hO
   have hOunit : IsUnit O := (Matrix.isUnit_iff_isUnit_det O).2
     (Matrix.isUnit_det_of_left_inverse ((mem_orthogonalGroup_iff' n ℝ).1 hOO))
-  refine ⟨fun p ↦ GeneralLinearGroup.polarDeformation (orthoFrame (M p.2)) p.1, ?_,
-    fun t ↦ ?_, fun s ↦ ?_, fun t ↦ ?_⟩
+  refine ⟨fun p ↦ GeneralLinearGroup.polarDeformation
+    (GeneralLinearGroup.realOrthonormalize (M p.2)) p.1, ?_, fun t ↦ ?_, fun s ↦ ?_, fun t ↦ ?_⟩
   · have h := (GeneralLinearGroup.contMDiff_polarDeformation (n := n) (𝕜 := ℂ) (k := 0)).continuous
     exact h.comp ((continuous_subtype_val.comp continuous_fst).prodMk
-      ((continuous_orthoFrame hM).comp continuous_snd))
-  · simp [realImage_orthoFrame]
+      ((GeneralLinearGroup.continuous_realOrthonormalize hM).comp continuous_snd))
+  · simp
   · simp only
     rw [hO1, GeneralLinearGroup.polarDeformation_mul_toUnits, Units.val_mul,
       Unitary.val_toUnits_apply]
