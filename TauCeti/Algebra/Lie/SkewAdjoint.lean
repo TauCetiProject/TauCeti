@@ -320,6 +320,7 @@ theorem polarBilin_killingQuadraticForm :
   exact LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip (LieModule.traceForm_flip R L L)
 
 /-- The polar form of the Killing quadratic form, pointwise: `polar Q x y = 2 * κ(x, y)`. -/
+@[simp]
 theorem polar_killingQuadraticForm (x y : L) :
     QuadraticMap.polar (killingQuadraticForm R L) x y = 2 * killingForm R L x y := by
   have h := LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm R L) x y
