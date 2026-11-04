@@ -18,6 +18,10 @@ unbounded indices. If the twisting rows strictly lower generator indices, the tw
 the differential lowers the filtration. The successive quotient is therefore the finite-support
 module on generators of one index, with the coefficient differential alone.
 
+The degree-`n` part of each stage, `rowFiniteIndexGrading`, is its intersection with the
+total-degree grading; for cohomologically nonpositive coefficients, total degree `n` forces
+index at most `-n`.
+
 The quotient equivalence and its differential comparison are explicit. If generator indices
 are bounded below (as for nonnegative-dimensional cells), the filtration starts at zero. These
 are the algebraic cell-filtration properties needed for attaching free generators; no resolution
@@ -34,7 +38,7 @@ public section
 
 namespace TauCeti
 
-universe uR uA uP
+universe uR uA uM uP
 
 section Filtration
 
@@ -120,6 +124,48 @@ theorem rowFiniteIndexProjection_mem_grading (𝒜 : ℤ → Submodule R A) {p n
     (mem_rowFiniteTotalGrading_iff 𝒜 ind).mp hf x.val
 
 end Filtration
+
+section IndexGrading
+
+variable {R : Type uR} {M : Type uM} {P : Type uP}
+  [Semiring R] [AddCommMonoid M] [Module R M] {ℳ : ℤ → Submodule R M} {ind : P → ℤ}
+
+/-- The degree-`n` part of the `p`th stage of the index filtration of finite-support coefficient
+vectors: the vectors of total degree `n` carried by generators of index at most `p`. -/
+noncomputable def rowFiniteIndexGrading (ℳ : ℤ → Submodule R M) (ind : P → ℤ) (p n : ℤ) :
+    Submodule R (P →₀ M) :=
+  rowFiniteIndexFiltration ind p ⊓ rowFiniteTotalGrading ℳ ind n
+
+@[simp]
+theorem mem_rowFiniteIndexGrading_iff {p n : ℤ} {f : P →₀ M} :
+    f ∈ rowFiniteIndexGrading ℳ ind p n ↔
+      (∀ x, p < ind x → f x = 0) ∧ ∀ x, f x ∈ ℳ (n + ind x) := by
+  simp [rowFiniteIndexGrading]
+
+/-- The index filtration is increasing in each total degree. -/
+theorem rowFiniteIndexGrading_mono {p q n : ℤ} (hpq : p ≤ q) :
+    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteIndexGrading ℳ ind q n :=
+  inf_le_inf_right _ (rowFiniteIndexFiltration_mono ind hpq)
+
+theorem rowFiniteIndexGrading_le_rowFiniteIndexFiltration (p n : ℤ) :
+    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteIndexFiltration ind p :=
+  inf_le_left
+
+theorem rowFiniteIndexGrading_le_rowFiniteTotalGrading (p n : ℤ) :
+    rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteTotalGrading ℳ ind n :=
+  inf_le_right
+
+/-- For cohomologically nonpositive coefficients, a vector of total degree `n` is carried by
+generators of index at most `-n`. -/
+theorem rowFiniteTotalGrading_le_rowFiniteIndexFiltration (hℳ : ∀ k, 0 < k → ℳ k = ⊥) (n : ℤ) :
+    rowFiniteTotalGrading ℳ ind n ≤ rowFiniteIndexFiltration ind (-n) := by
+  intro f hf
+  rw [mem_rowFiniteIndexFiltration_iff]
+  intro x hx
+  have h := (mem_rowFiniteTotalGrading_iff ℳ ind).mp hf x
+  rwa [hℳ _ (by omega), Submodule.mem_bot] at h
+
+end IndexGrading
 
 section Quotient
 
