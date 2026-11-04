@@ -11,6 +11,8 @@ public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.DifferentialForm.Plane
+import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -41,7 +43,7 @@ energy bounds the `L²` norm of the perturbed derivative.
 The main result is the energy identity: pointwise,
 `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) = ω(∂_s u, ∂_t u) + d(K(u)) - R_K(u)`,
 where `d(K(u)) = ∂_s (K_t(u)) - ∂_t (K_s(u))` is the exterior derivative of the pulled-back
-one-form `K(u) = K_s(u) ds + K_t(u) dt`. Integrated over a rectangle using the divergence theorem,
+one-form `K(u) = K_s(u) ds + K_t(u) dt`. Integrated over a rectangle using Stokes' formula,
 the energy is the symplectic area plus the boundary integral of `K(u)` minus the integral of the
 curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical perturbation
 `K = H_t dt`, the curvature vanishes; for a continuation perturbation `K = β(s) H_t dt`, it is
@@ -110,21 +112,18 @@ theorem integral_fderiv_sub_fderiv_Icc (hU : IsOpen U) (hfs : ContDiffOn ℝ 1 f
     ∫ z in Icc a b, (fderiv ℝ ft z stdComplexLineReal - fderiv ℝ fs z stdComplexLineImag) =
       (∫ s in a.1..b.1, fs (s, a.2)) + (∫ t in a.2..b.2, ft (b.1, t)) -
         (∫ s in a.1..b.1, fs (s, b.2)) - ∫ t in a.2..b.2, ft (a.1, t) := by
-  have hdiff {h : ℝ × ℝ → ℝ} (hh : ContDiffOn ℝ 1 h U) {z : ℝ × ℝ} (hz : z ∈ U) :
-      HasFDerivAt h (fderiv ℝ h z) z :=
-    ((hh.differentiableOn one_ne_zero z hz).differentiableAt (hU.mem_nhds hz)).hasFDerivAt
-  have hint {z : ℝ × ℝ} (hz : z ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2) : z ∈ U :=
-    habU (Icc_prod_eq a b ▸ ⟨Ioo_subset_Icc_self hz.1, Ioo_subset_Icc_self hz.2⟩)
-  -- The divergence theorem for the vector field `(f_t, -f_s)`.
-  have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le ft (fun z ↦ -fs z)
-    (fderiv ℝ ft) (fun z ↦ -fderiv ℝ fs z) a b hab (hft.continuousOn.mono habU)
-    (hfs.continuousOn.neg.mono habU) (fun _ hz ↦ hdiff hft (hint hz))
-    (fun _ hz ↦ (hdiff hfs (hint hz)).neg)
-    (by simpa only [neg_apply, ← sub_eq_add_neg, stdComplexLineReal_eq,
-      stdComplexLineImag_eq] using integrableOn_fderiv_sub_fderiv_Icc hU hfs hft habU)
-  simp only [neg_apply, ← sub_eq_add_neg, intervalIntegral.integral_neg]
-    at hdiv
-  rw [stdComplexLineReal_eq, stdComplexLineImag_eq, hdiv]
+  -- Stokes' formula for the one-form `f_s dx + f_t dy`.
+  have hω (z) (hz : z ∈ Icc a b) :
+      ContDiffAt ℝ 1 (fun z ↦ fs z • Prod.realPlaneDx z + ft z • Prod.realPlaneDy z) z :=
+    ((hfs.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDx.contDiffAt).add
+      ((hft.contDiffAt (hU.mem_nhds (habU hz))).smul Prod.contDiff_realPlaneDy.contDiffAt)
+  have h := integral_extDeriv_prod_Icc hab hω
+  rw [setIntegral_congr_fun measurableSet_Icc fun z hz ↦
+    extDeriv_apply_pair_of_differentiableAt ((hω z hz).differentiableAt one_ne_zero) _ _] at h
+  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+    Prod.realPlaneDx_apply, Prod.realPlaneDy_apply, smul_eq_mul, mul_zero, mul_one, add_zero,
+    zero_add] at h
+  rw [stdComplexLineReal_eq, stdComplexLineImag_eq, h]
   ring
 
 end TauCeti.Floer

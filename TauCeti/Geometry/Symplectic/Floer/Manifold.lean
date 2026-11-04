@@ -261,8 +261,7 @@ theorem perturbedMFDeriv_perturbationPullback (ω : SmoothTwoForm I M)
   have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w v =
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ w) (fderiv ℝ φ w v) := by
     rw [mfderiv_comp w hu hφ.mdifferentiableAt, mfderiv_eq_fderiv]
-    -- The identifications `NormedSpace.fromTangentSpace` are identities.
-    rfl
+    exact ContinuousLinearMap.comp_apply _ _ _
   -- Unfold both perturbed derivatives and expand `X_{φ^*K}`.
   simp only [ContinuousLinearMap.comp_apply, perturbedMFDeriv_apply, hd, comp_apply,
     ω.hamiltonianVectorField_perturbationPullback hKs hKt]
@@ -290,11 +289,8 @@ theorem floerEnergyDensity_perturbationPullback (ω : SmoothTwoForm I M)
       ℝ × ℝ →ₗ[ℝ] TangentSpace I (u (φ w))).apply_stdComplexLine (fderiv ℝ φ w e)
   rw [floerEnergyDensity_def, floerEnergyDensity_def,
     ω.perturbedMFDeriv_perturbationPullback hφ hu hKs hKt]
-  simp only [ContinuousLinearMap.comp_apply, hP, eval₂_smul_add_smul]
-  simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
-    stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- The base points `(u ∘ φ) w` and `u (φ w)` of the two evaluations agree by unfolding `∘`.
-  rfl
+  simp only [ContinuousLinearMap.comp_apply, hP, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  exact ω.eval₂_smul_add_smul_det _ (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
 
 /-- **The curvature is a two-form.** For a `C²` change of coordinates `φ`, the curvature of the
 pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvature of `K` at `φ w`. -/
@@ -310,9 +306,8 @@ theorem hamiltonianCurvature_perturbationPullback (ω : SmoothTwoForm I M)
       (perturbationPullback φ Ks Kt stdComplexLineImag w) x =
         (fderiv ℝ φ w).det * ω.poissonBracket (Ks (φ w)) (Kt (φ w)) x := by
     simp only [poissonBracket_def, ω.hamiltonianVectorField_perturbationPullback hKs' hKt',
-      eval₂_smul_add_smul]
-    simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
       stdComplexLineReal_eq, stdComplexLineImag_eq]
+    exact ω.eval₂_smul_add_smul_det _ (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def]
   linear_combination fderiv_perturbationPullback_sub_fderiv_perturbationPullback hφ hKs hKt -
     hbracket

@@ -481,8 +481,8 @@ lemma apply_smul_add_smul (ω : SymplecticForm V) (x y : V) (a b c d : ℝ) :
 the coordinate directions under a linear map `B` of the plane: the coefficient is `det B`. -/
 lemma apply_smul_add_smul_det (ω : SymplecticForm V) (B : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) (x y : V) :
     ω ((B (1, 0)).1 • x + (B (1, 0)).2 • y) ((B (0, 1)).1 • x + (B (0, 1)).2 • y) =
-      LinearMap.det B * ω x y := by
-  rw [ω.apply_smul_add_smul, LinearMap.det_finTwoProd]
+      LinearMap.det B * ω x y :=
+  ω.isAlt.apply_smul_add_smul_det B x y
 
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the
