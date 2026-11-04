@@ -89,6 +89,12 @@ theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
   push_cast
   ring_nf
 
+/-- The plumbing map scales distances by `‖b_q‖ e^{-2πL} / 2`. -/
+theorem norm_plumbingFactor (q : Puncture) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = ‖q.endScale‖ * Real.exp (-(2 * π * L)) / 2 := by
+  rw [plumbingFactor_eq_mul_ofReal, norm_mul, Complex.norm_real,
+    Real.norm_of_nonneg (by positivity), mul_div_assoc]
+
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
 theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCenter := by

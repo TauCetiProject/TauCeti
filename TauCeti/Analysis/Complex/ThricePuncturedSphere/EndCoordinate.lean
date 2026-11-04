@@ -104,6 +104,10 @@ def endScale : Puncture → ℂ
 theorem endScale_ne_zero (q : Puncture) : q.endScale ≠ 0 := by
   cases q <;> norm_num
 
+/-- The ends at the finite punctures have scale of norm `1 / 2`. -/
+theorem norm_endScale {q : Puncture} (hq : q ≠ inf) : ‖q.endScale‖ = 1 / 2 := by
+  cases q <;> simp_all
+
 /-- The ends other than the one at `∞` are positive. -/
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all
