@@ -39,10 +39,12 @@ This file develops the Lie-derivative and integrability theory of these equation
    and the vertical Nijenhuis expression vanish on a neighborhood of `p` (automatic when
    `Module.finrank ℝ V ≤ 2`, `lieDerivEndomorphism_horizontalTerm_eq_zero_of_finrank_le_two`), then
    the horizontal curvature `y ↦ horizontalTerm i α j (p.1, y) a b` is an infinitesimal
-   automorphism of the fibre complex structure (`L_{ζ(a, b)} j = 0` at `p.2`). Consequently, along
-   any surface fibre admitting no nonzero `j`-infinitesimal automorphisms (such as closed curves in
-   the stable range), local vanishing of `mixedTerm` alone implies full Nijenhuis vanishing
-   (`nijenhuis_eq_zero_of_mixedTerm_eq_zero_fiber`).
+   automorphism of the fibre complex structure (`L_{ζ(a, b)} j = 0` at `p.2`). On a product `B × V`
+   this does not force `horizontalTerm = 0` on its own (since `(ℝ², j)` carries nonzero
+   holomorphic vector fields), so both `mixedTerm = 0` and `horizontalTerm = 0` remain necessary
+   in a local product chart (`nijenhuis_eq_zero_iff_of_finrank_eq_two`); Lemma B provides the
+   local chart identity used when globalizing to closed fibres without nonzero holomorphic vector
+   fields.
 
 ## References
 
@@ -576,35 +578,5 @@ theorem lieDerivEndomorphism_horizontalTerm_eq_zero_of_finrank_le_two
     filter_upwards [hj_ev, hj_sq.eventually_nhds] with q hjq hjsqq v w
     exact fiber_nijenhuis_eq_zero_of_finrank_le_two hdim hjq hjsqq v w
   exact lieDerivEndomorphism_horizontalTerm_eq_zero hi hα hj hj_sq hαj hmix hvert a b
-
-/-- **Closed/automorphism-free fibre reconciliation**: along a fibre `{b₀} × V` of real dimension
-at most `2` on which `j(b₀, ·)` admits no nonzero infinitesimal automorphisms, if `mixedTerm`
-vanishes on a neighborhood of `{b₀} × V`, then the full Nijenhuis tensor `J.nijenhuis` vanishes at
-every point of `{b₀} × V`. -/
-theorem nijenhuis_eq_zero_of_mixedTerm_eq_zero_fiber
-    [FiniteDimensional ℝ B] [FiniteDimensional ℝ V] (hdim : Module.finrank ℝ V ≤ 2)
-    (J : SmoothAlmostComplexStructure 𝓘(ℝ, B × V) (B × V))
-    {i : B →L[ℝ] B} (hi : ∀ a, i (i a) = -a)
-    (α : B × V → B →L[ℝ] V) (j : B × V → V →L[ℝ] V) (b₀ : B)
-    (hJ : ∀ y : V, (fun q ↦ (J.toEndomorphism q : (B × V) →L[ℝ] B × V)) =ᶠ[𝓝 (b₀, y)]
-      blockEndomorphism i α j)
-    (hα : ∀ y : V, ContDiffAt ℝ 2 α (b₀, y))
-    (hj : ∀ y : V, ContDiffAt ℝ 2 j (b₀, y))
-    (hmix : ∀ y : V, ∀ᶠ q in 𝓝 (b₀, y), ∀ a v, mixedTerm i α j q a v = 0)
-    (haut : ∀ ξ : V → V,
-      (∀ y : V, lieDerivEndomorphism ξ (fun z ↦ j (b₀, z)) y = 0) → ξ = 0)
-    (y : V) :
-    J.nijenhuis (b₀, y) = 0 := by
-  rw [nijenhuis_eq_zero_iff_of_finrank_le_two J i α j (hJ y)
-    (((hα y).of_le one_le_two).differentiableAt one_ne_zero)
-    (((hj y).of_le one_le_two).differentiableAt one_ne_zero) hdim]
-  refine ⟨(hmix y).self_of_nhds, fun a b ↦
-    congrFun (haut (fun w ↦ horizontalTerm i α j (b₀, w) a b) fun z ↦ ?_) y⟩
-  have hsq_αj : ∀ᶠ q in 𝓝 (b₀, z),
-      (∀ v, j q (j q v) = -v) ∧ (∀ c, α q (i c) + j q (α q c) = 0) :=
-    (hJ z).mono fun q hq ↦ ((blockEndomorphism_comp_self_eq_neg_id_iff i α j q).1
-      (by rw [← hq]; exact J.square_neg q)).2
-  exact lieDerivEndomorphism_horizontalTerm_eq_zero_of_finrank_le_two hdim hi
-    (hα z) (hj z) (hsq_αj.mono fun _ h ↦ h.1) (hsq_αj.mono fun _ h ↦ h.2) (hmix z) a b
 
 end TauCeti.ComplexStructureFamily
