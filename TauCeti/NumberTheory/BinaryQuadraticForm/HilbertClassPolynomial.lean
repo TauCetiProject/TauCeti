@@ -35,8 +35,9 @@ the singular moduli of discriminant `-n`, each with multiplicity one. It is the 
 `X - j(τ)` over the roots `τ` of the primitive reduced forms of discriminant `-n`, one for each
 proper class. Its degree is the order of the Picard group, which for a fundamental discriminant is
 the class number of the field, and its coefficients are real. The theory of complex
-multiplication shows that its coefficients are in fact integers and that it generates the ring
-class field; neither statement is proved here.
+multiplication shows that its coefficients are in fact integers and that adjoining any singular
+modulus of discriminant `-n` to the quadratic field `K = ℚ(√(-n))` generates the ring class field
+of the order of discriminant `-n` over `K`; neither statement is proved here.
 
 ## Main definitions
 
@@ -242,26 +243,15 @@ theorem separable_hilbertClassPolynomial : (hilbertClassPolynomial n).Separable 
   separable_prod_X_sub_C_iff.2 <| singularModulus_injective.comp
     posDefProperClass_mk_primitiveReducedForms_bijective.1
 
-/-- The reflection `(a, b, c) ↦ (a, -b, c)` on proper classes of primitive positive definite
-forms. -/
-private def reflectedClass : PosDefProperClass n → PosDefProperClass n :=
-  Quotient.map (fun f ↦ ⟨(f : BinaryQuadraticForm ℤ).reflected,
-      reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩)
-    fun f g h ↦ by
-      obtain ⟨γ, rfl⟩ := mem_orbit_iff.1 h
-      exact mem_orbit_iff.2 ⟨Matrix.SpecialLinearGroup.conjJ γ, Subtype.ext <|
-        (SubMulAction.val_smul _ _).trans (reflected_smul γ (g : BinaryQuadraticForm ℤ)).symm⟩
-
-private theorem reflectedClass_involutive : Function.Involutive (reflectedClass n) :=
-  Quotient.ind fun _ ↦ congrArg (Quotient.mk _) (Subtype.ext (reflected_reflected _))
-
 private theorem star_singularModulus_eq_reflectedClass (q : PosDefProperClass n) :
     starRingEnd ℂ (singularModulus n q) = singularModulus n (reflectedClass n q) := by
   induction q using Quotient.inductionOn with | h f
+  rw [reflectedClass_mk]
   exact star_singularModulus_mk_of_eq_reflected rfl
 
 /-- **The Hilbert class polynomial is invariant under complex conjugation**: conjugation permutes
 the singular moduli, sending each class to the class of its reflected form. -/
+@[simp]
 theorem map_star_hilbertClassPolynomial :
     (hilbertClassPolynomial n).map (starRingEnd ℂ) = hilbertClassPolynomial n := by
   have := Fintype.ofFinite (PosDefProperClass n)
@@ -270,6 +260,7 @@ theorem map_star_hilbertClassPolynomial :
   exact Fintype.prod_bijective _ (reflectedClass_involutive n).bijective _ _ fun _ ↦ rfl
 
 /-- **The Hilbert class polynomial has real coefficients.** -/
+@[simp]
 theorem im_coeff_hilbertClassPolynomial (k : ℕ) : ((hilbertClassPolynomial n).coeff k).im = 0 := by
   rw [← Complex.conj_eq_iff_im, ← coeff_map, map_star_hilbertClassPolynomial]
 

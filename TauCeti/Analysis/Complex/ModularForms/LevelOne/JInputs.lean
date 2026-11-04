@@ -501,6 +501,7 @@ theorem exists_laurentQExpansion_j_coeff_eq_intCast (n : ℤ) :
 /-- **`j` commutes with complex conjugation**: `j (-conj τ) = conj (j τ)`, where
 `J • τ = -conj τ` is the reflection in the imaginary axis. The `q`-parameter of `-conj τ` is the
 conjugate of that of `τ`, and the `q`-expansion of `j` has integer coefficients. -/
+@[simp]
 theorem j_J_smul (τ : ℍ) : j (J • τ) = starRingEnd ℂ (j τ) := by
   have hq : 𝕢 1 ((J • τ : ℍ) : ℂ) = starRingEnd ℂ (𝕢 1 τ) := by
     rw [Function.Periodic.qParam, Function.Periodic.qParam, coe_J_smul, ← Complex.exp_conj]
