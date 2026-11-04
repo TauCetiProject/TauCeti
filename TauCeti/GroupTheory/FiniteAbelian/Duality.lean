@@ -97,7 +97,9 @@ theorem finsum_domRestrictHom {N : Type*} [AddCommMonoid N] (H : Subgroup G)
   have := Fintype.ofFinite (H →* Mˣ)
   -- Restriction is surjective, so each fibre is a coset of its kernel, of order `#(G ⧸ H)`.
   rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, ← card_domRestrictHom_ker M H]
-  exact congrArg Multiplicative.toAdd <| MonoidHom.prod_comp_of_surjective _
-    (MonoidHom.domRestrict_surjective M H) (Multiplicative.ofAdd ∘ g)
+  -- Apply the multiplicative fibre-counting formula in `Multiplicative N` and transport it back.
+  simpa only [Function.comp_apply, toAdd_prod, toAdd_pow, toAdd_ofAdd] using
+    congrArg Multiplicative.toAdd <| MonoidHom.prod_comp_of_surjective _
+      (MonoidHom.domRestrict_surjective M H) (Multiplicative.ofAdd ∘ g)
 
 end CommGroup

@@ -213,8 +213,10 @@ theorem exponent_abelianConductor_le_iff (v : HeightOneSpectrum (𝓞 K)) {n : �
     (abelianConductor K L).exponent v ≤ n ↔
       ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
         (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
-          (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range :=
-  OpenSubgroup.exponent_ideleClassConductor_le_iff
+          (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  rw [abelianConductor]
+  -- The open subgroup `⟨N_{L/K}(C_L), _⟩` coerces to `N_{L/K}(C_L)` by projection.
+  exact OpenSubgroup.exponent_ideleClassConductor_le_iff
 
 variable (K L) in
 /-- The conductor of `L/K` is admissible for `L/K`. -/
