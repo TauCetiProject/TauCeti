@@ -102,41 +102,34 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type
   (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (c : Basis ι 𝕜 F)
   (b : OrthonormalBasis ι 𝕜 V)
 
-open scoped Classical in
-/-- The Gram–Schmidt orthonormal frame of the chart `e` over its base set, extended outside it by
-the frames of the charts `trivializationAt`. Only its values on `e.baseSet` matter. -/
-private def orthonormalFrameExtend (x : B) : V ≃ₗᵢ[𝕜] E x :=
-  if hx : x ∈ e.baseSet then e.orthonormalFrame c b ⟨x, hx⟩
-  else (trivializationAt F E x).orthonormalFrame c b ⟨x, mem_baseSet_trivializationAt F E x⟩
-
-private theorem isMeasurableIsometricFrame_orthonormalFrameExtend :
-    IsMeasurableIsometricFrame F (μ.restrict e.baseSet) (e.orthonormalFrameExtend c b) :=
-  isMeasurableIsometricFrame_restrict_baseSet c b e fun x hx ↦ by simp [orthonormalFrameExtend, hx]
+private theorem isMeasurableIsometricFrame_orthonormalFrameAt :
+    IsMeasurableIsometricFrame F (μ.restrict e.baseSet) (e.orthonormalFrameAt c b) :=
+  isMeasurableIsometricFrame_restrict_baseSet c b e fun _ ↦ e.orthonormalFrameAt_of_mem c b
 
 variable (p μ) in
 /-- **Unitary charts.** Over the base set `U` of an atlas chart `e`, reading sections in the
 Gram–Schmidt orthonormal frame of `e` is a linear isometry from `Lᵖ(E, μ|_U)` onto `Lp V p μ|_U`. -/
 def orthonormalLpSectionEquiv :
     LpSection 𝕜 F E p (μ.restrict e.baseSet) ≃ₗᵢ[𝕜] Lp V p (μ.restrict e.baseSet) :=
-  (e.isMeasurableIsometricFrame_orthonormalFrameExtend c b).lpSectionEquiv p
+  (e.isMeasurableIsometricFrame_orthonormalFrameAt c b).lpSectionEquiv p
 
 theorem coeFn_orthonormalLpSectionEquiv (f : LpSection 𝕜 F E p (μ.restrict e.baseSet)) :
     ∀ᵐ x ∂μ.restrict e.baseSet, ∀ hx : x ∈ e.baseSet,
       e.orthonormalLpSectionEquiv p μ c b f x = (e.orthonormalFrame c b ⟨x, hx⟩).symm (f x) := by
   filter_upwards
-    [(e.isMeasurableIsometricFrame_orthonormalFrameExtend c b).coeFn_lpSectionEquiv p f]
+    [(e.isMeasurableIsometricFrame_orthonormalFrameAt c b).coeFn_lpSectionEquiv p f]
     with x h hx
   rw [orthonormalLpSectionEquiv, h]
-  simp [orthonormalFrameExtend, hx]
+  rw [e.orthonormalFrameAt_of_mem c b hx]
 
 theorem coeFn_orthonormalLpSectionEquiv_symm (g : Lp V p (μ.restrict e.baseSet)) :
     ∀ᵐ x ∂μ.restrict e.baseSet, ∀ hx : x ∈ e.baseSet,
       (e.orthonormalLpSectionEquiv p μ c b).symm g x = e.orthonormalFrame c b ⟨x, hx⟩ (g x) := by
   filter_upwards
-    [(e.isMeasurableIsometricFrame_orthonormalFrameExtend c b).coeFn_lpSectionEquiv_symm p g]
+    [(e.isMeasurableIsometricFrame_orthonormalFrameAt c b).coeFn_lpSectionEquiv_symm p g]
     with x h hx
   rw [orthonormalLpSectionEquiv, h]
-  simp [orthonormalFrameExtend, hx]
+  rw [e.orthonormalFrameAt_of_mem c b hx]
 
 end Unitary
 
@@ -223,22 +216,19 @@ def lpSectionEquivOfBounds :
         rw [h1, h2, e.apply_mk_symm (hUe hx)] }
     C' C
     (fun f ↦ by
-      simp only [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp,
-        LpSection.norm_def]
-      refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
-      rw [ENNReal.ofReal_mul C'.coe_nonneg, ENNReal.ofReal_toReal f.memLp_norm.eLpNorm_ne_top]
-      refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-        (memLp_coord_of_bound e hU hUe C' hC' f).aestronglyMeasurable ?_ p
-      filter_upwards [ae_restrict_mem hU] with x hx
-      simpa only [norm_norm, e.symm_apply_apply_mk (hUe hx)] using hC' x hx (e ⟨x, f x⟩).2)
+      rw [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, LpSection.norm_eq_norm_toLp]
+      refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+      filter_upwards [MemLp.coeFn_toLp (memLp_coord_of_bound e hU hUe C' hC' f),
+        MemLp.coeFn_toLp f.memLp_norm, ae_restrict_mem hU] with x h1 h2 hx
+      rw [h1, h2, norm_norm]
+      simpa only [e.symm_apply_apply_mk (hUe hx)] using hC' x hx (e ⟨x, f x⟩).2)
     (fun g ↦ by
-      simp only [LinearEquiv.coe_symm_mk', LpSection.norm_mk, Lp.norm_def]
-      refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
-      rw [ENNReal.ofReal_mul C.coe_nonneg, ENNReal.ofReal_toReal (Lp.memLp g).eLpNorm_ne_top]
-      refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-        (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g).aestronglyMeasurable ?_ p
-      filter_upwards [ae_restrict_mem hU] with x hx
-      simpa only [norm_norm] using hC x hx (g x))
+      rw [LinearEquiv.coe_symm_mk', LpSection.norm_mk_eq_norm_toLp]
+      refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+      filter_upwards [MemLp.coeFn_toLp (memLp_norm_symm_of_bound (𝕜 := 𝕜) e hU hUe C hC g),
+        ae_restrict_mem hU] with x h1 hx
+      rw [h1, norm_norm]
+      exact hC x hx (g x))
 
 theorem coeFn_lpSectionEquivOfBounds (f : LpSection 𝕜 F E p (μ.restrict U)) :
     ∀ᵐ x ∂μ.restrict U,

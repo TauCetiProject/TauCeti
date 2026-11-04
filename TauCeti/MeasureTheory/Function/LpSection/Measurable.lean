@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 public import TauCeti.Topology.VectorBundle.Section
+public import TauCeti.Topology.FiberBundle.Countable
 
 /-!
 # Almost everywhere strongly measurable sections of vector bundles
@@ -231,28 +232,13 @@ theorem aestronglyMeasurableSection_iff_of_iUnion_baseSet_eq_univ {ι : Type*} [
     (fun i ↦ (e i).open_baseSet.measurableSet)
     e fun _ ↦ subset_rfl, he, Measure.restrict_univ]
 
-omit [∀ x, NormedSpace 𝕜 (E x)] [VectorBundle 𝕜 F E] [OpensMeasurableSpace B] [MeasurableSpace B] in
-variable (F E) in
-/-- Over a second-countable base, countably many charts `trivializationAt F E (p n)` cover the base
-(the index set is nonempty when the base is). -/
-theorem exists_iUnion_baseSet_trivializationAt_eq_univ [Nonempty B] :
-    ∃ p : ℕ → B, ⋃ n, (trivializationAt F E (p n)).baseSet = univ := by
-  obtain ⟨t, ht, htU⟩ := countable_cover_nhds (U := fun x ↦ (trivializationAt F E x).baseSet)
-    fun x ↦ (trivializationAt F E x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E x)
-  have hne : t.Nonempty := by
-    obtain ⟨x⟩ := ‹Nonempty B›
-    obtain ⟨y, hy, -⟩ := mem_iUnion₂.1 (htU.symm ▸ mem_univ x : x ∈ ⋃ y ∈ t, _)
-    exact ⟨y, hy⟩
-  obtain ⟨p, rfl⟩ := ht.exists_eq_range hne
-  exact ⟨p, by rwa [biUnion_range] at htU⟩
-
 /-- The fibre norm of an a.e.-strongly measurable section is a.e.-strongly measurable, when the
 fibre norm is continuous on the total space. -/
 theorem AEStronglyMeasurableSection.aestronglyMeasurable_norm [ContinuousFiberNorm F E]
     (hs : AEStronglyMeasurableSection 𝕜 F μ s) : AEStronglyMeasurable (fun x ↦ ‖s x‖) μ := by
   cases isEmpty_or_nonempty B
   · exact .of_subsingleton_dom
-  obtain ⟨p, hp⟩ := exists_iUnion_baseSet_trivializationAt_eq_univ F E (B := B)
+  obtain ⟨p, hp⟩ := FiberBundle.exists_iUnion_baseSet_trivializationAt_eq_univ F E (B := B)
   rw [← Measure.restrict_univ (μ := μ), ← hp, aestronglyMeasurable_iUnion_iff]
   intro n
   set e := trivializationAt F E (p n)
@@ -350,44 +336,37 @@ private theorem aestronglyMeasurable_coord_iff_orthonormalFrame (e : Trivializat
     {Φ : ∀ x, V ≃ₗᵢ[𝕜] E x} (hΦ : ∀ x (hx : x ∈ A), Φ x = e.orthonormalFrame c b ⟨x, hAe hx⟩) :
     AEStronglyMeasurable (fun x ↦ (e ⟨x, s x⟩).2) (μ.restrict A) ↔
       AEStronglyMeasurable (fun x ↦ (Φ x).symm (s x)) (μ.restrict A) := by
-  -- The Gram–Schmidt vectors, as sections over the whole base.
-  set u : ι → ∀ x, E x :=
-    fun i x ↦ InnerProductSpace.gramSchmidtNormed 𝕜 (fun j ↦ e.symmL 𝕜 x (c j)) i
-  have hu (x : B) (hx : x ∈ e.baseSet) (i : ι) : e.orthonormalBasis c ⟨x, hx⟩ i = u i x :=
-    e.orthonormalBasis_apply c ⟨x, hx⟩ i
-  have hcont (i : ι) : ContinuousOn (fun x ↦ (⟨x, u i x⟩ : TotalSpace F E)) e.baseSet := by
+  -- On `A`, the frame `Φ` is the chosen frame `e.orthonormalFrameAt c b`, whose coordinates are
+  -- continuous over `e.baseSet`; the two coordinate maps are continuous families of linear maps.
+  have hΦ' (x : B) (hx : x ∈ A) : Φ x = e.orthonormalFrameAt c b x := by
+    rw [hΦ x hx, e.orthonormalFrameAt_of_mem c b (hAe hx)]
+  have hframe (w : V) :
+      ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.orthonormalFrameAt c b x w)) e.baseSet := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (e.continuous_orthonormalBasis c i).congr fun y ↦ by rw [hu y y.2]; rfl
-  have hsymm (x : B) (hx : x ∈ A) (v : E x) : (Φ x).symm v = ∑ i, ⟪u i x, v⟫_𝕜 • b i := by
-    simp only [hΦ x hx, e.orthonormalFrame_symm_apply, hu x (hAe hx)]
-  have happ (x : B) (hx : x ∈ A) (w : V) : Φ x w = ∑ i, ⟪b i, w⟫_𝕜 • u i x := by
-    simp only [hΦ x hx, e.orthonormalFrame_apply, hu x (hAe hx)]
+    exact (OrthonormalFrameBundle.continuous_iff.1 (e.continuous_orthonormalFrame c b) w).congr
+      fun y ↦ by simp [e.orthonormalFrameAt_of_mem c b y.2]
   constructor
-  · -- The frame coordinates are `v ↦ ∑ i, ⟪u i x, e.symmL x v⟫ • b i` applied to the chart ones.
-    intro h
-    refine (h.apply_of_forall_of_continuous (g := fun x v ↦ ∑ i, ⟪u i x, e.symmL 𝕜 x v⟫_𝕜 • b i)
-      (fun v ↦ ?_) (fun x ↦ ?_)).congr ?_
-    · refine (ContinuousOn.mono ?_ hAe).aestronglyMeasurable hA
-      exact continuousOn_finsetSum _ fun i _ ↦
-        ((hcont i).inner_bundle_of_continuousFiberNorm (b := id)
-          (e.continuousOn_mk_symmL v)).smul continuousOn_const
-    · exact continuous_finsetSum _ fun i _ ↦
-        (continuous_const.inner (e.symmL 𝕜 x).continuous).smul continuous_const
-    · filter_upwards [ae_restrict_mem hA] with x hx
-      rw [hsymm x hx, e.symmL_apply (hAe hx), e.symm_apply_apply_mk (hAe hx)]
-  · -- The chart coordinates are `w ↦ ∑ i, ⟪b i, w⟫ • (e ⟨x, u i x⟩).2` applied to the frame ones.
-    intro h
+  · intro h
     refine (h.apply_of_forall_of_continuous
-      (g := fun x w ↦ ∑ i, ⟪b i, w⟫_𝕜 • (e ⟨x, u i x⟩).2) (fun w ↦ ?_) (fun x ↦ ?_)).congr ?_
-    · refine (ContinuousOn.mono ?_ hAe).aestronglyMeasurable hA
-      exact continuousOn_finsetSum _ fun i _ ↦ continuousOn_const.smul
-        (continuous_snd.comp_continuousOn (e.continuousOn.comp (hcont i) fun x hx ↦
-          e.mem_source.2 hx))
-    · exact continuous_finsetSum _ fun i _ ↦
-        (continuous_const.inner continuous_id).smul continuous_const
+      (g := fun x v ↦ (e.orthonormalFrameAt c b x).symm (e.symmL 𝕜 x v)) (fun v ↦ ?_)
+      (fun x ↦ (e.orthonormalFrameAt c b x).symm.continuous.comp (e.symmL 𝕜 x).continuous)).congr
+      ?_
+    · exact (((e.continuousOn_orthonormalFrameAt_symm c b).comp (e.continuousOn_mk_symmL v)
+        fun _ hx ↦ hx).mono hAe).aestronglyMeasurable hA
     · filter_upwards [ae_restrict_mem hA] with x hx
-      conv_rhs => rw [← (Φ x).apply_symm_apply (s x), happ x hx]
-      simp only [← e.continuousLinearMapAt_apply_of_mem (R := 𝕜) (hAe hx), map_sum, map_smul]
+      rw [hΦ' x hx, e.symmL_apply (hAe hx), e.symm_apply_apply_mk (hAe hx)]
+  · intro h
+    refine (h.apply_of_forall_of_continuous
+      (g := fun x w ↦ e.continuousLinearMapAt 𝕜 x (e.orthonormalFrameAt c b x w)) (fun w ↦ ?_)
+      (fun x ↦ (e.continuousLinearMapAt 𝕜 x).continuous.comp
+        (e.orthonormalFrameAt c b x).continuous)).congr ?_
+    · refine (ContinuousOn.congr ?_ fun x hx ↦
+        e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx _).mono hAe |>.aestronglyMeasurable hA
+      exact continuous_snd.comp_continuousOn
+        (e.continuousOn.comp (hframe w) fun x hx ↦ e.mem_source.2 hx)
+    · filter_upwards [ae_restrict_mem hA] with x hx
+      rw [← hΦ' x hx, LinearIsometryEquiv.apply_symm_apply,
+        e.continuousLinearMapAt_apply_of_mem (R := 𝕜) (hAe hx)]
 
 /-- **Gluing Gram–Schmidt frames.** Let `A i` be countably many measurable sets, each contained in
 the base set of an atlas chart `e i`, and let `Φ` agree on each `A i` with the Gram–Schmidt
@@ -428,7 +407,7 @@ theorem exists_isMeasurableIsometricFrame [FiniteDimensional 𝕜 F] [FiniteDime
       ⟨fun _ ↦ .of_subsingleton_dom, fun _ ↦ .of_isEmpty s⟩⟩
   let c := Module.finBasis 𝕜 F
   let b := (stdOrthonormalBasis 𝕜 V).reindex (finCongr hV)
-  obtain ⟨p, hp⟩ := exists_iUnion_baseSet_trivializationAt_eq_univ F E (B := B)
+  obtain ⟨p, hp⟩ := FiberBundle.exists_iUnion_baseSet_trivializationAt_eq_univ F E (B := B)
   let e (n : ℕ) := trivializationAt F E (p n)
   have hcover (x : B) : ∃ n, x ∈ (e n).baseSet := mem_iUnion.1 (hp.symm ▸ mem_univ x)
   -- Each point uses the chart of least index containing it.

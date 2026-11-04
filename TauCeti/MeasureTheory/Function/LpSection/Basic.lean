@@ -285,6 +285,14 @@ theorem norm_mk (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun
   rw [norm_def, eLpNorm_congr_ae (g := fun x ↦ ‖s x‖)
     ((coeFn_mk hs hsp).mono fun x hx ↦ by simp only [hx])]
 
+/-- The norm of a class in `Lᵖ(E, μ)` is the `Lp` norm of the fibre norm of a representative. -/
+theorem norm_eq_norm_toLp : ‖f‖ = ‖f.memLp_norm.toLp _‖ := by
+  rw [Lp.norm_toLp, norm_def]
+
+theorem norm_mk_eq_norm_toLp (hs : AEStronglyMeasurableSection 𝕜 F μ s)
+    (hsp : MemLp (fun x ↦ ‖s x‖) p μ) : ‖mk s hs hsp‖ = ‖hsp.toLp _‖ := by
+  rw [norm_mk, Lp.norm_toLp]
+
 /-- For finite `p ≠ 0`, the norm in `Lᵖ(E, μ)` is `(∫ ‖s x‖ ^ p ∂μ) ^ (1 / p)`. -/
 theorem norm_mk_eq_integral (hp0 : p ≠ 0) (hp : p ≠ ∞) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
@@ -479,9 +487,7 @@ instance instCompleteSpace [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)] :
     CompleteSpace (LpSection 𝕜 F E p μ) := by
   obtain ⟨Φ, hΦ⟩ := exists_isMeasurableIsometricFrame F E (EuclideanSpace 𝕜 (Fin (finrank 𝕜 F)))
     (finrank_euclideanSpace_fin)
-  let L := (hΦ μ).lpSectionEquiv p
-  exact (completeSpace_congr (e := L.toLinearEquiv.toEquiv) L.isometry.isUniformEmbedding).2
-    inferInstance
+  exact ((hΦ μ).lpSectionEquiv p).toIsometryEquiv.completeSpace
 
 end LpSection
 
