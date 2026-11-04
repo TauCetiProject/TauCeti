@@ -168,27 +168,27 @@ private theorem hasCompactSupport_truncation (T : ℝ) : HasCompactSupport (trun
   exact hz ⟨_, by simpa using not_lt.1 h, ContinuousLinearEquiv.apply_symm_apply _ _⟩
 
 /-- On the thrice-punctured sphere the cutoff is given by its product formula nearby. -/
-private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) :
+private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) :
     truncation T =ᶠ[𝓝 z] fun z' ↦ ∏ q, (1 - smoothTransition (endHeight q z' - T)) := by
   filter_upwards [isOpen_puncturedPlane.mem_nhds hz] with z' hz'
-  rw [truncation, ite_eq_right (not_or.2 hz')]
+  rw [truncation, ite_eq_right (not_or.2 (mem_puncturedPlane_iff.1 hz'))]
 
 private theorem contDiff_truncation (T : ℝ) : ContDiff ℝ 1 (truncation T) := by
   refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
   by_cases hz : Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1
   · exact contDiffAt_const.congr_of_eventuallyEq (truncation_eventuallyEq_zero T hz)
   · have hz' := not_or.1 hz
-    refine ContDiffAt.congr_of_eventuallyEq ?_ (truncation_eventuallyEq_prod T hz')
+    refine ContDiffAt.congr_of_eventuallyEq ?_
+      (truncation_eventuallyEq_prod T (mem_puncturedPlane_iff.2 hz'))
     exact contDiffAt_prod fun q _ ↦ contDiffAt_const.sub
       (smoothTransition.contDiffAt.comp z
         ((contDiffAt_endHeight q (ne_endCenter hz' q)).sub contDiffAt_const))
 
 /-- The support of the cutoff stays away from the punctures. -/
 private theorem mem_tsupport_truncation {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ tsupport (truncation T)) :
-    Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 := by
+    z ∈ puncturedPlane := by
   by_contra h
-  rw [not_and_or, not_not, not_not] at h
+  rw [mem_puncturedPlane_iff, not_and_or, not_not, not_not] at h
   exact (notMem_tsupport_iff_eventuallyEq.2 (truncation_eventuallyEq_zero T h)) hz
 
 private theorem truncation_mem_Icc (T : ℝ) (z : ℝ × ℝ) : truncation T z ∈ Icc 0 1 := by
@@ -201,24 +201,22 @@ private theorem truncation_mem_Icc (T : ℝ) (z : ℝ × ℝ) : truncation T z �
 
 /-- At a point of the thrice-punctured sphere where every end height is below `T`, the cutoff
 is `1` nearby. -/
-private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ puncturedPlane)
     (hT : ∀ q, endHeight q z < T) : truncation T =ᶠ[𝓝 z] fun _ ↦ 1 := by
   have hev : ∀ᶠ z' in 𝓝 z, ∀ q, endHeight q z' < T := eventually_all.2 fun q ↦
-    (contDiffAt_endHeight q (ne_endCenter hz q) (n := 0)).continuousAt.eventually
-      (gt_mem_nhds (hT q))
+    (contDiffAt_endHeight q (ne_endCenter (mem_puncturedPlane_iff.1 hz) q)
+      (n := 0)).continuousAt.eventually (gt_mem_nhds (hT q))
   filter_upwards [truncation_eventuallyEq_prod T hz, hev] with z' h₁ h₂
   rw [h₁]
   exact Finset.prod_eq_one fun q _ ↦ by
     rw [smoothTransition.zero_of_nonpos (by linarith [h₂ q]), sub_zero]
 
 /-- As the height tends to infinity, the cutoff tends to `1` on the thrice-punctured sphere. -/
-private theorem tendsto_truncation {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) :
+private theorem tendsto_truncation {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) :
     Tendsto (fun T ↦ truncation T z) atTop (𝓝 1) := by
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [eventually_all.2 fun q ↦ eventually_ge_atTop (endHeight q z)] with T hT
-  rw [truncation, ite_eq_right (not_or.2 hz)]
+  rw [truncation, ite_eq_right (not_or.2 (mem_puncturedPlane_iff.1 hz))]
   exact (Finset.prod_eq_one fun q _ ↦ by
     rw [smoothTransition.zero_of_nonpos (by linarith [hT q]), sub_zero]).symm
 
@@ -644,8 +642,7 @@ period-one `C¹` Hamiltonians `H_q` on the ends of `S = ℂ ∖ {0, 1}`, with co
 the negative (output) end, minus the integrated curvature. -/
 theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u
-      {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1})
+    (hu : ContDiffOn ℝ 2 u puncturedPlane)
     (hE : Integrable (ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u))
@@ -675,8 +672,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm
   have hae : ∀ᵐ z : ℝ × ℝ, z ∈ puncturedPlane := by
     refine measure_mono_null (t := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1})
       (fun z hz ↦ ?_) ?_
-    · have hz' : ¬(Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) :=
-        hz
+    · have hz' := mem_puncturedPlane_iff.not.1 hz
       rcases not_and_or.1 hz' with h | h
       · exact Or.inl (by rw [← not_not.1 h, ContinuousLinearEquiv.apply_symm_apply])
       · exact Or.inr (by

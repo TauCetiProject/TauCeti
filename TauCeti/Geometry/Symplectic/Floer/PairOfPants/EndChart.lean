@@ -62,7 +62,7 @@ namespace Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
 /-- The pair of pants `S = ℂ ∖ {0, 1}`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
-@[expose] def puncturedPlane : Set (ℝ × ℝ) :=
+def puncturedPlane : Set (ℝ × ℝ) :=
   {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
 
 /-- A point lies in `S` when, as a complex number, it is neither `0` nor `1`. -/
@@ -198,14 +198,14 @@ theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := by
 
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
-theorem mem_image_endChart {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ puncturedPlane)
     {q : Puncture} (hq : 1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
     z ∈ endChart q '' endStrip q := by
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
     ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
   rw [endChart, ContinuousLinearEquiv.symm_apply_apply,
-    q.cylindricalEndLift_endCoord (ne_endCenter hz q), ContinuousLinearEquiv.apply_symm_apply]
+    q.cylindricalEndLift_endCoord (ne_endCenter (mem_puncturedPlane_iff.1 hz) q),
+    ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The strip of an end is measurable. -/
 theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
