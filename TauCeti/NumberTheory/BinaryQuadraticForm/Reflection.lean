@@ -67,6 +67,13 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
     f.reflected.IsPrimitive ↔ f.IsPrimitive := by
   rw [isPrimitive_iff, isPrimitive_iff, content_reflected]
 
+/-- Reflection preserves the primitive positive definite forms of discriminant `-n`. -/
+theorem reflected_mem_posDef_inf_primitiveForms_iff {n : ℕ} [NeZero n]
+    {f : BinaryQuadraticForm ℤ} :
+    f.reflected ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ⊓ primitiveForms (-n) := by
+  simp only [mem_posDef_inf_primitiveForms, discrim_reflected, reflected_a,
+    isPrimitive_reflected_iff]
+
 /-- Primitive normalization commutes with reflection, including for the zero form. -/
 @[simp] theorem primPart_reflected (f : BinaryQuadraticForm ℤ) :
     f.reflected.primPart = f.primPart.reflected := by
