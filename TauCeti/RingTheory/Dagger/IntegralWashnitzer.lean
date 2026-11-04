@@ -61,7 +61,9 @@ ball of the Tate algebra `T = K⟨X⟩`. Overconvergent series are dense in `T°
 * `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff`: `f ∈ R°⟨X⟩†` iff `f` is overconvergent and all
   its coefficients have norm at most one; equivalently
   (`TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_norm_le_one`), `f` lies in the closed unit
-  ball for the Gauss norm.
+  ball for the Gauss norm. Over a nontrivially normed field this says that `K°⟨X⟩†` is the ring of
+  power-bounded elements of `K⟨X⟩†`
+  (`TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_isPowerBounded`).
 * `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow`: the
   Monsky–Washnitzer degree growth condition in coefficient form. For finitely many variables and
   any `0 < q < 1`, `f ∈ R°⟨X⟩†` iff `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` for some integer `c > 0`.
@@ -860,5 +862,22 @@ end intWashnitzerAlgebra
 end NormedField
 
 end AdicCompletion
+
+end TauCeti.Dagger
+
+/-! The power-bounded characterisation is stated outside the scope of
+`MvPowerSeries.WithPiTopology` opened above, so that power-boundedness refers to the Gauss norm
+topology of `K⟨X⟩†` rather than to the coefficientwise topology. -/
+
+namespace TauCeti.Dagger
+
+variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- **The integral Monsky–Washnitzer algebra is the ring of power-bounded elements**: an
+overconvergent series has all its coefficients in `K°` iff it is power-bounded for the Gauss norm
+topology. -/
+theorem mem_intWashnitzerAlgebra_iff_isPowerBounded {f : washnitzerAlgebra σ K} :
+    (f : MvPowerSeries σ K) ∈ intWashnitzerAlgebra σ K ↔ Huber.IsPowerBounded f := by
+  rw [mem_intWashnitzerAlgebra_iff_norm_le_one, washnitzerAlgebra.isPowerBounded_iff_norm_le_one]
 
 end TauCeti.Dagger
