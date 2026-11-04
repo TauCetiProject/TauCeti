@@ -100,9 +100,11 @@ theorem toMatrix_piTensorProductMap_mulVecLin [CommSemiring R] [Fintype m] [Deci
 /-- **Commuting with the Kronecker power of a monomial matrix.** Let `A` be the monomial matrix
 sending the `y`-th basis vector to `d y` times the `π y`-th one, so `A x y = d y` when `x = π y`
 and `0` otherwise. If `M` commutes with the Kronecker power of `A`, then relabelling both indices
-of an entry of `M` by `π` multiplies it by the weight of the column index and divides it by the
-weight of the row index:
-`M (π ∘ v) (π ∘ u) * ∏ i, d (u i) = (∏ i, d (v i)) * M v u`. -/
+of an entry of `M` by `π` satisfies the cross-multiplied identity
+`M (π ∘ v) (π ∘ u) * ∏ i, d (u i) = (∏ i, d (v i)) * M v u`,
+with the column weight `∏ i, d (u i)` on the left and the row weight `∏ i, d (v i)` on the right.
+When the column weight is invertible, the relabelled entry is therefore the original entry
+multiplied by the row weight and divided by the column weight. -/
 theorem apply_comp_mul_prod_of_commute_kroneckerPower [CommSemiring R] [Fintype m]
     [DecidableEq m] [Fintype κ] [DecidableEq κ] {M : Matrix (κ → m) (κ → m) R}
     (π : Equiv.Perm m) (d : m → R)

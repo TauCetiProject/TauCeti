@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
+public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.TensorPower
 import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Data.Sum.Basic
 import TauCeti.LinearAlgebra.Matrix.KroneckerPower
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -61,8 +62,6 @@ there, hence everywhere.
 
 ## Main results
 
-* `TauCeti.symplecticCrossing_mem_centralizer` and `TauCeti.symplecticCupCap_mem_centralizer`: the
-  two Brauer diagrams lie in the commutant.
 * `TauCeti.mem_centralizer_stdSymplecticRep_tensorPower_two_iff`: the operators commuting with the
   symplectic group on two strands are the combinations of the identity, the crossing and the
   cap-cup diagram.
@@ -449,13 +448,6 @@ private theorem relation_mixed
   · linear_combination h₁
   · linear_combination h₂
 
-/-- If two labels lie in distinct pairs, there is a pair index other than `i₀`. -/
-private theorem exists_ne_of_ne_swap {p q : Fin n ⊕ Fin n} (h : q ≠ p) (h' : q ≠ p.swap)
-    (i₀ : Fin n) : ∃ j, j ≠ i₀ := by
-  by_contra hcon
-  simp only [not_exists, not_not] at hcon
-  rcases p with i | i <;> rcases q with k | k <;> simp_all
-
 /-- **A matrix commuting with the symplectic group on two strands vanishes** as soon as it
 vanishes at the three entries `(e_a ⊗ e_b, e_a ⊗ e_b)`, `(e_b ⊗ e_a, e_a ⊗ e_b)` and
 `(e_c ⊗ e_d, e_a ⊗ e_b)`, for `a = inl i₀`, `b = inr i₀` and every other pair `(c, d)`. -/
@@ -512,7 +504,8 @@ private theorem eq_zero_of_commute [IsDomain K]
     · rw [hqp]; exact hdiag s
     by_cases hqp' : s = r.swap
     · rw [hqp']; exact hpair r
-    obtain ⟨j, hj⟩ := exists_ne_of_ne_swap (Ne.symm hqp) hqp' i₀
+    have := Sum.nontrivial_of_ne_of_ne_swap (Ne.symm hqp) hqp'
+    obtain ⟨j, hj⟩ := exists_ne i₀
     obtain ⟨π, d, hπ, hr, hs⟩ :=
       exists_isSympMonomial_apply_eq_apply_eq (K := K) (Ne.symm hqp) hqp' (Ne.symm hj)
     exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hr, hs]; exact hα j hj)
@@ -521,7 +514,8 @@ private theorem eq_zero_of_commute [IsDomain K]
     by_cases hqp' : r = s.swap
     · rw [hqp']; exact hpair' s
     have hsr : s ≠ r.swap := fun e => hqp' (by rw [e, Sum.swap_swap])
-    obtain ⟨j, hj⟩ := exists_ne_of_ne_swap (Ne.symm hqp) hsr i₀
+    have := Sum.nontrivial_of_ne_of_ne_swap (Ne.symm hqp) hsr
+    obtain ⟨j, hj⟩ := exists_ne i₀
     obtain ⟨π, d, hπ, hr, hs⟩ :=
       exists_isSympMonomial_apply_eq_apply_eq (K := K) (Ne.symm hqp) hsr (Ne.symm hj)
     exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hr, hs]; exact hβ j hj)
@@ -530,7 +524,8 @@ private theorem eq_zero_of_commute [IsDomain K]
     by_cases hrp' : r = p.swap
     · rw [hrp', Sum.swap_swap]; exact hpair' p
     have hpr : p ≠ r.swap := fun e => hrp' (by rw [e, Sum.swap_swap])
-    obtain ⟨j, hj⟩ := exists_ne_of_ne_swap hrp hrp' i₀
+    have := Sum.nontrivial_of_ne_of_ne_swap hrp hrp'
+    obtain ⟨j, hj⟩ := exists_ne i₀
     obtain ⟨π, d, hπ, hr, hp⟩ :=
       exists_isSympMonomial_apply_eq_apply_eq (K := K) (Ne.symm hrp) hpr (Ne.symm hj)
     refine apply_eq_zero_of_apply_eq_zero hM hπ ?_
@@ -544,24 +539,6 @@ end Commutant
 section Duality
 
 variable {K : Type*} [CommRing K] {n : ℕ}
-
-/-- The crossing commutes with the symplectic group, so it lies in the commutant of the symplectic
-group on two strands. -/
-theorem symplecticCrossing_mem_centralizer :
-    symplecticCrossing K n ∈
-      Subalgebra.centralizer K (Set.range ((stdSymplecticRep K n).tensorPower 2)) := by
-  rw [Subalgebra.mem_centralizer_iff]
-  rintro _ ⟨g, rfl⟩
-  exact (commute_symplecticCrossing_tensorPower K n g).symm.eq
-
-/-- The cap-cup diagram commutes with the symplectic group, so it lies in the commutant of the
-symplectic group on two strands. -/
-theorem symplecticCupCap_mem_centralizer :
-    symplecticCupCap K n ∈
-      Subalgebra.centralizer K (Set.range ((stdSymplecticRep K n).tensorPower 2)) := by
-  rw [Subalgebra.mem_centralizer_iff]
-  rintro _ ⟨g, rfl⟩
-  exact (commute_symplecticCupCap_tensorPower K n g).symm.eq
 
 /-- A combination of the identity, the crossing and the cap-cup diagram lies in the commutant. -/
 private theorem combination_mem_centralizer (x y z : K) :
