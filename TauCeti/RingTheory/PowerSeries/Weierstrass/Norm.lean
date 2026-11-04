@@ -14,9 +14,9 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Charpoly
 
 import Mathlib.NumberTheory.Multiplicity
 import Mathlib.RingTheory.Norm.Basic
-import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Norm.Cokernel
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -35,6 +35,9 @@ the class of `φ`. This file reads the kernel `N[φ]` and the cokernel `N ⧸ φ
   `A ⧸ (norm)`;
 * over an infinite domain, when the norm vanishes, `N ⧸ φ N` is infinite;
 * for a polynomial `φ = P`, the norm is the resultant `Res(f, P)`.
+
+The first three are the Weierstrass cases of the corresponding statements for any finite free
+algebra (`TauCeti.Algebra.torsionBy_eq_bot_iff_norm_ne_zero` and its companions).
 
 Over an infinite principal ideal domain with finite quotients, such as a discrete valuation ring
 `O` with finite residue field, `N ⧸ φ N` is therefore finite exactly when the norm of `φ` is
@@ -71,7 +74,6 @@ module.
 public section
 
 open IsLocalRing
-open scoped Pointwise
 
 namespace PowerSeries.IsWeierstrassFactorizationAt
 
@@ -101,9 +103,7 @@ theorem torsionBy_eq_bot_iff [IsDomain A] (φ : A⟦X⟧) :
       Algebra.norm A (Ideal.Quotient.mk (Ideal.span {g}) φ) ≠ 0 := by
   have := H.free_quotient
   have := H.finite_quotient
-  rw [Algebra.norm_apply, ne_eq, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not,
-    LinearMap.ker_eq_bot', Submodule.eq_bot_iff]
-  simp [Submodule.mem_torsionBy_iff, TauCeti.Ideal.Quotient.smul_eq_lmul_mk A]
+  exact TauCeti.Algebra.torsionBy_eq_bot_iff_norm_ne_zero φ
 
 /-- **Cokernel of multiplication on a Weierstrass quotient.** Over a principal ideal domain, if the
 norm over `A` of the class of a series `φ` is nonzero, then `A⟦X⟧ ⧸ (g)` modulo `φ` has as many
@@ -114,10 +114,7 @@ theorem natCard_quotSMulTop [IsDomain A] [IsPrincipalIdealRing A] {φ : A⟦X⟧
       Nat.card (A ⧸ Ideal.span {Algebra.norm A (Ideal.Quotient.mk (Ideal.span {g}) φ)}) := by
   have := H.free_quotient
   have := H.finite_quotient
-  rw [Algebra.norm_apply] at hφ ⊢
-  rw [← LinearMap.card_quotient_range_eq_card_quotient_span_det hφ,
-    ← TauCeti.Ideal.Quotient.restrictScalars_smul_top_eq_range_lmul]
-  exact Nat.card_congr (Submodule.Quotient.restrictScalarsEquiv A _).toEquiv.symm
+  exact TauCeti.Algebra.natCard_quotSMulTop_of_norm_ne_zero hφ
 
 /-- **Infinite cokernel on a Weierstrass quotient.** Over an infinite domain, if the norm over `A`
 of the class of a series `φ` vanishes, then `A⟦X⟧ ⧸ (g)` modulo `φ` is infinite. -/
@@ -126,10 +123,7 @@ theorem infinite_quotSMulTop [IsDomain A] [Infinite A] {φ : A⟦X⟧}
     Infinite (QuotSMulTop φ (A⟦X⟧ ⧸ Ideal.span {g})) := by
   have := H.free_quotient
   have := H.finite_quotient
-  rw [Algebra.norm_apply] at hφ
-  have := LinearMap.infinite_quotient_range_of_det_eq_zero hφ
-  rw [← TauCeti.Ideal.Quotient.restrictScalars_smul_top_eq_range_lmul] at this
-  exact Infinite.of_injective _ (Submodule.Quotient.restrictScalarsEquiv A _).injective
+  exact TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero hφ
 
 /-- **Finite cokernels on a Weierstrass quotient.** If `A` is an infinite principal ideal domain
 whose quotients by nonzero ideals are finite, for instance a discrete valuation ring with finite
@@ -139,12 +133,9 @@ theorem finite_quotSMulTop_iff [IsDomain A] [IsPrincipalIdealRing A] [Infinite A
     [Ring.HasFiniteQuotients A] (φ : A⟦X⟧) :
     Finite (QuotSMulTop φ (A⟦X⟧ ⧸ Ideal.span {g})) ↔
       Algebra.norm A (Ideal.Quotient.mk (Ideal.span {g}) φ) ≠ 0 := by
-  refine ⟨fun hfin hφ ↦ ?_, fun hφ ↦ ?_⟩
-  · exact not_finite_iff_infinite.mpr (H.infinite_quotSMulTop hφ) hfin
-  · have := Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hφ)
-    refine Nat.finite_of_card_ne_zero ?_
-    rw [H.natCard_quotSMulTop hφ]
-    exact Nat.card_pos.ne'
+  have := H.free_quotient
+  have := H.finite_quotient
+  exact TauCeti.Algebra.finite_quotSMulTop_iff_norm_ne_zero φ
 
 end PowerSeries.IsWeierstrassFactorizationAt
 
