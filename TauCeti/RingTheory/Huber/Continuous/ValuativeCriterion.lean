@@ -61,8 +61,8 @@ then already continuous, because a vanishing value is cofinal for free.
 
 The construction separates `x` from the integral closure of `B` inside `Frac R`, so it needs `R`
 to be a domain. The general case reduces to it modulo a prime. If `x` is not integral over `B`,
-then by `TauCeti.isIntegral_of_forall_isPrime_map` its image in `R ⧸ J` is not integral over the
-image of `B` for some prime `J`. The quotient is again a Huber ring
+then by `TauCeti.isIntegral_of_forall_isMinimalPrime_map` its image in `R ⧸ J` is not integral
+over the image of `B` for some prime `J`. The quotient is again a Huber ring
 (`TauCeti.Huber.IsHuberRing.quotient`), the image of `B` is open because the quotient map is, and
 every open subring of a Huber ring contains a ring of definition
 (`TauCeti.Huber.exists_pairOfDefinition_ringOfDefinition_le`). So the domain case applies in
@@ -404,7 +404,7 @@ theorem exists_continuous_valuation_of_not_isIntegral [IsHuberRing R] {B : Subri
       ¬ IsIntegral (B.map (Ideal.Quotient.mk J)) (Ideal.Quotient.mk J x) := by
     by_contra h
     push Not at h
-    exact hx (isIntegral_of_forall_isPrime_map h)
+    exact hx (isIntegral_of_forall_isMinimalPrime_map fun J hJ ↦ h J hJ.isPrime)
   have := hJ
   have hBJ : IsOpen ((B.map (Ideal.Quotient.mk J) : Subring (R ⧸ J)) : Set (R ⧸ J)) := by
     rw [Subring.coe_map]

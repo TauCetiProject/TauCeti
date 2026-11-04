@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
@@ -90,6 +90,17 @@ theorem mapOrientation_apply (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b
     (hb : b ∈ e.baseSet) (o : Orientation ℝ (E b) ι) :
     e.mapOrientation ι hb o = Orientation.map ι (e.linearEquivAt ℝ b hb) o :=
   (rfl)
+
+/-- Reading an orientation in a pulled-back chart agrees with reading it in the original
+chart at the image point. -/
+@[simp]
+theorem mapOrientation_pullback {B' : Type*} [TopologicalSpace B']
+    {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] (f : K) {b : B'}
+    (hb : b ∈ (e.pullback f).baseSet) (o : Orientation ℝ (E (f b)) ι) :
+    (e.pullback f).mapOrientation ι hb o =
+      e.mapOrientation ι (by simpa only [pullback_baseSet, Set.mem_preimage] using hb) o := by
+  exact congrArg (fun L ↦ Orientation.map ι L o) (e.linearEquivAt_pullback f b hb)
 
 @[simp]
 theorem mapOrientation_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}

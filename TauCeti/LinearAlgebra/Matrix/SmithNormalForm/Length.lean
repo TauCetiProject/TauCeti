@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 import Mathlib.LinearAlgebra.Quotient.Pi
 
@@ -18,7 +18,7 @@ this computes the cokernel length by the normalized valuation of the determinant
 to a trace Gram matrix, this is the linear algebra input to the discriminant-length formula.
 
 The diagonal computation works over any commutative ring, including for zero entries.
-The general computation uses `Matrix.exists_mul_mul_eq_diagonal_of_det_ne_zero` and
+The general computation uses `Matrix.exists_mul_mul_eq_diagonal` and
 invariance of quotients under linear equivalences; no choice of uniformizer is needed.
 
 ## References
@@ -58,7 +58,7 @@ usual determinant valuation formula. -/
 theorem length_quotient_range_mulVecLin_eq_ord_det [IsDomain R] [IsPrincipalIdealRing R]
     (A : Matrix ι ι R) (hA : A.det ≠ 0) :
     Module.length R ((ι → R) ⧸ LinearMap.range A.mulVecLin) = Ring.ord R A.det := by
-  obtain ⟨L, Q, d, hL, hQ, hdiag⟩ := A.exists_mul_mul_eq_diagonal_of_det_ne_zero hA
+  obtain ⟨L, Q, d, hL, hQ, hdiag⟩ := A.exists_mul_mul_eq_diagonal
   let e : (ι → R) ≃ₗ[R] (ι → R) := LinearEquiv.ofBijective L.mulVecLin
     ⟨mulVec_injective_of_isUnit (L.isUnit_iff_isUnit_det.mpr hL),
       mulVec_surjective_iff_isUnit.mpr (L.isUnit_iff_isUnit_det.mpr hL)⟩

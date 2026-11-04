@@ -99,6 +99,22 @@ theorem map_mul_val_inv_unitT (hτ : IsMarkovTrace z τ) {n : ℕ}
     hτ.map_mul_T hx, smul_eq_mul]
   ring
 
+/-- Positive stabilization has constant `z`, independently of the strand count. -/
+theorem map_braidHom_stabilize (hτ : IsMarkovTrace z τ) {n : ℕ} (b : BraidGroup (n + 1)) :
+    τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n))) =
+      z * τ (braidHom R q (n + 1) b) := by
+  simp only [map_mul, braidHom_strandIncl, braidHom_sigma, Units.val_mul, val_unitT,
+    Fin.val_last]
+  exact hτ.map_mul_T (braidHom_mem_stage b)
+
+/-- Negative stabilization has constant `z - (q - q⁻¹)`, dictated by the Hecke relation. -/
+theorem map_braidHom_stabilizeInv (hτ : IsMarkovTrace z τ) {n : ℕ} (b : BraidGroup (n + 1)) :
+    τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹)) =
+      (z - ((q : R) - ↑q⁻¹)) * τ (braidHom R q (n + 1) b) := by
+  simp only [map_mul, map_inv, braidHom_strandIncl, braidHom_sigma, Units.val_mul,
+    Fin.val_last]
+  exact hτ.map_mul_val_inv_unitT (braidHom_mem_stage b)
+
 /-- **Uniqueness of the Ocneanu trace.** Two Markov traces with the same parameter are equal. -/
 theorem unique {τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R} (hτ : IsMarkovTrace z τ)
     (hτ' : IsMarkovTrace z τ') : τ = τ' :=
