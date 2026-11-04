@@ -178,13 +178,8 @@ theorem IsGorensteinProjective.isTotallyReflexive {M : ModuleCat.{u} A}
   refine ⟨hM.finite, hP.bijective_opDualEval 0 i.symm, fun n e ↦ hM.ext_eq_zero _ e,
     fun n e ↦ ?_⟩
   -- Transport along the dual `M* ≅ (Z⁰)*` of `Z⁰ ≅ M`.
-  let d : ModuleCat.of Aᵐᵒᵖ (Module.Dual A M) ≅
-      ModuleCat.of Aᵐᵒᵖ (Module.Dual A (P.cycles 0)) :=
-    { hom := ModuleCat.ofHom (i.hom.hom.lcomp Aᵐᵒᵖ A)
-      inv := ModuleCat.ofHom (i.inv.hom.lcomp Aᵐᵒᵖ A)
-      hom_inv_id := by ext φ x; simp
-      inv_hom_id := by ext φ x; simp }
-  exact ext_eq_zero_of_iso d (hP.ext_dual_cycles_eq_zero n 0) e
+  exact ext_eq_zero_of_iso (LinearEquiv.congrLeft A Aᵐᵒᵖ i.symm.toLinearEquiv).toModuleIso
+    (hP.ext_dual_cycles_eq_zero n 0) e
 
 end TauCeti
 
@@ -201,7 +196,7 @@ private def extOrthogonal : ObjectProperty (ModuleCat.{u} A) := fun X ↦
 the last term of a sequence `0 ⟶ X' ⟶ Aⁿ ⟶ X ⟶ 0` with `X'` of the same kind. -/
 private theorem exists_syzygy [IsNoetherianRing A] (X : ModuleCat.{u} A)
     (hX : extOrthogonal A X) : ∃ S : ShortComplex (ModuleCat.{u} A),
-      IsCompleteResolutionStep S ∧ extOrthogonal A S.X₁ ∧ Nonempty (S.X₃ ≅ X) := by
+      S.IsCompleteResolutionStep ∧ extOrthogonal A S.X₁ ∧ Nonempty (S.X₃ ≅ X) := by
   have := hX.1
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' A X
   let S := ModuleCat.shortComplexOfCompEqZero (LinearMap.ker π).subtype π (by ext; simp)
@@ -218,7 +213,7 @@ private theorem exists_syzygy [IsNoetherianRing A] (X : ModuleCat.{u} A)
 `M*`. -/
 private theorem exists_cosyzygy [IsNoetherianRing Aᵐᵒᵖ] (M : ModuleCat.{u} A)
     (hM : IsTotallyReflexive A M) : ∃ S : ShortComplex (ModuleCat.{u} A),
-      IsCompleteResolutionStep S ∧ IsTotallyReflexive A S.X₃ ∧ Nonempty (S.X₁ ≅ M) := by
+      S.IsCompleteResolutionStep ∧ IsTotallyReflexive A S.X₃ ∧ Nonempty (S.X₁ ≅ M) := by
   have := hM.finite
   -- `M*` embeds in the dual of a finite free module, so it is finitely generated.
   obtain ⟨r, π, hπ⟩ := Module.Finite.exists_fin' A M

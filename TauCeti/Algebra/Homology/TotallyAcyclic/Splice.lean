@@ -21,6 +21,11 @@ Consequently, a module is Gorenstein-projective as soon as it lies in a class `R
 admit such sequences `0 ⟶ X ⟶ P ⟶ X' ⟶ 0` with `X'` again in `R` (cosyzygies), inside a class `L`
 of modules that admit such sequences `0 ⟶ X' ⟶ P ⟶ X ⟶ 0` with `X'` again in `L` (syzygies).
 
+## Main definitions
+
+* `CategoryTheory.ShortComplex.IsCompleteResolutionStep`: a short exact sequence with finitely
+  generated projective middle term, along which functionals extend.
+
 ## Main results
 
 * `CochainComplex.isTotallyAcyclic_splice`: a splice of short exact sequences with finitely
@@ -80,7 +85,7 @@ theorem isTotallyAcyclic_splice (hS : ∀ n, (S n).ShortExact)
 
 end CochainComplex
 
-namespace TauCeti
+namespace CategoryTheory.ShortComplex
 
 variable {A : Type u} [Ring A]
 
@@ -92,6 +97,12 @@ structure IsCompleteResolutionStep (S : ShortComplex (ModuleCat.{v} A)) : Prop w
   projective : Projective S.X₂
   exists_comp_eq (φ : S.X₁ →ₗ[A] A) : ∃ ψ : S.X₂ →ₗ[A] A, ψ ∘ₗ S.f.hom = φ
 
+end CategoryTheory.ShortComplex
+
+namespace TauCeti
+
+variable {A : Type u} [Ring A]
+
 /-- **Gorenstein-projective modules from syzygies and cosyzygies.** Let `R ≤ L` be classes of
 modules. Suppose every module `X` in `L` is the last term of a sequence `0 ⟶ X' ⟶ P ⟶ X ⟶ 0` with
 `X'` in `L`, and every `X` in `R` is the first term of a sequence `0 ⟶ X ⟶ P ⟶ X' ⟶ 0` with `X'` in
@@ -99,9 +110,9 @@ modules. Suppose every module `X` in `L` is the last term of a sequence `0 ⟶ X
 Then every module in `R` is Gorenstein-projective. -/
 theorem isGorensteinProjective_of_isCompleteResolutionStep (L R : ObjectProperty (ModuleCat.{v} A))
     (hRL : R ≤ L)
-    (hL : ∀ X, L X → ∃ S : ShortComplex (ModuleCat.{v} A), IsCompleteResolutionStep S ∧ L S.X₁ ∧
+    (hL : ∀ X, L X → ∃ S : ShortComplex (ModuleCat.{v} A), S.IsCompleteResolutionStep ∧ L S.X₁ ∧
       Nonempty (S.X₃ ≅ X))
-    (hR : ∀ X, R X → ∃ S : ShortComplex (ModuleCat.{v} A), IsCompleteResolutionStep S ∧ R S.X₃ ∧
+    (hR : ∀ X, R X → ∃ S : ShortComplex (ModuleCat.{v} A), S.IsCompleteResolutionStep ∧ R S.X₃ ∧
       Nonempty (S.X₁ ≅ X))
     {M : ModuleCat.{v} A} (hM : R M) : IsGorensteinProjective A M := by
   choose fL hfL hLX₁ eL using hL
@@ -121,7 +132,7 @@ theorem isGorensteinProjective_of_isCompleteResolutionStep (L R : ObjectProperty
     | .negSucc 0 => Classical.choice (eL (Ln 0).1 (Ln 0).2) ≪≫
         (Classical.choice (eR (Rn 0).1 (Rn 0).2)).symm
     | .negSucc (n + 1) => Classical.choice (eL (Ln (n + 1)).1 (Ln (n + 1)).2)
-  have hS (n : ℤ) : IsCompleteResolutionStep (S n) := by
+  have hS (n : ℤ) : (S n).IsCompleteResolutionStep := by
     cases n with
     | ofNat n => exact hfR _ _
     | negSucc n => exact hfL _ _
