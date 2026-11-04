@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
-public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Tensor
+public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Closed
 
 /-!
 # The simplicial category of pointed simplicial sets
