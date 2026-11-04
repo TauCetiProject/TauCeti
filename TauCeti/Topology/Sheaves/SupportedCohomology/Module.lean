@@ -150,6 +150,19 @@ lemma map_mem_supportedSubmodule_of_le {S : Closeds X} {W' W : Opens X} (h : W' 
   simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using
     congr(F.obj.map (homOfLE (inf_le_inf_right S.compl h)).op $hs)
 
+/-- Enlarging the closed support enlarges the submodule of supported sections. -/
+@[gcongr]
+lemma supportedSubmodule_mono {Z S : Closeds X} (hZS : Z ≤ S) (W : Opens X) :
+    F.supportedSubmodule Z W ≤ F.supportedSubmodule S W := by
+  intro s hs
+  rw [mem_supportedSubmodule_iff] at hs ⊢
+  have hcompl : S.compl ≤ Z.compl := (Closeds.complOrderIso X).monotone hZS
+  have hcomp : S.complInclusion W =
+      homOfLE (inf_le_inf_left W hcompl) ≫
+        Z.complInclusion W := Subsingleton.elim _ _
+  rw [hcomp, op_comp, F.obj.map_comp]
+  simp [hs]
+
 end CategoryTheory.Sheaf
 
 namespace TopologicalSpace.Closeds
