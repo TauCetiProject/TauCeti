@@ -400,11 +400,12 @@ end IdentityComponent
 
 section WeightedDynkinDiagram
 
-/-- **Conjugacy of dominant `sl₂` triples with equal weighted Dynkin diagrams.** If two `sl₂`
-triples in `Lie(G)` have neutral elements dominant with respect to the same base `b` and equal
-weighted Dynkin diagrams, then `RootPairing.Base.weightedDynkinDiagram_injective` gives `h₁ = h₂`,
-so `exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq` yields a
-rational point of `C_G(h₁)°` fixing `h₁ = h₂` and carrying `(e₁, f₁)` to `(e₂, f₂)`. -/
+/-- **Conjugacy of dominant `sl₂` triples with equal weighted Dynkin diagrams.** Over an
+algebraically closed field `k` of characteristic zero, if `G = Spec H` is of finite type with
+Killing Lie algebra `𝔤` and two `sl₂` triples `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` in `𝔤` have
+neutral elements dominant with respect to the same root-system base `b` of a Cartan subalgebra `𝔥`
+and equal weighted Dynkin diagrams, then some rational point `g` of the connected centralizer
+`C_G(h₁)°` carries `(h₁, e₁, f₁)` to `(h₂, e₂, f₂)` under the adjoint action. -/
 theorem exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : FiniteTypeCommHopfAlgCat.{u, u} k}
@@ -425,14 +426,18 @@ theorem exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDia
           e₂ ∧
         Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f₁ =
           f₂ := by
+  -- Equal weighted Dynkin diagrams on `b.dominantNeutralElements` force `h₁ = h₂` via
+  -- `b.weightedDynkinDiagram_injective`, reducing to
+  -- `exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq`.
   obtain rfl := b.weightedDynkinDiagram_injective hdiag
   exact t₁.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq t₂
 
-/-- **Adjoint orbit image equality for dominant `sl₂` triples with equal weighted Dynkin diagrams.**
-If two `sl₂` triples in `Lie(G)` have neutral elements dominant with respect to the same base `b`
-and equal weighted Dynkin diagrams, then `h₁ = h₂`, so by `range_projectiveOrbitMap_adjoint_eq`
-their nilpositive elements have the same topological adjoint `G`-orbit image in `P(𝔤 × k)`,
-including nonclosed points. -/
+/-- **Adjoint orbit image equality for dominant `sl₂` triples with equal weighted Dynkin
+diagrams.** Over an algebraically closed field `k` of characteristic zero, if `G = Spec H` is of
+finite type with Killing Lie algebra `𝔤` and two `sl₂` triples `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)`
+in `𝔤` have neutral elements dominant with respect to the same root-system base `b` of a Cartan
+subalgebra `𝔥` and equal weighted Dynkin diagrams, then `e₁` and `e₂` have the same topological
+adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points. -/
 theorem range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
@@ -449,6 +454,8 @@ theorem range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq
       Set.range (Comodule.projectiveOrbitMap (H := H)
         ((e₂, 1) : Module.Dual k (Bialgebra.CotangentSpace k H) × k)
         (Module.isUnimodular_mk_one e₂)) := by
+  -- Equal weighted Dynkin diagrams on `b.dominantNeutralElements` force `h₁ = h₂` via
+  -- `b.weightedDynkinDiagram_injective`, reducing to `range_projectiveOrbitMap_adjoint_eq`.
   obtain rfl := b.weightedDynkinDiagram_injective hdiag
   exact t₁.range_projectiveOrbitMap_adjoint_eq t₂
 

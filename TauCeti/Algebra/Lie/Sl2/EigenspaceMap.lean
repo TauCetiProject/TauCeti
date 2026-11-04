@@ -115,11 +115,13 @@ variable (K : Type*) [CommRing K] [IsDomain K] [CharZero K] {L : Type*} [LieRing
   [LieAlgebra K L] [IsNoetherian K L] [IsTorsionFree K L]
 
 include K in
-/-- **The neutral and raising elements of an `sl₂` triple determine the lowering element.** The
-difference `f - f'` has `h`-weight `-2` and is killed by `ad e`, whereas `ad e` is injective at
-weight `-2`. -/
+/-- **The neutral and raising elements of an `sl₂` triple determine the lowering element.** In a
+Noetherian torsion-free Lie algebra over a domain `K` of characteristic zero, any two `sl₂`
+triples `(h, e, f)` and `(h, e, f')` sharing `h` and `e` satisfy `f = f'`. -/
 theorem f_eq_of_isSl2Triple {h e f f' : L} (t : IsSl2Triple h e f) (t' : IsSl2Triple h e f') :
     f = f' := by
+  -- The difference `f - f'` has `h`-weight `-2` and is killed by `ad e`, whereas `ad e` is
+  -- injective at weight `-2`.
   apply sub_eq_zero.mp
   have hdisj := t.disjoint_ker_toEnd_e_eigenspace (K := K) (M := L) (μ := -2) fun n hn ↦ by
     have : ((-2 : ℤ) : K) = ((n : ℤ) : K) := by simpa using hn
@@ -131,10 +133,12 @@ theorem f_eq_of_isSl2Triple {h e f f' : L} (t : IsSl2Triple h e f) (t' : IsSl2Tr
     abel
 
 include K in
-/-- **The neutral and lowering elements of an `sl₂` triple determine the raising element.** This is
-`IsSl2Triple.f_eq_of_isSl2Triple` for the opposite triples `(-h, f, e)` and `(-h, f, e')`. -/
+/-- **The neutral and lowering elements of an `sl₂` triple determine the raising element.** In a
+Noetherian torsion-free Lie algebra over a domain `K` of characteristic zero, any two `sl₂`
+triples `(h, e, f)` and `(h, e', f)` sharing `h` and `f` satisfy `e = e'`. -/
 theorem e_eq_of_isSl2Triple {h e e' f : L} (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f) :
     e = e' :=
+  -- Apply `f_eq_of_isSl2Triple` to the opposite triples `(-h, f, e)` and `(-h, f, e')`.
   t.symm.f_eq_of_isSl2Triple K t'.symm
 
 end Uniqueness
