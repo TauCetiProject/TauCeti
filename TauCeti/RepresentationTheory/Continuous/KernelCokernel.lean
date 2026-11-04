@@ -315,8 +315,11 @@ norms. -/
 @[simp]
 theorem norm_cokerEquivKerAdjoint_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary)
     (x : F ⧸ T.toContinuousLinearMap.range) :
-    ‖(T.cokerEquivKerAdjoint hπ hρ x : F)‖ = ‖x‖ :=
-  T.norm_cokerEquivOrthogonalRange_apply hρ x
+    ‖(T.cokerEquivKerAdjoint hπ hρ x : F)‖ = ‖x‖ := by
+  have h : (T.cokerEquivKerAdjoint hπ hρ x : F) = T.cokerEquivOrthogonalRange hρ x := by
+    induction x using Submodule.Quotient.induction_on with
+    | H w => rw [coe_cokerEquivKerAdjoint_apply_mk, cokerEquivOrthogonalRange_apply_mk]
+  rw [h, norm_cokerEquivOrthogonalRange_apply]
 
 /-- The equivariant identification of the cokernel with the kernel of the adjoint is an
 isometry. -/

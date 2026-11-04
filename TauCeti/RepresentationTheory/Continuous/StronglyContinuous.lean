@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
 
 /-!
