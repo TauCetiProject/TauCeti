@@ -30,6 +30,12 @@ In the principal quotient `R ⧸ (1 - e)`, the image of `e` is `1`
 (`TauCeti.Ideal.Quotient.mk_span_singleton_one_sub_self`); when `e` is idempotent this quotient is
 the component of `R` cut out by `e`.
 
+For a commutative `A`-algebra `R` and an ideal `J`, multiplication by `φ : R` on `R ⧸ J` is the
+`A`-linear map `Algebra.lmul A (R ⧸ J)` of the class of `φ`
+(`TauCeti.Ideal.Quotient.smul_eq_lmul_mk`), so the submodule `φ (R ⧸ J)`, viewed over `A`, is the
+range of that map (`TauCeti.Ideal.Quotient.restrictScalars_smul_top_eq_range_lmul`). This turns
+the cokernel `QuotSMulTop φ (R ⧸ J)` into the cokernel of an `A`-linear endomorphism.
+
 If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated by `I`
 are unique. This quotient extensionality lemma is used to construct compatible residue maps.
 More generally, if `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to
@@ -168,5 +174,25 @@ theorem mk_span_singleton_one_sub_self {R : Type*} [CommRing R] (e : R) :
     Ideal.Quotient.mk (Ideal.span {1 - e}) e = 1 := by
   rw [← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
   exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
+
+variable {A R : Type*} [CommRing A] [CommRing R] [Algebra A R] {J : Ideal R}
+
+variable (A) in
+/-- Multiplication by `φ` on `R ⧸ J` is multiplication by the class of `φ`, as an `A`-linear
+map. -/
+theorem smul_eq_lmul_mk (φ : R) (x : R ⧸ J) :
+    φ • x = Algebra.lmul A (R ⧸ J) (Ideal.Quotient.mk J φ) x := by
+  rw [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+  exact Algebra.smul_def φ x
+
+open scoped Pointwise in
+/-- The submodule `φ (R ⧸ J)`, viewed over `A`, is the range of multiplication by the class of
+`φ`. -/
+theorem restrictScalars_smul_top_eq_range_lmul (φ : R) :
+    (φ • ⊤ : Submodule R (R ⧸ J)).restrictScalars A =
+      LinearMap.range (Algebra.lmul A (R ⧸ J) (Ideal.Quotient.mk J φ)) := by
+  ext x
+  simp [Submodule.mem_smul_pointwise_iff_exists, smul_eq_lmul_mk A, Ideal.mem_span_singleton',
+    mul_comm]
 
 end TauCeti.Ideal.Quotient

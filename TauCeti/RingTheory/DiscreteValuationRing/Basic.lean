@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -32,8 +33,8 @@ distinct, a discrete valuation ring is also infinite.
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
   has cardinality `Nat.card (ResidueField S) ^ n`.
-* `TauCeti.IsDiscreteValuationRing.finite_quotient_span_singleton`: if the residue field is
-  finite, so is the quotient by any nonzero element.
+* `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
+  the quotient by any nonzero ideal.
 * `TauCeti.IsDiscreteValuationRing.natCard_map_maximalIdeal_pow`: the graded piece
   `𝔪 ^ n / 𝔪 ^ (n + 1)` has as many elements as the residue field.
 * `TauCeti.IsDiscreteValuationRing.quotient_mk_eq_iff_le_addVal`: equality modulo `𝔪 ^ n` is
@@ -85,17 +86,16 @@ theorem natCard_quotient_maximalIdeal_pow (n : ℕ) :
   -- The residue field is defined as the quotient by the maximal ideal.
   rfl
 
-/-- If the residue field of a discrete valuation ring is finite, then so is its quotient by any
-nonzero element, which generates a power of the maximal ideal. -/
-theorem finite_quotient_span_singleton [Finite (ResidueField S)] {x : S} (hx : x ≠ 0) :
-    Finite (S ⧸ Ideal.span {x}) := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
-    (Ideal.span_singleton_eq_bot.not.mpr hx) hϖ
-  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
-  refine Nat.finite_of_card_ne_zero ?_
-  rw [natCard_quotient_maximalIdeal_pow]
-  exact pow_ne_zero _ Nat.card_pos.ne'
+/-- **A discrete valuation ring with finite residue field has finite quotients**: a nonzero ideal
+is a power of the maximal ideal. -/
+instance hasFiniteQuotients [Finite (ResidueField S)] : Ring.HasFiniteQuotients S where
+  finiteQuotient {I} hI := by
+    obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+    obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+    rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+    refine Nat.finite_of_card_ne_zero ?_
+    rw [natCard_quotient_maximalIdeal_pow]
+    exact pow_ne_zero _ Nat.card_pos.ne'
 
 /-- The graded piece `𝔪 ^ n / 𝔪 ^ (n + 1)` of a discrete valuation ring, viewed as an ideal of
 `S ⧸ 𝔪 ^ (n + 1)`, has as many elements as the residue field. -/

@@ -96,12 +96,13 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
 
 omit [IsPrincipalIdealRing R] in
 /-- **An endomorphism with vanishing determinant has infinite cokernel.** Over an infinite domain,
-if `det f = 0` then `M ⧸ range f` is infinite: the kernel of `f` is nonzero, so by rank-nullity
-the cokernel has positive rank, and the multiples of an element of positive rank are pairwise
-distinct. Together with `card_quotient_range_eq_card_quotient_span_det`, the cokernel of `f` is
-finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
+if `det f = 0` then `M ⧸ range f` is infinite. Together with
+`card_quotient_range_eq_card_quotient_span_det`, over an infinite principal ideal domain the
+cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
 theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
     Infinite (M ⧸ range f) := by
+  -- The kernel of `f` is nonzero, so by rank-nullity the cokernel has positive rank, and the
+  -- multiples of an element of positive rank are pairwise distinct.
   have hker : 0 < Module.rank R (ker f) := by
     obtain ⟨x, hx, hx0⟩ := (ker f).ne_bot_iff.mp (det_eq_zero_iff_ker_ne_bot.mp hf)
     exact rank_pos_iff_exists_ne_zero.mpr ⟨⟨x, hx⟩, by simpa using hx0⟩

@@ -15,6 +15,7 @@ import Mathlib.NumberTheory.Multiplicity
 import Mathlib.RingTheory.Norm.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -73,21 +74,6 @@ namespace PowerSeries.IsWeierstrassFactorizationAt
 
 variable {A : Type*} [CommRing A] {I : Ideal A} {g : A⟦X⟧} {f : Polynomial A} {h : A⟦X⟧}
 
-/-- Multiplication by `φ` on `A⟦X⟧ ⧸ (g)` is multiplication by the class of `φ`. -/
-private theorem smul_eq_lmul (φ : A⟦X⟧) (x : A⟦X⟧ ⧸ Ideal.span {g}) :
-    φ • x = Algebra.lmul A _ (Ideal.Quotient.mk _ φ) x := by
-  rw [Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
-  exact Algebra.smul_def φ x
-
-/-- The submodule `φ (A⟦X⟧ ⧸ (g))`, viewed over `A`, is the range of multiplication by the class
-of `φ`. -/
-private theorem restrictScalars_smul_top (φ : A⟦X⟧) :
-    (φ • ⊤ : Submodule A⟦X⟧ (A⟦X⟧ ⧸ Ideal.span {g})).restrictScalars A =
-      LinearMap.range (Algebra.lmul A _ (Ideal.Quotient.mk _ φ)) := by
-  ext x
-  simp [Submodule.mem_smul_pointwise_iff_exists, smul_eq_lmul, Ideal.mem_span_singleton',
-    mul_comm]
-
 variable (H : g.IsWeierstrassFactorizationAt f h I) [IsAdicComplete I A]
 include H
 
@@ -114,7 +100,7 @@ theorem torsionBy_eq_bot_iff [IsDomain A] (φ : A⟦X⟧) :
   have := H.finite_quotient
   rw [Algebra.norm_apply, ne_eq, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not,
     LinearMap.ker_eq_bot', Submodule.eq_bot_iff]
-  simp [Submodule.mem_torsionBy_iff, smul_eq_lmul]
+  simp [Submodule.mem_torsionBy_iff, TauCeti.Ideal.Quotient.smul_eq_lmul_mk A]
 
 /-- **Cokernel of multiplication on a Weierstrass quotient.** Over a principal ideal domain, if the
 norm over `A` of the class of a series `φ` is nonzero, then `A⟦X⟧ ⧸ (g)` modulo `φ` has as many
@@ -126,7 +112,8 @@ theorem natCard_quotSMulTop [IsDomain A] [IsPrincipalIdealRing A] {φ : A⟦X⟧
   have := H.free_quotient
   have := H.finite_quotient
   rw [Algebra.norm_apply] at hφ ⊢
-  rw [← LinearMap.card_quotient_range_eq_card_quotient_span_det hφ, ← restrictScalars_smul_top]
+  rw [← LinearMap.card_quotient_range_eq_card_quotient_span_det hφ,
+    ← TauCeti.Ideal.Quotient.restrictScalars_smul_top_eq_range_lmul]
   exact Nat.card_congr (Submodule.Quotient.restrictScalarsEquiv A _).toEquiv.symm
 
 /-- **Infinite cokernel on a Weierstrass quotient.** Over an infinite domain, if the norm over `A`
@@ -138,7 +125,7 @@ theorem infinite_quotSMulTop [IsDomain A] [Infinite A] {φ : A⟦X⟧}
   have := H.finite_quotient
   rw [Algebra.norm_apply] at hφ
   have := LinearMap.infinite_quotient_range_of_det_eq_zero hφ
-  rw [← restrictScalars_smul_top] at this
+  rw [← TauCeti.Ideal.Quotient.restrictScalars_smul_top_eq_range_lmul] at this
   exact Infinite.of_injective _ (Submodule.Quotient.restrictScalarsEquiv A _).injective
 
 /-- **Finite cokernels on a Weierstrass quotient over a discrete valuation ring.** If `A` is a
@@ -150,7 +137,7 @@ theorem finite_quotSMulTop_iff [IsDomain A] [IsDiscreteValuationRing A] [Finite 
       Algebra.norm A (Ideal.Quotient.mk (Ideal.span {g}) φ) ≠ 0 := by
   refine ⟨fun hfin hφ ↦ ?_, fun hφ ↦ ?_⟩
   · exact not_finite_iff_infinite.mpr (H.infinite_quotSMulTop hφ) hfin
-  · have := TauCeti.IsDiscreteValuationRing.finite_quotient_span_singleton hφ
+  · have := Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hφ)
     refine Nat.finite_of_card_ne_zero ?_
     rw [H.natCard_quotSMulTop hφ]
     exact Nat.card_pos.ne'
