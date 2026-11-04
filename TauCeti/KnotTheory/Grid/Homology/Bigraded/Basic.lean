@@ -169,4 +169,41 @@ theorem X_smul_mem_bigradedUnblockedHomologyPiece (i : Fin n) {g : ℤ × ℤ}
   have h := G.monomial_smul_mem_bigradedUnblockedHomologyPiece R (Finsupp.single i 1) (1 : R) hy
   rwa [Finsupp.degree_single, Nat.cast_one, mul_one, ← X] at h
 
+/-- An equivalence intertwining the unblocked differentials identifies each homology bidegree
+if it identifies each chain bidegree. The converse membership implication includes the inverse
+homology equivalence, so the image is the entire homogeneous piece. -/
+theorem unblockedHomologyEquiv_mem_bigradedPiece_iff
+    (G' : OddComponentGridDiagram n)
+    {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R}
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
+    (he : ∀ c, G'.1.unblockedDifferential R (e c) = e (G.1.unblockedDifferential R c))
+    (f : G.1.unblockedHomology R ≃ₛₗ[σ] G'.1.unblockedHomology R)
+    (hf : ∀ z : LinearMap.ker (G.1.unblockedDifferential R),
+      f (G.1.unblockedHomologyClass R z) = G'.1.unblockedHomologyClass R
+        ⟨e z, G.1.map_mem_ker_unblockedDifferential_of_intertwining R G'.1 e he z.2⟩)
+    (hg : ∀ g c, e c ∈ G'.bigradedChainMinusPiece R g ↔
+      c ∈ G.bigradedChainMinusPiece R g)
+    {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
+    f y ∈
+        G'.bigradedUnblockedHomologyPiece R g ↔
+      y ∈ G.bigradedUnblockedHomologyPiece R g := by
+  constructor
+  · intro hy
+    obtain ⟨w, hw, hwy⟩ := (G'.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
+    have hz : e.symm w ∈ LinearMap.ker (G.1.unblockedDifferential R) := by
+      rw [LinearMap.mem_ker]
+      apply e.injective
+      rw [map_zero, ← he, LinearEquiv.apply_symm_apply]
+      exact LinearMap.mem_ker.mp w.2
+    refine (G.mem_bigradedUnblockedHomologyPiece_iff R).mpr
+      ⟨⟨e.symm w, hz⟩, (hg g _).mp (by simpa only [LinearEquiv.apply_symm_apply] using hw), ?_⟩
+    apply f.injective
+    rw [hf]
+    simpa only [LinearEquiv.apply_symm_apply] using hwy
+  · intro hy
+    obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
+    rw [hf]
+    exact G'.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R ((hg g _).mpr hz)
+
 end TauCeti.OddComponentGridDiagram
