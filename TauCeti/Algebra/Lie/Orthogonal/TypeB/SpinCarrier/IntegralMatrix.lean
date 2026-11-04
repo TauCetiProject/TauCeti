@@ -69,7 +69,7 @@ private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n 
     (rep_kostantForm_mem_lattice n) k
 
 /-- The integral matrix of every numbered simple root generator squares to zero. -/
-theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+@[simp] theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * rootIntMatrix n k = 0 := by
   have hop : rootOperator n k * rootOperator n k = 0 :=
     kostantRootOperator_mul_eq_zero _ _ _ _ _
