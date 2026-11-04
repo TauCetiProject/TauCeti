@@ -16,12 +16,12 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 The shuffle representation acts on `PiLp 2 (fun _ : ShuffleMask k l => U)`, with its
 ordinary sum inner product, not a norm transported from an induced module. If the rest
 module's generators are symmetric and the parameter is real, the shuffle generators are
-symmetric too. For a complete rest module every algebra element acts continuously.
+symmetric too. If the rest generators act continuously, every algebra element acts
+continuously, without requiring completeness or a real parameter.
 
-A unitary intertwiner of rest modules extends by identity on masks. This is the native
-`LinearIsometryEquiv.piLpCongrRight`; it intertwines the shuffle actions and preserves
-coordinate cuts selecting masks containing any fixed site. Thus orthogonal decompositions
-of rest modules can be used without changing the mask norm or the site projections.
+A unitary intertwiner of rest modules extends coordinatewise by identity on masks. This is
+the native `LinearIsometryEquiv.piLpCongrRight`; it is a linear isometry equivalence that
+intertwines the shuffle actions.
 The statements include empty selected and empty rest blocks.
 
 ## References
@@ -93,10 +93,10 @@ theorem isSymmetric_shuffleHilbertRep_T (hq : star (q : 𝕜) = q)
   simp only [PiLp.inner_apply, shuffleHilbertRep_apply]
   exact sum_inner_shuffleRep_T k ρ hq hρ i _ _
 
-/-- If the rest Hilbert space is complete, every shuffle operator is bounded. No
-finite-dimensionality of the rest module is required. -/
-theorem continuous_shuffleHilbertRep [CompleteSpace U] (hq : star (q : 𝕜) = q)
-    (hρ : ∀ i, (ρ (T q i)).IsSymmetric) (x : TypeAHeckeAlgebra 𝕜 q (k + l)) :
+/-- If the rest generators act continuously, every shuffle operator is bounded. No
+completeness, finite-dimensionality, symmetry or real-parameter hypothesis is required. -/
+theorem continuous_shuffleHilbertRep (hρ : ∀ i, Continuous (ρ (T q i)))
+    (x : TypeAHeckeAlgebra 𝕜 q (k + l)) :
     Continuous (shuffleHilbertRep k ρ x) := by
   have hx : x ∈ Algebra.adjoin 𝕜 (Set.range (T (n := k + l) q)) := by
     rw [adjoin_range_T]
@@ -104,7 +104,22 @@ theorem continuous_shuffleHilbertRep [CompleteSpace U] (hq : star (q : 𝕜) = q
   induction hx using Algebra.adjoin_induction with
   | mem x hx =>
     obtain ⟨i, rfl⟩ := hx
-    exact (isSymmetric_shuffleHilbertRep_T k ρ hq hρ i).continuous
+    classical
+    change Continuous (fun f => WithLp.toLp 2 (shuffleRep k ρ (T q i) (WithLp.ofLp f)))
+    apply (PiLp.continuous_toLp 2 _).comp
+    apply continuous_pi
+    intro S
+    by_cases ha : BraidGroup.strand i ∈ S.1 <;>
+      by_cases hb : BraidGroup.strandSucc i ∈ S.1
+    · simp only [shuffleRep_T_apply_of_mem_of_mem ρ ha hb]
+      exact (PiLp.continuous_apply 2 _ S).const_smul _
+    · simp only [shuffleRep_T_apply_of_mem_of_notMem ρ ha hb]
+      exact ((PiLp.continuous_apply 2 _ S).const_smul _).sub
+        (PiLp.continuous_apply 2 _ _)
+    · simp only [shuffleRep_T_apply_of_notMem_of_mem ρ ha hb]
+      exact (PiLp.continuous_apply 2 _ _).neg
+    · simp only [shuffleRep_T_apply_of_notMem_of_notMem ρ ha hb]
+      exact (hρ _).comp (PiLp.continuous_apply 2 _ S)
   | algebraMap r =>
     rw [AlgHom.commutes, Module.algebraMap_end_eq_smul_id]
     exact continuous_const.smul continuous_id
@@ -157,6 +172,10 @@ theorem piLpCongrRight_shuffleHilbertRep (e : U ≃ₗᵢ[𝕜] V)
         (LinearIsometryEquiv.piLpCongrRight 2 (fun _ : ShuffleMask k l => e) f) := by
   apply PiLp.ext
   intro S
+  -- Both the Hilbert action and piLpCongrRight wrap the coordinatewise algebraic maps
+  -- with toLp/ofLp; at a fixed coordinate these inverse wrappers cancel definitionally.
+  change e (shuffleRep k ρ x (WithLp.ofLp f) S) =
+    shuffleRep k ρ' x (fun S => e (f S)) S
   exact congrFun (LinearMap.congr_fun (compLeft_comp_shuffleRep e.toLinearMap he x)
     (WithLp.ofLp f)) S
 
