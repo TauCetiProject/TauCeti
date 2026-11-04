@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
+public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Family
 
@@ -28,6 +29,8 @@ of maps of circles pulls `dt_i` back to the coordinate pullback of the `i`-th fa
 `dt_(q i)`. In particular the diagonal rescaling of all periods, by the rescaling diffeomorphisms
 `AddCircle (p i) ≃ AddCircle (q i)`, pulls `dt_i` back to `(p i)⁻¹ * q i` times `dt_i`. Reindexing
 the factors along a map `e` of index sets, `x ↦ (j ↦ x (e j))`, pulls `dt_j` back to `dt_(e j)`.
+When all periods are equal, an invertible integer matrix `A`, acting by `x ↦ A • x`, pulls `dt_i`
+back to `∑ j, A i j • dt_j`.
 
 For an ordered index set `Fin n`, the ordered wedge product `dt_0 ∧ ⋯ ∧ dt_(n-1)` of the
 coordinate time forms is the volume form of the torus (`TauCeti.torusVolumeForm p`). It sends
@@ -60,6 +63,8 @@ pulls it back to `sign σ` times itself, and the diagonal rescaling of the perio
   `TauCeti.mpullback_piMap_diffeomorphAddCircle_torusTimeForm`: pullbacks along products of maps
   of circles, and along the diagonal rescaling of the periods.
 * `TauCeti.mpullback_reindex_torusTimeForm`: naturality under reindexing of the factors.
+* `TauCeti.mpullback_generalLinearGroup_smul_torusTimeForm`: an invertible integer matrix `A`
+  acting on a torus of equal periods pulls `dt_i` back to `∑ j, A i j • dt_j`.
 * `TauCeti.torusVolumeForm_apply`, `TauCeti.torusVolumeForm_apply_ne_zero`: the determinant
   formula for the volume form, which vanishes nowhere.
 * `TauCeti.mpullback_reindex_torusVolumeForm`,
@@ -159,6 +164,20 @@ theorem mpullback_reindex_torusTimeForm {ι' : Type*} [Fintype ι'] (e : ι' →
   rfl
 
 variable [DecidableEq ι]
+
+/-- An invertible integer matrix `A`, acting on the torus `ι → AddCircle q` of equal periods, pulls
+the coordinate time form `dt_i` back to `∑ j, A i j • dt_j`. -/
+theorem mpullback_generalLinearGroup_smul_torusTimeForm (q : ℝ) [Fact (0 < q)] (A : GL ι ℤ)
+    (i : ι) :
+    SmoothForm.mpullback (fun x : ι → AddCircle q ↦ A • x) (contMDiff_const_smul A)
+        (torusTimeForm (fun _ ↦ q) i) =
+      ∑ j, ((A : Matrix ι ι ℤ) i j : ℝ) • torusTimeForm (fun _ ↦ q) j := by
+  refine Subtype.ext (funext fun x ↦ ?_)
+  ext v
+  rw [SmoothForm.mpullback_apply, torusTimeForm_apply, sum_smul_torusTimeForm_apply]
+  -- The derivative of `x ↦ A • x` is multiplication by `A`; take its `i`-th coordinate.
+  simpa [Matrix.mulVec, dotProduct] using
+    congrFun (AddCircle.mfderiv_generalLinearGroup_smul_apply q A x (v 0)) i
 
 /-- On the coordinate fiber through `x` in the `i`-th coordinate, the coordinate time form `dt_i`
 restricts to the time form of the `i`-th circle. -/

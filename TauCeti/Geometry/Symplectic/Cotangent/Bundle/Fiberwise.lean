@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.Translate
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 
 /-!
@@ -29,6 +30,13 @@ constructions.
   `(c •)^*λ = c • λ` and `(c •)^*ω = c • ω`. For `c = -1` this is the fibre negation, which
   reverses both `λ` and `ω`; for `c = e^t` it is the time-`t` map of the radial Liouville flow.
 
+Composing a fibre translation with a cotangent lift gives the affine symplectomorphisms of
+cotangent bundles. For a diffeomorphism `h : M → N` and a one-form `α` on `N`, the cotangent lift of
+`h` followed by `τ_α` pulls `λ_N` back to `λ_M + π^*(h^*α)`
+(`mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm`),
+hence pulls `ω_N` back to `ω_M` when `α` is closed
+(`mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm`).
+
 The cotangent projection pulls forms back injectively, because it has the zero section as a
 smooth right inverse (`TauCeti.SmoothForm.mpullback_proj_injective`); this turns the identity
 `τ_α^*ω = ω - π^*dα` into the closedness criterion.
@@ -42,6 +50,9 @@ convention, whereas `τ_α` translates by `+α`.
   `TauCeti.CotangentBundle.mpullback_vectorBundleTranslateDiffeomorph_symplecticForm`.
 * `TauCeti.CotangentBundle.mpullback_vectorBundleScalarDiffeomorph_liouvilleForm` and
   `TauCeti.CotangentBundle.mpullback_vectorBundleScalarDiffeomorph_symplecticForm`.
+* `mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm` and
+  `mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm`: a cotangent lift
+  followed by a fibre translation.
 
 ## References
 
@@ -148,6 +159,57 @@ theorem mpullback_vectorBundleTranslateDiffeomorph_symplecticForm_eq_self_iff
     ← mextDerivₗ_apply I 1 α, ZeroMemClass.coe_eq_zero]
 
 end Symplectic
+
+/-! ### Cotangent lifts followed by fibre translations -/
+
+section Lift
+
+variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- **A cotangent lift followed by a fibre translation shifts the Liouville form.** For a smooth
+diffeomorphism `h : M → N` and a one-form `α` on `N`, the cotangent lift of `h` followed by the
+translation of the fibres of `T*N` by `α` pulls the Liouville form of `T*N` back to
+`λ_M + π^*(h^*α)`. -/
+theorem mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm
+    [IsManifold I 2 M] [IsManifold J 2 N] (h : M ≃ₘ⟮I, J⟯ N) (α : SmoothForm J N ℝ 1) :
+    SmoothForm.mpullback _ (h.cotangent.trans (vectorBundleTranslateDiffeomorph
+        (SmoothForm.degreeOneEquiv α) (SmoothForm.degreeOneEquiv α).contMDiff)).contMDiff
+        (liouvilleForm J N) =
+      liouvilleForm I M +
+        SmoothForm.mpullback (TotalSpace.proj : CotangentBundle I M → M) (contMDiff_proj _)
+          (SmoothForm.mpullback h h.contMDiff α) := by
+  simp only [Diffeomorph.coe_trans]
+  rw [← SmoothForm.mpullback_mpullback _ _ h.cotangent.contMDiff
+      (vectorBundleTranslateDiffeomorph _ (SmoothForm.degreeOneEquiv α).contMDiff).contMDiff,
+    mpullback_vectorBundleTranslateDiffeomorph_liouvilleForm, map_add,
+    Diffeomorph.mpullback_cotangent_liouvilleForm, SmoothForm.mpullback_mpullback,
+    SmoothForm.mpullback_mpullback]
+  -- The cotangent lift covers `h`, so pulling back along `π_N ∘ T*h` is pulling back along
+  -- `h ∘ π_M`.
+  have hcomm : (TotalSpace.proj ∘ h.cotangent) = h ∘ TotalSpace.proj :=
+    funext (Diffeomorph.proj_cotangent h)
+  simp only [hcomm]
+
+/-- **A cotangent lift followed by a closed fibre translation is symplectic.** For a smooth
+diffeomorphism `h : M → N` and a closed one-form `α` on `N`, the cotangent lift of `h` followed by
+the translation of the fibres of `T*N` by `α` pulls the canonical symplectic form of `T*N` back to
+that of `T*M`. -/
+theorem mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm
+    [IsManifold I ∞ M] [IsManifold J ∞ N] (h : M ≃ₘ⟮I, J⟯ N) {α : SmoothForm J N ℝ 1}
+    (hα : α.IsClosed) :
+    SmoothForm.mpullback _ (h.cotangent.trans (vectorBundleTranslateDiffeomorph
+        (SmoothForm.degreeOneEquiv α) (SmoothForm.degreeOneEquiv α).contMDiff)).contMDiff
+        (symplecticForm J N) = symplecticForm I M := by
+  have hlam := mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm h α
+  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
+    ← SmoothForm.mextDerivₗ_mpullback]
+  refine congrArg Neg.neg ((congrArg (mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1) hlam).trans ?_)
+  -- The added form `π^*(h^*α)` is closed, since `α` is.
+  rw [map_add, SmoothForm.mextDerivₗ_mpullback, SmoothForm.mextDerivₗ_mpullback,
+    (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero α).1 hα, map_zero, map_zero, add_zero]
+
+end Lift
 
 end CotangentBundle
 
