@@ -8,13 +8,14 @@ module
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.NumberTheory.NumberField.House
-import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Topology.MetricSpace.ProperSpace.Real
 import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 
 /-!
-# A Minkowski-reduced integral basis of a number field
+# An integral basis of bounded house
 
 For a number field `K` of degree `d = [K : ℚ]`, the norm on `mixedSpace K` at `mixedEmbedding K x`
 is the house of `x` (`TauCeti.NumberField.norm_mixedEmbedding`), so the closed unit ball of
@@ -27,15 +28,14 @@ minima into a `ℤ`-basis `TauCeti.NumberField.reducedIntegralBasis K` of `𝓞 
 has house at most `max 1 ((i + 1) / 2) * √|discr K|`.
 
 Its largest house `TauCeti.NumberField.integralBasisHouse K` satisfies `1 ≤ integralBasisHouse K`
-and `integralBasisHouse K ≤ max 1 (d / 2) * √|discr K|`, with `integralBasisHouse ℚ = 1`. When a
-body `B` in `ι → mixedSpace K` is balanced over every completion, multiplying `l + 1` vectors
-independent over `K` in `Λ ∩ t • B` by `reducedIntegralBasis K` produces `d * (l + 1)` vectors
-independent over `ℝ` in `Λ.mixedImage ∩ (integralBasisHouse K * t) • B`.
+and `integralBasisHouse K ≤ max 1 (d / 2) * √|discr K|`, with `integralBasisHouse ℚ = 1`; it bounds
+the local norm at every infinite place of all members of `reducedIntegralBasis K`.
 
 ## Main definitions
 
 * `TauCeti.NumberField.reducedIntegralBasis K`: a `ℤ`-basis of `𝓞 K` indexed by
-  `Fin (finrank ℚ K)` with house bounded in terms of `[K : ℚ]` and `|discr K|`.
+  `Fin (finrank ℚ K)` with house bounded via successive minima in terms of `[K : ℚ]` and
+  `|discr K|`.
 * `TauCeti.NumberField.integralBasisHouse K`: the largest house among the members of
   `reducedIntegralBasis K`.
 
@@ -44,6 +44,8 @@ independent over `ℝ` in `Λ.mixedImage ∩ (integralBasisHouse K * t) • B`.
 * `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.house_reducedIntegralBasis_le_mul_sqrt_discr`:
   `house (reducedIntegralBasis K i : K) ≤ max 1 ((i + 1) / 2) * √|(discr K : ℝ)|`.
+* `TauCeti.NumberField.integralBasisHouse_le_iff`:
+  `integralBasisHouse K ≤ c ↔ ∀ i, house (reducedIntegralBasis K i : K) ≤ c`.
 * `TauCeti.NumberField.one_le_integralBasisHouse` and `TauCeti.NumberField.integralBasisHouse_le`:
   `1 ≤ integralBasisHouse K ≤ max 1 ([K : ℚ] / 2) * √|(discr K : ℝ)|`.
 * `TauCeti.NumberField.integralBasisHouse_rat`: `integralBasisHouse ℚ = 1`.
@@ -61,6 +63,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+  TauCeti.NumberField.mixedEmbedding
 open scoped Pointwise
 
 namespace TauCeti.NumberField
@@ -87,7 +90,7 @@ section Construction
 
 variable (K)
 
-open Classical in
+open scoped Classical in
 /-- The closed unit ball of `mixedSpace K` as a `ConvexBody`. -/
 private def mixedUnitBall : ConvexBody (mixedSpace K) where
   carrier := Metric.closedBall 0 1
@@ -95,29 +98,39 @@ private def mixedUnitBall : ConvexBody (mixedSpace K) where
   isCompact' := isCompact_closedBall 0 1
   nonempty' := Metric.nonempty_closedBall.2 zero_le_one
 
-open Classical in
-private theorem zero_mem_interior_mixedUnitBall :
-    (0 : mixedSpace K) ∈ interior (mixedUnitBall K : Set (mixedSpace K)) :=
-  Metric.ball_subset_interior_closedBall (Metric.mem_ball_self zero_lt_one)
+open scoped Classical in
+@[simp]
+private theorem coe_mixedUnitBall :
+    (mixedUnitBall K : Set (mixedSpace K)) = Metric.closedBall 0 1 :=
+  rfl
 
-open Classical in
+open scoped Classical in
+@[simp]
+private theorem mem_mixedUnitBall {z : mixedSpace K} :
+    z ∈ mixedUnitBall K ↔ ‖z‖ ≤ 1 := by
+  rw [← SetLike.mem_coe, coe_mixedUnitBall, Metric.mem_closedBall, dist_zero_right]
+
+open scoped Classical in
+private theorem zero_mem_interior_mixedUnitBall :
+    (0 : mixedSpace K) ∈ interior (mixedUnitBall K : Set (mixedSpace K)) := by
+  rw [coe_mixedUnitBall]
+  exact Metric.ball_subset_interior_closedBall (Metric.mem_ball_self zero_lt_one)
+
+open scoped Classical in
 private theorem neg_mem_mixedUnitBall :
     ∀ z ∈ mixedUnitBall K, -z ∈ mixedUnitBall K := by
   intro z hz
-  change -z ∈ Metric.closedBall (0 : mixedSpace K) 1
-  change z ∈ Metric.closedBall (0 : mixedSpace K) 1 at hz
   simpa using hz
 
-open Classical in
+open scoped Classical in
 private theorem norm_le_of_mem_smul_mixedUnitBall {t : ℝ} (ht : 0 ≤ t) {z : mixedSpace K}
     (hz : z ∈ t • (mixedUnitBall K : Set (mixedSpace K))) : ‖z‖ ≤ t := by
   rcases hz with ⟨u, hu, rfl⟩
-  change u ∈ Metric.closedBall (0 : mixedSpace K) 1 at hu
-  have hu1 : ‖u‖ ≤ 1 := by simpa using hu
+  rw [SetLike.mem_coe, mem_mixedUnitBall] at hu
   rw [_root_.norm_smul, Real.norm_of_nonneg ht]
-  exact mul_le_of_le_one_right ht hu1
+  exact mul_le_of_le_one_right ht hu
 
-open Classical in
+open scoped Classical in
 /-- Every successive minimum of `mixedEmbedding.integerLattice K` with respect to the unit ball is
 at least `1`, because every nonzero algebraic integer has house at least `1`. -/
 private theorem one_le_successiveMin_integerLattice
@@ -135,33 +148,7 @@ private theorem one_le_successiveMin_integerLattice
     _ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i :=
       norm_le_of_mem_smul_mixedUnitBall K ht (hvL 0).2
 
-open Classical in
-/-- The volume of the closed unit ball of `mixedSpace K` is at least `2 ^ r₁ * 2 ^ r₂`. -/
-private theorem two_pow_le_volume_mixedUnitBall :
-    (2 : ℝ) ^ nrRealPlaces K * 2 ^ nrComplexPlaces K ≤
-      volume.real (mixedUnitBall K : Set (mixedSpace K)) := by
-  have hsub : convexBodyLT K 1 ⊆ (mixedUnitBall K : Set (mixedSpace K)) := by
-    intro z hz
-    change z ∈ Metric.closedBall (0 : mixedSpace K) 1
-    rw [Metric.mem_closedBall, dist_zero_right, Prod.norm_def]
-    simp only [convexBodyLT, Set.mem_prod, Set.mem_pi, Set.mem_univ, forall_true_left,
-      Metric.mem_ball, dist_zero_right, Pi.one_apply, NNReal.coe_one] at hz
-    exact max_le ((pi_norm_le_iff_of_nonneg zero_le_one).2 fun w ↦ (hz.1 w).le)
-      ((pi_norm_le_iff_of_nonneg zero_le_one).2 fun w ↦ (hz.2 w).le)
-  have hfin : volume (mixedUnitBall K : Set (mixedSpace K)) ≠ ⊤ :=
-    (mixedUnitBall K).isCompact.measure_lt_top.ne
-  have hvol : (convexBodyLTFactor K : ℝ) ≤ volume.real (mixedUnitBall K : Set (mixedSpace K)) := by
-    rw [measureReal_def, ← ENNReal.ofReal_le_ofReal_iff ENNReal.toReal_nonneg,
-      ENNReal.ofReal_toReal hfin, ENNReal.ofReal_coe_nnreal,
-      ← mul_one (convexBodyLTFactor K : ENNReal)]
-    simpa [convexBodyLT_volume] using measure_mono (μ := volume) hsub
-  refine le_trans ?_ hvol
-  simp only [convexBodyLTFactor, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_ofNat,
-    NNReal.coe_real_pi]
-  gcongr
-  exact Real.two_le_pi
-
-open Classical in
+open scoped Classical in
 /-- The product of the successive minima of `mixedEmbedding.integerLattice K` with respect to the
 unit ball of `mixedSpace K` is at most `√|discr K|`. -/
 private theorem prod_successiveMin_integerLattice_le :
@@ -179,8 +166,9 @@ private theorem prod_successiveMin_integerLattice_le :
   rw [← mul_le_mul_iff_left₀ hC]
   calc (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i) * C
       ≤ (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i) *
-          volume.real (mixedUnitBall K : Set (mixedSpace K)) :=
-        mul_le_mul_of_nonneg_left (two_pow_le_volume_mixedUnitBall K) hprod_nn
+          volume.real (mixedUnitBall K : Set (mixedSpace K)) := by
+        rw [coe_mixedUnitBall]
+        exact mul_le_mul_of_nonneg_left (two_pow_mul_two_pow_le_volume_real_closedBall K) hprod_nn
     _ ≤ 2 ^ finrank ℝ (mixedSpace K) * ZLattice.covolume (mixedEmbedding.integerLattice K) := hmink
     _ = √|(discr K : ℝ)| * C := by
         rw [hdim, covolume_integerLattice, pow_add, pow_mul]
@@ -197,19 +185,7 @@ private theorem prod_successiveMin_integerLattice_le :
             rw [h4]
             ring
 
-/-- The `ℤ`-linear equivalence `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by
-`mixedEmbedding K`. -/
-private def integerLatticeEquiv : 𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K :=
-  LinearEquiv.ofInjective
-    ((mixedEmbedding K).toIntAlgHom.toLinearMap.comp
-      ((Algebra.linearMap (𝓞 K) K).restrictScalars ℤ))
-    (fun x y hxy ↦ RingOfIntegers.ext <| mixedEmbedding_injective K (by simpa using hxy))
-
-private theorem coe_integerLatticeEquiv (x : 𝓞 K) :
-    (integerLatticeEquiv K x : mixedSpace K) = mixedEmbedding K (x : K) :=
-  rfl
-
-/-- **Existence of a Minkowski-reduced integral basis.** Every number field `K` has a `ℤ`-basis
+/-- **Existence of an integral basis of bounded house.** Every number field `K` has a `ℤ`-basis
 `b` of `𝓞 K` indexed by `Fin (finrank ℚ K)` such that `b i` has house at most
 `max 1 ((i + 1) / 2) * √|discr K|` and the embedded images `mixedEmbedding K (b i)` are linearly
 independent over `ℝ`. -/
@@ -227,7 +203,7 @@ theorem exists_basis_ringOfIntegers_house_le :
     (bL.map (integerLatticeEquiv K).symm).reindex eIdx
   have hb_img (i : Fin (finrank ℚ K)) :
       mixedEmbedding K (b i : K) = (bL (eIdx.symm i) : mixedSpace K) := by
-    change (integerLatticeEquiv K (b i) : mixedSpace K) = _
+    rw [← coe_integerLatticeEquiv]
     simp [b]
   refine ⟨b, ?_, fun i ↦ ?_⟩
   · have hR := (bL.ofZLatticeBasis ℝ (mixedEmbedding.integerLattice K)).linearIndependent.comp
@@ -256,8 +232,9 @@ theorem exists_basis_ringOfIntegers_house_le :
     rw [← hj_val]
     exact hnorm.trans (mul_le_mul_of_nonneg_left hlam (le_trans zero_le_one (le_max_left _ _)))
 
-/-- **A Minkowski-reduced integral basis** of `𝓞 K`, indexed by `Fin (finrank ℚ K)`, whose `i`-th
-element has house at most `max 1 ((i + 1) / 2) * √|discr K|`. -/
+/-- **An integral basis of bounded house** of `𝓞 K`, indexed by `Fin (finrank ℚ K)`, constructed
+from successive minima so that its `i`-th element has house at most
+`max 1 ((i + 1) / 2) * √|discr K|`. -/
 def reducedIntegralBasis : Basis (Fin (finrank ℚ K)) ℤ (𝓞 K) :=
   (exists_basis_ringOfIntegers_house_le K).choose
 
@@ -274,19 +251,32 @@ theorem house_reducedIntegralBasis_le_mul_sqrt_discr (i : Fin (finrank ℚ K)) :
       max 1 ((((i : ℕ) : ℝ) + 1) / 2) * √|(discr K : ℝ)| :=
   (exists_basis_ringOfIntegers_house_le K).choose_spec.2 i
 
-/-- **The house of the reduced integral basis** of `K`: the largest house among the members of
+/-- **The house of `reducedIntegralBasis K`**: the largest house among the members of
 `reducedIntegralBasis K`. -/
 def integralBasisHouse : ℝ :=
   have : Nonempty (Fin (finrank ℚ K)) := Fin.pos_iff_nonempty.1 Module.finrank_pos
   Finset.univ.sup' Finset.univ_nonempty fun i ↦ house (reducedIntegralBasis K i : K)
 
+/-- Unfolds `integralBasisHouse K` as the supremum of the houses of `reducedIntegralBasis K`. -/
+theorem integralBasisHouse_def :
+    integralBasisHouse K =
+      have : Nonempty (Fin (finrank ℚ K)) := Fin.pos_iff_nonempty.1 Module.finrank_pos
+      Finset.univ.sup' Finset.univ_nonempty fun i ↦ house (reducedIntegralBasis K i : K) :=
+  (rfl)
+
 end Construction
+
+/-- `integralBasisHouse K` is bounded above by `c` if and only if every member of
+`reducedIntegralBasis K` has house at most `c`. -/
+@[simp]
+theorem integralBasisHouse_le_iff {c : ℝ} :
+    integralBasisHouse K ≤ c ↔ ∀ i, house (reducedIntegralBasis K i : K) ≤ c := by
+  simp [integralBasisHouse_def]
 
 /-- Every member of `reducedIntegralBasis K` has house at most `integralBasisHouse K`. -/
 theorem house_reducedIntegralBasis_le (i : Fin (finrank ℚ K)) :
-    house (reducedIntegralBasis K i : K) ≤ integralBasisHouse K := by
-  have : Nonempty (Fin (finrank ℚ K)) := ⟨i⟩
-  exact Finset.le_sup' (fun j ↦ house (reducedIntegralBasis K j : K)) (Finset.mem_univ i)
+    house (reducedIntegralBasis K i : K) ≤ integralBasisHouse K :=
+  integralBasisHouse_le_iff.1 le_rfl i
 
 /-- At every infinite place `w`, the embedded basis element `reducedIntegralBasis K i` has local
 norm at most `integralBasisHouse K`. -/
@@ -316,8 +306,9 @@ theorem integralBasisHouse_pos : 0 < integralBasisHouse K :=
 `integralBasisHouse K ≤ max 1 ([K : ℚ] / 2) * √|discr K|`. -/
 theorem integralBasisHouse_le :
     integralBasisHouse K ≤ max 1 ((finrank ℚ K : ℝ) / 2) * √|(discr K : ℝ)| := by
-  rw [integralBasisHouse]
-  refine Finset.sup'_le _ _ fun i _ ↦ (house_reducedIntegralBasis_le_mul_sqrt_discr K i).trans ?_
+  rw [integralBasisHouse_le_iff]
+  intro i
+  refine (house_reducedIntegralBasis_le_mul_sqrt_discr K i).trans ?_
   gcongr
   have hi : (i : ℕ) + 1 ≤ finrank ℚ K := i.isLt
   exact_mod_cast hi
@@ -330,13 +321,11 @@ theorem integralBasisHouse_le_finrank_mul_sqrt_discr :
   have hd : (1 : ℝ) ≤ finrank ℚ K := by exact_mod_cast (Module.finrank_pos (R := ℚ) (M := K))
   exact max_le hd (by linarith)
 
-/-- Over `ℚ`, the reduced integral basis has house `1`. -/
+/-- Over `ℚ`, `integralBasisHouse ℚ` equals `1`. -/
 @[simp]
 theorem integralBasisHouse_rat : integralBasisHouse ℚ = 1 := by
-  refine le_antisymm ?_ one_le_integralBasisHouse
-  have h := integralBasisHouse_le (K := ℚ)
-  rw [Module.finrank_self, NumberField.discr_rat] at h
-  norm_num at h
-  exact h
+  refine le_antisymm (integralBasisHouse_le.trans ?_) one_le_integralBasisHouse
+  rw [Module.finrank_self, NumberField.discr_rat]
+  norm_num
 
 end TauCeti.NumberField
