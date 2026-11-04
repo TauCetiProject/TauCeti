@@ -53,7 +53,7 @@ Hamiltonians are bounded, and the actions of the end loops converge to `A_q`, th
 (`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`). With the curvature
 bound `∫_S |R_K| ≤ B₀ + B₁ + B_∞` for `|H_q| ≤ B_q`, nonnegativity of the energy gives the action
 bound `A_∞ ≤ A₀ + A₁ + B₀ + B₁ + B_∞`
-(`SymplecticForm.hamiltonianAction_inf_le_of_tendsto`), and already
+(`SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le_of_tendsto`), and already
 `A_{H_∞}(x_∞) ≤ A_{H₀}(x₀) + A_{H₁}(x₁) + B₀ + B₁ + B_∞` for the end loops at every `R ≥ 2`
 (`SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le`). Thus a map with nonnegative
 energy density from inputs of actions `A₀, A₁` to an output of action `A_∞` can exist only when
@@ -76,7 +76,8 @@ energy density from inputs of actions `A₀, A₁` to an output of action `A_∞
   Hamiltonians, the energy of a map with nonnegative energy density whose end-loop actions
   converge to `A_q` is `A₀ + A₁ - A_∞ - ∫_S R_K`.
 * `SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le`,
-  `SymplecticForm.hamiltonianAction_inf_le_of_tendsto`: the action bound for the output end.
+  `SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le_of_tendsto`: the action bound for
+  the output end.
 
 ## References
 
@@ -127,8 +128,9 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture �
 
 section Area
 
-/-- The integral of the primitive `λₓ(v) = ½ ω(x, v)` along the counterclockwise circle of center
-`c` and radius `s`, as in `TauCeti.SymplecticForm.integral_fderiv_apply_annulus`. -/
+/-- Twice the integral of the primitive `λₓ(v) = ½ ω(x, v)` along the image under `v` of the
+counterclockwise circle of center `c` and radius `s`, that is `∫ ω(v, ∂_θ v) dθ`, as in
+`TauCeti.SymplecticForm.integral_fderiv_apply_annulus`. -/
 private noncomputable def circleTerm (ω : SymplecticForm V) (v : ℂ → V) (c : ℂ) (s : ℝ) : ℝ :=
   ∫ θ in -π..π, ω (v (circleMap c s θ)) (deriv (fun θ ↦ v (circleMap c s θ)) θ)
 
@@ -484,7 +486,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
 loops of `u` converge to `A_q` as `R → ∞`, then `A_∞ ≤ A₀ + A₁ + B₀ + B₁ + B_∞`. This has the
 shape of the support hypothesis `F₀ ≤ F₁ + F₂ + C` of `TauCeti.NovikovModule.kernelProduct`, with
 the actions as filtrations and `C = B₀ + B₁ + B_∞`. -/
-theorem hamiltonianAction_inf_le_of_tendsto (ω : SymplecticForm V)
+theorem hamiltonianAction_pairOfPantsEndLoop_inf_le_of_tendsto (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
