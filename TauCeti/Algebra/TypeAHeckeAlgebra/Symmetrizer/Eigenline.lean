@@ -112,19 +112,14 @@ theorem mem_ideal_span_parabolicEigenSum_univ_iff
     obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton'.mp hx
     apply (mem_span_parabolicEigenSum_univ_iff ha _).mpr
     intro i
-    have heq : T q i * (y * parabolicEigenSum cs Set.univ a) =
-        y * (parabolicEigenSum cs Set.univ a * T q i) := by
-      rw [← (commute_parabolicEigenSum_univ ha y).eq, ← mul_assoc,
-        T_mul_parabolicEigenSum cs Set.univ ha (Set.mem_univ i),
-        parabolicEigenSum_mul_T cs Set.univ ha (Set.mem_univ i),
-        smul_mul_assoc, mul_smul_comm]
-      rw [(commute_parabolicEigenSum_univ ha y).eq]
-    rw [heq, parabolicEigenSum_mul_T cs Set.univ ha (Set.mem_univ i), mul_smul_comm]
+    rw [← (commute_parabolicEigenSum_univ ha y).eq, ← mul_assoc,
+      T_mul_parabolicEigenSum cs Set.univ ha (Set.mem_univ i), smul_mul_assoc]
   · intro hx
     obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
     rw [Algebra.smul_def]
     exact Ideal.mul_mem_left _ _ (Ideal.subset_span (Set.mem_singleton _))
 
+omit [Finite W] in
 /-- In a semisimple Hecke algebra the full symmetrizer normalization is a unit. This includes
 both roots of the Hecke quadratic and does not assume that the coefficient ring is a field. -/
 theorem isUnit_sum_pow_length_of_isSemisimpleRing [Fintype W]
@@ -132,15 +127,6 @@ theorem isUnit_sum_pow_length_of_isSemisimpleRing [Fintype W]
     (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1) :
     IsUnit (∑ w : W, a ^ (2 * cs.length w)) := by
   classical
-  let := Fintype.ofFinite (cs.parabolic Set.univ)
-  have hsum : (∑ w : cs.parabolic Set.univ, a ^ (2 * cs.length w)) =
-      ∑ w : W, a ^ (2 * cs.length w) := by
-    apply Fintype.sum_bijective Subtype.val
-    · refine ⟨Subtype.val_injective, fun w => ⟨⟨w, ?_⟩, rfl⟩⟩
-      rw [cs.parabolic_univ]
-      exact Subgroup.mem_top w
-    · intro w
-      rfl
   let C := parabolicEigenSum (q := q) cs Set.univ a
   obtain ⟨e, he, hI⟩ := IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.span {C})
   have hemem : e ∈ Ideal.span {C} := by
@@ -157,12 +143,13 @@ theorem isUnit_sum_pow_length_of_isSemisimpleRing [Fintype W]
   have hnorm : (r * ∑ w : W, a ^ (2 * cs.length w)) • C = (1 : R) • C := by
     calc
       _ = C * (r • C) := by
-        rw [mul_smul_comm, parabolicEigenSum_mul_self cs Set.univ ha, hsum, smul_smul]
+        rw [mul_smul_comm, parabolicEigenSum_univ_mul_self cs ha, smul_smul]
       _ = C := by rw [hr, hCe]
       _ = (1 : R) • C := (one_smul R C).symm
   have hinv := smul_parabolicEigenSum_injective (q := q) (cs := cs) a hnorm
   exact isUnit_iff_exists_inv'.mpr ⟨r, hinv⟩
 
+omit [Finite W] in
 /-- Over a field, semisimplicity forces the full row symmetrizer scalar to be nonzero.
 Vanishing therefore detects genuinely nonsemisimple specializations. -/
 theorem sum_pow_length_ne_zero_of_isSemisimpleRing {K : Type*} [Field K] {q : Kˣ}

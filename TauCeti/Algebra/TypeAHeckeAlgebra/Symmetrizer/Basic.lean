@@ -207,4 +207,31 @@ theorem parabolicEigenSum_neg_inv_mul_self [Fintype (cs.parabolic J)] :
   rw [parabolicEigenSum_mul_self cs J ha]
   simp [pow_mul]
 
+/-- The full weighted sum has quasi-idempotence scalar indexed by the original Coxeter
+carrier, rather than by the full parabolic subgroup subtype. -/
+theorem parabolicEigenSum_univ_mul_self [Fintype W] {a : R}
+    (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1) :
+    parabolicEigenSum (q := q) cs Set.univ a * parabolicEigenSum cs Set.univ a =
+      (∑ w : W, a ^ (2 * cs.length w)) • parabolicEigenSum cs Set.univ a := by
+  classical
+  let := Fintype.ofFinite (cs.parabolic Set.univ)
+  have hsum : (∑ w : cs.parabolic Set.univ, a ^ (2 * cs.length w)) =
+      ∑ w : W, a ^ (2 * cs.length w) := by
+    apply Fintype.sum_bijective Subtype.val
+    · refine ⟨Subtype.val_injective, fun w => ⟨⟨w, ?_⟩, rfl⟩⟩
+      rw [cs.parabolic_univ]
+      exact Subgroup.mem_top w
+    · intro w
+      rfl
+  rw [parabolicEigenSum_mul_self cs Set.univ ha, hsum]
+
+/-- A unit full-sum normalization gives an idempotent without reindexing to the parabolic
+subgroup subtype. -/
+theorem isIdempotentElem_smul_parabolicEigenSum_univ [Fintype W] {a : R}
+    (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1)
+    (h : IsUnit (∑ w : W, a ^ (2 * cs.length w))) :
+    IsIdempotentElem ((↑h.unit⁻¹ : R) • parabolicEigenSum (q := q) cs Set.univ a) := by
+  rw [IsIdempotentElem, smul_mul_assoc, mul_smul_comm, parabolicEigenSum_univ_mul_self cs ha,
+    smul_smul, smul_smul, mul_assoc, h.val_inv_mul, mul_one]
+
 end TauCeti.TypeAHeckeAlgebra
