@@ -59,6 +59,16 @@ theorem trace_cons_true (σ : α → Equiv.Perm Q) (q : Q) (a : α)
 theorem trace_cons_false (σ : α → Equiv.Perm Q) (q : Q) (a : α)
     (w : PresentationWord α) : trace σ q ((a, false) :: w) = trace σ ((σ a).symm q) w := (rfl)
 
+/-- The scan depends only on the free-group element of the word. The inverses compensate
+for the left-to-right scan and Mathlib's right-to-left permutation multiplication. -/
+theorem trace_eq_lift (σ : α → Equiv.Perm Q) (q : Q) (w : PresentationWord α) :
+    trace σ q w = (FreeGroup.lift (fun a => (σ a)⁻¹) (FreeGroup.mk w))⁻¹ q := by
+  induction w generalizing q with
+  | nil => simp [FreeGroup.lift_mk]
+  | cons l w ih =>
+    rcases l with ⟨a, s⟩
+    cases s <;> simp [ih, FreeGroup.lift_mk, Equiv.Perm.mul_apply]
+
 /-- Rewrite a path using positive edges as generators. The inverse of an edge is indexed by
 its positive starting state, not by the state from which the negative step starts. -/
 def rewrite (σ : α → Equiv.Perm Q) : Q → PresentationWord α → PresentationWord (Q × α)
@@ -81,6 +91,7 @@ theorem rewrite_cons_false (σ : α → Equiv.Perm Q) (q : Q) (a : α)
       (((σ a).symm q, a), false) :: rewrite σ ((σ a).symm q) w := (rfl)
 
 /-- Scanning a concatenation continues from the endpoint of the first word. -/
+@[simp]
 theorem trace_append (σ : α → Equiv.Perm Q) (q : Q) (u v : PresentationWord α) :
     trace σ q (u ++ v) = trace σ (trace σ q u) v := by
   induction u generalizing q with
@@ -88,6 +99,7 @@ theorem trace_append (σ : α → Equiv.Perm Q) (q : Q) (u v : PresentationWord 
   | cons l u ih => rcases l with ⟨a, s⟩; cases s <;> simp [ih]
 
 /-- Rewriting a concatenation continues from the endpoint of the first word. -/
+@[simp]
 theorem rewrite_append (σ : α → Equiv.Perm Q) (q : Q) (u v : PresentationWord α) :
     rewrite σ q (u ++ v) = rewrite σ q u ++ rewrite σ (trace σ q u) v := by
   induction u generalizing q with
@@ -106,25 +118,18 @@ theorem length_rewrite (σ : α → Equiv.Perm Q) (q : Q) (w : PresentationWord 
 @[simp]
 theorem trace_invRev (σ : α → Equiv.Perm Q) (q : Q) (w : PresentationWord α) :
     trace σ (trace σ q w) (FreeGroup.invRev w) = q := by
-  induction w generalizing q with
-  | nil => simp [FreeGroup.invRev]
-  | cons l w ih =>
-    rcases l with ⟨a, s⟩
-    rw [FreeGroup.invRev_cons]
-    have hinv : FreeGroup.invRev [(a, s)] = [(a, !s)] := (rfl)
-    rw [hinv, trace_append]
-    cases s <;> simp [ih]
+  simp [trace_eq_lift, ← FreeGroup.inv_mk]
 
 /-- Reversing a path and all its signs reverses and inverts the rewritten word literally. -/
+@[simp]
 theorem rewrite_invRev (σ : α → Equiv.Perm Q) (q : Q) (w : PresentationWord α) :
     rewrite σ (trace σ q w) (FreeGroup.invRev w) = FreeGroup.invRev (rewrite σ q w) := by
   induction w generalizing q with
   | nil => simp [FreeGroup.invRev]
   | cons l w ih =>
     rcases l with ⟨a, s⟩
-    rw [FreeGroup.invRev_cons]
-    have hinv : FreeGroup.invRev [(a, s)] = [(a, !s)] := (rfl)
-    rw [hinv, rewrite_append]
+    have hinv : FreeGroup.invRev [(a, s)] = [(a, !s)] := by simp [FreeGroup.invRev]
+    rw [FreeGroup.invRev_cons, hinv, rewrite_append]
     cases s <;> simp only [trace_cons_false, trace_cons_true, ih, trace_invRev,
       rewrite_cons_false, rewrite_cons_true] <;>
       simp [FreeGroup.invRev]
@@ -176,11 +181,14 @@ theorem actionPerm_symm_apply (f : α → G) (a : α) (q : Q) :
 Mathlib's convention that the rightmost factor acts first. -/
 theorem trace_actionPerm (f : α → G) (q : Q) (w : PresentationWord α) :
     trace (actionPerm f) q w = (FreeGroup.lift f (FreeGroup.mk w))⁻¹ • q := by
-  induction w generalizing q with
-  | nil => simp [FreeGroup.lift_mk]
-  | cons l w ih =>
-    rcases l with ⟨a, s⟩
-    cases s <;> simp [ih, FreeGroup.lift_mk, mul_smul]
+  have hcomp : (MulAction.toPermHom G Q).comp (FreeGroup.lift f) =
+      FreeGroup.lift (fun a => (actionPerm f a)⁻¹) := by
+    apply FreeGroup.ext_hom
+    intro a
+    simp only [MonoidHom.comp_apply, FreeGroup.lift_apply_of, actionPerm,
+      ← MulAction.coe_toPermHom, map_inv, inv_inv]
+  rw [trace_eq_lift, ← hcomp]
+  simp
 
 /-- Rewriting a relation from any state yields a relation among the edge generators.
 In particular every transversal-conjugated defining relator evaluates to one. -/
