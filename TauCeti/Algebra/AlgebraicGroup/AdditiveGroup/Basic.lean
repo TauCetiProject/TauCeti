@@ -166,13 +166,13 @@ theorem toAdd_gaPointsMulEquiv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A))
   rw [gaPointsMulEquiv]
   simp
 
-/-- The universal point of `𝔾ₐ`, given by the identity algebra map, has parameter `ι 1`. -/
+/-- The universal additive point has parameter equal to the universal coordinate. -/
 @[simp]
 theorem gaPointsMulEquiv_toConv_id :
     gaPointsMulEquiv (toConv (AlgHom.id R (SymmetricAlgebra R R))) =
       Multiplicative.ofAdd (ι R R 1) := by
   rw [← ofAdd_toAdd (gaPointsMulEquiv _), toAdd_gaPointsMulEquiv]
-  rfl
+  simp
 
 /-- The inverse equivalence sends an element of the value algebra to the corresponding
 `A`-valued point of `𝔾ₐ`. -/

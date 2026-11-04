@@ -22,7 +22,8 @@ using only within-set differentiability, with no second derivative or interior-d
 in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDerivWithin_smul` to
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 `TauCeti.extDerivWithin_function_smul` is the Leibniz rule for multiplication by a scalar
-function.
+function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
+`DifferentiableAt.fderivWithin`.
 -/
 
 public section
@@ -48,6 +49,16 @@ theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :
   have h₁ : (1 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ v) := by
     funext i; fin_cases i; rfl
   simp [h₀, h₁, sub_eq_add_neg]
+
+/-- The exterior derivative of a one-form differentiable at `x`, on an ordered pair, in terms of
+the derivatives of its coefficient functions `ω(w)` and `ω(v)`. This is the two-vector case of
+`extDeriv_apply`; it is the curl identity that turns the divergence theorem into Stokes' formula
+on a rectangle. -/
+theorem extDeriv_apply_pair_of_differentiableAt {ω : E → E [⋀^Fin 1]→L[𝕜] F}
+    (hω : DifferentiableAt 𝕜 ω x) (v w : E) :
+    extDeriv ω x ![v, w] = fderiv 𝕜 (fun y ↦ ω y (fun _ ↦ w)) x v -
+      fderiv 𝕜 (fun y ↦ ω y (fun _ ↦ v)) x w := by
+  simp [extDeriv_apply_pair, fderiv_continuousAlternatingMap_apply_const_apply hω]
 
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
@@ -110,6 +121,12 @@ theorem extDeriv_function_smul {c : E → 𝕜} (hc : DifferentiableAt 𝕜 c x)
       hω.differentiableWithinAt
 
 end TauCeti
+
+/-- The exterior derivative within a set of a form differentiable at a point of unique
+differentiability is its exterior derivative. -/
+protected theorem DifferentiableAt.extDerivWithin (h : DifferentiableAt 𝕜 ω x)
+    (hxs : UniqueDiffWithinAt 𝕜 s x) : extDerivWithin ω s x = extDeriv ω x := by
+  rw [extDerivWithin, extDeriv, h.fderivWithin hxs]
 
 namespace ContinuousLinearMap
 

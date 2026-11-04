@@ -112,7 +112,7 @@ theorem ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L} (hα :
     simp
   rw [hexp, Nat.add_sub_cancel, hadt]
   rw [pow_succ] at hzero
-  simpa [Module.End.mul_apply] using hzero
+  simpa [mul_apply_eq_comp] using hzero
 
 /-! ## Simple roots -/
 

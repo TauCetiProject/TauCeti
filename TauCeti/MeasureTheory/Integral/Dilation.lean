@@ -15,43 +15,41 @@ scalar `r` rescales its integral against an additive Haar measure by `|(r ^ n)�
 the dimension of `E`. Mathlib records this for the Bochner integral as
 `MeasureTheory.Measure.integral_comp_smul`; this file is the lower-Lebesgue-integral counterpart,
 proved the same way from `MeasureTheory.Measure.map_addHaar_smul`, and, like the Bochner version,
-needing no integrability hypothesis.
+needing no measurability hypothesis. Unlike the Bochner version, it needs `r ≠ 0`: for `r = 0`
+the left-hand side is `g 0 * μ univ`, which is `∞` in positive dimension unless `g 0 = 0`.
 
 ## Main declarations
 
-* `TauCeti.lintegral_comp_smul`: `∫⁻ x, g (r • x) ∂μ = |(r ^ n)⁻¹| * ∫⁻ x, g x ∂μ`.
-* `TauCeti.lintegral_comp_inv_smul`: the same law written for `r⁻¹` and `0 < r`.
-* `TauCeti.lintegral_comp_homothety`: the same law for the homothety of ratio `r` about any
-  centre.
+* `MeasureTheory.Measure.lintegral_comp_smul`:
+  `∫⁻ x, g (r • x) ∂μ = |(r ^ n)⁻¹| * ∫⁻ x, g x ∂μ`.
+* `MeasureTheory.Measure.lintegral_comp_inv_smul`: the same law written for `r⁻¹`, with factor
+  `|r ^ n|`.
+* `MeasureTheory.Measure.lintegral_comp_homothety`: the same law for the homothety of ratio `r`
+  about any centre.
 -/
 
 public section
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-open MeasureTheory Module
+open Module
 open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
 /-- **Dilation scaling of the lower Lebesgue integral.** This is the counterpart, for `∫⁻`, of
-Mathlib's `MeasureTheory.Measure.integral_comp_smul`; as there, no integrability of `g` is
-needed. -/
+`MeasureTheory.Measure.integral_comp_smul`; as there, `g` need not be measurable. -/
 theorem lintegral_comp_smul (g : E → ℝ≥0∞) {r : ℝ} (hr : r ≠ 0) :
     ∫⁻ x, g (r • x) ∂μ = ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| * ∫⁻ x, g x ∂μ := by
-  calc ∫⁻ x, g (r • x) ∂μ = ∫⁻ y, g y ∂Measure.map (fun x => r • x) μ :=
-        (lintegral_map_equiv g
-          (Homeomorph.smul (isUnit_iff_ne_zero.2 hr).unit).toMeasurableEquiv).symm
-    _ = ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| * ∫⁻ x, g x ∂μ := by
-        rw [Measure.map_addHaar_smul μ hr, lintegral_smul_measure, smul_eq_mul]
+  rw [← (measurableEmbedding_const_smul₀ hr).lintegral_map, map_addHaar_smul μ hr,
+    lintegral_smul_measure, smul_eq_mul]
 
-/-- Dilating the variable by `r⁻¹`, for `0 < r`, multiplies a lower Lebesgue integral by
-`r ^ n`, where `n` is the dimension of the ambient space. -/
-theorem lintegral_comp_inv_smul (g : E → ℝ≥0∞) {r : ℝ} (hr : 0 < r) :
-    ∫⁻ x, g (r⁻¹ • x) ∂μ = ENNReal.ofReal (r ^ finrank ℝ E) * ∫⁻ x, g x ∂μ := by
-  rw [lintegral_comp_smul μ g (inv_ne_zero hr.ne'), inv_pow, inv_inv,
-    abs_of_nonneg (by positivity)]
+/-- Dilating the variable by `r⁻¹`, for `r ≠ 0`, multiplies a lower Lebesgue integral by
+`|r ^ n|`, where `n` is the dimension of the ambient space. -/
+theorem lintegral_comp_inv_smul (g : E → ℝ≥0∞) {r : ℝ} (hr : r ≠ 0) :
+    ∫⁻ x, g (r⁻¹ • x) ∂μ = ENNReal.ofReal |r ^ finrank ℝ E| * ∫⁻ x, g x ∂μ := by
+  rw [lintegral_comp_smul μ g (inv_ne_zero hr), inv_pow, inv_inv]
 
 /-- **Homothety scaling of the lower Lebesgue integral.** Precomposing with the homothety of
 ratio `r ≠ 0` about any centre `x` rescales a lower Lebesgue integral against an additive Haar
@@ -63,4 +61,4 @@ theorem lintegral_comp_homothety (g : E → ℝ≥0∞) (x : E) {r : ℝ} (hr : 
   rw [lintegral_sub_right_eq_self (fun z => g (r • z + x)) x,
     lintegral_comp_smul μ (fun z => g (z + x)) hr, lintegral_add_right_eq_self]
 
-end TauCeti
+end MeasureTheory.Measure

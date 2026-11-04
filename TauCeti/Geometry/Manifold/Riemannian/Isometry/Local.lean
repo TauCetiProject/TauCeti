@@ -158,7 +158,7 @@ theorem exists_contMDiff_mpullback_apply_eq (hf : IsLocalRiemannianIsometry I J 
     (u : TangentSpace I x) :
     ∃ X : Π y : N, TangentSpace J y,
       CMDiff ∞ (T% X) ∧ mpullback I J f X x = u ∧ X (f x) = mfderiv I J f x u := by
-  obtain ⟨X, hX, hXu⟩ := FiberBundle.exists_contMDiff_section_eq J F (mfderiv I J f x u)
+  obtain ⟨X, hX, hXu⟩ := FiberBundle.exists_contMDiff_section_eq J F ∞ (mfderiv I J f x u)
   exact ⟨X, hX, (hf.mpullback_apply_eq_iff X u).2 hXu, hXu⟩
 
 end Extension

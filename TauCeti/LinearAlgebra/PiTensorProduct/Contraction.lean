@@ -54,7 +54,7 @@ private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm
           (fun b : {b : ι // b ≠ i ∧ b ≠ j} => update v i z b.val) =
             (fun b => v b.val) :=
         update_comp_eq_of_forall_ne v z (fun b => b.property.1)
-      simp only [update_self, update_of_ne hij.symm, hup, map_add, add_apply, add_smul]
+      simp only [update_self, update_of_ne hij.symm, hup, map_add, LinearMap.add_apply, add_smul]
     by_cases haj : a = j
     · subst a
       have hup (z : M) :
@@ -75,8 +75,9 @@ private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm
           (fun b : {b : ι // b ≠ i ∧ b ≠ j} => update v i z b.val) =
             (fun b => v b.val) :=
         update_comp_eq_of_forall_ne v z (fun b => b.property.1)
-      simp only [update_self, update_of_ne hij.symm, hup, map_smul, smul_apply, smul_smul,
-        smul_eq_mul]
+      simp only [LinearMap.smul_apply, smul_eq_mul, update_self, update_of_ne hij.symm, hup,
+        map_smul,
+        smul_smul]
     by_cases haj : a = j
     · subst a
       have hup (z : M) :
@@ -180,7 +181,7 @@ theorem contractTensorPair_comp_insertPair (B : LinearMap.BilinForm R M) {i j : 
       if h : (a : ι) ≠ i ∧ (a : ι) ≠ j then w ⟨a, h⟩ else if (a : ι) = i then p else q) = w :=
     funext fun a => dite_eq_left a.2
   simp only [compMultilinearMap_apply, comp_apply, PiTensorProduct.insertPair_tprod,
-    contractTensorPair_tprod, hw, smul_apply, id_apply]
+    contractTensorPair_tprod, hw, LinearMap.smul_apply, id_apply]
   simp [hij.symm]
 
 end LinearMap

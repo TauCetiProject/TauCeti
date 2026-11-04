@@ -213,7 +213,7 @@ constant: both sides of each defining comparison scale by that constant. -/
 theorem schwarzRearrangement_smul_measure {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞)
     (f : E → ℝ≥0∞) : schwarzRearrangement (c • μ) f = schwarzRearrangement μ f := by
   ext x
-  simp only [schwarzRearrangement_def, Measure.smul_apply, smul_eq_mul,
+  simp only [schwarzRearrangement_def, _root_.smul_apply, smul_eq_mul,
     ENNReal.mul_lt_mul_iff_right hc₀ hc]
 
 /-- The Schwarz rearrangement of the indicator of a set is the indicator of

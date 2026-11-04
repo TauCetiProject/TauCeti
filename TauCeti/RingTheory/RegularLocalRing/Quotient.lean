@@ -54,7 +54,7 @@ private theorem exists_regularSystem_aux (dimension : ℕ) :
       I = span (generators '' {index | (index : ℕ) < count}) := by
   classical
   induction dimension using Nat.strong_induction_on with
-  | h dimension induction =>
+  | ind dimension induction =>
     intro R _ _ hdimension I _
     by_cases hzero : I = ⊥
     · obtain ⟨generators, hspan⟩ :=

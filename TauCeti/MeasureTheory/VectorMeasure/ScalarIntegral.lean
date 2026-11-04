@@ -37,6 +37,8 @@ of the naturality of the vector-measure integral, `map_integral_comp_eq_integral
 * `MeasureTheory.VectorMeasure.scalarMeasureOfReal`: a signed measure as a scalar measure.
 * `MeasureTheory.VectorMeasure.scalarMeasureOfReal_realPart_add_I_smul_imagPart`: the
   reconstruction `μ = re μ + I • im μ`.
+* `MeasureTheory.VectorMeasure.isFiniteMeasure_variation`: every scalar measure has finite
+  variation.
 * `MeasureTheory.VectorMeasure.re_integral_ofReal`,
   `MeasureTheory.VectorMeasure.im_integral_ofReal`: the real and imaginary parts of the integral
   of a real function are its integrals against the real and imaginary parts of the measure.
@@ -153,6 +155,16 @@ theorem variation_scalarMeasureOfReal (σ : SignedMeasure X) :
   refine le_antisymm (variation_le_of_forall_enorm_le fun s _ => ?_) ?_
   · simpa [enorm_le_iff_norm_le] using enorm_measure_le_variation σ s
   · simpa using variation_scalarMeasureRealPart_le (scalarMeasureOfReal σ : VectorMeasure X 𝕜)
+
+/-- A scalar measure has finite variation. -/
+instance isFiniteMeasure_variation (μ : VectorMeasure X 𝕜) : IsFiniteMeasure μ.variation := by
+  -- The variation of a signed measure is the total variation of its Jordan decomposition.
+  have (σ : SignedMeasure X) :
+      IsFiniteMeasure (scalarMeasureOfReal σ : VectorMeasure X 𝕜).variation := by
+    rw [variation_scalarMeasureOfReal, ← SignedMeasure.totalVariation_eq_variation]
+    infer_instance
+  rw [← scalarMeasureOfReal_realPart_add_I_smul_imagPart μ]
+  exact isFiniteMeasure_of_le _ variation_add_le
 
 /-- A function integrable against a scalar measure is integrable against its real part. -/
 theorem Integrable.scalarMeasureRealPart {V : Type*} [NormedAddCommGroup V]

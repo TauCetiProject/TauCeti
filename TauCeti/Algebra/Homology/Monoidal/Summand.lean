@@ -72,8 +72,7 @@ lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ �
   simp [tensorHom_def]
 
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
-  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
-  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
 
@@ -126,7 +125,7 @@ lemma leftUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (λ_ X).inv.f j = (leftUnitor' X).inv j := by
   dsimp only [MonoidalCategoryStruct.leftUnitor, monoidalCategoryStruct,
     monoidalCategory, leftUnitor, Iso.symm_inv]
-  simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
+  simp only [Hom.isoOfComponents_hom_f, CategoryTheory.Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
 /-- The degreewise component of the inverse right unitor of homological complexes is the
@@ -136,7 +135,7 @@ lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (ρ_ X).inv.f j = (rightUnitor' X).inv j := by
   dsimp only [MonoidalCategoryStruct.rightUnitor, monoidalCategoryStruct,
     monoidalCategory, rightUnitor, Iso.symm_inv]
-  simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
+  simp only [Hom.isoOfComponents_hom_f, CategoryTheory.Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
 /-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`

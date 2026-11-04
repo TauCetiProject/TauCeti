@@ -97,7 +97,7 @@ theorem pow_ne_radicand (b : constants p) : b ^ p ≠ radicand p := by
 
 /-- `X ^ p - t` is irreducible over `k`. -/
 theorem irreducible_X_pow_sub_C_radicand : Irreducible (X ^ p - C (radicand p)) :=
-  X_pow_sub_C_irreducible_of_prime hp.out (pow_ne_radicand p)
+  irreducible_X_pow_sub_C_of_prime hp.out (pow_ne_radicand p)
 
 /-- `k' / k` is not separable: it is purely inseparable
 (`TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`) and `s ∉ k`. -/

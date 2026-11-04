@@ -49,6 +49,8 @@ We prove the basic theory in the amplitude:
 * the degenerate modulus `k = 0`: `legendreF φ 0 = legendreE φ 0 = φ`, and
   `legendreK 0 = legendreEc 0 = π / 2`;
 * the characteristic `α2 = 0`: `legendrePi φ k 0 = legendreF φ k`.
+* on `[0, π / 2]`, the integrals of the second and third kinds in terms of the first
+  (`legendreE_eq_legendreF_sub`, `legendrePi_eq_legendreF_add`).
 
 The conventions (modulus rather than parameter, argument order `(φ, k)` and `(φ, k, α2)`) are
 those of DLMF Chapter 19 and of B. Braams' `lean-codes` formalization of B. C. Carlson's
@@ -143,6 +145,15 @@ theorem legendreF_integrand_eq_inv_sqrt (k θ : ℝ) :
 theorem intervalIntegrable_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) (a b : ℝ) :
     IntervalIntegrable (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) volume a b :=
   (continuous_legendreF_integrand hk).intervalIntegrable a b
+
+/-- The integrand of the first kind is continuous on `[0, φ]` when `0 ≤ φ ≤ π / 2` and
+`k² sin² φ < 1`. -/
+theorem continuousOn_legendreF_integrand {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ π / 2)
+    (hk : k ^ 2 * sin φ ^ 2 < 1) :
+    ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (uIcc 0 φ) := by
+  rw [uIcc_of_le hφ0]
+  exact (continuous_const.sub (continuous_const.mul (continuous_sin.pow 2))).continuousOn.rpow_const
+    fun θ ⟨h0, hθ⟩ ↦ Or.inl (sub_pos.mpr (mul_sin_sq_lt_one_of_le hk h0 hθ hφ)).ne'
 
 /-! #### The second kind -/
 
@@ -252,6 +263,19 @@ theorem self_le_legendreF {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 ≤ φ) : φ �
     (intervalIntegrable_legendreF_integrand hk 0 φ) fun θ _ ↦ one_le_legendreF_integrand hk θ
   simpa [legendreF_def] using h
 
+/-- An elementary upper bound for the incomplete elliptic integral of the first kind
+at nonnegative amplitude, valid for either sign of the modulus. -/
+theorem legendreF_le_div_sqrt {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 ≤ φ) :
+    legendreF φ k ≤ φ / √(1 - k ^ 2) := by
+  have h := integral_mono_on hφ
+    (intervalIntegrable_legendreF_integrand hk 0 φ) intervalIntegrable_const
+    (fun θ _ ↦ legendreF_integrand_le hk θ)
+  have hr : (1 - k ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2))⁻¹ := by
+    rw [inv_sqrt_eq_rpow]
+    norm_num
+  rw [hr] at h
+  simpa [legendreF_def, div_eq_mul_inv] using h
+
 /-- `F(φ, k)` is odd in the amplitude. -/
 @[simp]
 theorem legendreF_neg (φ k : ℝ) : legendreF (-φ) k = -legendreF φ k :=
@@ -313,6 +337,13 @@ theorem legendreF_zero_modulus (φ : ℝ) : legendreF φ 0 = φ := by
 /-- For `k ^ 2 < 1`, the complete integral of the first kind `K(k)` is positive. -/
 theorem legendreK_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreK k :=
   legendreF_pos hk (by positivity)
+
+/-- An elementary upper bound for the complete elliptic integral of the first kind,
+valid for either sign of the modulus. -/
+theorem legendreK_le_pi_div_two_div_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreK k ≤ π / 2 / √(1 - k ^ 2) := by
+  simpa [legendreK_def] using
+    legendreF_le_div_sqrt hk (by positivity : (0 : ℝ) ≤ π / 2)
 
 @[simp]
 theorem legendreK_neg (k : ℝ) : legendreK (-k) = legendreK k := legendreF_neg_modulus _ k
@@ -391,6 +422,29 @@ theorem legendreE_int_mul_pi (k : ℝ) (n : ℤ) : legendreE (n * π) k = 2 * n 
 theorem legendreE_zero_modulus (φ : ℝ) : legendreE φ 0 = φ := by
   simp [legendreE_def]
 
+/-- The integral of the second kind in terms of the first:
+`E(φ, k) = F(φ, k) - k² ∫₀^φ sin² θ (1 - k² sin² θ)^(-1/2) dθ` for `0 ≤ φ ≤ π / 2` and
+`k² sin² φ < 1`. -/
+theorem legendreE_eq_legendreF_sub {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ π / 2)
+    (hk : k ^ 2 * sin φ ^ 2 < 1) :
+    legendreE φ k = legendreF φ k -
+      k ^ 2 * ∫ θ in (0 : ℝ)..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * sin θ ^ 2 := by
+  have hX := continuousOn_legendreF_integrand hφ0 hφ hk
+  have hX2 : ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * sin θ ^ 2)
+      (uIcc 0 φ) := hX.mul (continuous_sin.pow 2).continuousOn
+  rw [legendreF_def, legendreE_def, ← intervalIntegral.integral_const_mul,
+    ← intervalIntegral.integral_sub hX.intervalIntegrable (hX2.intervalIntegrable.const_mul _)]
+  refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
+  rw [uIcc_of_le hφ0] at hθ
+  have hD : 0 < 1 - k ^ 2 * sin θ ^ 2 := sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ.1 hθ.2 hφ)
+  -- The square root is the inverse square root times its argument.
+  have hhalf : (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) =
+      (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (1 - k ^ 2 * sin θ ^ 2) := by
+    rw [← rpow_add_one hD.ne']
+    norm_num
+  rw [hhalf]
+  ring
+
 /-- For every modulus `k`, the complete integral of the second kind `E(k)` is positive. -/
 theorem legendreEc_pos (k : ℝ) : 0 < legendreEc k :=
   legendreE_pos (by positivity)
@@ -459,6 +513,29 @@ theorem legendrePi_add_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (φ : �
 theorem legendrePi_int_mul_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (n : ℤ) :
     legendrePi (n * π) k α2 = 2 * n * legendrePic k α2 := by
   simpa using legendrePi_add_int_mul_pi hk hα 0 n
+
+/-- The integral of the third kind in terms of the first:
+`Π(φ, k, α²) = F(φ, k) + α² ∫₀^φ sin² θ (1 - α² sin² θ)⁻¹ (1 - k² sin² θ)^(-1/2) dθ` for
+`0 ≤ φ ≤ π / 2`, `k² sin² φ < 1` and `α² sin² φ < 1`. -/
+theorem legendrePi_eq_legendreF_add {φ k α2 : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ π / 2)
+    (hk : k ^ 2 * sin φ ^ 2 < 1) (hα : α2 * sin φ ^ 2 < 1) :
+    legendrePi φ k α2 = legendreF φ k + α2 * ∫ θ in (0 : ℝ)..φ,
+      (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (sin θ ^ 2 / (1 - α2 * sin θ ^ 2)) := by
+  have hαθ {θ : ℝ} (hθ : θ ∈ uIcc 0 φ) : 0 < 1 - α2 * sin θ ^ 2 := by
+    rw [uIcc_of_le hφ0] at hθ
+    exact sub_pos.mpr (mul_sin_sq_lt_one_of_le hα hθ.1 hθ.2 hφ)
+  have hX := continuousOn_legendreF_integrand hφ0 hφ hk
+  have hX2 : ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) *
+      (sin θ ^ 2 / (1 - α2 * sin θ ^ 2))) (uIcc 0 φ) :=
+    hX.mul ((continuous_sin.pow 2).continuousOn.div
+      (continuous_const.sub (continuous_const.mul (continuous_sin.pow 2))).continuousOn
+      fun θ hθ ↦ (hαθ hθ).ne')
+  rw [legendreF_def, legendrePi_def, ← intervalIntegral.integral_const_mul,
+    ← intervalIntegral.integral_add hX.intervalIntegrable (hX2.intervalIntegrable.const_mul _)]
+  refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
+  have hD := (hαθ hθ).ne'
+  field_simp
+  ring
 
 /-- For `k ^ 2 < 1` and `α2 < 1`, the complete integral of the third kind `Π(k, α²)` is
 positive. -/

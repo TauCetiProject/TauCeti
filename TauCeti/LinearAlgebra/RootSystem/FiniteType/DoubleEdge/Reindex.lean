@@ -194,7 +194,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A
   -- Strong induction on the distance from `a`: the intervening edges are single by induction.
   -- Thus the two-multiple-edge exclusion applies to the subpath from `a` through `r + 1`.
   induction r using Nat.strong_induction_on with
-  | h r ih =>
+  | ind r ih =>
       let m := r - a - 1
       have hn : 0 < n := by omega
       -- Read the interval from vertex `a` through vertex `r + 1` as a chain of length `m + 3`.

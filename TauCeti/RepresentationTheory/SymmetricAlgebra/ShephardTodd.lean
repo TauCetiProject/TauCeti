@@ -109,9 +109,7 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_dual_of_pseudoreflecti
       (∀ i, ∃ d, 0 < d ∧
         (f i : SymmetricAlgebra K (Module.Dual K V)) ∈ homogeneousSubmodule K (Module.Dual K V) d) ∧
         Function.Bijective (MvPolynomial.aeval (R := K) f) := by
-  have := ρ.faithfullyFlat_symmetricAlgebra_dual_of_finrank_quotient_eq_one
-    (s := ((↑) : {g : G // Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1} → G))
-    (by rwa [Subtype.range_coe_subtype, ← pseudoreflectionSubgroup_def]) (fun g ↦ g.2)
+  have := ρ.faithfullyFlat_symmetricAlgebra_dual_of_pseudoreflectionSubgroup_eq_top hG
   obtain ⟨f, hf, hbij⟩ :=
     ρ.dual.exists_bijective_aeval_symmetricAlgebraInvariants_of_faithfullyFlat
   -- Reindex the generators by `Fin (dim V)`, using `dim V* = dim V`.

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Modular-forms basics: extensions of Mathlib's API
@@ -65,6 +66,9 @@ AINTLIB `LeanModularForms` project
 * `slash_zpow_eq_self_of_slash_eq`, `slash_zpow_mul_mul_zpow_eq_smul`: slash
   invariance passes to integer powers, and an eigenvalue law survives multiplication on both
   sides by powers of an invariance.
+* `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
+  for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
+  every integer power of `A`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -166,23 +170,34 @@ analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet prov
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
 
-/-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
-on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor
-`denom (-I) z ^ (-k) = (-1) ^ (-k) = (-1) ^ k`.
+namespace TauCeti.ModularForm
 
-This is the source of every parity constraint on weights and nebentypus characters. -/
+variable {k : ℤ} {f : ℍ → ℂ}
+
+/-- Negating a matrix of `SL(2, ℤ)` multiplies its weight-`k` slash action by `(-1)^k`, the
+scalar by which the central element `-I` acts. -/
 @[simp]
-theorem _root_.ModularForm.slash_neg_one (k : ℤ) (f : ℍ → ℂ) :
-    f ∣[k] (-1 : GL (Fin 2) ℝ) = (-1 : ℂ) ^ k • f := by
-  have hzpow : (-1 : ℂ) ^ (-k) = (-1 : ℂ) ^ k := by
-    rw [zpow_neg, ← inv_zpow]
-    norm_num
-  have hdet : (-1 : GL (Fin 2) ℝ).det = 1 := by
-    ext
-    simp [Matrix.det_neg]
-  funext z
-  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp [Matrix.det_neg])]
-  simp [hzpow, hdet, mul_comm]
+theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
+    f ∣[k] (-A) = (-1 : ℂ) ^ k • f ∣[k] A := by
+  -- `ModularForm.SL_slash` exposes the image of `-I` in `GL (Fin 2) ℝ` through `toGL ∘ map`,
+  -- which is `mapGL` unfolded.
+  have hGL : toGL (map (Int.castRingHom ℝ) (-1 : SL(2, ℤ))) = -1 := mapGL_neg_one
+  rw [← neg_one_mul, SlashAction.slash_mul, ModularForm.SL_slash f (-1), hGL,
+    _root_.ModularForm.slash_neg_one]
+  -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
+  exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
+
+/-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
+`SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
+theorem SL_slash_zpow_eq_self_of_slash_eq {A : SL(2, ℤ)} (hA : f ∣[k] A = f) (j : ℤ) :
+    f ∣[k] (A ^ j) = f := by
+  have hGL : toGL (map (Int.castRingHom ℝ) (A ^ j)) = toGL (map (Int.castRingHom ℝ) A) ^ j :=
+    map_zpow (mapGL ℝ) A j
+  rw [ModularForm.SL_slash] at hA ⊢
+  rw [hGL]
+  exact slash_zpow_eq_self_of_slash_eq k f hA j
+
+end TauCeti.ModularForm
 
 /-- **The weight-`k` slash formula at a positive-determinant matrix**, free of the `σ` twist:
 
@@ -238,7 +253,7 @@ theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) 
   rw [ModularForm.slash_apply_of_det_pos k hdetpos, UpperHalfPlane.glScalar_smul,
     UpperHalfPlane.denom_scalar, hdet, abs_of_nonneg (sq_nonneg (u : ℝ))]
   push_cast
-  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← zpow_mul]
+  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← _root_.zpow_mul]
   simp only [Pi.smul_apply, smul_eq_mul]
   rw [mul_assoc, ← zpow_add₀ (by exact_mod_cast u.ne_zero), mul_comm]
   congr 1
@@ -271,7 +286,7 @@ theorem _root_.SlashInvariantForm.slash_action_eqn_of_det_pos {F : Type*} [FunLi
   have hden : denom γ (τ : ℂ) ^ (-k) ≠ 0 := zpow_ne_zero _ (denom_ne_zero γ τ)
   have hpow : ((|(γ.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) ≠ 0 := zpow_ne_zero _ hdet_ne
   rw [(eq_mul_inv_iff_mul_eq₀ hpow).mpr ((eq_mul_inv_iff_mul_eq₀ hden).mpr h),
-    ← zpow_neg, ← zpow_neg, neg_neg, neg_sub]
+    ← _root_.zpow_neg, ← _root_.zpow_neg, neg_neg, neg_sub]
   ring
 
 /-! ### Translation by positive-determinant matrices -/
@@ -523,12 +538,12 @@ theorem eq_zero_of_eq_const_of_weight_ne_zero
   have hdetpos : 0 < γ.val.det := by
     simp [← GeneralLinearGroup.val_det_apply, hdet]
   have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
-  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, _root_.one_zpow, one_mul] at h
   rw [hf, Function.const_apply, Function.const_apply] at h
   have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
   have hnorm : ‖denom γ z‖ = 1 := by
     apply (zpow_left_inj₀ (norm_nonneg _) zero_le_one hk).mp
-    simpa only [norm_zpow, norm_one, one_zpow] using congrArg norm hd
+    simpa only [norm_zpow, norm_one, _root_.one_zpow] using congrArg norm hd
   have him : |(denom γ z).im| = 2 := by
     simp [denom, z, Complex.mul_im, abs_mul, abs_div, abs_abs]
     field_simp

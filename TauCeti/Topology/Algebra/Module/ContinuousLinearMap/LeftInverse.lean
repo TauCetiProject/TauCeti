@@ -16,6 +16,9 @@ algebra of the differential of a parameter-preserving family of immersions.
 
 The construction uses Mathlib's `ContinuousLinearMap.HasLeftInverse`: subtract the
 contribution of the first coordinate, then apply a left inverse on the second factor.
+
+If a compression `P ∘L A` is invertible, the left inverse `(P ∘L A).inverse ∘L P` also gives a
+projection off the range of `A`. Composing a linear map with this projection annihilates `A`.
 -/
 
 public section
@@ -44,5 +47,16 @@ theorem hasLeftInverse_fst_prod_iff (A : E × F →L[R] G) :
       rw [← map_sub]
       simp
     simpa [hA] using congrArg (Prod.mk x) (hL y)
+
+/-- Projecting a continuous linear map off the range of an operator with invertible compression
+annihilates that operator. -/
+theorem sub_comp_inverse_comp_comp_eq_zero (a : E →L[R] G) (A : F →L[R] E)
+    (P : E →L[R] F) (hQ : (P ∘L A).IsInvertible) :
+    (a - a ∘L A ∘L (P ∘L A).inverse ∘L P) ∘L A = 0 := by
+  ext v
+  have hi := hQ.inverse_apply_self v
+  simp only [comp_apply] at hi
+  simp only [comp_apply, sub_apply, zero_apply]
+  rw [hi, sub_self]
 
 end ContinuousLinearMap

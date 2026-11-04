@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
@@ -189,12 +190,8 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_snd_apply {f : N × M → F} {W : Set (
   have hfq : MDifferentiableAt (J.prod I) 𝓘(𝕜, F) f q :=
     ((hf q hq).contMDiffAt (hW.mem_nhds hq)).mdifferentiableAt
       (ne_of_gt (lt_of_lt_of_le (by simp) hmn))
-  -- Differentiate `f` along the slice `y ↦ (q.1, y)`, whose differential is `inr`. The composite
-  -- is `fun y ↦ f (q.1, y)` and `inr v` is `(0, v)`, both by definition.
-  have h := mvfderiv_comp_apply (g := f) (f := fun y : M ↦ (q.1, y)) q.2 hfq
-    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (A q)
-  rw [mfderiv_prod_right] at h
-  exact h
+  -- Currying fixes `q.1`; the second-factor inclusion sends `A q` to `(0, A q)`.
+  exact congrArg (· (A q)) (TauCeti.mvfderiv_curry_right q.1 q.2 hfq)
 
 end Partial
 

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
 -- Proof-only: lowest homogeneous components of powers.
@@ -62,6 +63,10 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
+* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
+  has zero constant coefficient.
+* `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
+  continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
@@ -101,6 +106,19 @@ of a completed group algebra attached to two topological generators.
 public section
 
 namespace PowerSeries
+
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution depends only on the first `n + 1` coefficients of the outer series. -/
+theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) (n : ℕ) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range (n + 1), coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst' (.of_constantCoeff_zero' hg)]
+  refine finsum_eq_sum_of_support_subset _ fun k hk ↦ ?_
+  rw [Function.mem_support] at hk
+  simp only [Finset.coe_range, Set.mem_Iio]
+  by_contra h
+  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
+    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
 
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
@@ -413,6 +431,22 @@ theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ 
 end Perturbation
 
 end PowerSeries
+
+open scoped PowerSeries PowerSeries.WithPiTopology in
+/-- Substitution is jointly continuous for coefficientwise continuous families, provided the
+inner series always has zero constant coefficient. No discrete coefficient topology is needed. -/
+theorem Continuous.powerSeries_subst {A R S : Type*} [TopologicalSpace A]
+    [CommRing R] [TopologicalSpace R] [CommRing S] [TopologicalSpace S]
+    [IsTopologicalRing S] [Algebra R S] [ContinuousSMul R S]
+    {f : A → R⟦X⟧} {g : A → S⟦X⟧} (hf : Continuous f) (hg : Continuous g)
+    (hg₀ : ∀ a, PowerSeries.constantCoeff (g a) = 0) :
+    Continuous fun a ↦ (f a).subst (g a) := by
+  refine continuous_iff_continuousAt.mpr fun a ↦
+    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+  simp_rw [PowerSeries.coeff_subst_eq_sum_range _ (hg₀ _)]
+  exact (continuous_finsetSum _ fun k _ ↦
+    ((PowerSeries.WithPiTopology.continuous_coeff R k).comp hf).smul
+      ((PowerSeries.WithPiTopology.continuous_coeff S n).comp (hg.pow k))).continuousAt
 
 section Field
 

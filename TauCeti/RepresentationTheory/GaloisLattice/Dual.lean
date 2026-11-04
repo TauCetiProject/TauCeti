@@ -59,19 +59,19 @@ theorem galoisLatticeProperty_contragredient
     smul σ x := ρ σ x
     one_smul x := by
       change ρ 1 x = x
-      rw [map_one, Module.End.one_apply]
+      rw [map_one, one_apply_eq_self]
     mul_smul σ τ x := by
       change ρ (σ * τ) x = ρ σ (ρ τ x)
-      rw [map_mul, Module.End.mul_apply]
+      rw [map_mul, mul_apply_eq_comp]
   }
   let _ : MulAction (Field.absoluteGaloisGroup k) W := {
     smul σ w := τ σ w
     one_smul w := by
       change τ 1 w = w
-      rw [map_one, Module.End.one_apply]
+      rw [map_one, one_apply_eq_self]
     mul_smul σ τ' w := by
       change τ (σ * τ') w = τ σ (τ τ' w)
-      rw [map_mul, Module.End.mul_apply]
+      rw [map_mul, mul_apply_eq_comp]
   }
   rw [galoisLatticeProperty_iff]
   refine ⟨⟨inferInstance, inferInstance⟩, ?_⟩

@@ -200,7 +200,7 @@ theorem halve_snd (p : SolidTorus) : (halve p).2 = p.2 :=
 /-- Halving the radius is an embedding of the solid torus into itself. -/
 theorem isEmbedding_halve : IsEmbedding halve := by
   have h : IsEmbedding fun w : closedBall (0 : ℂ) 1 => (halve (w, 1)).1 := by
-    refine IsEmbedding.of_comp (by fun_prop) continuous_subtype_val ?_
+    refine IsEmbedding.of_comp (by unfold halve; fun_prop) continuous_subtype_val ?_
     exact (Homeomorph.smulOfNeZero (2⁻¹ : ℝ) (by norm_num)).isEmbedding.comp
       IsEmbedding.subtypeVal
   exact h.prodMap IsEmbedding.id
