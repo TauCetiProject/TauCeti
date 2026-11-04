@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
@@ -157,3 +157,23 @@ theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End �
     U.IsReducing A.adjoint ↔ U.IsReducing A := by
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
     LinearMap.adjoint_adjoint, and_comm]
+
+/-- For an invariant subspace of a symmetric map, applying the complementary projection to
+`A X - X M` is the same as forming the residual of the projected trial map. No isometry or
+finite-dimensionality hypothesis is needed.
+
+The corresponding DKPS projected-residual statement is in
+`ForTauCeti/Analysis/InnerProductSpace/Residual/AngleEmbedding.lean` (Jon Crall and
+GPT 5.6 High; Kitware, Apache-2.0). The proof uses invariant-projection commutation. -/
+theorem LinearMap.IsSymmetric.sylvester_starProjection_orthogonal_comp
+    {F : Type*} [AddCommGroup F] [Module 𝕜 F] {A : E →ₗ[𝕜] E}
+    (hA : A.IsSymmetric) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
+    (hU : U ∈ Module.End.invtSubmodule A) (X : F →ₗ[𝕜] E) (M : F →ₗ[𝕜] F) :
+    A ∘ₗ (Uᗮ.starProjection.toLinearMap ∘ₗ X) -
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X) ∘ₗ M =
+      Uᗮ.starProjection.toLinearMap ∘ₗ (A ∘ₗ X - X ∘ₗ M) := by
+  ext x
+  have hU' := hA.orthogonalComplement_mem_invtSubmodule (p := U) hU
+  have hcomm := hA.starProjection_apply_comm hU' (X x)
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, map_sub]
+  rw [hcomm]
