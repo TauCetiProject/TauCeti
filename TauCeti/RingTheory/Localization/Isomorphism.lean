@@ -81,6 +81,25 @@ theorem exists_surjective_localizationAway (f : R →+* S) (hf : f.FiniteType)
   obtain ⟨a, ha⟩ := Algebra.mem_bot.mp (hn n le_rfl)
   exact ⟨a, n, by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using ha⟩
 
+/-- In a commuting square with injective bottom map and a localization on the left,
+a single denominator annihilates the finitely generated kernel of the top map. -/
+theorem exists_mul_ker_eq_zero_of_injective (f : R →+* S) (hker : (ker f).FG)
+    (M : Submonoid R) {Rm T : Type*} [CommRing Rm] [CommRing T]
+    [Algebra R Rm] [IsLocalization M Rm] (g : Rm →+* T) (k : S →+* T)
+    (hcomm : g.comp (algebraMap R Rm) = k.comp f) (hg : Function.Injective g) :
+    ∃ r : M, ∀ x ∈ ker f, (r : R) * x = 0 := by
+  have : Module.Finite R (ker f) := Module.Finite.of_fg hker
+  have he : (Algebra.linearMap R Rm).comp (ker f).subtype =
+      (Algebra.linearMap R Rm).comp (0 : ker f →ₗ[R] R) := by
+    ext x
+    apply hg
+    have hx := congrArg (fun l : R →+* T ↦ l x) hcomm
+    simpa [mem_ker.mp x.2] using hx
+  obtain ⟨r, hr⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule M
+    (Algebra.linearMap R Rm) (ker f).subtype 0 he
+  exact ⟨r, fun x hx ↦ by
+    simpa [Submonoid.smul_def] using congrArg (fun l : ker f →ₗ[R] R ↦ l ⟨x, hx⟩) hr⟩
+
 /-- A ring map with finitely generated kernel which becomes injective after inverting a
 submonoid is injective after inverting a single element of that submonoid. No finite type
 hypothesis on the target is required. -/
@@ -89,18 +108,12 @@ theorem exists_injective_localizationAway (f : R →+* S) (hker : (ker f).FG)
     (h : Function.Injective (IsLocalization.map (S := Localization M)
       (Localization (M.map f)) f (Submonoid.le_comap_map M))) :
     ∃ r ∈ M, Function.Injective (Localization.awayMap f r) := by
-  have : Module.Finite R (ker f) := Module.Finite.of_fg hker
-  -- The inclusion of the kernel becomes zero after localization.
-  have he : (Algebra.linearMap R (Localization M)).comp (ker f).subtype =
-      (Algebra.linearMap R (Localization M)).comp (0 : ker f →ₗ[R] R) := by
-    ext x
-    apply h
-    simp [IsLocalization.map_eq, mem_ker.mp x.2]
-  obtain ⟨r, hr⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule M
-    (Algebra.linearMap R (Localization M)) (ker f).subtype 0 he
+  obtain ⟨r, hr⟩ := f.exists_mul_ker_eq_zero_of_injective hker M
+    (IsLocalization.map (Localization (M.map f)) f (Submonoid.le_comap_map M))
+    (algebraMap S (Localization (M.map f))) (IsLocalization.map_comp _) h
   refine ⟨r, r.2, (IsLocalization.Away.map_injective_iff (S := Localization.Away (r : R))
     (Localization.Away (f r)) f r).mpr fun x hx ↦ ⟨1, ?_⟩⟩
-  simpa [Submonoid.smul_def] using congrArg (fun g : ker f →ₗ[R] R ↦ g ⟨x, hx⟩) hr
+  simpa using hr x hx
 
 /-- A finite type ring map with finitely generated kernel which becomes an isomorphism
 after localization is an isomorphism on a principal neighbourhood. For a Noetherian source,
@@ -115,6 +128,22 @@ theorem exists_bijective_localizationAway (f : R →+* S) (hf : f.FiniteType)
   exact ⟨a * b, M.mul_mem ha hb,
     Localization.awayMap_injective_of_dvd f (dvd_mul_right a b) hinj,
     Localization.awayMap_surjective_of_dvd f (dvd_mul_left b a) hsurj⟩
+
+/-- Localization maps commute with `Localization.awayMap` through compatible algebra towers.
+Such towers arise, for example, when `Submonoid.powers a ≤ M`. -/
+theorem localizationMap_comp_algebraMap_away (f : R →+* S) (M : Submonoid R) (a : R)
+    {Rm Sm : Type*} [CommRing Rm] [CommRing Sm]
+    [Algebra R Rm] [IsLocalization M Rm] [Algebra S Sm] [IsLocalization (M.map f) Sm]
+    [Algebra (Localization.Away a) Rm] [IsScalarTower R (Localization.Away a) Rm]
+    [Algebra (Localization.Away (f a)) Sm] [IsScalarTower S (Localization.Away (f a)) Sm] :
+    (IsLocalization.map (S := Rm) Sm f (Submonoid.le_comap_map M)).comp
+        (algebraMap (Localization.Away a) Rm) =
+      (algebraMap (Localization.Away (f a)) Sm).comp (Localization.awayMap f a) := by
+  apply IsLocalization.ringHom_ext (.powers a)
+  ext x
+  simp [← IsScalarTower.algebraMap_apply R (Localization.Away a) Rm,
+    IsLocalization.Away.map, IsLocalization.map_eq,
+    ← IsScalarTower.algebraMap_apply S (Localization.Away (f a)) Sm]
 
 /-- A finitely presented ring map which becomes an isomorphism after localization is already
 an isomorphism on a principal neighbourhood. Neither ring needs to be Noetherian, and the
@@ -143,7 +172,6 @@ theorem exists_bijective_localizationAway_of_finitePresentation (f : R →+* S)
   have : Algebra.FinitePresentation Ra Sa := hfa
   have hker : (ker fa).FG :=
     Algebra.FinitePresentation.ker_fG_of_surjective (Algebra.ofId Ra Sa) hsurj
-  have : Module.Finite Ra (ker fa) := Module.Finite.of_fg hker
   -- Regard the full localization as a localization of this principal neighbourhood.
   have hle : Submonoid.powers a ≤ M := (Submonoid.powers_le).mpr ha
   let : Algebra Ra (Localization M) :=
@@ -161,23 +189,10 @@ theorem exists_bijective_localizationAway_of_finitePresentation (f : R →+* S)
   let : IsScalarTower S Sa (Localization (M.map f)) :=
     IsLocalization.localization_isScalarTower_of_submonoid_le Sa
       (Localization (M.map f)) _ _ hleS
-  have hcomm : g.comp (algebraMap Ra (Localization M)) =
-      (algebraMap Sa (Localization (M.map f))).comp fa := by
-    apply IsLocalization.ringHom_ext (.powers a)
-    ext x
-    simp only [coe_comp, Function.comp_apply,
-      ← IsScalarTower.algebraMap_apply R Ra (Localization M),
-      fa, IsLocalization.Away.map, IsLocalization.map_eq, g]
-    exact IsScalarTower.algebraMap_apply S Sa (Localization (M.map f)) (f x)
-  have he : (Algebra.linearMap Ra (Localization M)).comp (ker fa).subtype =
-      (Algebra.linearMap Ra (Localization M)).comp (0 : ker fa →ₗ[Ra] Ra) := by
-    ext x
-    apply h.1
-    have hx := congrArg (fun k : Ra →+* Localization (M.map f) ↦ k x) hcomm
-    simpa [mem_ker.mp x.2] using hx
   -- One further denominator kills this finite kernel.
-  obtain ⟨b, hb⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule
-    (M.map (algebraMap R Ra)) (Algebra.linearMap Ra (Localization M)) (ker fa).subtype 0 he
+  obtain ⟨b, hb⟩ := fa.exists_mul_ker_eq_zero_of_injective hker
+    (M.map (algebraMap R Ra)) g (algebraMap Sa (Localization (M.map f)))
+    (f.localizationMap_comp_algebraMap_away M a) h.1
   obtain ⟨t, ht, hbt⟩ := b.2
   refine ⟨a * t, M.mul_mem ha ht, ?_,
     Localization.awayMap_surjective_of_dvd f (dvd_mul_right a t) hsurj⟩
@@ -186,8 +201,7 @@ theorem exists_bijective_localizationAway_of_finitePresentation (f : R →+* S)
   have hxa : algebraMap R Ra x ∈ ker fa := by
     simp [mem_ker, fa, IsLocalization.Away.map, IsLocalization.map_eq, hx]
   have hz : algebraMap R Ra (t * x) = 0 := by
-    have hb' := congrArg (fun k : ker fa →ₗ[Ra] Ra ↦ k ⟨_, hxa⟩) hb
-    simpa [Submonoid.smul_def, ← hbt, Algebra.smul_def, map_mul] using hb'
+    simpa [← hbt, map_mul] using hb _ hxa
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := (IsLocalization.map_eq_zero_iff (.powers a) Ra (t * x)).mp hz
   refine ⟨n + 1, ?_⟩
   calc
