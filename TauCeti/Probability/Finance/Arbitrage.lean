@@ -39,9 +39,10 @@ More generally, if the wealth `V` of any trading strategy, measured in units of 
 that is positive at the later date, is a supermartingale under a measure `Q` with the same null
 sets as `P`, then trading between two dates is not an arbitrage under `P`
 (`MeasureTheory.Supermartingale.not_isArbitrage`). In particular this applies when the wealth in
-units of `N` is a `Q`-martingale; it is then also determined by its terminal value through the
-conditional pricing formula `V_t = N_t E_Q[V_T / N_T | ℱ_t]`
-(`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), which gives the law of one price
+units of `N` is a `Q`-martingale; then, at every earlier date `t` at which `N_t` is almost surely
+nonzero, the wealth is also determined by its terminal value through the conditional pricing
+formula `V_t = N_t E_Q[V_T / N_T | ℱ_t]` (`MeasureTheory.Martingale.ae_eq_mul_condExp_div`),
+which gives the law of one price at such dates
 (`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`), both in
 `TauCeti/Probability/Martingale/Basic.lean`.
 

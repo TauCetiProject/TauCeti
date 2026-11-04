@@ -15,11 +15,12 @@ elementary stochastic integral:
 
 * a martingale `X` with values in a Banach space, frozen at a fixed date `w`, `t ↦ X (min w t)`,
   is a martingale (`MeasureTheory.Martingale.const_min`);
-* if a real martingale `Y` vanishes up to a date `r`, then multiplying it by a bounded random
-  variable known at time `r` gives a martingale (`MeasureTheory.Martingale.mul_left_of_eq_zero`).
+* if a real martingale `Y` vanishes up to a date `r`, then multiplying it by a random variable
+  known at time `r` gives a martingale, provided every product is integrable, as it is for a
+  bounded multiplier (`MeasureTheory.Martingale.mul_left_of_eq_zero`).
 
-Together they show that a bounded position chosen at `r`, times the change of a martingale over
-`(r, r']`, is a martingale.
+Together they show that a position chosen at `r`, times the change of a martingale over
+`(r, r']`, is a martingale whenever this product is integrable at every time.
 
 If `V / N` is a martingale under `Q` for a real process `N`, then `V` is recovered from its value
 at a later date `j` as `V i = N i * Q[V j / N j | ℱ i]` wherever `N i` does not vanish
@@ -88,15 +89,11 @@ theorem Martingale.const_min [SigmaFiniteFiltration μ ℱ] (hX : Martingale X �
   · rw [min_eq_right hsw.le]
     exact hX.condExp_ae_eq (le_min hsw.le hst)
 
-/-- If a martingale `Y` vanishes up to a date `r`, and `a` is a bounded random variable known at
-time `r`, then `t ↦ a * Y t` is a martingale. -/
+/-- If a martingale `Y` vanishes up to a date `r`, and `a` is a random variable known at time `r`
+such that every product `a * Y t` is integrable, then `t ↦ a * Y t` is a martingale. -/
 theorem Martingale.mul_left_of_eq_zero [SigmaFiniteFiltration μ ℱ] {a : Ω → ℝ} {r : ι}
     (hY : Martingale Y ℱ μ) (hY₀ : ∀ t ≤ r, Y t = 0) (ha : StronglyMeasurable[ℱ r] a)
-    (ha_bdd : ∃ C, ∀ᵐ ω ∂μ, |a ω| ≤ C) : Martingale (fun t ↦ a * Y t) ℱ μ := by
-  have hmul : ∀ t, Integrable (a * Y t) μ := fun t ↦ by
-    obtain ⟨C, hC⟩ := ha_bdd
-    exact (hY.integrable t).bdd_mul (ha.mono (ℱ.le r)).aestronglyMeasurable
-      (hC.mono fun ω hω ↦ by rwa [Real.norm_eq_abs])
+    (hmul : ∀ t, Integrable (a * Y t) μ) : Martingale (fun t ↦ a * Y t) ℱ μ := by
   -- Once `a` is known, it factors out of the conditional expectation.
   have hlate : ∀ s t, r ≤ s → s ≤ t → μ[a * Y t | ℱ s] =ᵐ[μ] a * Y s := fun s t hrs hst ↦
     (condExp_mul_of_stronglyMeasurable_left (ha.mono (ℱ.mono hrs)) (hmul t)
