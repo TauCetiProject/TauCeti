@@ -163,15 +163,12 @@ theorem aemeasurable_renewalCountNat (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ
     AEMeasurable (renewalCountNat T t) P := by
   set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hT n).mk (T n)
   have hT' (n : ℕ) : Measurable (T' n) := (hT n).measurable_mk
+  have hT'_ae (n : ℕ) : T' n =ᵐ[P] T n := (hT n).ae_eq_mk.symm
   refine (measurable_renewalCountNat hT' t).aemeasurable.congr ?_
-  filter_upwards [ae_all_iff.2 fun n ↦ (hT n).ae_eq_mk] with ω hω
-  have harr (n : ℕ) : arrival T' n ω = arrival T n ω := by
-    rw [arrival_def, arrival_def]
-    exact Finset.sum_congr rfl fun i _ ↦ (hω i).symm
+  filter_upwards [arrival_congr_ae hT'_ae] with ω harr
   have hrc : renewalCount T' t ω = renewalCount T t ω := by
     simp only [renewalCount_def, harr]
-  have hfn : (fun n ↦ arrival T' n ω) = fun n ↦ arrival T n ω := funext harr
-  rw [renewalCountNat_def, renewalCountNat_def, hfn, hrc]
+  rw [renewalCountNat_def, renewalCountNat_def, funext harr, hrc]
 
 /-- For nondegenerate i.i.d. increments, the natural and extended counts agree almost surely
 on one event for all times. -/

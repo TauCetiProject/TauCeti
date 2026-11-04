@@ -114,6 +114,22 @@ lemma measurable_arrival [MeasurableSpace Ω] {T : ℕ → Ω → ℝ≥0} (hT :
     (n : ℕ) : Measurable (arrival T n) :=
   measurable_arrival_of_lt fun i _ ↦ hT i
 
+/-- If every increment is almost-everywhere measurable, so is every arrival time. -/
+@[fun_prop]
+theorem aemeasurable_arrival [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
+    (hT : ∀ n, AEMeasurable (T n) P) (n : ℕ) : AEMeasurable (arrival T n) P := by
+  simp only [funext (arrival_def T n)]
+  exact Finset.aemeasurable_fun_sum _ fun i _ ↦ hT i
+
+/-- If two increment sequences agree almost everywhere at each index, then almost everywhere all
+of their arrival times agree. -/
+theorem arrival_congr_ae [MeasurableSpace Ω] {P : Measure Ω} {T T' : ℕ → Ω → ℝ≥0}
+    (h : ∀ n, T n =ᵐ[P] T' n) :
+    ∀ᵐ ω ∂P, ∀ n, arrival T n ω = arrival T' n ω := by
+  filter_upwards [ae_all_iff.2 h] with ω hω n
+  rw [arrival_def, arrival_def]
+  exact Finset.sum_congr rfl fun i _ ↦ hω i
+
 /-! ### The counting process -/
 
 /-- The number `#{n ≥ 1 | arrival T n ω ≤ t}` of arrivals in `[0, t]`, counted with multiplicity,
@@ -291,9 +307,9 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
   have hlimsup : ∀ᵐ ω ∂P, ω ∈ limsup (fun n ↦ T' n ⁻¹' Ici a) atTop :=
     mem_ae_iff.2 <| (prob_compl_eq_zero_iff (MeasurableSet.measurableSet_limsup hsm)).2 <|
       measure_limsup_eq_one hsm hindep_s hsum
-  filter_upwards [hlimsup, ae_all_iff.2 hT'_ae] with ω hω hEq
-  simpa [arrival_def, hEq] using
-    tendsto_arrival_atTop_of_frequently_le ha (mem_limsup_iff_frequently_mem.1 hω)
+  filter_upwards [hlimsup, arrival_congr_ae hT'_ae] with ω hω hEq
+  exact (tendsto_arrival_atTop_of_frequently_le ha (mem_limsup_iff_frequently_mem.1 hω)).congr
+    fun n ↦ (hEq n).symm
 
 /-- **Finiteness of the renewal counts.** For independent, identically distributed increments
 that are not almost surely zero, almost surely every count `renewalCount T t` is finite. The

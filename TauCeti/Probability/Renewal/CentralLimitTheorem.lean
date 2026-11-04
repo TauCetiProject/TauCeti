@@ -57,9 +57,10 @@ u(t) = t / μ + x * σ * √(t / μ ^ 3),     m(t) = ⌊u(t)⌋₊ + 1.
    (`tendsto_cdf_renewalCountNat_sub_div`), from which weak convergence follows by
    `MeasureTheory.TendstoInDistribution.of_tendsto_cdf`.
 
-Both the `ℝ≥0` real-time limit (with both `P[T 0]` and `(∫⁻ T 0 ∂P).toReal` formulations), the
-limit along any `t_i → ∞` (in particular any sequence `t_n → ∞`), and the `ℝ` real-time limit are
-provided. Zero waiting times are permitted.
+Both the `ℝ≥0` real-time limit (with both `P[T 0]` and `(∫⁻ T 0 ∂P).toReal` formulations) and the
+`ℝ` real-time limit are provided; precomposing with
+`MeasureTheory.TendstoInDistribution.comp_tendsto` specializes them along any time family `t_i → ∞`
+(in particular any sequence `t_n → ∞`). Zero waiting times are permitted.
 
 ## Main statements
 
@@ -73,8 +74,7 @@ provided. Zero waiting times are permitted.
   the standardized renewal counts to `cdf (gaussianReal 0 1)`.
 * `TauCeti.Probability.tendstoInDistribution_renewalCountNat_sub_div` — **the renewal central limit
   theorem** along `atTop : Filter ℝ≥0`, together with its extended-mean form
-  `tendstoInDistribution_renewalCountNat_sub_div_toReal_lintegral`, its general filter/sequential
-  form `tendstoInDistribution_renewalCountNat_sub_div_of_tendsto`, and its real-axis form
+  `tendstoInDistribution_renewalCountNat_sub_div_toReal_lintegral` and its real-axis form
   `tendstoInDistribution_renewalCountNat_toNNReal_sub_div`.
 
 ## References
@@ -344,9 +344,7 @@ theorem tendsto_cdf_renewalCountNat_sub_div
     have hN := aemeasurable_renewalCountNat (fun n ↦ (hid n).aemeasurable_fst) t
     fun_prop
   have hW_meas (n : ℕ) : AEMeasurable (W n) P := by
-    have hA : AEMeasurable (arrival T n) P := by
-      simp only [funext (arrival_def T n)]
-      exact Finset.aemeasurable_fun_sum _ fun k _ ↦ (hid k).aemeasurable_fst
+    have hA := aemeasurable_arrival (fun k ↦ (hid k).aemeasurable_fst) n
     fun_prop
   have hcoe_top : Tendsto (fun t : ℝ≥0 ↦ (t : ℝ)) atTop atTop :=
     NNReal.tendsto_coe_atTop.2 tendsto_id
@@ -361,8 +359,11 @@ theorem tendsto_cdf_renewalCountNat_sub_div
       have h := hW_clt.tendsto_cdf y
       rw [Measure.map_id] at h
       exact h.comp hm_top) ?_
-  have hnonexp := ae_tendsto_arrival_atTop hindep hid
-    (measure_setOf_eq_zero_lt_one_of_variance_ne_zero (hid 0).aemeasurable_fst hvar)
+  have hzero : P {ω | T 0 ω = 0} < 1 := by
+    simpa only [Function.comp_apply, NNReal.coe_eq_zero] using
+      measure_setOf_eq_zero_lt_one_of_variance_ne_zero
+        (measurable_coe_nnreal_real.comp_aemeasurable (hid 0).aemeasurable_fst) hvar
+  have hnonexp := ae_tendsto_arrival_atTop hindep hid hzero
   filter_upwards [eventually_gt_atTop (0 : ℝ≥0), hu_top.eventually_ge_atTop 0] with t ht hu0
   filter_upwards [hnonexp] with ω hω
   exact renewalCountNat_sub_div_le_iff hω hμ hσ x ht hu0
@@ -370,7 +371,9 @@ theorem tendsto_cdf_renewalCountNat_sub_div
 /-- **The renewal central limit theorem.** Let `T 0, T 1, …` be independent, identically distributed
 nonnegative waiting times with nonzero variance `σ² = Var[T 0; P]` and expectation `μ = P[T 0]`. As
 `t → ∞` in `ℝ≥0`, the standardized renewal count `((N_t : ℝ) - t / μ) / (σ * √(t / μ ^ 3))`
-converges in distribution to any standard normal random variable `Z`. -/
+converges in distribution to any standard normal random variable `Z`. Precomposing with
+`MeasureTheory.TendstoInDistribution.comp_tendsto` gives convergence along any time family (in
+particular any sequence) tending to `atTop`. -/
 theorem tendstoInDistribution_renewalCountNat_sub_div
     (hZ : HasLaw Z (gaussianReal 0 1) P')
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
@@ -403,20 +406,6 @@ theorem tendstoInDistribution_renewalCountNat_sub_div_toReal_lintegral
       atTop Z (fun _ ↦ P) P' := by
   rw [TauCeti.MeasureTheory.toReal_lintegral_coe_eq_integral (hid 0).aemeasurable_fst]
   exact tendstoInDistribution_renewalCountNat_sub_div hZ hindep hid hvar
-
-/-- **The renewal central limit theorem along any time family tending to infinity.** In particular,
-this applies to every sequence `t : ℕ → ℝ≥0` with `Tendsto t atTop atTop`. -/
-theorem tendstoInDistribution_renewalCountNat_sub_div_of_tendsto
-    {ι : Type*} {l : Filter ι} {t : ι → ℝ≥0} (ht : Tendsto t l atTop)
-    (hZ : HasLaw Z (gaussianReal 0 1) P')
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hvar : Var[fun ω ↦ (T 0 ω : ℝ); P] ≠ 0) :
-    TendstoInDistribution
-      (fun i ω ↦
-        ((renewalCountNat T (t i) ω : ℝ) - (t i : ℝ) / P[fun ω ↦ (T 0 ω : ℝ)]) /
-          (√Var[fun ω ↦ (T 0 ω : ℝ); P] * √((t i : ℝ) / P[fun ω ↦ (T 0 ω : ℝ)] ^ 3)))
-      l Z (fun _ ↦ P) P' :=
-  (tendstoInDistribution_renewalCountNat_sub_div hZ hindep hid hvar).comp_tendsto ht
 
 /-- **The renewal central limit theorem on the real time axis.** As `t → ∞` in `ℝ`, the
 standardized renewal count at `t.toNNReal` converges in distribution to a standard normal law. -/

@@ -244,22 +244,6 @@ theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u �
   have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
   simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
 
-/-- **CDF continuity from null singletons.** The cumulative distribution function of a
-probability measure on `ℝ` is continuous when every singleton has measure zero. -/
-theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
-    [NullSingletonClass ν] : Continuous (cdf ν) := by
-  have hleft : ∀ x, leftLim (cdf ν) x = cdf ν x := by
-    intro x
-    have hsing : (cdf ν).measure {x} = 0 := by rw [measure_cdf]; exact measure_singleton x
-    rw [StieltjesFunction.measure_singleton] at hsing
-    have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
-    have hz : cdf ν x - leftLim (cdf ν) x ≤ 0 := ENNReal.ofReal_eq_zero.mp hsing
-    exact le_antisymm hle (by linarith)
-  rw [continuous_iff_continuousAt]
-  intro x
-  rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, hleft x,
-    ((cdf ν).right_continuous x).rightLim_eq]
-
 /-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
 if and only if `ν` assigns mass zero to `{x}`. -/
 theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
@@ -272,6 +256,12 @@ theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : �
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, ((cdf ν).right_continuous x).rightLim_eq,
     hsing, ENNReal.ofReal_eq_zero, sub_nonpos]
   exact ⟨fun h ↦ h.symm.le, le_antisymm hle⟩
+
+/-- **CDF continuity from null singletons.** The cumulative distribution function of a
+probability measure on `ℝ` is continuous when every singleton has measure zero. -/
+theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] : Continuous (cdf ν) :=
+  continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/

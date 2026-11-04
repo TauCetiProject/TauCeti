@@ -40,14 +40,15 @@ finiteness of the Bochner and extended means for `ℝ≥0`-valued random variabl
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
-* `TauCeti.integrable_of_variance_ne_zero`: on a finite measure space, nonzero variance implies
-  integrability.
+* `TauCeti.integrable_of_variance_ne_zero` and
+  `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: for a real-valued random variable
+  with nonzero variance, integrability holds on a finite measure space and `μ {ω | X ω = 0} < 1`
+  holds on a probability space.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`,
-  `TauCeti.lintegral_coe_lt_top_of_variance_ne_zero`,
-  `TauCeti.lintegral_coe_pos_of_variance_ne_zero`, and
-  `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: for an `ℝ≥0`-valued random variable
-  with nonzero variance, the Bochner and extended expectations are finite and strictly positive,
-  and on a probability space the variable is not almost surely zero.
+  `TauCeti.lintegral_coe_lt_top_of_variance_ne_zero`, and
+  `TauCeti.lintegral_coe_pos_of_variance_ne_zero`: for an `ℝ≥0`-valued random variable with
+  nonzero variance on a finite measure space, the Bochner and extended expectations are finite and
+  strictly positive.
 -/
 
 public section
@@ -165,17 +166,16 @@ theorem lintegral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → �
     ENNReal.ofReal_pos]
   exact integral_coe_pos_of_variance_ne_zero hX hvar
 
-/-- On a probability space, a nonnegative random variable with nonzero variance is not almost
+/-- On a probability space, a real-valued random variable with nonzero variance is not almost
 surely zero. -/
-theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ}
+    (hX : AEMeasurable X μ) (hvar : Var[X; μ] ≠ 0) :
     μ {ω | X ω = 0} < 1 := by
   refine lt_of_le_of_ne prob_le_one fun hfull ↦ hvar ?_
   have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
-    hX.nullMeasurable (measurableSet_singleton (0 : ℝ≥0))
-  have hae : ∀ᵐ ω ∂μ, X ω = 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
-  have hae0 : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 := hae.mono fun ω hω ↦ by simp [hω]
-  rw [variance_congr hae0, variance_zero]
+    hX.nullMeasurable (measurableSet_singleton (0 : ℝ))
+  have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
+  rw [variance_congr hae, variance_zero]
 
 end VarianceNeZero
 
