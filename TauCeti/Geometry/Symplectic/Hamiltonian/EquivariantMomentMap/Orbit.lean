@@ -40,9 +40,10 @@ functions whose regular points are exactly the points where the action is locall
 Poisson-commute wherever the cocycle vanishes and `μ(x)` vanishes on brackets
 (`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`). So the results on common levels of
 Poisson-commuting functions apply: a parametrization of a level `μ = c` of the dimension
-`dim M - dim 𝔤`, at whose points the action is locally free, is a coisotropic map when `c`
-vanishes on `⁅𝔤, 𝔤⁆` (`TauCeti.SmoothTwoForm.IsMomentMap.isCoisotropicMap_of_forall_eq`), and a
-Lagrangian map when moreover `2 dim 𝔤 = dim M`
+`dim M - dim 𝔤`, at whose points the action is locally free and the cocycle of `μ` vanishes, is
+a coisotropic map when `c` vanishes on `⁅𝔤, 𝔤⁆`
+(`TauCeti.SmoothTwoForm.IsMomentMap.isCoisotropicMap_of_forall_eq`), and a Lagrangian map when
+moreover `2 dim 𝔤 = dim M`
 (`TauCeti.SmoothTwoForm.IsMomentMap.isLagrangianMap_of_forall_eq`).
 
 For a group-level moment map of a Lie group action the cocycle vanishes identically
@@ -72,6 +73,11 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 namespace SmoothTwoForm
+
+/-- A linear functional on an abelian Lie algebra vanishes on brackets. -/
+private theorem dual_apply_lie_eq_zero {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [IsLieAbelian 𝔤]
+    (ν : Module.Dual ℝ 𝔤) (Z Z' : 𝔤) : ν ⁅Z, Z'⁆ = 0 := by
+  rw [trivial_lie_zero, map_zero]
 
 namespace IsMomentMap
 
@@ -123,9 +129,15 @@ theorem isIsotropic_orbitTangent_iff (h : σ.IsMomentMap a μ) (hc : σ.momentCo
 cocycle of a moment map vanishes, the orbit tangent space is isotropic. -/
 theorem isIsotropic_orbitTangent [IsLieAbelian 𝔤] (h : σ.IsMomentMap a μ)
     (hc : σ.momentCocycle a μ x = 0) : (hσ.symplecticFormAt x).IsIsotropic (a.orbitTangent x) :=
-  (isIsotropic_orbitTangent_iff hσ h hc).2 fun Z Z' ↦ by rw [trivial_lie_zero, map_zero]
+  (isIsotropic_orbitTangent_iff hσ h hc).2 (dual_apply_lie_eq_zero (μ x))
 
 variable [FiniteDimensional ℝ E]
+
+/-- For a nondegenerate form on a finite-dimensional manifold, the symplectic complement of the
+kernel of the differential of a moment map is the orbit tangent space: `(ker dμ_x)^σ = 𝔤 · x`. -/
+theorem orthogonal_ker_differential (h : σ.IsMomentMap a μ) (x : M) :
+    (hσ.symplecticFormAt x).orthogonal (LinearMap.ker (h.differential x)) = a.orbitTangent x := by
+  rw [← orthogonal_orbitTangent hσ h, SymplecticForm.orthogonal_orthogonal]
 
 /-- At a point where the cocycle of a moment map vanishes, `ker dμ_x` is coisotropic exactly when
 `μ(x)` vanishes on the derived algebra `⁅𝔤, 𝔤⁆`. -/
@@ -133,8 +145,7 @@ theorem isCoisotropic_ker_differential_iff (h : σ.IsMomentMap a μ)
     (hc : σ.momentCocycle a μ x = 0) :
     (hσ.symplecticFormAt x).IsCoisotropic (LinearMap.ker (h.differential x)) ↔
       ∀ Z Z' : 𝔤, μ x ⁅Z, Z'⁆ = 0 := by
-  rw [SymplecticForm.isCoisotropic_iff_le, ← orthogonal_orbitTangent hσ h,
-    SymplecticForm.orthogonal_orthogonal, orthogonal_orbitTangent hσ h,
+  rw [SymplecticForm.isCoisotropic_iff_le, orthogonal_ker_differential hσ h,
     h.orbitTangent_le_ker_differential_iff hc]
 
 /-- **The kernel of the differential is coisotropic.** At a point where the cocycle of a moment map
@@ -189,8 +200,7 @@ theorem ker_differential_eq_orbitTangent (h : σ.IsMomentMap a μ)
     (hfree : a.isotropy x = ⊥) (hdim : 2 * finrank ℝ 𝔤 = finrank ℝ E) :
     LinearMap.ker (h.differential x) = a.orbitTangent x := by
   have hL := ((isLagrangian_ker_differential_iff hσ h hc hμ hfree).2 hdim).isIsotropic
-  rw [SymplecticForm.isIsotropic_iff_le, ← orthogonal_orbitTangent hσ h,
-    SymplecticForm.orthogonal_orthogonal, orthogonal_orbitTangent hσ h] at hL
+  rw [SymplecticForm.isIsotropic_iff_le, orthogonal_ker_differential hσ h] at hL
   exact le_antisymm hL (h.orbitTangent_le_ker_differential hc hμ)
 
 omit hσ
@@ -221,14 +231,8 @@ theorem isRegularPoint_iff_isotropy_eq_bot (h : σ.IsMomentMap a μ) (b : Basis 
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at this
     rw [Function.comp_apply, Basis.dualBasis_equivFun, h.differential_apply, this,
       mvfderiv_apply_eq_mfderiv_apply]
-  rw [isRegularPoint_iff, ← h.differential_surjective_iff hσx]
-  refine ⟨fun hs ν ↦ ?_, fun hs w ↦ ?_⟩
-  · obtain ⟨v, hv⟩ := hs (b.dualBasis.equivFun ν)
-    exact ⟨v, b.dualBasis.equivFun.injective ((congrFun heq v).symm.trans hv)⟩
-  · obtain ⟨v, hv⟩ := hs (b.dualBasis.equivFun.symm w)
-    exact ⟨v, (congrFun heq v).trans (by
-      rw [Function.comp_apply, hv]
-      exact b.dualBasis.equivFun.apply_symm_apply w)⟩
+  rw [isRegularPoint_iff, heq]
+  exact (EquivLike.comp_surjective _ b.dualBasis.equivFun).trans (h.differential_surjective_iff hσx)
 
 include hσ
 
@@ -315,7 +319,7 @@ theorem two_mul_finrank_le_of_isotropy_eq_bot (h : σ.IsEquivariantMomentMap μ)
     (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
     2 * finrank ℝ (GroupLieAlgebra I G) ≤ finrank ℝ E' :=
   h.toIsMomentMap.two_mul_finrank_le_of_isotropy_eq_bot hσ (h.momentCocycle_eq_zero x)
-    (fun _ _ ↦ by rw [trivial_lie_zero, map_zero]) hfree
+    (dual_apply_lie_eq_zero _) hfree
 
 variable {F H'' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'']
   {J : ModelWithCorners ℝ F H''} {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
@@ -331,7 +335,7 @@ theorem isCoisotropicMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hdim : finrank ℝ F + finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') :
     hσ.IsCoisotropicMap J g :=
   h.toIsMomentMap.isCoisotropicMap_of_forall_eq hσ hg hfree (fun _ ↦ h.momentCocycle_eq_zero _)
-    (fun _ _ ↦ by rw [trivial_lie_zero, map_zero]) hinj hdim
+    (dual_apply_lie_eq_zero c) hinj hdim
 
 /-- **Regular levels of toric moment maps are Lagrangian.** For a group-level moment map of a Lie
 group with abelian Lie algebra and half the dimension of `M`, such as the torus of a symplectic
@@ -344,7 +348,7 @@ theorem isLagrangianMap_of_forall_eq (h : σ.IsEquivariantMomentMap μ) (hg : �
     (hdimN : finrank ℝ F = finrank ℝ (GroupLieAlgebra I G))
     (hdim : 2 * finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E') : hσ.IsLagrangianMap J g :=
   h.toIsMomentMap.isLagrangianMap_of_forall_eq hσ hg hfree (fun _ ↦ h.momentCocycle_eq_zero _)
-    (fun _ _ ↦ by rw [trivial_lie_zero, map_zero]) hinj hdimN hdim
+    (dual_apply_lie_eq_zero c) hinj hdimN hdim
 
 end IsEquivariantMomentMap
 
