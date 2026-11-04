@@ -140,19 +140,10 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear (n : ℕ) {U V
   toFun := cohomologyOnRes M n h
   map_add' := map_add _
   map_smul' r x := by
-    apply (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U).injective
-    -- Restriction is precomposition and the action is postcomposition of `Ext` classes.
-    rw [RingHom.id_apply]
-    refine (_root_.CategoryTheory.Sheaf.cohomologyPresheaf_map_apply ((toSheaf X).obj M)
-      (homOfLE h) n (r • x)).trans ?_
-    refine Eq.trans ?_ (H'AddEquivExt_cohomologyOn_smul M n U r _).symm
-    refine Eq.trans ?_ (congrArg
-      (fun e ↦ e.comp (Abelian.Ext.mk₀ ((toSheaf X).map (M.globalSectionsSmul r))) (add_zero n))
-      (_root_.CategoryTheory.Sheaf.cohomologyPresheaf_map_apply ((toSheaf X).obj M)
-        (homOfLE h) n x).symm)
-    rw [H'AddEquivExt_cohomologyOn_smul]
-    exact (Abelian.Ext.comp_assoc _ _ _ (zero_add n) (add_zero n)
-      (show 0 + n + 0 = n by omega)).symm
+    rw [RingHom.id_apply, cohomologyOn_smul_def, cohomologyOn_smul_def]
+    exact (ConcreteCategory.congr_hom
+      (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+        ((toSheaf X).map (M.globalSectionsSmul r))).naturality (homOfLE h).op) x).symm
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_apply (n : ℕ)
