@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 
@@ -70,6 +71,9 @@ degree `s`. This is the route to noetherianity of the Tate algebra.
   `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero` and, over a field,
   `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero`: the units of the ring of restricted
   series, for a multiplicative coefficient norm.
+* `TauCeti.PowerSeries.isUnit_iff_gaussNorm_sub_one_lt_one`: for a multiplicative coefficient
+  norm with `‖1‖ = 1`, a restricted series with constant coefficient `1` is a unit exactly when
+  `‖U - 1‖_c < 1`.
 * `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul`: multiplying by such a unit leaves the
   distinguished degree unchanged.
 
@@ -395,6 +399,18 @@ theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] 
   refine IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext ?_)
   rw [Subring.coe_mul, Subring.coe_one, mul_comm]
   exact hqr
+
+/-- **Units close to `1`.** Over a complete ultrametric normed commutative ring with
+multiplicative norm and `‖1‖ = 1`, and at a positive radius `c`, a restricted series with constant
+coefficient `1` is a unit of the ring of series restricted at `c` exactly when `‖U - 1‖_c < 1`. -/
+theorem isUnit_iff_gaussNorm_sub_one_lt_one [CompleteSpace R] [NormOneClass R] (hc : 0 < c)
+    (U : PowerSeries.IsRestricted.subring (R := R) c)
+    (h0 : _root_.PowerSeries.constantCoeff (U : PowerSeries R) = 1) :
+    IsUnit U ↔ ((U : PowerSeries R) - 1).gaussNorm norm c < 1 := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  rw [isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero hc,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply, h0, and_iff_left isUnit_one,
+    gaussNorm_sub_one_lt_one_iff hc U.2 h0]
 
 /-- **Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1). Over a complete
 ultrametric normed commutative ring with multiplicative norm, a restricted series `f`
