@@ -434,13 +434,9 @@ theorem exists_isMeasurableIsometricFrame [FiniteDimensional 𝕜 F] [FiniteDime
   -- Each point uses the chart of least index containing it.
   let A (n : ℕ) : Set B := {x | Nat.find (hcover x) = n}
   have hAe (n : ℕ) : A n ⊆ (e n).baseSet := fun x hx ↦ hx ▸ Nat.find_spec (hcover x)
-  have hA (n : ℕ) : MeasurableSet (A n) := by
-    have : A n = (e n).baseSet ∩ ⋂ m, ⋂ (_ : m < n), ((e m).baseSet)ᶜ := by
-      ext x
-      simp [A, Nat.find_eq_iff]
-    rw [this]
-    exact (e n).open_baseSet.measurableSet.inter <| .iInter fun m ↦ .iInter fun _ ↦
-      (e m).open_baseSet.measurableSet.compl
+  have hA (n : ℕ) : MeasurableSet (A n) :=
+    measurable_find hcover (fun k ↦ (e k).open_baseSet.measurableSet)
+      (measurableSet_singleton n)
   have hAU : ⋃ n, A n = univ := eq_univ_of_forall fun x ↦ mem_iUnion.2 ⟨_, rfl⟩
   have hframe (x : B) {n m : ℕ} (hn : x ∈ (e n).baseSet) (hm : x ∈ (e m).baseSet) (h : n = m) :
       (e n).orthonormalFrame c b ⟨x, hn⟩ = (e m).orthonormalFrame c b ⟨x, hm⟩ := by
