@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.Submodule.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 
 /-!
@@ -49,6 +49,11 @@ noncomputable def projectiveEmbedding :
     submoduleBlowup C F ⟶ Proj (SymmetricAlgebra.homogeneousSubmodule C (F →₀ C)) :=
   Proj.map (presentation C F)
     (HomogeneousIdeal.irrelevant_le_map_of_surjective _ (presentation_surjective C))
+
+/-- The projective embedding is the `Proj.map` induced by the graded presentation. -/
+theorem projectiveEmbedding_def :
+    projectiveEmbedding C F = Proj.map (presentation C F)
+      (HomogeneousIdeal.irrelevant_le_map_of_surjective _ (presentation_surjective C)) := (rfl)
 
 /-- The projective presentation is a closed immersion, even for an infinite generating set. -/
 instance isClosedImmersion_projectiveEmbedding : IsClosedImmersion (projectiveEmbedding C F) :=
