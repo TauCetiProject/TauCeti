@@ -77,19 +77,14 @@ theorem map_prod_rotate (l : List G) (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.p
 
 end IsConjInvariant
 
-/-- The distance in the normed group associated to `ℓ` is `ℓ (g⁻¹ * h)`. -/
-@[simp] theorem toNormedGroup_dist (ℓ : GroupNorm G) (g h : G) :
-    letI := ℓ.toNormedGroup
-    dist g h = ℓ (g⁻¹ * h) := by
-  rfl
-
 /-- The associated metric is right invariant exactly when the norm is conjugation invariant.
 Left invariance is already supplied by `GroupNorm.toNormedGroup`. -/
 theorem isConjInvariant_iff_dist_mul_right (ℓ : GroupNorm G) :
     ℓ.IsConjInvariant ↔
       letI := ℓ.toNormedGroup
       ∀ g h k : G, dist (g * k) (h * k) = dist g h := by
-  simp only [toNormedGroup_dist]
+  let := ℓ.toNormedGroup
+  simp +zetaDelta only [dist_eq_norm_inv_mul, norm]
   constructor
   · intro hℓ g h k
     simpa [mul_assoc] using hℓ.map_inv_mul_mul (g⁻¹ * h) k
@@ -142,8 +137,8 @@ end Metric
 /-- Recovering a norm from its associated metric returns the original norm. -/
 @[simp] theorem ofLeftInvariantMetric_toNormedGroup (ℓ : GroupNorm G) :
     letI := ℓ.toNormedGroup
-    ofLeftInvariantMetric (fun g h k => by simp [mul_assoc]) = ℓ := by
+    ofLeftInvariantMetric (fun g h k => by simp [dist_eq_norm_inv_mul, mul_assoc]) = ℓ := by
   ext g
-  simp
+  simp [dist_eq_norm_inv_mul, norm]
 
 end GroupNorm
