@@ -93,6 +93,15 @@ theorem mem_ker {α : RoughForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
   rw [ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
     ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, Matrix.vec_single_eq_const]
 
+/-- The kernel of a one-form at `x` is the whole tangent space exactly when the form vanishes
+at `x`. -/
+@[simp]
+theorem ker_eq_top_iff {α : RoughForm I M ℝ 1} {x : M} : α.ker x = ⊤ ↔ α x = 0 := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ eq_top_iff.2 fun v _ ↦ ?_⟩
+  · have hv : ![v 0] = v := funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl
+    simpa [hv] using mem_ker.1 (h ▸ Submodule.mem_top : v 0 ∈ α.ker x)
+  · simp [h]
+
 /-- Rescaling a one-form by a function that does not vanish at `x` does not change its kernel
 at `x`. -/
 theorem ker_fun_smul {α : RoughForm I M ℝ 1} {f : M → ℝ} {x : M} (hfx : f x ≠ 0) :

@@ -32,6 +32,7 @@ inequality.
   only against wedges `u ∧ w` of two vectors.
 * `exteriorPower.inner_lieMap_left`: the derivation action `D_A` of a skew-adjoint `A` on
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
+* `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
 -/
@@ -159,3 +160,25 @@ theorem norm_ιMulti_le_prod_norm (v : Fin n → E) : ‖ιMulti ℝ n v‖ ≤ 
   simpa using Matrix.re_det_gram_le_prod_norm_sq (𝕜 := ℝ) v
 
 end exteriorPower
+
+namespace OrthonormalBasis
+
+open scoped RealInnerProductSpace
+
+variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [Fintype ι]
+
+/-- Contracting the squared norms of `eᵢ ∧ u` in an orthonormal basis gives
+`(dim E - 1) |u|²`. This includes dimensions zero and one. -/
+theorem sum_norm_sq_ιMulti_two (b : OrthonormalBasis ι ℝ E) (u : E) :
+    ∑ i, ‖exteriorPower.ιMulti ℝ 2 ![b i, u]‖ ^ 2 =
+      ((Fintype.card ι : ℝ) - 1) * ‖u‖ ^ 2 := by
+  have hw (i) : ‖exteriorPower.ιMulti ℝ 2 ![b i, u]‖ ^ 2 =
+      ‖u‖ ^ 2 - ⟪b i, u⟫ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, exteriorPower.inner_ιMulti_two]
+    simp [b.orthonormal.1 i, real_inner_comm, pow_two]
+  simp only [hw, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, b.sum_sq_inner_right]
+  ring
+
+end OrthonormalBasis
