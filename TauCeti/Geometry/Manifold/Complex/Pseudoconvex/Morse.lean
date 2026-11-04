@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Strong
 public import TauCeti.Geometry.Manifold.Complex.SquaredDistance
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
+import TauCeti.Algebra.Order.Group.Bounds
 import TauCeti.Topology.Maps.Proper.Basic
 import TauCeti.Topology.Maps.Proper.Metric
 
@@ -26,12 +27,14 @@ with the original function near any closed set on a neighbourhood of which it is
 remain globally strongly `q`-pseudoconvex so that every critical point has real Morse index at most
 `n + q`.
 
-For a proper function `f`, taking uniform `C⁰` tolerance `1` preserves properness, and no separate
-sigma-compactness hypothesis on `M` is needed because a proper map into `ℝ` already makes `M`
-sigma-compact (`IsProperMap.sigmaCompactSpace`). When `f` is moreover bounded below — a smooth
-strongly `q`-pseudoconvex exhaustion — the resulting Morse function is again proper and bounded
-below, with all chosen local `C^k` and `C²` tolerances and the critical-index bound `≤ n + q`
-surviving the infinite-stage exhaustion construction.
+For a proper function `f`, relative proper Morse approximation
+(`ContMDiffMap.exists_isMorse_isProperMap_mem_ball_sub_compl`) preserves properness within uniform
+`C⁰` distance `1` in every strong `C^k` ball, with no separate sigma-compactness hypothesis on `M`
+needed because a proper map into `ℝ` already makes `M` sigma-compact
+(`IsProperMap.sigmaCompactSpace`). When `f` is moreover bounded below — a smooth strongly
+`q`-pseudoconvex exhaustion — the perturbed function `g` is again proper, bounded below, globally
+strongly `q`-pseudoconvex, and Morse with all critical indices at most `n + q`, and satisfies
+`|g - f| < 1` everywhere (agreeing with `f` near `C` in the relative form).
 
 Specializing to `q = 0` yields the corresponding statements for strictly plurisubharmonic functions
 and exhaustions, with real Morse indices bounded by `n`. In particular, along any smooth proper
@@ -183,8 +186,7 @@ theorem exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl {q : 
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
   have : FiniteDimensional ℝ E := .trans ℝ ℂ E
-  -- Combine the prescribed control `c` with the order-two control guarding strong `q`-positivity,
-  -- so both families of local tolerances survive the exhaustion iteration.
+  -- Combine the prescribed control `c` with the order-two control guarding strong `q`-positivity.
   obtain ⟨c₀, -, hc₀⟩ :=
     exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by simp : (2 : ℕ∞ω) ≤ ∞) q f hf
   obtain ⟨g, hg, hgm, hgf, hgs⟩ :=
@@ -263,13 +265,18 @@ theorem exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub
       (∀ x, |g x - f x| < 1) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   have := hf_prop.sigmaCompactSpace
-  obtain ⟨g, hg, hgm, hg_pos, hg_idx, hgf, hgs⟩ :=
-    f.exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl c hf_pos continuous_const
-      (fun _ ↦ one_pos) hC hV hCV hfV
-  refine ⟨g, hg, hgm, hf_prop.of_dist_le g.contMDiff.continuous (C := 1) fun x ↦ ?_,
-    hg_pos, hg_idx, hgf, hgs⟩
-  rw [Real.dist_eq, abs_sub_comm]
-  exact (hgf x).le
+  have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
+  have : FiniteDimensional ℝ E := .trans ℝ ℂ E
+  obtain ⟨c₀, -, hc₀⟩ :=
+    exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by simp : (2 : ℕ∞ω) ≤ ∞) q f hf_pos
+  obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ :=
+    f.exists_isMorse_isProperMap_mem_ball_sub_compl (c.sup c₀) hf_prop hC hV hCV hfV
+  have hg_pos : ∀ x, IsManifoldStronglyPseudoconvexAt E q g x :=
+    hc₀ g (StrongCkControl.ball_sup_subset_right c c₀ f hg)
+  refine ⟨g, StrongCkControl.ball_sup_subset_left c c₀ f hg, hgm, hgp, hg_pos, fun x hx ↦ ?_,
+    hgf, hgs⟩
+  exact (hg_pos x).manifoldMorseIndex_le (g.contMDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).contMDiffAt
+    (mem_criticalPoints.mp hx)
 
 /-- **Proper Morse approximation of strongly `q`-pseudoconvex functions** in a strong `C^k` ball
 within `C⁰` distance `1`. -/
@@ -346,10 +353,7 @@ theorem exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub
     ContMDiffMap.exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl
       ⟨f, hf⟩ .empty hf_prop hf_pos hC hV hCV hfV
   simp only [ContMDiffMap.coeFn_mk] at hgf hgs
-  obtain ⟨b, hb⟩ := hf_bdd
-  refine ⟨g, hgm, hgp, ⟨b - 1, ?_⟩, hg_pos, hg_idx, hgf, hgs⟩
-  rintro _ ⟨x, rfl⟩
-  linarith [(abs_lt.mp (hgf x)).1, hb (mem_range_self x)]
+  exact ⟨g, hgm, hgp, hf_bdd.range_of_abs_sub_le fun x ↦ (hgf x).le, hg_pos, hg_idx, hgf, hgs⟩
 
 /-- **Morse perturbation of a strongly `q`-pseudoconvex exhaustion.** A smooth proper bounded-below
 globally strongly `q`-pseudoconvex function `f : M → ℝ` on a Hausdorff complex manifold is

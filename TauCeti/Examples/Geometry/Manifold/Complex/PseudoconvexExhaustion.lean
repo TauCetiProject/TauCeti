@@ -63,10 +63,13 @@ namespace TauCeti.PseudoconvexExhaustionExample
 def quarticExhaustion (z : ℂ) : ℝ :=
   2 * z.re ^ 2 + z.im ^ 4
 
+private theorem quarticExhaustion_eq_clm :
+    quarticExhaustion = fun z : ℂ ↦ 2 * (reCLM z) ^ 2 + (imCLM z) ^ 4 :=
+  funext fun z ↦ by simp only [quarticExhaustion, reCLM_apply, imCLM_apply]
+
 /-- `quarticExhaustion` is smooth on `ℂ`. -/
 theorem contDiff_quarticExhaustion : ContDiff ℝ ∞ quarticExhaustion := by
-  have h : quarticExhaustion = fun z : ℂ ↦ 2 * (reCLM z) ^ 2 + (imCLM z) ^ 4 := rfl
-  rw [h]
+  rw [quarticExhaustion_eq_clm]
   fun_prop
 
 private theorem norm_sq_le_quarticExhaustion_add_one (z : ℂ) :
@@ -89,6 +92,7 @@ theorem isProperMap_quarticExhaustion : IsProperMap quarticExhaustion := by
 
 private theorem hasFDerivAt_quarticExhaustion (z : ℂ) :
     HasFDerivAt quarticExhaustion ((4 * z.re) • reCLM + (4 * z.im ^ 3) • imCLM) z := by
+  rw [quarticExhaustion_eq_clm]
   have hre : HasFDerivAt (fun w : ℂ ↦ 2 * (reCLM w) ^ 2) ((4 * z.re) • reCLM) z := by
     convert (reCLM.hasFDerivAt.pow 2).const_mul 2 using 1
     ext v
@@ -108,7 +112,7 @@ private theorem fderiv_quarticExhaustion (z : ℂ) :
 private theorem hasFDerivAt_fderiv_quarticExhaustion (z : ℂ) :
     HasFDerivAt (fderiv ℝ quarticExhaustion)
       ((4 • reCLM).smulRight reCLM + ((12 * z.im ^ 2) • imCLM).smulRight imCLM) z := by
-  simp only [funext fderiv_quarticExhaustion]
+  simp only [funext fderiv_quarticExhaustion, ← reCLM_apply, ← imCLM_apply]
   have hre : HasFDerivAt (fun w : ℂ ↦ (4 * reCLM w) • reCLM)
       ((4 • reCLM).smulRight reCLM) z := by
     convert (reCLM.hasFDerivAt.const_mul 4).smul_const reCLM using 1
