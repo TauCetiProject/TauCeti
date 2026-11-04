@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.Hecke
 public import TauCeti.NumberTheory.ModularForms.Newforms.OrthogonalBasis
 public import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
 
+import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.AtkinLehner
 import TauCeti.NumberTheory.ModularForms.FiniteDimensional
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.CoefficientCriterion
@@ -60,10 +61,11 @@ comparison we obtain:
   `heckeTLevelOne` with `heckeTCompositeGamma0 1 n`.
 * `TauCeti.commute_heckeTCuspLevelOne`, `TauCeti.commute_heckeTLevelOne`: level-one Hecke operators
   commute.
-* `TauCeti.heckeTCuspLevelOne_levelOneNewformBasis`, `TauCeti.trace_heckeTCuspLevelOne`,
-  `TauCeti.levelOneNewformBasis_mem_of_forall_prime`,
-  `TauCeti.injective_of_heckeTCuspLevelOne_mem_ker`: eigenbasis action, trace, prime-Hecke
-  invariant-subspace coordinate extraction, and injectivity criterion on `CuspForm 𝒮ℒ k`.
+* `HeckeRing.GL2.Newform.twelve_le_weight`, `TauCeti.heckeTCuspLevelOne_levelOneNewformBasis`,
+  `TauCeti.trace_heckeTCuspLevelOne`, `TauCeti.levelOneNewformBasis_mem_of_forall_prime`,
+  `TauCeti.injective_of_heckeTCuspLevelOne_mem_ker`: the weight bound `12 ≤ k` on level-one
+  newforms, eigenbasis action, trace, prime-Hecke invariant-subspace coordinate extraction, and
+  injectivity criterion on `CuspForm 𝒮ℒ k`.
 * `TauCeti.heckeTLevelOne_E`, `TauCeti.isCompl_cuspFormSubmodule_span_E`,
   `TauCeti.trace_heckeTLevelOne`: the Eisenstein Hecke eigenvalue, the cusp/Eisenstein complement,
   and the trace of `Tₙ` on `ModularForm 𝒮ℒ k`.
@@ -268,6 +270,13 @@ theorem cuspFormGamma1OneEquiv_toCuspForm (k : ℤ) (f : Newform 1 k) :
     cuspFormGamma1OneEquiv k f.toCuspForm = levelOneNewformBasis k f := by
   ext z
   simp
+
+/-- Every level-one newform has weight `k ≥ 12`, since `S_k(SL(2, ℤ)) = 0` for `k < 12`. -/
+theorem _root_.HeckeRing.GL2.Newform.twelve_le_weight {k : ℤ} (f : Newform 1 k) : 12 ≤ k := by
+  by_contra! hk
+  have hne : levelOneNewformBasis k f ≠ 0 := (levelOneNewformBasis k).ne_zero f
+  have hzero : Module.rank ℂ (CuspForm 𝒮ℒ k) = 0 := CuspForm.rank_eq_zero_of_weight_lt_twelve hk
+  exact hne (rank_zero_iff_forall_zero.mp hzero _)
 
 /-- **Each basis vector of `levelOneNewformBasis k` is an eigenform of every `heckeTCuspLevelOne`**,
 with eigenvalue equal to its `n`-th Fourier coefficient. -/

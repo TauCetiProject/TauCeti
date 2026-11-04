@@ -10,8 +10,8 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Parity
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.PeriodRelation
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Parity
 
-import TauCeti.NumberTheory.ModularForms.LFunction.EulerProduct
 import TauCeti.NumberTheory.ModularForms.LevelOne.DimensionFormula
+import TauCeti.NumberTheory.ModularForms.LevelOne.LFunction
 import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.LValue
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.TraceReduction
 import TauCeti.RingTheory.MvPolynomial.Finrank
@@ -37,12 +37,10 @@ proves that at level one:
 2. **The odd Eichler–Shimura isomorphism.** Since `dim W_w^- = dim S_{w+2}(SL(2, ℤ))`
    (`finrank_oddPeriodPolynomials_eq_finrank_cuspForm`), `oddPeriodPolynomial hk` upgrades to a
    Hecke-equivariant linear equivalence `oddPeriodPolynomialEquiv hk : CuspForm 𝒮ℒ k ≃ₗ[ℂ] W_w^-`.
-3. **Action of the period relation on `X^w - Y^w` and the even Eichler–Shimura isomorphism.**
-   Evaluating Popa–Zagier's period relation (A) on `Y^w` — which is fixed by `T` and sent to
-   `Y^w - X^w = -(X^w - Y^w)` by `1 - S` — shows that *every* solution `ξ` of
-   `PeriodRelation R n ξ` (`n ≥ 1`) scales the Eisenstein period polynomial `X^w - Y^w` by
-   `σ_{w+1}(n)` (`PeriodRelation.periodAction_eisensteinPeriodPolynomial`). A cusp form whose even
-   period polynomial were `X^w - Y^w` would therefore be a nonzero cusp form with Hecke eigenvalues
+3. **Disjointness of `X^w - Y^w` and the even Eichler–Shimura isomorphism.** Since every solution
+   `ξ` of `PeriodRelation R n ξ` (`n ≥ 1`) scales the Eisenstein period polynomial `X^w - Y^w` by
+   `σ_{w+1}(n)` (`PeriodRelation.periodAction_eisensteinPeriodPolynomial`), a cusp form whose even
+   period polynomial were `X^w - Y^w` would be a nonzero cusp form with Hecke eigenvalues
    `σ_{w+1}(n)`, contradicting the absolute convergence of its Dirichlet series at `s = w + 1` for
    `w ≥ 10`. Hence `W_w^+` is the internal direct sum of `range (evenPeriodPolynomial hk)` and
    `ℂ · (X^w - Y^w)` for positive even `w`, giving a Hecke-equivariant linear equivalence
@@ -67,8 +65,6 @@ proves that at level one:
 
 ## Main results
 
-* `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_eisensteinPeriodPolynomial`:
-  every solution of `PeriodRelation R n ξ` (`n ≥ 1`) multiplies `X^w - Y^w` by `σ_{w+1}(n)`.
 * `TauCeti.evenPeriodPolynomial_injective`, `TauCeti.oddPeriodPolynomial_injective`: injectivity of
   the even and odd period maps on `CuspForm 𝒮ℒ k`.
 * `TauCeti.isCompl_range_evenPeriodPolynomial_span_eisensteinPeriodPolynomial`: for positive even
@@ -94,146 +90,19 @@ proves that at level one:
 
 public noncomputable section
 
-open CongruenceSubgroup EisensteinSeries Filter HeckeRing.GL2 Matrix Matrix.SpecialLinearGroup
-  ModularForm ModularGroup Module MonoidAlgebra MulOpposite MvPolynomial Representation Topology
-  UpperHalfPlane
+open CongruenceSubgroup EisensteinSeries Filter HeckeRing.GL2 ModularForm Module MonoidAlgebra
+  MvPolynomial Topology UpperHalfPlane
 open scoped ArithmeticFunction.sigma MatrixGroups ModularForm
 
 namespace TauCeti
 
-/-! ### Action of the period relation on the Eisenstein period polynomial -/
-
-namespace TraceFormulaMatrixModule
-
-section CommRing
-
-variable {R : Type*} [CommRing R] {w : ℕ}
-
-/-- An upper-triangular `2 × 2` integer matrix `(a b; 0 d)` scales the monomial `Y^w` by `d^w`. -/
-private theorem binaryFormRep_upperTriangular_X_one_pow {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (hM : M 1 0 = 0) :
-    binaryFormRep R w (op M) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
-      (M 1 1 : R) ^ w • ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
-  apply Subtype.ext
-  rw [Submodule.coe_smul, coe_binaryFormRep_apply]
-  simp [Fin.sum_univ_two, hM, Algebra.smul_def, mul_pow]
-
-/-- `T = (1 1; 0 1)` fixes the monomial `Y^w`. -/
-private theorem binaryFormRep_T_X_one_pow :
-    binaryFormRep R w (op (T : Matrix (Fin 2) (Fin 2) ℤ)) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
-      ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
-  simpa [coe_T] using binaryFormRep_upperTriangular_X_one_pow (R := R) (w := w)
-    (M := (T : Matrix (Fin 2) (Fin 2) ℤ)) (by simp [coe_T])
-
-/-- `Y^w - Y^w ∣ S = Y^w - X^w = -eisensteinPeriodPolynomial R w`. -/
-private theorem sub_binaryFormRep_S_X_one_pow :
-    (⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ : homogeneousSubmodule (Fin 2) R w) -
-      binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))
-        ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
-      -eisensteinPeriodPolynomial R w := by
-  apply Subtype.ext
-  rw [Submodule.coe_sub, Submodule.coe_neg, coe_binaryFormRep_apply,
-    coe_eisensteinPeriodPolynomial]
-  simp [Fin.sum_univ_two, coe_S]
-
-/-- The upper-triangular sum `Tₙ^∞` (`n ≥ 1`) scales `Y^w` by `σ_{w+1}(n)`: for each positive
-divisor `d ∣ n` there are `d` upper-triangular representatives `(n/d, b; 0, d)` with `0 ≤ b < d`,
-each scaling `Y^w` by `d^w`. -/
-theorem periodAction_upperTriangularSum_X_one_pow (hw : Even w) (n : ℕ) [NeZero n] :
-    periodAction (R := R) hw (upperTriangularSum R n) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
-      (σ (w + 1) n : R) • ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
-  have hn : (n : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
-  have hsign : (n : ℤ).sign = 1 := Int.sign_eq_one_of_pos (Nat.cast_pos.mpr (Nat.pos_of_neZero n))
-  rw [upperTriangularSum_eq_sum_reps, map_sum, LinearMap.sum_apply]
-  have hterm (A : FixedDetMatrices.reps (n : ℤ)) :
-      periodAction (R := R) hw (single (mk A.1) 1) ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ =
-        (A.1.1 1 1 : R) ^ w • ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩ := by
-    rw [periodAction_single, one_smul, binaryFormAction_mk,
-      binaryFormRep_upperTriangular_X_one_pow A.2.1]
-  simp_rw [hterm, ← Finset.sum_smul]
-  congr 1
-  refine (Fintype.sum_equiv (FixedDetMatrices.repsEquiv hn).symm
-    (fun x ↦ (((FixedDetMatrices.repsEquiv hn).symm x).1.1 1 1 : R) ^ w)
-    (fun A ↦ (A.1.1 1 1 : R) ^ w) fun _ ↦ rfl).symm.trans ?_
-  have hval (x : (p : ↥(n : ℤ).natAbs.divisorsAntidiagonal) × Fin p.1.2) :
-      (((FixedDetMatrices.repsEquiv hn).symm x).1.1 1 1 : R) ^ w = ((x.1.1.2 : ℤ) : R) ^ w := by
-    have hmatrix : ((FixedDetMatrices.repsEquiv hn).symm x).1.1 =
-        !![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, (n : ℤ).sign * x.1.1.2] :=
-      FixedDetMatrices.coe_repsEquiv_symm_apply hn x
-    rw [hmatrix, hsign]
-    simp
-  simp_rw [hval]
-  rw [Fintype.sum_sigma]
-  have hinner (p : ↥(n : ℤ).natAbs.divisorsAntidiagonal) :
-      ∑ _ : Fin p.1.2, ((p.1.2 : ℤ) : R) ^ w = ((p.1.2 ^ (w + 1) : ℕ) : R) := by
-    rw [Finset.sum_const, Finset.card_fin, Int.cast_natCast, nsmul_eq_mul, Nat.cast_pow,
-      pow_succ']
-  simp_rw [hinner]
-  rw [Finset.sum_coe_sort (n : ℤ).natAbs.divisorsAntidiagonal
-      fun p ↦ ((p.2 ^ (w + 1) : ℕ) : R),
-    Int.natAbs_natCast,
-    Nat.sum_divisorsAntidiagonal' fun _ d ↦ ((d ^ (w + 1) : ℕ) : R),
-    ArithmeticFunction.sigma_apply, Nat.cast_sum]
-
-/-- **Every solution of Popa–Zagier's period relation (A) scales `X^w - Y^w` by `σ_{w+1}(n)`.**
-Evaluating `(1 - S)·ξ - Tₙ^∞·(1 - S) ∈ (1 - T)·R[ℳₙ]` on `Y^w` kills the `(1 - T)`-term because
-`T` fixes `Y^w`, turns `(1 - S)·ξ` into `-periodAction hw ξ (X^w - Y^w)`, and turns `Tₙ^∞·(1 - S)`
-into `-σ_{w+1}(n) • (X^w - Y^w)`. -/
-theorem PeriodRelation.periodAction_eisensteinPeriodPolynomial (hw : Even w) (n : ℕ) [NeZero n]
-    {ξ : R[TraceFormulaMatrixModule n]} (h : PeriodRelation R n ξ) :
-    periodAction hw ξ (eisensteinPeriodPolynomial R w) =
-      (σ (w + 1) n : R) • eisensteinPeriodPolynomial R w := by
-  obtain ⟨ζ, hζ⟩ := periodRelation_iff.mp h
-  let Q₀ : homogeneousSubmodule (Fin 2) R w := ⟨X 1 ^ w, isHomogeneous_X_pow 1 w⟩
-  have happ := congrArg (fun x ↦ periodAction (R := R) hw x Q₀) hζ
-  have hrhs : periodAction (R := R) hw
-      ((1 - ofMulAction R SL(2, ℤ) (TraceFormulaMatrixModule n) T) ζ) Q₀ = 0 := by
-    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, periodAction_ofMulAction,
-      LinearMap.sub_apply, mul_apply_eq_comp, binaryFormRep_T_X_one_pow, sub_self]
-  have hlhs1 : periodAction (R := R) hw
-      ((1 - ofMulAction R SL(2, ℤ) (TraceFormulaMatrixModule n) S) ξ) Q₀ =
-      -periodAction hw ξ (eisensteinPeriodPolynomial R w) := by
-    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, periodAction_ofMulAction,
-      LinearMap.sub_apply, mul_apply_eq_comp, ← map_sub, sub_binaryFormRep_S_X_one_pow, map_neg]
-  have hlhs2 : periodAction (R := R) hw
-      ((1 - ofMulAction R PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (.op (S : PSL(2, ℤ))))
-        (upperTriangularSum R n)) Q₀ =
-      -((σ (w + 1) n : R) • eisensteinPeriodPolynomial R w) := by
-    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, periodAction_ofMulAction_op,
-      LinearMap.sub_apply, mul_apply_eq_comp, periodAction_upperTriangularSum_X_one_pow hw n,
-      map_smul, ← smul_sub (σ (w + 1) n : R) Q₀, sub_binaryFormRep_S_X_one_pow, smul_neg]
-  rw [hrhs, map_sub, LinearMap.sub_apply, hlhs1, hlhs2] at happ
-  exact neg_injective (sub_eq_zero.mp happ.symm)
-
-end CommRing
-
-end TraceFormulaMatrixModule
-
 /-! ### Nonvanishing on level-one newforms and injectivity of `r_f^+` and `r_f^-` -/
-
-/-- If `Newform 1 k` is nonempty (equivalently `S_k(SL(2, ℤ)) ≠ 0`), then `12 ≤ k`. -/
-private theorem twelve_le_weight_of_newform {k : ℤ} (f : Newform 1 k) : 12 ≤ k := by
-  by_contra! hk
-  have hne : levelOneNewformBasis k f ≠ 0 := (levelOneNewformBasis k).ne_zero f
-  have hzero : Module.rank ℂ (CuspForm 𝒮ℒ k) = 0 := CuspForm.rank_eq_zero_of_weight_lt_twelve hk
-  exact hne (rank_zero_iff_forall_zero.mp hzero _)
-
-/-- On `Re s > k/2 + 1`, `ModularForm.L` of `levelOneNewformBasis k f` does not vanish. -/
-private theorem L_levelOneNewformBasis_ne_zero {k : ℤ} (hk : 0 < k) (f : Newform 1 k) {s : ℂ}
-    (hs : (k : ℝ) / 2 + 1 < s.re) :
-    ModularForm.L hk (levelOneNewformBasis k f) s ≠ 0 := by
-  have hwidth : Subgroup.strictWidthInfty 𝒮ℒ = 1 := by
-    rw [← Gamma1_one_map_eq_SL, strictWidthInfty_Gamma1]
-  have hL := CuspForm.LSeries_qExpansion_coeff_eq hk (levelOneNewformBasis k f) hs
-  rw [hwidth, Complex.ofReal_one, Complex.one_cpow, one_mul, coe_levelOneNewformBasis_apply] at hL
-  rw [← hL]
-  exact f.LSeries_ne_zero_of_lt_re (by linarith)
 
 /-- **The even period polynomial of a level-one newform is nonzero.** -/
 theorem evenPeriodPolynomial_levelOneNewformBasis_ne_zero {k : ℤ} {w : ℕ} (hk : k = w + 2)
     (f : Newform 1 k) :
     evenPeriodPolynomial hk (levelOneNewformBasis k f) ≠ 0 := by
-  have hk12 : 12 ≤ k := twelve_le_weight_of_newform f
+  have hk12 : 12 ≤ k := f.twelve_le_weight
   refine evenPeriodPolynomial_ne_zero hk _ (L_levelOneNewformBasis_ne_zero (by omega) f ?_)
   have hw10_nat : 10 ≤ w := by omega
   have hw10 : (10 : ℝ) ≤ w := by exact_mod_cast hw10_nat
@@ -245,7 +114,7 @@ theorem evenPeriodPolynomial_levelOneNewformBasis_ne_zero {k : ℤ} {w : ℕ} (h
 theorem oddPeriodPolynomial_levelOneNewformBasis_ne_zero {k : ℤ} {w : ℕ} (hk : k = w + 2)
     (f : Newform 1 k) :
     oddPeriodPolynomial hk (levelOneNewformBasis k f) ≠ 0 := by
-  have hk12 : 12 ≤ k := twelve_le_weight_of_newform f
+  have hk12 : 12 ≤ k := f.twelve_le_weight
   refine oddPeriodPolynomial_ne_zero hk _ (by omega)
     (L_levelOneNewformBasis_ne_zero (by omega) f ?_)
   have hw10_nat : 10 ≤ w := by omega
@@ -328,7 +197,7 @@ term `σ_{w+1}(n) / n^{w+1}` is at least `1`. -/
 private theorem not_forall_qExpansion_coeff_eq_sigma {k : ℤ} {w : ℕ} (hk : k = w + 2)
     (f : Newform 1 k) (hcoeff : ∀ n : ℕ, n ≠ 0 →
       (qExpansion 1 f.toCuspForm).coeff n = (σ (w + 1) n : ℂ)) : False := by
-  have hk12 : 12 ≤ k := twelve_le_weight_of_newform f
+  have hk12 : 12 ≤ k := f.twelve_le_weight
   have hw10_nat : 10 ≤ w := by omega
   have hw10 : (10 : ℝ) ≤ w := by exact_mod_cast hw10_nat
   have hk_cast : (k : ℝ) = (w : ℝ) + 2 := by exact_mod_cast hk
@@ -484,6 +353,7 @@ theorem extendedEvenPeriodPolynomialEquiv_coe_cuspForm {k : ℤ} {w : ℕ} (hk :
 
 /-- In positive even degree `w`, `extendedEvenPeriodPolynomialEquiv` sends the normalized Eisenstein
 series `ModularForm.E` to the Eisenstein period polynomial `X^w - Y^w`. -/
+@[simp]
 theorem extendedEvenPeriodPolynomialEquiv_E {k w : ℕ} (hk : (k : ℤ) = w + 2)
     (hw : Even w) (hw₀ : w ≠ 0) (hk3 : 3 ≤ k) :
     extendedEvenPeriodPolynomialEquiv hk (ModularForm.E hk3) =
