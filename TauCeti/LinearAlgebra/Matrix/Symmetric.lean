@@ -301,6 +301,7 @@ theorem subTransposeEqEquiv_apply_mk_of_le (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i 
 
 /-- The solution of `S - Sᵀ = Q` with parameter `g` has entries `g s(i, j)` on and above the
 diagonal, and `g s(i, j) + Q i j` below it. -/
+@[simp]
 theorem coe_subTransposeEqEquiv_symm_apply (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
     (g : Sym2 n → R) (i j : n) :
     ((subTransposeEqEquiv hQ hQd).symm g).1 i j = g s(i, j) + if j < i then Q i j else 0 :=

@@ -163,6 +163,7 @@ theorem transpose_mul_J_mul_transpose {m : Type*} (C : Matrix m (l ⊕ l) R) :
 
 /-- The congruence transform `C * J * Cᵀ` of `J` has zero diagonal, in every characteristic: its
 entries are the values of the standard alternating form on pairs of rows of `C`. -/
+@[simp]
 theorem mul_J_mul_transpose_apply_self {m : Type*} (C : Matrix m (l ⊕ l) R) (i : m) :
     (C * J l R * Cᵀ) i i = 0 := by
   simp [J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, mul_comm]
