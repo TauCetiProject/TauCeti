@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.Matrix.Polar.Deformation
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 

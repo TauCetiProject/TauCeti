@@ -192,12 +192,14 @@ theorem GeneralLinearGroup.coe_ofEuclideanCLE (D : EuclideanSpace 𝕜 ι ≃L[�
   simp [ofEuclideanCLE, ContinuousLinearEquiv.toUnit]
 
 /-- The continuous linear map of the matrix of an automorphism is the automorphism. -/
+@[simp]
 theorem GeneralLinearGroup.toEuclideanCLM_ofEuclideanCLE
     (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) :
     toEuclideanCLM (𝕜 := 𝕜) (GeneralLinearGroup.ofEuclideanCLE D : Matrix ι ι 𝕜) = D := by
   rw [coe_ofEuclideanCLE, StarAlgEquiv.apply_symm_apply]
 
 /-- The continuous linear equivalence of the matrix of an automorphism is the automorphism. -/
+@[simp]
 theorem GeneralLinearGroup.toEuclideanCLE_ofEuclideanCLE
     (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) :
     (GeneralLinearGroup.ofEuclideanCLE D : Matrix ι ι 𝕜).toEuclideanCLE
@@ -206,6 +208,7 @@ theorem GeneralLinearGroup.toEuclideanCLE_ofEuclideanCLE
     rw [coe_toEuclideanCLE, toEuclideanCLM_ofEuclideanCLE]
 
 /-- The matrix of the continuous linear equivalence of an invertible matrix is the matrix. -/
+@[simp]
 theorem GeneralLinearGroup.ofEuclideanCLE_toEuclideanCLE (A : GL ι 𝕜) :
     GeneralLinearGroup.ofEuclideanCLE ((A : Matrix ι ι 𝕜).toEuclideanCLE A.det_ne_zero) = A :=
   Units.ext <| by rw [coe_ofEuclideanCLE, coe_toEuclideanCLE, StarAlgEquiv.symm_apply_apply]

@@ -141,6 +141,7 @@ theorem realImage_mul (M N : Matrix n n ℂ) :
   simp [map_mul]
 
 /-- An invertible real matrix maps `ℝⁿ` onto itself. -/
+@[simp]
 theorem realImage_map_ofReal {N : Matrix n n ℝ} (hN : IsUnit N) :
     (N.map ((↑) : ℝ → ℂ)).realImage = realSubspace n := by
   refine le_antisymm (realImage_map_ofReal_le N) fun v hv ↦ ?_
@@ -153,6 +154,7 @@ theorem realImage_map_ofReal {N : Matrix n n ℝ} (hN : IsUnit N) :
   simpa using h
 
 /-- Multiplying on the right by an invertible real matrix does not change `M ℝⁿ`. -/
+@[simp]
 theorem realImage_mul_map_ofReal (M : Matrix n n ℂ) {N : Matrix n n ℝ} (hN : IsUnit N) :
     (M * N.map ((↑) : ℝ → ℂ)).realImage = M.realImage := by
   rw [realImage_mul, realImage_map_ofReal hN, realImage]
