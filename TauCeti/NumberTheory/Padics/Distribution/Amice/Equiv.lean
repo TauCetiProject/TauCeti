@@ -48,7 +48,7 @@ Such a matrix defines an isometric automorphism of `C₀(ℕ, E)`
 ## Main results
 
 * `TauCeti.AnalyticStage.norm_amiceMap`: Amice's map preserves norms.
-* `TauCeti.AnalyticStage.surjective_amiceMap`: Amice's map is onto.
+* `TauCeti.AnalyticStage.amiceMap_surjective`: Amice's map is onto.
 * `TauCeti.AnalyticStage.amiceEquiv_symm_amiceTerm`: the inverse of Amice's isomorphism sends
   Amice's vector `e_{h,n} • e` to the coordinate vector `single n e`.
 * `TauCeti.AnalyticStage.isOrthonormalBasis_amiceTerm`: Amice's basis theorem for `LA_h(ℤ_p)`.
@@ -248,7 +248,7 @@ theorem norm_amiceMap (c : C₀(ℕ, E)) : ‖amiceMap p h S c‖ = ‖c‖ := b
 variable (p h) in
 /-- **Amice's theorem: surjectivity.** Every coefficient vector of `LA_h(E)` is the expansion of
 a series `∑ₙ e_{h,n} • cₙ` with `cₙ → 0`. -/
-theorem surjective_amiceMap : Function.Surjective (amiceMap p h S (E := E)) := fun v ↦
+theorem amiceMap_surjective : Function.Surjective (amiceMap p h S (E := E)) := fun v ↦
   ⟨(amiceEquiv p h S).symm v, by rw [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply]⟩
 
 /-- The inverse of Amice's isomorphism sends Amice's vector `e_{h,n} • e` to the coordinate vector
