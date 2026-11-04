@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
+import TauCeti.Combinatorics.SimpleGraph.Paths
 
 /-!
 # The fan lemma
@@ -20,7 +21,7 @@ meet every walk from `x` to a vertex of `U`.
 The **fan lemma** follows: in a `k`-vertex-connected graph on a finite vertex type, a vertex `x`
 outside a set `U` of at least `k` vertices is joined to `U` by a fan of `k` paths. More generally,
 it suffices that `x` be `k`-vertex-reachable from every vertex of `U`. Fans are the tool by which
-cycles through prescribed vertices are built in highly connected graphs.
+cycles through prescribed vertices and open ears are built in highly connected graphs.
 
 ## Main results
 
@@ -33,6 +34,10 @@ cycles through prescribed vertices are built in highly connected graphs.
   paths from `x` to `U`.
 * `SimpleGraph.exists_fan_of_forall_isVertexReachable` and
   `SimpleGraph.IsVertexConnected.exists_fan`: the **fan lemma**.
+* `SimpleGraph.IsVertexConnected.exists_open_ear_of_sup_edge` and
+  `SimpleGraph.IsVertexConnected.exists_open_ear`: existence of an open ear in `G` through `x ∉ U`
+  between two distinct vertices of `U` when `G ⊔ SimpleGraph.edge s t` (for distinct `s, t ∈ U`) or
+  `G` itself is `2`-vertex-connected.
 
 ## Implementation notes
 
@@ -203,5 +208,54 @@ theorem IsVertexConnected.exists_fan [Finite V] {k : ℕ} (h : G.IsVertexConnect
       (∀ i, (P i).IsPath) ∧ (∀ i, ∀ v ∈ (P i).support, v ≠ u i → v ∉ U) ∧
       Pairwise fun i j ↦ ∀ v ∈ (P i).support, v ∈ (P j).support → v = x :=
   exists_fan_of_forall_isVertexReachable hx hU fun y _ ↦ h.isVertexReachable x y
+
+/-- Given distinct vertices `s ≠ t` in `U` and a vertex `x ∉ U` on a finite vertex type,
+`2`-vertex-connectivity of `G ⊔ SimpleGraph.edge s t` produces an open ear in `G` itself passing
+through `x` between two distinct endpoints in `U`, with all internal vertices outside `U`. -/
+theorem IsVertexConnected.exists_open_ear_of_sup_edge [Finite V] {s t : V}
+    (h : (G ⊔ SimpleGraph.edge s t).IsVertexConnected 2) (hst : s ≠ t) (hsU : s ∈ U) (htU : t ∈ U)
+    (hx : x ∉ U) :
+    ∃ (u₀ u₁ : V) (R : G.Walk u₀ u₁), u₀ ∈ U ∧ u₁ ∈ U ∧ u₀ ≠ u₁ ∧ R.IsPath ∧ x ∈ R.support ∧
+      ∀ v ∈ R.support, v ≠ u₀ → v ≠ u₁ → v ∉ U := by
+  classical
+  have hU2 : 2 ≤ #U := one_lt_card.2 ⟨s, hsU, t, htU, hst⟩
+  obtain ⟨u, P, hinj, hu, hP, hint, hdisj⟩ := h.exists_fan hx hU2
+  have htransfer (i : Fin 2) : ∀ e ∈ (P i).edges, e ∈ G.edgeSet := by
+    intro e he
+    induction e with | h v w => ?_
+    refine ((P i).adj_of_mem_edges he).elim id fun hedge ↦ False.elim ?_
+    rw [edge_adj] at hedge
+    have hvU : v ∈ U := by rcases hedge.1 with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> assumption
+    have hwU : w ∈ U := by rcases hedge.1 with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> assumption
+    have hvu : v = u i := by
+      by_contra hne
+      exact hint i v ((P i).fst_mem_support_of_mem_edges he) hne hvU
+    have hwu : w = u i := by
+      by_contra hne
+      exact hint i w ((P i).snd_mem_support_of_mem_edges he) hne hwU
+    exact hedge.2 (hvu.trans hwu.symm)
+  let Q : ∀ i : Fin 2, G.Walk x (u i) := fun i ↦ (P i).transfer G (htransfer i)
+  have hQ_supp (i : Fin 2) : (Q i).support = (P i).support := Walk.support_transfer _ _
+  have hQ_path (i : Fin 2) : (Q i).IsPath := (Q i).isPath_def.2 (hQ_supp i ▸ (hP i).support_nodup)
+  refine ⟨u 0, u 1, (Q 0).reverse.append (Q 1), hu 0, hu 1, hinj.ne (by decide), ?_,
+    (Walk.mem_support_append_iff _ _).2 (.inr (Q 1).start_mem_support), fun v hv h0 h1 hvU ↦ ?_⟩
+  · refine (Walk.isPath_append _ _).2 ⟨(hQ_path 0).reverse, (hQ_path 1).tail, fun v hv₀ hv₁ ↦ ?_⟩
+    rw [Walk.support_reverse, List.mem_reverse, hQ_supp] at hv₀
+    have hvx : v = x :=
+      hdisj (by decide : (0 : Fin 2) ≠ 1) v hv₀ (hQ_supp 1 ▸ List.mem_of_mem_tail hv₁)
+    exact (hQ_path 1).start_notMem_tail_support (hvx ▸ hv₁)
+  · rw [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse, hQ_supp,
+      hQ_supp] at hv
+    exact hv.elim (fun hv₀ ↦ hint 0 v hv₀ h0 hvU) (fun hv₁ ↦ hint 1 v hv₁ h1 hvU)
+
+/-- In a `2`-vertex-connected simple graph on a finite vertex type, any vertex `x` outside a set `U`
+of at least two vertices lies on an open ear in `G` between two distinct endpoints in `U`, with all
+internal vertices outside `U`. -/
+theorem IsVertexConnected.exists_open_ear [Finite V] (h : G.IsVertexConnected 2) (hx : x ∉ U)
+    (hU : 2 ≤ #U) :
+    ∃ (u₀ u₁ : V) (R : G.Walk u₀ u₁), u₀ ∈ U ∧ u₁ ∈ U ∧ u₀ ≠ u₁ ∧ R.IsPath ∧ x ∈ R.support ∧
+      ∀ v ∈ R.support, v ≠ u₀ → v ≠ u₁ → v ∉ U := by
+  obtain ⟨s, hsU, t, htU, hst⟩ := one_lt_card.1 hU
+  exact (h.mono le_sup_left).exists_open_ear_of_sup_edge hst hsU htU hx
 
 end SimpleGraph
