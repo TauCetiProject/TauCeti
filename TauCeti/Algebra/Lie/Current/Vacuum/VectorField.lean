@@ -30,15 +30,17 @@ Two vector fields give the basic structure of the vacuum vertex algebra.
 
 * **Translation.** `T = -d/dt` (`TauCeti.CurrentAlgebra.vacuumTranslation`) kills the vacuum and
   satisfies `[T, J^x[[n]]] = -n J^x[[n - 1]]`, the coefficient form of
-  `[T, J^x(z)] = ∂_z J^x(z)`. Consequently `T^k x₋₁|0⟩ = k! x₋ₖ₋₁|0⟩`, so that
+  `[T, J^x(z)] = ∂_z J^x(z)`. Consequently `T^k x₋₁|0⟩ = k! x₋ₖ₋₁|0⟩`. When `R` is a
+  `ℚ`-algebra, so that the factorials are invertible, this says that
   `J^x(z)|0⟩ = ∑ₖ x₋ₖ₋₁|0⟩ zᵏ` is `e^{zT} x₋₁|0⟩`.
 * **Degree.** `L₀ = -t d/dt` (`TauCeti.CurrentAlgebra.vacuumDegreeOperator`) kills the vacuum and
   satisfies `[L₀, J^x[[n]]] = -n J^x[[n]]` and `[L₀, T] = T`. So the mode `xₙ` maps the
   `μ`-eigenspace of `L₀` to the `(μ - n)`-eigenspace, and `T` maps it to the `(μ + 1)`-eigenspace:
   the vectors `x¹₋ₙ₁ ⋯ xᵏ₋ₙₖ|0⟩` are eigenvectors of degree `n₁ + ⋯ + nₖ`.
 
-These hold at every central value `a`, including the critical level and `a = 0`, over every
-commutative ring, and with no finiteness of `L`.
+The results proved here hold at every central value `a`, including the critical level and
+`a = 0`, over every commutative ring, and with no finiteness of `L`; only the exponential
+reformulation of the translation property needs `R` to be a `ℚ`-algebra.
 
 ## Main definitions
 
@@ -237,8 +239,9 @@ theorem vacuumTranslation_ncoeff_currentField_apply (x : L) (n : ℤ)
   rw [sub_eq_iff_eq_add, neg_add_eq_sub] at h
   exact h
 
-/-- **The translation property of the generating states**: `T^k x₋₁|0⟩ = k! x₋ₖ₋₁|0⟩`. Hence the
-vector `J^x(z)|0⟩ = ∑ₖ x₋ₖ₋₁|0⟩ zᵏ` is `e^{zT} x₋₁|0⟩`. -/
+/-- **The translation property of the generating states**: `T^k x₋₁|0⟩ = k! x₋ₖ₋₁|0⟩`, over any
+commutative ring `R`. When `R` is a `ℚ`-algebra, dividing by `k!` shows that the vector
+`J^x(z)|0⟩ = ∑ₖ x₋ₖ₋₁|0⟩ zᵏ` is `e^{zT} x₋₁|0⟩`. -/
 theorem pow_vacuumTranslation_ncoeff_currentField_vacuum (x : L) (k : ℕ) :
     (vacuumTranslation Φ hΦ hΦs a ^ k) (((J x)[[-1]]) (vacuum Φ hΦ hΦs a)) =
       (k.factorial : R) • ((J x)[[-k - 1]]) (vacuum Φ hΦ hΦs a) := by
