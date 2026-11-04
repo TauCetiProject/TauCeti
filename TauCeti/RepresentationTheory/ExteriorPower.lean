@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.RepresentationTheory.Intertwining
 
 /-!
@@ -154,11 +155,9 @@ underlying linear map is the map induced by `e` on `d`th exterior powers, and it
 map induced by `e.symm`. -/
 noncomputable def exteriorPower (e : ρ.Equiv σ) (d : ℕ) :
     (ρ.exteriorPower d).Equiv (σ.exteriorPower d) :=
-  -- The inverse is given explicitly, rather than obtained from bijectivity, so that
+  -- `LinearEquiv.exteriorPower` takes the inverse to be the map induced by `e.symm`, so that
   -- `exteriorPower_symm` holds by definition, as for `TensorProduct.congr`.
-  .mk (.ofLinearMap (_root_.exteriorPower.map d e.toLinearMap)
-    (_root_.exteriorPower.map d e.symm.toLinearMap) (by ext; simp [Function.comp_def])
-    (by ext; simp [Function.comp_def])) (e.toIntertwiningMap.exteriorPower d).isIntertwining'
+  .mk (e.toLinearEquiv.exteriorPower d) (e.toIntertwiningMap.exteriorPower d).isIntertwining'
 
 /-- The underlying linear map is the usual map induced on exterior powers. -/
 @[simp]

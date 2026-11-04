@@ -53,6 +53,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring homomorphism `f : R →+* S` making `S` a projective `R`-module.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
+* `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
+  restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
 -/
 
 public section
@@ -178,6 +180,22 @@ theorem projective_restrictScalars_iff (e : R ≃+* S) (M : ModuleCat.{v} S) :
   exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
 
 end RingEquiv
+
+namespace Function.Exact
+
+/-- If `P --f--> Q --g--> M` is exact and `M` is an `S`-module with scalars restricted along
+`φ : R →+* S`, then every scalar `r` with `φ r = 0` kills the cokernel of `f`. -/
+theorem smul_mem_range {P Q : Type*} [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    {φ : R →+* S} {M : ModuleCat.{v} S} {f : P →ₗ[R] Q}
+    {g : Q →ₗ[R] (ModuleCat.restrictScalars φ).obj M} (hfg : Function.Exact f g) {r : R}
+    (hr : φ r = 0) (y : Q) : r • y ∈ LinearMap.range f := by
+  refine (hfg _).1 ?_
+  rw [map_smul, ModuleCat.restrictScalars.smul_def, hr, zero_smul]
+  -- The left side is the zero of `M` and the right side the zero of its restriction of scalars:
+  -- restriction of scalars keeps the additive group of `M` by definition, as in `smul_def`.
+  rfl
+
+end Function.Exact
 
 namespace ModuleCat
 

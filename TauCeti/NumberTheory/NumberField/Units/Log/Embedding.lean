@@ -376,7 +376,7 @@ def logSpaceRep : Representation ℝ (L ≃ₐ[K] L) (logSpace L) where
     have h : (LinearMap.funLeft ℝ ℝ fun w : {w : InfinitePlace L // w ≠ w₀} ↦ τ⁻¹ • w.1)
         (logSpaceExtend L y) = fun w ↦ logSpaceExtend L y (τ⁻¹ • w.1) :=
       funext fun w ↦ LinearMap.funLeft_apply _ _ _ _ w
-    simp only [LinearMap.comp_apply, LinearMap.funLeft_apply, Module.End.mul_apply, h,
+    simp only [LinearMap.comp_apply, LinearMap.funLeft_apply, mul_apply_eq_comp, h,
       logSpaceExtend_eq_self hτ, mul_inv_rev, mul_smul]
 
 variable {K L}

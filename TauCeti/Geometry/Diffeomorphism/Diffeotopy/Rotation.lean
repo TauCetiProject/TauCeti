@@ -31,6 +31,13 @@ can move a point and a unit tangent vector there to any other point and unit tan
 needed to match the first-order data of two curves in the sphere. On the circle this fails: a
 rotation of the circle cannot reverse the direction of a tangent vector.
 
+More globally, every linear isometry of determinant `1` is reached: such an isometry is joined to
+the identity by an analytic path of linear isometries
+(`LinearIsometryEquiv.exists_contDiff_path_of_det_eq_one`), so its restriction to the sphere is the
+final map of a rotation diffeotopy
+(`TauCeti.exists_diffeotopy_final_apply_eq_of_det_eq_one`). Two linear isometries of the same
+determinant therefore induce diffeotopic diffeomorphisms of the sphere.
+
 ## Main definitions
 
 * `TauCeti.unitSphereDiffeotopy R hR hR₀`: the diffeotopy of the unit sphere applying the linear
@@ -43,6 +50,8 @@ rotation of the circle cannot reverse the direction of a tangent vector.
 * `TauCeti.exists_diffeotopy_final_apply_eq_and_apply_eq`: in a sphere of dimension at least two,
   any orthonormal pair `(x, v)` is carried to any other orthonormal pair `(y, w)` by a linear
   isometry which is the final map of a diffeotopy of the sphere.
+* `TauCeti.exists_diffeotopy_final_apply_eq_of_det_eq_one`: every linear isometry of determinant
+  `1` is the final map of a rotation diffeotopy of the sphere.
 
 ## References
 
@@ -170,5 +179,17 @@ theorem exists_diffeotopy_final_apply_eq_and_apply_eq (hn : 2 ≤ n) {x v y w : 
       (by rwa [real_inner_comm]), hg₂y y (by rwa [real_inner_comm]) (by rwa [real_inner_comm])]
   · obtain ⟨g, hg, hgv, hgy⟩ := exists_isFinalRotation_apply_eq (n := n) (m := m) hv₁ hw h
     exact ⟨g, hg, hgy y (by rwa [real_inner_comm]) (by rwa [real_inner_comm]), hgv⟩
+
+/-! ### Isometries of determinant one -/
+
+/-- **Rotations of a sphere are diffeotopic to the identity.** A linear isometry of determinant `1`
+restricts on the unit sphere to the final map of a rotation diffeotopy. -/
+theorem exists_diffeotopy_final_apply_eq_of_det_eq_one {e : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = 1) :
+    ∃ Φ : Diffeotopy (𝓡 n) m (sphere (0 : E) 1), ∀ z, (Φ.final z : E) = e z := by
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
+  obtain ⟨R, hR, hR₀, hR₁⟩ := e.exists_contDiff_path_of_det_eq_one he
+  exact ⟨unitSphereDiffeotopy R (hR.of_le le_top) hR₀, fun z => by
+    rw [coe_unitSphereDiffeotopy_final_apply, hR₁]⟩
 
 end TauCeti

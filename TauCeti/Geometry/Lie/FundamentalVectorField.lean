@@ -39,6 +39,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_mulRightInvariantVectorField`: each orbit map `g ↦ g • x` relates the
   right-invariant vector field of `ξ` on `G` to `ξ_M`.
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
+* `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
+  `ξ_M` to `ξ_N`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
@@ -139,6 +141,19 @@ theorem fundamentalVectorField_eq_mulRightInvariantVectorField (ξ : GroupLieAlg
   rw [fundamentalVectorField_apply, mulRightInvariantVectorField_apply]
   -- Left multiplication `h • g` is `h * g` by definition of the action of a monoid on itself.
   rfl
+
+/-- **Equivariant maps relate fundamental vector fields.** If `f : M → N` satisfies
+`f (g • x) = g • f x` for every `g`, and `f` and the orbit map of `x` are differentiable, then the
+derivative of `f` at `x` sends `ξ_M(x)` to `ξ_N(f x)`. -/
+theorem mfderiv_fundamentalVectorField_of_map_smul {E'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N] [MulAction G N] {f : M → N} {x : M}
+    (hf : MDifferentiableAt I' I'' f x) (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1)
+    (hfx : ∀ g : G, f (g • x) = g • f x) (ξ : GroupLieAlgebra I G) :
+    mfderiv I' I'' f x (fundamentalVectorField I' ξ x) = fundamentalVectorField I'' ξ (f x) := by
+  have hcomp : (f ∘ fun g : G => g • x) = fun g : G => g • f x := funext hfx
+  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, ← hcomp]
+  exact (mfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x) ξ).symm
 
 /-- For a `C^n` action, the fundamental vector field of `ξ` is a `C^m` vector field when
 `m + 1 ≤ n`. -/

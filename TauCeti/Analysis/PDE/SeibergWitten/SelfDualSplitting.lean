@@ -263,7 +263,7 @@ theorem rankOne_eq_smul_cliffordProjection {ψ : positiveHalfSpinors o ρ}
   -- The range of `P` is the line spanned by `ψ`.
   have hline : ∀ w : LinearMap.range (P : Module.End ℂ (positiveHalfSpinors o ρ)),
       ∃ c : ℂ, c • (⟨ψ, ψ, hψ⟩ : LinearMap.range (P : Module.End ℂ _)) = w :=
-    (finrank_eq_one_iff_of_nonzero' _ fun h ↦ hψ₀ (by simpa using congrArg Subtype.val h)).1
+    (finrank_eq_one_iff_of_ne_zero' _ fun h ↦ hψ₀ (by simpa using congrArg Subtype.val h)).1
       (finrank_range_cliffordProjection o ρ hQ hkl hω hω₂ h₂)
   ext v
   obtain ⟨c, hc⟩ := hline ⟨P v, v, rfl⟩

@@ -29,6 +29,11 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 `TauCeti.BalancedExtension f P`, and `RingHom.isFG_restrictScalars_of_finite` together with
 `RingHom.projective_restrictScalars_of_projective`.
 
+## Main definitions
+
+* `RingHom.finiteProjectiveModulesExtendScalars`: extension of scalars as an additive functor
+  between the categories of finitely generated projective modules.
+
 ## Main results
 
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
@@ -68,6 +73,39 @@ end TauCeti.BalancedExtension
 namespace RingHom
 
 open TauCeti
+
+/-- **Extension of scalars on finitely generated projective modules.** A ring homomorphism
+`f : R →+* S` induces a functor from the finitely generated projective `R`-modules to the
+finitely generated projective `S`-modules, sending `P` to `S ⊗_R P`. -/
+noncomputable def finiteProjectiveModulesExtendScalars :
+    (finiteProjectiveModules R).FullSubcategory ⥤ (finiteProjectiveModules S).FullSubcategory :=
+  (finiteProjectiveModules S).lift
+    ((finiteProjectiveModules R).ι ⋙ BalancedExtension.functor.{u, u, u} f)
+    fun P ↦ BalancedExtension.finiteProjectiveModules_le_inverseImage_functor f P.obj P.property
+
+instance : f.finiteProjectiveModulesExtendScalars.Additive := by
+  -- Instance search does not find Mathlib's additivity instance for `ObjectProperty.lift` here,
+  -- so additivity is read off the composite with the faithful inclusion, which is the additive
+  -- functor `ι ⋙ BalancedExtension.functor f`.
+  have : (f.finiteProjectiveModulesExtendScalars ⋙ (finiteProjectiveModules S).ι).Additive :=
+    inferInstanceAs ((finiteProjectiveModules R).ι ⋙ BalancedExtension.functor.{u, u, u} f).Additive
+  exact Functor.additive_of_comp_faithful _ (finiteProjectiveModules S).ι
+
+@[simp]
+theorem finiteProjectiveModulesExtendScalars_obj_obj
+    (P : (finiteProjectiveModules R).FullSubcategory) :
+    (f.finiteProjectiveModulesExtendScalars.obj P).obj =
+      ModuleCat.of S (BalancedExtension f P.obj) :=
+  (rfl)
+
+@[simp]
+theorem finiteProjectiveModulesExtendScalars_map_hom
+    {P Q : (finiteProjectiveModules R).FullSubcategory} (g : P ⟶ Q) :
+    (f.finiteProjectiveModulesExtendScalars.map g).hom =
+      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≫
+        ModuleCat.ofHom (BalancedExtension.map f g.hom.hom) ≫
+          eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj Q).symm :=
+  (rfl)
 
 /-- **Restriction of scalars on finitely generated projective modules.** Restriction of scalars
 along `f : R →+* S` sends finitely generated projective `S`-modules to finitely generated

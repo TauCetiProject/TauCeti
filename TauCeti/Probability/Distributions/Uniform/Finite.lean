@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.UniformOn
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.Probability.Quantile.Finite
 
 /-!
 # Uniform measures on finite types
@@ -24,8 +25,14 @@ uniform measures to uniform measures on their images.
   finite Dirac-sum constructions agree.
 * `Finset.support_uniformOn_coe_finset`: in a T₁ space, the topological support of a finite
   uniform law is its finite set.
+* `Finset.uniformOn_univ_real_finset`: the real mass of a finite set under the uniform law on a
+  finite type is its normalized cardinality.
 * `Finset.integral_uniformOn_finset`: integration against a finite uniform law is a
   normalized finite sum.
+* `TauCeti.Probability.quantile_map_uniformOn_univ_eq_iff` characterizes quantiles after
+  assigning arbitrary real labels to a finite uniform sample;
+* `TauCeti.Probability.tendsto_quantile_map_uniformOn_univ_nhdsGT_zero` and
+  `TauCeti.Probability.tendsto_quantile_map_uniformOn_univ_nhdsLT_one` give its endpoint limits.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
@@ -36,7 +43,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open Filter MeasureTheory ProbabilityTheory Set Topology
 open scoped ENNReal
 
 variable {α β E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
@@ -87,6 +94,14 @@ theorem support_uniformOn_coe_finset [TopologicalSpace α] [T1Space α] (s : Fin
       exact ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _)
     exact hatom.trans_le (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
+/-- The real mass of a finite set under the uniform law on a finite type is its cardinality
+divided by the cardinality of the type. -/
+theorem uniformOn_univ_real_finset [Fintype α] (s : Finset α) :
+    (uniformOn (Set.univ : Set α)).real s = (s.card : ℝ) / Fintype.card α := by
+  classical
+  rw [measureReal_def, ← Finset.coe_univ, uniformOn_apply_finset]
+  simp [ENNReal.toReal_div]
+
 end Finset
 
 namespace TauCeti.Probability
@@ -97,6 +112,68 @@ uniform law. -/
 theorem uniformOn_univ_apply_singleton [Fintype α] (a : α) :
     uniformOn (Set.univ : Set α) {a} = (Fintype.card α : ℝ≥0∞)⁻¹ := by
   simpa using Finset.uniformOn_coe_finset_apply_singleton (Finset.univ : Finset α) a
+
+/-- The cdf after assigning real labels to a uniform sample from a nonempty finite type is the
+proportion of labels no larger than the cutoff. Equal labels are counted with their full
+multiplicity. -/
+theorem cdf_map_uniformOn_univ [Fintype α] [Nonempty α] (label : α → ℝ) (x : ℝ) :
+    cdf ((uniformOn (Set.univ : Set α)).map label) x =
+      ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
+  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  have hpreimage : label ⁻¹' Set.Iic x =
+      (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
+    ext i
+    simp
+  rw [hpreimage, Finset.uniformOn_univ_real_finset]
+
+/-- A real number is the quantile of a uniformly sampled finite collection of supplied labels
+exactly when the level strictly exceeds the proportion of smaller labels and is at most the
+proportion of labels no larger than it. This is the cumulative-crossing description obtained by
+sorting the distinct labels and aggregating equal ones. -/
+theorem quantile_map_uniformOn_univ_eq_iff [Fintype α] [Nonempty α] (label : α → ℝ)
+    {u x : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    ((uniformOn (Set.univ : Set α)).map label).quantile u = x ↔
+      ((Finset.univ.filter fun i ↦ label i < x).card : ℝ) / Fintype.card α < u ∧
+        u ≤ ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
+  rw [Measure.quantile_map_finite_eq_iff _ label hu]
+  have hpreimage_lt : label ⁻¹' Set.Iio x =
+      (Finset.univ.filter fun i ↦ label i < x : Finset α) := by
+    ext i
+    simp
+  have hpreimage_le : label ⁻¹' Set.Iic x =
+      (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
+    ext i
+    simp
+  rw [hpreimage_lt, hpreimage_le, Finset.uniformOn_univ_real_finset,
+    Finset.uniformOn_univ_real_finset]
+
+/-- As the level tends to zero from above, labelled finite-uniform quantiles tend to a least
+supplied label. -/
+theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero [Finite α] [Nonempty α]
+    (label : α → ℝ) (i : α) (hmin : ∀ j, label i ≤ label j) :
+    Tendsto ((uniformOn (Set.univ : Set α)).map label).quantile (𝓝[>] 0)
+      (𝓝 (label i)) := by
+  let _ := Fintype.ofFinite α
+  apply Measure.tendsto_quantile_map_finite_nhdsGT_zero
+    (uniformOn (Set.univ : Set α)) label i
+  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+    simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
+  · exact fun j _ ↦ hmin j
+
+/-- As the level tends to one from below, labelled finite-uniform quantiles tend to a greatest
+supplied label. -/
+theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one [Finite α] [Nonempty α]
+    (label : α → ℝ) (i : α) (hmax : ∀ j, label j ≤ label i) :
+    Tendsto ((uniformOn (Set.univ : Set α)).map label).quantile (𝓝[<] 1)
+      (𝓝 (label i)) := by
+  let _ := Fintype.ofFinite α
+  apply Measure.tendsto_quantile_map_finite_nhdsLT_one
+    (uniformOn (Set.univ : Set α)) label i
+  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+    simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
+  · exact fun j _ ↦ hmax j
 
 end TauCeti.Probability
 
@@ -197,7 +274,7 @@ instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [No
     [MeasurableSpace α] :
     IsProbabilityMeasure (Measure.uniformOfFinset (Finset.univ : Finset α)) := by
   constructor
-  simp [Measure.uniformOfFinset, Measure.finsetSum_apply, Finset.sum_const, nsmul_eq_mul,
+  simp [Measure.uniformOfFinset, _root_.sum_apply, Finset.sum_const, nsmul_eq_mul,
     ENNReal.mul_inv_cancel, Fintype.card_ne_zero]
 
 /-- Two independent uniform samples from `Fin 2` differ with probability `1 / 2`. -/

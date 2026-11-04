@@ -56,7 +56,8 @@ variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X 
 
 /-- A Dirac measure leaves a map no room to be modified on a null set: pushing `Measure.dirac x`
 forward along a `Measure.dirac x`-a.e. measurable map is evaluating that map at `x`. -/
-@[simp]
+-- Evaluate the point mass before generic map rules request singleton measurability.
+@[simp↓]
 theorem map_dirac_of_aemeasurable {x : X} (hT : AEMeasurable T (Measure.dirac x)) :
     (Measure.dirac x).map T = Measure.dirac (T x) := by
   have hx : T x = hT.mk T x := by
@@ -106,10 +107,10 @@ theorem eq_smul_dirac_of_forall_notMem {X : Type*} [MeasurableSpace X]
   apply Measure.ext
   intro s hs
   by_cases hx : x ∈ s
-  · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
+  · rw [_root_.smul_apply, Measure.dirac_apply' _ hs,
       Set.indicator_of_mem hx, Pi.one_apply, smul_eq_mul, mul_one]
     exact measure_of_measure_compl_eq_zero (hk sᶜ hs.compl (by simpa))
-  · rw [Measure.smul_apply, Measure.dirac_apply' _ hs,
+  · rw [_root_.smul_apply, Measure.dirac_apply' _ hs,
       Set.indicator_of_notMem hx, smul_eq_mul, mul_zero]
     exact hk s hs hx
 
@@ -151,7 +152,7 @@ theorem eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac {X : Type*} [MeasurableS
   have hzero (s : Set X) (hs : MeasurableSet s) (hx : x ∉ s) :
       μ s = 0 ∧ ν s = 0 := by
     have h' := congrArg (fun η : Measure X => η s) h
-    rw [Measure.add_apply, Measure.dirac_apply' _ hs,
+    rw [_root_.add_apply, Measure.dirac_apply' _ hs,
       Set.indicator_of_notMem hx] at h'
     exact add_eq_zero.mp h'
   exact ⟨μ.eq_smul_dirac_of_forall_notMem x (fun s hs hx => (hzero s hs hx).1),

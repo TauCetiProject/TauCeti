@@ -62,6 +62,28 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The section of a difference of fields is the difference of their sections. -/
+theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
+  simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
+  ring
+
+/-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
+theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  ring
+
+/-- If a field tends to zero along a filter, then so does its section. -/
+theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : Filter.Tendsto x l (nhds 0)) : Filter.Tendsto (sectionValue x) l (nhds 0) := by
+  have h : Continuous fun v : EuclideanSpace ℝ (Fin 4) ↦ 2 * ((v 2 : ℂ) + (v 3 : ℂ) * I) := by
+    fun_prop
+  have := (h.tendsto 0).comp hx
+  simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
+  exact this.congr fun z ↦ (sectionValue_apply x z).symm
+
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
 def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=
@@ -146,6 +168,16 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     equation x z 2 = fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
+
+/-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
+`F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/
+theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hsol : equation x z = 0) :
+    fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I =
+      -((1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 8) := by
+  have h := congrArg (· 0) hsol
+  simp only [equation_apply_zero, PiLp.zero_apply] at h
+  linarith
 
 /-- The curvature component of the linearized equation. -/
 @[simp]

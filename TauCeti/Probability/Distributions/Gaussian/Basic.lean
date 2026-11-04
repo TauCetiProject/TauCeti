@@ -28,6 +28,8 @@ differentiates it in the mean, for formulas over intervals whose bounds may be i
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
 * `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization:
   `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
+* `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
+  mean.
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFRealEReal` — as a function of the mean `μ`, the
@@ -66,6 +68,13 @@ theorem gaussianPDFReal_eq_gaussianPDFReal_zero_one (m : ℝ) (v : ℝ≥0) (x :
   simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero, div_pow, Real.sq_sqrt hv'.le,
     Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * π)]
   field_simp
+
+/-- The Gaussian density of `N(m, v)` decreases to the right of its mean. -/
+theorem antitoneOn_gaussianPDFReal (m : ℝ) (v : ℝ≥0) :
+    AntitoneOn (gaussianPDFReal m v) (Set.Ici m) := fun x hx y _ hxy => by
+  have hx : 0 ≤ x - m := sub_nonneg.2 hx
+  simp only [gaussianPDFReal]
+  gcongr
 
 /-- The standard Gaussian density decays faster than `1 / |x|`: `x φ(x) → 0` as `|x| → ∞`. -/
 theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :

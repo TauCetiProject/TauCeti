@@ -378,9 +378,9 @@ theorem level_top_le_comap (u : L.ground) :
     simpa using L.conj_mem_top (L.ground.toSubgroup.inv_mem u.2) hv
   have hvu : v * (u : G) = (u : G) * ((u : G)⁻¹ * v * (u : G)) := by group
   calc F.toRep.ρ v (F.toRep.ρ (u : G) x)
-      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, Module.End.mul_apply]
+      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) (F.toRep.ρ ((u : G)⁻¹ * v * (u : G)) x) := by
-        rw [hvu, map_mul, Module.End.mul_apply]
+        rw [hvu, map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) x := by rw [(F.mem_level.1 hx) _ hconj]
 
 /-- The action of the ground subgroup `U` on the top level `A^V`. -/

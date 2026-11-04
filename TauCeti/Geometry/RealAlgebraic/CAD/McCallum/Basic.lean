@@ -201,8 +201,6 @@ private lemma isIrreducibleBasis_nullificationExample :
   · rw [Finset.mem_singleton.1 hb]
     exact hirr.ne_zero
 
-variable [NormalizedGCDMonoid (MvPolynomial (Fin 3) ℝ)]
-
 /-- **McCallum lifting fails over positive-dimensional nullifying cells.** The hypothesis of
 `TauCeti.exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection` that no basis member is
 nullified over a cell with more than one point cannot be dropped, even over a connected
@@ -218,7 +216,9 @@ order at least two at the point `(-1, 0, 0, 0)` above `C`, and order one at ever
 `C` where `X₀ ≠ -1` or `X₁ ≠ 0`. Since every cell of a stack over `C` lies over the whole of `C`,
 no stack over `C`, given by pointwise strictly increasing functions, continuous or not, has `f`
 order-invariant on each cell. -/
-theorem exists_nullified_mcCallumProjection_orderAt_ne :
+theorem exists_nullified_mcCallumProjection_orderAt_ne
+    (polynomialGCD : NormalizedGCDMonoid (MvPolynomial (Fin 3) ℝ)) :
+    let := polynomialGCD
     ∃ (f : MvPolynomial (Fin 4) ℝ) (C : Set (Fin 3 → ℝ)), IsSemialgebraic C ∧
       IsAnalyticSubmanifold 1 C ∧ IsConnected C ∧
       ∀ B, (({f} : Finset _).map (finSuccEquiv ℝ 3).toEquiv.toEmbedding).IsIrreducibleBasis B →
@@ -227,6 +227,7 @@ theorem exists_nullified_mcCallumProjection_orderAt_ne :
         (∀ b ∈ B, ∀ x ∈ C, b.map (MvPolynomial.eval x) = 0) ∧
         ∀ (k : ℕ) (θ : Fin k → C → ℝ), (∀ x, StrictMono fun i ↦ θ i x) →
           ∃ E ∈ stackCells C θ, ∃ y ∈ E, ∃ y' ∈ E, f.orderAt y ≠ f.orderAt y' := by
+  let := polynomialGCD
   set C : Set (Fin 3 → ℝ) := {x | ∀ i : Fin 3, 1 ≤ i.val → x i = 0} with hC
   have hmem {x : Fin 3 → ℝ} : x ∈ C ↔ x 1 = 0 ∧ x 2 = 0 := by
     simp [hC, Fin.forall_fin_succ]
@@ -287,33 +288,40 @@ end Nullification
 
 section WellOriented
 
-variable [∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ)]
+-- Keep the chosen GCD structures as data: every recursive projection must use
+-- the same family, and these concrete polynomial rings cannot be local instance binders.
+variable (polynomialGCD : ∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ))
+
 
 /-- A finite family `F` of real polynomials in `n` variables is *well-oriented* in McCallum's
 sense if, when `n` is positive, singling out the distinguished variable `X 0` gives a family with
 a squarefree basis `B` such that each member of `B` is nullified at only finitely many points of
 `ℝ ^ (n - 1)`, and the McCallum projection of the family with respect to `B` is again
 well-oriented. Every family of constants is well-oriented. -/
-def IsMcCallumWellOriented : (n : ℕ) → Finset (MvPolynomial (Fin n) ℝ) → Prop
+def IsMcCallumWellOriented (polynomialGCD : ∀ m,
+    NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ)) : (n : ℕ) → Finset (MvPolynomial (Fin n) ℝ) → Prop
   | 0, _ => True
-  | n + 1, F => ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B ∧
+  | n + 1, F =>
+      let := polynomialGCD
+      ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B ∧
       (∀ b ∈ B, {x : Fin n → ℝ | b.map (MvPolynomial.eval x) = 0}.Finite) ∧
-      IsMcCallumWellOriented n ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B)
+      IsMcCallumWellOriented polynomialGCD n
+        ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B)
 
 /-- Every family of polynomials in no variables is well-oriented. -/
 @[simp]
 theorem isMcCallumWellOriented_zero (F : Finset (MvPolynomial (Fin 0) ℝ)) :
-    IsMcCallumWellOriented 0 F :=
+    letI := polynomialGCD; IsMcCallumWellOriented polynomialGCD 0 F :=
   trivial
 
 /-- A family of polynomials in `n + 1` variables is well-oriented exactly when it has a
 squarefree basis in the distinguished variable `X 0` whose members are nullified at finitely
 many points, and whose McCallum projection is well-oriented. -/
 theorem isMcCallumWellOriented_succ_iff {F : Finset (MvPolynomial (Fin (n + 1)) ℝ)} :
-    IsMcCallumWellOriented (n + 1) F ↔
+    letI := polynomialGCD; IsMcCallumWellOriented polynomialGCD (n + 1) F ↔
       ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B ∧
         (∀ b ∈ B, {x : Fin n → ℝ | b.map (MvPolynomial.eval x) = 0}.Finite) ∧
-        IsMcCallumWellOriented n
+        IsMcCallumWellOriented polynomialGCD n
           ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B) :=
   Iff.rfl
 
@@ -321,7 +329,8 @@ theorem isMcCallumWellOriented_succ_iff {F : Finset (MvPolynomial (Fin (n + 1)) 
 nullified at most at the single point of `ℝ ^ 0`. -/
 @[simp]
 theorem isMcCallumWellOriented_one (F : Finset (MvPolynomial (Fin 1) ℝ)) :
-    IsMcCallumWellOriented 1 F := by
+    letI := polynomialGCD; IsMcCallumWellOriented polynomialGCD 1 F := by
+  let := polynomialGCD
   obtain ⟨B, hB⟩ := (F.map (finSuccEquiv ℝ 0).toEquiv.toEmbedding).exists_isIrreducibleBasis
   exact ⟨B, hB.isSquarefreeBasis, fun _ _ ↦ toFinite _, trivial⟩
 
@@ -329,9 +338,10 @@ theorem isMcCallumWellOriented_one (F : Finset (MvPolynomial (Fin 1) ℝ)) :
 so it has a nonzero coefficient, a polynomial in one variable with finitely many zeros. -/
 @[simp]
 theorem isMcCallumWellOriented_two (F : Finset (MvPolynomial (Fin 2) ℝ)) :
-    IsMcCallumWellOriented 2 F := by
+    letI := polynomialGCD; IsMcCallumWellOriented polynomialGCD 2 F := by
+  let := polynomialGCD
   obtain ⟨B, hB⟩ := (F.map (finSuccEquiv ℝ 1).toEquiv.toEmbedding).exists_isIrreducibleBasis
-  refine ⟨B, hB.isSquarefreeBasis, fun b hb ↦ ?_, isMcCallumWellOriented_one _⟩
+  refine ⟨B, hB.isSquarefreeBasis, fun b hb ↦ ?_, isMcCallumWellOriented_one polynomialGCD _⟩
   obtain ⟨i, hi⟩ : ∃ i, b.coeff i ≠ 0 := by
     by_contra! h
     exact (hB.irreducible b hb).ne_zero (Polynomial.ext h)
@@ -350,9 +360,10 @@ theorem isMcCallumWellOriented_two (F : Finset (MvPolynomial (Fin 2) ℝ)) :
 well-oriented in McCallum's sense has a cylindrical algebraic decomposition into analytic
 submanifolds, on each cell of which every member of the family has constant ambient order. -/
 theorem exists_isCAD_orderAt_eq_of_isMcCallumWellOriented {F : Finset (MvPolynomial (Fin n) ℝ)}
-    (hF : IsMcCallumWellOriented n F) :
+    (hF : IsMcCallumWellOriented polynomialGCD n F) :
     ∃ 𝒞, IsCAD n 𝒞 ∧ (∀ E ∈ 𝒞, ∃ d, IsAnalyticSubmanifold d E) ∧
       ∀ f ∈ F, ∀ E ∈ 𝒞, ∀ y ∈ E, ∀ y' ∈ E, f.orderAt y = f.orderAt y' := by
+  let := polynomialGCD
   induction n with
   | zero =>
     refine ⟨{univ}, .zero, fun E hE ↦ ⟨0, ?_⟩, fun f _ E _ y _ y' _ ↦ by

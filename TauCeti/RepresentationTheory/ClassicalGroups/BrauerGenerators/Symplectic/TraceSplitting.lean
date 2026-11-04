@@ -222,7 +222,7 @@ noncomputable def symplecticTraceTensors :
     refine iSup_le fun i => iSup_le fun j => iSup_le fun hij => ?_
     rintro _ ⟨y, rfl⟩
     have h := LinearMap.congr_fun (commute_symplecticCupCapAt_tensorPower g hij).eq y
-    rw [Module.End.mul_apply, Module.End.mul_apply] at h
+    rw [mul_apply_eq_comp, mul_apply_eq_comp] at h
     rw [Submodule.mem_comap, ← h]
     exact Submodule.mem_iSup_of_mem i <| Submodule.mem_iSup_of_mem j <|
       Submodule.mem_iSup_of_mem hij <| LinearMap.mem_range_self _ _

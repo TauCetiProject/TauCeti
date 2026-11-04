@@ -49,6 +49,7 @@ simple ones first among them, matching the convention of
 
 ## Main results
 
+* `TauCeti.DynkinType.typeBSimplyConnectedBase_two_support`: the base is the two simple indices.
 * `TauCeti.DynkinType.root_b2Index` and `TauCeti.DynkinType.coroot_b2Index`: the tables are the
   roots and the coroots of the pinned rank-two type `B` datum.
 * `TauCeti.DynkinType.b2Index_bijective` and
@@ -125,6 +126,14 @@ two Bourbaki simple indices and ordered as `TauCeti.DynkinType.b2Root` is. -/
 
 /-- The second named index is the second Bourbaki simple root. -/
 @[simp] lemma b2Index_one : b2Index 1 = typeBSimpleIndex 2 1 := rfl
+
+/-- The base of the pinned rank-two type `B` datum is supported on the first two named indices. -/
+@[simp] lemma typeBSimplyConnectedBase_two_support :
+    (typeBSimplyConnectedBase 2).support = {b2Index 0, b2Index 1} := by
+  ext k
+  simp only [mem_typeBSimplyConnectedBase_support, Finset.mem_insert, Finset.mem_singleton,
+    b2Index_zero, b2Index_one, Fin.ext_iff, typeBSimpleIndex_val, Fin.val_zero, Fin.val_one]
+  omega
 
 /-! ## Computing the table -/
 
