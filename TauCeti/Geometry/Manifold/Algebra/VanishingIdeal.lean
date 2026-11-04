@@ -23,9 +23,10 @@ Its square `I_x ^ 2` consists of the finite sums of products of two functions va
 
 At an interior point of a finite-dimensional Hausdorff manifold, a smooth function lies in `I_x ^ 2`
 exactly when it vanishes at `x` together with its differential. Near `x` the function is read in a
-chart and factored by Hadamard's lemma through the centred coordinate functions, with coefficients
-the partial derivatives; a bump function equal to `1` near `x` turns this local factorization into
-a global one, since a function vanishing near `x` is the product of itself with `1 - χ`.
+chart and factored by Hadamard's lemma through the centred coordinate functions, with smooth
+coefficients whose values at the base point are the partial derivatives; a bump function equal to
+`1` near `x` turns this local factorization into a global one, since a function vanishing near `x`
+is the product of itself with `1 - χ`.
 
 Consequently the algebraic cotangent space `I_x / I_x ^ 2` (Mathlib's `Ideal.Cotangent`) is the
 cotangent space `T_x*M`, the class of `f ∈ I_x` corresponding to its differential `df_x`. This is
