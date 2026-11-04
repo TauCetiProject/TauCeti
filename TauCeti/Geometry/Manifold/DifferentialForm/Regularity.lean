@@ -495,6 +495,18 @@ theorem mextDerivₗ_apply [IsManifold I 2 M] (k : ℕ) (φ : SmoothForm I M F k
     (mextDerivₗ I k φ : RoughForm I M F (k + 1)) = mextDeriv φ.1 :=
   (rfl)
 
+/-- The exterior derivative of a smooth function, regarded as a `0`-form, evaluated on a tangent
+vector, is the derivative of the function applied to that vector. -/
+theorem mextDerivₗ_zero_apply [IsManifold I 2 M] (f : SmoothForm I M F 0) (x : M)
+    (v : TangentSpace I x) :
+    (mextDerivₗ I 0 f).1 x ![v] = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  calc (mextDerivₗ I 0 f).1 x ![v]
+      = mextDeriv (RoughForm.ofFunction I fun y ↦ f.1 y 0) x ![v] := by
+        rw [mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
+    _ = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+        rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+          Matrix.cons_val_zero]
+
 namespace SmoothForm
 
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
