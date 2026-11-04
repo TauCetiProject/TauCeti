@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
+public import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
@@ -37,6 +38,9 @@ direction `w`; its derivative involves the second derivative of `u`.
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
+  of bilinear maps, read along `u` and pulled back along `u`, are those of the family, taken in
+  the directions of the images under `u` and pulled back along `u`.
 * `ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq`: a local map fixing zero and
   preserving quadratic functions has a derivative preserving those quadratic functions.
 * `ContinuousAt.hasFDerivAt_clm_apply_zero`: evaluating a family `A q` of continuous linear maps,
@@ -121,6 +125,33 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
   rw [h]
   exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
     (contDiff_fst.clm_comp contDiff_snd)
+
+noncomputable section PullbackBilin
+
+-- Cache the canonical operator-space instances: searching for the structure on nested operator
+-- spaces otherwise fails.
+private local instance : NormedAddCommGroup (E →L[𝕜] G) := ContinuousLinearMap.toNormedAddCommGroup
+private local instance : NormedSpace 𝕜 (E →L[𝕜] G) := ContinuousLinearMap.toNormedSpace
+private local instance : NormedAddCommGroup (F →L[𝕜] G) := ContinuousLinearMap.toNormedAddCommGroup
+private local instance : NormedSpace 𝕜 (F →L[𝕜] G) := ContinuousLinearMap.toNormedSpace
+
+/-- The iterated derivatives of a family `B` of bilinear maps, read along a continuous linear map
+`u` and pulled back along `u`, are those of `B` at the image point, taken in the directions of the
+images under `u` and pulled back along `u`. -/
+theorem _root_.ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp
+    {B : F → F →L[𝕜] F →L[𝕜] G} {U : Set F} (hU : IsOpen U) (hB : ContDiffOn 𝕜 n B U)
+    (u : E →L[𝕜] F) {z : E} (hz : u z ∈ U) {m : ℕ} (hm : m ≤ n) :
+    iteratedFDeriv 𝕜 m (ContinuousLinearMap.pullbackBilinL u ∘ (B ∘ u)) z =
+      (ContinuousLinearMap.pullbackBilinL u).compContinuousMultilinearMap
+        ((iteratedFDeriv 𝕜 m B (u z)).compContinuousLinearMap fun _ ↦ u) := by
+  have hU' : IsOpen (u ⁻¹' U) := hU.preimage u.continuous
+  have hBu : ContDiffAt 𝕜 n (B ∘ u) z :=
+    (hB.contDiffAt (hU.mem_nhds hz)).comp z u.contDiff.contDiffAt
+  rw [(ContinuousLinearMap.pullbackBilinL u).iteratedFDeriv_comp_left hBu hm,
+    ← iteratedFDerivWithin_of_isOpen m hU' hz, ← iteratedFDerivWithin_of_isOpen m hU hz,
+    u.iteratedFDerivWithin_comp_right hB hU.uniqueDiffOn hU'.uniqueDiffOn hz hm]
+
+end PullbackBilin
 
 /-- If a family `A` of continuous linear maps is continuous at `p`, then `(x, q) ↦ A q x` is
 differentiable at `(0, p)`, with derivative `(x, q) ↦ A p x`. No differentiability in `q` is
