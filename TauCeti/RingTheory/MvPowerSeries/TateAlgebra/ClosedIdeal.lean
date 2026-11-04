@@ -16,10 +16,9 @@ import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 Every left ideal `I` of a restricted power-series algebra `K⟨X₁/c₁, …, Xₙ/cₙ⟩` in finitely many
 variables over a complete ultrametric division ring `K` is closed for the Gauss norm, and in fact
 *strictly closed*: every residue class in `K⟨X₁/c₁, …, Xₙ/cₙ⟩ ⧸ I` has a representative attaining
-its quotient Gauss norm (`Ideal.exists_mk_eq_and_norm_eq_isRestricted_subring`,
-`Ideal.Quotient.exists_mk_eq_and_norm_eq_isRestricted_subring`), even when `K` is trivially normed
-or not spherically complete. At unit polyradius, every quotient norm is the norm of a scalar in `K`
-(`Ideal.exists_norm_eq_norm_quotient_isRestricted_subring`).
+its quotient Gauss norm (`Ideal.exists_mk_eq_and_norm_eq_isRestricted_subring`), even when `K` is
+trivially normed or not spherically complete. At unit polyradius, every quotient norm is the norm
+of a scalar in `K` (`Ideal.exists_norm_eq_norm_quotient_isRestricted_subring`).
 
 When `K` is commutative, `isClosed_ideal_isRestrictedSubring` makes Mathlib's
 `Ideal.Quotient.normedCommRing` apply to every quotient of a Tate algebra. Together with
@@ -33,8 +32,7 @@ ultrametric algebra norm whose values at unit polyradius lie in `‖K‖`.
   Tate algebra over a complete ultrametric division ring is closed.
 * `Ideal.exists_norm_sub_eq_norm_mk_isRestricted_subring` and
   `Ideal.exists_mk_eq_and_norm_eq_isRestricted_subring`: every coset has a least-norm element, so
-  every residue class has a representative attaining its quotient norm (with `Ideal.Quotient`
-  counterparts over a complete ultrametric field).
+  every residue class has a representative attaining its quotient norm.
 * `Ideal.exists_norm_eq_norm_quotient_isRestricted_subring`: at unit polyradius, every quotient
   Gauss norm is the norm of an element of `K`.
 
@@ -49,8 +47,6 @@ public section
 namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
-
-section DivisionRing
 
 variable {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K] [CompleteSpace K]
   {σ : Type*} [Finite σ] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
@@ -88,28 +84,5 @@ theorem _root_.Ideal.exists_norm_eq_norm_quotient_isRestricted_subring
   obtain ⟨f, -, hfq⟩ := I.exists_mk_eq_and_norm_eq_isRestricted_subring q
   obtain ⟨t, ht⟩ := exists_norm_coeff_eq_norm f
   exact ⟨coeff t (f : MvPowerSeries σ K), ht.trans hfq⟩
-
-end DivisionRing
-
-section Field
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {σ : Type*} [Finite σ] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
-
-/-- Commutative-ring form of `Ideal.exists_norm_sub_eq_norm_mk_isRestricted_subring` using
-`Ideal.Quotient.mk`. -/
-theorem _root_.Ideal.Quotient.exists_norm_sub_eq_norm_mk_isRestricted_subring
-    (I : Ideal (IsRestricted.subring (R := K) c)) (f : IsRestricted.subring (R := K) c) :
-    ∃ g ∈ I, ‖f - g‖ = ‖Ideal.Quotient.mk I f‖ :=
-  I.exists_norm_sub_eq_norm_mk_isRestricted_subring f
-
-/-- Commutative-ring form of `Ideal.exists_mk_eq_and_norm_eq_isRestricted_subring` using
-`Ideal.Quotient.mk`. -/
-theorem _root_.Ideal.Quotient.exists_mk_eq_and_norm_eq_isRestricted_subring
-    (I : Ideal (IsRestricted.subring (R := K) c)) (q : IsRestricted.subring (R := K) c ⧸ I) :
-    ∃ f : IsRestricted.subring (R := K) c, Ideal.Quotient.mk I f = q ∧ ‖f‖ = ‖q‖ :=
-  I.exists_mk_eq_and_norm_eq_isRestricted_subring q
-
-end Field
 
 end TauCeti.MvPowerSeries
