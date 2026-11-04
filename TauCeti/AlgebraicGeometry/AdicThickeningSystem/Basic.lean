@@ -430,6 +430,9 @@ end IsAdicHom
 
 /-- A scheme `S` viewed as the constant adic thickening system with `X n = S` and `ι n = 𝟙 S`,
 functorially in `S`. -/
+-- `@[expose]` is forced by dependent typing of component morphisms: without `(ofScheme.obj S).X n`
+-- reducing definitionally to `S`, `ofScheme_obj_ι`, `ofScheme_map_app`,
+-- `ofSchemeFullyFaithful_preimage`, and `spfToSpec_app` do not typecheck.
 @[expose, simps]
 def ofScheme : Scheme.{u} ⥤ AdicThickeningSystem.{u} where
   obj S :=

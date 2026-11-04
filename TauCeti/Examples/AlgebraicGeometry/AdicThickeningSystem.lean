@@ -156,8 +156,7 @@ theorem Spf.not_spec_powerSeries (k : Type u) [Field k] :
   refine ⟨hcard1, hcard2, ⟨fun e ↦ ?_⟩⟩
   have h := Nat.card_congr
     (IsUniversalHomeomorphism.isHomeomorph (e.hom.app 0)).homeomorph.toEquiv
-  dsimp only [AdicThickeningSystem.ofScheme] at h
-  rw [hcard1 0, hcard2] at h
+  rw [AdicThickeningSystem.ofScheme_obj_X, hcard1 0, hcard2] at h
   omega
 
 /-! ### 3. Endomorphisms of `Spf ℤ_[p]` -/

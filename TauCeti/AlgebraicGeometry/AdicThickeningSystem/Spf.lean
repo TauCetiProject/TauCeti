@@ -138,6 +138,10 @@ private lemma spf_levelMap_eq (I : Ideal R) (n : ℕ) :
 
 /-- The tower of affine thickenings `Spec (R ⧸ I ^ (n + 1))` associated to any ideal `I` of a
 commutative ring `R`. Stacks, Definition 87.9.9 (0AIF). -/
+-- `@[expose]` is forced by dependent typing of component morphisms: without `(spf I).X n`
+-- reducing definitionally to `Spec (CommRingCat.of (R ⧸ I ^ (n + 1)))`, `spf_ι`, `spf_transition`,
+-- `spfToSpec_app`, `spfMap_app`, and `Spec.preimage (f.app n)` in `mk_comp_spfHomEquiv_apply` do
+-- not typecheck.
 @[stacks 0AIF, expose, simps X ι]
 noncomputable def spf (I : Ideal R) : AdicThickeningSystem.{u} where
   X n := Spec (CommRingCat.of (R ⧸ I ^ (n + 1)))
@@ -152,8 +156,7 @@ noncomputable def spf (I : Ideal R) : AdicThickeningSystem.{u} where
 
 theorem spf_reduction (I : Ideal R) (n : ℕ) :
     (spf I).reduction n = Spec (CommRingCat.of (R ⧸ I ^ (n + 1))) := by
-  rw [reduction_eq]
-  rfl
+  rw [reduction_eq, spf_X]
 
 /-- For `m ≤ n`, the composite transition `(spf I).transition h` is `Spec.map` of the quotient
 factorization `R ⧸ I ^ (n + 1) →+* R ⧸ I ^ (m + 1)`. -/
@@ -428,6 +431,10 @@ end AdicThickeningSystem
 
 /-- The formal spectrum of an adic ring `A` as the adic thickening system of affine reductions
 `Spec (A ⧸ I ^ (n + 1))`. Stacks, Definition 87.9.9 (0AIF). -/
+-- `@[expose]` is forced by dependent typing of component morphisms: without `(Spf A).X n`
+-- reducing definitionally to `Spec (CommRingCat.of (A.carrier ⧸ A.ideal ^ (n + 1)))`, `Spf.ι_eq`,
+-- `Spf.toSpec_app`, `Spf.map_app`, and `Spec.preimage (f.app n)` in `Spf.mk_comp_homEquiv_apply`
+-- do not typecheck.
 @[stacks 0AIF, expose]
 noncomputable def Spf (A : AdicRing.{u}) : AdicThickeningSystem.{u} :=
   AdicThickeningSystem.spf A.ideal
@@ -441,8 +448,7 @@ theorem X_eq (A : AdicRing.{u}) (n : ℕ) :
 
 theorem reduction_eq (A : AdicRing.{u}) (n : ℕ) :
     (Spf A).reduction n = Spec (CommRingCat.of (A.carrier ⧸ A.ideal ^ (n + 1))) := by
-  rw [AdicThickeningSystem.reduction_eq]
-  rfl
+  rw [AdicThickeningSystem.reduction_eq, X_eq]
 
 @[simp]
 theorem ι_eq (A : AdicRing.{u}) (n : ℕ) :

@@ -117,6 +117,9 @@ private lemma isPullback_levelMap_pullback_fst (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶
     exact ih.paste_horiz (isPullback_pullbackMap_fst f g m)
 
 /-- The levelwise fibre product of `f : 𝔛 ⟶ 𝔖` along an adic morphism `g : 𝔜 ⟶ 𝔖`. -/
+-- `@[expose]` is forced by dependent typing of component morphisms: without `(pullback f g).X n`
+-- reducing definitionally to `Limits.pullback (f.app n) (g.app n)`, `pullback_ι`, `fst_app`,
+-- `snd_app`, and `lift_app` do not typecheck.
 @[expose, simps X ι]
 noncomputable def pullback (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] :
     AdicThickeningSystem.{u} where
@@ -135,15 +138,14 @@ noncomputable def pullback (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g]
 
 theorem pullback_reduction (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) :
     (pullback f g).reduction n = Limits.pullback (f.app n) (g.app n) := by
-  rw [reduction_eq]
-  rfl
+  rw [reduction_eq, pullback_X]
 
 namespace pullback
 
 /-- The first projection `pullback f g ⟶ 𝔛` of the levelwise fibre product. -/
 noncomputable def fst (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] : pullback f g ⟶ 𝔛 where
   app n := Limits.pullback.fst (f.app n) (g.app n)
-  naturality n := by simp [AdicThickeningSystem.pullback]
+  naturality _ := by simp [AdicThickeningSystem.pullback]
 
 @[simp]
 theorem fst_app (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) :
@@ -153,7 +155,7 @@ theorem fst_app (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) 
 /-- The second projection `pullback f g ⟶ 𝔜` of the levelwise fibre product. -/
 noncomputable def snd (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] : pullback f g ⟶ 𝔜 where
   app n := Limits.pullback.snd (f.app n) (g.app n)
-  naturality n := by simp [AdicThickeningSystem.pullback]
+  naturality _ := by simp [AdicThickeningSystem.pullback]
 
 @[simp]
 theorem snd_app (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] (n : ℕ) :
@@ -170,7 +172,7 @@ theorem condition (f : 𝔛 ⟶ 𝔖) (g : 𝔜 ⟶ 𝔖) [IsAdicHom g] :
 noncomputable def lift {𝔚 : AdicThickeningSystem.{u}} {f : 𝔛 ⟶ 𝔖} {g : 𝔜 ⟶ 𝔖} [IsAdicHom g]
     (u : 𝔚 ⟶ 𝔛) (v : 𝔚 ⟶ 𝔜) (h : u ≫ f = v ≫ g) : 𝔚 ⟶ pullback f g where
   app n := Limits.pullback.lift (u.app n) (v.app n) (congrArg (fun k ↦ k.app n) h)
-  naturality n := by
+  naturality _ := by
     refine Limits.pullback.hom_ext ?_ ?_
     · simp [AdicThickeningSystem.pullback]
     · simp [AdicThickeningSystem.pullback]
