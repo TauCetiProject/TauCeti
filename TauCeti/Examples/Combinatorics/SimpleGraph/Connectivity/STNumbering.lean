@@ -19,8 +19,10 @@ public API of `SimpleGraph.STNumbering` and its induced `TauCeti.DoubledQuiver.O
   with the chord `0 — 2` oriented forward;
 * the diagonal edge (`s = 0`, `t = 2`), ordered `[0, 1, 3, 2]` by starting at the triangle
   `0 — 1 — 2 — 0` and inserting the open ear `0 — 3 — 2` before `2`;
-* the nonadjacent pair (`s = 1`, `t = 3`), ordered `[1, 0, 2, 3]`, illustrating the
-  Lempel–Even–Cederbaum characterization `diamond ⊔ edge 1 3 = ⊤` when `s` and `t` are not
+* the nonadjacent pair (`s = 1`, `t = 3`), ordered `[1, 0, 2, 3]`, certifying
+  `2`-vertex-connectivity of `diamond ⊔ SimpleGraph.edge 1 3` and illustrating the
+  Lempel–Even–Cederbaum equivalence
+  `SimpleGraph.nonempty_stNumbering_iff_isVertexConnected_two_sup_edge` when `s` and `t` are not
   adjacent.
 -/
 
@@ -55,6 +57,11 @@ def diamondCycleST : diamond.STNumbering 0 3 where
     · exact ⟨2, by rw [diamond_adj]; decide, by decide⟩
     · exact ⟨3, by rw [diamond_adj]; decide, by decide⟩
     · exact (hv3 rfl).elim
+
+@[simp]
+private theorem val_diamondCycleST_numbering (v : Fin 4) :
+    (diamondCycleST.numbering v).val = v.val :=
+  (rfl)
 
 /-- Explicit `st`-numbering `[0, 1, 3, 2]` (values `0 ↦ 0, 1 ↦ 1, 2 ↦ 3, 3 ↦ 2`) across the
 diagonal edge `0 — 2`. -/
@@ -98,33 +105,38 @@ def diamondNonEdgeST : diamond.STNumbering 1 3 where
 example (d : diamond.Dart) :
     (d ∈ diamondCycleST.toOrientation ↔ d.fst < d.snd) ∧
       (d ∈ diamondCycleST.symm.toOrientation ↔ d.snd < d.fst) := by
-  rw [diamondCycleST.mem_symm_toOrientation, STNumbering.mem_toOrientation,
-    STNumbering.mem_toOrientation]
-  exact ⟨Iff.rfl, Iff.rfl⟩
+  rw [STNumbering.mem_symm_toOrientation]
+  simp [← Fin.val_fin_lt]
 
--- Both adjacent-edge orientations are acyclic, have unique source and unique sink, and route every
--- vertex from source to sink.
+-- The `(0, 3)` cycle-edge orientation is acyclic, routes every vertex from `0` to `3`, and has `0`
+-- as its unique source and `3` as its unique sink.
 example :
     TauCeti.Quiver.IsAcyclic (OrientedQuiver diamond diamondCycleST.toOrientation) ∧
       (∀ x : OrientedQuiver diamond diamondCycleST.toOrientation,
         Nonempty (Quiver.Path (OrientedQuiver.vertex diamond diamondCycleST.toOrientation 0) x) ∧
         Nonempty (Quiver.Path x (OrientedQuiver.vertex diamond diamondCycleST.toOrientation 3))) ∧
-      ((∀ v, (∀ u, IsEmpty
-          (OrientedQuiver.vertexEquiv diamond diamondCycleST.toOrientation u ⟶
-            OrientedQuiver.vertexEquiv diamond diamondCycleST.toOrientation v)) ↔ v = 0) ∧
-        (∀ v, (∀ w, IsEmpty
-          (OrientedQuiver.vertexEquiv diamond diamondCycleST.toOrientation v ⟶
-            OrientedQuiver.vertexEquiv diamond diamondCycleST.toOrientation w)) ↔ v = 3)) := by
+      ((∀ x : OrientedQuiver diamond diamondCycleST.toOrientation,
+          TauCeti.Quiver.IsSource x ↔
+            x = OrientedQuiver.vertex diamond diamondCycleST.toOrientation 0) ∧
+        (∀ x : OrientedQuiver diamond diamondCycleST.toOrientation,
+          TauCeti.Quiver.IsSink x ↔
+            x = OrientedQuiver.vertex diamond diamondCycleST.toOrientation 3)) := by
   have hconn : diamond.Preconnected :=
     diamondCycleST.preconnected_of_adj (by rw [diamond_adj]; decide)
   exact ⟨diamondCycleST.isAcyclic_toOrientation,
     fun x ↦ ⟨diamondCycleST.nonempty_path_from_source hconn x,
       diamondCycleST.nonempty_path_to_sink hconn x⟩,
-    ⟨fun _ ↦ diamondCycleST.forall_isEmpty_vertexEquiv_hom_target_iff hconn,
-      fun _ ↦ diamondCycleST.forall_isEmpty_vertexEquiv_hom_source_iff hconn⟩⟩
+    ⟨fun _ ↦ diamondCycleST.isSource_iff hconn,
+      fun _ ↦ diamondCycleST.isSink_iff hconn⟩⟩
 
+-- Across the diagonal edge `0 — 2`, the induced orientation is acyclic, routes every vertex from
+-- `0` to `2`, and has `0` and `2` as the unique vertices with no lower-numbered (respectively
+-- higher-numbered) neighbour.
 example :
     TauCeti.Quiver.IsAcyclic (OrientedQuiver diamond diamondDiagST.toOrientation) ∧
+      (∀ x : OrientedQuiver diamond diamondDiagST.toOrientation,
+        Nonempty (Quiver.Path (OrientedQuiver.vertex diamond diamondDiagST.toOrientation 0) x) ∧
+        Nonempty (Quiver.Path x (OrientedQuiver.vertex diamond diamondDiagST.toOrientation 2))) ∧
       (∀ v, (∀ u, ¬(diamond.Adj u v ∧ diamondDiagST.numbering u < diamondDiagST.numbering v)) ↔
         v = 0) ∧
       (∀ v, (∀ w, ¬(diamond.Adj v w ∧ diamondDiagST.numbering v < diamondDiagST.numbering w)) ↔
@@ -132,6 +144,8 @@ example :
   have hconn : diamond.Preconnected :=
     diamondDiagST.preconnected_of_adj (by rw [diamond_adj]; decide)
   exact ⟨diamondDiagST.isAcyclic_toOrientation,
+    fun x ↦ ⟨diamondDiagST.nonempty_path_from_source hconn x,
+      diamondDiagST.nonempty_path_to_sink hconn x⟩,
     fun _ ↦ diamondDiagST.forall_not_adj_and_numbering_lt_iff hconn,
     fun _ ↦ diamondDiagST.forall_not_adj_and_lt_numbering_iff hconn⟩
 

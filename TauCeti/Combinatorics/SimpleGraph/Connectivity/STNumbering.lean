@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import Mathlib.Data.Fin.Rev
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
+public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 import Mathlib.Data.List.NodupEquivFin
 import TauCeti.Combinatorics.SimpleGraph.Connectivity.Fan
@@ -22,8 +23,8 @@ every vertex other than `s` and `t` has both a lower-numbered neighbour and a hi
 neighbour. Directing each edge from its lower-numbered endpoint to its higher-numbered endpoint
 yields a bipolar acyclic orientation of `G`: it has no positive-length directed closed paths, and
 whenever `G` is preconnected (in particular whenever `s` and `t` are adjacent or `V` has at least
-three vertices), `s` is the unique vertex with no incoming arrow, `t` is the unique vertex with no
-outgoing arrow, and every vertex lies on a directed path from `s` to `t`.
+three vertices), `s` is the unique source, `t` is the unique sink, and every vertex lies on a
+directed path from `s` to `t`.
 
 On a finite vertex type with at least three vertices and `s ≠ t`, Lempel, Even, and Cederbaum
 characterized the existence of an `st`-numbering by `2`-vertex-connectivity of `G ⊔ edge s t`
@@ -51,14 +52,17 @@ between its two attachment vertices.
 ## Main results
 
 * `SimpleGraph.STNumbering.isAcyclic_toOrientation`: the induced orientation is acyclic.
-* `SimpleGraph.STNumbering.nonempty_path_from_source`,
+* `SimpleGraph.STNumbering.preconnected_of_reachable`,
+  `SimpleGraph.STNumbering.connected_of_reachable`: when `t` is reachable from `s` (in particular
+  when `G.Adj s t` or `3 ≤ Fintype.card V`), `G` is preconnected and connected.
+* `SimpleGraph.STNumbering.isSource_source`, `SimpleGraph.STNumbering.isSink_sink`,
+  `SimpleGraph.STNumbering.nonempty_path_from_source`,
   `SimpleGraph.STNumbering.nonempty_path_to_sink`,
-  `SimpleGraph.STNumbering.forall_isEmpty_hom_target_iff`,
-  `SimpleGraph.STNumbering.forall_isEmpty_hom_source_iff`: when `G` is preconnected (in particular
-  when `G.Adj s t` or `3 ≤ Fintype.card V`), every vertex is reachable from `s` and can reach `t`,
-  `s` is the unique vertex with no incoming arrow, and `t` is the unique vertex with no outgoing
-  arrow (together with their graph-level transports `forall_isEmpty_vertexEquiv_hom_target_iff`,
-  `forall_isEmpty_vertexEquiv_hom_source_iff`, `forall_not_adj_and_numbering_lt_iff`, and
+  `SimpleGraph.STNumbering.isSource_iff`,
+  `SimpleGraph.STNumbering.isSink_iff`: `s` is a source and `t` is a sink of
+  `OrientedQuiver G n.toOrientation`; when `G` is preconnected, every vertex is reachable from `s`
+  and can reach `t`, `s` is the unique source, and `t` is the unique sink (together with the
+  graph-level neighbour characterizations `forall_not_adj_and_numbering_lt_iff` and
   `forall_not_adj_and_lt_numbering_iff`).
 * `SimpleGraph.nonempty_stNumbering_iff_isVertexConnected_two_sup_edge`,
   `SimpleGraph.nonempty_stNumbering_iff_isVertexConnected_two`,
@@ -128,18 +132,10 @@ theorem ext_val {n₁ n₂ : G.STNumbering s t}
     (h : ∀ v, (n₁.numbering v).val = (n₂.numbering v).val) : n₁ = n₂ :=
   ext fun v ↦ Fin.ext (h v)
 
-/-- The vertex numbering of an `st`-numbering is injective. -/
-theorem injective (n : G.STNumbering s t) : Function.Injective n.numbering :=
-  n.numbering.injective
-
-/-- The vertex numbering of an `st`-numbering is bijective. -/
-theorem bijective (n : G.STNumbering s t) : Function.Bijective n.numbering :=
-  n.numbering.bijective
-
 /-- The natural-number values of an `st`-numbering are injective. -/
 theorem val_numbering_injective (n : G.STNumbering s t) :
     Function.Injective fun v ↦ (n.numbering v).val :=
-  Fin.val_injective.comp n.injective
+  Fin.val_injective.comp n.numbering.injective
 
 /-- A graph admitting an `st`-numbering has a nonempty vertex type. -/
 theorem nonempty (_ : G.STNumbering s t) : Nonempty V :=
@@ -204,7 +200,7 @@ theorem not_lt_numbering_source (n : G.STNumbering s t) (v : V) :
 /-- A vertex has strictly larger number than `s` if and only if it is distinct from `s`. -/
 theorem numbering_source_lt_iff (n : G.STNumbering s t) {v : V} :
     n.numbering s < n.numbering v ↔ v ≠ s := by
-  rw [lt_iff_le_and_ne, ne_comm, n.injective.ne_iff]
+  rw [lt_iff_le_and_ne, ne_comm, n.numbering.injective.ne_iff]
   exact and_iff_right (n.numbering_source_le v)
 
 /-- The sink `t` has the maximum number among all vertices. -/
@@ -222,7 +218,7 @@ theorem not_numbering_sink_lt (n : G.STNumbering s t) (v : V) :
 /-- A vertex has strictly smaller number than `t` if and only if it is distinct from `t`. -/
 theorem lt_numbering_sink_iff (n : G.STNumbering s t) {v : V} :
     n.numbering v < n.numbering t ↔ v ≠ t := by
-  rw [lt_iff_le_and_ne, n.injective.ne_iff]
+  rw [lt_iff_le_and_ne, n.numbering.injective.ne_iff]
   exact and_iff_right (n.le_numbering_sink v)
 
 /-! ### Endpoint copy, reversal, monotonicity, and isomorphism transport -/
@@ -330,42 +326,40 @@ theorem symm_mono (hGH : G ≤ H) (n : G.STNumbering s t) :
     (n.mono hGH).symm = n.symm.mono hGH :=
   (rfl)
 
+private def mapNumbering {W : Type*} [Fintype W] {G' : SimpleGraph W} (n : G.STNumbering s t)
+    (e : G ≃g G') : W ≃ Fin (Fintype.card W) :=
+  e.symm.toEquiv.trans (n.numbering.trans (finCongr (Fintype.card_congr e.toEquiv)))
+
+private theorem map_lower_neighbor {W : Type*} [Fintype W] {G' : SimpleGraph W}
+    (n : G.STNumbering s t) (e : G ≃g G') {w : W} (hws : w ≠ e s) (hwt : w ≠ e t) :
+    ∃ u', G'.Adj u' w ∧ n.mapNumbering e u' < n.mapNumbering e w := by
+  obtain ⟨u, hadj, hlt⟩ := n.lower_neighbor (v := e.symm w)
+    (fun h ↦ hws (e.symm_apply_eq.1 h)) (fun h ↦ hwt (e.symm_apply_eq.1 h))
+  exact ⟨e u, by simpa using e.map_adj_iff.2 hadj,
+    by simp [mapNumbering, Fin.lt_def, Fin.lt_def.1 hlt]⟩
+
 /-- Transport an `st`-numbering along a graph isomorphism. -/
 def map {W : Type*} [Fintype W] {G' : SimpleGraph W} (n : G.STNumbering s t) (e : G ≃g G') :
     G'.STNumbering (e s) (e t) where
-  numbering := e.symm.toEquiv.trans (n.numbering.trans (finCongr (Fintype.card_congr e.toEquiv)))
-  source_first := by
-    simp only [Equiv.trans_apply, RelIso.coe_fn_toEquiv, finCongr_apply, Fin.val_cast,
-      RelIso.symm_apply_apply, n.val_numbering_source]
+  numbering := n.mapNumbering e
+  source_first := by simp [mapNumbering]
   sink_last := by
-    simp only [Equiv.trans_apply, RelIso.coe_fn_toEquiv, finCongr_apply, Fin.val_cast,
-      RelIso.symm_apply_apply, ← Fintype.card_congr e.toEquiv, n.sink_last]
-  lower_neighbor w hws hwt := by
-    have hws' : e.symm w ≠ s := fun h ↦ hws (by simpa using congrArg e h)
-    have hwt' : e.symm w ≠ t := fun h ↦ hwt (by simpa using congrArg e h)
-    obtain ⟨u, hadj, hlt⟩ := n.lower_neighbor hws' hwt'
-    have hadj' : G'.Adj (e u) w := by
-      simpa only [RelIso.apply_symm_apply] using e.map_adj_iff.2 hadj
-    refine ⟨e u, hadj', ?_⟩
-    simp only [Equiv.trans_apply, RelIso.coe_fn_toEquiv, finCongr_apply, Fin.lt_def, Fin.val_cast,
-      RelIso.symm_apply_apply]
-    exact Fin.lt_def.1 hlt
+    have := n.card_pos
+    simp [mapNumbering, ← Fintype.card_congr e.toEquiv]
+    omega
+  lower_neighbor _ hws hwt := n.map_lower_neighbor e hws hwt
   higher_neighbor w hws hwt := by
-    have hws' : e.symm w ≠ s := fun h ↦ hws (by simpa using congrArg e h)
-    have hwt' : e.symm w ≠ t := fun h ↦ hwt (by simpa using congrArg e h)
-    obtain ⟨u, hadj, hlt⟩ := n.higher_neighbor hws' hwt'
-    have hadj' : G'.Adj w (e u) := by
-      simpa only [RelIso.apply_symm_apply] using e.map_adj_iff.2 hadj
-    refine ⟨e u, hadj', ?_⟩
-    simp only [Equiv.trans_apply, RelIso.coe_fn_toEquiv, finCongr_apply, Fin.lt_def, Fin.val_cast,
-      RelIso.symm_apply_apply]
-    exact Fin.lt_def.1 hlt
+    obtain ⟨u', hadj, hlt⟩ := n.symm.map_lower_neighbor e hwt hws
+    have hrev (x : W) : n.symm.mapNumbering e x = (n.mapNumbering e x).rev := by
+      ext
+      simp [mapNumbering, Fintype.card_congr e.toEquiv]
+    exact ⟨u', hadj.symm, Fin.rev_lt_rev.1 (by rwa [hrev, hrev] at hlt)⟩
 
 @[simp]
 theorem val_map_numbering {W : Type*} [Fintype W] {G' : SimpleGraph W} (n : G.STNumbering s t)
     (e : G ≃g G') (w : W) :
-    ((n.map e).numbering w).val = (n.numbering (e.symm w)).val :=
-  (rfl)
+    ((n.map e).numbering w).val = (n.numbering (e.symm w)).val := by
+  simp [map, mapNumbering]
 
 /-- Evaluating `n.map e` at `e v` recovers the natural-number index of `v`. -/
 theorem val_map_numbering_apply {W : Type*} [Fintype W] {G' : SimpleGraph W}
@@ -375,13 +369,13 @@ theorem val_map_numbering_apply {W : Type*} [Fintype W] {G' : SimpleGraph W}
 
 @[simp]
 theorem map_refl (n : G.STNumbering s t) : n.map Iso.refl = n :=
-  ext_val fun _ ↦ rfl
+  ext_val fun _ ↦ by simp
 
 /-- Transport of `st`-numberings along graph isomorphisms composes functorially. -/
 theorem map_trans {W X : Type*} [Fintype W] [Fintype X] {G' : SimpleGraph W} {G'' : SimpleGraph X}
     (n : G.STNumbering s t) (e₁ : G ≃g G') (e₂ : G' ≃g G'') :
     (n.map e₁).map e₂ = n.map (e₁.trans e₂) :=
-  ext_val fun _ ↦ rfl
+  ext_val fun _ ↦ by simp
 
 @[simp]
 theorem symm_map {W : Type*} [Fintype W] {G' : SimpleGraph W} (n : G.STNumbering s t)
@@ -425,14 +419,14 @@ variable [Fintype V] {G : SimpleGraph V} {s t : V}
 /-- The orientation induced by an `st`-numbering, directing every edge from its lower-numbered
 endpoint to its higher-numbered endpoint. -/
 def toOrientation (n : G.STNumbering s t) : Orientation G :=
-  @Orientation.ofLinearOrder V G (LinearOrder.lift' n.numbering n.injective)
+  @Orientation.ofLinearOrder V G (LinearOrder.lift' n.numbering n.numbering.injective)
 
 /-- A dart belongs to `n.toOrientation` exactly when its first endpoint has a strictly smaller
 number than its second endpoint. -/
 @[simp]
 theorem mem_toOrientation (n : G.STNumbering s t) (d : G.Dart) :
     d ∈ n.toOrientation ↔ n.numbering d.fst < n.numbering d.snd :=
-  @Orientation.mem_ofLinearOrder_iff V G (LinearOrder.lift' n.numbering n.injective) d
+  @Orientation.mem_ofLinearOrder_iff V G (LinearOrder.lift' n.numbering n.numbering.injective) d
 
 @[simp]
 theorem toOrientation_copy (n : G.STNumbering s t) {s' t' : V} (hs : s = s') (ht : t = t') :
@@ -490,64 +484,50 @@ theorem isEmpty_hom_iff (n : G.STNumbering s t) {u v : V} :
 /-- The orientation induced by an `st`-numbering is acyclic. -/
 theorem isAcyclic_toOrientation (n : G.STNumbering s t) :
     TauCeti.Quiver.IsAcyclic (OrientedQuiver G n.toOrientation) :=
-  @OrientedQuiver.isAcyclic_ofLinearOrder V G (LinearOrder.lift' n.numbering n.injective)
-
-private theorem adj_and_lt_of_hom (n : G.STNumbering s t) {x y : OrientedQuiver G n.toOrientation}
-    (e : x ⟶ y) :
-    G.Adj ((OrientedQuiver.vertexEquiv G n.toOrientation).symm x)
-        ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) ∧
-      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm x) <
-        n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) := by
-  let u := (OrientedQuiver.vertexEquiv G n.toOrientation).symm x
-  let v := (OrientedQuiver.vertexEquiv G n.toOrientation).symm y
-  have hx : OrientedQuiver.vertex G n.toOrientation u = x := by
-    rw [← OrientedQuiver.vertexEquiv_apply, Equiv.apply_symm_apply]
-  have hy : OrientedQuiver.vertex G n.toOrientation v = y := by
-    rw [← OrientedQuiver.vertexEquiv_apply, Equiv.apply_symm_apply]
-  obtain ⟨hadj, hlt⟩ := n.homEquiv u v (Quiver.homOfEq e hx.symm hy.symm)
-  exact ⟨hadj, hlt⟩
+  @OrientedQuiver.isAcyclic_ofLinearOrder V G (LinearOrder.lift' n.numbering n.numbering.injective)
 
 /-- Along any directed path in `OrientedQuiver G n.toOrientation`, vertex numbers are monotone. -/
 theorem numbering_le_of_path (n : G.STNumbering s t) {x y : OrientedQuiver G n.toOrientation}
     (p : Quiver.Path x y) :
     n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm x) ≤
-      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) := by
-  induction p with
-  | nil => exact le_rfl
-  | cons _ e ih => exact ih.trans (n.adj_and_lt_of_hom e).2.le
+      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) :=
+  @OrientedQuiver.le_of_path_ofLinearOrder V G
+    (LinearOrder.lift' n.numbering n.numbering.injective) x y p
 
 /-- Along any positive-length directed path in `OrientedQuiver G n.toOrientation`, the endpoint
 number is strictly greater than the start number. -/
 theorem numbering_lt_of_path_of_length_pos (n : G.STNumbering s t)
     {x y : OrientedQuiver G n.toOrientation} (p : Quiver.Path x y) (hp : 0 < p.length) :
     n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm x) <
-      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) := by
-  cases p with
-  | nil => cases hp
-  | cons q e => exact (n.numbering_le_of_path q).trans_lt (n.adj_and_lt_of_hom e).2
+      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) :=
+  @OrientedQuiver.lt_of_path_of_length_pos_ofLinearOrder V G
+    (LinearOrder.lift' n.numbering n.numbering.injective) x y p hp
 
 /-! ### Monotone walks, source, sink, and directed reachability -/
+
+/-- Any vertex property holding at `s` and propagated along lower-numbered adjacencies holds at
+every vertex `v ≠ t`. -/
+private theorem of_ne_sink (n : G.STNumbering s t) (P : V → Prop) (hs : P s)
+    (hstep : ∀ ⦃u v⦄, u ≠ t → G.Adj u v → n.numbering u < n.numbering v → P u → P v)
+    {v : V} (hvt : v ≠ t) : P v := by
+  induction hk : (n.numbering v).val using Nat.strongRec generalizing v with
+  | ind k ih =>
+    obtain rfl | hvs := eq_or_ne v s
+    · exact hs
+    · obtain ⟨u, hadj, hlt⟩ := n.lower_neighbor hvs hvt
+      have hut : u ≠ t := n.lt_numbering_sink_iff.1 (hlt.trans_le (n.le_numbering_sink v))
+      exact hstep hut hadj hlt (ih (n.numbering u).val (hk ▸ Fin.lt_def.1 hlt) hut rfl)
 
 /-- Every vertex `v ≠ t` is joined from `s` by a walk in `G` whose vertices all have numbers at
 most `n.numbering v`. -/
 theorem exists_walk_from_source_of_ne_sink (n : G.STNumbering s t) {v : V} (hvt : v ≠ t) :
     ∃ p : G.Walk s v, ∀ x ∈ p.support, n.numbering x ≤ n.numbering v := by
-  induction hk : (n.numbering v).val using Nat.strongRec generalizing v with
-  | ind k ih =>
-    obtain rfl | hvs := eq_or_ne v s
-    · refine ⟨.nil, fun x hx ↦ ?_⟩
-      simp only [Walk.support_nil, List.mem_singleton] at hx
-      rw [hx]
-    · obtain ⟨u, hadj, hlt⟩ := n.lower_neighbor hvs hvt
-      have hut : u ≠ t := n.lt_numbering_sink_iff.1 (hlt.trans_le (n.le_numbering_sink v))
-      obtain ⟨p, hp⟩ := ih (n.numbering u).val (hk ▸ Fin.lt_def.1 hlt) hut rfl
-      refine ⟨p.append hadj.toWalk, fun x hx ↦ ?_⟩
-      simp only [Walk.mem_support_append_iff, Walk.support_cons, Walk.support_nil,
-        List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with hx | rfl | rfl
-      · exact (hp x hx).trans hlt.le
-      · exact hlt.le
-      · exact le_rfl
+  refine n.of_ne_sink (fun w ↦ ∃ p : G.Walk s w, ∀ x ∈ p.support, n.numbering x ≤ n.numbering w)
+    ⟨.nil, by simp⟩ (fun u w _ hadj hlt ⟨p, hp⟩ ↦ ⟨p.append hadj.toWalk, fun x hx ↦ ?_⟩) hvt
+  simp only [Walk.mem_support_append_iff, Walk.support_cons, Walk.support_nil, List.mem_cons,
+    List.not_mem_nil, or_false] at hx
+  rcases hx with hx | rfl | rfl
+  exacts [(hp x hx).trans hlt.le, hlt.le, le_rfl]
 
 /-- Every vertex `v ≠ s` is joined to `t` by a walk in `G` whose vertices all have numbers at
 least `n.numbering v`. -/
@@ -558,18 +538,27 @@ theorem exists_walk_to_sink_of_ne_source (n : G.STNumbering s t) {v : V} (hvs : 
   rw [Walk.support_reverse, List.mem_reverse] at hx
   exact Fin.rev_le_rev.1 (hp x hx)
 
-/-- If `s` and `t` are adjacent, any graph admitting an `st`-numbering is preconnected. -/
-theorem preconnected_of_adj (n : G.STNumbering s t) (hst : G.Adj s t) : G.Preconnected := by
+/-- If `t` is reachable from `s`, any graph admitting an `st`-numbering is preconnected. -/
+theorem preconnected_of_reachable (n : G.STNumbering s t) (hst : G.Reachable s t) :
+    G.Preconnected := by
   have hreach (v : V) : G.Reachable s v := by
     obtain rfl | hvt := eq_or_ne v t
-    · exact hst.reachable
+    · exact hst
     · obtain ⟨p, -⟩ := n.exists_walk_from_source_of_ne_sink hvt
       exact ⟨p⟩
   exact fun u v ↦ (hreach u).symm.trans (hreach v)
 
+/-- If `t` is reachable from `s`, any graph admitting an `st`-numbering is connected. -/
+theorem connected_of_reachable (n : G.STNumbering s t) (hst : G.Reachable s t) : G.Connected :=
+  (connected_iff G).2 ⟨n.preconnected_of_reachable hst, n.nonempty⟩
+
+/-- If `s` and `t` are adjacent, any graph admitting an `st`-numbering is preconnected. -/
+theorem preconnected_of_adj (n : G.STNumbering s t) (hst : G.Adj s t) : G.Preconnected :=
+  n.preconnected_of_reachable hst.reachable
+
 /-- If `s` and `t` are adjacent, any graph admitting an `st`-numbering is connected. -/
 theorem connected_of_adj (n : G.STNumbering s t) (hst : G.Adj s t) : G.Connected :=
-  (connected_iff G).2 ⟨n.preconnected_of_adj hst, n.nonempty⟩
+  n.connected_of_reachable hst.reachable
 
 /-- On at least three vertices, any graph admitting an `st`-numbering is preconnected, even if `s`
 and `t` are not adjacent. -/
@@ -585,64 +574,51 @@ theorem preconnected_of_three_le_card (n : G.STNumbering s t) (h3 : 3 ≤ Fintyp
     omega
   obtain ⟨ps, -⟩ := n.exists_walk_from_source_of_ne_sink hmt
   obtain ⟨pt, -⟩ := n.exists_walk_to_sink_of_ne_source hms
-  have hst : G.Reachable s t := ⟨ps.append pt⟩
-  have hreach (v : V) : G.Reachable s v := by
-    obtain rfl | hvt := eq_or_ne v t
-    · exact hst
-    · obtain ⟨p, -⟩ := n.exists_walk_from_source_of_ne_sink hvt
-      exact ⟨p⟩
-  exact fun u v ↦ (hreach u).symm.trans (hreach v)
+  exact n.preconnected_of_reachable ⟨ps.append pt⟩
 
 /-- On at least three vertices, any graph admitting an `st`-numbering is connected. -/
 theorem connected_of_three_le_card (n : G.STNumbering s t) (h3 : 3 ≤ Fintype.card V) :
     G.Connected :=
-  (connected_iff G).2 ⟨n.preconnected_of_three_le_card h3, n.nonempty⟩
+  n.connected_of_reachable (n.preconnected_of_three_le_card h3 s t)
 
-/-- The source `s` has no incoming arrow in `OrientedQuiver G n.toOrientation`. -/
-theorem isEmpty_hom_source (n : G.STNumbering s t) (x : OrientedQuiver G n.toOrientation) :
-    IsEmpty (x ⟶ OrientedQuiver.vertex G n.toOrientation s) :=
-  ⟨fun e ↦ by
-    have hlt := (n.adj_and_lt_of_hom e).2
-    rw [OrientedQuiver.vertexEquiv_symm_vertex] at hlt
-    exact n.not_lt_numbering_source _ hlt⟩
+/-- The vertex `s` is a quiver source of `OrientedQuiver G n.toOrientation`. -/
+theorem isSource_source (n : G.STNumbering s t) :
+    TauCeti.Quiver.IsSource (OrientedQuiver.vertex G n.toOrientation s) := by
+  rw [TauCeti.Quiver.IsSource_def]
+  intro x
+  obtain ⟨u, rfl⟩ := (OrientedQuiver.vertexEquiv G n.toOrientation).surjective x
+  rw [OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
+  exact fun ⟨_, hlt⟩ ↦ n.not_lt_numbering_source u hlt
 
-/-- The sink `t` has no outgoing arrow in `OrientedQuiver G n.toOrientation`. -/
-theorem isEmpty_hom_sink (n : G.STNumbering s t) (x : OrientedQuiver G n.toOrientation) :
-    IsEmpty (OrientedQuiver.vertex G n.toOrientation t ⟶ x) :=
-  ⟨fun e ↦ by
-    have hlt := (n.adj_and_lt_of_hom e).2
-    rw [OrientedQuiver.vertexEquiv_symm_vertex] at hlt
-    exact n.not_numbering_sink_lt _ hlt⟩
+/-- The vertex `t` is a quiver sink of `OrientedQuiver G n.toOrientation`. -/
+theorem isSink_sink (n : G.STNumbering s t) :
+    TauCeti.Quiver.IsSink (OrientedQuiver.vertex G n.toOrientation t) := by
+  rw [TauCeti.Quiver.IsSink_def]
+  intro x
+  obtain ⟨w, rfl⟩ := (OrientedQuiver.vertexEquiv G n.toOrientation).surjective x
+  rw [OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
+  exact fun ⟨_, hlt⟩ ↦ n.not_numbering_sink_lt w hlt
 
 /-- Every vertex `v ≠ t` is reachable from `s` in `OrientedQuiver G n.toOrientation` (with no
 connectedness hypothesis on `G`). -/
 theorem nonempty_path_from_source_of_ne_sink (n : G.STNumbering s t) {v : V} (hvt : v ≠ t) :
     Nonempty (Quiver.Path (OrientedQuiver.vertex G n.toOrientation s)
-      (OrientedQuiver.vertex G n.toOrientation v)) := by
-  induction hk : (n.numbering v).val using Nat.strongRec generalizing v with
-  | ind k ih =>
-    obtain rfl | hvs := eq_or_ne v s
-    · exact ⟨.nil⟩
-    · obtain ⟨u, hadj, hlt⟩ := n.lower_neighbor hvs hvt
-      have hut : u ≠ t := n.lt_numbering_sink_iff.1 (hlt.trans_le (n.le_numbering_sink v))
-      obtain ⟨p⟩ := ih (n.numbering u).val (hk ▸ Fin.lt_def.1 hlt) hut rfl
-      exact ⟨p.cons (n.arrow hadj hlt)⟩
+      (OrientedQuiver.vertex G n.toOrientation v)) :=
+  n.of_ne_sink
+    (fun w ↦ Nonempty (Quiver.Path (OrientedQuiver.vertex G n.toOrientation s)
+      (OrientedQuiver.vertex G n.toOrientation w)))
+    ⟨.nil⟩ (fun _ _ _ hadj hlt ⟨p⟩ ↦ ⟨p.cons (n.arrow hadj hlt)⟩) hvt
 
 /-- Every vertex `v ≠ s` can reach `t` in `OrientedQuiver G n.toOrientation` (with no
 connectedness hypothesis on `G`). -/
 theorem nonempty_path_to_sink_of_ne_source (n : G.STNumbering s t) {v : V} (hvs : v ≠ s) :
     Nonempty (Quiver.Path (OrientedQuiver.vertex G n.toOrientation v)
-      (OrientedQuiver.vertex G n.toOrientation t)) := by
-  induction hk : Fintype.card V - 1 - (n.numbering v).val using Nat.strongRec generalizing v with
-  | ind k ih =>
-    obtain rfl | hvt := eq_or_ne v t
-    · exact ⟨.nil⟩
-    · obtain ⟨w, hadj, hlt⟩ := n.higher_neighbor hvs hvt
-      have hws : w ≠ s := n.numbering_source_lt_iff.1 ((n.numbering_source_le v).trans_lt hlt)
-      have hlt_val : (n.numbering v).val < (n.numbering w).val := Fin.lt_def.1 hlt
-      have hw_bound : (n.numbering w).val < Fintype.card V := (n.numbering w).isLt
-      obtain ⟨p⟩ := ih (Fintype.card V - 1 - (n.numbering w).val) (by omega) hws rfl
-      exact ⟨(n.arrow hadj hlt).toPath.comp p⟩
+      (OrientedQuiver.vertex G n.toOrientation t)) :=
+  n.symm.of_ne_sink
+    (fun w ↦ Nonempty (Quiver.Path (OrientedQuiver.vertex G n.toOrientation w)
+      (OrientedQuiver.vertex G n.toOrientation t)))
+    ⟨.nil⟩
+    (fun _ _ _ hadj hlt ⟨p⟩ ↦ ⟨(n.arrow hadj.symm (Fin.rev_lt_rev.1 hlt)).toPath.comp p⟩) hvs
 
 /-- When `G` is preconnected, `OrientedQuiver G n.toOrientation` has a directed path from `s` to
 `t`. -/
@@ -676,69 +652,37 @@ theorem nonempty_path_to_sink (n : G.STNumbering s t) (hG : G.Preconnected)
   · exact n.nonempty_path_source_sink_of_preconnected hG
   · exact n.nonempty_path_to_sink_of_ne_source hvs
 
-/-- When `G` is preconnected, `s` is the unique vertex of `OrientedQuiver G n.toOrientation` with
-no incoming arrow. -/
-theorem forall_isEmpty_hom_target_iff (n : G.STNumbering s t) (hG : G.Preconnected)
-    (x : OrientedQuiver G n.toOrientation) :
-    (∀ y, IsEmpty (y ⟶ x)) ↔ x = OrientedQuiver.vertex G n.toOrientation s := by
-  refine ⟨fun h ↦ ?_, fun h y ↦ h ▸ n.isEmpty_hom_source y⟩
-  obtain ⟨p⟩ := n.nonempty_path_from_source hG x
-  cases p with
-  | nil => rfl
-  | cons _ e => exact ((h _).false e).elim
+/-- When `G` is preconnected, `s` is the unique source of `OrientedQuiver G n.toOrientation`. -/
+theorem isSource_iff (n : G.STNumbering s t) (hG : G.Preconnected)
+    {x : OrientedQuiver G n.toOrientation} :
+    TauCeti.Quiver.IsSource x ↔ x = OrientedQuiver.vertex G n.toOrientation s :=
+  ⟨fun h ↦ (h.eq_of_path (n.nonempty_path_from_source hG x).some).symm,
+    fun h ↦ h ▸ n.isSource_source⟩
 
-/-- When `G` is preconnected, `t` is the unique vertex of `OrientedQuiver G n.toOrientation` with
-no outgoing arrow. -/
-theorem forall_isEmpty_hom_source_iff (n : G.STNumbering s t) (hG : G.Preconnected)
-    (x : OrientedQuiver G n.toOrientation) :
-    (∀ y, IsEmpty (x ⟶ y)) ↔ x = OrientedQuiver.vertex G n.toOrientation t := by
-  refine ⟨fun h ↦ ?_, fun h y ↦ h ▸ n.isEmpty_hom_sink y⟩
-  by_contra hxt
-  obtain ⟨v, rfl⟩ := (OrientedQuiver.vertexEquiv G n.toOrientation).surjective x
-  rw [OrientedQuiver.vertexEquiv_apply] at hxt h
-  have hvt : v ≠ t := by rintro rfl; exact hxt rfl
-  obtain rfl | hvs := eq_or_ne v s
-  · obtain ⟨w, hadj, -⟩ := Walk.exists_eq_cons_of_ne hvt (hG v t).some
-    exact (h (OrientedQuiver.vertex G n.toOrientation w)).false
-      (n.arrow hadj (n.numbering_source_lt_iff.2 hadj.ne'))
-  · obtain ⟨w, hadj, hlt⟩ := n.higher_neighbor hvs hvt
-    exact (h (OrientedQuiver.vertex G n.toOrientation w)).false (n.arrow hadj hlt)
+/-- When `G` is preconnected, `t` is the unique sink of `OrientedQuiver G n.toOrientation`. -/
+theorem isSink_iff (n : G.STNumbering s t) (hG : G.Preconnected)
+    {x : OrientedQuiver G n.toOrientation} :
+    TauCeti.Quiver.IsSink x ↔ x = OrientedQuiver.vertex G n.toOrientation t :=
+  ⟨fun h ↦ h.eq_of_path (n.nonempty_path_to_sink hG x).some,
+    fun h ↦ h ▸ n.isSink_sink⟩
 
-/-- Transported through `OrientedQuiver.vertexEquiv`, when `G` is preconnected `s` is the unique
-vertex `v : V` with no incoming arrow in `OrientedQuiver G n.toOrientation`. -/
-theorem forall_isEmpty_vertexEquiv_hom_target_iff (n : G.STNumbering s t) (hG : G.Preconnected)
-    {v : V} :
-    (∀ u, IsEmpty (OrientedQuiver.vertexEquiv G n.toOrientation u ⟶
-        OrientedQuiver.vertexEquiv G n.toOrientation v)) ↔ v = s := by
-  let e := OrientedQuiver.vertexEquiv G n.toOrientation
-  rw [← e.apply_eq_iff_eq (x := v) (y := s), OrientedQuiver.vertexEquiv_apply,
-    OrientedQuiver.vertexEquiv_apply, ← n.forall_isEmpty_hom_target_iff hG]
-  exact ⟨fun h y ↦ let ⟨u, hu⟩ := e.surjective y; hu ▸ h u, fun h u ↦ h (e u)⟩
-
-/-- Transported through `OrientedQuiver.vertexEquiv`, when `G` is preconnected `t` is the unique
-vertex `v : V` with no outgoing arrow in `OrientedQuiver G n.toOrientation`. -/
-theorem forall_isEmpty_vertexEquiv_hom_source_iff (n : G.STNumbering s t) (hG : G.Preconnected)
-    {v : V} :
-    (∀ w, IsEmpty (OrientedQuiver.vertexEquiv G n.toOrientation v ⟶
-        OrientedQuiver.vertexEquiv G n.toOrientation w)) ↔ v = t := by
-  let e := OrientedQuiver.vertexEquiv G n.toOrientation
-  rw [← e.apply_eq_iff_eq (x := v) (y := t), OrientedQuiver.vertexEquiv_apply,
-    OrientedQuiver.vertexEquiv_apply, ← n.forall_isEmpty_hom_source_iff hG]
-  exact ⟨fun h y ↦ let ⟨w, hw⟩ := e.surjective y; hw ▸ h w, fun h w ↦ h (e w)⟩
-
-/-- Transported through `OrientedQuiver.vertexEquiv` and `STNumbering.homEquiv`, when `G` is
-preconnected `s` is the unique vertex with no lower-numbered neighbour. -/
+/-- When `G` is preconnected, `s` is the unique vertex with no lower-numbered neighbour. -/
 theorem forall_not_adj_and_numbering_lt_iff (n : G.STNumbering s t) (hG : G.Preconnected) {v : V} :
     (∀ u, ¬(G.Adj u v ∧ n.numbering u < n.numbering v)) ↔ v = s := by
-  simpa only [OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff] using
-    n.forall_isEmpty_vertexEquiv_hom_target_iff hG (v := v)
+  let e := OrientedQuiver.vertexEquiv G n.toOrientation
+  rw [← e.apply_eq_iff_eq (x := v) (y := s), OrientedQuiver.vertexEquiv_apply,
+    OrientedQuiver.vertexEquiv_apply, ← n.isSource_iff hG, TauCeti.Quiver.IsSource_def,
+    e.symm.forall_congr_left]
+  simp only [e, Equiv.symm_symm, OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
 
-/-- Transported through `OrientedQuiver.vertexEquiv` and `STNumbering.homEquiv`, when `G` is
-preconnected `t` is the unique vertex with no higher-numbered neighbour. -/
+/-- When `G` is preconnected, `t` is the unique vertex with no higher-numbered neighbour. -/
 theorem forall_not_adj_and_lt_numbering_iff (n : G.STNumbering s t) (hG : G.Preconnected) {v : V} :
     (∀ w, ¬(G.Adj v w ∧ n.numbering v < n.numbering w)) ↔ v = t := by
-  simpa only [OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff] using
-    n.forall_isEmpty_vertexEquiv_hom_source_iff hG (v := v)
+  let e := OrientedQuiver.vertexEquiv G n.toOrientation
+  rw [← e.apply_eq_iff_eq (x := v) (y := t), OrientedQuiver.vertexEquiv_apply,
+    OrientedQuiver.vertexEquiv_apply, ← n.isSink_iff hG, TauCeti.Quiver.IsSink_def,
+    e.symm.forall_congr_left]
+  simp only [e, Equiv.symm_symm, OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
 
 /-! ### `2`-vertex-connectivity from an `st`-numbering -/
 
@@ -760,7 +704,7 @@ private theorem exists_walk_avoiding_singleton (n : G.STNumbering s t) (hst : s 
       refine ⟨p.reverse.mapLe le_sup_left, ?_⟩
       rw [Walk.support_mapLe_eq_support, Walk.support_reverse, List.mem_reverse]
       exact fun ht ↦ (n.lt_numbering_sink_iff.2 hv).not_ge (hp z ht)
-    · rcases lt_or_gt_of_ne (n.injective.ne hv) with hlt | hgt
+    · rcases lt_or_gt_of_ne (n.numbering.injective.ne hv) with hlt | hgt
       · have hvt : v ≠ t := n.lt_numbering_sink_iff.1 (hlt.trans_le (n.le_numbering_sink z))
         obtain ⟨p, hp⟩ := n.exists_walk_from_source_of_ne_sink hvt
         refine ⟨p.reverse.mapLe le_sup_left, ?_⟩
@@ -848,52 +792,6 @@ private theorem isPartialSTList_pair {G : SimpleGraph V} {s t : V} (hst : s ≠ 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
     exact hv.elim (fun h ↦ (hvs h).elim) (fun h ↦ (hvt h).elim)
 
-/-- Decompose the support of a nontrivial simple path `R : G.Walk a b` as `a :: (I ++ [b])`, where
-`I` is duplicate-free and contains neither endpoint, and every vertex of `I` has an adjacent
-predecessor and an adjacent successor in `R.support`. -/
-private theorem exists_internal_support_of_isPath {G : SimpleGraph V} {a b : V} {R : G.Walk a b}
-    (hR : R.IsPath) (hab : a ≠ b) :
-    ∃ I : List V, R.support = a :: (I ++ [b]) ∧ I.Nodup ∧ (∀ v ∈ I, v ≠ a ∧ v ≠ b) ∧
-      (∀ v ∈ I, (∃ u, G.Adj u v ∧ [u, v] <+ R.support) ∧
-        (∃ w, G.Adj v w ∧ [v, w] <+ R.support)) := by
-  have hRnil : ¬R.Nil := fun h ↦ hab h.eq
-  let I := R.support.tail.dropLast
-  have htail_ne : R.support.tail ≠ [] := List.ne_nil_of_mem (R.end_mem_tail_support hRnil)
-  have htail_last : R.support.tail.getLast htail_ne = b := by
-    have h2 : (a :: R.support.tail).getLast (List.cons_ne_nil _ _) = b := by
-      simpa only [Walk.cons_tail_support] using R.getLast_support
-    simpa only [List.getLast_cons htail_ne] using h2
-  have hsupp_eq : R.support = a :: (I ++ [b]) := by
-    rw [← R.cons_tail_support]
-    congr 1
-    simpa only [I, htail_last] using (List.dropLast_concat_getLast htail_ne).symm
-  have hsupp_nd : (a :: (I ++ [b])).Nodup := hsupp_eq ▸ hR.support_nodup
-  refine ⟨I, hsupp_eq, (List.nodup_cons.1 hsupp_nd).2.of_append_left, fun v hvI ↦ ?_,
-    fun v hvI ↦ ?_⟩
-  · refine ⟨fun h ↦ (List.nodup_cons.1 hsupp_nd).1 (List.mem_append_left _ (h ▸ hvI)), ?_⟩
-    rintro rfl
-    exact (List.nodup_cons.1 hsupp_nd).2.disjoint hvI (List.mem_singleton_self v)
-  · obtain ⟨I₁, I₂, hI_eq⟩ := List.mem_iff_append.1 hvI
-    have h₁ : a :: I₁ ≠ [] := List.cons_ne_nil _ _
-    have h₂ : (a :: I₁) ++ [v] ≠ [] := by simp
-    have h₃ : I₂ ++ [b] ≠ [] := by simp
-    have hchain₁ : ((a :: I₁) ++ (v :: (I₂ ++ [b]))).IsChain G.Adj := by
-      simpa [hsupp_eq, hI_eq, List.cons_append, List.append_assoc] using R.isChain_adj_support
-    have hchain₂ : (((a :: I₁) ++ [v]) ++ (I₂ ++ [b])).IsChain G.Adj := by
-      simpa [hsupp_eq, hI_eq, List.cons_append, List.append_assoc] using R.isChain_adj_support
-    refine ⟨⟨(a :: I₁).getLast h₁,
-      by simpa using hchain₁.rel_getLast_head_of_append h₁ (List.cons_ne_nil _ _), ?_⟩,
-      ⟨(I₂ ++ [b]).head h₃, by simpa using hchain₂.rel_getLast_head_of_append h₂ h₃, ?_⟩⟩
-    · rw [hsupp_eq, hI_eq]
-      have hs₁ : [(a :: I₁).getLast h₁] <+ a :: I₁ :=
-        List.singleton_sublist.2 (List.getLast_mem h₁)
-      simpa only [List.cons_append, List.nil_append, List.append_assoc] using
-        hs₁.append (by simp : [v] <+ v :: (I₂ ++ [b]))
-    · rw [hsupp_eq, hI_eq]
-      have hs₂ : [(I₂ ++ [b]).head h₃] <+ I₂ ++ [b] := List.singleton_sublist.2 (List.head_mem h₃)
-      simpa only [List.cons_append, List.nil_append, List.append_assoc] using
-        (by simp : [v] <+ (a :: I₁) ++ [v]).append hs₂
-
 /-- Inserting the internal vertices of a `G`-path `R` from `a` to `b` immediately after `a` in
 `L = A ++ a :: B` (where `b ∈ B` and all internal vertices of `R` lie outside `L`) extends the
 partial `st`-list to one containing `R.support`. -/
@@ -908,7 +806,7 @@ private theorem IsPartialSTList.insertPath {G : SimpleGraph V} {s t a b : V} {A 
     have hnd := hL.nodup
     simp only [L, List.nodup_append, List.nodup_cons] at hnd
     exact hnd.2.1.1 hbB
-  obtain ⟨I, hsupp_eq, hI_nd, hI_ne, hI_nbrs⟩ := exists_internal_support_of_isPath hR hab
+  obtain ⟨I, hsupp_eq, hI_nd, hI_ne, hI_nbrs⟩ := hR.exists_support_eq_cons_append hab
   have hIL : List.Disjoint I L := fun v hvI ↦
     hint v (hsupp_eq ▸ List.mem_cons_of_mem a (List.mem_append_left _ hvI))
       (hI_ne v hvI).1 (hI_ne v hvI).2
@@ -1002,46 +900,6 @@ private def IsPartialSTList.toSTNumbering [Fintype V] [DecidableEq V] {G : Simpl
     simp only [num, Equiv.trans_apply, finCongr_apply, Fin.val_cast, ht']
     omega
 
-/-- Given `s ≠ t` inside `U : Finset V` and a vertex `x ∉ U`, `2`-vertex-connectivity of
-`G ⊔ edge s t` produces an open ear in `G` itself passing through `x` between two distinct
-endpoints in `U`, with all internal vertices outside `U`. -/
-private theorem exists_open_ear_of_isVertexConnected_two_sup_edge [Finite V]
-    {G : SimpleGraph V} {s t x : V} {U : Finset V} (hst : s ≠ t) (hsU : s ∈ U) (htU : t ∈ U)
-    (hxU : x ∉ U) (hG : (G ⊔ SimpleGraph.edge s t).IsVertexConnected 2) :
-    ∃ (u₀ u₁ : V) (R : G.Walk u₀ u₁), u₀ ∈ U ∧ u₁ ∈ U ∧ u₀ ≠ u₁ ∧ R.IsPath ∧ x ∈ R.support ∧
-      ∀ v ∈ R.support, v ≠ u₀ → v ≠ u₁ → v ∉ U := by
-  classical
-  have hU2 : 2 ≤ #U := Finset.one_lt_card.2 ⟨s, hsU, t, htU, hst⟩
-  obtain ⟨u, P, hinj, hu, hP, hint, hdisj⟩ := hG.exists_fan hxU hU2
-  have htransfer (i : Fin 2) : ∀ e ∈ (P i).edges, e ∈ G.edgeSet := by
-    intro e he
-    induction e with | h v w => ?_
-    refine ((P i).adj_of_mem_edges he).elim id fun hedge ↦ False.elim ?_
-    rw [edge_adj] at hedge
-    have hvU : v ∈ U := by rcases hedge.1 with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> assumption
-    have hwU : w ∈ U := by rcases hedge.1 with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> assumption
-    have hvu : v = u i := by
-      by_contra hne
-      exact hint i v ((P i).fst_mem_support_of_mem_edges he) hne hvU
-    have hwu : w = u i := by
-      by_contra hne
-      exact hint i w ((P i).snd_mem_support_of_mem_edges he) hne hwU
-    exact hedge.2 (hvu.trans hwu.symm)
-  let Q : ∀ i : Fin 2, G.Walk x (u i) := fun i ↦ (P i).transfer G (htransfer i)
-  have hQ_supp (i : Fin 2) : (Q i).support = (P i).support := Walk.support_transfer _ _
-  have hQ_path (i : Fin 2) : (Q i).IsPath := (Q i).isPath_def.2 (hQ_supp i ▸ (hP i).support_nodup)
-  let R₀ : G.Walk (u 0) (u 1) := (Q 0).reverse.append (Q 1)
-  refine ⟨u 0, u 1, R₀, hu 0, hu 1, hinj.ne (by decide), ?_,
-    (Walk.mem_support_append_iff _ _).2 (.inr (Q 1).start_mem_support), fun v hv h0 h1 hvU ↦ ?_⟩
-  · refine (Walk.isPath_append _ _).2 ⟨(hQ_path 0).reverse, (hQ_path 1).tail, fun v hv₀ hv₁ ↦ ?_⟩
-    rw [Walk.support_reverse, List.mem_reverse, hQ_supp] at hv₀
-    have hvx : v = x :=
-      hdisj (by decide : (0 : Fin 2) ≠ 1) v hv₀ (hQ_supp 1 ▸ List.mem_of_mem_tail hv₁)
-    exact (hQ_path 1).start_notMem_tail_support (hvx ▸ hv₁)
-  · rw [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse, hQ_supp,
-      hQ_supp] at hv
-    exact hv.elim (fun h ↦ hint 0 v h h0 hvU) (fun h ↦ hint 1 v h h1 hvU)
-
 /-- **Lempel–Even–Cederbaum theorem (existence).** Let `s ≠ t` be distinct vertices of a finite
 simple graph `G` such that `G ⊔ SimpleGraph.edge s t` is `2`-vertex-connected. Then `G` admits an
 `st`-numbering. -/
@@ -1062,10 +920,10 @@ theorem nonempty_stNumbering_of_isVertexConnected_two_sup_edge [Fintype V] {G : 
     · push Not at hall
       obtain ⟨x, hxL⟩ := hall
       obtain ⟨u₀, u₁, R₀, hu₀, hu₁, hu₀₁, hR₀_path, hxR₀, hR₀_int⟩ :=
-        exists_open_ear_of_isVertexConnected_two_sup_edge hst
+        hG.exists_open_ear_of_sup_edge hst
           (List.mem_toFinset.2 (List.mem_of_mem_head? hL.head?_eq))
           (List.mem_toFinset.2 (List.mem_of_mem_getLast? hL.getLast?_eq))
-          (List.mem_toFinset.not.2 hxL) hG
+          (List.mem_toFinset.not.2 hxL)
       obtain ⟨A₀, B₀, hLA₀⟩ := List.mem_iff_append.1 (List.mem_toFinset.1 hu₀)
       have hu₁_mem : u₁ ∈ A₀ ∨ u₁ ∈ B₀ := by
         have h1 := List.mem_toFinset.1 hu₁
