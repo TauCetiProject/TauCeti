@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
 # Tensor-product basis coordinates
@@ -23,6 +24,8 @@ consists of pure tensors.
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
+* `Submodule.tensor_mem_range_iff_forall_tensorComponent_mem`: contractions against a projective
+  right factor detect membership in the tensor product with a submodule of the left factor.
 * `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
@@ -78,6 +81,32 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
     LinearMap.id_apply] using this
 
 end TensorProduct
+
+namespace Submodule
+
+variable {R M N : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N]
+
+/-- A tensor lies in the tensor product with a submodule exactly when all its contractions
+against linear functionals on the projective right factor lie in that submodule. -/
+theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z : M ⊗[R] N) :
+    z ∈ LinearMap.range (TensorProduct.map S.subtype (LinearMap.id : N →ₗ[R] N)) ↔
+      ∀ f : N →ₗ[R] R, LinearMap.tensorComponent f z ∈ S := by
+  constructor
+  · rintro ⟨w, hw⟩ f
+    rw [← hw]
+    have h := LinearMap.tensorComponent_map f S.subtype (LinearMap.id : N →ₗ[R] N) w
+    rw [LinearMap.comp_id] at h
+    rw [h]
+    exact (LinearMap.tensorComponent f w).property
+  · intro h
+    rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
+    apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
+    intro f
+    rw [map_zero, LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id]
+    simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
+
+end Submodule
 
 namespace Module.Basis
 
