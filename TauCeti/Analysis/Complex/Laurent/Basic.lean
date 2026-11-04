@@ -17,7 +17,9 @@ differentiable outside a countable exceptional set in its open interior. Under t
 hypotheses, the two-circle Cauchy formula represents the function between the circles by
 the difference of its outer and inner Cauchy integrals, even at exceptional points.
 Neither result assumes that the function extends across the center: isolated essential
-singularities are allowed.
+singularities are allowed. When `f` is complex-differentiable on a circle with circle-integrable
+derivative, integrating around the circle also expresses the Laurent coefficients of `deriv f` in
+terms of those of `f` (`circleLaurentCoeff_deriv_of_differentiableAt`, `circleLaurentCoeff_deriv`).
 
 The construction uses Mathlib's Cauchy-Goursat theorem for annuli,
 `Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable`, and its removable
@@ -36,7 +38,7 @@ For the classical Cauchy and Laurent formulas, see John B. Conway,
 public section
 
 open Complex Set Metric Filter
-open scoped Real Topology
+open scoped Real ENNReal Topology
 
 namespace TauCeti
 
@@ -139,6 +141,35 @@ theorem circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable
       ⟨ball_subset_closedBall hz.1.1, fun h => hz.1.2 (ball_subset_closedBall h)⟩
     exact ((differentiableAt_id.sub_const c).zpow (Or.inl (hn z hzA))).smul (hd z hz)
 
+/-- On an open concentric annulus `Metric.eball c R \ Metric.closedBall c r`, any two interior
+radii `ρ₁, ρ₂ ∈ (r, R)` yield identical `circleLaurentCoeff` values when `f` is continuous on the
+open annulus and complex-differentiable outside a countable subset. -/
+theorem circleLaurentCoeff_eq_of_differentiable_on_open_annulus_off_countable
+    {f : ℂ → E} {c : ℂ} {r ρ₁ ρ₂ : ℝ} {R : ℝ≥0∞} {s : Set ℂ}
+    (hr : 0 ≤ r) (hr₁ : r < ρ₁) (hr₂ : r < ρ₂)
+    (hR₁ : ENNReal.ofReal ρ₁ < R) (hR₂ : ENNReal.ofReal ρ₂ < R) (hs : s.Countable)
+    (hc : ContinuousOn f (eball c R \ closedBall c r))
+    (hd : ∀ z ∈ (eball c R \ closedBall c r) \ s, DifferentiableAt ℂ f z) (n : ℤ) :
+    circleLaurentCoeff f c ρ₁ n = circleLaurentCoeff f c ρ₂ n := by
+  let r' : ℝ := min ρ₁ ρ₂
+  let R' : ℝ := max ρ₁ ρ₂
+  have hr'_pos : 0 < r' := hr.trans_lt (lt_min hr₁ hr₂)
+  have hrr' : r < r' := lt_min hr₁ hr₂
+  have hR'R : ENNReal.ofReal R' < R := by
+    dsimp only [R']
+    rcases max_choice ρ₁ ρ₂ with hmax | hmax <;> rwa [hmax]
+  have hsub : closedBall c R' \ ball c r' ⊆ eball c R \ closedBall c r := fun z hz =>
+    ⟨by rw [mem_eball, edist_dist]; exact (ENNReal.ofReal_le_ofReal hz.1).trans_lt hR'R,
+      fun hzr => hz.2 (lt_of_le_of_lt hzr hrr')⟩
+  have hsub_open : (ball c R' \ closedBall c r') \ s ⊆ (eball c R \ closedBall c r) \ s :=
+    fun z hz => ⟨hsub ⟨ball_subset_closedBall hz.1.1,
+      fun h => hz.1.2 (ball_subset_closedBall h)⟩, hz.2⟩
+  have heq := circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable
+    hr'_pos (min_le_max) hs (hc.mono hsub) (fun z hz => hd z (hsub_open hz)) n
+  rcases le_total ρ₁ ρ₂ with hle | hle
+  · simpa only [r', R', min_eq_left hle, max_eq_right hle] using heq.symm
+  · simpa only [r', R', min_eq_right hle, max_eq_left hle] using heq
+
 variable [CompleteSpace E]
 
 /-- A Laurent monomial has precisely its prescribed coefficient, in every integer degree. -/
@@ -230,5 +261,70 @@ theorem
       (∮ z in C(c, r), (z - w)⁻¹ • f z) = (2 * π * I : ℂ) • f w :=
     sub_eq_iff_eq_add.mpr ((sub_eq_iff_eq_add.mp hid).trans (add_comm _ _))
   rw [hdiff, inv_smul_smul₀ (by simp [Real.pi_ne_zero])]
+
+/-- If `f` is complex-differentiable at every point of `Metric.sphere c R` (`0 < R`) and `deriv f`
+is circle-integrable on `C(c, R)`, then the `n`-th circle Laurent coefficient of `deriv f` equals
+`(n + 1) • circleLaurentCoeff f c R (n + 1)`. -/
+theorem circleLaurentCoeff_deriv_of_differentiableAt {f : ℂ → E} {c : ℂ} {R : ℝ}
+    (hR : 0 < R) (hd : ∀ z ∈ sphere c R, DifferentiableAt ℂ f z)
+    (hderiv : CircleIntegrable (deriv f) c R) (n : ℤ) :
+    circleLaurentCoeff (deriv f) c R n = ((n + 1 : ℤ) : ℂ) • circleLaurentCoeff f c R (n + 1) := by
+  have hc_not_mem : c ∉ sphere c |R| := by
+    rw [abs_of_pos hR, mem_sphere, dist_self]
+    exact hR.ne
+  have hf_cont : ContinuousOn f (sphere c R) :=
+    fun z hz => (hd z hz).continuousAt.continuousWithinAt
+  have hf_int : CircleIntegrable f c R := hf_cont.circleIntegrable hR.le
+  have hi₁ : CircleIntegrable (fun z => (((-n - 1 : ℤ) : ℂ) * (z - c) ^ (-n - 2)) • f z) c R := by
+    simpa only [mul_smul] using
+      (hf_int.sub_zpow_smul (-n - 2) hc_not_mem).const_fun_smul (a := ((-n - 1 : ℤ) : ℂ))
+  have hi₂ : CircleIntegrable (fun z => (z - c) ^ (-n - 1) • deriv f z) c R :=
+    hderiv.sub_zpow_smul (-n - 1) hc_not_mem
+  have hzero : (∮ z in C(c, R),
+      (((-n - 1 : ℤ) : ℂ) * (z - c) ^ (-n - 2)) • f z +
+        (z - c) ^ (-n - 1) • deriv f z) = 0 := by
+    refine circleIntegral.integral_eq_zero_of_hasDerivWithinAt
+      (f := fun w : ℂ => (w - c) ^ (-n - 1) • f w) hR.le fun z hz => ?_
+    have hzc : z - c ≠ 0 := sub_ne_zero.mpr (ne_of_mem_sphere hz hR.ne')
+    have hzpow : HasDerivAt (fun w : ℂ => (w - c) ^ (-n - 1))
+        (((-n - 1 : ℤ) : ℂ) * (z - c) ^ (-n - 2)) z := by
+      have hexp : -n - 1 - 1 = -n - 2 := by omega
+      simpa only [Function.comp_def, id_eq, hexp, mul_one] using
+        (hasDerivAt_zpow (-n - 1) (z - c) (Or.inl hzc)).comp z
+          ((hasDerivAt_id (𝕜 := ℂ) z).sub_const c)
+    exact ((hzpow.smul (hd z hz).hasDerivAt).congr_deriv (add_comm _ _)).hasDerivWithinAt
+  rw [circleIntegral.integral_add hi₁ hi₂] at hzero
+  have hpull : (∮ z in C(c, R), (((-n - 1 : ℤ) : ℂ) * (z - c) ^ (-n - 2)) • f z) =
+      (-((n + 1 : ℤ) : ℂ)) • ∮ z in C(c, R), (z - c) ^ (-(n + 1) - 1) • f z := by
+    have hexp : -n - 2 = -(n + 1) - 1 := by omega
+    have hcast : ((-n - 1 : ℤ) : ℂ) = -((n + 1 : ℤ) : ℂ) := by push_cast; ring
+    simp only [mul_smul, hexp, hcast, circleIntegral.integral_smul]
+  rw [hpull, neg_smul, neg_add_eq_zero] at hzero
+  rw [circleLaurentCoeff_def, circleLaurentCoeff_def, ← hzero, smul_comm]
+
+/-- For `f` complex-differentiable on an open concentric annulus
+`Metric.eball c R \ Metric.closedBall c r` and any interior circle radius `ρ ∈ (r, R)`, the `n`-th
+circle Laurent coefficient of `deriv f` equals `(n + 1) • circleLaurentCoeff f c ρ (n + 1)`. -/
+theorem circleLaurentCoeff_deriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
+    (hf : DifferentiableOn ℂ f (eball c R \ closedBall c r))
+    (hr : 0 ≤ r) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R) (n : ℤ) :
+    circleLaurentCoeff (deriv f) c ρ n = ((n + 1 : ℤ) : ℂ) • circleLaurentCoeff f c ρ (n + 1) := by
+  have hρ_pos : 0 < ρ := hr.trans_lt hrρ
+  have hopen : IsOpen (eball c R \ closedBall c r) := isOpen_eball.sdiff isClosed_closedBall
+  have hsphere : sphere c ρ ⊆ eball c R \ closedBall c r := fun z hz => by
+    have hdist : dist z c = ρ := mem_sphere.mp hz
+    exact ⟨by rw [mem_eball, edist_dist, hdist]; exact hρR,
+      by rw [mem_closedBall, hdist, not_le]; exact hrρ⟩
+  have hdf : DifferentiableOn ℂ (deriv f) (eball c R \ closedBall c r) := hf.deriv hopen
+  exact circleLaurentCoeff_deriv_of_differentiableAt hρ_pos
+    (fun z hz => (hf z (hsphere hz)).differentiableAt (hopen.mem_nhds (hsphere hz)))
+    ((hdf.continuousOn.mono hsphere).circleIntegrable hρ_pos.le) n
+
+/-- Derivatives have vanishing `(-1)`-st circle Laurent coefficient (zero residue). -/
+theorem circleLaurentCoeff_deriv_neg_one {f : ℂ → E} {c : ℂ} {R : ℝ}
+    (hR : 0 < R) (hd : ∀ z ∈ sphere c R, DifferentiableAt ℂ f z)
+    (hderiv : CircleIntegrable (deriv f) c R) :
+    circleLaurentCoeff (deriv f) c R (-1) = 0 := by
+  simpa using circleLaurentCoeff_deriv_of_differentiableAt hR hd hderiv (-1)
 
 end TauCeti

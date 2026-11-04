@@ -36,8 +36,9 @@ is complex-differentiable on `Metric.eball c R \ {c}`:
 
 ## Main results
 
-* `TauCeti.hasLaurentSeriesOnAnnulus_eval_inv_sub` and `TauCeti.circleLaurentCoeff_eval_inv_sub`:
-  Laurent expansion and circle Laurent coefficients of `w ↦ P.eval (w - c)⁻¹` for `P : ℂ[X]`.
+* `Polynomial.hasLaurentSeriesOnAnnulus_eval_inv_sub` and
+  `Polynomial.circleLaurentCoeff_eval_inv_sub`: Laurent expansion and circle Laurent coefficients of
+  `w ↦ P.eval (w - c)⁻¹` for `P : ℂ[X]`.
 * `TauCeti.meromorphicGerms.eventually_circleLaurentCoeff_neg_add_one_eq_coeff_principalPart` and
   `TauCeti.meromorphicGerms.circleLaurentCoeff_neg_add_one_eq_coeff_principalPart`: negative circle
   Laurent coefficients compute the coefficients of `meromorphicGerms.principalPart`.
@@ -67,10 +68,31 @@ open scoped ContDiff ENNReal Manifold NNReal
 
 namespace TauCeti
 
+/-- The negative-degree Laurent terms `(w - c) ^ (-(k + 1)) • P.coeff (k + 1)` of a polynomial
+`P : ℂ[X]` have finite support and sum to `P.eval (w - c)⁻¹ - P.coeff 0`. -/
+private theorem hasSum_zpow_neg_add_one_smul_coeff_succ (P : ℂ[X]) (c w : ℂ) :
+    HasSum (fun k : ℕ => (w - c) ^ (-((k : ℤ) + 1)) • P.coeff (k + 1))
+      (P.eval (w - c)⁻¹ - P.coeff 0) := by
+  have hterm : ∀ k : ℕ,
+      (w - c) ^ (-((k : ℤ) + 1)) • P.coeff (k + 1) =
+        P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) := fun k => by
+    rw [← Nat.cast_add_one, zpow_neg, zpow_natCast, ← inv_pow, smul_eq_mul, mul_comm]
+  simp_rw [hterm]
+  have hsum : HasSum (fun k : ℕ => P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1))
+      (∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1)) := by
+    refine hasSum_sum_of_ne_finset_zero fun k hk => ?_
+    rw [Finset.mem_range, not_lt] at hk
+    rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
+  have heval : ∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) =
+      P.eval (w - c)⁻¹ - P.coeff 0 := by
+    rw [Polynomial.eval_eq_sum_range, Finset.sum_range_succ', pow_zero, mul_one,
+      add_sub_cancel_right]
+  rwa [heval] at hsum
+
 /-- A polynomial `P : ℂ[X]` evaluated at the inverted coordinate `(w - c)⁻¹` has the finite Laurent
 series supported in nonpositive degrees `n ≤ 0` with coefficients `P.coeff (-n).toNat`. -/
-theorem hasLaurentSeriesOnAnnulus_eval_inv_sub (P : ℂ[X]) (c : ℂ) {r : ℝ} {R : ℝ≥0∞}
-    (hr : 0 ≤ r) (hrR : ENNReal.ofReal r < R) :
+theorem _root_.Polynomial.hasLaurentSeriesOnAnnulus_eval_inv_sub (P : ℂ[X]) (c : ℂ)
+    {r : ℝ} {R : ℝ≥0∞} (hr : 0 ≤ r) (hrR : ENNReal.ofReal r < R) :
     HasLaurentSeriesOnAnnulus (fun w => P.eval (w - c)⁻¹)
       (fun n : ℤ => if n ≤ 0 then P.coeff (-n).toNat else 0) c r R where
   r_nonneg := hr
@@ -86,33 +108,23 @@ theorem hasLaurentSeriesOnAnnulus_eval_inv_sub (P : ℂ[X]) (c : ℂ) {r : ℝ} 
     have hn : HasSum (fun k : ℕ =>
         (w - c) ^ (-((k : ℤ) + 1)) •
           (if -((k : ℤ) + 1) ≤ 0 then P.coeff (-(-((k : ℤ) + 1))).toNat else 0))
-        (∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1)) := by
-      have hterm : ∀ k : ℕ,
-          (w - c) ^ (-((k : ℤ) + 1)) •
-            (if -((k : ℤ) + 1) ≤ 0 then P.coeff (-(-((k : ℤ) + 1))).toNat else 0) =
-            P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) := by
-        intro k
-        split_ifs with hle
-        · have hnat : (-(-((k : ℤ) + 1))).toNat = k + 1 := by omega
-          rw [hnat, ← Nat.cast_add_one, zpow_neg, zpow_natCast, ← inv_pow, smul_eq_mul, mul_comm]
-        · omega
-      simp_rw [hterm]
-      refine hasSum_sum_of_ne_finset_zero fun k hk => ?_
-      rw [Finset.mem_range, not_lt] at hk
-      rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
-    have heval : P.eval (w - c)⁻¹ =
-        P.coeff 0 + ∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) := by
-      rw [Polynomial.eval_eq_sum_range, Finset.sum_range_succ', pow_zero, mul_one, add_comm]
-    exact heval ▸ HasSum.of_nat_of_neg_add_one
+        (P.eval (w - c)⁻¹ - P.coeff 0) := by
+      refine (hasSum_zpow_neg_add_one_smul_coeff_succ P c w).congr_fun fun k => ?_
+      split_ifs with hle
+      · have hnat : (-(-((k : ℤ) + 1))).toNat = k + 1 := by omega
+        rw [hnat]
+      · omega
+    simpa only [add_sub_cancel] using HasSum.of_nat_of_neg_add_one
       (f := fun n : ℤ => (w - c) ^ n • (if n ≤ 0 then P.coeff (-n).toNat else 0)) hp hn
 
 /-- On every circle of positive radius `ρ > 0` around `c`, the circle Laurent coefficients of
 `z ↦ P.eval (z - c)⁻¹` extract the coefficients of `P` in nonpositive degrees and vanish in positive
 degrees. -/
-theorem circleLaurentCoeff_eval_inv_sub (P : ℂ[X]) (c : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (n : ℤ) :
+theorem _root_.Polynomial.circleLaurentCoeff_eval_inv_sub (P : ℂ[X]) (c : ℂ) {ρ : ℝ} (hρ : 0 < ρ)
+    (n : ℤ) :
     circleLaurentCoeff (fun z => P.eval (z - c)⁻¹) c ρ n =
       if n ≤ 0 then P.coeff (-n).toNat else 0 :=
-  (hasLaurentSeriesOnAnnulus_eval_inv_sub P c le_rfl
+  (P.hasLaurentSeriesOnAnnulus_eval_inv_sub c le_rfl
     (r := 0) (R := ⊤) (by simp)).circleLaurentCoeff_eq hρ ENNReal.ofReal_lt_top n
 
 /-- When the negative-degree coefficients `a (-(k + 1))` match those of a polynomial `P : ℂ[X]` with
@@ -121,18 +133,9 @@ theorem laurentNegPart_eq_eval_inv_sub_of_coeff_eq {a : ℤ → ℂ} {P : ℂ[X]
     (hP : P.coeff 0 = 0) (ha : ∀ k : ℕ, a (-((k : ℤ) + 1)) = P.coeff (k + 1)) (c w : ℂ) :
     laurentNegPart a c w = P.eval (w - c)⁻¹ := by
   have hsum : HasSum (fun k : ℕ => (w - c) ^ (-((k : ℤ) + 1)) • a (-((k : ℤ) + 1)))
-      (∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1)) := by
-    have hterm : ∀ k : ℕ,
-        (w - c) ^ (-((k : ℤ) + 1)) • a (-((k : ℤ) + 1)) =
-          P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) := by
-      intro k
-      rw [ha k, ← Nat.cast_add_one, zpow_neg, zpow_natCast, ← inv_pow, smul_eq_mul, mul_comm]
-    simp_rw [hterm]
-    refine hasSum_sum_of_ne_finset_zero fun k hk => ?_
-    rw [Finset.mem_range, not_lt] at hk
-    rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
-  rw [laurentNegPart_def, hsum.tsum_eq, Polynomial.eval_eq_sum_range, Finset.sum_range_succ', hP,
-    zero_mul, add_zero]
+      (P.eval (w - c)⁻¹ - P.coeff 0) :=
+    (hasSum_zpow_neg_add_one_smul_coeff_succ P c w).congr_fun fun k => by rw [ha k]
+  rw [laurentNegPart_def, hsum.tsum_eq, hP, sub_zero]
 
 namespace meromorphicGerms
 
@@ -163,7 +166,7 @@ private theorem exists_hasLaurentSeriesOnAnnulus_of_coe_eq {c : ℂ} {φ : merom
   have hR₁_pos : ENNReal.ofReal 0 < R₁ := by
     rw [ENNReal.ofReal_zero]
     exact lt_min hp.r_pos hε
-  have hP := hasLaurentSeriesOnAnnulus_eval_inv_sub (principalPart φ) c le_rfl hR₁_pos
+  have hP := (principalPart φ).hasLaurentSeriesOnAnnulus_eval_inv_sub c le_rfl hR₁_pos
   have hg_ser := hp.hasLaurentSeriesOnAnnulus.mono le_rfl (min_le_left _ _) hR₁_pos
   have hsum_ser := (hP.add hg_ser).congr fun z hz =>
     hεfg ⟨eball_subset_eball (min_le_right _ _) hz.1, by simpa using hz.2⟩

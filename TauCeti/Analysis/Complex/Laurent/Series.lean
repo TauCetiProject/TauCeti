@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.FunctionSeries
 public import TauCeti.Analysis.Complex.Laurent.Basic
+import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
 # Convergent Laurent series on concentric annuli
@@ -17,8 +18,8 @@ punctured open disks when `r = 0`, exteriors of closed disks when `R = ⊤`, and
 plane `ℂ \ {c}` when `r = 0` and `R = ⊤`) and establishes their analytic properties.
 
 Any integer-indexed Laurent series that converges pointwise on an open annulus automatically has
-summable norm bounds `∑_{n ∈ ℤ} ‖a n‖ * ρ ^ n < ∞` on every interior circle `ρ ∈ (r, R)`. For
-complete `E`, it converges uniformly on every closed concentric subannulus and splits on the open
+summable norm bounds `∑_{n ∈ ℤ} ‖a n‖ * ρ ^ n < ∞` on every interior circle `ρ ∈ (r, R)` and
+converges uniformly on every closed concentric subannulus. For complete `E`, it splits on the open
 annulus as `f = laurentPosPart a c + laurentNegPart a c`, where `laurentPosPart a c` converges as a
 formal power series on the entire outer disk `Metric.eball c R` and `laurentNegPart a c` is
 complex-analytic on the entire exterior `(Metric.closedBall c r)ᶜ` and vanishes at infinity. When
@@ -281,48 +282,100 @@ theorem sub_zpow_smul (v : E) (c : ℂ) (m : ℤ) {r : ℝ} {R : ℝ≥0∞}
     · subst n; rfl
     · simp
 
+/-- The radius of convergence of the nonnegative formal power series `laurentPosPowerSeries a` is
+at least the outer radius `R`. -/
+theorem le_radius_laurentPosPowerSeries {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c r R) :
+    R ≤ (laurentPosPowerSeries a).radius := by
+  refine le_of_forall_lt fun q hqR => ?_
+  have hmax : max (ENNReal.ofReal r) q < R := max_lt h.r_lt hqR
+  obtain ⟨q', hq'max, hq'R⟩ := exists_between hmax
+  lift q' to ℝ≥0 using hq'R.ne_top
+  have hrq' : r < (q' : ℝ) :=
+    (ENNReal.ofReal_lt_coe_iff h.r_nonneg).mp ((le_max_left _ _).trans_lt hq'max)
+  have hq'_pos : 0 < (q' : ℝ) := h.r_nonneg.trans_lt hrq'
+  have hqq' : q < (q' : ℝ≥0∞) := (le_max_right _ _).trans_lt hq'max
+  let w₁ : ℂ := c + (q' : ℝ)
+  have hw₁_dist : dist w₁ c = (q' : ℝ) := by
+    simp [w₁, dist_eq_norm, abs_of_pos hq'_pos]
+  have hw₁ : w₁ ∈ eball c R \ closedBall c r := by
+    refine ⟨?_, ?_⟩
+    · rw [mem_eball, edist_dist, hw₁_dist, ENNReal.ofReal_coe_nnreal]
+      exact hq'R
+    · rw [mem_closedBall, hw₁_dist, not_le]
+      exact hrq'
+  have htend₁ : Tendsto (fun n : ℕ => ‖laurentPosPowerSeries a n‖ * (q' : ℝ) ^ n) atTop (𝓝 0) := by
+    have hcof := ((h.hasSum hw₁).summable.tendsto_cofinite_zero.comp
+      Nat.cast_injective.tendsto_cofinite).norm
+    rw [Nat.cofinite_eq_atTop, norm_zero] at hcof
+    refine hcof.congr fun n => ?_
+    have hsub : w₁ - c = (q' : ℝ) := add_sub_cancel_left c (q' : ℝ)
+    simp only [Function.comp_def, zpow_natCast, norm_smul, norm_pow, hsub, Complex.norm_real,
+      Real.norm_eq_abs, abs_of_pos hq'_pos, norm_laurentPosPowerSeries, mul_comm]
+  exact hqq'.trans_le ((laurentPosPowerSeries a).le_radius_of_tendsto htend₁)
+
 /-- Pointwise convergence of a Laurent series on an open annulus implies absolute norm-power
 summability of its nonnegative-degree terms on every interior circle of radius `ρ ∈ (r, R)`. -/
 theorem summable_norm_mul_pow {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
     (h : HasLaurentSeriesOnAnnulus f a c r R) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R) :
     Summable (fun n : ℕ => ‖a n‖ * ρ ^ n) := by
   have hρ_pos : 0 < ρ := h.r_nonneg.trans_lt hrρ
-  obtain ⟨q, hρq, hqR⟩ := exists_between hρR
-  lift q to ℝ≥0 using hqR.ne_top
-  have hρq' : ρ < (q : ℝ) := (ENNReal.ofReal_lt_coe_iff hρ_pos.le).mp hρq
-  have hq_pos : 0 < (q : ℝ) := hρ_pos.trans hρq'
-  let w₁ : ℂ := c + (q : ℝ)
-  have hw₁_dist : dist w₁ c = (q : ℝ) := by
-    simp [w₁, dist_eq_norm, abs_of_pos hq_pos]
-  have hw₁ : w₁ ∈ eball c R \ closedBall c r := by
+  let ρnn : ℝ≥0 := ⟨ρ, hρ_pos.le⟩
+  have hcoe : (ρnn : ℝ) = ρ := rfl
+  have hlt : (ρnn : ℝ≥0∞) < (laurentPosPowerSeries a).radius := by
+    rw [← ENNReal.ofReal_coe_nnreal, hcoe]
+    exact hρR.trans_le h.le_radius_laurentPosPowerSeries
+  simpa only [norm_laurentPosPowerSeries, hcoe] using
+    (laurentPosPowerSeries a).summable_norm_mul_pow hlt
+
+/-- Auxiliary formal power series in the inverted coordinate `(w - c)⁻¹`, with zero constant term
+and `(n + 1)`-th coefficient `a (-(n + 1))`. -/
+private noncomputable def negCoordPowerSeries (a : ℤ → E) : FormalMultilinearSeries ℂ ℂ E
+  | 0 => 0
+  | n + 1 => ContinuousMultilinearMap.mkPiRing ℂ (Fin (n + 1)) (a (-((n : ℤ) + 1)))
+
+private theorem negCoordPowerSeries_apply_zero (a : ℤ → E) (u : ℂ) :
+    negCoordPowerSeries a 0 (fun _ => u) = 0 := (rfl)
+
+private theorem negCoordPowerSeries_apply_succ (a : ℤ → E) (n : ℕ) (u : ℂ) :
+    negCoordPowerSeries a (n + 1) (fun _ => u) = u ^ (n + 1) • a (-((n : ℤ) + 1)) := by
+  simp [negCoordPowerSeries]
+
+private theorem norm_negCoordPowerSeries_succ (a : ℤ → E) (n : ℕ) :
+    ‖negCoordPowerSeries a (n + 1)‖ = ‖a (-((n : ℤ) + 1))‖ :=
+  ContinuousMultilinearMap.norm_mkPiRing (a (-((n : ℤ) + 1)))
+
+private theorem le_radius_negCoordPowerSeries {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
+    (h : HasLaurentSeriesOnAnnulus f a c r R) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R) :
+    ENNReal.ofReal ρ⁻¹ ≤ (negCoordPowerSeries a).radius := by
+  have hρ_pos : 0 < ρ := h.r_nonneg.trans_lt hrρ
+  let w₂ : ℂ := c + ρ
+  have hw₂_dist : dist w₂ c = ρ := by
+    simp [w₂, dist_eq_norm, abs_of_pos hρ_pos]
+  have hw₂ : w₂ ∈ eball c R \ closedBall c r := by
     refine ⟨?_, ?_⟩
-    · rw [mem_eball, edist_dist, hw₁_dist, ENNReal.ofReal_coe_nnreal]
-      exact hqR
-    · rw [mem_closedBall, hw₁_dist, not_le]
-      exact hrρ.trans hρq'
-  have htend₁ : Tendsto (fun n : ℕ => ‖(w₁ - c) ^ (n : ℤ) • a n‖) atTop (𝓝 0) := by
-    have hcof := (h.hasSum hw₁).summable.tendsto_cofinite_zero
-    simpa only [Nat.cofinite_eq_atTop, Function.comp_def, norm_zero] using
-      (hcof.comp Nat.cast_injective.tendsto_cofinite).norm
-  have hev₁ : ∀ᶠ n : ℕ in atTop, ‖a n‖ * ρ ^ n ≤ (ρ / (q : ℝ)) ^ n := by
-    filter_upwards [htend₁.eventually (Iio_mem_nhds zero_lt_one)] with n hn
-    have hsub : w₁ - c = (q : ℝ) := add_sub_cancel_left c (q : ℝ)
-    have hn' : (q : ℝ) ^ n * ‖a n‖ ≤ 1 := by
-      have hn_lt : (q : ℝ) ^ n * ‖a n‖ < 1 := by
-        simpa only [zpow_natCast, norm_smul, norm_pow, hsub, Complex.norm_real,
-          Real.norm_eq_abs, abs_of_pos hq_pos, mem_Iio] using hn
-      exact hn_lt.le
-    calc
-      ‖a n‖ * ρ ^ n = ((q : ℝ) ^ n * ‖a n‖) * (ρ / (q : ℝ)) ^ n := by
-        rw [div_pow, mul_comm ((q : ℝ) ^ n), mul_assoc,
-          mul_div_cancel₀ _ (pow_ne_zero n hq_pos.ne')]
-      _ ≤ 1 * (ρ / (q : ℝ)) ^ n :=
-        mul_le_mul_of_nonneg_right hn' (pow_nonneg (div_nonneg hρ_pos.le hq_pos.le) n)
-      _ = (ρ / (q : ℝ)) ^ n := one_mul _
-  exact Summable.of_norm_bounded_eventually_nat
-    (summable_geometric_of_lt_one (div_nonneg hρ_pos.le hq_pos.le) ((div_lt_one hq_pos).2 hρq'))
-    (hev₁.mono fun n hn => by
-      rwa [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (pow_nonneg hρ_pos.le _))])
+    · rw [mem_eball, edist_dist, hw₂_dist]
+      exact hρR
+    · rw [mem_closedBall, hw₂_dist, not_le]
+      exact hrρ
+  have hinj : Function.Injective (fun n : ℕ => -((n : ℤ) + 1)) := by
+    intro m n hmn; dsimp only at hmn; omega
+  have htend_succ :
+      Tendsto (fun n : ℕ => ‖negCoordPowerSeries a (n + 1)‖ * (ρ⁻¹) ^ (n + 1)) atTop (𝓝 0) := by
+    have hcof := ((h.hasSum hw₂).summable.tendsto_cofinite_zero.comp hinj.tendsto_cofinite).norm
+    rw [Nat.cofinite_eq_atTop, norm_zero] at hcof
+    refine hcof.congr fun n => ?_
+    have hsub : w₂ - c = ρ := add_sub_cancel_left c ρ
+    dsimp only [Function.comp_def]
+    rw [norm_smul, hsub, norm_zpow, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hρ_pos,
+      ← Nat.cast_add_one, zpow_neg, zpow_natCast, ← inv_pow,
+      Nat.cast_add_one, ← norm_negCoordPowerSeries_succ, mul_comm]
+  let ρnn : ℝ≥0 := ⟨ρ⁻¹, inv_nonneg.2 hρ_pos.le⟩
+  have hcoe : (ρnn : ℝ) = ρ⁻¹ := rfl
+  have hrad : (ρnn : ℝ≥0∞) ≤ (negCoordPowerSeries a).radius :=
+    (negCoordPowerSeries a).le_radius_of_tendsto (r := ρnn)
+      ((tendsto_add_atTop_iff_nat 1).mp htend_succ)
+  rwa [← ENNReal.ofReal_coe_nnreal, hcoe] at hrad
 
 /-- Pointwise convergence of a Laurent series on an open annulus implies absolute norm-power
 summability of its negative-degree terms on every interior circle of radius `ρ ∈ (r, R)`. -/
@@ -334,44 +387,17 @@ theorem summable_norm_mul_zpow_neg_add_one {f : ℂ → E} {a : ℤ → E} {c : 
   have hr₁_pos : 0 < r₁ := by dsimp [r₁]; linarith [h.r_nonneg]
   have hrr₁ : r < r₁ := by dsimp [r₁]; linarith
   have hr₁ρ : r₁ < ρ := by dsimp [r₁]; linarith
-  let w₂ : ℂ := c + r₁
-  have hw₂_dist : dist w₂ c = r₁ := by
-    simp [w₂, dist_eq_norm, abs_of_pos hr₁_pos]
-  have hw₂ : w₂ ∈ eball c R \ closedBall c r := by
-    refine ⟨?_, ?_⟩
-    · rw [mem_eball, edist_dist, hw₂_dist]
-      exact (ENNReal.ofReal_lt_ofReal_iff hρ_pos).mpr hr₁ρ |>.trans hρR
-    · rw [mem_closedBall, hw₂_dist, not_le]
-      exact hrr₁
-  have hinj : Function.Injective (fun n : ℕ => -((n : ℤ) + 1)) := by
-    intro m n hmn; dsimp only at hmn; omega
-  have htend₂ : Tendsto (fun n : ℕ =>
-      ‖(w₂ - c) ^ (-((n : ℤ) + 1)) • a (-((n : ℤ) + 1))‖) atTop (𝓝 0) := by
-    simpa only [Nat.cofinite_eq_atTop, Function.comp_def, norm_zero] using
-      ((h.hasSum hw₂).summable.tendsto_cofinite_zero.comp hinj.tendsto_cofinite).norm
-  have hev₂ : ∀ᶠ n : ℕ in atTop,
-      ‖a (-((n : ℤ) + 1))‖ * ρ ^ (-((n : ℤ) + 1)) ≤ (r₁ / ρ) ^ (n + 1) := by
-    filter_upwards [htend₂.eventually (Iio_mem_nhds zero_lt_one)] with n hn
-    have hsub : w₂ - c = r₁ := add_sub_cancel_left c r₁
-    have hn' : r₁ ^ (-((n : ℤ) + 1)) * ‖a (-((n : ℤ) + 1))‖ ≤ 1 := by
-      have hn_lt : r₁ ^ (-((n : ℤ) + 1)) * ‖a (-((n : ℤ) + 1))‖ < 1 := by
-        simpa only [norm_smul, norm_zpow, hsub, Complex.norm_real, Real.norm_eq_abs,
-          abs_of_pos hr₁_pos, mem_Iio] using hn
-      exact hn_lt.le
-    calc
-      ‖a (-((n : ℤ) + 1))‖ * ρ ^ (-((n : ℤ) + 1))
-          = (r₁ ^ (-((n : ℤ) + 1)) * ‖a (-((n : ℤ) + 1))‖) * (r₁ / ρ) ^ (n + 1) := by
-        simp only [div_pow, ← Nat.cast_add_one, zpow_neg, zpow_natCast]
-        field_simp [hr₁_pos.ne', hρ_pos.ne']
-      _ ≤ 1 * (r₁ / ρ) ^ (n + 1) :=
-        mul_le_mul_of_nonneg_right hn' (pow_nonneg (div_nonneg hr₁_pos.le hρ_pos.le) _)
-      _ = (r₁ / ρ) ^ (n + 1) := one_mul _
-  have hgeom : Summable (fun n : ℕ => (r₁ / ρ) ^ (n + 1)) :=
-    (summable_nat_add_iff 1).2 <|
-      summable_geometric_of_lt_one (div_nonneg hr₁_pos.le hρ_pos.le) ((div_lt_one hρ_pos).2 hr₁ρ)
-  exact Summable.of_norm_bounded_eventually_nat hgeom
-    (hev₂.mono fun n hn => by
-      rwa [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (zpow_nonneg hρ_pos.le _))])
+  have hr₁R : ENNReal.ofReal r₁ < R :=
+    ((ENNReal.ofReal_lt_ofReal_iff hρ_pos).mpr hr₁ρ).trans hρR
+  let ρnn : ℝ≥0 := ⟨ρ⁻¹, inv_nonneg.2 hρ_pos.le⟩
+  have hcoe : (ρnn : ℝ) = ρ⁻¹ := rfl
+  have hlt : (ρnn : ℝ≥0∞) < (negCoordPowerSeries a).radius := by
+    refine lt_of_lt_of_le ?_ (h.le_radius_negCoordPowerSeries hrr₁ hr₁R)
+    rw [← ENNReal.ofReal_coe_nnreal, hcoe]
+    exact (ENNReal.ofReal_lt_ofReal_iff (inv_pos.2 hr₁_pos)).mpr (inv_strictAnti₀ hr₁_pos hr₁ρ)
+  have hsum := (summable_nat_add_iff 1).mpr ((negCoordPowerSeries a).summable_norm_mul_pow hlt)
+  refine hsum.congr fun n => ?_
+  rw [norm_negCoordPowerSeries_succ, hcoe, inv_pow, ← Nat.cast_add_one, zpow_neg, zpow_natCast]
 
 /-- Pointwise convergence of a Laurent series on an open annulus automatically yields absolute
 norm-power summability `∑_{n ∈ ℤ} ‖a n‖ * ρ ^ n < ∞` on every interior circle of radius
@@ -415,53 +441,29 @@ theorem exists_summable_norm_bound_on_closedAnnulus {f : ℂ → E} {a : ℤ →
       refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
       exact inv_anti₀ (pow_pos hr'_pos (k + 1)) (pow_le_pow_left₀ hr'_pos.le hr'_le (k + 1))
 
-/-- The radius of convergence of the nonnegative formal power series `laurentPosPowerSeries a` is
-at least the outer radius `R`. -/
-theorem le_radius_laurentPosPowerSeries {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
-    (h : HasLaurentSeriesOnAnnulus f a c r R) :
-    R ≤ (laurentPosPowerSeries a).radius := by
-  refine le_of_forall_lt fun q hqR => ?_
-  have hmax : max (ENNReal.ofReal r) q < R := max_lt h.r_lt hqR
-  obtain ⟨q', hq'max, hq'R⟩ := exists_between hmax
-  lift q' to ℝ≥0 using hq'R.ne_top
-  have hrq' : r < (q' : ℝ) :=
-    (ENNReal.ofReal_lt_coe_iff h.r_nonneg).mp ((le_max_left _ _).trans_lt hq'max)
-  have hqq' : q < (q' : ℝ≥0∞) := (le_max_right _ _).trans_lt hq'max
-  have hq'_in : ENNReal.ofReal (q' : ℝ) < R := by simpa using hq'R
-  have hrad : (q' : ℝ≥0∞) ≤ (laurentPosPowerSeries a).radius := by
-    refine (laurentPosPowerSeries a).le_radius_of_summable_norm ?_
-    simpa only [norm_laurentPosPowerSeries] using h.summable_norm_mul_pow hrq' hq'_in
-  exact hqq'.trans_le hrad
-
-/-- Auxiliary formal power series in the inverted coordinate `(w - c)⁻¹`, with zero constant term
-and `(n + 1)`-th coefficient `a (-(n + 1))`. -/
-private noncomputable def negCoordPowerSeries (a : ℤ → E) : FormalMultilinearSeries ℂ ℂ E
-  | 0 => 0
-  | n + 1 => ContinuousMultilinearMap.mkPiRing ℂ (Fin (n + 1)) (a (-((n : ℤ) + 1)))
-
-private theorem negCoordPowerSeries_apply_zero (a : ℤ → E) (u : ℂ) :
-    negCoordPowerSeries a 0 (fun _ => u) = 0 := (rfl)
-
-private theorem negCoordPowerSeries_apply_succ (a : ℤ → E) (n : ℕ) (u : ℂ) :
-    negCoordPowerSeries a (n + 1) (fun _ => u) = u ^ (n + 1) • a (-((n : ℤ) + 1)) := by
-  simp [negCoordPowerSeries]
-
-private theorem norm_negCoordPowerSeries_succ (a : ℤ → E) (n : ℕ) :
-    ‖negCoordPowerSeries a (n + 1)‖ = ‖a (-((n : ℤ) + 1))‖ :=
-  ContinuousMultilinearMap.norm_mkPiRing (a (-((n : ℤ) + 1)))
-
-private theorem le_radius_negCoordPowerSeries {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
-    (h : HasLaurentSeriesOnAnnulus f a c r R) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R) :
-    ENNReal.ofReal ρ⁻¹ ≤ (negCoordPowerSeries a).radius := by
-  have hρ_pos : 0 < ρ := h.r_nonneg.trans_lt hrρ
-  have hsum' : Summable (fun n : ℕ => ‖negCoordPowerSeries a n‖ * (ρ⁻¹) ^ n) := by
-    rw [← summable_nat_add_iff 1]
-    refine (h.summable_norm_mul_zpow_neg_add_one hrρ hρR).congr fun n => ?_
-    rw [norm_negCoordPowerSeries_succ, ← Nat.cast_add_one, zpow_neg, zpow_natCast, inv_pow]
-  let ρnn : ℝ≥0 := ⟨ρ⁻¹, inv_nonneg.2 hρ_pos.le⟩
-  have hrad : (ρnn : ℝ≥0∞) ≤ (negCoordPowerSeries a).radius :=
-    (negCoordPowerSeries a).le_radius_of_summable_norm (r := ρnn) hsum'
-  rwa [← ENNReal.ofReal_coe_nnreal] at hrad
+/-- On any closed concentric subannulus inside the open annulus, the finite partial sums of the
+Laurent series converge uniformly to `f`. -/
+theorem tendstoUniformlyOn_closedAnnulus {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {r r' R' : ℝ} {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c r R)
+    (hrr' : r < r') (hr'R' : r' ≤ R') (hR'R : ENNReal.ofReal R' < R) :
+    TendstoUniformlyOn (fun (t : Finset ℤ) w => ∑ n ∈ t, (w - c) ^ n • a n) f atTop
+      (closedBall c R' \ ball c r') := by
+  obtain ⟨B, hB, hbound⟩ := h.exists_summable_norm_bound_on_closedAnnulus hrr' hr'R' hR'R
+  have hsub : closedBall c R' \ ball c r' ⊆ eball c R \ closedBall c r := fun w hw =>
+    ⟨by rw [mem_eball, edist_dist]; exact (ENNReal.ofReal_le_ofReal hw.1).trans_lt hR'R,
+      fun hwr => hw.2 (lt_of_le_of_lt hwr hrr')⟩
+  let e : E →ₗᵢ[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplₗᵢ
+  have he : TendstoUniformlyOn
+      (fun (t : Finset ℤ) w => ∑ n ∈ t, e ((w - c) ^ n • a n)) (fun w => e (f w)) atTop
+      (closedBall c R' \ ball c r') := by
+    refine (tendstoUniformlyOn_tsum hB fun n w hw => ?_).congr_right fun w hw => ?_
+    · rw [e.norm_map]
+      exact hbound n w hw
+    · exact ((h.hasSum (hsub hw)).map e e.continuous).tsum_eq
+  rw [Metric.tendstoUniformlyOn_iff] at he ⊢
+  intro ε hε
+  filter_upwards [he ε hε] with t ht w hw
+  simpa only [← map_sum, e.isometry.dist_eq] using ht w hw
 
 private theorem inv_sub_mem_eball_radius_negCoordPowerSeries
     {f : ℂ → E} {a : ℤ → E} {c w : ℂ} {r : ℝ} {R : ℝ≥0∞}
@@ -498,24 +500,6 @@ private theorem radius_negCoordPowerSeries_pos
 section CompleteSpace
 
 variable [CompleteSpace E]
-
-/-- On any closed concentric subannulus inside the open annulus, the finite partial sums of the
-Laurent series converge uniformly to `f`. -/
-theorem tendstoUniformlyOn_closedAnnulus {f : ℂ → E} {a : ℤ → E} {c : ℂ}
-    {r r' R' : ℝ} {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c r R)
-    (hrr' : r < r') (hr'R' : r' ≤ R') (hR'R : ENNReal.ofReal R' < R) :
-    TendstoUniformlyOn (fun (t : Finset ℤ) w => ∑ n ∈ t, (w - c) ^ n • a n) f atTop
-      (closedBall c R' \ ball c r') := by
-  obtain ⟨B, hB, hbound⟩ := h.exists_summable_norm_bound_on_closedAnnulus hrr' hr'R' hR'R
-  have hsub : closedBall c R' \ ball c r' ⊆ eball c R \ closedBall c r := by
-    intro w hw
-    refine ⟨?_, ?_⟩
-    · rw [mem_eball, edist_dist]
-      exact (ENNReal.ofReal_le_ofReal hw.1).trans_lt hR'R
-    · intro hwr
-      exact hw.2 (lt_of_le_of_lt hwr hrr')
-  refine (tendstoUniformlyOn_tsum hB hbound).congr_right fun w hw => ?_
-  exact (h.hasSum (hsub hw)).tsum_eq
 
 /-- The positive-degree part of a Laurent series on `Metric.eball c R \ Metric.closedBall c r`
 converges as a formal power series on the entire open disk `Metric.eball c R`, including at `c`. -/
@@ -618,13 +602,8 @@ theorem tendsto_laurentNegPart_cocompact {f : ℂ → E} {a : ℤ → E} {c : �
       rw [negCoordPowerSeries_apply_succ]
       simp
   have hinv : Tendsto (fun z : ℂ => (z - c)⁻¹) (cocompact ℂ) (𝓝 0) := by
-    rw [Metric.tendsto_nhds]
-    intro ε hε
-    filter_upwards [(isCompact_closedBall c ε⁻¹).compl_mem_cocompact] with z hz
-    have hlt : ε⁻¹ < ‖z - c‖ := by
-      simpa only [mem_compl_iff, mem_closedBall, dist_eq_norm, not_le] using hz
-    rw [dist_zero_right, norm_inv]
-    exact inv_lt_of_inv_lt₀ hε hlt
+    rw [← Metric.cobounded_eq_cocompact]
+    exact Filter.tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded c)
   have hcomp : Tendsto (fun z : ℂ => (negCoordPowerSeries a).sum (z - c)⁻¹) (cocompact ℂ) (𝓝 0) :=
     hsum0 ▸ hcont0.tendsto.comp hinv
   refine hcomp.congr' ?_
