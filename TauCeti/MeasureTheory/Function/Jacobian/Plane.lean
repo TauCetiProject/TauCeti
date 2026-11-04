@@ -10,9 +10,11 @@ public import Mathlib.MeasureTheory.Function.Jacobian
 /-!
 # Change of variables in the plane for densities scaling by the Jacobian
 
-A density `f` on a region `s` of `ℝ × ℝ` that is `det dφ` (or `|det dφ|`) times `g ∘ φ`, for an
-injective differentiable change of coordinates `φ`, has the same integral over `s` as `g` over
-`φ '' s`. This packages Mathlib's change of variables formula
+A density `f` on a region `s` of `ℝ × ℝ` that is `|det dφ|` times `g ∘ φ`, for an injective
+differentiable change of coordinates `φ`, has the same integral over `s` as `g` over `φ '' s`. If
+instead `f` is the signed `det dφ` times `g ∘ φ`, then the lower Lebesgue integral of `‖f‖ₑ` over
+`s` equals that of `‖g‖ₑ` over `φ '' s`, without any orientation assumption. This packages
+Mathlib's change of variables formula
 (`MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul`) for Lebesgue measure on the
 plane, where densities of this kind arise as coefficients of two-forms.
 
