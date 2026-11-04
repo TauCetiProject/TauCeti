@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
-public import TauCeti.Geometry.Manifold.Submersion
+public import TauCeti.Geometry.Manifold.Submersion.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
