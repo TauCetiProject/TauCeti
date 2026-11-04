@@ -67,6 +67,8 @@ of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.Strin
   concatenation.
 * `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
   the cap is at most the minimal height.
+* `TauCeti.PLPath.ofSegments_reflectRecords_of_forall_nonneg`: capped reflection, up to the final
+  height, of a path whose segments all have nonnegative height reflects the whole path.
 * `TauCeti.PLPath.lower_ofSegments`: the lowering operator may be computed on any presentation.
 * `TauCeti.PLPath.lower_eq_none_iff`, `TauCeti.PLPath.raise_eq_none_iff`: `f_α π = 0` exactly when
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
@@ -131,6 +133,14 @@ theorem listMinHeight_map {W : Type*} [AddCommMonoid W] [Module 𝕜 W]
 
 theorem listMinHeight_nonpos (l : List V) : listMinHeight f l ≤ 0 := by
   cases l <;> simp
+
+/-- A path whose segments all have nonnegative height never goes below its starting height. -/
+theorem listMinHeight_eq_zero_of_forall_nonneg (h : ∀ v ∈ l, 0 ≤ f v) : listMinHeight f l = 0 := by
+  induction l with
+  | nil => rfl
+  | cons v l ih =>
+    rw [listMinHeight_cons, ih fun w hw ↦ h w (List.mem_cons_of_mem v hw), add_zero,
+      min_eq_left (h v List.mem_cons_self)]
 
 /-- The minimal height is the height of some vertex. -/
 theorem exists_listMinHeight_eq (l : List V) : ∃ n, listMinHeight f l = f (l.take n).sum := by
@@ -491,6 +501,30 @@ theorem reflectRecords_of_le_listMinHeight (h : c ≤ listMinHeight f l) :
     rw [listMinHeight_cons] at h
     rw [reflectRecords_cons_of_nonpos (min_le_of_right_le (h.trans (min_le_left _ _))),
       ih (by linarith [min_le_right 0 (f v + listMinHeight f l)])]
+
+/-- Capped reflection of a path with nonnegative segment heights, up to its final height, reflects
+the whole path. -/
+theorem ofSegments_reflectRecords_of_forall_nonneg (h : ∀ v ∈ l, 0 ≤ f v) :
+    ofSegments 𝕜 (reflectRecords f x (f l.sum) l) = ofSegments 𝕜 (l.map (preReflection x f)) := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    have hv := h v List.mem_cons_self
+    have hl : ∀ w ∈ l, 0 ≤ f w := fun w hw ↦ h w (List.mem_cons_of_mem v hw)
+    have hcap : min (f v + listMinHeight f l) (f (v :: l).sum) = f v := by
+      rw [listMinHeight_eq_zero_of_forall_nonneg hl, add_zero, List.sum_cons, map_add]
+      exact min_eq_left (le_add_of_nonneg_right
+        (listMinHeight_eq_zero_of_forall_nonneg hl ▸ listMinHeight_le_apply_sum l))
+    have hrest : f (v :: l).sum - f v = f l.sum := by
+      rw [List.sum_cons, map_add, add_sub_cancel_left]
+    rcases hv.eq_or_lt with hv0 | hvpos
+    · -- A segment of height zero is fixed by the reflection.
+      have hfix : preReflection x f v = v := by simp [preReflection_apply, ← hv0]
+      rw [reflectRecords_cons_of_nonpos (by rw [hcap]; exact hv0.ge), hrest]
+      simp [ofSegments_cons, ih hl, hfix]
+    · -- A segment of positive height is reflected whole, leaving a zero remainder.
+      rw [reflectRecords_cons_of_pos (by rw [hcap]; exact hvpos), hcap, hrest]
+      simp [ofSegments_cons, ih hl, hvpos.ne']
 
 /-! ### Independence of the presentation -/
 
