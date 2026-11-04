@@ -95,6 +95,20 @@ theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f 
     (fun z => congrArg PLift.up (hf z)) k x
   exact congrArg PLift.down (by simpa only [_root_.one_zpow, Equiv.Perm.one_apply] using hmap.symm)
 
+/-- Points in the same permutation cycle have the same minimal period. -/
+theorem minimalPeriod_eq (h : σ.SameCycle x y) :
+    Function.minimalPeriod σ x = Function.minimalPeriod σ y := by
+  apply Function.minimalPeriod_eq_minimalPeriod_iff.mpr
+  intro n
+  have hi : ∀ z, Function.IsPeriodicPt σ n (σ z) ↔ Function.IsPeriodicPt σ n z := by
+    intro z
+    constructor
+    · intro hz
+      simpa only [σ.symm_apply_apply] using
+        hz.map (g := σ.symm) (fun z ↦ by simp)
+    · exact fun hz ↦ hz.apply
+  exact Iff.of_eq (h.apply_eq_of_apply_eq fun z ↦ propext (hi z))
+
 /-- A map intertwining two permutations carries orbits of the first permutation into orbits of
 the second. -/
 theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :

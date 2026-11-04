@@ -71,10 +71,11 @@ choosing decidability or enumeration instances on that cycle. -/
 theorem permutationAverage_apply (v : I → K) (i : I) :
     (permutationAverage σ v).val i =
       (∑ᶠ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i}, v j.val) /
-        minimalPeriod σ (Quotient.mk (SameCycle.setoid σ) i).out := by
+        minimalPeriod σ i := by
   classical
   let := Fintype.ofFinite I
   let c : Cycles σ := Quotient.mk _ i
+  rw [← (Quotient.exact (Quotient.out_eq c)).minimalPeriod_eq]
   have hsum : (∑ᶠ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = c}, v j.val) =
       ∑ j with σ.SameCycle c.out j, v j := by
     rw [finsum_eq_sum_of_fintype,
@@ -111,7 +112,8 @@ theorem permutationAverage_fixed
   let := Fintype.ofFinite I
   apply Subtype.ext
   funext i
-  rw [permutationAverage_apply, finsum_eq_sum_of_fintype]
+  rw [permutationAverage_apply, finsum_eq_sum_of_fintype,
+    ← (Quotient.exact (Quotient.out_eq (Quotient.mk (SameCycle.setoid σ) i))).minimalPeriod_eq]
   have hv (j : {j : I // Quotient.mk (SameCycle.setoid σ) j = Quotient.mk _ i}) :
       v.val j.val = v.val i :=
     permutationFixed_apply_eq_of_quotient_eq σ v j.property
@@ -198,11 +200,13 @@ each cycle of length `n` is an integer divided by `n`. -/
 theorem mem_permutationProjectedLattice_iff
     (v : (LinearEquiv.funCongrLeft K K σ).toLinearMap.fixedSubmodule) :
     v ∈ permutationProjectedLattice (K := K) σ ↔ ∀ i, ∃ z : ℤ,
-      v.val i = (z : K) / minimalPeriod σ (Quotient.mk (SameCycle.setoid σ) i).out := by
+      v.val i = (z : K) / minimalPeriod σ i := by
   classical
   constructor
   · rintro ⟨a, rfl⟩ i
-    exact ⟨a (Quotient.mk _ i), projectedCoordinates_apply σ a i⟩
+    refine ⟨a (Quotient.mk _ i), ?_⟩
+    rw [projectedCoordinates_apply,
+      (Quotient.exact (Quotient.out_eq (Quotient.mk (SameCycle.setoid σ) i))).minimalPeriod_eq]
   · intro h
     choose a ha using fun c : Cycles σ ↦ h c.out
     refine ⟨a, ?_⟩
@@ -210,7 +214,6 @@ theorem mem_permutationProjectedLattice_iff
     funext i
     rw [projectedCoordinates_apply]
     have hc := ha (Quotient.mk _ i)
-    rw [Quotient.out_eq] at hc
     exact hc.symm.trans (permutationFixed_apply_eq_of_quotient_eq σ v (Quotient.out_eq _))
 
 /-- The lattice described by cycle denominators is precisely the image of the integral
@@ -228,7 +231,8 @@ theorem mem_permutationProjectedLattice_iff_exists_average
     refine ⟨b, ?_⟩
     apply Subtype.ext
     funext i
-    rw [permutationAverage_apply, finsum_eq_sum_of_fintype, projectedCoordinates_apply]
+    rw [permutationAverage_apply, finsum_eq_sum_of_fintype, projectedCoordinates_apply,
+      (Quotient.exact (Quotient.out_eq (Quotient.mk (SameCycle.setoid σ) i))).minimalPeriod_eq]
     congr 1
     let c : Cycles σ := Quotient.mk _ i
     have hsum : (∑ j : {j : I // Quotient.mk (SameCycle.setoid σ) j = c},
