@@ -6,11 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
-public import TauCeti.Geometry.Symplectic.CompatibleMetric
-public import TauCeti.Geometry.Symplectic.Orientation
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.LinearAlgebra.ExteriorPower.Square
-import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
 # The principal symbol of the anti-self-dual deformation operator
@@ -43,13 +39,14 @@ two-forms. As a formula on `ℝ ⊕ ⋀²`, `J′(f, η) = (-⟪ω_u, η⟫, f �
 the complex-linear part `δ_ω = (δ₀ - J′ δ₀ J) / 2` of `δ₀` has the same principal symbol as `δ₀`:
 their difference is of order zero.
 
-**Unitary frames and symplectic compatibility.** In a positively oriented unitary orthonormal frame
-`e₀, e₁ = J e₀, e₂, e₃ = J e₂`, at `ξ = e₀` the symbol maps `(e₀, e₁, e₂, e₃)` to the complex basis
-`((1, 0), (0, ω_u), (0, ρ₁), (0, ρ₂))` with `J′(1, 0) = (0, ω_u)` and `J′(0, ρ₁) = (0, ρ₂)`, where
-`ρ₁ = (e₀ ∧ e₂ - e₁ ∧ e₃) / √2` and `ρ₂ = (e₀ ∧ e₃ + e₁ ∧ e₂) / √2`. Every compatible symplectic
-pair `(ω, J)` whose associated metric is the inner product induces such a unitary frame for the
-symplectic orientation extending any given unit vector `ξ`
-(`TauCeti.SeibergWitten.exists_orthonormalBasis_symplecticOrientation_of_norm_eq_one`).
+**Action in an oriented unitary frame.** In a positively oriented unitary orthonormal frame
+`e₀, e₁ = J e₀, e₂, e₃ = J e₂`, at `ξ = e₀` the symbol maps `(e₀, e₁, e₂, e₃)` to the `J′`-adapted
+real orthonormal basis `((1, 0), (0, ω_u), (0, ρ₁), (0, ρ₂))`, so `((1, 0), (0, ρ₁))` is a
+`ℂ`-basis of `(ℝ ⊕ Λ⁺, J′)` with `J′(1, 0) = (0, ω_u)` and `J′(0, ρ₁) = (0, ρ₂)`, where
+`ρ₁ = (e₀ ∧ e₂ - e₁ ∧ e₃) / √2` and `ρ₂ = (e₀ ∧ e₃ + e₁ ∧ e₂) / √2`. Completion of any unit
+vector `ξ` to such a positively oriented unitary frame is provided in
+`TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis`
+(`TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one_of_orientation`).
 
 ## Main definitions
 
@@ -59,8 +56,9 @@ symplectic orientation extending any given unit vector `ξ`
   `TauCeti.SeibergWitten.deformationSymbolEquiv o hkl hξ`: `σ_ξ` valued in `ℝ × Λ⁺`, and as a
   linear isomorphism `V ≃ₗ[ℝ] ℝ × Λ⁺` for `ξ ≠ 0`.
 * `TauCeti.SeibergWitten.deformationComplexStructure J` and
-  `TauCeti.SeibergWitten.deformationSelfDualComplexStructure hkl he h₀ h₂`: the complex structure
-  `J′` on `ℝ × ⋀² V` and bundled as an `AlmostComplexStructure` on `ℝ × Λ⁺`.
+  `TauCeti.SeibergWitten.deformationSelfDualComplexStructure hkl he h₀ h₂`: the ambient linear
+  endomorphism `J′` on `ℝ × ⋀² V` and its restriction to `ℝ × Λ⁺` bundled as an
+  `AlmostComplexStructure`.
 
 ## Main results
 
@@ -79,10 +77,12 @@ symplectic orientation extending any given unit vector `ξ`
   `TauCeti.SeibergWitten.isComplexLinearMap_deformationSymbolSelfDual`: `σ_ξ ∘ J = J′ ∘ σ_ξ`.
 * `TauCeti.SeibergWitten.two_inv_smul_sub_deformationComplexStructure_deformationSymbol`: the
   complex-linear part of the symbol is the symbol, `(σ_ξ a - J′ (σ_ξ (J a))) / 2 = σ_ξ a`.
-* `TauCeti.SeibergWitten.deformationSymbol_basis_two`,
+* `TauCeti.SeibergWitten.deformationSymbol_basis_zero`,
+  `TauCeti.SeibergWitten.deformationSymbol_basis_one`,
+  `TauCeti.SeibergWitten.deformationSymbol_basis_two`,
   `TauCeti.SeibergWitten.deformationSymbol_basis_three`, and
-  `TauCeti.SeibergWitten.exists_orthonormalBasis_of_norm_eq_one`: explicit evaluation in an oriented
-  unitary frame and completion of any unit vector to an oriented unitary frame.
+  `TauCeti.SeibergWitten.deformationComplexStructure_basis_two`: explicit evaluation in an
+  oriented unitary frame.
 
 ## References
 
@@ -242,14 +242,12 @@ theorem deformationSymbol_map {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.to
       ((deformationSymbol o hkl ξ a).1,
         exteriorPower.map 2 f.toLinearMap (deformationSymbol o hkl ξ a).2) := by
   subst ho
-  have hι : exteriorPower.map 2 f.toLinearMap (ιMulti ℝ 2 ![ξ, a]) = ιMulti ℝ 2 ![f ξ, f a] := by
-    rw [exteriorPower.map_apply_ιMulti]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
   refine Prod.ext (f.inner_map_map ξ a) ?_
+  dsimp only
+  have hmap : exteriorPower.map 2 f.toLinearMap (ιMulti ℝ 2 ![ξ, a]) = ιMulti ℝ 2 ![f ξ, f a] :=
+    exteriorPower.map_apply_ιMulti_two f.toLinearMap ξ a
   rw [deformationSymbol_apply_snd, deformationSymbol_apply_snd, map_smul, map_add,
-    ← o.hodgeStar_map f hkl hkl', hι]
+    ← o.hodgeStar_map f hkl hkl', hmap]
 
 end Covariance
 
@@ -296,31 +294,6 @@ section ComplexCovariance
 
 variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [Fact (finrank ℝ V' = 4)]
 
-/-- A complex-linear isometry between orthogonal almost complex four-spaces transports the Kähler
-two-vector. -/
-private theorem map_kahlerForm_of_isComplexLinearMap {J : AlmostComplexStructure V}
-    {J' : AlmostComplexStructure V'} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
-    {f : V ≃ₗᵢ[ℝ] V'} (hfJ : IsComplexLinearMap J J' f.toLinearMap) :
-    exteriorPower.map 2 f.toLinearMap J.kahlerForm = J'.kahlerForm := by
-  have hfJ' : ∀ v, f (J v) = J' (f v) := (isComplexLinearMap_iff_apply J J' f.toLinearMap).1 hfJ
-  have hJ' : ∀ u w, ⟪J' u, J' w⟫ = ⟪u, w⟫ := fun u w ↦ by
-    obtain ⟨u, rfl⟩ := f.surjective u
-    obtain ⟨w, rfl⟩ := f.surjective w
-    rw [← hfJ', ← hfJ', f.inner_map_map, f.inner_map_map, hJ]
-  refine ext_inner_ιMulti_two fun u' w' ↦ ?_
-  obtain ⟨u, rfl⟩ := f.surjective u'
-  obtain ⟨w, rfl⟩ := f.surjective w'
-  have hι : exteriorPower.map 2 f.toLinearMap (ιMulti ℝ 2 ![u, w]) = ιMulti ℝ 2 ![f u, f w] := by
-    rw [exteriorPower.map_apply_ιMulti]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  rw [← hι]
-  refine (exteriorPower.inner_map_map f.toLinearIsometry J.kahlerForm
-    (ιMulti ℝ 2 ![u, w])).trans ?_
-  rw [AlmostComplexStructure.inner_kahlerForm_ιMulti hJ, hι,
-    AlmostComplexStructure.inner_kahlerForm_ιMulti hJ', ← hfJ', f.inner_map_map]
-
 /-- **Naturality of `deformationComplexStructure` under complex-linear isometries.** -/
 theorem deformationComplexStructure_map {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure V'} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
@@ -328,20 +301,17 @@ theorem deformationComplexStructure_map {J : AlmostComplexStructure V}
     deformationComplexStructure J' (p.1, exteriorPower.map 2 f.toLinearMap p.2) =
       ((deformationComplexStructure J p).1,
         exteriorPower.map 2 f.toLinearMap (deformationComplexStructure J p).2) := by
-  have hω := map_kahlerForm_of_isComplexLinearMap hJ hfJ
-  have hfJ' : ∀ v, f (J v) = J' (f v) := (isComplexLinearMap_iff_apply J J' f.toLinearMap).1 hfJ
+  have hω := AlmostComplexStructure.map_kahlerForm_of_isComplexLinearMap hJ hfJ
+  have hfJ' := (isComplexLinearMap_iff_apply J J' f.toLinearMap).1 hfJ
   have hlie : exteriorPower.map 2 f.toLinearMap ∘ₗ exteriorPower.lieMap 2 J.toLinearMap =
       exteriorPower.lieMap 2 J'.toLinearMap ∘ₗ exteriorPower.map 2 f.toLinearMap := by
     refine exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ ?_)
     have hv : v = ![v 0, v 1] := funext fun i ↦ by fin_cases i <;> rfl
     rw [LinearMap.compAlternatingMap_apply, LinearMap.compAlternatingMap_apply,
       LinearMap.comp_apply, LinearMap.comp_apply, hv,
-      exteriorPower.lieMap_two_apply_ιMulti, map_add, exteriorPower.map_apply_ιMulti,
-      exteriorPower.map_apply_ιMulti, exteriorPower.map_apply_ιMulti]
-    have hfv : (f.toLinearMap ∘ ![v 0, v 1]) = ![f (v 0), f (v 1)] :=
-      funext fun i ↦ by fin_cases i <;> rfl
-    rw [hfv, exteriorPower.lieMap_two_apply_ιMulti]
-    congr 1 <;> (congr 1; funext i; fin_cases i <;> first | rfl | exact hfJ' _)
+      exteriorPower.lieMap_two_apply_ιMulti, map_add, exteriorPower.map_apply_ιMulti_two,
+      exteriorPower.map_apply_ιMulti_two, exteriorPower.map_apply_ιMulti_two,
+      exteriorPower.lieMap_two_apply_ιMulti, hfJ', hfJ']
   refine Prod.ext ?_ ?_
   · rw [deformationComplexStructure_apply_fst, deformationComplexStructure_apply_fst, ← hω]
     exact congrArg (fun t ↦ -(√2 / 2 * t))
@@ -524,28 +494,6 @@ theorem two_inv_smul_sub_deformationComplexStructure_deformationSymbol (ξ a : V
 
 /-! ### Explicit action in an oriented unitary frame -/
 
-omit h₀ h₂ in
-/-- In a positively oriented orthonormal frame `e`, `⋆(e₀ ∧ e₂) = -e₁ ∧ e₃` because
-`(e₀, e₂, e₁, e₃)` is an odd permutation of `(e₀, e₁, e₂, e₃)`. -/
-theorem hodgeStar_ιMulti_basis_zero_two :
-    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 2]) = -ιMulti ℝ 2 ![e 1, e 3] := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_neg_left, inner_ιMulti_two]
-  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
-    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
-  ring
-
-omit h₀ h₂ in
-/-- In a positively oriented orthonormal frame `e`, `⋆(e₀ ∧ e₃) = e₁ ∧ e₂` because
-`(e₀, e₃, e₁, e₂)` is an even permutation of `(e₀, e₁, e₂, e₃)`. -/
-theorem hodgeStar_ιMulti_basis_zero_three :
-    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 3]) = ιMulti ℝ 2 ![e 1, e 2] := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
-  simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
-    ← e.repr_apply_apply, OrthonormalBasis.repr_self]
-  ring
-
 omit he h₀ h₂ in
 /-- At `ξ = e₀`, `σ_{e₀}(e₀) = (1, 0)`. -/
 theorem deformationSymbol_basis_zero (e : OrthonormalBasis (Fin 4) ℝ V) :
@@ -564,7 +512,7 @@ theorem deformationSymbol_basis_two :
     deformationSymbol o hkl (e 0) (e 2) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) := by
   refine Prod.ext (e.orthonormal.2 (by decide)) ?_
-  rw [deformationSymbol_apply_snd, hodgeStar_ιMulti_basis_zero_two hkl he, sub_eq_add_neg]
+  rw [deformationSymbol_apply_snd, o.hodgeStar_ιMulti_basis_zero_two hkl he, sub_eq_add_neg]
 
 omit h₀ h₂ in
 /-- At `ξ = e₀` in a positively oriented orthonormal frame,
@@ -573,7 +521,7 @@ theorem deformationSymbol_basis_three :
     deformationSymbol o hkl (e 0) (e 3) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
   refine Prod.ext (e.orthonormal.2 (by decide)) ?_
-  rw [deformationSymbol_apply_snd, hodgeStar_ιMulti_basis_zero_three hkl he]
+  rw [deformationSymbol_apply_snd, o.hodgeStar_ιMulti_basis_zero_three hkl he]
 
 /-- On the anti-`J`-invariant self-dual basis vector `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)`, the target
 complex structure `J′` acts as `J′(0, ρ₁) = (0, ρ₂)` with `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`. -/
@@ -587,151 +535,5 @@ theorem deformationComplexStructure_basis_two :
     deformationSymbol_basis_three hkl he]
 
 end Frame
-
-/-! ### Unitary frames and symplectic orientation -/
-
-section Symplectic
-
-/-- Every unitary orthonormal basis `e` (`J e₀ = e₁`, `J e₂ = e₃`) for a symplectic form `ω`
-satisfying `ω(v, w) = ⟪J v, w⟫` is a Darboux basis of `ω`, and therefore induces the symplectic
-orientation `ω.orientation Fact.out`. -/
-theorem orientation_orthonormalBasis_eq_symplecticOrientation {ω : SymplecticForm V}
-    {J : AlmostComplexStructure V} (hω : ∀ v w, ω v w = ⟪J v, w⟫)
-    {e : OrthonormalBasis (Fin 4) ℝ V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
-    e.toBasis.orientation = ω.orientation Fact.out := by
-  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
-  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
-  let b : Basis (Fin 2 × Fin 2) ℝ V := e.toBasis.reindex (finProdFinEquiv (m := 2) (n := 2)).symm
-  have hb : ω.IsDarbouxBasis b := by
-    have he_inner := orthonormal_iff_ite.1 e.orthonormal
-    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
-      fin_cases i <;> fin_cases j <;>
-      simp [b, finProdFinEquiv, hω, h₀, h₁, h₂, h₃, he_inner]
-  have hre : b.reindex ((finProdFinEquiv (m := 2) (n := 2)).trans (finCongr rfl)) = e.toBasis :=
-    Basis.eq_of_apply_eq fun i ↦ by simp [b]
-  rw [← hre]
-  exact hb.orientation_reindex Fact.out rfl
-
-/-- Given an orthogonal almost complex structure `J` on a four-dimensional inner product space `V`
-and a unit vector `ξ`, there exists a unitary orthonormal basis `e` extending `e 0 = ξ`,
-`e 1 = J ξ`, `J (e 2) = e 3`. -/
-private theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {ξ : V} (hξ : ‖ξ‖ = 1) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V, e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  have hskew := AlmostComplexStructure.inner_apply_left hJ
-  have hself (v : V) : ⟪v, J v⟫ = 0 := by
-    have h := hskew v v
-    rw [real_inner_comm v (J v)] at h
-    linarith
-  have norm_J (v : V) : ‖J v‖ = ‖v‖ := by
-    rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]
-  have hon₂ : Orthonormal ℝ ![ξ, J ξ] := by
-    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, norm_J], fun {i j} hij ↦ ?_⟩
-    fin_cases i <;> fin_cases j
-    · exact absurd rfl hij
-    · exact hself ξ
-    · rw [real_inner_comm]; exact hself ξ
-    · exact absurd rfl hij
-  let P : Submodule ℝ V := Submodule.span ℝ (Set.range ![ξ, J ξ])
-  have hPdim : finrank ℝ P = 2 := by
-    rw [finrank_span_eq_card hon₂.linearIndependent, Fintype.card_fin]
-  have hPorth : finrank ℝ Pᗮ = 2 := by
-    have hsum := P.finrank_add_finrank_orthogonal
-    have hv : finrank ℝ V = 4 := Fact.out
-    omega
-  let bP := stdOrthonormalBasis ℝ Pᗮ
-  let η : V := (bP ⟨0, by omega⟩ : Pᗮ)
-  have hη_norm : ‖η‖ = 1 :=
-    (Submodule.norm_coe _).trans (bP.orthonormal.1 ⟨0, by omega⟩)
-  have hη_mem : η ∈ Pᗮ := (bP ⟨0, by omega⟩).2
-  have hξη : ⟪ξ, η⟫ = 0 := hη_mem ξ (Submodule.subset_span ⟨0, rfl⟩)
-  have hJξη : ⟪J ξ, η⟫ = 0 := hη_mem (J ξ) (Submodule.subset_span ⟨1, rfl⟩)
-  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
-  have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
-  have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] := by
-    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, norm_J], fun {i j} hij ↦ ?_⟩
-    have hξJ := hself ξ
-    have hηJη := hself η
-    fin_cases i <;> fin_cases j <;> dsimp only <;> first
-      | exact absurd rfl hij
-      | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη
-      | (rw [real_inner_comm]; first
-          | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη)
-  have hcard : Fintype.card (Fin 4) = finrank ℝ V :=
-    (Fintype.card_fin 4).trans (Fact.out : finrank ℝ V = 4).symm
-  let e : OrthonormalBasis (Fin 4) ℝ V :=
-    (basisOfOrthonormalOfCardEqFinrank hon₄ hcard).toOrthonormalBasis
-      (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
-  have he_coe : (e : Fin 4 → V) = ![ξ, J ξ, η, J η] := by
-    rw [Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
-  exact ⟨e, congrFun he_coe 0, by simp [he_coe], by simp [he_coe]⟩
-
-/-- The symplectic form `ω(v, w) = ⟪J v, w⟫` associated to an orthogonal almost complex structure
-`J`. -/
-private def symplecticFormOfOrthogonal {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : SymplecticForm V :=
-  have halt : ((innerₗ V).comp J.toLinearMap).IsAlt := fun v ↦ by
-    have h := AlmostComplexStructure.inner_apply_left hJ v v
-    rw [real_inner_comm (J v) v] at h
-    simpa [LinearMap.comp_apply] using (by linarith : ⟪J v, v⟫ = 0)
-  { toBilinForm := (innerₗ V).comp J.toLinearMap
-    isAlt := halt
-    nondegenerate := by
-      refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft halt.isRefl).2 fun v hv ↦ ?_
-      have h0 : ⟪J v, J v⟫ = 0 := by simpa [LinearMap.comp_apply] using hv (J v)
-      rw [hJ, inner_self_eq_zero] at h0
-      exact h0 }
-
-/-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product induces
-an oriented unitary orthonormal frame extending any given unit vector `ξ`.** -/
-theorem exists_orthonormalBasis_symplecticOrientation_of_norm_eq_one {ω : SymplecticForm V}
-    {J : AlmostComplexStructure V} (hg : ∀ v w, ⟪v, w⟫ = ω v (J w))
-    {ξ : V} (hξ : ‖ξ‖ = 1) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V,
-      e.toBasis.orientation = ω.orientation Fact.out ∧
-        e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  have hinv := ω.invariant_of_apply_apply_eq_inner fun v w ↦ (hg v w).symm
-  have hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫ := fun v w ↦ by
-    rw [hg, hg]
-    exact hinv.associatedBilinForm_invariant v w
-  have hω : ∀ v w, ω v w = ⟪J v, w⟫ := fun v w ↦ by
-    rw [hg]
-    exact hinv.symplecticForm_apply_eq_associatedBilinForm_apply_left_apply v w
-  obtain ⟨e, he₀, h₀, h₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ hξ
-  exact ⟨e, orientation_orthonormalBasis_eq_symplecticOrientation hω h₀ h₂, he₀, h₀, h₂⟩
-
-/-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product admits a
-positively oriented unitary orthonormal frame for `ω.orientation Fact.out`.** -/
-theorem exists_orthonormalBasis_symplecticOrientation {ω : SymplecticForm V}
-    {J : AlmostComplexStructure V} (hg : ∀ v w, ⟪v, w⟫ = ω v (J w)) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ V,
-      e.toBasis.orientation = ω.orientation Fact.out ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
-  have hv : finrank ℝ V = 4 := Fact.out
-  let ξ := stdOrthonormalBasis ℝ V ⟨0, by omega⟩
-  have hξ : ‖ξ‖ = 1 := (stdOrthonormalBasis ℝ V).orthonormal.1 _
-  obtain ⟨e, he, _, h₀, h₂⟩ :=
-    exists_orthonormalBasis_symplecticOrientation_of_norm_eq_one hg hξ
-  exact ⟨e, he, h₀, h₂⟩
-
-/-- **Completing any unit vector to a positively oriented unitary frame.** If `(o, J)` admits one
-positively oriented unitary orthonormal frame `e`, then every unit vector `ξ` (`‖ξ‖ = 1`) extends to
-a positively oriented unitary orthonormal frame `e'` with `e' 0 = ξ`, `J (e' 0) = e' 1`, and
-`J (e' 2) = e' 3`. -/
-theorem exists_orthonormalBasis_of_norm_eq_one {o : Orientation ℝ V (Fin 4)}
-    {e : OrthonormalBasis (Fin 4) ℝ V} (he : e.toBasis.orientation = o)
-    {J : AlmostComplexStructure V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {ξ : V} (hξ : ‖ξ‖ = 1) :
-    ∃ e' : OrthonormalBasis (Fin 4) ℝ V,
-      e'.toBasis.orientation = o ∧ e' 0 = ξ ∧ J (e' 0) = e' 1 ∧ J (e' 2) = e' 3 := by
-  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂
-  let ω := symplecticFormOfOrthogonal hJ
-  have hω : ∀ v w, ω v w = ⟪J v, w⟫ := fun _ _ ↦ rfl
-  obtain ⟨e', he'₀, h'₀, h'₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ hξ
-  have ho : e'.toBasis.orientation = o := by
-    rw [orientation_orthonormalBasis_eq_symplecticOrientation hω h'₀ h'₂,
-      ← orientation_orthonormalBasis_eq_symplecticOrientation hω h₀ h₂, he]
-  exact ⟨e', ho, he'₀, h'₀, h'₂⟩
-
-end Symplectic
 
 end TauCeti.SeibergWitten

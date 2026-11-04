@@ -201,6 +201,14 @@ theorem wedge_apply_zero_right (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M 
     (wedge φ ψ).1 x v = φ.1 x v * ψ.1 x 0 := by
   rw [coe_wedge, RoughForm.wedge_apply_zero_right]
 
+/-- At each point `x`, wedging a smooth real-valued `k`-form on the right with a smooth zero-form
+scales its fibrewise alternating form by `ψ.1 x 0`. -/
+theorem wedge_zero_right_apply_eq_smul (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ 0)
+    (x : M) :
+    (wedge φ ψ).1 x = ψ.1 x 0 • φ.1 x := by
+  ext v
+  rw [wedge_apply_zero_right, ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_comm]
+
 /-- The smooth real-valued wedge of two one-forms evaluates as a determinant. -/
 theorem wedge_apply_one_one (φ : SmoothForm I M ℝ 1) (ψ : SmoothForm I M ℝ 1) (x : M)
     (v w : TangentSpace I x) :
@@ -242,6 +250,18 @@ theorem wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : 
       (-1 : ℝ) ^ (k * l) • (wedge ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [wedge, coe_wedgeWith, RoughForm.wedge_def] using
     RoughForm.wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) x v
+
+/-- Bundled graded commutativity of the smooth real-valued wedge: `φ ∧ ψ` equals `(-1) ^ (k * l)`
+times the degree transport of `ψ ∧ φ`. -/
+theorem wedge_eq_smul_cast_wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
+    wedge φ ψ = (-1 : ℝ) ^ (k * l) •
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (Nat.add_comm l k) (wedge ψ φ) := by
+  apply Subtype.ext
+  funext x
+  ext v
+  rw [wedge_comm, Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
+    cast_apply]
 
 end SmoothForm
 

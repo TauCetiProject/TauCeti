@@ -31,6 +31,8 @@ of the wedges of the type components of the factors whose types add up to `(P,Q)
 * `TauCeti.SmoothForm.IsOfType.wedgeWith`: types add under the wedge of smooth forms.
 * `TauCeti.SmoothAlmostComplexStructure.typeProjection_wedgeWith`: the type components of a
   wedge of smooth forms.
+* `TauCeti.SmoothAlmostComplexStructure.covectorComplexStructure_wedge_zero_right`: right
+  `C^∞(M)`-linearity of `covectorComplexStructure`.
 
 ## References
 
@@ -149,6 +151,18 @@ theorem typeProjection_wedgeWith (hμ₁ : ∀ (c : ℂ) a b, μ (c • a) b = c
     simp only [coe_typeProjection, Submodule.coe_sum, Finset.sum_apply, SmoothForm.coe_wedgeWith,
       RoughForm.wedgeWith_apply']
     exact ContinuousLinearMap.typeProjection_pairedWedge (J.apply_apply x) hμ₁ hμ₂ _ _ P Q
+
+/-- `covectorComplexStructure J` commutes with right multiplication by smooth functions. -/
+theorem covectorComplexStructure_wedge_zero_right (a : SmoothForm I M ℝ 1)
+    (f : SmoothForm I M ℝ 0) :
+    J.covectorComplexStructure (SmoothForm.wedge a f) =
+      SmoothForm.wedge (J.covectorComplexStructure a) f := by
+  apply Subtype.ext
+  funext x
+  ext w
+  have hw : ![w 0] = w := funext fun i ↦ by fin_cases i; rfl
+  rw [← hw, covectorComplexStructure_apply_vec, SmoothForm.wedge_apply_zero_right,
+    SmoothForm.wedge_apply_zero_right, covectorComplexStructure_apply_vec, neg_mul]
 
 end SmoothAlmostComplexStructure
 

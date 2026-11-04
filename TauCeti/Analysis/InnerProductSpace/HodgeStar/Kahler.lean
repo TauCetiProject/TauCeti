@@ -49,12 +49,15 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
+* `map_kahlerForm_of_isComplexLinearMap`: complex-linear isometries preserve `ω`.
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+* `Orientation.hodgeStar_ιMulti_basis_zero_two`, `Orientation.hodgeStar_ιMulti_basis_zero_three`:
+  action of `⋆` on `e₀ ∧ e₂` and `e₀ ∧ e₃` in a positively oriented orthonormal frame.
 
 ## References
 
@@ -68,6 +71,16 @@ noncomputable section
 
 open Module exteriorPower
 open scoped RealInnerProductSpace
+
+/-- Mapping a decomposable two-vector `u ∧ w` by `exteriorPower.map 2 f` gives `f u ∧ f w`. -/
+theorem exteriorPower.map_apply_ιMulti_two {R M₁ M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    (f : M₁ →ₗ[R] M₂) (u w : M₁) :
+    exteriorPower.map 2 f (ιMulti R 2 ![u, w]) = ιMulti R 2 ![f u, f w] := by
+  rw [exteriorPower.map_apply_ιMulti]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -127,6 +140,27 @@ theorem lieMap_kahlerForm :
   refine ext_inner_ιMulti_two fun u w ↦ ?_
   rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
   simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
+
+/-- A complex-linear linear isometry equivalence between orthogonal almost complex inner product
+spaces transports the Kähler two-vector. -/
+theorem map_kahlerForm_of_isComplexLinearMap {V' : Type*} [NormedAddCommGroup V']
+    [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V'] {J' : AlmostComplexStructure V'}
+    {f : V ≃ₗᵢ[ℝ] V'} (hfJ : IsComplexLinearMap J J' f.toLinearMap) :
+    exteriorPower.map 2 f.toLinearMap J.kahlerForm = J'.kahlerForm := by
+  have hfJ' : ∀ v, f (J v) = J' (f v) := (isComplexLinearMap_iff_apply J J' f.toLinearMap).1 hfJ
+  have hJ' : ∀ u w, ⟪J' u, J' w⟫ = ⟪u, w⟫ := fun u w ↦ by
+    obtain ⟨u, rfl⟩ := f.surjective u
+    obtain ⟨w, rfl⟩ := f.surjective w
+    rw [← hfJ', ← hfJ', f.inner_map_map, f.inner_map_map, hJ]
+  refine ext_inner_ιMulti_two fun u' w' ↦ ?_
+  obtain ⟨u, rfl⟩ := f.surjective u'
+  obtain ⟨w, rfl⟩ := f.surjective w'
+  have hmap : exteriorPower.map 2 f.toLinearMap (ιMulti ℝ 2 ![u, w]) = ιMulti ℝ 2 ![f u, f w] :=
+    exteriorPower.map_apply_ιMulti_two f.toLinearMap u w
+  rw [← hmap]
+  refine (exteriorPower.inner_map_map f.toLinearIsometry J.kahlerForm
+    (ιMulti ℝ 2 ![u, w])).trans ?_
+  rw [inner_kahlerForm_ιMulti hJ, hmap, inner_kahlerForm_ιMulti hJ', ← hfJ', f.inner_map_map]
 
 end Orthogonal
 
@@ -256,3 +290,39 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
 end Frame
 
 end TauCeti.AlmostComplexStructure
+
+namespace Orientation
+
+variable [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4)) (hkl : 2 + 2 = finrank ℝ V)
+  {e : OrthonormalBasis (Fin 4) ℝ V} (he : e.toBasis.orientation = o)
+include he
+
+/-- In a positively oriented orthonormal frame `e` of a four-dimensional inner product space,
+`⋆(e₀ ∧ e₂) = -e₁ ∧ e₃` because `(e₀, e₂, e₁, e₃)` is an odd permutation of
+`(e₀, e₁, e₂, e₃)`. -/
+theorem hodgeStar_ιMulti_basis_zero_two :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 2]) = -ιMulti ℝ 2 ![e 1, e 3] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_neg_left, inner_ιMulti_two]
+  simp only [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
+    ← e.repr_apply_apply, OrthonormalBasis.repr_self, OrthonormalBasis.coe_toBasis_repr_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
+    Matrix.head_cons, Matrix.tail_cons, PiLp.single_apply, Fin.isValue, Fin.reduceEq,
+    ite_true, ite_false]
+  ring
+
+/-- In a positively oriented orthonormal frame `e` of a four-dimensional inner product space,
+`⋆(e₀ ∧ e₃) = e₁ ∧ e₂` because `(e₀, e₃, e₁, e₂)` is an even permutation of
+`(e₀, e₁, e₂, e₃)`. -/
+theorem hodgeStar_ιMulti_basis_zero_three :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e 3]) = ιMulti ℝ 2 ![e 1, e 2] := by
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
+  simp only [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
+    ← e.repr_apply_apply, OrthonormalBasis.repr_self, OrthonormalBasis.coe_toBasis_repr_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
+    Matrix.head_cons, Matrix.tail_cons, PiLp.single_apply, Fin.isValue, Fin.reduceEq,
+    ite_true, ite_false]
+  ring
+
+end Orientation

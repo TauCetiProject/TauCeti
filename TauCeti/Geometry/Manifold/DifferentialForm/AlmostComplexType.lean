@@ -50,8 +50,11 @@ and it holds at boundary and corner points as well.
 
 * `IsSmoothForm.alternatingDerivation`: the derivation along a `C^n` endomorphism field preserves
   `C^n` forms.
-* `ContMDiffSection.alternatingDerivation`: the derivation of smooth forms along a smooth
-  endomorphism field of the tangent bundle.
+* `ContMDiffSection.alternatingDerivation`, `ContMDiffSection.realAlternatingDerivation`: the
+  derivation of complex- and real-valued smooth forms along a smooth endomorphism field of the
+  tangent bundle.
+* `TauCeti.SmoothAlmostComplexStructure.covectorComplexStructure`: the dual almost complex structure
+  on smooth real one-forms.
 * `TauCeti.SmoothForm.IsOfType`: a smooth form has type `(p,q)`.
 * `TauCeti.SmoothAlmostComplexStructure.typeProjection`: the projection onto smooth forms of type
   `(p,q)`.
@@ -182,6 +185,28 @@ theorem aeval_alternatingDerivation_apply (g : ℂ[X]) (φ : SmoothForm I M F k)
   exact (LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval (σ := ev)
     (f := A.alternatingDerivation) (g := (A x).alternatingDerivation) (LinearMap.ext
     fun φ ↦ rfl) g) φ).symm
+
+/-- A smooth endomorphism field `A` of the tangent bundle acts on real-valued smooth `k`-forms as a
+derivation, obtained by restricting `ContMDiffSection.alternatingDerivation` from complexified
+forms. -/
+def realAlternatingDerivation
+    (A : ContMDiffSection I (E →L[ℝ] E) ∞ fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) :
+    Module.End ℝ (SmoothForm I M ℝ k) :=
+  SmoothForm.mapCoeff Complex.reCLM ∘ₗ
+    (A.alternatingDerivation (F := ℂ) (k := k)).restrictScalars ℝ ∘ₗ
+      SmoothForm.mapCoeff Complex.ofRealCLM
+
+/-- At every point, `realAlternatingDerivation` sums the form over replacing one tangent argument
+by its image under `A`. -/
+@[simp]
+theorem realAlternatingDerivation_apply (φ : SmoothForm I M ℝ k) (x : M)
+    (v : Fin k → TangentSpace I x) :
+    (A.realAlternatingDerivation φ).1 x v =
+      ∑ i, φ.1 x (Function.update v i (A x (v i))) := by
+  rw [realAlternatingDerivation, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearMap.restrictScalars_apply, SmoothForm.coe_mapCoeff, RoughForm.mapCoeff_apply,
+    A.coe_alternatingDerivation, ContinuousLinearMap.alternatingDerivation_apply, map_sum]
+  simp
 
 end ContMDiffSection
 
@@ -699,5 +724,48 @@ theorem IsOfType.mextDerivₗ_eq_typeProjection_add (hφ : φ.IsOfType J p q) :
     simp [J.typeProjection_eq_zero hx]
 
 end SmoothForm
+
+namespace SmoothAlmostComplexStructure
+
+/-- **The almost complex structure on smooth real one-forms** dual to a smooth almost complex
+structure `J` on `M`, given by `(J.covectorComplexStructure a)_x(v) = -a_x(J_x v)`. -/
+def covectorComplexStructure (J : SmoothAlmostComplexStructure I M) :
+    AlmostComplexStructure (SmoothForm I M ℝ 1) where
+  toLinearMap := -J.toEndomorphism.realAlternatingDerivation
+  square_neg := by
+    ext a x w
+    rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.neg_apply, Submodule.coe_neg,
+      Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
+      ContMDiffSection.realAlternatingDerivation_apply, Fin.sum_univ_one]
+    have hu1 : Function.update w 0 (J.toEndomorphism x (w 0)) = ![J x (w 0)] :=
+      funext fun i ↦ by fin_cases i; rfl
+    rw [hu1, Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, _root_.neg_neg,
+      ContMDiffSection.realAlternatingDerivation_apply, Fin.sum_univ_one]
+    have hu2 : Function.update ![J x (w 0)] 0 (J.toEndomorphism x (![J x (w 0)] 0)) =
+        Function.update w 0 ((-1 : ℝ) • w 0) :=
+      funext fun i ↦ by
+        fin_cases i
+        simp only [Fin.zero_eta, Function.update_self, Matrix.cons_val_zero, neg_one_smul]
+        exact J.apply_apply x (w 0)
+    rw [hu2, (a.1 x).map_update_smul, Function.update_eq_self, neg_one_smul,
+      LinearMap.neg_apply, LinearMap.id_apply, Submodule.coe_neg, Pi.neg_apply,
+      ContinuousAlternatingMap.neg_apply]
+
+theorem covectorComplexStructure_apply (J : SmoothAlmostComplexStructure I M)
+    (a : SmoothForm I M ℝ 1) :
+    J.covectorComplexStructure a = -J.toEndomorphism.realAlternatingDerivation a :=
+  (rfl)
+
+@[simp]
+theorem covectorComplexStructure_apply_vec (J : SmoothAlmostComplexStructure I M)
+    (a : SmoothForm I M ℝ 1) (x : M) (v : TangentSpace I x) :
+    (J.covectorComplexStructure a).1 x ![v] = -a.1 x ![J x v] := by
+  rw [covectorComplexStructure_apply, Submodule.coe_neg, Pi.neg_apply,
+    ContinuousAlternatingMap.neg_apply, ContMDiffSection.realAlternatingDerivation_apply,
+    Fin.sum_univ_one]
+  congr 2
+  exact funext fun i ↦ by fin_cases i; rfl
+
+end SmoothAlmostComplexStructure
 
 end TauCeti

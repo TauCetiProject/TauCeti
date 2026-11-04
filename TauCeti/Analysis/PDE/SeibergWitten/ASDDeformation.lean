@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import TauCeti.LinearAlgebra.Determinant.Line
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.Riemannian.AlmostComplex
 
 /-!
 # The Atiyah–Hitchin–Singer deformation operator and symbol commutator
@@ -39,8 +40,6 @@ This file defines `δ₀` on smooth differential forms and proves two foundation
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.innerZeroForm`: the smooth zero-form `⋆(α ∧ ⋆β)` representing the pointwise
-  inner product of smooth `k`-forms.
 * `TauCeti.SeibergWitten.asdDeformationOperator`: the operator `δ₀(a) = (-d*a, √2 (da)⁺)`.
 * `TauCeti.SeibergWitten.deformationTargetRescale`,
   `TauCeti.SeibergWitten.asdDeformationDetLineEquiv`: target rescaling intertwining `δ₀` with
@@ -76,183 +75,12 @@ open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti.SeibergWitten
 
-/-- Direct `AddCommGroup` shortcut on `SmoothForm I M ℝ k`, avoiding nested `Submodule` ring
-search on products with `SmoothForm.selfDualForms`. -/
-local instance instAddCommGroupSmoothForm {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-    [IsManifold I 1 M] (k : ℕ) :
-    AddCommGroup (SmoothForm I M ℝ k) :=
-  Submodule.addCommGroup _
-
-/-- Direct `Module ℝ` shortcut on `SmoothForm I M ℝ k`. -/
-local instance instModuleSmoothForm {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-    [IsManifold I 1 M] (k : ℕ) :
-    Module ℝ (SmoothForm I M ℝ k) :=
-  Submodule.module _
-
-/-- Direct `AddCommGroup` shortcut on `SmoothForm.selfDualForms o`. -/
-local instance instAddCommGroupSelfDualForms {E H M : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
-    [ChartedSpace H M] [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    (o : Manifold.Orientation I M (Fin (2 + 2))) :
-    AddCommGroup (SmoothForm.selfDualForms (I := I) (M := M) o) :=
-  Submodule.addCommGroup _
-
-/-- Direct `Module ℝ` shortcut on `SmoothForm.selfDualForms o`. -/
-local instance instModuleSelfDualForms {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-    [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    (o : Manifold.Orientation I M (Fin (2 + 2))) :
-    Module ℝ (SmoothForm.selfDualForms (I := I) (M := M) o) :=
-  Submodule.module _
-
-section Helpers
-
-/-- For a compatible metric and orientation, `⋆(α ∧ ⋆β)` evaluated at `0` recovers the pointwise
-form inner product `⟨α, β⟩`. -/
-private theorem formHodgeStar_wedge_formHodgeStar_apply_zero
-    {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-    {n k l : ℕ} [_i : Fact (finrank ℝ V = n)] (o : Orientation ℝ V (Fin n))
-    (hkl : k + l = finrank ℝ V) (hm0 : (k + l) + 0 = finrank ℝ V)
-    (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
-    o.formHodgeStar hm0 (α.wedge (o.formHodgeStar hkl β)) 0 =
-      alternatingFormInner V k α β := by
-  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
-  obtain ⟨b, rfl⟩ := (alternatingFormEquiv V k).surjective β
-  set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
-    rw [← hkl]; exact (exteriorPower.wedge ℝ V k l a (o.hodgeStar hkl b)).2⟩
-  have hz : ((exteriorPower.wedge ℝ V k l a (o.hodgeStar hkl b) : ExteriorAlgebra ℝ V) *
-      ((ιMulti ℝ 0 (![] : Fin 0 → V)) : ExteriorAlgebra ℝ V)) = (z : ExteriorAlgebra ℝ V) := by
-    simp [z, ExteriorAlgebra.ιMulti_zero_apply]
-  have h0 : (0 : Fin 0 → V) = ![] := Subsingleton.elim _ _
-  rw [o.formHodgeStar_alternatingFormEquiv, ← alternatingFormEquiv_wedge,
-    o.formHodgeStar_apply, LinearEquiv.symm_apply_apply,
-    alternatingFormInner_alternatingFormEquiv, ← o.wedgePairing_hodgeStar hkl, h0,
-    wedgePairing_apply_eq_of_coe_mul_eq _ hm0 _ _ z hz,
-    wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- The smooth zero-form `⋆(α ∧ ⋆β)`, linear in `β`, representing the pointwise inner product
-`⟨α, β⟩` of smooth `k`-forms on an oriented Riemannian `(k + l)`-manifold. -/
-def innerZeroForm {k l : ℕ} (o : Manifold.Orientation I M (Fin (k + l)))
-    (α : SmoothForm I M ℝ k) : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ 0 :=
-  SmoothForm.hodgeStar o (Nat.add_zero (k + l)) ∘ₗ
-    SmoothForm.wedge α ∘ₗ SmoothForm.hodgeStar o rfl
-
-/-- Evaluating `innerZeroForm o α β` at `x : M` recovers `alternatingFormInner` of `α_x` and
-`β_x`. -/
-theorem innerZeroForm_apply {k l : ℕ} (o : Manifold.Orientation I M (Fin (k + l)))
-    (α β : SmoothForm I M ℝ k) (x : M) (u : Fin 0 → TangentSpace I x) :
-    (innerZeroForm o α β).1 x u =
-      alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) := by
-  let _ := o.fact_finrank_tangentSpace x
-  have hu : u = 0 := Subsingleton.elim _ _
-  rw [hu, innerZeroForm, LinearMap.comp_apply, LinearMap.comp_apply, SmoothForm.coe_hodgeStar,
-    RoughForm.hodgeStar_apply]
-  have hw : (SmoothForm.wedge α (SmoothForm.hodgeStar o rfl β)).1 x =
-      (α.1 x).wedge ((o.orientationAt x).formHodgeStar
-        (o.fact_finrank_tangentSpace x).out.symm (β.1 x)) := by
-    ext w
-    rw [SmoothForm.coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-      ← ContinuousAlternatingMap.wedge_def, SmoothForm.coe_hodgeStar, RoughForm.hodgeStar_apply]
-  rw [hw]
-  exact formHodgeStar_wedge_formHodgeStar_apply_zero (o.orientationAt x) _ _ (α.1 x) (β.1 x)
-
-/-- The Hodge star commutes with right multiplication by a smooth zero-form. -/
-private theorem hodgeStar_wedge_zero_right {m k l : ℕ} (o : Manifold.Orientation I M (Fin m))
-    (hkl : k + l = m) (φ : SmoothForm I M ℝ k) (f : SmoothForm I M ℝ 0) :
-    SmoothForm.hodgeStar o hkl (SmoothForm.wedge φ f) =
-      SmoothForm.wedge (SmoothForm.hodgeStar o hkl φ) f := by
-  apply Subtype.ext
-  funext x
-  let _ := o.fact_finrank_tangentSpace x
-  have hsmul : (SmoothForm.wedge φ f).1 x = f.1 x 0 • φ.1 x := by
-    ext v
-    rw [SmoothForm.wedge_apply_zero_right, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      mul_comm]
-  ext v
-  rw [SmoothForm.wedge_apply_zero_right, SmoothForm.coe_hodgeStar, RoughForm.hodgeStar_apply,
-    hsmul, map_smul, ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_comm,
-    SmoothForm.coe_hodgeStar, RoughForm.hodgeStar_apply]
-
-/-- The self-dual projection commutes with right multiplication by a smooth zero-form. -/
-private theorem selfDualPart_wedge_zero_right {k : ℕ} (o : Manifold.Orientation I M (Fin (k + k)))
-    (φ : SmoothForm I M ℝ k) (f : SmoothForm I M ℝ 0) :
-    SmoothForm.selfDualPart o (SmoothForm.wedge φ f) =
-      SmoothForm.wedge (SmoothForm.selfDualPart o φ) f := by
-  apply Subtype.ext
-  funext x
-  ext v
-  simp only [SmoothForm.coe_selfDualPart, RoughForm.selfDualPart_apply,
-    SmoothForm.wedge_apply_zero_right, Pi.smul_apply, Pi.add_apply,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply, smul_eq_mul]
-  have hh := congrArg (fun ψ : SmoothForm I M ℝ k ↦ ψ.1 x v)
-    (hodgeStar_wedge_zero_right o rfl φ f)
-  simp only [SmoothForm.coe_hodgeStar, SmoothForm.wedge_apply_zero_right] at hh
-  rw [hh]
-  ring
-
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The Leibniz rule for wedging a smooth `k`-form on the right with a smooth zero-form:
-`d(φ ∧ f) = dφ ∧ f + (-1)^k φ ∧ df`. -/
-private theorem mextDerivₗ_wedge_zero_right {k : ℕ} (φ : SmoothForm I M ℝ k)
-    (f : SmoothForm I M ℝ 0) :
-    mextDerivₗ I k (SmoothForm.wedge φ f) =
-      SmoothForm.wedge (mextDerivₗ I k φ) f +
-        (-1 : ℝ) ^ k • SmoothForm.wedge φ (mextDerivₗ I 0 f) := by
-  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  exact SmoothForm.mextDerivₗ_wedge (I := I) (k := k) (l := 0) φ f
-
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- Under `alternatingFormEquiv`, a smooth one-form at `x` corresponds to the tangent vector given
-by the Riesz dual of `SmoothForm.degreeOneEquiv`. -/
-private theorem alternatingFormEquiv_rieszDual_degreeOneEquiv (a : SmoothForm I M ℝ 1) (x : M) :
-    (letI : FiniteDimensional ℝ (TangentSpace I x) :=
-      VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-     alternatingFormEquiv (TangentSpace I x) 1
-      (ιMulti ℝ 1 ![Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv a x)])) =
-      a.1 x := by
-  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
-    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  ext w
-  have hw : ![w 0] = w := funext fun i ↦ by fin_cases i; rfl
-  rw [alternatingFormEquiv_ιMulti_apply, Matrix.det_fin_one]
-  simp only [Matrix.of_apply, Matrix.cons_val_fin_one, Riemannian.Tensor.inner_rieszDual,
-    SmoothForm.degreeOneEquiv_apply_apply_vec, hw]
-
-/-- Under `alternatingFormEquiv`, `SmoothForm.selfDualPart` acts fibrewise as `(1 / 2) (y + ⋆y)` on
-`⋀² T_x M`. -/
-private theorem alternatingFormEquiv_symm_selfDualPart
-    (o : Manifold.Orientation I M (Fin (2 + 2))) (η : SmoothForm I M ℝ 2) (x : M) :
-    (letI := o.fact_finrank_tangentSpace x
-     (alternatingFormEquiv (TangentSpace I x) 2).symm ((SmoothForm.selfDualPart o η).1 x)) =
-      (letI := o.fact_finrank_tangentSpace x
-       (2⁻¹ : ℝ) • ((alternatingFormEquiv (TangentSpace I x) 2).symm (η.1 x) +
-         (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
-           ((alternatingFormEquiv (TangentSpace I x) 2).symm (η.1 x)))) := by
-  let _ := o.fact_finrank_tangentSpace x
-  apply (alternatingFormEquiv (TangentSpace I x) 2).injective
-  rw [LinearEquiv.apply_symm_apply, map_smul, map_add,
-    ← (o.orientationAt x).formHodgeStar_alternatingFormEquiv, LinearEquiv.apply_symm_apply,
-    SmoothForm.coe_selfDualPart, RoughForm.selfDualPart_apply, Pi.smul_apply, Pi.add_apply,
-    RoughForm.hodgeStar_apply]
-
-end Helpers
-
 /-! ### The Atiyah–Hitchin–Singer operator `δ₀` and its determinant line -/
 
 section ASDDeformation
+
+private theorem sqrt_two_div_two_mul_sqrt_two : √2 / 2 * √2 = (1 : ℝ) := by
+  linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -291,21 +119,10 @@ theorem coe_asdDeformationOperator_apply_snd (a : SmoothForm I M ℝ 1) :
 Seiberg–Witten `abelianDeformationOperator` `T(a) = (-2 d*a, (da)⁺)`. -/
 def deformationTargetRescale :
     (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) ≃ₗ[ℝ]
-      (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) where
-  toFun p := ((2 : ℝ) • p.1, (√2 / 2 : ℝ) • p.2)
-  invFun p := ((2⁻¹ : ℝ) • p.1, √2 • p.2)
-  map_add' p q := Prod.ext (smul_add _ _ _) (smul_add _ _ _)
-  map_smul' c p := Prod.ext (smul_comm _ _ _) (smul_comm _ _ _)
-  left_inv p := Prod.ext (by module) <| Subtype.ext <| by
-    simp only [SetLike.val_smul, smul_smul]
-    have h : √2 * (√2 / 2) = (1 : ℝ) := by
-      linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
-    rw [h, one_smul]
-  right_inv p := Prod.ext (by module) <| Subtype.ext <| by
-    simp only [SetLike.val_smul, smul_smul]
-    have h : √2 / 2 * √2 = (1 : ℝ) := by
-      linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
-    rw [h, one_smul]
+      (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :=
+  (LinearEquiv.smulOfUnit (Units.mkOfMulEqOne (2 : ℝ) 2⁻¹ (by norm_num))).prodCongr
+    (LinearEquiv.smulOfUnit
+      (Units.mkOfMulEqOne (√2 / 2 : ℝ) √2 sqrt_two_div_two_mul_sqrt_two))
 
 @[simp]
 theorem deformationTargetRescale_apply_fst
@@ -344,10 +161,8 @@ theorem deformationTargetRescale_comp_asdDeformationOperator :
       asdDeformationOperator_apply_fst, abelianDeformationOperator_apply_fst]
     module
   · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_deformationTargetRescale_apply_snd,
-      coe_asdDeformationOperator_apply_snd, coe_abelianDeformationOperator_apply_snd, smul_smul]
-    have h : √2 / 2 * √2 = (1 : ℝ) := by
-      linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
-    rw [h, one_smul]
+      coe_asdDeformationOperator_apply_snd, coe_abelianDeformationOperator_apply_snd, smul_smul,
+      sqrt_two_div_two_mul_sqrt_two, one_smul]
 
 /-- **Canonical isomorphism of determinant lines** between `δ₀` and `abelianDeformationOperator`,
 induced by the identity on `Ω¹(M)` and `deformationTargetRescale` on `Ω⁰(M) × Ω⁺(M)`. -/
@@ -399,12 +214,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 `Ω⁰(M) × Ω⁺(M)` of the deformation operator. -/
 def deformationTargetMulRight (f : SmoothForm I M ℝ 0) :
     Module.End ℝ (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :=
-  (SmoothForm.wedge.flip f ∘ₗ LinearMap.fst ℝ _ _).prod <|
-    (SmoothForm.wedge.flip f ∘ₗ (SmoothForm.selfDualForms (I := I) (M := M) o).subtype ∘ₗ
-      LinearMap.snd ℝ _ _).codRestrict _ fun p ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.flip_apply, Submodule.coe_subtype,
-        LinearMap.snd_apply, SmoothForm.mem_selfDualForms, hodgeStar_wedge_zero_right]
-      rw [SmoothForm.mem_selfDualForms.1 p.2.2]
+  (SmoothForm.wedge.flip f).prodMap <|
+    (SmoothForm.wedge.flip f).restrict fun _ hη ↦ by
+      rw [LinearMap.flip_apply, SmoothForm.mem_selfDualForms,
+        SmoothForm.hodgeStar_wedge_zero_right, SmoothForm.mem_selfDualForms.1 hη]
 
 @[simp]
 theorem deformationTargetMulRight_apply_fst (f : SmoothForm I M ℝ 0)
@@ -425,6 +238,7 @@ theorem asdDeformationOperator_wedge_sub_fst_apply (a : SmoothForm I M ℝ 1)
     ((asdDeformationOperator o (SmoothForm.wedge a f) -
         deformationTargetMulRight o f (asdDeformationOperator o a)).1).1 x u =
       alternatingFormInner (TangentSpace I x) 1 ((mextDerivₗ I 0 f).1 x) (a.1 x) := by
+  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have h13 : 0 + 1 + 3 = 2 + 2 := rfl
   have h310 : 3 + 1 + 0 = 2 + 2 := rfl
   have hcod (b : SmoothForm I M ℝ 1) :
@@ -436,24 +250,22 @@ theorem asdDeformationOperator_wedge_sub_fst_apply (a : SmoothForm I M ℝ 1)
     module
   have hwcomm : SmoothForm.wedge (SmoothForm.hodgeStar o h13 a) (mextDerivₗ I 0 f) =
       -SmoothForm.wedge (mextDerivₗ I 0 f) (SmoothForm.hodgeStar o h13 a) := by
-    apply Subtype.ext
-    funext y
-    ext w
-    rw [SmoothForm.wedge_comm, Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply]
-    have hcast : w ∘ Fin.cast (Nat.add_comm 1 3) = w := rfl
-    rw [hcast]
-    norm_num
+    rw [SmoothForm.wedge_eq_smul_cast_wedge_comm, LinearEquiv.cast_apply, cast_eq]
+    have hpow : (-1 : ℝ) ^ (3 * (0 + 1)) = -1 := by norm_num
+    rw [hpow]
+    module
   have hsub : (asdDeformationOperator o (SmoothForm.wedge a f) -
       deformationTargetMulRight o f (asdDeformationOperator o a)).1 =
-      innerZeroForm (k := 1) (l := 3) o (mextDerivₗ I 0 f) a := by
+      SmoothForm.innerZeroForm (k := 1) (l := 3) o (mextDerivₗ I 0 f) a := by
     rw [Prod.fst_sub, asdDeformationOperator_apply_fst, deformationTargetMulRight_apply_fst,
-      asdDeformationOperator_apply_fst, hcod, hcod, hodgeStar_wedge_zero_right o h13 a f,
-      mextDerivₗ_wedge_zero_right, map_add, map_smul, hodgeStar_wedge_zero_right o h310 _ f,
-      hwcomm, map_neg]
+      asdDeformationOperator_apply_fst, hcod, hcod, SmoothForm.hodgeStar_wedge_zero_right o h13 a f,
+      SmoothForm.mextDerivₗ_wedge (I := I) (k := 3) (l := 0), LinearEquiv.cast_apply, cast_eq,
+      LinearEquiv.cast_apply, cast_eq, map_add, map_smul,
+      SmoothForm.hodgeStar_wedge_zero_right o h310 _ f, hwcomm, map_neg]
     have hpow : (-1 : ℝ) ^ 3 = -1 := by norm_num
-    rw [hpow, innerZeroForm, LinearMap.comp_apply, LinearMap.comp_apply]
+    rw [hpow, SmoothForm.innerZeroForm_def]
     module
-  rw [hsub, innerZeroForm_apply]
+  rw [hsub, SmoothForm.innerZeroForm_apply]
 
 /-- **Self-dual two-form component of `[δ₀, · ∧ f]`:**
 `√2 (d(a ∧ f))⁺ - √2 (da)⁺ ∧ f = √2 (df ∧ a)⁺`. -/
@@ -462,21 +274,21 @@ theorem coe_asdDeformationOperator_wedge_sub_snd (a : SmoothForm I M ℝ 1)
     ((asdDeformationOperator o (SmoothForm.wedge a f) -
         deformationTargetMulRight o f (asdDeformationOperator o a)).2 : SmoothForm I M ℝ 2) =
       √2 • SmoothForm.selfDualPart o (SmoothForm.wedge (mextDerivₗ I 0 f) a) := by
+  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have hwcomm : SmoothForm.wedge a (mextDerivₗ I 0 f) =
       -SmoothForm.wedge (mextDerivₗ I 0 f) a := by
-    apply Subtype.ext
-    funext y
-    ext w
-    rw [SmoothForm.wedge_comm, Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply]
-    have hcast : w ∘ Fin.cast (Nat.add_comm 1 1) = w := rfl
-    rw [hcast]
-    norm_num
+    rw [SmoothForm.wedge_eq_smul_cast_wedge_comm, LinearEquiv.cast_apply, cast_eq]
+    have hpow : (-1 : ℝ) ^ (1 * (0 + 1)) = -1 := by norm_num
+    rw [hpow]
+    module
   have hneg : (-1 : ℝ) ^ 1 • (-SmoothForm.wedge (mextDerivₗ I 0 f) a) =
       SmoothForm.wedge (mextDerivₗ I 0 f) a := by module
   rw [Prod.snd_sub, Submodule.coe_sub, coe_asdDeformationOperator_apply_snd,
     coe_deformationTargetMulRight_apply_snd, coe_asdDeformationOperator_apply_snd,
-    mextDerivₗ_wedge_zero_right, hwcomm, hneg, map_add, smul_add,
-    selfDualPart_wedge_zero_right, LinearMap.map_smul₂ SmoothForm.wedge, add_sub_cancel_left]
+    SmoothForm.mextDerivₗ_wedge (I := I) (k := 1) (l := 0), LinearEquiv.cast_apply, cast_eq,
+    LinearEquiv.cast_apply, cast_eq, hwcomm, hneg, map_add, smul_add,
+    SmoothForm.selfDualPart_wedge_zero_right, SmoothForm.wedge.map_smul, LinearMap.smul_apply,
+    add_sub_cancel_left]
 
 /-- **The `C^∞(M)`-commutator of `δ₀` computes `deformationSymbol` fibrewise:** at every `x : M`,
 reading `(df)_x` and `a_x` as tangent vectors via `Riemannian.Tensor.rieszDual` and two-forms as
@@ -498,8 +310,8 @@ theorem asdDeformationOperator_commutator_eq_deformationSymbol (a : SmoothForm I
   let _ := o.fact_finrank_tangentSpace x
   set ξ := Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)
   set v := Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv a x)
-  have hξ := alternatingFormEquiv_rieszDual_degreeOneEquiv (mextDerivₗ I 0 f) x
-  have hv := alternatingFormEquiv_rieszDual_degreeOneEquiv a x
+  have hξ := SmoothForm.alternatingFormEquiv_rieszDual_degreeOneEquiv (mextDerivₗ I 0 f) x
+  have hv := SmoothForm.alternatingFormEquiv_rieszDual_degreeOneEquiv a x
   have hzv : (alternatingFormEquiv (TangentSpace I x) 2).symm
       ((SmoothForm.wedge (mextDerivₗ I 0 f) a).1 x) = ιMulti ℝ 2 ![ξ, v] := by
     apply (alternatingFormEquiv (TangentSpace I x) 2).injective
@@ -516,7 +328,7 @@ theorem asdDeformationOperator_commutator_eq_deformationSymbol (a : SmoothForm I
       Matrix.det_fin_one]
     simp [ξ, v]
   · rw [coe_asdDeformationOperator_wedge_sub_snd, Submodule.coe_smul, Pi.smul_apply, map_smul,
-      alternatingFormEquiv_symm_selfDualPart, hzv, smul_smul, ← div_eq_mul_inv,
+      SmoothForm.alternatingFormEquiv_symm_selfDualPart, hzv, smul_smul, ← div_eq_mul_inv,
       deformationSymbol_apply_snd]
 
 end SymbolCommutator
