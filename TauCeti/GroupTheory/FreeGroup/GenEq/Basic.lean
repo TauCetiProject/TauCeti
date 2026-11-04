@@ -182,6 +182,54 @@ def boundaryEquation (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.nu
   else
     (Ω.segment (Ω.left c.2.1) c.1 true, Ω.segment c.2.2 (Ω.right (Ω.dual c.2.1)) false)
 
+/-- The left side of the basic equation of `μ` is `h[α(μ), β(μ)] ^ ε(μ)`. -/
+@[simp]
+theorem basicEquation_fst (μ : Fin Ω.numBases) :
+    (Ω.basicEquation μ).1 = Ω.segment (Ω.left μ) (Ω.right μ) (Ω.sign μ) :=
+  (rfl)
+
+/-- The right side of the basic equation of `μ` is `h[α(Δμ), β(Δμ)] ^ ε(Δμ)`. -/
+@[simp]
+theorem basicEquation_snd (μ : Fin Ω.numBases) :
+    (Ω.basicEquation μ).2 =
+      Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) (Ω.sign (Ω.dual μ)) :=
+  (rfl)
+
+/-- The left side of the coefficient equation of a constant base on item `k` is `hₖ`. -/
+@[simp]
+theorem coeffEquation_fst (b : Fin Ω.numItems × (A × Bool)) :
+    (Ω.coeffEquation b).1 = [(Sum.inl b.1, true)] :=
+  (rfl)
+
+/-- The right side of the coefficient equation of a constant base is its letter. -/
+@[simp]
+theorem coeffEquation_snd (b : Fin Ω.numItems × (A × Bool)) :
+    (Ω.coeffEquation b).2 = [(Sum.inr b.2.1, b.2.2)] :=
+  (rfl)
+
+/-- The left side of the boundary equation of a connection `(p, μ, q)` is `h[α(μ), p]`. -/
+@[simp]
+theorem boundaryEquation_fst (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)) :
+    (Ω.boundaryEquation c).1 = Ω.segment (Ω.left c.2.1) c.1 true := by
+  unfold boundaryEquation
+  split_ifs <;> rfl
+
+/-- When `ε(μ) = ε(Δμ)`, the right side of the boundary equation of a connection `(p, μ, q)` is
+`h[α(Δμ), q]`. -/
+theorem boundaryEquation_snd_of_sign_eq
+    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)}
+    (h : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)) :
+    (Ω.boundaryEquation c).2 = Ω.segment (Ω.left (Ω.dual c.2.1)) c.2.2 true := by
+  simp only [boundaryEquation, h, ite_true]
+
+/-- When `ε(μ) ≠ ε(Δμ)`, the right side of the boundary equation of a connection `(p, μ, q)` is
+`h[q, β(Δμ)]⁻¹`. -/
+theorem boundaryEquation_snd_of_sign_ne
+    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)}
+    (h : Ω.sign c.2.1 ≠ Ω.sign (Ω.dual c.2.1)) :
+    (Ω.boundaryEquation c).2 = Ω.segment c.2.2 (Ω.right (Ω.dual c.2.1)) false := by
+  simp only [boundaryEquation, h, ite_false]
+
 /-- The equations of a generalised equation: its basic, coefficient and boundary equations, each
 recorded as the pair of its two sides. -/
 def equations : Set (List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool)) :=
@@ -250,6 +298,12 @@ structure Solution where
 `L = R` of `Ω`. -/
 def toSystem : Set (GX (FreeGroup A) (Fin Ω.numItems)) :=
   (fun e => EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) '' Ω.equations
+
+/-- The elements of `Ω*` are the words `L R⁻¹` for the equations `L = R` of `Ω`. -/
+theorem mem_toSystem_iff {w : GX (FreeGroup A) (Fin Ω.numItems)} :
+    w ∈ Ω.toSystem ↔ ∃ e ∈ Ω.equations,
+      EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
+  Iff.rfl
 
 /-- The points of `Ω*` are the group solutions of the equations of `Ω`: the assignments under
 which both sides of every equation agree in the group, possibly after cancellation. -/
@@ -468,7 +522,7 @@ private theorem disjoint_of_sign_ne (μ : Fin Ω.numBases) (hμ : Ω.sign μ ≠
   have ex := U.subst_eq _ (Ω.basicEquation_mem_equations x)
   have rx := (U.isReduced_subst _ (Ω.basicEquation_mem_equations x)).1
   have ry := (U.isReduced_subst _ (Ω.basicEquation_mem_equations x)).2
-  simp only [basicEquation] at ex rx ry
+  simp only [basicEquation_fst, basicEquation_snd] at ex rx ry
   rw [hx, hy, segment_false, substituteVars_invRev] at ex
   rw [hy, segment_false, substituteVars_invRev, FreeGroup.isReduced_invRev] at ry
   rw [hx] at rx
@@ -495,10 +549,10 @@ theorem prefixLength_boundary {c : Fin (Ω.numItems + 1) × Fin Ω.numBases ×
   have e := congrArg List.length (U.subst_eq _ (Ω.boundaryEquation_mem_equations hc))
   have l₁ := U.length_substituteVars_segment_add_prefixLength true h₁.le
   split_ifs with hs
-  · simp only [boundaryEquation, hs, ite_true] at e
+  · rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq hs] at e
     have l₂ := U.length_substituteVars_segment_add_prefixLength true h₃.le
     omega
-  · simp only [boundaryEquation, hs, ite_false] at e
+  · rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne hs] at e
     have l₂ := U.length_substituteVars_segment_add_prefixLength false h₄.le
     omega
 
@@ -546,7 +600,8 @@ private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.con
     b.2 = b'.2 := by
   have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
   have e' := U.subst_eq _ (Ω.coeffEquation_mem_equations hb')
-  simp only [coeffEquation, substituteVars_singleton_inl, substituteVars_singleton_inr] at e e'
+  simp only [coeffEquation_fst, coeffEquation_snd, substituteVars_singleton_inl,
+    substituteVars_singleton_inr] at e e'
   rw [hk, e'] at e
   simp only [List.cons.injEq, and_true] at e
   exact e.symm
@@ -557,7 +612,8 @@ theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) : U.prefixLength (b.1 + 1) = U.prefixLength b.1 + 1 := by
   have hone : (U.word b.1).length = 1 := by
     have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
-    simp only [coeffEquation, substituteVars_singleton_inl, substituteVars_singleton_inr] at e
+    simp only [coeffEquation_fst, coeffEquation_snd, substituteVars_singleton_inl,
+      substituteVars_singleton_inr] at e
     simp [e]
   have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right b.1 1)
   rw [segment_succ, substituteVars_singleton_inl, hone] at this
