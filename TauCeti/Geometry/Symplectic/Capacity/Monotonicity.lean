@@ -245,7 +245,7 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
   obtain ⟨G, hG, hGsup⟩ := exists_isRelContractibleHZAdmissible_lt_iSup (σ := σ)
     (V := {x | F x < s}) (Z := Z)
     ⟨{x | F x < s}, isOpen_lt hFc continuous_const,
-      ⟨x₁, show F x₁ < s by rw [hx₁]; linarith [hsI.1]⟩, subset_rfl⟩
+      ⟨x₁, by rw [mem_ofPred_eq, hx₁]; linarith [hsI.1]⟩, subset_rfl⟩
     (by rw [hφeq hsI.2.le]; exact ENNReal.ofReal_ne_top) hη0
   rw [hφeq hsI.2.le, ENNReal.toReal_ofReal (by positivity)] at hGsup
   -- The cutoff `f`, stepping down from `A = (|L| + 2) η` to `0` across `[s, s + η / 2]`.
@@ -256,11 +256,11 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
   obtain ⟨c, hc, hcc⟩ := hσ.exists_hasContractibleClosedCharacteristicOfPeriodLE hF
     (s₁ := s) (s₂ := s + η / 2) (s₃ := s + η) (A := A) (K := 2 * Mρ * (|L| + 2)) (f := f)
     (by linarith) (by linarith) (hcpt _ (by linarith)) (fun x (hx : F x ≤ s + η / 2) ↦
-      hint (show F x < b by linarith))
+      hint (hx.trans_lt (by linarith)))
     (by
       obtain ⟨x, hx⟩ := hval (r := s + 3 * η / 4) ⟨by linarith [hsI.1], by linarith⟩
       exact ⟨x, by rw [hx]; linarith, by rw [hx]; linarith⟩)
-    (fun z hz ↦ show F z ≤ s from (show F z ≤ a from hZ hz).trans hsI.1.le) hG hf hf_nonneg
+    (fun z hz ↦ le_trans (hZ hz) hsI.1.le) hG hf hf_nonneg
     (fun r ↦ (hfanti (min_le_left r s)).trans_eq (hfA _ (min_le_right r s))) hfA hf0
     (fun r ↦ (hfK Mρ hMρ r).trans_eq (by rw [hA, add_sub_cancel_left]; field_simp))
     (by
