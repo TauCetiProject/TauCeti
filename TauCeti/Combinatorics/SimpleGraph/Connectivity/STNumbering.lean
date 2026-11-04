@@ -138,16 +138,13 @@ theorem val_numbering_injective (n : G.STNumbering s t) :
   Fin.val_injective.comp n.numbering.injective
 
 /-- A graph admitting an `st`-numbering has a nonempty vertex type. -/
-theorem nonempty (_ : G.STNumbering s t) : Nonempty V :=
-  ⟨s⟩
+theorem nonempty (_ : G.STNumbering s t) : Nonempty V := ⟨s⟩
 
 /-- A graph admitting an `st`-numbering has positive vertex count. -/
-theorem card_pos (n : G.STNumbering s t) : 0 < Fintype.card V :=
-  (n.numbering s).pos
+theorem card_pos (n : G.STNumbering s t) : 0 < Fintype.card V := (n.numbering s).pos
 
 @[simp]
-theorem val_numbering_source (n : G.STNumbering s t) : (n.numbering s).val = 0 :=
-  n.source_first
+theorem val_numbering_source (n : G.STNumbering s t) : (n.numbering s).val = 0 := n.source_first
 
 @[simp]
 theorem val_numbering_sink (n : G.STNumbering s t) :
@@ -188,8 +185,7 @@ theorem source_ne_sink [Nontrivial V] (n : G.STNumbering s t) : s ≠ t := by
   exact Fintype.one_lt_card.ne'
 
 /-- The source `s` has the minimum number among all vertices. -/
-theorem numbering_source_le (n : G.STNumbering s t) (v : V) :
-    n.numbering s ≤ n.numbering v := by
+theorem numbering_source_le (n : G.STNumbering s t) (v : V) : n.numbering s ≤ n.numbering v := by
   simp [Fin.le_iff_val_le_val]
 
 @[simp]
@@ -234,12 +230,10 @@ def copy (n : G.STNumbering s t) {s' t' : V} (hs : s = s') (ht : t = t') :
 
 @[simp]
 theorem copy_numbering (n : G.STNumbering s t) {s' t' : V} (hs : s = s') (ht : t = t') :
-    (n.copy hs ht).numbering = n.numbering :=
-  (rfl)
+    (n.copy hs ht).numbering = n.numbering := (rfl)
 
 @[simp]
-theorem copy_rfl (n : G.STNumbering s t) : n.copy rfl rfl = n :=
-  (rfl)
+theorem copy_rfl (n : G.STNumbering s t) : n.copy rfl rfl = n := (rfl)
 
 /-- Reverse an `st`-numbering via `Fin.revPerm`, exchanging the source `s` and the sink `t`. -/
 def symm (n : G.STNumbering s t) : G.STNumbering t s where
@@ -260,8 +254,7 @@ def symm (n : G.STNumbering s t) : G.STNumbering t s where
 
 @[simp]
 theorem symm_numbering_apply (n : G.STNumbering s t) (v : V) :
-    n.symm.numbering v = (n.numbering v).rev :=
-  (rfl)
+    n.symm.numbering v = (n.numbering v).rev := (rfl)
 
 /-- Explicit natural-number formula for the reversed `st`-numbering. -/
 theorem val_symm_numbering (n : G.STNumbering s t) (v : V) :
@@ -275,8 +268,7 @@ theorem symm_symm (n : G.STNumbering s t) : n.symm.symm = n :=
 
 @[simp]
 theorem symm_copy (n : G.STNumbering s t) {s' t' : V} (hs : s = s') (ht : t = t') :
-    (n.copy hs ht).symm = n.symm.copy ht hs :=
-  (rfl)
+    (n.copy hs ht).symm = n.symm.copy ht hs := (rfl)
 
 /-- Reversing the order on `Fin (Fintype.card V)` identifies `st`-numberings with
 `ts`-numberings. -/
@@ -287,13 +279,11 @@ def symmEquiv (G : SimpleGraph V) (s t : V) : G.STNumbering s t ≃ G.STNumberin
   right_inv := symm_symm
 
 @[simp]
-theorem symmEquiv_apply (n : G.STNumbering s t) : symmEquiv G s t n = n.symm :=
-  (rfl)
+theorem symmEquiv_apply (n : G.STNumbering s t) : symmEquiv G s t n = n.symm := (rfl)
 
 @[simp]
 theorem symmEquiv_symm (G : SimpleGraph V) (s t : V) :
-    (symmEquiv G s t).symm = symmEquiv G t s :=
-  (rfl)
+    (symmEquiv G s t).symm = symmEquiv G t s := (rfl)
 
 /-- Transport an `st`-numbering to a supergraph on the same vertex type. -/
 def mapLe (hGH : G ≤ H) (n : G.STNumbering s t) : H.STNumbering s t where
@@ -309,23 +299,19 @@ def mapLe (hGH : G ≤ H) (n : G.STNumbering s t) : H.STNumbering s t where
 
 @[simp]
 theorem mapLe_numbering (hGH : G ≤ H) (n : G.STNumbering s t) :
-    (n.mapLe hGH).numbering = n.numbering :=
-  (rfl)
+    (n.mapLe hGH).numbering = n.numbering := (rfl)
 
 @[simp]
-theorem mapLe_refl (n : G.STNumbering s t) : n.mapLe le_rfl = n :=
-  (rfl)
+theorem mapLe_refl (n : G.STNumbering s t) : n.mapLe le_rfl = n := (rfl)
 
 /-- Supergraph transport of `st`-numberings composes transitively. -/
 @[simp]
 theorem mapLe_mapLe {K : SimpleGraph V} (hGH : G ≤ H) (hHK : H ≤ K) (n : G.STNumbering s t) :
-    (n.mapLe hGH).mapLe hHK = n.mapLe (hGH.trans hHK) :=
-  (rfl)
+    (n.mapLe hGH).mapLe hHK = n.mapLe (hGH.trans hHK) := (rfl)
 
 @[simp]
 theorem symm_mapLe (hGH : G ≤ H) (n : G.STNumbering s t) :
-    (n.mapLe hGH).symm = n.symm.mapLe hGH :=
-  (rfl)
+    (n.mapLe hGH).symm = n.symm.mapLe hGH := (rfl)
 
 private def mapNumbering {W : Type*} [Fintype W] {G' : SimpleGraph W} (n : G.STNumbering s t)
     (e : G ≃g G') : W ≃ Fin (Fintype.card W) :=
@@ -369,8 +355,7 @@ theorem val_map_numbering_apply {W : Type*} [Fintype W] {G' : SimpleGraph W}
   rw [val_map_numbering, RelIso.symm_apply_apply]
 
 @[simp]
-theorem map_refl (n : G.STNumbering s t) : n.map Iso.refl = n :=
-  ext_val fun _ ↦ by simp
+theorem map_refl (n : G.STNumbering s t) : n.map Iso.refl = n := ext_val fun _ ↦ by simp
 
 /-- Transport of `st`-numberings along graph isomorphisms composes functorially. -/
 theorem map_trans {W X : Type*} [Fintype W] [Fintype X] {G' : SimpleGraph W} {G'' : SimpleGraph X}
@@ -399,8 +384,7 @@ def stNumberingEquiv [Fintype V] {W : Type*} [Fintype W] {G : SimpleGraph V} {H 
 @[simp]
 theorem stNumberingEquiv_apply [Fintype V] {W : Type*} [Fintype W] {G : SimpleGraph V}
     {H : SimpleGraph W} (e : G ≃g H) (s t : V) (n : G.STNumbering s t) :
-    e.stNumberingEquiv s t n = n.map e :=
-  (rfl)
+    e.stNumberingEquiv s t n = n.map e := (rfl)
 
 @[simp]
 theorem val_stNumberingEquiv_symm_numbering [Fintype V] {W : Type*} [Fintype W]
@@ -417,22 +401,36 @@ variable [Fintype V] {G : SimpleGraph V} {s t : V}
 
 /-! ### Induced bipolar orientation and quiver transport -/
 
+/-- The linear order on `V` pulled back from `Fin (Fintype.card V)` along `n.numbering`. -/
+private abbrev linearOrder (n : G.STNumbering s t) : LinearOrder V :=
+  LinearOrder.lift' n.numbering n.numbering.injective
+
+-- `LinearOrder.lift'` defines `<` and `≤` on `V` as the preimages under `n.numbering`; isolate
+-- those two definitional equalities here so the orientation and path lemmas rewrite explicitly.
+private theorem linearOrder_lt_iff (n : G.STNumbering s t) {u v : V} :
+    @LT.lt V n.linearOrder.toLT u v ↔ n.numbering u < n.numbering v := Iff.rfl
+
+private theorem linearOrder_le_iff (n : G.STNumbering s t) {u v : V} :
+    @LE.le V n.linearOrder.toLE u v ↔ n.numbering u ≤ n.numbering v := Iff.rfl
+
 /-- The orientation induced by an `st`-numbering, directing every edge from its lower-numbered
 endpoint to its higher-numbered endpoint. -/
 def toOrientation (n : G.STNumbering s t) : Orientation G :=
-  @Orientation.ofLinearOrder V G (LinearOrder.lift' n.numbering n.numbering.injective)
+  letI := n.linearOrder
+  Orientation.ofLinearOrder G
 
 /-- A dart belongs to `n.toOrientation` exactly when its first endpoint has a strictly smaller
 number than its second endpoint. -/
 @[simp]
 theorem mem_toOrientation (n : G.STNumbering s t) (d : G.Dart) :
-    d ∈ n.toOrientation ↔ n.numbering d.fst < n.numbering d.snd :=
-  @Orientation.mem_ofLinearOrder_iff V G (LinearOrder.lift' n.numbering n.numbering.injective) d
+    d ∈ n.toOrientation ↔ n.numbering d.fst < n.numbering d.snd := by
+  let _ := n.linearOrder
+  rw [← n.linearOrder_lt_iff]
+  exact Orientation.mem_ofLinearOrder_iff G d
 
 @[simp]
 theorem toOrientation_copy (n : G.STNumbering s t) {s' t' : V} (hs : s = s') (ht : t = t') :
-    (n.copy hs ht).toOrientation = n.toOrientation :=
-  (rfl)
+    (n.copy hs ht).toOrientation = n.toOrientation := (rfl)
 
 /-- Reversing an `st`-numbering reverses every dart of its induced orientation. -/
 theorem mem_symm_toOrientation (n : G.STNumbering s t) (d : G.Dart) :
@@ -456,14 +454,12 @@ def homEquiv (n : G.STNumbering s t) (u v : V) :
 @[simp]
 theorem homEquiv_arrow (n : G.STNumbering s t) {u v : V} (h : G.Adj u v)
     (hlt : n.numbering u < n.numbering v) :
-    n.homEquiv u v (n.arrow h hlt) = ⟨h, hlt⟩ :=
-  Subtype.ext rfl
+    n.homEquiv u v (n.arrow h hlt) = ⟨h, hlt⟩ := Subtype.ext rfl
 
 @[simp]
 theorem homEquiv_symm_apply (n : G.STNumbering s t) {u v : V} (h : G.Adj u v)
     (hlt : n.numbering u < n.numbering v) :
-    (n.homEquiv u v).symm ⟨h, hlt⟩ = n.arrow h hlt :=
-  Subsingleton.elim _ _
+    (n.homEquiv u v).symm ⟨h, hlt⟩ = n.arrow h hlt := Subsingleton.elim _ _
 
 /-- An arrow from `u` to `v` exists in `OrientedQuiver G n.toOrientation` if and only if `u` and
 `v` are adjacent with `n.numbering u < n.numbering v`. -/
@@ -484,25 +480,28 @@ theorem isEmpty_hom_iff (n : G.STNumbering s t) {u v : V} :
 
 /-- The orientation induced by an `st`-numbering is acyclic. -/
 theorem isAcyclic_toOrientation (n : G.STNumbering s t) :
-    TauCeti.Quiver.IsAcyclic (OrientedQuiver G n.toOrientation) :=
-  @OrientedQuiver.isAcyclic_ofLinearOrder V G (LinearOrder.lift' n.numbering n.numbering.injective)
+    TauCeti.Quiver.IsAcyclic (OrientedQuiver G n.toOrientation) := by
+  let _ := n.linearOrder
+  exact OrientedQuiver.isAcyclic_ofLinearOrder G
 
 /-- Along any directed path in `OrientedQuiver G n.toOrientation`, vertex numbers are monotone. -/
 theorem numbering_le_of_path (n : G.STNumbering s t) {x y : OrientedQuiver G n.toOrientation}
     (p : Quiver.Path x y) :
     n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm x) ≤
-      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) :=
-  @OrientedQuiver.le_of_path_ofLinearOrder V G
-    (LinearOrder.lift' n.numbering n.numbering.injective) x y p
+      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) := by
+  let _ := n.linearOrder
+  rw [← n.linearOrder_le_iff]
+  exact OrientedQuiver.le_of_path_ofLinearOrder G p
 
 /-- Along any positive-length directed path in `OrientedQuiver G n.toOrientation`, the endpoint
 number is strictly greater than the start number. -/
 theorem numbering_lt_of_path_of_length_pos (n : G.STNumbering s t)
     {x y : OrientedQuiver G n.toOrientation} (p : Quiver.Path x y) (hp : 0 < p.length) :
     n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm x) <
-      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) :=
-  @OrientedQuiver.lt_of_path_of_length_pos_ofLinearOrder V G
-    (LinearOrder.lift' n.numbering n.numbering.injective) x y p hp
+      n.numbering ((OrientedQuiver.vertexEquiv G n.toOrientation).symm y) := by
+  let _ := n.linearOrder
+  rw [← n.linearOrder_lt_iff]
+  exact OrientedQuiver.lt_of_path_of_length_pos_ofLinearOrder G p hp
 
 /-! ### Monotone walks, source, sink, and directed reachability -/
 
