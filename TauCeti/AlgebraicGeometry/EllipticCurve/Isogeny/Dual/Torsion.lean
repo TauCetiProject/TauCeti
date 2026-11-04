@@ -7,22 +7,23 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Surjective
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 
 /-!
 # Kernels of dual isogenies and degree torsion
 
 For an isogeny `φ : W₁ → W₂`, the identity `φ̂ ∘ φ = [deg φ]` gives an exact sequence
 `ker φ → W₁[deg φ] → ker φ̂`. The first map is inclusion and the second is induced by `φ`.
-Over a separably closed field, if the degree is invertible, the second map is surjective.
-Applying this to the dual also lifts every point of `ker φ` through `φ̂` on degree torsion.
+Over a separably closed field, if `φ` is separable, the second map is surjective.
+If `φ̂` is separable, applying this to the dual lifts every point of `ker φ` through `φ̂`
+on degree torsion.
 
 These are the native-point maps underlying `TauCeti.Isogeny.kerCoeffToTorsionCoeff` and
 `TauCeti.Isogeny.torsionCoeffToDualKerCoeff` in
 `TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion`.
 There `TauCeti.Isogeny.torsionShortExact` packages the same sequence over a separable closure
 as discrete Galois modules. Here the maps are defined over any field, without coefficient
-or cohomology imports; surjectivity is stated under the hypotheses used by the Weil pairing.
+or cohomology imports; surjectivity only needs separability of the relevant isogeny.
 
 ## References
 
@@ -119,27 +120,27 @@ theorem mem_range_kerToTorsion_iff
     refine ⟨⟨R, (Hom.mem_ker_pointMapHom_iff _ _).mpr hR⟩, ?_⟩
     exact Subtype.ext (φ.coe_kerToTorsion _)
 
-variable [IsSepClosed F] (hd : (φ.degree : F) ≠ 0)
+variable [IsSepClosed F]
 
-include hd in
-/-- Every point of the dual kernel is the image under `φ` of a degree-torsion point. -/
-theorem torsionToDualKer_surjective : Function.Surjective φ.torsionToDualKer := by
+/-- For a separable isogeny, every point of the dual kernel is the image under `φ` of a
+degree-torsion point. -/
+theorem torsionToDualKer_surjective
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
+    Function.Surjective φ.torsionToDualKer := by
   intro Q
-  obtain ⟨R, hR⟩ := W₂.nsmul_surjective hd (Q : W₂.Point)
-  dsimp only at hR
-  refine ⟨⟨(Hom.ofIsogeny φ.dual).pointMap R, ?_⟩, Subtype.ext ?_⟩
-  · rw [Submodule.mem_torsionBy_iff, natCast_zsmul, ← Hom.pointMap_nsmul, hR]
-    exact (Hom.mem_ker_pointMapHom_iff _ _).mp Q.property
-  · exact (φ.pointMap_pointMap_dual R).trans hR
+  obtain ⟨R, hR⟩ := φ.toPointHom_surjective (Q : W₂.Point)
+  rw [← Hom.pointMap_ofIsogeny_eq_toPointHom] at hR
+  refine ⟨⟨R, ?_⟩, Subtype.ext hR⟩
+  rw [Submodule.mem_torsionBy_iff, natCast_zsmul, ← φ.pointMap_dual_pointMap, hR]
+  exact (Hom.mem_ker_pointMapHom_iff _ _).mp Q.property
 
-include hd in
-/-- Every point killed by `φ` lifts through `φ̂` on degree torsion. -/
-theorem exists_dual_pointMap_eq_of_mem_ker {P : W₁.Point}
+/-- If the dual is separable, every point killed by `φ` lifts through `φ̂` on degree torsion. -/
+theorem exists_dual_pointMap_eq_of_mem_ker
+    [Algebra.IsSeparable φ.dual.fieldPullback.fieldRange W₂.FunctionField] {P : W₁.Point}
     (hP : P ∈ (Hom.ofIsogeny φ).pointMapHom.ker) :
     ∃ S : Submodule.torsionBy ℤ W₂.Point (φ.degree : ℤ),
       (Hom.ofIsogeny φ.dual).pointMap S = P := by
   have hs := φ.dual.torsionToDualKer_surjective
-    (by simpa only [degree_dual] using hd)
   have hs' : ∀ Q : (Hom.ofIsogeny φ.dual.dual).pointMapHom.ker,
       ∃ S : Submodule.torsionBy ℤ W₂.Point (φ.dual.degree : ℤ),
         (Hom.ofIsogeny φ.dual).pointMap S = Q := fun Q ↦ by

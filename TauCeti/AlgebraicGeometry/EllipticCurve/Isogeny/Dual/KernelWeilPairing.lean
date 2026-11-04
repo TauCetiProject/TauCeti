@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Torsion
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 
 /-!
 # The Weil pairing on the kernels of dual isogenies
@@ -58,7 +59,8 @@ theorem weilPairing_eq_zero_of_pointMap_eq_zero
     (hP : (Hom.ofIsogeny φ).pointMap P = 0)
     (hR : (Hom.ofIsogeny φ).pointMap R = 0) :
     weilPairing W₁ φ.degree hd P R = 0 := by
-  obtain ⟨S, hS⟩ := φ.exists_dual_pointMap_eq_of_mem_ker hd
+  have := φ.isSeparable_dual_of_degree_ne_zero hd
+  obtain ⟨S, hS⟩ := φ.exists_dual_pointMap_eq_of_mem_ker
     ((Hom.mem_ker_pointMapHom_iff _ _).mpr hP)
   have h := φ.weilPairing_eq_weilPairing_dual φ.degree hd
     (S := R) (T := S) (S' := 0) (T' := P) hR hS
@@ -70,6 +72,7 @@ theorem weilPairing_eq_zero_of_pointMap_eq_zero
 `e_φ(P, φ R) = e_n(P, R)` on degree torsion, where `n = deg φ`. -/
 def kerWeilPairing : (Hom.ofIsogeny φ).pointMapHom.ker →+
     (Hom.ofIsogeny φ.dual).pointMapHom.ker →+ Additive (rootsOfUnity φ.degree F) := by
+  have := (φ.isSeparable_dual_and_self_iff.mpr hd).2
   let pairing := (weilPairing W₁ φ.degree hd).comp φ.kerToTorsion
   let vanishing (P : (Hom.ofIsogeny φ).pointMapHom.ker) :
       φ.torsionToDualKer.ker ≤ (pairing P).ker := fun R hR ↦
@@ -77,17 +80,17 @@ def kerWeilPairing : (Hom.ofIsogeny φ).pointMapHom.ker →+
       (φ.pointMap_kerToTorsion P)
       ((φ.torsionToDualKer_eq_zero_iff R).mp hR)
   let lift := φ.torsionToDualKer.liftOfSurjective
-    (G₃ := Additive (rootsOfUnity φ.degree F)) (φ.torsionToDualKer_surjective hd)
+    (G₃ := Additive (rootsOfUnity φ.degree F)) φ.torsionToDualKer_surjective
   refine { toFun := fun P ↦ lift ⟨pairing P, vanishing P⟩
            map_zero' := ?_
            map_add' := ?_ }
   · ext Q
-    obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
+    obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective Q
     simp only [lift, AddMonoidHom.liftOfSurjective, AddMonoidHom.liftOfRightInverse_comp_apply,
       map_zero, AddMonoidHom.zero_apply]
   · intro P P'
     ext Q
-    obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
+    obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective Q
     simp only [lift, AddMonoidHom.liftOfSurjective, AddMonoidHom.liftOfRightInverse_comp_apply,
       map_add, AddMonoidHom.add_apply]
 
@@ -109,11 +112,12 @@ theorem kerWeilPairing_unique
     (he : ∀ P R, e P (φ.torsionToDualKer R) =
       weilPairing W₁ φ.degree hd (φ.kerToTorsion P) R) :
     e = φ.kerWeilPairing hd := by
+  have := (φ.isSeparable_dual_and_self_iff.mpr hd).2
   apply AddMonoidHom.ext
   intro P
   apply AddMonoidHom.ext
   intro Q
-  obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
+  obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective Q
   exact (he P R).trans (φ.kerWeilPairing_torsionToDualKer hd P R).symm
 
 /-- The isogeny Weil pairing is nondegenerate in its first argument. -/
@@ -129,7 +133,8 @@ theorem kerWeilPairing_nondegenerate_left
 theorem kerWeilPairing_nondegenerate_right
     {Q : (Hom.ofIsogeny φ.dual).pointMapHom.ker}
     (hQ : ∀ P, φ.kerWeilPairing hd P Q = 0) : Q = 0 := by
-  obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective hd Q
+  have := (φ.isSeparable_dual_and_self_iff.mpr hd).2
+  obtain ⟨R, rfl⟩ := φ.torsionToDualKer_surjective Q
   let T := torsionByMap _ (Hom.ofIsogeny φ).pointMapHom.toIntLinearMap R
   have hT_coe : (T : W₂.Point) = (Hom.ofIsogeny φ).pointMap R := by
     rw [coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap, Hom.pointMapHom_apply]
