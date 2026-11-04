@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BimoduleResolution
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BimoduleResolution.Basic
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.Algebra.Homology.DG.Algebra.Envelope
 
