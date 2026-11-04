@@ -82,16 +82,6 @@ section Continuous
 
 variable [IsManifold I 1 M]
 
-/-- The pullback of a continuous form along a `C¹` map `u` from a normed space, evaluated on fixed
-vectors, is continuous. For `u` a map of the plane this is the integrand of a rectangle
-integral. -/
-theorem IsSmoothForm.continuous_mpullback_apply {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] {k : ℕ} {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ) {u : E' → M}
-    (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (v : Fin k → E') :
-    Continuous fun z ↦ TauCeti.mpullback 𝓘(ℝ, E') I u φ z v := by
-  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
-  exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
-
 /-- The inner integral of a rectangle integral of a continuous form over a `C¹` map is a
 continuous function of the first coordinate. -/
 private theorem continuous_integral_mpullback {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
@@ -200,7 +190,7 @@ theorem rectangleTrans_apply_add_snd {u₁ u₂ : ℝ × ℝ → M} {T : ℝ}
 
 omit [TopologicalSpace M] in
 /-- Below `s = 2/3` the concatenation is a reparametrization of the first map. -/
-private theorem rectangleTrans_eq_left {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t, u₁ (1, t) = u₂ (0, t))
+theorem rectangleTrans_eq_left {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t, u₁ (1, t) = u₂ (0, t))
     {z : ℝ × ℝ} (hz : z.1 < 2 / 3) :
     rectangleTrans u₁ u₂ z =
       (u₁ ∘ Prod.map (fun s ↦ Real.smoothTransition (3 * s)) id) z := by
@@ -211,7 +201,7 @@ private theorem rectangleTrans_eq_left {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t
 
 omit [TopologicalSpace M] in
 /-- Above `s = 1/3` the concatenation is a reparametrization of the second map. -/
-private theorem rectangleTrans_eq_right {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t, u₁ (1, t) = u₂ (0, t))
+theorem rectangleTrans_eq_right {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t, u₁ (1, t) = u₂ (0, t))
     {z : ℝ × ℝ} (hz : 1 / 3 < z.1) :
     rectangleTrans u₁ u₂ z =
       (u₂ ∘ Prod.map (fun s ↦ Real.smoothTransition (3 * s - 2)) id) z := by
