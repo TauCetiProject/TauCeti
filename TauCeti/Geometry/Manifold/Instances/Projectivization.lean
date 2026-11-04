@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
+public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Topology.Algebra.Projectivization
 
 /-!
@@ -29,6 +30,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 * `Projectivization.contDiffOn_affineChart_symm_trans`: the transition maps are `C^r` for
   every `r`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
+* `Projectivization.instIsManifoldReal`: over a normed `ℝ`-algebra, such as `ℂ`, it is also a real
+  `C^r` manifold with the same charts.
 * `Projectivization.contMDiffOn_affineChart` and `Projectivization.contMDiff_affineChart_symm`:
   the affine charts and their inverses are `C^r` maps.
 
@@ -84,6 +87,13 @@ instance instIsManifold (r : ℕ∞ω) :
   apply isManifold_of_contDiffOn
   rintro _ _ ⟨i, rfl⟩ ⟨j, rfl⟩
   simpa using contDiffOn_affineChart_symm_trans i j r
+
+/-- Projective space over a normed `ℝ`-algebra `𝕜` is, with the same affine charts, a real `C^r`
+manifold for every `r`. Over `ℂ` this is the underlying real smooth structure of `ℂℙⁿ`, modelled
+on `𝓘(ℝ, Fin n → ℂ)`. -/
+instance instIsManifoldReal [NormedAlgebra ℝ 𝕜] (r : ℕ∞ω) :
+    IsManifold 𝓘(ℝ, Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
+  (instIsManifold r).restrictScalars ℝ
 
 /-- Each standard affine chart of projective space is a `C^r` map on its domain. -/
 theorem contMDiffOn_affineChart (i : Fin (n + 1)) (r : ℕ∞ω) :
