@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import TauCeti.Analysis.Matrix.Polar.Deformation
-public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
+public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 
 /-!
@@ -21,24 +19,11 @@ is how the Maslov index of a totally real boundary condition is compared with in
 only for Lagrangian loops, such as the Robbin–Salamon index of their closed-loop specialization.
 
 The two loops are joined by a homotopy through loops of maximal totally real subspaces with
-continuous frames, built as follows. Write `Λ t = M t ℝⁿ` (`Matrix.realImage`) for a continuous
-path `M` of invertible matrices; closedness of the loop says `M 1 = M 0 G` for a real invertible
-matrix `G`.
-
-* **Orthonormalization.** Replacing `M` by `B = M Re (Mᴴ M) ^ (-1/2)` does not change the real
-  spans `M t ℝⁿ`, because the correction is real and invertible, and it makes the columns of
-  `B t` orthonormal for the real inner product `Re ⟪·, ·⟫`. Two such frames with the same real
-  span differ by a real orthogonal matrix, so `B 1 = B 0 O` with `O` orthogonal, hence unitary.
-* **Polar contraction.** Contracting the positive factor of the polar decomposition
-  `B t = P t V t`, through `P t ^ (1 - s) V t`
-  (`Matrix.GeneralLinearGroup.polarDeformation`), is equivariant under right multiplication by
-  the unitary monodromy `O` (`Matrix.GeneralLinearGroup.polarDeformation_mul_toUnits`). So every
-  intermediate path still closes up as a loop of subspaces, and at `s = 1` it reaches the unitary
-  path `V`. Homotopy invariance of the Maslov index
-  (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_homotopy`) then compares the two loops.
-
-Without the orthonormalization the monodromy `G` need not be orthogonal, and the polar
-contraction of `M` need not close up.
+continuous frames. Write `Λ t = M t ℝⁿ` (`Matrix.realImage`) for a continuous path `M` of
+invertible matrices. The closed frame `M` deforms through closed frames to a path `U` of unitary
+matrices, by orthonormalizing its real frames and then contracting the positive factor of their
+polar decomposition (`TauCeti.exists_realImage_homotopy_unitaryGroup`). Homotopy invariance of the
+Maslov index (`TauCeti.TotallyRealLoop.maslovIndex_eq_of_homotopy`) then compares the two loops.
 
 ## Main declarations
 
@@ -60,117 +45,11 @@ public section
 noncomputable section
 
 open Matrix
-open scoped MatrixOrder ComplexOrder Matrix.Norms.L2Operator unitInterval
+open scoped unitInterval
 
 namespace TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-! ### Orthonormalizing a frame by a real change of basis -/
-
-/-- The real Gram matrix `Re (Mᴴ M)` of the columns of `M`, for the real inner product
-`Re ⟪v, w⟫` of `ℂⁿ`. -/
-private abbrev realGram (M : Matrix n n ℂ) : Matrix n n ℝ := (Mᴴ * M).map Complex.re
-
-/-- The real Gram matrix of an invertible complex matrix is positive definite. -/
-private theorem posDef_realGram (M : GL n ℂ) : (realGram (M : Matrix n n ℂ)).PosDef :=
-  (PosDef.conjTranspose_mul_self _ (mulVec_injective_of_isUnit M.isUnit)).map_re
-
-/-- The real matrix `Re (Mᴴ M) ^ (-1/2)`. Multiplying `M` by it on the right makes the columns
-orthonormal for `Re ⟪·, ·⟫`. -/
-private abbrev gramNormalizer (M : GL n ℂ) : Matrix n n ℝ :=
-  realGram (M : Matrix n n ℂ) ^ (-(1 / 2) : ℝ)
-
-private theorem posDef_gramNormalizer (M : GL n ℂ) : (gramNormalizer M).PosDef :=
-  isStrictlyPositive_iff_posDef.1 <|
-    IsStrictlyPositive.rpow _ _ (isStrictlyPositive_iff_posDef.2 (posDef_realGram M))
-
-private theorem gramNormalizer_mul_realGram_mul (M : GL n ℂ) :
-    (gramNormalizer M)ᵀ * realGram (M : Matrix n n ℂ) * gramNormalizer M = 1 := by
-  have hH := isStrictlyPositive_iff_posDef.2 (posDef_realGram M)
-  have hT : (gramNormalizer M)ᵀ = gramNormalizer M := by
-    exact (by simpa [conjTranspose_eq_transpose_of_trivial] using (posDef_gramNormalizer M).1 :
-      (gramNormalizer M).IsSymm).eq
-  rw [hT, gramNormalizer]
-  nth_rw 2 [← CFC.rpow_one (realGram (M : Matrix n n ℂ)) hH.nonneg]
-  rw [← CFC.rpow_add hH.isUnit, ← CFC.rpow_add hH.isUnit]
-  norm_num [CFC.rpow_zero _ hH.nonneg]
-
-private theorem isUnit_gramNormalizer_map (M : GL n ℂ) :
-    IsUnit ((gramNormalizer M).map ((↑) : ℝ → ℂ)) :=
-  (posDef_gramNormalizer M).isUnit.map Complex.ofRealHom.mapMatrix
-
-/-- The frame `M Re (Mᴴ M) ^ (-1/2)`. It spans the same real subspace as `M`, and its columns are
-orthonormal for `Re ⟪·, ·⟫`. -/
-private def orthoFrame (M : GL n ℂ) : GL n ℂ :=
-  M * (isUnit_gramNormalizer_map M).unit
-
-private theorem coe_orthoFrame (M : GL n ℂ) :
-    (orthoFrame M : Matrix n n ℂ) = M * (gramNormalizer M).map ((↑) : ℝ → ℂ) :=
-  rfl
-
-private theorem realImage_orthoFrame (M : GL n ℂ) :
-    (orthoFrame M : Matrix n n ℂ).realImage = (M : Matrix n n ℂ).realImage := by
-  rw [coe_orthoFrame]
-  exact realImage_mul_map_ofReal _ (posDef_gramNormalizer M).isUnit
-
-private theorem realGram_orthoFrame (M : GL n ℂ) :
-    realGram (orthoFrame M : Matrix n n ℂ) = 1 := by
-  rw [coe_orthoFrame, realGram, map_re_conjTranspose_mul_self_mul_map_ofReal,
-    gramNormalizer_mul_realGram_mul]
-
-private theorem continuous_orthoFrame {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
-    (hM : Continuous M) : Continuous fun x ↦ orthoFrame (M x) := by
-  refine Units.isOpenEmbedding_val.continuous_iff.2 ?_
-  have hval : Continuous fun x ↦ (M x : Matrix n n ℂ) := Units.continuous_val.comp hM
-  have hG : Continuous fun x ↦ realGram (M x : Matrix n n ℂ) :=
-    (hval.matrix_conjTranspose.mul hval).matrix_map Complex.continuous_re
-  have hQ : Continuous fun x ↦ gramNormalizer (M x) :=
-    (Matrix.contDiffOn_rpow (𝕜 := ℝ) (n := n) (-(1 / 2)) (k := 0)).continuousOn.comp_continuous
-      hG fun x ↦ posDef_realGram (M x)
-  exact hval.mul (hQ.matrix_map Complex.continuous_ofReal)
-
-/-- Two frames with the same real span whose columns are orthonormal for `Re ⟪·, ·⟫` differ by an
-orthogonal matrix on the right. -/
-private theorem exists_transpose_mul_self_eq_one {B B' : GL n ℂ}
-    (h : (B : Matrix n n ℂ).realImage = (B' : Matrix n n ℂ).realImage)
-    (hB : realGram (B : Matrix n n ℂ) = 1) (hB' : realGram (B' : Matrix n n ℂ) = 1) :
-    ∃ O : Matrix n n ℝ, Oᵀ * O = 1 ∧ (B' : Matrix n n ℂ) = B * O.map ((↑) : ℝ → ℂ) := by
-  obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal h
-  refine ⟨O, ?_, hO⟩
-  have := map_re_conjTranspose_mul_self_mul_map_ofReal (B : Matrix n n ℂ) O
-  rwa [← hO, ← realGram, ← realGram, hB', hB, mul_one, eq_comm] at this
-
-/-- **The Lagrangian deformation of a closed frame.** A continuous path `M` of invertible complex
-matrices with `M 0 ℝⁿ = M 1 ℝⁿ` is deformed, through continuous paths `F (s, ·)` with
-`F (s, 0) ℝⁿ = F (s, 1) ℝⁿ`, from a path with the same real spans as `M` to a path of unitary
-matrices. First orthonormalize the real frames, so that the endpoint monodromy is orthogonal;
-then contract the positive factor of the polar decomposition, which is equivariant under that
-monodromy. -/
-private theorem exists_frameHomotopy {M : I → GL n ℂ} (hM : Continuous M)
-    (h01 : (M 0 : Matrix n n ℂ).realImage = (M 1 : Matrix n n ℂ).realImage) :
-    ∃ F : I × I → GL n ℂ, Continuous F ∧
-      (∀ t, (F (0, t) : Matrix n n ℂ).realImage = (M t : Matrix n n ℂ).realImage) ∧
-      (∀ s, (F (s, 0) : Matrix n n ℂ).realImage = (F (s, 1) : Matrix n n ℂ).realImage) ∧
-      ∀ t, (F (1, t) : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
-  obtain ⟨O, hOO, hO⟩ := exists_transpose_mul_self_eq_one (B := orthoFrame (M 0))
-    (B' := orthoFrame (M 1)) (by rw [realImage_orthoFrame, realImage_orthoFrame, h01])
-    (realGram_orthoFrame _) (realGram_orthoFrame _)
-  have hOu := map_ofReal_mem_unitaryGroup ((mem_orthogonalGroup_iff' n ℝ).2 hOO)
-  have hO1 : orthoFrame (M 1) = orthoFrame (M 0) * Unitary.toUnits ⟨_, hOu⟩ := Units.ext hO
-  have hOunit : IsUnit O :=
-    (Matrix.isUnit_iff_isUnit_det O).2 (Matrix.isUnit_det_of_left_inverse hOO)
-  refine ⟨fun p ↦ GeneralLinearGroup.polarDeformation (orthoFrame (M p.2)) p.1, ?_,
-    fun t ↦ ?_, fun s ↦ ?_, fun t ↦ ?_⟩
-  · have h := (GeneralLinearGroup.contMDiff_polarDeformation (n := n) (𝕜 := ℂ) (k := 0)).continuous
-    exact h.comp ((continuous_subtype_val.comp continuous_fst).prodMk
-      ((continuous_orthoFrame hM).comp continuous_snd))
-  · simp [realImage_orthoFrame]
-  · simp only
-    rw [hO1, GeneralLinearGroup.polarDeformation_mul_toUnits, Units.val_mul,
-      Unitary.val_toUnits_apply]
-    exact (realImage_mul_map_ofReal _ hOunit).symm
-  · simp
 
 /-! ### Loops of totally real subspaces of `ℂⁿ` -/
 
@@ -197,7 +76,7 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
     refine congrArg (fun f ↦ (realSubspace n).map f) (LinearMap.ext fun v ↦ ?_)
     simp
   obtain ⟨F, hFc, hF0, hFclosed, hF1⟩ :=
-    exists_frameHomotopy hMc (by rw [hMΛ, hMΛ]; exact Λ.toFun_zero_eq_toFun_one)
+    exists_realImage_homotopy_unitaryGroup hMc (by rw [hMΛ, hMΛ]; exact Λ.toFun_zero_eq_toFun_one)
   have hF1c : Continuous fun t : I ↦ F (1, t) := hFc.comp (Continuous.prodMk_right 1)
   let Λ' : TotallyRealLoop (EuclideanSpace ℂ n) :=
     { toFun := fun t ↦ (F (1, t) : Matrix n n ℂ).realImage

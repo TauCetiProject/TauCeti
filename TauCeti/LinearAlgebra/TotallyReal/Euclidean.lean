@@ -16,7 +16,8 @@ The real subspace `ℝⁿ ⊆ ℂⁿ` of vectors with real coordinates (`TauCeti
 totally real. Its image `M ℝⁿ` under a complex matrix (`Matrix.realImage`) is the real span of the
 columns of `M`. For invertible `M` it is again maximal totally real, and it only depends on `M` up
 to right multiplication by an invertible real matrix: two invertible matrices with the same image
-of `ℝⁿ` differ by such a matrix. For unitary `M` it is moreover isotropic for the standard
+of `ℝⁿ` differ by such a matrix, which is orthogonal when both have columns orthonormal for the
+real inner product `Re ⟪·, ·⟫`. For unitary `M` it is moreover isotropic for the standard
 symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
 
 ## Main declarations
@@ -27,6 +28,8 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
   for invertible `M` (`Matrix.isMaximalTotallyReal_realImage`).
 * `Matrix.realImage_mul_map_ofReal`, `Matrix.exists_eq_mul_map_ofReal`: `M ℝⁿ` determines an
   invertible `M` up to right multiplication by an invertible real matrix.
+* `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
+  that real matrix is orthogonal.
 * `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
   continuous linear automorphism of `ℂⁿ` is its image under the automorphism.
 * `TauCeti.im_inner_eq_zero_of_mem_realImage`: the subspace `U ℝⁿ` is isotropic for
@@ -181,6 +184,18 @@ theorem exists_eq_mul_map_ofReal {M M' : GL n ℂ}
     ext i j
     apply Complex.ext <;> simp [hX i j]
   rw [hX', ← mul_assoc, Units.mul_inv, one_mul]
+
+/-- Two invertible complex matrices with the same image of `ℝⁿ`, whose columns are orthonormal for
+the real inner product `Re ⟪·, ·⟫`, differ by a real orthogonal matrix on the right. -/
+theorem exists_mem_orthogonalGroup_eq_mul_map_ofReal {M M' : GL n ℂ}
+    (h : (M : Matrix n n ℂ).realImage = (M' : Matrix n n ℂ).realImage)
+    (hM : ((M : Matrix n n ℂ)ᴴ * M).map Complex.re = 1)
+    (hM' : ((M' : Matrix n n ℂ)ᴴ * M').map Complex.re = 1) :
+    ∃ O ∈ orthogonalGroup n ℝ, (M' : Matrix n n ℂ) = M * O.map ((↑) : ℝ → ℂ) := by
+  obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal h
+  refine ⟨O, (mem_orthogonalGroup_iff' n ℝ).2 ?_, hO⟩
+  have := map_re_conjTranspose_mul_self_mul_map_ofReal (M : Matrix n n ℂ) O
+  rwa [← hO, hM', hM, mul_one, eq_comm] at this
 
 /-- The image of `ℝⁿ` under the matrix of a continuous linear automorphism of `ℂⁿ` is its image
 under the automorphism. -/
