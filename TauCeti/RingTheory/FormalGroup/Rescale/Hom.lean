@@ -63,6 +63,13 @@ private theorem map_scaledSeries (f : FormalGroupHom F G) (s : R) (φ : R →+* 
   ext n
   simp [coeff_scaledSeries]
 
+private theorem eval_scaledSeries (f : FormalGroupHom F G) (s : R) :
+    (scaledSeries (f.map Polynomial.C) Polynomial.X).map (Polynomial.evalRingHom s) =
+      scaledSeries f s := by
+  ext n
+  simpa [coeff_scaledSeries] using
+    mul_comm (PowerSeries.coeff n f.toPowerSeries) (s ^ (n - 1))
+
 private theorem smul_subst_scaledSeries (f : FormalGroupHom F G) (s : R)
     {σ : Type*} {a : MvPowerSeries σ R} (ha : PowerSeries.HasSubst a) :
     s • PowerSeries.subst a (scaledSeries f s) =
@@ -98,10 +105,6 @@ private theorem scaledSeries_hom (f : FormalGroupHom F G) (s : R) :
       (.of_constantCoeff_zero ((F.map Polynomial.C).rescale Polynomial.X).zero_constantCoeff),
     MvPowerSeries.map_subst (.toMvPowerSeries
       (constantCoeff_scaledSeries (f.map Polynomial.C) Polynomial.X))] at h
-  have hseries : (scaledSeries (f.map Polynomial.C) Polynomial.X).map
-      (Polynomial.evalRingHom s) = scaledSeries f s := by
-    rw [map_scaledSeries]
-    simp [scaledSeries, map_toPowerSeries, PowerSeries.map, Polynomial.evalRingHom]
   have hlaw (L : FormalGroup R) :
       MvPowerSeries.map (Polynomial.evalRingHom s)
         ((L.map Polynomial.C).rescale Polynomial.X).toPowerSeries =
@@ -109,7 +112,7 @@ private theorem scaledSeries_hom (f : FormalGroupHom F G) (s : R) :
     rw [← FormalGroup.map_toPowerSeries, FormalGroup.map_rescale, FormalGroup.map_comp]
     simp only [Polynomial.evalRingHom, Polynomial.eval₂RingHom_comp_C, FormalGroup.map_id,
       Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
-  simpa only [hseries, hlaw, PowerSeries.map_toMvPowerSeries] using h
+  simpa only [eval_scaledSeries, hlaw, PowerSeries.map_toMvPowerSeries] using h
 
 /-- Rescale a formal group homomorphism together with its source and target. Its coefficient
 of degree `n` is multiplied by `s ^ (n - 1)`, so its linear coefficient does not change. -/
@@ -183,16 +186,15 @@ theorem rescale_comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) (s : R) :
   have hscaled {L M : FormalGroup R} (f : FormalGroupHom L M) :
       ((f.map Polynomial.C).rescale Polynomial.X).toPowerSeries.map
         (Polynomial.evalRingHom s) = (f.rescale s).toPowerSeries := by
-    rw [map_rescale_toPowerSeries]
-    simp [rescale, scaledSeries, map_toPowerSeries, PowerSeries.map, Polynomial.evalRingHom]
+    exact eval_scaledSeries f s
   apply FormalGroupHom.ext
   rw [← map_comp] at h
   simp only [comp_toPowerSeries] at h
-  -- `PowerSeries.map` is the multivariate coefficient map on the unit index type.
-  simp only [PowerSeries.map] at h hscaled
-  rw [PowerSeries.map_subst (.of_constantCoeff_zero
-    ((f.map Polynomial.C).rescale Polynomial.X).zero_constantCoeff)] at h
-  simpa only [PowerSeries.map, hscaled, comp_toPowerSeries] using h
+  rw [comp_toPowerSeries]
+  exact (hscaled (g.comp f)).symm.trans <| h.trans <|
+    (PowerSeries.map_subst (.of_constantCoeff_zero
+      ((f.map Polynomial.C).rescale Polynomial.X).zero_constantCoeff) _).trans <|
+        congrArg₂ PowerSeries.subst (hscaled f) (hscaled g)
 
 end TauCeti.FormalGroupHom
 
