@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.LinearAlgebra.BilinearMap
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # The integer cast into a normed ring
@@ -17,7 +17,7 @@ ring homomorphism, such as `Polynomial.supNorm_map`, apply to integer polynomial
 
 Over a seminormed ring `R`, which need not be a field, an `R`-bilinear map `β` with
 `‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous_of_norm_apply_le`), and
-so is a scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`continuousSMul_of_norm_smul_le`).
+so is a scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`).
 -/
 
 public section
@@ -27,8 +27,6 @@ public section
 instance RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
     [NormSMulClass ℤ R] [NormOneClass R] : RingHomIsometric (Int.castRingHom R) where
   norm_map {n} := by simp [norm_intCast_eq_abs_mul_norm_one, Int.norm_eq_abs]
-
-open Filter Topology
 
 open scoped NNReal
 
@@ -40,23 +38,18 @@ variable {R : Type*} [SeminormedCommRing R]
 theorem LinearMap.continuous_of_norm_apply_le {X Y Z : Type*} [SeminormedAddCommGroup X]
     [Module R X] [SeminormedAddCommGroup Y] [Module R Y] [SeminormedAddCommGroup Z] [Module R Z]
     (β : X →ₗ[R] Y →ₗ[R] Z) (C : ℝ) (hβ : ∀ x y, ‖β x y‖ ≤ C * ‖x‖ * ‖y‖) :
-    Continuous fun p : X × Y ↦ β p.1 p.2 := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  -- `β x y - β x₀ y₀ = β (x - x₀) y + β x₀ (y - y₀)`
-  have hg : Tendsto (fun q : X × Y ↦ C * ‖q.1 - p.1‖ * ‖q.2‖ + C * ‖p.1‖ * ‖q.2 - p.2‖) (𝓝 p)
-      (𝓝 0) := by
-    simpa using ((by fun_prop : Continuous fun q : X × Y ↦
-      C * ‖q.1 - p.1‖ * ‖q.2‖ + C * ‖p.1‖ * ‖q.2 - p.2‖).tendsto p)
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun q ↦ ?_) hg
-  have hsplit : β q.1 q.2 - β p.1 p.2 = β (q.1 - p.1) q.2 + β p.1 (q.2 - p.2) := by
-    simp only [map_sub, LinearMap.sub_apply]
-    abel
-  rw [hsplit]
-  exact (norm_add_le _ _).trans (add_le_add (hβ _ _) (hβ _ _))
+    Continuous fun p : X × Y ↦ β p.1 p.2 :=
+  IsBoundedBilinearMap.continuous (𝕜 := R)
+    { add_left := fun x₁ x₂ y ↦ by simp
+      smul_left := fun c x y ↦ by simp
+      add_right := fun x y₁ y₂ ↦ by simp
+      smul_right := fun c x y ↦ by simp
+      bound := ⟨max C 1, by positivity, fun x y ↦
+        (hβ x y).trans (by gcongr; exact le_max_left _ _)⟩ }
 
 /-- A scalar action bounded by `C * ‖r‖ * ‖m‖` is continuous. -/
-theorem continuousSMul_of_norm_smul_le {M : Type*} [SeminormedAddCommGroup M] [Module R M]
+theorem TauCeti.continuousSMul_of_norm_smul_le {M : Type*} [SeminormedAddCommGroup M]
+    [Module R M]
     (h : ∃ C : ℝ≥0, ∀ (r : R) (m : M), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) : ContinuousSMul R M :=
   h.elim fun C hC ↦ ⟨(LinearMap.lsmul R M).continuous_of_norm_apply_le C hC⟩
 
