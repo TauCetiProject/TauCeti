@@ -58,6 +58,7 @@ along it, so no canonical sample space is imposed on users.
   at `a₀` at time zero.
 * `MeasureTheory.Measure.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
   kernel integrated against `ν`.
+* `MeasureTheory.Measure.markovChainLaw_smul` — scaling the initial measure scales the path law.
 * `MeasureTheory.Measure.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
   `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form, and
   `MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp` evaluates it at a singleton.
@@ -196,6 +197,13 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_eq_comp :
 theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_apply (x : α) :
     κ.markovChainKernel x = markovChainLaw (Measure.dirac x) κ := by
   rw [Measure.markovChainLaw_eq_comp, Measure.dirac_bind (Kernel.measurable _)]
+
+/-- **The path law is linear in the initial measure under scaling**: scaling the initial measure
+by `c` scales the path law by `c`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_smul (c : ℝ≥0∞) :
+    markovChainLaw (c • ν) κ = c • markovChainLaw ν κ := by
+  simp only [Measure.markovChainLaw_eq_comp]
+  exact Measure.bind_smul _ _ κ.markovChainKernel.measurable.aemeasurable
 
 /-- **The law of the chain depends measurably on its starting state.** -/
 theorem _root_.ProbabilityTheory.Kernel.measurable_markovChainLaw_dirac :

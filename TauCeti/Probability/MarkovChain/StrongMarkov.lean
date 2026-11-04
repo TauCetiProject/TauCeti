@@ -123,9 +123,7 @@ theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul
     hτ.measurableSpace_le _ hA |>.inter ((measurableSet_singleton ⊤).preimage hτ.measurable').compl
   rw [markovChainLaw_restrict_map_stoppedValue_shift_iterate ν κ hτ hA,
     Measure.map_congr (ae_restrict_of_forall_mem hS hy), Measure.map_const,
-    Measure.restrict_apply_univ]
-  simp only [markovChainLaw_eq_comp]
-  exact Measure.bind_smul _ _ κ.markovChainKernel.measurable.aemeasurable
+    Measure.restrict_apply_univ, markovChainLaw_smul]
 
 /-- **The strong Markov property, for events.** For a stopping time `τ` of the natural filtration,
 an event `A` of the σ-algebra of `τ` and a measurable set `B` of paths,

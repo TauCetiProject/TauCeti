@@ -30,12 +30,13 @@ and reaches `y`, then:
 * `y` is recurrent, by comparing Green functions:
   `(κ ^ b) y {x} · (κ ^ n) x {x} · (κ ^ a) x {y} ≤ (κ ^ (b + n + a)) y {y}`.
 
-Consequently recurrence and transience are class properties, the communicating class of a
-recurrent state is closed, and within it the chain started anywhere enters every state almost
-surely. For an irreducible chain, either every state is recurrent or none is; if they are, then
-from every initial law the chain enters every state almost surely and visits every state
-infinitely often. On a finite nonempty state space some state is recurrent, so there is a closed
-communicating class, and every state of a finite irreducible chain is recurrent.
+Consequently recurrence and transience are class properties, within the communicating class of
+a recurrent state the chain started anywhere enters every state almost surely, and on a countable
+state space that class is closed. For an irreducible chain, either every state is recurrent or none
+is; if they are, then from every initial law the chain enters every state almost surely, and on a
+countable state space almost every path visits every state infinitely often. On a finite nonempty
+state space some state is recurrent, so there is a closed communicating class, and every state of a
+finite irreducible chain is recurrent.
 
 ## Main definitions
 
@@ -52,13 +53,14 @@ communicating class, and every state of a finite irreducible chain is recurrent.
 * `ProbabilityTheory.Kernel.Communicates.isRecurrent_iff`: recurrence is a class property.
 * `ProbabilityTheory.Kernel.IsRecurrent.markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top`:
   in the class of a recurrent state, the chain started anywhere enters every state almost surely.
-* `ProbabilityTheory.Kernel.IsRecurrent.isClosedSet_communicatingClass`: the communicating class
-  of a recurrent state is closed.
+* `ProbabilityTheory.Kernel.IsRecurrent.isClosedSet_communicatingClass`: on a countable state
+  space, the communicating class of a recurrent state is closed.
 * `ProbabilityTheory.Kernel.isRecurrent_iff_isRecurrent`,
   `ProbabilityTheory.Kernel.IsRecurrent.ae_hittingAfter_zero_ne_top` and
   `ProbabilityTheory.Kernel.IsRecurrent.ae_forall_infinite_setOf_eq`: for an irreducible chain,
   recurrence does not depend on the state, and a recurrent irreducible chain started from any
-  initial law enters, and visits infinitely often, every state.
+  initial law enters every state almost surely; on a countable state space, almost every path
+  visits every state infinitely often.
 * `ProbabilityTheory.Kernel.exists_isRecurrent`,
   `ProbabilityTheory.Kernel.exists_isClosedSet_communicatingClass` and
   `ProbabilityTheory.Kernel.isRecurrent_of_finite`: finite state spaces.
@@ -235,16 +237,26 @@ theorem IsRecurrent.ae_hittingAfter_zero_ne_top (hx : κ.IsRecurrent x) (ν : Me
   simp [Kernel.markovChainKernel_apply, hw]
 
 /-- **A recurrent irreducible chain visits every state infinitely often.** On a countable state
-space, from every finite initial measure, almost every path visits every state infinitely
-often. -/
+space, from every initial measure, almost every path visits every state infinitely often. -/
 theorem IsRecurrent.ae_forall_infinite_setOf_eq [Countable α] (hx : κ.IsRecurrent x)
-    (ν : Measure α) [IsFiniteMeasure ν] :
+    (ν : Measure α) :
     ∀ᵐ ω ∂markovChainLaw ν κ, ∀ y, {n | ω n = y}.Infinite := by
-  refine ae_all_iff.mpr fun y => ?_
-  filter_upwards [hx.ae_hittingAfter_zero_ne_top ν y,
-    Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top ν κ
-      ((isRecurrent_iff_isRecurrent x y).mp hx)] with ω hH hω
-  exact hω hH
+  have hS : MeasurableSet {ω : ℕ → α | ∀ y, {n | ω n = y}.Infinite} := by
+    simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (ω : ℕ → α) => ω n),
+      lt_top_iff_ne_top, Set.ofPred_forall]
+    exact MeasurableSet.iInter fun y => MeasurableSet.iInter fun k =>
+      measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+        (measurableSet_singleton y) k
+  -- Started at any state `w`, almost every path visits every state infinitely often.
+  have hw : ∀ w, markovChainLaw (Measure.dirac w) κ {ω | ∀ y, {n | ω n = y}.Infinite}ᶜ = 0 :=
+    fun w => ae_iff.mp <| ae_all_iff.mpr fun y => by
+      filter_upwards [hx.ae_hittingAfter_zero_ne_top (Measure.dirac w) y,
+        Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top (Measure.dirac w) κ
+          ((isRecurrent_iff_isRecurrent x y).mp hx)] with ω hH hω
+      exact hω hH
+  rw [ae_iff, ← Set.compl_ofPred, Measure.markovChainLaw_eq_comp,
+    Measure.bind_apply hS.compl (Kernel.aemeasurable _)]
+  simp [Kernel.markovChainKernel_apply, hw]
 
 end Irreducible
 
