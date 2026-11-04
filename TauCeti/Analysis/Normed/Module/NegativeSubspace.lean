@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Graph coordinates for negative subspaces
@@ -26,6 +28,22 @@ The main result is
 `Submodule.existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt`. The preceding dimension
 bound and the final maximality theorem explain why subspaces of this dimension are
 maximal among negative subspaces. The statements include a zero-dimensional first factor.
+In these graph coordinates the space of maximal negative subspaces is the open unit ball of
+`E →L[ℝ] F`, which is contractible (`Metric.contractibleSpace_ball`) by the straight-line
+contraction `A ↦ t • A`.
+
+Graph coordinates also compare orientations of different negative subspaces. A frame of a
+negative subspace is an operator `L : E →L[ℝ] E × F` whose nonzero values lie in the negative
+cone; its negative block `fst ∘ L` is then invertible, and the sign of its determinant records
+the orientation of the frame relative to `E`. Along a continuous family of such frames over a
+preconnected parameter space this sign is constant
+(`ContinuousLinearMap.det_fst_comp_pos_iff_of_norm_snd_lt`), so it is the orientation transported
+through the space of negative subspaces. The straight-line contraction acts on frames as
+`ContinuousLinearMap.negativeContraction`, `u ↦ ((L u).1, t • (L u).2)`: if the image of `L` is
+the graph of `A`, the image of its contraction at time `t` is the graph of `t • A`
+(`ContinuousLinearMap.range_negativeContraction`). It stays negative for `|t| ≤ 1`
+(`ContinuousLinearMap.norm_snd_negativeContraction_lt`) and joins `L` to the frame
+`inl ∘ fst ∘ L` of `E × 0`.
 
 ## References
 
@@ -61,6 +79,91 @@ theorem opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt [FiniteDimensional ℝ E]
   · intro h u hu
     have hne : (u, A u) ≠ (0 : E × F) := fun hz ↦ hu (congrArg Prod.fst hz)
     simpa only [one_mul] using h (u, A u) (by simp) hne
+
+/-- A frame whose nonzero values lie strictly inside the negative cone has injective negative
+block. No finite-dimensionality is needed. -/
+theorem injective_fst_comp_of_norm_snd_lt (L : E →L[ℝ] E × F)
+    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) : Injective ((fst ℝ E F).comp L) := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
+  by_contra hne
+  have h := hL u hne
+  rw [show (L u).1 = 0 from hu, norm_zero] at h
+  exact (norm_nonneg _).not_gt h
+
+/-- A frame whose nonzero values lie strictly inside the negative cone has invertible negative
+block. -/
+theorem det_fst_comp_ne_zero_of_norm_snd_lt [FiniteDimensional ℝ E] (L : E →L[ℝ] E × F)
+    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) : ((fst ℝ E F).comp L).det ≠ 0 := by
+  rw [ContinuousLinearMap.det, Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not,
+    LinearMap.ker_eq_bot]
+  exact L.injective_fst_comp_of_norm_snd_lt hL
+
+/-- **Orientation transport through negative subspaces.** Along a continuous family of frames
+whose nonzero values lie strictly inside the negative cone, parametrized by a preconnected space,
+the sign of the determinant of the negative block is constant. -/
+theorem det_fst_comp_pos_iff_of_norm_snd_lt [FiniteDimensional ℝ E] {X : Type*}
+    [TopologicalSpace X] [PreconnectedSpace X] {L : X → E →L[ℝ] E × F} (hcont : Continuous L)
+    (hL : ∀ x u, u ≠ 0 → ‖(L x u).2‖ < ‖(L x u).1‖) (x y : X) :
+    0 < ((fst ℝ E F).comp (L x)).det ↔ 0 < ((fst ℝ E F).comp (L y)).det := by
+  have hdet : Continuous fun z ↦ ((fst ℝ E F).comp (L z)).det :=
+    continuous_det.comp ((compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hcont)
+  have key (a b : X) (ha : 0 < ((fst ℝ E F).comp (L a)).det) :
+      0 < ((fst ℝ E F).comp (L b)).det := by
+    by_contra hb
+    obtain ⟨z, hz⟩ := intermediate_value_univ b a hdet ⟨not_lt.1 hb, ha.le⟩
+    exact (L z).det_fst_comp_ne_zero_of_norm_snd_lt (hL z) hz
+  exact ⟨key x y, key y x⟩
+
+/-- The straight-line contraction of a frame `L` in graph coordinates: the frame
+`u ↦ ((L u).1, t • (L u).2)`. It is `L` at `t = 1` and a frame of `E × 0` at `t = 0`. -/
+noncomputable def negativeContraction (L : E →L[ℝ] E × F) (t : ℝ) : E →L[ℝ] E × F :=
+  inl ℝ E F ∘L fst ℝ E F ∘L L + t • (inr ℝ E F ∘L snd ℝ E F ∘L L)
+
+@[simp]
+theorem negativeContraction_apply (L : E →L[ℝ] E × F) (t : ℝ) (u : E) :
+    L.negativeContraction t u = ((L u).1, t • (L u).2) := by
+  simp [negativeContraction]
+
+@[simp]
+theorem negativeContraction_one (L : E →L[ℝ] E × F) : L.negativeContraction 1 = L := by
+  ext u <;> simp
+
+@[simp]
+theorem negativeContraction_zero (L : E →L[ℝ] E × F) :
+    L.negativeContraction 0 = inl ℝ E F ∘L fst ℝ E F ∘L L := by
+  ext u <;> simp
+
+@[continuity, fun_prop]
+theorem continuous_negativeContraction (L : E →L[ℝ] E × F) :
+    Continuous L.negativeContraction :=
+  continuous_const.add (continuous_id.smul continuous_const)
+
+/-- The straight-line contraction of a frame is the contraction of its graph coordinate: if
+the image of `L` is the graph of `A`, the image of `L.negativeContraction t` is the graph of
+`t • A`. -/
+theorem range_negativeContraction {L : E →L[ℝ] E × F} {A : E →L[ℝ] F}
+    (hA : LinearMap.range (L : E →ₗ[ℝ] E × F) = A.toLinearMap.graph) (t : ℝ) :
+    LinearMap.range (L.negativeContraction t : E →ₗ[ℝ] E × F) = (t • A).toLinearMap.graph := by
+  have hL (u : E) : (L u).2 = A (L u).1 := by
+    have : L u ∈ A.toLinearMap.graph := hA ▸ LinearMap.mem_range_self (L : E →ₗ[ℝ] E × F) u
+    simpa using this
+  ext z
+  simp only [LinearMap.mem_range, coe_coe, negativeContraction_apply, LinearMap.mem_graph_iff,
+    smul_apply]
+  constructor
+  · rintro ⟨u, rfl⟩
+    simp [hL]
+  · intro hz
+    obtain ⟨u, hu⟩ : (z.1, A z.1) ∈ LinearMap.range (L : E →ₗ[ℝ] E × F) := hA ▸ by simp
+    rw [coe_coe] at hu
+    exact ⟨u, Prod.ext (by simp [hu]) (by simp [hu, hz])⟩
+
+/-- The straight-line contraction keeps a negative frame negative for `|t| ≤ 1`. -/
+theorem norm_snd_negativeContraction_lt (L : E →L[ℝ] E × F)
+    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) {t : ℝ} (ht : |t| ≤ 1) {u : E} (hu : u ≠ 0) :
+    ‖(L.negativeContraction t u).2‖ < ‖(L.negativeContraction t u).1‖ := by
+  rw [negativeContraction_apply, norm_smul, Real.norm_eq_abs]
+  exact (mul_le_of_le_one_left (norm_nonneg _) ht).trans_lt (hL u hu)
 
 end ContinuousLinearMap
 
