@@ -18,7 +18,9 @@ simultaneous approximation of the derivatives of a compactly supported smooth fu
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
 `closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
-`ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`.
+`ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`. These bumps are all
+rescalings of the first one (`ContDiffBump.shrinking_apply_eq`), so integrals against their
+normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
 -/
 
 public section
@@ -65,6 +67,24 @@ theorem tendsto_rOut_shrinking (hR : 0 < R) :
   simp only [rOut_shrinking]
   exact tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
 
+/-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
+so all the bumps of the sequence are rescalings of one kernel. -/
+theorem shrinking_apply_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [HasContDiffBump E] (hR : 0 < R) (n : ℕ) (x : E) :
+    (shrinking hR n : ContDiffBump (0 : E)) x =
+      (shrinking hR 0 : ContDiffBump (0 : E)) (((n : ℝ) + 1) • x) := by
+  have hratio : (R / ((n : ℝ) + 1)) / (R / (2 * ((n : ℝ) + 1))) =
+      (R / ((0 : ℕ) + 1 : ℝ)) / (R / (2 * ((0 : ℕ) + 1 : ℝ))) := by
+    field_simp
+  have hscale : (R / (2 * ((n : ℝ) + 1)))⁻¹ • x =
+      (R / (2 * ((0 : ℕ) + 1 : ℝ)))⁻¹ • (((n : ℝ) + 1) • x) := by
+    rw [smul_smul]
+    congr 1
+    field_simp
+    norm_num
+  simp only [ContDiffBump.apply, sub_zero, rIn_shrinking, rOut_shrinking]
+  rw [hratio, hscale]
+
 end Shrinking
 
 variable {G F : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -83,6 +103,33 @@ theorem tsupport_normed_convolution_subset [IsLocallyFiniteMeasure μ] [μ.IsOpe
   · exact (isClosed_tsupport g).add_left_of_isCompact (isCompact_closedBall _ _)
 
 variable [μ.IsAddHaarMeasure] [CompleteSpace F]
+
+/-- Integrating against the normalized bump `ContDiffBump.shrinking hR n` is integrating against
+the normalized bump `ContDiffBump.shrinking hR 0` after rescaling the variable by `(n + 1)⁻¹`. -/
+theorem integral_shrinking_normed_mul {R : ℝ} (hR : 0 < R) (n : ℕ) (f : G → ℝ) :
+    ∫ t, (shrinking (c := (0 : G)) hR n).normed μ t * f t ∂μ =
+      ∫ s, (shrinking (c := (0 : G)) hR 0).normed μ s * f (((n : ℝ) + 1)⁻¹ • s) ∂μ := by
+  set S : ℝ := (n : ℝ) + 1
+  have hS : 0 < S := by positivity
+  set d := Module.finrank ℝ G
+  have hI : ∫ t, (shrinking (c := (0 : G)) hR n) t ∂μ =
+      (S ^ d)⁻¹ * ∫ s, (shrinking (c := (0 : G)) hR 0) s ∂μ := by
+    simp_rw [shrinking_apply_eq hR n]
+    rw [Measure.integral_comp_smul_of_nonneg μ _ S (hR := hS.le), smul_eq_mul]
+  have hI0 : ∫ s, (shrinking (c := (0 : G)) hR 0) s ∂μ ≠ 0 := (integral_pos _).ne'
+  have hSd : S ^ d ≠ 0 := pow_ne_zero _ hS.ne'
+  set g : G → ℝ := fun s => (shrinking (c := (0 : G)) hR 0).normed μ s * f (S⁻¹ • s) * S ^ d
+  have hg (t : G) : (shrinking (c := (0 : G)) hR n).normed μ t * f t = g (S • t) := by
+    simp only [g, normed_def]
+    rw [hI, shrinking_apply_eq hR n, inv_smul_smul₀ hS.ne']
+    field_simp
+    exact mul_comm _ _
+  calc ∫ t, (shrinking (c := (0 : G)) hR n).normed μ t * f t ∂μ = ∫ t, g (S • t) ∂μ :=
+        integral_congr_ae (.of_forall hg)
+    _ = (S ^ d)⁻¹ • ∫ s, g s ∂μ := Measure.integral_comp_smul_of_nonneg μ g S (hR := hS.le)
+    _ = _ := by
+        simp only [g, smul_eq_mul, integral_mul_const]
+        field_simp
 
 /-- Normalized bumps of shrinking radius approximate a uniformly continuous function
 uniformly on the whole space. -/

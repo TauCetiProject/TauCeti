@@ -55,6 +55,8 @@ integrability or compact support assumption on the function.
   to the identity on `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
   convolution of a function in `Lᵖ` with these bumps.
+* `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
+  convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
 
@@ -171,6 +173,22 @@ theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l 
   filter_upwards [normedBumpLp_ae_eq_convolution hp (phi i) hf, hf.coeFn_toLp]
     with x h₁ h₂
   rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
+
+/-- **Mollification converges in `L¹`.** For an integrable `f` and normalized smooth bumps
+`phi i` centred at zero whose outer radii tend to zero, `∫ ‖(phi i).normed mu ⋆ f - f‖ → 0`. This
+is the case `p = 1` of `TauCeti.tendsto_eLpNorm_normed_convolution_sub`, written with lower
+Lebesgue integrals. -/
+theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Type*}
+    {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : Integrable f mu) :
+    Tendsto (fun i ↦ ∫⁻ x, ‖((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x‖ₑ ∂mu) l
+      (nhds 0) := by
+  have h := tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hphi
+    (memLp_one_iff_integrable.mpr hf)
+  have hi (i : I) : Integrable ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) mu :=
+    ((phi i).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hf).sub hf
+  simp_rw [eLpNorm_one_eq_lintegral_enorm (hi _).aestronglyMeasurable] at h
+  exact h
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
 bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions
