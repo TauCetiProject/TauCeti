@@ -160,32 +160,6 @@ theorem trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLe
 
 section CyclicTrace
 
-omit [RigidCategory C] in
-/-- Whiskering on the first of two `X` factors slides across `(α_ X X Z)⁻¹ ≫ β_{X,X} ▷ Z ≫ α`
-onto the second `X` factor. -/
-private theorem whiskerRight_comp_associator_inv_braiding_associator_hom {X Z : C} (u : X ⟶ X) :
-    u ▷ (X ⊗ Z) ≫ (α_ X X Z).inv ≫ (β_ X X).hom ▷ Z ≫ (α_ X X Z).hom =
-      (α_ X X Z).inv ≫ (β_ X X).hom ▷ Z ≫ (α_ X X Z).hom ≫ X ◁ (u ▷ Z) := by
-  calc _ = (α_ X X Z).inv ≫ ((u ▷ X ≫ (β_ X X).hom) ▷ Z) ≫ (α_ X X Z).hom := by monoidal
-    _ = (α_ X X Z).inv ≫ (((β_ X X).hom ≫ X ◁ u) ▷ Z) ≫ (α_ X X Z).hom := by
-          rw [braiding_naturality_left]
-    _ = _ := by monoidal
-
-omit [RigidCategory C] in
-/-- Whiskering on `X ⊗ Z` slides across `(α_ X X Z)⁻¹ ≫ β_{X,X} ▷ Z ≫ α` onto the first `X` and
-third `Z` factors. -/
-private theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom {X Z : C}
-    (f : X ⟶ X) (g : Z ⟶ Z) :
-    X ◁ (f ⊗ₘ g) ≫ (α_ X X Z).inv ≫ (β_ X X).hom ▷ Z ≫ (α_ X X Z).hom =
-      (α_ X X Z).inv ≫ (β_ X X).hom ▷ Z ≫ (α_ X X Z).hom ≫ f ▷ (X ⊗ Z) ≫ X ◁ (X ◁ g) := by
-  calc _ = (α_ X X Z).inv ≫ ((X ◁ f) ▷ Z ≫ ((X ⊗ X) ◁ g ≫ (β_ X X).hom ▷ Z)) ≫
-        (α_ X X Z).hom := by rw [tensorHom_def]; monoidal
-    _ = (α_ X X Z).inv ≫ ((X ◁ f ≫ (β_ X X).hom) ▷ Z) ≫ (X ⊗ X) ◁ g ≫ (α_ X X Z).hom := by
-          rw [whisker_exchange]; monoidal
-    _ = (α_ X X Z).inv ≫ (((β_ X X).hom ≫ f ▷ X) ▷ Z) ≫ (X ⊗ X) ◁ g ≫ (α_ X X Z).hom := by
-          rw [braiding_naturality_right]
-    _ = _ := by monoidal
-
 /-- **Cyclic power-trace induction**: in a symmetric rigid category, the categorical trace of
 `(a ⊗ₘ tensorPowMap f n) ≫ (tensorPowShiftIso X n).hom` on `tensorPow X (n + 1)` equals the
 categorical trace of `(End.of f ^ n).asHom ≫ a` on `X`. -/
@@ -204,10 +178,8 @@ theorem trace_tensorHom_tensorPowMap_comp_tensorPowShiftIso_hom {X : C} (a f : X
             X ◁ (a ▷ tensorPow X n ≫ X ◁ tensorPowMap f n ≫ (tensorPowShiftIso X n).hom)) ≫
           f ▷ (X ⊗ tensorPow X n) := by
       rw [tensorHom_def a, Category.assoc,
-        reassoc_of% (whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom f
-          (tensorPowMap f n)),
-        reassoc_of% (whiskerRight_comp_associator_inv_braiding_associator_hom
-          (Z := tensorPow X n) a)]
+        whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom_assoc,
+        whiskerRight_comp_associator_inv_braiding_associator_hom_assoc]
       simp only [← MonoidalCategory.whiskerLeft_comp, Category.assoc]
       rw [← whisker_exchange, ← MonoidalCategory.whiskerLeft_comp_assoc]
     have h2 : f ▷ (X ⊗ tensorPow X n) ≫
@@ -217,8 +189,7 @@ theorem trace_tensorHom_tensorPowMap_comp_tensorPowShiftIso_hom {X : C} (a f : X
         (α_ X X (tensorPow X n)).inv ≫ (β_ X X).hom ▷ tensorPow X n ≫
           (α_ X X (tensorPow X n)).hom ≫
             X ◁ (((f ≫ a) ⊗ₘ tensorPowMap f n) ≫ (tensorPowShiftIso X n).hom) := by
-      rw [reassoc_of% (whiskerRight_comp_associator_inv_braiding_associator_hom
-        (Z := tensorPow X n) f)]
+      rw [whiskerRight_comp_associator_inv_braiding_associator_hom_assoc]
       simp only [← MonoidalCategory.whiskerLeft_comp, ← comp_whiskerRight_assoc,
         tensorHom_def, Category.assoc]
     rw [tensorPowMap_succ, tensorPowShiftIso_succ_hom, h1, trace_comm, h2,
