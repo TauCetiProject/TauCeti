@@ -54,7 +54,7 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace Polynomial
 
 namespace TauCeti.NumberField.QuadraticForm.Sqrt5
 
-variable {K : Type} [Field K] [NumberField K] {θ : 𝓞 K}
+variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 open _root_.QuadraticMap
 
