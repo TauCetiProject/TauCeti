@@ -49,6 +49,9 @@ domain.
   coordinate changes.
 * `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
+* `TauCeti.Floer.integral_image_eq_integral_of_eq_abs_det_smul` and
+  `TauCeti.Floer.lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul`: the change of variables
+  formula for a density that scales by the Jacobian determinant, for any target.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -184,6 +187,42 @@ theorem fderiv_perturbationPullback_sub_fderiv_perturbationPullback {φ : ℝ ×
     stdComplexLineReal_eq, stdComplexLineImag_eq]
   ring
 
+section Integral
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : ℝ × ℝ → ℝ × ℝ}
+  {s : Set (ℝ × ℝ)} {f g : ℝ × ℝ → F}
+
+/-- **Change of variables for a density.** If a density `f` on a measurable set `s` is
+`|det dφ|` times `g ∘ φ`, for a change of coordinates `φ` that is injective and differentiable on
+`s`, then the integral of `g` over `φ '' s` is the integral of `f` over `s`. The energy density
+and the curvature of a pulled-back perturbation datum are densities of this kind. -/
+theorem integral_image_eq_integral_of_eq_abs_det_smul (hs : MeasurableSet s) (hinj : InjOn φ s)
+    (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hf : ∀ w ∈ s, f w = |(fderiv ℝ φ w).det| • g (φ w)) :
+    ∫ z in φ '' s, g z = ∫ w in s, f w := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
+    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
+  exact setIntegral_congr_fun hs fun w hw ↦ (hf w hw).symm
+
+/-- **Change of variables for the size of a density.** If a density `f` on a measurable set `s`
+is `det dφ` times `g ∘ φ`, for a change of coordinates `φ` that is injective and differentiable
+on `s`, then the lower Lebesgue integral of `‖g‖ₑ` over `φ '' s` is that of `‖f‖ₑ` over `s`. No
+orientation, integrability or measurability hypothesis is needed. -/
+theorem lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul (hs : MeasurableSet s)
+    (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hf : ∀ w ∈ s, f w = (fderiv ℝ φ w).det • g (φ w)) :
+    ∫⁻ z in φ '' s, ‖g z‖ₑ = ∫⁻ w in s, ‖f w‖ₑ := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
+    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
+  refine setLIntegral_congr_fun hs fun w hw ↦ ?_
+  rw [hf w hw, enorm_smul, Real.enorm_eq_ofReal_abs]
+
+end Integral
+
 end Floer
 
 namespace SymplecticForm
@@ -303,14 +342,10 @@ theorem integral_floerEnergyDensity_image (ω : SymplecticForm V) (hs : Measurab
     (hKt : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
     ∫ z in φ '' s, ω.floerEnergyDensity Ks Kt u z =
       ∫ w in s, ω.floerEnergyDensity (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
-    ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
+    rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
+      ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
 
 /-- **Invariance of the integrated curvature under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the integral
@@ -324,14 +359,11 @@ theorem integral_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : Measur
     (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
     ∫ z in φ '' s, ω.hamiltonianCurvature Ks Kt z (u z) =
       ∫ w in s, ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (fun w hw ↦ ((hφ w hw).differentiableAt (by norm_num)).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
-    (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
+      rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
+        (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
 
 /-- **Invariance of the curvature allowance under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the integral of `|R_K(u)|` over
@@ -346,14 +378,11 @@ theorem integral_abs_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : Me
     (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
     ∫ z in φ '' s, |ω.hamiltonianCurvature Ks Kt z (u z)| =
       ∫ w in s, |ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))| := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (fun w hw ↦ ((hφ w hw).differentiableAt (by norm_num)).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-    (hKt' w hw), abs_mul, smul_eq_mul]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))| :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
+      rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
+        (hKt' w hw), abs_mul, smul_eq_mul]
 
 /-- **Invariance of the curvature allowance as a lower integral.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the lower Lebesgue integral of
@@ -369,14 +398,11 @@ theorem lintegral_enorm_hamiltonianCurvature_image (ω : SymplecticForm V) (hs :
     (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
     ∫⁻ z in φ '' s, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
       ∫⁻ w in s, ‖ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
-    (fun w hw ↦ ((hφ w hw).differentiableAt (by norm_num)).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setLIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-    (hKt' w hw), enorm_mul, Real.enorm_eq_ofReal_abs, Real.enorm_eq_ofReal_abs]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ :=
+  lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
+      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
+        (hKt' w hw)
 
 end Integral
 

@@ -42,9 +42,12 @@ derivative is `(du - X_K) ∘ dφ`, and both the energy density and the curvatur
 the Jacobian determinant `det dφ`. By the change of variables formula the energy and the
 integrated curvature over a region may therefore be computed in any orientation-preserving
 chart. These are the manifold-target versions of the identities in
-`TauCeti.Geometry.Symplectic.Floer.Pullback`. The domain-derivative part of the curvature does
-not see the target, and is shared with them through
-`TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`.
+`TauCeti.Geometry.Symplectic.Floer.Pullback`. The domain-derivative part of the curvature,
+Green's theorem for `K(u)` and the change of variables formula do not see the target, and are
+shared with them through
+`TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`,
+`TauCeti.Floer.integral_fderiv_sub_fderiv_Icc` and
+`TauCeti.Floer.integral_image_eq_integral_of_eq_abs_det_smul`.
 
 These are coordinate-domain energy identities for arbitrary manifold targets, not a compactness
 theorem or an identity involving caps at punctured ends. On a vector-space target with constant
@@ -333,14 +336,10 @@ theorem integral_floerEnergyDensity_image (ω : SmoothTwoForm I M) (hs : Measura
     (hKt : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
     ∫ z in φ '' s, ω.floerEnergyDensity Ks Kt u z =
       ∫ w in s, ω.floerEnergyDensity (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
-    ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
+    rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
+      ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
 
 /-- **Invariance of the integrated curvature under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the integral
@@ -354,14 +353,11 @@ theorem integral_hamiltonianCurvature_image (ω : SmoothTwoForm I M) (hs : Measu
     (hKt' : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
     ∫ z in φ '' s, ω.hamiltonianCurvature Ks Kt z (u z) =
       ∫ w in s, ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
-    (fun w hw ↦ ((hφ w hw).differentiableAt (by norm_num)).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
-    (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
+      rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
+        (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
 
 /-- **Invariance of the curvature allowance under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the lower Lebesgue integral of
@@ -376,14 +372,11 @@ theorem lintegral_enorm_hamiltonianCurvature_image (ω : SmoothTwoForm I M)
     (hKt' : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
     ∫⁻ z in φ '' s, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
       ∫⁻ w in s, ‖ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
-        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
-    (fun w hw ↦ ((hφ w hw).differentiableAt (by norm_num)).hasFDerivAt.hasFDerivWithinAt) hinj]
-  refine setLIntegral_congr_fun hs fun w hw ↦ ?_
-  rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-    (hKt' w hw), enorm_mul, Real.enorm_eq_ofReal_abs, Real.enorm_eq_ofReal_abs]
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ :=
+  lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
+      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
+        (hKt' w hw)
 
 /-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
 data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle
@@ -408,47 +401,30 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
           (∫ s in a.1..b.1, Ks (s, b.2) (u (s, b.2))) -
           ∫ t in a.2..b.2, Kt (a.1, t) (u (a.1, t))) -
         ∫ z in Icc a b, ω.hamiltonianCurvature Ks Kt z (u z) := by
-  -- The pulled-back components `K_t(u)` and `-K_s(u)` are `C¹` functions on the domain, to which
-  -- the divergence theorem applies.
-  set f : ℝ × ℝ → ℝ := fun w ↦ Kt w (u w)
-  set g : ℝ × ℝ → ℝ := fun w ↦ -Ks w (u w)
+  -- The pulled-back components `K_s(u)` and `K_t(u)` are `C¹` functions on the domain, to which
+  -- Green's theorem applies.
   have hgraph : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℝ × ℝ).prod I) 1 (fun w ↦ (w, u w)) U :=
     contMDiffOn_id.prodMk hu
   have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have hf : ContDiffOn ℝ 1 f U := contMDiffOn_iff_contDiffOn.mp (hKt.comp hgraph hmem)
-  have hg : ContDiffOn ℝ 1 g U := (contMDiffOn_iff_contDiffOn.mp (hKs.comp hgraph hmem)).neg
-  have hdiff {h : ℝ × ℝ → ℝ} (hh : ContDiffOn ℝ 1 h U) {z : ℝ × ℝ} (hz : z ∈ U) :
-      HasFDerivAt h (fderiv ℝ h z) z :=
-    ((hh.differentiableOn one_ne_zero z hz).differentiableAt (hU.mem_nhds hz)).hasFDerivAt
-  have hint {z : ℝ × ℝ} (hz : z ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2) : z ∈ U :=
-    habU (Icc_prod_eq a b ▸ ⟨Ioo_subset_Icc_self hz.1, Ioo_subset_Icc_self hz.2⟩)
-  have hcont {L : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ} (hL : ContinuousOn L U) (v : ℝ × ℝ) :
-      IntegrableOn (fun z ↦ L z v) (Icc a b) :=
-    ((hL.mono habU).clm_apply continuousOn_const).integrableOn_compact isCompact_Icc
-  have hderiv : IntegrableOn
-      (fun z ↦ fderiv ℝ f z stdComplexLineReal + fderiv ℝ g z stdComplexLineImag) (Icc a b) :=
-    (hcont (hf.continuousOn_fderiv_of_isOpen hU le_rfl) _).add
-      (hcont (hg.continuousOn_fderiv_of_isOpen hU le_rfl) _)
-  have hdiv := integral_divergence_prod_Icc_of_hasFDerivAt_of_le f g (fderiv ℝ f) (fderiv ℝ g)
-    a b hab (hf.continuousOn.mono habU) (hg.continuousOn.mono habU)
-    (fun _ hz ↦ hdiff hf (hint hz)) (fun _ hz ↦ hdiff hg (hint hz)) hderiv
-  have hg' (z : ℝ × ℝ) : fderiv ℝ g z stdComplexLineImag =
-      -fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag := by
-    simp [g, fderiv_fun_neg]
+  have hf : ContDiffOn ℝ 1 (fun w ↦ Kt w (u w)) U :=
+    contMDiffOn_iff_contDiffOn.mp (hKt.comp hgraph hmem)
+  have hg : ContDiffOn ℝ 1 (fun w ↦ Ks w (u w)) U :=
+    contMDiffOn_iff_contDiffOn.mp (hKs.comp hgraph hmem)
+  have hderiv := integrableOn_fderiv_sub_fderiv_Icc hU hg hf habU
   -- The pointwise energy identity on the rectangle.
   have hpt : ∀ z ∈ Icc a b, ω.floerEnergyDensity Ks Kt u z =
       (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
-        (fderiv ℝ f z stdComplexLineReal + fderiv ℝ g z stdComplexLineImag) -
+        (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+          fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) -
         ω.hamiltonianCurvature Ks Kt z (u z) := by
     intro z hz
     have hzU := habU hz
     have hzU' : (z, u z) ∈ U ×ˢ (univ : Set M) := hmem hzU
-    rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt
-        one_ne_zero)
+    exact hω.floerEnergyDensity_eq
+      ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt one_ne_zero)
       ((hKs.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
-      ((hKt.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero),
-      hg', ← sub_eq_add_neg]
+      ((hKt.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
   -- The symplectic area density is integrable, as the difference of integrable functions.
   have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
@@ -456,26 +432,14 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
     refine ((hE.sub hderiv).add hR).congr_fun (fun z hz ↦ ?_) measurableSet_Icc
     simp only [Pi.add_apply, Pi.sub_apply, hpt z hz]
     ring
-  calc
-    ∫ z in Icc a b, ω.floerEnergyDensity Ks Kt u z =
-        ∫ z in Icc a b, ((SmoothBundleForm.eval₂ ω (u z)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
-          (fderiv ℝ f z stdComplexLineReal + fderiv ℝ g z stdComplexLineImag) -
-          ω.hamiltonianCurvature Ks Kt z (u z)) :=
-      setIntegral_congr_fun measurableSet_Icc hpt
-    _ = _ := by
-      have hsum : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
-            (fderiv ℝ f z stdComplexLineReal + fderiv ℝ g z stdComplexLineImag)) (Icc a b) :=
-        harea.add hderiv
-      rw [integral_sub hsum hR, integral_add harea hderiv]
-      have h₁ : stdComplexLineReal = ((1 : ℝ), (0 : ℝ)) := rfl
-      have h₂ : stdComplexLineImag = ((0 : ℝ), (1 : ℝ)) := rfl
-      rw [h₁, h₂, hdiv]
-      simp only [g, intervalIntegral.integral_neg, f]
-      ring
+  have hsum : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+          fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag)) (Icc a b) :=
+    harea.add hderiv
+  rw [setIntegral_congr_fun measurableSet_Icc hpt, integral_sub hsum hR,
+    integral_add harea hderiv, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
 end Integral
 
