@@ -94,8 +94,8 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
-* `PowerSeries.coeff_subst_eq_sum_range`: the coefficient of `X^d` in `f (a)`, for `a` of zero
-  constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
+* `PowerSeries.coeff_subst_eq_sum_range_degree`: the coefficient of `X^d` in `f (a)`, for `a` of
+  zero constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
 * `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
@@ -381,8 +381,9 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
 
 /-- The coefficient of `X^d` in `f (a)`, for `a` of zero constant coefficient, is the finite sum
 `∑_{n ≤ |d|} fₙ [X^d] aⁿ`: the powers `aⁿ` with `n > |d|` have order greater than `|d|`. This is the
-finite form of Mathlib's `PowerSeries.coeff_subst`. -/
-theorem coeff_subst_eq_sum_range {τ : Type*} {a : MvPowerSeries τ S}
+finite form of Mathlib's `PowerSeries.coeff_subst`, and the multivariate analogue of
+`PowerSeries.coeff_subst_eq_sum_range`. -/
+theorem coeff_subst_eq_sum_range_degree {τ : Type*} {a : MvPowerSeries τ S}
     (ha : MvPowerSeries.constantCoeff a = 0) (f : R⟦X⟧) (d : τ →₀ ℕ) :
     MvPowerSeries.coeff d (f.subst a) =
       ∑ n ∈ Finset.range (d.degree + 1), coeff n f • MvPowerSeries.coeff d (a ^ n) := by

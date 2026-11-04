@@ -232,9 +232,10 @@ private theorem coeff_subst_functionalEquationSum {f : PowerSeries K}
         (if p ^ i ∣ n then (σ ^ i) (PowerSeries.coeff (n / p ^ i) f) else 0) *
           coeff d (ψ ^ n) := by
     rw [← PowerSeries.subst_expand (p ^ i) (NeZero.ne _) (.of_constantCoeff_zero hψ₀),
-      PowerSeries.coeff_subst_eq_sum_range hψ₀]
+      PowerSeries.coeff_subst_eq_sum_range_degree hψ₀]
     simp_rw [smul_eq_mul, PowerSeries.coeff_expand, PowerSeries.coeff_map]
-  simp_rw [hR, PowerSeries.coeff_subst_eq_sum_range hψ₀, smul_eq_mul, Finset.mul_sum, ← mul_assoc]
+  simp_rw [hR, PowerSeries.coeff_subst_eq_sum_range_degree hψ₀, smul_eq_mul, Finset.mul_sum,
+    ← mul_assoc]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun n hn ↦ ?_
   rw [← Finset.sum_mul]
@@ -331,8 +332,8 @@ theorem SatisfiesFunctionalEquation.subst (hσ : Set.MapsTo σ A A)
   have hu₀ : constantCoeff (ψ ^ p ^ i) = 0 := by rw [map_pow, hψ₀, zero_pow (NeZero.ne _)]
   have hw₀ : constantCoeff (expand (p ^ i) (NeZero.ne _) (map (σ ^ i) ψ)) = 0 := by
     rw [constantCoeff_expand, constantCoeff_map, hψ₀, map_zero]
-  rw [← mul_sub, PowerSeries.coeff_subst_eq_sum_range hu₀,
-    PowerSeries.coeff_subst_eq_sum_range hw₀, ← Finset.sum_sub_distrib, Finset.mul_sum]
+  rw [← mul_sub, PowerSeries.coeff_subst_eq_sum_range_degree hu₀,
+    PowerSeries.coeff_subst_eq_sum_range_degree hw₀, ← Finset.sum_sub_distrib, Finset.mul_sum]
   refine Subring.sum_mem _ fun m _ ↦ ?_
   rw [PowerSeries.coeff_map, smul_eq_mul, smul_eq_mul, ← mul_sub, ← map_sub]
   exact mul_coeff_pow_sub_expand_pow_mem hσ hσp hs hf hψ i m d
@@ -363,8 +364,9 @@ private theorem coeff_sub_functionalEquationSum_subst_sub (f : PowerSeries K)
   have hsub (e : τ →₀ ℕ) : coeff e (f.subst ψ) - coeff e (f.subst ψ') =
       ∑ n ∈ Finset.range (e.degree + 1),
         PowerSeries.coeff n f * (coeff e (ψ ^ n) - coeff e (ψ' ^ n)) := by
-    simp_rw [PowerSeries.coeff_subst_eq_sum_range hψ₀, PowerSeries.coeff_subst_eq_sum_range hψ'₀,
-      ← Finset.sum_sub_distrib, smul_eq_mul, mul_sub]
+    simp_rw [PowerSeries.coeff_subst_eq_sum_range_degree hψ₀,
+      PowerSeries.coeff_subst_eq_sum_range_degree hψ'₀, ← Finset.sum_sub_distrib, smul_eq_mul,
+      mul_sub]
   have hA : coeff d (f.subst ψ) - coeff d (f.subst ψ') =
       PowerSeries.coeff 1 f * (coeff d ψ - coeff d ψ') := by
     rw [hsub, Finset.sum_eq_single 1]
