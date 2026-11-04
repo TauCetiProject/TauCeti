@@ -20,6 +20,10 @@ has local multiplicity one. The fibre-counting degree theorem gives degree one, 
 `jBiholomorph` is the resulting biholomorphism, normalized by the images of the cusp and the two
 elliptic orbits.
 
+Restricted to the coarse quotient, the biholomorphism shows that `j` is injective there
+(`jQuotient_injective`): two points of the upper half-plane have the same value of `j` exactly
+when they lie in one `SL(2, ℤ)`-orbit (`j_eq_j_iff`).
+
 ## References
 
 * Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, §§2.4–2.5.
@@ -197,5 +201,18 @@ theorem jBiholomorph_ρ :
 theorem jBiholomorph_I :
     jBiholomorph (ofQuotient (Quotient.mk _ I)) = ((1728 : ℂ) : OnePoint ℂ) := by
   simp [j_I]
+
+/-- The modular invariant is injective on the coarse level-one quotient. -/
+theorem jQuotient_injective : Function.Injective jQuotient := fun p q h ↦ by
+  have : jBiholomorph (ofQuotient p) = jBiholomorph (ofQuotient q) := by simp [h]
+  exact ofQuotient.inj (jBiholomorph.injective this)
+
+/-- **The modular invariant classifies `SL(2, ℤ)`-orbits**: `j z = j w` exactly when `w` lies in
+the `SL(2, ℤ)`-orbit of `z`. -/
+theorem j_eq_j_iff {z w : ℍ} : j z = j w ↔ ∃ γ : SL(2, ℤ), γ • z = w := by
+  rw [← jQuotient_mk, ← jQuotient_mk, jQuotient_injective.eq_iff, Quotient.eq,
+    orbitRel_psl2zToPSL2RRange_iff_orbitRel_sl, orbitRel_apply, mem_orbit_iff]
+  exact ⟨fun ⟨γ, h⟩ ↦ ⟨γ⁻¹, by rw [← h, inv_smul_smul]⟩,
+    fun ⟨γ, h⟩ ↦ ⟨γ⁻¹, by rw [← h, inv_smul_smul]⟩⟩
 
 end TauCeti.ModularGroup
