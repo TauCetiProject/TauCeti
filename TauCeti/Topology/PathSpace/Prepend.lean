@@ -46,6 +46,17 @@ namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {w x y z : X}
 
+/-- Serre's left delay is continuous for a family of paths with varying endpoints. -/
+theorem delayReflLeft_continuous_family {A : Type*} [TopologicalSpace A]
+    {a b : A → X} (γ : ∀ q, Path (a q) (b q)) (hγ : Continuous ↿γ)
+    (s : C(A, I)) : Continuous ↿fun q ↦ delayReflLeft (s q) (γ q) := by
+  -- The delay is evaluation at the reflected Serre reparametrization; this also works when
+  -- the endpoints vary, where continuity in a single fixed native path space does not apply.
+  have h : Continuous (fun q : A × I ↦ γ q.1 (σ (qRight (σ q.2, s q.1)))) :=
+    hγ.comp (show Continuous (fun q : A × I ↦ (q.1, σ (qRight (σ q.2, s q.1)))) from by
+      fun_prop)
+  exact h
+
 /-! ### Reparametrizing the paths of a path space -/
 
 /-- Reparametrizing by a fixed endpoint-preserving map `f : I → I` is continuous on the

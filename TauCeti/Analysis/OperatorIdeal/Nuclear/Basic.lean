@@ -92,8 +92,8 @@ theorem nuclearENorm_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B :
     (A ∘L T ∘L B).nuclearENorm ≤ ‖A‖ₑ * T.nuclearENorm * ‖B‖ₑ := by
   simp only [nuclearENorm_def, enorm_eq_nnnorm, ← ENNReal.tsum_mul_left,
     ← ENNReal.tsum_mul_right]
-  exact ENNReal.tsum_le_tsum fun n ↦ by
-    exact_mod_cast singularValue_comp_comp_le A T B n
+  exact _root_.tsum_le_tsum fun n ↦ by
+    exact ENNReal.coe_le_coe.mpr (singularValue_comp_comp_le A T B n)
 
 /-- Domination of every Ky Fan prefix implies domination of the nuclear gauges. -/
 theorem nuclearENorm_le_of_forall_kyFanGauge_le {S : G →L[𝕜] H} {T : E →L[𝕜] F}

@@ -21,6 +21,12 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
+* `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
+  for `r < -1`.
+* `TauCeti.norm_integral_le_of_ae_norm_le_rpow`: an integral over `[0, t]` with two power-weight
+  bounds near and away from `s = t`, split at `t - δ²`, is `O(δ^α)`.
+* `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
+  function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
 * `TauCeti.integral_pow_add_two_mul_sqrt_one_sub_sq`: the moments
@@ -34,6 +40,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
   `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
+* `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
+  over an interval is a difference of arctangents.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -57,6 +65,132 @@ theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
     ∫ x in a..b, (b - x) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
   rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
     integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
+
+/-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
+`c^(r + 1) / -(r + 1)` over `[a, b - c]`, uniformly in `a`. -/
+theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0 < c)
+    (hcb : c ≤ b - a) :
+    ∫ x in a..b - c, (b - x) ^ r ≤ c ^ (r + 1) / -(r + 1) := by
+  have hval : ∫ x in a..b - c, (b - x) ^ r = (c ^ (r + 1) - (b - a) ^ (r + 1)) / -(r + 1) := by
+    rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_sub_cancel,
+      integral_rpow (Or.inr ⟨by linarith, Set.notMem_uIcc_of_lt hc (hc.trans_le hcb)⟩),
+      div_neg, ← neg_div, neg_sub]
+  have hr₁ : 0 < -(r + 1) := by linarith
+  rw [hval]
+  gcongr
+  exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
+
+open MeasureTheory Real Set in
+open scoped Interval in
+/-- Splitting a singular integral at distance `δ²` from its singular endpoint. If the integrand
+is `O(A (t - s)^((α - 2)/2))`, which is integrable, and also `O(B δ (t - s)^((α - 3)/2))`, which is
+integrable away from `s = t`, then using the first bound on `t - δ² < s < t` and the second on
+`0 < s < t - δ²` bounds the integral over `[0, t]` by `(2A/α + 2B/(1 - α)) δ^α`. This is the time
+integration behind parabolic Hölder estimates at two points at distance `δ`. -/
+theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {Φ : ℝ → F} {α δ t A B : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : 0 < t)
+    (hδ : 0 < δ) (hA : 0 ≤ A) (hB : 0 ≤ B) (hΦ : IntervalIntegrable Φ volume 0 t)
+    (hΦA : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2))
+    (hΦB : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ) :
+    ‖∫ s in 0..t, Φ s‖ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
+  have hsq : (δ ^ 2) ^ (α / 2) = δ ^ α := by
+    rw [← rpow_natCast_mul hδ.le]
+    congr 1
+    push_cast
+    ring
+  -- Near `s = t`, the first bound integrates to `(2A/α) (t - a)^(α/2)`.
+  have hnear : ∀ a, 0 ≤ a → a ≤ t → ‖∫ s in a..t, Φ s‖ ≤ 2 / α * A * (t - a) ^ (α / 2) := by
+    intro a ha hat
+    refine (intervalIntegral.norm_integral_le_of_norm_le hat ?_
+      ((intervalIntegrable_sub_rpow (r := (α - 2) / 2) (by linarith) a t).const_mul A)).trans_eq ?_
+    · filter_upwards [hΦA] with s hs hsI using hs (Ioc_subset_Ioc ha le_rfl hsI)
+    · rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith),
+        show (α - 2) / 2 + 1 = α / 2 by ring]
+      field_simp
+  have hB' : 0 ≤ 2 / (1 - α) * B * δ ^ α := by
+    have : 0 < 1 - α := by linarith
+    positivity
+  rcases le_or_gt t (δ ^ 2) with htδ | htδ
+  · -- If `t ≤ δ²`, the first bound suffices on the whole interval.
+    calc ‖∫ s in 0..t, Φ s‖ ≤ 2 / α * A * (t - 0) ^ (α / 2) := hnear 0 le_rfl ht.le
+      _ ≤ 2 / α * A * (δ ^ 2) ^ (α / 2) := by
+          rw [sub_zero]
+          gcongr
+      _ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
+          rw [hsq]
+          linarith
+  -- Otherwise split the interval at `s₀ = t - δ²`.
+  set s₀ := t - δ ^ 2 with hs₀_def
+  have hs₀ : 0 < s₀ := by linarith
+  have hs₀t : s₀ ≤ t := by linarith [pow_pos hδ 2]
+  have hmem : s₀ ∈ [[0, t]] := by
+    rw [uIcc_of_le ht.le]
+    exact ⟨hs₀.le, hs₀t⟩
+  rw [← intervalIntegral.integral_add_adjacent_intervals
+    (hΦ.mono_set (uIcc_subset_uIcc left_mem_uIcc hmem))
+    (hΦ.mono_set (uIcc_subset_uIcc hmem right_mem_uIcc))]
+  -- Away from `s = t`, the second bound integrates to at most `2B/(1 - α) δ^α`.
+  have hfar : ‖∫ s in 0..s₀, Φ s‖ ≤ 2 / (1 - α) * B * δ ^ α := by
+    have hcont : ContinuousOn (fun s => (t - s) ^ ((α - 3) / 2)) [[0, s₀]] := fun s hs => by
+      rw [uIcc_of_le hs₀.le] at hs
+      have hts : s < t := by linarith [hs.2, pow_pos hδ 2]
+      exact ((continuousAt_const.sub continuousAt_id).rpow_const
+        (Or.inl (sub_pos.2 hts).ne')).continuousWithinAt
+    refine (intervalIntegral.norm_integral_le_of_norm_le hs₀.le ?_
+      ((hcont.intervalIntegrable.const_mul B).mul_const δ)).trans ?_
+    · filter_upwards [hΦB] with s hs hsI using hs (Ioc_subset_Ioc le_rfl hs₀t hsI)
+    rw [intervalIntegral.integral_mul_const, intervalIntegral.integral_const_mul]
+    have hpow : (δ ^ 2) ^ ((α - 3) / 2 + 1) * δ = δ ^ α := by
+      rw [← rpow_natCast_mul hδ.le, ← rpow_add_one hδ.ne']
+      congr 1
+      push_cast
+      ring
+    have h1α : 1 - α ≠ 0 := by linarith
+    calc B * (∫ s in 0..s₀, (t - s) ^ ((α - 3) / 2)) * δ
+        ≤ B * ((δ ^ 2) ^ ((α - 3) / 2 + 1) / -((α - 3) / 2 + 1)) * δ := by
+          gcongr
+          exact integral_sub_rpow_le_of_lt_neg_one (by linarith) (by positivity) (by linarith)
+      _ = 2 / (1 - α) * B * δ ^ α := by
+          rw [← hpow, show -((α - 3) / 2 + 1) = (1 - α) / 2 by ring]
+          field_simp
+  calc ‖(∫ s in 0..s₀, Φ s) + ∫ s in s₀..t, Φ s‖
+      ≤ ‖∫ s in 0..s₀, Φ s‖ + ‖∫ s in s₀..t, Φ s‖ := norm_add_le _ _
+    _ ≤ 2 / (1 - α) * B * δ ^ α + 2 / α * A * (t - s₀) ^ (α / 2) :=
+        add_le_add hfar (hnear s₀ hs₀.le hs₀t)
+    _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
+        rw [hs₀_def, sub_sub_cancel, hsq]
+        ring
+
+open MeasureTheory Real Set in
+open scoped Interval in
+/-- For `α < 2`, a function bounded by `A h (t' - s)^((α - 4)/2)` on `(0, t' - h]` has integral
+over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. This is the time integration, away from
+the singular endpoint, behind temporal Hölder estimates with time step `h`. -/
+theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
+    (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
+    ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
+  have h2α : 0 < 2 - α := by linarith
+  have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
+    fun s hs => by
+      rw [uIcc_of_le (by linarith)] at hs
+      have hst : s < t' := by linarith [hs.2]
+      exact ((continuousAt_const.sub continuousAt_id).rpow_const
+        (Or.inl (sub_pos.2 hst).ne')).continuousWithinAt
+  refine (intervalIntegral.norm_integral_le_of_norm_le (by linarith) hg
+    (hcont.intervalIntegrable.const_mul (A * h))).trans ?_
+  rw [intervalIntegral.integral_const_mul]
+  have hpow : h * h ^ ((α - 4) / 2 + 1) = h ^ (α / 2) := by
+    rw [mul_comm, ← rpow_add_one hh.ne']
+    congr 1
+    ring
+  calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
+      ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
+        gcongr
+        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
+    _ = 2 / (2 - α) * A * h ^ (α / 2) := by
+        rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
+        field_simp
 
 /-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points of `(-1, 1)`. -/
 theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
@@ -290,6 +424,14 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
 end TauCeti
 
 namespace Real
+
+/-- The integral of the Poisson kernel `η / ((t - x)² + η²)` over `[a, b]` is a difference of
+arctangents: a translate of Mathlib's `integral_div_sq_add_sq`. For `η = 0` both sides vanish. -/
+theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
+    ∫ x in a..b, η / ((t - x) ^ 2 + η ^ 2) = arctan ((b - t) / η) - arctan ((a - t) / η) := by
+  simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
+  rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
+    integral_div_sq_add_sq]
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/

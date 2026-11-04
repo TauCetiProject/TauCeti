@@ -272,7 +272,7 @@ strictly differentiable with zero derivative. This is the two-point estimate nee
 contraction argument for the local stable-manifold theorem. -/
 theorem hasStrictFDerivAt_negativeGradientRemainder (hf : ContDiffAt ℝ 2 f x) :
     HasStrictFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) x :=
-  (hf.contDiffAt_negativeGradientRemainder (m := 1) (by norm_num)).hasStrictFDerivAt'
+  (hf.contDiffAt_negativeGradientRemainder (m := 1) (by norm_num)).hasStrictFDerivAt
     hf.hasFDerivAt_negativeGradientRemainder one_ne_zero
 
 /-- On a sufficiently small closed ball about a twice continuously differentiable point, the
@@ -297,7 +297,7 @@ theorem neg_gradient_sub_linearization_isLittleO (hf : ContDiffAt ℝ 2 f x) (hg
       (fun y ↦ y - x) := by
   have hrem := hf.hasFDerivAt_negativeGradientRemainder.isLittleO
   rw [negativeGradientRemainder_self hgrad] at hrem
-  simpa only [negativeGradientRemainder_apply, sub_zero, zero_apply] using hrem
+  simpa only [negativeGradientRemainder_apply, sub_zero, _root_.zero_apply] using hrem
 
 /-- Near a critical point of a twice continuously differentiable function the gradient is bounded
 above by a multiple of the distance to that point: it vanishes at the point and is differentiable
