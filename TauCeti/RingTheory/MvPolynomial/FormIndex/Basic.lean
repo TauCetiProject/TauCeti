@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.Data.Finsupp.ENNReal
+public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -47,13 +48,18 @@ products, by `MvPolynomial.iInf_support_weight_mul`.
 * `MvPolynomial.mem_formIdeal_iff_le_formIndex`: the supremum defining the index is attained.
 * `MvPolynomial.formIndex_prod_pow`: the index of `∏ h, M h (X h) ^ j h` is `∑ h, j h / d h`.
 * `MvPolynomial.formIndex_eq_top_iff`, `MvPolynomial.min_formIndex_le_add`,
-  `MvPolynomial.formIndex_mul`, `MvPolynomial.formIndex_pow`, `MvPolynomial.formIndex_smul`: the
-  index is a valuation.
+  `MvPolynomial.formIndex_mul`, `MvPolynomial.formIndex_pow`, `MvPolynomial.formIndex_smul`,
+  `MvPolynomial.formIndex_smul_form`: the index is a valuation and invariant under unit scaling of
+  each block's form.
+* `MvPolynomial.IsMultiHomogeneous.substForm`, `MvPolynomial.IsMultiHomogeneous.substFormInv`:
+  both coordinate substitutions preserve multihomogeneity.
 
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), Definition 7.5.17 and 7.5.18.
+* Ralf Stephan, `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
+  commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -155,6 +161,32 @@ theorem substFormInv_sum_C_mul_X (hM : ∀ h, M h (i₀ h) ≠ 0) (h : κ) :
     substFormInv M i₀ (∑ i, C (M h i) * X (h, i)) = X (h, i₀ h) := by
   rw [← substForm_X_self, substFormInv_substForm hM]
 
+/-- `substForm M i₀` preserves multihomogeneity of any multidegree `e`. -/
+theorem IsMultiHomogeneous.substForm {R : Type*} [CommSemiring R] [DecidableEq κ]
+    {e : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous e P)
+    (M : κ → ι → R) (i₀ : κ → ι) :
+    IsMultiHomogeneous e (MvPolynomial.substForm M i₀ P) := by
+  rw [MvPolynomial.substForm]
+  refine hP.aeval fun h i ↦ ?_
+  by_cases hi : i = i₀ h
+  · subst hi
+    simp only [↓reduceIte]
+    exact IsMultiHomogeneous.sum (univ : Finset ι) _ fun j _ ↦ (isMultiHomogeneous_X h j).C_mul _
+  · simp [hi]
+
+/-- `substFormInv M i₀` preserves multihomogeneity of any multidegree `e`. -/
+theorem IsMultiHomogeneous.substFormInv [DecidableEq κ] {e : κ → ℕ}
+    {P : MvPolynomial (κ × ι) K} (hP : IsMultiHomogeneous e P) (M : κ → ι → K) (i₀ : κ → ι) :
+    IsMultiHomogeneous e (MvPolynomial.substFormInv M i₀ P) := by
+  rw [MvPolynomial.substFormInv]
+  refine hP.aeval fun h i ↦ ?_
+  by_cases hi : i = i₀ h
+  · subst hi
+    simp only [↓reduceIte]
+    exact ((isMultiHomogeneous_X h (i₀ h)).sub
+      (IsMultiHomogeneous.sum _ _ fun j _ ↦ (isMultiHomogeneous_X h j).C_mul _)).C_mul _
+  · simp [hi]
+
 end Substitution
 
 section CommSemiring
@@ -240,6 +272,31 @@ theorem min_formIndex_le_add (P Q : MvPolynomial (κ × ι) R) :
 theorem formIndex_smul {c : R} (hc : IsUnit c) (P : MvPolynomial (κ × ι) R) :
     formIndex d M (c • P) = formIndex d M P := by
   simp only [formIndex, smul_eq_C_mul, Ideal.unit_mul_mem_iff_mem _ (hc.map C)]
+
+/-- Scaling each form `M h` by a unit `c h` does not change `formIdeal`. -/
+theorem formIdeal_smul_form {c : κ → R} (hc : ∀ h, IsUnit (c h)) (t : ℝ≥0∞) (d : κ → ℕ)
+    (M : κ → ι → R) :
+    formIdeal t d (fun h ↦ c h • M h) = formIdeal t d M := by
+  have hgen (j : κ → ℕ) :
+      ∏ h, (∑ i, C ((c h • M h) i) * X (h, i)) ^ j h =
+        C (∏ h, c h ^ j h) * ∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h := by
+    simp only [Pi.smul_apply, smul_eq_mul, C_mul, mul_assoc, ← mul_sum, mul_pow, prod_mul_distrib,
+      ← map_pow, ← map_prod]
+  have hunit (j : κ → ℕ) : IsUnit (C (∏ h, c h ^ j h) : MvPolynomial (κ × ι) R) :=
+    (Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one
+      fun h _ ↦ (hc h).pow (j h)).map C
+  refine le_antisymm ?_ ?_ <;> rw [formIdeal, Ideal.span_le] <;> rintro _ ⟨j, hj, rfl⟩ <;>
+    dsimp only <;> rw [SetLike.mem_coe]
+  · rw [hgen j, Ideal.unit_mul_mem_iff_mem _ (hunit j)]
+    exact prod_pow_mem_formIdeal hj
+  · rw [← Ideal.unit_mul_mem_iff_mem _ (hunit j), ← hgen j]
+    exact prod_pow_mem_formIdeal hj
+
+/-- Scaling each form `M h` by a unit `c h` does not change `formIndex`. -/
+theorem formIndex_smul_form {c : κ → R} (hc : ∀ h, IsUnit (c h)) (d : κ → ℕ)
+    (M : κ → ι → R) (P : MvPolynomial (κ × ι) R) :
+    formIndex d (fun h ↦ c h • M h) P = formIndex d M P := by
+  simp only [formIndex, formIdeal_smul_form hc]
 
 variable [DecidableEq ι] {i₀ : κ → ι}
 
