@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.MeasureTheory.Function.Lp.Subtype
+public import TauCeti.MeasureTheory.Group.Arithmetic
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.SigmaCompactSupport
 public import TauCeti.MeasureTheory.Integral.PeakFunction
@@ -40,8 +41,8 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
   formulas and representative independence.
 * **Countable `Lᵖ` families and kernels inside an open subgroup:** Countably many `Lᵖ` classes
   (`1 ≤ p < ∞`) simultaneously belong to the range of `MeasureTheory.Lp.extendByZeroComapₗᵢ` for a
-  single σ-compact open subgroup `H`, and normalized nonnegative continuous or `L¹` peak kernels
-  supported in any identity neighbourhood `U ∈ 𝓝 1` can be chosen inside `H`.
+  single σ-compact open subgroup `H`, and normalized nonnegative `L¹` peak kernels supported in any
+  identity neighbourhood `U ∈ 𝓝 1` can be chosen inside `H`.
 
 ## Main statements
 
@@ -55,9 +56,8 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
   translated-coset integral formulas and coset-representative independence.
 * `MeasureTheory.Lp.exists_openSubgroup_isSigmaCompact_mem_range_extendByZeroComapₗᵢ`: countably
   many `Lᵖ` elements (`p < ∞`) come by zero extension from one σ-compact open subgroup.
-* `OpenSubgroup.exists_nonneg_tsupport_subset_integral_eq_one`,
-  `OpenSubgroup.exists_lp_one_nonneg_integral_eq_one_norm_eq_one`: normalized nonnegative kernels
-  chosen inside a given open subgroup and identity neighbourhood.
+* `OpenSubgroup.exists_lp_one_nonneg_integral_eq_one_norm_eq_one`: normalized nonnegative `L¹`
+  kernels chosen inside a given open subgroup and identity neighbourhood.
 
 ## References
 
@@ -71,29 +71,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set Topology
-open scoped CompactlySupported ENNReal NNReal Pointwise
-
-/-! ### Measurable group operations on subobjects -/
-
-section SubobjectMeasurable
-
-@[to_additive]
-instance MulMemClass.measurableMul {M S : Type*} [Mul M] [MeasurableSpace M] [MeasurableMul M]
-    [SetLike S M] [MulMemClass S M] (s : S) : MeasurableMul s where
-  measurable_const_mul c := (measurable_subtype_coe.const_mul (c : M)).subtype_mk
-  measurable_mul_const c := (measurable_subtype_coe.mul_const (c : M)).subtype_mk
-
-@[to_additive AddMemClass.measurableAdd₂]
-instance MulMemClass.measurableMul₂ {M S : Type*} [Mul M] [MeasurableSpace M] [MeasurableMul₂ M]
-    [SetLike S M] [MulMemClass S M] (s : S) : MeasurableMul₂ s where
-  measurable_mul := (measurable_fst.subtype_val.mul measurable_snd.subtype_val).subtype_mk
-
-@[to_additive]
-instance InvMemClass.measurableInv {G S : Type*} [Inv G] [MeasurableSpace G] [MeasurableInv G]
-    [SetLike S G] [InvMemClass S G] (s : S) : MeasurableInv s where
-  measurable_inv := measurable_subtype_coe.inv.subtype_mk
-
-end SubobjectMeasurable
+open scoped ENNReal NNReal Pointwise
 
 /-! ### Haar measure, regularity, and modular character on open subgroups -/
 
@@ -159,12 +137,14 @@ end HaarAndRegularity
 
 section ModularCharacter
 
-/-- Given a regular Haar measure on `G`, the modular character of an open subgroup `H` agrees with
-the restriction of the modular character of `G`. -/
-theorem modularCharacter_eq_of_regular {G : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-    (H : OpenSubgroup G) (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] (u : H) :
+/-- **Modular character on an open subgroup.** On a locally compact topological group `G`, the
+modular character of an open subgroup `H` is the restriction of the modular character of `G`. -/
+@[simp]
+theorem modularCharacter_eq {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    [LocallyCompactSpace G] (H : OpenSubgroup G) (u : H) :
     Measure.modularCharacter u = Measure.modularCharacter (u : G) := by
+  borelize G
+  set μ : Measure G := Measure.haar
   set ν : Measure H := μ.comap ((↑) : H → G)
   have hcoe : MeasurableEmbedding ((↑) : H → G) :=
     MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
@@ -188,15 +168,6 @@ theorem modularCharacter_eq_of_regular {G : Type*} [Group G] [TopologicalSpace G
   have heval := congrArg (fun m : Measure H ↦ m K) hsmul
   simp only [smul_apply, Measure.nnreal_smul_coe_apply] at heval
   exact_mod_cast ENNReal.mul_left_inj hKpos hKtop |>.1 heval
-
-/-- **Modular character on an open subgroup.** On a locally compact topological group `G`, the
-modular character of an open subgroup `H` is the restriction of the modular character of `G`. -/
-@[simp]
-theorem modularCharacter_eq {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    [LocallyCompactSpace G] (H : OpenSubgroup G) (u : H) :
-    Measure.modularCharacter u = Measure.modularCharacter (u : G) := by
-  borelize G
-  exact H.modularCharacter_eq_of_regular Measure.haar u
 
 end ModularCharacter
 
@@ -439,21 +410,6 @@ end Lp
 end MeasureTheory
 
 namespace OpenSubgroup
-
-/-- **Continuous peak kernels inside an open subgroup.** On a locally compact `R₁` group with a
-measure positive on nonempty open sets and finite on compact sets, every open subgroup `H` and
-neighbourhood `U ∈ 𝓝 1` admit a nonnegative `φ : C_c(G, ℝ)` of unit integral supported in both `U`
-and `H`. -/
-@[to_additive exists_nonneg_tsupport_subset_integral_eq_one
-  /-- **Continuous peak kernels inside an open additive subgroup.** -/]
-theorem exists_nonneg_tsupport_subset_integral_eq_one {G : Type*} [Group G] [TopologicalSpace G]
-    [R1Space G] [LocallyCompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
-    (H : OpenSubgroup G) (μ : Measure G) [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ]
-    {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
-    ∃ φ : C_c(G, ℝ), 0 ≤ φ ∧ tsupport φ ⊆ U ∧ tsupport φ ⊆ H ∧ ∫ x, φ x ∂μ = 1 := by
-  obtain ⟨φ, hφ0, hφUH, hφ1⟩ := TauCeti.exists_nonneg_tsupport_subset_integral_eq_one μ
-    (Filter.inter_mem hU (H.isOpen.mem_nhds H.one_mem))
-  exact ⟨φ, hφ0, hφUH.trans inter_subset_left, hφUH.trans inter_subset_right, hφ1⟩
 
 /-- **`L¹` peak kernels inside an open subgroup.** For a locally finite measure positive on nonempty
 open sets, every open subgroup `H` and neighbourhood `U ∈ 𝓝 1` admit a nonnegative subtype kernel
