@@ -47,7 +47,8 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
 
 * `AlgHom.isIntegral_map_unitClosedBall_iff_supSeminorm_le_one`: for a Tate presentation `π`
   of `A`, an element is integral over `π(K⟨X⟩°)` if and only if `|f|sup ≤ 1`.
-* `TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one`: `A° = {f | |f|sup ≤ 1}`.
+* `TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one`: `A° = {f | |f|sup ≤ 1}`,
+  with the pointwise form `TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_forall_pointNorm_le_one`.
 * `TauCeti.IsAffinoidAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`:
   `A°° = {f | |f|sup < 1}`, with the pointwise form
   `TauCeti.IsAffinoidAlgebra.isTopologicallyNilpotent_iff_forall_pointNorm_lt_one`.
@@ -56,6 +57,8 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
   reduced is `{f | |f|sup ≤ 1}`.
 * `TauCeti.IsAffinoidAlgebra.isPowerBounded_mul_inverse_iff`: for a unit `c`, `b c⁻¹` is
   power-bounded if and only if `|b(x)| ≤ |c(x)|` at every classical point `x`.
+* `TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inverse_iff`: `c` is a unit with
+  power-bounded inverse if and only if `|c(x)| ≥ 1` at every classical point `x`.
 
 ## References
 
@@ -219,6 +222,13 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra 
     rw [hfu]
     exact hu.isTopologicallyNilpotent_mul hcn
 
+/-- **Power-bounded elements, pointwise.** For every complete ultrametric algebra norm on an
+affinoid algebra, an element is power-bounded if and only if it has absolute value at most one at
+every classical point. -/
+theorem isPowerBounded_iff_forall_pointNorm_le_one (hA : IsAffinoidAlgebra K A) {f : A} :
+    Huber.IsPowerBounded f ↔ ∀ x, pointNorm K x f ≤ 1 := by
+  rw [hA.isPowerBounded_iff_supSeminorm_le_one, hA.supSeminorm_le_iff zero_le_one]
+
 /-- **Topologically nilpotent elements, pointwise.** For every complete ultrametric algebra norm on
 an affinoid algebra, an element is topologically nilpotent if and only if it has absolute value
 less than one at every classical point. -/
@@ -256,5 +266,19 @@ theorem isPowerBounded_mul_inverse_iff (hA : IsAffinoidAlgebra K A) {b c : A} (h
   have hpos : 0 < pointNorm K y c :=
     (pointNorm_nonneg c).lt_of_ne' (hA.isUnit_iff_forall_pointNorm_ne_zero.mp hc y)
   rw [hA.pointNorm_mul, hA.pointNorm_inverse y hc, ← div_eq_mul_inv, div_le_one hpos]
+
+/-- **Units with power-bounded inverse.** In an affinoid algebra with a complete ultrametric algebra
+norm, `c` is a unit with power-bounded inverse if and only if `|c(y)| ≥ 1` at every classical
+point `y`. -/
+theorem isUnit_and_isPowerBounded_inverse_iff (hA : IsAffinoidAlgebra K A) {c : A} :
+    IsUnit c ∧ Huber.IsPowerBounded (Ring.inverse c) ↔
+      ∀ y : MaximalSpectrum A, 1 ≤ pointNorm K y c := by
+  refine ⟨fun ⟨hc, h⟩ y ↦ ?_, fun h ↦ ?_⟩
+  · rw [← one_mul (Ring.inverse c), hA.isPowerBounded_mul_inverse_iff hc] at h
+    simpa using h y
+  · have hc : IsUnit c :=
+      hA.isUnit_iff_forall_pointNorm_ne_zero.mpr fun y ↦ (one_pos.trans_le (h y)).ne'
+    rw [← one_mul (Ring.inverse c), hA.isPowerBounded_mul_inverse_iff hc]
+    exact ⟨hc, by simpa using h⟩
 
 end TauCeti.IsAffinoidAlgebra

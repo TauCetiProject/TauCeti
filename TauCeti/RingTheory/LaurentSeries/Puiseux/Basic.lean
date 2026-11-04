@@ -195,6 +195,13 @@ theorem levelEmbedding_expand (n d : ℕ+) (f : K⸨X⸩) :
     levelEmbedding K (n * d) (expand K d f) = levelEmbedding K n f :=
   Subtype.ext (ramifiedEmbedding_expand n d f)
 
+/-- `levelEmbedding_expand` for a level `m` divisible by `n`: the transition map
+`X ↦ X ^ (m / n)` from level `n` to level `m` commutes with the level embeddings. -/
+@[simp]
+theorem levelEmbedding_expand_divExact {n m : ℕ+} (h : n ∣ m) (f : K⸨X⸩) :
+    levelEmbedding K m (expand K (m.divExact n) f) = levelEmbedding K n f := by
+  rw [← levelEmbedding_expand n (m.divExact n) f, PNat.mul_div_exact h]
+
 /-- `levelEmbedding_expand` as an equality of algebra maps. -/
 theorem levelEmbedding_comp_expand (n d : ℕ+) :
     (levelEmbedding K (n * d)).comp (expand K d) = levelEmbedding K n :=

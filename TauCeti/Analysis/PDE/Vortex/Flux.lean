@@ -138,7 +138,7 @@ private theorem exists_contDiffAt_eventuallyEq_log_normSq_add
   have hwz' : ‖w - z₀‖ ≠ 0 := norm_ne_zero_iff.mpr (sub_ne_zero.mpr hwz)
   have hlog : Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) =
       2 * k * Real.log ‖w - z₀‖ + Real.log (‖v w‖ ^ 2) := by
-    rw [← norm_sectionValue_sq x w, hw, norm_mul, norm_pow, mul_pow, ← pow_mul,
+    rw [← sq_norm_sectionValue x w, hw, norm_mul, norm_pow, mul_pow, ← pow_mul,
       Real.log_mul (pow_ne_zero _ hwz') (pow_ne_zero 2 (norm_ne_zero_iff.mpr hvw)),
       Real.log_pow]
     push_cast
@@ -163,7 +163,7 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
   have hs : ContDiff ℝ 2 (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :=
     contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
   have hsne : ∀ {w}, sectionValue x w ≠ 0 → 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≠ 0 := fun hw ↦ by
-    rw [← norm_sectionValue_sq]
+    rw [← sq_norm_sectionValue]
     exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hw)
   -- Off the zeros every kernel term is harmonic.
   have hKh : ∀ w, sectionValue x w ≠ 0 → HarmonicAt (fun y ↦ 4 * π * K y) w := fun w hw ↦
