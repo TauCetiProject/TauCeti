@@ -206,7 +206,7 @@ private theorem exists_syzygy [IsNoetherianRing A] (X : ModuleCat.{u} A)
   exact ⟨S, ⟨hS, inferInstanceAs (Module.Finite A (Fin n → A)), this,
     hS.moduleCat_exists_comp_eq_of_ext_eq_zero (hX.2 0)⟩,
     ⟨inferInstanceAs (Module.Finite A (LinearMap.ker π)),
-      fun n ↦ ext_X₁_eq_zero_of_ext_X₃_eq_zero hS (hX.2 (n + 1))⟩, ⟨Iso.refl _⟩⟩
+      fun n ↦ hS.ext_X₁_eq_zero_of_ext_X₃_eq_zero (hX.2 (n + 1))⟩, ⟨Iso.refl _⟩⟩
 
 /-- Over a right noetherian ring, a totally reflexive module `M` is the first term of a sequence
 `0 ⟶ M ⟶ Aᵏ ⟶ M' ⟶ 0` with `M'` totally reflexive: the map to `Aᵏ` is given by generators of
@@ -238,7 +238,7 @@ private theorem exists_cosyzygy [IsNoetherianRing Aᵐᵒᵖ] (M : ModuleCat.{u}
   have hD := hS.moduleCatOpDual hj
   refine ⟨S, ⟨hS, inferInstanceAs (Module.Finite A (Fin k → A)), hproj, hj⟩,
     ⟨inferInstanceAs (Module.Finite A ((Fin k → A) ⧸ LinearMap.range j)), ?_,
-      fun n ↦ ?_, fun n ↦ ext_X₁_eq_zero_of_ext_X₃_eq_zero hD (hM.ext_dual_eq_zero (n + 1))⟩,
+      fun n ↦ ?_, fun n ↦ hD.ext_X₁_eq_zero_of_ext_X₃_eq_zero (hM.ext_dual_eq_zero (n + 1))⟩,
     ⟨Iso.refl _⟩⟩
   · -- Reflexivity of the cokernel; functionals on `M'*` extend to `(Aᵏ)*` as `Ext¹(M*, A) = 0`.
     refine opDualEval_bijective_of_exact_of_surjective A (LinearMap.exact_map_mkQ_range j)
@@ -248,7 +248,7 @@ private theorem exists_cosyzygy [IsNoetherianRing Aᵐᵒᵖ] (M : ModuleCat.{u}
   · -- `Ext^{n+1}(M', A) = 0` by dimension shifting, as functionals on `M` extend to `Aᵏ`.
     cases n with
     | zero => exact hS.moduleCat_ext_eq_zero_of_exists_comp_eq hj
-    | succ n => exact ext_X₃_eq_zero_of_ext_X₁_eq_zero hS (hM.ext_eq_zero n)
+    | succ n => exact hS.ext_X₃_eq_zero_of_ext_X₁_eq_zero (hM.ext_eq_zero n)
 
 /-- **Totally reflexive modules are Gorenstein-projective** over a left and right noetherian
 ring. -/

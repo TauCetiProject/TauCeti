@@ -27,7 +27,8 @@ with kernel the maps extending to that term, giving the quotient identification.
 In higher degrees, composition with the extension class of such a sequence is a bijection
 `Ext^{n+1}(P₁, Y) ⟶ Ext^{n+2}(M, Y)` (`TauCeti.precomp_extClass_bijective`). Its two halves
 transfer vanishing between `Ext^{n+1}(P₁, Y)` and `Ext^{n+2}(M, Y)`
-(`TauCeti.ext_X₃_eq_zero_of_ext_X₁_eq_zero`, `TauCeti.ext_X₁_eq_zero_of_ext_X₃_eq_zero`), and
+(`CategoryTheory.ShortComplex.ShortExact.ext_X₃_eq_zero_of_ext_X₁_eq_zero` and
+`CategoryTheory.ShortComplex.ShortExact.ext_X₁_eq_zero_of_ext_X₃_eq_zero`), and
 iterating them along a chain of short exact sequences gives
 `TauCeti.ext_X₃_eq_zero_of_forall_exists_f_comp_eq`.
 
@@ -194,18 +195,34 @@ theorem precomp_extClass_bijective (hS : S.ShortExact) [Projective S.X₂] (Y : 
       (n₀ := n + 1) (by lia)
     exact ⟨x, rfl⟩
 
+end TauCeti
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open CategoryTheory.Abelian
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {S : ShortComplex C}
+
 /-- **Dimension shifting to the cokernel**: if `S` is short exact with projective middle term,
 then `Ext^{n+2}(S.X₃, Y) = 0` as soon as `Ext^{n+1}(S.X₁, Y) = 0`. -/
 theorem ext_X₃_eq_zero_of_ext_X₁_eq_zero (hS : S.ShortExact) [Projective S.X₂] {Y : C} {n : ℕ}
     (h : ∀ x : Ext.{w} S.X₁ Y (n + 1), x = 0) (e : Ext.{w} S.X₃ Y (n + 2)) : e = 0 := by
-  obtain ⟨x, rfl⟩ := (precomp_extClass_bijective hS Y n).2 e
+  obtain ⟨x, rfl⟩ := (TauCeti.precomp_extClass_bijective hS Y n).2 e
   rw [h x, map_zero]
 
 /-- **Dimension shifting to the kernel**: if `S` is short exact with projective middle term,
 then `Ext^{n+1}(S.X₁, Y) = 0` as soon as `Ext^{n+2}(S.X₃, Y) = 0`. -/
 theorem ext_X₁_eq_zero_of_ext_X₃_eq_zero (hS : S.ShortExact) [Projective S.X₂] {Y : C} {n : ℕ}
     (h : ∀ e : Ext.{w} S.X₃ Y (n + 2), e = 0) (x : Ext.{w} S.X₁ Y (n + 1)) : x = 0 :=
-  (precomp_extClass_bijective hS Y n).1 (by rw [h (Ext.precomp _ _ _ x), map_zero])
+  (TauCeti.precomp_extClass_bijective hS Y n).1 (by rw [h (Ext.precomp _ _ _ x), map_zero])
+
+end CategoryTheory.ShortComplex.ShortExact
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Abelian
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 
 /-- **`Ext` vanishing along a chain of short exact sequences.** Let `Sₘ`, for `m : ℤ`, be short
 exact sequences with projective middle terms, with `Sₘ.X₃ ≅ Sₘ₊₁.X₁`, such that every morphism
@@ -222,7 +239,6 @@ theorem ext_X₃_eq_zero_of_forall_exists_f_comp_eq {S : ℤ → ShortComplex C}
   | zero => exact (hS m).ext_eq_zero_of_exists_f_comp_eq (h m) x
   | succ n ih =>
     obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by lia⟩
-    exact ext_X₃_eq_zero_of_ext_X₁_eq_zero (hS (k + 1))
-      (ext_eq_zero_of_iso (e k).symm (ih k)) x
+    exact (hS (k + 1)).ext_X₃_eq_zero_of_ext_X₁_eq_zero (ext_eq_zero_of_iso (e k).symm (ih k)) x
 
 end TauCeti
