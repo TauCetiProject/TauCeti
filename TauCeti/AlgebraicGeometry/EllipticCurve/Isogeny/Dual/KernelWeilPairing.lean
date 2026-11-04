@@ -50,8 +50,6 @@ variable {F : Type*} [Field F] [DecidableEq F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂)
 
-local instance : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
-
 variable [IsSepClosed F] (hd : (φ.degree : F) ≠ 0)
 
 /-- The kernel of an isogeny is isotropic for the Weil pairing at its degree. -/
