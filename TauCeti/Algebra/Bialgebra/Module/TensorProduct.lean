@@ -137,6 +137,18 @@ variable {M N} in
   simp
 
 variable {M N} in
+/-- Pure tensors distribute over finite sums in the first factor. -/
+theorem sum_tmul {ι : Type*} (s : Finset ι) (m : ι → M) (n : N) :
+    tmul R H (∑ i ∈ s, m i) n = ∑ i ∈ s, tmul R H (m i) n :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.sum_tmul])
+
+variable {M N} in
+/-- Pure tensors distribute over finite sums in the second factor. -/
+theorem tmul_sum {ι : Type*} (s : Finset ι) (m : M) (n : ι → N) :
+    tmul R H m (∑ i ∈ s, n i) = ∑ i ∈ s, tmul R H m (n i) :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.tmul_sum])
+
+variable {M N} in
 /-- Base scalars may be applied to the first factor. -/
 theorem smul_tmul' (r : R) (m : M) (n : N) :
     r • tmul R H m n = tmul R H (r • m) n := by
@@ -296,6 +308,22 @@ variable {M N} in
   apply Tensor.ext
   intro m n
   simp
+
+variable {M N} in
+/-- Tensoring a composite intertwiner on the left with `LinearMap.id` on the right splits as a
+composite of `tensorMap`s. -/
+theorem tensorMap_comp_id (f : M →ₗ[H] M') (f' : M' →ₗ[H] M'') :
+    tensorMap R H (f'.comp f) (LinearMap.id : N →ₗ[H] N) =
+      (tensorMap R H f' LinearMap.id).comp (tensorMap R H f LinearMap.id) := by
+  rw [← tensorMap_comp, LinearMap.id_comp]
+
+variable {M N} in
+/-- Tensoring `LinearMap.id` on the left with a composite intertwiner on the right splits as a
+composite of `tensorMap`s. -/
+theorem tensorMap_id_comp (g : N →ₗ[H] N') (g' : N' →ₗ[H] N'') :
+    tensorMap R H (LinearMap.id : M →ₗ[H] M) (g'.comp g) =
+      (tensorMap R H LinearMap.id g').comp (tensorMap R H LinearMap.id g) := by
+  rw [← tensorMap_comp, LinearMap.id_comp]
 
 variable {M N} in
 /-- Tensor products of module isomorphisms, for the coproduct actions. -/
