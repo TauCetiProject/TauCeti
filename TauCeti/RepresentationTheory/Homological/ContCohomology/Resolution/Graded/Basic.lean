@@ -94,6 +94,17 @@ private theorem resolutionModuleComplex_d_apply (n : ℕ)
 /-- The direct sum of the shifted coinduced resolution. Degree zero is `C(G, X)`. -/
 abbrev gradedResolutionModule := ⨁ n : ℕ, (resolutionX X (n + 1)).V
 
+namespace GradedResolution
+
+/-- The componentwise scalar action on the total resolution. Open this scope when tensoring
+resolutions: for integer scalars, the fallback action on the underlying additive group need not
+be definitionally equal to this direct-sum action. -/
+noncomputable scoped instance (priority := 1100) instModule : Module R X.gradedResolutionModule :=
+  @DirectSum.instModule R _ ℕ (fun n ↦ (resolutionX X (n + 1)).V)
+    (fun _ ↦ inferInstance) (fun n ↦ (resolutionX X (n + 1)).hV2)
+
+end GradedResolution
+
 /-- The canonical differential on the total shifted resolution. -/
 noncomputable def gradedResolutionDifferential :
     X.gradedResolutionModule →ₗ[R] X.gradedResolutionModule :=

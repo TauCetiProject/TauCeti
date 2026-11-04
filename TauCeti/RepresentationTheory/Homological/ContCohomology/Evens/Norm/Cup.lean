@@ -46,12 +46,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup]
   [Fintype (G ⧸ U.toSubgroup)]
 
--- Match the total resolution's direct-sum module structure, rather than the fallback
--- integer action on its underlying additive group.
-private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+open scoped TopRep.GradedResolution
 
 /-- The tensor norm of the cup of two homogeneous cocycles is the canonical cup of their tensor
 norms. The formula holds for every transversal, with the degree equality `l m + l n = l (m + n)`

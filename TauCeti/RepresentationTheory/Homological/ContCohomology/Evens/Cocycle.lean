@@ -48,12 +48,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup]
   [Fintype (G ⧸ U.toSubgroup)] (t : U.toSubgroup.LeftTransversal)
 
--- Tensor induction uses the direct-sum scalar action of the total resolution, rather than
--- the fallback integer action on its underlying additive group.
-private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+open scoped TopRep.GradedResolution
 
 /-- The class of the diagonal tensor of a canonical homogeneous cocycle with trivial `𝔽₂`
 coefficients. Its degree is the index times the input degree, and tensor-induced coefficients
