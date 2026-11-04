@@ -27,20 +27,20 @@ where `J(z, x)` is an almost complex structure on `V` depending on the domain po
 `du - X(z, u)` is complex linear.
 
 Gromov's graph construction (`TauCeti.Geometry.Symplectic.Floer.Graph`) turns solutions into
-pseudoholomorphic curves: the graph `y ↦ (y, u y)` solves the autonomous equation
-`∂ₜũ = J̃(ũ) ∂ₛũ` for the structure
+pseudoholomorphic curves: the graph `U y = (y, u y)` solves the autonomous equation
+`∂ₜU = J'(U) ∂ₛU` for the structure
 
-`J̃(z, x)(ξ, v) = (i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`
+`J'(z, x)(ξ, v) = (i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`
 
 on `ℂ × V` (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`). This is the structure
 `TauCeti.SymplecticForm.floerGraphAlmostComplex` of the graph construction, written here as a
 continuous-linear-map-valued function on the Euclidean product `WithLp 2 (ℂ × V)`
 (`TauCeti.Floer.graphStructure`). That is the form in which the local compactness theory of
 `TauCeti.Geometry.Symplectic.JHolomorphic.Energy` applies, which needs a `C²` structure on an
-inner product space: `J̃² = -1` wherever `J² = -1`
-(`TauCeti.Floer.graphStructure_graphStructure`), and `J̃` is as regular as `J` and `X`
+inner product space: `J'² = -1` wherever `J² = -1`
+(`TauCeti.Floer.graphStructure_graphStructure`), and `J'` is as regular as `J` and `X`
 (`TauCeti.Floer.contDiffOn_graphStructure`). The graph has energy density
-`‖∂ₛũ‖² = 1 + ‖∂ₛu‖²` (`TauCeti.norm_fderiv_toLp_graph_apply_sq`), so on a domain of finite area
+`‖∂ₛU‖² = 1 + ‖∂ₛu‖²` (`TauCeti.norm_fderiv_toLp_graph_apply_sq`), so on a domain of finite area
 bounded energy of `u` gives bounded energy of its graph. The small-energy estimate for the graph
 becomes a mean-value inequality for `u`
 (`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy`):
@@ -127,7 +127,7 @@ variable {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {u 
 
 /-- **Gromov's graph construction in Euclidean coordinates.** A map `u` differentiable at `y`
 solves the inhomogeneous equation `∂ₜu - X(y, u) i = J(y, u)(∂ₛu - X(y, u) 1)` at `y` exactly when
-its graph solves `∂ₜũ = J̃(ũ) ∂ₛũ` there. -/
+its graph solves `∂ₜU = J'(U) ∂ₛU` there. -/
 theorem fderiv_toLp_prodMk_I_eq_graphStructure_iff (hu : DifferentiableAt ℝ u y) :
     fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y I =
         graphStructure J X (WithLp.toLp 2 (y, u y))
@@ -143,7 +143,7 @@ end Graph
 /-- **The mean-value inequality for Floer solutions.** Let `J` and `X` be `C²` on an open set
 `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with `J(z, x)² = -1` on `D × K`.
 There is a threshold `δ > 0` with the following property. Let `u` be `C³` on an open
-neighbourhood of a closed disc `B̄_r(z₀)`, and on the open disc `B_r(z₀) ⊆ D` let it solve
+neighbourhood of a closed disc `closedBall z₀ r`, and on the open disc `B_r(z₀) ⊆ D` let it solve
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` with image in `K`. If the energy
 `π r² + ∫_{B_r(z₀)} ‖∂ₛu‖²` of its graph over the disc is less than `δ`, then
 `π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
