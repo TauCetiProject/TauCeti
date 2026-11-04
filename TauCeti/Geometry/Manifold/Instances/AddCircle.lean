@@ -59,8 +59,9 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.symm_apply_of_coe_apply`, `AddCircle.mfderiv_of_coe_apply`,
   `AddCircle.mfderiv_extChartAt_symm`: the inverse of a local lift is the quotient map, and local
   lifts and the inverses of the extended charts have derivative the identity of `ℝ`.
-* `AddCircle.coe_extChartAt_apply`, `AddCircle.extChartAt_symm_apply`: the extended charts are
-  local lifts, and their inverses are the quotient map on their targets.
+* `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
+  `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
+  the quotient map on their targets.
 * `AddCircle.instLieAddGroup`: `AddCircle p` is an analytic additive Lie group. In particular,
   multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
@@ -474,6 +475,11 @@ of its source to a real number representing it. -/
 theorem coe_extChartAt_apply (x : AddCircle p) {y : AddCircle p}
     (hy : y ∈ (extChartAt 𝓘(ℝ) x).source) : (extChartAt 𝓘(ℝ) x y : AddCircle p) = y := by
   simpa using coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) (by simpa using hy)
+
+variable {p} in
+/-- The extended chart of `AddCircle p` at `x` sends `x` to a real number representing it. -/
+theorem coe_extChartAt_self (x : AddCircle p) : (extChartAt 𝓘(ℝ) x x : AddCircle p) = x :=
+  coe_extChartAt_apply x (mem_extChartAt_source x)
 
 variable {p} in
 /-- On its target, the inverse of an extended chart of `AddCircle p` is the quotient map

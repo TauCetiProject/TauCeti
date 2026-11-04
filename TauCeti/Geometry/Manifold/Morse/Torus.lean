@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import TauCeti.Analysis.Calculus.Morse.Pi
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
@@ -30,16 +31,16 @@ for the Morse inequalities; the homology of the torus is not computed here.
 
 In the preferred chart at any point, whose coordinates are local real lifts of the coordinates of
 the point, the cosine function is the separated sum `y ↦ ∑ i, cos (2π yᵢ / pᵢ)`
-(`TauCeti.torusCos_comp_extChartAt_symm`). The statements about critical points and indices are
-therefore those of `TauCeti.Analysis.Calculus.Morse.Pi` for the one-variable functions
-`t ↦ cos (2π t / pᵢ)`. For `m = 2` this is the classical function on the two-torus with one
-minimum, two saddles and one maximum.
+(`TauCeti.torusCos_comp_extChartAt_symm_eventuallyEq`). The statements about critical points
+and indices are therefore those of `TauCeti.Analysis.Calculus.Morse.Pi` for the one-variable
+functions `t ↦ cos (2π t / pᵢ)`. For `m = 2` this is the classical function on the two-torus with
+one minimum, two saddles and one maximum.
 
 ## Main declarations
 
 * `TauCeti.torusCos`: the cosine function on a torus, with `TauCeti.torusCos_coe` evaluating it
   at the class of a real vector.
-* `TauCeti.torusCos_comp_extChartAt_symm`: its expression in the preferred charts.
+* `TauCeti.torusCos_comp_extChartAt_symm_eventuallyEq`: its expression in the preferred charts.
 * `TauCeti.contMDiff_torusCos` and `TauCeti.isMorse_torusCos`: it is a smooth Morse function.
 * `TauCeti.mem_criticalPoints_torusCos_iff`: its critical points are the points with all
   coordinates `0` or the half period.
@@ -89,17 +90,10 @@ theorem continuous_torusCos : Continuous (torusCos p) := by
 
 variable [∀ i, Fact (0 < p i)]
 
-/-- The point of the preferred chart of the torus at `x` is a family of real lifts of the
-coordinates of `x`. -/
-private theorem coe_extChartAt_self_apply (x : ∀ i, AddCircle (p i)) (i : ι) :
-    ((extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i : ℝ) : AddCircle (p i)) = x i := by
-  rw [extChartAt_pi]
-  exact coe_extChartAt_apply (x i) (mem_extChartAt_source (x i))
-
 /-- **The cosine function in the preferred charts.** Near the image of `x` in its preferred chart,
 the coordinate expression of the cosine function on the torus is the separated sum
 `y ↦ ∑ i, cos (2π yᵢ / pᵢ)`. -/
-theorem torusCos_comp_extChartAt_symm (x : ∀ i, AddCircle (p i)) :
+theorem torusCos_comp_extChartAt_symm_eventuallyEq (x : ∀ i, AddCircle (p i)) :
     torusCos p ∘ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
       =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)]
       fun y ↦ ∑ i, Real.cos (2 * π / p i * y i) := by
@@ -115,24 +109,21 @@ theorem torusCos_comp_extChartAt_symm (x : ∀ i, AddCircle (p i)) :
 theorem contMDiff_torusCos :
     ContMDiff (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) 𝓘(ℝ) ∞ (torusCos p) := by
   intro x
-  rw [contMDiffAt_iff, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    ModelWithCorners.range_eq_univ, contDiffWithinAt_univ, id_comp]
-  refine ⟨(continuous_torusCos p).continuousAt, ContDiffAt.congr_of_eventuallyEq ?_
-    (torusCos_comp_extChartAt_symm p x)⟩
-  fun_prop
+  exact contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.2 <|
+    ContDiffAt.congr_of_eventuallyEq (by fun_prop) (torusCos_comp_extChartAt_symm_eventuallyEq p x)
 
-/-- The derivative of the angle cosine `t ↦ cos (c t)` of a factor. -/
-private theorem deriv_cos_mul (c t : ℝ) :
-    deriv (fun s ↦ Real.cos (c * s)) t = -(c * Real.sin (c * t)) := by
-  rw [deriv_comp_mul_left (f := Real.cos), Real.deriv_cos, smul_eq_mul, mul_neg]
+omit [Fintype ι] in
+/-- The angular frequency `2π / pᵢ` of the `i`-th factor is nonzero. -/
+private theorem two_pi_div_ne_zero (i : ι) : 2 * π / p i ≠ 0 :=
+  div_ne_zero (by positivity) (Fact.out : 0 < p i).ne'
 
-/-- The second derivative of the angle cosine `t ↦ cos (c t)` of a factor. -/
-private theorem deriv_deriv_cos_mul (c t : ℝ) :
-    deriv (deriv fun s ↦ Real.cos (c * s)) t = -(c ^ 2 * Real.cos (c * t)) := by
-  rw [show (deriv fun s ↦ Real.cos (c * s)) = fun s ↦ -(c * Real.sin (c * s)) from
-      funext (deriv_cos_mul c), deriv.fun_neg, deriv_const_mul _ (by fun_prop),
-    deriv_comp_mul_left (f := Real.sin), Real.deriv_sin, smul_eq_mul]
-  ring
+/-- The second derivative of the angle cosine of the `i`-th factor at a lift of `x i` is
+`-(2π / pᵢ)²` times the cosine of the angle of `x i`. -/
+private theorem deriv_deriv_cos_extChartAt (i : ι) (x : ∀ i, AddCircle (p i)) :
+    deriv (deriv fun s ↦ Real.cos (2 * π / p i * s))
+        (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) =
+      -((2 * π / p i) ^ 2 * (toCircle (x i) : ℂ).re) := by
+  rw [deriv_deriv_cos_mul, ← re_toCircle_coe, extChartAt_pi_apply, coe_extChartAt_self]
 
 /-- The derivative of the angle cosine of the `i`-th factor at a lift of `x i` vanishes exactly
 when `x i` is `0` or the half period. -/
@@ -140,9 +131,9 @@ private theorem deriv_cos_eq_zero_iff (i : ι) (x : ∀ i, AddCircle (p i)) :
     deriv (fun s ↦ Real.cos (2 * π / p i * s))
         (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) = 0 ↔
       x i = 0 ∨ x i = ((p i / 2 : ℝ) : AddCircle (p i)) := by
-  have hc : 2 * π / p i ≠ 0 := div_ne_zero (by positivity) (Fact.out : 0 < p i).ne'
-  rw [deriv_cos_mul, neg_eq_zero, mul_eq_zero, or_iff_right hc, ← im_toCircle_coe,
-    coe_extChartAt_self_apply, im_toCircle_eq_zero_iff (Fact.out : 0 < p i).ne']
+  rw [deriv_cos_mul, neg_eq_zero, mul_eq_zero, or_iff_right (two_pi_div_ne_zero p i),
+    ← im_toCircle_coe, extChartAt_pi_apply, coe_extChartAt_self,
+    im_toCircle_eq_zero_iff (Fact.out : 0 < p i).ne']
 
 /-- The second derivative of the angle cosine of the `i`-th factor at a lift of `x i` is negative
 exactly when the cosine is positive. -/
@@ -150,10 +141,8 @@ private theorem deriv_deriv_cos_neg_iff (i : ι) (x : ∀ i, AddCircle (p i)) :
     deriv (deriv fun s ↦ Real.cos (2 * π / p i * s))
         (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) < 0 ↔
       0 < (toCircle (x i) : ℂ).re := by
-  have hc : 0 < (2 * π / p i) ^ 2 :=
-    pow_pos (div_pos (by positivity) (Fact.out : 0 < p i)) 2
-  rw [deriv_deriv_cos_mul, neg_lt_zero, ← re_toCircle_coe, coe_extChartAt_self_apply,
-    mul_pos_iff_of_pos_left hc]
+  rw [deriv_deriv_cos_extChartAt, neg_lt_zero,
+    mul_pos_iff_of_pos_left (sq_pos_of_ne_zero (two_pi_div_ne_zero p i))]
 
 /-- **Critical points of the cosine function on a torus**: the points all of whose coordinates are
 `0` or the half period. -/
@@ -161,7 +150,7 @@ theorem mem_criticalPoints_torusCos_iff {x : ∀ i, AddCircle (p i)} :
     x ∈ criticalPoints (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusCos p) ↔
       ∀ i, x i = 0 ∨ x i = ((p i / 2 : ℝ) : AddCircle (p i)) := by
   rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero,
-    (torusCos_comp_extChartAt_symm p x).fderiv_eq,
+    (torusCos_comp_extChartAt_symm_eventuallyEq p x).fderiv_eq,
     fderiv_sum_comp_eval_eq_zero_iff (φ := fun i s ↦ Real.cos (2 * π / p i * s))
       fun i ↦ by fun_prop]
   exact forall_congr' fun i ↦ deriv_cos_eq_zero_iff p i x
@@ -173,16 +162,14 @@ theorem isMorse_torusCos : IsMorse (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)
     (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.2 hx)
   rw [isManifoldNondegenerateCriticalPoint_iff]
   refine IsNondegenerateCriticalPoint.congr_of_eventuallyEq ?_
-    (torusCos_comp_extChartAt_symm p x).symm
+    (torusCos_comp_extChartAt_symm_eventuallyEq p x).symm
   refine (isNondegenerateCriticalPoint_sum_comp_eval_iff
     (φ := fun i s ↦ Real.cos (2 * π / p i * s)) fun i ↦ by fun_prop).2 fun i ↦
       ⟨(deriv_cos_eq_zero_iff p i x).2 (hcrit i), ?_⟩
   -- At a critical point the angle cosine of each factor is `±1`, so its second derivative is not
   -- zero.
-  have hc : 2 * π / p i ≠ 0 := div_ne_zero (by positivity) (Fact.out : 0 < p i).ne'
-  rw [deriv_deriv_cos_mul, neg_ne_zero, mul_ne_zero_iff, ← re_toCircle_coe,
-    coe_extChartAt_self_apply]
-  refine ⟨pow_ne_zero 2 hc, ?_⟩
+  rw [deriv_deriv_cos_extChartAt, neg_ne_zero, mul_ne_zero_iff]
+  refine ⟨pow_ne_zero 2 (two_pi_div_ne_zero p i), ?_⟩
   rcases hcrit i with h | h <;> simp [h, (Fact.out : 0 < p i).ne']
 
 /-- **The Morse index of the cosine function on a torus** at a critical point is the number of
@@ -191,7 +178,8 @@ theorem manifoldMorseIndex_torusCos {x : ∀ i, AddCircle (p i)}
     (hx : x ∈ criticalPoints (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusCos p)) :
     manifoldMorseIndex (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusCos p) x =
       {i | x i = 0}.ncard := by
-  rw [manifoldMorseIndex_def, morseIndex_congr_of_eventuallyEq (torusCos_comp_extChartAt_symm p x),
+  rw [manifoldMorseIndex_def,
+    morseIndex_congr_of_eventuallyEq (torusCos_comp_extChartAt_symm_eventuallyEq p x),
     morseIndex_sum_comp_eval (φ := fun i s ↦ Real.cos (2 * π / p i * s)) fun i ↦ by fun_prop]
   congr 1
   ext i
@@ -217,7 +205,7 @@ private theorem torusCosCriticalPoint_injective : Injective (torusCosCriticalPoi
 
 /-- The critical points of the cosine function are the points `torusCosCriticalPoint p s`, and
 the one indexed by `s` has `s` as its set of zero coordinates. -/
-private theorem exists_torusCosCriticalPoint_eq {x : ∀ i, AddCircle (p i)}
+private theorem torusCosCriticalPoint_toFinset_setOf_eq_zero {x : ∀ i, AddCircle (p i)}
     (hx : x ∈ criticalPoints (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusCos p)) :
     torusCosCriticalPoint p {i | x i = 0}.toFinset = x := by
   ext1 i
@@ -244,7 +232,7 @@ private theorem criticalPoints_torusCos_eq_range :
     criticalPoints (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusCos p) =
       range (torusCosCriticalPoint p) := by
   ext x
-  refine ⟨fun hx ↦ ⟨_, exists_torusCosCriticalPoint_eq p hx⟩, ?_⟩
+  refine ⟨fun hx ↦ ⟨_, torusCosCriticalPoint_toFinset_setOf_eq_zero p hx⟩, ?_⟩
   rintro ⟨s, rfl⟩
   exact torusCosCriticalPoint_mem_criticalPoints p s
 
@@ -262,7 +250,7 @@ theorem criticalCount_torusCos (j : ℕ) :
       Finset.subset_univ, true_and]
     constructor
     · rintro ⟨hx, hj⟩
-      refine ⟨{i | x i = 0}.toFinset, ?_, exists_torusCosCriticalPoint_eq p hx⟩
+      refine ⟨{i | x i = 0}.toFinset, ?_, torusCosCriticalPoint_toFinset_setOf_eq_zero p hx⟩
       rw [← hj, manifoldMorseIndex_torusCos p hx, ncard_eq_toFinset_card']
     · rintro ⟨s, hs, rfl⟩
       refine ⟨torusCosCriticalPoint_mem_criticalPoints p s, ?_⟩

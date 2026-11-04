@@ -107,11 +107,14 @@ theorem im_toCircle_eq_zero_iff {T : ℝ} (hT : T ≠ 0) {x : AddCircle T} :
     · left
       refine injective_toCircle hT ?_
       rw [toCircle_zero]
-      exact Circle.ext (Complex.ext (by simp; linarith) (by simp [h]))
+      exact Circle.ext (Complex.ext (by rw [Circle.coe_one, Complex.one_re]; linarith)
+        (by simp [h]))
     · right
       refine injective_toCircle hT ?_
       rw [toCircle_half_period hT]
-      exact Circle.ext (Complex.ext (by simp; linarith) (by simp [h]))
+      exact Circle.ext (Complex.ext
+        (by rw [Circle.coe_neg, Circle.coe_one, Complex.neg_re, Complex.one_re]; linarith)
+        (by simp [h]))
   · rintro (rfl | rfl) <;> simp [hT]
 
 end AddCircle

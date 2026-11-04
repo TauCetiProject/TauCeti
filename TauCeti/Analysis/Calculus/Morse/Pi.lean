@@ -16,7 +16,7 @@ For a finite family of functions `φ i : ℝ → ℝ`, the *separated sum* `y �
 derivatives of the summands. Consequently `y` is a critical point of the sum exactly when each
 `y i` is a critical point of `φ i`; it is a nondegenerate critical point exactly when, moreover,
 each second derivative `φ i'' (y i)` is nonzero; and its Morse index is the number of `i` with
-`φ i'' (y i) < 0`, by Sylvester's count `QuadraticMap.sigNeg_weightedSumSquares`.
+`φ i'' (y i) < 0`, by Sylvester's count `QuadraticForm.sigNeg_weightedSumSquares`.
 
 This is the calculus behind the standard Morse function `∑ i, cos (2π xᵢ / pᵢ)` on a torus
 `∀ i, AddCircle (p i)`, whose charts have the real coordinates of the factors as coordinates. The
