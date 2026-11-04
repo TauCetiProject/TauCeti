@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
@@ -17,9 +18,10 @@ An edge of the nerve of a monoid `M`, viewed as a category with one object, is a
 short edges. Consequently, a homotopy `H` from `f` to `g` between maps `K ⟶ nerve (SingleObj M)`
 satisfies, over each edge `e` of `K` from `x₀` to `x₁`, the relation
 `H ({x₁} × Δ[1]) * f e = g e * H ({x₀} × Δ[1])` (`CategoryTheory.nerve.edgeElem_homotopy`),
-obtained by cutting the square `e × Δ[1]` into two triangles along its diagonal. For a group,
-this is the obstruction showing that a map whose values around a loop do not multiply to `1` is
-not homotopic to a constant map.
+obtained from the two triangles `SSet.Edge.CompStruct.ofSimplicialObjectHomotopy` and
+`SSet.Edge.CompStruct.ofSimplicialObjectHomotopy'` cutting the square `e × Δ[1]` along its
+diagonal. For a group, this is the obstruction showing that a map whose values around a loop do
+not multiply to `1` is not homotopic to a constant map.
 
 ## Main declarations
 
@@ -75,30 +77,25 @@ lemma edgeElem_homotopy {K : SSet.{u}} {f g : K ⟶ nerve (SingleObj M)} (H : SS
     (e : K _⦋1⦌) :
     edgeElem (H.h.app _ (verticalEdge (K.δ 0 e))) * edgeElem (f.app _ e) =
       edgeElem (g.app _ e) * edgeElem (H.h.app _ (verticalEdge (K.δ 1 e))) := by
-  let y : Δ[1] _⦋1⦌ := stdSimplex.edge 1 0 1 (by decide)
-  -- The triangles with vertices `(x₀, 0), (x₁, 0), (x₁, 1)` and `(x₀, 0), (x₀, 1), (x₁, 1)`.
-  let P : (K ⊗ Δ[1]) _⦋2⦌ := (K.σ 1 e, Δ[1].σ 0 y)
-  let Q : (K ⊗ Δ[1]) _⦋2⦌ := (K.σ 0 e, Δ[1].σ 1 y)
-  have hP := edgeElem_app_δ_one H.h P
-  have hQ := edgeElem_app_δ_one H.h Q
-  -- The ends of the cylinder: `(ι₀ ≫ H.h).app _ e` is `H.h.app _ (ι₀.app _ e)` by definition.
-  have hb : H.h.app _ (ι₀.app _ e) = f.app _ e := ConcreteCategory.congr_hom (congr_app H.h₀ _) e
-  have ht : H.h.app _ (ι₁.app _ e) = g.app _ e := ConcreteCategory.congr_hom (congr_app H.h₁ _) e
-  have hPQ : (K ⊗ Δ[1]).δ 1 P = (K ⊗ Δ[1]).δ 1 Q :=
-    Prod.ext ((δ_comp_σ_self_apply 1 e).trans (δ_comp_σ_succ_apply 0 e).symm)
-      ((δ_comp_σ_succ_apply 0 y).trans (δ_comp_σ_self_apply 1 y).symm)
-  have hP₀ : (K ⊗ Δ[1]).δ 0 P = verticalEdge (K.δ 0 e) :=
-    Prod.ext ((δ_comp_σ_of_le_apply (i := 0) (j := 0) le_rfl e).trans (verticalEdge_fst _).symm)
-      ((δ_comp_σ_self_apply 0 y).trans (verticalEdge_snd _).symm)
-  have hP₂ : (K ⊗ Δ[1]).δ 2 P = ι₀.app _ e :=
-    Prod.ext (δ_comp_σ_succ_apply 1 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
-  have hQ₀ : (K ⊗ Δ[1]).δ 0 Q = ι₁.app _ e :=
-    Prod.ext (δ_comp_σ_self_apply 0 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
-  have hQ₂ : (K ⊗ Δ[1]).δ 2 Q = verticalEdge (K.δ 1 e) :=
-    Prod.ext ((δ_comp_σ_of_gt_apply (i := 1) (j := 0) (by decide) e).trans
-      (verticalEdge_fst _).symm) ((δ_comp_σ_succ_apply 1 y).trans (verticalEdge_snd _).symm)
-  rw [hPQ, hP₀, hP₂, hb] at hP
-  rw [hQ₀, hQ₂, ht] at hQ
-  rw [← hP, hQ]
+  -- Edges of the nerve of `M` are the elements of `M` they represent.
+  have hE {x y : (nerve (SingleObj M)) _⦋0⦌} (e : (nerve (SingleObj M)).Edge x y) :
+      homEquiv e = edgeElem e.edge :=
+    (homEquiv_apply e).trans (by simp)
+  -- The vertical edges of the combinatorial homotopy are the images of the vertical edges.
+  have hv (v : K _⦋0⦌) : (Edge.ofSimplicialObjectHomotopy H.toSimplicialObjectHomotopy v).edge =
+      H.h.app _ (verticalEdge v) := by
+    refine congrArg (H.h.app _) (Prod.ext ?_ ?_)
+    · exact (congrArg (fun φ : ⦋1⦌ ⟶ ⦋0⦌ ↦ K.map φ.op v) (Subsingleton.elim _ _)).trans
+        (verticalEdge_fst v).symm
+    · rw [verticalEdge_snd]
+      exact (prodStdSimplex₁.nonDegenerateEquiv_snd 0).trans (by decide)
+  -- The two triangles of the square `e × Δ[1]`, with their common diagonal.
+  have h₁ := homEquiv_comp
+    (Edge.CompStruct.ofSimplicialObjectHomotopy H.toSimplicialObjectHomotopy (Edge.mk' e))
+  have h₂ := homEquiv_comp
+    (Edge.CompStruct.ofSimplicialObjectHomotopy' H.toSimplicialObjectHomotopy (Edge.mk' e))
+  rw [hE, hE, hE, hv, SingleObj.comp_as_mul] at h₁ h₂
+  rw [← h₁] at h₂
+  exact h₂.symm
 
 end CategoryTheory.nerve
