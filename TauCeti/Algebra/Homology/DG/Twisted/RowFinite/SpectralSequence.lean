@@ -380,6 +380,7 @@ theorem indexCochainComplexMap_comp_proj (p : ℤ) :
 
 /-- The short complex `F_p ⟶ F_{p+1} ⟶ ⊕_{ind x = p + 1} ℳ` of the index filtration, whose second
 map restricts to the generators of index `p + 1`. -/
+@[expose, simps]
 noncomputable def indexShortComplex (p : ℤ) :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   ShortComplex.mk (m.indexCochainComplexMap hM hm (Int.le_add_one le_rfl))
@@ -511,6 +512,15 @@ noncomputable def indexSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) :
       (rowFiniteIndexGradedPieceComplex ind hM (pq.2 + 1)).homology (pq.1 + pq.2) :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso (m.indexCokernelIso hM hm pq.2)
+
+/-- The first-page isomorphism is the generic identification with the cokernel, followed by the
+isomorphism on cohomology induced by `indexCokernelIso`. -/
+theorem indexSpectralSequenceFirstPageXIso_eq (pq : ℤ × ℤ) :
+    m.indexSpectralSequenceFirstPageXIso hM hm pq =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
+        (HomologicalComplex.homologyFunctor _ _ _).mapIso (m.indexCokernelIso hM hm pq.2) := by
+  apply Iso.ext
+  rfl
 
 /-! ### Convergence -/
 
