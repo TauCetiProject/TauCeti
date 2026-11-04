@@ -103,17 +103,18 @@ theorem mem_integerLattice_rat_iff (x : NumberField.mixedEmbedding.euclidean.mix
     x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ ↔
       ∃ z : ℤ, mixedSpaceRatEquivReal x = z := by
   let e := NumberField.mixedEmbedding.euclidean.toMixed ℚ
-  rw [show (x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ) ↔
-      ∃ a : 𝓞 ℚ, mixedEmbedding ℚ a = e x by
-    simp [e, NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]]
+  have hmem : x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ ↔
+      ∃ a : 𝓞 ℚ, mixedEmbedding ℚ a = e x := by
+    simp [e, NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]
+  rw [hmem]
   refine ⟨fun ⟨a, ha⟩ ↦ ⟨Rat.ringOfIntegersEquiv a, ?_⟩,
     fun ⟨z, hz⟩ ↦ ⟨Rat.ringOfIntegersEquiv.symm z, ?_⟩⟩
-  · rw [show x = e.symm (mixedEmbedding ℚ a) from e.injective (by simpa using ha.symm),
-      mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, RingOfIntegers.coe_eq_algebraMap,
+  · have hx : x = e.symm (mixedEmbedding ℚ a) := e.injective (by simpa [e] using ha.symm)
+    rw [hx, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, RingOfIntegers.coe_eq_algebraMap,
       ← Rat.ringOfIntegersEquiv_apply_coe, Rat.cast_intCast]
-  · rw [show x = e.symm (mixedEmbedding ℚ (z : ℚ)) from mixedSpaceRatEquivReal.injective
-        (by rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast]),
-      ContinuousLinearEquiv.apply_symm_apply, Rat.ringOfIntegersEquiv_symm_apply_coe]
+  · have hx : x = e.symm (mixedEmbedding ℚ (z : ℚ)) := mixedSpaceRatEquivReal.injective
+      (by rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast])
+    rw [hx, ContinuousLinearEquiv.apply_symm_apply, Rat.ringOfIntegersEquiv_symm_apply_coe]
 
 end TauCeti.NumberField.mixedEmbedding.euclidean
 

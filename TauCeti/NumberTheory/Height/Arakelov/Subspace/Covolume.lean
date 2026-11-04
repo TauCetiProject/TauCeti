@@ -171,7 +171,7 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
   obtain ⟨e, hP0, hP_sup, hPx⟩ := v.val.exists_pivot_inv_mul_le_one hx_li
   set P := x.submatrix id e
   have hP_one : v P.det = 1 :=
-    v.val.det_eq_one_of_mul_eq_one v.add_le (Matrix.mul_nonsing_inv P (isUnit_iff_ne_zero.mpr hP0))
+    P.abv_det_eq_one_of_mul_eq_one v.add_le (Matrix.mul_nonsing_inv P (isUnit_iff_ne_zero.mpr hP0))
       (fun i j ↦ hx_le i (e j)) (apply_nonsing_inv_pivot_le_one b hW v ha_eq hPx)
   simpa [x, Matrix.row_apply, FinitePlace.coe_apply] using hP_sup.symm.trans hP_one
 

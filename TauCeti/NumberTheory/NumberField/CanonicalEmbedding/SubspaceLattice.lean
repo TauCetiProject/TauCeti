@@ -12,8 +12,8 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Rat
 public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 
-import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.LinearAlgebra.Projection
+import TauCeti.LinearAlgebra.Basis.Basic
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The Euclidean span and lattice of integral points of a number-field subspace
@@ -261,18 +261,6 @@ section GivenPseudoBasis
 variable {W : Submodule K (ι → K)} {κ : Type*} (b : Basis κ K W) {J : κ → Ideal (𝓞 K)}
   (hJ : ∀ k, J k ≠ ⊥)
 
-omit [NumberField K] in
-private theorem coe_apply_eq_sum_repr_mul [Fintype κ] (w : W) (i : ι) :
-    (w : ι → K) i = ∑ k : κ, b.repr w k * (b k : ι → K) i := by
-  have hi := congrFun (congrArg W.subtype (b.sum_repr w).symm) i
-  rw [map_sum, Finset.sum_apply] at hi
-  simpa only [coe_subtype, SetLike.val_smul, Pi.smul_apply, smul_eq_mul] using hi
-
-omit [NumberField K] in
-private theorem apply_eq_sum_repr_mul [Fintype κ] {v : ι → K} (hv : v ∈ W) (i : ι) :
-    v i = ∑ k : κ, b.repr ⟨v, hv⟩ k * (b k : ι → K) i :=
-  coe_apply_eq_sum_repr_mul b ⟨v, hv⟩ i
-
 /-- The coordinatewise evaluation map `(PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ]
 mixedSpace K` at `i : ι`. -/
 private def evalMixedLinear (i : ι) :
@@ -296,17 +284,6 @@ private theorem evalMixedLinear_pseudoBasisVec (p : κ × index K) (i : ι) :
       (J p.1).mixedLatticeBasis (hJ p.1) p.2 * mixedEmbedding K ((b p.1 : ι → K) i) := by
   simp [evalMixedLinear_apply, pseudoBasisVec]
 
-omit [NumberField K] in
-open Classical in
-/-- Extend the `k₀`-th coordinate functional of a `K`-basis `b` of `W` across a `K`-complement of
-`W` in `ι → K`. -/
-private theorem exists_linearMap_apply_basis_eq_ite (k₀ : κ) :
-    ∃ f : (ι → K) →ₗ[K] K, ∀ k, f (b k : ι → K) = if k = k₀ then 1 else 0 := by
-  obtain ⟨S, hS⟩ := W.exists_isCompl
-  refine ⟨(b.coord k₀).comp (Submodule.projectionOnto W S hS), fun k ↦ ?_⟩
-  rw [LinearMap.comp_apply, Submodule.projectionOnto_apply_left hS (b k), Basis.coord_apply,
-    b.repr_self, Finsupp.single_apply]
-
 private theorem linearIndependent_pseudoBasisVec [Finite ι] [Finite κ] :
     LinearIndependent ℝ (pseudoBasisVec b hJ) := by
   classical
@@ -314,19 +291,19 @@ private theorem linearIndependent_pseudoBasisVec [Finite ι] [Finite κ] :
   cases nonempty_fintype κ
   rw [Fintype.linearIndependent_iff]
   intro c hc ⟨k₀, ν₀⟩
-  -- Extend the `k₀`-th `b`-coordinate to `ι → K`, then `mixedSpace K`-linearly to isolate `k₀`.
-  obtain ⟨f, hf⟩ := exists_linearMap_apply_basis_eq_ite b k₀
+  -- Extend `b`'s coordinates biorthogonally to `ι → K`, then `mixedSpace K`-linearly.
+  obtain ⟨f, hf⟩ := b.linearIndependent_coe_basis.exists_dual_forall_apply_eq_ite
   have hsum : ∑ ν : index K, c (k₀, ν) • (J k₀).mixedLatticeBasis (hJ k₀) ν = 0 := by
-    have hm := congrArg (mixedExtend f) hc
+    have hm := congrArg (mixedExtend (f k₀)) hc
     have hvec (p : κ × index K) :
-        mixedExtend f (pseudoBasisVec b hJ p) =
-          (J p.1).mixedLatticeBasis (hJ p.1) p.2 * mixedEmbedding K (f (b p.1 : ι → K)) := by
+        mixedExtend (f k₀) (pseudoBasisVec b hJ p) =
+          (J p.1).mixedLatticeBasis (hJ p.1) p.2 * mixedEmbedding K (f k₀ (b p.1 : ι → K)) := by
       simpa [pseudoBasisVec] using
-        mixedExtend_toLp_mul f ((J p.1).mixedLatticeBasis (hJ p.1) p.2) (b p.1 : ι → K)
+        mixedExtend_toLp_mul (f k₀) ((J p.1).mixedLatticeBasis (hJ p.1) p.2) (b p.1 : ι → K)
     rw [map_sum, map_zero] at hm
-    simp_rw [map_smul, hvec, hf] at hm
+    simp_rw [map_smul, hvec, hf k₀] at hm
     rw [Fintype.sum_prod_type] at hm
-    simpa using hm
+    simpa [eq_comm] using hm
   exact Fintype.linearIndependent_iff.mp ((J k₀).mixedLatticeBasis (hJ k₀)).linearIndependent
     (fun ν ↦ c (k₀, ν)) hsum ν₀
 
@@ -351,9 +328,10 @@ private theorem span_range_pseudoBasisVec [Finite ι] [Finite κ] :
       rw [WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply, ← evalMixedLinear_apply,
         map_sum]
       simp only [map_smul, evalMixedLinear_pseudoBasisVec]
-      rw [apply_eq_sum_repr_mul b hv i, map_sum, Fintype.sum_prod_type]
+      rw [congrFun (b.eq_sum_repr_smul_of_mem hv) i, Finset.sum_apply, map_sum,
+        Fintype.sum_prod_type]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [map_mul,
+      rw [Pi.smul_apply, smul_eq_mul, map_mul,
         ← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr ⟨v, hv⟩ k)),
         Finset.sum_mul]
       exact Finset.sum_congr rfl fun ν _ ↦ Algebra.smul_mul_assoc _ _ _
@@ -417,9 +395,11 @@ theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
         ← Submodule.coe_subtype, ← LinearMap.comp_apply, map_sum]
       simp only [LinearMap.comp_apply, Submodule.coe_subtype, evalMixedLinear_apply, map_zsmul,
         coe_euclideanSpanBasisOfPseudoBasis_apply, ContinuousLinearEquiv.apply_symm_apply, map_mul]
-      rw [apply_eq_sum_repr_mul b (mem_integerPoints.mp hzW) i, map_sum, Fintype.sum_prod_type]
+      have hzi : (z i : K) = (∑ k, b.repr wK k • (b k : ι → K)) i :=
+        congrFun (b.eq_sum_repr_smul_of_mem (mem_integerPoints.mp hzW)) i
+      rw [hzi, Finset.sum_apply, map_sum, Fintype.sum_prod_type]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [map_mul, hm k, Finset.sum_mul]
+      rw [Pi.smul_apply, smul_eq_mul, map_mul, hm k, Finset.sum_mul]
       refine Finset.sum_congr rfl fun ν _ ↦ ?_
       rw [Ideal.mixedLatticeBasis_apply, ← Int.cast_smul_eq_zsmul ℝ,
         ← Int.cast_smul_eq_zsmul ℝ, Algebra.smul_mul_assoc]
@@ -573,9 +553,9 @@ private theorem map_euclideanSpan_rat [Fintype ι] (V : Submodule ℚ (ι → �
         WithLp.toLp 2 fun i ↦ (v i : ℝ) := by ext1 i; simp [f, E]
     simpa [Submodule.mem_comap, hv'] using toLp_mem_realSpan hv
   have hdim : finrank ℝ (V.euclideanSpan.map f) = finrank ℝ V.realSpan := by
-    rw [show f = E.toLinearEquiv.toLinearMap by ext; simp [f],
-      LinearEquiv.finrank_map_eq E.toLinearEquiv, V.finrank_euclideanSpan, Module.finrank_self,
-      one_mul, V.finrank_realSpan]
+    have hf : f = E.toLinearEquiv.toLinearMap := by ext; simp [f]
+    rw [hf, LinearEquiv.finrank_map_eq E.toLinearEquiv, V.finrank_euclideanSpan,
+      Module.finrank_self, one_mul, V.finrank_realSpan]
   exact eq_of_le_of_finrank_eq hle hdim
 
 open Classical in

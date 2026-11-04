@@ -232,7 +232,8 @@ theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
     dsimp only
     rw [hmat, Matrix.det_mul, map_mul, mul_comm]
     gcongr
-    exact v.val.det_le_prod v.add_le fun k i ↦ hle i ((hΛ _).1 (hx k (Set.mem_univ _)) i)
+    exact Matrix.abv_det_le_prod_of_isNonarchimedean v.add_le fun k i ↦
+      hle i ((hΛ _).1 (hx k (Set.mem_univ _)) i)
 
 /-- **The largest local determinant of an `𝓞 K`-module.** For a finitely generated `𝓞 K`-module
 `Λ` spanning `ι → K` and a finite place `v`, the values of `v` on the determinants of `card ι`

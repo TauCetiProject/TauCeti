@@ -130,23 +130,24 @@ theorem exists_pseudoBasis_integerPoints [NumberField K] [Finite ι] (W : Submod
     { toFun z := ⟨fun i ↦ ((z : ι → 𝓞 K) i : K), z.2⟩
       map_add' _ _ := by ext; simp
       map_smul' _ _ := by ext i; simp [Algebra.smul_def] }
-  set M : Submodule (𝓞 K) W := LinearMap.range φ
+  set M : Submodule (𝓞 K) W := LinearMap.range φ with hM
   have hmemM (w : W) : w ∈ M ↔ ∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
     refine ⟨fun ⟨z, hz⟩ i ↦ hz ▸ ⟨(z : ι → 𝓞 K) i, rfl⟩, fun hw ↦ ?_⟩
     choose z hz using hw
     exact ⟨⟨z, by rw [mem_integerPoints]; convert w.2 with i; exact hz i⟩,
       Subtype.ext (funext hz)⟩
   have hFG : M.FG := by
-    rw [show M = _ from LinearMap.range_eq_map φ]; exact (IsNoetherian.noetherian ⊤).map φ
+    rw [hM, LinearMap.range_eq_map]
+    exact (IsNoetherian.noetherian ⊤).map φ
   have hspan : span K (M : Set W) = ⊤ := eq_top_iff.2 fun w _ ↦ by
     obtain ⟨⟨d, hd⟩, hdw⟩ := IsLocalization.exist_integer_multiples (𝓞 K)⁰ Finset.univ (w : ι → K)
     have hd0 : algebraMap (𝓞 K) K d ≠ 0 :=
       (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).2 (nonZeroDivisors.ne_zero hd)
     have hdwM : d • w ∈ M := (hmemM (d • w)).2 fun i ↦ by
       simpa [Algebra.smul_def, IsLocalization.IsInteger] using hdw i (Finset.mem_univ i)
-    rw [show w = (algebraMap (𝓞 K) K d)⁻¹ • (d • w) by
-      rw [← algebraMap_smul K d w, inv_smul_smul₀ hd0]]
-    exact smul_mem _ _ (subset_span hdwM)
+    have hw : w = (algebraMap (𝓞 K) K d)⁻¹ • (d • w) := by
+      rw [← algebraMap_smul K d w, inv_smul_smul₀ hd0]
+    exact hw ▸ smul_mem _ _ (subset_span hdwM)
   obtain ⟨b, J, hJ, hb⟩ := M.exists_pseudoBasis (K := K) (ι := Fin (finrank K W)) hFG hspan
     (Nat.card_fin _)
   exact ⟨b, J, hJ, fun w ↦ (hmemM w).symm.trans (hb w)⟩
