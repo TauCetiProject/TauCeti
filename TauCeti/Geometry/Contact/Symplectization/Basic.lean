@@ -70,6 +70,8 @@ cooriented contact structure. In terms of the annihilator line `(ker α)⁰ ⊂ 
   one-forms preserve the symplectization form.
 * `TauCeti.SmoothForm.mpullback_symplectizationLift_mextDerivₗ_symplectization`: they are
   symplectic.
+* `TauCeti.surjective_mfderiv_symplectizationLift_id`: the lift of the identity has surjective
+  differential.
 
 ## References
 
@@ -295,6 +297,28 @@ theorem contMDiff_symplectizationLift {F : M → M'} (hF : ContMDiff I I' ∞ F)
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, f x ≠ 0) :
     ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') ∞ (symplectizationLift F f) :=
   (contMDiff_fst.sub ((hf.log hf₀).comp contMDiff_snd)).prodMk (hF.comp contMDiff_snd)
+
+omit [IsManifold I ∞ M] in
+/-- The lift `(t, x) ↦ (t - log f(x), x)` of the identity along a smooth nowhere vanishing
+function has surjective differential, since the lift along `f⁻¹` is a smooth right inverse. -/
+theorem surjective_mfderiv_symplectizationLift_id {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf₀ : ∀ x, f x ≠ 0) (p : ℝ × M) :
+    Function.Surjective
+      (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (symplectizationLift id f) p) := by
+  have hΦ := contMDiff_symplectizationLift contMDiff_id hf hf₀
+  have hΨ := contMDiff_symplectizationLift contMDiff_id (hf.inv₀ hf₀) fun x ↦ inv_ne_zero (hf₀ x)
+  have hcomp : symplectizationLift id f ∘ symplectizationLift id (fun x ↦ (f x)⁻¹) = id :=
+    funext fun q ↦ by simp [Real.log_inv]
+  -- The differential is surjective at every point `Ψ q` of the image of the right inverse `Ψ`.
+  have key (q : ℝ × M) : Function.Surjective (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I)
+      (symplectizationLift id f) (symplectizationLift id (fun x ↦ (f x)⁻¹) q)) := by
+    have hd := mfderiv_comp q ((hΦ _).mdifferentiableAt (by simp))
+      ((hΨ q).mdifferentiableAt (by simp))
+    rw [hcomp, mfderiv_id] at hd
+    exact fun w ↦ ⟨_, (congrArg (· w) hd).symm⟩
+  have hΨΦ : symplectizationLift id (fun x ↦ (f x)⁻¹) (symplectizationLift id f p) = p := by
+    simp [Real.log_inv]
+  exact hΨΦ ▸ key (symplectizationLift id f p)
 
 namespace SmoothForm
 

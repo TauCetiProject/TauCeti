@@ -32,6 +32,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
+* `HasDerivAt.mvfderiv_comp_fst_mul_comp_snd_apply`: the derivative of the product
+  `(t, x) ↦ g(t) f(x)` on `𝕜 × N`.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 -/
@@ -145,6 +147,28 @@ theorem _root_.HasDerivAt.mvfderiv_comp_fst_apply {g : 𝕜 → F} {g' : F} {p :
   -- `ContinuousLinearMap.toSpanSingleton 𝕜 g'` sends `s` to `s • g'`, read through
   -- `NormedSpace.fromTangentSpace`.
   rfl
+
+/-- The derivative of the product `(t, x) ↦ g(t) f(x)` on `𝕜 × N`, for `g` with derivative `g'` at
+`p.1` and `f` differentiable at `p.2`: it sends a tangent vector `(s, v)` at `p` to
+`s g' f(p.2) + g(p.1) df(v)`. -/
+theorem _root_.HasDerivAt.mvfderiv_comp_fst_mul_comp_snd_apply {g : 𝕜 → 𝕜} {g' : 𝕜} {f : N → 𝕜}
+    {p : 𝕜 × N} (hg : HasDerivAt g g' p.1) (hf : MDifferentiableAt J 𝓘(𝕜) f p.2)
+    (v : TangentSpace (𝓘(𝕜).prod J) p) :
+    mvfderiv (𝓘(𝕜).prod J) (fun q : 𝕜 × N ↦ g q.1 * f q.2) p v =
+      NormedSpace.fromTangentSpace (𝕜 := 𝕜) p.1 v.1 * g' * f p.2 +
+        g p.1 * mvfderiv J f p.2 v.2 := by
+  have hg' : MDifferentiableAt (𝓘(𝕜).prod J) 𝓘(𝕜) (fun q : 𝕜 × N ↦ g q.1) p :=
+    hg.differentiableAt.mdifferentiableAt.comp p mdifferentiableAt_fst
+  have hf' : MDifferentiableAt (𝓘(𝕜).prod J) 𝓘(𝕜) (fun q : 𝕜 × N ↦ f q.2) p :=
+    hf.comp p mdifferentiableAt_snd
+  have hfst : mvfderiv (𝓘(𝕜).prod J) (fun q : 𝕜 × N ↦ g q.1) p v =
+      NormedSpace.fromTangentSpace (𝕜 := 𝕜) p.1 v.1 * g' :=
+    hg.mvfderiv_comp_fst_apply v
+  have hsnd : mvfderiv (𝓘(𝕜).prod J) (fun q : 𝕜 × N ↦ f q.2) p v = mvfderiv J f p.2 v.2 :=
+    mvfderiv_comp_snd_apply f p v
+  rw [mvfderiv_fun_mul hg' hf', add_apply, smul_apply, smul_apply, hfst, hsnd, smul_eq_mul,
+    smul_eq_mul]
+  ring
 
 end TauCeti
 

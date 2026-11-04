@@ -57,11 +57,12 @@ pulls `d(eᵗ α')` back to `d(eᵗ α)`
 
 ## Main results
 
-* `TauCeti.mvfderiv_exp_mul_apply`: the differential of `eᵗ f(x)`.
 * `TauCeti.SmoothForm.isHamiltonianVectorField_symplectization_iff`: `(R_α f) ∂_t - X` is a
   Hamiltonian vector field of `eᵗ f` exactly when `X` is a contact Hamiltonian vector field of `f`.
 * `TauCeti.SmoothForm.IsContactForm.hamiltonianVectorField_symplectization`:
   `X_(r f) = (R_α f) ∂_t - X_f`.
+* `TauCeti.SmoothForm.IsContactForm.hamiltonianVectorField_symplectization_apply`: the same
+  formula at a point `(t, x)`, for `f` differentiable at `x`.
 * `TauCeti.SmoothForm.IsContactForm.hamiltonianVectorField_symplectization_exp`: `X_r = -R_α`.
 * `TauCeti.SmoothForm.IsContactForm.poissonBracket_symplectization`:
   `{r f, r g}_ω = r (dα(X_f, X_g) + f R_α(g) - g R_α(f))`.
@@ -88,31 +89,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {α : SmoothForm I M ℝ 1} {f g : M → ℝ} {X : (x : M) → TangentSpace I x}
-
-omit [IsManifold I ∞ M] in
-/-- The differential of the function `(t, x) ↦ eᵗ f(x)` on `ℝ × M`: it sends a tangent vector
-`(s, v)` at `(t, x)` to `eᵗ (s f(x) + df_x(v))`. -/
-theorem mvfderiv_exp_mul_apply {p : ℝ × M} (hf : MDifferentiableAt I 𝓘(ℝ) f p.2)
-    (v : TangentSpace (𝓘(ℝ).prod I) p) :
-    mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p v =
-      Real.exp p.1 *
-        (NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p v).1 * f p.2 +
-          mvfderiv I f p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
-  have he : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (fun q : ℝ × M ↦ Real.exp q.1) p :=
-    ((Real.contDiff_exp (n := 1)).contMDiff.comp contMDiff_fst p).mdifferentiableAt one_ne_zero
-  have hexp : mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1) p v =
-      NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p v).1 * Real.exp p.1 := by
-    rw [Manifold.tangentSpaceProdEquiv_apply]
-    exact (Real.hasDerivAt_exp p.1).mvfderiv_comp_fst_apply v
-  have hsnd : mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ f q.2) p v =
-      mvfderiv I f p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
-    rw [Manifold.tangentSpaceProdEquiv_apply]
-    exact mvfderiv_comp_snd_apply f p v
-  have hf' : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (fun q : ℝ × M ↦ f q.2) p :=
-    hf.comp p mdifferentiableAt_snd
-  rw [mvfderiv_fun_mul he hf', add_apply, smul_apply, smul_apply, hexp, hsnd, smul_eq_mul,
-    smul_eq_mul]
-  ring
 
 namespace SmoothForm
 
@@ -141,8 +117,9 @@ private theorem eval₂_sub_mvfderiv_exp_mul {p : ℝ × M} (hf : MDifferentiabl
       (mextDerivₗ I 1 α).eval₂ p.2 (-X p.2) w = -mextDeriv α.1 p.2 ![X p.2, w] := by
     rw [← bilinFormAt_apply, map_neg, LinearMap.neg_apply, bilinFormAt_apply,
       SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
-  rw [eval₂_mextDerivₗ_symplectization, mvfderiv_exp_mul_apply hf]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, hα, hdα]
+  rw [eval₂_mextDerivₗ_symplectization,
+    (Real.hasDerivAt_exp p.1).mvfderiv_comp_fst_mul_comp_snd_apply hf]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, Manifold.tangentSpaceProdEquiv_apply, hα, hdα]
   ring
 
 /-- **Hamiltonian vector fields of homogeneous functions.** For a differentiable function `f` on
@@ -194,6 +171,24 @@ variable [FiniteDimensional ℝ E] (hα : α.IsContactForm)
 include hα
 
 /-- **The Hamiltonian vector field of a homogeneous function** on the symplectization of a contact
+form, at a point `(t, x)` where `f` is differentiable at `x`: `X_(eᵗ f) = (R_α f) ∂_t - X_f`, where
+`X_f` is the contact Hamiltonian vector field of `f`. -/
+theorem hamiltonianVectorField_symplectization_apply {p : ℝ × M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) :
+    SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
+        (fun p ↦ Real.exp p.1 * f p.2) p =
+      (Manifold.tangentSpaceProdEquiv p).symm
+        ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
+          -α.contactHamiltonianVectorField f p.2) := by
+  have hω := hα.isSymplectic_mextDerivₗ_symplectization.isNondegenerate
+  refine (hω.isInvertible_flat p).injective (ContinuousLinearMap.ext fun v ↦ ?_)
+  -- Both sides contract with `ω` to `d(eᵗ f)`, by the equations defining `X_f` at `x`.
+  rw [SmoothTwoForm.flat_apply, SmoothTwoForm.flat_apply, hω.eval₂_hamiltonianVectorField,
+    eq_comm, ← sub_eq_zero, eval₂_sub_mvfderiv_exp_mul hf, hα.apply_contactHamiltonianVectorField,
+    hα.mextDeriv_contactHamiltonianVectorField_left]
+  ring
+
+/-- **The Hamiltonian vector field of a homogeneous function** on the symplectization of a contact
 form: `X_(eᵗ f) = (R_α f) ∂_t - X_f` for a differentiable function `f` on `M`, where `X_f` is the
 contact Hamiltonian vector field of `f`. In the coordinate `r = eᵗ`, this is
 `X_(r f) = r (R_α f) ∂_r - X_f`. -/
@@ -203,32 +198,32 @@ theorem hamiltonianVectorField_symplectization (hf : MDifferentiable I 𝓘(ℝ)
       fun p ↦ (Manifold.tangentSpaceProdEquiv p).symm
         ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
           -α.contactHamiltonianVectorField f p.2) :=
-  ((hα.isSymplectic_mextDerivₗ_symplectization.isNondegenerate.isHamiltonianVectorField_iff_eq).1
-    ((hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f
-      ).isHamiltonianVectorField_symplectization hf)).symm
+  funext fun p ↦ hα.hamiltonianVectorField_symplectization_apply (hf p.2)
 
 /-- The `∂_t`-component of the Hamiltonian vector field of `eᵗ f` on the symplectization of a
 contact form is `R_α f`. -/
-theorem fromTangentSpace_hamiltonianVectorField_symplectization_fst
-    (hf : MDifferentiable I 𝓘(ℝ) f) (p : ℝ × M) :
-    NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p
+@[simp]
+theorem fromTangentSpace_hamiltonianVectorField_symplectization_fst {p : ℝ × M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) :
+    NormedSpace.fromTangentSpace (𝕜 := ℝ) p.1
       (SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
-        (fun p ↦ Real.exp p.1 * f p.2) p)).1 = mvfderiv I f p.2 (α.reebVectorField p.2) := by
-  rw [hα.hamiltonianVectorField_symplectization hf, ContinuousLinearEquiv.apply_symm_apply,
+        (fun p ↦ Real.exp p.1 * f p.2) p).1 = mvfderiv I f p.2 (α.reebVectorField p.2) := by
+  rw [hα.hamiltonianVectorField_symplectization_apply hf, Manifold.tangentSpaceProdEquiv_symm_apply,
     ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The `M`-component of the Hamiltonian vector field of `eᵗ f` on the symplectization of a
 contact form is `-X_f`: the projection to `M` sends `X_(eᵗ f)` to minus the contact Hamiltonian
 vector field of `f`. -/
-theorem hamiltonianVectorField_symplectization_snd (hf : MDifferentiable I 𝓘(ℝ) f)
-    (p : ℝ × M) :
-    (Manifold.tangentSpaceProdEquiv p
-      (SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
-        (fun p ↦ Real.exp p.1 * f p.2) p)).2 = -α.contactHamiltonianVectorField f p.2 := by
-  rw [hα.hamiltonianVectorField_symplectization hf, ContinuousLinearEquiv.apply_symm_apply]
+@[simp]
+theorem hamiltonianVectorField_symplectization_snd {p : ℝ × M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) :
+    (SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
+        (fun p ↦ Real.exp p.1 * f p.2) p).2 = -α.contactHamiltonianVectorField f p.2 := by
+  rw [hα.hamiltonianVectorField_symplectization_apply hf, Manifold.tangentSpaceProdEquiv_symm_apply]
 
 /-- **The Hamiltonian vector field of the fibre coordinate** `r = eᵗ` on the symplectization of a
 contact form is minus the Reeb vector field: `X_r = -R_α`, with no `∂_t`-component. -/
+@[simp]
 theorem hamiltonianVectorField_symplectization_exp :
     SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
         (fun p : ℝ × M ↦ Real.exp p.1) =
@@ -239,15 +234,15 @@ theorem hamiltonianVectorField_symplectization_exp :
   exact h
 
 /-- **The Poisson bracket of homogeneous functions** on the symplectization of a contact form:
-for differentiable functions `f` and `g` on `M`,
+for functions `f` and `g` on `M` differentiable at `x`, at a point `(t, x)`,
 
 `{eᵗ f, eᵗ g}_ω = eᵗ (dα(X_f, X_g) + f R_α(g) - g R_α(f))`,
 
 where `X_f` and `X_g` are contact Hamiltonian vector fields. The factor `dα(X_f, X_g) +
 f R_α(g) - g R_α(f)` is the Jacobi bracket `{f, g}_α` of the contact form, so in the coordinate
 `r = eᵗ` this reads `{r f, r g}_ω = r {f, g}_α`. -/
-theorem poissonBracket_symplectization (hf : MDifferentiable I 𝓘(ℝ) f)
-    (hg : MDifferentiable I 𝓘(ℝ) g) (p : ℝ × M) :
+theorem poissonBracket_symplectization {p : ℝ × M} (hf : MDifferentiableAt I 𝓘(ℝ) f p.2)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g p.2) :
     SmoothTwoForm.poissonBracket (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
         (fun p ↦ Real.exp p.1 * f p.2) (fun p ↦ Real.exp p.1 * g p.2) p =
       Real.exp p.1 *
@@ -265,21 +260,22 @@ theorem poissonBracket_symplectization (hf : MDifferentiable I 𝓘(ℝ) f)
   have hneg (k : M → ℝ) : α.1 p.2 ![-α.contactHamiltonianVectorField k p.2] = -k p.2 := by
     rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec,
       hα.apply_contactHamiltonianVectorField]
-  rw [SmoothTwoForm.poissonBracket_def, hα.hamiltonianVectorField_symplectization hf,
-    hα.hamiltonianVectorField_symplectization hg, eval₂_mextDerivₗ_symplectization]
+  rw [SmoothTwoForm.poissonBracket_def, hα.hamiltonianVectorField_symplectization_apply hf,
+    hα.hamiltonianVectorField_symplectization_apply hg, eval₂_mextDerivₗ_symplectization]
   simp only [ContinuousLinearEquiv.apply_symm_apply, hneg, hdα]
   ring
 
 /-- **The primitive recovers a homogeneous Hamiltonian.** On the symplectization of a contact form,
 the symplectization form `eᵗ α` takes the value `-eᵗ f` on the Hamiltonian vector field of
 `eᵗ f`, so the primitive `λ = -eᵗ α` of `ω = -dλ` satisfies `λ(X_(r f)) = r f`. -/
-theorem symplectization_apply_hamiltonianVectorField (hf : MDifferentiable I 𝓘(ℝ) f)
-    (p : ℝ × M) :
+theorem symplectization_apply_hamiltonianVectorField {p : ℝ × M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) :
     α.symplectization.1 p
         ![SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
           (fun p ↦ Real.exp p.1 * f p.2) p] =
       -(Real.exp p.1 * f p.2) := by
-  rw [symplectization_apply, hα.hamiltonianVectorField_symplectization_snd hf,
+  rw [symplectization_apply, Manifold.tangentSpaceProdEquiv_apply,
+    hα.hamiltonianVectorField_symplectization_snd hf,
     ← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec,
     hα.apply_contactHamiltonianVectorField, mul_neg]
 
@@ -291,28 +287,6 @@ section ChangeOfForm
 
 variable {α' : SmoothForm I M ℝ 1} {h : M → ℝ}
 
-omit [IsManifold I ∞ M] in
-/-- The lift `(t, x) ↦ (t - log h(x), x)` of the identity has surjective differential, since the
-lift along `h⁻¹` is a smooth right inverse. -/
-private theorem surjective_mfderiv_symplectizationLift_id (hh : ContMDiff I 𝓘(ℝ) ∞ h)
-    (hh₀ : ∀ x, h x ≠ 0) (p : ℝ × M) :
-    Function.Surjective
-      (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (symplectizationLift id h) p) := by
-  have hΦ := contMDiff_symplectizationLift contMDiff_id hh hh₀
-  have hΨ := contMDiff_symplectizationLift contMDiff_id (hh.inv₀ hh₀) fun x ↦ inv_ne_zero (hh₀ x)
-  have hcomp : symplectizationLift id h ∘ symplectizationLift id (fun x ↦ (h x)⁻¹) = id :=
-    funext fun q ↦ by simp [Real.log_inv]
-  -- The differential is surjective at every point `Ψ q` of the image of the right inverse `Ψ`.
-  have key (q : ℝ × M) : Function.Surjective (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I)
-      (symplectizationLift id h) (symplectizationLift id (fun x ↦ (h x)⁻¹) q)) := by
-    have hd := mfderiv_comp q ((hΦ _).mdifferentiableAt (by simp))
-      ((hΨ q).mdifferentiableAt (by simp))
-    rw [hcomp, mfderiv_id] at hd
-    exact fun w ↦ ⟨_, (congrArg (· w) hd).symm⟩
-  have hΨΦ : symplectizationLift id (fun x ↦ (h x)⁻¹) (symplectizationLift id h p) = p := by
-    simp [Real.log_inv]
-  exact hΨΦ ▸ key (symplectizationLift id h p)
-
 /-- **The homogeneous Hamiltonian correspondence does not depend on the contact form.** Let
 `α' = h α` for a smooth positive function `h`, with `α` a contact form. The lift
 `Φ : (t, x) ↦ (t - log h(x), x)` of the identity identifies the two symplectizations: both
@@ -323,7 +297,7 @@ vector field of `eᵗ (f / h)` for `d(eᵗ α)` to the Hamiltonian vector field 
 `d(eᵗ α')`. -/
 theorem IsContactForm.mfderiv_symplectizationLift_hamiltonianVectorField [FiniteDimensional ℝ E]
     (hα : α.IsContactForm) (hh : ContMDiff I 𝓘(ℝ) ∞ h) (hh₀ : ∀ x, 0 < h x)
-    (hα' : ∀ x, α'.1 x = h x • α.1 x) (hf : MDifferentiable I 𝓘(ℝ) f) (p : ℝ × M) :
+    (hα' : ∀ x, α'.1 x = h x • α.1 x) {p : ℝ × M} (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) :
     mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (symplectizationLift id h) p
         (SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
           (fun q ↦ Real.exp q.1 * (f q.2 / h q.2)) p) =
@@ -340,7 +314,7 @@ theorem IsContactForm.mfderiv_symplectizationLift_hamiltonianVectorField [Finite
   have hg : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2)
       (symplectizationLift id h p) :=
     (((Real.contDiff_exp (n := 1)).contMDiff.comp contMDiff_fst _).mdifferentiableAt
-      one_ne_zero).mul ((hf _).comp _ mdifferentiableAt_snd)
+      one_ne_zero).mul (hf.comp_of_eq _ mdifferentiableAt_snd (by simp))
   rw [← hcomp]
   exact (hα.isSymplectic_mextDerivₗ_symplectization.isNondegenerate
     ).mfderiv_hamiltonianVectorField_comp
