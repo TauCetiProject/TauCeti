@@ -466,49 +466,27 @@ theorem IsOrientedAtlas.orientation_transContinuousLinearEquiv
   obtain ⟨L, hL, hmap⟩ := hA.orientation_spec model hι hφ hx
   obtain ⟨L', hL', hmap'⟩ :=
     hAe.orientation_spec (_root_.Orientation.map ι e.toLinearEquiv model) hι' hφ hx
-  have hφd : MDifferentiableAt I I φ x := mdifferentiableAt_of_isInvertible_mfderiv ⟨L, hL⟩
-  have hφd' : MDifferentiableAt (I.transContinuousLinearEquiv e)
-      (I.transContinuousLinearEquiv e) φ x :=
-    mdifferentiableAt_of_isInvertible_mfderiv ⟨L', hL'⟩
-  have hidM := I.hasMFDerivAt_id_transContinuousLinearEquiv e x
-  have hidH := I.hasMFDerivAt_id_transContinuousLinearEquiv e (φ x)
   let T : TangentSpace I x ≃L[ℝ] TangentSpace (I.transContinuousLinearEquiv e) x :=
     ((tangentSpaceCastModel I x).trans e).trans
       (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm
-  have hcomm :
-      mfderiv I (I.transContinuousLinearEquiv e) ((id : H → H) ∘ φ) x =
-        mfderiv I (I.transContinuousLinearEquiv e) (φ ∘ (id : M → M)) x := rfl
-  rw [mfderiv_comp x hidH.mdifferentiableAt hφd, hidH.mfderiv,
-    mfderiv_comp x hφd' hidM.mdifferentiableAt, hidM.mfderiv, id_eq] at hcomm
-  have hLeq :
-      (T.trans L').toLinearEquiv =
-        L.toLinearEquiv.trans e.toLinearEquiv := by
+  have hLeq : T.trans L' = L.trans e := by
     ext v
-    have hv := congrArg (fun S ↦ S v) hcomm
-    set w := T v
-    have hLv : (tangentSpaceCastModel I (φ x)) (mfderiv I I φ x v) = L v :=
-      congrArg (fun f : TangentSpace I x →L[ℝ] E ↦ f v) hL.symm
-    have hL'v :
-        (tangentSpaceCastModel (I.transContinuousLinearEquiv e) (φ x))
-          (mfderiv (I.transContinuousLinearEquiv e) (I.transContinuousLinearEquiv e) φ x w) =
-          L' w :=
-      congrArg (fun f : TangentSpace (I.transContinuousLinearEquiv e) x →L[ℝ] F ↦ f w) hL'.symm
-    have hv' := congrArg (tangentSpaceCastModel (I.transContinuousLinearEquiv e) (φ x)) hv
-    dsimp only [id_eq] at hv'
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at hv'
-    have hw : T v = w := rfl
-    rw [hw] at hv'
-    simp only [ContinuousLinearEquiv.trans_apply,
-      ContinuousLinearEquiv.apply_symm_apply] at hv'
-    rw [hLv, hL'v] at hv'
-    exact hv'.symm
+    -- For the `H`-valued chart `φ`, `TangentSpace _ (φ x)` is the model space itself, on which
+    -- `tangentSpaceCastModel` acts as the identity.
+    have hL'v : L' (T v) =
+        tangentSpaceCastModel (I.transContinuousLinearEquiv e) (φ x)
+          (mfderiv (I.transContinuousLinearEquiv e) (I.transContinuousLinearEquiv e) φ x (T v)) :=
+      DFunLike.congr_fun hL' (T v)
+    have hLv : tangentSpaceCastModel I (φ x) (mfderiv I I φ x v) = L v :=
+      (DFunLike.congr_fun hL v).symm
+    rw [ContinuousLinearEquiv.trans_apply, hL'v, I.mfderiv_transContinuousLinearEquiv I e e φ x]
+    simp [T, hLv]
   refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ T
     (I.mfderiv_id_transContinuousLinearEquiv e x).symm).2 ?_
   rw [id_eq]
   apply (_root_.Orientation.map ι L'.toLinearEquiv).injective
   rw [← _root_.Orientation.map_trans, ← ContinuousLinearEquiv.trans_toLinearEquiv, hLeq,
-    _root_.Orientation.map_trans, hmap, hmap']
+    ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans, hmap, hmap']
 
 section SelfEquiv
 

@@ -23,10 +23,13 @@ The groupoid comparison uses the same conjugation argument as Mathlib's
 `ContinuousLinearEquiv.instIsManifoldtransContinuousLinearEquiv`, before choosing an atlas.
 Similarly, within-range derivatives of coordinate expressions and chart transitions conjugate by the
 linear equivalence (`ModelWithCorners.fderivWithin_transContinuousLinearEquiv`,
-`ModelWithCorners.fderivWithin_extChartAt_transContinuousLinearEquiv`), and the identity map from
+`ModelWithCorners.fderivWithin_extChartAt_transContinuousLinearEquiv`), the identity map from
 `(M, I)` to `(M, I.transContinuousLinearEquiv e)` has manifold derivative `e` read through
 `tangentSpaceCastModel` (`ModelWithCorners.hasMFDerivAt_id_transContinuousLinearEquiv`,
-`ModelWithCorners.mfderiv_id_transContinuousLinearEquiv`).
+`ModelWithCorners.mfderiv_id_transContinuousLinearEquiv`), and manifold derivatives between
+arbitrary charted spaces conjugate accordingly
+(`ModelWithCorners.mdifferentiableAt_transContinuousLinearEquiv_iff`,
+`ModelWithCorners.mfderiv_transContinuousLinearEquiv`).
 Mathlib's `ContinuousLinearEquiv.toTransContinuousLinearEquiv` supplies the identity comparison
 diffeomorphism on any charted manifold, with underlying map `id` in both directions.
 
@@ -153,6 +156,74 @@ theorem mfderiv_id_transContinuousLinearEquiv {M : Type*} [TopologicalSpace M]
         (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm :
           TangentSpace I x →L[𝕜] TangentSpace (I.transContinuousLinearEquiv e) x) :=
   (I.hasMFDerivAt_id_transContinuousLinearEquiv e x).mfderiv
+
+/-- Continuous linear changes of the source and target model coordinates conjugate
+`writtenInExtChartAt` by `e` and `e'`. -/
+theorem writtenInExtChartAt_transContinuousLinearEquiv
+    {E' F' H' M N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace H']
+    (J : ModelWithCorners 𝕜 E' H') [TopologicalSpace M] [ChartedSpace H M]
+    [TopologicalSpace N] [ChartedSpace H' N]
+    (e : E ≃L[𝕜] F) (e' : E' ≃L[𝕜] F') (x : M) (f : M → N) :
+    writtenInExtChartAt (I.transContinuousLinearEquiv e) (J.transContinuousLinearEquiv e') x f =
+      e' ∘ (writtenInExtChartAt I J x f ∘ e.symm) := by
+  ext y
+  simp [writtenInExtChartAt]
+
+/-- Continuous linear changes of the source and target model coordinates leave manifold
+differentiability at a point unchanged. -/
+@[simp]
+theorem mdifferentiableAt_transContinuousLinearEquiv_iff
+    {E' F' H' M N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace H']
+    (J : ModelWithCorners 𝕜 E' H') [TopologicalSpace M] [ChartedSpace H M]
+    [TopologicalSpace N] [ChartedSpace H' N]
+    (e : E ≃L[𝕜] F) (e' : E' ≃L[𝕜] F') {f : M → N} {x : M} :
+    MDifferentiableAt (I.transContinuousLinearEquiv e) (J.transContinuousLinearEquiv e') f x ↔
+      MDifferentiableAt I J f x := by
+  rw [mdifferentiableAt_iff, mdifferentiableAt_iff,
+    I.writtenInExtChartAt_transContinuousLinearEquiv J e e' x f,
+    I.transContinuousLinearEquiv_range e, e.image_eq_preimage_symm,
+    I.coe_extChartAt_transContinuousLinearEquiv e, Function.comp_apply,
+    e'.comp_differentiableWithinAt_iff, e.symm.comp_right_differentiableWithinAt_iff,
+    e.symm_apply_apply]
+
+/-- Continuous linear changes of the source and target model coordinates conjugate the manifold
+derivative `mfderiv` at `x` by `e` and `e'`, read through `tangentSpaceCastModel`. -/
+theorem mfderiv_transContinuousLinearEquiv
+    {E' F' H' M N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace H']
+    (J : ModelWithCorners 𝕜 E' H') [TopologicalSpace M] [ChartedSpace H M]
+    [TopologicalSpace N] [ChartedSpace H' N]
+    (e : E ≃L[𝕜] F) (e' : E' ≃L[𝕜] F') (f : M → N) (x : M) :
+    mfderiv (I.transContinuousLinearEquiv e) (J.transContinuousLinearEquiv e') f x =
+      (((tangentSpaceCastModel J (f x)).trans e').trans
+          (tangentSpaceCastModel (J.transContinuousLinearEquiv e') (f x)).symm :
+            TangentSpace J (f x) →L[𝕜] TangentSpace (J.transContinuousLinearEquiv e') (f x)) ∘L
+        mfderiv I J f x ∘L
+        (((tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).trans e.symm).trans
+          (tangentSpaceCastModel I x).symm :
+            TangentSpace (I.transContinuousLinearEquiv e) x →L[𝕜] TangentSpace I x) := by
+  have hu : UniqueDiffWithinAt 𝕜 (e.symm ⁻¹' range I) (e (extChartAt I x x)) := by
+    have h := (I.transContinuousLinearEquiv e).uniqueDiffWithinAt_image (x := chartAt H x x)
+    rwa [I.transContinuousLinearEquiv_range e, e.image_eq_preimage_symm,
+      I.coe_transContinuousLinearEquiv e, Function.comp_apply] at h
+  by_cases hf : MDifferentiableAt I J f x
+  · have hf' :
+        MDifferentiableAt (I.transContinuousLinearEquiv e) (J.transContinuousLinearEquiv e') f x :=
+      (I.mdifferentiableAt_transContinuousLinearEquiv_iff J e e').2 hf
+    rw [hf'.mfderiv, hf.mfderiv,
+      I.writtenInExtChartAt_transContinuousLinearEquiv J e e' x f,
+      I.transContinuousLinearEquiv_range e, e.image_eq_preimage_symm,
+      I.coe_extChartAt_transContinuousLinearEquiv e, Function.comp_apply,
+      e'.comp_fderivWithin hu, e.symm.comp_right_fderivWithin hu, e.symm_apply_apply]
+    ext v
+    simp
+  · have hf' :
+        ¬ MDifferentiableAt (I.transContinuousLinearEquiv e) (J.transContinuousLinearEquiv e')
+          f x :=
+      mt (I.mdifferentiableAt_transContinuousLinearEquiv_iff J e e').1 hf
+    simp [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hf']
 
 private theorem contDiffGroupoid_le_transContinuousLinearEquiv (e : E ≃L[𝕜] F)
     (n : ℕ∞ω) : contDiffGroupoid n I ≤ contDiffGroupoid n (I.transContinuousLinearEquiv e) := by

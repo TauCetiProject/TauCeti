@@ -120,10 +120,13 @@ theorem basis_map_complexEuclideanRealLinearIsometryEquiv (n : ℕ) :
     LinearIsometryEquiv.coe_toLinearEquiv, Module.Basis.complexToReal_apply,
     OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, EuclideanSpace.single,
     PiLp.single_apply, (complexRealIndexEquiv n).injective.eq_iff, Prod.mk.injEq]
-  rw [show complexRealIndexEquiv n (j', a') =
-      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j', a'))
-    from Fin.ext (by simp [Nat.add_comm]),
-    complexEuclideanRealLinearIsometryEquiv_apply_finProdFinEquiv]
+  -- `complexRealIndexEquiv` is abstract across module boundaries, whereas
+  -- `complexEuclideanRealLinearIsometryEquiv_apply_finProdFinEquiv` uses the explicit
+  -- `Fin.cast`/`finProdFinEquiv` index; compare underlying `ℕ` values to bridge the two.
+  have hidx : complexRealIndexEquiv n (j', a') =
+      Fin.cast (Nat.mul_comm n 2) (finProdFinEquiv (j', a')) :=
+    Fin.ext (by simp [Nat.add_comm])
+  rw [hidx, complexEuclideanRealLinearIsometryEquiv_apply_finProdFinEquiv]
   by_cases hj : j' = j
   · subst hj
     fin_cases a <;> fin_cases a' <;> simp
