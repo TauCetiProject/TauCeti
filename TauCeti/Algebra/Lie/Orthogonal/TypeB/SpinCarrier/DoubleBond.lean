@@ -36,9 +36,10 @@ schemes or identify the carrier with an independently pinned simply connected gr
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate II.
 
-The integral-lattice transport uses the existing Kostant root-operator construction
-`TauCeti.UniversalEnvelopingAlgebra.kostantRootOperator`; the group calculation uses
-`Units.val_commutatorElement_eq_one_add_lie_add`.
+The integral relations come from `TauCeti.TypeBSpinCarrier.rootIntMatrix_mul_self_eq_zero`
+and `TauCeti.TypeBSpinCarrier.rootIntMatrix_lie_lie_eq_zero` in `SpinCarrier/IntegralMatrix.lean`;
+the group calculation uses
+`Matrix.coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul`.
 -/
 
 public section
