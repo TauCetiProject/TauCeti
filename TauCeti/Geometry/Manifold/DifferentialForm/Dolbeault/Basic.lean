@@ -166,6 +166,18 @@ namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M)
 
+/-- The restriction of `∂bar` to forms of type `(p,q)`, with codomain the forms of type
+`(p,q+1)`. This restriction is available even without integrability. -/
+def delBarType (p q : ℕ) :
+    J.typeForms (F := F) p q →ₗ[ℂ] J.typeForms (F := F) p (q + 1) :=
+  (J.delBar.comp (J.typeForms (F := F) p q).subtype).codRestrict _ fun φ ↦
+    (J.mem_typeForms p (q + 1) _).mpr ((J.mem_typeForms p q _).mp φ.2).delBar
+
+/-- The differential on type forms agrees with `∂bar` on the underlying smooth forms. -/
+@[simp]
+theorem coe_delBarType (p q : ℕ) (φ : J.typeForms (F := F) p q) :
+    (J.delBarType p q φ : SmoothForm I M F (p + (q + 1))) = J.delBar φ.1 := (rfl)
+
 /-! ### Type components of `∂` and `∂bar` -/
 
 /-- The type-`(p+1,q)` component of `∂φ` is `∂` of the type-`(p,q)` component of `φ`. -/
