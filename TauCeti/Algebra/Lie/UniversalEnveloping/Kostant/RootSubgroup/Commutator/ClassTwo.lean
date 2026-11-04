@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.UniversalEnveloping.ClassTwo
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Basic
 public import TauCeti.RingTheory.DividedPowers.ClassTwo
@@ -47,21 +48,6 @@ variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 
 attribute [local instance high] Algebra.toModule
 
-private theorem root_mul_eq_reverse_add_bracket :
-    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) +
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆) :=
-  (sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie (R := ℚ) ρ (e i) (e j))
-
-private theorem isNilpotent_bracket
-    (hi : ⁅e i, ⁅e i, e j⁆⁆ = 0) (hj : ⁅e j, ⁅e i, e j⁆⁆ = 0)
-    (hni : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))) :
-    IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) :=
-  Associative.isNilpotent_of_commutator_eq (root_mul_eq_reverse_add_bracket e ρ)
-    (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni
-
 include hM in
 /-- Divided powers of a bracket centralizing its two factors preserve a Kostant-stable lattice.
 The bracket need not be one of the distinguished root vectors. -/
@@ -70,7 +56,7 @@ theorem dividedPower_lie_apply_mem
     (n : ℕ) {v : V} (hv : v ∈ M) :
     Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) v ∈ M := by
   have hz := ((kostantForm e h).map ρ.toRingHom).dividedPower_mem_of_commutator_eq
-    (root_mul_eq_reverse_add_bracket e ρ)
+    ((sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie ρ (e i) (e j)))
     (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj)
     (dividedPower_mem_map_kostantForm e h ρ i)
     (dividedPower_mem_map_kostantForm e h ρ j) n
@@ -88,7 +74,7 @@ noncomputable def kostantBracketRootSubgroupParam
   (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).symm.toMonoidHom.comp
     (baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) M
       (fun n _ hv ↦ dividedPower_lie_apply_mem e h ρ M hM hi hj n hv)
-      (isNilpotent_bracket e ρ hi hj hni))
+      (isNilpotent_map_ι_lie_of_isNilpotent ρ hi hj hni))
 
 /-- The bracket subgroup acts by the divided-power exponential of the bracket operator. -/
 theorem kostantBracketRootSubgroupParam_val
@@ -103,7 +89,7 @@ theorem kostantBracketRootSubgroupParam_val
       (kostantBracketRootSubgroupParam e h ρ M hM hi hj hni A t).toLinearEquiv =
         baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) M
           (fun n _ hv ↦ dividedPower_lie_apply_mem e h ρ M hM hi hj n hv)
-          (isNilpotent_bracket e ρ hi hj hni) t := by
+          (isNilpotent_map_ι_lie_of_isNilpotent ρ hi hj hni) t := by
     rw [kostantBracketRootSubgroupParam]
     exact (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).apply_symm_apply _
   apply LinearMap.ext
@@ -135,7 +121,7 @@ theorem commutatorElement_kostantRootSubgroupParam_eq_bracket
       (Multiplicative.ofAdd u))
     rw [hx, hy, kostantBracketRootSubgroupParam_val]
     exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M
-      (root_mul_eq_reverse_add_bracket e ρ)
+      ((sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie ρ (e i) (e j)))
       (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni hnj _ _ _ t u
   have hyz : Commute y z := by
     apply Units.ext
