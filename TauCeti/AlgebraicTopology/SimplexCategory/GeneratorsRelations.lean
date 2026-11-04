@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.GeneratorsRelations.NormalForms
+public import Mathlib.AlgebraicTopology.SimplexCategory.MorphismProperty
 
 /-!
 # The presentation of the simplex category
@@ -92,6 +93,21 @@ private lemma factor_face {n : ℕ} {x : SimplexCategoryGenRel}
           (le_of_not_gt hkj)), hij', Category.assoc]
 termination_by n
 
+private lemma factor_face_of_map_eq {n : ℕ} {x : SimplexCategoryGenRel}
+    (f : x ⟶ mk n) (g : x ⟶ mk (n + 1)) (hg : P_δ g) (i : Fin (n + 2))
+    (h : toSimplexCategory.map (f ≫ δ i) = toSimplexCategory.map g) :
+    ∃ g' : x ⟶ mk n, P_δ g' ∧ g = g' ≫ δ i ∧
+      toSimplexCategory.map f = toSimplexCategory.map g' := by
+  have hmissing : ∀ a, eval g a ≠ i := by
+    have he : eval (f ≫ δ i) = eval g := congrArg SimplexCategory.Hom.toOrderHom h
+    intro a ha
+    exact Fin.succAbove_ne i _ ((eval_comp_apply f (δ i) a).symm.trans
+      ((congrArg (fun q ↦ q a) he).trans ha))
+  obtain ⟨g', hg', hg⟩ := factor_face g hg i hmissing
+  refine ⟨g', hg', hg, ?_⟩
+  apply (cancel_mono (SimplexCategory.δ i)).1
+  simpa [hg] using h
+
 private lemma map_injective_faces {n : ℕ} {x : SimplexCategoryGenRel}
     (f g : x ⟶ mk n) (hf : P_δ f) (hg : P_δ g)
     (h : toSimplexCategory.map f = toSimplexCategory.map g) : f = g := by
@@ -116,26 +132,11 @@ private lemma map_injective_faces {n : ℕ} {x : SimplexCategoryGenRel}
       · simp at hn
     | of _ hface =>
       cases hface with | δ i =>
-      have hmissing : ∀ a, eval g a ≠ i := by
-        have he : eval (δ i) = eval g := congrArg SimplexCategory.Hom.toOrderHom h
-        intro a ha
-        exact Fin.succAbove_ne i a ((congrArg (fun q ↦ q a) he).trans ha)
-      obtain ⟨g', hg', hg⟩ := factor_face g hg i hmissing
-      have h' : toSimplexCategory.map (𝟙 (mk n)) = toSimplexCategory.map g' := by
-        apply (cancel_mono (SimplexCategory.δ i)).1
-        simpa [hg] using h
+      obtain ⟨g', hg', hg, h'⟩ := factor_face_of_map_eq (𝟙 _) g hg i (by simpa using h)
       rw [hg, ← ih (𝟙 _) g' (P_δ.id_mem _) hg' h', Category.id_comp]
     | comp_of f' _ hf' hface =>
       cases hface with | δ i =>
-      have hmissing : ∀ a, eval g a ≠ i := by
-        have he : eval (f' ≫ δ i) = eval g := congrArg SimplexCategory.Hom.toOrderHom h
-        intro a ha
-        exact Fin.succAbove_ne i _ ((eval_comp_apply f' (δ i) a).symm.trans
-          ((congrArg (fun q ↦ q a) he).trans ha))
-      obtain ⟨g', hg', hg⟩ := factor_face g hg i hmissing
-      have h' : toSimplexCategory.map f' = toSimplexCategory.map g' := by
-        apply (cancel_mono (SimplexCategory.δ i)).1
-        simpa [hg] using h
+      obtain ⟨g', hg', hg, h'⟩ := factor_face_of_map_eq f' g hg i h
       rw [hg, ih f' g' hf' hg' h']
 
 private lemma map_injective_degeneracies {x y : SimplexCategoryGenRel}
@@ -167,39 +168,27 @@ private lemma map_injective_degeneracies {x y : SimplexCategoryGenRel}
   subst hLL
   simpa using hg.symm
 
-private lemma map_surjective_mk (n m : ℕ) (f : SimplexCategory.mk n ⟶ SimplexCategory.mk m) :
-    ∃ g : mk n ⟶ mk m, toSimplexCategory.map g = f := by
-  classical
-  by_cases hinj : Function.Injective f.toOrderHom
-  · by_cases hsurj : Function.Surjective f.toOrderHom
-    · have := SimplexCategory.isIso_of_bijective ⟨hinj, hsurj⟩
-      have hnm : n = m := by
-        have := SimplexCategory.skeletal ⟨asIso f⟩
-        exact congrArg SimplexCategory.len this
-      subst m
-      exact ⟨𝟙 _, (toSimplexCategory.map_id _).trans
-        (SimplexCategory.eq_id_of_isIso f).symm⟩
-    · cases m with
-      | zero =>
-        exact (hsurj fun a ↦ ⟨0, Subsingleton.elim (α := Fin 1) _ _⟩).elim
-      | succ m =>
-        obtain ⟨i, f', rfl⟩ := SimplexCategory.eq_comp_δ_of_not_surjective f hsurj
-        obtain ⟨g, hg⟩ := map_surjective_mk n m f'
-        exact ⟨g ≫ δ i, by rw [toSimplexCategory.map_comp, hg, toSimplexCategory_map_δ]; rfl⟩
-  · cases n with
-    | zero => exact (hinj fun _ _ _ ↦ Subsingleton.elim (α := Fin 1) _ _).elim
-    | succ n =>
-      obtain ⟨i, f', rfl⟩ := SimplexCategory.eq_σ_comp_of_not_injective f hinj
-      obtain ⟨g, hg⟩ := map_surjective_mk n m f'
-      exact ⟨σ i ≫ g, by rw [toSimplexCategory.map_comp, hg, toSimplexCategory_map_σ]; rfl⟩
-termination_by n + m
-
 /-- The generators and relations supply every monotone map of finite nonempty ordinals. -/
 instance : toSimplexCategory.Full where
   map_surjective {x y} f := by
     cases x using SimplexCategoryGenRel.rec
     cases y using SimplexCategoryGenRel.rec
-    exact map_surjective_mk _ _ f
+    -- The object identifications here are the definitional equalities recorded by
+    -- toSimplexCategory_obj_mk and SimplexCategory.mk_len: the comparison sends mk n
+    -- to SimplexCategory.mk n, and every simplex is the constructor at its length.
+    let W : MorphismProperty SimplexCategory := fun x y f ↦
+      ∃ g : mk x.len ⟶ mk y.len, toSimplexCategory.map g = f
+    have : W.IsMultiplicative := {
+      id_mem x := ⟨𝟙 _, toSimplexCategory.map_id _⟩
+      comp_mem f f' hf hf' := by
+        obtain ⟨g, hg⟩ := hf
+        obtain ⟨g', hg'⟩ := hf'
+        exact ⟨g ≫ g', (toSimplexCategory.map_comp g g').trans
+          (congrArg₂ (· ≫ ·) hg hg')⟩ }
+    have hW := SimplexCategory.morphismProperty_eq_top W
+      (fun i ↦ ⟨δ i, toSimplexCategory_map_δ i⟩)
+      (fun i ↦ ⟨σ i, toSimplexCategory_map_σ i⟩)
+    exact (hW ▸ trivial : W f)
 
 /-- The simplicial identities identify any two words inducing the same monotone map. -/
 instance : toSimplexCategory.Faithful where
