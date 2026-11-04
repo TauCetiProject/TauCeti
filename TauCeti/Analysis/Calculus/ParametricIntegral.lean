@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Topology.Compactness.Normed
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Convex.Topology
 
 /-!
 # Compact-parameter integration
@@ -29,7 +32,13 @@ uniformly in `x` by an integrable function of `s`
 (`TauCeti.iteratedFDeriv_intervalIntegral`, `TauCeti.contDiff_intervalIntegral`). No joint
 regularity in `(s, x)` is needed, and the bounds may blow up at the ends of the interval. This is
 the form needed for time integrals of heat-kernel convolutions, whose derivatives are singular at
-the final time.
+the final time. As an application, for a continuous bilinear map `L` and a compactly supported
+`C^i` factor `V`, the spatial iterated derivatives of the radial integrand
+`y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)` (`t ∈ [0, 1]`) are bounded pointwise
+(`TauCeti.norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le`) and uniformly across `[0, 1] × E`
+(`TauCeti.exists_norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le`), yielding a linear seminorm
+bound on `y ↦ ∫ t in 0..1, t ^ k • L (f (lineMap x₀ y t)) (V y)` along segments from `x₀`
+(`TauCeti.exists_norm_iteratedFDeriv_intervalIntegral_pow_smul_clm_apply_lineMap_le`).
 
 For a compact parameter space `α` mapped continuously into a topological space `P` by `ι`, an
 integrable weight `g` on `α` preserves integrability and continuity of the integrand in a
@@ -228,6 +237,197 @@ theorem contDiff_intervalIntegral {N : ℕ}
       x).differentiableAt
 
 end IteratedFDeriv
+
+/-! ### Spatial derivatives of radial bilinear integrands -/
+
+section RadialBilinear
+
+open AffineMap Filter Set
+
+/-- Pointwise `m`-th spatial derivative bound for a radial bilinear integrand
+`z ↦ t ^ k • L (f (lineMap x₀ z t)) (V z)` with `t ∈ [0, 1]`. -/
+theorem norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le
+    {G E' H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
+    (x₀ : E) (k : ℕ) (L : G →L[ℝ] E' →L[ℝ] H)
+    {V : E → E'} {m : ℕ} (hV : ContDiff ℝ m V) {M : ℕ → ℝ} {y : E}
+    (hM : ∀ j ≤ m, ‖iteratedFDeriv ℝ j V y‖ ≤ M j)
+    {f : E → G} (hf : ContDiff ℝ m f) {D : ℝ} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+    (hD : ∀ j ≤ m, ‖iteratedFDeriv ℝ j f (lineMap x₀ y t)‖ ≤ D) :
+    ‖iteratedFDeriv ℝ m (fun z ↦ t ^ k • L (f (lineMap x₀ z t)) (V z)) y‖ ≤
+      (∑ j ∈ Finset.range (m + 1), (m.choose j : ℝ) * (‖L‖ * M (m - j))) * D := by
+  have hD0 : 0 ≤ D := (norm_nonneg _).trans (hD 0 (Nat.zero_le _))
+  have ht_id : ‖t • ContinuousLinearMap.id ℝ E‖ ≤ 1 := by
+    rw [norm_smul, Real.norm_of_nonneg ht.1]
+    exact (mul_le_of_le_one_right ht.1 ContinuousLinearMap.norm_id_le).trans ht.2
+  have htk_id : ‖(t ^ k) • ContinuousLinearMap.id ℝ H‖ ≤ 1 := by
+    rw [norm_smul, Real.norm_of_nonneg (pow_nonneg ht.1 _)]
+    exact (mul_le_of_le_one_right (pow_nonneg ht.1 _) ContinuousLinearMap.norm_id_le).trans
+      (pow_le_one₀ ht.1 ht.2)
+  have hray_cont : ContDiff ℝ m (fun z ↦ f (lineMap x₀ z t)) := by
+    simp only [lineMap_apply_module']
+    exact hf.comp (((contDiff_id.sub contDiff_const).const_smul t).add contDiff_const)
+  -- Bound the derivatives of `z ↦ L (f (lineMap x₀ z t))` using `0 ≤ t ≤ 1`.
+  have hray_norm {j : ℕ} (hj : j ≤ m) :
+      ‖iteratedFDeriv ℝ j (fun z ↦ L (f (lineMap x₀ z t))) y‖ ≤ ‖L‖ * D := by
+    have hj' : (j : WithTop ℕ∞) ≤ m := by exact_mod_cast hj
+    have hcompL : (fun z ↦ L (f (lineMap x₀ z t))) = L ∘ (fun z ↦ f (lineMap x₀ z t)) := rfl
+    rw [hcompL]
+    refine (L.norm_iteratedFDeriv_comp_left hray_cont.contDiffAt hj').trans ?_
+    refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg L)
+    have hshift : ContDiff ℝ m (fun z ↦ f (z + (1 - t) • x₀)) :=
+      hf.comp (contDiff_id.add contDiff_const)
+    have hline : (fun z ↦ f (lineMap x₀ z t)) =
+        (fun z ↦ f (z + (1 - t) • x₀)) ∘ (t • ContinuousLinearMap.id ℝ E) := by
+      funext z
+      simp [lineMap_apply_module, add_comm]
+    have hpt : (t • ContinuousLinearMap.id ℝ E) y + (1 - t) • x₀ = lineMap x₀ y t := by
+      simp [lineMap_apply_module, add_comm]
+    rw [hline, (t • ContinuousLinearMap.id ℝ E).iteratedFDeriv_comp_right hshift y hj',
+      iteratedFDeriv_comp_add_right, hpt]
+    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+    refine (mul_le_of_le_one_right (norm_nonneg _) ?_).trans (hD j hj)
+    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    exact pow_le_one₀ (norm_nonneg _) ht_id
+  -- Apply the Leibniz bound to `z ↦ L (f (lineMap x₀ z t)) (V z)` and absorb `t ^ k`.
+  have hu_eq : (fun z ↦ t ^ k • L (f (lineMap x₀ z t)) (V z)) =
+      ((t ^ k) • ContinuousLinearMap.id ℝ H) ∘ fun z ↦ L (f (lineMap x₀ z t)) (V z) := rfl
+  have hclm_cont : ContDiff ℝ m (fun z ↦ L (f (lineMap x₀ z t)) (V z)) :=
+    (L.contDiff.comp hray_cont).clm_apply hV
+  rw [hu_eq]
+  refine (((t ^ k) • ContinuousLinearMap.id ℝ H).norm_iteratedFDeriv_comp_left
+    hclm_cont.contDiffAt le_rfl).trans ?_
+  refine (mul_le_of_le_one_left (norm_nonneg _) htk_id).trans ?_
+  refine (norm_iteratedFDeriv_clm_apply (L.contDiff.comp hray_cont) hV y le_rfl).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun j hj ↦ ?_
+  have hjm : j ≤ m := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+  have hMj : 0 ≤ M (m - j) := (norm_nonneg _).trans (hM (m - j) (Nat.sub_le m j))
+  calc (m.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun z ↦ L (f (lineMap x₀ z t))) y‖ *
+        ‖iteratedFDeriv ℝ (m - j) V y‖
+      ≤ (m.choose j : ℝ) * (‖L‖ * D) * M (m - j) := by
+        gcongr
+        exacts [hray_norm hjm, hM (m - j) (Nat.sub_le m j)]
+    _ = (m.choose j : ℝ) * (‖L‖ * M (m - j)) * D := by ring
+
+/-- **Global derivative domination for a compactly supported radial bilinear integrand.** If `V`
+is `C^i` with compact support and `f` is `C^i`, then the spatial derivatives of
+`y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)` of order at most `i` are bounded uniformly in
+`t ∈ [0, 1]` and `z : E`. -/
+theorem exists_norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le
+    {G E' H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup H] [NormedSpace ℝ H]
+    (x₀ : E) (k : ℕ) (L : G →L[ℝ] E' →L[ℝ] H)
+    {V : E → E'} {i : ℕ} (hV : ContDiff ℝ i V) (hVc : HasCompactSupport V)
+    {f : E → G} (hf : ContDiff ℝ i f) :
+    ∃ C : ℝ, ∀ m ≤ i, ∀ t ∈ Icc (0 : ℝ) 1, ∀ z,
+      ‖iteratedFDeriv ℝ m (fun y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) z‖ ≤ C := by
+  -- Bound the derivatives of the compactly supported factor `V` globally on `E`.
+  have hVbd : ∀ m ≤ i, ∃ M : ℝ, ∀ y, ‖iteratedFDeriv ℝ m V y‖ ≤ M := fun m hm ↦
+    Continuous.bounded_above_of_compact_support
+      (hV.continuous_iteratedFDeriv (by exact_mod_cast hm)) (hVc.iteratedFDeriv m)
+  choose! M hM using hVbd
+  have hM0 {m : ℕ} (hm : m ≤ i) : 0 ≤ M m := (norm_nonneg _).trans (hM m hm x₀)
+  -- Bound the derivatives of `f` on the compact cone over `tsupport V`.
+  let K' : Set E := ⋃ y ∈ tsupport V, segment ℝ x₀ y
+  have hK' : IsCompact K' := hVc.biUnion_segment x₀
+  have hfbd : ∀ j ≤ i, ∃ Cf : ℝ, ∀ z ∈ K', ‖iteratedFDeriv ℝ j f z‖ ≤ Cf := fun j hj ↦
+    hK'.exists_bound_of_continuousOn
+      (hf.continuous_iteratedFDeriv (by exact_mod_cast hj)).continuousOn
+  choose! Cf hCf using hfbd
+  let Df : ℝ := ∑ j ∈ Finset.range (i + 1), |Cf j|
+  have hDf0 : 0 ≤ Df := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
+  have hDf {j : ℕ} (hj : j ≤ i) {z : E} (hz : z ∈ K') : ‖iteratedFDeriv ℝ j f z‖ ≤ Df :=
+    (hCf j hj z hz).trans <| (le_abs_self _).trans <|
+      Finset.single_le_sum (f := fun j ↦ |Cf j|) (fun _ _ ↦ abs_nonneg _)
+        (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+  let A (m : ℕ) : ℝ := ∑ j ∈ Finset.range (m + 1), (m.choose j : ℝ) * (‖L‖ * M (m - j))
+  have hA0 {m : ℕ} (hm : m ≤ i) : 0 ≤ A m :=
+    Finset.sum_nonneg fun j _ ↦ mul_nonneg (Nat.cast_nonneg _)
+      (mul_nonneg (norm_nonneg L) (hM0 ((Nat.sub_le m j).trans hm)))
+  refine ⟨∑ m ∈ Finset.range (i + 1), A m * Df, fun m hm t ht z ↦ ?_⟩
+  have hm_le : A m * Df ≤ ∑ n ∈ Finset.range (i + 1), A n * Df :=
+    Finset.single_le_sum
+      (fun n hn ↦ mul_nonneg (hA0 (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))) hDf0)
+      (Finset.mem_range.2 (Nat.lt_succ_of_le hm))
+  by_cases hz : z ∈ tsupport V
+  · exact (norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le x₀ k L
+      (hV.of_le (by exact_mod_cast hm)) (fun j hj ↦ hM j (hj.trans hm) z)
+      (hf.of_le (by exact_mod_cast hm)) ht
+      (fun j hj ↦ hDf (hj.trans hm) (mem_biUnion hz (lineMap_mem_segment ℝ x₀ z ht)))).trans hm_le
+  · -- Off `tsupport V`, the integrand vanishes in a neighbourhood of `z`, so its derivatives do.
+    have hu_tsup : tsupport (fun y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) ⊆ tsupport V :=
+      closure_minimal (Function.support_subset_iff'.2 fun w hw ↦ by
+        simp [image_eq_zero_of_notMem_tsupport hw]) (isClosed_tsupport V)
+    have hu0 : iteratedFDeriv ℝ m (fun y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) z = 0 :=
+      image_eq_zero_of_notMem_tsupport fun hmem ↦
+        hz (hu_tsup (tsupport_iteratedFDeriv_subset m hmem))
+    rw [hu0, norm_zero]
+    exact (mul_nonneg (hA0 hm) hDf0).trans hm_le
+
+/-- **Spatial derivative bound for a compactly supported radial bilinear interval integral.**
+If `V` is `C^i` with compact support, there exists `A ≥ 0` such that for every `C^i` map `f` whose
+derivatives of order at most `i` are bounded by `B` along `[x₀, x]`, the `i`-th derivative of
+`y ↦ ∫ t in 0..1, t ^ k • L (f (lineMap x₀ y t)) (V y)` at `x` has norm at most `A * B`. -/
+theorem exists_norm_iteratedFDeriv_intervalIntegral_pow_smul_clm_apply_lineMap_le
+    {G E' H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
+    (x₀ : E) (k : ℕ) (L : G →L[ℝ] E' →L[ℝ] H)
+    {V : E → E'} {i : ℕ} (hV : ContDiff ℝ i V) (hVc : HasCompactSupport V) :
+    ∃ A : ℝ, 0 ≤ A ∧
+      ∀ {f : E → G}, ContDiff ℝ i f →
+        ∀ {x : E} {B : ℝ},
+          (∀ j ≤ i, ∀ z ∈ segment ℝ x₀ x, ‖iteratedFDeriv ℝ j f z‖ ≤ B) →
+          ‖iteratedFDeriv ℝ i
+            (fun y ↦ ∫ t in (0 : ℝ)..1, t ^ k • L (f (lineMap x₀ y t)) (V y)) x‖ ≤
+            A * B := by
+  have hVbd : ∀ j ≤ i, ∃ M : ℝ, ∀ y, ‖iteratedFDeriv ℝ j V y‖ ≤ M := fun j hj ↦
+    Continuous.bounded_above_of_compact_support
+      (hV.continuous_iteratedFDeriv (by exact_mod_cast hj)) (hVc.iteratedFDeriv j)
+  choose! M hM using hVbd
+  have hM0 {j : ℕ} (hj : j ≤ i) : 0 ≤ M j := (norm_nonneg _).trans (hM j hj x₀)
+  let A : ℝ := ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (‖L‖ * M (i - j))
+  have hA0 : 0 ≤ A :=
+    Finset.sum_nonneg fun j _ ↦ mul_nonneg (Nat.cast_nonneg _)
+      (mul_nonneg (norm_nonneg L) (hM0 (Nat.sub_le i j)))
+  refine ⟨A, hA0, fun {f} hf {x B} hB ↦ ?_⟩
+  -- Joint smoothness and global derivative domination justify differentiating under the integral.
+  have hG : ContDiff ℝ i (fun p : ℝ × E ↦ p.1 ^ k • L (f (lineMap x₀ p.2 p.1)) (V p.2)) := by
+    have hline_p : ContDiff ℝ i (fun p : ℝ × E ↦ lineMap x₀ p.2 p.1) := by
+      simp only [lineMap_apply_module']
+      exact (contDiff_fst.smul (contDiff_snd.sub contDiff_const)).add contDiff_const
+    exact (contDiff_fst.pow k).smul ((L.contDiff.comp (hf.comp hline_p)).clm_apply
+      (hV.comp contDiff_snd))
+  have hcont {m : ℕ} (hm : m ≤ i) (z : E) :
+      Continuous fun t : ℝ ↦
+        iteratedFDeriv ℝ m (fun y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) z :=
+    (_root_.ContDiff.continuous_iteratedFDeriv_prod_right hG m (by exact_mod_cast hm)).comp
+      (continuous_id.prodMk continuous_const)
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le x₀ k L hV hVc hf
+  have hub (m : ℕ) (hm : m ≤ i) :
+      ∀ᵐ t ∂volume.restrict (uIoc (0 : ℝ) 1), ∀ z,
+        ‖iteratedFDeriv ℝ m (fun y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) z‖ ≤ C := by
+    rw [ae_restrict_iff' measurableSet_uIoc, uIoc_of_le zero_le_one]
+    exact Eventually.of_forall fun t ht z ↦ hC m hm t (Ioc_subset_Icc_self ht) z
+  rw [iteratedFDeriv_intervalIntegral (μ := volume) (a := 0) (b := 1)
+    (u := fun t y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) (N := i)
+    (Eventually.of_forall fun t ↦ hG.comp (contDiff_const.prodMk contDiff_id))
+    (fun m hm z ↦ (hcont hm z).aestronglyMeasurable)
+    (bound := fun _ _ ↦ C) (fun _ _ ↦ intervalIntegrable_const) hub le_rfl]
+  -- Apply the sharp pointwise derivative bound at `x` along `[x₀, x]`.
+  have hle : ∀ t ∈ uIoc (0 : ℝ) 1,
+      ‖iteratedFDeriv ℝ i (fun y ↦ t ^ k • L (f (lineMap x₀ y t)) (V y)) x‖ ≤ A * B :=
+    fun t ht ↦ by
+      rw [uIoc_of_le zero_le_one] at ht
+      have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
+      exact norm_iteratedFDeriv_pow_smul_clm_apply_lineMap_le x₀ k L hV (fun j hj ↦ hM j hj x)
+        hf ht' (fun j hj ↦ hB j hj _ (lineMap_mem_segment ℝ x₀ x ht'))
+  simpa using intervalIntegral.norm_integral_le_of_norm_le_const hle
+
+end RadialBilinear
 
 /-! ### Integration against a weight over a compact parameter space -/
 

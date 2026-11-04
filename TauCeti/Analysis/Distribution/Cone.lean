@@ -68,9 +68,6 @@ augmented-zero two-point difference `δ_q - δ_p` (`p, q ∈ Ω`) is filled by `
 * `Distribution.cone_comp_evalCLM_apply`, `Distribution.cone_comp_evalCLM_finZero_comp_extDerivCLM`,
   `Distribution.cone_sub_comp_evalCLM_finZero_comp_extDerivCLM`: explicit evaluation and filling
   on degree-zero point currents and two-point differences.
-* `Distribution.not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero`,
-  `Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`: augmentation obstruction to
-  compactly supported filling, in particular for nonzero point currents.
 * `StarConvex.exists_isCompact_dsupport_comp_extDerivCLM_eq_iff`,
   `StarConvex.exists_isCompact_dsupport_comp_extDerivCLM_finZero_eq_iff`: Poincaré
   characterization of compactly supported currents admitting compactly supported fillings on a
@@ -474,40 +471,6 @@ theorem cone_sub_comp_evalCLM_finZero_comp_extDerivCLM (x₀ : E) {p q : E}
 end TopologicalAddGroup
 
 end Group
-
-section Obstruction
-
-variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [TopologicalSpace V] [AddCommGroup V] [Module ℝ V]
-  {Ω : Opens E} {k : ℕ}
-
-/-- **Augmentation obstruction to compactly supported filling.** A `k`-current `T` whose
-augmentation is nonzero at some constant `k`-form cannot equal `Q ∘L extDerivCLM` for any
-`(k + 1)`-current `Q` with compact support in `Ω` (in particular at `k = 0`, where the ordinary
-boundary `∂₀ T` of every `0`-current is zero). -/
-theorem not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero
-    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
-    {c : E [⋀^Fin k]→L[ℝ] F} (haug : augmentation T c ≠ 0) :
-    ¬∃ Q : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V,
-      IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧ Q ∘L TestFunction.extDerivCLM = T := by
-  rintro ⟨Q, hQc, hQΩ, rfl⟩
-  exact haug (augmentation_comp_extDerivCLM Q hQc hQΩ c)
-
-/-- A single point `k`-current `ω ↦ ℓ (ω p)` at `p ∈ Ω` with `ℓ ≠ 0` has nonzero augmentation and
-therefore admits no compactly supported `(k + 1)`-current filling on `Ω`. -/
-theorem not_exists_comp_extDerivCLM_eq_comp_evalCLM {p : E} (hp : p ∈ Ω)
-    {ℓ : (E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hℓ : ℓ ≠ 0) :
-    ¬∃ Q : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V,
-      IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧
-        Q ∘L TestFunction.extDerivCLM =
-          ℓ ∘L BoundedContinuousFunction.evalCLM ℝ p ∘L
-            TestFunction.toBoundedContinuousFunctionCLM ℝ := by
-  obtain ⟨c, hc⟩ := exists_ne_zero hℓ
-  refine not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero (c := c) ?_
-  rwa [augmentation_comp_evalCLM_comp_toBoundedContinuousFunctionCLM hp ℓ c]
-
-end Obstruction
 
 end Distribution
 

@@ -52,7 +52,11 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
   support, and compactness of point-evaluation support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
-* `Distribution.augmentation_comp_extDerivCLM`: the augmentation of a boundary is zero.
+* `Distribution.augmentation_comp_extDerivCLM`,
+  `Distribution.not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero`,
+  `Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`: the augmentation of a boundary is
+  zero, obstructing compactly supported fillings of currents with nonzero augmentation (in
+  particular nonzero point currents).
 
 ## References
 
@@ -386,16 +390,18 @@ theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
     (hS : IsCompact (dsupport S)) (hSΩ : dsupport S ⊆ Ω) (c : F) :
     augmentation (⇑T - ⇑S) c = augmentation T c - augmentation S c := by
   let N : 𝓓^{n}(Ω, F) →+ V := -(S : 𝓓^{n}(Ω, F) →+ V)
+  have hN_coe : ⇑N = -⇑S := by
+    ext φ
+    simp [N]
   have hN : dsupport N = dsupport S := by
-    rw [show ⇑N = -⇑S by ext; simp [N], dsupport_neg]
+    rw [hN_coe, dsupport_neg]
   have hNS : augmentation N c = -augmentation S c := by
     obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) hS hSΩ
     rw [augmentation_eq N (hN ▸ hχ), augmentation_eq S hχ]
     simp [N]
   have h := augmentation_add T N hT hTΩ (hN ▸ hS) (hN ▸ hSΩ) c
   have hTN : ⇑T + ⇑N = ⇑T - ⇑S := by
-    ext φ
-    simp [N, sub_eq_add_neg]
+    rw [hN_coe, ← sub_eq_add_neg]
   rw [hTN, hNS] at h
   rw [h, sub_eq_add_neg]
 
@@ -492,5 +498,36 @@ theorem augmentation_comp_extDerivCLM (hT : IsCompact (dsupport T)) (hTΩ : dsup
   simp
 
 end Boundary
+
+section Obstruction
+
+variable [FiniteDimensional ℝ E] [TopologicalSpace V] [AddCommGroup V] [Module ℝ V] {k : ℕ}
+
+/-- **Augmentation obstruction to compactly supported filling.** A `k`-current `T` whose
+augmentation is nonzero at some constant `k`-form cannot equal `Q ∘L extDerivCLM` for any
+`(k + 1)`-current `Q` with compact support in `Ω` (in particular at `k = 0`, where the ordinary
+boundary `∂₀ T` of every `0`-current is zero). -/
+theorem not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    {c : E [⋀^Fin k]→L[ℝ] F} (haug : augmentation T c ≠ 0) :
+    ¬∃ Q : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V,
+      IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧ Q ∘L TestFunction.extDerivCLM = T := by
+  rintro ⟨Q, hQc, hQΩ, rfl⟩
+  exact haug (augmentation_comp_extDerivCLM Q hQc hQΩ c)
+
+/-- A single point `k`-current `ω ↦ ℓ (ω p)` at `p ∈ Ω` with `ℓ ≠ 0` has nonzero augmentation and
+therefore admits no compactly supported `(k + 1)`-current filling on `Ω`. -/
+theorem not_exists_comp_extDerivCLM_eq_comp_evalCLM {p : E} (hp : p ∈ Ω)
+    {ℓ : (E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hℓ : ℓ ≠ 0) :
+    ¬∃ Q : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V,
+      IsCompact (dsupport Q) ∧ dsupport Q ⊆ Ω ∧
+        Q ∘L TestFunction.extDerivCLM =
+          ℓ ∘L BoundedContinuousFunction.evalCLM ℝ p ∘L
+            TestFunction.toBoundedContinuousFunctionCLM ℝ := by
+  obtain ⟨c, hc⟩ := exists_ne_zero hℓ
+  refine not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero (c := c) ?_
+  rwa [augmentation_comp_evalCLM_comp_toBoundedContinuousFunctionCLM hp ℓ c]
+
+end Obstruction
 
 end Distribution
