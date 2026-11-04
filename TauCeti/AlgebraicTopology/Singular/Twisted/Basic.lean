@@ -545,6 +545,12 @@ lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
     (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k σ).hom x) = 0 :=
   congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h)
 
+/-- A chain supported on a single simplex `τ` only has a nonzero coefficient on `τ`. -/
+lemma eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero
+    {σ τ : (TopCat.toSSet.obj X) _⦋k⦌} {x : L.obj (initialVertex τ)}
+    (h : (twistedChainComplexCoeff L σ).hom ((ιTwistedChainComplex L k τ).hom x) ≠ 0) : τ = σ :=
+  by_contra fun hne ↦ h (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
+
 /-- Summing a family of additive maps out of the simplex fibres against the coefficients of a
 finite sum of chains, each supported on one simplex, applies the maps summand by summand. -/
 lemma finsum_twistedChainComplexCoeff_sum {M : Type*} [AddCommMonoid M]
@@ -665,6 +671,28 @@ lemma twistedChainComplexCoeff_d_ιTwistedChainComplex_apply_of_forall_ne
     (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom
       ((ιTwistedChainComplex L (k + 1) σ).hom x)) = 0 :=
   congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_d_twistedChainComplexCoeff_of_forall_ne L h)
+
+/-- The twisted boundary of a chain supported in a set `s` is supported in `s`. -/
+lemma range_simplexMap_subset_of_twistedChainComplexCoeff_d_ne_zero
+    {z : (twistedChainComplex L).X (k + 1)} {s : Set X}
+    (hz : ∀ σ, (twistedChainComplexCoeff L σ).hom z ≠ 0 → Set.range (TopCat.simplexMap σ) ⊆ s)
+    {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
+    (hρ : (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom z) ≠ 0) :
+    Set.range (TopCat.simplexMap ρ) ⊆ s := by
+  -- Expand `z` as the finite sum of its single-simplex parts; some summand contributes to `ρ`.
+  have hfin := finite_support_twistedChainComplexCoeff L z
+  rw [← finsum_ιTwistedChainComplex_twistedChainComplexCoeff L z,
+    map_finsum _ (hfin.subset fun σ hσ h ↦ hσ (by simp only [h, map_zero])),
+    map_finsum _ (hfin.subset fun σ hσ h ↦ hσ (by simp only [h, map_zero]))] at hρ
+  obtain ⟨σ, hσ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hρ)
+  have hσz : (twistedChainComplexCoeff L σ).hom z ≠ 0 := fun h ↦
+    hσ (by rw [h, map_zero, map_zero, map_zero])
+  -- That summand is supported on `σ`, so `ρ` is a face of `σ`.
+  obtain ⟨i, rfl⟩ :
+      ∃ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ := by
+    by_contra! hne
+    exact hσ (twistedChainComplexCoeff_d_ιTwistedChainComplex_apply_of_forall_ne L hne _)
+  exact (TopCat.range_simplexMap_map_subset _ σ).trans (hz σ hσz)
 
 end Coeff
 
