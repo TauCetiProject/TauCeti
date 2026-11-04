@@ -28,26 +28,26 @@ example (t : R) (I : Ideal R) :
       IsTopologicalRing (completion t I) :=
   ⟨inferInstance, inferInstance, inferInstance⟩
 
-/-- `topology_adic_agreement`: the total ideal gives the ordinary principal adic topology. -/
+/-- The total ideal gives the ordinary principal adic topology. -/
 example (t : R) : ringTopology t (⊤ : Ideal R) = (Ideal.span {t}).adicTopology :=
   ringTopology_top t
 
-/-- `topology_zero_ideal`: the zero ideal gives the discrete topology. -/
+/-- The zero ideal gives the discrete topology. -/
 example (t : R) : ringTopology t (⊥ : Ideal R) = ⊥ := by simp
 
-/-- `completion_zero_ideal`: no elements are lost or added, for any parameter. -/
+/-- No elements are lost or added, for any parameter. -/
 example (t : R) : Function.Bijective (completionMap t (⊥ : Ideal R)) :=
   completionMap_bot_bijective t
 
-/-- `completion_unit_parameter`: the actual completion is the quotient, with its specified map. -/
+/-- The actual completion is the quotient, with its specified map. -/
 example (I : Ideal R) (a : R) :
     completionOneEquiv I (completionMap 1 I a) = Ideal.Quotient.mk I a := by simp
 
-/-- `henselian_completion_test_unit_parameter`: the unit-parameter kernel is exactly `I`. -/
+/-- The unit-parameter kernel is exactly `I`. -/
 example (I : Ideal R) : RingHom.ker (completionMap 1 I) = I := by
   simp [ker_completionMap]
 
-/-- `henselian_completion_test_distinct_filtrations`: 3 vanishes for parameter 1 and ideal (3). -/
+/-- The integer 3 vanishes for parameter 1 and ideal (3). -/
 example : completionMap (1 : ℤ) (Ideal.span {3}) 3 = 0 := by
   apply (completionOneEquiv (Ideal.span {3})).injective
   simp only [completionOneEquiv_completionMap, map_zero]

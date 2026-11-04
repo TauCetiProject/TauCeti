@@ -86,7 +86,7 @@ theorem ringTopology_isTopologicalRing (t : R) (I : Ideal R) :
   (filtrationBasis t I).toRingFilterBasis.isTopologicalRing
 
 /-- Neighbourhoods are the supersets of the congruence classes modulo `tⁿ I`. -/
-theorem ringTopology_nhds (t : R) (I : Ideal R) (a : R) :
+theorem hasBasis_nhds_ringTopology (t : R) (I : Ideal R) (a : R) :
     (@nhds R (ringTopology t I) a).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ {b | b - a ∈ filtrationIdeal t I n}) :=
   (filtrationBasis t I).hasBasis_nhds a
@@ -96,7 +96,7 @@ theorem ringTopology_top (t : R) :
     ringTopology t (⊤ : Ideal R) = (Ideal.span {t}).adicTopology := by
   apply TopologicalSpace.ext_nhds
   intro a
-  apply (ringTopology_nhds t ⊤ a).eq_of_same_basis
+  apply (hasBasis_nhds_ringTopology t ⊤ a).eq_of_same_basis
   convert (Ideal.span {t}).hasBasis_nhds_adic a using 1
   ext n b
   simp [filtrationIdeal_def, Set.image_add_left, neg_add_eq_sub]
@@ -106,7 +106,7 @@ theorem ringTopology_top (t : R) :
 theorem ringTopology_bot (t : R) : ringTopology t (⊥ : Ideal R) = ⊥ := by
   let := ringTopology t (⊥ : Ideal R)
   have : DiscreteTopology R := discreteTopology_iff_singleton_mem_nhds.mpr fun a ↦
-    (ringTopology_nhds t ⊥ a).mem_iff.mpr ⟨0, trivial, by simp [sub_eq_zero]⟩
+    (hasBasis_nhds_ringTopology t ⊥ a).mem_iff.mpr ⟨0, trivial, by simp [sub_eq_zero]⟩
   exact DiscreteTopology.eq_bot
 
 /-- A residue ring of the filtration, equipped below with the discrete uniformity. -/
@@ -222,7 +222,7 @@ theorem eval_surjective (t : R) (I : Ideal R) (n : ℕ) :
   obtain ⟨a, rfl⟩ := residueMap_surjective t I n x
   exact ⟨completionMap t I a, eval_completionMap t I n a⟩
 
-/-- Exactly the elements divisible into every filtration ideal die in the completion. -/
+/-- The kernel of the canonical map is the intersection of the filtration ideals `tⁿ I`. -/
 theorem ker_completionMap (t : R) (I : Ideal R) :
     RingHom.ker (completionMap t I) = ⨅ n, filtrationIdeal t I n := by
   rw [← RingHom.ker_comp_of_injective (completionMap t I)
@@ -250,7 +250,7 @@ theorem continuous_eval (t : R) (I : Ideal R) (n : ℕ) : Continuous (eval t I n
   (continuous_apply n).comp continuous_subtype_val
 
 /-- A single residue coordinate suffices to specify a basic neighbourhood in the completion. -/
-theorem completion_nhds (t : R) (I : Ideal R) (x : completion t I) :
+theorem hasBasis_nhds_completion (t : R) (I : Ideal R) (x : completion t I) :
     (𝓝 x).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ {y | eval t I n y = eval t I n x}) := by
   constructor
@@ -276,7 +276,7 @@ theorem denseRange_completionMap (t : R) (I : Ideal R) : DenseRange (completionM
   intro x
   rw [mem_closure_iff_nhds]
   intro U hU
-  obtain ⟨n, _, hn⟩ := (completion_nhds t I x).mem_iff.mp hU
+  obtain ⟨n, _, hn⟩ := (hasBasis_nhds_completion t I x).mem_iff.mp hU
   obtain ⟨a, ha⟩ := residueMap_surjective t I n (eval t I n x)
   exact ⟨completionMap t I a, hn ha, ⟨a, rfl⟩⟩
 
@@ -288,8 +288,8 @@ theorem isInducing_completionMap (t : R) (I : Ideal R) :
   let := ringTopology t I
   rw [isInducing_iff_nhds]
   intro a
-  apply (ringTopology_nhds t I a).eq_of_same_basis
-  convert (completion_nhds t I (completionMap t I a)).comap (completionMap t I) using 1
+  apply (hasBasis_nhds_ringTopology t I a).eq_of_same_basis
+  convert (hasBasis_nhds_completion t I (completionMap t I a)).comap (completionMap t I) using 1
   ext n b
   simp only [Set.mem_ofPred_eq, Set.mem_preimage, eval_completionMap, residueMap_eq_iff]
 
@@ -337,7 +337,7 @@ theorem completionOneEquiv_completionMap (I : Ideal R) (a : R) :
 /-- The completion for unit parameter is discrete, as is the quotient `R / I`. -/
 instance completionOne_discrete (I : Ideal R) : DiscreteTopology (completion (1 : R) I) :=
   discreteTopology_iff_singleton_mem_nhds.mpr fun x ↦
-    (completion_nhds 1 I x).mem_iff.mpr ⟨0, trivial, fun _ hy ↦
+    (hasBasis_nhds_completion 1 I x).mem_iff.mpr ⟨0, trivial, fun _ hy ↦
       (eval_injective_of_constant 1 I (filtrationIdeal_one I)) hy⟩
 
 /-- For the zero ideal, no elements are identified or added by completion. -/
