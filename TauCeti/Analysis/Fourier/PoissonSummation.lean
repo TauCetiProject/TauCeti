@@ -103,7 +103,7 @@ private theorem toTorus_add (x : E) (ℓ : span ℤ (range o.toBasis)) :
 
 /-- The torus is the quotient of `E` by the lattice spanned by `o`. -/
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
-  isOpenQuotientMap_coe.isQuotientMap.comp
+  TauCeti.UnitAddTorus.isOpenQuotientMap_coe.isQuotientMap.comp
     ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isQuotientMap.comp o.repr.toHomeomorph.isQuotientMap)
 
 /-- The lattice vector with coordinates `n` in the basis `o`. -/

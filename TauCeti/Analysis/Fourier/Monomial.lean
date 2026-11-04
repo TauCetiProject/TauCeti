@@ -30,7 +30,7 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
-* `UnitAddTorus.mFourier_apply_add`, `UnitAddTorus.mFourier_coe_apply` and
+* `UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
   is `exp (2πi ∑ i, n i * x i)`.
@@ -164,6 +164,19 @@ theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
   simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, TauCeti.fourier_apply_add,
     Finset.prod_mul_distrib]
 
+/-- Multivariate Fourier monomials take values in the unit circle. -/
+@[simp]
+theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
+  simp [mFourier, norm_prod]
+
+end UnitAddTorus
+
+namespace TauCeti.UnitAddTorus
+
+open _root_.UnitAddTorus
+
+variable {d : Type*} [Fintype d]
+
 /-- The value of the multivariate Fourier monomial `mFourier n` at the image of `x : d → ℝ` is
 `exp (2πi ∑ i, n i * x i)`. -/
 theorem mFourier_coe_apply (n : d → ℤ) (x : d → ℝ) :
@@ -174,9 +187,4 @@ theorem mFourier_coe_apply (n : d → ℤ) (x : d → ℝ) :
   push_cast
   ring
 
-/-- Multivariate Fourier monomials take values in the unit circle. -/
-@[simp]
-theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
-  simp [mFourier, norm_prod]
-
-end UnitAddTorus
+end TauCeti.UnitAddTorus

@@ -18,13 +18,22 @@ those results can be read for `volume`.
 
 ## Main results
 
-* `UnitAddTorus.volume_eq_pi_haarAddCircle`: the volume on the unit torus is the product of the
-  Haar probability measures on its circle factors.
+* An instance stating that the volume on the unit circle `UnitAddCircle` is a probability measure.
+* `TauCeti.UnitAddTorus.volume_eq_pi_haarAddCircle`: the volume on the unit torus is the product of
+  the Haar probability measures on its circle factors.
+* `TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume`: the Fourier coefficients on the unit
+  torus are integrals for the volume.
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory UnitAddTorus
+
+namespace TauCeti
+
+/-- The volume on the unit circle `ℝ / ℤ` is a probability measure. -/
+instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
+  ⟨by simp [AddCircle.measure_univ]⟩
 
 namespace UnitAddTorus
 
@@ -39,4 +48,16 @@ theorem volume_eq_pi_haarAddCircle :
   funext
   simp [AddCircle.volume_eq_smul_haarAddCircle]
 
+/-- The Fourier coefficients of `f` are integrals for the volume of the torus. Mathlib defines
+`mFourierCoeff` using the Haar probability measure on each circle factor; this is the volume. -/
+theorem mFourierCoeff_eq_integral_volume {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : UnitAddTorus d → E) (n : d → ℤ) :
+    mFourierCoeff f n = ∫ z, mFourier (-n) z • f z := by
+  rw [volume_eq_pi_haarAddCircle]
+  -- Mathlib defines `mFourierCoeff` with its file-local normalization
+  -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
+  rfl
+
 end UnitAddTorus
+
+end TauCeti

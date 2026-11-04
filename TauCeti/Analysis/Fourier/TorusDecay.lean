@@ -80,17 +80,13 @@ noncomputable section
 open MeasureTheory Complex Topology Set
 open scoped Real
 
-/-- The measure on `ℝ / ℤ` is a probability measure. -/
-private local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  ⟨by simp [AddCircle.measure_univ]⟩
-
 namespace TauCeti
 
 namespace UnitAddTorus
 
 open _root_.UnitAddTorus
 
-variable {d : Type*} {E : Type*} [NormedAddCommGroup E]
+variable {d : Type*}
 
 /-! ### The quotient map `(d → ℝ) → UnitAddTorus d` -/
 
@@ -106,22 +102,11 @@ private theorem toTorus_add (x y : d → ℝ) : toTorus (x + y) = toTorus x + to
 private theorem toTorus_smul (t : ℝ) (w : d → ℝ) :
     toTorus (t • w) = fun i ↦ ((t * w i : ℝ) : UnitAddCircle) := rfl
 
-variable [Fintype d] [NormedSpace ℂ E]
-
-/-! ### Translation and the Fourier coefficients -/
-
-/-- The Fourier coefficients of `f` are integrals for the volume of the torus. Mathlib defines
-`mFourierCoeff` using the Haar probability measure on each circle factor; this is the volume. -/
-theorem mFourierCoeff_eq_integral_volume (f : UnitAddTorus d → E) (n : d → ℤ) :
-    mFourierCoeff f n = ∫ z, mFourier (-n) z • f z := by
-  rw [volume_eq_pi_haarAddCircle]
-  -- Mathlib defines `mFourierCoeff` with its file-local normalization
-  -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
-  rfl
-
 end UnitAddTorus
 
 end TauCeti
+
+/-! ### Translation and the Fourier coefficients -/
 
 namespace UnitAddTorus
 

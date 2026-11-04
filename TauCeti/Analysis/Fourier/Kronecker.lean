@@ -55,10 +55,6 @@ open scoped Real
 
 noncomputable section
 
-/-- The measure on `ℝ / ℤ` is a probability measure. -/
-local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  ⟨by simp [AddCircle.measure_univ]⟩
-
 namespace TauCeti
 
 namespace UnitAddTorus

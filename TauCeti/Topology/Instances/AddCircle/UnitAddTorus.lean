@@ -22,19 +22,19 @@ functions on the torus are the same as continuous `ℤ^d`-periodic functions on 
 
 ## Main results
 
-* `UnitAddTorus.surjective_coe`: every point of the torus comes from a point of `d → ℝ`.
-* `UnitAddTorus.isOpenQuotientMap_coe`: the map `d → ℝ → UnitAddTorus d` is an open quotient
-  map.
-* `UnitAddTorus.coe_eq_coe_iff`: two points have the same image exactly when they differ by an
-  integer vector.
-* `UnitAddTorus.periodic_comp_coe`: the lift of a function on the torus is `ℤ^d`-periodic.
-* `UnitAddTorus.exists_continuous_comp_coe_eq`: a continuous `ℤ^d`-periodic function on `d → ℝ`
-  descends to a continuous function on the torus.
+* `TauCeti.UnitAddTorus.surjective_coe`: every point of the torus comes from a point of `d → ℝ`.
+* `TauCeti.UnitAddTorus.isOpenQuotientMap_coe`: the map `d → ℝ → UnitAddTorus d` is an open
+  quotient map.
+* `TauCeti.UnitAddTorus.coe_eq_coe_iff`: two points have the same image exactly when they differ by
+  an integer vector.
+* `TauCeti.UnitAddTorus.periodic_comp_coe`: the lift of a function on the torus is `ℤ^d`-periodic.
+* `TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq`: a continuous `ℤ^d`-periodic function on
+  `d → ℝ` descends to a continuous function on the torus.
 -/
 
 public section
 
-namespace UnitAddTorus
+namespace TauCeti.UnitAddTorus
 
 variable {d : Type*}
 
@@ -85,4 +85,4 @@ theorem exists_continuous_comp_coe_eq {X : Type*} [TopologicalSpace X] {G : (d �
     fun x ↦ ?_⟩
   exact DFunLike.congr_fun (hq.lift_comp (f := ⟨_, hq.continuous⟩) ⟨G, hG⟩ hfac) x
 
-end UnitAddTorus
+end TauCeti.UnitAddTorus
