@@ -191,6 +191,13 @@ theorem hamiltonianVectorField_const (σ : SmoothTwoForm I M) (c : ℝ) :
   funext x
   simp [hamiltonianVectorField_def, mvfderiv_const]
 
+/-- The Hamiltonian vector field vanishes at every point near which the Hamiltonian is constant,
+for instance outside the topological support of the Hamiltonian. -/
+theorem hamiltonianVectorField_eq_zero_of_eventuallyEq {x : M} {c : ℝ}
+    (h : f =ᶠ[nhds x] fun _ ↦ c) : σ.hamiltonianVectorField f x = 0 := by
+  rw [hamiltonianVectorField_def, h.mvfderiv_eq]
+  simp [mvfderiv_const]
+
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hg : MDifferentiableAt I 𝓘(ℝ) g x) :

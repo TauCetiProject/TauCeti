@@ -51,6 +51,8 @@ monotone in `W`.
 
 * `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristic`: a level carries a closed
   characteristic contractible in `W`.
+* `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristicOfPeriodLE`: a level carries a closed
+  characteristic contractible in `W` of period at most `τ`.
 * `TauCeti.SmoothTwoForm.HasContractibleAlmostExistence`: the contractible almost existence
   property of a level.
 
@@ -157,6 +159,48 @@ theorem IsNondegenerate.hasContractibleClosedCharacteristic_smul_iff [FiniteDime
     fun h ↦ h.of_hamiltonianVectorField_eq_smul (inv_ne_zero ha) (fun _ ↦ id) fun x _ ↦ ?_⟩
   · rw [hσ.hamiltonianVectorField_smul ha, Pi.smul_apply, smul_inv_smul₀ ha]
   · rw [hσ.hamiltonianVectorField_smul ha, Pi.smul_apply]
+
+/-! ### Closed characteristics of bounded period -/
+
+variable (σ W F c) in
+/-- The level `F⁻¹(c)` **carries a closed characteristic contractible in `W` of period at most
+`τ`**: the Hamiltonian vector field of `F` has a nonconstant `T`-periodic integral curve with
+`0 < T ≤ τ`, contained in the level, whose loop `ℝ/Tℤ → W` is contractible in `W`. A bound on the
+period is what the Hofer–Zehnder monotonicity argument produces near a level, and what a limit of
+closed characteristics on nearby levels needs. -/
+def HasContractibleClosedCharacteristicOfPeriodLE (τ : ℝ) : Prop :=
+  ∃ (T : ℝ) (γ : ℝ → M), 0 < T ∧ T ≤ τ ∧ IsMIntegralCurve γ (σ.hamiltonianVectorField F) ∧
+    Periodic γ T ∧ (∃ t, γ t ≠ γ 0) ∧ (∀ t, F (γ t) = c) ∧
+    ∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t
+
+theorem hasContractibleClosedCharacteristicOfPeriodLE_iff {τ : ℝ} :
+    σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ ↔
+      ∃ (T : ℝ) (γ : ℝ → M), 0 < T ∧ T ≤ τ ∧ IsMIntegralCurve γ (σ.hamiltonianVectorField F) ∧
+        Periodic γ T ∧ (∃ t, γ t ≠ γ 0) ∧ (∀ t, F (γ t) = c) ∧
+        ∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t :=
+  Iff.rfl
+
+/-- A level carries a closed characteristic contractible in `W` exactly when it carries one of
+some bounded period. -/
+theorem hasContractibleClosedCharacteristic_iff_exists_ofPeriodLE :
+    σ.HasContractibleClosedCharacteristic W F c ↔
+      ∃ τ, σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ := by
+  refine ⟨fun ⟨T, γ, hT, h⟩ ↦ ⟨T, T, γ, hT, le_rfl, h⟩, fun ⟨_, T, γ, hT, _, h⟩ ↦ ⟨T, γ, hT, h⟩⟩
+
+/-- A closed characteristic of bounded period is a closed characteristic. -/
+theorem HasContractibleClosedCharacteristicOfPeriodLE.hasContractibleClosedCharacteristic
+    {τ : ℝ} (h : σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ) :
+    σ.HasContractibleClosedCharacteristic W F c :=
+  hasContractibleClosedCharacteristic_iff_exists_ofPeriodLE.2 ⟨τ, h⟩
+
+/-- A closed characteristic contractible in `W` of period at most `τ` is contractible in every
+larger set and has period at most every `τ' ≥ τ`. -/
+theorem HasContractibleClosedCharacteristicOfPeriodLE.mono {τ τ' : ℝ}
+    (h : σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ) (hW : W ⊆ W') (hτ : τ ≤ τ') :
+    σ.HasContractibleClosedCharacteristicOfPeriodLE W' F c τ' := by
+  obtain ⟨T, γ, hT, hTτ, hγ, hper, hne, hlev, g, hg, hgγ⟩ := h
+  exact ⟨T, γ, hT, hTτ.trans hτ, hγ, hper, hne, hlev,
+    (⟨inclusion hW, continuous_inclusion hW⟩ : C(W, W')).comp g, hg.comp_right _, hgγ⟩
 
 /-! ### The contractible almost existence property -/
 
