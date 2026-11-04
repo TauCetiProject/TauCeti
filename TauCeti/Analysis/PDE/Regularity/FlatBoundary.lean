@@ -25,8 +25,9 @@ smooth `ψ` compactly supported in `U`. This file proves that `u` is `H²` up to
 portion: on `Ω ∩ V` for every open `V` whose closure is compact and contained in `U`, the
 restriction of `u` is the first-order part of an element of `W^{2,2}(Ω ∩ V)`.
 
-Nothing is assumed about the rest of `∂Ω`, nor about `a`, `b` and `c` away from `U` beyond the
-weak formulation. This is the local statement used to prove global `H²` regularity on a `C²`
+Nothing is assumed about the rest of `∂Ω`, nor about `a` away from `U` beyond the weak
+formulation; the lower-order coefficients `b` and `c` are still assumed to lie in `L∞(Ω)` on all
+of `Ω`. This is the local statement used to prove global `H²` regularity on a `C²`
 domain: flattening the boundary in a chart turns the equation into one of the same form on a
 half-space, with Lipschitz coefficients, near the flat part of its boundary.
 
