@@ -182,7 +182,7 @@ variable (μ) in
 /-- On a discrete group, means on `UCB G` correspond to positive linear functionals `M` on
 `L∞(G, μ)` with `M 1 = 1`, for any measure `μ` charging every point. A mean `m` corresponds to
 `[f] ↦ m f`, and the inverse is the restriction `TauCeti.Mean.ofLpTop`. -/
-def lpTopEquiv : Mean G ≃ {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M linftyOne = 1} where
+def lpTopEquiv : Mean G ≃ {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M 1 = 1} where
   toFun m := ⟨{
       toLinearMap := m.toPositiveLinearMap.toLinearMap ∘ₗ ((UCB.discreteLinearIsometryEquiv G).trans
         (toLpTopLinearIsometryEquiv μ ℝ)).symm.toLinearEquiv.toLinearMap
@@ -209,7 +209,7 @@ theorem lpTopEquiv_apply_toLpTop (m : Mean G) (f : G →ᵇ ℝ) :
 
 /-- The mean corresponding to a normalized positive functional on `L∞` is its restriction. -/
 @[simp]
-theorem lpTopEquiv_symm_apply (M : {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M linftyOne = 1}) :
+theorem lpTopEquiv_symm_apply (M : {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M 1 = 1}) :
     (lpTopEquiv μ).symm M = ofLpTop M.1 M.2 :=
   (rfl)
 
@@ -232,7 +232,7 @@ variable (μ) in
 point (for instance a Haar measure), `L∞(G, μ)` carries a left-invariant positive linear
 functional `M` with `M 1 = 1`. -/
 theorem amenable_iff_exists_lpTop_invariant [μ.IsMulLeftInvariant] :
-    Amenable G ↔ ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+    Amenable G ↔ ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M 1 = 1 ∧
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ := by
   refine ⟨fun h => ?_, fun ⟨M, hM, h⟩ => Amenable.of_lpTop M hM h⟩
   obtain ⟨m, hm⟩ := (amenable_iff G).1 h
