@@ -106,11 +106,9 @@ lemma lie_f_pow_succ_toEnd_e (t : IsSl2Triple h e f)
   | zero =>
     simp [leibniz_lie, ← lie_skew f e, t.lie_e_f, hyh, hyf]
   | succ n ih =>
-    rw [pow_succ', mul_apply_eq_comp, LieModule.toEnd_apply_apply, leibniz_lie,
-      ← lie_skew f e, t.lie_e_f, neg_lie, t.lie_h_pow_toEnd_e hyh, ih, lie_smul,
-      lie_e_pow_toEnd_e, ← neg_smul, ← add_smul, Nat.cast_add, Nat.cast_one]
-    congr 1
-    ring
+    rw [pow_succ', mul_apply_eq_comp, LieModule.toEnd_apply_apply, leibniz_lie, ih]
+    simp [← lie_skew f e, t.lie_e_f, t.lie_h_pow_toEnd_e hyh, lie_e_pow_toEnd_e]
+    module
 
 end StringCoefficients
 
@@ -126,8 +124,11 @@ lemma pow_ad_apply_eq_zero_of_weight_neg_nat
     (ad K L e ^ (n + 1)) y = 0 := by
   -- Both powers iterate the same bracket function, independently of the scalar ring.
   have powers (m : ℕ) : (LieModule.toEnd ℚ L L e ^ m) y = (ad K L e ^ m) y := by
-    simp only [pow_apply_eq_iterate]
-    rfl
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      simpa only [pow_succ', mul_apply_eq_comp, LieModule.toEnd_apply_apply, ad_apply]
+        using congrArg (fun z ↦ ⁅e, z⁆) ih
   obtain ⟨N, hN⟩ := he
   have top : (ad K L e ^ (N + (n + 1))) y = 0 := by
     simp [pow_add, hN]
