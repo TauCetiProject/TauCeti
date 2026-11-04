@@ -38,8 +38,9 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
-* `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J`
-  relative to `J₀`.
+* `TauCeti.cayleyFormula`: the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹` in any ring,
+  and `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform
+  `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J` relative to `J₀`, which is this expression on endomorphisms.
 * `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
@@ -56,6 +57,28 @@ namespace TauCeti
 open LinearMap
 
 variable {V W X : Type*}
+
+section CayleyFormula
+
+variable {R : Type*} [Ring R]
+
+/-- The Cayley coordinate `-(1 + A B)(1 - A B)⁻¹` of `B` relative to `A`, in any ring.
+The Cayley transform `TauCeti.AlmostComplexStructure.cayley` is this expression on linear
+endomorphisms. -/
+noncomputable def cayleyFormula (A B : R) : R :=
+  -((1 + A * B) * Ring.inverse (1 - A * B))
+
+/-- The defining formula of the Cayley coordinate expression. -/
+lemma cayleyFormula_def (A B : R) :
+    cayleyFormula A B = -((1 + A * B) * Ring.inverse (1 - A * B)) := (rfl)
+
+/-- Ring isomorphisms commute with the Cayley coordinate expression. -/
+theorem map_cayleyFormula {S F : Type*} [Ring S] [EquivLike F R S] [RingEquivClass F R S]
+    (f : F) (A B : R) :
+    f (cayleyFormula A B) = cayleyFormula (f A) (f B) := by
+  simp only [cayleyFormula_def, map_mul, map_add, map_one, map_neg, map_sub, map_ringInverse]
+
+end CayleyFormula
 
 /-- A pointwise almost complex structure is a real-linear endomorphism whose square is `-1`.
 
@@ -198,7 +221,11 @@ structures tamed by a form compatible with `J₀`, the endomorphism `1 - J₀ J`
 the transform is a
 bijection onto the Cayley ball (`TauCeti.SymplecticForm.Compatible.cayleyEquiv`). -/
 noncomputable def cayley (J₀ J : AlmostComplexStructure V) : Module.End ℝ V :=
-  -((1 + J₀.toLinearMap * J.toLinearMap) * Ring.inverse (1 - J₀.toLinearMap * J.toLinearMap))
+  cayleyFormula J₀.toLinearMap J.toLinearMap
+
+/-- The Cayley transform is the Cayley coordinate expression of the underlying endomorphisms. -/
+lemma cayley_eq_cayleyFormula (J₀ J : AlmostComplexStructure V) :
+    J₀.cayley J = cayleyFormula J₀.toLinearMap J.toLinearMap := (rfl)
 
 /-- The defining formula of the Cayley transform. -/
 lemma cayley_def (J₀ J : AlmostComplexStructure V) :

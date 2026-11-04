@@ -574,7 +574,7 @@ theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y :
       (extChartAt I y y) := by
   have h := (contMDiffAt_iff.mp hf).2
   rw [I.range_eq_univ, contDiffWithinAt_univ] at h
-  exact h.hasStrictFDerivAt one_ne_zero
+  exact h.hasStrictFDerivAt_fderiv one_ne_zero
 
 end RCLikeCharts
 

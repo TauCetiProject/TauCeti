@@ -284,7 +284,7 @@ theorem lintegral_posDef_det_rpow_mul_exp_neg_trace_mul_eq_top_of_dotProduct_mul
         rw [ENNReal.tsum_mul_right, hsum,
           ENNReal.top_mul (Metric.measure_closedBall_pos _ _ hr0).ne']
     _ ≤ _ := by
-        refine le_trans (ENNReal.tsum_le_tsum fun k => ?_)
+        refine le_trans (tsum_le_tsum fun k => ?_)
           (tsum_setLIntegral_add_smul_le (by fun_prop) hvv hrE hKP hE0)
         rw [← setLIntegral_const]
         exact setLIntegral_mono' Metric.isClosed_closedBall.measurableSet (hbound k)

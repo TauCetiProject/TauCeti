@@ -60,6 +60,9 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
+* `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
+  product with an upper-triangular right factor leaves the earlier columns of the product
+  unchanged.
 * `TauCeti.isUpperTriangular_transvection_iff` — a transvection with its off-diagonal entry
   strictly below the diagonal is upper triangular exactly when its parameter vanishes.
 * `TauCeti.vecMul_injective_of_submatrix_isUpperTriangular` — a rectangular matrix has injective
@@ -182,7 +185,7 @@ theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
       subst j
       omega
   | succ k ih =>
-      rw [pow_succ, mul_apply]
+      rw [pow_succ, Matrix.mul_apply]
       apply Finset.sum_eq_zero
       intro l _
       by_cases hil : i.1 + k ≤ l.1
@@ -418,6 +421,18 @@ theorem IsUpperUnitriangular.isNilpotent_sub_one {T p : Type*} [Ring T] [Fintype
     _root_.IsNilpotent (M - 1) :=
   isNilpotent_of_isUpperTriangular_of_diag_eq_zero
     hM.isUpperTriangular_sub_one hM.sub_one_apply_diag
+
+/-- Replacing the column `a` of both factors of a product leaves every earlier column `c < a` of
+the product unchanged, when the right factor is upper triangular. -/
+theorem updateCol_mul_updateCol_apply_of_lt {T l p : Type*} [NonUnitalNonAssocSemiring T]
+    [Fintype p] [LinearOrder p] {J : Matrix l p T} {H : Matrix p p T}
+    (hH : H.IsUpperTriangular) {a c : p} (hca : c < a) (x : l → T) (y : p → T) (i : l) :
+    (J.updateCol a x * H.updateCol a y) i c = (J * H) i c := by
+  simp only [Matrix.mul_apply, updateCol_apply, hca.ne, ↓reduceIte]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  split_ifs with hk
+  · rw [hk, hH hca, mul_zero, mul_zero]
+  · rfl
 
 end Matrix
 

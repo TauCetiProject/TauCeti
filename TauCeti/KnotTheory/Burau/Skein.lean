@@ -96,8 +96,8 @@ theorem normalizedBurauAlexander_skein
   have hminus : -(Multiplicative.toAdd (ArtinGroup.exponentSum _ b) + -1 +
       Multiplicative.toAdd (ArtinGroup.exponentSum _ c) + (n : ℤ)) =
       -(w + (n : ℤ)) + 1 := by dsimp only [w]; omega
-  rw [hplus, hminus, zpow_add, zpow_add]
-  simp only [Units.val_mul, zpow_neg_one, zpow_one]
+  rw [hplus, hminus, _root_.zpow_add, _root_.zpow_add]
+  simp only [Units.val_mul, _root_.zpow_neg_one, _root_.zpow_one]
   have hskein := burauAlexander_skein b c i (s ^ 2)
   have hcancel : ((s⁻¹ : Rˣ) : R) * (s ^ 2 : Rˣ).val = (s : R) := by
     rw [Units.val_pow_eq_pow_val, pow_two, ← mul_assoc, Units.inv_mul, one_mul]

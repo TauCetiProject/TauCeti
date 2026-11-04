@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Frobenius.Basic
-public import TauCeti.RingTheory.FormalGroup.Height
+public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.PowerSeries.Expand
 

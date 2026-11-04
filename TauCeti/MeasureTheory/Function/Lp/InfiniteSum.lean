@@ -44,7 +44,7 @@ theorem ae_enorm_le_tsum_enorm_of_hasSum [Countable κ] {u : κ → Lp E p μ} {
   filter_upwards [hS, hsum] with x hx hxsum
   refine le_of_tendsto' (continuous_enorm.tendsto _ |>.comp hx) fun n => ?_
   simp only [Function.comp_apply, hxsum n]
-  exact (enorm_sum_le _ _).trans (ENNReal.sum_le_tsum _)
+  exact (enorm_sum_le _ _).trans (_root_.sum_le_tsum _)
 
 end Lp
 

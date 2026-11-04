@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Constructions.SumProd
+public import Mathlib.Topology.ContinuousMap.Defs
 public import Mathlib.Topology.Homeomorph.Defs
 
 /-!
-# Extending a homeomorphism of an open piece by the identity
+# Extending maps of an open piece by the identity
+
+Let `j : Y → X` be an open embedding. A continuous family of self-maps of `Y` which fixes the
+points of `j ⁻¹' V`, for an open neighbourhood `V` of the complement of the range of `j`, extends
+by the identity to a continuous family of self-maps of `X`.
 
 Let `χ : Z → Y` be an open embedding, for instance a chart onto an open subset of `Y`, and let `Λ`
 be a homeomorphism of `Z` that moves only points lying over a closed subset `C` of `Y` contained in
@@ -19,6 +25,8 @@ closedness of `C` is what makes the identity extension continuous at the frontie
 
 ## Main results
 
+* `Topology.IsOpenEmbedding.exists_continuousMap_extend_id`: a continuous family of self-maps of
+  `Y` extended along `j` by the identity.
 * `Topology.IsOpenEmbedding.exists_homeomorph_extend`: the homeomorphism of `Y` extending `Λ`
   along `χ` by the identity.
 -/
@@ -29,41 +37,43 @@ open Set Filter Topology
 
 namespace Topology.IsOpenEmbedding
 
-variable {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] {χ : Z → Y} {C : Set Y}
-
-/-- The transport of `Φ` along `χ`, extended by the identity off the image of `χ`. -/
-private noncomputable def extendFun (χ : Z → Y) (Φ : Z → Z) (y : Y) : Y :=
-  open Classical in if hy : y ∈ range χ then χ (Φ hy.choose) else y
-
-private theorem extendFun_apply (hχ : IsOpenEmbedding χ) (Φ : Z → Z) (z : Z) :
-    extendFun χ Φ (χ z) = χ (Φ z) := by
-  have hz : χ z ∈ range χ := mem_range_self z
-  rw [extendFun, dite_eq_left hz, hχ.injective hz.choose_spec]
-
-private theorem extendFun_eq_self (hχ : IsOpenEmbedding χ) {Φ : Z → Z}
-    (hΦ : ∀ z, χ z ∉ C → Φ z = z) {y : Y} (hy : y ∉ C) : extendFun χ Φ y = y := by
-  by_cases hyχ : y ∈ range χ
-  · obtain ⟨z, rfl⟩ := hyχ
-    rw [extendFun_apply hχ, hΦ z hy]
-  · rw [extendFun, dite_eq_right hyχ]
-
-private theorem continuous_extendFun (hχ : IsOpenEmbedding χ) (hC : IsClosed C)
-    (hCχ : C ⊆ range χ) {Φ : Z → Z} (hΦc : Continuous Φ) (hΦ : ∀ z, χ z ∉ C → Φ z = z) :
-    Continuous (extendFun χ Φ) := by
-  refine continuous_iff_continuousAt.2 fun y => ?_
-  by_cases hyχ : y ∈ range χ
-  · -- On the open image of `χ` the extension is `χ ∘ Φ` read through the chart.
-    obtain ⟨z, rfl⟩ := hyχ
-    rw [← hχ.isInducing.continuousAt_iff' (hχ.isOpen_range.mem_nhds (mem_range_self z))]
-    have hcomp : extendFun χ Φ ∘ χ = χ ∘ Φ := funext (extendFun_apply hχ Φ)
+/-- **A family of self-maps of an open piece extends by the identity.** Let `j : Y → X` be an open
+embedding and `G : Z × Y → Y` a continuous family of self-maps of `Y`. If the points outside the
+range of `j` have an open neighbourhood `V` such that every `G z` fixes the points of `j ⁻¹' V`,
+then the family transported along `j` extends by the identity to a continuous family of self-maps
+of `X`. -/
+theorem exists_continuousMap_extend_id {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {j : Y → X} (hj : IsOpenEmbedding j) {Z : Type*} [TopologicalSpace Z]
+    {V : Set X} (hV : IsOpen V) (hjV : (range j)ᶜ ⊆ V) (G : C(Z × Y, Y))
+    (hG : ∀ z y, j y ∈ V → G (z, y) = y) :
+    ∃ Φ : C(Z × X, X), (∀ z y, Φ (z, j y) = j (G (z, y))) ∧ ∀ z, ∀ x ∉ range j, Φ (z, x) = x := by
+  classical
+  let Φ : Z × X → X := fun p ↦ if hp : p.2 ∈ range j then j (G (p.1, hp.choose)) else p.2
+  have hΦj (z : Z) (y : Y) : Φ (z, j y) = j (G (z, y)) := by
+    have hy : j y ∈ range j := mem_range_self y
+    simp only [Φ, dite_eq_left hy, hj.injective hy.choose_spec]
+  -- `Φ` is the identity on `V`.
+  have hΦV (z : Z) (x : X) (hx : x ∈ V) : Φ (z, x) = x := by
+    by_cases hxj : x ∈ range j
+    · obtain ⟨y, rfl⟩ := hxj
+      rw [hΦj, hG z y hx]
+    · exact dite_eq_right hxj
+  refine ⟨⟨Φ, continuous_iff_continuousAt.2 fun p ↦ ?_⟩, hΦj, fun z x hx ↦ dite_eq_right hx⟩
+  obtain ⟨z, x⟩ := p
+  by_cases hxj : x ∈ range j
+  · -- Over the open range of `j`, `Φ` is the transported family.
+    obtain ⟨y, rfl⟩ := hxj
+    have hj' : IsOpenEmbedding (Prod.map id j : Z × Y → Z × X) := .prodMap .id hj
+    have hcomp : Φ ∘ Prod.map id j = j ∘ G := funext fun q ↦ hΦj q.1 q.2
+    refine (hj'.isInducing.continuousAt_iff'
+      (hj'.isOpen_range.mem_nhds (mem_range_self (z, y)))).1 ?_
     rw [hcomp]
-    exact (hχ.continuous.comp hΦc).continuousAt
-  · -- Off the image of `χ` the point lies in the open complement of `C`, where the extension is
-    -- the identity.
-    have hyC : y ∉ C := fun h => hyχ (hCχ h)
-    refine continuousAt_id.congr ?_
-    filter_upwards [hC.isOpen_compl.mem_nhds hyC] with w hw
-    exact (extendFun_eq_self hχ hΦ hw).symm
+    exact (hj.continuous.comp G.continuous).continuousAt
+  · -- Near a point outside the range of `j`, `Φ` is the identity.
+    exact continuousAt_snd.congr (Filter.eventually_of_mem
+      ((hV.preimage continuous_snd).mem_nhds (hjV hxj)) fun q hq ↦ (hΦV q.1 q.2 hq).symm)
+
+variable {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] {χ : Z → Y} {C : Set Y}
 
 /-- A homeomorphism `Λ` of `Z`, moving only points whose images under the open embedding `χ` lie in
 a closed set `C ⊆ range χ`, extends along `χ` by the identity to a homeomorphism of `Y`: one that
@@ -73,21 +83,34 @@ theorem exists_homeomorph_extend (hχ : IsOpenEmbedding χ) (Λ : Z ≃ₜ Z) (h
     ∃ H : Y ≃ₜ Y, (∀ z, H (χ z) = χ (Λ z)) ∧ ∀ y ∉ C, H y = y := by
   have hΛs : ∀ z, χ z ∉ C → Λ.symm z = z := fun z hz => by
     rw [Λ.symm_apply_eq, hΛ z hz]
-  -- Both extensions fix `C`'s complement, and they are mutually inverse on the image of `χ`.
-  have hinv : ∀ (Φ Ψ : Z ≃ₜ Z), (∀ z, Ψ (Φ z) = z) → (∀ z, χ z ∉ C → Φ z = z) →
-      (∀ z, χ z ∉ C → Ψ z = z) → ∀ y, extendFun χ Ψ (extendFun χ Φ y) = y := by
-    intro Φ Ψ hΨΦ hΦ hΨ y
+  -- Extend `Λ` and `Λ.symm`, viewed as constant families over `Unit`, by the identity off `C`.
+  have hext (Φ : Z ≃ₜ Z) (hΦ : ∀ z, χ z ∉ C → Φ z = z) :
+      ∃ f : C(Y, Y), (∀ z, f (χ z) = χ (Φ z)) ∧ ∀ y ∉ C, f y = y := by
+    obtain ⟨F, hFχ, hF⟩ := hχ.exists_continuousMap_extend_id hC.isOpen_compl
+      (fun _ hy h => hy (hCχ h)) ⟨fun p : Unit × Z => Φ p.2, Φ.continuous.comp continuous_snd⟩
+      fun _ z hz => hΦ z hz
+    refine ⟨⟨fun y => F ((), y), F.continuous.comp (.prodMk continuous_const continuous_id)⟩,
+      fun z => hFχ () z, fun y hy => ?_⟩
     by_cases hyχ : y ∈ range χ
     · obtain ⟨z, rfl⟩ := hyχ
-      rw [extendFun_apply hχ, extendFun_apply hχ, hΨΦ]
+      exact (hFχ () z).trans (congrArg χ (hΦ z hy))
+    · exact hF () y hyχ
+  obtain ⟨f, hfχ, hf⟩ := hext Λ hΛ
+  obtain ⟨g, hgχ, hg⟩ := hext Λ.symm hΛs
+  -- The two extensions fix `C`'s complement, and they are mutually inverse on the image of `χ`.
+  have hinv : ∀ (u v : C(Y, Y)) (Φ Ψ : Z → Z), (∀ z, Ψ (Φ z) = z) → (∀ z, u (χ z) = χ (Φ z)) →
+      (∀ z, v (χ z) = χ (Ψ z)) → (∀ y ∉ C, u y = y) → (∀ y ∉ C, v y = y) → ∀ y, v (u y) = y := by
+    intro u v Φ Ψ hΨΦ hu hv hu' hv' y
+    by_cases hyχ : y ∈ range χ
+    · obtain ⟨z, rfl⟩ := hyχ
+      rw [hu, hv, hΨΦ]
     · have hyC : y ∉ C := fun h => hyχ (hCχ h)
-      rw [extendFun_eq_self hχ hΦ hyC, extendFun_eq_self hχ hΨ hyC]
-  exact ⟨{ toFun := extendFun χ Λ
-           invFun := extendFun χ Λ.symm
-           left_inv := hinv Λ Λ.symm Λ.symm_apply_apply hΛ hΛs
-           right_inv := hinv Λ.symm Λ Λ.apply_symm_apply hΛs hΛ
-           continuous_toFun := continuous_extendFun hχ hC hCχ Λ.continuous hΛ
-           continuous_invFun := continuous_extendFun hχ hC hCχ Λ.symm.continuous hΛs },
-    extendFun_apply hχ Λ, fun _ hy => extendFun_eq_self hχ hΛ hy⟩
+      rw [hu' y hyC, hv' y hyC]
+  exact ⟨{ toFun := f
+           invFun := g
+           left_inv := hinv f g Λ Λ.symm Λ.symm_apply_apply hfχ hgχ hf hg
+           right_inv := hinv g f Λ.symm Λ Λ.apply_symm_apply hgχ hfχ hg hf
+           continuous_toFun := f.continuous
+           continuous_invFun := g.continuous }, hfχ, hf⟩
 
 end Topology.IsOpenEmbedding

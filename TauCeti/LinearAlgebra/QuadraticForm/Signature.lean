@@ -24,7 +24,8 @@ opposite index of inertia. It also characterizes positive-definiteness by the ne
 index and the radical. These are convenient consequences of Sylvester's law of inertia which
 complement Mathlib's definitions of `QuadraticMap.PosDef`, `sigPos`, and `sigNeg`.
 
-It also proves that restriction to a subspace cannot increase either index of inertia, that
+It also proves that restriction to a subspace cannot increase either index of inertia, that an
+orthogonal family of vectors of positive (or negative) square bounds the corresponding index, that
 quotienting a quadratic form by its radical preserves both indices, and that multiplication by a
 positive scalar preserves both indices while multiplication by a negative scalar exchanges them; a
 form which a linear automorphism negates has equal indices.
@@ -41,12 +42,17 @@ of positive (negative) square has at most as many members as the positive (negat
   positive index of inertia.
 * `QuadraticForm.sigNeg_restrict_le`: restriction to a subspace cannot increase the
   negative index of inertia.
+* `QuadraticForm.card_le_sigPos_of_isOrthoᵢ` and `QuadraticForm.card_le_sigNeg_of_isOrthoᵢ`: a
+  family of pairwise orthogonal vectors of positive (resp. negative) square bounds the positive
+  (resp. negative) index of inertia from below.
 * `QuadraticForm.sigPos_smul_of_pos` and `QuadraticForm.sigNeg_smul_of_pos`: positive scaling
   preserves both indices.
 * `QuadraticForm.sigPos_smul_of_neg` and `QuadraticForm.sigNeg_smul_of_neg`: negative scaling
   exchanges the two indices.
 * `QuadraticForm.sigNeg_eq_sigPos_of_comp_eq_neg`: a form negated by a linear automorphism has
   equal indices of inertia.
+* `QuadraticForm.sigNeg_eq_sigPos_of_isCompl`: a form vanishing on two complementary submodules
+  has equal indices of inertia.
 * `QuadraticForm.sigPos_lift_radical`: quotienting by the radical preserves the positive
   index of inertia.
 * `QuadraticForm.sigNeg_lift_radical`: quotienting by the radical preserves the negative
@@ -57,6 +63,9 @@ of positive (negative) square has at most as many members as the positive (negat
   is characterized by vanishing negative index and trivial radical.
 * `QuadraticForm.sigPos_add_sigNeg_of_nondegenerate`: the two indices of inertia of a
   nondegenerate quadratic form add up to the dimension.
+* `QuadraticForm.sigPos_eq_finrank_of_isCompl` and `QuadraticForm.sigNeg_eq_finrank_of_isCompl`:
+  a nondegenerate form vanishing on two complementary subspaces `A` and `B` has both indices of
+  inertia equal to `dim A`.
 * `LinearMap.BilinForm.card_le_sigPos_toQuadraticMap_of_iIsOrtho` and
   `LinearMap.BilinForm.card_le_sigNeg_toQuadraticMap_of_iIsOrtho`: an orthogonal family of
   vectors of positive (negative) square has at most `sigPos` (`sigNeg`) members.
@@ -83,6 +92,21 @@ theorem sigNeg_eq_sigPos_of_comp_eq_neg (Q : _root_.QuadraticForm R M) (e : M �
     (he : ∀ v, Q (e v) = -Q v) : sigNeg Q = sigPos Q := by
   rw [← sigPos_neg]
   exact (QuadraticMap.Equivalent.sigPos_eq ⟨⟨e, fun v ↦ by simp [he]⟩⟩).symm
+
+/-- A quadratic form vanishing on two complementary submodules `A` and `B` has equal indices of
+inertia: the automorphism `a + b ↦ a - b` negates it, since `Q (a + b)` is the polar pairing of
+`a` and `b`. -/
+theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submodule R M}
+    (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A) (hB : Q.IsTotallyIsotropic B) :
+    sigNeg Q = sigPos Q := by
+  let e : M ≃ₗ[R] M := (Submodule.prodEquivOfIsCompl A B hAB).symm ≪≫ₗ
+    (LinearEquiv.refl R A).prodCongr (LinearEquiv.neg R) ≪≫ₗ Submodule.prodEquivOfIsCompl A B hAB
+  refine sigNeg_eq_sigPos_of_comp_eq_neg Q e fun v ↦ ?_
+  obtain ⟨⟨a, b⟩, rfl⟩ := (Submodule.prodEquivOfIsCompl A B hAB).surjective v
+  simp only [e, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
+    LinearEquiv.neg_apply, Submodule.coe_prodEquivOfIsCompl', Submodule.coe_neg]
+  rw [QuadraticMap.map_add Q, QuadraticMap.map_add Q, QuadraticMap.map_neg, polar_neg_right]
+  simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
 
 variable [IsStrictOrderedRing R]
 
@@ -190,6 +214,44 @@ theorem sigNeg_restrict_le (Q : _root_.QuadraticForm K M) (W : Subspace K M) :
     ext x
     simp only [QuadraticMap.restrict_apply, neg_apply]
   simpa only [hneg, sigPos_neg] using sigPos_restrict_le (-Q) W
+
+/-- A finite family of pairwise orthogonal vectors on which a quadratic form is positive spans a
+positive-definite subspace, so its size is at most the positive index of inertia. -/
+theorem card_le_sigPos_of_isOrthoᵢ {ι : Type*} [Fintype ι] {Q : _root_.QuadraticForm K M}
+    {v : ι → M} (hv : Q.polarBilin.IsOrthoᵢ v) (hpos : ∀ i, 0 < Q (v i)) :
+    Fintype.card ι ≤ sigPos Q := by
+  classical
+  have hli : LinearIndependent K v :=
+    LinearMap.linearIndependent_of_isOrthoᵢ hv fun i ↦ by
+      rw [polarBilin_apply_apply, polar_self, two_nsmul]
+      exact (add_pos (hpos i) (hpos i)).ne'
+  rw [← finrank_span_eq_card hli]
+  refine le_sigPos_of_posDef Q fun ⟨x, hx⟩ hx0 ↦ ?_
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun K).1 hx
+  -- The cross terms of `Q (∑ i, c i • v i)` vanish by orthogonality.
+  have hcross : ∑ ij ∈ univ.sym2 with ¬ij.IsDiag,
+      polarSym2 Q (ij.map fun i ↦ c i • v i) = 0 := by
+    refine Finset.sum_eq_zero fun ij hij ↦ ?_
+    induction ij using Sym2.ind with
+    | h i j =>
+      have hij' : i ≠ j := by simpa using (Finset.mem_filter.1 hij).2
+      simp [← polarBilin_apply_apply, hv hij']
+  obtain ⟨i, hi⟩ : ∃ i, c i ≠ 0 := by
+    by_contra! h
+    exact hx0 (by simp [h])
+  rw [restrict_apply, Q.map_sum, hcross, add_zero]
+  simp only [QuadraticMap.map_smul, smul_eq_mul]
+  exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (mul_self_nonneg _) (hpos j).le)
+    ⟨i, mem_univ _, mul_pos (mul_self_pos.2 hi) (hpos i)⟩
+
+/-- A finite family of pairwise orthogonal vectors on which a quadratic form is negative spans a
+negative-definite subspace, so its size is at most the negative index of inertia. -/
+theorem card_le_sigNeg_of_isOrthoᵢ {ι : Type*} [Fintype ι] {Q : _root_.QuadraticForm K M}
+    {v : ι → M} (hv : Q.polarBilin.IsOrthoᵢ v) (hneg : ∀ i, Q (v i) < 0) :
+    Fintype.card ι ≤ sigNeg Q := by
+  rw [← sigPos_neg]
+  refine card_le_sigPos_of_isOrthoᵢ (fun i j hij ↦ ?_) fun i ↦ neg_pos.2 (hneg i)
+  simpa [polar_neg] using hv hij
 
 section Prod
 
@@ -319,6 +381,31 @@ theorem sigPos_add_sigNeg_of_nondegenerate (Q : _root_.QuadraticForm K M) (hQ : 
   have hsig := sigPos_add_sigNeg_add_radical (Q := Q)
   rw [hQ.radical_eq_bot] at hsig
   simpa only [finrank_bot, add_zero] using hsig
+
+/-- A nondegenerate quadratic form vanishing on two complementary subspaces `A` and `B` has
+positive index of inertia `dim A`; swapping the roles gives `dim A = dim B`. For example, the real
+intersection form on `H²(S¹ × Y)`, for a closed oriented three-manifold `Y`, vanishes on `p*H²(Y)`
+and on `[ds] ∪ p*H¹(Y)`, which Poincaré duality pairs perfectly, so its positive index is
+`dim H²(Y) = b₁(Y)`. Combine with `QuadraticMap.nondegenerate_of_isCompl` when nondegeneracy
+comes from a perfect pairing of `A` with `B`. -/
+theorem sigPos_eq_finrank_of_isCompl (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate)
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A)
+    (hB : Q.IsTotallyIsotropic B) :
+    sigPos Q = Module.finrank K A := by
+  have hsum := sigPos_add_sigNeg_of_nondegenerate Q hQ
+  rw [sigNeg_eq_sigPos_of_isCompl Q hAB hA hB] at hsum
+  have hdim := Submodule.finrank_add_eq_of_isCompl hAB
+  have hleA := sigPos_add_finrank_le_of_nonpos (V := A) fun _ hx ↦ (hA.apply_eq_zero hx).le
+  have hleB := sigPos_add_finrank_le_of_nonpos (V := B) fun _ hx ↦ (hB.apply_eq_zero hx).le
+  omega
+
+/-- A nondegenerate quadratic form vanishing on two complementary subspaces `A` and `B` has
+negative index of inertia `dim A`. -/
+theorem sigNeg_eq_finrank_of_isCompl (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate)
+    {A B : Subspace K M} (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A)
+    (hB : Q.IsTotallyIsotropic B) :
+    sigNeg Q = Module.finrank K A := by
+  rw [sigNeg_eq_sigPos_of_isCompl Q hAB hA hB, sigPos_eq_finrank_of_isCompl Q hQ hAB hA hB]
 
 end QuadraticForm
 

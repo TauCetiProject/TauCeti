@@ -109,7 +109,7 @@ theorem exists_isOpen_contDiffOn_implicitFunction {u : E₁ × E₂} {f : E₁ �
     ∃ U : Set E₁, IsOpen U ∧ u.1 ∈ U ∧
       ContDiffOn 𝕜 n ((hf.contDiffAt (hs.mem_nhds hu)).implicitFunction hn hi) U := by
   let hfu : ContDiffAt 𝕜 n f u := hf.contDiffAt (hs.mem_nhds hu)
-  let hstrict := hfu.hasStrictFDerivAt hn
+  let hstrict := hfu.hasStrictFDerivAt_fderiv hn
   let φ := hstrict.implicitFunctionDataOfProdDomain hi
   let e₀ := φ.hasStrictFDerivAt.toOpenPartialHomeomorph φ.prodFun
   let e := e₀.restrOpen s hs
@@ -468,7 +468,7 @@ theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
   -- `(f a, 0)`, `g ∘ Φ.symm` is constant along each slice `{y} × ker f'`, so the factor is
   -- `h y = g (Φ.symm (y, 0))`.
   set f' := fderiv 𝕜 f a
-  have hfs : HasStrictFDerivAt f f' a := hf.hasStrictFDerivAt hn
+  have hfs : HasStrictFDerivAt f f' a := hf.hasStrictFDerivAt_fderiv hn
   have : CompleteSpace f'.ker := hker.isClosed.completeSpace_coe
   set Φ := hfs.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker
   have hΦa : Φ.symm (f a, 0) = a :=

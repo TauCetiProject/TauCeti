@@ -108,7 +108,7 @@ theorem toBridgeForest_reverse (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈ V(
 /-- Trails project to paths: filtering preserves distinct edges, and a forest trail is a path. -/
 theorem IsTrail.toBridgeForest {p : G.Walk x y} (hp : p.IsTrail)
     (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (p.toBridgeForest hx hy).IsPath := by
-  apply G.isForest_bridgeForest.isPath_of_isTrail
+  apply (G.isForest_bridgeForest.isPath_iff_isTrail _).mpr
   rw [isTrail_def, edges_toBridgeForest]
   exact ((isTrail_def p).mp hp).filter _
 

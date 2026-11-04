@@ -22,7 +22,9 @@ applies to `C²` embedded circles through the tubular-neighbourhood theorem.
 * `TauCeti.IsSolidTorusLinkNeighborhood` records solid-torus neighbourhoods of every component
   together with pairwise disjoint images of the closed solid tori.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet` constructs them in a Hausdorff
-  space from solid-torus neighbourhoods of the individual components.
+  space from solid-torus neighbourhoods of the individual components, and
+  `TauCeti.exists_isSolidTorusLinkNeighborhood_and_of_forall_nhdsSet` keeps a chosen property of
+  each component's neighbourhood, such as preserving orientation.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood` constructs these neighbourhoods for a finite
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
@@ -83,6 +85,26 @@ end IsSolidTorusLinkNeighborhood
 
 /-! ### Existence from neighbourhoods of the components -/
 
+/-- **Disjoint solid-torus neighbourhoods of a link, with a property of each.** In a Hausdorff
+space, let `f` be a finite family of circles with pairwise disjoint images, each of which has a
+solid-torus neighbourhood with the property `P i` inside every neighbourhood of its image. Then the
+family has solid-torus neighbourhoods with pairwise disjoint images, each with its property. -/
+theorem exists_isSolidTorusLinkNeighborhood_and_of_forall_nhdsSet [T2Space X] [Finite ι]
+    {f : ι → Circle → X} (hdisj : Pairwise (Disjoint on fun i => range (f i)))
+    {P : ι → (SolidTorus → X) → Prop}
+    (hf : ∀ i, ∀ U ∈ 𝓝ˢ (range (f i)),
+      ∃ Φ : SolidTorus → X, IsSolidTorusNeighborhood (f i) Φ ∧ P i Φ ∧ range Φ ⊆ U) :
+    ∃ Φ : ι → SolidTorus → X, IsSolidTorusLinkNeighborhood f Φ ∧ ∀ i, P i (Φ i) := by
+  -- The images are compact, so they have pairwise disjoint neighbourhoods.
+  have hcompact (i : ι) : IsCompact (range (f i)) := by
+    obtain ⟨Φ, hΦ, -⟩ := hf i univ Filter.univ_mem
+    exact hΦ.isCompact_range
+  obtain ⟨U, hU, hUdisj⟩ := Pairwise.exists_mem_filter_of_disjoint fun i j hij =>
+    separatedNhds_iff_disjoint.1 <|
+      SeparatedNhds.of_isCompact_isCompact (hcompact i) (hcompact j) (hdisj hij)
+  choose Φ hΦ hP hΦU using fun i => hf i (U i) (hU i)
+  exact ⟨Φ, ⟨hΦ, fun i j hij => (hUdisj hij).mono (hΦU i) (hΦU j)⟩, hP⟩
+
 /-- **Disjoint solid-torus neighbourhoods of a link.** In a Hausdorff space, let `f` be a finite
 family of circles with pairwise disjoint images, each of which has a solid-torus neighbourhood
 inside every neighbourhood of its image. Then the family has solid-torus neighbourhoods with
@@ -91,16 +113,10 @@ theorem exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet [T2Space X] [Finit
     {f : ι → Circle → X} (hdisj : Pairwise (Disjoint on fun i => range (f i)))
     (hf : ∀ i, ∀ U ∈ 𝓝ˢ (range (f i)),
       ∃ Φ : SolidTorus → X, IsSolidTorusNeighborhood (f i) Φ ∧ range Φ ⊆ U) :
-    ∃ Φ : ι → SolidTorus → X, IsSolidTorusLinkNeighborhood f Φ := by
-  -- The images are compact, so they have pairwise disjoint neighbourhoods.
-  have hcompact (i : ι) : IsCompact (range (f i)) := by
-    obtain ⟨Φ, hΦ, -⟩ := hf i univ Filter.univ_mem
-    exact hΦ.isCompact_range
-  obtain ⟨U, hU, hUdisj⟩ := Pairwise.exists_mem_filter_of_disjoint fun i j hij =>
-    separatedNhds_iff_disjoint.1 <|
-      SeparatedNhds.of_isCompact_isCompact (hcompact i) (hcompact j) (hdisj hij)
-  choose Φ hΦ hΦU using fun i => hf i (U i) (hU i)
-  exact ⟨Φ, hΦ, fun i j hij => (hUdisj hij).mono (hΦU i) (hΦU j)⟩
+    ∃ Φ : ι → SolidTorus → X, IsSolidTorusLinkNeighborhood f Φ :=
+  let ⟨Φ, hΦ, _⟩ := exists_isSolidTorusLinkNeighborhood_and_of_forall_nhdsSet (P := fun _ _ => True)
+    hdisj fun i U hU => let ⟨Φ, hΦ, hΦU⟩ := hf i U hU; ⟨Φ, hΦ, trivial, hΦU⟩
+  ⟨Φ, hΦ⟩
 
 /-! ### Existence in Euclidean three-space -/
 

@@ -342,4 +342,14 @@ theorem clebschGordanEquiv_single (hq : IsGenericQuantumParameter q) (j : Fin (m
   rw [clebschGordanEquiv, LinearEquiv.ofBijective_apply, clebschGordanSum,
     LinearMap.lsum_piSingle]
 
+/-- Composing the Clebsch–Gordan isomorphism with a coordinate inclusion gives the
+corresponding normalized Clebsch–Gordan inclusion. -/
+@[simp]
+theorem clebschGordanEquiv_comp_single (hq : IsGenericQuantumParameter q)
+    (j : Fin (min m n + 1)) :
+    (clebschGordanEquiv (m := m) (n := n) (ε := ε) (δ := δ) hq).toLinearMap.comp
+      (LinearMap.single _ _ j) = clebschGordanInclusion hq j := by
+  ext x
+  simp
+
 end TauCeti.UqSl2

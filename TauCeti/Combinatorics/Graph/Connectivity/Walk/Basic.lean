@@ -54,6 +54,41 @@ abbrev cons' (x y z : α) (e : β) (h : G.IsLink e x y)
 
 instance (x : α) : Inhabited (G.Walk x x) := ⟨.nil⟩
 
+/-- Change the endpoints of a walk along equalities. -/
+protected def copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    G.Walk x' y' := by
+  subst x'
+  subst y'
+  exact p
+
+@[simp]
+theorem copy_rfl_rfl (p : G.Walk x y) : p.copy rfl rfl = p :=
+  (rfl)
+
+@[simp]
+theorem copy_copy {x y x' y' x'' y'' : α} (p : G.Walk x y)
+    (hx : x = x') (hy : y = y') (hx' : x' = x'') (hy' : y' = y'') :
+    (p.copy hx hy).copy hx' hy' = p.copy (hx.trans hx') (hy.trans hy') := by
+  subst x'
+  subst y'
+  subst x''
+  subst y''
+  rfl
+
+@[simp]
+theorem copy_nil {x x' : α} (hx : x = x') :
+    (Walk.nil : G.Walk x x).copy hx hx = .nil := by
+  subst x'
+  rfl
+
+@[simp]
+theorem copy_cons {x y z x' z' : α} (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
+    (hx : x = x') (hz : z = z') :
+    (Walk.cons e h p).copy hx hz = .cons e (hx ▸ h) (p.copy rfl hz) := by
+  subst x'
+  subst z'
+  rfl
+
 /-- The one-edge walk associated to an edge linking two vertices. -/
 def _root_.Graph.IsLink.toWalk {e : β} (h : G.IsLink e x y) : G.Walk x y :=
   .cons e h .nil
@@ -78,6 +113,34 @@ def edges {x y : α} : G.Walk x y → List β
   | .nil => []
   | .cons e _ p => e :: p.edges
 
+/-- Every edge traversed by a walk is an actual edge of the ambient graph. -/
+theorem edges_subset_edgeSet (p : G.Walk x y) :
+    ∀ ⦃e : β⦄, e ∈ p.edges → e ∈ E(G) := by
+  induction p with
+  | nil => simp [edges]
+  | cons e h p ih =>
+      intro f hf
+      simp only [edges, List.mem_cons] at hf
+      exact hf.elim (fun hfe => hfe ▸ h.edge_mem) (fun hfp => ih hfp)
+
+/-- The edges traversed by a walk, as actual edges. -/
+def edgesAttach {x y : α} (p : G.Walk x y) : List G.edgeSet :=
+  p.edges.attachWith (fun e ↦ e ∈ G.edgeSet) fun _ he ↦ p.edges_subset_edgeSet he
+
+@[simp]
+theorem edgesAttach_nil : (nil : G.Walk x x).edgesAttach = [] :=
+  (rfl)
+
+@[simp]
+theorem edgesAttach_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
+    (cons e h p).edgesAttach = ⟨e, h.edge_mem⟩ :: p.edgesAttach :=
+  (rfl)
+
+/-- Forgetting actual-edge membership from `edgesAttach` gives the edge list. -/
+@[simp]
+theorem edgesAttach_unattach (p : G.Walk x y) : p.edgesAttach.unattach = p.edges := by
+  simp [edgesAttach]
+
 @[simp, grind =]
 theorem length_nil : (nil : G.Walk x x).length = 0 := (rfl)
 
@@ -98,6 +161,27 @@ theorem edges_nil : (nil : G.Walk x x).edges = [] := (rfl)
 @[simp, grind =]
 theorem edges_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).edges = e :: p.edges := (rfl)
+
+@[simp]
+theorem length_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (p.copy hx hy).length = p.length := by
+  subst x'
+  subst y'
+  rfl
+
+@[simp]
+theorem support_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (p.copy hx hy).support = p.support := by
+  subst x'
+  subst y'
+  rfl
+
+@[simp]
+theorem edges_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (p.copy hx hy).edges = p.edges := by
+  subst x'
+  subst y'
+  rfl
 
 @[simp]
 theorem _root_.Graph.IsLink.length_toWalk {e : β} (h : G.IsLink e x y) :
@@ -214,16 +298,6 @@ theorem eq_nil_iff_nil {p : G.Walk x x} : p = nil ↔ p.Nil := by
 
 alias ⟨_, Nil.eq_nil⟩ := eq_nil_iff_nil
 
-/-- Every edge traversed by a walk is an actual edge of the ambient graph. -/
-theorem edges_subset_edgeSet (p : G.Walk x y) :
-    ∀ ⦃e : β⦄, e ∈ p.edges → e ∈ E(G) := by
-  induction p with
-  | nil => simp
-  | cons e h p ih =>
-      intro f hf
-      simp only [edges_cons, List.mem_cons] at hf
-      exact hf.elim (fun hfe => hfe ▸ h.edge_mem) (fun hfp => ih hfp)
-
 /-- Every vertex on a walk starting at an actual vertex is an actual vertex of the ambient graph. -/
 theorem support_subset_vertexSet (p : G.Walk x y) (hx : x ∈ V(G)) :
     ∀ a ∈ p.support, a ∈ V(G) := by
@@ -290,6 +364,15 @@ theorem append_assoc (p : G.Walk x y) (q : G.Walk y z) (r : G.Walk z w) :
   | nil => rfl
   | cons e h p ih => simp [ih]
 
+@[simp]
+theorem append_copy_copy {x y z x' y' z' : α} (p : G.Walk x y) (q : G.Walk y z)
+    (hx : x = x') (hy : y = y') (hz : z = z') :
+    (p.copy hx hy).append (q.copy hy hz) = (p.append q).copy hx hz := by
+  subst x'
+  subst y'
+  subst z'
+  rfl
+
 @[simp, grind =]
 theorem length_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).length = p.length + q.length := by
@@ -352,6 +435,13 @@ theorem reverse_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
   simp [reverse, Walk.reverseAux, IsLink.toWalk]
 
 @[simp]
+theorem reverse_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (p.copy hx hy).reverse = p.reverse.copy hy hx := by
+  subst x'
+  subst y'
+  rfl
+
+@[simp]
 theorem reverse_append (p : G.Walk x y) (q : G.Walk y z) :
     (p.append q).reverse = q.reverse.append p.reverse := by
   simp [reverse]
@@ -408,6 +498,26 @@ theorem isPath_def (p : G.Walk x y) : p.IsPath ↔ p.support.Nodup := (Iff.rfl)
 
 theorem isCycle_def (p : G.Walk x x) :
     p.IsCycle ↔ p ≠ .nil ∧ p.edges.Nodup ∧ p.support.tail.Nodup := (Iff.rfl)
+
+@[simp]
+theorem isTrail_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (p.copy hx hy).IsTrail ↔ p.IsTrail := by
+  subst x'
+  subst y'
+  rfl
+
+@[simp]
+theorem isPath_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
+    (p.copy hx hy).IsPath ↔ p.IsPath := by
+  subst x'
+  subst y'
+  rfl
+
+@[simp]
+theorem isCycle_copy {x x' : α} (p : G.Walk x x) (hx : x = x') :
+    (p.copy hx hx).IsCycle ↔ p.IsCycle := by
+  subst x'
+  rfl
 
 @[simp]
 theorem isTrail_nil : IsTrail (nil : G.Walk x x) := by

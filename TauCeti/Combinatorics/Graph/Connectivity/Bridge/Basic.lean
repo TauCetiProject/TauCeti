@@ -49,16 +49,18 @@ Deleting every bridge leaves a graph without bridges
 A multigraph is a forest, `Graph.IsForest`, when it has no cycles; since loops and pairs of
 parallel edges are cycles of multigraphs, a forest has neither.
 `Graph.isForest_iff_forall_isBridge` shows that a multigraph is a forest exactly when every actual
-edge is a bridge.  Only the component counts assume finiteness: of the components when deleting
-one bridge or finitely many bridges, and of the actual vertices when deleting all bridges; the
-other statements need no finiteness assumptions.
+edge is a bridge.  In a forest, a walk is a path exactly when it is a trail
+(`Graph.IsForest.isPath_iff_isTrail`).  Only the component counts assume finiteness: of the
+components when deleting one bridge or finitely many bridges, and of the actual vertices when
+deleting all bridges; the other statements need no finiteness assumptions.
 
 The statements follow the corresponding results for simple graphs in Mathlib,
 `SimpleGraph.isBridge_iff`, `SimpleGraph.isBridge_iff_forall_walk_mem_edges`,
 `SimpleGraph.isBridge_iff_forall_cycle_notMem`, `SimpleGraph.IsBridge.notMem_edges_of_isCycle`,
-`SimpleGraph.isAcyclic_iff_forall_isBridge`, and `SimpleGraph.IsAcyclic.anti`, adapted to
-multigraphs whose walks record edge identities. The proof of `Graph.isForest_iff_forall_isBridge`
-is adapted from Mathlib's proof of `SimpleGraph.isAcyclic_iff_forall_isBridge`.
+`SimpleGraph.isAcyclic_iff_forall_isBridge`, `SimpleGraph.IsAcyclic.isPath_iff_isTrail`, and
+`SimpleGraph.IsAcyclic.anti`, adapted to multigraphs whose walks record edge identities. The proof
+of `Graph.isForest_iff_forall_isBridge` is adapted from Mathlib's proof of
+`SimpleGraph.isAcyclic_iff_forall_isBridge`.
 -/
 
 public section
@@ -78,9 +80,7 @@ deleted. -/
 theorem IsBridge.not_reachable_deleteEdges (he : G.IsBridge e) (h : G.IsLink e x y) :
     ¬ (G.deleteEdges {e}).Reachable x y := by
   obtain ⟨S, -, hS, hx, hy⟩ := he.isEdgeCut_singleton.exists_of_isLink h (mem_singleton e)
-  intro hr
-  refine hy (hr.mem_of_edgeCut_eq_empty ?_ hx)
-  rw [edgeCut_deleteEdges, hS, sdiff_self]
+  exact hS ▸ G.not_reachable_deleteEdges_edgeCut hx hy
 
 /-- An edge joining `x` and `y` is a bridge exactly when deleting it leaves `y` unreachable
 from `x`. -/
@@ -88,8 +88,7 @@ theorem IsLink.isBridge_iff_not_reachable_deleteEdges (h : G.IsLink e x y) :
     G.IsBridge e ↔ ¬ (G.deleteEdges {e}).Reachable x y := by
   refine ⟨fun he ↦ he.not_reachable_deleteEdges h, fun hxy ↦ ?_⟩
   refine isEdgeCut_iff.mpr ⟨{z | (G.deleteEdges {e}).Reachable x z}, subset_antisymm ?_ ?_⟩
-  · have hcut := edgeCut_setOf_reachable (G.deleteEdges {e}) x
-    rwa [edgeCut_deleteEdges, sdiff_eq_empty] at hcut
+  · exact G.edgeCut_setOf_reachable_deleteEdges_subset {e} x
   · rw [singleton_subset_iff, Graph.mem_edgeCut_iff]
     refine ⟨x, y, h, Reachable.refl ?_, hxy⟩
     rw [vertexSet_deleteEdges]
@@ -344,20 +343,41 @@ theorem IsForest.eq_of_isLink (hG : G.IsForest) (he : G.IsLink e x y) (hf : G.Is
   by_contra hfe
   exact he.not_isBridge_of_isLink_of_ne hf hfe (hG.isBridge he.edge_mem)
 
-/-- A trail in a forest cannot revisit a vertex, so it is a path. -/
-theorem IsForest.isPath_of_isTrail (hG : G.IsForest) {x y : α} {p : G.Walk x y}
-    (hp : p.IsTrail) : p.IsPath := by
-  classical
+/-- In a forest, a walk is a path exactly when it traverses no edge identity more than once. -/
+theorem IsForest.isPath_iff_isTrail (hG : G.IsForest) (p : G.Walk x y) :
+    p.IsPath ↔ p.IsTrail := by
+  refine ⟨Walk.IsPath.isTrail, fun hp ↦ ?_⟩
   induction p with
   | nil => simp
-  | @cons x z y e h p ih =>
-    obtain ⟨hpt, hep⟩ := (Walk.isTrail_cons e h p).mp hp
-    have hpp := ih hpt
-    refine (Walk.isPath_cons e h p).mpr ⟨hpp, fun hx ↦ ?_⟩
-    have hc : (Walk.cons e h (p.takeUntil x hx)).IsCycle :=
-      (Walk.cons_isCycle_iff e h _).mpr
-        ⟨hpp.takeUntil hx, fun he ↦ hep (p.edges_takeUntil_subset_edges hx he)⟩
-    exact hG _ hc
+  | @cons x y z e h p ih =>
+      rw [Walk.isTrail_cons] at hp
+      rw [Walk.isPath_cons]
+      refine ⟨ih hp.1, fun hx ↦ ?_⟩
+      classical
+      let q := p.takeUntil x hx
+      have hq : q.IsPath := (ih hp.1).takeUntil hx
+      have heq : e ∉ q.edges := fun he ↦ hp.2 (p.edges_takeUntil_subset_edges hx he)
+      exact hG (Walk.cons e h q) ((Walk.cons_isCycle_iff ..).2 ⟨hq, heq⟩)
+
+/-- Every walk between the endpoints of a path in a forest traverses every edge of that path. -/
+theorem IsForest.edges_subset_of_isPath (hG : G.IsForest) {p : G.Walk x y} (hp : p.IsPath)
+    (q : G.Walk x y) : p.edges ⊆ q.edges := by
+  induction p with
+  | nil => simp
+  | @cons x y z e h p ih =>
+      have hp' : p.IsPath := ((Walk.isPath_cons e h p).1 hp).1
+      have hep : e ∉ p.edges := ((Walk.isTrail_cons e h p).1 hp.isTrail).2
+      intro f hf
+      simp only [Walk.edges_cons, List.mem_cons] at hf
+      rcases hf with rfl | hf
+      · have heq := (h.isBridge_iff_forall_walk_mem_edges.1 (hG.isBridge h.edge_mem))
+          (q.append p.reverse)
+        simp only [Walk.edges_append, Walk.edges_reverse, List.mem_append, List.mem_reverse] at heq
+        exact heq.resolve_right hep
+      · have hfq := ih hp' (h.toWalk.reverse.append q) hf
+        simp only [Walk.edges_append, Walk.edges_reverse, IsLink.edges_toWalk,
+          List.reverse_singleton, List.mem_append, List.mem_singleton] at hfq
+        exact hfq.resolve_left fun hfe ↦ hep (hfe ▸ hf)
 
 /-- A graph with no edges is a forest. -/
 @[simp]

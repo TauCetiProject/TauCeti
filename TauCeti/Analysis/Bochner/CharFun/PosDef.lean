@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import TauCeti.Analysis.Bochner.CharFun.Basic
 public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Analysis.Complex.Order
@@ -49,10 +49,6 @@ namespace TauCeti
 
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasure μ]
-
-private theorem integrable_exp_inner_mul_I (a : E) :
-    Integrable (fun y => exp (⟪y, a⟫ * I)) μ :=
-  ((innerProbChar a).integrable μ).congr (.of_forall (innerProbChar_apply a))
 
 omit [MeasurableSpace E] [OpensMeasurableSpace E] in
 private theorem exp_mul_conj_exp_inner (y a b : E) :

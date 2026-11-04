@@ -108,7 +108,7 @@ theorem ofPMF_toPMF [Countable α] [MeasurableSingletonClass α] (κ : Kernel α
 theorem existsUnique_isMarkovKernel_of_tsum_eq_one [Countable α]
     [MeasurableSingletonClass α] (p : α → β → ℝ≥0∞) (hp : ∀ a, ∑' b, p a b = 1) :
     ∃! κ : Kernel α β, IsMarkovKernel κ ∧ ∀ a b, κ a {b} = p a b := by
-  let q : α → PMF β := fun a => ⟨p a, ENNReal.summable.hasSum_iff.mpr (hp a)⟩
+  let q : α → PMF β := fun a => ⟨p a, CompleteLattice.summable.hasSum_iff.mpr (hp a)⟩
   refine ⟨ofPMF q, ⟨inferInstance, fun a b => ofPMF_apply_singleton q a b⟩, ?_⟩
   intro κ hκ
   apply Kernel.ext

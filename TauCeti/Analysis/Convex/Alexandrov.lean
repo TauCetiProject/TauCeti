@@ -409,9 +409,9 @@ theorem eq_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A B : E →L[ℝ
     filter_upwards [hne, hA (c / 2) (half_pos hc), hB (c / 2) (half_pos hc)]
       with x' ⟨y', hy'⟩ hA' hB'
     have h : (A - B) (x' - x) = (y' - y - B (x' - x)) - (y' - y - A (x' - x)) := by
-      rw [sub_apply]
+      rw [_root_.sub_apply]
       abel
-    rw [sub_self, map_zero, sub_zero, zero_apply, sub_zero, h]
+    rw [sub_self, map_zero, sub_zero, _root_.zero_apply, sub_zero, h]
     linarith [norm_sub_le (y' - y - B (x' - x)) (y' - y - A (x' - x)), hA' y' hy', hB' y' hy']
   have h₁ : HasFDerivAt (fun x' => (A - B) (x' - x)) (A - B) x := by
     have h := (A - B).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const x)
