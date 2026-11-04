@@ -36,7 +36,9 @@ embedded submanifold. Likewise, postcomposing an immersion with a diffeomorphism
 with a different finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for
 example after exchanging the factors of a product.
 In particular, a `C^n` map with a left inverse near a point, differentiable at the image of that
-point, is an immersion there (`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`).
+point, is an immersion there (`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`), and pairing a
+map with injective differentials with any `C^n` map gives an immersion
+(`ContMDiff.isImmersion_prodMk`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -308,6 +310,21 @@ theorem Diffeomorph.isImmersion_comp [FiniteDimensional 𝕜 EP] (Φ : N ≃ₘ^
   rw [mfderiv_comp x (Φ.mdifferentiable hn0 _) (hf.contMDiff.mdifferentiableAt hn0),
     ContinuousLinearMap.coe_comp, ← Φ.mfderivToContinuousLinearEquiv_coe hn0]
   exact (Φ.mfderivToContinuousLinearEquiv hn0 (f x)).injective.comp (hf.mfderiv_injective hn0 x)
+
+omit [CompleteSpace E] [CompleteSpace E'] [CompleteSpace EP] in
+/-- Pairing a `C^n` map with injective differentials between boundaryless manifolds with any `C^n`
+map into a boundaryless manifold gives an immersion `x ↦ (f x, g x)`, provided the target models
+are finite dimensional. -/
+theorem ContMDiff.isImmersion_prodMk [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 EP]
+    {g : M → P} (hf : ContMDiff I J n f) (hinj : ∀ x, Injective (mfderiv I J f x))
+    (hg : ContMDiff I IP n g) (hn : 1 ≤ n) :
+    IsImmersion I (J.prod IP) n (fun x => (f x, g x)) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x => ?_
+  refine ((hf.prodMk hg).contMDiffOn.isImmersionAt_iff_injective_mfderiv
+    isOpen_univ (mem_univ x) hn).mpr ?_
+  rw [mfderiv_prodMk (hf.mdifferentiableAt hn0) (hg.mdifferentiableAt hn0)]
+  exact fun v w hvw => hinj x (congrArg Prod.fst hvw)
 
 end Manifold
 
