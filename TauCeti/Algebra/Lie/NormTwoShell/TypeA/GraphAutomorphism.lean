@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.NormTwoShell.Reindex
 public import TauCeti.Algebra.Lie.NormTwoShell.TypeA.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.GraphAutomorphism.Coordinates
-public import TauCeti.Algebra.Lie.Subalgebra.Fixed
+public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import TauCeti.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 
