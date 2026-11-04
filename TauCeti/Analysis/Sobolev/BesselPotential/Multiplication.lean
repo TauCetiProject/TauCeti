@@ -10,6 +10,7 @@ import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Multiplication by Schwartz functions on the Bessel-potential spaces `H^s(ℝⁿ)`
@@ -34,7 +35,9 @@ transform of `φ u` is the convolution `∫ 𝓕 φ ζ • 𝓕 u (ξ - ζ) dζ`
 `⟨ξ⟩ ^ s ‖𝓕 (φ u) ξ‖ ≤ ∫ k(ζ) g(ξ - ζ) dζ`, with `k = 2 ^ (|s| / 2) ⟨·⟩ ^ |s| ‖𝓕 φ‖ ∈ L¹` and
 `g = ⟨·⟩ ^ s ‖𝓕 u‖ ∈ L²`.
 
-Young's inequality `‖k ⋆ g‖₂ ≤ ‖k‖₁ ‖g‖₂` bounds the `H^s` norm of `φ u`
+Young's inequality `‖k ⋆ g‖₂ ≤ ‖k‖₁ ‖g‖₂`, here Schur's test
+`TauCeti.lintegral_rpow_lintegral_mul_le` for the kernel `k (ξ - η)` whose row and column
+integrals are both `‖k‖₁`, bounds the `H^s` norm of `φ u`
 (`SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_le`).
 
 To pass to all of `H^s`, conjugate by the Bessel potentials `J^s` (Mathlib's
@@ -47,7 +50,14 @@ Hausdorff space of tempered distributions.
 
 ## Main declarations
 
-* `SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_le`: the `H^s` estimate for Schwartz
+* `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel for Fourier multipliers of
+  Schwartz functions.
+* `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg`: the Bessel
+  multipliers of orders `s` and `-s` are inverse on Schwartz functions.
+* `TemperedDistribution.besselPotential_toTemperedDistributionCLM_eq`: the Bessel potential of a
+  Schwartz function is its Schwartz-space Fourier multiplier.
+* `SchwartzMap.eLpNorm_rpow_smul_fourier_smulLeftCLM_le`,
+  `SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_le`: the `H^s` estimate for Schwartz
   functions.
 * `TemperedDistribution.exists_besselPotential_smulLeftCLM_eq_and_norm_le`: the estimate on
   tempered distributions in `H^s`.
@@ -59,7 +69,6 @@ Hausdorff space of tempered distributions.
 
 * G. B. Folland, *Real Analysis: Modern Techniques and Their Applications*, 2nd ed., Wiley, 1999,
   §9.3 (Sobolev spaces on `ℝⁿ`: Peetre's inequality and multiplication by Schwartz functions).
-* E. H. Lieb and M. Loss, *Analysis*, 2nd ed., AMS, 2001, Theorem 4.2 (Young's inequality).
 -/
 
 public section
@@ -73,70 +82,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
-section Young
-
-/-- Pointwise Cauchy–Schwarz for a convolution of extended nonnegative functions:
-`(∫⁻ y, k y * g (x - y)) ^ 2 ≤ (∫⁻ k) * ∫⁻ y, k y * g (x - y) ^ 2`. -/
-private theorem sq_lintegral_mul_sub_le {k g : E → ℝ≥0∞} (hk : Measurable k) (hg : Measurable g)
-    (x : E) :
-    (∫⁻ y, k y * g (x - y)) ^ 2 ≤ (∫⁻ y, k y) * ∫⁻ y, k y * g (x - y) ^ 2 := by
-  have hgx : Measurable fun y ↦ g (x - y) := hg.comp (measurable_const.sub measurable_id)
-  have hcs := ENNReal.lintegral_mul_le_Lp_mul_Lq volume Real.HolderConjugate.two_two
-    (f := fun y ↦ k y ^ (1 / 2 : ℝ)) (g := fun y ↦ k y ^ (1 / 2 : ℝ) * g (x - y))
-    (hk.pow_const (1 / 2 : ℝ)).aemeasurable ((hk.pow_const (1 / 2 : ℝ)).mul hgx).aemeasurable
-  simp only [Pi.mul_apply] at hcs
-  have h₀ : ∫⁻ y, k y ^ (1 / 2 : ℝ) * (k y ^ (1 / 2 : ℝ) * g (x - y)) =
-      ∫⁻ y, k y * g (x - y) := by
-    congr 1
-    ext y
-    rw [← mul_assoc, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
-    norm_num
-  have h₁ : ∫⁻ y, (k y ^ (1 / 2 : ℝ)) ^ (2 : ℝ) = ∫⁻ y, k y := by
-    congr 1
-    ext y
-    rw [← ENNReal.rpow_mul]
-    norm_num
-  have h₂ : ∫⁻ y, (k y ^ (1 / 2 : ℝ) * g (x - y)) ^ (2 : ℝ) = ∫⁻ y, k y * g (x - y) ^ 2 := by
-    congr 1
-    ext y
-    rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← ENNReal.rpow_mul, ENNReal.rpow_two]
-    norm_num
-  rw [h₀, h₁, h₂] at hcs
-  calc (∫⁻ y, k y * g (x - y)) ^ 2
-      ≤ ((∫⁻ y, k y) ^ (1 / 2 : ℝ) * (∫⁻ y, k y * g (x - y) ^ 2) ^ (1 / 2 : ℝ)) ^ 2 := by
-        gcongr
-    _ = (∫⁻ y, k y) * ∫⁻ y, k y * g (x - y) ^ 2 := by
-      rw [mul_pow, ← ENNReal.rpow_natCast, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul,
-        ← ENNReal.rpow_mul]
-      norm_num
-
-/-- Young's inequality `L¹ ⋆ L² ⊆ L²` for extended nonnegative functions:
-`∫⁻ x, (∫⁻ y, k y * g (x - y)) ^ 2 ≤ (∫⁻ k) ^ 2 * ∫⁻ g ^ 2`. -/
-private theorem lintegral_sq_lintegral_mul_sub_le {k g : E → ℝ≥0∞} (hk : Measurable k)
-    (hg : Measurable g) :
-    ∫⁻ x, (∫⁻ y, k y * g (x - y)) ^ 2 ≤ (∫⁻ y, k y) ^ 2 * ∫⁻ x, g x ^ 2 := by
-  have hm : Measurable (Function.uncurry fun x y : E ↦ k y * g (x - y) ^ 2) :=
-    (hk.comp measurable_snd).mul ((hg.comp (measurable_fst.sub measurable_snd)).pow_const 2)
-  calc ∫⁻ x, (∫⁻ y, k y * g (x - y)) ^ 2
-      ≤ ∫⁻ x, (∫⁻ y, k y) * ∫⁻ y, k y * g (x - y) ^ 2 :=
-        lintegral_mono fun x ↦ sq_lintegral_mul_sub_le hk hg x
-    _ = (∫⁻ y, k y) * ∫⁻ y, ∫⁻ x, k y * g (x - y) ^ 2 := by
-      rw [lintegral_const_mul _ (by exact hm.lintegral_prod_right'),
-        lintegral_lintegral_swap (by exact hm.aemeasurable)]
-    _ = (∫⁻ y, k y) * ∫⁻ y, k y * ∫⁻ x, g x ^ 2 := by
-      congr 1
-      refine lintegral_congr fun y ↦ ?_
-      rw [lintegral_const_mul _ (by exact (hg.comp (measurable_id.sub_const y)).pow_const 2)]
-      congr 1
-      exact lintegral_sub_right_eq_self (fun x ↦ g x ^ 2) y
-    _ = (∫⁻ y, k y) ^ 2 * ∫⁻ x, g x ^ 2 := by
-      rw [lintegral_mul_const _ hk, sq, mul_assoc]
-
-end Young
-
 namespace SchwartzMap
 
-/-- The Peetre weight `ζ ↦ ⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖` of a Schwartz function is integrable. -/
+/-- For every real `r`, `ζ ↦ (1 + ‖ζ‖ ^ 2) ^ r ‖𝓕 φ ζ‖` is integrable. With `r = |s| / 2` this is
+the Peetre weight `⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖` of the `H^s` multiplication bound. -/
 theorem integrable_one_add_norm_sq_rpow_mul_norm_fourier (r : ℝ) (φ : 𝓢(E, ℂ)) :
     Integrable fun ζ : E ↦ (1 + ‖ζ‖ ^ 2) ^ r * ‖𝓕 φ ζ‖ := by
   have hg := Function.hasTemperateGrowth_one_add_norm_sq_rpow E r
@@ -145,38 +94,125 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm_fourier (r : ℝ) (φ : 𝓢(E,
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
 
+/-- Composing the Fourier multipliers with symbols `⟨ξ⟩ ^ s` and `⟨ξ⟩ ^ (-s)` on Schwartz
+functions gives the identity. This is the Schwartz-space form of Mathlib's
+`TemperedDistribution.besselPotential_besselPotential_apply` at orders `-s` and `s`. -/
+theorem fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg (s : ℝ)
+    (ψ : 𝓢(E, F)) :
+    fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+        (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) ψ) = ψ := by
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop)]
+  have : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) *
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 := by
+    ext x
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity)]
+    simp [neg_div]
+  rw [this, fourierMultiplierCLM_const]
+  simp
+
+/-- **Plancherel for Fourier multipliers.** For a symbol `w` of temperate growth, the `L²` norm
+of the Fourier multiplier `𝓕⁻ (w • 𝓕 f)` of a Schwartz function is the `L²` norm of `w • 𝓕 f`. -/
+theorem norm_toLp_fourierMultiplierCLM_eq {w : E → ℂ} (hw : w.HasTemperateGrowth)
+    (f : 𝓢(E, F)) :
+    ‖(fourierMultiplierCLM F w f).toLp 2‖ = (eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume).toReal := by
+  rw [← norm_fourier_toL2_eq, fourierMultiplierCLM_apply, fourier_fourierInv_eq, norm_toLp]
+  congr 2
+  ext ξ
+  rw [smulLeftCLM_apply_apply hw]
+
+omit [CompleteSpace F] in
+/-- The `L²` norm of `⟨ξ⟩ ^ s 𝓕 f`, written as a lower Lebesgue integral of the real-valued
+function `⟨ξ⟩ ^ s ‖𝓕 f ξ‖`. -/
+private theorem eLpNorm_rpow_smul_fourier_eq (s : ℝ) (f : E → F) (hf : Continuous f) :
+    eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • f ξ) 2 volume =
+      (∫⁻ ξ, ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2) * ‖f ξ‖) ^ 2) ^ (1 / 2 : ℝ) := by
+  have hw : Continuous fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) :=
+    Complex.continuous_ofReal.comp ((continuous_const.add (continuous_norm.pow 2)).rpow_const
+      fun x ↦ Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg ‖x‖)).ne')
+  have hm : AEStronglyMeasurable (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • f ξ) volume :=
+    (hw.smul hf).aestronglyMeasurable
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top hm]
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two, ← ofReal_norm, norm_smul, Complex.norm_real]
+  refine congrArg (· ^ (1 / 2 : ℝ)) (lintegral_congr fun ξ ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+
 /-- The pointwise Peetre bound behind the `H^s` estimate: for Schwartz functions `φ` and `f`,
 `⟨ξ⟩ ^ s ‖𝓕 (φ f) ξ‖` is bounded by the convolution of `2 ^ (|s| / 2) ⟨·⟩ ^ |s| ‖𝓕 φ‖` with
 `⟨·⟩ ^ s ‖𝓕 f‖`. -/
-private theorem enorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (f : 𝓢(E, F))
-    (ξ : E) :
-    ‖(((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ‖ₑ ≤
-      ∫⁻ t, ENNReal.ofReal (2 ^ (|s| / 2) * ((1 + ‖t‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ t‖)) *
-        ‖(((1 + ‖ξ - t‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f (ξ - t)‖ₑ := by
-  rw [fourier_smulLeftCLM_apply, enorm_smul]
-  calc ‖(((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)‖ₑ * ‖∫ t, 𝓕 φ t • 𝓕 f (ξ - t)‖ₑ
-      ≤ ‖(((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)‖ₑ * ∫⁻ t, ‖𝓕 φ t • 𝓕 f (ξ - t)‖ₑ := by
+private theorem ofReal_rpow_mul_norm_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ))
+    (f : 𝓢(E, F)) (ξ : E) :
+    ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2) * ‖𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ‖) ≤
+      ∫⁻ y, ENNReal.ofReal
+          (2 ^ (|s| / 2) * ((1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ (ξ - y)‖)) *
+        ENNReal.ofReal ((1 + ‖y‖ ^ 2) ^ (s / 2) * ‖𝓕 f y‖) := by
+  have hconv : 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ = ∫ y, 𝓕 φ (ξ - y) • 𝓕 f y := by
+    rw [fourier_smulLeftCLM_apply,
+      ← integral_sub_left_eq_self (fun y ↦ 𝓕 φ (ξ - y) • 𝓕 f y) volume ξ]
+    simp only [sub_sub_cancel]
+  rw [hconv, ENNReal.ofReal_mul (by positivity), ofReal_norm]
+  calc ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2)) * ‖∫ y, 𝓕 φ (ξ - y) • 𝓕 f y‖ₑ
+      ≤ ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2)) * ∫⁻ y, ‖𝓕 φ (ξ - y) • 𝓕 f y‖ₑ := by
         gcongr
         exact enorm_integral_le_lintegral_enorm _
-    _ = ∫⁻ t, ‖(((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)‖ₑ * ‖𝓕 φ t • 𝓕 f (ξ - t)‖ₑ :=
-        (lintegral_const_mul' _ _ enorm_ne_top).symm
+    _ = ∫⁻ y, ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ (s / 2) * (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖)) := by
+        rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+        refine lintegral_congr fun y ↦ ?_
+        rw [← ofReal_norm, norm_smul, ← ENNReal.ofReal_mul (by positivity)]
     _ ≤ _ := by
-      refine lintegral_mono fun t ↦ ?_
-      have hn (r : ℝ) (hr : 0 ≤ r) (v : F) :
-          ‖(r : ℂ) • v‖ₑ = ENNReal.ofReal (r * ‖v‖) := by
-        rw [← ofReal_norm, norm_smul, Complex.norm_real, Real.norm_of_nonneg hr]
-      rw [hn _ (by positivity), ← ofReal_norm (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ),
-        ← ofReal_norm (𝓕 φ t • 𝓕 f (ξ - t)), ← ENNReal.ofReal_mul (norm_nonneg _),
-        ← ENNReal.ofReal_mul (by positivity), norm_smul, Complex.norm_real,
-        Real.norm_of_nonneg (by positivity)]
+      refine lintegral_mono fun y ↦ ?_
+      rw [← ENNReal.ofReal_mul (by positivity)]
       refine ENNReal.ofReal_le_ofReal ?_
-      have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul s (ξ - t) t
-      rw [sub_add_cancel] at hP
-      have h₁ : 0 ≤ ‖𝓕 φ t‖ * ‖𝓕 f (ξ - t)‖ := by positivity
-      calc (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (‖𝓕 φ t‖ * ‖𝓕 f (ξ - t)‖)
-          ≤ 2 ^ (|s| / 2) * (1 + ‖ξ - t‖ ^ 2) ^ (s / 2) * (1 + ‖t‖ ^ 2) ^ (|s| / 2) *
-              (‖𝓕 φ t‖ * ‖𝓕 f (ξ - t)‖) := mul_le_mul_of_nonneg_right hP h₁
+      have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul s y (ξ - y)
+      rw [add_sub_cancel] at hP
+      calc (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖)
+          ≤ 2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (s / 2) * (1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2) *
+              (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖) := by gcongr
         _ = _ := by ring
+
+/-- The `H^s` estimate for multiplication by a Schwartz function, on the Fourier side:
+`‖⟨ξ⟩ ^ s 𝓕 (φ f)‖_{L²} ≤ 2 ^ (|s| / 2) (∫ ⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖ dζ) ‖⟨ξ⟩ ^ s 𝓕 f‖_{L²}`. It is
+the pointwise Peetre bound followed by Schur's test for the convolution kernel. -/
+theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) :
+    eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ)
+        2 volume ≤
+      ENNReal.ofReal (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) *
+        eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) 2 volume := by
+  set k : E → ℝ≥0∞ :=
+    fun ζ ↦ ENNReal.ofReal (2 ^ (|s| / 2) * ((1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖))
+  set g : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal ((1 + ‖y‖ ^ 2) ^ (s / 2) * ‖𝓕 f y‖)
+  have hk : Measurable k := by fun_prop
+  have hg : Measurable g := ENNReal.measurable_ofReal.comp
+    ((((measurable_const.add (measurable_norm.pow_const 2)).pow_const (s / 2))).mul
+      (𝓕 f).continuous.norm.measurable)
+  have hint := (integrable_one_add_norm_sq_rpow_mul_norm_fourier (|s| / 2) φ).const_mul
+    (2 ^ (|s| / 2))
+  have hk_int : ∫⁻ ζ, k ζ = ENNReal.ofReal
+      (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) := by
+    rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal hint
+      (.of_forall fun ζ ↦ by positivity)]
+  -- Schur's test for the kernel `k (x - y)`, whose row and column integrals are `∫⁻ k`.
+  have hschur := TauCeti.lintegral_rpow_lintegral_mul_le (μ := volume) (ν := volume)
+    (k := fun x y ↦ k (x - y)) (hk.comp (measurable_fst.sub measurable_snd))
+    (g := g) hg.aemeasurable (p := 2) one_le_two
+    (A := ∫⁻ ζ, k ζ) (B := ∫⁻ ζ, k ζ)
+    (.of_forall fun x ↦ (lintegral_sub_left_eq_self k x).le)
+    (.of_forall fun y ↦ (lintegral_sub_right_eq_self k y).le)
+  simp only [ENNReal.rpow_two] at hschur
+  norm_num at hschur
+  rw [eLpNorm_rpow_smul_fourier_eq _ _ (𝓕 (smulLeftCLM F (φ : E → ℂ) f)).continuous,
+    eLpNorm_rpow_smul_fourier_eq _ _ (𝓕 f).continuous, ← hk_int]
+  calc (∫⁻ ξ, ENNReal.ofReal
+          ((1 + ‖ξ‖ ^ 2) ^ (s / 2) * ‖𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ‖) ^ 2) ^ (1 / 2 : ℝ)
+      ≤ (∫⁻ ξ, (∫⁻ y, k (ξ - y) * g y) ^ 2) ^ (1 / 2 : ℝ) := by
+        gcongr with ξ
+        exact ofReal_rpow_mul_norm_fourier_smulLeftCLM_le s φ f ξ
+    _ ≤ ((∫⁻ ζ, k ζ) ^ 2 * ∫⁻ y, g y ^ 2) ^ (1 / 2 : ℝ) := by
+        gcongr
+        simpa only [sq, mul_assoc] using hschur
+    _ = (∫⁻ ζ, k ζ) * (∫⁻ y, g y ^ 2) ^ (1 / 2 : ℝ) := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← ENNReal.rpow_natCast,
+          ← ENNReal.rpow_mul]
+        norm_num
 
 /-- **Multiplication by a Schwartz function is bounded on `H^s`**, on Schwartz functions. With
 the Bessel-potential weight `⟨ξ⟩ ^ s` of order `s ∈ ℝ`, Mathlib's convention for `H^s`,
@@ -189,64 +225,31 @@ theorem norm_toLp_fourierMultiplierCLM_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, �
         (smulLeftCLM F (φ : E → ℂ) f)).toLp 2‖ ≤
       (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) *
         ‖(fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f).toLp 2‖ := by
-  set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by fun_prop
-  have hwg (g : 𝓢(E, F)) : (fun ξ ↦ w ξ • 𝓕 g ξ) = smulLeftCLM F w (𝓕 g) := by
-    ext ξ
-    rw [smulLeftCLM_apply_apply hw]
-  -- By Plancherel, the `H^s` norm of a Schwartz function is the `L²` norm of `w • 𝓕 g`.
-  have hnorm (g : 𝓢(E, F)) : ‖(fourierMultiplierCLM F w g).toLp 2‖ =
-      (eLpNorm (fun ξ ↦ w ξ • 𝓕 g ξ) 2 volume).toReal := by
-    rw [← norm_fourier_toL2_eq, fourierMultiplierCLM_apply, fourier_fourierInv_eq, norm_toLp,
-      hwg]
-  set k : E → ℝ≥0∞ :=
-    fun ζ ↦ ENNReal.ofReal (2 ^ (|s| / 2) * ((1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖))
-  set g : E → ℝ≥0∞ := fun η ↦ ‖w η • 𝓕 f η‖ₑ
-  have hk : Measurable k := by fun_prop
-  have hg : Measurable g := by
-    have : g = fun η ↦ ‖smulLeftCLM F w (𝓕 f) η‖ₑ := by simp only [g, ← hwg]
-    rw [this]
-    exact (smulLeftCLM F w (𝓕 f)).continuous.enorm.measurable
-  have hint := (integrable_one_add_norm_sq_rpow_mul_norm_fourier (|s| / 2) φ).const_mul
-    (2 ^ (|s| / 2))
-  have hk_int : ∫⁻ ζ, k ζ = ENNReal.ofReal
-      (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) := by
-    rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun ζ ↦ by positivity)]
-  have hL2 (g : 𝓢(E, F)) : eLpNorm (fun ξ ↦ w ξ • 𝓕 g ξ) 2 volume =
-      (∫⁻ x, ‖w x • 𝓕 g x‖ₑ ^ 2) ^ (1 / 2 : ℝ) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-      (by rw [hwg]; exact (smulLeftCLM F w (𝓕 g)).continuous.aestronglyMeasurable)]
-    simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
-  have hmain : eLpNorm (fun ξ ↦ w ξ • 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ) 2 volume ≤
-      ENNReal.ofReal (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) *
-        eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume := by
-    rw [hL2, hL2, ← hk_int]
-    calc (∫⁻ ξ, ‖w ξ • 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ‖ₑ ^ 2) ^ (1 / 2 : ℝ)
-        ≤ (∫⁻ ξ, (∫⁻ t, k t * g (ξ - t)) ^ 2) ^ (1 / 2 : ℝ) := by
-          gcongr with ξ
-          exact enorm_rpow_smul_fourier_smulLeftCLM_le s φ f ξ
-      _ ≤ ((∫⁻ ζ, k ζ) ^ 2 * ∫⁻ η, g η ^ 2) ^ (1 / 2 : ℝ) := by
-          gcongr
-          exact lintegral_sq_lintegral_mul_sub_le hk hg
-      _ = (∫⁻ ζ, k ζ) * (∫⁻ η, g η ^ 2) ^ (1 / 2 : ℝ) := by
-          rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), ← ENNReal.rpow_natCast,
-            ← ENNReal.rpow_mul]
-          norm_num
-  rw [hnorm, hnorm]
-  have hfin : eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume ≠ ⊤ := by
-    rw [hwg]
-    exact ((smulLeftCLM F w (𝓕 f)).memLp 2 volume).eLpNorm_ne_top
-  calc (eLpNorm (fun ξ ↦ w ξ • 𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ) 2 volume).toReal
-      ≤ (ENNReal.ofReal (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) *
-          eLpNorm (fun ξ ↦ w ξ • 𝓕 f ξ) 2 volume).toReal :=
-        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hfin) hmain
-    _ = _ := by
-      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  rw [norm_toLp_fourierMultiplierCLM_eq hw, norm_toLp_fourierMultiplierCLM_eq hw,
+    ← ENNReal.toReal_ofReal (by positivity : 0 ≤ 2 ^ (|s| / 2) *
+      ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖), ← ENNReal.toReal_mul]
+  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ?_)
+    (eLpNorm_rpow_smul_fourier_smulLeftCLM_le s φ f)
+  rw [eLpNorm_rpow_smul_fourier_eq _ _ (𝓕 f).continuous]
+  have hfin := ((smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 f)).memLp 2
+    volume).eLpNorm_ne_top
+  rwa [← eLpNorm_rpow_smul_fourier_eq _ _ (𝓕 f).continuous, show
+    (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) =
+      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 f) from by
+    ext ξ; rw [smulLeftCLM_apply_apply hw]]
 
 end SchwartzMap
 
 namespace TemperedDistribution
+
+/-- The Bessel potential of a Schwartz function is the Schwartz function given by the Fourier
+multiplier with the same symbol `⟨ξ⟩ ^ s`. -/
+theorem besselPotential_toTemperedDistributionCLM_eq (s : ℝ) (f : 𝓢(E, F)) :
+    besselPotential E F s (f : 𝓢'(E, F)) =
+      (SchwartzMap.fourierMultiplierCLM F
+        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f : 𝓢'(E, F)) :=
+  fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop) f
 
 /-- **Multiplication by a Schwartz function is bounded on `H^s`**, for every real `s`. If the
 tempered distribution `u` lies in `H^s`, with `J^s u = v ∈ L²`, then `J^s (φ u) = v'` for some
@@ -259,16 +262,8 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
   set C := 2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖
   set Λ : ℝ → 𝓢(E, F) →L[ℂ] 𝓢(E, F) := fun t ↦
     SchwartzMap.fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
-  have hΛ (ψ : 𝓢(E, F)) : Λ s (Λ (-s) ψ) = ψ := by
-    simp only [Λ]
-    rw [SchwartzMap.fourierMultiplierCLM_fourierMultiplierCLM_apply (by fun_prop) (by fun_prop)]
-    have : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) *
-        fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) = fun _ ↦ 1 := by
-      ext x
-      rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity)]
-      simp [neg_div]
-    rw [this, SchwartzMap.fourierMultiplierCLM_const]
-    simp
+  have hΛ (ψ : 𝓢(E, F)) : Λ s (Λ (-s) ψ) = ψ :=
+    SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg s ψ
   -- The operator `w ↦ J^s (φ J^{-s} w)` on Schwartz functions, and its bound in `L²`.
   set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) :=
     Λ s ∘L SchwartzMap.smulLeftCLM F (φ : E → ℂ) ∘L Λ (-s)
@@ -295,12 +290,10 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
     ext1 ψ
     simp only [Function.comp_apply]
     rw [LinearMap.extendOfNorm_eq hdense ⟨C, hbound⟩]
-    have hJ (t : ℝ) (χ : 𝓢(E, F)) : besselPotential E F t (χ : 𝓢'(E, F)) = (Λ t χ : 𝓢'(E, F)) :=
-      fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop) χ
     simp only [T, f₀, e, M, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
       SchwartzMap.toLpCLM_apply, Lp.toTemperedDistributionCLM_apply,
-      Lp.toTemperedDistribution_toLp_eq, hJ,
-      smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth]
+      Lp.toTemperedDistribution_toLp_eq, besselPotential_toTemperedDistributionCLM_eq,
+      smulLeftCLM_toTemperedDistributionCLM_eq φ.hasTemperateGrowth, Λ]
   refine ⟨K v, ?_, LinearMap.norm_extendOfNorm_apply_le hdense C hbound v⟩
   have hu : u = besselPotential E F (-s) v := by
     rw [← hv, besselPotential_besselPotential_apply]
@@ -347,20 +340,17 @@ theorem toDistr_smulLeftCLM (u : H^{s, 2}(E, F)) :
     (smulLeftCLM s φ u).toDistr = TemperedDistribution.smulLeftCLM F (φ : E → ℂ) u.toDistr := by
   rfl
 
-/-- The `H^s` norm of `φ u` is at most `2 ^ (|s| / 2) (∫ ⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖ dζ) ‖u‖`. -/
-theorem norm_smulLeftCLM_apply_le (u : H^{s, 2}(E, F)) :
-    ‖smulLeftCLM s φ u‖ ≤ (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) * ‖u‖ := by
-  simp only [← norm_toLp_eq]
-  exact (exists_besselPotential_smulLeftCLM_eq_and_norm_le s φ
-    u.bessel_toDistr_eq_toLp).choose_spec.2
-
 /-- The operator norm of multiplication by `φ` on `H^s` is at most
 `2 ^ (|s| / 2) ∫ ⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖ dζ`. -/
 theorem norm_smulLeftCLM_le :
     ‖(smulLeftCLM s φ : H^{s, 2}(E, F) →L[ℂ] H^{s, 2}(E, F))‖ ≤
       2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖ :=
-  ContinuousLinearMap.opNorm_le_bound _
-    (mul_nonneg (by positivity) (integral_nonneg fun _ ↦ by positivity))
-    (norm_smulLeftCLM_apply_le s φ)
+  LinearMap.mkContinuous_norm_le _
+    (mul_nonneg (by positivity) (integral_nonneg fun _ ↦ by positivity)) _
+
+/-- The `H^s` norm of `φ u` is at most `2 ^ (|s| / 2) (∫ ⟨ζ⟩ ^ |s| ‖𝓕 φ ζ‖ dζ) ‖u‖`. -/
+theorem norm_smulLeftCLM_apply_le (u : H^{s, 2}(E, F)) :
+    ‖smulLeftCLM s φ u‖ ≤ (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) * ‖u‖ :=
+  (smulLeftCLM s φ).le_of_opNorm_le (norm_smulLeftCLM_le s φ) u
 
 end BesselPotentialSpace

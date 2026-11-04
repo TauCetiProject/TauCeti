@@ -14,8 +14,8 @@ Mathlib's `TemperedDistribution.smulLeftCLM F g` multiplies a tempered distribut
 `g` of temperate growth, through its action `u ↦ g • u` on test functions. This file records that
 on the tempered distribution of a Schwartz function `f` it is the tempered distribution of the
 pointwise product `g • f`, so that it extends Mathlib's `SchwartzMap.smulLeftCLM`. Mathlib proves
-the corresponding statement for `Lᵖ` functions and bounded `g`
-(`MeasureTheory.Lp.toTemperedDistribution_smul_eq`).
+the corresponding statement for `g` of temperate growth lying in `Lᵖ`, acting on `L^q` functions
+with Hölder exponents (`MeasureTheory.Lp.toTemperedDistribution_smul_eq`).
 
 ## Main results
 
