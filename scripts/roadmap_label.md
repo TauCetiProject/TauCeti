@@ -1,11 +1,35 @@
 # Roadmap label automation
 
-`roadmap-label.yml` classifies open, reopened, pushed, and body/base-edited PRs.
-Title-only edits are ignored because the title supplies no classification
-evidence. A 20-second delay before token creation lets rapid events on one PR
-collapse through its cancellation group. Ignored title edits use a separate
-group, so they cannot cancel a meaningful run before their job is skipped. Only trusted default-branch code runs;
-the PR body and changed file paths remain API data.
+`roadmap-label-reconcile.yml` handles open, reopened, pushed, and body/base-edited
+PRs in one batch. Title-only edits are filtered before the shared concurrency
+group, so they cannot displace meaningful pending work. There is one active and
+one replaceable pending job across all PRs. The `control-batch-debounce` environment
+has a five-minute wait timer and no secrets or reviewers; `deployment: false`
+applies the wait without recording a deployment or occupying a runner. New events
+coalesce while it waits, bounding runner starts to about twelve per hour.
+
+Each pass discovers every open PR whose saved classification inputs changed,
+rather than limiting itself to the PR that happened to wake it. Completed input
+hashes and bounded retries survive in the state artifact. The listing guard grows
+with the repository's open-PR count instead of fixing a project-size ceiling.
+Only trusted default-branch code runs; PR bodies and file paths remain API data.
+
+The batch wrapper yields between PRs once changed-PR work has used 40 responses,
+in addition to metadata discovery, preserving completed inputs in the state file.
+The current PR can finish beyond that target, avoiding a permanent cutoff for
+large diffs; retries count toward the allowance. Quota reserves still apply to
+requests within a PR.
+Observed quota reserves stop further reads with 250 workflow-token requests/points
+remaining and App writes with 1,000 REST requests (100 GraphQL points) remaining.
+A local allowance yield is normal scheduling, not a shared quota-outage signal.
+Transport failures retain up to 15 seconds of bounded retry waits. Actual quota
+exhaustion stops immediately and retains normal retry state.
+These reserves are advisory between concurrent callers; other jobs can consume
+quota after it is observed. A malformed progress checkpoint is rebuilt from current
+PR inputs automatically; it cannot strand every future batch awaiting a manual reset.
+Failed checkpoint downloads try older trusted progress. Pending failures are processed
+least-recently-attempted first, and exhausted failures get an automatic six-hour retry
+deadline even when permissions or API validation change without a contributor edit.
 
 ## Credentials and API usage
 
@@ -83,7 +107,7 @@ Mutations are spaced by at least one second within a process.
 
 ## Recovery and maintenance
 
-`roadmap-label-reconcile.yml` runs hourly at minute 17. It scans open PR metadata
+`roadmap-label-reconcile.yml` also wakes hourly at minute 17 after events cease. It scans open PR metadata
 in creation order before mutations. This keeps comment activity from moving
 PRs between pages and resetting retries. The state artifact contains hashes of
 the actual processed head, body, base branch name, state, canonical area set, and
@@ -102,14 +126,16 @@ Per-PR failures move to the artifact's retry queue while healthy work advances.
 After five failed recovery attempts for the same inputs, the PR is reported in
 warnings and the step summary. Transient server failures and non-capped incomplete
 file listings pause for six hours, then start another bounded retry cycle without
-requiring a PR edit. Non-transient failures remain exhausted until their
-inputs/policy change or a manual full scan resets the state.
+requiring a PR edit. In the batch wrapper, every exhausted failure receives
+this timed retry, including permission or validation failures whose external
+conditions may change without a contributor edit.
 Rate limits, transport outages, listing errors,
 and failed artifact uploads fail the workflow and retain the previous successful
 window. Completed progress is saved even on a deferred run, so the next pass can
-skip its successful prefix. State restoration accepts only scheduled or manually
-dispatched runs from this repository's main branch, excluding fork PR runs even
-when their head branch is named main. Saved retry timestamps must be finite,
+skip its successful prefix. State restoration accepts trusted scheduled/manual
+main runs and `pull_request_target` runs executing main's workflow definition.
+Untrusted fork `pull_request` runs cannot supply state, even if their head branch
+is named main. Saved retry timestamps must be finite,
 nonnegative numbers. Closed PRs are pruned after a complete listing.
 
 Without a state handoff, local recovery uses the previous successful run's start,
@@ -136,7 +162,7 @@ independent of that label opt-in.
 
 This mitigation does not guarantee capacity for ten times the event rate. Each
 meaningful event run still needs a snapshot query; large diffs need more pages.
-The debounce coalesces rapid events only on the same PR. Recovery caches avoid
+The debounce coalesces rapid events across all PRs. Recovery caches avoid
 repeated snapshots for unchanged PRs, but every sweep still lists all open PR
 metadata. Cold state must inspect every open PR and can need multiple quota
 windows to finish. The default reconciliation safety limit is 5,000 open PRs;

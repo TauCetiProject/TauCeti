@@ -50,6 +50,8 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 ## Main definitions
 
 * `TauCeti.SymplecticForm.hamiltonianCurvature`: the curvature `R_K`.
+* `TauCeti.SymplecticForm.hamiltonianOneForm`: the vector-valued one-form
+  `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`.
 * `TauCeti.SymplecticForm.perturbedFDeriv`: the perturbed derivative `du - X_K`.
 * `TauCeti.SymplecticForm.floerEnergyDensity`: the Floer energy density.
 
@@ -212,6 +214,27 @@ theorem perturbedFDeriv_apply (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V 
         v.2 • ω.hamiltonianVectorField (Kt z) (u z) :=
   (rfl)
 
+/-- The Hamiltonian vector field `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of the perturbation one-form
+`K = K_s ds + K_t dt`, at the domain point `z` and the target point `x`: it sends a tangent vector
+`(a, b)` of the domain to `a X_{K_s}(x) + b X_{K_t}(x)`. -/
+noncomputable def hamiltonianOneForm (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (z : ℝ × ℝ) (x : V) : ℝ × ℝ →L[ℝ] V :=
+  (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (Ks z) x) +
+    (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (Kt z) x)
+
+@[simp]
+theorem hamiltonianOneForm_apply (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ)
+    (x : V) (v : ℝ × ℝ) :
+    ω.hamiltonianOneForm Ks Kt z x v =
+      v.1 • ω.hamiltonianVectorField (Ks z) x + v.2 • ω.hamiltonianVectorField (Kt z) x :=
+  (rfl)
+
+/-- The perturbed derivative is `du - X_K(u)`. -/
+theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+    (z : ℝ × ℝ) :
+    ω.perturbedFDeriv Ks Kt u z = fderiv ℝ u z - ω.hamiltonianOneForm Ks Kt z (u z) := by
+  ext <;> simp [perturbedFDeriv_apply]
+
 /-- The `∂_s` component of the perturbed derivative is `∂_s u - X_{K_s}(u)`. -/
 @[simp]
 theorem perturbedFDeriv_apply_stdComplexLineReal (ω : SymplecticForm V)
@@ -263,6 +286,15 @@ theorem floerEnergyDensity_def (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V
       ω (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- For the zero perturbation the Floer energy density is the symplectic area density
+`ω(∂_s u, ∂_t u)`. -/
+@[simp]
+theorem floerEnergyDensity_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag]
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
 

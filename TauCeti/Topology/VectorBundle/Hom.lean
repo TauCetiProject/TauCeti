@@ -29,7 +29,10 @@ continuous Hom-bundle sections is continuous.
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
 common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
-(`VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`).
+(`VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`). Both directions read the
+section through the local trivializations of the two charts
+(`VectorBundleCore.inChartCoordinates_eq_localTriv_comp` in
+`TauCeti.Topology.VectorBundle.Coordinates`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -348,11 +351,7 @@ theorem continuousOn_inChartCoordinates {f : B → F →L[𝕜] G} {i : ι} {j :
   let e := (Z.localTriv i).continuousLinearMap (RingHom.id 𝕜) (W.localTriv j)
   have he : ContinuousOn (fun x ↦ (e ⟨x, f x⟩).2) (Z.baseSet i ∩ W.baseSet j) :=
     (e.continuousOn.comp hf fun _ hx ↦ e.mem_source.2 hx).snd
-  refine he.congr fun x hx ↦ ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [e, Trivialization.continuousLinearMap_apply, localTriv_continuousLinearMapAt _ hx.2,
-    localTriv_symmL _ hx.1, inChartCoordinates_apply]
-  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
-  rfl
+  exact he.congr fun x hx ↦ inChartCoordinates_eq_localTriv_comp hx.1 hx.2 (f x)
 
 /-- A family of fibre maps is a continuous section of the Hom bundle between two cores exactly
 when it is continuous in every pair of charts. -/

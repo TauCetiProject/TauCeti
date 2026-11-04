@@ -195,6 +195,14 @@ noncomputable def polynomialToRestricted (c : ℝ) :
 theorem coe_polynomialToRestricted (p : Polynomial R) :
     (polynomialToRestricted c p : PowerSeries R) = p := (rfl)
 
+/-- The inclusion of polynomials into restricted power series is injective at every radius. -/
+theorem polynomialToRestricted_injective (c : ℝ) :
+    Function.Injective (polynomialToRestricted (R := R) c) := by
+  intro p q h
+  apply Polynomial.coe_injective R
+  simpa only [coe_polynomialToRestricted] using
+    congrArg (fun f : PowerSeries.IsRestricted.subring (R := R) c ↦ (f : PowerSeries R)) h
+
 /-- A restricted series whose coefficients vanish from degree `s` onward is the polynomial
 inclusion of its `s`-truncation. -/
 theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero {s : ℕ}

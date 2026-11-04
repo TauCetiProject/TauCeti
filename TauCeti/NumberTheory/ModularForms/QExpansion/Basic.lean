@@ -52,6 +52,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 ## Main declarations
 
 * `TauCeti.ModularForm.qExpansionLinearMap`.
+* `ModularForm.qExpansion_zsmul` (at root, so dot notation on `ModularForm` elaborates): the
+  `q`-expansion commutes with integer multiples.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
@@ -99,6 +101,13 @@ lemma ModularForm.qExpansionLinearMap_apply {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ
     ModularForm.qExpansionLinearMap hh hΓ k f = qExpansion h f := by
   unfold ModularForm.qExpansionLinearMap
   rfl
+
+/-- The `q`-expansion commutes with integer multiples of a modular form: it is additive, by
+`ModularForm.qExpansionAddHom`. -/
+lemma _root_.ModularForm.qExpansion_zsmul {Γ : Subgroup (GL (Fin 2) ℝ)} (hh : 0 < h)
+    (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} (n : ℤ) (f : ModularForm Γ k) :
+    qExpansion h ⇑(n • f) = n • qExpansion h f :=
+  map_zsmul (_root_.ModularForm.qExpansionAddHom hh hΓ k) n f
 
 /-- **Uniqueness of `q`-expansion coefficients, for a raw function on `ℍ`.** If `f` is given by
 a convergent expansion `f τ = ∑' m, c m * 𝕢 h τ ^ m` and its cusp function is analytic at `0`,
