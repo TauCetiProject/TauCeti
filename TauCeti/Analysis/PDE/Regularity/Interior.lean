@@ -62,9 +62,12 @@ restriction of `u` solves the equation with the extended field.
 
 * `TauCeti.PDE.divMatrixGradient` and `TauCeti.PDE.localizedForcing`: the divergence of the
   conormal cutoff field and the forcing term in the localized equation.
-* `TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul`: a cutoff of a weak
-  solution, extended by zero, is a weak solution on the whole space with an explicit `L²` forcing
-  term.
+* `TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`: a cutoff `ψ u`
+  of a weak solution on `Ω ⊆ H`, with `tsupport ψ ∩ H ⊆ Ω` and `ψ u ∈ H¹₀(Ω)`, extended by zero,
+  is a weak solution on `H` with an explicit `L²` forcing term. This localizes up to a part of
+  `∂Ω` that lies in `∂H`, where `u` vanishes.
+* `TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul`: its case `H = ℝⁿ`, for
+  a cutoff compactly supported in `Ω`.
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact`: near a compact subset
   of `Ω`, a weak solution and its forcing agree with a whole-space weak solution and its forcing.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`:
@@ -95,7 +98,8 @@ namespace TauCeti
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-  {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {K : ℝ≥0} {M : ℝ}
+  {Omega H : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {K : ℝ≥0}
+  {M : ℝ}
 
 /-! ### The divergence of the conormal field of a cutoff -/
 
@@ -269,16 +273,17 @@ theorem measurable_divMatrixGradient (ha : Continuous fun x => matrixBilinearFor
     ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ))
 
 /-- **Integration by parts against the conormal field of a cutoff.** For `u ∈ H¹(Ω)`, a test
-function `φ` on the whole space, and a smooth `ψ` compactly supported in `Ω`,
+function `φ` on an open set `H`, and a smooth compactly supported `ψ` with
+`tsupport ψ ∩ H ⊆ Ω`,
 
 `∫_Ω u (⟨∇φ, a ∇ψ⟩ + φ div(a ∇ψ)) = -∫_Ω φ ⟨∇u, a ∇ψ⟩`,
 
-the integration by parts of `u` against the Lipschitz components of `φ a ∇ψ`. -/
+the integration by parts of `u` against the Lipschitz components of `φ a ∇ψ`, which are compactly
+supported in `Ω`. -/
 private theorem setIntegral_value_mul_eq_neg (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (u : W1p mu Omega 2)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ ι)), ℝ)) :
+    (hts : tsupport ψ ∩ H ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (φ : 𝓓(H, ℝ)) :
     ∫ x in Omega, W1p.value u x * (matrixBilinearForm (a x) (∇ φ x) (∇ ψ x)
         + φ x * divMatrixGradient a ψ x) ∂mu
       = -∫ x in Omega, φ x * matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x) ∂mu := by
@@ -297,12 +302,15 @@ private theorem setIntegral_value_mul_eq_neg (hM : ∀ x, ‖matrixBilinearForm 
       (holderWith_one.2 (hLh i)) (Mf := Cφ.toNNReal) (Mg := (Ch i).toNNReal)
       (fun x => (hCφ x).trans (Real.le_coe_toNNReal _))
       (fun x => (hCh i x).trans (Real.le_coe_toNNReal _)))
-  have hsupp : ∀ i, Function.support (g i) ⊆ tsupport ψ := fun i x hx =>
-    tsupport_matrixBilinearForm_gradient_subset (a := a) ψ (b i)
-      (subset_tsupport _ fun h0 => hx (by simp only [g, h, h0, mul_zero]))
-  have hgc : ∀ i, HasCompactSupport (g i) := fun i => hψc.mono' (hsupp i)
+  have hsupp : ∀ i, Function.support (g i) ⊆ tsupport ψ ∩ tsupport φ := fun i x hx =>
+    ⟨tsupport_matrixBilinearForm_gradient_subset (a := a) ψ (b i)
+      (subset_tsupport _ fun h0 => hx (by simp only [g, h, h0, mul_zero])),
+      subset_tsupport _ fun h0 => hx (by simp only [g, h0, zero_mul])⟩
+  have hgc : ∀ i, HasCompactSupport (g i) := fun i =>
+    hψc.mono' ((hsupp i).trans inter_subset_left)
   have hgs : ∀ i, tsupport (g i) ⊆ Omega := fun i =>
-    (closure_minimal (hsupp i) (isClosed_tsupport ψ)).trans hts
+    (closure_minimal (hsupp i) ((isClosed_tsupport ψ).inter (isClosed_tsupport _))).trans
+      fun x hx => hts ⟨hx.1, φ.tsupport_subset hx.2⟩
   have key : ∀ i, ∫ x in Omega, lineDeriv ℝ (g i) x (b i) * W1p.value u x ∂mu =
       -∫ x in Omega, g i x * ⟪W1p.gradient u x, b i⟫_ℝ ∂mu := fun i =>
     W1p.setIntegral_lineDeriv_mul_value_eq_neg (by norm_num) u (hLg i) (hgc i) (hgs i) (b i)
@@ -419,38 +427,43 @@ theorem memLp_localizedForcing (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M
   exact ((h1.sub h2).sub h3).sub h4
 
 /-- **The weak equation tested against `ψ φ`.** For a weak solution `u` of `-div(a ∇u) = f` in
-`Ω`, a smooth `ψ` compactly supported in `Ω`, and a test function `φ` on the whole space, the
-product `ψ φ` is an admissible test function, and its gradient is `ψ ∇φ + φ ∇ψ`. -/
-private theorem setIntegral_matrixBilinearForm_smul_add_eq {f : Lp ℝ 2 (mu.restrict Omega)}
-    {u : W1p mu Omega 2}
+`Ω ⊆ H`, a smooth compactly supported `ψ` with `tsupport ψ ∩ H ⊆ Ω`, and a test function `φ` on
+`H`, the product `ψ φ` is an admissible test function, and its gradient is `ψ ∇φ + φ ∇ψ`. -/
+private theorem setIntegral_matrixBilinearForm_smul_add_eq (hΩH : Omega ≤ H)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ ι)), ℝ)) :
+    (hts : tsupport ψ ∩ H ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (φ : 𝓓(H, ℝ)) :
     ∫ x in Omega, matrixBilinearForm (a x) (ψ x • ∇ φ x + φ x • ∇ ψ x) (W1p.gradient u x) ∂mu =
       ∫ x in Omega, ψ x * f x * φ x ∂mu := by
   obtain ⟨N, hN, hψN, hgradN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
   have hψN' : ∀ x ∈ Omega, |ψ x| ≤ N := fun x _ => hψN x
   have hgradN' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ N := fun x _ => hgradN x
-  have hΩ : (Omega : Set (EuclideanSpace ℝ ι)) ⊆ ((⊤ : Opens (EuclideanSpace ℝ ι)) :
-      Set (EuclideanSpace ℝ ι)) := SetLike.coe_subset_coe.mpr le_top
+  have hΩ : (Omega : Set (EuclideanSpace ℝ ι)) ⊆ H := SetLike.coe_subset_coe.mpr hΩH
   -- `φ` as an element of `H¹(Ω)`, and the test function `ψ φ ∈ H¹₀(Ω)`.
-  set φΩ := W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ 2 φ)
+  set φΩ := W1p.restrictL hΩH (W1p.ofTestFunctionₗ mu H 2 φ)
   have hφv : ∀ᵐ x ∂mu.restrict Omega, W1p.value φΩ x = φ x := by
-    filter_upwards [W1p.value_restrictL_ae le_top (W1p.ofTestFunctionₗ mu ⊤ 2 φ),
+    filter_upwards [W1p.value_restrictL_ae hΩH (W1p.ofTestFunctionₗ mu H 2 φ),
       ae_restrict_of_ae_restrict_of_subset hΩ (testFunctionLp_apply_ae (mu := mu) 2 φ)]
       with x h1 h2
     rw [h1, W1p.value_ofTestFunctionₗ, h2]
   have hφg : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient φΩ x = ∇ φ x := by
-    filter_upwards [W1p.gradient_restrictL_ae le_top (W1p.ofTestFunctionₗ mu ⊤ 2 φ),
+    filter_upwards [W1p.gradient_restrictL_ae hΩH (W1p.ofTestFunctionₗ mu H 2 φ),
       ae_restrict_of_ae_restrict_of_subset hΩ (gradientTestFunctionLp_apply_ae (mu := mu) 2 φ)]
       with x h1 h2
     rw [h1, W1p.gradient_ofTestFunctionₗ, h2]
   set v := W1p.contDiffSMul ψ hψ hN hψN' hgradN' φΩ
-  have hv : v ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hN hψN' hgradN'
-      hψc hts φΩ
+  -- `ψ φ` vanishes off the compact set `tsupport φ ∩ tsupport ψ ⊆ Ω`.
+  have hv : v ∈ w1p0Submodule mu Omega 2 := by
+    refine W1p.mem_w1p0Submodule_of_isCompact (by norm_num)
+      (φ.hasCompactSupport.inter_right (isClosed_tsupport ψ))
+      (fun x hx => hts ⟨hx.2, φ.tsupport_subset hx.1⟩) ?_
+    filter_upwards [W1p.value_contDiffSMul_ae hψ hN hψN' hgradN' φΩ, hφv] with x h1 h2 hxK
+    rw [h1, h2, smul_eq_mul]
+    by_cases hxφ : x ∈ tsupport φ
+    · rw [image_eq_zero_of_notMem_tsupport fun hxψ => hxK ⟨hxφ, hxψ⟩, zero_mul]
+    · rw [image_eq_zero_of_notMem_tsupport hxφ, mul_zero]
   have h := hu ⟨v, hv⟩
   simp only at h
   rw [energyFormH1_zero_zero_eq_setIntegral] at h
@@ -466,24 +479,23 @@ private theorem setIntegral_matrixBilinearForm_smul_add_eq {f : Lp ℝ 2 (mu.res
         rw [h1, h2, smul_eq_mul]
         ring
 
-/-- **The localized weak equation, tested against a whole-space test function.** If `u` is a
-weak solution of `-div(a ∇u) = f` in `Ω` and `ψ` is a smooth cutoff compactly supported in `Ω`,
-then `ψ u`, whose weak gradient is `ψ ∇u + u ∇ψ`, satisfies the weak form of
-`-div(a ∇(ψ u)) = localizedForcing a ψ f u` against every test function `φ` on the whole space. -/
+/-- **The localized weak equation, tested against a test function on `H`.** If `u` is a weak
+solution of `-div(a ∇u) = f` in `Ω ⊆ H` and `ψ` is a smooth compactly supported cutoff with
+`tsupport ψ ∩ H ⊆ Ω`, then `ψ u`, whose weak gradient is `ψ ∇u + u ∇ψ`, satisfies the weak form
+of `-div(a ∇(ψ u)) = localizedForcing a ψ f u` against every test function `φ` on `H`. -/
 private theorem setIntegral_matrixBilinearForm_cutoff_eq
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {f : Lp ℝ 2 (mu.restrict Omega)}
-    {u : W1p mu Omega 2}
+    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (hΩH : Omega ≤ H)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ ι)), ℝ)) :
+    (hts : tsupport ψ ∩ H ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (φ : 𝓓(H, ℝ)) :
     ∫ x in Omega, matrixBilinearForm (a x) (∇ φ x)
         (ψ x • W1p.gradient u x + W1p.value u x • ∇ ψ x) ∂mu
       = ∫ x in Omega, localizedForcing a ψ f u x * φ x ∂mu := by
   -- The weak equation tested against `ψ φ`.
-  have hE1 := setIntegral_matrixBilinearForm_smul_add_eq hu hψ hψc hts φ
+  have hE1 := setIntegral_matrixBilinearForm_smul_add_eq hΩH hu hψ hψc hts φ
   -- Integration by parts moves the derivative off `φ` in the term `u ⟨∇φ, a ∇ψ⟩`.
   have hE2 := setIntegral_value_mul_eq_neg hM hK u hψ hψc hts φ
   -- Every weight below vanishes off `tsupport ψ`, and all but `div(a ∇ψ)` are continuous.
@@ -603,52 +615,102 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
         simp only [localizedForcing_def]
         ring
 
-/-- The whole-space weak equation for the extended cutoff product, against a test function. -/
+/-- The weak equation on `H` for an extended cutoff product, against a test function. -/
 private theorem energyFormH1_ofTestFunctionₗ_eq_of_ae_eq_indicator
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
+    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (hΩH : Omega ≤ H)
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {w : W1p mu ⊤ 2}
-    (hwg : ∀ᵐ x ∂mu, W1p.gradient w x = (Omega : Set (EuclideanSpace ℝ ι)).indicator
+    (hts : tsupport ψ ∩ H ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {w : W1p mu H 2}
+    (hwg : ∀ᵐ x ∂mu.restrict H, W1p.gradient w x = (Omega : Set (EuclideanSpace ℝ ι)).indicator
       (fun y => ψ y • W1p.gradient u y + W1p.value u y • ∇ ψ y) x)
     {g : EuclideanSpace ℝ ι → ℝ}
-    (hg : ∀ᵐ x ∂mu, g x = (Omega : Set (EuclideanSpace ℝ ι)).indicator
+    (hg : ∀ᵐ x ∂mu.restrict H, g x = (Omega : Set (EuclideanSpace ℝ ι)).indicator
       (localizedForcing a ψ f u) x)
-    (φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ ι)), ℝ)) :
-    energyFormH1 a 0 0 w (W1p.ofTestFunctionₗ mu ⊤ 2 φ) =
-      ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), g x * φ x ∂mu := by
+    (φ : 𝓓(H, ℝ)) :
+    energyFormH1 a 0 0 w (W1p.ofTestFunctionₗ mu H 2 φ) = ∫ x in H, g x * φ x ∂mu := by
   have hΩ := Omega.isOpen.measurableSet
-  have htop : mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  have hint_top : ∀ F : EuclideanSpace ℝ ι → ℝ,
-      ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), F x ∂mu =
-        ∫ x, F x ∂mu := fun F => by rw [htop]
-  have hφg := (gradientTestFunctionLp_apply_ae (mu := mu) 2 φ).filter_mono (ae_mono htop.ge)
-  rw [energyFormH1_zero_zero_eq_setIntegral, hint_top, hint_top]
-  calc ∫ x, matrixBilinearForm (a x) (W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ 2 φ) x)
+  -- Integrals over `H` of functions supported in `Ω ⊆ H` are integrals over `Ω`.
+  have hHΩ : (H : Set (EuclideanSpace ℝ ι)) ∩ Omega = Omega :=
+    inter_eq_right.2 (SetLike.coe_subset_coe.mpr hΩH)
+  rw [energyFormH1_zero_zero_eq_setIntegral]
+  calc ∫ x in H, matrixBilinearForm (a x) (W1p.gradient (W1p.ofTestFunctionₗ mu H 2 φ) x)
           (W1p.gradient w x) ∂mu
-      = ∫ x, (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => matrixBilinearForm (a y)
+      = ∫ x in H, (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => matrixBilinearForm (a y)
           (∇ φ y) (ψ y • W1p.gradient u y + W1p.value u y • ∇ ψ y)) x ∂mu := by
         refine integral_congr_ae ?_
-        filter_upwards [hφg, hwg] with x h1 h2
+        filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ, hwg] with x h1 h2
         rw [W1p.gradient_ofTestFunctionₗ, h1, h2]
         by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
         · rw [indicator_of_mem hxΩ, indicator_of_mem hxΩ]
         · rw [indicator_of_notMem hxΩ, indicator_of_notMem hxΩ, map_zero]
     _ = ∫ x in Omega, localizedForcing a ψ f u x * φ x ∂mu := by
-        rw [integral_indicator hΩ]
-        exact setIntegral_matrixBilinearForm_cutoff_eq hM hK hu hψ hψc hts φ
-    _ = ∫ x, g x * φ x ∂mu := by
-        rw [← integral_indicator hΩ]
+        rw [setIntegral_indicator hΩ, hHΩ]
+        exact setIntegral_matrixBilinearForm_cutoff_eq hM hK hΩH hu hψ hψc hts φ
+    _ = ∫ x in H, g x * φ x ∂mu := by
+        rw [← hHΩ, ← setIntegral_indicator hΩ]
         refine integral_congr_ae ?_
         filter_upwards [hg] with x h
         rw [h]
         by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
         · rw [indicator_of_mem hxΩ, indicator_of_mem hxΩ]
         · rw [indicator_of_notMem hxΩ, indicator_of_notMem hxΩ, zero_mul]
+
+/-- **A cutoff of a weak solution with zero boundary values solves an equation on a larger
+domain.** Let `a` be a coefficient field on the whole space with `‖a(x)‖ ≤ M` and `x ↦ a(x)`
+Lipschitz, both measured in the operator norm of its bilinear forms. Let `Ω ⊆ H` be open, let
+`u ∈ H¹(Ω)` be a weak solution of `-div(a ∇u) = f` in `Ω`, with `f ∈ L²(Ω)`, and let `ψ` be smooth
+and compactly supported with `tsupport ψ ∩ H ⊆ Ω` and `ψ u ∈ H¹₀(Ω)`. Then `ψ u`, extended by
+zero, lies in `H¹₀(H)` and is a weak solution of `-div(a ∇w) = g` on `H` for `g ∈ L²(H)` given
+almost everywhere by
+
+`g = ψ f - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)`, extended by zero.
+
+The support of `ψ` may meet `∂Ω`, but only where `∂Ω` is part of `∂H`; there the hypothesis
+`ψ u ∈ H¹₀(Ω)` expresses that `u` vanishes on that part of the boundary. No ellipticity and no
+regularity of `∂Ω` is needed. -/
+theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem
+    (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
+    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (hΩH : Omega ≤ H)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+    (hts : tsupport ψ ∩ H ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {N : ℝ} (hN : 0 ≤ N)
+    (hψN : ∀ x ∈ Omega, |ψ x| ≤ N) (hgradN : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ N)
+    (hmem : W1p.contDiffSMul ψ hψ hN hψN hgradN u ∈ w1p0Submodule mu Omega 2) :
+    ∃ w : W1p0 mu H 2, ∃ g : Lp ℝ 2 (mu.restrict H),
+      IsWeakSolutionDirichlet a 0 0 g w ∧
+        (∀ᵐ x ∂mu.restrict H, g x = (Omega : Set (EuclideanSpace ℝ ι)).indicator
+          (localizedForcing a ψ f u) x) ∧
+        (∀ᵐ x ∂mu.restrict H, W1p.value (w : W1p mu H 2) x =
+          (Omega : Set (EuclideanSpace ℝ ι)).indicator
+            (fun y => ψ y * W1p.value u y) x) ∧
+        ∀ᵐ x ∂mu.restrict H, W1p.gradient (w : W1p mu H 2) x =
+          (Omega : Set (EuclideanSpace ℝ ι)).indicator
+            (fun y => ψ y • W1p.gradient u y + W1p.value u y • ∇ ψ y) x := by
+  have hΩ := Omega.isOpen.measurableSet
+  have hsub : (Omega : Set (EuclideanSpace ℝ ι)) ⊆ H := SetLike.coe_subset_coe.mpr hΩH
+  let w : W1p0 mu H 2 := W1p0.extendByZeroL hΩH ⟨_, hmem⟩
+  -- The forcing term, extended by zero.
+  have hG := memLp_localizedForcing hM hK hψ hψc f u
+  have hg : ∀ᵐ x ∂mu.restrict H,
+      extendByZeroLpₗᵢ ℝ mu hΩ hsub (hG.toLp (localizedForcing a ψ f u)) x =
+        (Omega : Set (EuclideanSpace ℝ ι)).indicator (localizedForcing a ψ f u) x := by
+    have h3 := (ae_restrict_iff' hΩ).1 hG.coeFn_toLp
+    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hΩ hsub
+      (hG.toLp (localizedForcing a ψ f u)), ae_restrict_of_ae h3] with x hx2 hx3
+    by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
+    · rw [hx2, indicator_of_mem hxΩ, indicator_of_mem hxΩ, hx3 hxΩ]
+    · rw [hx2, indicator_of_notMem hxΩ, indicator_of_notMem hxΩ]
+  have hwg := W1p.gradient_extendByZeroL_contDiffSMul_ae hΩH hψ hN hψN hgradN u hmem
+  -- The energy form is continuous, so testing against test functions suffices.
+  have hcoeff := memLp_energyIntegrand_of_continuous (mu := mu) hM hK.continuous H
+  exact ⟨w, _, (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2
+    (energyFormH1_ofTestFunctionₗ_eq_of_ae_eq_indicator hM hK hΩH hu hψ hψc hts hwg hg), hg,
+    W1p.value_extendByZeroL_contDiffSMul_ae hΩH hψ hN hψN hgradN u hmem, hwg⟩
 
 /-- **A cutoff of a weak solution solves an equation on the whole space.** Let `a` be a
 coefficient field on the whole space with `‖a(x)‖ ≤ M` and `x ↦ a(x)` Lipschitz, both measured in
@@ -659,7 +721,8 @@ compactly supported in `Ω`. Then `ψ u`, extended by zero, is a weak solution o
 
 `g = ψ f - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)`, extended by zero.
 
-No ellipticity and no regularity of `∂Ω` is needed. -/
+No ellipticity and no regularity of `∂Ω` is needed. This is the case `H = ℝⁿ` of
+`TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`. -/
 theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x))
@@ -679,38 +742,13 @@ theorem exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul
         ∀ᵐ x ∂mu, W1p.gradient (w : W1p mu ⊤ 2) x =
           (Omega : Set (EuclideanSpace ℝ ι)).indicator
             (fun y => ψ y • W1p.gradient u y + W1p.value u y • ∇ ψ y) x := by
-  have hΩ := Omega.isOpen.measurableSet
-  have hsub : (Omega : Set (EuclideanSpace ℝ ι)) ⊆
-      ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) :=
-    SetLike.coe_subset_coe.mpr le_top
   obtain ⟨N, hN, hψN, hgradN⟩ :=
     (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  have hψN' : ∀ x ∈ Omega, |ψ x| ≤ N := fun x _ => hψN x
-  have hgradN' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ N := fun x _ => hgradN x
-  have hw := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (p := 2) (by norm_num)
-    hψ hN hψN' hgradN' hψc hts u
-  let w : W1p0 mu ⊤ 2 := W1p0.extendByZeroL le_top ⟨_, hw⟩
-  -- The forcing term, extended by zero.
-  have hG := memLp_localizedForcing hM hK hψ hψc f u
-  have hg : ∀ᵐ x ∂mu, extendByZeroLpₗᵢ ℝ mu hΩ hsub (hG.toLp (localizedForcing a ψ f u)) x =
-      (Omega : Set (EuclideanSpace ℝ ι)).indicator (localizedForcing a ψ f u) x := by
-    have h2 := (coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hΩ hsub
-      (hG.toLp (localizedForcing a ψ f u))).filter_mono
-        (ae_mono (by rw [Opens.coe_top, Measure.restrict_univ]))
-    have h3 := (ae_restrict_iff' hΩ).1 hG.coeFn_toLp
-    filter_upwards [h2, h3] with x hx2 hx3
-    by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-    · rw [hx2, indicator_of_mem hxΩ, indicator_of_mem hxΩ, hx3 hxΩ]
-    · rw [hx2, indicator_of_notMem hxΩ, indicator_of_notMem hxΩ]
-  -- The energy form is continuous, so testing against test functions suffices.
-  have hcoeff := memLp_energyIntegrand_of_continuous (mu := mu) hM hK.continuous ⊤
-  refine ⟨w, _, (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2
-    (fun φ => ?_), hg, ?_, ?_⟩
-  · exact
-    energyFormH1_ofTestFunctionₗ_eq_of_ae_eq_indicator hM hK hu hψ hψc hts
-      (W1p.gradient_extendByZeroL_contDiffSMul_ae hψ hN hψN' hgradN' u hw) hg φ
-  · exact W1p.value_extendByZeroL_contDiffSMul_ae hψ hN hψN' hgradN' u hw
-  · exact W1p.gradient_extendByZeroL_contDiffSMul_ae hψ hN hψN' hgradN' u hw
+  have hmem := W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (p := 2) (by norm_num)
+    hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) hψc hts u
+  have h := exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem hM hK le_top hu hψ
+    hψc (inter_subset_left.trans hts) hN _ _ hmem
+  simpa only [Opens.coe_top, Measure.restrict_univ] using h
 
 /-- **Localizing a weak solution to the whole space.** Let `a` be a coefficient field on the
 whole space with `‖a(x)‖ ≤ M` and `x ↦ a(x)` Lipschitz, both measured in the operator norm of its
