@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import TauCeti.Analysis.Calculus.FDeriv.Comp
 public import TauCeti.MeasureTheory.Integral.Dilation
 public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
@@ -51,7 +50,6 @@ namespace MeasureTheory.Measure
 
 /-- The **entropy** `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)` of a function `g`, with the
 convention `0 log 0 = 0` of `Real.log`. -/
-@[expose]
 noncomputable def entropy {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) : ℝ :=
   ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ)
 
@@ -59,7 +57,7 @@ noncomputable def entropy {α : Type*} {mα : MeasurableSpace α} (μ : Measure 
 theorem entropy_def {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) :
     entropy μ g =
       ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem entropy_zero {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) :
