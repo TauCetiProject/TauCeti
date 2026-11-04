@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.UniformConvergence
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Full
-public import TauCeti.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 
 /-!
 # The canonical multipliers of the full crossed product
