@@ -32,29 +32,6 @@ public section
 
 open TauCeti.SymmetricAlgebra
 
-namespace SymmetricAlgebra
-
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- The differential of a homogeneous fixed polynomial at an eigenpoint satisfies the
-scaled chain rule. No nonzero-Jacobian or invertibility hypothesis is needed here. -/
-theorem lift_pderiv_comp_of_map_eq_self (p : SymmetricAlgebra R M)
-    {d : ℕ} (hp : p ∈ homogeneousSubmodule R M d) {g : M →ₗ[R] M}
-    (hg : map R g p = p) (x : Module.Dual R M) {c : R}
-    (hx : x ∘ₗ g = c • x) (φ : Module.Dual R M) :
-    lift x (pderiv φ p) = c ^ (d - 1) * lift x (pderiv (φ ∘ₗ g) p) := by
-  have heval : (lift x).comp (map R g) = lift (c • x) := by
-    ext m
-    simpa using DFunLike.congr_fun hx m
-  calc
-    lift x (pderiv φ p) = lift x (map R g (pderiv (φ ∘ₗ g) p)) := by
-      rw [← pderiv_map, hg]
-    _ = lift (c • x) (pderiv (φ ∘ₗ g) p) := DFunLike.congr_fun heval _
-    _ = _ := lift_smul_of_mem_homogeneousSubmodule R M x c
-      (pderiv_mem_homogeneousSubmodule _ hp)
-
-end SymmetricAlgebra
-
 namespace LinearMap
 
 open SymmetricAlgebra Polynomial
