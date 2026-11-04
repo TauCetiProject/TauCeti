@@ -41,6 +41,7 @@ first statement does not extend to `|c| < 1`.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
   `det (c • L) = c²ⁿ det L` for `c ≠ 0`.
+* `ZLattice.covolume_natCast_smul`: `covolume (c • L) = cⁿ covolume L` for a positive integer `c`.
 * `ZLattice.isIntegral_smul_iff`, `ZLattice.isEven_smul_iff`: the exact criteria for `c • L` to be
   integral or even.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
@@ -136,6 +137,13 @@ theorem covolume_smul {c : ℝ} (hc : c ≠ 0) (μ : Measure E := by volume_tac)
     simp [Units.smul_def]
   rw [smul_eq_comap L hc, covolume_comap_continuousLinearEquiv L _ μ, hA, LinearMap.det_smul,
     LinearMap.det_id, mul_one, abs_pow, abs_inv, inv_pow, inv_inv]
+
+/-- Scaling a full lattice by a positive integer `c` multiplies its covolume by `cⁿ`, where `n` is
+the dimension of the space, for any Haar measure. -/
+theorem covolume_natCast_smul (c : ℕ) [NeZero c] (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] :
+    covolume ((c : ℝ) • L) μ = (c : ℝ) ^ finrank ℝ E * covolume L μ := by
+  rw [covolume_smul L (NeZero.ne _) μ, Nat.abs_cast]
 
 end Normed
 
