@@ -9,8 +9,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Conjugation
-public import TauCeti.LinearAlgebra.Complex.Eigenspace
-public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct
+public import TauCeti.LinearAlgebra.Eigenspace.ComplexStructure
+public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Basic
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -97,7 +97,8 @@ complementary. -/
 theorem isCompl_eigenspace_baseChange_I_neg_I (J : AlmostComplexStructure V) :
     IsCompl (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
       (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) :=
-  Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id _ J.baseChange_comp_self
+  Module.End.isCompl_eigenspace_eigenspace_neg_of_comp_self_eq_neg_id (Ne.isUnit two_ne_zero)
+    Complex.I_mul_I _ J.baseChange_comp_self
 
 /-! ## The `(1,0)` and `(0,1)` parts of a real vector -/
 

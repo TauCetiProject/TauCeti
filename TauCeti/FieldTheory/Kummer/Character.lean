@@ -87,8 +87,7 @@ noncomputable def kummerCharacter (α : Lˣ) (hα : ∀ σ, ρ σ ((α : L) ^ n)
       rw [coe_ratio, div_mul_cancel₀ _ α.ne_zero]
     -- `ρ σ` fixes the constant `τ α / α`, which is how it commutes past the second factor.
     have hc : ρ σ ((ratio ρ n hα τ : Lˣ) : L) = ((ratio ρ n hα τ : Lˣ) : L) := by
-      rw [← MulEquiv.apply_symm_apply (TauCeti.rootsOfUnityMulEquiv F L n) (ratio ρ n hα τ),
-        TauCeti.coe_rootsOfUnityMulEquiv, AlgEquiv.commutes]
+      rw [← TauCeti.algebraMap_rootsOfUnityMulEquiv_symm_apply F L n, AlgEquiv.commutes]
     simp only [coe_ratio, Subgroup.coe_mul, Units.val_mul, map_mul, AlgEquiv.mul_apply]
     rw [← coe_ratio ρ n hα τ, hτ, map_mul, hc, coe_ratio]
     field_simp
@@ -104,8 +103,7 @@ variable {ρ n}
 @[simp]
 theorem algebraMap_kummerCharacter {α : Lˣ} (hα : ∀ σ, ρ σ ((α : L) ^ n) = (α : L) ^ n) (σ : G) :
     algebraMap F L (ρ.kummerCharacter n α hα σ : Fˣ) = ρ σ α / α := by
-  rw [← TauCeti.coe_rootsOfUnityMulEquiv F L n, kummerCharacter_apply, MulEquiv.apply_symm_apply,
-    coe_ratio]
+  rw [kummerCharacter_apply, TauCeti.algebraMap_rootsOfUnityMulEquiv_symm_apply, coe_ratio]
 
 /-- **The Kummer character moves `α` by its value**: `σ α = χ(σ) α`. -/
 theorem apply_eq_algebraMap_kummerCharacter_mul {α : Lˣ}

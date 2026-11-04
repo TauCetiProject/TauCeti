@@ -166,8 +166,8 @@ theorem map_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι
   apply Measure.ext_of_singleton
   intro m
   rw [Measure.map_apply (by fun_prop) (MeasurableSet.singleton m),
-    multinomialMeasure_def, Measure.finsetSum_apply, binomial_singleton]
-  simp only [Measure.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
+    multinomialMeasure_def, _root_.sum_apply, binomial_singleton]
+  simp only [_root_.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
     Set.mem_preimage, Set.mem_singleton_iff, smul_eq_mul, mul_ite, mul_one, mul_zero]
   rw [sum_multinomialWeight_eq_apply]
   have hsum : p.weights i + ∑ j ∈ Finset.univ.erase i, p.weights j = 1 := by

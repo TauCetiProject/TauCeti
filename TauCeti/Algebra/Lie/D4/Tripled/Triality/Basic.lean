@@ -257,7 +257,7 @@ theorem trialityMatrix_pow_three (A : Type v) [CommRing A] : trialityMatrix A ^ 
   apply kostantNumberedSymmetryMatrix_pow_eq_one
   intro x
   rw [← MinusculeWeightTable.Symmetry.moduleEquiv_pow, trialitySymmetry_pow_three,
-    MinusculeWeightTable.Symmetry.moduleEquiv_one, LinearEquiv.coe_one, id_eq]
+    MinusculeWeightTable.Symmetry.moduleEquiv_one, FunLike.coe_one_eq_id, id_eq]
 
 /-- Conjugation by the triality matrix preserves the tripled carrier's point subgroup. -/
 private theorem map_points_conj_trialityMatrix (A : Type v) [CommRing A] :

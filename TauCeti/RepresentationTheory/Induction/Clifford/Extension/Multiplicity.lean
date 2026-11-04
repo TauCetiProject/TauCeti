@@ -110,14 +110,14 @@ private noncomputable def implementerMultiplicity :
     -- Evaluate the linear-map constructor and the identity implementing pair.
     change W.ρ 1 (f.hom.hom.hom ((1 : A ≃ₗ[k] A).symm x)) = f.hom.hom.hom x
     simp only [map_one, FGModuleCat.obj_carrier]
-    exact Module.End.one_apply _
+    exact _root_.one_apply_eq_self _
   map_mul' p q := by
     ext f x
     -- Multiplication of endomorphisms is composition; unbundle it before evaluation.
     change (implementerMap A W (p * q) f).hom.hom.hom x =
       (implementerMap A W p (implementerMap A W q f)).hom.hom.hom x
     simp only [implementerMap_apply, Subgroup.coe_mul, Prod.fst_mul, Prod.snd_mul,
-      ← LinearEquiv.coe_inv, mul_inv_rev, LinearEquiv.mul_apply]
+      ← LinearEquiv.coe_inv, mul_inv_rev, _root_.mul_apply_eq_comp]
     exact congrArg (fun l : Module.End k W =>
       l (f.hom.hom.hom (q.1.2.symm (p.1.2.symm x)))) (map_mul W.ρ p.1.1 q.1.1)
 
@@ -170,7 +170,7 @@ theorem cliffordMultiplicityRepresentation_mk_kernelLift (d : (End A)ˣ)
     rw [map_inv, implementers_inv_snd]
   simp only [cliffordMultiplicityRepresentation_mk_apply, op_smul_apply,
     kernelLift_fst, hi, kernelLift_snd_apply, map_one]
-  exact Module.End.one_apply (R := k) (M := W) _
+  exact _root_.one_apply_eq_self (F := Module.End k W) _
 
 /-- Clifford operators are semilinear for the full commutant action. -/
 theorem cliffordMultiplicityRepresentation_smul (c : Carrier A) (d : End A)
@@ -215,14 +215,14 @@ theorem cliffordMultiplicityRepresentation_section_mul (hs : s 1 = 1) (q r : Quo
   -- Write `s q * s r` as the kernel image of the factor times `s (q * r)`, then act by each part.
   calc cliffordMultiplicityRepresentation A W (s q) (cliffordMultiplicityRepresentation A W (s r) f)
       = cliffordMultiplicityRepresentation A W ((s q : Carrier A) * s r) f := by
-        rw [map_mul, Module.End.mul_apply]
+        rw [map_mul, _root_.mul_apply_eq_comp]
     _ = cliffordMultiplicityRepresentation A W
           (inl A ((FDRep.cliffordCrossedSystem A s hs).factor q r) * s (q * r)) f := by
         rw [TauCeti.GroupExtension.section_mul, groupExtension_inl, cliffordCrossedSystem_factor]
     _ = cliffordMultiplicityRepresentation A W
           (QuotientGroup.mk (kernelLift A ((FDRep.cliffordCrossedSystem A s hs).factor q r)))
           (cliffordMultiplicityRepresentation A W (s (q * r)) f) := by
-        rw [map_mul, Module.End.mul_apply, inl_apply]
+        rw [map_mul, _root_.mul_apply_eq_comp, inl_apply]
     _ = _ := cliffordMultiplicityRepresentation_mk_kernelLift A W _ _
 
 end Field
