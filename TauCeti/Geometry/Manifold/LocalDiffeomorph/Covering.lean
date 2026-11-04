@@ -9,12 +9,13 @@ public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
-# Smooth sections of covering trivializations
+# Regularity of sections of covering trivializations
 
-If a bundle projection is a local diffeomorphism, every inverse branch of any topological
-trivialization is smooth on its base set. In particular, a topological covering which is a
-local diffeomorphism has smooth local sections on the same evenly covered neighborhoods;
-there is no need to shrink the neighborhood separately for each sheet.
+If a bundle projection is a `C^n` local diffeomorphism, every inverse branch of any topological
+trivialization is `C^n` on its base set. In particular, a topological covering which is a
+`C^n` local diffeomorphism has `C^n` local sections on the same evenly covered neighborhoods;
+there is no need to shrink the neighborhood separately for each sheet. When `n = ∞`, these
+sections are smooth.
 
 The argument uses `ContMDiffOn.of_comp_isLocalDiffeomorph`: an inverse branch is continuous,
 and its composite with the projection is the identity. No manifold structure on the fiber
@@ -66,8 +67,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M B : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace B] [ChartedSpace G B] {p : M → B} {n : ℕ∞ω}
 
-/-- A covering which is a local diffeomorphism admits evenly covered neighborhoods with smooth
-sections, labeled by their values in the fiber at the center. -/
+/-- A covering which is a `C^n` local diffeomorphism admits evenly covered neighborhoods with
+`C^n` sections, labeled by their values in the fiber at the center. When `n = ∞`, these sections
+are smooth. -/
 theorem exists_trivialization_contMDiffOn_symm (hcover : IsCoveringMap p)
     (hp : IsLocalDiffeomorph I J n p) {y : B} (hy : y ∈ range p) :
     ∃ t : Bundle.Trivialization (p ⁻¹' {y}) p,
