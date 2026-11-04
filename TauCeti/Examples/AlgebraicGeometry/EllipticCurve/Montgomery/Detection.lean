@@ -12,18 +12,19 @@ import TauCeti.NumberTheory.LcmUpto
 /-!
 # Examples of Montgomery stage-1 detection
 
-The raw pair `(21, 25)` modulo `35` represents infinity modulo `5`, while its denominator is
-nonzero modulo `7`. Because the distinguished two-torsion point over `ZMod 5` has additive
-order `2`, the stage-1 multiplier `Nat.lcmUpto 2 = 2` annihilates it, and nonvanishing modulo
-`7` certifies a proper factor of `35` at `B₁ = 2`.
+The raw pair `(21, 25)` modulo `35` represents infinity modulo `5`, while modulo `7` it reduces
+to `(0, 4)`, representing the distinguished two-torsion point `(0, 0)` with nonzero denominator.
+Because the distinguished two-torsion point over `ZMod 5` has additive order `2`, the stage-1
+multiplier `Nat.lcmUpto 2 = 2` annihilates it, and nonvanishing modulo `7` certifies a proper
+factor of `35` at `B₁ = 2`. Doubling `(21, 25)` modulo `35` gives `(9, 0)`: infinity remains at
+infinity modulo `5` and doubling annihilates the two-torsion point modulo `7`, so the doubled
+pair's denominator vanishes modulo both `5` and `7` and `gcd(0, 35) = 35` is inconclusive.
 
 Separately, the affine point `(1, 3)` on `y² = x³ + x` over `ZMod 7` has additive order `4`:
 its only prime divisor `2` is at most `3`, yet `4` divides neither `Nat.lcmUpto 2 = 2` nor
-`Nat.lcmUpto 3 = 6`, illustrating that prime-divisor smoothness is strictly weaker than
-powersmoothness (`B₁ = 3` versus `B₁ = 4`). Doubling `(21, 25)` once more modulo `35` gives
-`(9, 0)`: at `B₁ = 4` (`Nat.lcmUpto 4 = 12`) both primes `5` and `7` are annihilated and
-`gcd(0, 35) = 35` is inconclusive. The remaining examples separate the three gcd outcomes and
-record a proper gcd for a prime-power modulus.
+`Nat.lcmUpto 3 = 6`, whereas `4 ∣ Nat.lcmUpto 4 = 12`, illustrating that prime-divisor
+smoothness is strictly weaker than powersmoothness (`B₁ = 3` versus `B₁ = 4`). The remaining
+examples separate the three gcd outcomes and record a proper gcd for a prime-power modulus.
 -/
 
 public section
@@ -56,10 +57,12 @@ private theorem addOrderOf_pointSeven : addOrderOf pointSeven = 4 := by
   rw [pow_one, two_nsmul, pointSeven_double]
   exact twoTorsionPoint_ne_zero 0 (by decide)
 
--- The reduced pair is genuinely nonzero and represents infinity.
+-- Modulo 5, (21, 25) represents infinity (1, 0); modulo 7 it reduces to (0, 4).
 example : (Pair.mk 21 25 : Pair (ZMod 35)).map
-    (ZMod.castHom (by norm_num : 5 ∣ 35) (ZMod 5)) = ⟨1, 0⟩ := by
-  ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+      (ZMod.castHom (by norm_num : 5 ∣ 35) (ZMod 5)) = ⟨1, 0⟩ ∧
+    (Pair.mk 21 25 : Pair (ZMod 35)).map
+      (ZMod.castHom (by norm_num : 7 ∣ 35) (ZMod 7)) = ⟨0, 4⟩ := by
+  constructor <;> (ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide)
 
 -- Stage-1 detection at B₁ = 2 (M(2) = 2): the two-torsion point over ZMod 5 has order 2 ≤ 2.
 example : 5 ∣ Nat.gcd (25 : ZMod 35).val 35 := by
@@ -91,27 +94,23 @@ example : ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 2 ∧
   rw [addOrderOf_pointSeven]
   decide
 
--- Doubling (21, 25) again modulo 35 gives (9, 0): at B₁ = 4 both primes 5 and 7 are annihilated,
--- producing the inconclusive outcome gcd(0, 35) = 35.
+-- Modulo 5, (21, 25) is already infinity (1, 0); modulo 7 it reduces to (0, 4), representing the
+-- two-torsion point (0, 0) of order 2. Doubling (21, 25) modulo 35 gives (9, 0), whose denominator
+-- vanishes modulo both 5 and 7 and produces the inconclusive outcome gcd(0, 35) = 35.
 example : double (2 : ZMod 35) 4 ⟨21, 25⟩ = ⟨9, 0⟩ ∧
     5 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
     7 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
     Nat.gcd (0 : ZMod 35).val 35 = 35 := by
   refine ⟨by ext <;> norm_num [double_x, double_z] <;> decide, ?_, ?_, by decide⟩
-  · have hdvd5 :
-        addOrderOf (twoTorsionPoint (B := (1 : ZMod 5)) 0 (by decide)) ∣ (4 : ℕ).lcmUpto :=
-      Nat.dvd_lcmUpto (by simp) (by simp)
-    apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 5) (A := 0) (B := 1)
-      (m := (4 : ℕ).lcmUpto) (by decide) (twoTorsionPoint 0 (by decide)) ⟨9, 0⟩ hdvd5
-    rw [addOrderOf_dvd_iff_nsmul_eq_zero.mp hdvd5, coordinates_zero, Pair.cross_def]
+  · apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 5) (A := 0) (B := 1)
+      (m := (2 : ℕ).lcmUpto) (by decide) 0 ⟨9, 0⟩ (Nat.dvd_lcmUpto (by simp) (by simp))
+    rw [nsmul_zero, coordinates_zero, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
-  · have hdvd7 : addOrderOf pointSeven ∣ (4 : ℕ).lcmUpto := by
-      rw [addOrderOf_pointSeven]
-      exact Nat.dvd_lcmUpto (by decide) le_rfl
-    apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 7) (A := 0) (B := 1)
-      (m := (4 : ℕ).lcmUpto) (by decide) pointSeven ⟨9, 0⟩ hdvd7
-    rw [addOrderOf_dvd_iff_nsmul_eq_zero.mp hdvd7, coordinates_zero, Pair.cross_def]
+  · apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 7) (A := 0) (B := 1)
+      (m := (2 : ℕ).lcmUpto) (by decide) (twoTorsionPoint 0 (by decide)) ⟨9, 0⟩
+      (Nat.dvd_lcmUpto (by simp) (by simp))
+    rw [Nat.lcmUpto_two, two_nsmul, twoTorsionPoint_add_self, coordinates_zero, Pair.cross_def]
     simp only [Pair.map_x, Pair.map_z]
     decide
 
