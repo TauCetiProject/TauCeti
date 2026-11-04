@@ -43,6 +43,8 @@ any ordering of the circles or parenthesization of the tensor product, and it is
 * `TauCeti.Khovanov.circleQuantumGrading`: the quantum grading of the circle tensor.
 * `TauCeti.Khovanov.circlePieceBasis`: the basis of its degree-`p` piece indexed by the labellings
   of degree `p`, so that every piece is finite free.
+* `TauCeti.Khovanov.circlePieceEquivOfUnique`: a piece with a single labelling of its degree is
+  identified with `R`.
 
 ## Main results
 
@@ -302,6 +304,47 @@ instance (p : ℤ) : Module.Free R ((circleQuantumGrading R ι).piece p) :=
 /-- Each quantum-degree piece of the circle tensor is a finitely generated module. -/
 instance (p : ℤ) : Module.Finite R ((circleQuantumGrading R ι).piece p) :=
   .of_basis (circlePieceBasis R ι p)
+
+/-- When `l₀` is the only labelling of degree `p`, the labellings of degree `p` form a singleton
+with element `l₀`. -/
+@[instance_reducible]
+private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+
+private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    ((uniqueLabelingOfDegree h).default : ι → Bool) = l₀ :=
+  rfl
+
+variable (R) in
+/-- When `l₀` is the only labelling of degree `p`, the degree-`p` piece of the circle tensor is free
+of rank one: the coordinate along `l₀` identifies it with `R`. -/
+noncomputable def circlePieceEquivOfUnique {p : ℤ} (l₀ : ι → Bool)
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
+    (circleQuantumGrading R ι).piece p ≃ₗ[R] R :=
+  letI := uniqueLabelingOfDegree h
+  (circlePieceBasis R ι p).equivFun ≪≫ₗ LinearEquiv.funUnique _ R R
+
+/-- The identification of a rank-one piece with `R` reads off the coordinate along the unique
+labelling of that degree. -/
+@[simp]
+theorem circlePieceEquivOfUnique_apply {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (x : (circleQuantumGrading R ι).piece p) :
+    circlePieceEquivOfUnique R l₀ h x = (circleBasis R ι).repr x l₀ := by
+  simp [circlePieceEquivOfUnique, circlePieceBasis_repr_apply, coe_default_uniqueLabelingOfDegree]
+
+/-- The inverse identification sends a scalar to that multiple of the basis vector of the unique
+labelling of that degree. -/
+@[simp]
+theorem coe_circlePieceEquivOfUnique_symm_apply {p : ℤ} {l₀ : ι → Bool}
+    (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (r : R) :
+    ((circlePieceEquivOfUnique R l₀ h).symm r : CircleTensor R ι) = r • circleBasis R ι l₀ := by
+  have hl₀ : circleBasis R ι l₀ ∈ (circleQuantumGrading R ι).piece p :=
+    (h l₀).2 rfl ▸ circleBasis_mem_circleQuantumGrading_piece l₀
+  have hr : r = circlePieceEquivOfUnique R l₀ h (r • ⟨_, hl₀⟩) := by simp
+  rw [(LinearEquiv.symm_apply_eq _).2 hr, Submodule.coe_smul]
 
 /-- The pure tensor of the labels of a labelling is homogeneous of the degree of the labelling.
 This is the simp-normal form of `TauCeti.Khovanov.circleBasis_mem_circleQuantumGrading_piece`. -/

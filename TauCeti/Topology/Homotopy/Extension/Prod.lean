@@ -5,21 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.Extension.Basic
+public import TauCeti.Topology.Homotopy.Extension.Cube
+public import TauCeti.Topology.Homotopy.Extension.NDRPair
 
 /-!
-# Products of closed cofibrations with arbitrary spaces
+# Products of closed cofibrations
 
-If a closed subset `A ⊆ X` has the homotopy extension property, then so does `Y × A ⊆ Y × X`
-for every space `Y`. No compactness or separation hypothesis on the parameter space is needed.
-This allows homotopies to be extended continuously in additional parameters, in particular
-when proving the homotopy lifting property of restriction between compact-open mapping spaces.
+If closed subsets `A ⊆ X` and `B ⊆ Y` have the homotopy extension property, then so does
+`A × Y ∪ X × B ⊆ X × Y` (Strøm's product theorem). No compactness or separation hypothesis is
+needed. The proof passes through NDR data: closed cofibrations are exactly the subsets admitting
+NDR data (`TauCeti.nonempty_ndrPair_iff`), and NDR pairs have products (`TauCeti.NDRPair.prod`).
+Both subsets are assumed closed here, as NDR data requires; Strøm's theorem needs only one of
+them closed.
 
-The construction uses the cylinder retraction characterization of
-`TauCeti.HasHomotopyExtensionProperty.exists_retraction` and leaves the parameter unchanged.
+Two special cases are recorded.
+
+* Taking `B = ∅`, the product `Y × A ⊆ Y × X` of a closed cofibration with any space is a
+  cofibration. This allows homotopies to be extended continuously in additional parameters, in
+  particular when proving the homotopy lifting property of restriction between compact-open
+  mapping spaces.
+* Taking `{0, 1} ⊆ I` as the first factor, `{0, 1} × X ∪ I × A ⊆ I × X` is a cofibration: a
+  homotopy of maps out of `X × I` may be prescribed at both ends and over `A` at once. This is the
+  form in which homotopies between homotopies are extended, as in the proof that a homotopy
+  equivalence between cofibrations under `A` is a homotopy equivalence relative to `A`.
+
+## Main declarations
+
+* `TauCeti.HasHomotopyExtensionProperty.prod_univ_union_univ_prod`: **Strøm's product theorem**
+  for closed cofibrations.
+* `TauCeti.HasHomotopyExtensionProperty.univ_prod`: products with arbitrary spaces.
+* `TauCeti.HasHomotopyExtensionProperty.zero_one_prod_univ_union_univ_prod`: the cylinder on a
+  closed cofibration, relative to both of its ends.
 
 ## References
 
+* A. Strøm, *Note on cofibrations II*, Math. Scand. 22 (1968), 130–142, for the product theorem.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Chapter 0, Proposition 0.19, where the cylinder case is used.
 * G. W. Whitehead, *Elements of Homotopy Theory*, Chapter I, homotopy extension and cofibrations.
 -/
 
@@ -29,23 +51,27 @@ open Set unitInterval
 
 namespace TauCeti
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {A : Set X}
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {A : Set X} {B : Set Y}
+
+/-- **Strøm's product theorem**: if closed subsets `A ⊆ X` and `B ⊆ Y` have the homotopy
+extension property, then so does `A × Y ∪ X × B ⊆ X × Y`. -/
+theorem HasHomotopyExtensionProperty.prod_univ_union_univ_prod (hA : HasHomotopyExtensionProperty A)
+    (hA' : IsClosed A) (hB : HasHomotopyExtensionProperty B) (hB' : IsClosed B) :
+    HasHomotopyExtensionProperty (A ×ˢ (univ : Set Y) ∪ (univ : Set X) ×ˢ B) := by
+  obtain ⟨N⟩ := nonempty_ndrPair_iff.2 ⟨hA', hA⟩
+  obtain ⟨M⟩ := nonempty_ndrPair_iff.2 ⟨hB', hB⟩
+  exact (N.prod M).hasHomotopyExtensionProperty
 
 /-- A closed cofibration remains a cofibration after taking its product with any space. -/
 theorem HasHomotopyExtensionProperty.univ_prod (h : HasHomotopyExtensionProperty A)
     (hA : IsClosed A) : HasHomotopyExtensionProperty ((univ : Set Y) ×ˢ A) := by
-  obtain ⟨r, hr, hr'⟩ := h.exists_retraction
-  let R : C(I × (Y × X), I × (Y × X)) :=
-    ⟨fun q ↦ ((r (q.1, q.2.2)).1, (q.2.1, (r (q.1, q.2.2)).2)), by fun_prop⟩
-  refine hasHomotopyExtensionProperty_of_retraction (isClosed_univ.prod hA)
-    (r := R) (fun q ↦ ?_) (fun q hq ↦ ?_)
-  · exact mem_cylinderExtensionDomain_iff.mpr
-      ((mem_cylinderExtensionDomain_iff.mp (hr (q.1, q.2.2))).imp id
-        (fun hx ↦ ⟨mem_univ _, hx⟩))
-  · have hq' : (q.1, q.2.2) ∈ cylinderExtensionDomain A := by
-      rcases mem_cylinderExtensionDomain_iff.mp hq with h₀ | h₁
-      · exact mem_cylinderExtensionDomain_iff.mpr (Or.inl h₀)
-      · exact mem_cylinderExtensionDomain_iff.mpr (Or.inr h₁.2)
-    simp [R, hr' _ hq']
+  simpa using hasHomotopyExtensionProperty_empty.prod_univ_union_univ_prod isClosed_empty h hA
+
+/-- **The cylinder on a closed cofibration**: if a closed subset `A ⊆ X` has the homotopy
+extension property, then so does `{0, 1} × X ∪ I × A ⊆ I × X`. -/
+theorem HasHomotopyExtensionProperty.zero_one_prod_univ_union_univ_prod
+    (h : HasHomotopyExtensionProperty A) (hA : IsClosed A) :
+    HasHomotopyExtensionProperty (({0, 1} : Set I) ×ˢ (univ : Set X) ∪ univ ×ˢ A) :=
+  hasHomotopyExtensionProperty_zero_one.prod_univ_union_univ_prod (toFinite _).isClosed h hA
 
 end TauCeti
