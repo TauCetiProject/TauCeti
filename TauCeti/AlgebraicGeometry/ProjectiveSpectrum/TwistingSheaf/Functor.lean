@@ -47,7 +47,9 @@ the structure sheaf.
   structure sheaves.
 * `AlgebraicGeometry.Proj.twistingSheaf.comap_const`, `AlgebraicGeometry.Proj.comap_toTwistingSheaf`
   and `AlgebraicGeometry.Proj.twistingSheaf.comap_mul`: compatibility with fractions, with the
-  sections `r / 1` and with multiplication.
+  sections `r / 1` and with multiplication, with `AlgebraicGeometry.Proj.twistingSheafMap_app_mul`
+  and `AlgebraicGeometry.Proj.res_twistingSheafMap_app_mul` the forms of the last for the
+  morphism of twisting sheaves.
 * `AlgebraicGeometry.Proj.twistingSheafMap_comp` and `AlgebraicGeometry.Proj.twistingSheafMap_id`:
   compatibility with composition and identities, with the sectionwise forms
   `AlgebraicGeometry.Proj.twistingSheafMap_app_apply_of_eq_comp` and
@@ -252,6 +254,26 @@ theorem twistingSheafMap_app (U : (Proj 𝒜).Opens) :
     Scheme.Modules.Hom.app (twistingSheafMap f hf n) U =
       AddCommGrpCat.ofHom (comap f hf (U := U) Set.Subset.rfl) :=
   (rfl)
+
+/-- The morphisms of twisting sheaves are multiplicative on sections: they send the product of
+sections of `𝒪(m)` and `𝒪(n)` to the product of their images. -/
+theorem twistingSheafMap_app_mul {m : ℤ} (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) :
+    (twistingSheafMap f hf (m + n)).app U (mul 𝒜 U m n s t) =
+      mul ℬ (map f hf ⁻¹ᵁ U) m n ((twistingSheafMap f hf m).app U s)
+        ((twistingSheafMap f hf n).app U t) :=
+  comap_mul f hf Set.Subset.rfl s t
+
+/-- The morphisms of twisting sheaves, followed by restriction to an open `V` of the preimage of
+`U`, are multiplicative on sections. -/
+theorem res_twistingSheafMap_app_mul {m : ℤ} (U : (Proj 𝒜).Opens) {V : (Proj ℬ).Opens}
+    (e : V ⟶ map f hf ⁻¹ᵁ U) (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) :
+    (twistingSheaf ℬ (m + n)).presheaf.map e.op
+        ((twistingSheafMap f hf (m + n)).app U (mul 𝒜 U m n s t)) =
+      mul ℬ V m n ((twistingSheaf ℬ m).presheaf.map e.op ((twistingSheafMap f hf m).app U s))
+        ((twistingSheaf ℬ n).presheaf.map e.op ((twistingSheafMap f hf n).app U t)) :=
+  (congrArg ((twistingSheaf ℬ (m + n)).presheaf.map e.op)
+    (twistingSheafMap_app_mul f hf U s t)).trans (twistingSheaf.res_mul _ _ _)
 
 /-- **The morphisms of twisting sheaves are compatible with composition**: under
 `Proj.map (g.comp f) = Proj.map g ≫ Proj.map f`, the morphism induced by `g.comp f` is the
