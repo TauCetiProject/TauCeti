@@ -446,7 +446,7 @@ def normRpow (m : ℝ) : HomogeneousSymbol E V V m where
   coefficient_zero_frequency x := by simp
   contDiffOn_coefficient := by
     refine ContDiffOn.congr (f := fun p : E × E => ‖p.2‖ ^ m • ContinuousLinearMap.id ℂ V)
-      (fun p hp => ?_) fun p hp => by simp [show p.2 ≠ 0 from hp]
+      (fun p hp => ?_) fun p hp => by rw [Set.mem_ofPred_eq] at hp; simp [hp]
     refine ContDiffAt.contDiffWithinAt ?_
     exact (((contDiffAt_norm ℝ hp).comp p contDiffAt_snd).rpow_const_of_ne
       (norm_ne_zero_iff.mpr hp)).smul contDiffAt_const

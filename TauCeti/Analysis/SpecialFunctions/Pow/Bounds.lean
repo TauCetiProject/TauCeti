@@ -346,7 +346,7 @@ theorem norm_rpow_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E] {ξ
       Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by linarith)
     rw [Real.mul_rpow (by norm_num) (by positivity)] at h2
     have h2r : (2 : ℝ) ^ (|r| / 2) * 2 ^ (r / 2) = 1 := by
-      rw [abs_of_neg hr, ← Real.rpow_add (by norm_num), show -r / 2 + r / 2 = 0 by ring,
+      rw [abs_of_neg hr, ← Real.rpow_add (by norm_num), neg_div, neg_add_cancel,
         Real.rpow_zero]
     calc (‖ξ‖ ^ 2) ^ (r / 2) = 2 ^ (|r| / 2) * (2 ^ (r / 2) * (‖ξ‖ ^ 2) ^ (r / 2)) := by
           rw [← mul_assoc, h2r, one_mul]
