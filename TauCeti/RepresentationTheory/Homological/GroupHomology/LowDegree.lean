@@ -8,19 +8,19 @@ module
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.LowDegree
 
 /-!
-# Group homology in low degrees
+# Group homology in degrees zero and one
 
 Complements to Mathlib's `Mathlib.RepresentationTheory.Homological.GroupHomology.LowDegree`, which
-identifies `H₀(G, A)` with the coinvariants of `A` and, for trivial `A`, `H₁(G, A)` with
-`Gᵃᵇ ⊗[ℤ] A`.
+identifies `H₀(G, A)` with the coinvariants of `A`, and `H₁(G, A)` with `Gᵃᵇ ⊗ A` for trivial
+coefficients `A`.
 
 ## Main results
 
 * `TauCeti.groupHomology.H0π_eq_iff`: two elements of `A` have the same class in `H₀(G, A)`
   exactly when their difference lies in the augmentation submodule
   `Representation.Coinvariants.ker A.ρ`.
-* `TauCeti.subsingleton_groupHomology_one_of_forall_exists_sq`: `H₁(G; k) = 0` when every element
-  of `G` is a square and `2 = 0` in `k`.
+* `TauCeti.groupHomology.isZero_H1_of_forall_exists_zpow_eq`: if every element of `G` is an
+  `m`-th power and `m` kills the trivial coefficients `A`, then `H₁(G, A) = 0`.
 -/
 
 public section
@@ -42,35 +42,24 @@ theorem H0π_eq_iff {x y : A.V} :
   exact (H0Iso A).toLinearEquiv.symm.injective.eq_iff.trans
     (Representation.Coinvariants.mk_eq_iff _)
 
-end TauCeti.groupHomology
-
-namespace TauCeti
-
-open TensorProduct
-
-variable (k : Type u) [CommRing k] {G : Type u} [Group G]
-
-/-- **The first homology of a two-divisible group vanishes in characteristic two.** If every element
-of `G` is a square and `2 = 0` in `k`, then `H₁(G; k) = Gᵃᵇ ⊗ k` vanishes: every element of the
-abelianization is twice another, and twice every element of `k` is zero. -/
-theorem subsingleton_groupHomology_one_of_forall_exists_sq (hk : (2 : k) = 0)
-    (h : ∀ g : G, ∃ x, x ^ 2 = g) : Subsingleton (groupHomology (Rep.trivial k G k) 1) := by
-  suffices Subsingleton (Additive (Abelianization G) ⊗[ℤ] k) by
-    exact (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial k G k)).injective.subsingleton
-  refine ⟨fun s t ↦ ?_⟩
-  suffices ∀ s : Additive (Abelianization G) ⊗[ℤ] k, s = 0 by rw [this s, this t]
-  intro s
-  induction s using TensorProduct.inductionOn with
-  | add s t hs ht => rw [hs, ht, add_zero]
-  | tmul a b =>
-    -- `a` is the class of a square `x ^ 2`, so `a ⊗ b = x ⊗ 2b = 0`
-    -- `Abelianization.of` is the quotient map, so it is surjective
-    obtain ⟨g, hg⟩ : ∃ g, Abelianization.of g = Additive.toMul a :=
-      QuotientGroup.mk_surjective _
-    obtain ⟨x, rfl⟩ := h g
-    have ha : a = Additive.ofMul (Abelianization.of x) + Additive.ofMul (Abelianization.of x) := by
-      rw [← ofMul_mul, ← map_mul, ← pow_two, hg, ofMul_toMul]
-    rw [ha, TensorProduct.add_tmul, ← TensorProduct.tmul_add, ← two_mul, hk, zero_mul,
+open TensorProduct in
+/-- **First homology of a divisible group.** If every element of `G` is an `m`-th power and
+multiplication by `m` is zero on the trivial representation `A`, then `H₁(G, A) = Gᵃᵇ ⊗ A`
+vanishes. -/
+theorem isZero_H1_of_forall_exists_zpow_eq [A.IsTrivial] (m : ℤ) (hG : ∀ g : G, ∃ x, x ^ m = g)
+    (hA : ∀ a : A.V, m • a = 0) : CategoryTheory.Limits.IsZero (H1 A) := by
+  rw [ModuleCat.isZero_iff_subsingleton]
+  suffices Subsingleton (Additive (Abelianization G) ⊗[ℤ] A) from
+    (H1AddEquivOfIsTrivial A).injective.subsingleton
+  rw [subsingleton_iff_forall_eq 0]
+  intro z
+  induction z using TensorProduct.inductionOn with
+  | tmul x a =>
+    -- the class of `g = yᵐ` is `m` times that of `y`, and `m` kills `a`
+    obtain ⟨g, hg⟩ : ∃ g, Abelianization.of g = x.toMul := QuotientGroup.mk_surjective x.toMul
+    obtain ⟨y, rfl⟩ := hG g
+    rw [← ofMul_toMul x, ← hg, map_zpow, ofMul_zpow, TensorProduct.smul_tmul, hA,
       TensorProduct.tmul_zero]
+  | add x y hx hy => rw [hx, hy, add_zero]
 
-end TauCeti
+end TauCeti.groupHomology
