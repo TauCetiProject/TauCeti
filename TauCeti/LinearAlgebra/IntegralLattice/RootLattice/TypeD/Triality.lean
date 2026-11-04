@@ -44,15 +44,18 @@ act on a lattice glued from copies of `D₄`.
 * `discriminantGroupEquiv_checkerboardTriality_checkerboardVectorClass` and its two companions:
   `τ` acts on the discriminant classes by `v ↦ c ↦ s ↦ v`.
 * `discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry`:
-  in the quaternary coordinates of the discriminant group, `τ` is multiplication by `ω²`.
+  in the quaternary coordinates of the discriminant group, `τ` is multiplication by `ω²`, and its
+  powers give `TauCeti.IntegralLattice.checkerboardScalarIsometry`, realizing every unit of `F₄` on
+  the checkerboard discriminant group.
 * `TauCeti.DynkinType.typeD4Triality`: the triality isometry of the root lattice of type `D₄`,
   permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`).
 * `TauCeti.DynkinType.discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry`: on the `D₄` glue
   alphabet, read in `F₄`, it is multiplication by `ω²`; its powers give every nonzero scaling
   (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`).
 * `TauCeti.DynkinType.typeD4ScalarIsometry`: the power of triality realizing a given unit of
-  `F₄` on the glue alphabet (`typeD4ScalarIsometry_eq_pow`). It sends `1` to the identity and
-  products to composites (`typeD4ScalarIsometry_one`, `typeD4ScalarIsometry_mul`).
+  `F₄` on the glue alphabet (`typeD4ScalarIsometry_eq_pow`), compatible with
+  `checkerboardScalarIsometry` under `rootLatticeIsometryCheckerboard`
+  (`typeD4ScalarIsometry_trans_rootLatticeIsometryCheckerboard`).
 
 ## References
 
@@ -239,6 +242,89 @@ theorem discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminant
       typeD4QuaternaryDiscriminantQuadraticIsometry_root]
     exact discriminantGroupEquiv_checkerboardTriality_checkerboardCospinorClass
 
+/-- **The powers of triality act on the discriminant group of `D₄` as multiplication by the powers
+of `ω²`**, read in the quaternary coordinates `typeD4QuaternaryDiscriminantQuadraticIsometry`. -/
+theorem
+    discriminantGroupEquiv_checkerboardTriality_pow_typeD4QuaternaryDiscriminantQuadraticIsometry
+    (k : ℕ) (y : F) :
+    (checkerboardTriality ^ k).discriminantGroupEquiv
+        (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω y) =
+      typeD4QuaternaryDiscriminantQuadraticIsometry hF hω ((ω ^ 2) ^ k * y) := by
+  induction k generalizing y with
+  | zero =>
+    rw [pow_zero, pow_zero, one_mul, Isometry.one_def, Isometry.discriminantGroupEquiv_refl]
+    -- `LinearEquiv.refl_apply` does not rewrite here: the argument is typed in the carrier of
+    -- the discriminant quadratic module rather than in the discriminant group.
+    rfl
+  | succ k ih =>
+    rw [pow_succ checkerboardTriality k, Isometry.mul_def, Isometry.discriminantGroupEquiv_trans]
+    refine (congrArg _
+      (discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry
+        hF hω y)).trans ((ih _).trans ?_)
+    rw [pow_succ (ω ^ 2) k, mul_assoc]
+
+/-- **Triality realizes every nonzero scalar of `F₄` on the checkerboard `D₄` discriminant group.**
+For a unit `a` of a field `F` of four elements, this is the power of `checkerboardTriality` acting
+on the discriminant group, read in the quaternary coordinates
+`typeD4QuaternaryDiscriminantQuadraticIsometry`, as multiplication by `a`. For `a = 1, ω, ω²` it is
+the power `0, 2, 1` of triality. -/
+noncomputable def checkerboardScalarIsometry (a : Fˣ) :
+    Isometry (checkerboardLattice 4) (checkerboardLattice 4) :=
+  checkerboardTriality ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a)
+
+/-- **`checkerboardScalarIsometry a` acts on the `D₄` discriminant group as multiplication by
+`a`**, read through `typeD4QuaternaryDiscriminantQuadraticIsometry`. -/
+theorem
+    discriminantGroupEquiv_checkerboardScalarIsometry_typeD4QuaternaryDiscriminantQuadraticIsometry
+    (a : Fˣ) (y : F) :
+    (checkerboardScalarIsometry hF hω a).discriminantGroupEquiv
+        (typeD4QuaternaryDiscriminantQuadraticIsometry hF hω y) =
+      typeD4QuaternaryDiscriminantQuadraticIsometry hF hω (a * y) := by
+  rw [checkerboardScalarIsometry,
+    discriminantGroupEquiv_checkerboardTriality_pow_typeD4QuaternaryDiscriminantQuadraticIsometry
+      hF hω,
+    sq_pow_finFourEquiv_symm]
+
+/-- **`checkerboardScalarIsometry a` is the power of triality realizing `a`**: if `(ω²)ᵏ = a`, then
+it is `checkerboardTriality ^ k`. -/
+theorem checkerboardScalarIsometry_eq_pow (a : Fˣ) {k : ℕ} (hk : (ω ^ 2) ^ k = a) :
+    checkerboardScalarIsometry hF hω a = checkerboardTriality ^ k := by
+  -- Both `ω²` and triality have order three, so only the exponent modulo three matters.
+  have h3 : (ω ^ 2) ^ 3 = 1 := by
+    rw [← pow_mul, mul_comm, pow_mul, pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω,
+      one_pow]
+  have h1 : ω ^ 2 ≠ 1 := fun h ↦ one_ne_zero (α := F) <| by
+    linear_combination ω * hω - (ω + 1) * h - ω * two_eq_zero_of_natCard_eq_four hF
+  have hmod := (isOfFinOrder_iff_pow_eq_one.mpr ⟨3, by norm_num, h3⟩).pow_inj_mod.mp
+    ((sq_pow_finFourEquiv_symm hF hω a).trans hk.symm)
+  rw [orderOf_eq_prime h3 h1] at hmod
+  exact (pow_eq_pow_mod _ checkerboardTriality_pow_three).trans
+    ((congrArg _ hmod).trans (pow_eq_pow_mod k checkerboardTriality_pow_three).symm)
+
+/-- The scalar `1` is realized on the checkerboard lattice by the identity isometry. -/
+@[simp]
+theorem checkerboardScalarIsometry_one : checkerboardScalarIsometry hF hω 1 = 1 :=
+  (checkerboardScalarIsometry_eq_pow hF hω 1 (k := 0) (by rw [pow_zero, Units.val_one])).trans
+    (pow_zero _)
+
+/-- The checkerboard isometries realizing two scalars compose to the isometry realizing their
+product. -/
+theorem checkerboardScalarIsometry_mul (a b : Fˣ) :
+    checkerboardScalarIsometry hF hω (a * b) =
+      checkerboardScalarIsometry hF hω a * checkerboardScalarIsometry hF hω b := by
+  rw [checkerboardScalarIsometry_eq_pow hF hω a (sq_pow_finFourEquiv_symm hF hω a),
+    checkerboardScalarIsometry_eq_pow hF hω b (sq_pow_finFourEquiv_symm hF hω b), ← pow_add]
+  refine checkerboardScalarIsometry_eq_pow hF hω _ ?_
+  rw [pow_add, sq_pow_finFourEquiv_symm, sq_pow_finFourEquiv_symm, Units.val_mul]
+
+/-- The checkerboard isometry realizing the inverse of a scalar is the inverse self-isometry. -/
+@[simp]
+theorem checkerboardScalarIsometry_inv (a : Fˣ) :
+    checkerboardScalarIsometry hF hω a⁻¹ = (checkerboardScalarIsometry hF hω a)⁻¹ :=
+  mul_eq_one_iff_eq_inv.mp <|
+    (checkerboardScalarIsometry_mul hF hω a⁻¹ a).symm.trans <| by
+      rw [inv_mul_cancel, checkerboardScalarIsometry_one]
+
 end IntegralLattice
 
 /-! ## Triality on the root lattice of type `D₄` -/
@@ -331,6 +417,40 @@ noncomputable def typeD4ScalarIsometry (a : Fˣ) :
     Isometry ((D 4).rootLattice ht) ((D 4).rootLattice ht) :=
   typeD4Triality ht ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a)
 
+/-- `typeD4ScalarIsometry a` is `checkerboardScalarIsometry a`, conjugated along
+`rootLatticeIsometryCheckerboard`. -/
+theorem typeD4ScalarIsometry_eq_conjMulEquiv (a : Fˣ) :
+    typeD4ScalarIsometry ht hF hω a =
+      (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm.conjMulEquiv
+        (checkerboardScalarIsometry hF hω a) := by
+  rw [typeD4ScalarIsometry, checkerboardScalarIsometry, typeD4Triality, map_pow]
+
+/-- `typeD4ScalarIsometry a` acts on the root lattice by conjugating `checkerboardScalarIsometry a`
+with `rootLatticeIsometryCheckerboard`. -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the argument `x` by `rank_D`.
+theorem typeD4ScalarIsometry_apply (a : Fˣ) (x : Fin (D 4).rank → ℚ) :
+    typeD4ScalarIsometry ht hF hω a x = (rootLatticeIsometryCheckerboard 4 le_rfl ht).symm
+      (checkerboardScalarIsometry hF hω a (rootLatticeIsometryCheckerboard 4 le_rfl ht x)) := by
+  rw [typeD4ScalarIsometry_eq_conjMulEquiv, Isometry.conjMulEquiv_apply, Isometry.symm_symm]
+
+/-- **`rootLatticeIsometryCheckerboard` intertwines `typeD4ScalarIsometry` and
+`checkerboardScalarIsometry` pointwise.** -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the argument `x` by `rank_D`.
+theorem rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply (a : Fˣ)
+    (x : Fin (D 4).rank → ℚ) :
+    rootLatticeIsometryCheckerboard 4 le_rfl ht (typeD4ScalarIsometry ht hF hω a x) =
+      checkerboardScalarIsometry hF hω a (rootLatticeIsometryCheckerboard 4 le_rfl ht x) := by
+  rw [typeD4ScalarIsometry_apply, Isometry.apply_symm_apply]
+
+/-- **`rootLatticeIsometryCheckerboard` intertwines `typeD4ScalarIsometry` and
+`checkerboardScalarIsometry`.** -/
+theorem typeD4ScalarIsometry_trans_rootLatticeIsometryCheckerboard (a : Fˣ) :
+    (typeD4ScalarIsometry ht hF hω a).trans (rootLatticeIsometryCheckerboard 4 le_rfl ht) =
+      (rootLatticeIsometryCheckerboard 4 le_rfl ht).trans (checkerboardScalarIsometry hF hω a) :=
+  Isometry.ext fun x ↦ by
+    rw [Isometry.trans_apply, Isometry.trans_apply,
+      rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply]
+
 /-- **`typeD4ScalarIsometry a` acts on the `D₄` glue alphabet as multiplication by `a`**, read
 through `typeD4GlueAlphabetQuaternaryIsometry`. -/
 theorem discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry (a : Fˣ)
@@ -347,32 +467,27 @@ theorem discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry (a : F�
 is `typeD4Triality ^ k`. -/
 theorem typeD4ScalarIsometry_eq_pow (a : Fˣ) {k : ℕ} (hk : (ω ^ 2) ^ k = a) :
     typeD4ScalarIsometry ht hF hω a = typeD4Triality ht ^ k := by
-  -- Both `ω²` and triality have order three, so only the exponent modulo three matters.
-  have h3 : (ω ^ 2) ^ 3 = 1 := by
-    rw [← pow_mul, mul_comm, pow_mul, pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω,
-      one_pow]
-  have h1 : ω ^ 2 ≠ 1 := fun h ↦ one_ne_zero (α := F) <| by
-    linear_combination ω * hω - (ω + 1) * h - ω * two_eq_zero_of_natCard_eq_four hF
-  have hmod := (isOfFinOrder_iff_pow_eq_one.mpr ⟨3, by norm_num, h3⟩).pow_inj_mod.mp
-    ((sq_pow_finFourEquiv_symm hF hω a).trans hk.symm)
-  rw [orderOf_eq_prime h3 h1] at hmod
-  exact (pow_eq_pow_mod _ (typeD4Triality_pow_three ht)).trans
-    ((congrArg _ hmod).trans (pow_eq_pow_mod k (typeD4Triality_pow_three ht)).symm)
+  rw [typeD4ScalarIsometry_eq_conjMulEquiv, checkerboardScalarIsometry_eq_pow hF hω a hk,
+    map_pow, typeD4Triality]
 
 /-- The scalar `1` is realized by the identity isometry. -/
 @[simp]
-theorem typeD4ScalarIsometry_one : typeD4ScalarIsometry ht hF hω 1 = 1 :=
-  (typeD4ScalarIsometry_eq_pow ht hF hω 1 (k := 0) (by rw [pow_zero, Units.val_one])).trans
-    (pow_zero _)
+theorem typeD4ScalarIsometry_one : typeD4ScalarIsometry ht hF hω 1 = 1 := by
+  rw [typeD4ScalarIsometry_eq_conjMulEquiv, checkerboardScalarIsometry_one, map_one]
 
 /-- The isometries realizing two scalars compose to the isometry realizing their product. -/
 theorem typeD4ScalarIsometry_mul (a b : Fˣ) :
     typeD4ScalarIsometry ht hF hω (a * b) =
       typeD4ScalarIsometry ht hF hω a * typeD4ScalarIsometry ht hF hω b := by
-  rw [typeD4ScalarIsometry_eq_pow ht hF hω a (sq_pow_finFourEquiv_symm hF hω a),
-    typeD4ScalarIsometry_eq_pow ht hF hω b (sq_pow_finFourEquiv_symm hF hω b), ← pow_add]
-  refine typeD4ScalarIsometry_eq_pow ht hF hω _ ?_
-  rw [pow_add, sq_pow_finFourEquiv_symm, sq_pow_finFourEquiv_symm, Units.val_mul]
+  rw [typeD4ScalarIsometry_eq_conjMulEquiv, checkerboardScalarIsometry_mul, map_mul,
+    ← typeD4ScalarIsometry_eq_conjMulEquiv, ← typeD4ScalarIsometry_eq_conjMulEquiv]
+
+/-- The isometry realizing the inverse of a scalar is the inverse self-isometry. -/
+@[simp]
+theorem typeD4ScalarIsometry_inv (a : Fˣ) :
+    typeD4ScalarIsometry ht hF hω a⁻¹ = (typeD4ScalarIsometry ht hF hω a)⁻¹ := by
+  rw [typeD4ScalarIsometry_eq_conjMulEquiv, checkerboardScalarIsometry_inv, map_inv,
+    ← typeD4ScalarIsometry_eq_conjMulEquiv]
 
 end DynkinType
 
