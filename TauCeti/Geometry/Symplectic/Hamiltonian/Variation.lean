@@ -43,6 +43,14 @@ theorem contDiffAt_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
     ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.contDiffAt.comp (p, x)
       (hK'.fderiv contDiffAt_snd le_rfl)
 
+/-- A jointly `C¹` Hamiltonian family has jointly continuous Hamiltonian vector fields. -/
+theorem continuous_hamiltonianVectorField_uncurry (ω : SymplecticForm V) {K : P → V → ℝ}
+    (hK : ContDiff ℝ 1 (Function.uncurry K)) :
+    Continuous (Function.uncurry fun p ↦ ω.hamiltonianVectorField (K p)) :=
+  continuous_iff_continuousAt.2 fun w ↦
+    (ω.contDiffAt_hamiltonianVectorField_uncurry (n := 0) (by simpa using hK.contDiffAt)
+      ).continuousAt
+
 /-- Differentiating a Hamiltonian vector field in a parameter direction gives the Hamiltonian
 vector field of the actual parameter derivative of the Hamiltonian. -/
 theorem fderiv_hamiltonianVectorField_parameter_apply (ω : SymplecticForm V)
