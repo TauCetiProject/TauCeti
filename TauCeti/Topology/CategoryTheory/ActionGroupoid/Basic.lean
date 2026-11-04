@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Category.QuiverTotal
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import Mathlib.Topology.IsLocalHomeomorph
 
@@ -23,7 +23,11 @@ The source-target map is proper precisely when the action is proper. For a discr
 each fixed-label slice is an open bisection: source and target are local homeomorphisms. Thus
 these topologies give the topological action presentations used for finite quotient charts,
 without imposing faithfulness or discarding ineffective isotropy. The basic topology, units,
-composition and source charts are also available for monoid actions.
+composition and source charts are also available for monoid actions. The functor
+`CategoryTheory.ActionCategory.map φ f` induced by a continuous map `f` equivariant along a
+continuous monoid homomorphism `φ` is continuous on total arrows, and jointly continuous in a
+parameter when `f` varies continuously (`TauCeti.ActionGroupoid.continuous_mapTotal_map`,
+`TauCeti.ActionGroupoid.continuous_uncurry_mapTotal_map`).
 
 ## References
 
@@ -214,6 +218,17 @@ theorem isLocalHomeomorph_source :
       ActionCategory G X) :=
   IsLocalHomeomorph.mk _ fun f => ⟨sourceChart G X f.hom.hom, rfl, fun _ _ => rfl⟩
 
+variable {G X} in
+/-- Near an arrow `f`, every arrow has the label of `f`, so there its target is the translate of
+its source by that fixed label. -/
+theorem eventually_back_right_eq_smul (f : Quiver.Total (ActionCategory G X)) :
+    ∀ᶠ a in 𝓝 f, a.right.back = f.hom.hom • a.left.back := by
+  filter_upwards [((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl]
+    with a ha
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at ha
+  rw [← ha]
+  exact a.hom.map_val.symm
+
 end Discrete
 
 end Monoid
@@ -279,5 +294,34 @@ theorem isLocalHomeomorph_target :
     exact a.hom.map_val.symm.trans (congrArg (· • a.left.back) hl)
 
 end Group
+
+section Map
+
+variable {X} {M N Y : Type*} [Monoid M] [Monoid N] [MulAction M X] [MulAction N Y]
+  [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The functors of action groupoids induced by a family of equivariant maps along a continuous
+monoid homomorphism, depending continuously on a parameter and the point, are jointly continuous
+in the parameter and the total arrow. -/
+theorem continuous_uncurry_mapTotal_map {T : Type*} [TopologicalSpace T] {φ : M →* N}
+    (hφ : Continuous φ) {f : T → X →ₑ[φ] Y} (hf : Continuous fun p : T × X ↦ f p.1 p.2) :
+    Continuous fun p : T × Quiver.Total (ActionCategory M X) ↦
+      (ActionCategory.map φ (f p.1)).toPrefunctor.mapTotal p.2 :=
+  (arrowHomeomorph N Y).isInducing.continuous_iff.2 <| by
+    -- In label-source coordinates, the arrow `(g, x)` at parameter `s` goes to `(φ g, f s x)`.
+    have : Continuous fun p : T × M × X ↦ (φ p.2.1, f p.1 p.2.2) :=
+      (hφ.comp (continuous_fst.comp continuous_snd)).prodMk
+        (hf.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
+    exact (this.comp (continuous_id.prodMap (arrowHomeomorph M X).continuous)).congr
+      fun _ ↦ by simp
+
+/-- The functor of action groupoids induced by a continuous equivariant map along a continuous
+monoid homomorphism is continuous on total arrows. -/
+theorem continuous_mapTotal_map {φ : M →* N} (hφ : Continuous φ) {f : X →ₑ[φ] Y}
+    (hf : Continuous f) : Continuous (ActionCategory.map φ f).toPrefunctor.mapTotal :=
+  (continuous_uncurry_mapTotal_map hφ (f := fun _ : Unit ↦ f) (hf.comp continuous_snd)).comp
+    (.prodMk_right ())
+
+end Map
 
 end TauCeti.ActionGroupoid

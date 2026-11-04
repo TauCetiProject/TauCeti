@@ -272,6 +272,35 @@ section Coordinates
 
 variable {ι : Type*} [Fintype ι] {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {S : Set ι}
 
+/-- For a region `{z | ∀ i ∈ S, 0 ≤ z i}`, the coordinates which are nonnegative on the whole
+region are exactly those of `S`. -/
+theorem forall_mem_range_nonneg_iff (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {i : ι} :
+    (∀ z ∈ range J, 0 ≤ z i) ↔ i ∈ S := by
+  classical
+  refine ⟨fun h ↦ ?_, fun hi z hz ↦ by rw [hJ] at hz; exact hz i hi⟩
+  by_contra hiS
+  -- The point with `i`-th coordinate `-1` and all others `0` lies in the region.
+  set z : EuclideanSpace ℝ ι := WithLp.toLp 2 fun j ↦ if j = i then -1 else 0
+  have hz : z ∈ range J := by
+    rw [hJ]
+    intro k hk
+    have hki : k ≠ i := fun h ↦ hiS (h ▸ hk)
+    simp [z, hki]
+  have := h z hz
+  norm_num [z] at this
+
+/-- The quadrant is the region of `EuclideanSpace ℝ (Fin n)` cut out by the nonnegativity of
+every coordinate. -/
+theorem range_modelWithCornersEuclideanQuadrant_eq (n : ℕ) :
+    range (𝓡c n) = {z | ∀ i ∈ (univ : Set (Fin n)), 0 ≤ z i} := by
+  simp [range_modelWithCornersEuclideanQuadrant]
+
+/-- The half-space is the region of `EuclideanSpace ℝ (Fin n)` cut out by the nonnegativity of the
+coordinate `0`. -/
+theorem range_modelWithCornersEuclideanHalfSpace_eq (n : ℕ) [NeZero n] :
+    range (𝓡∂ n) = {z | ∀ i ∈ ({0} : Set (Fin n)), 0 ≤ z i} := by
+  simp [range_modelWithCornersEuclideanHalfSpace]
+
 /-- For a model with corners whose range is cut out by the nonnegativity of the coordinates
 indexed by `S`, the depth of a point of the range is the number of those coordinates that vanish
 there. -/
@@ -334,8 +363,7 @@ vanishing coordinates. -/
 @[simp]
 theorem depthAt_modelWithCornersEuclideanQuadrant {n : ℕ} {y : EuclideanSpace ℝ (Fin n)}
     (hy : y ∈ range (𝓡c n)) : (𝓡c n).depthAt y = Nat.card {i // y i = 0} := by
-  rw [depthAt_eq_natCard_of_range_eq (S := univ) (by simp [range_modelWithCornersEuclideanQuadrant])
-    hy]
+  rw [depthAt_eq_natCard_of_range_eq (range_modelWithCornersEuclideanQuadrant_eq n) hy]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ by simp)
 
 /-- In the half-space model `𝓡∂ n`, a point of the half-space has depth `1` on the boundary
@@ -344,8 +372,7 @@ hyperplane and depth `0` elsewhere. -/
 theorem depthAt_modelWithCornersEuclideanHalfSpace {n : ℕ} [NeZero n]
     {y : EuclideanSpace ℝ (Fin n)} (hy : y ∈ range (𝓡∂ n)) :
     (𝓡∂ n).depthAt y = if y 0 = 0 then 1 else 0 := by
-  rw [depthAt_eq_natCard_of_range_eq (S := {0})
-    (by simp [range_modelWithCornersEuclideanHalfSpace]) hy]
+  rw [depthAt_eq_natCard_of_range_eq (range_modelWithCornersEuclideanHalfSpace_eq n) hy]
   split_ifs with h
   · exact Nat.card_eq_one_iff_exists.mpr ⟨⟨0, rfl, h⟩, fun j ↦ Subtype.ext j.2.1⟩
   · have : IsEmpty {i // i ∈ ({0} : Set (Fin n)) ∧ y i = 0} := ⟨fun j ↦ h (j.2.1 ▸ j.2.2)⟩

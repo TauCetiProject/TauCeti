@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeSide
 import Mathlib.Combinatorics.SimpleGraph.Star
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Flow-equivalent trees and cut trees
@@ -209,6 +210,23 @@ theorem apply_edgeSide_le (hT : IsCutTree f T w) {u v : V} (huv : T.Adj u v)
   obtain ⟨e, he, hle⟩ := hT.exists_weight_le hs ht
   rw [hT.apply_edgeSide huv]
   exact (hmin e he).trans hle
+
+/-- A minimum-weight edge of a cut tree leaves a side minimizing the set function among all
+nonempty proper vertex sets. -/
+theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
+    ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
+      f (T.edgeSide u v) ≤ f S := by
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
+  obtain ⟨s, hs⟩ := hS
+  obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by
+    by_contra! h
+    exact hSuniv (eq_univ_iff_forall.mpr h)
+  exact hT.apply_edgeSide_le huv hmin hs ht
 
 end IsCutTree
 
