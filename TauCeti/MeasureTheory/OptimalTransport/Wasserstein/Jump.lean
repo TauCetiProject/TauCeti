@@ -117,42 +117,18 @@ theorem wassersteinEDist_one_bernoulliMeasure_one_zero (s t : I) :
       wassersteinEDist 1 Ber((1 : ℝ), 0, s) Ber((1 : ℝ), 0, t) =
         ENNReal.ofReal ((t : ℝ) - s) by
     rcases le_total s t with hst | hts
-    · rw [h s t hst, edist_dist, Subtype.dist_eq, Real.dist_eq, abs_of_nonpos]
-      · simp [neg_sub]
-      · exact sub_nonpos.2 hst
-    · rw [wassersteinEDist_comm measurable_edist, h t s hts, edist_dist,
-        Subtype.dist_eq, Real.dist_eq, abs_of_nonneg]
-      exact sub_nonneg.2 hts
+    · have hst' : (s : ℝ) ≤ t := hst
+      simpa [edist_dist, Subtype.dist_eq, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hst'),
+        neg_sub] using h s t hst
+    · have hts' : (t : ℝ) ≤ s := hts
+      rw [wassersteinEDist_comm measurable_edist, edist_comm s t]
+      simpa [edist_dist, Subtype.dist_eq, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hts'),
+        neg_sub] using h t s hts
   intro s t hst
   apply le_antisymm
-  · -- Leave the common mass fixed and move only the remaining mass from zero to one.
-    let commonMass : Measure ℝ := ENNReal.ofReal (s : ℝ) • Measure.dirac 1 +
-      ENNReal.ofReal (1 - (t : ℝ)) • Measure.dirac 0
-    let movedMass : Measure ℝ := ENNReal.ofReal ((t : ℝ) - s) • Measure.dirac 0
-    have hleft : ENNReal.ofReal (1 - (t : ℝ)) + ENNReal.ofReal ((t : ℝ) - s) =
-        ENNReal.ofReal (1 - (s : ℝ)) := by
-      rw [← ENNReal.ofReal_add (sub_nonneg.2 t.2.2) (sub_nonneg.2 hst)]
-      congr 1
-      ring
-    have hright : ENNReal.ofReal (s : ℝ) + ENNReal.ofReal ((t : ℝ) - s) =
-        ENNReal.ofReal (t : ℝ) := by
-      rw [← ENNReal.ofReal_add s.2.1 (sub_nonneg.2 hst)]
-      congr 1
-      ring
-    have hs : Ber((1 : ℝ), 0, s) = commonMass + movedMass := by
-      simp only [bernoulliMeasure_def, ← Measure.coe_nnreal_smul, ENNReal.coe_nnreal_eq,
-        unitInterval.coe_toNNReal, unitInterval.coe_symm_eq]
-      simp [commonMass, movedMass, add_assoc, ← add_smul, hleft]
-    have ht : Ber((1 : ℝ), 0, t) = commonMass + movedMass univ • Measure.dirac 1 := by
-      simp only [bernoulliMeasure_def, ← Measure.coe_nnreal_smul, ENNReal.coe_nnreal_eq,
-        unitInterval.coe_toNNReal, unitInterval.coe_symm_eq]
-      simp only [commonMass, movedMass, smul_apply, measure_univ, smul_eq_mul, mul_one]
-      rw [add_right_comm (ENNReal.ofReal (s : ℝ) • Measure.dirac 1), ← add_smul, hright]
-    rw [hs, ht]
-    refine (wassersteinEDist_add_smul_dirac_le measurable_edist 1
-      commonMass movedMass 1).trans_eq ?_
-    rw [eLpNorm_one_eq_lintegral_enorm (by fun_prop)]
-    simp [movedMass, lintegral_smul_measure]
+  · have hst' : (s : ℝ) ≤ t := hst
+    simpa [edist_dist, Subtype.dist_eq, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hst'), neg_sub]
+      using wassersteinEDist_one_bernoulliMeasure_le measurable_edist (1 : ℝ) 0 s t
   · -- The difference of means gives the matching lower bound.
     simpa [integral_bernoulliMeasure] using ofReal_integral_sub_integral_le_wassersteinEDist_one
       LipschitzWith.id (integrable_bernoulliMeasure 1 0 t id)
@@ -160,21 +136,19 @@ theorem wassersteinEDist_one_bernoulliMeasure_one_zero (s t : I) :
       |>.trans_eq (wassersteinEDist_comm measurable_edist 1 Ber((1 : ℝ), 0, t) Ber(1, 0, s))
 
 /-- The two-point mixture curve in the finite-first-moment Wasserstein space. -/
-noncomputable def jumpCurve (t : I) : WassersteinSpace 1 ℝ :=
+noncomputable def bernoulliMixtureCurve (t : I) : WassersteinSpace 1 ℝ :=
   WassersteinSpace.mk ⟨Ber((1 : ℝ), 0, t), inferInstance⟩
     (hasFiniteMoment_bernoulliMeasure 1 1 0 t)
 
-@[simp] theorem coe_jumpCurve (t : I) :
-    ((jumpCurve t : ProbabilityMeasure ℝ) : Measure ℝ) = Ber((1 : ℝ), 0, t) := by
-  exact (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk
-    ⟨Ber((1 : ℝ), 0, t), inferInstance⟩ (hasFiniteMoment_bernoulliMeasure 1 1 0 t))).trans
-    (ProbabilityMeasure.coe_mk _ _)
+@[simp] theorem coe_bernoulliMixtureCurve (t : I) :
+    ((bernoulliMixtureCurve t : ProbabilityMeasure ℝ) : Measure ℝ) = Ber((1 : ℝ), 0, t) := by
+  exact congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
 
 /-- The mixture curve is an isometric copy of the unit interval in `P₁(ℝ)`, hence a
 constant-speed Wasserstein geodesic from `δ₀` to `δ₁`. -/
-theorem isometry_jumpCurve : Isometry jumpCurve := by
+theorem isometry_bernoulliMixtureCurve : Isometry bernoulliMixtureCurve := by
   intro s t
-  rw [WassersteinSpace.edist_def, coe_jumpCurve, coe_jumpCurve,
+  rw [WassersteinSpace.edist_def, coe_bernoulliMixtureCurve, coe_bernoulliMixtureCurve,
     wassersteinEDist_one_bernoulliMeasure_one_zero]
 
 /-- No probability law on continuous real paths has the two-point mixture as every time marginal.
