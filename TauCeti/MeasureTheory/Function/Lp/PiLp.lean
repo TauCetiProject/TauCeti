@@ -58,14 +58,17 @@ variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜]
   (E : ι → Type*) [∀ i, NormedAddCommGroup (E i)] [∀ i, Module 𝕜 (E i)]
   [∀ i, IsBoundedSMul 𝕜 (E i)] {μ : Measure α}
 
+private theorem memLp_toLp_coord (g : ∀ i, Lp (E i) p μ) :
+    MemLp (fun x ↦ WithLp.toLp p fun i ↦ g i x) p μ :=
+  MemLp.of_eval_piLp (q := p) (f := fun x ↦ WithLp.toLp p fun i ↦ g i x) fun i ↦ Lp.memLp (g i)
+
 private theorem norm_toLp_eval_eq (f : Lp (PiLp p E) p μ) :
     ‖WithLp.toLp p (fun i ↦ ((Lp.memLp f).eval_piLp i).toLp)‖ = ‖f‖ := by
   set g : ∀ i, Lp (E i) p μ := fun i ↦ ((Lp.memLp f).eval_piLp i).toLp
   have hg (i : ι) : ∀ᵐ x ∂μ, g i x = f x i := ((Lp.memLp f).eval_piLp i).coeFn_toLp
   rcases isEmpty_or_nonempty ι with hι | hι
-  · have hf0 : f = 0 := Lp.ext <| by
-      filter_upwards [Lp.coeFn_zero (PiLp p E) p μ] with x hx
-      exact hx ▸ Subsingleton.elim _ _
+  · have hf0 : f = 0 := Lp.ext <| (Lp.coeFn_zero (PiLp p E) p μ).mono fun _ hx ↦
+      hx ▸ Subsingleton.elim _ _
     simp [hf0, Subsingleton.elim (WithLp.toLp p g) 0]
   rcases eq_or_ne p ∞ with rfl | hp
   · apply le_antisymm
@@ -76,24 +79,20 @@ private theorem norm_toLp_eval_eq (f : Lp (PiLp p E) p μ) :
     · refine Lp.norm_top_le_of_ae_bound (norm_nonneg (WithLp.toLp ∞ g)) ?_
       filter_upwards [ae_all_iff.mpr fun i ↦ (hg i).and (Lp.ae_norm_le_norm_top (g i))] with x hx
       rw [PiLp.norm_eq_ciSup, PiLp.norm_eq_ciSup]
-      refine ciSup_le fun i ↦ ?_
-      exact (hx i).1 ▸ (hx i).2.trans (le_ciSup (Set.finite_range fun j ↦ ‖g j‖).bddAbove i)
+      exact ciSup_le fun i ↦
+        (hx i).1 ▸ (hx i).2.trans (le_ciSup (Set.finite_range fun j ↦ ‖g j‖).bddAbove i)
   · have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
     have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
     have hpow : (∑ i, ‖g i‖ ^ p.toReal) = ‖f‖ ^ p.toReal := by
       calc ∑ i, ‖g i‖ ^ p.toReal
-          = ∑ i, ∫ x, ‖g i x‖ ^ p.toReal ∂μ :=
-              Finset.sum_congr rfl fun i _ ↦ (Lp.integral_norm_rpow_eq_norm_rpow hp0 hp (g i)).symm
-        _ = ∑ i, ∫ x, ‖f x i‖ ^ p.toReal ∂μ :=
-              Finset.sum_congr rfl fun i _ ↦ integral_congr_ae <| (hg i).mono fun _ hgi ↦ by
-                dsimp only
-                rw [hgi]
-        _ = ∫ x, ∑ i, ‖f x i‖ ^ p.toReal ∂μ :=
-              (integral_finsetSum _ fun i _ ↦
-                ((Lp.memLp f).eval_piLp i).integrable_norm_rpow hp0 hp).symm
+          = ∑ i, ∫ x, ‖g i x‖ ^ p.toReal ∂μ := Finset.sum_congr rfl fun i _ ↦
+              (Lp.integral_norm_rpow_eq_norm_rpow hp0 hp (g i)).symm
+        _ = ∑ i, ∫ x, ‖f x i‖ ^ p.toReal ∂μ := Finset.sum_congr rfl fun i _ ↦
+              integral_congr_ae <| (hg i).mono fun _ hgi ↦ by dsimp only; rw [hgi]
+        _ = ∫ x, ∑ i, ‖f x i‖ ^ p.toReal ∂μ := (integral_finsetSum _ fun i _ ↦
+              ((Lp.memLp f).eval_piLp i).integrable_norm_rpow hp0 hp).symm
         _ = ∫ x, ‖f x‖ ^ p.toReal ∂μ := integral_congr_ae <| .of_forall fun x ↦ by
-              dsimp only
-              rw [PiLp.norm_eq_sum hr, ← Real.rpow_mul
+              dsimp only; rw [PiLp.norm_eq_sum hr, ← Real.rpow_mul
                 (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _),
                 one_div_mul_cancel hr.ne', Real.rpow_one]
         _ = ‖f‖ ^ p.toReal := Lp.integral_norm_rpow_eq_norm_rpow hp0 hp f
@@ -105,41 +104,22 @@ variable (μ) in
 `PiLp p (fun i ↦ Lp (E i) p μ)` for every `1 ≤ p ≤ ∞` on a finite index type `ι`. -/
 def piLpEquiv : Lp (PiLp p E) p μ ≃ₗᵢ[𝕜] PiLp p (fun i ↦ Lp (E i) p μ) where
   toFun f := WithLp.toLp p fun i ↦ ((Lp.memLp f).eval_piLp i).toLp
-  invFun g := (MemLp.of_eval_piLp (q := p) (f := fun x ↦ WithLp.toLp p fun i ↦ g i x)
-    fun i ↦ Lp.memLp (g i)).toLp
+  invFun g := (memLp_toLp_coord p E fun i ↦ g i).toLp
   map_add' f₁ f₂ := by
-    ext i : 1
-    simp only [PiLp.add_apply, ← MemLp.toLp_add]
-    refine MemLp.toLp_congr _ _ ?_
-    filter_upwards [Lp.coeFn_add f₁ f₂] with x hx
-    rw [hx, Pi.add_apply, PiLp.add_apply, Pi.add_apply]
+    ext i : 1; simp only [PiLp.add_apply, ← MemLp.toLp_add]
+    exact MemLp.toLp_congr _ _ ((Lp.coeFn_add f₁ f₂).mono fun _ hx ↦ by dsimp only; rw [hx]; rfl)
   map_smul' c f := by
-    ext i : 1
-    simp only [RingHom.id_apply, PiLp.smul_apply, ← MemLp.toLp_const_smul]
-    refine MemLp.toLp_congr _ _ ?_
-    filter_upwards [Lp.coeFn_smul c f] with x hx
-    rw [hx, Pi.smul_apply, PiLp.smul_apply, Pi.smul_apply]
-  left_inv f := by
-    apply Lp.ext
-    set g : ∀ i, Lp (E i) p μ := fun i ↦ ((Lp.memLp f).eval_piLp i).toLp
-    have hmem : MemLp (fun x ↦ WithLp.toLp p fun i ↦ g i x) p μ :=
-      MemLp.of_eval_piLp (q := p) (f := fun x ↦ WithLp.toLp p fun i ↦ g i x)
-        fun i ↦ Lp.memLp (g i)
-    have hall : ∀ᵐ x ∂μ, ∀ i, g i x = f x i :=
-      ae_all_iff.mpr fun i ↦ ((Lp.memLp f).eval_piLp i).coeFn_toLp
-    filter_upwards [hmem.coeFn_toLp, hall] with x hx hcoord
-    rw [hx]
-    ext i
-    exact hcoord i
+    ext i : 1; simp only [RingHom.id_apply, PiLp.smul_apply, ← MemLp.toLp_const_smul]
+    exact MemLp.toLp_congr _ _ ((Lp.coeFn_smul c f).mono fun _ hx ↦ by dsimp only; rw [hx]; rfl)
+  left_inv f := Lp.ext <| by
+    filter_upwards [(memLp_toLp_coord p E fun i ↦ ((Lp.memLp f).eval_piLp i).toLp).coeFn_toLp,
+      ae_all_iff.mpr fun i ↦ ((Lp.memLp f).eval_piLp i).coeFn_toLp] with x hx hcoord
+    exact hx.trans (PiLp.ext hcoord)
   right_inv g := by
-    ext i : 1
-    dsimp only [PiLp.toLp_apply]
-    apply Lp.ext
-    have hmem : MemLp (fun x ↦ WithLp.toLp p fun j ↦ g j x) p μ :=
-      MemLp.of_eval_piLp (q := p) (f := fun x ↦ WithLp.toLp p fun j ↦ g j x)
-        fun j ↦ Lp.memLp (g j)
+    ext i : 1; apply Lp.ext
+    have hmem := memLp_toLp_coord p E fun j ↦ g j
     filter_upwards [((Lp.memLp hmem.toLp).eval_piLp i).coeFn_toLp, hmem.coeFn_toLp] with x h₁ h₂
-    rw [h₁, h₂, PiLp.toLp_apply]
+    rw [PiLp.toLp_apply, h₁, h₂, PiLp.toLp_apply]
   norm_map' := norm_toLp_eval_eq p E
 
 variable {p 𝕜 E}
@@ -153,36 +133,28 @@ theorem coeFn_piLpEquiv_apply (f : Lp (PiLp p E) p μ) (i : ι) :
 everywhere. -/
 theorem coeFn_piLpEquiv_symm (g : PiLp p (fun i ↦ Lp (E i) p μ)) :
     (piLpEquiv p 𝕜 E μ).symm g =ᵐ[μ] fun x ↦ WithLp.toLp p fun i ↦ g i x :=
-  (MemLp.of_eval_piLp (q := p) (f := fun x ↦ WithLp.toLp p fun i ↦ g i x)
-    fun i ↦ Lp.memLp (g i)).coeFn_toLp
+  (memLp_toLp_coord p E fun i ↦ g i).coeFn_toLp
 
 /-- On a single-coordinate vector, `(piLpEquiv p 𝕜 E μ).symm` acts pointwise by `PiLp.single`
 almost everywhere. -/
 theorem coeFn_piLpEquiv_symm_single [DecidableEq ι] (i : ι) (h : Lp (E i) p μ) :
     (piLpEquiv p 𝕜 E μ).symm (PiLp.single p i h) =ᵐ[μ] fun x ↦ PiLp.single p i (h x) := by
   have hall : ∀ᵐ x ∂μ, ∀ j, (PiLp.single p i h : PiLp p fun j ↦ Lp (E j) p μ) j x =
-      (PiLp.single p i (h x) : PiLp p E) j := by
-    refine ae_all_iff.mpr fun j ↦ ?_
+      (PiLp.single p i (h x) : PiLp p E) j := ae_all_iff.mpr fun j ↦ by
     by_cases hj : j = i
-    · subst hj
-      simp
-    · filter_upwards [Lp.coeFn_zero (E j) p μ] with x hx
-      simpa [Pi.single_eq_of_ne hj] using hx
+    · subst hj; simp
+    · exact (Lp.coeFn_zero (E j) p μ).mono fun _ hx ↦ by simpa [Pi.single_eq_of_ne hj] using hx
   filter_upwards [coeFn_piLpEquiv_symm (𝕜 := 𝕜) (PiLp.single p i h), hall] with x hx hcoord
-  rw [hx]
-  ext j
-  exact hcoord j
+  exact hx.trans (PiLp.ext hcoord)
 
 /-- Coordinate evaluation via `piLpEquiv` commutes with heterogeneous `Lp` scalar multiplication. -/
 @[simp]
 theorem piLpEquiv_lpSMul {q : ℝ≥0∞} [HolderTriple q p p] (a : Lp 𝕜 q μ)
     (f : Lp (PiLp p E) p μ) (i : ι) :
     piLpEquiv p 𝕜 E μ (a • f : Lp (PiLp p E) p μ) i =
-      (a • piLpEquiv p 𝕜 E μ f i : Lp (E i) p μ) := by
-  apply Lp.ext
+      (a • piLpEquiv p 𝕜 E μ f i : Lp (E i) p μ) := Lp.ext <| by
   filter_upwards [coeFn_piLpEquiv_apply (𝕜 := 𝕜) (a • f : Lp (PiLp p E) p μ) i,
-    Lp.coeFn_lpSMul (r := p) a f,
-    Lp.coeFn_lpSMul (r := p) a (piLpEquiv p 𝕜 E μ f i),
+    Lp.coeFn_lpSMul (r := p) a f, Lp.coeFn_lpSMul (r := p) a (piLpEquiv p 𝕜 E μ f i),
     coeFn_piLpEquiv_apply (𝕜 := 𝕜) f i] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, Pi.smul_apply', Pi.smul_apply', PiLp.smul_apply, h₄]
 

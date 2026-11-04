@@ -53,17 +53,12 @@ theorem memℓp_piLp_iff {f : ∀ a, PiLp q (E a)} :
   classical
   have hsingle (i : ι) : Memℓp (fun a ↦ PiLp.single q i (f a i)) p :=
     (hf i).mono' fun a ↦ (PiLp.norm_single q (E a) i (f a i)).le
-  have hsum : ∀ s : Finset ι, Memℓp (fun a ↦ ∑ i ∈ s, PiLp.single q i (f a i)) p := by
-    intro s
+  have hsum (s : Finset ι) : Memℓp (fun a ↦ ∑ i ∈ s, PiLp.single q i (f a i)) p := by
     induction s using Finset.induction_on with
     | empty => simpa using (zero_mem_ℓp' (E := fun a ↦ PiLp q (E a)) (p := p))
-    | insert j s hj ih =>
-        simpa only [Finset.sum_insert hj, Pi.add_def] using (hsingle j).add ih
-  have hfeq : (fun a ↦ ∑ i, PiLp.single q i (f a i)) = f := by
-    funext a
-    ext j
-    simp
-  exact hfeq ▸ hsum Finset.univ
+    | insert j s hj ih => simpa only [Finset.sum_insert hj, Pi.add_def] using (hsingle j).add ih
+  exact (show (fun a ↦ ∑ i, PiLp.single q i (f a i)) = f by funext a; ext j; simp) ▸
+    hsum Finset.univ
 
 alias ⟨Memℓp.eval_piLp, Memℓp.of_eval_piLp⟩ := memℓp_piLp_iff
 
@@ -85,40 +80,31 @@ private theorem norm_toLp_eval_eq (f : lp (fun a ↦ PiLp p (E a)) p) :
   set g : ∀ i, lp (fun a ↦ E a i) p := fun i ↦ ⟨fun a ↦ f a i, (lp.memℓp f).eval_piLp i⟩
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   rcases isEmpty_or_nonempty ι with hι | hι
-  · have hf0 : f = 0 := by
-      ext a i
-      exact IsEmpty.elim hι i
+  · have hf0 : f = 0 := by ext a i; exact IsEmpty.elim hι i
     simp [hf0, Subsingleton.elim (WithLp.toLp p g) 0]
   rcases eq_or_ne p ∞ with rfl | hp
   · apply le_antisymm
     · rw [PiLp.norm_eq_ciSup]
-      refine ciSup_le fun i ↦ lp.norm_le_of_forall_le (norm_nonneg f) fun a ↦ ?_
-      exact (PiLp.norm_apply_le (f a) i).trans (lp.norm_apply_le_norm ENNReal.top_ne_zero f a)
+      exact ciSup_le fun i ↦ lp.norm_le_of_forall_le (norm_nonneg f) fun a ↦
+        (PiLp.norm_apply_le (f a) i).trans (lp.norm_apply_le_norm ENNReal.top_ne_zero f a)
     · refine lp.norm_le_of_forall_le (norm_nonneg (WithLp.toLp ∞ g)) fun a ↦ ?_
       rw [PiLp.norm_eq_ciSup, PiLp.norm_eq_ciSup]
-      refine ciSup_le fun i ↦ ?_
-      exact (lp.norm_apply_le_norm ENNReal.top_ne_zero (g i) a).trans
+      exact ciSup_le fun i ↦ (lp.norm_apply_le_norm ENNReal.top_ne_zero (g i) a).trans
         (le_ciSup (Set.finite_range fun j ↦ ‖g j‖).bddAbove i)
   · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
     have hpow : ∑ i, ‖g i‖ ^ p.toReal = ‖f‖ ^ p.toReal := by
       calc ∑ i, ‖g i‖ ^ p.toReal
-          = ∑ i, ∑' a, ‖f a i‖ ^ p.toReal := by
-              refine Finset.sum_congr rfl fun i _ ↦ ?_
-              exact lp.norm_rpow_eq_tsum hr (g i)
-        _ = ∑' a, ∑ i, ‖f a i‖ ^ p.toReal := by
-              symm
-              exact Summable.tsum_finsetSum fun i _ ↦ ((lp.memℓp (g i)).summable hr)
-        _ = ∑' a, ‖f a‖ ^ p.toReal := by
-              refine tsum_congr fun a ↦ ?_
+          = ∑ i, ∑' a, ‖f a i‖ ^ p.toReal :=
+              Finset.sum_congr rfl fun i _ ↦ lp.norm_rpow_eq_tsum hr (g i)
+        _ = ∑' a, ∑ i, ‖f a i‖ ^ p.toReal :=
+              (Summable.tsum_finsetSum fun i _ ↦ (lp.memℓp (g i)).summable hr).symm
+        _ = ∑' a, ‖f a‖ ^ p.toReal := tsum_congr fun a ↦ by
               rw [PiLp.norm_eq_sum hr, ← Real.rpow_mul
                 (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _),
                 one_div_mul_cancel hr.ne', Real.rpow_one]
         _ = ‖f‖ ^ p.toReal := (lp.norm_rpow_eq_tsum hr f).symm
-    rw [PiLp.norm_eq_sum hr]
-    calc (∑ i, ‖g i‖ ^ p.toReal) ^ (1 / p.toReal)
-        = (‖f‖ ^ p.toReal) ^ (1 / p.toReal) := by rw [hpow]
-      _ = ‖f‖ := by
-          rw [← Real.rpow_mul (norm_nonneg f), mul_one_div_cancel hr.ne', Real.rpow_one]
+    rw [PiLp.norm_eq_sum hr, hpow, ← Real.rpow_mul (norm_nonneg f), mul_one_div_cancel hr.ne',
+      Real.rpow_one]
 
 /-- Coordinatewise evaluation identifies `lp (fun a ↦ PiLp p (E a)) p` linear-isometrically with
 `PiLp p (fun i ↦ lp (fun a ↦ E a i) p)` for every `1 ≤ p ≤ ∞` on a finite index type `ι`. -/
@@ -137,14 +123,12 @@ variable {p 𝕜 E}
 /-- Coordinatewise evaluation of `lp.piLpEquiv`. -/
 @[simp]
 theorem piLpEquiv_apply (f : lp (fun a ↦ PiLp p (E a)) p) (i : ι) (a : α) :
-    piLpEquiv p 𝕜 E f i a = f a i :=
-  (rfl)
+    piLpEquiv p 𝕜 E f i a = f a i := (rfl)
 
 /-- Coordinatewise evaluation of `(lp.piLpEquiv).symm`. -/
 @[simp]
 theorem piLpEquiv_symm_apply (g : PiLp p (fun i ↦ lp (fun a ↦ E a i) p)) (a : α) (i : ι) :
-    (piLpEquiv p 𝕜 E).symm g a i = g i a :=
-  (rfl)
+    (piLpEquiv p 𝕜 E).symm g a i = g i a := (rfl)
 
 end NormedRing
 

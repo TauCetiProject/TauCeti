@@ -145,8 +145,7 @@ theorem blockHardyOrthogonalEquiv_blockHankel_apply {r : ℕ} (A : BlockSymbol r
     blockHardyOrthogonalEquiv r (blockHankel r A f) i =
       ∑ j : Fin r, hankel (blockSymbolEntry r i j A) (f j) := by
   have hf : f = ∑ j : Fin r, PiLp.single 2 j (f j) := by
-    ext k : 1
-    simp [WithLp.ofLp_sum, Finset.sum_apply, Pi.single_apply]
+    ext k : 1; simp [WithLp.ofLp_sum, Finset.sum_apply, Pi.single_apply]
   conv_lhs => rw [hf]
   simp only [map_sum, WithLp.ofLp_sum, Finset.sum_apply,
     blockHardyOrthogonalEquiv_blockHankel_single]
@@ -157,11 +156,9 @@ theorem blockHankel_const {r : ℕ}
     (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
     blockHankel r (Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) M) = 0 := by
   ext f : 1
-  apply (blockHardyOrthogonalEquiv r).injective
-  ext i : 1
+  refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
   rw [zero_apply, blockHardyOrthogonalEquiv_blockHankel_apply, map_zero, PiLp.zero_apply]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
-  rw [blockSymbolEntry_const, hankel_const, zero_apply]
+  exact Finset.sum_eq_zero fun j _ ↦ by rw [blockSymbolEntry_const, hankel_const, zero_apply]
 
 /-- The adjoint of `blockHankel r A` multiplies negative-mode vector functions by `star A` and
 projects back onto `BlockHardySpace r`. -/
@@ -211,26 +208,22 @@ theorem blockHankel_eq_zero_iff {r : ℕ} (A : BlockSymbol r) :
   · intro hA n hn
     refine ContinuousLinearMap.ext fun v ↦ PiLp.ext fun i ↦ ?_
     have hv : v = ∑ j : Fin r, v j • EuclideanSpace.single j (1 : ℂ) := by
-      ext m
-      simp [EuclideanSpace.single, Pi.single_apply]
+      ext m; simp [EuclideanSpace.single, Pi.single_apply]
     rw [zero_apply, PiLp.zero_apply, hv, map_sum, WithLp.ofLp_sum, Finset.sum_apply]
     refine Finset.sum_eq_zero fun j _ ↦ ?_
     have hij : hankel (blockSymbolEntry r i j A) = 0 := by
       ext h : 1
-      have hzero := congrArg (fun H ↦ blockHardyOrthogonalEquiv r (H (PiLp.single 2 j h)) i) hA
-      simpa using hzero
+      simpa using congrArg (fun H ↦ blockHardyOrthogonalEquiv r (H (PiLp.single 2 j h)) i) hA
     rw [map_smul, PiLp.smul_apply, ← fourierCoeff_blockSymbolEntry,
       (hankel_eq_zero_iff _).mp hij n hn, smul_zero]
   · intro hA
     ext f : 1
-    apply (blockHardyOrthogonalEquiv r).injective
-    ext i : 1
+    refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
     rw [blockHardyOrthogonalEquiv_blockHankel_apply, zero_apply, map_zero, PiLp.zero_apply]
     refine Finset.sum_eq_zero fun j _ ↦ ?_
-    have hij : hankel (blockSymbolEntry r i j A) = 0 := by
-      rw [hankel_eq_zero_iff]
-      intro n hn
-      rw [fourierCoeff_blockSymbolEntry, hA n hn, zero_apply, PiLp.zero_apply]
+    have hij : hankel (blockSymbolEntry r i j A) = 0 :=
+      (hankel_eq_zero_iff _).mpr fun n hn ↦ by
+        rw [fourierCoeff_blockSymbolEntry, hA n hn, zero_apply, PiLp.zero_apply]
     rw [hij, zero_apply]
 
 /-- Block Toeplitz multiplication `T_A ∘L T_B = T_{A • B}` is exact when the right symbol `B` is
@@ -238,21 +231,17 @@ analytic (its negative Fourier coefficients vanish). -/
 theorem blockToeplitz_comp_of_analytic {r : ℕ} (A B : BlockSymbol r)
     (hB : ∀ n : ℤ, n < 0 → fourierCoeff B n = 0) :
     blockToeplitz r A ∘L blockToeplitz r B = blockToeplitz r (A • B : BlockSymbol r) := by
-  ext f : 1
-  have hf := congrArg (fun T ↦ T f) (blockToeplitz_comp_sub_blockToeplitz A B)
-  simpa only [sub_apply, neg_apply, ContinuousLinearMap.comp_apply,
-    (blockHankel_eq_zero_iff B).mpr hB, zero_apply, map_zero, neg_zero, sub_eq_zero] using hf
+  rw [← sub_eq_zero, blockToeplitz_comp_sub_blockToeplitz, (blockHankel_eq_zero_iff B).mpr hB,
+    ContinuousLinearMap.comp_zero, neg_zero]
 
 /-- Block Toeplitz multiplication `T_A ∘L T_B = T_{A • B}` is exact when the left symbol `A` is
 coanalytic (the negative Fourier coefficients of `star A` vanish). -/
 theorem blockToeplitz_comp_of_coanalytic {r : ℕ} (A B : BlockSymbol r)
     (hA : ∀ n : ℤ, n < 0 → fourierCoeff (star A : BlockSymbol r) n = 0) :
     blockToeplitz r A ∘L blockToeplitz r B = blockToeplitz r (A • B : BlockSymbol r) := by
-  ext f : 1
-  have hf := congrArg (fun T ↦ T f) (blockToeplitz_comp_sub_blockToeplitz A B)
-  simpa only [sub_apply, neg_apply, ContinuousLinearMap.comp_apply,
+  rw [← sub_eq_zero, blockToeplitz_comp_sub_blockToeplitz,
     (blockHankel_eq_zero_iff (star A)).mpr hA, ContinuousLinearMap.adjoint.map_zero,
-    zero_apply, neg_zero, sub_eq_zero] using hf
+    ContinuousLinearMap.zero_comp, neg_zero]
 
 /-- Extracting the `(i, j)` scalar entry commutes with `ContinuousMap.toLp ∞`. -/
 theorem blockSymbolEntry_toLp {r : ℕ}
@@ -269,8 +258,7 @@ theorem blockSymbolEntry_toLp {r : ℕ}
     ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (AddCircle.haarAddCircle (T := 1))
       ((ContinuousMap.mk (euclideanMatrixEntryCLM r i j)
         (euclideanMatrixEntryCLM r i j).continuous).comp F)] with x h₁ h₂ h₃
-  rw [h₁, h₂, h₃]
-  simp
+  rw [h₁, h₂, h₃]; simp
 
 private theorem isCompactOperator_finset_sum {ι M₁ M₂ : Type*} [TopologicalSpace M₁]
     [AddCommMonoid M₁] [TopologicalSpace M₂] [AddCommMonoid M₂] [ContinuousAdd M₂]
@@ -296,28 +284,20 @@ theorem isCompactOperator_blockHankel_toLp {r : ℕ}
   let incl (i : Fin r) : ↥hardySubmoduleᗮ →L[ℂ] PiLp 2 (fun _ : Fin r ↦ ↥hardySubmoduleᗮ) :=
     (PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin r ↦ ↥hardySubmoduleᗮ)).symm.toContinuousLinearMap
       ∘L ContinuousLinearMap.single ℂ (fun _ : Fin r ↦ ↥hardySubmoduleᗮ) i
-  have hincl (i : Fin r) (g : ↥hardySubmoduleᗮ) : incl i g = PiLp.single 2 i g := rfl
   have hdecomp : (blockHankel r A : BlockHardySpace r → ↥(blockHardySubmodule r)ᗮ) =
       (blockHardyOrthogonalEquiv r).symm ∘ fun f ↦
-        ∑ i : Fin r, incl i (∑ j : Fin r, hankel (blockSymbolEntry r i j A) (f j)) := by
-    funext f
-    apply (blockHardyOrthogonalEquiv r).injective
-    rw [Function.comp_apply, LinearIsometryEquiv.apply_symm_apply]
-    ext k : 1
+        ∑ i : Fin r, (incl i ∘ fun f ↦ ∑ j : Fin r,
+          (hankel (blockSymbolEntry r i j A) ∘
+            PiLp.proj (𝕜 := ℂ) 2 (fun _ : Fin r ↦ HardySpace) j) f) f := by
+    funext f; apply (blockHardyOrthogonalEquiv r).injective
+    rw [Function.comp_apply, LinearIsometryEquiv.apply_symm_apply]; ext k : 1
     rw [blockHardyOrthogonalEquiv_blockHankel_apply]
-    simp [hincl, WithLp.ofLp_sum, Finset.sum_apply, Pi.single_apply]
+    simp [incl, WithLp.ofLp_sum, Finset.sum_apply, Pi.single_apply]
   rw [hdecomp]
   refine (isCompactOperator_finset_sum Finset.univ fun i _ ↦ ?_).continuous_comp
     (blockHardyOrthogonalEquiv r).symm.continuous
-  have hi : (fun f : BlockHardySpace r ↦
-        incl i (∑ j : Fin r, hankel (blockSymbolEntry r i j A) (f j))) =
-      incl i ∘ fun f ↦ ∑ j : Fin r, hankel (blockSymbolEntry r i j A) (f j) := rfl
-  rw [hi]
   refine (isCompactOperator_finset_sum Finset.univ fun j _ ↦ ?_).clm_comp (incl i)
-  have hproj : (fun f : BlockHardySpace r ↦ hankel (blockSymbolEntry r i j A) (f j)) =
-      hankel (blockSymbolEntry r i j A) ∘
-        PiLp.proj (𝕜 := ℂ) 2 (fun _ : Fin r ↦ HardySpace) j := rfl
-  rw [hproj, blockSymbolEntry_toLp]
+  rw [blockSymbolEntry_toLp]
   exact (isCompactOperator_hankel_toLp _).comp_clm _
 
 /-- **Compactness of block Toeplitz semicommutators.** For any essentially bounded block symbol `A`

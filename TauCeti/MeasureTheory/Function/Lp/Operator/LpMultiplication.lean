@@ -74,11 +74,10 @@ theorem operatorMultiplication_eq_iff {A : Lp (E →L[𝕜] F) ∞ μ} {f : Lp E
 
 /-- Applying `operatorMultiplication p A` changes the `Lᵖ` norm by at most `‖A‖`. -/
 theorem norm_operatorMultiplication_apply_le (A : Lp (E →L[𝕜] F) ∞ μ) (f : Lp E p μ) :
-    ‖operatorMultiplication p A f‖ ≤ ‖A‖ * ‖f‖ := by
-  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  filter_upwards [operatorMultiplication_ae A f, Lp.ae_norm_le_norm_top A] with x hx hAx
-  rw [hx]
-  exact (A x).le_of_opNorm_le hAx (f x)
+    ‖operatorMultiplication p A f‖ ≤ ‖A‖ * ‖f‖ :=
+  Lp.norm_le_mul_norm_of_ae_le_mul <| by
+    filter_upwards [operatorMultiplication_ae A f, Lp.ae_norm_le_norm_top A] with x hx hAx
+    exact hx ▸ (A x).le_of_opNorm_le hAx (f x)
 
 /-- The operator norm of `operatorMultiplication p A` is at most the `L∞` norm of `A`. -/
 theorem norm_operatorMultiplication_le (A : Lp (E →L[𝕜] F) ∞ μ) :
@@ -88,15 +87,13 @@ theorem norm_operatorMultiplication_le (A : Lp (E →L[𝕜] F) ∞ μ) :
 /-- The zero symbol defines the zero operator on `Lp E p μ`. -/
 @[simp]
 theorem operatorMultiplication_zero :
-    operatorMultiplication p (0 : Lp (E →L[𝕜] F) ∞ μ) = 0 := by
-  simp [operatorMultiplication]
+    operatorMultiplication p (0 : Lp (E →L[𝕜] F) ∞ μ) = 0 := by simp [operatorMultiplication]
 
 /-- Operator multiplication is additive in the symbol. -/
 @[simp]
 theorem operatorMultiplication_add (A B : Lp (E →L[𝕜] F) ∞ μ) :
     operatorMultiplication p (A + B) =
-      operatorMultiplication p A + operatorMultiplication p B := by
-  simp [operatorMultiplication]
+      operatorMultiplication p A + operatorMultiplication p B := by simp [operatorMultiplication]
 
 /-- Operator multiplication commutes with scalar multiplication of the symbol. -/
 @[simp]
@@ -108,23 +105,19 @@ theorem operatorMultiplication_smul (c : 𝕜) (A : Lp (E →L[𝕜] F) ∞ μ) 
 scalar function. -/
 theorem operatorMultiplication_lpSMul (a : Lp 𝕜 ∞ μ) (A : Lp (E →L[𝕜] F) ∞ μ) (f : Lp E p μ) :
     operatorMultiplication p A (a • f : Lp E p μ) =
-      (a • operatorMultiplication p A f : Lp F p μ) := by
-  apply Lp.ext
-  filter_upwards [operatorMultiplication_ae A (a • f : Lp E p μ),
-    Lp.coeFn_lpSMul (r := p) a f,
-    Lp.coeFn_lpSMul (r := p) a (operatorMultiplication p A f),
-    operatorMultiplication_ae A f] with x h₁ h₂ h₃ h₄
+      (a • operatorMultiplication p A f : Lp F p μ) := Lp.ext <| by
+  filter_upwards [operatorMultiplication_ae A (a • f : Lp E p μ), Lp.coeFn_lpSMul (r := p) a f,
+    Lp.coeFn_lpSMul (r := p) a (operatorMultiplication p A f), operatorMultiplication_ae A f]
+    with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, Pi.smul_apply', Pi.smul_apply', map_smul, h₄]
 
 /-- Multiplying the operator symbol by an `L∞` scalar function scales the resulting `Lᵖ` output. -/
 theorem operatorMultiplication_lpSMul_symbol (a : Lp 𝕜 ∞ μ) (A : Lp (E →L[𝕜] F) ∞ μ)
     (f : Lp E p μ) :
     operatorMultiplication p (a • A : Lp (E →L[𝕜] F) ∞ μ) f =
-      (a • operatorMultiplication p A f : Lp F p μ) := by
-  apply Lp.ext
+      (a • operatorMultiplication p A f : Lp F p μ) := Lp.ext <| by
   filter_upwards [operatorMultiplication_ae (a • A : Lp (E →L[𝕜] F) ∞ μ) f,
-    Lp.coeFn_lpSMul (r := ∞) a A,
-    Lp.coeFn_lpSMul (r := p) a (operatorMultiplication p A f),
+    Lp.coeFn_lpSMul (r := ∞) a A, Lp.coeFn_lpSMul (r := p) a (operatorMultiplication p A f),
     operatorMultiplication_ae A f] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, Pi.smul_apply', Pi.smul_apply', smul_apply, h₄]
 
@@ -132,10 +125,8 @@ theorem operatorMultiplication_lpSMul_symbol (a : Lp 𝕜 ∞ μ) (A : Lp (E →
 theorem operatorMultiplication_of_ae_eq_const {A : Lp (E →L[𝕜] F) ∞ μ} {T : E →L[𝕜] F}
     (hA : A =ᵐ[μ] fun _ ↦ T) :
     operatorMultiplication p A = T.compLpL p μ := by
-  ext1 f
-  rw [operatorMultiplication_eq_iff]
-  filter_upwards [hA, T.coeFn_compLpL f] with x hx hT
-  rw [hx, hT]
+  ext1 f; rw [operatorMultiplication_eq_iff]
+  filter_upwards [hA, T.coeFn_compLpL f] with x hx hT; rw [hx, hT]
 
 /-- On a finite measure space, a constant continuous linear map `T` in `L∞` acts as `T.compLpL`. -/
 @[simp]
@@ -147,13 +138,10 @@ theorem operatorMultiplication_const [IsFiniteMeasure μ] (T : E →L[𝕜] F) :
 theorem operatorMultiplication_comp_holderL (A : Lp (F →L[𝕜] G) ∞ μ) (B : Lp (E →L[𝕜] F) ∞ μ) :
     operatorMultiplication p A ∘L operatorMultiplication p B =
       operatorMultiplication p ((ContinuousLinearMap.compL 𝕜 E F G).holderL μ ∞ ∞ ∞ A B) := by
-  ext1 f
-  rw [ContinuousLinearMap.comp_apply]
-  symm
-  rw [operatorMultiplication_eq_iff]
+  ext1 f; symm; rw [ContinuousLinearMap.comp_apply, operatorMultiplication_eq_iff]
   filter_upwards [(ContinuousLinearMap.compL 𝕜 E F G).coeFn_holder (r := ∞) A B,
-    operatorMultiplication_ae A (operatorMultiplication p B f),
-    operatorMultiplication_ae B f] with x hAB hA hB
+    operatorMultiplication_ae A (operatorMultiplication p B f), operatorMultiplication_ae B f]
+    with x hAB hA hB
   rw [ContinuousLinearMap.holderL_apply_apply, hAB, ContinuousLinearMap.compL_apply,
     ContinuousLinearMap.comp_apply, hA, hB]
 
@@ -161,13 +149,10 @@ theorem operatorMultiplication_comp_holderL (A : Lp (F →L[𝕜] G) ∞ μ) (B 
 theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[𝕜] E) ∞ μ) :
     operatorMultiplication p A ∘L operatorMultiplication p B =
       operatorMultiplication p (A • B : Lp (E →L[𝕜] E) ∞ μ) := by
-  ext1 f
-  rw [ContinuousLinearMap.comp_apply]
-  symm
-  rw [operatorMultiplication_eq_iff]
+  ext1 f; symm; rw [ContinuousLinearMap.comp_apply, operatorMultiplication_eq_iff]
   filter_upwards [Lp.coeFn_lpSMul (r := ∞) A B,
-    operatorMultiplication_ae A (operatorMultiplication p B f),
-    operatorMultiplication_ae B f] with x hAB hA hB
+    operatorMultiplication_ae A (operatorMultiplication p B f), operatorMultiplication_ae B f]
+    with x hAB hA hB
   rw [hAB, Pi.smul_apply', smul_eq_mul, mul_apply_eq_comp, hA, hB]
 
 end NormedSpace
@@ -183,8 +168,7 @@ theorem adjoint_operatorMultiplication (A : Lp (E →L[𝕜] E) ∞ μ) :
     ContinuousLinearMap.adjoint (operatorMultiplication 2 A) =
       operatorMultiplication 2 (star A) := by
   refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
+  rw [L2.inner_def, L2.inner_def]; refine integral_congr_ae ?_
   filter_upwards [operatorMultiplication_ae (p := 2) (star A) f,
     operatorMultiplication_ae (p := 2) A g, Lp.coeFn_star A] with x hf hg hA
   simp [hf, hg, hA, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
@@ -203,25 +187,20 @@ private theorem exists_subset_measure_lt_norm_apply [SigmaFinite μ] (A : Lp (E 
     ∃ (u : E) (t : Set α), MeasurableSet t ∧ (∀ x ∈ t, c * ‖u‖ < ‖A x u‖) ∧
       0 < μ t ∧ μ t < ∞ := by
   obtain ⟨D, hD_count, hD_dense⟩ := TopologicalSpace.exists_countable_dense E
-  have hsub : {x | c < ‖A x‖} ⊆ ⋃ u ∈ D, {x | c * ‖u‖ < ‖A x u‖} := by
-    intro x hx
-    rw [Set.mem_ofPred_eq] at hx
+  have hsub : {x | c < ‖A x‖} ⊆ ⋃ u ∈ D, {x | c * ‖u‖ < ‖A x u‖} := fun x hx ↦ by
     have hnot : ¬ ∀ w : E, ‖A x w‖ ≤ c * ‖w‖ := fun h ↦
       (not_le_of_gt hx) ((A x).opNorm_le_bound hc_nonneg h)
-    push Not at hnot
-    obtain ⟨w, hw⟩ := hnot
-    have hopen : IsOpen {v : E | c * ‖v‖ < ‖A x v‖} := isOpen_lt (by fun_prop) (by fun_prop)
-    obtain ⟨u, huU, huD⟩ := hD_dense.inter_open_nonempty _ hopen ⟨w, hw⟩
+    push Not at hnot; obtain ⟨w, hw⟩ := hnot
+    obtain ⟨u, huU, huD⟩ := hD_dense.inter_open_nonempty {u : E | c * ‖u‖ < ‖A x u‖}
+      (isOpen_lt (by fun_prop) (by fun_prop)) ⟨w, hw⟩
     exact Set.mem_biUnion huD huU
   have hμ_union : μ (⋃ u ∈ D, {x | c * ‖u‖ < ‖A x u‖}) ≠ 0 :=
     mt (measure_mono_null hsub) (Lp.measure_lt_norm_ne_zero hc_nonneg hc_lt)
   obtain ⟨u, _, hμs⟩ : ∃ u ∈ D, μ {x | c * ‖u‖ < ‖A x u‖} ≠ 0 := by
-    by_contra! hzero
-    exact hμ_union ((measure_biUnion_null_iff hD_count).2 hzero)
-  have hs : MeasurableSet {x | c * ‖u‖ < ‖A x u‖} :=
-    measurableSet_lt measurable_const
-      (((ContinuousLinearMap.apply 𝕜 F u).continuous.norm.comp_stronglyMeasurable
-        (Lp.stronglyMeasurable A)).measurable)
+    by_contra! hzero; exact hμ_union ((measure_biUnion_null_iff hD_count).2 hzero)
+  have hs : MeasurableSet {x | c * ‖u‖ < ‖A x u‖} := measurableSet_lt measurable_const
+    (((ContinuousLinearMap.apply 𝕜 F u).continuous.norm.comp_stronglyMeasurable
+      (Lp.stronglyMeasurable A)).measurable)
   obtain ⟨t, ht, hts, hμt_pos, hμt_top⟩ :=
     Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
   exact ⟨u, t, ht, hts, hμt_pos, hμt_top⟩
@@ -237,15 +216,11 @@ theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) �
   have hlt : ‖operatorMultiplication p A‖ < ‖A‖ := lt_of_not_ge hle
   set c := (‖operatorMultiplication p A‖ + ‖A‖) / 2 with hc_def
   have hc_nonneg : 0 ≤ c := by positivity
-  have hop_lt_c : ‖operatorMultiplication p A‖ < c := by linarith [hc_def]
-  have hc_lt : c < ‖A‖ := by linarith [hc_def]
   obtain ⟨u, t, ht, hts, hμt_pos, hμt_top⟩ :=
-    exists_subset_measure_lt_norm_apply A hc_nonneg hc_lt
+    exists_subset_measure_lt_norm_apply A hc_nonneg (by linarith [hc_def])
   have hu_ne : u ≠ 0 := by
     obtain ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero hμt_pos.ne'
-    intro hu0
-    have := hts x₀ hx₀
-    simp [hu0] at this
+    rintro rfl; exact absurd (hts x₀ hx₀) (by simp)
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   set f := indicatorConstLp p ht hμt_top.ne u
   set g := indicatorConstLp p ht hμt_top.ne (c * ‖u‖)
@@ -265,11 +240,12 @@ theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) �
     by_cases hx : x ∈ t
     · simp only [Set.indicator_of_mem hx,
         Real.norm_of_nonneg (mul_nonneg hc_nonneg (norm_nonneg u))]
-      exact le_of_lt (hts x hx)
+      exact (hts x hx).le
     · simp [Set.indicator_of_notMem hx]
   have hcancel : c * ‖f‖ ≤ ‖operatorMultiplication p A‖ * ‖f‖ :=
     hfg ▸ (Lp.norm_le_norm_of_ae_le hpoint).trans (le_opNorm _ _)
-  exact (not_le_of_gt hop_lt_c) (le_of_mul_le_mul_right hcancel hf_pos)
+  exact (not_le_of_gt (by linarith [hc_def] : ‖operatorMultiplication p A‖ < c))
+    (le_of_mul_le_mul_right hcancel hf_pos)
 
 end ExactNorm
 
