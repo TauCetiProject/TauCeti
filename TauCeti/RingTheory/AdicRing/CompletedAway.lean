@@ -137,6 +137,14 @@ instance : IsScalarTower A (Localization.Away f) (CompletedAway A f) :=
     (AdicCompletion ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
       (Localization.Away f)))
 
+/-- The completed localisation `A_{f}` is, by definition, the adic completion of `A_f` along
+`I A_f`; this is that identification as an isomorphism of `A_f`-algebras. -/
+noncomputable def equivAdicCompletion :
+    CompletedAway A f ≃ₐ[Localization.Away f]
+      AdicCompletion ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
+        (Localization.Away f) :=
+  AlgEquiv.refl
+
 /-- The completed localisation carries the adic topology of the extension `I A_{f}` of the chosen
 ideal of definition `I` of `A`. -/
 noncomputable instance : WithIdeal (CompletedAway A f) :=

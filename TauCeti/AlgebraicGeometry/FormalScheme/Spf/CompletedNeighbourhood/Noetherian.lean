@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood
 
-import all TauCeti.RingTheory.AdicRing.CompletedAway
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Localization.LocalizationLocalization
@@ -104,8 +103,9 @@ attribute [local instance] awayAlgebra in
 private noncomputable def toLocalCompletion (f : BasicNeighbourhood p) :
     CompletedAway A f.elem →ₐ[A] LocalCompletion p :=
   haveI := isScalarTower_away p f
-  (AdicCompletion.mapₐ (Algebra.ofId (Localization.Away f.elem) _)
-    ((map_ideal_away p f) ▸ Ideal.le_comap_map)).restrictScalars A
+  ((AdicCompletion.mapₐ (Algebra.ofId (Localization.Away f.elem) _)
+    ((map_ideal_away p f) ▸ Ideal.le_comap_map)).comp
+      (CompletedAway.equivAdicCompletion A f.elem).toAlgHom).restrictScalars A
 
 attribute [local instance] awayAlgebra in
 /-- For noetherian `A` and `f ∉ 𝔭`, the completion `Â_𝔭` is flat over `A_{f}`. -/
@@ -116,9 +116,11 @@ private theorem flat_toLocalCompletion [IsNoetherianRing A] (f : BasicNeighbourh
       (p : PrimeSpectrum A).asIdeal.primeCompl)
       (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
     IsLocalization.isLocalization_of_submonoid_le _ _ _ _ (powers_le_primeCompl p f)
-  exact AdicCompletion.flat_mapₐ_of_isLocalization _
-    (Algebra.algebraMapSubmonoid (Localization.Away f.elem)
-      (p : PrimeSpectrum A).asIdeal.primeCompl) (map_ideal_away p f)
+  -- the completion of `A_f → A_𝔭`, after the identification of `A_{f}` with that completion
+  exact (RingHom.Flat.of_bijective (CompletedAway.equivAdicCompletion A f.elem).bijective).comp
+    (AdicCompletion.flat_mapₐ_of_isLocalization _
+      (Algebra.algebraMapSubmonoid (Localization.Away f.elem)
+        (p : PrimeSpectrum A).asIdeal.primeCompl) (map_ideal_away p f))
 
 /-- The cocone of the maps `A_{f} → Â_𝔭` over the diagram of completed localisations. -/
 private noncomputable def localCompletionCocone : Cocone (completedNeighbourhoodDiagram p) where
