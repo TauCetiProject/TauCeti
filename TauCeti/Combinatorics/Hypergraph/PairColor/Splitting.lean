@@ -19,16 +19,18 @@ import Mathlib.Tactic.Ring
 # Quasirandom splitting of pair colors
 
 A symmetric labelling `f : Sym2 V → ι` of the unordered vertex pairs splits every color `c` of a
-coherent pair coloring `S` into the colors `(c, i)`, for `i : ι`; this is `PairColorSystem.split`.
-This file shows that some splitting is quasirandom on a prescribed finite family of vertex
-cells: on every rectangle `A' ×ˢ B'` inside two cells `A` and `B`, each color `(c, i)` occupies
-a `1 / |ι|` share of the pairs of color `c`, up to an error `δ |A| |B|`
+coherent pair coloring `S` into the colors `(c, i)`, for `i : ι`; this is `PairColorSystem.split`,
+defined in `TauCeti.Combinatorics.Hypergraph.PairColor.Basic`. This file shows that some
+splitting is quasirandom on a prescribed finite family of vertex cells: on every rectangle
+`A' ×ˢ B'` inside two cells `A` and `B`, each color `(c, i)` occupies a `1 / |ι|` share of the
+pairs of color `c`, up to an error `δ |A| |B|`
 (`PairColorSystem.exists_split_abs_card_sub_le`). The cells may coincide, so the diagonal cell
 pairs are covered as well.
 
-The proof is an averaging argument over all `|ι| ^ |Sym2 V|` labellings. The deviation of the
-indicator of `(c, i)` from a `1 / |ι|` share of the indicator of `c` has mean zero at every pair,
-independently over the unordered pairs. Its box sum on two cells, a weighted count of the
+The proof is an averaging argument over all labellings of the unordered pairs inside the union of
+the cells; the vertex type itself may be infinite. The deviation of the indicator of `(c, i)`
+from a `1 / |ι|` share of the indicator of `c` has mean zero at every pair, independently over
+the unordered pairs. Its box sum on two cells, a weighted count of the
 rectangles `{x, x'} × {y, y'}`, therefore averages to the contribution of the degenerate
 rectangles, at most `|A| |B| (|A| + |B|) + |B| ^ 2` (`Fintype.sum_apply_mul_eq_zero`). Some
 labelling achieves at most the average of the normalized box sums over all cells and colors,
@@ -38,20 +40,18 @@ discrepancy on every rectangle (`Finset.sum_sum_pow_four_le`). No probability th
 Splitting preserves regularity: if `(A, B)` is an `ε`-regular pair for `S` and the splitting is
 quasirandom on `A` and `B` at scale `ε ^ 3 / 2`, then `(A, B)` is `2 ε`-regular for the split
 coloring (`PairColorSystem.IsRegularPair.split`). Consequently every regular lower skeleton with
-large vertex cells has a split palette, `|ι|` times larger, that is still regular and in which the
-density of each split color is a `1 / |ι|` share of the density of its parent
-(`PairSkeleton3.IsPairColorRegular.exists_split`). Splitting the one-color skeleton gives regular
-lower skeletons whose `|ι|` colors all have density close to `1 / |ι|` on every cell pair.
+large vertex cells has a split palette, `|ι|` times larger, that is still regular and in which, on
+every pair of cells, the density of each split color is within `ε ^ 3` of a `1 / |ι|` share of the
+density of its parent (`PairSkeleton3.IsPairColorRegular.exists_split`). Splitting the one-color
+skeleton gives regular lower skeletons whose `|ι|` colors all have density within `ε ^ 3` of
+`1 / |ι|` on every cell pair.
 
 A coloring of triples carries no pair structure of its own, so a regular approximation of a
 three-uniform hypergraph has to construct pair colorings that are regular on every pair of
 cells, with prescribed densities. Quasirandom splittings supply such colorings: their classes
-are regular pieces of a fixed density share, and merging classes adjusts densities in steps of
-`1 / |ι|`.
-
-## Main definitions
-
-* `TauCeti.PairColorSystem.split`: refine a pair coloring by a symmetric labelling of pairs.
+are regular pieces of approximately a `1 / |ι|` share of their parent's density, and merging
+classes adjusts densities in steps of approximately `1 / |ι|` times the parent density, with the
+errors of the merged classes adding up.
 
 ## Main results
 
@@ -80,37 +80,26 @@ namespace PairColorSystem
 
 variable {κ ι V : Type*}
 
-/-- Split a coherent pair coloring by a symmetric labelling of the unordered vertex pairs: the
-color of an ordered distinct pair `(u, v)` becomes its original color together with the label
-of `s(u, v)`. Reversal reverses the original color and keeps the label. -/
-def split (S : PairColorSystem κ V) (f : Sym2 V → ι) : PairColorSystem (κ × ι) V where
-  color p := (S.color p, f s(p.1.1, p.1.2))
-  rev c := (S.rev c.1, c.2)
-  rev_involutive c := by simp
-  color_rev p := by simp [S.color_rev, Sym2.eq_swap]
+section ExtendLabel
 
-@[simp]
-theorem split_color (S : PairColorSystem κ V) (f : Sym2 V → ι) (p : {p : V × V // p.1 ≠ p.2}) :
-    (S.split f).color p = (S.color p, f s(p.1.1, p.1.2)) := (rfl)
+variable [Nonempty ι] [DecidableEq V] (U : Finset V)
 
-@[simp]
-theorem split_rev (S : PairColorSystem κ V) (f : Sym2 V → ι) (c : κ × ι) :
-    (S.split f).rev c = (S.rev c.1, c.2) := (rfl)
+/-- Extend a labelling of the unordered pairs inside `U` to all unordered pairs. -/
+private noncomputable def extendLabel (g : U.sym2 → ι) (z : Sym2 V) : ι :=
+  if h : z ∈ U.sym2 then g ⟨z, h⟩ else Classical.arbitrary ι
 
-/-- The total split color is the total original color together with the label of the pair. -/
-theorem colorOfPair_split (S : PairColorSystem κ V) (f : Sym2 V → ι) (u v : V) :
-    (S.split f).colorOfPair u v = (S.colorOfPair u v).map fun c ↦ (c, f s(u, v)) := by
-  by_cases h : u = v
-  · subst h
-    simp
-  · simp [h]
+private theorem extendLabel_of_mem {g : U.sym2 → ι} {z : Sym2 V} (hz : z ∈ U.sym2) :
+    extendLabel U g z = g ⟨z, hz⟩ :=
+  dite_eq_left hz
 
-@[simp]
-theorem colorOfPair_split_eq_some_iff (S : PairColorSystem κ V) (f : Sym2 V → ι) (u v : V)
-    (c : κ) (i : ι) :
-    (S.split f).colorOfPair u v = some (c, i) ↔ S.colorOfPair u v = some c ∧ f s(u, v) = i := by
-  rw [colorOfPair_split]
-  cases S.colorOfPair u v <;> simp
+private theorem extendLabel_update_of_ne (g : U.sym2 → ι) (e : U.sym2) (v : ι) {z : Sym2 V}
+    (hz : z ≠ e.1) : extendLabel U (Function.update g e v) z = extendLabel U g z := by
+  unfold extendLabel
+  split_ifs
+  · exact Function.update_of_ne (fun h ↦ hz (congrArg Subtype.val h)) _ _
+  · rfl
+
+end ExtendLabel
 
 section Discrepancy
 
@@ -188,14 +177,16 @@ variable [Nonempty ι]
 
 section Averaging
 
-variable [Fintype V] [DecidableEq V]
+variable [DecidableEq V] (U : Finset V)
 
-/-- A rectangle `{x, x'} × {y, y'}` that is not degenerate contributes nothing on average: the
-label of `s(x, y)` occurs in only one of its four factors. -/
-private theorem sum_splitDev_mul_eq_zero {x x' y y' : V} (hx : x ≠ x') (hy : y ≠ y')
-    (hxy : x = y' → y ≠ x') :
-    ∑ f : Sym2 V → ι, splitDev S c i x y (f s(x, y)) * splitDev S c i x y' (f s(x, y')) *
-      (splitDev S c i x' y (f s(x', y)) * splitDev S c i x' y' (f s(x', y'))) = 0 := by
+/-- A rectangle `{x, x'} × {y, y'}` inside `U` that is not degenerate contributes nothing on
+average: the label of `s(x, y)` occurs in only one of its four factors. -/
+private theorem sum_splitDev_mul_eq_zero {x x' y y' : V} (hxU : x ∈ U) (hyU : y ∈ U)
+    (hx : x ≠ x') (hy : y ≠ y') (hxy : x = y' → y ≠ x') :
+    ∑ g : U.sym2 → ι, splitDev S c i x y (extendLabel U g s(x, y)) *
+      splitDev S c i x y' (extendLabel U g s(x, y')) *
+      (splitDev S c i x' y (extendLabel U g s(x', y)) *
+        splitDev S c i x' y' (extendLabel U g s(x', y'))) = 0 := by
   have h₁ : s(x, y') ≠ s(x, y) := by
     rw [Ne, Sym2.eq_iff]
     rintro (⟨-, rfl⟩ | ⟨rfl, rfl⟩) <;> exact hy rfl
@@ -206,43 +197,50 @@ private theorem sum_splitDev_mul_eq_zero {x x' y y' : V} (hx : x ≠ x') (hy : y
     rw [Ne, Sym2.eq_iff]
     rintro (⟨rfl, -⟩ | ⟨rfl, rfl⟩)
     exacts [hx rfl, hxy rfl rfl]
-  simp_rw [mul_assoc]
-  exact Fintype.sum_apply_mul_eq_zero s(x, y) (sum_splitDev S c i x y)
-    (G := fun f ↦ splitDev S c i x y' (f s(x, y')) *
-      (splitDev S c i x' y (f s(x', y)) * splitDev S c i x' y' (f s(x', y'))))
-    fun f v ↦ by simp only [Function.update_of_ne h₁, Function.update_of_ne h₂,
-      Function.update_of_ne h₃]
+  have he : s(x, y) ∈ U.sym2 := mk_mem_sym2_iff.2 ⟨hxU, hyU⟩
+  simp_rw [mul_assoc, extendLabel_of_mem U he]
+  exact Fintype.sum_apply_mul_eq_zero ⟨s(x, y), he⟩ (sum_splitDev S c i x y)
+    (G := fun g ↦ splitDev S c i x y' (extendLabel U g s(x, y')) *
+      (splitDev S c i x' y (extendLabel U g s(x', y)) *
+        splitDev S c i x' y' (extendLabel U g s(x', y'))))
+    fun g v ↦ by
+      simp only [extendLabel_update_of_ne U g ⟨s(x, y), he⟩ v h₁,
+        extendLabel_update_of_ne U g ⟨s(x, y), he⟩ v h₂,
+        extendLabel_update_of_ne U g ⟨s(x, y), he⟩ v h₃]
 
-/-- On average over the labellings, a rectangle `{x, x'} × {y, y'}` contributes at most one, and
-nothing unless it is degenerate. -/
-private theorem sum_splitDev_mul_le (x x' y y' : V) :
-    ∑ f : Sym2 V → ι, splitDev S c i x y (f s(x, y)) * splitDev S c i x y' (f s(x, y')) *
-      (splitDev S c i x' y (f s(x', y)) * splitDev S c i x' y' (f s(x', y'))) ≤
-    (Fintype.card (Sym2 V → ι) : ℝ) * ((if x = x' then 1 else 0) + (if y = y' then 1 else 0) +
+/-- On average over the labellings of the pairs inside `U`, a rectangle `{x, x'} × {y, y'}`
+inside `U` contributes at most one, and nothing unless it is degenerate. -/
+private theorem sum_splitDev_mul_le {x y : V} (x' y' : V) (hxU : x ∈ U) (hyU : y ∈ U) :
+    ∑ g : U.sym2 → ι, splitDev S c i x y (extendLabel U g s(x, y)) *
+      splitDev S c i x y' (extendLabel U g s(x, y')) *
+      (splitDev S c i x' y (extendLabel U g s(x', y)) *
+        splitDev S c i x' y' (extendLabel U g s(x', y'))) ≤
+    (Fintype.card (U.sym2 → ι) : ℝ) * ((if x = x' then 1 else 0) + (if y = y' then 1 else 0) +
       (if x = y' then 1 else 0) * (if y = x' then 1 else 0)) := by
   by_cases hd : x = x' ∨ y = y' ∨ (x = y' ∧ y = x')
   · have hone : (1 : ℝ) ≤ (if x = x' then 1 else 0) + (if y = y' then 1 else 0) +
         (if x = y' then 1 else 0) * (if y = x' then 1 else 0) := by
       split_ifs <;> norm_num <;> tauto
-    have hterm (f : Sym2 V → ι) : splitDev S c i x y (f s(x, y)) *
-        splitDev S c i x y' (f s(x, y')) *
-        (splitDev S c i x' y (f s(x', y)) * splitDev S c i x' y' (f s(x', y'))) ≤ 1 := by
+    have hterm (g : U.sym2 → ι) : splitDev S c i x y (extendLabel U g s(x, y)) *
+        splitDev S c i x y' (extendLabel U g s(x, y')) *
+        (splitDev S c i x' y (extendLabel U g s(x', y)) *
+          splitDev S c i x' y' (extendLabel U g s(x', y'))) ≤ 1 := by
       refine (le_abs_self _).trans ?_
       simp only [abs_mul]
       calc _ ≤ (1 : ℝ) * 1 * (1 * 1) := by gcongr <;> exact abs_splitDev_le_one ..
         _ = 1 := by norm_num
-    calc _ ≤ ∑ _f : Sym2 V → ι, (1 : ℝ) := sum_le_sum fun f _ ↦ hterm f
-      _ = Fintype.card (Sym2 V → ι) * 1 := by simp
+    calc _ ≤ ∑ _g : U.sym2 → ι, (1 : ℝ) := sum_le_sum fun g _ ↦ hterm g
+      _ = Fintype.card (U.sym2 → ι) * 1 := by simp
       _ ≤ _ := by gcongr
   · push Not at hd
-    rw [sum_splitDev_mul_eq_zero S c i hd.1 hd.2.1 hd.2.2]
+    rw [sum_splitDev_mul_eq_zero S c i U hxU hyU hd.1 hd.2.1 hd.2.2]
     positivity
 
-/-- The box sum of the deviations on two cells averages to at most the number of degenerate
-rectangles. -/
-private theorem sum_splitBox_le (A B : Finset V) :
-    ∑ f : Sym2 V → ι, splitBox S c i f A B ≤
-      Fintype.card (Sym2 V → ι) * (#A * #B ^ 2 + #A ^ 2 * #B + #B ^ 2) := by
+/-- The box sum of the deviations on two cells inside `U` averages, over the labellings of the
+pairs inside `U`, to at most the number of degenerate rectangles. -/
+private theorem sum_splitBox_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) :
+    ∑ g : U.sym2 → ι, splitBox S c i (extendLabel U g) A B ≤
+      Fintype.card (U.sym2 → ι) * (#A * #B ^ 2 + #A ^ 2 * #B + #B ^ 2) := by
   have hI (a : V) (s : Finset V) : ∑ b ∈ s, (if a = b then (1 : ℝ) else 0) ≤ 1 := by
     rw [sum_ite_eq]
     split_ifs <;> norm_num
@@ -274,9 +272,11 @@ private theorem sum_splitBox_le (A B : Finset V) :
           gcongr with y _ y' _
           exacts [hI' y' A, hI y A]
       _ = _ := by simp
-  calc _ = ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, ∑ f : Sym2 V → ι,
-        splitDev S c i x y (f s(x, y)) * splitDev S c i x y' (f s(x, y')) *
-          (splitDev S c i x' y (f s(x', y)) * splitDev S c i x' y' (f s(x', y'))) := by
+  calc _ = ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, ∑ g : U.sym2 → ι,
+        splitDev S c i x y (extendLabel U g s(x, y)) *
+          splitDev S c i x y' (extendLabel U g s(x, y')) *
+          (splitDev S c i x' y (extendLabel U g s(x', y)) *
+            splitDev S c i x' y' (extendLabel U g s(x', y'))) := by
         simp_rw [splitBox, sq, sum_mul_sum]
         rw [sum_comm]
         refine sum_congr rfl fun y _ ↦ ?_
@@ -284,13 +284,13 @@ private theorem sum_splitBox_le (A B : Finset V) :
         refine sum_congr rfl fun y' _ ↦ ?_
         rw [sum_comm]
         exact sum_congr rfl fun x _ ↦ sum_comm
-    _ ≤ ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (Fintype.card (Sym2 V → ι) : ℝ) *
+    _ ≤ ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (Fintype.card (U.sym2 → ι) : ℝ) *
         ((if x = x' then 1 else 0) + (if y = y' then 1 else 0) +
           (if x = y' then 1 else 0) * (if y = x' then 1 else 0)) := by
-        gcongr with y _ y' _ x _ x' _
-        exact sum_splitDev_mul_le S c i x x' y y'
-    _ ≤ (Fintype.card (Sym2 V → ι) : ℝ) * (#B * #B * #A + #B * (#A * #A) + #B * #B) := by
-        calc _ = (Fintype.card (Sym2 V → ι) : ℝ) *
+        gcongr with y hy y' _ x hx x' _
+        exact sum_splitDev_mul_le S c i U x' y' (hA hx) (hB hy)
+    _ ≤ (Fintype.card (U.sym2 → ι) : ℝ) * (#B * #B * #A + #B * (#A * #A) + #B * #B) := by
+        calc _ = (Fintype.card (U.sym2 → ι) : ℝ) *
               (∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) +
                 ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if y = y' then (1 : ℝ) else 0) +
                 ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A,
@@ -304,23 +304,25 @@ end Averaging
 /-- Normalized by the squared cell sizes, the box sums of the cell pairs of `𝒜 ×ˢ 𝒜` and the
 colors of `κ × ι` average to at most `3 |𝒜| ^ 2 |κ| |ι| / N` over all labellings, so that some
 labelling makes each of them at most this average. -/
-private theorem exists_forall_splitBox_le [Finite V] [Fintype κ] (𝒜 : Finset (Finset V)) {N : ℕ}
+private theorem exists_forall_splitBox_le [Fintype κ] (𝒜 : Finset (Finset V)) {N : ℕ}
     (hN₀ : 0 < N) (hN : ∀ A ∈ 𝒜, N ≤ #A) :
     ∃ f : Sym2 V → ι, ∀ A ∈ 𝒜, ∀ B ∈ 𝒜, ∀ (c : κ) (i : ι),
       splitBox S c i f A B ≤
         3 * #𝒜 ^ 2 * Fintype.card κ * Fintype.card ι / N * (#A * #B) ^ 2 := by
   classical
-  have := Fintype.ofFinite V
+  -- Only the labels of the pairs inside the union `U` of the cells matter.
+  let U := 𝒜.sup id
+  have hU {A : Finset V} (hA : A ∈ 𝒜) : A ⊆ U := le_sup (f := id) hA
   have hN₀' : (0 : ℝ) < N := by exact_mod_cast hN₀
   have hcell {A : Finset V} (hA : A ∈ 𝒜) : (1 : ℝ) ≤ #A := by exact_mod_cast hN₀.trans_le (hN A hA)
   let P := 𝒜 ×ˢ 𝒜 ×ˢ (univ : Finset (κ × ι))
   -- The sum, over all cell pairs and colors, of the normalized box sums.
-  let W (f : Sym2 V → ι) : ℝ :=
-    ∑ p ∈ P, splitBox S p.2.2.1 p.2.2.2 f p.1 p.2.1 / (#p.1 * #p.2.1) ^ 2
+  let W (g : U.sym2 → ι) : ℝ :=
+    ∑ p ∈ P, splitBox S p.2.2.1 p.2.2.2 (extendLabel U g) p.1 p.2.1 / (#p.1 * #p.2.1) ^ 2
   -- Each normalized box sum averages to at most `3 / N`: there are at most
   -- `|A| |B| (|A| + |B|) + |B| ^ 2 ≤ 3 |A| ^ 2 |B| ^ 2 / N` degenerate rectangles.
-  have hp {p} (hp : p ∈ P) : ∑ f, splitBox S p.2.2.1 p.2.2.2 f p.1 p.2.1 / (#p.1 * #p.2.1) ^ 2 ≤
-      Fintype.card (Sym2 V → ι) * 3 / N := by
+  have hp {p} (hp : p ∈ P) : ∑ g, splitBox S p.2.2.1 p.2.2.2 (extendLabel U g) p.1 p.2.1 /
+      (#p.1 * #p.2.1) ^ 2 ≤ Fintype.card (U.sym2 → ι) * 3 / N := by
     simp only [P, mem_product] at hp
     have hA : (N : ℝ) ≤ #p.1 := by exact_mod_cast hN _ hp.1
     have hB : (N : ℝ) ≤ #p.2.1 := by exact_mod_cast hN _ hp.2.1
@@ -333,23 +335,23 @@ private theorem exists_forall_splitBox_le [Finite V] [Fintype κ] (𝒜 : Finset
         mul_le_mul_of_nonneg_left (hA.trans (le_mul_of_one_le_left (by positivity) hA₁))
           (by positivity : (0 : ℝ) ≤ #p.2.1 ^ 2)]
     rw [← sum_div, div_le_div_iff₀ (by positivity) hN₀']
-    calc (∑ f, splitBox S p.2.2.1 p.2.2.2 f p.1 p.2.1) * N
-        ≤ Fintype.card (Sym2 V → ι) *
+    calc (∑ g, splitBox S p.2.2.1 p.2.2.2 (extendLabel U g) p.1 p.2.1) * N
+        ≤ Fintype.card (U.sym2 → ι) *
             ((#p.1 * #p.2.1 ^ 2 + #p.1 ^ 2 * #p.2.1 + #p.2.1 ^ 2) * N) := by
           rw [← mul_assoc]
           gcongr
-          exact sum_splitBox_le S _ _ p.1 p.2.1
-      _ ≤ Fintype.card (Sym2 V → ι) * (3 * (#p.1 * #p.2.1) ^ 2) := by gcongr
+          exact sum_splitBox_le S _ _ U (hU hp.1) (hU hp.2.1)
+      _ ≤ Fintype.card (U.sym2 → ι) * (3 * (#p.1 * #p.2.1) ^ 2) := by gcongr
       _ = _ := by ring
-  have hW : ∑ f, W f ≤
-      ∑ _f : Sym2 V → ι, (3 * #𝒜 ^ 2 * Fintype.card κ * Fintype.card ι / N : ℝ) := by
+  have hW : ∑ g, W g ≤
+      ∑ _g : U.sym2 → ι, (3 * #𝒜 ^ 2 * Fintype.card κ * Fintype.card ι / N : ℝ) := by
     rw [sum_comm]
     refine (sum_le_sum fun p hp' ↦ hp hp').trans_eq ?_
     simp only [P, sum_const, card_product, card_univ, Fintype.card_prod, nsmul_eq_mul,
       Nat.cast_mul]
     ring
-  obtain ⟨f, -, hf⟩ := exists_le_of_sum_le univ_nonempty hW
-  refine ⟨f, fun A hA B hB c i ↦ ?_⟩
+  obtain ⟨g, -, hf⟩ := exists_le_of_sum_le univ_nonempty hW
+  refine ⟨extendLabel U g, fun A hA B hB c i ↦ ?_⟩
   have hle := (single_le_sum (s := P) (fun p _ ↦ div_nonneg (splitBox_nonneg ..) (sq_nonneg _))
     (by simp [P, hA, hB] : (A, B, c, i) ∈ P)).trans hf
   have hAB : (0 : ℝ) < (#A * #B) ^ 2 := by
@@ -363,7 +365,7 @@ least `N`. If `3 |𝒜| ^ 2 |κ| |ι| ≤ δ ^ 4 N`, then some symmetric labelli
 the vertex pairs splits every color `c` evenly on every rectangle inside two cells of `𝒜`: for
 `A, B ∈ 𝒜`, `A' ⊆ A` and `B' ⊆ B`, the number of pairs of `A' ×ˢ B'` of split color `(c, i)` is
 within `δ |A| |B|` of `1 / |ι|` times the number of pairs of color `c`. -/
-theorem exists_split_abs_card_sub_le [Finite V] [Fintype κ] (𝒜 : Finset (Finset V)) {N : ℕ} {δ : ℝ}
+theorem exists_split_abs_card_sub_le [Fintype κ] (𝒜 : Finset (Finset V)) {N : ℕ} {δ : ℝ}
     (hδ : 0 ≤ δ) (hN : ∀ A ∈ 𝒜, N ≤ #A)
     (h : 3 * #𝒜 ^ 2 * Fintype.card κ * Fintype.card ι ≤ δ ^ 4 * N) :
     ∃ f : Sym2 V → ι, ∀ A ∈ 𝒜, ∀ B ∈ 𝒜, ∀ c i, ∀ A' ⊆ A, ∀ B' ⊆ B,
