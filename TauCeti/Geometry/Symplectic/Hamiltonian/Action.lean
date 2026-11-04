@@ -13,10 +13,10 @@ public import TauCeti.Geometry.Manifold.TwoForm.Basic
 
 Let `σ` be a two-form on a manifold `M` and `H : ℝ → M → ℝ` a time-dependent Hamiltonian. The
 action of a loop `γ`, traversed over `t ∈ [0, 1]`, is measured against a reference surface: a
-smooth cylinder `γ̄` from `γ` to a reference loop (`TauCeti.IsSmoothCylinder`), oriented from `γ`
+smooth cylinder `Γ` from `γ` to a reference loop (`TauCeti.IsSmoothCylinder`), oriented from `γ`
 at `s = 0` to the reference loop at `s = 1`. The action is
 
-`𝒜_H(γ, γ̄) = ∫ γ̄^* σ - ∫₀¹ H(t, γ(t)) dt`
+`𝒜_H(γ, Γ) = ∫ Γ^* σ - ∫₀¹ H(t, γ(t)) dt`
 
 (`TauCeti.SmoothTwoForm.cylinderAction`), the area term being `TauCeti.rectangleIntegral` over the
 unit square. This is the formula of the action functional in Barraud–Damian–Humilière–Oancea,
