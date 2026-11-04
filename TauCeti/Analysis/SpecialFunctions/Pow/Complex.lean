@@ -35,11 +35,12 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 
 For a nonpositive real exponent `r`, the principal power `(t + x) ^ r` of a translate of `x` along
 the positive real axis is `O(t ^ r)` for `t > 0` when `x ∈ slitPlane ∪ {0}`, and bounded, indeed
-`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. More generally, for `z ∈ slitPlane` and any
-complex exponent `s` (with no sign restriction on `s.re`), `‖((t : ℂ) + w) ^ s‖` is comparable to
-`(1 + t) ^ s.re` for `t ≥ 0`, locally uniformly in `w` near `z`. These bounds control the
-integrands and parametric derivatives of improper integrals such as Carlson's elliptic integrals
-along `(0, ∞)`.
+`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. More generally, for `z ∈ slitPlane`, `t ≥ 0`,
+and any complex exponent `s` (with no sign restriction on `s.re`), `‖((t : ℂ) + w) ^ s‖` is bounded
+above by `C * (1 + t) ^ s.re` (with `C > 0`) locally uniformly in `w` near `z`, and
+`‖((t : ℂ) + z) ^ s‖` is bounded below by `c * (1 + t) ^ s.re` (with `c > 0`) at each fixed
+`z ∈ slitPlane`. These bounds control the integrands and parametric derivatives of improper
+integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 
 ## Main results
 

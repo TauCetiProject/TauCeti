@@ -19,10 +19,11 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 # Parametric differentiation and holomorphy of slit-plane power integrals
 
 For a complex parameter `z` in `Complex.slitPlane` and any complex exponent `s`, the principal
-power `((t : ℂ) + z) ^ s` along the nonnegative real half-line `t ≥ 0` has norm comparable to
-`(1 + t) ^ s.re`, locally uniformly in `z`
-(`TauCeti.exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow`,
-`TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow`).
+power `((t : ℂ) + w) ^ s` along the nonnegative real half-line `t ≥ 0` has norm bounded above by
+`C * (1 + t) ^ s.re` (with `C > 0`) locally uniformly for `w` near `z`
+(`TauCeti.exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow`), and `‖((t : ℂ) + z) ^ s‖` is
+bounded below by `c * (1 + t) ^ s.re` (with `c > 0`) pointwise at each `z ∈ slitPlane`
+(`TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow`).
 
 Consequently, for any measure `μ` on `ℝ` and weight `g : ℝ → ℂ`, integrability of
 `t ↦ g t * ((t : ℂ) + z) ^ s` on `(0, ∞)` is independent of `z ∈ slitPlane`, is equivalent to
