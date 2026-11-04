@@ -22,9 +22,8 @@ namespace Complex
 
 /-- The square of the principal square root is the original complex number. -/
 @[simp]
-theorem sq_sqrt (z : ℂ) : sqrt z ^ 2 = z := by
-  rw [sqrt, ← cpow_nat_mul]
-  norm_num
+theorem sq_sqrt (z : ℂ) : sqrt z ^ 2 = z :=
+  cpow_ofNat_inv_pow z 2
 
 /-- The principal square root has nonnegative real part. -/
 theorem sqrt_re_nonneg (z : ℂ) : 0 ≤ (sqrt z).re := by

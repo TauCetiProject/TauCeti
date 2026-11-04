@@ -18,9 +18,10 @@ slit plane, even if one original node is zero. The factorization
 `x + λ = (√x + √y) (√x + √z)` also respects principal complex powers: the two factors have
 positive real parts, so their arguments add without crossing the branch cut.
 
-These results ensure that the transformed Carlson integrals and their principal-power
-kernels are defined on the same branches as the original integrals. The theorem for one
-node applies to the other two by permutation. The hypotheses are weaker than requiring
+These results place the transformed nodes in the domain of the slit-plane convergence and
+holomorphy API and split their principal powers over the factorization without a branch
+correction. The theorem for one node applies to the other two by permutation. The hypotheses
+are weaker than requiring
 all three original nodes in `slitPlane ∪ {0}` with at most one zero: it suffices that each
 of the pairs `(x, y)` and `(x, z)` contains a slit-plane node.
 
