@@ -46,6 +46,9 @@ everywhere exactly when it and its covariant derivative are orthogonal to `γ'` 
   normal everywhere if and only if `J` and `DJ` are normal at one parameter.
 * `TauCeti.Manifold.IsJacobiFieldOn.starProjection_singleton_eq`: the orthogonal projection of a
   Jacobi field onto the velocity line is `(α + β t) γ'(t)` with explicit coefficients.
+* `TauCeti.Manifold.IsJacobiFieldOn.alongCurveWithin_starProjection_singleton` and
+  `TauCeti.Manifold.IsJacobiFieldOn.alongCurveWithin_sub_starProjection_singleton`: covariant
+  differentiation preserves the tangential and normal splitting.
 * `TauCeti.Manifold.IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton` and
   `TauCeti.Manifold.IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton`: the tangential
   and normal components of a Jacobi field are Jacobi fields.
@@ -205,6 +208,37 @@ theorem IsJacobiFieldOn.starProjection_singleton_eq
     hJ.inner_curveVelocityWithin_eq hs ha ht,
     hJ.isGeodesicCurveOn.norm_curveVelocityWithin_eq hs ht ha, RCLike.ofReal_real_eq_id, id_eq]
 
+/-- Covariant differentiation commutes with the tangential projection of a Jacobi field.
+The formula also holds when the geodesic velocity vanishes. -/
+@[simp]
+theorem IsJacobiFieldOn.alongCurveWithin_starProjection_singleton
+    (hJ : IsJacobiFieldOn I γ J s) (hs : IsPreconnected s) (ht : t ∈ s) :
+    alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s t =
+      (ℝ ∙ curveVelocityWithin I γ s t).starProjection
+        (alongCurveWithin (leviCivitaConnection I M) γ J s t) := by
+  let f : ℝ → ℝ := fun r ↦
+    (inner ℝ (J t) (curveVelocityWithin I γ s t) +
+      (r - t) * inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s t)
+        (curveVelocityWithin I γ s t)) / ‖curveVelocityWithin I γ s t‖ ^ 2
+  have hf : HasDerivAt f
+      (inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s t)
+        (curveVelocityWithin I γ s t) / ‖curveVelocityWithin I γ s t‖ ^ 2) t := by
+    convert (((hasDerivAt_id t).sub_const t).mul_const
+      (inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s t)
+        (curveVelocityWithin I γ s t))).const_add
+      (inner ℝ (J t) (curveVelocityWithin I γ s t)) |>.div_const
+        (‖curveVelocityWithin I γ s t‖ ^ 2) using 1 <;> simp [f]
+  rw [alongCurveWithin_congr _ γ _
+    (Filter.mem_of_superset self_mem_nhdsWithin
+      (fun r hr ↦ hJ.starProjection_singleton_eq hs ht hr))
+    (hJ.starProjection_singleton_eq hs ht ht),
+    hJ.isGeodesicCurveOn.alongCurveWithin_smul_curveVelocityWithin ht
+      hf.differentiableAt.differentiableWithinAt,
+    hf.hasDerivWithinAt.derivWithin (hJ.uniqueDiffOn t ht),
+    Submodule.starProjection_singleton, real_inner_comm]
+  rfl
+
 /-- The tangential component of a Jacobi field, its orthogonal projection onto the line spanned by
 the velocity, is a Jacobi field on a preconnected parameter set. -/
 theorem IsJacobiFieldOn.isJacobiFieldOn_starProjection_singleton [I.Boundaryless]
@@ -232,6 +266,25 @@ theorem IsJacobiFieldOn.isJacobiFieldOn_sub_starProjection_singleton [I.Boundary
       (fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s :=
   (hJ.add ((hJ.isJacobiFieldOn_starProjection_singleton hs).const_smul (-1))).congr fun r _ ↦ by
     simp [sub_eq_add_neg]
+
+/-- Covariant differentiation commutes with the normal projection of a Jacobi field. -/
+@[simp]
+theorem IsJacobiFieldOn.alongCurveWithin_sub_starProjection_singleton [I.Boundaryless]
+    (hJ : IsJacobiFieldOn I γ J s) (hs : IsPreconnected s) (ht : t ∈ s) :
+    alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)) s t =
+      alongCurveWithin (leviCivitaConnection I M) γ J s t -
+        (ℝ ∙ curveVelocityWithin I γ s t).starProjection
+          (alongCurveWithin (leviCivitaConnection I M) γ J s t) := by
+  let N := fun r ↦ J r - (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)
+  let P := fun r ↦ (ℝ ∙ curveVelocityWithin I γ s r).starProjection (J r)
+  have hsum : J = fun r ↦ N r + P r := by funext r; simp [N, P]
+  have hN := hJ.isJacobiFieldOn_sub_starProjection_singleton hs
+  have hP := hJ.isJacobiFieldOn_starProjection_singleton hs
+  have hD := alongCurveWithin_add (leviCivitaConnection I M) γ N P s
+    (hN.differentiableWithinAt_sectionCoord ht) (hP.differentiableWithinAt_sectionCoord ht)
+  rw [← hsum, hJ.alongCurveWithin_starProjection_singleton hs ht] at hD
+  exact eq_sub_of_add_eq hD.symm
 
 /-- **Splitting of Jacobi fields.** On a preconnected parameter set, every Jacobi field is the sum
 of a tangential Jacobi field `(α + β t) γ'(t)` and a Jacobi field orthogonal to the velocity. -/
