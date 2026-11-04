@@ -27,6 +27,8 @@ fields on a product manifold.
   through a projection.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
+  factor times a function of the second factor.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
@@ -109,6 +111,20 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- The identifications `NormedSpace.fromTangentSpace` at `(g ∘ Prod.snd) p` and at `g p.2` agree,
   -- as these points are equal by definition.
   rfl
+
+/-- **Product rule on a product.** The derivative of `(x, y) ↦ g x * h y` sends a tangent vector
+`(u, w)` at `p` to `dg(u) * h p.2 + g p.1 * dh(w)`. -/
+theorem mvfderiv_comp_fst_mul_comp_snd_apply {g : M → 𝕜} {h : N → 𝕜} {p : M × N}
+    (hg : MDifferentiableAt I 𝓘(𝕜) g p.1) (hh : MDifferentiableAt J 𝓘(𝕜) h p.2)
+    (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (fun q : M × N ↦ g q.1 * h q.2) p v =
+      mvfderiv I g p.1 v.1 * h p.2 + g p.1 * mvfderiv J h p.2 v.2 := by
+  have hv := congrArg (fun φ ↦ φ v)
+    (mvfderiv_mul (hg.comp p mdifferentiableAt_fst) (hh.comp p mdifferentiableAt_snd))
+  simp only [add_apply, smul_apply, smul_eq_mul,
+    mvfderiv_comp_fst_apply, mvfderiv_comp_snd_apply, Function.comp_apply] at hv
+  -- The product `(g ∘ Prod.fst) * (h ∘ Prod.snd)` is the function `(x, y) ↦ g x * h y`.
+  exact hv.trans (by ring)
 
 /-- The derivative of a vector-valued function of a scalar second factor, read on a product: the
 scalar component `v.2` of a tangent vector is sent to `v.2 • g'(p.2)`. -/
