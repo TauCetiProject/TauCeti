@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Homogeneous symbols
@@ -27,11 +29,13 @@ powers `‖ξ‖ ^ m` of the frequency norm are homogeneous symbols of every deg
 (`TauCeti.HomogeneousSymbol.normRpow`).
 
 Differentiating the homogeneity relation shows that the derivatives of `a` in `j` position
-directions and `l` frequency directions are homogeneous of degree `m - l`. Since `a` is continuous
-on the compact sets `K × {‖ξ‖ = 1}`, this gives the estimate `≤ C ‖ξ‖ ^ (m - l)` on `K × E`
-(`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_le`). Multiplying `a` by a frequency
-cutoff `χ` gives a smooth function `χ(ξ) a(x, ξ)` on all of `E × E` which satisfies the symbol
-estimates of order `m`, with the weight `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
+directions and `l` frequency directions are homogeneous of degree `m - l`. When `E` is a proper
+space (for instance finite-dimensional), the sets `K × {‖ξ‖ = 1}` with `K` compact are compact and
+the derivatives of `a` are continuous on them, so they satisfy the estimate `≤ C ‖ξ‖ ^ (m - l)`
+on `K × (E \ {0})` (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_le`). Multiplying `a`
+by a frequency cutoff `χ` gives a smooth function `χ(ξ) a(x, ξ)` on all of `E × E`. On a proper
+space it satisfies the symbol estimates of order `m` on `K × E`, with the weight
+`⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
 (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_frequencyCutoff_smul_le`); changing the
 cutoff changes it by a smoothing term, whose derivatives decay faster than every power of `⟨ξ⟩`
 (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_frequencyCutoff_smul_le`).
@@ -47,11 +51,13 @@ Derivatives are full Fréchet derivatives on `E × E`; a derivative in `j` posit
 * `TauCeti.HomogeneousSymbol.normRpow`: the symbol `‖ξ‖ ^ m` times the identity.
 * `TauCeti.HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency`: homogeneity of the
   derivatives.
-* `TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_le`: the estimate
-  `‖∂_x^j ∂_ξ^l a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - l)` for `x` in a compact set.
+* `TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_le`: on a proper space, the estimate
+  `‖∂_x^j ∂_ξ^l a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - l)` for `x` in a compact set and `ξ ≠ 0`.
 * `TauCeti.HomogeneousSymbol.contDiff_frequencyCutoff_smul` and
   `TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_frequencyCutoff_smul_le`: the cut-off
-  term is smooth and satisfies the symbol estimates of order `m`.
+  term is smooth and, on a proper space, satisfies the symbol estimates of order `m`.
+* `TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_frequencyCutoff_smul_le`: on a
+  proper space, two cut-off terms differ by a smoothing term.
 
 ## References
 
@@ -109,19 +115,15 @@ theorem coefficient_smul_frequency (a : HomogeneousSymbol E V W m) (x ξ : E) {t
   · simp
   · exact a.coefficient_smul_frequency_of_ne_zero x ξ hξ t ht
 
-omit [NormedSpace ℝ E] in
-private theorem isOpen_setOf_snd_ne_zero : IsOpen {p : E × E | p.2 ≠ 0} :=
-  isOpen_ne_fun continuous_snd continuous_const
-
 theorem contDiffAt_coefficient (a : HomogeneousSymbol E V W m) {p : E × E} (hp : p.2 ≠ 0) :
     ContDiffAt ℝ ∞ a.coefficient p :=
-  a.contDiffOn_coefficient.contDiffAt (isOpen_setOf_snd_ne_zero.mem_nhds hp)
+  a.contDiffOn_coefficient.contDiffAt ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hp)
 
 theorem continuousOn_iteratedFDeriv_coefficient (a : HomogeneousSymbol E V W m) (k : ℕ) :
     ContinuousOn (iteratedFDeriv ℝ k a.coefficient) {p | p.2 ≠ 0} :=
+  have hU : IsOpen {p : E × E | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
   (a.contDiffOn_coefficient.continuousOn_iteratedFDerivWithin (mod_cast le_top)
-    isOpen_setOf_snd_ne_zero.uniqueDiffOn).congr
-      fun _ hp => (iteratedFDerivWithin_of_isOpen k isOpen_setOf_snd_ne_zero hp).symm
+    hU.uniqueDiffOn).congr fun _ hp => (iteratedFDerivWithin_of_isOpen k hU hp).symm
 
 /-! ### The vector space of homogeneous symbols of a fixed degree -/
 
@@ -259,6 +261,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x ξ : E} (hξ : ξ ≠ 0) {t
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i => ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v := by
   let S : E × E →L[ℝ] E × E := (ContinuousLinearMap.id ℝ E).prodMap (t • ContinuousLinearMap.id ℝ E)
+  have hU : IsOpen {p : E × E | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
   have hS : S ⁻¹' {p : E × E | p.2 ≠ 0} = {p | p.2 ≠ 0} := by
     ext p
     simp [S, ht.ne']
@@ -267,10 +270,10 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x ξ : E} (hξ : ξ ≠ 0) {t
     exact a.coefficient_smul_frequency p.1 p.2 ht
   have hξ' : (x, ξ) ∈ {p : E × E | p.2 ≠ 0} := hξ
   have key := S.iteratedFDerivWithin_comp_right a.contDiffOn_coefficient
-    isOpen_setOf_snd_ne_zero.uniqueDiffOn (by rw [hS]; exact isOpen_setOf_snd_ne_zero.uniqueDiffOn)
+    hU.uniqueDiffOn (by rw [hS]; exact hU.uniqueDiffOn)
     (x := (x, ξ)) (by simpa [S, ht.ne'] using hξ) (i := k) (mod_cast le_top)
-  rw [hS, hcomp, iteratedFDerivWithin_of_isOpen k isOpen_setOf_snd_ne_zero hξ',
-    iteratedFDerivWithin_of_isOpen k isOpen_setOf_snd_ne_zero (by simpa [S, ht.ne'] using hξ),
+  rw [hS, hcomp, iteratedFDerivWithin_of_isOpen k hU hξ',
+    iteratedFDerivWithin_of_isOpen k hU (by simpa [S, ht.ne'] using hξ),
     iteratedFDeriv_const_smul_apply ((a.contDiffAt_coefficient hξ).of_le (mod_cast le_top))] at key
   have := congr($key v)
   simpa [S, Prod.map, Pi.smul_apply] using this.symm
@@ -298,16 +301,9 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x ξ : E} (hξ : ξ �
   rw [Real.rpow_sub ht, Real.rpow_natCast, div_eq_mul_inv, mul_comm, mul_smul, ← h, smul_smul,
     inv_mul_cancel₀ htl, one_smul]
 
-omit [NormedSpace ℝ E] in
-/-- The norms of `j` position directions followed by `l` frequency directions multiply to the
-product of the norms of the two families. -/
-private theorem prod_norm_append {j l : ℕ} (u : Fin j → E) (w : Fin l → E) :
-    ∏ i, ‖Fin.append (fun i => ((u i, 0) : E × E)) (fun i => (0, w i)) i‖ =
-      (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
-  simp [Fin.prod_univ_add, Prod.norm_def]
-
-/-- The derivatives of a homogeneous symbol of degree `m` in `j` position directions and `l`
-frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions in a compact set. -/
+/-- On a proper space, the derivatives of a homogeneous symbol of degree `m` in `j` position
+directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions in a
+compact set and nonzero frequencies `ξ`. -/
 theorem exists_norm_iteratedFDeriv_le [ProperSpace E] {K : Set E} (hK : IsCompact K)
     (j l : ℕ) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ξ ≠ 0 → ∀ (u : Fin j → E) (w : Fin l → E),
@@ -329,7 +325,8 @@ theorem exists_norm_iteratedFDeriv_le [ProperSpace E] {K : Set E} (hK : IsCompac
     (hC (x, θ) ⟨hx, by simp [θ, norm_smul, hnξ.ne']⟩).trans (le_max_left _ _)
   have hop := (iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)).le_opNorm
     (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))
-  rw [prod_norm_append] at hop
+  simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
+    norm_nonneg, max_eq_left, max_eq_right] at hop
   rw [hξθ, a.iteratedFDeriv_coefficient_smul_frequency_append hθ hnξ, norm_smul,
     Real.norm_of_nonneg (Real.rpow_nonneg hnξ.le _), ← hξθ]
   calc ‖ξ‖ ^ (m - l) * ‖iteratedFDeriv ℝ (j + l) a.coefficient (x, θ)
@@ -347,59 +344,6 @@ end Derivatives
 
 section Cutoff
 
-omit [NormedSpace ℝ E] in
-/-- For `‖ξ‖ ≥ 1`, the power `‖ξ‖ ^ r` is bounded by a multiple of `⟨ξ⟩ ^ r`. -/
-private theorem norm_rpow_le_one_add_norm_sq_rpow {ξ : E} (hξ : 1 ≤ ‖ξ‖) (r : ℝ) :
-    ‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
-  have hs : 0 < ‖ξ‖ := one_pos.trans_le hξ
-  have hsq : ‖ξ‖ ^ r = (‖ξ‖ ^ 2) ^ (r / 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hs.le]
-    ring_nf
-  rw [hsq]
-  rcases le_or_gt 0 r with hr | hr
-  · calc (‖ξ‖ ^ 2) ^ (r / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-          Real.rpow_le_rpow (by positivity) (by linarith) (by linarith)
-      _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-          le_mul_of_one_le_left (by positivity) (Real.one_le_rpow (by norm_num) (by positivity))
-  · have h2 : (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≥ (2 * ‖ξ‖ ^ 2) ^ (r / 2) :=
-      Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by linarith)
-    rw [Real.mul_rpow (by norm_num) (by positivity)] at h2
-    have h2r : (2 : ℝ) ^ (|r| / 2) * 2 ^ (r / 2) = 1 := by
-      rw [abs_of_neg hr, ← Real.rpow_add (by norm_num), show -r / 2 + r / 2 = 0 by ring,
-        Real.rpow_zero]
-    calc (‖ξ‖ ^ 2) ^ (r / 2) = 2 ^ (|r| / 2) * (2 ^ (r / 2) * (‖ξ‖ ^ 2) ^ (r / 2)) := by
-          rw [← mul_assoc, h2r, one_mul]
-      _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-          mul_le_mul_of_nonneg_left h2 (by positivity)
-
-omit [NormedSpace ℝ E] in
-/-- For `‖ξ‖ ≤ 2`, the weight `⟨ξ⟩ ^ r` is bounded below by `5 ^ (-|r| / 2)`. -/
-private theorem rpow_le_one_add_norm_sq_rpow {ξ : E} (hξ : ‖ξ‖ ≤ 2) (r : ℝ) :
-    (5 : ℝ) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
-  have h5 : 1 + ‖ξ‖ ^ 2 ≤ 5 := by nlinarith [norm_nonneg ξ]
-  rcases le_or_gt 0 r with hr | hr
-  · exact (Real.rpow_le_one_of_one_le_of_nonpos (by norm_num) (by linarith [abs_nonneg r])).trans
-      (Real.one_le_rpow (by nlinarith [norm_nonneg ξ]) (by linarith))
-  · rw [abs_of_neg hr, neg_neg]
-    exact Real.rpow_le_rpow_of_nonpos (by positivity) h5 (by linarith)
-
-/-- A smooth function on `E × E` satisfies, for positions in a compact set and frequencies in a
-ball, every derivative estimate with the weight `⟨ξ⟩ ^ r`. -/
-private theorem exists_norm_iteratedFDeriv_le_of_norm_le [ProperSpace E] {A : Type*}
-    [NormedAddCommGroup A] [NormedSpace ℝ A] {f : E × E → A} (hf : ContDiff ℝ ∞ f)
-    {K : Set E} (hK : IsCompact K) (k : ℕ) (r : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : E, ‖ξ‖ ≤ 2 →
-      ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : E) 2)).exists_bound_of_continuousOn
-    (hf.continuous_iteratedFDeriv (mod_cast le_top)).continuousOn
-  refine ⟨max C 0 / 5 ^ (-|r| / 2), by positivity, fun x hx ξ hξ => ?_⟩
-  have h5 : (0 : ℝ) < 5 ^ (-|r| / 2) := by positivity
-  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
-        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
-    _ = max C 0 / 5 ^ (-|r| / 2) * 5 ^ (-|r| / 2) := by field_simp
-    _ ≤ max C 0 / 5 ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-        mul_le_mul_of_nonneg_left (rpow_le_one_add_norm_sq_rpow hξ r) (by positivity)
-
 variable (a : HomogeneousSymbol E V W m) (χ : FrequencyCutoff E)
 
 /-- Multiplying a homogeneous symbol by a frequency cutoff gives a smooth function on all of
@@ -415,17 +359,18 @@ theorem contDiff_frequencyCutoff_smul :
     simp [hq]
   · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient hp)
 
-/-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of degree `m` satisfies the symbol
-estimates of order `m`: its derivatives in `j` position directions and `l` frequency directions
-are bounded by `C ⟨ξ⟩ ^ (m - l)` for positions in a compact set. -/
+/-- On a proper space, the cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of degree `m`
+satisfies the symbol estimates of order `m`: its derivatives in `j` position directions and `l`
+frequency directions are bounded by `C ⟨ξ⟩ ^ (m - l)` for positions in a compact set and every
+frequency. -/
 theorem exists_norm_iteratedFDeriv_frequencyCutoff_smul_le [ProperSpace E] {K : Set E}
     (hK : IsCompact K) (j l : ℕ) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ (ξ : E) (u : Fin j → E) (w : Fin l → E),
       ‖iteratedFDeriv ℝ (j + l) (fun p : E × E => χ p.2 • a.coefficient p) (x, ξ)
           (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) * (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_le_of_norm_le
-    (a.contDiff_frequencyCutoff_smul χ) hK (j + l) (m - l)
+  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le
+    ((a.contDiff_frequencyCutoff_smul χ).of_le (mod_cast le_top)) hK 2 (m - l)
   obtain ⟨C₂, hC₂, h₂⟩ := a.exists_norm_iteratedFDeriv_le hK j l
   refine ⟨max C₁ (C₂ * 2 ^ (|m - l| / 2)), le_max_of_le_left hC₁, fun x hx ξ u w => ?_⟩
   have hprod : 0 ≤ (∏ i, ‖u i‖) * ∏ i, ‖w i‖ := by positivity
@@ -434,7 +379,8 @@ theorem exists_norm_iteratedFDeriv_frequencyCutoff_smul_le [ProperSpace E] {K : 
   · -- Near the zero frequency the cut-off term is smooth, so compactness bounds it.
     refine ((iteratedFDeriv ℝ (j + l) (fun p : E × E => χ p.2 • a.coefficient p)
       (x, ξ)).le_opNorm _).trans ?_
-    rw [prod_norm_append]
+    simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
+      norm_nonneg, max_eq_left, max_eq_right]
     refine mul_le_mul_of_nonneg_right ((h₁ x hx ξ hξ).trans ?_) hprod
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
   · -- At large frequencies the cut-off term agrees with the homogeneous symbol.
@@ -453,17 +399,18 @@ theorem exists_norm_iteratedFDeriv_frequencyCutoff_smul_le [ProperSpace E] {K : 
       _ ≤ max C₁ (C₂ * 2 ^ (|m - l| / 2)) * (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2) :=
           mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
 
-/-- Changing the frequency cutoff changes the cut-off term of a homogeneous symbol by a smoothing
-term: for positions in a compact set, every derivative of the difference is bounded by
-`C ⟨ξ⟩ ^ r`, for every real `r`. -/
+/-- On a proper space, changing the frequency cutoff changes the cut-off term of a homogeneous
+symbol by a smoothing term: for positions in a compact set, every derivative of the difference is
+bounded by `C ⟨ξ⟩ ^ r`, for every real `r`. -/
 theorem exists_norm_iteratedFDeriv_sub_frequencyCutoff_smul_le [ProperSpace E]
     (χ' : FrequencyCutoff E) {K : Set E} (hK : IsCompact K) (k : ℕ) (r : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : E,
       ‖iteratedFDeriv ℝ k
           (fun p : E × E => χ p.2 • a.coefficient p - χ' p.2 • a.coefficient p) (x, ξ)‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
-  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_le_of_norm_le
-    ((a.contDiff_frequencyCutoff_smul χ).sub (a.contDiff_frequencyCutoff_smul χ')) hK k r
+  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le
+    (((a.contDiff_frequencyCutoff_smul χ).sub (a.contDiff_frequencyCutoff_smul χ')).of_le
+      (mod_cast le_top)) hK 2 r
   refine ⟨C, hC, fun x hx ξ => ?_⟩
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · exact h x hx ξ hξ

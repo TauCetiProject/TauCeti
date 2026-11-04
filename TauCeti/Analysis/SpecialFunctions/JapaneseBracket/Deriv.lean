@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Derivatives of powers of the Japanese bracket
@@ -31,12 +32,19 @@ The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times
 (`ContinuousLinearMap.exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow`). The bounds follow
 by induction on `k`.
 
+Near the zero frequency no decay is needed: a `C^k` function of a position `x` and a frequency `ξ`
+satisfies the estimate `‖D^k f(x, ξ)‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)`, for every real `r`, when `x`
+ranges over a compact set and `ξ` over a ball, since the derivative is bounded there and the
+weight is bounded below.
+
 ## Main declarations
 
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le`: the derivative bounds for
   `(1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
+* `TauCeti.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: the weighted estimate
+  of a `C^k` function of `(x, ξ)` for `x` in a compact set and `ξ` in a ball.
 
 ## References
 
@@ -107,6 +115,30 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
 end ContinuousLinearMap
 
 namespace TauCeti
+
+section Compact
+
+variable [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [ProperSpace F]
+
+/-- A `C^k` function on `E × F` satisfies, for `x` in a compact set and `ξ` in a ball, the
+estimate `‖D^k f(x, ξ)‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for every real `r`: the derivative is bounded
+there, and the weight is bounded below. -/
+theorem exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {k : ℕ}
+    {f : E × F → G} (hf : ContDiff ℝ k f) {K : Set E} (hK : IsCompact K) (R r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : F, ‖ξ‖ ≤ R →
+      ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  have hw : (0 : ℝ) < (1 + R ^ 2) ^ (-|r| / 2) := by positivity
+  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
+  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
+        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
+    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+        mul_le_mul_of_nonneg_left (one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
+          (by positivity)
+
+end Compact
 
 variable [InnerProductSpace ℝ E]
 
