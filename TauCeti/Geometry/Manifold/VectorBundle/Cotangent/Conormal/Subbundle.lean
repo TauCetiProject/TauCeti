@@ -56,7 +56,8 @@ points, products, and coordinate slices are computed in
   space of `conormalSpace J I i` into `CotangentBundle I M`.
 * `TauCeti.CotangentBundle.instTopologicalSpaceTotalSpaceConormalSpace`: subspace topology from
   `i *ᵖ T*M` on the total space of `conormalSpace J I i`.
-* `TauCeti.CotangentBundle.IsConormalFrameOn`: `C^n` local frames of `conormalSpace J I i`.
+* `TauCeti.CotangentBundle.IsConormalFrameOn`: `C^n` local frames of `conormalSpace J I i`, with
+  associated local trivializations `TauCeti.CotangentBundle.IsConormalFrameOn.trivialization`.
 * `TauCeti.CotangentBundle.conormalFiberBundle`: `FiberBundle` structure of rank `k` on
   `conormalSpace J I i` for a `C^m` map `i` (`n + 1 ≤ m`) with injective differentials.
 
@@ -251,6 +252,8 @@ structure IsConormalFrameOn (n : ℕ∞ω) (i : Q → M)
 
 namespace IsConormalFrameOn
 
+section Basic
+
 variable {i : Q → M} {X : ι → Π q : Q, TangentSpace I (i q) →L[𝕜] 𝕜} {U U' : Set Q}
 
 /-- Restricting a `C^n` local conormal frame to a subset preserves the frame property. -/
@@ -279,9 +282,34 @@ theorem isSubbundleFrameOn (hX : IsConormalFrameOn J I n i X U) :
   linearIndependent := hX.linearIndependent
   span_eq := hX.span_eq
 
+/-- At a point `q ∈ U`, a local conormal frame `X` on `U` forms a basis of
+`conormalSpace J I i q`. -/
+def basis (hX : IsConormalFrameOn J I n i X U) {q : Q} (hq : q ∈ U) :
+    Basis ι 𝕜 (conormalSpace J I i q) :=
+  hX.isSubbundleFrameOn.basis hq
+
+/-- Coercing the `j`-th element of `hX.basis hq` into `T*_{i q} M` recovers `X j q`. -/
+@[simp]
+theorem coe_basis (hX : IsConormalFrameOn J I n i X U) {q : Q} (hq : q ∈ U) (j : ι) :
+    (hX.basis hq j : TangentSpace I (i q) →L[𝕜] 𝕜) = X j q :=
+  hX.isSubbundleFrameOn.coe_basis hq j
+
+/-- At `q ∈ U`, the conormal covector with coordinates `c` in `hX.basis hq` is the linear
+combination `∑ j, c j • X j q`. -/
+theorem coe_basis_equivFun_symm [Fintype ι] (hX : IsConormalFrameOn J I n i X U) {q : Q}
+    (hq : q ∈ U) (c : ι → 𝕜) :
+    ((hX.basis hq).equivFun.symm c : TangentSpace I (i q) →L[𝕜] 𝕜) = ∑ j, c j • X j q := by
+  simp
+
+end Basic
+
+section Pullback
+
+variable (ic : C^n⟮J, Q; I, M⟯) {X : ι → Π q : Q, TangentSpace I (ic q) →L[𝕜] 𝕜} {U : Set Q}
+
 /-- On an open set `U`, each member of a `C^n` local conormal frame along `ic : C^n⟮J, Q; I, M⟯` is
 a `C^n` section of the pulled-back cotangent bundle `ic *ᵖ T*M`. -/
-theorem contMDiffOn_pullback (ic : C^n⟮J, Q; I, M⟯)
+theorem contMDiffOn_pullback
     (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) (j : ι) :
     ContMDiffOn J (J.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
       (fun q : Q ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) q (X j q) :
@@ -290,10 +318,11 @@ theorem contMDiffOn_pullback (ic : C^n⟮J, Q; I, M⟯)
   exact ((Bundle.Pullback.contMDiffAt_iff ic ic.contMDiff.contMDiffAt).mpr
     ⟨contMDiffAt_id, (hX.contMDiffOn_lift j).contMDiffAt (hU.mem_nhds hq)⟩).contMDiffWithinAt
 
+variable [Finite ι] [IsRCLikeNormedField 𝕜]
+
 /-- The local trivialization of `conormalSpace J I ic` over `U` determined by a local conormal
 frame `X` along `ic : C^n⟮J, Q; I, M⟯`. -/
-def trivialization [Finite ι] [IsRCLikeNormedField 𝕜] (ic : C^n⟮J, Q; I, M⟯)
-    (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) :
+def trivialization (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) :
     Trivialization (ι → 𝕜) (π (ι → 𝕜) fun q ↦ conormalSpace J I (ic : Q → M) q) :=
   letI : FiberBundle (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
     FiberBundle.pullback (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
@@ -301,15 +330,73 @@ def trivialization [Finite ι] [IsRCLikeNormedField 𝕜] (ic : C^n⟮J, Q; I, M
     VectorBundle.pullback (𝕜 := 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
   hX.isSubbundleFrameOn.trivialization hU
 
+/-- `hX.trivialization ic hU` is the subbundle frame trivialization
+`hX.isSubbundleFrameOn.trivialization hU` inside the pulled-back cotangent bundle `ic *ᵖ T*M`. -/
+theorem trivialization_def (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) :
+    letI : FiberBundle (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+      FiberBundle.pullback (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+    letI : VectorBundle 𝕜 (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+      VectorBundle.pullback (𝕜 := 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+    hX.trivialization ic hU = hX.isSubbundleFrameOn.trivialization hU :=
+  (rfl)
+
+/-- The base set of `hX.trivialization ic hU` is `U`. -/
 @[simp]
-theorem trivialization_baseSet [Finite ι] [IsRCLikeNormedField 𝕜]
-    (ic : C^n⟮J, Q; I, M⟯) (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) :
+theorem trivialization_baseSet (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) :
     (hX.trivialization ic hU).baseSet = U := by
   let : FiberBundle (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
     FiberBundle.pullback (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
   let : VectorBundle 𝕜 (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
     VectorBundle.pullback (𝕜 := 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
   exact hX.isSubbundleFrameOn.trivialization_baseSet hU
+
+/-- Over `U`, the conormal frame trivialization sends a covector to its coordinates in the basis
+`hX.basis hp`. -/
+@[simp]
+theorem trivialization_apply (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U)
+    {p : TotalSpace (ι → 𝕜) fun q ↦ conormalSpace J I (ic : Q → M) q} (hp : p.proj ∈ U) :
+    hX.trivialization ic hU p = (p.proj, (hX.basis hp).equivFun p.2) := by
+  let : FiberBundle (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+    FiberBundle.pullback (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  let : VectorBundle 𝕜 (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+    VectorBundle.pullback (𝕜 := 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  exact hX.isSubbundleFrameOn.trivialization_apply hU hp
+
+/-- Over `U`, the partial-homeomorphism inverse of the conormal frame trivialization sends
+`(q, c)` to `(q, (hX.basis hz).equivFun.symm c)`. -/
+@[simp]
+theorem trivialization_toOpenPartialHomeomorph_symm_apply
+    (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U)
+    {z : Q × (ι → 𝕜)} (hz : z.1 ∈ U) :
+    (hX.trivialization ic hU).toOpenPartialHomeomorph.symm z =
+      TotalSpace.mk' (ι → 𝕜) (E := fun q ↦ conormalSpace J I (ic : Q → M) q)
+        z.1 ((hX.basis hz).equivFun.symm z.2) := by
+  let : FiberBundle (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+    FiberBundle.pullback (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  let : VectorBundle 𝕜 (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+    VectorBundle.pullback (𝕜 := 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  exact hX.isSubbundleFrameOn.trivialization_symm_apply hU hz
+
+/-- Over `U`, the fibrewise inverse of the conormal frame trivialization sends coordinates `c` to
+`(hX.basis hq).equivFun.symm c`. -/
+@[simp]
+theorem trivialization_symm_apply (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U)
+    {q : Q} (hq : q ∈ U) (c : ι → 𝕜) :
+    (hX.trivialization ic hU).symm q c = (hX.basis hq).equivFun.symm c :=
+  (TotalSpace.mk_inj (F := ι → 𝕜) (E := fun q ↦ conormalSpace J I (ic : Q → M) q) (b := q)).mp
+    (((hX.trivialization ic hU).mk_symm (b := q) (by simpa using hq) c).trans
+      (hX.trivialization_toOpenPartialHomeomorph_symm_apply ic hU (z := (q, c)) hq))
+
+/-- The conormal frame trivialization is fibrewise linear. -/
+instance isLinear_trivialization (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U) :
+    (hX.trivialization ic hU).IsLinear 𝕜 := by
+  let : FiberBundle (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+    FiberBundle.pullback (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  let : VectorBundle 𝕜 (E →L[𝕜] 𝕜) ((ic : Q → M) *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) :=
+    VectorBundle.pullback (𝕜 := 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ic
+  exact hX.isSubbundleFrameOn.isLinear_trivialization hU
+
+end Pullback
 
 end IsConormalFrameOn
 
