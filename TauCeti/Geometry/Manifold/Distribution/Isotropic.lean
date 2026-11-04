@@ -110,8 +110,8 @@ theorem _root_.Diffeomorph.isDistributionIsotropicMap_diffeomorph_comp_iff {E'' 
   have hD : (D' (ψ (f y))).comap
       (ψ.mfderivToContinuousLinearEquiv hn (f y)).toLinearEquiv.toLinearMap = D (f y) := by
     ext v
-    rw [Submodule.mem_comap, hψ, ← ψ.mfderivToContinuousLinearEquiv_coe hn]
-    rfl
+    rw [Submodule.mem_comap, hψ, ← ψ.mfderivToContinuousLinearEquiv_coe hn, LinearEquiv.coe_coe,
+      ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_coe]
   rw [hD]
 
 /-! ### Pulling back a local defining form -/

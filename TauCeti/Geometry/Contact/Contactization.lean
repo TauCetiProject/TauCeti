@@ -300,11 +300,8 @@ theorem SmoothForm.mpullback_contactization (hφ : ContMDiff J I ∞ φ)
     (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
     (mpullback (fun y ↦ (φ y, h y)) (hφ.prodMk hh) θ.contactization).1 =
       mextDeriv (RoughForm.ofFunction J h) - TauCeti.mpullback J I φ θ.1 := by
-  rw [contactization_def, map_sub, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
-    ← mpullback_comp, ← mpullback_comp, Submodule.coe_sub, coe_mpullback, coe_mpullback]
-  -- The components `Prod.snd ∘ (φ, h)` and `Prod.fst ∘ (φ, h)` simplify to `h` and `φ`.
-  simp only [Function.comp_def]
-  rw [mpullback_realLineCoordForm]
+  simp [contactization_def, ← LinearMap.comp_apply, ← mpullback_comp, Function.comp_def,
+    mpullback_realLineCoordForm]
 
 /-- **Isotropic maps into a contactization.** A smooth map `y ↦ (φ y, h y)` into `W × ℝ` is
 isotropic for the kernel of the contactization form `dz - θ` exactly when `φ^* θ = dh`. -/
