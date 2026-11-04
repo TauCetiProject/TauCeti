@@ -260,10 +260,11 @@ variable {N : ℕ} [NeZero N]
 theorem qExpansion_natCast_discriminant :
     qExpansion N discriminant =
       PowerSeries.expand N (NeZero.ne N) (qExpansion 1 discriminant) := by
-  simpa using TauCeti.qExpansion_nat_mul one_pos (Nat.pos_of_ne_zero (NeZero.ne N))
+  simpa using TauCeti.qExpansion_nat_mul one_ne_zero (Nat.pos_of_ne_zero (NeZero.ne N))
     (SlashInvariantFormClass.periodic_comp_ofComplex CuspForm.discriminant
       one_mem_strictPeriods_SL)
-    (ModularFormClass.bdd_at_infty CuspForm.discriminant) CuspForm.discriminant.holo'
+    (ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant one_pos
+      one_mem_strictPeriods_SL)
 
 /-- The coefficients of `Δ` at period `N` vanish below `N`. -/
 @[simp]
