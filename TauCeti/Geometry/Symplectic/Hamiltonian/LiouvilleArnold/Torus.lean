@@ -102,8 +102,9 @@ include hσ hF hcomm hc
 
 /-- The orbit map `v ↦ v • x` of the Hamiltonian flow action, descended to the quotient of `ι → ℝ`
 by translation by the stabilizer `Λ` of `x`; it is Mathlib's `AddAction.ofQuotientStabilizer` read
-on this orbit space. When the connected component `L` of `x` in its level consists of regular
-points of `F`, it is a Lagrangian embedding with range `L`
+on this orbit space. On a manifold of dimension `2 · |ι|` (`2 * Fintype.card ι = finrank ℝ E`),
+when the connected component `L` of `x` in its level consists of regular points of `F`, it is a
+Lagrangian embedding with range `L`
 (`isLagrangianEmbedding_ofQuotientHamiltonianFlowStabilizer`,
 `range_ofQuotientHamiltonianFlowStabilizer`). -/
 def ofQuotientHamiltonianFlowStabilizer (x : M) :
