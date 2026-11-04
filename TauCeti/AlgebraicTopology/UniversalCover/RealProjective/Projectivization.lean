@@ -12,7 +12,7 @@ import TauCeti.LinearAlgebra.Projectivization.UnitSphere
 /-!
 # The antipodal quotient and real projectivization
 
-`RealProjectiveSpace.projectivizationHomeomorph` identifies the antipodal quotient of
+`RealProjectiveSpace.homeomorphProjectivization` identifies the antipodal quotient of
 `Sⁿ` with the native projectivization of `Fin (n + 1) → ℝ`. It sends a unit vector to
 its line in homogeneous coordinates, forgetting only the `WithLp` type synonym.
 The inverse sends any nonzero homogeneous vector to its normalized antipodal class.
@@ -40,21 +40,23 @@ namespace TauCeti.RealProjectiveSpace
 
 variable (n : ℕ)
 
+/-- The homogeneous coordinates of a unit vector are nonzero. -/
+private theorem ofLp_val_ne_zero (v : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    WithLp.ofLp v.val ≠ 0 :=
+  fun h ↦ (ne_zero_of_mem_sphere one_ne_zero v)
+    ((WithLp.ofLp_eq_zero (x := v.val) 2).mp h)
+
 /-- Send an antipodal unit-vector class to the line spanned by its homogeneous coordinates. -/
 private def toProjectivization : RealProjectiveSpace n → ℙ ℝ (Fin (n + 1) → ℝ) :=
   RealProjectiveSpace.lift n
-    (fun v ↦ Projectivization.mk ℝ (WithLp.ofLp v.val)
-      (fun h ↦ (ne_zero_of_mem_sphere one_ne_zero v)
-        ((WithLp.ofLp_eq_zero (x := v.val) 2).mp h)))
+    (fun v ↦ Projectivization.mk ℝ (WithLp.ofLp v.val) (ofLp_val_ne_zero n v))
     (fun v ↦ (Projectivization.mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨-1, by simp⟩)
 
 /-- The comparison sends a unit-vector representative to its projective class. -/
 @[simp]
 private theorem toProjectivization_mk (v : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     toProjectivization n (mk n v) =
-      Projectivization.mk ℝ (WithLp.ofLp v.val)
-        (fun h ↦ (ne_zero_of_mem_sphere one_ne_zero v)
-          ((WithLp.ofLp_eq_zero (x := v.val) 2).mp h)) :=
+      Projectivization.mk ℝ (WithLp.ofLp v.val) (ofLp_val_ne_zero n v) :=
   RealProjectiveSpace.lift_mk n _ _ v
 
 /-- The sphere-quotient comparison is continuous for the native quotient topologies. -/
@@ -64,8 +66,7 @@ private theorem continuous_toProjectivization : Continuous (toProjectivization n
   simpa only [Function.comp_def, toProjectivization_mk] using
     (Projectivization.continuous_mk
       ((PiLp.continuous_ofLp 2 (fun _ : Fin (n + 1) ↦ ℝ)).comp continuous_subtype_val)
-      (fun v h ↦ (ne_zero_of_mem_sphere one_ne_zero v)
-        ((WithLp.ofLp_eq_zero (x := v.val) 2).mp h)))
+      (ofLp_val_ne_zero n))
 
 /-- Equality of real projective lines identifies precisely the antipodal classes. -/
 private theorem toProjectivization_injective : Function.Injective (toProjectivization n) := by
@@ -95,41 +96,42 @@ private theorem toProjectivization_surjective : Function.Surjective (toProjectiv
 
 /-- The antipodal sphere quotient is homeomorphic to native real projectivization,
 with its homogeneous-coordinate topology. -/
-def projectivizationHomeomorph : RealProjectiveSpace n ≃ₜ ℙ ℝ (Fin (n + 1) → ℝ) :=
+def homeomorphProjectivization : RealProjectiveSpace n ≃ₜ ℙ ℝ (Fin (n + 1) → ℝ) :=
   (continuous_toProjectivization n).homeoOfEquivCompactToT2
     (f := Equiv.ofBijective (toProjectivization n)
       ⟨toProjectivization_injective n, toProjectivization_surjective n⟩)
 
+/-- The homeomorphism evaluates as the sphere-quotient comparison map. -/
+private theorem homeomorphProjectivization_apply (x : RealProjectiveSpace n) :
+    homeomorphProjectivization n x = toProjectivization n x :=
+  congrArg (fun e : RealProjectiveSpace n ≃ ℙ ℝ (Fin (n + 1) → ℝ) ↦ e x)
+    (Continuous.toEquiv_homeoOfEquivCompactToT2 (continuous_toProjectivization n))
+
 /-- The homeomorphism sends a unit vector to the line of its coordinates. -/
 @[simp]
-theorem projectivizationHomeomorph_mk
+theorem homeomorphProjectivization_mk
     (v : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    projectivizationHomeomorph n (mk n v) =
-      Projectivization.mk ℝ (WithLp.ofLp v.val)
-        (fun h ↦ (ne_zero_of_mem_sphere one_ne_zero v)
-          ((WithLp.ofLp_eq_zero (x := v.val) 2).mp h)) :=
-  -- The compact-to-Hausdorff constructor retains the underlying equivalence and its map.
-  toProjectivization_mk n v
+    homeomorphProjectivization n (mk n v) =
+      Projectivization.mk ℝ (WithLp.ofLp v.val) (by exact ofLp_val_ne_zero n v) := by
+  rw [homeomorphProjectivization_apply, toProjectivization_mk]
 
 /-- The inverse comparison recovers the antipodal class of any unit representative. -/
 @[simp]
-theorem projectivizationHomeomorph_symm_mk
+theorem homeomorphProjectivization_symm_mk
     (v : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    (projectivizationHomeomorph n).symm
-      (Projectivization.mk ℝ (WithLp.ofLp v.val)
-        (fun h ↦ (ne_zero_of_mem_sphere one_ne_zero v)
-          ((WithLp.ofLp_eq_zero (x := v.val) 2).mp h))) = mk n v :=
-  (projectivizationHomeomorph n).symm_apply_eq.mpr (projectivizationHomeomorph_mk n v).symm
+    (homeomorphProjectivization n).symm
+      (Projectivization.mk ℝ (WithLp.ofLp v.val) (by exact ofLp_val_ne_zero n v)) = mk n v :=
+  (homeomorphProjectivization n).symm_apply_eq.mpr (homeomorphProjectivization_mk n v).symm
 
 /-- Inverse homogeneous coordinates: normalize a nonzero vector in the Euclidean norm,
 then take its antipodal class. -/
-theorem projectivizationHomeomorph_symm_mk_eq_normalize
+theorem homeomorphProjectivization_symm_mk_eq_normalize
     (v : Fin (n + 1) → ℝ) (hv : v ≠ 0) :
-    (projectivizationHomeomorph n).symm (Projectivization.mk ℝ v hv) =
+    (homeomorphProjectivization n).symm (Projectivization.mk ℝ v hv) =
       mk n ⟨‖WithLp.toLp 2 v‖⁻¹ • WithLp.toLp 2 v,
         mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (by simpa using hv))⟩ := by
-  apply (projectivizationHomeomorph n).injective
-  rw [Homeomorph.apply_symm_apply, projectivizationHomeomorph_mk,
+  apply (homeomorphProjectivization n).injective
+  rw [Homeomorph.apply_symm_apply, homeomorphProjectivization_mk,
     Projectivization.mk_eq_mk_iff']
   refine ⟨‖WithLp.toLp 2 v‖, ?_⟩
   simp [smul_smul, norm_ne_zero_iff.mpr ((WithLp.toLp_eq_zero 2).not.mpr hv)]
