@@ -16,6 +16,7 @@ weight-space theory. The transport and finrank identities hold over any commutat
 
 ## Main results
 
+* `LieModule.weightSpace_zero`: the zero-weight space is the submodule of invariant vectors.
 * `LieModule.map_weightSpace_le`: a Lie-module homomorphism preserves each weight space.
 * `LieModule.comap_weightSpace_eq_of_injective`: the preimage under an injective Lie-module
   homomorphism is the corresponding source weight space.
@@ -74,6 +75,21 @@ namespace LieModule
 variable {R L M M₂ : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
   [AddCommGroup M₂] [Module R M₂] [LieRingModule L M₂] [LieModule R L M₂]
+
+variable (M) in
+/-- The zero-weight space is the submodule of invariant vectors. -/
+@[simp]
+theorem weightSpace_zero : weightSpace M (0 : L → R) = maxTrivSubmodule R L M := by
+  ext m
+  simp [mem_weightSpace, mem_maxTrivSubmodule]
+
+variable (M) in
+/-- The weight space of the zero linear form is the submodule of invariant vectors. -/
+@[simp]
+theorem weightSpace_coe_zero :
+    weightSpace M ⇑(0 : Module.Dual R L) = maxTrivSubmodule R L M := by
+  have hzero : ⇑(0 : Module.Dual R L) = (0 : L → R) := funext LinearMap.zero_apply
+  rw [hzero, weightSpace_zero]
 
 /-- A morphism of Lie modules sends a weight space into the corresponding weight space. -/
 theorem map_weightSpace_le (f : LieModuleHom R L M M₂) (χ : L → R) :
