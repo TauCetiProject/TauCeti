@@ -69,9 +69,9 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K]
 
-/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the coefficient
-`∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` of `vᴺ` in `tateClearedX` becomes
-`∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2) qᴺ`. -/
+/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the divisor sum
+`∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)`, which `tateClearedX` multiplies by `(1 - u)²` to form its
+coefficient of `vᴺ` for `N ≥ 1`, becomes `∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2) qᴺ`. -/
 private theorem aeval_sum_divisors_X_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N : ℕ) :
     Polynomial.aeval u (∑ d ∈ N.divisors, (d : Polynomial ℤ) * (Polynomial.X ^ (N + d) +
         Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N)) * (q / u) ^ N =
@@ -88,8 +88,9 @@ private theorem aeval_sum_divisors_X_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N 
   field_simp
   ring
 
-/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the coefficient of `vᴺ` in `tateClearedY`
-becomes
+/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the divisor sum
+`∑_{d ∣ N} (d (d - 1) / 2 · uᴺ⁺ᵈ - d (d + 1) / 2 · uᴺ⁻ᵈ + d uᴺ)`, which `tateClearedY`
+multiplies by `(1 - u)³` to form its coefficient of `vᴺ` for `N ≥ 1`, becomes
 `∑_{d ∣ N} (d (d - 1) / 2 · uᵈ - d (d + 1) / 2 · u⁻ᵈ + d) qᴺ`. -/
 private theorem aeval_sum_divisors_Y_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N : ℕ) :
     Polynomial.aeval u (∑ d ∈ N.divisors, ((d.choose 2 : Polynomial ℤ) * Polynomial.X ^ (N + d) -
