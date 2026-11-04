@@ -52,6 +52,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {u : E → ℝ} {p : ℝ≥0}
 
+private theorem sharpSobolevConst_pos (hp : NNReal.HolderConjugate (finrank ℝ E) p) :
+    0 < (finrank ℝ E : ℝ) * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ := by
+  have hn : 0 < (finrank ℝ E : ℝ) := by exact_mod_cast hp.pos
+  have hball : 0 < volume.real (ball (0 : E) 1) :=
+    ENNReal.toReal_pos (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne
+  positivity
+
 private theorem mul_eLpNorm_le_totalVariationOn_of_nonneg (hu : Integrable u)
     (hu0 : 0 ≤ᵐ[volume] u) (hp : NNReal.HolderConjugate (finrank ℝ E) p) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^
@@ -101,12 +108,6 @@ theorem eLpNorm_le_inv_mul_totalVariationOn (hu : Integrable u)
     eLpNorm u p volume ≤
       (ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^
         (finrank ℝ E : ℝ)⁻¹))⁻¹ * totalVariationOn volume ⊤ u := by
-  have hC : 0 < (finrank ℝ E : ℝ) * volume.real (ball (0 : E) 1) ^
-      (finrank ℝ E : ℝ)⁻¹ := by
-    have hn : 0 < (finrank ℝ E : ℝ) := by exact_mod_cast hp.pos
-    have hball : 0 < volume.real (ball (0 : E) 1) :=
-      ENNReal.toReal_pos (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne
-    positivity
   have habs := mul_eLpNorm_le_totalVariationOn_of_nonneg hu.norm
     (Filter.Eventually.of_forall fun x ↦ norm_nonneg (u x)) hp
   rw [eLpNorm_norm u hu.aestronglyMeasurable] at habs
@@ -119,8 +120,8 @@ theorem eLpNorm_le_inv_mul_totalVariationOn (hu : Integrable u)
     (finrank ℝ E : ℝ)⁻¹)
   calc
     eLpNorm u p volume = C⁻¹ * (C * eLpNorm u p volume) := by
-      rw [← mul_assoc, ENNReal.inv_mul_cancel (ENNReal.ofReal_pos.mpr hC).ne'
-        ENNReal.ofReal_ne_top, one_mul]
+      rw [← mul_assoc, ENNReal.inv_mul_cancel
+        (ENNReal.ofReal_pos.mpr (sharpSobolevConst_pos hp)).ne' ENNReal.ofReal_ne_top, one_mul]
     _ ≤ C⁻¹ * totalVariationOn volume ⊤ u := by gcongr; exact habs.trans hvar
 
 /-- A whole-space BV function belongs to the critical Lebesgue space `L^(n/(n-1))`. -/
@@ -131,11 +132,6 @@ theorem MemBV.memLp_of_holderConjugate (hu : MemBV volume ⊤ u)
   apply memLp_iff.mpr
   refine (eLpNorm_le_inv_mul_totalVariationOn hint' hp).trans_lt ?_
   apply ENNReal.mul_lt_top _ hvar
-  apply ENNReal.inv_lt_top.mpr
-  apply ENNReal.ofReal_pos.mpr
-  have hn : 0 < (finrank ℝ E : ℝ) := by exact_mod_cast hp.pos
-  have hball : 0 < volume.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne
-  positivity
+  exact ENNReal.inv_lt_top.mpr (ENNReal.ofReal_pos.mpr (sharpSobolevConst_pos hp))
 
 end TauCeti
