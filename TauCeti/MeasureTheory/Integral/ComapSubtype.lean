@@ -17,24 +17,19 @@ For a measurable set `s : Set α` and a measure `μ : Measure α`, the subtype p
 Bochner integral bridges `lintegral_subtype_comap`, `integrableOn_iff_comap_subtypeVal`, and
 `integral_subtype_comap`.
 
-This file completes that bridge in four directions:
+This file completes that bridge in three directions:
 
-1. **Preimage measure and null sets**: `comap_subtype_coe_preimage` computes
-   `(μ.comap (↑)) ((↑) ⁻¹' t) = μ (t ∩ s)` without measurability of `t`, and
-   `comap_subtype_coe_eq_zero_iff` characterizes null sets of `μ.comap (↑)`.
-2. **`AEStronglyMeasurable`, `eLpNorm` and `MemLp` on `μ.comap (↑)`**: exact subtype counterparts
+1. **`AEStronglyMeasurable`, `eLpNorm` and `MemLp` on `μ.comap (↑)`**: exact subtype counterparts
    of `μ.restrict s`.
-3. **Agreement with ambient integrals and norms**: when `f =ᵐ[μ.restrict sᶜ] 0`, strong
+2. **Agreement with ambient integrals and norms**: when `f =ᵐ[μ.restrict sᶜ] 0`, strong
    measurability, `lintegral`, `eLpNorm`, `MemLp`, `Integrable`, and the Bochner integral against
    `μ` on `α` agree with those of `x : s ↦ f x` against `μ.comap (↑)` on `s`.
-4. **Independence of the ambient carrier**: if `f` vanishes almost everywhere outside two
+3. **Independence of the ambient carrier**: if `f` vanishes almost everywhere outside two
    measurable sets `s₁` and `s₂`, all six quantities agree between `(s₁, μ.comap (↑))` and
    `(s₂, μ.comap (↑))`.
 
 ## Main results
 
-* `MeasureTheory.comap_subtype_coe_preimage`, `MeasureTheory.comap_subtype_coe_eq_zero_iff`:
-  preimage measure formula and null-set characterization for `μ.comap (↑)`.
 * `MeasureTheory.aestronglyMeasurable_restrict_iff_comap_subtypeVal`,
   `MeasureTheory.eLpNorm_comp_subtypeVal`, `MeasureTheory.memLp_restrict_iff_comap_subtypeVal`:
   restriction-to-subtype equivalences.
@@ -55,22 +50,6 @@ open scoped ENNReal
 namespace MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {s s₁ s₂ : Set α} {p : ℝ≥0∞}
-
-section SubtypeMeasure
-
-/-- For a measurable set `s`, the subtype pullback `μ.comap (↑)` assigns measure `μ (t ∩ s)` to the
-preimage of any set `t : Set α`, measurable or not. -/
-theorem comap_subtype_coe_preimage (hs : MeasurableSet s) (μ : Measure α) (t : Set α) :
-    μ.comap ((↑) : s → α) (((↑) : s → α) ⁻¹' t) = μ (t ∩ s) := by
-  rw [comap_subtype_coe_apply hs, image_preimage_eq_inter_range, Subtype.range_coe]
-
-/-- Null sets of `μ.comap (↑)` on a measurable set `s` are the subsets whose image in `α` is
-`μ`-null. -/
-theorem comap_subtype_coe_eq_zero_iff (hs : MeasurableSet s) {t : Set s} :
-    μ.comap ((↑) : s → α) t = 0 ↔ μ (((↑) : s → α) '' t) = 0 := by
-  rw [comap_subtype_coe_apply hs]
-
-end SubtypeMeasure
 
 section RestrictBridge
 

@@ -8,12 +8,13 @@ module
 public import Mathlib.GroupTheory.Coset.Basic
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Integral.ComapSubtype
+public import TauCeti.MeasureTheory.Integral.PeakFunction
 public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 
 /-!
-# Restricted Haar measures, translated-coset integrals and convolution on open subgroups
+# Restricted Haar measures, coset integrals, convolution and peak kernels on open subgroups
 
 Let `H : OpenSubgroup G` be an open subgroup of a topological group `G` carrying a measure `μ`.
 Because `(↑) : H → G` is an open embedding, the subtype pullback measure `μ.comap ((↑) : H → G)`
@@ -25,12 +26,15 @@ whenever `μ` is inner regular on sets of finite measure (`OpenSubgroup.innerReg
 locally compact group, the modular character of `H` agrees with the restriction of the modular
 character of `G` (`OpenSubgroup.modularCharacter_coe`).
 
-This file develops four families of identities for `(H, μ.comap ((↑) : H → G))`:
+This file develops five families of results for `(H, μ.comap ((↑) : H → G))`:
 
-1. **Ambient agreement and subgroup independence**: when `f` vanishes `μ`-almost everywhere outside
-   `H`, its `AEStronglyMeasurable` predicate, lower Lebesgue integral, `Lᵖ` seminorm, `MemLp`
-   predicate, `Integrable` predicate, and Bochner integral on `G` agree with those of its
-   restriction to `(H, μ.comap (↑))`, and are independent of the open subgroup `H` chosen.
+1. **Ambient integral agreement and subgroup independence**: when `f` vanishes `μ`-almost everywhere
+   outside `H`, its Bochner integral on `G` agrees with that of its restriction to
+   `(H, μ.comap (↑))` and is independent of the open subgroup `H` chosen
+   (`OpenSubgroup.integral_eq_comap`, `OpenSubgroup.integral_comap_congr`); the generic subtype
+   bridges in `TauCeti.MeasureTheory.Integral.ComapSubtype` give the corresponding facts for
+   `AEStronglyMeasurable`, `lintegral`, `eLpNorm`, `MemLp`, and `Integrable` via
+   `H.isOpen.measurableSet`.
 2. **Left-coset calculations**: for a left-invariant measure `μ` and any `g : G`, pushing
    `μ.comap (↑)` forward along `y : H ↦ g * y` yields `μ.restrict (g • (H : Set G))`, reducing set
    integrals, `Lᵖ` seminorms, `MemLp`, and `IntegrableOn` on `g • (H : Set G)` to
@@ -45,6 +49,10 @@ This file develops four families of identities for `(H, μ.comap ((↑) : H → 
    becomes the `H`-convolution against the coset slice `w : H ↦ f ((w : G) * g)`. When `f` also
    vanishes `μ`-almost everywhere outside `H` and `μ` is a regular Haar measure, the convolution
    integrand is `μ`-almost everywhere zero—hence its integral vanishes—at every `x ∉ H`.
+5. **Peak kernels inside `H`**: since `H` is open it contains a neighbourhood of the identity, so
+   for any identity neighbourhood `U` there exist nonnegative `C_c(G, ℝ)` unit-integral peak kernels
+   supported inside both `U` and `H` and norm-one `L¹(G, μ; 𝕜)` unit-integral peak kernels vanishing
+   almost everywhere outside both `U` and `H`.
 
 ## Main results
 
@@ -55,10 +63,8 @@ This file develops four families of identities for `(H, μ.comap ((↑) : H → 
   regularity of `μ.comap ((↑) : H → G)` when `IsSigmaCompact (H : Set G)`.
 * `OpenSubgroup.modularCharacter_coe`:
   `Measure.modularCharacter (y : G) = Measure.modularCharacter y` for `y : H`.
-* `OpenSubgroup.lintegral_eq_comap`, `OpenSubgroup.eLpNorm_eq_comap`,
-  `OpenSubgroup.memLp_iff_comap`, `OpenSubgroup.integrable_iff_comap`,
-  `OpenSubgroup.integral_eq_comap`, and `*_comap_congr`: ambient agreement and subgroup
-  independence.
+* `OpenSubgroup.integral_eq_comap`, `OpenSubgroup.integral_comap_congr`: ambient Bochner integral
+  agreement and subgroup independence.
 * `OpenSubgroup.map_mul_left_comap`, `OpenSubgroup.setIntegral_smul_eq_integral_comap`,
   `OpenSubgroup.restrict_op_smul_eq_smul_map_comap`,
   `OpenSubgroup.setIntegral_op_smul_eq_integral_comap`: left- and right-coset measure and integral
@@ -67,6 +73,11 @@ This file develops four families of identities for `(H, μ.comap ((↑) : H → 
   `OpenSubgroup.integral_smul_inv_mul_mul_eq_comap`,
   `OpenSubgroup.integral_smul_inv_mul_eq_zero_of_notMem`: pointwise convolution reduction and
   vanishing outside `H`.
+* `OpenSubgroup.exists_nonneg_tsupport_subset_integral_eq_one` and
+  `OpenSubgroup.exists_integral_eq_one_norm_eq_one`: nonnegative `C_c(G, ℝ)` unit-integral kernels
+  supported inside both `U` and `H`, and norm-one `L¹(G, μ; 𝕜)` unit-integral kernels vanishing
+  almost everywhere outside both `U` and `H`, for any identity neighbourhood `U` and open subgroup
+  `H`.
 
 ## References
 
@@ -78,7 +89,7 @@ This file develops four families of identities for `(H, μ.comap ((↑) : H → 
 public section
 
 open Filter MeasureTheory MulOpposite Set Topology
-open scoped ENNReal NNReal Pointwise
+open scoped CompactlySupported ENNReal NNReal Pointwise
 
 namespace OpenSubgroup
 
@@ -235,105 +246,7 @@ end ModularCharacter
 section AmbientAgreement
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
-  {μ : Measure G} {H H₁ H₂ : OpenSubgroup G} {p : ℝ≥0∞}
-
-/-- A function vanishing `μ`-almost everywhere outside an open subgroup `H` is almost everywhere
-strongly measurable on `G` if and only if its restriction to `H` is almost everywhere strongly
-measurable for `μ.comap (↑)`. -/
-@[to_additive /-- A function vanishing `μ`-almost everywhere outside an open additive subgroup `H`
-is almost everywhere strongly measurable on `G` if and only if its restriction to `H` is almost
-everywhere strongly measurable for `μ.comap (↑)`. -/]
-theorem aestronglyMeasurable_iff_comap {β : Type*} [TopologicalSpace β] [Zero β] {f : G → β}
-    (hf : f =ᵐ[μ.restrict (H : Set G)ᶜ] 0) :
-    AEStronglyMeasurable f μ ↔
-      AEStronglyMeasurable (fun x : H ↦ f x) (μ.comap ((↑) : H → G)) :=
-  aestronglyMeasurable_iff_comap_subtypeVal_of_ae_eq_zero H.isOpen.measurableSet hf
-
-/-- Subgroup independence of `AEStronglyMeasurable` for a function vanishing almost everywhere
-outside two open subgroups `H₁` and `H₂`. -/
-@[to_additive /-- Subgroup independence of `AEStronglyMeasurable` for a function vanishing almost
-everywhere outside two open additive subgroups `H₁` and `H₂`. -/]
-theorem aestronglyMeasurable_comap_congr {β : Type*} [TopologicalSpace β] [Zero β] {f : G → β}
-    (hf₁ : f =ᵐ[μ.restrict (H₁ : Set G)ᶜ] 0) (hf₂ : f =ᵐ[μ.restrict (H₂ : Set G)ᶜ] 0) :
-    AEStronglyMeasurable (fun x : H₁ ↦ f x) (μ.comap ((↑) : H₁ → G)) ↔
-      AEStronglyMeasurable (fun x : H₂ ↦ f x) (μ.comap ((↑) : H₂ → G)) :=
-  aestronglyMeasurable_comap_subtypeVal_congr H₁.isOpen.measurableSet H₂.isOpen.measurableSet
-    hf₁ hf₂
-
-/-- If `f : G → ℝ≥0∞` vanishes `μ`-almost everywhere outside an open subgroup `H`, its ambient
-lower Lebesgue integral equals its integral on `(H, μ.comap (↑))`. -/
-@[to_additive /-- If `f : G → ℝ≥0∞` vanishes `μ`-almost everywhere outside an open additive subgroup
-`H`, its ambient lower Lebesgue integral equals its integral on `(H, μ.comap (↑))`. -/]
-theorem lintegral_eq_comap {f : G → ℝ≥0∞} (hf : f =ᵐ[μ.restrict (H : Set G)ᶜ] 0) :
-    ∫⁻ x, f x ∂μ = ∫⁻ x : H, f x ∂(μ.comap ((↑) : H → G)) :=
-  lintegral_eq_subtype_comap_of_ae_eq_zero H.isOpen.measurableSet hf
-
-/-- Subgroup independence of the lower Lebesgue integral for `f : G → ℝ≥0∞` vanishing almost
-everywhere outside `H₁` and `H₂`. -/
-@[to_additive /-- Subgroup independence of the lower Lebesgue integral for `f : G → ℝ≥0∞` vanishing
-almost everywhere outside `H₁` and `H₂`. -/]
-theorem lintegral_comap_congr {f : G → ℝ≥0∞}
-    (hf₁ : f =ᵐ[μ.restrict (H₁ : Set G)ᶜ] 0) (hf₂ : f =ᵐ[μ.restrict (H₂ : Set G)ᶜ] 0) :
-    ∫⁻ x : H₁, f x ∂(μ.comap ((↑) : H₁ → G)) = ∫⁻ x : H₂, f x ∂(μ.comap ((↑) : H₂ → G)) :=
-  lintegral_subtype_comap_congr H₁.isOpen.measurableSet H₂.isOpen.measurableSet hf₁ hf₂
-
-/-- If `f` vanishes `μ`-almost everywhere outside an open subgroup `H`, its ambient `Lᵖ` seminorm
-equals the `Lᵖ` seminorm of its restriction to `(H, μ.comap (↑))`. -/
-@[to_additive /-- If `f` vanishes `μ`-almost everywhere outside an open additive subgroup `H`, its
-ambient `Lᵖ` seminorm equals the `Lᵖ` seminorm of its restriction to `(H, μ.comap (↑))`. -/]
-theorem eLpNorm_eq_comap {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : G → ε}
-    (hf : f =ᵐ[μ.restrict (H : Set G)ᶜ] 0) (p : ℝ≥0∞) :
-    eLpNorm f p μ = eLpNorm (fun x : H ↦ f x) p (μ.comap ((↑) : H → G)) :=
-  eLpNorm_eq_comap_subtypeVal_of_ae_eq_zero H.isOpen.measurableSet hf p
-
-/-- Subgroup independence of the `Lᵖ` seminorm for a function vanishing almost everywhere outside
-`H₁` and `H₂`. -/
-@[to_additive /-- Subgroup independence of the `Lᵖ` seminorm for a function vanishing almost
-everywhere outside `H₁` and `H₂`. -/]
-theorem eLpNorm_comap_congr {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : G → ε}
-    (hf₁ : f =ᵐ[μ.restrict (H₁ : Set G)ᶜ] 0) (hf₂ : f =ᵐ[μ.restrict (H₂ : Set G)ᶜ] 0)
-    (p : ℝ≥0∞) :
-    eLpNorm (fun x : H₁ ↦ f x) p (μ.comap ((↑) : H₁ → G)) =
-      eLpNorm (fun x : H₂ ↦ f x) p (μ.comap ((↑) : H₂ → G)) :=
-  eLpNorm_comap_subtypeVal_congr H₁.isOpen.measurableSet H₂.isOpen.measurableSet hf₁ hf₂ p
-
-/-- If `f` vanishes `μ`-almost everywhere outside an open subgroup `H`, membership in ambient `Lᵖ`
-is equivalent to membership in `Lᵖ` on `(H, μ.comap (↑))`. -/
-@[to_additive /-- If `f` vanishes `μ`-almost everywhere outside an open additive subgroup `H`,
-membership in ambient `Lᵖ` is equivalent to membership in `Lᵖ` on `(H, μ.comap (↑))`. -/]
-theorem memLp_iff_comap {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : G → ε}
-    (hf : f =ᵐ[μ.restrict (H : Set G)ᶜ] 0) :
-    MemLp f p μ ↔ MemLp (fun x : H ↦ f x) p (μ.comap ((↑) : H → G)) :=
-  memLp_iff_comap_subtypeVal_of_ae_eq_zero H.isOpen.measurableSet hf
-
-/-- Subgroup independence of `MemLp` for a function vanishing almost everywhere outside `H₁` and
-`H₂`. -/
-@[to_additive /-- Subgroup independence of `MemLp` for a function vanishing almost everywhere
-outside `H₁` and `H₂`. -/]
-theorem memLp_comap_congr {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] {f : G → ε}
-    (hf₁ : f =ᵐ[μ.restrict (H₁ : Set G)ᶜ] 0) (hf₂ : f =ᵐ[μ.restrict (H₂ : Set G)ᶜ] 0) :
-    MemLp (fun x : H₁ ↦ f x) p (μ.comap ((↑) : H₁ → G)) ↔
-      MemLp (fun x : H₂ ↦ f x) p (μ.comap ((↑) : H₂ → G)) :=
-  memLp_comap_subtypeVal_congr H₁.isOpen.measurableSet H₂.isOpen.measurableSet hf₁ hf₂
-
-/-- If `f` vanishes `μ`-almost everywhere outside an open subgroup `H`, ambient integrability is
-equivalent to integrability on `(H, μ.comap (↑))`. -/
-@[to_additive /-- If `f` vanishes `μ`-almost everywhere outside an open additive subgroup `H`,
-ambient integrability is equivalent to integrability on `(H, μ.comap (↑))`. -/]
-theorem integrable_iff_comap {ε : Type*} [TopologicalSpace ε] [ENormedAddMonoid ε] {f : G → ε}
-    (hf : f =ᵐ[μ.restrict (H : Set G)ᶜ] 0) :
-    Integrable f μ ↔ Integrable (fun x : H ↦ f x) (μ.comap ((↑) : H → G)) :=
-  integrable_iff_comap_subtypeVal_of_ae_eq_zero H.isOpen.measurableSet hf
-
-/-- Subgroup independence of integrability for a function vanishing almost everywhere outside `H₁`
-and `H₂`. -/
-@[to_additive /-- Subgroup independence of integrability for a function vanishing almost everywhere
-outside `H₁` and `H₂`. -/]
-theorem integrable_comap_congr {ε : Type*} [TopologicalSpace ε] [ENormedAddMonoid ε] {f : G → ε}
-    (hf₁ : f =ᵐ[μ.restrict (H₁ : Set G)ᶜ] 0) (hf₂ : f =ᵐ[μ.restrict (H₂ : Set G)ᶜ] 0) :
-    Integrable (fun x : H₁ ↦ f x) (μ.comap ((↑) : H₁ → G)) ↔
-      Integrable (fun x : H₂ ↦ f x) (μ.comap ((↑) : H₂ → G)) :=
-  integrable_comap_subtypeVal_congr H₁.isOpen.measurableSet H₂.isOpen.measurableSet hf₁ hf₂
+  {μ : Measure G} {H H₁ H₂ : OpenSubgroup G}
 
 /-- If `f` vanishes `μ`-almost everywhere outside an open subgroup `H`, its ambient Bochner
 integral equals its Bochner integral on `(H, μ.comap (↑))`. -/
@@ -700,5 +613,48 @@ theorem ae_restrict_compl_integral_smul_inv_mul_eq_zero {h : G → α} {f : G �
 end TwoFactors
 
 end Convolution
+
+section Kernels
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
+  (H : OpenSubgroup G)
+
+/-- **Continuous peak kernels inside an open subgroup.** On a locally compact `R₁` group with a
+measure positive on nonempty open sets and finite on compact sets, every neighbourhood `U` of `1`
+carries a nonnegative compactly supported continuous function `φ` of unit integral supported inside
+both `U` and `H`. -/
+@[to_additive exists_nonneg_tsupport_subset_integral_eq_one
+/-- **Continuous peak kernels inside an open additive subgroup.** On a locally compact
+`R₁` additive group with a measure positive on nonempty open sets and finite on compact sets, every
+neighbourhood `U` of `0` carries a nonnegative compactly supported continuous function `φ` of unit
+integral supported inside both `U` and `H`. -/]
+theorem exists_nonneg_tsupport_subset_integral_eq_one [R1Space G] [LocallyCompactSpace G]
+    (μ : Measure G) [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ]
+    {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
+    ∃ φ : C_c(G, ℝ), 0 ≤ φ ∧ tsupport φ ⊆ U ∧ tsupport φ ⊆ H ∧ ∫ x, φ x ∂μ = 1 := by
+  obtain ⟨φ, hφ0, hφUH, hφ1⟩ := TauCeti.exists_nonneg_tsupport_subset_integral_eq_one μ
+    (inter_mem hU (H.isOpen.mem_nhds H.one_mem))
+  exact ⟨φ, hφ0, hφUH.trans inter_subset_left, hφUH.trans inter_subset_right, hφ1⟩
+
+/-- **`L¹` peak kernels inside an open subgroup.** For a locally finite measure positive on nonempty
+open sets, every neighbourhood `U` of `1` carries an `L¹` class `f` of unit integral and unit `L¹`
+norm vanishing almost everywhere outside both `U` and `H`. -/
+@[to_additive (dont_translate := 𝕜) exists_integral_eq_one_norm_eq_one
+/-- **`L¹` peak kernels inside an open additive subgroup.** For a locally finite measure positive on
+nonempty open sets, every neighbourhood `U` of `0` carries an `L¹` class `f` of unit integral and
+unit `L¹` norm vanishing almost everywhere outside both `U` and `H`. -/]
+theorem exists_integral_eq_one_norm_eq_one (𝕜 : Type*) [RCLike 𝕜] (μ : Measure G)
+    [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
+    ∃ f : G →₁[μ] 𝕜, ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧
+      (∀ᵐ x ∂μ, x ∉ U → f x = 0) ∧ (f : G → 𝕜) =ᵐ[μ.restrict (H : Set G)ᶜ] 0 := by
+  obtain ⟨f, hf1, hfn, hfUH⟩ := TauCeti.exists_integral_eq_one_norm_eq_one 𝕜 μ
+    (inter_mem hU (H.isOpen.mem_nhds H.one_mem))
+  refine ⟨f, hf1, hfn, ?_, (ae_restrict_iff' H.isOpen.measurableSet.compl).2 ?_⟩
+  · filter_upwards [hfUH] with x hx hxU
+    exact hx fun hxUH ↦ hxU hxUH.1
+  · filter_upwards [hfUH] with x hx hxH
+    exact hx fun hxUH ↦ hxH hxUH.2
+
+end Kernels
 
 end OpenSubgroup
