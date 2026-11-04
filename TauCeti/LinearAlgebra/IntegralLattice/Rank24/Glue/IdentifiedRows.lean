@@ -46,8 +46,9 @@ the order `|H_r| = glueOrder r`, the Lagrangian property, and, except for `A₂�
 
 ## Main declarations
 
-* `map_glueSubgroup_a2Twelfth`, `map_glueSubgroup_d4Sixth`, `map_glueSubgroup_a11d7e6`: the
-  table subgroups are the separately identified subgroups.
+* `map_glueSubgroup_a2Twelfth`, `map_glueSubgroup_d4Sixth` (with
+  `mem_glueSubgroup_d4Sixth_iff_hexacode`), `map_glueSubgroup_a11d7e6`: the table subgroups are
+  the separately identified subgroups.
 * `natCard_glueSubgroup_*`, `isLagrangian_glueSubgroup_*`,
   `four_le_sum_glueMinimum_of_mem_glueSubgroup_*`: the order, Lagrangian and minimum-norm checks
   of these rows, for the table subgroup.
@@ -261,6 +262,22 @@ theorem map_glueSubgroup_d4Sixth :
       ⟨_, ofFn_mem_glueWords_d4Sixth d ?_, decodeGlueWord_D_four_ofFn d⟩
     simp only [d4SixPrintedDigits_def, Set.mem_insert_iff, Set.mem_singleton_iff] at hd
     simpa only [List.mem_cons, List.not_mem_nil, or_false] using hd
+
+/-- A glue word of the row `D₄⁶` lies in the table glue subgroup `d4Sixth.glueSubgroup` exactly
+when its image under `d4SixthGlueModuleIsometry` lies in `d4SixGlueSubgroup`. -/
+theorem d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff (w : d4Sixth.glueModule) :
+    d4SixthGlueModuleIsometry w ∈ d4SixGlueSubgroup ↔ w ∈ d4Sixth.glueSubgroup := by
+  rw [← map_glueSubgroup_d4Sixth]
+  exact AddSubgroup.mem_map_iff_mem d4SixthGlueModuleIsometry.injective
+
+/-- **The table glue subgroup of `D₄⁶` is the hexacode**: a glue word of the row lies in
+`d4Sixth.glueSubgroup` exactly when its image under `d4SixthGlueModuleIsometry` and
+`d4SixHexacodeIsometry` belongs to `Hexacode.code ω`. -/
+theorem mem_glueSubgroup_d4Sixth_iff_hexacode {F : Type*} [Field F] [Finite F]
+    (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0) (w : d4Sixth.glueModule) :
+    w ∈ d4Sixth.glueSubgroup ↔
+      d4SixHexacodeIsometry hF hω (d4SixthGlueModuleIsometry w) ∈ Hexacode.code ω := by
+  rw [← d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff, mem_d4SixGlueSubgroup_iff hF hω]
 
 /-- **The table glue subgroup of `D₄⁶` has the displayed order `64`.** -/
 theorem natCard_glueSubgroup_d4Sixth : Nat.card d4Sixth.glueSubgroup = d4Sixth.glueOrder :=

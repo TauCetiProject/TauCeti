@@ -7,7 +7,6 @@ module
 
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.D4Six.Lattice
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
 
 /-!
 # Hexacode automorphisms act on the Niemeier lattice `D₄⁶`
@@ -34,6 +33,10 @@ glue alphabet through powers of the triality isometry of `D₄`
   `c (σ a)⁻¹ * u a * c a` and the same permutation
   (`TauCeti.d4SixHexacodeIsometry_conj_monomialEquiv`). It therefore preserves the glue subgroup,
   and `TauCeti.d4SixHexacodeAutIsometry` is the induced self-isometry of `D₄⁶`.
+* Transporting `d4SixHexacodeAutIsometry` across `TauCeti.d4SixHexacodeOverlatticeIsometry` to the
+  hexacode gluing of `(D₄)⁶` cancels the coordinate scalings `c`: the conjugated self-isometry
+  `TauCeti.d4SixCheckerboardHexacodeAutIsometry` acts directly by `checkerboardScalarIsometry` for
+  `u` and the component permutation `σ` (`TauCeti.d4SixCheckerboardHexacodeAutIsometry_apply`).
 
 The code automorphisms, the transformations of glue words and the lattice isometries are kept
 distinct; the evaluation lemmas record how they are related.
@@ -193,5 +196,54 @@ theorem d4SixHexacodeAutIsometry_apply (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fin
         ((d4SixHexacodeScaling hω j)⁻¹ * u (σ.symm j) * d4SixHexacodeScaling hω (σ.symm j))
         (x (σ.symm j)) := by
   rw [d4SixHexacodeAutIsometry, d4SixMonomialIsometry_apply, Equiv.apply_symm_apply]
+
+/-- **A monomial automorphism of the hexacode acts directly on the hexacode gluing of `(D₄)⁶`.**
+Conjugating `d4SixHexacodeAutIsometry` across `d4SixHexacodeOverlatticeIsometry` cancels the
+coordinate scalings `[ω, ω, 1, ω², ω², 1]`, giving a self-isometry of the hexacode overlattice of
+`(D₄)⁶` that applies `checkerboardScalarIsometry` for `u` and moves coordinate `a` to `σ a`. -/
+noncomputable def d4SixCheckerboardHexacodeAutIsometry (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fin 6))
+    (he : monomialEquiv u σ ∈ monomialAut (Hexacode.code ω)) :
+    Isometry
+      (((checkerboardLattice 4).coordinatePower (Fin 6)).ofIsotropicSubgroup
+        ((isEven_checkerboardLattice 4).coordinatePower (Fin 6))
+        (codeInTypeD4CoordinatePowerDiscriminant hF hω (Hexacode.code ω).toAddSubgroup)
+        (Hexacode.isLagrangian_codeInTypeD4CoordinatePowerDiscriminant hF hω hω).isIsotropic)
+      (((checkerboardLattice 4).coordinatePower (Fin 6)).ofIsotropicSubgroup
+        ((isEven_checkerboardLattice 4).coordinatePower (Fin 6))
+        (codeInTypeD4CoordinatePowerDiscriminant hF hω (Hexacode.code ω).toAddSubgroup)
+        (Hexacode.isLagrangian_codeInTypeD4CoordinatePowerDiscriminant hF hω hω).isIsotropic) :=
+  (d4SixHexacodeOverlatticeIsometry hF hω).conjMulEquiv (d4SixHexacodeAutIsometry hF hω u σ he)
+
+/-- **On the hexacode gluing of `(D₄)⁶`, a monomial automorphism `monomialEquiv u σ` acts without
+conjugation scalings**: coordinate `j` of the image is obtained by applying the power of
+`checkerboardTriality` realizing `u (σ.symm j)` to coordinate `σ.symm j`. -/
+@[simp]
+theorem d4SixCheckerboardHexacodeAutIsometry_apply (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fin 6))
+    (he : monomialEquiv u σ ∈ monomialAut (Hexacode.code ω))
+    (y : Fin 6 → Fin 4 → ℚ) (j : Fin 6) :
+    d4SixCheckerboardHexacodeAutIsometry hF hω u σ he y j =
+      checkerboardScalarIsometry hF hω (u (σ.symm j)) (y (σ.symm j)) := by
+  rw [d4SixCheckerboardHexacodeAutIsometry, Isometry.conjMulEquiv_apply,
+    d4SixHexacodeOverlatticeIsometry_apply, d4SixHexacodeAutIsometry_apply,
+    rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply,
+    d4SixHexacodeOverlatticeIsometry_symm_apply, Isometry.apply_symm_apply, ← Isometry.mul_apply,
+    ← Isometry.mul_apply, ← checkerboardScalarIsometry_mul, ← checkerboardScalarIsometry_mul]
+  have hunit : d4SixHexacodeScaling hω j *
+      ((d4SixHexacodeScaling hω j)⁻¹ * u (σ.symm j) * d4SixHexacodeScaling hω (σ.symm j)) *
+        (d4SixHexacodeScaling hω (σ.symm j))⁻¹ = u (σ.symm j) := by
+    simp [mul_assoc]
+  rw [hunit]
+
+/-- **`d4SixHexacodeOverlatticeIsometry` intertwines the hexacode automorphism actions** on
+`d4SixLattice` and on the hexacode gluing of `(D₄)⁶`. -/
+-- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the argument `x` by `rank_D`.
+theorem d4SixHexacodeOverlatticeIsometry_d4SixHexacodeAutIsometry_apply
+    (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fin 6))
+    (he : monomialEquiv u σ ∈ monomialAut (Hexacode.code ω))
+    (x : Fin 6 → Fin (D 4).rank → ℚ) :
+    d4SixHexacodeOverlatticeIsometry hF hω (d4SixHexacodeAutIsometry hF hω u σ he x) =
+      d4SixCheckerboardHexacodeAutIsometry hF hω u σ he
+        (d4SixHexacodeOverlatticeIsometry hF hω x) := by
+  rw [d4SixCheckerboardHexacodeAutIsometry, Isometry.conjMulEquiv_apply, Isometry.symm_apply_apply]
 
 end TauCeti
