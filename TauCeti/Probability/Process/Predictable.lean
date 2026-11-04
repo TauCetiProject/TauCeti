@@ -9,12 +9,12 @@ public import Mathlib.Probability.Process.Predictable
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Predictability of continuous adapted processes
+# Predictability of left-continuous adapted processes
 
-Continuous adapted processes in nonnegative real time are strongly predictable. The proof uses
+Left-continuous adapted processes in nonnegative real time are strongly predictable. The proof uses
 left endpoint step approximations on countable regular partitions, including the initial value
-on the predictable time-zero slice. This supplies predictability of continuous asset processes
-and hence of Borel functions of time and those assets.
+on the predictable time-zero slice. Continuous paths give a corollary. This supplies predictability
+of continuous asset processes and hence of Borel functions of time and those assets.
 
 The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
 time dependence can be combined with predictable processes.
@@ -100,10 +100,11 @@ private lemma measurable_leftSample {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 �
     (.iUnion fun k => measurableSet_predictable_Ioc_prod _ _ ((hu _).measurable hA))
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- An adapted process with continuous sample paths is predictable. -/
-theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
+/-- An adapted process with left-continuous sample paths is predictable. -/
+theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_leftContinuous
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : StronglyAdapted ℱ u)
-    (hc : ∀ ω, Continuous (fun t => u t ω)) : IsStronglyPredictable ℱ u := by
+    (hc : ∀ ω t, ContinuousWithinAt (fun s => u s ω) (Iic t) t) :
+    IsStronglyPredictable ℱ u := by
   borelize E
   have hm (n : ℕ) : StronglyMeasurable[ℱ.predictable]
       (fun p : ℝ≥0 × Ω => u (leftSample n p.1) p.2) := by
@@ -113,7 +114,21 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
     rintro _ ⟨p, rfl⟩
     exact Set.mem_iUnion.mpr ⟨⌈p.1 * (n + 1)⌉₊ - 1, Set.mem_range_self p.2⟩
   apply stronglyMeasurable_of_tendsto atTop hm
-  exact tendsto_pi_nhds.mpr fun p => (hc p.2).continuousAt.tendsto.comp (tendsto_leftSample p.1)
+  apply tendsto_pi_nhds.mpr
+  intro p
+  apply (hc p.2 p.1).tendsto.comp
+  refine tendsto_nhdsWithin_iff.mpr ⟨tendsto_leftSample p.1, .of_forall fun n => ?_⟩
+  by_cases ht : p.1 = 0
+  · simp [ht, leftSample_zero]
+  · exact (leftSample_mem n (pos_iff_ne_zero.mpr ht)).1.le
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- An adapted process with continuous sample paths is predictable. -/
+theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
+    {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : StronglyAdapted ℱ u)
+    (hc : ∀ ω, Continuous (fun t => u t ω)) : IsStronglyPredictable ℱ u :=
+  hu.isStronglyPredictable_of_leftContinuous fun ω _ =>
+    (hc ω).continuousAt.continuousWithinAt
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}
