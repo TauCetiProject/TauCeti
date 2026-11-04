@@ -345,8 +345,9 @@ vector space `V i`, and take the Lefschetz sign `sgn det (1 - f i ^ k)` as the s
 iterate. If every iterate is nondegenerate, these signs form a geometric sequence with ratio
 `(-1) ^ i₋` (`LinearMap.sign_det_one_sub_pow_succ`), so the product formula applies. -/
 
-variable {K : Type*} [CommRing K] [Algebra ℚ K] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
-  [∀ i, Module ℝ (V i)] [∀ i, FiniteDimensional ℝ (V i)]
+variable {ι H : Type*} [AddCommMonoid H] {N : H →+ ℝ} {γ : ι → H} {K : Type*} [CommRing K]
+  [Algebra ℚ K] {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module ℝ (V i)]
+  [∀ i, FiniteDimensional ℝ (V i)]
 
 /-- **The product formula for linearized return maps.** Let `f i` be an endomorphism of a
 finite-dimensional real vector space such that `1 - f i ^ k` is invertible for every `k ≥ 1`, and
