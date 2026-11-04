@@ -116,17 +116,7 @@ theorem exists_holderOnWith_fderiv_apply_add_mul_ball {α : ℝ≥0} (hα : α �
     ((ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hc hHu hcM
       (fun y hy => by simpa only [Real.norm_eq_abs] using hN₀ y hy)).mono_const
       (mul_le_of_le_one_left' (ContinuousLinearMap.opNorm_mul_le ℝ ℝ))
-  intro y hy z hz
-  calc edist (fderiv ℝ u y (b y) + c y * u y) (fderiv ℝ u z (b z) + c z * u z)
-      ≤ edist (fderiv ℝ u y (b y)) (fderiv ℝ u z (b z)) + edist (c y * u y) (c z * u z) :=
-        edist_add_add_le _ _ _ _
-    _ ≤ ↑(N * L + β * (N * κ)) * edist y z ^ (α : ℝ) +
-          ↑(γ * (N * κ) + N * L) * edist y z ^ (α : ℝ) :=
-        add_le_add (h1.edist_le hy hz) (h2.edist_le hy hz)
-    _ = ↑((β * κ + L + (γ * κ + L)) * N) * edist y z ^ (α : ℝ) := by
-        rw [← add_mul]
-        congr 1
-        push_cast
-        ring
+  exact (HolderWith.restrict_iff.1 (h1.holderWith.add h2.holderWith)).mono_const
+    (le_of_eq (by ring))
 
 end TauCeti

@@ -164,18 +164,11 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_add {�
   set g : E → ℝ := fun y => fderiv ℝ u y (b y) + c y * u y
   have hg : HolderOnWith (D * N) α g (ball x R) := hD hu hN₀ hN₁ hN₂
   have hM₀ : HolderOnWith (M + D * N) α P (ball x R) := by
-    have hPg : P = fun y => (P y + g y) - g y := funext fun y => by ring
-    rw [hPg]
-    refine HolderOnWith.of_dist_le fun y hy z hz => ?_
-    have h1 : |P y + g y - (P z + g z)| ≤ M * dist y z ^ (α : ℝ) := by
-      simpa only [Real.dist_eq, P, g, add_assoc] using hM.dist_le hy hz
-    have h2 := hg.dist_le hy hz
-    rw [Real.dist_eq] at h2 ⊢
-    have e : P y + g y - g y - (P z + g z - g z) = (P y + g y - (P z + g z)) - (g y - g z) := by
-      ring
-    rw [e]
-    push_cast at h2 ⊢
-    linarith [abs_sub (P y + g y - (P z + g z)) (g y - g z)]
+    have hPg : HolderOnWith M α (fun y => P y + g y) (ball x R) := by
+      simpa only [P, g, add_assoc] using hM
+    have h := (HolderWith.restrict_iff (f := fun y => P y + g y + (-1 : ℝ) • g y)).1
+      (hPg.holderWith.add (hg.holderWith.smul (-1 : ℝ)))
+    simpa using h
   refine (hC₀ hu hN₀ hN₁ hN₂ hV hM₀).mono_const ?_
   calc C₀ * (M + D * N + N) ≤ C₀ * ((D + 1) * (M + N)) := by
         gcongr
