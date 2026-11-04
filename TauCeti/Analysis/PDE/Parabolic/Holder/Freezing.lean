@@ -68,9 +68,11 @@ variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A local shortcut for the norm on Hessians. Without it, instance search for the operator norm on
 `(E →L[ℝ] E →L[ℝ] F) →L[ℝ] F`, the coefficient space of the second-order term, fails: the norm
 instance on its domain only arises as a nested instance problem during unification. -/
-local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
+local instance instNormedAddCommGroupHessian :
+    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
 /-- A local shortcut for scalar operations on Hessians, needed for the same reason. -/
-local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+local instance instNormedSpaceHessian :
+    NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
 
 /-- With vanishing lower-order coefficients the spatial operator is its principal part. -/
 private theorem spatialOperatorL_zero_zero (hα : α ≤ 1)
