@@ -146,6 +146,17 @@ theorem parabolic_univ : cs.parabolic (Set.univ : Set B) = ⊤ := by
   obtain ⟨ω, rfl⟩ := cs.wordProd_surjective w
   exact cs.wordProd_mem_parabolic fun i _ => Set.mem_univ i
 
+/-- Summing over the full standard parabolic subgroup is summing over the Coxeter carrier. -/
+theorem sum_parabolic_univ [Fintype W] [Fintype (cs.parabolic Set.univ)]
+    {A : Type*} [AddCommMonoid A] (f : W → A) :
+    (∑ w : cs.parabolic Set.univ, f w) = ∑ w : W, f w := by
+  apply Fintype.sum_bijective Subtype.val
+  · refine ⟨Subtype.val_injective, fun w => ⟨⟨w, ?_⟩, rfl⟩⟩
+    rw [cs.parabolic_univ]
+    exact Subgroup.mem_top w
+  · intro w
+    rfl
+
 /-- Every element of a standard parabolic subgroup is spelled by a word with letters in the
 defining set. -/
 theorem exists_wordProd_eq_of_mem_parabolic {J : Set B} {w : W} (hw : w ∈ cs.parabolic J) :
