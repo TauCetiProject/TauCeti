@@ -42,35 +42,16 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {T : ℕ → Ω → ℝ≥0} {a : ℝ≥0} {q : unitInterval}
 
-omit [MeasurableSpace Ω] in
-/-- Deterministic positive increments give the usual floor count, including an arrival
-exactly at time `t` and excluding the artificial arrival at zero. -/
-@[simp]
-theorem renewalCountNat_const (ha : 0 < a) (t : ℝ≥0) (ω : Ω) :
-    renewalCountNat (fun (_ : ℕ) (_ : Ω) ↦ a) t ω = ⌊t / a⌋₊ := by
-  have harr (n : ℕ) : arrival (fun (_ : ℕ) (_ : Ω) ↦ a) n ω = (n : ℝ≥0) * a := by
-    simp [arrival_def]
-  have hlim : Tendsto (fun n ↦ arrival (fun (_ : ℕ) (_ : Ω) ↦ a) n ω) atTop atTop := by
-    simpa only [harr] using Tendsto.atTop_mul_const ha
-      (tendsto_natCast_atTop_atTop (R := ℝ≥0))
-  apply (renewalCountNat_eq_iff hlim).2
-  simp only [harr]
-  exact ⟨(le_div_iff₀ ha).mp (Nat.floor_le (by positivity)),
-    (div_lt_iff₀ ha).mp (by exact_mod_cast Nat.lt_floor_add_one (t / a))⟩
-
 /-- The arrival times for two-point increments have scaled binomial laws. -/
 theorem hasLaw_arrival_binomial (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (T n) (bernoulliMeasure a 0 q) P) (n : ℕ) :
     HasLaw (arrival T n) ((binomial n q).map (fun j : ℕ ↦ (j : ℝ≥0) * a)) P := by
-  have := hindep.isProbabilityMeasure
-  have h := hindep.hasLaw_finset_sum_convolutionPower hlaw (Finset.range n)
-  rw [Finset.card_range, bernoulliMeasure_convolutionPower_multiples] at h
+  have h := hasLaw_arrival hindep (fun n ↦ (hlaw n).identDistrib (hlaw 0)) n
+  rw [(hlaw 0).map_eq, bernoulliMeasure_convolutionPower_multiples] at h
   convert h using 1
-  · funext ω
-    simp only [arrival_def, Finset.sum_apply]
-  · congr 1
-    funext j
-    simp
+  congr 1
+  funext j
+  simp
 
 /-- Two-point increments with a positive chance of a strictly positive increment do not explode.
 Zero increments and success probability one are both allowed. -/
