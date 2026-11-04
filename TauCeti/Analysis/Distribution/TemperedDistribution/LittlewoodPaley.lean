@@ -151,23 +151,27 @@ theorem littlewoodPaleyBlock_fourierMultiplierCLM_comm {g : E → ℂ} (hg : g.H
 /-- The Littlewood–Paley blocks commute with each other. -/
 theorem littlewoodPaleyBlock_comm (j k : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (littlewoodPaleyBlock F φ k u) =
-      littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) :=
-  littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
+      littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) := by
+  simp only [littlewoodPaleyBlock_apply φ k]
+  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
     (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) j u
 
 /-- The Littlewood–Paley blocks commute with the Bessel potentials `J^s`. -/
 theorem littlewoodPaleyBlock_besselPotential_comm (s : ℝ) (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (besselPotential E F s u) =
-      besselPotential E F s (littlewoodPaleyBlock F φ j u) :=
-  littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (by fun_prop) j u
+      besselPotential E F s (littlewoodPaleyBlock F φ j u) := by
+  simp only [besselPotential]
+  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (by fun_prop) j u
 
 /-- On a Schwartz function, the Littlewood–Paley block is the Schwartz Fourier multiplier
 by `ψⱼ`. -/
-theorem littlewoodPaleyBlock_toTemperedDistribution [CompleteSpace F] (j : ℕ) (f : 𝓢(E, F)) :
+theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq [CompleteSpace F] (j : ℕ)
+    (f : 𝓢(E, F)) :
     littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) =
       (SchwartzMap.fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f :
-        𝓢'(E, F)) :=
-  fourierMultiplierCLM_toTemperedDistributionCLM_eq
+        𝓢'(E, F)) := by
+  rw [littlewoodPaleyBlock_apply]
+  exact fourierMultiplierCLM_toTemperedDistributionCLM_eq
     (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) f
 
 end TemperedDistribution
