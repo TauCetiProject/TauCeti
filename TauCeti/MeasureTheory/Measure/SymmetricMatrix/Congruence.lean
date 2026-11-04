@@ -555,6 +555,38 @@ end GeneralLinearGroup
 
 end Matrix
 
+namespace TauCeti
+
+variable {p : ℕ}
+
+/-- Congruence by the `i`-th row of the identity matrix, read as a real number, is the diagonal
+entry `(i, i)`. -/
+theorem symmetricFinOneEquiv_comp_symmetricCongruenceLinearMap_row (i : Fin p) :
+    symmetricFinOneEquiv ∘ Matrix.symmetricCongruenceLinearMap
+        ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id) =
+      fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
+  funext A
+  rw [Function.comp_apply, symmetricFinOneEquiv_apply,
+    Matrix.coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero (j := i)
+      fun a ha ↦ by rw [Matrix.submatrix_apply, id_eq, Matrix.one_apply_ne ha.symm],
+    Matrix.submatrix_apply, id_eq, Matrix.one_apply_eq, one_pow, one_mul]
+
+/-- Mapping a measure by congruence with the `i`-th row of the identity matrix and then applying
+the single-entry identification is the same as mapping it by its `(i, i)` entry. -/
+theorem map_symmetricFinOneEquiv_symmetricCongruenceLinearMap_row (i : Fin p)
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) :
+    (μ.map (Matrix.symmetricCongruenceLinearMap
+        ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id))).map
+        symmetricFinOneEquiv =
+      μ.map fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
+  rw [Measure.map_map symmetricFinOneEquiv.continuous.measurable
+    (LinearMap.continuous_of_finiteDimensional _).measurable,
+    symmetricFinOneEquiv_comp_symmetricCongruenceLinearMap_row]
+
+end TauCeti
+
 namespace MeasureTheory.Measure
 
 open scoped Matrix
