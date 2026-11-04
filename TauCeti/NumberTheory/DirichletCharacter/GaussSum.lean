@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
-import Mathlib.Analysis.Fourier.ZMod
 import TauCeti.Analysis.Fourier.ZMod
 
 /-!
@@ -27,9 +26,10 @@ character defined by a primitive root of unity `ζ`. Its Galois action is χ⁻�
 cyclotomic character, so its stabilizer is the kernel of χ. This is the form needed to identify
 quadratic subfields of cyclotomic fields.
 
-Pulled back to the residues modulo a multiple `N` of its level `v`, a primitive complex character
-`φ` has Fourier coefficients supported on the multiples of `N / v`, where they are multiples of
-`φ` by the Gauss sum (`DirichletCharacter.IsPrimitive.sum_inv_mul_stdAddChar`).
+For a primitive complex character `φ` of level `v`, the inverse `φ⁻¹` pulled back to the
+residues modulo a multiple `N` of `v` has Fourier coefficients supported on the multiples of
+`N / v`, where they are multiples of `φ` by the Gauss sum `g(φ⁻¹)`
+(`DirichletCharacter.IsPrimitive.sum_inv_mul_stdAddChar`).
 
 The Gauss-sum identities are classical; see K. Ireland and M. Rosen, *A Classical Introduction to
 Modern Number Theory*, Chapter 6.

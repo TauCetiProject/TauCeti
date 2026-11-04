@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.QExpansion
 import TauCeti.Data.ZMod.Count
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.LValues
 
 /-!
