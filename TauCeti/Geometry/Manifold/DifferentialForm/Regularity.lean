@@ -508,6 +508,20 @@ theorem mextDerivₗ_cast [IsManifold I 2 M]
   cases h
   simp
 
+/-- The value of the exterior derivative of a real one-form on two tangent vectors is the value
+of the bilinear form `(mextDerivₗ I 1 α).bilinFormAt x`. -/
+theorem mextDeriv_eq_bilinFormAt [IsManifold I 2 M] (α : SmoothForm I M ℝ 1) (x : M)
+    (v w : TangentSpace I x) :
+    mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
+  rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+
+/-- The exterior derivative of a one-form is alternating: swapping its two inputs negates it. -/
+theorem mextDeriv_swap [IsManifold I 2 M] (α : SmoothForm I M F 1) (x : M)
+    (v w : TangentSpace I x) :
+    mextDeriv α.1 x ![v, w] = -mextDeriv α.1 x ![w, v] := by
+  have h := SmoothBundleForm.eval₂_swap (mextDerivₗ I 1 α) x v w
+  rwa [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at h
+
 end SmoothForm
 
 /-- A coordinate form supported compactly inside the chart extends with the same regularity

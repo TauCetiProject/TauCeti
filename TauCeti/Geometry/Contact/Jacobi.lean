@@ -109,18 +109,6 @@ theorem jacobiBracket_def (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) 
           g x * mvfderiv I f x (α.reebVectorField x) :=
   (rfl)
 
-/-- The value of `dα` on two tangent vectors, as its bilinear form. -/
-private theorem mextDeriv_eq_bilinFormAt (α : SmoothForm I M ℝ 1) (x : M)
-    (v w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
-  rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
-
-/-- `dα` is alternating. -/
-private theorem mextDeriv_swap (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = -mextDeriv α.1 x ![w, v] := by
-  have h := SmoothBundleForm.eval₂_swap (mextDerivₗ I 1 α) x v w
-  rwa [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at h
-
 /-- The Jacobi bracket is antisymmetric. -/
 theorem neg_jacobiBracket (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) :
     -α.jacobiBracket g f x = α.jacobiBracket f g x := by
