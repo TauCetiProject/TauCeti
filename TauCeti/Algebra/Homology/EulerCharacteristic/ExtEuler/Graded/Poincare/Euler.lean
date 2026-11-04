@@ -97,17 +97,8 @@ theorem coeff_eulerPowerSeries_bigradedExtPoincarePowerSeries
       let _ := hN.subsingleton hn
       rw [coeff_coeff_bigradedExtPoincarePowerSeries, Module.finrank_zero_of_subsingleton,
         Nat.cast_zero]),
-    extEuler_eq k ha hN]
-  have htrunc (M : ℕ) :
-      (∑ n ∈ Finset.range M, (-1 : ℤ) ^ n *
-          (PowerSeries.coeff n (bigradedExtPoincarePowerSeries k e h)).coeff (a : ℤ)) =
-        truncatedExtEuler.{w} k X ((e ^ (a : ℤ)).functor.obj Y) M := by
-    induction M with
-    | zero => simp
-    | succ M ih =>
-      rw [Finset.sum_range_succ, ih, truncatedExtEuler_succ,
-        coeff_coeff_bigradedExtPoincarePowerSeries]
-  exact htrunc N
+    extEuler_eq k ha hN, truncatedExtEuler_def]
+  simp only [coeff_coeff_bigradedExtPoincarePowerSeries]
 
 /-- The Maslov-graded Euler formal power series of `bigradedExtPoincarePowerSeries` has `n`-th
 coefficient `(-1)ⁿ dim_k (⨁ j, Extⁿ(X, Y{j}))`. -/

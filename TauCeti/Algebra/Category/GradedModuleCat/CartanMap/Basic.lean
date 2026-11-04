@@ -463,6 +463,13 @@ theorem gradedFiniteModules_shiftObj {M : GradedModuleCat.{uA} 𝒜} (hM : grade
     (d : ℤ) : gradedFiniteModules 𝒜 (M.shiftObj d) :=
   gradedFiniteModules_iff.2 (gradedFiniteModules_iff.1 hM)
 
+/-- Any integer power of `GradedModuleCat.shift 𝒜` preserves `gradedFiniteModules 𝒜`. -/
+theorem gradedFiniteModules_shiftPow {M : GradedModuleCat.{uA} 𝒜}
+    (hM : gradedFiniteModules 𝒜 M) (j : ℤ) :
+    gradedFiniteModules 𝒜 (((GradedModuleCat.shift 𝒜) ^ j).functor.obj M) :=
+  (gradedFiniteModules 𝒜).prop_of_iso (((GradedModuleCat.shiftPowIso 𝒜 j).app M).symm)
+    (gradedFiniteModules_shiftObj hM j)
+
 /-- In a full subcategory stable under internal shifts, whose exact-structure shift agrees with
 the ambient grading shift, the class of the explicit `d`-shift is `T d` times the original class. -/
 private theorem laurentK0_of_shiftObj_aux {P : ObjectProperty (GradedModuleCat.{uA} 𝒜)}

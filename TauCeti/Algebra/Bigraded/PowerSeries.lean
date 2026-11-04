@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
-public import TauCeti.Algebra.Polynomial.Laurent.Symmetric
 
 /-!
 # Euler characteristics of unbounded bigraded formal power series
@@ -263,18 +262,6 @@ theorem coeff_maslovEulerPowerSeries (P : PowerSeries (LaurentPolynomial R)) (n 
       (-1 : R) ^ n * laurentEval (1 : Rˣ) (PowerSeries.coeff n P) := by
   simp [maslovEulerPowerSeries]
 
-private theorem laurentEval_one_eq_sum (f : LaurentPolynomial R) :
-    laurentEval (1 : Rˣ) f = f.coeff.sum fun _ c ↦ c := by
-  induction f using LaurentPolynomial.induction_on' with
-  | add p q hp hq =>
-    rw [map_add, hp, hq, AddMonoidAlgebra.coeff_add,
-      Finsupp.sum_add_index' (fun _ ↦ rfl) (fun _ _ _ ↦ rfl)]
-  | C_mul_T a r =>
-    rw [map_mul, laurentEval_C, laurentEval_T, one_zpow,
-      Units.val_one, mul_one, ← single_eq_C_mul_T, AddMonoidAlgebra.coeff_single,
-      Finsupp.sum_single_index rfl]
-    simp
-
 /-- On a diagonally supported bigraded formal power series, `maslovEulerPowerSeries` has `n`-th
 coefficient `(-1)ⁿ [qⁿ][tⁿ] P`. -/
 theorem coeff_maslovEulerPowerSeries_of_diagonal {P : PowerSeries (LaurentPolynomial R)}
@@ -303,8 +290,7 @@ variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 /-- **The Alexander-graded and Maslov-graded Euler formal power series agree exactly on diagonal
 series**, for any series with nonnegative coefficients and no support strictly below the diagonal.
 Unlike `TauCeti.Bigraded.euler_eq_maslovEuler_iff_isDiagonal`, no cohomological vanishing bound is
-required: strong induction on the Maslov degree `n` inductively eliminates lower-degree
-contributions to internal degree `n` before comparing the two `n`-th coefficients. -/
+required. -/
 theorem eulerPowerSeries_eq_maslovEulerPowerSeries_iff {P : PowerSeries (LaurentPolynomial R)}
     (hP : HasEulerPowerSeries P)
     (hnonneg : ∀ (n : ℕ) (a : ℤ), 0 ≤ (PowerSeries.coeff n P).coeff a)
@@ -314,6 +300,8 @@ theorem eulerPowerSeries_eq_maslovEulerPowerSeries_iff {P : PowerSeries (Laurent
   classical
   constructor
   · intro heq n
+    -- Strong induction on the Maslov degree `n` inductively eliminates lower-degree
+    -- contributions to internal degree `n` before comparing the two `n`-th coefficients.
     induction n using Nat.strong_induction_on with
     | ind n ih =>
       intro a hna

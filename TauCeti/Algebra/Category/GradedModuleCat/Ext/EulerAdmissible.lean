@@ -31,9 +31,10 @@ characteristic `χ(M, N{j})` vanishes for all `j < c`.
 
 Propagating this property through internal shifts and graded composition series shows that over a
 finite-dimensional graded algebra, **every pair of finite graded modules is ordinarily
-`IsEulerAdmissible` in `GradedModuleCat 𝒜`** whenever an exhaustive degree-zero simple family has
-finite-term minimal resolutions — in particular whenever the algebra is nonnegatively graded with
-semisimple degree-zero part — with no cohomological global-dimension hypothesis.
+`IsEulerAdmissible` in `GradedModuleCat 𝒜`** whenever an exhaustive degree-zero simple family admits
+minimal resolutions with finite-dimensional terms — in particular whenever the algebra is
+nonnegatively graded with semisimple degree-zero part — with no cohomological global-dimension
+hypothesis.
 
 ## Main results
 
@@ -74,10 +75,12 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
   [HasExt.{w} (GradedModuleCat.{v} 𝒜)] [∀ n, Module.Finite k (r.X n)]
 
-/-- **Bigraded Ext out of a minimally resolved module vanishes below a shifted diagonal.** If `M`
-vanishes in internal degrees below `c`, its minimal resolution has finite-dimensional terms over
-`k`, and `N` is concentrated in degree zero, then `GradedExt (shift 𝒜) M N n j` is a subsingleton
-whenever `j < c + n`. No nonnegative algebra grading or field hypothesis is required. -/
+/-- **Bigraded Ext out of a minimally resolved module vanishes below a shifted diagonal.** Here
+`r.IsMinimal` requires differentials to land in the strictly positive-degree action `A₊` (`0 < i`),
+and `[∀ n, Module.Finite k (r.X n)]` bounds each resolution term's grading below. If `M` vanishes in
+internal degrees below `c` and `N` is concentrated in degree zero, then
+`GradedExt (shift 𝒜) M N n j` is a subsingleton whenever `j < c + n`, with no nonnegative algebra
+grading or field hypothesis (cf. `IsMinimal.subsingleton_ext_of_lt`). -/
 theorem IsMinimal.subsingleton_gradedExt_of_lt (hr : r.IsMinimal) {c : ℤ}
     (hM : ∀ p < c, M.grading.piece p = ⊥) {N : GradedModuleCat.{v} 𝒜}
     (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) {n : ℕ} {j : ℤ} (hjn : j < c + n) :
@@ -225,7 +228,8 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
 /-- For a linearly resolved source and degree-zero target, the unbounded Ext Poincaré power series
-satisfies `Bigraded.HasEulerPowerSeries`, with no minimality or finite-term hypothesis. -/
+satisfies `Bigraded.HasEulerPowerSeries`, with no minimality or termwise finite-dimensionality
+hypothesis. -/
 theorem IsLinear.hasEulerPowerSeries_bigradedExtPoincarePowerSeries (hr : r.IsLinear)
     {N : GradedModuleCat.{v} 𝒜} (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥)
     (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) :
@@ -281,20 +285,6 @@ open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 
 universe w v uk uA uI
 
-section ShiftPow
-
-variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A}
-
-/-- Any integer power of `GradedModuleCat.shift 𝒜` preserves `gradedFiniteModules 𝒜`. -/
-theorem gradedFiniteModules_shiftPow {M : GradedModuleCat.{uA} 𝒜}
-    (hM : gradedFiniteModules 𝒜 M) (j : ℤ) :
-    gradedFiniteModules 𝒜 (((GradedModuleCat.shift 𝒜) ^ j).functor.obj M) :=
-  (gradedFiniteModules 𝒜).prop_of_iso (((GradedModuleCat.shiftPowIso 𝒜 j).app M).symm)
-    (gradedFiniteModules_shiftObj hM j)
-
-end ShiftPow
-
 section CompositionSeries
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
@@ -326,17 +316,7 @@ section FiniteAlgebra
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] [Module.Finite k A]
-
-/-- Over a finite-dimensional graded `k`-algebra, every finitely generated graded source and
-finite-dimensional graded target have internally finite bigraded Ext. -/
-theorem GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite
-    [HasExt.{w} (GradedModuleCat.{max uA v} 𝒜)]
-    (X Y : GradedModuleCat.{max uA v} 𝒜) [Module.Finite A X] [Module.Finite k Y] :
-    IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) X Y := by
-  let : IsNoetherianRing A := IsNoetherianRing.of_finite k A
-  exact GradedModuleCat.isGradedExtInternallyFinite_of_finite X Y
-
-variable {I : Type uI} [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+  {I : Type uI} [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
 
 omit [GradedAlgebra 𝒜] in
 /-- If every internal shift between members of an exhaustive graded simple family is ordinarily

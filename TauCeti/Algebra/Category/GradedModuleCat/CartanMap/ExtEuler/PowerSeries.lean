@@ -29,10 +29,10 @@ a uniform cohomological bound `IsGradedExtBoundedBy` holds. Nevertheless:
 1. Because `A` is nonnegatively graded, every entry of `C` is supported in nonnegative powers of `q`
    (`TauCeti.coeff_gradedCartanMatrix_eq_zero_of_neg`), so coefficientwise truncation embeds `C`
    into `Matrix I I (PowerSeries ℤ)`.
-2. Whenever the `Sᵢ` admit finite-term minimal graded projective resolutions (or linear
-   resolutions), every pair of finite graded modules is ordinarily `TauCeti.IsEulerAdmissible` on
-   each fixed internal target shift, and the Alexander-graded Euler formal power series `E_ps` of
-   `TauCeti.bigradedExtPoincarePowerSeriesMatrix` satisfies
+2. Whenever the `Sᵢ` admit minimal graded projective resolutions with finite-dimensional terms (or
+   linear resolutions), every pair of finite graded modules is ordinarily
+   `TauCeti.IsEulerAdmissible` on each fixed internal target shift, and the Alexander-graded Euler
+   formal power series `E_ps` of `TauCeti.bigradedExtPoincarePowerSeriesMatrix` satisfies
    `C_psᵀ * E_ps = diagonal (fun i ↦ dim_k(eᵢ • (Sᵢ)₀))`.
 3. Comparing this identity with `C_psᵀ * P_tot(-q) = diagonal (fun i ↦ dim_k(eᵢ • (Sᵢ)₀))` over the
    integral domain `PowerSeries ℤ`, where `P_tot(-q)` is the matrix of Maslov-graded Euler formal
@@ -46,8 +46,6 @@ a uniform cohomological bound `IsGradedExtBoundedBy` holds. Nevertheless:
 
 ## Main results
 
-* `TauCeti.coeff_gradedCartanMatrix_eq_zero_of_neg`: over a nonnegatively graded algebra, all
-  negative-degree Laurent coefficients of the graded Cartan matrix vanish.
 * `TauCeti.gradedCartanMatrix_trunc_transpose_mul_eulerPowerSeries_eq_diagonal`: the unbounded
   formal-power-series identity `C_psᵀ * E_ps = diagonal (fun i ↦ dim_k(eᵢ • (Sᵢ)₀))` for minimal
   resolutions.
@@ -79,44 +77,7 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 open scoped Matrix Pointwise
 
-universe uk uA uI uJ
-
-section NonnegCartan
-
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  [Module.Finite k A] {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
-  {I : Type uI} {J : Type uJ} [Fintype J] [Finite I]
-  (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e : I → A}
-  (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
-  (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
-  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
-  (hS : IsExhaustiveGradedSimpleFamily S)
-  (bP : Module.Basis J (LaurentPolynomial ℤ)
-    (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
-  {f : A} (hf : IsIdempotentElem f)
-  (hF : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) (j : J)
-  (hj : bP j = LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {f}) hF,
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton hf hF⟩)
-
-include hj in
-/-- Over a nonnegatively graded finite-dimensional algebra, every negative-degree Laurent
-coefficient of a column `[A f]` of the graded Cartan matrix in the simple-class basis vanishes
-(without assuming unit idempotent multiplicity `dim_k(eᵢ • (Sᵢ)₀) = 1`). -/
-theorem coeff_gradedCartanMatrix_eq_zero_of_neg (hneg : ∀ p < 0, 𝒜 p = ⊥) (i : I)
-    (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) {p : ℤ} (hp : p < 0) :
-    (gradedCartanMatrix 𝒜 bP
-      (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS) i j).coeff p = 0 := by
-  have hmul := finrank_smul_simple_piece_zero_mul_coeff_gradedCartanMatrix
-    S he he₀ hne hself hS bP hf hF j hj i hconc p
-  have hbot : cornerSubmodule k (e i) f ⊓ 𝒜 p = ⊥ := by simp [hneg p hp]
-  rw [hbot, Module.finrank_zero_of_subsingleton (M := ↥(⊥ : Submodule k A)), Nat.cast_zero] at hmul
-  have hpos : (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) ≠ 0 :=
-    ne_of_gt (Int.natCast_pos.mpr
-      ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) hconc (hself i)))
-  exact (mul_eq_zero.mp hmul).resolve_left hpos
-
-end NonnegCartan
+universe uk uA uI
 
 section SliceDescent
 
@@ -263,7 +224,8 @@ private lemma shiftSliceExtEulerHom_smul_eq_coeff_mul
   refine Finset.sum_congr rfl fun m hm ↦ ?_
   have hma : m ≤ a := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
   have hsub : (a : ℤ) - (m : ℤ) = ((a - m : ℕ) : ℤ) := by omega
-  rw [Function.Embedding.coeFn_mk, Polynomial.coeff_coe, coeff_trunc, hsub, ← hQ (a - m)]
+  rw [Function.Embedding.coeFn_mk, Polynomial.coeff_coe, hsub, ← hQ (a - m)]
+  rfl
 
 end SliceDescent
 
@@ -363,10 +325,11 @@ private theorem cartan_eulerPowerSeries_eq_diagonal_aux
 include hbP in
 /-- **The unbounded Cartan–Euler formal power-series identity.** Over a finite-dimensional
 nonnegatively graded algebra, let `Sᵢ` be an exhaustive degree-zero simple family with chosen
-finite-term minimal resolutions `rᵢ`. Then `C_psᵀ * E_ps = diagonal (fun i ↦ dim_k(eᵢ • (Sᵢ)₀))`,
-where `C_ps` truncates each entry of the graded Cartan matrix into `PowerSeries ℤ` and `E_ps` takes
-the Alexander-graded Euler formal power series of each entry of the full Ext Poincaré matrix. No
-cohomological global-dimension bound is assumed. -/
+minimal resolutions `rᵢ` having finite-dimensional terms. Then
+`C_psᵀ * E_ps = diagonal (fun i ↦ dim_k(eᵢ • (Sᵢ)₀))`, where `C_ps` truncates each entry of the
+graded Cartan matrix into `PowerSeries ℤ` and `E_ps` takes the Alexander-graded Euler formal power
+series of each entry of the full Ext Poincaré matrix. No cohomological global-dimension bound is
+assumed. -/
 theorem gradedCartanMatrix_trunc_transpose_mul_eulerPowerSeries_eq_diagonal
     (r : ∀ i, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S i).obj.grading)
     [∀ i n, Module.Finite k ((r i).X n)] (hr : ∀ i, (r i).IsMinimal)
