@@ -18,6 +18,7 @@ public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.Flat.Tower
 import TauCeti.RingTheory.Unramified.Normal
 
@@ -473,10 +474,7 @@ theorem isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType [Flat f]
   -- a flat local homomorphism is faithfully flat, and Noetherianity descends along it
   have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
     .of_flat_of_isLocalHom
-  exact Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-    (A := X.presheaf.stalk x) <| isNoetherian_of_linearEquiv
-      (Algebra.TensorProduct.rid (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)
-        (X.presheaf.stalk x)).toLinearEquiv.symm
+  exact .of_faithfullyFlat (X.presheaf.stalk x)
 
 /-- The stalk map at `x` of a formally unramified morphism `f : X ⟶ Y`, as an algebra, is formally
 unramified. -/
