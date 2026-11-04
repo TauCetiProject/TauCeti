@@ -23,10 +23,12 @@ cumulants are the `κ k`:
 Indeed, the free cumulants of `S_N` are `N` times those of a summand, and the `n`-th free cumulant
 of a summand is `m N n` plus products of at least two moments, each of order `1 / N`.
 
-The *free Poisson limit theorem* is the case of summands with the moments of the Bernoulli law
-`(1 - r / N) δ₀ + (r / N) δ_c`, that is `φ N (b N j ^ k) = r / N * c ^ k` for `k ≥ 1`: the moments
-of `S_N`, the `N`-fold free additive convolution power of this law, converge to the moments
-`c ^ n * ∑_{π ∈ NC(n)} r ^ |π|` of a free Poisson element of rate `r` and jump size `c`.
+The *free Poisson limit theorem* is the case of summands with the algebraic Bernoulli moments
+`φ N (b N j ^ k) = r / N * c ^ k` for `k ≥ 1`: the moments of `S_N` converge to the moments
+`c ^ n * ∑_{π ∈ NC(n)} r ^ |π|` of a free Poisson element of rate `r` and jump size `c`. When `r`
+and `c` are real and `0 ≤ r / N ≤ 1`, these are the moments of the Bernoulli law
+`(1 - r / N) δ₀ + (r / N) δ_c`, and those of `S_N` are the moments of its `N`-fold free additive
+convolution power.
 
 No positivity or traciality of the functionals is assumed, the algebras may depend on `N`, and the
 conclusion is convergence of moments.
@@ -121,10 +123,11 @@ theorem tendsto_apply_sum_pow_of_tendsto_natCast_mul
   simp_rw [hκ, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 /-- *The free Poisson limit theorem*: for each `N`, let `b N 0, …, b N (N - 1)` be freely
-independent for a normalised `φ N`, each with the moments `φ N (b N j ^ k) = r / N * c ^ k`,
-`k ≥ 1`, of the Bernoulli law `(1 - r / N) δ₀ + (r / N) δ_c`. Then the moments of the row sums
-converge to `c ^ n * ∑_{π ∈ NC(n)} r ^ |π|`, the moments of a free Poisson element of rate `r` and
-jump size `c`. -/
+independent for a normalised `φ N`, each with the algebraic Bernoulli moments
+`φ N (b N j ^ k) = r / N * c ^ k`, `k ≥ 1` (for real `r`, `c` with `0 ≤ r / N ≤ 1`, the moments of
+the Bernoulli law `(1 - r / N) δ₀ + (r / N) δ_c`). Then the moments of the row sums converge to
+`c ^ n * ∑_{π ∈ NC(n)} r ^ |π|`, the moments of a free Poisson element of rate `r` and jump size
+`c`. -/
 theorem tendsto_apply_sum_pow_of_apply_pow_eq_div_mul_pow
     (h : ∀ N, IsFreelyIndependentElements (φ N) (b N)) (hφ : ∀ N, φ N 1 = 1) {r c : 𝕜}
     (hb : ∀ N j k, k ≠ 0 → φ N (b N j ^ k) = r / N * c ^ k) (n : ℕ) :
