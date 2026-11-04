@@ -10,9 +10,7 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.RingTheory.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node.Basic
-import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
-import TauCeti.RingTheory.GradedAlgebra.FiniteType
 
 /-!
 # The blowup of the node `xy = π²a` at its origin
@@ -201,16 +199,9 @@ variable (π) in
 `A = R[x, y] ⧸ (xy - π²a)` along `I = (π, x, y)` is proper. -/
 theorem isProper_blowup :
     IsProper (Proj.toSpecZero (grade (originIdeal π (π ^ 2 * a))) ≫
-      Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) := by
-  -- The Rees algebra of the finitely generated ideal `(π, x, y)` is of finite type, so the
-  -- blowup `Proj` is proper over its degree-zero part.
-  have := reesAlgebra.finiteType_of_fg
-    (by rw [originIdeal_def]; exact Submodule.fg_span (Set.toFinite _) :
-      (originIdeal π (π ^ 2 * a)).FG)
-  -- Instance search does not find `ContainsIdentities` through `IsMultiplicative` here.
-  have : MorphismProperty.ContainsIdentities @IsProper :=
-    MorphismProperty.IsMultiplicative.toContainsIdentities
-  exact MorphismProperty.comp_mem (W := @IsProper) _ _ inferInstance (MorphismProperty.of_isIso _ _)
+      Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) :=
+  isProper_toSpecZero_reesAlgebra <| by
+    rw [originIdeal_def]; exact Submodule.fg_span (Set.toFinite _)
 
 variable (π) in
 /-- **The blowup of a node is an isomorphism away from its center.** The morphism
