@@ -15,35 +15,13 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 
 At a generic parameter `q`, the signed ladder modules `L_m^ε` of `U_q(sl₂)` are simple, pairwise
 non-isomorphic for distinct `(m, ε)`, and have one-dimensional endomorphism algebras over `ℂ`.
-This file packages Schur's lemma into a uniform scalar extraction `LadderModule.schurScalar` defined
-for arbitrary `UqSl2 q`-linear maps `L_m^ε →ₗ[UqSl2 q] L_n^δ` as the `v₀`-coordinate of `f v₀`.
+This file packages Schur's lemma into a uniform scalar extraction `LadderModule.schurScalar` on
+arbitrary `UqSl2 q`-linear maps `L_m^ε →ₗ[UqSl2 q] L_n^δ` as the `v₀`-coordinate of `f v₀`.
 
-Because `LadderModule.vec` indexes ladder vectors uniformly over all integers and `v₀` is present
-for every `n`, every intertwiner `f : L_m^ε →ₗ[UqSl2 q] L_n^δ` satisfies
-`f (vec q m ε j) = schurScalar f • vec q n δ j` for every `j : ℤ`: when `(m, ε) = (n, δ)` this is
-Schur's lemma over `ℂ`, and when `(m, ε) ≠ (n, δ)` both sides vanish. Consequently `schurScalar`
-is multiplicative under composition without transporting endomorphisms across highest-weight or
-sign casts.
-
-## Main definitions
-
-* `TauCeti.UqSl2.LadderModule.congr`: congruence `L_m^ε ≃ₗ[UqSl2 q] L_n^δ` from `m = n` and
-  `ε = δ`.
-* `TauCeti.UqSl2.LadderModule.schurScalar`: the complex scalar attached to a map
-  `L_m^ε →ₗ[UqSl2 q] L_n^δ`.
-* `TauCeti.UqSl2.LadderModule.schurEndAlgEquiv`: the canonical `ℂ`-algebra equivalence
-  `End_{UqSl2 q}(L_m^ε) ≃ₐ[ℂ] ℂ` at a generic parameter.
-
-## Main results
-
-* `TauCeti.UqSl2.LadderModule.hom_eq_zero_of_ne`: maps between inequivalent signed ladder modules
-  vanish at a generic parameter.
-* `TauCeti.UqSl2.LadderModule.apply_eq_schurScalar_smul`: every endomorphism of `L_m^ε` acts by
-  `schurScalar`.
-* `TauCeti.UqSl2.LadderModule.apply_vec_eq_schurScalar_smul`: every map `L_m^ε →ₗ[UqSl2 q] L_n^δ`
-  acts on every ladder vector `v_j` by `schurScalar`.
-* `TauCeti.UqSl2.LadderModule.schurScalar_comp`: multiplicativity of `schurScalar` under
-  composition.
+Every intertwiner `f : L_m^ε →ₗ[UqSl2 q] L_n^δ` satisfies
+`f (vec q m ε j) = schurScalar f • vec q n δ j` for every `j : ℤ` (`apply_vec_eq_schurScalar_smul`),
+so `schurScalar` is multiplicative under composition (`schurScalar_comp`) and induces
+`schurEndAlgEquiv : End_{UqSl2 q}(L_m^ε) ≃ₐ[ℂ] ℂ`.
 
 ## References
 
@@ -56,41 +34,28 @@ namespace TauCeti.UqSl2.LadderModule
 
 variable {q : ℂ} [Fact (q ≠ 0)] {m n : ℕ} {ε δ : ℤˣ}
 
-/-! ### Congruence along equal indices -/
-
 variable (q) in
 /-- Congruence of signed ladder modules along equalities of highest weights and signs. -/
-def congr (hm : m = n) (hε : ε = δ) :
-    LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ :=
+def congr (hm : m = n) (hε : ε = δ) : LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ :=
   hm ▸ hε ▸ LinearEquiv.refl (UqSl2 q) (LadderModule q m ε)
 
 /-- Congruence along reflexivity is the identity equivalence. -/
-@[simp]
-theorem congr_refl (m : ℕ) (ε : ℤˣ) :
+@[simp] theorem congr_refl (m : ℕ) (ε : ℤˣ) :
     congr q (rfl : m = m) (rfl : ε = ε) = LinearEquiv.refl (UqSl2 q) (LadderModule q m ε) :=
   (rfl)
 
 /-- Inverting `LadderModule.congr` symmetries the index equalities. -/
-@[simp]
-theorem congr_symm (hm : m = n) (hε : ε = δ) :
-    (congr q hm hε).symm = congr q hm.symm hε.symm := by
-  subst hm hε
-  rfl
+@[simp] theorem congr_symm (hm : m = n) (hε : ε = δ) :
+    (congr q hm hε).symm = congr q hm.symm hε.symm := by subst hm hε; rfl
 
 /-- Composing `LadderModule.congr` composes the index equalities. -/
 theorem congr_trans {p : ℕ} {ζ : ℤˣ} (hm₁ : m = n) (hε₁ : ε = δ) (hm₂ : n = p) (hε₂ : δ = ζ) :
     (congr q hm₁ hε₁).trans (congr q hm₂ hε₂) = congr q (hm₁.trans hm₂) (hε₁.trans hε₂) := by
-  subst hm₁ hε₁ hm₂ hε₂
-  rfl
+  subst hm₁ hε₁ hm₂ hε₂; rfl
 
 /-- `LadderModule.congr` preserves the integer-indexed ladder vectors. -/
-@[simp]
-theorem congr_vec (hm : m = n) (hε : ε = δ) (j : ℤ) :
-    congr q hm hε (vec q m ε j) = vec q n δ j := by
-  subst hm hε
-  rfl
-
-/-! ### Vanishing between inequivalent ladder modules -/
+@[simp] theorem congr_vec (hm : m = n) (hε : ε = δ) (j : ℤ) :
+    congr q hm hε (vec q m ε j) = vec q n δ j := by subst hm hε; rfl
 
 /-- At a generic parameter, no module isomorphism exists between `L_m^ε` and `L_n^δ` when
 `m ≠ n` or `ε ≠ δ`. -/
@@ -98,7 +63,7 @@ theorem isEmpty_linearEquiv_of_ne (hq : IsGenericQuantumParameter q) (h : m ≠ 
     IsEmpty (LadderModule q m ε ≃ₗ[UqSl2 q] LadderModule q n δ) := by
   rw [← not_nonempty_iff, nonempty_linearEquiv_iff hq]
   rintro ⟨rfl, rfl⟩
-  exact h.elim (fun hm => hm rfl) (fun hε => hε rfl)
+  exact h.elim (· rfl) (· rfl)
 
 /-- At a generic parameter, any `UqSl2 q`-linear map between signed ladder modules with different
 highest weights or signs vanishes. -/
@@ -108,45 +73,31 @@ theorem hom_eq_zero_of_ne (hq : IsGenericQuantumParameter q) (h : m ≠ n ∨ ε
   have := isSimpleModule (m := n) (ε := δ) hq
   exact hom_eq_zero_of_isEmpty_linearEquiv (isEmpty_linearEquiv_of_ne hq h) f
 
-/-! ### Schur scalars -/
-
 /-- The scalar attached to a `UqSl2 q`-linear map `L_m^ε → L_n^δ`, extracted as the `v₀`
-coordinate of the image of `v₀`.
-
-At a generic parameter, `f` acts on every ladder vector `v_j` by multiplication by `schurScalar f`
-(`apply_vec_eq_schurScalar_smul`), and vanishes when `(m, ε) ≠ (n, δ)`. -/
+coordinate of the image of `v₀`. -/
 def schurScalar (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : ℂ :=
   (basis q n δ).repr (f (vec q m ε 0)) 0
 
 /-- The zero intertwiner has Schur scalar zero. -/
-@[simp]
-theorem schurScalar_zero :
+@[simp] theorem schurScalar_zero :
     schurScalar (0 : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) = 0 := by
   simp [schurScalar]
 
 /-- `schurScalar` is additive. -/
-@[simp]
-theorem schurScalar_add (f g : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
-    schurScalar (f + g) = schurScalar f + schurScalar g := by
-  simp [schurScalar]
+@[simp] theorem schurScalar_add (f g : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    schurScalar (f + g) = schurScalar f + schurScalar g := by simp [schurScalar]
 
 /-- `schurScalar` commutes with negation. -/
-@[simp]
-theorem schurScalar_neg (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
-    schurScalar (-f) = -schurScalar f := by
-  simp [schurScalar]
+@[simp] theorem schurScalar_neg (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    schurScalar (-f) = -schurScalar f := by simp [schurScalar]
 
 /-- `schurScalar` commutes with subtraction. -/
-@[simp]
-theorem schurScalar_sub (f g : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
-    schurScalar (f - g) = schurScalar f - schurScalar g := by
-  simp [schurScalar]
+@[simp] theorem schurScalar_sub (f g : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    schurScalar (f - g) = schurScalar f - schurScalar g := by simp [schurScalar]
 
 /-- `schurScalar` is `ℂ`-linear. -/
-@[simp]
-theorem schurScalar_smul (c : ℂ) (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
-    schurScalar (c • f) = c * schurScalar f := by
-  simp [schurScalar]
+@[simp] theorem schurScalar_smul (c : ℂ) (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
+    schurScalar (c • f) = c * schurScalar f := by simp [schurScalar]
 
 /-- `schurScalar` commutes with finite sums. -/
 theorem schurScalar_sum {ι : Type*} (s : Finset ι)
@@ -160,22 +111,17 @@ theorem schurScalar_sum {ι : Type*} (s : Finset ι)
 /-- If `f` sends `v₀` to `c • v₀`, then `schurScalar f = c`. -/
 theorem schurScalar_eq_of_apply_vec_zero
     {f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ} {c : ℂ}
-    (hf : f (vec q m ε 0) = c • vec q n δ 0) :
-    schurScalar f = c := by
+    (hf : f (vec q m ε 0) = c • vec q n δ 0) : schurScalar f = c := by
   simp [schurScalar, hf]
 
 /-- The identity endomorphism has Schur scalar `1`. -/
-@[simp]
-theorem schurScalar_id :
+@[simp] theorem schurScalar_id :
     schurScalar (LinearMap.id : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m ε) = 1 :=
   schurScalar_eq_of_apply_vec_zero (by simp)
 
 /-- Congruence along equal indices has Schur scalar `1`. -/
-@[simp]
-theorem schurScalar_congr (hm : m = n) (hε : ε = δ) :
-    schurScalar (congr q hm hε).toLinearMap = 1 := by
-  subst hm hε
-  exact schurScalar_id
+@[simp] theorem schurScalar_congr (hm : m = n) (hε : ε = δ) :
+    schurScalar (congr q hm hε).toLinearMap = 1 := by subst hm hε; exact schurScalar_id
 
 /-- At a generic parameter, every `UqSl2 q`-endomorphism of `L_m^ε` acts as scalar multiplication
 by its `schurScalar`. -/
@@ -183,8 +129,8 @@ theorem apply_eq_schurScalar_smul (hq : IsGenericQuantumParameter q)
     (f : Module.End (UqSl2 q) (LadderModule q m ε)) (x : LadderModule q m ε) :
     f x = schurScalar f • x := by
   have := isSimpleModule (m := m) (ε := ε) hq
-  let c : ℂ := endAlgEquivSelfOfIsSimpleModule (k := ℂ) f
-  have hc : ∀ y, f y = c • y := fun y => (endAlgEquivSelfOfIsSimpleModule_smul f y).symm
+  have hc : ∀ y, f y = (endAlgEquivSelfOfIsSimpleModule (k := ℂ) f : ℂ) • y :=
+    fun y => (endAlgEquivSelfOfIsSimpleModule_smul f y).symm
   rw [schurScalar_eq_of_apply_vec_zero (hc (vec q m ε 0)), hc x]
 
 /-- At a generic parameter, `schurScalar` gives the canonical `ℂ`-algebra equivalence
@@ -195,19 +141,16 @@ def schurEndAlgEquiv (hq : IsGenericQuantumParameter q) :
   endAlgEquivSelfOfIsSimpleModule
 
 /-- `schurEndAlgEquiv` evaluates to `schurScalar`. -/
-@[simp]
-theorem schurEndAlgEquiv_apply (hq : IsGenericQuantumParameter q)
+@[simp] theorem schurEndAlgEquiv_apply (hq : IsGenericQuantumParameter q)
     (f : Module.End (UqSl2 q) (LadderModule q m ε)) :
     schurEndAlgEquiv hq f = schurScalar f := by
   have := isSimpleModule (m := m) (ε := ε) hq
-  symm
-  exact schurScalar_eq_of_apply_vec_zero
-    ((endAlgEquivSelfOfIsSimpleModule_smul f (vec q m ε 0)).symm)
+  exact (schurScalar_eq_of_apply_vec_zero
+    ((endAlgEquivSelfOfIsSimpleModule_smul f (vec q m ε 0)).symm)).symm
 
 /-- At a generic parameter, `schurScalar` vanishes between inequivalent signed ladder modules. -/
 theorem schurScalar_eq_zero_of_ne (hq : IsGenericQuantumParameter q) (h : m ≠ n ∨ ε ≠ δ)
-    (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
-    schurScalar f = 0 := by
+    (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) : schurScalar f = 0 := by
   rw [hom_eq_zero_of_ne hq h f, schurScalar_zero]
 
 /-- At a generic parameter, any `UqSl2 q`-linear map `L_m^ε → L_n^δ` sends every ladder vector
@@ -216,15 +159,12 @@ theorem apply_vec_eq_schurScalar_smul (hq : IsGenericQuantumParameter q)
     (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) (j : ℤ) :
     f (vec q m ε j) = schurScalar f • vec q n δ j := by
   by_cases hmn : m = n ∧ ε = δ
-  · rcases hmn with ⟨rfl, rfl⟩
-    exact apply_eq_schurScalar_smul hq f (vec q m ε j)
-  · have hne : m ≠ n ∨ ε ≠ δ := by tauto
-    rw [hom_eq_zero_of_ne hq hne f, schurScalar_zero, LinearMap.zero_apply, zero_smul]
+  · rcases hmn with ⟨rfl, rfl⟩; exact apply_eq_schurScalar_smul hq f (vec q m ε j)
+  · rw [hom_eq_zero_of_ne hq (by tauto) f, schurScalar_zero, LinearMap.zero_apply, zero_smul]
 
 /-- `schurScalar` is multiplicative under composition of `UqSl2 q`-linear maps between arbitrary
 signed ladder modules. -/
-@[simp]
-theorem schurScalar_comp (hq : IsGenericQuantumParameter q) {p : ℕ} {ζ : ℤˣ}
+@[simp] theorem schurScalar_comp (hq : IsGenericQuantumParameter q) {p : ℕ} {ζ : ℤˣ}
     (g : LadderModule q n δ →ₗ[UqSl2 q] LadderModule q p ζ)
     (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q n δ) :
     schurScalar (g.comp f) = schurScalar g * schurScalar f := by

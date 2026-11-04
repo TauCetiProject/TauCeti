@@ -197,7 +197,7 @@ theorem tensorMap_apply_eq_schurScalar_smul (hq : IsGenericQuantumParameter q)
   | htmul a b =>
     rw [tensorMap_tmul, apply_eq_schurScalar_smul hq f a, apply_eq_schurScalar_smul hq g b,
       ← smul_tmul', tmul_smul, smul_smul, mul_comm]
-  | hadd x y hx hy => rw [map_add, hx, hy, smul_add]
+  | hadd _ _ hx hy => rw [map_add, hx, hy, smul_add]
 
 /-- Naturality of the Clebsch–Gordan inclusions with respect to `UqSl2 q`-endomorphisms of the two
 tensor factors. -/
@@ -221,8 +221,7 @@ theorem clebschGordanProjection_tensorMap (hq : IsGenericQuantumParameter q)
   rw [tensorMap_apply_eq_schurScalar_smul hq f g x, LinearMap.map_smul_of_tower]
 
 /-- Naturality of Clebsch–Gordan inclusions and projections across arbitrary factor intertwiners
-`f : L_m^ε → L_{m'}^{ε'}` and `g : L_n^δ → L_{n'}^{δ'}` on the ladder vectors `v_l` (covering both
-`l = 0` and the normalized `F`-ladder vectors `0 ≤ l ≤ m + n - 2j`). -/
+`f : L_m^ε → L_{m'}^{ε'}` and `g : L_n^δ → L_{n'}^{δ'}` on the ladder vectors `v_l`. -/
 theorem clebschGordanProjection_tensorMap_inclusion_vec (hq : IsGenericQuantumParameter q)
     {m' n' : ℕ} {ε' δ' : ℤˣ}
     (f : LadderModule q m ε →ₗ[UqSl2 q] LadderModule q m' ε')
@@ -233,20 +232,15 @@ theorem clebschGordanProjection_tensorMap_inclusion_vec (hq : IsGenericQuantumPa
       (if (j : ℕ) = (j' : ℕ) then schurScalar f * schurScalar g else 0) • vec q _ _ l := by
   by_cases hm : m = m' ∧ ε = ε'
   · by_cases hn : n = n' ∧ δ = δ'
-    · rcases hm with ⟨rfl, rfl⟩
-      rcases hn with ⟨rfl, rfl⟩
+    · rcases hm with ⟨rfl, rfl⟩; rcases hn with ⟨rfl, rfl⟩
       rw [tensorMap_clebschGordanInclusion hq f g j, LinearMap.map_smul_of_tower]
       by_cases hj : j = j'
-      · subst hj
-        simp
-      · have hjv : (j : ℕ) ≠ (j' : ℕ) := Fin.val_ne_of_ne hj
-        rw [clebschGordanProjection_inclusion_of_ne hq (Ne.symm hj), ite_eq_right hjv,
-          smul_zero, zero_smul]
-    · have hne : n ≠ n' ∨ δ ≠ δ' := by tauto
-      rw [hom_eq_zero_of_ne hq hne g, schurScalar_zero, mul_zero, ite_self, zero_smul,
+      · subst hj; simp
+      · rw [clebschGordanProjection_inclusion_of_ne hq (Ne.symm hj),
+          ite_eq_right (Fin.val_ne_of_ne hj), smul_zero, zero_smul]
+    · rw [hom_eq_zero_of_ne hq (by tauto) g, schurScalar_zero, mul_zero, ite_self, zero_smul,
         tensorMap_zero_right, LinearMap.zero_apply, map_zero]
-  · have hne : m ≠ m' ∨ ε ≠ ε' := by tauto
-    rw [hom_eq_zero_of_ne hq hne f, schurScalar_zero, zero_mul, ite_self, zero_smul,
+  · rw [hom_eq_zero_of_ne hq (by tauto) f, schurScalar_zero, zero_mul, ite_self, zero_smul,
       tensorMap_zero_left, LinearMap.zero_apply, map_zero]
 
 end TauCeti.UqSl2
