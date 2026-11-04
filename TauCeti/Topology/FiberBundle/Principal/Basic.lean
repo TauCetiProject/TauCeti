@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Group.Action.Opposite
 public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.Topology.Algebra.Group.Defs
+public import Mathlib.Topology.Algebra.MulAction
+public import TauCeti.Algebra.Group.Action.TotalSpace
 public import TauCeti.Topology.FiberBundle.Pullback
 
 /-!
@@ -305,6 +307,14 @@ theorem Continuous.totalSpaceMk_smul [ContinuousMul G]
     (hp : Continuous fun x ↦ TotalSpace.mk' G (f x) (p x)) (hg : Continuous g) :
     Continuous fun x ↦ TotalSpace.mk' G (f x) (op (g x) • p x) :=
   continuous_iff_continuousAt.2 fun _ ↦ hp.continuousAt.totalSpaceMk_smul hg.continuousAt
+
+/-- The fibrewise right action is continuous on the total space. -/
+instance TauCeti.PrincipalBundle.continuousSMul_totalSpace [ContinuousMul G] :
+    ContinuousSMul Gᵐᵒᵖ (TotalSpace G P) where
+  -- The total-space action is definitionally the fibrewise action in a total-space constructor;
+  -- `op (unop g) = g` definitionally identifies the scalar with the original opposite scalar.
+  continuous_smul := Continuous.totalSpaceMk_smul continuous_snd
+    (continuous_unop.comp continuous_fst)
 
 /-- **The division map of a principal bundle is continuous**, for two continuous families of points
 `p x` and `q x` of the total space lying over a common varying base point `f x`. -/
