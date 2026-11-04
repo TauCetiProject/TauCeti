@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Field.UnitBall
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
@@ -150,6 +151,22 @@ theorem realSpinThreeHomeomorphQuaternionSphere_symm_apply
     ContinuousMulEquiv.coe_toHomeomorph_symm]
   exact realSpinThreeContinuousMulEquivQuaternionUnitary_symm_apply
     (Quaternion.unitaryHomeomorphSphere.symm q)
+
+/-- The homeomorphism from compact `Spin(3)` to the unit quaternion sphere sends the identity to
+the quaternion `1`. -/
+@[simp]
+theorem realSpinThreeHomeomorphQuaternionSphere_one :
+    realSpinThreeHomeomorphQuaternionSphere 1 = 1 := by
+  apply Subtype.ext
+  rw [coe_realSpinThreeHomeomorphQuaternionSphere_apply, map_one]
+  rfl
+
+/-- The inverse homeomorphism from the unit quaternion sphere to compact `Spin(3)` sends the
+quaternion `1` to the identity. -/
+theorem realSpinThreeHomeomorphQuaternionSphere_symm_one :
+    realSpinThreeHomeomorphQuaternionSphere.symm 1 = 1 :=
+  realSpinThreeHomeomorphQuaternionSphere.symm_apply_eq.mpr
+    realSpinThreeHomeomorphQuaternionSphere_one.symm
 
 end TauCeti
 
