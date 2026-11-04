@@ -47,7 +47,8 @@ counted from a generator to itself, since a nonnegative periodic domain vanishes
 periodic domains at most one domain is counted between two generators, so each coefficient is `1`
 exactly when a counted domain exists. In a nice weakly admissible diagram a counted domain
 changes the points of `x` on exactly one or two `α`-curves, as a bigon or a rectangle does. In a
-singly pointed diagram with a well-defined relative grading, the differential lowers it by one.
+singly pointed diagram the differential lowers the relative grading by one, modulo the Maslov
+indices of the periodic domains, and on the nose when those vanish.
 
 ## Main definitions
 
@@ -74,6 +75,9 @@ singly pointed diagram with a well-defined relative grading, the differential lo
   or two `α`-curves.
 * `TauCeti.HeegaardRegionSystem.relativeGrading_eq_one_of_hatCoefficient_ne_zero`: the
   differential lowers the relative Maslov grading by one.
+* `TauCeti.HeegaardRegionSystem.coe_relativeGrading_eq_one_of_hatCoefficient_ne_zero`: without
+  any hypothesis on the periodic domains, it lowers the relative Maslov grading by one modulo
+  the periodic Maslov indices.
 
 ## References
 
@@ -209,6 +213,17 @@ theorem relativeGrading_eq_one_of_hatCoefficient_ne_zero [Subsingleton Basepoint
     (hc : H.hatCoefficient χ x y ≠ 0) : H.relativeGrading χ z x y = 1 := by
   obtain ⟨D, hD, hz, -, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
   rw [hD.relativeGrading_eq z hχ hP, hμ, hz z]
+  simp
+
+/-- In a singly pointed diagram of a closed surface of genus `n`, the hat differential lowers
+the relative Maslov grading by one modulo the periodic Maslov indices at `x`: a nonzero
+coefficient from `x` to `y` forces `gr(x, y) = 1` there. -/
+theorem coe_relativeGrading_eq_one_of_hatCoefficient_ne_zero [Subsingleton Basepoint]
+    (z : Basepoint) (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
+    (hc : H.hatCoefficient χ x y ≠ 0) :
+    (H.relativeGrading χ z x y : ℚ ⧸ H.periodicMaslovIndices χ x) = (1 : ℚ) := by
+  obtain ⟨D, hD, hz, -, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
+  rw [hD.coe_relativeGrading_eq z hχ, hμ, hz z]
   simp
 
 end Coefficient
