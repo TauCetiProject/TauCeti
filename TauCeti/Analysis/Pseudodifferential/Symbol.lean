@@ -39,8 +39,8 @@ This file sets up the carrier `TauCeti.Symbol n V W m` and its basic structure:
 The basic examples are the order-zero symbols `TauCeti.Symbol.ofSpatial φ` depending only on the
 position, which are uniform exactly when all derivatives of `φ` are bounded, and the order-one
 symbols `TauCeti.Symbol.ofFrequencyLinear L` given by a linear function of the frequency, the
-symbols of constant-coefficient first-order differential operators. A nonzero linear function of
-the frequency is not a symbol of order zero.
+symbols of constant-coefficient first-order differential operators without zeroth-order term. A
+nonzero linear function of the frequency is not a symbol of order zero.
 
 Mixed derivatives `∂_x^α ∂_ξ^β` are indexed by lists of coordinates, so that they can be
 iterated one direction at a time; for smooth maps they do not depend on the order of the
@@ -658,7 +658,7 @@ private theorem ofFrequencyLinear_bound (L : CoordinateSpace n →L[ℝ] V →L[
     exact mul_nonneg (norm_nonneg L) (weight_nonneg ξ _)
 
 /-- A linear function of the frequency is a uniform symbol of order one. These are the symbols of
-constant-coefficient first-order differential operators. -/
+constant-coefficient first-order differential operators without zeroth-order term. -/
 def ofFrequencyLinear (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W) : Symbol n V W 1 where
   coefficient p := L p.2
   smooth := L.contDiff.comp contDiff_snd
