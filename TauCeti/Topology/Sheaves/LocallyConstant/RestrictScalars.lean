@@ -74,6 +74,9 @@ def toLocallyConstantModuleRestrictScalarsObjIso :
   (SheafOfModules.fullyFaithfulForget _).preimageIso
     (PresheafOfModules.isoMk (fun U ↦ ModuleCat.isoMk (Iso.refl _) fun f ↦ by
       ext s
+      -- The additive-group wrappers in `Iso.refl` are only definitionally equal, preventing
+      -- direct rewriting with the smul bridge lemmas. Select `F`'s locally constant `S`-action
+      -- explicitly to identify the restricted action as the action of the image under `φ`.
       exact (congrArg (fun g : LocallyConstant U.unop S ↦
         @SMul.smul _ _ (instSMulLocallyConstant F U.unop) g s)
         (locallyConstantRingCatSheafMap_app_apply X φ U f)).trans
