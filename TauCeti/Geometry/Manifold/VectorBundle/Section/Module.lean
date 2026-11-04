@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Opens
 public import TauCeti.Topology.VectorBundle.Pullback
