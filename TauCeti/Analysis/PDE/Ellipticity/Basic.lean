@@ -632,6 +632,20 @@ lemma opNorm_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X
     ‖matrixBilinearForm (a x)‖ ≤ Lam :=
   matrixBilinearForm_opNorm_le_of_upper_bound (a x) h.upper_nonneg (h.upper_bound hx)
 
+/-- At every point of the domain, the quadratic form is bounded above by `Λ‖ξ‖²`. -/
+@[grind =>]
+lemma toQuadraticForm'_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
+    (ξ : EuclideanSpace ℝ n) : (a x).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
+  (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (a x) ξ).trans
+    (mul_le_mul_of_nonneg_right (h.opNorm_matrixBilinearForm_le hx) (sq_nonneg _))
+
+/-- At every point of the domain, every entry of the coefficient matrix is bounded in absolute
+value by the upper ellipticity constant. -/
+lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (i j : n) :
+    |a x i j| ≤ Lam := by
+  simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
+    h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+
 /-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
 bounded set, of operator norm at most the upper ellipticity constant. -/
 lemma isBounded_image_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) :
