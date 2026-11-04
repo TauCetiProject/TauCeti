@@ -71,6 +71,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.mem_map_swap_prodCongr_refl_iff_of_ne` and
   `Finset.mk_mem_map_swap_prodCongr_refl_iff` describe membership in a finset of pairs whose
   first coordinates are transposed.
+* `Finset.union_eq_union_and_disjoint_and_disjoint_of_repartition` shows that two pairs of
+  disjoint finsets partition the same elements, given two such partitions they agree with away
+  from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -349,6 +352,29 @@ theorem map_swap_symmDiff_pair_eq_self_iff {α : Type*} [DecidableEq α] (a b : 
         tauto
       · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
         tauto
+
+/-- Let `A₀, B₀` and `S, F₀` be two partitions of the same elements into two disjoint finsets.
+Suppose that, away from the exceptional elements (those satisfying `q`), the finsets `A`, `B` and
+`F` agree with `A₀`, `B₀` and `F₀`, that `S` contains no exceptional element, and that at the
+exceptional elements `A` and `B` contain exactly the elements of `F`, without overlap. Then
+`A, B` and `S, F` partition the same elements. -/
+theorem union_eq_union_and_disjoint_and_disjoint_of_repartition {α : Type*} [DecidableEq α]
+    (q : α → Prop) {A B S F A₀ B₀ F₀ : Finset α}
+    (hrep : S ∪ F₀ = A₀ ∪ B₀) (hSF : Disjoint S F₀) (hAB : Disjoint A₀ B₀)
+    (hA : ∀ p, ¬q p → (p ∈ A ↔ p ∈ A₀)) (hB : ∀ p, ¬q p → (p ∈ B ↔ p ∈ B₀))
+    (hF : ∀ p, ¬q p → (p ∈ F ↔ p ∈ F₀)) (hS : ∀ p ∈ S, ¬q p)
+    (hq : ∀ p, q p → (p ∈ A ∨ p ∈ B ↔ p ∈ F) ∧ ¬(p ∈ A ∧ p ∈ B)) :
+    A ∪ B = S ∪ F ∧ Disjoint A B ∧ Disjoint S F := by
+  refine ⟨Finset.ext fun p => ?_, Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_,
+    Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_⟩
+  · rw [Finset.mem_union, Finset.mem_union]
+    by_cases hp : q p
+    · rw [(hq p hp).1, iff_false_intro fun h => hS p h hp, false_or]
+    · rw [hA p hp, hB p hp, hF p hp, ← Finset.mem_union, ← Finset.mem_union, hrep]
+  · by_cases hp : q p
+    · exact (hq p hp).2 ⟨h₁, h₂⟩
+    · exact Finset.disjoint_left.mp hAB ((hA p hp).mp h₁) ((hB p hp).mp h₂)
+  · exact Finset.disjoint_left.mp hSF h₁ ((hF p (hS p h₁)).mp h₂)
 
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/
