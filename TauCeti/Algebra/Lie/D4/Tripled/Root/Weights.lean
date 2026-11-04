@@ -67,13 +67,6 @@ attribute [local instance high] Algebra.toModule
 -- Keep the cotangent algebra module rather than the generic integer module on its additive group.
 attribute [local instance high] Ideal.instModuleCotangentOfAlgebra
 
-private theorem weightTorusIntegralCoordinateMap_comp_quotient :
-    weightTorusIntegralCoordinateMap.hom.comp
-        (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal) =
-      (GeneralLinear.weightTorusCoordinateMap d4TripledWeight).hom := by
-  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-    mkQuotient_comp_weightTorusIntegralCoordinateMap]
-
 /-- Over any commutative value ring, the weight torus acts on each normalized integral root
 vector through its signed simple-root character. This includes rings with nilpotents. -/
 theorem adDerivation_weightTorus_rootVector {B : Type*} [CommRing B]
@@ -93,7 +86,9 @@ theorem adDerivation_weightTorus_rootVector {B : Type*} [CommRing B]
     GeneralLinear.tangentLinearEquivMatrix_apply]
   ext a b
   rw [HopfIdeal.tangentMatrix_adDerivation_weightTorus_apply definingIdeal d4TripledWeight
-    weightTorusIntegralCoordinateMap.hom weightTorusIntegralCoordinateMap_comp_quotient,
+    weightTorusIntegralCoordinateMap.hom
+      (by simpa only [GeneralLinear.hom_weightTorusCoordinateMap] using
+        weightTorusIntegralCoordinateMap_comp_quotient),
     map_smul, map_smul, Matrix.smul_apply, smul_eq_mul, tangentMatrix_rootVector]
   by_cases hab : d4TripledWeight a - d4TripledWeight b = TypeDStd.rootGeneratorWeight 4 k
   · rw [hab]
@@ -119,8 +114,9 @@ theorem mem_adjointWeightSpace_iff
           (HopfIdeal.quotientLieHom definingIdeal
             (Derivation.cotangentLinearEquiv (B := ℤ) x)) a b = 0 := by
   let := projectiveCotangent
-  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus definingIdeal d4TripledWeight
-    weightTorusIntegralCoordinateMap.hom weightTorusIntegralCoordinateMap_comp_quotient α x
+  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom
+    definingIdeal d4TripledWeight weightTorusIntegralCoordinateMap.hom
+    weightTorusIntegralCoordinateMap_comp_quotient α x
 
 /-- A normalized root differential, viewed in the cotangent dual of the integral carrier, has
 its prescribed signed simple-root character. -/
@@ -150,13 +146,8 @@ theorem rootGeneratorWeight_mem_nontrivialAdjointWeights
       Derivation.nontrivialAdjointWeights weightTorusIntegralCoordinateMap.hom := by
   let := projectiveCotangent
   rw [Derivation.mem_nontrivialAdjointWeights]
-  refine ⟨?_, ?_⟩
-  · intro h
-    have hdiag := congrArg
-      (fun c : Multiplicative (Fin 4 →₀ ℤ) ↦ Multiplicative.toAdd c (Sum.elim id id k)) h
-    simp only [SplitTorus.toAdd_weightCharacter, toAdd_one, Finsupp.zero_apply] at hdiag
-    cases k <;> simp [TypeDStd.rootGeneratorWeight_inl, TypeDStd.rootGeneratorWeight_inr,
-      CartanMatrix.D_diag] at hdiag
+  refine ⟨SplitTorus.weightCharacter_eq_one_iff.not.2
+    (TypeDStd.rootGeneratorWeight_ne_zero 4 k), ?_⟩
   · intro hbot
     have hv := rootVector_mem_adjointWeightSpace projectiveCotangent k
     rw [hbot, Submodule.mem_bot] at hv

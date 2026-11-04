@@ -59,6 +59,8 @@ the first.
 * `Valuation.exists_pow_lt_of_isTopologicallyNilpotent`
 * `Valuation.IsContinuous.lt_one_of_isTopologicallyNilpotent`
 * `Valuation.IsContinuous.cofinalValue_of_isTopologicallyNilpotent`
+* `Valuation.HasFullCharacteristicGroup.isContinuous` : a full characteristic group and an
+  open unit ball that is a neighbourhood of `0` imply continuity on a topological ring.
 * `Valuation.HasFullCharacteristicGroup.cofinalValue_of_isTopologicallyNilpotent` :
   cofinality again, with continuity replaced by a full characteristic group plus the open unit
   ball being a neighbourhood of `0` — the `Γ_v = cΓ_v` branch of Theorem 7.10's converse.
@@ -149,6 +151,28 @@ theorem IsContinuous.cofinalValue_of_isTopologicallyNilpotent [ContinuousConstSM
     ((hv.isOpen_lt_div r ht.ne').mem_nhds
       (by simpa using zero_lt_iff.mpr (div_ne_zero hr.ne' ht.ne'))) ha
   exact ⟨n, by rw [← map_pow, Valuation.restrict_lt_iff_lt_embedding, hemb, map_pow]; exact hn⟩
+
+/-- A valuation with full characteristic group is continuous if its open unit ball is a
+neighbourhood of zero. -/
+theorem HasFullCharacteristicGroup.isContinuous [IsTopologicalRing A] {v : Valuation A Γ₀}
+    (hv : HasFullCharacteristicGroup v) (hU : {a : A | v a < 1} ∈ nhds 0) :
+    v.IsContinuous := by
+  refine (isContinuous_iff_forall_ne_zero v).mpr fun b hb ↦
+    isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  obtain ⟨t, ht, htle⟩ := hv.exists_inv_le (zero_lt_iff.mpr
+    (fun h ↦ hb (v.restrict_eq_zero_iff.mp h)))
+  have ht0 : v t ≠ 0 := fun h ↦ ht (v.restrict_eq_zero_iff.mpr h)
+  have hbound : (v t)⁻¹ ≤ v b := by
+    have := MonoidWithZeroHom.ValueGroup₀.embedding_strictMono.monotone htle
+    simpa using this
+  have hcont : Continuous fun y : A ↦ (y - x) * t := by fun_prop
+  filter_upwards [hcont.continuousAt.preimage_mem_nhds (by simpa using hU)] with y hy
+  have hy' : v (y - x) < (v t)⁻¹ := by
+    have : v (y - x) * v t < (v t)⁻¹ * v t := by simpa [map_mul, ht0] using hy
+    exact lt_of_mul_lt_mul_right this zero_le
+  calc v y = v ((y - x) + x) := by rw [sub_add_cancel]
+    _ ≤ max (v (y - x)) (v x) := v.map_add _ _
+    _ < v b := max_lt (hy'.trans_le hbound) hx
 
 /-- **Full characteristic group makes every topologically nilpotent value cofinal**, given that
 the open unit ball `{a | v a < 1}` is a neighbourhood of `0`.
