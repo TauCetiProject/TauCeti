@@ -180,6 +180,20 @@ theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin n ⊕ 
   generatedCoordinateMap_comp_generatedCoordinateDesc n hn A (generatorCoordinateMap n hn A j)
     ((le_generatedDefiningIdeal_iff n hn A _).mp le_rfl j)
 
+/-- The numbered root-subgroup coordinate maps of the generated spin group are surjective.
+Thus the numbered root subgroups are closed subgroups of the generated group. -/
+theorem generatedCoordinateLift_inl_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (generatedCoordinateLift n hn A (.inl k)).hom := by
+  have h : Function.Surjective
+      (generatedCoordinateMap n hn A ≫ generatedCoordinateLift n hn A (.inl k)).hom := by
+    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
+      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n hn A k).comp
+      (coordinateMap_surjective n hn A)
+  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact Function.Surjective.of_comp h
+
 /-- The generator lift is the unique factorization through the generated subgroup. -/
 theorem generatedCoordinateLift_unique (j : Sum (Fin n ⊕ Fin n) Unit)
     (g : generatedCoordinateHopfAlgebra n hn A ⟶ generatorCoordinateAlgebra n A j)
