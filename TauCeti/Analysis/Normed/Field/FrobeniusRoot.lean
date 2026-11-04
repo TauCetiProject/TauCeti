@@ -46,7 +46,7 @@ noncomputable def frobeniusRootAbs (K : Type*) [NormedField K] [IsUltrametricDis
     (p : ℕ) [ExpChar K p] (e : ℕ) : AbsoluteValue K ℝ :=
   (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)).nonarchRpow
     (by
-      rw [show ⇑(IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)) = norm from rfl]
+      rw [funext (IsAbsoluteValue.toAbsoluteValue_apply (norm : K → ℝ))]
       exact IsUltrametricDist.isNonarchimedean_norm)
     (inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e)))
 
