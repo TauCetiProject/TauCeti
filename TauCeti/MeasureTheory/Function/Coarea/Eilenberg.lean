@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Eilenberg's inequality
@@ -23,7 +24,9 @@ No measurability of `A`, of the fibers, or of the fiber-measure function is assu
 integral on the left is an upper integral: we produce a measurable majorant of
 `y ↦ μH[t] (A ∩ f ⁻¹' {y})` with integral bounded by the right-hand side. Consequently, if
 `μH[m + t] A = 0` then almost every fiber is `μH[t]`-null, and if `μH[m + t] A < ∞` then almost
-every fiber has finite `μH[t]` measure. These are the exceptional-set statements used in the
+every fiber has finite `μH[t]` measure. On a second-countable domain `X`, covering `A` by
+countably many open pieces on which `f` is Lipschitz extends the null-fiber statement to maps
+that are only locally Lipschitz on `A`. These are the exceptional-set statements used in the
 proof of the coarea formula, where `X` is `n`-dimensional, `t = n - m`, and `μ` is Lebesgue
 measure. We also give them for the Euclidean-normalized Hausdorff measures `μHE[k]`.
 
@@ -51,6 +54,9 @@ integral of the lower limit of the majorants.
   respectively of finite measure, under the corresponding hypothesis on `A`.
 * `LipschitzOnWith.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero` and
   `LipschitzOnWith.ae_euclideanHausdorffMeasure_inter_preimage_lt_top`: the same for `μHE`.
+* `LocallyLipschitzOn.ae_hausdorffMeasure_inter_preimage_eq_zero` and
+  `LocallyLipschitzOn.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero`: almost every fiber is
+  null for maps locally Lipschitz on `A` in a second-countable domain.
 
 ## References
 
@@ -237,3 +243,34 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_lt_top (hf : LipschitzOnWith
   exact euclideanHausdorffMeasure_lt_top_iff.2 hy
 
 end LipschitzOnWith
+
+namespace LocallyLipschitzOn
+
+variable [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
+
+/-- If `f` is locally Lipschitz on `A` in a second-countable domain with values in an
+`m`-dimensional real normed space and `μH[m + t] A = 0`, then for almost every `y` the fiber
+`A ∩ f ⁻¹' {y}` is `μH[t]`-null. -/
+theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f) (ht : 0 ≤ t)
+    (hA : μH[finrank ℝ Y + t] A = 0) : ∀ᵐ y ∂μ, μH[t] (A ∩ f ⁻¹' {y}) = 0 := by
+  obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
+  have hpiece : ∀ᵐ y ∂μ, ∀ n, μH[t] ((A ∩ U n) ∩ f ⁻¹' {y}) = 0 :=
+    ae_all_iff.2 fun n ↦ (hK n).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht
+      (measure_mono_null inter_subset_left hA)
+  filter_upwards [hpiece] with y hy
+  exact measure_mono_null
+    (fun x hx ↦ by
+      obtain ⟨n, hn⟩ := mem_iUnion.1 (hcov hx.1)
+      exact mem_iUnion.2 ⟨n, ⟨hx.1, hn⟩, hx.2⟩)
+    (measure_iUnion_null hy)
+
+/-- If `f` is locally Lipschitz on `A` in a second-countable domain with values in an
+`m`-dimensional real normed space and `μHE[m + k] A = 0`, then for almost every `y` the fiber
+`A ∩ f ⁻¹' {y}` is `μHE[k]`-null. -/
+theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f)
+    {k : ℕ} (hA : μHE[finrank ℝ Y + k] A = 0) : ∀ᵐ y ∂μ, μHE[k] (A ∩ f ⁻¹' {y}) = 0 := by
+  rw [euclideanHausdorffMeasure_eq_zero_iff, Nat.cast_add] at hA
+  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ k.cast_nonneg hA] with y hy
+  exact euclideanHausdorffMeasure_eq_zero_iff.2 hy
+
+end LocallyLipschitzOn

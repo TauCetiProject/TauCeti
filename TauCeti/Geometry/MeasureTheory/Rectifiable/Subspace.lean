@@ -27,8 +27,8 @@ not surjective. Hence almost every fibre of any linear map is countably
 
 ## Main statements
 
-* `TauCeti.CountablyRectifiable.of_finrank`: every subset of a finite-dimensional real normed
-  space `E` is countably `(dim E)`-rectifiable.
+* `TauCeti.CountablyRectifiable.of_finiteDimensional`: every subset of a finite-dimensional real
+  normed space `E` is countably `(dim E)`-rectifiable.
 * `Submodule.countablyRectifiable`: a finite-dimensional real submodule is countably rectifiable of
   its dimension, without assuming the ambient normed space is finite-dimensional.
 * `AffineSubspace.countablyRectifiable`: an affine subspace with finite-dimensional direction in a
@@ -57,11 +57,11 @@ namespace CountablyRectifiable
 
 /-- Every subset of a finite-dimensional real normed space `E` is countably
 `(dim E)`-rectifiable, via a continuous linear equivalence with Euclidean space. -/
-theorem of_finrank {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] (s : Set E) :
+theorem of_finiteDimensional {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (s : Set E) :
     CountablyRectifiable (finrank ℝ E) s := by
   let e : EuclideanSpace ℝ (Fin (finrank ℝ E)) ≃L[ℝ] E :=
-    (LinearEquiv.ofFinrankEq _ _ (finrank_euclideanSpace_fin (𝕜 := ℝ))).toContinuousLinearEquiv
+    ContinuousLinearEquiv.ofFinrankEq (finrank_euclideanSpace_fin (𝕜 := ℝ))
   have hs : e '' (e.symm '' s) = s := ContinuousLinearEquiv.image_symm_image e s
   rw [← hs]
   exact (CountablyRectifiable.euclidean (e.symm '' s)).image
@@ -80,7 +80,7 @@ theorem Submodule.countablyRectifiable {E : Type*} [NormedAddCommGroup E] [Norme
     CountablyRectifiable (finrank ℝ p) (p : Set E) := by
   have h : (p : Set E) = Subtype.val '' (univ : Set p) := by simp
   rw [h, CountablyRectifiable.isometry_image_iff isometry_subtype_coe]
-  exact .of_finrank univ
+  exact .of_finiteDimensional univ
 
 /-- An affine subspace with finite-dimensional direction in a normed torsor over a real normed
 space is countably rectifiable of its direction's dimension. Neither nonemptiness of the affine
@@ -92,7 +92,7 @@ theorem AffineSubspace.countablyRectifiable {V P : Type*} [NormedAddCommGroup V]
   rcases (s : Set P).eq_empty_or_nonempty with hs | ⟨q, hq⟩
   · simpa only [hs] using CountablyRectifiable.empty
   let e : EuclideanSpace ℝ (Fin (finrank ℝ s.direction)) ≃L[ℝ] s.direction :=
-    (LinearEquiv.ofFinrankEq _ _ (finrank_euclideanSpace_fin (𝕜 := ℝ))).toContinuousLinearEquiv
+    ContinuousLinearEquiv.ofFinrankEq (finrank_euclideanSpace_fin (𝕜 := ℝ))
   let φ : EuclideanSpace ℝ (Fin (finrank ℝ s.direction)) → P := fun u ↦ (e u : V) +ᵥ q
   have hlip : LipschitzWith ‖e.toContinuousLinearMap‖₊ φ := by
     have hvadd : LipschitzWith 1 (fun w : s.direction ↦ (w : V) +ᵥ q) :=

@@ -17,6 +17,7 @@ import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Measure.Regular
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Critical-rank fibre nullity and the coarea formula for Lipschitz maps
@@ -64,14 +65,13 @@ points form the Borel regular locus where `Coarea.Basic` applies.
 * `TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_normDet_adjoint_fderiv_eq_zero`,
   `TauCeti.ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_not_surjective_fderiv`:
   critical-rank points have almost everywhere null fibres.
-* `LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage`: almost-everywhere
-  measurability of normalized fibre measures for maps locally Lipschitz on a Lebesgue-measurable
-  set.
-* `LocallyLipschitzOn.ae_restrict_inter_setOf_regular_preimage_eq`,
-  `LipschitzWith.ae_restrict_inter_setOf_regular_preimage_eq`: on almost every fibre, restricting
-  `μHE[n - m]` to the fibre agrees with restricting to its regular part.
-* `ae_euclideanHausdorffMeasure_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero` (in
-  `LipschitzWith`): the coarea Sard lemma for Lipschitz maps.
+* `ae_restrict_inter_setOf_regular_preimage_eq` (in `LocallyLipschitzOn`, `LocallyLipschitz`, and
+  `LipschitzWith`): on almost every fibre, restricting `μHE[n - m]` to the fibre agrees with
+  restricting to its regular part.
+* `ae_euclideanHausdorffMeasure_inter_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero`
+  (in `LocallyLipschitzOn`) and
+  `ae_euclideanHausdorffMeasure_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero` (in
+  `LocallyLipschitz` and `LipschitzWith`): the coarea Sard lemma.
 * `lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv` (in
   `LocallyLipschitzOn`, `LocallyLipschitz`, and `LipschitzWith`): the unweighted coarea formula.
 * `LipschitzOnWith.integrableOn_normDet_adjoint_fderiv`,
@@ -96,7 +96,28 @@ public section
 open Filter Function MeasureTheory Measure Metric Module Set
 open scoped ENNReal NNReal Topology
 
+/-- Integrating `μHE[k] (g y)` pulls out the Euclidean normalization scalar factor in front of
+`∫⁻ y, μH[(k : ℝ)] (g y)`. -/
+private theorem lintegral_euclideanHausdorffMeasure {α X : Type*} [MeasurableSpace α]
+    [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] (μ : Measure α) (k : ℕ) (g : α → Set X) :
+    ∫⁻ y, μHE[k] (g y) ∂μ =
+      (addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin k))) μH[(k : ℝ)] : ℝ≥0∞) *
+        ∫⁻ y, μH[(k : ℝ)] (g y) ∂μ := by
+  rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+  refine lintegral_congr fun y ↦ ?_
+  rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
+
 namespace TauCeti
+
+/-- The linear model `(v, u) ↦ A v + ε • u` on `WithLp 2 (E × F)` of the derivative of
+`(x, z) ↦ f x + ε • z`. -/
+private noncomputable def coareaPerturbDeriv {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] (ε : ℝ)
+    (A : E →L[ℝ] F) : WithLp 2 (E × F) →L[ℝ] F :=
+  A ∘L (ContinuousLinearMap.fst ℝ E F ∘L
+      (WithLp.prodContinuousLinearEquiv 2 ℝ E F : WithLp 2 (E × F) →L[ℝ] E × F)) +
+    ε • (ContinuousLinearMap.snd ℝ E F ∘L
+      (WithLp.prodContinuousLinearEquiv 2 ℝ E F : WithLp 2 (E × F) →L[ℝ] E × F))
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -108,9 +129,7 @@ omit [MeasurableSpace F] [BorelSpace F] in
 theorem measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero (f : E → F) :
     MeasurableSet {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).adjoint.normDet ≠ 0} :=
   (measurableSet_of_differentiableAt ℝ f).inter
-    (measurableSet_eq_fun ((ContinuousLinearMap.continuous_normDet.comp
-      ContinuousLinearMap.adjoint.continuous).measurable.comp (measurable_fderiv ℝ f))
-      measurable_const).compl
+    (measurableSet_eq_fun (measurable_normDet_adjoint_fderiv f) measurable_const).compl
 
 omit [MeasurableSpace F] [BorelSpace F] in
 /-- The regular coarea locus, where `f` is differentiable with surjective derivative, is Borel
@@ -119,18 +138,21 @@ theorem measurableSet_setOf_differentiableAt_surjective_fderiv (f : E → F) :
     MeasurableSet {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)} := by
   convert measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero f using 1
   ext x
-  exact and_congr_right' (by
-    rw [← ContinuousLinearMap.coe_coe, ← LinearMap.normDet_adjoint_ne_zero_iff,
-      ContinuousLinearMap.adjoint_toLinearMap])
+  exact and_congr_right' ContinuousLinearMap.normDet_adjoint_ne_zero_iff.symm
 
-/-- Critical-rank fibre nullity on a compact set `K` where `fderiv ℝ f` is bounded and
-`dim F ≤ dim E`, proved by perturbing `f` to `(x, z) ↦ f x + ε • z` on `K × ball 0 1`. -/
-private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
-    {K : Set E} (hK : IsCompact K) (R : ℝ) (hdim : finrank ℝ F ≤ finrank ℝ E)
-    (hd : ∀ x ∈ K, DifferentiableAt ℝ f x)
-    (h0 : ∀ x ∈ K, (fderiv ℝ f x).adjoint.normDet = 0)
-    (hR' : ∀ x ∈ K, ‖fderiv ℝ f x‖ ≤ R) :
-    ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (K ∩ f ⁻¹' {y}) = 0 := by
+/-- Slicing `S = K × ball 0 1` by `p ε (x, z) = f x + ε • z` (`ε ≠ 0`) and then by `(x, z) ↦ z`
+bounds `c * (volume (ball 0 1) * ∫⁻ u, μH[dim E - dim F] (K ∩ f ⁻¹' {u}))` above by
+`volume (ball 0 1) * ∫⁻ w in S, (coareaPerturbDeriv ε (fderiv ℝ f w.fst))†.normDet`. -/
+private theorem mul_lintegral_hausdorffMeasure_le_setLIntegral_coareaPerturbDeriv
+    {K : Set E} (hK : IsCompact K) (hdim : finrank ℝ F ≤ finrank ℝ E)
+    (hd : ∀ x ∈ K, DifferentiableAt ℝ f x) {ε : ℝ} (hε : ε ≠ 0) :
+    (addHaarScalarFactor
+        (volume : Measure (EuclideanSpace ℝ (Fin (finrank ℝ E)))) μH[(finrank ℝ E : ℝ)] : ℝ≥0∞) *
+      (volume (ball (0 : F) 1) *
+        ∫⁻ u : F, μH[((finrank ℝ E - finrank ℝ F : ℕ) : ℝ)] (K ∩ f ⁻¹' {u})) ≤
+      volume (ball (0 : F) 1) *
+        ∫⁻ w : WithLp 2 (E × F) in {w | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1},
+          ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
   let W := WithLp 2 (E × F)
   let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
   let π₁ : W →L[ℝ] E := ContinuousLinearMap.fst ℝ E F ∘L (e : W →L[ℝ] E × F)
@@ -144,29 +166,21 @@ private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
   have hSm : MeasurableSet S :=
     (hK.isClosed.measurableSet.preimage π₁.continuous.measurable).inter
       (isOpen_ball.measurableSet.preimage π₂.continuous.measurable)
-  have hSfin : volume S ≠ ∞ := by
-    have hSbdd : Bornology.IsBounded S :=
-      (e.symm.toContinuousLinearMap.lipschitzWith.isBounded_image
-        (hK.isBounded.prod (isBounded_ball (x := (0 : F)) (r := 1)))).subset
-        fun w hw ↦ ⟨e w, hw, e.symm_apply_apply w⟩
-    exact hSbdd.measure_lt_top.ne
-  let p (ε : ℝ) (w : W) : F := f w.fst + ε • w.snd
-  let D (ε : ℝ) (A : E →L[ℝ] F) : W →L[ℝ] F := A ∘L π₁ + ε • π₂
-  have hp_deriv (ε : ℝ) {w : W} (hw : w ∈ S) :
-      HasFDerivAt (p ε) (D ε (fderiv ℝ f w.fst)) w :=
+  let p (w : W) : F := f w.fst + ε • w.snd
+  have hp_deriv {w : W} (hw : w ∈ S) :
+      HasFDerivAt p (coareaPerturbDeriv ε (fderiv ℝ f w.fst)) w :=
     ((hd w.fst hw.1).hasFDerivAt.comp w π₁.hasFDerivAt).add (π₂.hasFDerivAt.const_smul ε)
-  have hD_surj {ε : ℝ} (hε : ε ≠ 0) (A : E →L[ℝ] F) : Surjective (D ε A) := fun v ↦
-    ⟨e.symm (0, ε⁻¹ • v), by simp [D, π₁, π₂, smul_inv_smul₀ hε]⟩
-  -- For `ε ≠ 0`, `p ε` has surjective derivative on `S`, so the regular coarea formula applies.
-  have hco {ε : ℝ} (hε : ε ≠ 0) :
-      ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ε ⁻¹' {y}) =
-        ∫⁻ w in S, ENNReal.ofReal (D ε (fderiv ℝ f w.fst)).adjoint.normDet := by
+  have hD_surj (A : E →L[ℝ] F) : Surjective (coareaPerturbDeriv ε A) := fun v ↦
+    ⟨e.symm (0, ε⁻¹ • v), by simp [coareaPerturbDeriv, e, smul_inv_smul₀ hε]⟩
+  -- Since `p` has surjective derivative on `S`, the regular coarea formula applies.
+  have hco : ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ⁻¹' {y}) =
+      ∫⁻ w in S, ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
     rw [← hdimW,
       lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
-        hSm.nullMeasurableSet (fun w hw ↦ (hp_deriv ε hw).differentiableAt)
-        (fun w hw ↦ by rw [(hp_deriv ε hw).fderiv]; exact hD_surj hε _)]
-    exact setLIntegral_congr_fun hSm fun w hw ↦ by rw [(hp_deriv ε hw).fderiv]
-  -- Slice each `p ε`-fibre along the `1`-Lipschitz second projection `w ↦ w.snd`.
+        hSm.nullMeasurableSet (fun w hw ↦ (hp_deriv hw).differentiableAt)
+        (fun w hw ↦ by rw [(hp_deriv hw).fderiv]; exact hD_surj _)]
+    exact setLIntegral_congr_fun hSm fun w hw ↦ by rw [(hp_deriv hw).fderiv]
+  -- Slice each `p`-fibre along the `1`-Lipschitz second projection `w ↦ w.snd`.
   set k := finrank ℝ E - finrank ℝ F
   let ϕ : F → ℝ≥0∞ := fun u ↦ μH[(k : ℝ)] (K ∩ f ⁻¹' {u})
   have hϕm : Measurable ϕ :=
@@ -180,8 +194,8 @@ private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
       e.injective (by ext <;> simp [e])
     rw [hsub, WithLp.prod_norm_sq_eq_of_L2]
     simp
-  have hslice (ε : ℝ) (y : F) {z : F} (hz : z ∈ B) :
-      (S ∩ p ε ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z} =
+  have hslice (y : F) {z : F} (hz : z ∈ B) :
+      (S ∩ p ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z} =
         (fun x : E ↦ WithLp.toLp 2 (x, z)) '' (K ∩ f ⁻¹' {y - ε • z}) := by
     ext w
     simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_image, S, p]
@@ -191,67 +205,85 @@ private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
       exact e.injective (by ext <;> simp [e])
     · rintro ⟨x, ⟨hxK, hfx⟩, rfl⟩
       simp [hxK, hz, hfx]
-  have hsnd_lip : LipschitzWith 1 (fun w : W ↦ w.snd) := by
-    refine LipschitzWith.of_dist_le_mul fun w₁ w₂ ↦ ?_
-    simp only [NNReal.coe_one, one_mul, dist_eq_norm]
-    refine le_of_sq_le_sq ?_ (norm_nonneg _)
-    have hsub : (w₁ - w₂).snd = w₁.snd - w₂.snd := rfl
-    rw [← hsub, WithLp.prod_norm_sq_eq_of_L2]
-    nlinarith [sq_nonneg ‖(w₁ - w₂).fst‖]
+  have hsnd_lip : LipschitzWith 1 (fun w : W ↦ w.snd) :=
+    LipschitzWith.of_edist_le WithLp.edist_snd_le
   have hdim_add : (finrank ℝ F : ℝ) + (k : ℝ) = (finrank ℝ E : ℝ) := by
     exact_mod_cast Nat.add_sub_of_le hdim
+  have hfib (y : F) : ∫⁻ z in B, ϕ (y - ε • z) ≤
+      volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ⁻¹' {y}) := by
+    have hBeq : ∫⁻ z in B, ϕ (y - ε • z) =
+        ∫⁻ z in B, μH[(k : ℝ)] ((S ∩ p ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z}) := by
+      refine setLIntegral_congr_fun isOpen_ball.measurableSet fun z hz ↦ ?_
+      rw [hslice y hz, (hι z).hausdorffMeasure_image (Or.inl k.cast_nonneg)]
+    calc ∫⁻ z in B, ϕ (y - ε • z)
+        ≤ ∫⁻ z : F, μH[(k : ℝ)] ((S ∩ p ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z}) := by
+          rw [hBeq]
+          exact setLIntegral_le_lintegral B _
+      _ ≤ volume B * 1 ^ finrank ℝ F *
+            μH[(finrank ℝ F : ℝ) + (k : ℝ)] (S ∩ p ⁻¹' {y}) :=
+          hsnd_lip.lipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le volume
+            k.cast_nonneg
+      _ = volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ⁻¹' {y}) := by simp [hdim_add]
+  have hswap : ∫⁻ y : F, ∫⁻ z in B, ϕ (y - ε • z) = volume B * ∫⁻ u : F, ϕ u := by
+    have hm : AEMeasurable (fun q : F × F ↦ ϕ (q.1 - ε • q.2))
+        (volume.prod (volume.restrict B)) :=
+      (hϕm.comp (continuous_fst.sub
+        (continuous_const.smul continuous_snd)).measurable).aemeasurable
+    rw [lintegral_lintegral_swap hm]
+    simp_rw [lintegral_sub_right_eq_self ϕ]
+    rw [setLIntegral_const, mul_comm]
   let c := addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin (finrank ℝ E))))
     μH[(finrank ℝ E : ℝ)]
-  have hlow {ε : ℝ} (hε : ε ≠ 0) :
-      (c : ℝ≥0∞) * (volume B * ∫⁻ u : F, ϕ u) ≤
-        volume B * ∫⁻ w in S, ENNReal.ofReal (D ε (fderiv ℝ f w.fst)).adjoint.normDet := by
-    have hfib (y : F) : ∫⁻ z in B, ϕ (y - ε • z) ≤
-        volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ε ⁻¹' {y}) := by
-      have hBeq : ∫⁻ z in B, ϕ (y - ε • z) =
-          ∫⁻ z in B, μH[(k : ℝ)] ((S ∩ p ε ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z}) := by
-        refine setLIntegral_congr_fun isOpen_ball.measurableSet fun z hz ↦ ?_
-        rw [hslice ε y hz, (hι z).hausdorffMeasure_image (Or.inl k.cast_nonneg)]
-      calc ∫⁻ z in B, ϕ (y - ε • z)
-          ≤ ∫⁻ z : F, μH[(k : ℝ)] ((S ∩ p ε ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z}) := by
-            rw [hBeq]
-            exact setLIntegral_le_lintegral B _
-        _ ≤ volume B * 1 ^ finrank ℝ F *
-              μH[(finrank ℝ F : ℝ) + (k : ℝ)] (S ∩ p ε ⁻¹' {y}) :=
-            hsnd_lip.lipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le volume
-              k.cast_nonneg
-        _ = volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ε ⁻¹' {y}) := by simp [hdim_add]
-    have hswap : ∫⁻ y : F, ∫⁻ z in B, ϕ (y - ε • z) = volume B * ∫⁻ u : F, ϕ u := by
-      have hm : AEMeasurable (fun q : F × F ↦ ϕ (q.1 - ε • q.2))
-          (volume.prod (volume.restrict B)) :=
-        (hϕm.comp (continuous_fst.sub
-          (continuous_const.smul continuous_snd)).measurable).aemeasurable
-      rw [lintegral_lintegral_swap hm]
-      simp_rw [lintegral_sub_right_eq_self ϕ]
-      rw [setLIntegral_const, mul_comm]
-    calc (c : ℝ≥0∞) * (volume B * ∫⁻ u : F, ϕ u)
-        = (c : ℝ≥0∞) * ∫⁻ y : F, ∫⁻ z in B, ϕ (y - ε • z) := by rw [hswap]
-      _ ≤ (c : ℝ≥0∞) * ∫⁻ y : F, volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ε ⁻¹' {y}) := by
-          gcongr with y
-          exact hfib y
-      _ = volume B * ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ε ⁻¹' {y}) := by
-          rw [lintegral_const_mul' _ _ measure_ball_lt_top.ne, ← mul_assoc, mul_comm (c : ℝ≥0∞),
-            mul_assoc, ← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-          congr 1
-          refine lintegral_congr fun y ↦ ?_
-          rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
-      _ = volume B * ∫⁻ w in S, ENNReal.ofReal (D ε (fderiv ℝ f w.fst)).adjoint.normDet := by
-          rw [hco hε]
-  -- Dominated convergence sends the upper bound to `0` as `ε → 0`.
+  calc (c : ℝ≥0∞) * (volume B * ∫⁻ u : F, ϕ u)
+      = (c : ℝ≥0∞) * ∫⁻ y : F, ∫⁻ z in B, ϕ (y - ε • z) := by rw [hswap]
+    _ ≤ (c : ℝ≥0∞) * ∫⁻ y : F, volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ⁻¹' {y}) := by
+        gcongr with y
+        exact hfib y
+    _ = volume B * ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ⁻¹' {y}) := by
+        rw [lintegral_const_mul' _ _ measure_ball_lt_top.ne,
+          lintegral_euclideanHausdorffMeasure volume (finrank ℝ E), mul_left_comm]
+    _ = volume B * ∫⁻ w in S,
+          ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
+        rw [hco]
+
+/-- As `ε → 0`, dominated convergence sends
+`∫⁻ w in K × ball 0 1, (coareaPerturbDeriv ε (fderiv ℝ f w.fst))†.normDet` to `0` whenever `K` is
+compact, `‖fderiv ℝ f‖ ≤ R` on `K`, and `(fderiv ℝ f x)†.normDet = 0` on `K`. -/
+private theorem tendsto_setLIntegral_coareaPerturbDeriv_nhds_zero
+    {K : Set E} (hK : IsCompact K) (R : ℝ)
+    (h0 : ∀ x ∈ K, (fderiv ℝ f x).adjoint.normDet = 0)
+    (hR' : ∀ x ∈ K, ‖fderiv ℝ f x‖ ≤ R) :
+    Tendsto
+      (fun ε : ℝ ↦
+        ∫⁻ w : WithLp 2 (E × F) in {w | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1},
+          ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet)
+      (𝓝 0) (𝓝 0) := by
+  let W := WithLp 2 (E × F)
+  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
+  let π₁ : W →L[ℝ] E := ContinuousLinearMap.fst ℝ E F ∘L (e : W →L[ℝ] E × F)
+  let π₂ : W →L[ℝ] F := ContinuousLinearMap.snd ℝ E F ∘L (e : W →L[ℝ] E × F)
+  let S : Set W := {w : W | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1}
+  have hSm : MeasurableSet S :=
+    (hK.isClosed.measurableSet.preimage π₁.continuous.measurable).inter
+      (isOpen_ball.measurableSet.preimage π₂.continuous.measurable)
+  have hSfin : volume S ≠ ∞ := by
+    have hSbdd : Bornology.IsBounded S :=
+      (e.symm.toContinuousLinearMap.lipschitzWith.isBounded_image
+        (hK.isBounded.prod (isBounded_ball (x := (0 : F)) (r := 1)))).subset
+        fun w hw ↦ ⟨e w, hw, e.symm_apply_apply w⟩
+    exact hSbdd.measure_lt_top.ne
   have hcont : Continuous fun L : W →L[ℝ] F ↦ L.adjoint.normDet :=
-    ContinuousLinearMap.continuous_normDet.comp ContinuousLinearMap.adjoint.continuous
-  have hDcont : Continuous fun q : ℝ × (E →L[ℝ] F) ↦ D q.1 q.2 :=
+    ContinuousLinearMap.continuous_normDet_adjoint
+  have hDcont : Continuous fun q : ℝ × (E →L[ℝ] F) ↦ coareaPerturbDeriv q.1 q.2 :=
     (continuous_snd.clm_comp continuous_const).add (continuous_fst.smul continuous_const)
   obtain ⟨M, hM⟩ := (isCompact_Icc (a := (-1 : ℝ)) (b := 1)).prod
     (isCompact_closedBall (0 : E →L[ℝ] F) R)
     |>.exists_bound_of_continuousOn (hcont.comp hDcont).continuousOn
   have hlim : Tendsto
-      (fun ε : ℝ ↦ ∫⁻ w in S, ENNReal.ofReal (D ε (fderiv ℝ f w.fst)).adjoint.normDet) (𝓝 0)
-      (𝓝 (∫⁻ w in S, ENNReal.ofReal (D 0 (fderiv ℝ f w.fst)).adjoint.normDet)) := by
+      (fun ε : ℝ ↦ ∫⁻ w in S,
+        ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet) (𝓝 0)
+      (𝓝 (∫⁻ w in S,
+        ENNReal.ofReal (coareaPerturbDeriv 0 (fderiv ℝ f w.fst)).adjoint.normDet)) := by
     refine tendsto_lintegral_filter_of_dominated_convergence (fun _ ↦ ENNReal.ofReal M)
       (Eventually.of_forall fun ε ↦ ?_) ?_ ?_ (Eventually.of_forall fun w ↦ ?_)
     · exact ENNReal.measurable_ofReal.comp ((hcont.comp ((continuous_id.clm_comp
@@ -265,26 +297,47 @@ private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
       exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hSfin
     · exact (ENNReal.continuous_ofReal.comp (hcont.comp
         (hDcont.comp (continuous_id.prodMk continuous_const)))).tendsto 0
-  have hzero : ∫⁻ w in S, ENNReal.ofReal (D 0 (fderiv ℝ f w.fst)).adjoint.normDet = 0 := by
+  have hzero : ∫⁻ w in S,
+      ENNReal.ofReal (coareaPerturbDeriv 0 (fderiv ℝ f w.fst)).adjoint.normDet = 0 := by
     refine (setLIntegral_congr_fun hSm fun w hw ↦ ?_).trans lintegral_zero
-    have hns : ¬Surjective (D 0 (fderiv ℝ f w.fst) : W →ₗ[ℝ] F) := by
-      have hns0 : ¬Surjective (fderiv ℝ f w.fst : E →ₗ[ℝ] F) := by
-        rw [← LinearMap.normDet_adjoint_eq_zero_iff, ContinuousLinearMap.adjoint_toLinearMap]
-        exact h0 w.fst hw.1
+    have hns : ¬Surjective (coareaPerturbDeriv 0 (fderiv ℝ f w.fst)) := by
       intro hsurj
-      refine hns0 fun v ↦ ?_
+      refine (ContinuousLinearMap.normDet_adjoint_eq_zero_iff.1 (h0 w.fst hw.1)) fun v ↦ ?_
       obtain ⟨u, hu⟩ := hsurj v
-      exact ⟨π₁ u, by simpa [D] using hu⟩
-    rw [← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.normDet_adjoint_eq_zero_iff.2 hns,
-      ENNReal.ofReal_zero]
-  rw [hzero] at hlim
-  have hlim' : Tendsto
-      (fun ε : ℝ ↦ volume B * ∫⁻ w in S, ENNReal.ofReal (D ε (fderiv ℝ f w.fst)).adjoint.normDet)
+      exact ⟨u.fst, by simpa [coareaPerturbDeriv] using hu⟩
+    rw [ContinuousLinearMap.normDet_adjoint_eq_zero_iff.2 hns, ENNReal.ofReal_zero]
+  rwa [hzero] at hlim
+
+/-- Critical-rank fibre nullity on a compact set `K` where `fderiv ℝ f` is bounded and
+`dim F ≤ dim E`, proved by combining the slicing lower bound on `K × ball 0 1` with dominated
+convergence as `ε → 0`. -/
+private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
+    {K : Set E} (hK : IsCompact K) (R : ℝ) (hdim : finrank ℝ F ≤ finrank ℝ E)
+    (hd : ∀ x ∈ K, DifferentiableAt ℝ f x)
+    (h0 : ∀ x ∈ K, (fderiv ℝ f x).adjoint.normDet = 0)
+    (hR' : ∀ x ∈ K, ‖fderiv ℝ f x‖ ≤ R) :
+    ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (K ∩ f ⁻¹' {y}) = 0 := by
+  set k := finrank ℝ E - finrank ℝ F
+  let B : Set F := ball 0 1
+  let c := addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin (finrank ℝ E))))
+    μH[(finrank ℝ E : ℝ)]
+  let ϕ : F → ℝ≥0∞ := fun u ↦ μH[(k : ℝ)] (K ∩ f ⁻¹' {u})
+  have hϕm : Measurable ϕ :=
+    hK.measurable_hausdorffMeasure_inter_preimage
+      (fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt) (k : ℝ)
+  have hB_fin : volume B < ∞ := measure_ball_lt_top
+  have hlim : Tendsto
+      (fun ε : ℝ ↦ volume B *
+        ∫⁻ w : WithLp 2 (E × F) in {w | w.fst ∈ K ∧ w.snd ∈ B},
+          ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet)
       (𝓝[≠] 0) (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul (hlim.mono_left nhdsWithin_le_nhds)
-      (Or.inr measure_ball_lt_top.ne)
+    simpa only [mul_zero] using ENNReal.Tendsto.const_mul
+      ((tendsto_setLIntegral_coareaPerturbDeriv_nhds_zero hK R h0 hR').mono_left
+        nhdsWithin_le_nhds)
+      (Or.inr hB_fin.ne)
   have hprod0 : (c : ℝ≥0∞) * (volume B * ∫⁻ u : F, ϕ u) = 0 :=
-    nonpos_iff_eq_zero.1 (ge_of_tendsto hlim' (eventually_nhdsWithin_of_forall fun ε hε ↦ hlow hε))
+    nonpos_iff_eq_zero.1 (ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun _ hε ↦
+      mul_lintegral_hausdorffMeasure_le_setLIntegral_coareaPerturbDeriv hK hdim hd hε))
   have hc0 : (c : ℝ≥0∞) ≠ 0 :=
     ENNReal.coe_ne_zero.2 (addHaarScalarFactor_volume_hausdorffMeasure_ne_zero (finrank ℝ E))
   have hB0 : volume B ≠ 0 := (measure_ball_pos volume (0 : F) one_pos).ne'
@@ -321,9 +374,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_normDet_adjoint_f
       {x | ‖fderiv ℝ f x‖ ≤ r}
   have hTm (r : ℕ) : MeasurableSet (T r) :=
     (((measurableSet_of_differentiableAt ℝ f).inter
-      (measurableSet_eq_fun ((ContinuousLinearMap.continuous_normDet.comp
-        ContinuousLinearMap.adjoint.continuous).measurable.comp (measurable_fderiv ℝ f))
-        measurable_const)).inter
+      (measurableSet_eq_fun (measurable_normDet_adjoint_fderiv f) measurable_const)).inter
       (measurableSet_le (measurable_fderiv ℝ f).norm measurable_const))
   choose t A _ ht_meas ht_cover ht_approx _ using fun r ↦
     exists_partition_approximatesLinearOn_of_hasFDerivWithinAt f (T r) (fderiv ℝ f)
@@ -373,9 +424,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_not_surjective_fd
     (hns : ∀ x ∈ s, ¬Surjective (fderiv ℝ f x)) :
     ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) = 0 :=
   ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_normDet_adjoint_fderiv_eq_zero hd
-    fun x hx ↦ by
-      rw [← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.normDet_adjoint_eq_zero_iff]
-      exact hns x hx
+    fun x hx ↦ ContinuousLinearMap.normDet_adjoint_eq_zero_iff.2 (hns x hx)
 
 end TauCeti
 
@@ -387,63 +436,6 @@ private alias lintegral_coarea_surj :=
 namespace LocallyLipschitzOn
 
 open TauCeti
-
-section NormedTarget
-
-/-- If `f` is locally Lipschitz on `A` with values in an `m`-dimensional real normed space and
-`μH[m + t] A = 0`, then almost every fibre `A ∩ f ⁻¹' {y}` is `μH[t]`-null. -/
-theorem ae_hausdorffMeasure_inter_preimage_eq_zero {X Y : Type*} [EMetricSpace X]
-    [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y]
-    [MeasurableSpace Y] [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure]
-    {A : Set X} {f : X → Y} {t : ℝ}
-    (hf : LocallyLipschitzOn A f) (ht : 0 ≤ t) (hA : μH[finrank ℝ Y + t] A = 0) :
-    ∀ᵐ y ∂μ, μH[t] (A ∩ f ⁻¹' {y}) = 0 := by
-  have hloc : ∀ x ∈ A, ∃ U, IsOpen U ∧ x ∈ U ∧ ∃ K, LipschitzOnWith K f (A ∩ U) := by
-    intro x hx
-    obtain ⟨K, u, hu, hK⟩ := hf hx
-    obtain ⟨U, hU, hxU, hUu⟩ := mem_nhdsWithin.1 hu
-    exact ⟨U, hU, hxU, K, hK.mono ((inter_comm A U).subset.trans hUu)⟩
-  choose! U hU hxU K hK using hloc
-  obtain ⟨c, hcA, hc, hcov⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (f := fun x ↦ A ∩ U x) fun x hx ↦ inter_mem_nhdsWithin A ((hU x hx).mem_nhds (hxU x hx))
-  have hae := (ae_ball_iff hc).2 fun x hx ↦
-    (hK x (hcA hx)).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht
-      (measure_mono_null inter_subset_left hA)
-  filter_upwards [hae] with y hy
-  have : Countable c := hc.to_subtype
-  refine measure_mono_null (t := ⋃ x : c, (A ∩ U x) ∩ f ⁻¹' {y}) (fun z ⟨hzA, hzy⟩ ↦ ?_)
-    (measure_iUnion_null fun x ↦ hy x x.2)
-  obtain ⟨x, hxc, hzx⟩ := mem_iUnion₂.1 (hcov hzA)
-  exact mem_iUnion.2 ⟨⟨x, hxc⟩, hzx, hzy⟩
-
-/-- **Normalized fibre measures of a locally Lipschitz map on a Lebesgue-measurable set are almost
-everywhere measurable.** Neither openness of `A` nor a global Lipschitz bound is required. -/
-theorem aemeasurable_euclideanHausdorffMeasure_inter_preimage {E Y : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y]
-    [MeasurableSpace Y] [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure]
-    {A : Set E} {f : E → Y} (hf : LocallyLipschitzOn A f) (hA : NullMeasurableSet A) {k : ℕ}
-    (hk : finrank ℝ E ≤ finrank ℝ Y + k) :
-    AEMeasurable (fun y ↦ μHE[k] (A ∩ f ⁻¹' {y})) μ := by
-  obtain ⟨S, hSA, hS, hSA'⟩ := hA.exists_isSigmaCompact_subset_ae_eq
-  have hnull : μH[finrank ℝ Y + (k : ℝ)] (A \ S) = 0 := by
-    have h := (ae_eq_set.1 hSA').2
-    rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
-      euclideanHausdorffMeasure_eq_zero_iff] at h
-    exact nonpos_iff_eq_zero.1 ((hausdorffMeasure_mono (by exact_mod_cast hk) _).trans h.le)
-  have hae : (fun y ↦ μH[(k : ℝ)] (A ∩ f ⁻¹' {y})) =ᵐ[μ]
-      fun y ↦ μH[(k : ℝ)] (S ∩ f ⁻¹' {y}) := by
-    filter_upwards [(hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ
-      k.cast_nonneg hnull] with y hy
-    exact (measure_eq_measure_of_null_sdiff (inter_subset_inter_left _ hSA)
-      (by rwa [← inter_sdiff_distrib_right])).symm
-  simp only [euclideanHausdorffMeasure_def, _root_.smul_apply]
-  exact ((hS.measurable_hausdorffMeasure_inter_preimage (hf.continuousOn.mono hSA)
-    (k : ℝ)).aemeasurable.congr hae.symm).const_smul _
-
-end NormedTarget
 
 section Coarea
 
@@ -460,7 +452,7 @@ theorem ae_euclideanHausdorffMeasure_sdiff_setOf_regular_inter_preimage_eq_zero
       ((U \ {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}) ∩ f ⁻¹' {y}) = 0 := by
   let N := {x ∈ U | ¬DifferentiableAt ℝ f x}
   let C := {x ∈ U | DifferentiableAt ℝ f x ∧ ¬Surjective (fderiv ℝ f x)}
-  have hN_vol : μH[finrank ℝ F + ((finrank ℝ E - finrank ℝ F : ℕ) : ℝ)] N = 0 := by
+  have hN_vol : μHE[finrank ℝ F + (finrank ℝ E - finrank ℝ F)] N = 0 := by
     have hvol : volume N = 0 := by
       have hae : ∀ᵐ x : E, x ∉ N := by
         filter_upwards [hf.ae_differentiableAt_of_mem hU] with x hx hxN
@@ -468,12 +460,12 @@ theorem ae_euclideanHausdorffMeasure_sdiff_setOf_regular_inter_preimage_eq_zero
       exact measure_eq_zero_iff_ae_notMem.2 hae
     rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
       euclideanHausdorffMeasure_eq_zero_iff] at hvol
+    rw [euclideanHausdorffMeasure_eq_zero_iff]
     exact nonpos_iff_eq_zero.1
       ((hausdorffMeasure_mono (by exact_mod_cast le_add_tsub) _).trans hvol.le)
-  have hN_fib : ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (N ∩ f ⁻¹' {y}) = 0 := by
-    filter_upwards [(hf.mono fun _ (hx : _ ∈ N) ↦ hx.1).ae_hausdorffMeasure_inter_preimage_eq_zero
-      volume (Nat.cast_nonneg _) hN_vol] with y hy
-    exact euclideanHausdorffMeasure_eq_zero_iff.2 hy
+  have hN_fib : ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (N ∩ f ⁻¹' {y}) = 0 :=
+    (hf.mono fun _ (hx : _ ∈ N) ↦ hx.1).ae_euclideanHausdorffMeasure_inter_preimage_eq_zero
+      volume hN_vol
   have hC_fib : ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F] (C ∩ f ⁻¹' {y}) = 0 :=
     ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_not_surjective_fderiv
       (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2)
@@ -483,6 +475,21 @@ theorem ae_euclideanHausdorffMeasure_sdiff_setOf_regular_inter_preimage_eq_zero
   by_cases hd : DifferentiableAt ℝ f x
   · exact Or.inr ⟨⟨hxU, hd, fun hs ↦ hxG ⟨hd, hs⟩⟩, hxy⟩
   · exact Or.inl ⟨⟨hxU, hd⟩, hxy⟩
+
+/-- **Coarea Sard lemma for locally Lipschitz maps on open sets.** On an open set `U` where `f` is
+locally Lipschitz, the points of `U` where the coarea Jacobian `(fderiv ℝ f x)†.normDet` vanishes
+(including points where `f` is not differentiable) meet almost every fibre in a
+`μHE[dim E - dim F]`-null set. -/
+theorem
+    ae_euclideanHausdorffMeasure_inter_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero
+    (hf : LocallyLipschitzOn U f) (hU : IsOpen U) :
+    ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F]
+      ((U ∩ {x | (fderiv ℝ f x).adjoint.normDet = 0}) ∩ f ⁻¹' {y}) = 0 := by
+  filter_upwards
+    [hf.ae_euclideanHausdorffMeasure_sdiff_setOf_regular_inter_preimage_eq_zero hU] with y hy
+  refine measure_mono_null ?_ hy
+  exact fun x ⟨⟨hxU, hx0⟩, hxy⟩ ↦
+    ⟨⟨hxU, fun hreg ↦ (ContinuousLinearMap.normDet_adjoint_ne_zero_iff.2 hreg.2) hx0⟩, hxy⟩
 
 /-- For `s ⊆ U` with `U` open and `f` locally Lipschitz on `U`, restricting
 `μHE[dim E - dim F]` to the fibre `s ∩ f ⁻¹' {y}` agrees for almost every `y : F` with restricting
@@ -521,9 +528,8 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_
     filter_upwards [ae_restrict_of_ae (hf.ae_differentiableAt_of_mem (μ := volume) hU),
       ae_restrict_mem (MeasurableSet.diff hU.measurableSet hGm)] with x hx hxUG
     have hd : DifferentiableAt ℝ f x := hx hxUG.1
-    have hns : ¬Surjective (fderiv ℝ f x : E →ₗ[ℝ] F) := fun hsurj ↦ hxUG.2 ⟨hd, hsurj⟩
-    rw [← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.normDet_adjoint_eq_zero_iff.2 hns,
-      ENNReal.ofReal_zero]
+    have hns : ¬Surjective (fderiv ℝ f x) := fun hsurj ↦ hxUG.2 ⟨hd, hsurj⟩
+    rw [ContinuousLinearMap.normDet_adjoint_eq_zero_iff.2 hns, ENNReal.ofReal_zero]
   rw [hfib,
     lintegral_coarea_surj (hs.inter hGm.nullMeasurableSet) (fun _ hx ↦ hx.2.1) (fun _ hx ↦ hx.2.2),
     ← lintegral_inter_add_sdiff _ s hGm, hzero, add_zero]
@@ -595,10 +601,9 @@ theorem integrableOn_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
   by_cases hEF : finrank ℝ E < finrank ℝ F
   · have h0 : (fun x : E ↦ (fderiv ℝ f x).adjoint.normDet) = 0 := by
       ext x
-      have hns : ¬Surjective (fderiv ℝ f x : E →ₗ[ℝ] F) :=
+      have hns : ¬Surjective (fderiv ℝ f x) :=
         fun h ↦ hEF.not_ge (LinearMap.finrank_le_finrank_of_surjective h)
-      rw [Pi.zero_apply, ← ContinuousLinearMap.adjoint_toLinearMap,
-        LinearMap.normDet_adjoint_eq_zero_iff.2 hns]
+      rw [Pi.zero_apply, ContinuousLinearMap.normDet_adjoint_eq_zero_iff.2 hns]
     rw [h0]
     exact integrableOn_zero
   replace hEF : finrank ℝ F ≤ finrank ℝ E := not_lt.1 hEF
@@ -607,28 +612,21 @@ theorem integrableOn_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
   have ht_fin : volume t < ∞ :=
     ((measure_mono inter_subset_left).trans_eq (measure_toMeasurable s)).trans_lt hs.lt_top
   have hJm : Measurable fun x : E ↦ (fderiv ℝ f x).adjoint.normDet :=
-    (ContinuousLinearMap.continuous_normDet.comp
-      ContinuousLinearMap.adjoint.continuous).measurable.comp (measurable_fderiv ℝ f)
-  have hfU : LocallyLipschitzOn U f := fun _ _ ↦ ⟨K, U, self_mem_nhdsWithin, hf⟩
+    TauCeti.measurable_normDet_adjoint_fderiv f
   have ht_int : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet) t := by
     refine (lintegral_ofReal_ne_top_iff_integrable hJm.aestronglyMeasurable.restrict
       (Eventually.of_forall fun _ ↦ LinearMap.normDet_nonneg _)).1 ?_
-    rw [← hfU.lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
-      hU inter_subset_right htm.nullMeasurableSet]
+    rw [← hf.locallyLipschitzOn
+      |>.lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
+        hU inter_subset_right htm.nullMeasurableSet]
     set k := finrank ℝ E - finrank ℝ F
-    let c := addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin k))) μH[(k : ℝ)]
-    have hc : ∫⁻ y : F, μHE[k] (t ∩ f ⁻¹' {y}) =
-        (c : ℝ≥0∞) * ∫⁻ y : F, μH[(k : ℝ)] (t ∩ f ⁻¹' {y}) := by
-      rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-      refine lintegral_congr fun y ↦ ?_
-      rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
     have htH : μH[finrank ℝ F + (k : ℝ)] t < ∞ := by
       have hdim : finrank ℝ F + (k : ℝ) = (finrank ℝ E : ℝ) := by
         exact_mod_cast Nat.add_sub_of_le hEF
       rw [hdim, ← euclideanHausdorffMeasure_lt_top_iff,
         InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
       exact ht_fin
-    rw [hc]
+    rw [lintegral_euclideanHausdorffMeasure]
     refine ENNReal.mul_ne_top ENNReal.coe_ne_top ?_
     refine ((hf.mono inter_subset_right).lintegral_hausdorffMeasure_inter_preimage_le volume
       k.cast_nonneg).trans_lt ?_ |>.ne
@@ -681,6 +679,18 @@ theorem ae_euclideanHausdorffMeasure_compl_setOf_regular_inter_preimage_eq_zero
   let hfU := hf.locallyLipschitzOn (s := univ)
   simpa only [compl_eq_univ_sdiff] using
     hfU.ae_euclideanHausdorffMeasure_sdiff_setOf_regular_inter_preimage_eq_zero isOpen_univ
+
+/-- **Coarea Sard lemma for locally Lipschitz maps.** The set where the coarea Jacobian
+`(fderiv ℝ f x)†.normDet` vanishes (including points where `f` is not differentiable) meets almost
+every fibre in a `μHE[dim E - dim F]`-null set. -/
+theorem ae_euclideanHausdorffMeasure_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero
+    (hf : LocallyLipschitz f) :
+    ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F]
+      ({x | (fderiv ℝ f x).adjoint.normDet = 0} ∩ f ⁻¹' {y}) = 0 := by
+  open LocallyLipschitzOn in
+  simpa only [univ_inter] using
+    ae_euclideanHausdorffMeasure_inter_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero
+      (hf.locallyLipschitzOn (s := univ)) isOpen_univ
 
 /-- For a locally Lipschitz map `f : E → F` and any set `s`, restricting `μHE[dim E - dim F]` to
 `s ∩ f ⁻¹' {y}` agrees for almost every `y : F` with restricting to its regular part. -/
@@ -761,14 +771,9 @@ every fibre in a `μHE[dim E - dim F]`-null set. -/
 theorem ae_euclideanHausdorffMeasure_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero
     (hf : LipschitzWith K f) :
     ∀ᵐ y : F, μHE[finrank ℝ E - finrank ℝ F]
-      ({x | (fderiv ℝ f x).adjoint.normDet = 0} ∩ f ⁻¹' {y}) = 0 := by
-  filter_upwards [hf.ae_euclideanHausdorffMeasure_compl_setOf_regular_inter_preimage_eq_zero]
-    with y hy
-  refine measure_mono_null
-    (t := {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)}ᶜ ∩ f ⁻¹' {y})
-    (fun x ⟨hx, hxy⟩ ↦ ⟨fun hreg ↦ ?_, hxy⟩) hy
-  exact (LinearMap.normDet_adjoint_ne_zero_iff.2 hreg.2)
-    (by simpa [ContinuousLinearMap.adjoint_toLinearMap] using hx)
+      ({x | (fderiv ℝ f x).adjoint.normDet = 0} ∩ f ⁻¹' {y}) = 0 :=
+  hf.locallyLipschitz
+    |>.ae_euclideanHausdorffMeasure_setOf_normDet_adjoint_fderiv_eq_zero_inter_preimage_eq_zero
 
 /-- For a Lipschitz map `f : E → F` and any set `s`, restricting `μHE[dim E - dim F]` to the fibre
 `s ∩ f ⁻¹' {y}` agrees for almost every `y : F` with restricting to its regular part. -/

@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # The coarea formula for maps with surjective derivative
@@ -46,7 +47,7 @@ To globalize, fix `τ > 1`. Splitting `s` into the level sets `τ ^ j ≤ J f x 
 `exists_partition_approximatesLinearOn_of_hasFDerivWithinAt` gives countably many disjoint
 measurable pieces on which both sides of the formula agree up to the factor `τ²`. The fibre
 measures of the pieces are measurable functions of the fibre up to null sets
-(`LipschitzOnWith.aemeasurable_euclideanHausdorffMeasure_inter_preimage`), so the estimates add
+(`LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage`), so the estimates add
 up, and `τ → 1` gives the formula for measurable `s`. A Lebesgue-null set has null fibres for
 almost every `y` by Eilenberg's inequality, which extends the formula to Lebesgue-measurable `s`.
 The structure follows the proof of the area formula in
@@ -59,6 +60,7 @@ The structure follows the proof of the area formula in
 * `ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
   `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`: the coarea formula up to a
   controlled factor for a map approximated by a linear map with a right inverse.
+* `TauCeti.measurable_normDet_adjoint_fderiv`: Borel measurability of the coarea Jacobian.
 * `lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv`:
   the coarea formula for maps with surjective derivative.
 * `ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt`: almost every
@@ -268,6 +270,19 @@ theorem ofReal_normDet_adjoint_mul_volume_le
 
 end ApproximatesLinearOn
 
+namespace TauCeti
+
+/-- The coarea Jacobian `x ↦ (fderiv ℝ f x)†.normDet` of a map between finite-dimensional real
+inner product spaces is Borel measurable. -/
+@[fun_prop]
+theorem measurable_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (f : E → F) :
+    Measurable fun x ↦ (fderiv ℝ f x).adjoint.normDet :=
+  ContinuousLinearMap.continuous_normDet_adjoint.measurable.comp (measurable_fderiv ℝ f)
+
+end TauCeti
+
 namespace MeasureTheory
 
 /-! ### Globalization -/
@@ -351,9 +366,7 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
   set J : E → ℝ := fun x ↦ (fderiv ℝ f x).adjoint.normDet
   set S : ℤ → Set E := fun j ↦ s ∩ J ⁻¹' Ico ((τ : ℝ) ^ j) ((τ : ℝ) ^ (j + 1))
   have hSm (j : ℤ) : MeasurableSet (S j) :=
-    hs.inter (((ContinuousLinearMap.continuous_normDet.comp
-      ContinuousLinearMap.adjoint.continuous).measurable.comp
-        (measurable_fderiv ℝ f)) measurableSet_Ico)
+    hs.inter (TauCeti.measurable_normDet_adjoint_fderiv f measurableSet_Ico)
   have hSd : Pairwise (Disjoint on S) := by
     intro i j hij
     refine disjoint_left.2 fun x hi hj ↦ hij (le_antisymm ?_ ?_)
@@ -371,7 +384,8 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
     · exact (hSd hij).mono inter_subset_left inter_subset_left
   · refine Subset.antisymm (iUnion_subset fun p ↦ inter_subset_left.trans inter_subset_left)
       fun x hx ↦ ?_
-    obtain ⟨j, hj⟩ := exists_mem_Ico_zpow (LinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx)) hτ'
+    obtain ⟨j, hj⟩ := exists_mem_Ico_zpow
+      (ContinuousLinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx)) hτ'
     obtain ⟨n, hn⟩ := mem_iUnion.1 (ht_cover j ⟨hx, hj⟩)
     exact mem_iUnion.2 ⟨(j, n), ⟨hx, hj⟩, hn⟩
   · -- On a nonempty piece, `J A` and every `J f x` lie in the same interval `[τ ^ j, τ ^ (j + 1))`,
@@ -416,8 +430,9 @@ private theorem lintegral_le_and_setLIntegral_le_of_one_lt (hs : MeasurableSet s
   have hint : ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) =
       ∑' p, ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (P p ∩ f ⁻¹' {y}) := by
     simp_rw [hfib]
-    exact lintegral_tsum fun p ↦ (hK p).aemeasurable_euclideanHausdorffMeasure_inter_preimage
-      volume (hPm p).nullMeasurableSet le_add_tsub
+    exact lintegral_tsum fun p ↦
+      (hK p).locallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage
+        volume (hPm p).nullMeasurableSet le_add_tsub
   rw [hint, ← hPU, lintegral_iUnion hPm hPd, ← ENNReal.tsum_mul_left, ← ENNReal.tsum_mul_left]
   exact ⟨tsum_le_tsum fun p ↦ (hpiece p).1, tsum_le_tsum fun p ↦ (hpiece p).2⟩
 

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Subspace
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Countable rectifiability of fibres in the coarea setting
@@ -32,15 +33,17 @@ the fibre-rectifiability statements accompanying the coarea formula:
 
 ## The argument
 
-On Euclidean spaces, Kirszbraun's theorem (`LipschitzOnWith.extend_finite_dimension`) extends a map
-that is Lipschitz on `s` to a globally Lipschitz map `g`. Splitting each fibre `g ⁻¹' {y}` into its
-regular part—countably `(n - m)`-rectifiable for every `y`—and its complement—`μHE[n - m]`-null for
-almost every `y` by
+To use the inner-product coarea theory of `TauCeti.MeasureTheory.Function.Coarea.Lipschitz`,
+continuous linear equivalences first transport `E` and `F` to Euclidean spaces (preserving
+countable rectifiability and additive-Haar-null sets). There,
+`LipschitzOnWith.extend_finite_dimension` (Lipschitz extension into a finite-dimensional real normed
+space, which enlarges the Lipschitz constant by a dimension-dependent factor) extends a map that is
+Lipschitz on `s` to a globally Lipschitz map `g`. Splitting each fibre `g ⁻¹' {y}` into its regular
+part—countably `(n - m)`-rectifiable for every `y`—and its complement—`μHE[n - m]`-null for almost
+every `y` by
 `LipschitzWith.ae_euclideanHausdorffMeasure_compl_setOf_regular_inter_preimage_eq_zero`—makes almost
-every fibre of `g`, hence of `f` on `s`, countably `(n - m)`-rectifiable. Continuous linear
-equivalences with Euclidean spaces transfer both countable rectifiability and additive-Haar-null
-sets to arbitrary finite-dimensional real normed spaces, and second countability extends the result
-to locally Lipschitz maps on arbitrary sets.
+every fibre of `g`, hence of `f` on `s`, countably `(n - m)`-rectifiable. Second countability then
+extends the result to locally Lipschitz maps on arbitrary sets.
 
 ## Main statements
 
@@ -187,12 +190,11 @@ theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E} {K : �
   let E₀ := EuclideanSpace ℝ (Fin (finrank ℝ E))
   let F₀ := EuclideanSpace ℝ (Fin (finrank ℝ F))
   let eE : E ≃L[ℝ] E₀ :=
-    (LinearEquiv.ofFinrankEq E E₀
-      (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm).toContinuousLinearEquiv
+    ContinuousLinearEquiv.ofFinrankEq (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm
   let eF : F ≃L[ℝ] F₀ :=
-    (LinearEquiv.ofFinrankEq F F₀
-      (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm).toContinuousLinearEquiv
-  -- Transport `f` on `s` to `f₀` on `eE '' s ⊆ E₀`, and extend to `g₀ : E₀ → F₀` by Kirszbraun.
+    ContinuousLinearEquiv.ofFinrankEq (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm
+  -- Transport `f` on `s` to `f₀` on `eE '' s ⊆ E₀` (to use the inner-product coarea theory), and
+  -- extend `f₀` to a globally Lipschitz map `g₀ : E₀ → F₀`.
   let f₀ : E₀ → F₀ := eF ∘ f ∘ eE.symm
   have hf₀ : LipschitzOnWith (‖eF.toContinuousLinearMap‖₊ * (K * ‖eE.symm.toContinuousLinearMap‖₊))
       f₀ (eE '' s) := by
@@ -206,17 +208,9 @@ theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E} {K : �
       ae_countablyRectifiable_preimage_of_innerProductSpace hg₀
   -- Pull the almost-everywhere statement back along the linear isomorphism `eF`.
   have : (μ.map eF).IsAddHaarMeasure := eF.isAddHaarMeasure_map μ
-  have hmap : μ.map eF = addHaarScalarFactor (μ.map eF) volume • (volume : Measure F₀) :=
-    isAddLeftInvariant_eq_smul (μ.map eF) volume
-  let em := eF.toHomeomorph.toMeasurableEquiv
-  have hcoe : (em : F → F₀) = eF := rfl
-  have haeF : ∀ᵐ y ∂μ, CountablyRectifiable (finrank ℝ E - finrank ℝ F) (g₀ ⁻¹' {eF y}) := by
-    rw [ae_iff]
-    have h0 : (μ.map em)
-        {z : F₀ | ¬CountablyRectifiable (finrank ℝ E - finrank ℝ F) (g₀ ⁻¹' {z})} = 0 := by
-      rw [hcoe, hmap, smul_apply, ae_iff.1 hae₀, smul_zero]
-    rwa [MeasurableEquiv.map_apply] at h0
-  filter_upwards [haeF] with y hy
+  have hqmp : QuasiMeasurePreserving eF μ volume :=
+    ⟨eF.continuous.measurable, absolutelyContinuous_isAddHaarMeasure (μ.map eF) volume⟩
+  filter_upwards [hqmp.ae hae₀] with y hy
   -- Push `(eE '' s) ∩ g₀ ⁻¹' {eF y}` forward along the Lipschitz inverse `eE.symm`.
   have hsub : eE.symm '' (eE '' s ∩ g₀ ⁻¹' {eF y}) = s ∩ f ⁻¹' {y} := by
     ext x
@@ -274,21 +268,11 @@ openness nor measurability of `s` is required. -/
 theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E}
     (hf : LocallyLipschitzOn s f) :
     ∀ᵐ y ∂μ, CountablyRectifiable (finrank ℝ E - finrank ℝ F) (s ∩ f ⁻¹' {y}) := by
-  have hloc : ∀ x ∈ s, ∃ U, IsOpen U ∧ x ∈ U ∧ ∃ K, LipschitzOnWith K f (s ∩ U) := by
-    intro x hx
-    obtain ⟨K, t, ht, hK⟩ := hf hx
-    obtain ⟨U, hU, hxU, hUt⟩ := mem_nhdsWithin.1 ht
-    exact ⟨U, hU, hxU, K, hK.mono ((inter_comm s U).subset.trans hUt)⟩
-  choose! U hU hxU K hK using hloc
-  obtain ⟨c, hcs, hc, hcov⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (f := fun x ↦ s ∩ U x) fun x hx ↦ inter_mem_nhdsWithin s ((hU x hx).mem_nhds (hxU x hx))
-  have hae := (ae_ball_iff hc).2 fun x hx ↦
-    (hK x (hcs hx)).ae_countablyRectifiable_inter_preimage μ
-  filter_upwards [hae] with y hy
-  have : Countable c := hc.to_subtype
-  refine (CountablyRectifiable.iUnion fun x : c ↦ hy x x.2).mono fun z ⟨hzs, hzy⟩ ↦ ?_
-  obtain ⟨x, hxc, hzx⟩ := mem_iUnion₂.1 (hcov hzs)
-  exact mem_iUnion.2 ⟨⟨x, hxc⟩, hzx, hzy⟩
+  obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
+  filter_upwards [ae_all_iff.2 fun n ↦ (hK n).ae_countablyRectifiable_inter_preimage μ] with y hy
+  refine (CountablyRectifiable.iUnion hy).mono fun z ⟨hzs, hzy⟩ ↦ ?_
+  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcov hzs)
+  exact mem_iUnion.2 ⟨n, ⟨hzs, hn⟩, hzy⟩
 
 end LocallyLipschitzOn
 
