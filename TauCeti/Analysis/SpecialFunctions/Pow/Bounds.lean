@@ -48,6 +48,10 @@ If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 This reads off the growth of consecutive continued-fraction denominators from the lower error
 bound `1 / (q (q + q')) < |ξ - p / q|`.
 
+If `0 < t ≤ 1` and `ε ≤ A t` with `0 ≤ A`, then `t ^ (-ε) ≤ exp A`. This makes factors such as
+`a ^ (-ε)` uniformly bounded when the exponent `ε` shrinks with the radius `a`, as in Taubes's
+monotonicity inequality with `ε = C r ^ (-1/2)` and `a = c r ^ (-1/2)`.
+
 For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditive up to the constant
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
 weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -76,6 +80,7 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 * `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
   for `1 < q`, `0 < δ ≤ 1` and `0 ≤ r ≤ 1`.
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality.
+* `TauCeti.rpow_neg_le_exp`: `t ^ (-ε) ≤ exp A` for `0 < t ≤ 1`, `0 ≤ A` and `ε ≤ A t`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -291,6 +296,25 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
 end Real
 
 namespace TauCeti
+
+/-- A power of a radius in `(0, 1]` with exponent controlled by the radius itself is uniformly
+bounded: if `0 < t ≤ 1` and `ε ≤ A t` with `A ≥ 0`, then `t ^ (-ε) ≤ exp A`. -/
+theorem rpow_neg_le_exp {t ε A : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : 0 ≤ A) (hε : ε ≤ A * t) :
+    t ^ (-ε) ≤ Real.exp A := by
+  rw [Real.rpow_def_of_pos ht, Real.exp_le_exp]
+  have hlog : 0 ≤ -Real.log t := neg_nonneg.2 (Real.log_nonpos ht.le ht1)
+  -- `-log t = log t⁻¹ ≤ t⁻¹ - 1`, so `t (-log t) ≤ 1 - t ≤ 1`.
+  have htlog : t * -Real.log t ≤ 1 := by
+    have h := Real.log_le_sub_one_of_pos (inv_pos.2 ht)
+    rw [Real.log_inv] at h
+    have := mul_le_mul_of_nonneg_left h ht.le
+    rw [mul_sub, mul_inv_cancel₀ ht.ne', mul_one] at this
+    linarith
+  calc Real.log t * -ε = -Real.log t * ε := by ring
+    _ ≤ -Real.log t * (A * t) := mul_le_mul_of_nonneg_left hε hlog
+    _ = A * (t * -Real.log t) := by ring
+    _ ≤ A * 1 := mul_le_mul_of_nonneg_left htlog hA
+    _ = A := mul_one A
 
 /-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
 `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/

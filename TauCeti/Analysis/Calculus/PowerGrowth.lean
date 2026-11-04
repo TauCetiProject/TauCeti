@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Power growth from a differential inequality
@@ -131,25 +132,6 @@ theorem mul_le_mul_rpow_of_rpow_one_sub_le_mul_deriv {m : ℝ → ℝ} {a K r : 
   linarith
 
 /-! ### Almost-monotonicity with a curvature factor and a forcing term -/
-
-/-- A power of a radius in `(0, 1]` with exponent controlled by the radius itself is uniformly
-bounded: if `0 < t ≤ 1` and `ε ≤ A t` with `A ≥ 0`, then `t ^ (-ε) ≤ exp A`. -/
-theorem rpow_neg_le_exp {t ε A : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : 0 ≤ A) (hε : ε ≤ A * t) :
-    t ^ (-ε) ≤ Real.exp A := by
-  rw [Real.rpow_def_of_pos ht, Real.exp_le_exp]
-  have hlog : 0 ≤ -Real.log t := neg_nonneg.2 (Real.log_nonpos ht.le ht1)
-  -- `-log t = log t⁻¹ ≤ t⁻¹ - 1`, so `t (-log t) ≤ 1 - t ≤ 1`.
-  have htlog : t * -Real.log t ≤ 1 := by
-    have h := Real.log_le_sub_one_of_pos (inv_pos.2 ht)
-    rw [Real.log_inv] at h
-    have := mul_le_mul_of_nonneg_left h ht.le
-    rw [mul_sub, mul_inv_cancel₀ ht.ne', mul_one] at this
-    linarith
-  calc Real.log t * -ε = -Real.log t * ε := by ring
-    _ ≤ -Real.log t * (A * t) := mul_le_mul_of_nonneg_left hε hlog
-    _ = A * (t * -Real.log t) := by ring
-    _ ≤ A * 1 := mul_le_mul_of_nonneg_left htlog hA
-    _ = A := mul_one A
 
 /-- The logarithmic integration step: if `β f(t) ≤ t (1 + C t) f'(t)` at almost every
 `t ∈ (x, y)` for a function `f` monotone on `[x, y]` and positive at `x`, then `log f` increases
@@ -339,7 +321,7 @@ theorem le_mul_sq_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
     have hD't : 0 ≤ β * D / (4 - β) * t ^ (4 : ℝ) :=
       mul_nonneg (div_nonneg (by positivity) (by linarith)) (by positivity)
     have hD'b : β * D / (4 - β) * b ^ (4 : ℝ) ≤ D * b ^ 4 := by
-      rw [show (4 : ℝ) = ((4 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+      rw [Real.rpow_ofNat]
       exact mul_le_mul_of_nonneg_right hD'D (by positivity)
     nlinarith
   -- `ψ(t) ≤ t ^ β ≤ e ^ (2 A) t ^ 2`.
@@ -454,7 +436,7 @@ theorem mul_sq_le_of_le_half_mul_deriv_add_mul_pow_four {f : ℝ → ℝ} {a b C
           ring
   -- The forcing correction is at most `D t ^ 4 ≤ D b ^ 2 t ^ 2`.
   have h4 : β * D / (4 - β) * t ^ (4 : ℝ) ≤ D * b ^ 2 * t ^ 2 := by
-    rw [show (4 : ℝ) = ((4 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+    rw [Real.rpow_ofNat]
     have htb : t ^ 2 ≤ b ^ 2 := pow_le_pow_left₀ ht0.le ht.2 2
     calc β * D / (4 - β) * t ^ 4 ≤ D * t ^ 4 := mul_le_mul_of_nonneg_right hD'D (by positivity)
       _ = D * t ^ 2 * t ^ 2 := by ring
