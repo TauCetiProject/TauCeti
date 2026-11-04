@@ -26,9 +26,10 @@ this file does not establish the existence of pairwise separators on arbitrary c
 ## References
 
 * O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, §8,
-  Corollary 8.3, for the degree identity.
+  Corollary 8.3, for the polynomial equation of degree `deg β` satisfied by each meromorphic
+  function (the upper bound).
 * E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
-  d'Enfants*, Corollary 1.93, for the meromorphic field-degree theorem.
+  d'Enfants*, Corollary 1.93, for the equality `[M(X) : ℂ(t)] = degree β`.
 -/
 
 public section
