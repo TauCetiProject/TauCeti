@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Group.Pointwise.Interval
-public import Mathlib.Order.Interval.Set.UnorderedInterval
 
 /-!
 # Isometric maps of an interval into a linearly ordered group

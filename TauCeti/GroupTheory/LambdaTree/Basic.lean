@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.BundledFun
 public import TauCeti.Algebra.Order.Group.IntervalIsometry
 
 /-!
@@ -38,6 +39,7 @@ not a `ℤ`-tree, so geodesicity alone does not make a `Λ`-metric space a `Λ`-
 * `TauCeti.LambdaMetric.IsSegment d σ x y`: `σ` is a segment from `x` to `y`.
 * `TauCeti.LambdaMetric.IsGeodesic d`: any two points are joined by a segment.
 * `TauCeti.LambdaMetric.IsTree d`: `d` makes `X` a `Λ`-tree.
+* `TauCeti.LambdaMetric.IsTree.segment`: the unique segment `[x, y]` in a `Λ`-tree.
 
 ## Main results
 
@@ -64,62 +66,85 @@ namespace TauCeti
 
 open Set
 
-/-- A `Λ`-metric on `X`, for a linearly ordered abelian group `Λ`: a symmetric `Λ`-valued
-function on pairs of points, vanishing exactly on the diagonal and satisfying the triangle
-inequality. Nonnegativity follows (`TauCeti.LambdaMetric.dist_nonneg`). -/
-@[ext]
-structure LambdaMetric (Λ X : Type*) [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] where
-  /-- The distance between two points. -/
-  dist : X → X → Λ
-  dist_self (x : X) : dist x x = 0
-  eq_of_dist_eq_zero {x y : X} : dist x y = 0 → x = y
-  dist_comm (x y : X) : dist x y = dist y x
-  dist_triangle (x y z : X) : dist x z ≤ dist x y + dist y z
+/-- A `Λ`-metric on `X`, for a linearly ordered abelian group `Λ`: a `Λ`-valued pseudometric
+(Mathlib's `PseudoMetric X Λ`) vanishing only on the diagonal. Nonnegativity follows
+(`TauCeti.LambdaMetric.nonneg`). -/
+structure LambdaMetric (Λ X : Type*) [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ]
+    extends PseudoMetric X Λ where
+  eq_of_eq_zero' {x y : X} : toFun x y = 0 → x = y
 
 namespace LambdaMetric
-
-attribute [simp] dist_self
 
 variable {Λ X : Type*} [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ]
   (d : LambdaMetric Λ X)
 
-theorem dist_nonneg (x y : X) : 0 ≤ d.dist x y := by
-  have := d.dist_triangle x y x
-  rw [d.dist_self, d.dist_comm y x] at this
-  grind
+instance : FunLike (LambdaMetric Λ X) X (X → Λ) where
+  coe d := d.toPseudoMetric
+  coe_injective := fun ⟨_, _⟩ ⟨_, _⟩ h => by
+    congr
+    exact DFunLike.coe_injective h
 
 @[simp]
-theorem dist_eq_zero {x y : X} : d.dist x y = 0 ↔ x = y :=
-  ⟨d.eq_of_dist_eq_zero, fun h => h ▸ d.dist_self x⟩
+theorem coe_toPseudoMetric : ⇑d.toPseudoMetric = d :=
+  rfl
 
-theorem dist_pos {x y : X} : 0 < d.dist x y ↔ x ≠ y := by
-  rw [(d.dist_nonneg x y).lt_iff_ne', Ne, dist_eq_zero]
+@[ext]
+theorem ext {d d' : LambdaMetric Λ X} (h : ∀ x y, d x y = d' x y) : d = d' :=
+  DFunLike.coe_injective (funext₂ h)
+
+@[simp]
+protected theorem refl (x : X) : d x x = 0 :=
+  d.toPseudoMetric.refl x
+
+protected theorem symm (x y : X) : d x y = d y x :=
+  d.toPseudoMetric.symm x y
+
+protected theorem triangle (x y z : X) : d x z ≤ d x y + d y z :=
+  d.toPseudoMetric.triangle x y z
+
+protected theorem nonneg (x y : X) : 0 ≤ d x y :=
+  d.toPseudoMetric.nonneg x y
+
+@[simp]
+theorem eq_zero_iff {x y : X} : d x y = 0 ↔ x = y :=
+  ⟨d.eq_of_eq_zero', fun h => h ▸ d.refl x⟩
+
+theorem pos_iff {x y : X} : 0 < d x y ↔ x ≠ y := by
+  rw [(d.nonneg x y).lt_iff_ne', Ne, eq_zero_iff]
 
 variable (Λ) in
 /-- The `Λ`-metric `|a - b|` on `Λ` itself. -/
 def self : LambdaMetric Λ Λ where
-  dist a b := |a - b|
-  dist_self a := by simp
-  eq_of_dist_eq_zero h := sub_eq_zero.1 (abs_eq_zero.1 h)
-  dist_comm a b := abs_sub_comm a b
-  dist_triangle a b c := abs_sub_le a b c
+  toFun a b := |a - b|
+  refl' a := by simp
+  symm' a b := abs_sub_comm a b
+  triangle' a b c := abs_sub_le a b c
+  eq_of_eq_zero' h := sub_eq_zero.1 (abs_eq_zero.1 h)
 
 @[simp]
-theorem self_dist (a b : Λ) : (self Λ).dist a b = |a - b| :=
+theorem self_apply (a b : Λ) : (self Λ) a b = |a - b| :=
   (rfl)
 
 /-! ### Segments -/
 
 /-- `f` is isometric on the subset `s` of `Λ`: `d (f a) (f b) = |a - b|` for `a, b ∈ s`. -/
 def IsometricOn (f : Λ → X) (s : Set Λ) : Prop :=
-  ∀ a ∈ s, ∀ b ∈ s, d.dist (f a) (f b) = |a - b|
+  ∀ a ∈ s, ∀ b ∈ s, d (f a) (f b) = |a - b|
+
+theorem isometricOn_iff {f : Λ → X} {s : Set Λ} :
+    d.IsometricOn f s ↔ ∀ a ∈ s, ∀ b ∈ s, d (f a) (f b) = |a - b| :=
+  Iff.rfl
+
+theorem IsometricOn.dist_eq {d : LambdaMetric Λ X} {f : Λ → X} {s : Set Λ}
+    (h : d.IsometricOn f s) {a b : Λ} (ha : a ∈ s) (hb : b ∈ s) : d (f a) (f b) = |a - b| :=
+  h a ha b hb
 
 /-- `σ` is a segment from `x` to `y`: the image of the interval `[0, d x y]` under a map, isometric
 on it, sending `0` to `x` and `d x y` to `y`. By `TauCeti.LambdaMetric.isSegment_iff_exists_Icc`
 any closed interval `[a, b]` of `Λ` may be used instead of `[0, d x y]`. -/
 def IsSegment (σ : Set X) (x y : X) : Prop :=
-  ∃ f : Λ → X, f 0 = x ∧ f (d.dist x y) = y ∧ d.IsometricOn f (Icc 0 (d.dist x y)) ∧
-    f '' Icc 0 (d.dist x y) = σ
+  ∃ f : Λ → X, f 0 = x ∧ f (d x y) = y ∧ d.IsometricOn f (Icc 0 (d x y)) ∧
+    f '' Icc 0 (d x y) = σ
 
 variable {d}
 
@@ -128,9 +153,9 @@ the endpoints. -/
 theorem isSegment_iff_exists_Icc {σ : Set X} {x y : X} :
     d.IsSegment σ x y ↔ ∃ a b : Λ, ∃ f : Λ → X, a ≤ b ∧ f a = x ∧ f b = y ∧
       d.IsometricOn f (Icc a b) ∧ f '' Icc a b = σ := by
-  refine ⟨fun ⟨f, h0, h1, hf, hσ⟩ => ⟨0, _, f, d.dist_nonneg x y, h0, h1, hf, hσ⟩, ?_⟩
+  refine ⟨fun ⟨f, h0, h1, hf, hσ⟩ => ⟨0, _, f, d.nonneg x y, h0, h1, hf, hσ⟩, ?_⟩
   rintro ⟨a, b, f, hab, rfl, rfl, hf, rfl⟩
-  have hD : d.dist (f a) (f b) = b - a := by
+  have hD : d (f a) (f b) = b - a := by
     rw [hf a ⟨le_rfl, hab⟩ b ⟨hab, le_rfl⟩, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hab)]
   have hmem {s : Λ} (hs : s ∈ Icc 0 (b - a)) : a + s ∈ Icc a b :=
     ⟨le_add_of_nonneg_right hs.1, by grind⟩
@@ -146,11 +171,11 @@ variable {σ τ : Set X} {x y : X}
 
 theorem left_mem (h : d.IsSegment σ x y) : x ∈ σ := by
   obtain ⟨f, rfl, -, -, rfl⟩ := h
-  exact mem_image_of_mem f ⟨le_rfl, d.dist_nonneg _ _⟩
+  exact mem_image_of_mem f ⟨le_rfl, d.nonneg _ _⟩
 
 theorem right_mem (h : d.IsSegment σ x y) : y ∈ σ := by
   obtain ⟨f, -, h1, -, rfl⟩ := h
-  exact ⟨_, ⟨d.dist_nonneg _ _, le_rfl⟩, h1⟩
+  exact ⟨_, ⟨d.nonneg _ _, le_rfl⟩, h1⟩
 
 /-- A segment from `x` to `y` is a segment from `y` to `x`. -/
 theorem symm (h : d.IsSegment σ x y) : d.IsSegment σ y x := by
@@ -165,18 +190,18 @@ theorem symm (h : d.IsSegment σ x y) : d.IsSegment σ y x := by
 /-- In a segment, every distance up to the distance between two of its points is realised from
 the first of them. -/
 theorem exists_dist_eq (h : d.IsSegment σ x y) {u v : X} (hu : u ∈ σ) (hv : v ∈ σ) {r : Λ}
-    (hr₀ : 0 ≤ r) (hr : r ≤ d.dist u v) : ∃ w ∈ σ, d.dist u w = r := by
+    (hr₀ : 0 ≤ r) (hr : r ≤ d u v) : ∃ w ∈ σ, d u w = r := by
   obtain ⟨f, -, -, hf, rfl⟩ := h
   obtain ⟨s, hs, rfl⟩ := hu
   obtain ⟨t, ht, rfl⟩ := hv
   rw [hf s hs t ht] at hr
   rcases le_total s t with hst | hts
   · rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hst)] at hr
-    have hmem : s + r ∈ Icc 0 (d.dist x y) := ⟨by grind, by grind⟩
+    have hmem : s + r ∈ Icc 0 (d x y) := ⟨by grind, by grind⟩
     exact ⟨f (s + r), mem_image_of_mem f hmem, by
       rw [hf s hs _ hmem, sub_add_cancel_left, abs_neg, abs_of_nonneg hr₀]⟩
   · rw [abs_of_nonneg (sub_nonneg.2 hts)] at hr
-    have hmem : s - r ∈ Icc 0 (d.dist x y) := ⟨by grind, by grind⟩
+    have hmem : s - r ∈ Icc 0 (d x y) := ⟨by grind, by grind⟩
     exact ⟨f (s - r), mem_image_of_mem f hmem, by rw [hf s hs _ hmem, sub_sub_cancel,
       abs_of_nonneg hr₀]⟩
 
@@ -188,25 +213,25 @@ theorem eq_of_subset {ρ : Set X} {p q : X} (hσ : d.IsSegment σ x y) (hρ : d.
   obtain ⟨g, -, -, hg, rfl⟩ := hρ
   -- Write the parametrisation `g` of `ρ` as `f ∘ h`; then `h` is an isometric map of an interval
   -- into `Λ`, so its image is an interval, which contains both ends of `[0, d x y]`.
-  have hfac : ∀ s ∈ Icc 0 (d.dist p q), ∃ r ∈ Icc 0 (d.dist x y), f r = g s :=
+  have hfac : ∀ s ∈ Icc 0 (d p q), ∃ r ∈ Icc 0 (d x y), f r = g s :=
     fun s hs => hsub (mem_image_of_mem g hs)
   choose! h hhD hfh using hfac
-  have hh : ∀ s ∈ Icc 0 (d.dist p q), ∀ t ∈ Icc 0 (d.dist p q), |h s - h t| = |s - t| :=
+  have hh : ∀ s ∈ Icc 0 (d p q), ∀ t ∈ Icc 0 (d p q), |h s - h t| = |s - t| :=
     fun s hs t ht => by rw [← hf _ (hhD s hs) _ (hhD t ht), hfh s hs, hfh t ht, hg s hs t ht]
-  have himage := image_Icc_eq_uIcc_of_abs_sub_eq (d.dist_nonneg p q) hh
+  have himage := image_Icc_eq_uIcc_of_abs_sub_eq (d.nonneg p q) hh
   -- A point of `σ` lying in `ρ` has its parameter in the image of `h`.
-  have hmem {r : Λ} (hr : r ∈ Icc 0 (d.dist x y)) (hr' : f r ∈ g '' Icc 0 (d.dist p q)) :
-      r ∈ uIcc (h 0) (h (d.dist p q)) := by
+  have hmem {r : Λ} (hr : r ∈ Icc 0 (d x y)) (hr' : f r ∈ g '' Icc 0 (d p q)) :
+      r ∈ uIcc (h 0) (h (d p q)) := by
     obtain ⟨s, hs, hgs⟩ := hr'
-    have : |h s - r| = 0 := by rw [← hf _ (hhD s hs) _ hr, hfh s hs, hgs, d.dist_self]
+    have : |h s - r| = 0 := by rw [← hf _ (hhD s hs) _ hr, hfh s hs, hgs, d.refl]
     rw [abs_eq_zero, sub_eq_zero] at this
     exact himage ▸ ⟨s, hs, this⟩
-  have h0 := hmem ⟨le_rfl, d.dist_nonneg x y⟩ (by rwa [hf0])
-  have hD := hmem ⟨d.dist_nonneg x y, le_rfl⟩ (by rwa [hfD])
+  have h0 := hmem ⟨le_rfl, d.nonneg x y⟩ (by rwa [hf0])
+  have hD := hmem ⟨d.nonneg x y, le_rfl⟩ (by rwa [hfD])
   refine hsub.antisymm ?_
   rintro _ ⟨r, hr, rfl⟩
-  have hr' : r ∈ uIcc (h 0) (h (d.dist p q)) :=
-    uIcc_subset_uIcc h0 hD (by rwa [uIcc_of_le (d.dist_nonneg x y)])
+  have hr' : r ∈ uIcc (h 0) (h (d p q)) :=
+    uIcc_subset_uIcc h0 hD (by rwa [uIcc_of_le (d.nonneg x y)])
   rw [← himage] at hr'
   obtain ⟨s, hs, rfl⟩ := hr'
   exact ⟨s, hs, (hfh s hs).symm⟩
@@ -219,7 +244,7 @@ theorem isSegment_comm {σ : Set X} {x y : X} : d.IsSegment σ x y ↔ d.IsSegme
 /-- The only segment from a point to itself is the singleton. -/
 @[simp]
 theorem isSegment_self_iff {σ : Set X} {x : X} : d.IsSegment σ x x ↔ σ = {x} := by
-  simp only [IsSegment, d.dist_self, Icc_self, image_singleton]
+  simp only [IsSegment, d.refl, Icc_self, image_singleton]
   refine ⟨fun ⟨f, h0, _, _, hσ⟩ => by rw [← hσ, h0], fun h => ⟨fun _ => x, rfl, rfl, ?_, h.symm⟩⟩
   rintro a rfl b rfl
   simp
@@ -248,19 +273,34 @@ theorem IsTree.isSegment_unique (hd : d.IsTree) {σ τ : Set X} {x y : X}
   exact (hσ.eq_of_subset hστ inter_subset_left hx hy).symm.trans
     (hτ.eq_of_subset hστ inter_subset_right hx hy)
 
+/-- The segment `[x, y]` in a `Λ`-tree, unique by
+`TauCeti.LambdaMetric.IsTree.isSegment_unique`. -/
+noncomputable def IsTree.segment (hd : d.IsTree) (x y : X) : Set X :=
+  (hd.isGeodesic x y).choose
+
+theorem IsTree.isSegment_segment (hd : d.IsTree) (x y : X) : d.IsSegment (hd.segment x y) x y :=
+  (hd.isGeodesic x y).choose_spec
+
+/-- In a `Λ`-tree, the segments from `x` to `y` are exactly `[x, y]`. -/
+theorem IsTree.isSegment_iff_eq_segment (hd : d.IsTree) {σ : Set X} {x y : X} :
+    d.IsSegment σ x y ↔ σ = hd.segment x y :=
+  ⟨fun h => hd.isSegment_unique h (hd.isSegment_segment x y),
+    fun h => h ▸ hd.isSegment_segment x y⟩
+
 /-! ### Examples -/
 
 /-- The segments of `Λ` are its closed intervals. -/
 theorem self_isSegment_iff {σ : Set Λ} {a b : Λ} : (self Λ).IsSegment σ a b ↔ σ = uIcc a b := by
   refine ⟨fun ⟨f, h0, h1, hf, hσ⟩ => ?_, ?_⟩
-  · rw [← hσ, image_Icc_eq_uIcc_of_abs_sub_eq ((self Λ).dist_nonneg a b)
-      fun s hs t ht => (self_dist _ _).symm.trans (hf s hs t ht), h0, h1]
+  · rw [← hσ, image_Icc_eq_uIcc_of_abs_sub_eq ((self Λ).nonneg a b)
+      fun s hs t ht => (self_apply _ _).symm.trans (hf s hs t ht), h0, h1]
   rintro rfl
   rw [isSegment_iff_exists_Icc]
   rcases le_total a b with hab | hba
-  · refine ⟨a, b, id, hab, rfl, rfl, fun s _ t _ => self_dist s t, by rw [image_id, uIcc_of_le hab]⟩
+  · exact ⟨a, b, id, hab, rfl, rfl, fun s _ t _ => self_apply s t,
+      by rw [image_id, uIcc_of_le hab]⟩
   · refine ⟨b, a, fun s => a + b - s, hba, by simp, by simp, fun s _ t _ => ?_, ?_⟩
-    · rw [self_dist, sub_sub_sub_cancel_left, abs_sub_comm]
+    · rw [self_apply, sub_sub_sub_cancel_left, abs_sub_comm]
     · rw [image_const_sub_Icc, add_sub_cancel_right, add_sub_cancel_left, uIcc_of_ge hba]
 
 /-- `Λ`, with the metric `|a - b|`, is a `Λ`-tree. -/
@@ -315,21 +355,21 @@ section CycleFour
 variable {d : LambdaMetric ℤ X}
 
 /-- Two points at distance `1` in a `ℤ`-metric space form a segment. -/
-private theorem isSegment_pair {x y : X} (h : d.dist x y = 1) : d.IsSegment {x, y} x y := by
+private theorem isSegment_pair {x y : X} (h : d x y = 1) : d.IsSegment {x, y} x y := by
   have hI : Icc (0 : ℤ) 1 = {0, 1} := by
     ext t
     simp only [mem_Icc, mem_insert_iff, mem_singleton_iff]
     omega
   refine ⟨fun t => if t ≤ 0 then x else y, by simp, by simp [h], ?_, ?_⟩
   · rw [h, hI]
-    rintro s (rfl | rfl) t (rfl | rfl) <;> simp [h, d.dist_comm y x]
+    rintro s (rfl | rfl) t (rfl | rfl) <;> simp [h, d.symm y x]
   · rw [h, hI, image_pair]
     simp
 
 /-- Three points `x, m, y` with `d x m = d m y = 1` and `d x y = 2` in a `ℤ`-metric space form a
 segment. -/
-private theorem isSegment_triple {x m y : X} (hxm : d.dist x m = 1) (hmy : d.dist m y = 1)
-    (hxy : d.dist x y = 2) : d.IsSegment {x, m, y} x y := by
+private theorem isSegment_triple {x m y : X} (hxm : d x m = 1) (hmy : d m y = 1)
+    (hxy : d x y = 2) : d.IsSegment {x, m, y} x y := by
   have hI : Icc (0 : ℤ) 2 = {0, 1, 2} := by
     ext t
     simp only [mem_Icc, mem_insert_iff, mem_singleton_iff]
@@ -337,7 +377,7 @@ private theorem isSegment_triple {x m y : X} (hxm : d.dist x m = 1) (hmy : d.dis
   refine ⟨fun t => if t ≤ 0 then x else if t ≤ 1 then m else y, by simp, by simp [hxy], ?_, ?_⟩
   · rw [hxy, hI]
     rintro s (rfl | rfl | rfl) t (rfl | rfl | rfl) <;>
-      simp [hxm, hmy, hxy, d.dist_comm m x, d.dist_comm y m, d.dist_comm y x]
+      simp [hxm, hmy, hxy, d.symm m x, d.symm y m, d.symm y x]
   · rw [hxy, hI, image_insert_eq, image_pair]
     simp
 
@@ -345,18 +385,18 @@ end CycleFour
 
 /-- The path metric on the vertices `0, 1, 2, 3` of a cycle of length four. -/
 private def cycleFour : LambdaMetric ℤ (Fin 4) where
-  dist i j := if i = j then 0 else if i - j = 2 then 2 else 1
-  dist_self i := by simp
-  eq_of_dist_eq_zero {i j} := by revert i j; decide
-  dist_comm := by decide
-  dist_triangle := by decide
+  toFun i j := if i = j then 0 else if i - j = 2 then 2 else 1
+  refl' i := by simp
+  symm' := by decide
+  triangle' := by decide
+  eq_of_eq_zero' {i j} := by revert i j; decide
 
 /-- A geodesic `Λ`-metric space need not be a `Λ`-tree: the vertices of a cycle of length four,
 with the path metric, form a geodesic `ℤ`-metric space in which the two segments `{0, 1, 2}` and
 `{0, 3, 2}` from `0` to `2` meet in `{0, 2}`, which is not a segment, so (T3) fails. -/
 theorem exists_isGeodesic_not_isTree : ∃ d : LambdaMetric ℤ (Fin 4), d.IsGeodesic ∧ ¬d.IsTree := by
-  have hdist : ∀ x y : Fin 4, x = y ∨ cycleFour.dist x y = 1 ∨
-      (cycleFour.dist x (x + 1) = 1 ∧ cycleFour.dist (x + 1) y = 1 ∧ cycleFour.dist x y = 2) := by
+  have hdist : ∀ x y : Fin 4, x = y ∨ cycleFour x y = 1 ∨
+      (cycleFour x (x + 1) = 1 ∧ cycleFour (x + 1) y = 1 ∧ cycleFour x y = 2) := by
     decide
   refine ⟨cycleFour, fun x y => ?_, fun hd => ?_⟩
   · rcases hdist x y with rfl | h | ⟨h₁, h₂, h₃⟩
