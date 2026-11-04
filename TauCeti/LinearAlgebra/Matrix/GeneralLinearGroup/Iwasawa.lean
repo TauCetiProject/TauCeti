@@ -110,8 +110,7 @@ private theorem coe_map_of_mem_posDiagonalSubgroup {a : GL (Fin n) ℝ}
     {d : Fin n → ℝ} (ha : (a : Matrix (Fin n) (Fin n) ℝ) = diagonal d) :
     (GeneralLinearGroup.map (algebraMap ℝ 𝕜) a : Matrix (Fin n) (Fin n) 𝕜) =
       diagonal fun i => (d i : 𝕜) := by
-  change (a : Matrix (Fin n) (Fin n) ℝ).map (algebraMap ℝ 𝕜) = _
-  rw [ha, diagonal_map (map_zero _)]
+  rw [GeneralLinearGroup.val_map_apply, ha, diagonal_map (map_zero _)]
 
 /-- A positive real diagonal matrix times an upper unitriangular matrix is upper triangular with
 positive diagonal. -/
