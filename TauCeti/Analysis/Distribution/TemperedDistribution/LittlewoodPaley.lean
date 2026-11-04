@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 
 /-!
 # The inhomogeneous Littlewood–Paley decomposition of a tempered distribution
