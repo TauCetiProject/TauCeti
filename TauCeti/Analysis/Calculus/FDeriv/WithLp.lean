@@ -23,7 +23,8 @@ corresponding coordinate direction: along the line `s ↦ (s, y)` in the first f
 `fderiv 𝕜 g (t, y) (1, 0)`, and on the slice `z ↦ (t, z)` it is `w ↦ fderiv 𝕜 g (t, y) (0, w)`.
 These are the chain rules used to compute integrals over a half-space `{x | a < x.fst}` one
 normal line or one tangential slice at a time, as in Fubini-type proofs of the divergence
-theorem. The file also computes the derivative of the normal graph parametrization
+theorem. A map `w ↦ (f w, g w)` into the product is differentiated componentwise. The file also
+computes the derivative of the normal graph parametrization
 `y ↦ (φ y, y)`: it is the graph `x ↦ (A x, x)` of the derivative `A` of `φ`, so its
 geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
 
@@ -33,6 +34,10 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   its derivative in the direction `(1, 0)`.
 * `TauCeti.fderiv_comp_toLp_snd`: the derivative of `g` on a slice of the second factor is its
   derivative in the direction `(0, w)`.
+* `TauCeti.fderiv_toLp_prodMk_apply`: the derivative of `w ↦ (f w, g w)` is `v ↦ (df v, dg v)`.
+* `TauCeti.norm_fderiv_le_norm_fderiv_toLp_graph`, `TauCeti.norm_fderiv_toLp_graph_apply_sq`:
+  the derivative of a graph `w ↦ (w, u w)` dominates that of `u`, and in the Euclidean product
+  its squared length is `‖v‖² + ‖du v‖²`.
 * `HasFDerivAt.normalGraphEmbedding`: the derivative of a graph parametrization is the graph of
   the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
@@ -77,6 +82,38 @@ theorem fderiv_comp_toLp_snd {g : WithLp p (F × E) → G} {t : F} {y : E}
       ((hasFDerivAt_const t y).prodMk (hasFDerivAt_id y))
   have h : HasFDerivAt (fun z : E ↦ g (WithLp.toLp p (t, z))) _ y := hg.hasFDerivAt.comp y hl
   rw [h.fderiv]
+  simp
+
+/-- The derivative of a map `w ↦ (f w, g w)` into `WithLp p (F × E)`, applied to a direction `v`,
+is `(df v, dg v)`. -/
+theorem fderiv_toLp_prodMk_apply {f : G → F} {g : G → E} {y : G}
+    (hf : DifferentiableAt 𝕜 f y) (hg : DifferentiableAt 𝕜 g y) (v : G) :
+    fderiv 𝕜 (fun w ↦ WithLp.toLp p (f w, g w)) y v =
+      WithLp.toLp p (fderiv 𝕜 f y v, fderiv 𝕜 g y v) := by
+  have h : HasFDerivAt (fun w ↦ WithLp.toLp p (f w, g w))
+      ((WithLp.prodContinuousLinearEquiv p 𝕜 F E).symm.toContinuousLinearMap.comp
+        ((fderiv 𝕜 f y).prod (fderiv 𝕜 g y))) y :=
+    (WithLp.prodContinuousLinearEquiv p 𝕜 F E).symm.hasFDerivAt.comp y
+      (hf.hasFDerivAt.prodMk hg.hasFDerivAt)
+  rw [h.fderiv]
+  simp
+
+/-- The derivative of a graph `w ↦ (w, u w)` in the `L^p` product dominates the derivative
+of `u`. -/
+theorem norm_fderiv_le_norm_fderiv_toLp_graph {u : F → E} {y : F}
+    (hu : DifferentiableAt 𝕜 u y) :
+    ‖fderiv 𝕜 u y‖ ≤ ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (w, u w)) y‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
+    have h := (WithLp.norm_snd_le (x := fderiv 𝕜 (fun w ↦ WithLp.toLp p (w, u w)) y v)).trans
+      (ContinuousLinearMap.le_opNorm _ v)
+    rwa [fderiv_toLp_prodMk_apply differentiableAt_fun_id hu, WithLp.toLp_snd] at h
+
+/-- In the Euclidean product, the derivative of a graph `w ↦ (w, u w)` in the direction `v` has
+squared length `‖v‖² + ‖du v‖²`. -/
+theorem norm_fderiv_toLp_graph_apply_sq {u : F → E} {y : F} (hu : DifferentiableAt 𝕜 u y)
+    (v : F) :
+    ‖fderiv 𝕜 (fun w ↦ WithLp.toLp 2 (w, u w)) y v‖ ^ 2 = ‖v‖ ^ 2 + ‖fderiv 𝕜 u y v‖ ^ 2 := by
+  rw [fderiv_toLp_prodMk_apply differentiableAt_fun_id hu, WithLp.prod_norm_sq_eq_of_L2]
   simp
 
 section NormalGraph
