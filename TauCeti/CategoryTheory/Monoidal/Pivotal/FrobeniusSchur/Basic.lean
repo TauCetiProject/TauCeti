@@ -48,7 +48,8 @@ isomorphism, and `ν_1(V)` is the rank of `𝟙_ C ⟶ V` when that module is fi
 * `TauCeti.frobeniusSchurEnd`: the same operator as a `k`-linear endomorphism, of order dividing
   `n + 1` (`TauCeti.frobeniusSchurEnd_pow_eq_one`);
 * `TauCeti.frobeniusSchurIndicator`: the indicator `ν_n(V)`, with
-  `TauCeti.frobeniusSchurIndicator_congr` and `TauCeti.frobeniusSchurIndicator_one`.
+  `TauCeti.frobeniusSchurIndicator_congr`, `TauCeti.frobeniusSchurIndicator_one`, and
+  `TauCeti.frobeniusSchurIndicator_two`.
 
 ## References
 
@@ -81,6 +82,16 @@ theorem pivotalRotate_def {X Y : C} (f : 𝟙_ C ⟶ X ⊗ Y) :
     pivotalRotate f = @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) ⊗≫ Xᘁ ◁ f ▷ X ⊗≫
       ε_ X Xᘁ ▷ Y ▷ X ⊗≫ 𝟙 _ :=
   (rfl)
+
+/-- Rotating the coevaluation `η_ X Xᘁ : 𝟙_ C ⟶ X ⊗ Xᘁ` yields the coevaluation of
+`pivotalExactPairing X`. -/
+@[simp]
+theorem pivotalRotate_coevaluation (X : C) :
+    pivotalRotate (η_ X Xᘁ) = @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) := by
+  rw [pivotalRotate_def]
+  calc _ = @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) ⊗≫
+        (Xᘁ ◁ η_ X Xᘁ ⊗≫ ε_ X Xᘁ ▷ Xᘁ) ▷ X ⊗≫ 𝟙 _ := by monoidal
+    _ = _ := by rw [coevaluation_evaluation'']; monoidal
 
 /-- The rotation is natural in the second factor. -/
 theorem pivotalRotate_comp_whiskerLeft {X Y Y' : C} (f : 𝟙_ C ⟶ X ⊗ Y) (g : Y ⟶ Y') :
@@ -290,6 +301,11 @@ noncomputable def frobeniusSchurIndicator (n : ℕ+) : k :=
 /-- The indicator `ν_{n+1}(V)` is the trace of `frobeniusSchurEnd k V n`. -/
 theorem frobeniusSchurIndicator_succPNat (n : ℕ) :
     frobeniusSchurIndicator k V n.succPNat = LinearMap.trace k _ (frobeniusSchurEnd k V n) :=
+  (rfl)
+
+/-- The second Frobenius–Schur indicator `ν₂(V)` is the trace of `frobeniusSchurEnd k V 1`. -/
+theorem frobeniusSchurIndicator_two :
+    frobeniusSchurIndicator k V 2 = LinearMap.trace k _ (frobeniusSchurEnd k V 1) :=
   (rfl)
 
 /-- The first Frobenius–Schur indicator is the dimension of `𝟙_ C ⟶ V`, since `E_V^{(1)}` is the
