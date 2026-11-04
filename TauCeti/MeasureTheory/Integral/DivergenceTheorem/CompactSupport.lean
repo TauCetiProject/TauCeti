@@ -96,7 +96,10 @@ theorem integral_fderiv_one_add_fderiv_I_eq_zero {f g : ℂ → ℝ}
     ∫ z, fderiv ℝ f z 1 + fderiv ℝ g z I = 0 := by
   -- Transport along the coordinates `ℝ² ≃ ℂ`, `p ↦ p 0 + p 1 * I`, which preserve volume.
   let L : (Fin 2 → ℝ) ≃L[ℝ] ℂ := basisOneI.equivFun.toContinuousLinearEquiv.symm
-  have hL : (L : (Fin 2 → ℝ) → ℂ) = measurableEquivPi.symm := rfl
+  have hL : (L : (Fin 2 → ℝ) → ℂ) = measurableEquivPi.symm := by
+    funext p
+    simp [L, measurableEquivPi_symm_apply, Module.Basis.equivFun_symm_apply,
+      Fin.sum_univ_two]
   let F : (Fin 2 → ℝ) → (Fin 2 → ℝ) := fun p ↦ ![f (L p), g (L p)]
   have hF : Differentiable ℝ F := differentiable_pi.2 fun i ↦ by
     fin_cases i
@@ -111,17 +114,19 @@ theorem integral_fderiv_one_add_fderiv_I_eq_zero {f g : ℂ → ℝ}
     exact hp (by simp [F, hf0, hg0])
   have hdivF (p : Fin 2 → ℝ) : ∑ i : Fin 2, fderiv ℝ F p (Pi.single i 1) i =
       fderiv ℝ f (L p) 1 + fderiv ℝ g (L p) I := by
-    -- Componentwise derivatives; `ContinuousLinearMap.proj` applies the coordinate.
+    -- Componentwise derivatives: the `i`-th coordinate of `fderiv ℝ F p` is the derivative of
+    -- `fun q ↦ F q i`.
     have hcomp (i : Fin 2) (v : Fin 2 → ℝ) :
         fderiv ℝ F p v i = fderiv ℝ (fun q ↦ F q i) p v := by
-      rw [(hasFDerivAt_pi'.1 (hF p).hasFDerivAt i).fderiv]; rfl
-    simp only [Fin.sum_univ_two, hcomp]
+      simp only [fderiv_apply (hF p) i, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.proj_apply]
     have h0 : L (Pi.single 0 1) = 1 := by rw [hL]; simp
     have h1 : L (Pi.single 1 1) = I := by rw [hL]; simp
-    -- The coordinates of `F` are `f ∘ L` and `g ∘ L`.
-    change fderiv ℝ (f ∘ L) p _ + fderiv ℝ (g ∘ L) p _ = _
-    simp only [L.comp_right_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      h0, h1]
+    -- The coordinates of `F` are `fun q ↦ f (L q)` and `fun q ↦ g (L q)`.
+    simp only [Fin.sum_univ_two, hcomp, F, Matrix.cons_val_zero, Matrix.cons_val_one,
+      fderiv_fun_comp p (hf (L p)) L.differentiableAt,
+      fderiv_fun_comp p (hg (L p)) L.differentiableAt,
+      L.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, h0, h1]
   have h : ∫ p : Fin 2 → ℝ, fderiv ℝ f (L p) 1 + fderiv ℝ g (L p) I = 0 := by
     simpa only [hdivF] using integral_divergence_eq_zero_of_differentiable hF hFc (by
       simp only [hdivF, hL]
