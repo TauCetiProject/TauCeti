@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Barrier
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
-import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Hessian.Classical
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
-import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 
 /-!
 # The Dirichlet problem for Poisson's equation
