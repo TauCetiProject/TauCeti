@@ -230,7 +230,7 @@ noncomputable def weightReesHom : (MvPolynomial σ R)[X] →ₐ[R] (MvPolynomial
 variable {R w}
 
 @[simp]
-theorem weightReesHom_C (p : MvPolynomial σ R) :
+theorem weightReesHom_C {p : MvPolynomial σ R} :
     weightReesHom R w (Polynomial.C p) =
       aeval (fun i ↦ Polynomial.C (X i) * Polynomial.X ^ w i) p :=
   Polynomial.aevalTower_C _ _ _
