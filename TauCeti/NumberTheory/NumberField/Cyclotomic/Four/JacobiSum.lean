@@ -169,9 +169,34 @@ theorem jacobiSum_powerResidueSymbol_four_eq {π : 𝓞 K} (hπ : P = span {π})
       RingOfIntegers.natCast_absNorm_span_singleton_of_four]
   have h := neg_apply_neg_one_mul_jacobiSum_eq_of_dvd (orderOf_powerResidueSymbol hP) hπ' hN hdvd
   -- Multiply by `-χ (-1)`, using `χ (-1) ^ 2 = χ (1) = 1`.
-  have hsq : powerResidueSymbol P 4 (-1) * powerResidueSymbol P 4 (-1) = 1 := by
-    rw [← map_mul, neg_one_mul, neg_neg, map_one]
   rw [← h]
-  linear_combination (-jacobiSum (powerResidueSymbol P 4) (powerResidueSymbol P 4)) * hsq
+  linear_combination (-jacobiSum (powerResidueSymbol P 4) (powerResidueSymbol P 4)) *
+    (powerResidueSymbol P 4).apply_neg_one_mul_self
 
 end Ideal
+
+section Examples
+
+open Ideal
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K] {ζ : K}
+  (hζ : IsPrimitiveRoot ζ 4) {P : Ideal (𝓞 K)} [P.IsMaximal] [Fintype (𝓞 K ⧸ P)]
+  (hP : P = span {((-1 : ℤ) : 𝓞 K) + (2 : ℤ) * hζ.toInteger})
+include hP
+
+/- The primary element `π = -1 + 2i` generates a prime of norm `5`. The quartic residue symbol at
+that prime takes the value `(-1) ^ ((5 - 1) / 4) = -1` at `-1`, so the Jacobi sum is `π`
+itself. -/
+example : jacobiSum (powerResidueSymbol P 4) (powerResidueSymbol P 4) =
+    ((-1 : ℤ) : 𝓞 K) + (2 : ℤ) * hζ.toInteger := by
+  have hN : absNorm P = 5 := by
+    rw [hP, absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_four]
+    rfl
+  have h : powerResidueSymbol P 4 (-1) = -1 := by
+    rw [← map_one (Ideal.Quotient.mk P), ← map_neg,
+      powerResidueSymbol_mk_of_pow_eq_one (by rw [hN]; decide) (by norm_num), hN]
+    norm_num
+  rw [jacobiSum_powerResidueSymbol_four_eq hP (by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide),
+    h, neg_neg, one_mul]
+
+end Examples
