@@ -200,6 +200,17 @@ lemma localHomologyMap_comp_localHomologyRestriction {S : Set M} {T T' : Set N} 
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _))
 
+/-- **Homotopy invariance of the maps of local homology.** Maps `j₀, j₁ : M → N` joined by a
+homotopy that never sends a point outside `S` into `T` induce the same map
+`Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)`. -/
+theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy j₁) {S : Set M}
+    {T : Set N} (hF : ∀ (τ : unitInterval) (y : M), y ∉ S → F (τ, y) ∉ T)
+    (h₀ : j₀ ⁻¹' T ⊆ S) (h₁ : j₁ ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyMap R j₀ h₀ k = localHomologyMap R j₁ h₁ k :=
+  (TopPair.ofSubsetHomotopy (g₀ := TopCat.ofHom j₀) (g₁ := TopCat.ofHom j₁)
+    (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
+    fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
+
 end Map
 
 section Chart
