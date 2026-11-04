@@ -131,6 +131,15 @@ theorem listMinHeight_map {W : Type*} [AddCommMonoid W] [Module 𝕜 W]
   | nil => simp
   | cons v l ih => simp [listMinHeight_cons, ih]
 
+/-- Nonnegative dilation multiplies every vertex height and its minimum by the same scalar. -/
+theorem listMinHeight_map_smul [PosMulMono 𝕜] {a : 𝕜} (ha : 0 ≤ a) (l : List V) :
+    listMinHeight f (l.map (a • ·)) = a * listMinHeight f l := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    simp only [List.map_cons, listMinHeight_cons, map_smul, smul_eq_mul, ih, ← mul_add]
+    rw [mul_min_of_nonneg _ _ ha, mul_zero]
+
 theorem listMinHeight_nonpos (l : List V) : listMinHeight f l ≤ 0 := by
   cases l <;> simp
 
@@ -274,6 +283,13 @@ theorem minHeight_map {W : Type*} [AddCommGroup W] [Module 𝕜 W]
     (p.map g).minHeight f' = p.minHeight (f'.comp g) := by
   obtain ⟨l, rfl⟩ := ofSegments_surjective p
   simp only [map_ofSegments, minHeight_ofSegments, listMinHeight_map]
+
+/-- Nonnegative dilation scales the minimum running height. -/
+theorem minHeight_map_smul {a : 𝕜} (ha : 0 ≤ a) (p : PLPath 𝕜 V) :
+    (p.map (a • LinearMap.id)).minHeight f = a * p.minHeight f := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  simpa only [map_ofSegments, minHeight_ofSegments, LinearMap.coe_smul, Pi.smul_def,
+    LinearMap.id_apply] using listMinHeight_map_smul (f := f) ha l
 
 @[simp]
 theorem minHeight_one : (1 : PLPath 𝕜 V).minHeight f = 0 := by
