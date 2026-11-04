@@ -33,7 +33,8 @@ orthogonal complement: `D_J² η = 2 ⟪ω, η⟫ ω - 4 η`. This is the comple
 self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`; this is what makes the principal symbol of
 the anti-self-dual deformation operator complex linear.
 
-Statements in dimension four take a positively oriented orthonormal basis `e` with
+The Hodge-star and self-duality results in dimension four take a positively oriented
+orthonormal basis `e` with
 `J e₀ = e₁` and `J e₂ = e₃` as a witness that the orientation is the complex one; the
 conclusions do not depend on the choice of such a frame.
 
@@ -45,6 +46,7 @@ conclusions do not depend on the choice of such a frame.
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
+* `norm_apply`: an orthogonal `J` preserves norms.
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
@@ -55,6 +57,11 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+
+In the namespace `OrthonormalBasis`:
+
+* `exists_complexStructure_finFour`: every orthonormal four-frame carries an almost complex
+  structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
 
 ## References
 
