@@ -11,6 +11,9 @@ public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.Analysis.Calculus.Deriv.CompMul
+import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Integrability and Stokes formulas for symplectic area
@@ -22,7 +25,9 @@ area of a `C²` map on a closed annulus with the difference of its boundary acti
 The outer and inner circles are both parametrized counterclockwise on `[-π, π]`, and the inner
 action is subtracted. No extension across the inner disc is needed. Together with the
 isoperimetric inequality for the boundary loops, this is the Stokes step used in energy decay
-and removal of singularities for holomorphic curves.
+and removal of singularities for holomorphic curves. The same holds on a closed disc with finitely
+many disjoint round holes, the shape of a truncated punctured sphere, with the sum of the inner
+actions subtracted (`TauCeti.SymplecticForm.integral_fderiv_apply_closedBall_diff_iUnion_ball`).
 
 For a loop `x : [0, 1] → V`, the integral of `λ` along it is the loop area
 `a(x) = ½ ∫₀¹ ω(x(t), x'(t)) dt` (`TauCeti.SymplecticForm.loopArea`). If the bottom and top sides
@@ -30,7 +35,9 @@ of a map `u` on `[a, b] × [0, 1]` agree, so that each `t ↦ u(s, t)` is a loop
 formula says that the symplectic area of `u` is `a(u(b, ·)) - a(u(a, ·))`
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_eq_loopArea_sub`). In particular the loop
 area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
-(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`).
+(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`). A loop which traverses
+a `2π`-periodic curve backwards in unit time, such as a clockwise circle, has loop area minus the
+counterclockwise boundary integral of `λ` (`TauCeti.SymplecticForm.loopArea_comp_sub_two_pi_mul`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 
@@ -116,6 +123,38 @@ theorem loopArea_def (ω : SymplecticForm V) (x : ℝ → V) :
 @[simp]
 theorem loopArea_const (ω : SymplecticForm V) (v : V) : ω.loopArea (fun _ ↦ v) = 0 := by
   simp [loopArea_def]
+
+/-- **The loop area of a reversed periodic curve.** If `γ` has period `2π`, the loop
+`t ↦ γ(θ₀ - 2πt)` traverses one period of `γ` backwards in unit time, so its loop area is minus
+the integral of the primitive `λₓ(v) = ½ ω(x, v)` along `γ` over `[-π, π]`. For `γ` a map composed
+with `circleMap`, this converts boundary integrals of Stokes' formula on discs into loop areas of
+clockwise loops. -/
+theorem loopArea_comp_sub_two_pi_mul (ω : SymplecticForm V) {γ : ℝ → V}
+    (hγ : Function.Periodic γ (2 * π)) (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ γ (θ₀ - 2 * π * t)) =
+      -((1 / 2 : ℝ) * ∫ θ in -π..π, ω (γ θ) (deriv γ θ)) := by
+  have hderiv (t : ℝ) :
+      deriv (fun t ↦ γ (θ₀ - 2 * π * t)) t = -(2 * π) • deriv γ (θ₀ - 2 * π * t) := by
+    have h := deriv_comp_mul_left (f := fun s ↦ γ (θ₀ - s)) (2 * π) (x := t)
+    rw [h, deriv_comp_const_sub, smul_neg, neg_smul]
+  have hper : Function.Periodic (fun θ ↦ ω (γ θ) (deriv γ θ)) (2 * π) := by
+    intro θ
+    have hd : deriv γ (θ + 2 * π) = deriv γ θ := by
+      rw [← deriv_comp_add_const]
+      congr 1
+      funext x
+      exact hγ x
+    simp only [hγ θ, hd]
+  have hsmul (x y : V) (a : ℝ) : ω x (a • y) = a * ω x y :=
+    (LinearMap.map_smul₂ ω.toBilinForm.flip a y x).trans (smul_eq_mul _ _)
+  have hsub := intervalIntegral.integral_comp_sub_mul (a := 0) (b := 1)
+    (fun θ ↦ ω (γ θ) (deriv γ θ)) (by positivity : (2 * π : ℝ) ≠ 0) θ₀
+  have hshift := hper.intervalIntegral_add_eq (θ₀ - 2 * π) (-π)
+  rw [sub_add_cancel, show -π + 2 * π = π by ring] at hshift
+  simp only [mul_one, mul_zero, sub_zero, hshift, smul_eq_mul] at hsub
+  rw [loopArea_def]
+  simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub]
+  field_simp
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 
@@ -207,6 +246,67 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
+  linarith
+
+/-- **Stokes' formula for symplectic area on a disc with round holes.** Let the closed discs
+`closedBall (c i) (ρ i)` be pairwise disjoint and contained in `ball z₀ r`. The pullback area of a
+`C²` map over `closedBall z₀ r \ ⋃ i, ball (c i) (ρ i)` is the outer boundary action minus the sum
+of the inner boundary actions for the primitive `λₓ(v) = ½ ω(x, v)`, all circles being
+parametrized counterclockwise on `[-π, π]`. No regularity inside the holes is needed. -/
+theorem integral_fderiv_apply_closedBall_diff_iUnion_ball [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) {u : ℂ → V} {ι : Type*} [Fintype ι] {z₀ : ℂ} {r : ℝ}
+    {c : ι → ℂ} {ρ : ι → ℝ} (hr : 0 ≤ r) (hρ : ∀ i, 0 < ρ i)
+    (hsub : ∀ i, Metric.closedBall (c i) (ρ i) ⊆ Metric.ball z₀ r)
+    (hdisj : Pairwise fun i j ↦
+      Disjoint (Metric.closedBall (c i) (ρ i)) (Metric.closedBall (c j) (ρ j)))
+    (hu : ∀ z ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i), ContDiffAt ℝ 2 u z) :
+    ∫ z in Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i),
+      ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
+      (1 / 2 : ℝ) * ((∫ θ in -π..π, ω (u (circleMap z₀ r θ))
+        (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)) -
+      ∑ i, ∫ θ in -π..π, ω (u (circleMap (c i) (ρ i) θ))
+        (deriv (fun θ ↦ u (circleMap (c i) (ρ i) θ)) θ)) := by
+  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
+    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
+  have hB (x y : V) : B x y = ω x y := by simp [B]
+  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
+    rw [hB, hB, ← ω.neg_eq]
+    ring
+  -- The derivative along a boundary circle, at points of the region.
+  have hcircle (z₁ : ℂ) (s : ℝ)
+      (hs : ∀ θ, circleMap z₁ s θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i))
+      (θ : ℝ) :
+      deriv (fun θ ↦ u (circleMap z₁ s θ)) θ =
+        fderiv ℝ u (circleMap z₁ s θ) (circleMap 0 s θ * I) :=
+    (((hu _ (hs θ)).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
+      (hasDerivAt_circleMap z₁ s θ)).deriv
+  have houter (θ : ℝ) :
+      circleMap z₀ r θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) := by
+    have hθ : ‖circleMap z₀ r θ - z₀‖ = r := by
+      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hr]
+    refine ⟨by rw [Metric.mem_closedBall, dist_eq_norm, hθ], ?_⟩
+    simp only [mem_iUnion, not_exists]
+    intro j hj
+    have h := hsub j (Metric.ball_subset_closedBall hj)
+    rw [Metric.mem_ball, dist_eq_norm, hθ] at h
+    exact lt_irrefl _ h
+  have hinner (i : ι) (θ : ℝ) :
+      circleMap (c i) (ρ i) θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) := by
+    have hθ : ‖circleMap (c i) (ρ i) θ - c i‖ = ρ i := by
+      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_pos (hρ i)]
+    have hmem : circleMap (c i) (ρ i) θ ∈ Metric.closedBall (c i) (ρ i) := by
+      rw [Metric.mem_closedBall, dist_eq_norm, hθ]
+    refine ⟨Metric.ball_subset_closedBall (hsub i hmem), ?_⟩
+    simp only [mem_iUnion, not_exists]
+    intro j hj
+    rcases eq_or_ne i j with rfl | hij
+    · rw [Metric.mem_ball, dist_eq_norm, hθ] at hj
+      exact lt_irrefl _ hj
+    · exact (hdisj hij).ne_of_mem hmem (Metric.ball_subset_closedBall hj) rfl
+  have hgreen := B.integral_bilinear_fderiv_sub_closedBall_diff_iUnion_ball hr hρ hsub hdisj hu
+  simp only [hskew, integral_const_mul] at hgreen
+  simp only [hB, ← hcircle z₀ r houter,
+    fun i ↦ (hcircle (c i) (ρ i) (hinner i) · |>.symm)] at hgreen
   linarith
 
 end SymplecticForm

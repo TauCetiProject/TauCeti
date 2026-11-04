@@ -14,6 +14,8 @@ import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Stokes' formula for one-forms on rectangles and annuli
@@ -21,7 +23,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 The integral of the exterior derivative of a vector-valued real one-form over a rectangle or
 closed annulus is its positively oriented boundary integral. Zero inner radius gives the disc
 formula. Only C¹ regularity near the region of integration is required; in the annular
-case no regularity on the missing inner disc is needed. On a rectangle the formula is stated both
+case no regularity on the missing inner disc is needed. The same holds for a closed disc with
+finitely many disjoint round holes (`TauCeti.integral_extDeriv_closedBall_diff_iUnion_ball`), the
+shape of a truncated punctured sphere. On a rectangle the formula is stated both
 for the set integral over `Icc a b` (`TauCeti.integral_extDeriv_prod_Icc`) and for the iterated
 integral over oriented intervals (`TauCeti.integral2_extDeriv`).
 
@@ -51,8 +55,8 @@ pullback gives the annulus formula: the seam edges cancel, and the radial Jacobi
 
 public section
 
-open MeasureTheory Set Complex
-open scoped Real
+open MeasureTheory Set Complex Filter
+open scoped Real Topology
 
 namespace TauCeti
 
@@ -310,5 +314,166 @@ theorem integral_extDeriv_closedBall
     exact (ω z₀).map_coord_zero 0 rfl
   rw [hz, intervalIntegral.integral_zero, sub_zero] at h
   exact h
+
+/-- **Stokes' formula on a closed disc with finitely many round holes.** Let the closed discs
+`closedBall (c i) (ρ i)` be pairwise disjoint and contained in the open disc `ball z₀ r`. For a
+one-form which is C¹ near the region `closedBall z₀ r \ ⋃ i, ball (c i) (ρ i)`, the integral of
+its exterior derivative over the region is the outer circle integral minus the sum of the inner
+circle integrals, all circles being parametrized counterclockwise. No regularity inside the holes
+is needed. -/
+theorem integral_extDeriv_closedBall_diff_iUnion_ball {ι : Type*} [Fintype ι]
+    {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} {z₀ : ℂ} {r : ℝ} {c : ι → ℂ} {ρ : ι → ℝ}
+    (hr : 0 ≤ r) (hρ : ∀ i, 0 < ρ i)
+    (hsub : ∀ i, Metric.closedBall (c i) (ρ i) ⊆ Metric.ball z₀ r)
+    (hdisj : Pairwise fun i j ↦
+      Disjoint (Metric.closedBall (c i) (ρ i)) (Metric.closedBall (c j) (ρ j)))
+    (hω : ∀ z ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i), ContDiffAt ℝ 1 ω z) :
+    (∫ z in Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i), extDeriv ω z ![1, I]) =
+      (∫ θ in -π..π, ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I)) -
+        ∑ i, ∫ θ in -π..π, ω (circleMap (c i) (ρ i) θ) (fun _ ↦ circleMap 0 (ρ i) θ * I) := by
+  -- Multiply `ω` by a smooth cutoff `1 - χ` which vanishes deep inside each hole and equals one
+  -- near the region, so that the product `α` is `C¹` on the whole closed disc. Then apply the disc
+  -- formula to `α` on the outer disc and on each closed hole, and subtract.
+  classical
+  set D := Metric.closedBall z₀ r
+  set Ω := D \ ⋃ i, Metric.ball (c i) (ρ i)
+  have hballD (i : ι) : Metric.ball (c i) (ρ i) ⊆ D :=
+    Metric.ball_subset_closedBall.trans ((hsub i).trans Metric.ball_subset_closedBall)
+  -- The boundary circles of the holes lie in the region.
+  have hsphere {i : ι} {z : ℂ} (hz : ‖z - c i‖ = ρ i) : z ∈ Ω := by
+    have hzi : z ∈ Metric.closedBall (c i) (ρ i) := by
+      rw [Metric.mem_closedBall, dist_eq_norm, hz]
+    refine ⟨Metric.ball_subset_closedBall (hsub i hzi), ?_⟩
+    simp only [mem_iUnion, not_exists]
+    intro j hj
+    rcases eq_or_ne i j with rfl | hij
+    · rw [Metric.mem_ball, dist_eq_norm, hz] at hj
+      exact lt_irrefl _ hj
+    · exact (hdisj hij).ne_of_mem hzi (Metric.ball_subset_closedBall hj) rfl
+  -- So does the outer circle.
+  have houter {z : ℂ} (hz : ‖z - z₀‖ = r) : z ∈ Ω := by
+    refine ⟨by rw [Metric.mem_closedBall, dist_eq_norm, hz], ?_⟩
+    simp only [mem_iUnion, not_exists]
+    intro j hj
+    have h := hsub j (Metric.ball_subset_closedBall hj)
+    rw [Metric.mem_ball, dist_eq_norm, hz] at h
+    exact lt_irrefl _ h
+  -- `ω` is `C¹` on a collar of uniform width `δ` inside each hole.
+  have hΩc : IsCompact Ω :=
+    (isCompact_closedBall z₀ r).diff (isOpen_iUnion fun i ↦ Metric.isOpen_ball)
+  have hU : IsOpen {z | ContDiffAt ℝ 1 ω z} :=
+    isOpen_iff_mem_nhds.2 fun z hz ↦ ContDiffAt.eventually hz (by simp)
+  obtain ⟨δ, hδ, hδU⟩ := hΩc.exists_thickening_subset_open hU hω
+  have hcollar {i : ι} {z : ℂ} (h₀ : 0 < ‖z - c i‖) (h₁ : ρ i - δ < ‖z - c i‖)
+      (h₂ : ‖z - c i‖ ≤ ρ i) : ContDiffAt ℝ 1 ω z := by
+    set w : ℂ := c i + ((ρ i / ‖z - c i‖ : ℝ) : ℂ) * (z - c i)
+    have hw : ‖w - c i‖ = ρ i := by
+      simp only [w, add_sub_cancel_left, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+        abs_div, abs_of_pos (hρ i), abs_of_pos h₀]
+      field_simp
+    have hzw : dist z w = ρ i - ‖z - c i‖ := by
+      have : z - w = ((1 - ρ i / ‖z - c i‖ : ℝ) : ℂ) * (z - c i) := by
+        simp only [w]; push_cast; ring
+      rw [dist_eq_norm, this, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_nonpos (by rw [sub_nonpos, le_div_iff₀ h₀]; linarith)]
+      field_simp
+      ring
+    exact hδU (Metric.mem_thickening_iff.2 ⟨w, hsphere hw, by rw [hzw]; linarith⟩)
+  -- Cutoffs equal to `1` deep inside each hole and to `0` near its boundary circle.
+  set ε : ι → ℝ := fun i ↦ min δ (ρ i)
+  have hε (i : ι) : 0 < ε i := lt_min hδ (hρ i)
+  have hερ (i : ι) : ε i ≤ ρ i := min_le_right _ _
+  have hεδ (i : ι) : ε i ≤ δ := min_le_left _ _
+  let b : ∀ i, ContDiffBump (c i) := fun i ↦
+    ⟨ρ i - 2 * ε i / 3, ρ i - ε i / 3, by linarith [hε i, hερ i], by linarith [hε i]⟩
+  set χ : ℂ → ℝ := fun z ↦ ∑ i, b i z with hχ_def
+  have hχ : ContDiff ℝ 1 χ := ContDiff.sum fun i _ ↦ (b i).contDiff
+  set α : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun z ↦ (1 - χ z) • ω z
+  -- Near the region the cutoffs vanish, so `α = ω`.
+  have hα_eq {z : ℂ} (hz : z ∈ Ω) : α =ᶠ[𝓝 z] ω := by
+    have hfar : ∀ᶠ y in 𝓝 z, ∀ i, ρ i - ε i / 3 < ‖y - c i‖ := by
+      refine eventually_all.2 fun i ↦ ?_
+      have hzi : ρ i ≤ ‖z - c i‖ := by
+        by_contra! h
+        exact hz.2 (mem_iUnion.2 ⟨i, by rwa [Metric.mem_ball, dist_eq_norm]⟩)
+      exact ((continuous_norm.comp (continuous_id.sub continuous_const)).tendsto z
+        ).eventually_const_lt (show ρ i - ε i / 3 < ‖z - c i‖ by linarith [hε i])
+    filter_upwards [hfar] with y hy
+    have hχy : χ y = 0 := Finset.sum_eq_zero fun i _ ↦
+      (b i).zero_of_le_dist (by rw [dist_eq_norm]; exact (hy i).le)
+    simp [α, hχy]
+  -- `α` is `C¹` on the whole closed disc.
+  have hα : ∀ z ∈ D, ContDiffAt ℝ 1 α z := by
+    intro z hz
+    by_cases hωz : ContDiffAt ℝ 1 ω z
+    · exact (contDiffAt_const.sub hχ.contDiffAt).smul hωz
+    have hzΩ : z ∉ Ω := fun h ↦ hωz (hω z h)
+    obtain ⟨i, hi⟩ : ∃ i, z ∈ Metric.ball (c i) (ρ i) := by
+      simpa [Ω, hz] using hzΩ
+    rw [Metric.mem_ball, dist_eq_norm] at hi
+    have hdeep : ‖z - c i‖ < ρ i - 2 * ε i / 3 := by
+      by_contra! h
+      exact hωz (hcollar (by linarith [hε i, hερ i]) (by linarith [hε i, hεδ i]) hi.le)
+    refine contDiffAt_const.congr_of_eventuallyEq (f := fun _ ↦ (0 : ℂ [⋀^Fin 1]→L[ℝ] F)) ?_
+    have hnhds : Metric.ball (c i) (ρ i - 2 * ε i / 3) ∈ 𝓝 z :=
+      Metric.isOpen_ball.mem_nhds (by rwa [Metric.mem_ball, dist_eq_norm])
+    filter_upwards [hnhds] with y hy
+    have hyi : y ∈ Metric.ball (c i) (ρ i) :=
+      Metric.ball_subset_ball (by linarith [hε i]) hy
+    have hχy : χ y = 1 := by
+      simp only [hχ_def]
+      rw [Finset.sum_eq_single i]
+      · exact (b i).one_of_mem_closedBall (Metric.ball_subset_closedBall hy)
+      · intro j _ hji
+        refine (b j).zero_of_le_dist ?_
+        by_contra! h
+        have hyj : y ∈ Metric.closedBall (c j) (ρ j) := by
+          rw [Metric.mem_closedBall]
+          exact h.le.trans (show ρ j - ε j / 3 ≤ ρ j by linarith [hε j])
+        exact (hdisj hji).ne_of_mem hyj (Metric.ball_subset_closedBall hyi) rfl
+      · simp
+    simp [α, hχy]
+  -- Stokes on the closed disc and on the closed holes, for `α`.
+  have hcont : ContinuousOn (fun z ↦ extDeriv α z ![1, I]) D := fun z hz ↦
+    (continuousAt_extDeriv_apply (hα z hz) _).continuousWithinAt
+  have hint : IntegrableOn (fun z ↦ extDeriv α z ![1, I]) D :=
+    hcont.integrableOn_compact (isCompact_closedBall z₀ r)
+  have hD := integral_extDeriv_closedBall hr hα
+  have hH (i : ι) := integral_extDeriv_closedBall (hρ i).le fun z hz ↦
+    hα z (Metric.ball_subset_closedBall (hsub i hz))
+  -- Split the disc into the region and the open holes.
+  have hsplit : (∫ z in D, extDeriv α z ![1, I]) =
+      (∫ z in Ω, extDeriv α z ![1, I]) +
+        ∑ i, ∫ z in Metric.closedBall (c i) (ρ i), extDeriv α z ![1, I] := by
+    have hDU : D = Ω ∪ ⋃ i, Metric.ball (c i) (ρ i) :=
+      (sdiff_union_of_subset (iUnion_subset hballD)).symm
+    conv_lhs => rw [hDU]
+    rw [setIntegral_union disjoint_sdiff_left (MeasurableSet.iUnion fun i ↦ measurableSet_ball)
+      (hint.mono_set sdiff_subset) (hint.mono_set (iUnion_subset hballD)),
+      integral_iUnion_fintype (fun i ↦ measurableSet_ball)
+        (fun i j hij ↦ ((hdisj hij).mono Metric.ball_subset_closedBall
+          Metric.ball_subset_closedBall))
+        fun i ↦ hint.mono_set (hballD i)]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ ↦ setIntegral_congr_set ?_
+    refine ae_eq_set.2 ⟨by simp [sdiff_eq_empty.2 Metric.ball_subset_closedBall], ?_⟩
+    rw [Metric.closedBall_sdiff_ball]
+    exact Measure.addHaar_sphere volume _ _
+  have hΩ : (∫ z in Ω, extDeriv α z ![1, I]) = ∫ z in Ω, extDeriv ω z ![1, I] :=
+    setIntegral_congr_fun hΩc.isClosed.measurableSet fun z hz ↦ by
+      rw [(hα_eq hz).extDeriv_eq]
+  have hcirc (z₁ : ℂ) (s : ℝ) (hs : ∀ θ, circleMap z₁ s θ ∈ Ω) :
+      (∫ θ in -π..π, α (circleMap z₁ s θ) (fun _ ↦ circleMap 0 s θ * I)) =
+        ∫ θ in -π..π, ω (circleMap z₁ s θ) (fun _ ↦ circleMap 0 s θ * I) := by
+    congr 1
+    funext θ
+    rw [(hα_eq (hs θ)).eq_of_nhds]
+  rw [hcirc z₀ r fun θ ↦ houter (by
+    rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hr])] at hD
+  have hH' (i : ι) := (hH i).trans (hcirc (c i) (ρ i) fun θ ↦
+    hsphere (i := i) (by
+      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_pos (hρ i)]))
+  rw [← hD, hsplit, hΩ, Finset.sum_congr rfl fun i _ ↦ hH' i]
+  abel
 
 end TauCeti

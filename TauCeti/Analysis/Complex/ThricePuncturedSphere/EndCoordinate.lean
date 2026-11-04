@@ -71,6 +71,15 @@ def endSign : Puncture → ℝ
 @[simp] theorem abs_endSign (q : Puncture) : |q.endSign| = 1 := by
   cases q <;> simp
 
+/-- A sum over the three punctures. -/
+theorem sum_univ {M : Type*} [AddCommMonoid M] (f : Puncture → M) :
+    ∑ q, f q = f zero + f one + f inf := by
+  have huniv : (Finset.univ : Finset Puncture) = {zero, one, inf} := by
+    ext q
+    cases q <;> simp
+  rw [huniv, Finset.sum_insert (by simp), Finset.sum_insert (by simp), Finset.sum_singleton,
+    add_assoc]
+
 /-- The sign of an end is `1` or `-1`. -/
 theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSign = -1 := by
   cases q <;> simp
@@ -429,6 +438,19 @@ theorem truncation_eq (R : ℝ) :
     refine ⟨hw₀, hw₁, fun q => ?_⟩
     cases q
     exacts [(h₀ hw₀).2 ha, (h₁ hw₁).2 hb, (h₂ hw₀).2 hc]
+
+/-- The truncation is a closed disc with two round holes: the closed disc of radius
+`2 exp (2πR)` about `0` with the open discs of radius `exp (-2πR) / 2` about `0` and `1`
+removed. -/
+theorem truncation_eq_closedBall_diff (R : ℝ) :
+    truncation R = Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+      (Metric.ball 0 (Real.exp (-(2 * π * R)) / 2) ∪
+        Metric.ball 1 (Real.exp (-(2 * π * R)) / 2)) := by
+  rw [truncation_eq]
+  ext w
+  simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_sdiff, Set.mem_union, Metric.mem_ball,
+    dist_eq_norm, sub_zero, not_or, not_lt]
+  tauto
 
 /-- The truncation of the thrice-punctured sphere is compact. -/
 theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
