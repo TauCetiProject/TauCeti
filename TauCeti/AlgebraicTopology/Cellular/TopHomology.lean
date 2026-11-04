@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import TauCeti.AlgebraicTopology.Cellular.Comparison
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Basic
-public import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
 # Freeness of cellular homology in a degree without cells above it
@@ -59,9 +59,6 @@ theorem free_cellularHomology_of_isEmpty_cell (n : ℕ) [IsEmpty (cell C (n + 1)
   have : Module.Free k (K.X n : ModuleCat k) := by
     rw [cellularChainComplex_X]
     infer_instance
-  -- The cycles are a submodule of the free module of `n`-chains.
-  have := Module.Free.of_injective_of_projective_of_isPrincipalIdealRing (K.iCycles n).hom
-    ((ModuleCat.mono_iff_injective _).1 inferInstance)
   exact .of_equiv (K.isoHomologyπ (n + 1) n (by simp) hd).toLinearEquiv
 
 /-- **Relative homology below an empty degree is free.** If a relative CW complex `(C, D)` has no

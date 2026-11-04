@@ -63,10 +63,8 @@ theorem free_singularHomology_totalPair (n : ℕ)
   have hfg : Function.Exact f g := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
     (T.singularHomology_exact_total V n)
   -- So `Hₙ(X, B)` is an extension of the image of `g`, a submodule of a free module, by `Hₙ(A, B)`.
-  have hfg' : Function.Exact f g.rangeRestrict := fun y ↦ by
-    have hy := SetLike.ext_iff.1 g.ker_rangeRestrict y
-    rw [LinearMap.mem_ker, LinearMap.mem_ker] at hy
-    rw [← hfg y, hy]
+  have hfg' : Function.Exact f g.rangeRestrict :=
+    (LinearMap.range g).injective_subtype.comp_exact_iff_exact.1 hfg
   have : Module.Free k (LinearMap.range g) := Submodule.free_of_isPrincipalIdealRing _
   let S : ShortComplex (ModuleCat k) :=
     .mk (ModuleCat.ofHom f) (ModuleCat.ofHom g.rangeRestrict)

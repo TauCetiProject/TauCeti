@@ -135,8 +135,8 @@ theorem IsMorse.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le
   obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
   exact (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb
-    (fun x hx ↦ hd x hx.1) R hn).of_iso (nonempty_singularHomology_iso_sublevelPair hab
-      (fun x ↦ (hf' x).1) (fun x ↦ (hf' x).2) R n).some
+    (fun x hx ↦ hd x hx.1) R hn).of_iso (singularHomologyIsoSublevelPair hab
+      (fun x ↦ (hf' x).1) (fun x ↦ (hf' x).2) R n)
 
 /-- **Homology of a compact manifold is free in the degree of the largest index.** If every
 critical point of a Morse function on a compact boundaryless manifold `M` has index at most `d`,
@@ -152,8 +152,8 @@ theorem IsMorse.free_singularHomology_of_manifoldMorseIndex_le (hf : IsMorse I f
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
   have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb
     (fun x hx ↦ hd x hx.1) V
-  exact .of_equiv (nonempty_singularHomology_iso_sublevelPair hab (fun x ↦ (hf' x).1)
-    (fun x ↦ (hf' x).2) V d).some.symm.toLinearEquiv
+  exact .of_equiv (singularHomologyIsoSublevelPair hab (fun x ↦ (hf' x).1)
+    (fun x ↦ (hf' x).2) V d).symm.toLinearEquiv
 
 end Compact
 

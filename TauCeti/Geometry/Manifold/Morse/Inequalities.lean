@@ -324,8 +324,8 @@ private theorem IsMorse.exists_morseInequalities_univ (hf : IsMorse I f) :
   obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
   refine ⟨a, b, hab, hf.morseInequalities V hab hcompact ha hb,
-    fun n ↦ nonempty_singularHomology_iso_sublevelPair hab (fun x ↦ (hf' x).1)
-      (fun x ↦ (hf' x).2) V n, fun i ↦ ?_⟩
+    fun n ↦ ⟨singularHomologyIsoSublevelPair hab (fun x ↦ (hf' x).1)
+      (fun x ↦ (hf' x).2) V n⟩, fun i ↦ ?_⟩
   rw [bandCount, criticalCount_def, ← ncard_def]
   congr 1
   ext x
