@@ -35,10 +35,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2573d44fa8f3b32884278ca730a40f303b29e286
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2573d44fa8f3b32884278ca730a40f303b29e286
+          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
           project-directory: .
       - name: Recover maintenance PRs abandoned without a build status
         env:
@@ -58,10 +58,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2573d44fa8f3b32884278ca730a40f303b29e286
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2573d44fa8f3b32884278ca730a40f303b29e286
+          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
           project-directory: .
       - name: Install checksum-verified elan
         env:
@@ -102,10 +102,10 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2573d44fa8f3b32884278ca730a40f303b29e286
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2573d44fa8f3b32884278ca730a40f303b29e286
+          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
           project-directory: .
       - name: Publish the fixed-target bump
         env:
