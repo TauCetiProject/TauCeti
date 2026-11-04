@@ -441,8 +441,7 @@ end SolvabilityCertificate
 
 section PrimeLinearQuadraticExample
 
-local instance : Fact (Nat.Prime 3) := ⟨by decide⟩
-local instance : Fact (Nat.Prime 5) := ⟨by decide⟩
+local instance factPrimeFiveSolvable : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
 
 /-- `X ^ 5 - X + 3` is monic over `ℤ`. -/
 theorem monic_X_pow_five_sub_X_add_three : (X ^ 5 - X + 3 : ℤ[X]).Monic := by
