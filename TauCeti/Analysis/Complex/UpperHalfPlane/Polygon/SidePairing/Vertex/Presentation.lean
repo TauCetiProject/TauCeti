@@ -44,33 +44,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 
-/-- The least vertex index on each vertex cycle, including ideal cycles. -/
-def cycleRepresentatives : Finset (Fin n) :=
-  Finset.univ.filter fun i ↦ ∀ j ∈ σ.cycle i, i ≤ j
-
-/-- A vertex represents its cycle exactly when it is its least index. -/
-@[simp]
-theorem mem_cycleRepresentatives {i : Fin n} :
-    i ∈ σ.cycleRepresentatives ↔ ∀ j ∈ σ.cycle i, i ≤ j := by
-  simp [cycleRepresentatives]
-
-/-- Every vertex cycle has exactly one least-index representative. -/
-theorem existsUnique_mem_cycleRepresentatives (j : Fin n) :
-    ∃! i, i ∈ σ.cycleRepresentatives ∧ i ∈ σ.cycle j := by
-  let i := (σ.cycle j).min' ⟨j, σ.self_mem_cycle j⟩
-  have hi : i ∈ σ.cycle j := Finset.min'_mem _ _
-  have hmin : ∀ k ∈ σ.cycle j, i ≤ k := fun k hk ↦ Finset.min'_le _ _ hk
-  have hrep : i ∈ σ.cycleRepresentatives := by
-    rw [mem_cycleRepresentatives]
-    intro k hk
-    apply hmin
-    rw [mem_cycle_iff_sameCycle] at hi hk ⊢
-    exact hi.trans hk
-  refine ⟨i, ⟨hrep, hi⟩, fun k hk ↦ le_antisymm ?_ (hmin k hk.2)⟩
-  apply (σ.mem_cycleRepresentatives.mp hk.1) i
-  rw [mem_cycle_iff_sameCycle] at hi hk ⊢
-  exact hk.2.symm.trans hi
-
 /-- Side-identification relations, and finite-vertex cycle relations only at vertices in `s`.
 An ideal vertex contributes no relation even if it belongs to `s`. -/
 def relatorsAt (s : Set (Fin n)) : Set (FreeGroup (Fin n)) :=
@@ -87,6 +60,32 @@ theorem mem_relatorsAt_iff {s : Set (Fin n)} {w : FreeGroup (Fin n)} :
           w = σ.cycleWord j ^ orderOf (σ.cycleMap j)) := by
   simp [relatorsAt]
 
+/-- A side-identification word belongs to every restricted relator set. -/
+theorem sideRelator_mem_relatorsAt (s : Set (Fin n)) (i : Fin n) :
+    σ.sideRelator i ∈ σ.relatorsAt s :=
+  Or.inl ⟨i, rfl⟩
+
+/-- The order relation at a retained finite vertex belongs to the restricted relator set. -/
+theorem cycleWord_pow_mem_relatorsAt {s : Set (Fin n)} {j : Fin n} {z : ℍ}
+    (hjs : j ∈ s) (hj : P.vertex j = .inl z) :
+    σ.cycleWord j ^ orderOf (σ.cycleMap j) ∈ σ.relatorsAt s :=
+  Or.inr ⟨j, z, hjs, hj, rfl⟩
+
+/-- Every side-identification word is trivial in the reduced presentation. -/
+@[simp]
+theorem relatorQuotientAt_sideRelator (s : Set (Fin n)) (i : Fin n) :
+    PresentedGroup.mk (σ.relatorsAt s) (σ.sideRelator i) = 1 :=
+  PresentedGroup.one_of_mem (σ.sideRelator_mem_relatorsAt s i)
+
+/-- A retained finite-vertex cycle word has order dividing that of its cycle transformation
+in the reduced presentation. -/
+@[simp]
+theorem relatorQuotientAt_cycleWord_pow {s : Set (Fin n)} {j : Fin n} {z : ℍ}
+    (hjs : j ∈ s) (hj : P.vertex j = .inl z) :
+    PresentedGroup.mk (σ.relatorsAt s) (σ.cycleWord j) ^ orderOf (σ.cycleMap j) = 1 := by
+  rw [← map_pow]
+  exact PresentedGroup.one_of_mem (σ.cycleWord_pow_mem_relatorsAt hjs hj)
+
 /-- Restricting the vertices only removes relators. -/
 theorem relatorsAt_subset_relators (s : Set (Fin n)) : σ.relatorsAt s ⊆ σ.relators := by
   rintro w (hw | ⟨j, z, -, hj, rfl⟩)
@@ -102,13 +101,13 @@ theorem normalClosure_relatorsAt_eq {s : Set (Fin n)}
   apply Subgroup.normalClosure_le_normal
   intro w hw
   rcases σ.mem_relators_iff.mp hw with ⟨i, rfl⟩ | ⟨j, z, hj, rfl⟩
-  · exact Subgroup.subset_normalClosure (Or.inl ⟨i, rfl⟩)
+  · exact Subgroup.subset_normalClosure (σ.sideRelator_mem_relatorsAt s i)
   · obtain ⟨i, his, hi⟩ := hs j (by simp [hj])
     have hfinite : (P.vertex i).isLeft := (σ.isLeft_vertex_eq_of_mem_cycle hi).trans
       (by simp [hj])
     obtain ⟨zi, hzi⟩ := Sum.isLeft_iff.mp hfinite
     have hrel : σ.cycleWord i ^ orderOf (σ.cycleMap i) ∈ σ.relatorsAt s :=
-      Or.inr ⟨i, zi, his, hzi, rfl⟩
+      σ.cycleWord_pow_mem_relatorsAt his hzi
     have hc := (σ.isConj_cycleWord_of_mem_cycle hi).symm.pow (orderOf (σ.cycleMap j))
     rw [σ.orderOf_cycleMap_eq_of_mem_cycle hi] at hrel
     exact Subgroup.conjugatesOfSet_subset_normalClosure
