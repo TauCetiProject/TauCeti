@@ -26,6 +26,9 @@ endomorphism.
   onto the other.
 * `LinearEquiv.fixedSubmoduleCongr`: the resulting equivalence of fixed submodules.
 
+* `LinearMap.infFixedSubmoduleEquivRestrict`: fixed vectors in an invariant submodule
+  are linearly equivalent to fixed vectors of the restricted endomorphism.
+
 * `LinearMap.fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
   invariant submodule `p` is the part of the fixed submodule of `f` that lies in `p`.
 -/
@@ -55,6 +58,32 @@ theorem pow_apply_of_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoi
     (f ^ i) x = x := by
   rw [pow_apply_eq_iterate]
   exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp hx) i
+
+section Restrict
+
+variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    (f : V →ₗ[R] V) {p : Submodule R V} (hf : ∀ x ∈ p, f x ∈ p)
+
+/-- Fixed vectors lying in an invariant submodule are fixed vectors of the restriction. -/
+def infFixedSubmoduleEquivRestrict :
+    ↥(p ⊓ f.fixedSubmodule) ≃ₗ[R] (f.restrict hf).fixedSubmodule :=
+  ((p.equivSubtypeMap (f.restrict hf).fixedSubmodule).trans
+    (LinearEquiv.ofEq _ _ (by
+      rw [fixedSubmodule_restrict, Submodule.map_comap_subtype]))).symm
+
+/-- The restriction equivalence retains the ambient vector. -/
+@[simp]
+theorem infFixedSubmoduleEquivRestrict_apply (x : ↥(p ⊓ f.fixedSubmodule)) :
+    ((f.infFixedSubmoduleEquivRestrict hf x).val : V) = x.val := by
+  simp [infFixedSubmoduleEquivRestrict]
+
+/-- The inverse restriction equivalence retains the ambient vector. -/
+@[simp]
+theorem infFixedSubmoduleEquivRestrict_symm_apply (x : (f.restrict hf).fixedSubmodule) :
+    ((f.infFixedSubmoduleEquivRestrict hf).symm x).val = (x.val : V) := by
+  simp [infFixedSubmoduleEquivRestrict]
+
+end Restrict
 
 variable {R J : Type*} {W : J → Type*} [Semiring R]
   [∀ j, AddCommMonoid (W j)] [∀ j, Module R (W j)]

@@ -595,14 +595,9 @@ theorem ncard_posRoots_typeASimplyConnectedRootDatum (n : ℕ)
 
 /-! ## The graph automorphism -/
 
-/-- The graph automorphism of type `Aₙ` read on the classical ordered pairs: it exchanges the two
-entries and reverses each, `(a, b) ↦ (rev b, rev a)`. This is the effect of `e_a ↦ -e_{rev a}` on
-the root `e_a - e_b`. -/
-private def typeAGraphPairMap (p : TypeAIndex n) : TypeAIndex n :=
-  ⟨(p.val.2.rev, p.val.1.rev), fun h => p.2 (Fin.rev_injective h).symm⟩
-
-private lemma typeAGraphPairMap_involutive : Involutive (typeAGraphPairMap (n := n)) :=
-  fun _ => Subtype.ext (Prod.ext (Fin.rev_rev _) (Fin.rev_rev _))
+-- The graph automorphism of type `Aₙ` read on the classical ordered pairs is
+-- `finDistinctPairsRevSwap (n + 1)`: it exchanges the two entries and reverses each,
+-- `(a, b) ↦ (rev b, rev a)`, the effect of `e_a ↦ -e_{rev a}` on the root `e_a - e_b`.
 
 private lemma val_rev_succ (a : Fin (n + 1)) : ((a.rev : Fin (n + 1)) : ℕ) = n - (a : ℕ) := by
   rw [Fin.val_rev]
@@ -626,34 +621,33 @@ private lemma typeACoweight_rev {a : ℕ} (ha : a ≤ n) (k : Fin n) :
   simp only [typeACoweight, hk]
   split_ifs <;> omega
 
-private lemma typeAPairRoot_typeAGraphPairMap (p : TypeAIndex n) (k : Fin n) :
-    typeAPairRoot (typeAGraphPairMap p) k = typeAPairRoot p k.rev := by
+private lemma typeAPairRoot_finDistinctPairsRevSwap (p : TypeAIndex n) (k : Fin n) :
+    typeAPairRoot (finDistinctPairsRevSwap (n + 1) p) k = typeAPairRoot p k.rev := by
   have hle : ∀ x : Fin (n + 1), (x : ℕ) ≤ n := fun x => Nat.lt_succ_iff.mp x.isLt
-  simp only [typeAPairRoot, typeAGraphPairMap, Pi.sub_apply, val_rev_succ,
+  simp only [typeAPairRoot, finDistinctPairsRevSwap_apply_val, Pi.sub_apply, val_rev_succ,
     typeAWeight_rev (hle _) k]
   ring
 
-private lemma typeAPairCoroot_typeAGraphPairMap (p : TypeAIndex n) (k : Fin n) :
-    typeAPairCoroot (typeAGraphPairMap p) k = typeAPairCoroot p k.rev := by
+private lemma typeAPairCoroot_finDistinctPairsRevSwap (p : TypeAIndex n) (k : Fin n) :
+    typeAPairCoroot (finDistinctPairsRevSwap (n + 1) p) k = typeAPairCoroot p k.rev := by
   have hle : ∀ x : Fin (n + 1), (x : ℕ) ≤ n := fun x => Nat.lt_succ_iff.mp x.isLt
-  simp only [typeAPairCoroot, typeAGraphPairMap, Pi.sub_apply, val_rev_succ,
+  simp only [typeAPairCoroot, finDistinctPairsRevSwap_apply_val, Pi.sub_apply, val_rev_succ,
     typeACoweight_rev (hle _) k]
   ring
 
 /-- The permutation of the pinned root indices induced by the graph automorphism. -/
 private def typeAGraphIndexPerm (n : ℕ) : Equiv.Perm (Fin (n * (n + 1))) :=
-  ((typeAIndexEquiv n).symm.trans (typeAGraphPairMap_involutive (n := n)).toPerm).trans
-    (typeAIndexEquiv n)
+  ((typeAIndexEquiv n).symm.trans (finDistinctPairsRevSwap (n + 1))).trans (typeAIndexEquiv n)
 
 private lemma typeAIndexEquiv_symm_typeAGraphIndexPerm (k : Fin (n * (n + 1))) :
     (typeAIndexEquiv n).symm (typeAGraphIndexPerm n k) =
-      typeAGraphPairMap ((typeAIndexEquiv n).symm k) := by
-  simp [typeAGraphIndexPerm, Involutive.coe_toPerm]
+      finDistinctPairsRevSwap (n + 1) ((typeAIndexEquiv n).symm k) := by
+  simp [typeAGraphIndexPerm]
 
 private lemma typeAGraphIndexPerm_involutive : Involutive (typeAGraphIndexPerm n) := fun k =>
   (typeAIndexEquiv n).symm.injective <| by
     rw [typeAIndexEquiv_symm_typeAGraphIndexPerm, typeAIndexEquiv_symm_typeAGraphIndexPerm,
-      typeAGraphPairMap_involutive]
+      finDistinctPairsRevSwap_finDistinctPairsRevSwap]
 
 private lemma typeAGraphIndexPerm_symm :
     (typeAGraphIndexPerm n).symm = typeAGraphIndexPerm n :=
@@ -688,12 +682,12 @@ def typeAGraphAut (n : ℕ) : RootPairing.Aut (typeASimplyConnectedRootDatum n) 
     funext k j
     simpa [typeARevEquiv_eq, root_typeASimplyConnectedRootDatum,
       typeAIndexEquiv_symm_typeAGraphIndexPerm] using
-      (typeAPairRoot_typeAGraphPairMap ((typeAIndexEquiv n).symm k) j).symm
+      (typeAPairRoot_finDistinctPairsRevSwap ((typeAIndexEquiv n).symm k) j).symm
   coroot_coweightMap := by
     funext k j
     simpa [typeARevEquiv_eq, coroot_typeASimplyConnectedRootDatum, typeAGraphIndexPerm_symm,
       typeAIndexEquiv_symm_typeAGraphIndexPerm] using
-      (typeAPairCoroot_typeAGraphPairMap ((typeAIndexEquiv n).symm k) j).symm
+      (typeAPairCoroot_finDistinctPairsRevSwap ((typeAIndexEquiv n).symm k) j).symm
   bijective_weightMap := (typeARevEquiv n).bijective
   bijective_coweightMap := (typeARevEquiv n).bijective
 
@@ -723,7 +717,7 @@ the simple roots in Bourbaki order, the induced permutation is `Fin.revPerm`, wh
     typeAIndexEquiv_symm_typeAGraphIndexPerm, typeAIndexEquiv_symm_typeASimpleIndex,
     typeAIndexEquiv_symm_typeASimpleIndex]
   refine Subtype.ext (Prod.ext (Fin.ext ?_) (Fin.ext ?_)) <;>
-    simp only [typeAGraphPairMap, Fin.val_rev] <;> omega
+    simp only [finDistinctPairsRevSwap_apply_val, Fin.val_rev] <;> omega
 
 /-- **The type `Aₙ` graph automorphism is an involution.** It is the automorphism attached to the
 order-two symmetry of the `Aₙ` diagram, so a Steinberg endomorphism of the `²Aₙ` family built from
