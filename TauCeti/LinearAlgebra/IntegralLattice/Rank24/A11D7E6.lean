@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.GlueWord
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
 
 /-!
@@ -32,7 +33,8 @@ sublattice is computed from the glue minima, not from evenness, unimodularity, o
 
 * `TauCeti.a11d7e6`: the ordered components `A₁₁`, `D₇`, `E₆`.
 * `TauCeti.a11d7e6GlueWord`: the glue word `[111]`, with `addOrderOf_a11d7e6GlueWord`,
-  `sum_glueMinimum_a11d7e6GlueWord` and `quadratic_a11d7e6GlueWord`.
+  `encodeGlueWord_a11d7e6GlueWord`, `sum_glueMinimum_a11d7e6GlueWord` and
+  `quadratic_a11d7e6GlueWord`.
 * `TauCeti.a11d7e6GlueSubgroup`: the cyclic glue subgroup, with `natCard_a11d7e6GlueSubgroup`,
   `isLagrangian_a11d7e6GlueSubgroup` and `four_le_sum_glueMinimum_of_mem_a11d7e6GlueSubgroup`.
 * `TauCeti.a11d7e6Lattice`: the glued lattice, with `mem_a11d7e6Lattice_carrier_iff`,
@@ -137,6 +139,29 @@ theorem addOrderOf_a11d7e6GlueWord : addOrderOf a11d7e6GlueWord = 12 :=
   Nat.dvd_antisymm
     (addOrderOf_dvd_iff_nsmul_eq_zero.mpr ((nsmul_a11d7e6GlueWord_eq_zero_iff 12).mpr dvd_rfl))
     ((nsmul_a11d7e6GlueWord_eq_zero_iff _).mp (addOrderOf_nsmul_eq_zero a11d7e6GlueWord))
+
+/-- The digit word of the glue word `[111]` of `A₁₁ D₇ E₆` is `[1, 1, 1]`. -/
+theorem encodeGlueWord_a11d7e6GlueWord :
+    encodeGlueWord a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord = [1, 1, 1] := by
+  -- The `A₁₁` and `E₆` alphabets are `ZMod 12` and `ZMod 3` by definition, and the `D₇` alphabet
+  -- is `ZMod 4` through `glueAlphabet_D_of_odd`, so each label is the residue of `1`.
+  have h₀ := nsmul_a11d7e6GlueWord_apply_zero 1
+  have h₁ := nsmul_a11d7e6GlueWord_apply_one 1
+  have h₂ := nsmul_a11d7e6GlueWord_apply_two 1
+  rw [one_nsmul] at h₀ h₁ h₂
+  rw [encodeGlueWord_def]
+  simp only [List.ofFn_succ, List.ofFn_zero]
+  refine congrArg₂ _ ?_ (congrArg₂ _ ?_ (congrArg₂ _ ?_ rfl))
+  · refine (congrArg Fin.val (DynkinType.glueLabelEquiv_A_symm_apply 11 _ _)).trans ?_
+    rw [Fin.val_mk]
+    exact (congrArg ZMod.val h₀).trans rfl
+  · refine (congrArg Fin.val
+      (DynkinType.glueLabelEquiv_symm_D_of_odd 7 _ (by decide) _)).trans ?_
+    rw [Fin.val_mk]
+    exact (congrArg ZMod.val h₁).trans rfl
+  · refine (congrArg Fin.val (DynkinType.glueLabelEquiv_symm_E6 _ _)).trans ?_
+    rw [Fin.val_mk]
+    exact (congrArg ZMod.val h₂).trans rfl
 
 /-! ### Minimum norms of the glue words -/
 
