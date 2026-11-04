@@ -56,7 +56,9 @@ involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an invo
 with `σ` off the pair (`Function.Involutive.swap_mul`,
 `Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
 (`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
-into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`).
+into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a
+natural-number valued function along it equals the total increase
+(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
 -/
 
 public section
@@ -287,6 +289,17 @@ theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePr
   have h₃ : #{x | p (σ x) ∧ p x} = #{x | p x ∧ p (σ x)} := by simp only [and_comm]
   have h₄ : #{x | p x ∧ ¬p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by simp only [and_comm]
   have h₅ : #{x | p (σ x) ∧ ¬p x} = #{x | ¬p x ∧ p (σ x)} := by simp only [and_comm]
+  omega
+
+/-- For a permutation `σ` of a finite type and `f : α → ℕ`, the total decrease of `f` along
+`x ↦ σ x` equals its total increase. -/
+theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
+    ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
+  have key (a b : ℕ) : ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = a - b := by omega
+  have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
+    push_cast [← Finset.sum_sub_distrib]
+    simp_rw [key]
+    rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
 
 end Equiv.Perm
