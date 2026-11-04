@@ -504,19 +504,16 @@ theorem coe_integralModularFormEquivIntegralAtCusps (k : ℕ)
       integralModularFormToModularForm k f :=
   (rfl)
 
-private theorem ofNat_mul_eq_smul (R : Type*) {A : Type*} [Semiring R] [NonAssocSemiring A]
-    [Module R A] (n : ℕ) [n.AtLeastTwo] (x : A) :
-    (ofNat(n) : A) * x = (ofNat(n) : R) • x := by
-  simp [ofNat_smul_eq_nsmul]
-
 private theorem aeval_E₄_neg_E₆_discriminant_relation :
     MvPolynomial.aeval (R := ℤ)
       ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
         DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
         DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)]
       (MvPolynomial.X 0 ^ 3 - MvPolynomial.X 1 ^ 2 - 1728 * MvPolynomial.X 2) = 0 := by
-  simp [discriminant_eq_E₄_cube_sub_E₆_sq_graded, ofNat_mul_eq_smul ℂ,
-    smul_inv_smul₀ (by norm_num : (1728 : ℂ) ≠ 0)]
+  have hΔ := (eq_inv_smul_iff₀ (by norm_num : (1728 : ℂ) ≠ 0)).mp
+    (by simpa using discriminant_eq_E₄_cube_sub_E₆_sq_graded)
+  rw [ofNat_smul_eq_nsmul, nsmul_eq_mul, Nat.cast_ofNat] at hΔ
+  simp [hΔ]
 
 /-- The canonical `ℤ`-algebra homomorphism from `ℤ[c₄, c₆, Δ]` to the graded ring
 `⨁ k : ℤ, ModularForm 𝒮ℒ k` sending `c₄ ↦ E₄`, `c₆ ↦ -E₆` and `Δ ↦ Δ`, constructed directly from
@@ -709,12 +706,13 @@ private theorem modularFormsToComplexAdjoin_discriminant :
   have hrelT :
       (Algebra.TensorProduct.includeRight c₄Adjoin : ℂ ⊗[ℤ] _) ^ 3 -
         Algebra.TensorProduct.includeRight (-c₆Adjoin) ^ 2 =
-        1728 * Algebra.TensorProduct.includeRight ΔAdjoin := by
-    simpa [-Algebra.TensorProduct.includeRight_apply, -map_neg, map_ofNat] using
+        (1728 : ℂ) • Algebra.TensorProduct.includeRight ΔAdjoin := by
+    simpa [-Algebra.TensorProduct.includeRight_apply, -map_neg, map_ofNat,
+      ofNat_smul_eq_nsmul] using
       congrArg (Algebra.TensorProduct.includeRight (R := ℤ) (A := ℂ)) hrel
   simp [-Algebra.TensorProduct.includeRight_apply, -map_neg,
     discriminant_eq_E₄_cube_sub_E₆_sq_graded, modularFormsToComplexAdjoin_E₄,
-    modularFormsToComplexAdjoin_E₆, hrelT, ofNat_mul_eq_smul ℂ]
+    modularFormsToComplexAdjoin_E₆, hrelT]
 
 private theorem complexAdjoinToModularForms_comp_modularFormsToComplexAdjoin :
     complexAdjoinToModularForms.comp modularFormsToComplexAdjoin = AlgHom.id ℂ _ := by
