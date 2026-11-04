@@ -43,7 +43,8 @@ back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSp
 ## Main definitions
 
 * `Submodule.euclideanSpan W`: the real span of `W` inside
-  `PiLp 2 fun _ : ι ↦ NumberField.mixedEmbedding.euclidean.mixedSpace K`.
+  `PiLp 2 fun _ : ι ↦ NumberField.mixedEmbedding.euclidean.mixedSpace K`, with defining equation
+  `Submodule.euclideanSpan_def` and universal property `Submodule.euclideanSpan_le_iff`.
 * `Submodule.integerLattice W`: the `ℤ`-submodule of points of `W.euclideanSpan` with coordinates
   in `NumberField.mixedEmbedding.euclidean.integerLattice K`.
 * `Submodule.integerPointsEquivIntegerLattice W`: the `ℤ`-linear equivalence
@@ -95,16 +96,34 @@ def euclideanSpan (W : Submodule K (ι → K)) :
   span ℝ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦
     (euclidean.toMixed K).symm (mixedEmbedding K (v i))) '' W)
 
+/-- `W.euclideanSpan` is the `ℝ`-span of the Euclidean Minkowski embeddings of points of `W`. -/
+theorem euclideanSpan_def (W : Submodule K (ι → K)) :
+    W.euclideanSpan =
+      span ℝ ((fun v : ι → K ↦ WithLp.toLp 2 fun i ↦
+        (euclidean.toMixed K).symm (mixedEmbedding K (v i))) '' W) :=
+  (rfl)
+
 /-- Every point of `W` embeds into `W.euclideanSpan`. -/
 theorem toLp_mem_euclideanSpan {W : Submodule K (ι → K)} {v : ι → K} (hv : v ∈ W) :
     (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) ∈
       W.euclideanSpan :=
   subset_span ⟨v, hv, rfl⟩
 
+/-- `W.euclideanSpan` is contained in a real submodule `U` if and only if the Euclidean Minkowski
+embedding of every vector of `W` belongs to `U`. -/
+@[simp]
+theorem euclideanSpan_le_iff {W : Submodule K (ι → K)}
+    {U : Submodule ℝ (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K)} :
+    W.euclideanSpan ≤ U ↔
+      ∀ v ∈ W,
+        (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (v i))) ∈ U := by
+  rw [euclideanSpan_def, span_le, image_subset_iff]
+  rfl
+
 /-- The real span of the zero subspace is zero. -/
 @[simp]
 theorem euclideanSpan_bot : (⊥ : Submodule K (ι → K)).euclideanSpan = ⊥ := by
-  rw [euclideanSpan, bot_coe, image_singleton, span_singleton_eq_bot]
+  rw [euclideanSpan_def, bot_coe, image_singleton, span_singleton_eq_bot]
   ext1 i
   simp
 
@@ -112,7 +131,7 @@ theorem euclideanSpan_bot : (⊥ : Submodule K (ι → K)).euclideanSpan = ⊥ :
 @[gcongr]
 theorem euclideanSpan_mono {W₁ W₂ : Submodule K (ι → K)} (h : W₁ ≤ W₂) :
     W₁.euclideanSpan ≤ W₂.euclideanSpan :=
-  span_mono (image_mono h)
+  euclideanSpan_le_iff.2 fun _ hv ↦ toLp_mem_euclideanSpan (h hv)
 
 open Classical in
 /-- `mixedSpace K`-linear extension of a `K`-linear form `f : (ι → K) →ₗ[K] K` to the Euclidean
@@ -149,11 +168,10 @@ theorem toLp_mem_euclideanSpan_iff [Finite ι] {W : Submodule K (ι → K)} {v :
   by_contra hv
   -- Separate `v` from `W` by a `K`-linear form `f` and extend `f` `mixedSpace K`-linearly.
   obtain ⟨f, hfv, hfW⟩ := exists_dual_map_eq_bot_of_notMem hv inferInstance
-  have hle : W.euclideanSpan ≤ LinearMap.ker (mixedExtend f) := by
-    refine span_le.2 ?_
-    rintro _ ⟨u, hu, rfl⟩
-    have hfu : f u = 0 := by simpa [hfW] using mem_map_of_mem (f := f) hu
-    simp [mixedExtend_toLp, hfu]
+  have hle : W.euclideanSpan ≤ LinearMap.ker (mixedExtend f) :=
+    euclideanSpan_le_iff.2 fun u hu ↦ by
+      have hfu : f u = 0 := by simpa [hfW] using mem_map_of_mem (f := f) hu
+      simp [mixedExtend_toLp, hfu]
   have hgv : mixedEmbedding K (f v) = 0 := (mixedExtend_toLp f v).symm.trans (hle h)
   exact hfv ((map_eq_zero_iff (mixedEmbedding K) (mixedEmbedding_injective K)).1 hgv)
 
@@ -330,13 +348,11 @@ private theorem span_range_pseudoBasisVec [Finite κ] :
     span ℝ (range (pseudoBasisVec b hJ)) = W.euclideanSpan := by
   classical
   cases nonempty_fintype κ
-  refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
+  refine le_antisymm (span_le.2 ?_) (euclideanSpan_le_iff.2 fun v hv ↦ ?_)
   · rintro _ ⟨⟨k, ν⟩, rfl⟩
     simpa [pseudoBasisVec, Algebra.smul_def] using
       toLp_mem_euclideanSpan (W.smul_mem ((J k).mixedBasisElem (hJ k) ν) (b k).2)
-  · rintro _ ⟨v, hv, rfl⟩
-    dsimp only
-    rw [toLp_eq_sum_repr_smul_pseudoBasisVec b hJ hv]
+  · rw [toLp_eq_sum_repr_smul_pseudoBasisVec b hJ hv]
     exact sum_mem fun p _ ↦ smul_mem _ _ (subset_span ⟨p, rfl⟩)
 
 /-- The `ℝ`-basis of `W.euclideanSpan` attached to a `K`-basis `b` of `W` and nonzero ideals `J k`
@@ -534,8 +550,8 @@ private theorem map_euclideanSpan_rat [Fintype ι] (V : Submodule ℚ (ι → �
   set E := LinearIsometryEquiv.piLpCongrRight 2 fun _ : ι ↦ mixedSpaceRatEquivReal
   set f : (PiLp 2 fun _ : ι ↦ euclidean.mixedSpace ℚ) →ₗ[ℝ] PiLp 2 fun _ : ι ↦ ℝ := ↑E
   have hle : V.euclideanSpan.map f ≤ V.realSpan := by
-    rw [map_le_iff_le_comap, euclideanSpan, span_le]
-    rintro _ ⟨v, hv, rfl⟩
+    rw [map_le_iff_le_comap, euclideanSpan_le_iff]
+    intro v hv
     have hv' : f (WithLp.toLp 2 fun i ↦
         (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (v i))) =
         WithLp.toLp 2 fun i ↦ (v i : ℝ) := by ext1 i; simp [f, E]
