@@ -6,23 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
-public import TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution
+public import TauCeti.NumberTheory.HeckeRing.GLn.ScalarMul
 public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
+public import TauCeti.NumberTheory.HeckeRing.Normalizer
 
-import Mathlib.Algebra.Ring.Int.Units
+import Mathlib.LinearAlgebra.Matrix.Integer
 import Mathlib.Tactic.Group
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
-# Rational and full `GL_n` Hecke rings and the global comparison chain
+# Rational and full `GL_n` Hecke rings, global comparison, and central scalar units
 
 Following Proposition 3.16 of [Shimura][shimura1971] and §2 of [Rhodes–Shemanske][rhodes1999], this
 file constructs the rational Hecke triples `(SL_n(ℤ), GL_n^+(ℚ))` and `(GL_n(ℤ), GL_n(ℚ))` inside
-`GL_n(ℚ)`, proves their commutativity, and establishes the global comparison chain
+`GL_n(ℚ)`, proves their commutativity, establishes the global comparison chain
 
 `IntegralHeckeRing n ↪ RationalHeckeRing n ≃+* FullHeckeRing n`
 
-(over `ℤ`, and more generally over any coefficient semiring `R`).
+(over `ℤ`, and more generally over any coefficient semiring `R`), and packages the central scalar
+units `T(c, …, c)` that clear denominators across `RationalHeckeRing n`.
 
 Every element of `GL_n(ℚ)` clears denominators under multiplication by a positive scalar matrix
 `diag(c, …, c)` (`exists_pos_natDiagGL_mul_mem_intEntries`). Together with Shimura's Lemma 3.10
@@ -35,28 +37,30 @@ one clears denominators and puts the resulting integral matrix in Smith normal f
 (`γ₁, γ₂ ∈ SL_n(ℤ)`), so conjugating `diag(-1, 1, …, 1)` by `γ₁` produces a determinant-`-1` element
 of `GL_n(ℤ) ∩ g · GL_n(ℤ) · g⁻¹`.
 
-The file also records how negation `-I_n` interacts with double cosets in the two groups: `-I_n`
-always lies in `GL_n(ℤ)` (`doubleCoset_neg_GLnZ`), whereas `-I_n ∈ SL_n(ℤ)` and
-`-g ∈ SL_n(ℤ) g SL_n(ℤ)` hold if and only if `n` is even (`neg_one_mem_SLnZ_iff`,
-`neg_mem_doubleCoset_SLnZ_iff`).
+Finally, each scalar operator `T(c, …, c)` normalizes `SL_n(ℤ)` and becomes a central unit
+`scalarUnit n c` in `RationalHeckeRing n`; the positive scalar operators form `scalarSubmonoid n`
+inside `IntegralHeckeRing n` and clear denominators for every element of `RationalHeckeRing n`
+(`exists_mul_mem_scalarSubmonoid_eq`).
 
 ## Main definitions
 
-* `HeckeRing.GLn.GLnZ`: `GL_n(ℤ)` embedded as a subgroup of `GL_n(ℚ)` via
-  `Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ)`.
 * `HeckeRing.GLn.RationalHeckeRing`, `HeckeRing.GLn.FullHeckeRing`: the Hecke rings of
   `(SL_n(ℤ), GL_n^+(ℚ))` and `(GL_n(ℤ), GL_n(ℚ))` over `ℤ`.
 * `HeckeRing.GLn.integralToRationalRingHom`, `HeckeRing.GLn.integralToRational`: the injective
   embedding `𝕋 (posDetInt n) (SLnZ n) R →+* 𝕋 (GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R`.
-* `HeckeRing.GLn.rationalToFullRingEquiv`, `HeckeRing.GLn.rationalToFullEquiv`: the ring isomorphism
-  `𝕋 (GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R ≃+* 𝕋 ⊤ (GLnZ n) R`.
+* `HeckeRing.GLn.rationalToFullRingEquiv`, `HeckeRing.GLn.rationalToFullEquiv`,
+  `HeckeRing.GLn.integralToFullRingHom`: the ring isomorphism
+  `𝕋 (GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R ≃+* 𝕋 ⊤ (GLnZ n) R` and composite embedding from the
+  integral Hecke ring.
 * `HeckeRing.GLn.commSemiringRationalHeckeRing`, `HeckeRing.GLn.commRingRationalHeckeRing`,
   `HeckeRing.GLn.commSemiringFullHeckeRing`, `HeckeRing.GLn.commRingFullHeckeRing`: commutativity of
   both rational Hecke rings.
+* `HeckeRing.GLn.scalarUnit`, `HeckeRing.GLn.scalarSubmonoid`: the central scalar units of
+  `RationalHeckeRing n` and the multiplicative submonoid of positive scalar operators in
+  `IntegralHeckeRing n`.
 
 ## Main results
 
-* `HeckeRing.GLn.SLnZ_eq_GLnZ_inf_glpos`: `SL_n(ℤ) = GL_n(ℤ) ⊓ GL_n^+(ℚ)`.
 * `HeckeRing.GLn.neg_one_mem_SLnZ_iff`, `HeckeRing.GLn.neg_mem_doubleCoset_SLnZ_iff`,
   `HeckeRing.GLn.doubleCoset_neg_GLnZ`: parity behavior of `-I_n` on double cosets.
 * `HeckeRing.GLn.exists_pos_natDiagGL_mul_mem_intEntries`,
@@ -64,6 +68,9 @@ always lies in `GL_n(ℤ)` (`doubleCoset_neg_GLnZ`), whereas `-I_n ∈ SL_n(ℤ)
   matrix.
 * `HeckeRing.GLn.commensurator_SLnZ_eq_top`, `HeckeRing.GLn.commensurator_GLnZ_eq_top`: both
   arithmetic subgroups have commensurator all of `GL_n(ℚ)`.
+* `HeckeRing.GLn.isUnit_integralToRational_of_mem_scalarSubmonoid`,
+  `HeckeRing.GLn.exists_mul_mem_scalarSubmonoid_eq`: `integralToRational n` sends
+  `scalarSubmonoid n` to units and clears denominators across `RationalHeckeRing n`.
 
 ## References
 
@@ -81,103 +88,6 @@ open scoped Pointwise HeckeCosetModule
 namespace HeckeRing.GLn
 
 variable (n : ℕ)
-
-section GLnZ
-
-/-- `GL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, embedded entrywise via
-`Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ)`. -/
-noncomputable def GLnZ : Subgroup (GL (Fin n) ℚ) :=
-  (Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) :
-    GL (Fin n) ℤ →* GL (Fin n) ℚ).range
-
-/-- Canonical membership of an integral invertible matrix in `GLnZ n`. -/
-theorem map_intCast_mem_GLnZ (γ : GL (Fin n) ℤ) :
-    Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ ∈ GLnZ n :=
-  ⟨γ, rfl⟩
-
-/-- Membership in `GLnZ n` characterised by an integral `GL_n(ℤ)` witness. -/
-@[simp]
-theorem mem_GLnZ_iff {g : GL (Fin n) ℚ} :
-    g ∈ GLnZ n ↔
-      ∃ γ : GL (Fin n) ℤ, Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ = g := by
-  rw [GLnZ, MonoidHom.mem_range]
-
-/-- Every element of `GL_n(ℤ)` has integer matrix entries. -/
-theorem hasIntEntries_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) :
-    HasIntEntries n g := by
-  obtain ⟨γ, rfl⟩ := (mem_GLnZ_iff n).mp hg
-  refine (hasIntEntries_iff n).mpr ⟨(γ : Matrix (Fin n) (Fin n) ℤ), ?_⟩
-  ext i j
-  simp [Matrix.GeneralLinearGroup.map_apply]
-
-/-- `GL_n(ℤ)` lies in the integral-entry submonoid `intEntries n`. -/
-theorem GLnZ_le_intEntries : (GLnZ n).toSubmonoid ≤ intEntries n :=
-  fun _ hg ↦ (mem_intEntries n).mpr (hasIntEntries_of_mem_GLnZ n hg)
-
-/-- Every element of `GL_n(ℤ)` has rational determinant `1` or `-1`. -/
-theorem det_eq_one_or_neg_one_of_mem_GLnZ {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n) :
-    (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨ (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1 := by
-  obtain ⟨γ, rfl⟩ := (mem_GLnZ_iff n).mp hg
-  have hdet : ((Matrix.GeneralLinearGroup.map (Int.castRingHom ℚ) γ : GL (Fin n) ℚ) :
-      Matrix (Fin n) (Fin n) ℚ).det = ((Matrix.GeneralLinearGroup.det γ : ℤˣ) : ℤ) := by
-    rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.map_det]; rfl
-  rw [hdet]
-  rcases Int.units_eq_one_or (Matrix.GeneralLinearGroup.det γ) with h | h <;> simp [h]
-
-/-- Entrywise and determinant characterization of `GL_n(ℤ)` inside `GL_n(ℚ)`: an invertible rational
-matrix belongs to `GL_n(ℤ)` if and only if it has integer entries and determinant `±1`. -/
-theorem mem_GLnZ_iff_hasIntEntries_and_det {g : GL (Fin n) ℚ} :
-    g ∈ GLnZ n ↔ HasIntEntries n g ∧
-      ((↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 ∨ (↑g : Matrix (Fin n) (Fin n) ℚ).det = -1) := by
-  refine ⟨fun hg ↦ ⟨hasIntEntries_of_mem_GLnZ n hg, det_eq_one_or_neg_one_of_mem_GLnZ n hg⟩, ?_⟩
-  rintro ⟨hint, hdet⟩
-  obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp hint
-  have hAdet_cast : (A.det : ℚ) = (↑g : Matrix (Fin n) (Fin n) ℚ).det := by
-    rw [hA]; simpa [RingHom.mapMatrix_apply] using RingHom.map_det (Int.castRingHom ℚ) A
-  have hAunit : IsUnit A.det := by
-    rcases hdet with h1 | h1
-    · exact (show A.det = 1 by exact_mod_cast hAdet_cast.trans h1) ▸ isUnit_one
-    · exact (show A.det = -1 by exact_mod_cast hAdet_cast.trans h1) ▸ IsUnit.neg isUnit_one
-  refine (mem_GLnZ_iff n).mpr ⟨Matrix.nonsingInvUnit A hAunit, Units.ext ?_⟩
-  ext i j
-  simpa [Matrix.GeneralLinearGroup.map_apply, Matrix.nonsingInvUnit] using
-    (congrFun (congrFun hA i) j).symm
-
-/-- `SL_n(ℤ)` is the positive-determinant part of `GL_n(ℤ)`: `SL_n(ℤ) = GL_n(ℤ) ⊓ GL_n^+(ℚ)`. -/
-theorem SLnZ_eq_GLnZ_inf_glpos : SLnZ n = GLnZ n ⊓ Matrix.GLPos (Fin n) ℚ := by
-  ext g
-  rw [Subgroup.mem_inf]
-  constructor
-  · intro hg
-    refine ⟨?_, SLnZ_le_glpos n hg⟩
-    obtain ⟨σ, rfl⟩ := (mem_SLnZ_iff n).mp hg
-    refine (mem_GLnZ_iff n).mpr ⟨σ.toGL, Units.ext ?_⟩
-    rw [mapGL_coe_matrix]; ext i j; simp [algebraMap_int_eq, Matrix.GeneralLinearGroup.map_apply]
-  · rintro ⟨hgZ, hgPos⟩
-    rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hgPos
-    have hdet1 : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1 :=
-      (det_eq_one_or_neg_one_of_mem_GLnZ n hgZ).resolve_right (by linarith)
-    obtain ⟨A, hA⟩ := (hasIntEntries_iff n).mp (hasIntEntries_of_mem_GLnZ n hgZ)
-    have hAdet : A.det = 1 := by
-      have hcast : (A.det : ℚ) = (↑g : Matrix (Fin n) (Fin n) ℚ).det := by
-        rw [hA]; simpa [RingHom.mapMatrix_apply] using RingHom.map_det (Int.castRingHom ℚ) A
-      exact_mod_cast hcast.trans hdet1
-    let σ : Matrix.SpecialLinearGroup (Fin n) ℤ := ⟨A, hAdet⟩
-    refine (mem_SLnZ_iff n).mpr ⟨σ, Units.ext ?_⟩
-    rw [hA, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe, RingHom.mapMatrix_apply]
-    simp [σ]
-
-private lemma mem_SLnZ_of_mem_GLnZ_of_det_eq_one {g : GL (Fin n) ℚ} (hg : g ∈ GLnZ n)
-    (hdet : (↑g : Matrix (Fin n) (Fin n) ℚ).det = 1) : g ∈ SLnZ n := by
-  rw [SLnZ_eq_GLnZ_inf_glpos, Subgroup.mem_inf, Matrix.mem_glpos,
-    Matrix.GeneralLinearGroup.val_det_apply, hdet]
-  exact ⟨hg, one_pos⟩
-
-/-- `SL_n(ℤ)` is a subgroup of `GL_n(ℤ)`. -/
-theorem SLnZ_le_GLnZ : SLnZ n ≤ GLnZ n :=
-  SLnZ_eq_GLnZ_inf_glpos n ▸ inf_le_left
-
-end GLnZ
 
 section ParityAndSign
 
@@ -279,22 +189,13 @@ section Commensurator
 such that `diag(c, …, c) * g` has integer entries. -/
 theorem exists_pos_natDiagGL_mul_mem_intEntries (g : GL (Fin n) ℚ) :
     ∃ c : ℕ, 0 < c ∧ natDiagGL n (fun _ ↦ c) * g ∈ intEntries n := by
-  let A : Matrix (Fin n) (Fin n) ℚ := g
-  let c : ℕ := ∏ i : Fin n, ∏ j : Fin n, (A i j).den
-  have hc : 0 < c := Finset.prod_pos fun _ _ ↦ Finset.prod_pos fun _ _ ↦ Rat.den_pos _
-  refine ⟨c, hc, (mem_intEntries n).mpr ((hasIntEntries_iff n).mpr
-    ⟨Matrix.of fun i j ↦ (A i j).num * ↑(c / (A i j).den), ?_⟩)⟩
+  set A : Matrix (Fin n) (Fin n) ℚ := ↑g with hA
+  have hc : 0 < A.den := Nat.pos_of_ne_zero A.den_ne_zero
+  refine ⟨A.den, hc, (mem_intEntries n).mpr ((hasIntEntries_iff n).mpr ⟨A.num, ?_⟩)⟩
   ext i j
-  have hdvd : (A i j).den ∣ c :=
-    dvd_trans (Finset.dvd_prod_of_mem (fun j' ↦ (A i j').den) (Finset.mem_univ j))
-      (Finset.dvd_prod_of_mem (fun i' ↦ ∏ j', (A i' j').den) (Finset.mem_univ i))
-  have hmul : (c : ℚ) = ((A i j).den : ℚ) * ((c / (A i j).den : ℕ) : ℚ) := by
-    exact_mod_cast (Nat.mul_div_cancel' hdvd).symm
-  simp only [Units.val_mul, natDiagGL_coe n _ fun _ ↦ hc, Matrix.diagonal_mul,
-    Matrix.map_apply, Matrix.of_apply, Int.cast_mul, Int.cast_natCast]
-  calc (c : ℚ) * A i j
-      = ((c / (A i j).den : ℕ) : ℚ) * (A i j * ((A i j).den : ℚ)) := by rw [hmul]; ring
-    _ = ((A i j).num : ℚ) * ((c / (A i j).den : ℕ) : ℚ) := by rw [Rat.mul_den_eq_num, mul_comm]
+  simp only [Units.val_mul, ← hA, natDiagGL_coe n _ fun _ ↦ hc, Matrix.diagonal_mul,
+    Matrix.map_apply]
+  rw [← A.num_div_den i j, mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr A.den_ne_zero)]
 
 /-- **Clearing denominators in `GL_n^+(ℚ)`**: for every `g ∈ GL_n^+(ℚ)` there is a positive natural
 `c` such that `diag(c, …, c) * g` lies in Shimura's integral submonoid `posDetInt n`. -/
@@ -323,21 +224,17 @@ theorem commensurator_SLnZ_eq_top : commensurator (SLnZ n) = ⊤ := by
 /-- `SL_n(ℤ)` has finite index (at most `2`) inside `GL_n(ℤ)`. -/
 instance finiteIndex_SLnZ_subgroupOf_GLnZ : ((SLnZ n).subgroupOf (GLnZ n)).FiniteIndex := by
   have hinj : Function.Injective (fun q : GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n) ↦
-      decide (0 < ((q.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det)) := by
+      decide (((q.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det = 1)) := by
     intro q₁ q₂ hdec
     have hiff := decide_eq_decide.mp hdec
     have hdet_eq : ((q₁.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det =
         ((q₂.out : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ).det := by
-      rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₁.out.2 with h1 | h1 <;>
-        rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₂.out.2 with h2 | h2 <;>
-        first | exact h1.trans h2.symm | exfalso; linarith [hiff.mp (by linarith)] |
-          exfalso; linarith [hiff.mpr (by linarith)]
-    have hSL : (q₁.out : GL (Fin n) ℚ)⁻¹ * (q₂.out : GL (Fin n) ℚ) ∈ SLnZ n := by
-      refine mem_SLnZ_of_mem_GLnZ_of_det_eq_one n
-        ((GLnZ n).mul_mem ((GLnZ n).inv_mem q₁.out.2) q₂.out.2) ?_
-      rw [Units.val_mul, Matrix.det_mul, ← Matrix.GeneralLinearGroup.val_det_apply, map_inv,
-        Units.val_inv_eq_inv_val, Matrix.GeneralLinearGroup.val_det_apply, ← hdet_eq]
-      rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₁.out.2 with h1 | h1 <;> simp [h1]
+      rcases det_eq_one_or_neg_one_of_mem_GLnZ n q₁.out.2 with h₁ | h₁
+      · exact h₁.trans (hiff.mp h₁).symm
+      · have h₂ := (det_eq_one_or_neg_one_of_mem_GLnZ n q₂.out.2).resolve_left
+          fun h₂ ↦ absurd (hiff.mpr h₂) (by rw [h₁]; norm_num)
+        exact h₁.trans h₂.symm
+    have hSL := inv_mul_mem_SLnZ_of_mem_GLnZ_of_det_eq n q₁.out.2 q₂.out.2 hdet_eq
     simpa only [QuotientGroup.out_eq'] using QuotientGroup.eq.mpr (Subgroup.mem_subgroupOf.mpr hSL)
   have : Finite (GLnZ n ⧸ (SLnZ n).subgroupOf (GLnZ n)) := Finite.of_injective _ hinj
   exact Subgroup.finiteIndex_of_finite_quotient
@@ -472,21 +369,11 @@ theorem exists_mem_SLnZ_inv_mul_mem_conj_GLnZ {g : GL (Fin n) ℚ}
       exists_mem_GLnZ_det_neg_one_mul_eq_mul n hg
     refine ⟨u * s₁⁻¹, mem_SLnZ_of_mem_GLnZ_of_det_eq_one n
       ((GLnZ n).mul_mem hu ((GLnZ n).inv_mem hs₁)) ?_, ?_⟩
-    · rw [Units.val_mul, Matrix.det_mul, hu1, ← Matrix.GeneralLinearGroup.val_det_apply, map_inv,
-        Units.val_inv_eq_inv_val, Matrix.GeneralLinearGroup.val_det_apply, hs₁_det]; norm_num
+    · rw [Units.val_mul, Matrix.det_mul, det_inv_of_mem_GLnZ n hs₁, hu1, hs₁_det]; norm_num
     · rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
         ConjAct.ofConjAct_toConjAct, inv_inv, show (u * s₁⁻¹)⁻¹ * u = s₁ by group,
         mul_assoc, hintertwine, inv_mul_cancel_left]
       exact hs₂
-
-/-- **Double-coset equivalence** `SL_n(ℤ) \ GL_n^+(ℚ) / SL_n(ℤ) ≃ GL_n(ℤ) \ GL_n(ℚ) / GL_n(ℤ)`
-(`Rhodes–Shemanske`, §2). -/
-noncomputable def rationalToFullCosetEquiv :
-    HeckeCoset (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) (SLnZ n) ≃
-      HeckeCoset (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) (GLnZ n) :=
-  HeckeCoset.mapEquivOfInf (SLnZ_eq_GLnZ_inf_glpos n) le_top le_rfl
-    (fun δ' ↦ exists_mem_GLnZ_mul_mem_glpos n (δ' : GL (Fin n) ℚ))
-    (fun g _ hu ↦ exists_mem_SLnZ_inv_mul_mem_conj_GLnZ n g.2 hu)
 
 /-- **Rational-to-full Hecke ring isomorphism** (`Shimura` Proposition 3.16 /
 `Rhodes–Shemanske` §2): `H_R(SL_n(ℤ), GL_n^+(ℚ)) ≃+* H_R(GL_n(ℤ), GL_n(ℚ))` over any coefficient
@@ -517,6 +404,15 @@ noncomputable def integralToFullRingHom [NeZero n] (R : Type*) [Semiring R] :
     𝕋 (posDetInt n) (SLnZ n) R →+* 𝕋 (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) R :=
   (rationalToFullRingEquiv n R).toRingHom.comp (integralToRationalRingHom n R)
 
+/-- `integralToFullRingHom` maps a basis element to the corresponding `GL_n(ℤ)`-coset basis
+element. -/
+@[simp]
+theorem integralToFullRingHom_single [NeZero n] (R : Type*) [Semiring R]
+    (D : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)) (b : R) :
+    integralToFullRingHom n R (HeckeCosetModule.single R D b) =
+      HeckeCosetModule.single R (D.map le_top (SLnZ_le_GLnZ n) (SLnZ_le_GLnZ n)) b := by
+  simp [integralToFullRingHom]
+
 /-- `integralToFullRingHom` is injective over any coefficient semiring `R`. -/
 theorem integralToFullRingHom_injective [NeZero n] (R : Type*) [Semiring R] :
     Function.Injective (integralToFullRingHom n R) :=
@@ -526,12 +422,6 @@ end Comparison
 
 section Commutativity
 
-/-- Transposition preserves `GL_n^+(ℚ)`. -/
-theorem transposeMulEquiv_mem_glpos {g : GL (Fin n) ℚ} (hg : g ∈ Matrix.GLPos (Fin n) ℚ) :
-    (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop ∈ Matrix.GLPos (Fin n) ℚ := by
-  rw [Matrix.mem_glpos, Matrix.GeneralLinearGroup.val_det_apply] at hg ⊢
-  rwa [Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv, Matrix.det_transpose]
-
 /-- Transposition as an anti-involution of the rational Hecke datum `(GL_n^+(ℚ), SL_n(ℤ))`. -/
 noncomputable def transposeRationalAntiInvolution :
     HeckeAntiInvolution (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) :=
@@ -539,7 +429,7 @@ noncomputable def transposeRationalAntiInvolution :
     (Matrix.GeneralLinearGroup.transposeMulEquiv (R := ℚ) (Fin n)).toMonoidHom
     Matrix.GeneralLinearGroup.transposeMulEquiv_transposeMulEquiv
     (fun _ hg ↦ transposeMulEquiv_mem_SLnZ n hg)
-    (fun _ hg ↦ transposeMulEquiv_mem_glpos n hg)
+    (fun _ hg ↦ Matrix.GeneralLinearGroup.transposeMulEquiv_mem_glpos hg)
 
 /-- `transposeRationalAntiInvolution` acts on `GL_n^+(ℚ)` by matrix transposition. -/
 @[simp]
@@ -620,5 +510,165 @@ noncomputable def commRingFullHeckeRing (R : Type*) [CommRing R] :
     mul_comm := mul_comm_fullHeckeRing n R }
 
 end Commutativity
+
+attribute [local instance] commRingRationalHeckeRing
+
+section ScalarUnits
+
+/-- Multiplying a rational double-coset basis element on the right by the scalar coset of
+`natDiagGL n (fun _ ↦ c)` gives the single double coset of the product representative. -/
+theorem single_mul_natDiagGL_const (g : (Matrix.GLPos (Fin n) ℚ).toSubmonoid) (c : ℕ) :
+    HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) g) 1 *
+        HeckeCosetModule.single ℤ
+          (HeckeCoset.mk (SLnZ n) (SLnZ n)
+            ⟨natDiagGL n (fun _ ↦ c),
+              posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c))⟩) 1 =
+      HeckeCosetModule.single ℤ
+        (HeckeCoset.mk (SLnZ n) (SLnZ n)
+          ⟨(g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c),
+            (Matrix.GLPos (Fin n) ℚ).mul_mem g.2
+              (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c)))⟩) 1 :=
+  HeckeCosetModule.single_mul_single_of_mem_normalizer_right (x := g)
+    (y := ⟨natDiagGL n (fun _ ↦ c),
+      posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c))⟩) ℤ
+    (natDiagGL_const_mem_normalizer n c (SLnZ n))
+
+/-- The scalar operator `T(c, …, c)` as a central unit of `RationalHeckeRing n`, with inverse
+`[SL_n(ℤ) · (natDiagGL n (fun _ ↦ c))⁻¹ · SL_n(ℤ)]` (taking the fallback value `1` at `c = 0` to
+match `natDiagGL`). -/
+noncomputable def scalarUnit (c : ℕ) : (RationalHeckeRing n)ˣ :=
+  HeckeCosetModule.unitOfMemNormalizer ℤ
+    (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c)))
+    ((Matrix.GLPos (Fin n) ℚ).inv_mem
+      (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c))))
+    (natDiagGL_const_mem_normalizer n c (SLnZ n))
+
+/-- The inverse of `scalarUnit` is the single double-coset operator of
+`(natDiagGL n (fun _ ↦ c))⁻¹`. -/
+@[simp]
+theorem val_inv_scalarUnit (c : ℕ) :
+    (↑(scalarUnit n c)⁻¹ : RationalHeckeRing n) =
+      HeckeCosetModule.single ℤ
+        (HeckeCoset.mk (SLnZ n) (SLnZ n)
+          ⟨(natDiagGL n (fun _ ↦ c))⁻¹,
+             (Matrix.GLPos (Fin n) ℚ).inv_mem
+               (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c)))⟩) 1 := by
+  rw [scalarUnit, HeckeCosetModule.val_inv_unitOfMemNormalizer]
+
+private lemma natDiagGL_const_zero : natDiagGL n (fun _ ↦ 0) = 1 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact Subsingleton.elim _ _
+  · exact natDiagGL_of_not_pos n fun h ↦ Nat.lt_irrefl 0 (h ⟨0, hn⟩)
+
+/-- At `c = 0`, `scalarUnit` takes the fallback value `1`. -/
+@[simp]
+theorem scalarUnit_zero : scalarUnit n 0 = 1 := by
+  apply Units.ext
+  rw [scalarUnit, HeckeCosetModule.val_unitOfMemNormalizer, Units.val_one,
+    HeckeCosetModule.one_def, HeckeCoset.one_def]
+  exact congrArg (HeckeCosetModule.single ℤ · 1)
+    (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n)) (Subtype.ext (natDiagGL_const_zero n)))
+
+/-- At `c = 1`, `scalarUnit` is the multiplicative identity. -/
+@[simp]
+theorem scalarUnit_one : scalarUnit n 1 = 1 := by
+  apply Units.ext
+  rw [scalarUnit, HeckeCosetModule.val_unitOfMemNormalizer, Units.val_one,
+    HeckeCosetModule.one_def, HeckeCoset.one_def]
+  exact congrArg (HeckeCosetModule.single ℤ · 1)
+    (congrArg (HeckeCoset.mk (SLnZ n) (SLnZ n)) (Subtype.ext (natDiagGL_one n)))
+
+variable [NeZero n]
+
+/-- The underlying element of `scalarUnit` is the image of `diagElem (fun _ ↦ c)` in
+`RationalHeckeRing n`. -/
+@[simp]
+theorem val_scalarUnit (c : ℕ) :
+    (scalarUnit n c : RationalHeckeRing n) = integralToRational n (diagElem (fun _ ↦ c)) := by
+  rw [scalarUnit, HeckeCosetModule.val_unitOfMemNormalizer, integralToRational_diagElem]
+
+/-- `scalarUnit` is multiplicative in positive scalars `c` and `d`. -/
+theorem scalarUnit_mul {c d : ℕ} (hc : 0 < c) (hd : 0 < d) :
+    scalarUnit n (c * d) = scalarUnit n c * scalarUnit n d := by
+  apply Units.ext
+  rw [Units.val_mul, val_scalarUnit, val_scalarUnit, val_scalarUnit, ← map_mul,
+    diagElem_const_mul n c hc (fun _ ↦ d) (fun _ ↦ hd)]
+  rfl
+
+/-- The `k`-th power of `scalarUnit` at `c` is `scalarUnit` at `c ^ k`. -/
+theorem scalarUnit_pow (c k : ℕ) :
+    scalarUnit n c ^ k = scalarUnit n (c ^ k) := by
+  rcases Nat.eq_zero_or_pos c with rfl | hc
+  · rcases k with _ | k
+    · simp
+    · rw [Nat.zero_pow (Nat.succ_pos k), scalarUnit_zero, one_pow]
+  · apply Units.ext
+    rw [Units.val_pow_eq_pow_val, val_scalarUnit, val_scalarUnit, ← map_pow,
+      diagElem_const_pow n c hc k]
+
+/-- Every scalar operator `diagElem (fun _ ↦ c)` becomes a unit in `RationalHeckeRing n`. -/
+theorem isUnit_integralToRational_diagElem_const (c : ℕ) :
+    IsUnit (integralToRational n (diagElem (fun _ ↦ c))) :=
+  val_scalarUnit n c ▸ (scalarUnit n c).isUnit
+
+/-- The multiplicative submonoid of `IntegralHeckeRing n` consisting of the positive scalar Hecke
+operators `T(c, …, c)` (`0 < c`). -/
+noncomputable def scalarSubmonoid : Submonoid (IntegralHeckeRing n) where
+  carrier := {f | ∃ c : ℕ, 0 < c ∧ f = diagElem (fun _ ↦ c)}
+  one_mem' := ⟨1, Nat.one_pos, diagElem_one.symm⟩
+  mul_mem' := by
+    rintro _ _ ⟨c, hc, rfl⟩ ⟨d, hd, rfl⟩
+    refine ⟨c * d, mul_pos hc hd, ?_⟩
+    rw [diagElem_const_mul n c hc (fun _ ↦ d) (fun _ ↦ hd)]
+    rfl
+
+/-- Membership in `scalarSubmonoid n` by a positive scalar witness `c`. -/
+@[simp]
+theorem mem_scalarSubmonoid_iff {f : IntegralHeckeRing n} :
+    f ∈ scalarSubmonoid n ↔ ∃ c : ℕ, 0 < c ∧ f = diagElem (fun _ ↦ c) :=
+  Iff.rfl
+
+/-- Every positive scalar operator `diagElem (fun _ ↦ c)` belongs to `scalarSubmonoid n`. -/
+theorem diagElem_const_mem_scalarSubmonoid {c : ℕ} (hc : 0 < c) :
+    diagElem (fun _ ↦ c) ∈ scalarSubmonoid n :=
+  ⟨c, hc, rfl⟩
+
+/-- Every element of `scalarSubmonoid n` maps to a unit under `integralToRational n`. -/
+theorem isUnit_integralToRational_of_mem_scalarSubmonoid {s : IntegralHeckeRing n}
+    (hs : s ∈ scalarSubmonoid n) : IsUnit (integralToRational n s) := by
+  obtain ⟨c, -, rfl⟩ := hs
+  exact isUnit_integralToRational_diagElem_const n c
+
+/-- **Global denominator clearing in `RationalHeckeRing n`** (`Shimura`, Proposition 3.16): every
+rational Hecke operator `z` becomes integral after multiplying by a positive scalar operator
+`s ∈ scalarSubmonoid n`. -/
+theorem exists_mul_mem_scalarSubmonoid_eq (z : RationalHeckeRing n) :
+    ∃ x : IntegralHeckeRing n, ∃ s ∈ scalarSubmonoid n,
+      z * integralToRational n s = integralToRational n x := by
+  induction z using HeckeCosetModule.induction_linear with
+  | h0 => exact ⟨0, 1, (scalarSubmonoid n).one_mem, by simp⟩
+  | hsingle D m =>
+    induction D using HeckeCoset.induction with | h g =>
+    obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+    have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
+      natDiagGL_const_comm n c g ▸ hcg
+    refine ⟨HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) ⟨_, hgc⟩) m,
+      diagElem (fun _ ↦ c), diagElem_const_mem_scalarSubmonoid n hc, ?_⟩
+    have h1 := single_mul_natDiagGL_const n g c
+    rw [HeckeCosetModule.single_mul_single] at h1
+    rw [integralToRational_diagElem, HeckeCosetModule.single_mul_single,
+      integralToRational, integralToRationalRingHom_single, HeckeCoset.map_mk]
+    exact (congrArg (m • ·) ((one_smul ℤ _).symm.trans h1)).trans
+      (HeckeCosetModule.smul_single_one ℤ _ m)
+  | hadd z₁ z₂ ih₁ ih₂ =>
+    obtain ⟨x₁, s₁, hs₁, hx₁⟩ := ih₁
+    obtain ⟨x₂, s₂, hs₂, hx₂⟩ := ih₂
+    refine ⟨x₁ * s₂ + x₂ * s₁, s₁ * s₂, (scalarSubmonoid n).mul_mem hs₁ hs₂, ?_⟩
+    calc (z₁ + z₂) * integralToRational n (s₁ * s₂)
+        = (z₁ * integralToRational n s₁) * integralToRational n s₂ +
+            (z₂ * integralToRational n s₂) * integralToRational n s₁ := by rw [map_mul]; ring
+      _ = integralToRational n (x₁ * s₂ + x₂ * s₁) := by rw [hx₁, hx₂, map_add, map_mul, map_mul]
+
+end ScalarUnits
 
 end HeckeRing.GLn

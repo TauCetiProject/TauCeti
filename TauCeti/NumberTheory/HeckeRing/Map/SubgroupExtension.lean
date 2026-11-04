@@ -131,6 +131,8 @@ theorem multiplicity_eq_of_inf (hHP : H = H' ⊓ P) {g h d : G}
   have hzP : ((i.out : G) * g * ((j.out : G) * h))⁻¹ * d ∈ P :=
     P.mul_mem (P.inv_mem (P.mul_mem (P.mul_mem (hleP i.out.2) hgP)
       (P.mul_mem (hleP j.out.2) hhP))) hdP
+  -- Unfold only the pair equivalence `epairs` so its second component is the named quotient `q`
+  -- without unfolding `eg` or `q`, and expose the defining fibre equations.
   dsimp only [epairs, Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.prodShear_apply,
     Equiv.refl_apply, MulAction.toPerm_apply]
   change (((i.out : G) * g * ((j.out : G) * h) : G ⧸ H) = (d : G ⧸ H)) ↔
@@ -162,10 +164,8 @@ theorem map_bijective_of_inf :
   · intro D₁ D₂ hEq
     induction D₁ using HeckeCoset.induction with | h g₁ =>
     induction D₂ using HeckeCoset.induction with | h g₂ =>
-    rw [map_mk, map_mk, eq_iff] at hEq
-    have hmem : (g₁ : G) ∈ doubleCoset (g₂ : G) H' H' := by
-      change (g₁ : G) ∈ doubleCoset ((Submonoid.inclusion hΔ g₂ : Δ') : G) H' H'
-      rw [← hEq]; exact mem_doubleCoset_self H' H' _
+    rw [map_mk, map_mk, eq_iff, Submonoid.coe_inclusion, Submonoid.coe_inclusion] at hEq
+    have hmem : (g₁ : G) ∈ doubleCoset (g₂ : G) H' H' := hEq ▸ mem_doubleCoset_self H' H' _
     obtain ⟨u₁, hu₁, u₂, hu₂, hg₁⟩ := mem_doubleCoset.mp hmem
     obtain ⟨x, hxH, hxu₁⟩ := hstab g₂ u₁ hu₁
     rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
@@ -227,12 +227,8 @@ theorem mapSubgroupLinearEquiv_apply_map (f : 𝕋 Δ H R) (D : HeckeCoset Δ H 
 @[simp]
 theorem mapSubgroupLinearEquiv_single (D : HeckeCoset Δ H H) (b : R) :
     mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab (single R D b) =
-      single R (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) b := by
-  classical
-  ext E
-  obtain ⟨D', rfl⟩ := (HeckeCoset.map_bijective_of_inf hHP hΔ hΔP hsurj hstab).2 E
-  rw [mapSubgroupLinearEquiv_apply_map, single_apply, single_apply,
-    (HeckeCoset.map_bijective_of_inf hHP hΔ hΔP hsurj hstab).1.eq_iff]
+      single R (D.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)) b :=
+  mapDomain_single R _ D b
 
 end LinearEquiv
 
@@ -250,18 +246,11 @@ theorem mapSubgroupLinearEquiv_structureConstants (D₁ D₂ : HeckeCoset Δ H H
       structureConstants R H' H' H'
         (D₁.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)).rep
         (D₂.map hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)).rep := by
-  have hle : H ≤ H' := hHP ▸ inf_le_left
-  have hrep_mem (D : HeckeCoset Δ H H) :
-      (((D.map hΔ hle hle).rep : Δ') : G) ∈ doubleCoset (D.rep : G) H' H' := by
-    rw [show D.map hΔ hle hle = HeckeCoset.mk H' H' (Submonoid.inclusion hΔ D.rep) by
-      conv_lhs => rw [← HeckeCoset.mk_rep D, HeckeCoset.map_mk]]
-    exact HeckeCoset.rep_mk_mem_doubleCoset (Submonoid.inclusion hΔ D.rep)
   ext E
   obtain ⟨D, rfl⟩ := (HeckeCoset.map_bijective_of_inf hHP hΔ hΔP hsurj hstab).2 E
   rw [mapSubgroupLinearEquiv_apply_map, structureConstants_apply, structureConstants_apply,
-    multiplicity_doubleCoset_congr_first H' H' H' _ _ (hrep_mem D₁),
-    multiplicity_doubleCoset_congr_second H' H' H' _ _ (hrep_mem D₂),
-    multiplicity_doubleCoset_congr (Γ₁ := H') (Γ₂ := H') (Γ₃ := H') _ _ (hrep_mem D),
+    HeckeCoset.multiplicity_map_rep hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)
+      D₁ D₂ D,
     multiplicity_eq_of_inf hHP (hΔP D₁.rep.2) (hΔP D₂.rep.2) (hΔP D.rep.2)
       (hstab D₁.rep) (hstab D₂.rep)]
 
@@ -270,17 +259,13 @@ theorem mapSubgroupLinearEquiv_mul (f g : 𝕋 Δ H R) :
     mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab (f * g) =
       mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab f *
         mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab g := by
-  induction f using HeckeCosetModule.induction_linear with
-  | h0 => simp
-  | hadd _ _ h₁ h₂ => simp only [_root_.add_mul, map_add, h₁, h₂]
-  | hsingle D₁ a =>
-    induction g using HeckeCosetModule.induction_linear with
-    | h0 => simp
-    | hadd _ _ h₁ h₂ => simp only [_root_.mul_add, map_add, h₁, h₂]
-    | hsingle D₂ b =>
-      rw [single_mul_single, map_smul, map_smul,
-        mapSubgroupLinearEquiv_structureConstants R hHP hΔ hΔP hsurj hstab,
-        mapSubgroupLinearEquiv_single, mapSubgroupLinearEquiv_single, single_mul_single]
+  let L := (mapSubgroupLinearEquiv R hHP hΔ hΔP hsurj hstab).toLinearMap
+  rw [mul_def, mul_def]
+  exact map_mul_of_structureConstants R hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)
+    (hHP ▸ inf_le_left) L L L
+    (mapSubgroupLinearEquiv_single R hHP hΔ hΔP hsurj hstab)
+    (mapSubgroupLinearEquiv_single R hHP hΔ hΔP hsurj hstab)
+    (mapSubgroupLinearEquiv_structureConstants R hHP hΔ hΔP hsurj hstab) f g
 
 include hHP hΔ hΔP hsurj hstab in
 /-- **Subgroup-extension isomorphism for Hecke rings** (Shimura Proposition 3.16 /

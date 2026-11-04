@@ -171,7 +171,7 @@ theorem multiplicity_doubleCoset_congr_first (H₁ H₂ H₃ : Subgroup G)
       _ = QuotientGroup.mk (i.out * (⟨a, ha⟩ : H₁)) := by
         rw [decompQuotientEquivMulLeftRight_mk, MulAction.Quotient.smul_mk, smul_eq_mul]
         exact congrArg QuotientGroup.mk (Subtype.ext (by
-          simp [aN, Subgroup.normalizerMonoidHom, HSMul.hSMul, mul_assoc]))
+          simp [aN, Subgroup.normalizerMonoidHom_apply_symm_apply_coe, mul_assoc]))
   let c : DecompQuotient H₁ H₂ (a * g * b) → H₂ := fun i ↦
     ⟨g⁻¹ * (((eg i).out : G)⁻¹ * ((i.out : G) * a)) * g * b,
       H₂.mul_mem (conj_mem_of_mk_eq g (heg i)) hb⟩
@@ -187,6 +187,7 @@ theorem multiplicity_doubleCoset_congr_first (H₁ H₂ H₃ : Subgroup G)
     have hm := H₃.inv_mem (conj_mem_of_mk_eq h (QuotientGroup.mk_out_smul (c i) j))
     dsimp only [q, c, Subtype.coe_mk] at hm ⊢
     simpa only [Subgroup.coe_mul, mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left] using hm
+  -- As above, expose only the shear equivalence so its second component is the named quotient `q`.
   dsimp only [epairs, Equiv.prodShear_apply, MulAction.toPerm_apply]
   change (((i.out : G) * (a * g * b) * ((j.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃)) ↔
     ((((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃))

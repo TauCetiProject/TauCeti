@@ -293,6 +293,11 @@ variable {Δ'' : Submonoid G} {H₁'' H₂'' : Subgroup G}
     map hΔ' h₁' h₂' (map hΔ h₁ h₂ D) = map (hΔ.trans hΔ') (h₁.trans h₁') (h₂.trans h₂') D :=
   Quotient.inductionOn D fun _ ↦ rfl
 
+/-- `HeckeCoset.map` preserves the identity double coset. -/
+@[simp] lemma map_one {H H' : Subgroup G} (hΔ : Δ ≤ Δ') (hH : H ≤ H') :
+    map hΔ hH hH (1 : HeckeCoset Δ H H) = (1 : HeckeCoset Δ' H' H') := by
+  rw [one_def, one_def, map_mk]; rfl
+
 end Map
 
 /-- Induction: to prove something for all double cosets, prove it for `mk H₁ H₂ g`. -/
@@ -1002,6 +1007,12 @@ lemma sum_single (f : HeckeCosetModule Δ H₁ H₂ R) : f.sum (single R) = f :=
 lemma single_add (D : HeckeCoset Δ H₁ H₂) (b c : R) :
     single R D (b + c) = single R D b + single R D c :=
   Finsupp.single_add D b c
+
+/-- `Finsupp.mapDomain_single`, as a wrapper-level equation between two Hecke coset modules. -/
+lemma mapDomain_single {G' : Type*} [Group G'] {Δ' : Submonoid G'} {H₁' H₂' : Subgroup G'}
+    (k : HeckeCoset Δ H₁ H₂ → HeckeCoset Δ' H₁' H₂') (D : HeckeCoset Δ H₁ H₂) (b : R) :
+    (Finsupp.mapDomain k (single R D b) : HeckeCosetModule Δ' H₁' H₂' R) = single R (k D) b :=
+  Finsupp.mapDomain_single
 
 /-- `Finsupp.induction_linear`, restated for the wrapper type `HeckeCosetModule Δ H₁ H₂ R` in
 its basis vocabulary `single`, in the same way that `MonoidAlgebra.induction_linear` restates
