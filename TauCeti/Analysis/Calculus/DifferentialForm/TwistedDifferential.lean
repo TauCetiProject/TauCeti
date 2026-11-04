@@ -17,7 +17,7 @@ differential of a real function `f` is the one-form `d^c_J f = -(1/2) df ∘ J`.
 
 ## Main definitions
 
-* `TauCeti.twistedDifferential J f`: the one-form `d^c_J f = -(1/2) df ∘ J`.
+* `TauCeti.AlmostComplexStructure.twistedDifferential J f`: the one-form `d^c_J f = -(1/2) df ∘ J`.
 -/
 
 public section
@@ -26,7 +26,7 @@ noncomputable section
 
 open ContinuousAlternatingMap
 
-namespace TauCeti
+namespace TauCeti.AlmostComplexStructure
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (J : AlmostComplexStructure E)
@@ -39,7 +39,7 @@ def twistedDifferential (f : E → ℝ) (x : E) : E [⋀^Fin 1]→L[ℝ] ℝ :=
 /-- The twisted differential evaluated on a vector. -/
 @[simp]
 theorem twistedDifferential_apply (f : E → ℝ) (x : E) (v : Fin 1 → E) :
-    twistedDifferential J f x v = -2⁻¹ * fderiv ℝ f x (J (v 0)) := by
+    J.twistedDifferential f x v = -2⁻¹ * fderiv ℝ f x (J (v 0)) := by
   simp [twistedDifferential]
 
-end TauCeti
+end TauCeti.AlmostComplexStructure

@@ -74,7 +74,7 @@ stated on the plane `ℂ`, and the modulus-potential decomposition and the bound
 form on a finite-dimensional real normed space carrying an almost complex structure.
 
 The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differential `d^c_J`
-(`TauCeti.twistedDifferential`) are general constructions defined in
+(`TauCeti.AlmostComplexStructure.twistedDifferential`) are general constructions defined in
 `TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm` and
 `TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential`.
 
@@ -428,7 +428,7 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     (hH : HasDerivAt H (χ (normSq (α x)) / normSq (α x)) (normSq (α x))) (hχ : χ 0 = 0)
     (hα : DifferentiableAt ℝ α x) :
     cutoffPhaseForm χ b α x =
-      twistedDifferential J (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ b α x := by
+      J.twistedDifferential (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ b α x := by
   -- The derivative of `H(|α|²)` is `H'(s) · 2 Re (conj α dα)`.
   have hd : HasFDerivAt (fun y ↦ H (normSq (α y)))
       ((χ (normSq (α x)) / normSq (α x)) •
@@ -438,7 +438,7 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     exact hH.comp_hasFDerivAt x hα.hasFDerivAt.norm_sq
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = fun _ ↦ w := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  rw [ContinuousAlternatingMap.add_apply, twistedDifferential_apply, cutoffDBarForm_apply,
+  rw [ContinuousAlternatingMap.add_apply, J.twistedDifferential_apply, cutoffDBarForm_apply,
     hd.fderiv, covariantDBar_apply, J.apply_apply, map_neg, cutoffPhaseForm_apply,
     ContinuousAlternatingMap.smul_apply, covariantPhaseForm_apply,
     ContinuousAlternatingMap.add_apply, phaseForm_apply]
