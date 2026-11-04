@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Ring.Units
+public import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -28,7 +30,9 @@ cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
 `ContinuousLinearMap.apply_ringInverse_apply`) and is bounded below by `‖A⁻¹‖⁻¹`
 (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
 `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
-(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
+(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). A scalar shift bounded below
+is invertible if a sufficiently nearby shift is invertible
+(`ContinuousLinearMap.isUnit_sub_of_nearby_resolvent`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
@@ -135,6 +139,53 @@ theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit 
     (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
   refine opNorm_le_bound _ hM fun y ↦ ?_
   simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
+
+/-- A scalar shift bounded below by `c > 0` is invertible if a shift at scalar distance
+less than `c / 4` is invertible. -/
+theorem isUnit_sub_of_nearby_resolvent [CompleteSpace E] [Nontrivial E]
+    (T : E →L[𝕜] E) {z w : 𝕜} {c : ℝ} (hc : 0 < c)
+    (hbound : ∀ x : E, c * ‖x‖ ≤ ‖T x - z • x‖)
+    (hw : IsUnit (algebraMap 𝕜 (E →L[𝕜] E) w - T)) (hzw : ‖z - w‖ < c / 4) :
+    IsUnit (algebraMap 𝕜 (E →L[𝕜] E) z - T) := by
+  obtain ⟨u, hu⟩ := hw
+  -- The lower bound at `z` remains at least `c / 2` at the nearby resolvent point `w`.
+  have hlow (x : E) : c / 2 * ‖x‖ ≤ ‖(u : E →L[𝕜] E) x‖ := by
+    have h := TauCeti.norm_sub_smul_le_norm_sub_smul_add (T x) x z w
+    have hdist := mul_le_mul_of_nonneg_right hzw.le (norm_nonneg x)
+    have heq : ‖T x - w • x‖ = ‖(u : E →L[𝕜] E) x‖ := by
+      rw [hu, sub_apply, algebraMap_apply, norm_sub_rev]
+    rw [heq] at h
+    have hb := hbound x
+    nlinarith
+  have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
+    rw [← Ring.inverse_unit]
+    apply norm_ringInverse_le_of_forall_norm_le u.isUnit (by positivity)
+    intro x
+    rw [div_mul_eq_mul_div]
+    apply (le_div_iff₀ hc).mpr
+    have h := hlow x
+    nlinarith
+  -- Mathlib's nearby-unit construction makes `z` a resolvent point as well.
+  let v : E →L[𝕜] E := (u : E →L[𝕜] E) - (algebraMap 𝕜 _ z - T)
+  have hv : ‖v‖ ≤ ‖z - w‖ := by
+    apply opNorm_le_bound _ (norm_nonneg _)
+    intro x
+    have heq : v x = (w - z) • x := by
+      simp only [v, hu, sub_apply, algebraMap_apply, sub_smul]
+      abel
+    rw [heq, norm_smul, norm_sub_rev]
+  have hnear : ‖(algebraMap 𝕜 _ z - T) - (u : E →L[𝕜] E)‖ <
+      ‖(↑u⁻¹ : E →L[𝕜] E)‖⁻¹ := by
+    rw [norm_sub_rev, ← one_div, lt_div_iff₀ (Units.norm_pos u⁻¹)]
+    calc ‖v‖ * ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ ‖z - w‖ * (2 / c) :=
+          mul_le_mul hv hinv (norm_nonneg _) (norm_nonneg _)
+      _ < 1 := by
+        have hpos : 0 < 2 / c := by positivity
+        have h := mul_lt_mul_of_pos_right hzw hpos
+        have heq : (c / 4) * (2 / c) = 1 / 2 := by field_simp; norm_num
+        rw [heq] at h
+        linarith
+  exact (u.ofNearby (algebraMap 𝕜 _ z - T) hnear).isUnit
 
 end Inverse
 
