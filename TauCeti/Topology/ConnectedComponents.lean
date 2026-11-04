@@ -33,6 +33,8 @@ space by them.
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
+* `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
+  open set is joined to each point of its component by a path inside that component.
 * `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
   a point of an open set `U` lies in the component of that point in `U`, as soon as it meets the
   closure of that component only inside `U`.
@@ -165,6 +167,15 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
+
+/-- **Points of a component of an open set are joined inside it.** In a locally path-connected
+space, the connected component of `x` in an open set `U` is open and connected, hence path
+connected, so it joins `x` to each of its points. -/
+theorem _root_.IsOpen.joinedIn_of_mem_connectedComponentIn [LocallyPathConnectedSpace X]
+    {U : Set X} (hU : IsOpen U) {x y : X} (hx : x ∈ U) (hy : y ∈ connectedComponentIn U x) :
+    JoinedIn (connectedComponentIn U x) x y :=
+  (hU.connectedComponentIn.isConnected_iff_isPathConnected.1
+    (isConnected_connectedComponentIn_iff.2 hx)).joinedIn x (mem_connectedComponentIn hx) y hy
 
 /-- **Trapping a preconnected set in a component of an open set.** Let `U` be open in a locally
 connected space and let `C` be the connected component of `x ∈ U` in `U`. A preconnected set `A`

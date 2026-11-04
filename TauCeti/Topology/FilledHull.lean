@@ -11,6 +11,7 @@ public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Separation.Hausdorff
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Frontier
 
@@ -217,24 +218,6 @@ theorem subset_filledHull_of_frontier_subset (hSb : IsBounded S) (hfr : frontier
 
 end TauCeti
 
-section Noncompact
-
-/-- A noncompact space is nonempty, the empty space being compact. -/
-theorem NoncompactSpace.nonempty (X : Type*) [TopologicalSpace X] [NoncompactSpace X] :
-    Nonempty X :=
-  not_isEmpty_iff.1 fun _ ↦ _root_.noncompact_univ X isCompact_univ
-
-variable {X : Type*} [TopologicalSpace X]
-
-/-- A preconnected noncompact space has no compact connected component: its only component is the
-whole space. -/
-theorem TauCeti.not_isCompact_connectedComponent [PreconnectedSpace X] [NoncompactSpace X]
-    (x : X) : ¬IsCompact (connectedComponent x) := by
-  rw [PreconnectedSpace.connectedComponent_eq_univ]
-  exact noncompact_univ X
-
-end Noncompact
-
 section Compact
 
 open Set
@@ -242,6 +225,18 @@ open Set
 variable {X : Type*} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X]
 
 namespace TauCeti
+
+omit [T2Space X] [WeaklyLocallyCompactSpace X] in
+/-- The component in `Sᶜ` of a point of `S` is empty, so its closure is compact. -/
+theorem isCompact_closure_connectedComponentIn_compl_of_mem {S : Set X} {x : X} (hx : x ∈ S) :
+    IsCompact (closure (connectedComponentIn Sᶜ x)) := by
+  simp [connectedComponentIn_eq_empty (notMem_compl_iff.2 hx)]
+
+omit [T2Space X] [WeaklyLocallyCompactSpace X] in
+/-- A point whose component in `Sᶜ` has noncompact closure lies outside `S`. -/
+theorem notMem_of_not_isCompact_closure_connectedComponentIn_compl {S : Set X} {x : X}
+    (hx : ¬IsCompact (closure (connectedComponentIn Sᶜ x))) : x ∉ S :=
+  fun hxS ↦ hx (isCompact_closure_connectedComponentIn_compl_of_mem hxS)
 
 omit [T2Space X] [WeaklyLocallyCompactSpace X] in
 /-- **A complementary component missing the frontier of a neighbourhood is clopen.** Let `K` be a
@@ -279,8 +274,8 @@ theorem connectedComponentIn_compl_inter_frontier_nonempty [LocallyConnectedSpac
   set C := connectedComponentIn Lᶜ x
   by_contra hCfr
   have hCfr' (w : X) (hwC : w ∈ C) : w ∉ frontier M := fun hw ↦ hCfr ⟨w, hwC, hw⟩
-  have hxC : x ∈ C := mem_connectedComponentIn fun hxL ↦
-    hx (by simp [C, connectedComponentIn_eq_empty (notMem_compl_iff.2 hxL)])
+  have hxC : x ∈ C :=
+    mem_connectedComponentIn (notMem_of_not_isCompact_closure_connectedComponentIn_compl hx)
   by_cases hxM : x ∈ M
   · -- Inside `M`, the component has compact closure.
     have hCM : C ⊆ interior M :=
@@ -404,7 +399,7 @@ theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace
     exact Finite.of_surjective _ ConnectedComponents.surjective_coe
   have := not_compactSpace_iff.1 hc
   -- Enlarge `K` by a point, so that the neighbourhood `L₀` below is nonempty.
-  obtain ⟨x₀⟩ := NoncompactSpace.nonempty X
+  obtain ⟨x₀⟩ := (Filter.cocompact X).nonempty_of_neBot
   -- `L` is a compact neighbourhood `L₀` of `K` together with the components of `X \ L₀` with
   -- compact closure. The other components of `X \ L₀` meet the compact frontier of a compact
   -- neighbourhood `M` of `L₀`, which only finitely many components do.
@@ -413,8 +408,7 @@ theorem exists_isCompact_finite_connectedComponents_compl [LocallyConnectedSpace
   set L := {x | IsCompact (closure (connectedComponentIn L₀ᶜ x))}
   have hL : IsCompact L := hL₀.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
     not_isCompact_connectedComponent
-  have hL₀L : L₀ ⊆ L := fun x hx ↦ by
-    simp [L, connectedComponentIn_eq_empty (notMem_compl_iff.2 hx)]
+  have hL₀L : L₀ ⊆ L := fun _ ↦ isCompact_closure_connectedComponentIn_compl_of_mem
   -- Outside `L`, the components of `X \ L` are the components of `X \ L₀`.
   have hcomp (x : X) (hx : x ∈ Lᶜ) : connectedComponentIn Lᶜ x = connectedComponentIn L₀ᶜ x := by
     refine (connectedComponentIn_mono x (compl_subset_compl.2 hL₀L)).antisymm

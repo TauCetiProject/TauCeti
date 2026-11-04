@@ -10,6 +10,7 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.FilledHull
 
 /-!
@@ -485,9 +486,8 @@ theorem exists_endSequence_subset_connectedComponentIn
   -- Points whose component in the complement of `L ∪ Kₙ` has noncompact closure.
   obtain ⟨y₀, hy₀, hP₀⟩ := exists_mem_not_isCompact_closure_connectedComponentIn_compl hX hx (hM 0)
   obtain ⟨z, rfl, hz⟩ := exists_seq_not_isCompact_closure_connectedComponentIn_compl hX hM hP₀
-  have hzM (n : ℕ) : z n ∉ L ∪ K n := fun h ↦ (hz n).1 <| by
-    rw [connectedComponentIn_eq_empty (notMem_compl_iff.2 h), closure_empty]
-    exact isCompact_empty
+  have hzM (n : ℕ) : z n ∉ L ∪ K n :=
+    notMem_of_not_isCompact_closure_connectedComponentIn_compl (hz n).1
   refine ⟨{ toFun n := connectedComponentIn (L ∪ K n)ᶜ (z n)
             exists_eq_connectedComponentIn' n := ⟨L ∪ K n, hM n, z n, hzM n, rfl⟩
             antitone' := antitone_nat_of_succ_le fun n ↦ ?_
@@ -588,12 +588,8 @@ theorem connectedAtInfinity_of_subsingleton_endComponents [Subsingleton (EndComp
       ← connectedComponentIn_eq (hV (V.antitone j.zero_le hw))]
     exact mem_connectedComponentIn hy
   -- That component is open and connected, hence path-connected.
-  have hopen : IsOpen (connectedComponentIn Lᶜ x) :=
-    hL.isClosed.isOpen_compl.connectedComponentIn
-  exact (((hopen.isConnected_iff_isPathConnected).1
-    (isConnected_connectedComponentIn_iff.2 hx)).joinedIn x (mem_connectedComponentIn hx) y
-      hxy).mono ((connectedComponentIn_subset _ _).trans
-        (compl_subset_compl.2 (hKL.trans interior_subset)))
+  exact (hL.isClosed.isOpen_compl.joinedIn_of_mem_connectedComponentIn hx hxy).mono
+    ((connectedComponentIn_subset _ _).trans (compl_subset_compl.2 (hKL.trans interior_subset)))
 
 /-- **Connectedness at infinity is having at most one end**, for preconnected, locally
 path-connected, σ-compact, locally compact Hausdorff spaces. -/
@@ -606,7 +602,7 @@ theorem connectedAtInfinity_iff_subsingleton_endComponents :
 locally path-connected, σ-compact, locally compact Hausdorff spaces. -/
 theorem connectedAtInfinity_iff_natCard_endComponents_eq_one [NoncompactSpace X] :
     ConnectedAtInfinity X ↔ Nat.card (EndComponents X) = 1 := by
-  have := NoncompactSpace.nonempty X
+  have := (Filter.cocompact X).nonempty_of_neBot
   have : Nonempty (EndComponents X) := nonempty_endComponents not_isCompact_connectedComponent
   rw [Nat.card_eq_one_iff_unique, connectedAtInfinity_iff_subsingleton_endComponents]
   exact (and_iff_left this).symm
