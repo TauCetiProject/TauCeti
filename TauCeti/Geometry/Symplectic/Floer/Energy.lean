@@ -72,7 +72,11 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   along a line near which the perturbation is cylindrical.
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
-  commutes with domain translations.
+  commutes with domain translations, and likewise for the perturbed derivative
+  (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
+  `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
+  (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
+  `SymplecticForm.floerEnergyDensity_comp_add_right`).
 
 ## References
 
@@ -246,6 +250,22 @@ theorem isComplexLinearMap_perturbedFDeriv_iff (ω : SymplecticForm V)
     rw [add_eq_zero_iff_eq_neg] at h
     rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
 
+/-- The perturbed derivative commutes with translations of the domain: translating the map and
+the perturbation data by `v` translates the perturbed derivative by `v`. -/
+theorem perturbedFDeriv_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.perturbedFDeriv (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.perturbedFDeriv Ks Kt u (z + v) := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  simp only [perturbedFDeriv_apply, fderiv_comp_add_right]
+
+/-- The perturbed derivative at `z` only depends on the germ of the map at `z`. -/
+theorem perturbedFDeriv_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    {u u' : ℝ × ℝ → V} {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
+    ω.perturbedFDeriv Ks Kt u z = ω.perturbedFDeriv Ks Kt u' z := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  simp only [perturbedFDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+
 end Differential
 
 section Density
@@ -272,6 +292,20 @@ theorem floerEnergyDensity_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag]
+
+/-- The Floer energy density commutes with translations of the domain. -/
+theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- The Floer energy density at `z` only depends on the germ of the map at `z`. -/
+theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    {u u' : ℝ × ℝ → V} {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks Kt u' z := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def,
+    ω.perturbedFDeriv_congr_of_eventuallyEq Ks Kt h]
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
 
