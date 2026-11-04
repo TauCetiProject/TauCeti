@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Bifunctor.Basic
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
 
 /-!
@@ -197,8 +197,8 @@ lemma relativeAlexanderWhitneyDiagonal_naturality {U V : Set X} {U' V' : Set Y} 
   have hU := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hfU) R
   have hV := TopPair.singularChainComplexπ_pair_naturality (TopPair.ofSubsetMap f hfV) S
   rw [TopPair.ofSubsetMap_fst] at hU hV
-  -- Term-mode steps, for the same reason as in
-  -- `chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom`.
+  -- Term-mode steps: `rw` cannot match here, since the ambient chains appear both as
+  -- `(toSSetPair.obj P).right.chainComplex R` and as `(toSSet.obj X).chainComplex R`.
   refine (alexanderWhitneyDiagonal_naturality_assoc f u _).trans <|
     (congrArg (_ ≫ ·) ((tensorHom_comp_tensorHom
       (SSet.chainComplexMap (toSSet.map f) R) (SSet.chainComplexMap (toSSet.map f) S)

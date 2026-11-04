@@ -19,8 +19,7 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   vanishing on `A` vanishes on `A`.  This gives `TopPair.singularCup :
   Hᵖ(X; R, M) × H^q(X, A; S, N) ⟶ Hⁿ(X, A; T, L)`, which needs no hypothesis on `A`.  It is
   associative and unital, so it makes `H*(X, A)` a module over `H*(X)`; it is natural in maps of
-  pairs and maps to the absolute cup product under `H*(X, A) ⟶ H*(X)`.  The cup product of two
-  relative classes `a, b ∈ H*(X, A)` is `j^*a ⌣ b`, for `j^* : H*(X, A) ⟶ H*(X)`.
+  pairs and maps to the absolute cup product under `H*(X, A) ⟶ H*(X)`.
 * **Relative cup product.**  For subsets `U` and `V` of `X`, a cochain vanishing on `U` cupped with
   a cochain vanishing on `V` vanishes on the chains `C(U) + C(V)` of the singular simplices lying
   in `U` or in `V`, but not in general on the chains of `U ∪ V`.  When `U` and `V` are open in
@@ -149,9 +148,7 @@ variable (k : Type*) [CommRing k] [Linear k C] [MonoidalLinear k C]
 `Hᵖ(X; R, M) × H^q(X, A; S, N) ⟶ Hⁿ(X, A; T, L)` for a pair `(X, A)` and `p + q = n`: the cup
 product along the right relative Alexander–Whitney diagonal `P.rightAlexanderWhitneyDiagonal u`
 and the pairing `μ : M ⊗ N ⟶ L`.  It makes relative cohomology a module over absolute cohomology
-(`TopPair.singularCup_assoc` and `TopPair.singularCup_constSingularCocycle_left`).  The cup product
-`Hᵖ(X, A) × H^q(X, A) ⟶ Hⁿ(X, A)` of two relative classes is the cup product of the image
-`P.singularCohomologyπ R k M p a` of the first one in `Hᵖ(X)` with the second one. -/
+(`TopPair.singularCup_assoc` and `TopPair.singularCup_constSingularCocycle_left`). -/
 def singularCup (P : TopPair.{w}) (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n) :
     P.fst.singularCohomology R k M p →ₗ[k] P.singularCohomology S k N q →ₗ[k]
       P.singularCohomology T k L n :=
@@ -187,7 +184,11 @@ lemma singularCohomologyπ_singularCup (P : TopPair.{w}) (u : T ⟶ R ⊗ S) (μ
       P.fst.singularCup k u μ p q n h a (P.singularCohomologyπ S k N q b) := by
   obtain ⟨a, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p a
   obtain ⟨b, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q b
-  rw [singularCup_homologyπ]
+  rw [singularCup_homologyπ, singularCohomologyπ, singularCohomologyπ,
+    singularCochainComplexShortComplex_f_eq, singularCochainComplexShortComplex_f_eq]
+  -- The maps to absolute cohomology are now `homologyMap` of `Hom(π, -)`; the lemmas below state
+  -- them with source and target written as `linearYonedaObj`, which is by definition
+  -- `TopPair.singularCochainComplex`.
   refine (TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_homologyπ_apply
     (P.singularChainComplexπ T) n _).trans ?_
   refine Eq.trans ?_ (congrArg _

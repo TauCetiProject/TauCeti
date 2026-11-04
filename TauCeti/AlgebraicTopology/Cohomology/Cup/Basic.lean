@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 
 /-!
 # The cup product in singular cohomology
