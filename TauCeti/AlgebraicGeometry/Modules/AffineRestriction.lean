@@ -35,6 +35,8 @@ scalars.
 * `AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction`: for a quasi-coherent `M`
   and affine opens `V ≤ U`, restriction `Γ(M, U) → Γ(M, V)` is a base change along
   `Γ(X, U) → Γ(X, V)`.
+* `AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestrictionLinearMap`: the same for
+  restriction of sections as a named linear map `Scheme.Modules.sectionsRestrictionLinearMap`.
 * `AlgebraicGeometry.Scheme.Modules.Hom.bijective_app_of_le`: a morphism of quasi-coherent
   modules bijective on the sections over an affine open `U` is bijective over every affine
   `V ≤ U`.
@@ -169,6 +171,31 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction
   rw [h]
   exact Function.bijective_id
 
+/-- Restriction of sections `Γ(M, U) → Γ(M, V)` as a `Γ(X, U)`-linear map, for module structures
+compatible with restriction of functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.sectionsRestrictionLinearMap (hVU : V ≤ U)
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(X, V) r = X.presheaf.map (homOfLE hVU).op r) :
+    Γ(M, U) →ₗ[Γ(X, U)] Γ(M, V) where
+  toFun := M.presheaf.map (homOfLE hVU).op
+  map_add' := map_add _
+  map_smul' r s := by
+    rw [RingHom.id_apply, Scheme.Modules.map_smul, ← hA, algebraMap_smul]
+
+/-- `Scheme.Modules.sectionsRestrictionLinearMap` applies the restriction map of `M`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.sectionsRestrictionLinearMap_apply (hVU : V ≤ U)
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(X, V) r = X.presheaf.map (homOfLE hVU).op r) (s : Γ(M, U)) :
+    M.sectionsRestrictionLinearMap hVU hA s = M.presheaf.map (homOfLE hVU).op s :=
+  (rfl)
+
+/-- For a quasi-coherent `M` and affine opens `V ≤ U`, the restriction map
+`Scheme.Modules.sectionsRestrictionLinearMap` is a base change along `Γ(X, U) → Γ(X, V)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestrictionLinearMap
+    [M.IsQuasicoherent] (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hVU : V ≤ U)
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(X, V) r = X.presheaf.map (homOfLE hVU).op r) :
+    IsBaseChange Γ(X, V) (M.sectionsRestrictionLinearMap hVU hA) :=
+  M.isBaseChange_sectionsRestriction hU hV hVU hA _ fun _ ↦ rfl
+
 end
 
 variable {M} {N : X.Modules}
@@ -182,20 +209,12 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.bijective_app_of_le
     (hV : IsAffineOpen V) (hVU : V ≤ U) (h : Function.Bijective (φ.app U)) :
     Function.Bijective (φ.app V) := by
   let := (X.presheaf.map (homOfLE hVU).op).hom.toAlgebra
-  let := Module.compHom Γ(M, V) (algebraMap Γ(X, U) Γ(X, V))
-  let := Module.compHom Γ(N, V) (algebraMap Γ(X, U) Γ(X, V))
-  have : IsScalarTower Γ(X, U) Γ(X, V) Γ(M, V) := .of_algebraMap_smul fun _ _ ↦ rfl
-  have : IsScalarTower Γ(X, U) Γ(X, V) Γ(N, V) := .of_algebraMap_smul fun _ _ ↦ rfl
-  let ρM : Γ(M, U) →ₗ[Γ(X, U)] Γ(M, V) :=
-    { toFun := M.presheaf.map (homOfLE hVU).op
-      map_add' := map_add _
-      map_smul' := M.map_smul _ }
-  let ρN : Γ(N, U) →ₗ[Γ(X, U)] Γ(N, V) :=
-    { toFun := N.presheaf.map (homOfLE hVU).op
-      map_add' := map_add _
-      map_smul' := N.map_smul _ }
-  have hM := M.isBaseChange_sectionsRestriction hU hV hVU (fun _ ↦ rfl) ρM fun _ ↦ rfl
-  have hN := N.isBaseChange_sectionsRestriction hU hV hVU (fun _ ↦ rfl) ρN fun _ ↦ rfl
+  -- Sections over `V` are `Γ(X, U)`-modules by restriction of scalars.
+  let _ (P : X.Modules) : Module Γ(X, U) Γ(P, V) := Module.compHom _ (algebraMap Γ(X, U) Γ(X, V))
+  have _ (P : X.Modules) : IsScalarTower Γ(X, U) Γ(X, V) Γ(P, V) :=
+    .of_algebraMap_smul fun _ _ ↦ rfl
+  have hM := M.isBaseChange_sectionsRestrictionLinearMap hU hV hVU fun _ ↦ rfl
+  have hN := N.isBaseChange_sectionsRestrictionLinearMap hU hV hVU fun _ ↦ rfl
   let φU : Γ(M, U) ≃ₗ[Γ(X, U)] Γ(N, U) := .ofBijective
     { toFun := φ.app U
       map_add' := map_add _
