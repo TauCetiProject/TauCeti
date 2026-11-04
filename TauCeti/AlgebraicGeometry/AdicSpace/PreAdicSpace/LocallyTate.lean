@@ -210,31 +210,6 @@ theorem spaBasicOpen_mem_tateAffinoidOpens_of_isTopologicallyNilpotent {T : Fins
   spaBasicOpen_mem_tateAffinoidOpens_of_isTateRing_completion P Aplus hAplus hP hT
     (isTateRing_completion_locTopology_of_isTopologicallyNilpotent P T s _ _ hs)
 
-/-- **Covering analytic points of `Spa(A, A⁺)` by standard analytic rational opens.** Let `Q` be a
-property of objects of `𝒱^pre` that holds on every rational open `R(T/s)` of `Spa(A, A⁺)` with `T`
-spanning an open ideal and `s` topologically nilpotent. Then every analytic point of `Spa(A, A⁺)`
-lies in an open of `propOpens Q`, namely one of the charts `R(G/g)` where `G` is a finite generating
-set of `P.idealOfDefinition`. -/
-theorem exists_mem_propOpens_of_mem_analyticPoints (Q : ObjectProperty PreAdicSpace.{u})
-    (hQ : ∀ {T : Finset A} {s : A},
-      IsOpen (Ideal.span (T : Set A) : Set A) → IsTopologicallyNilpotent s →
-      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q)
-    {y : presentationLimitPreAdicSpace P Aplus hAplus hP}
-    (hy : y ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints) :
-    ∃ W ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q, y ∈ W := by
-  classical
-  obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
-  -- `presentationLimitPreAdicSpace` has underlying type `spa Aplus`, so `Set.mem_preimage`
-  -- views `y` as an element of `spa Aplus`.
-  have hy' : (y : spa Aplus).1 ∈ spaAnalytic Aplus :=
-    Set.mem_preimage.mp (by rwa [analyticPoints_presentationLimitPreAdicSpace] at hy)
-  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hy'
-  obtain ⟨g, hg, hyg⟩ := Set.mem_iUnion₂.mp hy'
-  refine ⟨spaBasicOpen Aplus (G.image (↑)) g, hQ ?_ ?_, mem_spaBasicOpen.mpr hyg⟩
-  · exact P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition
-  · exact P.isTopologicallyNilpotent_of_mem_idealOfDefinition
-      (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg))
-
 end ArbitraryBase
 
 section TateBase
@@ -285,31 +260,6 @@ theorem isTateAffinoid.isBasis_tateAffinoidOpens {X : PreAdicSpace.{u}} (hX : is
   isBasis_propOpens_of_iso isTateAffinoid e
     (isBasis_tateAffinoidOpens_presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
-
-/-- Transporting a standard analytic rational open from an affinoid chart `X|_V ≅ Spa(A, A⁺)` back
-to `X`: if `x` is an analytic point of `X` lying in `V` and `Q` holds on rational opens of
-`Spa(A, A⁺)` with topologically nilpotent denominator, then `x` lies in an open of `X.propOpens Q`.
--/
-theorem exists_mem_propOpens_of_mem_analyticPoints {X : PreAdicSpace.{u}}
-    (Q : ObjectProperty PreAdicSpace.{u}) [Q.IsClosedUnderIsomorphisms]
-    {x : X} (hx : x ∈ X.analyticPoints) {V : Opens X} (hxV : x ∈ V)
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-    (P : PairOfDefinition A) (Aplus : Subring A)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hP : P.ringOfDefinition ≤ Aplus)
-    (e : X.restrict V.isOpenEmbedding ≅ presentationLimitPreAdicSpace P Aplus hAplus hP)
-    (hQ : ∀ {T : Finset A} {s : A},
-      IsOpen (Ideal.span (T : Set A) : Set A) → IsTopologicallyNilpotent s →
-      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q) :
-    ∃ U ∈ X.propOpens Q, x ∈ U := by
-  let x' : X.restrict V.isOpenEmbedding := ⟨x, hxV⟩
-  have hx' : x' ∈ (X.restrict V.isOpenEmbedding).analyticPoints := by
-    rwa [analyticPoints_restrict]
-  obtain ⟨W, hW, hyW⟩ := ValuationSpectrum.exists_mem_propOpens_of_mem_analyticPoints
-    P Aplus hAplus hP Q hQ (mapsTo_analyticPoints_of_isOpenImmersion e.hom hx')
-  exact ⟨V.isOpenEmbedding.isOpenMap.functor.obj ((Opens.map e.hom.base).obj W),
-    (mem_propOpens_restrict_iff X V.isOpenEmbedding Q _).mp
-      ((map_hom_base_mem_propOpens_iff Q e).mpr hW),
-    ⟨x', hyW, rfl⟩⟩
 
 /-- **Tate-chart characterisation of analytic points** (Wedhorn, Proposition and Definition 8.36):
 on a locally affinoid object `X` of `𝒱^pre`, a point is analytic if and only if it has an open Tate
