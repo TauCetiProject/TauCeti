@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Leading monomials for a monomial order
@@ -17,7 +18,8 @@ multiple, the cancellation of leading terms by an S-polynomial, the behaviour of
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, leading data of renamed polynomials, elimination orders and the
 lexicographic ones among them, agreement of leading exponents under two monomial orders, leading
-data of substitutions of monic families, and algebraic independence from leading monomials.
+data of substitutions of monic families, top-weight parts of binomials perturbed by terms of
+lower weight, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -75,6 +77,11 @@ the images of the generators of the Lazard ring in a polynomial ring.
   exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
   the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
   most `e`.
+* `MonomialOrder.weightedHomogeneousComponent_monomial_sub_monomial_sub`: for weights `a` with
+  `A = Finsupp.linearCombination ℕ a`, if `A u = A v` and every exponent `w` of `Q` satisfies
+  `A w ≺ A u`, the part of weight `A u` of `Y^u - Y^v - Q` is `Y^u - Y^v`; every exponent of
+  `Y^u - Y^v - Q` has weight at most `A u`
+  (`MonomialOrder.linearCombination_le_of_mem_support_monomial_sub_monomial_sub`).
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -454,6 +461,44 @@ theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomi
   exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
 
 end Substitution
+
+section Binomial
+
+variable {ι : Type*} [CommRing R] {m}
+
+/-- If `A u = A v` for `A = Finsupp.linearCombination ℕ a` and every exponent `w` of `Q` satisfies
+`A w ≺ A u`, then every exponent `w` of `Y^u - Y^v - Q` satisfies `A w ≼ A u`. -/
+theorem linearCombination_le_of_mem_support_monomial_sub_monomial_sub {a : ι → σ →₀ ℕ}
+    {u v : ι →₀ ℕ} (huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v)
+    {Q : MvPolynomial ι R}
+    (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u)
+    {w : ι →₀ ℕ} (hw : w ∈ (monomial u (1 : R) - monomial v 1 - Q).support) :
+    Finsupp.linearCombination ℕ a w ≼[m] Finsupp.linearCombination ℕ a u := by
+  classical
+  rcases Finset.mem_union.1 (support_sub _ _ _ hw) with hw | hw
+  · rcases Finset.mem_union.1 (support_sub _ _ _ hw) with hw | hw <;>
+      rw [Finset.mem_singleton.1 (support_monomial_subset hw)]
+    rw [huv]
+  · exact (hQ w hw).le
+
+/-- If `A u = A v` for `A = Finsupp.linearCombination ℕ a` and every exponent `w` of `Q` satisfies
+`A w ≺ A u`, then the part of `Y^u - Y^v - Q` of top weight `A u` for the weights `a` is the
+binomial `Y^u - Y^v`. -/
+theorem weightedHomogeneousComponent_monomial_sub_monomial_sub {a : ι → σ →₀ ℕ} {u v : ι →₀ ℕ}
+    (huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v)
+    {Q : MvPolynomial ι R}
+    (hQ : ∀ w ∈ Q.support, Finsupp.linearCombination ℕ a w ≺[m] Finsupp.linearCombination ℕ a u) :
+    weightedHomogeneousComponent a (Finsupp.linearCombination ℕ a u)
+      (monomial u (1 : R) - monomial v 1 - Q) = monomial u 1 - monomial v 1 := by
+  rw [map_sub, weightedHomogeneousComponent_eq_self
+      ((isWeightedHomogeneous_monomial _ _ _ (Finsupp.weight_apply_eq_linearCombination a u)).sub
+        (isWeightedHomogeneous_monomial _ _ _
+          ((Finsupp.weight_apply_eq_linearCombination a v).trans huv.symm))),
+    weightedHomogeneousComponent_eq_zero' _ _ fun w hw h ↦
+      (hQ w hw).ne (by rw [← Finsupp.weight_apply_eq_linearCombination, h]),
+    sub_zero]
+
+end Binomial
 
 variable [CommRing R] [NoZeroDivisors R]
 
