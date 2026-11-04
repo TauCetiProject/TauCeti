@@ -48,11 +48,9 @@ private local instance instGradientNorm : NormedAddCommGroup (E →L[ℝ] ℝ) :
 /-- The corresponding proof-local scalar-operation shortcut. -/
 private local instance instGradientSpace : NormedSpace ℝ (E →L[ℝ] ℝ) := inferInstance
 
-/-- A shortcut for the Hessian norm in the coefficients and cross terms. Without it, instance
-search must discover this norm through unification with an outer continuous linear map. -/
-local instance instHessianNorm : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
-/-- The corresponding scalar-operation shortcut for Hessians. -/
-local instance instHessianSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+-- Reuse the operator module's Hessian shortcuts for instance search in coefficient types.
+attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
+  instNormedSpaceRealContinuousLinearMapId
 
 variable (hα : α ≤ 1)
   (A : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] ℝ))
@@ -116,9 +114,9 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
         (‖valueHolderL hα u‖ + ‖spatialFDerivHolderL hα u‖) := by
   -- The two cross terms are rank-one Hessians, each with the product bound.
   let T := ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)
-  have hT : ‖T‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun f g ↦ by
-      simp [T, ContinuousLinearMap.norm_smulRight_apply]
+  have hT : ‖T‖ ≤ 1 := by
+    simpa only [T] using
+      (ContinuousLinearMap.norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := E →L[ℝ] ℝ))
   have hcross (f g : HolderSpace α (slab (E := E) t₀ t₁) (E →L[ℝ] ℝ)) :
       ‖T.compHolder₂ f g‖ ≤ ‖f‖ * ‖g‖ :=
     (T.norm_compHolder₂_apply_le f g).trans (by
