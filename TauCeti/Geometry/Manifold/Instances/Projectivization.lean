@@ -68,6 +68,21 @@ theorem affineOpenPartialHomeomorph_mem_atlas (i : Fin (n + 1)) :
     affineOpenPartialHomeomorph i ∈ atlas (Fin n → 𝕜) (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
   mem_range_self i
 
+/-- The extended chart of a standard affine chart, for the model `𝓘(𝕜, Fin n → 𝕜)`, is the affine
+chart itself. -/
+theorem coe_affineOpenPartialHomeomorph_extend (i : Fin (n + 1)) :
+    ⇑((affineOpenPartialHomeomorph i).extend 𝓘(𝕜, Fin n → 𝕜)) = affineChart (K := 𝕜) i := by
+  rw [OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, Function.id_comp,
+    coe_affineOpenPartialHomeomorph]
+
+/-- The inverse of the extended chart of a standard affine chart, for the model
+`𝓘(𝕜, Fin n → 𝕜)`, is the inverse of the affine chart. -/
+theorem coe_affineOpenPartialHomeomorph_extend_symm (i : Fin (n + 1)) :
+    ⇑((affineOpenPartialHomeomorph i).extend 𝓘(𝕜, Fin n → 𝕜)).symm =
+      (affineChart (K := 𝕜) i).symm := by
+  rw [OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe_symm, Function.comp_id,
+    coe_affineOpenPartialHomeomorph_symm]
+
 /-- The transition maps between the standard affine charts of projective space are `C^r` for
 every `r`, including the analytic order `ω`. -/
 theorem contDiffOn_affineChart_symm_trans (i j : Fin (n + 1)) (r : ℕ∞ω) :

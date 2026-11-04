@@ -123,6 +123,14 @@ theorem hessianQuadraticForm_smul (a : ℝ) (f : E → ℝ) (x : E) :
   ext v
   simp [fderiv_fderiv_const_smul]
 
+/-- Adding a constant to a function does not change its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_add_const (f : E → ℝ) (c : ℝ) (x : E) :
+    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
+  have hfd : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
+  ext v
+  simp only [hessianQuadraticForm_apply, hfd]
+
 /-- At a critical point the Hessian quadratic form pulls back along the derivative of a `C²`
 change of variables. -/
 theorem hessianQuadraticForm_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
@@ -165,6 +173,12 @@ noncomputable def morseIndex (f : E → ℝ) (x : E) : ℕ :=
 /-- The Morse index is the negative index of inertia of the Hessian quadratic form. -/
 theorem morseIndex_def : morseIndex f x = sigNeg (hessianQuadraticForm f x) := by
   simp [morseIndex]
+
+/-- Adding a constant to a function does not change its Morse index. -/
+@[simp]
+theorem morseIndex_add_const (f : E → ℝ) (c : ℝ) (x : E) :
+    morseIndex (fun y ↦ f y + c) x = morseIndex f x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_add_const]
 
 /-- The Morse index depends only on the germ of the function at the point. -/
 theorem morseIndex_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :

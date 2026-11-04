@@ -32,9 +32,9 @@ of complex projective space are built.
 
 * `Projectivization.affineOpen i`: the points whose `i`-th homogeneous coordinate is nonzero;
   `Projectivization.iUnion_affineOpen` says that these sets cover projective space.
-* `Projectivization.mk_single_mem_affineOpen_iff` and `Projectivization.injective_mk_single`: the
-  coordinate point `[eᵢ]` lies in `U_j` exactly when `i = j`, so distinct coordinate points are
-  distinct.
+* `Projectivization.mk_single_mem_affineOpen_iff` and
+  `Projectivization.mk_single_left_injective`: the coordinate point `[eᵢ]` lies in `U_j`
+  exactly when `i = j`, so distinct coordinate points are distinct.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates; `Projectivization.affineChart_symm_zero` says that the
@@ -102,7 +102,7 @@ theorem mk_single_mem_affineOpen_iff [DecidableEq ι] (i j : ι) :
   simp [Pi.single_apply, eq_comm]
 
 /-- Distinct indices give distinct coordinate points `[eᵢ]`. -/
-theorem injective_mk_single [DecidableEq ι] :
+theorem mk_single_left_injective [DecidableEq ι] :
     Function.Injective fun i : ι ↦ mk K (Pi.single i 1 : ι → K) (by simp) := fun i j h ↦ by
   have hj := (mk_single_mem_affineOpen_iff (K := K) j j).2 rfl
   beta_reduce at h

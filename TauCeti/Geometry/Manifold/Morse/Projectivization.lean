@@ -240,7 +240,6 @@ private theorem isNondegenerateCriticalPoint_chartQuotient {b : Fin n → ℝ} {
   have hinv : (fderiv ℝ (chartSubstitution (n := n)) 0).IsInvertible := by
     rw [fderiv_chartSubstitution_zero]
     exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
-  have hfd : fderiv ℝ (fun y ↦ Q y + c) = fderiv ℝ Q := funext fun _ ↦ fderiv_add_const c
   have hnd : IsNondegenerateCriticalPoint Q 0 :=
     (QuadraticMap.isNondegenerateCriticalPoint_zero_iff Q).2 <|
       QuadraticMap.nondegenerate_weightedSumSquares fun k ↦
@@ -250,14 +249,10 @@ private theorem isNondegenerateCriticalPoint_chartQuotient {b : Fin n → ℝ} {
   · rw [chartSubstitution_zero, isNondegenerateCriticalPoint_add_const_iff]
     exact hnd
   · have hcrit : fderiv ℝ (fun y ↦ Q y + c) (chartSubstitution 0) = 0 := by
-      rw [hfd, chartSubstitution_zero]
+      rw [fderiv_add_const, chartSubstitution_zero]
       exact hnd.fderiv_eq_zero
-    have hhess : hessianQuadraticForm (fun y ↦ Q y + c) 0 = hessianQuadraticForm Q 0 := by
-      ext v
-      simp only [hessianQuadraticForm_apply, hfd]
-    rw [morseIndex_comp hQ hφ hcrit hinv, chartSubstitution_zero, morseIndex_def, hhess,
-      ← morseIndex_def, QuadraticMap.morseIndex_eq_sigNeg,
-      QuadraticForm.sigNeg_weightedSumSquares]
+    rw [morseIndex_comp hQ hφ hcrit hinv, chartSubstitution_zero, morseIndex_add_const,
+      QuadraticMap.morseIndex_eq_sigNeg, QuadraticForm.sigNeg_weightedSumSquares]
     simp only [sub_neg]
 
 end Chart
@@ -289,8 +284,7 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveWeightedSumSquares {i : F
     (IsManifold.subset_maximalAtlas (I := 𝓘(ℝ, Fin n → ℝ)) (n := 2)
       (affineOpenPartialHomeomorph_mem_atlas i)) (f := projectiveWeightedSumSquares w)
     (v := 0) (by simp)
-  simp only [OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe_symm, comp_id,
-    coe_affineOpenPartialHomeomorph_symm, comp_apply, id_eq, affineChart_symm_zero] at h
+  rw [coe_affineOpenPartialHomeomorph_extend_symm, affineChart_symm_zero] at h
   rw [projectiveWeightedSumSquares_comp_affineChart_symm] at h
   exact h (isNondegenerateCriticalPoint_chartQuotient fun k ↦ hw _ (Fin.succAbove_ne i k)).1
 
@@ -307,8 +301,7 @@ theorem manifoldMorseIndex_projectiveWeightedSumSquares {i : Fin (n + 1)}
     (IsManifold.subset_maximalAtlas (I := 𝓘(ℝ, Fin n → ℝ)) (n := 2)
       (affineOpenPartialHomeomorph_mem_atlas i)) (f := projectiveWeightedSumSquares w)
     (v := 0) (by simp) (by simpa using hb.1)
-  simp only [OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe_symm, comp_id,
-    coe_affineOpenPartialHomeomorph_symm, comp_apply, id_eq, affineChart_symm_zero] at h
+  rw [coe_affineOpenPartialHomeomorph_extend_symm, affineChart_symm_zero] at h
   rw [h, hb.2]
   -- The weights below `wᵢ` are the weights `w (i.succAbove k)` below `wᵢ`.
   have himage : {j | w j < w i} = i.succAbove '' {k | w (i.succAbove k) < w i} := by
@@ -332,9 +325,7 @@ theorem criticalPoints_projectiveWeightedSumSquares (hw : Injective w) :
       (IsManifold.subset_maximalAtlas (n := 1) (affineOpenPartialHomeomorph_mem_atlas i)) hsrc
       ((contMDiff_projectiveWeightedSumSquares w (r := 1) x).mdifferentiableAt one_ne_zero)).1
       (mem_criticalPoints.1 hx)
-    simp only [OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe_symm, comp_id,
-      coe_affineOpenPartialHomeomorph_symm, OpenPartialHomeomorph.extend_coe,
-      modelWithCornersSelf_coe, id_comp, coe_affineOpenPartialHomeomorph,
+    rw [coe_affineOpenPartialHomeomorph_extend_symm, coe_affineOpenPartialHomeomorph_extend,
       projectiveWeightedSumSquares_comp_affineChart_symm] at hcrit
     have hz := eq_zero_of_fderiv_chartQuotient_eq_zero
       (fun k ↦ hw.ne (Fin.succAbove_ne i k)) hcrit
@@ -361,9 +352,8 @@ theorem isMorse_projectiveWeightedSumSquares (hw : Injective w) :
 theorem totalCriticalCount_projectiveWeightedSumSquares (hw : Injective w) :
     totalCriticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveWeightedSumSquares w) = n + 1 := by
   rw [totalCriticalCount_def, criticalPoints_projectiveWeightedSumSquares hw,
-    ← image_univ, injective_mk_single.encard_image, encard_univ, ENat.card_eq_coe_fintype_card,
-    Fintype.card_fin]
-  rfl
+    ← image_univ, mk_single_left_injective.encard_image, encard_univ, ENat.card_eq_coe_fintype_card,
+    Fintype.card_fin, Nat.cast_succ]
 
 /-- For distinct weights, the weighted sum of squares on `ℝℙⁿ` has exactly one critical point of
 each index `j ≤ n`, and none of larger index. -/
@@ -396,7 +386,7 @@ theorem criticalCount_projectiveWeightedSumSquares (hw : Injective w) (j : ℕ) 
     · rintro ⟨_, ⟨m, hm, rfl⟩, rfl⟩
       exact ⟨⟨σ m, rfl⟩, by
         rw [manifoldMorseIndex_projectiveWeightedSumSquares fun l hl ↦ hw.ne hl, hrank, hm]⟩
-  rw [criticalCount_def, hset, injective_mk_single.encard_image, σ.injective.encard_image]
+  rw [criticalCount_def, hset, mk_single_left_injective.encard_image, σ.injective.encard_image]
   split_ifs with hj
   · rw [encard_eq_one]
     exact ⟨⟨j, Nat.lt_succ_of_le hj⟩, by ext m; simp [Fin.ext_iff]⟩
