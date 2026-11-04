@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.EReal.Operations
+import Mathlib.Data.EReal.Inv
 
 /-!
 # Operations on extended real numbers
@@ -51,6 +52,9 @@ installing a coercion; it is additive.
   real weights and a real subtrahend is `≠ ⊤` when `a` and `b` are.
 * `EReal.coe_mul_add_coe_mul_sub_add_sub_comm` — two such combinations with the same weights add
   termwise.
+* `EReal.coe_mul_coe_mul_add_coe_mul_sub` — nonnegative real scaling distributes through a
+  weighted sum with a real subtrahend.
+* `EReal.ne_top_of_coe_mul_ne_top` — a positive real multiple can be `≠ ⊤` only if its operand is.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -256,6 +260,22 @@ theorem _root_.EReal.coe_mul_add_coe_mul_sub_add_sub_comm (a b a' b' : EReal) {s
   simp only [sub_eq_add_neg, ← EReal.coe_neg]
   rw [neg_add, EReal.coe_add]
   abel
+
+/-- Nonnegative real scaling distributes through a weighted sum with a real subtrahend. -/
+theorem _root_.EReal.coe_mul_coe_mul_add_coe_mul_sub (a b : EReal) {c : ℝ} (hc : 0 ≤ c)
+    (s t r : ℝ) :
+    (c : EReal) * ((s : EReal) * a + (t : EReal) * b - (r : EReal)) =
+      (s : EReal) * ((c : EReal) * a) + (t : EReal) * ((c : EReal) * b) -
+        ((c * r : ℝ) : EReal) := by
+  rw [EReal.mul_sub_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hc) (EReal.coe_ne_top _),
+    EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hc) (EReal.coe_ne_top _),
+    mul_left_comm, mul_left_comm (c : EReal) (t : EReal), ← EReal.coe_mul]
+
+/-- If a positive real multiple is not `⊤`, neither is the original extended real. -/
+theorem _root_.EReal.ne_top_of_coe_mul_ne_top {c : ℝ} (hc : 0 < c) {d : EReal}
+    (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
+  rintro rfl
+  exact hd (EReal.coe_mul_top_of_pos hc)
 
 end TauCeti
 

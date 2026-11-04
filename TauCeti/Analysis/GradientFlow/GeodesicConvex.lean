@@ -220,9 +220,7 @@ theorem ConvexAlong.const_mul (h : ConvexAlong m φ γ) {c : ℝ} (hc : 0 ≤ c)
         (t : EReal) * φ (γ 1) - ((m / 2 * t * (1 - t) * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal)) :=
       mul_le_mul_of_nonneg_left (h t ht) hc'
     _ = _ := by
-      rw [EReal.mul_sub_of_nonneg_of_ne_top hc' (EReal.coe_ne_top _),
-        EReal.left_distrib_of_nonneg_of_ne_top hc' (EReal.coe_ne_top _), mul_left_comm,
-        mul_left_comm (c : EReal) (t : EReal), ← EReal.coe_mul]
+      rw [EReal.coe_mul_coe_mul_add_coe_mul_sub _ _ hc]
       congr 2
       ring
 
@@ -299,11 +297,9 @@ theorem GeodesicallyConvex.add_convexAlongGeodesics (hφ : GeodesicallyConvex m 
 /-- **Positive multiple of a geodesically convex energy.** If `φ` is `m`-geodesically convex and
 `c > 0`, then `c φ` is `(c m)`-geodesically convex. -/
 theorem GeodesicallyConvex.const_mul (h : GeodesicallyConvex m φ) {c : ℝ} (hc : 0 < c) :
-    GeodesicallyConvex (c * m) fun x ↦ (c : EReal) * φ x := by
-  have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
-    rintro rfl
-    exact hd (EReal.coe_mul_top_of_pos hc)
-  exact fun _ _ hx hy ↦ (h (hne hx) (hne hy)).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
+    GeodesicallyConvex (c * m) fun x ↦ (c : EReal) * φ x := fun _ _ hx hy ↦
+  (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy)).imp
+    fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
 
 /-- **Nonnegative multiple of an energy convex along geodesics.** If `φ` is `m`-convex along
 geodesics and `c ≥ 0`, then `c φ` is `(c m)`-convex along geodesics. For `c = 0` this is the zero
@@ -313,10 +309,9 @@ theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ}
   rcases hc.eq_or_lt with rfl | hc
   · intro _ _ _ _ _ _ t _
     simp
-  have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
-    rintro rfl
-    exact hd (EReal.coe_mul_top_of_pos hc)
-  exact fun _ _ hx hy _ hγ ↦ (h (hne hx) (hne hy) hγ).const_mul hc.le
+  exact fun _ _ hx hy _ hγ ↦
+    (h (EReal.ne_top_of_coe_mul_ne_top hc hx) (EReal.ne_top_of_coe_mul_ne_top hc hy) hγ).const_mul
+      hc.le
 
 /-- **Supremum of energies convex along geodesics.** The pointwise supremum of a family of
 energies, each `m`-convex along geodesics, is `m`-convex along geodesics. -/

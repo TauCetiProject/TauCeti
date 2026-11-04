@@ -565,7 +565,9 @@ theorem _root_.StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ := by
   rw [convexAlongGeneralizedGeodesics_def]
-  intro ν₀ ν₁ _ _ γ hγ t ht ν hν
+  intro ν₀ ν₁ _ _ γ hγ
+  rw [convexAlongGeneralizedGeodesicPlan_def]
+  intro t ht ν hν
   -- The generalized geodesic is the interpolation of the coupling `γ.snd` of `ν₀` and `ν₁`.
   have hπ := hγ.isCoupling_snd
   have : IsProbabilityMeasure γ.snd := hπ.isProbabilityMeasure
