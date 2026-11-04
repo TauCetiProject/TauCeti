@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.OrthSum
 public import TauCeti.Algebra.Module.ZLattice.RealModel
 public import TauCeti.Algebra.Module.ZLattice.Scaling
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
-public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import Mathlib.GroupTheory.Schreier
 
 /-!
