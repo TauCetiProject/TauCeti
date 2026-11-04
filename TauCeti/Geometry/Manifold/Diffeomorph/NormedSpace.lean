@@ -21,6 +21,10 @@ provides only the `C^∞` one.
 For a nonzero scalar `a`, the affine map `x ↦ a • x + b` is a diffeomorphism of `E`, of any
 smoothness, with inverse `y ↦ a⁻¹ • (y - b)` (`Diffeomorph.smulAdd`). On the real line these are
 the affine changes of time `t ↦ a * t + b`.
+
+A diffeomorphism between normed spaces of nonzero smoothness is differentiable
+(`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse
+is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`).
 -/
 
 public section
