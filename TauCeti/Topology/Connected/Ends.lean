@@ -7,8 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.Topology.Compactness.SigmaCompact
+public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.FilledHull
 
 /-!
 # Ends of a topological space
@@ -23,6 +25,15 @@ Along a monotone sequence `K₀ ⊆ K₁ ⊆ ⋯` of compact sets that is cofina
 instance a `CompactExhaustion`, the ends are the inverse limit of the sets `π₀(X \ Kₙ)` of
 complementary components, which is the classical description of ends.
 
+In a preconnected, locally connected, locally compact Hausdorff space, every compact set lies in
+the interior of a compact set whose complement has finitely many components, none of them with
+compact closure. If the space is moreover σ-compact, each complementary component with noncompact
+closure contains an end. A space is *connected at infinity* when, far enough out, any two points
+are joined by a path avoiding a prescribed compact set. For preconnected, locally path-connected,
+σ-compact, locally compact Hausdorff spaces, this says exactly that there is at most one end, and
+exactly one when the space is noncompact. These hypotheses hold for instance for connected
+second-countable manifolds and for connected locally finite CW complexes.
+
 Ends are the basic invariant at infinity of a noncompact space. They appear together with simple
 connectivity at infinity (`TauCeti.SimplyConnectedAtInfinity`) in the proper homotopy theory of
 noncompact complexes and manifolds.
@@ -36,6 +47,8 @@ noncompact complexes and manifolds.
 * `TauCeti.EndComponents X`: the ends of `X`, sequences up to mutual cofinal containment.
 * `TauCeti.componentComplFunctor`: the inverse system `n ↦ π₀(X \ Kₙ)` of complementary
   components along a monotone sequence of sets.
+* `TauCeti.ConnectedAtInfinity`: outside a large compact set, any two points are joined by a path
+  avoiding a given compact set.
 
 ## Main results
 
@@ -47,6 +60,18 @@ noncompact complexes and manifolds.
   ends are the inverse limit of the complementary components;
   `CompactExhaustion.endComponentsEquivSections` specializes this to a compact exhaustion.
 * `TauCeti.isEmpty_endComponents`: a compact space has no ends.
+* `TauCeti.exists_isCompact_finite_connectedComponents_compl`: in a preconnected, locally connected,
+  locally compact Hausdorff space, every compact set has a compact neighbourhood whose complement
+  has finitely many components, none of them with compact closure.
+* `TauCeti.exists_endSequence_subset_connectedComponentIn`: in a σ-compact, locally compact
+  Hausdorff, locally connected space with no compact component, every complementary component of a
+  compact set with noncompact closure contains an end sequence; in particular such a nonempty space
+  has an end (`TauCeti.nonempty_endComponents`).
+* `TauCeti.ConnectedAtInfinity.subsingleton_endComponents`: a space connected at infinity has at
+  most one end. Conversely, `TauCeti.connectedAtInfinity_iff_subsingleton_endComponents` and
+  `TauCeti.connectedAtInfinity_iff_natCard_endComponents_eq_one`: a preconnected, locally
+  path-connected, σ-compact, locally compact Hausdorff space is connected at infinity exactly when
+  it has at most one end, and, if it is noncompact, exactly when it has one end.
 * `TauCeti.natCard_endComponents_real`: the real line has exactly two ends, at `+∞` and `-∞`.
 
 ## References
@@ -434,6 +459,284 @@ theorem endComponentsEquivSections_symm_apply (K : CompactExhaustion X)
 end CompactExhaustion
 
 namespace TauCeti
+
+section AtInfinity
+
+variable {X : Type u} [TopologicalSpace X]
+
+/-! ### Compact sets whose complement has finitely many unbounded components -/
+
+section Neighbourhoods
+
+variable [T2Space X] [LocallyConnectedSpace X]
+
+/-- **An unbounded complementary component crosses the frontier of every compact neighbourhood.**
+In a preconnected, locally connected Hausdorff space, let `L` be a nonempty compact set lying in the
+interior of a compact set `M`. If the component of `x` in `X \ L` has noncompact closure, then it
+meets the frontier of `M`. -/
+theorem connectedComponentIn_compl_inter_frontier_nonempty [PreconnectedSpace X] {L M : Set X}
+    (hL : IsCompact L) (hM : IsCompact M) (hLM : L ⊆ interior M) (hLne : L.Nonempty) {x : X}
+    (hx : ¬IsCompact (closure (connectedComponentIn Lᶜ x))) :
+    (connectedComponentIn Lᶜ x ∩ frontier M).Nonempty := by
+  -- Otherwise the component lies inside `M`, where its closure is compact, or outside `M`, where
+  -- it is clopen in the whole space, hence equal to it, although it misses `L`.
+  set C := connectedComponentIn Lᶜ x
+  by_contra hCfr
+  have hCfr' (w : X) (hwC : w ∈ C) : w ∉ frontier M := fun hw ↦ hCfr ⟨w, hwC, hw⟩
+  have hxC : x ∈ C := mem_connectedComponentIn fun hxL ↦
+    hx (by simp [C, connectedComponentIn_eq_empty (notMem_compl_iff.2 hxL)])
+  by_cases hxM : x ∈ M
+  · -- Inside `M`, the component has compact closure.
+    have hCM : C ⊆ interior M :=
+      isPreconnected_connectedComponentIn.subset_of_closure_inter_subset isOpen_interior
+        ⟨x, hxC, (mem_interior_iff_notMem_frontier hxM).2 (hCfr' x hxC)⟩
+        fun w ⟨hw, hwC⟩ ↦ (mem_interior_iff_notMem_frontier
+          (hM.isClosed.closure_subset (closure_mono interior_subset hw))).2 (hCfr' w hwC)
+    exact hx (hM.of_isClosed_subset isClosed_closure
+      (closure_minimal (hCM.trans interior_subset) hM.isClosed))
+  · -- Outside `M`, the component is clopen, so it is the whole space, which meets `L`.
+    have hCM : C ⊆ Mᶜ :=
+      isPreconnected_connectedComponentIn.subset_of_closure_inter_subset
+        hM.isClosed.isOpen_compl ⟨x, hxC, hxM⟩ fun w ⟨hw, hwC⟩ hwM ↦
+          hCfr' w hwC ⟨subset_closure hwM, by rwa [← mem_compl_iff, ← closure_compl]⟩
+    have hfrC : frontier C = ∅ := by
+      refine eq_empty_of_forall_notMem fun w hw ↦ ?_
+      have hwL : w ∈ L := by
+        simpa using frontier_connectedComponentIn_subset_compl hL.isClosed.isOpen_compl x hw
+      have hw' : w ∈ closure Mᶜ := closure_mono hCM (frontier_subset_closure hw)
+      rw [closure_compl] at hw'
+      exact hw' (hLM hwL)
+    obtain ⟨y, hy⟩ := hLne
+    have hyC : y ∈ C := (isClopen_iff_frontier_eq_empty.2 hfrC).eq_univ ⟨x, hxC⟩ ▸ mem_univ y
+    exact connectedComponentIn_subset Lᶜ x hyC hy
+
+/-- **Compact neighbourhoods with finitely many unbounded complementary components.** In a
+preconnected, locally connected, locally compact Hausdorff space, every compact set `K` lies in the
+interior of a compact set `L` such that `X \ L` has only finitely many connected components, none
+of which has compact closure. -/
+theorem exists_isCompact_finite_connectedComponents_compl [WeaklyLocallyCompactSpace X]
+    [PreconnectedSpace X] {K : Set X} (hK : IsCompact K) :
+    ∃ L : Set X, IsCompact L ∧ K ⊆ interior L ∧ Finite (ConnectedComponents ↥Lᶜ) ∧
+      ∀ x ∈ Lᶜ, ¬IsCompact (closure (connectedComponentIn Lᶜ x)) := by
+  -- In a compact space the whole space works.
+  by_cases hc : CompactSpace X
+  · refine ⟨univ, isCompact_univ, by simp, ?_, fun x hx ↦ absurd (mem_univ x) hx⟩
+    have : IsEmpty ↥(univ : Set X)ᶜ := ⟨fun x ↦ x.2 (mem_univ _)⟩
+    exact Finite.of_surjective _ ConnectedComponents.surjective_coe
+  have hX (x : X) : ¬IsCompact (connectedComponent x) := by
+    rw [PreconnectedSpace.connectedComponent_eq_univ]
+    exact fun h ↦ hc ⟨h⟩
+  -- Enlarge `K` by a point, so that the neighbourhood `L₀` below is nonempty.
+  obtain ⟨x₀⟩ : Nonempty X := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    exact hc inferInstance
+  -- `L` is a compact neighbourhood `L₀` of `K` together with the components of `X \ L₀` with
+  -- compact closure. The other components of `X \ L₀` meet the compact frontier of a compact
+  -- neighbourhood `M` of `L₀`, which only finitely many components do.
+  obtain ⟨L₀, hL₀, hKL₀⟩ := exists_compact_superset (hK.insert x₀)
+  obtain ⟨M, hM, hL₀M⟩ := exists_compact_superset hL₀
+  set L := {x | IsCompact (closure (connectedComponentIn L₀ᶜ x))}
+  have hL : IsCompact L := hL₀.isCompact_setOf_isCompact_closure_connectedComponentIn_compl hX
+  have hL₀L : L₀ ⊆ L := fun x hx ↦ by
+    simp [L, connectedComponentIn_eq_empty (notMem_compl_iff.2 hx)]
+  -- Outside `L`, the components of `X \ L` are the components of `X \ L₀`.
+  have hcomp (x : X) (hx : x ∈ Lᶜ) : connectedComponentIn Lᶜ x = connectedComponentIn L₀ᶜ x := by
+    refine (connectedComponentIn_mono x (compl_subset_compl.2 hL₀L)).antisymm
+      (isPreconnected_connectedComponentIn.subset_connectedComponentIn
+        (mem_connectedComponentIn fun h ↦ hx (hL₀L h)) fun y hy hyL ↦ hx ?_)
+    exact (congrArg (fun s ↦ IsCompact (closure s)) (connectedComponentIn_eq hy)).mpr hyL
+  refine ⟨L, hL, (subset_insert x₀ K).trans (hKL₀.trans (interior_mono hL₀L)), ?_,
+    fun x hx ↦ hcomp x hx ▸ hx⟩
+  -- Finitely many components of `X \ L₀` cover the frontier of `M`, and every component of
+  -- `X \ L` is one of them.
+  have hfrM : frontier M ⊆ L₀ᶜ := fun y hy hyL₀ ↦ hy.2 (hL₀M hyL₀)
+  obtain ⟨F, -, hcover⟩ := (hM.of_isClosed_subset isClosed_frontier
+    hM.isClosed.frontier_subset).elim_nhds_subcover (connectedComponentIn L₀ᶜ)
+      fun y hy ↦ hL₀.isClosed.isOpen_compl.connectedComponentIn.mem_nhds
+        (mem_connectedComponentIn (hfrM hy))
+  have hF (x : X) (hx : x ∈ Lᶜ) :
+      ∃ z ∈ F, connectedComponentIn L₀ᶜ z = connectedComponentIn L₀ᶜ x := by
+    obtain ⟨w, hwC, hwM⟩ := connectedComponentIn_compl_inter_frontier_nonempty hL₀ hM hL₀M
+      ⟨x₀, interior_subset (hKL₀ (mem_insert x₀ K))⟩ hx
+    obtain ⟨z, hzF, hwz⟩ := mem_iUnion₂.1 (hcover hwM)
+    exact ⟨z, hzF, (connectedComponentIn_eq hwz).trans (connectedComponentIn_eq hwC).symm⟩
+  classical
+  refine Finite.of_surjective
+    (fun z : {z : F // (z : X) ∈ Lᶜ} ↦ ConnectedComponents.mk (⟨z.1, z.2⟩ : ↥Lᶜ)) ?_
+  rintro ⟨x, hx⟩
+  obtain ⟨z, hzF, hzx⟩ := hF x hx
+  have hzL : z ∈ Lᶜ := fun h ↦ hx ((congrArg (fun s ↦ IsCompact (closure s)) hzx).mp h)
+  exact ⟨⟨⟨z, hzF⟩, hzL⟩, (ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hzL hx).2
+    (by rw [hcomp z hzL, hcomp x hx, hzx])⟩
+
+end Neighbourhoods
+
+/-! ### Existence of ends -/
+
+section Existence
+
+variable [T2Space X] [WeaklyLocallyCompactSpace X] [SigmaCompactSpace X] [LocallyConnectedSpace X]
+
+/-- **Every unbounded complementary component contains an end.** In a σ-compact, locally compact
+Hausdorff, locally connected space with no compact connected component, let `L` be compact and let
+the component of `x` in `X \ L` have noncompact closure. Then some end sequence starts inside that
+component. -/
+theorem exists_endSequence_subset_connectedComponentIn
+    (hX : ∀ x : X, ¬IsCompact (connectedComponent x)) {L : Set X} (hL : IsCompact L) {x : X}
+    (hx : ¬IsCompact (closure (connectedComponentIn Lᶜ x))) :
+    ∃ U : EndSequence X, U 0 ⊆ connectedComponentIn Lᶜ x := by
+  -- Along a compact exhaustion `Kₙ`, choose nested components of the complements of `L ∪ Kₙ`
+  -- with noncompact closure.
+  set K := CompactExhaustion.choice X
+  have hM (n : ℕ) : IsCompact (L ∪ K n) := hL.union (K.isCompact n)
+  have hMmono {m n : ℕ} (h : m ≤ n) : L ∪ K m ⊆ L ∪ K n := union_subset_union_right L (K.subset h)
+  -- Points whose component in the complement of `L ∪ Kₙ` has noncompact closure.
+  let P (n : ℕ) (y : X) : Prop := ¬IsCompact (closure (connectedComponentIn (L ∪ K n)ᶜ y))
+  have step (n : ℕ) (y : X) (hy : P n y) : ∃ y' ∈ connectedComponentIn (L ∪ K n)ᶜ y, P (n + 1) y' :=
+    exists_mem_not_isCompact_closure_connectedComponentIn_compl hX hy (hM (n + 1))
+  choose! next hnext_mem hnext using step
+  obtain ⟨y₀, hy₀, hP₀⟩ := exists_mem_not_isCompact_closure_connectedComponentIn_compl hX hx (hM 0)
+  let z : ℕ → X := fun n ↦ Nat.rec y₀ (fun n zn ↦ next n zn) n
+  have hz (n : ℕ) : P n (z n) := by
+    induction n with
+    | zero => exact hP₀
+    | succ n ih => exact hnext n (z n) ih
+  have hzM (n : ℕ) : z n ∉ L ∪ K n := fun h ↦ hz n <| by
+    rw [connectedComponentIn_eq_empty (notMem_compl_iff.2 h), closure_empty]
+    exact isCompact_empty
+  refine ⟨{ toFun n := connectedComponentIn (L ∪ K n)ᶜ (z n)
+            exists_eq_connectedComponentIn' n := ⟨L ∪ K n, hM n, z n, hzM n, rfl⟩
+            antitone' := antitone_nat_of_succ_le fun n ↦ ?_
+            eventually_disjoint' C hC := ?_ }, ?_⟩
+  · -- The next component lies in the component of the previous point.
+    refine (connectedComponentIn_mono _ (compl_subset_compl.2 (hMmono n.le_succ))).trans ?_
+    exact (connectedComponentIn_eq (hnext_mem n (z n) (hz n))).symm.subset
+  · obtain ⟨m, hm⟩ := K.exists_superset_of_isCompact hC
+    exact eventually_atTop.2 ⟨m, fun n hn ↦ subset_compl_iff_disjoint_right.1 <|
+      (connectedComponentIn_subset _ _).trans <| compl_subset_compl.2 <|
+        hm.trans ((K.subset hn).trans subset_union_right)⟩
+  · refine (connectedComponentIn_mono _ (compl_subset_compl.2 subset_union_left)).trans ?_
+    exact (connectedComponentIn_eq hy₀).symm.subset
+
+/-- A nonempty σ-compact, locally compact Hausdorff, locally connected space with no compact
+connected component has an end. -/
+theorem nonempty_endComponents [Nonempty X] (hX : ∀ x : X, ¬IsCompact (connectedComponent x)) :
+    Nonempty (EndComponents X) := by
+  obtain ⟨x⟩ := ‹Nonempty X›
+  obtain ⟨U, -⟩ := exists_endSequence_subset_connectedComponentIn hX isCompact_empty (x := x) <| by
+    rw [compl_empty, connectedComponentIn_univ, isClosed_connectedComponent.closure_eq]
+    exact hX x
+  exact ⟨.mk U⟩
+
+end Existence
+
+/-! ### Connectedness at infinity -/
+
+variable (X) in
+/-- A space is **connected at infinity** if for every compact set `K` there is a compact set
+`L ⊇ K` such that any two points outside `L` are joined by a path in `X \ K`. -/
+def ConnectedAtInfinity : Prop :=
+  ∀ K : Set X, IsCompact K → ∃ L : Set X, IsCompact L ∧ K ⊆ L ∧ ∀ x ∉ L, ∀ y ∉ L, JoinedIn Kᶜ x y
+
+/-- Unfolding `TauCeti.ConnectedAtInfinity`. -/
+theorem connectedAtInfinity_iff : ConnectedAtInfinity X ↔
+    ∀ K : Set X, IsCompact K → ∃ L : Set X, IsCompact L ∧ K ⊆ L ∧
+      ∀ x ∉ L, ∀ y ∉ L, JoinedIn Kᶜ x y :=
+  Iff.rfl
+
+namespace ConnectedAtInfinity
+
+/-- A compact space is connected at infinity: take `L` to be the whole space. -/
+theorem of_compactSpace [CompactSpace X] : ConnectedAtInfinity X :=
+  fun _ _ ↦ ⟨univ, isCompact_univ, subset_univ _, fun x hx ↦ absurd (mem_univ x) hx⟩
+
+/-- A space connected at infinity has at most one end. -/
+theorem subsingleton_endComponents (h : ConnectedAtInfinity X) :
+    Subsingleton (EndComponents X) := by
+  refine ⟨fun e e' ↦ ?_⟩
+  obtain ⟨U, rfl⟩ := EndComponents.mk_surjective e
+  obtain ⟨V, rfl⟩ := EndComponents.mk_surjective e'
+  refine EndComponents.mk_eq_mk_iff.2 ((U.equiv_iff_forall_exists_subset V).2 fun i ↦ ?_)
+  -- Far out, the sets of `U` and `V` are joined by paths avoiding the compact set `K` of `Uᵢ`, so
+  -- they lie in the same component of its complement, which is `Uᵢ`.
+  obtain ⟨K, hK, y, -, hU⟩ := U.exists_eq_connectedComponentIn i
+  obtain ⟨L, hL, hKL, hjoin⟩ := h K hK
+  obtain ⟨n, hin, hUn, hVn⟩ := ((eventually_ge_atTop i).and
+    ((U.eventually_disjoint hL).and (V.eventually_disjoint hL))).exists
+  obtain ⟨a, ha⟩ := U.nonempty n
+  obtain ⟨b, hb⟩ := V.nonempty n
+  -- The path from `a` to `b` avoids `K`, so `b` lies in the component of `a` in `X \ K`.
+  obtain ⟨γ, hγ⟩ := hjoin a (disjoint_left.1 hUn ha) b (disjoint_left.1 hVn hb)
+  have hab : b ∈ connectedComponentIn Kᶜ a :=
+    (isPreconnected_range γ.continuous).subset_connectedComponentIn ⟨0, γ.source⟩
+      (range_subset_iff.2 hγ) ⟨1, γ.target⟩
+  have hVK : V n ⊆ Kᶜ := (hVn.mono_right hKL).subset_compl_right
+  refine ⟨n, ((V.isPreconnected n).subset_connectedComponentIn hb hVK).trans ?_⟩
+  rw [← connectedComponentIn_eq hab, hU, ← connectedComponentIn_eq (hU ▸ U.antitone hin ha)]
+
+end ConnectedAtInfinity
+
+section OneEnd
+
+variable [T2Space X] [WeaklyLocallyCompactSpace X] [SigmaCompactSpace X]
+  [LocallyPathConnectedSpace X] [PreconnectedSpace X]
+
+/-- A preconnected, locally path-connected, σ-compact, locally compact Hausdorff space with at most
+one end is connected at infinity. -/
+theorem connectedAtInfinity_of_subsingleton_endComponents [Subsingleton (EndComponents X)] :
+    ConnectedAtInfinity X := by
+  -- Take a compact neighbourhood `L` of `K` whose complementary components all have noncompact
+  -- closure. Each of them contains an end, so there is only one, and it is path-connected.
+  refine fun K hK ↦ ?_
+  obtain ⟨L, hL, hKL, -, hLc⟩ := exists_isCompact_finite_connectedComponents_compl hK
+  refine ⟨L, hL, hKL.trans interior_subset, fun x hx y hy ↦ ?_⟩
+  have hX (w : X) : ¬IsCompact (connectedComponent w) := by
+    rw [PreconnectedSpace.connectedComponent_eq_univ]
+    exact fun h ↦ hLc x hx (h.of_isClosed_subset isClosed_closure (subset_univ _))
+  obtain ⟨U, hU⟩ := exists_endSequence_subset_connectedComponentIn hX hL (hLc x hx)
+  obtain ⟨V, hV⟩ := exists_endSequence_subset_connectedComponentIn hX hL (hLc y hy)
+  -- The two ends agree, so the components of `x` and `y` in `X \ L` share a point.
+  obtain ⟨j, hj⟩ := ((U.equiv_iff_forall_exists_subset V).1
+    (EndComponents.mk_eq_mk_iff.1 (Subsingleton.elim (EndComponents.mk U) (.mk V)))) 0
+  obtain ⟨w, hw⟩ := V.nonempty j
+  have hxy : y ∈ connectedComponentIn Lᶜ x := by
+    rw [connectedComponentIn_eq (hU (hj hw)),
+      ← connectedComponentIn_eq (hV (V.antitone j.zero_le hw))]
+    exact mem_connectedComponentIn hy
+  -- That component is open and connected, hence path-connected.
+  have hopen : IsOpen (connectedComponentIn Lᶜ x) :=
+    hL.isClosed.isOpen_compl.connectedComponentIn
+  exact (((hopen.isConnected_iff_isPathConnected).1
+    (isConnected_connectedComponentIn_iff.2 hx)).joinedIn x (mem_connectedComponentIn hx) y
+      hxy).mono ((connectedComponentIn_subset _ _).trans
+        (compl_subset_compl.2 (hKL.trans interior_subset)))
+
+/-- **Connectedness at infinity is having at most one end**, for preconnected, locally
+path-connected, σ-compact, locally compact Hausdorff spaces. -/
+theorem connectedAtInfinity_iff_subsingleton_endComponents :
+    ConnectedAtInfinity X ↔ Subsingleton (EndComponents X) :=
+  ⟨ConnectedAtInfinity.subsingleton_endComponents, fun _ ↦
+    connectedAtInfinity_of_subsingleton_endComponents⟩
+
+/-- **A noncompact space is connected at infinity exactly when it has one end**, for preconnected,
+locally path-connected, σ-compact, locally compact Hausdorff spaces. -/
+theorem connectedAtInfinity_iff_natCard_endComponents_eq_one [NoncompactSpace X] :
+    ConnectedAtInfinity X ↔ Nat.card (EndComponents X) = 1 := by
+  have hX (w : X) : ¬IsCompact (connectedComponent w) := by
+    rw [PreconnectedSpace.connectedComponent_eq_univ]
+    exact noncompact_univ X
+  have : Nonempty X := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    exact noncompact_univ X isCompact_univ
+  have : Nonempty (EndComponents X) := nonempty_endComponents hX
+  rw [Nat.card_eq_one_iff_unique, connectedAtInfinity_iff_subsingleton_endComponents]
+  exact (and_iff_left this).symm
+
+end OneEnd
+
+end AtInfinity
 
 /-! ### The two ends of the real line -/
 
