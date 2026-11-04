@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
+public import TauCeti.Analysis.PDE.Vortex.Zeros
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 /-!
 # Uniqueness of plane vortices with the same zeros
@@ -33,10 +36,24 @@ phase (`TauCeti.exists_contDiff_eq_exp_ofReal_mul_I`). Finally, wherever `α ≠
 holomorphicity equation `∂bar_a α = 0` determines the connection from the section
 (`TauCeti.Vortex.eq_of_forall_section_eq`), which identifies `x` with the gauge transform of `y`.
 
-Only uniqueness is proved, and the zeros enter through the factor `h`. The sections of two
-vortices with the same zeros, counted with multiplicity, differ by such a factor because of the
-local holomorphic structure of `∂bar_a`; that comparison, and the existence of a vortex with
-prescribed zeros, are not addressed here.
+The zeros enter through the factor `h`. If the sections of two fields satisfying the
+holomorphicity rows `∂bar_a α = 0` have the same zeros with the same multiplicities, then such a
+factor exists and is as regular as the connections
+(`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Multiplicities are expressed by a function
+`n` such that each section factors near every `z` as `(w - z) ^ n z * v w`, with `v` continuous and
+nonzero at `z`; the similarity principle upgrades the factor to a `Cᵏ` one with the same exponent
+(`TauCeti.eq_of_eventually_sub_pow_mul_eq`). The factor of the quotient at a zero is the quotient
+of the two factors there.
+
+For smooth vortices with the same end framing `α (z) · phase (z) → 1`, where `|phase| → 1` (for
+example the winding phase `(z / |z|) ^ (-m)`), the factor tends to one at infinity, so it is an
+element of the smooth framed gauge group. Since a framed gauge is determined by its action on a
+field whose section vanishes only on a nowhere dense set
+(`TauCeti.Vortex.framedGaugeGroup_smul_left_injective`), two smooth framed vortices with the same
+zero multiplicities differ by exactly one framed gauge
+(`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`). This is uniqueness modulo the framed
+gauge action for each effective divisor; existence of a vortex with prescribed zeros is not
+addressed here.
 
 ## References
 
@@ -200,5 +217,189 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
       linear_combination (y z 2 ^ 2 + y z 3 ^ 2) * Real.sin_sq_add_cos_sq (f z)
     rw [Set.mem_ofPred_eq] at hz ⊢
     rwa [hsq]
+
+/-! ### Vortices with the same zero multiplicities -/
+
+section Divisor
+
+open scoped ContDiff
+
+variable {k : ℕ∞} {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+
+/-- The section in the form used by `exists_contDiffAt_section_eq_pow_mul`. -/
+private theorem sectionValue_eq_two_mul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ) :
+    sectionValue x w = 2 * ((x w 2 : ℂ) + I * x w 3) := by
+  rw [sectionValue_apply, mul_comm I]
+
+/-- A local factorization of a vortex section with a factor only continuous at `z` can be
+replaced by one with the same exponent and a `Cᵏ` factor. -/
+private theorem exists_contDiffAt_sectionValue_eq_pow_mul (hk : 1 ≤ k)
+    (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {z : ℂ} {n : ℕ}
+    (hn : ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w) :
+    ∃ V : ℂ → ℂ, ContDiffAt ℝ k V z ∧ V z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * V w := by
+  obtain ⟨v, hv, hv₀, hfac⟩ := hn
+  -- The factorization makes the section nonzero at points near `z` other than `z`.
+  have hne : ∃ w, (x w 2 : ℂ) + I * x w 3 ≠ 0 := by
+    obtain ⟨w, ⟨hw, hvw⟩, hwz⟩ :=
+      (((hfac.and (hv.eventually_ne hv₀)).filter_mono nhdsWithin_le_nhds).and
+        (eventually_mem_nhdsWithin (s := {z}ᶜ))).exists
+    refine ⟨w, fun h0 ↦ mul_ne_zero
+      (pow_ne_zero n (sub_ne_zero.mpr (Set.mem_compl_singleton_iff.mp hwz))) hvw ?_⟩
+    rw [← hw, sectionValue_eq_two_mul, h0, mul_zero]
+  obtain ⟨m, V, hV, hV₀, hfacV⟩ := exists_contDiffAt_section_eq_pow_mul hk hb₁ hb₂ hp hq hhol hne z
+  obtain rfl : m = n := eq_of_eventually_sub_pow_mul_eq hV.continuousAt hV₀ hv hv₀ <| by
+    filter_upwards [hfac, hfacV] with w hw hwV
+    rw [← hwV, ← hw, sectionValue_eq_two_mul]
+  exact ⟨V, hV, hV₀, by simpa only [sectionValue_eq_two_mul] using hfacV⟩
+
+/-- **Vortex sections with the same zero multiplicities differ by a nowhere-vanishing `Cᵏ`
+factor.** Let `x` and `y` be fields with `Cᵏ` connections (`k ≥ 1`) and differentiable sections
+satisfying the holomorphicity rows `∂bar_a α = 0` of the vortex equation. If `n` is a
+multiplicity function for both sections, meaning that each of them factors near every `z` as
+`(w - z) ^ n z * v w` with `v` continuous and nonzero at `z`, then `α_x = h α_y` for a
+nowhere-vanishing `Cᵏ` function `h`. -/
+theorem exists_contDiff_sectionValue_eq_mul (hk : 1 ≤ k)
+    (hxb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hxb₂ : ContDiff ℝ k (fun w ↦ x w 1))
+    (hxp : Differentiable ℝ (fun w ↦ x w 2)) (hxq : Differentiable ℝ (fun w ↦ x w 3))
+    (hxhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hyb₁ : ContDiff ℝ k (fun w ↦ y w 0)) (hyb₂ : ContDiff ℝ k (fun w ↦ y w 1))
+    (hyp : Differentiable ℝ (fun w ↦ y w 2)) (hyq : Differentiable ℝ (fun w ↦ y w 3))
+    (hyhol : ∀ w, equation y w 1 = 0 ∧ equation y w 2 = 0) {n : ℂ → ℕ}
+    (hnx : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
+    (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
+    ∃ h : ℂ → ℂ, ContDiff ℝ k h ∧ (∀ z, h z ≠ 0) ∧
+      ∀ z, sectionValue x z = h z * sectionValue y z := by
+  choose V hV hV₀ hfacV using fun z ↦
+    exists_contDiffAt_sectionValue_eq_pow_mul hk hxb₁ hxb₂ hxp hxq hxhol (hnx z)
+  choose W hW hW₀ hfacW using fun z ↦
+    exists_contDiffAt_sectionValue_eq_pow_mul hk hyb₁ hyb₂ hyp hyq hyhol (hny z)
+  -- Off the zeros of `α_y` take the quotient of the sections; at a zero `z` take the quotient of
+  -- the two factors at `z`.
+  let h : ℂ → ℂ := fun w ↦
+    if sectionValue y w = 0 then V w w / W w w else sectionValue x w / sectionValue y w
+  -- Near each `z`, `h` is the quotient of the two factors at `z`.
+  have hloc (z : ℂ) : h =ᶠ[𝓝 z] fun w ↦ V z w / W z w := by
+    filter_upwards [hfacV z, hfacW z, (hW z).continuousAt.eventually_ne (hW₀ z)]
+      with w hwV hwW hW0
+    by_cases hs : sectionValue y w = 0
+    · -- The only zero of `α_y` near `z` is `z` itself.
+      obtain rfl : w = z := by
+        by_contra hwz
+        rw [hwW] at hs
+        exact mul_ne_zero (pow_ne_zero _ (sub_ne_zero.mpr hwz)) hW0 hs
+      simp only [h, hs, ↓reduceIte]
+    · have hpow : (w - z) ^ n z ≠ 0 := fun h0 ↦ hs (by rw [hwW, h0, zero_mul])
+      simp only [h, hs, ↓reduceIte]
+      rw [hwV, hwW, mul_div_mul_left _ _ hpow]
+  have hq (z : ℂ) : ContDiffAt ℝ k (fun w ↦ V z w / W z w) z := by
+    simpa only [div_eq_mul_inv, Pi.inv_apply] using (hV z).mul ((hW z).inv (hW₀ z))
+  refine ⟨h, contDiff_iff_contDiffAt.2 fun z ↦ (hq z).congr_of_eventuallyEq (hloc z),
+    fun z ↦ ?_, fun z ↦ ?_⟩
+  · rw [(hloc z).self_of_nhds]
+    exact div_ne_zero (hV₀ z) (hW₀ z)
+  · rw [(hloc z).self_of_nhds, (hfacV z).self_of_nhds, (hfacW z).self_of_nhds]
+    rw [div_mul_eq_mul_div, eq_div_iff (hW₀ z)]
+    ring
+
+/-- **The framed gauge action is free at a field with nowhere dense zeros.** If the section of
+`y` is nonzero on a dense set, then a smooth framed gauge is determined by its action on `y`. -/
+theorem framedGaugeGroup_smul_left_injective (hdense : Dense {z | sectionValue y z ≠ 0}) :
+    Function.Injective fun u : framedGaugeGroup ↦ u • y := by
+  intro u v huv
+  have hc (u : framedGaugeGroup) : Continuous fun z ↦ ((u.val z : Circle) : ℂ) :=
+    ((mem_framedGaugeGroup _).mp u.property).1.continuous
+  refine Subtype.ext (funext fun z ↦ Circle.ext ?_)
+  refine congrFun ((hc u).ext_on hdense (hc v) fun w hw ↦ ?_) z
+  have hw' := congrArg (fun x ↦ sectionValue x w) huv
+  simp only [framedGaugeGroup_smul, sectionValue_gaugeTransform] at hw'
+  exact mul_right_cancel₀ hw hw'
+
+/-- **Uniqueness of framed plane vortices with prescribed zeros, modulo framed gauge.** Let `x`
+and `y` be smooth solutions of the vortex equation on the plane with the same end framing
+`α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the winding
+phase `(z / |z|) ^ (-m)`. If `n` is a multiplicity function for both sections, meaning that each of
+them factors near every `z` as `(w - z) ^ n z * v w` with `v` continuous and nonzero at `z`, then
+exactly one smooth framed gauge `u` satisfies `u • y = x`. -/
+theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : ContDiff ℝ ∞ y)
+    (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0) {phase : ℂ → ℂ}
+    (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
+    (hxfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1))
+    (hyfr : Tendsto (fun z ↦ sectionValue y z * phase z) (cocompact ℂ) (𝓝 1)) {n : ℂ → ℕ}
+    (hnx : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
+    (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
+    ∃! u : framedGaugeGroup, u • y = x := by
+  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hyi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ y w i := (contDiff_piLp 2).1 hy i
+  have hxhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hxsol w]
+  have hyhol (w : ℂ) : equation y w 1 = 0 ∧ equation y w 2 = 0 := by simp [hysol w]
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) : Differentiable ℝ f := hf.differentiable (by simp)
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
+    (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
+  have hnormsq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+      ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+    rw [sectionValue_apply, Complex.sq_norm, normSq_mul, normSq_add_mul_I, normSq_apply]
+    norm_num
+  -- The end framing gives `|α| → 1` at infinity.
+  have hlim (x : ℂ → EuclideanSpace ℝ (Fin 4))
+      (hfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1)) :
+      Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
+    have hn : Tendsto (fun z ↦ ‖sectionValue x z‖) (cocompact ℂ) (𝓝 1) := by
+      have hdiv := hfr.norm.div hphase one_ne_zero
+      rw [norm_one, div_one] at hdiv
+      refine hdiv.congr' ?_
+      filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
+      rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
+    simpa only [hnormsq, one_pow] using hn.pow 2
+  have hylim := hlim y hyfr
+  -- The zeros of `α_y` are finite, so their complement is dense.
+  have hdense : Dense {z | sectionValue y z ≠ 0} := by
+    refine (dense_univ.sdiff_finite (finite_setOfPred_section_eq_zero (k := ⊤) le_top (hyi 0)
+      (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hylim)).mono fun z hz ↦ ?_
+    simp only [Set.mem_sdiff, Set.mem_univ, true_and, Set.mem_ofPred_eq] at hz ⊢
+    rw [sectionValue_eq_two_mul]
+    exact mul_ne_zero two_ne_zero hz
+  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} := hdense.mono fun z hz ↦ by
+    have h4 := hnormsq y z
+    simp only [Set.mem_ofPred_eq] at hz ⊢
+    intro h0
+    rw [h0, mul_zero] at h4
+    exact hz (norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp h4))
+  have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
+    have := hα z
+    rw [sectionValue_apply, sectionValue_apply] at this
+    linear_combination this / 2
+  obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hd _ (hxi 0))
+    (hd _ (hxi 1)) (contDiff_infty.1 (hxi 2) 2) (contDiff_infty.1 (hxi 3) 2) (hd _ (hyi 0))
+    (hd _ (hyi 1)) (contDiff_infty.1 (hyi 2) 2) (contDiff_infty.1 (hyi 3) 2) hxsol hysol
+    (hlim x hxfr) hylim (contDiff_infty.1 hh 2) hh₀ hα' hdense'
+  -- The gauge `exp (i f)` is `h`, which is smooth and tends to one at infinity.
+  have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
+    rw [Circle.coe_exp, hhf]
+  have hh1 : Tendsto h (cocompact ℂ) (𝓝 1) := by
+    have hdiv := hxfr.div hyfr one_ne_zero
+    rw [div_one] at hdiv
+    refine hdiv.congr' ?_
+    filter_upwards [hyfr.eventually_ne one_ne_zero] with z hz
+    rw [Pi.div_apply, hα z, mul_assoc, mul_div_cancel_right₀ _ hz]
+  have hu : (fun w ↦ Circle.exp (f w)) ∈ framedGaugeGroup := by
+    refine (mem_framedGaugeGroup _).2 ⟨?_, ?_⟩
+    · simpa only [hcoe] using hh
+    · exact tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm)
+  have hsmul : (⟨_, hu⟩ : framedGaugeGroup) • y = x := by
+    simp only [framedGaugeGroup_smul]
+    rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
+    exact hxy.symm
+  exact ⟨⟨_, hu⟩, hsmul, fun v hv ↦
+    framedGaugeGroup_smul_left_injective hdense (hv.trans hsmul.symm)⟩
+
+end Divisor
 
 end TauCeti.Vortex
