@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.Binomial
@@ -54,6 +55,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
   each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
+* `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
+  `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
+  is multiplicative and fixes the unit, so it may be applied factorwise to products.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
@@ -494,6 +498,13 @@ theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule
   have := koszulTwist_mem_piece _ hx' q
   rwa [InternalGrading.ofDecomposition_piece] at this
 
+/-- On an element of degree `e` of a decomposition `ℳ`, the Koszul twist of parameter `q` of the
+grading of `ℳ` acts as the scalar `(-1)^(q * e)`. -/
+theorem InternalGrading.koszulTwist_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {x : M} {e : ℤ} (hx : x ∈ ℳ e) (q : ℤ) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x = (((q * e).negOnePow : ℤ) : R) • x :=
+  koszulTwist_apply_of_mem _ (by rwa [InternalGrading.ofDecomposition_piece]) q
+
 /-- The Koszul twist of parameter zero is the identity. -/
 @[simp]
 theorem InternalGrading.koszulTwist_zero (G : InternalGrading R M) :
@@ -666,6 +677,42 @@ theorem InternalGrading.twistedTuple_zero_twist (G : InternalGrading R M) {n : �
 end KoszulTwistLemmas
 
 namespace InternalGrading
+
+section KoszulTwistMul
+
+variable {R : Type u} {A : Type v} [CommRing R]
+
+/-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
+so the signs `(-1) ^ (q |a|)` multiply. -/
+theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
+    [DirectSum.Decomposition 𝒜] (q : ℤ) (a b : A) :
+    (ofDecomposition 𝒜).koszulTwist q (a * b) =
+      (ofDecomposition 𝒜).koszulTwist q a * (ofDecomposition 𝒜).koszulTwist q b := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | add a a' ha ha' => rw [add_mul, map_add, ha, ha', map_add, add_mul]
+  | homogeneous a =>
+    obtain ⟨a, hap⟩ := a
+    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | add b b' hb hb' => rw [mul_add, map_add, hb, hb', map_add, mul_add]
+    | homogeneous b =>
+      obtain ⟨b, hbq⟩ := b
+      rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedMul.mul_mem hap hbq),
+        koszulTwist_ofDecomposition_apply_of_mem _ hap,
+        koszulTwist_ofDecomposition_apply_of_mem _ hbq, smul_mul_smul_comm, mul_add,
+        Int.negOnePow_add, Units.val_mul, Int.cast_mul]
+
+/-- The Koszul twist of a graded algebra fixes the unit, which has degree zero. -/
+@[simp]
+theorem koszulTwist_ofDecomposition_one [Semiring A] [Module R A] {𝒜 : ℤ → Submodule R A}
+    [SetLike.GradedOne 𝒜] [DirectSum.Decomposition 𝒜] (q : ℤ) :
+    (ofDecomposition 𝒜).koszulTwist q 1 = 1 :=
+  koszulTwist_apply_of_mem_zero _
+    (by rw [ofDecomposition_piece]; exact SetLike.GradedOne.one_mem (A := 𝒜)) q
+
+end KoszulTwistMul
 
 section QuadraticTwist
 
