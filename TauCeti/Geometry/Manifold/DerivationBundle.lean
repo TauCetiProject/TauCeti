@@ -105,7 +105,7 @@ theorem tangentToPointDerivation_apply (x : M) (v : TangentSpace I x)
 
 /-- **A globally smooth map with the germ of the extended chart.** There is a `C^∞` map `M → E`
 that agrees with `extChartAt I x` on a neighbourhood of `x`. -/
-theorem exists_contMDiffMap_eventuallyEq_extChartAt
+theorem TauCeti.exists_contMDiffMap_eventuallyEq_extChartAt
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] (x : M) :
@@ -415,7 +415,7 @@ theorem tangentToPointDerivation_surjective
   intro D
   -- A bump-localized extended chart is globally smooth and agrees with the chart germ at `x`.
   -- Push `D` through it and apply the model-space theorem to obtain the candidate vector `v`.
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
+  obtain ⟨F, hF⟩ := TauCeti.exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
   obtain ⟨w, hw⟩ := tangentToPointDerivation_surjective_model (F x) (fdifferential F x D)
   let v : TangentSpace I x := w
   have hv : mfderiv I (modelWithCornersSelf ℝ E) F x v = w := by
