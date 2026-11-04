@@ -84,7 +84,7 @@ The same criterion applies to the other nodes after permuting the inputs. -/
 theorem add_carlsonDuplicationLambda_div_four_mem_slitPlane {x y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) :
     (x + carlsonDuplicationLambda x y z) / 4 ∈ slitPlane := by
-  exact TauCeti.div_ofReal_mem_slitPlane
+  simpa only [ofReal_ofNat] using TauCeti.div_ofReal_mem_slitPlane
     (add_carlsonDuplicationLambda_mem_slitPlane hxy hxz) (by norm_num : (0 : ℝ) < 4)
 
 end Complex
