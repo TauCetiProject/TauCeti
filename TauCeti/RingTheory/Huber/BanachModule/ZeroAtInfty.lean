@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Basic
+public import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.RingTheory.Huber.BanachModule.CompletedTensor
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.BaseChange
 
@@ -320,17 +320,18 @@ theorem zeroAtInftyEquiv_map_smul (s : S) (z : CompletedTensor R C₀(I, R) S) :
   ext i
   simp
 
-/-- **Coefficientwise extension of operators.** For an `R`-algebra `S` whose structure map is
-bounded, `‖algebraMap R S r‖ ≤ C * ‖r‖` (the hypothesis of `mapCoeffs`, equivalent to the bound
-`hS` on the action), the completed tensor extension `u ⊗̂ 1` of an operator
-`u : C₀(J, R) →L[R] C₀(I, R)` is its coefficientwise extension `u.mapCoeffs`, the operator over `S`
-with matrix `u.matrixCoeff.map (algebraMap R S)`. -/
+/-- **Coefficientwise extension of operators.** For an `R`-algebra `S` with bounded action `hS`,
+the completed tensor extension `u ⊗̂ 1` of an operator `u : C₀(J, R) →L[R] C₀(I, R)` is its
+coefficientwise extension `u.mapCoeffs`, the operator over `S` with matrix
+`u.matrixCoeff.map (algebraMap R S)`. The structure-map bound that `mapCoeffs` requires follows
+from `hS` (`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`). -/
 theorem zeroAtInftyEquiv_map [TauCeti.NormedRing.IsTate R]
-    (hφ : ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖)
     {J : Type*} [TopologicalSpace J] [DiscreteTopology J] [DecidableEq J]
     (u : C₀(J, R) →L[R] C₀(I, R)) (z : CompletedTensor R C₀(J, R) S) :
     zeroAtInftyEquiv I hS (map u (.id R S) z) =
-      u.mapCoeffs (algebraMap R S) hφ (zeroAtInftyEquiv J hS z) := by
+      u.mapCoeffs (algebraMap R S) (exists_norm_algebraMap_le_of_norm_smul_le hS)
+        (zeroAtInftyEquiv J hS z) := by
+  have hφ := exists_norm_algebraMap_le_of_norm_smul_le hS
   suffices (zeroAtInftyEquiv I hS : _ →L[R] C₀(I, S)).comp (map u (.id R S)) =
       ((u.mapCoeffs (algebraMap R S) hφ).restrictScalars R).comp
         (zeroAtInftyEquiv J hS : _ →L[R] C₀(J, S)) from DFunLike.congr_fun this z
