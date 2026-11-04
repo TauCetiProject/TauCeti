@@ -12,7 +12,7 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 /-!
 # A degenerate limit destroys the Fredholm property of the trajectory operator
 
-Let `A : ℝ → End(E)` be an essentially bounded family of operators on a real Hilbert space `E`.
+Let `A : ℝ → End(E)` be an essentially bounded family of operators on a real Banach space `E`.
 This file proves that the trajectory operator
 
 `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)`
@@ -29,7 +29,8 @@ The obstruction is a sequence of approximate kernel elements escaping to infinit
 plateaus `ψₙ`, equal to one on an interval of length `2 (n + 1)` and supported in the interval
 of length `2 (n + 2)` with the same centre, the centres moving off to the end at which `A s v`
 tends to zero. Their derivatives are bounded independently of `n` and supported on two intervals
-of length one, so for the normalized paths `uₙ = ψₙ v / ‖ψₙ v‖_{L²}`
+of length one (`TauCeti.exists_forall_contDiff_plateau`), so after rescaling `v` to a unit vector,
+the normalized paths `uₙ = ψₙ v / ‖ψₙ v‖_{L²}` satisfy
 
 `‖D_A uₙ‖²_{L²} ≤ 2 ‖ψₙ'‖² / ‖ψₙ‖² + 2 sup_{supp ψₙ} ‖A s v‖² → 0`,
 
@@ -67,81 +68,11 @@ open scoped ENNReal Topology Distributions
 
 namespace TauCeti.WeakDerivStep
 
-/-- Smooth plateaus with uniformly bounded derivatives: around any centre `c` and for every `n`,
-a smooth function supported in `closedBall c (n + 2)` with `∫ ψ² ≥ 2 (n + 1)` and `∫ ψ'² ≤ C`,
-where `C` does not depend on `c` or `n`. They are the radial cutoffs
-`TauCeti.exists_forall_contDiff_cutoff_closedBall` between radii `n + 1` and `n + 2`. -/
-private theorem exists_plateau : ∃ C : ℝ, ∀ (c : ℝ) (n : ℕ), ∃ ψ : ℝ → ℝ,
-    ContDiff ℝ (⊤ : ℕ∞) ψ ∧ tsupport ψ ⊆ closedBall c (n + 2) ∧
-      2 * (n + 1) ≤ ∫ s, ψ s ^ 2 ∧ ∫ s, deriv ψ s ^ 2 ≤ C := by
-  obtain ⟨K, -, hK⟩ := exists_forall_contDiff_cutoff_closedBall (E := ℝ)
-  refine ⟨2 * K ^ 2, fun c n ↦ ?_⟩
-  obtain ⟨ψ, hψ, hψr, hψ1, hψt, hψd, -⟩ :=
-    hK c (r := n + 1) (R := n + 2) (by positivity) (by linarith)
-  have hψc : HasCompactSupport ψ := (isCompact_closedBall c _).of_isClosed_subset
-    (isClosed_tsupport ψ) hψt
-  have hψcont : Continuous ψ := hψ.continuous
-  have hψ'cont : Continuous (deriv ψ) := hψ.continuous_deriv (by simp)
-  have hint : Integrable (fun s ↦ ψ s ^ 2) :=
-    Continuous.integrable_of_hasCompactSupport (by fun_prop)
-      (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
-  have hdint : Integrable (fun s ↦ deriv ψ s ^ 2) :=
-    Continuous.integrable_of_hasCompactSupport (by fun_prop)
-      (hψc.deriv.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
-  have hA : volume (closedBall c (n + 2) \ ball c (n + 1)) ≠ ∞ :=
-    ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top).ne
-  refine ⟨ψ, hψ, hψt, ?_, ?_⟩
-  · -- `ψ = 1` on `closedBall c (n + 1)`.
-    calc 2 * ((n : ℝ) + 1) = ∫ s, (closedBall c (n + 1)).indicator (fun _ ↦ (1 : ℝ)) s := by
-          rw [integral_indicator_const _ measurableSet_closedBall, Real.volume_real_closedBall
-            (by positivity), smul_eq_mul, mul_one]
-      _ ≤ ∫ s, ψ s ^ 2 := by
-          refine integral_mono ((integrable_indicator_iff measurableSet_closedBall).2
-            (integrableOn_const measure_closedBall_lt_top.ne)) hint fun s ↦ ?_
-          by_cases hs : s ∈ closedBall c (n + 1)
-          · simp [indicator_of_mem hs, hψ1 hs]
-          · simp [indicator_of_notMem hs, sq_nonneg]
-  · -- `ψ'` is bounded by `K` and vanishes off the annulus `closedBall c (n + 2) \ ball c (n + 1)`.
-    have hd (s : ℝ) : deriv ψ s ^ 2 ≤
-        (closedBall c (n + 2) \ ball c (n + 1)).indicator (fun _ ↦ K ^ 2) s := by
-      by_cases hs : s ∈ closedBall c (n + 2) \ ball c (n + 1)
-      · have h := hψd s
-        rw [gradient_eq_deriv', Real.norm_eq_abs, show (n : ℝ) + 2 - (n + 1) = 1 by ring,
-          div_one] at h
-        rw [indicator_of_mem hs, ← sq_abs]
-        exact pow_le_pow_left₀ (abs_nonneg _) h 2
-      · rw [indicator_of_notMem hs]
-        suffices deriv ψ s = 0 by simp [this]
-        rcases not_and_or.1 hs with hs | hs
-        · exact Function.notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))
-        · have h1 : ψ =ᶠ[𝓝 s] fun _ ↦ 1 :=
-            Filter.eventually_of_mem (isOpen_ball.mem_nhds (not_not.1 hs)) fun t ht ↦
-              hψ1 (ball_subset_closedBall ht)
-          rw [h1.deriv_eq, deriv_const]
-    calc ∫ s, deriv ψ s ^ 2
-        ≤ ∫ s, (closedBall c (n + 2) \ ball c (n + 1)).indicator (fun _ ↦ K ^ 2) s :=
-          integral_mono hdint ((integrable_indicator_iff
-            (measurableSet_closedBall.diff measurableSet_ball)).2 (integrableOn_const hA)) hd
-      _ = 2 * K ^ 2 := by
-          rw [integral_indicator_const _ (measurableSet_closedBall.diff measurableSet_ball),
-            measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
-              (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
-            Real.volume_real_closedBall (by positivity), measureReal_def, Real.volume_ball,
-            ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
-          ring
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A : ℝ → E →L[ℝ] E}
-
-/-- Dividing by `√I` divides the squared norm by `I`. -/
-private theorem norm_inv_sqrt_smul_sq_mul {G : Type*} [SeminormedAddCommGroup G]
-    [NormedSpace ℝ G] {I : ℝ} (hI : 0 < I) (z : G) : ‖(√I)⁻¹ • z‖ ^ 2 * I = ‖z‖ ^ 2 := by
-  rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg I), inv_pow,
-    Real.sq_sqrt hI.le]
-  field_simp
+variable {E : Type*} [NormedAddCommGroup E]
 
 section Complete
 
-variable [CompleteSpace E]
+variable [NormedSpace ℝ E] [CompleteSpace E] {A : ℝ → E →L[ℝ] E}
 
 /-- The path `φ v` of a test function `φ` and a unit vector `v` has `L²` norm `‖φ‖_{L²}` and
 `W^{1,2}` norm `‖φ‖_{W^{1,2}}`. -/
@@ -222,8 +153,11 @@ private theorem not_isFredholm_trajectoryOperator_of_forall_mem_closedBall
       exact hn s hs
     · rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hv'.ne']
   intro hT
-  obtain ⟨C, hC⟩ := exists_plateau
-  choose ψ hψ hψt hI hJ using fun n ↦ hC (c n) n
+  obtain ⟨C, hC⟩ := exists_forall_contDiff_plateau
+  have hC' (n : ℕ) : ∃ ψ : ℝ → ℝ, ContDiff ℝ (⊤ : ℕ∞) ψ ∧ tsupport ψ ⊆ closedBall (c n) (n + 2) ∧
+      2 * (n + 1) ≤ ∫ s, ψ s ^ 2 ∧ ∫ s, deriv ψ s ^ 2 ≤ C := by
+    simpa only [add_assoc, one_add_one_eq_two] using hC (c n) (r := n + 1) (by positivity)
+  choose ψ hψ hψt hI hJ using hC'
   -- The paths `uₙ = ψₙ v` of `W^{1,2}(ℝ, E)`.
   let φ (n : ℕ) : 𝓓((⊤ : Opens ℝ), ℝ) :=
     ⟨ψ n, hψ n, (isCompact_closedBall _ _).of_isClosed_subset (isClosed_tsupport _) (hψt n),
@@ -243,9 +177,12 @@ private theorem not_isFredholm_trajectoryOperator_of_forall_mem_closedBall
       fun s hs ↦ hn s (hψt n hs)
   -- Normalize: `xₙ = uₙ / ‖uₙ‖_{L²}`.
   let x (n : ℕ) := (√(∫ s, ψ n s ^ 2))⁻¹ • u n
+  have hscale (n : ℕ) : (√(∫ s, ψ n s ^ 2))⁻¹ ^ 2 * (∫ s, ψ n s ^ 2) = 1 := by
+    rw [inv_pow, Real.sq_sqrt (hIpos n).le, inv_mul_cancel₀ (hIpos n).ne']
   have hxprev (n : ℕ) : ‖prev _ (x n)‖ = 1 := by
     have h : ‖prev _ (x n)‖ ^ 2 * (∫ s, ψ n s ^ 2) = ‖prev _ (u n)‖ ^ 2 := by
-      simpa only [x, prev_smul] using norm_inv_sqrt_smul_sq_mul (hIpos n) (prev _ (u n))
+      simp only [x, prev_smul, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+      rw [mul_right_comm, hscale, one_mul]
     exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
       (mul_right_cancel₀ (hIpos n).ne' (h.trans ((hprev n).trans (one_mul _).symm)))
   have hC0 : 0 ≤ C := (integral_nonneg fun _ ↦ sq_nonneg _).trans (hJ 0)
@@ -254,7 +191,8 @@ private theorem not_isFredholm_trajectoryOperator_of_forall_mem_closedBall
     rintro _ ⟨n, rfl⟩
     have h : ‖x n‖ ^ 2 * (∫ s, ψ n s ^ 2) = (∫ s, ψ n s ^ 2) + ∫ s, deriv (ψ n) s ^ 2 := by
       rw [← hnorm]
-      exact norm_inv_sqrt_smul_sq_mul (hIpos n) (u n)
+      simp only [x, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+      rw [mul_right_comm, hscale, one_mul]
     have h1 : ‖x n‖ ^ 2 ≤ 1 + C := by
       refine le_of_mul_le_mul_right ?_ (hIpos n)
       nlinarith [hI n, hJ n, mul_le_mul_of_nonneg_left (hI n) hC0]
@@ -269,8 +207,8 @@ private theorem not_isFredholm_trajectoryOperator_of_forall_mem_closedBall
     refine (pow_lt_pow_iff_left₀ (norm_nonneg _) hδ.le two_ne_zero).1 ?_
     have h : ‖trajectoryOperator (p := 2) AL (x n)‖ ^ 2 * (∫ s, ψ n s ^ 2) =
         ‖trajectoryOperator (p := 2) AL (u n)‖ ^ 2 := by
-      simpa only [x, map_smul] using
-        norm_inv_sqrt_smul_sq_mul (hIpos n) (trajectoryOperator (p := 2) AL (u n))
+      simp only [x, map_smul, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+      rw [mul_right_comm, hscale, one_mul]
     have hT2 := hTu n hn
     rw [div_lt_iff₀ (by positivity)] at hnC
     refine lt_of_mul_lt_mul_right ?_ (hIpos n).le
@@ -373,8 +311,8 @@ symmetric operators on a finite-dimensional real inner product space, with limit
 and derivative tending to zero at both ends, the trajectory operator `D_A u = u' + A u` from
 `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and only if both limits are injective, that is,
 invertible. The coefficient of the operator is any `L∞` class `AL` of `A`. -/
-theorem isFredholm_trajectoryOperator_iff [FiniteDimensional ℝ E]
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
+theorem isFredholm_trajectoryOperator_iff [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    {A : ℝ → E →L[ℝ] E} (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric)
     {Aminus Aplus : E →L[ℝ] E}
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
     (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
