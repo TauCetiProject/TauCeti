@@ -33,6 +33,8 @@ moment maps of Hamiltonian group actions are equivariant.
 
 ## Main results
 
+* `TauCeti.Lie.coadjointRepresentation_comp_of_hasMFDerivAt`: restriction of covectors along the
+  derivative at the identity of a homomorphism intertwines the coadjoint actions.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
   finite-dimensional model, each component `g ↦ (Ad*_g ν) ξ` of the coadjoint action is smooth.
 * `TauCeti.Lie.mvfderiv_coadjointRepresentation_apply_one`: the derivative at the identity of
@@ -85,6 +87,22 @@ theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAl
     (X : GroupLieAlgebra I G) :
     coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) :=
   (rfl)
+
+/-- **Naturality of the coadjoint action.** If a group homomorphism `φ : G →* G'` has derivative
+`L : 𝔤 → 𝔤'` at the identity, then restricting covectors along `L` intertwines the coadjoint
+actions: `(Ad*_{φ g} ν) ∘ L = Ad*_g (ν ∘ L)`. -/
+theorem coadjointRepresentation_comp_of_hasMFDerivAt {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G'] [LieGroup I' 1 G']
+    {φ : G →* G'} {L : GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I' G'}
+    (hL : HasMFDerivAt I I' φ 1 L) (g : G) (ν : Module.Dual 𝕜 (GroupLieAlgebra I' G')) :
+    (coadjointRepresentation 𝕜 I' G' (φ g) ν).comp
+        (L : GroupLieAlgebra I G →ₗ[𝕜] GroupLieAlgebra I' G') =
+      coadjointRepresentation 𝕜 I G g
+        (ν.comp (L : GroupLieAlgebra I G →ₗ[𝕜] GroupLieAlgebra I' G')) := by
+  ext X
+  simp only [LinearMap.comp_apply, coadjointRepresentation_apply, ContinuousLinearMap.coe_coe,
+    apply_adjointContinuousLinearMap_of_hasMFDerivAt hL, map_inv]
 
 section Smooth
 

@@ -36,6 +36,8 @@ This advances Deliverable A, Layer 1 of
 * `TauCeti.Lie.mfderiv_mul_right_mulInvariantVectorField`: right translation by `g` carries the
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
+* `TauCeti.Lie.apply_adjointContinuousLinearMap_of_hasMFDerivAt`: the derivative at the identity
+  of a homomorphism intertwines the adjoint actions.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
 
 ## References
@@ -129,6 +131,33 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (x := conjDiffeomorph (I := I) (n := 1) h 1) (x' := 1)
     (by simp)]
   rfl
+
+/-- **Naturality of the adjoint action.** If a group homomorphism `φ : G →* G'` has derivative
+`L : 𝔤 → 𝔤'` at the identity, then `L` intertwines the adjoint actions:
+`L (Ad_g X) = Ad_{φ g} (L X)`. -/
+theorem apply_adjointContinuousLinearMap_of_hasMFDerivAt {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G'] [LieGroup I' 1 G']
+    {φ : G →* G'} {L : GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I' G'}
+    (hL : HasMFDerivAt I I' φ 1 L) (g : G) (X : GroupLieAlgebra I G) :
+    L (adjointContinuousLinearMap (I := I) g X) =
+      adjointContinuousLinearMap (I := I') (φ g) (L X) := by
+  have hfun : (φ ∘ conjDiffeomorph (I := I) (n := 1) g) =
+      conjDiffeomorph (I := I') (n := 1) (φ g) ∘ φ := by
+    funext x
+    simp
+  have hφ : MDifferentiableAt I I' φ 1 := hL.mdifferentiableAt
+  rw [← hL.mfderiv]
+  -- Both sides are derivatives at `1` of the two sides of `hfun`, by the chain rule. The tangent
+  -- spaces at `conj_g 1` and `φ 1` are only propositionally those at `1`, so `rw` cannot be used.
+  exact (congrArg (mfderiv I I' φ 1) (adjointContinuousLinearMap_apply (I := I) g X)).trans <|
+    (mfderiv_comp_apply_of_eq (1 : G) hφ
+      ((conjDiffeomorph (I := I) (n := 1) g).mdifferentiable one_ne_zero 1) (by simp)
+      X).symm.trans <|
+    (DFunLike.congr_fun (mfderiv_congr (I := I) (I' := I') (x := (1 : G)) hfun) X).trans <|
+    (mfderiv_comp_apply_of_eq (1 : G)
+      ((conjDiffeomorph (I := I') (n := 1) (φ g)).mdifferentiable one_ne_zero 1) hφ
+      (map_one φ) X).trans (adjointContinuousLinearMap_apply (I := I') (φ g) _).symm
 
 @[simp]
 private theorem conjDiffeomorph_inv (g : G) :

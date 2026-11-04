@@ -41,6 +41,9 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
   `ξ_M` to `ξ_N`.
+* `TauCeti.fundamentalVectorField_apply_of_smul_eq`: for an action through a homomorphism
+  `φ : K →* G` with derivative `L` at the identity, the fundamental vector field of `L ξ` is that
+  of `ξ`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
@@ -154,6 +157,21 @@ theorem mfderiv_fundamentalVectorField_of_map_smul {E'' : Type*} [NormedAddCommG
   have hcomp : (f ∘ fun g : G => g • x) = fun g : G => g • f x := funext hfx
   rw [fundamentalVectorField_apply, fundamentalVectorField_apply, ← hcomp]
   exact (mfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x) ξ).symm
+
+/-- **Actions through a homomorphism.** Let a group `K` act on `M` through a homomorphism
+`φ : K →* G`, that is `k • x = φ k • x`, and let `L : 𝔨 → 𝔤` be the derivative of `φ` at the
+identity. If the orbit map of `x` under `G` is differentiable at the identity, then the fundamental
+vector field of `L ξ` at `x` is that of `ξ`. -/
+theorem fundamentalVectorField_apply_of_smul_eq {EK : Type*} [NormedAddCommGroup EK]
+    [NormedSpace 𝕜 EK] {HK : Type*} [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
+    {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K] [MulAction K M]
+    {φ : K →* G} {L : GroupLieAlgebra IK K →L[𝕜] GroupLieAlgebra I G} {x : M}
+    (hx : ∀ k : K, k • x = φ k • x) (hL : HasMFDerivAt IK I φ 1 L)
+    (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1) (ξ : GroupLieAlgebra IK K) :
+    fundamentalVectorField I' (L ξ) x = fundamentalVectorField I' ξ x := by
+  have hcomp : ((fun g : G => g • x) ∘ φ) = fun k : K => k • x := funext fun k ↦ (hx k).symm
+  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, ← hcomp, ← hL.mfderiv]
+  exact (mfderiv_comp_apply_of_eq (1 : K) horbit hL.mdifferentiableAt (map_one φ) ξ).symm
 
 /-- For a `C^n` action, the fundamental vector field of `ξ` is a `C^m` vector field when
 `m + 1 ≤ n`. -/

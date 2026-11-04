@@ -52,6 +52,8 @@ reduced.
 
 * `TauCeti.CotangentBundle.liouvilleForm_apply_fundamentalVectorField`: `⟨μ, ξ⟩ = λ(ξ_{T*M})`.
 * `TauCeti.CotangentBundle.momentMap_smul`: coadjoint equivariance.
+* `TauCeti.CotangentBundle.momentMap_comp_of_smul_eq`: for an action through a homomorphism, the
+  cotangent moment map is the restriction of the cotangent moment map of the larger group.
 * `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`: `μ` is a coadjoint-equivariant
   moment map for the canonical symplectic form.
 
@@ -94,6 +96,22 @@ def momentMap (z : CotangentBundle I M) : Module.Dual ℝ (GroupLieAlgebra IG G)
 theorem momentMap_apply (z : CotangentBundle I M) (ξ : GroupLieAlgebra IG G) :
     momentMap IG G z ξ = z.2 (fundamentalVectorField I ξ z.proj) :=
   (rfl)
+
+/-- **Restriction along a homomorphism.** If a Lie group `K` acts on `M` through a homomorphism
+`φ : K →* G` whose derivative at the identity is `L : 𝔨 → 𝔤`, then the cotangent moment map of `K`
+is the restriction along `L` of that of `G`: `⟨μ_K(z), ξ⟩ = ⟨μ_G(z), L ξ⟩`. -/
+theorem momentMap_comp_of_smul_eq {EK HK : Type*} [NormedAddCommGroup EK] [NormedSpace ℝ EK]
+    [TopologicalSpace HK] {IK : ModelWithCorners ℝ EK HK} {K : Type*} [TopologicalSpace K]
+    [ChartedSpace HK K] [Group K] [MulAction K M] [ContMDiffSMul IG I 1 G M] {φ : K →* G}
+    {L : GroupLieAlgebra IK K →L[ℝ] GroupLieAlgebra IG G}
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (hL : HasMFDerivAt IK IG φ 1 L)
+    (z : CotangentBundle I M) :
+    (momentMap IG G z).comp (L : GroupLieAlgebra IK K →ₗ[ℝ] GroupLieAlgebra IG G) =
+      momentMap IK K z := by
+  ext ξ
+  rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, momentMap_apply, momentMap_apply,
+    fundamentalVectorField_apply_of_smul_eq (hsmul · z.proj) hL
+      ((ContMDiffSMul.contMDiff_smul_const (n := 1) z.proj).mdifferentiableAt one_ne_zero)]
 
 section Smooth
 
