@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
@@ -26,6 +27,10 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   and all other entries `1` is unitary.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
+* `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
+  `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
+  matrix only up to a scalar factor, such as those coming from its action on a projective space,
+  into unitarity.
 -/
 
 public section
@@ -48,6 +53,36 @@ theorem diagonal_update_one_mem_unitaryGroup {a : α} (ha : a ∈ unitary α) (i
     rcases eq_or_ne j i with rfl | h
     · simpa using ha
     · simp [Function.update_of_ne h]
+
+/-- **Recognizing unitary matrices.** If `Aᴴ A` is a scalar matrix and the determinant of `A` has
+norm one, then `A` is unitary: the scalar is the squared norm of a column of `A`, a nonnegative
+real number whose `card n`-th power is `‖det A‖ ^ 2 = 1`. -/
+theorem mem_unitaryGroup_of_star_mul_self_eq_scalar {𝕜 : Type*} [RCLike 𝕜] {A : Matrix n n 𝕜}
+    {u : 𝕜} (hdet : ‖A.det‖ = 1) (h : star A * A = scalar n u) :
+    A ∈ unitaryGroup n 𝕜 := by
+  rw [mem_unitaryGroup_iff', h]
+  rcases isEmpty_or_nonempty n with hn | hn
+  · exact Subsingleton.elim _ _
+  obtain ⟨i⟩ := id hn
+  -- The scalar is the squared norm of the `i`-th column of `A`.
+  have hu : u = ((∑ k, ‖A k i‖ ^ 2 : ℝ) : 𝕜) := by
+    have hii := congrFun (congrFun h i) i
+    rw [Matrix.mul_apply, scalar_apply, diagonal_apply_eq] at hii
+    simp only [star_apply] at hii
+    rw [← hii]
+    push_cast
+    exact Finset.sum_congr rfl fun k _ => RCLike.conj_mul (A k i)
+  -- Its `card n`-th power is `‖det A‖ ^ 2 = 1`.
+  have hpow : (∑ k, ‖A k i‖ ^ 2) ^ Fintype.card n = 1 := by
+    have hd := congrArg det h
+    simp only [det_mul, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def,
+      RCLike.conj_mul, hdet, RCLike.ofReal_one, one_pow, scalar_apply, det_diagonal,
+      Finset.prod_const, Finset.card_univ, hu] at hd
+    exact_mod_cast hd.symm
+  rw [hu, (pow_eq_one_iff_of_nonneg (a := ∑ k, ‖A k i‖ ^ 2)
+    (Finset.sum_nonneg fun _ _ => sq_nonneg _)
+    Fintype.card_ne_zero).mp hpow]
+  simp
 
 end Matrix
 
