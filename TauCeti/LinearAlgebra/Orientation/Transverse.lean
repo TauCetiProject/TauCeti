@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Alternating.Curry
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.LinearAlgebra.Basis.Fin
 public import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
@@ -39,7 +38,6 @@ continuity of induced orientations is checked in local trivializations.
   respect to any basis of `V`.
 * `Orientation.transverse_neg`: reversing the orientation of `V` reverses the induced
   orientation.
-* `Module.Basis.det_finCons_ne_zero`: `v` followed by a basis of `W` is a basis of `V`.
 
 ## References
 
@@ -63,41 +61,6 @@ private def refBasis (hV : finrank R V = k + 1) (hW : finrank R W = k) : Basis (
   haveI : FiniteDimensional R V := .of_finrank_eq_succ hV
   finBasisOfFinrankEq R W hW
 
-/-- The basis `v, b 0, …, b (k - 1)` of `V`, for a basis `b` of a subspace `W` of dimension `k` of
-a space `V` of dimension `k + 1` and `v ∉ W`. -/
-private def consBasis (hV : finrank R V = k + 1) (hv : v ∉ W) (b : Basis (Fin k) R W) :
-    Basis (Fin (k + 1)) R V :=
-  basisOfLinearIndependentOfCardEqFinrank
-    ((b.linearIndependent.map' W.subtype W.ker_subtype).finCons (by
-      rwa [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]))
-    (by rw [Fintype.card_fin, hV])
-
-private theorem coe_consBasis (hV : finrank R V = k + 1) (hv : v ∉ W) (b : Basis (Fin k) R W) :
-    ⇑(consBasis hV hv b) = Fin.cons v (W.subtype ∘ b) :=
-  coe_basisOfLinearIndependentOfCardEqFinrank _ _
-
-/-- For a basis `c` of `V` beginning with `v` and continuing with a basis `b` of `W`, and a second
-basis `b'` of `W`, the determinant of `v, b' 0, …, b' (k - 1)` with respect to `c` is that of `b'`
-with respect to `b`: `u ↦ c.det (v, u)` is an alternating form on `W` taking the value `1` on
-`b`. -/
-private theorem det_cons_eq_det (b b' : Basis (Fin k) R W) (c : Basis (Fin (k + 1)) R V)
-    (hc : ⇑c = Fin.cons v (W.subtype ∘ b)) :
-    c.det (Fin.cons v (W.subtype ∘ b')) = b.det b' := by
-  let f : W [⋀^Fin k]→ₗ[R] R := (c.det.curryLeft v).compLinearMap W.subtype
-  have hf (u : Fin k → W) : f u = c.det (Fin.cons v (W.subtype ∘ u)) := by
-    simp only [f, AlternatingMap.compLinearMap_apply, AlternatingMap.curryLeft_apply_apply,
-      Matrix.vecCons, Function.comp_def]
-  have h1 : f b = 1 := by rw [hf, ← hc, c.det_self]
-  rw [← hf, f.eq_smul_basis_det b, h1, one_smul]
-
-/-- **The vectors `v, b 0, …, b (k - 1)` form a basis.** For a basis `b` of a subspace `W` of
-codimension one and `v ∉ W`, their determinant with respect to any basis of `V` is nonzero. -/
-theorem _root_.Module.Basis.det_finCons_ne_zero (e : Basis (Fin (k + 1)) R V)
-    (b : Basis (Fin k) R W) (hv : v ∉ W) : e.det (Fin.cons v (W.subtype ∘ b)) ≠ 0 := by
-  have hV : finrank R V = k + 1 := by rw [finrank_eq_card_basis e, Fintype.card_fin]
-  rw [← coe_consBasis hV hv b]
-  exact (e.isUnit_det _).ne_zero
-
 variable [LinearOrder R] [IsStrictOrderedRing R] (o : Orientation R V (Fin (k + 1)))
   (hV : finrank R V = k + 1) (hW : finrank R W = k) (hv : v ∉ W)
 
@@ -107,7 +70,8 @@ induced by an orientation `o` of `V` and a vector `v ∉ W`: a basis `b` of `W` 
 when `v, b 0, …, b (k - 1)` is a positive basis of `V`
 (`Orientation.transverse_eq_orientation_iff`). -/
 def transverse : Orientation R W (Fin k) :=
-  if (consBasis hV hv (refBasis hV hW)).orientation = o then (refBasis hV hW).orientation
+  if (Basis.mkFinConsOfNotMem v (refBasis hV hW) hv hV).orientation = o then
+    (refBasis hV hW).orientation
   else -(refBasis hV hW).orientation
 
 /-- **The transverse orientation is characterized by prepending the vector.** A basis `b` of `W`
@@ -117,11 +81,11 @@ theorem transverse_eq_orientation_iff (b : Basis (Fin k) R W) (c : Basis (Fin (k
     (hc : ⇑c = Fin.cons v (W.subtype ∘ b)) :
     o.transverse hV hW hv = b.orientation ↔ c.orientation = o := by
   set b₀ := refBasis hV hW
-  set c₀ := consBasis hV hv b₀
+  set c₀ := Basis.mkFinConsOfNotMem v b₀ hv hV
   -- `c` is positive for `c₀` exactly when `b` is positive for `b₀`.
   have hdet : c₀.det c = b₀.det b := by
     rw [hc]
-    exact det_cons_eq_det b₀ b c₀ (coe_consBasis hV hv b₀)
+    exact b₀.det_finCons_eq_det c₀ (Basis.coe_mkFinConsOfNotMem v b₀ hv hV) b
   have key : c₀.orientation = c.orientation ↔ b₀.orientation = b.orientation := by
     rw [c₀.orientation_eq_iff_det_pos, b₀.orientation_eq_iff_det_pos, hdet]
   rw [transverse]
@@ -139,8 +103,8 @@ otherwise. -/
 theorem transverse_eq_orientation_iff_det (b : Basis (Fin k) R W) (e : Basis (Fin (k + 1)) R V) :
     o.transverse hV hW hv = b.orientation ↔
       (o = e.orientation ↔ 0 < e.det (Fin.cons v (W.subtype ∘ b))) := by
-  set c := consBasis hV hv b
-  have hc : ⇑c = Fin.cons v (W.subtype ∘ b) := coe_consBasis hV hv b
+  set c := Basis.mkFinConsOfNotMem v b hv hV
+  have hc : ⇑c = Fin.cons v (W.subtype ∘ b) := Basis.coe_mkFinConsOfNotMem v b hv hV
   rw [transverse_eq_orientation_iff o hV hW hv b c hc, ← hc, ← e.orientation_eq_iff_det_pos]
   rcases e.orientation_eq_or_eq_neg o with rfl | rfl
   · simp only [true_iff]
@@ -154,8 +118,8 @@ theorem transverse_eq_orientation_iff_det (b : Basis (Fin k) R W) (e : Basis (Fi
 @[simp]
 theorem transverse_neg : (-o).transverse hV hW hv = -o.transverse hV hW hv := by
   set b := refBasis hV hW
-  set c := consBasis hV hv b
-  have hc : ⇑c = Fin.cons v (W.subtype ∘ b) := coe_consBasis hV hv b
+  set c := Basis.mkFinConsOfNotMem v b hv hV
+  have hc : ⇑c = Fin.cons v (W.subtype ∘ b) := Basis.coe_mkFinConsOfNotMem v b hv hV
   have hneg := transverse_eq_orientation_iff (-o) hV hW hv b c hc
   rcases b.orientation_eq_or_eq_neg (o.transverse hV hW hv) with h | h
   · -- `c` is positive for `o`, hence not for `-o`.

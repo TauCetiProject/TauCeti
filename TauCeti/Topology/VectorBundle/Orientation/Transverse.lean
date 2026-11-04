@@ -9,6 +9,7 @@ public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 public import TauCeti.LinearAlgebra.Orientation.Transverse
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+public import TauCeti.Topology.VectorBundle.Subbundle
 
 /-!
 # Orientations of codimension-one subbundles transverse to a section
@@ -79,25 +80,6 @@ private def fiberTransverse (hF : finrank ℝ F = k + 1) (hF' : finrank ℝ F' =
 
 variable [FiniteDimensional ℝ F] [FiniteDimensional ℝ F']
 
-omit [NormedSpace ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [NormedSpace ℝ F'] [FiberBundle F' fun b ↦ V b] [VectorBundle ℝ F' fun b ↦ V b]
-  [FiniteDimensional ℝ F] [FiniteDimensional ℝ F'] in
-/-- A frame vector `e'.symm x v` of the subbundle, read in a trivialization `g` of the ambient
-bundle, depends continuously on the base point near a point of both base sets. -/
-private theorem continuousAt_frame
-    (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))
-    (e' : Trivialization F' (π F' fun b ↦ V b)) (g : Trivialization F (π F E)) {b₀ : B}
-    (he' : b₀ ∈ e'.baseSet) (hg : b₀ ∈ g.baseSet) (v : F') :
-    ContinuousAt (fun x ↦ (g ⟨x, (e'.symm x v : E x)⟩).2) b₀ := by
-  -- Near `b₀`, the frame vector is the image of `e'.symm (x, v)` in the total space of `E`.
-  have hframe : (fun x ↦ (⟨x, (e'.symm x v : E x)⟩ : TotalSpace F E)) =ᶠ[𝓝 b₀]
-      (fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E)) ∘
-        fun x ↦ e'.toOpenPartialHomeomorph.symm (x, v) := by
-    filter_upwards [e'.open_baseSet.mem_nhds he'] with x hx
-    rw [Function.comp_apply, ← e'.mk_symm hx]
-  have h := (hV.continuousAt.comp (e'.continuousAt_symm_prodMk_left he')).congr hframe.symm
-  exact ((g.continuousOn.continuousAt (g.open_source.mem_nhds (g.mem_source.2 hg))).comp h).snd
-
 /-- **The induced fibre orientations are locally constant** in the preferred trivializations of
 the subbundle. -/
 private theorem eventually_mapOrientation_fiberTransverse (hF : finrank ℝ F = k + 1)
@@ -143,7 +125,7 @@ private theorem eventually_mapOrientation_fiberTransverse (hF : finrank ℝ F = 
       exact ((g.continuousOn.continuousAt (g.open_source.mem_nhds (g.mem_source.2 hg))).comp
         hν.continuousAt).snd
     · simp only [w, Fin.cons_succ]
-      exact continuousAt_frame hV e' g he' hg (β' j)
+      exact e'.continuousAt_symm_subbundle g hV he' hg (β' j)
   have hd₀ : d b₀ ≠ 0 := by
     rw [← hdet b₀ he' hg]
     exact Basis.det_finCons_ne_zero _ _ (hνV b₀)
