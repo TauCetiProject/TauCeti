@@ -109,6 +109,17 @@ theorem coe_star [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGro
 
 end NontriviallyNormed
 
+section Unital
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- The inclusion of a unital algebra into its multiplier algebra sends `1` to `1`. -/
+@[simp, norm_cast]
+theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Unital
+
 section ProperStar
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
