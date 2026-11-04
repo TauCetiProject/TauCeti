@@ -83,7 +83,7 @@ variable {u : WeakDerivStep volume ⊤ 2
   (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → E}
 
 /-- The squared `L²` norm of a path is the integral of the squared norm of a representative. -/
-private theorem norm_prev_sq_eq_integral
+theorem norm_prev_sq_eq_integral
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
     ‖prev _ u‖ ^ 2 = ∫ s, ‖φ s‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq,
@@ -92,7 +92,7 @@ private theorem norm_prev_sq_eq_integral
 
 /-- The squared `L²` norm of the weak derivative is that of the classical derivative of a `C¹`
 representative. -/
-private theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
     ‖weakFDeriv _ u‖ ^ 2 = ∫ s, ‖deriv φ s‖ ^ 2 := by
   have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
@@ -104,7 +104,7 @@ private theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
 
 /-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
 `∫ ‖φ' + A φ‖²`. -/
-private theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
@@ -119,7 +119,7 @@ private theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
   simp
 
 /-- Restriction to `(-R', R')` controls the `L²` norm of a representative on `[-R, R]`. -/
-private theorem integral_Icc_le_norm_restrictBaseL_sq (hφ : Continuous φ)
+theorem integral_Icc_le_norm_restrictBaseL_sq (hφ : Continuous φ)
     (hφc : HasCompactSupport φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) {R R' : ℝ} (hR : R < R') :
     ∫ s in Icc (-R) R, ‖φ s‖ ^ 2 ≤
@@ -244,7 +244,7 @@ theorem ker_trajectoryOperator_eq_bot
 
 /-- Restriction of `W^{1,2}(ℝ, E)` paths to a bounded interval, scaled by a constant, is
 compact. -/
-private theorem isCompactOperator_smul_restrictBaseL (K R : ℝ) :
+theorem isCompactOperator_smul_restrictBaseL (K R : ℝ) :
     IsCompactOperator (K • restrictBaseL
       (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
       (V := ⟨Ioo (-R) R, isOpen_Ioo⟩) le_top) := by

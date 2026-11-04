@@ -213,15 +213,15 @@ theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (squareIntegrableSolutions A) : ℤ) -
         Module.finrank ℝ (squareIntegrableSolutions (-A)) := by
-  have hALsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      (AL s).toLinearMap.IsSymmetric := by
+  have hALadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      AL s = ContinuousLinearMap.adjoint (AL s) := by
     filter_upwards [hAL] with s hs
     rw [hs]
-    exact hsym s
+    exact (hsym s).clm_adjoint_eq.symm
   have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] -A := by
     filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
     simp only [hs, Pi.neg_apply, hAs]
-  rw [index_trajectoryOperator_of_isClosed_range hALsym hclosed,
+  rw [index_trajectoryOperator_of_isClosed_range hALadj hclosed,
     finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hA.neg (-AL) hnegAL]
 
 /-- **The index of the trajectory operator counts square-integrable solutions.** Under the
