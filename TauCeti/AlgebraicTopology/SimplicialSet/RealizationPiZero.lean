@@ -41,6 +41,16 @@ open CategoryTheory Limits Simplicial HomotopicalAlgebra
 
 universe u
 
+namespace TauCeti.TopCat
+
+/-- The connected component of a singular vertex corresponds to the path component of its point.
+-/
+lemma π₀_mk_eq_zerothHomotopyEquiv_mk {T : TopCat.{u}} (q : (TopCat.toSSet.obj T) _⦋0⦌) :
+    SSet.π₀.mk q = TopCat.zerothHomotopyEquiv (.mk (TopCat.toSSetObj₀Equiv q)) := by
+  rw [TopCat.zerothHomotopyEquiv_mk, Equiv.symm_apply_apply]
+
+end TauCeti.TopCat
+
 namespace SSet
 
 /-- The point of the geometric realization `|X|` given by a vertex `x` of `X`: the singular vertex
@@ -54,36 +64,32 @@ lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
     toTop.map f (toTopPoint x) = toTopPoint (f.app _ x) := by
   have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
   dsimp at h
-  rw [toTopPoint, toTopPoint, h,
-    ← TopCat.toSSetObj₀Equiv.symm_apply_apply ((sSetTopAdj.unit.app X).app _ x),
-    TauCeti.TopCat.toSSet_map_app_toSSetObj₀Equiv_symm, Equiv.apply_symm_apply,
-    Equiv.apply_symm_apply]
+  rw [toTopPoint, toTopPoint, h, TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
 
 /-- The singular simplicial set of a weak homotopy equivalence is bijective on connected
 components, these being the path components of the spaces. -/
 lemma bijective_mapπ₀_toSSet_map {T T' : TopCat.{u}} (g : T ⟶ T')
     (hg : g.hom.IsWeakHomotopyEquivalence) :
     Function.Bijective (mapπ₀ (TopCat.toSSet.map g)) := by
-  -- Write every vertex of a singular simplicial set as the singular vertex of a point, so that
-  -- connected components become path components via `TopCat.zerothHomotopyEquiv`.
-  have hmk (t : T) : mapπ₀ (TopCat.toSSet.map g) (π₀.mk (TopCat.toSSetObj₀Equiv.symm t)) =
-      TopCat.zerothHomotopyEquiv (.mk (g t)) := by
-    rw [mapπ₀_mk, TauCeti.TopCat.toSSet_map_app_toSSetObj₀Equiv_symm,
-      TopCat.zerothHomotopyEquiv_mk]
+  -- Connected components of singular simplicial sets are path components via
+  -- `TopCat.zerothHomotopyEquiv`.
+  have hmk (p : (TopCat.toSSet.obj T) _⦋0⦌) : mapπ₀ (TopCat.toSSet.map g) (π₀.mk p) =
+      TopCat.zerothHomotopyEquiv (.mk (g (TopCat.toSSetObj₀Equiv p))) := by
+    rw [mapπ₀_mk, TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk,
+      TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
   refine ⟨fun a b h ↦ ?_, fun b ↦ ?_⟩
   · induction a using π₀.rec with | mk p => ?_
     induction b using π₀.rec with | mk q => ?_
-    rw [← TopCat.toSSetObj₀Equiv.symm_apply_apply p, ← TopCat.toSSetObj₀Equiv.symm_apply_apply q,
-      hmk, hmk] at h
-    rw [← TopCat.toSSetObj₀Equiv.symm_apply_apply p, ← TopCat.toSSetObj₀Equiv.symm_apply_apply q,
-      ← TopCat.zerothHomotopyEquiv_mk, ← TopCat.zerothHomotopyEquiv_mk]
+    rw [hmk, hmk] at h
+    rw [TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk p,
+      TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk q]
     exact congrArg _ (ZerothHomotopy.sound
       (hg.joined_iff.1 (Quotient.exact (TopCat.zerothHomotopyEquiv.injective h))).somePath)
   · induction b using π₀.rec with | mk q => ?_
     obtain ⟨s, hs⟩ := hg.exists_joined (TopCat.toSSetObj₀Equiv q)
     refine ⟨π₀.mk (TopCat.toSSetObj₀Equiv.symm s), ?_⟩
-    rw [hmk, ZerothHomotopy.sound hs.somePath, TopCat.zerothHomotopyEquiv_mk,
-      Equiv.symm_apply_apply]
+    rw [hmk, Equiv.apply_symm_apply, ZerothHomotopy.sound hs.somePath,
+      TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk]
 
 variable (X : SSet.{u})
 
@@ -98,10 +104,9 @@ private lemma toTopToπ₀_toTopPoint (x : X _⦋0⦌) : toTopToπ₀ X (toTopPo
     (NatTrans.congr_app (sSetTopAdj.homEquiv_unit X _ (toTopToπ₀ X)) (Opposite.op ⦋0⦌)) x
   rw [toTopToπ₀, Equiv.apply_symm_apply] at h
   dsimp at h
-  rw [toπ₀_app_zero, constHomEquiv_symm_app_zero,
-    ← TopCat.toSSetObj₀Equiv.symm_apply_apply ((sSetTopAdj.unit.app X).app _ x),
-    TauCeti.TopCat.toSSet_map_app_toSSetObj₀Equiv_symm] at h
-  exact TopCat.toSSetObj₀Equiv.symm.injective h.symm
+  rw [toπ₀_app_zero, constHomEquiv_symm_app_zero] at h
+  rw [toTopPoint, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
+  exact (TopCat.toSSetObj₀Equiv.symm_apply_eq.1 h).symm
 
 /-- The unit `X ⟶ Sing |X|` is injective on connected components: a path in `|X|` between the
 points of two vertices stays in one connected component of `X`. -/
@@ -135,10 +140,8 @@ lemma surjective_mapπ₀_unit : Function.Surjective (mapπ₀ (sSetTopAdj.unit.
     inferInstanceAs (PathConnectedSpace |stdSimplex.{u}.obj j.left|)
   let v : (uliftYoneda.{u}.obj j.left) _⦋0⦌ := ULift.up (SimplexCategory.const _ _ 0)
   refine ⟨π₀.mk (j.hom.app _ v), ?_⟩
-  have key (q : (TopCat.toSSet.obj |X|) _⦋0⦌) :
-      π₀.mk q = TopCat.zerothHomotopyEquiv (.mk (TopCat.toSSetObj₀Equiv q)) := by
-    rw [TopCat.zerothHomotopyEquiv_mk, Equiv.symm_apply_apply]
-  rw [mapπ₀_mk, key, key, ← hy]
+  rw [mapπ₀_mk, TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk,
+    TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk, ← hy]
   -- The singular vertex of the unit at a vertex is, by definition, the point of that vertex.
   change TopCat.zerothHomotopyEquiv (.mk (toTopPoint (j.hom.app _ v))) = _
   rw [← toTop_map_toTopPoint]
