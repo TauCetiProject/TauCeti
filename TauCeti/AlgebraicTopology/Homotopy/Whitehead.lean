@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 public import TauCeti.Topology.Homotopy.MappingCylinder
 public import TauCeti.Topology.CWComplex.Classical.CWType
+public import TauCeti.Topology.CWComplex.Classical.Cylinder
 
 /-!
 # Whitehead's theorem
@@ -44,22 +45,38 @@ type `g` has a right homotopy inverse `h` in turn. Then `f ≃ f ∘ g ∘ h ≃
 structure on the mapping cylinder nor cellular approximation: the only cell-by-cell argument is
 the skeletal induction inside the compression lemma.
 
+The injectivity half of Proposition 4.22 compresses homotopies in the same way: if `f ∘ g₀ ≃ f ∘ g₁`
+for maps `g₀ g₁ : K → X`, then `g₀ ≃ g₁`
+(`ContinuousMap.IsWeakHomotopyEquivalence.homotopic_of_comp_homotopic`). In `M_f` the maps
+`incl ∘ gᵢ` are homotopic to `mkBase ∘ f ∘ gᵢ`, so to each other. For a CW complex `C`, a homotopy
+between them is a map out of the cylinder `C × I`, which is a CW complex relative to its two ends
+(`TauCeti.relCWComplexCylinder`), and the ends go into the bottom face. Compressing it into the
+bottom face relative to the ends gives a homotopy from `g₀` to `g₁`. So `f` induces a bijection
+`[K, X] → [K, Y]` (`ContinuousMap.IsWeakHomotopyEquivalence.comp_homotopic_comp_iff`). With
+Whitehead's theorem this shows that CW approximations of a space are unique up to homotopy
+equivalence (`ContinuousMap.IsWeakHomotopyEquivalence.exists_homotopyEquiv_comp_homotopic`).
+
 ## Main declarations
 
 * `ContinuousMap.IsWeakHomotopyEquivalence.subsingleton_relHomotopyGroup_mappingCylinder`: the
   relative homotopy groups of the mapping cylinder of a weak homotopy equivalence vanish.
 * `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`: maps out of spaces of CW
   type lift through a weak homotopy equivalence up to homotopy.
+* `ContinuousMap.IsWeakHomotopyEquivalence.homotopic_of_comp_homotopic`,
+  `ContinuousMap.IsWeakHomotopyEquivalence.comp_homotopic_comp_iff`: maps out of spaces of CW type
+  are homotopic when their composites with a weak homotopy equivalence are.
 * `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`: **Whitehead's theorem**.
+* `ContinuousMap.IsWeakHomotopyEquivalence.exists_homotopyEquiv_comp_homotopic`: CW
+  approximations are unique up to homotopy equivalence.
 * `TauCeti.contractibleSpace_of_subsingleton_homotopyGroup`: a weakly contractible space of CW
   type is contractible.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.1, Theorem 4.5 (Whitehead's theorem), Lemma 4.6 (the compression lemma), and
-  Proposition 4.22 (its surjectivity half), and the corollary after Theorem 4.5 on weakly
-  contractible CW complexes.
+  Section 4.1, Theorem 4.5 (Whitehead's theorem), Lemma 4.6 (the compression lemma),
+  Corollary 4.19 (uniqueness of CW approximations), Proposition 4.22, and the corollary after
+  Theorem 4.5 on weakly contractible CW complexes.
 -/
 
 public section
@@ -67,6 +84,7 @@ public section
 universe w
 
 open Set Topology Topology.RelCWComplex
+open scoped unitInterval
 
 namespace ContinuousMap.IsWeakHomotopyEquivalence
 
@@ -127,6 +145,60 @@ private theorem exists_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEquivalenc
   have h := (ContinuousMap.Homotopic.refl (proj f)).comp hg₁.homotopic.symm
   rwa [← comp_assoc, proj_comp_mkBase, id_comp, ← hg', ← comp_assoc, proj_comp_incl] at h
 
+/-- **Maps out of a CW complex that become homotopic after a weak homotopy equivalence are
+homotopic** (the injectivity half of Hatcher, Proposition 4.22). If `f : X → Y` is a weak homotopy
+equivalence and `C` is a CW complex, then two maps `g₀ g₁ : C → X` with `f ∘ g₀ ≃ f ∘ g₁` are
+homotopic. -/
+private theorem homotopic_of_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEquivalence)
+    {g₀ g₁ : C(C, X)} (h : (f.comp g₀).Homotopic (f.comp g₁)) : g₀.Homotopic g₁ := by
+  open TauCeti TauCeti.MappingCylinder in
+  -- In the mapping cylinder, `incl ∘ gᵢ ≃ mkBase ∘ proj ∘ incl ∘ gᵢ = mkBase ∘ f ∘ gᵢ`, so
+  -- `incl ∘ g₀` and `incl ∘ g₁` are homotopic through `mkBase ∘ (f ∘ g₀ ≃ f ∘ g₁)`.
+  have hd : ((mkBase f).comp (proj f)).Homotopic (ContinuousMap.id _) :=
+    ⟨(deformation f).toHomotopy.symm⟩
+  have hincl (g : C(C, X)) : ((mkBase f).comp (f.comp g)).Homotopic ((incl f).comp g) := by
+    have h := hd.comp (ContinuousMap.Homotopic.refl ((incl f).comp g))
+    rwa [id_comp, comp_assoc, ← comp_assoc (proj f), proj_comp_incl] at h
+  obtain ⟨H⟩ := (hincl g₀).symm.trans
+    (((ContinuousMap.Homotopic.refl (mkBase f)).comp h).trans (hincl g₁))
+  -- `H` is a map out of the cylinder `C × I`, a CW complex relative to its two ends, which `H`
+  -- sends into the bottom face. Compress it into the bottom face relative to the ends.
+  let := relCWComplexCylinder C ∅
+  let F : C(C ×ˢ (univ : Set I), TopCat.of (MappingCylinder f)) :=
+    ⟨fun p ↦ H (p.1.2, ⟨p.1.1, p.2.1⟩),
+      H.continuous.comp ((continuous_snd.comp continuous_subtype_val).prodMk
+        ((continuous_fst.comp continuous_subtype_val).subtype_mk _))⟩
+  have hbase : MapsTo F {p | (p : X' × I) ∈ C ×ˢ ({0, 1} : Set I) ∪ (∅ : Set X') ×ˢ univ}
+      (range (incl f)) := by
+    rintro ⟨⟨c, t⟩, hc, _⟩ hp
+    simp only [mem_ofPred_eq, mem_union, mem_prod, mem_insert_iff, mem_singleton_iff,
+      mem_empty_iff_false, false_and, or_false] at hp
+    obtain ⟨-, rfl | rfl⟩ := hp
+    · exact ⟨g₀ ⟨c, hc⟩, (H.apply_zero ⟨c, hc⟩).symm⟩
+    · exact ⟨g₁ ⟨c, hc⟩, (H.apply_one ⟨c, hc⟩).symm⟩
+  obtain ⟨F', hF', hrange⟩ := exists_homotopicRel_range_subset_of_relHomotopyGroup
+    (Y := TopCat.of (MappingCylinder f)) (B := range (incl f))
+    (fun h₀ ↦ isEmptyElim h₀.some)
+    (fun _ _ b ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder _ b) F hbase
+  -- Read the compressed homotopy in `X` through the homeomorphism `X ≃ₜ range (incl f)`; on the
+  -- two ends it agrees with `H`, which is `incl ∘ g₀` and `incl ∘ g₁` there.
+  let ψ := inclHomeomorph f
+  have hF'end (t : I) (ht : t ∈ ({0, 1} : Set I)) (c : C) :
+      F' ⟨((c : X'), t), c.2, mem_univ t⟩ = H (t, c) :=
+    (hF'.fst_eq_snd (Or.inl ⟨c.2, ht⟩)).symm
+  have hψ (x : X) (hx : incl f x ∈ range (incl f)) : ψ.symm ⟨incl f x, hx⟩ = x :=
+    ψ.symm_apply_eq.2 (Subtype.ext (inclHomeomorph_apply_coe x).symm)
+  refine ⟨{ toFun q := ψ.symm ⟨F' ⟨((q.2 : X'), q.1), q.2.2, mem_univ _⟩, hrange (mem_range_self _)⟩
+            continuous_toFun := ψ.symm.continuous.comp (Continuous.subtype_mk (F'.continuous.comp
+              (((continuous_subtype_val.comp continuous_snd).prodMk continuous_fst).subtype_mk _))
+                _)
+            map_zero_left c := ?_
+            map_one_left c := ?_ }⟩
+  · simp_rw [hF'end 0 (mem_insert 0 _) c, H.apply_zero, ContinuousMap.comp_apply]
+    exact hψ _ _
+  · simp_rw [hF'end 1 (mem_insert_of_mem _ rfl) c, H.apply_one, ContinuousMap.comp_apply]
+    exact hψ _ _
+
 variable {K : Type*} [TopologicalSpace K] [hK : TauCeti.CWType K]
 
 /-- Maps out of a space of CW type lift through a weak homotopy equivalence up to homotopy
@@ -140,6 +212,27 @@ theorem exists_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) (g : C(K, Y)) :
   rw [ContinuousMap.comp_assoc, ContinuousMap.comp_assoc] at h
   exact h.trans (by simpa only [ContinuousMap.comp_id] using
     (ContinuousMap.Homotopic.refl g).comp e.left_inv)
+
+/-- Maps out of a space of CW type that become homotopic after composition with a weak homotopy
+equivalence are homotopic (the injectivity half of Hatcher, Proposition 4.22). -/
+theorem homotopic_of_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) {g₀ g₁ : C(K, X)}
+    (h : (f.comp g₀).Homotopic (f.comp g₁)) : g₀.Homotopic g₁ := by
+  obtain ⟨Z, _, _, C, _, ⟨e⟩⟩ := hK.exists_homotopyEquiv
+  -- Transfer to the CW complex `C` through `e⁻¹`, and back through `gᵢ ≃ gᵢ ∘ e⁻¹ ∘ e`.
+  have h' : (g₀.comp e.invFun).Homotopic (g₁.comp e.invFun) :=
+    hf.homotopic_of_comp_homotopic_cwComplex <| by
+      simpa only [comp_assoc] using h.comp (ContinuousMap.Homotopic.refl e.invFun)
+  have hback (g : C(K, X)) : ((g.comp e.invFun).comp e.toFun).Homotopic g := by
+    simpa only [comp_assoc, comp_id] using (ContinuousMap.Homotopic.refl g).comp e.left_inv
+  exact (hback g₀).symm.trans ((h'.comp (ContinuousMap.Homotopic.refl e.toFun)).trans (hback g₁))
+
+/-- **A weak homotopy equivalence `f : X → Y` induces a bijection `[K, X] → [K, Y]` of homotopy
+classes of maps out of a space `K` of CW type** (Hatcher, Proposition 4.22): two maps `K → X` are
+homotopic exactly when their composites with `f` are, and every map `K → Y` is homotopic to such a
+composite (`ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`). -/
+theorem comp_homotopic_comp_iff (hf : f.IsWeakHomotopyEquivalence) {g₀ g₁ : C(K, X)} :
+    (f.comp g₀).Homotopic (f.comp g₁) ↔ g₀.Homotopic g₁ :=
+  ⟨hf.homotopic_of_comp_homotopic, (ContinuousMap.Homotopic.refl f).comp⟩
 
 variable [TauCeti.CWType X] [TauCeti.CWType Y]
 
@@ -170,6 +263,18 @@ noncomputable def homotopyEquiv (hf : f.IsWeakHomotopyEquivalence) : X ≃ₕ Y 
 @[simp]
 theorem homotopyEquiv_toFun (hf : f.IsWeakHomotopyEquivalence) : hf.homotopyEquiv.toFun = f :=
   (rfl)
+
+omit [TauCeti.CWType Y] in
+/-- **CW approximations are unique up to homotopy equivalence** (Hatcher, Corollary 4.19). If
+`f : X → Y` and `g : K → Y` are weak homotopy equivalences out of spaces of CW type, then there is a
+homotopy equivalence `e : K ≃ₕ X` with `f ∘ e ≃ g`. -/
+theorem exists_homotopyEquiv_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) {g : C(K, Y)}
+    (hg : g.IsWeakHomotopyEquivalence) :
+    ∃ e : K ≃ₕ X, (f.comp e.toFun).Homotopic g := by
+  obtain ⟨g', hg'⟩ := hf.exists_comp_homotopic g
+  -- The lift `g'` is a weak homotopy equivalence by two out of three, hence one by Whitehead.
+  have hw : g'.IsWeakHomotopyEquivalence := hf.of_postcomp (hg.of_homotopic hg'.symm)
+  exact ⟨hw.homotopyEquiv, hg'⟩
 
 end ContinuousMap.IsWeakHomotopyEquivalence
 
