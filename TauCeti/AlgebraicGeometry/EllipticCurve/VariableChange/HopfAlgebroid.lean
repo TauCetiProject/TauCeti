@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ModularForm
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+
+-- Non-public: `WeierstrassCurve.VariableChange.map_one`, `map_mul`, and `map_inv` are defined in
+-- `VariableChange.Basic` and used only in the proofs below.
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The Weierstrass Hopf algebroid `(A, Γ)`
@@ -129,12 +132,6 @@ abbrev ChangeRing : Type := CoordinateRingOver (MvPolynomial Coeff ℤ)
 
 /-- The universal admissible change of variables `(u, r, s, t)` over `ChangeRing`. -/
 abbrev ChangeRing.change : VariableChange ChangeRing := universalChange
-
-/-- Two ring homomorphisms out of `ℤ[A₁, A₂, A₃, A₄, A₆]` agree as soon as they produce the same
-Weierstrass curve from `Universal.curve`. -/
-theorem coeffRing_ringHom_ext {f g : MvPolynomial Coeff ℤ →+* R}
-    (h : Universal.curve.map f = Universal.curve.map g) : f = g := by
-  simpa using congrArg WeierstrassCurve.specialize h
 
 /-- The **left unit** `η_L : A →+* Γ` of the Weierstrass Hopf algebroid, embedding the universal
 coefficients as the coefficients of the source curve. -/
@@ -308,7 +305,7 @@ theorem map_comp_rightUnit (f : ChangeRing →+* R) :
 @[simp]
 theorem variableChangeLift_comp_rightUnit (p : WeierstrassCurve R × VariableChange R) :
     (variableChangeLift p).comp rightUnit = (p.2 • p.1).specialize := by
-  refine coeffRing_ringHom_ext ?_
+  refine Universal.coeffRing_ringHom_ext ?_
   rw [map_comp_rightUnit, map_variableChangeLift_universalChange, variableChangeLift_comp_leftUnit,
     map_specialize, map_specialize]
 
@@ -424,6 +421,18 @@ def includeRight : ChangeRing →+* CoordinateRingOver ChangeRing :=
 theorem includeRight_def : includeRight = mapCoordinateRingOver rightUnit :=
   (rfl)
 
+/-- `mapCoordinateRingOver g` restricts on the right factor `includeRight` to
+`mapCoordinateRingOver (g ∘ rightUnit)`. -/
+@[simp]
+theorem mapCoordinateRingOver_comp_includeRight (g : ChangeRing →+* R) :
+    (mapCoordinateRingOver g).comp includeRight = mapCoordinateRingOver (g.comp rightUnit) := by
+  rw [includeRight_def, mapCoordinateRingOver_comp]
+
+@[simp]
+theorem mapCoordinateRingOver_includeRight (g : ChangeRing →+* R) (x : ChangeRing) :
+    mapCoordinateRingOver g (includeRight x) = mapCoordinateRingOver (g.comp rightUnit) x :=
+  RingHom.congr_fun (mapCoordinateRingOver_comp_includeRight g) x
+
 /-- The pushout relation of `Γ ⊗_A Γ`: the target of the first arrow (`includeLeft ∘ rightUnit`)
 equals the source of the second arrow (`includeRight ∘ leftUnit`). -/
 theorem includeLeft_comp_rightUnit : includeLeft.comp rightUnit = includeRight.comp leftUnit :=
@@ -531,6 +540,32 @@ theorem tensor_ringHom_ext {k k' : CoordinateRingOver ChangeRing →+* R}
     (h₂ : k.comp includeRight = k'.comp includeRight) : k = k' :=
   tensorLift.symm.injective (Subtype.ext (Prod.ext h₁ h₂))
 
+/-- The canonical composable pair `(includeLeft, includeRight)` is classified by the identity on
+`CoordinateRingOver ChangeRing`. -/
+@[simp]
+theorem tensorLift_includeLeft_includeRight :
+    tensorLift ⟨(includeLeft, includeRight), includeLeft_comp_rightUnit⟩ =
+      RingHom.id (CoordinateRingOver ChangeRing) :=
+  tensorLift.right_inv (RingHom.id (CoordinateRingOver ChangeRing))
+
+/-- Naturality of `tensorLift` under ring homomorphisms `R →+* S`. -/
+theorem comp_tensorLift (g : R →+* S)
+    (p : {p : (ChangeRing →+* R) × (ChangeRing →+* R) //
+      p.1.comp rightUnit = p.2.comp leftUnit}) :
+    g.comp (tensorLift p) =
+      tensorLift ⟨(g.comp p.1.1, g.comp p.1.2), by
+        rw [RingHom.comp_assoc, p.2, RingHom.comp_assoc]⟩ := by
+  refine tensor_ringHom_ext ?_ ?_ <;> simp [RingHom.comp_assoc]
+
+/-- `mapCoordinateRingOver g` on `Γ ⊗_A Γ` is the `tensorLift` of `algebraMap ∘ g` and
+`mapCoordinateRingOver (g ∘ rightUnit)`. -/
+@[simp]
+theorem tensorLift_algebraMap_mapCoordinateRingOver (g : ChangeRing →+* R) :
+    tensorLift ⟨((algebraMap R (CoordinateRingOver R)).comp g,
+        mapCoordinateRingOver (g.comp rightUnit)), by simp [RingHom.comp_assoc]⟩ =
+      mapCoordinateRingOver g := by
+  refine tensor_ringHom_ext ?_ ?_ <;> simp
+
 /-! ### The coproduct `Δ : Γ →+* Γ ⊗_A Γ` -/
 
 /-- The **coproduct** `Δ : Γ →+* Γ ⊗_A Γ`, classifying the composite `C * C'` of the universal
@@ -574,7 +609,7 @@ theorem comp_coproduct_comp_leftUnit (k : CoordinateRingOver ChangeRing →+* R)
 /-- `Δ ∘ η_R = ι₂ ∘ η_R`: the target of the composite is the target of the second arrow. -/
 @[simp]
 theorem coproduct_comp_rightUnit : coproduct.comp rightUnit = includeRight.comp rightUnit := by
-  refine coeffRing_ringHom_ext ?_
+  refine Universal.coeffRing_ringHom_ext ?_
   rw [map_comp_rightUnit, map_coproduct_universalChange, coproduct_comp_leftUnit,
     map_comp_rightUnit, ← includeLeft_comp_rightUnit, map_comp_rightUnit, mul_smul]
 
@@ -691,14 +726,8 @@ theorem tensorLift_coproduct_assoc {f₁ f₂ f₃ : ChangeRing →+* R}
         rw [RingHom.comp_assoc, coproduct_comp_leftUnit, ← RingHom.comp_assoc,
           tensorLift_comp_includeLeft, h₁₂]⟩).comp coproduct := by
   refine changeRing_ringHom_ext ?_ ?_
-  · rw [comp_coproduct_comp_leftUnit, comp_coproduct_comp_leftUnit, tensorLift_comp_includeLeft,
-      tensorLift_comp_includeLeft, comp_coproduct_comp_leftUnit, tensorLift_comp_includeLeft]
-  · rw [map_comp_coproduct_universalChange, map_comp_coproduct_universalChange,
-      tensorLift_comp_includeRight, tensorLift_comp_includeLeft,
-      tensorLift_comp_includeRight, tensorLift_comp_includeLeft,
-      map_comp_coproduct_universalChange, map_comp_coproduct_universalChange,
-      tensorLift_comp_includeRight, tensorLift_comp_includeLeft,
-      tensorLift_comp_includeRight, tensorLift_comp_includeLeft, mul_assoc]
+  · simp [comp_coproduct_comp_leftUnit]
+  · simp [map_comp_coproduct_universalChange, mul_assoc]
 
 /-- **Coassociativity** `(Δ ⊗ id) ∘ Δ = (id ⊗ Δ) ∘ Δ` in the triple pushout
 `Γ ⊗_A Γ ⊗_A Γ = CoordinateRingOver (CoordinateRingOver ChangeRing)`, whose three factor inclusions
@@ -707,69 +736,33 @@ are `algebraMap ∘ includeLeft`, `algebraMap ∘ includeRight`, and
 theorem coproduct_coassoc :
     (tensorLift (R := CoordinateRingOver (CoordinateRingOver ChangeRing))
         ⟨((algebraMap _ _).comp coproduct, mapCoordinateRingOver (includeRight.comp rightUnit)),
-          (RingHom.comp_assoc rightUnit coproduct _).trans <|
-            (congrArg (RingHom.comp _) coproduct_comp_rightUnit).trans
-              (mapCoordinateRingOver_comp_leftUnit (includeRight.comp rightUnit)).symm⟩).comp
-          coproduct =
+          by simp [RingHom.comp_assoc]⟩).comp coproduct =
       (tensorLift (R := CoordinateRingOver (CoordinateRingOver ChangeRing))
         ⟨((algebraMap _ _).comp includeLeft, (mapCoordinateRingOver includeRight).comp coproduct),
-          (RingHom.comp_assoc rightUnit includeLeft _).trans <|
-            (congrArg (RingHom.comp _) includeLeft_comp_rightUnit).trans <|
-            (RingHom.comp_assoc leftUnit includeRight _).symm.trans <|
-            (congrArg (·.comp leftUnit)
-              (mapCoordinateRingOver_comp_includeLeft includeRight).symm).trans <|
-            (RingHom.comp_assoc leftUnit includeLeft
-              (mapCoordinateRingOver includeRight)).trans <|
-            (congrArg (mapCoordinateRingOver includeRight).comp
-              coproduct_comp_leftUnit.symm).trans
-            (RingHom.comp_assoc leftUnit coproduct
-              (mapCoordinateRingOver includeRight)).symm⟩).comp coproduct := by
-  let T3 := CoordinateRingOver (CoordinateRingOver ChangeRing)
-  let α : CoordinateRingOver ChangeRing →+* T3 := algebraMap _ _
-  let m : CoordinateRingOver ChangeRing →+* T3 := mapCoordinateRingOver includeRight
-  let pL : {p : (ChangeRing →+* T3) × (ChangeRing →+* T3) //
-      p.1.comp rightUnit = p.2.comp leftUnit} :=
-    ⟨(α.comp coproduct, mapCoordinateRingOver (includeRight.comp rightUnit)),
-      (RingHom.comp_assoc rightUnit coproduct α).trans <|
-        (congrArg (RingHom.comp α) coproduct_comp_rightUnit).trans
-          (mapCoordinateRingOver_comp_leftUnit (includeRight.comp rightUnit)).symm⟩
-  let pR : {p : (ChangeRing →+* T3) × (ChangeRing →+* T3) //
-      p.1.comp rightUnit = p.2.comp leftUnit} :=
-    ⟨(α.comp includeLeft, m.comp coproduct),
-      (RingHom.comp_assoc rightUnit includeLeft α).trans <|
-        (congrArg (RingHom.comp α) includeLeft_comp_rightUnit).trans <|
-        (RingHom.comp_assoc leftUnit includeRight α).symm.trans <|
-        (congrArg (·.comp leftUnit)
-          (mapCoordinateRingOver_comp_includeLeft includeRight).symm).trans <|
-        (RingHom.comp_assoc leftUnit includeLeft m).trans <|
-        (congrArg m.comp coproduct_comp_leftUnit.symm).trans
-        (RingHom.comp_assoc leftUnit coproduct m).symm⟩
-  have hmR : m.comp includeRight = mapCoordinateRingOver (includeRight.comp rightUnit) :=
-    (congrArg m.comp includeRight_def).trans (mapCoordinateRingOver_comp includeRight rightUnit)
-  refine changeRing_ringHom_ext ?_ ?_
-  · exact (comp_coproduct_comp_leftUnit (tensorLift pL)).trans <|
-      (congrArg (·.comp leftUnit) (tensorLift_comp_includeLeft pL)).trans <|
-      (comp_coproduct_comp_leftUnit α).trans <|
-      (congrArg (·.comp leftUnit) (tensorLift_comp_includeLeft pR)).symm.trans
-      (comp_coproduct_comp_leftUnit (tensorLift pR)).symm
-  · exact (map_comp_coproduct_universalChange (tensorLift pL)).trans <|
-      (congrArg₂ (· * ·)
-        (congrArg ChangeRing.change.map (tensorLift_comp_includeRight pL))
-        (congrArg ChangeRing.change.map (tensorLift_comp_includeLeft pL))).trans <|
-      (congrArg (ChangeRing.change.map (mapCoordinateRingOver (includeRight.comp rightUnit)) * ·)
-        (map_comp_coproduct_universalChange α)).trans <|
-      (mul_assoc _ _ _).symm.trans <|
-      (congrArg (· * ChangeRing.change.map (α.comp includeLeft))
-        (congrArg₂ (· * ·)
-          (congrArg ChangeRing.change.map hmR.symm)
-          (congrArg ChangeRing.change.map
-            (mapCoordinateRingOver_comp_includeLeft includeRight).symm))).trans <|
-      (congrArg (· * ChangeRing.change.map (α.comp includeLeft))
-        (map_comp_coproduct_universalChange m).symm).trans <|
-      (congrArg₂ (· * ·)
-        (congrArg ChangeRing.change.map (tensorLift_comp_includeRight pR))
-        (congrArg ChangeRing.change.map (tensorLift_comp_includeLeft pR))).symm.trans
-      (map_comp_coproduct_universalChange (tensorLift pR)).symm
+          by rw [comp_coproduct_comp_leftUnit, mapCoordinateRingOver_comp_includeLeft,
+            RingHom.comp_assoc, includeLeft_comp_rightUnit,
+            RingHom.comp_assoc]⟩).comp coproduct := by
+  let α : CoordinateRingOver ChangeRing →+*
+      CoordinateRingOver (CoordinateRingOver ChangeRing) := algebraMap _ _
+  have h₁₂ : (α.comp includeLeft).comp rightUnit = (α.comp includeRight).comp leftUnit := by
+    rw [RingHom.comp_assoc, includeLeft_comp_rightUnit, RingHom.comp_assoc]
+  have h₂₃ : (α.comp includeRight).comp rightUnit =
+      (mapCoordinateRingOver (includeRight.comp rightUnit)).comp leftUnit := by
+    simp [RingHom.comp_assoc, α]
+  have h₁ : tensorLift ⟨(α.comp includeLeft, α.comp includeRight), h₁₂⟩ = α := by
+    rw [← comp_tensorLift α ⟨(includeLeft, includeRight), includeLeft_comp_rightUnit⟩,
+      tensorLift_includeLeft_includeRight, RingHom.comp_id]
+  have h₂ : tensorLift ⟨(α.comp includeRight,
+      mapCoordinateRingOver (includeRight.comp rightUnit)), h₂₃⟩ =
+      mapCoordinateRingOver includeRight :=
+    tensorLift_algebraMap_mapCoordinateRingOver includeRight
+  convert tensorLift_coproduct_assoc h₁₂ h₂₃ using 2
+  · congr 1
+    apply Subtype.ext
+    simp only [h₁, α]
+  · congr 1
+    apply Subtype.ext
+    simp only [h₂, α]
 
 /-! ### The conjugation `c : Γ →+* Γ` and antipode equations -/
 
@@ -797,7 +790,7 @@ theorem map_conjugation_universalChange : ChangeRing.change.map conjugation = Ch
 /-- `c ∘ η_R = η_L`: the target of the inverse arrow is the source of the original arrow. -/
 @[simp]
 theorem conjugation_comp_rightUnit : conjugation.comp rightUnit = leftUnit := by
-  refine coeffRing_ringHom_ext ?_
+  refine Universal.coeffRing_ringHom_ext ?_
   rw [map_comp_rightUnit, map_conjugation_universalChange, conjugation_comp_leftUnit,
     map_rightUnit, inv_smul_smul]
 

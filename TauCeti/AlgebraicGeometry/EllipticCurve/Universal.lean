@@ -401,6 +401,13 @@ open MvPolynomial in
 lemma Universal.specialize_curve : Universal.curve.specialize = RingHom.id _ :=
   ringHom_ext (fun n ↦ by rw [eq_intCast C, map_intCast, map_intCast]) fun i ↦ by cases i <;> simp
 
+/-- Two ring homomorphisms out of `ℤ[A₁, A₂, A₃, A₄, A₆]` agree as soon as they produce the same
+Weierstrass curve from `Universal.curve`. -/
+theorem Universal.coeffRing_ringHom_ext {f g : MvPolynomial Coeff ℤ →+* R}
+    (h : Universal.curve.map f = Universal.curve.map g) : f = g := by
+  simpa only [specialize_map, Universal.specialize_curve, RingHom.comp_id] using
+    congrArg WeierstrassCurve.specialize h
+
 /-- `specialize` sends the discriminant of the universal curve to the discriminant of `W`. -/
 @[simp]
 lemma specialize_Δ : W.specialize Universal.curve.Δ = W.Δ := by
