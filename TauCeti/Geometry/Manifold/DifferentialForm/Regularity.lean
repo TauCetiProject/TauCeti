@@ -543,6 +543,13 @@ theorem mextDerivₗ_cast [IsManifold I 2 M]
   cases h
   simp
 
+/-- The exterior derivative of a one-form, evaluated on two tangent vectors, is the bilinear form
+of the two-form `dα`. -/
+theorem mextDeriv_eq_bilinFormAt [IsManifold I 2 M] (α : SmoothForm I M ℝ 1) (x : M)
+    (v w : TangentSpace I x) :
+    mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
+  rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+
 end SmoothForm
 
 /-- A coordinate form supported compactly inside the chart extends with the same regularity
