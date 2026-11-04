@@ -120,6 +120,22 @@ def toGraph (e : G.Ear H) : Graph α β :=
   G.walkGraph e.toWalk.2.2
 
 @[simp]
+theorem toGraph_open {s t : α} (hHG : H ≤ G) (walk : G.Walk s t) (isPath : walk.IsPath)
+    (start_mem : s ∈ V(H)) (end_mem : t ∈ V(H)) (endpoints_ne : s ≠ t)
+    (internal_new : ∀ x ∈ walk.support, x ≠ s → x ≠ t → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.open hHG walk isPath start_mem end_mem endpoints_ne internal_new edges_new).toGraph =
+      G.walkGraph walk := by
+  rw [toGraph, toWalk_open]
+
+@[simp]
+theorem toGraph_closed {s : α} (hHG : H ≤ G) (walk : G.Walk s s) (isCycle : walk.IsCycle)
+    (base_mem : s ∈ V(H)) (internal_new : ∀ x ∈ walk.support, x ≠ s → x ∉ V(H))
+    (edges_new : ∀ e ∈ walk.edges, e ∉ E(H)) :
+    (Ear.closed hHG walk isCycle base_mem internal_new edges_new).toGraph = G.walkGraph walk := by
+  rw [toGraph, toWalk_closed]
+
+@[simp]
 theorem vertexSet_toGraph (e : G.Ear H) :
     V(e.toGraph) = {x | x ∈ e.toWalk.2.2.support} :=
   e.toWalk.2.2.vertexSet_walkGraph

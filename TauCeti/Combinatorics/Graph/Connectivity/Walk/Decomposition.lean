@@ -16,7 +16,8 @@ uses vertices and edge identities in their original order, so it can replace a w
 connectivity arguments without losing the distinction between parallel edges.
 
 The interface is adapted from Mathlib's `SimpleGraph.Walk.takeUntil`,
-`SimpleGraph.Walk.dropUntil`, and `SimpleGraph.Walk.bypass`.
+`SimpleGraph.Walk.dropUntil`, `SimpleGraph.Walk.bypass`, and
+`SimpleGraph.Walk.IsPath.isCycle_append`.
 -/
 
 public section
@@ -327,6 +328,23 @@ theorem bypass_eq_self_iff_isPath {p : G.Walk x y} : p.bypass = p ↔ p.IsPath :
   ⟨fun h => h ▸ p.bypass_isPath, IsPath.bypass_eq_self⟩
 
 end Extraction
+
+/-- Two paths with opposite endpoints form a cycle when their interiors and edge identities are
+disjoint and at least one path is nonempty. -/
+theorem IsPath.isCycle_append {p : G.Walk x y} {q : G.Walk y x} (hp : p.IsPath)
+    (hq : q.IsPath) (hv : p.support.tail.Disjoint q.support.tail)
+    (he : p.edges.Disjoint q.edges) (hne : 0 < p.length ∨ 0 < q.length) :
+    (p.append q).IsCycle := by
+  rw [isCycle_def, edges_append, support_append]
+  refine ⟨fun h ↦ ?_, ?_, ?_⟩
+  · have hz : (p.append q).length = 0 := by
+      simpa only [length_nil] using congrArg Walk.length h
+    rw [length_append] at hz
+    omega
+  · exact List.Nodup.append (isTrail_def p |>.mp hp.isTrail)
+      (isTrail_def q |>.mp hq.isTrail) he
+  · simpa only [List.tail_append_of_ne_nil p.support_ne_nil] using
+      List.Nodup.append hp.support_nodup.tail hq.support_nodup.tail hv
 
 end Graph.Walk
 
