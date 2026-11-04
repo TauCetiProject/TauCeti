@@ -31,6 +31,10 @@ The total space commutes with base change: for `f : Y ⟶ X`, the total space `�
 pulled-back bundle is the fibre product `Y ×_X 𝕍(E)`, naturally in `E`
 (`totalSpaceSchemeBaseChangeIso`). This combines `f^* (E^∨) ≅ (f^* E)^∨` with the base change
 `Spec_Y (Sym (f^* F)) ≅ Y ×_X Spec_X (Sym F)` of the relative spectrum of a symmetric algebra.
+On points this base change is pullback of sections: the projection `𝕍(f^* E) ⟶ 𝕍(E)`
+(`totalSpacePullbackFst`) sends the point of a section `s` of `q^* f^* E`, for `q : T ⟶ Y`, to
+the point of the section `(q ≫ f)^* E ≅ q^* f^* E` given by `s`
+(`totalSpaceHomEquiv_map_comp_totalSpacePullbackFst`).
 
 ## Notation
 
@@ -57,6 +61,9 @@ Hartshorne's exercise describes only sections over open subsets of `X`.
 * `TauCeti.AlgebraicGeometry.totalSpaceHomEquiv_comp_map`: naturality in the vector bundle;
 * `TauCeti.AlgebraicGeometry.totalSpaceSchemeBaseChangeIso`: the total space of `f^* E` is the
   base change of the total space of `E`, naturally in `E`.
+* `TauCeti.AlgebraicGeometry.totalSpacePullbackFst`: the projection `𝕍(f^* E) ⟶ 𝕍(E)`;
+* `TauCeti.AlgebraicGeometry.totalSpaceHomEquiv_map_comp_totalSpacePullbackFst`: the projection
+  acts on sections by the composition isomorphism `(q ≫ f)^* E ≅ q^* f^* E`.
 
 ## References
 
@@ -250,6 +257,154 @@ lemma totalSpaceSchemeBaseChangeIso_hom_app (E : FiniteLocallyFreeSheaf X) :
           (relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
             (op ((toQuasicoherent X).obj (dual E))) :=
   (rfl)
+
+variable (E : FiniteLocallyFreeSheaf X)
+
+/-- The projection `𝕍(f^* E) ⟶ 𝕍(E)` from the total space of the pulled-back bundle, as a morphism
+of schemes over `X`: relative Spec of the symmetric algebras of `f^* (E^∨) ≅ (f^* E)^∨`, followed
+by the projection `Spec_Y (Sym (f^* E^∨)) ⟶ Spec_X (Sym E^∨)`. Under
+`totalSpaceSchemeBaseChangeIso` it is the first projection of the fibre product `Y ×_X 𝕍(E)`
+(`totalSpaceSchemeBaseChangeIso_hom_app_left_fst`). -/
+def totalSpacePullbackFst :
+    (Over.map f).obj ((MorphismProperty.Over.forget _ _ Y).obj
+      ((totalSpaceScheme Y).obj ((FiniteLocallyFreeSheaf.pullback f).obj E))) ⟶
+      (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E) :=
+  (Over.map f).map ((MorphismProperty.Over.forget _ _ Y).map
+      ((relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).hom)).op ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op)) ≫
+    relativeSpecSymmetricAlgebraPullbackFst f ((toQuasicoherent X).obj (dual E))
+
+/-- The isomorphism `totalSpaceSchemeBaseChangeIso` followed by the first projection of the fibre
+product `Y ×_X 𝕍(E)` is the projection `totalSpacePullbackFst`. -/
+lemma totalSpaceSchemeBaseChangeIso_hom_app_left_fst :
+    ((totalSpaceSchemeBaseChangeIso f).hom.app E).left ≫
+        Limits.pullback.fst ((totalSpaceScheme X).obj E).hom f =
+      (totalSpacePullbackFst f E).left := by
+  rw [totalSpaceSchemeBaseChangeIso_hom_app, totalSpacePullbackFst]
+  -- `MorphismProperty.Comma.comp_left` and `Over.comp_left` do not rewrite these composites:
+  -- `@IsAffineHom` only has type `MorphismProperty Scheme` after unfolding. `change` states both
+  -- sides as composites of underlying morphisms, which they are by definition of `.left` of a
+  -- composite and of `Over.map_map_left`.
+  change (((relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).hom)).op ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op).left ≫
+      ((relativeSpecSymmetricAlgebraBaseChangeIso f).hom.app
+        (op ((toQuasicoherent X).obj (dual E)))).left) ≫
+        Limits.pullback.fst ((totalSpaceScheme X).obj E).hom f =
+    ((relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).hom)).op ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).inv.app (dual E))).op).left ≫
+      (relativeSpecSymmetricAlgebraPullbackFst f ((toQuasicoherent X).obj (dual E))).left
+  exact (Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) (relativeSpecSymmetricAlgebraBaseChangeIso_hom_app_left_fst f _))
+
+/-- The linear functional on `(q ≫ f)^* E^∨` of the projection to `𝕍(E)` of a point `t` of
+`𝕍(f^* E)` over `q : T ⟶ Y` is the base-change map `(q ≫ f)^* E^∨ ≅ q^* f^* E^∨ ⟶ q^* (f^* E)^∨`
+followed by the linear functional of `t`. -/
+private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePullbackFst
+    {T : Over Y} (t : T ⟶ (MorphismProperty.Over.forget _ _ Y).obj
+      ((totalSpaceScheme Y).obj ((FiniteLocallyFreeSheaf.pullback f).obj E))) :
+    relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E))
+      ((Over.map f).obj T) ((Over.map f).map t ≫ totalSpacePullbackFst f E) =
+        (Scheme.Modules.pullbackComp T.hom f).inv.app ((ihom E.obj).obj (𝟙_ X.Modules)) ≫
+          (Scheme.Modules.pullback T.hom).map ((pullbackIhomComparison E.obj f).app (𝟙_ X.Modules) ≫
+            (ihom ((Scheme.Modules.pullback f).obj E.obj)).map
+              (Scheme.Modules.pullbackObjUnitIso f).hom ≫
+            eqToHom (congrArg (fun M : Y.Modules ↦ (ihom M).obj (𝟙_ Y.Modules))
+              (FiniteLocallyFreeSheaf.pullback_obj_obj f E).symm)) ≫
+          relativeSpecSymmetricAlgebraPullbackHomEquiv
+            ((toQuasicoherent Y).obj (dual ((FiniteLocallyFreeSheaf.pullback f).obj E))) T t := by
+  refine ((congrArg (relativeSpecSymmetricAlgebraPullbackHomEquiv _ _)
+    ((Over.map f).map_comp_assoc t _ _).symm).trans
+      (relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_relativeSpecSymmetricAlgebraPullbackFst
+        f _ _)).trans
+        (congrArg (_ ≫ ·) ?_)
+  -- Naturality of the linear functionals in the quasicoherent sheaf, for the two relative-Spec
+  -- maps making up the first factor of `totalSpacePullbackFst`.
+  refine (congrArg (_ ≫ ·) ((congrArg (relativeSpecSymmetricAlgebraPullbackHomEquiv _ T)
+    ((congrArg (t ≫ ·) ((MorphismProperty.Over.forget _ _ Y).map_comp _ _)).trans
+      (Category.assoc _ _ _).symm)).trans
+    ((relativeSpecSymmetricAlgebraPullbackHomEquiv_comp_relativeSpec_map _ _ _).trans
+      (congrArg (_ ≫ ·)
+        (relativeSpecSymmetricAlgebraPullbackHomEquiv_comp_relativeSpec_map _ T t))))).trans ?_
+  refine ((Category.assoc _ _ _).symm.trans (Category.assoc _ _ _).symm).trans
+    (congrArg (· ≫ _) ?_)
+  refine (congrArg (· ≫ _) ((Scheme.Modules.pullback T.hom).map_comp _ _).symm).trans
+    (((Scheme.Modules.pullback T.hom).map_comp _ _).symm.trans (congrArg _ ?_))
+  simp only [pullbackToQuasicoherentIso_inv_app_hom, toQuasicoherent_map_hom,
+    pullbackDualIso_hom_hom]
+  -- The leading transports cancel. The composites mix the `Y.Modules` and underlying sheaf
+  -- category instances, which `simp` does not identify.
+  erw [eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+
+-- The equation `M' = f^* M` is a hypothesis so that it can be eliminated: the sheaf underlying a
+-- pulled-back finite locally free sheaf is equal, but not syntactically equal, to the pullback
+-- of the underlying sheaf.
+/-- `Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp` for a sheaf `M'` equal
+to `f^* M`: a functional on `(q ≫ f)^* M^∨` obtained from a functional `ψ` on `q^* M'^∨`
+corresponds to the section of `q^* M'` of `ψ`, through `q^* f^* M ≅ (q ≫ f)^* M`. -/
+private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q : T ⟶ Y)
+    (M : X.Modules) [M.IsQuasicoherent] [M.IsLocallyFree] [M.IsFiniteType]
+    (M' : Y.Modules) [M'.IsQuasicoherent] [M'.IsLocallyFree] [M'.IsFiniteType]
+    (h : M' = (Scheme.Modules.pullback f).obj M)
+    [IsIso ((pullbackIhomComparison M (q ≫ f)).app (𝟙_ X.Modules) ≫
+      (ihom ((Scheme.Modules.pullback (q ≫ f)).obj M)).map
+        (Scheme.Modules.pullbackObjUnitIso (q ≫ f)).hom)]
+    [IsIso ((pullbackIhomComparison M' q).app (𝟙_ Y.Modules) ≫
+      (ihom ((Scheme.Modules.pullback q).obj M')).map (Scheme.Modules.pullbackObjUnitIso q).hom)]
+    (ψ' : (Scheme.Modules.pullback (q ≫ f)).obj ((ihom M).obj (𝟙_ X.Modules)) ⟶ 𝟙_ T.Modules)
+    (ψ : (Scheme.Modules.pullback q).obj ((ihom M').obj (𝟙_ Y.Modules)) ⟶ 𝟙_ T.Modules)
+    (hψ : ψ' = (Scheme.Modules.pullbackComp q f).inv.app ((ihom M).obj (𝟙_ X.Modules)) ≫
+      (Scheme.Modules.pullback q).map ((pullbackIhomComparison M f).app (𝟙_ X.Modules) ≫
+        (ihom ((Scheme.Modules.pullback f).obj M)).map (Scheme.Modules.pullbackObjUnitIso f).hom ≫
+        eqToHom (congrArg (fun N : Y.Modules ↦ (ihom N).obj (𝟙_ Y.Modules)) h.symm)) ≫ ψ) :
+    Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback (q ≫ f)).obj M)
+        (inv ((pullbackIhomComparison M (q ≫ f)).app (𝟙_ X.Modules) ≫
+            (ihom ((Scheme.Modules.pullback (q ≫ f)).obj M)).map
+              (Scheme.Modules.pullbackObjUnitIso (q ≫ f)).hom) ≫ ψ') =
+      Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback q).obj M')
+          (inv ((pullbackIhomComparison M' q).app (𝟙_ Y.Modules) ≫
+            (ihom ((Scheme.Modules.pullback q).obj M')).map
+              (Scheme.Modules.pullbackObjUnitIso q).hom) ≫ ψ) ≫
+        eqToHom (congrArg (Scheme.Modules.pullback q).obj h) ≫
+          (Scheme.Modules.pullbackComp q f).hom.app M := by
+  subst hψ h
+  simp only [eqToHom_refl, Category.comp_id, Category.id_comp]
+  exact Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp q f M ψ
+
+/-- **Base change of the total space on points.** For a scheme `q : T ⟶ Y` over `Y` and a point
+`t : T ⟶ 𝕍(f^* E)` over `Y`, the section of `(q ≫ f)^* E` of the projection of `t` to `𝕍(E)` is
+the section of `q^* f^* E` of `t`, through the composition isomorphism of pullback. -/
+theorem totalSpaceHomEquiv_map_comp_totalSpacePullbackFst {T : Over Y}
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ Y).obj
+      ((totalSpaceScheme Y).obj ((FiniteLocallyFreeSheaf.pullback f).obj E))) :
+    totalSpaceHomEquiv E ((Over.map f).obj T) ((Over.map f).map t ≫ totalSpacePullbackFst f E) =
+      totalSpaceHomEquiv ((FiniteLocallyFreeSheaf.pullback f).obj E) T t ≫
+        eqToHom (congrArg (Scheme.Modules.pullback T.hom).obj
+          (FiniteLocallyFreeSheaf.pullback_obj_obj f E)) ≫
+          (Scheme.Modules.pullbackComp T.hom f).hom.app E.obj := by
+  rw [totalSpaceHomEquiv_apply, totalSpaceHomEquiv_apply]
+  exact dualHomUnitEquiv_inv_comp_eq_of_pullbackComp f T.hom E.obj _
+    (FiniteLocallyFreeSheaf.pullback_obj_obj f E) _ _
+    (relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePullbackFst f E t)
+
+/-- The projection to `𝕍(E)` of the point of `𝕍(f^* E)` of a section `s` of `q^* f^* E` is the
+point of the section `(q ≫ f)^* E ≅ q^* f^* E` corresponding to `s`. -/
+theorem map_totalSpaceHomEquiv_symm_comp_totalSpacePullbackFst {T : Over Y}
+    (s : 𝟙_ T.left.Modules ⟶
+      (Scheme.Modules.pullback T.hom).obj ((FiniteLocallyFreeSheaf.pullback f).obj E).obj) :
+    (Over.map f).map ((totalSpaceHomEquiv ((FiniteLocallyFreeSheaf.pullback f).obj E) T).symm s) ≫
+        totalSpacePullbackFst f E =
+      (totalSpaceHomEquiv E ((Over.map f).obj T)).symm (s ≫
+        eqToHom (congrArg (Scheme.Modules.pullback T.hom).obj
+          (FiniteLocallyFreeSheaf.pullback_obj_obj f E)) ≫
+          (Scheme.Modules.pullbackComp T.hom f).hom.app E.obj) :=
+  (Equiv.eq_symm_apply _).2 ((totalSpaceHomEquiv_map_comp_totalSpacePullbackFst f E _).trans
+    (congrArg (· ≫ _) (Equiv.apply_symm_apply _ _)))
 
 end BaseChange
 

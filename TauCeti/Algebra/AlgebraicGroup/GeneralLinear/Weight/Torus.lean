@@ -48,6 +48,8 @@ No faithfulness is asserted: an arbitrary weight family may have a common kernel
   represented weight torus.
 * `TauCeti.GeneralLinear.weightTorusCoordinateMap_surjective`: spanning weights make the
   coordinate morphism surjective.
+* `TauCeti.GeneralLinear.map_genericMatrix_weightTorusCoordinateMap`: the generic matrix
+  restricts along the weight torus to the diagonal matrix of the prescribed weight characters.
 * `TauCeti.GeneralLinear.weightTorusCoordinateBialgHom`: its direct diagonal-representation form,
   allowing the base ring and torus index to live in different universes.
 * `TauCeti.GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights`:
@@ -320,6 +322,16 @@ theorem weightTorusCoordinateMap_X (wt : Fin N → κ → ℤ) (i j : Fin N) :
   rw [weightTorusCoordinateMap_apply]
   rw [diagonalTorusCoordinateMap_X]
   split_ifs <;> simp
+
+/-- The generic matrix restricts along the weight torus to the diagonal matrix of the prescribed
+weight characters. -/
+theorem map_genericMatrix_weightTorusCoordinateMap [Fintype κ] (wt : Fin N → κ → ℤ) :
+    (genericMatrix R N).map (weightTorusCoordinateMap (R := R) wt).hom.toAlgHom =
+      Matrix.diagonal fun i ↦ MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) (1 : R) := by
+  ext i j
+  rw [Matrix.map_apply, genericMatrix_apply]
+  simp only [BialgHom.coe_toAlgHom]
+  rw [weightTorusCoordinateMap_X, Matrix.diagonal_apply, SplitTorus.weightCharacter_def]
 
 /-- The categorical weight-torus coordinate map is the direct diagonal-representation
 bialgebra morphism when the base ring and torus index live in the same universe. -/
