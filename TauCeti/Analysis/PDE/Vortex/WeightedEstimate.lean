@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
-public import TauCeti.Analysis.InnerProductSpace.RadialExponential
+public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 
 /-!
 # Weighted energy estimates for the plane-vortex adjoint

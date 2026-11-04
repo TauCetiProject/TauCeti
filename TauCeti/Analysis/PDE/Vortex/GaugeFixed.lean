@@ -229,6 +229,30 @@ theorem gaugeFixedAdjointSymbol_def (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace 
       !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
         -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2] := (rfl)
 
+/-- The first connection component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_zero (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 0 = -d 1 * v 0 - d I * v 1 := (rfl)
+
+/-- The second connection component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_one (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 1 = -d I * v 0 + d 1 * v 1 := (rfl)
+
+/-- The real section component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_two (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 2 = -d 1 * v 2 - d I * v 3 := (rfl)
+
+/-- The imaginary section component of the adjoint symbol. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_apply_three (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v 3 = -d 1 * v 3 + d I * v 2 := (rfl)
+
 /-- The adjoint symbol preserves squared norms up to the squared covector norm. -/
 theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
     (v : EuclideanSpace ℝ (Fin 4)) :
@@ -244,7 +268,7 @@ theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
     (v : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedAdjointSymbol (r • d) v = r • gaugeFixedAdjointSymbol d v := by
   ext i
-  fin_cases i <;> simp [gaugeFixedAdjointSymbol_def] <;> ring
+  fin_cases i <;> simp <;> ring
 
 /-- The adjoint symbol commutes with real scaling of the field value. -/
 @[simp]
@@ -252,7 +276,7 @@ theorem gaugeFixedAdjointSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
     (v : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedAdjointSymbol d (r • v) = r • gaugeFixedAdjointSymbol d v := by
   ext i
-  fin_cases i <;> simp [gaugeFixedAdjointSymbol_def] <;> ring
+  fin_cases i <;> simp <;> ring
 
 /-- The adjoint's Leibniz rule for a real weight, with its exact symbol commutator. -/
 theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
@@ -271,8 +295,7 @@ theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
   ext i
   fin_cases i <;>
     simp [gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
-      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd,
-      gaugeFixedAdjointSymbol_def] <;> ring
+      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd] <;> ring
 
 /-- **The gauge Laplacian**: at every field, `d₀* d₀ f = -Δ f + (|α|² / 4) f`, where
 `|α|² / 4 = p² + q²`. No regularity of the field is needed. -/
