@@ -8,23 +8,24 @@ module
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # Submodule intervals and quotients
 
 This file records the generic order correspondence between a submodule interval and submodules of
 the associated quotient, and the identifications of *subquotients* `↥B ⧸ A` that a linear map
-induces when it is injective or surjective.
+induces when it is injective or surjective.  The submodule-map facts behind these,
+`Submodule.mapIic_symm_apply` and `LinearMap.map_equivMapOfInjective_comap_subtype`, live in
+`TauCeti.Algebra.Module.Submodule.Map`.
 
 ## Main declarations
 
-* `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images
-  along the inclusion.
 * `Submodule.iccOrderIsoQuotientOfMapEq`: the interval/quotient correspondence for a
   specified copy of the lower endpoint inside the upper endpoint.
-* `TauCeti.mapSubquotientEquivOfInjective`: an injective linear map identifies the subquotient of
+* `LinearMap.mapSubquotientEquivOfInjective`: an injective linear map identifies the subquotient of
   the images of two submodules with the subquotient of the two submodules themselves.
-* `TauCeti.comapSubquotientEquivOfSurjective`: a surjective linear map identifies the subquotient
+* `LinearMap.comapSubquotientEquivOfSurjective`: a surjective linear map identifies the subquotient
   of the preimages of two submodules with the subquotient of the two submodules themselves.
 * `LinearMap.quotientEquivRangeQuotientMap`: a linear map whose kernel lies below a submodule
   identifies the quotient by that submodule with the corresponding quotient of its range, and
@@ -82,15 +83,6 @@ section QuotientInterval
 section Order
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-
-/-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
-`symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`.
-
-This is not a simp lemma: unfolding the inverse prevents simplification by the order
-isomorphism's round-trip laws. -/
-theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
-    p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
-  rfl
 
 /-- Submodules of `q` containing a submodule whose ambient image is `p` are the same as ambient
 submodules in the interval from `p` to `q`. -/
@@ -155,29 +147,9 @@ end Quotient
 
 end QuotientInterval
 
-section Map
-
-variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N]
-
-/-- An injective linear map carries the trace of `A` in `B` onto the trace of `A.map f` in
-`B.map f`, so it descends to the subquotients. -/
-@[simp]
-theorem _root_.LinearMap.map_equivMapOfInjective_comap_subtype (f : M →ₗ[R] N)
-    (hf : Function.Injective f) (A B : Submodule R M) :
-    map (B.equivMapOfInjective f hf : ↥B →ₗ[R] ↥(B.map f)) (comap B.subtype A) =
-      comap (B.map f).subtype (A.map f) := by
-  refine map_injective_of_injective (B.map f).injective_subtype ?_
-  have hcomp : (B.map f).subtype ∘ₗ (B.equivMapOfInjective f hf : ↥B →ₗ[R] ↥(B.map f)) =
-      f ∘ₗ B.subtype :=
-    LinearMap.ext fun x => coe_equivMapOfInjective_apply f hf B x
-  rw [← map_comp, hcomp, map_comp, map_comap_subtype, map_comap_subtype, map_inf f hf]
-
-end Map
-
 end Submodule
 
-namespace TauCeti
+namespace LinearMap
 
 section Subquotient
 
@@ -193,7 +165,7 @@ noncomputable def mapSubquotientEquivOfInjective (f : M →ₗ[R] N) (hf : Funct
   (Submodule.Quotient.equiv _ _ (Submodule.equivMapOfInjective f hf B)
     (f.map_equivMapOfInjective_comap_subtype hf A B)).symm
 
-/-- `TauCeti.mapSubquotientEquivOfInjective` read on representatives: its inverse is induced by
+/-- `LinearMap.mapSubquotientEquivOfInjective` read on representatives: its inverse is induced by
 the restriction `Submodule.equivMapOfInjective` of `f` to `B`. -/
 @[simp]
 theorem mapSubquotientEquivOfInjective_symm_apply (f : M →ₗ[R] N) (hf : Function.Injective f)
@@ -203,7 +175,7 @@ theorem mapSubquotientEquivOfInjective_symm_apply (f : M →ₗ[R] N) (hf : Func
   rw [mapSubquotientEquivOfInjective, LinearEquiv.symm_symm, Submodule.Quotient.equiv_apply,
     Submodule.mapQ_apply, LinearEquiv.coe_coe]
 
-/-- `TauCeti.mapSubquotientEquivOfInjective` read on representatives, in the forward direction:
+/-- `LinearMap.mapSubquotientEquivOfInjective` read on representatives, in the forward direction:
 it undoes the restriction `Submodule.equivMapOfInjective` of `f` to `B`. -/
 @[simp]
 theorem mapSubquotientEquivOfInjective_apply (f : M →ₗ[R] N) (hf : Function.Injective f)
@@ -215,7 +187,7 @@ theorem mapSubquotientEquivOfInjective_apply (f : M →ₗ[R] N) (hf : Function.
     LinearEquiv.apply_symm_apply]
 
 /-- The kernel of `x ↦ f x mod A`, on the preimage of `B`, is the trace of the preimage of `A`. -/
-theorem _root_.LinearMap.ker_mkQ_comp_submoduleComap (f : M →ₗ[R] N) (A B : Submodule R N) :
+theorem ker_mkQ_comp_submoduleComap (f : M →ₗ[R] N) (A B : Submodule R N) :
     LinearMap.ker ((Submodule.comap B.subtype A).mkQ ∘ₗ f.submoduleComap B)
       = Submodule.comap (B.comap f).subtype (A.comap f) := by
   ext x
@@ -233,7 +205,7 @@ noncomputable def comapSubquotientEquivOfSurjective (f : M →ₗ[R] N) (hf : Fu
       ((Submodule.mkQ_surjective _).comp
         (LinearMap.submoduleComap_surjective_of_surjective f B hf)))
 
-/-- `TauCeti.comapSubquotientEquivOfSurjective` read on representatives: it is induced by the
+/-- `LinearMap.comapSubquotientEquivOfSurjective` read on representatives: it is induced by the
 restriction `LinearMap.submoduleComap` of `f` to the preimage of `B`. -/
 @[simp]
 theorem comapSubquotientEquivOfSurjective_apply (f : M →ₗ[R] N) (hf : Function.Surjective f)
@@ -243,7 +215,7 @@ theorem comapSubquotientEquivOfSurjective_apply (f : M →ₗ[R] N) (hf : Functi
   rw [comapSubquotientEquivOfSurjective, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.comp_apply, Submodule.mkQ_apply]
 
-/-- `TauCeti.comapSubquotientEquivOfSurjective` read on representatives, in the inverse direction:
+/-- `LinearMap.comapSubquotientEquivOfSurjective` read on representatives, in the inverse direction:
 it undoes the restriction `LinearMap.submoduleComap` of `f` to the preimage of `B`. -/
 @[simp]
 theorem comapSubquotientEquivOfSurjective_symm_apply (f : M →ₗ[R] N) (hf : Function.Surjective f)
@@ -255,7 +227,7 @@ theorem comapSubquotientEquivOfSurjective_symm_apply (f : M →ₗ[R] N) (hf : F
 
 /-- The kernel of the map from `M` to the quotient of the range of `f` by the image of `I` is
 exactly `I`, provided that `I` contains the kernel of `f`. -/
-theorem _root_.LinearMap.ker_mkQ_comp_rangeRestrict (f : M →ₗ[R] N) (I : Submodule R M)
+theorem ker_mkQ_comp_rangeRestrict (f : M →ₗ[R] N) (I : Submodule R M)
     (hker : LinearMap.ker f ≤ I) :
     LinearMap.ker ((I.map f.rangeRestrict).mkQ.comp f.rangeRestrict) = I := by
   rw [LinearMap.ker_comp, Submodule.ker_mkQ]
@@ -266,7 +238,7 @@ theorem _root_.LinearMap.ker_mkQ_comp_rangeRestrict (f : M →ₗ[R] N) (I : Sub
 If `ker f ≤ I`, the map `x ↦ f x` identifies `M / I` with the range of `f` modulo the
 image of `I`. This form of the first isomorphism theorem is useful when `f` is a representation
 with a controlled kernel. -/
-noncomputable def _root_.LinearMap.quotientEquivRangeQuotientMap (f : M →ₗ[R] N)
+noncomputable def quotientEquivRangeQuotientMap (f : M →ₗ[R] N)
     (I : Submodule R M)
     (hker : LinearMap.ker f ≤ I) :
     (M ⧸ I) ≃ₗ[R] (LinearMap.range f ⧸ I.map f.rangeRestrict) :=
@@ -277,7 +249,7 @@ noncomputable def _root_.LinearMap.quotientEquivRangeQuotientMap (f : M →ₗ[R
 /-- `LinearMap.quotientEquivRangeQuotientMap` sends the class of `x` to the class of `f x` in the
 range quotient. -/
 @[simp]
-theorem _root_.LinearMap.quotientEquivRangeQuotientMap_apply_mk (f : M →ₗ[R] N)
+theorem quotientEquivRangeQuotientMap_apply_mk (f : M →ₗ[R] N)
     (I : Submodule R M) (hker : LinearMap.ker f ≤ I) (x : M) :
     f.quotientEquivRangeQuotientMap I hker (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (f.rangeRestrict x) := by
@@ -288,7 +260,7 @@ theorem _root_.LinearMap.quotientEquivRangeQuotientMap_apply_mk (f : M →ₗ[R]
 /-- `LinearMap.quotientEquivRangeQuotientMap` read in the inverse direction: the class of
 `f.rangeRestrict x` in the range quotient comes from the class of `x`. -/
 @[simp]
-theorem _root_.LinearMap.quotientEquivRangeQuotientMap_symm_apply_mk (f : M →ₗ[R] N)
+theorem quotientEquivRangeQuotientMap_symm_apply_mk (f : M →ₗ[R] N)
     (I : Submodule R M) (hker : LinearMap.ker f ≤ I) (x : M) :
     (f.quotientEquivRangeQuotientMap I hker).symm (Submodule.Quotient.mk (f.rangeRestrict x)) =
       Submodule.Quotient.mk x := by
@@ -297,7 +269,7 @@ theorem _root_.LinearMap.quotientEquivRangeQuotientMap_symm_apply_mk (f : M →�
 
 end Subquotient
 
-end TauCeti
+end LinearMap
 
 namespace Submodule
 
