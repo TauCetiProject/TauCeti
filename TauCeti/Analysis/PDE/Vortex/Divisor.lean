@@ -28,10 +28,10 @@ with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ 
 section with continuous local factors sums to `m` as well, by the same argument principle. Only
 the holomorphicity rows are used; the curvature equation is not needed.
 
-Thus the number of zeros counted with multiplicity, which is the flux `(2π)⁻¹ ∫ i F_a` of a
-vortex (Jaffe–Taubes, Chapter III), equals the framing degree `m`, and framed degree-`m`
-vortices have their divisors in `Sym^m ℂ`. Existence of a vortex for a given divisor is not
-asserted here.
+This file proves that the total multiplicity of the zeros equals the framing degree `m`, so that
+framed degree-`m` vortices have their divisors in `Sym^m ℂ`. The classical identification of
+that total multiplicity with the flux `(2π)⁻¹ ∫ i F_a` (Jaffe–Taubes, Chapter III) is not proved
+here, and neither is existence of a vortex for a given divisor.
 
 ## References
 
@@ -83,7 +83,7 @@ theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
   have hcard : Multiset.card (Finsupp.toMultiset N) = m := by
     rw [Finsupp.card_toMultiset, Finsupp.sum, ← finsum_eq_of_tendsto_mul_inv_pow hmult hframe,
       finsum_eq_sum_of_support_subset n (s := N.support) fun z hz ↦ ?_]
-    · rfl
+    · simp [hNdef, Finsupp.ofSupportFinite_coe]
     · simpa [hNdef, Finsupp.mem_support_iff, Finsupp.ofSupportFinite_coe] using hz
   refine ⟨⟨Finsupp.toMultiset N, hcard⟩, fun z ↦ ⟨v z, hvc z, hv0 z, ?_⟩⟩
   simpa only [Sym.coe_mk, Finsupp.count_toMultiset, hNdef, Finsupp.ofSupportFinite_coe] using
