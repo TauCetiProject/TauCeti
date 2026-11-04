@@ -134,22 +134,17 @@ def covariantPhaseForm (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) :
 theorem covariantPhaseForm_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
     covariantPhaseForm b α x = phaseForm α x + b x := (rfl)
 
-/-- A nonzero complex number has `re ^ 2 + im ^ 2 ≠ 0`, the form of `|z|² ≠ 0` used by
-`field_simp` after expanding real and imaginary parts. -/
-private theorem re_sq_add_im_sq_ne_zero {z : ℂ} (h : z ≠ 0) : z.re ^ 2 + z.im ^ 2 ≠ 0 := by
-  rw [sq, sq, ← normSq_apply]
-  exact normSq_eq_zero.not.2 h
-
 /-- Away from the zeros of `α`, the covariant phase form is `Im (conj α ∇_a α) / |α|²`. -/
 theorem covariantPhaseForm_apply_eq_div (h : α x ≠ 0) (v : E) :
     covariantPhaseForm b α x (fun _ ↦ v) =
       (conj (α x) * covariantDeriv b α x v).im / normSq (α x) := by
-  have hn := re_sq_add_im_sq_ne_zero h
+  have hn := (normSq_pos.2 h).ne'
   rw [covariantPhaseForm_apply, ContinuousAlternatingMap.add_apply, phaseForm_apply,
     covariantDeriv_apply]
   simp only [add_re, add_im, mul_im, mul_re, conj_re, conj_im, ofReal_re, ofReal_im, I_re, I_im,
-    inv_re, inv_im, normSq_apply]
+    inv_re, inv_im]
   field_simp
+  rw [normSq_apply]
   ring
 
 /-- The covariant phase form is invariant under gauge transformations
@@ -452,13 +447,14 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     (hα : DifferentiableAt ℝ α x) :
     cutoffPhaseForm χ b α x =
       J.twistedDifferential (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ b α x := by
-  -- The derivative of `H(|α|²)` is `H'(s) · 2 Re (conj α dα)`.
-  have hd : HasFDerivAt (fun y ↦ H (normSq (α y)))
-      ((χ (normSq (α x)) / normSq (α x)) •
-        (2 • (innerSL ℝ (α x)).comp (fderiv ℝ α x))) x := by
+  -- The derivative of `|α|²` is `2 Re (conj α dα)`.
+  have hd : HasFDerivAt (fun y ↦ normSq (α y))
+      (2 • (innerSL ℝ (α x)).comp (fderiv ℝ α x)) x := by
     simp_rw [normSq_eq_norm_sq]
-    rw [normSq_eq_norm_sq] at hH
-    exact hH.comp_hasFDerivAt x hα.hasFDerivAt.norm_sq
+    exact hα.hasFDerivAt.norm_sq
+  have hc := J.twistedDifferential_comp hH hd.differentiableAt
+  rw [Function.comp_def] at hc
+  rw [hc]
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = fun _ ↦ w := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
   simp only [ContinuousAlternatingMap.add_apply, J.twistedDifferential_apply, cutoffDBarForm_apply,
@@ -468,10 +464,11 @@ theorem cutoffPhaseForm_eq_twistedDifferential_add {H : ℝ → ℝ}
     covariantDeriv_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
   by_cases h : α x = 0
   · simp [h, hχ]
-  · have hn := re_sq_add_im_sq_ne_zero h
+  · have hn := (normSq_pos.2 h).ne'
     simp only [mul_re, mul_im, add_re, add_im, neg_re, neg_im, conj_re, conj_im, ofReal_re,
-      ofReal_im, I_re, I_im, div_ofNat_re, div_ofNat_im, inv_re, inv_im, normSq_apply]
+      ofReal_im, I_re, I_im, div_ofNat_re, div_ofNat_im, inv_re, inv_im]
     field_simp
+    rw [normSq_apply]
     ring
 
 /-- **Pointwise bound on the correction form.** If `χ` vanishes on `[0, c)` and `|χ| ≤ 1`, then
