@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
+public import TauCeti.Algebra.Polynomial.Laurent.Units
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Resolution
 
 /-!
@@ -21,8 +22,10 @@ Consequently, if every finite graded module admits such a resolution, the graded
 an isomorphism of `ℤ[q,q⁻¹]`-modules. Its inverse sends the class of a module to the alternating
 class of any finite graded projective resolution. This is the graded analogue of
 `TauCeti.cartanEquiv`. In particular the graded Cartan matrix, in any projective and module
-bases indexed by the same finite type, has determinant a unit of `ℤ[q,q⁻¹]`. This needs no
-splitting hypothesis on the simple modules or on the degree-zero part of `A`.
+bases indexed by the same finite type, has determinant a unit of `ℤ[q,q⁻¹]`, that is `qⁿ` or
+`-qⁿ` for some `n : ℤ`. This needs no splitting hypothesis on the simple modules or on the
+degree-zero part of `A`. Neither the sign nor the exponent is determined: changing the bases
+multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
 
 ## Main definitions
 
@@ -43,6 +46,9 @@ splitting hypothesis on the simple modules or on the degree-zero part of `A`.
   graded module has a finite graded-projective resolution.
 * `TauCeti.isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution`: graded Cartan
   unimodularity, in any two bases indexed by the same finite type.
+* `TauCeti.exists_gradedCartanMatrix_det_eq_T_or_neg_T_of_le_admitsFiniteResolution`: the
+  graded Cartan determinant is `qⁿ` or `-qⁿ`, the graded counterpart of
+  `TauCeti.cartanMatrix_det_eq_one_or_neg_one`.
 
 ## References
 
@@ -310,6 +316,23 @@ theorem isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution {I : Type*} [
         gradedCartanEquiv_apply]
   rw [hC]
   exact LinearEquiv.isUnit_det _ bP bM
+
+include h in
+/-- **The graded Cartan determinant is `±qⁿ`.** If every finite graded module has a finite
+graded-projective resolution, the graded Cartan matrix in a projective basis and a module basis
+indexed by the same finite type has determinant `qⁿ` or `-qⁿ` for some `n : ℤ`. This is the
+graded counterpart of `TauCeti.cartanMatrix_det_eq_one_or_neg_one`; neither the sign nor the
+exponent is asserted. -/
+theorem exists_gradedCartanMatrix_det_eq_T_or_neg_T_of_le_admitsFiniteResolution {I : Type*}
+    [Fintype I] [DecidableEq I]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
+    (bM : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) :
+    ∃ n : ℤ, (gradedCartanMatrix 𝒜 bP bM).det = LaurentPolynomial.T n ∨
+      (gradedCartanMatrix 𝒜 bP bM).det = -LaurentPolynomial.T n :=
+  LaurentPolynomial.isUnit_iff_exists_eq_T_or_neg_T.1
+    (isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution 𝒜 h bP bM)
 
 end Inverse
 

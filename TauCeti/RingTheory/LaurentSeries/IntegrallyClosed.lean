@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LaurentSeries
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.RingTheory.HahnSeries.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -24,6 +25,8 @@ roots of unity `η ∈ K`, for every field `K`.
 ## Main results
 
 * `TauCeti.LaurentSeries.isIntegrallyClosedIn`: `K` is integrally closed in `K⸨X⸩`.
+* `TauCeti.LaurentSeries.exists_rootsOfUnity_algebraMap_eq`: a root of unity of `K⸨X⸩` is the
+  image of a root of unity of `K`.
 -/
 
 public section
@@ -44,5 +47,17 @@ instance isIntegrallyClosedIn : IsIntegrallyClosedIn K K⸨X⸩ := by
     ((isIntegral_algHom_iff (IsScalarTower.toAlgHom K K⟦X⟧ K⸨X⸩)
       (IsFractionRing.injective K⟦X⟧ K⸨X⸩)).mp hf)
   exact ⟨c, (IsScalarTower.algebraMap_apply K K⟦X⟧ K⸨X⸩ c).symm⟩
+
+variable {K}
+
+/-- A `d`-th root of unity of `K⸨X⸩` is a constant: the image of a `d`-th root of unity of `K`.
+This holds because the constants are integrally closed in `K⸨X⸩`. -/
+theorem exists_rootsOfUnity_algebraMap_eq {d : ℕ+} {w : K⸨X⸩} (hw : w ^ (d : ℕ) = 1) :
+    ∃ η : rootsOfUnity d K, Algebra.algebraMap K K⸨X⸩ ((η : Kˣ) : K) = w := by
+  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp
+    (IsIntegral.of_pow (R := K) d.pos (hw ▸ isIntegral_one))
+  have hcd : c ^ (d : ℕ) = 1 :=
+    (Algebra.algebraMap K K⸨X⸩).injective (by rw [map_pow, hc, hw, map_one])
+  exact ⟨rootsOfUnity.mkOfPowEq c hcd, by rw [rootsOfUnity.coe_mkOfPowEq, hc]⟩
 
 end TauCeti.LaurentSeries

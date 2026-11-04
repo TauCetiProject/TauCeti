@@ -54,6 +54,8 @@ zero that the centralizer has dimension `dim ker (ad x)`.
 * `TauCeti.Comodule.matrixCoefficient_sub_algebraMap_mem_stabilizerHopfIdeal` and
   `TauCeti.Comodule.stabilizerHopfIdeal_le_iff`: its defining equations, and its universal property
   among Hopf ideals.
+* `TauCeti.Comodule.basePointsRepresentation_prodTrivial`: rational points act on `M × k`
+  through `M`, fixing the trivial coordinate.
 * `TauCeti.Comodule.stabilizerHopfIdeal_basePointsRepresentation`: acting on the vector
   conjugates its scheme-theoretic stabilizer.
 * `TauCeti.Comodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `v` is fixed.
@@ -139,25 +141,43 @@ private theorem baseChange_snd_endOfPoint {A : Type*} [CommRing A] [Algebra k A]
   let : Comodule k H k := trivial
   simpa [endOfPoint_trivial] using LinearMap.congr_fun (baseChange_comp_endOfPoint sndHom g) x
 
+/-- Points act on the first factor of `M × k` through their action on `M`. -/
+private theorem baseChange_fst_endOfPoint {A : Type*} [CommRing A] [Algebra k A]
+    (g : H →ₐ[k] A) (x : A ⊗[k] (M × k)) :
+    (LinearMap.fst k M k).baseChange A (endOfPoint (M × k) g x) =
+      endOfPoint M g ((LinearMap.fst k M k).baseChange A x) :=
+  LinearMap.congr_fun (baseChange_comp_endOfPoint fstHom g) x
+
+/-- A rational point acts on `M × k` through its action on `M`, fixing the trivial
+coordinate. -/
+@[simp]
+theorem basePointsRepresentation_prodTrivial (g : WithConv (H →ₐ[k] k)) (v : M) (c : k) :
+    basePointsRepresentation (H := H) (M × k) g (v, c) =
+      (basePointsRepresentation (H := H) M g v, c) := by
+  have hfst := baseChange_fst_endOfPoint g.ofConv (1 ⊗ₜ[k] (v, c))
+  have hsnd := baseChange_snd_endOfPoint g.ofConv (1 ⊗ₜ[k] (v, c))
+  simp only [endOfPoint_tmul, one_smul, endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation,
+    LinearMap.baseChange_tmul, LinearMap.fst_apply, LinearMap.snd_apply] at hfst hsnd
+  exact Prod.ext (by simpa using congrArg (TensorProduct.lid k M) hfst)
+    (by simpa using congrArg (TensorProduct.lid k k) hsnd)
+
 /-- The vector `v` is fixed by the action of an `A`-point exactly when `(v, 1)` is. -/
 private theorem endOfPoint_prodTrivial_eq_iff (v : M) {A : Type*} [CommRing A] [Algebra k A]
     (g : H →ₐ[k] A) :
     endOfPoint (M × k) g (1 ⊗ₜ[k] (v, 1)) = 1 ⊗ₜ[k] (v, 1) ↔
       endOfPoint M g (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
   let : Comodule k H k := trivial
-  have hfst (x : A ⊗[k] (M × k)) :
-      (LinearMap.fst k M k).baseChange A (endOfPoint (M × k) g x) =
-        endOfPoint M g ((LinearMap.fst k M k).baseChange A x) :=
-    LinearMap.congr_fun (baseChange_comp_endOfPoint fstHom g) x
   -- The two projections jointly detect equality, through `A ⊗ (M × k) ≃ (A ⊗ M) × (A ⊗ k)`.
   have hprod (x : A ⊗[k] (M × k)) : TensorProduct.prodRight k k A M k x =
       ((LinearMap.fst k M k).baseChange A x, (LinearMap.snd k M k).baseChange A x) := by
     induction x using TensorProduct.inductionOn with
     | tmul a m => simp
     | add x y hx hy => simp [hx, hy]
-  refine ⟨fun h ↦ by simpa using (hfst _).symm.trans congr((LinearMap.fst k M k).baseChange A $h),
+  refine ⟨fun h ↦ by
+      simpa using (baseChange_fst_endOfPoint g _).symm.trans
+        congr((LinearMap.fst k M k).baseChange A $h),
     fun h ↦ (TensorProduct.prodRight k k A M k).injective ?_⟩
-  rw [hprod, hprod, hfst, baseChange_snd_endOfPoint]
+  rw [hprod, hprod, baseChange_fst_endOfPoint, baseChange_snd_endOfPoint]
   simpa using h
 
 /-- An algebra-valued point lies in the stabilizer of `v` exactly when it fixes `1 ⊗ v`. -/
