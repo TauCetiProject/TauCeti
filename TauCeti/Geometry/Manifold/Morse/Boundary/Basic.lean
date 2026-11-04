@@ -41,6 +41,7 @@ hypothesis is needed.
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `morseTrajectorySlice`: the points of the trajectories from `p` to `q` on the middle level.
+* `neg_morseTrajectorySlice`: reversing the pseudo-gradient reverses the trajectories.
 * `IsMorseSmale.finite_morseTrajectorySlice`: for consecutive indices it is finite.
 * `IsMorseSmale.morseBoundaryCoeff`: the coefficient of `q` in the boundary of `p`.
 * `IsMorseSmale.morseBoundary`: the mod-two Morse boundary, an endomorphism of the free
@@ -90,6 +91,16 @@ theorem value_lt_of_mem_morseTrajectorySlice (hf : MDifferentiable 𝓘(ℝ, E) 
   rw [mem_morseTrajectorySlice] at hz
   have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq ⟨hz.1, hz.2.1⟩
   exact h.1.trans h.2
+
+/-- **Reversing the pseudo-gradient reverses the trajectories.** The middle-level slice of the
+trajectories of `-X` from `q` to `p` is the middle-level slice of the trajectories of `X` from `p`
+to `q`. -/
+theorem neg_morseTrajectorySlice (hf : IsMorse 𝓘(ℝ, E) f) (p q : M) :
+    (hX.neg hf).morseTrajectorySlice q p = hX.morseTrajectorySlice p q := by
+  ext z
+  simp only [mem_morseTrajectorySlice, hX.neg_flow hf, Flow.unstableSet_reverse,
+    Flow.stableSet_reverse, Pi.neg_apply]
+  exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
 
 omit hX in
 /-- **Finitely many trajectories between critical points of consecutive index.** Under the
