@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -40,6 +41,7 @@ every level, which is what a Petersson product for a congruence subgroup is an i
 
 * `ModularGroup.volume_fd_lt_top`: the standard fundamental domain has finite invariant
   measure.
+* `ModularGroup.volume_fd`: its invariant measure is `π / 3`.
 * `ModularGroup.volume_frontier_fd`: the frontier of `𝒟` has zero invariant measure.
 * `ModularGroup.fd_ae_eq_fdo`: `𝒟` and `𝒟ᵒ` agree almost everywhere (so set integrals
   over them coincide, via `MeasureTheory.setIntegral_congr_set`).
@@ -189,6 +191,21 @@ theorem volume_frontier_fd : (volume : Measure ℍ) (frontier (fd : Set ℍ)) = 
 theorem fd_ae_eq_fdo : (fd : Set ℍ) =ᶠ[ae (volume : Measure ℍ)] fdo :=
   ((fdo_eq_interior_fd.symm ▸ interior_ae_eq_of_null_frontier volume_frontier_fd :
     (fdo : Set ℍ) =ᶠ[ae (volume : Measure ℍ)] fd)).symm
+
+/-- **The area of the standard fundamental domain.** `𝒟` has invariant measure `π / 3`. It is the
+region above the unit semicircle between the verticals `re = -1/2` and `re = 1/2`, whose area is
+`arccos (-1/2) - arccos (1/2) = 2π/3 - π/3`. -/
+theorem volume_fd : (volume : Measure ℍ) fd = ENNReal.ofReal (Real.pi / 3) := by
+  have hfd : (fd : Set ℍ) = TauCeti.UpperHalfPlane.idealRegion (-(1 / 2)) (1 / 2) := by
+    ext z
+    simp only [fd, mem_ofPred_eq, TauCeti.UpperHalfPlane.mem_idealRegion_iff, abs_le]
+    tauto
+  have harccos : Real.arccos (1 / 2) = Real.pi / 3 := by
+    rw [← Real.cos_pi_div_three, Real.arccos_cos (by positivity) (by linarith [Real.pi_pos])]
+  rw [hfd, TauCeti.UpperHalfPlane.volume_idealRegion (by norm_num) (by norm_num) (by norm_num),
+    Real.arccos_neg, harccos]
+  congr 1
+  ring
 
 /-! ### Disjointness of translates of the open fundamental domain -/
 

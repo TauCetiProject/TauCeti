@@ -66,11 +66,11 @@ theorem ker_le_range_of_isUnit (d : M →ₗ[S] M) (hd : d ∘ₗ d = 0) (h : M 
   obtain ⟨u, hu⟩ := hu
   have hinv : Commute d ↑u⁻¹ := (hu ▸ hcomm).units_inv_right
   have hy : d ((↑u⁻¹ : Module.End S M) x) = 0 := by
-    rw [← Module.End.mul_apply, hinv.eq, Module.End.mul_apply, hx, map_zero]
+    rw [← mul_apply_eq_comp, hinv.eq, mul_apply_eq_comp, hx, map_zero]
   refine ⟨h ((↑u⁻¹ : Module.End S M) x), ?_⟩
-  have hx' : ((u : Module.End S M) * ↑u⁻¹) x = x := by rw [Units.mul_inv, Module.End.one_apply]
+  have hx' : ((u : Module.End S M) * ↑u⁻¹) x = x := by rw [Units.mul_inv, one_apply_eq_self]
   rw [hu] at hx'
-  simpa only [Module.End.mul_apply, LinearMap.add_apply, hy, map_zero, add_zero] using hx'
+  simpa only [mul_apply_eq_comp, LinearMap.add_apply, hy, map_zero, add_zero] using hx'
 
 end Semiring
 
@@ -153,8 +153,8 @@ theorem ker_le_range_of_matching {ι α : Type*} [LT α] (d : (ι →₀ S) →�
   refine d.ker_le_range_of_forall_mem_support_lt hd (h := h) w hw fun i ↦ ?_
   suffices H : (d * h + h * d - 1 : Module.End S (ι →₀ S)) (Finsupp.single i 1) ∈
       supported S S {j | w j < w i} from fun j hj ↦ (mem_supported S _).1 H hj
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, Module.End.mul_apply,
-    Module.End.one_apply]
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, mul_apply_eq_comp,
+    one_apply_eq_self]
   by_cases hi : src i
   · -- `h` kills the source `i` and sends the matching term of `d i` back to `i`.
     have hpi : ¬src (p i) := (hsrc i).1 hi

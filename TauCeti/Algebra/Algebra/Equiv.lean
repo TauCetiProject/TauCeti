@@ -9,10 +9,15 @@ public import Mathlib.Algebra.Algebra.Equiv
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 
 /-!
-# Cancelling factors in algebra automorphisms
+# Algebra automorphisms as ring automorphisms; cancelling factors
 
-These lemmas recover the action of an algebra automorphism on one factor from its action on a
-product or quotient and a fixed cancellable factor. An automorphism negating a nonzero element
+The underlying ring automorphism of an algebra automorphism turns the identity and product of
+`A ≃ₐ[R] A` into the identity and composition of ring equivalences
+(`AlgEquiv.toRingEquiv_one`, `AlgEquiv.toRingEquiv_mul`). For inverses, Mathlib's
+`AlgEquiv.aut_inv` and `AlgEquiv.symm_toRingEquiv` already apply.
+
+The remaining lemmas recover the action of an algebra automorphism on one factor from its action
+on a product or quotient and a fixed cancellable factor. An automorphism negating a nonzero element
 is nontrivial when multiplication by `2` is injective. An automorphism multiplying an element by a
 fixed factor `c` multiplies it by `cᵏ` under its `k`-th power.
 -/
@@ -20,6 +25,24 @@ fixed factor `c` multiplies it by `cᵏ` under its `k`-th power.
 public section
 
 namespace AlgEquiv
+
+section ToRingEquiv
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- The identity algebra automorphism is the identity ring automorphism. -/
+@[simp]
+theorem toRingEquiv_one : ((1 : A ≃ₐ[R] A) : A ≃+* A) = RingEquiv.refl A :=
+  (rfl)
+
+/-- A product of algebra automorphisms is the composite of the ring automorphisms, the right
+factor applied first. -/
+@[simp]
+theorem toRingEquiv_mul (σ τ : A ≃ₐ[R] A) :
+    ((σ * τ : A ≃ₐ[R] A) : A ≃+* A) = (τ : A ≃+* A).trans σ :=
+  (rfl)
+
+end ToRingEquiv
 
 /-- Cancel a fixed left-regular factor to show that an automorphism fixes the other factor. -/
 theorem apply_eq_self_of_apply_mul_eq_mul {F L : Type*} [CommSemiring F] [Semiring L]

@@ -164,7 +164,7 @@ private theorem rep_rootGenerator_rep_rootGenerator_eq_zero
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
         (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k)) v) = 0 := by
   have h := DFunLike.congr_fun (pow_two_rep_serreRootGenerator_eq_zero k) v
-  simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-! ## The pinned carrier -/
 

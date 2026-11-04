@@ -83,7 +83,7 @@ theorem gaussSum_pow_modEq_neg_one {R : Type*} [CommRing R] [IsDomain R] {l : �
   rw [SModEq.sub_mem, ← Ideal.Quotient.eq, ← gaussSum_one_left hψ, ← hχ, map_pow, gaussSum,
     gaussSum, map_sum, map_sum, sum_pow_char]
   simp only [map_mul, mul_pow, ← map_pow, ← MulChar.pow_apply' χ (Fact.out : l.Prime).ne_zero,
-    AddChar.pow_apply]
+    _root_.pow_apply]
 
 /-- **The Frobenius on a Gauss sum.** Let `R` have prime characteristic `p` and let `q = p ^ n` be
 invertible in the finite ring `A`. If the multiplicative character `χ` satisfies `χ ^ q = χ`,
@@ -98,7 +98,7 @@ theorem gaussSum_pow_char_pow {A : Type*} [CommRing A] [Fintype A] {R : Type*} [
     rw [gaussSum, gaussSum, sum_pow_char_pow]
     refine Finset.sum_congr rfl fun x _ ↦ ?_
     rw [mul_pow, ← MulChar.pow_apply' χ (pow_ne_zero n (Fact.out : p.Prime).ne_zero), hχ,
-      AddChar.pow_apply]
+      _root_.pow_apply]
   rw [h, AddChar.pow_mulShift, Nat.cast_pow, ← hq.unit_spec, gaussSum_mulShift_eq]
 
 omit [Fintype F] in

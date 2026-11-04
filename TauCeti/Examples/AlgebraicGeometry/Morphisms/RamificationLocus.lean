@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Smooth.Flat
 public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
@@ -23,12 +24,20 @@ For a field `k`, these examples compute the loci of three morphisms of affine sp
   ramification locus is empty while its non-étale locus is the whole of `Spec k`: the two loci in
   the source differ in general;
 * in characteristic `p > 0`, the relative Frobenius `𝔸¹_k ⟶ 𝔸¹_k`, `t ↦ tᵖ`, is finite and
-  dominant but ramified everywhere, since `d(tᵖ) = 0`. As `𝔸¹_k` is also regular and integral
-  (not formalized here), purity of the ramification locus in codimension one must exclude a
-  ramification locus that is the whole source;
-* if `2 ≠ 0` in `k`, the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (u, v) = (x², y)`, has ramification locus
-  `V(x)` and branch locus `V(u)` (`TauCeti.AlgebraicGeometry.ramificationLocus_square` and
-  `TauCeti.AlgebraicGeometry.branchLocus_square`).
+  dominant between regular integral schemes but ramified everywhere, since `d(tᵖ) = 0`. So purity
+  of the ramification locus in codimension one must exclude a ramification locus that is the
+  whole source;
+* if `2 ≠ 0` in `k`, the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (u, v) = (x², y)`, is finite and dominant
+  between regular integral schemes. Its ramification locus is `V(x)`
+  (`TauCeti.AlgebraicGeometry.ramificationLocus_square`), and so is its non-étale locus
+  (`TauCeti.AlgebraicGeometry.nonEtaleLocus_square`), as it must be by
+  `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_nonEtaleLocus`. In particular the map is not
+  étale at the origin, where it is ramified at the codimension-one point `(x)`: purity of the
+  branch locus cannot drop its hypothesis at codimension-one points. The branch locus is `V(u)`
+  (`TauCeti.AlgebraicGeometry.branchLocus_square`), with generic point `(u)`
+  (`TauCeti.AlgebraicGeometry.isGenericPoint_branchLocus_square`), at which the local ring of
+  `𝔸²_k` has dimension one: the branch locus is irreducible of codimension one, as purity of the
+  branch locus predicts.
 
 The ramification loci are computed as supports of the module of Kähler differentials, through
 `RingHom.support_subset_ramificationLocus_specMap` and
@@ -124,6 +133,12 @@ example : (Spec.map (CommRingCat.ofHom (expand k p).toRingHom)).ramificationLocu
   · rw [eq_top_iff, ← Ideal.span_singleton_one, Ideal.span_le, Set.singleton_subset_iff]
     exact Submodule.subset_span ⟨X, by simp⟩
 
+/-- *test_ramificationLocus_frobenius*: `𝔸¹_k` is regular. -/
+example : AlgebraicGeometry.IsRegular (Spec (CommRingCat.of k[X])) := inferInstance
+
+/-- *test_ramificationLocus_frobenius*: `𝔸¹_k` is integral. -/
+example : IsIntegral (Spec (CommRingCat.of k[X])) := inferInstance
+
 end Frobenius
 
 section Square
@@ -139,6 +154,21 @@ private noncomputable abbrev squareMap : MvPolynomial (Fin 2) k →ₐ[k] MvPoly
 private theorem squareMap_X_zero : squareMap k (X 0) = X 0 ^ 2 := by simp [squareMap]
 
 private theorem squareMap_X_one : squareMap k (X 1) = X 1 := by simp [squareMap]
+
+/-- Over `k[y]`, the squaring map is the expansion `x ↦ x²` of polynomials in `x`. -/
+private theorem finSuccEquiv_squareMap (f : MvPolynomial (Fin 2) k) :
+    finSuccEquiv k 1 (squareMap k f) = Polynomial.expand _ 2 (finSuccEquiv k 1 f) := by
+  have h1 : finSuccEquiv k 1 (X 1) = Polynomial.C (X 0) := finSuccEquiv_X_succ (j := 0)
+  have H : (finSuccEquiv k 1).toRingHom.comp (squareMap k).toRingHom =
+      (Polynomial.expand _ 2).toRingHom.comp (finSuccEquiv k 1).toRingHom := by
+    refine MvPolynomial.ringHom_ext (fun a ↦ ?_) fun i ↦ ?_
+    · simp [squareMap, finSuccEquiv_apply]
+    · fin_cases i <;> simp [squareMap, h1, finSuccEquiv_X_zero]
+  simpa using RingHom.congr_fun H f
+
+private theorem squareMap_injective : Function.Injective (squareMap k) := fun f g h ↦
+  (finSuccEquiv k 1).injective <| Polynomial.expand_injective two_pos <| by
+    rw [← finSuccEquiv_squareMap, ← finSuccEquiv_squareMap, h]
 
 /-- The ramification locus of the squaring map lies in `V(x)` when `2 ≠ 0` in `k`. -/
 private theorem ramificationLocus_squareMap_subset (h2 : (2 : k) ≠ 0) :
@@ -231,6 +261,91 @@ theorem AlgebraicGeometry.branchLocus_square (h2 : (2 : k) ≠ 0) :
       ).branchLocus = PrimeSpectrum.zeroLocus {X 0} := by
   rw [Scheme.Hom.branchLocus_def, AlgebraicGeometry.ramificationLocus_square k h2]
   exact (Set.image_congr fun q _ ↦ Spec.map_apply _ q).trans (image_comap_squareMap_zeroLocus k)
+
+/-- *test_purity_needs_codimOne*: `𝔸²_k`, the source and target of the squaring map, is
+regular. -/
+example : AlgebraicGeometry.IsRegular (Spec (CommRingCat.of (MvPolynomial (Fin 2) k))) :=
+  inferInstance
+
+/-- *test_purity_needs_codimOne*: the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (x², y)`, is finite, since
+`x` is a root of the monic polynomial `T² - x²` over `k[x², y]`. -/
+private theorem isFinite_specMap_squareMap :
+    IsFinite (Spec.map (CommRingCat.ofHom (squareMap k).toRingHom)) := by
+  rw [IsFinite.SpecMap_iff]
+  refine RingHom.IsIntegral.to_finite (fun f ↦ ?_) (.of_comp_finiteType
+    (f := algebraMap k (MvPolynomial (Fin 2) k)) ?_)
+  · have hX (i : Fin 2) : (squareMap k).toRingHom.IsIntegralElem (X i) := by
+      fin_cases i
+      · exact ⟨Polynomial.X ^ 2 - Polynomial.C (X 0), Polynomial.monic_X_pow_sub_C _ two_ne_zero,
+          by simp [squareMap]⟩
+      · simpa [squareMap] using (squareMap k).toRingHom.isIntegralElem_map (x := X 1)
+    induction f using MvPolynomial.induction_on with
+    | C a => simpa using (squareMap k).toRingHom.isIntegralElem_map (x := C a)
+    | add f g hf hg => exact hf.add _ hg
+    | mul_X f i h => exact h.mul _ (hX i)
+  · convert (RingHom.finiteType_algebraMap (A := k) (B := MvPolynomial (Fin 2) k)).mpr
+      inferInstance
+    exact RingHom.ext (squareMap k).commutes
+
+/-- *test_purity_branchLocus_square*: the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (x², y)`, is dominant,
+since the substitution `(x, y) ↦ (x², y)` is injective. -/
+private theorem isDominant_specMap_squareMap :
+    IsDominant (Spec.map (CommRingCat.ofHom (squareMap k).toRingHom)) :=
+  ⟨RingHom.denseRange_comap_of_injective _ (squareMap_injective k)⟩
+
+/-- *test_purity_branchLocus_square*: if `2 ≠ 0` in `k`, the map `𝔸²_k ⟶ 𝔸²_k`,
+`(x, y) ↦ (x², y)`, has non-étale locus `V(x)`, equal to its ramification locus. -/
+theorem AlgebraicGeometry.nonEtaleLocus_square (h2 : (2 : k) ≠ 0) :
+    (Spec.map (CommRingCat.ofHom
+      (aeval ![X 0 ^ 2, X 1] : MvPolynomial (Fin 2) k →ₐ[k] MvPolynomial (Fin 2) k).toRingHom)
+      ).nonEtaleLocus = PrimeSpectrum.zeroLocus {X 0} := by
+  have := isFinite_specMap_squareMap k
+  have := isDominant_specMap_squareMap k
+  rw [← Scheme.Hom.ramificationLocus_eq_nonEtaleLocus,
+    AlgebraicGeometry.ramificationLocus_square k h2]
+
+/-- *test_purity_needs_codimOne*: if `2 ≠ 0` in `k`, the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (x², y)`,
+is not étale at the origin `(x, y)`, the kernel of the constant coefficient. The map is finite
+and `𝔸²_k` is regular, but the map is ramified at the codimension-one point `(x)` specializing to
+the origin. -/
+example (h2 : (2 : k) ≠ 0) :
+    (⟨RingHom.ker (constantCoeff : MvPolynomial (Fin 2) k →+* k),
+      (RingHom.ker_isMaximal_of_surjective (constantCoeff : MvPolynomial (Fin 2) k →+* k)
+        fun a ↦ ⟨C a, constantCoeff_C (Fin 2) a⟩).isPrime⟩ :
+        Spec (CommRingCat.of (MvPolynomial (Fin 2) k))) ∈
+    (Spec.map (CommRingCat.ofHom
+      (aeval ![X 0 ^ 2, X 1] : MvPolynomial (Fin 2) k →ₐ[k] MvPolynomial (Fin 2) k).toRingHom)
+      ).nonEtaleLocus := by
+  rw [AlgebraicGeometry.nonEtaleLocus_square k h2]
+  exact (PrimeSpectrum.mem_zeroLocus _ _).mpr <| Set.singleton_subset_iff.mpr <|
+    RingHom.mem_ker.mpr (constantCoeff_X _ _)
+
+/-- *test_purity_branchLocus_square*: if `2 ≠ 0` in `k`, the branch locus `V(u)` of the map
+`𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (u, v) = (x², y)`, is irreducible, with generic point `(u)`. -/
+theorem AlgebraicGeometry.isGenericPoint_branchLocus_square (h2 : (2 : k) ≠ 0) :
+    IsGenericPoint (⟨Ideal.span {X 0}, (Ideal.span_singleton_prime (X_ne_zero _)).mpr prime_X⟩ :
+        Spec (CommRingCat.of (MvPolynomial (Fin 2) k)))
+      (Spec.map (CommRingCat.ofHom
+        (aeval ![X 0 ^ 2, X 1] : MvPolynomial (Fin 2) k →ₐ[k] MvPolynomial (Fin 2) k).toRingHom)
+        ).branchLocus := by
+  rw [AlgebraicGeometry.branchLocus_square k h2, IsGenericPoint, PrimeSpectrum.closure_singleton,
+    PrimeSpectrum.zeroLocus_span]
+
+/-- *test_purity_branchLocus_square*: the point `(u)` of `𝔸²_k` has codimension one: the local
+ring of `𝔸²_k` there has dimension one. If `2 ≠ 0` in `k`, then `(u)` is the generic point of the
+branch locus of the map `𝔸²_k ⟶ 𝔸²_k`, `(x, y) ↦ (u, v) = (x², y)`
+(`isGenericPoint_branchLocus_square`). -/
+example :
+    ringKrullDim ((Spec (CommRingCat.of (MvPolynomial (Fin 2) k))).presheaf.stalk
+      (⟨Ideal.span {X 0}, (Ideal.span_singleton_prime (X_ne_zero _)).mpr prime_X⟩ :
+        Spec (CommRingCat.of (MvPolynomial (Fin 2) k)))) = 1 := by
+  -- `rw [ringKrullDim_stalk_eq_coheight, ← idealHeight_eq_coheight]` cannot match: the point is
+  -- elaborated as a `PrimeSpectrum` term rather than a point of `Spec`, so we chain with `trans`.
+  refine (ringKrullDim_stalk_eq_coheight _).trans
+    ((congrArg _ (idealHeight_eq_coheight _ _).symm).trans ?_)
+  rw [Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero (X_ne_zero _)) prime_X.not_isUnit]
+  norm_cast
 
 end Square
 

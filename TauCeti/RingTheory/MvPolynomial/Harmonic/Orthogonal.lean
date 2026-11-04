@@ -71,7 +71,7 @@ theorem laplacian_linearSubst (M : Matrix σ σ R) (p : MvPolynomial σ R) :
     laplacian (linearSubst M p) =
       ∑ i, ∑ k, C ((M * Mᵀ) i k) * linearSubst M (pderiv k (pderiv i p)) := by
   simp only [laplacian_apply, pderiv_linearSubst, map_sum, pderiv_C_mul, Finset.mul_sum,
-    mul_apply, transpose_apply, map_mul, Finset.sum_mul, mul_assoc]
+    Matrix.mul_apply, transpose_apply, map_mul, Finset.sum_mul, mul_assoc]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
 
@@ -81,13 +81,13 @@ theorem laplacian_linearSubst_of_mul_transpose_eq_one [DecidableEq σ] {M : Matr
     (hM : M * Mᵀ = 1) (p : MvPolynomial σ R) :
     laplacian (linearSubst M p) = linearSubst M (laplacian p) := by
   rw [laplacian_linearSubst, hM]
-  simp [one_apply, laplacian_apply]
+  simp [Matrix.one_apply, laplacian_apply]
 
 /-- A substitution along a matrix with `Mᵀ M = 1` fixes the squared norm `r² = ∑ᵢ Xᵢ²`. -/
 theorem linearSubst_normSq_of_transpose_mul_eq_one [DecidableEq σ] {M : Matrix σ σ R}
     (hM : Mᵀ * M = 1) : linearSubst M (normSq σ R) = normSq σ R := by
   have hMjk (j k : σ) : ∑ i, M i j * M i k = if j = k then 1 else 0 := by
-    simpa [mul_apply, one_apply] using congrFun (congrFun hM j) k
+    simpa [Matrix.mul_apply, Matrix.one_apply] using congrFun (congrFun hM j) k
   -- Expanding `∑ᵢ (∑ⱼ Mᵢⱼ Xⱼ)²` gives `∑ⱼₖ (Mᵀ M)ⱼₖ Xⱼ Xₖ`.
   have hsum (j k : σ) : ∑ i, C (M i j) * X j * (C (M i k) * X k) =
       C (∑ i, M i j * M i k) * (X j * X k : MvPolynomial σ R) := by

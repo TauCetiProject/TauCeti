@@ -81,7 +81,7 @@ theorem adjugateGL_rightCosetRep (v : DecompQuotient Γ₂ Γ₁ (D.out : GL (Fi
   have hinv : (((((v.out : Γ₂) : GL (Fin 2) ℚ))⁻¹ : GL (Fin 2) ℚ) :
       Matrix (Fin 2) (Fin 2) ℚ).det = 1 := by
     rw [Matrix.coe_units_inv, Matrix.det_nonsing_inv, hdet, Ring.inverse_one]
-  rw [rightCosetRep_def, adjugateGL_mul, adjugateGL_eq_inv hinv, inv_inv]
+  rw [rightCosetRep_def, adjugateGL_mul, adjugateGL_eq_inv_iff.mpr hinv, inv_inv]
 
 /-- **A `Γ₂`-invariant function does not see which right-coset representative it is slashed by,
 once the adjugate is taken**: `g ∣[k] aᵥ^ι = g ∣[k] δ^ι` for every `v`.

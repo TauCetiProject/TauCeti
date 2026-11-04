@@ -185,7 +185,7 @@ theorem IsHermitian.star_eigenvectorUnitary_mul_eigenvectorUnitary_apply {B : Ma
     (hA : A.IsHermitian) (hB : B.IsHermitian) (i j : n) :
     (star (hA.eigenvectorUnitary : Matrix n n 𝕜) * hB.eigenvectorUnitary) i j =
       ⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜 := by
-  simp [mul_apply, EuclideanSpace.inner_eq_star_dotProduct, dotProduct, mul_comm]
+  simp [Matrix.mul_apply, EuclideanSpace.inner_eq_star_dotProduct, dotProduct, mul_comm]
 
 /-- **The trace of a product of two functional calculi.** For Hermitian `A` and `B` with
 eigenvalues `aᵢ`, `bⱼ` and orthonormal eigenvectors `uᵢ`, `vⱼ`,
@@ -211,7 +211,7 @@ theorem IsHermitian.trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermitian)
   rw [hA.cfc_eq, hB.cfc_eq, IsHermitian.cfc, IsHermitian.cfc, Unitary.conjStarAlgAut_apply,
     Unitary.conjStarAlgAut_apply, key, trace_mul_cycle, hUU, one_mul, trace]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [diag_apply, mul_apply]
+  rw [diag_apply, Matrix.mul_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [mul_diagonal, diagonal_mul, star_apply, Function.comp_apply, hW]
   rw [hU, hV, star_eigenvectorUnitary_mul_eigenvectorUnitary_apply, RCLike.star_def]

@@ -167,17 +167,17 @@ section Tracking
 variable (p : ℕ)
 
 /-- The length `p ^ v_p(e)` given to a syllable with exponent `e`. -/
-private def weight (e : ℤ) : ℕ :=
+private noncomputable def weight (e : ℤ) : ℕ :=
   p ^ padicValInt p e
 
 /-- The letters spelling `x₁ ^ t₁ ⋯ x_k ^ t_k` in positions `1, 2, …`, where `tᵢ` is the weight
 of the `i`-th syllable. -/
-private def letters : List (X × ℤ) → ℕ → Option X
+private noncomputable def letters : List (X × ℤ) → ℕ → Option X
   | [], _ => none
   | a :: s, j => if j ≤ weight p a.2 then some a.1 else letters s (j - weight p a.2)
 
 /-- The total weight of a syllable list. -/
-private def totalWeight (s : List (X × ℤ)) : ℕ :=
+private noncomputable def totalWeight (s : List (X × ℤ)) : ℕ :=
   (s.map fun a ↦ weight p a.2).sum
 
 variable {p} (ℓ : ℕ → Option X) (D : ℕ)
@@ -291,11 +291,14 @@ private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (
       -- Normalize the matrix index difference to the weight of this syllable.
       rw [coe_rep_of_zpow, one_add_shift_pow_apply, ite_eq_left ⟨by omega, by rwa [ha, hb]⟩,
         show (b : ℕ) - a = p ^ padicValInt p e by rw [ha, hb]; simp [weight]]
-      refine TauCeti.choose_emod_ne_zero (e := e) (hs0 _ List.mem_cons_self) ?_
-      have := Nat.lt_pow_self hp.out.one_lt (n := padicValInt p e)
-      have : weight p e ≤ D := by omega
-      simp only [weight] at this
-      omega
+      refine TauCeti.natCast_choose_pow_padicValInt_ne_zero_of_modEq (e := e) (K := D + 1)
+        (hs0 _ List.mem_cons_self) ?_ ?_
+      · have := Nat.lt_pow_self hp.out.one_lt (n := padicValInt p e)
+        have : weight p e ≤ D := by omega
+        simp only [weight] at this
+        omega
+      · rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by simp [hp.out.ne_zero]))]
+        exact_mod_cast Int.mod_modEq _ _
     -- Position `L + weight p e` is spelled `x`, which differs from the next syllable's letter.
     · intro c hc
       right

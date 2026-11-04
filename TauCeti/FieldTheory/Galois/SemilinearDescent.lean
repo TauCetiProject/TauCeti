@@ -145,7 +145,7 @@ theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F
       (AlgHom.liftEquiv k L (fixedField ρ.range) F (fixedField ρ.range).val) := by
   let f := AlgHom.liftEquiv k L (fixedField ρ.range) F (fixedField ρ.range).val
   refine ⟨?_, ?_⟩
-  · have h := liftBaseChange_injective_of_invariant (ρ := toRepresentation ρ)
+  · have h := liftBaseChange_injective_of_invariant (L := L) (ρ := toRepresentation ρ)
       (f := (fixedField ρ.range).val.toLinearMap) Subtype.val_injective fun σ a x ↦ by
         simp [apply_smul hρ, (mem_fixedField_iff _ _).mp x.2 (ρ σ) ⟨σ, rfl⟩]
     rwa [← AlgHom.liftEquiv_toLinearMap] at h

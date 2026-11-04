@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Order.Interval.Set.UnorderedInterval
 
 /-!
-# Finite sums over ordered filters
+# Finite sums over filters
 
 This file records elementary consequences of a finite family being zero away from an initial
 interval.  They are useful whenever a filtered finite sum is evaluated after all of its nonzero
 terms have been passed.
+
+It also gives positivity of the sum of a positive family over all indices except one, when the
+index type has at least two elements.
 -/
 
 public section
@@ -22,6 +25,14 @@ open Set
 open scoped BigOperators
 
 namespace Finset
+
+/-- For a positive family on a finite type with at least two elements, the sum over all indices
+other than a given one is positive. -/
+theorem sum_filter_ne_pos {ι M : Type*} [Fintype ι] [DecidableEq ι] [Nontrivial ι]
+    [AddCommMonoid M] [Preorder M] [IsOrderedCancelAddMonoid M] [AddLeftStrictMono M] {a : ι → M}
+    (ha : ∀ i, 0 < a i) (i : ι) : 0 < ∑ j with j ≠ i, a j := by
+  obtain ⟨j, hj⟩ := exists_ne i
+  exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
 
 variable {ι α M : Type*} [Preorder α] [AddCommMonoid M]
 

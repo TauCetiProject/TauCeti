@@ -22,7 +22,7 @@ This applies to the divided monomial deformation of a Lazard evaluation: its cen
 is nonzero even when the ordinary fiber is nullified. It identifies all finite branch limits
 with that evaluation's root multiset, without assuming a root count or a matching at the
 center. Repeated limits and an empty family of branches are allowed. The scalar balance uses
-Mathlib’s `AnalyticAt.unique_eventuallyEq_zpow_smul_nonzero`.
+Mathlib’s `AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero`.
 
 ## References
 
@@ -123,7 +123,7 @@ theorem eq_C_mul_prod_of_laurent
     simpa only [Multiset.mem_toFinset, mem_roots (mul_ne_zero hF0 hHne), IsRoot,
       eval_mul] using hz
   have hbalance : a + ∑ i, min (e i) 0 = 0 := by
-    apply AnalyticAt.unique_eventuallyEq_zpow_smul_nonzero
+    apply AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero
       (f := fun y ↦ (F y).eval z) (z₀ := (0 : 𝕜))
     · refine ⟨_, hHA z, mul_ne_zero hu0 (mul_ne_zero_iff.mp hz').2, ?_⟩
       filter_upwards [hrewrite] with y hy

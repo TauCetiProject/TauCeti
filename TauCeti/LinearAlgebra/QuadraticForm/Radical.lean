@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 
 /-!
 # Radical API for quadratic forms
@@ -48,6 +49,8 @@ regular case.
   into a zero map and a map with trivial radical has finrank equal to the radical.
 * `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
   trivial kernel is nondegenerate.
+* `QuadraticMap.nondegenerate_of_isCompl`: a quadratic map vanishing on two complementary
+  submodules which its polar form pairs perfectly is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a finite-dimensional subspace on which the
@@ -181,6 +184,24 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   rw [hker]
   nontriviality R
   simp only [rank_subsingleton', zero_le]
+
+/-- A quadratic map vanishing on two complementary submodules `A` and `B` is nondegenerate when
+its polar form pairs them perfectly: no nonzero vector of `A` is polar orthogonal to all of `B`,
+and no nonzero vector of `B` is polar orthogonal to all of `A`. This holds in every
+characteristic. -/
+theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
+    (hAB : IsCompl A B) (hA : Q.IsTotallyIsotropic A) (hB : Q.IsTotallyIsotropic B)
+    (hAB_sep : ∀ a ∈ A, (∀ b ∈ B, polar Q a b = 0) → a = 0)
+    (hBA_sep : ∀ b ∈ B, (∀ a ∈ A, polar Q a b = 0) → b = 0) : Q.Nondegenerate := by
+  refine nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.ker_eq_bot'.mpr fun x hx ↦ ?_)
+  obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp (hAB.sup_eq_top ▸ Submodule.mem_top (x := x))
+  have hx' (y : M) : polar Q (a + b) y = 0 := by
+    simpa only [polarBilin_apply_apply, LinearMap.zero_apply] using LinearMap.congr_fun hx y
+  have ha0 : a = 0 := hAB_sep a ha fun b' hb' ↦ by
+    simpa only [polar_add_left, hB.polar_eq_zero hb hb', add_zero] using hx' b'
+  have hb0 : b = 0 := hBA_sep b hb fun a' ha' ↦ by
+    simpa only [polar_add_left, hA.polar_eq_zero ha ha', zero_add, polar_comm Q b a'] using hx' a'
+  simp [ha0, hb0]
 
 /-- The polar orthogonal complement of a complement to the radical is the radical. -/
 theorem orthogonal_polarBilin_eq_radical_of_isCompl [Invertible (2 : R)]

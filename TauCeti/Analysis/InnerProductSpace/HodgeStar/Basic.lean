@@ -298,7 +298,7 @@ private theorem two_mul_finrank_eigenspace_hodgeStar {k : ℕ} (hk : Even k) (hk
   have hker : LinearMap.ker (1 + -(ε • S)) = Module.End.eigenspace S ε := by
     ext x
     simp only [LinearMap.mem_ker, Module.End.mem_eigenspace_iff, LinearMap.add_apply,
-      Module.End.one_apply, LinearMap.neg_apply, LinearMap.smul_apply, add_neg_eq_zero]
+      one_apply_eq_self, LinearMap.neg_apply, LinearMap.smul_apply, add_neg_eq_zero]
     refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, smul_smul, hε, one_smul]⟩
     conv_rhs => rw [h]
     rw [smul_smul, hε, one_smul]

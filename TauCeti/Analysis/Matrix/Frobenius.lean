@@ -105,7 +105,8 @@ theorem frobenius_real_inner_eq_sum_mul (A B : Matrix m n ℝ) :
 /-- The Frobenius inner product of matrices over `𝕜` is the trace of `Aᴴ * B`. -/
 theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     ⟪A, B⟫_𝕜 = (Aᴴ * B).trace := by
-  simp only [frobenius_inner_eq_sum_conj_mul, trace, diag_apply, mul_apply, conjTranspose_apply,
+  simp only [frobenius_inner_eq_sum_conj_mul, trace, diag_apply, Matrix.mul_apply,
+    conjTranspose_apply,
     RCLike.star_def]
   exact Finset.sum_comm
 

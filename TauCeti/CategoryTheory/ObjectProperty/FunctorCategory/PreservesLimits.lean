@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Adjunction.Limits
+
 public import Mathlib.CategoryTheory.ObjectProperty.FunctorCategory.PreservesLimits
 
 /-!

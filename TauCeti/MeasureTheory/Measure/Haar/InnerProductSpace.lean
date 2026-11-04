@@ -41,6 +41,8 @@ conditions on single coordinates, such as polydiscs, are measured.
   components of `a` along `K` and `Kᗮ`.
 * `MeasureTheory.Measure.addHaar_setOf_fst_eq`: a hyperplane `{a} × E` of the Euclidean product
   `ℝ × E` is null for every additive Haar measure.
+* `MeasureTheory.Measure.addHaar_setOf_inner_eq`: so is a hyperplane `{y | ⟪y, ν⟫ = c}` with
+  `ν ≠ 0`.
 * `PiLp.volume_preserving_symm_measurableEquiv_toLp`: the volume of `PiLp 2 F` is the product of
   the volumes of the factors.
 
@@ -146,6 +148,22 @@ theorem addHaar_setOf_fst_eq (μ : Measure (WithLp 2 (ℝ × E))) [μ.IsAddHaarM
     simp at hmem
   rw [← hs]
   exact addHaar_affineSubspace μ s hne
+
+open scoped RealInnerProductSpace in
+/-- A hyperplane `{y | ⟪y, ν⟫ = c}` with `ν ≠ 0` is a null set for every additive Haar measure. -/
+theorem addHaar_setOf_inner_eq (μ : Measure E) [μ.IsAddHaarMeasure] {ν : E} (hν : ν ≠ 0)
+    (c : ℝ) : μ {y | ⟪y, ν⟫ = c} = 0 := by
+  have hν2 : ⟪ν, ν⟫ ≠ 0 := inner_self_ne_zero.2 hν
+  -- The hyperplane is a translate of the proper subspace `K = {y | ⟪ν, y⟫ = 0}`.
+  set K : Submodule ℝ E := LinearMap.ker (innerₛₗ ℝ ν)
+  have hK : K ≠ ⊤ := fun h => hν2 (by simpa [K] using (h ▸ Submodule.mem_top : ν ∈ K))
+  have hs : {y | ⟪y, ν⟫ = c} = (· + -((c / ⟪ν, ν⟫) • ν)) ⁻¹' (K : Set E) := by
+    ext y
+    simp only [K, Set.mem_ofPred_eq, Set.mem_preimage, SetLike.mem_coe, LinearMap.mem_ker,
+      innerₛₗ_apply_apply, inner_add_right, inner_neg_right, real_inner_smul_right,
+      div_mul_cancel₀ _ hν2, real_inner_comm y ν, add_neg_eq_zero]
+  rw [hs, measure_preimage_add_right]
+  exact addHaar_submodule μ K hK
 
 end MeasureTheory.Measure
 

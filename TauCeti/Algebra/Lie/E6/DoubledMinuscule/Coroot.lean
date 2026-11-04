@@ -101,13 +101,13 @@ theorem tangentMatrixLieHom_cartanVector (i : Fin 6) :
     tangentMatrixLieHom (cartanVector (B := B) i) =
       Matrix.diagonal fun a ↦ (matrixWeight a i : B) := by
   rw [cartanVector_def, LieHom.map_lie, tangentMatrixLieHom_rootVector,
-    tangentMatrixLieHom_rootVector, rootIntMatrix_eq_reindex, rootIntMatrix_eq_reindex]
+    tangentMatrixLieHom_rootVector, rootIntMatrix_inl, rootIntMatrix_inr]
   have h := ((isSerreSystem.map
     (Matrix.reindexLieEquiv matrixIndexEquiv).toLieHom).map
       (matrixIntCastLieHom B)).lie_E_F_self i
   simp only [Function.comp_apply, LieEquiv.coe_toLieHom, Matrix.reindexLieEquiv_apply,
     matrixIntCastLieHom_eq_map] at h
-  rw [Sum.elim_inl, Sum.elim_inr, h]
+  rw [h]
   ext a b
   simp only [Matrix.map_apply, Matrix.reindex_apply, Matrix.submatrix_apply,
     cartanGeneratorMatrix_apply, Matrix.diagonal_apply, matrixWeight_apply]
