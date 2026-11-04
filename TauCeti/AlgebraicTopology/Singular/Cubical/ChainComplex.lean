@@ -116,6 +116,15 @@ theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ 
     ((normalizedCubicalChainComplex R).map f).f n x = NormalizedCubicalChain.map R f.hom n x :=
   (rfl)
 
+/-- Under the concrete term identifications, a map of cubical complexes is the push-forward
+of normalized chains. -/
+theorem normalizedCubicalChainComplexXEquiv_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (n : ℕ) (x : ((normalizedCubicalChainComplex R).obj X).X n) :
+    normalizedCubicalChainComplexXEquiv Y n
+        (((normalizedCubicalChainComplex R).map f).f n x) =
+      NormalizedCubicalChain.map R f.hom n (normalizedCubicalChainComplexXEquiv X n x) :=
+  (rfl)
+
 /-- The terms of the normalized cubical chain complex are projective modules. -/
 instance (X : TopCat.{u}) (n : ℕ) :
     Module.Projective R (((normalizedCubicalChainComplex R).obj X).X n) :=
