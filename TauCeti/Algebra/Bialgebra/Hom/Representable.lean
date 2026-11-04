@@ -283,6 +283,12 @@ theorem homEquiv_comp_one_tmul {T' : Type*} [CommRing T'] [Algebra R T']
 instance instFinitePresentation : Algebra.FinitePresentation R (HomAlgebra R H G) :=
   Algebra.FinitePresentation.quotient (ideal_fg R H G)
 
+/-- The closed locus of monoid homomorphisms is finite whenever the ambient scheme of
+maps is finite. -/
+instance instModuleFinite [Module.Finite R (TauCeti.Algebra.WeilRestriction R G (G ⊗[R] H))] :
+    Module.Finite R (HomAlgebra R H G) :=
+  inferInstanceAs (Module.Finite R (Ambient R H G ⧸ ideal R H G))
+
 section BaseChange
 
 open TauCeti.Bialgebra.TensorProduct (baseChangeTowerBialgEquiv)
