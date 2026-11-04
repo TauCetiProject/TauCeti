@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Matrix.PEquiv
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 
@@ -20,7 +21,9 @@ indexed by `κ → n` whose `(v, u)` entry is `∏ i, A (v i) (u i)`. It is the 
 every factor of the `κ`-indexed tensor power, in the monomial bases.
 
 The Kronecker power is multiplicative and commutes with transposition, so if `Aᵀ * A = 1` then
-the Kronecker power satisfies the same identity.
+the Kronecker power satisfies the same identity. The Kronecker power of a diagonal matrix is
+diagonal, and that of the matrix of an equivalence `f` is the matrix of the equivalence
+`v ↦ f ∘ v` of index functions.
 
 ## Main definitions
 
@@ -36,6 +39,8 @@ the Kronecker power satisfies the same identity.
   in every factor of the tensor power, in the monomial basis.
 * `Matrix.apply_comp_mul_prod_of_commute_kroneckerPower`: a matrix commuting with the Kronecker
   power of a monomial matrix is invariant under the relabelling of its indices, up to the weights.
+* `Matrix.kroneckerPower_diagonal` and `Matrix.kroneckerPower_toMatrix_toPEquiv`: the Kronecker
+  powers of diagonal and permutation-type matrices.
 -/
 
 public section
@@ -119,5 +124,22 @@ theorem apply_comp_mul_prod_of_commute_kroneckerPower [CommSemiring R] [Fintype 
   have hinj (w : κ → m) : (π ∘ v = π ∘ w) ↔ v = w := π.injective.comp_left.eq_iff
   simp only [Matrix.mul_apply, hK, mul_ite, mul_zero, ite_mul, zero_mul, hinj] at h
   simpa using h
+/-- The Kronecker power of a diagonal matrix is the diagonal matrix with entry `∏ i, d (v i)` at
+the index function `v`. -/
+@[simp]
+theorem kroneckerPower_diagonal [CommMonoidWithZero R] [DecidableEq n] [Fintype κ] (d : n → R) :
+    (diagonal d).kroneckerPower κ = diagonal fun v : κ → n => ∏ i, d (v i) := by
+  ext v u
+  simp [diagonal_apply, Finset.prod_ite_zero, funext_iff]
+
+/-- The Kronecker power of the matrix of an equivalence `f : m ≃ n` is the matrix of the
+equivalence `v ↦ f ∘ v` it induces on the index functions. -/
+@[simp]
+theorem kroneckerPower_toMatrix_toPEquiv [CommMonoidWithZero R] [DecidableEq n] [Fintype κ]
+    (f : m ≃ n) :
+    (f.toPEquiv.toMatrix : Matrix m n R).kroneckerPower κ =
+      (Equiv.piCongrRight fun _ : κ => f).toPEquiv.toMatrix := by
+  ext v u
+  simp [Fintype.prod_boole, funext_iff]
 
 end Matrix

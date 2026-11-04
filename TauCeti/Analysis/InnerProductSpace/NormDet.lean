@@ -43,6 +43,8 @@ identity.
   Jacobian.
 * `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
+* `LinearMap.normDet_adjoint_pos_iff`: the Jacobian of the adjoint is positive exactly for
+  surjective maps.
 * `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
   on a Euclidean product is the product of their Jacobians.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
@@ -99,6 +101,14 @@ theorem normDet_adjoint_eq_normDet_comp_subtype {𝕜 U W : Type*} [RCLike 𝕜]
     simp [adjoint_inner_left]
   rw [← normDet_codRestrict hmem, hM,
     normDet_adjoint _ (f.finrank_orthogonal_ker_of_surjective hf)]
+
+/-- The Jacobian of the adjoint of a linear map is positive exactly when the map is surjective. -/
+theorem normDet_adjoint_pos_iff {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U]
+    [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup W]
+    [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] {f : U →ₗ[𝕜] W} :
+    0 < f.adjoint.normDet ↔ Function.Surjective f := by
+  rw [f.adjoint.normDet_nonneg.lt_iff_ne', Ne, normDet_eq_zero_iff_ker_ne_bot, not_not,
+    ← orthogonal_range, Submodule.orthogonal_eq_bot_iff, range_eq_top]
 
 /-- The norm determinant of `(u, w) ↦ A u + B w` on the Euclidean product is the product of the
 norm determinants of `A` and `B` when their ranges are orthogonal. The codomain need not be

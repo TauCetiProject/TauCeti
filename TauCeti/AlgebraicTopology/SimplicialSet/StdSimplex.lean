@@ -24,6 +24,10 @@ an initial and a final segment.
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.subcomplex_hom_app_apply`: the vertices of the image of a simplex under a map
+  from a subcomplex of a standard simplex to a standard simplex.
+* `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
+  to the vertex `yonedaEquiv g j`.
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
@@ -33,7 +37,7 @@ an initial and a final segment.
 
 public section
 
-open CategoryTheory Simplicial
+open CategoryTheory Opposite Simplicial
 
 universe u
 
@@ -52,6 +56,59 @@ vertices are `e`. -/
 lemma const_app_apply {X : SSet.{u}} {n d : ℕ} (e : Fin (n + 1)) (x : X _⦋d⦌)
     (j : Fin (d + 1)) : (SSet.const (stdSimplex.const n e _) : X ⟶ Δ[n]).app _ x j = e :=
   (rfl)
+
+/-- The top simplex of `Δ[n]`, corresponding to its identity map, has `j` as its `j`-th vertex. -/
+@[simp]
+lemma yonedaEquiv_id_apply (n : ℕ) (j : Fin (n + 1)) : yonedaEquiv (𝟙 (Δ[n] : SSet.{u})) j = j :=
+  (rfl)
+
+/-- The constant simplex at the vertex `k` of `Δ[n]` has all its vertices equal to `k`. -/
+@[simp]
+lemma const_apply (n : ℕ) (k : Fin (n + 1)) (d : ℕ) (t : Fin (d + 1)) :
+    stdSimplex.const n k (op ⦋d⦌) t = k :=
+  (rfl)
+
+/-- The vertices of the image of a simplex `x` of `Δ[n]` under a simplicial operator `f` are the
+vertices of `x` indexed through `f`. -/
+@[simp]
+lemma obj_map_apply {n d d' : ℕ} (f : op ⦋d⦌ ⟶ op ⦋d'⦌) (x : Δ[n] _⦋d⦌) (j : Fin (d' + 1)) :
+    Δ[n].map f x j = x (f.unop.toOrderHom j) :=
+  (rfl)
+
+/-- The edge of `Δ[n]` from `a` to `b` starts at `a`. -/
+@[simp]
+lemma edge_apply_zero (n : ℕ) (a b : Fin (n + 1)) (hab : a ≤ b) : edge n a b hab 0 = a :=
+  (rfl)
+
+/-- The edge of `Δ[n]` from `a` to `b` ends at `b`. -/
+@[simp]
+lemma edge_apply_one (n : ℕ) (a b : Fin (n + 1)) (hab : a ≤ b) : edge n a b hab 1 = b :=
+  (rfl)
+
+/-- A map `g` from a subcomplex `S` of `Δ[d]` to `Δ[n]` acts on vertices: the `t`-th vertex of the
+image of a simplex `x` of `S` is the image of the `t`-th vertex of `x`. -/
+lemma subcomplex_hom_app_apply {d n a : ℕ} {S : (Δ[d] : SSet.{u}).Subcomplex}
+    (g : (S : SSet.{u}) ⟶ Δ[n]) (x : Δ[d] _⦋a⦌) (hx : x ∈ S.obj _) (t : Fin (a + 1))
+    (ht : obj₀Equiv.symm (x t) ∈ S.obj (op ⦋0⦌)) :
+    g.app _ ⟨x, hx⟩ t = g.app _ ⟨obj₀Equiv.symm (x t), ht⟩ 0 := by
+  have h : (⟨obj₀Equiv.symm (x t), ht⟩ : S.obj (op ⦋0⦌)) =
+      (S : SSet.{u}).map (SimplexCategory.const ⦋0⦌ ⦋a⦌ t).op ⟨x, hx⟩ :=
+    Subtype.ext (stdSimplex.ext _ _ fun _ ↦ by simp)
+  rw [h, NatTrans.naturality_apply, obj_map_apply]
+  simp
+
+/-- The simplex of `X` corresponding to a map `f : Δ[n] ⟶ X` is the image under `f` of the top
+simplex of `Δ[n]`. -/
+lemma yonedaEquiv_eq_app_id {X : SSet.{u}} {n : ℕ} (f : Δ[n] ⟶ X) :
+    yonedaEquiv f = f.app _ (yonedaEquiv (𝟙 Δ[n])) := by
+  rw [← yonedaEquiv_comp, Category.id_comp]
+
+/-- A map of standard simplices `g : Δ[d'] ⟶ Δ[d]` sends the vertex `j` of `Δ[d']` to the vertex
+`yonedaEquiv g j` of `Δ[d]`. -/
+lemma hom_app_obj₀Equiv_symm {d d' : ℕ} (g : (Δ[d'] : SSet.{u}) ⟶ Δ[d]) (j : Fin (d' + 1)) :
+    g.app _ (obj₀Equiv.symm j) = obj₀Equiv.symm (yonedaEquiv g j) :=
+  stdSimplex.ext _ _ fun t ↦ by
+    rw [hom_app_apply, obj₀Equiv_symm_apply, const_apply, obj₀Equiv_symm_apply, const_apply]
 
 /-- Standard simplices are quasicategories, being isomorphic to nerves of linear orders. -/
 instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where
