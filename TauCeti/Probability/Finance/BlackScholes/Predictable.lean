@@ -23,6 +23,9 @@ The bond price may be any deterministic Borel function; continuous positive bond
 special case. These results supply predictable holdings for stochastic integration. They do
 not assert integrability or self-financing.
 
+The public theorems in `MeasureTheory.IsStronglyPredictable` are `deriv_callPrice`,
+`deriv_putPrice`, `hedgeBondHolding_callPrice`, and `hedgeBondHolding_putPrice`.
+
 ## References
 
 * S. E. Shreve, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer, 2004,
@@ -74,7 +77,7 @@ private theorem isStronglyPredictable_before_maturity
 
 /-- The call delta along a predictable positive spot process, extended by zero at and
 after maturity, is predictable. -/
-theorem isStronglyPredictable_deriv_callPrice
+theorem deriv_callPrice
     (hS : IsStronglyPredictable ℱ S)
     (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω) (hK : 0 < K) (hσ : σ ≠ 0) :
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then
@@ -87,7 +90,7 @@ theorem isStronglyPredictable_deriv_callPrice
 
 /-- The put delta along a predictable positive spot process, extended by zero at and
 after maturity, is predictable. -/
-theorem isStronglyPredictable_deriv_putPrice
+theorem deriv_putPrice
     (hS : IsStronglyPredictable ℱ S)
     (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω) (hK : 0 < K) (hσ : σ ≠ 0) :
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then
@@ -100,7 +103,7 @@ theorem isStronglyPredictable_deriv_putPrice
 
 /-- The call delta hedge bond holding along a predictable positive spot process, with
 a deterministic Borel bond price and zero extension at and after maturity, is predictable. -/
-theorem isStronglyPredictable_hedgeBondHolding_callPrice
+theorem hedgeBondHolding_callPrice
     (hS : IsStronglyPredictable ℱ S)
     (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω) (hK : 0 < K) (hσ : σ ≠ 0)
     {β : ℝ≥0 → ℝ} (hβ : Measurable β) :
@@ -115,11 +118,12 @@ theorem isStronglyPredictable_hedgeBondHolding_callPrice
     -(K * exp (-r * (T - p.1)) * cdf (gaussianReal 0 1)
       (dMinus (S p.1 p.2) r σ K (T - p.1))) / β p.1) (by fun_prop) ?_
   intro t ω ht
-  exact hedgeBondHolding_callPrice (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht) (β t)
+  exact TauCeti.BlackScholes.hedgeBondHolding_callPrice
+    (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht) (β t)
 
 /-- The put delta hedge bond holding along a predictable positive spot process, with
 a deterministic Borel bond price and zero extension at and after maturity, is predictable. -/
-theorem isStronglyPredictable_hedgeBondHolding_putPrice
+theorem hedgeBondHolding_putPrice
     (hS : IsStronglyPredictable ℱ S)
     (hpos : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → 0 < S t ω) (hK : 0 < K) (hσ : σ ≠ 0)
     {β : ℝ≥0 → ℝ} (hβ : Measurable β) :
@@ -134,6 +138,7 @@ theorem isStronglyPredictable_hedgeBondHolding_putPrice
     K * exp (-r * (T - p.1)) * cdf (gaussianReal 0 1)
       (-dMinus (S p.1 p.2) r σ K (T - p.1)) / β p.1) (by fun_prop) ?_
   intro t ω ht
-  exact hedgeBondHolding_putPrice (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht) (β t)
+  exact TauCeti.BlackScholes.hedgeBondHolding_putPrice
+    (r := r) (hpos t ω ht) hK hσ (sub_pos.mpr ht) (β t)
 
 end MeasureTheory.IsStronglyPredictable
