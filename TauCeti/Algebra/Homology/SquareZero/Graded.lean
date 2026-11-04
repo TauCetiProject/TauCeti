@@ -27,7 +27,12 @@ of a square-zero endomorphism, in `TauCeti.Algebra.Homology.SquareZero`).
 A bilinear map `μ : M₁ → M₂ → M₀` which shifts degree by `ε` and obeys the Leibniz rule
 `D₀ (μ a b) = μ (D₁ a) b + (-1)^i μ a (D₂ b)` for `a` of degree `i` sends two cocycles to a
 cocycle, and a cocycle and a coboundary, in either order, to a coboundary. Hence it descends to a
-bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyProduct`).
+bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyProduct`). If the two
+ways of multiplying three cocycles differ by a coboundary, the products on cohomology are
+associative (`LinearMap.cohomologyProduct_assoc`); if `μ a b - (-1)^(i j) μ' b a` is a coboundary
+for cocycles of degrees `i` and `j`, they are graded commutative
+(`LinearMap.cohomologyProduct_eq_negOnePowCast_smul`). The products may be different bilinear
+maps, between different modules, as long as the degrees match.
 
 A linear map `f : M₁ → M₀` which preserves degrees and commutes with the endomorphisms on
 homogeneous elements, `D₀ (f a) = f (D₁ a)`, sends cocycles to cocycles and coboundaries to
@@ -56,6 +61,10 @@ intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduc
   with a coboundary are coboundaries.
 * `LinearMap.cohomologyProduct_mk`: the product on cohomology is computed on representing
   cocycles.
+* `LinearMap.cohomologyProduct_assoc`: products associative up to coboundaries on cocycles are
+  associative on cohomology.
+* `LinearMap.cohomologyProduct_eq_negOnePowCast_smul`: products graded commutative up to
+  coboundaries on cocycles are graded commutative on cohomology.
 * `LinearMap.cohomologyMap_mk`: the induced map on cohomology is computed on representing cocycles.
 * `LinearMap.cohomologyMap_id`, `LinearMap.cohomologyMap_comp`: functoriality of the induced maps.
 * `LinearMap.cohomologyMap_comp_cohomologyMap`, `LinearMap.cohomologyMap_cohomologyMap`: composites
@@ -208,6 +217,85 @@ theorem cohomologyProduct_mk (a : D₁.cocycles G₁ i) (b : D₂.cocycles G₂ 
   (rfl)
 
 end Product
+
+section Associativity
+
+variable {R M₁ M₂ M₃ M₁₂ M₂₃ M₀ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
+  [AddCommGroup M₁₂] [Module R M₁₂] [AddCommGroup M₂₃] [Module R M₂₃]
+  [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₃ : M₃ →ₗ[R] M₃} {D₁₂ : M₁₂ →ₗ[R] M₁₂}
+  {D₂₃ : M₂₃ →ₗ[R] M₂₃} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₃ : ℤ → Submodule R M₃}
+  {G₁₂ : ℤ → Submodule R M₁₂} {G₂₃ : ℤ → Submodule R M₂₃} {G₀ : ℤ → Submodule R M₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₁₂} {μ' : M₁₂ →ₗ[R] M₃ →ₗ[R] M₀}
+  {ν : M₂ →ₗ[R] M₃ →ₗ[R] M₂₃} {ν' : M₁ →ₗ[R] M₂₃ →ₗ[R] M₀} {ε₁ ε₂ ε₃ ε₄ : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₁₂ (i + j + ε₁)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₁₂ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₁₂} {b : M₃}, a ∈ G₁₂ i → b ∈ G₃ j → μ' a b ∈ G₀ (i + j + ε₂)}
+  {hμ'L : ∀ {i : ℤ} {a : M₁₂}, a ∈ G₁₂ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₁₂ a) b + negOnePowCast R i • μ' a (D₃ b)}
+  {hνdeg : ∀ {i j : ℤ} {a : M₂} {b : M₃}, a ∈ G₂ i → b ∈ G₃ j → ν a b ∈ G₂₃ (i + j + ε₃)}
+  {hνL : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → ∀ b,
+    D₂₃ (ν a b) = ν (D₂ a) b + negOnePowCast R i • ν a (D₃ b)}
+  {hν'deg : ∀ {i j : ℤ} {a : M₁} {b : M₂₃}, a ∈ G₁ i → b ∈ G₂₃ j → ν' a b ∈ G₀ (i + j + ε₄)}
+  {hν'L : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (ν' a b) = ν' (D₁ a) b + negOnePowCast R i • ν' a (D₂₃ b)}
+
+/-- **Associativity of products on cohomology.** Let `μ`, `μ'`, `ν`, `ν'` be products inducing
+products on cohomology, so that the classes `x`, `y`, `z` can be multiplied in two ways:
+`μ' (μ x y) z` and `ν' x (ν y z)`. If `μ' (μ a b) c - ν' a (ν b c)` is a coboundary for all
+cocycles `a`, `b`, `c`, then the two products of classes agree. The four products may shift
+degrees differently, as long as both ways land in the same degree `i₀`. -/
+theorem cohomologyProduct_assoc {i j l i₁₂ i₂₃ i₀ : ℤ} (h₁₂ : i + j + ε₁ = i₁₂)
+    (h₂₃ : j + l + ε₃ = i₂₃) (h₀ : i₁₂ + l + ε₂ = i₀) (h₀' : i + i₂₃ + ε₄ = i₀)
+    (hassoc : ∀ {a : M₁} {b : M₂} {c : M₃}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      c ∈ D₃.cocycles G₃ l → μ' (μ a b) c - ν' a (ν b c) ∈ D₀.coboundaries G₀ i₀)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) (z : D₃.cohomology G₃ l) :
+    cohomologyProduct μ' hμ'deg hμ'L h₀ (cohomologyProduct μ hμdeg hμL h₁₂ x y) z =
+      cohomologyProduct ν' hν'deg hν'L h₀' x (cohomologyProduct ν hνdeg hνL h₂₃ y z) := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  induction z using Submodule.Quotient.induction_on with | H c => ?_
+  rw [cohomologyProduct_mk, cohomologyProduct_mk, cohomologyProduct_mk, cohomologyProduct_mk,
+    cohomology_mk_eq_mk_iff]
+  exact hassoc a.2 b.2 c.2
+
+end Associativity
+
+section GradedCommutativity
+
+variable {R M₁ M₂ M₀ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+  [Module R M₂] [AddCommGroup M₀] [Module R M₀]
+  {D₁ : M₁ →ₗ[R] M₁} {D₂ : M₂ →ₗ[R] M₂} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₂ : ℤ → Submodule R M₂} {G₀ : ℤ → Submodule R M₀}
+  {μ : M₁ →ₗ[R] M₂ →ₗ[R] M₀} {μ' : M₂ →ₗ[R] M₁ →ₗ[R] M₀} {ε ε' : ℤ}
+  {hμdeg : ∀ {i j : ℤ} {a : M₁} {b : M₂}, a ∈ G₁ i → b ∈ G₂ j → μ a b ∈ G₀ (i + j + ε)}
+  {hμL : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → ∀ b,
+    D₀ (μ a b) = μ (D₁ a) b + negOnePowCast R i • μ a (D₂ b)}
+  {hμ'deg : ∀ {i j : ℤ} {a : M₂} {b : M₁}, a ∈ G₂ i → b ∈ G₁ j → μ' a b ∈ G₀ (i + j + ε')}
+  {hμ'L : ∀ {i : ℤ} {a : M₂}, a ∈ G₂ i → ∀ b,
+    D₀ (μ' a b) = μ' (D₂ a) b + negOnePowCast R i • μ' a (D₁ b)}
+
+/-- **Graded commutativity of products on cohomology.** Let `μ` and the exchanged product `μ'`
+induce products on cohomology. If `μ a b - (-1)^(i j) μ' b a` is a coboundary for all cocycles
+`a` of degree `i` and `b` of degree `j`, then `μ x y = (-1)^(i j) μ' y x` for all classes `x` of
+degree `i` and `y` of degree `j`. -/
+theorem cohomologyProduct_eq_negOnePowCast_smul {i j k : ℤ} (hk : i + j + ε = k)
+    (hk' : j + i + ε' = k)
+    (hcomm : ∀ {a : M₁} {b : M₂}, a ∈ D₁.cocycles G₁ i → b ∈ D₂.cocycles G₂ j →
+      μ a b - negOnePowCast R (i * j) • μ' b a ∈ D₀.coboundaries G₀ k)
+    (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j) :
+    cohomologyProduct μ hμdeg hμL hk x y =
+      negOnePowCast R (i * j) • cohomologyProduct μ' hμ'deg hμ'L hk' y x := by
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  induction y using Submodule.Quotient.induction_on with | H b => ?_
+  rw [cohomologyProduct_mk, cohomologyProduct_mk, ← Submodule.Quotient.mk_smul,
+    cohomology_mk_eq_mk_iff]
+  exact hcomm a.2 b.2
+
+end GradedCommutativity
 
 section Map
 
