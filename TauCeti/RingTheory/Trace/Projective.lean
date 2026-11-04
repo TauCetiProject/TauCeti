@@ -43,7 +43,7 @@ the primes of `R`, where the criterion is the classical one for finite algebras 
 * `Algebra.projectiveTrace_tmul`: compatibility with base change,
   `Tr_{A ⊗ S/A}(a ⊗ s) = a · Tr_{S/R}(s)`.
 * `Algebra.algebraMap_projectiveTrace_one`: `Tr_{S/R}(1)` is the rank of `S` at every prime.
-* `Algebra.projectiveTrace_prod`: the trace is additive on products of algebras.
+* `Algebra.projectiveTrace_prod_apply`: the trace is additive on products of algebras.
 * `Algebra.etale_iff_projectiveTraceForm_bijective`: a finite projective algebra is étale iff its
   trace pairing is perfect.
 
@@ -91,6 +91,7 @@ theorem projectiveTraceForm_apply (x y : S) :
 theorem projectiveTraceForm_isSymm : (projectiveTraceForm R S).IsSymm :=
   ⟨fun x y ↦ by simp [mul_comm]⟩
 
+@[simp]
 theorem projectiveTrace_algebraMap (r : R) :
     projectiveTrace R S (algebraMap R S r) = r * projectiveTrace R S 1 := by
   rw [algebraMap_eq_smul_one, map_smul, smul_eq_mul]
@@ -125,8 +126,8 @@ theorem projectiveTrace_tmul (A : Type*) [CommSemiring A] [Algebra R A] (a : A) 
 
 /-- The trace is additive on products: `Tr_{S × T/R}(s, t) = Tr_{S/R}(s) + Tr_{T/R}(t)`. -/
 @[simp]
-theorem projectiveTrace_prod {T : Type*} [CommSemiring T] [Algebra R T] [Module.Finite R T]
-    [Module.Projective R T] (s : S) (t : T) :
+theorem projectiveTrace_prod_apply {T : Type*} [CommSemiring T] [Algebra R T]
+    [Module.Finite R T] [Module.Projective R T] (s : S) (t : T) :
     projectiveTrace R (S × T) (s, t) = projectiveTrace R S s + projectiveTrace R T t := by
   have : lmul R (S × T) (s, t) = (lmul R S s).prodMap (lmul R T t) := by
     ext <;> simp
