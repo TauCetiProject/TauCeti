@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
+-- Proof-only: coefficients of a difference of substitutions.
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -25,6 +27,16 @@ the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` compon
 polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
 `f(a)` is that polynomial evaluated at the linear parts of the `a i`
 (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
+
+Products and powers of close series are close: the order of `x y - x' y'` is bounded through
+those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
+zero constant coefficient and `x - y` has order at least `n`, then `xᵏ - yᵏ` has order at least
+`n + k - 1` for `k ≥ 1` (`MvPowerSeries.le_order_pow_sub_pow`). Substitution is Lipschitz for the
+order: if every `a i` and `b i` has zero constant coefficient and `a i - b i` has order at least
+`n` for all `i`, then `f(a) - f(b)` has order at least `n + k - 1` when `f` has order at least `k`
+(`MvPowerSeries.le_order_subst_sub_subst`), and under the same hypotheses, in degrees at most `n`
+it agrees with the linear part `∑ᵢ fᵢ (a i - b i)` of `f` applied to the differences
+(`MvPowerSeries.coeff_subst_sub_subst_of_degree_le`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`). Over a commutative ring, if `f` and
@@ -93,7 +105,7 @@ coefficient of `X` in `f`. -/
 theorem homogeneousComponent_one_eq_C_mul_X (f : MvPowerSeries Unit R) :
     homogeneousComponent 1 f = C (coeff (Finsupp.single () 1) f) * X () := by
   classical
-  ext d
+  refine ext fun d ↦ ?_
   rw [coeff_homogeneousComponent, coeff_C_mul, coeff_X]
   by_cases h : d = Finsupp.single () 1
   · subst h
@@ -289,6 +301,119 @@ theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPo
     (homogeneousComponentPolynomial n f) (f := l)).symm
 
 end Polynomial
+
+section Differences
+
+variable {σ τ R : Type*} {n : ℕ}
+
+section Ring
+
+variable [Ring R]
+
+/-- The order of `x y - x' y'` is at least the smaller of the orders of `(x - x') y` and
+`x' (y - y')`. -/
+theorem le_order_mul_sub_mul {x x' y y' : MvPowerSeries τ R} {m : ℕ∞}
+    (h₁ : m ≤ (x - x').order + y.order) (h₂ : m ≤ x'.order + (y - y').order) :
+    m ≤ (x * y - x' * y').order := by
+  rw [show x * y - x' * y' = (x - x') * y + x' * (y - y') by
+    rw [sub_mul, mul_sub, sub_add_sub_cancel]]
+  exact le_order_add (h₁.trans le_order_mul) (h₂.trans le_order_mul)
+
+/-- If `x - y` has order at least `n` and `x`, `y` have zero constant coefficient, then
+`xᵏ - yᵏ` has order at least `n + k - 1` for `k ≥ 1`. -/
+theorem le_order_pow_sub_pow {x y : MvPowerSeries τ R} (hx : constantCoeff x = 0)
+    (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) {k : ℕ} (hk : k ≠ 0) :
+    ((n + k - 1 : ℕ) : ℕ∞) ≤ (x ^ k - y ^ k).order := by
+  induction k with
+  | zero => exact absurd rfl hk
+  | succ k ih =>
+    rcases Nat.eq_zero_or_pos k with rfl | hk₀
+    · simpa using hxy
+    rw [pow_succ, pow_succ]
+    refine le_order_mul_sub_mul ((add_le_add (ih hk₀.ne') (one_le_order_iff_constCoeff_eq_zero.mpr
+      hx)).trans' ?_) ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k hy) hxy).trans' ?_)
+    · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ n + k - 1 + 1)
+    · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ k + n)
+
+end Ring
+
+variable [CommRing R]
+
+/-- **Monomials in close arguments are closer.** If the series `a i` and `b i` have zero constant
+coefficient and `a i - b i` has order at least `n` for every `i`, then for `d ≠ 0` the monomials
+`aᵈ` and `bᵈ` differ by a series of order at least `n + |d| - 1`. -/
+theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries τ R}
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {d : ι →₀ ℕ} (hd : d ≠ 0) :
+    ((n + d.degree - 1 : ℕ) : ℕ∞) ≤
+      ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k).order := by
+  classical
+  induction d using Finsupp.induction with
+  | zero => exact absurd rfl hd
+  | single_add i k f hi hk ih =>
+    have hprod (c : ι → MvPowerSeries τ R) : ((Finsupp.single i k + f).prod fun i k ↦ c i ^ k) =
+        c i ^ k * f.prod fun i k ↦ c i ^ k := by
+      rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
+        Finsupp.prod_single_index (h := fun i k ↦ c i ^ k) (pow_zero _)]
+    rw [hprod, hprod, map_add, Finsupp.degree_single]
+    rcases eq_or_ne f 0 with rfl | hf
+    · simpa using le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk
+    have hf₀ : f.degree ≠ 0 := fun h ↦ hf ((Finsupp.degree_eq_zero_iff f).mp h)
+    refine le_order_mul_sub_mul ((add_le_add (le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk)
+      (degree_le_order_prod_pow ha₀ f)).trans' ?_)
+      ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k (hb₀ i)) (ih hf)).trans' ?_)
+    · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ n + k - 1 + f.degree)
+    · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ k + (n + f.degree - 1))
+
+/-- **Substitution is Lipschitz for the order.** Let `H` have order at least `k`, and let the
+series `a i` and `b i` have zero constant coefficient, with `a i - b i` of order at least `n`.
+Then `H(a) - H(b)` has order at least `n + k - 1`. -/
+theorem le_order_subst_sub_subst {H : MvPowerSeries σ R} {k : ℕ}
+    (hH : (k : ℕ∞) ≤ H.order) {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) :
+    ((n + k - 1 : ℕ) : ℕ∞) ≤ (H.subst a - H.subst b).order := by
+  refine nat_le_order fun e he ↦ ?_
+  rw [coeff_subst_sub_subst ha hb]
+  refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
+  rcases eq_or_ne d 0 with rfl | hd
+  · simp
+  by_cases hdk : d.degree < k
+  · rw [coeff_of_lt_order (hH.trans_lt' (by exact_mod_cast hdk)), zero_smul]
+  · rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab hd).trans_lt'
+      (by exact_mod_cast (by omega : e.degree < n + d.degree - 1))), smul_zero]
+
+/-- **The linear part of a difference of substitutions.** If the series `a i` and `b i` have zero
+constant coefficient and `a i - b i` has order at least `n`, then in degrees at most `n` the
+coefficients of `H(a) - H(b)` are those of `∑ᵢ hᵢ (a i - b i)`, where `hᵢ` is the coefficient of
+`Xᵢ` in `H`. -/
+theorem coeff_subst_sub_subst_of_degree_le [Fintype σ] (H : MvPowerSeries σ R)
+    {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {e : τ →₀ ℕ} (he : e.degree ≤ n) :
+    coeff e (H.subst a - H.subst b) =
+      ∑ i, coeff (Finsupp.single i 1) H * coeff e (a i - b i) := by
+  classical
+  rw [coeff_subst_sub_subst ha hb, finsum_eq_sum_of_support_subset (s := Finset.univ.image
+    fun i ↦ Finsupp.single i 1), Finset.sum_image fun i _ j _ h ↦ by
+      simpa using Finsupp.single_left_inj (one_ne_zero (α := ℕ)) |>.mp h]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Finsupp.prod_single_index (h := fun i k ↦ a i ^ k) (pow_zero _),
+      Finsupp.prod_single_index (h := fun i k ↦ b i ^ k) (pow_zero _), pow_one, pow_one,
+      smul_eq_mul]
+  · intro d hd
+    rw [Function.mem_support] at hd
+    rcases eq_or_ne d 0 with rfl | hd₀
+    · simp at hd
+    by_cases hd₁ : d.degree = 1
+    · obtain ⟨i, rfl⟩ := (Set.ext_iff.mp Finsupp.range_single_one d).mpr hd₁
+      simp
+    · refine absurd ?_ hd
+      rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab hd₀).trans_lt'
+        (by exact_mod_cast (by have := (Finsupp.degree_eq_zero_iff d).not.mpr hd₀; omega :
+          e.degree < n + d.degree - 1))), smul_zero]
+
+end Differences
 
 open Finsupp
 
