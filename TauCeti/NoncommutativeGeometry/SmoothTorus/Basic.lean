@@ -108,6 +108,24 @@ theorem weight_add_le (x y : ℤ × ℤ) : weight (x + y) ≤ weight x * weight 
     _ = (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) * ((1 + |(y.1 : ℝ)|) * (1 + |(y.2 : ℝ)|)) := by
         ring
 
+/-- An additive map on the lattice grows at most linearly in the weight. -/
+theorem norm_addMonoidHom_apply_le_mul_weight (ℓ : ℤ × ℤ →+ ℂ) (x : ℤ × ℤ) :
+    ‖ℓ x‖ ≤ (‖ℓ (1, 0)‖ + ‖ℓ (0, 1)‖) * weight x := by
+  have hx : x = x.1 • ((1, 0) : ℤ × ℤ) + x.2 • ((0, 1) : ℤ × ℤ) := by ext <;> simp
+  have h₁ : |(x.1 : ℝ)| ≤ weight x := by
+    rw [weight]
+    nlinarith [abs_nonneg (x.1 : ℝ), abs_nonneg (x.2 : ℝ)]
+  have h₂ : |(x.2 : ℝ)| ≤ weight x := by
+    rw [weight]
+    nlinarith [abs_nonneg (x.1 : ℝ), abs_nonneg (x.2 : ℝ)]
+  calc ‖ℓ x‖ = ‖(x.1 : ℂ) * ℓ (1, 0) + (x.2 : ℂ) * ℓ (0, 1)‖ := by
+        conv_lhs => rw [hx, map_add, map_zsmul, map_zsmul, zsmul_eq_mul, zsmul_eq_mul]
+    _ ≤ |(x.1 : ℝ)| * ‖ℓ (1, 0)‖ + |(x.2 : ℝ)| * ‖ℓ (0, 1)‖ := by
+        simpa only [norm_mul, Complex.norm_intCast] using
+          norm_add_le ((x.1 : ℂ) * ℓ (1, 0)) ((x.2 : ℂ) * ℓ (0, 1))
+    _ ≤ weight x * ‖ℓ (1, 0)‖ + weight x * ‖ℓ (0, 1)‖ := by gcongr
+    _ = (‖ℓ (1, 0)‖ + ‖ℓ (0, 1)‖) * weight x := by ring
+
 /-- The inverse square of the weight is summable over `ℤ × ℤ`. -/
 theorem summable_inv_weight_sq : Summable fun x : ℤ × ℤ ↦ (weight x ^ 2)⁻¹ := by
   have h := summable_one_add_abs_int_rpow (r := -2) (by norm_num)
@@ -154,6 +172,22 @@ theorem single (x₀ : ℤ × ℤ) (c : ℂ) : IsRapidDecay (Pi.single x₀ c) :
   · simp
   · simp only [ne_eq, hx, not_false_eq_true, Pi.single_eq_of_ne, norm_zero, zero_mul]
     exact mul_nonneg (norm_nonneg _) (pow_nonneg (weight_pos _).le _)
+
+/-- Multiplying a rapidly decreasing function by a function of polynomial growth gives a rapidly
+decreasing function. -/
+theorem mul_left_of_norm_le {f : ℤ × ℤ → ℂ} {C : ℝ} {n : ℕ}
+    (hf : ∀ x, ‖f x‖ ≤ C * weight x ^ n) (ha : IsRapidDecay a) : IsRapidDecay (f * a) := by
+  intro k
+  obtain ⟨D, hD⟩ := ha (n + k)
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hf 0)
+  refine ⟨C * D, fun x ↦ ?_⟩
+  have hw := pow_nonneg (weight_pos x).le k
+  calc ‖(f * a) x‖ * weight x ^ k = ‖f x‖ * ‖a x‖ * weight x ^ k := by
+        rw [Pi.mul_apply, norm_mul]
+    _ ≤ C * weight x ^ n * ‖a x‖ * weight x ^ k :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (hf x) (norm_nonneg _)) hw
+    _ = C * (‖a x‖ * weight x ^ (n + k)) := by ring
+    _ ≤ C * D := mul_le_mul_of_nonneg_left (hD x) hC
 
 /-- A rapidly decreasing function remains summable after multiplication by any power of the
 weight. -/
@@ -292,6 +326,11 @@ def single (x : ℤ × ℤ) (c : ℂ) : SmoothNoncommutativeTorus θ :=
 theorem coeff_single (x : ℤ × ℤ) (c : ℂ) :
     (single x c : SmoothNoncommutativeTorus θ).coeff = Pi.single x c :=
   (rfl)
+
+@[simp]
+theorem single_zero (x : ℤ × ℤ) : (single x 0 : SmoothNoncommutativeTorus θ) = 0 := by
+  ext y
+  simp
 
 @[simp]
 theorem smul_single (x : ℤ × ℤ) (c d : ℂ) :
