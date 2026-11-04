@@ -68,11 +68,10 @@ theorem map_fst_localData_markedPlace_eq_parts_weightedRamificationPartition
       simpa only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using hQ
     have h := degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) Q
     have hmark : (markedPlace k i).degree = 1 := by
-      have hlinear : (Polynomial.X - 1 : Polynomial k).natDegree = 1 := by
-        simpa only [Polynomial.C_1] using Polynomial.natDegree_X_sub_C (1 : k)
       fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
-        markedPlace_zero, markedPlace_one, markedPlace_two, degree_adicOfIrreducible,
-        Polynomial.natDegree_X, Polynomial.C_1, hlinear, degree_infty]
+        markedPlace_zero, markedPlace_one, markedPlace_two,
+        degree_adicOfIrreducible_X_sub_C, degree_adicOfIrreducible,
+        Polynomial.natDegree_X, degree_infty]
     simpa only [hQ', hmark, one_mul] using h.symm
   -- Use the constant-extension splitting theorem to count points over each original place.
   -- Since the marked base place is rational, that count is the relative residue degree.
