@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Set.PowersetCard
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
@@ -38,16 +39,6 @@ public section
 
 open Module
 
-namespace Set.powersetCard
-
-/-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
-noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
-  Fintype.equivFinOfCardEq <| by
-    rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card,
-      Fintype.card_fin]
-
-end Set.powersetCard
-
 namespace exteriorPower
 
 variable (R : Type*) [CommRing R]
@@ -67,6 +58,14 @@ theorem piBasis_apply (m j : ℕ) (s : Fin (m.choose j)) :
 /-- The coordinates of `⋀[R]^j (Fin m → R)` in the basis `exteriorPower.piBasis`. -/
 noncomputable def piEquiv (m j : ℕ) : ⋀[R]^j (Fin m → R) ≃ₗ[R] (Fin (m.choose j) → R) :=
   (piBasis R m j).equivFun
+
+/-- The coordinate indexed by `s` is the coefficient of the wedge of standard basis vectors in the
+subset enumerated by `s`. -/
+theorem piEquiv_apply (m j : ℕ) (x : ⋀[R]^j (Fin m → R)) (s : Fin (m.choose j)) :
+    piEquiv R m j x s =
+      ((Pi.basisFun R (Fin m)).exteriorPower j).repr x
+        ((Set.powersetCard.finChooseEquiv m j).symm s) := by
+  rw [piEquiv, Basis.equivFun_apply, piBasis, Basis.repr_reindex_apply]
 
 theorem piEquiv_symm_apply_single (m j : ℕ) (s : Fin (m.choose j)) :
     (piEquiv R m j).symm (Pi.single s 1) = piBasis R m j s := by
@@ -121,9 +120,8 @@ theorem exteriorPowerCoords_single_apply (j : ℕ) {m n : ℕ} (f : (Fin m → R
     f ((Set.powersetCard.finChooseEquiv n j).symm s)
     ((Set.powersetCard.finChooseEquiv m j).symm t)
   simp only [LinearMap.toMatrix_apply, Pi.basisFun_repr, Pi.basisFun_apply] at h
-  rw [← h, exteriorPowerCoords, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.coe_coe, piEquiv_symm_apply_single, piBasis_apply, ← basis_apply,
-    exteriorPower.piEquiv, Basis.equivFun_apply, piBasis, Basis.repr_reindex_apply]
+  rw [← h]
+  simp [exteriorPowerCoords, piEquiv_symm_apply_single, piEquiv_apply, piBasis]
 
 end LinearMap
 
@@ -135,6 +133,13 @@ variable {R : Type*} [CommRing R]
 `exteriorPower.zeroEquiv`. -/
 noncomputable def piZeroEquiv (m : ℕ) : (Fin (m.choose 0) → R) ≃ₗ[R] (Fin 1 → R) :=
   (piEquiv R m 0).symm ≪≫ₗ zeroEquiv R (Fin m → R) ≪≫ₗ (LinearEquiv.funUnique (Fin 1) R R).symm
+
+/-- In degree zero, the coordinate of an exterior scalar is that scalar,
+through `exteriorPower.zeroEquiv`. -/
+@[simp] theorem piZeroEquiv_piEquiv (m : ℕ) (x : ⋀[R]^0 (Fin m → R)) :
+    piZeroEquiv m (piEquiv R m 0 x) = fun _ ↦ zeroEquiv R (Fin m → R) x := by
+  ext
+  simp [piZeroEquiv]
 
 /-- In degree zero, every compound map is the identity, read in `exteriorPower.piZeroEquiv`. -/
 @[simp] theorem piZeroEquiv_exteriorPowerCoords {m n : ℕ} (f : (Fin m → R) →ₗ[R] (Fin n → R))
@@ -149,6 +154,12 @@ noncomputable def piZeroEquiv (m : ℕ) : (Fin (m.choose 0) → R) ≃ₗ[R] (Fi
 `exteriorPower.oneEquiv`. -/
 noncomputable def piOneEquiv (m : ℕ) : (Fin (m.choose 1) → R) ≃ₗ[R] (Fin m → R) :=
   (piEquiv R m 1).symm ≪≫ₗ oneEquiv R (Fin m → R)
+
+/-- In degree one, the coordinates of an exterior vector are those of the vector,
+through `exteriorPower.oneEquiv`. -/
+@[simp] theorem piOneEquiv_piEquiv (m : ℕ) (x : ⋀[R]^1 (Fin m → R)) :
+    piOneEquiv m (piEquiv R m 1 x) = oneEquiv R (Fin m → R) x := by
+  simp [piOneEquiv]
 
 /-- In degree one, the compound map of `f` is `f`, read in `exteriorPower.piOneEquiv`. -/
 @[simp] theorem piOneEquiv_exteriorPowerCoords {m n : ℕ} (f : (Fin m → R) →ₗ[R] (Fin n → R))

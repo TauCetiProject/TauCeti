@@ -14,7 +14,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.CoordinateFunctor
 The `j`th exterior power of a finite-rank core `A` of rank `r` is the core of rank `r.choose j`
 with the same charts, whose transitions are the `j`th compound matrices of the transitions of `A`
 (`ContinuousLinearMap.exteriorPowerCoords`): its fibre is `⋀^j` of the fibre of `A`, read in the
-basis of wedges of standard basis vectors. Over a complete normed field this arises from the
+basis of wedges of standard basis vectors. This arises from the
 continuous coordinate functor `TauCeti.CoordinateFunctor.exteriorPower 𝕜 j`, so it is a functor
 
 * `FiniteRankBundleCore.exteriorPower B j : FiniteRankBundleCore 𝕜 B ⥤ FiniteRankBundleCore 𝕜 B`,
@@ -48,7 +48,7 @@ namespace TauCeti
 
 namespace CoordinateFunctor
 
-variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
 
 /-- The `j`th exterior power of coordinate spaces: `Fin n → 𝕜` is sent to the coordinates
 `Fin (n.choose j) → 𝕜` of its `j`th exterior power, and operators to their compound matrices. -/
@@ -72,7 +72,7 @@ namespace FiniteRankBundleCore
 
 universe u
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable (B : Type u) [TopologicalSpace B]
 
@@ -133,13 +133,39 @@ private theorem fiberMap_exteriorPowerZeroHom (A : FiniteRankBundleCore 𝕜 B) 
         (Fin (A.rank.choose 0) → 𝕜) →L[𝕜] (Fin 1 → 𝕜)) :=
   fiberMap_constHom _ _ _ x
 
+/-- The bundle map from the trivial line bundle to the degree-zero exterior power, given by the
+inverse of `exteriorPower.piZeroContinuousEquiv` on every fibre. -/
+private noncomputable def exteriorPowerZeroInv (A : FiniteRankBundleCore 𝕜 B) :
+    trivial 𝕜 B 1 ⟶ (exteriorPower 𝕜 B 0).obj A where
+  operator _ _ := ContinuousMap.const _
+    ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm :
+      (Fin 1 → 𝕜) →L[𝕜] (Fin (A.rank.choose 0) → 𝕜))
+  compatible _ _ j j' x _ _ _ _ v := by
+    -- Every compound matrix of degree zero fixes the image of the inverse equivalence.
+    apply (exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).injective
+    have h := congrArg (fun T => T ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm v))
+      (exteriorPower.piZeroContinuousEquiv_comp_exteriorPowerCoords (A.core.coordChange j j' x))
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at h
+    exact h
+
+private theorem fiberMap_exteriorPowerZeroInv (A : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (exteriorPowerZeroInv A).fiberMap x =
+      ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm :
+        (Fin 1 → 𝕜) →L[𝕜] (Fin (A.rank.choose 0) → 𝕜)) := by
+  rw [VectorBundleCore.CoordinateHom.fiberMap_def]
+  rfl
+
 /-- The degree-zero exterior power of a bundle is the trivial line bundle. -/
 noncomputable def exteriorPowerZeroIso (A : FiniteRankBundleCore 𝕜 B) :
-    (exteriorPower 𝕜 B 0).obj A ≅ trivial 𝕜 B 1 :=
-  have : IsIso (exteriorPowerZeroHom A) := (isIso_iff_bijective _).2 fun x => by
-    rw [fiberMap_exteriorPowerZeroHom]
-    exact (exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).bijective
-  asIso (exteriorPowerZeroHom A)
+    (exteriorPower 𝕜 B 0).obj A ≅ trivial 𝕜 B 1 where
+  hom := exteriorPowerZeroHom A
+  inv := exteriorPowerZeroInv A
+  hom_inv_id := hom_ext fun x => by
+    rw [fiberMap_comp, fiberMap_exteriorPowerZeroHom, fiberMap_exteriorPowerZeroInv, fiberMap_id]
+    exact (exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).coe_symm_comp_coe
+  inv_hom_id := hom_ext fun x => by
+    rw [fiberMap_comp, fiberMap_exteriorPowerZeroHom, fiberMap_exteriorPowerZeroInv, fiberMap_id]
+    exact (exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).coe_comp_coe_symm
 
 @[simp] theorem fiberMap_exteriorPowerZeroIso_hom (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     (exteriorPowerZeroIso A).hom.fiberMap x =
@@ -150,18 +176,8 @@ noncomputable def exteriorPowerZeroIso (A : FiniteRankBundleCore 𝕜 B) :
 @[simp] theorem fiberMap_exteriorPowerZeroIso_inv (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     (exteriorPowerZeroIso A).inv.fiberMap x =
       ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm :
-        (Fin 1 → 𝕜) →L[𝕜] (Fin (A.rank.choose 0) → 𝕜)) := by
-  -- Take the vector in the standard model `Fin 1 → 𝕜` of the trivial line.
-  refine ContinuousLinearMap.ext fun (v : Fin 1 → 𝕜) => ?_
-  -- Evaluate `hom ≫ inv = 𝟙` at the fibre `x` on the vector `e.symm v`.
-  have h := congrArg (fun g => g.fiberMap x ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm v))
-    (exteriorPowerZeroIso A).hom_inv_id
-  simp only [fiberMap_comp, fiberMap_exteriorPowerZeroIso_hom, fiberMap_id] at h
-  -- Applying a composite and the identity is definitional, on the same coordinate models.
-  have h' : (exteriorPowerZeroIso A).inv.fiberMap x ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank)
-      ((exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm v)) =
-        (exteriorPower.piZeroContinuousEquiv 𝕜 A.rank).symm v := h
-  rwa [ContinuousLinearEquiv.apply_symm_apply] at h'
+        (Fin 1 → 𝕜) →L[𝕜] (Fin (A.rank.choose 0) → 𝕜)) :=
+  fiberMap_exteriorPowerZeroInv A x
 
 /-- Every bundle map acts as the identity on degree-zero exterior powers. -/
 @[reassoc (attr := simp)]

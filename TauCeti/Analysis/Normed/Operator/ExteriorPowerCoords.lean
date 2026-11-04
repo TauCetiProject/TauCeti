@@ -16,8 +16,8 @@ For a continuous linear operator `g` between coordinate spaces over a normed fie
 `g.exteriorPowerCoords j` is its `j`th exterior power read in the coordinates
 `exteriorPower.piEquiv`, that is, the `j`th compound matrix of `g`, as a continuous linear
 operator between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The
-construction preserves identities and composition, and over a complete field it depends
-continuously on the operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), since its
+construction preserves identities and composition, and it depends continuously on the
+operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), since its
 matrix entries are minors of the matrix of `g`. It can therefore be applied to continuous families
 of transition matrices.
 
@@ -58,17 +58,21 @@ noncomputable def exteriorPowerCoords (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜]
   coe_injective (LinearMap.exteriorPowerCoords_comp j (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜))
     (f : (Fin l → 𝕜) →ₗ[𝕜] (Fin m → 𝕜)))
 
-/-- Over a complete field, the compound matrix depends continuously on the operator. -/
-theorem continuous_exteriorPowerCoords [CompleteSpace 𝕜] (j m n : ℕ) :
+/-- The compound matrix depends continuously on the operator. -/
+theorem continuous_exteriorPowerCoords (j m n : ℕ) :
     Continuous (exteriorPowerCoords j : ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) → _) := by
-  refine continuous_clm_apply.2 fun v ↦ ?_
-  -- Expand `v` in the standard basis; each basis vector is sent to a vector of minors.
-  have hv (g : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) : g.exteriorPowerCoords j v =
-      ∑ t, v t • g.exteriorPowerCoords j (Pi.single t 1) := by
+  -- Expand in the standard basis: the compound matrix is a sum of rank-one operators whose
+  -- columns are vectors of minors.
+  have h : (exteriorPowerCoords j : ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) → _) = fun g ↦
+      ∑ t, smulRightL 𝕜 _ _ (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)
+        (g.exteriorPowerCoords j (Pi.single t 1)) := by
+    funext g
+    refine ContinuousLinearMap.ext fun v ↦ ?_
     conv_lhs => rw [pi_eq_sum_univ' v]
-    simp only [map_sum, map_smul]
-  simp_rw [hv]
-  refine continuous_finsetSum _ fun t _ ↦ (continuous_pi fun s ↦ ?_).const_smul (v t)
+    simp only [map_sum, map_smul, sum_apply, smulRightL_apply_apply, smulRight_apply, proj_apply]
+  rw [h]
+  refine continuous_finsetSum _ fun t _ ↦ (smulRightL 𝕜 _ _
+    (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)).continuous.comp' (continuous_pi fun s ↦ ?_)
   simp_rw [exteriorPowerCoords_apply, LinearMap.exteriorPowerCoords_single_apply, coe_coe]
   refine Continuous.matrix_det (continuous_matrix fun i k ↦ ?_)
   simp only [Matrix.of_apply]
