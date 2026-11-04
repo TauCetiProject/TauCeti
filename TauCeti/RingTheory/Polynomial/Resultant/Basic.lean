@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.Polynomial.Degree.Operations
 
@@ -33,6 +34,10 @@ degrees, the form of base change used when comparing a resultant with its specia
 Finally, the entries of the Sylvester matrix are written out explicitly, column by column, for
 expanding its determinant term by term.
 
+Since a resultant with a monic left argument is a unit exactly when the two polynomials are
+coprime, coprimality can be read off a unit resultant: against `X - C a` this is a unit value at
+`a`, and modulo an ideal in the Jacobson radical it lifts from the reductions.
+
 ## Main results
 
 * `Polynomial.sylvester_apply_of_lt`, `Polynomial.sylvester_apply_of_le`: the entries of the
@@ -45,6 +50,10 @@ expanding its determinant term by term.
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
+* `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
+  at `a` is a unit.
+* `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
+  modulo an ideal in the Jacobson radical are coprime are themselves coprime.
 
 ## Provenance
 
@@ -183,3 +192,34 @@ theorem _root_.Polynomial.Monic.resultant_of_le {f g : R[X]} (hf : f.Monic) {n :
     hf.leadingCoeff, one_pow, one_mul]
 
 end TauCeti
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- `X - C a` is coprime to every polynomial whose value at `a` is a unit, over any commutative
+ring: the resultant of the two is that value. -/
+theorem isCoprime_X_sub_C_of_isUnit_eval {p : R[X]} {a : R} (h : IsUnit (p.eval a)) :
+    IsCoprime (X - C a) p := by
+  cases subsingleton_or_nontrivial R with
+  | inl _ => rw [Subsingleton.elim (X - C a) 1]; exact isCoprime_one_left
+  | inr _ =>
+    rwa [← isUnit_resultant_iff_isCoprime (monic_X_sub_C a), natDegree_X_sub_C,
+      resultant_X_sub_C_left (hg := le_rfl)]
+
+/-- **Coprimality lifts along the Jacobson radical.** If `g` is monic and the reductions of `g`
+and `h` modulo an ideal `I` in the Jacobson radical are coprime, then `g` and `h` are coprime. -/
+theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g h : R[X]}
+    (hg : g.Monic) (hgh : IsCoprime (g.map (Ideal.Quotient.mk I)) (h.map (Ideal.Quotient.mk I))) :
+    IsCoprime g h := by
+  have : IsLocalHom (Ideal.Quotient.mk I) := isLocalHom_of_le_jacobson hI
+  rw [← isUnit_resultant_iff_isCoprime hg]
+  refine IsUnit.of_map (Ideal.Quotient.mk I) _ ?_
+  cases subsingleton_or_nontrivial (R ⧸ I) with
+  | inl _ => exact isUnit_of_subsingleton _
+  | inr _ =>
+    rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
+      ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
+      hg.natDegree_map, resultant_map_map] at hgh
+
+end Polynomial
