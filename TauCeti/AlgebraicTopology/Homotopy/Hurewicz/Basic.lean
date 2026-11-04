@@ -76,6 +76,8 @@ as well.
   of the cube.
 * `HomotopyGroup.hurewicz_mul`, `HomotopyGroup.hurewiczHom`: the Hurewicz map is a homomorphism
   from `π_{n+1}(X, x)`, written additively, to the group of morphisms `R ⟶ Hₙ₊₁(X; R)`.
+* `HomotopyGroup.hurewiczIntHom`: the integral Hurewicz homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`,
+  natural in the space (`HomotopyGroup.hurewiczIntHom_map`).
 
 ## References
 
@@ -660,5 +662,32 @@ def hurewiczHom :
 lemma hurewiczHom_apply (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     hurewiczHom R n a = hurewicz R n a.toMul :=
   (rfl)
+
+/-- **The integral Hurewicz homomorphism** `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the
+Hurewicz homomorphism `HomotopyGroup.hurewiczHom` with integer coefficients, evaluated at
+`1 : ℤ`. -/
+def hurewiczIntHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
+    Additive (HomotopyGroup (Fin (n + 1)) X x) →+
+      ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+        (TopCat.of X) where
+  toFun a := (hurewiczHom (ModuleCat.of ℤ ℤ) n a).hom 1
+  map_zero' := by simp
+  map_add' a b := by simp
+
+lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
+    (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
+    hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
+  congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
+
+/-- **Naturality of the integral Hurewicz homomorphism**: for a based map `f : (X, x) → (Y, y)`,
+the Hurewicz class of `f_* a` is the image of the Hurewicz class of `a` under
+`f_* : Hₙ₊₁(X; ℤ) → Hₙ₊₁(Y; ℤ)`. -/
+theorem hurewiczIntHom_map {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
+    (f : C(X, Y)) (hf : f x = y) {n : ℕ} (a : HomotopyGroup (Fin (n + 1)) X x) :
+    hurewiczIntHom Y y n (Additive.ofMul (map f hf a)) =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
+        (TopCat.ofHom f)).hom (hurewiczIntHom X x n (Additive.ofMul a)) := by
+  rw [hurewiczIntHom_apply, hurewiczIntHom_apply, toMul_ofMul, toMul_ofMul, hurewicz_map,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end HomotopyGroup
