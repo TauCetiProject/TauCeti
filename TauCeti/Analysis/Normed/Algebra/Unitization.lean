@@ -230,23 +230,6 @@ variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing 
   [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- Composing a bounded derivation with the nonunital coordinate projection extends its
-Leibniz rule to unital actions of the ℓ¹ unitization. -/
-theorem comp_unitizationSndL_mul (D : A →L[𝕜] E)
-    (L R : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
-    (h1L : ∀ x, L 1 x = x) (h1R : ∀ x, R 1 x = x)
-    (hD : ∀ a b, D (a * b) =
-      L (WithLp.toLp 1 (a : Unitization 𝕜 A)) (D b) +
-      R (WithLp.toLp 1 (b : Unitization 𝕜 A)) (D a))
-    (u v : WithLp 1 (Unitization 𝕜 A)) :
-    (D ∘L WithLp.unitizationSndL 𝕜 A) (u * v) =
-      L u ((D ∘L WithLp.unitizationSndL 𝕜 A) v) +
-      R v ((D ∘L WithLp.unitizationSndL 𝕜 A) u) := by
-  rw [L.unitization_apply_eq_fst_smul_add u, R.unitization_apply_eq_fst_smul_add v]
-  simp only [comp_apply, WithLp.unitizationSndL_apply, WithLp.unitization_mul,
-    Unitization.snd_mul, map_add, map_smul, hD, add_apply, smul_apply, h1L, h1R]
-  abel
-
 /-- Extension through the nonunital coordinate projection does not increase the norm. -/
 theorem norm_comp_unitizationSndL_le (D : A →L[𝕜] E) :
     ‖D ∘L WithLp.unitizationSndL 𝕜 A‖ ≤ ‖D‖ := by
