@@ -21,11 +21,10 @@ In a finite-dimensional real inner product space, dilating a fixed smooth bump b
 to localize solutions of the Poisson equation: the error `Δ(χ_R u) - χ_R Δu` lives on the annulus
 `R ≤ ‖x‖ ≤ 2R` and is controlled by the decay of `u` and `Du` there.
 
-Two limits along such families let identities tested against `χ_R` pass to `R → ∞`. Cutoffs with
-values in `[0, 1]` that equal `1` on growing balls give `∫ χ_R f → ∫ f` for integrable `f`
-(`TauCeti.tendsto_integral_smul_of_eq_one_ball`). In dimension two the bound
-`|Δχ_R| = O(1/R²)` makes `∫ |Δχ_R|` bounded uniformly in `R`, so `∫ Δχ_R f → 0` for every `f`
-tending to `0` at infinity (`TauCeti.tendsto_integral_laplacian_smul_of_tendsto_cocompact`).
+In dimension two the bound `|Δχ_R| = O(1/R²)` makes `∫ |Δχ_R|` bounded uniformly in `R`, so
+`∫ Δχ_R f → 0` for every `f` tending to `0` at infinity
+(`TauCeti.tendsto_integral_laplacian_smul_of_tendsto_cocompact`). This lets identities tested
+against `χ_R` pass to `R → ∞`.
 -/
 
 public section
@@ -88,23 +87,6 @@ open InnerProductSpace
 
 variable [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {ι : Type*} {l : Filter ι} {χ : ι → E → ℝ} {R : ι → ℝ}
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- **Integrals against cutoffs exhaust the space.** If the cutoffs `χ i` take values in `[0, 1]`
-and equal `1` on `ball 0 (R i)` with `R i → ∞`, then `∫ χ i • f → ∫ f` for integrable `f`. -/
-theorem tendsto_integral_smul_of_eq_one_ball [l.IsCountablyGenerated] {μ : Measure E}
-    (hR : Tendsto R l atTop) (hχm : ∀ i, AEStronglyMeasurable (χ i) μ)
-    (hχ1 : ∀ i x, ‖x‖ < R i → χ i x = 1) (hχI : ∀ i x, χ i x ∈ Set.Icc (0 : ℝ) 1)
-    {f : E → F} (hf : Integrable f μ) :
-    Tendsto (fun i ↦ ∫ x, χ i x • f x ∂μ) l (𝓝 (∫ x, f x ∂μ)) := by
-  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
-    (.of_forall fun i ↦ (hχm i).smul hf.aestronglyMeasurable)
-    (.of_forall fun i ↦ .of_forall fun x ↦ ?_) hf.norm (.of_forall fun x ↦ ?_)
-  · rw [norm_smul, Real.norm_of_nonneg (hχI i x).1]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hχI i x).2
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
-    rw [hχ1 i x hi, one_smul]
 
 /-- **Laplacians of planar cutoffs against decaying functions.** In a two-dimensional space, let
 the cutoffs `χ i` equal `1` near `ball 0 (R i)` and `0` near the complement of
