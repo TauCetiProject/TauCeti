@@ -273,12 +273,22 @@ noncomputable def pullbackConstObj₀Equiv :
 
 /-- The edge attached to a vertex `s` of the fibre `{x} ×_L L_{y/}` is the map
 `Δ[1] ≅ Δ[0] ⋆ Δ[0] ⟶ L` corresponding to `s`. -/
+@[simp]
 lemma pullbackConstObj₀Equiv_apply_edge
     (s : (pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) _⦋0⦌) :
     (pullbackConstObj₀Equiv x y s).edge =
       yonedaEquiv ((join.stdSimplexIso 0 0).inv ≫
         (pullbackConstHomEquiv x y (yonedaEquiv.symm s)).1) :=
   join.coneEdgeEquiv_apply_edge x y _
+
+/-- The map `Δ[0] ⋆ Δ[0] ⟶ L` attached to the vertex of the fibre `{x} ×_L L_{y/}` corresponding to
+an edge `e` from `y` to `x` is the map attached to `e` by `SSet.join.coneEdgeEquiv`. -/
+@[simp]
+lemma pullbackConstHomEquiv_const_pullbackConstObj₀Equiv_symm (e : Edge y x) :
+    pullbackConstHomEquiv x y (const ((pullbackConstObj₀Equiv x y).symm e)) =
+      (join.coneEdgeEquiv x y).symm e := by
+  simpa [pullbackConstObj₀Equiv] using congrArg (pullbackConstHomEquiv x y)
+    (yonedaEquiv_symm_zero ((pullbackConstObj₀Equiv x y).symm e)).symm
 
 /-- If `L` is strict Segal, every simplex of the fibre `{x} ×_L L_{y/}` is totally degenerate: a
 map `Δ[0] ⋆ Δ[n] ⟶ L` sending `Δ[n]` to `x` is determined by its edge from the cone point to the
