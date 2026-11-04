@@ -9,8 +9,6 @@ public import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
-public import Mathlib.Algebra.Field.Defs
-public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
 public import Mathlib.Data.Finset.Max
@@ -19,9 +17,7 @@ public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NoncommRing
-import Mathlib.Tactic.Positivity
 import TauCeti.Data.Set.PowersetCard
 
 /-!
@@ -29,9 +25,6 @@ import TauCeti.Data.Set.PowersetCard
 
 * `Finset.exists_nat_prod_lt` bounds both coordinates of a finite set of pairs of
   natural numbers.
-* `Finset.exists_pos_lt_sub_and_add_lt` fits a symmetric interval `[c - δ, c + δ]` around a point
-  `c` of an open interval `(a, b)` of an ordered field inside `(a, b)` and above every element of a
-  finite set lying below `c`.
 * `Finset.exists_perm_eqOn_le_apply` gives a permutation of `ℕ` fixing one finite set pointwise
   and carrying a disjoint one past any bound.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
@@ -364,26 +357,6 @@ theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
   refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
   have hle := le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
   omega
-
-/-- Around a value `c` above `a` and above every element of a finite set `s`, and below `b`, some
-interval `[c - δ, c + δ]` lies inside `(a, b)` and above `s`. -/
-theorem exists_pos_lt_sub_and_add_lt {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-    {a b c : K} {s : Finset K} (hac : a < c) (hcb : c < b) (hs : ∀ x ∈ s, x < c) :
-    ∃ δ > 0, a < c - δ ∧ c + δ < b ∧ ∀ x ∈ s, x < c - δ := by
-  -- The largest of `a` and the elements of `s` lies below `c`.
-  set m := (insert a s).max' (insert_nonempty a s)
-  have ham : a ≤ m := le_max' _ _ (mem_insert_self a s)
-  have hms (x : K) (hx : x ∈ s) : x ≤ m := le_max' _ _ (mem_insert_of_mem hx)
-  have hmc : m < c := by
-    refine (max'_lt_iff _ _).2 fun x hx ↦ ?_
-    rcases mem_insert.1 hx with rfl | hx
-    · exact hac
-    · exact hs x hx
-  refine ⟨min (c - m) (b - c) / 2, by have := sub_pos.2 hmc; have := sub_pos.2 hcb; positivity,
-    ?_, ?_, fun x hx ↦ ?_⟩
-  · linarith [min_le_left (c - m) (b - c)]
-  · linarith [min_le_right (c - m) (b - c)]
-  · linarith [min_le_left (c - m) (b - c), hms x hx]
 
 /-- A permutation of `ℕ` that fixes a finite set `I` pointwise and carries a finite set `J`,
 disjoint from `I`, past `n`. -/

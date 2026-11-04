@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 public import TauCeti.Geometry.Manifold.Morse.Exhaustion
-import TauCeti.Data.Finset.Basic
 
 /-!
 # Homology of a Morse function with bounded indices
@@ -27,7 +26,8 @@ This file assembles these steps along finitely many critical levels, and then al
   it has index at most `d`, then `Hₙ(M_b, M_a)` vanishes for `n > d`
   (`TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le`). The band
   contains only finitely many critical values, and the relative homology of `(M_b, M_a)` is
-  assembled from the pieces between them by the long exact sequence of a triple.
+  assembled from the pieces between them by the long exact sequence of a triple, along the
+  induction over critical levels `TauCeti.IsMorse.band_induction`.
 * If `b` is a regular value with compact sublevel `M_b`, and every critical point in `M_b` has
   index at most `d`, then `Hₙ(M_b)` vanishes for `n > d`
   (`TauCeti.IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le`).
@@ -66,91 +66,6 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ} {a b : ℝ}
   {C : Type v} [Category.{w} C]
 
-omit [T2Space M] in
-/-- Vanishing of the relative homology of the sublevel pairs over `[a, b]` and over `[b, c]`
-gives vanishing over `[a, c]`, by the long exact sequence of the triple `(M_c, M_b, M_a)`. -/
-private theorem isZero_singularHomology_sublevelPair_trans [HasCoproducts.{u} C] [Abelian C]
-    {c : ℝ} (hab : a ≤ b) (hbc : b ≤ c) (R : C) (n : ℕ)
-    (h₁ : IsZero ((sublevelPair f hab).singularHomology R n))
-    (h₂ : IsZero ((sublevelPair f hbc).singularHomology R n)) :
-    IsZero ((sublevelPair f (hab.trans hbc)).singularHomology R n) :=
-  (TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hab)
-    (sublevel_mono f hbc)).isZero_singularHomology_totalPair R n h₁ h₂
-
-/-- The band statement, by induction over a finite set `S` of reals containing the critical values
-in the band, adding the largest element last: either no critical point lies on that level, or the
-band is cut just below and just above it into a smaller band, a single critical level and a band
-without critical points. -/
-private theorem IsMorse.isZero_singularHomology_sublevelPair_of_forall_mem_finset
-    [HasCoproducts.{u} C] [Abelian C] (hf : IsMorse I f) {d : ℕ}
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hd : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ}
-    (hn : d < n) (S : Finset ℝ) :
-    ∀ b' (hab' : a ≤ b'), b' ≤ b → IsRegularValue I 𝓘(ℝ) f b' →
-      (∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b', f p ∈ S) →
-      IsZero ((sublevelPair f hab').singularHomology R n) := by
-  have hcont : Continuous f := hf.contMDiff.continuous
-  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha
-  induction S using Finset.induction_on_max with
-  | empty =>
-    intro b' hab' hb'b _ hS
-    refine isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff hab'
-      (hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont)
-        (preimage_mono (Icc_subset_Icc_right hb'b))) (fun x hx₁ hx₂ hx ↦ ?_) R n
-    exact Finset.notMem_empty _
-      (hS x ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, hx₁, hx₂⟩)
-  | insert c s hcs ih =>
-    intro b' hab' hb'b hb' hS
-    rw [isRegularValue_iff_notMem_image_criticalPoints] at hb'
-    -- If no critical point of the band lies on the level `c`, the smaller set `s` suffices.
-    by_cases hc : ∃ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b', f p = c
-    swap
-    · refine ih b' hab' hb'b
-        (isRegularValue_iff_notMem_image_criticalPoints.2 hb') fun p hp ↦ ?_
-      rcases Finset.mem_insert.1 (hS p hp) with h | h
-      · exact absurd ⟨p, hp, h⟩ hc
-      · exact h
-    obtain ⟨p, ⟨hpcrit, hpa, hpb⟩, rfl⟩ := hc
-    obtain ⟨δ, hδ, hδa, hδb, hδs⟩ := Finset.exists_pos_lt_sub_and_add_lt
-      (hpa.lt_of_ne fun h ↦ ha ⟨p, hpcrit, h.symm⟩) (hpb.lt_of_ne fun h ↦ hb' ⟨p, hpcrit, h⟩) hcs
-    have hband : IsCompact (f ⁻¹' Icc (f p - δ) (f p + δ)) :=
-      hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont)
-        (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
-    have hdp : ∀ q ∈ criticalPoints I f ∩ f ⁻¹' {f p}, manifoldMorseIndex I f q ≤ d :=
-      fun q hq ↦ hd q ⟨hq.1, by
-        have : f q = f p := hq.2
-        constructor <;> linarith⟩
-    obtain ⟨ε, hε, hεδ, hzero⟩ :=
-      hf.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hdp hδ hband
-    -- Every other critical value of the band `[a, b']` lies in `s`, hence below `f p - δ`.
-    have hlow : ∀ q ∈ criticalPoints I f ∩ f ⁻¹' Icc a b', f q ≠ f p → f q < f p - δ := by
-      intro q hq hqp
-      rcases Finset.mem_insert.1 (hS q hq) with h | h
-      · exact absurd h hqp
-      · exact hδs _ h
-    -- The band `[a, f p - ε]` has its critical values in `s` and a regular upper end.
-    have h₁ : IsZero ((sublevelPair f (a := a) (b := f p - ε) (by linarith)).singularHomology
-        R n) := by
-      refine ih (f p - ε) _ (by linarith) ?_ fun q hq ↦ ?_
-      · refine isRegularValue_iff_notMem_image_criticalPoints.2 ?_
-        rintro ⟨q, hq, hqε⟩
-        have := hlow q ⟨hq, by linarith, by linarith⟩ (by linarith)
-        linarith
-      · rcases Finset.mem_insert.1 (hS q ⟨hq.1, hq.2.1, by linarith [hq.2.2]⟩) with h | h
-        · linarith [hq.2.2]
-        · exact h
-    -- The band `[f p + ε, b']` contains no critical point.
-    have h₃ : IsZero ((sublevelPair f (a := f p + ε) (b := b') (by linarith)).singularHomology
-        R n) := by
-      refine isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf.contMDiff _
-        (hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont)
-          (preimage_mono (Icc_subset_Icc (by linarith) hb'b))) (fun q hq₁ hq₂ hq ↦ ?_) R n
-      have := hlow q ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, by linarith, hq₂⟩
-        (by linarith)
-      linarith
-    exact isZero_singularHomology_sublevelPair_trans _ _ R n
-      (isZero_singularHomology_sublevelPair_trans _ _ R n h₁ (hzero R n hn)) h₃
-
 /-- **A compact band whose critical points have index at most `d` has no relative homology above
 degree `d`.** Let `f` be a Morse function, let `a ≤ b` be regular values of `f` with compact band
 `f⁻¹[a, b]`, and suppose every critical point in the band has Morse index at most `d`. Then the
@@ -160,12 +75,22 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le [H
     [Abelian C] (hf : IsMorse I f) {d : ℕ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
     (hd : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ}
-    (hn : d < n) : IsZero ((sublevelPair f hab).singularHomology R n) := by
-  -- A compact band of a Morse function contains only finitely many critical points.
-  refine hf.isZero_singularHomology_sublevelPair_of_forall_mem_finset hcompact ha hd R hn
-    ((hf.finite_criticalPoints_inter hcompact).image f).toFinset b hab le_rfl hb fun p hp ↦ ?_
-  rw [Finite.mem_toFinset]
-  exact mem_image_of_mem f hp
+    (hn : d < n) : IsZero ((sublevelPair f hab).singularHomology R n) :=
+  hf.band_induction (P := fun s t hst ↦ IsZero ((sublevelPair f hst).singularHomology R n)) hab
+    hcompact ha hb
+    (fun _ _ hst hcompact hcrit ↦ isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero
+      hf.contMDiff hst hcompact
+        (fun x hx₁ hx₂ hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hx₁, hx₂⟩) R n)
+    (fun p hp hap hpb _ hδ hcompact ↦ by
+      obtain ⟨ε, hε, hεδ, hzero⟩ :=
+        hf.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le
+          (fun q hq ↦ hd q ⟨hq.1, by
+            have : f q = f p := hq.2
+            constructor <;> linarith⟩) hδ hcompact
+      exact ⟨ε, hε, hεδ, hzero R n hn⟩)
+    -- The long exact sequence of the triple `(M_t, M_m, M_s)` joins the pieces.
+    fun _ _ _ hsm hmt _ h₁ h₂ ↦ (TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hsm)
+      (sublevel_mono f hmt)).isZero_singularHomology_totalPair R n h₁ h₂
 
 /-- **A compact regular sublevel whose critical points have index at most `d` has no homology
 above degree `d`.** Let `f` be a Morse function, let `b` be a regular value of `f` with compact
