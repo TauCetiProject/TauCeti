@@ -52,6 +52,8 @@ of an associative algebra, such as `gl n`, is evaluated.
 * `LieHom.ad_apply_eq_leftRegularRep_sub_mulRight`: the inner derivation action is the difference
   of the left-regular action and right multiplication.
 * `LieAlgebra.ad_comp_ad`: `ad x ∘ ad y` expanded into left and right multiplications.
+* `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
+  when their bracket vanishes.
 
 ## References
 
@@ -156,3 +158,16 @@ theorem ad_comp_ad (x y : A) :
   noncomm_ring
 
 end LieAlgebra
+
+namespace LieSubalgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
+
+/-- Two elements of a Lie subalgebra of an associative algebra commute in the algebra exactly when
+their bracket vanishes. -/
+theorem commute_coe_iff {K : LieSubalgebra R A} {x y : K} : Commute (x : A) y ↔ ⁅x, y⁆ = 0 := by
+  rw [commute_iff_lie_eq, ← coe_bracket, ZeroMemClass.coe_eq_zero]
+
+end LieSubalgebra
