@@ -28,6 +28,8 @@ an initial and a final segment.
   from a subcomplex of a standard simplex to a standard simplex.
 * `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
   to the vertex `yonedaEquiv g j`.
+* `SSet.stdSimplex.nonempty_edge_iff`: `Δ[n]` has an edge from `a` to `b` exactly when `a ≤ b`,
+  and it is then unique (`SSet.stdSimplex.subsingleton_edge`).
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
@@ -109,6 +111,27 @@ lemma hom_app_obj₀Equiv_symm {d d' : ℕ} (g : (Δ[d'] : SSet.{u}) ⟶ Δ[d]) 
     g.app _ (obj₀Equiv.symm j) = obj₀Equiv.symm (yonedaEquiv g j) :=
   stdSimplex.ext _ _ fun t ↦ by
     rw [hom_app_apply, obj₀Equiv_symm_apply, const_apply, obj₀Equiv_symm_apply, const_apply]
+
+/-- A standard simplex has at most one edge between any two vertices: an edge of `Δ[n]` is
+determined by its endpoints. -/
+instance subsingleton_edge {n : ℕ} (y x : (Δ[n] : SSet.{u}) _⦋0⦌) : Subsingleton (Edge y x) where
+  allEq e e' := Edge.ext (stdSimplex.ext _ _ (Fin.forall_fin_two.2
+    -- The vertices `0` and `1` of an edge are the vertices of its faces `δ 1` and `δ 0`.
+    ⟨(congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.src_eq).trans
+      (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e'.src_eq).symm,
+    (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.tgt_eq).trans
+      (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e'.tgt_eq).symm⟩))
+
+/-- The standard simplex `Δ[n]` has an edge from the vertex `a` to the vertex `b` exactly when
+`a ≤ b`. -/
+lemma nonempty_edge_iff {n : ℕ} (a b : Fin (n + 1)) :
+    Nonempty (Edge (obj₀Equiv.{u}.symm a) (obj₀Equiv.symm b)) ↔ a ≤ b := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ ⟨Edge.mk (edge n a b h)
+    (obj₀Equiv.injective (edge_apply_zero.{u} n a b h))
+    (obj₀Equiv.injective (edge_apply_one.{u} n a b h))⟩⟩
+  have h₀ : e.edge 0 = a := congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.src_eq
+  have h₁ : e.edge 1 = b := congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.tgt_eq
+  exact h₀.symm.trans_le ((monotone_apply e.edge (by decide)).trans_eq h₁)
 
 /-- Standard simplices are quasicategories, being isomorphic to nerves of linear orders. -/
 instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where

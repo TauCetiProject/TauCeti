@@ -47,6 +47,8 @@ of the Kan–Quillen model structure and is not proved here.
 * `SSet.IsWeaklyContractible.exists_homotopy_const`: maps to Kan complexes are homotopic to
   constant maps.
 * `SSet.IsWeaklyContractible.isConnected`: weakly contractible simplicial sets are connected.
+* `SSet.isWeaklyContractible_const_iff`: the discrete simplicial set on `ι` is weakly
+  contractible exactly when `ι` has a unique element.
 
 ## References
 
@@ -236,5 +238,17 @@ instance isConnected : K.IsConnected where
     simpa [mapπ₀_mk, toπ₀_app_zero] using this.symm
 
 end IsWeaklyContractible
+
+/-- The discrete simplicial set on a type `ι` is weakly contractible exactly when `ι` has a unique
+element: its connected components are the elements of `ι`. -/
+theorem isWeaklyContractible_const_iff (ι : Type u) :
+    IsWeaklyContractible ((Functor.const SimplexCategoryᵒᵖ).obj ι) ↔ Nonempty (Unique ι) := by
+  rw [unique_iff_subsingleton_and_nonempty]
+  refine ⟨fun _ ↦ ⟨(constπ₀Equiv ι).symm.injective.subsingleton,
+    IsWeaklyContractible.nonempty (K := (Functor.const SimplexCategoryᵒᵖ).obj ι)⟩,
+    fun ⟨_, ⟨i⟩⟩ ↦ IsWeaklyContractible.of_homotopy (x := i) (.ofEq ?_)⟩
+  -- Every simplicial set map to a discrete simplicial set on a subsingleton is the identity.
+  ext n s
+  exact Subsingleton.elim (α := ι) _ _
 
 end SSet
