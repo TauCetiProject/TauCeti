@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.MeasureTheory.Measure.ContentOfOpens
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 
 /-!
 # The mass measure of a functional of locally finite mass
@@ -334,11 +335,8 @@ theorem massMeasure_le_of_enorm_apply_le (ν : Measure Ω) [ν.OuterRegular]
     obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.1 hU
     rw [massMeasure_preimage_coe hT hU']
     refine localMass_le_iff.2 fun φ hφU hφ => (h φ).trans ?_
-    rw [← lintegral_indicator_one hU.measurableSet]
-    refine lintegral_mono fun x => ?_
-    by_cases hx : (x : E) ∈ U'
-    · simpa [hx, ← ofReal_norm] using hφ x
-    · simp [hx, image_eq_zero_of_notMem_tsupport fun h => hx (hφU h)]
+    exact (φ.lintegral_enorm_le_mul_measure_preimage ν hU'.measurableSet hφU (a := 1)
+      fun x => by simpa [← ofReal_norm] using hφ x).trans_eq (one_mul _)
   refine Measure.le_iff'.2 fun s => ?_
   rw [s.measure_eq_iInf_isOpen (massMeasure T), s.measure_eq_iInf_isOpen ν]
   exact iInf₂_mono fun U _ => iInf_mono fun hU => hopen U hU
