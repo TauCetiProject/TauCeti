@@ -28,7 +28,7 @@ namespace ContinuousLinearMap
 
 /-- Perturbing both arguments of the quadratic form of a continuous linear map changes it by at
 most `2η ‖T‖`, when both vectors have norm at most one and are within `η` of each other. -/
-theorem norm_inner_self_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+theorem norm_inner_map_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
     [InnerProductSpace 𝕜 E] (T : E →L[𝕜] E) {η : ℝ} {x y : E}
     (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) (hxy : ‖x - y‖ ≤ η) :
     ‖Inner.inner 𝕜 (T x) x - Inner.inner 𝕜 (T y) y‖ ≤ 2 * η * ‖T‖ := by
@@ -39,12 +39,11 @@ theorem norm_inner_self_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGrou
     rw [map_sub]
     simp only [inner_sub_left, inner_sub_right]
     ring
-  have hTx : ‖T x‖ ≤ ‖T‖ :=
-    (T.le_opNorm x).trans (mul_le_of_le_one_right T.opNorm_nonneg hx)
-  have hTy : ‖T y‖ ≤ ‖T‖ :=
-    (T.le_opNorm y).trans (mul_le_of_le_one_right T.opNorm_nonneg hy)
-  have hTxy : ‖T (x - y)‖ ≤ ‖T‖ * η :=
-    (T.le_opNorm (x - y)).trans (mul_le_mul_of_nonneg_left hxy T.opNorm_nonneg)
+  have hTx : ‖T x‖ ≤ ‖T‖ := by
+    simpa using T.le_opNorm_of_le hx
+  have hTy : ‖T y‖ ≤ ‖T‖ := by
+    simpa using T.le_opNorm_of_le hy
+  have hTxy : ‖T (x - y)‖ ≤ ‖T‖ * η := T.le_opNorm_of_le hxy
   rw [hdecomp]
   calc
     ‖Inner.inner 𝕜 (T (x - y)) x + Inner.inner 𝕜 (T y) (x - y)‖
@@ -113,7 +112,7 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
       simpa [mem_closedBall, dist_eq_norm] using hN hzN
     have hdist' : ‖x - z‖ ≤ (η : ℝ) := by
       simpa [mem_closedBall, dist_eq_norm] using hdist
-    have herror := norm_inner_self_sub_le T hx.le hznorm hdist'
+    have herror := norm_inner_map_sub_le T hx.le hznorm hdist'
     have herror' :
         |RCLike.re (Inner.inner 𝕜 (T x) x) - RCLike.re (Inner.inner 𝕜 (T z) z)| ≤
           2 * (η : ℝ) * ‖T‖ := by
