@@ -81,9 +81,9 @@ theorem im_toCircle_coe (T t : ℝ) :
 /-- The half period `T / 2` of `AddCircle T` is sent to `-1` by `AddCircle.toCircle`. -/
 @[simp]
 theorem toCircle_half_period {T : ℝ} (hT : T ≠ 0) : toCircle ((T / 2 : ℝ) : AddCircle T) = -1 := by
+  have hangle : 2 * Real.pi / T * (T / 2) = Real.pi := by field_simp
   ext1
-  rw [toCircle_apply_mk, Circle.coe_exp, Circle.coe_neg, Circle.coe_one,
-    show 2 * Real.pi / T * (T / 2) = Real.pi by field_simp]
+  rw [toCircle_apply_mk, Circle.coe_exp, Circle.coe_neg, Circle.coe_one, hangle]
   exact Complex.exp_pi_mul_I
 
 /-- For a nonzero period `T`, the half period `T / 2` is a nonzero point of `AddCircle T`. -/

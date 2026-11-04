@@ -84,9 +84,8 @@ theorem torusCos_coe (t : ι → ℝ) :
   simp [torusCos_def]
 
 /-- The cosine function on a torus is continuous. -/
-theorem continuous_torusCos : Continuous (torusCos p) := by
-  rw [show torusCos p = fun x ↦ ∑ i, (toCircle (x i) : ℂ).re from funext (torusCos_def p)]
-  fun_prop
+theorem continuous_torusCos : Continuous (torusCos p) :=
+  Continuous.congr (by fun_prop) fun x ↦ (torusCos_def p x).symm
 
 variable [∀ i, Fact (0 < p i)]
 

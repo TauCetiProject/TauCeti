@@ -43,9 +43,10 @@ theorem deriv_cos_mul (c t : ℝ) : deriv (fun s ↦ cos (c * s)) t = -(c * sin 
 /-- The second derivative of `t ↦ cos (c t)` is `-c² cos (c t)`. -/
 theorem deriv_deriv_cos_mul (c t : ℝ) :
     deriv (deriv fun s ↦ cos (c * s)) t = -(c ^ 2 * cos (c * t)) := by
-  rw [show (deriv fun s ↦ cos (c * s)) = fun s ↦ -(c * sin (c * s)) from
-      funext (deriv_cos_mul c), deriv.fun_neg, deriv_const_mul _ (by fun_prop),
-    deriv_comp_mul_left (f := sin), Real.deriv_sin, smul_eq_mul]
+  have hderiv : (deriv fun s ↦ cos (c * s)) = fun s ↦ -(c * sin (c * s)) :=
+    funext (deriv_cos_mul c)
+  rw [hderiv, deriv.fun_neg, deriv_const_mul _ (by fun_prop), deriv_comp_mul_left (f := sin),
+    Real.deriv_sin, smul_eq_mul]
   ring
 
 /-- For `k ^ 2 < 1` and every real exponent `p`, the derivative in `k` of
