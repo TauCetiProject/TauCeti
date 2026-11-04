@@ -15,6 +15,7 @@ import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.MeasureTheory.Integral.Bochner.DisjointSequence
+import TauCeti.MeasureTheory.Integral.Lebesgue.DisjointSequence
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -81,7 +82,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   refine ⟨ι '' closedBall 0 R, ?_, fun f hf ↦ ?_⟩
   · -- The image of a ball of the reflexive space `L²` is weakly compact.
     have hcomp : toWeakSpace 𝕜 (Lp 𝕜 1 μ) ∘ ι = WeakSpace.map ι ∘ toWeakSpace 𝕜 (Lp 𝕜 2 μ) :=
-      rfl
+      funext fun g ↦ (WeakSpace.map_apply ι g).symm
     rw [← image_comp, hcomp, image_comp]
     exact (TauCeti.isCompact_toWeakSpace_closedBall
       (surjective_inclusionInDoubleDual (by norm_num) (by norm_num)) 0 R).image

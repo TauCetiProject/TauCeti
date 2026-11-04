@@ -55,16 +55,18 @@ theorem integrable_indicator_Ico_one {α : Type*} [MeasurableSpace α] [Topologi
     Integrable ((Ico a b).indicator (1 : α → ℝ)) μ :=
   (integrableOn_const measure_Ico_lt_top.ne).integrable_indicator measurableSet_Ico
 
-/-- The integral of `|f|` over a measurable set `s` is the integral of `f` over the part of `s`
-where `f` is nonnegative minus the integral of `f` over the part where it is negative. -/
+/-- The integral of `|f|` over a set `s` is the integral of `f` over the part of `s` where `f` is
+nonnegative minus the integral of `f` over the part where it is negative. -/
 theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ}
-    (hf : Integrable f μ) (hfm : Measurable f) {s : Set α} (hs : MeasurableSet s) :
+    {s : Set α} (hf : IntegrableOn f s μ) (hfm : Measurable f) :
     ∫ x in s, |f x| ∂μ = ∫ x in s ∩ {x | 0 ≤ f x}, f x ∂μ - ∫ x in s \ {x | 0 ≤ f x}, f x ∂μ := by
-  have hP : MeasurableSet {x | 0 ≤ f x} := measurableSet_le measurable_const hfm
-  rw [← integral_inter_add_sdiff hP hf.abs.integrableOn,
-    setIntegral_congr_fun (hs.inter hP) fun x hx ↦ abs_of_nonneg hx.2,
-    setIntegral_congr_fun (hs.diff hP) fun x hx ↦ abs_of_neg (not_le.1 hx.2), integral_neg,
-    sub_eq_add_neg]
+  have hneg : {x | f x < 0} ∩ s = s \ {x | 0 ≤ f x} := by
+    ext x
+    simp [and_comm]
+  simp_rw [← Real.norm_eq_abs]
+  rw [integral_norm_eq_pos_sub_neg hf, ← setIntegral_neg_eq_setIntegral_nonpos hf.1,
+    Measure.restrict_restrict (measurableSet_le measurable_const hfm),
+    Measure.restrict_restrict (measurableSet_lt hfm measurable_const), inter_comm _ s, hneg]
 
 end TauCeti
 
