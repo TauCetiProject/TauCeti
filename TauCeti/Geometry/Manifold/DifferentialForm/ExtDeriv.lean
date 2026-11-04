@@ -160,6 +160,11 @@ theorem mextDeriv_def (φ : RoughForm I M F k) (x : M) :
     mextDeriv φ x = extDerivWithin (E := E) (φ.inChartAt x) (range I) (extChartAt I x x) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_def, preimage_univ, univ_inter]
 
+/-- The exterior derivative of a one-form is alternating in its two arguments. -/
+theorem mextDeriv_swap (φ : RoughForm I M F 1) (x : M) (v w : TangentSpace I x) :
+    mextDeriv φ x ![v, w] = -mextDeriv φ x ![w, v] := by
+  simpa using (mextDeriv φ x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+
 /-! ### Locality -/
 
 /-- The exterior derivative within a set does not change when the set is modified away from a

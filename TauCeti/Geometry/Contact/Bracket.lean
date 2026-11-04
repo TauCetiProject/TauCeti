@@ -25,9 +25,9 @@ field `X_f` of a function `f`. The **Jacobi bracket** of two functions is
 `{f, g}_α = X_f(g) - g R_α(f)`
 (`TauCeti.SmoothForm.IsContactForm.contactBracket_eq_mvfderiv`).
 
-The bracket comes from the Lie bracket of contact vector fields. If `X` and `Y` are differentiable
-contact Hamiltonian vector fields of `C²` functions `f` and `g`, then `[X, Y]` is the contact
-Hamiltonian vector field of `X(g) - g R_α(f)`
+The bracket comes from the Lie bracket of contact vector fields. If `X` and `Y` are contact
+Hamiltonian vector fields of `C²` functions `f` and `g`, then `[X, Y]` is the contact Hamiltonian
+vector field of `X(g) - g R_α(f)`
 (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mlieBracket`). The proof evaluates the
 identity `d(dα) = 0` on `X`, `Y` and an extension of a tangent vector, using
 `L_X α = (R_α f) α` and `L_Y α = (R_α g) α`. Consequently
@@ -47,13 +47,13 @@ On smooth functions the bracket is a Jacobi bracket in the sense of Lichnerowicz
 * it is a first-order differential operator in each argument rather than a derivation:
   `{f, g k}_α = g {f, k}_α + k {f, g}_α - g k {f, 1}_α`, where `{f, 1}_α = -R_α f`
   (`TauCeti.SmoothForm.IsContactForm.contactBracket_mul_right` and
-  `TauCeti.SmoothForm.IsContactForm.contactBracket_const_right`);
+  `TauCeti.SmoothForm.IsContactForm.contactBracket_one_right`);
 * it satisfies the **Jacobi identity**
   `{f, {g, k}_α}_α + {g, {k, f}_α}_α + {k, {f, g}_α}_α = 0` for `C²` functions
   (`TauCeti.SmoothForm.IsContactForm.contactBracket_jacobi`).
 
 The bracket with the constant `1` is the Reeb derivative, `{1, g}_α = R_α g`
-(`TauCeti.SmoothForm.IsContactForm.contactBracket_const_left`), so `{f, ·}_α` is a derivation
+(`TauCeti.SmoothForm.IsContactForm.contactBracket_one_left`), so `{f, ·}_α` is a derivation
 where `R_α f = 0`. The Reeb derivative of a bracket is `R_α {f, g}_α = X_f(R_α g) - X_g(R_α f)`
 (`TauCeti.SmoothForm.IsContactForm.mvfderiv_contactBracket_reebVectorField`).
 
@@ -79,11 +79,6 @@ namespace SmoothForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {α : SmoothForm I M ℝ 1} {f g k : M → ℝ} {X Y : (x : M) → TangentSpace I x}
-
-/-- The exterior derivative of a one-form is alternating in its two arguments. -/
-private theorem mextDeriv_swap (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = -mextDeriv α.1 x ![w, v] := by
-  simpa using (mextDeriv α.1 x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
 
 /-! ### Lie brackets of contact Hamiltonian vector fields -/
 
@@ -212,17 +207,22 @@ theorem mextDeriv_mlieBracket_apply (hα : α.IsContactForm)
   linear_combination h + b x * hLX - a x * hLY + hdg - hdf
 
 /-- **The Lie bracket of contact Hamiltonian vector fields.** For a contact form `α` on a
-finite-dimensional manifold and differentiable contact Hamiltonian vector fields `X` of `f` and
-`Y` of `g`, with `f` and `g` of class `C²`, the bracket `[X, Y]` is a contact Hamiltonian vector
-field of `X(g) - g R_α(f)`. -/
+finite-dimensional manifold and contact Hamiltonian vector fields `X` of `f` and `Y` of `g`, with
+`f` and `g` of class `C²`, the bracket `[X, Y]` is a contact Hamiltonian vector field of
+`X(g) - g R_α(f)`. -/
 theorem mlieBracket (hα : α.IsContactForm) (hX : α.IsContactHamiltonianVectorField f X)
     (hY : α.IsContactHamiltonianVectorField g Y) (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (hg : ContMDiff I 𝓘(ℝ) 2 g)
-    (hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M)))
-    (hYd : MDifferentiable I I.tangent (fun y ↦ (Y y : TangentBundle I M))) :
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) :
     α.IsContactHamiltonianVectorField
       (fun y ↦ mvfderiv I g y (X y) - g y * mvfderiv I f y (α.reebVectorField y))
       (mlieBracket I X Y) := by
+  -- By uniqueness `X = X_f` and `Y = X_g`, which are differentiable.
+  have hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M)) := by
+    rw [hα.isContactHamiltonianVectorField_iff_eq.1 hX]
+    exact hα.mdifferentiable_contactHamiltonianVectorField hf
+  have hYd : MDifferentiable I I.tangent (fun y ↦ (Y y : TangentBundle I M)) := by
+    rw [hα.isContactHamiltonianVectorField_iff_eq.1 hY]
+    exact hα.mdifferentiable_contactHamiltonianVectorField hg
   refine isContactHamiltonianVectorField_iff.2 fun x ↦
     ⟨hX.apply_mlieBracket hY (hXd x) (hYd x), fun v ↦ ?_⟩
   have h := hX.mextDeriv_mlieBracket_apply hα hY (hf x) (hg x) (hXd x) (hYd x)
@@ -255,7 +255,7 @@ theorem contactBracket_def (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M)
 /-- The Jacobi bracket is antisymmetric. -/
 theorem neg_contactBracket (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) :
     -α.contactBracket g f x = α.contactBracket f g x := by
-  rw [contactBracket_def, contactBracket_def, mextDeriv_swap α x]
+  rw [contactBracket_def, contactBracket_def, mextDeriv_swap α.1 x]
   ring
 
 /-- The Jacobi bracket of a function with itself vanishes. -/
@@ -264,12 +264,6 @@ theorem contactBracket_self (α : SmoothForm I M ℝ 1) (f : M → ℝ) (x : M) 
     α.contactBracket f f x = 0 := by
   have h := neg_contactBracket α f f x
   linarith
-
-/-- The exterior derivative of a one-form evaluated on two vectors is the bilinear form of the
-two-form `dα`. -/
-private theorem mextDeriv_eq_bilinFormAt (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
-  rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
 
 /-- The Jacobi bracket is additive in its first argument on differentiable functions. -/
 theorem contactBracket_add_left {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
@@ -357,6 +351,18 @@ theorem contactBracket_const_left (c : ℝ) (g : M → ℝ) (x : M) :
     α.contactBracket (fun _ ↦ c) g x = c * mvfderiv I g x (α.reebVectorField x) := by
   rw [hα.contactBracket_eq_sub_mvfderiv, mvfderiv_const, zero_apply, sub_zero]
 
+/-- The Jacobi bracket with `1` on the right is `{f, 1}_α = -R_α(f)`. -/
+@[simp]
+theorem contactBracket_one_right (f : M → ℝ) (x : M) :
+    α.contactBracket f 1 x = -mvfderiv I f x (α.reebVectorField x) := by
+  rw [Pi.one_def, hα.contactBracket_const_right, one_mul]
+
+/-- The Jacobi bracket with `1` on the left is the Reeb derivative, `{1, g}_α = R_α(g)`. -/
+@[simp]
+theorem contactBracket_one_left (g : M → ℝ) (x : M) :
+    α.contactBracket 1 g x = mvfderiv I g x (α.reebVectorField x) := by
+  rw [Pi.one_def, hα.contactBracket_const_left, one_mul]
+
 /-- **The Leibniz rule of the Jacobi bracket.** For `g` and `k` differentiable at `x`,
 `{f, g k}_α = g {f, k}_α + k {f, g}_α + g k R_α(f)`. Since `{f, 1}_α = -R_α(f)`, the bracket is a
 first-order differential operator in `g` which is a derivation only where `R_α(f) = 0`. -/
@@ -398,8 +404,6 @@ theorem contactHamiltonianVectorField_contactBracket (hf : ContMDiff I 𝓘(ℝ)
       mlieBracket I (α.contactHamiltonianVectorField f) (α.contactHamiltonianVectorField g) := by
   have h := (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f).mlieBracket hα
     (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField g) hf hg
-    (hα.mdifferentiable_contactHamiltonianVectorField hf)
-    (hα.mdifferentiable_contactHamiltonianVectorField hg)
   rw [funext (hα.contactBracket_eq_mvfderiv f g)]
   exact (hα.isContactHamiltonianVectorField_iff_eq.1 h).symm
 
@@ -421,6 +425,28 @@ theorem mvfderiv_contactBracket_reebVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f)
     ← funext (hα.contactBracket_eq_mvfderiv f g)] at h
   linarith
 
+/-- The derivative of a Jacobi bracket: for `f` of class `C²` at `x` and a `C²` function `g`,
+`d{f, g}_α = f d(R_α g) + (R_α g) df - d(X_g f)` at `x`. -/
+theorem mvfderiv_contactBracket {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) :
+    mvfderiv I (α.contactBracket f g) x =
+      f x • mvfderiv I (fun y ↦ mvfderiv I g y (α.reebVectorField y)) x +
+        mvfderiv I g x (α.reebVectorField x) • mvfderiv I f x -
+          mvfderiv I (fun y ↦ mvfderiv I f y (α.contactHamiltonianVectorField g y)) x := by
+  have h2 : minSmoothness ℝ 2 ≤ (2 : ℕ∞ω) := by simp
+  have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
+  have hf1 : MDifferentiableAt I 𝓘(ℝ) f x := hf.mdifferentiableAt (by simp)
+  have hRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I g y (α.reebVectorField y)) x :=
+    mdifferentiableAt_mvfderiv_apply (hg x) h2
+      (hα.contMDiff_reebVectorField.mdifferentiableAt (by simp))
+  have hfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y * mvfderiv I g y (α.reebVectorField y)) x :=
+    hf1.mul hRg
+  have hdfXg : MDifferentiableAt I 𝓘(ℝ)
+      (fun y ↦ mvfderiv I f y (α.contactHamiltonianVectorField g y)) x :=
+    mdifferentiableAt_mvfderiv_apply hf h2 (hα.mdifferentiable_contactHamiltonianVectorField hg x)
+  rw [funext (hα.contactBracket_eq_sub_mvfderiv f g), mvfderiv_fun_sub hfRg hdfXg,
+    mvfderiv_fun_mul hf1 hRg]
+
 /-- For `C²` functions, the Jacobi bracket satisfies
 `{f, {g, k}_α}_α = {{f, g}_α, k}_α + {g, {f, k}_α}_α`. -/
 theorem contactBracket_contactBracket (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g)
@@ -430,49 +456,19 @@ theorem contactBracket_contactBracket (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : Con
         α.contactBracket g (α.contactBracket f k) x := by
   have h2 : minSmoothness ℝ 2 ≤ (2 : ℕ∞ω) := by simp
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-  have hR : MDifferentiableAt I I.tangent
-      (fun y ↦ (α.reebVectorField y : TangentBundle I M)) x :=
-    hα.contMDiff_reebVectorField.mdifferentiableAt (by simp)
   have hXg := hα.mdifferentiable_contactHamiltonianVectorField hg x
   have hXk := hα.mdifferentiable_contactHamiltonianVectorField hk x
-  have hf1 : MDifferentiableAt I 𝓘(ℝ) f x := (hf x).mdifferentiableAt (by simp)
-  have hRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I g y (α.reebVectorField y)) x :=
-    mdifferentiableAt_mvfderiv_apply (hg x) h2 hR
-  have hRk : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I k y (α.reebVectorField y)) x :=
-    mdifferentiableAt_mvfderiv_apply (hk x) h2 hR
-  have hfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y * mvfderiv I g y (α.reebVectorField y)) x :=
-    hf1.mul hRg
-  have hfRk : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y * mvfderiv I k y (α.reebVectorField y)) x :=
-    hf1.mul hRk
-  have hdfXg : MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ mvfderiv I f y (α.contactHamiltonianVectorField g y)) x :=
-    mdifferentiableAt_mvfderiv_apply (hf x) h2 hXg
-  have hdfXk : MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ mvfderiv I f y (α.contactHamiltonianVectorField k y)) x :=
-    mdifferentiableAt_mvfderiv_apply (hf x) h2 hXk
   -- `{f, {g, k}} = f R_α{g, k} - X_{{g, k}} f`, with `X_{{g, k}} = [X_g, X_k]`.
   have e1 := hα.contactBracket_eq_sub_mvfderiv f (α.contactBracket g k) x
   rw [hα.contactHamiltonianVectorField_contactBracket hg hk,
     hα.mvfderiv_contactBracket_reebVectorField hg hk,
     mvfderiv_mlieBracket (hf x) h2 hXg hXk] at e1
   -- `{g, {f, k}} = X_g {f, k} - {f, k} R_α g`, where `{f, k} = f R_α k - X_k f`.
-  have d2 : mvfderiv I (α.contactBracket f k) x =
-      f x • mvfderiv I (fun y ↦ mvfderiv I k y (α.reebVectorField y)) x +
-        mvfderiv I k x (α.reebVectorField x) • mvfderiv I f x -
-          mvfderiv I (fun y ↦ mvfderiv I f y (α.contactHamiltonianVectorField k y)) x := by
-    rw [funext (hα.contactBracket_eq_sub_mvfderiv f k), mvfderiv_fun_sub hfRk hdfXk,
-      mvfderiv_fun_mul hf1 hRk]
   have e2 := hα.contactBracket_eq_mvfderiv g (α.contactBracket f k) x
-  rw [d2] at e2
+  rw [hα.mvfderiv_contactBracket (hf x) hk] at e2
   -- `{{f, g}, k} = -(X_k {f, g} - {f, g} R_α k)`, where `{f, g} = f R_α g - X_g f`.
-  have d3 : mvfderiv I (α.contactBracket f g) x =
-      f x • mvfderiv I (fun y ↦ mvfderiv I g y (α.reebVectorField y)) x +
-        mvfderiv I g x (α.reebVectorField x) • mvfderiv I f x -
-          mvfderiv I (fun y ↦ mvfderiv I f y (α.contactHamiltonianVectorField g y)) x := by
-    rw [funext (hα.contactBracket_eq_sub_mvfderiv f g), mvfderiv_fun_sub hfRg hdfXg,
-      mvfderiv_fun_mul hf1 hRg]
   have e3 := hα.contactBracket_eq_mvfderiv k (α.contactBracket f g) x
-  rw [d3] at e3
+  rw [hα.mvfderiv_contactBracket (hf x) hg] at e3
   have efg := hα.contactBracket_eq_sub_mvfderiv f g x
   have efk := hα.contactBracket_eq_sub_mvfderiv f k x
   rw [← neg_contactBracket α (α.contactBracket f g) k]
