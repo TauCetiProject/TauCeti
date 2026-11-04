@@ -61,7 +61,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- All source-chart derivatives of the local frame coefficients, as a linear map into
 the product of compact-open continuous-map spaces. -/
--- Normalize chart targets in the dependent product, so the evaluation lemma is in simp normal form.
+-- Use the simp normal form of the target so `frameJet_apply` can rewrite this dependent coercion.
 def frameJet : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜]
     ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
       C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F) :=
@@ -70,6 +70,7 @@ def frameJet : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜]
       ((e i).frameCoordinates (hU i))
 
 /-- The frame jet is the native chart derivative of the frame-coordinate function. -/
+-- Normalize the dependent coercion's chart target, as required by simp normal form.
 @[simp]
 theorem frameJet_apply (s : Cₛ^n⟮I; F, V⟯) (i : ι) (x : U i)
     (m : {m : ℕ // m ≤ n}) :
@@ -99,7 +100,8 @@ theorem continuous_frameTopology_iff {P : Type*} [TopologicalSpace P]
     frameJet_apply]
   refine forall_congr' fun i ↦ forall_congr' fun x ↦ ?_
   simp only [Subtype.forall]
-  -- Match the expanded chart target in `frameJet` with the native chart-jet target.
+  -- `extChartAt` is a simp definition. Reconcile its native chart-jet target with the
+  -- expanded target required for the dependent coercion in `frameJet_apply` to be simp-normal.
   convert! Iff.rfl
 
 /-- A chosen frame-coordinate jet depends continuously on the section. -/
@@ -170,6 +172,8 @@ theorem isInducing_sectionFrameCoordinates :
     funext s i x m
     dsimp only [Function.comp_apply, J]
     rw [frameJet_apply]
+    -- The exported coefficient maps agree pointwise by their evaluation lemmas;
+    -- neither map's definition needs to be unfolded.
     congr 1
     ext y
     simp
@@ -203,7 +207,7 @@ theorem t2Space_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
     e U hU hcover).isEmbedding.t2Space
 
 /-- Evaluation at a point lying in one of the frame domains is continuous. -/
-theorem continuous_eval_of_mem (i : ι) {x : M} (hx : x ∈ U i) :
+theorem continuous_eval_const_of_mem (i : ι) {x : M} (hx : x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s x) := by
   let _ := frameTopology (I := I) (n := n) e U hU
@@ -217,12 +221,12 @@ theorem continuous_eval_of_mem (i : ι) {x : M} (hx : x ∈ U i) :
       (e i).symm_apply_apply_mk (hU i hx)]
 
 /-- Point evaluation is continuous when the chosen frame domains cover the base. -/
-theorem continuous_eval (hcover : ∀ x, ∃ i, x ∈ U i) (x : M) :
+theorem continuous_eval_const (hcover : ∀ x, ∃ i, x ∈ U i) (x : M) :
     let _ := frameTopology (I := I) (n := n) e U hU
     Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s x) := by
   let _ := frameTopology (I := I) (n := n) e U hU
   obtain ⟨i, hi⟩ := hcover x
-  exact continuous_eval_of_mem e U hU i hi
+  exact continuous_eval_const_of_mem e U hU i hi
 
 end Coefficients
 
@@ -265,6 +269,28 @@ theorem tendsto_frameTopology_iff {P : Type*} {l : Filter P}
     simpa only [map_sub, ContMDiffMap.chartIteratedFDeriv_sub,
       ContinuousMap.sub_apply, dist_eq_norm, norm_sub_rev] using hb z hz
 
+/-- A compact frame-coordinate derivative seminorm is continuous in the section topology. -/
+theorem continuous_chartDerivativeSeminorm (i : ι) (x : U i)
+    (K : Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous ((e i).chartDerivativeSeminorm (hU i) x K m hm) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  have hjet := (ContinuousMap.continuous_restrict (K : Set (extChartAt I x).target)).comp
+    (continuous_frameJet e U hU i x m hm)
+  exact ((continuous_norm (E := C(K, E [×m]→L[𝕜] F))).comp hjet).congr fun s ↦
+    ((e i).chartDerivativeSeminorm_apply (hU i) x K m hm s).symm
+
+/-- Compact frame derivative tolerance balls are open in the section topology. -/
+theorem isOpen_ball_chartDerivativeSeminorm (i : ι) (x : U i)
+    (K : Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n)
+    (s : Cₛ^n⟮I; F, V⟯) (r : ℝ) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    IsOpen (((e i).chartDerivativeSeminorm (hU i) x K m hm).ball s r) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  exact isOpen_lt ((continuous_chartDerivativeSeminorm e U hU i x K m hm).comp
+    (continuous_id.sub continuous_const)) continuous_const
+
 /-- Compact frame `C^k` tolerance balls are open in the section topology. -/
 theorem isOpen_ball_chartCkSeminorm (i : ι) (x : U i)
     (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n)
@@ -284,6 +310,25 @@ theorem isOpen_ball_chartCkSeminorm (i : ι) (x : U i)
         ((e i).frameCoordinates (hU i) s) ((e i).frameCoordinates (hU i) t) hr).symm
   · rw [Seminorm.ball_eq_emptyset _ (le_of_not_gt hr)]
     exact isOpen_empty
+
+/-- Every positive compact frame `C^k` tolerance gives a section neighborhood. -/
+theorem ball_chartCkSeminorm_mem_nhds (i : ι) (x : U i)
+    (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n)
+    (s : Cₛ^n⟮I; F, V⟯) {r : ℝ} (hr : 0 < r) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    ((e i).chartCkSeminorm (hU i) x K k hk).ball s r ∈ 𝓝 s := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  exact (isOpen_ball_chartCkSeminorm e U hU i x K k hk s r).mem_nhds (by simpa using hr)
+
+/-- A compact frame `C^k` seminorm is continuous in the section topology. -/
+theorem continuous_chartCkSeminorm (i : ι) (x : U i)
+    (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous ((e i).chartCkSeminorm (hU i) x K k hk) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  exact Seminorm.continuous_of_forall fun r hr ↦
+    ball_chartCkSeminorm_mem_nhds e U hU i x K k hk 0 hr
 
 end ContMDiffSection
 
