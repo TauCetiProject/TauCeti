@@ -46,8 +46,9 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.pairing_simpleIndex` and `TauCeti.DynkinType.pairingIn_simpleIndex`: the
   Cartan integers at the simple indices are the entries of the Bourbaki-numbered Cartan matrix.
 * `TauCeti.DynkinType.card_support_simplyConnectedBase`: the pinned base has `t.rank` elements.
-* `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum`: the pinned pairing is the dot
-  product, uniformly in the type.
+* `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum` and
+  `TauCeti.DynkinType.coroot'_simplyConnectedRootDatum_apply`: the pinned pairing and coroot
+  functionals are given by the dot product, uniformly in the type.
 * `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
   corresponding fundamental-weight coordinate.
 * `TauCeti.DynkinType.simpleIndex_B`, `simpleIndex_F4` and `simpleIndex_G2`: the simple-root
@@ -460,6 +461,17 @@ theorem toLinearMap_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid)
     rw [simplyConnectedRootDatum_G2]
     exact g2SimplyConnectedRootDatum_toLinearMap x y
 
+/-- Evaluation of a coroot functional of the pinned datum on a weight is the dot product with the
+corresponding coroot vector.
+
+Not a `simp` lemma: `RootPairing.coroot'` is an abbreviation for a `LinearMap.flip`, so `simp`
+rewrites the left-hand side with `LinearMap.flip_apply` before this could fire. -/
+theorem coroot'_simplyConnectedRootDatum_apply (t : DynkinType) (ht : t.Valid)
+    (k : Fin t.numRoots) (mu : Fin t.rank → ℤ) :
+    (t.simplyConnectedRootDatum ht).coroot' k mu =
+      mu ⬝ᵥ (t.simplyConnectedRootDatum ht).coroot k := by
+  rw [LinearMap.flip_apply, t.toLinearMap_simplyConnectedRootDatum ht]
+
 /-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate.
 
 Not a `simp` lemma: `RootPairing.coroot'` is an abbreviation for a `LinearMap.flip`, so `simp`
@@ -467,9 +479,7 @@ rewrites the left-hand side with `LinearMap.flip_apply` before this could fire. 
 theorem coroot'_simpleIndex_apply (t : DynkinType) (ht : t.Valid)
     (i : Fin t.rank) (mu : Fin t.rank → ℤ) :
     (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i) mu = mu i := by
-  change (t.simplyConnectedRootDatum ht).toLinearMap mu
-    ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht i)) = mu i
-  rw [t.coroot_simpleIndex ht, t.toLinearMap_simplyConnectedRootDatum ht,
+  rw [t.coroot'_simplyConnectedRootDatum_apply ht, t.coroot_simpleIndex ht,
     dotProduct_single, mul_one]
 
 /-- **The Cartan integers of the pinned datum at the simple indices are the entries of its

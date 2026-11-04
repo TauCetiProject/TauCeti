@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Algebra.Hom
-import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.RootDatum
@@ -73,26 +72,6 @@ attribute [local instance high] Algebra.toModule
 variable (t : DynkinType) (ht : t.Valid)
 
 /-! ## A simple Weyl representative -/
-
-/-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
-of endomorphisms of the Geck module. -/
-theorem isSl2Triple_geckRepresentation (i : Fin t.rank) :
-    IsSl2Triple
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
-  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-    ((t.lieBasis ht).sl2 i).map
-      ((t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
-      (by
-        intro hzero
-        apply ((t.lieBasis ht).sl2 i).h_ne_zero
-        apply t.geckRepresentation_ι_injective ht
-        simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, map_zero] using hzero)
 
 /-- **The pinned simple Weyl representative in the Geck carrier.**  At node `i` this is
 `xᵢ(1) x₋ᵢ(-1) xᵢ(1)`. -/
