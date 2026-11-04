@@ -60,11 +60,12 @@ theorem polarDeformation_one (T : E →L[ℝ] E) : T.polarDeformation 1 = T.pola
   rw [polarDeformation_def, sub_self, CFC.rpow_zero _ T.modulus_nonneg]
   rw [one_def, comp_id]
 
-/-- The polar deformation is continuous in the parameter in operator norm. -/
-theorem continuous_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) :
+/-- The polar deformation is continuous in the parameter in operator norm when the modulus
+is strictly positive. -/
+theorem continuous_polarDeformation (T : E →L[ℝ] E) (hT : IsStrictlyPositive T.modulus) :
     Continuous T.polarDeformation := by
   have hp : Continuous (fun t : ℝ ↦ T.modulus ^ (1 - t)) := by
-    simp_rw [CFC.rpow_eq_exp_smul_log _ _ (T.isStrictlyPositive_modulus hT)]
+    simp_rw [CFC.rpow_eq_exp_smul_log _ _ hT]
     have hexp : Continuous (NormedSpace.exp : (E →L[ℝ] E) → (E →L[ℝ] E)) :=
       continuous_iff_continuousAt.mpr fun A ↦ (NormedSpace.exp_analytic (𝕂 := ℝ) A).continuousAt
     exact hexp.comp ((continuous_const.sub continuous_id).smul continuous_const)
