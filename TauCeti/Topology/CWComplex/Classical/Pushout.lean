@@ -24,7 +24,7 @@ that it is a relative CW complex over `Z`, whose cells are those of `C`:
 * `Z ∪_a C` is a classical relative CW complex relative to the image of `Z`
   (`TauCeti.relativeCWPushout`), whose `n`-cells are the `n`-cells of `C`
   (`TauCeti.relativeCWPushoutCellEquiv`), with the characteristic maps of `C` composed with
-  `C → Z ∪_a C` (`TauCeti.relativeCWPushout_map`).
+  `C → Z ∪_a C` (`TauCeti.map_relativeCWPushout_apply`).
 
 No CW structure on `Z` is needed. The construction goes through categorical relative CW
 complexes: `C` gives one on the inclusion `D → C` (`TauCeti.toRelativeCWComplex`), its cobase
@@ -42,7 +42,7 @@ on a manifold.
   1990.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits HomotopicalAlgebra Metric Set Topology Topology.RelCWComplex
 
@@ -82,7 +82,7 @@ instance t2Space_adjunctionSpace [T2Space Z] : T2Space (adjunctionSpace C a) :=
 the relative CW complex `C` with base `D` to `Z` along `a : D → Z` is a classical relative CW
 complex relative to the image of `Z`. Its `n`-cells are the `n`-cells of `C`
 (`TauCeti.relativeCWPushoutCellEquiv`), with the characteristic maps of `C` composed with
-`C → Z ∪_a C` (`TauCeti.relativeCWPushout_map`). -/
+`C → Z ∪_a C` (`TauCeti.map_relativeCWPushout_apply`). -/
 @[instance_reducible] noncomputable def relativeCWPushout :
     RelCWComplex (univ : Set (adjunctionSpace C a))
       (range (pushout.inl (TopCat.ofHom a) (baseInclusion C))) :=
@@ -95,18 +95,24 @@ noncomputable def relativeCWPushoutCellEquiv (n : ℕ) :
 
 /-- The characteristic maps of `TauCeti.relativeCWPushout C a` are those of `C`, composed with the
 map `C → Z ∪_a C`. -/
-theorem relativeCWPushout_map (n : ℕ) (i : (relativeCWPushout C a).cell n) {x : Fin n → ℝ}
-    (hx : x ∈ closedBall 0 1) :
+theorem map_relativeCWPushout_apply (n : ℕ) (i : (relativeCWPushout C a).cell n)
+    {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
     (relativeCWPushout C a).map n i x =
       pushout.inr (TopCat.ofHom a) (baseInclusion C)
         ⟨map n (relativeCWPushoutCellEquiv C a n i) x,
           closedCell_subset_complex n _ (mem_image_of_mem _ hx)⟩ := by
   let c := toRelativeCWComplex C
   let γ : c.Cells := ⟨n, not_isMax n, relativeCWPushoutCellEquiv C a n i⟩
-  have h := (pushoutRelativeCWComplex C a).toRelCWComplex_map_apply n i ⟨x, hx⟩
-  have hγ := c.ofIsPushout_cells_ι (IsPushout.of_hasPushout (TopCat.ofHom a) (baseInclusion C)) γ
-  refine h.trans ((ConcreteCategory.congr_hom hγ _).trans
-    ((ConcreteCategory.comp_apply _ _ _).trans (congrArg _ (Subtype.ext ?_))))
-  exact (coe_toRelativeCWComplex_cells_ι_apply γ _).trans (by rw [Homeomorph.apply_symm_apply])
+  -- The cell of the cobase change indexed by `i` is the cell `γ` of `c`, transported along
+  -- `ofIsPushoutCellsEquiv`; both are indexed by `i` itself.
+  have hγ : (⟨n, not_isMax n, (pushoutRelativeCWComplex C a).toRelCWComplexCellEquiv n i⟩ :
+      (pushoutRelativeCWComplex C a).Cells).ι =
+        γ.ι ≫ pushout.inr (TopCat.ofHom a) (baseInclusion C) :=
+    c.ofIsPushout_cells_ι (IsPushout.of_hasPushout _ _) γ
+  rw [(pushoutRelativeCWComplex C a).toRelCWComplex_map_apply n i ⟨x, hx⟩,
+    ConcreteCategory.congr_hom hγ, ConcreteCategory.comp_apply]
+  congr 1
+  ext
+  rw [coe_toRelativeCWComplex_cells_ι_apply, Homeomorph.apply_symm_apply]
 
 end TauCeti
