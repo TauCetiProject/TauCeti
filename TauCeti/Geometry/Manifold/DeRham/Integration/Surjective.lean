@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
@@ -16,13 +16,13 @@ import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 Every neighbourhood of a point of an oriented finite-dimensional smooth manifold with corners
 supports a smooth closed top form of integral one. Integration on top compactly supported
-de Rham cohomology is therefore surjective on every nonempty boundaryless manifold.
+de Rham cohomology is therefore surjective on every nonempty, oriented, boundaryless,
+Hausdorff, sigma-compact finite-dimensional smooth manifold.
 Neither connectedness nor positive dimension is required. These localized representatives
 allow cohomology classes to be compared using coordinate neighbourhoods.
 
-Generalize the bump-times-determinant construction of
-`Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one` using
-Mathlib's `SmoothBumpFunction`, the chart pullback of `Module.Basis.continuousDet`,
+The bump-times-determinant construction uses Mathlib's `SmoothBumpFunction`, the chart pullback
+of `Module.Basis.continuousDet`,
 and the signed chart formula for `integralTopForm`. The positivity argument follows
 `integralTopForm_pos`, using the dense interior of each chart target. Local constancy of the sign
 prevents cancellation within the chosen support, including in dimension zero.
@@ -80,18 +80,9 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
   let p : RoughForm I M ℝ n := mpullback I 𝓘(ℝ, E) (extChartAt I x) α
   let ψ : RoughForm I M ℝ n := fun y ↦ χ y • p y
   have hs : IsSmoothForm I ∞ ψ := isSmoothForm_bump_smul_chart_det x χ b
-  have hsub : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) ψ ⊆ _root_.tsupport χ := by
-    -- As in `RoughForm.tsupport_smul_subset`, matching the model-fibre support against the
-    -- tangent-fibre scalar action makes `tsupport_smul_subset_left` time out. Use its support
-    -- argument pointwise, so that scalar operations remain in a single tangent fibre.
-    apply closure_mono
-    intro y hy
-    by_contra h
-    have hχy : χ y = 0 := Function.notMem_support.mp h
-    apply hy
-    ext v
-    simp [ψ, hχy]
-    rfl
+  have hsub : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) ψ ⊆ _root_.tsupport χ :=
+    -- Fix the model-space codomain so Mathlib's function-support lemma can infer the action.
+    _root_.tsupport_smul_subset_left χ (show M → E [⋀^Fin n]→L[ℝ] ℝ from p)
   have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) ψ) :=
     χ.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) hsub
   have hchart := hsub.trans χ.tsupport_subset_extChartAt_source
@@ -117,20 +108,13 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
     RoughForm.continuousOn_signedInChartAt (I := I) ψ b x _ continuous_const
       (hs.continuousOn_inChartAt x)
   have hpos : 0 < ∫ z, g z ∂b.addHaar := by
-    rw [integral_pos_iff_support_of_nonneg hg (hs.integrable_signedInChartAt_one hc b x)]
-    -- As in `integralTopForm_pos`, positivity on a relatively open neighbourhood reaches
-    -- the interior of the chart target, even when the chosen point is on the boundary.
-    obtain ⟨V, hVo, hxV, hV⟩ := mem_nhdsWithin.mp
-      ((hcont.continuousWithinAt (mem_extChartAt_target x)).eventually
-        (lt_mem_nhds (by rw [hgx]; exact zero_lt_one)))
-    obtain ⟨z, hzV, hz⟩ := mem_closure_iff.mp
-      (extChartAt_target_subset_closure_interior (mem_extChartAt_target (I := I) x)) V hVo hxV
-    let W := interior (extChartAt I x).target ∩ g ⁻¹' Ioi 0
-    have hWo : IsOpen W :=
-      (hcont.mono interior_subset).isOpen_inter_preimage isOpen_interior isOpen_Ioi
-    have hWne : W.Nonempty := ⟨z, hz, hV ⟨hzV, interior_subset hz⟩⟩
-    exact (hWo.measure_pos b.addHaar hWne).trans_le
-      (measure_mono fun y hy ↦ ne_of_gt hy.2)
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
+      (s := (extChartAt I x).target) (fun z hz ↦ by
+        dsimp only [g]
+        rw [RoughForm.signedInChartAt_apply, dite_eq_right hz])]
+    exact b.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target x hg
+      (hs.integrable_signedInChartAt_one hc b x).integrableOn hcont
+      (mem_extChartAt_target x) (by rw [hgx]; exact zero_lt_one)
   -- The unsigned chart integral is positive; the actual orientation adds only unit signs.
   have hi : integralTopForm (Manifold.Orientation.mk l) ψ ≠ 0 := by
     rw [integralTopForm_eq_chartIntegral l ψ (hs.integrableTopForm hc b) x hchart,
@@ -158,8 +142,8 @@ theorem exists_compactlySupportedClosedForms_integralTopForm_eq_one
       (integralTopForm_smul o (integralTopForm o φ.1.1)⁻¹ φ.1.1).trans (inv_mul_cancel₀ hφ)
 
 /-- Integration on top compactly supported de Rham cohomology is onto for every nonempty
-oriented boundaryless manifold. Connectedness is needed for injectivity, but not for this
-assertion. -/
+oriented boundaryless Hausdorff sigma-compact finite-dimensional smooth manifold. Connectedness
+is needed for injectivity, but not for this assertion. -/
 theorem compactlySupportedDeRhamCohomology.surjective_integral [BoundarylessManifold I M]
     [SigmaCompactSpace M] [Nonempty M]
     (o : Manifold.Orientation I M (Fin n)) :
