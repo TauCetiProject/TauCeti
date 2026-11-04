@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The smooth plane vortex equation and its deformation complex
@@ -94,6 +95,18 @@ def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : �
 theorem covariantDerivative_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
     covariantDerivative x z v = fderiv ℝ (sectionValue x) z v +
       I * ((x z 0 * v.re + x z 1 * v.im : ℝ) : ℂ) * sectionValue x z := (rfl)
+
+/-- The covariant derivative is real-linear in the tangent vector, so it is determined by its
+values on the coordinate frame `(1, i)`. -/
+theorem covariantDerivative_eq_re_mul_add_im_mul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
+    covariantDerivative x z v =
+      v.re * covariantDerivative x z 1 + v.im * covariantDerivative x z I := by
+  have h := LinearMap.apply_eq_re_smul_one_add_im_smul_I
+    (fderiv ℝ (sectionValue x) z : ℂ →ₗ[ℝ] ℂ) v
+  simp only [ContinuousLinearMap.coe_coe, Complex.real_smul] at h
+  simp only [covariantDerivative_apply, h, one_re, one_im, I_re, I_im]
+  push_cast
+  ring
 
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=

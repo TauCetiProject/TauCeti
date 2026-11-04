@@ -404,17 +404,6 @@ theorem curvature_rotateField {u : Circle} {x : ℂ → EuclideanSpace ℝ (Fin 
   linear_combination (fderiv ℝ (fun w ↦ x w 1) (u * z) 1 -
     fderiv ℝ (fun w ↦ x w 0) (u * z) I) * Circle.re_sq_add_im_sq u
 
-/-- The covariant derivative is real-linear in the tangent vector. -/
-private theorem covariantDerivative_eq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) :
-    covariantDerivative x z v =
-      v.re * covariantDerivative x z 1 + v.im * covariantDerivative x z I := by
-  have h := LinearMap.apply_eq_re_smul_one_add_im_smul_I
-    (fderiv ℝ (sectionValue x) z : ℂ →ₗ[ℝ] ℂ) v
-  simp only [ContinuousLinearMap.coe_coe, Complex.real_smul] at h
-  simp only [covariantDerivative_apply, h, one_re, one_im, I_re, I_im]
-  push_cast
-  ring
-
 /-- Rotation transports the physical energy density. -/
 @[simp]
 theorem energyDensity_rotateField {u : Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
@@ -423,7 +412,8 @@ theorem energyDensity_rotateField {u : Circle} {x : ℂ → EuclideanSpace ℝ (
     energyDensity (rotateField u x) z = energyDensity x (u * z) := by
   simp only [energyDensity_apply, curvature_rotateField hb₀ hb₁, covariantDerivative_rotateField,
     sectionValue_rotateField, mul_one]
-  rw [covariantDerivative_eq x _ (u : ℂ), covariantDerivative_eq x _ ((u : ℂ) * I)]
+  rw [covariantDerivative_eq_re_mul_add_im_mul x _ (u : ℂ),
+    covariantDerivative_eq_re_mul_add_im_mul x _ ((u : ℂ) * I)]
   simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, add_re, add_im, mul_re,
     mul_im, ofReal_re, ofReal_im, I_re, I_im]
   linear_combination ((covariantDerivative x (u * z) 1).re ^ 2 +
@@ -494,8 +484,8 @@ theorem linearizedEquation_rotateField {u : Circle} {x y : ℂ → EuclideanSpac
     simp [fderiv_comp_mul_apply_one, fderiv_comp_mul_apply_I]
     ring
 
-/-- The gauge-fixing row `d₀*` is a divergence, and is transported by rotations. This is not a
-`simp` lemma, since the `simp` lemma `gaugeAdjoint_def` unfolds its left-hand side. -/
+/-- The gauge-fixing row `d₀*` is transported by rotations. This is not a `simp` lemma, since the
+`simp` lemma `gaugeAdjoint_def` unfolds its left-hand side. -/
 theorem gaugeAdjoint_rotateField {u : Circle} {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     (hy₀ : DifferentiableAt ℝ (fun w ↦ y w 0) (u * z))
     (hy₁ : DifferentiableAt ℝ (fun w ↦ y w 1) (u * z)) :
