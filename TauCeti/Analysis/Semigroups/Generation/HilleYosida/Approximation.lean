@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Generation.Yosida.Basic
-import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Bounded approximations for the Hille--Yosida theorem
@@ -81,6 +81,7 @@ theorem norm_smul_resolvent_pow_le {A : X →ₗ.[ℝ] X} {lambda M : ℝ} (hM :
         _ = M := by
           field_simp
 
+omit [CompleteSpace X] in
 private theorem norm_exp_smul_smul_resolvent_le {A : X →ₗ.[ℝ] X} {lambda M t : ℝ}
     (hM : 1 ≤ M) (hlambda : 0 < lambda) (ht : 0 ≤ t)
     (hpow : ∀ n : ℕ, 1 ≤ n →
@@ -98,7 +99,8 @@ private theorem norm_exp_smul_smul_resolvent_le {A : X →ₗ.[ℝ] X} {lambda M
     congr 1
     ring
   rw [← harg]
-  exact ContinuousLinearMap.norm_exp_smul_le_mul_exp_of_norm_pow_le hs hB
+  simpa only [Real.norm_of_nonneg hs] using
+    TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le (t * lambda) hB
 
 /-- Under the exponent-zero Hille--Yosida power bounds for general `M`, every positive-time
 Yosida approximation has norm at most `M`. -/
@@ -116,7 +118,7 @@ theorem norm_exp_smul_yosidaApproximation_le {A : X →ₗ.[ℝ] X} {lambda M t 
           ‖exp ((t * lambda ^ 2) • LinearPMap.resolvent A lambda)‖ := norm_mul_le _ _
     _ ≤ Real.exp (-(t * lambda)) * (M * Real.exp (t * lambda)) := by
       gcongr
-      · exact ContinuousLinearMap.norm_exp_smul_one_le _
+      · exact TauCeti.norm_exp_smul_one_le ContinuousLinearMap.norm_id_le _
       · exact norm_exp_smul_smul_resolvent_le hM hlambda ht hpow
     _ = M * (Real.exp (-(t * lambda)) * Real.exp (t * lambda)) := by ring
     _ = M := by rw [← Real.exp_add]; simp

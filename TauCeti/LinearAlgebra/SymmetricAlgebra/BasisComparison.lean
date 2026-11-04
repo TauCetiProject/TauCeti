@@ -30,6 +30,9 @@ another only through the remaining factor.
 * `map_homogeneousSubmodule_equivMvPolynomial`: the basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
+* `Module.Basis.equivMvPolynomial_symmetricAlgebra_apply`: the basis-induced equivalence sends the
+  basis vector `b.symmetricAlgebra d` to the monomial `xᵈ`; these basis vectors are homogeneous of
+  degree `d.degree` and multiply by adding exponents.
 * `SymmetricAlgebra.equivMvPolynomial_map`: a linear map carrying basis vectors to basis vectors
   acts on the polynomial rings by renaming variables.
 * `SymmetricAlgebra.isRegular_ι_basis`: the generators of basis vectors are nonzerodivisors.
@@ -91,6 +94,38 @@ theorem _root_.SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff {ι : Type w
   rw [← MvPolynomial.mem_homogeneousSubmodule, ← map_homogeneousSubmodule_equivMvPolynomial R M b n,
     Submodule.mem_map_equiv (e := (SymmetricAlgebra.equivMvPolynomial b).toLinearEquiv)]
   simp
+
+variable {R M} in
+/-- Under the polynomial equivalence induced by `b`, the basis vector `b.symmetricAlgebra d` is the
+monomial `xᵈ`. -/
+@[simp]
+theorem _root_.Module.Basis.equivMvPolynomial_symmetricAlgebra_apply {ι : Type w}
+    (b : Basis ι R M) (d : ι →₀ ℕ) :
+    SymmetricAlgebra.equivMvPolynomial b (b.symmetricAlgebra d) = MvPolynomial.monomial d 1 := by
+  simp [Basis.symmetricAlgebra]
+
+variable {R M} in
+/-- The basis vector `b.symmetricAlgebra d` is homogeneous of degree `d.degree`. -/
+theorem _root_.Module.Basis.symmetricAlgebra_mem_homogeneousSubmodule {ι : Type w}
+    (b : Basis ι R M) (d : ι →₀ ℕ) : b.symmetricAlgebra d ∈ homogeneousSubmodule R M d.degree :=
+  (SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff R M b _ _).1 (by
+    simpa using MvPolynomial.isHomogeneous_monomial (1 : R) rfl)
+
+variable {R M} in
+/-- The basis vectors `b.symmetricAlgebra d` multiply by adding exponents. -/
+theorem _root_.Module.Basis.symmetricAlgebra_add {ι : Type w} (b : Basis ι R M)
+    (d d' : ι →₀ ℕ) :
+    b.symmetricAlgebra (d + d') = b.symmetricAlgebra d * b.symmetricAlgebra d' :=
+  (SymmetricAlgebra.equivMvPolynomial b).injective <| by
+    simp [MvPolynomial.monomial_mul_monomial]
+
+variable {R M} in
+/-- A power of the basis vector `b.symmetricAlgebra d` multiplies its exponent. -/
+theorem _root_.Module.Basis.symmetricAlgebra_pow {ι : Type w} (b : Basis ι R M)
+    (d : ι →₀ ℕ) (k : ℕ) :
+    b.symmetricAlgebra d ^ k = b.symmetricAlgebra (k • d) :=
+  (SymmetricAlgebra.equivMvPolynomial b).injective <| by
+    simp [MvPolynomial.monomial_pow]
 
 /-- The restriction of the polynomial equivalence induced by `b` to homogeneous components. -/
 noncomputable def homogeneousSubmoduleEquivMvPolynomial {ι : Type w} (b : Basis ι R M) (n : ℕ) :

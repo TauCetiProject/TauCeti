@@ -110,7 +110,7 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
   have hcauchy : ∀ᵐ x ∂P, CauchySeq fun n ↦ x n := by
     have hlt : ∫⁻ x, ∑' n, edist (x n) (x (n + 1)) ∂P ≠ ∞ := by
       rw [lintegral_tsum fun n ↦ (hjumpmeas n).aemeasurable]
-      exact ne_top_of_le_ne_top hb (ENNReal.tsum_le_tsum hint)
+      exact ne_top_of_le_ne_top hb (tsum_le_tsum hint)
     filter_upwards [ae_lt_top (Measurable.tsum hjumpmeas) hlt] with x hx
     exact cauchySeq_of_edist_le_of_tsum_ne_top _ (fun _ ↦ le_rfl) hx.ne
   -- hence almost every path converges, to a measurable limit `Z` coupled to every `μ n`
@@ -147,7 +147,7 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
     _ ≤ ∑' k, b (n + k) := by
         refine eLpNorm_le_of_ae_tendsto_ennreal hp0 hp'
           (fun N ↦ (hd.comp ((hev n).prodMk (hev (n + N)))).aemeasurable) ?_
-          fun N ↦ (hstep N).trans (ENNReal.sum_le_tsum _)
+          fun N ↦ (hstep N).trans (sum_le_tsum _)
         filter_upwards [hZtendsto] with x hx
         exact tendsto_const_nhds.edist
           (hx.comp (tendsto_atTop_mono (fun N ↦ Nat.le_add_left N n) tendsto_id))

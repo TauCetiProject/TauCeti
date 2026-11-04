@@ -145,7 +145,7 @@ theorem halfSpinRep_comp_halfSpinCliffordMul (s : spinGroup Q) (v : V) :
       halfSpinCliffordMul o ρ ε (spinVectorAction Q s v) ∘ₗ halfSpinRep o ρ ε s := by
   ext ψ
   simp only [LinearMap.comp_apply, coe_halfSpinRep_apply, coe_halfSpinCliffordMul_apply_apply,
-    ← Module.End.mul_apply, ← map_mul, ι_spinVectorAction_apply_mul]
+    ← mul_apply_eq_comp, ← map_mul, ι_spinVectorAction_apply_mul]
 
 /-- **Clifford equivariance of the `Spinᶜ(4)` half-spin representations**: `(s, z)` acts on
 vectors through the rotation action of `s` alone, and Clifford multiplication `W^ε → W^{-ε}`
@@ -245,8 +245,8 @@ theorem inner_halfSpinRep_apply_halfSpinRep_apply
     (ψ χ : eigenspace (ρ (chirality Q o)) ε) :
     ⟪halfSpinRep o ρ ε s ψ, halfSpinRep o ρ ε s χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
   rw [Submodule.coe_inner, Submodule.coe_inner, coe_halfSpinRep_apply, coe_halfSpinRep_apply,
-    ← LinearMap.adjoint_inner_right, adjoint_map_eq_map_star hρ, ← Module.End.mul_apply,
-    ← map_mul, spinGroup.star_mul_self_of_mem s.2, map_one, Module.End.one_apply]
+    ← LinearMap.adjoint_inner_right, adjoint_map_eq_map_star hρ, ← mul_apply_eq_comp,
+    ← map_mul, spinGroup.star_mul_self_of_mem s.2, map_one, one_apply_eq_self]
 
 /-- **The twisted half-spin representations are unitary** on a Hermitian Clifford module. -/
 theorem inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply

@@ -147,8 +147,8 @@ theorem apply_mem_weightSpace_of_forall_transvectionUnit_eq_sum_smul
   have hlhs : ∑ m' ∈ Finset.range d, c ^ m' • ρ (diagGL t) (A m' w)
       = ((weightChar K l t : Kˣ) : K) •
         ∑ m' ∈ Finset.range d, (((t i * (t j)⁻¹ : Kˣ) : K) * c) ^ m' • A m' w := by
-    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← Module.End.mul_apply,
-      ← map_mul, ← hconj, map_mul, Module.End.mul_apply, hexpand, map_sum]
+    rw [← hexpand, ← map_smul, ← apply_of_mem_weightSpace hw t, ← mul_apply_eq_comp,
+      ← map_mul, ← hconj, map_mul, mul_apply_eq_comp, hexpand, map_sum]
     exact Finset.sum_congr rfl fun m' _ ↦ (map_smul _ _ _).symm
   have hrhs : ∑ m' ∈ Finset.range d,
       c ^ m' • (((weightChar K (l + m' • (Pi.single i 1 - Pi.single j 1)) t : Kˣ) : K) • A m' w)
@@ -216,7 +216,7 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · have hw0 : w = 0 := by
       have h1 := hexpand 0
-      rw [transvectionUnit_zero, map_one, Module.End.one_apply, Finset.range_zero,
+      rw [transvectionUnit_zero, map_one, one_apply_eq_self, Finset.range_zero,
         Finset.sum_empty] at h1
       exact h1
     rw [hw0, map_zero]
@@ -227,7 +227,7 @@ theorem IsRationalRep.apply_transvectionUnit_eq_self (h : IsRationalRep ρ) {i j
           (Finset.mem_range.mp hm)), smul_zero]
     have hA0 : A 0 w = w := by
       have h1 := hexpand 0
-      rw [transvectionUnit_zero, map_one, Module.End.one_apply,
+      rw [transvectionUnit_zero, map_one, one_apply_eq_self,
         Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hd)
           (fun m _ hm ↦ by rw [zero_pow hm, zero_smul]), pow_zero, one_smul] at h1
       exact h1.symm

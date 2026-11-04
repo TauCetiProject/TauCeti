@@ -80,7 +80,8 @@ theorem ker_toTarget_le_jacobson :
   -- If `toTarget x = 0`, then `toTarget (1 + x * y) = 1` for every `y`, so `1 + x * y` is a unit.
   intro x hx
   have hx0 : toTarget R Ω x = 0 := RingHom.mem_ker.mp hx
-  refine Ideal.mem_jacobson_bot.mpr fun y ↦ (isUnit_iff_isUnit_toTarget R Ω _).mpr ?_
+  rw [Ideal.jacobson_bot]
+  refine Ring.mem_jacobson_iff.mpr fun y ↦ (isUnit_iff_isUnit_toTarget R Ω _).mpr ?_
   simp [hx0]
 
 /-- The colimit of pointed étale neighbourhoods is a local ring when the target is local. -/

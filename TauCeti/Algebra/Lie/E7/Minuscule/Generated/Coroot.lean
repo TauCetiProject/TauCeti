@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
-public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.Serre
-public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coordinates
 
 /-!
 # Simple-coroot differentials in the generated E₇ group
@@ -79,12 +76,7 @@ theorem generatedCorootCocharacter_eq_cocharacter_coroot_simpleIndex
             (DynkinType.E7.simpleIndex ht i))) := by
   rw [generatedCorootCocharacter_def]
   congr 1
-  apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 7 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans (coroot_simpleIndex ht i).symm
+  exact (cocharEquiv_symm_coroot_simpleIndex ht i).symm
 
 /-- The differential of the `i`-th coroot has diagonal entries given by pairing the
 minuscule weights with the named simple coroot. The tangent vector of `𝔾ₘ` is normalized to one. -/
@@ -102,11 +94,8 @@ theorem generatedTangentMatrixLieHom_derivationComp_generatedCorootCocharacter
       generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   rw [generatedTangentMatrixLieHom_apply, generatedCorootCocharacter_def,
-    GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
-  congr 1
-  ext a
-  rw [coroot'_simpleIndex_apply ht i]
-  simp
+    ← GeneralLinear.tangentMatrixLieHom_apply]
+  exact generalLinearTangentMatrixLieHom_derivationComp_cocharacter_applyAddHom _ _ hπ ht i
 
 /-- The bracket of the opposite normalized root vectors is the differential of the
 corresponding actual coroot cocharacter, with no characteristic assumption. -/
@@ -116,12 +105,8 @@ theorem generatedCartanVector_eq_derivationComp_generatedCorootCocharacter (i : 
         (MultiplicativeGroup.tangentLinearEquiv.symm (1 : R)) := by
   apply generatedTangentMatrixLieHom_injective R
   rw [generatedTangentMatrixLieHom_generatedCartanVector,
-    generatedTangentMatrixLieHom_derivationComp_generatedCorootCocharacter R DynkinType.valid_E7]
-  ext a b
-  simp only [Matrix.map_apply, cartanMatrix_apply, Matrix.diagonal_apply]
-  split_ifs
-  · rw [coroot'_simpleIndex_apply DynkinType.valid_E7 i]
-  · simp
+    generatedTangentMatrixLieHom_derivationComp_generatedCorootCocharacter R DynkinType.valid_E7,
+    cartanMatrix_map_intCast_eq_diagonal_coroot' DynkinType.valid_E7]
 
 /-- The Serre comparison sends each Cartan generator to the actual simple-coroot differential. -/
 theorem generatedSerreLift_serreH_eq_derivationComp_generatedCorootCocharacter (i : Fin 7) :
@@ -146,13 +131,9 @@ theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_eq_span :
     LinearMap.range
         (derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap =
       Submodule.span R (Set.range (generatedCartanVector R)) := by
-  rw [SplitTorus.range_derivationCompLieHom]
-  congr 1
-  apply congrArg Set.range
-  funext i
-  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
-    generatedCorootCocharacter_def,
-    derivationCompLieHom_apply]
+  simpa only [derivationCompLieHom_apply, ← generatedCorootCocharacter_def R,
+    ← generatedCartanVector_eq_derivationComp_generatedCorootCocharacter R] using
+    SplitTorus.range_derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom
 
 /-- Every tangent vector in the weight-torus image is in the image of the Serre comparison. -/
 theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_le_range_generatedSerreLift :
@@ -181,16 +162,11 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
 /-- The numbered Cartan vectors are independent, including in characteristic two. -/
 theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
-  have h := (SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 7)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap
-    (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R).injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 7) =
-        generatedCartanVector R := by
-    funext i
-    exact derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis R i
-  rwa [heq] at h
+  simpa only [derivationCompLieHom_apply, ← generatedCorootCocharacter_def R,
+    ← generatedCartanVector_eq_derivationComp_generatedCorootCocharacter R] using
+    SplitTorus.linearIndependent_derivationComp_cocharacter
+      (B := R) (generatedWeightTorusCoordinateMap R).hom
+      (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
 
 /-- The simple-coroot differentials form a basis of their span, the toral tangent image. -/
 def generatedCartanBasis :

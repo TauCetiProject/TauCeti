@@ -26,7 +26,7 @@ Artin–Schreier covers.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Proposition 3.7.8.
 * Mathlib: `Subfield.splits_bot` and `IsGalois.card_aut_eq_finrank`.
-* Mathlib: `X_pow_sub_C_irreducible_of_prime` (`Mathlib/FieldTheory/KummerPolynomial.lean`), whose
+* Mathlib: `irreducible_X_pow_sub_C_of_prime` (`Mathlib/FieldTheory/KummerPolynomial.lean`), whose
   proof is adapted for `irreducible_X_pow_sub_X_sub_C`.
 -/
 

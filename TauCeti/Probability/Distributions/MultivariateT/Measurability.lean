@@ -69,7 +69,7 @@ theorem measurable_multivariateTMeasure :
   have hvalid : MeasurableSet {p : EuclideanSpace ℝ ι × (ι → ι → ℝ) × ℝ |
       0 < p.2.2 ∧ (Matrix.of p.2.1).PosSemidef} :=
     (measurableSet_lt measurable_const measurable_snd.snd).inter
-      ((Matrix.posSemidef_is_closed (n := ι) (𝕜 := ℝ)).measurableSet.preimage
+      ((_root_.isClosed_setOfPred_posSemidef (n := ι) (R := ℝ)).measurableSet.preimage
         measurable_snd.fst)
   have h : Measurable fun p : EuclideanSpace ℝ ι × (ι → ι → ℝ) × ℝ =>
       if 0 < p.2.2 ∧ (Matrix.of p.2.1).PosSemidef then

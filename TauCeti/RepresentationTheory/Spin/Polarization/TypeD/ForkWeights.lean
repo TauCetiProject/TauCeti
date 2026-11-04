@@ -60,13 +60,13 @@ vector. This is the action-level calculation used by the type-`D` highest-weight
   · have hne : i ≠ (⟨(i : ℕ) + 1, hnext⟩ : Fin n) := by
       exact Fin.ne_of_lt (Nat.lt_succ_self _)
     simp only [P.typeDSimpleRootBivector_def b, dite_eq_left hnext, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
+      mul_apply_eq_comp, TauCeti.spinAction_ι_wedge,
       TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
       TauCeti.ExteriorAlgebra.contractLeft_coord_basis, Finset.mem_univ, ite_true,
       mul_smul_comm, TauCeti.ExteriorAlgebra.ι_mul_basis]
     simp [hne]
   · simp only [P.typeDSimpleRootBivector_def b, dite_eq_right hnext, map_mul,
-      Module.End.mul_apply, TauCeti.spinAction_ι_wedge,
+      mul_apply_eq_comp, TauCeti.spinAction_ι_wedge,
       TauCeti.ExteriorAlgebra.ι_mul_basis, Finset.mem_univ, ite_true, mul_zero]
 
 /-- Every positive simple-root Clifford bivector annihilates the exterior-basis vector obtained by
