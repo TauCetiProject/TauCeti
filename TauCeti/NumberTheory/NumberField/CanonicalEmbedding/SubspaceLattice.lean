@@ -7,15 +7,13 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Algebra.Module.ZLattice.RationalSubspace
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Rat
+public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Projection
-import Mathlib.RingTheory.Localization.Integer
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
-import TauCeti.RingTheory.DedekindDomain.PseudoBasis
 
 /-!
 # The Euclidean span and lattice of integral points of a number-field subspace
@@ -32,49 +30,40 @@ Within `W.euclideanSpan`, the points whose coordinates lie in
 canonically `ℤ`-linearly equivalent to the saturated `𝓞 K`-submodule `W.integerPoints` of tuples in
 `ι → 𝓞 K` whose image in `ι → K` belongs to `W`. Even when `W.integerPoints` is not free over
 `𝓞 K`, choosing a Steinitz pseudo-basis `W ∩ 𝓞_K^ι = ⊕ k, J k • b k`
-(`Submodule.exists_pseudoBasis`) and `ℤ`-bases of the coefficient ideals `J k`
+(`Submodule.exists_pseudoBasis_integerPoints`) and `ℤ`-bases of the coefficient ideals `J k`
 (`Ideal.mixedLatticeBasis`) produces an explicit `ℤ`-basis of `W.integerLattice` that is also an
 `ℝ`-basis of `W.euclideanSpan`. In particular, `W.euclideanSpan` has real dimension `D * m` and
 `W.integerLattice` is a discrete full `ℤ`-lattice in `W.euclideanSpan`.
 
 Over `ℚ`, the linear isometry
-`TauCeti.NumberField.mixedEmbedding.euclidean.mixedSpaceRatEquivReal` identifies
-`euclidean.mixedSpace ℚ` with `ℝ`, carrying `V.euclideanSpan` isometrically onto `V.realSpan`
-(`Submodule.euclideanSpanEquivRealSpan`) and pulling `V.intLattice` back to `V.integerLattice`
-(`Submodule.comap_intLattice_euclideanSpanEquivRealSpan`).
+`TauCeti.NumberField.mixedEmbedding.euclidean.mixedSpaceRatEquivReal` carries `V.euclideanSpan`
+isometrically onto `V.realSpan` (`Submodule.euclideanSpanEquivRealSpan`) and pulls `V.intLattice`
+back to `V.integerLattice` (`Submodule.comap_intLattice_euclideanSpanEquivRealSpan`).
 
 ## Main definitions
 
-* `Submodule.integerPoints W`: the `𝓞 K`-submodule `W ∩ (𝓞 K)^ι` of `ι → 𝓞 K`.
-* `Submodule.IsIntegerPseudoBasis W b J`: the predicate that a `K`-basis `b` of `W` and ideals `J`
-  of `𝓞 K` form a Steinitz pseudo-basis of `W.integerPoints`.
 * `Submodule.euclideanSpan W`: the real span of `W` inside
   `PiLp 2 fun _ : ι ↦ NumberField.mixedEmbedding.euclidean.mixedSpace K`.
 * `Submodule.integerLattice W`: the `ℤ`-submodule of points of `W.euclideanSpan` with coordinates
   in `NumberField.mixedEmbedding.euclidean.integerLattice K`.
 * `Submodule.integerPointsEquivIntegerLattice W`: the `ℤ`-linear equivalence
   `W.integerPoints ≃ₗ[ℤ] W.integerLattice`.
-* `Submodule.integerLatticeBasisOfPseudoBasis`: the `ℤ`-basis of `W.integerLattice` attached to a
-  pseudo-basis `(b, J)` of `W.integerPoints`.
-* `TauCeti.NumberField.mixedEmbedding.euclidean.mixedSpaceRatEquivReal`,
-  `Submodule.integerPointsEquivIntPoints`, `Submodule.euclideanSpanEquivRealSpan`: identifications
-  of the `K = ℚ` constructions with `ℝ`, `Submodule.intPoints`, and `Submodule.realSpan`.
+* `Submodule.euclideanSpanBasisOfPseudoBasis`, `Submodule.integerLatticeBasisOfPseudoBasis`: the
+  `ℝ`-basis of `W.euclideanSpan` and `ℤ`-basis of `W.integerLattice` attached to a pseudo-basis
+  `(b, J)` of `W.integerPoints`.
+* `Submodule.integerPointsEquivIntPoints`, `Submodule.euclideanSpanEquivRealSpan`: identifications
+  of the `K = ℚ` constructions with `Submodule.intPoints` and `Submodule.realSpan`.
 
 ## Main results
 
-* `Submodule.mem_integerPoints_of_smul_mem`: `W.integerPoints` is saturated in `ι → 𝓞 K`.
 * `Submodule.toLp_mem_euclideanSpan_iff`: the `K`-points of `W.euclideanSpan` are precisely the
   points of `W`.
-* `Submodule.exists_pseudoBasis_integerPoints`: `W` admits a `K`-basis `b` and nonzero ideals `J k`
-  of `𝓞 K` satisfying `W.IsIntegerPseudoBasis b J`.
 * `Submodule.finrank_euclideanSpan`, `Submodule.finrank_integerLattice`: `W.euclideanSpan` and
   `W.integerLattice` have rank `[K : ℚ] * finrank K W`.
 * The instances `BorelSpace W.euclideanSpan`, `MeasureSpace W.euclideanSpan`,
   `DiscreteTopology W.integerLattice`, and `IsZLattice ℝ W.integerLattice`.
 * `Submodule.comap_intLattice_euclideanSpanEquivRealSpan`: over `ℚ`, pulling `V.intLattice` back
   along `V.euclideanSpanEquivRealSpan` gives `V.integerLattice`.
-* `Matrix.integerPoints_ker_mulVecLin`: the integral points of the `K`-kernel of an `𝓞 K`-matrix
-  are its `𝓞 K`-kernel.
 
 ## References
 
@@ -94,74 +83,6 @@ open MeasureTheory Module NumberField NumberField.mixedEmbedding Set
 open scoped nonZeroDivisors
 
 namespace Submodule
-
-section IntegerPoints
-
-variable {K : Type*} [Field K] {ι : Type*}
-
-/-- The integral points of a `K`-subspace `W` of `ι → K`: the tuples `z : ι → 𝓞 K` whose image in
-`ι → K` lies in `W`. -/
-def integerPoints (W : Submodule K (ι → K)) : Submodule (𝓞 K) (ι → 𝓞 K) :=
-  (W.restrictScalars (𝓞 K)).comap ((Algebra.linearMap (𝓞 K) K).compLeft ι)
-
-/-- A tuple in `ι → 𝓞 K` is an integral point of `W` when its image in `ι → K` lies in `W`. -/
-@[simp]
-theorem mem_integerPoints {W : Submodule K (ι → K)} {z : ι → 𝓞 K} :
-    z ∈ W.integerPoints ↔ (fun i ↦ (z i : K)) ∈ W :=
-  Iff.rfl
-
-/-- The zero subspace has only the zero integral point. -/
-@[simp]
-theorem integerPoints_bot : (⊥ : Submodule K (ι → K)).integerPoints = ⊥ := by
-  ext z
-  simp [funext_iff]
-
-/-- The whole space `ι → K` has all of `ι → 𝓞 K` as integral points. -/
-@[simp]
-theorem integerPoints_top : (⊤ : Submodule K (ι → K)).integerPoints = ⊤ := by
-  ext z
-  simp
-
-/-- `Submodule.integerPoints` is monotone in the subspace. -/
-@[gcongr]
-theorem integerPoints_mono {W₁ W₂ : Submodule K (ι → K)} (h : W₁ ≤ W₂) :
-    W₁.integerPoints ≤ W₂.integerPoints :=
-  fun _ hz ↦ h hz
-
-/-- The integral points of `W` form a saturated `𝓞 K`-submodule of `ι → 𝓞 K`: if a nonzero
-`𝓞 K`-multiple of `z` lies in `W.integerPoints`, then so does `z`. -/
-theorem mem_integerPoints_of_smul_mem {W : Submodule K (ι → K)} {c : 𝓞 K} {z : ι → 𝓞 K}
-    (hc : c ≠ 0) (h : c • z ∈ W.integerPoints) : z ∈ W.integerPoints := by
-  rw [mem_integerPoints] at h ⊢
-  have hcK : (c : K) ≠ 0 := by simpa using hc
-  convert W.smul_mem (c : K)⁻¹ h using 1
-  ext i
-  simp [inv_mul_cancel_left₀ hcK]
-
-/-- `(b, J)` is a Steinitz pseudo-basis for the integral points of `W`: a vector `w ∈ W` has all
-coordinates in `𝓞 K` if and only if its `k`-th `b`-coordinate lies in `J k` for every `k`. -/
-def IsIntegerPseudoBasis (W : Submodule K (ι → K)) {κ : Type*} (b : Basis κ K W)
-    (J : κ → Ideal (𝓞 K)) : Prop :=
-  ∀ w : W, (∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ↔
-    ∀ k, b.repr w k ∈ IsLocalization.coeSubmodule K (J k)
-
-/-- Unfolding characterization of `Submodule.IsIntegerPseudoBasis`. -/
-theorem isIntegerPseudoBasis_iff {W : Submodule K (ι → K)} {κ : Type*} (b : Basis κ K W)
-    (J : κ → Ideal (𝓞 K)) :
-    W.IsIntegerPseudoBasis b J ↔
-      ∀ w : W, (∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ↔
-        ∀ k, b.repr w k ∈ IsLocalization.coeSubmodule K (J k) :=
-  Iff.rfl
-
-/-- Under `W.IsIntegerPseudoBasis b J`, integrality of the ambient coordinates of `w ∈ W` is
-equivalent to membership of `b.repr w k` in `J k` for every `k`. -/
-theorem IsIntegerPseudoBasis.mem_coeSubmodule_iff {W : Submodule K (ι → K)} {κ : Type*}
-    {b : Basis κ K W} {J : κ → Ideal (𝓞 K)} (hW : W.IsIntegerPseudoBasis b J) (w : W) :
-    (∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ↔
-      ∀ k, b.repr w k ∈ IsLocalization.coeSubmodule K (J k) :=
-  hW w
-
-end IntegerPoints
 
 section EuclideanSpan
 
@@ -281,7 +202,7 @@ private def integerPointsToIntegerLattice (W : Submodule K (ι → K)) :
     W.integerPoints →ₗ[ℤ] W.integerLattice where
   toFun z := ⟨⟨WithLp.toLp 2 fun i ↦
       (euclidean.toMixed K).symm (mixedEmbedding K ((z : ι → 𝓞 K) i)),
-    toLp_mem_euclideanSpan z.2⟩, fun i ↦ ⟨(z : ι → 𝓞 K) i, by simp⟩⟩
+    toLp_mem_euclideanSpan (mem_integerPoints.mp z.2)⟩, fun i ↦ ⟨(z : ι → 𝓞 K) i, by simp⟩⟩
   map_add' _ _ := by ext1; ext1; ext1 i; simp
   map_smul' c z := by
     ext1; ext1; ext1 i
@@ -334,40 +255,6 @@ theorem mixedEmbedding_integerPointsEquivIntegerLattice_symm_apply (W : Submodul
 end Equiv
 
 section PseudoBasis
-
-/-- **Existence of a pseudo-basis for the integral points of a subspace.** Any `K`-subspace `W` of
-`ι → K` admits a `K`-basis `b` indexed by `Fin (finrank K W)` and nonzero ideals `J k` of `𝓞 K`
-satisfying `W.IsIntegerPseudoBasis b J`. -/
-theorem exists_pseudoBasis_integerPoints [Finite ι] (W : Submodule K (ι → K)) :
-    ∃ (b : Basis (Fin (finrank K W)) K W) (J : Fin (finrank K W) → Ideal (𝓞 K)),
-      (∀ k, J k ≠ ⊥) ∧ W.IsIntegerPseudoBasis b J := by
-  classical
-  cases nonempty_fintype ι
-  -- View `W ∩ (𝓞 K)^ι` as an `𝓞 K`-submodule `M` of `W`.
-  let φ : W.integerPoints →ₗ[𝓞 K] W :=
-    { toFun z := ⟨fun i ↦ ((z : ι → 𝓞 K) i : K), z.2⟩
-      map_add' _ _ := by ext; simp
-      map_smul' _ _ := by ext i; simp [Algebra.smul_def] }
-  set M : Submodule (𝓞 K) W := LinearMap.range φ
-  have hmemM (w : W) : w ∈ M ↔ ∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
-    refine ⟨fun ⟨z, hz⟩ i ↦ hz ▸ ⟨(z : ι → 𝓞 K) i, rfl⟩, fun hw ↦ ?_⟩
-    choose z hz using hw
-    exact ⟨⟨z, by rw [mem_integerPoints]; convert w.2 with i; exact hz i⟩,
-      Subtype.ext (funext hz)⟩
-  have hFG : M.FG := by
-    rw [show M = _ from LinearMap.range_eq_map φ]; exact (IsNoetherian.noetherian ⊤).map φ
-  have hspan : span K (M : Set W) = ⊤ := eq_top_iff.2 fun w _ ↦ by
-    obtain ⟨⟨d, hd⟩, hdw⟩ := IsLocalization.exist_integer_multiples (𝓞 K)⁰ Finset.univ (w : ι → K)
-    have hd0 : algebraMap (𝓞 K) K d ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).2 (nonZeroDivisors.ne_zero hd)
-    have hdwM : d • w ∈ M := (hmemM (d • w)).2 fun i ↦ by
-      simpa [Algebra.smul_def, IsLocalization.IsInteger] using hdw i (Finset.mem_univ i)
-    rw [show w = (algebraMap (𝓞 K) K d)⁻¹ • (d • w) by
-      rw [← algebraMap_smul K d w, inv_smul_smul₀ hd0]]
-    exact smul_mem _ _ (subset_span hdwM)
-  obtain ⟨b, J, hJ, hb⟩ := M.exists_pseudoBasis (K := K) (ι := Fin (finrank K W)) hFG hspan
-    (Nat.card_fin _)
-  exact ⟨b, J, hJ, fun w ↦ (hmemM w).symm.trans (hb w)⟩
 
 section GivenPseudoBasis
 
@@ -502,20 +389,15 @@ theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
   refine le_antisymm (span_le.2 ?_) (fun w hw ↦ ?_)
   · rintro _ ⟨⟨k, ν⟩, rfl⟩
     rw [SetLike.mem_coe, mem_integerLattice]
-    have hint : ∀ i,
-        (J k).mixedBasisElem (hJ k) ν * (b k : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
-      simpa [Algebra.smul_def] using
-        (hW ((J k).mixedBasisElem (hJ k) ν • b k)).2
-          (b.repr_smul_self_mem_coeSubmodule J ((J k).mixedBasisElem_mem (hJ k) ν))
     intro i
-    obtain ⟨a, ha⟩ := hint i
+    obtain ⟨a, ha⟩ := hW.coe_smul_basis_mem_range ((J k).mixedBasisElem_mem (hJ k) ν) i
     rw [coe_euclideanSpanBasisOfPseudoBasis_apply, euclidean.integerLattice, ZLattice.comap,
       Submodule.mem_comap]
     exact ⟨a, by simp [← ha]⟩
   · obtain ⟨z, hzW, hwz⟩ := exists_mem_integerPoints_of_mem_integerLattice hw
-    let wK : W := ⟨fun i ↦ (z i : K), hzW⟩
+    let wK : W := ⟨fun i ↦ (z i : K), mem_integerPoints.mp hzW⟩
     have hwK : ∀ k, b.repr wK k ∈ IsLocalization.coeSubmodule K (J k) :=
-      (hW wK).1 fun i ↦ ⟨z i, rfl⟩
+      (hW.mem_coeSubmodule_iff wK).1 fun i ↦ ⟨z i, rfl⟩
     have hcoord (k : κ) : ∃ m : index K → ℤ,
         mixedEmbedding K (b.repr wK k) =
           ∑ ν : index K, m ν • (J k).mixedLatticeBasis (hJ k) ν := by
@@ -637,82 +519,6 @@ end PseudoBasis
 
 end EuclideanSpan
 
-end Submodule
-
-namespace TauCeti.NumberField.mixedEmbedding.euclidean
-
-open scoped RealInnerProductSpace
-
-private theorem isEmpty_isComplex_rat : IsEmpty {w : InfinitePlace ℚ // w.IsComplex} :=
-  ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr w.2
-    (Subsingleton.elim w.1 Rat.infinitePlace ▸ Rat.isReal_infinitePlace)⟩
-
-/-- The linear equivalence `mixedSpace ℚ ≃ₗ[ℝ] ℝ` given by evaluation at `Rat.infinitePlace`. -/
-private def mixedRatEquivReal : mixedSpace ℚ ≃ₗ[ℝ] ℝ :=
-  haveI := isEmpty_isComplex_rat
-  { toFun x := x.1 ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩
-    map_add' _ _ := rfl
-    map_smul' _ _ := rfl
-    invFun r := (fun _ ↦ r, isEmptyElim)
-    left_inv x := by
-      ext w
-      · exact congrArg x.1 (Subtype.ext (Subsingleton.elim Rat.infinitePlace w.1))
-      · exact isEmptyElim w
-    right_inv _ := rfl }
-
-open Classical in
-/-- The canonical linear isometry identifying `euclidean.mixedSpace ℚ` with `ℝ` via the unique
-infinite place of `ℚ`. -/
-def mixedSpaceRatEquivReal : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ ≃ₗᵢ[ℝ] ℝ :=
-  { (NumberField.mixedEmbedding.euclidean.toMixed ℚ).toLinearEquiv.trans mixedRatEquivReal with
-    norm_map' x := by
-      let _ : Unique {w : InfinitePlace ℚ // w.IsReal} :=
-        { default := ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩
-          uniq w := Subtype.ext (Subsingleton.elim w.1 Rat.infinitePlace) }
-      have := isEmpty_isComplex_rat
-      have hinner : ⟪x, x⟫ =
-          ((NumberField.mixedEmbedding.euclidean.toMixed ℚ x).1
-            ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩) ^ 2 := by
-        rw [← TauCeti.NumberField.mixedEmbedding.mixedInner_toMixed,
-          TauCeti.NumberField.mixedEmbedding.mixedInner_def, Fintype.sum_unique, Fintype.sum_empty,
-          add_zero, sq]
-        rfl
-      rw [norm_eq_sqrt_real_inner x, hinner, Real.sqrt_sq_eq_abs, ← Real.norm_eq_abs]
-      simp [mixedRatEquivReal] }
-
-open Classical in
-/-- `mixedSpaceRatEquivReal` sends the canonical embedding of `q : ℚ` to `(q : ℝ)`. -/
-@[simp]
-theorem mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding (q : ℚ) :
-    mixedSpaceRatEquivReal
-        ((NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ q)) =
-      (q : ℝ) := by
-  simp [mixedSpaceRatEquivReal, mixedRatEquivReal]
-
-open Classical in
-/-- A point of `euclidean.mixedSpace ℚ` lies in `euclidean.integerLattice ℚ` if and only if its
-image in `ℝ` under `mixedSpaceRatEquivReal` is an integer. -/
-theorem mem_integerLattice_rat_iff (x : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ) :
-    x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ ↔
-      ∃ z : ℤ, mixedSpaceRatEquivReal x = z := by
-  rw [show (x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ) ↔
-      ∃ a : 𝓞 ℚ, mixedEmbedding ℚ a = NumberField.mixedEmbedding.euclidean.toMixed ℚ x by
-    simp [NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]]
-  refine ⟨fun ⟨a, ha⟩ ↦ ⟨Rat.ringOfIntegersEquiv a, ?_⟩,
-    fun ⟨z, hz⟩ ↦ ⟨Rat.ringOfIntegersEquiv.symm z, ?_⟩⟩
-  · rw [show x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ a) from
-        (NumberField.mixedEmbedding.euclidean.toMixed ℚ).injective (by simpa using ha.symm),
-      mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding,
-      RingOfIntegers.coe_eq_algebraMap, ← Rat.ringOfIntegersEquiv_apply_coe, Rat.cast_intCast]
-  · rw [show x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (z : ℚ))
-        from mixedSpaceRatEquivReal.injective
-          (by rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast]),
-      ContinuousLinearEquiv.apply_symm_apply, Rat.ringOfIntegersEquiv_symm_apply_coe]
-
-end TauCeti.NumberField.mixedEmbedding.euclidean
-
-namespace Submodule
-
 section Rat
 
 open TauCeti.NumberField.mixedEmbedding.euclidean
@@ -796,27 +602,5 @@ theorem comap_intLattice_euclideanSpanEquivRealSpan [Fintype ι] (V : Submodule 
 end Rat
 
 end Submodule
-
-namespace Matrix
-
-open scoped Matrix NumberField
-
-variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
-
-/-- The integral points of the `K`-kernel of an `𝓞 K`-matrix are precisely its `𝓞 K`-kernel. -/
-@[simp]
-theorem integerPoints_ker_mulVecLin {m : Type*} (A : Matrix m ι (𝓞 K)) :
-    (LinearMap.ker (A.map (algebraMap (𝓞 K) K)).mulVecLin).integerPoints =
-      LinearMap.ker A.mulVecLin := by
-  ext z
-  simp only [Submodule.mem_integerPoints, LinearMap.mem_ker, Matrix.mulVecLin_apply, funext_iff,
-    Pi.zero_apply]
-  refine forall_congr' fun i ↦ ?_
-  have hcast : (((A *ᵥ z) i : 𝓞 K) : K) =
-      (A.map (algebraMap (𝓞 K) K) *ᵥ fun j ↦ (z j : K)) i :=
-    RingHom.map_mulVec (algebraMap (𝓞 K) K) A z i
-  rw [← hcast, NumberField.RingOfIntegers.coe_eq_zero_iff]
-
-end Matrix
 
 end

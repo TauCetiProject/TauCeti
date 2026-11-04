@@ -13,11 +13,11 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattic
 import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
 import TauCeti.InformationTheory.Coding.GeneratorParityCheck
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
-import TauCeti.RingTheory.DedekindDomain.PseudoBasis
 
 /-!
 # The covolume of the lattice of integral points of a number-field subspace
@@ -35,7 +35,8 @@ covolume W.integerLattice = ((2⁻¹) ^ r₂ * √|discr K|) ^ m * W.subspaceHei
                               W.relativeSubspaceArakelovHeight.
 ```
 
-Over `ℚ` (`D = 1`, `r₂ = 0`, `discr ℚ = 1`), this recovers `Submodule.covolume_intLattice`. Over a
+Over `ℚ` (`D = 1`, `r₂ = 0`, `discr ℚ = 1`), this recovers `Submodule.covolume_intLattice`:
+`covolume V.intLattice = V.subspaceHeight`. Over a
 general number field, no freeness of `W ∩ 𝓞_K^ι` over `𝓞 K` is assumed: choosing a Steinitz
 pseudo-basis `W ∩ 𝓞_K^ι = ⊕ k, J k • b k` (`Submodule.exists_pseudoBasis_integerPoints`), the
 norms `N(J k)` appear both in the archimedean change-of-basis determinant from the ideal lattices
@@ -58,8 +59,9 @@ fields.
   `W.relativeSubspaceArakelovHeight`.
 * `Submodule.covolume_integerLattice_bot`, `Submodule.covolume_integerLattice_top`: the boundary
   cases `W = ⊥` (covolume `1`) and `W = ⊤` (`#ι`-th power of the ring-of-integers covolume).
-* `Submodule.covolume_intLattice_eq_covolume_integerLattice`: over `ℚ`, the covolume of
-  `V.intLattice` in `V.realSpan` agrees with that of `V.integerLattice` in `V.euclideanSpan`.
+* `Submodule.covolume_intLattice_eq_covolume_integerLattice`, `Submodule.covolume_intLattice`: over
+  `ℚ`, the covolume of `V.intLattice` in `V.realSpan` agrees with that of `V.integerLattice` in
+  `V.euclideanSpan` and equals `V.subspaceHeight`.
 * `Matrix.covolume_integerLattice_ker_mulVecLin`: the covolume of the lattice of integral solutions
   of `A x = 0` in terms of the absolute height of the row space of `A`.
 
@@ -74,6 +76,11 @@ fields.
   §2.8 and Appendix C.2.
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace Theorem*,
   Ann. of Math. **177** (2013), 513–590, §6.1 and §13.
+
+The rational specialization `Submodule.covolume_intLattice` is adapted from Ralf Stephan's
+`ArithmeticHeights/RationalLattice.lean` in
+[`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/9894a1c4baf805296b249e95575f0e16e8e1afa3/ArithmeticHeights/RationalLattice.lean),
+commit `9894a1c4baf805296b249e95575f0e16e8e1afa3` (Apache 2.0).
 -/
 
 public section
@@ -161,10 +168,8 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
     exact (mul_eq_zero.mp hca).resolve_right (ha0 k)
   -- Every row of `x` is `(a k : K) • b k ∈ W ∩ (𝓞 K)^ι`, so its entries have `v ≤ 1`.
   have hx_le (k : Fin p) (j : ι) : v (x k j) ≤ 1 := by
-    obtain ⟨z, hz⟩ := (hW.mem_coeSubmodule_iff ((a k : K) • b k)).2
-      (b.repr_smul_self_mem_coeSubmodule J ⟨a k, haJ k, rfl⟩) j
-    have hzx : (z : K) = x k j := by simpa [x, Algebra.smul_def] using hz
-    exact hzx ▸ v.apply_le_one z
+    obtain ⟨z, hz⟩ := hW.coe_smul_basis_mem_range ⟨a k, haJ k, rfl⟩ j
+    exact (show (z : K) = x k j from hz) ▸ v.apply_le_one z
   obtain ⟨e, hP0, hP_sup, hPx⟩ := v.val.exists_pivot_inv_mul_le_one hx_li
   set P := x.submatrix id e
   have hP_one : v P.det = 1 :=
@@ -515,7 +520,12 @@ theorem covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeig
           W.relativeSubspaceArakelovHeight) ^ 2 := by
     rw [harch, relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b]
     dsimp only [y] at hfin hy ⊢
-    rw [arakelovMulHeight_eq_fintype hy]
+    have harak : arakelovMulHeight y =
+        (∏ w : InfinitePlace K,
+          (∑ s, ‖w.embedding (y s)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) *
+        ∏ᶠ v : FinitePlace K, ⨆ s, v (y s) := by
+      rw [arakelovMulHeight_eq hy]; congr!
+    rw [harak]
     -- Rewrite the `((w.mult : ℝ) / 2)`-rpow square at each infinite place as `^ w.mult`.
     have hinf_sq :
         (∏ w : InfinitePlace K,
@@ -605,6 +615,25 @@ theorem covolume_intLattice_eq_covolume_integerLattice (V : Submodule ℚ (ι �
     (ZLattice.covolume_pos _ volume).le two_ne_zero).mp hsq
 
 end MainTheorems
+
+/-- **The covolume of the lattice of integral points of a rational subspace is its absolute
+Euclidean height.** For a subspace `V` of `ℚ^ι`, the lattice `V ∩ ℤ^ι` in the real span of `V`
+has covolume `V.subspaceHeight`. -/
+theorem covolume_intLattice {ι : Type*} [Fintype ι] [LinearOrder ι] (V : Submodule ℚ (ι → ℚ)) :
+    ZLattice.covolume V.intLattice = V.subspaceHeight := by
+  classical
+  rw [V.covolume_intLattice_eq_covolume_integerLattice, V.covolume_integerLattice,
+    IsTotallyReal.nrComplexPlaces_eq_zero, discr_rat, finrank_self]
+  norm_num
+
+/-- The line through `(1, 2)` in `ℚ²` cuts out a lattice of covolume `√5` in its real span. -/
+example : ZLattice.covolume (ℚ ∙ ![(1 : ℚ), 2]).intLattice = √5 := by
+  have h : ![(1 : ℚ), 2] = ((↑) : ℤ → ℚ) ∘ ![1, 2] := by
+    ext i
+    fin_cases i <;> simp
+  rw [covolume_intLattice, subspaceHeight_span_singleton (by simp), h,
+    TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
+  norm_num [Fin.sum_univ_two]
 
 end Submodule
 

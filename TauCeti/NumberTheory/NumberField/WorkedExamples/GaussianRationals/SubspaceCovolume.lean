@@ -62,7 +62,9 @@ example (K : Type*) [Field K] [NumberField K] {θ : 𝓞 K}
       zero_add]
   have hrel : W.relativeSubspaceArakelovHeight = 2 := by
     rw [relativeSubspaceArakelovHeight_span_singleton hv0, ← hy_cast]
-    have hprod := arakelovMulHeight_mul_absNorm_span_range_fintype hy0
+    have hprod : arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (range y)).absNorm =
+        ∏ w : InfinitePlace K, (∑ i : Fin 2, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
+      rw [arakelovMulHeight_mul_absNorm_span_range hy0]; congr!
     rw [hspan_top, Ideal.absNorm_top, Nat.cast_one, mul_one] at hprod
     rw [hprod]
     have hfac (w : InfinitePlace K) :

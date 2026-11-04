@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.NumberTheory.NumberField.ProductFormula
 import TauCeti.Algebra.Module.ZLattice.Basic
-import TauCeti.Analysis.ExteriorPower.Nonarchimedean
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
 import TauCeti.RingTheory.DedekindDomain.PseudoBasis

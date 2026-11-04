@@ -42,47 +42,6 @@ section Ring
 
 variable {K : Type*} [CommRing K]
 
-omit [LinearOrder ι] [Fintype ι] [LinearOrder κ] in
-/-- Ultrametric Hadamard bound: if column `j` of a square matrix `M` is bounded by `B j` with
-respect to a nonarchimedean absolute value `v`, then `v M.det ≤ ∏ j, B j`. -/
-theorem det_le_prod {n : Type*} [Fintype n] [DecidableEq n] (v : AbsoluteValue K ℝ)
-    (hv : IsNonarchimedean v) {M : Matrix n n K} {B : n → ℝ} (hM : ∀ i j, v (M i j) ≤ B j) :
-    v M.det ≤ ∏ j, B j := by
-  rcases subsingleton_or_nontrivial K with hK | hK
-  · rw [Subsingleton.elim M.det 0, map_zero]
-    rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
-    · simp
-    · exact Finset.prod_nonneg fun j _ ↦ (v.nonneg (M i₀ j)).trans (hM i₀ j)
-  rw [Matrix.det_apply]
-  refine (hv.apply_sum_le_sup ⟨1, Finset.mem_univ 1⟩).trans ?_
-  refine Finset.sup'_le _ _ fun σ _ ↦ ?_
-  have hsign (a : K) : v (σ.sign • a) = v a := by
-    rcases Int.units_eq_one_or σ.sign with h | h <;> simp [h]
-  rw [hsign, map_prod]
-  exact Finset.prod_le_prod₀ (fun _ _ ↦ v.nonneg _) fun j _ ↦ hM (σ j) j
-
-omit [LinearOrder ι] [Fintype ι] [LinearOrder κ] in
-/-- A square matrix with entries in the nonarchimedean unit ball has determinant in the unit
-ball. -/
-theorem det_le_one {n : Type*} [Fintype n] [DecidableEq n] (v : AbsoluteValue K ℝ)
-    (hv : IsNonarchimedean v) {M : Matrix n n K} (hM : ∀ i j, v (M i j) ≤ 1) :
-    v M.det ≤ 1 :=
-  (v.det_le_prod hv hM).trans_eq Finset.prod_const_one
-
-omit [LinearOrder ι] [Fintype ι] [LinearOrder κ] in
-/-- If `M * N = 1` and both `M` and `N` have entries in the nonarchimedean unit ball, then
-`v M.det = 1`. -/
-theorem det_eq_one_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq n] [Nontrivial K]
-    (v : AbsoluteValue K ℝ) (hv : IsNonarchimedean v) {M N : Matrix n n K}
-    (hMN : M * N = 1) (hM : ∀ i j, v (M i j) ≤ 1) (hN : ∀ i j, v (N i j) ≤ 1) :
-    v M.det = 1 := by
-  refine le_antisymm (v.det_le_one hv hM) ?_
-  have hmul : v M.det * v N.det = 1 := by
-    rw [← map_mul, ← Matrix.det_mul, hMN, Matrix.det_one, map_one]
-  calc (1 : ℝ) = v M.det * v N.det := hmul.symm
-    _ ≤ v M.det * 1 := mul_le_mul_of_nonneg_left (v.det_le_one hv hN) (v.nonneg _)
-    _ = v M.det := mul_one _
-
 omit [Fintype ι] in
 /-- Every maximal minor, even one with repeated columns, is bounded by the
 maximum of the Plücker coordinates. -/

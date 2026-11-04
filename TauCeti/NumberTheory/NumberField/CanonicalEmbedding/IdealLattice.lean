@@ -153,36 +153,30 @@ theorem mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hI : I ≠ ⊥) (x : K)
   · obtain rfl := mixedEmbedding_injective K hyx
     simpa [toFractionalIdealUnit] using hy
 
-/-- Every element `I.mixedBasisElem hI ν` belongs to `IsLocalization.coeSubmodule K I`. -/
-theorem mixedBasisElem_mem (hI : I ≠ ⊥) (ν : index K) :
-    I.mixedBasisElem hI ν ∈ IsLocalization.coeSubmodule K I := by
-  rw [I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI, ← mixedLatticeBasis_apply]
-  exact Submodule.subset_span ⟨ν, rfl⟩
-
 /-- The family `I.mixedBasisElem hI` is linearly independent over `ℤ`. -/
 theorem linearIndependent_mixedBasisElem (hI : I ≠ ⊥) :
-    LinearIndependent ℤ (I.mixedBasisElem hI) := by
-  have hli : LinearIndependent ℤ (I.mixedLatticeBasis hI) :=
-    (I.mixedLatticeBasis hI).linearIndependent.restrict_scalars' ℤ
-  have heq : ⇑(I.mixedLatticeBasis hI) =
-      (mixedEmbedding K).toIntAlgHom.toLinearMap ∘ I.mixedBasisElem hI :=
-    funext (I.mixedLatticeBasis_apply hI)
-  rw [heq] at hli
-  exact hli.of_comp
+    LinearIndependent ℤ (I.mixedBasisElem hI) :=
+  ((basisOfFractionalIdeal K (toFractionalIdealUnit hI)).linearIndependent.restrict_scalars' ℤ).comp
+    _ (indexEquivChooseBasis hI).injective
 
 /-- The `ℤ`-span of `I.mixedBasisElem hI` in `K` is `IsLocalization.coeSubmodule K I`. -/
 @[simp]
 theorem span_int_mixedBasisElem (hI : I ≠ ⊥) :
     Submodule.span ℤ (range (I.mixedBasisElem hI)) =
       (IsLocalization.coeSubmodule K I).restrictScalars ℤ := by
+  classical
   ext x
-  rw [Submodule.restrictScalars_mem, I.mem_coeSubmodule_iff_mem_span_mixedLatticeBasis hI,
-    show range (I.mixedLatticeBasis hI) =
-      (mixedEmbedding K).toIntAlgHom.toLinearMap '' range (I.mixedBasisElem hI) by
-      rw [← range_comp]; exact congrArg range (funext (I.mixedLatticeBasis_apply hI)),
-    ← Submodule.map_span]
-  refine ⟨Submodule.mem_map_of_mem, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
-  rwa [← mixedEmbedding_injective K hyx]
+  change x ∈ Submodule.span ℤ
+      (range (basisOfFractionalIdeal K (toFractionalIdealUnit hI) ∘ indexEquivChooseBasis hI)) ↔ _
+  rw [Submodule.restrictScalars_mem, range_comp, Equiv.range_eq_univ, image_univ,
+    mem_span_basisOfFractionalIdeal]
+  simp [toFractionalIdealUnit]
+
+/-- Every element `I.mixedBasisElem hI ν` belongs to `IsLocalization.coeSubmodule K I`. -/
+theorem mixedBasisElem_mem (hI : I ≠ ⊥) (ν : index K) :
+    I.mixedBasisElem hI ν ∈ IsLocalization.coeSubmodule K I := by
+  rw [← Submodule.restrictScalars_mem ℤ, ← I.span_int_mixedBasisElem hI]
+  exact Submodule.subset_span (mem_range_self ν)
 
 open Classical in
 /-- The `ℤ`-fundamental domain of `I.mixedLatticeBasis hI` is a fundamental domain for the

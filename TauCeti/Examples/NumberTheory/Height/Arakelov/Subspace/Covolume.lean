@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Module.ZLattice.Scaling
-import TauCeti.NumberTheory.Height.Arakelov.Covolume
 import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
 
 /-!
