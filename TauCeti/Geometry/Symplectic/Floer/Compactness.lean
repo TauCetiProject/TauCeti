@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 
 /-!
@@ -33,7 +34,7 @@ pseudoholomorphic curves: the graph `U y = (y, u y)` solves the autonomous equat
 `J'(z, x)(ξ, v) = (i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`
 
 on `ℂ × V` (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`). This is the structure
-`TauCeti.SymplecticForm.floerGraphAlmostComplex` of the graph construction, written here as a
+`TauCeti.SymplecticForm.floerGraphAlmostComplex` of the graph construction, written there as a
 continuous-linear-map-valued function on the Euclidean product `WithLp 2 (ℂ × V)`
 (`TauCeti.Floer.graphStructure`). That is the form in which the local compactness theory of
 `TauCeti.Geometry.Symplectic.JHolomorphic.Energy` applies, which needs a `C²` structure on an
@@ -75,75 +76,10 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-section GraphStructure
-
-variable (J : ℂ × V → V →L[ℝ] V) (X : ℂ × V → ℂ →L[ℝ] V)
-
-/-- **Gromov's structure in Euclidean graph coordinates.** For a domain-dependent structure
-`J(z, x)` on `V` and a Hamiltonian one-form `X(z, x) : ℂ →L[ℝ] V`, this is the matrix-valued
-structure on `WithLp 2 (ℂ × V)` sending `(ξ, v)` at `p = (z, x)` to
-`(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. -/
-noncomputable def graphStructure (p : WithLp 2 (ℂ × V)) :
-    WithLp 2 (ℂ × V) →L[ℝ] WithLp 2 (ℂ × V) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).symm.toContinuousLinearMap ∘L
-    (inl ℝ ℂ V ∘L ContinuousLinearMap.mul ℝ ℂ I ∘L fst ℝ ℂ V +
-      inr ℝ ℂ V ∘L (J p.ofLp ∘L (snd ℝ ℂ V - X p.ofLp ∘L fst ℝ ℂ V) +
-        X p.ofLp ∘L ContinuousLinearMap.mul ℝ ℂ I ∘L fst ℝ ℂ V)) ∘L
-    (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).toContinuousLinearMap
-
-@[simp]
-theorem graphStructure_apply (p ζ : WithLp 2 (ℂ × V)) :
-    graphStructure J X p ζ = WithLp.toLp 2 (I * ζ.fst,
-      J p.ofLp (ζ.snd - X p.ofLp ζ.fst) + X p.ofLp (I * ζ.fst)) := by
-  simp [graphStructure, WithLp.ext_iff]
-
-variable {J X}
-
-/-- Gromov's structure squares to `-1` wherever `J` does. -/
-theorem graphStructure_graphStructure {p : WithLp 2 (ℂ × V)}
-    (hJ : ∀ v, J p.ofLp (J p.ofLp v) = -v) (ζ : WithLp 2 (ℂ × V)) :
-    graphStructure J X p (graphStructure J X p ζ) = -ζ := by
-  rw [WithLp.ext_iff, Prod.ext_iff]
-  simp [← mul_assoc, hJ, map_neg]
-
-/-- Gromov's structure is as regular as the almost complex structure and the Hamiltonian
-one-form. -/
-theorem contDiffOn_graphStructure {n : WithTop ℕ∞} {W : Set (ℂ × V)}
-    (hJ : ContDiffOn ℝ n J W) (hX : ContDiffOn ℝ n X W) :
-    ContDiffOn ℝ n (graphStructure J X) (WithLp.ofLp ⁻¹' W) := by
-  have hJ' : ContDiffOn ℝ n (fun p : WithLp 2 (ℂ × V) ↦ J p.ofLp) (WithLp.ofLp ⁻¹' W) :=
-    hJ.comp WithLp.contDiff_ofLp.contDiffOn (mapsTo_preimage _ _)
-  have hX' : ContDiffOn ℝ n (fun p : WithLp 2 (ℂ × V) ↦ X p.ofLp) (WithLp.ofLp ⁻¹' W) :=
-    hX.comp WithLp.contDiff_ofLp.contDiffOn (mapsTo_preimage _ _)
-  exact contDiffOn_const.clm_comp ((contDiffOn_const.add (contDiffOn_const.clm_comp
-    ((hJ'.clm_comp (contDiffOn_const.sub (hX'.clm_comp contDiffOn_const))).add
-      (hX'.clm_comp contDiffOn_const)))).clm_comp contDiffOn_const)
-
-end GraphStructure
-
-section Graph
-
-variable {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {u : ℂ → V} {y : ℂ}
-
-/-- **Gromov's graph construction in Euclidean coordinates.** A map `u` differentiable at `y`
-solves the inhomogeneous equation `∂ₜu - X(y, u) i = J(y, u)(∂ₛu - X(y, u) 1)` at `y` exactly when
-its graph solves `∂ₜU = J'(U) ∂ₛU` there. -/
-theorem fderiv_toLp_prodMk_I_eq_graphStructure_iff (hu : DifferentiableAt ℝ u y) :
-    fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y I =
-        graphStructure J X (WithLp.toLp 2 (y, u y))
-          (fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1) ↔
-      fderiv ℝ u y I - X (y, u y) I = J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1) := by
-  simp only [fderiv_toLp_prodMk_apply differentiableAt_fun_id hu, fderiv_fun_id,
-    graphStructure_apply, WithLp.ext_iff, Prod.ext_iff, WithLp.toLp_fst, WithLp.toLp_snd,
-    ContinuousLinearMap.id_apply, mul_one, true_and]
-  exact sub_eq_iff_eq_add.symm
-
-end Graph
-
 /-- **The mean-value inequality for Floer solutions.** Let `J` and `X` be `C²` on an open set
 `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with `J(z, x)² = -1` on `D × K`.
-There is a threshold `δ > 0` with the following property. Let `u` be `C³` on an open
-neighbourhood of a closed disc `closedBall z₀ r`, and on the open disc `B_r(z₀) ⊆ D` let it solve
+There is a threshold `δ > 0` with the following property. Let `u` be `C³` on an open disc
+`B_r(z₀) ⊆ D`, with `∂ₛu` continuous up to the boundary, and on the disc let it solve
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` with image in `K`. If the energy
 `π r² + ∫_{B_r(z₀)} ‖∂ₛu‖²` of its graph over the disc is less than `δ`, then
 `π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
@@ -152,8 +88,8 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
     (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
     (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
-    ∃ δ > 0, ∀ ⦃Ω : Set ℂ⦄ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, IsOpen Ω → 0 ≤ r →
-      closedBall z₀ r ⊆ Ω → ball z₀ r ⊆ D → ContDiffOn ℝ 3 u Ω →
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) → ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
       (∀ y ∈ ball z₀ r, fderiv ℝ u y I - X (y, u y) I =
         J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1)) →
       (∀ y ∈ ball z₀ r, u y ∈ K) →
@@ -166,38 +102,55 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
       ((WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).toHomeomorph.isCompact_preimage.2
         (hD.prod hK)) (preimage_mono hDKW)
       fun p hp ζ ↦ graphStructure_graphStructure (hJsq _ hp.1 _ hp.2) ζ
-  refine ⟨δ, hδ, fun Ω u z₀ r hΩ hr hrΩ hrD hu hCR huK hE ↦ ?_⟩
-  have hdiff : ∀ y ∈ Ω, DifferentiableAt ℝ u y := fun y hy ↦
-    (hu.differentiableOn (by norm_num)).differentiableAt (hΩ.mem_nhds hy)
-  have hu' : ContinuousOn (fun y ↦ fderiv ℝ u y 1) Ω :=
-    (hu.continuousOn_fderiv_of_isOpen hΩ (by norm_num)).clm_apply continuousOn_const
+  refine ⟨δ, hδ, fun u z₀ r hr hrD hu hu' hCR huK hE ↦ ?_⟩
+  have hdiff : ∀ y ∈ ball z₀ r, DifferentiableAt ℝ u y := fun y hy ↦
+    (hu.differentiableOn (by norm_num)).differentiableAt (isOpen_ball.mem_nhds hy)
   have hint : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z₀ r) :=
-    ((hu'.mono hrΩ).norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r)
+    (hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r)
       |>.mono_set ball_subset_closedBall
-  have hgen : ∀ y ∈ Ω, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
+  have hgen : ∀ y ∈ ball z₀ r, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
       1 + ‖fderiv ℝ u y 1‖ ^ 2 := fun y hy ↦ by
     simpa using norm_fderiv_toLp_graph_apply_sq (hdiff y hy) 1
-  have hvol : volume.real (ball z₀ r) = π * r ^ 2 := by
-    simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hr, mul_comm]
-  -- The energy of the graph on `B_r(z₀)` is its area `π r²` plus the energy of `u`.
-  have hgE : ∫ y in ball z₀ r, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
-      π * r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-    rw [setIntegral_congr_fun measurableSet_ball
-        fun y hy ↦ hgen y (hrΩ (ball_subset_closedBall hy)),
-      integral_add (integrableOn_const measure_ball_lt_top.ne) hint, setIntegral_const,
-      smul_eq_mul, mul_one, hvol]
-  have h := hmean (u := fun w ↦ WithLp.toLp 2 (w, u w)) hr
-    (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_id.prodMk (hu.mono
-      (ball_subset_closedBall.trans hrΩ))))
-    (((WithLp.prod_continuous_toLp 2 ℂ V).comp_continuousOn
-      ((continuousOn_const (c := (1 : ℂ))).prodMk hu')).congr (fun y hy ↦ by
-        simp [fderiv_toLp_prodMk_apply differentiableAt_fun_id (hdiff y hy)])
-      |>.mono hrΩ)
-    (fun y hy ↦ (fderiv_toLp_prodMk_I_eq_graphStructure_iff
-      (hdiff y (hrΩ (ball_subset_closedBall hy)))).2 (hCR y hy))
-    (fun y hy ↦ ⟨hrD hy, huK y hy⟩) (hgE ▸ hE)
-  rw [hgE, hgen z₀ (hrΩ (mem_closedBall_self hr))] at h
-  linarith
+  -- The graph need not be differentiable on the boundary circle, so apply the estimate for the
+  -- graph on every smaller disc `B_ρ(z₀)`, `ρ < r`, and let `ρ` tend to `r`.
+  have hsmall : ∀ ρ, 0 ≤ ρ → ρ < r → π * ρ ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤
+      7 * π * r ^ 2 + 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+    intro ρ hρ hρr
+    have hsub : closedBall z₀ ρ ⊆ ball z₀ r := closedBall_subset_ball hρr
+    have hvol : volume.real (ball z₀ ρ) = π * ρ ^ 2 := by
+      simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hρ, mul_comm]
+    -- The energy of the graph on `B_ρ(z₀)` is its area `π ρ²` plus the energy of `u`.
+    have hgE : ∫ y in ball z₀ ρ, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
+        π * ρ ^ 2 + ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 := by
+      rw [setIntegral_congr_fun measurableSet_ball
+          fun y hy ↦ hgen y (hsub (ball_subset_closedBall hy)),
+        integral_add (integrableOn_const measure_ball_lt_top.ne)
+          (hint.mono_set (ball_subset_closedBall.trans hsub)), setIntegral_const,
+        smul_eq_mul, mul_one, hvol]
+    have hmono : ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤
+        ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
+      setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball
+        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallyLE
+    have hπ : π * ρ ^ 2 ≤ π * r ^ 2 := by gcongr
+    have h := hmean (u := fun w ↦ WithLp.toLp 2 (w, u w)) hρ
+      (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_id.prodMk (hu.mono
+        (ball_subset_closedBall.trans hsub))))
+      (((WithLp.prod_continuous_toLp 2 ℂ V).comp_continuousOn
+        ((continuousOn_const (c := (1 : ℂ))).prodMk
+          (hu'.mono (hsub.trans ball_subset_closedBall)))).congr fun y hy ↦ by
+          simp [fderiv_toLp_prodMk_apply differentiableAt_fun_id (hdiff y (hsub hy))])
+      (fun y hy ↦ (fderiv_toLp_prodMk_I_eq_graphStructure_iff
+        (hdiff y (hsub (ball_subset_closedBall hy)))).2 (hCR y (hsub (ball_subset_closedBall hy))))
+      (fun y hy ↦ ⟨hrD (hsub (ball_subset_closedBall hy)),
+        huK y (hsub (ball_subset_closedBall hy))⟩)
+      (by rw [hgE]; linarith)
+    rw [hgE, hgen z₀ (mem_ball_self (hρ.trans_lt hρr))] at h
+    linarith
+  rcases hr.eq_or_lt with rfl | hr
+  · simp
+  refine le_of_tendsto (((by fun_prop : Continuous fun ρ : ℝ ↦
+    π * ρ ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2).tendsto r).mono_left (nhdsWithin_le_nhds (s := Iio r))) ?_
+  filter_upwards [Ioo_mem_nhdsLT hr] with ρ hρr using hsmall ρ hρr.1.le hρr.2
 
 /-- **Floer solutions converge off finitely many bubbling points.** Let `J` and `X` be `C²` on an
 open set `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with `J(z, x)² = -1` on
