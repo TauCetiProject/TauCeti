@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import TauCeti.RingTheory.Norm.Projective
 
@@ -37,8 +37,6 @@ vanishing of the coefficients of a single polynomial, as in the proof of Katz–
   algebra is a full set exactly when the norm identity holds on every base change.
 * `TauCeti.fullSetLocusIdeal_eq_bot_iff`: `s` is a full set of sections exactly when its full-set
   locus is all of `Spec A`.
-* `TauCeti.isFullSetOfSections_iff_of_isPushout`: full sets of sections and base change along a
-  pushout square.
 * `TauCeti.fullSetLocusIdeal_le_ker_iff`: **the full-set locus** (Katz–Mazur 1.9.1). The base
   change of `s` along `A → T` is a full set of sections exactly when `A → T` kills
   `fullSetLocusIdeal s`.
@@ -185,39 +183,6 @@ theorem fullSetLocusIdeal_eq_bot_iff (s : ι → B →ₐ[A] A) :
     fullSetLocusIdeal s = ⊥ ↔ IsFullSetOfSections s := by
   rw [← le_bot_iff, ← (RingHom.injective_iff_ker_eq_bot (algebraMap A A)).1 fun _ _ h ↦ h,
     fullSetLocusIdeal_le_ker_iff, isFullSetOfSections_baseChange_iff fun _ _ h ↦ h]
-
-omit [Module.Finite A B] [Module.Projective A B] in
-/-- Base change of sections along a pushout square: if `B'` is the base change of `B` along
-`A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then the base
-changes of `s` and of `s'` to any `A'`-algebra `T` are full sets of sections together. -/
-private theorem isFullSetOfSections_sectionBaseChange_iff_of_isPushout {A' B' : Type*}
-    [CommRing A'] [CommRing B'] [Algebra A A'] [Algebra A B'] [Algebra A' B'] [Algebra B B']
-    [IsScalarTower A A' B'] [IsScalarTower A B B'] [Algebra.IsPushout A A' B B']
-    {s : ι → B →ₐ[A] A} {s' : ι → B' →ₐ[A'] A'}
-    (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) (T : Type w) [CommRing T]
-    [Algebra A' T] [Algebra A T] [IsScalarTower A A' T] :
-    (IsFullSetOfSections fun i ↦ (s' i).sectionBaseChange T) ↔
-      IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T := by
-  let e : T ⊗[A] B ≃ₐ[T] T ⊗[A'] B' :=
-    (Algebra.TensorProduct.cancelBaseChange A A' T T B).symm.trans
-      (Algebra.TensorProduct.congr AlgEquiv.refl (Algebra.IsPushout.equiv A A' B B'))
-  rw [← isFullSetOfSections_comp_algEquiv_iff e]
-  refine Iff.of_eq (congrArg _ (funext fun i ↦ ?_))
-  refine Algebra.TensorProduct.ext' fun t b ↦ ?_
-  simp [e, Algebra.IsPushout.equiv_tmul, hs, ← IsScalarTower.algebraMap_apply]
-
-omit [Module.Finite A B] [Module.Projective A B] in
-/-- **Full sets of sections along a pushout square.** If `B'` is the base change of `B` along
-`A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then `s'` is a
-full set of sections exactly when the base change of `s` to `A'` is. -/
-theorem isFullSetOfSections_iff_of_isPushout {A' B' : Type*} [CommRing A'] [CommRing B']
-    [Algebra A A'] [Algebra A B'] [Algebra A' B'] [Algebra B B'] [IsScalarTower A A' B']
-    [IsScalarTower A B B'] [Algebra.IsPushout A A' B B'] [Module.Finite A' B'] [Module.Flat A' B']
-    {s : ι → B →ₐ[A] A} {s' : ι → B' →ₐ[A'] A'}
-    (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) :
-    IsFullSetOfSections s' ↔ IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A' :=
-  (isFullSetOfSections_baseChange_iff (T := A') fun _ _ h ↦ h).symm.trans
-    (isFullSetOfSections_sectionBaseChange_iff_of_isPushout hs A')
 
 /-- **The full-set locus commutes with base change.** If `B'` is the base change of `B` along
 `A → A'` and the sections `s'` of `B'` over `A'` extend the sections `s` of `B`, then the full-set
