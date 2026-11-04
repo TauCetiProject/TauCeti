@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Torus
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
@@ -41,9 +40,10 @@ The statements about smoothness take the discreteness of `Λ` as an instance arg
 manifold structure of `(ι → ℝ) / Λ` depends on it; at a regular point it is supplied by
 `TauCeti.SmoothTwoForm.IsSymplectic.discreteTopology_hamiltonianFlowStabilizer`.
 
-When `L` is moreover compact, as it is for a proper map `F`, the stabilizer spans `ι → ℝ`
-(`TauCeti.SmoothTwoForm.IsSymplectic.span_hamiltonianFlowStabilizer_eq_top`): it is a full
-lattice, of rank `n`. Then `(ι → ℝ) / Λ` is a compact torus,
+When `L` is moreover compact, as it is for a proper map `F`, the stabilizer is a full lattice
+of rank `n` (`TauCeti.SmoothTwoForm.IsSymplectic.isZLattice_hamiltonianFlowStabilizer` and
+`TauCeti.SmoothTwoForm.IsSymplectic.finrank_hamiltonianFlowStabilizer`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Torus`). Then `(ι → ℝ) / Λ` is a compact torus,
 and `L` is the image of a Lagrangian embedding of that torus. This is the smooth part of the
 Liouville–Arnold theorem on a single compact regular component; no symplectic coordinates near
 `L` are constructed here.
@@ -63,9 +63,6 @@ Liouville–Arnold theorem on a single compact regular component; no symplectic 
   it is a smooth embedding.
 * `TauCeti.SmoothTwoForm.IsSymplectic.isLagrangianEmbedding_ofQuotientHamiltonianFlowStabilizer`:
   it is a Lagrangian embedding.
-* `TauCeti.SmoothTwoForm.IsSymplectic.isZLattice_hamiltonianFlowStabilizer` and
-  `TauCeti.SmoothTwoForm.IsSymplectic.finrank_hamiltonianFlowStabilizer`: the stabilizer of a
-  point of a compact regular component is a full lattice of rank `n`.
 
 ## References
 
@@ -205,9 +202,8 @@ theorem contMDiff_ofQuotientHamiltonianFlowStabilizer (x : M)
 
 /-- **The descended orbit map is a smooth embedding.** On a manifold of dimension `2 · |ι|`, if
 every point of the connected component `L` of `x` in its level is a regular point of `F`, the map
-`[v] ↦ v • x` from `(ι → ℝ) / Λ` is a smooth embedding with range `L`. Its derivative at `[v]` is
-injective because that of the orbit map at `v`, `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)`, is, and the orbit
-projection `(ι → ℝ) → (ι → ℝ) / Λ` is a local diffeomorphism. -/
+`[v] ↦ v • x` from `(ι → ℝ) / Λ` is a smooth embedding (its range is `L`, see
+`range_ofQuotientHamiltonianFlowStabilizer`). -/
 theorem isSmoothEmbedding_ofQuotientHamiltonianFlowStabilizer
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
@@ -235,7 +231,8 @@ theorem isSmoothEmbedding_ofQuotientHamiltonianFlowStabilizer
 
 /-- **Regular components of a level are Lagrangian embeddings of `(ι → ℝ) / Λ`.** On a manifold of
 dimension `2 · |ι|`, if every point of the connected component `L` of `x` in its level is a regular
-point of `F`, the map `[v] ↦ v • x` from `(ι → ℝ) / Λ` is a Lagrangian embedding with range `L`.
+point of `F`, the map `[v] ↦ v • x` from `(ι → ℝ) / Λ` is a Lagrangian embedding (its range is
+`L`, see `range_ofQuotientHamiltonianFlowStabilizer`).
 When `L` is compact, `Λ` is a full lattice (`isZLattice_hamiltonianFlowStabilizer`) and
 `(ι → ℝ) / Λ` is a torus. -/
 theorem isLagrangianEmbedding_ofQuotientHamiltonianFlowStabilizer
@@ -252,32 +249,6 @@ theorem isLagrangianEmbedding_ofQuotientHamiltonianFlowStabilizer
       x p))
     (fun _ i j ↦ hcomm i j _) (he.isImmersion.mfderiv_injective (by simp))
     (finrank_fintype_fun_eq_card ℝ) hdim
-
-/-! ### Compact components: the period lattice -/
-
-/-- **The stabilizer of a point of a compact regular component is a full lattice.** On a manifold
-of dimension `2 · |ι|`, if the connected component `L` of `x` in its level is compact and consists
-of regular points of `F`, the stabilizer `Λ` of `x` spans `ι → ℝ`, so `(ι → ℝ) / Λ` is a compact
-torus. -/
-theorem isZLattice_hamiltonianFlowStabilizer (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
-    (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
-    (hL : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x))
-    [DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x)] :
-    IsZLattice ℝ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule where
-  span_top := by
-    rw [AddSubgroup.coe_toIntSubmodule]
-    exact hσ.span_hamiltonianFlowStabilizer_eq_top hF hcomm hc hreg hdim hL
-
-/-- **The period lattice of a compact regular component has rank `n`.** On a manifold of dimension
-`2 · |ι|`, if the connected component of `x` in its level is compact and consists of regular points
-of `F`, the stabilizer of `x` is a free abelian group of rank `|ι|`. -/
-theorem finrank_hamiltonianFlowStabilizer (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
-    (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
-    (hL : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x))
-    [DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x)] :
-    finrank ℤ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule = Fintype.card ι := by
-  have := hσ.isZLattice_hamiltonianFlowStabilizer hF hcomm hc hdim hreg hL
-  rw [ZLattice.rank ℝ, finrank_fintype_fun_eq_card]
 
 end IsSymplectic
 
