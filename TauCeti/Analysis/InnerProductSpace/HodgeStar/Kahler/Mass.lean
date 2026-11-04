@@ -50,27 +50,25 @@ include hJ
 This also covers the zero-dimensional space, where the form vanishes. -/
 theorem norm_alternatingFormEquiv_kahlerForm_le :
     ‖alternatingFormEquiv V 2 J.kahlerForm‖ ≤ 1 := by
-  have hn (v : V) : ‖J v‖ = ‖v‖ := (J.toLinearMap.isometryOfInner hJ).norm_map v
   refine (alternatingFormEquiv V 2 J.kahlerForm).opNorm_le_bound zero_le_one fun v ↦ ?_
   have heval : alternatingFormEquiv V 2 J.kahlerForm v = ⟪J (v 0), v 1⟫ := by
     have hv : v = ![v 0, v 1] := by ext i; fin_cases i <;> rfl
     rw [hv, alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [heval, Real.norm_eq_abs, Fin.prod_univ_two, one_mul]
-  simpa only [hn] using abs_real_inner_le_norm (J (v 0)) (v 1)
+  simpa only [norm_apply hJ] using abs_real_inner_le_norm (J (v 0)) (v 1)
 
 /-- The dual-comass mass of the Kähler bivector is half the real dimension, including in
 dimension zero. Its Hilbert norm, in contrast, is the square root of this number. -/
 @[simp]
 theorem norm_formDualEquiv_kahlerForm :
     ‖formDualEquiv ℝ V 2 J.kahlerForm‖ = finrank ℝ V / 2 := by
-  have hn (v : V) : ‖J v‖ = ‖v‖ := (J.toLinearMap.isometryOfInner hJ).norm_map v
   apply le_antisymm
   · refine (formDualEquiv ℝ V 2 J.kahlerForm).opNorm_le_bound (by positivity) fun ω ↦ ?_
     have hterm (i : Fin (finrank ℝ V)) :
         ‖ω ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)]‖ ≤ ‖ω‖ := by
       simpa only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-        hn, OrthonormalBasis.norm_eq_one, mul_one] using
+        norm_apply hJ, OrthonormalBasis.norm_eq_one, mul_one] using
         ω.le_opNorm ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)]
     rw [kahlerForm_def, map_smul, map_sum]
     simp only [smul_apply, sum_apply,
@@ -80,12 +78,11 @@ theorem norm_formDualEquiv_kahlerForm :
           gcongr
           exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ hterm i)
       _ = (finrank ℝ V : ℝ) / 2 * ‖ω‖ := by simp [div_eq_inv_mul, mul_assoc]
-  · calc (finrank ℝ V : ℝ) / 2 =
-          formDualEquiv ℝ V 2 J.kahlerForm (alternatingFormEquiv V 2 J.kahlerForm) := by
-            rw [formDualEquiv_alternatingFormEquiv, inner_kahlerForm_self hJ]
+  · calc (finrank ℝ V : ℝ) / 2 = ⟪J.kahlerForm, J.kahlerForm⟫ :=
+          (inner_kahlerForm_self hJ).symm
         _ ≤ ‖formDualEquiv ℝ V 2 J.kahlerForm‖ *
             ‖alternatingFormEquiv V 2 J.kahlerForm‖ :=
-          (Real.le_norm_self _).trans ((formDualEquiv ℝ V 2 J.kahlerForm).le_opNorm _)
+          inner_le_norm_formDualEquiv_mul _ _
         _ ≤ ‖formDualEquiv ℝ V 2 J.kahlerForm‖ :=
           mul_le_of_le_one_right (ContinuousLinearMap.opNorm_nonneg _)
             (norm_alternatingFormEquiv_kahlerForm_le hJ)
@@ -114,8 +111,7 @@ theorem norm_formDualEquiv_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fi
   obtain ⟨J, h₀, h₂⟩ := exists_complexStructure_finFour e
   rw [← J.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂,
     J.norm_formDualEquiv_kahlerForm (J.inner_apply_apply_of_orthonormalBasis h₀ h₂)]
-  have hdim : finrank ℝ V = 4 := by simpa using Module.finrank_eq_card_basis e.toBasis
-  norm_num [hdim]
+  norm_num [Module.finrank_eq_card_basis e.toBasis]
 
 /-- The same sum of orthogonal unit bivectors has Hilbert norm `√2`, not its mass `2`. -/
 theorem norm_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
@@ -123,7 +119,6 @@ theorem norm_ιMulti_add_ιMulti_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
   obtain ⟨J, h₀, h₂⟩ := exists_complexStructure_finFour e
   rw [← J.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, norm_eq_sqrt_real_inner,
     J.inner_kahlerForm_self (J.inner_apply_apply_of_orthonormalBasis h₀ h₂)]
-  have hdim : finrank ℝ V = 4 := by simpa using Module.finrank_eq_card_basis e.toBasis
-  norm_num [hdim]
+  norm_num [Module.finrank_eq_card_basis e.toBasis]
 
 end OrthonormalBasis

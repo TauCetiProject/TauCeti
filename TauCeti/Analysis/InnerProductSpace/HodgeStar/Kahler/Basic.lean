@@ -91,6 +91,12 @@ variable {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w�
 include hJ
 
 omit [FiniteDimensional ℝ V] in
+/-- An orthogonal almost complex structure preserves norms. -/
+@[simp]
+theorem norm_apply (v : V) : ‖J v‖ = ‖v‖ :=
+  (J.toLinearMap.isometryOfInner hJ).norm_map v
+
+omit [FiniteDimensional ℝ V] in
 /-- An orthogonal almost complex structure is skew-adjoint, `⟪J v, w⟫ = -⟪v, J w⟫`. -/
 theorem inner_apply_left (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
   J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
@@ -115,10 +121,9 @@ theorem inner_kahlerForm_ιMulti (u w : V) :
 /-- `⟪ω, ω⟫ = dim V / 2`: in a unitary frame `ω = e₁ ∧ e₂ + e₃ ∧ e₄ + ⋯` is a sum of
 `dim V / 2` orthonormal two-vectors. -/
 theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V / 2 := by
-  have hn (v : V) : ‖J v‖ = ‖v‖ := by
-    rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]
   nth_rewrite 2 [kahlerForm]
-  simp [inner_sum, real_inner_smul_right, inner_kahlerForm_ιMulti hJ, hn, div_eq_inv_mul]
+  simp [inner_sum, real_inner_smul_right, inner_kahlerForm_ιMulti hJ, norm_apply hJ,
+    div_eq_inv_mul]
 
 /-- `‖ω‖² = dim V / 2`, the simp normal form of `inner_kahlerForm_self`. -/
 @[simp]
