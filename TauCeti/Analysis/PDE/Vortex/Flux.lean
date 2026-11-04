@@ -8,12 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.CompactSupport
 
 /-!
@@ -188,39 +187,26 @@ private theorem hasCompactSupport_fluxProfile {R : ℝ} (hR : 0 < R) :
 /-- The winding term integrates to `2π`, independently of `R`. -/
 private theorem integral_fluxProfile {R : ℝ} (hR : 0 < R) :
     ∫ z : ℂ, fluxProfile R ‖z‖ = 2 * Real.pi := by
-  rw [integral_fun_norm_addHaar volume (fluxProfile R)]
+  have hrad := integral_norm_rpow_neg_finrank_mul_fderiv_apply_self (μ := (volume : Measure ℂ))
+    ((contDiff_fluxCutoff R).of_le (by norm_num)) (hasCompactSupport_fluxCutoff hR)
   have hball : volume.real (ball (0 : ℂ) 1) = Real.pi := by
     simp [Measure.real, Complex.volume_ball]
-  -- `r σ'(2 - (r / R)²) · 2 / R²` is minus the derivative of the compactly supported
-  -- profile `σ(2 - (r / R)²)`, whose value at `0` is one.
-  set F : ℝ → ℝ := fun r ↦ Real.smoothTransition (2 - (R⁻¹ * r) ^ 2)
-  have hF : ContDiff ℝ 1 F := Real.smoothTransition.contDiff.comp
-    (contDiff_const.sub ((contDiff_const.mul contDiff_id).pow 2))
-  have hFc : HasCompactSupport F := by
-    refine HasCompactSupport.intro (isCompact_closedBall (0 : ℝ) (2 * R)) fun r hr ↦ ?_
-    refine Real.smoothTransition.zero_of_nonpos ?_
-    have hr' : 2 * R < |r| := by simpa [Real.norm_eq_abs] using hr
-    have : 2 < |R⁻¹ * r| := by
-      rw [abs_mul, abs_of_pos (inv_pos.2 hR), lt_inv_mul_iff₀ hR]; linarith
-    nlinarith [sq_abs (R⁻¹ * r), abs_nonneg (R⁻¹ * r)]
-  have hderiv (r : ℝ) : deriv F r = -(r ^ (2 - 1) • fluxProfile R r) := by
-    have h₁ : HasDerivAt (fun r : ℝ ↦ 2 - (R⁻¹ * r) ^ 2) (-(2 * (R⁻¹ * r) * R⁻¹)) r := by
-      have := (((hasDerivAt_id r).const_mul R⁻¹).pow 2).const_sub (2 : ℝ)
-      convert this using 1
-      · ext; simp
-      · simp only [id, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, mul_one]
-    have h₂ : HasDerivAt Real.smoothTransition (deriv Real.smoothTransition (2 - (R⁻¹ * r) ^ 2))
-        (2 - (R⁻¹ * r) ^ 2) :=
-      ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _).hasDerivAt
-    -- `F` is by definition this composition; the `show` exposes it to `HasDerivAt.deriv`.
-    rw [show F = Real.smoothTransition ∘ fun r : ℝ ↦ 2 - (R⁻¹ * r) ^ 2 from rfl,
-      (h₂.comp r h₁).deriv, fluxProfile, pow_one, smul_eq_mul]
-    ring
-  have hI : ∫ r in Set.Ioi (0 : ℝ), deriv F r = -F 0 := hFc.integral_Ioi_deriv_eq hF 0
-  have hF0 : F 0 = 1 := Real.smoothTransition.one_of_one_le (by norm_num)
-  simp only [hderiv, integral_neg, hF0, neg_inj] at hI
-  rw [finrank_real_complex, hI, hball]
-  simp
+  have h0 : fluxCutoff R 0 = 1 := Real.smoothTransition.one_of_one_le (by simp)
+  rw [finrank_real_complex, hball, h0] at hrad
+  -- The radial derivative of `χ_R`, weighted by `‖z‖⁻²`, is minus the winding profile.
+  have hint (z : ℂ) : ‖z‖ ^ (-((2 : ℕ) : ℝ)) * fderiv ℝ (fluxCutoff R) z z =
+      -fluxProfile R ‖z‖ := by
+    rcases eq_or_ne z 0 with rfl | hz
+    · simp [fluxProfile, Real.smoothTransition.deriv_of_one_lt (by norm_num : (1 : ℝ) < 2)]
+    have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 hz
+    have hsq : z.re * z.re + z.im * z.im = ‖z‖ ^ 2 := by
+      rw [← Complex.normSq_eq_norm_sq, normSq_apply]
+    rw [fderiv_fluxCutoff_apply, hsq, fluxProfile, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
+      Nat.cast_ofNat, Real.rpow_neg (norm_nonneg z), Real.rpow_two]
+    field_simp
+  simp only [hint, integral_neg] at hrad
+  push_cast at hrad
+  linarith
 
 /-! ### The phase near infinity -/
 
