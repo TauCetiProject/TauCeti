@@ -22,8 +22,9 @@ a doubly (twisted) periodic map are used.
 
 ## Main declarations
 
-* `TauCeti.setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst`: the integral of a partial
-  derivative in the first coordinate is the integral of the difference of the side values.
+* `TauCeti.setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst`,
+  `TauCeti.setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_snd`: the integral of a partial
+  derivative is the integral of the difference of the values on the two opposite sides.
 * `TauCeti.setIntegral_rect_eq_zero_of_hasDerivAt_fst`,
   `TauCeti.setIntegral_rect_eq_zero_of_hasDerivAt_snd`: a partial derivative of a function with
   equal values on the two opposite sides integrates to zero over the rectangle.
@@ -67,22 +68,32 @@ theorem setIntegral_rect_eq_zero_of_hasDerivAt_fst {Φ φ : ℝ × ℝ → E}
   rw [setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst hφ hΦ hab]
   simp [hper]
 
+/-- **The fundamental theorem of calculus in the second coordinate.** The integral of a
+continuous partial derivative `φ = ∂₂ Φ` over the rectangle `[a₁, b₁] × [a₂, b₂]` is the integral
+over `[a₁, b₁]` of the difference of the values of `Φ` on the two horizontal sides. -/
+theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_snd {Φ φ : ℝ × ℝ → E}
+    (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun t ↦ Φ (s, t)) (φ (s, t)) t)
+    (hab : a₂ ≤ b₂) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ s in Icc a₁ b₁, (Φ (s, b₂) - Φ (s, a₂)) := by
+  have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+    exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod _ hint]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun s ↦ ?_)
+  dsimp only
+  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
+    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hΦ s t)
+      ((hφ.comp (Continuous.prodMk_right s)).intervalIntegrable _ _)]
+
 /-- A derivative in the second coordinate of a function with equal values on the horizontal
 sides `ℝ × {a₂}` and `ℝ × {b₂}` integrates to zero over the rectangle `[a₁, b₁] × [a₂, b₂]`. -/
 theorem setIntegral_rect_eq_zero_of_hasDerivAt_snd {Φ φ : ℝ × ℝ → E}
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun t ↦ Φ (s, t)) (φ (s, t)) t)
     (hper : ∀ s, Φ (s, b₂) = Φ (s, a₂)) : ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = 0 := by
-  have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
-    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-    exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod _ hint]
-  refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun s ↦ ?_)
-  dsimp only [Pi.zero_apply]
   rcases lt_or_ge b₂ a₂ with hab | hab
   · simp [Icc_eq_empty_of_lt hab]
-  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hΦ s t)
-      ((hφ.comp (Continuous.prodMk_right s)).intervalIntegrable _ _), hper, sub_self]
+  rw [setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_snd hφ hΦ hab]
+  simp [hper]
 
 /-- A continuous nonnegative function with zero integral over a nondegenerate rectangle
 `[a₁, b₁] × [a₂, b₂]` vanishes on it. -/

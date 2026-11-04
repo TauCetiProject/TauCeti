@@ -53,7 +53,9 @@ shows that a solution of `D ξ = 0` which decays at both ends together with `∂
 
 These are statements in a symplectic vector space with a constant form, matching the
 local-coordinate linearization `TauCeti.SymplecticForm.floerLinearization`; the Sobolev
-realization of `A` and `D` and their Fredholm theory are not treated here. The model case of a
+realization of `A` and `D` and their Fredholm theory are not treated here. For an actual orbit,
+the continuity hypothesis on `S` is
+`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`. The model case of a
 constant orthogonal complex structure on an inner product space is the operator
 `TauCeti.orbitTorusOperator`.
 
@@ -139,8 +141,6 @@ theorem integral_associatedBilinForm_asymptoticOperator_comm [FiniteDimensional 
       ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (ζ t) (asymptoticOperator J S η t) := by
   have hζ' : Continuous (deriv ζ) := hζ.continuous_deriv le_rfl
   have hη' : Continuous (deriv η) := hη.continuous_deriv le_rfl
-  have hB : Continuous fun p : V × V ↦ ω p.1 p.2 :=
-    ω.toBilinForm.toContinuousBilinearMap.continuous₂
   -- Both integrands are `J`-free after cancelling the almost complex structure.
   have hl : ∀ t, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t) (η t) =
       ω (deriv ζ t) (η t) - ω (S t (ζ t)) (η t) := fun t ↦ by
@@ -155,9 +155,9 @@ theorem integral_associatedBilinForm_asymptoticOperator_comm [FiniteDimensional 
     simp only [map_sub, LinearMap.sub_apply] at h₁ h₂ h₃ ⊢
     linarith
   have hc₁ : Continuous fun t ↦ ω (S t (ζ t)) (η t) :=
-    hB.comp ((hSc.clm_apply hζ.continuous).prodMk hη.continuous)
-  have hc₂ : Continuous fun t ↦ ω (deriv ζ t) (η t) := hB.comp (hζ'.prodMk hη.continuous)
-  have hc₃ : Continuous fun t ↦ ω (ζ t) (deriv η t) := hB.comp (hζ.continuous.prodMk hη')
+    ω.continuous_apply_comp (hSc.clm_apply hζ.continuous) hη.continuous
+  have hc₂ : Continuous fun t ↦ ω (deriv ζ t) (η t) := ω.continuous_apply_comp hζ' hη.continuous
+  have hc₃ : Continuous fun t ↦ ω (ζ t) (deriv η t) := ω.continuous_apply_comp hζ.continuous hη'
   have hc₄ : Continuous fun t ↦ -ω (ζ t) (deriv η t) := hc₃.neg
   rw [intervalIntegral.integral_congr
       (g := fun t ↦ ω (deriv ζ t) (η t) - ω (S t (ζ t)) (η t)) (fun t _ ↦ hl t),
@@ -216,9 +216,9 @@ theorem exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero [FiniteDimensi
     simp [h1]
   · rintro ⟨v, hv, hne⟩
     have hΨv : dysonSeriesLeft S 1 v = v := by
-      have h0 : (1 - dysonSeriesLeft S 1 : V →L[ℝ] V) v = 0 := hv
-      rw [sub_apply, one_apply_eq_self, sub_eq_zero] at h0
-      exact h0.symm
+      rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, one_apply_eq_self,
+        sub_eq_zero] at hv
+      exact hv.symm
     refine ⟨fun t ↦ dysonSeriesLeft S t v,
       fun t ↦ (hasDerivAt_dysonSeriesLeft_apply hSc v t).differentiableAt, fun t ↦ ?_,
       fun h ↦ hne (by simpa using congrFun h 0),
@@ -278,7 +278,76 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
     (hξ.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
+/-- A map of period one in the second coordinate has a derivative of period one in it. -/
+private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s t : ℝ) :
+    fderiv ℝ ξ (s, t + 1) = fderiv ℝ ξ (s, t) := by
+  have h := fderiv_add_eq_smul (c := ((0 : ℝ), (1 : ℝ))) (a := (1 : ℝ))
+    (fun ⟨p, q⟩ ↦ by simpa using hper p q) (s, t)
+  simp only [Prod.mk_add_mk, add_zero, one_smul] at h
+  exact h
+
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+
+/-- For continuously varying `J_t`, the norm `g_t(f, f)` of a continuous map `f` of the cylinder
+for `g_t = ω(·, J_t ·)` is continuous. -/
+private theorem continuous_associatedBilinForm_apply_self
+    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) {f : ℝ × ℝ → V} (hf : Continuous f) :
+    Continuous fun z ↦ ω.associatedBilinForm (J z.2) (f z) (f z) :=
+  ω.continuous_apply_comp hf (hJc.comp (continuous_snd.prodMk hf))
+
+omit [FiniteDimensional ℝ V] in
+/-- The pointwise form of the energy identity: for `ω`-invariant `J` and infinitesimally
+symplectic `T`, with `w = y - T x`, the norm `g(u + J w, u + J w)` for `g = ω(·, J ·)` is
+`g(u, u) + g(w, w)` plus twice `ω(w, u)`, written as the sum of the two partial derivatives
+`ω(w, u) + ω(m - T u, x)` and `ω(x, m) + ω(y, u)` used in the cylinder computation. -/
+private theorem associatedBilinForm_add_apply_self {J : AlmostComplexStructure V}
+    {T : V →L[ℝ] V} (hJ : ω.Invariant J) (hT : ∀ v w, ω (T v) w + ω v (T w) = 0)
+    (x y u m : V) :
+    ω.associatedBilinForm J (u + J (y - T x)) (u + J (y - T x)) =
+      (ω.associatedBilinForm J u u + ω.associatedBilinForm J (y - T x) (y - T x)) +
+        ((ω (y - T x) u + ω (m - T u) x) + (ω x m + ω y u)) := by
+  have hinv := (ω.invariant_iff J).mp hJ
+  have h₁ := hinv (y - T x) u
+  have h₂ := hinv (y - T x) (J (y - T x))
+  have h₃ := ω.neg_eq u (y - T x)
+  have h₄ := ω.neg_eq x m
+  have h₅ := ω.neg_eq u (T x)
+  have h₆ := hT u x
+  simp only [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply,
+    map_add, map_sub, map_neg, LinearMap.add_apply, LinearMap.sub_apply] at h₁ h₂ h₃ h₄ h₅ h₆ ⊢
+  linarith
+
+/-- The `s`-derivative of the slice pairing integrand `ω(∂t ξ - S_t ξ, ξ)`. -/
+private theorem hasDerivAt_slicePairing_fst (hξ : ContDiff ℝ 2 ξ) (s t : ℝ) :
+    HasDerivAt (fun s ↦ ω (fderiv ℝ ξ (s, t) (0, 1) - S t (ξ (s, t))) (ξ (s, t)))
+      (ω (fderiv ℝ ξ (s, t) (0, 1) - S t (ξ (s, t))) (fderiv ℝ ξ (s, t) (1, 0)) +
+        ω (fderiv ℝ (fderiv ℝ ξ) (s, t) (1, 0) (0, 1) - S t (fderiv ℝ ξ (s, t) (1, 0)))
+          (ξ (s, t))) s := by
+  have hus : HasDerivAt (fun s ↦ ξ (s, t)) (fderiv ℝ ξ (s, t) (1, 0)) s :=
+    (hξ.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
+  have hws : HasDerivAt (fun s ↦ fderiv ℝ ξ (s, t) (0, 1) - S t (ξ (s, t)))
+      (fderiv ℝ (fderiv ℝ ξ) (s, t) (1, 0) (0, 1) - S t (fderiv ℝ ξ (s, t) (1, 0))) s :=
+    (hasDerivAt_fderiv_apply_fst
+    ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (0, 1)).sub
+      ((S t).hasFDerivAt.comp_hasDerivAt s hus)
+  simpa only [LinearMap.toContinuousBilinearMap_apply] using
+    ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hws) (fun _ ↦ hus)
+
+/-- The `t`-derivative of `ω(ξ, ∂s ξ)`, using the symmetry of the second derivative. -/
+private theorem hasDerivAt_apply_fderiv_fst_snd (hξ : ContDiff ℝ 2 ξ) (s t : ℝ) :
+    HasDerivAt (fun t ↦ ω (ξ (s, t)) (fderiv ℝ ξ (s, t) (1, 0)))
+      (ω (ξ (s, t)) (fderiv ℝ (fderiv ℝ ξ) (s, t) (1, 0) (0, 1)) +
+        ω (fderiv ℝ ξ (s, t) (0, 1)) (fderiv ℝ ξ (s, t) (1, 0))) t := by
+  have hut : HasDerivAt (fun t ↦ ξ (s, t)) (fderiv ℝ ξ (s, t) (0, 1)) t :=
+    (hξ.differentiable (by norm_num) _).hasFDerivAt.comp_hasDerivAt t
+      (hasDerivAt_prodMk_right s t)
+  have hsym : fderiv ℝ (fderiv ℝ ξ) (s, t) (0, 1) (1, 0) =
+      fderiv ℝ (fderiv ℝ ξ) (s, t) (1, 0) (0, 1) :=
+    (hξ.contDiffAt.isSymmSndFDerivAt (by simp) (1, 0) (0, 1)).symm
+  have h := ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hut)
+    (fun _ ↦ hasDerivAt_fderiv_apply_snd
+      ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero (s, t)) (1, 0))
+  simpa only [LinearMap.toContinuousBilinearMap_apply, hsym] using h
 
 /-- **The energy identity of the stationary cylinder operator.** Let each `J_t` leave `ω`
 invariant, depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. For a
@@ -306,18 +375,9 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
           ∫ t in (0 : ℝ)..1,
             ω (fderiv ℝ ξ (a, t) stdComplexLineImag - S t (ξ (a, t))) (ξ (a, t))) := by
   simp only [stationaryCylinderOperator_def, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  have hξ1 : Differentiable ℝ ξ := hξ.differentiable (by norm_num)
   have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv (by norm_num)
-  have hdξ1 : Differentiable ℝ (fderiv ℝ ξ) :=
-    (hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
   have hddξ : Continuous (fderiv ℝ (fderiv ℝ ξ)) :=
     (hξ.fderiv_right (m := 1) le_rfl).continuous_fderiv one_ne_zero
-  have hB : Continuous fun p : V × V ↦ ω p.1 p.2 :=
-    ω.toBilinForm.toContinuousBilinearMap.continuous₂
-  have hω {f g : ℝ × ℝ → V} (hf : Continuous f) (hg : Continuous g) :
-      Continuous fun z ↦ ω (f z) (g z) := hB.comp (hf.prodMk hg)
-  have hJ' {f : ℝ × ℝ → V} (hf : Continuous f) : Continuous fun z ↦ J z.2 (f z) :=
-    hJc.comp (continuous_snd.prodMk hf)
   have hS' {f : ℝ × ℝ → V} (hf : Continuous f) : Continuous fun z ↦ S z.2 (f z) :=
     (hSc.comp continuous_snd).clm_apply hf
   -- Partial derivatives of `ξ` and the remainder `w = ∂t ξ - S ξ`.
@@ -333,69 +393,39 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
   set φ₁ : ℝ × ℝ → ℝ := fun z ↦ ω (w z) (ξs z) + ω (M z - S z.2 (ξs z)) (ξ z)
   set φ₂ : ℝ × ℝ → ℝ := fun z ↦ ω (ξ z) (M z) + ω (ξt z) (ξs z)
   have hφ₁ : Continuous φ₁ :=
-    (hω hw hξs).add (hω (hM.sub (hS' hξs)) hξ.continuous)
-  have hφ₂ : Continuous φ₂ := (hω hξ.continuous hM).add (hω hξt hξs)
-  have hus (s t : ℝ) : HasDerivAt (fun s ↦ ξ (s, t)) (ξs (s, t)) s :=
-    (hξ1 _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
-  have hut (s t : ℝ) : HasDerivAt (fun t ↦ ξ (s, t)) (ξt (s, t)) t :=
-    (hξ1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)
-  have hψ (s t : ℝ) : HasDerivAt (fun s ↦ ω (w (s, t)) (ξ (s, t))) (φ₁ (s, t)) s := by
-    have hws : HasDerivAt (fun s ↦ w (s, t)) (M (s, t) - S t (ξs (s, t))) s :=
-      (hasDerivAt_fderiv_apply_fst (hdξ1 _) (0, 1)).sub
-        ((S t).hasFDerivAt.comp_hasDerivAt s (hus s t))
-    simpa only [LinearMap.toContinuousBilinearMap_apply] using
-      ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hws)
-        (fun _ ↦ hus s t)
-  have hχ (s t : ℝ) : HasDerivAt (fun t ↦ ω (ξ (s, t)) (ξs (s, t))) (φ₂ (s, t)) t := by
-    have hsym : fderiv ℝ (fderiv ℝ ξ) (s, t) (0, 1) (1, 0) = M (s, t) :=
-      (hξ.contDiffAt.isSymmSndFDerivAt (by simp) (1, 0) (0, 1)).symm
-    have h := ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear
-      (fun _ ↦ hut s t) (fun _ ↦ hasDerivAt_fderiv_apply_snd (hdξ1 (s, t)) (1, 0))
-    simpa only [LinearMap.toContinuousBilinearMap_apply, hsym] using h
-  -- The pointwise identity.
+    (ω.continuous_apply_comp hw hξs).add (ω.continuous_apply_comp (hM.sub (hS' hξs)) hξ.continuous)
+  have hφ₂ : Continuous φ₂ :=
+    (ω.continuous_apply_comp hξ.continuous hM).add (ω.continuous_apply_comp hξt hξs)
+  have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  have hc₁ : Continuous fun z : ℝ × ℝ ↦ ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
+      ω.associatedBilinForm (J z.2) (w z) (w z) :=
+    (continuous_associatedBilinForm_apply_self hJc hξs).add
+      (continuous_associatedBilinForm_apply_self hJc hw)
+  have hc₂ : Continuous fun z ↦ φ₁ z + φ₂ z := hφ₁.add hφ₂
+  have hψc (s : ℝ) : Continuous fun t ↦ ω (w (s, t)) (ξ (s, t)) :=
+    (ω.continuous_apply_comp hw hξ.continuous).comp (Continuous.prodMk_right s)
   have hpt : ∀ z : ℝ × ℝ, ω.associatedBilinForm (J z.2) (ξs z + J z.2 (w z))
       (ξs z + J z.2 (w z)) =
       (ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
-        ω.associatedBilinForm (J z.2) (w z) (w z)) + (φ₁ z + φ₂ z) := fun z ↦ by
-    have hinv := (ω.invariant_iff (J z.2)).mp (hJ z.2)
-    have h₁ := hinv (w z) (ξs z)
-    have h₂ := hinv (w z) (J z.2 (w z))
-    have h₃ := ω.neg_eq (ξs z) (w z)
-    have h₄ := ω.neg_eq (ξ z) (M z)
-    have h₅ := ω.neg_eq (ξs z) (S z.2 (ξ z))
-    have h₆ := hS z.2 (ξs z) (ξ z)
-    simp only [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply,
-      φ₁, φ₂, w, map_add, map_sub, map_neg, LinearMap.add_apply, LinearMap.sub_apply,
-      ] at h₁ h₂ h₃ h₄ h₅ h₆ ⊢
-    linarith
-  have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hg {f : ℝ × ℝ → V} (hf : Continuous f) :
-      Continuous fun z ↦ ω.associatedBilinForm (J z.2) (f z) (f z) := hω hf (hJ' hf)
-  have hc₁ : Continuous fun z : ℝ × ℝ ↦ ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
-      ω.associatedBilinForm (J z.2) (w z) (w z) := (hg hξs).add (hg hw)
-  have hc₂ : Continuous fun z ↦ φ₁ z + φ₂ z := hφ₁.add hφ₂
-  have hψc (s : ℝ) : Continuous fun t ↦ ω (w (s, t)) (ξ (s, t)) :=
-    (hω hw hξ.continuous).comp (Continuous.prodMk_right s)
+        ω.associatedBilinForm (J z.2) (w z) (w z)) + (φ₁ z + φ₂ z) := fun z ↦
+    associatedBilinForm_add_apply_self (hJ z.2) (hS z.2) (ξ z) (ξt z) (ξs z) (M z)
   rw [integral_congr_ae (Eventually.of_forall hpt),
     integral_add (hc₁.continuousOn.integrableOn_compact hR)
       (hc₂.continuousOn.integrableOn_compact hR),
     integral_add (hφ₁.continuousOn.integrableOn_compact hR)
       (hφ₂.continuousOn.integrableOn_compact hR),
-    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z ↦ ω (ξ z) (ξs z)) hχ
-      (fun s ↦ ?_), add_zero, setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst
-      (Φ := fun z ↦ ω (w z) (ξ z)) hφ₁ hψ hab,
+    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z ↦ ω (ξ z) (ξs z))
+      (hasDerivAt_apply_fderiv_fst_snd hξ) (fun s ↦ ?_), add_zero,
+    setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst (Φ := fun z ↦ ω (w z) (ξ z)) hφ₁
+      (hasDerivAt_slicePairing_fst hξ) hab,
     integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
     intervalIntegral.integral_sub ((hψc b).intervalIntegrable _ _)
       ((hψc a).intervalIntegrable _ _)]
   -- `χ` has period one in `t`.
-  have hξs1 : ξs (s, 1) = ξs (s, 0) := by
-    have h := fderiv_add_eq_smul (c := ((0 : ℝ), (1 : ℝ))) (a := (1 : ℝ))
-      (fun ⟨p, q⟩ ↦ by simpa using hper p q) (s, 0)
-    simp only [Prod.mk_add_mk, add_zero, zero_add, one_smul] at h
-    simp only [ξs, h]
-  have hξ1' : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
-  dsimp only
-  rw [hξ1', hξs1]
+  have h1 := fderiv_add_one_snd hper s 0
+  rw [zero_add] at h1
+  have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
+  simp only [ξs, h1, hξ1]
 
 /-- The slice pairing `s ↦ ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` tends to zero as `|s| → ∞` when `ξ` and
 `∂t ξ` do, uniformly in `t`. -/
@@ -405,8 +435,6 @@ private theorem tendsto_integral_slicePairing (hSc : Continuous S)
     Tendsto (fun s ↦ ∫ t in (0 : ℝ)..1,
       ω (fderiv ℝ ξ (s, t) stdComplexLineImag - S t (ξ (s, t))) (ξ (s, t))) (cocompact ℝ)
         (𝓝 0) := by
-  have hB : Continuous fun p : V × V ↦ ω p.1 p.2 :=
-    ω.toBilinForm.toContinuousBilinearMap.continuous₂
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     (hSc.continuousOn (s := Icc (0 : ℝ) 1))
   set F := comap Prod.fst (cocompact ℝ) ⊓ 𝓟 (univ ×ˢ Icc (0 : ℝ) 1)
@@ -423,7 +451,8 @@ private theorem tendsto_integral_slicePairing (hSc : Continuous S)
     have hw0 : Tendsto (fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)) F
         (𝓝 0) := by simpa using hξt0.sub hS0
     simpa only [Function.comp_def, map_zero, LinearMap.zero_apply] using
-      (hB.tendsto (0, 0)).comp (hw0.prodMk_nhds hξ0)
+      ((ω.continuous_apply_comp continuous_fst continuous_snd).tendsto (0, 0)).comp
+        (hw0.prodMk_nhds hξ0)
   rw [Metric.tendsto_nhds]
   intro ε hε
   have h := Metric.tendsto_nhds.1 hψ0 (ε / 2) (by positivity)
@@ -449,8 +478,6 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
     ξ = 0 := by
   have hξ1 : Differentiable ℝ ξ := hξ.differentiable (by norm_num)
   have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv (by norm_num)
-  have hB : Continuous fun p : V × V ↦ ω p.1 p.2 :=
-    ω.toBilinForm.toContinuousBilinearMap.continuous₂
   have hg0 (t : ℝ) (v : V) : 0 ≤ ω v (J t v) := by
     rcases eq_or_ne v 0 with rfl | hv
     · simp
@@ -464,13 +491,12 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
         (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
   have hf0 : 0 ≤ f := fun z ↦ add_nonneg (hg0 _ _) (hg0 _ _)
   have hfc : Continuous f := by
-    have hJ' {g : ℝ × ℝ → V} (hg : Continuous g) : Continuous fun z ↦ J z.2 (g z) :=
-      hJc.comp (continuous_snd.prodMk hg)
     have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
       (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
     have hs : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineReal :=
       hdξ.clm_apply continuous_const
-    exact (hB.comp (hs.prodMk (hJ' hs))).add (hB.comp (hw.prodMk (hJ' hw)))
+    exact (continuous_associatedBilinForm_apply_self hJc hs).add
+      (continuous_associatedBilinForm_apply_self hJc hw)
   -- The energy identity with `D ξ = 0`.
   have hid {a b : ℝ} (hab : a ≤ b) : ∫ z in Icc a b ×ˢ Icc 0 1, f z = Φ a - Φ b := by
     have h := setIntegral_associatedBilinForm_stationaryCylinderOperator
@@ -504,10 +530,7 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
   have hs (z : ℝ × ℝ) : fderiv ℝ ξ z (1, 0) = 0 := by
     obtain ⟨s, t⟩ := z
     have hp : Periodic (fun t ↦ fderiv ℝ ξ (s, t) (1, 0)) 1 := fun t ↦ by
-      have h := fderiv_add_eq_smul (c := ((0 : ℝ), (1 : ℝ))) (a := (1 : ℝ))
-        (fun ⟨p, q⟩ ↦ by simpa using hper p q) (s, t)
-      simp only [Prod.mk_add_mk, add_zero, one_smul] at h
-      simp only [h]
+      simp only [fderiv_add_one_snd hper]
     obtain ⟨t₀, ht₀, h⟩ := hp.exists_mem_Ico₀ one_pos t
     simpa [h, stdComplexLineReal_eq] using hs0 s t₀ (Ico_subset_Icc_self ht₀)
   -- A map independent of `s` which decays as `s → ∞` vanishes.
@@ -553,17 +576,6 @@ theorem floerLinearization_eq_stationaryCylinderOperator (ω : SymplecticForm V)
   rw [floerLinearization_def, Floer.stationaryCylinderOperator_def, hxt, sub_self, map_zero,
     hamiltonianVectorField_const]
   simp
-
-/-- Along a continuous path `x`, the linearized Hamiltonian vector fields
-`S_t = dX_{H_t}(x(t))` of a jointly `C²` Hamiltonian depend continuously on `t`. This is the
-continuity hypothesis on `S` in the results on the asymptotic operator of an orbit `x`. -/
-theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V} (hx : Continuous x) :
-    Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) := by
-  have hF : ContDiff ℝ 1 (Function.uncurry fun t y ↦ ω.hamiltonianVectorField (H t) y) :=
-    contDiff_iff_contDiffAt.2 fun p ↦
-      ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hH.contDiffAt
-  exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
 
 end SymplecticForm
 
