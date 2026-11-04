@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Laurent.Expansion
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RegularEval
 import TauCeti.Analysis.Contour.Residue.PrincipalPart
+import TauCeti.Topology.Algebra.Polynomial.HasSum
 
 /-!
 # Circle Laurent coefficients and principal parts of meromorphic germs
@@ -74,22 +75,9 @@ namespace TauCeti
 `P : ℂ[X]` have finite support and sum to `P.eval (w - c)⁻¹ - P.coeff 0`. -/
 private theorem hasSum_zpow_neg_add_one_smul_coeff_succ (P : ℂ[X]) (c w : ℂ) :
     HasSum (fun k : ℕ => (w - c) ^ (-((k : ℤ) + 1)) • P.coeff (k + 1))
-      (P.eval (w - c)⁻¹ - P.coeff 0) := by
-  have hterm : ∀ k : ℕ,
-      (w - c) ^ (-((k : ℤ) + 1)) • P.coeff (k + 1) =
-        P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) := fun k => by
+      (P.eval (w - c)⁻¹ - P.coeff 0) :=
+  (P.hasSum_eval_sub_coeff_zero (w - c)⁻¹).congr_fun fun k => by
     simp only [← Int.negSucc_eq, zpow_negSucc, ← inv_pow, smul_eq_mul, mul_comm]
-  simp_rw [hterm]
-  have hsum : HasSum (fun k : ℕ => P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1))
-      (∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1)) := by
-    refine hasSum_sum_of_ne_finset_zero fun k hk => ?_
-    rw [Finset.mem_range, not_lt] at hk
-    rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
-  have heval : ∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) =
-      P.eval (w - c)⁻¹ - P.coeff 0 := by
-    rw [Polynomial.eval_eq_sum_range, Finset.sum_range_succ', pow_zero, mul_one,
-      add_sub_cancel_right]
-  rwa [heval] at hsum
 
 /-- A polynomial `P : ℂ[X]` evaluated at the inverted coordinate `(w - c)⁻¹` has the finite Laurent
 series supported in nonpositive degrees `n ≤ 0` with coefficients `P.coeff (-n).toNat`. -/
