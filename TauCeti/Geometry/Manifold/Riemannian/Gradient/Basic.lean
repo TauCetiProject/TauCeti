@@ -50,6 +50,9 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
   continuous metric, the differential of `f` read in a chart is locally bounded by a multiple of
   the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
+* `TauCeti.Manifold.eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`: the
+  sharp converse, comparing the length of the gradient near `p` with the length, for the metric
+  at `p`, of the coordinate differential, up to a factor arbitrarily close to `1`.
 -/
 
 public section
@@ -359,5 +362,37 @@ theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
         gcongr
         exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
     _ = C * ‖mvfderiv I f y‖ * ‖w‖ := by ring
+
+/-- **The gradient is sharply controlled by the differential in a chart.** For a continuous
+metric and any `r > 1`, near `p` the Riemannian length of the gradient of `f` is at most `r` times
+the length of the coordinate differential of `f` in the extended chart at `p`, transported to the
+tangent space at `p` by the tangent chart and measured with the metric at `p`. The constant `r`
+can be taken arbitrarily close to `1` because the metric read in the chart is continuous. -/
+theorem eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) {r : ℝ}
+    (hr : 1 < r) :
+    ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
+      DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) →
+      ‖mgradient I f y‖ ≤ r * ‖(fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) ∘L
+        (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p :
+          TangentSpace I p →L[ℝ] ℝ)‖ := by
+  set e := trivializationAt E (TangentSpace I) p
+  have hp : p ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' p
+  filter_upwards [eventually_norm_symmL_trivializationAt_self_comp_lt E
+    (fun x : M ↦ TangentSpace I x) p hr, chart_source_mem_nhds H p] with y hy hys f hd
+  set ℓ := fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
+  have hmf := TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt
+    (by rwa [extChartAt_source]) hd
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hys] at hmf
+  -- `df_y` factors through the tangent space at `p` by `e.symmL p ∘ e_y`, whose norm is `< r`.
+  have hfac : mvfderiv I f y = (ℓ ∘L e.continuousLinearMapAt ℝ p) ∘L
+      (e.symmL ℝ p ∘L e.continuousLinearMapAt ℝ y) := by
+    ext v
+    rw [mvfderiv_apply_eq_mfderiv_apply, hmf]
+    simp only [ContinuousLinearMap.comp_apply, e.continuousLinearMapAt_symmL hp, ℓ]
+    -- The two sides write the tangent bundle as `TangentSpace I` and as its eta-expansion.
+    rfl
+  rw [norm_mgradient_eq_norm_mvfderiv, hfac, mul_comm]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
 
 end TauCeti.Manifold

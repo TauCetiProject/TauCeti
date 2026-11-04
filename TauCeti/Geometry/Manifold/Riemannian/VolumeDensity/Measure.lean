@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfCoordinates
 public import Mathlib.MeasureTheory.Function.Jacobian
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -42,6 +43,9 @@ Proposition 2.44.
 * `TauCeti.chartRiemannianVolume_finiteAtFilter_nhds`: every point of a chart source has a
   neighbourhood of finite chart volume.
 * `TauCeti.chartRiemannianVolume_restrict_overlap`: chart volume measures agree on overlaps.
+* `TauCeti.map_addHaar_eq_chartVolumeDensity_inv_smul_volume`: in coordinates which are
+  orthonormal for the metric at the chart centre, the coordinate measure is the volume of
+  Euclidean space divided by the chart density at the centre.
 -/
 
 public section
@@ -379,5 +383,44 @@ theorem chartRiemannianVolume_restrict_overlap
         simp only [e, PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsUα hx)]
       rw [he_apply, (extChartAt I β).left_inv (hsUβ hx),
         (extChartAt I α).left_inv (hsUα hx)]
+
+omit [MeasurableSpace M] [BorelSpace M] in
+open InnerProductSpace in
+/-- **Orthonormal coordinates at the chart centre.** Let `L` carry the metric at `α`, read through
+the tangent chart at `α`, to the inner product of a Euclidean space `F`. Then `L` carries the
+coordinate measure to the volume of `F` divided by the chart density at `α`. -/
+theorem map_addHaar_eq_chartVolumeDensity_inv_smul_volume {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (α : M)
+    (L : E ≃L[ℝ] F)
+    (hL : ∀ v w : E, ⟪L v, L w⟫_ℝ = ⟪(trivializationAt E (TangentSpace I) α).symmL ℝ α v,
+      (trivializationAt E (TangentSpace I) α).symmL ℝ α w⟫_ℝ) :
+    Measure.map L (Module.finBasis ℝ E).addHaar =
+      (chartVolumeDensity (I := I) α α)⁻¹.toNNReal • volume := by
+  set b := Module.finBasis ℝ E
+  set b' := b.map L.toLinearEquiv
+  set o := (stdOrthonormalBasis ℝ F).reindex (finCongr L.toLinearEquiv.finrank_eq.symm)
+  set d := o.toBasis.det b'
+  -- The chart Gram matrix at `α` is the Gram matrix of `b'`, whose determinant is the square of
+  -- the determinant of `b'` in an orthonormal basis.
+  have hgram : chartGramMatrix (I := I) α α = Matrix.gram ℝ b' := by
+    ext i j
+    simp only [chartGramMatrix_apply, chartLocalFrame_eq_symmL, Matrix.gram_apply, b',
+      Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv, hL, b]
+  have hρ : chartVolumeDensity (I := I) α α = |d| := by
+    rw [chartVolumeDensity_def, hgram, Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul,
+      Matrix.det_conjTranspose]
+    simp only [RCLike.star_def, conj_trivial, d, Module.Basis.det_apply]
+    rw [← sq, Real.sqrt_sq_eq_abs]
+    congr 2
+  have hd : d ≠ 0 := (o.toBasis.isUnit_det b').ne_zero
+  -- The volume of the parallelepiped spanned by `b'` is `|d|`.
+  have hvol : volume (parallelepiped b') = ENNReal.ofReal |d| := by
+    rw [← o.addHaar_eq_volume, Measure.addHaar_parallelepiped]
+  rw [Module.Basis.map_addHaar, Module.Basis.addHaar_eq_iff, smul_apply,
+    Module.Basis.coe_parallelepiped, hvol, hρ]
+  -- The scalar `|d|⁻¹.toNNReal` acts on `ℝ≥0∞` as `ENNReal.ofReal |d|⁻¹`.
+  change ENNReal.ofReal |d|⁻¹ * ENNReal.ofReal |d| = 1
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  simp [hd]
 
 end TauCeti
