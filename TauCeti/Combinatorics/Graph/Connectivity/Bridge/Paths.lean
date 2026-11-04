@@ -29,31 +29,6 @@ variable {α : Type u} {β : Type v} {G : Graph α β} {x y z : α}
 
 namespace Walk
 
-open Classical in
-/-- Projection retains exactly the original bridge identities, in their original order. -/
-@[simp]
-theorem edges_toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    (p.toBridgeForest hx hy).edges = p.edges.filter (fun e ↦ decide (G.IsBridge e)) := by
-  classical
-  induction p with
-  | nil => simp
-  | cons e h p ih =>
-    by_cases he : G.IsBridge e
-    · rw [toBridgeForest_cons_of_isBridge h p he]
-      simp [he, ih]
-    · rw [edges_toBridgeForest_cons_of_not_isBridge h p he]
-      simp [he, ih]
-
-/-- A nonbridge traversal is omitted; only the identification of its end components remains. -/
-@[simp]
-theorem toBridgeForest_cons_of_not_isBridge {e : β} (h : G.IsLink e x y)
-    (p : G.Walk y z) (he : ¬ G.IsBridge e) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
-    (cons e h p).toBridgeForest hx hz =
-      ((G.bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
-        (h.reachable_deleteEdges_bridgeSet he)).symm ▸ p.toBridgeForest h.right_mem hz := by
-  apply ext_edges
-  simp [he]
-
 /-- Projection cannot increase the number of traversed edges. -/
 theorem length_toBridgeForest_le (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     (p.toBridgeForest hx hy).length ≤ p.length := by
