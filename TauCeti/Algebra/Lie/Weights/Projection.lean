@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
-public import TauCeti.Algebra.Lie.Weights.Killing
+public import TauCeti.Algebra.Lie.Weights.Killing.Basic
 import TauCeti.LinearAlgebra.Projection
 
 /-!

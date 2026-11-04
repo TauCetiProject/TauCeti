@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Weights.Killing
+public import TauCeti.Algebra.Lie.Weights.Killing.Basic
 public import TauCeti.Algebra.Lie.Weights.StructureConstant.Basic
 
 /-!

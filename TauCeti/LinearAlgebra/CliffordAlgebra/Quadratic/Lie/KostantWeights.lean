@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.RootWeights
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
-import TauCeti.Algebra.Lie.Weights.KillingQuadraticForm
+import TauCeti.Algebra.Lie.Weights.Killing.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Square
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
@@ -92,13 +92,14 @@ private theorem exists_rootInvolution_eq_bivector {χ : Weight K H L} (hχ : χ.
   refine ⟨v, v.2, ∑ i, s i • y i, sum_mem fun i _ ↦ Submodule.smul_mem _ _
     (genWeightSpaceProjection_apply_mem _ _), ?_, ?_⟩
   · have hpair (i) : killingForm K L (v : L) (s i • y i) =
-        killingForm K L (genWeightSpaceProjection K H L χ (bs i)) (killingDualBasis bs i) := by
+        killingForm K L (killingDualBasis bs i) (genWeightSpaceProjection K H L χ (bs i)) := by
       have hmove : killingForm K L (v : L) (s i • y i) = killingForm K L (s i • (v : L)) (y i) := by
         simp only [map_smul, LinearMap.smul_apply]
       rw [hmove, hs' i, killingForm_genWeightSpaceProjection H χ,
-        genWeightSpaceProjection_apply_apply, ← killingForm_genWeightSpaceProjection H χ]
-    rw [map_sum, Finset.sum_congr rfl fun i _ ↦ hpair i, sum_killingForm_killingDualBasis_eq_trace,
-      trace_genWeightSpaceProjection_eq_one H hχ]
+        genWeightSpaceProjection_apply_apply, ← killingForm_genWeightSpaceProjection H χ,
+        LieModule.traceForm_comm]
+    rw [map_sum, Finset.sum_congr rfl fun i _ ↦ hpair i,
+      LinearMap.BilinForm.sum_apply_dualBasis_eq_trace, trace_genWeightSpaceProjection_eq_one H hχ]
   · simp only [rootInvolution, ← hs', ← bivectorBilinear_apply, map_sum, map_smul,
       LinearMap.smul_apply, bs, y]
 
@@ -132,6 +133,7 @@ private theorem commute_rootInvolution {χ ψ : Weight K H L} (hχ : χ.IsNonZer
 variable {H}
 variable (base : (IsKilling.rootSystem H).Base)
 
+omit [IsAlgClosed K] in
 /-- The lift of a Cartan element in terms of the elements `X_α` of the positive roots:
 `q(h) = 1 / 2 • ∑_{α > 0} α(h) • X_α`. -/
 private theorem adjointCliffordHom_cartan_eq_sum_rootInvolution (h : H) :
