@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Covariant derivatives read in a local frame
@@ -35,7 +37,9 @@ derivative, and they give the classical coordinate formula for `∇ σ` along a 
 
 * `TauCeti.Manifold.frameCovariantDerivative`: the flat covariant derivative attached to a local
   frame, and `TauCeti.Manifold.isCovariantDerivativeOn_frameCovariantDerivative`, the proof that
-  it is a covariant derivative over the trivialization base set.
+  it is a covariant derivative over the trivialization base set, and
+  `TauCeti.Manifold.contMDiffCovariantDerivativeOn_frameCovariantDerivative`, its regularity
+  there.
 * `TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum`: the local frame
   formula for an arbitrary covariant derivative.
 * `TauCeti.Manifold.covariantDerivative_eq_of_localFrame_eq`: two covariant derivatives which
@@ -192,7 +196,8 @@ theorem isCovariantDerivativeOn_frameCovariantDerivative :
           g * (LinearMap.piApply (e.localFrameCoeff I b i)) σ := by
         ext y; simp
       rw [hsplit, mvfderiv_mul hg (hcoeff i)]
-      simp [mul_comm]
+      simp only [add_apply, smul_apply, smul_eq_mul, LinearMap.piApply_apply_apply]
+      ring
     ext v
     simp only [frameCovariantDerivative_apply, add_apply, smul_apply,
       ContinuousLinearMap.smulRight_apply, key, add_smul, mul_smul, Finset.sum_add_distrib,
@@ -285,6 +290,40 @@ theorem covariantDerivative_symm_eq_christoffelForm
     simp only [mvfderiv, ContinuousLinearMap.comp_apply, h, zero_apply, map_zero]
   rw [hzero]
   simp
+
+/-! ### Regularity of the flat covariant derivative of a local frame -/
+
+/-- The flat covariant derivative of a local frame is `C^n` on the base set of the trivialization
+defining the frame, on a `C^m` manifold and a `C^k` bundle with `n + 1 ≤ m` and `n + 1 ≤ k`: it
+sends a section which is `C^(n + 1)` there to a `C^n` section of `Hom(TM, V)` there. -/
+theorem contMDiffCovariantDerivativeOn_frameCovariantDerivative
+    [FiniteDimensional 𝕜 E] {m k n : ℕ∞ω} [IsManifold I m M]
+    [ContMDiffVectorBundle k F V I] (hm : n + 1 ≤ m) (hk : n + 1 ≤ k) :
+    -- The class needs `IsManifold I 1 M` merely to be stated; it follows from `hm`.
+    haveI : IsManifold I 1 M := .of_le (le_add_self.trans hm)
+    ContMDiffCovariantDerivativeOn F n (frameCovariantDerivative I b e) e.baseSet := by
+  have : IsManifold I 1 M := .of_le (le_add_self.trans hm)
+  refine ⟨fun {σ} hσ ↦ ?_⟩
+  have : IsManifold I (n + 1) M := .of_le hm
+  have : ContMDiffVectorBundle (n + 1) F V I := .of_le hk
+  have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hk)
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  -- Test the hom-bundle section on the local frame of the tangent bundle at each point.
+  refine contMDiffOn_of_locally_contMDiffOn fun x _ ↦ ?_
+  let eT := trivializationAt E (TangentSpace I : M → Type _) x
+  let bT := Module.Basis.ofVectorSpace 𝕜 E
+  have hu : IsOpen (e.baseSet ∩ eT.baseSet) := e.open_baseSet.inter eT.open_baseSet
+  refine ⟨eT.baseSet, eT.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x, ?_⟩
+  refine contMDiffOn_hom_of_localFrame (b := bT) (e := eT) (e' := e) (f := id)
+    (u := e.baseSet ∩ eT.baseSet) contMDiffOn_id
+    (fun y hy ↦ ⟨hy.2, hy.1⟩) fun j ↦ ?_
+  simp only [id, frameCovariantDerivative_apply]
+  refine ContMDiffOn.sum_section fun i _ ↦ ContMDiffOn.smul_section ?_ ?_
+  · exact ((contMDiffOn_baseSet_localFrameCoeff b hσ i).mono inter_subset_left
+      ).contMDiffOn_mvfderiv_apply hu
+      ((eT.contMDiffOn_localFrame_baseSet n bT j).mono inter_subset_right) le_rfl
+  · exact ((e.contMDiffOn_localFrame_baseSet n b i).mono inter_subset_left)
 
 end GeneralFibre
 
