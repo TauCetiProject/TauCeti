@@ -119,11 +119,8 @@ private theorem tautologicalRep_apply (K : Subgroup (GL ι 𝕜)) (k : K) :
   (rfl)
 
 private theorem continuous_tautologicalRep (K : Subgroup (GL ι 𝕜)) :
-    Continuous (tautologicalRep K) := by
-  have hc : Continuous (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) :=
-    LinearMap.continuous_of_finiteDimensional
-      (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).toAlgEquiv.toLinearEquiv.toLinearMap
-  exact hc.comp (Units.continuous_val.comp continuous_subtype_val)
+    Continuous (tautologicalRep K) :=
+  continuous_toEuclideanCLM.comp (Units.continuous_val.comp continuous_subtype_val)
 
 /-- **Every compact subgroup of `GL ι 𝕜` is conjugate into the unitary subgroup.** This is Weyl's
 unitarian trick: the Haar average of the standard inner product over a compact subgroup `K` is a
