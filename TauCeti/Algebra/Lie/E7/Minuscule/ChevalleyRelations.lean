@@ -60,21 +60,6 @@ local notation "CM" => CartanMatrix.E 7
 local notation "rootGen" => TauCeti.serreRootGenerator CM
 local notation "cartanGen" => TauCeti.serreH ℚ CM
 
-private theorem lie_positive_positive_eq_zero {i j : Fin 7} (hij : CM i j = 0) :
-    ⁅rootGen (.inl i), rootGen (.inl j)⁆ = 0 := by
-  simpa [TauCeti.serreRootGenerator_inl, hij] using
-    TauCeti.ad_pow_lie_serreE_serreE ℚ CM i j
-
-private theorem lie_negative_negative_eq_zero {i j : Fin 7} (hij : CM i j = 0) :
-    ⁅rootGen (.inr i), rootGen (.inr j)⁆ = 0 := by
-  simpa [TauCeti.serreRootGenerator_inr, hij] using
-    TauCeti.ad_pow_lie_serreF_serreF ℚ CM i j
-
-private theorem lie_positive_negative_eq_zero {i j : Fin 7} (hij : i ≠ j) :
-    ⁅rootGen (.inl i), rootGen (.inr j)⁆ = 0 := by
-  simpa only [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr] using
-    TauCeti.lie_serreE_serreF_of_ne ℚ CM hij
-
 private theorem commute_rootSubgroupPoints_of_lie_eq_zero
     {i j : Fin 7 ⊕ Fin 7} (hij : ⁅rootGen i, rootGen j⁆ = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
@@ -93,21 +78,27 @@ commutative ring. -/
 theorem commute_rootSubgroupPoints_inl_inl {i j : Fin 7} (hij : CM i j = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inl i) A s) (rootSubgroupPoints (.inl j) A t) :=
-  commute_rootSubgroupPoints_of_lie_eq_zero (lie_positive_positive_eq_zero hij) A s t
+  commute_rootSubgroupPoints_of_lie_eq_zero
+    (by simpa only [TauCeti.serreRootGenerator_inl] using
+      TauCeti.lie_serreE_serreE_of_eq_zero ℚ CM hij) A s t
 
 /-- Negative numbered simple-root subgroups at nonadjacent nodes commute over every
 commutative ring. -/
 theorem commute_rootSubgroupPoints_inr_inr {i j : Fin 7} (hij : CM i j = 0)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inr i) A s) (rootSubgroupPoints (.inr j) A t) :=
-  commute_rootSubgroupPoints_of_lie_eq_zero (lie_negative_negative_eq_zero hij) A s t
+  commute_rootSubgroupPoints_of_lie_eq_zero
+    (by simpa only [TauCeti.serreRootGenerator_inr] using
+      TauCeti.lie_serreF_serreF_of_eq_zero ℚ CM hij) A s t
 
 /-- A positive and a negative numbered simple-root subgroup at distinct nodes commute over
 every commutative ring. -/
 theorem commute_rootSubgroupPoints_inl_inr {i j : Fin 7} (hij : i ≠ j)
     (A : Type u) [CommRing A] (s t : Multiplicative A) :
     Commute (rootSubgroupPoints (.inl i) A s) (rootSubgroupPoints (.inr j) A t) :=
-  commute_rootSubgroupPoints_of_lie_eq_zero (lie_positive_negative_eq_zero hij) A s t
+  commute_rootSubgroupPoints_of_lie_eq_zero (by
+    simpa only [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr] using
+      TauCeti.lie_serreE_serreF_of_ne ℚ CM hij) A s t
 
 /-- A negative and a positive numbered simple-root subgroup at distinct nodes commute over
 every commutative ring. -/
