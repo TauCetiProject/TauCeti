@@ -36,6 +36,8 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
+* `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
+  map lowering an exhaustive filtration starting at `⊥` is bijective.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
@@ -71,6 +73,25 @@ theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module
     rwa [sub_neg_eq_add, _root_.mul_apply_eq_comp, LinearMap.sub_apply, _root_.one_apply_eq_self,
       hneg n y hn, sub_zero] at h
 
+/-- If `f` is the identity up to a map lowering an exhaustive increasing filtration `p` with
+`p 0 = ⊥`, that is `f x - x ∈ p n` whenever `x ∈ p (n + 1)`, then `f` is bijective: `f - 1` is
+locally nilpotent. -/
+theorem Module.End.bijective_of_sub_mem_filtration {p : ℕ → Submodule R M} (hp0 : p 0 = ⊥)
+    (hp : ∀ x, ∃ n, x ∈ p n) {f : Module.End R M}
+    (hf : ∀ n x, x ∈ p (n + 1) → f x - x ∈ p n) : Function.Bijective f := by
+  have hnil (n : ℕ) : ∀ x ∈ p n, ((f - 1) ^ n) x = 0 := by
+    induction n with
+    | zero =>
+      intro x hx
+      rw [hp0, Submodule.mem_bot] at hx
+      rw [hx, map_zero]
+    | succ n ih =>
+      intro x hx
+      rw [pow_succ, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self]
+      exact ih _ (hf n x hx)
+  have h := (f - 1).isUnit_one_add_of_forall_exists_pow_apply_eq_zero fun x ↦
+    (hp x).imp fun n ↦ hnil n x
+  rwa [add_sub_cancel, Module.End.isUnit_iff] at h
 
 section Ring
 
