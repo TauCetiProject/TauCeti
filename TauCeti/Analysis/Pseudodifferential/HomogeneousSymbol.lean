@@ -25,8 +25,9 @@ builds a homogeneous symbol from a function given only away from `ξ = 0`.
 
 The file develops:
 
-* the complex vector space structure on homogeneous symbols of a fixed degree, and the
-  pointwise composition `HomogeneousSymbol.comp`, which adds degrees;
+* the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
+  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
+  composition `HomogeneousSymbol.comp`, which adds degrees;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -187,8 +188,9 @@ instance : AddCommGroup (HomogeneousSymbol X E V W m) :=
   coefficient_injective.addCommGroup _ coefficient_zero coefficient_add coefficient_neg
     coefficient_sub (fun _ _ ↦ coefficient_smul _ _) (fun _ _ ↦ coefficient_smul _ _)
 
-instance : Module ℂ (HomogeneousSymbol X E V W m) :=
-  coefficient_injective.module ℂ
+instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ R (V →L[ℂ] W)]
+    [ContinuousConstSMul R (V →L[ℂ] W)] : Module R (HomogeneousSymbol X E V W m) :=
+  coefficient_injective.module R
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
