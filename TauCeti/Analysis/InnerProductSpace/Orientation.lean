@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Continuous oriented volume forms
@@ -161,16 +162,6 @@ end LinearIsometryEquiv
 section OrthogonalSpanSingleton
 
 variable {m : ℕ}
-
-/-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
-linearly independent. -/
-theorem _root_.LinearIndependent.finCons_orthogonal_span_singleton {p : E} (hp : p ≠ 0)
-    {w : Fin m → (ℝ ∙ p)ᗮ} (hw : LinearIndependent ℝ w) :
-    LinearIndependent ℝ (Fin.cons p fun i ↦ (w i : E)) := by
-  refine linearIndependent_finCons.2 ⟨hw.map' _ (Submodule.ker_subtype _), fun h ↦ hp ?_⟩
-  have hle : Submodule.span ℝ (Set.range fun i ↦ (w i : E)) ≤ (ℝ ∙ p)ᗮ :=
-    Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦ (w i).2)
-  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
 
 variable [Fact (Module.finrank ℝ E = m + 1)]
 

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
 # The outward-normal orientation of a unit sphere
@@ -17,9 +18,9 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 Let `E` be an oriented real inner product space of dimension `n + 1`, with unit sphere `Sⁿ`.
 The tangent space of `Sⁿ` at `u` is carried by the derivative of the inclusion onto the
 hyperplane `u^⊥` (`range_mvfderiv_subtypeVal`), and `u` itself is the outward normal there. The
-*outward-normal orientation* `TauCeti.sphereOrientation o` declares a tangent basis
+*outward-normal orientation* `o.sphereOrientation` declares a tangent basis
 `v₁, …, vₙ` at `u` positive exactly when `u, v₁, …, vₙ` is a positive basis of `E`
-(`TauCeti.orientation_eq_orientationAt_sphereOrientation_iff`), the convention by which
+(`Orientation.orientation_eq_orientationAt_sphereOrientation_iff`), the convention by which
 `o.orthogonalSpanSingleton` orients the hyperplane `u^⊥`.
 
 Putting the outward normal first is the usual convention for the boundary orientation of the
@@ -32,8 +33,8 @@ contraction of the volume form of `E` with the position vector, through
 
 ## Main declarations
 
-* `TauCeti.sphereOrientation`: the outward-normal orientation of the unit sphere.
-* `TauCeti.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
+* `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
+* `Orientation.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
   positive exactly when `u` followed by its image in `E` has positive volume.
 
 ## References
@@ -56,21 +57,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-/-- A point of the sphere followed by the image of a linearly independent family of tangent
-vectors at it is linearly independent in `E`: the derivative of the inclusion is injective with
-range `u^⊥`, which does not contain `u`. -/
-theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E) 1)
-    {v : Fin n → TangentSpace (𝓡 n) u} (hv : LinearIndependent ℝ v) :
-    LinearIndependent ℝ
-      (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
-  refine linearIndependent_finCons.2 ⟨hv.map' _ (LinearMap.ker_eq_bot_of_injective
-    (injective_mvfderiv_subtypeVal_sphere (n := n) u)), fun h ↦ ne_zero_of_mem_unit_sphere u ?_⟩
-  have hle : Submodule.span ℝ (Set.range fun i ↦
-      mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) ≤ (ℝ ∙ (u : E))ᗮ := by
-    rw [← range_mvfderiv_subtypeVal (n := n) u]
-    exact Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦ LinearMap.mem_range_self _ _)
-  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle h))
 
 /-- The contraction `x ↦ vol(x, ·)` of the volume form of `E` with the position vector. -/
 private def radialVolumeForm (o : Orientation ℝ E (Fin (n + 1))) : RoughForm 𝓘(ℝ, E) E ℝ n :=
@@ -109,8 +95,8 @@ private theorem sphereTopForm_ne_zero (o : Orientation ℝ E (Fin (n + 1)))
 /-- The **outward-normal orientation** of the unit sphere `Sⁿ` of an oriented real inner product
 space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is positive exactly when
 `u, v₁, …, vₙ` is a positive basis of `E`
-(`TauCeti.orientation_eq_orientationAt_sphereOrientation_iff`). -/
-def sphereOrientation (o : Orientation ℝ E (Fin (n + 1))) :
+(`Orientation.orientation_eq_orientationAt_sphereOrientation_iff`). -/
+def _root_.Orientation.sphereOrientation (o : Orientation ℝ E (Fin (n + 1))) :
     Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n) :=
   Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin (sphereTopForm o)
     (isSmoothForm_sphereTopForm o) (sphereTopForm_ne_zero o)
@@ -118,12 +104,13 @@ def sphereOrientation (o : Orientation ℝ E (Fin (n + 1))) :
 /-- A tangent basis `v` of the unit sphere at `u` is positive for the outward-normal orientation
 exactly when `u, v₁, …, vₙ`, read in `E` through the derivative of the inclusion, has positive
 volume, that is, is a positive basis of `E`. -/
-theorem orientation_eq_orientationAt_sphereOrientation_iff (o : Orientation ℝ E (Fin (n + 1)))
-    {u : sphere (0 : E) 1} (v : Basis (Fin n) ℝ (TangentSpace (𝓡 n) u)) :
-    v.orientation = (sphereOrientation o).orientationAt u ↔
+theorem _root_.Orientation.orientation_eq_orientationAt_sphereOrientation_iff
+    (o : Orientation ℝ E (Fin (n + 1))) {u : sphere (0 : E) 1}
+    (v : Basis (Fin n) ℝ (TangentSpace (𝓡 n) u)) :
+    v.orientation = o.sphereOrientation.orientationAt u ↔
       0 < o.volumeForm
         (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
-  rw [sphereOrientation, Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff,
-    sphereTopForm_apply]
+  rw [Orientation.sphereOrientation,
+    Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff, sphereTopForm_apply]
 
 end TauCeti
