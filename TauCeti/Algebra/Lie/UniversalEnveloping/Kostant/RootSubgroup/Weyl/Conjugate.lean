@@ -82,7 +82,8 @@ variable {i j : ι} {h₀ : L}
 variable (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
 variable (t : IsSl2Triple h₀ (e i) (e j))
-variable (hai : IsNilpotent (ad ℚ L (e i))) (haj : IsNilpotent (ad ℚ L (e j)))
+variable (hai : ∀ y, ∃ k, ((ad ℚ L (e i)) ^ k) y = 0)
+  (haj : ∀ y, ∃ k, ((ad ℚ L (e j)) ^ k) y = 0)
 
 /-- **The Weyl element conjugates the action of `x` to that of its Weyl transform.** For the Weyl
 automorphism `w` of an `sl₂` triple `(h₀, eᵢ, eⱼ)` of `L` and every `x ∈ L`,

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.Algebra.Polynomial.Derivative
+public import TauCeti.LinearAlgebra.End.Exp
 public import TauCeti.RingTheory.Derivation.Basic
 import Mathlib.Algebra.Module.Rat
 import Mathlib.Tactic.FieldSimp
@@ -43,6 +44,8 @@ polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p �
   homomorphism.
 * `Derivation.taylorExp_apply_eq_sum`: any iterate killing `a` gives a finite expansion of
   `taylorExp D a`.
+* `Derivation.taylorExp_apply_eq_locallyNilpotentExp`: the Taylor exponential is the exponential
+  `Module.End.locallyNilpotentExp` of the underlying linear endomorphism.
 * `Derivation.taylorExp_apply_of_apply_eq_zero`: the Taylor exponential fixes the elements killed
   by the derivation.
 * `Derivation.taylorExp_apply_mem`: the Taylor exponential preserves every ideal mapped into
@@ -184,6 +187,17 @@ theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     taylorExp D hD a = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] a := by
   simpa using D.aeval_taylorExpPolynomial_eq_sum hD 1 hn
 
+/-- **The Taylor exponential is the exponential of the underlying endomorphism.** As a linear map,
+the Taylor exponential of `D` is `Module.End.locallyNilpotentExp` of the linear map underlying
+`D`, which is locally nilpotent since its powers are the iterates of `D`. -/
+theorem taylorExp_apply_eq_locallyNilpotentExp (a : A) :
+    taylorExp D hD a = Module.End.locallyNilpotentExp D.toLinearMap
+      (fun b ↦ (hD b).imp fun _ hn ↦ by rwa [_root_.pow_apply_eq_iterate, coeFn_coe]) a := by
+  obtain ⟨n, hn⟩ := hD a
+  rw [taylorExp_apply_eq_sum D hD hn, Module.End.locallyNilpotentExp_apply_eq_sum _ _ (k := n)
+    (by rwa [_root_.pow_apply_eq_iterate, coeFn_coe])]
+  simp only [_root_.pow_apply_eq_iterate, coeFn_coe]
+
 /-- **Constants of the derivation are fixed by its Taylor exponential**: if `D` kills `a`, then
 the Taylor exponential of `D` fixes `a`. -/
 theorem taylorExp_apply_of_apply_eq_zero {a : A} (ha : D a = 0) : taylorExp D hD a = a := by
@@ -216,12 +230,8 @@ theorem map_taylorExp {R' B : Type*} [CommSemiring R'] [CommRing B] [Algebra R' 
     (D' : Derivation R' B B) (hD' : ∀ b, ∃ n, D'^[n] b = 0) {F : Type*} [FunLike F A B]
     [AddMonoidHomClass F A B] (f : F) (hf : ∀ a, f (D a) = D' (f a)) (a : A) :
     f (taylorExp D hD a) = taylorExp D' hD' (f a) := by
-  have hiter : ∀ i, f (D^[i] a) = D'^[i] (f a) := fun i =>
-    Function.Semiconj.iterate_right hf i a
-  obtain ⟨n, hn⟩ := hD a
-  have hn' : D'^[n] (f a) = 0 := by rw [← hiter, hn, map_zero]
-  rw [taylorExp_apply_eq_sum D hD hn, taylorExp_apply_eq_sum D' hD' hn', map_sum]
-  exact sum_congr rfl fun i _ => by rw [map_rat_smul, hiter]
+  rw [taylorExp_apply_eq_locallyNilpotentExp, taylorExp_apply_eq_locallyNilpotentExp]
+  exact Module.End.map_locallyNilpotentExp _ _ _ f hf a
 
 end TaylorExp
 
