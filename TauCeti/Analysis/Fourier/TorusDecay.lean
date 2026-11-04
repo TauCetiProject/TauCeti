@@ -46,7 +46,7 @@ Fourier-series proof of the Schwartz kernel theorem.
 
 ## Main results
 
-* `TauCeti.UnitAddTorus.mFourierCoeff_comp_add`: the coefficients of a translate.
+* `UnitAddTorus.mFourierCoeff_comp_add`: the coefficients of a translate.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_smul_of_hasDerivAt`: the coefficients of a directional
   derivative.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv`: the coefficients of an
@@ -175,15 +175,31 @@ theorem mFourierCoeff_eq_integral_volume (f : UnitAddTorus d → E) (n : d → �
   -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
   rfl
 
+end UnitAddTorus
+
+end TauCeti
+
+namespace UnitAddTorus
+
+variable {d : Type*} {E : Type*} [NormedAddCommGroup E] [Fintype d] [NormedSpace ℂ E]
+
 /-- **Fourier coefficients of a translate.** Translating a function by `v` multiplies its `n`-th
 Fourier coefficient by `mFourier n v`. -/
 theorem mFourierCoeff_comp_add (f : UnitAddTorus d → E) (v : UnitAddTorus d) (n : d → ℤ) :
     mFourierCoeff (fun z ↦ f (z + v)) n = mFourier n v • mFourierCoeff f n := by
-  simp only [mFourierCoeff_eq_integral_volume, ← integral_smul]
+  simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, ← integral_smul]
   rw [← integral_add_right_eq_self (fun z ↦ mFourier n v • mFourier (-n) z • f z) v]
   congr 1 with z
   rw [smul_smul, mFourier_apply_add, mul_left_comm, ← mFourier_add, add_neg_cancel, mFourier_zero,
     ContinuousMap.one_apply, mul_one]
+
+end UnitAddTorus
+
+namespace TauCeti.UnitAddTorus
+
+open _root_.UnitAddTorus
+
+variable {d : Type*} {E : Type*} [NormedAddCommGroup E] [Fintype d] [NormedSpace ℂ E]
 
 /-- The Fourier coefficients of `f` are bounded by any bound for `f`. -/
 theorem norm_mFourierCoeff_le {f : UnitAddTorus d → E} {M : ℝ} (hM : ∀ z, ‖f z‖ ≤ M)
@@ -428,6 +444,4 @@ theorem hasSum_mFourier_series_of_iteratedFDeriv {f g : C(UnitAddTorus d, ℂ)} 
   simpa only [mFourierCoeff_eq_prod_smul_of_iteratedFDeriv (hf.of_le (by norm_cast; omega)) v hg,
     smul_eq_mul] using hasSum_mFourier_series_of_contDiff hk hgk
 
-end UnitAddTorus
-
-end TauCeti
+end TauCeti.UnitAddTorus
