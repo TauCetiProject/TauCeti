@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix
 public import TauCeti.Algebra.Lie.Sl2.Integration
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 import Mathlib.LinearAlgebra.Matrix.Integer
 
 /-!
@@ -133,13 +134,11 @@ private theorem rankOneMatrix_mem_of_root_mem {H : Subgroup (GL (Fin (dimension 
     (hinr : ∀ t : K, (rootSubgroupPoints n (.inr i) K (Multiplicative.ofAdd t) :
       GL (Fin (dimension n)) K) ∈ H)
     (g : SL(2, K)) : rankOneMatrix n K i g ∈ H := by
-  apply Sl2.squareZeroSL2Hom_mem_of_upper_lower_mem
+  apply (rankOneMatrix n K i).mem_of_sl2_upper_lower_mem
   · intro t
-    rw [← rankOneMatrix, rankOneMatrix_upper_transvection]
-    exact hinl t
+    simpa only [rankOneMatrix_upper_transvection] using hinl t
   · intro t
-    rw [← rankOneMatrix, rankOneMatrix_lower_transvection]
-    exact hinr t
+    simpa only [rankOneMatrix_lower_transvection] using hinr t
 
 /-- Over a field, the rank-one action lands in the type-B spin carrier. -/
 def rankOnePoints : SL(2, K) →* points n K :=

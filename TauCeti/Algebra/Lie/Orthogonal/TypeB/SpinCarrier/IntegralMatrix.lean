@@ -235,30 +235,33 @@ private theorem rootOp_endpoint_projections_apply (i : Fin (n + 1))
     (pow_two_rep_rootGenerator_eq_zero n (.inl i))
     (pow_two_rep_rootGenerator_eq_zero n (.inr i))
 
+private theorem toMatrix_eq_diagonal_of_basis_projection
+    (f : Module.End ℤ (lattice n).toAddSubgroup) (p : Fin (dimension n) → Prop)
+    [DecidablePred p] (hf : ∀ a, f (latticeBasis n a) =
+      if p a then latticeBasis n a else 0) :
+    LinearMap.toMatrix (latticeBasis n) (latticeBasis n) f =
+      Matrix.diagonal (fun a ↦ if p a then 1 else 0) := by
+  ext a b
+  rw [LinearMap.toMatrix_apply, hf]
+  by_cases hab : a = b
+  · subst b
+    by_cases hp : p a <;> simp [hp]
+  · by_cases hp : p b <;> simp [hp, hab]
+
 /-- The integral product `EF` projects onto the basis vectors of simple-coroot weight `1`. -/
 theorem rootIntMatrix_inl_mul_inr (i : Fin (n + 1)) :
     rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) =
       Matrix.diagonal (fun a ↦ if basisWeight n a i = 1 then 1 else 0) := by
   simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
-  ext a b
-  simp only [LinearMap.toMatrix_apply, Matrix.diagonal_apply]
-  have hP := (rootOp_endpoint_projections_apply n i b).1
-  simp only [rootOp] at hP
-  simp only [hP, apply_ite, map_zero, Module.Basis.repr_self]
-  clear hP
-  split_ifs <;> simp_all
+  exact toMatrix_eq_diagonal_of_basis_projection n _ _
+    (fun a ↦ (rootOp_endpoint_projections_apply n i a).1)
 
 /-- The integral product `FE` projects onto the basis vectors of simple-coroot weight `-1`. -/
 theorem rootIntMatrix_inr_mul_inl (i : Fin (n + 1)) :
     rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) =
       Matrix.diagonal (fun a ↦ if basisWeight n a i = -1 then 1 else 0) := by
   simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
-  ext a b
-  simp only [LinearMap.toMatrix_apply, Matrix.diagonal_apply]
-  have hQ := (rootOp_endpoint_projections_apply n i b).2
-  simp only [rootOp] at hQ
-  simp only [hQ, apply_ite, map_zero, Module.Basis.repr_self]
-  clear hQ
-  split_ifs <;> simp_all
+  exact toMatrix_eq_diagonal_of_basis_projection n _ _
+    (fun a ↦ (rootOp_endpoint_projections_apply n i a).2)
 
 end TauCeti.TypeBSpinCarrier
