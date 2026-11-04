@@ -39,8 +39,11 @@ theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f))
     (hhy : ⁅h, y⁆ = (-2 : ℚ) • y) (hfy : ⁅f, y⁆ = 0)
     (heeey : ⁅e, ⁅e, ⁅e, y⁆⁆⁆ = 0) :
-    weylAut t he hf y = (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ := by
-  have hf' : IsNilpotent (ad K L (-f)) := by simpa only [map_neg] using hf.neg
+    weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
+      (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ := by
+  have hf' := (show IsNilpotent (ad K L (-f)) by
+    simpa only [map_neg] using hf.neg).exists_pow_apply_eq_zero
+  have he' := he.exists_pow_apply_eq_zero
   have hfey : ⁅f, ⁅e, y⁆⁆ = (2 : ℚ) • y := by
     simpa only [t.lie_e_f, hhy, hfy, lie_zero, zero_sub, neg_smul, neg_inj] using
       (lie_lie (m := y) (x := e) (y := f)).symm
@@ -51,8 +54,8 @@ theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     have hc := lie_lie (m := ⁅e, y⁆) (x := e) (y := f)
     rw [t.lie_e_f, hhey, hfey, lie_smul] at hc
     exact (sub_eq_zero.mp hc.symm).symm
-  have hE0 : expAd e he y = y + ⁅e, y⁆ + (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ :=
-    expAd_apply_of_lie_lie_lie_eq_zero he heeey
+  have hE0 : expAd e he' y = y + ⁅e, y⁆ + (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ :=
+    expAd_apply_of_lie_lie_lie_eq_zero he' heeey
   have hF0 : expAd (-f) hf' y = y :=
     expAd_apply_of_lie_eq_zero hf' (by rw [neg_lie, hfy, neg_zero])
   have hF1 : expAd (-f) hf' ⁅e, y⁆ = ⁅e, y⁆ - (2 : ℚ) • y := by
@@ -64,13 +67,13 @@ theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     rw [expAd_apply_of_lie_lie_lie_eq_zero hf' (by simp [neg_lie, hfeey, hfey, hfy])]
     simp only [neg_lie, hfeey, hfey, lie_smul, lie_neg, smul_neg, neg_neg, smul_smul]
     module
-  have hmiddle : expAd (-f) hf' (expAd e he y) =
+  have hmiddle : expAd (-f) hf' (expAd e he' y) =
       (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ := by
     rw [hE0, map_add, map_add, map_rat_smul, hF0, hF1, hF2]
     module
-  have hE2 : expAd e he ⁅e, ⁅e, y⁆⁆ = ⁅e, ⁅e, y⁆⁆ :=
-    expAd_apply_of_lie_eq_zero he heeey
-  rw [weylAut_apply he hf t, hmiddle, map_rat_smul, hE2]
+  have hE2 : expAd e he' ⁅e, ⁅e, y⁆⁆ = ⁅e, ⁅e, y⁆⁆ :=
+    expAd_apply_of_lie_eq_zero he' heeey
+  rw [weylAut_apply he' hf.exists_pow_apply_eq_zero t, hmiddle, map_rat_smul, hE2]
 
 section Associative
 
@@ -87,7 +90,8 @@ theorem weylUnit_conj_of_lie_eq_neg_two_smul (t : IsSl2Triple H E F)
     (weylUnit hE hF : A) * Y * ↑(weylUnit hE hF)⁻¹ =
       (2⁻¹ : ℚ) • ⁅E, ⁅E, Y⁆⁆ := by
   rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_lie_eq_neg_two_smul _ _ hHY hFY hEEEY
+  exact t.weylAut_apply_of_lie_eq_neg_two_smul (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY hEEEY
 
 end Associative
 
