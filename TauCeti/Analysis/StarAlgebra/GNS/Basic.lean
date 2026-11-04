@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Module
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.Normed.Group.NullSubmodule
-public import Mathlib.Algebra.Star.Module
+public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import Mathlib.Analysis.Complex.Order
 
 /-!
@@ -21,7 +22,12 @@ space need not be complete.
 
 The construction applies in particular to positive noncommutative star-polynomial distributions.
 It needs no norm, order, faithfulness or traciality on the original algebra. Normalization is
-required only to make the cyclic vector a unit vector.
+required only to make the cyclic vector a unit vector. `StarPositiveFunctional.comp` pulls positive
+functionals back along (possibly non-unital) `⋆`-algebra homomorphisms,
+`StarPositiveFunctional.ofPositiveLinearMap` views any order-positive functional on a
+`StarOrderedRing` as a `StarPositiveFunctional`, and
+`StarPositiveFunctional.algebraicPositiveLinearMap` realizes a unital positive functional as the
+positive vector functional at `cyclicVector` on `Module.End ℂ φ.GNS`.
 
 The seminormed construction uses Mathlib's `PreInnerProductSpace.Core`, as in
 `PositiveLinearMap.PreGNS`, followed by `SeparationQuotient` and its inner-product instance.
@@ -81,6 +87,45 @@ theorem toLinearMap_apply (φ : StarPositiveFunctional A) (a : A) : φ.toLinearM
 theorem mk_apply (f : A →ₗ[ℂ] ℂ) (h : ∀ a, 0 ≤ f (star a * a)) (a : A) :
     (StarPositiveFunctional.mk f h) a = f a := (rfl)
 
+/-- Pull a `StarPositiveFunctional` back along any (possibly non-unital) `⋆`-algebra
+homomorphism. -/
+def comp {B : Type*} [NonUnitalRing B] [Module ℂ B] [StarRing B]
+    (φ : StarPositiveFunctional B) {F : Type*} [FunLike F A B]
+    [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] (f : F) : StarPositiveFunctional A where
+  toLinearMap :=
+    { toFun a := φ (f a)
+      map_add' a b := by simp
+      map_smul' c a := by simp }
+  square_nonneg a := by
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, map_mul, StarHomClass.map_star]
+    exact φ.square_nonneg (f a)
+
+@[simp]
+theorem comp_apply {B : Type*} [NonUnitalRing B] [Module ℂ B] [StarRing B]
+    (φ : StarPositiveFunctional B) {F : Type*} [FunLike F A B]
+    [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] (f : F) (a : A) :
+    φ.comp f a = φ (f a) :=
+  (rfl)
+
+/-- Every order-positive linear functional on a `StarOrderedRing` is nonnegative on squares
+`star a * a`. -/
+def ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOrder C] [StarRing C]
+    [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) : StarPositiveFunctional C where
+  toLinearMap := ω.toLinearMap
+  square_nonneg a := ω.map_nonneg (star_mul_self_nonneg a)
+
+@[simp]
+theorem ofPositiveLinearMap_apply {C : Type*} [NonUnitalRing C] [PartialOrder C] [StarRing C]
+    [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) (a : C) :
+    ofPositiveLinearMap ω a = ω a :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOrder C]
+    [StarRing C] [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) :
+    (ofPositiveLinearMap ω).toLinearMap = ω.toLinearMap :=
+  (rfl)
+
 variable (φ : StarPositiveFunctional A)
 
 variable [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
@@ -99,10 +144,8 @@ theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a)
 /-- A copy of the algebra carrying the seminorm induced by the positive functional. -/
 def PreGNS (_φ : StarPositiveFunctional A) := A
 
-@[no_expose]
 instance : AddCommGroup φ.PreGNS := inferInstanceAs (AddCommGroup A)
 
-@[no_expose]
 instance : Module ℂ φ.PreGNS := inferInstanceAs (Module ℂ A)
 
 /-- Identify the algebra with the space carrying its GNS seminorm. -/
@@ -116,12 +159,30 @@ private abbrev preInner : PreInnerProductSpace.Core ℂ φ.PreGNS where
   add_left a b c := by simp [add_mul]
   smul_left a b c := by simp [smul_mul_assoc]
 
-@[no_expose]
 instance : SeminormedAddCommGroup φ.PreGNS :=
-  InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)
+  AddGroupSeminorm.toSeminormedAddCommGroup
+    { toFun x := √(RCLike.re (φ (star (φ.toPreGNS.symm x) * φ.toPreGNS.symm x)))
+      map_zero' := by
+        exact @norm_zero φ.PreGNS
+          (InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)).toSeminormedAddGroup
+      add_le' x y := by
+        exact @norm_add_le φ.PreGNS
+          (InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)).toSeminormedAddGroup
+          x y
+      neg' x := by
+        exact @norm_neg φ.PreGNS
+          (InnerProductSpace.Core.toSeminormedAddCommGroup (c := φ.preInner)).toSeminormedAddGroup
+          x }
 
-@[no_expose]
-instance : InnerProductSpace ℂ φ.PreGNS := InnerProductSpace.ofCore φ.preInner
+instance : InnerProductSpace ℂ φ.PreGNS where
+  inner a b := φ (star (φ.toPreGNS.symm a) * φ.toPreGNS.symm b)
+  norm_smul_le := by
+    exact (InnerProductSpace.ofCore φ.preInner).norm_smul_le
+  norm_sq_eq_re_inner := by
+    exact (InnerProductSpace.ofCore φ.preInner).norm_sq_eq_re_inner
+  conj_inner_symm := by exact φ.preInner.conj_inner_symm
+  add_left := by exact φ.preInner.add_left
+  smul_left := by exact φ.preInner.smul_left
 
 /-- The inner product before taking the separation quotient is the original pairing. -/
 @[simp]
@@ -268,6 +329,11 @@ def nonUnitalRepresentation : A →ₙₐ[ℂ] Module.End ℂ φ.GNS where
     intro b
     simp [smul_mul_assoc]
 
+/-- Evaluating the non-unital representation at an element gives left multiplication. -/
+theorem nonUnitalRepresentation_apply (a : A) :
+    φ.nonUnitalRepresentation a = φ.leftMul a :=
+  (rfl)
+
 /-- The non-unital representation acts on classes by left multiplication. -/
 @[simp]
 theorem nonUnitalRepresentation_classMap (a b : A) :
@@ -307,6 +373,11 @@ def representation : A →ₐ[ℂ] Module.End ℂ φ.GNS where
     intro b
     simp [Algebra.algebraMap_eq_smul_one]
 
+/-- Evaluating the unital representation at an element gives left multiplication. -/
+theorem representation_apply (a : A) :
+    φ.representation a = φ.leftMul a :=
+  (rfl)
+
 /-- The action on classes is left multiplication. -/
 @[simp]
 theorem representation_classMap (a b : A) :
@@ -322,6 +393,12 @@ def cyclicVector : φ.GNS := φ.classMap 1
 
 /-- The cyclic vector is the class of the unit. -/
 theorem cyclicVector_def : φ.cyclicVector = φ.classMap 1 := (rfl)
+
+/-- Left multiplication acts on the cyclic vector by taking the class of the acting element. -/
+@[simp]
+theorem leftMul_cyclicVector (a : A) :
+    φ.leftMul a φ.cyclicVector = φ.classMap a := by
+  simp [cyclicVector_def]
 
 /-- Acting on the cyclic vector produces the class of the acting element. -/
 @[simp]
@@ -362,6 +439,27 @@ theorem norm_cyclicVector (hφ : φ 1 = 1) : ‖φ.cyclicVector‖ = 1 := by
   have h := φ.norm_cyclicVector_sq
   rw [hφ, Complex.one_re] at h
   nlinarith [norm_nonneg φ.cyclicVector]
+
+/-- The positive vector functional `T ↦ ⟪φ.cyclicVector, T φ.cyclicVector⟫_ℂ` on algebraic linear
+endomorphisms of the pre-Hilbert GNS space `φ.GNS`. -/
+def algebraicPositiveLinearMap : Module.End ℂ φ.GNS →ₚ[ℂ] ℂ :=
+  LinearMap.innerPositiveLinearMap ℂ φ.cyclicVector
+
+theorem algebraicPositiveLinearMap_def :
+    φ.algebraicPositiveLinearMap = LinearMap.innerPositiveLinearMap ℂ φ.cyclicVector :=
+  (rfl)
+
+@[simp]
+theorem algebraicPositiveLinearMap_apply (T : Module.End ℂ φ.GNS) :
+    φ.algebraicPositiveLinearMap T = ⟪φ.cyclicVector, T φ.cyclicVector⟫_ℂ := by
+  simp [algebraicPositiveLinearMap]
+
+theorem algebraicPositiveLinearMap_one : φ.algebraicPositiveLinearMap 1 = φ 1 := by
+  simp
+
+theorem algebraicPositiveLinearMap_representation (a : A) :
+    φ.algebraicPositiveLinearMap (φ.representation a) = φ a := by
+  simp
 
 end StarPositiveFunctional
 
