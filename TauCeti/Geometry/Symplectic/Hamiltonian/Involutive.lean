@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue
+public import TauCeti.Geometry.Manifold.RegularValue.Rank
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 
@@ -30,6 +30,14 @@ parametrization satisfying the hypotheses described below:
 * functions whose differentials at `x` vanish on `ker dF_x`, such as functions of `F`, then
   Poisson-commute at `x` as well
   (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_zero_of_ker_le`);
+* the rank of `F` at `x` (`TauCeti.mfderivRank`, the dimension of the image of `dF_x`) is the
+  dimension of the span of the `X_{F_i}(x)`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderivRank_eq_finrank_span_hamiltonianVectorField`), so
+  the points of rank zero are the common zeros of the Hamiltonian vector fields
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderivRank_eq_zero_iff_hamiltonianVectorField_eq_zero`);
+* where the `F_i` Poisson-commute this span is isotropic, so the rank of `F` there is at most half
+  the dimension of `M`, whether or not `x` is a regular point
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_mfderivRank_le`);
 * at a regular point of `F` (the differentials `dF_i` are independent) the `X_{F_i}(x)` are
   linearly independent, so `k` independent Poisson-commuting functions on a `2n`-dimensional
   manifold satisfy `k ≤ n`
@@ -157,17 +165,51 @@ theorem finrank_span_hamiltonianVectorField (hreg : IsRegularPoint I 𝓘(ℝ, �
       Fintype.card ι :=
   finrank_span_eq_card (hσ.linearIndependent_hamiltonianVectorField hreg)
 
-/-- **The dimension bound for Poisson-commuting functions.** If `k` functions Poisson-commute at a
-regular point of a `2n`-dimensional manifold, then `k ≤ n`. -/
-theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
-    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
-    2 * Fintype.card ι ≤ finrank ℝ E := by
+/-! ### The rank of a family of functions -/
+
+/-- **The rank of a family of functions is the dimension of its Hamiltonian span.** At a point
+where `F` is differentiable, the rank of `F` (the dimension of the image of `dF_x`) is the dimension
+of the span of the Hamiltonian vectors `X_{F_i}(x)`. -/
+theorem mfderivRank_eq_finrank_span_hamiltonianVectorField
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) :
+    mfderivRank I 𝓘(ℝ, ι → ℝ) F x =
+      finrank ℝ (Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x)) := by
+  rw [← hσ.orthogonal_ker_mfderiv hF, SymplecticForm.finrank_orthogonal, finrank_tangentSpace]
+  have := finrank_ker_mfderiv_add_mfderivRank (I := I) (J := 𝓘(ℝ, ι → ℝ)) (f := F) (x := x)
+  omega
+
+/-- **The points of rank zero are the common zeros of the Hamiltonian vectors.** A differentiable
+family `F` has rank zero at `x` exactly when every Hamiltonian vector `X_{F_i}(x)` vanishes, that
+is when `x` is an equilibrium of every Hamiltonian vector field `X_{F_i}`. -/
+theorem mfderivRank_eq_zero_iff_hamiltonianVectorField_eq_zero
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) :
+    mfderivRank I 𝓘(ℝ, ι → ℝ) F x = 0 ↔ ∀ i, σ.hamiltonianVectorField (F · i) x = 0 := by
+  rw [hσ.mfderivRank_eq_finrank_span_hamiltonianVectorField hF, Submodule.finrank_eq_zero,
+    Submodule.span_eq_bot, Set.forall_mem_range]
+
+/-- **The rank bound for Poisson-commuting functions.** At a point where the functions `F_i`
+Poisson-commute, the rank of `F` is at most half the dimension of `M`: the Hamiltonian vectors
+`X_{F_i}(x)` span an isotropic subspace of that dimension. Where `F` is not differentiable the
+rank is zero, so no differentiability of `F` is assumed. -/
+theorem two_mul_mfderivRank_le (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
+    2 * mfderivRank I 𝓘(ℝ, ι → ℝ) F x ≤ finrank ℝ E := by
+  by_cases hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x
+  swap
+  · simp [mfderivRank_eq_zero_of_not_mdifferentiableAt hF]
   have hiso : (hσ.symplecticFormAt x).IsIsotropic
       (Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x)) := by
     rw [SymplecticForm.isIsotropic_span_iff]
     simpa only [Set.forall_mem_range, symplecticFormAt_apply, poissonBracket_def] using hcomm
   have := hiso.two_mul_finrank_le
-  rwa [hσ.finrank_span_hamiltonianVectorField hreg, finrank_tangentSpace] at this
+  rwa [← hσ.mfderivRank_eq_finrank_span_hamiltonianVectorField hF, finrank_tangentSpace] at this
+
+/-- **The dimension bound for Poisson-commuting functions.** If `k` functions Poisson-commute at a
+regular point of a `2n`-dimensional manifold, then `k ≤ n`. -/
+theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
+    2 * Fintype.card ι ≤ finrank ℝ E := by
+  have := hσ.two_mul_mfderivRank_le hcomm
+  rwa [isRegularPoint_iff_mfderivRank_eq.1 hreg, Module.finrank_fintype_fun_eq_card] at this
 
 /-- **The Lagrangian criterion for `ker dF_x`.** At a regular point of `F`
 at which the `F_i` Poisson-commute, the kernel of `dF_x` is Lagrangian exactly when there are

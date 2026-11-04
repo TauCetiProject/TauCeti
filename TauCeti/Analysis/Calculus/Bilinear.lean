@@ -41,6 +41,8 @@ direction `w`; its derivative involves the second derivative of `u`.
 * `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
   of bilinear maps, read along `u` and pulled back along `u`, are those of the family, taken in
   the directions of the images under `u` and pulled back along `u`.
+* `ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq`: a local map fixing zero and
+  preserving quadratic functions has a derivative preserving those quadratic functions.
 * `ContinuousAt.hasFDerivAt_clm_apply_zero`: evaluating a family `A q` of continuous linear maps,
   continuous at `p`, on a vector `x` is differentiable at `(0, p)`, with no differentiability in
   `q`. For instance, the tube `(u, t) ↦ γ t + A t u` around a curve `γ`, built from a merely
@@ -182,5 +184,33 @@ theorem _root_.ContinuousAt.hasFDerivAt_clm_apply_zero {P : Type*} [NormedAddCom
     exact h.trans_isBigO (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _))
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative at the origin of a local map preserving quadratic functions also preserves
+those quadratic functions. Only differentiability at the origin is required; the bilinear forms
+need not be symmetric or nondegenerate. -/
+theorem apply_self_fderiv_eq_of_eventuallyEq (B : F →L[ℝ] F →L[ℝ] ℝ)
+    (C : E →L[ℝ] E →L[ℝ] ℝ) {φ : E → F} (hφ : DifferentiableAt ℝ φ 0) (hφ0 : φ 0 = 0)
+    (h : (fun y ↦ B (φ y) (φ y)) =ᶠ[nhds 0] (fun y ↦ C y y)) (v : E) :
+    B (fderiv ℝ φ 0 v) (fderiv ℝ φ 0 v) = C v v := by
+  -- Rescale along the ray through v; quadratic homogeneity removes the scale.
+  have hlim := hφ.hasFDerivAt.lim_real v
+  simp only [zero_add, hφ0, sub_zero] at hlim
+  have hquad := (B.continuous₂.tendsto _).comp (hlim.prodMk_nhds hlim)
+  have hnear : Filter.Tendsto (fun t : ℝ ↦ t⁻¹ • v) Filter.atTop (nhds 0) := by
+    simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const v
+  have heq : (fun t : ℝ ↦ B (t • φ (t⁻¹ • v)) (t • φ (t⁻¹ • v)))
+      =ᶠ[Filter.atTop] (fun _ ↦ C v v) := by
+    filter_upwards [hnear.eventually h, Filter.eventually_ne_atTop 0] with t ht ht0
+    simp only [map_smul, smul_apply, smul_smul]
+    rw [ht]
+    simp [mul_assoc, ht0]
+  exact tendsto_nhds_unique hquad (tendsto_const_nhds.congr' heq.symm)
+
+end ContinuousLinearMap
 
 end

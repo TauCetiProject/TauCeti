@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Topology.Compactness.Paracompact
+public import Mathlib.Topology.Sets.Compacts
 
 /-!
 # Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
@@ -19,7 +21,8 @@ form used to transport measures between a manifold and coordinates.
 Before choosing a measurable structure on the manifold, chart measurability expresses
 measurability in each preferred chart. When the chart space `H` is locally compact, compact sets
 admit finite open chart covers whose coordinate images lie in compact subsets of the chart targets,
-even without Hausdorffness.
+even without Hausdorffness. On a sigma-compact Hausdorff manifold these compact coordinate sets
+can instead be chosen to give a locally finite cover of the whole manifold.
 
 The extended chart of a product manifold has the product of the targets of the factor charts as
 its target (`TauCeti.extChartAt_prod_target`).
@@ -50,6 +53,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   continuous only on their measurable domain.
 * `TauCeti.exists_finite_precompact_chart_cover`: finite open chart covers with compact
   coordinate bounds for compact subsets of manifolds modelled on a locally compact space.
+* `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
+  cover of a locally compact, sigma-compact Hausdorff manifold.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
@@ -66,12 +71,14 @@ public section
 
 open scoped Manifold Topology
 
+universe u
+
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- The target of the extended chart of a product manifold at `x` is the product of the targets
 of the extended charts of the factors at the components of `x`. -/
@@ -331,6 +338,38 @@ theorem exists_finite_precompact_chart_cover [LocallyCompactSpace H] {s : Set M}
   · intro x hx
     obtain ⟨y, hy, hxy⟩ := Set.mem_iUnion₂.mp (ht hx)
     exact Set.mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa [α] using hxy⟩
+
+/-- A locally compact, sigma-compact Hausdorff manifold has a locally finite cover by compact
+coordinate sets in preferred extended charts. Their inverse images cover the manifold, including
+its boundary when the model has one. -/
+theorem exists_locallyFinite_compact_extChartAt_cover [LocallyCompactSpace H]
+    [SigmaCompactSpace M] [T2Space M] :
+    ∃ (α : Type u) (c : α → M)
+      (K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target),
+      LocallyFinite (fun i ↦ (extChartAt I (c i)).symm ''
+        (Subtype.val '' (K i : Set (extChartAt I (c i)).target))) ∧
+      (⋃ i, (extChartAt I (c i)).symm ''
+        (Subtype.val '' (K i : Set (extChartAt I (c i)).target))) = Set.univ := by
+  let : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  obtain ⟨α, c, A, hA, hcover, hlf⟩ :=
+    refinement_of_locallyCompact_sigmaCompact_of_nhds_basis fun x : M ↦
+      (compact_basis_nhds x).restrict_subset (extChartAt_source_mem_nhds (I := I) x)
+  let B (i : α) := (extChartAt I (c i)) '' A i
+  have hB (i : α) : IsCompact (B i) :=
+    (hA i).1.2.image_of_continuousOn ((continuousOn_extChartAt _).mono (hA i).2)
+  have hBt (i : α) : B i ⊆ (extChartAt I (c i)).target :=
+    (Set.image_mono (hA i).2).trans (extChartAt I (c i)).image_source_eq_target.subset
+  let K (i : α) : TopologicalSpace.Compacts (extChartAt I (c i)).target :=
+    ⟨Subtype.val ⁻¹' B i,
+      Topology.IsInducing.subtypeVal.isCompact_preimage' (hB i)
+        (by simpa only [Subtype.range_coe] using hBt i)⟩
+  have hKA (i : α) :
+      (extChartAt I (c i)).symm ''
+        (Subtype.val '' (K i : Set (extChartAt I (c i)).target)) = A i := by
+    dsimp only [K, TopologicalSpace.Compacts.coe_mk]
+    rw [Set.image_preimage_eq_of_subset (by simpa only [Subtype.range_coe] using hBt i)]
+    exact (extChartAt I (c i)).symm_image_image_of_subset_source (hA i).2
+  exact ⟨α, c, K, by simpa only [hKA] using hlf, by simpa only [hKA] using hcover⟩
 
 variable [MeasurableSpace M] [BorelSpace M]
 

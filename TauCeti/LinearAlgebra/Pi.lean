@@ -89,6 +89,17 @@ end Submodule
 
 namespace LinearEquiv
 
+/-- A coordinatewise linear equivalence sends a one-point family to the one-point family
+of its image in that coordinate. -/
+@[simp]
+public theorem piCongrRight_single {R ι : Type*} [Semiring R] [DecidableEq ι]
+    {M N : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
+    (e : ∀ i, M i ≃ₗ[R] N i) (i : ι) (x : M i) :
+    piCongrRight e (Pi.single i x) = Pi.single i (e i x) := by
+  funext j
+  exact Pi.apply_single (fun i => e i) (fun _ => map_zero _) i x j
+
 section FinSnoc
 
 variable (R : Type*) [Semiring R] {n : ℕ} (M : Fin (n + 1) → Type*)

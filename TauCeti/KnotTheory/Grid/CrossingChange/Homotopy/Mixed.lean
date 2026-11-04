@@ -150,34 +150,21 @@ private theorem terminalInitial_disjoint_and_weight (R : Type*) [CommSemiring R]
           (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q =
         (∏ c ∈ G.OColumnsOfSquares S, (MvPolynomial.X c : MvPolynomial (Fin n) R)) *
           ∏ c ∈ G.OColumnsOfSquares T, MvPolynomial.X c := by
-  have hQ' := (G.disjoint_map_swapColumns_XSet_iff a b _).mpr hQ
-  have hX : Disjoint (P.coveredSquares ∪
-      Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet :=
-    Finset.disjoint_union_left.mpr ⟨hP, hQ'⟩
   have hu : P.coveredSquares ∪
       Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding =
         S ∪ T := by
     ext p
     simpa only [Finset.mem_union] using (h p).1
-  rw [hu, Finset.disjoint_union_left] at hX
-  refine ⟨hX.1, hX.2, ?_⟩
-  rw [G.rename_pentagonWeight, G.prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    swapColumns_initialPentagonWeight_withTurnRow R]
-  have hu' : G.OColumnsOfSquares P.coveredSquares ∪
-      G.OColumnsOfSquares (Q.coveredSquares.map
-        ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) =
-      G.OColumnsOfSquares S ∪ G.OColumnsOfSquares T := by
-    ext c
-    simp only [Finset.mem_union, mem_OColumnsOfSquares]
-    exact (h _).1
-  have hi' : G.OColumnsOfSquares P.coveredSquares ∩
-      G.OColumnsOfSquares (Q.coveredSquares.map
-        ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) =
-      G.OColumnsOfSquares S ∩ G.OColumnsOfSquares T := by
-    ext c
-    simp only [Finset.mem_inter, mem_OColumnsOfSquares]
-    exact (h _).2
-  rw [← Finset.prod_union_inter, hu', hi', Finset.prod_union_inter]
+  have hi : P.coveredSquares ∩
+      Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding =
+        S ∩ T := by
+    ext p
+    simpa only [Finset.mem_inter] using (h p).2
+  obtain ⟨hSX, hTX, hw⟩ := G.disjoint_and_prod_OSet_eq_of_union_inter_eq
+    (MvPolynomial.X (R := R)) _ _ S T hu hi hP ((G.disjoint_map_swapColumns_XSet_iff a b _).mpr hQ)
+  refine ⟨hSX, hTX, ?_⟩
+  rw [G.rename_pentagonWeight, swapColumns_initialPentagonWeight_withTurnRow R]
+  simpa only [G.prod_ite_OSet_eq_prod_OColumnsOfSquares] using hw
 
 /-- For distinct turn rows, a counted terminal-side pentagon followed by a counted initial-side
 reverse pentagon has a counted crossing-change hexagon composite with the same underlying
