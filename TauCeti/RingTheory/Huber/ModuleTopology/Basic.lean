@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Order.Filter.Pi
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The natural topology of a finite module over a Huber ring
@@ -62,20 +63,18 @@ private theorem image_linearCombination_pi_idealImage (P : PairOfDefinition A) {
     Fintype.linearCombination A v '' Set.univ.pi (fun _ ↦ (P.idealImage n : Set A)) =
       ((P.idealOfDefinition ^ n • Submodule.span P.ringOfDefinition (Set.range v) :
         Submodule P.ringOfDefinition M) : Set M) := by
-  ext x
-  constructor
-  · rintro ⟨c, hc, rfl⟩
-    rw [Fintype.linearCombination_apply]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    obtain ⟨y, hy, hyc⟩ := (P.mem_idealImage n).mp (hc i trivial)
-    rw [← hyc, ← Subring.smul_def]
-    exact Submodule.smul_mem_smul hy (Submodule.subset_span ⟨i, rfl⟩)
-  · intro hx
-    obtain ⟨a, ha, rfl⟩ := (Submodule.mem_ideal_smul_span_iff_exists_sum _ v x).mp hx
-    refine ⟨fun i ↦ (a i : A), fun i _ ↦ (P.mem_idealImage n).mpr ⟨a i, ha i, rfl⟩, ?_⟩
-    rw [Fintype.linearCombination_apply,
-      Finsupp.sum_fintype a (fun i c ↦ c • v i) fun _ ↦ zero_smul _ _]
-    simp_rw [Subring.smul_def]
+  have hI : (P.idealImage n : Set A) =
+      Subtype.val '' ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) :
+        Set P.ringOfDefinition) := by
+    ext x
+    exact P.mem_idealImage n
+  rw [hI, ← Set.piMap_image_univ_pi, Set.image_image]
+  have hcomb : (fun c ↦ Fintype.linearCombination A v
+      (Pi.map (fun _ : ι ↦ (Subtype.val : P.ringOfDefinition → A)) c)) =
+      Fintype.linearCombination P.ringOfDefinition v := by
+    ext c
+    simp only [Pi.map_apply, Fintype.linearCombination_apply, Subring.smul_def]
+  rw [hcomb, Ideal.image_fintypeLinearCombination_pi]
 
 section IsTopologicalRing
 
