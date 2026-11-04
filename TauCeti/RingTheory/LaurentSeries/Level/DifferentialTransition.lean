@@ -126,10 +126,9 @@ theorem transition_transition (h₁ : n ∣ m) (h₂ : m ∣ l)
   simp only [addEquivContinuousKaehlerDifferential_transition]
   have hpow : (PowerSeries.X ^ (m.divExact n : ℕ) : K⟦X⟧).subst
       (PowerSeries.X ^ (l.divExact m : ℕ) : K⟦X⟧) = PowerSeries.X ^ (l.divExact n : ℕ) := by
-    have hd : PowerSeries.HasSubst (PowerSeries.X ^ (l.divExact m : ℕ) : K⟦X⟧) :=
-      .of_constantCoeff_zero' (by simp)
-    rw [PowerSeries.subst_pow hd, PowerSeries.subst_X hd,
-      ← pow_mul, mul_comm, ← PNat.mul_coe, he]
+    simpa only [← PNat.mul_coe, he] using
+      (PowerSeries.subst_X_pow_X_pow (R := K) (S := K) (m.divExact n : ℕ)
+        (l.divExact m).ne_zero)
   rw [TauCeti.ContinuousKaehlerDifferential.subst_subst]
   exact TauCeti.ContinuousKaehlerDifferential.subst_congr _ _ hpow _ _ _
 
@@ -142,10 +141,8 @@ theorem transition_map (h : n ∣ m) (ω : TauCeti.ContinuousKaehlerDifferential
     addEquivContinuousKaehlerDifferential_map]
   have hpow : (PowerSeries.X ^ (n : ℕ) : K⟦X⟧).subst
       (PowerSeries.X ^ (m.divExact n : ℕ) : K⟦X⟧) = PowerSeries.X ^ (m : ℕ) := by
-    have hd : PowerSeries.HasSubst (PowerSeries.X ^ (m.divExact n : ℕ) : K⟦X⟧) :=
-      .of_constantCoeff_zero' (by simp)
-    rw [PowerSeries.subst_pow hd, PowerSeries.subst_X hd,
-      ← pow_mul, mul_comm, ← PNat.mul_coe, PNat.mul_div_exact h]
+    simpa only [← PNat.mul_coe, PNat.mul_div_exact h] using
+      (PowerSeries.subst_X_pow_X_pow (R := K) (S := K) (n : ℕ) (m.divExact n).ne_zero)
   rw [TauCeti.ContinuousKaehlerDifferential.subst_subst]
   exact TauCeti.ContinuousKaehlerDifferential.subst_congr _ _ hpow _ _ _
 
