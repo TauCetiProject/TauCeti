@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Reduction
+public import TauCeti.Combinatorics.Quiver.Symmetric
 
 /-!
 # Trees of Serre graphs
@@ -15,8 +16,14 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
-An acyclic graph has no loop, and a restriction `Γ.restrict S hS` is acyclic exactly when no
-nonempty reduced closed path of `Γ` has all its darts in `S`.
+The unique reduced path of a tree from `a` to `b` is its geodesic `IsTree.geodesic`, the reduction
+of every path between them, and its length is the distance `IsTree.dist`, the least length of a
+path from `a` to `b`. Morphisms of trees that are injective on darts carry geodesics to geodesics
+and so preserve distances; this is how automorphisms of a tree act by isometries.
+
+An acyclic graph has no loop, and two darts with the same endpoints coincide. A restriction
+`Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has all its darts
+in `S`.
 
 The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
 since its petal is a reduced loop.
@@ -109,6 +116,103 @@ theorem isTree_iff_existsUnique_isReduced : Γ.IsTree ↔
   refine ⟨Γ.connected_iff.mpr ⟨hV, Γ.preconnected_iff.mpr fun a b => ⟨(h a b).exists.choose⟩⟩,
     ?_⟩
   exact (Γ.isAcyclic_iff_eq_of_isReduced).mpr fun a b p q hp hq => (h a b).unique hp hq
+
+variable {Γ} in
+/-- In an acyclic graph, two darts with the same endpoints are equal. -/
+theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
+    (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
+  let f' : Quiver.Hom (Γ.src e) (Γ.tgt e) := ⟨f, hs.symm, ht.symm⟩
+  have hp := h.eq_of_isReduced (Path.isReduced_toPath Γ (Γ.dart e)) (Path.isReduced_toPath Γ f')
+  exact (Γ.dart_val e).symm.trans
+    (congrArg Subtype.val (eq_of_heq (Quiver.Path.hom_heq_of_cons_eq_cons hp)))
+
+section Geodesic
+
+variable {Γ} (h : Γ.IsTree)
+
+/-- The geodesic of a tree from `a` to `b`: its unique reduced path. -/
+noncomputable def IsTree.geodesic (a b : Γ.V) : Γ.Path a b :=
+  (h.existsUnique_isReduced a b).exists.choose
+
+@[simp] theorem IsTree.isReduced_geodesic (a b : Γ.V) : Path.IsReduced Γ (h.geodesic a b) :=
+  (h.existsUnique_isReduced a b).exists.choose_spec
+
+/-- Every reduced path of a tree is the geodesic between its endpoints. -/
+theorem IsTree.eq_geodesic {a b : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p) :
+    p = h.geodesic a b :=
+  h.isAcyclic.eq_of_isReduced hp (h.isReduced_geodesic a b)
+
+/-- Reducing any path of a tree gives the geodesic between its endpoints. -/
+@[simp] theorem IsTree.reduce_eq_geodesic {a b : Γ.V} (p : Γ.Path a b) :
+    Path.reduce Γ p = h.geodesic a b :=
+  h.eq_geodesic (Path.isReduced_reduce Γ p)
+
+@[simp] theorem IsTree.geodesic_self (a : Γ.V) : h.geodesic a a = Quiver.Path.nil :=
+  (h.eq_geodesic (Path.isReduced_nil Γ a)).symm
+
+@[simp] theorem IsTree.reverse_geodesic (a b : Γ.V) :
+    (h.geodesic a b).reverse = h.geodesic b a :=
+  h.eq_geodesic ((Path.isReduced_reverse Γ _).mpr (h.isReduced_geodesic a b))
+
+/-- The geodesic along a single dart is that dart. -/
+theorem IsTree.geodesic_src_tgt (e : Γ.E) : h.geodesic (Γ.src e) (Γ.tgt e) = (Γ.dart e).toPath :=
+  (h.eq_geodesic (Path.isReduced_toPath Γ (Γ.dart e))).symm
+
+/-- The distance between two vertices of a tree: the length of the geodesic joining them. -/
+noncomputable def IsTree.dist (a b : Γ.V) : ℕ := (h.geodesic a b).length
+
+theorem IsTree.dist_def (a b : Γ.V) : h.dist a b = (h.geodesic a b).length := (rfl)
+
+/-- The geodesic is a shortest path. -/
+theorem IsTree.dist_le_length {a b : Γ.V} (p : Γ.Path a b) : h.dist a b ≤ p.length := by
+  rw [dist_def, ← h.reduce_eq_geodesic p]
+  exact Path.length_reduce_le Γ p
+
+@[simp] theorem IsTree.dist_self (a : Γ.V) : h.dist a a = 0 := by
+  simp [dist_def]
+
+theorem IsTree.dist_comm (a b : Γ.V) : h.dist a b = h.dist b a := by
+  rw [dist_def, dist_def, ← h.reverse_geodesic b a, Quiver.Path.length_reverse]
+
+@[simp] theorem IsTree.dist_eq_zero_iff {a b : Γ.V} : h.dist a b = 0 ↔ a = b := by
+  refine ⟨fun hab => Quiver.Path.eq_of_length_zero _ hab, ?_⟩
+  rintro rfl
+  exact h.dist_self a
+
+theorem IsTree.dist_pos_iff {a b : Γ.V} : 0 < h.dist a b ↔ a ≠ b := by
+  rw [Nat.pos_iff_ne_zero, ne_eq, h.dist_eq_zero_iff]
+
+theorem IsTree.dist_triangle (a b c : Γ.V) : h.dist a c ≤ h.dist a b + h.dist b c := by
+  simpa only [dist_def, Quiver.Path.length_comp] using
+    h.dist_le_length ((h.geodesic a b).comp (h.geodesic b c))
+
+/-- The endpoints of a dart are at distance one. -/
+@[simp] theorem IsTree.dist_src_tgt (e : Γ.E) : h.dist (Γ.src e) (Γ.tgt e) = 1 := by
+  rw [dist_def, h.geodesic_src_tgt, Quiver.Path.length_toPath]
+
+variable {Δ : SerreGraph} (h' : Δ.IsTree) (f : Γ.Hom Δ) (hf : Function.Injective f.mapE)
+include hf
+
+/-- A morphism of trees injective on darts maps geodesics to geodesics. -/
+theorem IsTree.mapPath_geodesic (a b : Γ.V) :
+    f.toPrefunctor.mapPath (h.geodesic a b) = h'.geodesic (f.mapV a) (f.mapV b) :=
+  h'.eq_geodesic ((Hom.isReduced_mapPath_iff Γ f hf _).mpr (h.isReduced_geodesic a b))
+
+/-- A morphism of trees injective on darts maps the darts of a geodesic to the darts of the
+geodesic between the image vertices. -/
+theorem IsTree.darts_geodesic_map (a b : Γ.V) :
+    Path.darts Δ (h'.geodesic (f.mapV a) (f.mapV b)) =
+      (Path.darts Γ (h.geodesic a b)).map f.mapE := by
+  have hd := Hom.darts_mapPath Γ f (h.geodesic a b)
+  rw [h.mapPath_geodesic h' f hf] at hd
+  exact hd
+
+/-- A morphism of trees injective on darts preserves distances. -/
+theorem IsTree.dist_map (a b : Γ.V) : h'.dist (f.mapV a) (f.mapV b) = h.dist a b := by
+  rw [dist_def, dist_def, ← Path.length_darts, h.darts_geodesic_map h' f hf, List.length_map,
+    Path.length_darts]
+
+end Geodesic
 
 section Restrict
 

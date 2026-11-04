@@ -173,6 +173,27 @@ private theorem isReduced_reduceSnoc {a b c : Γ.V} (p : Γ.Path a b)
   | nil => exact isReduced_nil Γ _
   | cons p e ih => exact isReduced_reduceSnoc Γ (reduce Γ p) ih e
 
+/-- One reduced append adds at most one dart. -/
+private theorem length_reduceSnoc_le {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
+    (reduceSnoc Γ p e).length ≤ p.length + 1 := by
+  classical
+  cases p with
+  | nil => simp
+  | @cons d _ q f =>
+    by_cases h : e.1 = Γ.rev f.1
+    · cases endpoint_eq_of_reverse_val Γ f e h
+      simp only [reduceSnoc, dite_eq_left h, Quiver.Path.length_cons]
+      omega
+    · simp [reduceSnoc_cons_of_ne Γ q f e h]
+
+/-- Free reduction does not lengthen a path. -/
+theorem length_reduce_le {a b : Γ.V} (p : Γ.Path a b) : (reduce Γ p).length ≤ p.length := by
+  induction p with
+  | nil => simp [reduce_nil]
+  | cons p e ih =>
+    rw [reduce_cons, Quiver.Path.length_cons]
+    exact (length_reduceSnoc_le Γ _ e).trans (by omega)
+
 /-- A reduced path is fixed by appending a dart and reducing just that append. -/
 private theorem reduceSnoc_eq_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c)
     (h : IsReduced Γ (p.cons e)) : reduceSnoc Γ p e = p.cons e := by
