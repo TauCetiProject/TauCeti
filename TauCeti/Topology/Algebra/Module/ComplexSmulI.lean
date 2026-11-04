@@ -35,23 +35,18 @@ variable (X : Type*) [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] [Modul
 
 /-- Multiplication by `i` as a real continuous linear equivalence of a complex module with a
 compatible real scalar action and continuous multiplication by constant scalars. -/
-noncomputable def smulIEquiv : X ≃L[ℝ] X where
-  toFun x := I • x
-  map_add' := smul_add I
-  map_smul' r x := smul_comm I r x
-  invFun x := -I • x
-  left_inv := neg_I_smul_I_smul
-  right_inv := I_smul_neg_I_smul
-  continuous_toFun := continuous_const_smul I
-  continuous_invFun := continuous_const_smul (-I)
+noncomputable def smulIEquiv : X ≃L[ℝ] X :=
+  ContinuousLinearEquiv.smulLeft (Units.mk0 I I_ne_zero)
 
 variable {X}
 
 @[simp]
-theorem smulIEquiv_apply (x : X) : smulIEquiv X x = I • x := (rfl)
+theorem smulIEquiv_apply (x : X) : smulIEquiv X x = I • x := by
+  simp [smulIEquiv, Units.smul_def]
 
 @[simp]
-theorem smulIEquiv_symm_apply (x : X) : (smulIEquiv X).symm x = -I • x := (rfl)
+theorem smulIEquiv_symm_apply (x : X) : (smulIEquiv X).symm x = -I • x := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, smulIEquiv_apply, I_smul_neg_I_smul]
 
 end Complex
 

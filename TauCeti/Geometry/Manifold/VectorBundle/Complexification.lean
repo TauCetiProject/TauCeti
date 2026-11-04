@@ -421,6 +421,19 @@ variable {IB F n E}
 theorem I_smul_oneTmulLinearMap (s : Cₛ^n⟮IB; F, E⟯) :
     Complex.I • oneTmulLinearMap IB F n E s = ITmulLinearMap IB F n E s :=
   ext fun x ↦ by simp [TensorProduct.smul_tmul']
+@[simp] theorem realPartLinearMap_oneTmulLinearMap (s : Cₛ^n⟮IB; F, E⟯) :
+    realPartLinearMap IB F n E (oneTmulLinearMap IB F n E s) = s := ext fun x ↦ by simp
+@[simp] theorem realPartLinearMap_ITmulLinearMap (s : Cₛ^n⟮IB; F, E⟯) :
+    realPartLinearMap IB F n E (ITmulLinearMap IB F n E s) = 0 := ext fun x ↦ by simp
+@[simp] theorem imaginaryPartLinearMap_oneTmulLinearMap (s : Cₛ^n⟮IB; F, E⟯) :
+    imaginaryPartLinearMap IB F n E (oneTmulLinearMap IB F n E s) = 0 := ext fun x ↦ by simp
+@[simp] theorem imaginaryPartLinearMap_ITmulLinearMap (s : Cₛ^n⟮IB; F, E⟯) :
+    imaginaryPartLinearMap IB F n E (ITmulLinearMap IB F n E s) = s := ext fun x ↦ by simp
+@[simp] theorem oneTmulLinearMap_realPartLinearMap_add_ITmulLinearMap_imaginaryPartLinearMap
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    oneTmulLinearMap IB F n E (realPartLinearMap IB F n E σ) +
+      ITmulLinearMap IB F n E (imaginaryPartLinearMap IB F n E σ) = σ :=
+  ext fun x ↦ by simp
 
 end BasicSimp
 
@@ -451,8 +464,8 @@ def complexificationEquivProd :
   map_add' σ τ := Prod.ext (map_add _ σ τ) (map_add _ σ τ)
   map_smul' r σ := Prod.ext (map_smul _ r σ) (map_smul _ r σ)
   invFun p := oneTmulLinearMap IB F n E p.1 + ITmulLinearMap IB F n E p.2
-  left_inv σ := ext fun x ↦ by simp
-  right_inv := fun ⟨_, _⟩ ↦ Prod.ext (ext fun x ↦ by simp) (ext fun x ↦ by simp)
+  left_inv σ := by simp
+  right_inv := fun ⟨_, _⟩ ↦ Prod.ext (by simp) (by simp)
 
 /-- The canonical `ℂ`-linear isomorphism
 `ℂ ⊗[ℝ] Cₛ^n⟮IB; F, E⟯ ≃ₗ[ℂ] Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯` sending `z ⊗ₜ s`
@@ -465,15 +478,8 @@ def complexificationEquiv :
       1 ⊗ₜ[ℝ] realPartLinearMap IB F n E σ + Complex.I ⊗ₜ[ℝ] imaginaryPartLinearMap IB F n E σ
     left_inv u := by
       obtain ⟨s, t, rfl⟩ := exists_one_tmul_add_I_tmul u
-      have hu : ((oneTmulLinearMap IB F n E).liftBaseChange ℂ) (1 ⊗ₜ[ℝ] s + Complex.I ⊗ₜ[ℝ] t) =
-          oneTmulLinearMap IB F n E s + ITmulLinearMap IB F n E t := by
-        simp [I_smul_oneTmulLinearMap]
-      dsimp only; rw [hu]
-      rw [show realPartLinearMap IB F n E _ = s from ext fun x ↦ by simp,
-        show imaginaryPartLinearMap IB F n E _ = t from ext fun x ↦ by simp]
-    right_inv σ := by
-      simp only [map_add, LinearMap.liftBaseChange_tmul, one_smul, I_smul_oneTmulLinearMap]
-      exact ext fun x ↦ by simp }
+      simp [I_smul_oneTmulLinearMap]
+    right_inv σ := by simp [I_smul_oneTmulLinearMap] }
 
 variable {IB F n E}
 

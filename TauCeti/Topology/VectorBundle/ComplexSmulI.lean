@@ -92,20 +92,10 @@ end Homeomorph
 section HomBundle
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G]
-  {W : B → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, Module ℂ (W x)]
-  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+  [IsScalarTower ℝ ℂ G] {W : B → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, Module ℂ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, ContinuousConstSMul ℂ (W x)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
   [VectorBundle ℂ G W] [VectorBundle ℝ G W]
-
-private theorem inCoordinates_constSMul (c : ℂ) (a : B) {x : B}
-    (hx : x ∈ (trivializationAt G W a).baseSet) (f : W x →L[ℝ] W x) (hf : ∀ w, f w = c • w)
-    (v : G) : ContinuousLinearMap.inCoordinates G W G W a x a x f v = c • v := by
-  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply, hf]
-  rw [(trivializationAt G W a).symmL_apply hx, ← (trivializationAt G W a).symmL_apply (R := ℂ) hx,
-    ← map_smul ((trivializationAt G W a).symmL ℂ x) c v, (trivializationAt G W a).symmL_apply hx,
-    Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hx,
-    (trivializationAt G W a).apply_mk_symm hx]
-
-variable [IsScalarTower ℝ ℂ G] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousConstSMul ℂ (W x)]
 
 /-- Read in any preferred trivialization, fibrewise multiplication by `Complex.I`
 (`Complex.smulIEquiv (W x)`) is the constant model operator `Complex.smulIEquiv G`. -/
@@ -113,7 +103,10 @@ variable [IsScalarTower ℝ ℂ G] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, 
     (hx : x ∈ (trivializationAt G W a).baseSet) :
     ContinuousLinearMap.inCoordinates G W G W a x a x
       (Complex.smulIEquiv (W x) : W x →L[ℝ] W x) = (Complex.smulIEquiv G : G →L[ℝ] G) := by
-  ext v; simpa using inCoordinates_constSMul Complex.I a hx _ (fun _ ↦ by simp) v
+  have hW : (Complex.smulIEquiv (W x) : W x →L[ℝ] W x) = Complex.I • .id ℝ (W x) := by ext; simp
+  have hG : (Complex.smulIEquiv G : G →L[ℝ] G) = Complex.I • .id ℝ G := by ext; simp
+  rw [hW, hG, ContinuousLinearMap.inCoordinates_smul _ _ hx,
+    ContinuousLinearMap.inCoordinates_id hx]
 
 /-- Read in any preferred trivialization, `(Complex.smulIEquiv (W x)).symm` is
 `(Complex.smulIEquiv G).symm`. -/
@@ -122,7 +115,11 @@ variable [IsScalarTower ℝ ℂ G] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, 
     ContinuousLinearMap.inCoordinates G W G W a x a x
       ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x) =
       ((Complex.smulIEquiv G).symm : G →L[ℝ] G) := by
-  ext v; simpa using inCoordinates_constSMul (-Complex.I) a hx _ (fun _ ↦ by simp) v
+  have hW : ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x) = (-Complex.I) • .id ℝ (W x) := by
+    ext; simp
+  have hG : ((Complex.smulIEquiv G).symm : G →L[ℝ] G) = (-Complex.I) • .id ℝ G := by ext; simp
+  rw [hW, hG, ContinuousLinearMap.inCoordinates_smul _ _ hx,
+    ContinuousLinearMap.inCoordinates_id hx]
 
 variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
 
