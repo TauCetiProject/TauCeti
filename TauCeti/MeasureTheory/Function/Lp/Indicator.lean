@@ -170,11 +170,11 @@ theorem linftyIndicator_empty : linftyIndicator μ ∅ MeasurableSet.empty = 0 :
 
 /-- The indicator of the whole space is the constant one in `L∞`. -/
 @[simp]
-theorem linftyIndicator_univ : linftyIndicator μ univ MeasurableSet.univ = linftyOne := by
+theorem linftyIndicator_univ : linftyIndicator μ univ MeasurableSet.univ = 1 := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_linftyIndicator (μ := μ) MeasurableSet.univ, coeFn_linftyOne (μ := μ)]
-    with x h h1
-  rw [h, h1, Set.indicator_univ, Pi.one_apply]
+  filter_upwards [coeFn_linftyIndicator (μ := μ) MeasurableSet.univ,
+    Lp.coeFn_one (E := ℝ) (μ := μ)] with x h h1
+  rw [h, h1, Set.indicator_univ]
 
 /-- Indicators of disjoint measurable sets add in `L∞`. -/
 theorem linftyIndicator_union (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : Disjoint s t) :
