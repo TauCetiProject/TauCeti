@@ -182,8 +182,8 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L] (H : LieSubalgebra K L)
   [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
-/-- Two weights whose weight spaces are not Killing-orthogonal are opposite. -/
-private theorem weight_add_ne_zero {χ ψ : Weight K H L} (h : χ ≠ -ψ) :
+/-- The sum of two weights vanishes only if they are opposite. -/
+theorem weight_add_ne_zero_of_ne_neg {χ ψ : Weight K H L} (h : χ ≠ -ψ) :
     (χ : H → K) + (ψ : H → K) ≠ 0 := fun hc ↦
   h <| Weight.ext fun u ↦ by
     have := congrFun hc u
@@ -205,14 +205,14 @@ theorem killingForm_genWeightSpaceProjection (χ : Weight K H L) (x y : L) :
     intro ψ _ h
     exact killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
       (genWeightSpaceProjection_apply_mem χ z) (genWeightSpaceProjection_apply_mem ψ w)
-      (weight_add_ne_zero H fun hc ↦ h (by rw [hc, neg_neg]))
+      (weight_add_ne_zero_of_ne_neg H fun hc ↦ h (by rw [hc, neg_neg]))
   rw [key]
   conv_rhs => rw [← sum_genWeightSpaceProjection_apply (K := K) (L := H) x]
   rw [map_sum, LinearMap.sum_apply, Finset.sum_eq_single χ _ (by simp)]
   intro ψ _ h
   exact killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
     (genWeightSpaceProjection_apply_mem ψ x) (genWeightSpaceProjection_apply_mem (-χ) y)
-    (weight_add_ne_zero H fun hc ↦ h (by rwa [neg_neg] at hc))
+    (weight_add_ne_zero_of_ne_neg H fun hc ↦ h (by rwa [neg_neg] at hc))
 
 /-- **Opposite root-space projections are a Killing-adjoint pair.** This is the
 `LinearMap.IsAdjointPair` form of `TauCeti.killingForm_genWeightSpaceProjection`, which is what

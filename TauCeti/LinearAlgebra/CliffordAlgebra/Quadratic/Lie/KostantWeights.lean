@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.RootWeights
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
+import TauCeti.Algebra.Lie.Weights.KillingQuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Square
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
@@ -64,37 +65,6 @@ variable {K : Type u} [Field K] [CharZero K] [IsAlgClosed K]
   [Invertible (2 : K)] [LieAlgebra.IsKilling K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra] [IsTriangularizable K H L]
 
-omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
-  [H.IsCartanSubalgebra] [IsTriangularizable K H L] [Invertible (2 : K)] in
-private theorem polar_killingQuadraticForm (x y : L) :
-    QuadraticMap.polar (killingQuadraticForm K L) x y = 2 * killingForm K L x y := by
-  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using
-    LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm K L) x y
-
-omit [CharZero K] [IsAlgClosed K] [Invertible (2 : K)] [LieAlgebra.IsKilling K L] in
-/-- Root spaces of weights that do not cancel are orthogonal for the Killing quadratic form. -/
-private theorem polar_eq_zero_of_mem_rootSpace {α β : H → K} {x y : L} (hx : x ∈ rootSpace H α)
-    (hy : y ∈ rootSpace H β) (h : α + β ≠ 0) :
-    QuadraticMap.polar (killingQuadraticForm K L) x y = 0 := by
-  rw [polar_killingQuadraticForm,
-    killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hy h, mul_zero]
-
-omit [CharZero K] [IsAlgClosed K] [Invertible (2 : K)] in
-/-- The sum of two weights vanishes only if they are opposite. -/
-private theorem coe_add_coe_ne_zero {χ ψ : Weight K H L} (h : χ ≠ -ψ) :
-    (χ : H → K) + (ψ : H → K) ≠ 0 := fun hc ↦
-  h <| DFunLike.coe_injective <| by
-    rw [Weight.coe_neg]
-    exact eq_neg_of_add_eq_zero_left hc
-
-omit [IsAlgClosed K] [Invertible (2 : K)] [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
-  [IsTriangularizable K H L] in
-/-- A nonzero weight is not its own negative. -/
-private theorem coe_add_self_ne_zero {χ : Weight K H L} (hχ : χ.IsNonZero) :
-    (χ : H → K) + (χ : H → K) ≠ 0 := fun hc ↦
-  hχ <| funext fun u ↦ by
-    simpa using congrFun hc u
-
 /-- The element `X_χ = ∑ᵢ β(π_χ bᵢ, π_{-χ} b'ᵢ)` of the Clifford algebra, for a basis `b` of `L`
 with Killing-dual basis `b'`. By `adjointCliffordHom_cartan_eq_sum_posRoots` the lift of a Cartan
 element is a combination of these elements. -/
@@ -137,12 +107,8 @@ omit [IsAlgClosed K] in
 private theorem rootInvolution_mul_self {χ : Weight K H L} (hχ : χ.IsNonZero) :
     rootInvolution H χ * rootInvolution H χ = 1 := by
   obtain ⟨e, he, f, hf, hef, hX⟩ := exists_rootInvolution_eq_bivector H hχ
-  have hQ {ψ : Weight K H L} (hψ : ψ.IsNonZero) {x : L} (hx : x ∈ rootSpace H ψ) :
-      killingQuadraticForm K L x = 0 := by
-    rw [killingQuadraticForm_apply]
-    exact killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hx
-      (coe_add_self_ne_zero H hψ)
-  rw [hX, bivector_mul_self, hQ hχ he, hQ (Weight.IsNonZero.neg hχ) hf,
+  rw [hX, bivector_mul_self, killingQuadraticForm_eq_zero_of_mem_rootSpace H hχ he,
+    killingQuadraticForm_eq_zero_of_mem_rootSpace H (Weight.IsNonZero.neg hχ) hf,
     polar_killingQuadraticForm, hef, mul_one, invOf_mul_self, one_pow, mul_zero, sub_zero, map_one]
 
 omit [IsAlgClosed K] in
@@ -153,15 +119,27 @@ private theorem commute_rootInvolution {χ ψ : Weight K H L} (hχ : χ.IsNonZer
   obtain ⟨e, he, f, hf, -, hX⟩ := exists_rootInvolution_eq_bivector H hχ
   obtain ⟨e', he', f', hf', -, hX'⟩ := exists_rootInvolution_eq_bivector H hψ
   rw [hX, hX', commute_iff_lie_eq, lie_bivector_bivector,
-    polar_eq_zero_of_mem_rootSpace H he he' (coe_add_coe_ne_zero H hne'),
-    polar_eq_zero_of_mem_rootSpace H he hf' (coe_add_coe_ne_zero H (by rwa [neg_neg])),
-    polar_eq_zero_of_mem_rootSpace H hf he' (coe_add_coe_ne_zero H (by rwa [ne_eq, neg_inj])),
-    polar_eq_zero_of_mem_rootSpace H hf hf' (coe_add_coe_ne_zero H (by
-      rwa [neg_neg, ne_eq, neg_eq_iff_eq_neg]))]
+    polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H he he'
+      (weight_add_ne_zero_of_ne_neg H hne'),
+    polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H he hf'
+      (weight_add_ne_zero_of_ne_neg H (by rwa [neg_neg])),
+    polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H hf he'
+      (weight_add_ne_zero_of_ne_neg H (by rwa [ne_eq, neg_inj])),
+    polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H hf hf'
+      (weight_add_ne_zero_of_ne_neg H (by rwa [neg_neg, ne_eq, neg_eq_iff_eq_neg]))]
   simp [bivector_def]
 
 variable {H}
 variable (base : (IsKilling.rootSystem H).Base)
+
+/-- The lift of a Cartan element in terms of the elements `X_α` of the positive roots:
+`q(h) = 1 / 2 • ∑_{α > 0} α(h) • X_α`. -/
+private theorem adjointCliffordHom_cartan_eq_sum_rootInvolution (h : H) :
+    adjointCliffordHom K L (h : L) =
+      (2 : K)⁻¹ • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) base,
+        (a : Weight K H L) h • rootInvolution H (a : Weight K H L) := by
+  simpa only [rootInvolution] using
+    adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h
 
 omit [IsAlgClosed K] in
 /-- The elements `X_α` of the positive roots commute with one another. -/
@@ -198,7 +176,7 @@ private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killin
     refine hmem.2 fun h ↦ ?_
     have hcomm : Commute (adjointCliffordHom K L (h : L))
         (rootInvolution H ((a : H.root) : Weight K H L)) := by
-      rw [adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h]
+      rw [adjointCliffordHom_cartan_eq_sum_rootInvolution base h]
       exact (Commute.sum_left _ _ _ fun b hb ↦
         (commute_rootInvolution_of_mem_posRootsFinset base hb a.2).smul_left _).smul_left _
     rw [LinearMap.mulLeft_apply, ← mul_assoc, hcomm.eq, mul_assoc, hmem.1 hw h, mul_smul_comm]
@@ -241,30 +219,30 @@ theorem exists_eq_weylVector_sub_sum_kostant_of_forall_lie_eq_smul
   set Φ := posRootsFinset (IsKilling.rootSystem H) base with hΦ
   let p (a : H.root) : Prop := rootInvolution H (a : Weight K H L) * v = -v
   refine ⟨Φ.filter p, Finset.filter_subset _ _, funext fun h ↦ ?_⟩
-  let A (a : H.root) : K := (a : Weight K H L) h
-  have hneg : ∑ a ∈ Φ.filter p, A a • (rootInvolution H (a : Weight K H L) * v) =
-      (-∑ a ∈ Φ.filter p, A a) • v := by
+  have hneg : ∑ a ∈ Φ.filter p, (a : Weight K H L) h • (rootInvolution H (a : Weight K H L) * v) =
+      (-∑ a ∈ Φ.filter p, (a : Weight K H L) h) • v := by
     rw [neg_smul, Finset.sum_smul, ← Finset.sum_neg_distrib]
     exact Finset.sum_congr rfl fun a ha ↦ by rw [(Finset.mem_filter.1 ha).2, smul_neg]
-  have hpos : ∑ a ∈ Φ.filter (¬ p ·), A a • (rootInvolution H (a : Weight K H L) * v) =
-      (∑ a ∈ Φ.filter (¬ p ·), A a) • v := by
+  have hpos :
+      ∑ a ∈ Φ.filter (¬ p ·), (a : Weight K H L) h • (rootInvolution H (a : Weight K H L) * v) =
+        (∑ a ∈ Φ.filter (¬ p ·), (a : Weight K H L) h) • v := by
     rw [Finset.sum_smul]
     refine Finset.sum_congr rfl fun a ha ↦ ?_
     have ⟨ha₁, ha₂⟩ := Finset.mem_filter.1 ha
     rw [(hX a ha₁).resolve_right ha₂]
   have hρ : weylVector (IsKilling.rootSystem H) base h =
-      (2 : K)⁻¹ * (∑ a ∈ Φ.filter p, A a + ∑ a ∈ Φ.filter (¬ p ·), A a) := by
+      (2 : K)⁻¹ * (∑ a ∈ Φ.filter p, (a : Weight K H L) h +
+        ∑ a ∈ Φ.filter (¬ p ·), (a : Weight K H L) h) := by
     rw [Finset.sum_filter_add_sum_filter_not, weylVector_def, twoWeylVector_def, invOf_eq_inv,
       LinearMap.smul_apply, LinearMap.sum_apply]
-    simp [A, hΦ]
+    simp [hΦ]
   have hroot : (∑ a ∈ Φ.filter p, (IsKilling.rootSystem H).root a) h =
-      ∑ a ∈ Φ.filter p, A a := by
-    simp [A]
+      ∑ a ∈ Φ.filter p, (a : Weight K H L) h := by
+    simp
   refine smul_left_injective K hv0 ?_
   simp only [LinearMap.sub_apply, hρ, hroot]
-  rw [← hv h, adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h]
-  change ((2 : K)⁻¹ • ∑ a ∈ Φ, A a • rootInvolution H (a : Weight K H L)) * v = _
-  rw [smul_mul_assoc, Finset.sum_mul, Finset.sum_congr rfl fun a _ ↦ smul_mul_assoc _ _ _,
+  rw [← hv h, adjointCliffordHom_cartan_eq_sum_rootInvolution base h, ← hΦ, smul_mul_assoc,
+    Finset.sum_mul, Finset.sum_congr rfl fun a _ ↦ smul_mul_assoc _ _ _,
     ← Finset.sum_filter_add_sum_filter_not Φ p, hneg, hpos, ← add_smul, smul_smul]
   congr 1
   ring
