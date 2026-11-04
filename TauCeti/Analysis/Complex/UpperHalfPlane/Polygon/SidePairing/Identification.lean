@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Elliptic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Orbit
-import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import TauCeti.Topology.Algebra.GroupAction.LocallyFiniteQuotient
 
 /-!
