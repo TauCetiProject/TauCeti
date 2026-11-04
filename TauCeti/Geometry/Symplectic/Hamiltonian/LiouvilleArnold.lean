@@ -32,6 +32,8 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
   elements of the action reach every nearby point of a regular level.
 * `TauCeti.SmoothTwoForm.IsSymplectic.range_hamiltonianFlowAction_apply`: the orbit of `x` is
   the connected component of `x` in its level, when that component is regular.
+* `TauCeti.SmoothTwoForm.IsSymplectic.injective_mfderiv_hamiltonianFlowAction_apply`: the orbit
+  map has injective derivative at every vector carrying `x` to a regular point.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer` and
   `TauCeti.SmoothTwoForm.IsSymplectic.discreteTopology_hamiltonianFlowStabilizer`: the stabilizer
   of a regular point is discrete.
@@ -293,6 +295,17 @@ theorem hamiltonianFlowAction_apply_eq_iff {x : M} {v w : ι → ℝ} :
   (AddAction.injective_ofQuotientStabilizer (ι → ℝ) x).eq_iff
     (a := (v : (ι → ℝ) ⧸ AddAction.stabilizer (ι → ℝ) x)) (b := w) |>.trans QuotientAddGroup.eq
 
+/-- **The orbit map has injective derivative at regular points.** If `v • x` is a regular point of
+`F`, the derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)` of the orbit map `v ↦ v • x` at `v` is injective,
+since the `X_{Fᵢ}(v • x)` are linearly independent. -/
+theorem injective_mfderiv_hamiltonianFlowAction_apply {x : M} {v : ι → ℝ}
+    (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x)) :
+    Injective
+      (mfderiv 𝓘(ℝ, ι → ℝ) I (fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) v) :=
+  (injective_iff_map_eq_zero _).2 fun w hw ↦ funext <| Fintype.linearIndependent_iff.1
+    (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hx) w <|
+      (hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x v w).symm.trans hw
+
 /-- **The orbit map is injective near `0` at a regular point.** If `x` is a regular point of `F`,
 then no vector near `0` other than `0` fixes `x`. -/
 theorem eventually_eq_zero_of_hamiltonianFlowAction_apply_eq {x : M}
@@ -301,12 +314,8 @@ theorem eventually_eq_zero_of_hamiltonianFlowAction_apply_eq {x : M}
   set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ho
   have ho0 : o 0 = x := hσ.hamiltonianFlowAction_zero_apply hF hcomm hc x
   have hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F (o 0) := ho0 ▸ hx
-  -- The derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(x)` of the orbit map at `0` is injective, since the
-  -- `X_{Fᵢ}(x)` are linearly independent.
-  have hinj : Injective (mfderiv 𝓘(ℝ, ι → ℝ) I o 0) := by
-    refine (injective_iff_map_eq_zero _).2 fun w hw ↦ funext <| Fintype.linearIndependent_iff.1
-      (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) w ?_
-    exact (hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc x 0 w).symm.trans hw
+  have hinj : Injective (mfderiv 𝓘(ℝ, ι → ℝ) I o 0) :=
+    hσ.injective_mfderiv_hamiltonianFlowAction_apply hF hcomm hc hreg
   have hoc : ContMDiffAt 𝓘(ℝ, ι → ℝ) I ∞ o 0 :=
     hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x 0
   obtain ⟨t, ht, hinjt⟩ := hoc.exists_mem_nhds_injOn (by simp) hinj
