@@ -113,9 +113,7 @@ theorem map_esymmAlgEquiv_symm (hn : Fintype.card σ = n) (f : R →+* S)
     _ = map f (aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
           ((esymmAlgEquiv σ R hn).symm p)) := by
         rw [eval₂_map, aeval_def, hom_eval₂]
-        congr 1
-        ext r
-        simp
+        exact congrFun (congrArg₂ eval₂ (RingHom.ext fun _ ↦ by simp) rfl) _
     _ = map f p := congrArg (map f) hR
 
 end WeightedHomogeneous
@@ -138,29 +136,19 @@ noncomputable def evalTopEsymm : symmetricSubalgebra σ R →ₐ[R] Polynomial R
 variable {σ R}
 
 theorem evalTopEsymm_apply (p : symmetricSubalgebra σ R) :
-    evalTopEsymm σ R p =
-      aeval (fun i : Fin (Fintype.card σ) ↦
-        if (i : ℕ) + 1 = Fintype.card σ then
-          (-1 : Polynomial R) ^ (i : ℕ) * Polynomial.X
-        else 0) ((esymmAlgEquiv σ R rfl).symm p) :=
-  (rfl)
+    evalTopEsymm σ R p = aeval (fun i : Fin (Fintype.card σ) ↦
+      if (i : ℕ) + 1 = Fintype.card σ then (-1 : Polynomial R) ^ (i : ℕ) * Polynomial.X else 0)
+      ((esymmAlgEquiv σ R rfl).symm p) := (rfl)
 
 /-- `evalTopEsymm` commutes with coefficient ring homomorphisms `f : R →+* S`. -/
 theorem map_evalTopEsymm {S : Type*} [CommRing S] (f : R →+* S) (p : symmetricSubalgebra σ R) :
     Polynomial.map f (evalTopEsymm σ R p) = evalTopEsymm σ S ⟨MvPolynomial.map f p, p.2.map f⟩ := by
   rw [evalTopEsymm_apply, evalTopEsymm_apply, ← map_esymmAlgEquiv_symm rfl f p, aeval_def,
-    aeval_def, eval₂_map]
-  have hC : (Polynomial.mapRingHom f : Polynomial R →+* Polynomial S).comp
-      (algebraMap R (Polynomial R)) = (algebraMap S (Polynomial S)).comp f := by
-    ext r
-    simp
-  rw [← Polynomial.coe_mapRingHom,
+    aeval_def, eval₂_map, ← Polynomial.coe_mapRingHom,
     hom_eval₂ ((esymmAlgEquiv σ R rfl).symm p) (algebraMap R (Polynomial R))
-      (Polynomial.mapRingHom f) _,
-    hC]
-  congr 1
-  funext i
-  split_ifs <;> simp
+      (Polynomial.mapRingHom f) _]
+  exact congrFun (congrArg₂ eval₂ (RingHom.ext fun _ ↦ by simp)
+    (funext fun i ↦ by split_ifs <;> simp)) _
 
 /-- For `k > 0`, `evalTopEsymm` maps the `k`-th elementary symmetric polynomial to
 `(-1) ^ (n - 1) * X` when `k = n` (`n = Fintype.card σ`) and `0` otherwise. -/
@@ -232,24 +220,21 @@ private theorem coeff_aeval_topEsymm_eq_zero {φ : MvPolynomial (Fin (Fintype.ca
         rw [ite_eq_right hi_ne, zero_pow hdi]
       simp [heval]
     · push Not at hsupp
-      have hd : d = Finsupp.single last (d last) := by
-        ext i
-        rcases eq_or_ne i last with rfl | hi
-        · simp
-        · simp [hsupp i hi, hi]
-      have hlast : (last : ℕ) + 1 = Fintype.card σ := by simp [last]; omega
+      have hd : d = Finsupp.single last (d last) := Finsupp.ext fun i ↦ by
+        by_cases hi : i = last <;> simp [hi, hsupp]
+      have hlast : (last : ℕ) + 1 = Fintype.card σ := Nat.sub_add_cancel hn
       have hm_eq : d last * Fintype.card σ = m := by
-        rw [← hr, hd, Finsupp.weight_apply, Finsupp.sum_single_index (by simp)]
-        simp [hlast]
+        rw [← hr, hd, Finsupp.weight_apply, Finsupp.sum_single_index (by simp), smul_eq_mul, hlast,
+          Finsupp.single_eq_same]
       have hkd : k ≠ d last := fun h ↦ hk (h ▸ hm_eq)
       rw [hd, aeval_monomial, Finsupp.prod_single_index (by simp)]
       simp only [hlast, ↓reduceIte, mul_pow, ← pow_mul, Polynomial.algebraMap_apply,
         Algebra.algebraMap_self, RingHom.id_apply]
-      have hpoly : Polynomial.C r * ((-1 : Polynomial R) ^ ((last : ℕ) * d last) *
+      rw [show Polynomial.C r * ((-1 : Polynomial R) ^ ((last : ℕ) * d last) *
           Polynomial.X ^ d last) =
-          Polynomial.C (r * (-1 : R) ^ ((last : ℕ) * d last)) * Polynomial.X ^ d last := by
-        simp [mul_assoc]
-      rw [hpoly, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right hkd, mul_zero]
+          Polynomial.C (r * (-1 : R) ^ ((last : ℕ) * d last)) * Polynomial.X ^ d last by
+            simp [mul_assoc],
+        Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, ite_eq_right hkd, mul_zero]
 
 /-- If `p ∈ symmetricSubalgebra σ R` is homogeneous of degree `m` and `k * Fintype.card σ ≠ m`,
 then the coefficient of `X ^ k` in `evalTopEsymm σ R p` vanishes. -/
@@ -318,21 +303,18 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
         refine Finset.sum_eq_zero fun a ha ↦ ?_
         rw [mem_filter, Set.mem_Ioo] at ha
         exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 ha.2.2.ne _ _
-      rw [hsum, sub_zero]
-      calc
-        (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (Fintype.card σ : Polynomial R) *
-            ((-1) ^ (Fintype.card σ - 1) * Polynomial.X)
-          = ((-1 : Polynomial R) ^ (Fintype.card σ + 1) * (-1) ^ (Fintype.card σ - 1)) *
-              ((Fintype.card σ : Polynomial R) * Polynomial.X) := by ring
-        _ = (Fintype.card σ : Polynomial R) * Polynomial.X := by
-          rw [neg_one_pow_succ_mul_neg_one_pow_pred hn, one_mul]
+      rw [hsum, sub_zero,
+        show (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (Fintype.card σ : Polynomial R) *
+            ((-1) ^ (Fintype.card σ - 1) * Polynomial.X) =
+          ((-1 : Polynomial R) ^ (Fintype.card σ + 1) * (-1) ^ (Fintype.card σ - 1)) *
+            ((Fintype.card σ : Polynomial R) * Polynomial.X) by ring,
+        neg_one_pow_succ_mul_neg_one_pow_pred hn, one_mul]
     · -- Case `m > n`: `eₘ = 0` and only the `a = (n, m - n)` summand survives, reducing to
       -- `p_{m-n}` by strong induction.
       rw [ite_eq_right hgt.ne', mul_zero, zero_sub]
       have hmem : (Fintype.card σ, m - Fintype.card σ) ∈
           {a ∈ antidiagonal m | a.1 ∈ Set.Ioo 0 m} := by
-        rw [mem_filter, mem_antidiagonal, Set.mem_Ioo]
-        exact ⟨by omega, hn, hgt⟩
+        simpa [mem_filter, mem_antidiagonal, Set.mem_Ioo] using ⟨by omega, hn, hgt⟩
       rw [Finset.sum_eq_single (Fintype.card σ, m - Fintype.card σ)]
       · rw [map_mul, map_mul, map_pow, map_neg, map_one, evalTopEsymm_esymm_of_pos hn,
           ite_eq_left rfl, ih (m - Fintype.card σ) (by omega) (by omega)]
@@ -344,27 +326,20 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
           have hdiv : m / Fintype.card σ = (m - Fintype.card σ) / Fintype.card σ + 1 := by
             conv_lhs => rw [← Nat.sub_add_cancel hgt.le]
             exact Nat.add_div_right (m - Fintype.card σ) hn
-          rw [hdiv, pow_succ]
-          calc
-            -((-1 : Polynomial R) ^ Fintype.card σ *
+          rw [hdiv, pow_succ,
+            show -((-1 : Polynomial R) ^ Fintype.card σ *
                 ((-1) ^ (Fintype.card σ - 1) * Polynomial.X) *
                 ((Fintype.card σ : Polynomial R) *
-                  Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ)))
-              = -((-1 : Polynomial R) ^ Fintype.card σ * (-1) ^ (Fintype.card σ - 1)) *
-                  ((Fintype.card σ : Polynomial R) *
-                    (Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ) * Polynomial.X)) := by
-                  ring
-            _ = (Fintype.card σ : Polynomial R) *
-                  (Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ) * Polynomial.X) := by
-              rw [neg_neg_one_pow_mul_neg_one_pow_pred hn, one_mul]
-        · rw [ite_eq_right h₁, ite_eq_right (mt hdvd.mpr h₁)]
-          simp
+                  Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ))) =
+              -((-1 : Polynomial R) ^ Fintype.card σ * (-1) ^ (Fintype.card σ - 1)) *
+                ((Fintype.card σ : Polynomial R) *
+                  (Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ) * Polynomial.X)) by ring,
+            neg_neg_one_pow_mul_neg_one_pow_pred hn, one_mul]
+        · simp [h₁, mt hdvd.mpr h₁]
       · intro a ha hne
         rw [mem_filter, mem_antidiagonal, Set.mem_Ioo] at ha
-        have ha1 : a.1 ≠ Fintype.card σ := fun h ↦ hne (Prod.ext h (by omega))
-        exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 ha1 _ _
-      · intro hnot
-        exact absurd hmem hnot
+        exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 (fun h ↦ hne (Prod.ext h (by omega))) _ _
+      · exact fun hnot ↦ absurd hmem hnot
 
 end Nonempty
 

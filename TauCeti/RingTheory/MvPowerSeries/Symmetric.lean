@@ -254,11 +254,9 @@ private theorem coeff_evalTopEsymmFun_eq_coeff_truncTotal (P : symmetricSubalgeb
     rcases isEmpty_or_nonempty σ with hσ | hσ
     · rw [Fintype.card_eq_zero, mul_zero] at hm
       have hsub : symmHomogeneousComponent m P = 0 := Subtype.ext <| MvPolynomial.coe_inj.mp <| by
-        dsimp only [symmHomogeneousComponent]
-        rw [ZeroMemClass.coe_zero, coe_homogeneousComponentPolynomial, MvPolynomial.coe_zero]
         ext d
-        rw [Subsingleton.elim d 0]
-        simp [coeff_homogeneousComponent, hm.symm]
+        simp [symmHomogeneousComponent, coe_homogeneousComponentPolynomial,
+          Subsingleton.elim d 0, coeff_homogeneousComponent, hm.symm]
       simp [hsub]
     · exact MvPolynomial.symmetricSubalgebra.coeff_evalTopEsymm_eq_zero
         (isHomogeneous_homogeneousComponentPolynomial m P.1) hm.symm
@@ -271,12 +269,10 @@ private theorem coeff_poly_evalTopEsymm_eq_of_truncTotal_eq
     (htrunc : truncTotal N (p.1 : MvPowerSeries σ R) = truncTotal N (q.1 : MvPowerSeries σ R)) :
     (MvPolynomial.symmetricSubalgebra.evalTopEsymm σ R p).coeff k =
       (MvPolynomial.symmetricSubalgebra.evalTopEsymm σ R q).coeff k := by
-  let P : symmetricSubalgebra σ R :=
-    ⟨p.1, (mem_symmetricSubalgebra _).mpr (isSymmetric_coe.mpr
-      ((MvPolynomial.mem_symmetricSubalgebra _).mp p.2))⟩
-  let Q : symmetricSubalgebra σ R :=
-    ⟨q.1, (mem_symmetricSubalgebra _).mpr (isSymmetric_coe.mpr
-      ((MvPolynomial.mem_symmetricSubalgebra _).mp q.2))⟩
+  let P : symmetricSubalgebra σ R := ⟨p.1, (mem_symmetricSubalgebra _).mpr
+    (isSymmetric_coe.mpr ((MvPolynomial.mem_symmetricSubalgebra _).mp p.2))⟩
+  let Q : symmetricSubalgebra σ R := ⟨q.1, (mem_symmetricSubalgebra _).mpr
+    (isSymmetric_coe.mpr ((MvPolynomial.mem_symmetricSubalgebra _).mp q.2))⟩
   let M := max N (max (p.1.totalDegree + 1) (q.1.totalDegree + 1))
   have hM : k * Fintype.card σ < M := hN.trans_le (le_max_left _ _)
   have hM0 : M ≠ 0 := by omega
@@ -378,25 +374,22 @@ private theorem coeff_evalTopEsymm_eq_coeff_truncTotal (P : symmetricSubalgebra 
 theorem constantCoeff_evalTopEsymm (P : symmetricSubalgebra σ R) :
     PowerSeries.constantCoeff (evalTopEsymm σ R P) = constantCoeff P.1 := by
   rw [← PowerSeries.coeff_zero_eq_constantCoeff, coeff_evalTopEsymm, zero_mul]
-  have hsub : symmHomogeneousComponent 0 P = algebraMap R _ (constantCoeff P.1) := by
-    apply Subtype.ext
-    apply MvPolynomial.coe_inj.mp
-    simp [symmHomogeneousComponent, coe_homogeneousComponentPolynomial, homogeneousComponent_zero,
-      Algebra.algebraMap_eq_smul_one, MvPolynomial.smul_eq_C_mul]
+  have hsub : symmHomogeneousComponent 0 P = algebraMap R _ (constantCoeff P.1) :=
+    Subtype.ext <| MvPolynomial.coe_inj.mp <| by
+      simp [symmHomogeneousComponent, coe_homogeneousComponentPolynomial, homogeneousComponent_zero,
+        Algebra.algebraMap_eq_smul_one, MvPolynomial.smul_eq_C_mul]
   dsimp only [symmHomogeneousComponent] at hsub
   rw [hsub, AlgHom.commutes, Polynomial.algebraMap_eq, Polynomial.coeff_C_zero]
 
 /-- On symmetric polynomials coerced to symmetric power series, `evalTopEsymm` agrees with
 polynomial `evalTopEsymm` coerced to `PowerSeries R`. -/
 theorem evalTopEsymm_coe (p : MvPolynomial.symmetricSubalgebra σ R) :
-    evalTopEsymm σ R
-        ⟨p.1, (mem_symmetricSubalgebra _).mpr
-          (isSymmetric_coe.mpr ((MvPolynomial.mem_symmetricSubalgebra _).mp p.2))⟩ =
+    evalTopEsymm σ R ⟨p.1, (mem_symmetricSubalgebra _).mpr
+        (isSymmetric_coe.mpr ((MvPolynomial.mem_symmetricSubalgebra _).mp p.2))⟩ =
       ((MvPolynomial.symmetricSubalgebra.evalTopEsymm σ R p : Polynomial R) : PowerSeries R) := by
   ext k
-  let P : symmetricSubalgebra σ R :=
-    ⟨p.1, (mem_symmetricSubalgebra _).mpr
-      (isSymmetric_coe.mpr ((MvPolynomial.mem_symmetricSubalgebra _).mp p.2))⟩
+  let P : symmetricSubalgebra σ R := ⟨p.1, (mem_symmetricSubalgebra _).mpr
+    (isSymmetric_coe.mpr ((MvPolynomial.mem_symmetricSubalgebra _).mp p.2))⟩
   let N := max (p.1.totalDegree + 1) (k * Fintype.card σ + 1)
   have hN : k * Fintype.card σ < N := (Nat.lt_succ_self _).trans_le (le_max_right _ _)
   have hsub : symmTruncTotal N P = p :=
@@ -410,10 +403,8 @@ theorem map_evalTopEsymm [CommRing S] (f : R →+* S) (P : symmetricSubalgebra �
   ext k
   rw [PowerSeries.coeff_map, coeff_evalTopEsymm, coeff_evalTopEsymm,
     ← Polynomial.coeff_map, MvPolynomial.symmetricSubalgebra.map_evalTopEsymm]
-  congr 2
-  congr 1
-  apply Subtype.ext
-  ext d
+  refine congrArg (fun q ↦ (MvPolynomial.symmetricSubalgebra.evalTopEsymm σ S q).coeff k)
+    (Subtype.ext <| MvPolynomial.ext _ _ fun d ↦ ?_)
   rw [MvPolynomial.coeff_map, ← MvPolynomial.coeff_coe, coe_homogeneousComponentPolynomial,
     ← MvPolynomial.coeff_coe, coe_homogeneousComponentPolynomial,
     coeff_homogeneousComponent, coeff_homogeneousComponent]
@@ -422,16 +413,12 @@ theorem map_evalTopEsymm [CommRing S] (f : R →+* S) (P : symmetricSubalgebra �
 /-- `evalTopEsymm` commutes with formal power series substitution. -/
 theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
     (a : τ → symmetricSubalgebra σ R) (ha : ∀ t, constantCoeff (a t).1 = 0) :
-    evalTopEsymm σ R
-        ⟨g.subst (fun t ↦ (a t).1),
-          (mem_symmetricSubalgebra _).mpr
-            (IsSymmetric.subst (hasSubst_of_constantCoeff_zero ha) fun t ↦ isSymmetric (a t))⟩ =
+    evalTopEsymm σ R ⟨g.subst (fun t ↦ (a t).1), (mem_symmetricSubalgebra _).mpr
+        (IsSymmetric.subst (hasSubst_of_constantCoeff_zero ha) fun t ↦ isSymmetric (a t))⟩ =
       g.subst (fun t ↦ evalTopEsymm σ R (a t)) := by
   ext k
-  let PS : symmetricSubalgebra σ R :=
-    ⟨g.subst (fun t ↦ (a t).1),
-      (mem_symmetricSubalgebra _).mpr
-        (IsSymmetric.subst (hasSubst_of_constantCoeff_zero ha) fun t ↦ isSymmetric (a t))⟩
+  let PS : symmetricSubalgebra σ R := ⟨g.subst (fun t ↦ (a t).1), (mem_symmetricSubalgebra _).mpr
+    (IsSymmetric.subst (hasSubst_of_constantCoeff_zero ha) fun t ↦ isSymmetric (a t))⟩
   let N := k * Fintype.card σ + 1
   have hN : k * Fintype.card σ < N := Nat.lt_succ_self _
   have hcard : 0 < Fintype.card σ := Fintype.card_pos
@@ -501,12 +488,10 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
     ← coeff_truncTotal _ hdeg, htrunc_unit, coeff_truncTotal _ hdeg]
 
 /-- Evaluating the symmetric coordinate sum `∑ i : σ, γ(Xᵢ)` under `evalTopEsymm` extracts the
-degree-multiples of `n = Fintype.card σ` multiplied by `n`, i.e. `n • PowerSeries.cartier R n 0 γ`.
--/
+degree-multiples of `n = Fintype.card σ` multiplied by `n`: `n • PowerSeries.cartier R n 0 γ`. -/
 theorem evalTopEsymm_sum_toMvPowerSeries [Nonempty σ] (γ : PowerSeries R) :
-    evalTopEsymm σ R
-        ⟨∑ i : σ, γ.toMvPowerSeries i,
-          (mem_symmetricSubalgebra _).mpr (IsSymmetric.sum_toMvPowerSeries γ)⟩ =
+    evalTopEsymm σ R ⟨∑ i : σ, γ.toMvPowerSeries i,
+        (mem_symmetricSubalgebra _).mpr (IsSymmetric.sum_toMvPowerSeries γ)⟩ =
       (Fintype.card σ : R) • PowerSeries.cartier R (Fintype.card σ) 0 γ := by
   have hn : 0 < Fintype.card σ := Fintype.card_pos
   -- Each homogeneous component of `∑ i, γ(Xᵢ)` is `coeff m γ` times the `m`-th power sum `psum`.
@@ -515,9 +500,8 @@ theorem evalTopEsymm_sum_toMvPowerSeries [Nonempty σ] (γ : PowerSeries R) :
         (MvPolynomial.mem_symmetricSubalgebra _).mpr
           ((IsSymmetric.sum_toMvPowerSeries γ).homogeneousComponentPolynomial m)⟩ :
         MvPolynomial.symmetricSubalgebra σ R) =
-      PowerSeries.coeff m γ •
-        ⟨MvPolynomial.psum σ R m,
-          (MvPolynomial.mem_symmetricSubalgebra _).mpr (MvPolynomial.psum_isSymmetric σ R m)⟩ :=
+      PowerSeries.coeff m γ • ⟨MvPolynomial.psum σ R m,
+        (MvPolynomial.mem_symmetricSubalgebra _).mpr (MvPolynomial.psum_isSymmetric σ R m)⟩ :=
     fun m ↦ Subtype.ext (homogeneousComponentPolynomial_sum_toMvPowerSeries m γ)
   ext k
   rw [coeff_evalTopEsymm, hcomp, map_smul, Polynomial.coeff_smul, PowerSeries.coeff_smul,

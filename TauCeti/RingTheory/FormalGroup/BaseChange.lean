@@ -103,14 +103,11 @@ noncomputable def mapPointHom (F : FormalGroup R) (f : R →+* S) (σ : Type*) :
     exact x.prop.map f⟩
   map_zero' := Subtype.ext (by simp)
   map_add' x y := Subtype.ext <| by
-    have hxy : HasSubst ![x.val, y.val] := hasSubst_of_constantCoeff_nilpotent fun i ↦ by
-      fin_cases i
-      · exact x.prop
-      · exact y.prop
+    have hxy : HasSubst ![x.val, y.val] :=
+      hasSubst_of_constantCoeff_nilpotent (Fin.forall_fin_two.mpr ⟨x.prop, y.prop⟩)
     simp only [add_apply, MvPowerSeries.map_subst hxy]
     congr 1
-    funext i
-    fin_cases i <;> simp
+    exact funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
 
 @[simp]
 theorem val_mapPointHom (F : FormalGroup R) (f : R →+* S) {σ : Type*} (x : F.Point σ) :
