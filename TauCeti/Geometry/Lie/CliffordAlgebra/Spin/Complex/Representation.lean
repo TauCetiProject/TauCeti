@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.AlgebraHom
+public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Basic
 public import TauCeti.RepresentationTheory.Spin.Representation
 public import TauCeti.Analysis.Matrix.Normed
@@ -91,15 +92,11 @@ theorem lieMap_complexSpinSmoothHom_eq :
         ((lieMap f.complexSpinSmoothHom).comp
           (complexSpinLieEquivQuadratic (Q := Q)).symm.toLieHom) =
       f.toLieHom.comp
-        ({ toLinearMap := (quadraticLieSubalgebra Q).incl.toLinearMap.restrictScalars ℝ
-           map_lie' := fun {x y} ↦ (quadraticLieSubalgebra Q).incl.map_lie x y } :
-          RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q) →ₗ⁅ℝ⁆ CliffordAlgebra Q) := by
+        ((quadraticLieSubalgebra Q).restrictScalarsIncl ℝ) := by
   ext x
   simp only [LieHom.comp_apply, LieEquiv.coe_toLieHom,
     unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothHom, LieEquiv.apply_symm_apply,
-    AlgHom.toLieHom_apply]
-  -- The real inclusion and the RestrictScalars accessor retain the subtype's underlying function.
-  rfl
+    AlgHom.toLieHom_apply, LieSubalgebra.restrictScalarsIncl_apply]
 
 end AlgHom
 
@@ -162,9 +159,7 @@ theorem lieMap_complexSpinSmoothMatrixHom_eq :
           (complexSpinLieEquivQuadratic (Q := Q)).symm.toLieHom) =
       (AlgHom.toLieHom
         ((((LinearMap.toMatrixAlgEquiv b).toAlgHom).comp (spinAction Q P)).restrictScalars ℝ)).comp
-        ({ toLinearMap := (quadraticLieSubalgebra Q).incl.toLinearMap.restrictScalars ℝ
-           map_lie' := fun {x y} ↦ (quadraticLieSubalgebra Q).incl.map_lie x y } :
-          RestrictScalars ℝ ℂ (quadraticLieSubalgebra Q) →ₗ⁅ℝ⁆ CliffordAlgebra Q) := by
+        ((quadraticLieSubalgebra Q).restrictScalarsIncl ℝ) := by
   exact AlgHom.lieMap_complexSpinSmoothHom_eq _
 
 end TauCeti.SpinPolarizationData
