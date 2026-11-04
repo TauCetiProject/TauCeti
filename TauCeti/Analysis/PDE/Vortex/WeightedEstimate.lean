@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.InnerProductSpace.RadialExponential
+import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Weighted energy estimates for the plane-vortex adjoint
@@ -38,20 +39,47 @@ open scoped Laplacian Topology RealInnerProductSpace
 
 variable {x η : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ}
 
-private def symbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+/-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
+and a target field value. It is independent of the vortex coefficients. -/
+def gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
     EuclideanSpace ℝ (Fin 4) :=
   !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
     -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2]
 
-private theorem norm_sq_symbol (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
-    ‖symbol d v‖ ^ 2 = (d 1 ^ 2 + d I ^ 2) * ‖v‖ ^ 2 := by
-  simp [symbol, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+/-- Coordinate formula for the principal symbol of the adjoint. -/
+theorem gaugeFixedAdjointSymbol_def (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d v =
+      !₂[-d 1 * v 0 - d I * v 1, -d I * v 0 + d 1 * v 1,
+        -d 1 * v 2 - d I * v 3, -d 1 * v 3 + d I * v 2] := (rfl)
+
+/-- The adjoint symbol preserves squared norms up to the squared covector norm. -/
+theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    ‖gaugeFixedAdjointSymbol d v‖ ^ 2 = (d 1 ^ 2 + d I ^ 2) * ‖v‖ ^ 2 := by
+  simp [gaugeFixedAdjointSymbol_def, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   ring
 
-private theorem adjoint_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) {z : ℂ}
+/-- The adjoint symbol commutes with real scaling of the covector. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_smul (r : ℝ) (d : ℂ →L[ℝ] ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol (r • d) v = r • gaugeFixedAdjointSymbol d v := by
+  ext i
+  fin_cases i <;> simp [gaugeFixedAdjointSymbol_def] <;> ring
+
+/-- The adjoint symbol commutes with real scaling of the field value. -/
+@[simp]
+theorem gaugeFixedAdjointSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
+    (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjointSymbol d (r • v) = r • gaugeFixedAdjointSymbol d v := by
+  ext i
+  fin_cases i <;> simp [gaugeFixedAdjointSymbol_def] <;> ring
+
+/-- The adjoint's Leibniz rule for a real weight, with its exact symbol commutator. -/
+theorem gaugeFixedAdjoint_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) {z : ℂ}
     (hw : DifferentiableAt ℝ w z) (hη : DifferentiableAt ℝ η z) :
     gaugeFixedAdjoint x (fun t ↦ w t • η t) z =
-      w z • gaugeFixedAdjoint x η z + symbol (fderiv ℝ w z) (η z) := by
+      w z • gaugeFixedAdjoint x η z + gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z) := by
   have hηi (i : Fin 4) : DifferentiableAt ℝ (fun t ↦ η t i) z :=
     (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hη
   have hd (i : Fin 4) (v : ℂ) :
@@ -63,7 +91,8 @@ private theorem adjoint_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) {z : ℂ}
   ext i
   fin_cases i <;>
     simp [gaugeFixedAdjoint_apply_zero, gaugeFixedAdjoint_apply_one,
-      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd, symbol] <;> ring
+      gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three, hd,
+      gaugeFixedAdjointSymbol_def] <;> ring
 
 /-- Exact localization of the squared adjoint norm. The zeroth-order vortex coefficients
 cancel, and the principal symbol contributes precisely `|dw|² |η|²`. No equation for `x`
@@ -75,19 +104,24 @@ theorem norm_sq_gaugeFixedAdjoint_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) 
         ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2 := by
   have hp : fderiv ℝ (fun t ↦ w t ^ 2) z = (2 * w z) • fderiv ℝ w z := by
     simpa using (hw.hasFDerivAt.pow 2).fderiv
-  have hs : symbol (fderiv ℝ (fun t ↦ w t ^ 2) z) (η z) =
-      (2 * w z) • symbol (fderiv ℝ w z) (η z) := by
-    rw [hp]
-    ext i
-    fin_cases i <;> simp [symbol] <;> ring
-  rw [adjoint_smul x hw hη, adjoint_smul x (hw.fun_pow 2) hη, hs,
+  rw [gaugeFixedAdjoint_fun_smul x hw hη,
+    gaugeFixedAdjoint_fun_smul x (hw.fun_pow 2) hη, hp, gaugeFixedAdjointSymbol_smul,
     norm_add_sq_real, inner_add_left, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
-    norm_sq_symbol]
+    norm_sq_gaugeFixedAdjointSymbol]
   simp only [real_inner_smul_left, real_inner_self_eq_norm_sq]
   rw [real_inner_comm (gaugeFixedAdjoint x η z)]
   ring
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
+
+private theorem integrable_weightGradientError (hw : ContDiff ℝ 1 w)
+    (hη : Continuous η) (hc : HasCompactSupport η) :
+    Integrable (fun z ↦
+      ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2) μ := by
+  have hd : Continuous (fderiv ℝ w) := hw.continuous_fderiv one_ne_zero
+  exact (by fun_prop : Continuous (fun z ↦
+    ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2)).integrable_of_hasCompactSupport
+      (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))
 
 /-- The integrated localization identity: the weighted pairing with `L_x L_x*` equals
 the localized adjoint energy minus the exact weight-gradient error. -/
@@ -105,12 +139,7 @@ theorem integral_norm_sq_gaugeFixedAdjoint_smul
     ((continuous_gaugeFixedAdjoint hx.continuous ((hw.pow 2).smul hη₁)).inner
       hA.continuous).integrable_of_hasCompactSupport
         (hAc.mono fun z hz he ↦ hz (by simp [he]))
-  have hd : Continuous (fderiv ℝ w) := hw.continuous_fderiv one_ne_zero
-  have he : Integrable (fun z ↦
-      ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2) μ :=
-    (by fun_prop : Continuous (fun z ↦
-      ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2)).integrable_of_hasCompactSupport
-        (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  have he := integrable_weightGradientError (μ := μ) hw hη.continuous hc
   simp_rw [norm_sq_gaugeFixedAdjoint_smul x (hw.differentiable (by norm_num) _)
     (hη.differentiable (by norm_num) _)]
   rw [integral_add hi he]
@@ -122,7 +151,7 @@ theorem integral_norm_sq_gaugeFixedAdjoint_smul
 /-- A real weight whose logarithmic gradient is bounded by `c` reduces the exterior
 squared mass from `a` to `a - c²`. The pairing is with the actual second-order operator
 `L_x L_x*`; no inverse or range assertion is assumed. -/
-theorem weighted_integral_norm_sq_le_integral_inner
+theorem mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator
     (hx : ContDiff ℝ 1 x) (hη : ContDiff ℝ 2 η) (hc : HasCompactSupport η)
     (hw : ContDiff ℝ 2 w) (hsol : ∀ z, η z ≠ 0 → equation x z = 0)
     {a c : ℝ} (ha : a ≤ 1 / 4)
@@ -139,13 +168,8 @@ theorem weighted_integral_norm_sq_le_integral_inner
   have hi : Integrable (fun z ↦ w z ^ 2 * ‖η z‖ ^ 2) μ :=
     ((hw.continuous.pow 2).mul (hη.continuous.norm.pow 2)).integrable_of_hasCompactSupport
       (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  have hd : Continuous (fderiv ℝ w) :=
-    (hw.of_le (by norm_num) : ContDiff ℝ 1 w).continuous_fderiv one_ne_zero
-  have he : Integrable (fun z ↦
-      ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2) μ :=
-    (by fun_prop : Continuous (fun z ↦
-      ((fderiv ℝ w z 1) ^ 2 + (fderiv ℝ w z I) ^ 2) * ‖η z‖ ^ 2)).integrable_of_hasCompactSupport
-        (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))
+  have he := integrable_weightGradientError (μ := μ)
+    (hw.of_le (by norm_num)) hη.continuous hc
   have hb := integral_mono he (hi.const_mul (c ^ 2)) fun z ↦
     by
       by_cases hz : η z = 0
@@ -161,7 +185,7 @@ theorem weighted_integral_norm_sq_le_integral_inner
 `exp(c √(1 + |z|²))`, `|c| < 1/2`, has a positive exterior energy margin
 `(1/4 - c²)/2`. The same radius works for every compactly supported `C²` test field
 vanishing on the indicated disc. -/
-theorem exists_exterior_exp_weighted_integral_norm_sq_le_integral_inner
+theorem exists_exterior_integral_exp_mul_norm_sq_le_integral_exp_mul_inner_gaugeFixedOperator
     (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     {c : ℝ} (hc : |c| < 1 / 2) :
@@ -178,45 +202,23 @@ theorem exists_exterior_exp_weighted_integral_norm_sq_le_integral_inner
   have he := hlim.eventually (lt_mem_nhds (by linarith : 4 * a < 1))
   rw [← Metric.cobounded_eq_cocompact] at he
   obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
-  -- The smooth radial weight has logarithmic gradient of norm at most |c|.
-  have hq : ContDiff ℝ 2 (fun z : ℂ ↦ 1 + ‖z‖ ^ 2) :=
-    contDiff_const.add (contDiff_id.norm_sq ℝ)
-  have hρ : ContDiff ℝ 2 (fun z : ℂ ↦ √(1 + ‖z‖ ^ 2)) :=
-    hq.sqrt (fun z ↦ by positivity)
   have hw : ContDiff ℝ 2 (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) :=
-    (contDiff_const.mul hρ).exp
+    contDiff_exp_mul_sqrt_one_add_norm_sq c
   have hdw (z : ℂ) :
       (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z 1) ^ 2 +
           (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z I) ^ 2 ≤
         c ^ 2 * Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 := by
-    have hp : 0 < 1 + ‖z‖ ^ 2 := by positivity
-    have hd :=
-      ((((hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_add 1).sqrt hp.ne').const_mul c).exp
-    have hv (v : ℂ) :
-        fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z v =
-          Real.exp (c * √(1 + ‖z‖ ^ 2)) * c / √(1 + ‖z‖ ^ 2) * ⟪z, v⟫ := by
-      rw [hd.fderiv]
-      simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
-      field_simp
-      ring
-    rw [hv 1, hv I]
-    have hn : ⟪z, (1 : ℂ)⟫ ^ 2 + ⟪z, I⟫ ^ 2 = ‖z‖ ^ 2 := by
-      rw [Complex.sq_norm]
-      simp [Complex.inner, Complex.normSq_apply, pow_two]
-    have hb : ‖z‖ ^ 2 / (√(1 + ‖z‖ ^ 2)) ^ 2 ≤ 1 := by
-      rw [Real.sq_sqrt hp.le]
-      exact (div_le_one hp).2 (by linarith)
-    calc
-      _ = (c ^ 2 * Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2) *
-          (‖z‖ ^ 2 / (√(1 + ‖z‖ ^ 2)) ^ 2) := by rw [← hn]; ring
-      _ ≤ _ := mul_le_of_le_one_right (by positivity) hb
+    have hb := norm_fderiv_exp_mul_sqrt_one_add_norm_sq_le c z
+    have hs := pow_le_pow_left₀ (norm_nonneg _) hb 2
+    simpa [orthonormalBasisOneI.norm_dual, Fin.sum_univ_two,
+      coe_orthonormalBasisOneI, mul_pow, sq_abs] using hs
   refine ⟨max R 1, by positivity, fun η hη hηc hzero ↦ ?_⟩
   have hP (z : ℂ) (hz : η z ≠ 0) : a ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
     have hnorm : max R 1 < ‖z‖ := lt_of_not_ge fun h ↦ hz (hzero z h)
     have hv : 4 * a < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
       hR (le_trans (le_max_left R 1) hnorm.le)
     linarith
-  have hb := weighted_integral_norm_sq_le_integral_inner (μ := μ)
+  have hb := mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator (μ := μ)
     hx hη hηc hw (fun z _ ↦ hsol z) ha.le hP (fun z _ ↦ hdw z)
   convert hb using 1
   congr 1
