@@ -41,9 +41,6 @@ on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
 
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
-
-The kernel of the structure map `R → R ⧸ I` is `I` (`Ideal.Quotient.ker_algebraMap`), the
-`algebraMap` form of Mathlib's `Ideal.mk_ker`.
 -/
 
 public section
@@ -128,11 +125,6 @@ theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] 
   let := Ideal.Quotient.field m
   have := RingHom.ker_isMaximal_of_surjective ((Ideal.Quotient.mk m).comp (f : A →+* S)) hf
   rwa [← RingHom.comap_ker, Ideal.mk_ker, Ideal.comap_coe] at this
-
-/-- The kernel of the structure map `R → R ⧸ I` is `I`. This is `Ideal.mk_ker` stated for
-`algebraMap`. -/
-theorem Quotient.ker_algebraMap (I : Ideal R) : RingHom.ker (algebraMap R (R ⧸ I)) = I := by
-  rw [Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
 
 end Ideal
 
