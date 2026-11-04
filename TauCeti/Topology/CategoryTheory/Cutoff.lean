@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import TauCeti.CategoryTheory.Category.QuiverTotal
 public import TauCeti.Topology.IsLocalHomeomorph
@@ -31,11 +32,11 @@ isotropy of an orbifold presentation, are retained.
 For a groupoid, dividing a nonnegative function `β` by its sums `x ↦ ∑ᶠ a, β a.right` over the
 arrows with source `x` gives a cutoff function, as soon as every orbit meets the locus where `β` is
 nonzero and `β` satisfies the compactness condition (`TauCeti.Quiver.isCutoff_div_finsum`). The
-sums are constant along orbits, by `Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_hom`.
+sums are constant along orbits, by `Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_iso`.
 
 Cutoff functions turn sums over the arrows of a proper groupoid into locally finite sums, as needed
 to average data along its orbits. Smooth cutoff functions of proper étale manifold groupoids are
-constructed in `TauCeti.Geometry.Manifold.PartitionOfUnity.Cutoff`. For the action groupoid of a
+constructed in `TauCeti.Geometry.Manifold.Groupoid.Cutoff`. For the action groupoid of a
 discrete group, `TauCeti.MulAction.IsCutoff` is the corresponding notion.
 
 ## References
@@ -82,6 +83,17 @@ theorem finite_preimage_left_inter
   simpa only [inter_assoc] using hs.finite_preimage_singleton_inter
     (by simpa only [inter_assoc] using hf isCompact_singleton)
 
+/-- If the arrows with source in a compact set `K` and target in the support of `f` form a compact
+set, then so do the arrows with source in `K` lying in the support of `f` composed with the
+target. -/
+theorem isCompact_preimage_left_inter_tsupport_comp
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) {K : Set C}
+    (hf : IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport f)) :
+    IsCompact (Quiver.Total.left ⁻¹' K ∩ tsupport (f ∘ Quiver.Total.right)) := by
+  have hsub := tsupport_comp_subset_preimage f ht
+  simpa only [inter_assoc, inter_eq_right.2 hsub] using
+    hf.inter_right (isClosed_tsupport (f ∘ Quiver.Total.right))
+
 end Finite
 
 /-- If the source map is a local homeomorphism, `f` is nonnegative and nonzero at the target of
@@ -110,6 +122,13 @@ theorem finite_preimage_left_inter (hc : IsCutoff c)
     (Quiver.Total.left ⁻¹' {x} ∩ Quiver.Total.right ⁻¹' tsupport c).Finite :=
   TauCeti.Quiver.finite_preimage_left_inter hs hc.isCompact_preimage_inter x
 
+/-- The arrows with source in a compact set and lying in the support of a cutoff function
+composed with the target form a compact set. -/
+theorem isCompact_preimage_left_inter_tsupport_comp (hc : IsCutoff c)
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) {K : Set C} (hK : IsCompact K) :
+    IsCompact (Quiver.Total.left ⁻¹' K ∩ tsupport (c ∘ Quiver.Total.right)) :=
+  TauCeti.Quiver.isCompact_preimage_left_inter_tsupport_comp ht (hc.isCompact_preimage_inter hK)
+
 /-- The source map is proper on the support of a cutoff function composed with the target map. -/
 theorem isProperMap_left [T2Space C] [CompactlyCoherentSpace C] (hc : IsCutoff c)
     (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
@@ -136,13 +155,12 @@ open CategoryTheory
 variable {C : Type*} [CategoryTheory.Groupoid C] [TopologicalSpace C]
   [TopologicalSpace (Quiver.Total C)]
 
-/-- In a groupoid whose source map is a local homeomorphism and whose target map is continuous,
-dividing a nonnegative function `β` by its sums over the targets of the arrows with each given
-source gives a cutoff function. This needs every orbit to meet the locus where `β` is nonzero, and
-the arrows with source in a compact set and target in the support of `β` to form a compact set. -/
-theorem isCutoff_div_finsum [T2Space C]
-    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
-    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) {β : C → ℝ} (hβ : ∀ x, 0 ≤ β x)
+/-- In a groupoid whose source map is a local homeomorphism, dividing a nonnegative function `β`
+by its sums over the targets of the arrows with each given source gives a cutoff function. This
+needs every orbit to meet the locus where `β` is nonzero, and the arrows with source in a compact
+set and target in the support of `β` to form a compact set. -/
+theorem isCutoff_div_finsum (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    {β : C → ℝ} (hβ : ∀ x, 0 ≤ β x)
     (hfin : ∀ ⦃K : Set C⦄, IsCompact K →
       IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport β))
     (hpos : ∀ x, ∃ a ∈ Quiver.Total.left ⁻¹' {x}, β a.right ≠ 0) :
@@ -153,14 +171,16 @@ theorem isCutoff_div_finsum [T2Space C]
   have hinv (a : Quiver.Total C) :
       ∑ᶠ b ∈ Quiver.Total.left ⁻¹' {a.right}, β b.right =
         ∑ᶠ b ∈ Quiver.Total.left ⁻¹' {a.left}, β b.right :=
-    (Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_hom β a.hom).symm
+    (Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_iso β (asIso a.hom)).symm
+  -- Dividing by the positive sums does not change the support.
+  have hsupp : Function.support (fun x ↦ β x / ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, β a.right) =
+      Function.support β := by
+    rw [Function.support_div, inter_eq_left]
+    exact fun x _ ↦ (hsum x).ne'
   refine ⟨fun x ↦ div_nonneg (hβ x) (hsum x).le, fun x ↦ ?_, fun K hK ↦ ?_⟩
   · rw [finsum_mem_congr rfl fun a (ha : a.left = x) ↦ by rw [hinv, ha, div_eq_mul_inv],
       ← finsum_mem_mul, mul_inv_cancel₀ (hsum x).ne']
-  · refine (hfin hK).of_isClosed_subset ((hK.isClosed.preimage hs.continuous).inter
-      ((isClosed_tsupport _).preimage ht)) (inter_subset_inter_right _ (preimage_mono ?_))
-    refine closure_mono fun x hx ↦ ?_
-    rw [Function.support_div] at hx
-    exact hx.1
+  · rw [tsupport, hsupp]
+    exact hfin hK
 
 end TauCeti.Quiver

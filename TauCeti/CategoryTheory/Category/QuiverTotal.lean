@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.CategoryTheory.EqToHom
-public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Combinatorics.Quiver.Subquiver
 
 /-!
@@ -23,10 +22,10 @@ A total arrow with identified endpoints is read as a morphism between those endp
 of morphisms into composition of total arrows (`Quiver.Total.mk_homOfEq_comp_homOfEq`).
 
 A sum over the total arrows with source `x` is a sum over the arrows `x ⟶ y` for all `y`
-(`Quiver.Total.finsum_mem_preimage_left_singleton`). In a groupoid, an arrow `x ⟶ y` matches the
-arrows out of `x` with those out of `y` with the same targets, so the sum of a function of the
+(`Quiver.Total.finsum_mem_preimage_left_singleton`). In a category, an isomorphism `x ≅ y` matches
+the arrows out of `x` with those out of `y` with the same targets, so the sum of a function of the
 target over the arrows with source `x` depends only on the isomorphism class of `x`
-(`Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_hom`). Such sums define the cutoff
+(`Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_iso`). Such sums define the cutoff
 functions of étale groupoids.
 
 ## Main declarations
@@ -74,17 +73,17 @@ theorem finsum_mem_preimage_left_singleton {M : Type*} [AddCommMonoid M]
 
 end Quiver
 
-/-- In a groupoid, the sum of a function of the target over the total arrows with source `x` only
-depends on the isomorphism class of `x`: an arrow `x ⟶ y` identifies the arrows out of `x` with
-those out of `y`, preserving targets. -/
-theorem finsum_mem_preimage_left_singleton_eq_of_hom {G : Type*} [Groupoid G] {M : Type*}
-    [AddCommMonoid M] (g : G → M) {x y : G} (f : x ⟶ y) :
+variable {C : Type*} [Category C]
+
+/-- The sum of a function of the target over the total arrows with source `x` only depends on the
+isomorphism class of `x`: an isomorphism `x ≅ y` identifies the arrows out of `x` with those out
+of `y`, preserving targets. -/
+theorem finsum_mem_preimage_left_singleton_eq_of_iso {M : Type*} [AddCommMonoid M] (g : C → M)
+    {x y : C} (e : x ≅ y) :
     ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, g a.right = ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {y}, g a.right := by
   rw [finsum_mem_preimage_left_singleton, finsum_mem_preimage_left_singleton]
-  exact finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ (asIso f).homFromEquiv)
+  exact finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ e.homFromEquiv)
     (f := fun p : Σ z, (y ⟶ z) ↦ g p.1)
-
-variable {C : Type*} [Category C]
 
 /-- The composite of total arrows `a` and `b` of a category with the target of `a` equal to the
 source of `b`: the first arrow is followed by the second. -/

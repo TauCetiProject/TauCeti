@@ -5,58 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.Structures
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.ShrinkingLemma
-public import TauCeti.Topology.CategoryTheory.Cutoff
-public import TauCeti.Topology.CategoryTheory.IsomorphismClasses
 import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
-# Smooth cutoff functions for proper étale groupoids
+# Smooth functions meeting every fiber of an open quotient map
 
-Let `C` be a groupoid whose objects form a Hausdorff σ-compact finite-dimensional real manifold
-and whose total arrows form a Hausdorff manifold, with source and target `C^n` local
-diffeomorphisms and proper source-target map `a ↦ (a.left, a.right)`. Then `C` has a `C^n` cutoff
-function (`TauCeti.Quiver.exists_isCutoff_contMDiff`): a nonnegative `C^n` function `c` on objects
-with `∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, c a.right = 1` for every object `x`, such that the source
-map is proper on the support of `c` composed with the target. No effectiveness is assumed: every
-arrow is counted, so isotropy arrows acting trivially near their object are retained.
+Let `π : M → Q` be an open quotient map from a Hausdorff σ-compact finite-dimensional real manifold
+onto a Hausdorff space. Then `M` has a nonnegative smooth function `β` which is nonzero somewhere
+on every fiber of `π`, and whose support meets the preimage of each compact subset of `Q` in a
+compact set (`TauCeti.exists_contMDiff_nonneg_isCompact_tsupport_inter_preimage`).
 
-This generalizes the cutoff functions of proper actions of discrete groups,
-`TauCeti.MulAction.exists_isCutoff_contMDiff`, to proper étale groupoids. Cutoff functions are used
-to average data over the arrows of a proper groupoid, and so to contract complexes of cochains on
-its nerve.
-
-Both constructions start from a nonnegative smooth function `β` on a manifold `M` which is nonzero
-somewhere on every fiber of an open quotient map `π : M → Q` onto a Hausdorff space, and whose
-support meets the preimage of each compact subset of `Q` in a compact set
-(`TauCeti.exists_contMDiff_nonneg_isCompact_tsupport_inter_preimage`). Here `Q` is the orbit space
-or the coarse space of isomorphism classes.
+Such functions are the starting point for cutoff functions: dividing `β` by its sums along orbits
+gives the cutoff functions of proper actions of discrete groups
+(`TauCeti.MulAction.exists_isCutoff_contMDiff`), where `Q` is the orbit space, and of proper étale
+groupoids (`TauCeti.Quiver.exists_isCutoff_contMDiff`), where `Q` is the coarse space of
+isomorphism classes.
 
 ## Implementation notes
 
-To construct `β`, note that `Q` is paracompact. Cover it by a locally finite family of open sets
-`O y` contained in the images of compact sets `K₀ y`, shrink it to a cover by sets `V y` with
-`closure (V y) ⊆ O y`, and sum smooth bump functions equal to one on `K₀ y ∩ π ⁻¹' closure (V y)`
-and supported in a compact neighbourhood of `K₀ y` over `O y`. For a groupoid, the properness of
-the source-target map then gives the compactness condition of a cutoff function, and
-`c = β / ∑ᶠ a, β a.right` by `TauCeti.Quiver.isCutoff_div_finsum`. Near each object the denominator
-is a finite sum of `β` composed with the target and local inverses of the source
-(`IsLocalHomeomorph.eventually_finsum_mem_preimage_singleton_eq_sum`), hence `C^n`.
+Note that `Q` is paracompact. Cover it by a locally finite family of open sets `O y` contained in
+the images of compact sets `K₀ y`, shrink it to a cover by sets `V y` with
+`closure (V y) ⊆ O y`, and sum smooth bump functions equal to one on
+`K₀ y ∩ π ⁻¹' closure (V y)` and supported in a compact neighbourhood of `K₀ y` over `O y`.
 
 ## References
 
-* M. Crainic, *Differentiable and algebroid cohomology, van Est isomorphisms, and characteristic
-  classes*, Comment. Math. Helv. **78** (2003), Section 2, for cutoff functions on proper
-  groupoids.
 * N. Bourbaki, *Integration II*, Chapter VII, §2, for Bruhat functions of proper actions.
 -/
 
 public section
 
-open CategoryTheory Function Set Topology
+open Function Set Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -132,77 +113,5 @@ theorem exists_contMDiff_nonneg_isCompact_tsupport_inter_preimage {Q : Type*} [T
       subset_tsupport _ hy') fun y' ↦ (hb01 y' _).1
 
 end Proper
-
-namespace Quiver
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-  {C : Type*} [CategoryTheory.Groupoid C] [TopologicalSpace C] [ChartedSpace H C]
-  [IsManifold I ∞ C] [T2Space C] [SigmaCompactSpace C]
-  [TopologicalSpace (Quiver.Total C)]
-
-/-- A proper groupoid with locally homeomorphic source and target, whose objects form a Hausdorff
-σ-compact finite-dimensional manifold, has a nonnegative smooth function on objects meeting every
-orbit, such that the arrows with source in a compact set and target in its support form a compact
-set. -/
-private theorem exists_contMDiff_nonneg_isCompact_preimage_inter
-    (hp : IsProperMap fun a : Quiver.Total C ↦ (a.left, a.right))
-    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
-    (ht : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C)) :
-    ∃ β : C → ℝ, CMDiff ∞ β ∧ (∀ x, 0 ≤ β x) ∧
-      (∀ ⦃K : Set C⦄, IsCompact K →
-        IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport β)) ∧
-      ∀ x, ∃ a ∈ Quiver.Total.left ⁻¹' {x}, β a.right ≠ 0 := by
-  let π : C → Quotient (isIsomorphicSetoid C) := Quotient.mk _
-  have hπ : IsOpenQuotientMap π :=
-    isOpenQuotientMap_isomorphismClassesMk hs.continuous ht.isOpenMap
-  have : T2Space (Quotient (isIsomorphicSetoid C)) :=
-    t2Space_isomorphismClasses hs.continuous ht.isOpenMap hp.isClosedMap.isClosed_range
-  obtain ⟨β, hβs, hβ0, hβK, hpos⟩ := exists_contMDiff_nonneg_isCompact_tsupport_inter_preimage I hπ
-  refine ⟨β, hβs, hβ0, fun K hK ↦ ?_, fun x ↦ ?_⟩
-  · -- The targets of these arrows lie in the support of `β` over the image of `K`.
-    refine (hp.isCompact_preimage (hK.prod (hβK (hK.image hπ.continuous)))).of_isClosed_subset
-      ((hK.isClosed.preimage hs.continuous).inter ((isClosed_tsupport _).preimage ht.continuous))
-      fun a ⟨haK, ha⟩ ↦ ⟨haK, ha, a.left, haK, isomorphismClassesMk_eq_iff.2 ⟨a.hom⟩⟩
-  · obtain ⟨z, hzx, hz⟩ := hpos x
-    obtain ⟨f⟩ := isomorphismClassesMk_eq_iff.1 hzx.symm
-    exact ⟨⟨x, z, f⟩, rfl, hz⟩
-
-variable {I} [ChartedSpace H' (Quiver.Total C)] [T2Space (Quiver.Total C)] {n : ℕ∞}
-
-/-- **Smooth cutoff functions of proper étale groupoids.** A groupoid whose objects form a
-Hausdorff σ-compact finite-dimensional real manifold, whose total arrows form a Hausdorff manifold,
-whose source and target are `C^n` local diffeomorphisms, and whose source-target map is proper, has
-a `C^n` cutoff function. -/
-theorem exists_isCutoff_contMDiff
-    (hp : IsProperMap fun a : Quiver.Total C ↦ (a.left, a.right))
-    (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
-    (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C)) :
-    ∃ c : C → ℝ, IsCutoff c ∧ CMDiff n c := by
-  have : LocallyCompactSpace C := Manifold.locallyCompact_of_finiteDimensional I
-  have hs' := hs.isLocalHomeomorph
-  have ht' := ht.isLocalHomeomorph
-  obtain ⟨β, hβs, hβ0, hβK, hpos⟩ := exists_contMDiff_nonneg_isCompact_preimage_inter I hp hs' ht'
-  refine ⟨_, isCutoff_div_finsum hs' ht'.continuous hβ0 hβK hpos,
-    (hβs.of_le (by simp)).div₀ (fun x₀ ↦ ?_) fun x ↦ (finsum_mem_pos hs' hβ0 hβK (hpos x)).ne'⟩
-  -- Near `x₀` the sum is a finite sum of `β` composed with the target and local inverses of the
-  -- source.
-  have hf (K : Set C) (hK : IsCompact K) :
-      IsCompact (Quiver.Total.left ⁻¹' K ∩ tsupport (β ∘ Quiver.Total.right)) :=
-    (hβK hK).of_isClosed_subset ((hK.isClosed.preimage hs'.continuous).inter (isClosed_tsupport _))
-      (inter_subset_inter_right _ (tsupport_comp_subset_preimage β ht'.continuous))
-  obtain ⟨F, hF, hev⟩ := hs'.eventually_finsum_mem_preimage_singleton_eq_sum
-    (f := β ∘ Quiver.Total.right) hf (σ := fun a ↦ (hs a).localInverse)
-    (fun a ↦ (hs a).continuousAt_localInverse)
-    (fun a ↦ (hs a).localInverse_left_inv (hs a).localInverse_mem_target)
-    (fun a ↦ (hs a).localInverse_eventuallyEq_right) x₀
-  refine (ContMDiffAt.sum fun a ha ↦ ?_).congr_of_eventuallyEq hev
-  rw [← hF a ha]
-  exact (hβs.of_le (by simp)).contMDiffAt.comp _
-    (ht.contMDiff.contMDiffAt.comp _ (hs a).contMDiffAt_localInverse)
-
-end Quiver
 
 end TauCeti
