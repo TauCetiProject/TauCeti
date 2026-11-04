@@ -31,8 +31,11 @@ open Fin
 
 namespace AlternatingMap
 
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {n : ℕ}
+variable {R M N : Type*} {n : ℕ}
+
+section CommSemiring
+
+variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- An alternating map in at least one argument is determined by its interior products. -/
 theorem curryLeft_injective :
@@ -43,7 +46,8 @@ theorem curryLeft_injective :
   rwa [curryLeft_apply_apply, curryLeft_apply_apply, Matrix.vecCons, cons_self_tail] at hv
 
 /-- Interior products anticommute: exchanging the first two arguments changes the sign. -/
-theorem curryLeft_curryLeft_eq_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (x y : M) :
+theorem curryLeft_curryLeft_eq_neg {N : Type*} [AddCommGroup N] [Module R N]
+    (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (x y : M) :
     (f.curryLeft x).curryLeft y = -(f.curryLeft y).curryLeft x := by
   ext r
   simp only [curryLeft_apply_apply, neg_apply]
@@ -55,6 +59,10 @@ theorem curryLeft_curryLeft_eq_neg (f : M [⋀^Fin (n + 2)]→ₗ[R] N) (x y : M
   · simp
   · rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one k)]
     simp
+
+end CommSemiring
+
+variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- A linear family `g` of alternating maps in `n + 1` arguments, each vanishing when its first
 argument equals the parameter, assembles into an alternating map in `n + 2` arguments whose first

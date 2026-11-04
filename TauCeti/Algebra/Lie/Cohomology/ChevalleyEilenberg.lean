@@ -296,28 +296,19 @@ theorem cochainComplex_d_succ (n : ℕ) :
     (cochainComplex R L M).d n (n + 1) = ModuleCat.ofHom (d R L M n) := by
   simp [cochainComplex]
 
-/-- The `n`-th Lie algebra cohomology of `L` with coefficients in `M`. -/
-noncomputable def cohomology (n : ℕ) : ModuleCat R :=
+/-- The `n`-th Lie algebra cohomology of `L` with coefficients in `M`, the homology of the
+Chevalley–Eilenberg complex in degree `n`. -/
+noncomputable abbrev cohomology (n : ℕ) : ModuleCat R :=
   (cochainComplex R L M).homology n
 
 /-! ### Comparison with the low-degree cochains -/
 
 omit [LieRingModule L M] [LieModule R L M] in
 /-- One-cochains are linear maps. -/
-def oneCochainEquiv : (L [⋀^Fin 1]→ₗ[R] M) ≃ₗ[R] oneCochain R L M where
-  toFun ω :=
-    { toFun x := ω ![x]
-      map_add' x y := ω.map_vecCons_add _ x y
-      map_smul' c x := ω.map_vecCons_smul _ c x }
-  invFun := ofSubsingleton R L M 0
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv ω := by
-    ext v
-    simpa using congrArg ω (funext fun i ↦ by fin_cases i; rfl)
-  right_inv f := by
-    ext x
-    simp
+def oneCochainEquiv : (L [⋀^Fin 1]→ₗ[R] M) ≃ₗ[R] oneCochain R L M :=
+  { (ofSubsingleton R L M 0).symm with
+    map_add' := fun _ _ ↦ rfl
+    map_smul' := fun _ _ ↦ rfl }
 
 variable {R L M}
 
@@ -325,7 +316,8 @@ omit [LieRingModule L M] [LieModule R L M] in
 /-- The linear map attached to a one-cochain is its value on one-element tuples. -/
 @[simp]
 theorem oneCochainEquiv_apply (ω : L [⋀^Fin 1]→ₗ[R] M) (x : L) :
-    oneCochainEquiv R L M ω x = ω ![x] := (rfl)
+    oneCochainEquiv R L M ω x = ω ![x] :=
+  congrArg ω (funext fun i ↦ by fin_cases i; rfl)
 
 omit [LieRingModule L M] [LieModule R L M] in
 /-- The one-cochain attached to a linear map evaluates it on the unique entry. -/

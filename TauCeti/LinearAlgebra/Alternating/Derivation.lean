@@ -37,7 +37,7 @@ open Function
 namespace LinearMap
 
 variable {R M N N₂ ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-  [AddCommGroup N] [Module R N] [AddCommGroup N₂] [Module R N₂] [Fintype ι] [DecidableEq ι]
+  [AddCommMonoid N] [Module R N] [AddCommMonoid N₂] [Module R N₂] [Fintype ι] [DecidableEq ι]
 
 /-- The sum, over all arguments, of an alternating map with `f` applied to that argument vanishes
 on tuples with two equal entries. -/
@@ -102,7 +102,8 @@ theorem alternatingDerivation_add (f g : M →ₗ[R] M) :
 
 /-- The derivation is compatible with subtraction of endomorphisms. -/
 @[simp]
-theorem alternatingDerivation_sub {M : Type*} [AddCommGroup M] [Module R M] (f g : M →ₗ[R] M) :
+theorem alternatingDerivation_sub {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N]
+    [Module R N] (f g : M →ₗ[R] M) :
     (f - g).alternatingDerivation (N := N) (ι := ι) =
       f.alternatingDerivation - g.alternatingDerivation := by
   ext ω v
@@ -118,8 +119,8 @@ theorem alternatingDerivation_compAlternatingMap (f : M →ₗ[R] M) (g : N →�
 
 /-- The commutator of the derivations induced by two endomorphisms is induced by their commutator,
 taken in the opposite order since the endomorphisms act on the arguments. -/
-theorem alternatingDerivation_alternatingDerivation_sub (f g : M →ₗ[R] M)
-    (ω : M [⋀^ι]→ₗ[R] N) :
+theorem alternatingDerivation_alternatingDerivation_sub {N : Type*} [AddCommGroup N] [Module R N]
+    (f g : M →ₗ[R] M) (ω : M [⋀^ι]→ₗ[R] N) :
     f.alternatingDerivation (g.alternatingDerivation ω) -
         g.alternatingDerivation (f.alternatingDerivation ω) =
       (g ∘ₗ f).alternatingDerivation ω - (f ∘ₗ g).alternatingDerivation ω := by
