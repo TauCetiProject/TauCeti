@@ -14,6 +14,7 @@ import TauCeti.Analysis.Analytic.Submanifold.Product
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Topology.Algebra.Module.Equiv.Fin
+import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
 # Products, analytic isomorphisms, embeddings, and induced atlases for analytic submanifolds
@@ -180,6 +181,8 @@ theorem isMAnalyticSubmanifold_image (Φ : OpenPartialHomeomorph M N)
     hs.image_extChartAt hxs
   have hC_I_eq : ⇑C_I = e ∘ extChartAt I x := by ext y; simp [C_I, extChartAt]
   have hC_J_eq : ⇑C_J = e' ∘ extChartAt J (Φ x) := by ext y; simp [C_J, extChartAt]
+  have hC_I_src : (extChartAt I x).source = C_I.source := by simp [C_I]
+  have hC_J_src : (extChartAt J (Φ x)).source = C_J.source := by simp [C_J]
   have hopen_S : (((e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source)) ∩ Ψ.source).Nonempty :=
     ⟨C_I x, ⟨x, ⟨hxs, mem_extChartAt_source x⟩, by rw [← hC_I_eq]⟩, hxΨ⟩
   have himg := hS_I.image_openPartialHomeomorph hΨ hΨ_symm hopen_S
@@ -196,28 +199,9 @@ theorem isMAnalyticSubmanifold_image (Φ : OpenPartialHomeomorph M N)
   · have heq : Ψ '' (((e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source)) ∩ Ψ.source) =
         Ψ.target ∩ (e' ∘ extChartAt J (Φ x)) ''
           ((Φ '' (s ∩ Φ.source)) ∩ (extChartAt J (Φ x)).source) := by
-      ext w
-      constructor
-      · rintro ⟨v, ⟨⟨y, ⟨hys, hysrc⟩, rfl⟩, hvΨ⟩, rfl⟩
-        have hyCI : y ∈ C_I.source := by simpa [C_I, extChartAt] using hysrc
-        have hv_eq : C_I y = (e ∘ extChartAt I x) y := by rw [hC_I_eq]
-        rw [← hv_eq] at hvΨ ⊢
-        have hyΦ : y ∈ Φ.source := by simpa [C_I.left_inv hyCI] using hvΨ.2.1
-        have hyCJ : Φ y ∈ C_J.source := by simpa [C_I.left_inv hyCI] using hvΨ.2.2
-        refine ⟨Ψ.map_source hvΨ, Φ y,
-          ⟨⟨y, ⟨hys, hyΦ⟩, rfl⟩, by simpa [C_J, extChartAt] using hyCJ⟩, ?_⟩
-        simp [Ψ, C_I.left_inv hyCI, hC_J_eq]
-      · rintro ⟨hwt, _, ⟨⟨y, ⟨hys, hyΦ⟩, rfl⟩, hyJsrc⟩, rfl⟩
-        have hyCJ : Φ y ∈ C_J.source := by simpa [C_J, extChartAt] using hyJsrc
-        have hwt' : C_J (Φ y) ∈ Ψ.target := by rwa [hC_J_eq]
-        have hyCI : y ∈ C_I.source := by
-          simpa [Ψ, C_J.left_inv hyCJ, Φ.left_inv hyΦ] using hwt'.2
-        have hyCJT : C_I y ∈ Ψ.source :=
-          ⟨C_I.map_source hyCI, by simpa [C_I.left_inv hyCI] using hyΦ,
-            by simpa [C_I.left_inv hyCI] using hyCJ⟩
-        refine ⟨C_I y, ⟨⟨y, ⟨hys, by simpa [C_I, extChartAt] using hyCI⟩, by rw [← hC_I_eq]⟩,
-          hyCJT⟩, ?_⟩
-        simp [Ψ, C_I.left_inv hyCI, hC_J_eq]
+      rw [← hC_I_eq, ← hC_J_eq, hC_I_src, hC_J_src, inter_comm _ Ψ.source, inter_comm s,
+        C_I.image_symm_trans_source_inter (Φ.trans C_J) s, Φ.image_trans_source_inter C_J s,
+        inter_comm C_J.source, inter_comm Φ.source]
     rwa [heq] at himg
 
 end OpenPartialHomeomorph

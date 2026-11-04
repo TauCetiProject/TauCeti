@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Analytic.Submanifold.Transport
 public import TauCeti.Analysis.Analytic.Submanifold.ZeroDimensional
 public import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
 # Analytic submanifolds of analytic manifolds
@@ -249,20 +250,13 @@ theorem IsMAnalyticSubmanifold.inter {e : E ≃L[𝕜] Fin n → 𝕜}
   have hC_coe : ⇑C = e ∘ extChartAt I x := by
     ext y
     simp [C, extChartAt]
+  have hC_src : (extChartAt I x).source = C.source := by simp [C]
   let V := C.target ∩ C.symm ⁻¹' u
   have hV : IsOpen V := C.continuousOn_symm.isOpen_inter_preimage C.open_target hu
   have heq : (e ∘ extChartAt I x) '' ((s ∩ u) ∩ (extChartAt I x).source) =
       ((e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source)) ∩ V := by
-    rw [← hC_coe]
-    ext w
-    constructor
-    · rintro ⟨y, ⟨⟨hys, hyu⟩, hysrc⟩, rfl⟩
-      have hyC : y ∈ C.source := by simpa [C, extChartAt] using hysrc
-      exact ⟨⟨y, ⟨hys, hysrc⟩, rfl⟩, C.map_source hyC, by simpa [C.left_inv hyC] using hyu⟩
-    · rintro ⟨⟨y, ⟨hys, hysrc⟩, rfl⟩, _, hyu⟩
-      have hyC : y ∈ C.source := by simpa [C, extChartAt] using hysrc
-      rw [mem_preimage, C.left_inv hyC] at hyu
-      exact ⟨y, ⟨⟨hys, hyu⟩, hysrc⟩, rfl⟩
+    rw [← hC_coe, hC_src, inter_comm (s ∩ u), C.image_source_inter_eq',
+      inter_comm s C.source, C.image_source_inter_eq', preimage_inter, inter_inter_distrib_left]
   rw [heq]
   have hxC : x ∈ C.source := by simp [C]
   exact (hs.image_extChartAt hxs).inter hV
@@ -292,16 +286,9 @@ theorem _root_.IsOpen.isMAnalyticSubmanifold {e : E ≃L[𝕜] Fin n → 𝕜}
   have hC_coe : ⇑C = e ∘ extChartAt I x := by
     ext y
     simp [C, extChartAt]
+  have hC_src : (extChartAt I x).source = C.source := by simp [C]
   have heq : (e ∘ extChartAt I x) '' (u ∩ (extChartAt I x).source) = C.target ∩ C.symm ⁻¹' u := by
-    rw [← hC_coe]
-    ext w
-    constructor
-    · rintro ⟨y, ⟨hyu, hyext⟩, rfl⟩
-      have hyC : y ∈ C.source := by simpa [C, extChartAt] using hyext
-      exact ⟨C.map_source hyC, by simpa [C.left_inv hyC] using hyu⟩
-    · rintro ⟨hwt, hwu⟩
-      have hyC : C.symm w ∈ C.source := C.map_target hwt
-      exact ⟨C.symm w, ⟨hwu, by simpa [C, extChartAt] using hyC⟩, C.right_inv hwt⟩
+    rw [← hC_coe, hC_src, inter_comm, C.image_source_inter_eq']
   rw [heq]
   have hxC : x ∈ C.source := by simp [C]
   exact (C.continuousOn_symm.isOpen_inter_preimage C.open_target hu).isAnalyticSubmanifold
@@ -357,24 +344,13 @@ private theorem isAnalyticSubmanifold_image_extend_of_local {e : E ≃L[𝕜] Fi
     exact hxC
   have hSU' : IsAnalyticSubmanifold d (U ∩ Φ '' (s ∩ φ.source)) := by rwa [hΦ_coe]
   have himg : Ψ '' ((U ∩ Φ '' (s ∩ φ.source)) ∩ Ψ.source) = (C '' (s ∩ c.source)) ∩ Ψ.target := by
-    ext w
-    constructor
-    · rintro ⟨v, ⟨⟨_, y, ⟨hys, hyφ⟩, rfl⟩, hvΨ⟩, rfl⟩
-      have hyΦ : y ∈ Φ.source := by simpa [Φ] using hyφ
-      have hyC : y ∈ C.source := by
-        have h1 := hvΨ.1.2
-        rwa [OpenPartialHomeomorph.symm_symm, mem_preimage, Φ.left_inv hyΦ] at h1
-      refine ⟨⟨y, ⟨hys, by simpa [C] using hyC⟩, ?_⟩, Ψ.map_source hvΨ⟩
-      simp [Ψ, Φ.left_inv hyΦ]
-    · rintro ⟨⟨y, ⟨hys, hyc⟩, rfl⟩, hwt⟩
-      have hyC : y ∈ C.source := by simpa [C] using hyc
-      have hsrc : Ψ.symm (C y) ∈ Ψ.source := Ψ.map_target hwt
-      have hyΦ : y ∈ Φ.source := by
-        have h1 := (htarget hwt).2
-        rwa [OpenPartialHomeomorph.symm_symm, mem_preimage, C.left_inv hyC] at h1
-      have hsymm : Ψ.symm (C y) = Φ y := by simp [Ψ, C.left_inv hyC]
-      refine ⟨Φ y, ⟨⟨hsymm ▸ hsrc.2, y, ⟨hys, by simpa [Φ] using hyΦ⟩, rfl⟩, hsymm ▸ hsrc⟩, ?_⟩
-      simpa [hsymm] using Ψ.right_inv hwt
+    have hsrc : (U ∩ Φ '' (s ∩ φ.source)) ∩ Ψ.source = Ψ.source ∩ Φ '' (Φ.source ∩ s) := by
+      simp only [Ψ, OpenPartialHomeomorph.restrOpen_source, Φ,
+        OpenPartialHomeomorph.extendTrans_source]
+      rw [inter_comm s, inter_comm (U ∩ _), inter_assoc, ← inter_assoc U, inter_self, ← inter_assoc]
+    have hC_src : C.source = c.source := by simp [C]
+    rw [hsrc, Φ.image_restrOpen_symm_trans_source_inter C hU s, hC_src,
+      inter_comm c.source, inter_comm]
   refine ⟨Ψ.target, Ψ.open_target, ?_, ?_⟩
   · have hval : Ψ (Φ x) = C x := by simp [Ψ, Φ.left_inv hxΦ]
     exact hval ▸ Ψ.map_source hxΨ
@@ -479,6 +455,7 @@ theorem isMAnalyticSubmanifold_of_locally_isMAnalyticSubmanifold {e : E ≃L[�
   have hC_coe : ⇑C = e ∘ extChartAt I x := by
     ext y
     simp [C, extChartAt]
+  have hC_src : (extChartAt I x).source = C.source := by simp [C]
   let U := C.target ∩ C.symm ⁻¹' u
   have hU : IsOpen U := C.continuousOn_symm.isOpen_inter_preimage C.open_target hu
   have hxC : x ∈ C.source := by simp [C]
@@ -493,16 +470,9 @@ theorem isMAnalyticSubmanifold_of_locally_isMAnalyticSubmanifold {e : E ≃L[�
     rw [← Function.comp_apply (f := e), ← hC_coe, C.right_inv hwt]
   have hinter : U ∩ (e ∘ extChartAt I x) '' (s ∩ (extChartAt I x).source) =
       (e ∘ extChartAt I x) '' ((s ∩ u) ∩ (extChartAt I x).source) := by
-    rw [← hC_coe]
-    ext w
-    constructor
-    · rintro ⟨⟨_, hwu⟩, y, ⟨hys, hyext⟩, rfl⟩
-      have hyC : y ∈ C.source := by simpa [C, extChartAt] using hyext
-      rw [mem_preimage, C.left_inv hyC] at hwu
-      exact ⟨y, ⟨⟨hys, hwu⟩, hyext⟩, rfl⟩
-    · rintro ⟨y, ⟨⟨hys, hyu⟩, hyext⟩, rfl⟩
-      have hyC : y ∈ C.source := by simpa [C, extChartAt] using hyext
-      exact ⟨⟨C.map_source hyC, by simpa [C.left_inv hyC] using hyu⟩, y, ⟨hys, hyext⟩, rfl⟩
+    rw [← hC_coe, hC_src, inter_comm s, C.image_source_inter_eq',
+      inter_comm (s ∩ u), C.image_source_inter_eq', preimage_inter, inter_comm U,
+      ← inter_inter_distrib_left]
   exact ⟨U, hU, hxU, hUsub, hinter.symm ▸ hsu.image_extChartAt ⟨hxs, hxu⟩⟩
 
 /-- A subset of a boundaryless `C^ω` manifold is a `d`-dimensional analytic submanifold if and only
