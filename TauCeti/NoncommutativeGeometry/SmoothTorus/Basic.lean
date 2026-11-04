@@ -82,6 +82,10 @@ namespace SmoothNoncommutativeTorus
 def weight (x : ℤ × ℤ) : ℝ :=
   (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|)
 
+/-- The product formula for the rapid-decay weight. -/
+theorem weight_def (x : ℤ × ℤ) :
+    weight x = (1 + |(x.1 : ℝ)|) * (1 + |(x.2 : ℝ)|) := (rfl)
+
 theorem one_le_weight (x : ℤ × ℤ) : 1 ≤ weight x :=
   one_le_mul_of_one_le_of_one_le (le_add_of_nonneg_right (abs_nonneg _))
     (le_add_of_nonneg_right (abs_nonneg _))
@@ -119,6 +123,10 @@ theorem summable_inv_weight_sq : Summable fun x : ℤ × ℤ ↦ (weight x ^ 2)�
 every `k`. -/
 def IsRapidDecay (a : ℤ × ℤ → ℂ) : Prop :=
   ∀ k : ℕ, ∃ C, ∀ x, ‖a x‖ * weight x ^ k ≤ C
+
+/-- Rapid decay is boundedness of every weighted coefficient function. -/
+theorem isRapidDecay_iff (a : ℤ × ℤ → ℂ) :
+    IsRapidDecay a ↔ ∀ k : ℕ, ∃ C, ∀ x, ‖a x‖ * weight x ^ k ≤ C := Iff.rfl
 
 namespace IsRapidDecay
 
