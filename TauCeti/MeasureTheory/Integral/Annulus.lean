@@ -18,6 +18,10 @@ integrable function over `A` is the sum of its integrals over `A` minus the open
 (`TauCeti.setIntegral_diff_ball_add_annulus_add_ball`). The first two pieces overlap only in the
 sphere of radius `r`, which is null. This removes a disc from a region so that an annulus formula
 applies to the removed part.
+
+The closed annulus `a ≤ ‖w - c‖ ≤ b` in a proper space is compact (`TauCeti.isCompact_annulus`),
+so a function continuous on it is integrable on it for any measure that is finite on compact sets
+(`ContinuousOn.integrableOn_annulus`).
 -/
 
 public section
@@ -25,6 +29,29 @@ public section
 open MeasureTheory Metric Set
 
 namespace TauCeti
+
+section Compact
+
+variable {G : Type*} [SeminormedAddCommGroup G] [ProperSpace G]
+
+/-- The closed annulus `a ≤ ‖w - c‖ ≤ b` in a proper space is compact. -/
+theorem isCompact_annulus (c : G) (a b : ℝ) : IsCompact {w : G | a ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ b} := by
+  have hc : Continuous fun w : G ↦ ‖w - c‖ := continuous_norm.comp (continuous_sub_right c)
+  refine (isCompact_closedBall c b).of_isClosed_subset
+    ((isClosed_le continuous_const hc).inter (isClosed_le hc continuous_const)) fun w hw ↦ ?_
+  rw [mem_closedBall, dist_eq_norm]
+  exact hw.2
+
+/-- A function continuous on the closed annulus `a ≤ ‖w - c‖ ≤ b` in a proper space is integrable
+on it for any measure that is finite on compact sets. -/
+theorem _root_.ContinuousOn.integrableOn_annulus [T2Space G] [MeasurableSpace G]
+    [OpensMeasurableSpace G] {F : Type*} [NormedAddCommGroup F] {μ : Measure G}
+    [IsFiniteMeasureOnCompacts μ] {f : G → F} {c : G} {a b : ℝ}
+    (hf : ContinuousOn f {w | a ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ b}) :
+    IntegrableOn f {w | a ≤ ‖w - c‖ ∧ ‖w - c‖ ≤ b} μ :=
+  hf.integrableOn_compact (isCompact_annulus c a b)
+
+end Compact
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [Nontrivial E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]

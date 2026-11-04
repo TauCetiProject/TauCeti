@@ -149,6 +149,18 @@ private theorem radii_bounds {R : ℝ} (hR : 0 ≤ R) :
   have h₂ : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by positivity)
   exact ⟨by positivity, by linarith, by linarith⟩
 
+/-- A point on the circle of radius `s ≥ 0` about one of the punctures `0`, `1` lies at distance
+`s` from that puncture and at distance at least `|s - 1|` from the other one. -/
+private theorem norm_circleMap_bounds {s : ℝ} (hs : 0 ≤ s) (θ : ℝ) :
+    ‖circleMap 0 s θ‖ = s ∧ |s - 1| ≤ ‖circleMap 0 s θ - 1‖ ∧
+      ‖circleMap 1 s θ - 1‖ = s ∧ |s - 1| ≤ ‖circleMap 1 s θ‖ := by
+  have h₀ : ‖circleMap 0 s θ‖ = s := by rw [norm_circleMap_zero, abs_of_nonneg hs]
+  have h₁ : ‖circleMap 1 s θ - 1‖ = s := by rw [circleMap_sub_center, h₀]
+  refine ⟨h₀, ?_, h₁, ?_⟩
+  · simpa [h₀] using abs_norm_sub_norm_le (circleMap 0 s θ) 1
+  · have h := abs_norm_sub_norm_le (circleMap 1 s θ - 1) (-1)
+    rwa [h₁, norm_neg, norm_one, sub_neg_eq_add, sub_add_cancel] at h
+
 /-- **The end loops as circles.** For `R ≥ 0` and a map `v` that is `C²` on `S`, the loop area
 of the end loop of `v` at the end `q` is minus half the circle term of `v` on the circle of radius
 `r = exp (-2πR) / 2` about `0` or `1`, or of radius `ρ = 2 exp (2πR)` about `0`. -/
@@ -180,20 +192,50 @@ private theorem loopArea_cylindricalEndLift_eq (ω : SymplecticForm V) {v : ℂ 
   refine ⟨?_, ?_, ?_⟩
   · simp only [h₀]
     refine ω.loopArea_circleMap_sub_two_pi_mul 0 r 0 (hdiff fun θ ↦ ?_)
-    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 hr.le θ)
-    rw [sub_zero] at h
-    exact ⟨by linarith,
-      by linarith [norm_le_norm_add_norm_sub (circleMap 0 r θ) 1, norm_one (α := ℂ)]⟩
+    obtain ⟨h, h', -⟩ := norm_circleMap_bounds hr.le θ
+    exact ⟨by linarith, by linarith [neg_abs_le (r - 1)]⟩
   · simp only [h₁]
     refine ω.loopArea_circleMap_sub_two_pi_mul 1 r π (hdiff fun θ ↦ ?_)
-    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 hr.le θ)
-    exact ⟨by linarith [norm_le_norm_add_norm_sub (circleMap 1 r θ) 1, norm_one (α := ℂ)],
-      by linarith⟩
+    obtain ⟨-, -, h, h'⟩ := norm_circleMap_bounds hr.le θ
+    exact ⟨by linarith [neg_abs_le (r - 1)], by linarith⟩
   · simp only [hinf]
     refine ω.loopArea_circleMap_sub_two_pi_mul 0 ρ 0 (hdiff fun θ ↦ ?_)
-    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 (by linarith : 0 ≤ ρ) θ)
-    rw [sub_zero] at h
-    exact ⟨by linarith, by linarith [norm_sub_norm_le (circleMap 0 ρ θ) 1, norm_one (α := ℂ)]⟩
+    obtain ⟨h, h', -⟩ := norm_circleMap_bounds (by linarith : 0 ≤ ρ) θ
+    exact ⟨by linarith, by linarith [le_abs_self (ρ - 1)]⟩
+
+/-- **Cutting the map off near `1`.** For `0 < r ≤ 1 / 2`, `2 ≤ ρ` and a map `v` that is `C²` on
+`S`, there is a map that is `C²` away from `0`, vanishes near every point at distance less than
+`r / 2` from `1`, and agrees with `v` near every point at distance at least `r` from `1`. Its
+circle terms on the circles of radius `r` about `0` and `1` and of radius `ρ` about `0` are those
+of `v`, and its circle term on the circle of radius `r / 4` about `1` vanishes. -/
+private theorem exists_cutoff_circleTerm (ω : SymplecticForm V) {v : ℂ → V}
+    (hv : ∀ w : ℂ, w ≠ 0 → w ≠ 1 → ContDiffAt ℝ 2 v w) {r ρ : ℝ} (hr : 0 < r) (hr₂ : r ≤ 1 / 2)
+    (hρ : 2 ≤ ρ) :
+    ∃ vc : ℂ → V, (∀ w, w ≠ 0 → ContDiffAt ℝ 2 vc w) ∧ (∀ w, ‖w - 1‖ < r / 2 → vc =ᶠ[𝓝 w] 0) ∧
+      (∀ w, r ≤ ‖w - 1‖ → vc =ᶠ[𝓝 w] v) ∧ circleTerm ω vc 0 r = circleTerm ω v 0 r ∧
+      circleTerm ω vc 0 ρ = circleTerm ω v 0 ρ ∧ circleTerm ω vc 1 r = circleTerm ω v 1 r ∧
+      circleTerm ω vc 1 (r / 4) = 0 := by
+  obtain ⟨vc, hvc', hvc₀', hvcv'⟩ :=
+    exists_contDiffAt_cutoff_ball (n := 2) (b := 3 * r / 4) v 1 (by positivity : 0 < r / 2)
+      (by linarith)
+  have hvc₀ (w : ℂ) (hw : ‖w - 1‖ < r / 2) : vc =ᶠ[𝓝 w] 0 := hvc₀' w (by rwa [dist_eq_norm])
+  have hvcv (w : ℂ) (hw : 3 * r / 4 < ‖w - 1‖) : vc =ᶠ[𝓝 w] v :=
+    hvcv' w (by rwa [dist_eq_norm])
+  have hvceq {c : ℂ} {s : ℝ} (hc : ∀ θ, 3 * r / 4 < ‖circleMap c s θ - 1‖) :
+      circleTerm ω vc c s = circleTerm ω v c s :=
+    circleTerm_congr ω fun θ ↦ (hvcv _ (hc θ)).eq_of_nhds
+  refine ⟨vc, fun w hw ↦ ?_, hvc₀, fun w hw ↦ hvcv w (by linarith), hvceq fun θ ↦ ?_,
+    hvceq fun θ ↦ ?_, hvceq fun θ ↦ ?_, ?_⟩
+  · by_cases hw₁ : w = 1
+    · subst hw₁
+      exact contDiffAt_const.congr_of_eventuallyEq (hvc₀ 1 (by simp; linarith))
+    · exact hvc' w (hv w hw hw₁)
+  · linarith [(norm_circleMap_bounds hr.le θ).2.1, neg_abs_le (r - 1)]
+  · linarith [(norm_circleMap_bounds (by linarith : 0 ≤ ρ) θ).2.1, le_abs_self (ρ - 1)]
+  · linarith [(norm_circleMap_bounds hr.le θ).2.2.1]
+  · have hz (θ : ℝ) : vc (circleMap 1 (r / 4) θ) = 0 := (hvc₀ _ (by
+      linarith [(norm_circleMap_bounds (by positivity : 0 ≤ r / 4) θ).2.2.1])).eq_of_nhds
+    simp [circleTerm, hz]
 
 variable [FiniteDimensional ℝ V]
 
@@ -212,36 +254,7 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
     simp [r, ρ]
   -- Cut `v` off near `1`; the cut-off map agrees with `v` on the three boundary circles of the
   -- truncation and vanishes on the circle of radius `r / 4` about `1`.
-  obtain ⟨vc, hvc', hvc₀', hvcv'⟩ :=
-    exists_contDiffAt_cutoff_ball (n := 2) (b := 3 * r / 4) v 1 (by positivity : 0 < r / 2)
-      (by linarith)
-  have hvc₀ (w : ℂ) (hw : ‖w - 1‖ < r / 2) : vc =ᶠ[𝓝 w] 0 := hvc₀' w (by rwa [dist_eq_norm])
-  have hvcv (w : ℂ) (hw : 3 * r / 4 < ‖w - 1‖) : vc =ᶠ[𝓝 w] v :=
-    hvcv' w (by rwa [dist_eq_norm])
-  have hvc (w : ℂ) (hw : w ≠ 0) : ContDiffAt ℝ 2 vc w := by
-    by_cases hw₁ : w = 1
-    · subst hw₁
-      exact contDiffAt_const.congr_of_eventuallyEq (hvc₀ 1 (by simp; linarith))
-    · exact hvc' w (hv w hw hw₁)
-  have hvceq {c : ℂ} {s : ℝ} (hc : ∀ θ, 3 * r / 4 < ‖circleMap c s θ - 1‖) :
-      circleTerm ω vc c s = circleTerm ω v c s :=
-    circleTerm_congr ω fun θ ↦ (hvcv _ (hc θ)).eq_of_nhds
-  have hC₀ : circleTerm ω vc 0 r = circleTerm ω v 0 r := hvceq fun θ ↦ by
-    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 hr.le θ)
-    rw [sub_zero] at h
-    linarith [norm_le_norm_add_norm_sub (circleMap 0 r θ) 1, norm_one (α := ℂ)]
-  have hCρ : circleTerm ω vc 0 ρ = circleTerm ω v 0 ρ := hvceq fun θ ↦ by
-    have h := mem_sphere_iff_norm.1 (circleMap_mem_sphere 0 (by linarith : 0 ≤ ρ) θ)
-    rw [sub_zero] at h
-    linarith [norm_sub_norm_le (circleMap 0 ρ θ) 1, norm_one (α := ℂ)]
-  have hC₁ : circleTerm ω vc 1 r = circleTerm ω v 1 r := hvceq fun θ ↦ by
-    rw [mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 hr.le θ)]
-    linarith
-  have hCin : circleTerm ω vc 1 (r / 4) = 0 := by
-    have hz (θ : ℝ) : vc (circleMap 1 (r / 4) θ) = 0 :=
-      (hvc₀ _ (by
-        rw [mem_sphere_iff_norm.1 (circleMap_mem_sphere 1 (by positivity) θ)]; linarith)).eq_of_nhds
-    simp [circleTerm, hz]
+  obtain ⟨vc, hvc, hvc₀, hvcv, hC₀, hCρ, hC₁, hCin⟩ := exists_cutoff_circleTerm ω hv hr hr₂ hρ
   -- Stokes' formula on the annulus `r ≤ ‖w‖ ≤ ρ` and on the annulus `r / 4 ≤ ‖w - 1‖ ≤ r`.
   set f : ℂ → ℝ := fun w ↦ ω (fderiv ℝ vc w 1) (fderiv ℝ vc w Complex.I)
   have hne {w : ℂ} (hw : r ≤ ‖w - 0‖) : w ≠ 0 := norm_pos_iff.1 (by rw [← sub_zero w]; linarith)
@@ -256,13 +269,7 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
   -- The area density of the cut-off map is integrable on the annulus about `0`, vanishes on the
   -- disc of radius `r / 4` about `1`, and is that of `v` on the truncation.
   have hfA : IntegrableOn f {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} := by
-    have hAc : IsCompact {w : ℂ | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} :=
-      Metric.isCompact_of_isClosed_isBounded
-        ((isClosed_le continuous_const (continuous_norm.comp (continuous_sub_right 0))).inter
-          (isClosed_le (continuous_norm.comp (continuous_sub_right 0)) continuous_const))
-        ((Metric.isBounded_closedBall (x := (0 : ℂ)) (r := ρ)).subset fun w hw ↦ by
-          simpa [dist_eq_norm] using hw.2)
-    refine ContinuousOn.integrableOn_compact hAc ?_
+    refine ContinuousOn.integrableOn_annulus ?_
     have hdf {w : ℂ} (hw : r ≤ ‖w - 0‖) : ContinuousAt (fderiv ℝ vc) w :=
       ((hvc w (hne hw)).fderiv_right (m := 1) (by norm_num)).continuousAt
     exact ω.continuousOn_apply_comp
@@ -275,7 +282,7 @@ private theorem integral_truncation_complex (ω : SymplecticForm V) {v : ℂ →
   have htrunc : ∫ w in truncation R, ω (fderiv ℝ v w 1) (fderiv ℝ v w Complex.I) =
       ∫ w in truncation R, f w := by
     refine setIntegral_congr_fun (isCompact_truncation R).isClosed.measurableSet fun w hw ↦ ?_
-    simp only [f, (hvcv w (by linarith [((hT w).1 hw).1.2])).fderiv_eq (𝕜 := ℝ)]
+    simp only [f, (hvcv w ((hT w).1 hw).1.2).fderiv_eq (𝕜 := ℝ)]
   -- Split the annulus about `0` into the truncation, the annulus `r / 4 ≤ ‖w - 1‖ ≤ r` and the
   -- disc of radius `r / 4` about `1`.
   have hsub : Metric.closedBall (1 : ℂ) r ⊆ {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ ρ} := fun w hw ↦ by
