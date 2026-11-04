@@ -269,7 +269,11 @@ theorem coefficientCochainComplexMap_id :
   ext
   simp
 
-/-- Coefficient maps preserve composition of morphisms of DG right modules. -/
+/-- Coefficient maps preserve composition of morphisms of DG right modules.
+
+The simp rule combines composites of coefficient maps into the coefficient map of the composite
+morphism of DG right modules. -/
+@[simp ←]
 theorem coefficientCochainComplexMap_comp {Q : Type uM} [AddCommGroup Q] [Module R Q]
     [Module Aᵐᵒᵖ Q] [IsScalarTower R Aᵐᵒᵖ Q] {𝒬 : ℤ → Submodule R Q} [DirectSum.Decomposition 𝒬]
     [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒬]
