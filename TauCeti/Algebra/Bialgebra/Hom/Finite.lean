@@ -12,9 +12,9 @@ import TauCeti.RingTheory.WeilRestriction.Finite
 /-!
 # Homomorphisms from finite constant monoid schemes to finite monoid schemes
 
-For a finite affine monoid scheme `G` and a finite constant monoid scheme `A`, the scheme
-of homomorphisms `A → G` is finite. More generally, this holds when the coordinate algebra
-of the source is split finite: the ambient scheme of maps is finite by the split-algebra
+For a finite, finitely presented affine monoid scheme `Spec H` and a split finite monoid
+scheme `Spec G` (for example, a finite constant monoid scheme), the scheme of homomorphisms
+`Spec G → Spec H` is finite. The ambient scheme of maps is finite by the split-algebra
 Weil restriction theorem, and the homomorphism equations define a closed subscheme.
 
 This is a finiteness statement, not a flatness statement. It is used to prove finiteness

@@ -59,6 +59,8 @@ in `T`; the isomorphism is the one that the Yoneda lemma produces.
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_one_tmul`: `homEquiv` is natural in `T`.
 * `TauCeti.Bialgebra.HomAlgebra.instFinitePresentation`: `HomAlgebra R H G` is of finite
   presentation over `R`.
+* `TauCeti.Bialgebra.HomAlgebra.instModuleFinite`: `HomAlgebra R H G` is module-finite over
+  `R` whenever the ambient Weil restriction `WeilRestriction R G (G ⊗[R] H)` is.
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
   compatible with the universal properties.
 
