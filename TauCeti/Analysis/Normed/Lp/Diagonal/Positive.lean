@@ -28,8 +28,9 @@ order (`lp.isLUB_range_diagonalTruncation`, and along `Finset.range n` on `ℓ²
 
 * `lp.isSelfAdjoint_diagonalCLM_iff`: `lp.diagonalCLM d` on `ℓ²` is self-adjoint iff
   `∀ i, star (d i) = d i`.
-* `lp.isPositive_diagonalCLM_iff`, `lp.diagonalCLM_le_diagonalCLM_iff`: characterizations of
-  positivity and the Loewner order on `ℓ²` diagonal operators.
+* `lp.isPositive_diagonalCLM_iff`, `lp.diagonalCLM_le_diagonalCLM_iff`,
+  `lp.isPositive_diagonalCLM_ofAntitone`: characterizations of positivity and the Loewner order on
+  `ℓ²` diagonal operators, and positivity for antitone `ℝ≥0` sequences.
 * `lp.isPositive_diagonalTruncation_iff`, `lp.diagonalTruncation_mono`,
   `lp.diagonalTruncation_le_diagonalCLM`: positivity and monotonicity of finite coordinate
   truncations.
@@ -82,6 +83,12 @@ theorem isPositive_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
       RCLike.conj_eq_iff_im.2 him, inner_self_eq_norm_sq_to_K, hmul, RCLike.smul_re]
     positivity
 
+/-- For any antitone `ℝ≥0`-valued sequence `c`, the diagonal operator `lp.diagonalCLM` of
+`lp.ofAntitone 𝕜 hc` on `ℓ²(ℕ, 𝕜)` is positive. -/
+theorem isPositive_diagonalCLM_ofAntitone {c : ℕ → ℝ≥0} (hc : Antitone c) :
+    (diagonalCLM (p := 2) (ofAntitone 𝕜 hc)).IsPositive :=
+  (isPositive_diagonalCLM_iff _).2 (ofAntitone_apply_nonneg 𝕜 hc)
+
 /-- The Loewner order between diagonal operators on `ℓ²(ι, 𝕜)` is the pointwise order on their
 coefficients. -/
 @[simp]
@@ -109,8 +116,7 @@ in the retained set of coordinates. -/
 theorem diagonalTruncation_mono {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) :
     Monotone (diagonalTruncation (p := 2) d) := fun s t hst ↦ by
   rw [diagonalTruncation_eq_diagonalCLM, diagonalTruncation_eq_diagonalCLM,
-    diagonalCLM_le_diagonalCLM_iff]
-  intro i
+    diagonalCLM_le_diagonalCLM_iff]; intro i
   simp only [coeFn_sum, Finset.sum_apply, lp.coeFn_single, Finset.sum_pi_single]
   by_cases his : i ∈ s
   · simp [his, hst his]
@@ -120,8 +126,7 @@ theorem diagonalTruncation_mono {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) 
 bounded above in the Loewner order by the full diagonal operator. -/
 theorem diagonalTruncation_le_diagonalCLM {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) (s : Finset ι) :
     diagonalTruncation (p := 2) d s ≤ diagonalCLM (p := 2) d := by
-  rw [diagonalTruncation_eq_diagonalCLM, diagonalCLM_le_diagonalCLM_iff]
-  intro i
+  rw [diagonalTruncation_eq_diagonalCLM, diagonalCLM_le_diagonalCLM_iff]; intro i
   simp only [coeFn_sum, Finset.sum_apply, lp.coeFn_single, Finset.sum_pi_single]
   by_cases hi : i ∈ s <;> simp [hi, hd i]
 
@@ -131,18 +136,15 @@ theorem isLUB_range_diagonalTruncation {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 �
     IsLUB (Set.range (diagonalTruncation (p := 2) d)) (diagonalCLM (p := 2) d) := by
   refine ⟨Set.forall_mem_range.2 (diagonalTruncation_le_diagonalCLM hd), fun B hB ↦ ?_⟩
   rw [ContinuousLinearMap.le_def]
-  have hpos (s : Finset ι) : (B - diagonalTruncation (p := 2) d s).IsPositive :=
-    ContinuousLinearMap.le_def.1 (hB ⟨s, rfl⟩)
-  have heval (x : ℓ^2(ι, 𝕜)) :
-      Tendsto (fun s ↦ (B - diagonalTruncation (p := 2) d s) x) atTop
-        (𝓝 ((B - diagonalCLM (p := 2) d) x)) :=
+  have hpos (s : Finset ι) := ContinuousLinearMap.le_def.1 (hB ⟨s, rfl⟩)
+  have heval (x : ℓ^2(ι, 𝕜)) : Tendsto (fun s ↦ (B - diagonalTruncation (p := 2) d s) x) atTop
+      (𝓝 ((B - diagonalCLM (p := 2) d) x)) :=
     tendsto_const_nhds.sub (tendsto_diagonalTruncation_apply ENNReal.ofNat_ne_top d x)
-  refine ⟨fun x y ↦ tendsto_nhds_unique ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds) ?_,
+  exact ⟨fun x y ↦ tendsto_nhds_unique ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds)
+      ((tendsto_const_nhds.inner (𝕜 := 𝕜) (heval y)).congr fun s ↦ ((hpos s).isSymmetric x y).symm),
     fun x ↦ ge_of_tendsto (RCLike.continuous_re.tendsto _ |>.comp
-      ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds)) (Eventually.of_forall fun s ↦ ?_)⟩
-  · exact (tendsto_const_nhds.inner (𝕜 := 𝕜) (heval y)).congr fun s ↦
-      ((hpos s).isSymmetric x y).symm
-  · exact (hpos s).re_inner_nonneg_left x
+      ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds))
+      (Eventually.of_forall fun s ↦ (hpos s).re_inner_nonneg_left x)⟩
 
 end Truncation
 

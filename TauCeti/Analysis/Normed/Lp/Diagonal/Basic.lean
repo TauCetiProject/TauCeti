@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Lp.Basic
@@ -20,7 +21,8 @@ A bounded scalar family defines coordinatewise multiplication on `lp` for every 
 truncations have rank at most the number of retained coordinates, and the discarded coefficients
 bound their error in operator norm. These estimates provide finite-rank approximations of
 diagonal operators. Over a locally compact scalar field, coefficients tending to
-zero along the cofinite filter give a compact diagonal operator.
+zero along the cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone
+`ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence (`lp.ofAntitone`).
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -31,6 +33,8 @@ open scoped lp ENNReal NNReal Topology
 open Filter
 
 namespace lp
+
+section Multiplier
 
 variable {ι 𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -239,18 +243,33 @@ theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
     IsCompactOperator (diagonalCLM (p := p) d) := by
   classical
   have : ProperSpace 𝕜 := .of_locallyCompactSpace 𝕜
-  apply isClosed_setOfPred_isCompactOperator.closure_subset
-  refine Metric.mem_closure_iff.mpr fun ε hε ↦ ?_
-  have hs : {i | ¬‖d i‖ < ε / 2}.Finite :=
-    eventually_cofinite.mp (hd.eventually (gt_mem_nhds (half_pos hε)))
-  let s := hs.toFinset
+  refine isCompactOperator_of_tendsto (tendsto_diagonalTruncation d hd)
+    (Eventually.of_forall fun s ↦ ?_)
   have : Module.Finite 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
     Module.rank_lt_aleph0_iff.mp
-      ((rank_diagonalTruncation_le (p := p) d s).trans_lt (Cardinal.natCast_lt_aleph0))
-  refine ⟨diagonalTruncation d s,
-    LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this), ?_⟩
-  rw [dist_eq_norm]
-  exact (norm_diagonalCLM_sub_diagonalTruncation_le d s (half_pos hε).le
-    (fun i hi ↦ (by simpa [s] using hi : ‖d i‖ < ε / 2).le)).trans_lt (half_lt_self hε)
+      ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
+  exact LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this)
+
+end Multiplier
+
+/-- An antitone `ℝ≥0`-valued sequence defines a bounded scalar sequence in `ℓ^∞(ℕ, 𝕜)`, bounded
+above by `c 0`. -/
+noncomputable def ofAntitone (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) : ℓ^∞(ℕ, 𝕜) :=
+  ⟨fun n ↦ ((c n : ℝ) : 𝕜), memℓp_infty ⟨c 0, by rintro _ ⟨n, rfl⟩; simpa using hc n.zero_le⟩⟩
+
+/-- Applying `lp.ofAntitone` casts the `n`-th nonnegative real entry into `𝕜`. -/
+@[simp]
+theorem ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    ofAntitone 𝕜 hc n = ((c n : ℝ) : 𝕜) := (rfl)
+
+/-- The norm of the `n`-th entry of `lp.ofAntitone 𝕜 hc` is `c n`. -/
+theorem norm_ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    ‖ofAntitone 𝕜 hc n‖ = c n := by
+  rw [ofAntitone_apply, RCLike.norm_ofReal, abs_of_nonneg (NNReal.coe_nonneg _)]
+
+open scoped ComplexOrder in
+/-- Every entry of `lp.ofAntitone 𝕜 hc` is nonnegative in the `RCLike` order. -/
+theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    0 ≤ ofAntitone 𝕜 hc n := by simp
 
 end lp

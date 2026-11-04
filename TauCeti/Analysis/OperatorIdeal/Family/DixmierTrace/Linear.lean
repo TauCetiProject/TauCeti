@@ -9,6 +9,7 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Positive
 public import TauCeti.Analysis.OperatorIdeal.Family.DixmierTrace.Basic
 public import TauCeti.Analysis.OperatorIdeal.Family.Modulus
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
+import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 import Mathlib.Analysis.CStarAlgebra.Unitary.Span
 
 /-!
@@ -496,60 +497,36 @@ theorem complexDixmierTrace_comp_sub_comp_eq_zero {ω : GeneralizedLimit}
       ((logarithmic ℂ).comp_right_mem_finiteSubmodule hT A),
     complexDixmierTrace_comp_comm hω A hT, sub_self]
 
-private theorem norm_complexDixmierTrace_le_four_mul_toReal_gauge (ω : GeneralizedLimit)
-    (T : E →L[ℂ] E) : ‖complexDixmierTrace ω T‖ ≤ 4 * ((logarithmic ℂ).gauge T).toReal := by
-  by_cases hTm : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule
-  · have hlt : (logarithmic ℂ).gauge T < ∞ := by simpa [OperatorGauge.mem_finiteSubmodule] using hTm
-    have hpart {Y : E →L[ℂ] E} (hY : (logarithmic ℂ).gauge Y ≤ (logarithmic ℂ).gauge T) :
-        |dixmierTrace ω Y⁺ - dixmierTrace ω Y⁻| ≤ 2 * ((logarithmic ℂ).gauge T).toReal := by
-      have hp := (dixmierTrace_le_toReal_gauge_logarithmic ω Y⁺).trans
-        (ENNReal.toReal_mono hlt.ne ((gauge_posPart_le (logarithmic ℂ) Y).trans hY))
-      have hn := (dixmierTrace_le_toReal_gauge_logarithmic ω Y⁻).trans
-        (ENNReal.toReal_mono hlt.ne ((gauge_negPart_le (logarithmic ℂ) Y).trans hY))
-      exact abs_le.2 ⟨by linarith [dixmierTrace_nonneg ω Y⁺],
-        by linarith [dixmierTrace_nonneg ω Y⁻]⟩
-    rw [complexDixmierTrace_of_mem ω hTm]
-    refine (norm_add_le _ _).trans ?_
-    simp only [norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs]
-    linarith [hpart (gauge_realPart_le (logarithmic ℂ) T),
-      hpart (gauge_imaginaryPart_le (logarithmic ℂ) T)]
-  · rw [complexDixmierTrace_of_notMem ω hTm, norm_zero]; positivity
-
 private theorem norm_complexDixmierTrace_comp_left_le_of_isPositive {ω : GeneralizedLimit}
     (hω : ω.IsDilationInvariant) (A : E →L[ℂ] E) {T : E →L[ℂ] E} (hTpos : T.IsPositive)
     (hT : T ∈ ((logarithmic ℂ).operatorGauge E E).finiteSubmodule) :
     ‖complexDixmierTrace ω (A ∘L T)‖ ≤ ‖A‖ * dixmierTrace ω T := by
-  -- `B ↦ Tr_ω(B T)` is positive since `Tr_ω(B T) = Tr_ω(√B T √B) ≥ 0` for `B ≥ 0`, so `‖ψ‖ = ψ 1`.
+  -- `B ↦ Tr_ω(B T)` is positive since `Tr_ω(B T) = Tr_ω(√B T √B) ≥ 0` for `B ≥ 0`, hence
+  -- automatically continuous on `E →L[ℂ] E` with `‖ψ‖ = ψ 1 = Tr_ω(T)`.
   open ComplexOrder in
-  have hlt : (logarithmic ℂ).gauge T < ∞ := by simpa [OperatorGauge.mem_finiteSubmodule] using hT
-  let ψ : (E →L[ℂ] E) →L[ℂ] ℂ := LinearMap.mkContinuous
+  let ψ₀ : (E →L[ℂ] E) →ₚ[ℂ] ℂ := PositiveLinearMap.mk₀
     { toFun := fun B ↦ complexDixmierTrace ω (B ∘L T)
       map_add' := fun B₁ B₂ ↦ by
         rw [add_comp, complexDixmierTrace_add hω
           ((logarithmic ℂ).comp_left_mem_finiteSubmodule B₁ hT)
           ((logarithmic ℂ).comp_left_mem_finiteSubmodule B₂ hT)]
       map_smul' := fun c B ↦ by simp [smul_comp, complexDixmierTrace_smul hω] }
-    (4 * ((logarithmic ℂ).gauge T).toReal) fun B ↦ by
-      have hBT : ((logarithmic ℂ).gauge (B ∘L T)).toReal ≤
-          ‖B‖ * ((logarithmic ℂ).gauge T).toReal :=
-        (ENNReal.toReal_mono (ENNReal.mul_lt_top enorm_lt_top hlt).ne
-          ((logarithmic ℂ).gauge_comp_left_le B T)).trans_eq (by simp [ENNReal.toReal_mul])
-      refine (norm_complexDixmierTrace_le_four_mul_toReal_gauge ω (B ∘L T)).trans ?_
-      linarith [mul_le_mul_of_nonneg_left hBT (by positivity : (0 : ℝ) ≤ 4)]
-  have hψ (X : E →L[ℂ] E) : ψ X = complexDixmierTrace ω (X ∘L T) := rfl
-  have hmono : Monotone ψ := (monotone_iff_map_nonneg ψ).2 fun B hB ↦ by
-    set R := CFC.sqrt B
-    have hRadj : adjoint R = R := (CFC.sqrt_nonneg B).isSelfAdjoint.star_eq
-    have hRmul : R ∘L R = B := CFC.sqrt_mul_sqrt_self B hB
-    have hRpos : (R ∘L T ∘L R).IsPositive := by simpa [hRadj] using hTpos.conj_adjoint R
-    rw [hψ, ← hRmul, comp_assoc,
-      complexDixmierTrace_comp_comm hω R ((logarithmic ℂ).comp_left_mem_finiteSubmodule R hT),
-      comp_assoc, complexDixmierTrace_of_isPositive ω hRpos]
-    exact RCLike.nonneg_iff.2 ⟨by simpa using dixmierTrace_nonneg ω _, by simp⟩
-  have hop : ‖ψ‖ = dixmierTrace ω T := Complex.ofReal_inj.1 <| by
-    rw [ψ.monotone_iff_opNorm_eq_map_one.1 hmono, hψ, one_def, id_comp,
-      complexDixmierTrace_of_isPositive ω hTpos]
-  simpa [hψ, hop, mul_comm] using ψ.le_opNorm A
+    fun B hB ↦ by
+      set R := CFC.sqrt B
+      have hRadj : adjoint R = R := (CFC.sqrt_nonneg B).isSelfAdjoint.star_eq
+      have hRmul : R ∘L R = B := CFC.sqrt_mul_sqrt_self B hB
+      have hRpos : (R ∘L T ∘L R).IsPositive := by simpa [hRadj] using hTpos.conj_adjoint R
+      change 0 ≤ complexDixmierTrace ω (B ∘L T)
+      rw [← hRmul, comp_assoc,
+        complexDixmierTrace_comp_comm hω R ((logarithmic ℂ).comp_left_mem_finiteSubmodule R hT),
+        comp_assoc, complexDixmierTrace_of_isPositive ω hRpos]
+      exact RCLike.nonneg_iff.2 ⟨by simpa using dixmierTrace_nonneg ω _, by simp⟩
+  let ψ : (E →L[ℂ] E) →P[ℂ] ℂ := .ofClass ψ₀
+  have hψ (X : E →L[ℂ] E) : (ψ : (E →L[ℂ] E) →L[ℂ] ℂ) X = complexDixmierTrace ω (X ∘L T) := rfl
+  have hop : ‖(ψ : (E →L[ℂ] E) →L[ℂ] ℂ)‖ = dixmierTrace ω T := Complex.ofReal_inj.1 <| by
+    rw [ψ.ofReal_opNorm_eq_map_one, ← PositiveContinuousLinearMap.coe_toContinuousLinearMap, hψ,
+      one_def, id_comp, complexDixmierTrace_of_isPositive ω hTpos]
+  simpa [hψ, hop, mul_comm] using (ψ : (E →L[ℂ] E) →L[ℂ] ℂ).le_opNorm A
 
 /-- **Sharp two-sided ideal bound for the linear Dixmier trace.** When `ω` is dilation invariant
 and `T` lies in `L^(1,∞)`, `‖Tr_ω(A T B)‖ ≤ ‖A‖ Tr_ω(|T|) ‖B‖`. -/

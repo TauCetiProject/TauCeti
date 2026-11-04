@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Isometry
 public import TauCeti.Analysis.OperatorIdeal.Family.KyFan.Dominance
+public import TauCeti.Analysis.OperatorIdeal.Family.Modulus
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 

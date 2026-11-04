@@ -87,24 +87,6 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
     exact (diagonalCLM d).singularValue_le_nnnorm_sub
       (rank_diagonalTruncation_range_le d n)
 
-/-- An antitone `ℝ≥0`-valued sequence defines a bounded scalar sequence in `ℓ^∞(ℕ, 𝕜)`, bounded
-above by `c 0`. -/
-noncomputable def ofAntitone (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) : ℓ^∞(ℕ, 𝕜) :=
-  ⟨fun n ↦ ((c n : ℝ) : 𝕜), memℓp_infty ⟨c 0, by
-    rintro _ ⟨n, rfl⟩
-    simpa using hc (Nat.zero_le n)⟩⟩
-
-/-- Applying `lp.ofAntitone` casts the `n`-th nonnegative real entry into `𝕜`. -/
-@[simp]
-theorem ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
-    ofAntitone 𝕜 hc n = ((c n : ℝ) : 𝕜) :=
-  (rfl)
-
-/-- The norm of the `n`-th entry of `lp.ofAntitone 𝕜 hc` is `c n`. -/
-theorem norm_ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
-    ‖ofAntitone 𝕜 hc n‖ = c n := by
-  rw [ofAntitone_apply, RCLike.norm_ofReal, abs_of_nonneg (NNReal.coe_nonneg _)]
-
 /-- The approximation numbers of the diagonal operator associated to `lp.ofAntitone 𝕜 hc` recover
 `c`. -/
 @[simp]

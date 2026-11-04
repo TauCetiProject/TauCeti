@@ -139,21 +139,31 @@ theorem isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean {T : E →L[�
     rw [complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean ω₁ hT hlim,
       complexDixmierTrace_eq_of_isPositive_of_tendsto_kyFanLogMean ω₂ hT hlim]⟩
 
-/-- For any operator whose logarithmic means converge to `0`, every dilation-invariant Dixmier
-trace vanishes. -/
-theorem complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero {ω : GeneralizedLimit}
-    (hω : ω.IsDilationInvariant) {T : E →L[ℂ] E} (hlim : Tendsto T.kyFanLogMean atTop (𝓝 0)) :
-    complexDixmierTrace ω T = 0 :=
-  norm_le_zero_iff.1
-    ((norm_complexDixmierTrace_le_dixmierTrace hω T).trans_eq (dixmierTrace_eq_of_tendsto ω hlim))
+/-- For any operator whose logarithmic means converge to `0`, every Dixmier trace vanishes. -/
+theorem complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero (ω : GeneralizedLimit)
+    {T : E →L[ℂ] E} (hlim : Tendsto T.kyFanLogMean atTop (𝓝 0)) :
+    complexDixmierTrace ω T = 0 := by
+  have hT := (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range
+  have hzero {X : E →L[ℂ] E}
+      (hX : ∀ k (hk : 0 < k), (kyFan ℂ k hk).gauge X ≤ (kyFan ℂ k hk).gauge T) :
+      dixmierTrace ω X = 0 := le_antisymm
+    ((dixmierTrace_le_of_forall_kyFanGauge_le ω hT fun k ↦ k.eq_zero_or_pos.elim
+      (by rintro rfl; simp) fun hk ↦ ENNReal.coe_le_coe.1
+        (by simpa only [gauge_kyFan] using hX k hk)).trans_eq
+      (dixmierTrace_eq_of_tendsto ω hlim)) (dixmierTrace_nonneg ω X)
+  rw [complexDixmierTrace_of_mem ω hT,
+    hzero fun k hk ↦ (gauge_posPart_le _ _).trans (gauge_realPart_le _ T),
+    hzero fun k hk ↦ (gauge_negPart_le _ _).trans (gauge_realPart_le _ T),
+    hzero fun k hk ↦ (gauge_posPart_le _ _).trans (gauge_imaginaryPart_le _ T),
+    hzero fun k hk ↦ (gauge_negPart_le _ _).trans (gauge_imaginaryPart_le _ T)]; simp
 
 /-- Ordinary convergence of the logarithmic means to `0` implies Dixmier measurability for an
 arbitrary bounded operator. -/
 theorem isDixmierMeasurable_of_tendsto_kyFanLogMean_zero {T : E →L[ℂ] E}
     (hlim : Tendsto T.kyFanLogMean atTop (𝓝 0)) : IsDixmierMeasurable T :=
-  ⟨(mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range, fun _ _ h₁ h₂ ↦
-    (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero h₁ hlim).trans
-      (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero h₂ hlim).symm⟩
+  ⟨(mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range, fun ω₁ ω₂ _ _ ↦
+    (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero ω₁ hlim).trans
+      (complexDixmierTrace_eq_zero_of_tendsto_kyFanLogMean_zero ω₂ hlim).symm⟩
 
 /-- Trace-class operators are Dixmier measurable (with Dixmier trace `0`). -/
 theorem isDixmierMeasurable_of_mem_traceClass {T : E →L[ℂ] E}
@@ -283,14 +293,6 @@ end Measurable
 
 section DiagonalModels
 
-private theorem nonneg_ofAntitone_apply {c : ℕ → ℝ≥0} (hc : Antitone c) :
-    open ComplexOrder in ∀ n, 0 ≤ lp.ofAntitone ℂ hc n :=
-  open ComplexOrder in fun _ ↦ RCLike.nonneg_iff.2 ⟨by simp, by simp⟩
-
-private theorem isPositive_diagonalCLM_ofAntitone {c : ℕ → ℝ≥0} (hc : Antitone c) :
-    (lp.diagonalCLM (p := 2) (lp.ofAntitone ℂ hc)).IsPositive :=
-  open ComplexOrder in (lp.isPositive_diagonalCLM_iff _).2 (nonneg_ofAntitone_apply hc)
-
 private theorem sum_range_succ_inv_le_one_add_log (N : ℕ) :
     ∑ j ∈ Finset.range (N + 1), ((j : ℝ) + 1)⁻¹ ≤ 1 + Real.log ((N : ℝ) + 2) := by
   simpa [harmonic] using (harmonic_le_one_add_log (N + 1)).trans
@@ -319,7 +321,7 @@ private theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
 
 /-- The harmonic diagonal operator is positive on `ℓ²(ℕ, ℂ)`. -/
 theorem isPositive_harmonicDiagonalCLM : harmonicDiagonalCLM.IsPositive :=
-  isPositive_diagonalCLM_ofAntitone harmonicEntry_antitone
+  lp.isPositive_diagonalCLM_ofAntitone harmonicEntry_antitone
 
 /-- Every generalized limit assigns real Dixmier trace `1` to `TauCeti.harmonicDiagonalCLM`. -/
 @[simp]
@@ -368,7 +370,7 @@ theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
       (∀ n (ω : GeneralizedLimit), complexDixmierTrace ω (S n) = 0) ∧
       (∀ ω : GeneralizedLimit, complexDixmierTrace ω T = 1) := by
   open ComplexOrder in
-  have hd_nonneg : ∀ j, 0 ≤ harmonicSeq j := nonneg_ofAntitone_apply harmonicEntry_antitone
+  have hd_nonneg : ∀ j, 0 ≤ harmonicSeq j := lp.ofAntitone_apply_nonneg ℂ harmonicEntry_antitone
   have hd_tendsto : Tendsto (fun j ↦ ‖harmonicSeq j‖) atTop (𝓝 0) := by
     have hnorm : (fun j ↦ ‖harmonicSeq j‖) = fun j : ℕ ↦ ((j : ℝ) + 1)⁻¹ := funext fun j ↦ by
       simpa [harmonicSeq] using lp.norm_ofAntitone_apply ℂ harmonicEntry_antitone j
@@ -491,7 +493,7 @@ theorem exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_
       IsDixmierMeasurable T ∧ (∀ ω : GeneralizedLimit, dixmierTrace ω T = 0) ∧
       (∀ ω : GeneralizedLimit, complexDixmierTrace ω T = 0) := by
   set T := lp.diagonalCLM (p := 2) (lp.ofAntitone ℂ invMulLogNNSeq_antitone) with hT
-  have hpos : T.IsPositive := isPositive_diagonalCLM_ofAntitone invMulLogNNSeq_antitone
+  have hpos : T.IsPositive := lp.isPositive_diagonalCLM_ofAntitone invMulLogNNSeq_antitone
   have hlim : Tendsto T.kyFanLogMean atTop (𝓝 0) := tendsto_kyFanLogMean_invMulLogSeq
   have hnot_tc : T ∉ ((traceClass ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
     rw [mem_finiteSubmodule_traceClass_iff, ← NNReal.summable_coe]
@@ -699,7 +701,7 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
       T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule ∧
       ¬ IsDixmierMeasurable T := by
   set T := lp.diagonalCLM (p := 2) (lp.ofAntitone ℂ oscNNSeq_antitone) with hT
-  have hpos : T.IsPositive := isPositive_diagonalCLM_ofAntitone oscNNSeq_antitone
+  have hpos : T.IsPositive := lp.isPositive_diagonalCLM_ofAntitone oscNNSeq_antitone
   have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
     obtain ⟨C, hC⟩ := (mem_finiteSubmodule_logarithmic_iff_bddAbove harmonicDiagonalCLM).1
       harmonicDiagonalCLM_mem_logarithmic
