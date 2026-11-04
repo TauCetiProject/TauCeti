@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -40,6 +41,10 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_ofReal_comp_apply`: for real-valued `f`, `\bar∂f = conj ∂f`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
+* `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
+  derivative.
+* `TauCeti.conjWirtingerDeriv_mul`, `TauCeti.conjWirtingerDeriv_pow`: the Leibniz and power rules
+  for complex-valued functions.
 
 ## References
 
@@ -153,6 +158,39 @@ theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
   simp [conjWirtingerDeriv_apply, wirtingerDeriv_apply]
 
 end Wirtinger
+
+/-- The conjugate Wirtinger derivative depends complex-linearly on the real derivative: if
+`Df(x) = ∑ cᵢ Dgᵢ(x)` with complex coefficients, then `\bar∂f(x) = ∑ cᵢ \bar∂gᵢ(x)`. -/
+theorem conjWirtingerDeriv_eq_sum_smul {f : V → W} {x : V} {ι : Type*} {s : Finset ι}
+    {c : ι → ℂ} {g : ι → V → W} (h : fderiv ℝ f x = ∑ i ∈ s, c i • fderiv ℝ (g i) x) :
+    conjWirtingerDeriv f x = ∑ i ∈ s, c i • conjWirtingerDeriv (g i) x := by
+  ext v
+  simp only [conjWirtingerDeriv_apply, h, sum_apply, smul_apply, Finset.smul_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  module
+
+section Mul
+
+variable {f g : V → ℂ} {x : V}
+
+/-- The **Leibniz rule** for the conjugate Wirtinger derivative:
+`\bar∂(f g) = f \bar∂g + g \bar∂f`. -/
+theorem conjWirtingerDeriv_mul (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g x) :
+    conjWirtingerDeriv (fun y ↦ f y * g y) x =
+      f x • conjWirtingerDeriv g x + g x • conjWirtingerDeriv f x := by
+  ext v
+  simp [conjWirtingerDeriv_apply, fderiv_fun_mul hf hg]
+  ring
+
+/-- The conjugate Wirtinger derivative of a power: `\bar∂(fⁿ) = n f^(n-1) \bar∂f`. -/
+theorem conjWirtingerDeriv_pow (hf : DifferentiableAt ℝ f x) (n : ℕ) :
+    conjWirtingerDeriv (fun y ↦ f y ^ n) x = (n * f x ^ (n - 1)) • conjWirtingerDeriv f x := by
+  ext v
+  simp [conjWirtingerDeriv_apply, fderiv_fun_pow n hf]
+  ring
+
+end Mul
 
 /-- In one variable the Wirtinger derivative is determined by its value at `1`. -/
 theorem wirtingerDeriv_apply_eq_smul_apply_one {f : ℂ → W} (x v : ℂ) :
