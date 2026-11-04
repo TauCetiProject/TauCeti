@@ -101,7 +101,7 @@ theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι]
   set X : StrictUpper ⊕ ℕ → Ω → ℂ := fun k ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k
   set e : ι → StrictUpper ⊕ ℕ := fun s ↦ entryIndex (u s) (v s)
   set c : ℂ := (Real.sqrt n : ℂ)⁻¹
-  have hX (k : StrictUpper ⊕ ℕ) : AEMeasurable (X k) P := aemeasurable_array hξm hηm k
+  have hX (k : StrictUpper ⊕ ℕ) : AEMeasurable (X k) P := aemeasurable_sumElim_ofReal hξm hηm k
   -- The coordinate read at step `t` and the coordinates read at the other steps.
   set S : Finset (StrictUpper ⊕ ℕ) := {e t}
   set T : Finset (StrictUpper ⊕ ℕ) := (Finset.univ.erase t).image e

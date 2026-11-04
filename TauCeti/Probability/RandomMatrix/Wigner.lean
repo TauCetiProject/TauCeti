@@ -174,7 +174,7 @@ private theorem wignerOfArray_comp (n : ℕ) :
 
 /-- The coordinates of the entry array `Sum.elim ξ (ofReal ∘ η)`, indexed by `StrictUpper ⊕ ℕ`,
 are a.e.-measurable when the entries `ξ` and `η` are. -/
-theorem aemeasurable_array {P : Measure Ω} (hξ : ∀ ij, AEMeasurable (ξ ij) P)
+theorem aemeasurable_sumElim_ofReal {P : Measure Ω} (hξ : ∀ ij, AEMeasurable (ξ ij) P)
     (hη : ∀ i, AEMeasurable (η i) P) (k : StrictUpper ⊕ ℕ) :
     AEMeasurable (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P := by
   cases k with
@@ -196,7 +196,7 @@ theorem aemeasurable_wignerMatrix {P : Measure Ω} (hξ : ∀ ij, AEMeasurable (
     (hη : ∀ i, AEMeasurable (η i) P) (n : ℕ) : AEMeasurable (wignerMatrix ξ η n) P := by
   rw [← wignerOfArray_comp]
   exact (measurable_wignerOfArray n).comp_aemeasurable
-    (aemeasurable_pi_iff.2 (aemeasurable_array hξ hη))
+    (aemeasurable_pi_iff.2 (aemeasurable_sumElim_ofReal hξ hη))
 
 end Measurability
 
@@ -246,7 +246,7 @@ theorem indepFun_wignerMatrix_column (hξ : ∀ ij, AEMeasurable (ξ ij) P)
   have hψ : Measurable fun (g : columnIndices n → ℂ) (i : Fin n) ↦ g ⟨_, hcol i⟩ :=
     measurable_pi_iff.2 fun i ↦ measurable_pi_apply _
   refine ((hindep.indepFun_finset₀ _ _ (disjoint_cornerIndices_columnIndices n)
-    (aemeasurable_array hξ hη)).comp hφ hψ).congr (.of_forall fun ω ↦ ?_)
+    (aemeasurable_sumElim_ofReal hξ hη)).comp hφ hψ).congr (.of_forall fun ω ↦ ?_)
       (.of_forall fun ω ↦ rfl)
   simp only [Function.comp_apply, wignerOfArray]
   refine wignerMatrix_congr _ (fun ij hij ↦ ?_) (fun i hi ↦ ?_)
