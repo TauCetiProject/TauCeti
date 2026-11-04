@@ -209,7 +209,8 @@ theorem psumPart_eq_sum_card_fixedPoints_smul_msymm {ρ : n.Partition} {π : Per
 module `M^ν` and `π` is any permutation of cycle type `ρ`. -/
 theorem psumPart_eq_sum_character_smul_msymm {ρ : n.Partition} {π : Perm (Fin n)}
     (hπ : ConjClasses.mk π = partitionEquivConjClasses n ρ) :
-    psumPart σ ℚ ρ = ∑ ν : n.Partition, (permutationModule ν).ρ.character π • msymm σ ℚ ν := by
+    psumPart σ ℚ ρ = ∑ ν : n.Partition, (permutationModule (R := ℚ) ν).ρ.character π • msymm σ ℚ
+      ν := by
   refine (psumPart_eq_sum_card_fixedPoints_smul_msymm (σ := σ) ℚ hπ).trans
     (Finset.sum_congr rfl fun ν _ => ?_)
   rw [char_permutationModule]

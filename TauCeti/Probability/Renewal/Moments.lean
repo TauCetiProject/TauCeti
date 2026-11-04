@@ -106,7 +106,7 @@ private theorem lintegral_renewalCount_pow_le_add_tsum (hT : ∀ n, Measurable (
     rcases lt_or_ge m M with h | h
     · exact le_add_right (by gcongr)
     · obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h
-      refine le_add_left (le_trans ?_ (ENNReal.le_tsum j))
+      refine le_add_left (le_trans ?_ (_root_.le_tsum _ j))
       rw [indicator_of_mem (natCast_le_renewalCount_iff.1 hm.ge)]
   refine (lintegral_mono_ae hle).trans_eq ?_
   rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
