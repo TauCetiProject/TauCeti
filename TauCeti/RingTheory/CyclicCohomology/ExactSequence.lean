@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CyclicCohomology.Periodicity
+public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Comparison
 
 /-!
 # Connes' operator `B` and the exactness of the SBI sequence
@@ -37,10 +37,13 @@ cohomology is cyclic cohomology in degrees `m` and `m + 1`
 exactness of `HC^(m+1) →I HH^(m+1) →B HC^m` for the maps `TauCeti.cyclicCohomology.toHochschild`
 and `TauCeti.hochschildCohomology.connesB` defined by cyclic cochains. (Exactness at `HC^1`, the
 injectivity of `I`, holds over every commutative ring, see
-`TauCeti.cyclicCohomology.injective_toHochschild_one`.)
-The periodicity map of the bicomplex is the shift of columns; it is not compared here with
-Connes' operator `S`, normalized as the exterior product with the cyclic `2`-cocycle
-`(a₀, a₁, a₂) ↦ a₀a₁a₂`.
+`TauCeti.cyclicCohomology.injective_toHochschild_one`.) Over a `ℚ`-algebra,
+`TauCeti.RingTheory.CyclicCohomology.Periodicity.Comparison` identifies Connes' periodicity
+operator `TauCeti.cyclicCohomology.periodicity` with `-((m + 1) * (m + 2))` times the bicomplex
+periodicity map and proves exactness of `HC^m →S HC^(m+2) →I HH^(m+2)`; combining that comparison
+with `exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity` yields exactness of
+`HH^(m+1) →B HC^m →S HC^(m+2)` and the injectivity and surjectivity criteria for `S` on cyclic
+cohomology.
 
 ## Main definitions
 
@@ -65,6 +68,13 @@ Connes' operator `S`, normalized as the exterior product with the cyclic `2`-coc
   degree zero and injective in degree one, for a possibly nonunital algebra.
 * `TauCeti.cyclicCohomology.exact_toHochschild_connesB`: when `1, 2, …, m + 1` are invertible in
   `R`, `HC^(m+1) → HH^(m+1) → HC^m` is exact.
+* `TauCeti.hochschildCohomology.connesB_comp_periodicity`,
+  `TauCeti.cyclicCohomology.exact_connesB_periodicity`: over a `ℚ`-algebra, `S ∘ B = 0` and
+  `HH^(m+1) →B HC^m →S HC^(m+2)` is exact.
+* `TauCeti.cyclicCohomology.injective_periodicity_of_isZero`,
+  `TauCeti.cyclicCohomology.surjective_periodicity_of_isZero`: over a `ℚ`-algebra,
+  `S : HC^m → HC^(m+2)` is injective when `HH^(m+1)` vanishes and surjective when `HH^(m+2)`
+  vanishes.
 
 ## References
 
@@ -461,6 +471,77 @@ theorem cyclicCohomology.exact_toHochschild_connesB (m : ℕ)
   · rw [LinearMap.comp_id, cyclicTotalHomologyConnesB_def]
     exact ModuleCat.hom_comp _ _
 
+section Rational
+
+variable [Algebra ℚ R]
+
+variable (R A M) in
+/-- Over a `ℚ`-algebra, the composite
+`S ∘ B : HH^(m+1)(A, Hom_R(A, M)) → HC^m(A; M) → HC^(m+2)(A; M)` vanishes. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem hochschildCohomology.connesB_comp_periodicity (m : ℕ) :
+    hochschildCohomology.connesB R A M m ≫ cyclicCohomology.periodicity R A M m = 0 := by
+  have := quasiIso_cyclicCochainComplexToTotal R A M
+  rw [← cancel_mono (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (m + 2)),
+    Limits.zero_comp, Category.assoc,
+    cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal,
+    Linear.comp_smul, ← Category.assoc, ← cyclicTotalHomologyConnesB_def,
+    cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity, smul_zero]
+
+/-- **Exactness of `HH^(m+1) →B HC^m →S HC^(m+2)`.** For a unital algebra over a ring containing
+`ℚ`, a cyclic cohomology class is killed by Connes' periodicity operator `S` if and only if it lies
+in the image of Connes' operator `B`. -/
+theorem cyclicCohomology.exact_connesB_periodicity (m : ℕ) :
+    Function.Exact (hochschildCohomology.connesB R A M m)
+      (cyclicCohomology.periodicity R A M m) := by
+  have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
+  have hunit : IsUnit (-((m + 1 : R) * (m + 2 : R))) := by
+    refine IsUnit.neg (IsUnit.mul ?_ ?_)
+    · simpa using (Nat.cast_add_one_ne_zero (R := ℚ) m).isUnit.map (algebraMap ℚ R)
+    · convert (Nat.cast_add_one_ne_zero (R := ℚ) (m + 1)).isUnit.map (algebraMap ℚ R) using 1
+      push_cast; ring
+  obtain ⟨u, hu⟩ := hunit
+  refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
+  · have hc' : cyclicTotalHomologyPeriodicity R A M m
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by
+      have h0 : -((m + 1 : R) * (m + 2 : R)) •
+          cyclicTotalHomologyPeriodicity R A M m
+            (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by
+        have heq := congrArg (fun f : cyclicCohomology R A M m ⟶ _ ↦ f c)
+          (cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M m)
+        simpa only [ModuleCat.comp_apply, ModuleCat.hom_smul, LinearMap.smul_apply, hc,
+          map_zero] using heq.symm
+      have h1 := congrArg ((↑u⁻¹ : R) • ·) h0
+      rwa [← hu, smul_smul, Units.inv_mul, one_smul, smul_zero] at h1
+    obtain ⟨b, hb⟩ :=
+      (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m _).1 hc'
+    refine ⟨b, hbij₀.1 ?_⟩
+    rw [← hb, cyclicTotalHomologyConnesB_def, ModuleCat.comp_apply]
+  · rintro ⟨b, rfl⟩
+    exact hochschildCohomology.connesB_comp_periodicity_apply R A M m b
+
+/-- Over a `ℚ`-algebra, Connes' periodicity map `S : HC^m(A; M) → HC^(m+2)(A; M)` is injective when
+`HH^(m+1)(A, Hom_R(A, M))` vanishes. -/
+theorem cyclicCohomology.injective_periodicity_of_isZero {m : ℕ}
+    (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
+    Function.Injective (cyclicCohomology.periodicity R A M m) := by
+  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
+  obtain ⟨b, rfl⟩ := (cyclicCohomology.exact_connesB_periodicity m c).1 hc
+  have := ModuleCat.isZero_iff_subsingleton.1 h
+  rw [Subsingleton.elim b 0, map_zero]
+
+/-- Over a `ℚ`-algebra, Connes' periodicity map `S : HC^m(A; M) → HC^(m+2)(A; M)` is surjective when
+`HH^(m+2)(A, Hom_R(A, M))` vanishes. -/
+theorem cyclicCohomology.surjective_periodicity_of_isZero {m : ℕ}
+    (h : Limits.IsZero (hochschildCohomology R A M (m + 2))) :
+    Function.Surjective (cyclicCohomology.periodicity R A M m) := by
+  have := ModuleCat.isZero_iff_subsingleton.1 h
+  exact fun c ↦ (cyclicCohomology.exact_periodicity_toHochschild R A M m c).1
+    (Subsingleton.elim _ 0)
+
+end Rational
+
 end Exactness
 
 end TauCeti
+
