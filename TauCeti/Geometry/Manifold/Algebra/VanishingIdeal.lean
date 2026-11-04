@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace

@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 

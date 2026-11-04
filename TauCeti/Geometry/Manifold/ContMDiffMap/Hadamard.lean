@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.LinearAlgebra.Basis.Defs
 import TauCeti.Analysis.Calculus.Hadamard
 
@@ -14,14 +14,11 @@ import TauCeti.Analysis.Calculus.Hadamard
 
 Subtracting its value at `x`, a smooth real function on a real normed space is a combination of
 the coordinate functions of a finite basis, each relative to its value at `x`, with smooth
-coefficients whose values at `x` are the directional derivatives along the basis. In the algebra
-of smooth functions this becomes an identity between bundled smooth maps.
+coefficients whose values at `x` are the directional derivatives along the basis.
 
 ## Main results
 
 * `ContMDiffMap.exists_hadamard_coords`: Hadamard's lemma in the coordinates of a finite basis.
-* `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of such a factorization in
-  the algebra of smooth functions.
 -/
 
 public section
@@ -61,26 +58,3 @@ theorem exists_hadamard_coords {E : Type*} [NormedAddCommGroup E]
         simp [mul_comm]
 
 end ContMDiffMap
-
-namespace TauCeti
-
-/-- **Hadamard's identity in the algebra of smooth functions.** A pointwise factorization of
-`g - g x` through the functions `c i`, with coefficients `a i`, is an identity between the bundled
-smooth maps themselves, the constants appearing as the images of `algebraMap`.
-
-This is the pointwise-to-bundled transport: the hypothesis speaks of values, the conclusion of
-elements of `C^∞⟮…⟯`, and the two are related by evaluation being a ring homomorphism. -/
-theorem sub_algebraMap_eq_sum_mul_sub_algebraMap {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {ι : Type*} [Fintype ι] (x : E)
-    (g : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯)
-    (a c : ι → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯)
-    (h : ∀ y, g y - g x = ∑ i, a i y * (c i y - c i x)) :
-    g - algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ (g x) =
-      ∑ i, a i * (c i - algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ (c i x)) := by
-  ext y
-  calc
-    (g - algebraMap ℝ C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ (g x)) y = g y - g x := rfl
-    _ = ∑ i, a i y * (c i y - c i x) := h y
-    _ = _ := by simp [Algebra.algebraMap_eq_smul_one]
-
-end TauCeti
