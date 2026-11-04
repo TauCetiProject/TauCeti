@@ -167,6 +167,25 @@ section SigmaCompact
 
 variable [SigmaCompactSpace M]
 
+/-- Every strong `C^∞` ball around a smooth globally strongly `q`-pseudoconvex function `f` contains
+a strong `C^∞` ball around `f` consisting of globally strongly `q`-pseudoconvex functions whose
+critical points all have real Morse index at most `dim_ℂ E + q`. -/
+private theorem exists_strongCkControl_ball_subset_isManifoldStronglyPseudoconvexAt {q : ℕ}
+    (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (c : StrongCkControl 𝓘(ℝ, E) M ∞)
+    (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x) :
+    ∃ c' : StrongCkControl 𝓘(ℝ, E) M ∞, c'.ball f ⊆ c.ball f ∧
+      ∀ g ∈ c'.ball f, (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
+        ∀ x ∈ criticalPoints 𝓘(ℝ, E) g, manifoldMorseIndex 𝓘(ℝ, E) g x ≤ finrank ℂ E + q := by
+  have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
+  obtain ⟨c₀, -, hc₀⟩ :=
+    exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by simp : (2 : ℕ∞ω) ≤ ∞) q f hf
+  refine ⟨c.sup c₀, StrongCkControl.ball_sup_subset_left c c₀ f, fun g hg ↦ ?_⟩
+  have hg_pos : ∀ x, IsManifoldStronglyPseudoconvexAt E q g x :=
+    hc₀ g (StrongCkControl.ball_sup_subset_right c c₀ f hg)
+  exact ⟨hg_pos, fun x hx ↦
+    (hg_pos x).manifoldMorseIndex_le (g.contMDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).contMDiffAt
+      (mem_criticalPoints.mp hx)⟩
+
 /-- **Relative Morse approximation of strongly `q`-pseudoconvex functions.** Every strong `C^k`
 neighbourhood `c.ball f` of a smooth globally strongly `q`-pseudoconvex function `f` on a
 sigma-compact Hausdorff complex manifold contains a smooth globally strongly `q`-pseudoconvex Morse
@@ -184,18 +203,12 @@ theorem exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl {q : 
       (∀ x ∈ criticalPoints 𝓘(ℝ, E) g, manifoldMorseIndex 𝓘(ℝ, E) g x ≤ finrank ℂ E + q) ∧
       (∀ x, |g x - f x| < ε x) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
-  have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
   have : FiniteDimensional ℝ E := .trans ℝ ℂ E
-  -- Combine the prescribed control `c` with the order-two control guarding strong `q`-positivity.
-  obtain ⟨c₀, -, hc₀⟩ :=
-    exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by simp : (2 : ℕ∞ω) ≤ ∞) q f hf
-  obtain ⟨g, hg, hgm, hgf, hgs⟩ :=
-    f.exists_isMorse_mem_ball_sub_compl (c.sup c₀) hε hε₀ hC hV hCV hfV
-  have hg_pos : ∀ x, IsManifoldStronglyPseudoconvexAt E q g x :=
-    hc₀ g (StrongCkControl.ball_sup_subset_right c c₀ f hg)
-  refine ⟨g, StrongCkControl.ball_sup_subset_left c c₀ f hg, hgm, hg_pos, fun x hx ↦ ?_, hgf, hgs⟩
-  exact (hg_pos x).manifoldMorseIndex_le (g.contMDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).contMDiffAt
-    (mem_criticalPoints.mp hx)
+  obtain ⟨c', hsub, hc'⟩ :=
+    f.exists_strongCkControl_ball_subset_isManifoldStronglyPseudoconvexAt c hf
+  obtain ⟨g, hg, hgm, hgf, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c' hε hε₀ hC hV hCV hfV
+  obtain ⟨hg_pos, hg_idx⟩ := hc' g hg
+  exact ⟨g, hsub hg, hgm, hg_pos, hg_idx, hgf, hgs⟩
 
 /-- **Morse approximation of strongly `q`-pseudoconvex functions** in a strong `C^k` ball and
 within a continuous positive `C⁰` tolerance. -/
@@ -265,18 +278,13 @@ theorem exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub
       (∀ x, |g x - f x| < 1) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   have := hf_prop.sigmaCompactSpace
-  have : IsManifold 𝓘(ℂ, E) 2 M := IsManifold.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
   have : FiniteDimensional ℝ E := .trans ℝ ℂ E
-  obtain ⟨c₀, -, hc₀⟩ :=
-    exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by simp : (2 : ℕ∞ω) ≤ ∞) q f hf_pos
+  obtain ⟨c', hsub, hc'⟩ :=
+    f.exists_strongCkControl_ball_subset_isManifoldStronglyPseudoconvexAt c hf_pos
   obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ :=
-    f.exists_isMorse_isProperMap_mem_ball_sub_compl (c.sup c₀) hf_prop hC hV hCV hfV
-  have hg_pos : ∀ x, IsManifoldStronglyPseudoconvexAt E q g x :=
-    hc₀ g (StrongCkControl.ball_sup_subset_right c c₀ f hg)
-  refine ⟨g, StrongCkControl.ball_sup_subset_left c c₀ f hg, hgm, hgp, hg_pos, fun x hx ↦ ?_,
-    hgf, hgs⟩
-  exact (hg_pos x).manifoldMorseIndex_le (g.contMDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).contMDiffAt
-    (mem_criticalPoints.mp hx)
+    f.exists_isMorse_isProperMap_mem_ball_sub_compl c' hf_prop hC hV hCV hfV
+  obtain ⟨hg_pos, hg_idx⟩ := hc' g hg
+  exact ⟨g, hsub hg, hgm, hgp, hg_pos, hg_idx, hgf, hgs⟩
 
 /-- **Proper Morse approximation of strongly `q`-pseudoconvex functions** in a strong `C^k` ball
 within `C⁰` distance `1`. -/
