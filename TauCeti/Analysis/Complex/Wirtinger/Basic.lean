@@ -43,8 +43,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
-* `TauCeti.conjWirtingerDeriv_mul`, `TauCeti.conjWirtingerDeriv_pow`: the Leibniz and power rules
-  for complex-valued functions.
+* `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
+  power rules for complex-valued functions.
 
 ## References
 
@@ -176,7 +176,8 @@ variable {f g : V → ℂ} {x : V}
 
 /-- The **Leibniz rule** for the conjugate Wirtinger derivative:
 `\bar∂(f g) = f \bar∂g + g \bar∂f`. -/
-theorem conjWirtingerDeriv_mul (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g x) :
+theorem conjWirtingerDeriv_fun_mul (hf : DifferentiableAt ℝ f x)
+    (hg : DifferentiableAt ℝ g x) :
     conjWirtingerDeriv (fun y ↦ f y * g y) x =
       f x • conjWirtingerDeriv g x + g x • conjWirtingerDeriv f x := by
   ext v
@@ -184,7 +185,7 @@ theorem conjWirtingerDeriv_mul (hf : DifferentiableAt ℝ f x) (hg : Differentia
   ring
 
 /-- The conjugate Wirtinger derivative of a power: `\bar∂(fⁿ) = n f^(n-1) \bar∂f`. -/
-theorem conjWirtingerDeriv_pow (hf : DifferentiableAt ℝ f x) (n : ℕ) :
+theorem conjWirtingerDeriv_fun_pow (hf : DifferentiableAt ℝ f x) (n : ℕ) :
     conjWirtingerDeriv (fun y ↦ f y ^ n) x = (n * f x ^ (n - 1)) • conjWirtingerDeriv f x := by
   ext v
   simp [conjWirtingerDeriv_apply, fderiv_fun_pow n hf]

@@ -45,8 +45,8 @@ where the remainder `R_j` is `A_j` minus `μ` times the Newton combination of th
 errors `Q_ℓ - ∑_{V ∈ R} V^ℓ \bar V`
 (`TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton`). Its pointwise norm is bounded by
 those of the `E_k` and of the mixed-moment errors
-(`TauCeti.norm_conjWirtingerDeriv_add_esymm_erase_le_of_newton`). When the measures concentrate
-on `R`, so that the mixed-moment errors and the `E_k` are small, `b_j` thus nearly solves the
+(`TauCeti.norm_conjWirtingerDeriv_add_esymm_erase_le_of_newton`). When the `E_k` and the
+mixed-moment errors are small and the `b_{j-k}` are bounded, `b_j` thus nearly solves the
 equation of the elementary symmetric functions of points moving by `D_C`.
 
 Under a change of frame `W ↦ g W` the moments become `gᵏ M_k` and `g^ℓ \bar g Q_ℓ`, the Newton
@@ -169,12 +169,12 @@ theorem norm_conjWirtingerDeriv_add_esymm_erase_le_of_newton (hb₀ : b 0 =ᶠ[�
   rw [conjWirtingerDeriv_add_esymm_erase_eq_of_newton hb₀ hb hM ν μ Q hR hj]
   refine (norm_sub_le _ _).trans (add_le_add ((norm_sum_le _ _).trans_eq ?_) ?_)
   · refine sum_congr rfl fun k _ ↦ ?_
-    rw [norm_smul, norm_div, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul,
-      Complex.norm_natCast]
+    rw [norm_smul]
+    simp
   · rw [norm_smul, mul_comm]
     refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans_eq ?_) (norm_nonneg _)
     refine sum_congr rfl fun k _ ↦ ?_
-    rw [norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
+    simp
 
 /-- **The frame law of the moment defects.** Under a change of frame `W ↦ g W` of the normal
 line, with `g(x) ≠ 0`, the moment `M` of order `k` becomes `gᵏ M`, the mixed moment `Q` of order
@@ -189,7 +189,8 @@ theorem conjWirtingerDeriv_pow_mul_add_add_eq_pow_smul {g : V → ℂ} {M : V �
         (k * (g x ^ (k - 1) * conj (g x) * Q)) • ((g x / conj (g x)) • μ) =
       g x ^ k • (conjWirtingerDeriv M x + (k * M x) • ν + (k * Q) • μ) := by
   have hgx' : conj (g x) ≠ 0 := (map_ne_zero _).2 hgx
-  rw [conjWirtingerDeriv_mul (f := fun y ↦ g y ^ k) (hg.pow k) hM, conjWirtingerDeriv_pow hg]
+  rw [conjWirtingerDeriv_fun_mul (f := fun y ↦ g y ^ k) (hg.pow k) hM,
+    conjWirtingerDeriv_fun_pow hg]
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · module
   have hpow : g x ^ k = g x ^ (k - 1) * g x := by rw [← pow_succ, Nat.sub_add_cancel hk]
