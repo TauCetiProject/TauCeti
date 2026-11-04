@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
+public import TauCeti.Analysis.Convolution.Jensen
 
 /-!
 # Mollification of weakly differentiable functions
@@ -22,11 +23,17 @@ at every point `x` for which `x - tsupport rho` lies in the domain. The convolve
 whole space; zero extensions of domain `Lᵖ` functions satisfy this assumption. No weak
 derivative identity outside the domain is required.
 
-The results hold for functions with values in an arbitrary real Banach space and for any
-s-finite, left-invariant measure on a real normed space, such as an additive Haar measure.
+The derivative identities hold for functions with values in an arbitrary real Banach space and
+for any s-finite, left-invariant measure on a real normed space, such as an additive Haar measure.
+The Jensen corollary below also assumes that the measure is negation-invariant and that the space
+is second countable, as holds for an additive Haar measure on a finite-dimensional space.
 
 This identity applies successively to the derivative fields of a Sobolev function, and is the
-analytic input to local smooth approximation and Meyers--Serrin density.
+analytic input to local smooth approximation and Meyers--Serrin density. Combined with Jensen's
+inequality for convolution (`ConvexOn.lintegral_ofReal_map_norm_convolution_le`), it shows that
+mollifying by a probability kernel does not increase a convex integral `∫ Φ(‖Du‖)` of the
+gradient, which is the form in which superlinear bounds from de la Vallée Poussin's criterion
+pass to mollifications.
 
 ## Main statements
 
@@ -37,6 +44,10 @@ analytic input to local smooth approximation and Meyers--Serrin density.
   derivative with the convolution of the weak derivative field.
 * `TauCeti.HasWeakLineDerivOn.lineDeriv_convolution_right` and
   `TauCeti.HasWeakFDerivOn.fderiv_convolution_right`: the corresponding derivative equations.
+* `TauCeti.HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le`: for a whole-space
+  weak derivative and a smooth compactly supported probability kernel `rho`, Jensen's bound
+  `∫ Φ(‖D(u ⋆ rho)‖) ≤ ∫ Φ(‖U‖)` for every `Φ` convex and monotone on `[0, ∞)`, for a
+  negation-invariant measure on a second-countable space.
 
 ## References
 
@@ -120,5 +131,24 @@ theorem HasWeakFDerivOn.fderiv_convolution_right {u : E → F} {U : E → E →L
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     fderiv ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) x = (U ⋆[(lsmul ℝ ℝ).flip, mu] rho) x :=
   (h.hasFDerivAt_convolution_right hu hU rho hrho hrho_cpt x hx).fderiv
+
+/-- **Jensen's bound for the gradient of a mollification.** If `U` is a weak derivative field of
+`u` on the whole space and `rho` is a smooth compactly supported probability kernel, then
+`∫ Φ(‖D(u ⋆ rho)‖) ≤ ∫ Φ(‖U‖)` for every `Φ` convex and monotone on `[0, ∞)`, in extended
+nonnegative form. -/
+theorem HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le
+    [SecondCountableTopology E] [mu.IsNegInvariant] {u : E → F} {U : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn mu ⊤ u U)
+    (hu : LocallyIntegrable u mu) (hU : LocallyIntegrable U mu) {Φ : ℝ → ℝ}
+    (hΦ : ConvexOn ℝ (Set.Ici 0) Φ) (hΦm : MonotoneOn Φ (Set.Ici 0)) {rho : E → ℝ}
+    (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho) (hrho0 : 0 ≤ᵐ[mu] rho)
+    (hrho1 : ∫ x, rho x ∂mu = 1) :
+    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) x‖) ∂mu ≤
+      ∫⁻ x, ENNReal.ofReal (Φ ‖U x‖) ∂mu := by
+  have hfderiv : fderiv ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) = rho ⋆[lsmul ℝ ℝ, mu] U := by
+    ext1 x
+    rw [h.fderiv_convolution_right hu hU rho hrho hrho_cpt x fun _ _ => trivial, convolution_flip]
+  rw [hfderiv]
+  exact hΦ.lintegral_ofReal_map_norm_convolution_le hΦm hrho0 hrho1 hU.aestronglyMeasurable
 
 end TauCeti

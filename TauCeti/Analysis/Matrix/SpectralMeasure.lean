@@ -16,6 +16,8 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
+import Mathlib.LinearAlgebra.Matrix.Trace
+
 /-!
 # Empirical spectral measures of matrices
 
@@ -84,7 +86,9 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   `Matrix.resolventTransform_spectralMeasure_of_charpoly_eq_X_pow_mul` — the spectral measure, its
   integrals and its resolvent transform when `A.charpoly = X ^ k * B.charpoly`;
 * `Matrix.spectralMeasure_conjTranspose_mul_self`, `Matrix.spectralMeasure_mul_conjTranspose_self`
-  — the zero-mass correction between the spectral measures of `Aᴴ * A` and `A * Aᴴ`.
+  — the zero-mass correction between the spectral measures of `Aᴴ * A` and `A * Aᴴ`;
+* `Matrix.IsHermitian.spectralMeasure_real_Iic` — the distribution function of the spectral measure
+  is the proportion of eigenvalues at most `t`.
 
 ## References
 
@@ -145,6 +149,20 @@ theorem spectralMeasure_apply (A : Matrix n n 𝕜) (hA : A.IsHermitian) {s : Se
     (A.spectralMeasure hA : Measure ℝ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, s.indicator 1 (hA.eigenvalues i) :=
   empiricalMeasureOfFintype_apply hs
+
+open Finset in
+/-- The distribution function of the spectral measure at `t` is the proportion of eigenvalues at
+most `t`, counted with multiplicity. -/
+theorem IsHermitian.spectralMeasure_real_Iic {A : Matrix n n 𝕜} (hA : A.IsHermitian) (t : ℝ) :
+    (A.spectralMeasure hA : Measure ℝ).real (Set.Iic t) =
+      (#{i | hA.eigenvalues₀ i ≤ t} : ℝ) / Fintype.card n := by
+  classical
+  have hsum : ∑ i, (Set.Iic t).indicator (1 : ℝ → ℝ≥0∞) (hA.eigenvalues₀ i) =
+      (#{i | hA.eigenvalues₀ i ≤ t} : ℝ≥0∞) := by
+    simp [Set.indicator_apply]
+  rw [Measure.real, spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    empiricalMeasureOfFintype_apply measurableSet_Iic, Fintype.card_fin, hsum]
+  simp [div_eq_inv_mul]
 
 /-- The spectral measure's atom at zero is the proportion of zero eigenvalues, expressed in terms
 of the matrix rank. -/
