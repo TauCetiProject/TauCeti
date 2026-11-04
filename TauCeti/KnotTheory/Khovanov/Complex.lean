@@ -256,6 +256,21 @@ theorem khovanovComplexXIso_hom_comp_π {i : ℤ}
   simp only [khovanovComplexπ, Category.assoc, biproduct.mapIso_hom, biproduct.map_π,
     eqToIso.hom, Functor.eqToHom_comp_cubeComplexπ_assoc]
 
+/-- The product coordinates of the term comparison are its normalized state projections. -/
+@[simp]
+theorem khovanovComplexXIso_biproductIsoPi_apply (i : ℤ)
+    (x : (D.khovanovComplex hD R j).X i)
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    ((ModuleCat.biproductIsoPi _).hom ((D.khovanovComplexXIso hD R j i).hom x)) S =
+      (eqToHom (D.resolutionCube_obj_normalized hD R j S.1)).hom
+        ((D.khovanovComplexπ hD R j S).hom x) := by
+  have h := congrArg (fun f ↦ (D.khovanovComplexXIso hD R j i).hom ≫
+    (ModuleCat.biproductIsoPi _).hom ≫ f)
+    (ModuleCat.biproductIsoPi_inv_comp_π _ S)
+  simp only [Iso.hom_inv_id_assoc, khovanovComplexXIso_hom_comp_π] at h
+  simpa only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    LinearMap.proj_apply] using (congrArg (fun f ↦ f.hom x) h).symm
+
 /-- The inverse term comparison projects a quantum piece onto its state vertex. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexXIso_inv_comp_π {i : ℤ}
