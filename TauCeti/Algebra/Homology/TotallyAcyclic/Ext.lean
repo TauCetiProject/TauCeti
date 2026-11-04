@@ -59,9 +59,8 @@ namespace TauCeti
 
 variable {A : Type u} [Ring A] [HasExt.{w} (ModuleCat.{v} A)]
 
-/-- **Gorenstein-projective modules have no higher extensions by finite projectives**:
-`Ext^{n+1}(M, Q) = 0` for a Gorenstein-projective module `M` and a finitely generated projective
-module `Q`. -/
+/-- **Gorenstein-projective modules have no higher extensions by projectives**:
+`Ext^{n+1}(M, Q) = 0` for a Gorenstein-projective module `M` and a projective module `Q`. -/
 theorem IsGorensteinProjective.ext_eq_zero {M : ModuleCat.{v} A} (hM : IsGorensteinProjective A M)
     (Q : ModuleCat.{v} A) [Module.Projective A Q] {n : ℕ} (e : Ext.{w} M Q (n + 1)) : e = 0 := by
   obtain ⟨P, hP, ⟨i⟩⟩ := (isGorensteinProjective_iff M).1 hM

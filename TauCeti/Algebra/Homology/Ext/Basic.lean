@@ -337,6 +337,7 @@ lemma ext_eq_zero_of_exists_f_comp_eq [Projective S.X₂] {Y : C}
   have := (Ext.one_subsingleton_iff_of_projective Y S hS inferInstance).2 fun x₁ ↦ by
     obtain ⟨ψ, hψ⟩ := h (Ext.addEquiv₀ x₁)
     refine ⟨Ext.mk₀ ψ, ?_⟩
+    -- `Ext.precomp` is an abbreviation for composition, with no simp lemma for its application.
     change (Ext.mk₀ S.f).comp (Ext.mk₀ ψ) (add_zero 0) = x₁
     rw [Ext.mk₀_comp_mk₀, hψ, Ext.mk₀_addEquiv₀_apply]
   exact Subsingleton.elim _ _

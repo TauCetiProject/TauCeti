@@ -144,22 +144,23 @@ private theorem ext_dual_cycles_eq_zero (n : ℕ) (m : ℤ)
   have (k : ℤ) : Projective (D k).X₂ := by
     have := hP.finite (-k)
     have := hP.projective (-k)
-    exact inferInstanceAs (Projective (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (P.X (-k)))))
+    infer_instance
   refine ext_eq_zero_of_iso (eqToIso (by
-      dsimp only [D]
-      rw [neg_neg]
-      rfl))
+      simp only [D, ShortComplex.moduleCatOpDual_X₃]
+      rw [neg_neg]))
     (ext_X₃_eq_zero_of_forall_exists_f_comp_eq hD
       (fun k ↦ eqToIso (by
-        dsimp only [D]
-        rw [show -(k + 1) + 1 = -k by lia]
-        rfl))
+        simp only [D, ShortComplex.moduleCatOpDual_X₃, ShortComplex.moduleCatOpDual_X₁]
+        rw [show -(k + 1) + 1 = -k by lia]))
       (fun k φ ↦ ?_) n (-m)) e
   obtain ⟨z, hz⟩ := (hP.bijective_opDualEval (-k + 1) (Iso.refl _)).2 φ.hom
   obtain ⟨p, rfl⟩ := (hS (-k)).moduleCat_surjective_g z
   refine ⟨ModuleCat.ofHom (opDualEval A (P.X (-k)) p), ?_⟩
   ext ψ
   rw [← hz]
+  -- Rewriting with `ShortComplex.moduleCatOpDual_f` leaves objects of the dual short complex in
+  -- the types of the composite, which blocks `ModuleCat.hom_comp`; state the composite as the
+  -- linear map it is by definition instead.
   change opDualEval A (P.X (-k)) p ((P.toCycles (-k) (-k + 1)).hom.lcomp Aᵐᵒᵖ A ψ) = _
   rw [opDualEval_apply]
   exact (opDualEval_apply A _ _ ψ).symm
@@ -240,8 +241,6 @@ private theorem exists_cosyzygy [IsNoetherianRing Aᵐᵒᵖ] (M : ModuleCat.{u}
     (LinearMap.exact_map_mkQ_range j) hjinj (Submodule.mkQ_surjective _)
   have hproj : Projective S.X₂ := inferInstanceAs (Projective (ModuleCat.of A (Fin k → A)))
   have hD := hS.moduleCatOpDual hj
-  have : Projective S.moduleCatOpDual.X₂ :=
-    inferInstanceAs (Projective (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (Fin k → A))))
   refine ⟨S, ⟨hS, inferInstanceAs (Module.Finite A (Fin k → A)), hproj, hj⟩,
     ⟨inferInstanceAs (Module.Finite A ((Fin k → A) ⧸ LinearMap.range j)), ?_,
       fun n ↦ ?_, fun n ↦ ext_X₁_eq_zero_of_ext_X₃_eq_zero hD (hM.ext_dual_eq_zero (n + 1))⟩,

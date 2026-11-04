@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.Supported
+public import Mathlib.RingTheory.Finiteness.Defs
 
 /-!
 # Filtering finitely supported functions supported on a set
@@ -16,6 +17,9 @@ every point of `s` satisfying `p` lies in `t`. This file packages this operation
 between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; Mathlib's
 `Finsupp.restrictDom` is the case of the predicate `(· ∈ t)` on the whole space.
 
+A linear map from a finitely generated module into `α →₀ M` takes values in the functions supported
+on one finite set (`TauCeti.Finsupp.exists_finset_support_subset`).
+
 ## Main definitions
 
 * `TauCeti.Finsupp.filterSupported`: `Finsupp.filter p` as a linear map
@@ -23,6 +27,8 @@ between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; 
 
 ## Main results
 
+* `TauCeti.Finsupp.exists_finset_support_subset`: the values of a linear map from a finitely
+  generated module into `α →₀ M` have their supports in one finite set.
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
@@ -73,5 +79,26 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
     (Submodule.inclusion (supported_mono (M := M) (R := R) ht)).comp (filterSupported p h) =
       filterSupported p fun a ha hp ↦ ht (h a ha hp) :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- **A finitely generated module maps into finitely many coordinates**: the values of a linear
+map from a finitely generated module into `α →₀ M` are all supported on one finite set, the union
+of the supports of the images of finitely many generators. -/
+theorem exists_finset_support_subset {N : Type*} [AddCommMonoid N] [Module R N] [Module.Finite R N]
+    (f : N →ₗ[R] α →₀ M) : ∃ T : Finset α, ∀ y, (f y).support ⊆ T := by
+  classical
+  obtain ⟨m, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := N)
+  refine ⟨Finset.univ.biUnion fun a ↦ (f (x a)).support, fun y ↦ ?_⟩
+  have hy : y ∈ Submodule.span R (Set.range x) := hx ▸ Submodule.mem_top
+  induction hy using Submodule.span_induction with
+  | mem _ h =>
+    obtain ⟨a, rfl⟩ := h
+    exact Finset.subset_biUnion_of_mem (fun a ↦ (f (x a)).support) (Finset.mem_univ a)
+  | zero => simp
+  | add y z _ _ hy hz =>
+    rw [map_add]
+    exact Finsupp.support_add.trans (Finset.union_subset hy hz)
+  | smul a y _ hy =>
+    rw [map_smul]
+    exact Finsupp.support_smul.trans hy
 
 end TauCeti.Finsupp

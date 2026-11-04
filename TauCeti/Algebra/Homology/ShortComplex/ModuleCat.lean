@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.LinearAlgebra.Exact
+public import TauCeti.LinearAlgebra.Dual.FiniteProjective
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
 # Homology of short complexes of modules
@@ -102,7 +104,8 @@ section OpDual
 variable {A : Type u} [Ring A] (S : ShortComplex (ModuleCat.{u} A))
 
 /-- The `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short complex of
-right `A`-modules, that is, of `Aᵐᵒᵖ`-modules. Both maps are precomposition. -/
+right `A`-modules, that is, of `Aᵐᵒᵖ`-modules. Both maps are precomposition. The body is exposed so
+that the `simps` lemmas for the two maps can be stated between the dual modules. -/
 @[expose, simps X₁ X₂ X₃ f g]
 noncomputable def moduleCatOpDual : ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) where
   X₁ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₃)
@@ -113,6 +116,11 @@ noncomputable def moduleCatOpDual : ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) wher
   zero := by
     ext φ x
     simp [← LinearMap.comp_apply S.g.hom S.f.hom, ← ModuleCat.hom_comp]
+
+/-- The dual of a finitely generated projective middle term is projective. -/
+instance [Module.Finite A S.X₂] [Module.Projective A S.X₂] : Projective S.moduleCatOpDual.X₂ := by
+  rw [moduleCatOpDual_X₂]
+  infer_instance
 
 variable {S}
 

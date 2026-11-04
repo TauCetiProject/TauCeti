@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Basic
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Projective coefficients for complete resolutions
@@ -16,11 +17,12 @@ coefficient module `Q`. Consequently every map from its cycles to `Q` extends to
 term. These extensions are the input for lifting maps between complete resolutions and for
 identifying finite projectives as relative injectives among Gorenstein-projective modules.
 
-The dual exactness in `CochainComplex.IsTotallyAcyclic` tests only the regular module. A projective
-module `Q` is a retract of a free module `Q →₀ A`, and since the terms of the complex are finitely
-generated, a map from a term to `Q →₀ A` lands in the functions supported on a finite set, a finite
-power of the regular module. No self-injectivity or commutativity assumption is needed. Taking the
-coefficient ring to be `Rᵐᵒᵖ` gives the statements for right `R`-modules.
+The dual exactness in `CochainComplex.IsTotallyAcyclic` tests only the regular module. A
+projective module `Q` is a retract of a free module `Q →₀ A`, and since the terms of the complex
+are finitely generated, a map from a term to `Q →₀ A` lands in the functions supported on a finite
+set (`TauCeti.Finsupp.exists_finset_support_subset`), a finite power of the regular module. No
+self-injectivity or commutativity assumption is needed. Taking the coefficient ring to be `Rᵐᵒᵖ`
+gives the statements for right `R`-modules.
 
 ## References
 
@@ -56,21 +58,7 @@ theorem exact_hom_projective (i j k : ℤ) (hij : i + 1 = j) (hjk : j + 1 = k) :
   constructor
   · intro hf
     -- As `Pʲ` is finitely generated, `s ∘ f` takes values in functions supported on a finite `T`.
-    obtain ⟨m, x, hx⟩ := Module.Finite.exists_fin (R := A) (M := P.X j)
-    let T : Finset Q := Finset.univ.biUnion fun a ↦ (s (f (x a))).support
-    have hT (y : P.X j) : (s (f y)).support ⊆ T := by
-      have hy : y ∈ Submodule.span A (Set.range x) := hx ▸ Submodule.mem_top
-      induction hy using Submodule.span_induction with
-      | mem _ h =>
-        obtain ⟨a, rfl⟩ := h
-        exact Finset.subset_biUnion_of_mem (fun a ↦ (s (f (x a))).support) (Finset.mem_univ a)
-      | zero => simp
-      | add y z _ _ hy hz =>
-        rw [map_add, map_add]
-        exact Finsupp.support_add.trans (Finset.union_subset hy hz)
-      | smul a y _ hy =>
-        rw [map_smul, map_smul]
-        exact Finsupp.support_smul.trans hy
+    obtain ⟨T, hT⟩ := TauCeti.Finsupp.exists_finset_support_subset (s ∘ₗ f)
     -- Extend each coordinate in `T` along the differential, then map back to the retract `Q`.
     have hcoord (t : Q) : ∃ g : P.X k →ₗ[A] A,
         g.comp (P.d j k).hom = (Finsupp.lapply t).comp (s.comp f) := by

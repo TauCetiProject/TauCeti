@@ -11,11 +11,11 @@ public import TauCeti.CategoryTheory.Exact.Biproduct
 /-!
 # The positive horseshoe step for complete resolutions
 
-A map into a finitely generated projective module extends across a monomorphism whose cokernel
-is Gorenstein-projective. Consequently, copresentations of the ends of a short exact sequence
-can be combined into a copresentation of its middle term, with middle module the direct sum of
-the prescribed copresenting modules. Only the left copresenting module must be finite
-projective. The cokernel is an extension of the two prescribed cokernels.
+A map into a projective module extends across a monomorphism whose cokernel is
+Gorenstein-projective. Consequently, copresentations of the ends of a short exact sequence can be
+combined into a copresentation of its middle term, with middle module the direct sum of the
+prescribed copresenting modules. Only the left copresenting module must be projective. The
+cokernel is an extension of the two prescribed cokernels.
 
 This is the positive-degree step of the complete horseshoe construction. Unlike an injective
 horseshoe, it does not require projective modules to be injective among all modules. Only the
