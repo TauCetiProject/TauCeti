@@ -34,9 +34,7 @@ carrier transfer to that pinned group only along such an identification, once pr
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
 * R. W. Carter, *Simple Groups of Lie Type*, Chapter 6.
 
-The block representation is `TauCeti.MinusculeWeightTable.sl2BlockSL`. The containment and
-image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`, using Mathlib's
-`Matrix.SL2.transvection_induction`.
+The block representation is `TauCeti.MinusculeWeightTable.sl2BlockSL`.
 -/
 
 public section
@@ -90,6 +88,8 @@ theorem sl2BlockSL_diag2nUnit (i : Fin 4) (u : Rˣ) :
 
 variable (K : Type*) [Field K] (i : Fin 4)
 
+/- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`,
+using Mathlib's `Matrix.SL2.transvection_induction`. -/
 private theorem sl2BlockSL_mem_of_rootSubgroupPoints_mem {H : Subgroup (GL (Fin 24) K)}
     (hinl : ∀ t : K, (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t) : GL (Fin 24) K) ∈ H)
     (hinr : ∀ t : K, (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t) : GL (Fin 24) K) ∈ H)
