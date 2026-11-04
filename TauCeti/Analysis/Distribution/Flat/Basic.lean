@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Mass.Normal
+public import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Extended flat mass with real normal decompositions
@@ -136,7 +137,7 @@ theorem normalFlatMass_smul (a : ℝ) : normalFlatMass (a • T) = ‖a‖ₑ * 
     ‖a‖ₑ * normalFlatMass T ≤ ‖a‖ₑ * (‖a⁻¹‖ₑ * normalFlatMass (a • T)) :=
       mul_le_mul' le_rfl (by simpa only [hcancel] using h)
     _ = normalFlatMass (a • T) := by
-      rw [← mul_assoc, ← enorm_mul, mul_inv_cancel₀ ha, enorm_one, one_mul]
+      simp [← mul_assoc, -enorm_inv, ← enorm_mul, ha]
 
 @[simp]
 theorem normalFlatMass_neg : normalFlatMass (-T) = normalFlatMass T := by
@@ -156,13 +157,8 @@ theorem enorm_apply_le_normalFlatMass_mul (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F
   let C := max ‖(ω : E →ᵇ (E [⋀^Fin k]→L[ℝ] F))‖ₑ
     ‖(extDerivCLM ω : E →ᵇ (E [⋀^Fin (k + 1)]→L[ℝ] F))‖ₑ
   by_cases hC : C = 0
-  · have hω : ω = 0 := by
-      have hz : ‖(ω : E →ᵇ (E [⋀^Fin k]→L[ℝ] F))‖ₑ = 0 :=
-        le_antisymm ((le_max_left _ _).trans hC.le) bot_le
-      have hn : ‖(ω : E →ᵇ (E [⋀^Fin k]→L[ℝ] F))‖ ≤ 0 := by
-        simpa only [← ofReal_norm, ENNReal.ofReal_eq_zero] using hz
-      exact TestFunction.ext fun x => by
-        simpa using (BoundedContinuousFunction.norm_le le_rfl).1 hn x
+  · have hω : ω = 0 := (toBoundedContinuousFunction_eq_zero ω).mp
+      (enorm_eq_zero.mp (le_antisymm ((le_max_left _ _).trans hC.le) bot_le))
     simp [hω]
   have hCtop : C ≠ ⊤ := by simp [C]
   dsimp only [C] at hC hCtop
@@ -195,7 +191,7 @@ theorem normalFlatMass_comp_extDerivCLM_le
   refine le_iInf fun R => le_iInf fun S => le_iInf fun hR => le_iInf fun hS =>
     le_iInf fun heq => ?_
   have hb : T ∘L extDerivCLM = 0 + R ∘L extDerivCLM := by
-    rw [heq, add_comp, comp_assoc, extDerivCLM_comp_extDerivCLM, comp_zero, add_zero, zero_add]
+    simp [heq, add_comp, comp_assoc, extDerivCLM_comp_extDerivCLM]
   exact (normalFlatMass_le 0 R isNormal_zero hR hb).trans (by simp)
 
 /-- Restriction to an open subset does not increase normal flat mass. This is restriction
