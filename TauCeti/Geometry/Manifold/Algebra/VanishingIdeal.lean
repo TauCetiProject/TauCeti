@@ -10,7 +10,8 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.Geometry.Manifold.BumpFunction
-import TauCeti.Geometry.Manifold.DerivationBundle
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
