@@ -181,14 +181,15 @@ theorem conjWirtingerDeriv_fun_mul (hf : DifferentiableAt ℝ f x)
     conjWirtingerDeriv (fun y ↦ f y * g y) x =
       f x • conjWirtingerDeriv g x + g x • conjWirtingerDeriv f x := by
   ext v
-  simp [conjWirtingerDeriv_apply, fderiv_fun_mul hf hg]
+  simp only [conjWirtingerDeriv_apply, fderiv_fun_mul hf hg, add_apply, smul_apply, smul_eq_mul]
   ring
 
 /-- The conjugate Wirtinger derivative of a power: `\bar∂(fⁿ) = n f^(n-1) \bar∂f`. -/
 theorem conjWirtingerDeriv_fun_pow (hf : DifferentiableAt ℝ f x) (n : ℕ) :
     conjWirtingerDeriv (fun y ↦ f y ^ n) x = (n * f x ^ (n - 1)) • conjWirtingerDeriv f x := by
   ext v
-  simp [conjWirtingerDeriv_apply, fderiv_fun_pow n hf]
+  simp only [conjWirtingerDeriv_apply, fderiv_fun_pow n hf, nsmul_eq_mul, smul_apply,
+    smul_eq_mul]
   ring
 
 end Mul

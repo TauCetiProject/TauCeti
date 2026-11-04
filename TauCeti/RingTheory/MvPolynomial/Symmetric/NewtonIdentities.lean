@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
-public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 public import TauCeti.Algebra.Algebra.NatCast
 import Mathlib.Algebra.Module.BigOperators
@@ -38,7 +37,8 @@ rule, the generating function identity `∑ (-1)ʲ b_j tʲ = exp (-∑ M_k tᵏ 
 `TauCeti.newton_variation_eq_sum` proves this without power series or exponentials: if `c_j`
 satisfies the recursion obtained by applying the Leibniz rule to Newton's recursion, with
 `δM_k = k e_k`, then `c_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} e_k`. The variations live in a
-torsion-free module over the ring of the `b_j`, as derivatives of scalar functions do. The same
+module in which division by positive integers is unique, as derivatives of scalar functions
+over a field of characteristic zero do. The same
 recursion shows that the Newton coefficients are homogeneous: rescaling `M_k ↦ gᵏ M_k`, as a
 change of frame `W ↦ g W` does to the moments `M_k = ∫ Wᵏ`, rescales `b_j ↦ gʲ b_j`
 (`TauCeti.newton_eq_pow_mul`). These identities are the algebra behind the equation satisfied by
@@ -143,7 +143,7 @@ end Subalgebra
 
 section Variation
 
-variable {A N : Type*} [CommRing A] [IsDomain A] [CharZero A]
+variable {A N : Type*} [CommRing A]
 
 /-- **The variation of the Newton coefficients.** Let `b` satisfy Newton's recursion
 `i b_i = ∑_{k=1}^{i} (-1)^(k-1) b_{i-k} M_k` for `i < j`, and let `c` satisfy the recursion
@@ -153,7 +153,7 @@ obtained from it by the Leibniz rule, `c₀ = 0` and
 
 for `i ≤ j`. Then `c_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} e_k`, that is
 `δ b_j = ∑_{k=1}^{j} (-1)^(k-1) b_{j-k} δM_k / k`. -/
-theorem newton_variation_eq_sum [AddCommGroup N] [Module A N] [Module.IsTorsionFree A N]
+theorem newton_variation_eq_sum [AddCommGroup N] [Module A N] [HasUniqueDiv N]
     {b M : ℕ → A} {c e : ℕ → N} {j : ℕ}
     (hb : ∀ i < j, (i : A) * b i = ∑ k ∈ Icc 1 i, (-1) ^ (k - 1) * b (i - k) * M k)
     (hc₀ : c 0 = 0)
@@ -190,9 +190,10 @@ theorem newton_variation_eq_sum [AddCommGroup N] [Module A N] [Module.IsTorsionF
       (fun k i ↦ by simp only [mem_Icc]; omega)]
     refine sum_congr rfl fun k _ ↦ sum_congr rfl fun i _ ↦ ?_
     rw [Nat.sub_right_comm]
-    ring_nf
-  have hj' : (j : A) ≠ 0 := Nat.cast_ne_zero.2 hj.ne'
-  refine smul_right_injective N hj' ?_
+    congr 1
+    ring
+  refine nsmul_right_injective hj.ne' ?_
+  simp only [← Nat.cast_smul_eq_nsmul A]
   simp only [smul_add, sum_add_distrib, hc j le_rfl, smul_sum]
   rw [hswap, ← sum_add_distrib]
   refine sum_congr rfl fun k hk ↦ ?_
@@ -204,7 +205,8 @@ theorem newton_variation_eq_sum [AddCommGroup N] [Module A N] [Module.IsTorsionF
 /-- **Homogeneity of the Newton coefficients.** If `b` and `b'` both start at `1` and satisfy
 Newton's recursion for `M` and for the rescaled sequence `k ↦ gᵏ M_k` respectively, up to `j`,
 then `b'_j = gʲ b_j`. -/
-theorem newton_eq_pow_mul {b b' M : ℕ → A} (g : A) {j : ℕ} (hb₀ : b 0 = 1) (hb'₀ : b' 0 = 1)
+theorem newton_eq_pow_mul [HasUniqueDiv A] {b b' M : ℕ → A} (g : A) {j : ℕ} (hb₀ : b 0 = 1)
+    (hb'₀ : b' 0 = 1)
     (hb : ∀ i ≤ j, (i : A) * b i = ∑ k ∈ Icc 1 i, (-1) ^ (k - 1) * b (i - k) * M k)
     (hb' : ∀ i ≤ j, (i : A) * b' i = ∑ k ∈ Icc 1 i, (-1) ^ (k - 1) * b' (i - k) * (g ^ k * M k)) :
     b' j = g ^ j * b j := by
@@ -212,7 +214,8 @@ theorem newton_eq_pow_mul {b b' M : ℕ → A} (g : A) {j : ℕ} (hb₀ : b 0 = 
   | _ j ih =>
   rcases Nat.eq_zero_or_pos j with rfl | hj
   · simp [hb₀, hb'₀]
-  refine mul_left_cancel₀ (Nat.cast_ne_zero.2 hj.ne' : (j : A) ≠ 0) ?_
+  refine nsmul_right_injective hj.ne' ?_
+  simp only [nsmul_eq_mul]
   rw [hb' j le_rfl, mul_left_comm, hb j le_rfl, mul_sum]
   refine sum_congr rfl fun k hk ↦ ?_
   rw [mem_Icc] at hk

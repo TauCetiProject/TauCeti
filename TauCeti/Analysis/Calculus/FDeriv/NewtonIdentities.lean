@@ -102,6 +102,7 @@ theorem hasFDerivAt_of_newton (hb₀ : b 0 =ᶠ[𝓝 x] 1)
     module
   have h₀ : fderiv 𝕜 (b 0) x = 0 := by
     rw [hb₀.fderiv_eq, fderiv_one, Pi.zero_apply]
+  have := HasUniqueDiv.of_isTorsionFree 𝔸 (E →L[𝕜] 𝔸)
   convert (hd j le_rfl).hasFDerivAt using 1
   rw [newton_variation_eq_sum (c := fun i ↦ fderiv 𝕜 (b i) x)
     (e := fun k ↦ (k : 𝔸)⁻¹ • fderiv 𝕜 (M k) x) (fun i hi ↦ (hb i hi.le).self_of_nhds) h₀ hc]
