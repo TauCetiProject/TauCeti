@@ -28,7 +28,8 @@ measure, then there are levels
 principle with bounded drift.
 
 The same holds for the classical gradient of a `C¹` function, which is read off from the weak
-statement on small balls.
+statement on small balls. In particular a level set of a `C¹` function on which its derivative
+does not vanish is null.
 -/
 
 public section
@@ -197,5 +198,15 @@ theorem gradient_ae_eq_zero_on_level_set_of_contDiffOn {w : E → ℝ}
     ae_restrict_mem hO.measurableSet] with x hx hxO hxk
   by_contra h
   exact hx ⟨hxO, hxk, h⟩
+
+/-- A level set of a `C¹` function is null if the derivative does not vanish on it. -/
+theorem measure_setOf_eq_eq_zero_of_fderiv_ne_zero {w : E → ℝ} (hw : ContDiff ℝ 1 w) {k : ℝ}
+    (hreg : ∀ x, w x = k → fderiv ℝ w x ≠ 0) : mu {x | w x = k} = 0 := by
+  have h := gradient_ae_eq_zero_on_level_set_of_contDiffOn (mu := mu) (Omega := ⊤)
+    hw.contDiffOn k
+  rw [Opens.coe_top, Measure.restrict_univ] at h
+  rw [measure_eq_zero_iff_ae_notMem]
+  filter_upwards [h] with x hx hxk
+  exact hreg x hxk (by simpa [gradient] using hx hxk)
 
 end TauCeti

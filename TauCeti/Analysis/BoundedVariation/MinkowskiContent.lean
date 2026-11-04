@@ -5,14 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
+import TauCeti.Analysis.BoundedVariation.Calibration
+import TauCeti.Analysis.Calculus.ContDiff.LevelSet
+import TauCeti.Analysis.Calculus.FDeriv.LevelSet
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Topology.Order.Sublevel
 
 /-!
 # Perimeter and outer Minkowski content
@@ -32,13 +39,23 @@ sets of `K`. If their volume has a right derivative `D` at `t = 0`, then `P(K) �
 (`IsCompact.perimeter_le_of_hasDerivWithinAt`). For convex bodies of positive volume this is
 one half of the identification of the perimeter with the first variation of parallel volume.
 
-The proof approximates the indicator of the closure of `s` by Lipschitz functions. Mathlib's
-`ε`-thickened indicator `thickenedIndicator` of `s` is `ε⁻¹`-Lipschitz, equals one on the
-closure of `s` and vanishes off `s_ε`. It attains its maximum on the closure of `s` and its
-minimum off `s_ε`, so its derivative vanishes there, and its total variation in `Ω` is at most
-`ε⁻¹ μ((s_ε \ closure s) ∩ Ω)`. The thickened indicators converge to the indicator of the closure
-of `s` locally in `L¹`, since the shells `s_ε \ closure s` decrease to the empty set, and lower
-semicontinuity of the total variation concludes.
+The first bound is proved by approximating the indicator of the closure of `s` by Lipschitz
+functions. Mathlib's `ε`-thickened indicator `thickenedIndicator` of `s` is `ε⁻¹`-Lipschitz,
+equals one on the closure of `s` and vanishes off `s_ε`. It attains its maximum on the closure of
+`s` and its minimum off `s_ε`, so its derivative vanishes there, and its total variation in `Ω` is
+at most `ε⁻¹ μ((s_ε \ closure s) ∩ Ω)`. The thickened indicators converge to the indicator of the
+closure of `s` locally in `L¹`, since the shells `s_ε \ closure s` decrease to the empty set, and
+lower semicontinuity of the total variation concludes.
+
+For sets with smooth boundary the outer Minkowski content is the perimeter. If `u` is smooth and
+compactly supported and `t > 0` is a regular value of `u`, the closed superlevel set
+`s = {u ≥ t}` satisfies `|s_ε \ s| / ε → P(s)` as `ε → 0⁺`
+(`ContDiff.tendsto_volume_thickening_sdiff_div`). The lower bound is the general one above. For
+the upper bound, write `s = {w ≥ 0}` for a smooth defining function `w` with `‖Dw‖ = 1` on the
+boundary (`ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt`). Since `‖Dw‖ ≤ 1 + δ` near the
+boundary, `s_ε \ s` lies in the shell `{-(1 + δ) ε < w < 0}` for small `ε`, and the calibration
+estimate for `-w` bounds the volume of that shell by `(1 + δ) ε P(s) / (1 - 2 δ)`
+(`ContDiff.setIntegral_norm_fderiv_le`).
 
 ## Main results
 
@@ -48,6 +65,8 @@ semicontinuity of the total variation concludes.
   has right derivative `D` at zero, its outer shells have volume `D t + o(t)`.
 * `IsCompact.perimeter_le_of_hasDerivWithinAt`: the perimeter of a compact set is at most the
   right derivative at zero of the volume of its outer parallel sets.
+* `ContDiff.tendsto_volume_thickening_sdiff_div`: the outer Minkowski content of a regular closed
+  superlevel set of a compactly supported smooth function is its perimeter.
 
 ## References
 
@@ -252,3 +271,179 @@ theorem IsCompact.perimeter_le_of_hasDerivWithinAt {K : Set E} (hK : IsCompact K
         gcongr
         exact thickening_subset_cthickening t K
     _ = ENNReal.ofReal D := (hK.tendsto_measure_cthickening_sdiff_div hD).liminf_eq
+
+/-! ### Regular superlevel sets of smooth functions -/
+
+section Smooth
+
+open TauCeti TestFunction
+open scoped ContDiff Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **The calibrated outer shell estimate.** Let `w` be `C¹` and let `ψ` be an admissible test
+vector field with `Dw (ψ) = -‖Dw‖` on the outer shell `S = {-η < w < 0}`, on which
+`‖Dw‖ ≥ 1 - ε`. If `|div ψ| ≤ C` and `η C ≤ ε < 1 / 2`, then
+`|S| ≤ η / (1 - 2 ε) P({w ≥ 0})`. -/
+private theorem volume_preimage_Ioo_neg_le {w : E → ℝ} (hw : ContDiff ℝ 1 w) {η ε C : ℝ}
+    (hη : 0 < η) (hε2 : ε < 1 / 2) (ψ : 𝓓(⊤, E)) (hψ1 : ∀ x, ‖ψ x‖ ≤ 1)
+    (hC : ∀ x, ‖divergenceCLM ψ x‖ ≤ C) (hηC : η * C ≤ ε)
+    (hψ : ∀ x, w x ∈ Ioo (-η) 0 → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖)
+    (hgrad : ∀ x, w x ∈ Ioo (-η) 0 → 1 - ε ≤ ‖fderiv ℝ w x‖)
+    (hfin : volume (w ⁻¹' Ioo (-η) 0) ≠ ⊤)
+    (hint : IntegrableOn (fun x => ‖fderiv ℝ w x‖) (w ⁻¹' Ioo (-η) 0)) :
+    volume (w ⁻¹' Ioo (-η) 0) ≤
+      ENNReal.ofReal (η / (1 - 2 * ε)) * perimeter volume ⊤ {x | 0 ≤ w x} := by
+  set S := w ⁻¹' Ioo (-η) 0
+  have hSm : MeasurableSet S := hw.continuous.measurable measurableSet_Ioo
+  -- Calibrate `-w` on the shell `S = {0 < -w < η}` with the test vector field `-ψ`.
+  have hfdn (x : E) : ‖fderiv ℝ (fun y => -w y) x‖ = ‖fderiv ℝ w x‖ := by
+    rw [fderiv_fun_neg, norm_neg]
+  have hpre : (fun y => -w y) ⁻¹' Ioo 0 η = S := by
+    ext x
+    simp only [mem_preimage, mem_Ioo, S]
+    constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  have hcal := hw.neg.setIntegral_norm_fderiv_le hη (-ψ) fun x hx => by
+    have hx : x ∈ S := hpre ▸ hx
+    simp [fderiv_fun_neg, hψ x hx]
+  rw [hpre] at hcal
+  simp_rw [hfdn] at hcal
+  set I := ∫ x, divergenceCLM (-ψ) x * {x | 0 < -w x}.indicator 1 x
+  -- The divergence term is at most the perimeter of `{w < 0}`, which is that of `{w ≥ 0}`.
+  have hI : ENNReal.ofReal I ≤ perimeter volume ⊤ {x | 0 ≤ w x} := by
+    have hc : {x | 0 < -w x} = {x | 0 ≤ w x}ᶜ := by
+      ext x
+      simp
+    rw [← perimeter_compl, ← hc, perimeter_def]
+    exact ofReal_integral_le_totalVariationOn (-ψ) fun x => by simpa using hψ1 x
+  have hJ : ∫ x in S, |divergenceCLM (-ψ) x| ≤ C * volume.real S := by
+    refine (le_abs_self _).trans ?_
+    rw [← Real.norm_eq_abs]
+    refine norm_setIntegral_le_of_norm_le_const hfin.lt_top fun x _ => ?_
+    simpa using hC x
+  have hlow : (1 - ε) * volume.real S ≤ ∫ x in S, ‖fderiv ℝ w x‖ :=
+    setIntegral_ge_of_const_le_real hSm hfin hgrad hint
+  -- Altogether `(1 - ε) |S| ≤ η (I + C |S|) ≤ η I + ε |S|`.
+  have hV : volume.real S ≤ η / (1 - 2 * ε) * I := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ (by linarith)]
+    nlinarith [measureReal_nonneg (μ := volume) (s := S)]
+  calc volume S = ENNReal.ofReal (volume.real S) := (ofReal_measureReal hfin).symm
+    _ ≤ ENNReal.ofReal (η / (1 - 2 * ε) * I) := ENNReal.ofReal_le_ofReal hV
+    _ = ENNReal.ofReal (η / (1 - 2 * ε)) * ENNReal.ofReal I :=
+        ENNReal.ofReal_mul (div_nonneg hη.le (by linarith))
+    _ ≤ ENNReal.ofReal (η / (1 - 2 * ε)) * perimeter volume ⊤ {x | 0 ≤ w x} := by
+        gcongr
+
+/-- **The outer shells of a smooth set are controlled by its perimeter.** Let `w` be smooth with
+`{w ≥ -δ}` compact and `‖Dw‖ = 1` on its zero level, and let `s = {w ≥ 0}`. For every
+`0 < ε < 1 / 2`, eventually as `r → 0⁺`,
+`|s_r \ s| ≤ (1 + ε) / (1 - 2 ε) r P(s)`, where `s_r` is the open `r`-neighbourhood of `s`. -/
+private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : ContDiff ℝ ∞ w) {δ : ℝ}
+    (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) (hnorm : ∀ x, w x = 0 → ‖fderiv ℝ w x‖ = 1)
+    {ε : ℝ} (hε : 0 < ε) (hε2 : ε < 1 / 2) :
+    ∀ᶠ r in 𝓝[>] 0, volume (thickening r {x | 0 ≤ w x} \ {x | 0 ≤ w x}) ≤
+      ENNReal.ofReal ((1 + ε) / (1 - 2 * ε) * r) * perimeter volume ⊤ {x | 0 ≤ w x} := by
+  set s := {x | 0 ≤ w x}
+  have hfd : Continuous fun x => ‖fderiv ℝ w x‖ := (hw.continuous_fderiv (by simp)).norm
+  -- A test vector field `ψ` calibrating `w` near its zero level, as `-∇w / ‖∇w‖` does.
+  obtain ⟨η₀, hη₀, ψ, hψ1, hψ⟩ := hw.exists_testFunction_fderiv_apply_eq_neg_norm hδ hK
+    fun x hx h0 => by simpa [h0] using hnorm x hx
+  -- Near the zero level, `‖Dw‖` lies within `ε` of `1`.
+  obtain ⟨η₁, hη₁, hη₁δ, hη₁C⟩ := exists_forall_abs_le_notMem hw.continuous hδ hK
+    (C := {x | ε ≤ |‖fderiv ℝ w x‖ - 1|})
+    (isClosed_le continuous_const (hfd.sub continuous_const).abs) fun x hx h0 => by
+      have hx : ε ≤ |‖fderiv ℝ w x‖ - 1| := hx
+      rw [hnorm x h0, sub_self, abs_zero] at hx
+      linarith
+  have hgrad {x : E} (hx : |w x| ≤ η₁) : |‖fderiv ℝ w x‖ - 1| < ε := lt_of_not_ge (hη₁C x hx)
+  obtain ⟨C, hC⟩ := (divergenceCLM ψ).continuous.bounded_above_of_compact_support
+    (divergenceCLM ψ).hasCompactSupport
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  set m := min (min η₀ η₁) (ε / (C + 1))
+  have hm : 0 < m := lt_min (lt_min hη₀ hη₁) (by positivity)
+  filter_upwards [Ioo_mem_nhdsGT (show 0 < m / (1 + ε) by positivity)] with r ⟨hr, hrm⟩
+  -- Write `η = (1 + ε) r` for the width of the outer shell `S = {-η < w < 0}`.
+  set η := (1 + ε) * r
+  have hη : 0 < η := by positivity
+  have hηm : η ≤ m := by
+    have := (lt_div_iff₀' (by linarith : (0 : ℝ) < 1 + ε)).1 hrm
+    linarith
+  have hη₀' : η ≤ η₀ := hηm.trans ((min_le_left _ _).trans (min_le_left _ _))
+  have hη₁' : η ≤ η₁ := hηm.trans ((min_le_left _ _).trans (min_le_right _ _))
+  have hηC : η * C ≤ ε := by
+    calc η * C ≤ ε / (C + 1) * C := mul_le_mul_of_nonneg_right (hηm.trans (min_le_right _ _)) hC0
+      _ ≤ ε := by
+          rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+          nlinarith
+  set S := w ⁻¹' Ioo (-η) 0
+  have hband {x : E} (hx : x ∈ S) : |w x| ≤ η := abs_le.2 ⟨hx.1.le, by linarith [hx.2]⟩
+  have hSK : S ⊆ {x | -δ ≤ w x} := fun x hx =>
+    (neg_le_neg (hη₁'.trans hη₁δ)).trans hx.1.le
+  -- The `r`-neighbourhood of `s` lies in `s ∪ S`, since `‖Dw‖ ≤ 1 + ε` near the zero level.
+  have hsub : thickening r s \ s ⊆ S := by
+    rintro x ⟨hx, hxs⟩
+    obtain ⟨p, hp, hpx⟩ := mem_thickening_iff.1 hx
+    refine ⟨?_, lt_of_not_ge hxs⟩
+    have := lt_apply_add_of_norm_fderiv_le (hw.differentiable (by simp)) (L := 1 + ε)
+      (a := -η) (b := 0) (by linarith) (fun y hy1 hy2 => ?_) (hp : 0 ≤ w p) (z := x - p) ?_
+    · simpa using this
+    · have := (abs_lt.1 (hgrad (abs_le.2 ⟨by linarith, by linarith⟩))).2
+      linarith
+    · rw [← dist_eq_norm]
+      simp only [η, sub_neg_eq_add, zero_add]
+      exact mul_lt_mul_of_pos_left hpx (by linarith)
+  calc volume (thickening r s \ s) ≤ volume S := measure_mono hsub
+    _ ≤ ENNReal.ofReal (η / (1 - 2 * ε)) * perimeter volume ⊤ s :=
+        volume_preimage_Ioo_neg_le (hw.of_le (by simp)) hη hε2 ψ hψ1 hC hηC
+          (fun x hx => hψ x ((hband hx).trans hη₀'))
+          (fun x hx => by linarith [(abs_lt.1 (hgrad ((hband hx).trans hη₁'))).1])
+          (ne_top_of_le_ne_top hK.measure_lt_top.ne (measure_mono hSK))
+          ((hfd.continuousOn.integrableOn_compact hK).mono_set hSK)
+    _ = ENNReal.ofReal ((1 + ε) / (1 - 2 * ε) * r) * perimeter volume ⊤ s := by
+        rw [show η / (1 - 2 * ε) = (1 + ε) / (1 - 2 * ε) * r by simp only [η]; ring]
+
+/-- **Outer Minkowski content of a regular superlevel set.** Let `u` be smooth and compactly
+supported, and let `t > 0` be a regular value of `u`. The closed superlevel set
+`s = {u ≥ t}` has outer Minkowski content equal to its perimeter:
+`|s_r \ s| / r → P(s)` as `r → 0⁺`, where `s_r` is the open `r`-neighbourhood of `s`. -/
+theorem ContDiff.tendsto_volume_thickening_sdiff_div {u : E → ℝ} (hu : ContDiff ℝ ∞ u)
+    (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t) (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) :
+    Tendsto (fun r => volume (thickening r {x | t ≤ u x} \ {x | t ≤ u x}) / ENNReal.ofReal r)
+      (𝓝[>] 0) (𝓝 (perimeter volume ⊤ {x | t ≤ u x})) := by
+  obtain ⟨w, hw, hK, hnorm, hset⟩ := hu.exists_contDiff_setOf_pos_eq_setOf_lt huc ht hreg
+  -- The closed superlevel set `{u ≥ t}` is `{w ≥ 0}`, the closure of `{u > t} = {w > 0}`.
+  have hs : {x | t ≤ u x} = {x | 0 ≤ w x} := by
+    rw [← hu.continuous.closure_setOf_lt_eq_of_fderiv_ne_zero hreg, ← hset,
+      hw.continuous.closure_setOf_lt_eq_of_fderiv_ne_zero fun x hx h0 => by
+        simpa [h0] using hnorm x hx]
+  rw [hs]
+  set s := {x | 0 ≤ w x}
+  have hsc : IsClosed s := isClosed_le continuous_const hw.continuous
+  refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
+  · -- The lower bound holds for every closed set.
+    calc perimeter volume ⊤ s = perimeter volume ⊤ (closure s) := by
+          rw [hsc.closure_eq]
+      _ ≤ liminf (fun r => volume ((thickening r s \ closure s) ∩ (⊤ : Opens E)) /
+            ENNReal.ofReal r) (𝓝[>] 0) :=
+          perimeter_closure_le_liminf_measure_thickening_sdiff_div ⊤ s
+      _ = liminf (fun r => volume (thickening r s \ s) / ENNReal.ofReal r) (𝓝[>] 0) := by
+          rw [hsc.closure_eq, Opens.coe_top]
+          simp_rw [inter_univ]
+  · -- The upper bound with constant `(1 + ε) / (1 - 2 ε)`, for every small `ε > 0`.
+    have hlim : Tendsto (fun ε : ℝ => ENNReal.ofReal ((1 + ε) / (1 - 2 * ε)) *
+        perimeter volume ⊤ s) (𝓝[>] 0) (𝓝 (perimeter volume ⊤ s)) := by
+      have h : Tendsto (fun ε : ℝ => (1 + ε) / (1 - 2 * ε)) (𝓝[>] 0) (𝓝 1) := by
+        have : ContinuousAt (fun ε : ℝ => (1 + ε) / (1 - 2 * ε)) 0 := by
+          fun_prop (disch := norm_num)
+        simpa using this.tendsto.mono_left nhdsWithin_le_nhds
+      simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal h) (Or.inl (by simp))
+    refine ge_of_tendsto hlim ?_
+    filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < 1 / 2 by norm_num)] with ε ⟨hε, hε2⟩
+    refine limsup_le_of_le (by isBoundedDefault) ?_
+    filter_upwards [eventually_volume_thickening_sdiff_le hw (by norm_num) hK hnorm hε hε2]
+      with r hr
+    refine ENNReal.div_le_of_le_mul (hr.trans_eq ?_)
+    rw [ENNReal.ofReal_mul (div_nonneg (by linarith) (by linarith)), mul_right_comm]
+
+end Smooth
