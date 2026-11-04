@@ -249,6 +249,41 @@ theorem isSegment_self_iff {σ : Set X} {x : X} : d.IsSegment σ x x ↔ σ = {x
   rintro a rfl b rfl
   simp
 
+/-! ### Short segments in `ℤ`-metric spaces -/
+
+section Int
+
+variable {d : LambdaMetric ℤ X}
+
+/-- Two points at distance `1` in a `ℤ`-metric space form a segment. -/
+theorem isSegment_pair {x y : X} (h : d x y = 1) : d.IsSegment {x, y} x y := by
+  have hI : Icc (0 : ℤ) 1 = {0, 1} := by
+    ext t
+    simp only [mem_Icc, mem_insert_iff, mem_singleton_iff]
+    omega
+  refine ⟨fun t => if t ≤ 0 then x else y, by simp, by simp [h], ?_, ?_⟩
+  · rw [h, hI]
+    rintro s (rfl | rfl) t (rfl | rfl) <;> simp [h, d.symm y x]
+  · rw [h, hI, image_pair]
+    simp
+
+/-- Three points `x, m, y` with `d x m = d m y = 1` and `d x y = 2` in a `ℤ`-metric space form a
+segment. -/
+theorem isSegment_triple {x m y : X} (hxm : d x m = 1) (hmy : d m y = 1)
+    (hxy : d x y = 2) : d.IsSegment {x, m, y} x y := by
+  have hI : Icc (0 : ℤ) 2 = {0, 1, 2} := by
+    ext t
+    simp only [mem_Icc, mem_insert_iff, mem_singleton_iff]
+    omega
+  refine ⟨fun t => if t ≤ 0 then x else if t ≤ 1 then m else y, by simp, by simp [hxy], ?_, ?_⟩
+  · rw [hxy, hI]
+    rintro s (rfl | rfl | rfl) t (rfl | rfl | rfl) <;>
+      simp [hxm, hmy, hxy, d.symm m x, d.symm y m, d.symm y x]
+  · rw [hxy, hI, image_insert_eq, image_pair]
+    simp
+
+end Int
+
 /-- `d` is geodesic: any two points are joined by a segment. -/
 def IsGeodesic (d : LambdaMetric Λ X) : Prop :=
   ∀ x y : X, ∃ σ, d.IsSegment σ x y
@@ -349,39 +384,6 @@ theorem isTree_of_subsingleton [Nonempty X] [Subsingleton X] : d.IsTree where
     exact ⟨x, x, isSegment_self_iff.2 (by rw [hσ, hτ, inter_self])⟩
 
 /-! ### A geodesic `ℤ`-metric space which is not a `ℤ`-tree -/
-
-section CycleFour
-
-variable {d : LambdaMetric ℤ X}
-
-/-- Two points at distance `1` in a `ℤ`-metric space form a segment. -/
-private theorem isSegment_pair {x y : X} (h : d x y = 1) : d.IsSegment {x, y} x y := by
-  have hI : Icc (0 : ℤ) 1 = {0, 1} := by
-    ext t
-    simp only [mem_Icc, mem_insert_iff, mem_singleton_iff]
-    omega
-  refine ⟨fun t => if t ≤ 0 then x else y, by simp, by simp [h], ?_, ?_⟩
-  · rw [h, hI]
-    rintro s (rfl | rfl) t (rfl | rfl) <;> simp [h, d.symm y x]
-  · rw [h, hI, image_pair]
-    simp
-
-/-- Three points `x, m, y` with `d x m = d m y = 1` and `d x y = 2` in a `ℤ`-metric space form a
-segment. -/
-private theorem isSegment_triple {x m y : X} (hxm : d x m = 1) (hmy : d m y = 1)
-    (hxy : d x y = 2) : d.IsSegment {x, m, y} x y := by
-  have hI : Icc (0 : ℤ) 2 = {0, 1, 2} := by
-    ext t
-    simp only [mem_Icc, mem_insert_iff, mem_singleton_iff]
-    omega
-  refine ⟨fun t => if t ≤ 0 then x else if t ≤ 1 then m else y, by simp, by simp [hxy], ?_, ?_⟩
-  · rw [hxy, hI]
-    rintro s (rfl | rfl | rfl) t (rfl | rfl | rfl) <;>
-      simp [hxm, hmy, hxy, d.symm m x, d.symm y m, d.symm y x]
-  · rw [hxy, hI, image_insert_eq, image_pair]
-    simp
-
-end CycleFour
 
 /-- The path metric on the vertices `0, 1, 2, 3` of a cycle of length four. -/
 private def cycleFour : LambdaMetric ℤ (Fin 4) where
