@@ -215,6 +215,14 @@ theorem rank_left_factor_eq {ι : Type*} [Fintype ι]
 
 end ExactRankFactorization
 
+/-- Left multiplication by a full-column-rank matrix preserves matrix rank. -/
+theorem rank_mul_eq_right_of_rank_eq_card {R m r o : Type*} [CommRing R] [IsDomain R]
+    [Fintype r] [Fintype o] (A : Matrix m r R) (B : Matrix r o R)
+    (hA : A.rank = Fintype.card r) : (A * B).rank = B.rank := by
+  apply le_antisymm (rank_mul_le_right A B)
+  have h := rank_mul_ge A B
+  omega
+
 section ExactRankFactorRange
 
 variable {𝕜 m n : Type*} [Field 𝕜] [Fintype n]
@@ -346,14 +354,6 @@ theorem rank_add_rank_le_rank_mul_add_card {o : Type*} [Fintype o] (A : Matrix m
   rw [Module.finrank_fintype_fun_eq_card] at hA
   have hB : B.rank = Module.finrank K S := rfl
   rw [rank, hB, hrange]
-  omega
-
-/-- Left multiplication by a full-column-rank matrix preserves matrix rank. -/
-theorem rank_mul_eq_right_of_rank_eq_card {r o : Type*} [Fintype r] [Fintype o]
-    (A : Matrix m r K) (B : Matrix r o K) (hA : A.rank = Fintype.card r) :
-    (A * B).rank = B.rank := by
-  apply le_antisymm (rank_mul_le_right A B)
-  have h := rank_mul_ge A B
   omega
 
 section StarOrderedField
