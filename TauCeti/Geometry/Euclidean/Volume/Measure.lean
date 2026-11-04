@@ -40,7 +40,12 @@ transported to `s` by adding a base point, is the Euclidean Hausdorff measure of
 of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +ᵥ q` are Mathlib's
 `IsometryEquiv.vaddConst q` followed by the inclusion of `s`
 (`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
-(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`).
+(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). In particular, for a unit
+vector `ν` of a finite-dimensional real inner product space of dimension `n`, the restriction of
+`μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of the
+orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
+(`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
+are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`).
 
 ## References
 
@@ -284,3 +289,63 @@ theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s)
     (IsometryEquiv.vaddConst q).range_eq_univ, inter_univ, euclideanHausdorffMeasure_preimage_coe]
 
 end AffineSubspace
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
+
+/-- The translated inclusion `y ↦ c • ν + y` of the orthogonal complement `(ℝ ∙ ν)ᗮ` is an
+isometry. When `‖ν‖ = 1`, its range is the hyperplane `{x | ⟪x, ν⟫ = c}`. -/
+theorem isometry_smul_add_coe (c : ℝ) :
+    Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
+  (isometry_add_left (c • ν)).comp isometry_subtype_coe
+
+variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+/-- **Hausdorff measure on a hyperplane.** For a unit vector `ν`, the `(n - 1)`-dimensional
+Hausdorff measure of the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of
+the orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`. -/
+theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) :
+    μHE[finrank ℝ F - 1].restrict {x | ⟪x, ν⟫ = c} =
+      (volume : Measure (ℝ ∙ ν)ᗮ).map fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
+  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
+  have hrange : range (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) = {x | ⟪x, ν⟫ = c} := by
+    ext x
+    refine ⟨?_, fun hx => ?_⟩
+    · rintro ⟨y, rfl⟩
+      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.2
+      simp [inner_add_left, real_inner_smul_left, hν, hy]
+    · have hy : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
+        rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
+          real_inner_smul_left, real_inner_self_eq_norm_sq, hν, hx.out]
+        ring
+      exact ⟨⟨x - c • ν, hy⟩, by simp⟩
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
+    (isometry_smul_add_coe c).map_euclideanHausdorffMeasure]
+  exact congrArg _ hrange.symm
+
+/-- Integrals over the hyperplane `{x | ⟪x, ν⟫ = c}` against Hausdorff measure are integrals over
+`(ℝ ∙ ν)ᗮ` against Lebesgue measure. -/
+theorem setIntegral_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] (g : F → G) :
+    ∫ x in {x | ⟪x, ν⟫ = c}, g x ∂μHE[finrank ℝ F - 1] = ∫ y : (ℝ ∙ ν)ᗮ, g (c • ν + y) := by
+  rw [euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    (isometry_smul_add_coe c).isClosedEmbedding.measurableEmbedding.integral_map]
+
+/-- A continuous compactly supported function is integrable on the hyperplane
+`{x | ⟪x, ν⟫ = c}` against Hausdorff measure. -/
+theorem integrableOn_setOf_inner_eq (hν : ‖ν‖ = 1) (c : ℝ) {G : Type*}
+    [NormedAddCommGroup G] {g : F → G}
+    (hg : Continuous g) (hgc : HasCompactSupport g) :
+    IntegrableOn g {x | ⟪x, ν⟫ = c} μHE[finrank ℝ F - 1] := by
+  have he := (isometry_smul_add_coe (ν := ν) c).isClosedEmbedding
+  rw [IntegrableOn, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    he.measurableEmbedding.integrable_map_iff]
+  exact (hg.comp he.continuous).integrable_of_hasCompactSupport (hgc.comp_isClosedEmbedding he)
+
+end TauCeti
