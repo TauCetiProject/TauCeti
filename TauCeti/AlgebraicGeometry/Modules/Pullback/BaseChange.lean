@@ -13,12 +13,15 @@ public import Mathlib.Topology.QuasiSeparated
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 /-!
 # Base change of quasicoherent sections
 
 For a morphism of schemes, if an open and its inverse image are affine, sections of the
 pullback of a quasicoherent sheaf are obtained by extending scalars along the coordinate-ring
-map. The isomorphism is characterized by sending `1 ⊗ s` to the pullback of `s`.
+map. The isomorphism is characterized by sending `1 ⊗ s` to the pullback of `s`. In particular,
+if a single section generates the sections over the affine open, its pullback generates the
+sections of the pullback over the inverse image.
 
 For a cartesian square over `Spec S ⟶ Spec R`, the same section map exhibits sections on the
 inverse image as the base change from `R` to `S`. This is the affine-cover input for cohomology
@@ -39,6 +42,8 @@ structure sheaf.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Hom.span_singleton_pullbackSections_eq_top`: over affine opens, the
+  pullback of a generator of the sections generates the sections of the pullback.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`: base change of sections over an
   affine open, along any base-ring map.
 * `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
@@ -208,6 +213,25 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pullbackSectionsEquiv_symm_pullbackSec
     (g.pullbackSectionsEquiv_one_tmul M hU hV s)
   erw [LinearEquiv.symm_apply_apply] at h
   exact h.symm
+include hU hV in
+/-- If a single section `m₀` generates `Γ(U, M)` over `Γ(X, U)`, then its pullback generates
+`Γ(g⁻¹ U, g^* M)` over `Γ(Y, g⁻¹ U)`, when `U` and `g⁻¹ U` are affine. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.span_singleton_pullbackSections_eq_top
+    {m₀ : Γ(M, U)} (h : Submodule.span Γ(X, U) {m₀} = ⊤) :
+    Submodule.span Γ(Y, g ⁻¹ᵁ U) {g.pullbackSections M U m₀} = ⊤ := by
+  refine eq_top_iff.mpr fun x _ ↦ Submodule.mem_span_singleton.mpr ?_
+  -- The extension of scalars of the cyclic module `Γ(U, M)` consists of the tensors `b ⊗ m₀`.
+  obtain ⟨y, rfl⟩ := (g.pullbackSectionsEquiv M hU hV).surjective x
+  obtain ⟨b, rfl⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top h y
+  -- View the coefficient `b` as a section of the structure sheaf rather than of its restriction.
+  obtain ⟨b, rfl⟩ : ∃ c : Γ(Y, g ⁻¹ᵁ U), c = b := ⟨b, rfl⟩
+  refine ⟨b, ?_⟩
+  rw [← g.pullbackSectionsEquiv_one_tmul M hU hV m₀]
+  refine (LinearEquiv.map_smul _ b _).symm.trans ?_
+  congr 1
+  have hb := ModuleCat.ExtendScalars.smul_tmul (g.app U).hom (M := .of Γ(X, U) Γ(M, U)) b 1 m₀
+  rw [mul_one] at hb
+  exact hb
 end AlgebraicGeometry.Scheme.Modules
 namespace AlgebraicGeometry.Scheme.Hom
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
