@@ -16,6 +16,7 @@ import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Noetherian
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.Regular.RegularSequence
 
@@ -157,14 +158,24 @@ private theorem map_pow_eq (n : ℕ) : (J.map (algebraMap R (LocalizedCompletion
       (algebraMap (AdicCompletion J R) (LocalizedCompletion J M)) := by
   rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq, Ideal.map_pow]
 
+omit [IsLocalization M S] in
+/-- If `x ∈ R̂` is congruent to `r ∈ R` modulo `J ^ n R̂`, their images in `T` are congruent modulo
+`J ^ n T`. -/
+private theorem algebraMap_sub_algebraMap_mem_map_pow {n : ℕ} {x : AdicCompletion J R} {r : R}
+    (hr : x - algebraMap R (AdicCompletion J R) r ∈
+      (J ^ n).map (algebraMap R (AdicCompletion J R))) :
+    algebraMap R (LocalizedCompletion J M) r -
+        algebraMap (AdicCompletion J R) (LocalizedCompletion J M) x ∈
+      (J.map (algebraMap R (LocalizedCompletion J M))) ^ n := by
+  rw [IsScalarTower.algebraMap_apply R (AdicCompletion J R), ← map_sub, map_pow_eq, ← neg_sub,
+    map_neg]
+  exact neg_mem (Ideal.mem_map_of_mem _ hr)
+
 variable {J M} in
 /-- The localization map `S → T` sends the ideal `J S` into `J T`. -/
 private theorem le_comap_toLocalization {K : Ideal S} (hK : J.map (algebraMap R S) = K) :
     K ≤ (J.map (algebraMap R (LocalizedCompletion J M))).comap (toLocalization J M) := by
-  rw [← hK, Ideal.map_le_iff_le_comap]
-  intro j hj
-  rw [Ideal.mem_comap, Ideal.mem_comap, AlgHom.commutes]
-  exact Ideal.mem_map_of_mem _ hj
+  rw [← hK, ← Ideal.map_le_iff_le_comap, Ideal.map_map_algebraMap]
 
 /-- Modulo `J ^ n`, the localization of `R` and the localization `T` of its completion agree: the
 map `S ⧸ J ^ n S → T ⧸ J ^ n T` is bijective. -/
@@ -208,10 +219,8 @@ private theorem bijective_quotientMap_toLocalization (hJ : J.FG) {K : Ideal S}
       rw [← AlgHom.commutes (toLocalization (S := S) J M) m₀, ← map_mul, IsLocalization.mk'_spec,
         AlgHom.commutes]
     rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, ← Ideal.mul_unit_mem_iff_mem _
-      (isUnit_algebraMap J M ⟨m₀, hm₀⟩), sub_mul, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hs, ht,
-      IsScalarTower.algebraMap_apply R (AdicCompletion J R) _ r, ← map_sub, map_pow_eq, ← neg_sub,
-      map_neg]
-    exact neg_mem (Ideal.mem_map_of_mem _ hr)
+      (isUnit_algebraMap J M ⟨m₀, hm₀⟩), sub_mul, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hs, ht]
+    exact algebraMap_sub_algebraMap_mem_map_pow J M hr
 
 include M in
 /-- **The completion of a localization is flat over the completion.** Let `R` be a noetherian
@@ -223,7 +232,7 @@ theorem flat_mapₐ_of_isLocalization [IsNoetherianRing R] {K : Ideal S}
       AdicCompletion J R →ₐ[R] AdicCompletion K S).toRingHom.Flat := by
   have hJ : J.FG := IsNoetherian.noetherian J
   -- the completion of `S` is the completion of the localization `T` of `R̂`
-  have he := bijective_mapₐ _ (le_comap_toLocalization hK)
+  have he := mapₐ_bijective _ (le_comap_toLocalization hK)
     (bijective_quotientMap_toLocalization J M hJ hK)
   rw [← RingHom.Flat.comp_iff_of_bijective_left he]
   have hcomp : (mapₐ (toLocalization J M) (le_comap_toLocalization hK)).toRingHom.comp
@@ -242,9 +251,7 @@ theorem flat_mapₐ_of_isLocalization [IsNoetherianRing R] {K : Ideal S}
     simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, evalₐ_mapₐ, hx,
       algebraMap_apply, evalₐ_of, Ideal.quotientMap_mk, Algebra.algebraMap_self, RingHom.id_apply,
       Algebra.ofId_apply, AlgHom.commutes, Ideal.Quotient.eq]
-    rw [IsScalarTower.algebraMap_apply R (AdicCompletion J R), ← map_sub, map_pow_eq, ← neg_sub,
-      map_neg]
-    exact neg_mem (Ideal.mem_map_of_mem _ hr)
+    exact algebraMap_sub_algebraMap_mem_map_pow J M hr
   -- `T` is flat over `R̂`, and its completion is flat over `T` since `T` is noetherian
   rw [hcomp]
   exact RingHom.Flat.comp (RingHom.flat_algebraMap_iff.mpr inferInstance)

@@ -25,7 +25,7 @@ at a prime.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
   `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
-* `AdicCompletion.bijective_mapₐ`: the map of completions is bijective if `f` induces bijections
+* `AdicCompletion.mapₐ_bijective`: the map of completions is bijective if `f` induces bijections
   `S ⧸ I ^ n → S' ⧸ I' ^ n` for all `n`.
 * `AdicCompletion.congrₐ`: the isomorphism of completions induced by an algebra isomorphism,
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
@@ -110,7 +110,7 @@ theorem mapₐ_mapₐ (g : S' →ₐ[R] S'') (hg : I' ≤ I''.comap g) (f : S �
 
 /-- If an algebra homomorphism `f : S →ₐ[R] S'` with `I ≤ f⁻¹ I'` induces bijections
 `S ⧸ I ^ n → S' ⧸ I' ^ n` for all `n`, then the induced map of completions is bijective. -/
-theorem bijective_mapₐ (f : S →ₐ[R] S') (hf : I ≤ I'.comap f)
+theorem mapₐ_bijective (f : S →ₐ[R] S') (hf : I ≤ I'.comap f)
     (h : ∀ n, Function.Bijective (Ideal.quotientMap (I' ^ n) f.toRingHom
       ((Ideal.pow_right_mono hf n).trans (Ideal.le_comap_pow _ n)))) :
     Function.Bijective (mapₐ f hf) := by

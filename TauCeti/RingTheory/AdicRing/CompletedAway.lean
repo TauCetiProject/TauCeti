@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.AdicCompletion.IdealIndependence
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicRing.Basic
 
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Away.Quotient
 
 /-!
@@ -383,9 +384,7 @@ theorem algHom_ext_of_map_pow_eq_bot {B : Type*} [Semiring B] [Algebra A B] {n :
   have hker (g : CompletedAway A f →ₐ[A] B) (x : CompletedAway A f)
       (hx : x ∈ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) : g x = 0 := by
     rw [← Ideal.map_pow] at hx
-    refine (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_ : _ ≤ RingHom.ker g) hx
-    rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.commutes, ← Ideal.mem_bot, ← h]
-    exact Ideal.mem_map_of_mem _ ha
+    exact (Ideal.map_eq_bot_iff_le_ker g).mp ((Ideal.map_map_algebraMap g _).trans h) hx
   ext x
   exact congr($(Subsingleton.elim (Ideal.Quotient.liftₐ _ g₁ (hker g₁))
     (Ideal.Quotient.liftₐ _ g₂ (hker g₂))) (Ideal.Quotient.mk _ x))

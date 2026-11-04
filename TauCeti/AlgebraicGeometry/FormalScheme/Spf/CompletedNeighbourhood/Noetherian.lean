@@ -13,6 +13,7 @@ import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Localization.LocalizationLocalization
 import TauCeti.RingTheory.AdicCompletion.Localization
 import TauCeti.RingTheory.Flat.Colimit
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Noetherianity of the completed localisations at an open prime
@@ -179,11 +180,10 @@ private noncomputable def residueLocalization :
 which is defined since `I ⊆ 𝔭`. -/
 private noncomputable def residueLocalCompletion :
     LocalCompletion p →ₐ[A] FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
-  (Ideal.Quotient.liftₐ _ (residueLocalization p) fun x hx ↦ by
-    refine (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_ :
-      _ ≤ RingHom.ker (residueLocalization p)) hx
-    rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.commutes, ← Ideal.mem_bot, ← map_ideal_residue p]
-    exact Ideal.mem_map_of_mem _ ha).comp ((AdicCompletion.evalOneₐ _).restrictScalars A)
+  (Ideal.Quotient.liftₐ _ (residueLocalization p) fun _ hx ↦
+    (Ideal.map_eq_bot_iff_le_ker (residueLocalization p)).mp
+      ((Ideal.map_map_algebraMap _ _).trans (map_ideal_residue p)) hx).comp
+    ((AdicCompletion.evalOneₐ _).restrictScalars A)
 
 /-- On the colimit, the value at `𝔭` through `Â_𝔭` is the residue map of the local ring
 `colim_{f ∉ 𝔭} A_{f}`, identified with `Frac(A ⧸ 𝔭)` by `stalkResidueIso`. -/
