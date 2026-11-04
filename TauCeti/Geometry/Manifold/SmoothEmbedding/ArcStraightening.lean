@@ -150,9 +150,10 @@ private theorem contMDiffAt_ofCyl {z₀ : Circle} {x : Circle × ℝ}
 private theorem injective_mfderiv_ofCyl {z₀ : Circle} {x : Circle × ℝ}
     (hx : |angle z₀ x.1| < Real.pi) :
     Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) (ofCyl z₀) x) :=
-  injective_mfderiv_of_comp_eventuallyEq_id ((contMDiffAt_ofCyl hx).mdifferentiableAt (by simp))
+  (hasLeftInverse_mfderiv_of_comp_eventuallyEq_id
+    ((contMDiffAt_ofCyl hx).mdifferentiableAt (by simp))
     ((contMDiff_toCyl z₀).mdifferentiableAt (by simp))
-    (Eventually.of_forall fun x => toCyl_ofCyl z₀ x)
+    (Eventually.of_forall fun x => toCyl_ofCyl z₀ x)).injective
 
 end Coordinates
 
@@ -390,18 +391,19 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
   refine ⟨DΦ.comp (DF.comp Dc), ?_, hk.hasFDerivAt, hl.hasFDerivAt⟩
   -- Each factor has a left inverse near its point.
   have hΦi : Injective DΦ := by
-    refine injective_mfderiv_of_comp_eventuallyEq_id (g := Prod.map φ.symm id)
-      ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ hFx).mdifferentiableAt (by simp)) ?_ ?_
+    refine (hasLeftInverse_mfderiv_of_comp_eventuallyEq_id (g := Prod.map φ.symm id)
+      ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ hFx).mdifferentiableAt (by simp))
+      ?_ ?_).injective
     · exact (contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas hφ (y := Prod.map φ id (F x))
         (φ.map_source hFx)).mdifferentiableAt (by simp)
     · filter_upwards [(φ.open_source.preimage continuous_fst).mem_nhds hFx] with y hy
       ext <;> simp [φ.left_inv hy]
   have hFi : Injective DF := (hF.isImmersion.isImmersionAt x).mfderiv_injective (by simp)
   have hci : Injective Dc := by
-    refine injective_mfderiv_of_comp_eventuallyEq_id (g := ofCyl z₀)
+    refine (hasLeftInverse_mfderiv_of_comp_eventuallyEq_id (g := ofCyl z₀)
       ((contMDiff_toCyl z₀).mdifferentiableAt (by simp))
       ((contMDiffAt_ofCyl (by rw [toCyl_zero, angle_self, abs_zero]; exact Real.pi_pos)
-        ).mdifferentiableAt (by simp)) ?_
+        ).mdifferentiableAt (by simp)) ?_).injective
     filter_upwards [(isOpen_lt (continuous_abs.comp continuous_fst) continuous_const).mem_nhds
       (show |((0 : ℝ), t).1| < Real.pi by simpa using Real.pi_pos)] with u hu
     exact ofCyl_toCyl hu
