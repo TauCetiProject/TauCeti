@@ -37,6 +37,10 @@ pairing between trivial bundles is a smooth hom-bundle section
 constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
+Interchanging the two inputs of a smooth bilinear bundle map preserves smoothness
+(`ContMDiffWithinAt.clm_bundle_flip`), without a choice of fibre norms. This permits
+contraction of a smooth tensor in any input slot.
+
 Finally, a family of fibrewise linear maps with finite-dimensional model source is a `C^n`
 section of the hom bundle exactly when the map of total spaces it induces is `C^n`
 (`TauCeti.contMDiff_hom_bundle_iff`, with a pointwise version
@@ -446,3 +450,78 @@ theorem exists_bundleDiffeomorph_iff (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
 end BundleMap
 
 end TauCeti
+
+section Flip
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
+  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
+  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  [TopologicalSpace M] [ChartedSpace HM M]
+  {F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {V₁ V₂ V₃ : B → Type*}
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+  [∀ x, IsNormableSpace 𝕜 (V₁ x)] [∀ x, IsNormableSpace 𝕜 (V₂ x)]
+  [∀ x, IsNormableSpace 𝕜 (V₃ x)]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
+  [TopologicalSpace (TotalSpace F₃ V₃)]
+  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
+  {b : M → B} {s : Set M} {x : M} {n : ℕ∞ω}
+  {A : ∀ x, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] V₃ (b x)}
+
+/-- Interchanging the two inputs of a smooth family of bilinear bundle maps preserves
+smoothness, also within a parameter set. -/
+theorem _root_.ContMDiffWithinAt.clm_bundle_flip
+    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] V₃ z) (b y) (A y)) s x) :
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₂ z →L[𝕜] V₁ z →L[𝕜] V₃ z) (b y) (A y).flip) s x := by
+  rw [contMDiffWithinAt_hom_bundle] at hA ⊢
+  refine ⟨hA.1, ?_⟩
+  have hnear : ∀ᶠ y in 𝓝[insert x s] x, b y ∈
+      (trivializationAt F₁ V₁ (b x)).baseSet ∩
+      (trivializationAt F₂ V₂ (b x)).baseSet ∩
+      (trivializationAt F₃ V₃ (b x)).baseSet :=
+    hA.1.insert.continuousWithinAt.preimage_mem_nhdsWithin
+      (((trivializationAt F₁ V₁ (b x)).open_baseSet.inter
+        (trivializationAt F₂ V₂ (b x)).open_baseSet).inter
+        (trivializationAt F₃ V₃ (b x)).open_baseSet |>.mem_nhds
+          ⟨⟨mem_baseSet_trivializationAt' (b x), mem_baseSet_trivializationAt' (b x)⟩,
+            mem_baseSet_trivializationAt' (b x)⟩)
+  let _ : NormedAddCommGroup (F₁ →L[𝕜] F₂ →L[𝕜] F₃) := inferInstance
+  let _ : NormedSpace 𝕜 (F₁ →L[𝕜] F₂ →L[𝕜] F₃) := inferInstance
+  let _ : NormedAddCommGroup (F₂ →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
+  let _ : NormedSpace 𝕜 (F₂ →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
+  have hf : ContDiff 𝕜 n (ContinuousLinearMap.flip :
+      (F₁ →L[𝕜] F₂ →L[𝕜] F₃) → F₂ →L[𝕜] F₁ →L[𝕜] F₃) := by
+    -- The normed and topological versions of flip agree on both arguments.
+    convert (ContinuousLinearMap.flipₗᵢ 𝕜 F₁ F₂ F₃).toContinuousLinearEquiv.contDiff
+      (𝕜 := 𝕜) (n := n) using 1
+    ext A u v
+    rfl
+  have hflip := hf.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hA.2
+  have heq : (fun y ↦ ContinuousLinearMap.inCoordinates F₂ V₂ (F₁ →L[𝕜] F₃)
+      (fun z ↦ V₁ z →L[𝕜] V₃ z) (b x) (b y) (b x) (b y) (A y).flip) =ᶠ[𝓝[insert x s] x]
+      (fun y ↦ (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[𝕜] F₃)
+        (fun z ↦ V₂ z →L[𝕜] V₃ z) (b x) (b y) (b x) (b y) (A y)).flip) := by
+    filter_upwards [hnear] with y hy
+    ext u v
+    simp only [ContinuousLinearMap.flip_apply]
+    rw [inCoordinates_apply_eq₂ hy.1.2 hy.1.1 hy.2,
+      inCoordinates_apply_eq₂ hy.1.1 hy.1.2 hy.2, ContinuousLinearMap.flip_apply]
+  exact hflip.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (Set.subset_insert x s)))
+    (heq.self_of_nhdsWithin (Set.mem_insert x s))
+
+end Flip
