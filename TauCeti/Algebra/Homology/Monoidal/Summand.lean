@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import TauCeti.Algebra.Homology.Bifunctor.Basic
 
 /-!
 # The monoidal structure of homological complexes on homogeneous summands
@@ -30,6 +31,8 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
 ## Main results
 
 * `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
+* `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
+  of morphisms vanishes when either factor does.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
@@ -72,6 +75,18 @@ lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ �
       (f₁.f i₁ ⊗ₘ f₂.f i₂) ≫ ιTensorObj L₁ L₂ i₁ i₂ j h := by
   refine (ι_mapBifunctorMap _ _ _ _ _ _ _ _).trans ?_
   simp [tensorHom_def]
+
+/-- The tensor product of homological complexes of the zero morphism with any morphism is zero. -/
+lemma zero_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₂ : K₂ ⟶ L₂)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
+    tensorHom (0 : K₁ ⟶ L₁) f₂ = 0 :=
+  mapBifunctorMap_zero_left (curriedTensor C) c K₁ L₁ f₂
+
+/-- The tensor product of homological complexes of any morphism with the zero morphism is zero. -/
+lemma tensorHom_zero {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
+    tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 :=
+  mapBifunctorMap_zero_right (curriedTensor C) c f₁ K₂ L₂
 
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
