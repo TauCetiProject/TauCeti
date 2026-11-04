@@ -23,8 +23,10 @@ import Mathlib.Order.Lattice.Nat
 An equation over a group `G` in the variables `X` is an element of `G[X] = G ∗ F(X)`. It is
 quadratic when every variable occurs in it at most twice, as `x` or as `x⁻¹`. Quadratic equations
 are the equations whose solution theory is governed by surfaces: up to automorphisms of `G[X]`
-fixing `G`, each strictly quadratic word is one of four standard quadratic words, the relators of
-orientable and non-orientable surfaces with boundary components labelled by coefficients.
+fixing `G`, each strictly quadratic word in which some variable occurs is one of four standard
+quadratic words, the relators of orientable and non-orientable surfaces with boundary components
+labelled by coefficients. The coefficient-only words, the elements of `G` (including `1`), are
+strictly quadratic but are not standard; they form a separate exceptional case.
 
 This file defines the number of occurrences of a variable in an element of `G[X]`, quadratic and
 strictly quadratic finite systems, the four types of standard quadratic equations together with
@@ -284,6 +286,7 @@ theorem occurrences_inr_of_self (x : X) : occurrences x (inr (FreeGroup.of x) : 
   simpa [FreeGroup.toWord_of] using
     countP_toWord_snd_le_occurrences (G := G) x (inr (FreeGroup.of x))
 
+@[simp]
 theorem occurrences_inr_of_of_ne {x y : X} (h : y ≠ x) :
     occurrences x (inr (FreeGroup.of y) : GX G X) = 0 :=
   occurrences_letter_of_ne (G := G) h true
