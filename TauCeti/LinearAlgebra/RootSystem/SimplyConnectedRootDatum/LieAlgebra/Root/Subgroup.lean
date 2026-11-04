@@ -111,7 +111,7 @@ theorem isNilpotent_apply_ι_chevalleySystem (γ : Fin t.numRoots) :
     (fun i z hz => ?_) γ
   obtain ⟨k, hk⟩ := hz
   refine ⟨k, ?_⟩
-  rw [weylAut_simpleIndex_eq i (isSl2Triple_rootGenerator i)
+  rw [weylAut_simpleIndex_eq i ((t.lieBasis ht).isSl2Triple_rootGenerator i)
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i),
     apply_ι_weylAut_eq_weylUnit_conj (t.lieBasis ht).rootGenerator ρ (hnil (.inl i))
       (hnil (.inr i)), Units.conj_pow, hk, mul_zero, zero_mul]
@@ -129,7 +129,7 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
     (fun z hz n => ?_) (fun i n _ hv => ?_) (fun i z hz n => ?_) γ
   · simpa using Associative.dividedPower_neg_smul_mem _ M (hz n)
   · simpa using dividedPower_apply_mem_of_kostantForm_apply_mem _ _ ρ hM (.inl i) n hv
-  · rw [weylAut_simpleIndex_eq i (isSl2Triple_rootGenerator i)
+  · rw [weylAut_simpleIndex_eq i ((t.lieBasis ht).isSl2Triple_rootGenerator i)
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
@@ -157,14 +157,9 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     (chevalleyRootSubgroup ρ M hM hnil γ A u).val =
       baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) M
         (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ) (Multiplicative.toAdd u) := by
-  refine LinearMap.ext fun z => ?_
-  have h : (chevalleyRootSubgroup ρ M hM hnil γ A u).toLinearEquiv =
-      baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) M
-        (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)
-        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) u := by
-    rw [chevalleyRootSubgroup]
-    exact (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).apply_symm_apply _
-  rw [← LinearMap.GeneralLinearGroup.coe_toLinearEquiv, h, coe_baseChangeExpHom]
+  rw [chevalleyRootSubgroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
+    baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
 /-- **At a simple root the root subgroup is the simple root subgroup** `xᵢ` of the Kostant data. -/
 @[simp]
@@ -220,20 +215,20 @@ theorem kostantWeylGL_conj_chevalleyRootSubgroup (i : Fin t.rank) (γ : Fin t.nu
   rw [Units.val_mul, Units.val_mul, kostantWeylGL_val, kostantWeylGL_inv_val,
     chevalleyRootSubgroup_val, chevalleyRootSubgroup_val, toAdd_ofAdd, toAdd_ofAdd,
     kostantWeylPoints_conj_baseChangeExp_weylAut _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i))
-      (isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
       (isNilpotent_ad_rootGenerator_inr i)
       (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
-  have hw : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (weylAut (isSl2Triple_rootGenerator i)
-      (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)
-      (t.chevalleySystem ht γ))) =
+  have hw : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (weylAut ((t.lieBasis ht).isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
+        (isNilpotent_ad_rootGenerator_inr i) (t.chevalleySystem ht γ))) =
       (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) γ))) := by
     rw [← weylAut_simpleIndex_eq i, weylAut_chevalleySystem, map_zsmul, map_zsmul]
   exact (baseChangeExp_congr hw M _
     (hw ▸ fun n => dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i))
-      (isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
       (isNilpotent_ad_rootGenerator_inr i) n
       (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n)) u).trans
     (baseChangeExp_zsmul _ M (dividedPower_chevalleySystem_smul_mem ρ M hM hnil _) _
@@ -254,10 +249,11 @@ theorem chevalleyRootSubgroup_mem_kostantElementarySubgroup (γ : Fin t.numRoots
       chevalleyRootSubgroup ρ M hM hnil
         ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) k) A u ∈ E := by
     set ε := t.chevalleyWeylSign ht (t.simpleIndex ht i) k
+    have hε : ((ε : ℤ) : A) * ((ε : ℤ) : A) = 1 := by
+      simp [← Int.cast_mul, ← Units.val_mul]
     have hu :
         u = Multiplicative.ofAdd (((ε : ℤ) : A) * (((ε : ℤ) : A) * Multiplicative.toAdd u)) := by
-      rw [← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
-        Int.cast_one, one_mul, ofAdd_toAdd]
+      simp [← mul_assoc, hε]
     have hn := kostantWeylGL_mem_kostantElementarySubgroup (t.lieBasis ht).rootGenerator
       (t.lieBasis ht).h ρ M hM hnil (.inl i) (.inr i) A
     rw [hu, ← kostantWeylGL_conj_chevalleyRootSubgroup]

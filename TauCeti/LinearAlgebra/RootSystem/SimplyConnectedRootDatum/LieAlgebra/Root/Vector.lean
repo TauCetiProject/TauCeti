@@ -83,11 +83,6 @@ private abbrev IsSimpleSummand (γ : Fin t.numRoots) (i : Fin t.rank) : Prop :=
 
 variable {t ht}
 
-private theorem simpleIndex_mem_support (i : Fin t.rank) :
-    t.simpleIndex ht i ∈ (t.rationalBase ht).support := by
-  rw [← coe_simpleSupportEquiv]
-  exact (t.simpleSupportEquiv ht i).2
-
 /-- A positive root that is not simple is a simple root plus a root. -/
 private theorem exists_isSimpleSummand {γ : Fin t.numRoots} (hγ : (t.rationalBase ht).IsPos γ)
     (hs : γ ∉ (t.rationalBase ht).support) : ∃ i, t.IsSimpleSummand ht γ i := by

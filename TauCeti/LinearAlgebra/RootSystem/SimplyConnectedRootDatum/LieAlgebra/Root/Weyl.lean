@@ -45,8 +45,8 @@ simple Weyl automorphisms.
 * `TauCeti.DynkinType.weylAut_chevalleySystem`: `w_α e_β = ε e_{s_α β}` with the sign
   `ε = TauCeti.DynkinType.chevalleyWeylSign α β`.
 * `TauCeti.DynkinType.weylAut_simpleIndex_eq`: at a simple root `αᵢ`, `w_{αᵢ}` is the Weyl
-  automorphism of the numbered triple `(αᵢ^∨, eᵢ, fᵢ)`, with
-  `TauCeti.DynkinType.isSl2Triple_rootGenerator` that triple.
+  automorphism of any `sl₂` triple `(h, eᵢ, fᵢ)` on its numbered generators, such as the basis
+  triple `LieAlgebra.Basis.isSl2Triple_rootGenerator`.
 * `TauCeti.DynkinType.chevalleySystem_induction`: a property of the Lie algebra that is invariant
   under negation and under the Weyl automorphisms of the simple roots, and holds at the simple root
   vectors `eᵢ`, holds at every root vector `e_γ`.
@@ -176,17 +176,6 @@ theorem weylAut_simpleIndex_eq (i : Fin t.rank) {h₀ : t.lieAlgebra ht}
   exact key _ _ ((t.chevalleySystem_simpleIndex ht i).trans (Basis.rootGenerator_inl _ i).symm)
     ((t.chevalleySystem_reflectionPerm_simpleIndex ht i).trans (Basis.rootGenerator_inr _ i).symm)
     _ _ _
-
-/-- The coroot of a simple root and its numbered generators form an `sl₂` triple
-`(αᵢ^∨, eᵢ, fᵢ)`. -/
-theorem isSl2Triple_rootGenerator (i : Fin t.rank) :
-    IsSl2Triple ((coroot (t.rootEquiv ht (t.simpleIndex ht i) :
-        Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) : t.cartanSubalgebra ht) :
-          t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inl i))
-      ((t.lieBasis ht).rootGenerator (.inr i)) := by
-  have T := t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i)
-  rwa [chevalleySystem_simpleIndex, chevalleySystem_reflectionPerm_simpleIndex,
-    ← Basis.rootGenerator_inl, ← Basis.rootGenerator_inr] at T
 
 /-- The simple raising generator `eᵢ` is ad-nilpotent. -/
 theorem isNilpotent_ad_rootGenerator_inl (i : Fin t.rank) :
