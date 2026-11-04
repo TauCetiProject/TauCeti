@@ -30,8 +30,8 @@ Operator Theory*, Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example
 
 ## Main declarations
 
-* `TwoSidedIdeal.smul_mem_of_isApproximateUnit` and `TwoSidedIdeal.smul_mem_of_isClosed`: closed
-  two-sided ideals in rings with an approximate unit (in particular, C⋆-algebras) absorb scalars.
+* `TwoSidedIdeal.smul_mem_of_isClosed`: closed two-sided ideals in C⋆-algebras absorb complex
+  scalars (specializing `TwoSidedIdeal.smul_mem_of_isApproximateUnit`).
 * `TwoSidedIdeal.star_mem_of_isClosed` and `Ideal.star_mem_of_isClosed`: closed two-sided ideals in
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
@@ -47,23 +47,6 @@ open Filter Topology Unitization
 open scoped CStarAlgebra
 
 namespace TwoSidedIdeal
-
-section ApproximateUnit
-
-variable {R A : Type*} [Semiring R] [NonUnitalRing A] [TopologicalSpace A]
-  [Module R A] [IsScalarTower R A A] [ContinuousConstSMul R A]
-
-/-- In a topological ring with a scalar-compatible `R`-module structure and an approximate unit,
-every closed two-sided ideal is closed under scalar multiplication by `R`. -/
-theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
-    {l : Filter A} (hl : l.IsApproximateUnit) (c : R) {a : A} (ha : a ∈ I) :
-    c • a ∈ I := by
-  have := hl.neBot
-  have hlim : Tendsto (fun e => (c • e) * a) l (𝓝 (c • a)) := by
-    simpa only [smul_mul_assoc] using (hl.tendsto_mul_right a).const_smul c
-  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
-
-end ApproximateUnit
 
 section CStarAlgebra
 

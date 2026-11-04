@@ -8,12 +8,14 @@ module
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 
 /-!
 # Closed two-sided ideals
 
-The closure of a two-sided ideal in a topological ring is again two-sided. We
+The closure of a two-sided ideal in a topological ring is again two-sided, and closed two-sided
+ideals in rings with an approximate unit absorb compatible scalar multiplication. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
 for quotients of noncommutative rings by native ideals. The closed ideal generated
 by an ideal of the center presents discrete modules with central relations.
@@ -25,7 +27,7 @@ the same native additive quotient and open quotient-map argument.
 
 public section
 
-open Topology
+open Filter Topology
 
 namespace Ideal
 
@@ -134,6 +136,23 @@ theorem isClosed_ker {f : F} (hf : Continuous f) : IsClosed (TwoSidedIdeal.ker f
   exact isClosed_singleton.preimage hf
 
 end ClosedKer
+
+section ApproximateUnit
+
+variable {R A : Type*} [Semiring R] [NonUnitalRing A] [TopologicalSpace A]
+  [Module R A] [IsScalarTower R A A] [ContinuousConstSMul R A]
+
+/-- In a topological ring with a scalar-compatible `R`-module structure and an approximate unit,
+every closed two-sided ideal is closed under scalar multiplication by `R`. -/
+theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+    {l : Filter A} (hl : l.IsApproximateUnit) (c : R) {a : A} (ha : a ∈ I) :
+    c • a ∈ I := by
+  have := hl.neBot
+  have hlim : Tendsto (fun e => (c • e) * a) l (𝓝 (c • a)) := by
+    simpa only [smul_mul_assoc] using (hl.tendsto_mul_right a).const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
+
+end ApproximateUnit
 
 end TwoSidedIdeal
 

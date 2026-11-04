@@ -522,27 +522,34 @@ instance isClosed_range : IsClosed (φ.range : Set B) := by
 theorem surjective_of_denseRange {φ : A →⋆ₐ[ℂ] B} (hφ : DenseRange φ) : Function.Surjective φ :=
   NonUnitalStarAlgHom.surjective_of_denseRange (φ := φ.toNonUnitalStarAlgHom) hφ
 
+private theorem ker_eq_ker_rangeRestrict :
+    TwoSidedIdeal.ker φ = TwoSidedIdeal.ker φ.rangeRestrict.toNonUnitalStarAlgHom := by
+  ext a
+  rw [TwoSidedIdeal.mem_ker, TwoSidedIdeal.mem_ker, Subtype.ext_iff]
+  rfl
+
+private theorem rangeRestrict_toNonUnitalStarAlgHom_surjective :
+    Function.Surjective φ.rangeRestrict.toNonUnitalStarAlgHom :=
+  φ.toAlgHom.rangeRestrict_surjective
+
 /-- First isometric `⋆`-isomorphism theorem for unital C⋆-algebras: `A ⧸ ker φ ≃⋆ₐ[ℂ] φ.range`. -/
 noncomputable def quotientKerEquivRange : A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[ℂ] φ.range :=
-  StarAlgEquiv.ofBijective
-    (TwoSidedIdeal.Quotient.liftUnitalStarAlgHom (TwoSidedIdeal.ker φ) φ.rangeRestrict
-      fun _ ha => Subtype.ext ((TwoSidedIdeal.mem_ker φ).mp ha))
-    ⟨fun x y hxy => by
-        obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) x
-        obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) y
-        rw [TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk,
-          TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk] at hxy
-        rw [TwoSidedIdeal.Quotient.eq, TwoSidedIdeal.mem_ker, map_sub,
-          sub_eq_zero]
-        exact congrArg Subtype.val hxy,
-     fun ⟨_, a, ha⟩ => ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a,
-        (TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk _ _ _ a).trans (Subtype.ext ha)⟩⟩
+  (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq (ker_eq_ker_rangeRestrict φ)).trans
+    (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
+      (φ := φ.rangeRestrict.toNonUnitalStarAlgHom)
+      (rangeRestrict_toNonUnitalStarAlgHom_surjective φ))
 
 @[simp]
 theorem quotientKerEquivRange_mk (a : A) :
     φ.quotientKerEquivRange (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) =
       φ.rangeRestrict a :=
-  TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk (TwoSidedIdeal.ker φ) φ.rangeRestrict _ a
+  (congrArg
+      (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
+        (rangeRestrict_toNonUnitalStarAlgHom_surjective φ))
+      (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_mk (ker_eq_ker_rangeRestrict φ) a)).trans
+    (NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk
+      (φ := φ.rangeRestrict.toNonUnitalStarAlgHom)
+      (rangeRestrict_toNonUnitalStarAlgHom_surjective φ) a)
 
 theorem coe_quotientKerEquivRange_mk (a : A) :
     (φ.quotientKerEquivRange (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) : B) = φ a :=
@@ -552,25 +559,11 @@ theorem coe_quotientKerEquivRange_mk (a : A) :
 of C⋆-algebras. -/
 noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₐ[ℂ] B} (hφ : Function.Surjective φ) :
     A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[ℂ] B :=
-  StarAlgEquiv.ofBijective
-    (TwoSidedIdeal.Quotient.liftUnitalStarAlgHom (TwoSidedIdeal.ker φ) φ
-      fun _ ha => (TwoSidedIdeal.mem_ker φ).mp ha)
-    ⟨fun x y hxy => by
-        obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) x
-        obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) y
-        rw [TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk,
-          TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk] at hxy
-        rw [TwoSidedIdeal.Quotient.eq, TwoSidedIdeal.mem_ker, map_sub,
-          sub_eq_zero]
-        exact hxy,
-     fun b => by
-        obtain ⟨a, rfl⟩ := hφ b
-        exact ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a,
-          TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk _ _ _ a⟩⟩
+  NonUnitalStarAlgHom.quotientKerEquivOfSurjective (φ := φ.toNonUnitalStarAlgHom) hφ
 
 @[simp]
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
-  TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk (TwoSidedIdeal.ker φ) φ _ a
+  NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk (φ := φ.toNonUnitalStarAlgHom) hφ a
 
 end StarAlgHom
