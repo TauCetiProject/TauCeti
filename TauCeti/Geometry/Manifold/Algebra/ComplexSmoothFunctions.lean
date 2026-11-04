@@ -167,9 +167,9 @@ theorem ext_re_im {f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
   equivRealProd.injective (by simp [hre, him])
 
 /-- Equality of complex smooth functions is equality of both real and imaginary parts. -/
-theorem re_eq_re_and_im_eq_im_iff {f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
-    f.re = g.re ∧ f.im = g.im ↔ f = g :=
-  ⟨fun h ↦ ext_re_im h.1 h.2, fun h ↦ by simp [h]⟩
+theorem ext_re_im_iff {f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    f = g ↔ f.re = g.re ∧ f.im = g.im :=
+  ⟨fun h ↦ by simp [h], fun h ↦ ext_re_im h.1 h.2⟩
 
 /-- Pointwise complex conjugation is an involutive real algebra equivalence. -/
 def conj : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₐ[ℝ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
