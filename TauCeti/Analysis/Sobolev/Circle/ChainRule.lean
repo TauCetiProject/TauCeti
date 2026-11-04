@@ -32,6 +32,8 @@ continuous linear automorphism of `H¹`.
 
 ## Main definitions
 
+* `TauCeti.CircleSobolev.derivOfLift`: the derivative `F'` of the lift, as a continuous function
+  on the circle.
 * `TauCeti.CircleSobolev.precompOneEquivOfLift`: for `φ` with lift `F` and continuous derivative
   `0 < c ≤ F' ≤ M`, the continuous linear automorphism `u ↦ u ∘ φ` of `H¹`.
 
@@ -75,15 +77,26 @@ variable {F F' : ℝ → ℝ} {c M : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
   (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M) (hF'c : Continuous F')
 
 omit hT in
-/-- The derivative `F'` of the lift, as a continuous function on the circle. -/
-private def derivOfLift : C(AddCircle T, ℂ) where
+/-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
+function on the circle; it is well defined since `F'` is `T`-periodic
+(`AddCircle.periodic_deriv_of_lift`). -/
+def derivOfLift : C(AddCircle T, ℂ) where
   toFun z := ((periodic_deriv_of_lift hF hper).lift z : ℂ)
   continuous_toFun :=
     (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 (continuous_ofReal.comp hF'c)
 
 omit hT in
-private theorem derivOfLift_coe (x : ℝ) : derivOfLift hF hper hF'c x = F' x :=
+@[simp]
+theorem derivOfLift_coe (x : ℝ) : derivOfLift hF hper hF'c x = F' x :=
   (rfl)
+
+omit hT in
+include hc hcF in
+/-- The derivative of a lift with `0 < c ≤ F'` does not vanish on the circle. -/
+theorem derivOfLift_ne_zero (y : AddCircle T) : derivOfLift hF hper hF'c y ≠ 0 := by
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
+  rw [derivOfLift_coe, ofReal_ne_zero]
+  exact (hc.trans_le (hcF x)).ne'
 
 /-- Multiplication by the derivative `F'` of the lift, on `H⁰ = L²`. -/
 private def mulDerivOfLift : CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ :=

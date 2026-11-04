@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Duality
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -91,35 +92,31 @@ theorem adjoint_precompEquivOfLift {f' : AddCircle T → ℂ} (hf' : ∀ x : ℝ
           CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ) ∘L
         mulFourierSeries (fourierCoeff fun x ↦ (f' x)⁻¹) := by
   set P := precompEquivOfLift hF hper hφ hc hcF hMF
-  have hpos (x : ℝ) : 0 < F' x := hc.trans_le (hcF x)
-  -- `fR` is `F'` regarded as a real function on the circle.
-  set fR : AddCircle T → ℝ := (periodic_deriv_of_lift hF hper).lift
-  have hfR (x : ℝ) : fR x = F' x := rfl
-  have hffR (y : AddCircle T) : f' y = fR y := by
+  -- `f'` is the derivative of the lift, regarded as a function on the circle.
+  obtain rfl : f' = derivOfLift hF hper hF'.continuous := funext fun y ↦ by
     obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
-    exact hf' x
-  have hfR₀ (y : AddCircle T) : fR y ≠ 0 := by
-    obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
-    exact (hpos x).ne'
+    rw [hf', derivOfLift_coe]
+  have hf'₀ := derivOfLift_ne_zero hF hper hc hcF hF'.continuous
   -- On `H⁰`, multiplication by the smooth function `1 / f'` is the multiplication operator.
-  have hinv : ContDiff ℝ ∞ fun x : ℝ ↦ (f' x)⁻¹ := by
-    simp only [hf']
-    exact (ofRealCLM.contDiff.comp hF').inv fun x ↦ by simpa using (hpos x).ne'
+  have hinv := (contDiff_derivOfLift hF hper hF' hF'.continuous).inv fun x ↦ hf'₀ x
   let g : C(AddCircle T, ℂ) :=
-    ⟨fun x ↦ (f' x)⁻¹, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hinv.continuous⟩
-  have hM : (mulFourierSeries (fourierCoeff fun x ↦ (f' x)⁻¹) :
+    ⟨fun x ↦ (derivOfLift hF hper hF'.continuous x)⁻¹, (map_continuous _).inv₀ hf'₀⟩
+  have hM : (mulFourierSeries (fourierCoeff fun x ↦ (derivOfLift hF hper hF'.continuous x)⁻¹) :
       CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ) =
         multiplicationOperator (ContinuousMap.toLp ⊤ haarAddCircle ℂ g) :=
     mulFourierSeries_fourierCoeff_eq_multiplicationOperator (f := g) hinv
   refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun a b ↦ ?_).symm
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-  set v := P.symm (mulFourierSeries (fourierCoeff fun x ↦ (f' x)⁻¹) a)
+  set v := P.symm (mulFourierSeries
+    (fourierCoeff fun x ↦ (derivOfLift hF hper hF'.continuous x)⁻¹) a)
   have hv : P v = multiplicationOperator (ContinuousMap.toLp ⊤ haarAddCircle ℂ g) a := by
     rw [ContinuousLinearEquiv.apply_symm_apply, hM]
   -- Change variables `y = φ x` in the `L²` inner product of `v` and `b`.
   rw [← (toLpₗᵢ T).inner_map_map v b, ← (toLpₗᵢ T).inner_map_map a (P b), L2.inner_def,
     L2.inner_def, ← integral_haarAddCircle_deriv_smul_comp_of_lift hF hper hφ
-      (fun x ↦ (hpos x).le) hfR (fun y ↦ inner ℂ (toLpₗᵢ T v y) (toLpₗᵢ T b y))]
+      (fun x ↦ (hc.trans_le (hcF x)).le) (f' := (periodic_deriv_of_lift hF hper).lift)
+      (fun _ ↦ rfl)
+      (fun y ↦ inner ℂ (toLpₗᵢ T v y) (toLpₗᵢ T b y))]
   refine integral_congr_ae ?_
   filter_upwards [toLpₗᵢ_precompEquivOfLift hF hper hφ hc hcF hMF v,
     toLpₗᵢ_precompEquivOfLift hF hper hφ hc hcF hMF b,
@@ -127,35 +124,18 @@ theorem adjoint_precompEquivOfLift {f' : AddCircle T → ℂ} (hf' : ∀ x : ℝ
     ContinuousMap.coeFn_toLp (p := ⊤) (𝕜 := ℂ) haarAddCircle g] with x h₁ h₂ h₃ h₄
   rw [hv] at h₁
   rw [← Function.comp_apply (f := toLpₗᵢ T v), ← h₁, ← Function.comp_apply (f := toLpₗᵢ T b), ← h₂,
-    h₃, h₄, ContinuousMap.coe_mk, hffR, ← smul_eq_mul, inner_smul_left, map_inv₀, conj_ofReal,
-    Complex.real_smul, ← mul_assoc, mul_inv_cancel₀ (ofReal_ne_zero.2 (hfR₀ x)), one_mul]
-
-/-- `F'` regarded as a function on the circle. -/
-private def circleDeriv : AddCircle T → ℂ :=
-  fun z ↦ ((periodic_deriv_of_lift hF hper).lift z : ℂ)
-
-omit hT in
-private theorem circleDeriv_coe (x : ℝ) : circleDeriv hF hper x = F' x :=
-  (rfl)
-
-omit hT in
-include hF' in
-private theorem contDiff_circleDeriv : ContDiff ℝ ∞ fun x : ℝ ↦ circleDeriv hF hper x := by
-  simp only [circleDeriv_coe]
-  exact ofRealCLM.contDiff.comp hF'
-
-omit hT in
-include hc hcF in
-private theorem circleDeriv_ne_zero (y : AddCircle T) : circleDeriv hF hper y ≠ 0 := by
-  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
-  rw [circleDeriv_coe, ofReal_ne_zero]
-  exact (hc.trans_le (hcF x)).ne'
+    h₃, h₄]
+  obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective x
+  have hy := hf'₀ y
+  rw [derivOfLift_coe] at hy
+  simp [g, P, Function.Periodic.lift_coe]
+  field_simp
 
 /-- The `L²` adjoint `v ↦ (v / F') ∘ φ⁻¹` of precomposition with `φ`, as an automorphism of `H^s`,
 `s ≥ 0`. -/
 private def adjointEquiv {s : ℝ} (hs : 0 ≤ s) : CircleSobolev s ℂ ≃L[ℂ] CircleSobolev s ℂ :=
-  (mulFourierSeriesEquiv (circleDeriv hF hper) (contDiff_circleDeriv hF hper hF')
-    (circleDeriv_ne_zero hF hper hc hcF)).symm.trans
+  (mulFourierSeriesEquiv (derivOfLift hF hper hF'.continuous)
+    (contDiff_derivOfLift hF hper hF' _) (derivOfLift_ne_zero hF hper hc hcF _)).symm.trans
     (precompSmoothEquivOfLift hF hper hφ hc hcF hMF hF' hs).symm
 
 /-- In `H⁰`, `adjointEquiv` is the `L²` adjoint of precomposition with `φ`. -/
@@ -165,9 +145,9 @@ private theorem inclusion_adjointEquiv {s : ℝ} (hs : 0 ≤ s) (a : CircleSobol
         (precompEquivOfLift hF hper hφ hc hcF hMF : CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ)
         (inclusion hs a) := by
   have hsum := summable_weight_mul_norm_fourierCoeff_of_contDiff
-    (f := fun y ↦ (circleDeriv hF hper y)⁻¹)
-    ((contDiff_circleDeriv hF hper hF').inv fun x ↦ circleDeriv_ne_zero hF hper hc hcF x)
-  rw [adjoint_precompEquivOfLift hF hper hφ hc hcF hMF hF' (circleDeriv_coe hF hper),
+    (f := fun y ↦ (derivOfLift hF hper hF'.continuous y)⁻¹)
+    ((contDiff_derivOfLift hF hper hF' _).inv fun x ↦ derivOfLift_ne_zero hF hper hc hcF _ x)
+  rw [adjoint_precompEquivOfLift hF hper hφ hc hcF hMF hF' (derivOfLift_coe hF hper _),
     adjointEquiv, ContinuousLinearEquiv.trans_apply, inclusion_precompSmoothEquivOfLift_symm,
     coe_mulFourierSeriesEquiv_symm, inclusion_mulFourierSeries hs (hsum _) (hsum _),
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
@@ -183,18 +163,7 @@ and its inverse is precomposition with the inverse map of the circle
 def precompNonposEquivOfLift {t : ℝ} (ht : t ≤ 0) : CircleSobolev t ℂ ≃L[ℂ] CircleSobolev t ℂ :=
   let Q := adjointEquiv hF hper hφ hc hcF hMF hF' (neg_nonneg.2 ht)
   (weightEquiv t (-t) ℂ).toContinuousLinearEquiv.trans
-    ((ContinuousLinearEquiv.equivOfInverse
-      (ContinuousLinearMap.adjoint (Q : CircleSobolev (-t) ℂ →L[ℂ] CircleSobolev (-t) ℂ))
-      (ContinuousLinearMap.adjoint (Q.symm : CircleSobolev (-t) ℂ →L[ℂ] CircleSobolev (-t) ℂ))
-      (fun x ↦ by
-        rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-          ContinuousLinearEquiv.coe_comp_coe_symm, ContinuousLinearMap.adjoint_id,
-          ContinuousLinearMap.id_apply])
-      (fun x ↦ by
-        rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-          ContinuousLinearEquiv.coe_symm_comp_coe, ContinuousLinearMap.adjoint_id,
-          ContinuousLinearMap.id_apply])).trans
-      (weightEquiv t (-t) ℂ).toContinuousLinearEquiv.symm)
+    (Q.adjointEquiv.trans (weightEquiv t (-t) ℂ).toContinuousLinearEquiv.symm)
 
 /-- The defining formula of `precompNonposEquivOfLift`. -/
 private theorem weightEquiv_precompNonposEquivOfLift {t : ℝ} (ht : t ≤ 0) (a : CircleSobolev t ℂ) :
