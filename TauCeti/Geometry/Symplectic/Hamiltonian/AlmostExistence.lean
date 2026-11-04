@@ -204,9 +204,9 @@ theorem HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristi
   obtain ⟨c', hc', h'⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Ioo (c - η) (c + η))
     (by rw [Real.volume_Ioo, Ne, ENNReal.ofReal_eq_zero, not_le]; linarith [lt_min hδ hε])
     (ae_restrict_of_ae hae)
-  have hcc' := h' ⟨by linarith [hc'.1], by linarith [hc'.2]⟩
-    (hreg c' ⟨by linarith [hc'.1], by linarith [hc'.2]⟩)
-  exact ⟨c', ⟨by linarith [hc'.1], by linarith [hc'.2]⟩, hcc'⟩
+  have hcδ : c' ∈ Ioo (c - δ) (c + δ) := Ioo_subset_Ioo (by linarith) (by linarith) hc'
+  have hcε : c' ∈ Ioo (c - ε) (c + ε) := Ioo_subset_Ioo (by linarith) (by linarith) hc'
+  exact ⟨c', hcδ, h' hcε (hreg c' hcδ)⟩
 
 /-- **Conformal invariance of almost existence.** For a nondegenerate form on a
 finite-dimensional manifold and `a ≠ 0`, a level has the contractible almost existence property

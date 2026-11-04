@@ -168,8 +168,7 @@ theorem hasContractibleClosedCharacteristic_univ {ε : ℝ}
     σ.HasContractibleClosedCharacteristic univ F c := by
   obtain ⟨t, -, ht⟩ := hZσ.exists_hasContractibleClosedCharacteristic_image_flowOf hσ hc hZ hε hF
     hFZ h
-  rwa [image_univ_of_surjective fun y ↦
-    ⟨flowOf Z (-t) y, flowOf_flowOf_neg (hZ.of_le (by simp)) hc t y⟩] at ht
+  rwa [image_univ_of_surjective (flowOf_surjective (hZ.of_le (by simp)) hc t)] at ht
 
 end IsLiouvilleVectorField
 
@@ -219,8 +218,8 @@ theorem hasContractibleClosedCharacteristic_univ
     ω.HasContractibleClosedCharacteristic univ
       (fun x ↦ Real.log (liouvilleRadialCoordinate Z W x)) T := by
   obtain ⟨t, -, ht⟩ := h.exists_hasContractibleClosedCharacteristic_image_flowOf hZ hT hae
-  rwa [image_univ_of_surjective fun y ↦ ⟨flowOf Z (-t) y, flowOf_flowOf_neg
-    ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) (h.isCompleteVectorField hZ) t y⟩] at ht
+  rwa [image_univ_of_surjective (flowOf_surjective ((h.contMDiff_of_interior_eq hZ).of_le
+    (by simp)) (h.isCompleteVectorField hZ) t)] at ht
 
 end IsLiouvilleCompletion
 
