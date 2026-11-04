@@ -45,6 +45,17 @@ variable {A B C B' C' : Type*} [CommRing A] [CommRing B] [CommRing C]
   [IsAdicHom (algebraMap A B')] [IsAdicHom (algebraMap A C')]
   {S : Pair B} {T : Pair C} {S' : Pair B'} {T' : Pair C'}
 
+private theorem map_mem_integralClosure {D : Type*} [CommRing D]
+    (F : Hom (S.completedTensor A T) (S'.completedTensor A T')) (P : Subring D)
+    (φ : D →+* CompletedTensor A B' C')
+    (hφ : ∀ a ∈ P, φ a ∈ (S.completedTensor A T).plus.map F.toRingHom)
+    {x : D} (hx : IsIntegral P x) :
+    φ x ∈ integralClosure ((S.completedTensor A T).plus.map F.toRingHom)
+      (CompletedTensor A B' C') := by
+  let d : P →+* (S.completedTensor A T).plus.map F.toRingHom := φ.restrict _ _ hφ
+  exact (mem_integralClosure_iff _ _).mpr <|
+    hx.map_of_comp_eq d φ (by ext; rfl)
+
 /-- **Completed tensor products preserve quotient mappings of Huber pairs.** The induced map
 is an open surjection, and the target plus ring is the integral closure of the image of the
 source plus ring. In particular this applies to completed base change, taking either factor
@@ -71,15 +82,11 @@ theorem isQuotientMapping_map (f : Hom S S') (g : Hom T T')
   apply (mem_integralClosure_iff _ _).mp
   refine S'.completedTensor_plus_le_comap T' hR
     (f := RingHom.id _) continuous_id (fun b hb ↦ ?_) (fun c hc ↦ ?_) hx
-  · let d : S.plus.map f.toRingHom →+* (S.completedTensor A T).plus.map F.toRingHom :=
-      (CompletedTensor.inl A B' C').restrict _ _ fun _ ⟨a, ha, hab⟩ ↦
-        Subring.mem_map.mpr ⟨_, S.inl_mem_completedTensor_plus T ha, by simp [F, ← hab]⟩
-    exact (mem_integralClosure_iff _ _).mpr <|
-      (hf.mem_plus_iff.mp hb).map_of_comp_eq d (CompletedTensor.inl A B' C') (by ext; rfl)
-  · let d : T.plus.map g.toRingHom →+* (S.completedTensor A T).plus.map F.toRingHom :=
-      (CompletedTensor.inr A B' C').restrict _ _ fun _ ⟨a, ha, hac⟩ ↦
-        Subring.mem_map.mpr ⟨_, S.inr_mem_completedTensor_plus T ha, by simp [F, ← hac]⟩
-    exact (mem_integralClosure_iff _ _).mpr <|
-      (hg.mem_plus_iff.mp hc).map_of_comp_eq d (CompletedTensor.inr A B' C') (by ext; rfl)
+  · refine map_mem_integralClosure F _ (CompletedTensor.inl A B' C') ?_ (hf.mem_plus_iff.mp hb)
+    rintro _ ⟨a, ha, hab⟩
+    exact Subring.mem_map.mpr ⟨_, S.inl_mem_completedTensor_plus T ha, by simp [F, ← hab]⟩
+  · refine map_mem_integralClosure F _ (CompletedTensor.inr A B' C') ?_ (hg.mem_plus_iff.mp hc)
+    rintro _ ⟨a, ha, hac⟩
+    exact Subring.mem_map.mpr ⟨_, S.inr_mem_completedTensor_plus T ha, by simp [F, ← hac]⟩
 
 end TauCeti.Huber.Pair.completedTensor
