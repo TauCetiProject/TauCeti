@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.CategoryTheory.EqToHom
+public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Combinatorics.Quiver.Subquiver
 
 /-!
-# Composition of total arrows
+# Composition of total arrows and sums over arrows with a given source
 
 The total arrows `Quiver.Total C` of a category form a space of their own, as for the arrows of a
 topological or étale groupoid. Two total arrows `a` and `b` are composable when the target of `a`
@@ -19,6 +21,13 @@ the subspace of composable pairs is the continuity of composition of a topologic
 A total arrow with identified endpoints is read as a morphism between those endpoints by Mathlib's
 `Quiver.homOfEq`, which recovers the total arrow (`Quiver.Total.mk_homOfEq`) and turns composition
 of morphisms into composition of total arrows (`Quiver.Total.mk_homOfEq_comp_homOfEq`).
+
+A sum over the total arrows with source `x` is a sum over the arrows `x ⟶ y` for all `y`
+(`Quiver.Total.finsum_mem_preimage_left_singleton`). In a groupoid, an arrow `x ⟶ y` matches the
+arrows out of `x` with those out of `y` with the same targets, so the sum of a function of the
+target over the arrows with source `x` depends only on the isomorphism class of `x`
+(`Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_hom`). Such sums define the cutoff
+functions of étale groupoids.
 
 ## Main declarations
 
@@ -43,7 +52,37 @@ theorem mk_homOfEq (a : Quiver.Total V) {y z : V} (hy : a.left = y) (hz : a.righ
   subst hy hz
   rfl
 
+/-- The total arrows with source `x` are the arrows `x ⟶ y`, for all objects `y`. -/
+theorem preimage_left_singleton (x : V) :
+    Quiver.Total.left ⁻¹' {x} =
+      Set.range fun p : Σ y, (x ⟶ y) ↦ (⟨x, p.1, p.2⟩ : Quiver.Total V) := by
+  ext ⟨a, b, f⟩
+  constructor
+  · rintro rfl
+    exact ⟨⟨b, f⟩, rfl⟩
+  · rintro ⟨p, h⟩
+    exact congrArg Quiver.Total.left h.symm
+
+/-- A sum over the total arrows with source `x` is a sum over the arrows `x ⟶ y`. -/
+theorem finsum_mem_preimage_left_singleton {M : Type*} [AddCommMonoid M]
+    (g : Quiver.Total V → M) (x : V) :
+    ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, g a = ∑ᶠ p : Σ y, (x ⟶ y), g ⟨x, p.1, p.2⟩ := by
+  rw [preimage_left_singleton, finsum_mem_range]
+  rintro ⟨y, f⟩ ⟨y', f'⟩ h
+  obtain ⟨-, rfl, hf⟩ := Quiver.Total.mk.inj h
+  exact Sigma.ext rfl hf
+
 end Quiver
+
+/-- In a groupoid, the sum of a function of the target over the total arrows with source `x` only
+depends on the isomorphism class of `x`: an arrow `x ⟶ y` identifies the arrows out of `x` with
+those out of `y`, preserving targets. -/
+theorem finsum_mem_preimage_left_singleton_eq_of_hom {G : Type*} [Groupoid G] {M : Type*}
+    [AddCommMonoid M] (g : G → M) {x y : G} (f : x ⟶ y) :
+    ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, g a.right = ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {y}, g a.right := by
+  rw [finsum_mem_preimage_left_singleton, finsum_mem_preimage_left_singleton]
+  exact finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ (asIso f).homFromEquiv)
+    (f := fun p : Σ z, (y ⟶ z) ↦ g p.1)
 
 variable {C : Type*} [Category C]
 
