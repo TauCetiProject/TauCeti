@@ -104,6 +104,16 @@ theorem stabilizeXChainMap_X_smul (j : Fin (n + 1)) (c : GridChainMinus R (n + 1
   rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
   simp
 
+/-- For any column `i` of `G`, `stabilizeXChainMap` carries multiplication by the variable
+`V_{s.castSucc.succAbove i}` of the transported old `O`-marking in `G'` to multiplication by `V_i`.
+
+Not a `simp` lemma: `LinearMap.map_smulₛₗ`, `MvPolynomial.rename_X`, and `Fin.predAbove_succAbove`
+already simplify the left-hand side. -/
+theorem stabilizeXChainMap_X_succAbove_smul (i : Fin n) (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXChainMap s R ((MvPolynomial.X (s.castSucc.succAbove i) : S) • c) =
+      (MvPolynomial.X i : A) • G.stabilizeXChainMap s R c := by
+  rw [G.stabilizeXChainMap_X_smul, Fin.predAbove_succAbove]
+
 variable [CharP R 2]
 
 /-- `GC⁻(G')` with scalars restricted to `A`, with its object and differential spelled out. -/

@@ -14,8 +14,9 @@ import Mathlib.LinearAlgebra.Dimension.Finrank
 # Bigraded stabilization invariance of simply blocked grid homology
 
 Let `G` be a grid diagram of size `n` with an odd number of link components, let `s` and `i` be
-columns of `G`, and let `G' = G.stabilizeX s` be the stabilization splitting the `X`-marking of
-column `s`, with `j = s.castSucc.succAbove i` the column of `G'` carrying the old `O`-marking of
+columns of `G`, and let `G' = G.stabilizeX s` be the south-west corner `X`-stabilization
+(`G.1.stabilizeX s.castSucc (G.1.X s).castSucc s` on the underlying grid) splitting the `X`-marking
+of column `s`, with `j = s.castSucc.succAbove i` the column of `G'` carrying the old `O`-marking of
 column `i`. Over any commutative ring `R` of characteristic two, the homologies of the one-variable
 specializations at `V_j = 0` and `V_i = 0` carry the internal `(O-Maslov, Alexander)` bigradings of
 `Homology/HatBigrading.lean`.
@@ -27,11 +28,13 @@ to specified `R`-linear equivalences on every homogeneous homology piece
 (`oneVariableSpecializationStabilizeXHomologyPieceEquiv`).
 
 For a knot grid (`hG : G.IsKnot`), applying this equivalence to `hG.toOddComponentGridDiagram` gives
-bigraded stabilization invariance of simply blocked grid homology `G-hat`. Unlike fully blocked grid
-homology `GH~`, whose Poincaré series is multiplied by `W` under stabilization, both the bigraded
+bigraded invariance of simply blocked grid homology `G-hat` under the south-west corner
+`X`-stabilization `G.stabilizeX s.castSucc (G.X s).castSucc s`. Unlike fully blocked grid homology
+`GH~`, whose Poincaré series is multiplied by `W` under this stabilization, both the bigraded
 Poincaré series (`bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX`) and the Alexander-graded
 Euler characteristic (`gradedSimplyBlockedHomologyEulerChar_stabilizeX`) of `G-hat` over a field of
-characteristic two are unchanged by `X`-stabilization.
+characteristic two are unchanged by `G.stabilizeX s.castSucc (G.X s).castSucc s`. Only this
+south-west corner `X`-stabilization is treated here.
 
 ## Main definitions
 
@@ -43,10 +46,12 @@ characteristic two are unchanged by `X`-stabilization.
 * `oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff`:
   the stabilization comparison preserves and reflects homology bidegrees.
 * `TauCeti.GridDiagram.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX`: over a field
-  of characteristic two, `X`-stabilization preserves the bigraded Poincaré series of `G-hat`.
+  of characteristic two, the south-west corner `X`-stabilization
+  `G.stabilizeX s.castSucc (G.X s).castSucc s` preserves the bigraded Poincaré series of `G-hat`.
 * `TauCeti.GridDiagram.IsKnot.gradedSimplyBlockedHomologyEulerChar_stabilizeX`: over a field of
-  characteristic two, `X`-stabilization preserves the Alexander-graded Euler characteristic of
-  `G-hat`.
+  characteristic two, the south-west corner `X`-stabilization
+  `G.stabilizeX s.castSucc (G.X s).castSucc s` preserves the Alexander-graded Euler characteristic
+  of `G-hat`.
 
 ## References
 
@@ -81,6 +86,8 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPi
     (hy : y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g) :
     G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y ∈
       G.bigradedHatHomologyPiece R i g := by
+  -- Unfold semireducible `OddComponentGridDiagram.stabilizeX` so `(G.stabilizeX s).1` reduces by
+  -- projection at `implicit` transparency (`dsimp only [val_stabilizeX]` makes no progress here).
   dsimp only [stabilizeX] at y hy ⊢
   obtain ⟨z, hz, rfl⟩ := (mem_bigradedHatHomologyPiece_iff _ R j).mp hy
   have heq : (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R
@@ -144,6 +151,9 @@ noncomputable def oneVariableSpecializationStabilizeXHomologyPieceEquiv (g : ℤ
     (G.stabilizeX s).bigradedHatHomologyPiece R j g ≃ₗ[R]
       G.bigradedHatHomologyPiece R i g :=
   (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).ofSubmodules _ _ (by
+    -- Unfold semireducible `OddComponentGridDiagram.stabilizeX` so the ambient module carrier
+    -- `(G.stabilizeX s).1` matches the domain of `oneVariableSpecializationStabilizeXHomologyEquiv`
+    -- at `implicit` transparency.
     dsimp only [stabilizeX]
     ext y
     rw [Submodule.mem_map_equiv]
@@ -172,8 +182,8 @@ theorem coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_symm_apply (g 
       (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y :=
   (rfl)
 
-/-- Stabilization preserves the `R`-rank of every homogeneous piece of the homology of the
-one-variable specialization. -/
+/-- The south-west corner `X`-stabilization `G.stabilizeX s` preserves the `R`-rank of every
+homogeneous piece of the homology of the one-variable specialization. -/
 theorem finrank_bigradedHatHomologyPiece_stabilizeX (g : ℤ × ℤ) :
     Module.finrank R ((G.stabilizeX s).bigradedHatHomologyPiece R j g) =
       Module.finrank R (G.bigradedHatHomologyPiece R i g) :=
@@ -192,10 +202,11 @@ local notation "j" => Fin.succAbove (Fin.castSucc s) i
 local notation "hG'" => Iff.mpr
   (GridDiagram.isKnot_stabilizeX G (Fin.castSucc s) (Fin.castSucc (GridDiagram.X G s)) s) hG
 
-/-- **Stabilization invariance of the Poincaré series of `G-hat`.** Over any field of
-characteristic two, splitting the `X`-marking of column `s` and blocking the transported old
-`O`-marking `s.castSucc.succAbove i` preserves the bigraded Poincaré series of simply blocked
-knot-grid homology. -/
+/-- **South-west `X`-stabilization invariance of the Poincaré series of `G-hat`.** Over any field of
+characteristic two, the south-west corner `X`-stabilization
+`G.stabilizeX s.castSucc (G.X s).castSucc s` (blocking the transported old `O`-marking
+`s.castSucc.succAbove i`) preserves the bigraded Poincaré series of simply blocked knot-grid
+homology. -/
 theorem bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX :
     (hG').bigradedSimplyBlockedHomologyPoincareSeries R j =
       hG.bigradedSimplyBlockedHomologyPoincareSeries R i := by
@@ -206,9 +217,11 @@ theorem bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX :
     coeff_bigradedSimplyBlockedHomologyPoincareSeries, hstab]
   exact hG.toOddComponentGridDiagram.finrank_bigradedHatHomologyPiece_stabilizeX s i R g
 
-/-- **Stabilization invariance of the Alexander-graded Euler characteristic of `G-hat`.** Over any
-field of characteristic two, `X`-stabilization preserves the Alexander-graded Euler characteristic
-of simply blocked knot-grid homology. -/
+/-- **South-west `X`-stabilization invariance of the Alexander-graded Euler characteristic of
+`G-hat`.** Over any field of characteristic two, the south-west corner `X`-stabilization
+`G.stabilizeX s.castSucc (G.X s).castSucc s` (blocking the transported old `O`-marking
+`s.castSucc.succAbove i`) preserves the Alexander-graded Euler characteristic of simply blocked
+knot-grid homology. -/
 theorem gradedSimplyBlockedHomologyEulerChar_stabilizeX :
     (hG').gradedSimplyBlockedHomologyEulerChar R j =
       hG.gradedSimplyBlockedHomologyEulerChar R i := by
