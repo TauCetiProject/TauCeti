@@ -26,6 +26,10 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 -- for `e ∈ ℂ`.
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.NormRpow
+-- Proof-only: the one-dimensional change of variables formula.
+import Mathlib.MeasureTheory.Function.JacobianOneDim
+-- Proof-only: where `Ψ₂Sq` is positive, with three real roots.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Real
 -- Proof-only: the area formula with multiplicity, and the Jacobian of a map `ℝ → ℝ`.
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
@@ -71,6 +75,11 @@ and the area formula turns the real period integral of `W`, scaled by `|c|`, int
 `dx' / √Ψ₂Sq'(x')` weighted by the number of `x` with `Ψ₂Sq(x) > 0` over each `x'`. When that
 number is a constant `n`, this reads `|c| Ω(W) = n Ω(W')`.
 
+When `Ψ₂Sq = 4 (x - e₁)(x - e₂)(x - e₃)` has three real roots `e₁ < e₂ < e₃`, the curve has two
+real components, over `[e₁, e₂]` and over `[e₃, ∞)`, and each carries half of the period. The
+substitution `x ↦ e₁ + (e₁ - e₂)(e₁ - e₃) / (x - e₁)`, which on points is translation by the point
+of order two over `e₁`, carries `(e₃, ∞)` onto `(e₁, e₂)` and preserves `dx / √Ψ₂Sq(x)`.
+
 ## Main definitions
 
 * `WeierstrassCurve.realPeriodLIntegral`: the integral `∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` in `ℝ≥0∞`.
@@ -94,6 +103,10 @@ number is a constant `n`, this reads `|c| Ω(W) = n Ω(W')`.
 * `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq` and
   `WeierstrassCurve.abs_mul_realPeriod_eq_of_ae_encard_eq`: `|c| Ω(W) = n Ω(W')` when almost every
   fibre has `n` elements.
+* `WeierstrassCurve.setLIntegral_Ioo_eq_setLIntegral_Ioi` and
+  `WeierstrassCurve.realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi`: with three real roots
+  `e₁ < e₂ < e₃`, the integrals over `(e₁, e₂)` and over `(e₃, ∞)` agree, so each is half of the
+  real period integral.
 
 ## References
 
@@ -447,5 +460,71 @@ theorem abs_mul_realPeriod_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg c), ENNReal.toReal_mul,
     ENNReal.toReal_natCast] at h
   rw [realPeriod, realPeriod, mul_left_comm, h, mul_left_comm]
+
+/-! ### Curves with three real roots -/
+
+/-- **The two real components carry the same period.** If `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e₃)`
+with `e₁ < e₂ < e₃`, then `∫_{e₁}^{e₂} dx / √Ψ₂Sq(x) = ∫_{e₃}^∞ dx / √Ψ₂Sq(x)`: the substitution
+`x ↦ e₁ + (e₁ - e₂)(e₁ - e₃) / (x - e₁)` carries `(e₃, ∞)` onto `(e₁, e₂)` and preserves
+`dx / √Ψ₂Sq(x)`. -/
+theorem setLIntegral_Ioo_eq_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e₁ < e₂) (h₂₃ : e₂ < e₃)
+    (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) :
+    ∫⁻ x in Ioo e₁ e₂, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ =
+      ∫⁻ x in Ioi e₃, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
+  have hΨ (x : ℝ) : W.Ψ₂Sq.eval x = 4 * (x - e₁) * (x - e₂) * (x - e₃) := by simp [h]
+  set k := (e₁ - e₂) * (e₁ - e₃)
+  have hk : 0 < k := mul_pos_of_neg_of_neg (by linarith) (by linarith)
+  set f : ℝ → ℝ := fun x ↦ e₁ + k * (x - e₁)⁻¹
+  have hf' (x : ℝ) (hx : x ∈ Ioi e₃) :
+      HasDerivWithinAt f (-k / (x - e₁) ^ 2) (Ioi e₃) x := by
+    have hx₁ : x - e₁ ≠ 0 := by rw [mem_Ioi] at hx; linarith
+    have hd := (((hasDerivAt_id x).sub_const e₁).inv hx₁).const_mul k |>.const_add e₁
+    exact (hd.congr_deriv (by simp only [id_eq]; field_simp)).hasDerivWithinAt
+  have hinj : InjOn f (Ioi e₃) := fun a ha b hb hab ↦ by
+    rw [mem_Ioi] at ha hb
+    have ha₁ : a - e₁ ≠ 0 := by linarith
+    have hb₁ : b - e₁ ≠ 0 := by linarith
+    simp only [f, add_right_inj, mul_right_inj' hk.ne', inv_inj, sub_left_inj] at hab
+    exact hab
+  have himage : f '' Ioi e₃ = Ioo e₁ e₂ := by
+    ext y
+    simp only [mem_image, mem_Ioi, mem_Ioo, f]
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      have hx₁ : 0 < x - e₁ := by linarith
+      refine ⟨by have := mul_pos hk (inv_pos.2 hx₁); linarith, ?_⟩
+      rw [← lt_sub_iff_add_lt', mul_inv_lt_iff₀ hx₁]
+      nlinarith
+    · rintro ⟨h₁, h₂⟩
+      have hy₁ : 0 < y - e₁ := by linarith
+      refine ⟨e₁ + k * (y - e₁)⁻¹, ?_, by field_simp [hk.ne', hy₁.ne']; ring⟩
+      rw [← sub_lt_iff_lt_add', lt_mul_inv_iff₀ hy₁]
+      nlinarith
+  rw [← himage, lintegral_image_eq_lintegral_abs_deriv_mul measurableSet_Ioi hf' hinj]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun x hx ↦ ?_
+  rw [mem_Ioi] at hx
+  have hx₁ : 0 < x - e₁ := by linarith
+  set a := k / (x - e₁) ^ 2
+  have ha : 0 < a := by positivity
+  have hfx : W.Ψ₂Sq.eval (f x) = a ^ 2 * W.Ψ₂Sq.eval x := by
+    simp only [hΨ, f, a, k]
+    field_simp
+    ring
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), hfx, Real.sqrt_mul (sq_nonneg a), Real.sqrt_sq ha.le,
+    show -k / (x - e₁) ^ 2 = -a by ring, abs_neg, abs_of_pos ha, mul_inv, ← mul_assoc,
+    mul_inv_cancel₀ ha.ne', one_mul]
+
+/-- **With three real roots `e₁ < e₂ < e₃`, the component over `(e₃, ∞)` carries half of the real
+period integral**: `Ψ₂Sq` is positive exactly on `(e₁, e₂) ∪ (e₃, ∞)`, and the integrals over the
+two intervals agree by `WeierstrassCurve.setLIntegral_Ioo_eq_setLIntegral_Ioi`. -/
+theorem realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e₁ < e₂)
+    (h₂₃ : e₂ < e₃) (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) :
+    W.realPeriodLIntegral = 2 * ∫⁻ x in Ioi e₃, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
+  have hset : {x | 0 < W.Ψ₂Sq.eval x} = Ioo e₁ e₂ ∪ Ioi e₃ :=
+    ext (W.pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots h₁₂ h₂₃ h)
+  rw [realPeriodLIntegral_def, hset, lintegral_union measurableSet_Ioi
+    (disjoint_left.mpr fun x (hx : x ∈ Ioo e₁ e₂) (hx' : x ∈ Ioi e₃) ↦
+      (lt_trans hx.2 h₂₃).not_gt hx'),
+    W.setLIntegral_Ioo_eq_setLIntegral_Ioi h₁₂ h₂₃ h, two_mul]
 
 end WeierstrassCurve
