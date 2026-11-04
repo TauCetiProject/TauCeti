@@ -59,22 +59,7 @@ namespace TauCeti.D4Triality
 
 open _root_.Matrix
 
-/-! ### Explicit orbit-sum expansion and structure-constant transfer -/
-
-/-- Each signed root orbit vector `invariantRoot negative o` is the `orbitCoeff`-weighted sum of
-the ambient root vectors along orbit `o`. -/
-theorem invariantRoot_eq_sum (negative : Bool) (o : Fin 6) :
-    invariantRoot negative o =
-      ∑ i : Fin 12 with orbit i = o,
-        orbitCoeff i • ShellLieAlgebra.root (CartanMatrix.D 4) (root negative i) := by
-  refine (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr.injective (Finsupp.ext fun idx ↦ ?_)
-  rcases idx with k | a
-  · simp [map_sum, Finsupp.finsetSum_apply]
-  · obtain ⟨⟨neg', j⟩, rfl⟩ := rootEquiv.surjective a
-    rw [rootEquiv_apply, basis_repr_invariantRoot, map_sum, Finsupp.finsetSum_apply]
-    simp only [map_zsmul, Finsupp.smul_apply, smul_eq_mul, ShellLieAlgebra.basis_repr_root,
-      Finsupp.single_apply, Sum.inr.injEq, Subtype.ext_iff, coe_root]
-    cases negative <;> cases neg' <;> fin_cases o <;> fin_cases j <;> decide
+/-! ### Structure-constant transfer and ambient bracket coordinates -/
 
 /-- Over any commutative ring `A`, the structure constants of `fixedSubalgebraBaseChangeBasis A`
 are the integer casts of the integral structure constants of `fixedBasis`. -/
@@ -87,9 +72,6 @@ theorem fixedSubalgebraBaseChangeBasis_repr_lie (A : Type*) [CommRing A]
   rw [fixedSubalgebraBaseChangeBasis_apply, fixedSubalgebraBaseChangeBasis_apply,
     ← (fixedSubalgebraBaseChangeLieEquiv A).map_lie, LieAlgebra.ExtendScalars.bracket_tmul,
     one_mul, fixedSubalgebraBaseChangeBasis_repr_tmul, zsmul_one]
-
-private theorem coe_negOnePow_int (n : ℤ) : (n.negOnePow : ℤ) = (-1 : ℤ) ^ n.natAbs :=
-  Int.coe_negOnePow ℤ n
 
 private theorem basis_repr_lie_invariantRoot_inl (neg₁ neg₂ : Bool) (o₁ o₂ : Fin 6)
     (k : Fin 4) :
@@ -112,8 +94,11 @@ private theorem basis_repr_lie_invariantRoot_inl (neg₁ neg₂ : Bool) (o₁ o�
   rw [invariantRoot_eq_sum neg₂ o₂]
   simp only [map_zsmul, LinearMap.smul_apply, map_sum, ShellLieAlgebra.bracketBilin_apply_apply,
     ShellLieAlgebra.root_lie_root, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul,
-    ShellLieAlgebra.basis_repr_rootBracket_inl, orderedSignForm_apply, coe_negOnePow_int]
-  exact Finset.sum_congr rfl fun j _ ↦ mul_left_comm _ _ _
+    ShellLieAlgebra.basis_repr_rootBracket_inl, orderedSignForm_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [mul_left_comm]
+  congr 4
+  exact Int.coe_negOnePow ℤ _
 
 private theorem basis_repr_lie_invariantRoot_inr (neg₁ neg₂ : Bool) (o₁ o₂ : Fin 6)
     (c : (CartanMatrix.D 4).normTwoShell) :
@@ -135,8 +120,11 @@ private theorem basis_repr_lie_invariantRoot_inr (neg₁ neg₂ : Bool) (o₁ o�
   rw [invariantRoot_eq_sum neg₂ o₂]
   simp only [map_zsmul, LinearMap.smul_apply, map_sum, ShellLieAlgebra.bracketBilin_apply_apply,
     ShellLieAlgebra.root_lie_root, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul,
-    ShellLieAlgebra.basis_repr_rootBracket_inr, orderedSignForm_apply, coe_negOnePow_int]
-  exact Finset.sum_congr rfl fun j _ ↦ mul_left_comm _ _ _
+    ShellLieAlgebra.basis_repr_rootBracket_inr, orderedSignForm_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [mul_left_comm]
+  congr 3
+  exact Int.coe_negOnePow ℤ _
 
 /-! ### Integral Chevalley-like bracket relations along the six root orbits -/
 
@@ -561,26 +549,9 @@ theorem range_g2SerreLift (A : Type*) [CommRing A] :
             fixedSubalgebraBaseChangeBasis A (.inr (false, k.castLE (by decide)))) ∪
           Set.range (fun k : Fin 2 ↦
             fixedSubalgebraBaseChangeBasis A (.inr (true, k.castLE (by decide))))) := by
-  set K := LieSubalgebra.lieSpan A
-    (LieEquiv.baseChange A trialityLieEquiv).toLieHom.fixedSubalgebra
-    (Set.range (fun k : Fin 2 ↦
-        fixedSubalgebraBaseChangeBasis A (.inr (false, k.castLE (by decide)))) ∪
-      Set.range (fun k : Fin 2 ↦
-        fixedSubalgebraBaseChangeBasis A (.inr (true, k.castLE (by decide)))))
-  apply le_antisymm
-  · have hcomap : ⊤ ≤ K.comap (g2SerreLift A) := by
-      rw [← lieSpan_serreE_union_serreF_eq_top A CartanMatrix.G₂, LieSubalgebra.lieSpan_le]
-      rintro _ (⟨k, rfl⟩ | ⟨k, rfl⟩)
-      · rw [SetLike.mem_coe, LieSubalgebra.mem_comap, g2SerreLift_serreE]
-        exact LieSubalgebra.subset_lieSpan (Or.inl ⟨k, rfl⟩)
-      · rw [SetLike.mem_coe, LieSubalgebra.mem_comap, g2SerreLift_serreF]
-        exact LieSubalgebra.subset_lieSpan (Or.inr ⟨k, rfl⟩)
-    rintro _ ⟨x, rfl⟩
-    exact hcomap trivial
-  · rw [LieSubalgebra.lieSpan_le]
-    rintro _ (⟨k, rfl⟩ | ⟨k, rfl⟩)
-    · exact ⟨serreE A CartanMatrix.G₂ k, g2SerreLift_serreE A k⟩
-    · exact ⟨serreF A CartanMatrix.G₂ k, g2SerreLift_serreF A k⟩
+  rw [LieHom.range_eq_map, ← lieSpan_serreE_union_serreF_eq_top A CartanMatrix.G₂,
+    LieSubalgebra.map_lieSpan]
+  simp [Set.image_union, ← Set.range_comp, Function.comp_def]
 
 /-- **Sharp surjectivity characterization for `g2SerreLift A`.**
 Over any commutative ring `A`, the folded `G₂` Serre comparison homomorphism `g2SerreLift A` onto

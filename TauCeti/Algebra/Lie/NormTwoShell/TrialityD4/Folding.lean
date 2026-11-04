@@ -112,16 +112,7 @@ theorem foldedCoroot_eq_permutationFixedBasis
     (O : Quotient (Equiv.Perm.SameCycle.setoid trialityPermD4)) :
     (CartanMatrix.D 4).foldedCoroot trialityPermD4 O =
       trialityPermD4.permutationFixedBasis O := by
-  classical
-  obtain ⟨k, rfl⟩ := vertexOrbitEquiv.surjective O
-  ext j
-  rw [coe_foldedCoroot_vertexOrbitEquiv, Equiv.Perm.permutationFixedBasis_apply]
-  have hmem : (Quotient.mk (Equiv.Perm.SameCycle.setoid trialityPermD4) j =
-      vertexOrbitEquiv k) ↔ vertexOrbit j = k := by
-    rw [← vertexOrbitEquiv.symm.apply_eq_iff_eq, vertexOrbitEquiv_symm_mk,
-      Equiv.symm_apply_apply]
-  rw [if_congr hmem rfl rfl]
-  fin_cases k <;> fin_cases j <;> decide
+  simp [foldedCoroot_def]
 
 /-- Pairing the `i`-th folded simple root functional with the `j`-th folded simple coroot produces
 Bourbaki's `DynkinType.G2.cartanMatrix i j`. -/
