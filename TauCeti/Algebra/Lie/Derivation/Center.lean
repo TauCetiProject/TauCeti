@@ -69,7 +69,7 @@ theorem restrictCenter_innerDerivation (b : A) :
     restrictCenter R A (innerDerivation R b) = 0 := by
   ext z
   simp only [coe_restrictCenter_apply, coe_innerDerivation, LieAlgebra.ad_apply,
-    Ring.lie_def, Derivation.zero_apply, ZeroMemClass.coe_zero]
+    Ring.lie_def, _root_.zero_apply, ZeroMemClass.coe_zero]
   exact sub_eq_zero.mpr (Subalgebra.mem_center_iff.mp z.property b)
 
 /-- Central multiplication of the values of a derivation is again a derivation. -/
@@ -108,7 +108,7 @@ theorem lie_center_smul (D E : derivationLieAlgebra R A) (z : Subalgebra.center 
     ⁅D, z • E⁆ = z • ⁅D, E⁆ + restrictCenter R A D z • E := by
   apply Subtype.ext
   ext a
-  simp [LieSubalgebra.coe_bracket, Ring.lie_def, Module.End.mul_apply,
+  simp [LieSubalgebra.coe_bracket, Ring.lie_def, mul_apply_eq_comp,
     center_smul_apply, leibniz, mul_sub]
   abel
 

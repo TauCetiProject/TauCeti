@@ -166,7 +166,7 @@ theorem expCoderiv_comp_ofLetter (hφ : φ ∘ₗ ofLetter R M = 0) :
     expCoderiv R φ ∘ₗ ofLetter R M = ofLetter R M := by
   refine LinearMap.ext fun a ↦ ?_
   rw [LinearMap.comp_apply, expCoderiv_apply_eq_sum hφ (ofLetter_mem_filtration R M a),
-    Finset.sum_range_one, pow_zero, Module.End.one_apply, Nat.factorial_zero, Nat.cast_one,
+    Finset.sum_range_one, pow_zero, one_apply_eq_self, Nat.factorial_zero, Nat.cast_one,
     inv_one, map_one, one_smul]
 
 /-- **The exponential to first order.**  If `φ` vanishes on the words of length at most `e`, for
@@ -183,9 +183,9 @@ theorem expCoderiv_apply_of_mem_filtration {e : ℕ} (he : 1 ≤ e)
   have hDD : (coderiv R φ ^ 2) z = 0 := by
     have h := coderiv_filtration_add_le R φ hφ 0 ⟨_, by rwa [zero_add], rfl⟩
     rw [filtration_zero, Submodule.mem_bot] at h
-    rw [sq, Module.End.mul_apply, h]
+    rw [sq, mul_apply_eq_comp, h]
   rw [expCoderiv_apply_eq_sum_of_pow_apply_eq_zero hφ₁ hDD, Finset.sum_range_succ,
-    Finset.sum_range_one, pow_zero, pow_one, Module.End.one_apply]
+    Finset.sum_range_one, pow_zero, pow_one, one_apply_eq_self]
   simp
 
 /-- **The exponential commutes with what commutes with the coderivation.**  An endomorphism `T` of
@@ -198,10 +198,10 @@ theorem commute_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0)
   refine LinearMap.ext fun z ↦ ?_
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   have hTr : ∀ r, T ((coderiv R φ ^ r) z) = (coderiv R φ ^ r) (T z) := fun r ↦ by
-    rw [← Module.End.mul_apply, (hT.pow_right r).eq, Module.End.mul_apply]
+    rw [← mul_apply_eq_comp, (hT.pow_right r).eq, mul_apply_eq_comp]
   have hz := pow_coderiv_apply_eq_zero_of_mem_filtration R hφ hn
   have hTz : (coderiv R φ ^ n) (T z) = 0 := by rw [← hTr, hz, map_zero]
-  rw [Module.End.mul_apply, Module.End.mul_apply, expCoderiv_apply_eq_sum hφ hn,
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, expCoderiv_apply_eq_sum hφ hn,
     expCoderiv_apply_eq_sum_of_pow_apply_eq_zero hφ hTz, map_sum]
   simp only [map_smul, hTr]
 
@@ -289,9 +289,9 @@ theorem isHomogeneous_expCoderiv (G : InternalGrading R M) {φ : ReducedTensorWo
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   have hpow : ∀ r, (coderiv R φ ^ r) z ∈ gradedPiece G p := fun r ↦ by
     induction r with
-    | zero => rwa [pow_zero, Module.End.one_apply]
+    | zero => rwa [pow_zero, one_apply_eq_self]
     | succ r ih =>
-        rw [pow_succ', Module.End.mul_apply]
+        rw [pow_succ', mul_apply_eq_comp]
         simpa only [add_zero] using hD p _ ih
   rw [expCoderiv_apply_eq_sum hφ₁ hn]
   exact Submodule.sum_mem _ fun r _ ↦ Submodule.smul_mem _ _ (hpow r)

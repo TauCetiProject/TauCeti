@@ -74,9 +74,9 @@ theorem det_of_intertwining_of_mulVec_eq_zero
   have hinter : B * (1 + vecMulVec v z) * D = D * X := by
     ext i j
     have h := congrFun (congrFun hAX i.castSucc) j
-    simp only [mul_apply, Fin.sum_univ_castSucc, hcol, hrow] at h
+    simp only [Matrix.mul_apply, Fin.sum_univ_castSucc, hcol, hrow] at h
     rw [mul_add, mul_one, add_mul, mul_vecMulVec, vecMulVec_mul]
-    simpa only [add_apply, mul_apply, vecMulVec_apply, neg_mul_neg,
+    simpa only [Matrix.add_apply, Matrix.mul_apply, vecMulVec_apply, neg_mul_neg,
       B, D, submatrix_apply, id_eq] using h
   have hdet : (1 + vecMulVec v z).det = 1 + z ⬝ᵥ v := by
     rw [vecMulVec_eq Unit, det_one_add_replicateCol_mul_replicateRow]

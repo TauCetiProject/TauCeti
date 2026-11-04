@@ -107,6 +107,36 @@ theorem _root_.ModelWithCorners.isOpen_extendCoordChange_source [I.Boundaryless]
   (e.continuousOn_extend_symm (I := I)).isOpen_inter_preimage e.isOpen_extend_target
     e'.isOpen_extend_source
 
+omit [ChartedSpace H M] in
+/-- For a boundaryless model, the coordinate overlap is a neighborhood of the coordinate of
+any point in both chart domains. -/
+theorem _root_.ModelWithCorners.extendCoordChange_source_mem_nhds [I.Boundaryless]
+    {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
+    (I.extendCoordChange e e').source ∈ 𝓝 (I (e x)) := by
+  apply I.isOpen_extendCoordChange_source.mem_nhds
+  rw [← OpenPartialHomeomorph.extend_image_source_inter]
+  exact Set.mem_image_of_mem _ ⟨hx, hx'⟩
+
+omit [ChartedSpace H M] in
+/-- A change of extended charts sends the coordinate of a point in the first chart to its
+coordinate in the second chart. -/
+@[simp]
+theorem _root_.ModelWithCorners.extendCoordChange_apply {e e' : OpenPartialHomeomorph M H}
+    {x : M} (hx : x ∈ e.source) :
+    I.extendCoordChange e e' (I (e x)) = I (e' x) := by
+  simp only [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
+    OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+    Function.comp_apply, I.left_inv, e.left_inv hx]
+
+omit [ChartedSpace H M] in
+/-- Near a point in a chart overlap, changing coordinates and then applying the inverse of the
+second extended chart agrees with the inverse of the first extended chart. -/
+theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq [I.Boundaryless]
+    {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
+    (e'.extend I).symm ∘ I.extendCoordChange e e' =ᶠ[𝓝 (I (e x))] (e.extend I).symm := by
+  filter_upwards [I.extendCoordChange_source_mem_nhds hx hx'] with y hy
+  exact (e'.extend I).left_inv hy.2
+
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/
 theorem extChartAt_inclusion_self {U V : TopologicalSpace.Opens M} (h : U ≤ V) (x : U) :

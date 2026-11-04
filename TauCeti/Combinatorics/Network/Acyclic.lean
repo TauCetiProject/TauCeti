@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Pi
 public import TauCeti.Combinatorics.Network.Decomposition
+public import TauCeti.Combinatorics.Network.SetFlow
 
 /-!
 # Acyclic assignments and acyclic flows
@@ -33,6 +34,8 @@ arrows of positive value contain the cycle `a → b → a`.
   additive subgroup containing the values of the original assignment.
 * `TauCeti.Flow.exists_isAcyclic_mem` and `TauCeti.Flow.exists_isAcyclic`: below every ordinary
   flow lies an acyclic flow of the same value.
+* `TauCeti.SetFlow.exists_isAcyclic`: below every set-to-set flow lies an acyclic flow of the same
+  value.
 * `TauCeti.PathCycleDecomposition.cycles_eq_nil_of_isAcyclic`: a path–cycle decomposition of an
   acyclic assignment has no cycles.
 * `TauCeti.Flow.toFun_le_val_of_isAcyclic`: an acyclic ordinary flow carries at most its value
@@ -173,6 +176,25 @@ theorem Flow.exists_isAcyclic (f : Flow cap s t) :
     ∃ g : Flow cap s t, g.toFun.IsAcyclic ∧ g.val = f.val ∧ g.toFun ≤ f.toFun :=
   let ⟨g, hg, hval, hle, _⟩ := f.exists_isAcyclic_mem ⊤ fun _ _ _ ↦ AddSubgroup.mem_top _
   ⟨g, hg, hval, hle⟩
+
+variable {A B : Finset V}
+
+/-- **Acyclic set-to-set flows.** Every `A`–`B` flow `f` has an acyclic `A`–`B` flow of the
+same value that is arrowwise at most `f`. -/
+theorem SetFlow.exists_isAcyclic (f : SetFlow cap A B) :
+    ∃ g : SetFlow cap A B, g.toFun.IsAcyclic ∧ g.val = f.val ∧ g.toFun ≤ f.toFun := by
+  obtain ⟨g, hg, hg₀, hgf, hexc, -⟩ :=
+    exists_isAcyclic_le (Q := Q) (⊤ : AddSubgroup K) (fun _ _ e ↦ f.nonneg e)
+      fun _ _ _ ↦ AddSubgroup.mem_top _
+  let g' : SetFlow cap A B :=
+    { toFun := g
+      mem_Icc := ⟨hg₀, hgf.trans f.mem_Icc.2⟩
+      conserve v hvA hvB := (hexc v).trans (f.conserve v hvA hvB)
+      excessAt_nonpos v hv := (hexc v).symm ▸ f.excessAt_nonpos v hv
+      excessAt_nonneg v hv := (hexc v).symm ▸ f.excessAt_nonneg v hv }
+  refine ⟨g', hg, ?_, hgf⟩
+  simp only [SetFlow.val_def, g']
+  exact sum_congr rfl fun v _ ↦ hexc v
 
 end CycleCancelling
 

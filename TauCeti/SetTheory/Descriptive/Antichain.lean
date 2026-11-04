@@ -11,6 +11,7 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.MeasureTheory.Constructions.Polish.Perfect
 import Mathlib.Topology.DerivedSet
 import Mathlib.Topology.MetricSpace.Perfect
+import TauCeti.Topology.Bases
 import TauCeti.Topology.Perfect
 
 /-!
@@ -34,7 +35,8 @@ the two agree on Polish spaces.
 A Cantor antichain on `A` gives at least continuum many classes, both of `E` and of its
 restriction `E.comap ((↑) : A → X)` to `A`. The restriction is reached through
 `Setoid.hasCantorAntichainOn_subtype_iff`, which passes Cantor antichains between `A` and the whole
-subtype `↥A`.
+subtype `↥A`. A second-countable `T₀` space, in particular a Polish space, has at most continuum
+many points, so there the number of classes is exactly `𝔠`.
 
 On a Polish space, Cantor antichains are the same as uncountable Borel sets of pairwise
 inequivalent points: the range of a Cantor antichain is compact, and the perfect set theorem for
@@ -59,6 +61,9 @@ homeomorphism pulling `F` back to `E`, with no hypothesis on the spaces.
 * `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient` and
   `Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap`: at least continuum many classes,
   of `E` and of its restriction to `A`.
+* `Setoid.HasCantorAntichainOn.mk_quotient_eq_continuum` and
+  `Setoid.HasCantorAntichainOn.mk_quotient_comap_eq_continuum`: exactly continuum many classes in a
+  second-countable `T₀` space, such as a Polish space.
 * `Setoid.HasCantorAntichainOn.hasPerfectAntichainOn` (Hausdorff spaces),
   `Setoid.HasPerfectAntichainOn.hasCantorAntichainOn` (completely metrizable spaces) and
   `Setoid.hasCantorAntichainOn_iff_hasPerfectAntichainOn`.
@@ -205,6 +210,21 @@ restriction of `E` to `A` has at least continuum many classes. -/
 theorem HasCantorAntichainOn.continuum_le_mk_quotient_comap (h : E.HasCantorAntichainOn A) :
     𝔠 ≤ #(Quotient (E.comap ((↑) : A → X))) :=
   (hasCantorAntichainOn_subtype_iff.2 h).continuum_le_mk_quotient
+
+/-- **Exactly continuum many classes.** In a second-countable `T₀` space, in particular a Polish
+space, a Cantor antichain on `A` for `E` gives `E` exactly continuum many classes. -/
+theorem HasCantorAntichainOn.mk_quotient_eq_continuum [SecondCountableTopology X] [T0Space X]
+    (h : E.HasCantorAntichainOn A) : #(Quotient E) = 𝔠 :=
+  (mk_quotient_le.trans (TauCeti.mk_le_continuum_of_secondCountableTopology X)).antisymm
+    h.continuum_le_mk_quotient
+
+/-- **Exactly continuum many classes on `A`.** In a second-countable `T₀` space, in particular a
+Polish space, a Cantor antichain on `A` for `E` gives the restriction of `E` to `A` exactly
+continuum many classes. -/
+theorem HasCantorAntichainOn.mk_quotient_comap_eq_continuum [SecondCountableTopology X]
+    [T0Space X] (h : E.HasCantorAntichainOn A) :
+    #(Quotient (E.comap ((↑) : A → X))) = 𝔠 :=
+  (hasCantorAntichainOn_subtype_iff.2 h).mk_quotient_eq_continuum
 
 /-! ### Cantor antichains and perfect antichains -/
 

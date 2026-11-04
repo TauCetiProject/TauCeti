@@ -87,7 +87,7 @@ theorem isSemisimple_conj_iff (g h : GeneralLinearGroup K V) :
         _ = h.toLinearEquiv.symm.toLinearMap := congrArg LinearEquiv.toLinearMap
           (LinearMap.GeneralLinearGroup.toLinearEquiv_inv h)
     ext v
-    simp only [Units.val_mul, End.mul_apply,
+    simp only [Units.val_mul, mul_apply_eq_comp,
       LinearMap.GeneralLinearGroup.congrLinearEquiv_apply,
       LinearMap.GeneralLinearGroup.coe_ofLinearEquiv, LinearEquiv.trans_apply,
       LinearMap.GeneralLinearGroup.coe_toLinearEquiv]

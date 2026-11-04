@@ -430,6 +430,7 @@ theorem isAddCyclic_quotient_span {x : ℤ_[p]} (hx : x ≠ 0) :
 /-- The valuation of a natural number in `ℤ_[p]` is its `p`-adic valuation. -/
 @[simp]
 theorem valuation_natCast (n : ℕ) : (n : ℤ_[p]).valuation = padicValNat p n := by
+  rw [Nat.padicValNat_def]
   have h := valuation_coe (n : ℤ_[p])
   rw [coe_natCast, Padic.valuation_natCast] at h
   exact_mod_cast h.symm
