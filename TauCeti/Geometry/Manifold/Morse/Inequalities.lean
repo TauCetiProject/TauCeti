@@ -35,7 +35,7 @@ three statements are the Morse inequalities for CW pairs. Across a band without 
 the relative homology vanishes, by the deformation retraction of `M_b` onto `M_a`
 (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
 A band is cut at the critical values it contains into finitely many such pieces
-(`TauCeti.IsMorse.sublevelPair_induction`), and the long exact sequence of the triple
+(`TauCeti.IsMorse.band_induction`), and the long exact sequence of the triple
 `M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are subadditive
 (`TauCeti.TopTriple.finrank_singularHomology_totalPair_le` and
 `TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le`), while the
@@ -154,7 +154,8 @@ private theorem morseInequalities_of_forall_notMem (hf : IsMorse I f) {a b : ℝ
   simp [hfin, hrank, hcount]
 
 /-- **The Morse inequalities across one critical level.** If the band `f⁻¹[c - δ, c + δ]` is
-compact, then for some `0 < ε ≤ δ` the Morse inequalities hold for `({f ≤ c + ε}, {f ≤ c - ε})`. -/
+compact, then for some `0 < ε ≤ δ` the Morse inequalities hold for
+`({f ≤ c + ε}, {f ≤ c - ε})`. -/
 private theorem IsMorse.exists_morseInequalities_level (hf : IsMorse I f) {c δ : ℝ} (hδ : 0 < δ)
     (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
     ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ MorseInequalities I f V (c - ε) (c + ε) (by linarith) := by
@@ -247,18 +248,17 @@ private theorem MorseInequalities.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m �
       T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V n hzero
     rw [h, he₁ hn, he₂ hn, hsum, mul_add]
 
-/-- **The Morse inequalities across a compact band between regular values**, by induction over
-the critical levels of the band. -/
+/-- **The Morse inequalities across a compact band between regular values**, by induction over its
+critical levels. -/
 private theorem IsMorse.morseInequalities (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) : MorseInequalities I f V a b hab :=
-  hf.sublevelPair_induction (fun s t hst ↦ MorseInequalities I f V s t hst)
-    (fun _ _ hst _ _ hcompact' hcrit ↦ morseInequalities_of_forall_notMem V hf hst hcompact' hcrit)
-    (fun _ _ hδ _ _ hcompact' _ ↦ hf.exists_morseInequalities_level V hδ hcompact')
-    (fun _ _ _ _ _ _ _ hcompact' _ _ _ h₁ h₂ ↦ h₁.trans V
-      ((hf.finite_criticalPoints_inter hcompact').subset fun _ hx ↦
-        ⟨hx.1, Ioc_subset_Icc_self hx.2⟩) h₂)
-    hab hcompact ha hb
+  hf.band_induction hab hcompact ha hb
+    (fun _ _ hst hcompact hcrit ↦ morseInequalities_of_forall_notMem V hf hst hcompact hcrit)
+    (fun _ _ _ _ _ hδ hcompact ↦ hf.exists_morseInequalities_level V hδ hcompact)
+    fun _ _ _ _ _ hcompact h₁ h₂ ↦ h₁.trans V
+      ((hf.finite_criticalPoints_inter hcompact).subset
+        (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))) h₂
 
 /-- **Finiteness of relative homology for a band.** Let `f` be a Morse function, and `a ≤ b`
 regular values with compact band `f⁻¹[a, b]`. Then the relative singular homology

@@ -42,7 +42,9 @@ proper function on the zero set (`TauCeti.isProperMap_norm_sq_sub_toLp_affineZer
 every critical point of this restriction has real Morse index at most the complex dimension
 `|σ| - |ι|` (`TauCeti.manifoldMorseIndex_norm_sq_sub_toLp_affineZeroLocus_le`). The latter is the
 Levi-form bound `TauCeti.manifoldMorseIndex_norm_sq_sub_comp_le` for a holomorphic immersion,
-applied to the inclusion of the zero set.
+applied to the inclusion of the zero set into Euclidean space `ℂ^σ`, which is holomorphic and an
+immersion (`TauCeti.contMDiff_toLp_coe_affineZeroLocus` and
+`TauCeti.injective_mvfderiv_toLp_coe_affineZeroLocus`).
 
 ## References
 
@@ -155,6 +157,39 @@ section Complex
 variable {σ ι : Type*} [Fintype σ] [Fintype ι] {p : ι → MvPolynomial σ ℂ}
   (hp : ∀ x ∈ affineZeroLocus p, Function.Surjective (jacobiMatrixAt p x).mulVec)
 
+omit [Fintype σ] [Fintype ι] in
+/-- The Euclidean inclusion is the inclusion followed by the linear identification `toLp`. -/
+private theorem toLp_coe_affineZeroLocus_eq :
+    (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) =
+      (EuclideanSpace.equiv σ ℂ).symm ∘ Subtype.val := by
+  rw [PiLp.coe_symm_continuousLinearEquiv, Function.comp_def]
+
+/-- The inclusion of a smooth affine complete intersection into Euclidean space `ℂ^σ` is
+holomorphic of every order. -/
+theorem contMDiff_toLp_coe_affineZeroLocus (r : ℕ∞ω) :
+    letI := affineZeroLocusChartedSpace hp
+    ContMDiff 𝓘(ℂ, Fin (Fintype.card σ - Fintype.card ι) → ℂ) 𝓘(ℂ, EuclideanSpace ℂ σ) r
+      (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) := by
+  let _ := affineZeroLocusChartedSpace hp
+  rw [toLp_coe_affineZeroLocus_eq]
+  exact (EuclideanSpace.equiv σ ℂ).symm.contDiff.contMDiff.comp (contMDiff_coe_affineZeroLocus hp r)
+
+/-- The inclusion of a smooth affine complete intersection into Euclidean space `ℂ^σ` is an
+immersion. -/
+theorem injective_mvfderiv_toLp_coe_affineZeroLocus (x : affineZeroLocus p) :
+    letI := affineZeroLocusChartedSpace hp
+    Function.Injective (mvfderiv 𝓘(ℂ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
+      (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) x) := by
+  let _ := affineZeroLocusChartedSpace hp
+  have := isManifold_affineZeroLocus hp 2
+  have hval := contMDiff_coe_affineZeroLocus hp 2 x
+  intro v w hvw
+  rw [toLp_coe_affineZeroLocus_eq] at hvw
+  set e := (EuclideanSpace.equiv σ ℂ).symm
+  simp only [mvfderiv_comp_apply_of_differentiableAt e.differentiableAt
+    (hval.mdifferentiableAt two_ne_zero), e.fderiv, mvfderiv_apply_eq_mfderiv_apply] at hvw
+  exact injective_mfderiv_coe_affineZeroLocus hp x (e.injective hvw)
+
 /-- **Milnor's index bound on a smooth affine complete intersection.** On the common zero set in
 `ℂ^σ` of a polynomial family with surjective Jacobian at every common zero, every critical point of
 the Euclidean squared distance from a point `a` has real Morse index at most the complex dimension
@@ -170,25 +205,11 @@ theorem manifoldMorseIndex_norm_sq_sub_toLp_affineZeroLocus_le (a : EuclideanSpa
       Fintype.card σ - Fintype.card ι := by
   let _ := affineZeroLocusChartedSpace hp
   have := isManifold_affineZeroLocus hp 2
-  -- The Euclidean inclusion is the inclusion followed by the linear identification `toLp`.
-  set e := (EuclideanSpace.equiv σ ℂ).symm
-  have hcomp : (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) = e ∘ Subtype.val := by
-    rw [PiLp.coe_symm_continuousLinearEquiv, Function.comp_def]
-  have hval := contMDiff_coe_affineZeroLocus hp 2 x
-  have hi : ContMDiffAt 𝓘(ℂ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
-      𝓘(ℂ, EuclideanSpace ℂ σ) 2 (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) x := by
-    rw [hcomp]
-    exact e.contDiff.contMDiff.contMDiffAt.comp x hval
-  have hinj : Function.Injective (mvfderiv 𝓘(ℂ, Fin (Fintype.card σ - Fintype.card ι) → ℂ)
-      (fun y : affineZeroLocus p ↦ WithLp.toLp 2 (y : σ → ℂ)) x) := by
-    intro v w hvw
-    simp only [hcomp, mvfderiv_comp_apply_of_differentiableAt e.differentiableAt
-      (hval.mdifferentiableAt two_ne_zero), e.fderiv,
-      mvfderiv_apply_eq_mfderiv_apply] at hvw
-    exact injective_mfderiv_coe_affineZeroLocus hp x (e.injective hvw)
   have hdim : Module.finrank ℂ (Fin (Fintype.card σ - Fintype.card ι) → ℂ) =
       Fintype.card σ - Fintype.card ι := Module.finrank_fin_fun ℂ
-  simpa only [hdim] using manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hcrit
+  simpa only [hdim] using manifoldMorseIndex_norm_sq_sub_comp_le
+    (contMDiff_toLp_coe_affineZeroLocus hp 2 x) (injective_mvfderiv_toLp_coe_affineZeroLocus hp x)
+    hcrit
 
 end Complex
 

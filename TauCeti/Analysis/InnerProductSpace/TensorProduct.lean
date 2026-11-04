@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.Dual
+public import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Tensor products of inner product spaces
@@ -21,6 +23,11 @@ sesquilinear forms on vector spaces carrying no inner product space structure of
 the Hodge forms of polarized Hodge structures: a sesquilinear form on `W₁ ⊗[𝕜] W₂` whose value on
 pure tensors is the product of the values of two positive definite Hermitian forms is positive
 definite.
+
+`InnerProductSpace.tensorDualMetric` puts the ordinary product metric on `F ⊗ E*`, with
+`E*` carrying the Riesz-transported algebraic dual metric. Evaluation carries this form to
+the unnormalized Hilbert–Schmidt pairing `tr(A† B)`. This fixes the metric normalization
+when endomorphisms are identified with tensors, without adding an instance on the dual.
 
 ## Main statements
 
@@ -110,3 +117,91 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
 end Sesquilinear
 
 end TauCeti
+
+namespace InnerProductSpace
+
+variable (𝕜 E F : Type*) [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- The ordinary tensor metric on `F ⊗ E*`, using the Riesz-transported positive dual
+metric. No norm or inner product instance on the algebraic dual is installed. -/
+noncomputable def tensorDualMetric :
+    F ⊗[𝕜] Module.Dual 𝕜 E →ₗ⋆[𝕜] F ⊗[𝕜] Module.Dual 𝕜 E →ₗ[𝕜] 𝕜 :=
+  (TensorProduct.map₂ (innerₛₗ 𝕜) (dualMetric 𝕜 E)).compr₂ₛₗ
+    (TensorProduct.lid 𝕜 𝕜).toLinearMap
+
+/-- On pure tensors the tensor metric is the product of the two factor metrics. -/
+@[simp]
+theorem tensorDualMetric_tmul (x : F) (φ : Module.Dual 𝕜 E)
+    (y : F) (ψ : Module.Dual 𝕜 E) :
+    tensorDualMetric 𝕜 E F (x ⊗ₜ φ) (y ⊗ₜ ψ) =
+      inner 𝕜 x y * dualMetric 𝕜 E φ ψ := by
+  simp [tensorDualMetric]
+
+/-- Evaluation identifies the ordinary tensor metric with the unnormalized Hilbert–Schmidt
+pairing. The source and target spaces may be different, and either can be zero. -/
+theorem tensorDualMetric_eq_trace [FiniteDimensional 𝕜 F]
+    (a b : F ⊗[𝕜] Module.Dual 𝕜 E) :
+    tensorDualMetric 𝕜 E F a b = LinearMap.trace 𝕜 E
+      ((dualTensorHom 𝕜 E F (TensorProduct.comm 𝕜 F (Module.Dual 𝕜 E) a)).adjoint ∘ₗ
+        dualTensorHom 𝕜 E F (TensorProduct.comm 𝕜 F (Module.Dual 𝕜 E) b)) := by
+  induction a with
+  | tmul x φ =>
+    induction b with
+    | tmul y ψ =>
+      obtain ⟨v, rfl, _⟩ := φ.existsUnique_innerₛₗ_eq
+      obtain ⟨w, rfl, _⟩ := ψ.existsUnique_innerₛₗ_eq
+      let e := stdOrthonormalBasis 𝕜 E
+      rw [tensorDualMetric_tmul, dualMetric_innerₛₗ, LinearMap.trace_eq_sum_inner _ e]
+      simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_right,
+        TensorProduct.comm_tmul, dualTensorHom_apply, innerₛₗ_apply_apply, inner_smul_left,
+        inner_smul_right]
+      simp only [← inner_conj_symm v, starRingEnd_self_apply, ← mul_assoc]
+      rw [← Finset.sum_mul, e.sum_inner_mul_inner, mul_comm]
+    | add b c hb hc => simp [hb, hc, LinearMap.comp_add]
+  | add a c ha hc => simp [ha, hc, LinearMap.add_comp]
+
+open scoped ComplexOrder in
+/-- The ordinary tensor/dual metric is positive on every nonzero tensor. -/
+theorem tensorDualMetric_self_pos {a : F ⊗[𝕜] Module.Dual 𝕜 E} (ha : a ≠ 0) :
+    0 < tensorDualMetric 𝕜 E F a a := by
+  have hinner : (innerₛₗ 𝕜 : F →ₗ⋆[𝕜] F →ₗ[𝕜] 𝕜).IsSymm :=
+    ⟨fun x y => inner_conj_symm y x⟩
+  apply TauCeti.apply_self_pos_of_apply_tmul_tmul
+    (tensorDualMetric_tmul 𝕜 E F) hinner (isPosSemidef_dualMetric 𝕜 E).isSymm _ _ ha
+  · intro x hx
+    exact RCLike.pos_iff.2 ⟨re_inner_self_pos.2 hx, inner_self_im x⟩
+  · intro φ hφ
+    exact lt_of_le_of_ne ((isPosSemidef_dualMetric 𝕜 E).nonneg φ)
+      (Ne.symm ((dualMetric_self_eq_zero_iff 𝕜 E φ).not.2 hφ))
+
+/-- Definiteness of the ordinary tensor/dual metric. -/
+@[simp]
+theorem tensorDualMetric_self_eq_zero_iff (a : F ⊗[𝕜] Module.Dual 𝕜 E) :
+    tensorDualMetric 𝕜 E F a a = 0 ↔ a = 0 := by
+  constructor
+  · intro h
+    by_contra ha
+    exact (tensorDualMetric_self_pos 𝕜 E F ha).ne' h
+  · rintro rfl
+    simp
+
+open scoped ComplexOrder in
+/-- The ordinary tensor/dual metric is Hermitian and positive semidefinite. -/
+theorem isPosSemidef_tensorDualMetric : (tensorDualMetric 𝕜 E F).IsPosSemidef where
+  eq a b := by
+    induction a with
+    | tmul x φ =>
+      induction b with
+      | tmul y ψ =>
+        simp only [tensorDualMetric_tmul, map_mul, inner_conj_symm,
+          (isPosSemidef_dualMetric 𝕜 E).eq]
+      | add b c hb hc => simp [hb, hc]
+    | add a c ha hc => simp [ha, hc]
+  nonneg a := by
+    rcases eq_or_ne a 0 with rfl | ha
+    · simp
+    · exact (tensorDualMetric_self_pos 𝕜 E F ha).le
+
+end InnerProductSpace

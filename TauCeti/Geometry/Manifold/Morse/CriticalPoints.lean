@@ -31,7 +31,9 @@ critical point, and so does each nonempty compact sublevel of a continuous funct
 manifold with at least two points it has at least two critical points, a maximum and a minimum.
 The critical set of a `C¹` function is closed, and a nondegenerate critical point is isolated in
 it, so a Morse function has finitely many critical points in every compact set; for a proper
-function bounded below, this applies to every sublevel set.
+function bounded below, this applies to every sublevel set. A compact band between regular
+values therefore holds finitely many critical levels, along which properties of the band can be
+proved one level at a time.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -58,8 +60,9 @@ polynomial in the Morse inequalities.
   sublevel sets of proper functions bounded below.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
-* `TauCeti.IsMorse.sublevelPair_induction`: Milnor's induction over the critical levels of a
-  compact band between regular values.
+* `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
+  from its validity across bands without critical points, across single critical levels, and
+  along triples of levels.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
@@ -334,81 +337,77 @@ theorem IsMorse.exists_criticalPoints_inter_preimage_Icc_subset (hf : IsMorse I 
   exact hball hyball ⟨⟨y, ⟨hy, hyδ⟩, rfl⟩, hyc⟩
 
 /-- **Induction over the critical levels of a compact band.** Let `f` be a Morse function and
-`a ≤ b` regular values with compact band `f⁻¹[a, b]`. A property `P s t` of the values `s ≤ t`
-holds for `a` and `b` if, for values in `[a, b]`:
+`a ≤ b` regular values of `f` with compact band `f⁻¹[a, b]`. A property `P s t` of intervals holds
+for `[a, b]` if it holds across every compact band `f⁻¹[s, t]` without critical points, across
+some `[c - ε, c + ε]` inside any compact band `f⁻¹[c - δ, c + δ]` around a critical value
+`c ∈ (a, b)`, and passes from `[s, m]` and `[m, t]` to `[s, t]` when `f⁻¹[s, t]` is compact.
 
-* it holds whenever the band `f⁻¹[s, t]` contains no critical point;
-* across each level `c`, for every `δ > 0` such that `f⁻¹[c - δ, c + δ]` lies in the interior of
-  the band and has all its critical points on the level `c`, it holds for `c - ε` and `c + ε` for
-  some `0 < ε ≤ δ`;
-* it holds for `s ≤ t` as soon as it holds for `s ≤ m` and `m ≤ t`, where `s`, `m` and `t` are
-  regular values.
-
-The cases supply the compactness of the bands involved. -/
-theorem IsMorse.sublevelPair_induction (hf : IsMorse I f) {a b : ℝ}
-    (P : ∀ s t : ℝ, s ≤ t → Prop)
-    (hfree : ∀ s t (hst : s ≤ t), a ≤ s → t ≤ b → IsCompact (f ⁻¹' Icc s t) →
-      (∀ x ∈ criticalPoints I f, f x ∉ Icc s t) → P s t hst)
-    (hlevel : ∀ c δ, 0 < δ → a < c - δ → c + δ < b → IsCompact (f ⁻¹' Icc (c - δ) (c + δ)) →
-      criticalPoints I f ∩ f ⁻¹' Icc (c - δ) (c + δ) ⊆ f ⁻¹' {c} →
-      ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ P (c - ε) (c + ε) (by linarith))
-    (htrans : ∀ s m t (hsm : s ≤ m) (hmt : m ≤ t), a ≤ s → t ≤ b →
-      IsCompact (f ⁻¹' Icc s t) → IsRegularValue I 𝓘(ℝ) f s → IsRegularValue I 𝓘(ℝ) f m →
-      IsRegularValue I 𝓘(ℝ) f t → P s m hsm → P m t hmt → P s t (hsm.trans hmt))
+The proof cuts the band just above its lowest critical value and inducts on the number of critical
+points in it. This is the induction along which Milnor's cell attachments across single critical
+levels assemble into statements about a whole band. -/
+theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t → Prop} {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) : P a b hab := by
+    (hb : IsRegularValue I 𝓘(ℝ) f b)
+    (hregular : ∀ s t (hst : s ≤ t), IsCompact (f ⁻¹' Icc s t) →
+      (∀ x ∈ criticalPoints I f, f x ∉ Icc s t) → P s t hst)
+    (hlevel : ∀ p ∈ criticalPoints I f, a < f p → f p < b → ∀ δ, 0 < δ →
+      IsCompact (f ⁻¹' Icc (f p - δ) (f p + δ)) →
+        ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ P (f p - ε) (f p + ε) (by linarith))
+    (htrans : ∀ s m t (hsm : s ≤ m) (hmt : m ≤ t), IsCompact (f ⁻¹' Icc s t) → P s m hsm →
+      P m t hmt → P s t (hsm.trans hmt)) :
+    P a b hab := by
   have hfc : Continuous f := hf.contMDiff.continuous
-  have hcompact' {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
-      (preimage_mono (Icc_subset_Icc hs ht))
-  have hreg {s : ℝ} (hs : ∀ x ∈ criticalPoints I f, f x ≠ s) : IsRegularValue I 𝓘(ℝ) f s :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxs⟩ ↦ hs x hx hxs
-  have hreg' {s : ℝ} (hs : IsRegularValue I 𝓘(ℝ) f s) : ∀ x ∈ criticalPoints I f, f x ≠ s :=
-    fun x hx hxs ↦ isRegularValue_iff_notMem_image_criticalPoints.1 hs ⟨x, hx, hxs⟩
-  -- Induct on the number of critical points in the band `f⁻¹[s, b]`, cutting it just above its
-  -- lowest critical value.
-  suffices ∀ N : ℕ, ∀ s, ∀ hsb : s ≤ b, a ≤ s → (criticalPoints I f ∩ f ⁻¹' Icc s b).ncard = N →
-      IsRegularValue I 𝓘(ℝ) f s → P s b hsb from this _ a hab le_rfl rfl ha
+  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
+  -- Induct on the lower end `a' ≥ a` of the band, which shrinks at each cut.
+  replace hlevel (p) (hp : p ∈ criticalPoints I f) {a' : ℝ} (haa' : a ≤ a') (hac : a' < f p) :=
+    hlevel p hp (haa'.trans_lt hac)
+  suffices ∀ N : ℕ, ∀ a', a ≤ a' → ∀ hab : a' ≤ b,
+      (criticalPoints I f ∩ f ⁻¹' Icc a' b).ncard = N → IsCompact (f ⁻¹' Icc a' b) →
+        a' ∉ f '' criticalPoints I f → P a' b hab
+    from this _ a le_rfl hab rfl hcompact ha
+  clear ha hcompact hab
   intro N
   induction N using Nat.strong_induction_on with
   | _ N ih =>
-  intro s hsb has hN hs
-  have hS := hf.finite_criticalPoints_inter (hcompact' has le_rfl)
-  rcases (criticalPoints I f ∩ f ⁻¹' Icc s b).eq_empty_or_nonempty with hS₀ | hSne
-  · exact hfree s b hsb has le_rfl (hcompact' has le_rfl) fun x hx hxsb ↦
-      hS₀.subset ⟨hx, hxsb⟩
-  obtain ⟨p, ⟨hp, hpsb⟩, hpmin⟩ := hS.isCompact.exists_isMinOn hSne hfc.continuousOn
-  have hsc : s < f p := hpsb.1.lt_of_ne fun h ↦ hreg' hs p hp h.symm
-  have hcb : f p < b := hpsb.2.lt_of_ne fun h ↦ hreg' hb p hp h
-  obtain ⟨δ, hδ, hδs, hδb⟩ : ∃ δ, 0 < δ ∧ s < f p - δ ∧ f p + δ < b :=
-    ⟨min (f p - s) (b - f p) / 2, half_pos (lt_min (sub_pos.2 hsc) (sub_pos.2 hcb)),
-      by linarith [min_le_left (f p - s) (b - f p)], by linarith [min_le_right (f p - s) (b - f p)]⟩
+  intro a' haa' hab hN hcompact ha
+  have hS := hf.finite_criticalPoints_inter hcompact
+  rcases (criticalPoints I f ∩ f ⁻¹' Icc a' b).eq_empty_or_nonempty with hS₀ | hSne
+  · exact hregular a' b hab hcompact fun x hx hxab ↦ hS₀.subset ⟨hx, hxab⟩
+  -- Cut the band just above the lowest critical value `c` in it.
+  obtain ⟨p, ⟨hp, hpab⟩, hpmin⟩ := hS.isCompact.exists_isMinOn hSne hfc.continuousOn
+  have hac : a' < f p := hpab.1.lt_of_ne fun h ↦ ha ⟨p, hp, h.symm⟩
+  have hcb : f p < b := hpab.2.lt_of_ne fun h ↦ hb ⟨p, hp, h⟩
+  have hcompact' {s t : ℝ} (hs : a' ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
+      (preimage_mono (Icc_subset_Icc hs ht))
+  -- Some `[c - δ, c + δ]` lies in `(a', b)` and contains no critical value other than `c`.
+  obtain ⟨δ, hδ, hδa, hδb⟩ : ∃ δ, 0 < δ ∧ a' < f p - δ ∧ f p + δ < b :=
+    ⟨min (f p - a') (b - f p) / 2, half_pos (lt_min (sub_pos.2 hac) (sub_pos.2 hcb)),
+      by linarith [min_le_left (f p - a') (b - f p)],
+      by linarith [min_le_right (f p - a') (b - f p)]⟩
   obtain ⟨δ', hδ', hδ'δ, hsub⟩ :=
-    hf.exists_criticalPoints_inter_preimage_Icc_subset hδ (hcompact' (by linarith) hδb.le)
-  obtain ⟨ε, hε, hεδ', hlev⟩ := hlevel (f p) δ' hδ' (by linarith) (by linarith)
-    (hcompact' (by linarith) (by linarith)) hsub
-  -- The values `f p ± ε` are regular, since the critical points near the level `f p` lie on it.
-  have hregε {t : ℝ} (ht : t ∈ Icc (f p - δ') (f p + δ')) (htp : t ≠ f p) :
-      IsRegularValue I 𝓘(ℝ) f t :=
-    hreg fun x hx hxt ↦ htp <| by
-      have : f x = f p := hsub ⟨hx, by rw [mem_preimage, hxt]; exact ht⟩
-      rw [← hxt, this]
-  have hlo := hregε (t := f p - ε) ⟨by linarith, by linarith⟩ (by linarith)
-  have hhi := hregε (t := f p + ε) ⟨by linarith, by linarith⟩ (by linarith)
-  -- Below `f p - ε` the band holds no critical point, since `f p` is the lowest critical value.
-  have hlow : P s (f p - ε) (by linarith) :=
-    hfree _ _ _ has (by linarith) (hcompact' has (by linarith)) fun x hx hxI ↦ by
+    hf.exists_criticalPoints_inter_preimage_Icc_subset hδ (hcompact' hδa.le hδb.le)
+  obtain ⟨ε, hε, hεδ', hmid⟩ :=
+    hlevel p hp haa' hac hcb δ' hδ' (hcompact' (by linarith) (by linarith))
+  -- Below `c - ε` the band holds no critical point, since `c` is the lowest critical value.
+  have hlow : P a' (f p - ε) (by linarith) :=
+    hregular _ _ _ (hcompact' le_rfl (by linarith)) fun x hx hxI ↦ by
       have : f p ≤ f x := hpmin ⟨hx, hxI.1, by linarith [hxI.2]⟩
       linarith [hxI.2]
-  -- Above `f p + ε` the band holds fewer critical points, missing `p`.
+  -- Above `c + ε` the band holds fewer critical points, missing `p`.
   have hlt : (criticalPoints I f ∩ f ⁻¹' Icc (f p + ε) b).ncard < N := by
     rw [← hN]
-    refine ncard_lt_ncard ⟨fun x hx ↦ ⟨hx.1, by linarith [hx.2.1], hx.2.2⟩, fun h ↦ ?_⟩ hS
-    have := (h ⟨hp, hpsb⟩).2.1
+    refine ncard_lt_ncard ⟨fun x hx ↦ ⟨hx.1, by linarith [hx.2.1], hx.2.2⟩,
+      fun h ↦ ?_⟩ hS
+    have := (h ⟨hp, hpab⟩).2.1
     linarith
-  have hup : P (f p + ε) b (by linarith) := ih _ hlt _ _ (by linarith) rfl hhi
-  exact htrans _ _ _ _ _ has le_rfl (hcompact' has le_rfl) hs hhi hb
-    (htrans _ _ _ _ _ has (by linarith) (hcompact' has (by linarith)) hs hlo hhi hlow hlev) hup
+  have hup : P (f p + ε) b (by linarith) :=
+    ih _ hlt _ (by linarith) _ rfl (hcompact' (by linarith) le_rfl) fun ⟨x, hx, hxc⟩ ↦ by
+      have := hsub ⟨hx, by rw [hxc]; linarith, by rw [hxc]; linarith⟩
+      rw [mem_preimage, mem_singleton_iff, hxc] at this
+      linarith
+  exact htrans _ _ _ _ _ hcompact
+    (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
 
 end IsManifold
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -32,6 +33,10 @@ distinct, a discrete valuation ring is also infinite.
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
   has cardinality `Nat.card (ResidueField S) ^ n`.
+* `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
+  the quotient by any nonzero ideal.
+* `TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add`: `𝔪 ^ (k + e)` has index
+  `Nat.card (ResidueField S) ^ e` in `𝔪 ^ k`.
 * `TauCeti.IsDiscreteValuationRing.natCard_map_maximalIdeal_pow`: the graded piece
   `𝔪 ^ n / 𝔪 ^ (n + 1)` has as many elements as the residue field.
 * `TauCeti.IsDiscreteValuationRing.quotient_mk_eq_iff_le_addVal`: equality modulo `𝔪 ^ n` is
@@ -82,6 +87,36 @@ theorem natCard_quotient_maximalIdeal_pow (n : ℕ) :
     (_root_.IsDiscreteValuationRing.not_a_field S), Submodule.cardQuot_apply]
   -- The residue field is defined as the quotient by the maximal ideal.
   rfl
+
+/-- **A discrete valuation ring with finite residue field has finite quotients**: a nonzero ideal
+is a power of the maximal ideal. -/
+instance hasFiniteQuotients [Finite (ResidueField S)] : Ring.HasFiniteQuotients S where
+  finiteQuotient {I} hI := by
+    obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+    obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+    rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+    infer_instance
+
+/-- The index of `𝔪 ^ (k + e)` in `𝔪 ^ k` is `Nat.card (ResidueField S) ^ e`: multiplication by
+the `k`-th power of a uniformizer carries `S ⊇ 𝔪 ^ e` isomorphically onto `𝔪 ^ k ⊇ 𝔪 ^ (k + e)`.
+No finiteness assumption on the residue field is needed. -/
+theorem relIndex_maximalIdeal_pow_add (k e : ℕ) :
+    (maximalIdeal S ^ (k + e)).toAddSubgroup.relIndex (maximalIdeal S ^ k).toAddSubgroup =
+      Nat.card (ResidueField S) ^ e := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  have hpow (j : ℕ) : maximalIdeal S ^ j = Ideal.span {ϖ ^ j} := by
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  let μ : S →+ S := AddMonoidHom.mulLeft (ϖ ^ k)
+  have hrange : μ.range = (maximalIdeal S ^ k).toAddSubgroup := by
+    ext x
+    simp [μ, hpow, Ideal.mem_span_singleton, dvd_def, eq_comm]
+  have hcomap : (maximalIdeal S ^ (k + e)).toAddSubgroup.comap μ =
+      (maximalIdeal S ^ e).toAddSubgroup := by
+    ext x
+    simp [μ, hpow, Ideal.mem_span_singleton, pow_add,
+      mul_dvd_mul_iff_left (pow_ne_zero k hϖ.ne_zero)]
+  rw [← hrange, ← AddSubgroup.index_comap, hcomap, ← natCard_quotient_maximalIdeal_pow,
+    ← Submodule.cardQuot_apply, Submodule.cardQuot]
 
 /-- The graded piece `𝔪 ^ n / 𝔪 ^ (n + 1)` of a discrete valuation ring, viewed as an ideal of
 `S ⧸ 𝔪 ^ (n + 1)`, has as many elements as the residue field. -/
