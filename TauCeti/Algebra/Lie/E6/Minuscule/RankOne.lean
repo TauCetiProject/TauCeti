@@ -80,28 +80,19 @@ theorem sl2BlockSL_diag2nUnit {R : Type*} [CommRing R] (i : Fin 6) (u : Rˣ) :
 
 variable (K : Type*) [Field K] (i : Fin 6)
 
-private theorem sl2BlockSL_mem_of_rootSubgroupPoints_mem {H : Subgroup (GL (Fin 27) K)}
-    (hinl : ∀ t : K, (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t) : GL (Fin 27) K) ∈ H)
-    (hinr : ∀ t : K, (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t) : GL (Fin 27) K) ∈ H)
-    (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · rw [sl2BlockSL_upper_transvection]
-      exact hinl t
-    · rw [sl2BlockSL_lower_transvection]
-      exact hinr t
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using mul_mem hg hh
-
 /-- The faithful rank-one map at the numbered simple node, with the prescribed positive and
 negative root parameters. -/
 def rankOnePoints : SL(2, K) →* points K :=
   (weightTable.sl2BlockSL i).codRestrict (points K)
-    (sl2BlockSL_mem_of_rootSubgroupPoints_mem K i
-      (fun t ↦ (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property)
-      (fun t ↦ (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t)).property))
+    (by
+      intro g
+      apply (weightTable.sl2BlockSL i).map_mem_of_transvection_mem
+      · intro t
+        rw [sl2BlockSL_upper_transvection]
+        exact (rootSubgroupPoints (.inl i) K (Multiplicative.ofAdd t)).property
+      · intro t
+        rw [sl2BlockSL_lower_transvection]
+        exact (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t)).property)
 
 /-- On underlying invertible matrices, the rank-one map is the weight-table block action. -/
 @[simp]
@@ -146,25 +137,10 @@ theorem range_rankOnePoints :
     (rankOnePoints K i).range =
       Subgroup.closure (Set.range (rootSubgroupPoints (.inl i) K) ∪
         Set.range (rootSubgroupPoints (.inr i) K)) := by
-  apply le_antisymm
-  · rintro _ ⟨g, rfl⟩
-    rw [← Subgroup.mem_map_iff_mem (points K).subtype_injective, Subgroup.subtype_apply,
-      coe_rankOnePoints]
-    apply sl2BlockSL_mem_of_rootSubgroupPoints_mem K i
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_,
-        Subgroup.subset_closure (Set.mem_union_left _ (Set.mem_range_self _)), rfl⟩
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_,
-        Subgroup.subset_closure (Set.mem_union_right _ (Set.mem_range_self _)), rfl⟩
-  · rw [Subgroup.closure_le]
-    rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
-    · refine ⟨Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1)
-        (Multiplicative.toAdd t), ?_⟩
-      rw [rankOnePoints_upper_transvection, ofAdd_toAdd]
-    · refine ⟨Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0)
-        (Multiplicative.toAdd t), ?_⟩
-      rw [rankOnePoints_lower_transvection, ofAdd_toAdd]
+  simpa only [MonoidHom.coe_comp, Function.comp_def,
+    Matrix.SpecialLinearGroup.transvectionHom_apply, rankOnePoints_upper_transvection,
+    rankOnePoints_lower_transvection, ofAdd_toAdd] using
+    (rankOnePoints K i).range_eq_closure_transvection
 
 end
 
