@@ -29,6 +29,8 @@ differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, 
 
 ## Main results
 
+* `TauCeti.IsLocalRiemannianIsometry.subtype_val`: the inclusion of an open submanifold equipped
+  with `TauCeti.Manifold.instRiemannianBundleOpen` is a local Riemannian isometry.
 * `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_restrictOpenTangentSpace`: the
   inclusion of an open submanifold is a local Riemannian isometry from the restricted metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_restrictOpenTangentSpace`: the scalar
@@ -52,6 +54,28 @@ open Bundle Manifold Filter TopologicalSpace
 open scoped ContDiff Manifold Topology
 
 noncomputable section
+
+namespace TauCeti
+
+open scoped TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The inclusion `(Subtype.val : U → M)` of an open submanifold, equipped with the restricted
+Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen U`, is a local Riemannian isometry. -/
+theorem IsLocalRiemannianIsometry.subtype_val
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) :
+    IsLocalRiemannianIsometry I I (Subtype.val : U → M) where
+  contMDiff := contMDiff_subtype_val
+  isInvertible_mfderiv x :=
+    ⟨Manifold.tangentSpaceOpenEquiv (I := I) x, (Manifold.mfderiv_subtype_val x).symm⟩
+  inner_mfderiv x v w := by
+    rw [Manifold.inner_tangentSpace_open U x v w, Manifold.mfderiv_subtype_val]
+    rfl
+
+end TauCeti
 
 namespace Bundle.ContMDiffRiemannianMetric
 

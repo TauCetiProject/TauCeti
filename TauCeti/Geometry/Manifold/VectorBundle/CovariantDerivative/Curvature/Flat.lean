@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.Frobenius
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Geometry.Manifold.BumpFunction
+import TauCeti.Analysis.ODE.Frobenius
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
@@ -37,8 +40,8 @@ without any boundaryless assumption.
 
 When `V` carries a smooth Riemannian bundle metric and `∇` is metric-compatible, parallel sections
 have locally constant pairwise inner products
-(`MDifferentiableOn.eventuallyEq_const_of_mfderiv_eq_zero`), so propagating an orthonormal basis of
-`V x₀` yields a smooth *orthonormal* local parallel frame.
+(`CovariantDerivative.IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero`), so propagating
+an orthonormal basis of `V x₀` yields a smooth *orthonormal* local parallel frame.
 
 ## Main results
 
@@ -56,8 +59,6 @@ have locally constant pairwise inner products
   `CovariantDerivative.exists_isLocalFrameOn_parallel`, and
   `CovariantDerivative.forall_curvatureTensor_eq_zero_iff_exists_isLocalFrameOn_parallel`:
   characterization of flat connections on open sets by smooth local parallel frames.
-* `CovariantDerivative.IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero`: pairwise
-  inner products of parallel sections are constant on preconnected open sets.
 * `CovariantDerivative.IsMetricCompatible.exists_orthonormal_isLocalFrameOn_parallel` (and its
   `of_isInteriorPoint` form):
   existence of smooth orthonormal local parallel frames for flat metric-compatible connections.
@@ -162,41 +163,6 @@ theorem curvatureTensor_eq_zero_of_isLocalFrameOn {ι : Type*} {s : ι → Π y 
 end VanishingFromParallel
 
 /-! ### Coordinate Christoffel map and Frobenius integrability on a general bundle -/
-
-private theorem mdifferentiableAt_and_mvfderiv_clm_apply_const
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-    {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
-    {g : M → F₁ →L[ℝ] F₂} {x : M}
-    (hg : MDifferentiableAt I 𝓘(ℝ, F₁ →L[ℝ] F₂) g x)
-    (w : F₁) (u : TangentSpace I x) :
-    MDifferentiableAt I 𝓘(ℝ, F₂) (fun y ↦ g y w) x ∧
-      mvfderiv I (fun y ↦ g y w) x u = mvfderiv I g x u w := by
-  let ev : (F₁ →L[ℝ] F₂) →L[ℝ] F₂ := ContinuousLinearMap.apply ℝ F₂ w
-  have hev : DifferentiableAt ℝ ev (g x) := ev.differentiableAt
-  refine ⟨hev.comp_mdifferentiableAt hg, ?_⟩
-  have hc := mvfderiv_comp_apply x hev.mdifferentiableAt hg u
-  change mvfderiv I (fun y ↦ g y w) x u =
-    mvfderiv 𝓘(ℝ, F₁ →L[ℝ] F₂) ev (g x)
-      (mfderiv I 𝓘(ℝ, F₁ →L[ℝ] F₂) g x u) at hc
-  rw [hc, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ev.fderiv]
-  rfl
-
-private theorem mdifferentiableAt_and_mvfderiv_clm_apply₂
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {Γ : M → F →L[ℝ] E →L[ℝ] F} {x : M}
-    (hΓ : MDifferentiableAt I 𝓘(ℝ, F →L[ℝ] E →L[ℝ] F) Γ x)
-    (w : F) (v' : E) (u : TangentSpace I x) :
-    MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ Γ y w v') x ∧
-      mvfderiv I (fun y ↦ Γ y w v') x u = mvfderiv I Γ x u w v' := by
-  obtain ⟨h1, hmv1⟩ := mdifferentiableAt_and_mvfderiv_clm_apply_const hΓ w u
-  obtain ⟨h2, hmv2⟩ := mdifferentiableAt_and_mvfderiv_clm_apply_const h1 v' u
-  exact ⟨h2, by rw [hmv2, hmv1]⟩
 
 section FrobeniusCoordinates
 
@@ -383,7 +349,11 @@ private theorem curvatureTensor_symm_trivializationAt_bundle (x₀ : M) {x : M}
   have hinner (v v' : E) :
       cov (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v')) x (eT.symm x v) =
         eV.symm x (mvfderiv I Γ x (eT.symm x v) w v' + Γ x (Γ x w v') v) := by
-    obtain ⟨hL_diff, hL_mv⟩ := mdifferentiableAt_and_mvfderiv_clm_apply₂ hΓ w v' (eT.symm x v)
+    have hL_diff : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ Γ y w v') x :=
+      (hΓ.clm_apply mdifferentiableAt_const).clm_apply mdifferentiableAt_const
+    have hL_mv : mvfderiv I (fun y ↦ Γ y w v') x (eT.symm x v) =
+        mvfderiv I Γ x (eT.symm x v) w v' :=
+      mvfderiv_clm_apply_const_apply₂ hΓ w v' (eT.symm x v)
     have hsmooth : CMDiff[O] ∞
         (T% (fun y ↦ cov (fun z ↦ eV.symm z w) y (eT.symm y v'))) :=
       ContMDiffOn.clm_bundle_apply
@@ -416,13 +386,13 @@ private theorem isFrobeniusIntegrableAt_neg_bundleChristoffelMap (x₀ : M) {z :
       (fun p : E × F ↦ -bundleChristoffelMap cov x₀ ((extChartAt I x₀).symm p.1) p.2) (z, w) := by
   set eV := trivializationAt F V x₀
   set eT := trivializationAt E (TangentSpace I) x₀
-  set y := (extChartAt I x₀).symm z
+  set y := (extChartAt I x₀).symm z with hy_def
   have hzt : z ∈ (extChartAt I x₀).target := interior_subset hz
   have hysrc : y ∈ (extChartAt I x₀).source := (extChartAt I x₀).map_target hzt
   have hyT : y ∈ eT.baseSet := by simpa [eT] using hysrc
   have hyz : extChartAt I x₀ y = z := (extChartAt I x₀).right_inv hzt
   set Γ := bundleChristoffelMap cov x₀
-  set ΓE : E → F →L[ℝ] E →L[ℝ] F := fun ζ ↦ Γ ((extChartAt I x₀).symm ζ)
+  set ΓE : E → F →L[ℝ] E →L[ℝ] F := fun ζ ↦ Γ ((extChartAt I x₀).symm ζ) with hΓE_def
   -- Smoothness of `ΓE` at `z` comes from `Γ` on `eV.baseSet ∩ eT.baseSet` and the inverse
   -- extended chart on `interior (extChartAt I x₀).target`.
   let OE : Set E := interior (extChartAt I x₀).target ∩
@@ -445,7 +415,7 @@ private theorem isFrobeniusIntegrableAt_neg_bundleChristoffelMap (x₀ : M) {z :
   have hsymm_mdiff : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x₀).symm z :=
     (hφsymm.contMDiffAt (isOpen_interior.mem_nhds hz)).mdifferentiableAt (by simp)
   have hfderiv_ΓE (a : E) : fderiv ℝ ΓE z a = mvfderiv I Γ y (eT.symm y a) := by
-    have hcomp := mvfderiv_comp_apply z hΓ_mdiff hsymm_mdiff
+    have hcomp := mvfderiv_comp_apply_of_eq z hΓ_mdiff hsymm_mdiff hy_def.symm
       ((NormedSpace.fromTangentSpace z).symm a)
     have hsymmL : eT.symm y a =
         mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm z ((NormedSpace.fromTangentSpace z).symm a) := by
@@ -455,11 +425,8 @@ private theorem isFrobeniusIntegrableAt_neg_bundleChristoffelMap (x₀ : M) {z :
           (mem_of_superset (isOpen_interior.mem_nhds hz)
             (interior_subset.trans (extChartAt_target_subset_range x₀)))]
       rfl
-    change mvfderiv 𝓘(ℝ, E) ΓE z ((NormedSpace.fromTangentSpace z).symm a) =
-      mvfderiv I Γ y
-        (mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm z ((NormedSpace.fromTangentSpace z).symm a))
-      at hcomp
-    rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ← hsymmL] at hcomp
+    rw [Function.comp_def, ← hΓE_def, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+      ← hsymmL] at hcomp
     simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using hcomp
   -- Compute `fderiv ℝ f (z, w)` by the product rule for continuous linear map application.
   let f : E × F → E →L[ℝ] F := fun p ↦ -ΓE p.1 p.2
@@ -498,64 +465,6 @@ private theorem isFrobeniusIntegrableAt_neg_bundleChristoffelMap (x₀ : M) {z :
   abel
 
 /-! ### Local parallel sections and frames from vanishing curvature -/
-
-/-- Universe-polymorphic wrapper around
-`TauCeti.exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt` transporting `E` and `F`
-across `Type` coordinate spaces so `E` and `F` need not share a universe level. -/
-private theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt_univ {n : ℕ∞}
-    {f : E × F → E →L[ℝ] F} {s : Set (E × F)} {z₀ : E} {y₀ : F}
-    (hf : ContDiffOn ℝ (n + 1) f s) (hs : s ∈ 𝓝 (z₀, y₀))
-    (hint : ∀ᶠ p in 𝓝 (z₀, y₀), IsFrobeniusIntegrableAt f p) :
-    ∃ (u : E × F → F) (U : Set (E × F)),
-      IsOpen U ∧ (z₀, y₀) ∈ U ∧ ContDiffOn ℝ (n + 1) u U ∧ u (z₀, y₀) = y₀ ∧
-      ∀ p ∈ U, HasFDerivAt (fun z ↦ u (z, p.2)) (f (p.1, u p)) p.1 := by
-  let E₀ : Type := Fin (Module.finrank ℝ E) → ℝ
-  let F₀ : Type := Fin (Module.finrank ℝ F) → ℝ
-  let κE : E ≃L[ℝ] E₀ := (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
-  let κF : F ≃L[ℝ] F₀ := (Module.finBasis ℝ F).equivFun.toContinuousLinearEquiv
-  let κP : (E × F) ≃L[ℝ] (E₀ × F₀) := κE.prodCongr κF
-  let κL : (E →L[ℝ] F) ≃L[ℝ] (E₀ →L[ℝ] F₀) := κE.arrowCongr κF
-  let f₀ : E₀ × F₀ → E₀ →L[ℝ] F₀ := fun q ↦ κL (f (κP.symm q))
-  let s₀ : Set (E₀ × F₀) := κP.symm ⁻¹' s
-  have hf₀ : ContDiffOn ℝ (n + 1) f₀ s₀ :=
-    κL.contDiff.comp_contDiffOn (hf.comp κP.symm.contDiff.contDiffOn (mapsTo_preimage _ _))
-  have hs₀ : s₀ ∈ 𝓝 (κE z₀, κF y₀) :=
-    κP.symm.continuousAt.preimage_mem_nhds (by simpa [κP] using hs)
-  have hint₀ : ∀ᶠ q in 𝓝 (κE z₀, κF y₀), IsFrobeniusIntegrableAt f₀ q := by
-    obtain ⟨O, hOsub, hOopen, hpO⟩ := mem_nhds_iff.1 (Filter.inter_mem hs hint)
-    have hO₀ : κP.symm ⁻¹' O ∈ 𝓝 (κE z₀, κF y₀) :=
-      κP.symm.continuousAt.preimage_mem_nhds (by simpa [κP] using hOopen.mem_nhds hpO)
-    filter_upwards [hO₀] with q hq
-    have hfp : DifferentiableAt ℝ f (κP.symm q) :=
-      (((hf.mono fun _ hp ↦ (hOsub hp).1).contDiffAt
-        (hOopen.mem_nhds hq)).differentiableAt (by simp))
-    have hf₀_q : HasFDerivAt f₀
-        (κL.toContinuousLinearMap.comp
-          ((fderiv ℝ f (κP.symm q)).comp κP.symm.toContinuousLinearMap)) q :=
-      κL.hasFDerivAt.comp q (hfp.hasFDerivAt.comp q κP.symm.hasFDerivAt)
-    rw [isFrobeniusIntegrableAt_iff]
-    intro v₀ w₀
-    rw [hf₀_q.fderiv]
-    simp only [f₀, κP, κL, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply,
-      ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_apply_apply]
-    exact congrArg κF ((isFrobeniusIntegrableAt_iff.1 (hOsub hq).2) (κE.symm v₀) (κE.symm w₀))
-  obtain ⟨u₀, U₀, hU₀open, hq₀U₀, hu₀smooth, hu₀_init, -, hu₀_sol⟩ :=
-    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt hf₀ hs₀ hint₀
-  let u : E × F → F := fun p ↦ κF.symm (u₀ (κP p))
-  let U : Set (E × F) := κP ⁻¹' U₀
-  refine ⟨u, U, hU₀open.preimage κP.continuous, hq₀U₀,
-    κF.symm.contDiff.comp_contDiffOn (hu₀smooth.comp κP.contDiff.contDiffOn (mapsTo_preimage _ _)),
-    by simp [u, κP, hu₀_init], fun p hp ↦ ?_⟩
-  have hsol_p : HasFDerivAt (fun z₀ ↦ u₀ (z₀, κF p.2)) (f₀ (κE p.1, u₀ (κP p))) (κE p.1) :=
-    hu₀_sol (κP p) hp
-  have hcomp : HasFDerivAt (fun z ↦ u (z, p.2))
-      (κF.symm.toContinuousLinearMap.comp
-        ((f₀ (κE p.1, u₀ (κP p))).comp κE.toContinuousLinearMap)) p.1 :=
-    κF.symm.hasFDerivAt.comp p.1 (hsol_p.comp p.1 κE.hasFDerivAt)
-  refine hcomp.congr_fderiv ?_
-  ext v
-  simp [u, f₀, κP, κL]
 
 /-- **Existence of local smooth parallel sections at an interior point.** If the curvature tensor
 of `cov` vanishes on a neighbourhood of an interior point `x₀`, then every fibre vector `w₀ : V x₀`
@@ -598,8 +507,8 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
       with ⟨z, w⟩ ⟨hzE, _⟩ hzf
     exact isFrobeniusIntegrableAt_neg_bundleChristoffelMap cov x₀ hzE.1 hzE.2 hzf w
   -- Solve the total differential equation `D u = f` smoothly near `(z₀, y₀)`.
-  obtain ⟨u, U, hU, hp₀U, husmooth, hu₀, husol⟩ :=
-    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt_univ hf
+  obtain ⟨u, U, hU, hp₀U, husmooth, hu₀, -, husol⟩ :=
+    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt hf
       ((hOE.prod isOpen_univ).mem_nhds ⟨hz₀OE, mem_univ _⟩) hint
   let WE : Set E := (fun z ↦ (z, y₀)) ⁻¹' U ∩ OE
   have hWE : IsOpen WE := (hU.preimage (continuous_id.prodMk continuous_const)).inter hOE
@@ -615,7 +524,7 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
   have hWM : IsOpen WM :=
     eV.open_baseSet.inter (hφto.continuousOn.isOpen_inter_preimage φ.open_source hWE)
   have hx₀WM : x₀ ∈ WM := ⟨hx₀V, hx₀φ, hz₀WE⟩
-  let g : M → F := fun y ↦ u₀ (extChartAt I x₀ y)
+  set g : M → F := fun y ↦ u₀ (extChartAt I x₀ y) with hg_def
   have hg_smooth : CMDiff[WM] ∞ g :=
     hu₀_smooth.comp (hφto.mono fun _ hy ↦ hy.2.1) fun _ hy ↦ hy.2.2
   let σloc : Π y : M, V y := fun y ↦ eV.symm y (g y)
@@ -639,8 +548,6 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
         (extChartAt I x₀ y) := husol _ hy.2.2.1
     have hchart_diff : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I x₀) y :=
       mdifferentiableAt_extChartAt hychart
-    have hchain := mvfderiv_comp_apply y hsol_y.hasMFDerivAt.mdifferentiableAt hchart_diff
-      (eT.symm y a)
     have hclm : mvfderiv I (extChartAt I x₀) y (eT.symm y a) = a := by
       calc mvfderiv I (extChartAt I x₀) y (eT.symm y a)
         _ = eT.continuousLinearMapAt ℝ y (eT.symmL ℝ y a) := by
@@ -649,12 +556,11 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
             rfl
         _ = a := eT.continuousLinearMapAt_symmL (R := ℝ) hyT a
     have hmv : mvfderiv I g y (eT.symm y a) = -Γ y (g y) a := by
-      refine hchain.trans ?_
-      rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
-      change fderiv ℝ u₀ (extChartAt I x₀ y) (mvfderiv I (extChartAt I x₀) y (eT.symm y a)) = _
-      rw [hclm, hsol_y.fderiv]
-      dsimp only [f, ΓE, g]
-      rw [(extChartAt I x₀).left_inv hysrc, neg_apply]
+      have hchain := mvfderiv_comp_apply_of_differentiableAt hsol_y.differentiableAt
+        hchart_diff (eT.symm y a)
+      rw [Function.comp_def, ← hg_def, hclm, hsol_y.fderiv] at hchain
+      dsimp only [f, ΓE, g] at hchain ⊢
+      rwa [(extChartAt I x₀).left_inv hysrc, neg_apply] at hchain
     rw [hmv, neg_add_cancel, ← eV.symmL_apply (R := ℝ) hy.1, map_zero, zero_apply]
   -- Cut `σloc` off by a smooth bump function supported in `WM`.
   obtain ⟨χ, -, hχsub⟩ :=
@@ -710,7 +616,7 @@ theorem exists_isLocalFrameOn_parallel_of_forall_exists {ι : Type*}
     hcoords_cont.isOpen_inter_preimage eV.open_baseSet isOpen_setOfPred_linearIndependent
   have hx₀_li : x₀ ∈ eV.baseSet ∩ coords ⁻¹' {f : ι → F | LinearIndependent ℝ f} := by
     refine ⟨hx₀V, ?_⟩
-    change LinearIndependent ℝ (coords x₀)
+    rw [mem_preimage, mem_ofPred_eq]
     have hfun : coords x₀ = (eV.linearEquivAt ℝ x₀ hx₀V) ∘ b₀ := by
       funext i
       simp [coords, hs_x₀ i]
@@ -840,64 +746,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [IsContMDiffRiemannianBundle I 1 F V]
   {cov : CovariantDerivative I F V}
-
-section InnerConst
-
-variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
-
-/-- For a metric-compatible connection, the inner product of two sections that are differentiable
-and parallel at `x` has vanishing differential at `x`. -/
-theorem IsMetricCompatible.mvfderiv_inner_eq_zero_of_cov_eq_zero
-    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {x : M}
-    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
-    (hσ0 : cov σ x = 0) (hτ0 : cov τ x = 0) :
-    mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x = 0 := by
-  ext u
-  let X : Π y : M, TangentSpace I y := extend E u
-  have hX : X x = u := extend_apply_self E u
-  rw [← hX, hcov.mvfderiv_inner_eq X hσ hτ]
-  beta_reduce
-  rw [hσ0, hτ0]
-  simp
-
-/-- For a metric-compatible connection, the inner product of two sections that are differentiable
-and parallel on an open set `U` is locally constant on `U`. -/
-theorem IsMetricCompatible.eventuallyEq_inner_const_of_cov_eq_zero
-    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {U : Set M} (hU : IsOpen U)
-    (hσ : MDiff[U] (T% σ)) (hτ : MDiff[U] (T% τ))
-    (hσ0 : ∀ y ∈ U, cov σ y = 0) (hτ0 : ∀ y ∈ U, cov τ y = 0) {x : M} (hx : x ∈ U) :
-    (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ inner ℝ (σ x) (τ x) := by
-  have hdiff : MDifferentiableOn I 𝓘(ℝ, ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) U := fun y hy ↦
-    (((hσ y hy).mdifferentiableAt (hU.mem_nhds hy)).inner_bundle
-      ((hτ y hy).mdifferentiableAt (hU.mem_nhds hy))).mdifferentiableWithinAt
-  refine hdiff.eventuallyEq_const_of_mfderiv_eq_zero hU (fun y hy ↦ ?_) hx
-  ext u
-  apply (NormedSpace.fromTangentSpace _).injective
-  simpa [mvfderiv] using DFunLike.congr_fun
-    (hcov.mvfderiv_inner_eq_zero_of_cov_eq_zero
-      ((hσ y hy).mdifferentiableAt (hU.mem_nhds hy))
-      ((hτ y hy).mdifferentiableAt (hU.mem_nhds hy))
-      (hσ0 y hy) (hτ0 y hy)) u
-
-/-- **Parallel sections of a metric-compatible connection have constant inner products** on any
-preconnected open set. Neither boundarylessness nor finite dimensionality of `M` is required. -/
-theorem IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero
-    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {U : Set M}
-    (hU : IsOpen U) (hUconn : IsPreconnected U)
-    (hσ : MDiff[U] (T% σ)) (hτ : MDiff[U] (T% τ))
-    (hσ0 : ∀ y ∈ U, cov σ y = 0) (hτ0 : ∀ y ∈ U, cov τ y = 0)
-    {x y : M} (hx : x ∈ U) (hy : y ∈ U) :
-    inner ℝ (σ x) (τ x) = inner ℝ (σ y) (τ y) := by
-  let Uo : TopologicalSpace.Opens M := ⟨U, hU⟩
-  have : PreconnectedSpace Uo := isPreconnected_iff_preconnectedSpace.mp hUconn
-  let φ : Uo → ℝ := fun z ↦ inner ℝ (σ z.1) (τ z.1)
-  have hloc : IsLocallyConstant φ :=
-    (IsLocallyConstant.iff_eventually_eq φ).mpr fun z ↦ by
-      have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.2
-      exact continuous_subtype_val.continuousAt.eventually hev
-  exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
-
-end InnerConst
 
 section OrthonormalFrame
 

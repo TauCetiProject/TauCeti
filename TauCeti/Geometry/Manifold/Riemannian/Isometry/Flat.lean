@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Flat
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.DifferentialForm.CovariantDerivative
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
-import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
@@ -37,9 +38,9 @@ The flat-implies-isometric direction chains four ingredients:
    smooth local orthonormal parallel frame `(s i)` on an open neighbourhood `W₁` of `x₀` extending
    an orthonormal basis `b₀` of `TangentSpace I x₀`.
 2. Because `leviCivitaConnection I M` is torsion-free, parallel vector fields commute
-   (`CovariantDerivative.IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero`), and any smooth
-   one-form whose pairings with a local parallel frame have vanishing differentials on `W₁` is
-   closed on `W₁` (`CovariantDerivative.IsTorsionFree.mextDeriv_eq_zero_of_isLocalFrameOn`).
+   (`CovariantDerivative.IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero`), and any differentiable
+   one-form whose pairings with a local parallel frame have vanishing differentials at a point is
+   closed there (`CovariantDerivative.IsTorsionFree.mextDeriv_eq_zero_of_isLocalFrameOn`).
    Applied to the dual coframe one-forms `α i (y) = ⟪s i y, ·⟫`, whose pairings `α i (s j) = δ_{ij}`
    are constant on `W₁`, each `α i` is closed on `W₁`.
 3. By the manifold Poincaré lemma (`TauCeti.exists_mextDeriv_eq_nhds`), near `x₀` each `α i` is the
@@ -53,16 +54,10 @@ The flat-implies-isometric direction chains four ingredients:
 The converse (`TauCeti.curvatureTensor_leviCivitaConnection_eq_zero_of_isLocalRiemannianIsometry`)
 needs no interior-point hypothesis: a local Riemannian isometry from an open submanifold `W` into a
 real inner-product space `F` pulls back the vanishing Euclidean curvature tensor to `W`, and the
-inclusion `W → M` pushes that vanishing to `M`.
+inclusion `W → M` (`TauCeti.IsLocalRiemannianIsometry.subtype_val`) pushes that vanishing to `M`.
 
 ## Main results
 
-* `CovariantDerivative.IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero` and
-  `CovariantDerivative.IsTorsionFree.mextDeriv_eq_zero_of_isLocalFrameOn`: parallel vector fields
-  of a torsion-free connection commute, and smooth one-forms with constant pairings against a local
-  parallel frame are closed.
-* `TauCeti.IsLocalRiemannianIsometry.subtype_val`: the inclusion of an open submanifold equipped
-  with the restricted metric is a local Riemannian isometry.
 * `TauCeti.exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_isInteriorPoint`:
   from vanishing curvature near an interior point `x₀` and `L : TangentSpace I x₀ ≃ₗᵢ[ℝ] F`,
   constructs a `RiemannianIsometry` from an open neighbourhood of `x₀` onto `Metric.ball (0 : F) r`
@@ -88,135 +83,9 @@ public section
 noncomputable section
 
 open Bundle CovariantDerivative FiberBundle Filter Function Metric Module Set TopologicalSpace
-open VectorField
 open scoped ContDiff Manifold Topology TauCeti
 
-/-! ### Parallel frames and closed coframes of torsion-free connections -/
-
-namespace CovariantDerivative
-
-section TorsionFreeCoframe
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- For a torsion-free connection, two differentiable vector fields whose covariant derivatives
-vanish at `x` have vanishing Lie bracket at `x`. -/
-theorem IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero [IsManifold I 1 M]
-    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.IsTorsionFree)
-    {X Y : Π y : M, TangentSpace I y} {x : M}
-    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
-    (hX0 : cov X x = 0) (hY0 : cov Y x = 0) :
-    mlieBracket I X Y x = 0 := by
-  rw [← (isTorsionFree_iff cov).mp ht hX hY, hY0, hX0]
-  simp
-
-/-- **Closedness of coframe forms against a torsion-free parallel frame.** Let `s` be a `C^n`
-(`n ≥ 1`) local frame of the tangent bundle on an open set `W`, parallel with respect to a
-torsion-free connection `cov`. Any `C¹` one-form `η` whose pairings `z ↦ η z ![s i z]` have
-vanishing differential on `W` has `mextDeriv η = 0` at every point of `W`. -/
-theorem IsTorsionFree.mextDeriv_eq_zero_of_isLocalFrameOn
-    [FiniteDimensional ℝ E] [IsManifold I 1 M]
-    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.IsTorsionFree)
-    {ι : Type*} {n : WithTop ℕ∞} (hn : 1 ≤ n) {s : ι → Π y : M, TangentSpace I y} {W : Set M}
-    (hW : IsOpen W) (hs : IsLocalFrameOn I E n s W)
-    (hpar : ∀ i, ∀ y ∈ W, cov (s i) y = 0)
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {η : TauCeti.RoughForm I M F 1} (hη : TauCeti.IsSmoothForm I 1 η)
-    (hconst : ∀ i, ∀ y ∈ W, mvfderiv I (fun z ↦ η z ![s i z]) y = 0)
-    {y : M} (hy : y ∈ W) :
-    TauCeti.mextDeriv η y = 0 := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  have : FiniteDimensional ℝ (TangentSpace I y) :=
-    ((trivializationAt E (TangentSpace I) y).linearEquivAt ℝ y
-      (mem_baseSet_trivializationAt E (TangentSpace I) y)).symm.finiteDimensional
-  let b := hs.toBasisAt hy
-  have : Fintype ι := FiniteDimensional.fintypeBasisIndex b
-  have hη_diff : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
-      (fun z ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) z (η z)) y :=
-    (hη.contMDiff.mdifferentiable one_ne_zero) y
-  have hs_diff (i : ι) : MDiffAt (T% (s i)) y :=
-    ((hs.contMDiffOn i).contMDiffAt (hW.mem_nhds hy)).mdifferentiableAt hn0
-  -- On basis pairs `(s i y, s j y)`, both directional terms and the Lie bracket term vanish.
-  have hη0 : η y ![0] = 0 := (η y).toMultilinearMap.map_coord_zero (0 : Fin 1) rfl
-  have hbasis (i j : ι) : TauCeti.mextDeriv η y ![s i y, s j y] = 0 := by
-    rw [TauCeti.mextDeriv_apply_one hη_diff (hs_diff i) (hs_diff j), hconst j y hy,
-      hconst i y hy,
-      ht.mlieBracket_eq_zero_of_cov_eq_zero (hs_diff i) (hs_diff j) (hpar i y hy) (hpar j y hy)]
-    simp [hη0]
-  -- Extend from basis vectors to arbitrary pairs by multilinearity in coordinates `0` and `1`.
-  let M_alt := (TauCeti.mextDeriv η y).toMultilinearMap
-  ext m
-  change M_alt m = 0
-  have hm0 : m = Function.update m 0 (∑ i, b.repr (m 0) i • s i y) := by
-    ext k
-    fin_cases k
-    · simp only [Fin.zero_eta, Function.update_self, ← hs.toBasisAt_coe hy]
-      exact (b.sum_repr (m 0)).symm
-    · rfl
-  rw [hm0, M_alt.map_update_sum]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [M_alt.map_update_smul]
-  refine smul_eq_zero_of_right _ ?_
-  let m₁ := Function.update m 0 (s i y)
-  have hm1 : Function.update m 0 (s i y) =
-      Function.update m₁ 1 (∑ j, b.repr (m 1) j • s j y) := by
-    ext k
-    fin_cases k
-    · rfl
-    · simp only [Fin.mk_one, Function.update_self, ← hs.toBasisAt_coe hy]
-      exact (b.sum_repr (m 1)).symm
-  rw [hm1, M_alt.map_update_sum]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
-  rw [M_alt.map_update_smul]
-  have hpair : Function.update m₁ 1 (s j y) = ![s i y, s j y] := by
-    ext k
-    fin_cases k <;> rfl
-  rw [hpair]
-  exact smul_eq_zero_of_right _ (hbasis i j)
-
-end TorsionFreeCoframe
-
-end CovariantDerivative
-
-/-! ### Open-submanifold inclusions and Euclidean tangent inner products -/
-
 namespace TauCeti
-
-section Helpers
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- The inclusion `(Subtype.val : U → M)` of an open submanifold, equipped with the restricted
-Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen U`, is a local Riemannian isometry. -/
-theorem IsLocalRiemannianIsometry.subtype_val
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) :
-    IsLocalRiemannianIsometry I I (Subtype.val : U → M) where
-  contMDiff := contMDiff_subtype_val
-  isInvertible_mfderiv x :=
-    ⟨Manifold.tangentSpaceOpenEquiv (I := I) x, (Manifold.mfderiv_subtype_val x).symm⟩
-  inner_mfderiv x v w := by
-    rw [Manifold.inner_tangentSpace_open U x v w, Manifold.mfderiv_subtype_val]
-    rfl
-
-private theorem mdifferentiableAt_and_mvfderiv_sum {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {ι : Type*} (s : Finset ι) {g : ι → M → F} {x : M}
-    (hg : ∀ i ∈ s, MDiffAt (g i) x) :
-    MDiffAt (fun y ↦ ∑ i ∈ s, g i y) x ∧
-      mvfderiv I (fun y ↦ ∑ i ∈ s, g i y) x = ∑ i ∈ s, mvfderiv I (g i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => exact ⟨mdifferentiableAt_const, by simp [mvfderiv_const]⟩
-  | insert j s hj ih =>
-    obtain ⟨hs_diff, hs_mv⟩ := ih fun i hi ↦ hg i (Finset.mem_insert_of_mem hi)
-    have hj_diff := hg j (Finset.mem_insert_self j s)
-    simp only [Finset.sum_insert hj]
-    exact ⟨hj_diff.add hs_diff, by rw [mvfderiv_fun_add hj_diff hs_diff, hs_mv]⟩
-
-end Helpers
 
 /-! ### Converse: local Euclidean isometries force vanishing curvature -/
 
@@ -246,12 +115,14 @@ theorem curvatureTensor_leviCivitaConnection_eq_zero_of_isLocalRiemannianIsometr
     simp
   -- Second, the open-submanifold inclusion `(Subtype.val : W → M)` pushes that vanishing to `M`.
   have hι := IsLocalRiemannianIsometry.subtype_val (I := I) W
-  ext u v w
-  change (leviCivitaConnection I M).curvatureTensor (Subtype.val xW) u v w = 0
-  obtain ⟨u', rfl⟩ := hι.mfderiv_surjective xW u
-  obtain ⟨v', rfl⟩ := hι.mfderiv_surjective xW v
-  obtain ⟨w', rfl⟩ := hι.mfderiv_surjective xW w
-  rw [← hι.mfderiv_curvatureTensor, hW0, map_zero]
+  have hM0 : (leviCivitaConnection I M).curvatureTensor (Subtype.val xW) = 0 := by
+    ext u v w
+    simp only [LinearMap.zero_apply]
+    obtain ⟨u', rfl⟩ := hι.mfderiv_surjective xW u
+    obtain ⟨v', rfl⟩ := hι.mfderiv_surjective xW v
+    obtain ⟨w', rfl⟩ := hι.mfderiv_surjective xW w
+    rw [← hι.mfderiv_curvatureTensor, hW0, map_zero]
+  exact hM0
 
 /-- If an open submanifold `W` is Riemannian-isometric to an open subset `B` of a real
 inner-product space `F`, then the curvature tensor of `M` vanishes at every point of `W`. -/
@@ -325,8 +196,9 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
     exact heq.mvfderiv_eq.trans (mvfderiv_const _)
   have hα_closed (i) : ∀ᶠ y in 𝓝 x₀, mextDeriv (α i) y = 0 :=
     eventually_of_mem (hW₁open.mem_nhds hx₀W₁) fun y hy ↦
-      htors.mextDeriv_eq_zero_of_isLocalFrameOn (by simp) hW₁open hframe₁ hpar₁
-        ((hα_smooth i).of_le (by simp)) (fun j z hz ↦ hα_const i j hz) hy
+      htors.mextDeriv_eq_zero_of_isLocalFrameOn (by simp) (hW₁open.mem_nhds hy) hframe₁
+        (fun j ↦ hpar₁ j y hy) (((hα_smooth i).contMDiff.mdifferentiable (by simp)) y)
+        (fun j ↦ hα_const i j hy)
   -- Step 3: Integrate each closed 1-form `α i` near `x₀` via the Poincaré lemma.
   have hprim (i) : ∃ V ∈ 𝓝 x₀, ∃ f : M → ℝ, CMDiff ∞ f ∧
       ∀ y ∈ V, ∀ v : TangentSpace I y, mvfderiv I f y v = inner ℝ (s i y) v := by
@@ -357,10 +229,9 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
     have hterm_diff (i) : MDiffAt (fun z ↦ (f i z - f i x₀) • L (b₀ i)) y :=
       ((((hf_smooth i).mdifferentiable (by simp) y).sub mdifferentiableAt_const).smul
         mdifferentiableAt_const)
-    obtain ⟨_, hsum_mv⟩ :=
-      mdifferentiableAt_and_mvfderiv_sum (I := I) Finset.univ (x := y)
-        (g := fun i z ↦ (f i z - f i x₀) • L (b₀ i)) (fun i _ ↦ hterm_diff i)
-    have h := DFunLike.congr_fun hsum_mv v
+    have h := DFunLike.congr_fun
+      (mvfderiv_fun_sum (I := I) (t := Finset.univ)
+        (g := fun i z ↦ (f i z - f i x₀) • L (b₀ i)) (fun i _ ↦ hterm_diff i)) v
     rw [sum_apply] at h
     refine h.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
     have hfi : MDiffAt (f i) y := (hf_smooth i).mdifferentiable (by simp) y
@@ -397,9 +268,10 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
     have hb_y (i) : b_y i = s i y := by
       rw [b_y.coe_toBasis.symm, Module.Basis.toBasis_toOrthonormalBasis,
         hframe₁.toBasisAt_coe hy.1]
-    rw [Manifold.inner_tangentSpace_vectorSpace]
-    change inner ℝ (mvfderiv I Φ y v) (mvfderiv I Φ y w) = inner ℝ v w
-    rw [hΦ_mv hy v, hΦ_mv hy w, hLb_orth.inner_sum _ _ Finset.univ]
+    rw [Manifold.inner_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace_apply,
+      NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+      ← mvfderiv_apply_eq_mfderiv_apply, hΦ_mv hy v, hΦ_mv hy w,
+      hLb_orth.inner_sum _ _ Finset.univ]
     simp only [RCLike.conj_to_real]
     calc ∑ i, inner ℝ (s i y) v * inner ℝ (s i y) w
       _ = ∑ i, inner ℝ v (b_y i) * inner ℝ (b_y i) w := by
@@ -423,9 +295,8 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
     hloc.contMDiffOn_localInverse.continuousOn.isOpen_inter_preimage ψ.open_source hW₂open
   have h0S : (0 : F) ∈ S := by
     refine ⟨hΦ_x₀ ▸ hloc.localInverse_mem_source, ?_⟩
-    change hloc.localInverse 0 ∈ W₂
-    rw [← hΦ_x₀, hloc.localInverse_left_inv hloc.localInverse_mem_target]
-    exact hx₀W₂
+    simpa only [mem_preimage, ψ, ← hΦ_x₀,
+      hloc.localInverse_left_inv hloc.localInverse_mem_target] using hx₀W₂
   obtain ⟨r, hr, hr_sub⟩ := Metric.isOpen_iff.1 hS_open 0 h0S
   let W_set : Set M := (ψ.target ∩ W₂) ∩ Φ ⁻¹' Metric.ball (0 : F) r
   have hW_open : IsOpen W_set :=
@@ -437,9 +308,7 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
   have hψ_maps {z : F} (hz : z ∈ Metric.ball (0 : F) r) : ψ z ∈ W_set := by
     obtain ⟨hz_src, hψW₂⟩ := hr_sub hz
     refine ⟨⟨ψ.map_source hz_src, hψW₂⟩, ?_⟩
-    change Φ (hloc.localInverse z) ∈ Metric.ball (0 : F) r
-    rw [hloc.localInverse_right_inv hz_src]
-    exact hz
+    simpa only [mem_preimage, ψ, hloc.localInverse_right_inv hz_src] using hz
   let d : Diffeomorph I 𝓘(ℝ, F) W B ∞ :=
     { toFun := fun y ↦ ⟨Φ y.1, y.2.2⟩
       invFun := fun z ↦ ⟨ψ z.1, hψ_maps z.2⟩
@@ -629,27 +498,9 @@ end TauCeti
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-private theorem riemannianBundle_restrictOpenTangentSpace_eq
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
-    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    (hinst : inst = ⟨g.toRiemannianMetric⟩) (W : Opens M) :
-    ({ g := (g.restrictOpenTangentSpace W).toRiemannianMetric } :
-        RiemannianBundle (fun x : W ↦ TangentSpace I x)) =
-      TauCeti.Manifold.instRiemannianBundleOpen (I := I) W := by
-  have hg : (TauCeti.Manifold.instRiemannianBundleOpen (I := I) W).g =
-      inst.g.restrictOpenTangentSpace W :=
-    TauCeti.Manifold.riemannianBundleOpen_g (I := I) W
-  have hinst_g : inst.g = g.toRiemannianMetric :=
-    congrArg (fun b : RiemannianBundle (fun x : M ↦ TangentSpace I x) ↦ b.g) hinst
-  cases h : TauCeti.Manifold.instRiemannianBundleOpen (I := I) W with | mk gW =>
-  rw [h, hinst_g, ← g.restrictOpenTangentSpace_toRiemannianMetric W] at hg
-  exact congrArg RiemannianBundle.mk hg.symm
-
-variable [FiniteDimensional ℝ E] [T2Space M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
 
 /-- For a bundled smooth Riemannian metric `g`, vanishing of the curvature tensor near an interior
 point `x₀` is equivalent to the existence of a smooth Riemannian isometry from `(W, g|_W)` onto an
@@ -674,15 +525,14 @@ theorem eventually_curvatureTensor_leviCivitaConnection_eq_zero_iff_of_isInterio
     (TauCeti.eventually_curvatureTensor_leviCivitaConnection_eq_zero_iff_ball_of_isInteriorPoint
       hx₀).trans ?_
   refine exists_congr fun W ↦ exists_congr fun hx₀W ↦ exists_congr fun r ↦ exists_congr fun _ ↦ ?_
-  let P (b : RiemannianBundle (fun x : W ↦ TangentSpace I x)) : Prop :=
-    letI : RiemannianBundle (fun x : W ↦ TangentSpace I x) := b
-    ∃ Ψ : TauCeti.RiemannianIsometry I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) W
-        (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
-          Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
-      (Ψ ⟨x₀, hx₀W⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0
-  change P (TauCeti.Manifold.instRiemannianBundleOpen (I := I) W) ↔
-    P ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
-  rw [g.riemannianBundle_restrictOpenTangentSpace_eq rfl W]
+  exact iff_of_eq (congrArg
+    (fun b : RiemannianBundle (fun x : W ↦ TangentSpace I x) ↦
+      letI : RiemannianBundle (fun x : W ↦ TangentSpace I x) := b
+      ∃ Ψ : TauCeti.RiemannianIsometry I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) W
+          (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
+            Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+        (Ψ ⟨x₀, hx₀W⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0)
+    (g.riemannianBundle_restrictOpenTangentSpace_eq W))
 
 /-- For a bundled smooth Riemannian metric `g`, vanishing of the curvature tensor on an open set
 `U` of interior points is equivalent to a local Euclidean isometry around every point of `U`. -/
@@ -707,15 +557,14 @@ theorem forall_curvatureTensor_leviCivitaConnection_eq_zero_iff_of_isInteriorPoi
     hUint).trans ?_
   refine forall₂_congr fun x _ ↦ exists_congr fun W ↦ exists_congr fun hxW ↦
     exists_congr fun r ↦ exists_congr fun _ ↦ ?_
-  let P (b : RiemannianBundle (fun x : W ↦ TangentSpace I x)) : Prop :=
-    letI : RiemannianBundle (fun x : W ↦ TangentSpace I x) := b
-    ∃ Ψ : TauCeti.RiemannianIsometry I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) W
-        (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
-          Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
-      (W : Set M) ⊆ U ∧ (Ψ ⟨x, hxW⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0
-  change P (TauCeti.Manifold.instRiemannianBundleOpen (I := I) W) ↔
-    P ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
-  rw [g.riemannianBundle_restrictOpenTangentSpace_eq rfl W]
+  exact iff_of_eq (congrArg
+    (fun b : RiemannianBundle (fun x : W ↦ TangentSpace I x) ↦
+      letI : RiemannianBundle (fun x : W ↦ TangentSpace I x) := b
+      ∃ Ψ : TauCeti.RiemannianIsometry I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) W
+          (⟨Metric.ball 0 r, Metric.isOpen_ball⟩ :
+            Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))),
+        (W : Set M) ⊆ U ∧ (Ψ ⟨x, hxW⟩ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) = 0)
+    (g.riemannianBundle_restrictOpenTangentSpace_eq W))
 
 section Boundaryless
 

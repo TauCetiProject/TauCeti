@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.ODE.SmoothParameter
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The local Frobenius theorem
@@ -670,11 +671,7 @@ private theorem eventually_hasFDerivAt_of_radial_solution_family
   rw [← (hU (p.1, p.2) hpball).2.2, ← hfd]
   exact (hsliceDiff p.2 hpy p.1 hpx).hasFDerivAt
 
-/-- **A smooth local family of Frobenius solutions.** Under the hypotheses of the local
-Frobenius theorem, the solutions through `(x₀, y)` for `y` near `y₀` can be chosen to depend
-smoothly on both `x` and `y` on one open neighbourhood. The value at `x₀` is the parameter `y`,
-and every nearby fixed-parameter slice solves the total differential equation. -/
-theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt
+private theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt_aux
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {n : ℕ∞}
     {f : E × F → E →L[ℝ] F} {s : Set (E × F)} {x₀ : E} {y₀ : F}
     (hf : ContDiffOn ℝ (n + 1) f s) (hs : s ∈ 𝓝 (x₀, y₀))
@@ -705,6 +702,76 @@ theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt
     exact hYsub hy.2
   · intro p hp
     exact hWsub hp.1.2
+
+end FiniteDimensional
+
+section FiniteDimensionalPolymorphic
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **A smooth local family of Frobenius solutions.** Under the hypotheses of the local
+Frobenius theorem, the solutions through `(x₀, y)` for `y` near `y₀` can be chosen to depend
+smoothly on both `x` and `y` on one open neighbourhood. The value at `x₀` is the parameter `y`,
+and every nearby fixed-parameter slice solves the total differential equation. -/
+theorem exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {n : ℕ∞}
+    {f : E × F → E →L[ℝ] F} {s : Set (E × F)} {x₀ : E} {y₀ : F}
+    (hf : ContDiffOn ℝ (n + 1) f s) (hs : s ∈ 𝓝 (x₀, y₀))
+    (hint : ∀ᶠ p in 𝓝 (x₀, y₀), IsFrobeniusIntegrableAt f p) :
+    ∃ (u : E × F → F) (U : Set (E × F)),
+      IsOpen U ∧ (x₀, y₀) ∈ U ∧ ContDiffOn ℝ (n + 1) u U ∧
+      u (x₀, y₀) = y₀ ∧
+      (∀ y, (x₀, y) ∈ U → u (x₀, y) = y) ∧
+      ∀ p ∈ U,
+        HasFDerivAt (fun x ↦ u (x, p.2)) (f (p.1, u p)) p.1 := by
+  let E₀ : Type := Fin (Module.finrank ℝ E) → ℝ
+  let F₀ : Type := Fin (Module.finrank ℝ F) → ℝ
+  let κE : E ≃L[ℝ] E₀ := (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
+  let κF : F ≃L[ℝ] F₀ := (Module.finBasis ℝ F).equivFun.toContinuousLinearEquiv
+  let κP : (E × F) ≃L[ℝ] (E₀ × F₀) := κE.prodCongr κF
+  let κL : (E →L[ℝ] F) ≃L[ℝ] (E₀ →L[ℝ] F₀) := κE.arrowCongr κF
+  let f₀ : E₀ × F₀ → E₀ →L[ℝ] F₀ := fun q ↦ κL (f (κP.symm q))
+  let s₀ : Set (E₀ × F₀) := κP.symm ⁻¹' s
+  have hf₀ : ContDiffOn ℝ (n + 1) f₀ s₀ :=
+    κL.contDiff.comp_contDiffOn (hf.comp κP.symm.contDiff.contDiffOn (mapsTo_preimage _ _))
+  have hs₀ : s₀ ∈ 𝓝 (κE x₀, κF y₀) :=
+    κP.symm.continuousAt.preimage_mem_nhds (by simpa [κP] using hs)
+  have hint₀ : ∀ᶠ q in 𝓝 (κE x₀, κF y₀), IsFrobeniusIntegrableAt f₀ q := by
+    obtain ⟨O, hOsub, hOopen, hpO⟩ := mem_nhds_iff.1 (Filter.inter_mem hs hint)
+    have hO₀ : κP.symm ⁻¹' O ∈ 𝓝 (κE x₀, κF y₀) :=
+      κP.symm.continuousAt.preimage_mem_nhds (by simpa [κP] using hOopen.mem_nhds hpO)
+    filter_upwards [hO₀] with q hq
+    have hfp : DifferentiableAt ℝ f (κP.symm q) :=
+      (((hf.mono fun _ hp ↦ (hOsub hp).1).contDiffAt
+        (hOopen.mem_nhds hq)).differentiableAt (by simp))
+    have hf₀_q : HasFDerivAt f₀
+        (κL.toContinuousLinearMap.comp
+          ((fderiv ℝ f (κP.symm q)).comp κP.symm.toContinuousLinearMap)) q :=
+      κL.hasFDerivAt.comp q (hfp.hasFDerivAt.comp q κP.symm.hasFDerivAt)
+    rw [isFrobeniusIntegrableAt_iff]
+    intro v₀ w₀
+    rw [hf₀_q.fderiv]
+    simp only [f₀, κP, κL, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply,
+      ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_apply_apply]
+    exact congrArg κF ((isFrobeniusIntegrableAt_iff.1 (hOsub hq).2) (κE.symm v₀) (κE.symm w₀))
+  obtain ⟨u₀, U₀, hU₀open, hq₀U₀, hu₀smooth, hu₀_base, hu₀_init, hu₀_sol⟩ :=
+    exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt_aux hf₀ hs₀ hint₀
+  let u : E × F → F := fun p ↦ κF.symm (u₀ (κP p))
+  let U : Set (E × F) := κP ⁻¹' U₀
+  refine ⟨u, U, hU₀open.preimage κP.continuous, hq₀U₀,
+    κF.symm.contDiff.comp_contDiffOn (hu₀smooth.comp κP.contDiff.contDiffOn (mapsTo_preimage _ _)),
+    by simp [u, κP, hu₀_base], fun y hy ↦ by simp [u, κP, hu₀_init (κF y) hy], fun p hp ↦ ?_⟩
+  have hsol_p : HasFDerivAt (fun z₀ ↦ u₀ (z₀, κF p.2)) (f₀ (κE p.1, u₀ (κP p))) (κE p.1) :=
+    hu₀_sol (κP p) hp
+  have hcomp : HasFDerivAt (fun x ↦ u (x, p.2))
+      (κF.symm.toContinuousLinearMap.comp
+        ((f₀ (κE p.1, u₀ (κP p))).comp κE.toContinuousLinearMap)) p.1 :=
+    κF.symm.hasFDerivAt.comp p.1 (hsol_p.comp p.1 κE.hasFDerivAt)
+  refine hcomp.congr_fderiv ?_
+  ext v
+  simp [u, f₀, κP, κL]
 
 /-- **The local Frobenius theorem.** Let `E` and `F` be finite-dimensional real normed spaces and
 let `f : E × F → (E →L[ℝ] F)` be `C^(n+1)` near `(x₀, y₀)`, for instance `C¹`. If `f` satisfies the
@@ -828,6 +895,6 @@ theorem eventually_exists_hasFDerivAt_iff_eventually_isFrobeniusIntegrableAt
       (x₀ := p.1) (y₀ := p.2) hsp hp
     exact ⟨u, hu₀, hu⟩
 
-end FiniteDimensional
+end FiniteDimensionalPolymorphic
 
 end TauCeti

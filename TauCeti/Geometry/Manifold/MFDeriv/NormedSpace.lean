@@ -30,6 +30,8 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_sum`, `TauCeti.mvfderiv_fun_sum`: `mvfderiv` commutes with finite sums of
+  differentiable functions.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
@@ -203,5 +205,28 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
     (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).differentiableAt hΦ v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
   rwa [ContinuousLinearMap.fderiv] at this
+
+/-- The derivative of a finite sum of vector-valued functions, read in the target space, is
+the sum of their derivatives. -/
+theorem mvfderiv_sum {ι : Type*} {t : Finset ι} {g : ι → M → F} {x : M}
+    (hg : ∀ i ∈ t, MDiffAt (g i) x) :
+    mvfderiv I (∑ i ∈ t, g i) x = ∑ i ∈ t, mvfderiv I (g i) x := by
+  have hsum : MDiffAt (∑ i ∈ t, g i) x := MDifferentiableAt.sum hg
+  rw [hsum.mvfderiv, Finset.sum_congr rfl fun i hi ↦ (hg i hi).mvfderiv]
+  have hd : ∀ i ∈ t, DifferentiableWithinAt 𝕜 (fun z ↦ g i ((extChartAt I x).symm z))
+      (Set.range I) (extChartAt I x x) := by
+    intro i hi
+    simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      Function.comp_def, id] using (hg i hi).differentiableWithinAt_writtenInExtChartAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.comp_def, id, Finset.sum_apply]
+  exact fderivWithin_fun_sum I.uniqueDiffWithinAt_image hd
+
+/-- The derivative of a pointwise finite sum of vector-valued functions, read in the target space,
+is the sum of their derivatives. -/
+theorem mvfderiv_fun_sum {ι : Type*} {t : Finset ι} {g : ι → M → F} {x : M}
+    (hg : ∀ i ∈ t, MDiffAt (g i) x) :
+    mvfderiv I (fun y ↦ ∑ i ∈ t, g i y) x = ∑ i ∈ t, mvfderiv I (g i) x := by
+  simpa only [Finset.sum_fn] using mvfderiv_sum hg
 
 end TauCeti
