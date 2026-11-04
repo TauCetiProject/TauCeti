@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Convex interpolation of Riemannian metrics
@@ -21,8 +22,12 @@ It preserves the metric at every point where the two input metrics agree.
 
 For smooth tangent metrics on a boundaryless manifold, interpolation is jointly continuous
 in both metrics and the interval parameter for the chart C² topology. The coordinate
-derivatives of every order interpolate linearly. These facts allow local combinations of
-metrics in approximation arguments, including arguments relative to a fixed spatial region.
+derivatives of every order interpolate linearly. For a fixed smooth weight `f`, interpolation
+is jointly continuous in both metrics for every chart Cᵏ topology
+(`Bundle.ContMDiffRiemannianMetric.continuous_convexCombinationFun`): the Leibniz rule bounds
+the derivatives of `(1 - f) (g - g₀) + f (h - h₀)` on compact chart sets by those of `g - g₀`
+and `h - h₀` of no larger order. These facts allow local combinations of metrics in
+approximation arguments, including arguments relative to a fixed spatial region.
 They do not assert that scalar positivity is preserved by convex combinations.
 
 The ambient section space and its positive cone are those of
@@ -124,13 +129,20 @@ theorem convexCombination_one (g h : ContMDiffRiemannianMetric IB n F V) :
   ext x v w
   simp
 
+/-- Interpolating a metric with itself, with any weight, leaves it unchanged. -/
+@[simp]
+theorem convexCombinationFun_self (g : ContMDiffRiemannianMetric IB n F V) (f : B → ℝ)
+    (hf : ContMDiff IB 𝓘(ℝ) n f) (hf₀ : ∀ x, 0 ≤ f x) (hf₁ : ∀ x, f x ≤ 1) :
+    g.convexCombinationFun g f hf hf₀ hf₁ = g := by
+  ext x v w
+  simp only [convexCombinationFun_inner]
+  ring
+
 /-- Interpolating a metric with itself leaves it unchanged. -/
 @[simp]
 theorem convexCombination_self (g : ContMDiffRiemannianMetric IB n F V) (t : unitInterval) :
     g.convexCombination g t = g := by
-  ext x v w
-  simp only [convexCombination_inner]
-  ring
+  rw [← convexCombinationFun_const, convexCombinationFun_self]
 
 /-- At any point where the two metrics agree, interpolation fixes their common inner product.
 In particular, interpolation preserves prescribed data on a neighbourhood of a closed subset. -/
@@ -235,6 +247,122 @@ theorem continuous_convexCombination {P : Type*} [TopologicalSpace P]
   have hleft := ((continuous_const (y := (1 : ℝ))).sub hc).smul (hg x m hm)
   have hright := hc.smul (hh x m hm)
   exact hleft.add hright
+
+omit [FiniteDimensional ℝ E] in
+/-- For a coefficient `c` that is smooth on a chart target, the coordinate derivatives of order
+`m ≤ k` of `c (g - g₀)` tend to zero uniformly on compact subsets of the target as `g` tends to `g₀`
+in the chart Cᵏ topology. This is the Leibniz bound
+`ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`. -/
+private theorem tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub (k : ℕ∞)
+    {ι : Type*} {l : Filter ι}
+    {g : ι → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : letI := chartCkTopology (I := I) (M := M) k; Tendsto g l (𝓝 g₀)) (x : M) {m : ℕ}
+    (hm : (m : ℕ∞) ≤ k) {c : E → ℝ} (hc : ContDiffOn ℝ ∞ c (extChartAt I x).target)
+    {K : Set E} (hKU : K ⊆ (extChartAt I x).target) (hK : IsCompact K) :
+    TendstoUniformlyOn (fun i z ↦ iteratedFDerivWithin ℝ m (fun y ↦
+        c y • ((g i).toNondegenerateMetric.chartMetric x y -
+          g₀.toNondegenerateMetric.chartMetric x y)) (extChartAt I x).target z)
+      (fun _ ↦ 0) l K := by
+  have hU : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
+  -- The map `y ↦ c y • (g i - g₀) y` is `y ↦ L y ((g i - g₀) (id y))` for `L y = c y • id`.
+  have hL := contDiffOn_infty.mp (hc.smul (contDiffOn_const
+    (c := ContinuousLinearMap.id ℝ (E →L[ℝ] E →L[ℝ] ℝ)))) m
+  have hform (i : ι) : (fun y ↦ (c y • ContinuousLinearMap.id ℝ (E →L[ℝ] E →L[ℝ] ℝ))
+      (((g i).toNondegenerateMetric.chartMetric x - g₀.toNondegenerateMetric.chartMetric x)
+        (id y))) = fun y ↦ c y • ((g i).toNondegenerateMetric.chartMetric x y -
+          g₀.toNondegenerateMetric.chartMetric x y) := by
+    funext y
+    simp only [smul_apply, ContinuousLinearMap.id_apply, id, Pi.sub_apply]
+  simp_rw [← hform]
+  refine hL.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp contDiffOn_id hU.uniqueDiffOn
+    hU.uniqueDiffOn (mapsTo_id _) hK hKU (Eventually.of_forall fun i ↦ contDiffOn_infty.mp
+      (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).sub
+        (g₀.toNondegenerateMetric.contDiffOn_chartMetric x)) m) fun j hj ↦ ?_
+  refine Metric.tendstoUniformlyOn_iff.mpr fun δ hδ ↦ ?_
+  filter_upwards [Metric.tendstoUniformlyOn_iff.mp ((tendsto_chartCk_iff k).mp hg x j
+    ((Nat.cast_le.2 hj).trans hm) K hKU hK) δ hδ] with i hi z hzK
+  have hz := hU.mem_nhds (hKU hzK)
+  rw [id, iteratedFDerivWithin_of_isOpen j hU (hKU hzK), iteratedFDeriv_sub_apply
+      (contDiffAt_infty.mp (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt hz) j)
+      (contDiffAt_infty.mp ((g₀.toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt hz) j),
+    dist_zero_left, ← dist_eq_norm, dist_comm]
+  exact hi z hzK
+
+/-- On a chart target, the coordinate derivatives of two interpolations with the same weight `f`
+differ by those of `(1 - f) (g - g₀) + f (h - h₀)`, with the weight read through the inverse
+chart. -/
+private theorem iteratedFDeriv_chartMetric_convexCombinationFun_sub
+    (g h g₀ h₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (f : M → ℝ)
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 ≤ f x) (hf₁ : ∀ x, f x ≤ 1) (x : M) (m : ℕ)
+    {z : E} (hz : z ∈ (extChartAt I x).target) :
+    iteratedFDeriv ℝ m ((g.convexCombinationFun h f hf hf₀ hf₁).toNondegenerateMetric.chartMetric
+        x) z -
+      iteratedFDeriv ℝ m
+        ((g₀.convexCombinationFun h₀ f hf hf₀ hf₁).toNondegenerateMetric.chartMetric x) z =
+    iteratedFDerivWithin ℝ m (fun y ↦ (1 - f ((extChartAt I x).symm y)) •
+        (g.toNondegenerateMetric.chartMetric x y - g₀.toNondegenerateMetric.chartMetric x y))
+        (extChartAt I x).target z +
+      iteratedFDerivWithin ℝ m (fun y ↦ f ((extChartAt I x).symm y) •
+        (h.toNondegenerateMetric.chartMetric x y - h₀.toNondegenerateMetric.chartMetric x y))
+        (extChartAt I x).target z := by
+  have hU : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
+  have hnhds := hU.mem_nhds hz
+  have hw : ContDiffOn ℝ ∞ (fun y ↦ f ((extChartAt I x).symm y)) (extChartAt I x).target :=
+    contMDiffOn_iff_contDiffOn.mp (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))
+  have hchart (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
+      ContDiffOn ℝ ∞ (g.toNondegenerateMetric.chartMetric x) (extChartAt I x).target :=
+    g.toNondegenerateMetric.contDiffOn_chartMetric x
+  have heq : (g.convexCombinationFun h f hf hf₀ hf₁).toNondegenerateMetric.chartMetric x -
+      (g₀.convexCombinationFun h₀ f hf hf₀ hf₁).toNondegenerateMetric.chartMetric x =ᶠ[𝓝 z]
+      fun y ↦ (1 - f ((extChartAt I x).symm y)) •
+          (g.toNondegenerateMetric.chartMetric x y - g₀.toNondegenerateMetric.chartMetric x y) +
+        f ((extChartAt I x).symm y) •
+          (h.toNondegenerateMetric.chartMetric x y - h₀.toNondegenerateMetric.chartMetric x y) := by
+    filter_upwards [hnhds] with y hy
+    simp only [Pi.sub_apply, chartMetric_convexCombinationFun _ _ _ _ _ _ _ hy]
+    module
+  have h₁ : ContDiffAt ℝ m (fun y ↦ (1 - f ((extChartAt I x).symm y)) •
+      (g.toNondegenerateMetric.chartMetric x y - g₀.toNondegenerateMetric.chartMetric x y)) z :=
+    contDiffAt_infty.mp ((((contDiffOn_const (c := (1 : ℝ))).sub hw).smul
+      ((hchart g).sub (hchart g₀))).contDiffAt hnhds) m
+  have h₂ : ContDiffAt ℝ m (fun y ↦ f ((extChartAt I x).symm y) •
+      (h.toNondegenerateMetric.chartMetric x y - h₀.toNondegenerateMetric.chartMetric x y)) z :=
+    contDiffAt_infty.mp ((hw.smul ((hchart h).sub (hchart h₀))).contDiffAt hnhds) m
+  rw [iteratedFDerivWithin_of_isOpen m hU hz, iteratedFDerivWithin_of_isOpen m hU hz,
+    ← iteratedFDeriv_sub_apply (contDiffAt_infty.mp ((hchart _).contDiffAt hnhds) m)
+      (contDiffAt_infty.mp ((hchart _).contDiffAt hnhds) m),
+    ← fun_iteratedFDeriv_add_apply h₁ h₂]
+  exact (heq.iteratedFDeriv ℝ m).self_of_nhds
+
+/-- For a fixed smooth weight `f` with values in `[0, 1]`, interpolation `(1 - f) g + f h` is
+jointly continuous in the two metrics `g` and `h` for every chart Cᵏ topology. -/
+theorem continuous_convexCombinationFun (k : ℕ∞) (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf₀ : ∀ x, 0 ≤ f x) (hf₁ : ∀ x, f x ≤ 1) :
+    letI := chartCkTopology (I := I) (M := M) k
+    Continuous (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ×
+        ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ↦
+      q.1.convexCombinationFun q.2 f hf hf₀ hf₁) := by
+  let _ := chartCkTopology (I := I) (M := M) k
+  refine continuous_iff_continuousAt.mpr fun q₀ ↦ (tendsto_chartCk_iff k).mpr
+    fun x m hm K hKU hK ↦ ?_
+  have hw : ContDiffOn ℝ ∞ (fun y ↦ f ((extChartAt I x).symm y)) (extChartAt I x).target :=
+    contMDiffOn_iff_contDiffOn.mp (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))
+  have h₁ := tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub k
+    (continuous_fst.tendsto q₀) x hm ((contDiffOn_const (c := (1 : ℝ))).sub hw) hKU hK
+  have h₂ := tendstoUniformlyOn_iteratedFDerivWithin_smul_chartMetric_sub k
+    (continuous_snd.tendsto q₀) x hm hw hKU hK
+  refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
+  filter_upwards [Metric.tendstoUniformlyOn_iff.mp h₁ (ε / 2) (half_pos hε),
+    Metric.tendstoUniformlyOn_iff.mp h₂ (ε / 2) (half_pos hε)] with q hq₁ hq₂ z hz
+  have hz₁ := hq₁ z hz
+  have hz₂ := hq₂ z hz
+  rw [dist_zero_left] at hz₁ hz₂
+  rw [dist_comm, dist_eq_norm,
+    iteratedFDeriv_chartMetric_convexCombinationFun_sub _ _ _ _ f hf hf₀ hf₁ x m (hKU hz)]
+  calc _ ≤ _ := norm_add_le _ _
+    _ < ε / 2 + ε / 2 := add_lt_add hz₁ hz₂
+    _ = ε := add_halves ε
 
 end TangentBundle
 

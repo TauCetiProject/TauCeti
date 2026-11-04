@@ -8,6 +8,11 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import Mathlib.RingTheory.Adjoin.Basic
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
+import Mathlib.Analysis.CStarAlgebra.Matrix
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
 import TauCeti.Analysis.SpecialFunctions.Pow.PolynomialIdentity
@@ -49,6 +54,8 @@ group or a Spin group, as needed for polar decompositions.
   semidefinite.
 * `Algebra.leftMulMatrixRpow_natCast` and `Algebra.leftMulMatrixRpow_add`: the natural powers and
   the group law.
+* `Algebra.continuousOn_leftMulMatrixRpow`: for the module topology, `(a, t) ↦ a ^ t` is jointly
+  continuous on the elements with strictly positive matrix.
 * `Algebra.bilin_leftMulMatrixRpow_eq_of_forall_pow`: a bilinear identity satisfied by all
   natural powers of an element with positive semidefinite matrix is satisfied by all its real
   powers.
@@ -158,6 +165,11 @@ theorem leftMulMatrixRpow_one {a : A} (ha : 0 ≤ leftMulMatrix B a) :
     leftMulMatrixRpow B a 1 = a := by
   simpa using leftMulMatrixRpow_natCast ha 1
 
+/-- The real powers of `1` are `1`. -/
+@[simp]
+theorem leftMulMatrixRpow_one_left (t : ℝ) : leftMulMatrixRpow B 1 t = 1 := by
+  rw [leftMulMatrixRpow_eq_iff, map_one, CFC.one_rpow]
+
 /-- **The group law of real powers.** For a unit `a`, `a ^ (s + t) = a ^ s * a ^ t`. This is the
 group law of the real powers when the matrix of `a` is positive definite; otherwise all the real
 powers are `0`. -/
@@ -193,5 +205,37 @@ theorem bilin_leftMulMatrixRpow_eq_of_forall_pow {W : Type*} [AddCommGroup W] [M
   have hn := hexp n
   simp only [leftMulMatrixRpow_natCast ha, Real.rpow_natCast, hsmul] at hn
   rw [← hn, h n]
+
+section Continuity
+
+variable [TopologicalSpace A] [IsModuleTopology 𝕜 A]
+
+/-- **Real powers are jointly continuous** in the element and the exponent: for the module
+topology on `A`, `(a, t) ↦ leftMulMatrixRpow B a t` is continuous on the pairs for which the
+left multiplication matrix of `a` is strictly positive, that is positive definite
+(`Matrix.isStrictlyPositive_iff_posDef`). -/
+theorem continuousOn_leftMulMatrixRpow :
+    ContinuousOn (fun p : A × ℝ ↦ leftMulMatrixRpow B p.1 p.2)
+      {p | IsStrictlyPositive (leftMulMatrix B p.1)} := by
+  have : Module.Finite 𝕜 A := Module.Finite.of_basis B
+  have := IsModuleTopology.isTopologicalAddGroup 𝕜 A
+  -- The maps `a ↦ leftMulMatrix B a` and `M ↦ toLin B B M 1` are linear, hence continuous.
+  have hM : Continuous (leftMulMatrix B : A → Matrix ι ι 𝕜) :=
+    IsModuleTopology.continuous_of_linearMap (leftMulMatrix B).toLinearMap
+  have hT : Continuous fun M : Matrix ι ι 𝕜 ↦ Matrix.toLin B B M 1 :=
+    LinearMap.continuous_of_finiteDimensional
+      ((LinearMap.applyₗ (1 : A)).comp (Matrix.toLin B B).toLinearMap)
+  -- Real powers of matrices are jointly continuous for the `ℓ²` operator norm, whose topology is
+  -- the entrywise one.
+  have hpow : ContinuousOn (fun p : Matrix ι ι 𝕜 × ℝ ↦ p.1 ^ p.2)
+      ({M | IsStrictlyPositive M} ×ˢ Set.univ) := by
+    open scoped Matrix.Norms.L2Operator in
+    let := Matrix.l2OpNormedAlgebraReal (n := ι) (𝕜 := 𝕜)
+    exact CFC.continuousOn_rpow_prod
+  exact hT.comp_continuousOn
+    (hpow.comp ((hM.comp continuous_fst).prodMk continuous_snd).continuousOn
+      fun _ hp ↦ ⟨hp, trivial⟩)
+
+end Continuity
 
 end Algebra

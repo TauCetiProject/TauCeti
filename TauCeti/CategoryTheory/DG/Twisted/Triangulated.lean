@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.DG.Twisted.Pretriangulated
 public import Mathlib.CategoryTheory.Triangulated.Triangulated
+public import Mathlib.CategoryTheory.Triangulated.Subcategory
 
 /-!
 # The homotopy category of twisted objects is triangulated
@@ -42,6 +43,11 @@ minus the comparison morphism `P⟦1⟧⟦1⟧ ⟶ P⟦1⟧`
 between `m₁`, `m₃` and the cone triangles, this gives the octahedra required by
 `CategoryTheory.IsTriangulated.mk'`.
 
+Every triangulated subcategory of `H⁰` closed under isomorphisms is closed under extensions of
+twisted objects (`TauCeti.DGTwistedObject.prop_extension`): the extension of `Q` by `P` along a
+closed degree-one morphism `g : Q ⟶ P` is isomorphic to the cone of the closed degree-zero
+morphism `Q⟦-1⟧ ⟶ P` underlying `g`.
+
 ## Main definitions
 
 * `TauCeti.DGTwistedObject.coneCompHom` and `TauCeti.DGTwistedObject.coneCompInv`: the closed
@@ -58,6 +64,8 @@ between `m₁`, `m₃` and the cone triangles, this gives the octahedra required
   `cone u ⟶ cone (u ≫ v) ⟶ cone v ⟶ (cone u)⟦1⟧` is distinguished.
 * `TauCeti.DGTwistedObject.isTriangulated`: the homotopy category of twisted objects is
   triangulated.
+* `TauCeti.DGTwistedObject.prop_extension`: a triangulated subcategory closed under isomorphisms
+  is closed under extensions of twisted objects.
 
 ## References
 
@@ -659,6 +667,45 @@ instance isTriangulated :
            ((dgComp_coneHomOfHomotopy_extensionSnd hw hv u (dgId R S) 0).trans
              (dgCompZero_def R _ _).symm)).symm
        mem := coneCompTriangle_mem_distinguishedTriangles hu hv hw huv }⟩⟩
+
+/-! ### Triangulated subcategories are closed under extensions -/
+
+section extension
+
+open ObjectProperty
+
+variable {S : ObjectProperty
+    (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))))}
+  [S.IsTriangulated] [S.IsClosedUnderIsomorphisms]
+
+/-- **A triangulated subcategory closed under isomorphisms is closed under extensions of twisted
+objects**: the extension of `Q` by `P` along a closed degree-one morphism `g : Q ⟶ P` is
+isomorphic to the cone of the closed degree-zero morphism `Q⟦-1⟧ ⟶ Q ⟶ P` underlying `g`, the
+third object of a distinguished triangle whose first two objects are `Q⟦-1⟧` and `P`. -/
+theorem prop_extension {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
+    {g : DGHom R 1 Q P} (hg : dgDifferential R 1 g = 0) (hP : S (of R P)) (hQ : S (of R Q)) :
+    S (of R (extension P Q g hg)) := by
+  have hu : dgDifferential R 0 (dgComp R (fromShift Q (-1)) g (neg_add_cancel 1)) = 0 := by
+    rw [dgDifferential_dgComp, dgDifferential_fromShift, hg, zero_dgComp, dgComp_zero, smul_zero,
+      add_zero]
+  -- `Q` is isomorphic to `Q⟦-1⟧⟦1⟧` through the comparison morphisms of the shifts.
+  refine S.prop_of_iso (extensionIsoOfIso R
+      (φ := dgComp R (toShift Q (-1)) (toShift ((shiftFunctor R (-1)).obj Q) 1) (by omega))
+      (ψ := dgComp R (fromShift ((shiftFunctor R (-1)).obj Q) 1) (fromShift Q (-1)) (by omega))
+      ?_ ?_ ?_ ?_).symm
+    (S.ext_of_isTriangulatedClosed₃ _ (coneTriangle_mem_distinguishedTriangles _ hu)
+      (by rw [coneTriangle_obj₁, ← shiftFunctor_obj_of]; exact S.le_shift (-1) _ hQ) hP)
+  · rw [dgDifferential_dgComp, dgDifferential_toShift, dgDifferential_toShift, zero_dgComp,
+      dgComp_zero, smul_zero, add_zero]
+  · rw [dgComp_assoc R (p := -(-1)) (q := -1) (r := 0) (pq := 0) (qr := -1) (n := 0) _ _ _
+      (by omega) (by omega) (by omega), dgComp_toShift_fromShift_assoc, dgComp_toShift_fromShift]
+  · rw [dgComp_assoc R (p := 1) (q := -1) (r := 0) (pq := 0) (qr := -1) (n := 0) _ _ _
+      (by omega) (by omega) (by omega), dgComp_fromShift_toShift_assoc, dgComp_fromShift_toShift]
+  · rw [coneMorphism_def, dgComp_assoc R (p := -(-1)) (q := -1) (r := 1) (pq := 0) (qr := 0)
+      (n := 1) _ _ _ (by omega) (by omega) (by omega), dgComp_toShift_fromShift_assoc,
+      dgComp_toShift_fromShift_assoc]
+
+end extension
 
 end DGTwistedObject
 

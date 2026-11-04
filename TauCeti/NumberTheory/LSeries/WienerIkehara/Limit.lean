@@ -82,12 +82,12 @@ theorem tendsto_tsum_term_mul_fourier (hFsum : LSeriesSummable
     · simp [_root_.LSeries.term, hn]
     · simp only [_root_.LSeries.term, hn, ite_false]
       ring
-  have h := tendsto_LSeries_nhdsGT
+  have h := LSeriesSummable.tendsto_LSeries_nhdsGE
     (a := fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) (σ := 1)
     (by simpa using hFsum)
   rw [Complex.ofReal_one] at h
   simp only [hterm]
-  exact h
+  exact h.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self)
 
 /-! ### The integral along the vertical line -/
 

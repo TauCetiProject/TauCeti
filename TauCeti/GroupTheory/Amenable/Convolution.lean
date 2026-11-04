@@ -25,6 +25,10 @@ mean `m` on `UCB G` interacts with this smoothing.
   integral `∫ y, h y • L_y ψ ∂μ`, so invariance of `m` gives `m (h ⋆ ψ) = (∫ h dμ) * m ψ`.
 * Left translating the kernel left translates the convolution, `(L_g h) ⋆ φ = L_g (h ⋆ φ)`, so
   `m ((L_g h) ⋆ φ) = m (h ⋆ φ)`.
+* Convolution is associative across `L¹` and `L∞`: for kernels `h, k ∈ L¹(G, μ)`, smoothing `φ`
+  by the `L¹` convolution `h ⋆ k` (`MeasureTheory.Lp.convolutionL`) is smoothing `φ` by `k` and
+  then the class of `k ⋆ φ` in `L∞` by `h` (`MeasureTheory.Lp.convolutionUCB_convolutionL`). Hence
+  `m ((h ⋆ k) ⋆ φ) = (∫ h dμ) * m (k ⋆ φ)`.
 
 Together with `h ⋆ (L_g φ) = (R_(g⁻¹) h) ⋆ φ`
 (`MeasureTheory.Lp.convolutionUCB_apply_leftTranslation`), whose kernel `R_(g⁻¹) h` is again
@@ -40,6 +44,8 @@ not to depend on the choice of such a kernel.
   `m (h ⋆ ψ) = (∫ h dμ) * m ψ` for `ψ ∈ UCB G`.
 * `TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_leftTranslation`: a left-invariant mean
   satisfies `m ((L_g h) ⋆ φ) = m (h ⋆ φ)`.
+* `TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_convolutionL`: a left-invariant mean
+  satisfies `m ((h ⋆ k) ⋆ φ) = (∫ h dμ) * m (k ⋆ φ)`.
 
 ## References
 
@@ -89,5 +95,14 @@ theorem IsLeftInvariant.apply_convolutionUCB_leftTranslation {m : Mean G}
     (hm : m.IsLeftInvariant) (g : G) (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) :
     m (Lp.convolutionUCB (Lp.leftTranslation μ 1 ℝ g h) φ) = m (Lp.convolutionUCB h φ) := by
   rw [Lp.convolutionUCB_leftTranslation_apply, hm.apply_leftTranslation]
+
+/-- A left-invariant mean takes the value `(∫ h dμ) * m (k ⋆ φ)` at `(h ⋆ k) ⋆ φ`, for kernels
+`h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`. In particular `m ((h ⋆ k) ⋆ φ) = m (k ⋆ φ)` when `h` has
+integral one. -/
+theorem IsLeftInvariant.apply_convolutionUCB_convolutionL {m : Mean G} (hm : m.IsLeftInvariant)
+    (h k : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) :
+    m (Lp.convolutionUCB (Lp.convolutionL μ 1 ENNReal.one_ne_top h k) φ) =
+      (∫ y, h y ∂μ) * m (Lp.convolutionUCB k φ) := by
+  rw [Lp.convolutionUCB_convolutionL, hm.apply_convolutionUCB_toLpTop]
 
 end TauCeti.Mean

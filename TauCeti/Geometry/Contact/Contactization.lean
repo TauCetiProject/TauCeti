@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality

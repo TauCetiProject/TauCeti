@@ -143,12 +143,12 @@ theorem ρ_mem_level_conj (g : G) {U U' : OpenSubgroup G}
     simpa [mul_assoc] using hw
   calc
     F.toRep.ρ w (F.toRep.ρ g a) = F.toRep.ρ (w * g) a := by
-      rw [← Module.End.mul_apply, ← map_mul]
+      rw [← mul_apply_eq_comp, ← map_mul]
     _ = F.toRep.ρ (g * (g⁻¹ * w * g)) a := by
       congr 1
       group
     _ = F.toRep.ρ g (F.toRep.ρ (g⁻¹ * w * g) a) := by
-      rw [← Module.End.mul_apply, ← map_mul]
+      rw [← mul_apply_eq_comp, ← map_mul]
     _ = F.toRep.ρ g a := congrArg _ (F.mem_level.1 ha _ hw')
 
 /-- **Conjugation of levels:** acting by `g` is an isomorphism `A^U ≃ A^{gUg⁻¹}`. The hypothesis
@@ -412,7 +412,7 @@ theorem conjugateCoefficientEquiv_rep_apply (γ : L.Gal) (x : F.level L.top) :
     refine Subtype.ext ?_
     rw [conjugateGalEquiv_mk, conjugateCoefficientEquiv_apply_coe, rep_ρ_mk_apply_coe,
       rep_ρ_mk_apply_coe, conjugateGroundEquiv_apply_coe, conjugateCoefficientEquiv_apply_coe]
-    simp only [← Module.End.mul_apply, ← map_mul]
+    simp only [← mul_apply_eq_comp, ← map_mul]
     congr 1
     group
 

@@ -1,34 +1,29 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Codex, Claude
 -/
 module
 
 public import TauCeti.Probability.Distributions.BetaBinomial.Quantile
 public import TauCeti.Probability.Distributions.DirichletMultinomial.Aggregation
+public import TauCeti.Probability.Distributions.Dirac
 
 /-!
-# Coordinate quantiles of Dirichlet-multinomial laws
+# Quantiles of Dirichlet-multinomial coordinates
 
-With at least two categories and positive concentrations `a`, the count in category `i` of a
-Dirichlet-multinomial vector with `n` trials is beta-binomial with `n` trials and shapes `a i`
-and `∑ j ≠ i, a j`. Its real lower quantile at an interior level is therefore the least count at
-which the explicit finite beta-binomial cumulative sum reaches the level. Near level zero the
-quantile tends to zero, and near level one it tends to `n`.
+With at least two categories, a coordinate of a Dirichlet-multinomial count vector has a
+beta-binomial law. Its real-cast quantile therefore has the scalar beta-binomial crossing
+characterization. With one category, all trials instead fall in that category, so its quantile is
+constantly the trial count.
 
-## Main results
-
-* `TauCeti.Probability.quantile_map_cast_eval_dirichletMultinomialMeasure_eq_iff`: the coordinate
-  quantile is the least crossing of the beta-binomial cumulative sum.
-* `TauCeti.Probability.tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsGT_zero`
-  and `TauCeti.Probability.tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsLT_one`:
-  the endpoint limits.
+This file also records the one-sided endpoint limits. The lower endpoint is zero except in the
+one-category case, while the upper endpoint is always the trial count.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley, 1997,
-  Chapter 35, Section 13.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley,
+  1997, Chapter 40.
 -/
 
 public section
@@ -39,57 +34,91 @@ open Filter MeasureTheory ProbabilityTheory Set Topology
 
 namespace TauCeti.Probability
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Nontrivial ι] {a : ι → ℝ} {u : ℝ}
+variable {ι : Type*} [Fintype ι] [Nonempty ι] {a : ι → ℝ}
 
-private theorem map_cast_eval_dirichletMultinomialMeasure (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) :
-    (dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ)) =
-      (betaBinomialMeasure n (a i) (∑ j with j ≠ i, a j)).map (Nat.cast : ℕ → ℝ) := by
-  rw [← map_eval_dirichletMultinomialMeasure ha n i,
-    Measure.map_map measurable_from_nat (measurable_pi_apply i), Function.comp_def]
+/-- For at least two categories, the real-cast quantile of a Dirichlet-multinomial coordinate is
+the quantile of its beta-binomial marginal. -/
+theorem quantile_map_cast_eval_dirichletMultinomialMeasure [DecidableEq ι] [Nontrivial ι]
+    (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) (u : ℝ) :
+    ((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u =
+      ((betaBinomialMeasure n (a i) (∑ j with j ≠ i, a j)).map
+        (Nat.cast : ℕ → ℝ)).quantile u := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_dirichletMultinomialMeasure ha n i]
 
-/-- A natural number is the lower quantile of the count in category `i` of a Dirichlet-multinomial
-law exactly when it is the least count whose beta-binomial cumulative sum, with shapes `a i` and
-`∑ j ≠ i, a j`, reaches the level. -/
-theorem quantile_map_cast_eval_dirichletMultinomialMeasure_eq_iff (ha : ∀ i, 0 < a i) (n : ℕ)
-    (i : ι) (hu : u ∈ Ioo 0 1) (k : ℕ) :
+/-- For at least two categories, a natural number is the coordinate quantile exactly when it is
+the least count whose beta-binomial cumulative mass reaches the level. -/
+theorem quantile_map_cast_eval_dirichletMultinomialMeasure_eq_iff [DecidableEq ι]
+    [Nontrivial ι] (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) {u : ℝ}
+    (hu : u ∈ Ioo 0 1) (k : ℕ) :
     ((dirichletMultinomialMeasure n a).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
       IsLeast {m : ℕ | u ≤ ∑ j ∈ Finset.Iic m,
         n.choose j * beta (a i + j) ((∑ l with l ≠ i, a l) + (n - j)) /
           beta (a i) (∑ l with l ≠ i, a l)} k := by
-  obtain ⟨j, hj⟩ := exists_ne i
-  have hsum : 0 < ∑ j with j ≠ i, a j :=
-    Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
-  rw [map_cast_eval_dirichletMultinomialMeasure ha,
-    quantile_map_cast_betaBinomialMeasure_eq_iff (ha i) hsum hu]
+  rw [quantile_map_cast_eval_dirichletMultinomialMeasure ha n i,
+    quantile_map_cast_betaBinomialMeasure_eq_iff (ha i) (Finset.sum_filter_ne_pos ha i) hu]
 
-omit [DecidableEq ι] in
-/-- As the level tends to zero from above, the quantiles of a Dirichlet-multinomial coordinate
-tend to zero. -/
+/-- With one category, every coordinate quantile at a level in `(0, 1]` is the trial count. -/
+@[simp]
+theorem quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one
+    (ha : ∀ i, 0 < a i) (hcard : Fintype.card ι = 1) (n : ℕ) (i : ι)
+    {u : ℝ} (hu : u ∈ Ioc 0 1) :
+    ((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u = n := by
+  let _ : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.mp hcard.le
+  rw [dirichletMultinomialMeasure_eq_dirac_of_subsingleton ha n,
+    Measure.map_dirac' (by fun_prop), Measure.quantile_dirac _ hu.1 hu.2]
+
+/-- At level zero, a Dirichlet-multinomial coordinate quantile tends to zero, except for the
+one-category law where it remains the trial count. -/
 theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsGT_zero
     (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) :
     Tendsto (fun u ↦
-      (((dirichletMultinomialMeasure n a).map (fun x ↦ (x i : ℝ))).quantile u : EReal))
-      (𝓝[>] 0) (𝓝 0) := by
+      (((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 (if Fintype.card ι = 1 then (n : EReal) else 0)) := by
   classical
-  obtain ⟨j, hj⟩ := exists_ne i
-  have hsum : 0 < ∑ j with j ≠ i, a j :=
-    Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
-  rw [map_cast_eval_dirichletMultinomialMeasure ha]
-  exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsGT_zero (ha i) hsum n
+  rcases subsingleton_or_nontrivial ι with _ | _
+  · let _ : Unique ι := uniqueOfSubsingleton i
+    have hcard : Fintype.card ι = 1 := Fintype.card_unique
+    simp only [hcard, ite_true]
+    apply tendsto_const_nhds.congr'
+    filter_upwards [Ioo_mem_nhdsGT (α := ℝ) zero_lt_one] with u hu
+    rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i
+      ⟨hu.1, hu.2.le⟩]
+    norm_cast
+  · -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+    rw [ite_eq_right (ne_of_gt Fintype.one_lt_card),
+      show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+        (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+      ← Measure.map_map (by fun_prop) (by fun_prop),
+      map_eval_dirichletMultinomialMeasure ha n i]
+    exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsGT_zero
+      (ha i) (Finset.sum_filter_ne_pos ha i) n
 
-omit [DecidableEq ι] in
-/-- As the level tends to one from below, the quantiles of a Dirichlet-multinomial coordinate
-tend to the number of trials. -/
+/-- At level one, every valid Dirichlet-multinomial coordinate quantile tends to the trial
+count. -/
 theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsLT_one
     (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) :
     Tendsto (fun u ↦
-      (((dirichletMultinomialMeasure n a).map (fun x ↦ (x i : ℝ))).quantile u : EReal))
+      (((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
       (𝓝[<] 1) (𝓝 (n : EReal)) := by
   classical
-  obtain ⟨j, hj⟩ := exists_ne i
-  have hsum : 0 < ∑ j with j ≠ i, a j :=
-    Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
-  rw [map_cast_eval_dirichletMultinomialMeasure ha]
-  exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsLT_one (ha i) hsum n
+  rcases subsingleton_or_nontrivial ι with _ | _
+  · let _ : Unique ι := uniqueOfSubsingleton i
+    have hcard : Fintype.card ι = 1 := Fintype.card_unique
+    apply tendsto_const_nhds.congr'
+    filter_upwards [Ioo_mem_nhdsLT (α := ℝ) zero_lt_one] with u hu
+    rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i
+      ⟨hu.1, hu.2.le⟩]
+    norm_cast
+  · -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+    rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+        (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+      ← Measure.map_map (by fun_prop) (by fun_prop),
+      map_eval_dirichletMultinomialMeasure ha n i]
+    exact tendsto_quantile_map_cast_betaBinomialMeasure_nhdsLT_one
+      (ha i) (Finset.sum_filter_ne_pos ha i) n
 
 end TauCeti.Probability

@@ -204,7 +204,7 @@ theorem mlieBracket_mulRightInvariantVectorField_mulInvariantVectorField
   apply tangentToPointDerivation_injective (I := I) g
   rw [Pi.zero_apply, map_zero]
   ext f
-  rw [Derivation.zero_apply]
+  rw [_root_.zero_apply]
   -- The pointed smooth-map argument is a different bundle from `ContMDiffMap`, so the public
   -- `tangentToPointDerivation_apply` lemma does not rewrite this coercion directly.
   change mvfderiv I f g

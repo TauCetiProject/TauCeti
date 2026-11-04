@@ -96,7 +96,7 @@ theorem restrict_pi_poissonMeasure_mul_weights (r : ℝ≥0) (p : StdSimplex ℝ
   classical
   apply Measure.ext_of_singleton
   intro k
-  rw [Measure.restrict_apply (measurableSet_singleton k), Measure.smul_apply,
+  rw [Measure.restrict_apply (measurableSet_singleton k), _root_.smul_apply,
     smul_eq_mul, multinomialMeasure_singleton]
   by_cases hk : ∑ i, k i = n
   · rw [ite_eq_left hk, Set.singleton_inter_of_mem (s := {l : ι → ℕ | ∑ i, l i = n}) hk]

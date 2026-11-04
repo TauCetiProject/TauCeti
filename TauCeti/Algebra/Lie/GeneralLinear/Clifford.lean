@@ -31,11 +31,6 @@ corresponding Clifford algebra.
 * `TauCeti.glCliffordHom_injective`: it is injective once `Fintype.card n` is invertible, which
   the quadratic part alone is not — the centre of `gl n K` is what the normal-ordering constant
   separates.
-
-## References
-
-* [Tau Ceti Roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), Representation Theory / Spin
-  Representations, Layer 9, “The worked instance: `gl_N` on `M_N(ℂ)` (the CAR algebra)”.
 -/
 
 public section

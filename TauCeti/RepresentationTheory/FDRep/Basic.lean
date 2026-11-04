@@ -114,7 +114,7 @@ theorem char_trivial {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
     [Module k V] [FiniteDimensional k V] (g : G) :
     (trivial k G V).character g = Module.finrank k V := by
   have hone : trivial k G V g = 1 :=
-    LinearMap.ext fun v => by rw [trivial_apply, Module.End.one_apply]
+    LinearMap.ext fun v => by rw [trivial_apply, _root_.one_apply_eq_self]
   rw [character, hone, LinearMap.trace_one]
 
 /-- **The character is additive on products of representations.** This is the unbundled counterpart
@@ -187,6 +187,23 @@ theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
       (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
   rfl
 
+/-- The inverse of the forgetful Hom equivalence is the forgetful functor on morphisms. -/
+@[simp]
+theorem forget₂HomLinearEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (f : X ⟶ Y) :
+    (forget₂HomLinearEquiv X Y).symm f =
+      (forget₂ (FDRep R G) (Rep R G)).map f :=
+  (rfl)
+
+/-- Forgetting after applying the Hom equivalence recovers the original intertwiner. -/
+@[simp]
+theorem forget₂_map_forget₂HomLinearEquiv {R : Type u} {G : Type v}
+    [CommRing R] [Monoid G] (X Y : FDRep R G)
+    (f : (forget₂ (FDRep R G) (Rep R G)).obj X ⟶
+      (forget₂ (FDRep R G) (Rep R G)).obj Y) :
+    (forget₂ (FDRep R G) (Rep R G)).map (forget₂HomLinearEquiv X Y f) = f :=
+  (forget₂HomLinearEquiv X Y).symm_apply_apply f
+
 /-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
 instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
     (A : FDRep R G) : Module.Finite R ((forget₂ (FDRep R G) (Rep R G)).obj A) :=
@@ -239,7 +256,7 @@ instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
 
 /-- Forgetting finite generation preserves scalar multiplication of intertwiners. -/
 instance forget₂_linear {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
-    Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
+    CategoryTheory.Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
   -- As for additivity, the forgetful functor keeps the underlying linear map.
   map_smul := by intros; rfl
 
@@ -264,7 +281,8 @@ theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y 
   simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
 
 /-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
-@[simp]
+-- Evaluate the scalar action before unfolding the opposite-representation wrapper.
+@[simp↓]
 theorem op_smul_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G)
     {B : FDRep R G} (d : End A) (f : A ⟶ B) (x : A) :
     (MulOpposite.op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by

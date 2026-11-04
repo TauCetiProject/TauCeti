@@ -53,6 +53,9 @@ With the finite limits, finite coproducts and direct summands of
 
 * `TauCeti.FiniteEtaleScheme.isColimitQuotientCocone F`: the relative invariant quotient is the
   quotient of `Y` by `G` in finite étale `S`-schemes.
+* `TauCeti.FiniteEtaleScheme.exists_comp_map_eq_of_comp_quotientπ_eq F`: two points of `Y` with
+  values in a field and the same image in `Y / G` differ by the action of an element of `G`
+  (`CommMon.exists_comp_relativeSpecMap_eq`).
 * `HasColimitsOfShape (SingleObj G) (FiniteEtaleScheme S)` for a finite group `G`.
 * `PreGaloisCategory (FiniteEtaleScheme S)` for every scheme `S`.
 
@@ -249,6 +252,26 @@ lemma quotientπ_hom_left : (quotientπ F).hom.left =
 lemma map_quotientπ (g : G) :
     F.map (X := SingleObj.star G) (Y := SingleObj.star G) g ≫ quotientπ F = quotientπ F :=
   ObjectProperty.hom_ext _ (Over.OverMorphism.ext (act_quotientMap F g))
+
+/-- **Points of the quotient are orbits.** Two morphisms from the spectrum of a field to `Y` with
+the same image in `Y / G` differ by the action of an element of `G`. -/
+theorem exists_comp_map_eq_of_comp_quotientπ_eq {K : Type u} [Field K]
+    {x₁ x₂ : Spec (CommRingCat.of K) ⟶ (F.obj (SingleObj.star G)).obj.left}
+    (h : x₁ ≫ (quotientπ F).hom.left = x₂ ≫ (quotientπ F).hom.left) :
+    ∃ g : G, x₁ ≫ (F.map (X := SingleObj.star G) (Y := SingleObj.star G) g).hom.left = x₂ := by
+  -- The underlying scheme of `quotient F` is the relative invariant quotient by definition
+  -- (`quotient_obj`), and the quotient map is `quotientMap F` (`quotientπ_hom_left`).
+  have h₀ : x₁ ≫ quotientMap F = x₂ ≫ quotientMap F := h
+  -- Pass to points of the relative spectrum of the function algebra.
+  obtain ⟨g, hg⟩ := CommMon.exists_comp_relativeSpecMap_eq
+    (x₁ := x₁ ≫ inv (F.obj (SingleObj.star G)).obj.hom.relativeSpecFunctionsToScheme)
+    (x₂ := x₂ ≫ inv (F.obj (SingleObj.star G)).obj.hom.relativeSpecFunctionsToScheme)
+    (by simpa only [Category.assoc] using h₀)
+  refine ⟨g⁻¹, ?_⟩
+  -- The action of `g` on the function algebra is pullback along the action map of `g⁻¹`.
+  have h' := congr($hg ≫ (F.obj (SingleObj.star G)).obj.hom.relativeSpecFunctionsToScheme)
+  rwa [Category.assoc, Category.assoc, relativeSpecMap_relativeSpecFunctionsToScheme,
+    IsIso.inv_hom_id_assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id] at h'
 
 /-- The quotient of a finite étale scheme by a finite group, as a cocone over the action. It is a
 colimit (`isColimitQuotientCocone`). -/

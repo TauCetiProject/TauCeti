@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondBianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -40,6 +41,8 @@ identity `derivCurvatureTensor_cyclic_eq_zero`.
 * `CovariantDerivative.derivCurvatureTensor_apply` and
   `CovariantDerivative.derivCurvatureTensor_apply_eq_curvatureOperator`: its value on smooth
   fields and sections.
+* `CovariantDerivative.derivCurvatureTensor_apply_of_contMDiffOn`: evaluation on local smooth
+  fields and sections, including local frames.
 * `CovariantDerivative.derivCurvatureTensor_antisymm`: `∇R` is antisymmetric in its two curvature
   arguments.
 * `CovariantDerivative.derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero`: `∇R = 0` for a
@@ -241,20 +244,20 @@ variable (cov covT)
 /-- The value of `∇R` on fibre vectors, computed on chosen smooth extensions. -/
 private def derivCurvatureValue (x : M) (v u w : TangentSpace I x) (s : V x) : V x :=
   derivCurvatureAux cov covT
-    (Classical.choose (exists_contMDiff_section_eq I E u))
-    (Classical.choose (exists_contMDiff_section_eq I E w))
-    (Classical.choose (exists_contMDiff_section_eq I F s)) x v
+    (Classical.choose (exists_contMDiff_section_eq I E ∞ u))
+    (Classical.choose (exists_contMDiff_section_eq I E ∞ w))
+    (Classical.choose (exists_contMDiff_section_eq I F ∞ s)) x v
 
 private theorem derivCurvatureValue_eq (x : M) (v : TangentSpace I x)
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ)) :
     derivCurvatureValue cov covT x v (Y x) (Z x) (σ x) = derivCurvatureAux cov covT Y Z σ x v :=
   congrFun (derivCurvatureAux_congr
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Z x))).1 hZ
-    (Classical.choose_spec (exists_contMDiff_section_eq I F (σ x))).1 hσ
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Y x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I E (Z x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I F (σ x))).2) v
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Z x))).1 hZ
+    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).1 hσ
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2
+    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Z x))).2
+    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).2) v
 
 private theorem derivCurvatureValue_add_dir (x : M) (v v' u w : TangentSpace I x) (s : V x) :
     derivCurvatureValue cov covT x (v + v') u w s =
@@ -270,10 +273,10 @@ private theorem derivCurvatureValue_smul_dir (x : M) (c : ℝ) (v u w : TangentS
 private theorem derivCurvatureValue_add_first (x : M) (v u u' w : TangentSpace I x) (s : V x) :
     derivCurvatureValue cov covT x v (u + u') w s =
       derivCurvatureValue cov covT x v u w s + derivCurvatureValue cov covT x v u' w s := by
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y', hY', rfl⟩ := exists_contMDiff_section_eq I E u'
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y', hY', rfl⟩ := exists_contMDiff_section_eq I E ∞ u'
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
   have h := derivCurvatureValue_eq cov covT x v (hY.add_section hY') hZ hσ
   rw [Pi.add_apply] at h
   rw [h, derivCurvatureAux_add_first hY hY' hZ hσ, Pi.add_apply,
@@ -282,9 +285,9 @@ private theorem derivCurvatureValue_add_first (x : M) (v u u' w : TangentSpace I
 private theorem derivCurvatureValue_smul_first (x : M) (c : ℝ) (v u w : TangentSpace I x)
     (s : V x) :
     derivCurvatureValue cov covT x v (c • u) w s = c • derivCurvatureValue cov covT x v u w s := by
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
   have h := derivCurvatureValue_eq cov covT x v
     ((contMDiff_const (c := c)).smul_section hY) hZ hσ
   rw [Pi.smul_apply'] at h
@@ -293,19 +296,19 @@ private theorem derivCurvatureValue_smul_first (x : M) (c : ℝ) (v u w : Tangen
 
 private theorem derivCurvatureValue_antisymm (x : M) (v u w : TangentSpace I x) (s : V x) :
     derivCurvatureValue cov covT x v u w s = -derivCurvatureValue cov covT x v w u s := by
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
   rw [derivCurvatureValue_eq cov covT x v hY hZ hσ, derivCurvatureValue_eq cov covT x v hZ hY hσ,
     derivCurvatureAux_antisymm hY hZ hσ, Pi.neg_apply]
 
 private theorem derivCurvatureValue_add_section (x : M) (v u w : TangentSpace I x) (s s' : V x) :
     derivCurvatureValue cov covT x v u w (s + s') =
       derivCurvatureValue cov covT x v u w s + derivCurvatureValue cov covT x v u w s' := by
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
-  obtain ⟨σ', hσ', rfl⟩ := exists_contMDiff_section_eq I F s'
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
+  obtain ⟨σ', hσ', rfl⟩ := exists_contMDiff_section_eq I F ∞ s'
   have h := derivCurvatureValue_eq cov covT x v hY hZ (hσ.add_section hσ')
   rw [Pi.add_apply] at h
   rw [h, derivCurvatureAux_add_section hY hZ hσ hσ', Pi.add_apply,
@@ -314,9 +317,9 @@ private theorem derivCurvatureValue_add_section (x : M) (v u w : TangentSpace I 
 private theorem derivCurvatureValue_smul_section (x : M) (c : ℝ) (v u w : TangentSpace I x)
     (s : V x) :
     derivCurvatureValue cov covT x v u w (c • s) = c • derivCurvatureValue cov covT x v u w s := by
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
   have h := derivCurvatureValue_eq cov covT x v hY hZ
     ((contMDiff_const (c := c)).smul_section hσ)
   rw [Pi.smul_apply'] at h
@@ -367,6 +370,61 @@ theorem derivCurvatureTensor_apply (x : M) (v : TangentSpace I x)
   rw [h]
   exact derivCurvatureValue_eq cov covT x v hY hZ hσ
 
+/-- The covariant curvature derivative evaluated on fields smooth only on a neighbourhood.
+This applies in particular to local frames, without choosing global frame extensions. -/
+theorem derivCurvatureTensor_apply_of_contMDiffOn (x : M) {U : Set M}
+    (hU : IsOpen U) (hx : x ∈ U) (v : TangentSpace I x)
+    (hY : CMDiff[U] ∞ (T% Y)) (hZ : CMDiff[U] ∞ (T% Z))
+    (hσ : CMDiff[U] ∞ (T% σ)) :
+    cov.derivCurvatureTensor covT x v (Y x) (Z x) (σ x) =
+      cov (curvatureOperator cov Y Z σ) x v -
+        cov.curvatureTensor x (covT Y x v) (Z x) (σ x) -
+          cov.curvatureTensor x (Y x) (covT Z x v) (σ x) -
+            cov.curvatureTensor x (Y x) (Z x) (cov σ x v) := by
+  -- Cut off the three local inputs to obtain globally smooth sections agreeing near `x`.
+  obtain ⟨ρ, hρ, -⟩ :=
+    (SmoothBumpFunction.nhds_basis_support (I := I) (hU.mem_nhds hx)).mem_iff.mp
+      (hU.mem_nhds hx)
+  have hY' : CMDiff ∞ (T% ((ρ : M → ℝ) • Y)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hY
+  have hZ' : CMDiff ∞ (T% ((ρ : M → ℝ) • Z)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hZ
+  have hσ' : CMDiff ∞ (T% ((ρ : M → ℝ) • σ)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hσ
+  have hYY' : Y =ᶠ[nhds x] (ρ : M → ℝ) • Y :=
+    ρ.eventuallyEq_one.mono fun y hy ↦ by
+      simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]
+      rfl
+  have hZZ' : Z =ᶠ[nhds x] (ρ : M → ℝ) • Z :=
+    ρ.eventuallyEq_one.mono fun y hy ↦ by
+      simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]
+      rfl
+  have hσσ' : ∀ᶠ y in nhds x, σ y = ((ρ : M → ℝ) • σ) y :=
+    ρ.eventuallyEq_one.mono fun y hy ↦ by simp [hy]
+  -- Locality transfers the differentiated curvature term as well as each correction term.
+  have hR : ∀ᶠ y in nhds x,
+      curvatureOperator cov Y Z σ y =
+        curvatureOperator cov ((ρ : M → ℝ) • Y) ((ρ : M → ℝ) • Z)
+          ((ρ : M → ℝ) • σ) y := by
+    filter_upwards [hYY'.eventuallyEq_nhds, hZZ'.eventuallyEq_nhds,
+      eventually_eventually_nhds.2 hσσ'] with y hYy hZy hσy
+    exact curvatureOperator_congr_of_eventuallyEq hY' hZ' hσ' hYy hZy hσy
+  have hdR' := (cov.contMDiff_curvatureOperator hY' hZ' hσ').mdifferentiable (by simp) x
+  have hdR : MDiffAt (T% (curvatureOperator cov Y Z σ)) x :=
+    hdR'.congr_of_eventuallyEq (hR.mono fun y hy ↦ by simp only [hy])
+  have hdY := (hY.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+  have hdZ := (hZ.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+  have hdσ := (hσ.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+  rw [hYY'.self_of_nhds, hZZ'.self_of_nhds, hσσ'.self_of_nhds,
+    derivCurvatureTensor_apply cov covT x v hY' hZ' hσ',
+    cov.isCovariantDerivativeOn.congr_of_eventuallyEq hdR hdR' Filter.univ_mem hR,
+    covT.isCovariantDerivativeOn.congr_of_eventuallyEq hdY
+      (hY'.mdifferentiableAt (by simp)) Filter.univ_mem hYY',
+    covT.isCovariantDerivativeOn.congr_of_eventuallyEq hdZ
+      (hZ'.mdifferentiableAt (by simp)) Filter.univ_mem hZZ',
+    cov.isCovariantDerivativeOn.congr_of_eventuallyEq hdσ
+      (hσ'.mdifferentiableAt (by simp)) Filter.univ_mem hσσ']
+
 /-- For a smooth connection `∇ᵀ` on the tangent bundle, the covariant derivative of the curvature
 tensor along a smooth vector field `X` is given entirely by curvature operators:
 `(∇_X R)(Y, Z) σ = ∇_X (R(Y, Z) σ) - R(∇ᵀ_X Y, Z) σ - R(Y, ∇ᵀ_X Z) σ - R(Y, Z) (∇_X σ)`. -/
@@ -402,9 +460,9 @@ theorem derivCurvatureTensor_self (x : M) (v u : TangentSpace I x) :
 theorem derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero
     (h : ∀ x : M, cov.curvatureTensor x = 0) (x : M) : cov.derivCurvatureTensor covT x = 0 := by
   ext v u w s
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
   have hR : curvatureOperator cov Y Z σ = 0 :=
     funext fun y ↦ by simp [← curvatureTensor_apply cov y hY hZ hσ, h y]
   simp [derivCurvatureTensor_apply cov covT x v hY hZ hσ, hR, h x]
@@ -417,10 +475,10 @@ theorem derivCurvatureTensor_cyclic_eq_zero [ContMDiffCovariantDerivative covT �
     cov.derivCurvatureTensor covT x u v w + cov.derivCurvatureTensor covT x v w u +
       cov.derivCurvatureTensor covT x w u v = 0 := by
   ext s
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F s
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiff_section_eq I F ∞ s
   simp only [LinearMap.add_apply, LinearMap.zero_apply,
     derivCurvatureTensor_apply_eq_curvatureOperator cov covT x hX hY hZ hσ,
     derivCurvatureTensor_apply_eq_curvatureOperator cov covT x hY hZ hX hσ,

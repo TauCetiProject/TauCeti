@@ -8,10 +8,12 @@ module
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+public import Mathlib.RingTheory.Etale.Basic
 
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.FieldTheory.Normal.Closure
+import Mathlib.RingTheory.Etale.Field
 import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
@@ -73,6 +75,9 @@ need to be tested.
   closure in a finite extension `M` of the fraction field is finite, the integral closure in every
   finite separable extension of `M` is finite (Stacks, Lemma 10.161.8 (032L), applied to the
   normalization); for `M` the fraction field this covers every Noetherian N-1 domain.
+* `TauCeti.Ring.finite_integralClosure_of_etale`: the integral closure of a Noetherian N-1 domain
+  in a finite étale algebra over its fraction field, a finite product of finite separable
+  extensions, is finite.
 * `TauCeti.Ring.isJapanese_iff_isN1`: a Noetherian domain with perfect fraction field is Japanese
   if and only if it is N-1 (Stacks, Lemma 10.161.11 (032M), in characteristic zero).
 * `TauCeti.Ring.isJapanese_iff_isPurelyInseparable`: a Noetherian domain is Japanese if and only
@@ -90,6 +95,12 @@ every fraction field and every universe.
 ## References
 
 * [Stacks Project, Section 10.161 (032E)](https://stacks.math.columbia.edu/tag/032E)
+* The proof of `TauCeti.Ring.finite_integralClosure_of_etale` through the field factors follows
+  T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
+  `lean/Pcf/Stacks/Purity/FiniteNormalModel.lean`, where the base is integrally closed
+  (`finiteEtaleAlgebra_integralClosure_finite`).
 -/
 
 public section
@@ -274,6 +285,34 @@ theorem finite_integralClosure_of_isSeparable [IsDomain R] [IsNoetherianRing R]
     TauCeti.IsIntegralClosure.tower_bot (A := B)
   exact .equiv (IsIntegralClosure.equiv R (integralClosure B E) E
     (integralClosure R E)).toLinearEquiv
+
+/-- **Finiteness of the integral closure in a finite étale algebra.** Let `R` be a Noetherian N-1
+domain with fraction field `K`, for instance an integrally closed Noetherian domain. Then the
+integral closure of `R` in a finite étale `K`-algebra `L`, that is, in a finite product of finite
+separable extensions of `K`, is a finite `R`-module. -/
+theorem finite_integralClosure_of_etale [IsDomain R] [IsNoetherianRing R] [IsN1 R]
+    (K : Type*) (L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [CommRing L]
+    [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra.Etale K L] :
+    Module.Finite R (integralClosure R L) := by
+  -- `L` is a finite product of finite separable field extensions `Lᵢ` of `K`.
+  obtain ⟨I, _, Li, _, _, e, hsep⟩ :=
+    (Algebra.FormallyEtale.iff_exists_algEquiv_prod K L).mp inferInstance
+  have : Module.Finite K L := Algebra.FormallyUnramified.finite_of_free K L
+  let (i : I) : Algebra R (Li i) := ((algebraMap K (Li i)).comp (algebraMap R K)).toAlgebra
+  have (i : I) : IsScalarTower R K (Li i) := .of_algebraMap_eq' rfl
+  have (i : I) : FiniteDimensional K (Li i) :=
+    .of_surjective ((LinearMap.proj i).comp e.toLinearEquiv.toLinearMap)
+      ((Function.surjective_eval i).comp e.surjective)
+  have (i : I) : Module.Finite R (integralClosure R (Li i)) :=
+    have := hsep i
+    finite_integralClosure_of_isSeparable K K (Li i)
+  -- The integral closure in `L` embeds into the product of the integral closures in the `Lᵢ`.
+  let φ : integralClosure R L →ₐ[R] ∀ i, integralClosure R (Li i) :=
+    AlgHom.pi fun i ↦ ((Pi.evalAlgHom R Li i).comp (e.restrictScalars R).toAlgHom)
+      |>.mapIntegralClosure
+  refine Module.Finite.of_injective φ.toLinearMap fun x y h ↦ Subtype.ext (e.injective ?_)
+  funext i
+  exact congrArg Subtype.val (congrFun h i)
 
 /-- A Noetherian domain whose fraction field is perfect, for instance of characteristic zero, is
 Japanese if and only if it is N-1. Stacks, Lemma 10.161.11 (032M), stated there in characteristic

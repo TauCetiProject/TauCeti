@@ -32,6 +32,8 @@ distinct simple classes hom orthogonal.
   types of simple classes;
 * `TauCeti.SimpleClasses.homOrthogonal_repr`: in a preadditive category with kernels, the chosen
   representatives of distinct simple classes are hom orthogonal (Schur's lemma).
+* `TauCeti.SimpleClasses.classOf_eq_of_ne_zero`: simple objects related by a nonzero morphism have
+  the same class.
 -/
 
 public section
@@ -155,6 +157,12 @@ theorem homOrthogonal_repr {D : Type u₁} [Category.{v₁} D] [Preadditive D] [
   by_contra hf
   have := isIso_of_hom_simple hf
   exact h ((eq_iff_nonempty_iso S T).2 ⟨asIso f⟩)
+
+/-- Two simple objects related by a nonzero morphism have the same class (Schur's lemma). -/
+theorem classOf_eq_of_ne_zero {D : Type u₁} [Category.{v₁} D] [Preadditive D] [HasKernels D]
+    {X Y : D} [Simple X] [Simple Y] {f : X ⟶ Y} (hf : f ≠ 0) : classOf X = classOf Y :=
+  have := isIso_of_hom_simple hf
+  (classOf_eq_iff_nonempty_iso X Y).2 ⟨asIso f⟩
 
 end SimpleClasses
 

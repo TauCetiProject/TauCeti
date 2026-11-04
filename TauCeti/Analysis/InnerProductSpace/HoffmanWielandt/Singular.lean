@@ -79,7 +79,7 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
         A.singularValues i ^ 2 -
           2 * (A.singularValues i *
             RCLike.re ⟪u i, B (v i)⟫_𝕜) + ‖B (v i)‖ ^ 2 := by
-    rw [sub_apply, hAv i, norm_sub_sq (𝕜 := 𝕜)]
+    rw [LinearMap.sub_apply, hAv i, norm_sub_sq (𝕜 := 𝕜)]
     simp [norm_smul, u, inner_smul_left, RCLike.conj_ofReal]
   have hexpSum :
       ∑ i : Fin (finrank 𝕜 E), ‖(A - B) (v i)‖ ^ 2 =

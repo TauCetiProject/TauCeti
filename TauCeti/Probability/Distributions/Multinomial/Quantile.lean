@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Codex, Claude
 -/
 module
 
@@ -9,29 +9,17 @@ public import TauCeti.Probability.Distributions.Binomial.Quantile
 public import TauCeti.Probability.Distributions.Multinomial.Marginal
 
 /-!
-# Coordinate quantiles of multinomial laws
+# Quantiles of multinomial coordinates
 
-The count in cell `i` of a multinomial vector with `n` trials and cell weights `p` is binomial
-with `n` trials and success probability `p i`. Its real lower quantile at an interior level is
-therefore the least count at which the binomial cumulative mass, written as a regularized
-incomplete Beta function, reaches the level.
-
-The one-sided endpoint limits are those of the binomial law. Near level zero the quantile tends
-to `n` when the cell has weight one and to zero otherwise; near level one it tends to zero when
-the cell has weight zero and to `n` otherwise.
-
-## Main results
-
-* `TauCeti.Probability.quantile_map_cast_eval_multinomialMeasure_eq_iff`: the coordinate quantile
-  is the least crossing of the incomplete-Beta cumulative mass.
-* `TauCeti.Probability.tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsGT_zero` and
-  `TauCeti.Probability.tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsLT_one`: the
-  endpoint limits.
+A coordinate of a multinomial count vector has a binomial law. Consequently, after casting the
+coordinate to the reals, its interior quantiles and one-sided endpoint limits are the corresponding
+binomial quantities. This includes zero trials and the deterministic cell-probability boundaries.
+The interior quantile is also characterized as the least crossing of the binomial cumulative mass.
 
 ## References
 
-* N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley, 1997,
-  Chapter 35.
+* N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley,
+  1997, Chapter 35.
 -/
 
 public section
@@ -39,49 +27,64 @@ public section
 noncomputable section
 
 open Convexity Filter MeasureTheory ProbabilityTheory Set Topology
-open scoped ProbabilityTheory
 
 namespace TauCeti.Probability
 
-variable {ι : Type*} [Fintype ι] {n : ℕ} {p : StdSimplex NNReal ι} {u : ℝ}
+variable {ι : Type*} [Fintype ι]
 
-/-- The real cast of a multinomial cell count is the real cast of its binomial marginal. -/
-private theorem map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
-    (multinomialMeasure n p).map (fun k ↦ (k i : ℝ)) =
-      Bin(ℝ, n, p.multinomialCellProbability i) := by
-  rw [← map_eval_multinomialMeasure,
-    Measure.map_map measurable_from_nat (measurable_pi_apply i), Function.comp_def]
+/-- The real-cast quantile of a multinomial coordinate is the quantile of its binomial
+marginal. -/
+theorem quantile_map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι)
+    (i : ι) (u : ℝ) :
+    ((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u =
+      ((ProbabilityTheory.binomial n (p.multinomialCellProbability i)).map
+        (Nat.cast : ℕ → ℝ)).quantile u := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_multinomialMeasure]
 
-/-- A natural number is the lower quantile of the count in cell `i` of a multinomial law exactly
-when it is the least count whose cumulative binomial mass, the regularized incomplete Beta
-function at `1 - p i`, reaches the level. At and beyond `n` the cumulative mass is one. -/
-theorem quantile_map_cast_eval_multinomialMeasure_eq_iff (i : ι) (hu : u ∈ Ioo 0 1) (k : ℕ) :
+/-- A natural number is the lower quantile of a multinomial coordinate exactly when it is the
+least count whose binomial cumulative mass reaches the level. -/
+theorem quantile_map_cast_eval_multinomialMeasure_eq_iff (n : ℕ)
+    (p : StdSimplex NNReal ι) (i : ι) {u : ℝ} (hu : u ∈ Ioo 0 1) (k : ℕ) :
     ((multinomialMeasure n p).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
       IsLeast
         {j : ℕ | u ≤ if n ≤ j then 1 else
           regularizedIncompleteBeta ((n : ℝ) - j) ((j : ℝ) + 1) (1 - (p.weights i : ℝ))}
         k := by
-  rw [map_cast_eval_multinomialMeasure, quantile_map_cast_binomial_eq_iff hu,
-    StdSimplex.coe_multinomialCellProbability]
+  rw [quantile_map_cast_eval_multinomialMeasure,
+    quantile_map_cast_binomial_eq_iff hu, StdSimplex.coe_multinomialCellProbability]
 
-/-- As the level tends to zero from above, the quantiles of a multinomial cell count tend to the
-lower endpoint of its support: `n` for a cell of weight one, zero otherwise. -/
-theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsGT_zero (n : ℕ)
-    (p : StdSimplex NNReal ι) (i : ι) :
-    Tendsto (fun u ↦ (((multinomialMeasure n p).map (fun x ↦ (x i : ℝ))).quantile u : EReal))
-      (𝓝[>] 0) (𝓝 (if p.weights i = 1 then (n : EReal) else 0)) := by
-  simpa only [map_cast_eval_multinomialMeasure,
-    StdSimplex.multinomialCellProbability_eq_one_iff] using
-    tendsto_quantile_map_cast_binomial_nhdsGT_zero n (p.multinomialCellProbability i)
+/-- At level zero, a multinomial coordinate quantile tends to the trial count when all mass is
+in that cell, and to zero otherwise. -/
+theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsGT_zero
+    (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
+    Tendsto (fun u ↦
+      (((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
+      (𝓝[>] 0)
+      (𝓝 (if p.multinomialCellProbability i = 1 then (n : EReal) else 0)) := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_multinomialMeasure]
+  exact tendsto_quantile_map_cast_binomial_nhdsGT_zero n (p.multinomialCellProbability i)
 
-/-- As the level tends to one from below, the quantiles of a multinomial cell count tend to the
-upper endpoint of its support: zero for a cell of weight zero, `n` otherwise. -/
-theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsLT_one (n : ℕ)
-    (p : StdSimplex NNReal ι) (i : ι) :
-    Tendsto (fun u ↦ (((multinomialMeasure n p).map (fun x ↦ (x i : ℝ))).quantile u : EReal))
-      (𝓝[<] 1) (𝓝 (if p.weights i = 0 then 0 else (n : EReal))) := by
-  simpa only [map_cast_eval_multinomialMeasure,
-    StdSimplex.multinomialCellProbability_eq_zero_iff] using
-    tendsto_quantile_map_cast_binomial_nhdsLT_one n (p.multinomialCellProbability i)
+/-- At level one, a multinomial coordinate quantile tends to zero when its cell has zero mass,
+and to the trial count otherwise. -/
+theorem tendsto_quantile_map_cast_eval_multinomialMeasure_nhdsLT_one
+    (n : ℕ) (p : StdSimplex NNReal ι) (i : ι) :
+    Tendsto (fun u ↦
+      (((multinomialMeasure n p).map (fun k ↦ (k i : ℝ))).quantile u : EReal))
+      (𝓝[<] 1)
+      (𝓝 (if p.multinomialCellProbability i = 0 then 0 else (n : EReal))) := by
+  -- Expose the cast as a composition for the reverse `Measure.map_map` rewrite.
+  rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
+      (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop),
+    map_eval_multinomialMeasure]
+  exact tendsto_quantile_map_cast_binomial_nhdsLT_one n (p.multinomialCellProbability i)
 
 end TauCeti.Probability
