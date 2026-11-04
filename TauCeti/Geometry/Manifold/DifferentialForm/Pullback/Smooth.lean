@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
@@ -195,6 +195,15 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F k) (x : M) (v : Fin k → TangentSpace I x) :
     (mpullback f hf φ).1 x v = φ.1 (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
+
+/-- A pullback equation `mpullback f hf φ' = c • φ` of smooth forms, read at the point `x` as an
+equation of the underlying rough forms. -/
+theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {hf : ContMDiff I I' ∞ f}
+    {φ' : SmoothForm I' M' F k} {φ : SmoothForm I M F k} {c : ℝ}
+    (h : mpullback f hf φ' = c • φ) (x : M) :
+    TauCeti.mpullback (F := F) I I' f φ'.1 x = c • φ.1 x := by
+  have h := congrFun (congrArg Subtype.val h) x
+  rwa [coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
 
 /-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)

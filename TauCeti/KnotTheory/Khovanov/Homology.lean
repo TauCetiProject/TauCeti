@@ -43,10 +43,16 @@ universe u
 variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
   (R : Type u) [CommRing R]
 
-/-- The normalized Khovanov cohomology of a planar diagram in cochain degree `i` and quantum
-degree `j`, computed by the native homology functor on `ModuleCat R`. -/
-abbrev khovanovHomology (i j : ℤ) : ModuleCat.{u} R :=
+/-- **Khovanov homology** `Khⁱʲ(D; R)` of a planar oriented code `D`: the cohomology in cochain
+degree `i` of the quantum component `j` of the normalized Khovanov complex. -/
+def khovanovHomology (i j : ℤ) : ModuleCat.{u} R :=
   (D.khovanovComplex hD R j).homology i
+
+/-- Khovanov homology in bidegree `(i, j)` is the cohomology in degree `i` of the quantum
+component `j` of the normalized Khovanov complex. -/
+theorem khovanovHomology_def (i j : ℤ) :
+    D.khovanovHomology hD R i j = (D.khovanovComplex hD R j).homology i :=
+  (rfl)
 
 /-- Normalization translates bracket homology by `(n₋, -n₊ + 2n₋)`.
 The comparison retains the degreewise sign in `khovanovComplexShiftIso`. -/

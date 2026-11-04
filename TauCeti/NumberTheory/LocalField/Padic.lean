@@ -225,20 +225,21 @@ theorem natCastValuation_eq_padicValNat (n : ℕ) (hn : (n : ℚ_[p]) ≠ 0) :
     rw [← toAdd_ofAdd ((TauCeti.natCastValuation ℚ_[p] n hn : ℕ) : ℤ),
       ← TauCeti.normalizedValuation_natCast ℚ_[p] n hn,
       toAdd_normalizedValuation_eq_valuation]
-    simp
+    simp [Nat.padicValNat_def]
   exact_mod_cast h
 
 /-- The normalized valuation of the residue prime `p` in `ℚ_[p]` is `1`; equivalently, `ℚ_[p]`
 is absolutely unramified. -/
 theorem natCastValuation_self :
     TauCeti.natCastValuation ℚ_[p] p (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) = 1 := by
-  rw [natCastValuation_eq_padicValNat, padicValNat.self (Fact.out : p.Prime).one_lt]
+  rw [natCastValuation_eq_padicValNat, Nat.padicValNat_def,
+    Nat.multiplicity_self (Fact.out : p.Prime).one_lt]
 
 /-- The normalized valuation of `2` in `ℚ_[p]` vanishes for every odd `p`. -/
 theorem natCastValuation_two (hp : p ≠ 2) :
     TauCeti.natCastValuation ℚ_[p] 2 (Nat.cast_ne_zero.mpr two_ne_zero) = 0 := by
-  rw [natCastValuation_eq_padicValNat]
-  exact padicValNat.eq_zero_of_not_dvd fun h ↦
+  rw [natCastValuation_eq_padicValNat, Nat.padicValNat_def]
+  exact multiplicity_eq_zero_of_not_dvd fun h ↦
     hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
 
 variable {p} in
@@ -253,13 +254,13 @@ over `ℚ_[p]` for such primes. -/
 theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     ¬ IsSquare (-1 : ℚ_[p]) := by
   intro hs0
-  have hs : IsSquare (-1 : ℚ_[p]ˣ) := TauCeti.isSquare_units_val_iff.mp hs0
+  have hs : IsSquare (-1 : ℚ_[p]ˣ) := Units.isSquare_coe_iff.mp hs0
   have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
   have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
     have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
     exact (by simpa using h (by simpa using hs))
   have hs' : IsSquare (-1 : 𝓀[ℚ_[p]]) :=
-    TauCeti.isSquare_units_val_iff.mpr hsres
+    Units.isSquare_coe_iff.mpr hsres
   let : Fintype 𝓀[ℚ_[p]] := Fintype.ofFinite _
   have hcard : Fintype.card 𝓀[ℚ_[p]] = p := by
     simpa only [Nat.card_eq_fintype_card] using natCard_residueField p

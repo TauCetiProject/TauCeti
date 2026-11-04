@@ -180,7 +180,7 @@ theorem hyperbolicPairTorus_eq_reflection_mul_reflection (hu : Q u = 0) (hv : Q 
       simp [QuadraticMap.map_add Q, QuadraticMap.map_smul, hu, hv, polar_smul_right, huv])
   have ht : (t : R) * ((t⁻¹ : Rˣ) : R) = 1 := Units.mul_inv t
   ext x
-  rw [LinearEquiv.mul_apply, reflection_apply, reflection_apply, hi₁, hi₂,
+  rw [mul_apply_eq_comp, reflection_apply, reflection_apply, hi₁, hi₂,
     hyperbolicPairTorus_apply]
   simp only [polar_add_left, polar_add_right, polar_sub_right, polar_smul_left, polar_smul_right,
     polar_comm Q v u, polar_comm Q u x, polar_comm Q v x, polar_self, hu, hv, huv, smul_eq_mul,

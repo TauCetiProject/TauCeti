@@ -5,26 +5,57 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import Mathlib.LinearAlgebra.Dimension.Localization
 
 /-!
-# The normalized Khovanov Euler polynomial
+# Khovanov homology and its graded Euler characteristic
 
-The graded Euler polynomial is formed from the ranks of the actual normalized cohomology
-modules. Finite quantum and cochain support make its coefficients honest finite alternating
-sums. Over the integers these ranks ignore torsion; over a field they are dimensions.
+The Khovanov homology `Khⁱʲ(D; R)` of a planar oriented code `D` is the cohomology in cochain
+degree `i` of the quantum component `j` of the normalized Khovanov complex
+`TauCeti.OrientedPDCode.khovanovComplex`. Its graded Euler characteristic is the Laurent
+polynomial
 
-Euler–Poincaré identifies this polynomial with the enhanced state sum over any Noetherian
-commutative ring satisfying rank-nullity, including the integers and every field. For a
-nonempty planar diagram it is `(q + q⁻¹)` times the native Jones polynomial under `T ↦ -q`.
-The empty diagram has Euler polynomial `1`, separately from that nonempty normalization.
+`χ_q Kh(D; R) = ∑ⱼ (∑ᵢ (-1) ^ i rank Khⁱʲ(D; R)) qʲ`,
+
+with `q = T` (`TauCeti.OrientedPDCode.khovanovEulerChar`). Its coefficients are Mathlib's homology
+Euler characteristics `HomologicalComplex.homologyEulerChar` of the quantum components of the
+normalized Khovanov complex. Only finitely many of them are nonzero, because the bracket has
+finite quantum support.
+
+Over a Noetherian ring with the rank-nullity property, such as `ℤ` or a field, the ranks are the
+ranks of finitely generated modules, the free ranks in the case of `ℤ`. Euler–Poincaré then
+computes each coefficient from the terms of the complex instead of its homology, and the
+normalized complex is a cochain shift of the bracket by `n₋`, so the coefficient of `qʲ` is the
+signed count of enhanced states of quantum degree `j`. In other words, `χ_q Kh(D; R)` is the
+enhanced state sum (`TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSum`). For a
+nonempty diagram this is Khovanov's theorem that the graded Euler characteristic is `(q + q⁻¹)`
+times the Jones polynomial at `t ^ (1/2) = -q`
+(`TauCeti.OrientedPDCode.khovanovEulerChar_eq_mul_eval₂_jonesPolynomial`). The empty diagram has
+graded Euler characteristic `1`.
+
+## Main definitions
+
+* `TauCeti.OrientedPDCode.khovanovHomology D hD R i j`: the Khovanov homology `Khⁱʲ(D; R)`.
+* `TauCeti.OrientedPDCode.khovanovEulerChar D hD R`: the graded Euler characteristic of the
+  Khovanov homology of `D` with coefficients in `R`.
+
+## Main results
+
+* `TauCeti.OrientedPDCode.homologyEulerChar_khovanovComplex`: Euler–Poincaré for each quantum
+  component, whose Euler characteristic is the coefficient of `qʲ` in the enhanced state sum.
+* `TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSum`: `χ_q Kh(D; R)` is the enhanced
+  state sum.
+* `TauCeti.OrientedPDCode.khovanovEulerChar_eq_mul_eval₂_jonesPolynomial`: for a nonempty diagram,
+  `χ_q Kh(D; R) = (q + q⁻¹) J(D)|_{t ^ (1/2) = -q}`.
+* `TauCeti.OrientedPDCode.khovanovEulerChar_empty`: the empty diagram has `χ_q Kh = 1`.
 
 ## References
 
-* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §§2–3.
-* D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*,
-  Algebr. Geom. Topol. 2 (2002), §§1.3–2.
+* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000).
+* D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*, Algebr. Geom. Topol. 2
+  (2002), §1.3 and §2.2.
 -/
 
 public section
@@ -37,12 +68,11 @@ namespace TauCeti.OrientedPDCode
 
 universe u
 
-variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-  (R : Type u) [CommRing R]
+variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 
 /-- Normalization multiplies the homology Euler characteristic by `(-1)^n₋` and translates
 the quantum index. This is an equality of alternating ranks of actual cohomology modules. -/
-theorem homologyEulerChar_khovanovComplex (j : ℤ) :
+theorem homologyEulerChar_khovanovComplex_eq_negOnePow_mul (j : ℤ) :
     (D.khovanovComplex hD R j).homologyEulerChar =
       ((D.negativeCrossingCount : ℤ).negOnePow : ℤ) *
         (D.toPDCode.khovanovBracket hD R
@@ -59,59 +89,73 @@ theorem homologyEulerChar_khovanovComplex (j : ℤ) :
     simp
   rw [← mul_assoc, ← Units.val_mul, hs]
 
+/-- The Euler characteristic of the terms of the quantum component `j` of the normalized Khovanov
+complex is `(-1) ^ n₋` times that of the quantum component `j - (n₊ - 2n₋)` of the bracket. -/
+theorem eulerChar_khovanovComplex (j : ℤ) :
+    (D.khovanovComplex hD R j).eulerChar = ((D.negativeCrossingCount : ℤ).negOnePow : ℤ) *
+      (D.toPDCode.khovanovBracket hD R
+        (j - (D.positiveCrossingCount - 2 * D.negativeCrossingCount))).eulerChar := by
+  have hj : j - ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount) =
+      j - D.positiveCrossingCount + 2 * D.negativeCrossingCount := by
+    ring
+  rw [hj, ← CochainComplex.eulerChar_shift]
+  exact HomologicalComplex.eulerChar_eq_of_iso (D.khovanovComplexShiftIso hD R j)
+
 section Nontrivial
 
 variable [Nontrivial R]
 
-private theorem finite_support_homologyEulerChar :
-    (Function.support (fun j ↦ (D.khovanovComplex hD R j).homologyEulerChar)).Finite := by
-  refine (Set.finite_Icc
-    ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
-      D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
-    ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
-      D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ))).subset ?_
-  intro j hj
-  by_contra h
-  apply hj
-  simp only [homologyEulerChar, GradedObject.eulerChar]
-  apply finsum_eq_zero_of_forall_eq_zero
-  intro i
-  have hz := D.isZero_khovanovHomology_of_quantum_notMem_Icc hD R h i
-  rw [ModuleCat.finrank_eq_zero_of_isZero hz]
-  simp
+/-- Only finitely many quantum components of the normalized Khovanov complex have a nonzero
+homology Euler characteristic. -/
+theorem finite_support_homologyEulerChar_khovanovComplex :
+    (Function.support fun j ↦ (D.khovanovComplex hD R j).homologyEulerChar).Finite := by
+  -- The quantum component `j` is a shift of the quantum component `j - n₊ + 2n₋` of the bracket,
+  -- and only finitely many of those are nonzero.
+  refine ((D.toPDCode.finite_quantumSupport_khovanovBracket hD R).image
+    (· + ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount))).subset fun j hj ↦ ?_
+  refine ⟨j - D.positiveCrossingCount + 2 * D.negativeCrossingCount, fun hzero ↦ hj ?_,
+    by ring⟩
+  have hK : IsZero (D.khovanovComplex hD R j) :=
+    ((shiftFunctor _ (D.negativeCrossingCount : ℤ)).map_isZero hzero).of_iso
+      (D.khovanovComplexShiftIso hD R j)
+  refine finsum_eq_zero_of_forall_eq_zero fun i ↦ ?_
+  have hX : IsZero ((D.khovanovComplex hD R j).X i) := (HomologicalComplex.eval _ _ i).map_isZero hK
+  rw [ModuleCat.finrank_eq_zero_of_isZero (HomologicalComplex.ExactAt.of_isZero hX).isZero_homology,
+    Nat.cast_zero, mul_zero]
 
-/-- The graded Euler polynomial of normalized Khovanov cohomology. Over `ℤ` it uses ranks of
-free parts; over a field it uses dimensions. Its coefficients are alternating cohomology ranks,
-not the state sum by definition. -/
-def khovanovEulerPolynomial : ℤ[T;T⁻¹] :=
-  AddMonoidAlgebra.coeffEquiv.symm (Finsupp.ofSupportFinite
+/-- **The graded Euler characteristic of Khovanov homology** `χ_q Kh(D; R)` of a planar oriented
+code `D`: the Laurent polynomial in `q = T` whose coefficient of `qʲ` is the alternating sum
+`∑ᵢ (-1) ^ i rank Khⁱʲ(D; R)`, Mathlib's homology Euler characteristic of the quantum component `j`
+of the normalized Khovanov complex. -/
+def khovanovEulerChar : ℤ[T;T⁻¹] :=
+  AddMonoidAlgebra.ofCoeff <| Finsupp.ofSupportFinite
     (fun j ↦ (D.khovanovComplex hD R j).homologyEulerChar)
-    (D.finite_support_homologyEulerChar hD R))
+    (D.finite_support_homologyEulerChar_khovanovComplex hD R)
 
-/-- A coefficient of the Euler polynomial is the Euler characteristic of the corresponding
-normalized quantum-component cohomology. -/
+/-- The coefficient of `qʲ` in the graded Euler characteristic of Khovanov homology is the
+homology Euler characteristic of the quantum component `j` of the normalized Khovanov complex. -/
 @[simp]
-theorem coeff_khovanovEulerPolynomial (j : ℤ) :
-    (D.khovanovEulerPolynomial hD R).coeff j =
-      (D.khovanovComplex hD R j).homologyEulerChar := by
-  rfl
+theorem coeff_khovanovEulerChar (j : ℤ) :
+    (D.khovanovEulerChar hD R).coeff j = (D.khovanovComplex hD R j).homologyEulerChar := by
+  rw [khovanovEulerChar, AddMonoidAlgebra.coeff_ofCoeff, Finsupp.ofSupportFinite_coe]
 
 /-- The coefficient formula as an honest finite alternating sum of ranks of `Khⁱʲ`.
 Over a field these ranks are dimensions. -/
-theorem coeff_khovanovEulerPolynomial_eq_sum (j : ℤ) :
-    (D.khovanovEulerPolynomial hD R).coeff j =
+theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
+    (D.khovanovEulerChar hD R).coeff j =
       ∑ i ∈ Finset.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount,
         (i.negOnePow : ℤ) * Module.finrank R (D.khovanovHomology hD R i j) := by
-  rw [coeff_khovanovEulerPolynomial,
+  rw [coeff_khovanovEulerChar,
     homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset _ _
       (finrankSupport_homology_subset_Icc (D.khovanovComplex hD R j)
         (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount)]
   rfl
 
-/-- The empty diagram has Euler polynomial `1` over every nontrivial commutative ring. -/
+/-- The empty diagram has graded Euler characteristic `1` over every nontrivial
+commutative ring. -/
 @[simp]
-theorem khovanovEulerPolynomial_empty (h : (empty : OrientedPDCode 0).toPDCode.IsPlanar) :
-    empty.khovanovEulerPolynomial h R = 1 := by
+theorem khovanovEulerChar_empty (h : (empty : OrientedPDCode 0).toPDCode.IsPlanar) :
+    empty.khovanovEulerChar h R = 1 := by
   classical
   have hn : empty.negativeCrossingCount = 0 := by
     have := empty.positiveCrossingCount_add_negativeCrossingCount
@@ -120,7 +164,7 @@ theorem khovanovEulerPolynomial_empty (h : (empty : OrientedPDCode 0).toPDCode.I
     have := empty.positiveCrossingCount_add_negativeCrossingCount
     omega
   ext j
-  rw [coeff_khovanovEulerPolynomial_eq_sum]
+  rw [coeff_khovanovEulerChar_eq_sum]
   simp only [hn, hp, Nat.cast_zero, neg_zero, Finset.Icc_self, Finset.sum_singleton,
     Int.negOnePow_zero, Units.val_one, one_mul]
   let K := empty.khovanovComplex h R j
@@ -131,7 +175,8 @@ theorem khovanovEulerPolynomial_empty (h : (empty : OrientedPDCode 0).toPDCode.I
         (by simp [hn])).eq_of_src _ _)
       ((K.isZero_of_isStrictlyLE empty.positiveCrossingCount 1
         (by simp [hp])).eq_of_tgt _ _)).homologyIso
-  rw [e.toLinearEquiv.finrank_eq, khovanovComplex_X, Functor.finrank_cubeComplex_X]
+  rw [khovanovHomology_def, e.toLinearEquiv.finrank_eq, khovanovComplex_X,
+    Functor.finrank_cubeComplex_X]
   rw [hn, hp]
   simp only [Nat.cast_zero, zero_add]
   rw [Finset.sum_filter, Fintype.sum_subsingleton _ (∅ : Finset (Fin 0))]
@@ -144,23 +189,34 @@ end Nontrivial
 
 variable [IsNoetherianRing R] [HasRankNullity.{u} R]
 
-/-- Euler–Poincaré for the normalized complex identifies its Euler polynomial with the
-native enhanced state sum. -/
-theorem khovanovEulerPolynomial_eq_enhancedStateSum :
-    D.khovanovEulerPolynomial hD R = D.enhancedStateSum := by
-  ext j
-  rw [coeff_khovanovEulerPolynomial, homologyEulerChar_khovanovComplex,
-    coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket D hD R]
-  congr 3
-  omega
+/-- **Euler–Poincaré for Khovanov homology**: over a Noetherian ring with the rank-nullity property,
+such as `ℤ` or a field, the homology Euler characteristic of the quantum component `j` of the
+normalized Khovanov complex is the coefficient of `qʲ` in the enhanced state sum, the signed count
+of enhanced states of quantum degree `j`. -/
+theorem homologyEulerChar_khovanovComplex (j : ℤ) :
+    (D.khovanovComplex hD R j).homologyEulerChar = D.enhancedStateSum.coeff j := by
+  rw [coeff_enhancedStateSum_eq_homologyEulerChar_khovanovBracket D hD R,
+    ← CochainComplex.eulerChar_eq_homologyEulerChar (D.toPDCode.khovanovBracket hD R _)
+      (fun _ ↦ inferInstance) 0 n,
+    ← eulerChar_khovanovComplex,
+    CochainComplex.eulerChar_eq_homologyEulerChar _
+      (fun _ ↦ by rw [khovanovComplex_X]; infer_instance)
+      (-D.negativeCrossingCount) D.positiveCrossingCount]
 
-/-- The graded Euler characteristic of normalized Khovanov cohomology recovers the native
-Jones polynomial after `T ↦ -q`, with the extra circle factor for a nonempty link. -/
-theorem khovanovEulerPolynomial_eq_mul_eval₂_jonesPolynomial
-    (h : 0 < D.toPDCode.componentCount) :
-    D.khovanovEulerPolynomial hD R =
+/-- **The graded Euler characteristic of Khovanov homology is the enhanced state sum**, over a
+Noetherian ring with the rank-nullity property, such as `ℤ` or a field. -/
+theorem khovanovEulerChar_eq_enhancedStateSum : D.khovanovEulerChar hD R = D.enhancedStateSum :=
+  AddMonoidAlgebra.coeff_injective <| Finsupp.ext fun j ↦ by
+    rw [coeff_khovanovEulerChar, homologyEulerChar_khovanovComplex]
+
+/-- **Khovanov's theorem**: the graded Euler characteristic of the Khovanov homology of a nonempty
+planar oriented code is `(q + q⁻¹)` times its Jones polynomial at `t ^ (1/2) = -q`, over a
+Noetherian ring with the rank-nullity property, such as `ℤ` or a field. The hypothesis
+`0 < componentCount` says that the diagram is nonempty; the empty diagram has graded Euler
+characteristic `1` (`TauCeti.OrientedPDCode.khovanovEulerChar_empty`). -/
+theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.componentCount) :
+    D.khovanovEulerChar hD R =
       (T 1 + T (-1)) * eval₂ (Int.castRingHom ℤ[T;T⁻¹]) (-genericUnit ℤ) D.jonesPolynomial := by
-  rw [khovanovEulerPolynomial_eq_enhancedStateSum]
-  exact D.enhancedStateSum_eq_mul_eval₂_jonesPolynomial h
+  rw [khovanovEulerChar_eq_enhancedStateSum, enhancedStateSum_eq_mul_eval₂_jonesPolynomial D h]
 
 end TauCeti.OrientedPDCode

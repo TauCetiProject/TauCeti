@@ -161,7 +161,7 @@ theorem representation_glCasimir_apply (m : M) :
   rw [map_sum, LinearMap.sum_apply]
   apply Finset.sum_congr rfl
   intro j _
-  rw [map_mul, Module.End.mul_apply,
+  rw [map_mul, mul_apply_eq_comp,
     TauCeti.UniversalEnvelopingAlgebra.representation_ι_apply,
     TauCeti.UniversalEnvelopingAlgebra.representation_ι_apply]
 
