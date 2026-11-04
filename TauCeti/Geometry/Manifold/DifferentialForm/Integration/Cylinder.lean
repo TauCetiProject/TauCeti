@@ -197,9 +197,9 @@ private theorem contMDiff_glue {n : ℕ∞} (h : ∀ t, u (0, t) = v (0, t))
   · refine (hcomp hu (-3) 1 z).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_fst continuous_const).mem_nhds hz] with w hw
     exact glue_eq_left h hw
-  · refine (hcomp hv 3 (-2) z).congr_of_eventuallyEq ?_
-    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds
-      (show (1 / 3 : ℝ) < z.1 by linarith)] with w hw
+  · have hz' : (1 / 3 : ℝ) < z.1 := by linarith
+    refine (hcomp hv 3 (-2) z).congr_of_eventuallyEq ?_
+    filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hz'] with w hw
     exact glue_eq_right h hw
 
 /-- The integral over the glued map is the integral over `v` minus the integral over `u`. -/

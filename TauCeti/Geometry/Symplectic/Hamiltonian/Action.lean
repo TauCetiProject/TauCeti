@@ -125,14 +125,21 @@ theorem contractibleAction_eq (hσ : VanishesOnSpheres σ.1) {x : M}
   simp only [contractibleAction, h, ↓reduceDIte]
   exact cylinderAction_eq_of_vanishesOnSpheres hσ h.choose_spec.choose_spec hu
 
+/-- The action of a loop with no smooth cap is `0`. -/
+@[simp]
+theorem contractibleAction_eq_zero_of_not_exists
+    (h : ¬∃ u : ℝ × ℝ → M, ∃ x : M, IsSmoothCylinder I γ (fun _ ↦ x) u) :
+    σ.contractibleAction H γ = 0 :=
+  dite_eq_right h
+
 /-- If `σ` vanishes on spheres, the action of the constant loop at `x` is `-∫₀¹ H(t, x) dt`. -/
+@[simp]
 theorem contractibleAction_const (hσ : VanishesOnSpheres σ.1) (x : M) :
     σ.contractibleAction H (fun _ ↦ x) = -∫ t in 0..1, H t x := by
-  have hc : IsSmoothCylinder I (fun _ ↦ x) (fun _ ↦ x) (fun _ : ℝ × ℝ ↦ x) :=
+  have hc : IsSmoothCylinder I (fun _ ↦ x) (fun _ ↦ x) ((fun _ : ℝ ↦ x) ∘ Prod.fst) :=
     ⟨contMDiff_const, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
-  rw [contractibleAction_eq hσ hc, cylinderAction_def,
-    show rectangleIntegral σ.1 (fun _ : ℝ × ℝ ↦ x) (0, 0) (1, 1) = 0 from
-      rectangleIntegral_comp_fst σ.1 (fun _ ↦ x) _ _, zero_sub]
+  rw [contractibleAction_eq hσ hc, cylinderAction_eq_of_isSmoothCylinder hc,
+    rectangleIntegral_comp_fst, zero_sub]
 
 open Classical in
 /-- The Hamiltonian action of a loop `γ` relative to the reference loop `γ₀`, measured against a
@@ -149,8 +156,15 @@ theorem referenceAction_eq (hσ : VanishesOnTori σ.1) (hu : IsSmoothCylinder I 
   simp only [referenceAction, h, ↓reduceDIte]
   exact cylinderAction_eq_of_vanishesOnTori hσ h.choose_spec hu
 
+/-- The action of a loop relative to `γ₀` is `0` when there is no smooth cylinder to `γ₀`. -/
+@[simp]
+theorem referenceAction_eq_zero_of_not_exists (h : ¬∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u) :
+    σ.referenceAction H γ₀ γ = 0 :=
+  dite_eq_right h
+
 /-- If `σ` vanishes on tori, a smooth reference loop `γ₀` with `γ₀ 1 = γ₀ 0` has action
 `-∫₀¹ H(t, γ₀(t)) dt` relative to itself. -/
+@[simp]
 theorem referenceAction_self (hσ : VanishesOnTori σ.1) (hγ₀ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ₀)
     (hper : γ₀ 1 = γ₀ 0) : σ.referenceAction H γ₀ γ₀ = -∫ t in 0..1, H t (γ₀ t) := by
   have hc : IsSmoothCylinder I γ₀ γ₀ (γ₀ ∘ Prod.snd) :=
