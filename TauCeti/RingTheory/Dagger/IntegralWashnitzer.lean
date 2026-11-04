@@ -37,6 +37,8 @@ isomorphisms `O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]` through which weak
 * `TauCeti.Dagger.intWashnitzerAlgebra σ R`: the subring `R°⟨X⟩†` of overconvergent series with
   coefficients of norm at most one.
 * `TauCeti.Dagger.intWashnitzerAlgebra.toWashnitzerAlgebra`: its inclusion into `R⟨X⟩†`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.restrictRingEquiv`: the restriction of a
+  Gauss-norm-preserving isomorphism `R⟨X⟩† ≃ R⟨Y⟩†` to an isomorphism `R°⟨X⟩† ≃ R°⟨Y⟩†`.
 * `TauCeti.Dagger.intWashnitzerAlgebra.ofMvPolynomial`: the inclusion `R°[X] → R°⟨X⟩†` of the
   polynomials, an `R°`-algebra map for the structure of `R°⟨X⟩†` given by the constant series.
 * `TauCeti.Dagger.intWashnitzerAlgebra.quotientSpanEquivMvPolynomial`: the reduction
@@ -57,6 +59,8 @@ isomorphisms `O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]` through which weak
   `Pⱼ` with integral coefficients and `deg Pⱼ ≤ c (j + 1)` for some `c`.
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem`: `K⟨X⟩† = K°⟨X⟩†[1/π]`, that
   is, every overconvergent series becomes integral after multiplication by a power of `π`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.mem_span_algebraMap_iff_norm_le`: over a field, a series in
+  `K°⟨X⟩†` is a multiple of the constant `a ∈ K°` iff its Gauss norm is at most `‖a‖`.
 * `TauCeti.Dagger.isUnit_intWashnitzerAlgebra_iff`: over a complete ultrametric normed field, `f`
   is a unit of `K°⟨X⟩†` iff its constant coefficient has norm one and all other coefficients have
   norm less than one.
@@ -186,6 +190,47 @@ theorem coe_toWashnitzerAlgebra (f : intWashnitzerAlgebra σ R) :
     (toWashnitzerAlgebra σ R f : MvPowerSeries σ R) = f :=
   (rfl)
 
+/-- The inclusion into `R⟨X⟩†` sends an integral overconvergent series to itself. -/
+@[simp]
+theorem toWashnitzerAlgebra_mk (f : washnitzerAlgebra σ R)
+    (hf : (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R) :
+    toWashnitzerAlgebra σ R ⟨f, hf⟩ = f :=
+  Subtype.ext (coe_toWashnitzerAlgebra _)
+
+/-- The inclusion `R°⟨X⟩† → R⟨X⟩†` is injective. -/
+theorem toWashnitzerAlgebra_injective : Function.Injective (toWashnitzerAlgebra σ R) :=
+  fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)
+
+/-- An element of `R°⟨X⟩†` has Gauss norm at most one in `R⟨X⟩†`. -/
+theorem norm_toWashnitzerAlgebra_le_one (f : intWashnitzerAlgebra σ R) :
+    ‖toWashnitzerAlgebra σ R f‖ ≤ 1 :=
+  mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.2)
+
+/-- A Gauss-norm-preserving ring isomorphism of Monsky–Washnitzer algebras restricts to their
+integral subrings. -/
+noncomputable def restrictRingEquiv {τ : Type*}
+    (e : washnitzerAlgebra σ R ≃+* washnitzerAlgebra τ R) (he : ∀ f, ‖e f‖ = ‖f‖) :
+    intWashnitzerAlgebra σ R ≃+* intWashnitzerAlgebra τ R where
+  toFun f := ⟨e (toWashnitzerAlgebra σ R f),
+    mem_intWashnitzerAlgebra_iff_norm_le_one.2
+      ((he _).trans_le (norm_toWashnitzerAlgebra_le_one f))⟩
+  invFun f := ⟨e.symm (toWashnitzerAlgebra τ R f),
+    mem_intWashnitzerAlgebra_iff_norm_le_one.2 <| by
+      rw [← he, e.apply_symm_apply]
+      exact norm_toWashnitzerAlgebra_le_one f⟩
+  left_inv f := Subtype.ext (by simp)
+  right_inv f := Subtype.ext (by simp)
+  map_mul' f g := Subtype.ext (by simp)
+  map_add' f g := Subtype.ext (by simp)
+
+/-- The restricted isomorphism acts as the given one on the underlying overconvergent series. -/
+@[simp]
+theorem toWashnitzerAlgebra_restrictRingEquiv {τ : Type*}
+    (e : washnitzerAlgebra σ R ≃+* washnitzerAlgebra τ R) (he : ∀ f, ‖e f‖ = ‖f‖)
+    (f : intWashnitzerAlgebra σ R) :
+    toWashnitzerAlgebra τ R (restrictRingEquiv e he f) = e (toWashnitzerAlgebra σ R f) :=
+  toWashnitzerAlgebra_mk _ _
+
 /-- `R°⟨X⟩†` is an `R°`-algebra through the constant series. -/
 noncomputable instance : Algebra (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) :=
   RingHom.toAlgebra <| ((C : R →+* MvPowerSeries σ R).comp
@@ -198,6 +243,24 @@ theorem coe_algebraMap (a : Subring.unitClosedBall R) :
     (algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a : MvPowerSeries σ R) =
       C (a : R) :=
   (rfl)
+
+/-- The inclusion into `R⟨X⟩†` sends the constant `a ∈ R°` to the constant `a`. -/
+@[simp]
+theorem toWashnitzerAlgebra_algebraMap (a : Subring.unitClosedBall R) :
+    toWashnitzerAlgebra σ R (algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a) =
+      algebraMap R (washnitzerAlgebra σ R) a :=
+  Subtype.ext (by simp [MvPowerSeries.algebraMap_apply])
+
+/-- A multiple of the constant `a ∈ R°` in `R°⟨X⟩†` has Gauss norm at most `‖a‖`. -/
+theorem norm_toWashnitzerAlgebra_le_of_mem_span {a : Subring.unitClosedBall R}
+    {f : intWashnitzerAlgebra σ R}
+    (hf : f ∈ Ideal.span {algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a}) :
+    ‖toWashnitzerAlgebra σ R f‖ ≤ ‖(a : R)‖ := by
+  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.1 hf
+  rw [map_mul, toWashnitzerAlgebra_algebraMap]
+  refine (norm_mul_le _ _).trans ?_
+  rw [washnitzerAlgebra.norm_algebraMap]
+  exact mul_le_of_le_one_left (norm_nonneg _) (norm_toWashnitzerAlgebra_le_one b)
 
 variable (σ R) in
 /-- The inclusion of the polynomials with coefficients in `R°` into `R°⟨X⟩†`. -/
@@ -371,6 +434,30 @@ theorem mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem {π : K} (hπ0 : π ≠ 0
       _ = 1 := inv_mul_cancel₀ (zero_lt_one.trans_le (le_max_right B 1)).ne'
   · have := mul_mem (C_mem_washnitzerAlgebra (π ^ k)⁻¹) (intWashnitzerAlgebra_le hk)
     simpa [← mul_assoc, ← map_mul, ← map_pow, hπ0] using this
+
+namespace intWashnitzerAlgebra
+
+/-- **Divisibility by constants.** Over a field, a series in `K°⟨X⟩†` is a multiple of the
+constant `a ∈ K°` iff its Gauss norm is at most `‖a‖`. -/
+theorem mem_span_algebraMap_iff_norm_le {a : Subring.unitClosedBall K}
+    {f : intWashnitzerAlgebra σ K} :
+    f ∈ Ideal.span {algebraMap (Subring.unitClosedBall K) (intWashnitzerAlgebra σ K) a} ↔
+      ‖toWashnitzerAlgebra σ K f‖ ≤ ‖(a : K)‖ := by
+  refine ⟨norm_toWashnitzerAlgebra_le_of_mem_span, fun hf ↦ ?_⟩
+  rcases eq_or_ne (a : K) 0 with ha | ha
+  · rw [ha, norm_zero, norm_le_zero_iff, ← map_zero (toWashnitzerAlgebra σ K)] at hf
+    rw [toWashnitzerAlgebra_injective hf]
+    exact zero_mem _
+  refine Ideal.mem_span_singleton'.2
+    ⟨⟨((algebraMap K (washnitzerAlgebra σ K) (a : K)⁻¹ * toWashnitzerAlgebra σ K f :
+      washnitzerAlgebra σ K) : MvPowerSeries σ K), mem_intWashnitzerAlgebra_iff_norm_le_one.2 ?_⟩,
+      toWashnitzerAlgebra_injective ?_⟩
+  · rw [norm_mul, washnitzerAlgebra.norm_algebraMap, norm_inv]
+    exact inv_mul_le_one_of_le₀ hf (norm_nonneg _)
+  · refine Subtype.ext ?_
+    simp [MvPowerSeries.algebraMap_apply, mul_right_comm _ (f : MvPowerSeries σ K), ← map_mul, ha]
+
+end intWashnitzerAlgebra
 
 variable [CompleteSpace K]
 

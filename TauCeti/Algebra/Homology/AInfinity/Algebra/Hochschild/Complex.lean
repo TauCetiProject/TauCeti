@@ -56,6 +56,10 @@ theorem mem_cochains {p : ℤ} {F : ReducedTensorWords R A →ₗ[R] A} :
       (𝒜.grading.shift 1).piece p := by
   rw [cochains, LinearMap.mem_homogeneousSubmodule]
 
+/-- The suspended Taylor map of the `A∞` algebra is a cochain of degree one. -/
+theorem taylor_mem_cochains : 𝒜.taylor ∈ cochains 𝒜 1 :=
+  (mem_cochains 𝒜).2 (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree)
+
 /-- The differential on homogeneous cochains. The output degree is supplied by an equality,
 so consumers can normalize degree arithmetic without transporting cochains. -/
 def d (p q : ℤ) (h : p + 1 = q) : cochains 𝒜 p →ₗ[R] cochains 𝒜 q where

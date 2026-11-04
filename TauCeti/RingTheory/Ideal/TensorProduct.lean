@@ -39,6 +39,10 @@ which is flat over `R`, it follows that `I S ⊗[S] M → M` is injective, that 
 `I`, `I S • (S ⊗[R] I) = S ⊗[R] I` (`Ideal.smul_top_baseChange_eq_top`), and it follows that
 `S ⊗[R] (I ⊗[R] I) ≅ I S ⊗[S] I S` (`Ideal.baseChangeTensorSelfEquiv`), which is how basic
 setups of almost mathematics base change (Gabber–Ramero, *Almost ring theory*, Remark 2.1.4(ii)).
+
+For an ideal `J` of `S` with `R → S ⧸ J` surjective, every element of `S ⊗[R] M` is `1 ⊗ m` modulo
+`J (S ⊗[R] M)` (`TensorProduct.exists_sub_one_tmul_mem_smul_top`). For an ideal `J` of `R`,
+`m ∈ J M` gives `1 ⊗ m ∈ (J S) (S ⊗[R] M)` (`TensorProduct.one_tmul_mem_map_smul_top`).
 -/
 
 public section
@@ -318,3 +322,41 @@ theorem baseChangeTensorSelfEquiv_tmul (hI : IsIdempotentElem I) (s : S) (a b : 
   simp [baseChangeTensorSelfEquiv, TensorProduct.smul_tmul']
 
 end Ideal
+
+namespace TensorProduct
+
+variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup M] [Module R M]
+
+/-- If `R → S ⧸ J` is surjective, then every element of `S ⊗[R] M` is of the form `1 ⊗ m` modulo
+`J (S ⊗[R] M)`. -/
+theorem exists_sub_one_tmul_mem_smul_top {J : Ideal S}
+    (hJ : Function.Surjective ((Ideal.Quotient.mk J).comp (algebraMap R S))) (x : S ⊗[R] M) :
+    ∃ m : M, x - 1 ⊗ₜ m ∈ (J • ⊤ : Submodule S (S ⊗[R] M)) := by
+  induction x with
+  | tmul b m =>
+    obtain ⟨a, ha⟩ := hJ (Ideal.Quotient.mk J b)
+    rw [RingHom.comp_apply, Ideal.Quotient.eq] at ha
+    refine ⟨a • m, ?_⟩
+    have : b ⊗ₜ[R] m - 1 ⊗ₜ (a • m) = (b - algebraMap R S a) • ((1 : S) ⊗ₜ[R] m) := by
+      rw [tmul_smul, ← algebraMap_smul S a]
+      simp only [smul_tmul', smul_eq_mul, mul_one, sub_tmul]
+    rw [this]
+    exact Submodule.smul_mem_smul (sub_mem_comm_iff.mp ha) Submodule.mem_top
+  | add x y hx hy =>
+    obtain ⟨m, hm⟩ := hx
+    obtain ⟨m', hm'⟩ := hy
+    refine ⟨m + m', ?_⟩
+    rw [tmul_add]
+    convert add_mem hm hm' using 1
+    abel
+
+/-- If `m ∈ J M` for an ideal `J` of `R`, then `1 ⊗ m ∈ (J S) (S ⊗[R] M)`. -/
+theorem one_tmul_mem_map_smul_top {J : Ideal R} {m : M} (hm : m ∈ (J • ⊤ : Submodule R M)) :
+    (1 : S) ⊗ₜ[R] m ∈ (J.map (algebraMap R S) • ⊤ : Submodule S (S ⊗[R] M)) := by
+  refine Submodule.smul_induction_on hm (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)
+  · rw [tmul_smul, ← algebraMap_smul S a]
+    exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ ha) Submodule.mem_top
+  · rw [tmul_add]
+    exact add_mem hx hy
+
+end TensorProduct

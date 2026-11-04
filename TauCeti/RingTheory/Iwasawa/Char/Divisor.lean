@@ -55,6 +55,8 @@ on the pseudo-null modules.
 * `TauCeti.Iwasawa.charDivisor_eq_zero_iff`: `div_A(M) = 0` iff `M` is pseudo-null.
 * `TauCeti.Iwasawa.charDivisor_quotient_of_height_eq_one`: for a prime `𝔭` of height one,
   `div_A(A ⧸ 𝔭) = [𝔭]`.
+* `LinearEquiv.charDivisor_apply_comap`: along a ring isomorphism `σ : A → B`, a `σ`-semilinear
+  equivalence `N ≃ M` gives `div_A(N)(σ⁻¹ 𝔮) = div_B(M)(𝔮)` at every prime `𝔮` of `B`.
 
 The examples at the end of the file are over `Λ = ℤ_p⟦T⟧`: the nonzero module `Λ ⧸ (p, T) = 𝔽_p`
 has characteristic divisor zero, while that of `Λ ⧸ (p)` is positive at the height-one prime `(p)`.
@@ -233,6 +235,23 @@ theorem charDivisor_quotient_of_height_eq_one {𝔭 : Ideal A} [𝔭.IsPrime] (h
       exact h𝔮 (PrimeSpectrum.ext (𝔭.eq_of_le_of_height_le hsupp (hht.trans h.symm).le).symm)
   exact charDivisor_eq_of_localLength_eq hloc
 
+/-- If the local lengths of `M` and `M'` correspond along a bijection of the prime spectra, then
+so do their characteristic divisors. -/
+private theorem charDivisor_apply_eq_of_localLength_eq {A' M' : Type*} [CommRing A']
+    [AddCommGroup M'] [Module A' M'] (E : PrimeSpectrum A' ≃ PrimeSpectrum A)
+    (h : ∀ 𝔮, localLength A M (E 𝔮) = localLength A' M' 𝔮) (𝔮 : PrimeSpectrum A') :
+    charDivisor A M (E 𝔮) = charDivisor A' M' 𝔮 := by
+  have hfin : (Function.support (localLength A M)).Finite ↔
+      (Function.support (localLength A' M')).Finite := by
+    have hsupp : Function.support (localLength A M) =
+        E '' Function.support (localLength A' M') := by
+      ext 𝔭
+      obtain ⟨𝔮, rfl⟩ := E.surjective 𝔭
+      simp [h]
+    rw [hsupp, Set.finite_image_iff E.injective.injOn]
+  unfold charDivisor
+  split_ifs <;> simp_all [Finsupp.ofSupportFinite_coe]
+
 end TauCeti.Iwasawa
 
 /-- The characteristic divisor is invariant under linear equivalence. -/
@@ -240,6 +259,28 @@ theorem LinearEquiv.charDivisor_eq {A M N : Type*} [CommRing A] [AddCommGroup M]
     [AddCommGroup N] [Module A N] (e : M ≃ₗ[A] N) :
     TauCeti.Iwasawa.charDivisor A M = TauCeti.Iwasawa.charDivisor A N :=
   (TauCeti.Iwasawa.IsPseudoIsomorphism.of_bijective e.bijective).charDivisor_eq
+
+/-- **Transport of the characteristic divisor along a ring isomorphism.** Let `σ : A → B` be a ring
+isomorphism and `e : N ≃ M` a `σ`-semilinear equivalence from an `A`-module to a `B`-module. Then
+the characteristic divisor of `N` at the prime `σ⁻¹ 𝔮` is that of `M` at `𝔮`: the prime `σ⁻¹ 𝔮`
+has the same height as `𝔮`, and the localizations `N_{σ⁻¹ 𝔮}` and `M_𝔮` have the same length. -/
+theorem LinearEquiv.charDivisor_apply_comap {A B N M : Type*} [CommRing A] [CommRing B]
+    [AddCommGroup N] [Module A N] [AddCommGroup M] [Module B M] {σ : A →+* B} {σ' : B →+* A}
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : N ≃ₛₗ[σ] M) (𝔮 : PrimeSpectrum B) :
+    TauCeti.Iwasawa.charDivisor A N (PrimeSpectrum.comap σ 𝔮) =
+      TauCeti.Iwasawa.charDivisor B M 𝔮 := by
+  let σe := RingHomInvPair.toRingEquiv σ σ'
+  let E := (PrimeSpectrum.comapEquiv σe).symm.toEquiv
+  have hE (𝔮 : PrimeSpectrum B) : E 𝔮 = PrimeSpectrum.comap σ 𝔮 := by
+    ext x
+    simp [E, σe, PrimeSpectrum.comapEquiv_apply]
+  rw [← hE]
+  refine TauCeti.Iwasawa.charDivisor_apply_eq_of_localLength_eq E (fun 𝔮 ↦ ?_) 𝔮
+  have hht : (𝔮.asIdeal.comap σ).height = 𝔮.asIdeal.height := σe.height_comap _
+  simp only [TauCeti.Iwasawa.localLength, hE, PrimeSpectrum.comap_asIdeal, hht]
+  split_ifs
+  · exact congrArg ENat.toNat (e.length_localizedModule_comap 𝔮.asIdeal)
+  · rfl
 
 namespace TauCeti.Iwasawa
 

@@ -24,11 +24,14 @@ The file also records the standard way of certifying a rational matrix as positi
 it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One general fact about
 `Matrix.PosDef` over any ring is recorded alongside, since Mathlib does not state it: a matrix on
 an empty index type is positive definite, which is what the rank-zero members of the classical
-Cartan families need.
+Cartan families need. So is the `1 × 1` criterion: such a matrix over a nontrivial star-ordered
+ring without zero divisors is positive definite exactly when its single entry is positive.
 
 ## Main results
 
 * `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
+* `Matrix.posDef_fin_one_iff`: a `1 × 1` matrix is positive definite exactly when its single
+  entry is positive.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
@@ -74,6 +77,20 @@ theorem _root_.Matrix.PosDef.of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [S
     [IsEmpty n] (A : _root_.Matrix n n R) : A.PosDef :=
   ⟨_root_.Matrix.ext fun i _ ↦ isEmptyElim i,
     fun _ hx ↦ (hx (Finsupp.ext fun i ↦ isEmptyElim i)).elim⟩
+
+/-- A `1 × 1` matrix over a nontrivial star-ordered ring without zero divisors, such as `ℝ` or
+`ℂ`, is positive definite exactly when its single entry is positive. -/
+@[simp]
+theorem _root_.Matrix.posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [NoZeroDivisors R] [Nontrivial R] (M : _root_.Matrix (Fin 1) (Fin 1) R) :
+    M.PosDef ↔ 0 < M 0 0 := by
+  have hdiag : M = _root_.Matrix.diagonal ![M 0 0] := by
+    ext i j
+    fin_cases i
+    fin_cases j
+    simp
+  rw [hdiag, _root_.Matrix.posDef_diagonal_iff]
+  simp
 
 /-- The finite case of `TauCeti.Matrix.posDef_map_intCast`, where positive definiteness can be
 tested against ordinary vectors. -/

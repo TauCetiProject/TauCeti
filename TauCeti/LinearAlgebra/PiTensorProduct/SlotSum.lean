@@ -54,8 +54,10 @@ satisfies `D H + H D = 1 - e ⊗ ⋯ ⊗ e` (`TauCeti.PiTensorProduct.slotSum_co
 cross terms appear twice and cancel, and the diagonal terms telescope. This is the sign-free,
 characteristic-two form of the tensor trick, whose Koszul-signed version on words of every length
 is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The homotopy depends on
-the ordering, but it need not be equivariant for anything. Dependent factors arise when tensor
-induction is regrouped by double cosets: each orbit contributes its own tensor-induced resolution.
+the ordering, but it need not be equivariant for anything. Like the slot sum, it is natural in
+factorwise maps intertwining the data `e` and `h` (`TauCeti.PiTensorProduct.slotHomotopy_comp_map`).
+Dependent factors arise when tensor induction is regrouped by double cosets: each orbit contributes
+its own tensor-induced resolution.
 
 Finally, gradings `ℳ i` of the factors `M i` induce the total-degree grading of `⨂[R] i, M i`
 (`TauCeti.PiTensorProduct.totalDegreePiece`), spanned by pure tensors of homogeneous factors whose
@@ -321,6 +323,32 @@ theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
     ← σ.symm.sum_comp p]
   exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
+/-- Reindexing a tensor product detects as well as preserves total degree. -/
+@[simp]
+theorem reindex_mem_totalDegreePiece_iff [Fintype κ]
+    (ℳ : ∀ i, A → Submodule R (M i)) (σ : ι ≃ κ) (n : A) (z : ⨂[R] i, M i) :
+    PiTensorProduct.reindex R M σ z ∈ totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
+      z ∈ totalDegreePiece ι ℳ n := by
+  constructor
+  · intro hz
+    have h : totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ≤
+        (totalDegreePiece ι ℳ n).comap (PiTensorProduct.reindex R M σ).symm.toLinearMap := by
+      refine totalDegreePiece_le_iff.2 ?_
+      intro p m hm hp
+      obtain ⟨m, rfl⟩ := (Equiv.piCongrLeft' M σ).surjective m
+      rw [funext (Equiv.piCongrLeft'_apply M σ m)] at hm ⊢
+      simp only [Submodule.mem_comap, LinearEquiv.coe_coe,
+        PiTensorProduct.reindex_symm_tprod]
+      rw [← hp, ← σ.sum_comp p]
+      apply tprod_mem_totalDegreePiece
+      intro i
+      obtain ⟨j, rfl⟩ := σ.symm.surjective i
+      simpa only [σ.apply_symm_apply] using hm j
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply] using h hz
+  · intro hz
+    simpa only [LinearEquiv.coe_coe, add_zero] using (isHomogeneous_reindex σ).map_mem hz
+
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
 theorem isHomogeneous_map_update [DecidableEq ι]
@@ -389,7 +417,9 @@ end Grading
 section SlotHomotopy
 
 variable [Fintype ι] [LinearOrder ι]
-  {M : ι → Type uM} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  {M : ι → Type uM} {N : ι → Type uN}
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
 
 variable (ι) in
 /-- The **slot homotopy** of a family of homotopies `h` relative to endomorphisms `e`, for a linear
@@ -414,6 +444,24 @@ theorem slotHomotopy_tprod (e h : ∀ i, Module.End R (M i)) (m : ∀ i, M i) :
   · simp
   · simp only [update_of_ne hj]
     split_ifs <;> rfl
+
+/-- **Naturality of the slot homotopy**: a family of factorwise maps intertwining `e'` with `e`
+and `h'` with `h` intertwines their slot homotopies. -/
+theorem slotHomotopy_comp_map {e h : ∀ i, Module.End R (M i)} {e' h' : ∀ i, Module.End R (N i)}
+    (g : ∀ i, N i →ₗ[R] M i) (he : ∀ i, e i ∘ₗ g i = g i ∘ₗ e' i)
+    (hh : ∀ i, h i ∘ₗ g i = g i ∘ₗ h' i) :
+    slotHomotopy ι e h ∘ₗ PiTensorProduct.map g =
+      PiTensorProduct.map g ∘ₗ slotHomotopy ι e' h' := by
+  ext m
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, PiTensorProduct.map_tprod,
+    slotHomotopy_tprod, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ (funext fun j ↦ ?_)
+  rcases eq_or_ne j i with rfl | hj
+  · simpa using LinearMap.congr_fun (hh j) (m j)
+  · simp only [update_of_ne hj]
+    split_ifs
+    · exact LinearMap.congr_fun (he j) (m j)
+    · rfl
 
 variable [AddCommMonoid A] {ℳ : ∀ i, A → Submodule R (M i)}
 

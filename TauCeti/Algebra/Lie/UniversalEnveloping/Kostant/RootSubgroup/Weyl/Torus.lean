@@ -250,7 +250,7 @@ theorem kostantWeylPoints_conj_kostantTorusPoints
       ((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ]
         ((_root_.TauCeti.UniversalEnvelopingAlgebra.kostantWeylRestrict
           e h ρ M hM hi hj).symm (b x)) :=
-    kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt hrefl s 1
+    kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt hrefl s 1
   have h3 : (kostantWeylPoints e h ρ M hM hi hj A).toLinearMap
       (((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ]
         ((_root_.TauCeti.UniversalEnvelopingAlgebra.kostantWeylRestrict

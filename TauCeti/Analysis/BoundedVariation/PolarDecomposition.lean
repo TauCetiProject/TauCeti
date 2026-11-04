@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
+import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
@@ -58,6 +59,12 @@ against this representation gives `|Du|(U) ≤ ∫_U ‖σ_u‖ d|Du|`, hence `�
 * `TauCeti.integrable_inner_polarDensity` and `TauCeti.dist_integral_inner_polarDensity_le`:
   continuous compactly supported fields pair integrably with `Du`, with uniform error controlled
   by the variation measure of a common compact support.
+* `TauCeti.integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity`: the representation
+  extends to every `C¹` vector field `φ` with compact support in `Ω`, with `div φ = tr (Dφ)`.
+  Mollification gives test fields converging to `φ` uniformly together with their derivatives
+  (`ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le`), and both sides are continuous for
+  this convergence (`TauCeti.dist_integral_trace_fderiv_mul_le` and
+  `TauCeti.dist_integral_inner_polarDensity_le`).
 * `TauCeti.polarDensity_congr_ae` and `TauCeti.polarDensity_const_sub`: `σ_u` only depends on `u`
   almost everywhere on `Ω`, and `σ_{c - u} = -σ_u` against an additive Haar measure.
 
@@ -438,5 +445,54 @@ theorem dist_integral_inner_polarDensity_le
   filter_upwards [ae_restrict_of_ae (ae_norm_polarDensity_eq_one hu hfin)] with x hx
   exact (norm_inner_le_norm (f x - g x) (polarDensity μ Ω u x)).trans
     (by simpa [hx, dist_eq_norm] using hε x)
+
+open Metric in
+/-- **Integration by parts against `C¹` vector fields.** For `u` locally integrable on `Ω` with
+locally finite variation, the polar decomposition `Du = σ_u |Du|` represents the distributional
+derivative against every `C¹` vector field `φ` with compact support in `Ω`:
+`∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`, where `div φ = tr (Dφ)`. -/
+theorem integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity
+    (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {φ : E → E} (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) (hs : tsupport φ ⊆ Ω) :
+    ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * u x ∂μ =
+      -∫ x, ⟪φ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hc.isCompact.exists_cthickening_subset_open Ω.isOpen hs
+  set K := cthickening δ (tsupport φ)
+  have hK : IsCompact K := hc.isCompact.cthickening
+  have hφK : tsupport φ ⊆ K := self_subset_cthickening _
+  have huK : IntegrableOn u K μ := hu.integrableOn_compact_subset hδΩ hK
+  set C := ‖traceCLM ℝ E‖ * ∫ x in K, ‖u x‖ ∂μ +
+    (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K)
+  have hC : 0 ≤ C := by positivity
+  -- Compare both sides with those of a test field `ψ` that is `C¹`-close to `φ`.
+  refine dist_le_zero.1 (le_of_forall_pos_le_add fun ε hε => ?_)
+  set η := ε / (C + 1)
+  have hη : 0 < η := by positivity
+  obtain ⟨ψ, hψK, hψ⟩ :=
+    hφ.exists_testFunction_dist_le_and_dist_fderiv_le hc.isCompact subset_rfl hδ hδΩ hη
+  have hψ1 : ContDiff ℝ 1 (ψ : E → E) := ψ.contDiff.of_le (by simp)
+  have hL := dist_integral_trace_fderiv_mul_le hK huK hφ hψ1 hφK hψK fun x => by
+    rw [dist_comm]
+    exact (hψ x).2
+  have hR := dist_integral_inner_polarDensity_le hu hfin hψ1.continuous hφ.continuous hK hδΩ
+    hψK hφK fun x => (hψ x).1
+  have hEq := integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin ψ
+  simp only [divergenceCLM_apply] at hEq
+  calc _ ≤ dist (∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * u x ∂μ)
+          (∫ x, LinearMap.trace ℝ E (fderiv ℝ ψ x : E →ₗ[ℝ] E) * u x ∂μ) +
+        dist (∫ x, ⟪ψ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u)
+          (∫ x, ⟪φ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u) := by
+        refine (dist_triangle _
+          (∫ x, LinearMap.trace ℝ E (fderiv ℝ ψ x : E →ₗ[ℝ] E) * u x ∂μ) _).trans_eq ?_
+        rw [hEq, dist_neg_neg]
+    _ ≤ η * C := by
+        rw [mul_add, ← mul_assoc, mul_comm η]
+        exact add_le_add hL hR
+    _ ≤ 0 + ε := by
+        rw [zero_add, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+        nlinarith
+
 
 end TauCeti

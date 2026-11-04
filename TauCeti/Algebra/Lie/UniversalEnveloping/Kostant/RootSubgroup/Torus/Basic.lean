@@ -261,16 +261,30 @@ theorem repr_kostantCartanOperator
   b.repr_apply_of_apply_basis
     (fun x => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM (hwt x) j) m y
 
-include e hM in
 /-- A weight basis separates weights: a weight vector of weight `μ` has vanishing coordinates at
-every basis vector of a different weight. -/
+every basis vector of a different weight. No Kostant-stability assumption is needed. -/
 theorem repr_eq_zero_of_isCartanWeightVector
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
     {μ : κ → ℤ} {m : M} (hm : IsCartanWeightVector h ρ μ (m : V)) {y : η} (hy : wt y ≠ μ) :
     b.repr m y = 0 := by
-  exact b.repr_eq_zero_of_weight_ne
-    (fun x j => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM (hwt x) j)
-    (fun j => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM hm j) hy
+  -- The weight basis itself restricts the Cartan operators to the lattice.
+  let f (j : κ) : Module.End ℤ M := b.constr ℤ fun x => wt x j • b x
+  have hf (j : κ) (v : M) : ((f j v : M) : V) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) (v : V) := by
+    have heq : M.subtype.toIntLinearMap.comp (f j) =
+        ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))).restrictScalars ℤ).comp
+          M.subtype.toIntLinearMap := by
+      apply b.ext
+      intro x
+      simp only [LinearMap.comp_apply, f, Module.Basis.constr_basis,
+        AddMonoidHom.coe_toIntLinearMap, AddSubgroup.subtype_apply, AddSubgroup.coe_zsmul,
+        LinearMap.restrictScalars_apply, (isCartanWeightVector_iff h ρ).1 (hwt x) j,
+        Int.cast_smul_eq_zsmul]
+    exact LinearMap.congr_fun heq v
+  exact b.repr_eq_zero_of_weight_ne (f := f)
+    (fun x j => b.constr_basis ℤ _ x)
+    (fun j => Subtype.ext (by rw [hf, (isCartanWeightVector_iff h ρ).1 hm j,
+      AddSubgroup.coe_zsmul, Int.cast_smul_eq_zsmul])) hy
 
 /-! ## Root operators on a stable subgroup -/
 
@@ -293,6 +307,14 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
     ((kostantRootOperator e h ρ M hM i v : M) : V) =
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
+
+/-- The public unfolding equation of the integral root operator: it is the first restricted
+divided power of `ρ(eᵢ)`, the linear coefficient of the divided-power exponential. -/
+theorem kostantRootOperator_def :
+    kostantRootOperator e h ρ M hM i =
+      integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv) := by
+  rw [kostantRootOperator]
 
 include e hM in
 /-- The integral root operator raises weights by the root: it is the first divided power of a
@@ -582,7 +604,6 @@ variable [Fintype κ]
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
-include e hM in
 /-- A torus point acts on a weight vector by the value of the corresponding character. -/
 theorem kostantTorusPoints_tmul_of_isCartanWeightVector
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
@@ -593,7 +614,7 @@ theorem kostantTorusPoints_tmul_of_isCartanWeightVector
     basisWeightTorus_apply_of_repr_eq_zero (b.baseChange A) wt s (μ := μ) (m := a ⊗ₜ[ℤ] m)
       (fun x hx => by
         rw [Module.Basis.baseChange_repr_tmul,
-          repr_eq_zero_of_isCartanWeightVector e h ρ M hM b wt hwt hm hx]
+          repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt hm hx]
         simp [Algebra.smul_def]),
     smul_tmul', smul_eq_mul]
 
@@ -624,7 +645,7 @@ theorem kostantTorusPoints_mul_kostantRootSubgroupPoints
           (b x) : M) : V) := by
     rw [coe_integralDividedPower_apply]
     exact IsCartanWeightVector.integralDividedPower e hα (hwt x) n
-  rw [kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt hw, hg]
+  rw [kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt hw, hg]
   have hchar : (torusCharacter s (wt x + n • α) : A) =
       (torusCharacter s (wt x) : A) * (torusCharacter s α : A) ^ n := by
     rw [torusCharacter_add, torusCharacter_nsmul]
@@ -649,7 +670,7 @@ private theorem kostantTorusPoints_baseChange_kostantRootOperator_tmul_basis
       ((torusCharacter s α : A) * ((torusCharacter s (wt x) : A) * a)) ⊗ₜ[ℤ]
         kostantRootOperator e h ρ M hM i (b x) := by
   rw [LinearMap.baseChange_tmul,
-    kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt
+    kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt
       (isCartanWeightVector_coe_kostantRootOperator e h ρ M hM i hα (hwt x)) s a,
     torusCharacter_add, Units.val_mul, mul_assoc,
     mul_left_comm (torusCharacter s (wt x) : A)]

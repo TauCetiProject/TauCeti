@@ -181,6 +181,11 @@ theorem mem_seifertLoops {p : ℕ × ℕ} : p ∈ w.seifertLoops ↔ w.IsSeifert
     and_iff_right_iff_imp]
   exact fun h ↦ ⟨h.1.trans h.2.1, h.2.1⟩
 
+/-- The empty braid word has no basis loops, regardless of its strand count. -/
+instance isEmpty_seifertLoops_nil : IsEmpty (seifertLoops (n := n) []) := by
+  refine ⟨fun x ↦ ?_⟩
+  simpa [seifertLoops] using x.2
+
 /-- A loop of `w ++ [y]` not running through the appended letter is a loop of `w`. -/
 theorem isSeifertLoop_append_singleton_iff (y : Fin (n - 1) × ℤˣ) {p : ℕ × ℕ}
     (hp : p.2 < w.length) : (w ++ [y]).IsSeifertLoop p ↔ w.IsSeifertLoop p := by
