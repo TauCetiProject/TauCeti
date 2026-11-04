@@ -9,8 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The integrated curvature and the energy identity of the pair-of-pants perturbation
@@ -87,8 +85,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture �
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`. -/
 private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) (x : V)
-    (v : ℂ) :
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
+    (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z := by
   exact ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).differentiableAt
@@ -98,12 +96,12 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
 /-- The components of the perturbation are differentiable in the target point, at points
 of `S`. -/
 private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) (x : V)
-    (v : ℂ) :
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
+    (x : V) (v : ℂ) :
     DifferentiableAt ℝ (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)
       x := by
-  have hK := (contDiffAt_pairOfPantsPerturbation_prod hH hHs (mem_puncturedPlane_iff.1 hz)
-    x).differentiableAt one_ne_zero
+  have hK := (contDiffAt_pairOfPantsPerturbation_prod hH hHs
+    (mem_thricePuncturedSphereReal_iff.1 hz) x).differentiableAt one_ne_zero
   exact (hK.comp x ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
     (differentiableAt_const v)
 
@@ -136,7 +134,7 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
 coordinate of every end is less than `1`, the perturbation vanishes nearby, and so does its
 curvature. -/
 private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero (ω : SymplecticForm V)
-    {z : ℝ × ℝ} (hz : z ∈ puncturedPlane)
+    {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (h : ∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < 1)
     (x : V) :
     ω.hamiltonianCurvature
@@ -149,7 +147,7 @@ private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero (ω : Sympl
     have hc : ContinuousAt
         (fun z' ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re) z :=
       continuousAt_const.mul
-        (((q.contDiffAt_re_endCoord (ne_endCenter (mem_puncturedPlane_iff.1 hz) q)
+        (((q.contDiffAt_re_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
           (n := 0)).continuousAt).comp
           Complex.equivRealProdCLM.symm.continuous.continuousAt)
     exact hc.eventually (gt_mem_nhds (h q))
@@ -196,7 +194,7 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         ENNReal.ofReal (deriv smoothTransition (q.endSign * z.1 - 1)) * ENNReal.ofReal (B q) := by
         refine setLIntegral_mono' hmeas fun z hz ↦ ?_
         have hz' := endSign_mul_pos_of_mem_endStrip hz
-        have hS := endChart_mem_puncturedPlane hz'
+        have hS := endChart_mem_thricePuncturedSphereReal hz'
         -- The curvature is a two-form, and in the coordinates of the end it is `±β' H_q`.
         have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := z)
           (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -256,7 +254,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sy
     by_cases h₁ : Complex.equivRealProdCLM.symm z = 1
     · exact Or.inr (Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
         (congrArg _ h₁)))
-    have hS : z ∈ puncturedPlane := mem_puncturedPlane_iff.2 ⟨h₀, h₁⟩
+    have hS : z ∈ thricePuncturedSphereReal := mem_thricePuncturedSphereReal_iff.2 ⟨h₀, h₁⟩
     by_cases hq : ∃ q : Puncture,
         1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
     · obtain ⟨q, hq⟩ := hq
@@ -288,8 +286,8 @@ private theorem image_endPiece_subset (q : Puncture) {R : ℝ} (hR : 1 ≤ R) :
   rintro _ ⟨z, hz, rfl⟩
   have hz' : (1 ≤ q.endSign * z.1 ∧ q.endSign * z.1 ≤ R) ∧ z.2 ∈ Ico (-1 / 2 : ℝ) (1 / 2) := hz
   have hz₀ : 0 < q.endSign * z.1 := by linarith [hz'.1.1]
-  refine mem_truncation.2 ⟨(mem_puncturedPlane_iff.1 (endChart_mem_puncturedPlane hz₀)).1,
-    (mem_puncturedPlane_iff.1 (endChart_mem_puncturedPlane hz₀)).2, fun r => ?_⟩
+  have hS := mem_thricePuncturedSphereReal_iff.1 (endChart_mem_thricePuncturedSphereReal hz₀)
+  refine mem_truncation.2 ⟨hS.1, hS.2, fun r => ?_⟩
   by_cases hr : q = r
   · subst hr
     rw [re_endCoord_endChart]
@@ -330,7 +328,7 @@ private theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (v : ℂ) :
     ContDiffOn ℝ 1
       (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      (puncturedPlane ×ˢ univ) := by
+      (thricePuncturedSphereReal ×ˢ univ) := by
   rintro ⟨z, x⟩ ⟨hz, -⟩
   exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
 
@@ -340,7 +338,7 @@ symplectic area, plus the integrals of the Hamiltonian term `β(±s - 1) H_q(t)`
 boundary circle minus the incoming one, minus the integrated curvature. -/
 private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u puncturedPlane)
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {q : Puncture} {a₁ b₁ : ℝ} (hab : a₁ ≤ b₁) (ha : 1 / 2 < q.endSign * a₁)
     (hb : 1 / 2 < q.endSign * b₁) :
     ∫ z in endChart q '' (Icc a₁ b₁ ×ˢ Ico (-1 / 2) (1 / 2)), ω.floerEnergyDensity
@@ -373,7 +371,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
   have hpos {z : ℝ × ℝ} (hz : z ∈ U) : 0 < q.endSign * z.1 := by
     have h : 1 / 2 < q.endSign * z.1 := hz
     linarith
-  have hS {z : ℝ × ℝ} (hz : z ∈ U) := endChart_mem_puncturedPlane (hpos hz)
+  have hS {z : ℝ × ℝ} (hz : z ∈ U) := endChart_mem_thricePuncturedSphereReal (hpos hz)
   have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
   have hinj : InjOn (endChart q) s :=
     (injOn_endChart q).mono fun z hz => mem_endStrip_iff.2 ⟨hsU hz, hz.2⟩
@@ -381,7 +379,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
     (hasFDerivAt_endChart q w).differentiableAt
   have hud {w : ℝ × ℝ} (hw : w ∈ U) : DifferentiableAt ℝ u (endChart q w) :=
     (hu.differentiableOn one_ne_zero _ (hS hw)).differentiableAt
-      (isOpen_puncturedPlane.mem_nhds (hS hw))
+      (isOpen_thricePuncturedSphereReal.mem_nhds (hS hw))
   -- Change variables to the cylinder coordinates of the end, in each of the three integrals.
   have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
     hmeas hinj (fun w _ => hφ w) (fun w _ => det_fderiv_endChart_nonneg q w)
@@ -449,7 +447,7 @@ Floer energy is the symplectic area, plus `±β(R - 1)` times the integral of `H
 boundary circle `±s = R`, minus the integrated curvature. -/
 private theorem integral_floerEnergyDensity_image_endPiece (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u puncturedPlane)
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {R : ℝ} (hR : 1 ≤ R) (q : Puncture) :
     ∫ z in endChart q '' endPiece q R, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -485,7 +483,7 @@ private theorem integral_floerEnergyDensity_image_endPiece (ω : SymplecticForm 
 perturbation, along a map that is `C¹` on `S`, are integrable over every truncation. -/
 private theorem integrableOn_truncation (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u puncturedPlane) (R : ℝ) :
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal) (R : ℝ) :
     IntegrableOn (ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
@@ -499,18 +497,19 @@ private theorem integrableOn_truncation (ω : SymplecticForm V) (hH : ∀ q, Per
         (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
   have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
-  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ puncturedPlane :=
-    fun z hz => mem_puncturedPlane_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
+    fun z hz =>
+      mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
-  have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_puncturedPlane le_rfl
+  have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl
   refine ⟨?_, ?_, ?_⟩
-  · exact ((ω.continuousOn_floerEnergyDensity isOpen_puncturedPlane hu hKs hKt).mono
+  · exact ((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu hKs hKt).mono
       hTS).integrableOn_compact hT
   · exact ((ω.continuousOn_apply_comp (hdu.clm_apply continuousOn_const)
       (hdu.clm_apply continuousOn_const)).mono hTS).integrableOn_compact hT
-  · exact ((ω.continuousOn_hamiltonianCurvature_comp isOpen_puncturedPlane hu.continuousOn hKs
-      hKt).mono hTS).integrableOn_compact hT
+  · exact ((ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal
+      hu.continuousOn hKs hKt).mono hTS).integrableOn_compact hT
 
 /-- **The energy identity on the truncated pair of pants.** Let `K` be the pair-of-pants
 perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with
@@ -526,7 +525,7 @@ output end `∞`, and `β = smoothTransition` is the cutoff of the perturbation,
 for `R ≥ 2`. -/
 theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u puncturedPlane)
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {R : ℝ} (hR : 1 ≤ R) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -591,7 +590,8 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
       z (u z) = 0 :=
     setIntegral_eq_zero_of_forall_eq_zero fun z hz =>
       hamiltonianCurvature_pairOfPantsPerturbation_eq_zero ω
-        (mem_puncturedPlane_iff.2 ⟨(mem_truncation.1 hz.1).1, (mem_truncation.1 hz.1).2.1⟩)
+        (mem_thricePuncturedSphereReal_iff.2
+          ⟨(mem_truncation.1 hz.1).1, (mem_truncation.1 hz.1).2.1⟩)
         (hcore hz) _
   -- The boundary circles: by periodicity, integrate over `[0, 1]` instead of `[-1/2, 1/2]`.
   have hcircle (q : Puncture) :
@@ -618,7 +618,7 @@ symplectic area plus the Hamiltonian boundary terms by at most `B₀ + B₁ + B_
 theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_le
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u puncturedPlane)
+    (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
     {R : ℝ} (hR : 1 ≤ R) :
     |(∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)

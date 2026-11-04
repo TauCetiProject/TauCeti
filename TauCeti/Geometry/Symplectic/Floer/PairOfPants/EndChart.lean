@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
-import TauCeti.LinearAlgebra.Determinant.Prod
+import Mathlib.RingTheory.Complex
+import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -15,17 +16,18 @@ import TauCeti.LinearAlgebra.Determinant.Prod
 Integrals over the pair of pants `S = ℂ ∖ {0, 1}` are computed in the real coordinates
 `ℝ × ℝ ≃ ℂ`, where the coordinate formulas of `TauCeti.Geometry.Symplectic.Floer.Energy` and
 `TauCeti.Geometry.Symplectic.Floer.Pullback` live. This file transports `S`
-(`TauCeti.Floer.puncturedPlane`), the pair-of-pants perturbation and the cylindrical end lifts of
-`S` to these coordinates. The end chart `φ_q` (`TauCeti.Floer.endChart q`) is the end lift of
-the end `q` in real coordinates, a holomorphic change of coordinates from the cylinder of the end
-to `S`. On the strip `±s > 1/2`, `t ∈ [-1/2, 1/2)` (`TauCeti.Floer.endStrip q`) it is injective,
-and it preserves orientation, so the change of variables formula applies on the images of the
-three strips; these images are disjoint and measurable. Along the end chart, the pair-of-pants
-perturbation pulls back to its components in the end coordinates.
+(`TauCeti.Floer.thricePuncturedSphereReal`), the pair-of-pants perturbation and the cylindrical
+end lifts of `S` to these coordinates. The end chart `φ_q` (`TauCeti.Floer.endChart q`) is the end
+lift of the end `q` in real coordinates, a holomorphic change of coordinates from the cylinder of
+the end to `S`. On the strip `±s > 1/2`, `t ∈ [-1/2, 1/2)` (`TauCeti.Floer.endStrip q`) it is
+injective, and it preserves orientation, so the change of variables formula applies on the images
+of the three strips; these images are disjoint and measurable. Along the end chart, the
+pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main definitions
 
-* `TauCeti.Floer.puncturedPlane`: the pair of pants `S` in the real coordinates `ℝ × ℝ ≃ ℂ`.
+* `TauCeti.Floer.thricePuncturedSphereReal`: the pair of pants `S` in the real coordinates
+  `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endChart q`: the end lift of `q` in the real coordinates `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
@@ -34,8 +36,9 @@ perturbation pulls back to its components in the end coordinates.
 
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
-* `TauCeti.Floer.endChart_mem_puncturedPlane`, `TauCeti.Floer.re_endCoord_endChart`: the end
-  chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal coordinate.
+* `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
+  the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
+  coordinate.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`: the end chart is
   injective on the strip and preserves orientation.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
@@ -62,26 +65,26 @@ namespace Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
 /-- The pair of pants `S = ℂ ∖ {0, 1}`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
-def puncturedPlane : Set (ℝ × ℝ) :=
+def thricePuncturedSphereReal : Set (ℝ × ℝ) :=
   {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
 
 /-- A point lies in `S` when, as a complex number, it is neither `0` nor `1`. -/
 @[simp]
-theorem mem_puncturedPlane_iff {z : ℝ × ℝ} :
-    z ∈ puncturedPlane ↔
+theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
+    z ∈ thricePuncturedSphereReal ↔
       Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 :=
   Iff.rfl
 
 /-- The pair of pants is open in real coordinates. -/
-theorem isOpen_puncturedPlane : IsOpen puncturedPlane :=
+theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
 theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) (x : V)
-    (v : ℂ) :
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
+    (x : V) (v : ℂ) :
     ContDiffAt ℝ n
       (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
       (z, x) :=
@@ -114,9 +117,10 @@ theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
   simp
 
 /-- The end chart sends the part `±s > 0` of the end into `S`. -/
-theorem endChart_mem_puncturedPlane {q : Puncture} {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) :
-    endChart q z ∈ puncturedPlane := by
-  rw [mem_puncturedPlane_iff, equivRealProdCLM_symm_endChart]
+theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
+    (hz : 0 < q.endSign * z.1) :
+    endChart q z ∈ thricePuncturedSphereReal := by
+  rw [mem_thricePuncturedSphereReal_iff, equivRealProdCLM_symm_endChart]
   exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
 
 /-- The part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates. It
@@ -184,8 +188,9 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
     simp
   funext z x
-  rw [perturbationPullback_apply, fderiv_endChart_apply, endChart,
-    ContinuousLinearEquiv.symm_apply_apply, hL, pairOfPantsEndComponent_def]
+  rw [perturbationPullback_apply, fderiv_endChart_apply, equivRealProdCLM_symm_endChart, hL,
+    pairOfPantsEndComponent_def]
+  -- `Complex.equivRealProdCLM.symm z` is the complex number `⟨z.1, z.2⟩` by definition.
   rfl
 
 /-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
@@ -198,13 +203,13 @@ theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := by
 
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
-theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ puncturedPlane)
+theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     {q : Puncture} (hq : 1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
     z ∈ endChart q '' endStrip q := by
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
     ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
-  rw [endChart, ContinuousLinearEquiv.symm_apply_apply,
-    q.cylindricalEndLift_endCoord (ne_endCenter (mem_puncturedPlane_iff.1 hz) q),
+  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The strip of an end is measurable. -/
@@ -216,13 +221,11 @@ theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
 /-- The end charts preserve orientation. -/
 theorem det_fderiv_endChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
     0 ≤ (fderiv ℝ (endChart q) ζ).det := by
-  simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
-    fderiv_endChart_apply]
-  simp only [Complex.equivRealProdCLM_symm_apply, Complex.equivRealProdCLM_apply,
-    Complex.mul_re, Complex.mul_im]
-  norm_num
-  nlinarith [sq_nonneg (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)).re,
-    sq_nonneg (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)).im]
+  -- The derivative is multiplication by a complex number `c`, whose real determinant is the
+  -- complex norm `|c|²`.
+  rw [(hasFDerivAt_endChart q ζ).fderiv]
+  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
+    Complex.normSq_nonneg]
 
 /-- The three end strips have disjoint images. -/
 theorem pairwise_disjoint_image_endChart :

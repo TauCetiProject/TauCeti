@@ -168,10 +168,11 @@ private theorem hasCompactSupport_truncation (T : ℝ) : HasCompactSupport (trun
   exact hz ⟨_, by simpa using not_lt.1 h, ContinuousLinearEquiv.apply_symm_apply _ _⟩
 
 /-- On the thrice-punctured sphere the cutoff is given by its product formula nearby. -/
-private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) :
+private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) :
     truncation T =ᶠ[𝓝 z] fun z' ↦ ∏ q, (1 - smoothTransition (endHeight q z' - T)) := by
-  filter_upwards [isOpen_puncturedPlane.mem_nhds hz] with z' hz'
-  rw [truncation, ite_eq_right (not_or.2 (mem_puncturedPlane_iff.1 hz'))]
+  filter_upwards [isOpen_thricePuncturedSphereReal.mem_nhds hz] with z' hz'
+  rw [truncation, ite_eq_right (not_or.2 (mem_thricePuncturedSphereReal_iff.1 hz'))]
 
 private theorem contDiff_truncation (T : ℝ) : ContDiff ℝ 1 (truncation T) := by
   refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
@@ -179,16 +180,16 @@ private theorem contDiff_truncation (T : ℝ) : ContDiff ℝ 1 (truncation T) :=
   · exact contDiffAt_const.congr_of_eventuallyEq (truncation_eventuallyEq_zero T hz)
   · have hz' := not_or.1 hz
     refine ContDiffAt.congr_of_eventuallyEq ?_
-      (truncation_eventuallyEq_prod T (mem_puncturedPlane_iff.2 hz'))
+      (truncation_eventuallyEq_prod T (mem_thricePuncturedSphereReal_iff.2 hz'))
     exact contDiffAt_prod fun q _ ↦ contDiffAt_const.sub
       (smoothTransition.contDiffAt.comp z
         ((contDiffAt_endHeight q (ne_endCenter hz' q)).sub contDiffAt_const))
 
 /-- The support of the cutoff stays away from the punctures. -/
 private theorem mem_tsupport_truncation {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ tsupport (truncation T)) :
-    z ∈ puncturedPlane := by
+    z ∈ thricePuncturedSphereReal := by
   by_contra h
-  rw [mem_puncturedPlane_iff, not_and_or, not_not, not_not] at h
+  rw [mem_thricePuncturedSphereReal_iff, not_and_or, not_not, not_not] at h
   exact (notMem_tsupport_iff_eventuallyEq.2 (truncation_eventuallyEq_zero T h)) hz
 
 private theorem truncation_mem_Icc (T : ℝ) (z : ℝ × ℝ) : truncation T z ∈ Icc 0 1 := by
@@ -201,10 +202,10 @@ private theorem truncation_mem_Icc (T : ℝ) (z : ℝ × ℝ) : truncation T z �
 
 /-- At a point of the thrice-punctured sphere where every end height is below `T`, the cutoff
 is `1` nearby. -/
-private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ puncturedPlane)
+private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (hT : ∀ q, endHeight q z < T) : truncation T =ᶠ[𝓝 z] fun _ ↦ 1 := by
   have hev : ∀ᶠ z' in 𝓝 z, ∀ q, endHeight q z' < T := eventually_all.2 fun q ↦
-    (contDiffAt_endHeight q (ne_endCenter (mem_puncturedPlane_iff.1 hz) q)
+    (contDiffAt_endHeight q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
       (n := 0)).continuousAt.eventually (gt_mem_nhds (hT q))
   filter_upwards [truncation_eventuallyEq_prod T hz, hev] with z' h₁ h₂
   rw [h₁]
@@ -212,11 +213,11 @@ private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z �
     rw [smoothTransition.zero_of_nonpos (by linarith [h₂ q]), sub_zero]
 
 /-- As the height tends to infinity, the cutoff tends to `1` on the thrice-punctured sphere. -/
-private theorem tendsto_truncation {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) :
+private theorem tendsto_truncation {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) :
     Tendsto (fun T ↦ truncation T z) atTop (𝓝 1) := by
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [eventually_all.2 fun q ↦ eventually_ge_atTop (endHeight q z)] with T hT
-  rw [truncation, ite_eq_right (not_or.2 (mem_puncturedPlane_iff.1 hz))]
+  rw [truncation, ite_eq_right (not_or.2 (mem_thricePuncturedSphereReal_iff.1 hz))]
   exact (Finset.prod_eq_one fun q _ ↦ by
     rw [smoothTransition.zero_of_nonpos (by linarith [hT q]), sub_zero]).symm
 
@@ -266,7 +267,7 @@ private noncomputable def primitiveT (ω : SymplecticForm V) (H : Puncture → �
 omit [FiniteDimensional ℝ V] in
 /-- The perturbation evaluated along a `C¹` map is `C¹` on the thrice-punctured sphere. -/
 private theorem contDiffAt_pairOfPantsPerturbation_comp (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (hu : ContDiffAt ℝ 1 u z) (v : ℂ) :
     ContDiffAt ℝ 1 (fun z ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) (u z) v)
       z :=
@@ -274,17 +275,17 @@ private theorem contDiffAt_pairOfPantsPerturbation_comp (hH : ∀ q, Periodic (H
     (f := fun z ↦ (z, u z)) z (contDiffAt_id.prodMk hu)
 
 private theorem contDiffOn_primitiveS (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) :
-    ContDiffOn ℝ 1 (primitiveS ω H u) puncturedPlane := fun z hz ↦ by
-  have hu' := hu.contDiffAt (isOpen_puncturedPlane.mem_nhds hz)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) :
+    ContDiffOn ℝ 1 (primitiveS ω H u) thricePuncturedSphereReal := fun z hz ↦ by
+  have hu' := hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)
   exact ((contDiffAt_pairOfPantsPerturbation_comp hH hHs hz (hu'.of_le one_le_two) 1).add
     (contDiffAt_const.mul (ω.toBilinForm.toContinuousBilinearMap.contDiffAt_bilinear_fderiv_apply
       hu' _))).contDiffWithinAt
 
 private theorem contDiffOn_primitiveT (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) :
-    ContDiffOn ℝ 1 (primitiveT ω H u) puncturedPlane := fun z hz ↦ by
-  have hu' := hu.contDiffAt (isOpen_puncturedPlane.mem_nhds hz)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) :
+    ContDiffOn ℝ 1 (primitiveT ω H u) thricePuncturedSphereReal := fun z hz ↦ by
+  have hu' := hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)
   exact ((contDiffAt_pairOfPantsPerturbation_comp hH hHs hz (hu'.of_le one_le_two) _).add
     (contDiffAt_const.mul (ω.toBilinForm.toContinuousBilinearMap.contDiffAt_bilinear_fderiv_apply
       hu' _))).contDiffWithinAt
@@ -293,7 +294,8 @@ private theorem contDiffOn_primitiveT (ω : SymplecticForm V) (hH : ∀ q, Perio
 perturbation is the exterior derivative of `α = K(u) + λ(u)`. -/
 private theorem floerEnergyDensity_add_hamiltonianCurvature_eq_primitive (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u puncturedPlane) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) :
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) :
     ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z +
@@ -305,26 +307,26 @@ private theorem floerEnergyDensity_add_hamiltonianCurvature_eq_primitive (ω : S
         fderiv ℝ (primitiveS ω H u) z stdComplexLineImag :=
   -- `primitiveS` and `primitiveT` are by definition the components of `α` in the general identity.
   ω.floerEnergyDensity_add_hamiltonianCurvature_eq
-    (hu.contDiffAt (isOpen_puncturedPlane.mem_nhds hz))
+    (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz))
     ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz _ _).differentiableAt one_ne_zero)
     ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz _ _).differentiableAt one_ne_zero)
 
 /-- A function continuous on the thrice-punctured sphere becomes integrable after multiplication
 by the cutoff. -/
 private theorem integrable_truncation_mul (T : ℝ) {F : ℝ × ℝ → ℝ}
-    (hF : ContinuousOn F puncturedPlane) : Integrable fun z ↦ truncation T z * F z :=
+    (hF : ContinuousOn F thricePuncturedSphereReal) : Integrable fun z ↦ truncation T z * F z :=
   (contDiff_truncation T).continuous.integrable_mul_of_continuousOn
-    (hasCompactSupport_truncation T) isOpen_puncturedPlane (fun _ hz ↦ mem_tsupport_truncation hz)
-    hF
+    (hasCompactSupport_truncation T) isOpen_thricePuncturedSphereReal
+    (fun _ hz ↦ mem_tsupport_truncation hz) hF
 
 /-- A function continuous on the thrice-punctured sphere becomes integrable after multiplication
 by a derivative of the cutoff. -/
 private theorem integrable_fderiv_truncation_mul (T : ℝ) (v : ℝ × ℝ) {F : ℝ × ℝ → ℝ}
-    (hF : ContinuousOn F puncturedPlane) :
+    (hF : ContinuousOn F thricePuncturedSphereReal) :
     Integrable fun z ↦ fderiv ℝ (truncation T) z v * F z :=
   (((contDiff_truncation T).continuous_fderiv one_ne_zero).clm_apply
     continuous_const).integrable_mul_of_continuousOn
-    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v) isOpen_puncturedPlane
+    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v) isOpen_thricePuncturedSphereReal
     (fun _ hz ↦ mem_tsupport_truncation (tsupport_fderiv_apply_subset ℝ v hz)) hF
 
 /-- The two-form `dχ ∧ α` for the cutoff `χ` at height `T` and the one-form `α = K(u) + λ(u)`,
@@ -335,7 +337,8 @@ private noncomputable def boundaryForm (ω : SymplecticForm V) (H : Puncture →
     fderiv ℝ (truncation T) z stdComplexLineImag * primitiveS ω H u z
 
 private theorem integrable_boundaryForm (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) (T : ℝ) :
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
+    (T : ℝ) :
     Integrable (boundaryForm ω H u T) :=
   (integrable_fderiv_truncation_mul T _ (contDiffOn_primitiveT ω hH hHs hu).continuousOn).sub
     (integrable_fderiv_truncation_mul T _ (contDiffOn_primitiveS ω hH hHs hu).continuousOn)
@@ -344,7 +347,8 @@ private theorem integrable_boundaryForm (ω : SymplecticForm V) (hH : ∀ q, Per
 the cutoff at height `T`, integrates to minus the integral of `dχ ∧ α`, for the one-form
 `α = K(u) + λ(u)`. -/
 private theorem integral_truncation_mul_eq (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) (T : ℝ) :
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
+    (T : ℝ) :
     ∫ z, truncation T z * (ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z +
@@ -357,25 +361,26 @@ private theorem integral_truncation_mul_eq (ω : SymplecticForm V) (hH : ∀ q, 
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   have hS := contDiffOn_primitiveS ω hH hHs hu
   have hT := contDiffOn_primitiveT ω hH hHs hu
-  have hχS : tsupport (truncation T) ⊆ puncturedPlane := fun z hz ↦ mem_tsupport_truncation hz
-  have hfd {F : ℝ × ℝ → ℝ} (hF : ContDiffOn ℝ 1 F puncturedPlane) (v : ℝ × ℝ) :
-      ContinuousOn (fun z ↦ fderiv ℝ F z v) puncturedPlane :=
-    (hF.continuousOn_fderiv_of_isOpen isOpen_puncturedPlane le_rfl).clm_apply
+  have hχS : tsupport (truncation T) ⊆ thricePuncturedSphereReal := fun z hz ↦
+    mem_tsupport_truncation hz
+  have hfd {F : ℝ × ℝ → ℝ} (hF : ContDiffOn ℝ 1 F thricePuncturedSphereReal) (v : ℝ × ℝ) :
+      ContinuousOn (fun z ↦ fderiv ℝ F z v) thricePuncturedSphereReal :=
+    (hF.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl).clm_apply
       continuousOn_const
   -- Integration by parts in the direction `v`, for a component `F` of `α`.
-  have hparts {F : ℝ × ℝ → ℝ} (hF : ContDiffOn ℝ 1 F puncturedPlane) (v : ℝ × ℝ) :
+  have hparts {F : ℝ × ℝ → ℝ} (hF : ContDiffOn ℝ 1 F thricePuncturedSphereReal) (v : ℝ × ℝ) :
       ∫ z, truncation T z * fderiv ℝ F z v = -∫ z, fderiv ℝ (truncation T) z v * F z :=
     integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
       (integrable_fderiv_truncation_mul T v hF.continuousOn)
       (integrable_truncation_mul T (hfd hF v)) (integrable_truncation_mul T hF.continuousOn)
       (fun z _ ↦ (contDiff_truncation T).differentiable one_ne_zero z)
       (fun z hz ↦ (hF.differentiableOn one_ne_zero z (hχS hz)).differentiableAt
-        (isOpen_puncturedPlane.mem_nhds (hχS hz)))
+        (isOpen_thricePuncturedSphereReal.mem_nhds (hχS hz)))
   calc _ = ∫ z, (truncation T z * fderiv ℝ (primitiveT ω H u) z stdComplexLineReal -
         truncation T z * fderiv ℝ (primitiveS ω H u) z stdComplexLineImag) := by
         refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
         dsimp only
-        by_cases hz : z ∈ puncturedPlane
+        by_cases hz : z ∈ thricePuncturedSphereReal
         · rw [floerEnergyDensity_add_hamiltonianCurvature_eq_primitive ω hH hHs hu hz, mul_sub]
         · have h0 : truncation T z = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hz (hχS h)
           simp [h0]
@@ -398,8 +403,8 @@ omit [FiniteDimensional ℝ V] in
 `dχ ∧ α`, transported to the coordinates of the end with its Jacobian, is
 `-±β'(±s - T) (H_q(t, u_q) + ½ ω(u_q, ∂_t u_q))` for `u_q = u ∘ φ_q`. -/
 private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hu : ContDiffOn ℝ 2 u puncturedPlane) {T : ℝ} (hT : 2 ≤ T) {q : Puncture} {ζ : ℝ × ℝ}
-    (hζ : 0 < q.endSign * ζ.1) :
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {T : ℝ} (hT : 2 ≤ T) {q : Puncture}
+    {ζ : ℝ × ℝ} (hζ : 0 < q.endSign * ζ.1) :
     |(fderiv ℝ (endChart q) ζ).det| *
         (fderiv ℝ (truncation T) (endChart q ζ) stdComplexLineReal *
             primitiveT ω H u (endChart q ζ) -
@@ -411,11 +416,11 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, 
   set L := fderiv ℝ (endChart q) ζ
   set κ := fderiv ℝ (truncation T) (endChart q ζ)
   set x := u (endChart q ζ)
-  have hw := endChart_mem_puncturedPlane hζ
+  have hw := endChart_mem_thricePuncturedSphereReal hζ
   have hφ : DifferentiableAt ℝ (endChart q) ζ := (hasFDerivAt_endChart q ζ).differentiableAt
   have hu₁ : DifferentiableAt ℝ u (endChart q ζ) :=
     (hu.differentiableOn (by norm_num) _ hw).differentiableAt
-      (isOpen_puncturedPlane.mem_nhds hw)
+      (isOpen_thricePuncturedSphereReal.mem_nhds hw)
   -- In end coordinates the cutoff is `1 - β(±s - T)`, a function of `s` alone.
   set g : ℝ → ℝ := fun s ↦ 1 - smoothTransition (q.endSign * s - T)
   have hg : HasDerivAt g (-(deriv smoothTransition (q.endSign * ζ.1 - T) * q.endSign)) ζ.1 := by
@@ -476,14 +481,15 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, 
 action of the loop `t ↦ u_q(s, t)`, for `u_q = u ∘ φ_q`. -/
 private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u puncturedPlane) {q : Puncture} {s : ℝ} (hs : 0 < q.endSign * s) :
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {q : Puncture} {s : ℝ}
+    (hs : 0 < q.endSign * s) :
     ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), (H q t (u (endChart q (s, t))) +
         1 / 2 * ω (u (endChart q (s, t))) (fderiv ℝ (u ∘ endChart q) (s, t) stdComplexLineImag)) =
       ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))) := by
-  set x : ℝ → V := fun t ↦ u (endChart q (s, t))
+  set x : ℝ → V := fun t ↦ u (endChart q (s, t)) with hx
   have huq (t : ℝ) : ContDiffAt ℝ 2 (u ∘ endChart q) (s, t) :=
-    (hu.contDiffAt (isOpen_puncturedPlane.mem_nhds
-      (endChart_mem_puncturedPlane (z := (s, t)) hs))).comp (s, t)
+    (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds
+      (endChart_mem_thricePuncturedSphereReal (z := (s, t)) hs))).comp (s, t)
       (contDiff_endChart q 2).contDiffAt
   have hline (t : ℝ) : HasDerivAt (fun t : ℝ ↦ (s, t)) stdComplexLineImag t := by
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
@@ -511,9 +517,10 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
   have hG : Periodic (fun t ↦ H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) 1 := fun t ↦ by
     simp only [hper t, hper' t, hH q t]
   calc _ = ∫ t in (-1 / 2 : ℝ)..(-1 / 2 + 1), (H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) := by
-        rw [intervalIntegral.integral_of_le (by norm_num), ← integral_Ico_eq_integral_Ioc]
-        norm_num [hderiv]
-        rfl
+        rw [intervalIntegral.integral_of_le (by norm_num), ← integral_Ico_eq_integral_Ioc,
+          show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num]
+        simp only [hderiv]
+        simp only [hx]
     _ = ∫ t in (0 : ℝ)..(0 + 1), (H q t (x t) + 1 / 2 * ω (x t) (deriv x t)) :=
         hG.intervalIntegral_add_eq _ _
     _ = _ := by
@@ -531,7 +538,7 @@ private theorem hasFDerivWithinAt_endChart (q : Puncture) (ζ : ℝ × ℝ) (s :
 weighted actions are integrable. -/
 private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u puncturedPlane) {T : ℝ} (hT : 2 ≤ T) (q : Puncture) :
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {T : ℝ} (hT : 2 ≤ T) (q : Puncture) :
     ∫ z in endChart q '' endStrip q, boundaryForm ω H u T z =
         -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
           ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) ∧
@@ -544,7 +551,6 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
       1 / 2 * ω (u (endChart q ζ)) (fderiv ℝ (u ∘ endChart q) ζ stdComplexLineImag)))
   set A : ℝ → ℝ := fun s ↦ deriv smoothTransition (q.endSign * s - T) *
     ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))
-  have hsq : q.endSign * q.endSign = 1 := by cases q <;> simp
   have hS₁ : MeasurableSet {s : ℝ | 1 / 2 < q.endSign * s} :=
     measurableSet_lt measurable_const (measurable_const.mul measurable_id)
   -- In end coordinates the integrand is `F`.
@@ -576,7 +582,7 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
   have hA : IntegrableOn A {s : ℝ | 1 / 2 < q.endSign * s} := by
     refine IntegrableOn.congr_fun (hint'.const_mul (-q.endSign)) (fun s hs ↦ ?_) hS₁
     rw [hinner s hs]
-    linear_combination (A s) * hsq
+    linear_combination (A s) * q.endSign_mul_self
   refine ⟨?_, hA.integrable_of_forall_notMem_eq_zero hzero⟩
   rw [integral_image_eq_integral_abs_det_fderiv_smul volume (measurableSet_endStrip q)
     (fun ζ _ ↦ hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q),
@@ -591,13 +597,13 @@ boundary term vanishes there. -/
 private theorem boundaryForm_eq_zero (ω : SymplecticForm V) {T : ℝ} (hT : 2 ≤ T) {z : ℝ × ℝ}
     (hz : z ∉ ⋃ q, endChart q '' endStrip q) : boundaryForm ω H u T z = 0 := by
   have hfd : fderiv ℝ (truncation T) z = 0 := by
-    by_cases hzS : z ∈ puncturedPlane
+    by_cases hzS : z ∈ thricePuncturedSphereReal
     · have hT' (q : Puncture) : endHeight q z < T := by
         by_contra h
         rw [not_lt, endHeight] at h
         exact hz (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)
       rw [(truncation_eventuallyEq_one hzS hT').fderiv_eq, fderiv_const_apply]
-    · simp only [mem_puncturedPlane_iff, not_and_or, not_not] at hzS
+    · simp only [mem_thricePuncturedSphereReal_iff, not_and_or, not_not] at hzS
       rw [(truncation_eventuallyEq_zero T hzS).fderiv_eq]
       simp
   simp [boundaryForm, hfd]
@@ -607,7 +613,7 @@ weighted by the cutoff at height `T`, integrates to the signed sum over the thre
 actions `A_q(s)` of the loops `t ↦ u(φ_q(s, t))`, averaged against `β'(±s - T)`. -/
 private theorem integral_truncation_mul_eq_sum (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u puncturedPlane) {T : ℝ} (hT : 2 ≤ T) :
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {T : ℝ} (hT : 2 ≤ T) :
     ∫ z, truncation T z * (ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z +
@@ -642,7 +648,7 @@ period-one `C¹` Hamiltonians `H_q` on the ends of `S = ℂ ∖ {0, 1}`, with co
 the negative (output) end, minus the integrated curvature. -/
 theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u puncturedPlane)
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal)
     (hE : Integrable (ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u))
@@ -669,10 +675,10 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)
   have hf : Integrable f := hE.add hR
   -- The punctures form a null set.
-  have hae : ∀ᵐ z : ℝ × ℝ, z ∈ puncturedPlane := by
+  have hae : ∀ᵐ z : ℝ × ℝ, z ∈ thricePuncturedSphereReal := by
     refine measure_mono_null (t := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1})
       (fun z hz ↦ ?_) ?_
-    · have hz' := mem_puncturedPlane_iff.not.1 hz
+    · have hz' := mem_thricePuncturedSphereReal_iff.not.1 hz
       rcases not_and_or.1 hz' with h | h
       · exact Or.inl (by rw [← not_not.1 h, ContinuousLinearEquiv.apply_symm_apply])
       · exact Or.inr (by
@@ -696,9 +702,8 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm
       ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) atTop
       (𝓝 (∑ q, q.endSign * A q)) :=
     tendsto_finsetSum _ fun q _ ↦ by
-      have hinv : q.endSign⁻¹ = q.endSign := by cases q <;> simp
       have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-        (by cases q <;> simp : q.endSign ≠ 0) (by simpa only [hinv] using hA q)
+        q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hA q)
         (eventually_ge_atTop 2 |>.mono fun T hT ↦
           (integral_image_endChart_boundaryForm ω hH hHs hu hT q).2)
       rw [abs_endSign, inv_one, one_mul] at h

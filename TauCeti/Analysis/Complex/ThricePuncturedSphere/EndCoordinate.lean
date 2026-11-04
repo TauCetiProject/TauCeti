@@ -75,6 +75,18 @@ def endSign : Puncture → ℝ
 theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSign = -1 := by
   cases q <;> simp
 
+/-- The sign of an end squares to one. -/
+@[simp] theorem endSign_mul_self (q : Puncture) : q.endSign * q.endSign = 1 := by
+  cases q <;> simp
+
+/-- The sign of an end is its own inverse. -/
+@[simp] theorem inv_endSign (q : Puncture) : q.endSign⁻¹ = q.endSign := by
+  cases q <;> simp
+
+/-- The sign of an end is nonzero. -/
+theorem endSign_ne_zero (q : Puncture) : q.endSign ≠ 0 := by
+  cases q <;> simp
+
 /-- The center of an end lift: `cylindricalEndLift q z - q.endCenter` is a multiple of
 `exp (-2πz)`. It is `0` at the ends at `0` and `∞`, and `1` at the end at `1`. -/
 def endCenter : Puncture → ℂ
