@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Smooth pullback of differential forms
@@ -203,6 +204,15 @@ theorem IsSmoothForm.mpullback (hω : IsSmoothForm I' m ω)
   rw [isSmoothForm_def]
   exact (isSmoothBundleForm_def _ _).mp
     (IsSmoothBundleForm.mpullback ((isSmoothBundleForm_def _ _).mpr hω.contMDiff) hf le_rfl)
+
+/-- The pullback of a continuous form along a `C¹` map `u` from a normed space, evaluated on fixed
+vectors, is continuous. For `u` a map of the plane this is the integrand of a rectangle
+integral. -/
+theorem IsSmoothForm.continuous_mpullback_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ)
+    {u : E' → M} (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (v : Fin k → E') :
+    Continuous fun z ↦ TauCeti.mpullback 𝓘(ℝ, E') I u φ z v := by
+  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
+  exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
 
 namespace SmoothForm
 
