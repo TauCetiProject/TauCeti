@@ -20,9 +20,10 @@ an ordinary category. Every vertex `f` of `X ⟶[SSet] Y` gives a morphism
 `SimplicialHomotopyCategory.homMk f`, every morphism arises this way, and two vertices give the same
 morphism exactly when they are joined by a zigzag of edges.
 
-An enriched functor `F` induces a functor `F.mapHomotopyCategory` of homotopy categories, compatibly
-with identities and composition up to the canonical isomorphisms
-`F.mapHomotopyCategoryId` and `F.mapHomotopyCategoryComp G`. The homotopy category is the
+An enriched functor `F` induces a functor `F.mapHomotopyCategory` of homotopy categories. Up to
+canonical isomorphisms, the identity enriched functor induces the identity functor
+(`CategoryTheory.EnrichedFunctor.mapHomotopyCategoryId`) and composites induce composites
+(`F.mapHomotopyCategoryComp G`). The homotopy category is the
 invariant on which Dwyer–Kan equivalences of simplicial categories are required to be essentially
 surjective.
 
@@ -76,17 +77,21 @@ structure SimplicialHomotopyCategory where
 
 namespace SimplicialHomotopyCategory
 
-/-- The category structure is the type-enriched category obtained by transporting the enrichment
-of `C` along the monoidal functor `SSet.π₀Functor`. -/
-instance : Category.{v} (SimplicialHomotopyCategory C) where
+/-- The enrichment in types obtained by transporting the enrichment of `C` along the monoidal
+functor `SSet.π₀Functor`. -/
+instance : EnrichedCategory (Type v) (SimplicialHomotopyCategory C) where
   Hom X Y := SSet.π₀ (X.as ⟶[SSet.{v}] Y.as)
-  id X := eId (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) X.as PUnit.unit
-  comp {X Y Z} f g :=
-    eComp (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) X.as Y.as Z.as ⟨f, g⟩
-  id_comp f := congr($(e_id_comp (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) _ _) f)
-  comp_id f := congr($(e_comp_id (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) _ _) f)
-  assoc f g h := congr($(e_assoc (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) _ _ _ _)
-    ⟨f, g, h⟩)
+  id X := eId (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) X.as
+  comp X Y Z := eComp (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) X.as Y.as Z.as
+  id_comp X Y := e_id_comp (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) X.as Y.as
+  comp_id X Y := e_comp_id (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) X.as Y.as
+  assoc W X Y Z :=
+    e_assoc (Type v) (C := TransportEnrichment SSet.π₀Functor.{v} C) W.as X.as Y.as Z.as
+
+/-- The category structure is the one of the type-enriched category obtained by transporting the
+enrichment of `C` along the monoidal functor `SSet.π₀Functor`. -/
+instance : Category.{v} (SimplicialHomotopyCategory C) :=
+  categoryOfEnrichedCategoryType _
 
 variable {C}
 
@@ -94,6 +99,20 @@ variable {C}
 sets. -/
 def homEquiv {X Y : SimplicialHomotopyCategory C} : (X ⟶ Y) ≃ SSet.π₀ (X.as ⟶[SSet.{v}] Y.as) :=
   Equiv.refl _
+
+/-- The identity of the homotopy category is the image of the unit of `SSet.π₀Functor` under the
+map of connected components of the enriched identity. -/
+lemma id_def (X : SimplicialHomotopyCategory C) :
+    𝟙 X = homEquiv.symm
+      (SSet.mapπ₀ (eId SSet.{v} X.as) (Functor.LaxMonoidal.ε SSet.π₀Functor PUnit.unit)) :=
+  (rfl)
+
+/-- Composition in the homotopy category is the tensorator of `SSet.π₀Functor` followed by the map
+of connected components of the enriched composition. -/
+lemma comp_def {X Y Z : SimplicialHomotopyCategory C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    f ≫ g = homEquiv.symm (SSet.mapπ₀ (eComp SSet.{v} X.as Y.as Z.as)
+      (Functor.LaxMonoidal.μ SSet.π₀Functor _ _ (homEquiv f, homEquiv g))) :=
+  (rfl)
 
 /-- The morphism of the homotopy category given by a vertex of a mapping simplicial set. -/
 def homMk {X Y : C} (f : (X ⟶[SSet.{v}] Y) _⦋0⦌) : of X ⟶ of Y :=
@@ -128,21 +147,13 @@ lemma homMk_eq_homMk {X Y : C} {f g : (X ⟶[SSet.{v}] Y) _⦋0⦌} (e : SSet.Ed
 
 /-- The identity of the homotopy category is the component of the enriched identity. -/
 lemma homMk_eId (X : C) : homMk ((eId SSet.{v} X).app (op ⦋0⦌) PUnit.unit) = 𝟙 (of X) := by
-  -- The identity of a type-enriched category is its enriched identity at the point, here
-  -- `mapπ₀ (eId X)` applied to the unit of `π₀Functor`.
-  change _ = SSet.mapπ₀ (eId SSet.{v} X) (Functor.LaxMonoidal.ε SSet.π₀Functor PUnit.unit)
-  rw [SSet.ε_π₀Functor_apply]
-  exact (SSet.mapπ₀_mk _ _).symm
+  rw [id_def, SSet.ε_π₀Functor_apply, SSet.mapπ₀_mk, homEquiv_symm_mk]
 
 /-- Composition in the homotopy category is induced by the enriched composition. -/
 @[simp]
 lemma homMk_comp_homMk {X Y Z : C} (f : (X ⟶[SSet.{v}] Y) _⦋0⦌) (g : (Y ⟶[SSet.{v}] Z) _⦋0⦌) :
     homMk f ≫ homMk g = homMk ((eComp SSet.{v} X Y Z).app (op ⦋0⦌) (f, g)) := by
-  -- The composite of a type-enriched category is its enriched composition at the pair, here
-  -- `mapπ₀ (eComp X Y Z)` applied after the tensorator of `π₀Functor`.
-  change SSet.mapπ₀ (eComp SSet.{v} X Y Z)
-    (Functor.LaxMonoidal.μ SSet.π₀Functor _ _ (SSet.π₀.mk f, SSet.π₀.mk g)) = _
-  rw [SSet.μ_π₀Functor_mk]
+  rw [comp_def, homEquiv_homMk, homEquiv_homMk, SSet.μ_π₀Functor_mk]
   exact SSet.mapπ₀_mk _ _
 
 end SimplicialHomotopyCategory
@@ -187,14 +198,14 @@ def mapHomotopyCategory (F : EnrichedFunctor SSet.{v} C D) :
   map f := homEquiv.symm (SSet.mapπ₀ (F.map _ _) (homEquiv f))
   map_id := by
     rintro ⟨X⟩
-    rw [← homMk_eId, homEquiv_homMk, SSet.mapπ₀_mk, homEquiv_symm_mk, map_app_eId_app, homMk_eId]
+    rw [← homMk_eId]
+    exact (congrArg homMk (map_app_eId_app F X)).trans (homMk_eId _)
   map_comp := by
     rintro ⟨X⟩ ⟨Y⟩ ⟨Z⟩ f g
     obtain ⟨f, rfl⟩ := homMk_surjective (X := X) (Y := Y) f
     obtain ⟨g, rfl⟩ := homMk_surjective (X := Y) (Y := Z) g
-    rw [homMk_comp_homMk, homEquiv_homMk, homEquiv_homMk, homEquiv_homMk, SSet.mapπ₀_mk,
-      SSet.mapπ₀_mk, SSet.mapπ₀_mk, homEquiv_symm_mk, homEquiv_symm_mk, homEquiv_symm_mk,
-      homMk_comp_homMk, map_app_eComp_app]
+    rw [homMk_comp_homMk]
+    exact (congrArg homMk (map_app_eComp_app F f g)).trans (homMk_comp_homMk _ _).symm
 
 variable (F : EnrichedFunctor SSet.{v} C D)
 
@@ -221,25 +232,15 @@ functor of homotopy categories is faithful. -/
 lemma faithful_mapHomotopyCategory
     (h : ∀ X Y : C, Function.Injective (SSet.mapπ₀ (F.map X Y))) :
     F.mapHomotopyCategory.Faithful where
-  map_injective {X Y} a b hab := by
-    obtain ⟨a, rfl⟩ := homMk_surjective (X := X.as) (Y := Y.as) a
-    obtain ⟨b, rfl⟩ := homMk_surjective (X := X.as) (Y := Y.as) b
-    rw [mapHomotopyCategory_map_homMk, mapHomotopyCategory_map_homMk] at hab
-    replace hab := congrArg homEquiv hab
-    rw [homEquiv_homMk, homEquiv_homMk, ← SSet.mapπ₀_mk, ← SSet.mapπ₀_mk] at hab
-    rw [← homEquiv_symm_mk, ← homEquiv_symm_mk, h _ _ hab]
+  map_injective {X Y} := homEquiv.symm.injective.comp ((h X.as Y.as).comp homEquiv.injective)
 
 /-- If the maps of mapping simplicial sets are surjective on connected components, the induced
 functor of homotopy categories is full. -/
 lemma full_mapHomotopyCategory
     (h : ∀ X Y : C, Function.Surjective (SSet.mapπ₀ (F.map X Y))) :
     F.mapHomotopyCategory.Full where
-  map_surjective {X Y} f := by
-    obtain ⟨f, rfl⟩ := homMk_surjective (X := F.obj X.as) (Y := F.obj Y.as) f
-    obtain ⟨c, hc⟩ := h X.as Y.as (SSet.π₀.mk f)
-    induction c using SSet.π₀.rec with | mk a => ?_
-    refine ⟨homMk a, ?_⟩
-    rw [mapHomotopyCategory_map_homMk, ← homEquiv_symm_mk, ← SSet.mapπ₀_mk, hc, homEquiv_symm_mk]
+  map_surjective {X Y} :=
+    homEquiv.symm.surjective.comp ((h X.as Y.as).comp homEquiv.surjective)
 
 /-- The identity enriched functor induces the identity of the homotopy category. -/
 def mapHomotopyCategoryId : (EnrichedFunctor.id SSet.{v} C).mapHomotopyCategory ≅ 𝟭 _ :=
@@ -247,6 +248,18 @@ def mapHomotopyCategoryId : (EnrichedFunctor.id SSet.{v} C).mapHomotopyCategory 
     obtain ⟨f, rfl⟩ := homMk_surjective (X := X.as) (Y := Y.as) f
     -- Both sides are `homMk f` up to the definition of the action on objects.
     exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+/-- The components of `mapHomotopyCategoryId` are identities. -/
+@[simp]
+lemma mapHomotopyCategoryId_hom_app (X : SimplicialHomotopyCategory C) :
+    (mapHomotopyCategoryId (C := C)).hom.app X = 𝟙 X :=
+  (rfl)
+
+/-- The components of the inverse of `mapHomotopyCategoryId` are identities. -/
+@[simp]
+lemma mapHomotopyCategoryId_inv_app (X : SimplicialHomotopyCategory C) :
+    (mapHomotopyCategoryId (C := C)).inv.app X = 𝟙 X :=
+  (rfl)
 
 /-- Composite enriched functors induce composite functors of homotopy categories. -/
 def mapHomotopyCategoryComp (G : EnrichedFunctor SSet.{v} D E) :
@@ -256,6 +269,20 @@ def mapHomotopyCategoryComp (G : EnrichedFunctor SSet.{v} D E) :
     obtain ⟨f, rfl⟩ := homMk_surjective (X := X.as) (Y := Y.as) f
     -- Both sides are `homMk (G.map (F.map f))` up to the definition of the action on objects.
     exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+/-- The components of `F.mapHomotopyCategoryComp G` are identities. -/
+@[simp]
+lemma mapHomotopyCategoryComp_hom_app (G : EnrichedFunctor SSet.{v} D E)
+    (X : SimplicialHomotopyCategory C) :
+    (F.mapHomotopyCategoryComp G).hom.app X = 𝟙 (of (G.obj (F.obj X.as))) :=
+  (rfl)
+
+/-- The components of the inverse of `F.mapHomotopyCategoryComp G` are identities. -/
+@[simp]
+lemma mapHomotopyCategoryComp_inv_app (G : EnrichedFunctor SSet.{v} D E)
+    (X : SimplicialHomotopyCategory C) :
+    (F.mapHomotopyCategoryComp G).inv.app X = 𝟙 (of (G.obj (F.obj X.as))) :=
+  (rfl)
 
 end
 
