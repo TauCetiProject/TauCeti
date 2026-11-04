@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
+public import TauCeti.Algebra.Star.Basic
+public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.Multiplier
 
 /-!
-# Multiplier homomorphisms and topological closures of two-sided star ideals
+# Multiplier homomorphisms of two-sided star ideals
 
 Every two-sided star ideal `I` of a nonunital normed star algebra `A` over `𝕜` acts on itself by
-left and right multiplication in `A`. This yields a canonical contractive nonunital star-algebra
-homomorphism `I.multiplierHom hmul : A →⋆ₙₐ[𝕜] 𝓜(𝕜, I)` extending the inclusion of `I` into its
-multiplier algebra. Because `I` is closed under the involution, left ideal absorption
-`∀ a : A, ∀ x ∈ I, a * x ∈ I` automatically implies right ideal absorption. Likewise, if a
-nonunital star subalgebra is absorbed on the left into its topological closure by a dense subset of
-`A`, then its topological closure is a closed two-sided star ideal of `A`.
+left and right multiplication in `A` (with right absorption deduced from left absorption via
+`StarMemClass.mul_mem_right_of_mul_mem_left`). This yields a canonical contractive nonunital
+star-algebra homomorphism `I.multiplierHom hmul : A →⋆ₙₐ[𝕜] 𝓜(𝕜, I)` extending the inclusion of
+`I` into its multiplier algebra.
 
 When `A` has a proper involution (in particular, when `A` is a C⋆-algebra), the kernel of
 `I.multiplierHom hmul` is the left annihilator `{a : A | ∀ x ∈ I, a * x = 0}` of `I` in `A`, so
@@ -26,11 +25,6 @@ is an essential ideal).
 
 ## Main definitions and results
 
-* `StarMemClass.mul_mem_right_of_mul_mem_left`: a subset closed under `star` and left
-  multiplication by ambient elements is also closed under right multiplication.
-* `NonUnitalStarSubalgebra.mul_mem_topologicalClosure_of_dense` and
-  `NonUnitalStarSubalgebra.mul_mem_topologicalClosure`: left ideal absorption passes from a dense
-  subset to `I.topologicalClosure`.
 * `NonUnitalStarSubalgebra.multiplierHom`: the canonical star-algebra homomorphism
   `A →⋆ₙₐ[𝕜] 𝓜(𝕜, I)` attached to a star ideal `I` of `A`.
 * `NonUnitalStarSubalgebra.multiplierHom_fst_apply` and
@@ -57,47 +51,7 @@ noncomputable section
 
 open scoped MultiplierAlgebra
 
-/-- Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the
-`NormedStarGroup` structure. -/
-instance StarMemClass.instNormedStarGroup {S E : Type*} [SeminormedAddCommGroup E]
-    [StarAddMonoid E] [NormedStarGroup E] [SetLike S E] [AddSubgroupClass S E] [StarMemClass S E]
-    (s : S) : NormedStarGroup s where
-  norm_star_le x := NormedStarGroup.norm_star_le (x : E)
-
-/-- A subset closed under the involution and under left multiplication by ambient elements is also
-closed under right multiplication, via `x * a = star (star a * star x)`. -/
-theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMul A]
-    [SetLike S A] [StarMemClass S A] {s : S}
-    (hmul : ∀ a : A, ∀ x ∈ s, a * x ∈ s) (a : A) {x : A} (hx : x ∈ s) : x * a ∈ s := by
-  simpa only [star_mul, star_star] using star_mem (hmul (star a) (star x) (star_mem hx))
-
 namespace NonUnitalStarSubalgebra
-
-section TopologicalClosure
-
-variable {R A : Type*} [CommSemiring R] [TopologicalSpace A] [NonUnitalSemiring A] [Module R A]
-  [Star A] [ContinuousStar A] [ContinuousConstSMul R A] [IsSemitopologicalSemiring A]
-  (I : NonUnitalStarSubalgebra R A)
-
-/-- If a dense subset `s` of `A` multiplies `I` on the left into `I.topologicalClosure`, then all
-of `A` multiplies `I.topologicalClosure` on the left into `I.topologicalClosure`. -/
-theorem mul_mem_topologicalClosure_of_dense {s : Set A} (hs : Dense s)
-    (hmul : ∀ a ∈ s, ∀ x ∈ I, a * x ∈ I.topologicalClosure) (a : A) {x : A}
-    (hx : x ∈ I.topologicalClosure) : a * x ∈ I.topologicalClosure := by
-  have hsI : ∀ b ∈ s, ∀ y ∈ I.topologicalClosure, b * y ∈ I.topologicalClosure := fun b hb _ hy =>
-    (I.isClosed_topologicalClosure.preimage (continuous_const_mul b)).closure_subset_iff.2
-      (hmul b hb) hy
-  exact (I.isClosed_topologicalClosure.preimage (continuous_mul_const x)).closure_subset_iff.2
-    (fun b hb => hsI b hb x hx) (hs a)
-
-/-- The topological closure of a left star ideal in a semitopological star algebra is again closed
-under left multiplication by ambient elements. -/
-theorem mul_mem_topologicalClosure (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (a : A) {x : A}
-    (hx : x ∈ I.topologicalClosure) : a * x ∈ I.topologicalClosure :=
-  I.mul_mem_topologicalClosure_of_dense dense_univ
-    (fun b _ y hy => I.le_topologicalClosure (hmul b y hy)) a hx
-
-end TopologicalClosure
 
 section NormedStarAlgebra
 

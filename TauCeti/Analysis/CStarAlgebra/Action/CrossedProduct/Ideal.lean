@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Ideal
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Functoriality
+import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Embedding full crossed products of closed invariant ideals
@@ -166,16 +167,6 @@ theorem of_mem_range_fullCrossedProductMap_subtypeHom_of_forall_mem
   obtain ⟨g, rfl⟩ := (hI.subtypeHom.convolutionMap μ).mem_range.1 <|
     (hI.mem_range_convolutionMap_subtypeHom_iff μ).2 hf
   exact hI.of_convolutionMap_mem_range_fullCrossedProductMap_subtypeHom μ g
-
-/-- A closed nonunital star subalgebra of `FullCrossedProduct α μ` contains the range of
-`hI.subtypeHom.fullCrossedProductMap μ` precisely when it contains the image of `C_c(G, I)`. -/
-theorem range_fullCrossedProductMap_subtypeHom_le_iff
-    {J : NonUnitalStarSubalgebra ℂ (FullCrossedProduct α μ)}
-    (hJ : IsClosed (J : Set (FullCrossedProduct α μ))) :
-    (hI.subtypeHom.fullCrossedProductMap μ).range ≤ J ↔
-      ∀ f : ConvolutionAlgebra hI.restrict μ,
-        of α μ (hI.subtypeHom.convolutionMap μ f) ∈ J :=
-  hI.subtypeHom.range_fullCrossedProductMap_le_iff μ hJ
 
 /-- The extended integrated form of a covariant representation `P` of `α` vanishes on the range of
 `hI.subtypeHom.fullCrossedProductMap μ` precisely when `P.coefficient` vanishes on `I`. -/

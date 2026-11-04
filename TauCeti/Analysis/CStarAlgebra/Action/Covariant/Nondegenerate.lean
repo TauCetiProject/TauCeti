@@ -16,9 +16,8 @@ import Mathlib.Topology.UrysohnsLemma
 The integrated form of a covariant pair generates the same closed subspace as its coefficient
 representation. In particular, its ranges span a dense subspace exactly when the coefficient
 representation is nondegenerate, and every integrated operator vanishes precisely when the
-coefficient representation is zero. This identifies the nondegenerate and faithful-on-ranges
-representations on the two sides of the integrated-form correspondence, without assuming unital
-coefficients.
+coefficient representation is zero. Thus the integrated form preserves and reflects nondegeneracy
+and detects the zero coefficient representation, without assuming unital coefficients.
 
 The proof tests matrix coefficients against compactly supported continuous scalar functions.
 Only local compactness, the R₁ separation axiom, finiteness of the measure on compact sets and
