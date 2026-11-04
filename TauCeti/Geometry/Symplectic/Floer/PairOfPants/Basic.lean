@@ -25,7 +25,9 @@ cutoff `β` vanishing for `±s ≤ 1` and equal to `1` for `±s ≥ 2`, and it v
 ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` components of its pullback
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
-* `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
+* `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`;
+  `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation` and
+  `TauCeti.Floer.contDiffOn_pairOfPantsPerturbation` restate this for a vector space target.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
   end `q` its pullback is the continuation datum `β(±s - 1) H_q(t) dt`.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
@@ -255,5 +257,43 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
   exact ((contMDiffAt_smoothTransition_endCoord q hw x).smul
     (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
+
+section VectorSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
+
+/-- **The perturbation is smooth, for a vector space target.** For Hamiltonians of period one
+which are `C^n` on `ℝ × V`, the perturbation is `C^n` jointly in the domain point of `S` and the
+target point. -/
+theorem contDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (Function.uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (Function.uncurry (H q)) :=
+    fun q => by
+      have h := (hHs q).contMDiff
+      rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+      exact h
+  have h := contMDiffAt_pairOfPantsPerturbation hH hHs' ⟨w, hw⟩ x
+  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact h
+  exact h'.contDiffAt
+
+/-- The components of the perturbation in real coordinates are `C^n` jointly in the domain point
+of `S` and the target point, for Hamiltonians of period one which are `C^n` on `ℝ × V`. -/
+theorem contDiffOn_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (Function.uncurry (H q))) (v : ℂ) :
+    ContDiffOn ℝ n
+      (Function.uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      ({z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1} ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hK := contDiffAt_pairOfPantsPerturbation hH hHs hz x
+  exact ((hK.comp (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.contDiffAt.comp (z, x) contDiffAt_fst).prodMk
+      contDiffAt_snd)).clm_apply contDiffAt_const).contDiffWithinAt
+
+end VectorSpace
 
 end TauCeti.Floer

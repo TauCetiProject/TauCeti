@@ -100,49 +100,6 @@ private theorem endSign_mul_pos_of_mem_endStrip {q : Puncture} {z : ℝ × ℝ}
   have h : 1 / 2 < q.endSign * z.1 := hz.1
   linarith
 
-/-- The perturbation is `C¹` jointly in the domain point of `S` and the target point. -/
-private theorem contDiffAt_pairOfPantsPerturbation_prod (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
-    ContDiffAt ℝ 1 (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H q)) := fun q => by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h := contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs' ⟨w, hw⟩ x
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact h
-  exact h'.contDiffAt
-
-end SymplecticForm
-
-namespace Floer
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
-
-/-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
-of `S` and the target point. -/
-theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (v : ℂ) :
-    ContDiffOn ℝ 1
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1} ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  have hK := SymplecticForm.contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x
-  exact ((hK.comp (z, x)
-    ((Complex.equivRealProdCLM.symm.contDiff.contDiffAt.comp (z, x) contDiffAt_fst).prodMk
-      contDiffAt_snd)).clm_apply contDiffAt_const).contDiffWithinAt
-
-end Floer
-
-namespace SymplecticForm
-
-open Floer
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
-
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`. -/
 private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
@@ -151,7 +108,8 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
     (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z := by
-  have hK := (contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x).differentiableAt one_ne_zero
+  have hK :=
+    (contDiffAt_pairOfPantsPerturbation (n := 1) hH hHs hz x).differentiableAt one_ne_zero
   exact (hK.comp z (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
     (differentiableAt_const x))).clm_apply (differentiableAt_const v)
 
@@ -160,7 +118,8 @@ of `S`. -/
 private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) (v : ℂ) :
     DifferentiableAt ℝ (fun y => pairOfPantsPerturbation H w y v) x := by
-  have hK := (contDiffAt_pairOfPantsPerturbation_prod hH hHs hw x).differentiableAt one_ne_zero
+  have hK :=
+    (contDiffAt_pairOfPantsPerturbation (n := 1) hH hHs hw x).differentiableAt one_ne_zero
   exact (hK.comp x ((differentiableAt_const w).prodMk differentiableAt_id)).clm_apply
     (differentiableAt_const v)
 

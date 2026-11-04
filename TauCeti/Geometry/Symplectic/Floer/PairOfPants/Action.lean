@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -42,8 +43,9 @@ Hence, for `R ≥ 2`, where the perturbation is `H_q(t) dt` along the boundary c
 The actions are those of the end loops capped by the cones `r x(t)`, the canonical caps in a
 vector space, so no class `A` of spheres appears. If the energy density of `u` is nonnegative, as
 it is for solutions of the Floer equation `(du - X_K)^{0,1} = 0` with respect to almost complex
-structures tamed by `ω` (`TauCeti.SymplecticForm.floerEnergyDensity_nonneg`), and the actions of
-the end loops converge to `A_q`, then the energy of `u` over all of `S` is
+structures tamed by `ω` (`TauCeti.SymplecticForm.floerEnergyDensity_nonneg`), the end
+Hamiltonians are bounded, and the actions of the end loops converge to `A_q`, then the energy of
+`u` over all of `S` is
 
 `E(u) = A₀ + A₁ - A_∞ - ∫_S R_K(u)`
 
@@ -61,6 +63,7 @@ energy density from inputs of actions `A₀, A₁` to an output of action `A_∞
 
 * `TauCeti.Floer.pairOfPantsEndLoop u q R`: the loop of `u` along the circle `±s = R` of the
   end `q`.
+  It has period one (`TauCeti.Floer.periodic_pairOfPantsEndLoop`).
 
 ## Main results
 
@@ -68,8 +71,9 @@ energy density from inputs of actions `A₀, A₁` to an output of action `A_∞
   truncation is the signed sum of the loop areas of the end loops.
 * `integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`:
   the energy identity on the truncation in terms of the actions of the end loops.
-* `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`: the energy of a map
-  with nonnegative energy density is `A₀ + A₁ - A_∞ - ∫_S R_K`.
+* `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`: for bounded end
+  Hamiltonians, the energy of a map with nonnegative energy density whose end-loop actions
+  converge to `A_q` is `A₀ + A₁ - A_∞ - ∫_S R_K`.
 * `SymplecticForm.hamiltonianAction_pairOfPantsEndLoop_inf_le`,
   `SymplecticForm.hamiltonianAction_inf_le_of_tendsto`: the action bound for the output end.
 
@@ -107,6 +111,11 @@ theorem pairOfPantsEndLoop_apply (u : ℝ × ℝ → V) (q : Puncture) (R t : �
       u (Complex.equivRealProdCLM (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))) :=
   (rfl)
 
+/-- The end loop has period one. -/
+theorem periodic_pairOfPantsEndLoop (u : ℝ × ℝ → V) (q : Puncture) (R : ℝ) :
+    Periodic (pairOfPantsEndLoop u q R) 1 := fun t ↦ by
+  simp only [pairOfPantsEndLoop_apply, periodic_cylindricalEndLift q (q.endSign * R) t]
+
 end Floer
 
 namespace SymplecticForm
@@ -125,19 +134,15 @@ private theorem exists_contDiffAt_eventuallyEq_zero_near_one {v : ℂ → V}
     ∃ vc : ℂ → V, (∀ w : ℂ, w ≠ 0 → ContDiffAt ℝ 2 vc w) ∧
       (∀ w : ℂ, ‖w - 1‖ < r / 2 → vc =ᶠ[𝓝 w] 0) ∧
       ∀ w : ℂ, 3 * r / 4 < ‖w - 1‖ → vc =ᶠ[𝓝 w] v := by
-  set d : ℝ := (3 * r / 4) ^ 2 - (r / 2) ^ 2
-  have hd : 0 < d := by simp only [d]; nlinarith
-  set χ : ℂ → ℝ := fun w ↦ smoothTransition ((‖w - 1‖ ^ 2 - (r / 2) ^ 2) / d)
-  have hχ : ContDiff ℝ 2 χ :=
-    smoothTransition.contDiff.comp ((((contDiff_norm_sq ℝ).comp
-      (contDiff_id.sub contDiff_const)).sub contDiff_const).div_const _)
+  let b : ContDiffBump (1 : ℂ) := ⟨r / 2, 3 * r / 4, by positivity, by linarith⟩
+  set χ : ℂ → ℝ := fun w ↦ 1 - b w
+  have hχ : ContDiff ℝ 2 χ := contDiff_const.sub b.contDiff
   have hχ₀ {w : ℂ} (hw : ‖w - 1‖ < r / 2) : χ w = 0 := by
-    refine smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg ?_ hd.le)
-    nlinarith [norm_nonneg (w - 1)]
+    simp only [χ, sub_eq_zero]
+    exact (b.one_of_mem_closedBall (by rw [Metric.mem_closedBall, dist_eq_norm]; exact hw.le)).symm
   have hχ₁ {w : ℂ} (hw : 3 * r / 4 < ‖w - 1‖) : χ w = 1 := by
-    refine smoothTransition.one_of_one_le ((one_le_div hd).2 ?_)
-    simp only [d]
-    nlinarith
+    simp only [χ, sub_eq_self]
+    exact b.zero_of_le_dist (by rw [dist_eq_norm]; exact hw.le)
   have hcont : Continuous fun w : ℂ ↦ ‖w - 1‖ := continuous_norm.comp (continuous_sub_right 1)
   have hzero (w : ℂ) (hw : ‖w - 1‖ < r / 2) : (fun w ↦ χ w • v w) =ᶠ[𝓝 w] 0 := by
     filter_upwards [(isOpen_lt hcont continuous_const).mem_nhds hw] with w' hw'
