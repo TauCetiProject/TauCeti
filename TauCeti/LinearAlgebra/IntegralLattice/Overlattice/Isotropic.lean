@@ -52,9 +52,10 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
 * `TauCeti.IntegralLattice.evenIntermediateCarrierOrderIsoIsotropicSubgroup`: the restriction of
   the intermediate-carrier order isomorphism to even carriers of an even lattice.
 * `TauCeti.IntegralLattice.ofIsotropicSubgroup`: the even overlattice glued along a
-  quadratic-isotropic subgroup of the discriminant group, as an integral lattice. It keeps the
-  ambient form, so it inherits nondegeneracy and positive definiteness, and the isotropy
-  hypothesis makes it even.
+  quadratic-isotropic subgroup of the discriminant group, as an integral lattice, with
+  `TauCeti.IntegralLattice.ofIsotropicSubgroup_eq_iff` and
+  `TauCeti.IntegralLattice.ofIsotropicSubgroup_eq_self_iff`. It keeps the ambient form, so it
+  inherits nondegeneracy and positive definiteness, and the isotropy hypothesis makes it even.
 
 ## References
 
@@ -464,6 +465,38 @@ theorem ofIsotropicSubgroup_bot (hL : L.IsEven) :
   rw [L.ofIsotropicSubgroup_carrier hL ⊥
       (FiniteQuadraticModule.isIsotropic_bot (L.discriminantQuadraticModule hL)),
     L.intermediateCarrierOfDiscriminantSubgroup_bot, Set.Icc.coe_bot]
+
+/-- Two quadratic-isotropic subgroups glue to the same overlattice if and only if they are
+equal. -/
+@[simp]
+theorem ofIsotropicSubgroup_eq_iff (hL : L.IsEven)
+    (H K : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H)
+    (hK : (L.discriminantQuadraticModule hL).IsIsotropic K) :
+    L.ofIsotropicSubgroup hL H hH = L.ofIsotropicSubgroup hL K hK ↔ H = K := by
+  constructor
+  · intro h
+    have hcarrier : L.intermediateCarrierOfDiscriminantSubgroup H =
+        L.intermediateCarrierOfDiscriminantSubgroup K :=
+      Subtype.ext ((L.ofIsotropicSubgroup_carrier hL H hH).symm.trans
+        ((congrArg IntegralLattice.carrier h).trans (L.ofIsotropicSubgroup_carrier hL K hK)))
+    exact (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup H).symm.trans
+      ((congrArg L.discriminantSubgroup hcarrier).trans
+        (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup K))
+  · rintro rfl
+    rfl
+
+/-- Gluing along a quadratic-isotropic subgroup returns the base lattice itself if and only if
+the subgroup is trivial. -/
+@[simp]
+theorem ofIsotropicSubgroup_eq_self_iff (hL : L.IsEven)
+    (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    L.ofIsotropicSubgroup hL H hH = L ↔ H = ⊥ := by
+  refine ⟨fun h ↦ (L.ofIsotropicSubgroup_eq_iff hL H ⊥ hH _).mp
+    (h.trans (L.ofIsotropicSubgroup_bot hL).symm), ?_⟩
+  rintro rfl
+  exact L.ofIsotropicSubgroup_bot hL
 
 /-- Gluing agrees with the even gluing correspondence: `ofIsotropicSubgroup` is the lattice
 carried by the correspondence's inverse image. -/
