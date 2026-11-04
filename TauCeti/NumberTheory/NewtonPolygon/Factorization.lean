@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Splits
+public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.EvalAt
-import Mathlib.Analysis.Normed.Algebra.Ultra
-import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.RingTheory.PowerSeries.RootBound
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 
 /-!
@@ -54,8 +51,6 @@ the slope-`m` factor.
   `Polynomial.IsPureSlopeFactorization.pairwise_isCoprime` and
   `Polynomial.IsPureSlopeFactorization.unique`: degree determination, support, pairwise coprimality
   and uniqueness of pure slope factorisations.
-* `Polynomial.norm_eq_rpow_of_forall_mem_newtonSlopes_eq`: every nonzero root of a pure polynomial
-  of slope `m` in a normed field extension has norm `b ^ m`.
 * `Polynomial.exists_mul_newtonSlopes_filter_le`: threshold factorisation `f = P * Q` separating
   finite slopes `≤ σ` from finite slopes `> σ`.
 * `Polynomial.existsUnique_isPureSlopeFactorization`,
@@ -365,62 +360,7 @@ end Field
 
 end PureSlopeFactorization
 
-/-! ### Root norms and existence of pure slope factorisations -/
-
-section RootNorm
-
-variable {K L : Type*} [NormedField K] [IsUltrametricDist K]
-  [NormedField L] [NormedAlgebra K L]
-  (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
-  (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
-
-include hb hv
-
-/-- Every root `x` of a nonzero polynomial pure of slope `m`, in any normed field extension `L` of
-`K`, satisfies `‖x‖ ≤ b ^ m`. -/
-theorem norm_le_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
-    (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx : aeval x f = 0) : ‖x‖ ≤ b ^ m := by
-  have : IsUltrametricDist L := .of_normedAlgebra K
-  have hc : 0 < b ^ m := Real.rpow_pos_of_pos (zero_lt_one.trans hb) m
-  have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hf
-  set P : K[X] := C f.leadingCoeff⁻¹ * f
-  have hmonic : P.Monic := by
-    rw [Monic, leadingCoeff_mul, leadingCoeff_C, inv_mul_cancel₀ hlc]
-  have hPd : TauCeti.PowerSeries.IsDistinguished (b ^ m) P.natDegree (P : K⟦X⟧) := by
-    rw [hmonic.isDistinguished_iff_forall_mem_newtonSlopes_le v hb hv]
-    intro s hs
-    rw [newtonSlopes_C_mul f v (v.ne_top_iff.mpr (inv_ne_zero hlc))] at hs
-    exact (hm s hs).le
-  have hPdL : TauCeti.PowerSeries.IsDistinguished (b ^ m) P.natDegree
-      (P.map (algebraMap K L) : L⟦X⟧) := by
-    rw [polynomial_map_coe]
-    exact hPd.map (algebraMap K L) (norm_algebraMap' L)
-  have hroot : (P.map (algebraMap K L)).eval x = 0 := by
-    rw [eval_map_algebraMap, map_mul, aeval_C, hx, mul_zero]
-  exact hPdL.norm_le_of_eval_eq_zero hc
-    ⟨hmonic.natDegree_map (algebraMap K L), hmonic.map (algebraMap K L)⟩ hroot
-
-/-- Every nonzero root `x` of a nonzero polynomial pure of slope `m`, in any normed field extension
-`L` of `K`, has norm `‖x‖ = b ^ m`. -/
-theorem norm_eq_rpow_of_forall_mem_newtonSlopes_eq {f : K[X]} (hf : f ≠ 0) {m : ℝ}
-    (hm : ∀ s ∈ f.newtonSlopes v, s = m) {x : L} (hx0 : x ≠ 0) (hx : aeval x f = 0) :
-    ‖x‖ = b ^ m := by
-  refine le_antisymm (norm_le_rpow_of_forall_mem_newtonSlopes_eq v hb hv hf hm hx) ?_
-  have hrev0 : f.reverse ≠ 0 := reverse_eq_zero.not.mpr hf
-  have hrev_slopes : ∀ s ∈ f.reverse.newtonSlopes v, s = -m := by
-    intro s hs
-    rw [newtonSlopes_reverse, Multiset.mem_map] at hs
-    obtain ⟨t, ht, rfl⟩ := hs
-    rw [hm t ht]
-  have hrev_root : aeval x⁻¹ f.reverse = 0 := by
-    rw [aeval_def, f.eval₂_inv_reverse_eq_zero_iff (algebraMap K L) hx0, ← aeval_def]
-    exact hx
-  have hinv := norm_le_rpow_of_forall_mem_newtonSlopes_eq v hb hv hrev0 hrev_slopes hrev_root
-  rw [norm_inv, Real.rpow_neg (zero_lt_one.trans hb).le] at hinv
-  exact (inv_le_inv₀ (norm_pos_iff.mpr hx0)
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m)).mp hinv
-
-end RootNorm
+/-! ### Existence of pure slope factorisations -/
 
 section Complete
 
