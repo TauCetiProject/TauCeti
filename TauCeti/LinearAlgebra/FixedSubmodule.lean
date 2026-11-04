@@ -21,6 +21,8 @@ endomorphism.
 
 * `LinearMap.fixedSubmodulePiEquiv`: fixed vectors of a componentwise endomorphism are
   tuples of fixed vectors, without a finiteness assumption on the index type.
+* `LinearMap.fixedSubmodule_prodMap`: fixed vectors of a product map form the product of
+  the two fixed submodules.
 
 * `LinearEquiv.map_fixedSubmodule`: an intertwining equivalence maps one fixed submodule
   onto the other.
@@ -119,6 +121,15 @@ theorem fixedSubmodulePiEquiv_symm_apply (g : ∀ j, W j →ₗ[R] W j)
     (u : ∀ j, (g j).fixedSubmodule) (j : J) :
     ((fixedSubmodulePiEquiv g).symm u).val j = (u j).val := by
   rfl
+
+variable {U V : Type*} [AddCommMonoid U] [AddCommMonoid V] [Module R U] [Module R V]
+
+/-- The fixed submodule of a product endomorphism is the product of its fixed submodules. -/
+@[simp]
+theorem fixedSubmodule_prodMap (f : U →ₗ[R] U) (g : V →ₗ[R] V) :
+    (f.prodMap g).fixedSubmodule = f.fixedSubmodule.prod g.fixedSubmodule := by
+  ext x
+  simp [mem_fixedSubmodule_iff, Prod.ext_iff]
 
 end LinearMap
 
