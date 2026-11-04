@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
@@ -35,7 +36,8 @@ from `X →L[ℝ] X` into the complex `C⋆`-algebra `X_ℂ →L[ℂ] X_ℂ`, so
 and `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding` applies. Consequently
 complexification preserves the spectrum of a self-adjoint operator
 (`ContinuousLinearMap.spectrum_complexifyL2`) and intertwines the two calculi
-(`ContinuousLinearMap.complexifyL2_cfc`): `(f(T))_ℂ = f(T_ℂ)`.
+(`ContinuousLinearMap.complexifyL2_cfc`): `(f(T))_ℂ = f(T_ℂ)`. Since the calculus of the complex
+`C⋆`-algebra is isometric, so is the real one.
 
 The calculus over `RCLike 𝕜` is in turn pulled back from the real one along realification. A
 Hilbert space `E` over `𝕜` is a real Hilbert space for the inner product `re ⟪x, y⟫`
@@ -55,6 +57,8 @@ realification preserves the spectrum of a self-adjoint operator
   functional calculus for bounded self-adjoint operators on a Hilbert space over `RCLike 𝕜`.
 * `ContinuousLinearMap.instStarOrderedRingRCLike`: Mathlib's star order on bounded operators,
   registered here as an instance.
+* `ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint`: the real
+  calculus is isometric, hence continuous in the operator.
 * `ContinuousLinearMap.spectrum_complexifyL2`: complexification preserves the spectrum of a
   self-adjoint operator.
 * `ContinuousLinearMap.complexifyL2_cfc`: complexification commutes with the continuous
@@ -110,6 +114,35 @@ theorem complexifyL2_cfc (f : ℝ → ℝ) (T : X →L[ℝ] X)
     (cfc f T).complexifyL2 = cfc f T.complexifyL2 := by
   simpa using (complexifyL2StarAlgHom X).map_cfc f T hf
     (isClosedEmbedding_complexifyL2StarAlgHom X).continuous hT (by simpa using hT)
+
+/-- The continuous functional calculus for bounded self-adjoint operators on a real Hilbert space
+is isometric: `‖f(T)‖` is the supremum of `|f|` on the spectrum of `T`. This is what makes the
+calculus continuous in the operator, as in `CFC.continuousOn_rpow` and `CFC.continuousOn_sqrt`. -/
+instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
+    IsometricContinuousFunctionalCalculus ℝ (X →L[ℝ] X) IsSelfAdjoint where
+  isometric T hT := by
+    refine AddMonoidHomClass.isometry_of_norm (cfcHom hT (R := ℝ)) fun f ↦ ?_
+    -- See `spectrum_complexifyL2` for this instance.
+    have : StarModule ℝ (WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+        WithLp 2 (TauCeti.Complexification X)) :=
+      StarModule.complexToReal (E := WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+        WithLp 2 (TauCeti.Complexification X))
+    -- Complexification is isometric and intertwines the two calculi, and the calculus of the
+    -- complex `C⋆`-algebra is isometric, on the same spectrum.
+    set g : ℝ → ℝ := Function.extend Subtype.val f 0
+    have hgf (x : spectrum ℝ T) : g x = f x := Subtype.val_injective.extend_apply f 0 x
+    have hg : ContinuousOn g (spectrum ℝ T) := by
+      rw [continuousOn_iff_continuous_domRestrict]
+      exact f.continuous.congr fun x ↦ (hgf x).symm
+    have hsp := spectrum_complexifyL2 hT
+    rw [cfcHom_eq_cfc_extend 0 hT, ← norm_complexifyL2, complexifyL2_cfc g T hg hT]
+    refine le_antisymm (norm_cfc_le (norm_nonneg f) fun x hx ↦ ?_)
+      ((ContinuousMap.norm_le f (norm_nonneg _)).2 fun x ↦ ?_)
+    · rw [hsp] at hx
+      simpa [hgf ⟨x, hx⟩] using f.norm_coe_le_norm ⟨x, hx⟩
+    · rw [← hgf x]
+      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
+        (by simpa using hT)
 
 section RCLike
 
