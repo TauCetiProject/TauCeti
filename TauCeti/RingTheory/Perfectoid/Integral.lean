@@ -44,10 +44,18 @@ unique map to `A` has principal kernel anyway.
   ring, `p` is not a unit.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.isPrincipal_ker_fontaineTheta`: the kernel of
   Mathlib's Fontaine map is principal.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.surjective_fontaineTheta`: Fontaine's map
+  `θ : W(A♭) → A` is surjective.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.exists_natCast_dvd_sub_pow`: every element is a
   `p`-th power modulo `p`.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.frobeniusModPow_surjective`: for every `π` with
   `π ^ p ∣ p`, Frobenius `A ⧸ π → A ⧸ π ^ p` is surjective.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.exists_associated_untilt`: for every `π` with
+  `π ^ p ∣ p` and `[IsAdicComplete (span {π}) A]`, `π` is associated to `ϖ.untilt` for some
+  `ϖ : PreTilt A p` with `π * p ∣ π - ϖ.untilt` (Bhatt–Morrow–Scholze, Lemma 3.9).
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.of_bijective_frobeniusModPow`: if `A` is `π`-adically
+  complete for a nonzerodivisor `π` with `π ^ p ∣ p` and bijective relative Frobenius
+  `A ⧸ (π) → A ⧸ (π ^ p)`, then `A` is integral perfectoid (Bhatt–Morrow–Scholze, Lemma 3.10(ii)).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_perfectRing`: a perfect ring of characteristic `p`
   is integral perfectoid; the kernel of `θ` is `(p)` (`WittVector.ker_fontaineTheta_eq_span_p`).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_subsingleton`: so is the zero ring.
@@ -55,12 +63,13 @@ unique map to `A` has principal kernel anyway.
 ## References
 
 * B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, §3.2, Definition 3.5 and
-  Lemma 3.10(i).
+  Lemmas 3.9–3.10.
 -/
 
 public section
 
 open Ideal
+open scoped nonZeroDivisors
 
 namespace TauCeti.Perfectoid
 
@@ -115,6 +124,11 @@ theorem exists_natCast_dvd_sub_pow (x : A) : ∃ y, (p : A) ∣ x - y ^ p := by
   rw [map_pow]
   exact hy.symm
 
+/-- Fontaine's map `θ : W(A♭) → A` of an integral perfectoid ring is surjective. -/
+theorem surjective_fontaineTheta [Fact ¬IsUnit (p : A)] :
+    Function.Surjective (WittVector.fontaineTheta A p) :=
+  _root_.surjective_fontaineTheta ((surjective_frobenius_modP_iff A).mpr exists_natCast_dvd_sub_pow)
+
 /-- In an integral perfectoid ring, Frobenius `A ⧸ π → A ⧸ π ^ p` is surjective for every `π`
 with `π ^ p ∣ p`, with no completeness assumption on `π`. This is the surjectivity half of
 Bhatt–Morrow–Scholze, *Integral p-adic Hodge theory*, Lemma 3.10(i). -/
@@ -122,6 +136,16 @@ theorem frobeniusModPow_surjective {π : A} (h : π ^ p ∣ (p : A)) :
     Function.Surjective (frobeniusModPow p h) :=
   (frobeniusModPow_surjective_iff h).mpr fun x ↦
     (exists_natCast_dvd_sub_pow x).imp fun _ ↦ h.trans
+
+/-- **Existence of compatible `p`-power roots up to a unit** (Bhatt–Morrow–Scholze, *Integral
+`p`-adic Hodge theory*, Lemma 3.9). If an integral perfectoid ring `A` is `π`-adically complete for
+an element `π` with `π ^ p ∣ p`, then some `ϖ : PreTilt A p` satisfies `π * p ∣ π - ϖ.untilt` and
+`Associated π ϖ.untilt`. -/
+theorem exists_associated_untilt [Fact ¬IsUnit (p : A)] {π : A} (hdvd : π ^ p ∣ (p : A))
+    [IsAdicComplete (span {π}) A] :
+    ∃ ϖ : PreTilt A p, π * (p : A) ∣ π - ϖ.untilt ∧ Associated π ϖ.untilt :=
+  PreTilt.exists_associated_untilt hdvd
+    ((frobeniusModPow_surjective_iff hdvd).mp (frobeniusModPow_surjective hdvd))
 
 end Basic
 
@@ -149,6 +173,25 @@ theorem of_subsingleton [Subsingleton A] : IsIntegralPerfectoid p A where
     dsimp only
     rw [← map_pow, Subsingleton.elim (x ^ p) x]
   theta_kernel_principal hp := (hp (isUnit_of_subsingleton _)).elim
+
+variable {p A} in
+/-- **Relative Frobenius criterion for integral perfectoid rings** (Bhatt–Morrow–Scholze,
+*Integral `p`-adic Hodge theory*, Lemma 3.10(ii)). Let `A` be `π`-adically complete for a
+nonzerodivisor `π` with `π ^ p ∣ p`. If relative Frobenius `A ⧸ (π) → A ⧸ (π ^ p)` is bijective,
+then `A` is an integral perfectoid ring. -/
+theorem of_bijective_frobeniusModPow {π : A} {hdvd : π ^ p ∣ (p : A)}
+    [IsAdicComplete (span {π}) A] (hreg : π ∈ A⁰)
+    (hbij : Function.Bijective (frobeniusModPow p hdvd)) : IsIntegralPerfectoid p A where
+  exists_adic_element := ⟨π, hdvd, inferInstance⟩
+  frobenius_surjective := by
+    have hs := exists_mul_dvd_sub_pow ((frobeniusModPow_surjective_iff hdvd).mp hbij.2)
+    exact (surjective_pow_modP_iff A).mpr fun a ↦
+      (hs a).imp fun _ ↦ (dvd_mul_left (p : A) π).trans
+  theta_kernel_principal hp hc := by
+    let : Fact (¬IsUnit (p : A)) := ⟨hp⟩
+    obtain ⟨ξ, -, -, hker⟩ :=
+      WittVector.exists_isDistinguished_mem_nonZeroDivisors_ker_fontaineTheta hreg hbij
+    exact ⟨⟨ξ, hker⟩⟩
 
 end IsIntegralPerfectoid
 
