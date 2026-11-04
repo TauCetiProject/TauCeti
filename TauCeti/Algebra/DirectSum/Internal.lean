@@ -34,7 +34,8 @@ independent family, then its kernel is spanned by its homogeneous parts,
 linear map preserves independence when the part of its kernel in the span is spanned by its
 intersections with the summands.
 
-`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
+`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
+and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements.
@@ -419,6 +420,26 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
       (projection_coe j y))
   · rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap, iSup_comm]
     simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
+
+/-- An internal direct sum of submodules can be reindexed along an equivalence of the index
+types. -/
+theorem comp_equiv {R M κ κ' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [DecidableEq κ] [DecidableEq κ'] {A : κ' → Submodule R M} (hA : DirectSum.IsInternal A)
+    (e : κ ≃ κ') : DirectSum.IsInternal (A ∘ e) := by
+  convert hA.iSup_fiber e.symm with k
+  simp [Equiv.symm_apply_eq]
+
+/-- Prepending the zero submodule to a natural-number-indexed internal decomposition
+again gives an internal decomposition. -/
+theorem nat_cons_bot {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {N : ℕ → Submodule R M} (h : DirectSum.IsInternal N) :
+    DirectSum.IsInternal (fun | 0 => ⊥ | i + 1 => N i) := by
+  have hfamily : (fun j ↦ ⨆ i, ⨆ _ : Nat.succ i = j, N i) =
+      (fun | 0 => ⊥ | i + 1 => N i) := by
+    funext j
+    cases j <;> simp
+  rw [← hfamily]
+  exact h.iSup_fiber Nat.succ
 
 /-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
 contains every canonical component of each of its elements, then it is the internal sum of its

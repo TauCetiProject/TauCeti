@@ -81,11 +81,11 @@ def tateModuleGaloisRepresentation :
     Representation ℤ_[ℓ] (K ≃ₐ[F] K) (TateModule ℓ (W⁄K).toAffine.Point) where
   toFun σ := TateModule.mapLinearMap (Affine.Point.map (W' := W) σ.toAlgHom)
   map_one' := LinearMap.ext fun x ↦ TateModule.ext fun n ↦ Subtype.ext <| by
-    simp only [Module.End.one_apply, TateModule.mapLinearMap_apply, TateModule.proj_map,
+    simp only [one_apply_eq_self, TateModule.mapLinearMap_apply, TateModule.proj_map,
       TateModule.levelMap_apply]
     exact Affine.Point.map_id _
   map_mul' σ τ := LinearMap.ext fun x ↦ TateModule.ext fun n ↦ Subtype.ext <| by
-    simp only [Module.End.mul_apply, TateModule.mapLinearMap_apply, TateModule.proj_map,
+    simp only [mul_apply_eq_comp, TateModule.mapLinearMap_apply, TateModule.proj_map,
       TateModule.levelMap_apply]
     exact (Affine.Point.map_map τ.toAlgHom σ.toAlgHom _).symm
 
@@ -150,9 +150,9 @@ theorem tateModuleGaloisRepresentation_eq_one_iff [IsSepClosed K] [W.IsElliptic]
       (TateModule.tateModuleTransition_surjective_of_natCard (Fact.out : ℓ.Prime).ne_zero hcard) k
       ⟨P, AddSubgroup.torsionBy.nsmul_iff.2 hP⟩
     have h := W.coe_proj_tateModuleGaloisRepresentation σ x k
-    rw [hσ, Module.End.one_apply, hx] at h
+    rw [hσ, one_apply_eq_self, hx] at h
     exact h.symm
-  · rw [coe_proj_tateModuleGaloisRepresentation, Module.End.one_apply,
+  · rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self,
       h k _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k x).2)]
 
 end Representation

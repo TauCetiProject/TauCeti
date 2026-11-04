@@ -127,7 +127,7 @@ theorem exists_reduced_artinSchreier_representative (p : ℕ) [Fact p.Prime] [Ch
   have hp0 : p ≠ 0 := (Fact.out : p.Prime).ne_zero
   -- Each cancellation decreases the nonnegative pole order; corrections add by Frobenius.
   induction h : (-P.ord u).toNat using Nat.strong_induction_on generalizing u with
-  | h n ih =>
+  | ind n ih =>
     by_cases hint : u ∈ P.integers
     · exact ⟨0, by simpa [hp0] using Or.inl hint⟩
     have hu : P.ord u < 0 := by

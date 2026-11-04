@@ -140,7 +140,7 @@ theorem eq_zero_of_genWeightSpace_ne_bot_of_isTrivial {chi : L → K}
   obtain ⟨k, hk⟩ := hm x
   have hx : toEnd K L M x = 0 := LinearMap.ext fun y ↦ LieModule.IsTrivial.trivial x y
   rw [hx, zero_sub, ← neg_smul, smul_pow, one_pow, LinearMap.smul_apply,
-    Module.End.one_apply] at hk
+    one_apply_eq_self] at hk
   rcases smul_eq_zero.mp hk with h | h
   · rcases Nat.eq_zero_or_pos k with rfl | hk0
     · simp at h
@@ -263,7 +263,7 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
     induction n with
     | zero => simp
     | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, ih, map_smul, toEnd_apply_apply, hx, smul_smul,
+      rw [pow_succ', mul_apply_eq_comp, ih, map_smul, toEnd_apply_apply, hx, smul_smul,
         pow_succ]
   have hmaps (chi : Weight K H M) : Set.MapsTo (toEnd K H M h ^ m)
       (genWeightSpace M chi) (genWeightSpace M chi) := fun x hx ↦ by

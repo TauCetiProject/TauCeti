@@ -102,8 +102,8 @@ theorem notMem_sq_of_span_pair_eq_maximalIdeal (hdim : ringKrullDim R = 2) {x y 
     (hxy : span {x, y} = maximalIdeal R) : x ∉ maximalIdeal R ^ 2 := fun hx ↦ by
   -- By Nakayama's lemma `y` alone would generate the maximal ideal.
   have hle : maximalIdeal R ≤ span {y} := by
-    refine Submodule.le_of_le_smul_of_le_jacobson_bot (maximalIdeal R).fg_of_isNoetherianRing
-      (maximalIdeal_le_jacobson _) ?_
+    refine Submodule.le_of_le_smul_of_le_jacobson (maximalIdeal R).fg_of_isNoetherianRing
+      (ringJacobson_eq_maximalIdeal R).ge ?_
     rw [smul_eq_mul, ← pow_two]
     calc maximalIdeal R = span {x} ⊔ span {y} := by rw [← span_insert, hxy]
       _ ≤ maximalIdeal R ^ 2 ⊔ span {y} :=

@@ -10,7 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 /-!
 # Logarithmic cutoffs along the natural numbers
 
-For any real shift `c`, the logarithms `log (N + c)` of the shifted natural numbers tend to `+∞`.
+The logarithms `log (N + c)` of the shifted natural numbers are positive for a real shift
+`c > 1`, and tend to `+∞` for any real shift `c`.
 The logarithms `log n` cut `(0, ∞)` into the steps `(log n, log (n + 1))`, on each of which the
 step function `t ↦ ⌊exp t⌋₊` is constant, equal to `n`. At the cutoffs `log (N + 1)`, the
 truncated Laplace integral of `t ↦ a ⌊exp t⌋₊` is therefore the partial sum of the Dirichlet
@@ -18,6 +19,7 @@ series of `a` plus the corresponding partial sum of a step correction.
 
 ## Main results
 
+* `Real.log_natCast_add_pos` — `log (N + c)` is positive for every shift `c > 1`.
 * `Real.tendsto_log_natCast_add_atTop` — `log (N + c)` tends to `atTop` as `N → ∞`.
 * `Real.floor_exp_eq_of_mem_Ioo` — `⌊exp t⌋₊ = n` for `t ∈ (log n, log (n + 1))`, `n > 0`.
 -/
@@ -27,6 +29,10 @@ public section
 namespace Real
 
 open Filter Set
+
+/-- For a real shift `c > 1`, `log (N + c)` is positive for every natural number `N`. -/
+theorem log_natCast_add_pos {c : ℝ} (hc : 1 < c) (N : ℕ) : 0 < log (N + c) :=
+  log_pos (by linarith [N.cast_nonneg (α := ℝ)])
 
 /-- For any real shift `c`, `log (N + c)` tends to `+∞` as the natural number `N` does. -/
 theorem tendsto_log_natCast_add_atTop (c : ℝ) :

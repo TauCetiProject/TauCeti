@@ -49,7 +49,7 @@ private theorem exists_eq_zsmul_of_mem_fundamentalLattice
     (hx : x ∈ t.fundamentalLattice ht i)
     (hxw : IsCartanWeightVector (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i))
-      (fun j => if j = i then 1 else 0) x) :
+      (Pi.single i 1) x) :
     ∃ n : ℤ, x = n • t.fundamentalModuleGenerator ht i := by
   rw [t.fundamentalLattice_def ht, t.kostantForm_def ht] at hx
   exact (t.lieBasis ht).exists_eq_zsmul_of_mem_orbitOfRep_kostantForm

@@ -51,7 +51,7 @@ theorem iSup_rationalEigenspace_eq_top {n ι : Type*} [Fintype n] [DecidableEq n
     rw [mem_rationalEigenspace]
     funext i
     have hij := congr_fun (congr_fun h i) j
-    rw [mul_diagonal, mul_apply] at hij
+    rw [mul_diagonal, Matrix.mul_apply] at hij
     simp only [map_apply] at hij
     simp only [mulVec, dotProduct, Function.comp_apply, col_apply, Pi.smul_apply, smul_eq_mul,
       hij, mul_comm]

@@ -39,6 +39,8 @@ two rectangles form a thin annulus through `X_k`, are computed in
 
 ## Main results
 
+* `TauCeti.GridDiagram.left_eq_of_mem_XHomotopyRectangles_X`: a rectangle counted by `H_k` from
+  the `X`-marking state has initial side `k`.
 * `TauCeti.GridDiagram.sum_XHomotopyDecompositions`: the matrix entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻`
   are the weighted sums over `XHomotopyDecompositions`.
 * `TauCeti.GridDiagram.mem_XHomotopyDecompositions_iff_of_disjoint`: for rectangles covering
@@ -86,6 +88,17 @@ theorem mem_XHomotopyRectangles (k : Fin n) {x y : GridState n}
     r ∈ G.XHomotopyRectangles k x y ↔
       r.IsEmpty ∧ r.toGridRectangle.coveredSquares ∩ G.XSet = {(k, G.X k)} := by
   simp [XHomotopyRectangles]
+
+/-- A rectangle counted by the `X`-marking homotopy of column `k` from the `X`-marking state has
+initial side `k`: its initial lower corner is the lower-left corner of the `X`-marked square of
+its initial side column, so it covers that marking. -/
+theorem left_eq_of_mem_XHomotopyRectangles_X {k : Fin n} {y : GridState n}
+    {r : GridRectangleBetween G.X y} (hr : r ∈ G.XHomotopyRectangles k G.X y) : r.left = k := by
+  have hmem : (r.left, r.bottom) ∈ r.toGridRectangle.coveredSquares ∩ G.XSet :=
+    Finset.mem_inter.mpr ⟨r.left_bottom_mem_coveredSquares,
+      (G.mem_XSet _).mpr (GridRectangleBetween.bottom_def r).symm⟩
+  rw [((G.mem_XHomotopyRectangles k r).mp hr).2, Finset.mem_singleton, Prod.mk.injEq] at hmem
+  exact hmem.1
 
 /-- The rectangles counted by `H_k` are empty rectangles. -/
 theorem XHomotopyRectangles_subset_emptyRectangles (k : Fin n) (x y : GridState n) :

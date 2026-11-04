@@ -5,124 +5,273 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 public import TauCeti.Probability.Finance.SimpleStrategy
 
 /-!
-# Arbitrage and its absence under an equivalent martingale measure
+# Arbitrage and martingale measures for simple strategies
 
-A trade with initial cost `v` and terminal wealth `X` is an *arbitrage* under the physical
-measure `P` (`TauCeti.Finance.IsArbitrage`) when it costs nothing, never loses money and makes a
-profit with positive probability:
+A trade with initial cost `v` and terminal wealth `V` is an **arbitrage** under a probability
+measure `P` (`TauCeti.Finance.IsArbitrage`) if it costs nothing almost surely, never ends with a
+loss almost surely, and ends with a gain with positive probability. The notion depends only on
+the null sets of `P` (`TauCeti.Finance.isArbitrage_iff_of_absolutelyContinuous`) and not on the
+unit of account (`TauCeti.Finance.isArbitrage_mul_iff`). An arbitrage with integrable terminal
+wealth has positive expected terminal wealth (`TauCeti.Finance.IsArbitrage.integral_pos`).
 
-`v = 0` and `X ≥ 0` `P`-almost surely, and `P {X > 0} > 0`.
+This file proves the easy half of the fundamental theorem of asset pricing for the simple
+strategies of `TauCeti.Probability.Finance.SimpleStrategy`. Suppose that, under a measure `Q`,
+the discounted stock price `X = S / β` is a martingale along the trading dates `τ 0, …, τ n`:
+each `X (τ j)` is integrable and `ℱ (τ j)`-measurable, and `E_Q[X (τ (j + 1)) | ℱ (τ j)] = X (τ j)`.
+Then for a stock holding `a j` chosen at `τ j` with integrable trading gains:
 
-This notion depends on `P` only through its null sets, so it is the same under every equivalent
-measure `Q` (`TauCeti.Finance.isArbitrage_congr_measure`), and it does not depend on the unit of
-account: dividing the cost and the wealth by a positive numeraire preserves it
-(`TauCeti.Finance.IsArbitrage.div`). Under `Q` an arbitrage whose terminal wealth is
-`Q`-integrable has strictly positive expected profit
-(`TauCeti.Finance.IsArbitrage.integral_lt_integral`). Hence, whenever the wealth of a
-trading strategy measured in units of a positive numeraire `N`, such as the bond, is a
-supermartingale under a measure `Q` equivalent to `P`, the strategy is not an arbitrage between
-any two dates (`MeasureTheory.Supermartingale.not_isArbitrage`). In particular this applies when
-the discounted wealth is a `Q`-martingale, the defining property of an admissible strategy in a
-market with an equivalent martingale measure.
+* the gains `∫ a dX` are a `Q`-martingale along the trading dates
+  (`TauCeti.Finance.condExp_simpleGains`) with mean zero
+  (`TauCeti.Finance.integral_simpleGains`);
+* if moreover the discounted initial cost is `Q`-integrable and known at `τ 0`, the discounted
+  wealth of a self-financing strategy at each trading date is the conditional expectation of its
+  discounted terminal wealth (`TauCeti.Finance.IsSelfFinancing.condExp_discounted_wealth`), so the
+  terminal wealth determines the wealth at every trading date;
+* if moreover `Q` and `P` have the same null sets and the bond price is positive, no
+  self-financing strategy is an arbitrage under `P`
+  (`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
 
-Discounted martingale wealth is also determined by its terminal value: it is the conditional
-price `V_t = N_t E_Q[V_T / N_T | ℱ_t]` (`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), so two
-such strategies with the same terminal wealth have the same wealth at every earlier date, and in
-particular the same initial cost (`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`). This is the
-law of one price. Both statements are general facts about martingales and are proved in
+More generally, if the wealth `V` of any trading strategy, measured in units of a numeraire `N`
+that is positive at the later date, is a supermartingale under a measure `Q` with the same null
+sets as `P`, then trading between two dates is not an arbitrage under `P`
+(`MeasureTheory.Supermartingale.not_isArbitrage`). In particular this applies when the wealth in
+units of `N` is a `Q`-martingale; it is then also determined by its terminal value through the
+conditional pricing formula `V_t = N_t E_Q[V_T / N_T | ℱ_t]`
+(`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), which gives the law of one price
+(`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`), both in
 `TauCeti/Probability/Martingale/Basic.lean`.
 
-For simple strategies the martingale property is proved rather than assumed. The gains
-`∫₀ᵗ a dX` of a simple strategy with bounded positions, each chosen at the start of its trading
-interval, from trading a `Q`-martingale `X` form a `Q`-martingale
-(`MeasureTheory.Martingale.simpleGains`, in `TauCeti/Probability/Finance/SimpleStrategy.lean`).
-So if the discounted stock `S / β` is a `Q`-martingale, every self-financing simple strategy
-with bounded stock positions has martingale discounted gains, and none is an arbitrage
-(`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
-
-## Main declarations
-
-* `TauCeti.Finance.IsArbitrage`: an arbitrage, given by its initial cost and terminal wealth.
-* `MeasureTheory.Supermartingale.not_isArbitrage`: no arbitrage when the wealth in units of a
-  positive numeraire is a supermartingale under an equivalent measure.
-* `TauCeti.Finance.IsSelfFinancing.not_isArbitrage`: no self-financing simple strategy is an
-  arbitrage when the discounted stock is a martingale under an equivalent measure.
+No integrability of the holdings themselves is assumed beyond that of each trading gain
+`a j (X (τ (j + 1)) - X (τ j))`, and apart from the integrability and measurability of the
+discounted initial cost in the wealth representation, the bond holdings need no integrability or
+measurability at all.
 
 ## References
 
+* J. M. Harrison, S. R. Pliska, *Martingales and stochastic integrals in the theory of continuous
+  trading*, Stochastic Process. Appl. 11 (1981), 215–260, §2–§3.
 * H. Föllmer, A. Schied, *Stochastic Finance: An Introduction in Discrete Time*, 4th ed.,
-  de Gruyter, 2016, §1.2 and §5.2.
+  de Gruyter, 2016, §5.2.
 * S. E. Shreve, *Stochastic Calculus for Finance II: Continuous-Time Models*, Springer, 2004,
-  §5.4.
+  §5.4.3.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Filter Finset
+open MeasureTheory Finset
 
 namespace TauCeti.Finance
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P Q : Measure Ω} {v X : Ω → ℝ}
+variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P Q : Measure Ω} {v V c₀ c : Ω → ℝ}
 
 /-! ### Arbitrage -/
 
-/-- A trade with initial cost `v` and terminal wealth `X` is an *arbitrage* under `P` when it
-costs nothing, never loses money and makes a profit with positive probability. -/
-structure IsArbitrage (P : Measure Ω) (v X : Ω → ℝ) : Prop where
-  /-- The trade costs nothing. -/
-  cost_ae_eq_zero : v =ᵐ[P] 0
-  /-- The trade never loses money. -/
-  ae_nonneg : 0 ≤ᵐ[P] X
-  /-- The trade makes a profit with positive probability. -/
-  measure_pos : 0 < P {ω | 0 < X ω}
+/-- A trade with initial cost `v` and terminal wealth `V` is an **arbitrage** under `P` if it
+costs nothing almost surely, its terminal wealth is nonnegative almost surely, and its terminal
+wealth is positive with positive probability. -/
+def IsArbitrage (P : Measure Ω) (v V : Ω → ℝ) : Prop :=
+  v =ᵐ[P] 0 ∧ 0 ≤ᵐ[P] V ∧ 0 < P {ω | 0 < V ω}
 
 /-- Unfolding lemma for `IsArbitrage`. -/
 theorem isArbitrage_iff :
-    IsArbitrage P v X ↔ v =ᵐ[P] 0 ∧ 0 ≤ᵐ[P] X ∧ 0 < P {ω | 0 < X ω} :=
-  ⟨fun h ↦ ⟨h.1, h.2, h.3⟩, fun h ↦ ⟨h.1, h.2.1, h.2.2⟩⟩
+    IsArbitrage P v V ↔ v =ᵐ[P] 0 ∧ 0 ≤ᵐ[P] V ∧ 0 < P {ω | 0 < V ω} :=
+  Iff.rfl
 
-/-- Being an arbitrage depends on the measure only through its null sets, so it is the same
-under equivalent measures. -/
-theorem isArbitrage_congr_measure (hPQ : P ≪ Q) (hQP : Q ≪ P) :
-    IsArbitrage P v X ↔ IsArbitrage Q v X := by
-  -- One direction suffices, by symmetry of the hypotheses.
-  have key : ∀ {P Q : Measure Ω}, P ≪ Q → Q ≪ P → IsArbitrage P v X → IsArbitrage Q v X :=
-    fun hPQ hQP h ↦ ⟨hQP.ae_le h.1, hQP.ae_le h.2,
-      pos_iff_ne_zero.2 fun h0 ↦ (pos_iff_ne_zero.1 h.3) (hPQ h0)⟩
-  exact ⟨key hPQ hQP, key hQP hPQ⟩
+/-- Arbitrage depends only on the null sets of the measure: it is the same under equivalent
+measures. -/
+theorem isArbitrage_iff_of_absolutelyContinuous (hPQ : P ≪ Q) (hQP : Q ≪ P) :
+    IsArbitrage P v V ↔ IsArbitrage Q v V := by
+  refine and_congr ⟨hQP.ae_eq, hPQ.ae_eq⟩
+    (and_congr ⟨fun h ↦ hQP.ae_le h, fun h ↦ hPQ.ae_le h⟩ ?_)
+  simp only [pos_iff_ne_zero]
+  exact ⟨mt fun h ↦ hPQ h, mt fun h ↦ hQP h⟩
 
-/-- Arbitrage does not depend on the unit of account: dividing the cost by any random variable
-and the terminal wealth by an almost surely positive one, such as the bond price at the initial
-and terminal dates, preserves an arbitrage. -/
-theorem IsArbitrage.div {N : Ω → ℝ} (h : IsArbitrage P v X) (hN : ∀ᵐ ω ∂P, 0 < N ω)
-    (N₀ : Ω → ℝ) : IsArbitrage P (v / N₀) (X / N) where
-  cost_ae_eq_zero := by filter_upwards [h.1] with ω hω; simp [hω]
-  ae_nonneg := by
-    filter_upwards [h.2, hN] with ω hX hNω using div_nonneg hX hNω.le
-  measure_pos := by
-    refine h.3.trans_eq (measure_congr ?_)
-    filter_upwards [hN] with ω hNω
-    simp [hNω]
+/-- Arbitrage does not depend on the unit of account: rescaling the initial cost by an almost surely
+nonvanishing factor and the terminal wealth by an almost surely positive factor preserves it. -/
+theorem isArbitrage_mul_iff (hc₀ : ∀ᵐ ω ∂P, c₀ ω ≠ 0) (hc : ∀ᵐ ω ∂P, 0 < c ω) :
+    IsArbitrage P (c₀ * v) (c * V) ↔ IsArbitrage P v V := by
+  have hv : ∀ᵐ ω ∂P, (c₀ * v) ω = 0 ↔ v ω = 0 := by
+    filter_upwards [hc₀] with ω hω
+    simp [hω]
+  have hV : ∀ᵐ ω ∂P, 0 ≤ (c * V) ω ↔ 0 ≤ V ω := by
+    filter_upwards [hc] with ω hω
+    simp [mul_nonneg_iff_of_pos_left hω]
+  have hV' : {ω | 0 < (c * V) ω} =ᵐ[P] {ω | 0 < V ω} := by
+    filter_upwards [hc] with ω hω
+    simp [mul_pos_iff_of_pos_left hω]
+  simp only [isArbitrage_iff, Filter.EventuallyEq, Filter.EventuallyLE, Pi.zero_apply,
+    measure_congr hV']
+  exact and_congr (Filter.eventually_congr hv) (and_congr_left' (Filter.eventually_congr hV))
 
-/-- Under the measure defining it, an integrable arbitrage has strictly positive expected
-profit: its expected terminal wealth exceeds its expected cost. -/
-theorem IsArbitrage.integral_lt_integral (h : IsArbitrage P v X) (hX : Integrable X P) :
-    ∫ ω, v ω ∂P < ∫ ω, X ω ∂P := by
-  rw [integral_congr_ae h.1]
-  simp only [Pi.zero_apply, integral_zero]
-  rw [integral_pos_iff_support_of_nonneg_ae h.2 hX]
-  exact h.3.trans_le (measure_mono fun ω (hω : 0 < X ω) ↦ hω.ne')
+/-- An arbitrage with integrable terminal wealth has positive expected terminal wealth. -/
+theorem IsArbitrage.integral_pos (h : IsArbitrage P v V) (hV : Integrable V P) :
+    0 < ∫ ω, V ω ∂P :=
+  (integral_pos_iff_support_of_nonneg_ae h.2.1 hV).2 <|
+    h.2.2.trans_le (measure_mono fun _ hω ↦ ne_of_gt hω)
 
-/-- A trade whose terminal wealth is integrable under a measure `Q` equivalent to `P`, with at
-most the expected value of its cost, is not an arbitrage under `P`. -/
-theorem not_isArbitrage_of_integral_le (hPQ : P ≪ Q) (hQP : Q ≪ P) (hX : Integrable X Q)
-    (hle : ∫ ω, X ω ∂Q ≤ ∫ ω, v ω ∂Q) : ¬IsArbitrage P v X := fun h ↦
-  (((isArbitrage_congr_measure hPQ hQP).1 h).integral_lt_integral hX).not_ge hle
+/-! ### Gains from trading a martingale -/
+
+section Gains
+
+variable [LinearOrder ι] {ℱ : Filtration ι mΩ} {τ : ℕ → ι} {n k m : ℕ} {a : ℕ → Ω → ℝ}
+  {X : ι → Ω → ℝ} [IsFiniteMeasure Q]
+
+/-- **Gains from trading a martingale form a martingale.** If `X` is a `Q`-martingale along the
+trading dates of a simple strategy whose holdings `a j` are chosen at `τ j` and whose trades have
+integrable gains, then for `k ≤ m ≤ n` the conditional expectation given `ℱ (τ k)` of the gains up
+to `τ m` is the gains up to `τ k`. -/
+theorem condExp_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
+    (hXm : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (X (τ j)))
+    (hXi : ∀ j ≤ n, Integrable (X (τ j)) Q)
+    (hX : ∀ j < n, Q[X (τ (j + 1)) | ℱ (τ j)] =ᵐ[Q] X (τ j))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hint : ∀ j < n, Integrable (a j * (X (τ (j + 1)) - X (τ j))) Q) (hkm : k ≤ m) (hm : m ≤ n) :
+    Q[simpleGains τ n a X (τ m) | ℱ (τ k)] =ᵐ[Q] simpleGains τ n a X (τ k) := by
+  have hle : ∀ i j, i ≤ j → j ≤ n → ℱ (τ i) ≤ ℱ (τ j) := fun i j hij hj ↦
+    ℱ.mono (hτ (hij.trans hj) hj hij)
+  -- Each trade has conditional mean zero given the information at its start.
+  have htrade : ∀ i < n, Q[a i * (X (τ (i + 1)) - X (τ i)) | ℱ (τ i)] =ᵐ[Q] 0 := fun i hi ↦ by
+    filter_upwards [condExp_mul_of_stronglyMeasurable_left (ha i hi) (hint i hi)
+        ((hXi _ hi).sub (hXi _ hi.le)), condExp_sub (hXi _ hi) (hXi _ hi.le) (ℱ (τ i)), hX i hi]
+      with ω h₁ h₂ h₃
+    rw [h₁, Pi.mul_apply, h₂, Pi.sub_apply, h₃,
+      condExp_of_stronglyMeasurable (ℱ.le _) (hXm i hi.le) (hXi i hi.le), sub_self, mul_zero,
+      Pi.zero_apply]
+  -- So does every later trade, given the information at `τ k`.
+  have hlater : ∀ i ∈ Ico k m, Q[a i * (X (τ (i + 1)) - X (τ i)) | ℱ (τ k)] =ᵐ[Q] 0 :=
+    fun i hi ↦ by
+      obtain ⟨hki, him⟩ := mem_Ico.1 hi
+      have hin : i < n := him.trans_le hm
+      refine (condExp_condExp_of_le (hle k i hki hin.le) (ℱ.le _)).symm.trans ?_
+      exact (condExp_congr_ae (htrade i hin)).trans (by rw [condExp_zero])
+  -- The gains up to `τ m` are the gains up to `τ k` plus the trades in between.
+  have hsplit : simpleGains τ n a X (τ m) =
+      simpleGains τ n a X (τ k) + ∑ i ∈ Ico k m, a i * (X (τ (i + 1)) - X (τ i)) := by
+    ext ω
+    simp only [simpleGains_apply_eq_sum hτ hm, simpleGains_apply_eq_sum hτ (hkm.trans hm),
+      Pi.add_apply, Finset.sum_apply, Pi.mul_apply, Pi.sub_apply, sum_range_add_sum_Ico _ hkm]
+  have hGk := stronglyMeasurable_simpleGains hτ hXm ha (hkm.trans hm)
+  have hGki := integrable_simpleGains hτ hint (hkm.trans hm)
+  have htradei : ∀ i ∈ Ico k m, Integrable (a i * (X (τ (i + 1)) - X (τ i))) Q :=
+    fun i hi ↦ hint i ((mem_Ico.1 hi).2.trans_le hm)
+  rw [hsplit]
+  filter_upwards [condExp_add hGki (integrable_finsetSum' _ htradei) (ℱ (τ k)),
+    condExp_finsetSum htradei (ℱ (τ k)), (Filter.eventually_all_finset _).2 hlater] with ω h₁ h₂ h₃
+  rw [h₁, Pi.add_apply, h₂, condExp_of_stronglyMeasurable (ℱ.le _) hGk hGki, Finset.sum_apply,
+    sum_eq_zero h₃, add_zero]
+
+/-- **Gains from trading a martingale have mean zero.** Under the hypotheses of
+`TauCeti.Finance.condExp_simpleGains`, the gains up to every trading date `τ m` have
+`Q`-expectation zero. -/
+theorem integral_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
+    (hXm : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (X (τ j)))
+    (hXi : ∀ j ≤ n, Integrable (X (τ j)) Q)
+    (hX : ∀ j < n, Q[X (τ (j + 1)) | ℱ (τ j)] =ᵐ[Q] X (τ j))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hint : ∀ j < n, Integrable (a j * (X (τ (j + 1)) - X (τ j))) Q) (hm : m ≤ n) :
+    ∫ ω, simpleGains τ n a X (τ m) ω ∂Q = 0 := by
+  rw [← integral_condExp (ℱ.le (τ 0)),
+    integral_congr_ae (condExp_simpleGains hτ hXm hXi hX ha hint (Nat.zero_le m) hm)]
+  simp [simpleGains_of_le hτ le_rfl]
+
+end Gains
+
+/-! ### Self-financing strategies under a martingale measure -/
+
+section SelfFinancing
+
+variable [LinearOrder ι] {ℱ : Filtration ι mΩ} {τ : ℕ → ι} {n k : ℕ} {a b : ℕ → Ω → ℝ}
+  {S β : ι → Ω → ℝ} [IsFiniteMeasure Q]
+
+/-- **The discounted wealth process is a martingale.** Let the discounted stock price `S / β` be a
+`Q`-martingale along the trading dates of a self-financing simple strategy whose stock holdings
+`a j` are chosen at `τ j` and whose trades in the discounted stock have integrable gains, and let
+the discounted initial cost be integrable and known at `τ 0`. Then for every `k ≤ n` the discounted
+cost of the portfolio formed at `τ k` is the conditional expectation given `ℱ (τ k)` of the
+discounted terminal wealth. In particular the terminal wealth determines the wealth at every
+trading date. -/
+theorem IsSelfFinancing.condExp_discounted_wealth (h : IsSelfFinancing τ (n + 1) a b S β)
+    (hτ : MonotoneOn τ (Set.Iic (n + 1))) (hβ : ∀ t ∈ Set.Icc (τ 0) (τ (n + 1)), ∀ ω, β t ω ≠ 0)
+    (hvm : StronglyMeasurable[ℱ (τ 0)]
+      fun ω ↦ (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω)
+    (hvi : Integrable (fun ω ↦ (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω) Q)
+    (hXm : ∀ j ≤ n + 1, StronglyMeasurable[ℱ (τ j)] ((S / β) (τ j)))
+    (hXi : ∀ j ≤ n + 1, Integrable ((S / β) (τ j)) Q)
+    (hX : ∀ j < n + 1, Q[(S / β) (τ (j + 1)) | ℱ (τ j)] =ᵐ[Q] (S / β) (τ j))
+    (ha : ∀ j < n + 1, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hint : ∀ j < n + 1, Integrable (a j * ((S / β) (τ (j + 1)) - (S / β) (τ j))) Q)
+    (hk : k ≤ n) :
+    Q[fun ω ↦ (a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1)) ω | ℱ (τ k)]
+      =ᵐ[Q] fun ω ↦ (a k ω * S (τ k) ω + b k ω * β (τ k) ω) / β (τ k) ω := by
+  have hk' : τ k ≤ τ (k + 1) :=
+    hτ (Set.mem_Iic.2 (by omega)) (Set.mem_Iic.2 (by omega)) (Nat.le_succ k)
+  -- Both sides are the discounted initial cost plus the gains from the discounted stock.
+  have hT : (fun ω ↦ (a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1)) ω) =
+      (fun ω ↦ (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω) +
+        simpleGains τ (n + 1) a (S / β) (τ (n + 1)) := by
+    ext ω
+    rw [Pi.add_apply]
+    exact h.discounted_terminal_wealth_eq hτ hβ ω
+  have hK : (fun ω ↦ (a k ω * S (τ k) ω + b k ω * β (τ k) ω) / β (τ k) ω) =
+      (fun ω ↦ (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω) +
+        simpleGains τ (n + 1) a (S / β) (τ k) := by
+    ext ω
+    rw [Pi.add_apply]
+    exact (isSelfFinancing_iff_discounted hτ hβ).1 h k (by omega) ω _ ⟨le_rfl, hk'⟩
+  have hvk := hvm.mono (ℱ.mono (hτ (Nat.zero_le _) (Set.mem_Iic.2 (by omega)) (Nat.zero_le k)))
+  rw [hT, hK]
+  filter_upwards [condExp_add hvi (integrable_simpleGains hτ hint le_rfl) (ℱ (τ k)),
+    condExp_simpleGains hτ hXm hXi hX ha hint (by omega : k ≤ n + 1) le_rfl] with ω h₁ h₂
+  rw [h₁, Pi.add_apply, Pi.add_apply, h₂, condExp_of_stronglyMeasurable (ℱ.le _) hvk hvi]
+
+/-- **No arbitrage under an equivalent martingale measure.** Let `Q` have the same null sets as
+`P`, let the bond price be positive and let the discounted stock price `S / β` be a `Q`-martingale
+along the trading dates. Then no self-financing simple strategy whose stock holdings `a j` are
+chosen at `τ j` and whose trades in the discounted stock have `Q`-integrable gains is an
+arbitrage under `P`. -/
+theorem IsSelfFinancing.not_isArbitrage (hPQ : P ≪ Q) (hQP : Q ≪ P)
+    (h : IsSelfFinancing τ (n + 1) a b S β) (hτ : MonotoneOn τ (Set.Iic (n + 1)))
+    (hβ : ∀ t ∈ Set.Icc (τ 0) (τ (n + 1)), ∀ ω, 0 < β t ω)
+    (hXm : ∀ j ≤ n + 1, StronglyMeasurable[ℱ (τ j)] ((S / β) (τ j)))
+    (hXi : ∀ j ≤ n + 1, Integrable ((S / β) (τ j)) Q)
+    (hX : ∀ j < n + 1, Q[(S / β) (τ (j + 1)) | ℱ (τ j)] =ᵐ[Q] (S / β) (τ j))
+    (ha : ∀ j < n + 1, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hint : ∀ j < n + 1, Integrable (a j * ((S / β) (τ (j + 1)) - (S / β) (τ j))) Q) :
+    ¬ IsArbitrage P (fun ω ↦ a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω)
+      (fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) := by
+  intro harb
+  have h₀ : τ 0 ∈ Set.Icc (τ 0) (τ (n + 1)) :=
+    ⟨le_rfl, hτ (Set.mem_Iic.2 (Nat.zero_le _)) Set.self_mem_Iic (Nat.zero_le _)⟩
+  have hT : τ (n + 1) ∈ Set.Icc (τ 0) (τ (n + 1)) := ⟨h₀.2, le_rfl⟩
+  -- Measured in bond shares, the trade is still an arbitrage, now under `Q`.
+  have hdarb := (isArbitrage_mul_iff (c₀ := fun ω ↦ (β (τ 0) ω)⁻¹)
+    (c := fun ω ↦ (β (τ (n + 1)) ω)⁻¹) (.of_forall fun ω ↦ inv_ne_zero (hβ _ h₀ ω).ne')
+    (.of_forall fun ω ↦ inv_pos.2 (hβ _ hT ω))).2
+    ((isArbitrage_iff_of_absolutelyContinuous hPQ hQP).1 harb)
+  -- Its discounted terminal wealth is the discounted initial cost, zero, plus the gains.
+  have hwealth : ∀ ω, ((fun ω ↦ (β (τ (n + 1)) ω)⁻¹) *
+      fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) ω =
+      ((fun ω ↦ (β (τ 0) ω)⁻¹) * fun ω ↦ a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) ω +
+        simpleGains τ (n + 1) a (S / β) (τ (n + 1)) ω := fun ω ↦ by
+    simpa only [Pi.mul_apply, inv_mul_eq_div] using
+      h.discounted_terminal_wealth_eq hτ (fun t ht ω ↦ (hβ t ht ω).ne') ω
+  have hgains : ((fun ω ↦ (β (τ (n + 1)) ω)⁻¹) *
+      fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) =ᵐ[Q]
+      simpleGains τ (n + 1) a (S / β) (τ (n + 1)) := by
+    filter_upwards [hdarb.1] with ω hω
+    rw [hwealth ω, hω, Pi.zero_apply, zero_add]
+  have hG := integrable_simpleGains hτ hint le_rfl
+  have hpos := hdarb.integral_pos (hG.congr hgains.symm)
+  rw [integral_congr_ae hgains, integral_simpleGains hτ hXm hXi hX ha hint le_rfl] at hpos
+  exact lt_irrefl 0 hpos
+
+end SelfFinancing
 
 end TauCeti.Finance
 
@@ -142,51 +291,19 @@ under a measure `Q` equivalent to `P`, then trading from `i` to `j ≥ i` is not
 theorem Supermartingale.not_isArbitrage [SigmaFiniteFiltration Q ℱ]
     (hV : Supermartingale (V / N) ℱ Q) (hPQ : P ≪ Q) (hQP : Q ≪ P) (hN : ∀ᵐ ω ∂P, 0 < N j ω)
     (hij : i ≤ j) : ¬IsArbitrage P (V i) (V j) := fun h ↦ by
-  refine not_isArbitrage_of_integral_le hPQ hQP (hV.integrable j) ?_ (h.div hN (N i))
-  simpa only [setIntegral_univ, Pi.div_apply] using hV.setIntegral_le hij MeasurableSet.univ
+  -- Measured in units of `N`, the trade is still an arbitrage, now under `Q`.
+  have hA : IsArbitrage Q (V i) ((V / N) j) := by
+    have h' := (isArbitrage_mul_iff (c₀ := 1) (c := (N j)⁻¹) (.of_forall fun _ ↦ one_ne_zero)
+      (hQP.ae_le (hN.mono fun ω hω ↦ by simpa using hω))).2
+      ((isArbitrage_iff_of_absolutelyContinuous hPQ hQP).1 h)
+    rwa [one_mul, ← div_eq_inv_mul] at h'
+  -- It costs nothing, so its expected value in units of `N` is zero at `i`, and cannot grow.
+  have hi : ∫ ω, (V / N) i ω ∂Q = 0 := by
+    refine integral_eq_zero_of_ae ?_
+    filter_upwards [hA.1] with ω hω
+    simp [hω]
+  have hle : ∫ ω, (V / N) j ω ∂Q ≤ ∫ ω, (V / N) i ω ∂Q := by
+    simpa only [setIntegral_univ] using hV.setIntegral_le hij MeasurableSet.univ
+  exact (hA.integral_pos (hV.integrable j)).not_ge (hle.trans hi.le)
 
 end MeasureTheory
-
-namespace TauCeti.Finance
-
-open MeasureTheory
-
-variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P Q : Measure Ω} [LinearOrder ι]
-  {ℱ : Filtration ι mΩ} {τ : ℕ → ι} {n : ℕ} {a b : ℕ → Ω → ℝ} {S β : ι → Ω → ℝ}
-
-/-- **No arbitrage with simple strategies.** Suppose the bond price `β` is positive during the
-trading period `[τ 0, τ (n + 1)]` and the discounted stock `S / β` is a martingale under a measure
-`Q` equivalent to `P`. Then a self-financing simple strategy whose stock positions are bounded
-and chosen at the start of their trading intervals is not an arbitrage: its initial cost
-`a 0 S (τ 0) + b 0 β (τ 0)` and terminal wealth `a n S (τ (n + 1)) + b n β (τ (n + 1))` do not
-form one. -/
-theorem IsSelfFinancing.not_isArbitrage [SigmaFiniteFiltration Q ℱ]
-    (h : IsSelfFinancing τ (n + 1) a b S β) (hτ : MonotoneOn τ (Set.Iic (n + 1)))
-    (hβ : ∀ t ∈ Set.Icc (τ 0) (τ (n + 1)), ∀ ω, 0 < β t ω) (hX : Martingale (S / β) ℱ Q)
-    (ha : ∀ j < n + 1, StronglyMeasurable[ℱ (τ j)] (a j))
-    (ha_bdd : ∀ j < n + 1, ∃ C, ∀ᵐ ω ∂Q, |a j ω| ≤ C) (hPQ : P ≪ Q) (hQP : Q ≪ P) :
-    ¬IsArbitrage P (fun ω ↦ a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω)
-      (fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) := fun hA ↦ by
-  have hG : Martingale (simpleGains τ (n + 1) a (S / β)) ℱ Q := hX.simpleGains hτ ha ha_bdd
-  have hT : τ (n + 1) ∈ Set.Icc (τ 0) (τ (n + 1)) :=
-    ⟨hτ (Nat.zero_le _) Set.self_mem_Iic (Nat.zero_le _), le_rfl⟩
-  have hA' := hA.div (ae_of_all _ (hβ _ hT)) (β (τ 0))
-  -- Discounted, the terminal wealth is the initial discounted cost, which vanishes, plus the gains.
-  have hdisc := (isSelfFinancing_iff_discounted hτ fun t ht ω ↦ (hβ t ht ω).ne').1 h n
-    (Nat.lt_succ_self n)
-  have hwealth : (fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1))
-      =ᵐ[Q] simpleGains τ (n + 1) a (S / β) (τ (n + 1)) := by
-    filter_upwards [hQP.ae_le hA'.1] with ω hω
-    simp only [Pi.div_apply]
-    rw [hdisc ω _ ⟨hτ (Nat.le_succ n) Set.self_mem_Iic (Nat.le_succ n), le_rfl⟩]
-    simp only [Pi.div_apply, Pi.zero_apply] at hω
-    rw [hω, zero_add]
-  -- The gains start at `0` and form a martingale, so their expectation vanishes.
-  have hG₀ : ∫ ω, simpleGains τ (n + 1) a (S / β) (τ (n + 1)) ω ∂Q = 0 := by
-    rw [← setIntegral_univ, ← hG.setIntegral_eq hT.1 MeasurableSet.univ, setIntegral_univ]
-    simp [simpleGains_of_le hτ le_rfl]
-  refine not_isArbitrage_of_integral_le hPQ hQP ((hG.integrable _).congr hwealth.symm) ?_ hA'
-  rw [integral_congr_ae hwealth, hG₀, integral_congr_ae (hQP.ae_le hA'.1)]
-  simp
-
-end TauCeti.Finance
