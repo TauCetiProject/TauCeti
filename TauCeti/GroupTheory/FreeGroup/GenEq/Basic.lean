@@ -59,6 +59,7 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.toSystem`: the system `Ω*` of group equations over `F(A)` in the items.
 * `TauCeti.GenEq.coordGroup`: the coordinate group `F_{R(Ω)}` of `Ω*` over `F(A)`.
 * `TauCeti.GenEq.Solution.toHom`: the `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution.
+* `TauCeti.GenEq.Solution.prefixLength`: the position of a boundary in the words of a solution.
 
 ## Main results
 
@@ -129,6 +130,11 @@ def segment (i j : ℕ) (s : Bool) : List ((Fin Ω.numItems ⊕ A) × Bool) :=
   let w := (((List.finRange Ω.numItems).take j).drop i).map fun k => (Sum.inl k, true)
   if s then w else FreeGroup.invRev w
 
+/-- The word `h[i, j]` lists the items `hᵢ, …, h_{j-1}` in order. -/
+theorem segment_true (i j : ℕ) : Ω.segment i j true =
+    (((List.finRange Ω.numItems).take j).drop i).map fun k => (Sum.inl k, true) := by
+  simp [segment]
+
 /-- The word `h[i, j] ^ -1` is the formal inverse of `h[i, j]`. -/
 theorem segment_false (i j : ℕ) : Ω.segment i j false = FreeGroup.invRev (Ω.segment i j true) := by
   simp [segment]
@@ -140,13 +146,14 @@ theorem length_segment (i j : ℕ) (s : Bool) :
   cases s <;> simp [segment, FreeGroup.invRev_length]
 
 /-- The word of a single item: `h[k, k + 1] = hₖ`. -/
+@[simp]
 theorem segment_succ (k : Fin Ω.numItems) : Ω.segment k (k + 1) true = [(Sum.inl k, true)] := by
   apply List.ext_getElem <;> simp [segment] <;> grind
 
 /-- Concatenation of segments: `h[i, j] h[j, k] = h[i, k]` for `i ≤ j ≤ k ≤ ρ`. -/
 theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
     Ω.segment i j true ++ Ω.segment j k true = Ω.segment i k true := by
-  simp only [segment, ite_true, ← List.map_append]
+  simp only [segment_true, ← List.map_append]
   congr 1
   set M := (List.finRange Ω.numItems).take k
   have hM : (List.finRange Ω.numItems).take j = M.take j := by
@@ -276,8 +283,11 @@ theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := 
   have h (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
       FreeGroup.lift (Sum.elim U.point (MonoidHom.id (FreeGroup A) ∘ FreeGroup.of))
         (FreeGroup.mk w) = FreeGroup.mk (substituteVars U.word w) := by
-    rw [mk_substituteVars, MonoidHom.coe_id, Function.id_comp,
-      show U.point = fun k => FreeGroup.mk (U.word k) from funext U.point_apply]
+    have hU : Sum.elim U.point FreeGroup.of =
+        Sum.elim (fun k => FreeGroup.mk (U.word k)) FreeGroup.of := by
+      funext y
+      cases y <;> simp
+    rw [mk_substituteVars, MonoidHom.coe_id, Function.id_comp, hU]
   rw [h, h, U.subst_eq e he]
 
 /-- The `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution, sending each item to its word. -/
@@ -346,32 +356,36 @@ namespace Solution
 
 variable {Ω} (U : Ω.Solution)
 
-/-- The total length of the words of the items before boundary `i`. -/
-private def prefixLength (i : ℕ) : ℕ :=
+/-- The total length of the words of the items before boundary `i`: the position of boundary `i`
+in the words of a solution. -/
+def prefixLength (i : ℕ) : ℕ :=
   (((List.finRange Ω.numItems).take i).map fun k => (U.word k).length).sum
 
 /-- The length of the substituted word `h[i, j] ^ ±1` is the total length of the words of the
 items between the boundaries `i` and `j`. -/
-private theorem length_substituteVars_segment (s : Bool) (i j : ℕ) :
+theorem length_substituteVars_segment (s : Bool) (i j : ℕ) :
     (substituteVars U.word (Ω.segment i j s)).length =
       ((((List.finRange Ω.numItems).take j).drop i).map fun k => (U.word k).length).sum := by
   have h : (substituteVars U.word (Ω.segment i j true)).length =
       ((((List.finRange Ω.numItems).take j).drop i).map fun k => (U.word k).length).sum := by
-    simp only [segment, ite_true]
-    rw [substituteVars_map_inl, List.length_flatMap]
+    rw [segment_true, substituteVars_map_inl, List.length_flatMap]
   cases s
   · rw [segment_false, substituteVars_invRev, FreeGroup.invRev_length, h]
   · exact h
 
-private theorem length_subst_segment_add (s : Bool) {i j : ℕ} (hij : i ≤ j) :
+/-- The substituted word `h[i, j] ^ ±1` spans the words of a solution from boundary `i` to
+boundary `j`. -/
+theorem length_substituteVars_segment_add_prefixLength (s : Bool) {i j : ℕ} (hij : i ≤ j) :
     (substituteVars U.word (Ω.segment i j s)).length + U.prefixLength i = U.prefixLength j := by
   rw [U.length_substituteVars_segment, prefixLength, prefixLength]
   conv_rhs => rw [← List.take_append_drop i (List.take j (List.finRange Ω.numItems))]
   rw [List.map_append, List.sum_append, List.take_take, min_eq_left hij, add_comm]
 
-private theorem prefixLength_add_le {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
+/-- Each item carries a nonempty word, so the prefix length grows at least by the number of items
+between two boundaries. -/
+theorem prefixLength_add_le {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
     U.prefixLength i + (j - i) ≤ U.prefixLength j := by
-  rw [← U.length_subst_segment_add true hij, add_comm]
+  rw [← U.length_substituteVars_segment_add_prefixLength true hij, add_comm]
   refine Nat.add_le_add_right ?_ _
   rw [U.length_substituteVars_segment]
   refine le_trans (le_of_eq ?_) (List.length_le_sum_of_one_le _ ?_)
@@ -380,18 +394,21 @@ private theorem prefixLength_add_le {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.n
     rintro _ ⟨k, -, rfl⟩
     exact List.length_pos_iff.2 (U.word_ne_nil k)
 
-private theorem prefixLength_lt {i j : ℕ} (hij : i < j) (hj : j ≤ Ω.numItems) :
+/-- The prefix length is strictly increasing on the boundaries. -/
+theorem prefixLength_lt {i j : ℕ} (hij : i < j) (hj : j ≤ Ω.numItems) :
     U.prefixLength i < U.prefixLength j := by
   have := U.prefixLength_add_le hij.le hj
   omega
 
-private theorem prefixLength_mono {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
-    U.prefixLength i ≤ U.prefixLength j := by
-  have := U.prefixLength_add_le hij hj
+/-- The prefix length is monotone. -/
+theorem prefixLength_mono : Monotone U.prefixLength := fun i j hij => by
+  have := U.length_substituteVars_segment_add_prefixLength true hij
   omega
 
-private theorem prefixLength_injOn {i j : ℕ} (hi : i ≤ Ω.numItems) (hj : j ≤ Ω.numItems)
-    (h : U.prefixLength i = U.prefixLength j) : i = j := by
+/-- Distinct boundaries have distinct prefix lengths. -/
+theorem prefixLength_injOn : Set.InjOn U.prefixLength (Set.Iic Ω.numItems) := by
+  intro i hi j hj h
+  rw [Set.mem_Iic] at hi hj
   rcases lt_trichotomy i j with hij | rfl | hij
   · exact absurd h (U.prefixLength_lt hij hj).ne
   · rfl
@@ -407,15 +424,15 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
       FreeGroup.invRev (substituteVars U.word (Ω.segment c d true))) : False := by
   have hlen := congrArg List.length heq
   rw [FreeGroup.invRev_length] at hlen
-  have h₁ := U.length_subst_segment_add true hab.le
-  have h₂ := U.length_subst_segment_add true hcd.le
+  have h₁ := U.length_substituteVars_segment_add_prefixLength true hab.le
+  have h₂ := U.length_substituteVars_segment_add_prefixLength true hcd.le
   rcases le_or_gt b d with hbd | hdb
   · -- The overlap `h[c, b]` is a nonempty reduced word equal to its formal inverse.
     rw [← Ω.segment_append hac hcb.le hb, ← Ω.segment_append hcb.le hbd hd,
       substituteVars_append, substituteVars_append, FreeGroup.invRev_append] at heq
-    have hX := U.length_subst_segment_add true hac
-    have hZ := U.length_subst_segment_add true hbd
-    have hC := U.length_subst_segment_add true hcb.le
+    have hX := U.length_substituteVars_segment_add_prefixLength true hac
+    have hZ := U.length_substituteVars_segment_add_prefixLength true hbd
+    have hC := U.length_substituteVars_segment_add_prefixLength true hcb.le
     have hXZ : (substituteVars U.word (Ω.segment a c true)).length =
         (FreeGroup.invRev (substituteVars U.word (Ω.segment b d true))).length := by
       rw [FreeGroup.invRev_length]
@@ -431,7 +448,7 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
       omega
     exact hCred.invRev_ne_self hCne hCC.symm
   · -- The base `[c, d]` lies strictly inside `[a, b]`, so its word is shorter.
-    have := U.prefixLength_mono hac (hcd.le.trans hd)
+    have := U.prefixLength_mono hac
     have := U.prefixLength_lt hdb hb
     omega
 
@@ -466,7 +483,7 @@ private theorem disjoint_of_sign_ne (μ : Fin Ω.numBases) (hμ : Ω.sign μ ≠
 
 /-- The boundary equation of a connection `(p, μ, q)` of a generalised equation with a solution,
 as an identity between prefix lengths. -/
-private theorem prefixLength_boundary {c : Fin (Ω.numItems + 1) × Fin Ω.numBases ×
+theorem prefixLength_boundary {c : Fin (Ω.numItems + 1) × Fin Ω.numBases ×
     Fin (Ω.numItems + 1)} (hc : c ∈ Ω.connections) :
     if Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1) then
       U.prefixLength c.1 + U.prefixLength (Ω.left (Ω.dual c.2.1)) =
@@ -476,13 +493,13 @@ private theorem prefixLength_boundary {c : Fin (Ω.numItems + 1) × Fin Ω.numBa
         U.prefixLength (Ω.right (Ω.dual c.2.1)) + U.prefixLength (Ω.left c.2.1) := by
   obtain ⟨h₁, -, h₃, h₄⟩ := Ω.bounds_of_mem_connections c hc
   have e := congrArg List.length (U.subst_eq _ (Ω.boundaryEquation_mem_equations hc))
-  have l₁ := U.length_subst_segment_add true h₁.le
+  have l₁ := U.length_substituteVars_segment_add_prefixLength true h₁.le
   split_ifs with hs
   · simp only [boundaryEquation, hs, ite_true] at e
-    have l₂ := U.length_subst_segment_add true h₃.le
+    have l₂ := U.length_substituteVars_segment_add_prefixLength true h₃.le
     omega
   · simp only [boundaryEquation, hs, ite_false] at e
-    have l₂ := U.length_subst_segment_add false h₄.le
+    have l₂ := U.length_substituteVars_segment_add_prefixLength false h₄.le
     omega
 
 include U in
@@ -495,7 +512,7 @@ private theorem connections_monotone_or_antitone (c : Fin (Ω.numItems + 1) × F
   obtain rfl : μ = μ' := hμ
   have e := U.prefixLength_boundary hc
   have e' := U.prefixLength_boundary hc'
-  have hpp := U.prefixLength_mono (Fin.le_def.1 hp) p'.is_le
+  have hpp := U.prefixLength_mono (Fin.le_def.1 hp)
   simp only at e e' hpp ⊢
   split_ifs at e e' ⊢
   · rw [Fin.le_def]
@@ -521,7 +538,7 @@ private theorem eq_of_left_eq (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × F
   have e := U.prefixLength_boundary hc
   simp only [hs, ite_true] at e
   rw [hleft] at e
-  exact Fin.ext (U.prefixLength_injOn p.is_le q.is_le (by omega))
+  exact Fin.ext (U.prefixLength_injOn (Set.mem_Iic.2 p.is_le) (Set.mem_Iic.2 q.is_le) (by omega))
 
 include U in
 private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.constBases)
@@ -536,13 +553,13 @@ private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.con
 
 /-- The item of a constant base carries a one-letter word, so the prefix length grows by one
 across it. -/
-private theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
+theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) : U.prefixLength (b.1 + 1) = U.prefixLength b.1 + 1 := by
   have hone : (U.word b.1).length = 1 := by
     have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
     simp only [coeffEquation, substituteVars_singleton_inl, substituteVars_singleton_inr] at e
     simp [e]
-  have := U.length_subst_segment_add true (Nat.le_add_right b.1 1)
+  have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right b.1 1)
   rw [segment_succ, substituteVars_singleton_inl, hone] at this
   omega
 
@@ -565,13 +582,13 @@ private theorem connections_adjacent (b : Fin Ω.numItems × (A × Bool)) (hb : 
   split_ifs at e e'
   · have hlt : (q : ℕ) < q' := by
       by_contra h
-      have := U.prefixLength_mono (not_lt.1 h) q.is_le
+      have := U.prefixLength_mono (not_lt.1 h)
       omega
     have := U.prefixLength_add_le hlt.le q'.is_le
     omega
   · have hlt : (q' : ℕ) < q := by
       by_contra h
-      have := U.prefixLength_mono (not_lt.1 h) q'.is_le
+      have := U.prefixLength_mono (not_lt.1 h)
       omega
     have := U.prefixLength_add_le hlt.le q.is_le
     omega

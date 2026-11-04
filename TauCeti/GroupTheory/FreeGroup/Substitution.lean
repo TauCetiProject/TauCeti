@@ -97,6 +97,12 @@ of `U x`, and a letter of `A^{±1}` is kept. -/
 theorem substituteVars_nil (U : X → List (A × Bool)) : substituteVars U [] = [] :=
   List.flatMap_nil
 
+/-- Substitution proceeds letter by letter. -/
+theorem substituteVars_cons (U : X → List (A × Bool)) (y : (X ⊕ A) × Bool)
+    (w : List ((X ⊕ A) × Bool)) :
+    substituteVars U (y :: w) = substituteVars U [y] ++ substituteVars U w := by
+  simp [substituteVars]
+
 @[simp]
 theorem substituteVars_append (U : X → List (A × Bool)) (w w' : List ((X ⊕ A) × Bool)) :
     substituteVars U (w ++ w') = substituteVars U w ++ substituteVars U w' :=
@@ -106,6 +112,12 @@ theorem substituteVars_append (U : X → List (A × Bool)) (w w' : List ((X ⊕ 
 @[simp]
 theorem substituteVars_singleton_inl (U : X → List (A × Bool)) (x : X) :
     substituteVars U [(Sum.inl x, true)] = U x := by
+  simp [substituteVars]
+
+/-- A negative variable is replaced by the formal inverse of its assigned word. -/
+@[simp]
+theorem substituteVars_singleton_inl_false (U : X → List (A × Bool)) (x : X) :
+    substituteVars U [(Sum.inl x, false)] = invRev (U x) := by
   simp [substituteVars]
 
 /-- A letter of `A^{±1}` is kept. -/

@@ -61,13 +61,26 @@ def toGX : FreeGroup (X ⊕ A) →* GroupAlgGeom.GX (FreeGroup A) X :=
   FreeGroup.lift (Sum.elim (fun x => Monoid.Coprod.inr (FreeGroup.of x))
     (fun a => Monoid.Coprod.inl (FreeGroup.of a)))
 
+/-- A variable is sent to the corresponding generator of `F(X)`. -/
+@[simp]
+theorem toGX_of_inl (x : X) :
+    toGX X A (FreeGroup.of (Sum.inl x)) = Monoid.Coprod.inr (FreeGroup.of x) := by
+  simp [toGX]
+
+/-- A coefficient letter is sent to the corresponding generator of `F(A)`. -/
+@[simp]
+theorem toGX_of_inr (a : A) :
+    toGX X A (FreeGroup.of (Sum.inr a)) = Monoid.Coprod.inl (FreeGroup.of a) := by
+  simp [toGX]
+
 /-- Evaluating the image of a word in `F(A)[X]` at `v` evaluates the word at `v` and at the
 coefficients. -/
+@[simp]
 theorem eval_toGX (ι : FreeGroup A →* H) (v : X → H) (w : FreeGroup (X ⊕ A)) :
     GroupAlgGeom.eval ι v (toGX X A w) = eval v (ι ∘ FreeGroup.of) w := by
   rw [← MonoidHom.comp_apply]
   congr 1
-  ext (x | a) <;> simp [toGX]
+  ext (x | a) <;> simp
 
 /-- A variable assignment solves a system when all equations vanish and all inequations
 remain nontrivial after evaluation. -/
