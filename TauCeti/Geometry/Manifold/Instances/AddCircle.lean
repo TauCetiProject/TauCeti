@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 
 /-!
 # The circle `AddCircle p` as a smooth manifold
@@ -67,6 +68,10 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   (`AddCircle.contDiff_of_comp_coe_eq`).
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
+* `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
+  `AddCircle.mfderiv_prodMap_coe`: the quotient map
+  `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
+  identity of `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
   of `f`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
@@ -627,5 +632,44 @@ theorem mfderiv_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCircle p) :
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
   exact (hasMFDerivAt_of_comp_coe_eq (funext (diffeomorphAddCircle_apply_mk p q n))
     ((hasFDerivAt_id t).mul_const (p⁻¹ * q))).mfderiv
+
+/-! ### The quotient map of a torus of two circles -/
+
+omit [Fact (0 < p)] [Fact (0 < q)] in
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is surjective. -/
+theorem prodMap_coe_surjective :
+    Function.Surjective (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
+  QuotientAddGroup.mk_surjective.prodMap QuotientAddGroup.mk_surjective
+
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism. -/
+theorem isLocalDiffeomorph_prodMap_coe (n : ℕ∞ω) :
+    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) n
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact (isLocalDiffeomorph_coe p n).prodMap (isLocalDiffeomorph_coe q n)
+
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` has derivative the identity of `ℝ × ℝ`,
+the tangent spaces of both circles being read in their charts. -/
+theorem hasMFDerivAt_prodMap_coe (z : ℝ × ℝ) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z
+      (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
+  -- The product of the identity derivatives of the two factors is the identity of `ℝ × ℝ`.
+  have hid : (ContinuousLinearMap.id ℝ ℝ).prodMap (ContinuousLinearMap.id ℝ ℝ) =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+    ext <;> simp
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  refine ((hasMFDerivAt_coe p z.1).prodMap (hasMFDerivAt_coe q z.2)).congr_mfderiv ?_
+  rw [mfderiv_coe, mfderiv_coe]
+  exact hid
+
+/-- The derivative of the quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is the identity of
+`ℝ × ℝ`. -/
+@[simp]
+theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
+  (hasMFDerivAt_prodMap_coe p q z).mfderiv
 
 end AddCircle
