@@ -68,19 +68,14 @@ theorem d4Tripled_raisingPath_iff_mem_posRootCone (a b : Fin 24) :
     | refl => simp
     | @tail b c h hbc ih =>
       obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hbc
-      have hroot : (P).root (typeDSimpleIndex 4 le_rfl i) ∈
-          posRootCone P (typeDSimplyConnectedBase 4 le_rfl) :=
-        root_mem_posRootCone_of_mem_posRoots P (typeDSimplyConnectedBase 4 le_rfl)
-          (support_subset_posRoots P (typeDSimplyConnectedBase 4 le_rfl)
-            ((mem_typeDSimplyConnectedBase_support le_rfl).mpr (by
-              simpa only [typeDSimpleIndex_val] using i.isLt)))
       have heq : μ (d4TripledReflection i b) - μ a =
           (μ b - μ a) + (P).root (typeDSimpleIndex 4 le_rfl i) := by
         rw [d4TripledWeight_reflection, hi, root_typeDSimpleIndex]
         simp only [neg_smul, one_smul, sub_neg_eq_add]
         abel
       rw [heq]
-      exact (posRootCone P (typeDSimplyConnectedBase 4 le_rfl)).add_mem ih hroot
+      exact (posRootCone P (typeDSimplyConnectedBase 4 le_rfl)).add_mem ih
+        (root_typeDSimpleIndex_mem_posRootCone le_rfl i)
   · intro h
     obtain ⟨c, hc⟩ := (mem_typeD_posRootCone_iff le_rfl).mp h
     refine (P).toInvariantForm.reflTransGen_of_sub_eq_sum
@@ -88,11 +83,7 @@ theorem d4Tripled_raisingPath_iff_mem_posRootCone (a b : Fin 24) :
       d4TripledWeight_injective rootForm_eq
       (f := typeDSimpleIndex 4 le_rfl) (fun a i hi ↦ ?_) hc
     have hai : μ a i = -1 := by
-      have hpair : (P).coroot' (typeDSimpleIndex 4 le_rfl i) (μ a) = μ a i := by
-        simp only [RootPairing.coroot', LinearMap.flip_apply,
-          toLinearMap_typeDSimplyConnectedRootDatum, coroot_typeDSimpleIndex,
-          dotProduct_single, mul_one]
-      rw [hpair] at hi
+      rw [coroot'_typeDSimpleIndex_apply le_rfl] at hi
       rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> omega
     refine ⟨d4TripledReflection i a, (d4TripledRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
     rw [d4TripledWeight_reflection, hai, root_typeDSimpleIndex]
