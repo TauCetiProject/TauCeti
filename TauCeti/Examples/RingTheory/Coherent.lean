@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Algebra.MvPolynomial.Variables
+import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Coherent.MvPolynomial
+import TauCeti.RingTheory.MvPolynomial.Noetherian
 
 /-!
 # Checks and counterexamples for coherent modules and coherent rings
@@ -69,8 +72,7 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
   intro relIdeal S xClass
   let yClass (n : ℕ) : S := Ideal.Quotient.mk relIdeal (MvPolynomial.X (some n))
   have hx_mul_y (n : ℕ) : xClass * yClass n = 0 := by
-    change Ideal.Quotient.mk relIdeal (MvPolynomial.X none) *
-      Ideal.Quotient.mk relIdeal (MvPolynomial.X (some n)) = 0
+    dsimp only [xClass, yClass]
     rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.subset_span ⟨n, rfl⟩
   -- Sending `x ↦ T` and `y_n ↦ 0` in `R[T]` shows any lift of an `x`-torsion element has zero
@@ -90,9 +92,8 @@ example (R : Type*) [CommRing R] [Nontrivial R] :
       MvPolynomial.constantCoeff p = 0 := by
     have hmul : Polynomial.X * evalXHom (Ideal.Quotient.mk relIdeal p) = 0 := by
       have h0 := congrArg evalXHom hp
-      rw [map_mul, map_zero,
-        show xClass = Ideal.Quotient.mk relIdeal (MvPolynomial.X none) from rfl,
-        evalXHom_mk, MvPolynomial.eval₂Hom_X', Option.elim_none] at h0
+      dsimp only [xClass] at h0
+      rw [map_mul, map_zero, evalXHom_mk, MvPolynomial.eval₂Hom_X', Option.elim_none] at h0
       exact h0
     have hcoeff : (evalXHom (Ideal.Quotient.mk relIdeal p)).coeff 0 = 0 := by
       simpa [Polynomial.coeff_X_mul] using congrArg (fun q : Polynomial R ↦ q.coeff 1) hmul

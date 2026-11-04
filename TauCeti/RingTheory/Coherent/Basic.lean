@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.RingTheory.Finiteness.Prod
+import TauCeti.Algebra.Module.FinitePresentation
 
 /-!
 # Coherent modules and coherent rings
@@ -55,9 +56,6 @@ finite presentation over non-discrete rank-one valuation rings.
   `Module.IsCoherent.pi`: abelian and finite-product closure properties of coherent modules.
 * `TauCeti.IsCoherentRing.isCoherent_iff_finitePresentation`: over a coherent ring, a module is
   coherent iff it is finitely presented.
-* `Module.FinitePresentation.of_restrictScalars_finitePresentation`,
-  `Module.finitePresentation_iff_of_finitePresentation`: ascent and comparison of finite
-  presentation along module-finite and finitely presented ring extensions.
 * `Module.IsCoherent.tensorProduct`, `Module.IsCoherent.linearMap`: over a commutative ring, if `M`
   is finitely presented and `N` is coherent, then `M ⊗[R] N` and `M →ₗ[R] N` are coherent.
 * `Module.isCoherent_iff_of_surjective`, `Ideal.Quotient.isCoherent_iff`,
@@ -451,20 +449,6 @@ theorem RingEquiv.isCoherentRing_iff {R S : Type*} [Ring R] [Ring S] (e : R ≃+
     TauCeti.IsCoherentRing R ↔ TauCeti.IsCoherentRing S :=
   ⟨fun _ ↦ isCoherentRing_of_ringEquiv e, fun _ ↦ isCoherentRing_of_ringEquiv e.symm⟩
 
-/-- If `S` is finite as a left `R`-module and `P` is finitely presented as an `R`-module, then `P`
-is finitely presented as an `S`-module (Stacks, Lemma 10.6.4, Tag 0519). -/
-@[stacks 0519]
-theorem Module.FinitePresentation.of_restrictScalars_finitePresentation
-    (R S P : Type*) [Ring R] [Ring S] [AddCommGroup P] [Module R S] [IsScalarTower R S S]
-    [Module R P] [Module S P] [IsScalarTower R S P]
-    [Module.Finite R S] [Module.FinitePresentation R P] :
-    Module.FinitePresentation S P := by
-  have : Module.Finite S P := .of_restrictScalars_finite R S P
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' S P
-  refine Module.finitePresentation_of_surjective f hf ?_
-  exact Submodule.FG.of_restrictScalars R
-    (Module.FinitePresentation.fg_ker (f.restrictScalars R) hf)
-
 /-- Every finitely generated module over a Noetherian ring is coherent. -/
 theorem Module.isCoherent_of_finite [IsNoetherianRing R] [Module.Finite R M] :
     Module.IsCoherent R M where
@@ -539,19 +523,9 @@ theorem torsionBySet_of_fg [Module.IsCoherent R M] {I : Ideal R} (hI : I.FG) :
   obtain ⟨s, hs⟩ := hI
   let ev : M →ₗ[R] (s → M) := LinearMap.pi fun r ↦ LinearMap.lsmul R M (r : R)
   have hker : Submodule.torsionBySet R M I = LinearMap.ker ev := by
+    rw [← hs, ← Submodule.torsionBySet_eq_torsionBySet_span]
     ext x
-    simp only [Submodule.mem_torsionBySet_iff, ev, LinearMap.mem_ker, LinearMap.pi_apply,
-      funext_iff, Pi.zero_apply, LinearMap.lsmul_apply]
-    refine ⟨fun h r ↦ h ⟨r.1, hs ▸ Submodule.subset_span r.2⟩, fun h ⟨a, ha⟩ ↦ ?_⟩
-    dsimp only
-    rw [← hs] at ha
-    refine Submodule.span_induction ?_ ?_ ?_ ?_ ha
-    · exact fun b hb ↦ h ⟨b, hb⟩
-    · exact zero_smul R x
-    · intro b c _ _ hb hc
-      rw [add_smul, hb, hc, add_zero]
-    · intro r b _ hb
-      rw [smul_eq_mul, mul_smul, hb, smul_zero]
+    simp [Submodule.mem_torsionBySet_iff, ev, funext_iff]
   rw [hker]
   infer_instance
 
@@ -564,32 +538,15 @@ theorem TauCeti.IsCoherentRing.annihilator [TauCeti.IsCoherentRing R] [Module.Is
   obtain ⟨s, hs⟩ := ‹Module.IsCoherent R M›.toFinite
   let ev : R →ₗ[R] (s → M) := LinearMap.pi fun m ↦ LinearMap.toSpanSingleton R M (m : M)
   have hker : Module.annihilator R M = LinearMap.ker ev := by
+    rw [← Submodule.annihilator_top, ← hs]
     ext r
-    simp only [Module.mem_annihilator, ev, LinearMap.mem_ker, LinearMap.pi_apply, funext_iff,
-      Pi.zero_apply, LinearMap.toSpanSingleton_apply]
-    refine ⟨fun h m ↦ h m.1, fun h x ↦ ?_⟩
-    have hx : x ∈ Submodule.span R (s : Set M) := hs ▸ Submodule.mem_top
-    refine Submodule.span_induction ?_ ?_ ?_ ?_ hx
-    · exact fun m hm ↦ h ⟨m, hm⟩
-    · exact smul_zero r
-    · intro y z _ _ hy hz
-      rw [smul_add, hy, hz, add_zero]
-    · intro a y _ hy
-      rw [smul_comm, hy, smul_zero]
+    simp [Submodule.mem_annihilator_span, ev, funext_iff]
   rw [hker]
   infer_instance
 
 section SurjectiveAlgebra
 
 variable {P : Type*} [AddCommGroup P] [Module R P] [Module S P] [IsScalarTower R S P]
-
-/-- Over an `R`-algebra `S` that is finitely presented as an `R`-module, an `S`-module `P` is
-finitely presented over `S` if and only if it is finitely presented over `R`
-(Stacks, Lemma 10.6.4, Tag 0519). -/
-@[stacks 0519]
-theorem Module.finitePresentation_iff_of_finitePresentation [Module.FinitePresentation R S] :
-    Module.FinitePresentation S P ↔ Module.FinitePresentation R P :=
-  ⟨fun _ ↦ .trans R P S, fun _ ↦ .of_restrictScalars_finitePresentation R S P⟩
 
 /-- Along a surjective `R`-algebra `S` that is finitely presented as an `R`-module, an `S`-module
 `P` is coherent over `S` if and only if it is coherent over `R`
