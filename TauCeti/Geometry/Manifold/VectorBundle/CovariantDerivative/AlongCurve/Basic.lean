@@ -47,9 +47,10 @@ ambient covariant derivative.
   scalar homogeneity; each has an unrestricted counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
-* `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt`: along a constant curve the
-  candidate is the ordinary derivative in the fixed tangent space, with
-  `CovariantDerivative.alongCurve_const_of_hasDerivAt` its unrestricted case.
+* `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
+  ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
+  case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
+  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative.
 * `CovariantDerivative.alongCurveWithin_inter`, `CovariantDerivative.alongCurveWithin_of_mem_nhds`,
   `CovariantDerivative.alongCurveWithin_subset`, `CovariantDerivative.alongCurveWithin_congr`, and
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
@@ -269,23 +270,56 @@ theorem alongCurve_zero (t : 𝕜) :
 /-! ### Constant curves -/
 
 /-- Along a constant curve at `x`, the moving-chart candidate within a parameter set is the
+ordinary derivative within that set of the field, read in the model space `E = T_x M`, wherever
+the set has unique derivatives.  No differentiability of the field is needed. -/
+@[simp]
+theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜}
+    (hs : UniqueDiffWithinAt 𝕜 s t) :
+    alongCurveWithin cov (fun _ : 𝕜 ↦ x) W s t = derivWithin W s t := by
+  have hx := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x
+  set L : E ≃L[𝕜] E := (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt 𝕜 x hx
+  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W :=
+    funext fun r ↦ (sectionCoord_apply (F := E) (V := TangentSpace I) _ W x r).trans
+      (congrFun (Trivialization.coe_continuousLinearEquivAt_eq (R := 𝕜) _ hx) (W r)).symm
+  -- `L` is an equivalence, so it commutes with `derivWithin` even where `W` is not
+  -- differentiable.
+  have hderiv : derivWithin (L ∘ W) s t = L (derivWithin W s t) := by
+    simp only [derivWithin, L.comp_fderivWithin hs]
+    rfl
+  have hchart : derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t = 0 := by
+    rw [Function.comp_def, derivWithin_fun_const, Pi.zero_apply]
+  -- Unfold the candidate by `change`: `W` is `E`-valued, so rewriting with the defining lemmas
+  -- would have to see through the identification `TangentSpace I x = E`.
+  change (trivializationAt E (TangentSpace I) x).symmL 𝕜 x
+      (derivWithin (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x) s t +
+        christoffelMap (Module.finBasis 𝕜 E)
+          (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet)) x
+            (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x t)
+            (derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t)) = _
+  rw [hcoord, hderiv, hchart, map_zero, add_zero,
+    ← Trivialization.symm_continuousLinearEquivAt_eq _ hx]
+  exact L.symm_apply_apply _
+
+/-- Along a constant curve at `x`, the unrestricted moving-chart candidate is the ordinary
+derivative of the field, read in the model space `E = T_x M`. -/
+@[simp]
+theorem alongCurve_const (x : M) (W : 𝕜 → E) (t : 𝕜) :
+    alongCurve cov (fun _ : 𝕜 ↦ x) W t = deriv W t :=
+  (alongCurveWithin_univ cov _ W t).symm.trans
+    ((alongCurveWithin_const cov x W uniqueDiffWithinAt_univ).trans
+      (congrFun (derivWithin_univ (f := W)) t))
+
+/-- Along a constant curve at `x`, the moving-chart candidate within a parameter set is the
 ordinary derivative of the field in the fixed tangent space `TangentSpace I x`. -/
 theorem alongCurveWithin_const_of_hasDerivWithinAt (x : M) {W : 𝕜 → TangentSpace I x}
     {W' : TangentSpace I x} {s : Set 𝕜} {t : 𝕜} (hW : HasDerivWithinAt W W' s t)
     (hs : UniqueDiffWithinAt 𝕜 s t) :
     alongCurveWithin cov (fun _ ↦ x) W s t = W' := by
   -- The fibre carries only its topology here; borrow the norm of the model space `E`, which
-  -- induces that topology, to differentiate the coordinate reading.
+  -- induces that topology, to read off the derivative.
   let _ : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
   let _ : NormedSpace 𝕜 (TangentSpace I x) := inferInstanceAs (NormedSpace 𝕜 E)
-  set L := (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 x
-  have hcoord : sectionCoord (F := E) (fun _ : 𝕜 ↦ x) W x = L ∘ W :=
-    funext fun r ↦ sectionCoord_apply _ W x r
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, hcoord,
-    (L.hasFDerivAt.comp_hasDerivWithinAt t hW).derivWithin hs]
-  simp only [Function.comp_def, derivWithin_fun_const, Pi.zero_apply, map_zero, add_zero]
-  exact (trivializationAt E (TangentSpace I) x).symmL_continuousLinearMapAt (R := 𝕜)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x) W'
+  exact (alongCurveWithin_const cov x W hs).trans (hW.derivWithin hs)
 
 /-- Along a constant curve at `x`, the unrestricted moving-chart candidate is the ordinary
 derivative of the field in the fixed tangent space `TangentSpace I x`. -/
