@@ -249,9 +249,7 @@ theorem ratAddValuation_map_eq_addVal {O : Type*} [CommRing O] [IsDomain O]
       ENat.map ((↑) : ℕ → ℚ) (IsDiscreteValuationRing.addVal O a) := by
   rcases eq_or_ne a 0 with rfl | ha
   · simp
-  obtain ⟨n, u, rfl⟩ : ∃ n : ℕ, ∃ u : Oˣ, a = u * π ^ n := by
-    obtain ⟨n, u, hu⟩ := IsDiscreteValuationRing.associated_pow_irreducible ha hπ
-    exact ⟨n, u⁻¹, by rw [← hu, mul_comm, mul_assoc, Units.mul_inv, mul_one]⟩
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
   have := ϖ.normOneClass
   have h : ‖φ (u * π ^ n)‖ = ‖(ϖ.unit : R)‖ ^ (n : ℤ) := by
     rw [map_mul, map_pow, _root_.norm_mul, _root_.norm_pow,
