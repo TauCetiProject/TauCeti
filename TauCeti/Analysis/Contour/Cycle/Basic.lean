@@ -36,8 +36,10 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
   of a vector-valued function over a cycle, when its contour integrand is integrable.
 * `TauCeti.Contour.Cycle.integral_congr`, `TauCeti.Contour.Cycle.integral_add`,
-  `TauCeti.Contour.Cycle.integral_smul`: the integral depends only on the integrand on the trace,
-  and is linear in integrands continuous there.
+  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_smul`: the integral depends
+  only on the integrand on the trace, and is linear in integrands continuous there.
+* `TauCeti.Contour.Cycle.integral_smul_const`: the integral of a scalar function times a constant
+  vector.
 * `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
   trace, times the length of the cycle, bounds the integral.
 * `TauCeti.Contour.Cycle.windingNumber` — the additive extension of the winding number.
@@ -383,6 +385,17 @@ theorem integral_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g
     (intervalIntegrable_of_mem_support hg hγ)]
   simp only [smul_add]
 
+/-- The integral over a cycle commutes with differences of integrands continuous on its trace. -/
+@[simp]
+theorem integral_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℂ → E}
+    {C : Cycle} (hf : ContinuousOn f (trace C)) (hg : ContinuousOn g (trace C)) :
+    integral (fun z ↦ f z - g z) C = integral f C - integral g C := by
+  simp only [integral_eq_sum_support, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [← smul_sub, ← intervalIntegral.integral_sub (intervalIntegrable_of_mem_support hf hγ)
+    (intervalIntegrable_of_mem_support hg hγ)]
+  simp only [smul_sub]
+
 /-- Scalar multiples can be taken out of the integral over a cycle. -/
 @[simp]
 theorem integral_smul {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -392,6 +405,17 @@ theorem integral_smul {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [Nor
   refine Finset.sum_congr rfl fun γ _ ↦ ?_
   rw [smul_comm c, ← intervalIntegral.integral_smul]
   exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦ (smul_comm c _ _).symm)
+
+/-- The integral over a cycle of a scalar function times a constant vector is the integral of the
+scalar function times that vector. -/
+@[simp]
+theorem integral_smul_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    (f : ℂ → ℂ) (v : E) (C : Cycle) :
+    integral (fun z ↦ f z • v) C = integral f C • v := by
+  simp only [integral_eq_sum_support, Finset.sum_smul, smul_assoc]
+  refine Finset.sum_congr rfl fun γ _ ↦ ?_
+  rw [← intervalIntegral.integral_smul_const]
+  simp only [smul_assoc]
 
 /-- **Norm bound for a cycle integral.** If `‖f‖ ≤ M` on the trace of `C`, then the integral of
 `f` over `C` is at most `M` times the length of `C`: the sum of the lengths
