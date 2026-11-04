@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.LinearAlgebra.Basis.Defs
 import TauCeti.Analysis.Calculus.Hadamard
 
@@ -19,7 +19,6 @@ of smooth functions this becomes an identity between bundled smooth maps.
 
 ## Main results
 
-* `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
 * `ContMDiffMap.exists_hadamard_coords`: Hadamard's lemma in the coordinates of a finite basis.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of such a factorization in
   the algebra of smooth functions.
@@ -32,20 +31,6 @@ open scoped ContDiff Manifold
 noncomputable section
 
 namespace ContMDiffMap
-
-/-- The coercion of a finite sum of smooth maps into a commutative additive Lie group is the
-pointwise sum. -/
-@[simp]
-theorem coe_sum {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {N : Type*} [TopologicalSpace N] [ChartedSpace H N]
-    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
-    {G : Type*} [AddCommMonoid G] [TopologicalSpace G] [ChartedSpace H' G] [ContMDiffAdd I' n G]
-    {ι : Type*} (s : Finset ι) (f : ι → C^n⟮I, N; I', G⟯) :
-    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
-  map_sum coeFnAddMonoidHom f s
 
 /-- **Hadamard's lemma in coordinates.** Subtracting its value at `x` writes a smooth real
 function as a combination of the coordinate functions of any finitely-indexed basis, each taken
