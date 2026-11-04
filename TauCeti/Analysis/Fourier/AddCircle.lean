@@ -68,6 +68,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   Fourier monomial.**
 * `AddChar.norm_apply_eq_one_of_continuous`: consequently a continuous additive character of the
   circle takes values of modulus one.
+* `ContinuousMonoidHom.existsUnique_circle_eq_zpow`: every continuous character of the
+  multiplicative unit circle is a unique integer power.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -381,6 +383,33 @@ theorem norm_apply_eq_one_of_continuous (χ : AddChar (AddCircle T) ℂ) (hχ : 
   exact Circle.norm_coe _
 
 end AddChar
+
+namespace ContinuousMonoidHom
+
+/-- A continuous character of the circle is a unique integer power. -/
+theorem existsUnique_circle_eq_zpow (χ : Circle →ₜ* Circle) :
+    ∃! n : ℤ, ∀ z : Circle, χ z = z ^ n := by
+  let ψ : AddChar (AddCircle (1 : ℝ)) ℂ :=
+    { toFun := fun x ↦ (χ (AddCircle.toCircle x) : ℂ)
+      map_zero_eq_one' := by simp
+      map_add_eq_mul' := fun x y ↦ by simp [AddCircle.toCircle_add] }
+  have hψ : Continuous ψ :=
+    (continuous_induced_dom (f := ((↑) : Circle → ℂ))).comp
+      (χ.continuous.comp AddCircle.continuous_toCircle)
+  obtain ⟨n, hn⟩ := AddChar.exists_fourierAddChar_eq ψ hψ
+  have hn' (z : Circle) : χ z = z ^ n := by
+    obtain ⟨x, rfl⟩ := (AddCircle.homeomorphCircle (T := (1 : ℝ)) one_ne_zero).surjective z
+    apply Circle.ext
+    simpa only [AddCircle.homeomorphCircle_apply, TauCeti.fourierAddChar_apply,
+      fourier_apply, AddCircle.toCircle_zsmul, ψ, AddChar.coe_mk] using
+      (DFunLike.congr_fun hn x).symm
+  refine ⟨n, hn', fun m hm ↦ ?_⟩
+  apply TauCeti.fourier_injective (T := (1 : ℝ)) one_ne_zero
+  ext x
+  simp only [fourier_apply, AddCircle.toCircle_zsmul]
+  exact congrArg (fun z : Circle ↦ (z : ℂ)) ((hm _).symm.trans (hn' _))
+
+end ContinuousMonoidHom
 
 namespace TauCeti
 
