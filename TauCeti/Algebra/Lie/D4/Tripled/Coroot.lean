@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.D4.Tripled.Root.Differential
-import TauCeti.Algebra.Lie.Matrix.IntegralCast
+import TauCeti.Algebra.Lie.Presentation.Serre.IntegralCast
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 
 /-!
@@ -109,15 +109,19 @@ theorem tangentMatrix_cartanVector (i : Fin 4) :
     GeneralLinear.tangentMatrix 24
         (HopfIdeal.quotientLieHom (B := B) definingIdeal (cartanVector (B := B) i)) =
       (cartanGeneratorMatrix i).map (Int.cast : ℤ → B) := by
-  have h := ((GeneralLinear.tangentLieEquivMatrix (R := ℤ) (B := B) 24).toLieHom.comp
-    (HopfIdeal.quotientLieHom (B := B) definingIdeal)).map_lie
-      (rootVector (B := B) (.inl i)) (rootVector (B := B) (.inr i))
-  simp only [LieHom.comp_apply, LieEquiv.coe_toLieHom,
-    GeneralLinear.tangentLieEquivMatrix_apply, tangentMatrix_rootVector,
-    rootMatrix_inl, rootMatrix_inr] at h
-  rw [cartanVector_def, h]
-  simpa only [Function.comp_apply, matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom B)).lie_E_F_self i
+  simpa only [LieHom.comp_apply, LieEquiv.coe_toLieHom,
+    GeneralLinear.tangentLieEquivMatrix_apply, cartanVector_def] using
+    isSerreSystem.map_lie_eq_intCast
+      (e := fun i ↦ rootVector (B := B) (.inl i))
+      (f := fun i ↦ rootVector (B := B) (.inr i))
+      ((GeneralLinear.tangentLieEquivMatrix (R := ℤ) (B := B) 24).toLieHom.comp
+        (HopfIdeal.quotientLieHom (B := B) definingIdeal))
+      (fun i ↦ by simpa only [LieHom.comp_apply, LieEquiv.coe_toLieHom,
+        GeneralLinear.tangentLieEquivMatrix_apply, rootMatrix_inl] using
+          tangentMatrix_rootVector (B := B) (.inl i))
+      (fun i ↦ by simpa only [LieHom.comp_apply, LieEquiv.coe_toLieHom,
+        GeneralLinear.tangentLieEquivMatrix_apply, rootMatrix_inr] using
+          tangentMatrix_rootVector (B := B) (.inr i)) i
 
 /-- The differential of the actual simple-coroot cocharacter has the diagonal weight-pairing
 matrix. The multiplicative tangent parameter is normalized to one. -/

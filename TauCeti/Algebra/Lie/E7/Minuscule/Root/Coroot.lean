@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent.Map
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.Lie.E7.Minuscule.Basic
 public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coordinates
-public import TauCeti.Algebra.Lie.Matrix.IntegralCast
 
 /-!
 # Carrier-independent E₇ coroot differentials
@@ -45,17 +44,6 @@ theorem cartanMatrix_map_intCast_eq_diagonal_coroot' (ht : DynkinType.E7.Valid) 
   split_ifs
   · rw [coroot'_simpleIndex_apply ht i]
   · simp
-
-/-- Any matrix realization sending opposite root vectors to their integral matrices sends
- their bracket to the Cartan matrix. -/
-theorem map_lie_eq_cartanMatrix {L : Type*} [LieRing L] [LieAlgebra R L]
-    (f : L →ₗ⁅R⁆ Matrix (Fin 56) (Fin 56) R) (x y : L) (i : Fin 7)
-    (hx : f x = (raisingMatrix i).map (Int.cast : ℤ → R))
-    (hy : f y = (loweringMatrix i).map (Int.cast : ℤ → R)) :
-    f ⁅x, y⁆ = (cartanMatrix i).map (Int.cast : ℤ → R) := by
-  rw [LieHom.map_lie, hx, hy]
-  simpa only [Function.comp_apply, matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).lie_E_F_self i
 
 variable {H : Type*} [CommRing H] [Bialgebra R H]
   (q : GeneralLinear.coordinateHopfAlgebra R 56 →ₐc[R] H)

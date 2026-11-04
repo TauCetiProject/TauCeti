@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coroot
 public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Differential
+import TauCeti.Algebra.Lie.Presentation.Serre.IntegralCast
 
 /-!
 # Simple-coroot differentials of the integral E₇ carrier
@@ -88,9 +89,9 @@ theorem cartanVector_def (i : Fin 7) :
 theorem tangentMatrixLieHom_cartanVector (i : Fin 7) :
     tangentMatrixLieHom R (cartanVector R i) =
       (cartanMatrix i).map (Int.cast : ℤ → R) := by
-  exact map_lie_eq_cartanMatrix (tangentMatrixLieHom R) _ _ i
-    (tangentMatrixLieHom_rootVector R (.inl i))
-    (tangentMatrixLieHom_rootVector R (.inr i))
+  exact isSerreSystem.map_lie_eq_intCast (tangentMatrixLieHom R)
+    (fun i ↦ tangentMatrixLieHom_rootVector R (.inl i))
+    (fun i ↦ tangentMatrixLieHom_rootVector R (.inr i)) i
 
 /-- The cocharacter defined by the `i`-th fundamental-weight coordinate of the weight torus. -/
 def corootCocharacter (i : Fin 7) : coordinateHopfAlgebra R →ₐc[R] LaurentPolynomial R :=

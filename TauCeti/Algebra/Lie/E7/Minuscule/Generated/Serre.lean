@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent.Map
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.RootWeight
-public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coroot
 public import TauCeti.Algebra.Lie.Presentation.Serre.IntegralCast
 
 /-!
@@ -90,9 +90,9 @@ matrix of the `i`-th coordinates of the minuscule weights. -/
 theorem generatedTangentMatrixLieHom_generatedCartanVector (i : Fin 7) :
     generatedTangentMatrixLieHom R (generatedCartanVector R i) =
       (cartanMatrix i).map (Int.cast : ℤ → R) := by
-  exact map_lie_eq_cartanMatrix (generatedTangentMatrixLieHom R) _ _ i
-    (generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
-    (generatedTangentMatrixLieHom_generatedRootVector R (.inr i))
+  exact isSerreSystem.map_lie_eq_intCast (generatedTangentMatrixLieHom R)
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inr i)) i
 
 /-- The normalized simple-root vectors and their Cartan brackets satisfy all E₇ Serre
 relations over any commutative ring, including rings of characteristic two or three. -/

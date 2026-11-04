@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.Serre
+public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coroot
 
 /-!
 # Simple-coroot differentials in the generated E₇ group
