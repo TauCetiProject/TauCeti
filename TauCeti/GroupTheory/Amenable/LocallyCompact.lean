@@ -130,23 +130,6 @@ theorem convolutionL_eq_integral_smul_rightTranslation (h k : Lp ℝ 1 μ) :
   simp only [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) (coeFn_toLpTop μ (ψ : G →ᵇ ℝ))] at h₁
   simpa [hψ, mul_comm] using h₁
 
-omit [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
-  [μ.IsHaarMeasure] [μ.Regular] in
-/-- A nonnegative kernel `k ∈ L¹(G, μ)` of integral one has `L¹` norm one. -/
-private theorem norm_eq_one_of_nonneg_of_integral_eq_one {k : Lp ℝ 1 μ} (hk : 0 ≤ k)
-    (hk₁ : ∫ z, k z ∂μ = 1) : ‖k‖ = 1 := by
-  rw [L1.norm_eq_integral_norm, ← hk₁]
-  refine integral_congr_ae ?_
-  filter_upwards [(coeFn_nonneg k).2 hk] with z hz using Real.norm_of_nonneg hz
-
-/-- The right translates `R_(z⁻¹) h` tend to `h` in `L¹(G, μ)` as `z → 1`. -/
-private theorem tendsto_rightTranslation_inv (h : Lp ℝ 1 μ) :
-    Tendsto (fun z : G => rightTranslation μ 1 ℝ z⁻¹ h) (𝓝 1) (𝓝 h) := by
-  have := ((continuous_rightTranslation_apply (𝕜 := ℝ) ENNReal.one_ne_top h).comp
-    continuous_inv).tendsto 1
-  simpa only [Function.comp_def, inv_one, map_one, LinearIsometryEquiv.coe_one, id_eq]
-    using this
-
 /-- **Right approximate identity estimate.** If `k ∈ L¹(G, μ)` is nonnegative of integral one and
 vanishes almost everywhere outside `U`, then `‖h ⋆ k - h‖₁` is at most any bound `C` for
 `‖R_(z⁻¹) h - h‖₁` over `z ∈ U`. -/
@@ -155,7 +138,7 @@ theorem norm_convolutionL_sub_le {h k : Lp ℝ 1 μ} (hk : 0 ≤ k) (hk₁ : ∫
     (hC : ∀ z ∈ U, ‖rightTranslation μ 1 ℝ z⁻¹ h - h‖ ≤ C) :
     ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ C := by
   rw [convolutionL_eq_integral_smul_rightTranslation, ← mul_one C,
-    ← norm_eq_one_of_nonneg_of_integral_eq_one hk hk₁]
+    ← (L1.norm_eq_integral_of_nonneg hk).trans hk₁]
   exact norm_integral_smul_sub_le hk₁ hkU
     (integrable_smul_rightTranslation_inv (L1.integrable_coeFn k) h).aestronglyMeasurable hC
 
@@ -165,7 +148,8 @@ integral one vanishing almost everywhere outside `U`. -/
 theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le (h : Lp ℝ 1 μ) {ε : ℝ}
     (hε : 0 < ε) : ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp ℝ 1 μ, 0 ≤ k → ∫ z, k z ∂μ = 1 →
       (∀ᵐ z ∂μ, z ∉ U → k z = 0) → ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ ε := by
-  refine ⟨_, Metric.tendsto_nhds.1 (tendsto_rightTranslation_inv h) ε hε, fun k hk hk₁ hkU => ?_⟩
+  refine ⟨_, Metric.tendsto_nhds.1
+    (tendsto_rightTranslation_inv (𝕜 := ℝ) ENNReal.one_ne_top h) ε hε, fun k hk hk₁ hkU => ?_⟩
   exact norm_convolutionL_sub_le hk hk₁ hkU fun z hz =>
     le_of_lt (by rw [← dist_eq_norm_sub]; exact hz)
 
@@ -180,8 +164,8 @@ theorem tendsto_convolutionL_left {ι : Type*} {l : Filter ι} {k : ι → Lp �
   refine tendsto_integral_smul_of_tendsto (C := 1) (.of_forall hk₁) (.of_forall fun i => ?_) hkU
     (.of_forall fun i =>
       (integrable_smul_rightTranslation_inv (L1.integrable_coeFn (k i)) h).aestronglyMeasurable)
-    (tendsto_rightTranslation_inv h)
-  exact (norm_eq_one_of_nonneg_of_integral_eq_one (hk i) (hk₁ i)).le
+    (tendsto_rightTranslation_inv ENNReal.one_ne_top h)
+  exact ((L1.norm_eq_integral_of_nonneg (hk i)).trans (hk₁ i)).le
 
 end MeasureTheory.Lp
 
