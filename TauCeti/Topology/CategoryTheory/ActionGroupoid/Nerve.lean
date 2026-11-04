@@ -165,6 +165,12 @@ def coarseMap :
     fatClassifyingSpace (ActionCategory G X) ⟶ TopCat.of (MulAction.orbitRel.Quotient G X) :=
   fatRealization.augment (coarseAugmentation G X)
 
+variable (G X) in
+/-- The coarse map is the augmentation of the fat realization induced by the coarse
+augmentation. -/
+theorem coarseMap_eq_augment :
+    coarseMap G X = fatRealization.augment (coarseAugmentation G X) := (rfl)
+
 /-- The coarse map sends a point of the simplex of a string of composable arrows to the orbit of
 any point of the string. -/
 theorem coarseMap_ι (m : SemiSimplexCategory)
