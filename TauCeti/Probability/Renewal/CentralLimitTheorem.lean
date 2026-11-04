@@ -282,7 +282,7 @@ private theorem tendstoInDistribution_neg_arrival_sub_div
   have mT0 : AEMeasurable (fun ω ↦ (T 0 ω : ℝ)) P :=
     measurable_coe_nnreal_real.comp_aemeasurable (hid 0).aemeasurable_fst
   have intT0 : Integrable (fun ω ↦ (T 0 ω : ℝ)) P :=
-    integrable_of_variance_ne_zero mT0.aestronglyMeasurable hvar
+    (memLp_two_of_variance_ne_zero mT0.aestronglyMeasurable hvar).integrable one_le_two
   let Y : ℕ → Ω → ℝ := fun k ω ↦ -((T k ω : ℝ) - μ) / σ
   have hlaw : HasLaw (id : ℝ → ℝ) (gaussianReal 0 1) (gaussianReal 0 1) :=
     ⟨measurable_id.aemeasurable, Measure.map_id⟩

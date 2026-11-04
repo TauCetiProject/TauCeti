@@ -27,10 +27,10 @@ transport plan, an integral over pairs of transported pairs, into the variance o
 displacement.
 
 The file also records the elementary bound of the mean of a real function by the square root of
-its second moment (the nonnegativity of its variance), together with moment and support consequences
-of nonzero variance `Var[X; μ] ≠ 0`: integrability on a finite measure space, positivity and
-finiteness of the Bochner and extended means for `ℝ≥0`-valued random variables, and nondegeneracy
-`μ {ω | X ω = 0} < 1` on a probability space.
+its second moment (the nonnegativity of its variance), together with two consequences of nonzero
+variance `Var[X; μ] ≠ 0`: strict positivity of the expectation of an `ℝ≥0`-valued random variable
+on a finite measure space, and nondegeneracy `μ {ω | X ω = 0} < 1` of a real-valued random
+variable on a probability space.
 
 ## Main statements
 
@@ -40,21 +40,16 @@ finiteness of the Bochner and extended means for `ℝ≥0`-valued random variabl
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
-* `TauCeti.integrable_of_variance_ne_zero` and
-  `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: for a real-valued random variable
-  with nonzero variance, integrability holds on a finite measure space and `μ {ω | X ω = 0} < 1`
-  holds on a probability space.
-* `TauCeti.integral_coe_pos_of_variance_ne_zero`,
-  `TauCeti.lintegral_coe_lt_top_of_variance_ne_zero`, and
-  `TauCeti.lintegral_coe_pos_of_variance_ne_zero`: for an `ℝ≥0`-valued random variable with
-  nonzero variance on a finite measure space, the Bochner and extended expectations are finite and
-  strictly positive.
+* `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
+  random variable with nonzero variance has strictly positive expectation.
+* `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
+  real-valued random variable with nonzero variance satisfies `μ {ω | X ω = 0} < 1`.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory Set
-open scoped ENNReal NNReal RealInnerProductSpace
+open scoped NNReal RealInnerProductSpace
 
 namespace MeasureTheory.MemLp
 
@@ -129,42 +124,18 @@ section VarianceNeZero
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- A real-valued random variable on a finite measure space with nonzero variance is integrable. -/
-theorem integrable_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ}
-    (hX : AEStronglyMeasurable X μ) (hvar : Var[X; μ] ≠ 0) :
-    Integrable X μ :=
-  (memLp_two_of_variance_ne_zero hX hvar).integrable one_le_two
-
 /-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
 positive real expectation. -/
 theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
     (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
     0 < ∫ ω, (X ω : ℝ) ∂μ := by
-  have hint := integrable_of_variance_ne_zero
-    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar
+  have hint := (memLp_two_of_variance_ne_zero
+    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar).integrable
+    one_le_two
   refine lt_of_le_of_ne (integral_nonneg fun ω ↦ (X ω).coe_nonneg) fun heq ↦ hvar ?_
   have hz : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 :=
     (integral_eq_zero_iff_of_nonneg (fun ω ↦ (X ω).coe_nonneg) hint).1 heq.symm
   rw [variance_congr hz, variance_zero]
-
-/-- A nonnegative random variable on a finite measure space with nonzero variance has finite
-extended mean. -/
-theorem lintegral_coe_lt_top_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
-    ∫⁻ ω, (X ω : ℝ≥0∞) ∂μ < ⊤ := by
-  rw [lintegral_coe_eq_integral X (integrable_of_variance_ne_zero
-    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar)]
-  exact ENNReal.ofReal_lt_top
-
-/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
-positive extended mean. -/
-theorem lintegral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
-    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
-    0 < ∫⁻ ω, (X ω : ℝ≥0∞) ∂μ := by
-  rw [lintegral_coe_eq_integral X (integrable_of_variance_ne_zero
-    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar),
-    ENNReal.ofReal_pos]
-  exact integral_coe_pos_of_variance_ne_zero hX hvar
 
 /-- On a probability space, a real-valued random variable with nonzero variance is not almost
 surely zero. -/
