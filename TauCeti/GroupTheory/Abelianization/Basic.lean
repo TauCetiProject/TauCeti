@@ -16,6 +16,8 @@ and written additively, the abelianization map sends products to sums in either 
 the commutator subgroup (`Abelianization.of_eq_one_iff`), so the abelianization map of a
 commutative group is injective (`Abelianization.of_injective`), and isomorphisms out of an
 abelianization are determined by their values on classes (`Abelianization.mulEquiv_ext`).
+Every element of the additive abelianization is the class of a group element
+(`Abelianization.exists_eq_ofMul_of`).
 -/
 
 public section
@@ -41,6 +43,11 @@ subgroup. -/
 @[simp]
 theorem of_eq_one_iff {g : G} : of g = 1 ↔ g ∈ commutator G := by
   rw [← MonoidHom.mem_ker, ker_of]
+
+/-- Written additively, every element of the abelianization is the class of a group element. -/
+theorem exists_eq_ofMul_of (x : Additive (Abelianization G)) : ∃ g : G, x = .ofMul (of g) := by
+  obtain ⟨g, hg⟩ : ∃ g, of g = x.toMul := QuotientGroup.mk_surjective x.toMul
+  exact ⟨g, by rw [hg, ofMul_toMul]⟩
 
 /-- The abelianization map of a commutative group is injective. -/
 theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
