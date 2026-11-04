@@ -584,29 +584,11 @@ open Classical in
 `V.integerLattice` in `V.euclideanSpan`. -/
 theorem covolume_intLattice_eq_covolume_integerLattice (V : Submodule ℚ (ι → ℚ)) :
     ZLattice.covolume V.intLattice = ZLattice.covolume V.integerLattice := by
-  let b := Free.chooseBasis ℤ V.intLattice
-  let b' : Basis (Free.ChooseBasisIndex ℤ V.intLattice) ℤ V.integerLattice :=
-    (b.ofZLatticeComap ℝ V.intLattice V.euclideanSpanEquivRealSpan.toLinearEquiv).map
-      (LinearEquiv.ofEq _ _ V.comap_intLattice_euclideanSpanEquivRealSpan)
-  have hgram :
-      Matrix.gram ℝ (fun i ↦ (b i : V.realSpan)) =
-        Matrix.gram ℝ (fun i ↦ (b' i : V.euclideanSpan)) := by
-    ext i j
-    simp only [b', Matrix.gram_apply, Basis.map_apply, LinearEquiv.coe_ofEq_apply,
-      Basis.ofZLatticeComap_apply, LinearIsometryEquiv.coe_symm_toLinearEquiv,
-      Submodule.coe_inner]
-    conv_lhs =>
-      rw [← V.euclideanSpanEquivRealSpan.apply_symm_apply (b i : V.realSpan),
-        ← V.euclideanSpanEquivRealSpan.apply_symm_apply (b j : V.realSpan)]
-    rw [PiLp.inner_apply, PiLp.inner_apply]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [V.coe_euclideanSpanEquivRealSpan_apply, V.coe_euclideanSpanEquivRealSpan_apply,
-      euclidean.mixedSpaceRatEquivReal.inner_map_map]
-  have hsq : ZLattice.covolume V.intLattice ^ 2 = ZLattice.covolume V.integerLattice ^ 2 := by
-    rw [ZLattice.covolume_sq_eq_det_gram V.intLattice b,
-      ZLattice.covolume_sq_eq_det_gram V.integerLattice b', hgram]
-  exact (pow_left_inj₀ (ZLattice.covolume_pos _ volume).le
-    (ZLattice.covolume_pos _ volume).le two_ne_zero).mp hsq
+  have he := LinearIsometryEquiv.measurePreserving
+    (E := V.euclideanSpan) (F := V.realSpan) V.euclideanSpanEquivRealSpan
+  rw [← V.comap_intLattice_euclideanSpanEquivRealSpan]
+  exact (ZLattice.covolume_comap V.intLattice volume volume
+    (e := V.euclideanSpanEquivRealSpan.toContinuousLinearEquiv) he).symm
 
 end MainTheorems
 
