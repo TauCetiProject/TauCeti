@@ -162,12 +162,14 @@ theorem numbering_sink (n : G.STNumbering s t) :
   Fin.ext n.val_numbering_sink
 
 /-- A vertex receives number `0` if and only if it is the source `s`. -/
+@[simp]
 theorem val_numbering_eq_zero_iff (n : G.STNumbering s t) {v : V} :
     (n.numbering v).val = 0 ↔ v = s := by
   rw [← n.val_numbering_source]
   exact n.val_numbering_injective.eq_iff
 
 /-- A vertex receives number `Fintype.card V - 1` if and only if it is the sink `t`. -/
+@[simp]
 theorem val_numbering_eq_card_sub_one_iff (n : G.STNumbering s t) {v : V} :
     (n.numbering v).val = Fintype.card V - 1 ↔ v = t := by
   rw [← n.val_numbering_sink]
@@ -194,6 +196,7 @@ theorem not_lt_numbering_source (n : G.STNumbering s t) (v : V) :
   not_lt_of_ge (n.numbering_source_le v)
 
 /-- A vertex has strictly larger number than `s` if and only if it is distinct from `s`. -/
+@[simp]
 theorem numbering_source_lt_iff (n : G.STNumbering s t) {v : V} :
     n.numbering s < n.numbering v ↔ v ≠ s := by
   rw [lt_iff_le_and_ne, ne_comm, n.numbering.injective.ne_iff]
@@ -212,6 +215,7 @@ theorem not_numbering_sink_lt (n : G.STNumbering s t) (v : V) :
   not_lt_of_ge (n.le_numbering_sink v)
 
 /-- A vertex has strictly smaller number than `t` if and only if it is distinct from `t`. -/
+@[simp]
 theorem lt_numbering_sink_iff (n : G.STNumbering s t) {v : V} :
     n.numbering v < n.numbering t ↔ v ≠ t := by
   rw [lt_iff_le_and_ne, n.numbering.injective.ne_iff]
