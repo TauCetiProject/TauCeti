@@ -115,6 +115,40 @@ theorem successiveVisit_eq_top_iff :
     obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp ht
     exact h ⟨n, successiveVisit_eq_coe_iff.mp hn.symm⟩
 
+/-- For finitely many visits, the visit indexed by `k` exists exactly when `k` is below
+the total number of visits. -/
+theorem successiveVisit_ne_top_iff_lt_ncard (hf : {n | X n ω = a}.Finite) :
+    successiveVisit X a k ω ≠ ⊤ ↔ k < {n | X n ω = a}.ncard := by
+  classical
+  simp only [ne_eq, successiveVisit_eq_top_iff, not_not]
+  constructor
+  · rintro ⟨n, hn, hk⟩
+    rw [← hk, Set.ncard_eq_toFinset_card _ hf]
+    exact visitCount_lt_card hf hn
+  · intro hk
+    have hcard : ∀ h : {n | X n ω = a}.Finite, k < h.toFinset.card := by
+      intro h
+      rwa [← Set.ncard_eq_toFinset_card _ h]
+    -- `visitTime` and `visitCount` are the `Nat.nth` and `Nat.count` wrappers for visits.
+    refine ⟨visitTime (fun n => X n ω) a k, ?_, ?_⟩
+    · simpa only [visitTime_def] using Nat.nth_mem k hcard
+    · simpa only [visitCount_eq_count, visitTime_def] using Nat.count_nth hcard
+
+/-- For a path starting at `a` with finitely many visits to `a`, the total visit count is
+one plus the positive-time visit count. -/
+theorem ncard_setOf_eq_eq_ncard_setOf_succ_add_one {x : ℕ → α} {a : α}
+    (hx : {n | x n = a}.Finite) (h0 : x 0 = a) :
+    {n | x n = a}.ncard = {n | x (n + 1) = a}.ncard + 1 := by
+  have hset : {n | x n = a} = insert 0 (Nat.succ '' {n | x (n + 1) = a}) := by
+    ext n
+    cases n with
+    | zero => simp [h0]
+    | succ n => simp
+  have hsucc : (Nat.succ '' {n | x (n + 1) = a}).Finite :=
+    hx.subset (by rw [hset]; exact Set.subset_insert _ _)
+  rw [hset, Set.ncard_insert_of_notMem (by simp) hsucc,
+    Set.ncard_image_of_injective _ Nat.succ_injective]
+
 /-- At an existing visit, the stopping time agrees with the combinatorial enumeration. -/
 theorem successiveVisit_eq_visitTime
     (h : ∃ n, X n ω = a ∧ visitCount (fun i => X i ω) a n = k) :
