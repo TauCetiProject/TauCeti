@@ -51,63 +51,6 @@ attribute [local instance high] Ideal.instModuleCotangentOfAlgebra
 
 variable (t : DynkinType) (ht : t.Valid)
 
-/-- The Weyl action on the integral character group of the Geck weight torus. -/
-def geckWeylCharacterAut : (t.simplyConnectedRootDatum ht).weylGroup →*
-    MulAut (Multiplicative (Fin t.rank →₀ ℤ)) where
-  toFun w := AddEquiv.toMultiplicative
-    (Finsupp.addEquivFunOnFinite.trans
-      ((DistribMulAction.toAddEquiv (Fin t.rank → ℤ) w).trans
-        Finsupp.addEquivFunOnFinite.symm))
-  map_one' := by
-    ext α i
-    simp
-  map_mul' w₁ w₂ := by
-    ext α i
-    simp [mul_smul]
-
-/-- On an additive exponent vector, the character action is the Weyl action transported
-through the finite-function equivalence. -/
-@[simp]
-theorem geckWeylCharacterAut_ofAdd
-    (w : (t.simplyConnectedRootDatum ht).weylGroup) (μ : Fin t.rank →₀ ℤ) :
-    t.geckWeylCharacterAut ht w (Multiplicative.ofAdd μ) =
-      Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
-        (w • Finsupp.equivFunOnFinite μ)) := (rfl)
-
-/-- On a weight written as an exponent vector, the character action is the usual Weyl action. -/
-@[simp↓]
-theorem geckWeylCharacterAut_weightCharacter
-    (w : (t.simplyConnectedRootDatum ht).weylGroup) (μ : Fin t.rank → ℤ) :
-    t.geckWeylCharacterAut ht w (SplitTorus.weightCharacter μ) =
-      SplitTorus.weightCharacter (w • μ) := by
-  simp only [SplitTorus.weightCharacter_def, geckWeylCharacterAut_ofAdd,
-    Equiv.apply_symm_apply]
-
-/-- Pulling a torus point back along a Weyl character automorphism gives the inverse Weyl
-action on its torus parameters. -/
-@[simp]
-theorem pointsMulEquiv_comp_geckWeylCharacterAut
-    (w : (t.simplyConnectedRootDatum ht).weylGroup) (A : Type*) [CommRing A]
-    (q : WithConv (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)) →ₐ[ℤ]
-      (CommAlgCat.of ℤ A))) :
-    SplitTorus.pointsMulEquiv
-        (toConv (q.ofConv.comp (MonoidAlgebra.domCongr ℤ ℤ
-          (t.geckWeylCharacterAut ht w)).toAlgHom)) =
-      t.geckWeylTorusAction ht A w⁻¹ (SplitTorus.pointsMulEquiv q) := by
-  have hchar (μ : Fin t.rank → ℤ) :
-      torusCharacter (SplitTorus.pointsMulEquiv
-        (toConv (q.ofConv.comp (MonoidAlgebra.domCongr ℤ ℤ
-          (t.geckWeylCharacterAut ht w)).toAlgHom))) μ =
-        torusCharacter (t.geckWeylTorusAction ht A w⁻¹ (SplitTorus.pointsMulEquiv q)) μ := by
-    rw [torusCharacter_geckWeylTorusAction, inv_inv,
-      ← SplitTorus.charOfPoint_weightCharacter, ← SplitTorus.charOfPoint_weightCharacter]
-    apply Units.ext
-    simp only [DiagonalizableGroup.charOfPoint_apply_coe,
-      AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_single,
-      geckWeylCharacterAut_weightCharacter]
-  funext i
-  simpa only [← weightChar_apply, weightChar_single] using hchar (Pi.single i 1)
-
 private theorem comp_pointConjugation_weylWord (l : List (Fin t.rank))
     (A : Type*) [CommRing A]
     (q : WithConv (MonoidAlgebra ℤ (Multiplicative (Fin t.rank →₀ ℤ)) →ₐ[ℤ]

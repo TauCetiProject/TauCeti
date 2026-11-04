@@ -484,16 +484,27 @@ theorem geckCoordinatePointMulEquiv_comp_geckWeightTorusIntegralCoordinateMap
           (q.ofConv.comp (t.geckWeightTorusIntegralCoordinateMap ht).hom.toAlgHom)) =
       t.geckWeightTorusPoints ht B (SplitTorus.pointsMulEquiv q) := by
   apply Subtype.ext
-  rw [coe_geckCoordinatePointMulEquiv, coe_geckWeightTorusPoints,
-    CommHopfAlgCat.quotientPointsHom_apply]
-  simp only [AlgHom.comp_assoc]
-  rw [← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
-    mkQuotient_comp_geckWeightTorusIntegralCoordinateMap]
-  rw [UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
-  have h := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
-    (t.geckWeightFin ht) (CommAlgCat.of ℤ B) q
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
-    (GeneralLinear.weightTorusCoordinateMap (t.geckWeightFin ht)) (CommAlgCat.of ℤ B) q] at h
+  rw [coe_geckCoordinatePointMulEquiv, coe_geckWeightTorusPoints]
+  have h := pointsMulEquiv_kostantWeightTorusToralCoordinateMapOfEq
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht)
+    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (t.geckDefiningIdeal_def ht)
+    (CommAlgCat.of ℤ B) q
+  -- Identify the two factorizations by their quotient composites, without unfolding them.
+  have hmap : kostantWeightTorusToralCoordinateMapOfEq
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+      (t.geckCoordinateLattice ht).toAddSubgroup
+      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+      (t.isNilpotent_geckRepresentation_rootGenerator ht)
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (t.geckDefiningIdeal_def ht) =
+        t.geckWeightTorusIntegralCoordinateMap ht := by
+    apply (cancel_epi (CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht)) (t.geckDefiningIdeal ht))).mp
+    rw [mkQuotient_comp_kostantWeightTorusToralCoordinateMapOfEq,
+      mkQuotient_comp_geckWeightTorusIntegralCoordinateMap]
+  rw [hmap, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   exact h
 
 /-- The underlying bialgebra map of the integral Geck weight torus factors the diagonal
