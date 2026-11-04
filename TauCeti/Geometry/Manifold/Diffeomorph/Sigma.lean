@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.ContMDiff.Sigma
 
@@ -24,6 +25,11 @@ diffeomorphisms of a disjoint union supported on a single component.
 * `Diffeomorph.sigmaCongrRightHom`: the same construction as a group homomorphism.
 * `Diffeomorph.sigmaFiber`: restriction of an index-preserving diffeomorphism to a fibre.
   Reassembling the restrictions by `sigmaCongrRight` recovers the original diffeomorphism.
+
+## Main results
+
+* `TauCeti.isLocalDiffeomorph_sigmaMk`: the inclusion of a component into a disjoint union is a
+  local diffeomorphism.
 -/
 
 public section
@@ -126,5 +132,25 @@ theorem mk_sigmaFiber_apply (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
 theorem sigmaCongrRight_sigmaFiber (e : (Σ i, M i) ≃ₘ^n⟮I, J⟯ Σ i, M' i)
     (h : ∀ x, (e x).1 = x.1) : sigmaCongrRight (e.sigmaFiber h) = e :=
   Diffeomorph.ext fun ⟨i, x⟩ ↦ mk_sigmaFiber_apply e h i x
+
+/-- The inclusion of a component into a disjoint union is a `C^n` local diffeomorphism: it is a
+diffeomorphism onto the open copy of the component, with inverse the second projection. -/
+theorem _root_.TauCeti.isLocalDiffeomorph_sigmaMk (i : ι) :
+    IsLocalDiffeomorph I I n (Sigma.mk i : M i → Σ i, M i) := by
+  intro x
+  have : Nonempty (M i) := ⟨x⟩
+  have hσ : Topology.IsOpenEmbedding (Sigma.mk i : M i → Σ i, M i) := .sigmaMk
+  let Φ : PartialDiffeomorph I I (M i) (Σ i, M i) n :=
+    { toPartialEquiv := (hσ.toOpenPartialHomeomorph _).toPartialEquiv
+      open_source := (hσ.toOpenPartialHomeomorph _).open_source
+      open_target := (hσ.toOpenPartialHomeomorph _).open_target
+      contMDiffOn_toFun := by
+        simpa using (TauCeti.contMDiff_sigmaMk (I := I) (n := n) i).contMDiffOn
+      contMDiffOn_invFun := by
+        rintro _ ⟨y, -, rfl⟩
+        refine (TauCeti.contMDiffAt_sigma_iff.2
+          (contMDiffAt_id.congr_of_eventuallyEq ?_)).contMDiffWithinAt
+        exact Filter.Eventually.of_forall fun z ↦ hσ.toOpenPartialHomeomorph_left_inv }
+  exact Φ.isLocalDiffeomorphAt I I n (Set.mem_univ x)
 
 end Diffeomorph

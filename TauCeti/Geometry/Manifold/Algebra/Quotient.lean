@@ -10,15 +10,18 @@ public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.Algebra.Subgroup
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
+public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Module.Submodule
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Algebra.Module.ZLattice.Ker
 import TauCeti.Algebra.Module.ZLattice.Quotient
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Topology.Algebra.Module.DiscretePreimage
 
 /-!
 # Quotients of normed spaces by discrete submodules are Lie groups
@@ -67,6 +70,14 @@ complex torus `ker f / (L ∩ ker f)` holomorphically into `E / L`, with image t
 component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex Lie groups
 (`Submodule.range_orbitRelQuotientMap_ker_subtype`).
 
+That identity component is an open subgroup of the kernel, so the kernel is a union of
+translates of the torus `ker f / (L ∩ ker f)`. Translating the charts of this torus makes the
+kernel a `C^n` Lie group modelled on `ker f`
+(`AddSubgroup.lieAddGroup_chartedSpaceOfIsOpenEmbedding`) whose inclusion into `E / L` is a `C^n`
+embedding. For complex `f` the kernel is thus a closed
+complex Lie subgroup of `E / L`, and the torus `ker f / (L ∩ ker f)` is biholomorphic onto its
+identity component.
+
 ## Main results
 
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
@@ -89,6 +100,15 @@ component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex 
 * `Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype`: for a real or complex linear map
   `f` carrying a full lattice `L` into a discrete subgroup, the torus `ker f / (L ∩ ker f)` embeds
   into `E / L`; for complex `f` the embedding is holomorphic.
+* `Submodule.instLieAddGroupKerOrbitRelQuotientMap`: the kernel `f⁻¹(L') / L` of the induced map
+  `E / L → E' / L'` is a `C^n` additive Lie group modelled on `ker f`; for complex `f` it is a
+  complex Lie group.
+* `Submodule.isSmoothEmbedding_subtypeVal_ker_orbitRelQuotientMap`: the inclusion of that kernel
+  into `E / L` is a `C^n` embedding.
+* `Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap`,
+  `Submodule.isLocalDiffeomorph_orbitRelQuotientToKerOrbitRelQuotientMap`: the torus
+  `ker f / (L ∩ ker f)` is an open subgroup of the kernel, included by a `C^n` local
+  diffeomorphism.
 
 ## References
 
@@ -336,3 +356,124 @@ theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype {𝕜 : Type
   exact L.isSmoothEmbedding_orbitRelQuotientMap_subtype _ (.of_finiteDimensional _)
 
 end Subtorus
+
+section KernelInclusion
+
+variable {𝕜 : Type*} [NormedField 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {E' : Type*} [AddCommGroup E'] [Module 𝕜 E'] (L : Submodule ℤ E) {L' : Submodule ℤ E'}
+  (f : E →ₗ[𝕜] E') (h : L ≤ L'.comap (f.restrictScalars ℤ))
+
+/-- The inclusion of the torus `ker f / (L ∩ ker f)` into the kernel `f⁻¹(L') / L` of the map
+`E / L → E' / L'` induced by `f`: the map of quotients induced by the inclusion of `ker f`, with
+its codomain restricted to the kernel. Its image is the identity component of the kernel
+(`Submodule.range_orbitRelQuotientMap_ker_subtype`). -/
+noncomputable def Submodule.orbitRelQuotientToKerOrbitRelQuotientMap :
+    AddAction.orbitRel.Quotient (ZLattice.comap 𝕜 L (LinearMap.ker f).subtype) (LinearMap.ker f) →+
+      (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :=
+  ((ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+    ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl).codRestrict _ fun t ↦ by
+      induction t using _root_.Quotient.inductionOn with | h x => ?_
+      -- The composite sends the orbit of `x` to the orbit of `f x = 0`.
+      exact AddMonoidHom.mem_ker.2 <|
+        (congrArg (L.orbitRelQuotientMap L' _ h)
+          (Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x)).trans <|
+        (L.orbitRelQuotientMap_mk L' _ h _).trans <|
+        (congrArg (_root_.Quotient.mk (AddAction.orbitRel L' E')) x.2).trans
+          L'.orbitRelQuotient_mk_zero
+
+/-- The orbit of `x ∈ ker f` in `ker f / (L ∩ ker f)` is sent to the orbit of `x` in `E / L`. -/
+@[simp]
+theorem Submodule.coe_orbitRelQuotientToKerOrbitRelQuotientMap_mk (x : LinearMap.ker f) :
+    (L.orbitRelQuotientToKerOrbitRelQuotientMap f h (_root_.Quotient.mk _ x) :
+      AddAction.orbitRel.Quotient L E) = _root_.Quotient.mk _ (x : E) :=
+  Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x
+
+end KernelInclusion
+
+section Kernel
+
+open Topology
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E] [FiniteDimensional ℝ E] {E' : Type*}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedSpace 𝕜 E'] [IsScalarTower ℝ 𝕜 E']
+  (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] {L' : Submodule ℤ E'}
+  [DiscreteTopology L'] (f : E →ₗ[𝕜] E') (h : L ≤ L'.comap (f.restrictScalars ℤ))
+
+/-- The torus `ker f / (L ∩ ker f)` is an open subgroup of the kernel `f⁻¹(L') / L` of the map
+`E / L → E' / L'` induced by `f`. -/
+theorem Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap :
+    IsOpenEmbedding (L.orbitRelQuotientToKerOrbitRelQuotientMap f h) := by
+  set j := (ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+    ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl
+  have hemb := (Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype (n := 0) L f
+    (Submodule.map_le_iff_le_comap.2 h)).isEmbedding
+  -- `AddMonoidHom.codRestrict` coerces to the codomain restriction of `j`.
+  refine ⟨hemb.codRestrict _ _, ?_⟩
+  obtain ⟨U, hU, hUK⟩ := Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage L f
+    (LinearMap.continuous_of_finiteDimensional (f.restrictScalars ℝ))
+    (Submodule.map_le_iff_le_comap.2 h)
+  have hK : ((L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :
+      Set (AddAction.orbitRel.Quotient L E)) =
+        _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by
+    simp [Submodule.ker_orbitRelQuotientMap]
+  have hj : Set.range j = _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) :=
+    (Submodule.range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp
+  -- The range is the trace of `U` on the kernel.
+  convert hU.preimage continuous_subtype_val using 1
+  ext ⟨z, hz⟩
+  have hzK : z ∈ _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := hK ▸ hz
+  have hzU : z ∈ U ↔ z ∈ Set.range j := by
+    rw [hj, ← hUK, Set.mem_inter_iff, and_iff_left hzK]
+  rw [Set.mem_preimage, hzU]
+  exact ⟨fun ⟨t, ht⟩ ↦ ⟨t, congrArg Subtype.val ht⟩, fun ⟨t, ht⟩ ↦ ⟨t, Subtype.ext ht⟩⟩
+
+/-- The kernel `f⁻¹(L') / L` of the homomorphism `E / L → E' / L'` induced by `f` is charted on
+`ker f`: near each of its points it is a translate of the torus `ker f / (L ∩ ker f)`, which is an
+open subgroup of the kernel. -/
+noncomputable instance Submodule.instChartedSpaceKerOrbitRelQuotientMap :
+    ChartedSpace (LinearMap.ker f) (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :=
+  AddSubgroup.chartedSpaceOfIsOpenEmbedding _ (L.orbitRelQuotientToKerOrbitRelQuotientMap f h)
+    (Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap L f h)
+
+/-- For the charts `Submodule.instChartedSpaceKerOrbitRelQuotientMap`, the inclusion of the torus
+`ker f / (L ∩ ker f)` into the kernel `f⁻¹(L') / L` is a `C^n` local diffeomorphism. Since it is
+also an open embedding (`Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap`), it
+identifies the torus with the identity component of the kernel; for `𝕜 = ℂ` and `n = ω` this
+identification is biholomorphic. -/
+theorem Submodule.isLocalDiffeomorph_orbitRelQuotientToKerOrbitRelQuotientMap :
+    IsLocalDiffeomorph 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, LinearMap.ker f) n
+      (L.orbitRelQuotientToKerOrbitRelQuotientMap f h) :=
+  AddSubgroup.isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding _
+
+private theorem isImmersion_coe_orbitRelQuotientToKerOrbitRelQuotientMap :
+    Manifold.IsImmersion 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, E) n fun t ↦
+      (L.orbitRelQuotientToKerOrbitRelQuotientMap f h t : AddAction.orbitRel.Quotient L E) :=
+  -- Followed by the inclusion of the kernel, the codomain restriction is the map of quotients
+  -- induced by the inclusion of `ker f`.
+  (Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype L f
+    (Submodule.map_le_iff_le_comap.2 h)).isImmersion
+
+/-- **The kernel of an induced homomorphism of tori is a Lie group.** Let a linear map
+`f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete subgroup `L'`. The kernel
+`f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`, with the charts
+`Submodule.instChartedSpaceKerOrbitRelQuotientMap` modelled on `ker f`, is a `C^n` additive Lie
+group. For `𝕜 = ℂ` and `n = ω` it is a complex Lie group. -/
+instance Submodule.instLieAddGroupKerOrbitRelQuotientMap :
+    LieAddGroup 𝓘(𝕜, LinearMap.ker f) n (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :=
+  AddSubgroup.lieAddGroup_chartedSpaceOfIsOpenEmbedding _
+    (isImmersion_coe_orbitRelQuotientToKerOrbitRelQuotientMap L f h)
+
+/-- **The kernel of an induced homomorphism of tori is an embedded Lie subgroup.** Let a linear
+map `f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete subgroup `L'`. The
+inclusion into `E / L` of the kernel `f⁻¹(L') / L` of the induced map `E / L → E' / L'` is a `C^n`
+embedding. For `𝕜 = ℂ` and `n = ω` this makes the kernel a closed complex Lie subgroup of the
+complex torus `E / L`; it is closed by `Submodule.isClosed_orbitRelQuotient_mk_image_preimage`. -/
+theorem Submodule.isSmoothEmbedding_subtypeVal_ker_orbitRelQuotientMap :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, E) n
+      (Subtype.val : (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker →
+        AddAction.orbitRel.Quotient L E) :=
+  AddSubgroup.isSmoothEmbedding_subtypeVal_chartedSpaceOfIsOpenEmbedding _
+    (isImmersion_coe_orbitRelQuotientToKerOrbitRelQuotientMap L f h)
+
+end Kernel
