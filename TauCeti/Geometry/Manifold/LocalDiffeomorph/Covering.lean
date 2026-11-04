@@ -17,9 +17,8 @@ trivialization is `C^n` on its base set. In particular, a topological covering w
 there is no need to shrink the neighborhood separately for each sheet. When `n = ∞`, these
 sections are smooth.
 
-The argument uses `ContMDiffOn.of_comp_isLocalDiffeomorph`: an inverse branch is continuous,
-and its composite with the projection is the identity. No manifold structure on the fiber
-of the trivialization is required.
+For an individual trivialization, local invertibility is needed only on its source.
+No manifold structure on the fiber of the trivialization is required.
 
 ## References
 

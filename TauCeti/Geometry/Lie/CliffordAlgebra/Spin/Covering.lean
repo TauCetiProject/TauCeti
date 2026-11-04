@@ -22,10 +22,8 @@ The topological covering is
 local smooth invertibility is
 `TauCeti.CliffordAlgebra.isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange`.
 We keep their native units-range carriers and select the matrix operator topology explicitly.
-At this Mathlib pin, `PiLp.pseudoMetricSpaceToPi` preserves the product uniformity, so the
-operator-induced matrix topology and the entrywise topology are definitionally equal.
-Consequently their identity homeomorphism, also on units and the SO range, is
-`Homeomorph.refl`; no new topology or smooth structure is introduced.
+The operator-induced matrix topology agrees with the entrywise topology, including on
+units and the special orthogonal range, so the topological covering applies to these carriers.
 
 The positive-dimensional statement includes rank one. Native Spin in rank zero is trivial;
 the geometric two-element rank-zero group is a separate construction.
