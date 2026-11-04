@@ -52,8 +52,8 @@ theorem additiveJucysMurphy_zero : additiveJucysMurphy q (0 : Fin (n + 1)) = 0 :
   apply toInfinite_injective R q (n + 1)
   simp
 
-/-- The finite recursion: conjugate the preceding additive element by the adjacent generator
-and add `q⁻¹ • T i`. The two strands of that generator are `i.castSucc` and `i.succ`. -/
+/-- The finite recursion: multiply the preceding additive element on both sides by the adjacent
+generator and add `q⁻¹ • T i`. The two strands of that generator are `i.castSucc` and `i.succ`. -/
 theorem additiveJucysMurphy_succ (i : Fin n) :
     additiveJucysMurphy q i.succ =
       T (n := n + 1) q i * additiveJucysMurphy q i.castSucc * T (n := n + 1) q i +
