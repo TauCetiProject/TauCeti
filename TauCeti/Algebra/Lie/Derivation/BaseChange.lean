@@ -369,9 +369,9 @@ theorem baseChange_rTensor (D : derivationLieAlgebra R A) {T : Type x} [CommRing
     [Algebra R T] (f : S →ₗ[R] T) (z : S ⊗[R] A) :
     (baseChange T D : Module.End T (T ⊗[R] A)) (f.rTensor A z) =
       f.rTensor A ((baseChange S D : Module.End S (S ⊗[R] A)) z) := by
-  induction z using TensorProduct.inductionOn with
-  | add z z' hz hz' => simp only [map_add, hz, hz']
-  | tmul s a => simp
+  rw [coe_baseChange, coe_baseChange, LinearMap.baseChange_eq_lTensor,
+    LinearMap.baseChange_eq_lTensor, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
+    ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply]
 
 /-- **Transitivity of extension of scalars**: along a tower `R → S → T`, the identification
 `T ⊗[S] (S ⊗[R] A) ≃ T ⊗[R] A` carries the extension to `T` of the extension of `D` to `S` onto the
@@ -382,12 +382,9 @@ theorem cancelBaseChange_baseChange_baseChange (D : derivationLieAlgebra R A) {T
         ((baseChange T (baseChange S D) : Module.End T (T ⊗[S] (S ⊗[R] A))) z) =
       (baseChange T D : Module.End T (T ⊗[R] A))
         (AlgebraTensorModule.cancelBaseChange R S T T A z) := by
-  induction z using TensorProduct.inductionOn with
-  | add z z' hz hz' => simp only [map_add, hz, hz']
-  | tmul t y =>
-    induction y using TensorProduct.inductionOn with
-    | add y y' hy hy' => simp only [tmul_add, map_add, hy, hy']
-    | tmul s a => simp
+  rw [coe_baseChange, coe_baseChange, coe_baseChange, LinearMap.baseChange_baseChange,
+    LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+    LinearEquiv.coe_coe]
 
 variable [Module.FaithfullyFlat R S]
 
