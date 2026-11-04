@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
-public import Mathlib.NumberTheory.NumberField.House
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Topology.MetricSpace.ProperSpace.Real
 import TauCeti.NumberTheory.GeometryOfNumbers.MinkowskiSecond
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 
 /-!
@@ -19,13 +17,14 @@ import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 
 For a number field `K` of degree `d = [K : ℚ]`, the norm on `mixedSpace K` at `mixedEmbedding K x`
 is the house of `x` (`TauCeti.NumberField.norm_mixedEmbedding`), so the closed unit ball of
-`mixedSpace K` cuts out the elements of `K` whose conjugates all have modulus at most `1`. Every
-nonzero algebraic integer has house at least `1`, so every successive minimum of
-`mixedEmbedding.integerLattice K` with respect to the unit ball is at least `1`. Minkowski's second
-theorem (`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`) bounds the product
-of those minima by `√|discr K|`, and `ZLattice.exists_basis_mem_smul_successiveMin` turns the
-minima into a `ℤ`-basis `TauCeti.NumberField.reducedIntegralBasis K` of `𝓞 K` whose `i`-th element
-has house at most `max 1 ((i + 1) / 2) * √|discr K|`.
+`mixedSpace K` (`ConvexBody.closedBall 0 1 zero_le_one`) cuts out the elements of `K` whose
+conjugates all have modulus at most `1`. Every nonzero algebraic integer has house at least `1`, so
+every successive minimum of `mixedEmbedding.integerLattice K` with respect to the unit ball is at
+least `1`. Minkowski's second theorem
+(`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`) bounds the product of those
+minima by `√|discr K|`, and `ZLattice.exists_basis_mem_smul_successiveMin` turns the minima into a
+`ℤ`-basis `TauCeti.NumberField.reducedIntegralBasis K` of `𝓞 K` whose `i`-th element has house at
+most `max 1 ((i + 1) / 2) * √|discr K|`.
 
 Its largest house `TauCeti.NumberField.integralBasisHouse K` satisfies `1 ≤ integralBasisHouse K`
 and `integralBasisHouse K ≤ max 1 (d / 2) * √|discr K|`, with `integralBasisHouse ℚ = 1`; it bounds
@@ -41,7 +40,6 @@ the local norm at every infinite place of all members of `reducedIntegralBasis K
 
 ## Main results
 
-* `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.house_reducedIntegralBasis_le_mul_sqrt_discr`:
   `house (reducedIntegralBasis K i : K) ≤ max 1 ((i + 1) / 2) * √|(discr K : ℝ)|`.
 * `TauCeti.NumberField.integralBasisHouse_le_iff`:
@@ -70,104 +68,61 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-open Classical in
-/-- On `mixedSpace K`, the sup norm of `mixedEmbedding K x` is the house of `x`. -/
-@[simp]
-theorem norm_mixedEmbedding (x : K) : ‖mixedEmbedding K x‖ = house x := by
-  refine le_antisymm ?_ ?_
-  · rw [norm_eq_sup'_normAtPlace]
-    refine Finset.sup'_le _ _ fun w _ ↦ ?_
-    rw [normAtPlace_apply, ← norm_embedding_eq]
-    exact norm_embedding_le_house x w.embedding
-  · rw [house, canonicalEmbedding.norm_le_iff]
-    intro φ
-    have hφ : ‖φ x‖ = normAtPlace (InfinitePlace.mk φ) (mixedEmbedding K x) := by
-      rw [normAtPlace_apply, InfinitePlace.apply]
-    rw [hφ, norm_eq_sup'_normAtPlace]
-    exact Finset.le_sup' (fun w ↦ normAtPlace w (mixedEmbedding K x)) (Finset.mem_univ _)
-
 section Construction
 
 variable (K)
-
-open scoped Classical in
-/-- The closed unit ball of `mixedSpace K` as a `ConvexBody`. -/
-private def mixedUnitBall : ConvexBody (mixedSpace K) where
-  carrier := Metric.closedBall 0 1
-  convex' := convex_closedBall 0 1
-  isCompact' := isCompact_closedBall 0 1
-  nonempty' := Metric.nonempty_closedBall.2 zero_le_one
-
-open scoped Classical in
-@[simp]
-private theorem coe_mixedUnitBall :
-    (mixedUnitBall K : Set (mixedSpace K)) = Metric.closedBall 0 1 :=
-  rfl
-
-open scoped Classical in
-@[simp]
-private theorem mem_mixedUnitBall {z : mixedSpace K} :
-    z ∈ mixedUnitBall K ↔ ‖z‖ ≤ 1 := by
-  rw [← SetLike.mem_coe, coe_mixedUnitBall, Metric.mem_closedBall, dist_zero_right]
-
-open scoped Classical in
-private theorem zero_mem_interior_mixedUnitBall :
-    (0 : mixedSpace K) ∈ interior (mixedUnitBall K : Set (mixedSpace K)) := by
-  rw [coe_mixedUnitBall]
-  exact Metric.ball_subset_interior_closedBall (Metric.mem_ball_self zero_lt_one)
-
-open scoped Classical in
-private theorem neg_mem_mixedUnitBall :
-    ∀ z ∈ mixedUnitBall K, -z ∈ mixedUnitBall K := by
-  intro z hz
-  simpa using hz
-
-open scoped Classical in
-private theorem norm_le_of_mem_smul_mixedUnitBall {t : ℝ} (ht : 0 ≤ t) {z : mixedSpace K}
-    (hz : z ∈ t • (mixedUnitBall K : Set (mixedSpace K))) : ‖z‖ ≤ t := by
-  rcases hz with ⟨u, hu, rfl⟩
-  rw [SetLike.mem_coe, mem_mixedUnitBall] at hu
-  rw [_root_.norm_smul, Real.norm_of_nonneg ht]
-  exact mul_le_of_le_one_right ht hu
 
 open scoped Classical in
 /-- Every successive minimum of `mixedEmbedding.integerLattice K` with respect to the unit ball is
 at least `1`, because every nonzero algebraic integer has house at least `1`. -/
 private theorem one_le_successiveMin_integerLattice
     (i : Fin (finrank ℝ (mixedSpace K))) :
-    1 ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i := by
+    1 ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+      (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := by
   obtain ⟨⟨ht, v, hv, hvL⟩, -⟩ := ZLattice.successiveMin_isLeast
-    (mixedEmbedding.integerLattice K) (zero_mem_interior_mixedUnitBall K) i
+    (mixedEmbedding.integerLattice K)
+    (ConvexBody.mem_interior_closedBall_self (0 : mixedSpace K) zero_lt_one) i
   obtain ⟨α, hα⟩ := (hvL 0).1
   replace hα : mixedEmbedding K (α : K) = v 0 := by simpa using hα
   have hα0 : (α : K) ≠ 0 := by
     intro h0
     exact hv.ne_zero 0 (by simpa [h0] using hα.symm)
+  have hv0 : ‖v 0‖ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+      (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := by
+    have hz := (hvL 0).2
+    rwa [ConvexBody.coe_closedBall, smul_unitClosedBall_of_nonneg ht,
+      mem_closedBall_zero_iff] at hz
   calc (1 : ℝ) ≤ house (α : K) := one_le_house_of_isIntegral α.2 hα0
     _ = ‖v 0‖ := by rw [← hα, norm_mixedEmbedding]
-    _ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i :=
-      norm_le_of_mem_smul_mixedUnitBall K ht (hvL 0).2
+    _ ≤ ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+          (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i := hv0
 
 open scoped Classical in
 /-- The product of the successive minima of `mixedEmbedding.integerLattice K` with respect to the
 unit ball of `mixedSpace K` is at most `√|discr K|`. -/
 private theorem prod_successiveMin_integerLattice_le :
-    ∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i ≤
+    ∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+      (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i ≤
       √|(discr K : ℝ)| := by
   have hmink := ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume
-    (mixedEmbedding.integerLattice K) volume (neg_mem_mixedUnitBall K)
+    (K := ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one)
+    (mixedEmbedding.integerLattice K) volume (fun _ hz ↦ by simpa using hz)
   have hdim : finrank ℝ (mixedSpace K) = nrRealPlaces K + 2 * nrComplexPlaces K := by
     rw [mixedEmbedding.finrank, ← card_add_two_mul_card_eq_rank]
   have hprod_nn : 0 ≤
-      ∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i :=
+      ∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+        (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i :=
     Finset.prod_nonneg fun i _ ↦ ZLattice.successiveMin_nonneg _ _ i
   set C : ℝ := 2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K
   have hC : 0 < C := by positivity
   rw [← mul_le_mul_iff_left₀ hC]
-  calc (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i) * C
-      ≤ (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) i) *
-          volume.real (mixedUnitBall K : Set (mixedSpace K)) := by
-        rw [coe_mixedUnitBall]
+  calc (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+          (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i) * C
+      ≤ (∏ i, ZLattice.successiveMin (mixedEmbedding.integerLattice K)
+          (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one) i) *
+          volume.real (ConvexBody.closedBall (0 : mixedSpace K) 1 zero_le_one :
+            Set (mixedSpace K)) := by
+        rw [ConvexBody.coe_closedBall]
         exact mul_le_mul_of_nonneg_left (two_pow_mul_two_pow_le_volume_real_closedBall K) hprod_nn
     _ ≤ 2 ^ finrank ℝ (mixedSpace K) * ZLattice.covolume (mixedEmbedding.integerLattice K) := hmink
     _ = √|(discr K : ℝ)| * C := by
@@ -195,8 +150,11 @@ theorem exists_basis_ringOfIntegers_house_le :
       ∀ i : Fin (finrank ℚ K),
         house (b i : K) ≤ max 1 ((((i : ℕ) : ℝ) + 1) / 2) * √|(discr K : ℝ)| := by
   classical
-  obtain ⟨bL, hbL⟩ := ZLattice.exists_basis_mem_smul_successiveMin
-    (mixedEmbedding.integerLattice K) (zero_mem_interior_mixedUnitBall K) (neg_mem_mixedUnitBall K)
+  let U : ConvexBody (mixedSpace K) := ConvexBody.closedBall 0 1 zero_le_one
+  obtain ⟨bL, hbL⟩ := ZLattice.exists_basis_mem_smul_successiveMin (K := U)
+    (mixedEmbedding.integerLattice K)
+    (ConvexBody.mem_interior_closedBall_self (0 : mixedSpace K) zero_lt_one)
+    (fun _ hz ↦ by simpa [U] using hz)
   let eIdx : Fin (finrank ℝ (mixedSpace K)) ≃ Fin (finrank ℚ K) :=
     finCongr (mixedEmbedding.finrank K)
   let b : Basis (Fin (finrank ℚ K)) ℤ (𝓞 K) :=
@@ -211,20 +169,22 @@ theorem exists_basis_ringOfIntegers_house_le :
     convert hR with i
     rw [Function.comp_apply, Basis.ofZLatticeBasis_apply, hb_img]
   · set j := eIdx.symm i
-    have hj_val : (j : ℕ) = (i : ℕ) := rfl
+    have hj_val : (j : ℕ) = (i : ℕ) := by simp [j, eIdx]
     have hc : 0 ≤ max 1 ((((j : ℕ) : ℝ) + 1) / 2) *
-        ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) j :=
+        ZLattice.successiveMin (mixedEmbedding.integerLattice K) U j :=
       mul_nonneg (le_trans zero_le_one (le_max_left _ _))
         (ZLattice.successiveMin_nonneg _ _ j)
     have hnorm : house (b i : K) ≤ max 1 ((((j : ℕ) : ℝ) + 1) / 2) *
-        ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) j := by
-      rw [← norm_mixedEmbedding, hb_img]
-      exact norm_le_of_mem_smul_mixedUnitBall K hc (hbL j)
+        ZLattice.successiveMin (mixedEmbedding.integerLattice K) U j := by
+      have hz := hbL j
+      rw [ConvexBody.coe_closedBall, smul_unitClosedBall_of_nonneg hc,
+        mem_closedBall_zero_iff] at hz
+      rwa [← norm_mixedEmbedding, hb_img]
     have hrest : 1 ≤ ∏ k ∈ Finset.univ.erase j,
-        ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) k :=
+        ZLattice.successiveMin (mixedEmbedding.integerLattice K) U k :=
       Finset.prod_induction _ (1 ≤ ·) (fun _ _ ha hb ↦ one_le_mul_of_one_le_of_one_le ha hb)
         le_rfl (fun k _ ↦ one_le_successiveMin_integerLattice K k)
-    have hlam : ZLattice.successiveMin (mixedEmbedding.integerLattice K) (mixedUnitBall K) j ≤
+    have hlam : ZLattice.successiveMin (mixedEmbedding.integerLattice K) U j ≤
         √|(discr K : ℝ)| := by
       refine (le_mul_of_one_le_right (ZLattice.successiveMin_nonneg _ _ j) hrest).trans ?_
       rw [Finset.mul_prod_erase _ _ (Finset.mem_univ j)]

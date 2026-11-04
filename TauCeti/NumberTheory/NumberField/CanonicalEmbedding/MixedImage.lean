@@ -33,7 +33,8 @@ is finitely generated, and it spans over `ℝ` exactly when `Λ` spans over `K`.
 * `NumberField.mixedEmbedding.mem_span_pi_latticeBasis`: the `ℤ`-span of
   `Pi.basis fun _ ↦ latticeBasis K` is the coordinatewise image of `ι → 𝓞 K`.
 * `NumberField.mixedEmbedding.finrank_pi_mixedSpace`: `finrank ℝ (ι → mixedSpace K) =
-  finrank ℚ K * Fintype.card ι`.
+  finrank ℚ K * Fintype.card ι`, with index-bound corollaries `lt_finrank_pi_mixedSpace`,
+  `mul_lt_finrank_pi_mixedSpace`, and `mul_succ_sub_one_lt_finrank_pi_mixedSpace`.
 * `NumberField.mixedEmbedding.sum_mixedEmbedding_mul_mixedEmbedding`: a `K`-linear form on
   `ι → K`, acting on `ι → mixedSpace K` through its coefficients as `z ↦ ∑ j, l eⱼ * zⱼ`, sends the
   image of `x` to the image of `l x`; `sum_mixedEmbedding_mul_sum_smul`,
@@ -100,6 +101,28 @@ theorem finrank_pi_mixedSpace [NumberField K] :
   classical
   rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_comm,
     mixedEmbedding.finrank]
+
+/-- An index `l < Fintype.card ι` is strictly below `finrank ℝ (ι → mixedSpace K)`. -/
+theorem lt_finrank_pi_mixedSpace [NumberField K] {l : ℕ} (hl : l < Fintype.card ι) :
+    l < finrank ℝ (ι → mixedSpace K) := by
+  rw [finrank_pi_mixedSpace]
+  exact hl.trans_le (Nat.le_mul_of_pos_left _ Module.finrank_pos)
+
+/-- For `l < Fintype.card ι`, `finrank ℚ K * l < finrank ℝ (ι → mixedSpace K)`. -/
+theorem mul_lt_finrank_pi_mixedSpace [NumberField K] {l : ℕ} (hl : l < Fintype.card ι) :
+    finrank ℚ K * l < finrank ℝ (ι → mixedSpace K) := by
+  rw [finrank_pi_mixedSpace]
+  exact Nat.mul_lt_mul_of_pos_left hl Module.finrank_pos
+
+/-- For `l < Fintype.card ι`, `finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K)`. -/
+theorem mul_succ_sub_one_lt_finrank_pi_mixedSpace [NumberField K] {l : ℕ}
+    (hl : l < Fintype.card ι) :
+    finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K) := by
+  rw [finrank_pi_mixedSpace]
+  have hpos : 0 < finrank ℚ K * (l + 1) := Nat.mul_pos Module.finrank_pos (Nat.succ_pos l)
+  have hle : finrank ℚ K * (l + 1) ≤ finrank ℚ K * Fintype.card ι :=
+    Nat.mul_le_mul_left _ hl
+  omega
 
 /-- A `K`-linear form on `ι → K` acting through its coefficients on the coordinatewise mixed
 embedding of a point is the mixed embedding of its value there. -/

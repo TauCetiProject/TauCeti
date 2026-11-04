@@ -44,16 +44,13 @@ theorem two_pow_mul_two_pow_le_volume_real_closedBall (K : Type*) [Field K] [Num
       ((pi_norm_le_iff_of_nonneg zero_le_one).2 fun w ↦ (hz.2 w).le)
   have hfin : volume (Metric.closedBall (0 : mixedSpace K) 1) ≠ ⊤ :=
     (isCompact_closedBall (0 : mixedSpace K) 1).measure_lt_top.ne
-  have hvol :
-      (convexBodyLTFactor K : ℝ) ≤ volume.real (Metric.closedBall (0 : mixedSpace K) 1) := by
-    rw [measureReal_def, ← ENNReal.ofReal_le_ofReal_iff ENNReal.toReal_nonneg,
-      ENNReal.ofReal_toReal hfin, ENNReal.ofReal_coe_nnreal,
-      ← mul_one (convexBodyLTFactor K : ENNReal)]
-    simpa [convexBodyLT_volume] using measure_mono (μ := volume) hsub
-  refine le_trans ?_ hvol
-  simp only [convexBodyLTFactor, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_ofNat,
-    NNReal.coe_real_pi]
-  gcongr
-  exact Real.two_le_pi
+  calc (2 : ℝ) ^ nrRealPlaces K * 2 ^ nrComplexPlaces K
+      ≤ (convexBodyLTFactor K : ℝ) := by
+        simp only [convexBodyLTFactor, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_ofNat,
+          NNReal.coe_real_pi]
+        gcongr
+        exact Real.two_le_pi
+    _ = volume.real (convexBodyLT K 1) := by simp [measureReal_def, convexBodyLT_volume]
+    _ ≤ volume.real (Metric.closedBall (0 : mixedSpace K) 1) := measureReal_mono hsub hfin
 
 end TauCeti.NumberField.mixedEmbedding

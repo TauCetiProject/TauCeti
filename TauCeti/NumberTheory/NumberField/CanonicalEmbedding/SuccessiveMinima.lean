@@ -30,8 +30,8 @@ of rank `d * n` rests on two linear-algebraic bridges:
 
 * **Extracting `K`-independent vectors from real minima.** Among the first `d * (l + 1)` real
   minimal vectors of `Λ.mixedImage`, `TauCeti.exists_linearIndependent_comp_finrank_mul` selects
-  `l + 1` vectors linearly independent over `K`, with the `j`-th selected by position `d * j`,
-  yielding `Λ.successiveMinimum B l ≤ ZLattice.successiveMin Λ.mixedImage B ⟨d * l, _⟩`.
+  `l + 1` vectors linearly independent over `K`, with the `j`-th selected at a position at most
+  `d * j`, yielding `Λ.successiveMinimum B l ≤ ZLattice.successiveMin Λ.mixedImage B ⟨d * l, _⟩`.
 * **Multiplying `K`-independent vectors by an integral basis of bounded house.** By
   `NumberField.mixedEmbedding.linearIndependent_real_mixedEmbedding_mul`, if `v 0, …, v l` are
   linearly independent over `K`, then their products with a family whose mixed embeddings are
@@ -91,35 +91,6 @@ open MeasureTheory Module NumberField NumberField.InfinitePlace NumberField.mixe
   TauCeti.NumberField
 open scoped Pointwise Topology
 
-namespace TauCeti.NumberField.mixedEmbedding
-
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
-
-/-- An index `l < Fintype.card ι` is strictly below `finrank ℝ (ι → mixedSpace K)`. -/
-theorem lt_finrank_pi_mixedSpace {l : ℕ} (hl : l < Fintype.card ι) :
-    l < finrank ℝ (ι → mixedSpace K) := by
-  rw [finrank_pi_mixedSpace]
-  exact hl.trans_le (Nat.le_mul_of_pos_left _ Module.finrank_pos)
-
-/-- For `l < Fintype.card ι`, `finrank ℚ K * l < finrank ℝ (ι → mixedSpace K)`. -/
-theorem mul_lt_finrank_pi_mixedSpace {l : ℕ} (hl : l < Fintype.card ι) :
-    finrank ℚ K * l < finrank ℝ (ι → mixedSpace K) := by
-  rw [finrank_pi_mixedSpace]
-  exact Nat.mul_lt_mul_of_pos_left hl Module.finrank_pos
-
-/-- For `l < Fintype.card ι`, `finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K)`. -/
-theorem mul_succ_sub_one_lt_finrank_pi_mixedSpace {l : ℕ} (hl : l < Fintype.card ι) :
-    finrank ℚ K * (l + 1) - 1 < finrank ℝ (ι → mixedSpace K) := by
-  rw [finrank_pi_mixedSpace]
-  have hpos : 0 < finrank ℚ K * (l + 1) := Nat.mul_pos Module.finrank_pos (Nat.succ_pos l)
-  have hle : finrank ℚ K * (l + 1) ≤ finrank ℚ K * Fintype.card ι :=
-    Nat.mul_le_mul_left _ hl
-  omega
-
-end TauCeti.NumberField.mixedEmbedding
-
-open TauCeti.NumberField.mixedEmbedding
-
 namespace Submodule
 
 section Basic
@@ -172,7 +143,7 @@ theorem successiveMinimum_smul (Λ : Submodule (𝓞 K) (ι → K)) (B : Set (ι
 /-- From `Fintype.card ι` onwards, `ι → K` has no `l + 1` `K`-linearly independent vectors, so
 `Λ.successiveMinimum B l` vanishes. -/
 @[simp]
-theorem successiveMinimum_of_card_le [Fintype ι] (Λ : Submodule (𝓞 K) (ι → K))
+theorem successiveMinimum_eq_zero_of_card_le [Fintype ι] (Λ : Submodule (𝓞 K) (ι → K))
     (B : Set (ι → mixedSpace K)) {l : ℕ} (hl : Fintype.card ι ≤ l) :
     Λ.successiveMinimum B l = 0 := by
   suffices {t : ℝ | 0 < t ∧ ∃ v : Fin (l + 1) → ι → K,
@@ -490,12 +461,9 @@ theorem successiveMin_mixedImage_le_mul
         (inv_mul_cancel₀ hcK.ne')
     refine ⟨fun i ↦ a * z i, hBbal z hz a ha, ?_⟩
     ext1 i
-    simp only [w, Pi.smul_apply]
     have hzi' : Λ.successiveMinimum B l • z i = mixedEmbedding K (v (e m).2 i) := by
       simpa using congr_fun hzv i
-    dsimp only [a]
-    rw [smul_mul_assoc, smul_smul, mul_right_comm cK _ cK⁻¹, mul_inv_cancel₀ hcK.ne', one_mul,
-      ← mul_smul_comm, hzi', ← map_mul]
+    simp [w, a, map_mul, ← hzi', mul_comm cK, mul_smul, hcK.ne']
   exact ZLattice.successiveMin_le (mul_pos hcK ht).le hw_lin hw_mem hw_body
 
 end ComparisonAndAttainment
@@ -710,7 +678,8 @@ example {K : Type*} [Field K] [NumberField K] (hd : 2 ≤ finrank ℚ K)
     Λ.successiveMinimum B 1 = 0 ∧
       0 < ZLattice.successiveMin Λ.mixedImage B
         ⟨1, by rw [finrank_pi_mixedSpace]; simp; omega⟩ :=
-  ⟨Λ.successiveMinimum_of_card_le B (by simp), ZLattice.successiveMin_pos Λ.mixedImage hB0 _⟩
+  ⟨Λ.successiveMinimum_eq_zero_of_card_le B (by simp),
+    ZLattice.successiveMin_pos Λ.mixedImage hB0 _⟩
 
 end Examples
 
