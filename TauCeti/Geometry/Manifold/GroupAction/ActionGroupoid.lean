@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-public import TauCeti.Topology.CategoryTheory.ActionGroupoid
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
 
 /-!
 # The smooth structure of an action groupoid
@@ -177,11 +177,10 @@ variable {G X} in
 of composable arrows gives a `C^n` family. The first arrow is followed by the second. -/
 theorem contMDiff_comp {a b : N → Quiver.Total (ActionCategory G X)} (ha : ContMDiff I' I n a)
     (hb : ContMDiff I' I n b) (h : ∀ z, (a z).right = (b z).left) :
-    ContMDiff I' I n fun z ↦
-      (⟨(a z).left, (b z).right, (a z).hom ≫ eqToHom (h z) ≫ (b z).hom⟩ :
-        Quiver.Total (ActionCategory G X)) := by
-  have hsource : ContMDiff I' I n fun z ↦ (a z).left :=
-    (isLocalDiffeomorph_source I n G X).contMDiff.comp ha
+    ContMDiff I' I n fun z ↦ (a z).comp (b z) (h z) := by
+  have hsource : ContMDiff I' I n fun z ↦ ((a z).comp (b z) (h z)).left := by
+    simpa only [Quiver.Total.comp_left, Function.comp_def] using
+      (isLocalDiffeomorph_source I n G X).contMDiff.comp ha
   exact (contMDiff_arrows_iff I n).2 ⟨(continuous_comp G X).comp
     ((ha.continuous.prodMk hb.continuous).subtype_mk h), hsource⟩
 

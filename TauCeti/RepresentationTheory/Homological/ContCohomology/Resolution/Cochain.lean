@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Basic
 
 /-!
 # Homogeneous cochains in the total coinduced resolution

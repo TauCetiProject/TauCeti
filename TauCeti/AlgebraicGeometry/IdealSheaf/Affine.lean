@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 
+import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
+
 /-!
 # Affine descriptions of pullback ideal sheaves
 
@@ -30,7 +32,10 @@ open `U` of `X` the kernel of the restriction of sections from `V(K)` to `V(I')`
 
 On an affine open `U` containing a point `η`, the ideal of the reduced closed subscheme
 `closure {η}` is the prime ideal of `Γ(X, U)` corresponding to `η`
-(`vanishingIdeal_closure_singleton_ideal`).
+(`vanishingIdeal_closure_singleton_ideal`). In the local ring `𝒪_{X,x}` at a point `x` of `U`, this
+ideal generates the prime lying under the maximal ideal of `𝒪_{X,η}` when `η` is a generization of
+`x` (`map_ideal_vanishingIdeal_closure_singleton_of_specializes`), and the unit ideal otherwise
+(`map_ideal_vanishingIdeal_closure_singleton_of_not_specializes`).
 -/
 
 public section
@@ -140,5 +145,41 @@ theorem vanishingIdeal_closure_singleton_ideal (η : X) (U : X.affineOpens) (hη
     exact specializes_iff_mem_closure.mpr hp
   exact (PrimeSpectrum.le_iff_specializes _ p).mpr
     (hU.fromSpec.isOpenEmbedding.isInducing.specializes_iff.mp hsp) ha
+
+/-- On an affine open `U` containing `x`, the ideal of the closure of a generization `η` of `x`,
+with its reduced induced structure, generates the prime of the local ring `𝒪_{X,x}` lying under
+the maximal ideal of `𝒪_{X,η}`. -/
+theorem map_ideal_vanishingIdeal_closure_singleton_of_specializes {U : X.affineOpens} {x η : X}
+    (hxU : x ∈ U.1) (h : η ⤳ x) :
+    ((vanishingIdeal ⟨closure {η}, isClosed_closure⟩).ideal U).map
+        (X.presheaf.germ U.1 x hxU).hom =
+      (IsLocalRing.maximalIdeal (X.presheaf.stalk η)).comap
+        (X.presheaf.stalkSpecializes h).hom := by
+  let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
+  have := U.2.isLocalization_stalk ⟨x, hxU⟩
+  rw [vanishingIdeal_closure_singleton_ideal η U (h.mem_open U.1.isOpen hxU),
+    ← TauCeti.AlgebraicGeometry.Scheme.comap_germ_comap_stalkSpecializes_maximalIdeal U.2 hxU h]
+  exact IsLocalization.map_under (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl _ _
+
+/-- On an affine open `U` containing `x`, the ideal of the closure of a point `η` that is not a
+generization of `x`, with its reduced induced structure, generates the unit ideal of the local
+ring `𝒪_{X,x}`. -/
+theorem map_ideal_vanishingIdeal_closure_singleton_of_not_specializes {U : X.affineOpens}
+    {x η : X} (hxU : x ∈ U.1) (h : ¬ η ⤳ x) :
+    ((vanishingIdeal ⟨closure {η}, isClosed_closure⟩).ideal U).map
+      (X.presheaf.germ U.1 x hxU).hom = ⊤ := by
+  let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
+  have := U.2.isLocalization_stalk ⟨x, hxU⟩
+  refine IsLocalization.AtPrime.map_eq_top_of_not_le (X.presheaf.stalk x)
+    (p := (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal) fun hle ↦ h ?_
+  -- The ideal of `closure {η}` lies in the prime of `x` only if `x` lies in `closure {η}`.
+  rw [vanishingIdeal_ideal, Closeds.coe_mk] at hle
+  have hU : IsAffineOpen U.1 := U.2
+  have h1 := (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure
+    (hU.fromSpec ⁻¹' closure {η})).subset ((PrimeSpectrum.mem_zeroLocus _ _).mpr hle)
+  have h2 : hU.fromSpec (hU.primeIdealOf ⟨x, hxU⟩) ∈ closure {η} :=
+    (isClosed_closure.preimage hU.fromSpec.continuous).closure_subset h1
+  rw [hU.fromSpec_primeIdealOf] at h2
+  exact specializes_iff_mem_closure.mpr h2
 
 end AlgebraicGeometry.Scheme.IdealSheafData

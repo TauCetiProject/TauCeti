@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
+import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Covering.Besicovitch
 
 /-!
@@ -32,15 +33,23 @@ proves their basic properties.
   at `|Dχ_s|`-almost every point (`TauCeti.ae_mem_reducedBoundary`,
   `TauCeti.ae_outerNormal_eq`). This is Lebesgue's differentiation theorem for `σ` against the
   Radon measure `|Dχ_s|` on `Ω`, which is available because `Ω` inherits the Besicovitch
-  covering property (`Besicovitch.ae_tendsto_average_closedBall`). Consequently
-  `∫_s div φ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every test vector field `φ` on `Ω`
-  (`TauCeti.integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal`).
+  covering property (`Besicovitch.ae_tendsto_average_closedBall`). Consequently the
+  **Gauss–Green formula** `∫_s div φ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` holds for every `C¹` vector field `φ`
+  with compact support in `Ω`, where `div φ = tr (Dφ)`
+  (`TauCeti.integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal`). It is the case
+  `u = χ_s` of integration by parts against `C¹` vector fields,
+  `∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`
+  (`TauCeti.integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity`).
 * A point of the reduced boundary forces `s` to have locally finite perimeter in `Ω`
   (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), so otherwise
   `∂*s` is empty (`TauCeti.reducedBoundary_eq_empty_of_not`).
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
   (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence, when `μ` is an additive
   Haar measure, in the topological frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
+* The outer normal concentrates at `ν_s x` in mean at every point `x` of the reduced boundary:
+  `⨍_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| → 0`
+  (`TauCeti.tendsto_setLIntegral_enorm_outerNormal_sub_div`). The averages of the unit vectors
+  `ν_s` tend to the unit vector `ν_s x`, and for unit vectors `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)`.
 * The reduced boundary and the outer normal only depend on `s` almost everywhere on `Ω`
   (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`). When `μ` is an additive
   Haar measure, the complement has the same reduced boundary with the opposite normal
@@ -53,9 +62,13 @@ perimeter in `Ω`, the perimeter measure is zero by convention and the reduced b
 ## References
 
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, §15.1 (Definition 15.1
-  and Proposition 15.5).
+  and Proposition 15.5) and Chapter 15 (blow-ups at points of the reduced boundary).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   §5.7.
+* L. Ambrosio, N. Fusco, D. Pallara, *Functions of Bounded Variation and Free Discontinuity
+  Problems*, §3.1.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, §12.1 (the
+  Gauss–Green measure of a set of locally finite perimeter).
 -/
 
 public section
@@ -64,8 +77,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set Filter Metric TestFunction
-open scoped ENNReal Topology RealInnerProductSpace Distributions
+open MeasureTheory TopologicalSpace Set Filter Metric
+open scoped ENNReal Topology RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω : Opens E} {s t : Set E} {x : E}
@@ -83,7 +96,7 @@ def reducedBoundary (μ : Measure E) (Ω : Opens E) (s : Set E) : Set E :=
 of the averages of the polar density of `Dχ_s` over `closedBall x r` against `|Dχ_s|`. At points
 of the reduced boundary it is a unit vector (`TauCeti.norm_outerNormal`), and
 `Dχ_s = -ν_s |Dχ_s|`
-(`TauCeti.integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal`). Elsewhere its
+(`TauCeti.integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal`). Elsewhere its
 value carries no meaning. -/
 def outerNormal (μ : Measure E) (Ω : Opens E) (s : Set E) (x : E) : E :=
   -limUnder (𝓝[>] (0 : ℝ)) fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
@@ -216,20 +229,127 @@ theorem ae_outerNormal_eq :
   filter_upwards [ae_tendsto_setAverage_polarDensity] with y hy
   exact outerNormal_eq_of_tendsto hy.2
 
-/-- **`Dχ_s = -ν_s |Dχ_s|`.** For a set of locally finite perimeter in `Ω`, the outer normal
-represents the distributional derivative of the indicator against the perimeter measure:
-`∫_s div φ dμ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every test vector field `φ` on `Ω`. -/
-theorem integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal
+/-- **The Gauss–Green formula, `Dχ_s = -ν_s |Dχ_s|`.** For a set `s` of locally finite perimeter
+in `Ω`, the outer normal `ν_s` represents the distributional derivative of the indicator against
+the perimeter measure: `∫_s div φ dμ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every `C¹` vector field `φ` with
+compact support in `Ω`, where `div φ = tr (Dφ)`. -/
+theorem integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (φ : 𝓓(Ω, E)) :
-    ∫ x, divergenceCLM φ x * s.indicator 1 x ∂μ =
+    {φ : E → E} (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) (hs : tsupport φ ⊆ Ω) :
+    ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * s.indicator 1 x ∂μ =
       ∫ y, ⟪φ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) := by
-  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, ← integral_neg]
+  rw [integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity hu hfin hφ hc hs,
+    ← integral_neg]
   refine integral_congr_ae ?_
   filter_upwards [ae_outerNormal_eq] with y hy
   rw [hy, inner_neg_right]
+
+/-! ### Concentration of the outer normal -/
+
+/-- The outer normal is integrable against the perimeter measure on sets of finite measure. -/
+theorem integrableOn_outerNormal {S : Set Ω} (hS : variationMeasure μ Ω (s.indicator 1) S ≠ ∞) :
+    IntegrableOn (fun y : Ω => outerNormal μ Ω s y) S (variationMeasure μ Ω (s.indicator 1)) := by
+  refine Measure.integrableOn_of_bounded hS ?_ (M := 1) ?_
+  · exact (measurable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).neg
+      |>.aestronglyMeasurable.congr (ae_outerNormal_eq.mono fun _ h => h.symm)
+  · filter_upwards [ae_restrict_of_ae ae_mem_reducedBoundary] with y hy
+    exact (norm_outerNormal hy).le
+
+/-- At a point `x` of the reduced boundary, for every `η > 0` and every small `r`, the perimeter
+measure of `closedBall x r` is finite and
+`∫_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s| ≤ 2 η |Dχ_s| (closedBall x r)`. -/
+theorem eventually_setIntegral_norm_outerNormal_sub_le
+    (hx : x ∈ reducedBoundary μ Ω s) {η : ℝ} (hη : 0 < η) :
+    ∀ᶠ r in 𝓝[>] 0,
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) ≠ ∞ ∧
+      ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+          ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ ∂variationMeasure μ Ω (s.indicator 1) ≤
+        2 * η * (variationMeasure μ Ω (s.indicator 1)).real
+          (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  set ν := outerNormal μ Ω s x
+  set n : Ω → E := fun y => outerNormal μ Ω s y
+  have hν : ‖ν‖ = 1 := norm_outerNormal hx
+  have hn1 : ∀ᵐ y ∂lam, ‖n y‖ = 1 := by
+    filter_upwards [ae_outerNormal_eq, ae_norm_polarDensity_eq_one hu hfin] with y h1 h2
+    simp only [n, h1, norm_neg, h2]
+  -- The averages of `ν_s` over small balls tend to `ν`.
+  have havg : Tendsto (fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r, n y ∂lam) (𝓝[>] 0)
+      (𝓝 ν) := by
+    have h := (tendsto_setAverage_polarDensity hx).neg
+    rw [neg_neg] at h
+    refine h.congr fun r => ?_
+    rw [← average_neg]
+    exact average_congr (ae_restrict_of_ae (ae_outerNormal_eq.mono fun _ h => h.symm))
+  have hinner : ∀ᶠ r in 𝓝[>] (0 : ℝ),
+      1 - η ^ 2 / 2 < ⟪ν, ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r, n y ∂lam⟫ := by
+    refine (tendsto_const_nhds.inner havg).eventually_const_lt ?_
+    rw [real_inner_self_eq_norm_sq, hν]
+    linarith [pow_pos hη 2]
+  obtain ⟨ε, hε, hεΩ⟩ :=
+    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [hinner, Ioc_mem_nhdsGT hε] with r hr hrε
+  set S := ((↑) : Ω → E) ⁻¹' closedBall x r
+  have hS : IsCompact S := Topology.IsInducing.subtypeVal.isCompact_preimage'
+    (isCompact_closedBall x r) (by
+      rw [Subtype.range_coe]
+      exact (closedBall_subset_closedBall hrε.2).trans hεΩ)
+  have hSfin : lam S ≠ ∞ := hS.measure_lt_top.ne
+  refine ⟨hSfin, ?_⟩
+  have hSm : MeasurableSet S := hS.isClosed.measurableSet
+  have hn : IntegrableOn n S lam := integrableOn_outerNormal hSfin
+  have hc (c : ℝ) : IntegrableOn (fun _ => c) S lam := integrableOn_const hSfin
+  have hν' : IntegrableOn (fun _ => ν) S lam := integrableOn_const hSfin
+  have hin : IntegrableOn (fun y => ⟪ν, n y⟫) S lam := Integrable.const_inner ν hn
+  calc ∫ y in S, ‖n y - ν‖ ∂lam
+      ≤ ∫ y in S, ((η + 2 / η) - 2 / η * ⟪ν, n y⟫) ∂lam := by
+        refine setIntegral_mono_on_ae (hn.sub hν').norm ((hc _).sub (hin.const_mul _)) hSm ?_
+        filter_upwards [hn1] with y hy _
+        -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`.
+        have h := norm_sub_sq_real (n y) ν
+        rw [hy, hν, real_inner_comm] at h
+        rw [show η + 2 / η - 2 / η * ⟪ν, n y⟫ = (η * η + ‖n y - ν‖ ^ 2) / η by
+          field_simp; linarith, le_div_iff₀ hη]
+        nlinarith [sq_nonneg (‖n y - ν‖ - η), norm_nonneg (n y - ν)]
+    _ = lam.real S * ((η + 2 / η) - 2 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫) := by
+        rw [integral_sub (hc _) (hin.const_mul _), integral_const_mul, integral_inner hn,
+          setIntegral_const, ← measure_smul_setAverage _ hSfin, inner_smul_right, smul_eq_mul]
+        ring
+    _ ≤ 2 * η * lam.real S := by
+        have hle : (η + 2 / η) - 2 / η * ⟪ν, ⨍ y in S, n y ∂lam⟫ ≤ 2 * η := by
+          have h2 : 2 / η * (1 - η ^ 2 / 2) = 2 / η - η := by field_simp
+          nlinarith [mul_lt_mul_of_pos_left hr (div_pos two_pos hη)]
+        nlinarith [measureReal_nonneg (μ := lam) (s := S)]
+
+/-- **Concentration of the outer normal at the reduced boundary.** At a point `x` of the reduced
+boundary of `s` in `Ω`, the mean deviation of the outer normal from `ν_s x` over small closed
+balls tends to zero:
+
+`(∫_{closedBall x r} ‖ν_s - ν_s x‖ d|Dχ_s|) / |Dχ_s| (closedBall x r) → 0`  as `r → 0⁺`. -/
+theorem tendsto_setLIntegral_enorm_outerNormal_sub_div (hx : x ∈ reducedBoundary μ Ω s) :
+    Tendsto (fun r => (∫⁻ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+        ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ₑ ∂variationMeasure μ Ω (s.indicator 1)) /
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r)) (𝓝[>] 0) (𝓝 0) := by
+  set lam := variationMeasure μ Ω (s.indicator 1)
+  refine ENNReal.tendsto_nhds_zero.2 fun δ hδ => ?_
+  obtain rfl | hδt := eq_or_ne δ ∞
+  · exact .of_forall fun _ => le_top
+  have hδr : 0 < δ.toReal / 2 := half_pos (ENNReal.toReal_pos hδ.ne' hδt)
+  filter_upwards [eventually_setIntegral_norm_outerNormal_sub_le hx hδr] with r ⟨hSfin, hr⟩
+  set S := ((↑) : Ω → E) ⁻¹' closedBall x r
+  refine ENNReal.div_le_of_le_mul ?_
+  have hi : IntegrableOn (fun y : Ω => outerNormal μ Ω s y - outerNormal μ Ω s x) S lam :=
+    (integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)
+  rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+  calc ENNReal.ofReal (∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ ∂lam)
+      ≤ ENNReal.ofReal (2 * (δ.toReal / 2) * lam.real S) := ENNReal.ofReal_le_ofReal hr
+    _ = δ * lam S := by
+        rw [mul_div_cancel₀ _ two_ne_zero, ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+          ENNReal.ofReal_toReal hδt, ofReal_measureReal hSfin]
+
 
 /-! ### Invariance under null modification and complements -/
 

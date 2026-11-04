@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
-import TauCeti.NumberTheory.Padics.MahlerBasis
+import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -165,6 +165,19 @@ theorem psiMeasure_apply (μ : D(ℤ_[p], R)) (f : C(ℤ_[p], R)) :
     psiMeasure μ f = μ (pMultiplesIndicator p R * f.comp (PadicInt.divideByP p)) := by
   rw [psiMeasure, LinearMap.comp_apply, map_apply, restrictMultiples_apply]
 
+/-- Psi on measures is continuous for the weak topologies. This statement does not
+require complete or ultrametric coefficients. -/
+theorem continuous_psiMeasure_weak :
+    @Continuous _ _ (WeakTopology (X := ℤ_[p]) (R := R) (E := R))
+      (WeakTopology (X := ℤ_[p]) (R := R) (E := R)) (psiMeasure (p := p) (R := R)) := by
+  let : TopologicalSpace D(ℤ_[p], R) := WeakTopology
+  have heval : Continuous (fun μ : D(ℤ_[p], R) ↦ fun f : C(ℤ_[p], R) ↦ μ f) :=
+    continuous_induced_dom
+  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
+  simpa only [psiMeasure_apply, Function.comp_def] using
+    (continuous_apply (pMultiplesIndicator (p := p) (R := R) *
+      f.comp (PadicInt.divideByP p))).comp heval
+
 /-- `ψ` is a left inverse of `φ`. -/
 @[simp]
 theorem psiMeasure_phiMeasure (μ : D(ℤ_[p], R)) : psiMeasure (phiMeasure μ) = μ := by
@@ -220,6 +233,13 @@ theorem unitRestriction_eq_self_iff_psiMeasure_eq_zero (μ : D(ℤ_[p], R)) :
     unitRestriction μ = μ ↔ psiMeasure μ = 0 := by
   rw [unitRestriction_eq_self_iff_restrictMultiples_eq_zero,
     psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]
+
+/-- Dilation by a unit preserves the kernel of measure psi. -/
+theorem psiMeasure_map_mulLeft_unit_eq_zero
+    (μ : D(ℤ_[p], R)) (a : ℤ_[p]ˣ) (hμ : psiMeasure μ = 0) :
+    psiMeasure (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) = 0 := by
+  rw [← unitRestriction_eq_self_iff_psiMeasure_eq_zero] at hμ ⊢
+  rw [unitRestriction_map_mulLeft_unit, hμ]
 
 /-- **`ψ` is determined by `φ`**: it is the unique linear map `ψ` for which `φ ψ` is the
 restriction to `pℤ_p`. Such a map is automatically a left inverse of `φ`

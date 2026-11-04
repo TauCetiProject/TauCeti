@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtensio
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Unramified
 
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # The trace form of the unramified quadratic extension of a dyadic field
@@ -124,7 +124,7 @@ theorem galoisEvens_kummerClass_sqrt_unramified [Invertible (2 : L)]
 /-- **The trace form of the unramified quadratic extension of a finite extension of `ℚ₂`**: if
 `K` is a finite extension of `ℚ₂` and `L = K(√Δ)` its unramified quadratic extension, then
 `w₂(Tr_*⟨1⟩) ≠ 0` exactly when the absolute ramification index of `K` is odd. -/
-theorem sw2Class_formClass_traceTransfer_sq_unramified_ne_zero_iff [Fact (Nat.Prime 2)]
+theorem sw2Class_formClass_traceTransfer_sq_unramified_ne_zero_iff
     [FinitePadicExtension K 2] (hfin : Module.finrank K L = 2) {x : L} {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd)
@@ -138,7 +138,7 @@ theorem sw2Class_formClass_traceTransfer_sq_unramified_ne_zero_iff [Fact (Nat.Pr
 /-- **The Evens norm of the square root of the unramified class over a finite extension of
 `ℚ₂`**: if `K` is a finite extension of `ℚ₂` and `L = K(x)` with `x² = Δ` the unramified class,
 then `N^{Ev}((x)) ≠ 0` exactly when the absolute ramification index of `K` is odd. -/
-theorem galoisEvens_kummerClass_sqrt_unramified_ne_zero_iff [Fact (Nat.Prime 2)]
+theorem galoisEvens_kummerClass_sqrt_unramified_ne_zero_iff
     [FinitePadicExtension K 2] [Invertible (2 : L)] (σ : L →ₐ[K] SeparableClosure K)
     (hfin : Module.finrank K L = 2) {x : L} {Δ : Kˣ}
     (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔

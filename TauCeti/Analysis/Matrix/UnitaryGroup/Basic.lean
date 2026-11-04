@@ -22,6 +22,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 * `Circle.coe_mem_unitary`: a point of the circle is a unitary complex number.
 * `Matrix.diagonal_mem_unitaryGroup_iff`: a diagonal matrix is unitary exactly when its diagonal
   entries are.
+* `Matrix.diagonal_update_one_mem_unitaryGroup`: a diagonal matrix with one unitary diagonal entry
+  and all other entries `1` is unitary.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
 -/
@@ -33,12 +35,19 @@ namespace Matrix
 variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
 
 /-- A diagonal matrix is unitary exactly when each of its diagonal entries is unitary. -/
-@[simp]
 theorem diagonal_mem_unitaryGroup_iff {d : n → α} :
     diagonal d ∈ unitaryGroup n α ↔ ∀ i, d i ∈ unitary α := by
   simp only [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonal_conjTranspose,
     diagonal_mul_diagonal, ← diagonal_one, diagonal_eq_diagonal_iff, Pi.star_apply,
     Unitary.mem_iff_self_mul_star]
+
+/-- A diagonal matrix with one diagonal entry a unitary scalar and the others `1` is unitary. -/
+theorem diagonal_update_one_mem_unitaryGroup {a : α} (ha : a ∈ unitary α) (i : n) :
+    diagonal (Function.update (1 : n → α) i a) ∈ unitaryGroup n α :=
+  diagonal_mem_unitaryGroup_iff.mpr fun j ↦ by
+    rcases eq_or_ne j i with rfl | h
+    · simpa using ha
+    · simp [Function.update_of_ne h]
 
 end Matrix
 

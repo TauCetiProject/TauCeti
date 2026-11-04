@@ -32,11 +32,24 @@ projection to the base is `C^n` and its fibre coordinate in the trivialization a
 is `C^n` into `F`. The trivializations of the atlas are `C^n` on their sources with `C^n` inverses,
 and the projection is `C^n`.
 
+Maps out of the base descend smoothly along the projection. For any `b₀ : B` and `v : F`, the
+local section `b ↦ e⁻¹ (b, v)` of the preferred trivialization `e` at `b₀` is `C^n` at `b₀`.
+In particular, every point `x` of the total space lies on such a section at its base point, with
+constant fibre coordinate `(e x).2`. A map `h` out of the base therefore agrees, near the
+base point of `x`, with the composite of `h ∘ π` and this section, so `h` is `C^n` at the base point
+of `x` exactly when `h ∘ π` is `C^n` at `x`. When the fibre is nonempty the projection is
+surjective, so a `C^n` map on the total space that is constant on the fibres descends uniquely to a
+`C^n` map on the base. These descent statements use neither smoothness of the coordinate changes
+nor `IsManifold` instances. For a principal bundle, a map on the total space invariant under the
+right action is constant on the fibres, because each fibre is a single orbit.
+
 ## Main definitions
 
 * `TauCeti.ContMDiffFiberBundle n F E IB IF`: the coordinate changes of the atlas are `C^n`.
 * `TauCeti.ManifoldTotalSpace F E`: a copy of the total space charted through the charts of the
   fibre, modelled on `ModelProd HB HF`.
+* `TauCeti.ManifoldTotalSpace.fiberwiseMap`: the map of charted total spaces induced by a family
+  `∀ b, E b → E' b`, with no continuity assumed. It represents bundle maps over a fixed base.
 
 ## Main results
 
@@ -44,7 +57,20 @@ and the projection is `C^n`.
   manifold modelled on `IB.prod IF`.
 * `TauCeti.ManifoldTotalSpace.contMDiffWithinAt_iff` and `contMDiffAt_iff`: maps into the total
   space are `C^n` exactly when their projection and their fibre coordinate are.
+* `TauCeti.ManifoldTotalSpace.extChartAt_proj_extChartAt_symm`: in preferred charts, the projection
+  is the first coordinate.
 * `TauCeti.ManifoldTotalSpace.contMDiff_proj`: the projection is `C^n`.
+* `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_symm` and
+  `TauCeti.ManifoldTotalSpace.contMDiffAt_totalSpaceMk_trivializationAt_symm`: the local section of
+  the preferred trivialization with any constant fibre coordinate is `C^n` at its centre, using
+  either the total-space inverse or the fibre-valued inverse followed by `TotalSpace.mk`.
+* `TauCeti.ManifoldTotalSpace.contMDiffWithinAt_comp_proj_iff` and `contMDiffAt_comp_proj_iff`: a
+  map out of the base is `C^n` at the base point of `x` exactly when its composite with the
+  projection is `C^n` at `x`.
+* `TauCeti.ManifoldTotalSpace.contMDiffOn_comp_proj_iff` and `contMDiff_comp_proj_iff`: for a
+  nonempty fibre, the same on a set of the base and globally.
+* `TauCeti.ManifoldTotalSpace.existsUnique_contMDiff_comp_proj_eq`: a `C^n` map constant on the
+  fibres is the composite of a unique `C^n` map of the base with the projection.
 * `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_snd`: near each point, the fibre
   coordinate in the trivialization at its base point is `C^n`.
 * `TauCeti.ManifoldTotalSpace.contMDiffOn_trivialization` and `contMDiffOn_trivialization_symm`:
@@ -62,6 +88,9 @@ and the projection is `C^n`.
 * The groupoid compatibility of the atlas and the resulting `IsManifold` instance follow Mathlib's
   `ContMDiffFiberwiseLinear.hasGroupoid` and `Bundle.TotalSpace.isManifold`, generalized from
   fibrewise-linear transitions to `TauCeti.contMDiffGroupoid`.
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
+  Springer, 2013, Theorems 4.26 (local sections of submersions), 4.29 (characteristic property of
+  surjective submersions) and 4.30 (passing smoothly to the quotient), for smooth descent.
 -/
 
 public section
@@ -175,6 +204,34 @@ def homeomorph : TotalSpace F E ≃ₜ ManifoldTotalSpace F E where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+section FiberwiseMap
+
+omit [TopologicalSpace B] [∀ b, TopologicalSpace (E b)] [TopologicalSpace F] [FiberBundle F E]
+
+variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')]
+
+/-- The map on charted total spaces induced by a family of maps between fibres over the same
+base. No continuity or smoothness of the family is assumed. -/
+def fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
+    ManifoldTotalSpace F E' :=
+  homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩
+
+/-- A fibrewise map evaluated on a point transported from the original total space. -/
+@[simp]
+theorem fiberwiseMap_homeomorph (φ : ∀ b, E b → E' b) (p : TotalSpace F E) :
+    fiberwiseMap φ (homeomorph F E p) = homeomorph F E' ⟨p.proj, φ _ p.2⟩ := by
+  unfold fiberwiseMap
+  rw [Homeomorph.symm_apply_apply]
+
+/-- Reading a fibrewise map back in the original total space evaluates the map on its fibre. -/
+@[simp]
+theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
+    (homeomorph F E').symm (fiberwiseMap φ x) =
+      ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
+  simp [fiberwiseMap]
+
+end FiberwiseMap
+
 /-- The copy is charted by the trivializations of the atlas followed by the charts of the product
 manifold `B × F`. -/
 instance : ChartedSpace (ModelProd HB HF) (ManifoldTotalSpace F E) :=
@@ -213,6 +270,28 @@ theorem extChartAt_homeomorph_apply (x y : TotalSpace F E) :
   -- The product chart acts componentwise. Its codomain is the synonym `ModelProd HB HF`, which
   -- keeps `simp` from matching `OpenPartialHomeomorph.prod_apply`, so it is rewritten instead.
   rw [OpenPartialHomeomorph.prod_apply, Prod.map_apply]
+
+/-- Read through the inverse of a preferred extended chart of the total space, the projection
+followed by the extended chart of the base at the same base point is the first coordinate. -/
+theorem extChartAt_proj_extChartAt_symm (x : TotalSpace F E) {y : EB × EF}
+    (hy : y ∈ (extChartAt (IB.prod IF) (homeomorph F E x)).target) :
+    extChartAt IB x.proj
+        ((homeomorph F E).symm ((extChartAt (IB.prod IF) (homeomorph F E x)).symm y)).proj =
+      y.1 := by
+  obtain ⟨w, hw⟩ :=
+    (homeomorph F E).surjective ((extChartAt (IB.prod IF) (homeomorph F E x)).symm y)
+  rw [← hw, Homeomorph.symm_apply_apply]
+  -- The point `w` lies in the source of the trivialization at the base point of `x`.
+  have hws : w ∈ (trivializationAt F E x.proj).source := by
+    have h := (extChartAt (IB.prod IF) (homeomorph F E x)).map_target hy
+    rw [← hw, extChartAt_source, chartAt_homeomorph] at h
+    simp only [Homeomorph.transOpenPartialHomeomorph_source, mem_preimage,
+      Homeomorph.symm_apply_apply, OpenPartialHomeomorph.trans_source] at h
+    exact h.1
+  have hy' := (extChartAt (IB.prod IF) (homeomorph F E x)).right_inv hy
+  rw [← hw, extChartAt_homeomorph_apply] at hy'
+  rw [← hy', (trivializationAt F E x.proj).coe_fst'
+    ((trivializationAt F E x.proj).mem_source.1 hws)]
 
 /-- A map into the total space is `C^n` within a set at a point, for the charts through the fibre,
 exactly when its projection to the base and its fibre coordinate in the trivialization at the base
@@ -265,6 +344,107 @@ theorem contMDiffAt_trivializationAt_snd (x : ManifoldTotalSpace F E) :
       x :=
   (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
     (.of_forall (homeomorph F E).apply_symm_apply))).2
+
+/-- The local section of the preferred trivialization with constant fibre coordinate `v` is
+`C^n` at its centre. Smoothness of the bundle's coordinate changes is not needed. -/
+theorem contMDiffAt_trivializationAt_symm (b₀ : B) (v : F) :
+    ContMDiffAt IB (IB.prod IF) n
+      (fun b ↦ homeomorph F E ((trivializationAt F E b₀).toOpenPartialHomeomorph.symm (b, v)))
+      b₀ := by
+  set e := trivializationAt F E b₀
+  have hx : b₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E b₀
+  have hb : (e.toOpenPartialHomeomorph.symm (b₀, v)).proj = b₀ := e.proj_symm_apply' hx
+  refine ManifoldTotalSpace.contMDiffAt_iff.2 ⟨contMDiffAt_id.congr_of_eventuallyEq ?_, ?_⟩
+  · filter_upwards [e.open_baseSet.mem_nhds hx] with b hb
+    exact e.proj_symm_apply' hb
+  · rw [hb]
+    refine (contMDiffAt_const (c := v)).congr_of_eventuallyEq ?_
+    filter_upwards [e.open_baseSet.mem_nhds hx] with b hb
+    exact congrArg Prod.snd (e.apply_symm_apply' hb)
+
+/-- The fibre-valued inverse of the preferred trivialization with constant coordinate `v`
+defines a `C^n` local section at its centre. -/
+theorem contMDiffAt_totalSpaceMk_trivializationAt_symm [∀ b, Nonempty (E b)] (b₀ : B) (v : F) :
+    ContMDiffAt IB (IB.prod IF) n
+      (fun b ↦ homeomorph F E ⟨b, (trivializationAt F E b₀).symm b v⟩) b₀ := by
+  refine (contMDiffAt_trivializationAt_symm b₀ v).congr_of_eventuallyEq ?_
+  filter_upwards [(trivializationAt F E b₀).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F E b₀)] with b hb
+  exact congrArg (homeomorph F E) ((trivializationAt F E b₀).mk_symm hb v)
+
+/-! #### Descent along the projection -/
+
+/-- A map `h` out of the base is `C^n` within `s` at the base point of `x` exactly when its
+composite with the projection is `C^n` within the preimage of `s` at `x`. -/
+@[simp]
+theorem contMDiffWithinAt_comp_proj_iff {h : B → M} {s : Set B} {x : TotalSpace F E} :
+    ContMDiffWithinAt (IB.prod IF) IM n (fun y ↦ h ((homeomorph F E).symm y).proj)
+        ((fun y ↦ ((homeomorph F E).symm y).proj) ⁻¹' s) (homeomorph F E x) ↔
+      ContMDiffWithinAt IB IM n h s x.proj := by
+  refine ⟨fun hh ↦ ?_, fun hh ↦ hh.comp_of_eq (contMDiff_proj n F E IB IF _).contMDiffWithinAt
+    (mapsTo_preimage _ _) (by simp)⟩
+  set e := trivializationAt F E x.proj
+  have hx : x.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E x.proj
+  have hsx : e.toOpenPartialHomeomorph.symm (x.proj, (e x).2) = x :=
+    e.symm_apply_mk_proj (e.mem_source.2 hx)
+  -- Near the base point of `x`, the map `h` is the composite of `h ∘ π` with the local section of
+  -- `e` through `x`.
+  rw [← contMDiffWithinAt_inter (e.open_baseSet.mem_nhds hx)]
+  refine (hh.comp_of_eq (contMDiffAt_trivializationAt_symm x.proj (e x).2).contMDiffWithinAt
+    (fun b hb ↦ ?_) (by simp [e, hsx])).congr (fun b hb ↦ ?_) (by simp [e, hsx])
+  · simpa [(trivializationAt F E x.proj).proj_symm_apply' hb.2] using hb.1
+  · simp [(trivializationAt F E x.proj).proj_symm_apply' hb.2]
+
+/-- A map `h` out of the base is `C^n` at the base point of `x` exactly when its composite with the
+projection is `C^n` at `x`. -/
+@[simp]
+theorem contMDiffAt_comp_proj_iff {h : B → M} {x : TotalSpace F E} :
+    ContMDiffAt (IB.prod IF) IM n (fun y ↦ h ((homeomorph F E).symm y).proj) (homeomorph F E x) ↔
+      ContMDiffAt IB IM n h x.proj := by
+  simpa only [preimage_univ, contMDiffWithinAt_univ] using
+    contMDiffWithinAt_comp_proj_iff (s := univ) (x := x) (h := h) (IF := IF) (n := n)
+
+/-- For a nonempty fibre, a map `h` out of the base is `C^n` on `s` exactly when its composite with
+the projection is `C^n` on the preimage of `s`. -/
+@[simp]
+theorem contMDiffOn_comp_proj_iff [Nonempty F] {h : B → M} {s : Set B} :
+    ContMDiffOn (IB.prod IF) IM n (fun y ↦ h ((homeomorph F E).symm y).proj)
+        ((fun y ↦ ((homeomorph F E).symm y).proj) ⁻¹' s) ↔ ContMDiffOn IB IM n h s := by
+  refine ⟨fun hh b hb ↦ ?_, fun hh y hy ↦ ?_⟩
+  · obtain ⟨x, rfl⟩ := FiberBundle.surjective_proj F E b
+    exact contMDiffWithinAt_comp_proj_iff.1 (hh _ (by simpa using hb))
+  · obtain ⟨x, rfl⟩ := (homeomorph F E).surjective y
+    exact contMDiffWithinAt_comp_proj_iff.2 (hh _ (by simpa using hy))
+
+/-- For a nonempty fibre, a map out of the base is `C^n` exactly when its composite with the
+projection is `C^n`. -/
+@[simp]
+theorem contMDiff_comp_proj_iff [Nonempty F] {h : B → M} :
+    ContMDiff (IB.prod IF) IM n (fun y ↦ h ((homeomorph F E).symm y).proj) ↔
+      ContMDiff IB IM n h := by
+  simpa only [preimage_univ, contMDiffOn_univ] using
+    contMDiffOn_comp_proj_iff (s := univ) (h := h) (IF := IF) (n := n)
+
+/-- **Smooth descent along the projection.** For a nonempty fibre, a `C^n` map `g` on the total
+space that is constant on each fibre is the composite of a unique `C^n` map of the base with the
+projection. -/
+theorem existsUnique_contMDiff_comp_proj_eq [Nonempty F] {g : ManifoldTotalSpace F E → M}
+    (hg : ContMDiff (IB.prod IF) IM n g)
+    (hfib : ∀ x y : TotalSpace F E, x.proj = y.proj → g (homeomorph F E x) = g (homeomorph F E y)) :
+    ∃! h : B → M, ContMDiff IB IM n h ∧ ∀ x : TotalSpace F E, h x.proj = g (homeomorph F E x) := by
+  have hπ := FiberBundle.surjective_proj F E
+  have hh : ∀ x : TotalSpace F E,
+      g (homeomorph F E (Function.surjInv hπ x.proj)) = g (homeomorph F E x) :=
+    fun x ↦ hfib _ _ (Function.surjInv_eq hπ x.proj)
+  refine ⟨fun b ↦ g (homeomorph F E (Function.surjInv hπ b)),
+    ⟨(contMDiff_comp_proj_iff (F := F) (E := E) (IF := IF)).1 ?_, hh⟩, ?_⟩
+  · refine hg.congr fun y ↦ ?_
+    obtain ⟨x, rfl⟩ := (homeomorph F E).surjective y
+    simp [hh]
+  · rintro h' ⟨-, hh'⟩
+    funext b
+    obtain ⟨x, rfl⟩ := hπ b
+    rw [hh', hh]
 
 variable [ContMDiffFiberBundle n F E IB IF]
 

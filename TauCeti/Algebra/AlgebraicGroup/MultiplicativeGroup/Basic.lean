@@ -28,6 +28,7 @@ property of the Laurent polynomial algebra. Over commutative targets this is Mat
   multiplicative equivalence from the convolution group to `Aˣ`.
 * `TauCeti.MultiplicativeGroup.pointsMulEquiv_mapValue`: the points equivalence is natural
   in the value algebra.
+* `TauCeti.MultiplicativeGroup.groupLikeT`: the coordinate `T`, as a group-like element.
 
 ## References
 
@@ -96,6 +97,19 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : Aˣ) :
 
 end Naturality
 
+section GroupLike
+
+variable (R) in
+/-- The coordinate `T` of `𝔾ₘ`, as a group-like element of `R[T, T⁻¹]`. -/
+noncomputable def groupLikeT : GroupLike R R[T;T⁻¹] :=
+  ⟨LaurentPolynomial.T 1, ⟨by simp, LaurentPolynomial.comul_T 1⟩⟩
+
+variable (R) in
+@[simp]
+theorem groupLikeT_val : (groupLikeT R).val = LaurentPolynomial.T 1 :=
+  (rfl)
+
+end GroupLike
 
 end MultiplicativeGroup
 

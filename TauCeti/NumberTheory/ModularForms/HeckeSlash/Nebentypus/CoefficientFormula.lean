@@ -65,8 +65,8 @@ private theorem qExpansion_coeff_one_heckeRingHomCharSpace_heckeTScalarGamma0_mu
       (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) c * (c : ℂ) ^ (k - 2) *
         (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff r := by
   by_cases hcN : Nat.Coprime c N
-  · rw [map_mul, Module.End.mul_apply, heckeRingHomCharSpace_heckeTScalarGamma0 k χ c hc hcN,
-      LinearMap.smul_apply, Module.End.one_apply, Submodule.coe_smul, FunLike.coe_smul,
+  · rw [map_mul, mul_apply_eq_comp, heckeRingHomCharSpace_heckeTScalarGamma0 k χ c hc hcN,
+      LinearMap.smul_apply, one_apply_eq_self, Submodule.coe_smul, FunLike.coe_smul,
       ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _),
       PowerSeries.coeff_smul, qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0 hr,
       smul_eq_mul, ← ZMod.coe_unitOfCoprime c hcN, MulChar.ofUnitHom_coe]
@@ -92,7 +92,7 @@ theorem qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_ne_zero 
           (qExpansion 1 (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff
             (m * n / d ^ 2) := by
   rw [← qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0 hm,
-    ← Module.End.mul_apply, ← map_mul, heckeTCompositeGamma0_mul_eq_sum_divisors_gcd N hm hn,
+    ← mul_apply_eq_comp, ← map_mul, heckeTCompositeGamma0_mul_eq_sum_divisors_gcd N hm hn,
     ← TauCeti.ModularForm.qExpansionLinearMap_apply one_pos
       (TauCeti.one_mem_strictPeriods_Gamma1_map _)]
   simp only [map_sum, LinearMap.sum_apply, LinearMap.smul_apply, Submodule.coe_sum,

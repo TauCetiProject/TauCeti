@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 
 import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 
