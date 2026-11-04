@@ -55,7 +55,8 @@ carried out on every bundle without first exhibiting a connection.
 * `CovariantDerivative.exists_contMDiffCovariantDerivative`: existence of a `C^n` covariant
   derivative on a `C^(n+1)` finite-rank vector bundle.
 * `CovariantDerivative.instNonempty`: a `C^1` finite-rank vector bundle over a paracompact
-  Hausdorff manifold carries a covariant derivative.
+  Hausdorff manifold carries a covariant derivative, with `instNonemptyOfSigmaCompact` covering
+  σ-compact Hausdorff manifolds modelled on finite-dimensional spaces.
 
 ## References
 
@@ -163,6 +164,18 @@ instance instNonempty [T2Space M] [ParacompactSpace M] [FiniteDimensional ℝ F]
     fun x _ ↦ mem_iUnion.2 ⟨x, FiberBundle.mem_baseSet_trivializationAt' x⟩
   ⟨ofPartitionOfUnity ρ hρ
     fun _ ↦ TauCeti.Manifold.isCovariantDerivativeOn_frameCovariantDerivative b⟩
+
+/-- A `C^1` real vector bundle of finite rank over a σ-compact Hausdorff manifold modelled on a
+finite-dimensional space carries a covariant derivative. Such a manifold is locally compact, hence
+paracompact, so this is `instNonempty`; it is stated separately because instance search does not
+derive paracompactness of a manifold from σ-compactness. -/
+instance instNonemptyOfSigmaCompact [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M]
+    [FiniteDimensional ℝ F] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I] :
+    Nonempty (CovariantDerivative I F V) :=
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  have : ParacompactSpace M := paracompact_of_locallyCompact_sigmaCompact
+  instNonempty
 
 variable [VectorBundle ℝ F V]
 
