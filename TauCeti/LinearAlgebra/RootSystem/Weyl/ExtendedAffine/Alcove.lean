@@ -201,7 +201,8 @@ theorem affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot :
     P.affineWeylGroup.subgroupOf (P.fundamentalAlcoveStabilizer b) = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).mpr fun ω hω ↦ Subtype.ext ?_
   exact eq_one_of_mem_affineWeylGroup_of_mapsTo b (fundamentalAlcove_nonempty b)
-    (Subgroup.mem_subgroupOf.mp hω) fun x hx ↦ ω.2.2 ▸ mem_image_of_mem _ hx
+    (Subgroup.mem_subgroupOf.mp hω) fun x hx ↦
+      ((P.mem_fundamentalAlcoveStabilizer b).mp ω.2).2 ▸ mem_image_of_mem _ hx
 
 /-- **The homomorphism `Ω → P∨ / Q∨` is injective**: its kernel `Ω ∩ W_aff` is trivial. -/
 theorem fundamentalAlcoveStabilizerToQuotient_injective :
@@ -284,6 +285,21 @@ noncomputable def fundamentalAlcoveStabilizerEquivQuotient :
 lemma fundamentalAlcoveStabilizerEquivQuotient_apply (ω : P.fundamentalAlcoveStabilizer b) :
     P.fundamentalAlcoveStabilizerEquivQuotient b ω = P.fundamentalAlcoveStabilizerToQuotient b ω :=
   (rfl)
+
+/-- The representative chosen by the inverse quotient isomorphism has the prescribed coweight
+class modulo the coroot lattice. -/
+@[simp]
+lemma ofAdd_mk_fundamentalAlcoveStabilizerEquivQuotient_symm_apply
+    (q : Multiplicative
+      (P.coweightLattice ⧸ (P.corootSpan ℤ).comap P.coweightLattice.subtype)) :
+    Multiplicative.ofAdd (Submodule.Quotient.mk
+      ⟨((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).1 0,
+        (P.mem_extendedAffineWeylGroup_iff.1
+          (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b
+            ((P.fundamentalAlcoveStabilizerEquivQuotient b).symm q).2)).2⟩) = q := by
+  simpa only [fundamentalAlcoveStabilizerEquivQuotient_apply,
+    fundamentalAlcoveStabilizerToQuotient_apply] using
+    (P.fundamentalAlcoveStabilizerEquivQuotient b).apply_symm_apply q
 
 end Field
 

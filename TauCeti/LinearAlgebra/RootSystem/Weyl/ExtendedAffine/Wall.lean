@@ -261,6 +261,15 @@ theorem fundamentalAlcoveStabilizerToPerm_injective [P.IsRootSystem] :
   simpa [sub_eq_zero] using (P.flip.eq_zero_iff_forall_coroot'_eq_zero.mpr
     (P.flip.coroot'_eq_zero_of_forall_mem_support b.flip hsimple))
 
+/-- For a root system, the homomorphism from the fundamental alcove stabilizer to the symmetry
+group of the affine Cartan matrix is injective. -/
+theorem fundamentalAlcoveStabilizerToMatrixSymmetryGroup_injective [P.IsRootSystem] :
+    Function.Injective (fundamentalAlcoveStabilizerToMatrixSymmetryGroup b) := by
+  intro ω₁ ω₂ h
+  apply fundamentalAlcoveStabilizerToPerm_injective b
+  simpa only [coe_fundamentalAlcoveStabilizerToMatrixSymmetryGroup_apply] using
+    congrArg Subtype.val h
+
 end Field
 
 end RootPairing
