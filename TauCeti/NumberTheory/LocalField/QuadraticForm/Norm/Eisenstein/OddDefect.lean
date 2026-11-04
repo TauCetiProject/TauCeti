@@ -166,14 +166,9 @@ theorem exists_eisenstein_mem_quadraticNormSubgroup_iff_of_defectExponent_eq_odd
     mem_quadraticNormSubgroup_unit_iff_of_eisenstein_eq hπ ht hc ht_eq hc_eq hb
   refine ⟨t, c, ht, hc, hunit_iff,
     mem_quadraticNormSubgroup_iff_of_eisenstein_eq hπ ht hc ht_eq hc_eq, Subgroup.ext fun q ↦ ?_⟩
-  rw [mem_unitQuadraticNormSquareClasses_iff, mem_eisensteinNormSquareSubgroup_iff]
-  have hcm := hc.mem_maximalIdeal
-  refine ⟨fun ⟨b, hb_mem, hb_val, hbq⟩ ↦ ?_, fun ⟨v, hv⟩ ↦ hv ▸ ⟨eisensteinNormUnit K ht hcm v,
-    (hunit_iff _ (valuation_eisensteinNormUnit ht hcm v)).mpr
-      ⟨1, v, by simp [coe_eisensteinNormUnit]⟩,
-    valuation_eisensteinNormUnit ht hcm v, (eisensteinNormSquareClass_def ht hcm v).symm⟩⟩
-  obtain ⟨u, v, hbuv⟩ := (hunit_iff b hb_val).mp hb_mem
-  exact ⟨v, hbq ▸ (squareClassHom_eq_eisensteinNormSquareClass_of_eq ht hcm hbuv).symm⟩
+  rw [mem_unitQuadraticNormSquareClasses_iff,
+    mem_eisensteinNormSquareSubgroup_iff_of_forall ht hc.mem_maximalIdeal hunit_iff]
+  exact ⟨fun ⟨b, hb, hv, hq⟩ ↦ ⟨b, hv, hb, hq⟩, fun ⟨b, hv, hb, hq⟩ ↦ ⟨b, hb, hv, hq⟩⟩
 
 /-- **Unit-norm square-class count for an odd-defect unit radicand.** Over a nonarchimedean local
 field with `2 ≠ 0`, a unit `a` of valuation `1` and odd quadratic defect has

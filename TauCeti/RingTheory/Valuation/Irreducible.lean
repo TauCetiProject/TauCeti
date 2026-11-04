@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Basic
 
@@ -16,7 +17,9 @@ element `c : v.integer` has maximal valuation among elements of `IsLocalRing.max
 (`TauCeti.valuation_le_of_mem_maximalIdeal`, `TauCeti.valuation_le_mul_of_div_lt_one`), cannot be
 factored into two elements of valuation below `1` (`TauCeti.valuation_lt_one_mul_ne_irreducible`),
 and satisfies `v (x ^ 2) ≠ v (c * y ^ 2)` for `y ≠ 0`
-(`TauCeti.valuation_sq_ne_valuation_mul_sq`).
+(`TauCeti.valuation_sq_ne_valuation_mul_sq`). When `v.integer` is a discrete valuation ring, every
+nonzero integral element has valuation a natural power of `v c`
+(`TauCeti.exists_valuation_eq_pow_irreducible`).
 
 ## References
 
@@ -68,5 +71,14 @@ theorem valuation_sq_ne_valuation_mul_sq {c : v.integer} (hc : Irreducible c) {x
     rwa [map_div₀, map_mul, ← hdiv, sq, map_div₀, mul_div_assoc, mul_assoc,
       div_mul_div_cancel₀ hy0, div_self hx0, mul_one, ← map_div₀]
   exact valuation_lt_one_mul_ne_irreducible hc hu1 hw1 (by field_simp)
+
+/-- When `v.integer` is a discrete valuation ring, every nonzero integral element has valuation a
+natural power of that of any irreducible element. -/
+theorem exists_valuation_eq_pow_irreducible (v : Valuation K Γ₀) [IsDiscreteValuationRing v.integer]
+    {c x : v.integer} (hx : x ≠ 0) (hc : Irreducible c) :
+    ∃ n : ℕ, v (x : K) = v (c : K) ^ n := by
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx hc
+  have hu : v ((u : v.integer) : K) = 1 := (Valuation.integer.integers v).valuation_unit u
+  exact ⟨n, by simp [hu]⟩
 
 end TauCeti

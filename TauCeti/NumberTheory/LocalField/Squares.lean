@@ -8,15 +8,12 @@ module
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Square
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
-import Mathlib.RingTheory.LocalRing.Quotient
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.LocalField.UnitFiltration.Quotient
 import TauCeti.RingTheory.Finite.ArtinSchreier
 
 /-!
@@ -65,11 +62,6 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 * `TauCeti.not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation`: a uniformizer
   times an element of even valuation is not a square.
 * `TauCeti.not_isSquare_of_isUniformizer`: a uniformizer is not a square.
-* `TauCeti.artinSchreierMaximalIdealQuotientEquiv`,
-  `TauCeti.mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub`, and
-  `TauCeti.natCard_artinSchreier_square_maximalIdeal_quotient`: the Artin–Schreier bijection on
-  `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)` and the count of classes `[s]` for which `1 + β (s² - s)` is a square
-  below `2 v_K(2)`.
 
 ## References
 
@@ -412,208 +404,5 @@ theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
   refine ⟨u, ?_⟩
   rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
   exact hxsq
-
-section ArtinSchreierQuotient
-
-/-- On the maximal-ideal classes in `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)`, the Artin–Schreier polynomial
-`y ↦ y ^ 2 - y` is a bijection. -/
-noncomputable def artinSchreierMaximalIdealQuotientEquiv (K : Type*) [Field K] [ValuativeRel K]
-    [TopologicalSpace K] [IsNonarchimedeanLocalField K] (m : ℕ) :
-    {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
-      Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} ≃
-    {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
-      Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} :=
-  Equiv.ofBijective
-    (fun x ↦ ⟨x.1 ^ 2 - x.1, by rw [map_sub, map_pow, x.2, zero_pow two_ne_zero, sub_self]⟩)
-    (by
-      refine Finite.injective_iff_bijective.mp fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ h ↦ ?_
-      obtain ⟨s₁, rfl⟩ := Ideal.Quotient.mk_surjective y₁
-      obtain ⟨s₂, rfl⟩ := Ideal.Quotient.mk_surjective y₂
-      have hmem : (s₁ - s₂) * (s₁ + s₂ - 1) ∈ 𝓂[K] ^ (m + 1) := by
-        have hq := Ideal.Quotient.eq.mp
-          (by simpa [← map_pow, ← map_sub] using congrArg Subtype.val h)
-        rwa [show (s₁ ^ 2 - s₁) - (s₂ ^ 2 - s₂) = (s₁ - s₂) * (s₁ + s₂ - 1) by ring] at hq
-      have hw : IsUnit (s₁ + s₂ - 1) := by
-        simpa only [neg_sub] using (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits (s₁ + s₂)
-          ((IsLocalRing.mem_maximalIdeal _).mp (add_mem
-            (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₁))
-            (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₂))))).neg
-      exact Subtype.ext
-        (Ideal.Quotient.eq.mpr (((𝓂[K] ^ (m + 1)).mul_unit_mem_iff_mem hw).mp hmem)))
-
-/-- Evaluating `artinSchreierMaximalIdealQuotientEquiv` applies `y ↦ y ^ 2 - y`. -/
-@[simp]
-theorem coe_artinSchreierMaximalIdealQuotientEquiv_apply (m : ℕ)
-    (x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
-      Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0}) :
-    (artinSchreierMaximalIdealQuotientEquiv K m x : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) = x.1 ^ 2 - x.1 := by
-  simp only [artinSchreierMaximalIdealQuotientEquiv, Equiv.ofBijective_apply]
-
-/-- Below `2 v_K(2)`, if `v(β) = v(c) ^ (2e - 2k - 1)` (`k < e = v_K(2)`) and `1 + β (s² - s)` is a
-square in `K`, then either `s ∈ 𝓂[K]` or `1 - s ∈ 𝓂[K]`. -/
-theorem mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub (h2 : (2 : K) ≠ 0)
-    {c β : 𝒪[K]} (hc : Irreducible c) {k : ℕ} (hk : k < natCastValuation K 2 h2)
-    (hvβ : valuation K (β : K) = valuation K (c : K) ^ (2 * natCastValuation K 2 h2 - 2 * k - 1))
-    {s : 𝒪[K]} (hs : IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K)))) :
-    s ∈ 𝓂[K] ∨ 1 - s ∈ 𝓂[K] := by
-  by_contra! hnot
-  obtain ⟨ξ, hξ⟩ := hs
-  have hsv : valuation K (s : K) = 1 := le_antisymm ((Valuation.mem_integer_iff _ _).mp s.2)
-    (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hnot.1))
-  have h1sv : valuation K ((s : K) - 1) = 1 := by
-    rw [show (s : K) - 1 = -((1 - s : 𝒪[K]) : K) by push_cast; ring, Valuation.map_neg]
-    exact le_antisymm ((Valuation.mem_integer_iff _ _).mp (1 - s).2)
-      (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hnot.2))
-  apply valuation_sq_sub_one_ne_pow_odd h2 hc (by omega : natCastValuation K 2 h2 - k - 1 < _) ξ
-  rw [show ξ ^ 2 - 1 = (β : K) * (s : K) * ((s : K) - 1) by rw [← sq] at hξ; linear_combination -hξ,
-    map_mul, map_mul, hvβ, hsv, h1sv, mul_one, mul_one]
-  congr 1; omega
-
-private theorem natCard_subtype_eq_two_mul_of_symm (m : ℕ)
-    {P : (𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) → Prop} (hsym : ∀ y, P (1 - y) ↔ P y)
-    (hdich : ∀ y, P y →
-      Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0 ∨
-        Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) (1 - y) = 0) :
-    Nat.card {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) // P y} =
-      2 * Nat.card {x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
-        Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} // P x.1} := by
-  let fac := Ideal.Quotient.factor (Ideal.pow_le_self (I := 𝓂[K]) (Nat.succ_ne_zero m))
-  have : Nontrivial (𝒪[K] ⧸ 𝓂[K]) :=
-    Ideal.Quotient.nontrivial_iff.mpr (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top
-  have hnot_both : ∀ y, ¬ (fac y = 0 ∧ fac (1 - y) = 0) := fun y ⟨hy, h1y⟩ ↦ by
-    rw [map_sub, map_one, hy, sub_zero] at h1y; exact one_ne_zero h1y
-  let splitFn : Bool × {x : {y // fac y = 0} // P x.1} → {y // P y} :=
-    fun ⟨b, x⟩ ↦ if b then ⟨x.1.1, x.2⟩ else ⟨1 - x.1.1, (hsym x.1.1).mpr x.2⟩
-  refine (Nat.card_congr (Equiv.ofBijective splitFn ⟨?_, fun ⟨y, hyP⟩ ↦ ?_⟩).symm).trans
-    (by rw [Nat.card_prod]; simp [fac])
-  · rintro ⟨b₁, ⟨⟨y₁, hy₁⟩, _⟩⟩ ⟨b₂, ⟨⟨y₂, hy₂⟩, _⟩⟩ heq
-    cases b₁ <;> cases b₂ <;>
-      simp only [splitFn, Bool.false_eq_true, ↓reduceIte, Subtype.mk.injEq] at heq
-    · obtain rfl : y₁ = y₂ := by linear_combination -heq
-      rfl
-    · exact (hnot_both y₁ ⟨hy₁, heq ▸ hy₂⟩).elim
-    · exact (hnot_both y₂ ⟨hy₂, heq.symm ▸ hy₁⟩).elim
-    · subst heq; rfl
-  · rcases hdich y hyP with hy0 | h1y0
-    · exact ⟨⟨true, ⟨⟨y, hy0⟩, hyP⟩⟩, rfl⟩
-    · exact ⟨⟨false, ⟨⟨1 - y, h1y0⟩, (hsym y).mpr hyP⟩⟩, by ext; simp [splitFn]⟩
-
-private theorem isSquare_one_add_mul_sq_sub_congr (h2 : (2 : K) ≠ 0) {c β : 𝒪[K]}
-    (hc : Irreducible c) {k : ℕ} (hk : k < natCastValuation K 2 h2)
-    (hvβ : valuation K (β : K) = valuation K (c : K) ^ (2 * natCastValuation K 2 h2 - 2 * k - 1))
-    {s₁ s₂ : 𝒪[K]} (h : s₁ - s₂ ∈ 𝓂[K] ^ (2 * k + 2)) :
-    IsSquare (1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K))) ↔
-      IsSquare (1 + (β : K) * ((s₂ : K) ^ 2 - (s₂ : K))) := by
-  have hc1 : valuation K (c : K) < 1 := Valuation.integer.v_irreducible_lt_one hc
-  have hlt : ∀ s : 𝒪[K], valuation K ((β : K) * ((s : K) ^ 2 - (s : K))) < 1 := fun s ↦ by
-    rw [map_mul, hvβ]
-    exact (mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp
-      (sub_mem (pow_mem s.2 2) s.2))).trans_lt (by simpa using pow_lt_one₀ zero_le hc1 (by omega))
-  let u : 𝒪[K] → Kˣ := fun s ↦ Units.mk0 (1 + (β : K) * ((s : K) ^ 2 - (s : K))) fun h0 ↦ by
-    simpa [h0] using (valuation K).map_one_add_of_lt (hlt s)
-  have hdiff : (u s₁)⁻¹ * u s₂ ∈ unitFiltration K (2 * dyadicLevel K h2 + 1) := by
-    rw [dyadicLevel_def, mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc]
-    have hd0 : 1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K)) ≠ 0 := (u s₁).ne_zero
-    have hid : (((u s₁)⁻¹ * u s₂ : Kˣ) : K) - 1 =
-        (β : K) * (((s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) : 𝒪[K]) : K) /
-          (1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K))) := by
-      simp only [u, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0]
-      rw [eq_div_iff hd0, sub_mul, inv_mul_eq_div, div_mul_cancel₀ _ hd0, one_mul]; push_cast; ring
-    have hmem : (s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) ∈ 𝓂[K] ^ (2 * k + 2) := by
-      rw [show (s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) = -(s₁ - s₂) * (s₁ + s₂ - 1) by ring]
-      exact Ideal.mul_mem_right _ _ (neg_mem h)
-    rw [hid, map_div₀, (valuation K).map_one_add_of_lt (hlt s₁), div_one, map_mul, hvβ]
-    refine (mul_le_mul' le_rfl (Set.mem_ofPred_eq.mp ((Set.ext_iff.mp
-      (hc.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) (2 * k + 2)) _).mp
-        hmem))).trans_eq ?_
-    rw [← pow_add]; congr 1; omega
-  have hu_coe : ∀ s : 𝒪[K], ((u s : Kˣ) : K) = 1 + (β : K) * ((s : K) ^ 2 - (s : K)) := fun s ↦ by
-    simp only [u, Units.val_mk0]
-  have hsq : IsSquare ((u s₁)⁻¹ * u s₂) :=
-    Subgroup.mem_square.mp (unitFiltration_le_square h2 hdiff)
-  rw [← hu_coe s₁, ← hu_coe s₂, Units.isSquare_coe_iff, Units.isSquare_coe_iff]
-  exact ⟨fun h1 ↦ by simpa only [mul_inv_cancel_left] using h1.mul hsq,
-    fun h2' ↦ by simpa only [mul_inv_rev, inv_inv, mul_inv_cancel_left] using h2'.mul hsq.inv⟩
-
-private noncomputable def artinSchreierMaximalIdealSquareEquiv (h2 : (2 : K) ≠ 0)
-    {c β : 𝒪[K]} (hc : Irreducible c) {k : ℕ} (hk : k < natCastValuation K 2 h2)
-    (hvβ : valuation K (β : K) = valuation K (c : K) ^ (2 * natCastValuation K 2 h2 - 2 * k - 1)) :
-    {x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (2 * k + 2) //
-        Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero (2 * k + 1))) y = 0} //
-      ∃ s : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s = x.1 ∧
-        IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K)))} ≃
-    {q : unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k) ⧸
-        (unitFiltration K (2 * natCastValuation K 2 h2 + 1)).subgroupOf
-          (unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k)) //
-      ∃ u : unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k),
-        QuotientGroup.mk u = q ∧ IsSquare (u : Kˣ)} := by
-  let e := natCastValuation K 2 h2
-  let E := (artinSchreierMaximalIdealQuotientEquiv K (2 * k + 1)).trans
-    (maximalIdealQuotientEquivUnitFiltrationQuotient hc hvβ (2 * k + 1)
-      (n₁ := 2 * e - 2 * k) (n₂ := 2 * e + 1) (by omega) (by omega))
-  refine Equiv.subtypeEquiv E fun ⟨y, hy⟩ ↦ ?_
-  obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-  have hs : s ∈ 𝓂[K] := Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy)
-  have hsm : s ^ 2 - s ∈ 𝓂[K] := by
-    rw [show s ^ 2 - s = s * (s - 1) by ring]; exact Ideal.mul_mem_right _ _ hs
-  have hsm0 : Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero (2 * k + 1)))
-      (Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) (s ^ 2 - s)) = 0 := by
-    rw [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]; exact hsm
-  let u_s : unitFiltration K (2 * e - 2 * k) := mkScaledUnit hc hvβ (by omega) hsm
-  have hE_eq : E ⟨Ideal.Quotient.mk _ s, hy⟩ = QuotientGroup.mk u_s := by
-    dsimp only [E, Equiv.trans_apply]
-    rw [show artinSchreierMaximalIdealQuotientEquiv K (2 * k + 1) ⟨Ideal.Quotient.mk _ s, hy⟩ =
-        ⟨Ideal.Quotient.mk _ (s ^ 2 - s), hsm0⟩ by ext; simp [map_sub, map_pow],
-      maximalIdealQuotientEquivUnitFiltrationQuotient_mk hc hvβ (2 * k + 1)
-        (by omega) (by omega) hsm hsm0]
-  rw [hE_eq, show (∃ s' : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s' = Ideal.Quotient.mk _ s ∧
-      IsSquare (1 + (β : K) * ((s' : K) ^ 2 - (s' : K)))) ↔
-      IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K))) from
-    ⟨fun ⟨s', hs', hsq⟩ ↦ (isSquare_one_add_mul_sq_sub_congr h2 hc hk hvβ
-      (Ideal.Quotient.eq.mp hs')).mp hsq, fun hsq ↦ ⟨s, rfl, hsq⟩⟩]
-  refine ⟨fun hsq ↦ ⟨u_s, rfl,
-    Units.isSquare_coe_iff.mp (by simpa [u_s, coe_mkScaledUnit] using hsq)⟩, ?_⟩
-  rintro ⟨u, hu_eq, hsq_u⟩
-  have hdiff : (u : Kˣ)⁻¹ * (u_s : Kˣ) ∈ unitFiltration K (2 * dyadicLevel K h2 + 1) := by
-    rw [dyadicLevel_def]; simpa only [e, Subgroup.coe_mul, Subgroup.coe_inv] using
-      Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hu_eq)
-  have hsq_mk : IsSquare ((u_s : Kˣ) : K) := Units.isSquare_coe_iff.mpr <| by
-    simpa only [mul_inv_cancel_left] using
-      hsq_u.mul (Subgroup.mem_square.mp (unitFiltration_le_square h2 hdiff))
-  simpa [u_s, coe_mkScaledUnit] using hsq_mk
-
-/-- Counting the Artin–Schreier square locus in `𝒪[K] ⧸ 𝓂[K] ^ (2k + 2)`: when
-`v(β) = v(c) ^ (2e - 2k - 1)` (`k < e = v_K(2)`), there are `#𝓀[K] ^ (k + 1)` classes `[s]` for
-which `1 + β (s² - s)` is a square in `K`. -/
-theorem natCard_artinSchreier_square_maximalIdeal_quotient (h2 : (2 : K) ≠ 0)
-    {c β : 𝒪[K]} (hc : Irreducible c) {k : ℕ} (hk : k < natCastValuation K 2 h2)
-    (hvβ : valuation K (β : K) = valuation K (c : K) ^ (2 * natCastValuation K 2 h2 - 2 * k - 1)) :
-    Nat.card {y : 𝒪[K] ⧸ 𝓂[K] ^ (2 * k + 2) //
-      ∃ s : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s = y ∧
-        IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K)))} =
-      Nat.card 𝓀[K] ^ (k + 1) := by
-  let P : (𝒪[K] ⧸ 𝓂[K] ^ (2 * k + 2)) → Prop := fun y ↦
-    ∃ s : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s = y ∧
-      IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K)))
-  have hP_mk : ∀ s : 𝒪[K], P (Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s) ↔
-      IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K))) := fun s ↦
-    ⟨fun ⟨s', hs', hsq⟩ ↦ (isSquare_one_add_mul_sq_sub_congr h2 hc hk hvβ
-      (Ideal.Quotient.eq.mp hs')).mp hsq, fun hsq ↦ ⟨s, rfl, hsq⟩⟩
-  have hsplit := natCard_subtype_eq_two_mul_of_symm (2 * k + 1) (P := P)
-    (fun y ↦ by
-      obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-      rw [← map_one (Ideal.Quotient.mk _), ← map_sub, hP_mk, hP_mk,
-        show ((1 - s : 𝒪[K]) : K) ^ 2 - ((1 - s : 𝒪[K]) : K) = (s : K) ^ 2 - (s : K) by
-          push_cast; ring])
-    (fun y hy ↦ by
-      obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-      simpa only [← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.factor_mk,
-        Ideal.Quotient.eq_zero_iff_mem] using
-        mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub h2 hc hk hvβ
-          ((hP_mk s).mp hy))
-  rw [hsplit, Nat.card_congr (artinSchreierMaximalIdealSquareEquiv h2 hc hk hvβ)]
-  exact two_mul_natCard_squareCosets_unitFiltration h2 hk
-
-end ArtinSchreierQuotient
 
 end TauCeti

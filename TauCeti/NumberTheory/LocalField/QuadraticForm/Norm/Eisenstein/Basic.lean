@@ -33,7 +33,8 @@ square when `valuation K 2 ≤ valuation K t < 1`. Instead, values of `1 - t X +
 `TauCeti.eisensteinNormSquareSubgroup_le_unitSquareClasses`). For irreducible `c`, we also compute
 the valuation of `x² - t x y + c y²` (`TauCeti.valuation_sq_sub_mul_add_mul_sq`,
 `TauCeti.valuation_sq_sub_mul_add_mul_sq_eq_one_iff`) and identify `eisensteinNormSquareSubgroup`
-with valuation-one norms (`TauCeti.mem_eisensteinNormSquareSubgroup_iff_exists_norm_eq`).
+with valuation-one norms (`TauCeti.mem_eisensteinNormSquareSubgroup_iff_of_forall`,
+`TauCeti.mem_eisensteinNormSquareSubgroup_iff_exists_norm_eq`).
 
 ## References
 
@@ -390,6 +391,24 @@ theorem eisensteinNormSquareSubgroup_le_unitSquareClasses {t c : 𝒪[K]} (ht : 
   rw [eisensteinNormSquareClass_def, squareClassHom_apply, QuotientGroup.mk'_apply]
   congr 1; ext; simp
 
+/-- If a predicate `P` on valuation-one units is equivalent to the normal form
+`u² (1 - t v + c v²)`, then `eisensteinNormSquareSubgroup K ht hc` consists of the square classes of
+valuation-one units satisfying `P`. -/
+theorem mem_eisensteinNormSquareSubgroup_iff_of_forall {t c : 𝒪[K]} (ht : t ∈ 𝓂[K])
+    (hc : c ∈ 𝓂[K]) {P : Kˣ → Prop}
+    (hP : ∀ b : Kˣ, valuation K (b : K) = 1 →
+      (P b ↔ ∃ (u : 𝒪[K]ˣ) (v : 𝒪[K]),
+        (b : K) = (u : K) ^ 2 * (1 - (t : K) * (v : K) + (c : K) * (v : K) ^ 2)))
+    (q : Kˣ ⧸ Subgroup.square Kˣ) :
+    q ∈ eisensteinNormSquareSubgroup K ht hc ↔
+      ∃ b : Kˣ, valuation K (b : K) = 1 ∧ P b ∧ squareClassHom b = q := by
+  rw [mem_eisensteinNormSquareSubgroup_iff]
+  refine ⟨fun ⟨v, hv⟩ ↦ hv ▸ ⟨eisensteinNormUnit K ht hc v, valuation_eisensteinNormUnit ht hc v,
+    (hP _ (valuation_eisensteinNormUnit ht hc v)).mpr ⟨1, v, by simp [coe_eisensteinNormUnit]⟩,
+    (eisensteinNormSquareClass_def ht hc v).symm⟩, fun ⟨b, hbv, hbP, hbq⟩ ↦ ?_⟩
+  obtain ⟨u, v, hbuv⟩ := (hP b hbv).mp hbP
+  exact ⟨v, hbq ▸ (squareClassHom_eq_eisensteinNormSquareClass_of_eq ht hc hbuv).symm⟩
+
 end ValuedField
 
 section EisensteinExtension
@@ -408,14 +427,9 @@ theorem mem_eisensteinNormSquareSubgroup_iff_exists_norm_eq {t c : 𝒪[K]} {ω 
     (q : Kˣ ⧸ Subgroup.square Kˣ) :
     q ∈ eisensteinNormSquareSubgroup K ht hc.mem_maximalIdeal ↔
       ∃ b : Kˣ, valuation K (b : K) = 1 ∧ (∃ z : L, Algebra.norm K z = b) ∧
-        squareClassHom b = q := by
-  have hcm := hc.mem_maximalIdeal
-  refine ⟨fun ⟨v, hv⟩ ↦ hv ▸ ⟨eisensteinNormUnit K ht hcm v, valuation_eisensteinNormUnit ht hcm v,
-    (exists_norm_eq_iff_of_eisensteinQuadraticBasis ht hc hω
-      (valuation_eisensteinNormUnit ht hcm v)).mpr ⟨1, v, by simp [coe_eisensteinNormUnit]⟩,
-    (eisensteinNormSquareClass_def ht hcm v).symm⟩, fun ⟨b, hbv, hbnorm, hbq⟩ ↦ ?_⟩
-  obtain ⟨u, v, hbuv⟩ := (exists_norm_eq_iff_of_eisensteinQuadraticBasis ht hc hω hbv).mp hbnorm
-  exact ⟨v, hbq ▸ (squareClassHom_eq_eisensteinNormSquareClass_of_eq ht hcm hbuv).symm⟩
+        squareClassHom b = q :=
+  mem_eisensteinNormSquareSubgroup_iff_of_forall ht hc.mem_maximalIdeal
+    (fun _ ↦ exists_norm_eq_iff_of_eisensteinQuadraticBasis ht hc hω) q
 
 end EisensteinExtension
 

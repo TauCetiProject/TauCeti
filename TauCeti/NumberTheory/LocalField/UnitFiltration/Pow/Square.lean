@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
+import TauCeti.RingTheory.Valuation.Irreducible
 
 /-!
 # Squaring on steps of the unit filtration at or below `v_K(2)`
@@ -111,11 +112,8 @@ theorem mem_or_neg_mem_unitFiltration_succ_of_sq_mem (h2 : (2 : K) ≠ 0) {w : K
     sub_mem ((Valuation.mem_integer_iff _ _).mpr ((mem_unitFiltration_zero w).mp hw0).le)
       (one_mem _)⟩
   have hδ0 : δ ≠ 0 := fun h0 ↦ hwnot (by simp [show (w : K) - 1 = 0 from congrArg Subtype.val h0])
-  obtain ⟨ρ, u, hδu⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hδ0 hπ
-  have hu1 : valuation K ((u : 𝒪[K]) : K) = 1 :=
-    (Valuation.integer.integers (valuation K)).valuation_unit u
-  have hδv : valuation K ((w : K) - 1) = valuation K (π : K) ^ ρ := by
-    simpa [δ, hu1] using congrArg (fun x : 𝒪[K] ↦ valuation K (x : K)) hδu
+  obtain ⟨ρ, hδv⟩ := exists_valuation_eq_pow_irreducible (valuation K) hδ0 hπ
+  dsimp only [δ] at hδv
   have hρle : ρ ≤ e := not_lt.mp fun hρgt ↦ hwnot (hδv ▸ pow_le_pow_right_of_le_one' hπ1.le hρgt)
   have hw_ge_e : valuation K (π : K) ^ e ≤ valuation K ((w : K) - 1) :=
     hδv ▸ pow_le_pow_right_of_le_one' hπ1.le hρle
