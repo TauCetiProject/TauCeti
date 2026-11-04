@@ -54,18 +54,26 @@ def EnhancedStateAt.toEnhancedState {i j : ℤ} (e : D.EnhancedStateAt i j) :
     D.toPDCode.EnhancedState :=
   ⟨PDCode.cubeState e.1.1, e.2.1⟩
 
-/-- The underlying enhanced state has the specified cochain degree. -/
+/-- Forgetting the constraints retains both the smoothing and its dependent circle labels. -/
 @[simp]
-theorem EnhancedStateAt.stateCochainDegree {i j : ℤ} (e : D.EnhancedStateAt i j) :
+theorem EnhancedStateAt.toEnhancedState_eq {i j : ℤ} (e : D.EnhancedStateAt i j) :
+    e.toEnhancedState D = ⟨PDCode.cubeState e.1.1, e.2.1⟩ := (rfl)
+
+/-- The underlying enhanced state has the specified cochain degree.
+Simplify the degree before expanding the underlying enhanced state. -/
+@[simp↓]
+theorem EnhancedStateAt.stateCochainDegree_toEnhancedState {i j : ℤ} (e : D.EnhancedStateAt i j) :
     D.stateCochainDegree (e.toEnhancedState D).1 = i := by
-  simp only [EnhancedStateAt.toEnhancedState, stateCochainDegree_cubeState, e.1.2]
+  simp only [EnhancedStateAt.toEnhancedState_eq, stateCochainDegree_cubeState, e.1.2]
   omega
 
-/-- The underlying enhanced state has the specified quantum degree. -/
-@[simp]
-theorem EnhancedStateAt.enhancedQuantumDegree {i j : ℤ} (e : D.EnhancedStateAt i j) :
+/-- The underlying enhanced state has the specified quantum degree.
+Simplify the degree before expanding the underlying enhanced state. -/
+@[simp↓]
+theorem EnhancedStateAt.enhancedQuantumDegree_toEnhancedState {i j : ℤ}
+    (e : D.EnhancedStateAt i j) :
     D.enhancedQuantumDegree (e.toEnhancedState D) = j := by
-  simp only [enhancedQuantumDegree_def, EnhancedStateAt.toEnhancedState, e.2.2]
+  simp only [EnhancedStateAt.toEnhancedState_eq, enhancedQuantumDegree_def, e.2.2]
   omega
 
 /-- Cube-subset indexing gives exactly the native enhanced states of bidegree `(i,j)`. -/
@@ -74,7 +82,8 @@ def enhancedStateAtEquiv (i j : ℤ) :
       {e : D.toPDCode.EnhancedState //
         D.stateCochainDegree e.1 = i ∧ D.enhancedQuantumDegree e = j} :=
   Equiv.ofBijective
-    (fun e ↦ ⟨e.toEnhancedState D, e.stateCochainDegree D, e.enhancedQuantumDegree D⟩)
+    (fun e ↦ ⟨e.toEnhancedState D, e.stateCochainDegree_toEnhancedState D,
+      e.enhancedQuantumDegree_toEnhancedState D⟩)
     ⟨by
       rintro ⟨S, l⟩ ⟨T, k⟩ h
       have hST : S = T := Subtype.ext
@@ -121,22 +130,34 @@ theorem khovanovEnhancedBasis_repr (i : ℤ) (x : (D.khovanovComplex hD R j).X i
           ((D.khovanovComplexπ hD R j e.1).hom x) : Khovanov.CircleTensor R _) e.2.1 := by
   simp only [khovanovEnhancedBasis, Module.Basis.map_repr, LinearEquiv.symm_symm,
     LinearEquiv.trans_apply, Pi.basis_repr, Khovanov.circlePieceBasis_repr_apply]
-  have hπ := D.khovanovComplexXIso_hom_comp_π hD R j e.1
-  have hpi := ModuleCat.biproductIsoPi_inv_comp_π
-    (fun S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount} ↦
-      ModuleCat.of R ((Khovanov.circleQuantumGrading R
-        (D.toPDCode.ResolvedCircle (PDCode.cubeState S.1))).piece
-          (j - D.stateQuantumShift (PDCode.cubeState S.1)))) e.1
-  have h := congrArg (fun f ↦ f.hom ((D.khovanovComplexXIso hD R j i).hom.hom x))
-    (congrArg (fun f ↦ (ModuleCat.biproductIsoPi _).hom ≫ f) hpi)
-  simp only [Iso.hom_inv_id_assoc] at h
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
-    LinearMap.proj_apply] at h
-  exact congrArg (fun y : (Khovanov.circleQuantumGrading R
-      (D.toPDCode.ResolvedCircle (PDCode.cubeState e.1.1))).piece
-        (j - D.stateQuantumShift (PDCode.cubeState e.1.1)) ↦
-    (Khovanov.circleBasis R _).repr (y : Khovanov.CircleTensor R _) e.2.1)
-      (h.symm.trans (congrArg (fun f ↦ f.hom x) hπ))
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    khovanovComplexXIso_biproductIsoPi_apply]
+
+/-- A basis vector is the circle-piece basis vector included in its state summand. -/
+@[simp]
+theorem khovanovEnhancedBasis_apply (i : ℤ) (e : D.EnhancedStateAt i j) :
+    D.khovanovEnhancedBasis hD R j i e =
+      (D.khovanovComplexι hD R j e.1).hom
+        ((eqToHom (D.resolutionCube_obj_normalized hD R j e.1.1).symm).hom
+          (Khovanov.circlePieceBasis R
+            (D.toPDCode.ResolvedCircle (PDCode.cubeState e.1.1))
+            (j - D.stateQuantumShift (PDCode.cubeState e.1.1)) e.2)) := by
+  classical
+  apply ((D.khovanovComplexXIso hD R j i).toLinearEquiv.trans
+    (ModuleCat.biproductIsoPi _).toLinearEquiv).injective
+  simp only [khovanovEnhancedBasis, Module.Basis.map_apply, LinearEquiv.apply_symm_apply,
+    Pi.basis_apply, LinearEquiv.trans_apply]
+  apply funext
+  intro T
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    khovanovComplexXIso_biproductIsoPi_apply]
+  by_cases h : e.1 = T
+  · subst T
+    simp only [Pi.single_eq_same, ← ModuleCat.comp_apply,
+      khovanovComplexι_π_self, ModuleCat.id_apply]
+    exact (ModuleCat.hom_inv_apply
+      (eqToIso (D.resolutionCube_obj_normalized hD R j e.1.1)) _).symm
+  · simp [ModuleCat.Hom.hom, ← ModuleCat.comp_apply, khovanovComplexι_π_of_ne, h]
 
 /-- The finite-free coefficient model of the normalized quantum component. Its differential
 is the signed saddle differential expressed in the enhanced-state bases.
@@ -221,16 +242,10 @@ theorem khovanovEnhancedComplex_d_state {i : ℤ}
                   (homOfLE (S.1.subset_insert a.1))).hom x)) := by
   have h := congrArg (fun f ↦ (D.khovanovEnhancedBasis hD R j (i + 1)).repr (f.hom x))
     (D.ι_khovanovComplex_d hD R j S)
-  calc
-    _ = (D.khovanovEnhancedBasis hD R j (i + 1)).repr
-        (((D.khovanovComplex hD R j).d i (i + 1)).hom
-          ((D.khovanovComplexι hD R j S).hom x)) :=
-      congrArg (fun y ↦ (D.khovanovEnhancedBasis hD R j (i + 1)).repr
-        (((D.khovanovComplex hD R j).d i (i + 1)).hom y))
-          ((D.khovanovEnhancedBasis hD R j i).repr.symm_apply_apply _)
-    _ = _ := by
-      simpa only [ModuleCat.hom_comp, ModuleCat.hom_sum, ModuleCat.hom_zsmul,
-        LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul]
-        using h
+  simp only [khovanovEnhancedComplex_d_apply, LinearEquiv.symm_apply_apply]
+  dsimp only [khovanovEnhancedComplex] at ⊢
+  simpa only [ModuleCat.hom_comp, ModuleCat.hom_sum, ModuleCat.hom_zsmul,
+    LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul,
+    ModuleCat.Hom.hom] using h
 
 end TauCeti.OrientedPDCode
