@@ -58,6 +58,8 @@ at a complex place (`Tr (i * i) = -2` over `ℚ(i)`), so it carries no Gaussian.
 ## Main statements
 
 * `TauCeti.NumberField.mixedEmbedding.mixedInner_def`: the coordinate formula for `mixedInner`.
+* `TauCeti.NumberField.mixedEmbedding.mixedInner_eq_sum_stdBasis_repr`: `mixedInner` is the
+  standard dot product in the coordinates of `NumberField.mixedEmbedding.stdBasis K`.
 * `TauCeti.NumberField.mixedEmbedding.mixedInner_toMixed`: `euclidean.toMixed` carries the inner
   product to `mixedInner`.
 * `TauCeti.NumberField.mixedEmbedding.eq_of_forall_mixedInner_eq`: a point of the mixed space is
@@ -103,6 +105,20 @@ theorem mixedInner_def (x y : mixedSpace K) :
     mixedInner K x y = ∑ w : {w : InfinitePlace K // w.IsReal}, x.1 w * y.1 w +
       ∑ w : {w : InfinitePlace K // w.IsComplex}, (x.2 w * (starRingEnd ℂ) (y.2 w)).re := by
   rw [mixedInner]
+
+open scoped Classical in
+/-- In the coordinates of `NumberField.mixedEmbedding.stdBasis K`, the Euclidean pairing
+`mixedInner` is the standard dot product. -/
+theorem mixedInner_eq_sum_stdBasis_repr (x y : mixedSpace K) :
+    mixedInner K x y = ∑ c : index K, (stdBasis K).repr x c * (stdBasis K).repr y c := by
+  rw [mixedInner_def, Fintype.sum_sum_type]
+  congr 1
+  rw [Fintype.sum_prod_type]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  rw [Fin.sum_univ_two, stdBasis_apply_isComplex_fst, stdBasis_apply_isComplex_fst,
+    stdBasis_apply_isComplex_snd, stdBasis_apply_isComplex_snd, Complex.mul_re, Complex.conj_re,
+    Complex.conj_im]
+  ring
 
 /-- The Euclidean pairing is symmetric. -/
 theorem mixedInner_comm (x y : mixedSpace K) : mixedInner K x y = mixedInner K y x := by

@@ -42,6 +42,24 @@ section Ring
 
 variable {K : Type*} [CommRing K]
 
+omit [LinearOrder ι] [Fintype ι] [LinearOrder κ] in
+/-- A square matrix with entries in the nonarchimedean unit ball has determinant in the unit
+ball. -/
+theorem det_le_one {n : Type*} [Fintype n] [DecidableEq n] (v : AbsoluteValue K ℝ)
+    (hv : IsNonarchimedean v) {M : Matrix n n K} (hM : ∀ i j, v (M i j) ≤ 1) :
+    v M.det ≤ 1 := by
+  rcases subsingleton_or_nontrivial K with hK | hK
+  · rw [Subsingleton.elim M.det 0, map_zero]
+    exact zero_le_one
+  rw [Matrix.det_apply]
+  refine (hv.apply_sum_le_sup ⟨1, Finset.mem_univ 1⟩).trans ?_
+  refine Finset.sup'_le _ _ fun σ _ ↦ ?_
+  have hsign (a : K) : v (σ.sign • a) = v a := by
+    rcases Int.units_eq_one_or σ.sign with h | h <;> simp [h]
+  rw [hsign, map_prod]
+  exact (Finset.prod_le_prod₀ (fun _ _ ↦ v.nonneg _) fun i _ ↦ hM (σ i) i).trans_eq
+    Finset.prod_const_one
+
 omit [Fintype ι] in
 /-- Every maximal minor, even one with repeated columns, is bounded by the
 maximum of the Plücker coordinates. -/

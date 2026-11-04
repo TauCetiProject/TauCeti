@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Projection
@@ -30,15 +30,13 @@ Within `W.euclideanSpan`, the points whose coordinates lie in
 canonically `ℤ`-linearly equivalent to the saturated `𝓞 K`-submodule `W.integerPoints` of tuples in
 `ι → 𝓞 K` whose image in `ι → K` belongs to `W`. Even when `W.integerPoints` is not free over
 `𝓞 K`, choosing a Steinitz pseudo-basis `W ∩ 𝓞_K^ι = ⊕ k, J k • b k`
-(`Submodule.exists_pseudoBasis`) and `ℤ`-bases of the coefficient ideals `J k` produces an explicit
-`ℤ`-basis of `W.integerLattice` that is also an `ℝ`-basis of `W.euclideanSpan`. In particular,
-`W.euclideanSpan` has real dimension `D * m` and `W.integerLattice` is a discrete full `ℤ`-lattice
-in `W.euclideanSpan`.
+(`Submodule.exists_pseudoBasis`) and `ℤ`-bases of the coefficient ideals `J k`
+(`Ideal.mixedLatticeBasis`) produces an explicit `ℤ`-basis of `W.integerLattice` that is also an
+`ℝ`-basis of `W.euclideanSpan`. In particular, `W.euclideanSpan` has real dimension `D * m` and
+`W.integerLattice` is a discrete full `ℤ`-lattice in `W.euclideanSpan`.
 
 ## Main definitions
 
-* `Ideal.mixedLatticeBasis`: an `ℝ`-basis of `mixedSpace K` indexed by `index K` whose `ℤ`-span is
-  the mixed-space lattice of a nonzero ideal `I` of `𝓞 K`.
 * `Submodule.integerPoints W`: the `𝓞 K`-submodule `W ∩ (𝓞 K)^ι` of `ι → 𝓞 K`.
 * `Submodule.euclideanSpan W`: the real span of `W` inside
   `PiLp 2 fun _ : ι ↦ NumberField.mixedEmbedding.euclidean.mixedSpace K`.
@@ -79,72 +77,6 @@ noncomputable section
 
 open MeasureTheory Module NumberField NumberField.mixedEmbedding Set
 open scoped nonZeroDivisors
-
-namespace Ideal
-
-section MixedLatticeBasis
-
-variable {K : Type*} [Field K] [NumberField K] {I : Ideal (𝓞 K)}
-
-/-- The nonzero fractional ideal unit attached to a nonzero ideal `I` of `𝓞 K`. -/
-private def toFractionalIdealUnit (hI : I ≠ ⊥) : (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-  Units.mk0 (I : FractionalIdeal (𝓞 K)⁰ K) (FractionalIdeal.coeIdeal_ne_zero.mpr hI)
-
-open scoped Classical in
-/-- Equivalence between `index K` and the `ℤ`-basis index of `I`. -/
-private def indexEquivChooseBasis (hI : I ≠ ⊥) :
-    index K ≃ Free.ChooseBasisIndex ℤ (toFractionalIdealUnit hI) :=
-  Fintype.equivOfCardEq <| by
-    rw [← finrank_eq_card_chooseBasisIndex, fractionalIdeal_rank, RingOfIntegers.rank,
-      ← mixedEmbedding.finrank K, ← finrank_eq_card_basis (stdBasis K)]
-
-open scoped Classical in
-/-- The `ν`-th `ℤ`-basis element of `I` in `K`, indexed by `index K`. -/
-def mixedBasisElem (hI : I ≠ ⊥) (ν : index K) : K :=
-  basisOfFractionalIdeal K (toFractionalIdealUnit hI) (indexEquivChooseBasis hI ν)
-
-open scoped Classical in
-/-- An `ℝ`-basis of `mixedSpace K` indexed by `index K` whose `ℤ`-span is the mixed-space lattice
-of the nonzero ideal `I`. -/
-def mixedLatticeBasis (hI : I ≠ ⊥) : Basis (index K) ℝ (mixedSpace K) :=
-  (fractionalIdealLatticeBasis K (toFractionalIdealUnit hI)).reindex
-    (indexEquivChooseBasis hI).symm
-
-open scoped Classical in
-/-- `Ideal.mixedLatticeBasis` embeds `Ideal.mixedBasisElem` via `mixedEmbedding K`. -/
-@[simp]
-theorem mixedLatticeBasis_apply (hI : I ≠ ⊥) (ν : index K) :
-    I.mixedLatticeBasis hI ν = mixedEmbedding K (I.mixedBasisElem hI ν) := by
-  simp [mixedLatticeBasis, mixedBasisElem]
-
-open scoped Classical in
-/-- A scalar `x : K` lies in `I` if and only if its mixed embedding lies in the `ℤ`-span of
-`I.mixedLatticeBasis hI`. -/
-theorem mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hI : I ≠ ⊥) (x : K) :
-    x ∈ IsLocalization.coeSubmodule K I ↔
-      mixedEmbedding K x ∈ Submodule.span ℤ (range (I.mixedLatticeBasis hI)) := by
-  rw [mixedLatticeBasis, Basis.coe_reindex, range_comp, Equiv.range_eq_univ, image_univ,
-    span_idealLatticeBasis, mem_idealLattice]
-  refine ⟨fun hx ↦ ⟨x, ?_, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
-  · simpa [toFractionalIdealUnit] using hx
-  · have : y = x := mixedEmbedding_injective K hyx
-    subst this
-    simpa [toFractionalIdealUnit] using hy
-
-open scoped Classical in
-/-- The `ℤ`-fundamental domain of `I.mixedLatticeBasis hI` is a fundamental domain for the
-mixed-space lattice of `I`. -/
-theorem isAddFundamentalDomain_mixedLatticeBasis (hI : I ≠ ⊥) :
-    IsAddFundamentalDomain
-      (idealLattice K
-        (Units.mk0 (I : FractionalIdeal (𝓞 K)⁰ K) (FractionalIdeal.coeIdeal_ne_zero.mpr hI)))
-      (ZSpan.fundamentalDomain (I.mixedLatticeBasis hI)) := by
-  rw [mixedLatticeBasis, ZSpan.fundamentalDomain_reindex]
-  exact fundamentalDomain_idealLattice K (toFractionalIdealUnit hI)
-
-end MixedLatticeBasis
-
-end Ideal
 
 namespace Submodule
 
@@ -250,11 +182,8 @@ theorem toLp_mem_euclideanSpan_iff [Finite ι] {W : Submodule K (ι → K)} {v :
   have hg (u : ι → K) :
       g (WithLp.toLp 2 fun i ↦ (euclidean.toMixed K).symm (mixedEmbedding K (u i))) =
         mixedEmbedding K (f u) := by
-    have hu (i : ι) : Pi.single i (u i) = u i • (Pi.single i 1 : ι → K) := by
-      ext j
-      simp [Pi.single_apply]
-    conv_rhs => rw [← Finset.univ_sum_single u, map_sum, map_sum]
-    simp [g, hu, mul_comm]
+    conv_rhs => rw [pi_eq_sum_univ' u, map_sum, map_sum]
+    simp [g, mul_comm]
   have hle : W.euclideanSpan ≤ LinearMap.ker g := by
     refine span_le.2 ?_
     rintro _ ⟨u, hu, rfl⟩
@@ -434,6 +363,13 @@ section GivenPseudoBasis
 variable {W : Submodule K (ι → K)} {κ : Type*} (b : Basis κ K W) {J : κ → Ideal (𝓞 K)}
   (hJ : ∀ k, J k ≠ ⊥)
 
+omit [NumberField K] in
+private theorem coe_apply_eq_sum_repr_mul [Fintype κ] (w : W) (i : ι) :
+    (w : ι → K) i = ∑ k : κ, b.repr w k * (b k : ι → K) i := by
+  have hi := congrFun (congrArg W.subtype (b.sum_repr w).symm) i
+  rw [map_sum, Finset.sum_apply] at hi
+  simpa only [coe_subtype, SetLike.val_smul, Pi.smul_apply, smul_eq_mul] using hi
+
 open scoped Classical in
 /-- The coordinatewise evaluation map `(PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) →ₗ[ℝ]
 mixedSpace K` at `i : ι`. -/
@@ -515,16 +451,9 @@ private theorem linearIndependent_pseudoBasisVec [Finite ι] [Finite κ] :
             mixedEmbedding K ((b k : ι → K) x))) =
         (∑ ν : index K, c (k, ν) • (J k).mixedLatticeBasis (hJ k) ν) *
           mixedEmbedding K (f (b k : ι → K)) := by
-      have hbk : f (b k : ι → K) = ∑ x : ι, (b k : ι → K) x * f (Pi.single x 1) := by
-        conv_lhs => rw [← Finset.univ_sum_single (b k : ι → K), map_sum]
-        refine Finset.sum_congr rfl fun x _ ↦ ?_
-        have hx : Pi.single x ((b k : ι → K) x) = (b k : ι → K) x • (Pi.single x 1 : ι → K) := by
-          ext j
-          simp [Pi.single_apply]
-        rw [hx, map_smul, smul_eq_mul]
-      rw [hbk, map_sum, Finset.mul_sum]
+      conv_rhs => rw [pi_eq_sum_univ' (b k : ι → K), map_sum, map_sum, Finset.mul_sum]
       refine Finset.sum_congr rfl fun x _ ↦ ?_
-      rw [map_mul]
+      simp only [map_smul, smul_eq_mul, map_mul]
       ring
     simp_rw [hterm, hf]
     simp
@@ -560,11 +489,8 @@ private theorem span_range_pseudoBasisVec [Finite ι] [Finite κ] :
         rw [evalMixedLinear_apply, WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply,
           map_sum]
         simp only [map_smul, evalMixedLinear_pseudoBasisVec]
-        have hv_eq : v i = ∑ k : κ, b.repr ⟨v, hv⟩ k * (b k : ι → K) i := by
-          have hi := congrFun (congrArg W.subtype (b.sum_repr ⟨v, hv⟩).symm) i
-          rw [map_sum, Finset.sum_apply] at hi
-          simpa only [coe_subtype, SetLike.val_smul, Pi.smul_apply, smul_eq_mul] using hi
-        rw [hv_eq, map_sum, Fintype.sum_prod_type]
+        rw [show v i = (⟨v, hv⟩ : W).1 i from rfl, coe_apply_eq_sum_repr_mul b ⟨v, hv⟩ i, map_sum,
+          Fintype.sum_prod_type]
         refine Finset.sum_congr rfl fun k _ ↦ ?_
         rw [map_mul,
           ← ((J k).mixedLatticeBasis (hJ k)).sum_repr (mixedEmbedding K (b.repr ⟨v, hv⟩ k)),
@@ -608,18 +534,12 @@ theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
     rw [SetLike.mem_coe, mem_integerLattice]
     have hint : ∀ i,
         (J k).mixedBasisElem (hJ k) ν * (b k : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
-      have hrepr : ∀ k', b.repr ((J k).mixedBasisElem (hJ k) ν • b k) k' ∈
-          IsLocalization.coeSubmodule K (J k') := by
-        intro k'
-        rw [map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
-        split_ifs with hk'
-        · subst hk'
-          rw [(J k).mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hJ k),
-            ← Ideal.mixedLatticeBasis_apply]
-          exact subset_span ⟨ν, rfl⟩
-        · exact zero_mem _
-      have := (hW ((J k).mixedBasisElem (hJ k) ν • b k)).2 hrepr
-      simpa [Algebra.smul_def] using this
+      have hmem : (J k).mixedBasisElem (hJ k) ν ∈ IsLocalization.coeSubmodule K (J k) := by
+        rw [(J k).mem_coeSubmodule_iff_mem_span_mixedLatticeBasis (hJ k),
+          ← Ideal.mixedLatticeBasis_apply]
+        exact subset_span ⟨ν, rfl⟩
+      simpa [Algebra.smul_def] using
+        (hW ((J k).mixedBasisElem (hJ k) ν • b k)).2 (b.repr_smul_self_mem_coeSubmodule J hmem)
     intro i
     obtain ⟨a, ha⟩ := hint i
     rw [coe_euclideanSpanBasisOfPseudoBasis_apply, euclidean.integerLattice, ZLattice.comap,
@@ -653,11 +573,8 @@ theorem span_int_euclideanSpanBasisOfPseudoBasis [Finite ι] [Finite κ]
         simp only [φ, LinearMap.comp_apply, Submodule.coe_subtype, evalMixedLinear_apply, hwz,
           ContinuousLinearEquiv.apply_symm_apply, map_zsmul,
           coe_euclideanSpanBasisOfPseudoBasis_apply, map_mul]
-        have hz_eq : ((z i : 𝓞 K) : K) = ∑ k : κ, b.repr wK k * (b k : ι → K) i := by
-          have hi := congrFun (congrArg W.subtype (b.sum_repr wK).symm) i
-          rw [map_sum, Finset.sum_apply] at hi
-          simpa only [wK, coe_subtype, SetLike.val_smul, Pi.smul_apply, smul_eq_mul] using hi
-        rw [hz_eq, map_sum, Fintype.sum_prod_type]
+        rw [show ((z i : 𝓞 K) : K) = (wK : ι → K) i from rfl, coe_apply_eq_sum_repr_mul b wK i,
+          map_sum, Fintype.sum_prod_type]
         refine Finset.sum_congr rfl fun k _ ↦ ?_
         rw [map_mul, hm k, Finset.sum_mul]
         refine Finset.sum_congr rfl fun ν _ ↦ ?_
@@ -725,18 +642,6 @@ instance instDiscreteTopologyIntegerLattice : DiscreteTopology W.integerLattice 
   rw [← span_int_euclideanSpanBasisOfPseudoBasis b hJ hW]
   infer_instance
 
-open scoped Classical in
-/-- The integral lattice of `W` is free over `ℤ` of rank `[K : ℚ] * finrank K W`. -/
-theorem finrank_integerLattice :
-    finrank ℤ W.integerLattice = finrank ℚ K * finrank K W := by
-  cases nonempty_fintype ι
-  have : IsZLattice ℝ W.integerLattice :=
-    ⟨by
-      obtain ⟨b, J, hJ, hW⟩ := W.exists_pseudoBasis_integerPoints
-      rw [← span_int_euclideanSpanBasisOfPseudoBasis b hJ hW]
-      exact ZSpan.span_top _⟩
-  rw [ZLattice.rank ℝ W.integerLattice, finrank_euclideanSpan]
-
 end Instances
 
 open scoped Classical in
@@ -756,13 +661,22 @@ instance instMeasureSpaceEuclideanSpan [Fintype ι] (W : Submodule K (ι → K))
   measureSpaceOfInnerProductSpace
 
 open scoped Classical in
-/-- The integral lattice of `W` spans `W.euclideanSpan` over `ℝ`: it is a full `ℤ`-lattice. -/
+/-- The integral lattice of `W` spans `W.euclideanSpan` over `ℝ`: it is a full `ℤ`-lattice.
+Note that `[Fintype ι]` is required in the statement because `IsZLattice ℝ W.integerLattice` takes
+`[NormedAddCommGroup W.euclideanSpan]` via `PiLp.normedAddCommGroup`. -/
 instance instIsZLatticeIntegerLattice [Fintype ι] (W : Submodule K (ι → K)) :
     IsZLattice ℝ W.integerLattice where
   span_top := by
     obtain ⟨b, J, hJ, hW⟩ := W.exists_pseudoBasis_integerPoints
     rw [← span_int_euclideanSpanBasisOfPseudoBasis b hJ hW]
     exact ZSpan.span_top _
+
+open scoped Classical in
+/-- The integral lattice of `W` is free over `ℤ` of rank `[K : ℚ] * finrank K W`. -/
+theorem finrank_integerLattice [Finite ι] (W : Submodule K (ι → K)) :
+    finrank ℤ W.integerLattice = finrank ℚ K * finrank K W := by
+  cases nonempty_fintype ι
+  rw [ZLattice.rank ℝ W.integerLattice, finrank_euclideanSpan]
 
 end PseudoBasis
 

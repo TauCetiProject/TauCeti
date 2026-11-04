@@ -13,12 +13,11 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattic
 import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
 import TauCeti.InformationTheory.Coding.GeneratorParityCheck
+import TauCeti.LinearAlgebra.Pi
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
--- Proof-only: lattice scaling and invariants of `ℚ(i)` for the worked sanity checks.
-import TauCeti.Algebra.Module.ZLattice.Scaling
-import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
+import TauCeti.RingTheory.DedekindDomain.PseudoBasis
 
 /-!
 # The covolume of the lattice of integral points of a number-field subspace
@@ -89,18 +88,6 @@ section FinitePlaces
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Finite ι] [LinearOrder ι]
 
-/-- At a finite place `v`, any square matrix with entries in the unit ball of `v` has determinant
-of absolute value at most `1`. -/
-private theorem apply_det_le_one {p : ℕ} (v : FinitePlace K) (M : Matrix (Fin p) (Fin p) K)
-    (hM : ∀ i j, v (M i j) ≤ 1) : v M.det ≤ 1 := by
-  have hsub : (M.submatrix id id).det = M.det := by simp
-  rw [← hsub]
-  refine (v.val.det_submatrix_le_iSup_plucker M id).trans ?_
-  refine Real.iSup_le (fun s ↦ ?_) zero_le_one
-  refine (v.val.plucker_le_prod_iSup (fun x y ↦ FinitePlace.add_le v x y) M.row s).trans ?_
-  exact (Finset.prod_le_prod₀ (fun _ _ ↦ Real.iSup_nonneg_of_nonnegHomClass v.val _)
-    fun i _ ↦ Real.iSup_le (fun j ↦ hM i j) zero_le_one).trans_eq Finset.prod_const_one
-
 /-- Scaling each vector `b k` of a pseudo-basis `(b, J)` by an element `a k ∈ J k` attaining the
 largest value of `v` on `J k` normalizes the local maximum Plücker norm at `v` to `1`. -/
 private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p : ℕ}
@@ -129,14 +116,8 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
     exact (mul_eq_zero.mp hca).resolve_right (ha0 k)
   -- Every row of `x` is `(a k : K) • b k ∈ W ∩ (𝓞 K)^ι`, so its entries have `v ≤ 1`.
   have hx_le (k : Fin p) (j : ι) : v (x k j) ≤ 1 := by
-    have hrepr : ∀ k', b.repr ((a k : K) • b k) k' ∈ IsLocalization.coeSubmodule K (J k') := by
-      intro k'
-      rw [map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
-      split_ifs with hk'
-      · subst hk'
-        exact ⟨a k, haJ k, rfl⟩
-      · exact zero_mem _
-    obtain ⟨z, hz⟩ := (hW ((a k : K) • b k)).2 hrepr j
+    obtain ⟨z, hz⟩ := (hW ((a k : K) • b k)).2
+      (b.repr_smul_self_mem_coeSubmodule J ⟨a k, haJ k, rfl⟩) j
     have hvz : v (z : K) ≤ 1 := by
       rw [← v.norm_embedding_eq]
       exact FinitePlace.norm_le_one K v.maximalIdeal z
@@ -145,54 +126,37 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
   obtain ⟨e, hP0, hP_sup, hPx⟩ := v.val.exists_pivot_inv_mul_le_one hx_li
   set P := x.submatrix id e
   -- Upper bound: `P` is a submatrix of `x`, so `v P.det ≤ 1`.
-  have hP_le : v P.det ≤ 1 := apply_det_le_one v P fun i j ↦ hx_le i (e j)
+  have hP_le : v P.det ≤ 1 := v.val.det_le_one v.add_le fun i j ↦ hx_le i (e j)
   -- Lower bound: clear denominators away from `v.maximalIdeal` in each row of `P⁻¹ * x`.
   have hPinv_le (i k : Fin p) : v (P⁻¹ i k) ≤ 1 := by
-    set 𝔭 := v.maximalIdeal
-    have hval (j : ι) : 𝔭.valuation K ((P⁻¹ * x) i j) ≤ 1 := by
-      rw [← FinitePlace.mk_apply_le_one_iff, FinitePlace.mk_maximalIdeal]
-      exact hPx i j
-    choose n d hnd using fun j ↦ 𝔭.exists_primeCompl_mul_eq_of_integer ((P⁻¹ * x) i j) (hval j)
-    let D : 𝔭.asIdeal.primeCompl := ∏ j : ι, d j
-    have hD_val : v ((D : 𝓞 K) : K) = 1 := by
-      rw [← v.norm_embedding_eq, FinitePlace.norm_eq_one_iff_notMem]
-      exact D.2
-    let w : W := ∑ l : Fin p, (((D : 𝓞 K) : K) * (P⁻¹ i l * (a l : K))) • b l
+    obtain ⟨d, hd_val, hd_int⟩ := v.exists_apply_eq_one_forall_mul_mem_range (hPx i)
+    let w : W := ∑ l : Fin p, ((d : K) * (P⁻¹ i l * (a l : K))) • b l
     have hw_int (j : ι) : (w : ι → K) j ∈ range (algebraMap (𝓞 K) K) := by
-      have hwj : (w : ι → K) j = ((D : 𝓞 K) : K) * (P⁻¹ * x) i j := by
+      have hwj : (w : ι → K) j = (d : K) * (P⁻¹ * x) i j := by
         have hi : (w : ι → K) j =
-            ∑ l : Fin p, (((D : 𝓞 K) : K) * (P⁻¹ i l * (a l : K))) * (b l : ι → K) j := by
+            ∑ l : Fin p, ((d : K) * (P⁻¹ i l * (a l : K))) * (b l : ι → K) j := by
           rw [← W.coe_subtype, map_sum, Finset.sum_apply]
-          rfl
+          simp only [Submodule.coe_subtype, SetLike.val_smul, Pi.smul_apply, smul_eq_mul]
         rw [hi, Matrix.mul_apply, Finset.mul_sum]
-        exact Finset.sum_congr rfl fun l _ ↦ by simp [x]; ring
+        exact Finset.sum_congr rfl fun _ _ ↦ by simp [x]; ring
       rw [hwj]
-      let q : 𝓞 K := ∏ j' ∈ Finset.univ.erase j, (d j' : 𝓞 K)
-      have hD_split : ((D : 𝓞 K) : K) = (q : K) * ((d j : 𝓞 K) : K) := by
-        have hD_coe : (D : 𝓞 K) = ∏ j' : ι, (d j' : 𝓞 K) :=
-          map_prod (Submonoid.subtype _) d Finset.univ
-        rw [hD_coe, ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ j)]
-        dsimp only [q]
-        push_cast
-        ring
-      refine ⟨q * n j, ?_⟩
-      calc algebraMap (𝓞 K) K (q * n j)
-          = (q : K) * ((P⁻¹ * x) i j * ((d j : 𝓞 K) : K)) := by rw [map_mul, ← hnd j]
-        _ = ((D : 𝓞 K) : K) * (P⁻¹ * x) i j := by rw [hD_split]; ring
-    have hrepr : b.repr w k = ((D : 𝓞 K) : K) * (P⁻¹ i k * (a k : K)) := by
+      exact hd_int j
+    have hrepr : b.repr w k = (d : K) * (P⁻¹ i k * (a k : K)) := by
       simp [w, Finsupp.single_apply]
     obtain ⟨c, hcJ, hc⟩ := (hW w).1 hw_int k
     have hc_le := v.apply_mul_absNorm_pow_le_one hcJ
     have hvc : v (c : K) = v (P⁻¹ i k) * v (a k : K) := by
-      have h1 : (c : K) = ((D : 𝓞 K) : K) * (P⁻¹ i k * (a k : K)) := hc.trans hrepr
-      rw [h1, map_mul, map_mul, hD_val, one_mul]
+      have h1 : (c : K) = (d : K) * (P⁻¹ i k * (a k : K)) := hc.trans hrepr
+      rw [h1, map_mul, map_mul, hd_val, one_mul]
     calc v (P⁻¹ i k)
         = v (P⁻¹ i k) * (v (a k : K) *
-            (𝔭.asIdeal.absNorm : ℝ) ^ multiplicity 𝔭.asIdeal (J k)) := by rw [ha_eq k, mul_one]
-      _ = v (c : K) * (𝔭.asIdeal.absNorm : ℝ) ^ multiplicity 𝔭.asIdeal (J k) := by
+            (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k)) := by
+          rw [ha_eq k, mul_one]
+      _ = v (c : K) *
+            (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k) := by
           rw [hvc, mul_assoc]
       _ ≤ 1 := hc_le
-  have hPinv_det_le : v P⁻¹.det ≤ 1 := apply_det_le_one v P⁻¹ hPinv_le
+  have hPinv_det_le : v P⁻¹.det ≤ 1 := v.val.det_le_one v.add_le hPinv_le
   have hmul_one : v P.det * v P⁻¹.det = 1 := by
     rw [← map_mul, ← Matrix.det_mul, Matrix.mul_nonsing_inv P (isUnit_iff_ne_zero.mpr hP0),
       Matrix.det_one, map_one]
@@ -281,40 +245,6 @@ section Archimedean
 
 variable {K : Type*} [Field K] [NumberField K]
 
-open scoped Classical in
-/-- `mixedInner` is the standard dot product in the coordinates of `mixedEmbedding.stdBasis K`. -/
-private theorem mixedInner_eq_sum_stdBasis_repr (x y : mixedSpace K) :
-    mixedInner K x y = ∑ c : index K, (stdBasis K).repr x c * (stdBasis K).repr y c := by
-  rw [mixedInner_def, Fintype.sum_sum_type]
-  congr 1
-  rw [Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun w _ ↦ ?_
-  rw [Fin.sum_univ_two, stdBasis_apply_isComplex_fst, stdBasis_apply_isComplex_fst,
-    stdBasis_apply_isComplex_snd, stdBasis_apply_isComplex_snd, Complex.mul_re, Complex.conj_re,
-    Complex.conj_im]
-  ring
-
-open scoped Classical in
-/-- The change-of-basis determinant from `stdBasis K` to `I.mixedLatticeBasis hI` has absolute
-value `N(I) * covolume (mixedEmbedding.integerLattice K)`. -/
-private theorem abs_det_stdBasis_mixedLatticeBasis {I : Ideal (𝓞 K)} (hI : I ≠ ⊥) :
-    |(stdBasis K).det (I.mixedLatticeBasis hI)| =
-      (I.absNorm : ℝ) * ZLattice.covolume (mixedEmbedding.integerLattice K) := by
-  let U : (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-    Units.mk0 (I : FractionalIdeal (𝓞 K)⁰ K) (FractionalIdeal.coeIdeal_ne_zero.mpr hI)
-  have hvol :
-      volume (ZSpan.fundamentalDomain (I.mixedLatticeBasis hI)) =
-        ENNReal.ofReal |(stdBasis K).det (I.mixedLatticeBasis hI)| := by
-    rw [ZSpan.measure_fundamentalDomain (I.mixedLatticeBasis hI) volume (stdBasis K),
-      volume_fundamentalDomain_stdBasis, mul_one]
-  have hcov :
-      ZLattice.covolume (idealLattice K U) = |(stdBasis K).det (I.mixedLatticeBasis hI)| := by
-    rw [ZLattice.covolume_eq_measure_fundamentalDomain _ volume
-        (I.isAddFundamentalDomain_mixedLatticeBasis hI),
-      measureReal_def, hvol, ENNReal.toReal_ofReal (abs_nonneg _)]
-  rw [← hcov, covolume_idealLattice, covolume_integerLattice]
-  simp only [U, Units.val_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast, mul_assoc]
-
 /-- Placewise rearrangement of `Fin p → mixedSpace K` into real and complex place factors. -/
 private def equivMixedPi (p : ℕ) :
     (Fin p → mixedSpace K) ≃ₗ[ℝ]
@@ -370,6 +300,38 @@ private theorem archimedeanGramEndo_apply_snd {W : Submodule K (ι → K)} {p : 
         (∑ i : ι, (mixedEmbedding K ((b k₁ : ι → K) i)).2 w *
           conj ((mixedEmbedding K ((b k₂ : ι → K) i)).2 w)) * (f k₁).2 w :=
   rfl
+
+open scoped Classical in
+omit [NumberField K] [LinearOrder ι] in
+@[simp]
+private theorem archimedeanGramEndo_apply_pi_single_fst {W : Submodule K (ι → K)} {p : ℕ}
+    (b : Basis (Fin p) K W) (k₁ k₂ : Fin p) (z : mixedSpace K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    ((archimedeanGramEndo b (Pi.single k₁ z)) k₂).1 w =
+      (∑ i : ι, (mixedEmbedding K ((b k₂ : ι → K) i)).1 w *
+        (mixedEmbedding K ((b k₁ : ι → K) i)).1 w) * z.1 w := by
+  rw [archimedeanGramEndo_apply_fst, Finset.sum_eq_single k₁]
+  · simp
+  · intro k _ hk
+    simp [hk]
+  · intro h
+    exact (h (Finset.mem_univ _)).elim
+
+open scoped Classical in
+omit [NumberField K] [LinearOrder ι] in
+@[simp]
+private theorem archimedeanGramEndo_apply_pi_single_snd {W : Submodule K (ι → K)} {p : ℕ}
+    (b : Basis (Fin p) K W) (k₁ k₂ : Fin p) (z : mixedSpace K)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    ((archimedeanGramEndo b (Pi.single k₁ z)) k₂).2 w =
+      (∑ i : ι, (mixedEmbedding K ((b k₁ : ι → K) i)).2 w *
+        conj ((mixedEmbedding K ((b k₂ : ι → K) i)).2 w)) * z.2 w := by
+  rw [archimedeanGramEndo_apply_snd, Finset.sum_eq_single k₁]
+  · simp
+  · intro k _ hk
+    simp [hk]
+  · intro h
+    exact (h (Finset.mem_univ _)).elim
 
 open scoped Classical in
 /-- The determinant of `archimedeanGramEndo b` is the product over all infinite places `w` of the
@@ -455,39 +417,79 @@ private theorem det_archimedeanGramEndo {W : Submodule K (ι → K)} {p : ℕ} (
   exact Fintype.prod_subtype_mul_prod_subtype IsReal fun w : InfinitePlace K ↦
     (∑ s, ‖w.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.mult
 
-/-- For a base basis `e` of `M` and a family of bases `v k` of `M`, the change-of-basis matrix on
-`Fin p → M` between the product bases reindexed by `Fin p × κ` has determinant
-`∏ k, e.det (v k)`. -/
-private theorem det_toMatrix_pi_reindex {κ : Type*} [Fintype κ] [DecidableEq κ]
-    {M : Type*} [AddCommGroup M] [Module ℝ M] {p : ℕ}
-    (e : Basis κ ℝ M) (v : Fin p → Basis κ ℝ M) :
-    (((Pi.basis fun _ : Fin p ↦ e).reindex (Equiv.sigmaEquivProd (Fin p) κ)).toMatrix
-      ((Pi.basis v).reindex (Equiv.sigmaEquivProd (Fin p) κ))).det =
-      ∏ k : Fin p, e.det (v k) := by
-  have : Module.Free ℝ M := Module.Free.of_basis e
-  have : Module.Finite ℝ M := Module.Finite.of_basis e
-  let Bstd := (Pi.basis fun _ : Fin p ↦ e).reindex (Equiv.sigmaEquivProd (Fin p) κ)
-  let Bv := (Pi.basis v).reindex (Equiv.sigmaEquivProd (Fin p) κ)
-  let Sk (k : Fin p) : M →ₗ[ℝ] M := e.constr ℝ (v k)
-  let S : (Fin p → M) →ₗ[ℝ] (Fin p → M) := LinearMap.pi fun k ↦ (Sk k).comp (LinearMap.proj k)
-  have hmat : Bstd.toMatrix Bv = LinearMap.toMatrix Bstd Bstd S := by
-    ext r q
-    rw [Basis.toMatrix_apply, LinearMap.toMatrix_apply]
-    refine DFunLike.congr_fun (congrArg Bstd.repr ?_) r
-    ext k
-    simp only [Bstd, Bv, S, Sk, Basis.coe_reindex, Function.comp_apply,
-      Equiv.sigmaEquivProd_symm_apply, Pi.basis_apply, LinearMap.pi_apply, LinearMap.comp_apply,
-      LinearMap.coe_proj, Function.eval, Pi.single_apply]
-    split_ifs with hkq
-    · subst hkq
-      exact (e.constr_basis ℝ (v q.1) q.2).symm
-    · exact (map_zero _).symm
-  rw [hmat, LinearMap.det_toMatrix, LinearMap.det_pi]
-  refine Finset.prod_congr rfl fun k _ ↦ ?_
-  rw [← LinearMap.det_toMatrix e (Sk k), Basis.det_apply]
-  congr 1
-  ext c₁ c₂
-  rw [LinearMap.toMatrix_apply, Basis.toMatrix_apply, e.constr_basis]
+open scoped Classical in
+omit [LinearOrder ι] in
+/-- In the `ℤ`-basis `integerLatticeBasisOfPseudoBasis b hJ hW`, the Euclidean Gram matrix on
+`Fin p × index K` factors through `archimedeanGramEndo b` and the change-of-basis matrix from
+`stdBasis K` to `(J k).mixedLatticeBasis (hJ k)`. -/
+private theorem gram_integerLatticeBasisOfPseudoBasis {W : Submodule K (ι → K)} {p : ℕ}
+    (b : Basis (Fin p) K W) {J : Fin p → Ideal (𝓞 K)} (hJ : ∀ k, J k ≠ ⊥)
+    (hW : ∀ w : W, (∀ i, (w : ι → K) i ∈ range (algebraMap (𝓞 K) K)) ↔
+      ∀ k, b.repr w k ∈ IsLocalization.coeSubmodule K (J k)) :
+    let e := Equiv.sigmaEquivProd (Fin p) (index K)
+    let Bstd := (Pi.basis fun _ : Fin p ↦ stdBasis K).reindex e
+    let Bideal := (Pi.basis fun k : Fin p ↦ (J k).mixedLatticeBasis (hJ k)).reindex e
+    Matrix.gram ℝ (fun q : Fin p × index K ↦
+        (integerLatticeBasisOfPseudoBasis b hJ hW q : W.euclideanSpan)) =
+      (Bstd.toMatrix Bideal)ᵀ *
+        (LinearMap.toMatrix Bstd Bstd (archimedeanGramEndo b))ᵀ *
+        Bstd.toMatrix Bideal := by
+  intro e Bstd Bideal
+  let β := integerLatticeBasisOfPseudoBasis b hJ hW
+  let T := archimedeanGramEndo b
+  have hBideal (q : Fin p × index K) :
+      Bideal q = Pi.single q.1 (mixedEmbedding K ((J q.1).mixedBasisElem (hJ q.1) q.2)) := by
+    simp [Bideal, e]
+  ext q₁ q₂
+  -- Express the Euclidean inner product of `β q₁` and `β q₂` via `mixedInner` and `T (Bideal q₁)`.
+  have hinner :
+      Matrix.gram ℝ (fun q : Fin p × index K ↦ (β q : W.euclideanSpan)) q₁ q₂ =
+        ∑ k : Fin p, mixedInner K ((T (Bideal q₁)) k) (Bideal q₂ k) := by
+    have hrhs :
+        (∑ k : Fin p, mixedInner K ((T (Bideal q₁)) k) (Bideal q₂ k)) =
+          mixedInner K ((T (Bideal q₁)) q₂.1)
+            (mixedEmbedding K ((J q₂.1).mixedBasisElem (hJ q₂.1) q₂.2)) := by
+      rw [hBideal q₂, Finset.sum_eq_single q₂.1]
+      · simp
+      · intro k _ hk
+        simp [hk.symm, mixedInner_def]
+      · intro h
+        exact (h (Finset.mem_univ _)).elim
+    rw [hrhs, Matrix.gram_apply, Submodule.coe_inner, PiLp.inner_apply]
+    dsimp only [β]
+    simp_rw [coe_integerLatticeBasisOfPseudoBasis_apply, ← mixedInner_toMixed,
+      ContinuousLinearEquiv.apply_symm_apply, map_mul, mixedInner_def]
+    rw [Finset.sum_add_distrib]
+    congr 1
+    · rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun w _ ↦ ?_
+      simp only [T, hBideal q₁, archimedeanGramEndo_apply_pi_single_fst, Finset.sum_mul,
+        Prod.fst_mul, Pi.mul_apply]
+      exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    · rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun w _ ↦ ?_
+      simp only [T, hBideal q₁, archimedeanGramEndo_apply_pi_single_snd, Finset.sum_mul,
+        ← Complex.re_sum, Prod.snd_mul, Pi.mul_apply, map_mul]
+      congr 1
+      exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  -- Expand `∑ k, mixedInner K ...` in `Bstd`-coordinates to obtain `(Cᵀ * Mᵀ * C) q₁ q₂`.
+  rw [hinner]
+  simp_rw [mixedInner_eq_sum_stdBasis_repr K]
+  have hdot (f g : Fin p → mixedSpace K) :
+      (∑ k : Fin p, ∑ c : index K, (stdBasis K).repr (f k) c * (stdBasis K).repr (g k) c) =
+        ∑ r : Fin p × index K, Bstd.repr f r * Bstd.repr g r := by
+    conv_rhs => rw [Fintype.sum_prod_type]
+    exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun c _ ↦ by simp [Bstd, e]
+  rw [hdot]
+  have hTB (r : Fin p × index K) :
+      Bstd.repr (T (Bideal q₁)) r =
+        ∑ s, LinearMap.toMatrix Bstd Bstd T r s * Bstd.toMatrix Bideal s q₁ := by
+    have hm := congrFun (LinearMap.toMatrix_mulVec_repr Bstd Bstd T (Bideal q₁)) r
+    rw [← hm, Matrix.mulVec, dotProduct]
+    exact Finset.sum_congr rfl fun s _ ↦ by rw [Basis.toMatrix_apply]
+  simp_rw [hTB, ← Basis.toMatrix_apply Bstd Bideal _ q₂, Finset.sum_mul]
+  simp only [Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
 
 open scoped Classical in
 /-- For a pseudo-basis `(b, J)` of `W.integerPoints`, the squared covolume of `W.integerLattice`
@@ -502,131 +504,31 @@ private theorem covolume_integerLattice_sq_of_pseudoBasis {W : Submodule K (ι �
           (Ideal.absNorm (J k) : ℝ) * ZLattice.covolume (mixedEmbedding.integerLattice K)) ^ 2 *
         ∏ w : InfinitePlace K,
           (∑ s, ‖w.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.mult := by
-  let β := integerLatticeBasisOfPseudoBasis b hJ hW
-  rw [ZLattice.covolume_sq_eq_det_gram W.integerLattice β]
-  -- Compare the Gram matrix on `Fin p × index K` with `archimedeanGramEndo b` in `stdBasis K`.
-  let Bstd : Basis (Fin p × index K) ℝ (Fin p → mixedSpace K) :=
-    (Pi.basis fun _ : Fin p ↦ stdBasis K).reindex (Equiv.sigmaEquivProd (Fin p) (index K))
-  let Bideal_k (k : Fin p) : Basis (index K) ℝ (mixedSpace K) := (J k).mixedLatticeBasis (hJ k)
-  let Bideal : Basis (Fin p × index K) ℝ (Fin p → mixedSpace K) :=
-    (Pi.basis Bideal_k).reindex (Equiv.sigmaEquivProd (Fin p) (index K))
-  let T := archimedeanGramEndo b
-  have hBideal_apply (q : Fin p × index K) (k : Fin p) :
-      Bideal q k =
-        if k = q.1 then mixedEmbedding K ((J q.1).mixedBasisElem (hJ q.1) q.2) else 0 := by
-    simp only [Bideal, Bideal_k, Basis.coe_reindex, Function.comp_apply,
-      Equiv.sigmaEquivProd_symm_apply, Pi.basis_apply, Pi.single_apply]
-    split_ifs with hkq
-    · subst hkq
-      exact (J q.1).mixedLatticeBasis_apply (hJ q.1) q.2
-    · rfl
-  have hgram_eq :
-      Matrix.gram ℝ (fun q : Fin p × index K ↦ (β q : W.euclideanSpan)) =
-        (Bstd.toMatrix Bideal)ᵀ * (LinearMap.toMatrix Bstd Bstd T)ᵀ * Bstd.toMatrix Bideal := by
-    ext q₁ q₂
-    -- First rewrite the inner product via `mixedInner` and `T (Bideal q₁)`.
-    have hinner :
-        Matrix.gram ℝ (fun q : Fin p × index K ↦ (β q : W.euclideanSpan)) q₁ q₂ =
-          ∑ k : Fin p, mixedInner K ((T (Bideal q₁)) k) (Bideal q₂ k) := by
-      -- On the RHS only `k = q₂.1` contributes since `Bideal q₂ k = 0` for `k ≠ q₂.1`.
-      have hrhs :
-          (∑ k : Fin p, mixedInner K ((T (Bideal q₁)) k) (Bideal q₂ k)) =
-            mixedInner K ((T (Bideal q₁)) q₂.1)
-              (mixedEmbedding K ((J q₂.1).mixedBasisElem (hJ q₂.1) q₂.2)) := by
-        rw [Finset.sum_eq_single q₂.1]
-        · simp [hBideal_apply]
-        · intro k _ hk
-          simp [hBideal_apply, hk, mixedInner_def]
-        · intro h
-          exact (h (Finset.mem_univ _)).elim
-      rw [hrhs, Matrix.gram_apply, Submodule.coe_inner, PiLp.inner_apply]
-      dsimp only [β]
-      simp_rw [coe_integerLatticeBasisOfPseudoBasis_apply]
-      have hterm (i : ι) :
-          ⟪(euclidean.toMixed K).symm
-              (mixedEmbedding K ((J q₁.1).mixedBasisElem (hJ q₁.1) q₁.2 * (b q₁.1 : ι → K) i)),
-            (euclidean.toMixed K).symm
-              (mixedEmbedding K ((J q₂.1).mixedBasisElem (hJ q₂.1) q₂.2 * (b q₂.1 : ι → K) i))⟫ =
-            mixedInner K
-              (mixedEmbedding K ((J q₁.1).mixedBasisElem (hJ q₁.1) q₁.2) *
-                mixedEmbedding K ((b q₁.1 : ι → K) i))
-              (mixedEmbedding K ((J q₂.1).mixedBasisElem (hJ q₂.1) q₂.2) *
-                mixedEmbedding K ((b q₂.1 : ι → K) i)) := by
-        rw [← mixedInner_toMixed, ContinuousLinearEquiv.apply_symm_apply,
-          ContinuousLinearEquiv.apply_symm_apply, map_mul, map_mul]
-      simp_rw [hterm, mixedInner_def]
-      rw [Finset.sum_add_distrib]
-      congr 1
-      · rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun w _ ↦ ?_
-        have hTw :
-            ((T (Bideal q₁)) q₂.1).1 w =
-              (∑ i : ι, (mixedEmbedding K ((b q₂.1 : ι → K) i)).1 w *
-                (mixedEmbedding K ((b q₁.1 : ι → K) i)).1 w) *
-                (mixedEmbedding K ((J q₁.1).mixedBasisElem (hJ q₁.1) q₁.2)).1 w := by
-          dsimp only [T]
-          rw [archimedeanGramEndo_apply_fst, Finset.sum_eq_single q₁.1]
-          · simp [hBideal_apply]
-          · intro k _ hk
-            simp [hBideal_apply, hk]
-          · intro h
-            exact (h (Finset.mem_univ _)).elim
-        rw [hTw, Finset.sum_mul, Finset.sum_mul]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        simp only [Prod.fst_mul, Pi.mul_apply]
-        ring
-      · rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun w _ ↦ ?_
-        have hTw :
-            ((T (Bideal q₁)) q₂.1).2 w =
-              (∑ i : ι, (mixedEmbedding K ((b q₁.1 : ι → K) i)).2 w *
-                conj ((mixedEmbedding K ((b q₂.1 : ι → K) i)).2 w)) *
-                (mixedEmbedding K ((J q₁.1).mixedBasisElem (hJ q₁.1) q₁.2)).2 w := by
-          dsimp only [T]
-          rw [archimedeanGramEndo_apply_snd, Finset.sum_eq_single q₁.1]
-          · simp [hBideal_apply]
-          · intro k _ hk
-            simp [hBideal_apply, hk]
-          · intro h
-            exact (h (Finset.mem_univ _)).elim
-        rw [hTw, Finset.sum_mul, Finset.sum_mul, ← Complex.re_sum]
-        congr 1
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        simp only [Prod.snd_mul, Pi.mul_apply, map_mul]
-        ring
-    -- Next express `∑ k, mixedInner K ...` as `(Cᵀ * Mᵀ * C) q₁ q₂` via `Bstd`-coordinates.
-    rw [hinner]
-    have hdot (f g : Fin p → mixedSpace K) :
-        (∑ k : Fin p, mixedInner K (f k) (g k)) =
-          ∑ r : Fin p × index K, Bstd.repr f r * Bstd.repr g r := by
-      simp_rw [mixedInner_eq_sum_stdBasis_repr]
-      conv_rhs => rw [Fintype.sum_prod_type]
-      refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun c _ ↦ ?_
-      simp [Bstd]
-    rw [hdot]
-    have hTB (r : Fin p × index K) :
-        Bstd.repr (T (Bideal q₁)) r =
-          ∑ s, LinearMap.toMatrix Bstd Bstd T r s * Bstd.toMatrix Bideal s q₁ := by
-      have hm := congrFun (LinearMap.toMatrix_mulVec_repr Bstd Bstd T (Bideal q₁)) r
-      rw [← hm, Matrix.mulVec, dotProduct]
-      exact Finset.sum_congr rfl fun s _ ↦ by rw [Basis.toMatrix_apply]
-    simp_rw [hTB, ← Basis.toMatrix_apply Bstd Bideal _ q₂, Finset.sum_mul]
-    simp only [Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun s _ ↦ by ring
-  -- Evaluate `det (Bstd.toMatrix Bideal)` via `det_toMatrix_pi_reindex`.
+  let e := Equiv.sigmaEquivProd (Fin p) (index K)
+  let Bstd := (Pi.basis fun _ : Fin p ↦ stdBasis K).reindex e
+  let Bideal_k (k : Fin p) := (J k).mixedLatticeBasis (hJ k)
+  let Bideal := (Pi.basis Bideal_k).reindex e
+  have hC_det : (Bstd.toMatrix Bideal).det = ∏ k : Fin p, (stdBasis K).det (Bideal_k k) := by
+    have hcomp : ⇑Bideal ∘ e = ⇑(Pi.basis Bideal_k) :=
+      funext fun x ↦ by rw [Function.comp_apply, Basis.reindex_apply, Equiv.symm_apply_apply]
+    have hid : (LinearMap.id : (Fin p → mixedSpace K) →ₗ[ℝ] Fin p → mixedSpace K) =
+        LinearMap.piMap fun _ : Fin p ↦ LinearMap.id := rfl
+    rw [Basis.toMatrix_reindex', Matrix.det_reindexAlgEquiv, hcomp,
+      ← LinearMap.toMatrix_id_eq_basis_toMatrix, hid, LinearMap.toMatrix_piMap,
+      Matrix.det_blockDiagonal']
+    exact Finset.prod_congr rfl fun k _ ↦ by
+      rw [LinearMap.toMatrix_id_eq_basis_toMatrix, Basis.det_apply]
   have hC_det_sq :
       (Bstd.toMatrix Bideal).det ^ 2 =
         (∏ k : Fin p,
           (Ideal.absNorm (J k) : ℝ) * ZLattice.covolume (mixedEmbedding.integerLattice K)) ^ 2 := by
-    have hC_abs :
-        |(Bstd.toMatrix Bideal).det| =
-          ∏ k : Fin p,
-            (Ideal.absNorm (J k) : ℝ) * ZLattice.covolume (mixedEmbedding.integerLattice K) := by
-      rw [det_toMatrix_pi_reindex (stdBasis K) Bideal_k, Finset.abs_prod]
-      exact Finset.prod_congr rfl fun k _ ↦ abs_det_stdBasis_mixedLatticeBasis (hJ k)
-    rw [← sq_abs, hC_abs]
-  rw [hgram_eq, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, Matrix.det_transpose,
-    mul_right_comm, ← sq, hC_det_sq, LinearMap.det_toMatrix Bstd T, det_archimedeanGramEndo]
+    rw [← sq_abs, hC_det, Finset.abs_prod]
+    congr 1
+    exact Finset.prod_congr rfl fun k _ ↦ (J k).abs_det_stdBasis_mixedLatticeBasis (hJ k)
+  rw [ZLattice.covolume_sq_eq_det_gram W.integerLattice (integerLatticeBasisOfPseudoBasis b hJ hW),
+    gram_integerLatticeBasisOfPseudoBasis b hJ hW, Matrix.det_mul, Matrix.det_mul,
+    Matrix.det_transpose, Matrix.det_transpose, mul_right_comm, ← sq, hC_det_sq,
+    LinearMap.det_toMatrix Bstd (archimedeanGramEndo b), det_archimedeanGramEndo]
 
 end Archimedean
 
@@ -746,121 +648,5 @@ theorem covolume_integerLattice_ker_mulVecLin (A : Matrix m ι K) :
     subspaceHeight_euclideanDual, generatedBy_eq_span_rows]
 
 end Matrix
-
-/-! ### Worked sanity checks -/
-
-section Examples
-
-open Module NumberField NumberField.mixedEmbedding Set Submodule TauCeti
-
-/-! Over `ℚ`, the line `W = ℚ ∙ ![1, 2]` has absolute height and integral-lattice covolume `√5`,
-whereas the index-`2` sublattice `(2 : ℝ) • W.integerLattice` generated by `2 • (1, 2)` has
-covolume `2 * √5`. -/
-
-open scoped Classical Pointwise in
-example :
-    (ℚ ∙ ![(1 : ℚ), 2]).subspaceHeight = √5 ∧
-      ZLattice.covolume (ℚ ∙ ![(1 : ℚ), 2]).integerLattice = √5 ∧
-      ZLattice.covolume ((2 : ℝ) • (ℚ ∙ ![(1 : ℚ), 2]).integerLattice) = 2 * √5 := by
-  set W : Submodule ℚ (Fin 2 → ℚ) := ℚ ∙ ![(1 : ℚ), 2]
-  have hv : ![(1 : ℚ), 2] ≠ 0 := by simp
-  have hcast : ![(1 : ℚ), 2] = ((↑) : ℤ → ℚ) ∘ ![1, 2] := by
-    ext i
-    fin_cases i <;> simp
-  have hH : W.subspaceHeight = √5 := by
-    rw [subspaceHeight_span_singleton hv, hcast,
-      TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
-    norm_num [Fin.sum_univ_two]
-  have hr₂ : nrComplexPlaces ℚ = 0 := by
-    have hcard := card_add_two_mul_card_eq_rank ℚ
-    rw [finrank_self] at hcard
-    omega
-  have hcov : ZLattice.covolume W.integerLattice = √5 := by
-    rw [W.covolume_integerLattice, hr₂, discr_rat, finrank_self, hH]
-    norm_num
-  have hdim : finrank ℝ W.euclideanSpan = 1 := by
-    rw [W.finrank_euclideanSpan, finrank_self, one_mul, finrank_span_singleton hv]
-  refine ⟨hH, hcov, ?_⟩
-  rw [ZLattice.covolume_smul W.integerLattice (by norm_num : (2 : ℝ) ≠ 0) volume, hdim, pow_one,
-    hcov]
-  norm_num
-
-/-! Over `K = ℚ(i)` (with `minpoly ℤ θ = X² + 1`), the line `W = K ∙ ![1, θ]` has absolute height
-`√2`, relative Arakelov height `2`, and integral-lattice covolume `2`: both the complex-place factor
-`2⁻¹ ^ r₂ = 1 / 2` (cancelling `√|discr K| = √4 = 2`) and the degree exponent `[K : ℚ] = 2` on
-`subspaceHeight` are necessary. -/
-
-open scoped Classical in
-example (K : Type*) [Field K] [NumberField K] {θ : 𝓞 K}
-    (hmin : minpoly ℤ θ = Polynomial.X ^ 2 + 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    (K ∙ ![(1 : K), (θ : K)]).subspaceHeight = √2 ∧
-      (K ∙ ![(1 : K), (θ : K)]).relativeSubspaceArakelovHeight = 2 ∧
-      ZLattice.covolume (K ∙ ![(1 : K), (θ : K)]).integerLattice = 2 := by
-  set W : Submodule K (Fin 2 → K) := K ∙ ![(1 : K), (θ : K)]
-  let y : Fin 2 → 𝓞 K := ![1, θ]
-  have hy0 : y ≠ 0 := fun h ↦ one_ne_zero (congrFun h 0)
-  have hv0 : ![(1 : K), (θ : K)] ≠ 0 := fun h ↦ one_ne_zero (congrFun h 0)
-  have hy_cast : (fun i ↦ (y i : K)) = ![(1 : K), (θ : K)] := by
-    ext i
-    fin_cases i <;> simp [y]
-  have hspan_top : Ideal.span (range y) = ⊤ :=
-    top_unique fun x _ ↦ by
-      simpa [y] using Ideal.mul_mem_left _ x (Ideal.subset_span (s := range y) ⟨0, rfl⟩)
-  have hr₁ : nrRealPlaces K = 0 := GaussianRationals.nrRealPlaces_eq_zero hmin
-  have hr₂ : nrComplexPlaces K = 1 := GaussianRationals.nrComplexPlaces_eq_one hmin hgen
-  have hdeg : finrank ℚ K = 2 := GaussianRationals.finrank_eq_two hmin hgen
-  have hdiscr : discr K = -4 := GaussianRationals.discr_eq_neg_four hmin hgen
-  have hθ_sq : (θ : K) ^ 2 = -1 := by
-    have h0 := GaussianRationals.sq_eq_neg_one hmin
-    exact_mod_cast h0
-  -- Every infinite place `w` of `ℚ(i)` is complex and unique, with `‖w θ‖² = 1`.
-  have hw_complex (w : InfinitePlace K) : w.IsComplex := by
-    rcases w.isReal_or_isComplex with h | h
-    · exfalso
-      have hpos : 0 < Fintype.card {v : InfinitePlace K // v.IsReal} :=
-        Fintype.card_pos_iff.mpr ⟨⟨w, h⟩⟩
-      have hreal : Fintype.card {v : InfinitePlace K // v.IsReal} = nrRealPlaces K := rfl
-      omega
-    · exact h
-  have hcard_inf : Fintype.card (InfinitePlace K) = 1 := by
-    have := Fintype.card_subtype_compl (IsReal (K := K))
-    have hcomp :
-        Fintype.card {w : InfinitePlace K // ¬w.IsReal} = nrComplexPlaces K :=
-      Fintype.card_congr (Equiv.subtypeEquivRight fun _ ↦ not_isReal_iff_isComplex)
-    have hreal : Fintype.card {w : InfinitePlace K // w.IsReal} = nrRealPlaces K := rfl
-    omega
-  have hrel : W.relativeSubspaceArakelovHeight = 2 := by
-    rw [relativeSubspaceArakelovHeight_span_singleton hv0, ← hy_cast]
-    have hprod := arakelovMulHeight_mul_absNorm_span_range hy0
-    rw [hspan_top, Ideal.absNorm_top, Nat.cast_one, mul_one] at hprod
-    rw [hprod, Subsingleton.elim (Fintype.ofFinite (Fin 2)) inferInstance]
-    have hfac (w : InfinitePlace K) :
-        (∑ i : Fin 2, ‖w.embedding (y i : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2) = 2 := by
-      have hm : w.mult = 2 := (hw_complex w).mult_eq_two
-      have hθ_norm : ‖w.embedding (θ : K)‖ ^ 2 = 1 := by
-        rw [← norm_pow, ← map_pow, hθ_sq, map_neg, map_one, norm_neg, norm_one]
-      rw [Fin.sum_univ_two, hm]
-      simp only [y, Matrix.cons_val_zero, Matrix.cons_val_one, map_one, norm_one, one_pow, hθ_norm]
-      norm_num
-    simp_rw [hfac]
-    rw [Finset.prod_const, Finset.card_univ, hcard_inf, pow_one]
-  have habs : W.subspaceHeight = √2 := by
-    have hp := W.subspaceHeight_pow_finrank
-    rw [hdeg, hrel] at hp
-    have hsq : W.subspaceHeight ^ 2 = √2 ^ 2 := by rw [hp, Real.sq_sqrt zero_le_two]
-    exact (pow_left_inj₀ (subspaceHeight_pos W).le (Real.sqrt_nonneg _) two_ne_zero).mp hsq
-  have hcov : ZLattice.covolume W.integerLattice = 2 := by
-    rw [W.covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeight,
-      mixedEmbedding.covolume_integerLattice, finrank_span_singleton hv0, pow_one, hr₂, hdiscr,
-      hrel]
-    have h4 : √(|(-4 : ℤ)| : ℝ) = 2 := by
-      have h4' : (|(-4 : ℤ)| : ℝ) = 2 ^ 2 := by norm_num
-      rw [h4', Real.sqrt_sq zero_le_two]
-    rw [h4]
-    norm_num
-  exact ⟨habs, hrel, hcov⟩
-
-end Examples
 
 end
