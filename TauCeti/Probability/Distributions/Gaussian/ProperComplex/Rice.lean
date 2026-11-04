@@ -47,7 +47,9 @@ namespace TauCeti.Probability
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- A positive-variance proper complex Gaussian coordinate has Rice modulus: a noncentral chi
-law of degree two, scale `√(v / 2)`, and noncentrality `‖m‖ / √(v / 2)`. -/
+law of degree two, scale `√((C i i).re / 2)`, and noncentrality
+`‖m i‖ / √((C i i).re / 2)`. -/
+@[simp]
 theorem map_norm_eval_properComplexGaussianMeasure (m : ι → ℂ)
     {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (i : ι) (hi : 0 < (C i i).re) :
     (properComplexGaussianMeasure m C).map (fun z ↦ ‖z i‖) =
