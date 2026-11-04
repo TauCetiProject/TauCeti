@@ -53,10 +53,9 @@ theorem log_det_sub_eq_integral_trace_of_posDef {A B : Matrix ι ι ℝ} (hA : A
       HasDerivAt (fun s : ℝ => Real.log (A + s • (B - A)).det)
         (trace ((A + t • (B - A))⁻¹ * (B - A))) t := by
     have hd := hdet t ht
-    have h := (hasFDerivAt_det (isUnit_iff_ne_zero.mpr hd)).comp_hasDerivAt t (hpath t)
-    change HasDerivAt (fun s : ℝ => (A + s • (B - A)).det)
-      ((A + t • (B - A)).det * trace ((A + t • (B - A))⁻¹ * (B - A))) t at h
-    simpa only [mul_div_cancel_left₀ _ hd] using h.log hd
+    have h := (differentiable_det (A + t • (B - A))).hasFDerivAt.comp_hasDerivAt t (hpath t)
+    have hJacobi := h.congr_deriv (fderiv_det_apply (isUnit_iff_ne_zero.mpr hd) (B - A))
+    simpa only [Function.comp_apply, mul_div_cancel_left₀ _ hd] using hJacobi.log hd
   have hc : ContinuousOn (fun t : ℝ => trace ((A + t • (B - A))⁻¹ * (B - A))) (Icc 0 1) := by
     intro t ht
     have hinv : ContinuousAt (fun s : ℝ => (A + s • (B - A))⁻¹) t :=
