@@ -48,6 +48,21 @@ theorem MonoidHom.actionRes_id :
     Action.res V (MonoidHom.id H) = 𝟭 (Action V H) :=
   rfl
 
+/-- Conjugate homomorphisms give compatible actions on two restrictions of the same action.
+The nested restriction on the left is the form used when changing Mackey representatives. -/
+theorem Action.res_ρ_comm_ρAut_hom {L M N : Type*} [Group L] [Monoid M] [Monoid N]
+    (A : Action V L) (g : L) (φ : M →* N) (σ : N →* L) (σ' : M →* L)
+    (hg : ∀ y : M, g * σ (φ y) = σ' y * g) (y : M) :
+    (((Action.res V φ).obj ((Action.res V σ).obj A)).ρ y).asHom ≫
+        (Action.ρAut A g).asIso.hom =
+      (Action.ρAut A g).asIso.hom ≫ (((Action.res V σ').obj A).ρ y).asHom := by
+  -- Restriction keeps the underlying object and composes its action with the homomorphism.
+  -- Rewriting res_obj_ρ in this dependent composition changes the endomorphism type;
+  -- read both actions in the common underlying object instead.
+  change (A.ρ (σ (φ y))).asHom ≫ (A.ρ g).asHom =
+    (A.ρ g).asHom ≫ (A.ρ (σ' y)).asHom
+  simp only [← End.mul_asHom, ← map_mul, hg]
+
 /-- Restriction along a surjective monoid homomorphism preserves the finrank of morphism spaces
 in a linear category. In particular it preserves the dimension of intertwining spaces of
 representations. -/

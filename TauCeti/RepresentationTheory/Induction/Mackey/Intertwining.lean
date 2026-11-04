@@ -327,7 +327,7 @@ theorem finrank_hom_res_mackeyToH_mul_left_mul_right (A : FDRep k H) (B : FDRep 
         (Action.res (FGModuleCat k) (mackeyToH (h₁ * s * h₂) K H)).obj B) =
       Module.finrank k (Subgroup.resFDRep ((mackeySubgroup s K H).subgroupOf H) A ⟶
         (Action.res (FGModuleCat k) (mackeyToH s K H)).obj B) := by
-  exact (Action.mackeyHomCongr (k := k) A B hh₁ hh₂ s).finrank_eq
+  exact (Action.mackeyHomCongr k A B hh₁ hh₂ s).finrank_eq
 
 open scoped Classical in
 /-- **The intertwining-number formula for a single induced representation**, over every field
