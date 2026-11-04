@@ -7,15 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Probability.Distributions.Fernique
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.Analysis.Calculus.IntervalIntegral.Rotation
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Moments.Basic
 import TauCeti.Probability.Distributions.Uniform.Basic
@@ -39,6 +37,7 @@ sections of normed spaces.
 The proof is the interpolation argument of Maurey and Pisier. For `(x, y) ∈ E × E` and the
 rotation `R θ (x, y) = (cos θ • x + sin θ • y, -sin θ • x + cos θ • y)`, the first coordinate of
 `R θ (x, y)` runs along a quarter circle from `x` to `y` with velocity the second coordinate, so
+(`ContDiff.sub_eq_integral_fderiv_rotation`)
 
 `f y - f x = ∫ θ in 0..π/2, f' (R θ (x, y)).1 (R θ (x, y)).2`.
 
@@ -53,7 +52,6 @@ contributes the same amount, which is an exponential moment of the Gaussian vari
 
 ## Main results
 
-* `TauCeti.Probability.sub_eq_integral_fderiv_rotation`: the interpolation identity above.
 * `ProbabilityTheory.IsGaussian.lintegral_exp_mul_sub_le`: the Maurey–Pisier inequality
   `∫∫ exp (t (f y - f x)) dμ(x) dμ(y) ≤ ∫ exp (π² t² / 8 · Var[f' x; μ]) dμ(x)`.
 * `ProbabilityTheory.IsGaussian.hasSubgaussianMGF_sub_integral_of_variance_fderiv_le`:
@@ -79,32 +77,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
-section Interpolation
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-/-- **The Gaussian interpolation identity.** The first coordinate of the rotation of `(x, y)`
-by `θ` runs from `x` (at `θ = 0`) to `y` (at `θ = π / 2`) with velocity the second coordinate,
-so the increment of a `C¹` function between `x` and `y` is the integral of its derivative along
-this quarter circle. -/
-theorem sub_eq_integral_fderiv_rotation {f : E → F} (hf : ContDiff ℝ 1 f) (p : E × E) :
-    f p.2 - f p.1 = ∫ θ in (0)..(π / 2),
-      fderiv ℝ f (ContinuousLinearMap.rotation θ p).1 (ContinuousLinearMap.rotation θ p).2 := by
-  have hd (θ : ℝ) : HasDerivAt (fun θ : ℝ ↦ f (cos θ • p.1 + sin θ • p.2))
-      (fderiv ℝ f (ContinuousLinearMap.rotation θ p).1
-        (ContinuousLinearMap.rotation θ p).2) θ := by
-    have hγ := ((hasDerivAt_cos θ).smul_const p.1).add ((hasDerivAt_sin θ).smul_const p.2)
-    exact (hf.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt θ hγ
-  have hcont : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun θ _ ↦ hd θ)]
-  · simp
-  · refine Continuous.intervalIntegrable ?_ _ _
-    simp only [ContinuousLinearMap.rotation_apply]
-    fun_prop
-
-end Interpolation
-
 section Jensen
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ}
@@ -127,7 +99,7 @@ private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E �
   have hmean : ∫ θ, t * (π / 2) * g θ ∂uniformMeasure 0 (π / 2) = t * (f p.2 - f p.1) := by
     simp only [g]
     rw [integral_const_mul, integral_uniformMeasure (by positivity),
-      sub_eq_integral_fderiv_rotation hf p, sub_zero, smul_eq_mul]
+      hf.sub_eq_integral_fderiv_rotation p, sub_zero, smul_eq_mul]
     field_simp
   rw [← hmean]
   exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
