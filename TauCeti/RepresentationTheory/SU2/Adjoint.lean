@@ -97,10 +97,15 @@ private theorem isHermitian_mul_pauli_mul_star (x : Fin 3 → ℝ) :
     ((U : Matrix (Fin 2) (Fin 2) ℂ) * pauli x * star (U : Matrix (Fin 2) (Fin 2) ℂ)).IsHermitian :=
   isHermitian_mul_mul_conjTranspose _ (isHermitian_pauli x)
 
+/-- Conjugation by a unitary matrix preserves the trace. -/
+private theorem trace_mul_mul_star (A : Matrix (Fin 2) (Fin 2) ℂ) :
+    ((U : Matrix (Fin 2) (Fin 2) ℂ) * A * star (U : Matrix (Fin 2) (Fin 2) ℂ)).trace = A.trace := by
+  rw [trace_mul_cycle, mem_unitaryGroup_iff'.mp U.2, one_mul]
+
 /-- Conjugating `pauli x` by a unitary matrix gives a traceless matrix. -/
 private theorem trace_mul_pauli_mul_star (x : Fin 3 → ℝ) :
     ((U : Matrix (Fin 2) (Fin 2) ℂ) * pauli x * star (U : Matrix (Fin 2) (Fin 2) ℂ)).trace = 0 := by
-  rw [trace_mul_cycle, mem_unitaryGroup_iff'.mp U.2, one_mul, trace_pauli]
+  rw [trace_mul_mul_star, trace_pauli]
 
 /-! ### The rotation attached to a unitary matrix -/
 
@@ -159,17 +164,16 @@ theorem dotProduct_pauliRotation_mulVec (x y : Fin 3 → ℝ) :
     (pauliRotation U *ᵥ x) ⬝ᵥ (pauliRotation U *ᵥ y) = x ⬝ᵥ y := by
   have h := trace_pauli_mul_pauli (pauliRotation U *ᵥ x) (pauliRotation U *ᵥ y)
   rw [pauli_pauliRotation_mulVec, pauli_pauliRotation_mulVec, ← mul_mul_mul_star,
-    trace_mul_cycle, mem_unitaryGroup_iff'.mp U.2, one_mul, trace_pauli_mul_pauli] at h
-  exact_mod_cast (mul_left_cancel₀ two_ne_zero h).symm
+    trace_mul_mul_star, trace_pauli_mul_pauli] at h
+  simpa using h.symm
 
 /-- Conjugation by a unitary matrix preserves the cross product of Pauli coordinates. -/
 theorem pauliRotation_mulVec_cross (x y : Fin 3 → ℝ) :
     pauliRotation U *ᵥ (x ⨯₃ y) = (pauliRotation U *ᵥ x) ⨯₃ (pauliRotation U *ᵥ y) := by
   refine pauli_injective (smul_right_injective _ (mul_ne_zero two_ne_zero I_ne_zero) ?_)
-  dsimp only
-  rw [← pauli_mul_sub_mul_pauli, pauli_pauliRotation_mulVec, pauli_pauliRotation_mulVec,
-    pauli_pauliRotation_mulVec, ← smul_mul_assoc, ← mul_smul_comm, ← pauli_mul_sub_mul_pauli,
-    mul_sub, sub_mul, mul_mul_mul_star, mul_mul_mul_star]
+  simp only [← pauli_mul_sub_mul_pauli, pauli_pauliRotation_mulVec]
+  rw [← mul_mul_mul_star, ← mul_mul_mul_star, ← sub_mul, ← mul_sub, pauli_mul_sub_mul_pauli]
+  simp
 
 /-- `pauliRotation U` is an orthogonal matrix. -/
 theorem pauliRotation_mem_orthogonalGroup : pauliRotation U ∈ orthogonalGroup (Fin 3) ℝ :=
@@ -211,9 +215,11 @@ private theorem mul_pauli_single_two_mul_star {A : Matrix (Fin 2) (Fin 2) ℂ} (
   simp only [Matrix.mul_apply, Fin.sum_univ_two] at h00 h10
   simp only [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply]
   simp only [star_apply, RCLike.star_def, one_apply_eq, one_apply_ne one_ne_zero] at h00 h10
-  refine ⟨?_, ?_⟩ <;> simp
-  · linear_combination -h10
-  · linear_combination -h00
+  constructor
+  · simp
+    linear_combination -h10
+  · simp
+    linear_combination -h00
 
 /-- The rotation `pauliRotation U` moves the north pole `(0, 0, 1)` to the point of the unit
 sphere attached by the Pauli map to the first column `u` of `U`, namely
@@ -262,12 +268,11 @@ theorem pauliRotation_eq_one_iff :
     exact ⟨_, eq_smul_one_of_commute_pauli (hcomm _) (hcomm _)⟩
   · rintro ⟨c, hc⟩
     refine (pauliRotation_eq_iff U).mpr fun x => ?_
-    have hcc : star c * c = 1 := by
+    have hcc : conj c * c = 1 := by
       have := Matrix.ext_iff.mpr (mem_unitaryGroup_iff.mp U.2) 0 0
       rw [hc] at this
       simpa [mul_comm] using this
-    rw [one_mulVec, hc, star_smul, star_one, smul_mul_assoc, one_mul, mul_smul_comm, mul_one,
-      smul_smul, hcc, one_smul]
+    simp [hc, smul_smul, hcc]
 
 /-! ### The double cover `SU(2) → SO(3)` -/
 
@@ -340,10 +345,13 @@ private theorem pauliCoord_torusMatrix_mul_pauli_mul_star (z : Circle) (x : Fin 
     simpa [normSq_apply, sq] using Circle.normSq_coe z
   simp only [pauliCoord_apply, Matrix.mul_apply, Fin.sum_univ_two, star_apply, pauli_apply]
   ext i
-  fin_cases i <;> simp [mulVec, dotProduct, Fin.sum_univ_three, sq]
-  · ring
-  · ring
-  · linear_combination x 2 * hre
+  fin_cases i
+  · simp [mulVec, dotProduct, Fin.sum_univ_three, sq]
+    ring
+  · simp [mulVec, dotProduct, Fin.sum_univ_three, sq]
+    ring
+  · simp [mulVec, dotProduct, Fin.sum_univ_three, sq]
+    linear_combination x 2 * hre
 
 /-- The rotation attached to the torus element `diag (z, z⁻¹)`: the rotation about the axis
 `(0, 0, 1)` by the angle `-2 arg z`. -/
