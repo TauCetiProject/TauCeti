@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Squared distance on complex manifolds

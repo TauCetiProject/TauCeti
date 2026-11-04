@@ -56,6 +56,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   even dimension.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
   vector at `inl 0` of some symplectic basis.
+* `LinearMap.IsAlt.even_finrank_of_injective`: a space carrying an injective alternating map into
+  a line has even dimension.
 
 ## References
 
@@ -388,3 +390,24 @@ theorem IsAlt.exists_basis_apply_eq_J_inl_zero_eq {e : V} (he : e ≠ 0) :
   exact ⟨m, b, hb, by rw [hbd, Sum.elim_inl, Fin.cons_zero]⟩
 
 end LinearMap.BilinForm
+
+namespace LinearMap
+
+/-- **A finite-dimensional space carrying an injective alternating map into a line has even
+dimension.** If `L : V → Hom(V, Q)` is injective and alternating, and `Q` is one-dimensional, then
+identifying `Q` with the scalars turns `L` into a nondegenerate alternating form on `V`. This is
+the dimension count for a line-valued nondegenerate form, such as the Levi form of a contact
+structure. -/
+theorem IsAlt.even_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] [AddCommGroup Q] [Module K Q] {L : V →ₗ[K] V →ₗ[K] Q}
+    (hL : L.IsAlt) (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) :
+    Even (Module.finrank K V) := by
+  have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ
+  let e : Q ≃ₗ[K] K := LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self])
+  refine BilinForm.IsAlt.even_finrank (B := L.compr₂ e.toLinearMap)
+    (fun v ↦ by simp [hL.self_eq_zero v]) (.ofSeparatingLeft fun v hv ↦ hinj ?_)
+  rw [map_zero]
+  ext w
+  simpa using hv w
+
+end LinearMap

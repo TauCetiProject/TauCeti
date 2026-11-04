@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.ResidueField
+public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
-# Residue fields of schemes: invertible natural numbers, geometric points, and spectra
+# Residue fields of schemes and their behaviour under base change
 
 This file records how the condition `(N : κ(x)) ≠ 0`, that a natural number `N` is invertible in
 the residue field at a point `x`, carries over between schemes. It is the form in which "`N` is
@@ -43,6 +44,14 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
   between schemes and rings, for instance for étale neighbourhoods built from algebras.
+
+A morphism surjective on stalks induces isomorphisms of residue fields. In a fibre product,
+if one of the two points has unchanged residue field over the base, the pair has a unique lift
+and the other projection preserves its residue field. These facts allow elementary étale
+neighbourhoods to be refined without splitting their distinguished points.
+
+The pullback arguments use Mathlib's `Scheme.Pullback.Triplet.tensor` description of the points
+over a pair as the spectrum of the tensor product of their residue fields.
 
 The two results on natural numbers only use that a ring homomorphism between fields, such as
 Mathlib's `Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
@@ -95,6 +104,82 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
 theorem Scheme.range_fromSpecAlgebraicClosure (X : Scheme.{u}) (x : X) :
     Set.range (X.fromSpecAlgebraicClosure x) = {x} :=
   Set.range_eq_singleton (X.fromSpecAlgebraicClosure_apply x)
+
+/-- A morphism surjective on stalks induces isomorphisms on residue fields. -/
+instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by
+  exact (ConcreteCategory.isIso_iff_bijective _).mpr
+    ((TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mp
+      (f.residueDegree_eq_one_of_surjectiveOnStalks x))
+
+/-- If a composite preserves the residue field at a point, the second morphism preserves
+the residue field at the image point. In particular, this cancels an open immersion from
+a composite. -/
+theorem Scheme.Hom.isIso_residueFieldMap_of_comp {X Y Z : Scheme.{u}}
+    (f : X ⟶ Y) (g : Y ⟶ Z) (x : X)
+    [IsIso ((f ≫ g).residueFieldMap x)] : IsIso (g.residueFieldMap (f x)) := by
+  apply (ConcreteCategory.isIso_iff_bijective _).mpr
+  refine ⟨(g.residueFieldMap (f x)).hom.injective, ?_⟩
+  have h := (ConcreteCategory.bijective_of_isIso ((f ≫ g).residueFieldMap x)).surjective
+  rw [Scheme.residueFieldMap_comp] at h
+  -- Identify the source fields at (f ≫ g) x and g (f x), so function cancellation applies.
+  change Function.Surjective ((f.residueFieldMap x).hom ∘
+    (g.residueFieldMap (f x)).hom) at h
+  exact h.of_comp_left (f.residueFieldMap x).hom.injective
+
+namespace Scheme.Pullback
+
+open Limits
+
+variable {X Y S : Scheme.{u}} {f : X ⟶ S} {g : Y ⟶ S}
+
+/-- Tensoring with an unchanged residue field leaves the other residue field unchanged. -/
+instance Triplet.isIso_tensorInl (T : Triplet f g) [IsIso (g.residueFieldMap T.y)] :
+    IsIso T.tensorInl := by
+  -- Expose the pushout inclusion so that stability of isomorphisms under pushout applies.
+  dsimp only [Triplet.tensorInl, Triplet.tensor]
+  infer_instance
+
+/-- If the residue field of `y` is unchanged over the base, a pair `(x, y)` has at most one
+lift to the fibre product. -/
+theorem eq_of_fst_eq_snd_eq_of_isIso {z z' : ↑(pullback f g)}
+    (hx : pullback.fst f g z = pullback.fst f g z')
+    (hy : pullback.snd f g z = pullback.snd f g z')
+    [IsIso (g.residueFieldMap (pullback.snd f g z'))] : z = z' := by
+  let T := Triplet.ofPoint z'
+  have : IsIso (g.residueFieldMap T.y) := by
+    have hy : T.y = pullback.snd f g z' := Triplet.ofPoint_y z'
+    rw [hy]
+    infer_instance
+  have : Subsingleton (Spec T.tensor) :=
+    (Scheme.homeoOfIso (asIso (Spec.map T.tensorInl))).injective.subsingleton
+  have H (T' : Triplet f g) (p : Spec T'.tensor) (hT : T' = T) :
+      T'.SpecTensorTo p = z' := by
+    subst T'
+    exact (congrArg T.SpecTensorTo (Subsingleton.elim p (SpecOfPoint z'))).trans
+      (SpecTensorTo_SpecOfPoint z')
+  exact (SpecTensorTo_SpecOfPoint z).symm.trans
+    (H _ (SpecOfPoint z) (Triplet.ext hx hy))
+
+/-- Base change by a point with unchanged residue field preserves the residue field at every
+point above it. No finiteness or étaleness hypothesis is needed. -/
+theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
+    [IsIso (g.residueFieldMap (pullback.snd f g z))] :
+    IsIso ((pullback.fst f g).residueFieldMap z) := by
+  let T := Triplet.ofPoint z
+  have : IsIso (g.residueFieldMap T.y) := by
+    have hy : T.y = pullback.snd f g z := Triplet.ofPoint_y z
+    rw [hy]
+    infer_instance
+  have : SurjectiveOnStalks (T.SpecTensorTo ≫ pullback.fst f g) := by
+    rw [T.specTensorTo_fst]
+    infer_instance
+  have : SurjectiveOnStalks T.SpecTensorTo := .of_comp _ (pullback.fst f g)
+  have h := T.SpecTensorTo.isIso_residueFieldMap_of_comp (pullback.fst f g) (SpecOfPoint z)
+  have hz : T.SpecTensorTo (SpecOfPoint z) = z := SpecTensorTo_SpecOfPoint z
+  rwa [hz] at h
+
+end Scheme.Pullback
 
 section FromSpecResidueField
 

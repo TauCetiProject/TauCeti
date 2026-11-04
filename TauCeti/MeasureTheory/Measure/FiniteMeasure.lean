@@ -27,6 +27,7 @@ continuous curve of finite measures when `u` is bounded continuous and uniformly
 * `MeasureTheory.FiniteMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.ProbabilityMeasure.instMeasurableSingletonClass`
 * `MeasureTheory.Measure.sum_singleton_eq_one`
+* `MeasureTheory.Measure.measureReal_finset_eq_zero`
 * `MeasureTheory.FiniteMeasure.tendsto_integral_of_tendstoUniformly`: narrow convergence against
   uniformly convergent integrands.
 
@@ -109,6 +110,13 @@ theorem Measure.sum_singleton_eq_one {κ : Type*} [Fintype κ] [MeasurableSpace 
     [MeasurableSingletonClass κ] (ν : Measure κ) [IsProbabilityMeasure ν] :
     ∑ k, ν {k} = 1 := by
   rw [sum_measure_singleton, Finset.coe_univ, measure_univ]
+
+/-- A finite measure vanishes on a finite set if it vanishes on every point of that set. -/
+theorem Measure.measureReal_finset_eq_zero (μ : Measure α) [IsFiniteMeasure μ]
+    [MeasurableSingletonClass α] (s : Finset α) (hzero : ∀ i ∈ s, μ.real {i} = 0) :
+    μ.real s = 0 := by
+  rw [← sum_measureReal_singleton]
+  exact Finset.sum_eq_zero hzero
 
 section NarrowConvergence
 
