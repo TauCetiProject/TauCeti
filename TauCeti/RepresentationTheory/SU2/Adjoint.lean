@@ -211,11 +211,7 @@ private theorem mul_pauli_single_two_mul_star {A : Matrix (Fin 2) (Fin 2) ℂ} (
   simp only [Matrix.mul_apply, Fin.sum_univ_two] at h00 h10
   simp only [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply]
   simp only [star_apply, RCLike.star_def, one_apply_eq, one_apply_ne one_ne_zero] at h00 h10
-  refine ⟨?_, ?_⟩ <;>
-    simp only [Fin.isValue, Pi.single_eq_same, ofReal_one, ne_eq, Fin.reduceEq, not_false_eq_true,
-      Pi.single_eq_of_ne, ofReal_zero, zero_mul, sub_self, add_zero, of_apply, cons_val',
-      cons_val_zero, cons_val_one, cons_val_fin_one, mul_one, mul_zero, star_apply, RCLike.star_def,
-      mul_neg, zero_add, neg_mul]
+  refine ⟨?_, ?_⟩ <;> simp
   · linear_combination -h10
   · linear_combination -h00
 
@@ -238,14 +234,12 @@ theorem pauliRotation_mulVec_single_two :
 private theorem eq_smul_one_of_commute_pauli {A : Matrix (Fin 2) (Fin 2) ℂ}
     (h3 : A * pauli (Pi.single 2 1) = pauli (Pi.single 2 1) * A)
     (h1 : A * pauli (Pi.single 0 1) = pauli (Pi.single 0 1) * A) : A = A 0 0 • 1 := by
-  have h01 := Matrix.ext_iff.mpr h3 0 1
-  have h10 := Matrix.ext_iff.mpr h3 1 0
-  have h11 := Matrix.ext_iff.mpr h1 0 1
-  simp only [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] at h01 h10 h11
-  simp only [Fin.isValue, Pi.single_eq_same, ofReal_one, ne_eq, Fin.reduceEq, not_false_eq_true,
-    Pi.single_eq_of_ne, ofReal_zero, zero_mul, sub_self, add_zero, of_apply, cons_val',
-    cons_val_one, cons_val_fin_one, cons_val_zero, mul_zero, mul_neg, mul_one, zero_add, one_mul,
-    neg_mul, one_ne_zero, sub_zero, neg_zero] at h01 h10 h11
+  have h01 : -A 0 1 = A 0 1 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h3 0 1
+  have h10 : A 1 0 = -A 1 0 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h3 1 0
+  have h11 : A 0 0 = A 1 1 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h1 0 1
   have h01' : A 0 1 = 0 := by linear_combination -h01 / 2
   have h10' : A 1 0 = 0 := by linear_combination h10 / 2
   ext i j
@@ -346,14 +340,7 @@ private theorem pauliCoord_torusMatrix_mul_pauli_mul_star (z : Circle) (x : Fin 
     simpa [normSq_apply, sq] using Circle.normSq_coe z
   simp only [pauliCoord_apply, Matrix.mul_apply, Fin.sum_univ_two, star_apply, pauli_apply]
   ext i
-  fin_cases i <;> simp only [Nat.succ_eq_add_one, Nat.reduceAdd, Fin.isValue, Fin.zero_eta,
-      Fin.mk_one, Fin.reduceFinMk, torusMatrix_apply_zero_zero, torusMatrix_apply_zero_one,
-      torusMatrix_apply_one_zero, torusMatrix_apply_one_one, of_apply, cons_val', cons_val,
-      cons_val_zero, cons_val_one, cons_val_fin_one, zero_mul, one_mul, zero_add, RCLike.star_def,
-      mul_neg, star_zero, mul_zero, add_zero, mul_re, inv_re, Circle.normSq_coe, div_one, add_re,
-      ofReal_re, I_re, ofReal_im, I_im, mul_one, sub_self, inv_im, add_im, mul_im, neg_mul,
-      sub_neg_eq_add, conj_re, conj_im, neg_zero, sub_zero, mulVec, dotProduct, sq, neg_add_rev,
-      Fin.sum_univ_three]
+  fin_cases i <;> simp [mulVec, dotProduct, Fin.sum_univ_three, sq]
   · ring
   · ring
   · linear_combination x 2 * hre
