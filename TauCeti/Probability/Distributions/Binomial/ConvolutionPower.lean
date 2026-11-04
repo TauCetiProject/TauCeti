@@ -36,12 +36,12 @@ theorem bernoulliMeasure_convolutionPower (p : unitInterval) (n : ℕ) :
 /-- Convolution powers of the law supported on `a` and zero are binomial laws transported
 along the map `j ↦ j • a`, including the empty sum at exponent zero. -/
 theorem bernoulliMeasure_convolutionPower_multiples {β : Type*} [MeasurableSpace β]
-    [AddMonoid β] [MeasurableAdd₂ β] [MeasurableSingletonClass β]
+    [AddMonoid β] [MeasurableAdd₂ β]
     (a : β) (p : unitInterval) (n : ℕ) :
     (bernoulliMeasure a 0 p).convolutionPower n = (binomial n p).map (multiplesHom β a) := by
   have hmap : (bernoulliMeasure (1 : ℕ) 0 p).map (multiplesHom β a) =
       bernoulliMeasure a 0 p := by
-    simp [map_bernoulliMeasure]
+    simpa using map_bernoulliMeasure' 1 0 (f := multiplesHom β a) Measurable.of_discrete p
   simpa only [bernoulliMeasure_convolutionPower, hmap] using
     (Measure.map_convolutionPower (bernoulliMeasure (1 : ℕ) 0 p)
       (multiplesHom β a) Measurable.of_discrete n).symm
