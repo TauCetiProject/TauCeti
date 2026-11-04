@@ -31,8 +31,9 @@ over `B_t⁺`. The constants are those of the interior estimates on balls.
 
 Only constants normal to the hyperplane are compared with `G` on the right. The tangential
 derivatives of `w` vanish on the flat boundary, so a tangential constant cannot approximate `G`
-near `x₀`, and indeed the oscillation of `G` alone does not decay at the boundary. The vector
-`m_t` is the best normal constant on `B_t⁺` in square mean
+near `x₀`. The decay is therefore bounded by the square mean distance from `G` to the normal
+constants on `B_r⁺`, not by the plain oscillation of `G` on `B_r⁺`, which also allows tangential
+constants. The vector `m_t` is the best normal constant on `B_t⁺` in square mean
 (`TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`), so the left-hand side, as a function
 of `t`, is nondecreasing and dominates the square mean oscillation of `G` on `B_t⁺`. It is the
 quantity iterated in Campanato's approach to Schauder estimates up to a flat boundary, where a
@@ -50,7 +51,7 @@ of `w` is a harmonic function `h` on the whole ball `ball x₀ r`, with `∇h = 
 (`TauCeti.gradient_normalReflection_of_forall_eq_neg`). For a normal vector `m` we have
 `R m = -m`, so `‖K (ρ x) - m‖ = ‖K x - m‖`, and the ball `ball x₀ t` is invariant under `ρ`.
 Hence each square integral over `ball x₀ t` is twice the one over `B_t⁺`
-(`TauCeti.setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace`). The average of `K` over
+(`TauCeti.setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace`). The average of `K` over
 `ball x₀ t` is a normal vector, because `ρ` preserves the ball and the measure. The interior decay
 estimates on `ball x₀ t ⊆ ball x₀ r`
 (`InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sq_le` and
@@ -59,7 +60,6 @@ estimates on half-balls.
 
 ## Main declarations
 
-* `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: the best normal constant.
 * `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_inter_normalHalfSpace_norm_sq_le`: decay of
   the `L²` mass on half-balls, with exponent `n`, for a harmonic function whose norm is invariant
   under `ρ`.
@@ -69,6 +69,9 @@ estimates on half-balls.
 * `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le_add`:
   the comparison step. A field close in `L²(B_r⁺)` to such a harmonic `K` inherits its decay, up
   to the distance between them.
+* `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq`: the weak gradient of a weakly
+  harmonic function vanishing on the flat boundary agrees on `B_r⁺` with a harmonic field `K`
+  on `ball x₀ r` with `K ∘ ρ = -R ∘ K`, to which the results above apply.
 * `TauCeti.WeaklyHarmonicOn.setIntegral_ball_inter_normalHalfSpace_norm_sq_le` and
   `TauCeti.WeaklyHarmonicOn.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le`: the two decay
   estimates for the weak gradient of a weakly harmonic function vanishing on the flat boundary.
@@ -91,50 +94,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {a : ℝ}
-
-/-! ### The best normal constant -/
-
-section NormalConstant
-
-variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The squared distance from `v` to a vector `(c, 0)` normal to the hyperplane `{0} × E` splits
-into the normal and tangential parts. -/
-private theorem norm_sub_toLp_sq (v : WithLp 2 (ℝ × E)) (c : ℝ) :
-    ‖v - WithLp.toLp 2 (c, 0)‖ ^ 2 = (v.fst - c) ^ 2 + ‖v.snd‖ ^ 2 := by
-  rw [WithLp.prod_norm_sq_eq_of_L2]
-  simp [Real.norm_eq_abs, sq_abs]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- **The best normal constant.** Among the vectors `(c, 0)` normal to the hyperplane `{0} × E`,
-the normal part `((f_s).fst, 0)` of the average `f_s` of `f` over `s` minimizes the square mean
-distance to `f` on `s`. -/
-theorem setIntegral_norm_sub_toLp_fst_setAverage_sq_le [CompleteSpace E] {s : Set α}
-    (hs : μ s ≠ ⊤) {f : α → WithLp 2 (ℝ × E)} (hf : MemLp f 2 (μ.restrict s)) (c : ℝ) :
-    ∫ x in s, ‖f x - WithLp.toLp 2 ((⨍ y in s, f y ∂μ).fst, 0)‖ ^ 2 ∂μ ≤
-      ∫ x in s, ‖f x - WithLp.toLp 2 (c, 0)‖ ^ 2 ∂μ := by
-  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hfst : MemLp (fun x => (f x).fst) 2 (μ.restrict s) :=
-    (WithLp.fstL 2 ℝ ℝ E).comp_memLp' hf
-  have hsnd : Integrable (fun x => ‖(f x).snd‖ ^ 2) (μ.restrict s) :=
-    ((WithLp.sndL 2 ℝ ℝ E).comp_memLp' hf).integrable_norm_pow two_ne_zero
-  have hnsq (d : ℝ) : IntegrableOn (fun x => ‖(f x).fst - d‖ ^ 2) s μ :=
-    (hfst.sub (memLp_const d)).integrable_norm_pow two_ne_zero
-  have hsq (d : ℝ) : IntegrableOn (fun x => ((f x).fst - d) ^ 2) s μ := by
-    simpa only [Real.norm_eq_abs, sq_abs] using hnsq d
-  have havg : (⨍ y in s, f y ∂μ).fst = ⨍ y in s, (f y).fst ∂μ := by
-    simp only [setAverage_eq, WithLp.smul_fst]
-    congr 1
-    exact ((WithLp.fstL 2 ℝ ℝ E).integral_comp_comm (hf.integrable one_le_two)).symm
-  simp_rw [norm_sub_toLp_sq, havg]
-  rw [integral_add (hsq _) hsnd, integral_add (hsq c) hsnd]
-  gcongr ?_ + _
-  simpa only [Real.norm_eq_abs, sq_abs] using
-    setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
-      (hfst.integrable one_le_two) (hnsq c)
-
-end NormalConstant
 
 /-! ### Harmonic fields on half-balls -/
 
@@ -165,16 +124,14 @@ private theorem setAverage_ball_eq_toLp_fst {K : WithLp 2 (ℝ × E) → WithLp 
     ⨍ x in ball x₀ t, K x = WithLp.toLp 2 ((⨍ x in ball x₀ t, K x).fst, 0) := by
   -- Changing variables by `ρ`, which maps the ball onto itself, the integral `m` of `K` over the
   -- ball satisfies `m = -R m`.
+  have hpre : normalReflection E a ⁻¹' ball x₀ t = ball x₀ t :=
+    Subset.antisymm (fun x hx =>
+      normalReflection_normalReflection a x ▸ mapsTo_normalReflection_ball hx₀ t hx)
+      (mapsTo_normalReflection_ball hx₀ t)
   have hcv : ∫ x in ball x₀ t, K (normalReflection E a x) = ∫ x in ball x₀ t, K x := by
-    rw [← integral_indicator measurableSet_ball, ← integral_indicator measurableSet_ball,
-      ← integral_comp_normalReflection a ((ball x₀ t).indicator K)]
-    congr 1
-    funext x
-    by_cases hx : x ∈ ball x₀ t
-    · rw [indicator_of_mem hx, indicator_of_mem (mapsTo_normalReflection_ball hx₀ t hx)]
-    · have hρx : normalReflection E a x ∉ ball x₀ t := fun h =>
-        hx (normalReflection_normalReflection a x ▸ mapsTo_normalReflection_ball hx₀ t h)
-      rw [indicator_of_notMem hx, indicator_of_notMem hρx]
+    conv_lhs => rw [← hpre]
+    exact (measurePreserving_normalReflection a).setIntegral_preimage_emb
+      (normalReflection E a).toHomeomorph.measurableEmbedding K (ball x₀ t)
   have hneg : ∫ x in ball x₀ t, K (normalReflection E a x) =
       -normalLinearReflection E (∫ x in ball x₀ t, K x) := by
     rw [setIntegral_congr_fun measurableSet_ball fun x hx => hodd x (ball_subset_ball htr hx),
@@ -232,10 +189,10 @@ theorem setIntegral_ball_inter_normalHalfSpace_norm_sq_le
   have hdecay := hu.setIntegral_ball_norm_sq_le (μ := volume)
     (integrableOn_of_integrableOn_inter_normalHalfSpace measurableSet_ball
       (mapsTo_normalReflection_ball hx₀ r) (hsq r le_rfl) hint) ht htr
-  rw [setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace measurableSet_ball
+  rw [setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace measurableSet_ball
       (mapsTo_normalReflection_ball hx₀ t) (hsq t htr) hintt,
-    setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace measurableSet_ball
-      (mapsTo_normalReflection_ball hx₀ r) (hsq r le_rfl) hint] at hdecay
+    setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace measurableSet_ball
+      (mapsTo_normalReflection_ball hx₀ r) (hsq r le_rfl) hint, smul_eq_mul, smul_eq_mul] at hdecay
   linarith
 
 /-- **Decay on half-balls of the distance to the best normal constant.** Let `x₀` lie on the
@@ -286,11 +243,12 @@ theorem setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le
   have hdecay := hK.setIntegral_ball_norm_sub_setAverage_sq_le (μ := volume) hintB ht htr
   rw [setAverage_ball_eq_toLp_fst hx₀ hodd htr] at hdecay
   set d := (⨍ x in ball x₀ t, K x).fst
-  rw [setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace measurableSet_ball
+  rw [setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace measurableSet_ball
       (mapsTo_normalReflection_ball hx₀ t) (hsq d t htr)
       (hmem.integrableOn_norm_sub_sq_of_subset hsub hfin _),
-    setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace measurableSet_ball
-      (mapsTo_normalReflection_ball hx₀ r) (hsq c r le_rfl) hint] at hdecay
+    setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace measurableSet_ball
+      (mapsTo_normalReflection_ball hx₀ r) (hsq c r le_rfl) hint, smul_eq_mul, smul_eq_mul]
+    at hdecay
   have hbest := setIntegral_norm_sub_toLp_fst_setAverage_sq_le hfin
     (hmem.mono_measure (Measure.restrict_mono hsub le_rfl)) d
   linarith
@@ -330,45 +288,19 @@ theorem setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le_add
     ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
   have hfint : volume (ball x₀ t ∩ (normalHalfSpace (E := E) a : Set _)) ≠ ⊤ :=
     ((measure_mono hsub).trans_lt hfinr.lt_top).ne
-  have hfK : IntegrableOn (fun x => ‖f x - K x‖ ^ 2)
-      (ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _)) :=
-    (hf.sub hKm).integrable_norm_pow two_ne_zero
-  have hE0 : 0 ≤ ∫ x in ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _), ‖f x - K x‖ ^ 2 :=
-    setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ => by positivity)
-  have hD : (0 : ℝ) ≤
-      2 ^ (3 * finrank ℝ (WithLp 2 (ℝ × E)) + 8) * (finrank ℝ (WithLp 2 (ℝ × E)) + 1) ^ 2 := by
-    positivity
-  have hq1 : (t / r) ^ (finrank ℝ (WithLp 2 (ℝ × E)) + 2) ≤ 1 :=
-    pow_le_one₀ (div_nonneg ht (ht.trans htr)) (div_le_one_of_le₀ htr (ht.trans htr))
-  -- On `B_t⁺`, compare `f` with the best normal constant of `K`, then split off `f - K`.
-  have step1 := setIntegral_norm_sub_toLp_fst_setAverage_sq_le hfint
+  -- On `B_t⁺`, the best normal constant of `f` approximates `f` at least as well as that of `K`.
+  have hbest := setIntegral_norm_sub_toLp_fst_setAverage_sq_le hfint
     (hf.mono_measure (Measure.restrict_mono hsub le_rfl))
     (⨍ y in ball x₀ t ∩ (normalHalfSpace (E := E) a : Set _), K y).fst
-  have step2 := MeasureTheory.setIntegral_norm_add_sq_le
-    (hKm.integrableOn_norm_sub_sq_of_subset hsub hfint (WithLp.toLp 2
-      ((⨍ y in ball x₀ t ∩ (normalHalfSpace (E := E) a : Set _), K y).fst, (0 : E))))
-    (hfK.mono_set hsub)
-  simp only [sub_add_sub_cancel'] at step2
   -- The decay of `K` from `B_r⁺` to `B_t⁺`, measured against the best normal constant of `f`.
-  have hdecay := hK.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le hx₀ hodd
-    (hKm.integrableOn_norm_sub_sq_of_subset subset_rfl hfinr (WithLp.toLp 2
-      ((⨍ y in ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _), f y).fst, (0 : E)))) ht htr
-  -- On `B_r⁺`, compare `K` with the best normal constant of `f`.
-  have hKf : IntegrableOn (fun x => ‖K x - f x‖ ^ 2)
-      (ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _)) := by
-    simpa only [norm_sub_rev (f _)] using hfK
-  have step3 := MeasureTheory.setIntegral_norm_add_sq_le
-    (hf.integrableOn_norm_sub_sq_of_subset subset_rfl hfinr (WithLp.toLp 2
-      ((⨍ y in ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _), f y).fst, (0 : E)))) hKf
-  simp only [sub_add_sub_cancel', norm_sub_rev (K _) (f _)] at step3
-  have step4 : ∫ x in ball x₀ t ∩ (normalHalfSpace (E := E) a : Set _), ‖f x - K x‖ ^ 2 ≤
-      ∫ x in ball x₀ r ∩ (normalHalfSpace (E := E) a : Set _), ‖f x - K x‖ ^ 2 :=
-    setIntegral_mono_set hfK (ae_of_all _ fun _ => by positivity) hsub.eventuallyLE
-  -- Combine, using `(t / r)^(n + 2) ≤ 1`.
-  have h3 := mul_le_mul_of_nonneg_left step3 (mul_nonneg hD (pow_nonneg
-    (div_nonneg ht (ht.trans htr)) (finrank ℝ (WithLp 2 (ℝ × E)) + 2)))
-  have hqE := mul_le_mul_of_nonneg_left (mul_le_of_le_one_left hE0 hq1) hD
-  linarith
+  exact MeasureTheory.setIntegral_norm_sub_sq_le_add_of_le hsub (by positivity)
+    (pow_nonneg (div_nonneg ht (ht.trans htr)) _)
+    (pow_le_one₀ (div_nonneg ht (ht.trans htr)) (div_le_one_of_le₀ htr (ht.trans htr)))
+    (hf.integrableOn_norm_sub_sq_of_subset subset_rfl hfinr _)
+    (hKm.integrableOn_norm_sub_sq_of_subset hsub hfint _)
+    ((hf.sub hKm).integrable_norm_pow two_ne_zero) hbest
+    (hK.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le hx₀ hodd
+      (hKm.integrableOn_norm_sub_sq_of_subset subset_rfl hfinr _) ht htr)
 
 end InnerProductSpace.HarmonicOnNhd
 
@@ -384,10 +316,14 @@ section WeaklyHarmonic
 variable {U : Opens (WithLp 2 (ℝ × E))} {w : WithLp 2 (ℝ × E) → ℝ}
   {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {x₀ : WithLp 2 (ℝ × E)} {r t : ℝ}
 
-/-- The weak gradient `G` of a weakly harmonic function vanishing on the flat boundary agrees on
-`ball x₀ r ∩ H` with a harmonic field `K` on `ball x₀ r` satisfying `K ∘ ρ = -R ∘ K`: the gradient
-of the odd reflection. -/
-private theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq
+/-- **Harmonic representative of the weak gradient.** Let `w` be weakly harmonic on `U ∩ H`, where
+`U` is an open set mapped into itself by the reflection `ρ` in `{a} × E`, with zero boundary
+values on the flat part: `w` is weakly differentiable on `U` with weak gradient `G`, and `w` and
+`G` vanish almost everywhere on `U` off `H`. If `ball x₀ r ⊆ U`, then `G` agrees almost
+everywhere on `ball x₀ r ∩ H` with a harmonic field `K` on `ball x₀ r` satisfying
+`K ∘ ρ = -R ∘ K`, where `R` is the linear part of `ρ`: the gradient of the odd reflection of `w`.
+Such a `K` satisfies the hypotheses of the half-ball decay estimates for harmonic fields. -/
+theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq
     (hharm : WeaklyHarmonicOn volume (U ⊓ normalHalfSpace a) w)
     (hU : MapsTo (normalReflection E a) U U)
     (hw : HasWeakFDerivOn volume U w fun x => innerSL ℝ (G x))

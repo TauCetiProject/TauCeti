@@ -45,8 +45,10 @@ Dominated convergence then passes to the limit.
   `Submodule.reflection` in the hyperplane `{0} × E`.
 * `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
   its measure preservation and derivative.
+* `TauCeti.gradient_normalReflection_of_forall_eq_neg`: the gradient of a function odd under the
+  normal reflection `ρ` satisfies `∇h (ρ x) = -R (∇h x)`, where `R` is the linear part of `ρ`.
 * `TauCeti.integrableOn_of_integrableOn_inter_normalHalfSpace` and
-  `TauCeti.setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace`: a reflection-invariant
+  `TauCeti.setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace`: a reflection-invariant
   function on a reflection-invariant set is integrable there as soon as it is integrable on the
   half in `H`, and its integral is twice the integral over that half.
 * `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
@@ -195,6 +197,32 @@ theorem contDiff_normalReflection (a : ℝ) {n : WithTop ℕ∞} :
   rw [normalReflection_eq_add]
   exact (normalLinearReflection E).toContinuousLinearEquiv.contDiff.add contDiff_const
 
+/-- **Gradients of odd functions.** Let `h` be odd under the reflection `ρ` in `{a} × E` on an
+open set `U`, that is `h (ρ x) = -h x` for `x ∈ U`. If `h` is differentiable at `ρ x`, then its
+gradient transforms by minus the linear part `R` of `ρ`: `∇h (ρ x) = -R (∇h x)`. The normal
+component of `∇h` is therefore even under `ρ` and its tangential components are odd. -/
+theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
+    (hU : IsOpen U) {h : WithLp 2 (ℝ × E) → ℝ} (hodd : ∀ x ∈ U, h (normalReflection E a x) = -h x)
+    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) (hd : DifferentiableAt ℝ h (normalReflection E a x)) :
+    ∇ h (normalReflection E a x) = -normalLinearReflection E (∇ h x) := by
+  set R := normalLinearReflection E
+  have hcomp : HasFDerivAt (fun y => h (normalReflection E a y))
+      ((fderiv ℝ h (normalReflection E a x)).comp
+        (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) x :=
+    hd.hasFDerivAt.comp x (hasFDerivAt_normalReflection a x)
+  have heq : (fun y => h (normalReflection E a y)) =ᶠ[𝓝 x] -h :=
+    Filter.eventually_of_mem (hU.mem_nhds hx) hodd
+  have hD : -fderiv ℝ h x = (fderiv ℝ h (normalReflection E a x)).comp
+      (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
+    rw [← fderiv_neg, ← (hcomp.congr_of_eventuallyEq heq.symm).fderiv]
+  refine ext_inner_right ℝ fun v => ?_
+  have hv := congrArg (fun L : WithLp 2 (ℝ × E) →L[ℝ] ℝ => L (R v)) hD
+  simp only [neg_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, R,
+    normalLinearReflection_normalLinearReflection] at hv
+  rw [inner_gradient_left, ← hv, ← inner_gradient_left, inner_neg_left,
+    inner_normalLinearReflection_left_eq_right]
+
 /-- The normal reflection in `{a} × E` maps every ball centred on that hyperplane into itself. -/
 theorem mapsTo_normalReflection_ball {a : ℝ} {x₀ : WithLp 2 (ℝ × E)} (hx₀ : x₀.fst = a) (r : ℝ) :
     MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) := fun x hx => by
@@ -231,9 +259,10 @@ the hyperplane `{a} × E` into the indicators of `U ∩ H` and of its mirror ima
 `U ∩ ρ⁻¹ H`. The hyperplane is null, so the splitting holds almost everywhere. -/
 private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
     {U : Set (WithLp 2 (ℝ × E))} (hU : MapsTo (normalReflection E a) U U)
-    {F : WithLp 2 (ℝ × E) → ℝ} (hF : ∀ x ∈ U, F (normalReflection E a x) = F x) :
-    U.indicator F =ᵐ[volume] fun x => (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F x +
-      (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F (normalReflection E a x) := by
+    {F : Type*} [AddZeroClass F] {g : WithLp 2 (ℝ × E) → F}
+    (hg : ∀ x ∈ U, g (normalReflection E a x) = g x) :
+    U.indicator g =ᵐ[volume] fun x => (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g x +
+      (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g (normalReflection E a x) := by
   set H : Set (WithLp 2 (ℝ × E)) := ↑(normalHalfSpace (E := E) a)
   filter_upwards [measure_eq_zero_iff_ae_notMem.1
     (Measure.addHaar_setOf_fst_eq (E := E) volume a)] with x hx
@@ -245,7 +274,7 @@ private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
     · have h1 : x ∉ U ∩ H := fun h => absurd hlt (not_lt.2 ((mem_normalHalfSpace a x).1 h.2).le)
       have h2 : normalReflection E a x ∈ U ∩ H :=
         ⟨hU hxU, (normalReflection_mem_normalHalfSpace_iff a x).2 hlt⟩
-      rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hF x hxU, zero_add]
+      rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hg x hxU, zero_add]
     · have h1 : x ∈ U ∩ H := ⟨hxU, (mem_normalHalfSpace a x).2 hgt⟩
       have h2 : normalReflection E a x ∉ U ∩ H := fun h =>
         absurd ((normalReflection_mem_normalHalfSpace_iff a x).1 h.2) (not_lt.2 hgt.le)
@@ -255,13 +284,13 @@ private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
     rw [indicator_of_notMem hxU, indicator_of_notMem h1, indicator_of_notMem h2, add_zero]
 
 /-- The two halves of the splitting `indicator_ae_eq_add_indicator_comp_normalReflection` are
-integrable when `F` is integrable on `U ∩ H`. -/
+integrable when `g` is integrable on `U ∩ H`. -/
 private theorem integrable_indicator_inter_normalHalfSpace {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
-    (hUm : MeasurableSet U) {F : WithLp 2 (ℝ × E) → ℝ}
-    (hint : IntegrableOn F (U ∩ (normalHalfSpace (E := E) a : Set _))) :
-    Integrable ((U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F) ∧
+    (hUm : MeasurableSet U) {F : Type*} [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F}
+    (hint : IntegrableOn g (U ∩ (normalHalfSpace (E := E) a : Set _))) :
+    Integrable ((U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g) ∧
       Integrable fun x =>
-        (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator F (normalReflection E a x) := by
+        (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g (normalReflection E a x) := by
   have h1 := (integrable_indicator_iff (hUm.inter (normalHalfSpace a).isOpen.measurableSet)).2 hint
   exact ⟨h1, ((measurePreserving_normalReflection a).integrable_comp_emb
     (normalReflection E a).toHomeomorph.measurableEmbedding).2 h1⟩
@@ -270,26 +299,28 @@ private theorem integrable_indicator_inter_normalHalfSpace {a : ℝ} {U : Set (W
 itself by `ρ` is integrable on `U` as soon as it is integrable on the half `U ∩ H`. -/
 theorem integrableOn_of_integrableOn_inter_normalHalfSpace {a : ℝ}
     {U : Set (WithLp 2 (ℝ × E))} (hUm : MeasurableSet U) (hU : MapsTo (normalReflection E a) U U)
-    {F : WithLp 2 (ℝ × E) → ℝ} (hF : ∀ x ∈ U, F (normalReflection E a x) = F x)
-    (hint : IntegrableOn F (U ∩ (normalHalfSpace (E := E) a : Set _))) : IntegrableOn F U := by
+    {F : Type*} [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F}
+    (hg : ∀ x ∈ U, g (normalReflection E a x) = g x)
+    (hint : IntegrableOn g (U ∩ (normalHalfSpace (E := E) a : Set _))) : IntegrableOn g U := by
   obtain ⟨h1, h2⟩ := integrable_indicator_inter_normalHalfSpace hUm hint
   exact (integrable_indicator_iff hUm).1 <|
-    (h1.add h2).congr (indicator_ae_eq_add_indicator_comp_normalReflection hU hF).symm
+    (h1.add h2).congr (indicator_ae_eq_add_indicator_comp_normalReflection hU hg).symm
 
 /-- **Integrals of reflection-invariant functions.** If `U` is a measurable set mapped into
 itself by the normal reflection `ρ` in `{a} × E`, for instance a ball centred on that hyperplane,
-and `F` is integrable on `U ∩ H` and invariant under `ρ` on `U`, then the integral of `F` over `U`
+and `g` is integrable on `U ∩ H` and invariant under `ρ` on `U`, then the integral of `g` over `U`
 is twice its integral over `U ∩ H`. -/
-theorem setIntegral_eq_two_mul_setIntegral_inter_normalHalfSpace {a : ℝ}
+theorem setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace {a : ℝ}
     {U : Set (WithLp 2 (ℝ × E))} (hUm : MeasurableSet U) (hU : MapsTo (normalReflection E a) U U)
-    {F : WithLp 2 (ℝ × E) → ℝ} (hF : ∀ x ∈ U, F (normalReflection E a x) = F x)
-    (hint : IntegrableOn F (U ∩ (normalHalfSpace (E := E) a : Set _))) :
-    ∫ x in U, F x = 2 * ∫ x in U ∩ (normalHalfSpace (E := E) a : Set _), F x := by
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : WithLp 2 (ℝ × E) → F}
+    (hg : ∀ x ∈ U, g (normalReflection E a x) = g x)
+    (hint : IntegrableOn g (U ∩ (normalHalfSpace (E := E) a : Set _))) :
+    ∫ x in U, g x = (2 : ℝ) • ∫ x in U ∩ (normalHalfSpace (E := E) a : Set _), g x := by
   obtain ⟨h1, h2⟩ := integrable_indicator_inter_normalHalfSpace hUm hint
   rw [← integral_indicator hUm,
-    integral_congr_ae (indicator_ae_eq_add_indicator_comp_normalReflection hU hF),
+    integral_congr_ae (indicator_ae_eq_add_indicator_comp_normalReflection hU hg),
     integral_add h1 h2, integral_comp_normalReflection a,
-    integral_indicator (hUm.inter (normalHalfSpace a).isOpen.measurableSet), two_mul]
+    integral_indicator (hUm.inter (normalHalfSpace a).isOpen.measurableSet), two_smul]
 
 end Reflection
 

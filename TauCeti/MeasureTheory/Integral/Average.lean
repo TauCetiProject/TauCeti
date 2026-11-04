@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
@@ -32,7 +33,9 @@ bound above this compares mean oscillations on nested sets, as in the theory of 
 bounded mean oscillation. In square mean the comparison with a constant reads
 `∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure; in an inner product space the
 factor `4` drops to `1`, by the orthogonal splitting
-`∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`.
+`∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`. For a function with values in the Euclidean
+product `ℝ × E`, the same splitting in the first coordinate shows that among the constants
+`(c, 0)` the best one is the first coordinate of the average.
 
 Averages are unchanged when the measure is multiplied by a positive finite scalar. They are also
 unchanged by a change of variables that rescales the measure by a constant factor,
@@ -74,6 +77,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
+* `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
+  Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
@@ -381,6 +386,45 @@ theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s
   exact le_add_of_nonneg_right (by positivity)
 
 end InnerProduct
+
+section NormalConstant
+
+variable {X E : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [CompleteSpace E] {s : Set X}
+
+/-- **The best normal constant.** Among the vectors `(c, 0)` of the Euclidean product `ℝ × E`, the
+first coordinate `((f_s).fst, 0)` of the average `f_s` of `f` over a set `s` of finite measure
+minimizes the square mean distance to `f` on `s`. -/
+theorem setIntegral_norm_sub_toLp_fst_setAverage_sq_le (hs : μ s ≠ ⊤)
+    {f : X → WithLp 2 (ℝ × E)} (hf : MemLp f 2 (μ.restrict s)) (c : ℝ) :
+    ∫ x in s, ‖f x - WithLp.toLp 2 ((⨍ y in s, f y ∂μ).fst, 0)‖ ^ 2 ∂μ ≤
+      ∫ x in s, ‖f x - WithLp.toLp 2 (c, 0)‖ ^ 2 ∂μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  -- The squared distance to `(d, 0)` splits into the first and second coordinates.
+  have hsplit (v : WithLp 2 (ℝ × E)) (d : ℝ) :
+      ‖v - WithLp.toLp 2 (d, 0)‖ ^ 2 = (v.fst - d) ^ 2 + ‖v.snd‖ ^ 2 := by
+    rw [WithLp.prod_norm_sq_eq_of_L2]
+    simp [Real.norm_eq_abs, sq_abs]
+  have hfst : MemLp (fun x => (f x).fst) 2 (μ.restrict s) :=
+    (WithLp.fstL 2 ℝ ℝ E).comp_memLp' hf
+  have hsnd : Integrable (fun x => ‖(f x).snd‖ ^ 2) (μ.restrict s) :=
+    ((WithLp.sndL 2 ℝ ℝ E).comp_memLp' hf).integrable_norm_pow two_ne_zero
+  have hnsq (d : ℝ) : IntegrableOn (fun x => ‖(f x).fst - d‖ ^ 2) s μ :=
+    (hfst.sub (memLp_const d)).integrable_norm_pow two_ne_zero
+  have hsq (d : ℝ) : IntegrableOn (fun x => ((f x).fst - d) ^ 2) s μ := by
+    simpa only [Real.norm_eq_abs, sq_abs] using hnsq d
+  have havg : (⨍ y in s, f y ∂μ).fst = ⨍ y in s, (f y).fst ∂μ := by
+    simp only [setAverage_eq, WithLp.smul_fst]
+    congr 1
+    exact ((WithLp.fstL 2 ℝ ℝ E).integral_comp_comm (hf.integrable one_le_two)).symm
+  simp_rw [hsplit, havg]
+  rw [integral_add (hsq _) hsnd, integral_add (hsq c) hsnd]
+  gcongr ?_ + _
+  simpa only [Real.norm_eq_abs, sq_abs] using
+    setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
+      (hfst.integrable one_le_two) (hnsq c)
+
+end NormalConstant
 
 section ChangeOfVariables
 
