@@ -43,6 +43,9 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   measures is a probability measure.
 * `TauCeti.eq_smul_dirac_and_eq_smul_dirac_of_add_eq_dirac` — summands of a Dirac measure are
   supported at the same point.
+* `Multiset.measureReal_univ_sum_map_dirac`, `Multiset.sum_map_dirac_apply_eq_zero` — the
+  counting measure `∑_{x ∈ s} δₓ` of a multiset `s` is finite, has mass `card s` and vanishes on
+  measurable sets avoiding `s`.
 -/
 
 public section
@@ -115,6 +118,45 @@ theorem eq_smul_dirac_of_forall_notMem {X : Type*} [MeasurableSpace X]
     exact hk s hs hx
 
 end MeasureTheory.Measure
+
+/-! ### Counting measures of multisets -/
+
+namespace Multiset
+
+variable {X : Type*} [MeasurableSpace X]
+
+/-- The counting measure `∑_{x ∈ s} δₓ` of a multiset is finite. -/
+instance isFiniteMeasure_sum_map_dirac (s : Multiset X) :
+    IsFiniteMeasure (s.map Measure.dirac).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp only [map_zero, sum_zero]; infer_instance
+  | cons a s ih => simp only [map_cons, sum_cons]; infer_instance
+
+/-- The total mass of the counting measure of a multiset is its cardinality. -/
+@[simp]
+theorem measure_univ_sum_map_dirac (s : Multiset X) :
+    (s.map Measure.dirac).sum Set.univ = card s := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih => simp [ih, add_comm]
+
+/-- The total mass of the counting measure of a multiset is its cardinality. -/
+@[simp]
+theorem measureReal_univ_sum_map_dirac (s : Multiset X) :
+    (s.map Measure.dirac).sum.real Set.univ = card s := by
+  simp [measureReal_def]
+
+/-- The counting measure of a multiset vanishes on a measurable set containing none of its
+elements. -/
+theorem sum_map_dirac_apply_eq_zero {s : Multiset X} {A : Set X} (hA : MeasurableSet A)
+    (hs : ∀ x ∈ s, x ∉ A) : (s.map Measure.dirac).sum A = 0 := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [map_cons, sum_cons, _root_.add_apply, ih fun x hx => hs x (mem_cons_of_mem hx),
+      add_zero, Measure.dirac_apply' _ hA, Set.indicator_of_notMem (hs a (mem_cons_self a s))]
+
+end Multiset
 
 namespace TauCeti
 

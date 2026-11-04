@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.MeasureTheory.SetAlgebra
 import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
 # Finite measures
@@ -29,7 +31,10 @@ continuous curve of finite measures when `u` is bounded continuous and uniformly
 * `MeasureTheory.Measure.sum_singleton_eq_one`
 * `MeasureTheory.Measure.measureReal_finset_eq_zero`
 * `MeasureTheory.FiniteMeasure.tendsto_integral_of_tendstoUniformly`: narrow convergence against
-  uniformly convergent integrands.
+  uniformly convergent `RCLike`-valued integrands.
+* `MeasureTheory.FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall`: the same for
+  measures carried by a closed ball of a proper normed space, against `RCLike`-valued integrands
+  that are only continuous, and converge uniformly, on the ball.
 
 ## Implementation
 
@@ -124,18 +129,18 @@ open Filter Topology
 open scoped BoundedContinuousFunction
 
 /-- **Narrow convergence against uniformly convergent integrands.** If the finite measures `μs i`
-converge narrowly to `μ` and the functions `fs i`, eventually almost everywhere strongly
-measurable, converge uniformly to a bounded continuous function `f`, then
+converge narrowly to `μ` and the `RCLike`-valued functions `fs i`, eventually almost everywhere
+strongly measurable, converge uniformly to a bounded continuous function `f`, then
 `∫ fs i dμs i` converges to `∫ f dμ`. -/
 theorem FiniteMeasure.tendsto_integral_of_tendstoUniformly [TopologicalSpace α]
-    [OpensMeasurableSpace α] {ι : Type*} {l : Filter ι} {μs : ι → FiniteMeasure α}
-    {μ : FiniteMeasure α} (hμ : Tendsto μs l (𝓝 μ)) {fs : ι → α → ℝ} {f : α →ᵇ ℝ}
+    [OpensMeasurableSpace α] {ι 𝕜 : Type*} [RCLike 𝕜] {l : Filter ι} {μs : ι → FiniteMeasure α}
+    {μ : FiniteMeasure α} (hμ : Tendsto μs l (𝓝 μ)) {fs : ι → α → 𝕜} {f : α →ᵇ 𝕜}
     (hf : TendstoUniformly fs f l) (hfs : ∀ᶠ i in l, AEStronglyMeasurable (fs i) (μs i)) :
     Tendsto (fun i ↦ ∫ x, fs i x ∂(μs i : Measure α)) l (𝓝 (∫ x, f x ∂(μ : Measure α))) := by
   -- It suffices that `∫ (fs i - f) dμs i → 0`, which is bounded by `sup ‖fs i - f‖ * mass`.
   suffices h : Tendsto (fun i ↦ ∫ x, fs i x ∂(μs i : Measure α) - ∫ x, f x ∂(μs i : Measure α))
       l (𝓝 0) by
-    simpa using h.add (FiniteMeasure.tendsto_iff_forall_integral_tendsto.1 hμ f)
+    simpa using h.add ((FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 hμ f)
   have hmass : Tendsto (fun i ↦ ((μs i).mass : ℝ)) l (𝓝 (μ.mass : ℝ)) :=
     (NNReal.continuous_coe.tendsto _).comp ((FiniteMeasure.continuous_mass.tendsto μ).comp hμ)
   rw [Metric.tendsto_nhds]
@@ -155,6 +160,55 @@ theorem FiniteMeasure.tendsto_integral_of_tendstoUniformly [TopologicalSpace α]
   rw [measureReal_def, ← FiniteMeasure.ennreal_mass, ENNReal.coe_toReal, div_mul_eq_mul_div,
     div_lt_iff₀ hK]
   exact mul_lt_mul_of_pos_left hmi hε
+
+/-- **Narrow convergence of measures carried by a closed ball.** Let finite measures `μs i` on a
+proper real normed space converge narrowly to `μ`, all carried by the closed ball `closedBall 0 r`.
+If functions `fs i`, continuous on that ball, converge uniformly on it to a function `f` continuous
+on it, then `∫ fs i dμs i` converges to `∫ f dμ`. Nothing is assumed off the ball: there `fs i`
+and `f` may be unbounded or discontinuous. -/
+theorem FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall {E 𝕜 ι : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] [MeasurableSpace E] [BorelSpace E]
+    [RCLike 𝕜] {l : Filter ι} {μs : ι → FiniteMeasure E} {μ : FiniteMeasure E}
+    (hμ : Tendsto μs l (𝓝 μ)) {r : ℝ}
+    (hμsr : ∀ᶠ i in l, (μs i : Measure E) (Metric.closedBall 0 r)ᶜ = 0)
+    (hμr : (μ : Measure E) (Metric.closedBall 0 r)ᶜ = 0) {fs : ι → E → 𝕜} {f : E → 𝕜}
+    (hfs : ∀ i, ContinuousOn (fs i) (Metric.closedBall 0 r))
+    (hf : ContinuousOn f (Metric.closedBall 0 r))
+    (hfsf : TendstoUniformlyOn fs f l (Metric.closedBall 0 r)) :
+    Tendsto (fun i ↦ ∫ x, fs i x ∂(μs i : Measure E)) l (𝓝 (∫ x, f x ∂(μ : Measure E))) := by
+  have hae {ν : Measure E} (hν : ν (Metric.closedBall 0 r)ᶜ = 0) :
+      ∀ᵐ x ∂ν, x ∈ Metric.closedBall 0 r :=
+    mem_ae_iff.2 hν
+  rcases lt_or_ge r 0 with hr | hr
+  · have h0 {ν : Measure E} (hν : ν (Metric.closedBall 0 r)ᶜ = 0) : ν = 0 := by
+      rwa [Metric.closedBall_eq_empty.2 hr, compl_empty, Measure.measure_univ_eq_zero] at hν
+    rw [h0 hμr, integral_zero_measure]
+    exact tendsto_const_nhds.congr' (hμsr.mono fun i hi ↦ by simp [h0 hi])
+  -- On measures carried by the ball, `fs i` and `f` may be replaced by their compositions with the
+  -- radial retraction `ρ` onto the ball. These converge uniformly on all of `E`, to the bounded
+  -- continuous function `f ∘ ρ`, so `FiniteMeasure.tendsto_integral_of_tendstoUniformly` applies.
+  have hmem := TauCeti.radialRetraction_mem_closedBall (E := E) hr
+  have hρ : Continuous (TauCeti.radialRetraction r : E → E) :=
+    (TauCeti.lipschitzWith_radialRetraction hr).continuous
+  have hρeq {ν : Measure E} (hν : ν (Metric.closedBall 0 r)ᶜ = 0) (g : E → 𝕜) :
+      ∫ x, g (TauCeti.radialRetraction r x) ∂ν = ∫ x, g x ∂ν :=
+    integral_congr_ae ((hae hν).mono fun x hx ↦ by
+      simp [TauCeti.radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hx)])
+  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : E) r).exists_bound_of_continuousOn hf
+  let G : E →ᵇ 𝕜 := BoundedContinuousFunction.mkOfBound
+    ⟨f ∘ TauCeti.radialRetraction r, hf.comp_continuous hρ hmem⟩ (2 * C) fun x y ↦ by
+      have hx := hC _ (hmem x)
+      have hy := hC _ (hmem y)
+      calc dist (f (TauCeti.radialRetraction r x)) (f (TauCeti.radialRetraction r y))
+          ≤ ‖f (TauCeti.radialRetraction r x)‖ + ‖f (TauCeti.radialRetraction r y)‖ :=
+            dist_le_norm_add_norm _ _
+        _ ≤ 2 * C := by linarith
+  have hlim := FiniteMeasure.tendsto_integral_of_tendstoUniformly hμ (f := G)
+    (fs := fun i ↦ fs i ∘ TauCeti.radialRetraction r)
+    (fun u hu ↦ (hfsf u hu).mono fun i hi x ↦ hi _ (hmem x))
+    (Eventually.of_forall fun i ↦ ((hfs i).comp_continuous hρ hmem).aestronglyMeasurable)
+  rw [← hρeq hμr f]
+  exact (tendsto_congr' (hμsr.mono fun i hi ↦ hρeq hi (fs i))).1 hlim
 
 end NarrowConvergence
 
