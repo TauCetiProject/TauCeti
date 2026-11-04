@@ -49,10 +49,11 @@ variable (k : Type u) [Field k]
 -- inclusion is used only to apply the latter's centralizer calculation.
 private def carrierRestriction : coordinateHopfAlgebra k ⟶ generatedCoordinateHopfAlgebra k :=
   CommHopfAlgCat.liftQuotient (baseChangeDefiningIdeal k) (generatedCoordinateMap k) (by
-    -- Normalize the bialgebra-to-ring-hom coercion so the named kernel lemma can rewrite.
-    change (baseChangeDefiningIdeal k).toIdeal ≤ RingHom.ker (generatedCoordinateMap k).hom
-    rw [generatedCoordinateMap_ker]
-    exact baseChangeDefiningIdeal_le_generatedDefiningIdeal k)
+    intro x hx
+    have hmem : x ∈ (generatedDefiningIdeal k).toIdeal :=
+      baseChangeDefiningIdeal_le_generatedDefiningIdeal k hx
+    rw [← generatedCoordinateMap_ker] at hmem
+    exact hmem)
 
 private def carrierPointsHom :
     HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k) (CommAlgCat.of k k) →*

@@ -48,10 +48,11 @@ variable (k : Type u) [Field k]
 -- Only the inclusion in the integral specialization is used, not equality of the carriers.
 private def carrierRestriction : coordinateHopfAlgebra k ⟶ generatedCoordinateHopfAlgebra k :=
   CommHopfAlgCat.liftQuotient (baseChangeDefiningIdeal k) (generatedCoordinateMap k) (by
-    -- Normalize the bialgebra-to-ring-hom coercion so the named kernel lemma can rewrite.
-    change (baseChangeDefiningIdeal k).toIdeal ≤ RingHom.ker (generatedCoordinateMap k).hom
-    rw [generatedCoordinateMap_ker]
-    exact baseChangeDefiningIdeal_le_generatedDefiningIdeal k)
+    intro x hx
+    have hmem : x ∈ (generatedDefiningIdeal k).toIdeal :=
+      baseChangeDefiningIdeal_le_generatedDefiningIdeal k hx
+    rw [← generatedCoordinateMap_ker] at hmem
+    exact hmem)
 
 private def carrierPointsHom :
     HopfAlgebra.points (R := k) (H := generatedCoordinateHopfAlgebra k) (CommAlgCat.of k k) →*
@@ -66,18 +67,12 @@ private theorem coe_carrierPointsHom
       GeneralLinear.pointsMulEquiv 54
         ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
           (CommAlgCat.of k k) g) := by
-  let q := (CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction k)).app (CommAlgCat.of k k) g
-  have h := quotientPointsHom_specializedPointsMulEquiv_symm k (specializedPointsMulEquiv k q)
-  -- The categorical point object and the explicit convolution-point type have different
-  -- wrappers; `erw` reconciles them when cancelling the point equivalence.
-  erw [MulEquiv.symm_apply_apply] at h
-  have hmatrix := congrArg (GeneralLinear.pointsMulEquiv (R := k) 54) h
-  rw [MulEquiv.apply_symm_apply] at hmatrix
-  -- The composite point map is the ambient quotient point, by the quotient's universal property.
-  have hq := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-    (baseChangeDefiningIdeal k) (carrierRestriction k) (generatedCoordinateMap k)
-    (CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _) (CommAlgCat.of k k) g
-  exact hmatrix.symm.trans (congrArg (GeneralLinear.pointsMulEquiv 54) hq.symm)
+  exact (coe_specializedPointsMulEquiv_apply k
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (carrierRestriction k)).app (CommAlgCat.of k k) g)).trans
+    (congrArg (GeneralLinear.pointsMulEquiv 54)
+      (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+        (baseChangeDefiningIdeal k) (carrierRestriction k) (generatedCoordinateMap k)
+        (CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _) (CommAlgCat.of k k) g).symm)
 
 private theorem carrierPointsHom_injective : Function.Injective (carrierPointsHom k) :=
   (specializedPointsMulEquiv k).injective.comp
