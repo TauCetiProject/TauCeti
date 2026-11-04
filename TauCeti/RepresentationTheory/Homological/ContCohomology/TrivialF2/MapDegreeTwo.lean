@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.MapDegreeTwo
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Map.DegreeTwo
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 
 /-!
