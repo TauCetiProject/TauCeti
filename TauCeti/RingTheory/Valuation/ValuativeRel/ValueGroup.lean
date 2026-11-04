@@ -21,6 +21,19 @@ public section
 
 open ValuativeRel
 
+/-- If every value in an extension is attained on the base, its value-group map is onto. -/
+theorem ValuativeExtension.mapValueGroupWithZero_surjective_of_forall_exists_veq
+    {A B : Type*} [CommRing A] [DivisionRing B] [ValuativeRel A] [ValuativeRel B]
+    [Algebra A B] [ValuativeExtension A B]
+    (h : ∀ x : B, ∃ r : A, algebraMap A B r =ᵥ x) :
+    Function.Surjective (mapValueGroupWithZero A B) := by
+  intro γ
+  obtain ⟨x, rfl⟩ := valuation_surjective γ
+  obtain ⟨r, hr⟩ := h x
+  exact ⟨valuation A r, by
+    rw [mapValueGroupWithZero_valuation]
+    exact (valuation B).veq_iff_eq.mp hr⟩
+
 namespace ValuativeRel
 
 variable {A B : Type*} [CommRing A] [Ring B] [ValuativeRel A] [ValuativeRel B]
@@ -55,7 +68,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
 
 /-- A uniformizer remains a uniformizer in a valued extension with unchanged value group.
 The extended valuation ring need not be assumed discrete in advance. -/
-theorem algebraMap_integer_of_surjective_valueGroup {π : (valuation K).integer}
+theorem algebraMap_integer_of_surjective_mapValueGroupWithZero {π : (valuation K).integer}
     (hπ : Irreducible π)
     (h : Function.Surjective (ValuativeExtension.mapValueGroupWithZero K L)) :
     Irreducible (algebraMap (valuation K).integer (valuation L).integer π) := by

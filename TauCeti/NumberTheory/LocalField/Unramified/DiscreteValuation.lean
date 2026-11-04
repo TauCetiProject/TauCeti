@@ -66,19 +66,14 @@ theorem exists_algebraMap_veq (x : Unramified E) :
   -- The structure map for `j.toAlgebra` is `j` itself.
   have h : j (algebraMap E L (r : E)) =ᵥ j y :=
     (ValuativeExtension.veq_iff_veq (A := L) (B := Unramified E)).mpr hv
-  have hjy : j y = x := Subtype.ext (by rfl)
+  have hjy : j y = x := Subtype.ext (IntermediateField.coe_inclusion _ _)
   rw [j.commutes, hjy] at h
   exact ⟨r, h⟩
 
 /-- The map on value groups from the base field to its maximal unramified extension is onto. -/
 theorem mapValueGroupWithZero_unramified_surjective :
-    Function.Surjective (ValuativeExtension.mapValueGroupWithZero E (Unramified E)) := by
-  intro γ
-  obtain ⟨x, rfl⟩ := valuation_surjective γ
-  obtain ⟨r, hr⟩ := exists_algebraMap_veq x
-  exact ⟨valuation E r, by
-    rw [ValuativeExtension.mapValueGroupWithZero_valuation]
-    exact (valuation (Unramified E)).veq_iff_eq.mp hr⟩
+    Function.Surjective (ValuativeExtension.mapValueGroupWithZero E (Unramified E)) :=
+  ValuativeExtension.mapValueGroupWithZero_surjective_of_forall_exists_veq exists_algebraMap_veq
 
 /-- The valuation of the maximal unramified extension is discrete. -/
 instance unramifiedIsDiscrete : IsDiscrete (Unramified E) :=
@@ -91,15 +86,13 @@ instance unramifiedIsRankLeOne : IsRankLeOne (Unramified E) :=
 /-- Completion of the maximal unramified extension still introduces no new values. -/
 theorem mapValueGroupWithZero_breve_surjective :
     Function.Surjective (ValuativeExtension.mapValueGroupWithZero E (Breve E)) := by
-  intro γ
-  obtain ⟨x, rfl⟩ := valuation_surjective γ
+  apply ValuativeExtension.mapValueGroupWithZero_surjective_of_forall_exists_veq
+  intro x
   obtain ⟨y, hy⟩ := Completion.exists_coe_veq x
   obtain ⟨r, hr⟩ := exists_algebraMap_veq y
-  have hv := (Completion.coe_veq_coe_iff.mpr hr).trans hy
-  refine ⟨valuation E r, ?_⟩
-  rw [ValuativeExtension.mapValueGroupWithZero_valuation]
-  -- The completion's `E`-algebra structure is the composite through `Unramified E`.
-  exact (valuation (Breve E)).veq_iff_eq.mp hv
+  refine ⟨r, ?_⟩
+  rw [Completion.algebraMap_def]
+  exact (Completion.coe_veq_coe_iff.mpr hr).trans hy
 
 end TauCeti.MaxUnramifiedCompletion
 
@@ -112,4 +105,4 @@ variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
 unramified extension, expressed as irreducibility in its valuation ring. -/
 theorem Irreducible.algebraMap_integer_breve {π : 𝒪[E]} (hπ : Irreducible π) :
     Irreducible (algebraMap 𝒪[E] 𝒪[Breve E] π) :=
-  hπ.algebraMap_integer_of_surjective_valueGroup mapValueGroupWithZero_breve_surjective
+  hπ.algebraMap_integer_of_surjective_mapValueGroupWithZero mapValueGroupWithZero_breve_surjective

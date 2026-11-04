@@ -37,12 +37,9 @@ theorem exists_coe_veq (x : Completion K) : ∃ r : K, (r : Completion K) =ᵥ x
 /-- The canonical map on value groups from a valued field to its completion is surjective. -/
 theorem mapValueGroupWithZero_surjective :
     Function.Surjective (ValuativeExtension.mapValueGroupWithZero K (Completion K)) := by
-  intro γ
-  obtain ⟨x, rfl⟩ := valuation_surjective γ
-  obtain ⟨r, hr⟩ := exists_coe_veq x
-  exact ⟨valuation K r, by
-    rw [ValuativeExtension.mapValueGroupWithZero_valuation]
-    exact (valuation (Completion K)).veq_iff_eq.mp hr⟩
+  apply ValuativeExtension.mapValueGroupWithZero_surjective_of_forall_exists_veq
+  simpa only [Completion.algebraMap_def, Algebra.algebraMap_self_apply] using
+    exists_coe_veq (K := K)
 
 /-- Completion preserves discreteness of a valued field, with no rank hypothesis. -/
 instance isDiscrete [IsDiscrete K] : IsDiscrete (Completion K) :=
