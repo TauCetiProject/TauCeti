@@ -39,9 +39,7 @@ Since `(-1)^λ ≡ 1` modulo `2`, the signed count has the parity of the number 
   (`TauCeti.IsMorse.toNat_totalCriticalCount_modEq`).
 
 On the sphere `Sⁿ` the height function has a minimum and a maximum and no other critical point.
-Hence `χ(Sⁿ; V) = (1 + (-1)ⁿ) dim V`
-(`TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_sphere`) and every Morse function
-on `Sⁿ` has an even number of critical points
+Hence every Morse function on `Sⁿ` has an even number of critical points
 (`TauCeti.IsMorse.even_toNat_totalCriticalCount_sphere`).
 
 The counts are the natural-number values `(criticalCount I f i).toNat`, which are the actual
@@ -130,25 +128,6 @@ section Sphere
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-/-- **The Euler characteristic of the sphere.** For the unit sphere `Sⁿ`,
-`∑ᵢ₌₀ᴺ (-1)ⁱ dim Hᵢ(Sⁿ; V) = (1 + (-1)ⁿ) dim V` for every `N ≥ n`: the height function is a Morse
-function with one critical point of index `0` and one of index `n`. -/
-theorem sum_range_neg_one_pow_mul_finrank_singularHomology_sphere {k : Type u} [DivisionRing k]
-    (V : ModuleCat.{u} k) [Module.Finite k V] {N : ℕ} (hN : n ≤ N) :
-    ∑ i ∈ Finset.range (N + 1), (-1 : ℤ) ^ i *
-        finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
-          (TopCat.of (sphere (0 : E) 1))) =
-      finrank k V * (1 + (-1) ^ n) := by
-  classical
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) := nonempty_sphere n
-  have hN' : finrank ℝ (EuclideanSpace ℝ (Fin n)) ≤ N := by rwa [finrank_euclideanSpace_fin]
-  rw [(isMorse_sphereHeight v).sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hN',
-    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum {v, -v}
-      (by rw [Finset.coe_pair, criticalPoints_sphereHeight]) hN',
-    Finset.sum_pair (ne_neg_of_mem_unit_sphere ℝ v), manifoldMorseIndex_sphereHeight_self,
-    manifoldMorseIndex_sphereHeight_neg, pow_zero, add_comm]
 
 /-- **Morse functions on a sphere have an even number of critical points.** -/
 theorem IsMorse.even_toNat_totalCriticalCount_sphere {f : sphere (0 : E) 1 → ℝ}
