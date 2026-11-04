@@ -30,6 +30,9 @@ discrete valuation ring.
   is integral.
 * `Scheme.IdealSheafData.subschemeι_genericPoint_vanishingIdeal_closure_singleton`: the generic
   point of the reduced closure of `η` maps to `η`.
+* `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
+  with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
+  closed subscheme.
 
 ## References
 
@@ -88,5 +91,20 @@ theorem subschemeι_genericPoint_vanishingIdeal_closure_singleton (η : X) :
   rw [Set.image_univ, range_subschemeι, coe_support_vanishingIdeal, Closeds.coe_mk,
     closure_closure] at h
   exact h.eq isGenericPoint_closure
+
+/-- A morphism `f` from a reduced scheme whose image lies in a closed subset `Z` kills the
+vanishing ideal of `Z`, so it factors through the reduced induced closed subscheme on `Z`
+(`IsClosedImmersion.lift` along `subschemeι`): a section vanishing on `Z` pulls back to a section
+with empty nonvanishing locus, which is zero on a reduced scheme. -/
+theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X)
+    {Z : Closeds X} (h : Set.range f ⊆ Z) : vanishingIdeal Z ≤ f.ker := by
+  refine le_ofIdeals_iff.mpr fun U s hs ↦ RingHom.mem_ker.mpr (eq_zero_of_basicOpen_eq_bot _ ?_)
+  rw [← Scheme.preimage_basicOpen, eq_bot_iff]
+  rintro y hy
+  have hZ : f y ∈ X.zeroLocus (U := U.1) ((vanishingIdeal Z).ideal U) :=
+    (mem_support_iff_of_mem (X.basicOpen_le s hy)).mp <| by
+      rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
+      exact h ⟨y, rfl⟩
+  exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
 
 end AlgebraicGeometry.Scheme.IdealSheafData
