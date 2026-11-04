@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 public import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.GradedAlgebra.Subalgebra
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # The Hilbert ideal of a linear group action
@@ -100,6 +101,53 @@ theorem mem_symmetricAlgebraHilbertIdeal_of_mem {p : SymmetricAlgebra R M}
     (hp' : p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)) :
     p ∈ ρ.symmetricAlgebraHilbertIdeal :=
   ρ.symmetricAlgebraHilbertIdeal_le_iff.1 le_rfl p hp hp'
+
+/-- A generating family for the invariant algebra, all of whose members have zero
+constant term, generates the Hilbert ideal in the ambient symmetric algebra. Polynomial
+independence and finiteness of the family are not needed. -/
+theorem symmetricAlgebraHilbertIdeal_eq_span_of_surjective {ι : Type*}
+    (f : ι → ρ.symmetricAlgebraInvariants)
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈
+      HomogeneousIdeal.irrelevant (homogeneousSubmodule R M))
+    (hsurj : Function.Surjective (MvPolynomial.aeval (R := R) f)) :
+    ρ.symmetricAlgebraHilbertIdeal = Ideal.span (Set.range fun i ↦
+      (f i : SymmetricAlgebra R M)) := by
+  let I := Ideal.span (Set.range fun i ↦ (f i : SymmetricAlgebra R M))
+  have haug (i : ι) : SymmetricAlgebra.algebraMapInv (f i : SymmetricAlgebra R M) = 0 := by
+    have hi := hf i
+    rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv,
+      RingHom.mem_ker] at hi
+    exact hi
+  refine le_antisymm (ρ.symmetricAlgebraHilbertIdeal_le_iff.2 ?_) ?_
+  · intro p hp hp₀
+    obtain ⟨P, hP⟩ := hsurj ⟨p, hp⟩
+    have heval : MvPolynomial.aeval (fun i ↦ (f i : SymmetricAlgebra R M)) P = p := by
+      have h := congrArg ρ.symmetricAlgebraInvariants.val hP
+      simpa only [MvPolynomial.comp_aeval_apply, Subalgebra.val_apply] using h
+    have hpaug : SymmetricAlgebra.algebraMapInv p = 0 := by
+      rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv,
+        RingHom.mem_ker] at hp₀
+      exact hp₀
+    have hc : MvPolynomial.constantCoeff P = 0 := by
+      rw [← heval, MvPolynomial.comp_aeval_apply] at hpaug
+      simpa only [haug, MvPolynomial.aeval_zero', Algebra.algebraMap_self_apply] using hpaug
+    have hPmem : P ∈ MvPolynomial.idealOfVars ι R := by
+      rw [← MvPolynomial.ker_constantCoeff, RingHom.mem_ker]
+      exact hc
+    have hmap : (MvPolynomial.idealOfVars ι R).map
+        (MvPolynomial.aeval (fun i ↦ (f i : SymmetricAlgebra R M))) = I := by
+      rw [MvPolynomial.idealOfVars, Ideal.map_span]
+      rw [← Set.range_comp]
+      simp only [Function.comp_def, MvPolynomial.aeval_X]
+      rfl
+    rw [← heval]
+    have h := Ideal.mem_map_of_mem (MvPolynomial.aeval
+      (fun i ↦ (f i : SymmetricAlgebra R M))) hPmem
+    rw [hmap] at h
+    exact h
+  · refine Ideal.span_le.2 ?_
+    rintro _ ⟨i, rfl⟩
+    exact ρ.mem_symmetricAlgebraHilbertIdeal_of_mem (f i).2 (hf i)
 
 /-- The Hilbert ideal is contained in the irrelevant ideal. -/
 theorem symmetricAlgebraHilbertIdeal_le_irrelevant :
