@@ -114,22 +114,6 @@ private theorem exists_side_smul_eq_of_mem_side {i : Fin n} {z w : ℍ} (hw : w 
   refine ⟨σ.pair i, hwz ▸ σ.map_smul_mem_side hw, ?_⟩
   rw [← hwz, smul_smul, σ.map_pair, inv_mul_cancel, one_smul]
 
-/-- A point of the polygon is an interior point, a point of a side other than its finite
-endpoints, or a finite vertex. -/
-private theorem mem_interior_or_mem_side_or_vertex_eq {z : ℍ} (hz : z ∈ P.carrier) :
-    z ∈ interior P.carrier ∨
-      (∃ i, z ∈ P.side i ∧ P.vertex i ≠ .inl z ∧ P.vertex (i + 1) ≠ .inl z) ∨
-        ∃ j, P.vertex j = .inl z := by
-  by_cases hzi : z ∈ interior P.carrier
-  · exact Or.inl hzi
-  have hzf : z ∈ frontier P.carrier := P.isClosed_carrier.frontier_eq ▸ ⟨hz, hzi⟩
-  obtain ⟨i, hi⟩ := mem_iUnion.mp (P.frontier_carrier ▸ hzf)
-  by_cases h₀ : P.vertex i = .inl z
-  · exact Or.inr (Or.inr ⟨i, h₀⟩)
-  by_cases h₁ : P.vertex (i + 1) = .inl z
-  · exact Or.inr (Or.inr ⟨i + 1, h₁⟩)
-  exact Or.inr (Or.inl ⟨i, hi, h₀, h₁⟩)
-
 /-- An element of `Γ` moving an interior point of the polygon into the polygon is the identity. -/
 private theorem eq_one_of_smul_mem_carrier
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
@@ -167,14 +151,14 @@ theorem mem_orbit_iff_of_mem_carrier (hmap : ∀ i, σ.map i ∈ Γ)
   · obtain ⟨⟨g, hg⟩, hgz⟩ := mem_orbit_iff.mp h
     rw [Subgroup.mk_smul] at hgz
     have hgw : g⁻¹ • w = z := by rw [← hgz, inv_smul_smul]
-    rcases mem_interior_or_mem_side_or_vertex_eq hw with hwi | ⟨i, hwi, hwp, hwq⟩ | ⟨k, hk⟩
+    rcases P.mem_interior_or_mem_side_or_vertex_eq_inl hw with hwi | ⟨i, hwi, hwp, hwq⟩ | ⟨k, hk⟩
     · -- an interior point is only equivalent to itself
       have h1 := eq_one_of_smul_mem_carrier hdisj (Γ.inv_mem hg) hwi (hgw ▸ hz)
       rw [inv_eq_one] at h1
       exact Or.inl (by rw [← hgz, h1, one_smul])
     · exact (σ.eq_or_exists_side_smul_eq_of_smul_mem_side hmap hdisj hg hz hwi hwp hwq
         hgz).imp_right Or.inl
-    rcases mem_interior_or_mem_side_or_vertex_eq hz with hzi | ⟨i, hzi, hzp, hzq⟩ | ⟨j, hj⟩
+    rcases P.mem_interior_or_mem_side_or_vertex_eq_inl hz with hzi | ⟨i, hzi, hzp, hzq⟩ | ⟨j, hj⟩
     · have h1 := eq_one_of_smul_mem_carrier hdisj hg hzi (hgz ▸ hw)
       exact Or.inl (by rw [← hgz, h1, one_smul])
     · rcases σ.eq_or_exists_side_smul_eq_of_smul_mem_side hmap hdisj (Γ.inv_mem hg) hw hzi hzp
