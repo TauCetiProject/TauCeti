@@ -33,6 +33,8 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
 ## Main results
 
 * `CategoryTheory.CommMon.relativeProjMap_relativeProjToBase`: the morphism lies over `X`.
+* `CategoryTheory.CommMon.relativeProjMap_id` and `CategoryTheory.CommMon.relativeProjMap_comp`:
+  the construction is contravariantly functorial.
 * `CategoryTheory.CommMon.isPullback_relativeProjMap`: over the chart of `Proj_X(B)` above an
   affine open `U`, the morphism is `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))`.
 * `CategoryTheory.CommMon.isClosedImmersion_relativeProjMap`: a morphism surjective in positive
@@ -95,6 +97,17 @@ theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app_toSpecCoeff
   Proj.map_toSpecCoeff (f := CommMon.gradedSectionsGradedHom φ U.toOpens) (hf := hφ U.toOpens U.2)
     (hR := fun r ↦ Subtype.ext <| by simp)
 
+/-- The morphisms induced by `φ` lie over the coefficient rings `Γ(X, U)`, composed with a further
+morphism. This is stated separately because the projective spectra are the charts of the relative
+`Proj`s only after unfolding, which defeats the reassociation in `@[reassoc]`. -/
+theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_app_toSpecCoeff_assoc
+    (U : X.AffineZariskiSite) {Y : Scheme.{u}} (g : Spec Γ(X, U.toOpens) ⟶ Y) :
+    (CommMon.relativeProjFunctorMap φ hφ).app U ≫
+        Proj.toSpecCoeff (B.gradedSectionsGrading U.toOpens) ≫ g =
+      Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ g :=
+  (Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ g) (CommMon.relativeProjFunctorMap_app_toSpecCoeff φ hφ U))
+
 /-- The morphism of relative `Proj`s `Proj_X(A) ⟶ Proj_X(B)` induced by a morphism `φ : B ⟶ A` of
 graded algebras, glued from the morphisms `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))` over the
 affine opens `U` of `X`. -/
@@ -114,11 +127,11 @@ theorem _root_.CategoryTheory.CommMon.relativeProjCover_f_relativeProjMap
 @[reassoc (attr := simp)]
 theorem _root_.CategoryTheory.CommMon.relativeProjMap_relativeProjToBase :
     CommMon.relativeProjMap φ hφ ≫ B.relativeProjToBase = A.relativeProjToBase :=
-  colimit.hom_ext fun U ↦ (CommMon.relativeProjCover_f_relativeProjMap_assoc φ hφ U _).trans <|
-    (congrArg (_ ≫ ·) (B.relativeProjCover_f_relativeProjToBase U)).trans <|
-      ((Category.assoc _ _ _).symm.trans
-        (congrArg (· ≫ _) (CommMon.relativeProjFunctorMap_app_toSpecCoeff φ hφ U))).trans
-        (A.relativeProjCover_f_relativeProjToBase U).symm
+  A.relativeProjCover.hom_ext _ _ fun (U : X.AffineZariskiSite) ↦ by
+    have h := A.relativeProjCover_f_relativeProjToBase U
+    rw [← CommMon.relativeProjFunctorMap_app_toSpecCoeff_assoc φ hφ U] at h
+    exact (CommMon.relativeProjCover_f_relativeProjMap_assoc φ hφ U _).trans
+      ((congrArg (_ ≫ ·) (B.relativeProjCover_f_relativeProjToBase U)).trans h.symm)
 
 /-- **Over an affine open `U` of `X`, the morphism of relative `Proj`s induced by `φ` is
 `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))`**: the chart of `Proj_X(A)` over `U` is the
@@ -128,12 +141,91 @@ theorem _root_.CategoryTheory.CommMon.isPullback_relativeProjMap (U : X.AffineZa
       (CommMon.relativeProjMap φ hφ) (B.relativeProjCover.f U) := by
   refine (IsPullback.of_right ?_ (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).symm
     (B.isPullback_relativeProjCover U)).flip
-  exact Eq.mpr (congrArg₂ (fun a b ↦ IsPullback a (A.relativeProjCover.f U) U.toOpens.ι b)
-    ((Category.assoc _ _ _).symm.trans
-      (congrArg (· ≫ _) (CommMon.relativeProjFunctorMap_app_toSpecCoeff φ hφ U)))
-    (CommMon.relativeProjMap_relativeProjToBase φ hφ)) (A.isPullback_relativeProjCover U)
+  have h := A.isPullback_relativeProjCover U
+  rw [← CommMon.relativeProjFunctorMap_app_toSpecCoeff_assoc φ hφ U,
+    ← CommMon.relativeProjMap_relativeProjToBase φ hφ] at h
+  exact h
 
 end Map
+
+section Functoriality
+
+variable {C : CommMon (GradedObject ℕ X.Modules)} [∀ n, (A.X n).IsQuasicoherent]
+  [∀ n, (B.X n).IsQuasicoherent] [∀ n, (C.X n).IsQuasicoherent]
+
+/-- The identity of a graded algebra induces the identity on the projective spectra of its
+sections. -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_id
+    (h : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom (𝟙 A) U)) :
+    CommMon.relativeProjFunctorMap (𝟙 A) h = 𝟙 A.relativeProjFunctor := by
+  ext U
+  exact (Proj.map_congr (CommMon.gradedSectionsGradedHom_id U.toOpens) _ _).trans Proj.map_id
+
+/-- The morphisms of projective spectra induced by a composite of morphisms of graded algebras
+are the composites of the induced morphisms. -/
+theorem _root_.CategoryTheory.CommMon.relativeProjFunctorMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
+    (hφ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (C.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom φ U))
+    (hψ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom ψ U))
+    (hφψ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (C.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom (φ ≫ ψ) U)) :
+    CommMon.relativeProjFunctorMap (φ ≫ ψ) hφψ =
+      CommMon.relativeProjFunctorMap ψ hψ ≫ CommMon.relativeProjFunctorMap φ hφ := by
+  ext U
+  exact (Proj.map_congr (CommMon.gradedSectionsGradedHom_comp φ ψ U.toOpens) _ _).trans
+    (Proj.map_comp _ _ _ _)
+
+/-- **The identity of a graded algebra induces the identity of its relative `Proj`.** -/
+@[simp]
+theorem _root_.CategoryTheory.CommMon.relativeProjMap_id
+    (h : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom (𝟙 A) U)) :
+    CommMon.relativeProjMap (𝟙 A) h = 𝟙 A.relativeProj :=
+  A.relativeProjCover.hom_ext _ _ fun (U : X.AffineZariskiSite) ↦
+    (CommMon.relativeProjCover_f_relativeProjMap (𝟙 A) h U).trans <| by
+      rw [CommMon.relativeProjFunctorMap_id]
+      exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- **The morphism of relative `Proj`s induced by a composite of morphisms of graded algebras is
+the composite of the induced morphisms.** -/
+theorem _root_.CategoryTheory.CommMon.relativeProjMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
+    (hφ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (C.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom φ U))
+    (hψ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom ψ U))
+    (hφψ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant (C.gradedSectionsGrading U)).map
+          (CommMon.gradedSectionsGradedHom (φ ≫ ψ) U)) :
+    CommMon.relativeProjMap (φ ≫ ψ) hφψ =
+      CommMon.relativeProjMap ψ hψ ≫ CommMon.relativeProjMap φ hφ :=
+  A.relativeProjCover.hom_ext _ _ fun (U : X.AffineZariskiSite) ↦
+    (CommMon.relativeProjCover_f_relativeProjMap (φ ≫ ψ) hφψ U).trans <| by
+      rw [CommMon.relativeProjFunctorMap_comp φ ψ hφ hψ hφψ,
+        CommMon.relativeProjCover_f_relativeProjMap_assoc ψ hψ U]
+      -- the charts are `Proj (⨁ n, Γ(Bₙ, U))` only after unfolding, so `rw` cannot reassociate
+      exact ((Category.assoc _ _ _).trans
+        (congrArg (_ ≫ ·) (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).symm)).trans
+          (Category.assoc _ _ _).symm
+
+end Functoriality
 
 section ClosedImmersion
 
@@ -143,30 +235,19 @@ variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] (φ :
       Set.range (CommMon.gradedSectionsGradedHom φ U))
 include hφ
 
-omit [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] in
-/-- A morphism of graded algebras surjective in positive degrees on affine sections satisfies the
-condition on irrelevant ideals needed to form the induced morphism of relative `Proj`s. -/
-theorem
-    _root_.CategoryTheory.CommMon.irrelevant_le_map_gradedSectionsGradedHom_of_grade_subset_range
-    (U : X.Opens) (hU : IsAffineOpen U) :
-    HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
-      (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
-        (CommMon.gradedSectionsGradedHom φ U) :=
-  HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)
-
 /-- **A morphism of graded algebras surjective in positive degrees induces a closed immersion of
 relative `Proj`s**: if `φ : B ⟶ A` maps `⨁ n, Γ(Bₙ, U)` onto every homogeneous component of
 positive degree of `⨁ n, Γ(Aₙ, U)` for every affine open `U` of `X`, then
 `Proj_X(A) ⟶ Proj_X(B)` is a closed immersion. -/
 @[stacks 01N0]
 theorem _root_.CategoryTheory.CommMon.isClosedImmersion_relativeProjMap :
-    IsClosedImmersion (CommMon.relativeProjMap φ
-      (CommMon.irrelevant_le_map_gradedSectionsGradedHom_of_grade_subset_range φ hφ)) := by
+    IsClosedImmersion (CommMon.relativeProjMap φ fun U hU ↦
+      HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)) := by
   refine IsZariskiLocalAtTarget.of_openCover B.relativeProjCover fun U ↦ ?_
-  have h := CommMon.isPullback_relativeProjMap φ
-    (CommMon.irrelevant_le_map_gradedSectionsGradedHom_of_grade_subset_range φ hφ) U
-  have : IsClosedImmersion ((CommMon.relativeProjFunctorMap φ
-      (CommMon.irrelevant_le_map_gradedSectionsGradedHom_of_grade_subset_range φ hφ)).app U) :=
+  have h := CommMon.isPullback_relativeProjMap φ (fun U hU ↦
+    HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)) U
+  have : IsClosedImmersion ((CommMon.relativeProjFunctorMap φ fun U hU ↦
+      HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ (hφ U hU)).app U) :=
     Proj.isClosedImmersion_map_of_grade_subset_range _ _ (hφ U.toOpens U.2)
   exact Eq.mpr (congrArg IsClosedImmersion h.isoPullback_inv_snd.symm)
     ((MorphismProperty.cancel_left_of_respectsIso @IsClosedImmersion h.isoPullback.inv _).mpr this)
@@ -179,30 +260,18 @@ variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] (φ :
   (hφ : ∀ i, 0 < i → Epi (φ.hom.hom i))
 include hφ
 
-/-- A morphism of graded algebras that is an epimorphism of module sheaves in every positive degree
-is surjective in positive degrees on sections over affine opens, the components of `A` and `B`
-being quasicoherent. -/
-theorem _root_.CategoryTheory.CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi
-    (U : X.Opens) (hU : IsAffineOpen U) (i : ℕ) (hi : 0 < i) :
-    (A.gradedSectionsGrading U i : Set (⨁ n, Γ(A.X n, U))) ⊆
-      Set.range (CommMon.gradedSectionsGradedHom φ U) := by
-  rintro _ hx
-  obtain ⟨x, rfl⟩ := DirectSum.mem_summand.mp hx
-  obtain ⟨y, rfl⟩ := @Scheme.Modules.Hom.app_surjective_of_epi_of_isAffineOpen _ (B.X i) (A.X i)
-    (φ.hom.hom i) (hφ i hi) _ _ U hU x
-  exact ⟨DirectSum.of _ i y, (CommMon.gradedSectionsGradedHom_apply φ U _).trans
-    (CommMon.gradedSectionsMap_of φ U i y)⟩
-
 /-- **A morphism of graded algebras that is an epimorphism in positive degrees induces a closed
 immersion of relative `Proj`s**: if `φ : B ⟶ A` is an epimorphism `Bₙ ⟶ Aₙ` of module sheaves for
 every `n > 0`, then `Proj_X(A) ⟶ Proj_X(B)` is a closed immersion. -/
 @[stacks 01N0]
 theorem _root_.CategoryTheory.CommMon.isClosedImmersion_relativeProjMap_of_epi :
-    IsClosedImmersion (CommMon.relativeProjMap φ
-      (CommMon.irrelevant_le_map_gradedSectionsGradedHom_of_grade_subset_range φ
-        (CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi φ hφ))) :=
-  CommMon.isClosedImmersion_relativeProjMap φ
-    (CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi φ hφ)
+    IsClosedImmersion (CommMon.relativeProjMap φ fun U hU ↦
+      HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ fun i hi ↦
+        have := hφ i hi
+        CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi φ U hU i) :=
+  CommMon.isClosedImmersion_relativeProjMap φ fun U hU i hi ↦
+    have := hφ i hi
+    CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi φ U hU i
 
 end Epi
 
