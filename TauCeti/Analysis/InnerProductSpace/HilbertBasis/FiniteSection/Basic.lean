@@ -125,6 +125,15 @@ theorem repr_finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) (i
     Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ b.repr x j • b j)]
   simp [inner_sum, inner_smul_right, orthonormal_iff_ite.mp b.orthonormal, Finset.mem_range]
 
+/-- A basis vector is retained exactly when its index lies in the finite section. -/
+@[simp]
+theorem finiteProjection_basis (b : HilbertBasis ℕ 𝕜 H) (n i : ℕ) :
+    b.finiteProjection n (b i) = if i < n + 1 then b i else 0 := by
+  rw [finiteProjection_apply,
+    Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ b.repr (b i) j • b j)]
+  simp [HilbertBasis.repr_apply_apply, orthonormal_iff_ite.mp b.orthonormal,
+    ite_smul, Finset.mem_range]
+
 /-- Finite-coordinate projection is idempotent. -/
 @[simp]
 theorem finiteProjection_comp_self (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :

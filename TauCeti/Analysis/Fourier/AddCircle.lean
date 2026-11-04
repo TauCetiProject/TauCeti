@@ -74,6 +74,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   function are the conjugates of its reflected coefficients.
 * `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
   at `n` and `0` elsewhere.
+* `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
+  the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 
 ## Tags
 
@@ -208,6 +210,24 @@ theorem eq_zero_of_forall_fourierCoeff_eq_zero (F : C(AddCircle T, ℂ))
 end ContinuousMap
 
 namespace TauCeti
+
+/-- Reflection of a circle function reverses its Fourier indices. -/
+theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : AddCircle T → E) (n : ℤ) :
+    fourierCoeff (fun x ↦ f (-x)) n = fourierCoeff f (-n) := by
+  rw [fourierCoeff, fourierCoeff, ← integral_neg_eq_self]
+  congr 1
+  funext x
+  simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
+
+/-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
+theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : Lp E p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (Lp.compMeasurePreserving (fun x ↦ -x)
+      (Measure.measurePreserving_neg haarAddCircle) f) n = fourierCoeff f (-n) := by
+  rw [fourierCoeff_congr_ae (Lp.coeFn_compMeasurePreserving f _)]
+  exact fourierCoeff_comp_neg f n
 
 /-- The `Lp` class of a Fourier monomial has modulus one almost everywhere. -/
 theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
