@@ -9,8 +9,7 @@ public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Order.Lattice.Nat
-public import Mathlib.GroupTheory.GroupAction.Basic
-public import Mathlib.GroupTheory.GroupAction.Hom
+public import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Group actions on trees
@@ -69,9 +68,9 @@ public section
 
 universe u v w x
 
-namespace TauCeti
-
 open MulAction
+
+namespace TauCeti
 
 /-- A `G`-tree: a Serre tree with an action of `G` by graph automorphisms without inversions. -/
 structure GTree (G : Type*) [Group G] where
@@ -283,30 +282,21 @@ variable (T) in
 /-- Two `G`-trees lie in the same deformation space when each dominates the other. -/
 def SameDeformationSpace (T' : GTree.{w, x} G) : Prop := T.Dominates T' ∧ T'.Dominates T
 
+/-- `T` dominates `T'` exactly when there is a `G`-equivariant map between their vertex sets. -/
+theorem dominates_iff_nonempty_mulActionHom {T' : GTree.{w, x} G} :
+    T.Dominates T' ↔ Nonempty (T.graph.V →[G] T'.graph.V) :=
+  Iff.rfl
+
+/-- Two `G`-trees lie in the same deformation space exactly when each dominates the other. -/
+theorem sameDeformationSpace_iff {T' : GTree.{w, x} G} :
+    T.SameDeformationSpace T' ↔ T.Dominates T' ∧ T'.Dominates T :=
+  Iff.rfl
+
 /-- A `G`-tree `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`.
 -/
 theorem dominates_iff {T' : GTree.{w, x} G} :
-    T.Dominates T' ↔ ∀ x : T.graph.V, T'.IsEllipticSubgroup (stabilizer G x) := by
-  refine ⟨fun ⟨f⟩ x => ⟨f x, fun g hg => ?_⟩, fun hS => ?_⟩
-  · rw [mem_stabilizer_iff] at hg ⊢
-    rw [← f.map_smul, hg]
-  · choose y hy using hS
-    -- `r x` is a chosen representative of the orbit of `x`, and `c x • r x = x`.
-    let r : T.graph.V → T.graph.V := fun x =>
-      (Quotient.mk'' x : Quotient (orbitRel G T.graph.V)).out
-    have hr : ∀ x, ∃ c : G, c • r x = x := fun x => by
-      obtain ⟨c, hc⟩ := orbitRel_apply.mp (Quotient.mk_out' (s₁ := orbitRel G T.graph.V) x)
-      exact ⟨c⁻¹, by rw [inv_smul_eq_iff]; exact hc.symm⟩
-    choose c hc using hr
-    have hrs : ∀ (g : G) x, r (g • x) = r x := fun g x =>
-      congrArg Quotient.out (Quotient.sound (orbitRel_apply.mpr (mem_orbit x g)))
-    refine ⟨⟨fun x => c x • y (r x), fun g x => ?_⟩⟩
-    have hgx : c (g • x) • r x = g • x := by simpa only [hrs] using hc (g • x)
-    have hk : (c x)⁻¹ * g⁻¹ * c (g • x) ∈ stabilizer G (r x) := by
-      rw [mem_stabilizer_iff, mul_smul, mul_smul, hgx, inv_smul_smul, inv_smul_eq_iff, hc]
-    have hky := mem_stabilizer_iff.mp (hy (r x) hk)
-    rw [mul_smul, mul_smul, inv_smul_eq_iff, inv_smul_eq_iff] at hky
-    simp only [id, hrs, hky, smul_smul]
+    T.Dominates T' ↔ ∀ x : T.graph.V, T'.IsEllipticSubgroup (stabilizer G x) :=
+  MulAction.nonempty_mulActionHom_iff_forall_exists_stabilizer_le
 
 theorem Dominates.refl : T.Dominates T := ⟨MulActionHom.id G⟩
 
