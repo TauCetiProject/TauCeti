@@ -48,8 +48,8 @@ condition into the global statement that every edge lies on one or two face side
 * `TauCeti.PolygonalComplex.HasSurfaceLink`: the link of a vertex is a finite circle or a finite
   interval.
 * `TauCeti.PolygonalComplex.eulerChar`: vertices minus geometric edges plus faces.
-* `TauCeti.PolygonalComplex.IsOrientable`: the faces can be oriented so that the two sides along
-  any edge lying on two face sides traverse it in opposite directions.
+* `TauCeti.PolygonalComplex.IsOrientable`: the faces can be oriented so that any two distinct
+  side occurrences along the same geometric edge traverse it in opposite directions.
 
 ## Main results
 
@@ -245,7 +245,7 @@ theorem linkDegree_eq_sideCount_rev_add_sideCount [Finite C.Face] (e : C.graph.E
 
 /-- A germ and its reverse have the same link degree: both count the face sides along their
 common edge. -/
-theorem linkDegree_rev [Finite C.Face] (e : C.graph.E) :
+@[simp] theorem linkDegree_rev [Finite C.Face] (e : C.graph.E) :
     C.linkDegree (C.graph.rev e) = C.linkDegree e := by
   rw [linkDegree_eq_sideCount_rev_add_sideCount, linkDegree_eq_sideCount_rev_add_sideCount,
     SerreGraph.rev_rev, add_comm]

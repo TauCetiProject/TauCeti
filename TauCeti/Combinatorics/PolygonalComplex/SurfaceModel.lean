@@ -18,12 +18,12 @@ this file works only with the combinatorial incidence data and uses no topology.
 
 The local link condition has global consequences for the incidence of faces and edges. Since the
 degree of a germ `e` in its link counts the face sides along `e` or its reverse, every geometric
-edge lies on one or two face sides (`SurfaceModel.boundary_incidence`). The darts whose edge lies
-on a single face side are the boundary darts (`SurfaceModel.boundaryDarts`), and they are exactly
-the germs of degree one in the links. Consequently every vertex meeting the boundary has exactly
-two boundary germs, the two ends of its interval link
-(`SurfaceModel.ncard_boundaryGerms_eq_two`). Finiteness of the faces also gives finiteness of the
-darts and of the vertices, since each of them occurs on a face.
+edge lies on one or two face sides (`SurfaceModel.sideCount_rev_add_sideCount_eq_one_or_two`).
+The darts whose edge lies on a single face side are the boundary darts
+(`SurfaceModel.boundaryDarts`), and they are exactly the germs of degree one in the links.
+Consequently every vertex meeting the boundary has exactly two boundary germs, the two ends of
+its interval link (`SurfaceModel.ncard_boundaryGerms_eq_two`). Finiteness of the faces also gives
+finiteness of the darts and of the vertices, since each of them occurs on a face.
 
 ## Main definitions
 
@@ -33,8 +33,10 @@ darts and of the vertices, since each of them occurs on a face.
 
 ## Main results
 
-* `TauCeti.SurfaceModel.boundary_incidence`: an edge not on the boundary lies on exactly two face
-  sides.
+* `TauCeti.SurfaceModel.sideCount_rev_add_sideCount_eq_one_or_two`: every geometric edge lies on
+  one or two face sides.
+* `TauCeti.SurfaceModel.notMem_boundaryDarts_iff`: an edge not on the boundary lies on exactly two
+  face sides.
 * `TauCeti.SurfaceModel.linkDegree_eq_one_iff_mem_boundaryDarts`: boundary darts are the germs of
   degree one.
 * `TauCeti.SurfaceModel.ncard_boundaryGerms_eq_two`: every boundary vertex has exactly two
@@ -121,7 +123,7 @@ theorem mem_boundaryDarts_iff {e : S.graph.E} :
 
 variable {S} in
 /-- An edge of a surface model that is not on the boundary lies on exactly two face sides. -/
-theorem boundary_incidence {e : S.graph.E} :
+theorem notMem_boundaryDarts_iff {e : S.graph.E} :
     e ∉ S.boundaryDarts ↔ S.sideCount (S.graph.rev e) + S.sideCount e = 2 := by
   have := S.sideCount_rev_add_sideCount_eq_one_or_two e
   rw [mem_boundaryDarts_iff]
@@ -142,7 +144,7 @@ variable {S} in
 /-- A dart which is not on the boundary has degree two in its link. -/
 theorem linkDegree_eq_two_iff_notMem_boundaryDarts {e : S.graph.E} :
     S.linkDegree e = 2 ↔ e ∉ S.boundaryDarts := by
-  rw [boundary_incidence, S.linkDegree_eq_sideCount_rev_add_sideCount]
+  rw [notMem_boundaryDarts_iff, S.linkDegree_eq_sideCount_rev_add_sideCount]
 
 /-- The boundary germs at a vertex `v`: the boundary darts starting at `v`. -/
 def boundaryGerms (v : S.graph.V) : Set S.graph.E := {e ∈ S.boundaryDarts | S.graph.src e = v}

@@ -43,9 +43,14 @@ For infinitely many faces the link is moreover infinite, and every germ then has
 * `TauCeti.SurfaceModel.isOrientable_torus`,
   `TauCeti.SurfaceModel.not_isOrientable_projectivePlane`: the torus is orientable and the
   projective plane is not.
-* `TauCeti.SurfaceModel.boundaryDarts_disc`, `TauCeti.SurfaceModel.boundaryDarts_torus`: both darts
-  of the disc are boundary darts, while the torus has no boundary.
-* `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: a pinched vertex has no surface link.
+* `TauCeti.SurfaceModel.boundaryDarts_disc`, `TauCeti.SurfaceModel.boundaryDarts_torus`,
+  `TauCeti.SurfaceModel.boundaryDarts_projectivePlane`, `TauCeti.SurfaceModel.boundaryDarts_sphere`:
+  both darts of the disc are boundary darts, while the closed models have no boundary.
+* `TauCeti.PolygonalComplex.hasSurfaceLink_polygon`,
+  `TauCeti.PolygonalComplex.isOrientable_polygon`: criteria on the word `w` for `polygon w` to
+  have surface links and to be orientable.
+* `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
+  the one-petal rose has no surface link (for example, the sphere with two points identified).
 
 ## References
 
@@ -80,17 +85,17 @@ section singleFace
 variable {Γ : SerreGraph.{u, v}} {w : List Γ.E} {hw : w ≠ []}
   {hclosed : ∀ i, Γ.tgt w[i] = Γ.src w[finRotate w.length i]}
 
-theorem singleFace_outgoing (k : Fin w.length) :
+theorem outgoing_singleFace (k : Fin w.length) :
     (singleFace Γ w hw hclosed).outgoing ⟨(), k⟩ = w[k] :=
   outgoing_def _ _
 
-theorem singleFace_incoming (k : Fin w.length) :
+theorem incoming_singleFace (k : Fin w.length) :
     (singleFace Γ w hw hclosed).incoming ⟨(), k⟩ = w[(finRotate w.length).symm k] :=
   incoming_def _ _
 
 /-- The number of sides of a single face attached along a dart `e` is the number of occurrences of
 `e` in its word. -/
-theorem singleFace_sideCount [DecidableEq Γ.E] (e : Γ.E) :
+theorem sideCount_singleFace [DecidableEq Γ.E] (e : Γ.E) :
     (singleFace Γ w hw hclosed).sideCount e = w.count e := by
   let eq : {c : (singleFace Γ w hw hclosed).Corner // (singleFace Γ w hw hclosed).outgoing c = e}
       ≃ {i : Fin w.length // w[i] = e} :=
@@ -105,26 +110,26 @@ theorem singleFace_sideCount [DecidableEq Γ.E] (e : Γ.E) :
 
 /-- The link degree of a dart in a single-face complex counts its occurrences and those of its
 reverse in the word. -/
-theorem singleFace_linkDegree [DecidableEq Γ.E] (e : Γ.E) :
+theorem linkDegree_singleFace [DecidableEq Γ.E] (e : Γ.E) :
     (singleFace Γ w hw hclosed).linkDegree e = w.count (Γ.rev e) + w.count e := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount, singleFace_sideCount, singleFace_sideCount]
+  rw [linkDegree_eq_sideCount_rev_add_sideCount, sideCount_singleFace, sideCount_singleFace]
 
-theorem singleFace_eulerChar :
+theorem eulerChar_singleFace :
     (singleFace Γ w hw hclosed).eulerChar = Nat.card Γ.V - Nat.card Γ.GeomEdge + 1 := by
   rw [eulerChar_def, Nat.card_unique (α := Unit), Nat.cast_one]
 
 /-- In the link of a vertex of a single-face complex, the corner at position `k` joins the germ
 `w[k]` to the reverse of the preceding dart. -/
-private theorem singleFace_link_step {x : Γ.V}
+theorem nonempty_vertexLink_path_singleFace {x : Γ.V}
     {a y : ((singleFace Γ w hw hclosed).vertexLink x).V}
     (b : ((singleFace Γ w hw hclosed).vertexLink x).V) (k : Fin w.length)
     (hk : Γ.src w[k] = x) (ha : a.1 = w[k]) (hb : b.1 = Γ.rev w[(finRotate w.length).symm k])
     (h : Nonempty (((singleFace Γ w hw hclosed).vertexLink x).Path b y)) :
     Nonempty (((singleFace Γ w hw hclosed).vertexLink x).Path a y) := by
   obtain ⟨p⟩ := (singleFace Γ w hw hclosed).nonempty_vertexLink_path ⟨⟨(), k⟩,
-    ((src_outgoing _ _).symm.trans (congrArg Γ.src (singleFace_outgoing k))).trans hk⟩
-    (ha.trans (singleFace_outgoing k).symm)
-    (hb.trans (congrArg Γ.rev (singleFace_incoming k).symm))
+    ((src_outgoing _ _).symm.trans (congrArg Γ.src (outgoing_singleFace k))).trans hk⟩
+    (ha.trans (outgoing_singleFace k).symm)
+    (hb.trans (congrArg Γ.rev (incoming_singleFace k).symm))
   obtain ⟨q⟩ := h
   exact ⟨p.comp q⟩
 
@@ -137,14 +142,14 @@ abbrev polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) : Polygonal
 
 /-- The link degree of a dart in `polygon w` counts its occurrences and those of its reverse in
 `w`. -/
-theorem polygon_linkDegree {α : Type u} [DecidableEq α] (w : List (α × Bool)) (hw : w ≠ [])
+theorem linkDegree_polygon {α : Type u} [DecidableEq α] (w : List (α × Bool)) (hw : w ≠ [])
     (e : α × Bool) : (polygon w hw).linkDegree e = w.count (e.1, !e.2) + w.count e := by
   let _ : DecidableEq (SerreGraph.rose α).E := inferInstanceAs (DecidableEq (α × Bool))
-  exact singleFace_linkDegree (Γ := SerreGraph.rose α) e
+  exact linkDegree_singleFace (Γ := SerreGraph.rose α) e
 
-theorem polygon_eulerChar {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) :
+theorem eulerChar_polygon {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) :
     (polygon w hw).eulerChar = 2 - Nat.card α := by
-  refine (singleFace_eulerChar (Γ := SerreGraph.rose α) (w := w) (hw := hw)).trans ?_
+  refine (eulerChar_singleFace (Γ := SerreGraph.rose α) (w := w) (hw := hw)).trans ?_
   rw [Nat.card_congr (SerreGraph.roseGeomEdgeEquiv α)]
   -- The rose has a single vertex.
   rw [show Nat.card (SerreGraph.rose α).V = 1 from Nat.card_unique (α := PUnit)]
@@ -152,13 +157,44 @@ theorem polygon_eulerChar {α : Type u} (w : List (α × Bool)) (hw : w ≠ []) 
 
 /-- In the link of the vertex of `polygon w`, the corner at position `k` joins the germ `w[k]` to
 the reverse of the preceding letter. -/
-private theorem polygon_link_step {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
+theorem nonempty_vertexLink_path_polygon {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
     {a y : ((polygon w hw).vertexLink PUnit.unit).V} (b : ((polygon w hw).vertexLink PUnit.unit).V)
     (k : Fin w.length) (ha : a.1 = w[k])
     (hb : b.1 = (w[(finRotate w.length).symm k].1, !w[(finRotate w.length).symm k].2))
     (h : Nonempty (((polygon w hw).vertexLink PUnit.unit).Path b y)) :
     Nonempty (((polygon w hw).vertexLink PUnit.unit).Path a y) :=
-  singleFace_link_step b k rfl ha hb h
+  nonempty_vertexLink_path_singleFace b k rfl ha hb h
+
+/-- A polygon whose link is joined from one germ to every germ, and whose letter counts give a
+circle or an interval, has surface links. -/
+theorem hasSurfaceLink_polygon {α : Type u} [DecidableEq α] {w : List (α × Bool)}
+    {hw : w ≠ []} (a : α × Bool)
+    (hpath : ∀ b : α × Bool,
+      Nonempty (((polygon w hw).vertexLink PUnit.unit).Path ⟨a, rfl⟩ ⟨b, rfl⟩))
+    (hdeg : (∀ e : α × Bool, w.count (e.1, !e.2) + w.count e = 2) ∨
+      ∃ e₁ e₂ : α × Bool, e₁ ≠ e₂ ∧ w.count (e₁.1, !e₁.2) + w.count e₁ = 1 ∧
+        w.count (e₂.1, !e₂.2) + w.count e₂ = 1 ∧
+          ∀ e : α × Bool, e ≠ e₁ → e ≠ e₂ → w.count (e.1, !e.2) + w.count e = 2)
+    (v : (polygon w hw).graph.V) : (polygon w hw).HasSurfaceLink v := by
+  refine ((polygon w hw).hasSurfaceLink_iff v).2 ⟨inferInstance,
+    ((polygon w hw).vertexLink v).connected_iff.2 ⟨⟨⟨a, rfl⟩⟩,
+      SerreGraph.preconnected_of_forall_nonempty_path _ ⟨a, rfl⟩ fun ⟨b, _⟩ => hpath b⟩, ?_⟩
+  rcases hdeg with hcirc | ⟨e₁, e₂, hne, h₁, h₂, h⟩
+  · exact .inl fun e _ => (linkDegree_polygon w hw e).trans (hcirc e)
+  · exact .inr ⟨e₁, e₂, hne, rfl, rfl, (linkDegree_polygon w hw e₁).trans h₁,
+      (linkDegree_polygon w hw e₂).trans h₂,
+      fun e _ he₁ he₂ => (linkDegree_polygon w hw e).trans (h e he₁ he₂)⟩
+
+/-- A polygon is orientable, keeping its face as given, when any two distinct occurrences of the
+same edge in its word are mutually reverse letters. -/
+theorem isOrientable_polygon {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
+    (h : ∀ k k' : Fin w.length, k ≠ k' → (w[k'] = w[k] ∨ w[k'] = (w[k].1, !w[k].2)) →
+      w[k'] = (w[k].1, !w[k].2)) :
+    (polygon w hw).IsOrientable := by
+  refine ((polygon w hw).isOrientable_iff).2 ⟨fun _ => true, fun ⟨⟨⟩, k⟩ ⟨⟨⟩, k'⟩ hne hk => ?_⟩
+  rw [orientedSide_of_eq_true _ rfl, orientedSide_of_eq_true _ rfl, outgoing_def, outgoing_def]
+  rw [outgoing_def, outgoing_def, SerreGraph.toGeomEdge_eq_toGeomEdge_iff] at hk
+  exact h k k' (fun hkk => hne (hkk ▸ rfl)) hk
 
 /-! ### Pinched vertices -/
 
@@ -221,47 +257,16 @@ open PolygonalComplex
 
 namespace SurfaceModel
 
-/-- A polygon whose link is joined from one germ to every germ, and whose letter counts give a
-circle or an interval, has surface links. -/
-private theorem polygon_hasSurfaceLink {α : Type u} [DecidableEq α] {w : List (α × Bool)}
-    {hw : w ≠ []} (a : α × Bool)
-    (hpath : ∀ b : α × Bool,
-      Nonempty (((polygon w hw).vertexLink PUnit.unit).Path ⟨a, rfl⟩ ⟨b, rfl⟩))
-    (hdeg : (∀ e : α × Bool, w.count (e.1, !e.2) + w.count e = 2) ∨
-      ∃ e₁ e₂ : α × Bool, e₁ ≠ e₂ ∧ w.count (e₁.1, !e₁.2) + w.count e₁ = 1 ∧
-        w.count (e₂.1, !e₂.2) + w.count e₂ = 1 ∧
-          ∀ e : α × Bool, e ≠ e₁ → e ≠ e₂ → w.count (e.1, !e.2) + w.count e = 2)
-    (v : (polygon w hw).graph.V) : (polygon w hw).HasSurfaceLink v := by
-  refine ((polygon w hw).hasSurfaceLink_iff v).2 ⟨inferInstance,
-    ((polygon w hw).vertexLink v).connected_iff.2 ⟨⟨⟨a, rfl⟩⟩,
-      SerreGraph.preconnected_of_forall_nonempty_path _ ⟨a, rfl⟩ fun ⟨b, _⟩ => hpath b⟩, ?_⟩
-  rcases hdeg with hcirc | ⟨e₁, e₂, hne, h₁, h₂, h⟩
-  · exact .inl fun e _ => (polygon_linkDegree w hw e).trans (hcirc e)
-  · exact .inr ⟨e₁, e₂, hne, rfl, rfl, (polygon_linkDegree w hw e₁).trans h₁,
-      (polygon_linkDegree w hw e₂).trans h₂,
-      fun e _ he₁ he₂ => (polygon_linkDegree w hw e).trans (h e he₁ he₂)⟩
-
-/-- A polygon is orientable, keeping its face as given, when any two distinct occurrences of the
-same edge in its word are mutually reverse letters. -/
-private theorem polygon_isOrientable_of_forall {α : Type u} {w : List (α × Bool)} {hw : w ≠ []}
-    (h : ∀ k k' : Fin w.length, k ≠ k' → (w[k'] = w[k] ∨ w[k'] = (w[k].1, !w[k].2)) →
-      w[k'] = (w[k].1, !w[k].2)) :
-    (polygon w hw).IsOrientable := by
-  refine ((polygon w hw).isOrientable_iff).2 ⟨fun _ => true, fun ⟨⟨⟩, k⟩ ⟨⟨⟩, k'⟩ hne hk => ?_⟩
-  rw [orientedSide_of_eq_true _ rfl, orientedSide_of_eq_true _ rfl, outgoing_def, outgoing_def]
-  rw [outgoing_def, outgoing_def, SerreGraph.toGeomEdge_eq_toGeomEdge_iff] at hk
-  exact h k k' (fun hkk => hne (hkk ▸ rfl)) hk
-
 /-! ### The disc -/
 
 /-- The disc: one petal `a` and a single face attached along `a`. -/
 def disc : SurfaceModel.{0, 0, 0} where
   toPolygonalComplex := polygon [((), true)] (List.cons_ne_nil _ _)
   connected := SerreGraph.rose_connected Unit
-  hasSurfaceLink := polygon_hasSurfaceLink ((), true)
+  hasSurfaceLink := hasSurfaceLink_polygon ((), true)
     (fun ⟨⟨⟩, b⟩ => by
       cases b
-      · exact polygon_link_step ⟨((), false), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩
+      · exact nonempty_vertexLink_path_polygon ⟨((), false), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩
       · exact ⟨.nil⟩)
     (.inr ⟨((), true), ((), false), by decide, by decide, by decide, by decide⟩)
 
@@ -269,13 +274,13 @@ theorem disc_toPolygonalComplex :
     disc.toPolygonalComplex = polygon [((), true)] (List.cons_ne_nil _ _) := (rfl)
 
 theorem eulerChar_disc : disc.eulerChar = 1 := by
-  rw [disc_toPolygonalComplex, polygon_eulerChar, Nat.card_unique]
+  rw [disc_toPolygonalComplex, eulerChar_polygon, Nat.card_unique]
   rfl
 
 /-- Both darts of the disc are boundary darts: its single edge lies on one face side. -/
 theorem boundaryDarts_disc : disc.boundaryDarts = Set.univ :=
   Set.eq_univ_of_forall fun e => linkDegree_eq_one_iff_mem_boundaryDarts.1 <|
-    (polygon_linkDegree (α := Unit) [((), true)] (List.cons_ne_nil _ _) e).trans <| by
+    (linkDegree_polygon (α := Unit) [((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> rfl
 
 /-! ### The torus -/
@@ -285,17 +290,17 @@ def torus : SurfaceModel.{0, 0, 0} where
   toPolygonalComplex := polygon (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)]
     (List.cons_ne_nil _ _)
   connected := SerreGraph.rose_connected (Fin 2)
-  hasSurfaceLink := polygon_hasSurfaceLink (0, true)
+  hasSurfaceLink := hasSurfaceLink_polygon (0, true)
     (fun ⟨i, b⟩ => by
       -- The link is the cycle `a, b, a⁻¹, b⁻¹`, through the corners at positions `0, 1, 2`.
       fin_cases i <;> cases b
-      · exact polygon_link_step ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl <|
-          polygon_link_step ⟨(0, false), rfl⟩ ⟨1, by decide⟩ rfl rfl ⟨.nil⟩
+      · exact nonempty_vertexLink_path_polygon ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl <|
+          nonempty_vertexLink_path_polygon ⟨(0, false), rfl⟩ ⟨1, by decide⟩ rfl rfl ⟨.nil⟩
       · exact ⟨.nil⟩
-      · exact polygon_link_step ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl <|
-          polygon_link_step ⟨(0, false), rfl⟩ ⟨1, by decide⟩ rfl rfl <|
-          polygon_link_step ⟨(1, false), rfl⟩ ⟨2, by decide⟩ rfl rfl ⟨.nil⟩
-      · exact polygon_link_step ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩)
+      · exact nonempty_vertexLink_path_polygon ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl <|
+          nonempty_vertexLink_path_polygon ⟨(0, false), rfl⟩ ⟨1, by decide⟩ rfl rfl <|
+          nonempty_vertexLink_path_polygon ⟨(1, false), rfl⟩ ⟨2, by decide⟩ rfl rfl ⟨.nil⟩
+      · exact nonempty_vertexLink_path_polygon ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩)
     (.inl fun ⟨i, b⟩ => by fin_cases i <;> cases b <;> decide)
 
 theorem torus_toPolygonalComplex :
@@ -304,13 +309,13 @@ theorem torus_toPolygonalComplex :
   (rfl)
 
 theorem eulerChar_torus : torus.eulerChar = 0 := by
-  rw [torus_toPolygonalComplex, polygon_eulerChar, Nat.card_eq_fintype_card, Fintype.card_fin]
+  rw [torus_toPolygonalComplex, eulerChar_polygon, Nat.card_eq_fintype_card, Fintype.card_fin]
   rfl
 
 /-- The torus has no boundary: each of its two edges lies on two face sides. -/
 theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
   Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <|
-    (polygon_linkDegree (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)]
+    (linkDegree_polygon (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)]
       (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨i, b⟩ := e
       fin_cases i <;> cases b <;> rfl
@@ -318,7 +323,7 @@ theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
 /-- The torus is orientable: with its face kept as given, the two sides along each edge traverse
 it in opposite directions. -/
 theorem isOrientable_torus : torus.IsOrientable :=
-  polygon_isOrientable_of_forall (hw := List.cons_ne_nil _ _) (by decide)
+  isOrientable_polygon (hw := List.cons_ne_nil _ _) (by decide)
 
 /-! ### The projective plane -/
 
@@ -326,10 +331,10 @@ theorem isOrientable_torus : torus.IsOrientable :=
 def projectivePlane : SurfaceModel.{0, 0, 0} where
   toPolygonalComplex := polygon [((), true), ((), true)] (List.cons_ne_nil _ _)
   connected := SerreGraph.rose_connected Unit
-  hasSurfaceLink := polygon_hasSurfaceLink ((), true)
+  hasSurfaceLink := hasSurfaceLink_polygon ((), true)
     (fun ⟨⟨⟩, b⟩ => by
       cases b
-      · exact polygon_link_step ⟨((), false), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩
+      · exact nonempty_vertexLink_path_polygon ⟨((), false), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩
       · exact ⟨.nil⟩)
     (.inl fun ⟨⟨⟩, b⟩ => by cases b <;> decide)
 
@@ -338,13 +343,13 @@ theorem projectivePlane_toPolygonalComplex :
   (rfl)
 
 theorem eulerChar_projectivePlane : projectivePlane.eulerChar = 1 := by
-  rw [projectivePlane_toPolygonalComplex, polygon_eulerChar, Nat.card_unique]
+  rw [projectivePlane_toPolygonalComplex, eulerChar_polygon, Nat.card_unique]
   rfl
 
 /-- The projective plane has no boundary: its edge lies on both face sides. -/
 theorem boundaryDarts_projectivePlane : projectivePlane.boundaryDarts = ∅ :=
   Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <|
-    (polygon_linkDegree (α := Unit) [((), true), ((), true)] (List.cons_ne_nil _ _) e).trans <| by
+    (linkDegree_polygon (α := Unit) [((), true), ((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> rfl
 
 /-- The projective plane is not orientable: its two sides traverse the same dart, and orienting
@@ -383,7 +388,7 @@ def sphere : SurfaceModel.{0, 0, 0} where
     · obtain rfl : e = v := he
       exact ⟨.nil⟩
     · let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
-      refine (singleFace_linkDegree e).trans ?_
+      refine (linkDegree_singleFace e).trans ?_
       cases e <;> rfl
 
 theorem sphere_toPolygonalComplex :
@@ -392,12 +397,20 @@ theorem sphere_toPolygonalComplex :
         (by intro i; fin_cases i <;> rfl) := (rfl)
 
 theorem eulerChar_sphere : sphere.eulerChar = 2 := by
-  rw [sphere_toPolygonalComplex, singleFace_eulerChar,
+  rw [sphere_toPolygonalComplex, eulerChar_singleFace,
     Nat.card_unique (α := SerreGraph.segment.GeomEdge)]
   -- The vertices of the segment are the two Booleans.
   rw [show Nat.card SerreGraph.segment.V = 2 from
     (Nat.card_eq_fintype_card (α := Bool)).trans Fintype.card_bool]
   rfl
+
+/-- The sphere has no boundary: its edge lies on both sides of the digon. -/
+theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <| by
+    let _ : DecidableEq SerreGraph.segment.E := inferInstanceAs (DecidableEq Bool)
+    refine (linkDegree_singleFace (Γ := SerreGraph.segment) (w := [false, true])
+      (hw := List.cons_ne_nil _ _) e).trans ?_
+    cases e <;> rfl
 
 end SurfaceModel
 
