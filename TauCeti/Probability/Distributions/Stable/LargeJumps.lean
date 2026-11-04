@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
 public import TauCeti.Probability.Distributions.CompoundPoisson.Moments
 public import TauCeti.Probability.Distributions.Pareto.Basic
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.Probability.Distributions.Affine
 
 /-!
@@ -80,10 +81,9 @@ theorem integrable_abs_rpow_compoundPoissonMeasure_stableLevyMeasure_iff
   have hmem := memLp_id_compoundPoissonMeasure_iff
     (μ := cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})
     (p := ENNReal.ofReal q) (by positivity) ENNReal.ofReal_ne_top hrate
-  rw [← integrable_norm_rpow_iff (by fun_prop) (by positivity) ENNReal.ofReal_ne_top,
-    ← integrable_norm_rpow_iff (by fun_prop) (by positivity) ENNReal.ofReal_ne_top] at hmem
-  simpa only [id_eq, Real.norm_eq_abs, ENNReal.toReal_ofReal hq.le] using
-    hmem.trans (integrable_abs_rpow_cond_stableLevyMeasure_iff hα hβ hε)
+  rw [memLp_id_ofReal_iff_integrable_abs_rpow hq,
+    memLp_id_ofReal_iff_integrable_abs_rpow hq] at hmem
+  exact hmem.trans (integrable_abs_rpow_cond_stableLevyMeasure_iff hα hβ hε)
 
 /-- Sine compensation does not change the large-jump moment threshold. Thus every
 positive-cutoff compensated stable approximation has finite absolute `q`th moment exactly
@@ -99,9 +99,8 @@ theorem integrable_abs_rpow_stableCompensatedPoissonMeasure_iff
   let _ := isProbabilityMeasure_cond_stableLevyMeasure hα hβ hε
   have h := memLp_id_map_affine_iff (μ := μ) (a := -c) (b := 1) (p := ENNReal.ofReal q)
     one_ne_zero
-  rw [← integrable_norm_rpow_iff (by fun_prop) (by positivity) ENNReal.ofReal_ne_top,
-    ← integrable_norm_rpow_iff (by fun_prop) (by positivity) ENNReal.ofReal_ne_top] at h
-  simp only [id_eq, Real.norm_eq_abs, ENNReal.toReal_ofReal hq.le] at h
+  rw [memLp_id_ofReal_iff_integrable_abs_rpow hq,
+    memLp_id_ofReal_iff_integrable_abs_rpow hq] at h
   rw [stableCompensatedPoissonMeasure_def]
   simpa only [one_mul, sub_eq_add_neg, add_comm] using h.trans
     (integrable_abs_rpow_compoundPoissonMeasure_stableLevyMeasure_iff hα hβ hε hq)

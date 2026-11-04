@@ -9,6 +9,7 @@ public import TauCeti.Probability.Independence.ConvolutionPower
 public import TauCeti.Probability.Moments.Basic
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.Probability.Moments.Covariance
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.MeanInequalitiesPow
 
@@ -81,13 +82,9 @@ theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
     ∫ x, ‖x‖ ^ p ∂μ.convolutionPower n ≤ (n : ℝ) ^ p * ∫ x, ‖x‖ ^ p ∂μ := by
   have hp0 : 0 ≤ p := le_trans zero_le_one hp
   have hlaw := μ.hasLaw_sum_pi_convolutionPower n
-  have hrpow_of_memLp {ν : Measure E} [IsFiniteMeasure ν] (hν : MemLp id (ENNReal.ofReal p) ν) :
-      Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
-    -- Apply the normed-target moment lemma to the real-valued norm.
-    simpa only [ENNReal.toReal_ofReal hp0, id_eq, norm_norm] using
-      (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
-  have hrpow := hrpow_of_memLp hμ
-  have hpow := hrpow_of_memLp (memLp_id_convolutionPower hμ n)
+  have hrpow := TauCeti.integrable_norm_rpow_of_memLp_id_ofReal hp0 hμ
+  have hpow := TauCeti.integrable_norm_rpow_of_memLp_id_ofReal hp0
+    (memLp_id_convolutionPower hμ n)
   have heval (i : Fin n) : Integrable (fun x : Fin n → E ↦ ‖x i‖ ^ p)
       (Measure.pi fun _ ↦ μ) := integrable_comp_eval (μ := fun _ : Fin n ↦ μ) hrpow
   rw [← hlaw.integral_comp (f := fun x ↦ ‖x‖ ^ p) hpow.aestronglyMeasurable]
@@ -120,20 +117,18 @@ at most linearly in the number of summands. -/
 theorem integral_norm_rpow_convolutionPower_le_of_le_one {p : ℝ} (hp : 0 < p)
     (hp1 : p ≤ 1) (hμ : MemLp id (ENNReal.ofReal p) μ) (n : ℕ) :
     ∫ x, ‖x‖ ^ p ∂μ.convolutionPower n ≤ (n : ℝ) * ∫ x, ‖x‖ ^ p ∂μ := by
-  have hrpow {ν : Measure E} [IsFiniteMeasure ν] (hν : MemLp id (ENNReal.ofReal p) ν) :
-      Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
-    simpa only [ENNReal.toReal_ofReal hp.le, id_eq, norm_norm] using
-      (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
   have hlaw := μ.hasLaw_sum_pi_convolutionPower n
-  have hi := hrpow hμ
+  have hi := TauCeti.integrable_norm_rpow_of_memLp_id_ofReal hp.le hμ
+  have hpow := TauCeti.integrable_norm_rpow_of_memLp_id_ofReal hp.le
+    (memLp_id_convolutionPower hμ n)
   have heval (i : Fin n) : Integrable (fun x : Fin n → E ↦ ‖x i‖ ^ p)
       (Measure.pi fun _ ↦ μ) := integrable_comp_eval (μ := fun _ : Fin n ↦ μ) hi
   rw [← hlaw.integral_comp (f := fun x ↦ ‖x‖ ^ p)
-    (hrpow (memLp_id_convolutionPower hμ n)).aestronglyMeasurable]
+    hpow.aestronglyMeasurable]
   calc
     _ ≤ ∫ x : Fin n → E, ∑ i, ‖x i‖ ^ p ∂Measure.pi (fun _ ↦ μ) := by
       apply integral_mono
-      · exact hlaw.integrable_comp (hrpow (memLp_id_convolutionPower hμ n))
+      · exact hlaw.integrable_comp hpow
       · exact integrable_finsetSum _ (fun i _ ↦ heval i)
       · intro x
         exact Finset.le_sum_of_subadditive (fun y : E ↦ ‖y‖ ^ p)
