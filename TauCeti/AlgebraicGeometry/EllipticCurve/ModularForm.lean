@@ -47,7 +47,7 @@ modular forms in `ℤ[c₄, c₆, Δ]` above, this determines the ring of
 integral modular forms of level one: an integral modular form of weight `k` is exactly a weighted
 homogeneous element of weight `k` of `ℤ[c₄, c₆, Δ]` (`WeierstrassCurve.isIntegralModularForm_iff`),
 and this subring is presented by the single relation `c₄³ - c₆² = 1728Δ`
-(`WeierstrassCurve.Universal.adjoinC₄C₆ΔEquiv`).
+(`WeierstrassCurve.adjoinC₄C₆ΔEquiv`).
 
 Deligne's theorem follows from the description after inverting `6`, because `ℤ[c₄, c₆, Δ]` is
 saturated with respect to `6`: every element of it is `α(c₄, Δ) + c₆ β(c₄, Δ)`, and reducing
@@ -59,6 +59,8 @@ and `β`.
 
 * `WeierstrassCurve.IsIntegralModularForm`: the predicate of being an integral modular form of
   weight `k`.
+* `TauCeti.WeierstrassCurve.integralModularFormSubmodule`: the `ℤ`-submodule of integral modular
+  forms of weight `k`, forming a graded monoid across weights.
 
 ## Main results
 
@@ -556,3 +558,27 @@ theorem isIntegralModularForm_iff : IsIntegralModularForm k f ↔
     fun h ↦ (isIntegralModularForm_iff_of_mem_adjoin h.1).mpr h.2⟩
 
 end WeierstrassCurve
+
+namespace TauCeti.WeierstrassCurve
+
+open _root_.WeierstrassCurve
+
+/-- The `ℤ`-submodule of `ℤ[a₁, a₂, a₃, a₄, a₆]` consisting of integral modular forms of weight `k`
+for the Weierstrass coordinate-change action. -/
+def integralModularFormSubmodule (k : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) where
+  carrier := {f | IsIntegralModularForm k f}
+  add_mem' hf hg := hf.add hg
+  zero_mem' := isIntegralModularForm_zero k
+  smul_mem' n _ hf := hf.smul n
+
+@[simp]
+theorem mem_integralModularFormSubmodule {k : ℕ} {f : MvPolynomial Coeff ℤ} :
+    f ∈ integralModularFormSubmodule k ↔ IsIntegralModularForm k f :=
+  (Iff.rfl)
+
+instance : SetLike.GradedMonoid integralModularFormSubmodule where
+  one_mem := mem_integralModularFormSubmodule.mpr isIntegralModularForm_one
+  mul_mem _ _ _ _ hf hg := mem_integralModularFormSubmodule.mpr
+    ((mem_integralModularFormSubmodule.mp hf).mul (mem_integralModularFormSubmodule.mp hg))
+
+end TauCeti.WeierstrassCurve
