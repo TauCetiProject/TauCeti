@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.MapDegreeTwo
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Map.DegreeTwo
 
 /-!
 # Unit-valued Galois cohomology of isomorphic fields
