@@ -285,6 +285,20 @@ end TauCeti
 
 namespace Complex
 
+/-- The principal square root has nonnegative real part, including on the branch cut. -/
+theorem cpow_half_re_nonneg (z : ℂ) : 0 ≤ (z ^ (1 / 2 : ℂ)).re := by
+  simpa only [one_div, cpow_inv_two_re] using
+    Real.sqrt_nonneg ((‖z‖ + z.re) / 2)
+
+/-- The principal square root of a point in the slit plane has positive real part. -/
+theorem cpow_half_re_pos {z : ℂ} (hz : z ∈ slitPlane) :
+    0 < (z ^ (1 / 2 : ℂ)).re := by
+  rw [one_div, cpow_inv_two_re, Real.sqrt_pos]
+  rcases mem_slitPlane_iff.mp hz with h | h
+  · linarith [norm_nonneg z]
+  · have := abs_re_lt_norm.mpr h
+    linarith [neg_abs_le z.re]
+
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
   rcases eq_or_ne w 0 with rfl | hw
