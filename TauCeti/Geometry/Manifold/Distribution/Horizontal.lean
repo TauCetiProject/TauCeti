@@ -42,7 +42,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable (J) in
 /-- A map `f : N → M` is **horizontal** for a distribution `D`, or tangent to `D`, when every
 tangent image `df_y(T_y N)` lies in `D (f y)`. For a contact structure `D` these are the
-isotropic maps, the parametrizations of immersed isotropic submanifolds.
+isotropic maps; when `f` is moreover a smooth immersion, it parametrizes an immersed isotropic
+submanifold.
 
 The tangent image is taken with `mfderiv`, which is `0` at points where `f` is not
 differentiable, so there the condition holds trivially. -/

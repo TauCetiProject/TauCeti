@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
+import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
@@ -17,9 +18,9 @@ import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 Let `ξ` be a hyperplane field on a manifold `M`. A map `f : N → M` is horizontal for `ξ`
 (`TauCeti.IsHorizontalMap`) when every tangent image `df_y(T_y N)` lies in the hyperplane
-`ξ_(f y)`. When `ξ` is a contact structure such maps are called **isotropic**, and they
-parametrize the immersed isotropic submanifolds; the source is an arbitrary charted space and `f`
-need not be injective, so embedded and immersed submanifolds are treated alike.
+`ξ_(f y)`. When `ξ` is a contact structure such maps are called **isotropic**; an isotropic smooth
+immersion parametrizes an immersed isotropic submanifold. The source is an arbitrary charted space
+and `f` need not be injective, so embedded and immersed submanifolds are treated alike.
 
 The Levi form `L_ξ(u, v) = -[U, V] mod ξ` of a `C¹` hyperplane field vanishes on the tangent
 images of every `C²` horizontal map
@@ -32,8 +33,8 @@ into a contact manifold of dimension `2 n + 1` has a source of dimension at most
 (`TauCeti.IsHorizontalMap.two_mul_finrank_add_one_le`). None of this uses a coorientation of `ξ`.
 
 For a global one-form `α`, a smooth map is horizontal for `ker α` exactly when it pulls `α` back
-to zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`), and then it
-also pulls `dα` back to zero.
+to zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`, in
+`TauCeti.Geometry.Contact.Pullback`), and then it also pulls `dα` back to zero.
 
 A **Legendrian immersion** (`TauCeti.IsLegendrianImmersion`) into a contact manifold of
 dimension `2 n + 1` is a smooth isotropic immersion from a manifold of dimension `n`, the
@@ -46,9 +47,7 @@ the image of a Legendrian immersion may have self-intersections.
 * `TauCeti.IsHorizontalMap.distributionLeviForm_eq_zero`: the Levi form vanishes on the tangent
   images of a horizontal map.
 * `TauCeti.IsHorizontalMap.two_mul_finrank_add_one_le`: the dimension bound `2 dim N + 1 ≤ dim M`
-  for isotropic maps into a contact manifold.
-* `TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`: a map is horizontal
-  for the kernel of a one-form exactly when the pulled-back form vanishes.
+  for isotropic maps into a contact manifold with injective differential at some point.
 * `TauCeti.IsLegendrianImmersion`, `TauCeti.IsLegendrianEmbedding`: Legendrian immersions and
   embeddings.
 
@@ -151,37 +150,6 @@ theorem IsHorizontalMap.two_mul_finrank_add_one_le [IsManifold I (n + 1) M]
   omega
 
 end Levi
-
-/-! ### Kernels of one-forms -/
-
-namespace SmoothForm
-
-variable [IsManifold I ∞ M] [IsManifold J ∞ N]
-
-/-- **Horizontality is the vanishing of the pullback.** A smooth map is horizontal for the kernel
-of a one-form `α` exactly when it pulls `α` back to zero. -/
-theorem isHorizontalMap_kerDistribution_iff_mpullback_eq_zero
-    (α : SmoothForm I M ℝ 1) (hf : ContMDiff J I ∞ f) :
-    IsHorizontalMap J α.kerDistribution f ↔ mpullback f hf α = 0 := by
-  have h (y : N) : (mpullback f hf α).1 y = 0 ↔
-      LinearMap.range (mfderiv J I f y).toLinearMap ≤ α.kerDistribution (f y) := by
-    have hker : (mpullback f hf α).kerDistribution y = RoughForm.ker (mpullback f hf α).1 y := by
-      ext
-      rw [mem_kerDistribution, RoughForm.mem_ker]
-    rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α y, hker,
-      RoughForm.ker_eq_top_iff]
-  simp only [isHorizontalMap_iff_range_mfderiv_le, ← h, Subtype.ext_iff, funext_iff,
-    ZeroMemClass.coe_zero, Pi.zero_apply]
-
-/-- A smooth map horizontal for the kernel of a one-form `α` also pulls back `dα` to zero. -/
-theorem mpullback_mextDerivₗ_eq_zero_of_isHorizontalMap
-    {α : SmoothForm I M ℝ 1} (hf : ContMDiff J I ∞ f)
-    (hfα : IsHorizontalMap J α.kerDistribution f) :
-    mpullback f hf (mextDerivₗ I 1 α) = 0 := by
-  rw [← mextDerivₗ_mpullback, (isHorizontalMap_kerDistribution_iff_mpullback_eq_zero α hf).1 hfα,
-    map_zero]
-
-end SmoothForm
 
 /-! ### Legendrian immersions and embeddings -/
 
