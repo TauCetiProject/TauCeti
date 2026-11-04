@@ -19,7 +19,8 @@ trajectory from `p` to `q` crosses each intermediate level `{f = c}` exactly onc
 slice `W^u(p) ∩ W^s(q) ∩ {f = c}` is in bijection with the space of unparametrized trajectories
 from `p` to `q` (`Flow.IsNegativeGradient.bijOn_quotient_mk_unstableSet_inter_stableSet_level`).
 This file shows that, where `W^u(p)` and `W^s(q)` meet transversally, the slice is an embedded
-`C¹` submanifold of dimension `morseIndex f p - morseIndex f q - 1`.
+submanifold of dimension `morseIndex f p - morseIndex f q - 1`, of class `C^n` when `f` is
+globally `C^(n+1)` with `1 ≤ n`.
 
 The level `{f = c}` is cut transversally: the velocity `-∇f y` of the trajectory through a point
 `y` of the slice is tangent to `W^u(p) ∩ W^s(q)`, while `df_y(-∇f y) = -‖∇f y‖² ≠ 0`. Hence the
