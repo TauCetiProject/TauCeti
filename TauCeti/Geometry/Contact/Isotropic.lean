@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
-import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
