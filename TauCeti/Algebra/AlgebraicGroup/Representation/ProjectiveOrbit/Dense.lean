@@ -41,8 +41,10 @@ nilpositive element has full dimension because its tangent space is the whole gr
 * `TauCeti.Comodule.closure_range_projectiveOrbitMap_eq_univ`: an orbit of dimension `dim M - 1` is
   dense.
 * `TauCeti.Comodule.isOpen_range_projectiveOrbitMap`: an orbit of dimension `dim M - 1` is open.
-* `TauCeti.Comodule.exists_span_basePointsRepresentation_eq`: two lines whose orbits have dimension
-  `dim M - 1` are carried to each other by a rational point of `G`.
+* `TauCeti.Comodule.exists_span_basePointsRepresentation_eq` and
+  `TauCeti.Comodule.range_projectiveOrbitMap_eq`: two lines whose orbits have dimension
+  `dim M - 1` are carried to each other by a rational point of `G`, and their scheme-theoretic
+  projective orbits coincide.
 
 ## References
 
@@ -94,9 +96,9 @@ theorem isOpen_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular k m)
   rwa [closure_range_projectiveOrbitMap_eq_univ m hm hdim, ← Set.compl_eq_univ_sdiff,
     isClosed_compl_iff] at h
 
-/-- **Two orbits of maximal dimension coincide.** If the orbits of the lines through `m` and `n`
-both have dimension `dim M - 1`, a rational point of `G` carries the line through `m` to the line
-through `n`. -/
+/-- **Two orbits of maximal dimension are conjugate.** If the orbits of the lines through `m` and
+`n` both have dimension `dim M - 1`, a rational point of `G` carries the line through `m` to the
+line through `n`. -/
 theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodular k m)
     (n : M) (hn : Module.IsUnimodular k n)
     (hmdim : (Module.finrank k M : WithBot ℕ∞) ≤
@@ -128,5 +130,18 @@ theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodula
   have h := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq m hm n hn g 1).mp
     (by simpa [AlgHom.convOne_def] using hg)
   simpa using h
+
+/-- **Two orbits of maximal dimension coincide.** If the orbits of the lines through `m` and `n`
+both have dimension `dim M - 1`, their full scheme-theoretic orbit images in `P(M)` are equal. -/
+theorem range_projectiveOrbitMap_eq (m : M) (hm : Module.IsUnimodular k m)
+    (n : M) (hn : Module.IsUnimodular k n)
+    (hmdim : (Module.finrank k M : WithBot ℕ∞) ≤
+      topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) + 1)
+    (hndim : (Module.finrank k M : WithBot ℕ∞) ≤
+      topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) n hn)) + 1) :
+    Set.range (projectiveOrbitMap (H := H) m hm) =
+      Set.range (projectiveOrbitMap (H := H) n hn) := by
+  obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq m hm n hn hmdim hndim
+  exact range_projectiveOrbitMap_eq_of_span_basePointsRepresentation_eq hm hn hg
 
 end TauCeti.Comodule

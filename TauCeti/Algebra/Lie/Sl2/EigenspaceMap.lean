@@ -51,6 +51,9 @@ vectors it contains of weight `n` with `n : ℕ` (`IsSl2Triple.ker_toEnd_e_eq_iS
 
 * `IsSl2Triple.disjoint_ker_toEnd_e_eigenspace` and
   `IsSl2Triple.disjoint_ker_toEnd_f_eigenspace`: injectivity of `e` and `f` on the eigenspaces.
+* `IsSl2Triple.eq_of_isSl2Triple` and `IsSl2Triple.eq_of_isSl2Triple_left`: in a Noetherian
+  torsion-free Lie algebra over a domain of characteristic zero, two elements of an `sl₂` triple
+  including the neutral element determine the third.
 * `IsSl2Triple.eigenspace_add_two_le_map_toEnd_e_sup_ker_toEnd_f`: the graded form of
   `M = e • M ⊕ ker f`, namely `M_(μ + 2) ≤ e • M_μ + (ker f ⊓ M_(μ + 2))`.
 * `IsSl2Triple.map_toEnd_e_eigenspace`: `e` maps `M_μ` onto `M_(μ + 2)` unless `μ + 2 = -n`.
@@ -105,6 +108,36 @@ theorem disjoint_ker_toEnd_f_eigenspace (t : IsSl2Triple h e f) (hμ : ∀ n : �
   simpa using this
 
 end Domain
+
+section Uniqueness
+
+variable (K : Type*) [CommRing K] [IsDomain K] [CharZero K] {L : Type*} [LieRing L]
+  [LieAlgebra K L] [IsNoetherian K L] [IsTorsionFree K L]
+
+include K in
+/-- **The neutral and raising elements of an `sl₂` triple determine the lowering element.** The
+difference `f - f'` has `h`-weight `-2` and is killed by `ad e`, whereas `ad e` is injective at
+weight `-2`. -/
+theorem eq_of_isSl2Triple {h e f f' : L} (t : IsSl2Triple h e f) (t' : IsSl2Triple h e f') :
+    f = f' := by
+  apply sub_eq_zero.mp
+  have hdisj := t.disjoint_ker_toEnd_e_eigenspace (K := K) (M := L) (μ := -2) fun n hn ↦ by
+    have : ((-2 : ℤ) : K) = ((n : ℤ) : K) := by simpa using hn
+    exact absurd (Int.cast_injective this) (by omega)
+  refine Submodule.disjoint_def.mp hdisj (f - f') ?_ ?_
+  · rw [LinearMap.mem_ker, toEnd_apply_apply, lie_sub, t.lie_e_f, t'.lie_e_f, sub_self]
+  · rw [Module.End.mem_eigenspace_iff, toEnd_apply_apply, lie_sub, t.lie_lie_smul_f K,
+      t'.lie_lie_smul_f K, neg_smul, smul_sub]
+    abel
+
+include K in
+/-- **The neutral and lowering elements of an `sl₂` triple determine the raising element.** This is
+`IsSl2Triple.eq_of_isSl2Triple` for the opposite triples `(-h, f, e)` and `(-h, f, e')`. -/
+theorem eq_of_isSl2Triple_left {h e e' f : L} (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f) :
+    e = e' :=
+  t.symm.eq_of_isSl2Triple K t'.symm
+
+end Uniqueness
 
 /-! ### Surjectivity -/
 
