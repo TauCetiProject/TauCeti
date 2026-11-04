@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Normed.Field.WithAbs
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
-import Mathlib.Algebra.Polynomial.Eval.Subring
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Trace
+import TauCeti.FieldTheory.PurelyInseparable.Basic
 
 /-!
 # Spectral norms on purely inseparable extensions
@@ -77,15 +77,12 @@ noncomputable def spectralAbsoluteValue (K M : Type*) [NormedField K] [IsUltrame
     (Algebra.IsAlgebraic.isAlgebraic x), fun hx ↦ hx ▸ spectralNorm_zero⟩
   add_le' _ _ := isNonarchimedean_spectralNorm.add_le spectralNorm_nonneg
 
-@[simp]
-theorem spectralAbsoluteValue_apply [IsPurelyInseparable K M] (x : M) :
-    spectralAbsoluteValue K M x = spectralNorm K M x :=
-  (rfl)
+@[simp] theorem spectralAbsoluteValue_apply [IsPurelyInseparable K M] (x : M) :
+    spectralAbsoluteValue K M x = spectralNorm K M x := (rfl)
 
 theorem isNonarchimedean_spectralAbsoluteValue (K M : Type*) [NormedField K]
     [IsUltrametricDist K] [Field M] [Algebra K M] [IsPurelyInseparable K M] :
-    IsNonarchimedean (spectralAbsoluteValue K M) :=
-  isNonarchimedean_spectralNorm
+    IsNonarchimedean (spectralAbsoluteValue K M) := isNonarchimedean_spectralNorm
 
 instance [IsPurelyInseparable K M] : IsUltrametricDist (WithAbs (spectralAbsoluteValue K M)) :=
   (isNonarchimedean_spectralAbsoluteValue K M).isUltrametricDist_withAbs
@@ -108,8 +105,7 @@ Equipping `M` with `spectralAbsoluteValue K M` through `WithAbs`, the spectral n
 `M` coincides with its spectral norm over `K`. -/
 theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField K]
     [IsUltrametricDist K] [Field M] [Algebra K M] [IsPurelyInseparable K M]
-    [Field N] [Algebra K N] [Algebra M N] [IsScalarTower K M N] [Algebra.IsAlgebraic M N]
-    (y : N) :
+    [Field N] [Algebra K N] [Algebra M N] [IsScalarTower K M N] [Algebra.IsAlgebraic M N] (y : N) :
     spectralNorm (WithAbs (spectralAbsoluteValue K M)) N y = spectralNorm K N y := by
   let M' := WithAbs (spectralAbsoluteValue K M)
   have : Algebra.IsAlgebraic K N := Algebra.IsAlgebraic.trans K M N
@@ -137,45 +133,17 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
             norm_algebraMap_withAbs_spectralAbsoluteValue P
       _ = spectralNorm K N y := by rw [spectralNorm]
   · -- Raise `Q = minpoly M' y` to a `p ^ n`-th power whose coefficients descend to `K`.
-    classical
     set Q := minpoly M' y
     have hQ : Q.Monic := minpoly.monic (Algebra.IsIntegral.isIntegral y)
     let p := ringExpChar K
     have : ExpChar M' p := expChar_of_injective_algebraMap (algebraMap K M').injective p
-    have hex (i : ℕ) : ∃ m : ℕ, (Q.coeff i) ^ p ^ m ∈ (algebraMap K M').range := by
-      obtain ⟨m, a, ha⟩ := IsPurelyInseparable.pow_mem K p (Q.coeff i).ofAbs
-      refine ⟨m, a, ?_⟩
-      apply WithAbs.ofAbs_injective
-      rw [WithAbs.algebraMap_right_apply, WithAbs.ofAbs_toAbs, WithAbs.ofAbs_pow]
-      exact ha
-    let m_fn (i : ℕ) : ℕ := (hex i).choose
-    set n : ℕ := Q.support.sup m_fn
+    have : IsPurelyInseparable K M' :=
+      (WithAbs.algEquiv K (spectralAbsoluteValue K M)).symm.isPurelyInseparable
+    obtain ⟨n, R, hR_map⟩ := Q.exists_map_eq_pow_expChar_pow_of_isPurelyInseparable K p
     set q : ℕ := p ^ n
     have hq : 0 < q := pow_pos (expChar_pos K p) n
-    have hmem (i : ℕ) : Q.coeff i ^ q ∈ (algebraMap K M').range := by
-      by_cases hi : i ∈ Q.support
-      · obtain ⟨a, ha⟩ := (hex i).choose_spec
-        have hle : m_fn i ≤ n := Finset.le_sup hi
-        refine ⟨a ^ p ^ (n - m_fn i), ?_⟩
-        rw [map_pow, ha, ← pow_mul, ← pow_add, Nat.add_sub_cancel' hle]
-      · rw [notMem_support_iff.mp hi, zero_pow hq.ne']
-        exact ⟨0, map_zero _⟩
-    obtain ⟨Q₀, hQ₀⟩ : Q.map (iterateFrobenius M' p n) ∈ (mapRingHom (algebraMap K M')).range :=
-      (mem_map_range (algebraMap K M')).mpr fun i ↦ by
-        rw [coeff_map, iterateFrobenius_def]
-        exact hmem i
-    rw [coe_mapRingHom] at hQ₀
-    set R : K[X] := Polynomial.expand K q Q₀
-    have hR_map : R.map (algebraMap K M') = Q ^ q := by
-      calc R.map (algebraMap K M')
-          = Polynomial.expand M' q (Q₀.map (algebraMap K M')) := map_expand
-        _ = Polynomial.expand M' q (Q.map (iterateFrobenius M' p n)) := by rw [hQ₀]
-        _ = (Polynomial.expand M' q Q).map (iterateFrobenius M' p n) := map_expand.symm
-        _ = Q ^ q := map_iterateFrobenius_expand p Q n
-    have hR_monic : R.Monic := by
-      refine monic_of_injective (algebraMap K M').injective ?_
-      rw [hR_map]
-      exact hQ.pow q
+    have hR_monic : R.Monic :=
+      monic_of_injective (algebraMap K M').injective (by rw [hR_map]; exact hQ.pow q)
     have hR_root : aeval y R = 0 := by
       rw [← aeval_map_algebraMap M' y R, hR_map, map_pow, minpoly.aeval, zero_pow hq.ne']
     calc spectralNorm K N y = spectralAlgNorm K N y := (spectralAlgNorm_def y).symm
@@ -183,9 +151,10 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
           norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm
             hR_monic hR_root
       _ = spectralValue (Q.map (iterateFrobenius M' p n)) ^ (1 / (q : ℝ)) := by
-          rw [Q₀.spectralValue_expand hq.ne', ← hQ₀,
-            (algebraMap K M').spectralValue_map_of_norm_eq
-              norm_algebraMap_withAbs_spectralAbsoluteValue]
+          rw [← (algebraMap K M').spectralValue_map_of_norm_eq
+              norm_algebraMap_withAbs_spectralAbsoluteValue,
+            hR_map, ← map_iterateFrobenius_expand p Q n, map_expand,
+            (Q.map (iterateFrobenius M' p n)).spectralValue_expand hq.ne']
       _ ≤ (spectralValue Q ^ q) ^ (1 / (q : ℝ)) :=
           Real.rpow_le_rpow (spectralValue_nonneg _)
             (Q.spectralValue_map_iterateFrobenius_le p n) (by positivity)
@@ -207,8 +176,7 @@ theorem exists_bound_spectralNorm_of_isPurelyInseparable_of_isSeparable {K M N :
     [Field N] [Algebra K N] [Algebra M N] [IsScalarTower K M N]
     [FiniteDimensional M N] [Algebra.IsSeparable M N]
     (hM : ∀ ψ : Module.Dual K M, ∃ C : ℝ, ∀ x, ‖ψ x‖ ≤ C * spectralNorm K M x)
-    (φ : Module.Dual K N) :
-    ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K N y := by
+    (φ : Module.Dual K N) : ∃ C : ℝ, ∀ y, ‖φ y‖ ≤ C * spectralNorm K N y := by
   let M' := WithAbs (TauCeti.spectralAbsoluteValue K M)
   let b := Module.finBasis M' N
   choose C₁ hC₁ using fun i ↦ Module.Dual.exists_bound_spectralNorm_of_isSeparable (b.coord i)

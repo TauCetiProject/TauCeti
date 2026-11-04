@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import Mathlib.Analysis.Normed.Field.WithAbs
 
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Order
 
@@ -103,10 +104,7 @@ theorem gaussFractionNorm_algebraMap (f : Tate) :
 /-- The extended Gauss norm is nonarchimedean. -/
 theorem isNonarchimedean_gaussFractionNorm : IsNonarchimedean (gaussFractionNorm σ K c) := by
   unfold gaussFractionNorm
-  exact isNonarchimedean_fractionRingAbsoluteValue _ _
-    (fun f g ↦ by
-      simpa only [IsAbsoluteValue.toAbsoluteValue_apply] using
-        IsUltrametricDist.norm_add_le_max f g)
+  exact isNonarchimedean_fractionRingAbsoluteValue _ _ IsUltrametricDist.isNonarchimedean_norm
 
 /-- The fraction field of a Tate algebra with the extended Gauss norm, without completion. -/
 abbrev GaussFractionField := WithAbs (gaussFractionNorm σ K c)
@@ -166,9 +164,7 @@ theorem pow_ne_algebraMap_gaussFractionField_X (i : σ) {n : ℕ} (hn : n ≠ 1)
   exact zero_ne_one hmod
 
 instance : IsUltrametricDist (GaussFractionField σ K c) :=
-  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
-    simpa only [WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_add] using
-      isNonarchimedean_gaussFractionNorm σ K c x.ofAbs y.ofAbs
+  (isNonarchimedean_gaussFractionNorm σ K c).isUltrametricDist_withAbs
 
 noncomputable instance : NormedAlgebra K (GaussFractionField σ K c) where
   norm_smul_le r x := by
@@ -240,8 +236,7 @@ noncomputable def gaussFractionFieldMap
       (GaussFractionField σ' K' c')).comp hφ)
 
 /-- `gaussFractionFieldMap` extends `φ` along the fraction-field embeddings. -/
-@[simp]
-theorem gaussFractionFieldMap_algebraMap
+@[simp] theorem gaussFractionFieldMap_algebraMap
     (φ : IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := K') c')
     (hφ : Function.Injective φ) (f : IsRestricted.subring (R := K) c) :
     φ.gaussFractionFieldMap hφ (algebraMap _ (GaussFractionField σ K c) f) =
@@ -254,10 +249,8 @@ theorem norm_gaussFractionFieldMap
     (hφ : Function.Injective φ) (hφ_norm : ∀ f, ‖φ f‖ = ‖f‖) (z : GaussFractionField σ K c) :
     ‖φ.gaussFractionFieldMap hφ z‖ = ‖z‖ := by
   obtain ⟨f, g, _, rfl⟩ := IsFractionRing.div_surjective (IsRestricted.subring (R := K) c) z
-  rw [map_div₀, gaussFractionFieldMap_algebraMap, gaussFractionFieldMap_algebraMap, norm_div,
-    norm_div, norm_algebraMap_gaussFractionField σ' K' c' _,
-    norm_algebraMap_gaussFractionField σ' K' c' _, norm_algebraMap_gaussFractionField σ K c _,
-    norm_algebraMap_gaussFractionField σ K c _, hφ_norm, hφ_norm]
+  simp only [map_div₀, gaussFractionFieldMap_algebraMap, norm_div,
+    norm_algebraMap_gaussFractionField, hφ_norm]
 
 /-- Extending a norm-preserving homomorphism of Tate algebras yields an isometry between their
 Gauss-normed fraction fields. -/

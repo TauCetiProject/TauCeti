@@ -136,20 +136,19 @@ private theorem isWeaklyStable_of_norm_eq {K : Type*} {K' : Type*} [NormedField 
   have : IsScalarTower K K' L' := .of_algebraMap_eq' <| by
     rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra]
   have : FiniteDimensional K L' := Module.Finite.trans K' L'
-  let eAlg : K ≃ₐ[K] K' :=
-    AlgEquiv.ofRingEquiv (f := e) fun a ↦ by
-      rw [Algebra.algebraMap_self, RingHom.id_apply, RingHom.algebraMap_toAlgebra,
-        RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
+  have heAlg (x : K) : e (algebraMap K K x) = algebraMap K K' x := by
+    simp [RingHom.algebraMap_toAlgebra]
+  let eAlg : K ≃ₐ[K] K' := AlgEquiv.ofRingEquiv (f := e) heAlg
   let φ : Module.Dual K L' := eAlg.symm.toLinearMap.comp (φ'.restrictScalars K)
   obtain ⟨C, hC⟩ := hK.exists_bound_spectralNorm φ
   refine ⟨C, fun y ↦ ?_⟩
   have hnorm : ‖φ y‖ = ‖φ' y‖ := by
+    dsimp only [φ, eAlg]
     rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AlgEquiv.toLinearMap_apply,
       AlgEquiv.ofRingEquiv_symm_apply, ← he (e.symm (φ' y)), e.apply_symm_apply]
   have hcomp : (algebraMap K' L').comp e.toRingHom =
       (RingEquiv.refl L').toRingHom.comp (algebraMap K L') := by
-    rw [RingEquiv.toRingHom_eq_coe (RingEquiv.refl L'), RingEquiv.toRingHom_refl, RingHom.id_comp,
-      RingHom.algebraMap_toAlgebra]
+    simp [RingHom.algebraMap_toAlgebra]
   have hspec : spectralNorm K' L' y = spectralNorm K L' y :=
     e.spectralNorm_eq_of_norm_eq he (RingEquiv.refl L') hcomp y
   rw [← hnorm, hspec]

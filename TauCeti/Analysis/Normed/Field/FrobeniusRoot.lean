@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Field.WithAbs
 public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 
 /-!
 # The Frobenius-root normed algebra of an ultrametric field
@@ -42,20 +41,16 @@ public section
 
 namespace TauCeti
 
-private theorem isNonarchimedean_toAbsoluteValue_norm (K : Type*) [NormedField K]
-    [IsUltrametricDist K] :
-    IsNonarchimedean (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)) := fun x y ↦ by
-  simpa only [IsAbsoluteValue.toAbsoluteValue_apply] using IsUltrametricDist.norm_add_le_max x y
-
 /-- The real absolute value `x ↦ ‖x‖ ^ (p ^ e)⁻¹` on an ultrametric normed field `K`. -/
 noncomputable def frobeniusRootAbs (K : Type*) [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [ExpChar K p] (e : ℕ) : AbsoluteValue K ℝ :=
   (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)).nonarchRpow
-    (isNonarchimedean_toAbsoluteValue_norm K)
+    (by
+      rw [show ⇑(IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)) = norm from rfl]
+      exact IsUltrametricDist.isNonarchimedean_norm)
     (inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e)))
 
-@[simp]
-theorem frobeniusRootAbs_apply {K : Type*} [NormedField K] [IsUltrametricDist K]
+@[simp] theorem frobeniusRootAbs_apply {K : Type*} [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [ExpChar K p] (e : ℕ) (x : K) :
     frobeniusRootAbs K p e x = ‖x‖ ^ ((p ^ e : ℕ) : ℝ)⁻¹ := by
   rw [frobeniusRootAbs, AbsoluteValue.nonarchRpow_apply, IsAbsoluteValue.toAbsoluteValue_apply]
@@ -104,14 +99,12 @@ variable {K p e}
 
 @[simp] theorem ringEquiv_apply (x : FrobeniusRoot K p e) : ringEquiv K p e x = val K p e x := (rfl)
 
-@[simp]
-theorem ringEquiv_symm_apply (a : K) : (ringEquiv K p e).symm a = root K p e a := (rfl)
+@[simp] theorem ringEquiv_symm_apply (a : K) : (ringEquiv K p e).symm a = root K p e a := (rfl)
 
-@[simp]
-theorem val_root (a : K) : val K p e (root K p e a) = a := (ringEquiv K p e).apply_symm_apply a
+@[simp] theorem val_root (a : K) : val K p e (root K p e a) = a :=
+  (ringEquiv K p e).apply_symm_apply a
 
-@[simp]
-theorem root_val (x : FrobeniusRoot K p e) : root K p e (val K p e x) = x :=
+@[simp] theorem root_val (x : FrobeniusRoot K p e) : root K p e (val K p e x) = x :=
   (ringEquiv K p e).symm_apply_apply x
 
 theorem root_injective : Function.Injective (root K p e) := (ringEquiv K p e).symm.injective
@@ -155,8 +148,7 @@ theorem norm_algebraMap (a : K) :
     ← Real.rpow_mul (norm_nonneg a), mul_inv_cancel₀ hq, Real.rpow_one]
 
 noncomputable instance : NormedAlgebra K (FrobeniusRoot K p e) where
-  norm_smul_le a x := by
-    rw [Algebra.smul_def, norm_mul, norm_algebraMap]
+  norm_smul_le a x := by rw [Algebra.smul_def, norm_mul, norm_algebraMap]
 
 /-- `root K p e` is a uniform inducing map from `K` to `FrobeniusRoot K p e`, since distances are
 raised to the positive exponent `(p ^ e)⁻¹`. -/
