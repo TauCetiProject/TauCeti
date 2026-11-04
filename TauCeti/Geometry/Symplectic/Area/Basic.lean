@@ -11,10 +11,12 @@ public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 import TauCeti.Topology.MetricSpace.ClosedBallDiffBalls
 import Mathlib.Analysis.Calculus.Deriv.CompMul
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Integrability and Stokes formulas for symplectic area
@@ -41,6 +43,8 @@ a `2π`-periodic curve backwards in unit time, such as a clockwise circle, has l
 counterclockwise boundary integral of `λ` (`TauCeti.SymplecticForm.loopArea_comp_sub_two_pi_mul`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
+The area of a map on `ℝ × ℝ` over a region of the plane may be computed in the complex coordinate
+(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_preimage_equivRealProd`).
 
 ## References
 
@@ -217,6 +221,32 @@ theorem integral_symplecticForm_fderiv_smul_eq_loopArea (ω : SymplecticForm V) 
 
 end LoopArea
 
+/-- **Symplectic area in the complex coordinate.** For a map `u` on `ℝ × ℝ` and a set `s ⊆ ℂ`, the
+symplectic area of `u` over the preimage of `s` under `ℝ × ℝ ≃ ℂ` is the symplectic area over `s`
+of `u` read in the complex coordinate `z = x + iy`. -/
+theorem integral_symplecticForm_fderiv_preimage_equivRealProd (ω : SymplecticForm V)
+    (u : ℝ × ℝ → V) (s : Set ℂ) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' s,
+        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) =
+      ∫ w in s, ω (fderiv ℝ (u ∘ Complex.equivRealProdCLM) w 1)
+        (fderiv ℝ (u ∘ Complex.equivRealProdCLM) w I) := by
+  set e := Complex.equivRealProdCLM
+  have hfderiv (z : ℝ × ℝ) (w : ℂ) : fderiv ℝ (u ∘ e) (e.symm z) w = fderiv ℝ u z (e w) := by
+    rw [e.comp_right_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      e.apply_symm_apply]
+  have hcoe : ⇑Complex.measurableEquivRealProd.symm = e.symm := by
+    funext p
+    apply Complex.ext <;> simp [e]
+  have h := (Complex.volume_preserving_equiv_real_prod.symm).setIntegral_preimage_emb
+    (MeasurableEquiv.measurableEmbedding _)
+    (fun w ↦ ω (fderiv ℝ (u ∘ e) w 1) (fderiv ℝ (u ∘ e) w I)) s
+  rw [hcoe] at h
+  rw [← h]
+  congr 1
+  funext z
+  rw [hfderiv, hfderiv]
+  simp [e, stdComplexLineReal, stdComplexLineImag]
+
 /-- The symplectic form as a continuous bilinear map whose antisymmetrization is `2ω`. This turns
 the bilinear Green formulas into Stokes' formulas for symplectic area. -/
 private theorem exists_continuousLinearMap_sub_swap [FiniteDimensional ℝ V]
@@ -228,13 +258,6 @@ private theorem exists_continuousLinearMap_sub_swap [FiniteDimensional ℝ V]
   refine ⟨B, hB, fun x y ↦ ?_⟩
   rw [hB, hB, ← ω.neg_eq]
   ring
-
-/-- The derivative of a map along a circle is its differential applied to the circle's velocity. -/
-private theorem deriv_comp_circleMap {u : ℂ → V} {z₁ : ℂ} {s θ : ℝ}
-    (hu : DifferentiableAt ℝ u (circleMap z₁ s θ)) :
-    deriv (fun θ ↦ u (circleMap z₁ s θ)) θ =
-      fderiv ℝ u (circleMap z₁ s θ) (circleMap 0 s θ * I) :=
-  (hu.hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₁ s θ)).deriv
 
 /-- **Stokes' formula for symplectic area on an annulus.** The pullback area of a `C²` map is
 the outer boundary action minus the inner boundary action for the primitive `λₓ(v) = ½ ω(x, v)`.
@@ -256,7 +279,7 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
     have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
         abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
-    exact deriv_comp_circleMap ((hu _ hm).differentiableAt (by norm_num))
+    exact ((hu _ hm).differentiableAt (by norm_num)).deriv_comp_circleMap
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
@@ -287,7 +310,7 @@ theorem integral_fderiv_apply_closedBall_diff_iUnion_ball [FiniteDimensional ℝ
       (θ : ℝ) :
       deriv (fun θ ↦ u (circleMap z₁ s θ)) θ =
         fderiv ℝ u (circleMap z₁ s θ) (circleMap 0 s θ * I) :=
-    deriv_comp_circleMap ((hu _ (hs θ)).differentiableAt (by norm_num))
+    ((hu _ (hs θ)).differentiableAt (by norm_num)).deriv_comp_circleMap
   have houter (θ : ℝ) :
       circleMap z₀ r θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) :=
     sphere_subset_closedBall_diff_iUnion_ball hsub (circleMap_mem_sphere z₀ hr θ)

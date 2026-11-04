@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # The action form of the energy identity on the truncated pair of pants
 
-The energy identity for pairs of pants reads `E = A₁ + A₂ - A₀ + ω(A) - ∫ R_K`, where `Aᵢ` is the
-action of the asymptotic orbit at the end `i` with its cap. For a symplectic vector space target
+The energy identity for pairs of pants reads
+`E = A_{H_0}(x_0) + A_{H_1}(x_1) - A_{H_∞}(x_∞) + ω(A) - ∫ R_K`, where `A_{H_q}(x_q)` is the action
+of the asymptotic orbit at the end `q` with its cap; `0` and `1` are the input ends and `∞` is the
+output end. For a symplectic vector space target
 every loop has the unique cap class of the cone over it, the class `A` vanishes, and the action is
 `A_H(x) = a(x) + ∫₀¹ H(t, x(t)) dt` with the loop area `a(x) = ½ ∫₀¹ ω(x, x') dt`
 (`TauCeti.SymplecticForm.hamiltonianAction`). This file proves this form of the identity on the
@@ -103,26 +104,6 @@ theorem integral_symplecticForm_fderiv_truncation_eq_sum_loopArea [FiniteDimensi
     (isOpen_ne.inter isOpen_ne).preimage e.symm.continuous
   have hv {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) : ContDiffAt ℝ 2 v w :=
     (hu.contDiffAt (hopen.mem_nhds (by simpa using hw))).comp w e.contDiff.contDiffAt
-  -- The area integral, in the complex coordinate.
-  have hfderiv (z : ℝ × ℝ) (w : ℂ) :
-      fderiv ℝ v (e.symm z) w = fderiv ℝ u z (e w) := by
-    rw [e.comp_right_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      e.apply_symm_apply]
-  have hchange : (∫ z in e.symm ⁻¹' truncation R,
-        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) =
-      ∫ w in truncation R, ω (fderiv ℝ v w 1) (fderiv ℝ v w Complex.I) := by
-    have hcoe : ⇑Complex.measurableEquivRealProd.symm = e.symm := by
-      funext p
-      apply Complex.ext <;> simp [e]
-    have h := (Complex.volume_preserving_equiv_real_prod.symm).setIntegral_preimage_emb
-      (MeasurableEquiv.measurableEmbedding _)
-      (fun w ↦ ω (fderiv ℝ v w 1) (fderiv ℝ v w Complex.I)) (truncation R)
-    rw [hcoe] at h
-    rw [← h]
-    refine setIntegral_congr_fun ((isCompact_truncation R).isClosed.measurableSet.preimage
-      e.symm.continuous.measurable) fun z _ ↦ ?_
-    rw [hfderiv, hfderiv]
-    simp [e, stdComplexLineReal, stdComplexLineImag]
   -- Stokes' formula on the disc with two holes.
   have hρ : 0 < ρ := by positivity
   have hρ_lt : ρ < 1 / 2 := by
@@ -170,8 +151,8 @@ theorem integral_symplecticForm_fderiv_truncation_eq_sum_loopArea [FiniteDimensi
       fun t ↦ v (circleMap 0 r (0 - 2 * π * t)) := by
     funext t
     rw [cylindricalEndLift_inf_endSign_mul_add, hv_def, comp_apply, zero_sub]
-  rw [hchange, htrunc, hstokes, Fin.sum_univ_two, Puncture.sum_univ, hx₀, hx₁,
-    hx_inf, hloop, hloop, hloop]
+  rw [ω.integral_symplecticForm_fderiv_preimage_equivRealProd, ← hv_def, htrunc, hstokes,
+    Fin.sum_univ_two, Puncture.sum_univ, hx₀, hx₁, hx_inf, hloop, hloop, hloop]
   simp only [c, Matrix.cons_val_zero, Matrix.cons_val_one, endSign_zero, endSign_one, endSign_inf]
   ring
 

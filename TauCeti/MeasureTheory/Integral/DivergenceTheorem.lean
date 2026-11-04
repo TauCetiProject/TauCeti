@@ -10,7 +10,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Geometry.Symplectic.Liouville.Linear
 
 /-!
-# Green's formula for bilinear pairings on rectangles and annuli
+# Green's formula for bilinear pairings on rectangles, annuli and discs with round holes
 
 Let `u : ℝ × ℝ → V` be a `C²` map near a closed rectangle `R = [a₁, b₁] × [a₂, b₂]` and let `B` be
 a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of `u` in the directions
