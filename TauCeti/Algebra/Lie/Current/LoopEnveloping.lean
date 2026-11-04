@@ -52,6 +52,7 @@ are used; as for Mathlib's polynomial residue cocycle, `R` is additively torsion
 
 * `TauCeti.CurrentAlgebra.loopEnvelopingHom`: the algebra morphism `U_pol → U`.
 * `TauCeti.CurrentAlgebra.loopOrderLeftIdeal`: the left ideal `I_N^pol` of `U_pol`.
+* `TauCeti.CurrentAlgebra.extendEnvelopingAction`: extension of a smooth polynomial level action.
 * `TauCeti.CurrentAlgebra.loopOrderQuotientMap`: the induced semilinear map
   `U_pol / I_N^pol → U / I_N`.
 
@@ -192,6 +193,82 @@ theorem loopOrderLeftIdeal_le_comap (N : ℤ) :
 
 end LeftIdeal
 
+/-- Polynomial smoothness is vanishing of the polynomial currents above a vectorwise cutoff. -/
+theorem smoothModules_loopOrderLeftIdeal_iff {M : ModuleCat.{v} UP} :
+    smoothModules (loopOrderLeftIdeal Φ hΦ hΦs a) M ↔
+      ∀ m : M, ∃ N : ℤ, ∀ p : P,
+        ofLoop R L p ∈ orderSubmodule R L N → envelopingι cP a p • m = 0 := by
+  rw [smoothModules_iff]
+  refine forall_congr' fun m ↦ exists_congr fun N ↦ ⟨fun h p hp ↦
+    h _ (envelopingι_mem_loopOrderLeftIdeal hp), fun h x hx ↦ ?_⟩
+  exact (loopOrderLeftIdeal_le_iff (I := LinearMap.ker
+    (LinearMap.toSpanSingleton UP M m))).2 h hx
+
+/-- Polynomial smoothness is precisely vectorwise vanishing of all sufficiently high modes. -/
+theorem smoothModules_loopOrderLeftIdeal_iff_modes {M : ModuleCat.{v} UP} :
+    smoothModules (loopOrderLeftIdeal Φ hΦ hΦs a) M ↔
+      ∀ m : M, ∃ N : ℤ, ∀ n : ℤ, N ≤ n → ∀ x : L,
+        envelopingι cP a (AddMonoidAlgebra.single n 1 ⊗ₜ x) • m = 0 := by
+  let := Module.restrictScalars R UP M
+  let := IsScalarTower.restrictScalars R UP M
+  rw [smoothModules_loopOrderLeftIdeal_iff]
+  simpa only [isLoopSmooth_iff_modes, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    Algebra.lsmul_apply] using (isLoopSmooth_iff (ρ := (Algebra.lsmul R R M).toLinearMap ∘ₗ
+      envelopingι cP a)).symm
+
+section ExtendAction
+
+variable {M : Type*} [AddCommGroup M] [Module R M]
+  [Module (CentralQuotient R (centralElement
+    (LieAlgebra.LoopAlgebra.twoCocycleOfBilinear R ℤ L Φ hΦ hΦs)) a) M]
+  [IsScalarTower R (CentralQuotient R (centralElement
+    (LieAlgebra.LoopAlgebra.twoCocycleOfBilinear R ℤ L Φ hΦ hΦs)) a) M]
+
+local notation "ρ" => LieHom.comp (AlgHom.toLieHom (Algebra.lsmul R R M))
+  (CentralQuotient.ι (centralElement cP) a)
+
+/-- A smooth polynomial level action extends to the formal level enveloping algebra.
+The given scalar action and scalar tower on `M` are preserved. -/
+def extendEnvelopingAction
+    (hM : IsLoopSmooth ((ρ).toLinearMap ∘ₗ
+      LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP)) :
+    UK →ₐ[R] Module.End R M :=
+  CentralQuotient.lift (extendExtensionLieHom ρ hM) <| by
+    rw [← ofLoopExtension_centralElement Φ hΦ hΦs, ← LieHom.comp_apply,
+      extendExtensionLieHom_comp_ofLoopExtension, LieHom.comp_apply,
+      CentralQuotient.ι_self, AlgHom.toLieHom_apply, AlgHom.commutes]
+
+/-- The extended level action agrees with the polynomial action on all polynomial
+enveloping-algebra elements. -/
+@[simp]
+theorem extendEnvelopingAction_loopEnvelopingHom
+    (hM : IsLoopSmooth ((ρ).toLinearMap ∘ₗ
+      LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP)) (x : UP) :
+    extendEnvelopingAction Φ hΦ hΦs a hM (loopEnvelopingHom Φ hΦ hΦs a x) =
+      Algebra.lsmul R R M x := by
+  suffices h : (extendEnvelopingAction Φ hΦ hΦs a hM).comp
+      (loopEnvelopingHom Φ hΦ hΦs a) = Algebra.lsmul R R M from AlgHom.congr_fun h x
+  refine CentralQuotient.algHom_ext fun e ↦ ?_
+  rw [AlgHom.comp_apply, loopEnvelopingHom, CentralQuotient.map_ι, extendEnvelopingAction,
+    CentralQuotient.lift_ι, ← LieHom.comp_apply,
+    extendExtensionLieHom_comp_ofLoopExtension, LieHom.comp_apply, AlgHom.toLieHom_apply]
+
+/-- On a formal current generator, the extended enveloping action is finite-truncation
+extension of the polynomial current action. -/
+theorem extendEnvelopingAction_envelopingι
+    (hM : IsLoopSmooth ((ρ).toLinearMap ∘ₗ
+      LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP))
+    (u : currentAlgebra R L) :
+    extendEnvelopingAction Φ hΦ hΦs a hM (envelopingι cΦ a u) =
+      extendAction ((ρ).toLinearMap ∘ₗ
+        LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP) hM u := by
+  rw [envelopingι_apply, extendEnvelopingAction, CentralQuotient.lift_ι,
+    ← LieHom.coe_toLinearMap, toLinearMap_extendExtensionLieHom,
+    extendExtensionAction_ofProd]
+  simp [← Prod.zero_eq_mk]
+
+end ExtendAction
+
 section Comparison
 
 variable {Φ hΦ hΦs a}
@@ -232,7 +309,7 @@ theorem exists_sub_loopEnvelopingHom_mem_orderLeftIdeal (b : UK) (N : ℤ) :
 
 /-- The representation of `U(ĝ_pol) / (ι K - a)` on `U_pol / I_N^pol` by left multiplication,
 as a representation of the polynomial residue central extension. -/
-private def quotientLieHom (N : ℤ) :
+private abbrev quotientLieHom (N : ℤ) :
     ofTwoCocycle cP →ₗ⁅R⁆ Module.End R (UP ⧸ loopOrderLeftIdeal Φ hΦ hΦs a N) :=
   (Algebra.lsmul R R (UP ⧸ loopOrderLeftIdeal Φ hΦ hΦs a N)).toLieHom.comp
     (CentralQuotient.ι (centralElement cP) a)
@@ -253,28 +330,23 @@ private theorem isLoopSmooth_quotientLieHom (N : ℤ) :
   obtain ⟨b, rfl⟩ := Submodule.Quotient.mk_surjective _ m
   obtain ⟨M, hM⟩ := exists_forall_mul_mem_loopOrderLeftIdeal Φ hΦ hΦs a b N
   refine ⟨M, fun p hp ↦ ?_⟩
-  simpa [coe_ofProdLinearEquiv, quotientLieHom_ofProd_mk, Submodule.Quotient.mk_eq_zero] using
-    hM _ (envelopingι_mem_loopOrderLeftIdeal hp)
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.inl_apply, coe_ofProdLinearEquiv, LieHom.coe_toLinearMap,
+    quotientLieHom_ofProd_mk,
+    Submodule.Quotient.mk_eq_zero]
+  exact hM _ (envelopingι_mem_loopOrderLeftIdeal hp)
 
 /-- The action of `U(ĝ) / (ι K - a)` on `U_pol / I_N^pol` extending the action of `U_pol` by
 finite truncation of formal currents. -/
 private def quotientAction (N : ℤ) :
     UK →ₐ[R] Module.End R (UP ⧸ loopOrderLeftIdeal Φ hΦ hΦs a N) :=
-  CentralQuotient.lift (extendExtensionLieHom _ (isLoopSmooth_quotientLieHom N)) <| by
-    rw [← ofLoopExtension_centralElement Φ hΦ hΦs, ← LieHom.comp_apply,
-      extendExtensionLieHom_comp_ofLoopExtension, quotientLieHom, LieHom.comp_apply,
-      CentralQuotient.ι_self, AlgHom.toLieHom_apply, AlgHom.commutes]
+  extendEnvelopingAction Φ hΦ hΦs a (isLoopSmooth_quotientLieHom N)
 
 /-- On the image of `U_pol`, the extended action is the action of `U_pol`. -/
 private theorem quotientAction_loopEnvelopingHom (N : ℤ) (x : UP) :
     quotientAction (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) N (loopEnvelopingHom Φ hΦ hΦs a x) =
       Algebra.lsmul R R _ x := by
-  suffices h : (quotientAction (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) N).comp
-      (loopEnvelopingHom Φ hΦ hΦs a) = Algebra.lsmul R R _ from AlgHom.congr_fun h x
-  refine CentralQuotient.algHom_ext fun e ↦ ?_
-  rw [AlgHom.comp_apply, loopEnvelopingHom, CentralQuotient.map_ι, quotientAction,
-    CentralQuotient.lift_ι, ← LieHom.comp_apply, extendExtensionLieHom_comp_ofLoopExtension,
-    quotientLieHom, LieHom.comp_apply, AlgHom.toLieHom_apply]
+  exact extendEnvelopingAction_loopEnvelopingHom Φ hΦ hΦs a _ x
 
 /-- The formal currents of order at least `N` kill the class of `1` in `U_pol / I_N^pol`, so the
 whole left ideal `I_N` does. -/
@@ -291,13 +363,16 @@ private theorem quotientAction_apply_mk_one {N : ℤ} {y : UK}
         ((quotientLieHom (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) N).toLinearMap ∘ₗ
           LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP)
             (AddMonoidAlgebra.single n 1 ⊗ₜ x) (Submodule.Quotient.mk 1) = 0 := by
-      simpa [coe_ofProdLinearEquiv, quotientLieHom_ofProd_mk, Submodule.Quotient.mk_eq_zero] using
-        envelopingι_mem_loopOrderLeftIdeal (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
-          (orderSubmodule_antitone R L hn (ofLoop_single_tmul_mem_orderSubmodule R L n x))
-    rw [envelopingι_apply, quotientAction, CentralQuotient.lift_ι, ← LieHom.coe_toLinearMap,
-      toLinearMap_extendExtensionLieHom, extendExtensionAction_ofProd, LinearMap.add_apply,
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        LinearMap.inl_apply, coe_ofProdLinearEquiv, LieHom.coe_toLinearMap,
+    quotientLieHom_ofProd_mk, mul_one,
+        Submodule.Quotient.mk_eq_zero]
+      exact envelopingι_mem_loopOrderLeftIdeal
+        (orderSubmodule_antitone R L hn (ofLoop_single_tmul_mem_orderSubmodule R L n x))
+    dsimp only [quotientLieHom] at hN
+    rw [quotientAction, extendEnvelopingAction_envelopingι,
       extendAction_apply_of_forall _ _ hN, trunc_eq_zero_of_mem_orderSubmodule R L hu]
-    simp [← Prod.zero_eq_mk]
+    simp
   | zero => simp
   | add y z _ _ hy hz => simp [hy, hz]
   | smul r y _ hy => simp [mul_apply_eq_comp, hy]
