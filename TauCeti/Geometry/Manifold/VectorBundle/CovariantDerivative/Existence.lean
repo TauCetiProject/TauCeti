@@ -119,8 +119,9 @@ variable [IsManifold I 1 M] [VectorBundle ℝ F V]
 /-- A sum of `C^n` local covariant derivatives weighted by a subordinate smooth partition of unity
 is `C^n`: it sends `C^(n+1)` sections to `C^n` sections of `Hom(TM, V)`. -/
 theorem IsSubordinate.contMDiffCovariantDerivativeOn_finsum_smul
-    {ρ : SmoothPartitionOfUnity ι I M} (hρ : ρ.IsSubordinate U) (hU : ∀ i, IsOpen (U i))
-    {n : ℕ∞} (hcov : ∀ i, ContMDiffCovariantDerivativeOn F n (cov i) (U i)) :
+    {s : Set M} {ρ : SmoothPartitionOfUnity ι I M s} (hρ : ρ.IsSubordinate U)
+    (hU : ∀ i, IsOpen (U i)) {n : ℕ∞}
+    (hcov : ∀ i, ContMDiffCovariantDerivativeOn F n (cov i) (U i)) :
     ContMDiffCovariantDerivativeOn F n (fun σ x ↦ ∑ᶠ i, ρ i x • cov i σ x) univ where
   contMDiff {σ} hσ := by
     rw [contMDiffOn_univ]
