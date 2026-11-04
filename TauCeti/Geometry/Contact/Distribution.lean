@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Levi
-import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
@@ -164,29 +163,6 @@ end IsContactDistribution
 /-! ### Local defining forms -/
 
 variable [FiniteDimensional ℝ E]
-
-omit [CompleteSpace E] in
-/-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
-`D` of rank `dim E - 1` has an open neighbourhood `U` on which `D` is the kernel of a one-form `α`,
-nonzero and of class `C^n` on `U`. No contact condition is needed. -/
-theorem IsContMDiffDistribution.exists_roughForm_ker_eq [IsManifold I (n + 1) M] {k : ℕ}
-    (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank ℝ E) (x : M) :
-    ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ α : RoughForm I M ℝ 1,
-      ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
-        (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
-      ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := 2) one_le_two
-  obtain ⟨U, a, hU, hxU, ha, haD⟩ := hD.exists_local_annihilator hk x
-  -- The covector field `a` is the one-form `α`, with the same kernel and regularity.
-  let α : RoughForm I M ℝ 1 :=
-    fun y ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I y) ℝ (0 : Fin 1) (a y)
-  refine ⟨U, hU, hxU, α, fun y hy ↦ ?_, fun y hy ↦ ⟨fun h ↦ (haD y hy).1 ?_, ?_⟩⟩
-  · exact ((contMDiffAt_ofSubsingleton_iff (V := Bundle.Trivial M ℝ)).2
-      ((ha y hy).contMDiffAt (hU.mem_nhds hy))).contMDiffWithinAt
-  · exact ContinuousLinearMap.ext fun v ↦ by simpa [α] using congr($h ![v])
-  · ext v
-    rw [← (haD y hy).2, RoughForm.mem_ker]
-    simp [α]
 
 /-- **A contact structure is locally defined by contact forms.** Every point of a `C^n` contact
 structure `D`, with `1 ≤ n`, has an open neighbourhood `U` on which `D` is the kernel of a one-form

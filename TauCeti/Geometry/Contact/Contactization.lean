@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Contactization of an exact symplectic manifold
@@ -38,6 +42,20 @@ The construction depends on the primitive `θ`, not only on `ω`. Changing `θ` 
 form of `θ + dg` (`TauCeti.mpullback_contactizationShift_contactization`). So the two contact forms
 are identified by a strict contactomorphism.
 
+A smooth map `y ↦ (φ y, h y)` into `W × ℝ` pulls `dz - θ` back to `dh - φ^* θ`
+(`TauCeti.SmoothForm.mpullback_contactization`), so it is isotropic for the kernel of `dz - θ`
+exactly when
+
+`φ^* θ = dh`
+
+(`TauCeti.SmoothForm.isDistributionIsotropicMap_contactization_iff`). When `-dθ` is
+nondegenerate, this says that `φ` is an exact Lagrangian map with primitive `h`: an exact
+Lagrangian immersion `φ` lifts to the Legendrian immersion `(φ, h)`, its **contact lift**
+(`TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_contactization`),
+and conversely, for `σ = -dθ`, the projection `φ` of an isotropic map `(φ, h)` with injective
+differentials from a manifold of half the dimension of `W` is exact Lagrangian with primitive `h`
+(`SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_of_isDistributionIsotropicMap_contactization`).
+
 ## Main definitions
 
 * `TauCeti.SmoothForm.contactization θ`: the one-form `dz - θ` on `W × ℝ`.
@@ -49,6 +67,10 @@ are identified by a strict contactomorphism.
 * `TauCeti.SmoothForm.isContactForm_contactization_iff`: `dz - θ` is a contact form exactly when
   `-dθ` is nondegenerate.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
+* `TauCeti.SmoothForm.isDistributionIsotropicMap_contactization_iff`: a map `(φ, h)` into the
+  contactization is isotropic exactly when `φ^* θ = dh`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_contactization`:
+  the contact lift of an exact Lagrangian immersion is a Legendrian immersion.
 * `TauCeti.CotangentBundle.isContactForm_contactization_liouvilleForm`: the one-jet space of a
   manifold is a contact manifold.
 
@@ -58,6 +80,8 @@ are identified by a strict contactomorphism.
   Chapter 2 (contact manifolds, including the space of one-jets).
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 3.5 (contact structures).
+* V. I. Arnold, *Mathematical Methods of Classical Mechanics*, second edition, Appendix 4
+  (Legendrian lifts of exact Lagrangian submanifolds).
 -/
 
 public section
@@ -257,6 +281,88 @@ theorem mpullback_contactizationShift_contactization (hg : ContMDiff I 𝓘(ℝ)
   abel
 
 end Shift
+
+/-! ### Isotropic maps into a contactization -/
+
+section Isotropic
+
+open Set Function Module _root_.Manifold
+
+variable {E H W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace W] [ChartedSpace H W] [IsManifold I ∞ W]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+  {θ : SmoothForm I W ℝ 1} {φ : N → W} {h : N → ℝ}
+
+/-- A smooth map `y ↦ (φ y, h y)` pulls the contactization form `dz - θ` back to `dh - φ^* θ`. -/
+theorem SmoothForm.mpullback_contactization (hφ : ContMDiff J I ∞ φ)
+    (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
+    (mpullback (fun y ↦ (φ y, h y)) (hφ.prodMk hh) θ.contactization).1 =
+      mextDeriv (RoughForm.ofFunction J h) - TauCeti.mpullback J I φ θ.1 := by
+  rw [contactization_def, map_sub, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
+    ← mpullback_comp, ← mpullback_comp, Submodule.coe_sub, coe_mpullback, coe_mpullback]
+  -- The components `Prod.snd ∘ (φ, h)` and `Prod.fst ∘ (φ, h)` simplify to `h` and `φ`.
+  simp only [Function.comp_def]
+  rw [mpullback_realLineCoordForm]
+
+/-- **Isotropic maps into a contactization.** A smooth map `y ↦ (φ y, h y)` into `W × ℝ` is
+isotropic for the kernel of the contactization form `dz - θ` exactly when `φ^* θ = dh`. -/
+theorem SmoothForm.isDistributionIsotropicMap_contactization_iff (hφ : ContMDiff J I ∞ φ)
+    (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
+    IsDistributionIsotropicMap J θ.contactization.kerDistribution (fun y ↦ (φ y, h y)) ↔
+      TauCeti.mpullback J I φ θ.1 = mextDeriv (RoughForm.ofFunction J h) := by
+  rw [isDistributionIsotropicMap_kerDistribution_iff_mpullback_eq_zero (hφ.prodMk hh),
+    Subtype.ext_iff, mpullback_contactization hφ hh, ZeroMemClass.coe_zero, sub_eq_zero, eq_comm]
+
+namespace SmoothTwoForm.IsNondegenerate
+
+variable {σ : SmoothTwoForm I W} {hσ : σ.IsNondegenerate}
+
+/-- **Contact lifts of exact Lagrangian maps.** If `φ` is an exact Lagrangian map with primitive
+`h`, then its lift `y ↦ (φ y, h y)` is isotropic for the kernel of the contactization form
+`dz - θ`. -/
+theorem IsExactLagrangianMap.isDistributionIsotropicMap_contactization
+    (hL : hσ.IsExactLagrangianMap J θ φ h) (hφ : ContMDiff J I ∞ φ) :
+    IsDistributionIsotropicMap J θ.contactization.kerDistribution (fun y ↦ (φ y, h y)) :=
+  (SmoothForm.isDistributionIsotropicMap_contactization_iff hφ hL.contMDiff_primitive).2
+    hL.mpullback_eq
+
+/-- **Projections of isotropic lifts are exact Lagrangian.** For a primitive `θ` of `σ = -dθ`, if
+the lift `y ↦ (φ y, h y)` of a smooth map is isotropic for the kernel of `dz - θ`, and `φ` has
+injective differentials from a manifold of half the dimension, then `φ` is an exact Lagrangian map
+with primitive `h`. -/
+theorem isExactLagrangianMap_of_isDistributionIsotropicMap_contactization [FiniteDimensional ℝ E]
+    (hθ : σ = -mextDerivₗ I 1 θ) (hφ : ContMDiff J I ∞ φ) (hh : ContMDiff J 𝓘(ℝ) ∞ h)
+    (hiso : IsDistributionIsotropicMap J θ.contactization.kerDistribution (fun y ↦ (φ y, h y)))
+    (hinj : ∀ y, Injective (mfderiv J I φ y)) (hdim : 2 * finrank ℝ E' = finrank ℝ E) :
+    hσ.IsExactLagrangianMap J θ φ h := by
+  have hpull := (SmoothForm.isDistributionIsotropicMap_contactization_iff hφ hh).1 hiso
+  exact ⟨(hσ.isIsotropicMap_of_mpullback_eq_mextDeriv hθ hφ (hh.of_le (by simp))
+    hpull).isLagrangianMap_of_finrank hinj hdim, hh, hpull⟩
+
+variable [I.Boundaryless] [J.Boundaryless] [FiniteDimensional ℝ E]
+
+/-- **Contact lifts of exact Lagrangian immersions are Legendrian.** If `φ` is an immersion from a
+nonempty manifold which is an exact Lagrangian map with primitive `h`, then its lift
+`y ↦ (φ y, h y)` is a Legendrian immersion for the contactization form `dz - θ`. -/
+theorem IsExactLagrangianMap.isLegendrianImmersion_contactization [Nonempty N]
+    (hL : hσ.IsExactLagrangianMap J θ φ h) (hφ : IsImmersion J I ∞ φ) :
+    IsLegendrianImmersion J θ.contactization.kerDistribution (fun y ↦ (φ y, h y)) := by
+  have hφ' := hφ.contMDiff
+  have hh := hL.contMDiff_primitive
+  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun y ↦ ?_,
+    (SmoothForm.isDistributionIsotropicMap_contactization_iff hφ' hh).2 hL.mpullback_eq, ?_⟩
+  · refine ((hφ'.prodMk hh).contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ
+      (mem_univ y) (by simp)).2 ?_
+    -- The first component of the differential of the lift is the injective differential of `φ`.
+    rw [mfderiv_prodMk (hφ'.mdifferentiableAt (by simp)) (hh.mdifferentiableAt (by simp))]
+    exact fun v w hvw ↦ hφ.mfderiv_injective (by simp) y (congrArg Prod.fst hvw)
+  · rw [finrank_prod, Module.finrank_self,
+      hL.isLagrangianMap.two_mul_finrank (hφ.mfderiv_injective (by simp) (Classical.arbitrary N))]
+
+end SmoothTwoForm.IsNondegenerate
+
+end Isotropic
 
 namespace CotangentBundle
 

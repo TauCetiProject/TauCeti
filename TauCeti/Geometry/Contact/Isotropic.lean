@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
@@ -107,9 +108,10 @@ theorem IsDistributionIsotropicMap.mfderiv_mem (h : IsDistributionIsotropicMap J
 
 /-- **Independence of the parametrization.** Precomposing with a diffeomorphism of the source
 does not change whether a map is isotropic. -/
-theorem isDistributionIsotropicMap_comp_diffeomorph_iff {E'' H'' : Type*} [NormedAddCommGroup E'']
-    [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type*}
-    [TopologicalSpace P] [ChartedSpace H'' P] {n : ℕ∞ω} (φ : P ≃ₘ^n⟮K, J⟯ N) (hn : n ≠ 0) :
+theorem _root_.Diffeomorph.isDistributionIsotropicMap_comp_diffeomorph_iff {E'' H'' : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+    {n : ℕ∞ω} (φ : P ≃ₘ^n⟮K, J⟯ N) (hn : n ≠ 0) :
     IsDistributionIsotropicMap K D (f ∘ φ) ↔ IsDistributionIsotropicMap J D f := by
   simp only [IsDistributionIsotropicMap, φ.range_mfderiv_comp_diffeomorph hn, Function.comp_apply]
   exact ⟨fun h y ↦ φ.apply_symm_apply y ▸ h (φ.symm y), fun h x ↦ h (φ x)⟩
