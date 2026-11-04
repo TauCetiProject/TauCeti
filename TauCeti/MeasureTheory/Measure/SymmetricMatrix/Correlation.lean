@@ -13,7 +13,6 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Matrix.Order
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Order.Prod.Lex.Basic
@@ -641,18 +640,12 @@ private theorem strictLowerTriangleKey_injective :
   simp only [strictLowerTriangleKey, toLex_inj, Prod.mk.injEq] at h
   exact Subtype.ext (Prod.ext h.2 h.1)
 
-private theorem isOpen_partialCorrelationCube :
-    IsOpen {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} := by
-  rw [show {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} =
-      Set.univ.pi fun _ ↦ Set.Ioo (-1) 1 by ext z; simp [abs_lt]]
-  exact isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_Ioo
-
 private theorem differentiableAt_correlationCoordinatesOfPartialCorrelation
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     DifferentiableAt ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z :=
   ((contDiffOn_correlationCoordinatesOfPartialCorrelation.differentiableOn
       (by simp : (∞ : WithTop ℕ∞) ≠ 0) z hz).differentiableAt
-    (isOpen_partialCorrelationCube.mem_nhds hz))
+    (isOpen_setOf_forall_abs_lt_one.mem_nhds hz))
 
 private theorem hasDerivAt_correlationCoordinatesOfPartialCorrelation_partialCorrelationLine
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1)

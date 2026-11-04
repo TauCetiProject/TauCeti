@@ -50,6 +50,14 @@ abbrev strictLowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 < ij.1}
 
 variable {p : ℕ}
 
+/-- The open unit cube in a finite product of copies of `ℝ` is open. -/
+theorem isOpen_setOf_forall_abs_lt_one {ι : Type*} [Finite ι] :
+    IsOpen {z : ι → ℝ | ∀ i, |z i| < 1} := by
+  -- Express the coordinatewise bound as a finite product of open intervals.
+  rw [show {z : ι → ℝ | ∀ i, |z i| < 1} =
+      Set.univ.pi fun _ ↦ Set.Ioo (-1) 1 by ext z; simp [abs_lt]]
+  exact isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_Ioo
+
 private def partialCorrelationRow (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
   if h : j < i then z ⟨(i, j), h⟩ else 0
 
