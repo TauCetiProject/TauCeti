@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+import TauCeti.Geometry.Manifold.Immersion.Basic
 
 /-!
 # Bundled smooth embeddings
@@ -42,6 +43,7 @@ later tubular-neighbourhood and surgery interfaces.
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
   smooth embedding.
+* `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -319,5 +321,11 @@ theorem _root_.Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap {f : M → 
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨hf, (Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap hp.continuous hinj
     hp.isClosedMap).isEmbedding⟩
+
+/-- Lowering the regularity order preserves smooth embeddings. -/
+theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
+    (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
+    Manifold.IsSmoothEmbedding I J n f :=
+  ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
 
 end TauCeti
