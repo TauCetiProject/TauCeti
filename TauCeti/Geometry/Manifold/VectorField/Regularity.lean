@@ -44,7 +44,8 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `VectorField.mpullback_extChartAt_symm_apply_eq_mfderiv`: on a boundaryless model, the
   inverse-chart pullback is the image of the field under the differential of the chart.
 * `ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`: on a boundaryless model, the inverse-chart
-  pullback of a `C^m` vector field is `C^m` on the chart target, when `m + 1 ≤ n`.
+  pullback of a `C^m` vector field is `C^m` on the part of the chart target mapped into an open
+  set where the field is `C^m`, when `m + 1 ≤ n`.
 * `VectorField.mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq`: a vector
   field with constant coordinates in the tangent-bundle trivialization at `x` pulls back to a
   constant field near the chart centre.
