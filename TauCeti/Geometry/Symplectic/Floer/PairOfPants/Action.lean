@@ -354,9 +354,7 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
       ω.floerEnergyDensity_nonneg (hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
         (hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
   have hcurv := abs_integral_hamiltonianCurvature_le ω hH hHs hB u
-  rw [show (Finset.univ : Finset Puncture) = {zero, one, inf} from rfl,
-    Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
-    endSign_zero, endSign_one, endSign_inf] at hnonneg
+  rw [sum_univ, endSign_zero, endSign_one, endSign_inf] at hnonneg
   linarith [neg_abs_le (∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)

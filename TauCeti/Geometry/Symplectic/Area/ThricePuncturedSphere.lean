@@ -75,19 +75,6 @@ private theorem circleArea_eq_zero (ω : SymplecticForm V) {u : ℂ → V} {c : 
   rw [circleArea_congr ω (v := fun _ ↦ 0) h]
   simp [circleArea]
 
-/-- In polar form, the end lift traverses the circle of radius `‖b_q‖ exp (-2πs)` about the
-center `c_q` of the end clockwise, starting at the argument of the scale `b_q`. -/
-private theorem cylindricalEndLift_ofReal_add_ofReal_mul_I (q : Puncture) (x t : ℝ) :
-    q.cylindricalEndLift (x + t * I) =
-      circleMap q.endCenter (‖q.endScale‖ * Real.exp (-(2 * π * x)))
-        (arg q.endScale - 2 * π * t) := by
-  rw [cylindricalEndLift_eq, circleMap]
-  congr 1
-  conv_lhs => rw [← norm_mul_exp_arg_mul_I q.endScale]
-  push_cast
-  simp only [mul_assoc, ← Complex.exp_add]
-  ring_nf
-
 /-- The loop area of the circle `s = x` of an end is minus the circle area of the corresponding
 circle about the center of the end. -/
 private theorem loopArea_cylindricalEndLift (ω : SymplecticForm V) (u : ℂ → V) (q : Puncture)
@@ -329,9 +316,7 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
       rw [hρ_def, endScale_inf, endSign_inf, show -(2 * π * (-1 * R)) = 2 * π * R by ring]
       norm_num
     simp only [loopArea_cylindricalEndLift]
-    rw [show (Finset.univ : Finset Puncture) = {zero, one, inf} from rfl,
-      Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
-      e₀, e₁, e₂, endSign_zero, endSign_one, endSign_inf, endCenter_zero, endCenter_one,
+    rw [sum_univ, e₀, e₁, e₂, endSign_zero, endSign_one, endSign_inf, endCenter_zero, endCenter_one,
       endCenter_inf]
     ring
   rw [hloops, hsplit, ← hAu, hI₁]

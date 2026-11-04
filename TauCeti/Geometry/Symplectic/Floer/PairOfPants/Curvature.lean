@@ -446,11 +446,8 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Sym
     (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz _ Complex.I)
     (differentiableAt_pairOfPantsPerturbation_target hH hHs hz _ 1)
     (differentiableAt_pairOfPantsPerturbation_target hH hHs hz _ Complex.I)
-  have hβ : deriv smoothTransition (q.endSign * w.1 - 1) = 0 := by
-    have h : smoothTransition =ᶠ[𝓝 (q.endSign * w.1 - 1)] fun _ ↦ 1 :=
-      (eventually_gt_nhds (by linarith : (1 : ℝ) < q.endSign * w.1 - 1)).mono
-        fun y hy ↦ smoothTransition.one_of_one_le hy.le
-    rw [h.deriv_eq, deriv_const]
+  have hβ : deriv smoothTransition (q.endSign * w.1 - 1) = 0 :=
+    smoothTransition.deriv_of_one_lt (by linarith)
   rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs (by linarith) x, hβ, mul_zero,
     zero_mul] at key
   exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_endChart_pos q w).ne'
