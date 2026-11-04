@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.TopHomology
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
+public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.AlgebraicTopology.Singular.Triple.Free
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology

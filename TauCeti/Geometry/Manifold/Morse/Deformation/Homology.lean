@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 
@@ -18,10 +17,6 @@ sublevel `{f ≤ a}` is a strong deformation retract of `{f ≤ b}`
 (`TauCeti.exists_sublevelDeformation`), so the relative singular homology of the sublevel pair
 `({f ≤ b}, {f ≤ a})` vanishes in every degree, for coefficients in any preadditive category with
 coproducts and homology (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
-
-At the other extreme, if `a < f ≤ b` everywhere then the sublevel pair is `(M, ∅)`, whose relative
-homology is the singular homology of `M`
-(`TauCeti.nonempty_singularHomology_iso_sublevelPair`).
 
 ## References
 
@@ -66,19 +61,5 @@ theorem isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff 
   have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
   rw [h]
   exact hx
-
-omit [T2Space M] in
-/-- **The sublevel pair of a band covering `M`.** If `a < f ≤ b` everywhere, the relative singular
-homology of `({f ≤ b}, {f ≤ a}) = (M, ∅)` is the singular homology of `M`. No regularity of `f` is
-needed. -/
-theorem nonempty_singularHomology_iso_sublevelPair (hab : a ≤ b) (ha : ∀ x, a < f x)
-    (hb : ∀ x, f x ≤ b) (R : C) (n : ℕ) :
-    Nonempty (((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of M) ≅
-      (sublevelPair f hab).singularHomology R n) := by
-  have : IsEmpty (sublevelPair f hab).snd := ⟨fun (x : {x : M | f x ≤ a}) ↦ (ha x).not_ge x.2⟩
-  have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) := inferInstance
-  exact ⟨((AlgebraicTopology.singularHomologyFunctor C n).obj R).mapIso
-    (TopCat.isoOfHomeo ((Homeomorph.setCongr (eq_univ_of_forall hb)).trans
-      (Homeomorph.Set.univ M))).symm ≪≫ @asIso _ _ _ _ _ hπ⟩
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
