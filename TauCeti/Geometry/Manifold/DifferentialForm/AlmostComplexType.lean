@@ -276,6 +276,17 @@ namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M) {φ : SmoothForm I M F k} {p q p' q' : ℕ}
 
+/-- The complex submodule of smooth forms of type `(p,q)`, inside the generic smooth
+`(p + q)`-form carrier. -/
+def typeForms (p q : ℕ) : Submodule ℂ (SmoothForm I M F (p + q)) :=
+  Module.End.eigenspace J.toEndomorphism.alternatingDerivation (((p : ℂ) - q) * Complex.I)
+
+/-- Membership in the type submodule is the existing pointwise type condition. -/
+@[simp]
+theorem mem_typeForms (p q : ℕ) (φ : SmoothForm I M F (p + q)) :
+    φ ∈ J.typeForms p q ↔ φ.IsOfType J p q := by
+  simp [typeForms, SmoothForm.isOfType_iff]
+
 /-- The projection of complex-valued smooth `k`-forms onto the forms of type `(p,q)` for `J`. It
 is the fibrewise type polynomial evaluated at the derivation induced by `J`, and it vanishes
 unless `p + q = k`. -/
