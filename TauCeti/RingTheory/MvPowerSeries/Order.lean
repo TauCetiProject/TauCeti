@@ -29,7 +29,8 @@ polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degr
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
 The degree-zero component of a series is its constant term
-(`MvPowerSeries.homogeneousComponent_zero`).
+(`MvPowerSeries.homogeneousComponent_zero`), and over a nontrivial semiring every coordinate
+variable has order one (`MvPowerSeries.order_X`).
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
@@ -61,6 +62,12 @@ end AddSub
 section Powers
 
 variable {σ R : Type*} [Semiring R] {f : MvPowerSeries σ R}
+
+/-- Over a nontrivial semiring, every coordinate indeterminate `X i` has order `1`. -/
+@[simp]
+theorem order_X [Nontrivial R] (i : σ) : (X i : MvPowerSeries σ R).order = 1 := by
+  rw [X_def, order_monomial_of_ne_zero one_ne_zero, Finsupp.degree_single]
+  rfl
 
 /-- A variable is its own degree-one homogeneous component. -/
 @[simp]

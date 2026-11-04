@@ -246,8 +246,8 @@ theorem not_completeSpace_gaussFractionField :
         -(a ^ (N ^ 2) * coeff μ₀ (Q : _root_.MvPowerSeries σ K)) := by
     have hd_eq : μ₀ i₀ = d := hμ₀_deg
     have hPX : coeff μ₀ ((P * X₀ ^ N : Tate) : _root_.MvPowerSeries σ K) = 0 := by
-      change coeff μ₀ ((P : _root_.MvPowerSeries σ K) * (X i₀) ^ N) = 0
-      rw [X_pow_eq, coeff_mul_monomial]
+      dsimp only [X₀]
+      rw [Subring.coe_mul, SubmonoidClass.coe_pow, X_pow_eq, coeff_mul_monomial]
       split_ifs with hle
       · exfalso
         have h := hle i₀
@@ -270,27 +270,21 @@ theorem not_completeSpace_gaussFractionField :
     have hN_pos : 0 < N := (Nat.zero_le d).trans_lt hNd
     have hQP : coeff μ₀ ((Q * P_num N : Tate) : _root_.MvPowerSeries σ K) =
         a ^ (N ^ 2) * coeff μ₀ (Q : _root_.MvPowerSeries σ K) := by
-      dsimp only [P_num]
-      rw [Finset.mul_sum]
-      change coeff μ₀ ((Tate).subtype (∑ k ∈ Finset.range N, _)) = _
-      rw [map_sum, map_sum, Finset.sum_eq_single (N - 1)]
+      dsimp only [P_num, X₀]
+      rw [Finset.mul_sum, AddSubmonoidClass.coe_finsetSum, map_sum, Finset.sum_eq_single (N - 1)]
       · have hzero : N - 1 - (N - 1) = 0 := Nat.sub_self _
         have hN1 : N - 1 + 1 = N := Nat.sub_add_cancel hN_pos
-        rw [hzero, pow_zero, mul_one, hN1]
-        change coeff μ₀ ((Q : _root_.MvPowerSeries σ K) * C (a ^ (N ^ 2))) = _
-        rw [mul_comm, coeff_C_mul]
+        rw [hzero, pow_zero, mul_one, hN1, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
+          mul_comm, coeff_C_mul]
       · intro k hk hk_ne
         have hkN : k < N := Finset.mem_range.mp hk
         have hm : 0 < N - 1 - k := by omega
-        change coeff μ₀ ((Q : _root_.MvPowerSeries σ K) *
-          (C (a ^ ((k + 1) ^ 2)) * (X i₀) ^ (N - 1 - k))) = 0
-        rw [← mul_assoc, mul_comm (Q : _root_.MvPowerSeries σ K), mul_assoc, coeff_C_mul,
-          hQX_pos hm, mul_zero]
+        rw [Subring.coe_mul, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
+          SubmonoidClass.coe_pow, ← mul_assoc, mul_comm (Q : _root_.MvPowerSeries σ K), mul_assoc,
+          coeff_C_mul, hQX_pos hm, mul_zero]
       · intro hnot
         exact absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
-    change coeff μ₀ (((P * X₀ ^ N : Tate) : _root_.MvPowerSeries σ K) -
-      ((Q * P_num N : Tate) : _root_.MvPowerSeries σ K)) = _
-    rw [map_sub, hPX, hQP, zero_sub]
+    rw [AddSubgroupClass.coe_sub, map_sub, hPX, hQP, zero_sub]
   -- Compare weighted coefficient lower bound with the approximation upper bound as `N → ∞`.
   let δ : ℝ := ‖coeff μ₀ (Q : _root_.MvPowerSeries σ K)‖ * μ₀.prod (c · ^ ·)
   have hδ_pos : 0 < δ := mul_pos (norm_pos_iff.mpr hμ₀_ne) (prod_pow_pos μ₀)

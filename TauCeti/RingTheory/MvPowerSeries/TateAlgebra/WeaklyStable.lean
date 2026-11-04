@@ -18,8 +18,11 @@ import TauCeti.Analysis.Normed.Module.Bases.CountableType
 import TauCeti.Analysis.Normed.Module.Dual.Bounded
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.PurelyInseparable
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.FieldTheory.PurelyInseparable.Embedding
 import TauCeti.FieldTheory.PurelyInseparable.Exponent
+import TauCeti.RingTheory.MvPowerSeries.Basic
+import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 
@@ -99,8 +102,8 @@ theorem spectralNorm_gaussFractionField_of_isEmpty (L : Type*) [Field L]
   refine ((gaussFractionFieldIsEmptyAlgEquiv σ K c).toRingEquiv.spectralNorm_eq_of_norm_eq
     (norm_gaussFractionFieldIsEmptyAlgEquiv σ K c) (RingEquiv.refl L) ?_ y).symm
   ext z
-  change algebraMap K L (gaussFractionFieldIsEmptyAlgEquiv σ K c z) =
-    algebraMap (GaussFractionField σ K c) L z
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom,
+    RingHom.coe_coe, RingEquiv.refl_apply]
   rw [IsScalarTower.algebraMap_apply K (GaussFractionField σ K c) L,
     ← gaussFractionFieldIsEmptyAlgEquiv_symm_apply, AlgEquiv.symm_apply_apply]
 
@@ -120,15 +123,6 @@ section Helpers
 
 variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
-/-- Weight identity `(μ.prod (c · ^ ·)) ^ a = μ.prod ((c · ^ a) ^ ·)` for positive polyradii. -/
-private theorem prod_rpow_eq_prod_pow {c : σ → ℝ} [∀ i, Fact (0 < c i)] (a : ℝ) (μ : σ →₀ ℕ) :
-    (μ.prod (c · ^ ·)) ^ a = μ.prod (fun i k ↦ (c i ^ a) ^ k) := by
-  change (∏ i ∈ μ.support, c i ^ μ i) ^ a = ∏ i ∈ μ.support, (c i ^ a) ^ μ i
-  rw [← Real.finsetProd_rpow _ _ fun i _ ↦ pow_nonneg (Fact.out : 0 < c i).le _]
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  have hc : 0 ≤ c i := (Fact.out : 0 < c i).le
-  rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul hc, ← Real.rpow_mul hc, mul_comm]
-
 /-- Applying `FrobeniusRoot.root K p e` coefficientwise maps `K{X / c}` into
 `(FrobeniusRoot K p e){X / r}` when `r i = c i ^ (p ^ e)⁻¹`. -/
 private noncomputable def tateRoot (p : ℕ) [ExpChar K p] (e : ℕ)
@@ -145,9 +139,17 @@ private noncomputable def tateRoot (p : ℕ) [ExpChar K p] (e : ℕ)
     refine hlim.congr fun μ ↦ ?_
     dsimp only [Function.comp_apply, qR]
     rw [Real.mul_rpow (norm_nonneg _) (prod_pow_pos μ).le, coeff_map, FrobeniusRoot.norm_root,
-      prod_rpow_eq_prod_pow]
+      μ.prod_pow_rpow (fun i _ ↦ (Fact.out : 0 < c i).le)]
     congr 1
     exact Finset.prod_congr rfl fun i _ ↦ by simp only [hr]⟩
+
+@[simp]
+private theorem coe_tateRoot (p : ℕ) [ExpChar K p] (e : ℕ)
+    {c r : σ → ℝ} [∀ i, Fact (0 < c i)] (hr : ∀ i, r i = c i ^ (((p ^ e : ℕ) : ℝ)⁻¹))
+    (f : IsRestricted.subring (R := K) c) :
+    (tateRoot p e hr f : _root_.MvPowerSeries σ (FrobeniusRoot K p e)) =
+      MvPowerSeries.map (FrobeniusRoot.root K p e) (f : _root_.MvPowerSeries σ K) :=
+  (rfl)
 
 private theorem tateRoot_pow {p : ℕ} [ExpChar K p] {e : ℕ}
     {c r : σ → ℝ} [∀ i, Fact (0 < c i)]
@@ -159,28 +161,14 @@ private theorem tateRoot_pow {p : ℕ} [ExpChar K p] {e : ℕ}
         (restrictedMap (algebraMap K (FrobeniusRoot K p e)) (C := 1)
           (fun a ↦ by simp) f) := by
   have hp : p ≠ 0 := (expChar_pos K p).ne'
-  have hq : p ^ e ≠ 0 := pow_ne_zero e hp
   have hhom : (iterateFrobenius (FrobeniusRoot K p e) p e).comp (FrobeniusRoot.root K p e) =
       algebraMap K (FrobeniusRoot K p e) := by
     ext a
     exact FrobeniusRoot.root_pow_expChar_pow a
   apply Subtype.ext
-  push_cast
-  rw [coe_restrictedExpand, coe_restrictedMap]
-  change (MvPowerSeries.map (FrobeniusRoot.root K p e) (f : _root_.MvPowerSeries σ K)) ^ p ^ e =
-    expand (p ^ e) hq
-      (MvPowerSeries.map (algebraMap K (FrobeniusRoot K p e)) (f : _root_.MvPowerSeries σ K))
-  rw [← MvPowerSeries.map_iterateFrobenius_expand p hp _ e, ← MvPowerSeries.map_expand,
+  rw [SubmonoidClass.coe_pow, coe_tateRoot, coe_restrictedExpand, coe_restrictedMap,
+    ← MvPowerSeries.map_iterateFrobenius_expand p hp _ e, ← MvPowerSeries.map_expand,
     MvPowerSeries.map_map, hhom, MvPowerSeries.map_expand]
-
-omit [IsUltrametricDist K] in
-private theorem coeff_coe_smul_isRestrictedSubring {K' : Type*} [NormedCommRing K']
-    [IsUltrametricDist K'] [NormedAlgebra K K'] {c : σ → ℝ} (a : K)
-    (u : IsRestricted.subring (R := K') c) (μ : σ →₀ ℕ) :
-    coeff μ ((a • u : IsRestricted.subring (R := K') c) : _root_.MvPowerSeries σ K') =
-      a • coeff μ (u : _root_.MvPowerSeries σ K') := by
-  rw [← IsScalarTower.algebraMap_smul K' a u, Algebra.smul_def, Subring.coe_mul,
-    coe_algebraMap_isRestrictedSubring, coeff_C_mul, ← Algebra.smul_def]
 
 /-- The `K`-submodule of restricted series over `K'` whose coefficients all lie in a given
 `K`-submodule `E ⊆ K'`. -/
@@ -193,8 +181,16 @@ private noncomputable def coeffSubmodule {K' : Type*} [NormedCommRing K'] [IsUlt
     rw [AddMemClass.coe_add, map_add]
     exact E.add_mem (h₁ μ) (h₂ μ)
   smul_mem' a {u} hu μ := by
-    rw [coeff_coe_smul_isRestrictedSubring]
+    rw [coe_smul_isRestrictedSubring, LinearMap.map_smul_of_tower]
     exact E.smul_mem a (hu μ)
+
+omit [IsUltrametricDist K] in
+@[simp]
+private theorem mem_coeffSubmodule {K' : Type*} [NormedCommRing K'] [IsUltrametricDist K']
+    [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)] {E : Submodule K K'}
+    {u : IsRestricted.subring (R := K') c} :
+    u ∈ coeffSubmodule c E ↔ ∀ μ, coeff μ (u : _root_.MvPowerSeries σ K') ∈ E :=
+  Iff.rfl
 
 /-- Extracting a `q`-adic expansion component preserves membership in `coeffSubmodule`. -/
 private noncomputable def restrictedExpandComponentLinear {K' : Type*} [NormedCommRing K']
@@ -202,9 +198,10 @@ private noncomputable def restrictedExpandComponentLinear {K' : Type*} [NormedCo
     [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < c i)] {q : ℕ} (hq : q ≠ 0)
     (hr : ∀ i, r i ^ q = c i) (E : Submodule K K') (ν : σ →₀ ℕ) :
     coeffSubmodule r E →ₗ[K] coeffSubmodule c E where
-  toFun u := ⟨restrictedExpandComponent hq hr ν u.1, fun μ ↦ by
-    rw [coeff_restrictedExpandComponent]
-    exact u.2 (q • μ + ν)⟩
+  toFun u := ⟨restrictedExpandComponent hq hr ν u.1,
+    mem_coeffSubmodule.mpr fun μ ↦ by
+      rw [coeff_restrictedExpandComponent]
+      exact mem_coeffSubmodule.mp u.2 (q • μ + ν)⟩
   map_add' u₁ u₂ := by
     apply Subtype.ext
     apply Subtype.ext
@@ -214,8 +211,47 @@ private noncomputable def restrictedExpandComponentLinear {K' : Type*} [NormedCo
     apply Subtype.ext
     apply Subtype.ext
     ext μ
-    simp only [RingHom.id_apply, SetLike.val_smul, coeff_coe_smul_isRestrictedSubring,
-      coeff_restrictedExpandComponent]
+    simp only [RingHom.id_apply, SetLike.val_smul, coe_smul_isRestrictedSubring,
+      LinearMap.map_smul_of_tower, coeff_restrictedExpandComponent]
+
+/-- Extracting the `μ`-th coefficient maps `coeffSubmodule c E` `K`-linearly into `E`. -/
+private noncomputable def coeffSubmoduleCoeff {K' : Type*} [NormedCommRing K']
+    [IsUltrametricDist K'] [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {E : Submodule K K'} (μ : σ →₀ ℕ) : coeffSubmodule c E →ₗ[K] E where
+  toFun v := ⟨coeff μ (v.1 : _root_.MvPowerSeries σ K'), mem_coeffSubmodule.mp v.2 μ⟩
+  map_add' v₁ v₂ := by
+    ext
+    simp only [Submodule.coe_add, Subring.coe_add, map_add]
+  map_smul' a v := by
+    ext
+    simp only [RingHom.id_apply, SetLike.val_smul, coe_smul_isRestrictedSubring,
+      LinearMap.map_smul_of_tower]
+
+omit [IsUltrametricDist K] in
+@[simp]
+private theorem coe_coeffSubmoduleCoeff {K' : Type*} [NormedCommRing K']
+    [IsUltrametricDist K'] [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {E : Submodule K K'} (μ : σ →₀ ℕ) (v : coeffSubmodule c E) :
+    (coeffSubmoduleCoeff μ v : K') = coeff μ (v.1 : _root_.MvPowerSeries σ K') :=
+  (rfl)
+
+private noncomputable def tateApplyDualFun {K' : Type*} [NormedCommRing K'] [IsUltrametricDist K']
+    [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)] {E : Submodule K K'}
+    (φ : StrongDual K E) (v : coeffSubmodule c E) : IsRestricted.subring (R := K) c :=
+  ⟨fun μ ↦ φ (coeffSubmoduleCoeff μ v), by
+    have h := v.1.2.const_mul ‖φ‖
+    rw [mul_zero] at h
+    refine squeeze_zero (fun μ ↦ mul_nonneg (norm_nonneg _) (prod_pow_pos μ).le) (fun μ ↦ ?_) h
+    rw [coeff_apply, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (φ.le_opNorm (coeffSubmoduleCoeff μ v))
+      (prod_pow_pos μ).le⟩
+
+@[simp]
+private theorem coeff_tateApplyDualFun {K' : Type*} [NormedCommRing K'] [IsUltrametricDist K']
+    [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)] {E : Submodule K K'}
+    (φ : StrongDual K E) (v : coeffSubmodule c E) (μ : σ →₀ ℕ) :
+    coeff μ (tateApplyDualFun φ v : _root_.MvPowerSeries σ K) = φ (coeffSubmoduleCoeff μ v) :=
+  coeff_apply _ μ
 
 /-- Applying a continuous `K`-linear functional `φ : StrongDual K E` coefficientwise defines a
 `K`-linear map `coeffSubmodule c E →ₗ[K] K{X / c}`. -/
@@ -223,40 +259,21 @@ private noncomputable def tateApplyDual {K' : Type*} [NormedCommRing K'] [IsUltr
     [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)] {E : Submodule K K'}
     (φ : StrongDual K E) :
     coeffSubmodule c E →ₗ[K] IsRestricted.subring (R := K) c where
-  toFun v :=
-    ⟨(fun μ ↦ φ ⟨coeff μ (v.1 : _root_.MvPowerSeries σ K'), v.2 μ⟩ :
-        _root_.MvPowerSeries σ K), by
-      have h := v.1.2.const_mul ‖φ‖
-      rw [mul_zero] at h
-      refine squeeze_zero (fun μ ↦ mul_nonneg (norm_nonneg _) (prod_pow_pos μ).le) (fun μ ↦ ?_) h
-      rw [coeff_apply, ← mul_assoc]
-      exact mul_le_mul_of_nonneg_right (φ.le_opNorm ⟨_, v.2 μ⟩) (prod_pow_pos μ).le⟩
+  toFun := tateApplyDualFun φ
   map_add' v₁ v₂ := by
     apply Subtype.ext
     ext μ
-    change φ ⟨coeff μ (((v₁ + v₂).1 : IsRestricted.subring (R := K') c) :
-        _root_.MvPowerSeries σ K'), (v₁ + v₂).2 μ⟩ =
-      φ ⟨coeff μ (v₁.1 : _root_.MvPowerSeries σ K'), v₁.2 μ⟩ +
-        φ ⟨coeff μ (v₂.1 : _root_.MvPowerSeries σ K'), v₂.2 μ⟩
-    rw [← φ.map_add]
-    refine congrArg φ (Subtype.ext ?_)
-    dsimp only [Submodule.coe_add]
-    rw [AddMemClass.coe_add, map_add]
+    simp only [Subring.coe_add, map_add, coeff_tateApplyDualFun]
   map_smul' a v := by
     apply Subtype.ext
     ext μ
-    rw [RingHom.id_apply, coeff_coe_smul_isRestrictedSubring, coeff_apply, coeff_apply,
-      ← φ.map_smul]
-    refine congrArg φ (Subtype.ext ?_)
-    dsimp only [SetLike.val_smul]
-    rw [coeff_coe_smul_isRestrictedSubring]
+    simp only [RingHom.id_apply, coe_smul_isRestrictedSubring, coeff_tateApplyDualFun, map_smul]
 
 private theorem coeff_tateApplyDual {K' : Type*} [NormedCommRing K'] [IsUltrametricDist K']
     [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)] {E : Submodule K K'}
     (φ : StrongDual K E) (v : coeffSubmodule c E) (μ : σ →₀ ℕ) :
-    coeff μ (tateApplyDual φ v : _root_.MvPowerSeries σ K) =
-      φ ⟨coeff μ (v.1 : _root_.MvPowerSeries σ K'), v.2 μ⟩ :=
-  coeff_apply _ μ
+    coeff μ (tateApplyDual φ v : _root_.MvPowerSeries σ K) = φ (coeffSubmoduleCoeff μ v) :=
+  coeff_tateApplyDualFun φ v μ
 
 private theorem norm_tateApplyDual_le {K' : Type*} [NormedCommRing K'] [IsUltrametricDist K']
     [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)] {E : Submodule K K'}
@@ -264,7 +281,7 @@ private theorem norm_tateApplyDual_le {K' : Type*} [NormedCommRing K'] [IsUltram
     ‖tateApplyDual φ v‖ ≤ ‖φ‖ * ‖v.1‖ :=
   norm_le_mul_of_norm_coeff_le (norm_nonneg φ) fun μ ↦ by
     rw [coeff_tateApplyDual]
-    exact φ.le_opNorm ⟨_, v.2 μ⟩
+    exact φ.le_opNorm (coeffSubmoduleCoeff μ v)
 
 private theorem restrictedMap_mul_mem_coeffSubmodule {K' : Type*} [NormedCommRing K']
     [IsUltrametricDist K'] [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
@@ -272,13 +289,12 @@ private theorem restrictedMap_mul_mem_coeffSubmodule {K' : Type*} [NormedCommRin
     (a : IsRestricted.subring (R := K) c) (v : coeffSubmodule c E) :
     restrictedMap (algebraMap K K') h_iso a * v.1 ∈ coeffSubmodule c E := by
   classical
+  rw [mem_coeffSubmodule]
   intro α
-  change coeff α ((restrictedMap (algebraMap K K') h_iso a : _root_.MvPowerSeries σ K') *
-    (v.1 : _root_.MvPowerSeries σ K')) ∈ E
-  rw [coeff_mul]
+  rw [Subring.coe_mul, coeff_mul]
   refine E.sum_mem fun pq _ ↦ ?_
   rw [coeff_restrictedMap, ← Algebra.smul_def]
-  exact E.smul_mem _ (v.2 pq.2)
+  exact E.smul_mem _ (mem_coeffSubmodule.mp v.2 pq.2)
 
 private theorem tateApplyDual_restrictedMap_mul {K' : Type*} [NormedCommRing K']
     [IsUltrametricDist K'] [NormedAlgebra K K'] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
@@ -287,22 +303,19 @@ private theorem tateApplyDual_restrictedMap_mul {K' : Type*} [NormedCommRing K']
     tateApplyDual φ ⟨restrictedMap (algebraMap K K') h_iso a * v.1,
       restrictedMap_mul_mem_coeffSubmodule h_iso a v⟩ = a * tateApplyDual φ v := by
   classical
-  let w : coeffSubmodule c E :=
+  set w : coeffSubmodule c E :=
     ⟨restrictedMap (algebraMap K K') h_iso a * v.1,
       restrictedMap_mul_mem_coeffSubmodule h_iso a v⟩
-  change tateApplyDual φ w = a * tateApplyDual φ v
   apply Subtype.ext
   ext α
   rw [coeff_tateApplyDual]
   have hsum :
-      (⟨coeff α (w.1 : _root_.MvPowerSeries σ K'), w.2 α⟩ : E) =
+      coeffSubmoduleCoeff α w =
         ∑ pq ∈ Finset.antidiagonal α,
-          coeff pq.1 (a : _root_.MvPowerSeries σ K) •
-            (⟨coeff pq.2 (v.1 : _root_.MvPowerSeries σ K'), v.2 pq.2⟩ : E) := by
+          coeff pq.1 (a : _root_.MvPowerSeries σ K) • coeffSubmoduleCoeff pq.2 v := by
     ext
-    dsimp only [w]
-    simp only [Subring.coe_mul, coeff_mul, coeff_restrictedMap, Submodule.coe_sum,
-      SetLike.val_smul, Algebra.smul_def]
+    simp only [coe_coeffSubmoduleCoeff, w, Subring.coe_mul, coeff_mul, coeff_restrictedMap,
+      Submodule.coe_sum, SetLike.val_smul, Algebra.smul_def]
   rw [hsum, map_sum, Subring.coe_mul, coeff_mul]
   refine Finset.sum_congr rfl fun pq _ ↦ ?_
   rw [φ.map_smul, smul_eq_mul, coeff_tateApplyDual]
@@ -315,10 +328,9 @@ private theorem expand_restrictedMap_mul_mem_coeffSubmodule {K' : Type*} [Normed
     restrictedExpand q hq hr (restrictedMap (algebraMap K K') h_iso a) * u.1 ∈
       coeffSubmodule r E := by
   classical
+  rw [mem_coeffSubmodule]
   intro α
-  change coeff α ((restrictedExpand q hq hr (restrictedMap (algebraMap K K') h_iso a) :
-      _root_.MvPowerSeries σ K') * (u.1 : _root_.MvPowerSeries σ K')) ∈ E
-  rw [coeff_mul]
+  rw [Subring.coe_mul, coeff_mul]
   refine E.sum_mem fun pq _ ↦ ?_
   rw [coe_restrictedExpand]
   by_cases h0 : coeff pq.1 (expand q hq
@@ -327,38 +339,7 @@ private theorem expand_restrictedMap_mul_mem_coeffSubmodule {K' : Type*} [Normed
     exact E.zero_mem
   · obtain ⟨μ, -, hμ⟩ := support_expand_subset q hq _ (a := pq.1) h0
     rw [← hμ, coeff_expand_smul, coeff_restrictedMap, ← Algebra.smul_def]
-    exact E.smul_mem _ (u.2 pq.2)
-
-private theorem restrictedExpandComponent_expand_mul [Finite σ]
-    {K' : Type*} [NormedCommRing K'] [IsUltrametricDist K'] {r c : σ → ℝ}
-    [∀ i, Fact (0 < r i)] {q : ℕ} (hq : q ≠ 0)
-    (hr : ∀ i, r i ^ q = c i)
-    (b : IsRestricted.subring (R := K') c) (u : IsRestricted.subring (R := K') r)
-    (ν : σ → Fin q) :
-    restrictedExpandComponent hq hr (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν))
-      (restrictedExpand q hq hr b * u) =
-      b * restrictedExpandComponent hq hr (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)) u := by
-  classical
-  have := Fintype.ofFinite σ
-  conv_lhs =>
-    rw [← sum_monomial_mul_restrictedExpand_restrictedExpandComponent hq hr u, Finset.mul_sum]
-  have hcomm :
-      (∑ ν' : σ → Fin q,
-        restrictedExpand q hq hr b *
-          ((⟨monomial (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν')) 1,
-              isRestricted_monomial r _ 1⟩ : IsRestricted.subring (R := K') r) *
-            restrictedExpand q hq hr
-              (restrictedExpandComponent hq hr
-                (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν')) u))) =
-      ∑ ν' : σ → Fin q,
-        (⟨monomial (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν')) 1,
-            isRestricted_monomial r _ 1⟩ : IsRestricted.subring (R := K') r) *
-          restrictedExpand q hq hr
-            (b * restrictedExpandComponent hq hr
-              (Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν')) u) := by
-    refine Finset.sum_congr rfl fun ν' _ ↦ ?_
-    rw [map_mul, ← mul_assoc, mul_comm (restrictedExpand q hq hr b), mul_assoc]
-  rw [hcomm, restrictedExpandComponent_sum_monomial_mul_restrictedExpand]
+    exact E.smul_mem _ (mem_coeffSubmodule.mp u.2 pq.2)
 
 end Helpers
 
@@ -462,14 +443,13 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
   have hmkElem_map (y : M) (s : nonZeroDivisors T) (a : Fin m → T)
       (ha : ∀ j, algebraMap T F (a j) = (s : T) • b.repr y j) :
       algebraMap T' F' (mkElem a).1 = algebraMap T' F' (Ψ s) * ι y := by
+    dsimp only [mkElem]
     rw [Submodule.coe_sum, map_sum, ← b.sum_repr y, map_sum, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     have haj : algebraMap T F (a j) = algebraMap T F s * b.repr y j := by
       simpa only [Algebra.smul_def] using ha j
-    change algebraMap T' F' (Ψ (a j) * rootG j) = _
     rw [map_mul, ← hΨ_F_alg (a j), haj, map_mul, hΨ_F_alg s, map_smul ι, Algebra.smul_def,
-      hι_b j, ← mul_assoc]
-    rfl
+      RingHom.algebraMap_toAlgebra, hι_b j, ← mul_assoc]
   -- Step 4: Construct separating spectrally bounded `F`-linear functionals on `M`.
   refine Module.Dual.exists_bound_of_forall_exists_ne_zero ψ (spectralNorm F M) fun x₀ hx₀ ↦ ?_
   obtain ⟨s₀, hs₀⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T)
@@ -499,9 +479,8 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
     rw [hcomp0, map_zero, mul_zero]
   obtain ⟨ν, μ, hμ_ne⟩ := hex_comp
   set ν_fs : σ →₀ ℕ := Finsupp.equivFunOnFinite.symm (Fin.val ∘ ν)
-  let e₀ : E :=
-    ⟨coeff μ (restrictedExpandComponent hq hr ν_fs u₀.1 : _root_.MvPowerSeries σ K'),
-      (restrictedExpandComponentLinear hq hr E ν_fs u₀).2 μ⟩
+  have hν_fs : ∀ i, ν_fs i < q := fun i ↦ by simp [ν_fs, (ν i).isLt]
+  let e₀ : E := coeffSubmoduleCoeff μ (restrictedExpandComponentLinear hq hr E ν_fs u₀)
   have he₀_ne : e₀ ≠ 0 := Subtype.coe_ne_coe.mp hμ_ne
   obtain ⟨f_dual, hf_ne⟩ := SeparatingDual.exists_ne_zero (R := K) he₀_ne
   let π : coeffSubmodule r E →ₗ[K] T :=
@@ -515,7 +494,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
         ⟨restrictedMap (algebraMap K K') h_iso a *
             (restrictedExpandComponentLinear hq hr E ν_fs u).1,
           restrictedMap_mul_mem_coeffSubmodule h_iso a _⟩ :=
-      Subtype.ext (restrictedExpandComponent_expand_mul hq hr _ u.1 ν)
+      Subtype.ext (restrictedExpandComponent_restrictedExpand_mul hq hr hν_fs _ u.1)
     rw [hcomp_eq, tateApplyDual_restrictedMap_mul]
   let C_π : ℝ := ‖f_dual‖ / ν_fs.prod (r · ^ ·)
   have hπ_norm (u : coeffSubmodule r E) : ‖π u‖ ≤ C_π * ‖u.1‖ := by
@@ -586,17 +565,6 @@ power-basis coordinate norm.
 
 universe u₁ u₂
 
-private theorem order_X_eq_one {σ K : Type*} [Semiring K] [Nontrivial K] (i₀ : σ) :
-    (_root_.MvPowerSeries.X i₀ : _root_.MvPowerSeries σ K).order = 1 := by
-  rw [MvPowerSeries.X_def, MvPowerSeries.order_monomial_of_ne_zero one_ne_zero,
-    Finsupp.degree_single]
-  rfl
-
-private theorem X_ne_zero_of_nontrivial {σ K : Type*} [Semiring K] [Nontrivial K] (i₀ : σ) :
-    (_root_.MvPowerSeries.X i₀ : _root_.MvPowerSeries σ K) ≠ 0 := by
-  intro h
-  simpa using congrArg (coeff (Finsupp.single i₀ 1)) h
-
 /-- In any characteristic (including `2`), `Y ^ 2 + Xᵢ ^ 2 * Y + Xᵢ` defines a degree-`2` separable
 extension of `GaussFractionField σ K c` on which `spectralNorm` is equivalent to the power-basis
 coordinate norm. -/
@@ -625,7 +593,7 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
   have hP_monic : P.Monic := by
     dsimp only [P]
     monicity!
-  have hX_ord := order_X_eq_one (K := K) i₀
+  have hX_ord := MvPowerSeries.order_X (R := K) i₀
   have hP_noroot (z : F) : ¬ P.IsRoot z := by
     intro hz
     rw [Polynomial.IsRoot.def, Polynomial.eval_add, Polynomial.eval_add, Polynomial.eval_pow,
@@ -653,7 +621,7 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
     have hA_ne : (A : _root_.MvPowerSeries σ K) ≠ 0 := by
       intro hA0
       rw [hA0, sq, zero_mul, mul_zero, zero_mul, zero_add, zero_add] at hser
-      exact mul_ne_zero (X_ne_zero_of_nontrivial i₀) (pow_ne_zero 2 hB_ne) hser
+      exact mul_ne_zero (MvPowerSeries.X_ne_zero i₀) (pow_ne_zero 2 hB_ne) hser
     obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hA_ne)
     obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hB_ne)
     have ho1 : ((A : _root_.MvPowerSeries σ K) ^ 2).order = ((2 * a : ℕ) : ℕ∞) := by
@@ -761,12 +729,12 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
       SetLike.mem_coe, mem_perfectClosure_iff_pow_mem p]
     exact ⟨1, x₀, by rw [pow_one, hα]⟩
   have : FiniteDimensional F M := IntermediateField.adjoin.finiteDimensional hα_int
-  have hX_ord := order_X_eq_one (K := K) i₀
+  have hX_ord := MvPowerSeries.order_X (R := K) i₀
   have hfin_gt : 1 < Module.finrank F M := by
     by_contra! hle
     have heq1 : Module.finrank F M = 1 := le_antisymm hle Module.finrank_pos
-    obtain ⟨z, hz⟩ := IntermediateField.finrank_adjoin_simple_eq_one_iff.mp heq1
-    change algebraMap F (AlgebraicClosure F) z = α at hz
+    obtain ⟨z, hz⟩ :=
+      IntermediateField.mem_bot.mp (IntermediateField.finrank_adjoin_simple_eq_one_iff.mp heq1)
     have hzp : z ^ p = x₀ := by
       apply (algebraMap F (AlgebraicClosure F)).injective
       rw [map_pow, hz, hα]
@@ -787,7 +755,7 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
     have hA_ne : (A : _root_.MvPowerSeries σ K) ≠ 0 := by
       intro hA0
       rw [hA0, zero_pow hp.ne_zero] at hser
-      exact mul_ne_zero (X_ne_zero_of_nontrivial i₀) (pow_ne_zero p hB_ne) hser.symm
+      exact mul_ne_zero (MvPowerSeries.X_ne_zero i₀) (pow_ne_zero p hB_ne) hser.symm
     obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hA_ne)
     obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp (MvPowerSeries.order_eq_top_iff.not.mpr hB_ne)
     have hpow_ord (S : _root_.MvPowerSeries σ K) (s : ℕ) (hS : (s : ℕ∞) = S.order) :

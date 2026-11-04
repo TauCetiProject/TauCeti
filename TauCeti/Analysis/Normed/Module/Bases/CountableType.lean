@@ -319,8 +319,8 @@ completeness of `K`. -/
 theorem separatingDual_of_dense_span {v : ℕ → E}
     (hv : Dense (span K (range v) : Set E)) : SeparatingDual K E where
   exists_ne_zero' {x} hx := by
-    obtain ⟨S, e, he⟩ := exists_isTOrthogonalBasis_of_dense_span hv
-      (show (2⁻¹ : ℝ≥0) < 1 by norm_num)
+    have ht : (2⁻¹ : ℝ≥0) < 1 := by norm_num
+    obtain ⟨S, e, he⟩ := exists_isTOrthogonalBasis_of_dense_span hv ht
     let b := he.toUnconditionalSchauderBasis (by norm_num)
     by_contra! h
     have hsum := b.expansion x
@@ -340,10 +340,13 @@ theorem _root_.Submodule.separatingDual_span_of_countable {S : Set E} (hS : S.Co
       exact zero_mem _
     · exact subset_span hn
   let v : ℕ → span K S := fun n ↦ ⟨f n, hfS n⟩
+  have hv : (span K S).subtype ∘ v = f := by
+    ext n
+    exact (span K S).subtype_apply (v n)
   have htop : span K (range v) = ⊤ := by
     apply Submodule.map_injective_of_injective (span K S).injective_subtype
-    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span, ← range_comp,
-      (show (span K S).subtype ∘ v = f from rfl), ← hf, span_insert_zero]
+    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span, ← range_comp, hv, ← hf,
+      span_insert_zero]
   refine separatingDual_of_dense_span (v := v) ?_
   rw [htop]
   exact dense_univ

@@ -45,8 +45,9 @@ namespace TauCeti
 noncomputable def frobeniusRootAbs (K : Type*) [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [ExpChar K p] (e : ℕ) : AbsoluteValue K ℝ :=
   (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)).nonarchRpow
-    (show IsNonarchimedean (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)) from
-      fun x y ↦ IsUltrametricDist.norm_add_le_max x y)
+    (Eq.mp (congrArg IsNonarchimedean
+      (funext (IsAbsoluteValue.toAbsoluteValue_apply (norm : K → ℝ))).symm)
+      IsUltrametricDist.isNonarchimedean_norm)
     (inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e)))
 
 @[simp]
@@ -127,11 +128,17 @@ theorem root_injective : Function.Injective (root K p e) :=
 theorem val_injective : Function.Injective (val K p e) :=
   (ringEquiv K p e).injective
 
+@[simp]
+theorem norm_toWithAbs (x : FrobeniusRoot K p e) : ‖x.toWithAbs‖ = ‖x‖ :=
+  (rfl)
+
+@[simp]
+theorem ofAbs_toWithAbs (x : FrobeniusRoot K p e) : x.toWithAbs.ofAbs = val K p e x :=
+  (rfl)
+
 theorem norm_def (x : FrobeniusRoot K p e) :
     ‖x‖ = ‖val K p e x‖ ^ ((p ^ e : ℕ) : ℝ)⁻¹ := by
-  change ‖x.toWithAbs‖ = _
-  rw [WithAbs.norm_eq_apply_ofAbs, frobeniusRootAbs_apply]
-  rfl
+  rw [← norm_toWithAbs, WithAbs.norm_eq_apply_ofAbs, ofAbs_toWithAbs, frobeniusRootAbs_apply]
 
 @[simp]
 theorem norm_root (a : K) :

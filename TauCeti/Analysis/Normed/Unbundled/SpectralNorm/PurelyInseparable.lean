@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.WithAbs
-public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
+public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
-import Mathlib.Algebra.Polynomial.Expand
+import Mathlib.Algebra.Polynomial.Eval.Subring
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 /-!
@@ -41,22 +41,6 @@ open Polynomial
 section NormedField
 
 variable {K M : Type*} [NormedField K] [IsUltrametricDist K] [Field M] [Algebra K M]
-
-/-- If `x ^ n = algebraMap K M a` for `n ≠ 0` in an algebraic extension `M / K`, then
-`spectralNorm K M x ^ n = ‖a‖`. -/
-theorem spectralNorm_pow_eq_norm_of_pow_eq_algebraMap [Algebra.IsAlgebraic K M] {n : ℕ}
-    (hn : n ≠ 0) {x : M} {a : K} (h : x ^ n = algebraMap K M a) :
-    spectralNorm K M x ^ n = ‖a‖ := by
-  rw [← isPowMul_spectralNorm x (Nat.one_le_iff_ne_zero.mpr hn), h, spectralNorm_extends]
-
-/-- If `x ^ n = algebraMap K M a` for `n ≠ 0` in an algebraic extension `M / K`, then
-`spectralNorm K M x = ‖a‖ ^ (1 / n)`. -/
-theorem spectralNorm_eq_norm_rpow_of_pow_eq_algebraMap [Algebra.IsAlgebraic K M] {n : ℕ}
-    (hn : n ≠ 0) {x : M} {a : K} (h : x ^ n = algebraMap K M a) :
-    spectralNorm K M x = ‖a‖ ^ (1 / (n : ℝ)) := by
-  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  rw [one_div, Real.eq_rpow_inv (spectralNorm_nonneg x) (norm_nonneg a) hn', Real.rpow_natCast,
-    spectralNorm_pow_eq_norm_of_pow_eq_algebraMap hn h]
 
 /-- On a purely inseparable extension of an ultrametric normed field, the spectral norm is
 multiplicative, without completeness or nontriviality of the norm on `K`. -/
@@ -114,51 +98,6 @@ noncomputable instance [IsPurelyInseparable K M] :
 
 end NormedField
 
-/-- Mapping a polynomial along a norm-preserving ring homomorphism between normed fields preserves
-its `spectralValue`. -/
-theorem spectralValue_map_of_norm_eq {F E : Type*} [NormedField F] [NormedField E]
-    (φ : F →+* E) (hφ : ∀ a, ‖φ a‖ = ‖a‖) (P : F[X]) :
-    spectralValue (P.map φ) = spectralValue P := by
-  have hdeg : (P.map φ).natDegree = P.natDegree := P.natDegree_map_eq_of_injective φ.injective
-  unfold spectralValue
-  congr 1 with n
-  simp only [spectralValueTerms, hdeg, coeff_map, hφ]
-
-private theorem spectralValue_expand_le {K M' : Type*} [NormedField K] [NormedField M']
-    [Algebra K M'] (hiso : ∀ a : K, ‖algebraMap K M' a‖ = ‖a‖) {q : ℕ} (hq : 0 < q)
-    {Q₀ : K[X]} {Q : M'[X]} (hdeg : Q₀.natDegree = Q.natDegree)
-    (hcoeff : ∀ k, algebraMap K M' (Q₀.coeff k) = Q.coeff k ^ q) :
-    spectralValue (Polynomial.expand K q Q₀) ≤ spectralValue Q := by
-  refine ciSup_le fun m ↦ ?_
-  rw [spectralValueTerms, natDegree_expand, hdeg]
-  split_ifs with hm
-  · rw [coeff_expand hq]
-    split_ifs with hdvd
-    · obtain ⟨k, rfl⟩ := hdvd
-      have hk : k < Q.natDegree := by
-        rw [mul_comm] at hm
-        exact Nat.lt_of_mul_lt_mul_right hm
-      rw [Nat.mul_div_cancel_left k hq]
-      have hnorm : ‖Q₀.coeff k‖ = ‖Q.coeff k‖ ^ q := by
-        rw [← hiso (Q₀.coeff k), hcoeff k, norm_pow]
-      have hsub : ((Q.natDegree * q : ℕ) : ℝ) - ((q * k : ℕ) : ℝ) =
-          (q : ℝ) * ((Q.natDegree : ℝ) - (k : ℝ)) := by
-        push_cast
-        ring
-      have hqR : (q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq.ne'
-      have hexp : (‖Q.coeff k‖ ^ q) ^ (1 / ((q : ℝ) * ((Q.natDegree : ℝ) - (k : ℝ)))) =
-          ‖Q.coeff k‖ ^ (1 / ((Q.natDegree : ℝ) - (k : ℝ))) := by
-        rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
-        congr 1
-        field_simp [hqR]
-      rw [hnorm, hsub, hexp, ← spectralValueTerms_of_lt_natDegree Q hk]
-      exact le_ciSup (spectralValueTerms_bddAbove Q) k
-    · rw [norm_zero, Real.zero_rpow]
-      · exact spectralValue_nonneg Q
-      · refine one_div_ne_zero (sub_ne_zero.mpr ?_)
-        exact_mod_cast hm.ne'
-  · exact spectralValue_nonneg Q
-
 /-- **Tower invariance of the spectral norm across a purely inseparable subextension.**
 Let `K → M → N` be a tower of fields with `M / K` purely inseparable and `N / M` algebraic.
 Equipping `M` with `spectralAbsoluteValue K M` through `WithAbs`, the spectral norm of `N` over
@@ -185,7 +124,7 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
           norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm
             (hP.map _) hroot
       _ = spectralValue P :=
-          spectralValue_map_of_norm_eq (algebraMap K M')
+          (algebraMap K M').spectralValue_map_of_norm_eq
             norm_algebraMap_withAbs_spectralAbsoluteValue P
       _ = spectralNorm K N y := rfl
   · -- Raise `Q = minpoly M' y` to a `p ^ n`-th power whose coefficients descend to `K`.
@@ -212,24 +151,16 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
         rw [map_pow, ha, ← pow_mul, ← pow_add, Nat.add_sub_cancel' hle]
       · rw [notMem_support_iff.mp hi, zero_pow hq.ne']
         exact ⟨0, map_zero _⟩
-    choose b hb using hmem
-    let Q₀ : K[X] := ∑ i ∈ Q.support, monomial i (b i)
-    have hQ₀_coeff (k : ℕ) : Q₀.coeff k = b k := by
-      rw [finsetSum_coeff]
-      simp only [coeff_monomial, Finset.sum_ite_eq']
-      split_ifs with hk
-      · rfl
-      · symm
-        apply (algebraMap K M').injective
-        rw [map_zero, hb k, notMem_support_iff.mp hk, zero_pow hq.ne']
-    have hQ₀_map : Q₀.map (algebraMap K M') = Q.map (iterateFrobenius M' p n) := by
-      ext k
-      rw [coeff_map, coeff_map, hQ₀_coeff, hb, iterateFrobenius_def]
+    obtain ⟨Q₀, hQ₀⟩ : Q.map (iterateFrobenius M' p n) ∈ (mapRingHom (algebraMap K M')).range :=
+      (mem_map_range (algebraMap K M')).mpr fun i ↦ by
+        rw [coeff_map, iterateFrobenius_def]
+        exact hmem i
+    rw [coe_mapRingHom] at hQ₀
     set R : K[X] := Polynomial.expand K q Q₀
     have hR_map : R.map (algebraMap K M') = Q ^ q := by
       calc R.map (algebraMap K M')
           = Polynomial.expand M' q (Q₀.map (algebraMap K M')) := map_expand
-        _ = Polynomial.expand M' q (Q.map (iterateFrobenius M' p n)) := by rw [hQ₀_map]
+        _ = Polynomial.expand M' q (Q.map (iterateFrobenius M' p n)) := by rw [hQ₀]
         _ = (Polynomial.expand M' q Q).map (iterateFrobenius M' p n) := map_expand.symm
         _ = Q ^ q := map_iterateFrobenius_expand p Q n
     have hR_monic : R.Monic := by
@@ -238,18 +169,31 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
       exact hQ.pow q
     have hR_root : aeval y R = 0 := by
       rw [← aeval_map_algebraMap M' y R, hR_map, map_pow, minpoly.aeval, zero_pow hq.ne']
-    have hdeg : Q₀.natDegree = Q.natDegree := by
-      have h1 : (R.map (algebraMap K M')).natDegree = R.natDegree :=
-        R.natDegree_map_eq_of_injective (algebraMap K M').injective
-      rw [hR_map, hQ.natDegree_pow, natDegree_expand, mul_comm q] at h1
-      exact Nat.eq_of_mul_eq_mul_right hq h1.symm
+    have hQ_frob : spectralValue (Q.map (iterateFrobenius M' p n)) ≤ spectralValue Q ^ q := by
+      have hdeg_frob : (Q.map (iterateFrobenius M' p n)).natDegree = Q.natDegree :=
+        Q.natDegree_map_eq_of_injective (iterateFrobenius M' p n).injective
+      refine ciSup_le fun k ↦ ?_
+      rw [spectralValueTerms, hdeg_frob]
+      split_ifs with hk
+      · rw [coeff_map, iterateFrobenius_def, norm_pow, ← Real.rpow_natCast,
+          ← Real.rpow_mul (norm_nonneg _), mul_comm (q : ℝ), Real.rpow_mul (norm_nonneg _),
+          Real.rpow_natCast, ← spectralValueTerms_of_lt_natDegree Q hk]
+        exact pow_le_pow_left₀ (spectralValueTerms_nonneg Q k)
+          (le_ciSup (spectralValueTerms_bddAbove Q) k) q
+      · exact pow_nonneg (spectralValue_nonneg Q) q
     calc spectralNorm K N y = spectralAlgNorm K N y := rfl
       _ ≤ spectralValue R :=
           norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm
             hR_monic hR_root
-      _ ≤ spectralValue Q :=
-          spectralValue_expand_le norm_algebraMap_withAbs_spectralAbsoluteValue hq hdeg
-            (fun k ↦ by rw [hQ₀_coeff, hb])
+      _ = spectralValue (Q.map (iterateFrobenius M' p n)) ^ (1 / (q : ℝ)) := by
+          rw [Q₀.spectralValue_expand hq.ne', ← hQ₀,
+            (algebraMap K M').spectralValue_map_of_norm_eq
+              norm_algebraMap_withAbs_spectralAbsoluteValue]
+      _ ≤ (spectralValue Q ^ q) ^ (1 / (q : ℝ)) :=
+          Real.rpow_le_rpow (spectralValue_nonneg _) hQ_frob (by positivity)
+      _ = spectralValue Q := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul (spectralValue_nonneg Q),
+            mul_one_div_cancel (Nat.cast_ne_zero.mpr hq.ne'), Real.rpow_one]
       _ = spectralNorm M' N y := rfl
 
 end TauCeti

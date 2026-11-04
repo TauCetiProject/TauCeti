@@ -49,39 +49,6 @@ The mathematical references are Bosch–Güntzer–Remmert, *Non-Archimedean Ana
 
 public section
 
-namespace RingEquiv
-
-/-- Compatible ring isomorphisms whose base map is norm-preserving preserve `spectralNorm`. -/
-theorem spectralNorm_eq_of_norm_eq {K K' L L' : Type*}
-    [NormedField K] [NormedField K'] [Field L] [Field L']
-    [Algebra K L] [Algebra K' L']
-    (e : K ≃+* K') (he : ∀ a, ‖e a‖ = ‖a‖) (g : L ≃+* L')
-    (hcomp : (algebraMap K' L').comp e.toRingHom = g.toRingHom.comp (algebraMap K L)) (x : L) :
-    spectralNorm K' L' (g x) = spectralNorm K L x := by
-  by_cases hx : IsIntegral K x
-  · have hmin : Polynomial.map (e : K →+* K') (minpoly K x) = minpoly K' (g x) :=
-      minpoly.eq_of_irreducible_of_monic
-        (by rw [← Polynomial.mapEquiv_apply, MulEquiv.irreducible_iff]
-            exact minpoly.irreducible hx)
-        (by simpa using (Polynomial.map_aeval_eq_aeval_map hcomp (minpoly K x) x).symm)
-        ((minpoly.monic hx).map _)
-    rw [spectralNorm, ← hmin, TauCeti.spectralValue_map_of_norm_eq (e : K →+* K') he,
-      ← spectralNorm]
-  · have hgx : ¬ IsIntegral K' (g x) := by
-      rintro ⟨P, hPm, hP0⟩
-      refine hx ⟨P.map (e.symm : K' →+* K), hPm.map _, ?_⟩
-      have hcomp' : (algebraMap K L).comp e.symm.toRingHom =
-          g.symm.toRingHom.comp (algebraMap K' L') := by
-        ext b
-        apply g.injective
-        simpa [RingHom.comp_apply] using (RingHom.congr_fun hcomp (e.symm b)).symm
-      rw [← Polynomial.aeval_def] at hP0 ⊢
-      simpa [hP0] using (Polynomial.map_aeval_eq_aeval_map hcomp' P (g x)).symm
-    rw [spectralNorm, spectralNorm, minpoly.eq_zero hx, minpoly.eq_zero hgx,
-      ← Polynomial.map_zero (e : K →+* K'), TauCeti.spectralValue_map_of_norm_eq (e : K →+* K') he]
-
-end RingEquiv
-
 namespace Module.Dual
 
 /-- In a tower of fields `K → L → N`, if every `K`-linear functional on `N` is bounded by
@@ -230,18 +197,16 @@ private theorem isWeaklyStable_of_norm_eq {K : Type*} {K' : Type*} [NormedField 
   let _ : Algebra K L' := ((algebraMap K' L').comp e.toRingHom).toAlgebra
   have : IsScalarTower K K' L' := .of_algebraMap_eq' rfl
   have : FiniteDimensional K L' := Module.Finite.trans K' L'
-  let φ : Module.Dual K L' :=
-    { toFun := fun y ↦ e.symm (φ' y)
-      map_add' := fun x y ↦ by rw [map_add, map_add]
-      map_smul' := fun a y ↦ by
-        rw [← IsScalarTower.algebraMap_smul K', map_smul, RingHom.id_apply]
-        change e.symm (e a * φ' y) = a * e.symm (φ' y)
-        rw [map_mul, e.symm_apply_apply] }
+  let eAlg : K ≃ₐ[K] K' :=
+    AlgEquiv.ofRingEquiv (f := e) fun a ↦ by
+      rw [Algebra.algebraMap_self, RingHom.id_apply, RingHom.algebraMap_toAlgebra,
+        RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
+  let φ : Module.Dual K L' := eAlg.symm.toLinearMap.comp (φ'.restrictScalars K)
   obtain ⟨C, hC⟩ := hK.exists_bound_spectralNorm φ
   refine ⟨C, fun y ↦ ?_⟩
   have hnorm : ‖φ y‖ = ‖φ' y‖ := by
-    change ‖e.symm (φ' y)‖ = ‖φ' y‖
-    rw [← he (e.symm (φ' y)), e.apply_symm_apply]
+    rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AlgEquiv.toLinearMap_apply,
+      AlgEquiv.ofRingEquiv_symm_apply, ← he (e.symm (φ' y)), e.apply_symm_apply]
   have hspec : spectralNorm K' L' y = spectralNorm K L' y :=
     e.spectralNorm_eq_of_norm_eq he (RingEquiv.refl L') rfl y
   rw [← hnorm, hspec]
