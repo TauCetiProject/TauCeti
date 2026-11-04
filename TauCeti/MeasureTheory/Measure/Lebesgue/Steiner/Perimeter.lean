@@ -236,8 +236,8 @@ theorem perimeter_steinerSymmetrization_le (e : E) (he : ‖e‖ = 1) {s : Set E
     obtain ⟨v, hv⟩ := (hprop k).2.2.2.1 x hx 1
     simp [h0] at hv
   have hFae (k : ℕ) : F k =ᵐ[volume] {x | t k < u k x} := by
-    have hnull := measure_setOf_eq_eq_zero_of_fderiv_ne_zero (mu := volume)
-      ((hprop k).1.of_le (by simp)) (hreg k)
+    have hnull := ((hprop k).1.of_le (by simp)).measure_setOf_eq_eq_zero_of_fderiv_ne_zero
+      (mu := volume) (hreg k)
     have hF : F k = {x | t k < u k x} ∪ {x | u k x = t k} := by
       ext x
       simp [F, le_iff_lt_or_eq, eq_comm]

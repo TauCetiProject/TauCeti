@@ -199,6 +199,16 @@ theorem gradient_ae_eq_zero_on_level_set_of_contDiffOn {w : E → ℝ}
   by_contra h
   exact hx ⟨hxO, hxk, h⟩
 
+end TauCeti
+
+namespace ContDiff
+
+open MeasureTheory TauCeti TopologicalSpace
+open scoped Gradient
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+
 /-- A level set of a `C¹` function is null if the derivative does not vanish on it. -/
 theorem measure_setOf_eq_eq_zero_of_fderiv_ne_zero {w : E → ℝ} (hw : ContDiff ℝ 1 w) {k : ℝ}
     (hreg : ∀ x, w x = k → fderiv ℝ w x ≠ 0) : mu {x | w x = k} = 0 := by
@@ -209,4 +219,4 @@ theorem measure_setOf_eq_eq_zero_of_fderiv_ne_zero {w : E → ℝ} (hw : ContDif
   filter_upwards [h] with x hx hxk
   exact hreg x hxk (by simpa [gradient] using hx hxk)
 
-end TauCeti
+end ContDiff
