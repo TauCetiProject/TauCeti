@@ -4,18 +4,20 @@ Where the build cache lives, who owns it, and which knob feeds which workflow.
 
 ## Mathlib download cache (GitHub Actions)
 
-The main `ci.yml` workflow maintains a narrow snapshot of Mathlib's compressed download store:
+The trusted `ci.yml` and `warm-dependencies.yml` workflows maintain a narrow snapshot of Mathlib's compressed download store:
 `$MATHLIB_CACHE_DIR/*.ltar`. The `.ltar` files are content-addressed; cache-tool scratch files,
 executables, and the unpacked `.lake` tree are not included. The local
 `.github/actions/restore-mathlib-ltars` action sets `MATHLIB_CACHE_DIR` job-wide through
-`$GITHUB_ENV`, defaulting to `$GITHUB_WORKSPACE/.mathlib-ltar-cache`; its `cache-dir` input can
-override that location. Main publishes only after a non-exact restore: an exact key is immutable
+`$GITHUB_ENV` to `$GITHUB_WORKSPACE/.mathlib-ltar-cache`. Restore and both publishers use the
+action's `cache-path` output verbatim: `.mathlib-ltar-cache/*.ltar`. Keeping this glob workspace-relative
+makes GitHub's cache version identical across hosted and fleet workspace paths; Mathlib itself
+continues to use the absolute directory. Main publishes only after a non-exact restore: an exact key is immutable
 and already contains this pin's snapshot. Before publishing, main runs `lake exe cache clean` so
 the snapshot contains only files needed by the current pin; if pruning fails, it skips publication
 instead of saving an unpruned snapshot. PR and merge-group jobs in `pr-build.yml` may restore this
 trusted snapshot but never publish one. `pages.yml` and
-`pr-profile.yml` are intentionally outside this initial rollout: `ci.yml` is included as the sole
-publisher and `pr-build.yml` as the highest-volume consumer. `pr-profile.yml` has comparable
+`pr-profile.yml` are intentionally outside this initial rollout; `pr-build.yml` is the
+highest-volume consumer. `pr-profile.yml` has comparable
 per-PR fetch volume but remains outside as a rollout control. Both excluded workflows continue
 fetching into Mathlib's default cache directory.
 
