@@ -263,19 +263,11 @@ maximal-volume ellipsoid `T` satisfy `‖⟪u, x⟫‖ ≤ ‖T x‖`. -/
 theorem norm_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) {u : E}
     (hu : ‖S u‖ = ‖u‖) (x : E) : ‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖ := by
   rw [norm_inner_symm]
-  rcases eq_or_ne ⟪x, u⟫ 0 with hz | hz
-  · rw [hz, norm_zero]
-    positivity
-  have hz' : ‖⟪x, u⟫‖ ≠ 0 := norm_ne_zero_iff.2 hz
-  -- Rotate `x` by the unit scalar `ω = ⟪x, u⟫ / ‖⟪x, u⟫‖`, which makes `⟪ω • x, u⟫` real.
-  set ω : 𝕜 := ⟪x, u⟫ / (‖⟪x, u⟫‖ : 𝕜)
-  have hω : ‖ω‖ = 1 := by simp [ω, hz']
-  have hre : re ⟪ω • x, u⟫ = ‖⟪x, u⟫‖ := by
-    have : ⟪ω • x, u⟫ = (‖⟪x, u⟫‖ : 𝕜) := by
-      rw [inner_smul_left, map_div₀, conj_ofReal, div_mul_eq_mul_div, RCLike.conj_mul]
-      field_simp
-    rw [this, ofReal_re]
-  have h := S.re_inner_le_norm_mul_norm_apply hS hu (ω • x)
-  rwa [hre, map_smul, norm_smul, hω, one_mul] at h
+  -- Rotate `x` by a unit scalar `conj c` with `c * ⟪x, u⟫ = ‖⟪x, u⟫‖`, so that the rotated inner
+  -- product `⟪conj c • x, u⟫ = c * ⟪x, u⟫` is real.
+  obtain ⟨c, hc, hcz⟩ := exists_norm_eq_mul_self ⟪x, u⟫
+  have h := S.re_inner_le_norm_mul_norm_apply hS hu (conj c • x)
+  rwa [inner_smul_left, conj_conj, ← hcz, ofReal_re, map_smul, norm_smul, norm_conj, hc,
+    one_mul] at h
 
 end ContinuousLinearMap
