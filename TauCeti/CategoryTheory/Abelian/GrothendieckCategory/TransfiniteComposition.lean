@@ -32,9 +32,10 @@ monomorphic quasi-isomorphisms of complexes, which are enlarged only along acycl
 
 ## References
 
-* The proof of `CategoryTheory.generatingMonomorphisms.exists_transfiniteCompositionOfShape` in
-  Mathlib's `Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives`, by Joël Riou,
-  which is the case where `Q` always holds and this file follows.
+* The proof of `exists_transfiniteCompositionOfShape` in the namespace
+  `CategoryTheory.IsGrothendieckAbelian.generatingMonomorphisms` of Mathlib's
+  `Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives`, by Joël Riou, which is
+  the case where `Q` always holds and this file follows.
 * A. Grothendieck, *Sur quelques points d'algèbre homologique*, Tôhoku Math. J. 9 (1957).
 -/
 

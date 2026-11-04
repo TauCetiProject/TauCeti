@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.CategoryTheory.Subobject.Basic
 public import Mathlib.SetTheory.Cardinal.HasCardinalLT
 
 /-!
 # Subobjects of homological complexes
 
-A subobject of a homological complex `K` in an abelian category is determined by its terms: two
-subobjects `A` and `B` of `K` whose terms `A.X i` and `B.X i` are the same subobjects of `K.X i`
-for every `i` are equal (`HomologicalComplex.subobjectMk_f_injective`). Consequently, the
+A subobject of a homological complex `K` in a category with finite limits is determined by its
+terms: two subobjects `A` and `B` of `K` whose terms `A.X i` and `B.X i` are the same subobjects
+of `K.X i` for every `i` are equal (`HomologicalComplex.subobjectMk_f_injective`). Consequently, the
 subobjects of `K` are at most as numerous as the families of subobjects of its terms
 (`HomologicalComplex.hasCardinalLT_subobject`). This bounds the size of complexes, for instance in
 transfinite constructions with complexes over a Grothendieck abelian category.
@@ -28,7 +28,8 @@ open CategoryTheory Limits
 
 namespace HomologicalComplex
 
-variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι} (K : HomologicalComplex C c)
+variable {C ι : Type*} [Category* C] [HasZeroMorphisms C] [HasFiniteLimits C] {c : ComplexShape ι}
+  (K : HomologicalComplex C c)
 
 /-- A subobject `A` of a homological complex `K` is determined by the subobjects of the terms
 `K.X i` given by its terms `A.X i`. -/

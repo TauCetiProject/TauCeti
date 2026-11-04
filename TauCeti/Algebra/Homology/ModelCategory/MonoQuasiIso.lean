@@ -62,7 +62,7 @@ exhausts `M`, since quasi-isomorphisms are stable under filtered colimits.
 * [Stacks: Lemma 079L](https://stacks.math.columbia.edu/tag/079L) and
   [Stacks: Theorem 079P](https://stacks.math.columbia.edu/tag/079P).
 * J. Lurie, *Higher Algebra*, Proposition 1.3.5.3.
-* The proof of `CategoryTheory.generatingMonomorphisms_rlp` in Mathlib's
+* The proof of `CategoryTheory.IsGrothendieckAbelian.generatingMonomorphisms_rlp` in Mathlib's
   `Mathlib.CategoryTheory.Abelian.GrothendieckCategory.EnoughInjectives`, by Joël Riou, which
   is followed for the passage from enlargements to lifting properties.
 -/
@@ -102,26 +102,6 @@ quotients of `B j` along epimorphisms. -/
 private noncomputable abbrev gen (j : ℕ) : C :=
   ∐ fun _ : Shrink.{w} (Subobject (B j)) ↦ G
 
-/-- A quotient `N₀` of `B` mapping to the target of an epimorphism `π₀` is the image of a morphism
-from the coproduct of copies of a separator indexed by the subobjects of `B` which lifts
-along `π₀`. -/
-private lemma exists_lift {G : C} (hG : IsSeparator G) {B M₀ N₀ Q₀ : C} (q : B ⟶ N₀) [Epi q]
-    (π₀ : M₀ ⟶ Q₀) [Epi π₀] (ι₀ : N₀ ⟶ Q₀) :
-    ∃ (g : (∐ fun _ : Shrink.{w} (Subobject B) ↦ G) ⟶ M₀)
-      (e : (∐ fun _ : Shrink.{w} (Subobject B) ↦ G) ⟶ N₀), Epi e ∧ g ≫ π₀ = e ≫ ι₀ := by
-  have htop : imageSubobject q = ⊤ := by
-    have : Epi (imageSubobject q).arrow := epi_of_epi_fac (imageSubobject_arrow_comp q)
-    exact (Subobject.isIso_arrow_iff_eq_top _).1 (isIso_of_mono_of_epi _)
-  obtain ⟨φ, hφ⟩ := hG.exists_epi_sigmaDesc_comp (pullback.snd π₀ ι₀)
-    (fun Y ↦ imageSubobject (((equivShrink.{w} (Subobject B)).symm Y).arrow ≫ q)) (fun Y' ↦ by
-      refine ⟨equivShrink _ ((Subobject.pullback q).obj Y'), ?_⟩
-      have := Subobject.epi_pullbackπ_of_le_imageSubobject q (htop ▸ le_top : Y' ≤ _)
-      dsimp only
-      rw [Equiv.symm_apply_apply, ← (Subobject.isPullback q Y').w, imageSubobject_comp_eq_of_epi,
-        imageSubobject_mono, Subobject.mk_arrow])
-  exact ⟨Sigma.desc φ ≫ pullback.fst _ _, Sigma.desc φ ≫ pullback.snd _ _, hφ, by
-    rw [Category.assoc, Category.assoc, pullback.condition]⟩
-
 variable {G B}
 
 /-- If the terms of a subcomplex `N` of the target of an epimorphism `π : M ⟶ Q` are quotients of
@@ -132,7 +112,8 @@ private lemma exists_free_lift (hG : IsSeparator G) {M Q N : CochainComplex C �
     ∃ (j : ℤ → ℕ) (ψ : free (fun n ↦ gen G B (j n)) ⟶ M)
       (e : free (fun n ↦ gen G B (j n)) ⟶ N), Epi e ∧ ψ ≫ π = e ≫ ι := by
   choose j q hq using hN
-  choose g e he hge using fun n ↦ exists_lift.{w} hG (q n) (π.f n) (ι.f n)
+  choose g e he hge using fun n ↦
+    hG.exists_sigma_lift (q n) (π.f n) (ι.f n) _ (equivShrink.{w} _).symm.surjective
   refine ⟨j, free.desc g, free.desc e,
     HomologicalComplex.epi_of_epi_f _ fun n ↦ epi_of_epi_fac (free.ι_desc_f e n), ?_⟩
   ext n
@@ -156,7 +137,7 @@ omit [IsGrothendieckAbelian.{w} C] in
 /-- The cokernel of the base change `A ×_M F ⟶ F` of a monomorphism `p : A ⟶ M` along
 `ψ : F ⟶ M` is the image of `F` in the cokernel of `p`: if `ψ` followed by the projection to the
 cokernel of `p` is `e ≫ ι` with `e` an epimorphism and `ι` a monomorphism, the cokernel of
-`A ×_M F ⟶ F` is the source of `ι`. -/
+`A ×_M F ⟶ F` is isomorphic to the source `N` of `ι`, hence acyclic when `N` is. -/
 private lemma acyclic_cokernel_pullback_snd {A M F N : CochainComplex C ℤ} (p : A ⟶ M)
     (ψ : F ⟶ M) (e : F ⟶ N) [Epi e] (ι : N ⟶ cokernel p) [Mono ι]
     (hψ : ψ ≫ cokernel.π p = e ≫ ι) (hN : N.Acyclic) :

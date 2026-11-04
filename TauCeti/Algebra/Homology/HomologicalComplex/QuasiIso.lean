@@ -113,22 +113,26 @@ lemma quasiIso_iSup_arrow [IsGrothendieckAbelian.{w} C] [c.HasNoLoop] [Small.{w}
     (A : ι → Subobject M) (hA : Monotone A)
     (h : ∀ i, QuasiIso (A i).arrow) : QuasiIso (⨆ i, A i).arrow := by
   let F : ι ⥤ MonoOver M := hA.functor ⋙ Subobject.representative
+  have hF (i : ι) : (⨆ i, A i).Factors (F.obj i).arrow :=
+    Subobject.factors_of_le _ (le_iSup A i) (by simpa [F] using (A i).factors_self)
   let s : Cocone (F ⋙ MonoOver.forget M) :=
     { pt := Over.mk (⨆ i, A i).arrow
       ι :=
-        { app i := Over.homMk (Subobject.ofLE _ _ (le_iSup A i)) (Subobject.ofLE_arrow _)
-          naturality _ _ g := Over.OverMorphism.ext ((cancel_mono (⨆ i, A i).arrow).1 (by
-            simp only [Over.comp_left, Functor.const_obj_map, Over.id_left, Category.assoc]
-            exact (congrArg _ (Subobject.ofLE_arrow _)).trans ((MonoOver.w (F.map g)).trans
-              ((Subobject.ofLE_arrow _).symm.trans (congrArg _ (Category.id_comp _).symm))))) } }
-  have : Mono s.pt.hom := (inferInstance : Mono (⨆ i, A i).arrow)
+        { app i := Over.homMk (Subobject.factorThru _ _ (hF i)) (by simp)
+          naturality _ _ g := by
+            ext : 1
+            rw [← cancel_mono (⨆ i, A i).arrow]
+            simp } }
+  have : Mono s.pt.hom := by
+    dsimp only [s, Over.mk_hom]
+    infer_instance
   have hs := IsGrothendieckAbelian.isColimitMapCoconeOfSubobjectMkEqISup F s
     ((Subobject.mk_arrow _).trans (iSup_congr fun i ↦ (Subobject.mk_arrow (A i)).symm))
   let f : F ⋙ MonoOver.forget M ⋙ Over.forget M ⟶ (Functor.const ι).obj M :=
-    { app i := (A i).arrow
-      naturality _ _ g := (MonoOver.w (F.map g)).trans (Category.comp_id _).symm }
+    { app i := (F.obj i).arrow
+      naturality _ _ g := by simp }
   exact MorphismProperty.IsStableUnderColimitsOfShape.condition (W := quasiIso C c)
-    _ _ _ _ hs (isColimitConstCocone ι M) f (fun i ↦ h i) (⨆ i, A i).arrow
-    fun _ ↦ (Subobject.ofLE_arrow _).trans (Category.comp_id _).symm
+    _ _ _ _ hs (isColimitConstCocone ι M) f (fun i ↦ by simpa [f, F] using h i) (⨆ i, A i).arrow
+    fun _ ↦ by simp [s, f]
 
 end HomologicalComplex
