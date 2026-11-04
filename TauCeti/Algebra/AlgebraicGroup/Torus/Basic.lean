@@ -62,7 +62,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- The object property selecting finite-type commutative Hopf algebras that are coordinate
 rings of split tori of finite rank.
@@ -180,18 +180,19 @@ namespace SplitTorus
 
 /-- The coordinate Hopf algebra of a finite-rank split torus satisfies the split-torus property. -/
 @[grind =>]
-theorem splitTorus_coordinateRing (k : Type u) [CommRing k] (σ : Type u) [Finite σ] :
+theorem splitTorus_coordinateRing (k : Type max u v) [CommRing k] (σ : Type v)
+    [Finite σ] :
     splitTorusCommHopfAlgProperty k
       (DiagonalizableGroup.coordinateRing k (characterGroup σ)) := by
   rw [splitTorusCommHopfAlgProperty_iff]
-  let eσ : σ ≃ ULift.{u} (Fin (Nat.card σ)) :=
+  let eσ : σ ≃ ULift.{max u v} (Fin (Nat.card σ)) :=
     (Finite.equivFin σ).trans Equiv.ulift.symm
   let e : Multiplicative (σ →₀ ℤ) ≃*
-      Multiplicative (ULift.{u} (Fin (Nat.card σ)) →₀ ℤ) :=
+      Multiplicative (ULift.{max u v} (Fin (Nat.card σ)) →₀ ℤ) :=
     AddEquiv.toMultiplicative (Finsupp.domCongr eσ)
   let i : DiagonalizableGroup.coordinateRing k (characterGroup σ) ≅
       DiagonalizableGroup.coordinateRing k
-        (characterGroup (ULift.{u} (Fin (Nat.card σ)))) :=
+        (characterGroup (ULift.{max u v} (Fin (Nat.card σ)))) :=
     ObjectProperty.isoMk _ <|
       _root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv k k e)
   exact ⟨Nat.card σ, ⟨i.symm⟩⟩
