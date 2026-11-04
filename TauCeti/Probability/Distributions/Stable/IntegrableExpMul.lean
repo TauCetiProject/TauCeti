@@ -100,16 +100,19 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
     simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
       stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
         (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
-  change t ∈ integrableExpSet id _
-  rw [← hmap, integrableExpSet_id_map_affine]
+  suffices h : t ∈ integrableExpSet id (stableMeasure α β s m) by
+    simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using h
+  rw [← hmap, integrableExpSet_id_map_affine, mem_preimage]
   have hts : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
-  exact integrable_exp_mul_stableMeasure_one_zero ⟨hα.1, hα2⟩ hβ hts
+  simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using
+    integrable_exp_mul_stableMeasure_one_zero ⟨hα.1, hα2⟩ hβ hts
 
 /-- The half-line `β * t ≤ 0` lies in the exponential-integrability set of a totally skewed
 stable law. -/
 theorem mem_integrableExpSet_id_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ)
-    (ht : β * t ≤ 0) : t ∈ integrableExpSet id (stableMeasure α β s m) :=
-  integrable_exp_mul_stableMeasure hβ s m ht
+    (ht : β * t ≤ 0) : t ∈ integrableExpSet id (stableMeasure α β s m) := by
+  simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using
+    integrable_exp_mul_stableMeasure hβ s m ht
 
 end TauCeti.Probability

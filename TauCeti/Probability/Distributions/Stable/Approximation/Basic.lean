@@ -193,13 +193,16 @@ theorem integrable_exp_mul_stableCompensatedPoissonMeasure {α β ε t : ℝ}
     (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
     Integrable (fun x ↦ exp (t * x)) (stableCompensatedPoissonMeasure α β ε) := by
   -- Translation by the sine compensator is the affine map with slope one.
-  change t ∈ integrableExpSet id _
+  suffices h : t ∈ integrableExpSet id (stableCompensatedPoissonMeasure α β ε) by
+    simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using h
   rw [stableCompensatedPoissonMeasure_def]
   set c := ∫ y in {y : ℝ | ε < |y|}, sin y ∂stableLevyMeasure α β
   rw [show (fun x : ℝ ↦ x - c) = fun x ↦ -c + 1 * x by ext x; ring,
     integrableExpSet_id_map_affine, mem_preimage, one_mul]
-  exact integrable_exp_mul_compoundPoissonMeasure _ measurable_id
-    (integrable_exp_mul_cond_stableLevyMeasure ht)
+  simpa only [integrableExpSet, mem_ofPred_eq, id_eq, AddMonoidHom.id_apply] using
+    integrable_exp_mul_compoundPoissonMeasure (f := AddMonoidHom.id ℝ) _
+      (by simpa only [AddMonoidHom.coe_id] using measurable_id)
+      (integrable_exp_mul_cond_stableLevyMeasure ht)
 
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the moment
 generating function of a compensated stable approximation is the exponential of the truncated
@@ -223,8 +226,11 @@ theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hα : α ∈ Ioo
   have hone : IntegrableOn (fun _ ↦ (1 : ℝ)) s ν := integrableOn_const hm_top
   -- The compound-Poisson factor, with the normalized jump law written against `ν`.
   have hcp : mgf id (compoundPoissonMeasure (ν s).toNNReal (cond ν s)) t =
-      exp (∫ x in s, exp (t * x) ∂ν - ν.real s) :=
-    mgf_compoundPoissonMeasure_cond (f := AddMonoidHom.id ℝ) measurable_id hm0 hm_top hexp
+      exp (∫ x in s, exp (t * x) ∂ν - ν.real s) := by
+    simpa only [AddMonoidHom.coe_id, AddMonoidHom.id_apply] using
+      mgf_compoundPoissonMeasure_cond (f := AddMonoidHom.id ℝ)
+        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm0 hm_top
+        (by simpa only [AddMonoidHom.id_apply] using hexp)
   -- Split the compensated integral into its exponential, constant and sine parts.
   have hsplit : ∫ x in s, exp (t * x) - 1 - t * sin x ∂ν =
       ∫ x in s, exp (t * x) ∂ν - ν.real s - t * ∫ y in s, sin y ∂ν := by
