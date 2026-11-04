@@ -261,12 +261,12 @@ theorem measure_eisensteinSet_pos {n : ℕ} [MeasurableSpace (Fin n → K)]
   have hc0 : c ≠ 0 := isOpen_integerBox.measure_ne_zero μ ⟨0, mem_integerBox.2 fun _ ↦ zero_mem _⟩
   have hctop : c ≠ ∞ := isCompact_integerBox.measure_lt_top.ne
   have h := measure_eisensteinSet hn (c⁻¹ • μ) (by
-    rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hc0 hctop])
+    rw [_root_.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hc0 hctop])
   have hq : 1 < (Nat.card 𝓀[K] : ℝ≥0∞) := by
     exact_mod_cast Finite.one_lt_card_iff_nontrivial.2 inferInstance
   have hpos : 0 < 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) :=
     ENNReal.mul_pos (by simp) (tsub_pos_of_lt (ENNReal.div_lt_of_lt_mul (by simpa using hq))).ne'
-  rw [← h, Measure.smul_apply, smul_eq_mul] at hpos
+  rw [← h, _root_.smul_apply, smul_eq_mul] at hpos
   exact pos_of_ne_zero fun h0 ↦ by simp [h0] at hpos
 
 end Measure

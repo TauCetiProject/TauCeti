@@ -240,7 +240,7 @@ theorem realFockAction_ι_mul_ι_apply_apply_one (u : V) :
     ring
   have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
     rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
-  simp only [map_mul, Module.End.mul_apply, realFockAction_ι, fockAction_ι_one_tmul,
+  simp only [map_mul, mul_apply_eq_comp, realFockAction_ι, fockAction_ι_one_tmul,
     LinearMap.smul_apply, LinearMap.add_apply, SpinPolarizationData.wedge_apply,
     SpinPolarizationData.contract_apply, hW, map_smul, mul_one, contractLeft_one, smul_zero,
     add_zero, smul_add, ExteriorAlgebra.ι_sq_zero, contractLeft_ι,

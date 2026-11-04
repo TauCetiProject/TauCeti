@@ -103,7 +103,7 @@ theorem hasSum_skellamMeasure_mass (r₁ r₂ : ℝ≥0) (k : ℕ) :
       (Real.exp (-(r₁ : ℝ)) * (r₁ : ℝ) ^ (j + k) / (j + k).factorial) *
         (Real.exp (-(r₂ : ℝ)) * (r₂ : ℝ) ^ j / j.factorial))
       ((skellamMeasure r₁ r₂).real {(k : ℤ)}) := by
-  have hsum := (ENNReal.summable.hasSum_iff.mpr
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr
     (skellamMeasure_singleton_natCast r₁ r₂ k).symm).toReal (measure_ne_top _ _)
   simpa only [ENNReal.toReal_mul, ← measureReal_def, poissonMeasure_real_singleton] using hsum
 
@@ -130,7 +130,7 @@ theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h�
   have hnat (s₁ s₂ : ℝ≥0) (h : 0 < s₁) (n : ℕ) :
       0 < skellamMeasure s₁ s₂ {(n : ℤ)} := by
     rw [skellamMeasure_singleton_natCast]
-    apply lt_of_lt_of_le _ (ENNReal.le_tsum 0)
+    apply lt_of_lt_of_le _ (_root_.le_tsum _ 0)
     simp only [zero_add, poissonMeasure_singleton, pow_zero, Nat.factorial_zero]
     have hs : (0 : ℝ) < s₁ := h
     positivity

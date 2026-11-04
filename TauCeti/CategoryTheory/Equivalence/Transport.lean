@@ -21,7 +21,7 @@ action by autoequivalence classes transports along a supplied equivalence.
 intertwining isomorphisms of the representing functors.
 
 The construction uses Mathlib's `Equivalence.congrLeft`, `Equivalence.congrRight`
-and `Equivalence.skeletonEquiv` on endofunctors, then `Units.mapEquiv` on their
+and `Equivalence.skeletonIsoCat.objEquiv` on endofunctors, then `Units.mapEquiv` on their
 invertible classes. It applies in particular to braid actions on equivalent
 homotopy or derived categories; no choice of a Morita equivalence is implicit.
 
@@ -47,18 +47,18 @@ attribute [local instance] endofunctorMonoidalCategory
 natural-isomorphism classes of endofunctors. -/
 def Equivalence.endofunctorClassCongr (e : C ≌ D) :
     Skeleton (C ⥤ C) ≃* Skeleton (D ⥤ D) where
-  toEquiv := (e.congrLeft.trans e.congrRight).skeletonEquiv
+  toEquiv := (e.congrLeft.trans e.congrRight).skeletonIsoCat.objEquiv
   map_mul' x y := by
     have h (F : C ⥤ C) :
-        (e.congrLeft.trans e.congrRight).skeletonEquiv (toSkeleton F) =
+        (e.congrLeft.trans e.congrRight).skeletonIsoCat.objEquiv (toSkeleton F) =
           toSkeleton ((e.inverse ⋙ F) ⋙ e.functor) :=
       (e.congrLeft.trans e.congrRight).functor.mapSkeleton_obj_toSkeleton F
     induction x using Quotient.inductionOn with | h F =>
     induction y using Quotient.inductionOn with | h G =>
     -- Quotient induction exposes the underlying quotient; restore the skeleton's monoid type.
-    change (e.congrLeft.trans e.congrRight).skeletonEquiv (toSkeleton F * toSkeleton G) =
-      (e.congrLeft.trans e.congrRight).skeletonEquiv (toSkeleton F) *
-        (e.congrLeft.trans e.congrRight).skeletonEquiv (toSkeleton G)
+    change (e.congrLeft.trans e.congrRight).skeletonIsoCat.objEquiv (toSkeleton F * toSkeleton G) =
+      (e.congrLeft.trans e.congrRight).skeletonIsoCat.objEquiv (toSkeleton F) *
+        (e.congrLeft.trans e.congrRight).skeletonIsoCat.objEquiv (toSkeleton G)
     rw [← Skeleton.toSkeleton_tensorObj, h, h, h, ← Skeleton.toSkeleton_tensorObj]
     -- Endofunctor tensor is composition; make it explicit before checking naturality.
     change toSkeleton ((e.inverse ⋙ (F ⋙ G)) ⋙ e.functor) =
@@ -67,7 +67,8 @@ def Equivalence.endofunctorClassCongr (e : C ≌ D) :
       (fun X ↦ e.functor.mapIso (G.mapIso (e.unitIso.app (F.obj (e.inverse.obj X)))))
       (by
         intro X Y f
-        simp only [Functor.comp_map, Functor.mapIso_hom, ← Functor.map_comp]
+        simp only [CategoryTheory.Functor.comp_map, CategoryTheory.Functor.mapIso_hom,
+          ← CategoryTheory.Functor.map_comp]
         exact congrArg (fun f ↦ e.functor.map (G.map f))
           (e.unitIso.hom.naturality (F.map (e.inverse.map f)))))
 
@@ -86,7 +87,7 @@ theorem Equivalence.endofunctorClassCongr_refl :
   induction x using Quotient.inductionOn with | h F =>
   rw [Equivalence.endofunctorClassCongr_toSkeleton]
   exact congr_toSkeleton_of_iso
-    (Functor.isoWhiskerRight F.leftUnitor (𝟭 C) ≪≫ F.rightUnitor)
+    (CategoryTheory.Functor.isoWhiskerRight F.leftUnitor (𝟭 C) ≪≫ F.rightUnitor)
 
 /-- Successive equivalences transport endofunctor classes successively. -/
 theorem Equivalence.endofunctorClassCongr_trans (e : C ≌ D) (f : D ≌ E) :
@@ -100,26 +101,35 @@ theorem Equivalence.endofunctorClassCongr_trans (e : C ≌ D) (f : D ≌ E) :
   simp only [Equivalence.endofunctorClassCongr_toSkeleton,
     Equivalence.trans_functor, Equivalence.trans_inverse]
   exact congr_toSkeleton_of_iso
-    (Functor.isoWhiskerRight (Functor.associator f.inverse e.inverse F)
+    (CategoryTheory.Functor.isoWhiskerRight
+      (CategoryTheory.Functor.associator f.inverse e.inverse F)
         (e.functor ⋙ f.functor) ≪≫
-      (Functor.associator (f.inverse ⋙ (e.inverse ⋙ F)) e.functor f.functor).symm ≪≫
-      Functor.isoWhiskerRight (Functor.associator f.inverse (e.inverse ⋙ F) e.functor)
+      (CategoryTheory.Functor.associator (f.inverse ⋙ (e.inverse ⋙ F)) e.functor f.functor).symm ≪≫
+      CategoryTheory.Functor.isoWhiskerRight
+        (CategoryTheory.Functor.associator f.inverse (e.inverse ⋙ F) e.functor)
         f.functor)
 
 /-- Reversing the supplied equivalence reverses transport of endofunctor classes. -/
 theorem Equivalence.endofunctorClassCongr_symm (e : C ≌ D) :
     e.symm.endofunctorClassCongr = e.endofunctorClassCongr.symm := by
   ext x
+  apply e.endofunctorClassCongr.injective
+  rw [MulEquiv.apply_symm_apply]
   induction x using Quotient.inductionOn with | h F =>
-  calc
-    e.symm.endofunctorClassCongr (toSkeleton F) =
-        toSkeleton ((e.functor ⋙ F) ⋙ e.inverse) :=
-      e.symm.endofunctorClassCongr_toSkeleton F
-    _ = toSkeleton (e.functor ⋙ F ⋙ e.inverse) :=
-      congr_toSkeleton_of_iso (Functor.associator _ _ _)
-    -- The inverse MulEquiv uses skeletonEquiv's inverse, the skeleton map of the inverse functor.
-    _ = e.endofunctorClassCongr.symm (toSkeleton F) :=
-      ((e.congrLeft.trans e.congrRight).inverse.mapSkeleton_obj_toSkeleton F).symm
+  simp only [Equivalence.endofunctorClassCongr_toSkeleton]
+  exact congr_toSkeleton_of_iso (NatIso.ofComponents
+    (fun X ↦ e.counitIso.app (F.obj (e.functor.obj (e.inverse.obj X))) ≪≫
+      F.mapIso (e.counitIso.app X))
+    (by
+      intro X Y f
+      simp only [Equivalence.symm_functor, Equivalence.symm_inverse, Iso.trans_hom,
+        CategoryTheory.Functor.comp_map, CategoryTheory.Functor.mapIso_hom, Category.assoc]
+      erw [e.counitIso.hom.naturality_assoc]
+      simp only [CategoryTheory.Functor.id_map]
+      rw [← Category.assoc, ← CategoryTheory.Functor.map_comp]
+      rw [Category.assoc, ← CategoryTheory.Functor.map_comp]
+      erw [e.counitIso.hom.naturality]
+      rfl))
 
 /-- Conjugation along an equivalence gives an isomorphism of groups of
 autoequivalence classes, in functional composition order. -/
@@ -183,8 +193,8 @@ theorem Equivalence.autoequivalenceClassCongr_symm (e : C ≌ D) :
 endofunctor across that equivalence. -/
 def Equivalence.transportedEndofunctorIso (e : C ≌ D) (F : C ⥤ C) :
     e.functor ⋙ ((e.inverse ⋙ F) ⋙ e.functor) ≅ F ⋙ e.functor :=
-  (Functor.associator e.functor (e.inverse ⋙ F) e.functor).symm ≪≫
-    Functor.isoWhiskerRight (e.funInvIdAssoc F) e.functor
+  (CategoryTheory.Functor.associator e.functor (e.inverse ⋙ F) e.functor).symm ≪≫
+    CategoryTheory.Functor.isoWhiskerRight (e.funInvIdAssoc F) e.functor
 
 /-- The intertwiner is induced by the inverse of the equivalence's unit. -/
 @[simp]
@@ -212,7 +222,7 @@ theorem Equivalence.autoequivalenceClassCongr_eq_iff (e : C ≌ D)
     Equivalence.toAutoequivalenceClass_eq_iff]
   constructor
   · rintro ⟨h⟩
-    exact ⟨(Functor.isoWhiskerLeft e.functor h).symm ≪≫
+    exact ⟨(CategoryTheory.Functor.isoWhiskerLeft e.functor h).symm ≪≫
       e.transportedEndofunctorIso F.functor⟩
   · rintro ⟨h⟩
     exact ⟨(e.symm.congrLeft (E := D)).functor.preimageIso

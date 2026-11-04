@@ -199,8 +199,8 @@ private lemma one_sub_mul_mul_one_add_mul (J₀ J : AlmostComplexStructure V) :
       -((1 + J₀.toLinearMap * J.toLinearMap) * J₀.toLinearMap *
         (1 - J₀.toLinearMap * J.toLinearMap)) := by
   ext v
-  simp only [Module.End.mul_apply, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.neg_apply,
-    Module.End.one_apply, map_add, map_sub, AlmostComplexStructure.apply_apply, map_neg]
+  simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.neg_apply,
+    one_apply_eq_self, map_add, map_sub, AlmostComplexStructure.apply_apply, map_neg]
   abel
 
 /-- The Cayley transform of a structure tamed by `ω` lies in the Cayley ball of an
@@ -233,17 +233,17 @@ theorem Compatible.cayley_mem_cayleyBall [FiniteDimensional ℝ V] (h₀ : ω.Co
   · -- With `u = P⁻¹ w`, the defect `q(w) - q(C w)` is `4 ω(u, J u)`.
     set u := Ring.inverse P w
     have hw' : P u = w := by
-      simp only [u, ← Module.End.mul_apply, Ring.mul_inverse_cancel _ hP, Module.End.one_apply]
+      simp only [u, ← mul_apply_eq_comp, Ring.mul_inverse_cancel _ hP, one_apply_eq_self]
     have hu : u ≠ 0 := by
       rintro hu
       exact hw (by rw [← hw', hu, map_zero])
     have hCw : J₀.cayley J w = -(N u) := by
-      rw [← hw', ← Module.End.mul_apply, h₀.tames.cayley_mul_one_sub_mul h, LinearMap.neg_apply]
+      rw [← hw', ← mul_apply_eq_comp, h₀.tames.cayley_mul_one_sub_mul h, LinearMap.neg_apply]
     have hswap := h₀.associatedBilinForm_apply_swap u (J₀ (J u))
     have hpos := h u hu
     rw [hCw, ← hw']
-    simp only [P, N, j, LinearMap.sub_apply, LinearMap.add_apply, Module.End.one_apply,
-      Module.End.mul_apply, map_neg, map_sub, map_add, LinearMap.neg_apply,
+    simp only [P, N, j, LinearMap.sub_apply, LinearMap.add_apply, one_apply_eq_self,
+      mul_apply_eq_comp, map_neg, map_sub, map_add, LinearMap.neg_apply,
       AlmostComplexStructure.apply_apply] at hswap ⊢
     beta_reduce at hpos
     linarith
@@ -302,16 +302,16 @@ private lemma Compatible.tames_inverseCayley [FiniteDimensional ℝ V] (h₀ : �
   have hQ := isUnit_one_sub_of_mem_cayleyBall hC
   set w := Ring.inverse (1 - C) v
   have hv' : (1 - C) w = v := by
-    simp only [w, ← Module.End.mul_apply, Ring.mul_inverse_cancel _ hQ, Module.End.one_apply]
+    simp only [w, ← mul_apply_eq_comp, Ring.mul_inverse_cancel _ hQ, one_apply_eq_self]
   have hw : w ≠ 0 := by
     rintro hw
     exact hv (by rw [← hv', hw, map_zero])
   have hJv : inverseCayley hC v = J₀ ((1 + C) w) := by
-    simp [w, inverseCayley_toLinearMap, Module.End.mul_apply]
+    simp [w, inverseCayley_toLinearMap, mul_apply_eq_comp]
   have hswap := h₀.associatedBilinForm_apply_swap w (C w)
   have hcontr := hC.2 w hw
   rw [hJv, ← hv']
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, Module.End.one_apply, map_sub,
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, one_apply_eq_self, map_sub,
     map_add] at hswap ⊢
   beta_reduce at hswap hcontr ⊢
   linarith
@@ -350,8 +350,8 @@ private lemma Compatible.inverseCayley_cayley [FiniteDimensional ℝ V] (h₀ : 
   -- `P + N = 2` and `P - N = -2 J₀ J`, so `J (P + N) = J₀ (P - N)`.
   have hkj : k * (P + N) = j * (P - N) := by
     ext v
-    simp only [P, N, j, k, Module.End.mul_apply, LinearMap.add_apply, LinearMap.sub_apply,
-      Module.End.one_apply, map_add, map_sub, AlmostComplexStructure.apply_apply]
+    simp only [P, N, j, k, mul_apply_eq_comp, LinearMap.add_apply, LinearMap.sub_apply,
+      one_apply_eq_self, map_add, map_sub, AlmostComplexStructure.apply_apply]
     abel
   rw [inverseCayley_toLinearMap, eq_comm, Ring.eq_mul_inverse_iff_mul_eq _ _ _ hQ]
   -- Right multiplication by `P = 1 - J₀ J` turns `C` into `C P = -N`.
@@ -412,14 +412,14 @@ private lemma Compatible.cayley_selfAdjoint_defect (h₀ : ω.Compatible J₀) (
   have hCP := h₀.tames.cayley_mul_one_sub_mul h
   have hCa := congrArg (fun f : Module.End ℝ V => f a) hCP
   have hCb := congrArg (fun f : Module.End ℝ V => f b) hCP
-  simp only [Module.End.mul_apply] at hCa hCb
+  simp only [mul_apply_eq_comp] at hCa hCb
   rw [hCa, hCb]
   -- Expanding `C P = -(1 + J₀ J)`, only `J₀`-invariance of `ω` and skew-symmetry are needed.
   have h₁ := h₀.invariant_apply (J a) b
   have h₂ := h₀.invariant_apply (J a) (J₀ (J b))
   have h₃ := ω.neg_eq (J a) b
-  simp only [LinearMap.neg_apply, LinearMap.add_apply, LinearMap.sub_apply, Module.End.one_apply,
-    Module.End.mul_apply, map_neg, map_add, map_sub, AlmostComplexStructure.apply_apply] at h₂ ⊢
+  simp only [LinearMap.neg_apply, LinearMap.add_apply, LinearMap.sub_apply, one_apply_eq_self,
+    mul_apply_eq_comp, map_neg, map_add, map_sub, AlmostComplexStructure.apply_apply] at h₂ ⊢
   linarith
 
 /-- For an `ω`-compatible `J₀` and a structure `J` tamed by `ω`, the Cayley transform of `J` is

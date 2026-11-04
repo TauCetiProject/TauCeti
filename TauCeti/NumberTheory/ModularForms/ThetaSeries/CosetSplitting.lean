@@ -46,9 +46,13 @@ eigenvalue `(-i)^k c^{-k} (covol L)⁻¹ G_L(a, c)` for every `γ`.
 
 ## Main statements
 
+* `ZLattice.IsEven.summable_norm_gaussSumTwisted_mul_thetaTerm`: the sum over `L^∨` converges
+  absolutely.
 * `ZLattice.IsEven.thetaCoset_smul_eq_tsum_gaussSumTwisted`,
   `ZLattice.IsEven.thetaSeries_smul_eq_tsum_gaussSumTwisted`: the coset splitting of
   `θ_{γ+L}(A τ)` and of `Θ_L(A τ)`.
+* `ZLattice.IsEven.thetaSeries_slash_apply_eq_tsum_gaussSumTwisted`: the same identity in slash
+  form, `(Θ_L ∣[k] A)(τ) = (covol L)⁻¹ (-i / c)^k ∑_{m ∈ L^∨} G_L(a, c; m) e(d ‖m‖² / (2c)) q_m(τ)`.
 * `ZLattice.IsEven.thetaCoset_slash_eq_gaussSum_smul`: for `N ∣ c`,
   `θ_{γ+L} ∣[k] A = (-i)^k c^{-k} (covol L)⁻¹ G_L(a, c) e(a b ‖γ‖² / 2) θ_{aγ+L}`.
 * `ZLattice.IsEven.thetaSeries_slash_eq_gaussSum_smul`: for `N ∣ c`,
@@ -78,6 +82,21 @@ namespace IsEven
 
 variable (hL : IsEven L)
 include hL
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The sum `∑_{m ∈ L^∨} G_L(a, c; m) e(d ‖m‖² / (2c)) exp (π i ‖m‖² τ)` of the coset splitting
+converges absolutely: the twisted Gauss sums are bounded and the phases have absolute value `1`. -/
+theorem summable_norm_gaussSumTwisted_mul_thetaTerm (a d : ℤ) (c : ℕ)
+    [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] (τ : ℍ) :
+    Summable fun m : dual L ↦ ‖gaussSumTwisted L hL a c m *
+      cexp (2 * π * I * ((d * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
+        cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ)‖ := by
+  refine .of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun m ↦ ?_)
+    (((summable_thetaSeries (dual L) τ).norm).mul_left
+      (Fintype.card (L ⧸ ((c : ℝ) • L).submoduleOf L) : ℝ))
+  rw [norm_mul, norm_mul, norm_exp_two_pi_mul_I_mul_ofReal, mul_one]
+  gcongr
+  exact norm_gaussSumTwisted_le hL a c m
 
 /-- **The coset splitting of a coset theta series.** Let `L` be an even full lattice of rank `2k`,
 `γ ∈ L^∨` and `A = !![a, b; c, d] ∈ SL(2, ℤ)` with `c > 0`. Then
@@ -174,6 +193,36 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
         cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
           cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ) := by
   simpa using thetaCoset_smul_eq_tsum_gaussSumTwisted hL hk A hc 0 τ
+
+/-- **The coset splitting in slash form.** Let `L` be an even full lattice of rank `2k` and
+`A = !![a, b; c, d] ∈ SL(2, ℤ)` with `c > 0`. Then in weight `k`,
+`(Θ_L ∣[k] A)(τ) = (covol L)⁻¹ (-i / c)^k ∑_{m ∈ L^∨} G_L(a, c; m) e(d ‖m‖² / (2c)) q_m(τ)`
+with `q_m(τ) = exp (π i ‖m‖² τ)`, where `G_L(a, c; m)` is the twisted Gauss sum and
+`e(x) = exp (2 π i x)`. -/
+theorem thetaSeries_slash_apply_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k)
+    (A : SL(2, ℤ)) {c : ℕ} [NeZero c] [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
+    (hc : A 1 0 = c) (τ : ℍ) :
+    (thetaSeries L ∣[(k : ℤ)] A) τ =
+      (covolume L : ℂ)⁻¹ * (-I / c) ^ k *
+        ∑' m : dual L, gaussSumTwisted L hL (A 0 0) c m *
+          cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
+            cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ) := by
+  have hden : UpperHalfPlane.denom A τ = c * (τ : ℂ) + A 1 1 := by
+    rw [ModularGroup.denom_apply, hc]
+    push_cast
+    ring
+  have hden₀ : (c : ℂ) * τ + A 1 1 ≠ 0 := hden ▸ UpperHalfPlane.denom_ne_zero _ τ
+  have hcC : (c : ℂ) ≠ 0 := NeZero.ne _
+  rw [ModularForm.SL_slash_apply, thetaSeries_smul_eq_tsum_gaussSumTwisted hL hk A hc, hden,
+    zpow_neg, zpow_natCast]
+  have h : ((c * (τ : ℂ) + A 1 1) / (I * c)) ^ k * ((c * (τ : ℂ) + A 1 1) ^ k)⁻¹ =
+      (-I / c) ^ k := by
+    rw [← inv_pow, ← mul_pow]
+    congr 1
+    rw [div_mul_eq_mul_div, mul_inv_cancel₀ hden₀, div_eq_div_iff (mul_ne_zero I_ne_zero hcC) hcC]
+    linear_combination (c : ℂ) * I_sq
+  rw [← h]
+  ring
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- When the level of `L` divides `c`, the dual sum in the coset splitting of `θ_{γ+L}(A τ)`

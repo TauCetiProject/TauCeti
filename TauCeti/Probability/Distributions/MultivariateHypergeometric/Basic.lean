@@ -146,7 +146,7 @@ when its total is the sample size, and zero otherwise. -/
 theorem multivariateHypergeometricMeasure_singleton (K : ι → ℕ) (n : ℕ) (k : ι → ℕ) :
     multivariateHypergeometricMeasure K n {k} =
       if ∑ i, k i = n then multivariateHypergeometricWeight K k else 0 := by
-  simp [multivariateHypergeometricMeasure, Measure.finsetSum_apply, Pi.single_apply, mul_ite,
+  simp [multivariateHypergeometricMeasure, _root_.sum_apply, Pi.single_apply, mul_ite,
     Finset.mem_piAntidiag]
 
 /-- The real singleton mass of a multivariate hypergeometric law, in the usual binomial form. -/
@@ -174,7 +174,7 @@ theorem multivariateHypergeometricMeasure_eq_zero_of_lt {K : ι → ℕ} {n : �
   apply Measure.ext_of_singleton
   intro k
   by_contra hk
-  rw [Measure.coe_zero, Pi.zero_apply, ← ne_eq,
+  rw [FunLike.coe_zero, Pi.zero_apply, ← ne_eq,
     multivariateHypergeometricMeasure_singleton_ne_zero_iff] at hk
   have hle : ∑ i, k i ≤ ∑ i, K i := Finset.sum_le_sum fun i _ ↦ hk.2 i
   omega
@@ -183,7 +183,7 @@ theorem multivariateHypergeometricMeasure_eq_zero_of_lt {K : ι → ℕ} {n : �
 exceed the population size. -/
 theorem isProbabilityMeasure_multivariateHypergeometricMeasure (K : ι → ℕ) {n : ℕ}
     (hn : n ≤ ∑ i, K i) : IsProbabilityMeasure (multivariateHypergeometricMeasure K n) := by
-  rw [isProbabilityMeasure_iff, multivariateHypergeometricMeasure, Measure.finsetSum_apply]
+  rw [isProbabilityMeasure_iff, multivariateHypergeometricMeasure, _root_.sum_apply]
   simpa using sum_multivariateHypergeometricWeight K hn
 
 /-- The multivariate hypergeometric law is a probability measure exactly when the sample size

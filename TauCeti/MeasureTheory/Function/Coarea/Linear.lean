@@ -120,7 +120,7 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   refine ⟨e, ?_, fun g y ↦ ?_⟩
   · -- Lebesgue measure on `F` is the image of Lebesgue measure on `W`, scaled by the Jacobian.
     ext t ht
-    rw [Measure.smul_apply, MeasurableEquiv.map_apply, smul_eq_mul,
+    rw [_root_.smul_apply, MeasurableEquiv.map_apply, smul_eq_mul,
       normDet_adjoint_eq_normDet_comp_subtype L hL,
       ← M.euclideanHausdorffMeasure_image_eq_normDet_mul_volume, hdim,
       InnerProductSpace.euclideanHausdorffMeasure_eq_volume]

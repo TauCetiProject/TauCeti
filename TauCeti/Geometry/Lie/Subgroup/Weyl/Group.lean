@@ -84,7 +84,7 @@ def _root_.Subgroup.weylAdjointRepresentation (K : Subgroup G) [IsMulCommutative
       (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
   K.normalizerQuotientLift (K.normalizerAdjointRepresentation (I := I)) fun g hg =>
     LinearMap.ext fun X => Subtype.ext <| by
-      rw [Module.End.one_apply, Subgroup.coe_normalizerAdjointRepresentation_apply]
+      rw [one_apply_eq_self, Subgroup.coe_normalizerAdjointRepresentation_apply]
       exact Ad_apply_eq_self_of_mem_lieSubalgebraOfSubgroup hg X.2
 
 @[simp]

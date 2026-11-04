@@ -147,8 +147,8 @@ theorem isSemialgebraic_hermitianProjectorLocus :
         ⋂ p : ι × ι, {a | eval (z a) (X (.inr p.swap) - X (.inl p)) = 0}) ∩
         {a | eval (z a) (∑ i, X (.inl (i, i)) - 1) = 0} := by
     ext a
-    simp [z, isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, ← Matrix.ext_iff, mul_apply,
-      trace, sub_eq_zero, Prod.forall, and_assoc]
+    simp [z, isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint,
+      ← Matrix.ext_iff, Matrix.mul_apply, trace, sub_eq_zero, Prod.forall, and_assoc]
   rw [h]
   exact ((IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_setOf_eval_sumElim_star_eq_zero _).inter
     (IsSemialgebraic.iInter fun _ ↦ isSemialgebraic_setOf_eval_sumElim_star_eq_zero _)).inter

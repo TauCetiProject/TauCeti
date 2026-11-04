@@ -67,6 +67,7 @@ Eisenstein series through their constant terms.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
   dependence of the constant term on the representative.
+* `ModularForm.constantTermAt_mul`: the constant term at a cusp is multiplicative.
 * `ModularForm.constantTermAt_eq_zero_of_odd`: in odd weight the constant term vanishes at a cusp
   whose stabilizer in `Γ` contains a conjugate of some `-Tʲ`, such as an irregular cusp.
 * `ModularForm.constantTermAt_diamondOp`: diamond operators act on constant terms by left
@@ -80,6 +81,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.ker_constantTerms`: the kernel of `constantTerms` is the cusp-form submodule.
 * `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
   coset's orbit constant term with the constant term at the cusp represented by the inverse matrix.
+* `ModularForm.constantTermAtCuspTranslationOrbit_mul`: the constant term at a cusp translation
+  orbit is multiplicative.
 * `TauCeti.ModularForm.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
   a modular form is cuspidal if and only if all its cusp translation orbit constant terms vanish.
 * `TauCeti.mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero`: the same
@@ -226,7 +229,15 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
       Γγ :=
     Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp)
   simp only [qExpansionAt_apply, coe_translate, hneg, SlashAction.slash_mul,
-    ModularForm.slash_neg_one, _root_.mul_inv_rev, map_mul, mul_smul, hΓ]
+    ModularForm.slash_neg_one]
+  have hΓneg : ConjAct.toConjAct (mapGL ℝ γ * (-1))⁻¹ • Γ = Γγ := by
+    rw [_root_.mul_inv_rev, ConjAct.toConjAct_mul, mul_smul]
+    exact hΓ
+  rw [hΓneg]
+  -- The translate wrapper coerces to this slash action. Expose it so the public
+  -- `qExpansion_smul` lemma applies without unfolding the cusp-function construction.
+  change qExpansion Γγ.strictWidthInfty
+    ((-1 : ℂ) ^ k • (⇑f ∣[k] mapGL ℝ γ)) = _
   exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
@@ -318,6 +329,14 @@ theorem constantTermAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     constantTermAt (-γ) f = (-1) ^ k * constantTermAt γ f := by
   rw [constantTermAt_eq_coeff_zero_qExpansionAt, constantTermAt_eq_coeff_zero_qExpansionAt,
     qExpansionAt_neg, PowerSeries.coeff_smul, smul_eq_mul]
+
+/-- The constant term at a cusp is multiplicative: the constant term of a product of forms of
+weights `k₁` and `k₂` is the product of their constant terms. -/
+theorem constantTermAt_mul {k₁ k₂ : ℤ} (γ : SL(2, ℤ)) (f : ModularForm Γ k₁)
+    (g : ModularForm Γ k₂) :
+    constantTermAt γ (f.mul g) = constantTermAt γ f * constantTermAt γ g := by
+  simp only [constantTermAt_eq_coeff_zero_qExpansionAt, qExpansionAt_mul,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply, map_mul]
 
 /-- Multiplying the representative on the right by an element `m` fixing `∞` (that is, with
 vanishing lower-left entry, so `m = ±Tʲ`) multiplies the constant term by `(m₀₀)ᵏ = (±1)ᵏ`. -/
@@ -476,7 +495,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
     exact this
   have hentry (g : SL(2, ℤ)) (j : Fin 2) : (g⁻¹ * γ₁ : SL(2, ℤ)) 1 j =
       (g⁻¹ : SL(2, ℤ)) 1 0 * γ₁ 0 j + (g⁻¹ : SL(2, ℤ)) 1 1 * γ₁ 1 j := by
-    simp only [Matrix.SpecialLinearGroup.coe_mul, mul_apply, Fin.sum_univ_two]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   have hm1 (j : Fin 2) : ((m 1 j : ℤ) : ZMod N) = (((1 : SL(2, ℤ)) 1 j : ℤ) : ZMod N) := by
     rw [← inv_mul_cancel γ₁, hm, hentry, hentry]
     push_cast
@@ -489,7 +508,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
     simpa using hdet
   have hg : m * ModularGroup.T ^ (-m 0 1) ∈ Γ(N) := by
     rw [Gamma_mem]
-    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, mul_apply,
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, Matrix.mul_apply,
       Fin.sum_univ_two]
     simp [h00, h10, h11]
   have hγ : γ₁ = (γ₂ * (m * ModularGroup.T ^ (-m 0 1)) * γ₂⁻¹) * γ₂ *
@@ -590,3 +609,22 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
         𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)
 
 end TauCeti.ModularForm
+
+namespace ModularForm
+
+open TauCeti.ModularForm Matrix.SpecialLinearGroup
+open scoped MatrixGroups
+
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne]
+
+/-- The constant term at a cusp translation orbit is multiplicative: the constant term of a
+product of forms of weights `k₁` and `k₂` is the product of their constant terms. -/
+@[simp]
+theorem constantTermAtCuspTranslationOrbit_mul {k₁ k₂ : ℤ} (f : ModularForm 𝒢 k₁)
+    (g : ModularForm 𝒢 k₂) (c : CuspTranslationOrbit 𝒢) :
+    constantTermAtCuspTranslationOrbit (f.mul g) c =
+      constantTermAtCuspTranslationOrbit f c * constantTermAtCuspTranslationOrbit g c := by
+  induction c using CuspTranslationOrbit.induction_on with
+  | h γ => simp only [constantTermAtCuspTranslationOrbit_mk_mapGL, constantTermAt_mul]
+
+end ModularForm

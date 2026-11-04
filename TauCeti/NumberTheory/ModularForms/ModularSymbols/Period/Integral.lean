@@ -420,7 +420,7 @@ theorem periodIntegrand_slash_mapGL {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
     hdet, ModularForm.rat_slash_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ← ModularForm.SL_slash, map_mapGL, coe_binaryFormRep_apply, aeval_linearSubst]
   push_cast
-  rw [one_zpow, one_mul]
+  rw [_root_.one_zpow, one_mul]
   congr 2
   ext i
   fin_cases i <;> simp [num, denom, mapGL_coe_matrix, Matrix.map_apply]
@@ -497,7 +497,7 @@ theorem periodIntegrand_adjugate_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → �
       simp [adjugate_fin_two, num, denom, mulVec, dotProduct, Fin.sum_univ_two, hent] <;> ring
   rw [periodIntegrand_slash_apply hk f _ hg τ, periodIntegrand_apply, coe_binaryFormRep_apply,
     aeval_linearSubst, ← hg', hvec, ((mem_homogeneousSubmodule w _).mp P.2).aeval_smul,
-    smul_eq_mul, zpow_neg, zpow_natCast]
+    smul_eq_mul, _root_.zpow_neg, zpow_natCast]
   field_simp
 
 /-- **The substitution `z ↦ g • z` for integral matrices of positive determinant**: for a rational

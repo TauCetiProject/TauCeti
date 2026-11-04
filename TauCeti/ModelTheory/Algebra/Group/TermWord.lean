@@ -15,7 +15,8 @@ Terms in the group language with named coefficients denote words in the variable
 coefficient names. A reduced word has a canonical left-associated term representative, and
 translating that term back to a word recovers the original group element. In every group,
 evaluation of a term agrees with evaluation of its word. This translates atomic equalities into
-word equations.
+word equations. Words in the variables alone likewise have canonical terms in the group language
+without coefficients, evaluating to the same group elements.
 
 The term–word interpretation follows Kharlampovich and Myasnikov, *Implicit function theorem
 over free groups*, §2.3. Mathlib's `FreeGroup.lift` supplies the universal evaluation map.
@@ -199,5 +200,29 @@ example (a : A) (x : X) :
         FreeGroup.of (Sum.inr a) := by
   simp only [Term.toWord_mul, Term.toWord_inv, Term.toWord_coeff, Term.toWord_var]
   rfl
+
+/-! ### Words without coefficients -/
+
+/-- A canonical term of the group language without coefficients spelling the reduced word of a
+free-group element: the canonical term `Term.ofWord` with no coefficient names, read in the group
+language through Mathlib's `LEquiv.addEmptyConstants`. -/
+noncomputable def wordTerm (w : FreeGroup X) : Language.group.Term X :=
+  (LEquiv.addEmptyConstants Language.group Empty).invLHom.onTerm
+    (Term.ofWord (A := Empty) (FreeGroup.map Sum.inl w))
+
+section WordTerm
+
+attribute [local instance] TauCeti.Group.structureOfGroup
+
+/-- The canonical term of a word evaluates to the value of the word. -/
+@[simp] theorem realize_wordTerm {G : Type*} [Group G] (v : X → G) (w : FreeGroup X) :
+    (wordTerm w).realize v = FreeGroup.lift v w := by
+  let : (Language.constantsOn Empty).Structure G := Language.constantsOn.structure isEmptyElim
+  have : (LEquiv.addEmptyConstants Language.group Empty).invLHom.IsExpansionOn G :=
+    LHom.sumElim_isExpansionOn _ _ G
+  rw [wordTerm, LHom.realize_onTerm, Term.realize_eq_lift isEmptyElim, Term.toWord_ofWord]
+  induction w using FreeGroup.induction_on <;> simp_all
+
+end WordTerm
 
 end FirstOrder.Language.group

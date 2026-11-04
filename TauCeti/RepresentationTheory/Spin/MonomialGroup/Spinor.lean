@@ -304,7 +304,7 @@ theorem nonempty_equiv_monomialGroupRep_or_of_odd
   have hrange : ∀ x, (LinearMap.range (φ e)).map (φ x) ≤ LinearMap.range (φ e) := by
     rintro x _ ⟨_, ⟨w, rfl⟩, rfl⟩
     refine ⟨φ x w, ?_⟩
-    rw [← Module.End.mul_apply, ← map_mul, hcomm, map_mul, Module.End.mul_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, hcomm, map_mul, mul_apply_eq_comp]
   rcases eq_bot_or_eq_top_of_map_monomialGroupLift_le hb hQ ρ hρ _ hrange with h | h
   · -- `e` acts by `0`, so the kernel of the Fock action of `P⁻` acts by zero.
     have hφe : φ e = 0 := LinearMap.range_eq_bot.mp h
@@ -315,7 +315,7 @@ theorem nonempty_equiv_monomialGroupRep_or_of_odd
   · -- `e` acts by `1`, so the kernel of the Fock action of `P` acts by zero.
     have hφe : φ e = 1 := LinearMap.ext fun w ↦ by
       obtain ⟨w', rfl⟩ := LinearMap.range_eq_top.mp h w
-      rw [← Module.End.mul_apply, ← map_mul, hidem, Module.End.one_apply]
+      rw [← mul_apply_eq_comp, ← map_mul, hidem, one_apply_eq_self]
     refine Or.inl (P.nonempty_equiv_monomialGroupRep_of_ker_le hb hQ ρ hρ fun x hx ↦ ?_)
     have hx' : x * e = 0 := hext (by simp [hx]) (by simp [he₀])
     simpa [hφe] using congrArg φ hx'

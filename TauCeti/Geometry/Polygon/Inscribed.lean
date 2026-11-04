@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
-public import TauCeti.Analysis.Calculus.Deriv.DualStrictMono
+public import TauCeti.Analysis.Calculus.Deriv.ChordGraph
 public import TauCeti.Analysis.Convex.CurveChord
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
+public import TauCeti.Topology.Homotopy.Isotopy.Basic
 public import TauCeti.Topology.Instances.Real.InjectiveModPeriod
+import TauCeti.Topology.Homotopy.Isotopy.StraightenGraph
 
 /-!
 # Inscribed polygons of a `C¹` loop
@@ -28,9 +30,15 @@ inscribed polygons with `n` and with `m` vertices are combinatorially equivalent
 (`Polygon.exists_combinatoriallyEquivalent_inscribed`), that is, related by Δ-moves and
 subdivisions of edges (`TauCeti.SimplePolygon.CombinatoriallyEquivalent`). So an embedded `C¹`
 loop determines a polygonal knot up to combinatorial equivalence, independently of the number of
-vertices used to inscribe it. The specialisations to smooth embeddings of the circle are
-`TauCeti.SmoothEmbedding.eventually_isSimple_inscribed` and
-`TauCeti.SmoothEmbedding.exists_combinatoriallyEquivalent_inscribed` in
+vertices used to inscribe it.
+
+Fine inscribed polygons are also ambient isotopic to the loop: for all large `n` some ambient
+isotopy of the ambient space carries the image of `γ` onto the inscribed polygon with `n` vertices
+(`Polygon.eventually_exists_ambientIsotopy_image_inscribed`). So a knot of class `C¹` is tame, that
+is, ambient isotopic to a polygonal knot. The specialisations to smooth embeddings of the circle
+are `TauCeti.SmoothEmbedding.eventually_isSimple_inscribed`,
+`TauCeti.SmoothEmbedding.exists_combinatoriallyEquivalent_inscribed` and
+`TauCeti.SmoothEmbedding.eventually_exists_ambientIsotopy_image_inscribed` in
 `TauCeti.KnotTheory.InscribedPolygon`.
 
 ## Main definitions
@@ -44,6 +52,8 @@ vertices used to inscribe it. The specialisations to smooth embeddings of the ci
   vanishing derivative, injective modulo its period, are eventually simple.
 * `Polygon.exists_combinatoriallyEquivalent_inscribed`: any two such inscribed polygons with
   enough vertices are combinatorially equivalent.
+* `Polygon.eventually_exists_ambientIsotopy_image_inscribed`: an ambient isotopy carries such a loop
+  onto each of its inscribed polygons with enough vertices.
 
 ## Implementation notes
 
@@ -69,6 +79,17 @@ parameters shows that the triangle `γ tᵢ, γ s, γ t'` meets every other edge
 collinear, and it keeps the mesh at most `h`. Refining the uniform parameters of the polygons with
 `n` and with `m` vertices, one parameter at a time, to the union of the two sets of parameters gives
 the same polygon from both sides.
+
+The proof of `Polygon.eventually_exists_ambientIsotopy_image_inscribed` straightens the arcs of `γ`
+over the steps `[k h, k h + h]`, `h = T / n`, onto their chords one at a time
+(`TauCeti.AmbientIsotopy.exists_final_image_eq_segment`). For step `k` it uses a functional `φ`
+with `φ ∘ γ` strictly increasing on the window `[k h - 2 δ, k h + 2 δ]`, and the straightening
+moves only points `x` with `φ x` strictly between the values of `φ` at the ends of the arc and
+within `7 K h` of `γ (k h)`. The pieces over the other steps, arcs not yet straightened and chords
+already straightened, avoid this region. After shifting their parameters by a multiple of the
+period into `[k h - 2 δ, k h - 2 δ + T)`, either they lie in the window, entirely on one side of the
+step `k`, or their parameters differ from `k h` by between `δ` and `T - δ`, so that they stay at
+distance at least `η - K h ≥ 7 K h` from `γ (k h)`.
 
 ## References
 
@@ -641,5 +662,243 @@ theorem exists_combinatoriallyEquivalent_inscribed (hT : 0 < T) (hγ : ContDiff 
   exact he₁.trans he₂.symm
 
 end Refinement
+
+/-! ### Straightening a `C¹` loop onto an inscribed polygon -/
+
+section AmbientIsotopy
+
+/-- While the arc of `γ` over `[k h, k h + h]` is straightened, the other pieces stay put: for a
+uniform mesh `h = T / n` of a `T`-periodic curve, fine compared with the window `4 δ` on which
+`φ ∘ γ` is strictly increasing and with the separation constant `η` of `γ`, no point of the arc
+or of the chord over another step `[j h, j h + h]` lies in the region moved by
+`TauCeti.AmbientIsotopy.exists_final_image_eq_segment`. -/
+private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) (hjk : j ≠ k)
+    (hT : 0 < T) (hper : Periodic γ T) {h δ η : ℝ} {K : NNReal} (hh : 0 < h) (hnh : n * h = T)
+    (hhδ : h ≤ δ) (hKη : 8 * (K * h) ≤ η) (hK : LipschitzOnWith K γ (Icc 0 T))
+    (hsep : ∀ a ∈ Icc 0 T, ∀ d ∈ Icc δ (T - δ), η ≤ dist (γ (a + d)) (γ a))
+    {φ : StrongDual ℝ E}
+    (hφ : StrictMonoOn (fun t ↦ φ (γ t)) (Icc (k * h - 2 * δ) (k * h + 2 * δ))) {x : E}
+    (hx : x ∈ γ '' Icc (j * h) (j * h + h) ∪ segment ℝ (γ (j * h)) (γ (j * h + h))) :
+    ¬ (φ (γ (k * h)) < φ x ∧ φ x < φ (γ (k * h + h)) ∧ ‖x - γ (k * h)‖ < 7 * (K * h)) := by
+  rintro ⟨h₁, h₂, h₃⟩
+  have hK0 : 0 ≤ (K : ℝ) * h := mul_nonneg K.2 hh.le
+  have hjT : j * h + h ≤ T := by
+    have : (j : ℝ) + 1 ≤ n := by exact_mod_cast hj
+    nlinarith
+  have hkT : k * h + h ≤ T := by
+    have : (k : ℝ) + 1 ≤ n := by exact_mod_cast hk
+    nlinarith
+  -- Shift the parameters `[j h, j h + h]` of the piece by a period into
+  -- `[k h - 2 δ, k h - 2 δ + T)`.
+  set m : ℤ := -toIcoDiv hT (k * h - 2 * δ) (j * h) with hm
+  set c := j * h + m * (n * h) with hc
+  have hc_mem : c ∈ Ico (k * h - 2 * δ) (k * h - 2 * δ + T) := by
+    have heq : toIcoMod hT (k * h - 2 * δ) (j * h) = c := by
+      rw [toIcoMod, zsmul_eq_mul, hc, hnh, hm, Int.cast_neg]
+      ring
+    exact heq ▸ toIcoMod_mem_Ico hT (k * h - 2 * δ) (j * h)
+  have hshift (s : ℝ) : γ (s + m * (n * h)) = γ s := by rw [hnh]; exact (hper.int_mul m) s
+  have hx' : x ∈ γ '' Icc c (c + h) ∪ segment ℝ (γ c) (γ (c + h)) := by
+    rcases hx with ⟨s, hs, rfl⟩ | hx
+    · exact Or.inl ⟨s + m * (n * h), ⟨by linarith [hs.1], by linarith [hs.2]⟩, hshift s⟩
+    · right
+      rwa [hc, hshift, add_right_comm, hshift]
+  rcases le_or_gt c (k * h + δ) with hnear | hfar
+  · -- The piece lies in the window, entirely on one side of the arc being straightened.
+    have hW : Icc c (c + h) ⊆ Icc (k * h - 2 * δ) (k * h + 2 * δ) :=
+      Icc_subset_Icc hc_mem.1 (by linarith)
+    have hk₀ : k * h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
+    have hk₁ : k * h + h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
+    have hc₀ : c ∈ Icc c (c + h) := left_mem_Icc.2 (by linarith)
+    have hc₁ : c + h ∈ Icc c (c + h) := right_mem_Icc.2 (by linarith)
+    -- Distinct steps `j ≠ k < n` stay distinct modulo `n`, so the shifted parameter interval
+    -- `[c, c + h]` and `[k h, k h + h]` overlap at most at an endpoint.
+    have hne : (j : ℤ) + m * n ≠ k := fun he ↦ hjk <| by
+      have h0 := Int.eq_zero_of_abs_lt_dvd (m := n) (x := k - j) ⟨m, by rw [← he]; ring⟩
+        (abs_sub_lt_iff.2 ⟨by omega, by omega⟩)
+      omega
+    have hle : c + h ≤ k * h ∨ k * h + h ≤ c := by
+      rw [hc]
+      rcases hne.lt_or_gt with hlt | hlt
+      · left
+        have : ((j : ℝ) + m * n + 1) * h ≤ k * h :=
+          mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
+        linarith
+      · right
+        have : ((k : ℝ) + 1) * h ≤ (j + m * n) * h :=
+          mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
+        linarith
+    rcases hle with hle | hle
+    · have hbelow : ∀ s ∈ Icc c (c + h), φ (γ s) ≤ φ (γ (k * h)) := fun s hs ↦
+        hφ.monotoneOn (hW hs) hk₀ (by linarith [hs.2])
+      have : φ x ≤ φ (γ (k * h)) := by
+        rcases hx' with ⟨s, hs, rfl⟩ | hx'
+        · exact hbelow s hs
+        · exact (convex_halfSpace_le φ.toLinearMap.isLinear _).segment_subset
+            (hbelow c hc₀) (hbelow (c + h) hc₁) hx'
+      linarith
+    · have habove : ∀ s ∈ Icc c (c + h), φ (γ (k * h + h)) ≤ φ (γ s) := fun s hs ↦
+        hφ.monotoneOn hk₁ (hW hs) (by linarith [hs.1])
+      have : φ (γ (k * h + h)) ≤ φ x := by
+        rcases hx' with ⟨s, hs, rfl⟩ | hx'
+        · exact habove s hs
+        · exact (convex_halfSpace_ge φ.toLinearMap.isLinear _).segment_subset
+            (habove c hc₀) (habove (c + h) hc₁) hx'
+      linarith
+  · -- The piece is far from the arc being straightened.
+    have hfar' : ∀ s ∈ Icc c (c + h), η ≤ ‖γ s - γ (k * h)‖ := fun s hs ↦ by
+      have := hsep (k * h) ⟨by positivity, by linarith⟩ (s - k * h)
+        ⟨by linarith [hs.1], by linarith [hs.2, hc_mem.2]⟩
+      rwa [add_sub_cancel, dist_eq_norm] at this
+    rcases hx' with ⟨s, hs, rfl⟩ | hx'
+    · linarith [hfar' s hs]
+    · have hxc : ‖x - γ c‖ ≤ K * h := by
+        have h1 := segment_subset_closedBall_left (γ c) (γ (c + h)) hx'
+        rw [Metric.mem_closedBall, dist_eq_norm, dist_comm, dist_eq_norm, hc, hshift,
+          add_right_comm, hshift] at h1
+        have h2 := hK.dist_le_mul (j * h + h) ⟨by positivity, hjT⟩ (j * h)
+          ⟨by positivity, by linarith⟩
+        rw [dist_eq_norm, dist_eq_norm, add_sub_cancel_left, Real.norm_of_nonneg hh.le] at h2
+        rw [hc, hshift]
+        linarith
+      have := hfar' c (left_mem_Icc.2 (by linarith))
+      have := norm_sub_le_norm_sub_add_norm_sub (γ c) x (γ (k * h))
+      rw [norm_sub_rev (γ c) x] at this
+      linarith
+
+/-- The inscribed polygon with `n` vertices of a continuous `T`-periodic curve `γ` is ambient
+isotopic to `γ`, provided the mesh `T / n` is fine compared with the window `4 δ` on which some
+`φ ∘ γ` is strictly increasing, with the separation constant `η` of `γ` and with a Lipschitz
+constant `K` of `γ`. The arcs of `γ` over the steps of the mesh are straightened onto their chords
+one at a time. -/
+private theorem exists_ambientIsotopy_image_inscribed_of_mesh {n : ℕ} (hn : 0 < n) (hT : 0 < T)
+    (hγ : Continuous γ) (hper : Periodic γ T) {δ η : ℝ} {K : NNReal} (hhδ : T / n ≤ δ)
+    (hδT : 2 * δ ≤ T) (hKη : 8 * (K * (T / n)) ≤ η)
+    (hmono : ∀ a ∈ Icc (-T) T, ∃ φ : StrongDual ℝ E,
+      StrictMonoOn (fun t ↦ φ (γ t)) (Icc a (a + 4 * δ)))
+    (hK : LipschitzOnWith K γ (Icc 0 T))
+    (hsep : ∀ a ∈ Icc 0 T, ∀ d ∈ Icc δ (T - δ), η ≤ dist (γ (a + d)) (γ a)) :
+    ∃ Φ : TauCeti.AmbientIsotopy E, Φ.final '' range γ = (inscribed γ T n).boundary ℝ := by
+  set h := T / n with hh_def
+  have hh : 0 < h := by positivity
+  have hnh : n * h = T := by rw [hh_def]; field_simp
+  -- After straightening the arcs over the first `k` steps, the curve consists of the chords over
+  -- these steps and of the arcs over the remaining ones.
+  let C (k : ℕ) : Set E := {x | ∃ j < n, (j < k ∧ x ∈ segment ℝ (γ (j * h)) (γ (j * h + h))) ∨
+    (k ≤ j ∧ x ∈ γ '' Icc (j * h) (j * h + h))}
+  have hC0 : range γ = C 0 := by
+    ext x
+    refine ⟨?_, ?_⟩
+    · rintro ⟨t, rfl⟩
+      have hs := toIcoMod_mem_Ico hT 0 t
+      rw [zero_add] at hs
+      have hγs : γ (toIcoMod hT 0 t) = γ t := by
+        rw [toIcoMod]; exact hper.sub_zsmul_eq _
+      set s := toIcoMod hT 0 t
+      have hs₀ : 0 ≤ s / h := div_nonneg hs.1 hh.le
+      refine ⟨⌊s / h⌋₊, (Nat.floor_lt hs₀).2 ?_, Or.inr ⟨Nat.zero_le _, s, ⟨?_, ?_⟩, hγs⟩⟩
+      · rw [div_lt_iff₀ hh, hnh]; exact hs.2
+      · exact (le_div_iff₀ hh).1 (Nat.floor_le hs₀)
+      · have := Nat.lt_floor_add_one (s / h)
+        rw [div_lt_iff₀ hh] at this
+        linarith
+    · rintro ⟨j, -, ⟨hj, -⟩ | ⟨-, s, -, rfl⟩⟩
+      · exact absurd hj (Nat.not_lt_zero j)
+      · exact mem_range_self s
+  have hCn : C n = (inscribed γ T n).boundary ℝ := by
+    ext x
+    simp only [C, boundary, mem_iUnion, edgeSet_inscribed hper, mem_ofPred_eq]
+    refine ⟨?_, ?_⟩
+    · rintro ⟨j, hj, ⟨-, hx⟩ | ⟨hj', -⟩⟩
+      · exact ⟨⟨j, hj⟩, by rwa [add_mul, one_mul]⟩
+      · omega
+    · rintro ⟨i, hx⟩
+      exact ⟨i, i.2, Or.inl ⟨i.2, by rwa [add_mul, one_mul] at hx⟩⟩
+  -- Straightening the arc over the step `k` carries `C k` onto `C (k + 1)`.
+  have step (k : ℕ) (hk : k < n) : ∃ Ψ : TauCeti.AmbientIsotopy E, Ψ.final '' C k = C (k + 1) := by
+    have hkT : k * h + h ≤ T := by
+      have : (k : ℝ) + 1 ≤ n := by exact_mod_cast hk
+      nlinarith
+    have hk0 : 0 ≤ k * h := by positivity
+    obtain ⟨φ, hφ⟩ := hmono (k * h - 2 * δ) ⟨by linarith, by linarith⟩
+    have hφ' : StrictMonoOn (fun t ↦ φ (γ t)) (Icc (k * h - 2 * δ) (k * h + 2 * δ)) :=
+      hφ.mono (Icc_subset_Icc le_rfl (by linarith))
+    obtain ⟨Ψ, himg, hsupp⟩ := TauCeti.AmbientIsotopy.exists_final_image_eq_segment
+      (by linarith : k * h < k * h + h) hγ.continuousOn
+      (hφ'.mono (Icc_subset_Icc (by linarith) (by linarith))) (D := K * h) fun s hs ↦ by
+        have := hK.dist_le_mul s ⟨by linarith [hs.1], by linarith [hs.2]⟩ (k * h) ⟨hk0, by linarith⟩
+        rw [dist_eq_norm, dist_eq_norm, Real.norm_of_nonneg (by linarith [hs.1])] at this
+        exact this.trans (by gcongr; linarith [hs.2])
+    have hfix (j : ℕ) (hj : j < n) (hjk : j ≠ k) (x : E)
+        (hx : x ∈ γ '' Icc (j * h) (j * h + h) ∪ segment ℝ (γ (j * h)) (γ (j * h + h))) :
+        Ψ.final x = x := by
+      by_contra hne
+      exact notMem_straightenRegion hj hk hjk hT hper hh hnh hhδ hKη hK hsep hφ' hx
+        (hsupp 1 x (by rwa [← TauCeti.AmbientIsotopy.final_apply]))
+    refine ⟨Ψ, ?_⟩
+    ext y
+    refine ⟨?_, ?_⟩
+    · rintro ⟨x, ⟨j, hj, hx⟩, rfl⟩
+      rcases eq_or_ne j k with rfl | hjk
+      · rcases hx with ⟨hjj, -⟩ | ⟨-, hx⟩
+        · exact absurd hjj (lt_irrefl j)
+        · exact ⟨j, hj, Or.inl ⟨j.lt_succ_self, himg ▸ mem_image_of_mem _ hx⟩⟩
+      · rcases hx with ⟨hjk', hx⟩ | ⟨hjk', hx⟩
+        · rw [hfix j hj hjk x (Or.inr hx)]
+          exact ⟨j, hj, Or.inl ⟨by omega, hx⟩⟩
+        · rw [hfix j hj hjk x (Or.inl hx)]
+          exact ⟨j, hj, Or.inr ⟨by omega, hx⟩⟩
+    · rintro ⟨j, hj, hy⟩
+      rcases eq_or_ne j k with rfl | hjk
+      · rcases hy with ⟨-, hy⟩ | ⟨hjj, -⟩
+        · rw [← himg] at hy
+          obtain ⟨x, hx, rfl⟩ := hy
+          exact ⟨x, ⟨j, hj, Or.inr ⟨le_rfl, hx⟩⟩, rfl⟩
+        · omega
+      · rcases hy with ⟨hjk', hy⟩ | ⟨hjk', hy⟩
+        · exact ⟨y, ⟨j, hj, Or.inl ⟨by omega, hy⟩⟩, hfix j hj hjk y (Or.inr hy)⟩
+        · exact ⟨y, ⟨j, hj, Or.inr ⟨by omega, hy⟩⟩, hfix j hj hjk y (Or.inl hy)⟩
+  -- Compose the straightenings of the arcs over all `n` steps.
+  have hstage (k : ℕ) (hk : k ≤ n) : ∃ Φ : TauCeti.AmbientIsotopy E, Φ.final '' range γ = C k := by
+    induction k with
+    | zero => exact ⟨TauCeti.AmbientIsotopy.refl E, by simpa using hC0⟩
+    | succ k ih =>
+      obtain ⟨Φ, hΦ⟩ := ih (by omega)
+      obtain ⟨Ψ, hΨ⟩ := step k (by omega)
+      refine ⟨Φ.trans Ψ, ?_⟩
+      rw [← hΨ, ← hΦ, image_image]
+      simp
+  obtain ⟨Φ, hΦ⟩ := hstage n le_rfl
+  exact ⟨Φ, hΦ.trans hCn⟩
+
+/-- **Fine inscribed polygons of a `C¹` loop are ambient isotopic to it.** Let `γ : ℝ → E` be a
+`C¹` curve of period `T > 0` in a real normed space, with nowhere vanishing derivative, injective
+modulo `T`. Then for all large `n` some ambient isotopy of `E` carries the image of `γ` onto the
+inscribed polygon with `n` vertices, which is simple by `Polygon.eventually_isSimple_inscribed`.
+So a knot of class `C¹` is tame: it is ambient isotopic to a polygonal knot. -/
+theorem eventually_exists_ambientIsotopy_image_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ)
+    (hper : Periodic γ T) (hinj : ∀ s t, γ s = γ t → ∃ k : ℤ, s = t + k * T)
+    (hderiv : ∀ t, deriv γ t ≠ 0) :
+    ∀ᶠ n in atTop, ∃ Φ : TauCeti.AmbientIsotopy E,
+      Φ.final '' range γ = (inscribed γ T n).boundary ℝ := by
+  obtain ⟨δ₀, hδ₀, hmono⟩ := hγ.exists_strictMonoOn_dual_comp hderiv (-T) T
+  set δ := min (δ₀ / 4) (T / 2)
+  have hδ : 0 < δ := lt_min (by positivity) (by positivity)
+  obtain ⟨K, hK⟩ := (hγ.contDiffOn (s := Icc 0 T)).exists_lipschitzOnWith one_ne_zero
+    (convex_Icc 0 T) isCompact_Icc
+  obtain ⟨η, hη, hsep⟩ := TauCeti.exists_pos_le_dist_apply_add hγ.continuous hinj
+    (isCompact_Icc (a := 0) (b := T)) hδ
+  have hc : 0 < min δ (η / (8 * K + 1)) := lt_min hδ (by positivity)
+  filter_upwards [eventually_gt_atTop 0,
+    (tendsto_const_div_atTop_nhds_zero_nat T).eventually (gt_mem_nhds hc)] with n hn hTn
+  have h₁ : T / n < η / (8 * K + 1) := hTn.trans_le (min_le_right _ _)
+  rw [lt_div_iff₀ (by positivity)] at h₁
+  have h₂ : 0 ≤ T / n := by positivity
+  refine exists_ambientIsotopy_image_inscribed_of_mesh hn hT hγ.continuous hper
+    (hTn.trans_le (min_le_left _ _)).le (by linarith [min_le_right (δ₀ / 4) (T / 2)])
+    (by nlinarith) (fun a ha ↦ (hmono a ha).imp fun φ hφ ↦ hφ.mono
+      (Icc_subset_Icc le_rfl (by linarith [min_le_left (δ₀ / 4) (T / 2)]))) hK hsep
+
+end AmbientIsotopy
 
 end Polygon

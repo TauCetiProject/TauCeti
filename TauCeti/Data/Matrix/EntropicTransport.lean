@@ -183,8 +183,8 @@ theorem entropicTransportValue_eq_of_isMinOn
 theorem entropicTransportObjective_add (C H : Matrix ι κ ℝ) (ε : ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (P : Matrix ι κ ℝ) :
     (C + H).entropicTransportObjective ε a b P = C.entropicTransportObjective ε a b P + ⟪H, P⟫ := by
-  simp only [entropicTransportObjective_def, frobenius_real_inner_eq_sum_mul, add_apply, add_mul,
-    Finset.sum_add_distrib]
+  simp only [Matrix.add_apply, Finset.sum_add_distrib, entropicTransportObjective_def,
+    frobenius_real_inner_eq_sum_mul, add_mul]
   ring
 
 /-- **The Gibbs reformulation.** For nonzero marginals and a nonzero temperature, the regularised
@@ -297,7 +297,7 @@ private theorem mul_sum_sum_sub_mul_log_sub_log_eq (hε : 0 < ε) (ha : ∀ i, 0
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [sub_apply]
+    simp only [Matrix.sub_apply]
     ring
   rw [frobenius_real_inner_eq_sum_mul]
   linarith
@@ -324,7 +324,8 @@ theorem norm_sub_le_of_isMinOn_entropicTransportObjective (hε : 0 < ε) (ha : �
     refine Finset.sum_le_sum fun i _ ↦ ?_
     rw [Finset.mul_sum]
     refine Finset.sum_le_sum fun j _ ↦ ?_
-    simpa [sub_apply, sq] using Real.sq_sub_le_mul_sub_mul_log_sub_log (hPpos i j) (hQpos i j)
+    simpa [Matrix.sub_apply,
+      sq] using Real.sq_sub_le_mul_sub_mul_log_sub_log (hPpos i j) (hQpos i j)
       (hle hP i j) (hle hQ i j)
   have hinner : ε * ‖P - Q‖ ^ 2 ≤ m * (‖P - Q‖ * ‖C - C'‖) := by
     calc ε * ‖P - Q‖ ^ 2
@@ -622,7 +623,7 @@ private theorem entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ → �
         C i j * P i j + ε * (P i j * log (P i j)) +
           D i j * (C i j + ε * log (P i j) + ε) + ε * (D i j ^ 2 / P i j) := by
     have h := TauCeti.mul_log_sub_mul_log_sub_le_sq_div (hPpos i j) (hPD i j)
-    simp only [add_apply, add_sub_cancel_left] at h ⊢
+    simp only [Matrix.add_apply, add_sub_cancel_left] at h ⊢
     nlinarith [mul_le_mul_of_nonneg_left h hε.le]
   have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
     Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ hcell i j

@@ -119,6 +119,18 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
 @[simp] theorem glueLabelEquiv_E8 (ht : E8.IsSimplyLaced) (i : Fin 1) :
     E8.glueLabelEquiv ht i = 0 := Subsingleton.elim _ _
 
+/-- **Labels are unchanged by identifying the glue alphabets of equal types**: a class and its
+image under `TauCeti.DynkinType.glueAlphabet_congr` carry the same Conway--Sloane label. -/
+theorem val_glueLabelEquiv_symm_ofEq {t s : DynkinType} (h : t = s) (ht : t.IsSimplyLaced)
+    (hs : s.IsSimplyLaced) (x : t.glueAlphabet ht) :
+    ((s.glueLabelEquiv hs).symm
+        (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr h ht hs) x)).val =
+      ((t.glueLabelEquiv ht).symm x).val := by
+  subst h
+  rw [FiniteQuadraticModule.Isometry.ofEq_rfl]
+  -- The identity isometry acts as the identity, and the two simply-laced proofs are equal.
+  rfl
+
 /-- The glue alphabet has exactly one element for each of its labels. -/
 theorem natCard_glueAlphabet_eq_glueLabelCount (t : DynkinType) (ht : t.IsSimplyLaced) :
     Nat.card (t.glueAlphabet ht) = t.glueLabelCount :=
