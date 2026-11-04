@@ -25,7 +25,10 @@ of the single-layer realization maps `dense`, `Matrix.mulVec`, `Neuromanifold.ac
 * in positive depth `L + 1`, the `L` hidden layers fold
   `Neuromanifold.activation (A.activation i) ()` with `dense` or `Matrix.mulVec`, and the output
   layer applies `dense (θ (Fin.last L))` or `(w (Fin.last L)).mulVec` with no activation
-  (`realize_succ_eq_dense_comp_dfoldl`, `realizeWeights_succ_eq_mulVec_comp_dfoldl`).
+  (`realize_succ_eq_dense_comp_dfoldl`, `realizeWeights_succ_eq_mulVec_comp_dfoldl`);
+* when all hidden activations are `id`, `A.realize θ` folds `dense` and `A.realizeWeights w` folds
+  `Matrix.mulVec` directly (`realize_eq_dfoldl_of_activation_eq_id`,
+  `realizeWeights_eq_dfoldl_of_activation_eq_id`).
 
 For the monomial specification `MLPSpec.monomial d r` of positive depth `L + 1`, each hidden layer
 uses `powerActivation (r i) ()`, giving `(w (Fin.last L)).mulVec ∘ Fin.dfoldl L … (fun i =>
@@ -34,13 +37,14 @@ powerActivation (r i) () ∘ (w i.castSucc).mulVec)`
 recovers the bias-free polynomial network `W_{L+1} ∘ σ_r ∘ ⋯ ∘ σ_r ∘ W₁` of
 Finkel–Rodriguez–Wu–Yahl, Definition 1.
 
-Dropping layer `0` of any specification `A : MLPSpec K (L + 1)` yields `A.tail : MLPSpec K L`.
-Unlike `MLPSpec.lowerLayers` and `MLPSpec.upperLayers` in
-`TauCeti.Geometry.Neuromanifold.MLP.Append`, which split at an interior hidden layer and require
-depth at least `2`, `MLPSpec.tail` applies at every positive depth, including depth `1` where
-`A.tail` has depth `0`. Together with the depth-zero and depth-one neuromanifolds, `MLPSpec.tail`
-gives a layer-by-layer recursion for `realizedFunctions A.realize` and
-`realizedFunctions A.realizeWeights`.
+Splitting off layer `0` of `A : MLPSpec K (L + 1)` via `A.tail : MLPSpec K L` (from
+`TauCeti.Geometry.Neuromanifold.MLP.Basic`) expresses positive-depth realization along
+`Fin.consEquiv` as `Neuromanifold.compose`. Unlike `MLPSpec.lowerLayers` and
+`MLPSpec.upperLayers` in `TauCeti.Geometry.Neuromanifold.MLP.Append`, which split at an interior
+hidden layer and require depth at least `2`, `MLPSpec.tail` applies at every positive depth,
+including depth `1` where `A.tail` has depth `0`. Together with the depth-zero and depth-one
+neuromanifolds, `MLPSpec.tail` gives a layer-by-layer recursion for `realizedFunctions A.realize`
+and `realizedFunctions A.realizeWeights`.
 
 ## References
 
@@ -105,123 +109,15 @@ theorem evalPrefix_zeroBias_castSucc_succ_eq_activation_mulVec (A : MLPSpec K (L
         ((w i.castSucc).mulVec (A.evalPrefix (A.zeroBias w) x i.castSucc.castSucc)) := by
   rw [evalPrefix_zeroBias_succ_eq_activation_mulVec, layerActivation_castSucc]
 
-/-- In positive depth, the output layer applies `dense` to the last hidden prefix. -/
-theorem realize_succ_eq_dense (A : MLPSpec K (L + 1)) (θ : A.Parameters)
-    (x : Fin (A.width 0) → K) :
-    A.realize θ x = dense (θ (Fin.last L)) (A.evalPrefix θ x (Fin.last L).castSucc) := by
-  rw [realize_succ, dense_apply]
-
-/-- A depth-zero MLP realizes the identity map. -/
-theorem realize_depth_zero_eq_id (A : MLPSpec K 0) (θ : A.Parameters) :
-    A.realize θ = id :=
-  funext (A.realize_depth_zero θ)
-
-/-- A depth-zero MLP realizes the identity map on bias-free parameters. -/
-theorem realizeWeights_depth_zero_eq_id (A : MLPSpec K 0) (w : A.Weights) :
-    A.realizeWeights w = id :=
-  funext (A.realizeWeights_depth_zero w)
-
 /-- A one-layer MLP realizes the dense affine layer `dense (θ 0)`. -/
 theorem realize_depth_one_eq_dense (A : MLPSpec K 1) (θ : A.Parameters) :
     A.realize θ = dense (θ 0) := by
   funext x
   rw [realize_depth_one, dense_apply]
 
-/-- A one-layer bias-free MLP realizes the linear layer `(w 0).mulVec`. -/
-theorem realizeWeights_depth_one_eq_mulVec (A : MLPSpec K 1) (w : A.Weights) :
-    A.realizeWeights w = (w 0).mulVec :=
-  funext (A.realizeWeights_depth_one w)
-
 end LayerStep
 
-/-! ### Dropping the first layer -/
-
-/-- The specification obtained from `A : MLPSpec K (L + 1)` by dropping layer `0`: its widths are
-`A.width 1, …, A.width (L + 1)` and its hidden activations are those of `A` above layer `1`.
-Its body is exposed so that `A.tail.Parameters` and `A.tail.Weights` are definitionally the tails
-of `A.Parameters` and `A.Weights`. -/
-@[expose] def tail (A : MLPSpec K (L + 1)) : MLPSpec K L where
-  width i := A.width i.succ
-  activation j := A.activation ⟨j.val + 1, by omega⟩
-
-/-- The widths of `A.tail` are the widths of `A` shifted up by one layer. -/
-@[simp]
-theorem tail_width (A : MLPSpec K (L + 1)) (i : Fin (L + 1)) :
-    A.tail.width i = A.width i.succ := (rfl)
-
-/-- The hidden activations of `A.tail` are those of `A` shifted up by one hidden layer. -/
-theorem tail_activation (A : MLPSpec K (L + 1)) (j : Fin (L - 1)) :
-    A.tail.activation j = A.activation ⟨j.val + 1, by omega⟩ := (rfl)
-
-/-- In depth at least two, hidden activation `j` of `A.tail` is hidden activation `j.succ` of
-`A`. -/
-@[simp]
-theorem tail_activation_succ (A : MLPSpec K (L + 2)) (j : Fin L) :
-    A.tail.activation j = A.activation j.succ :=
-  congrArg A.activation (Fin.ext rfl)
-
-/-- Each layer of `A.tail` applies the same scalar activation as the corresponding shifted layer of
-`A`. -/
-@[simp]
-theorem layerActivation_tail (A : MLPSpec K (L + 1)) (i : Fin L) :
-    A.tail.layerActivation i = A.layerActivation i.succ := by
-  by_cases h : i.val + 1 < L
-  · rw [A.tail.layerActivation_of_lt i h, A.layerActivation_of_lt i.succ (by simp; omega),
-      tail_activation]
-    exact congrArg A.activation (Fin.ext rfl)
-  · rw [A.tail.layerActivation_of_val_add_one_eq i (by omega),
-      A.layerActivation_of_val_add_one_eq i.succ (by simp; omega)]
-
-/-- Dropping the first layer of `MLPSpec.linear` drops the first width. -/
-@[simp]
-theorem tail_linear (d : Fin (L + 2) → ℕ) :
-    (linear d : MLPSpec K (L + 1)).tail = linear (Fin.tail d) := by
-  ext <;> simp [Fin.tail, tail_activation]
-
-/-- Dropping the first layer of `MLPSpec.polynomial` in depth `L + 2` drops the first width and the
-first hidden polynomial. -/
-@[simp]
-theorem tail_polynomial [Semiring K] (d : Fin (L + 3) → ℕ) (p : Fin (L + 1) → Polynomial K) :
-    (polynomial d p : MLPSpec K (L + 2)).tail = polynomial (Fin.tail d) (Fin.tail p) := by
-  ext <;> simp [Fin.tail]
-
-/-- Dropping the first layer of `MLPSpec.monomial` in depth `L + 2` drops the first width and the
-first hidden exponent. -/
-@[simp]
-theorem tail_monomial [Monoid K] (d : Fin (L + 3) → ℕ) (r : Fin (L + 1) → ℕ) :
-    (monomial d r : MLPSpec K (L + 2)).tail = monomial (Fin.tail d) (Fin.tail r) := by
-  ext <;> simp [Fin.tail]
-
-/-- Taking the tail of parameters commutes with the zero-bias embedding. -/
-@[simp]
-theorem tail_zeroBias [Zero K] (A : MLPSpec K (L + 1)) (w : A.Weights) :
-    Fin.tail (A.zeroBias w) = A.tail.zeroBias (Fin.tail w) :=
-  funext fun i => (A.zeroBias_apply w i.succ).trans (A.tail.zeroBias_apply (Fin.tail w) i).symm
-
-/-- Consing a first weight matrix commutes with the zero-bias embedding. -/
-@[simp]
-theorem zeroBias_cons [Zero K] (A : MLPSpec K (L + 1))
-    (w₀ : Matrix (Fin (A.width 1)) (Fin (A.width 0)) K) (w : A.tail.Weights) :
-    A.zeroBias (Fin.cons w₀ w) = Fin.cons (w₀, 0) (A.tail.zeroBias w) := by
-  funext i
-  cases i using Fin.cases with
-  | zero =>
-    exact (A.zeroBias_apply _ 0).trans
-      ((congrArg (·, (0 : Fin (A.width 1) → K))
-        (Fin.cons_zero (α := fun i => Matrix (Fin (A.width i.succ)) (Fin (A.width i.castSucc)) K)
-          w₀ w)).trans
-        (Fin.cons_zero (α := fun i =>
-          Matrix (Fin (A.width i.succ)) (Fin (A.width i.castSucc)) K × (Fin (A.width i.succ) → K))
-          (w₀, 0) (A.tail.zeroBias w)).symm)
-  | succ i =>
-    exact (A.zeroBias_apply _ i.succ).trans
-      (((congrArg (·, (0 : Fin (A.width i.succ.succ) → K))
-          (Fin.cons_succ (α := fun k => Matrix (Fin (A.width k.succ)) (Fin (A.width k.castSucc)) K)
-            w₀ w i)).trans
-        (A.tail.zeroBias_apply w i).symm).trans
-        (Fin.cons_succ (α := fun k =>
-          Matrix (Fin (A.width k.succ)) (Fin (A.width k.castSucc)) K × (Fin (A.width k.succ) → K))
-          (w₀, 0) (A.tail.zeroBias w) i).symm)
+/-! ### Factoring the first layer via `MLPSpec.tail` -/
 
 section TailEvaluation
 
@@ -236,9 +132,9 @@ theorem evalPrefix_succ_eq_tail (A : MLPSpec K (L + 1)) (θ : A.Parameters)
         (Neuromanifold.activation (A.layerActivation 0) () (dense (θ 0) x)) i := by
   induction i using Fin.induction with
   | zero =>
-    exact (A.evalPrefix_succ_eq_activation_dense θ x 0).trans
-      ((congrArg (fun v => Neuromanifold.activation (A.layerActivation 0) () (dense (θ 0) v))
-        (A.evalPrefix_zero θ x)).trans (A.tail.evalPrefix_zero (Fin.tail θ) _).symm)
+    rw [evalPrefix_succ_eq_activation_dense]
+    simp only [Fin.castSucc_zero, evalPrefix_zero]
+    exact (A.tail.evalPrefix_zero (Fin.tail θ) _).symm
   | succ i ih =>
     -- `i.succ.castSucc` and `i.castSucc.succ` both have `.val = i.val + 1`, so `ih` applies at the
     -- recursive call of `A.evalPrefix`.
@@ -254,12 +150,10 @@ theorem evalPrefix_zeroBias_succ_eq_tail (A : MLPSpec K (L + 1)) (w : A.Weights)
     A.evalPrefix (A.zeroBias w) x i.succ =
       A.tail.evalPrefix (A.tail.zeroBias (Fin.tail w))
         (Neuromanifold.activation (A.layerActivation 0) () ((w 0).mulVec x)) i := by
-  have hd : dense (A.zeroBias w 0) x = (w 0).mulVec x :=
-    congrFun ((congrArg dense (A.zeroBias_apply w 0)).trans (dense_mk_zero (w 0))) x
-  exact (A.evalPrefix_succ_eq_tail (A.zeroBias w) x i).trans
-    ((congrArg (fun p => A.tail.evalPrefix p _ i) (A.tail_zeroBias w)).trans
-      (congrArg (fun v => A.tail.evalPrefix (A.tail.zeroBias (Fin.tail w))
-        (Neuromanifold.activation (A.layerActivation 0) () v) i) hd))
+  have hd : dense (A.zeroBias w 0) = (w 0).mulVec := by rw [zeroBias_apply, dense_mk_zero]
+  rw [evalPrefix_succ_eq_tail, tail_zeroBias]
+  exact congrArg (fun v => A.tail.evalPrefix _ (Neuromanifold.activation _ () v) i)
+    (congrFun hd x)
 
 /-- The realization of `A` factors through its first dense layer, layer `0`'s activation, and the
 realization of `A.tail`. -/
@@ -268,6 +162,7 @@ theorem realize_eq_tail_comp (A : MLPSpec K (L + 1)) (θ : A.Parameters) :
       A.tail.realize (Fin.tail θ) ∘
         Neuromanifold.activation (A.layerActivation 0) () ∘ dense (θ 0) := by
   funext x
+  -- `Fin.last (L + 1)` is definitionally `(Fin.last L).succ`.
   exact ((A.realize_def θ x).trans (A.evalPrefix_succ_eq_tail θ x (Fin.last L))).trans
     (A.tail.realize_def (Fin.tail θ) _).symm
 
@@ -278,28 +173,20 @@ theorem realize_cons (A : MLPSpec K (L + 1))
     (θ : A.tail.Parameters) :
     A.realize (Fin.cons θ₀ θ) =
       A.tail.realize θ ∘ Neuromanifold.activation (A.layerActivation 0) () ∘ dense θ₀ := by
-  let P := fun i : Fin (L + 1) =>
-    Matrix (Fin (A.width i.succ)) (Fin (A.width i.castSucc)) K × (Fin (A.width i.succ) → K)
-  exact (A.realize_eq_tail_comp (Fin.cons (α := P) θ₀ θ)).trans
-    ((congrArg (fun p => A.tail.realize p ∘
-        Neuromanifold.activation (A.layerActivation 0) () ∘ dense (Fin.cons (α := P) θ₀ θ 0))
-      (Fin.tail_cons (α := P) θ₀ θ)).trans
-      (congrArg (fun p₀ => A.tail.realize θ ∘
-          Neuromanifold.activation (A.layerActivation 0) () ∘ dense p₀)
-        (Fin.cons_zero (α := P) θ₀ θ)))
+  rw [realize_eq_tail_comp, Fin.tail_def]
+  rfl
 
 /-- Under `Fin.consEquiv`, `A.realize` is `Neuromanifold.compose` of layer `0` (including its
 activation) and `A.tail.realize`. -/
 theorem realize_comp_consEquiv (A : MLPSpec K (L + 1)) :
     A.realize ∘ Fin.consEquiv _ =
       compose (fun θ₀ => Neuromanifold.activation (A.layerActivation 0) () ∘ dense θ₀)
-        A.tail.realize :=
-  funext fun p =>
-    (Function.comp_apply (f := A.realize) (x := p)).trans
-      ((congrArg A.realize (Fin.consEquiv_apply _ p)).trans
-        ((A.realize_cons p.1 p.2).trans
-          (compose_apply (fun θ₀ => Neuromanifold.activation (A.layerActivation 0) () ∘ dense θ₀)
-            A.tail.realize p).symm))
+        A.tail.realize := by
+  funext p
+  simp only [Function.comp_apply, Fin.consEquiv_apply]
+  exact (A.realize_cons p.1 p.2).trans
+    (compose_apply (fun θ₀ => Neuromanifold.activation (A.layerActivation 0) () ∘ dense θ₀)
+      A.tail.realize p).symm
 
 /-- The bias-free realization of `A` factors through `(w 0).mulVec`, layer `0`'s activation, and
 the bias-free realization of `A.tail`. -/
@@ -308,11 +195,10 @@ theorem realizeWeights_eq_tail_comp (A : MLPSpec K (L + 1)) (w : A.Weights) :
       A.tail.realizeWeights (Fin.tail w) ∘
         Neuromanifold.activation (A.layerActivation 0) () ∘ (w 0).mulVec := by
   funext x
-  exact ((congrFun (congrFun A.realizeWeights_def w) x).trans
-    ((A.realize_def _ x).trans
-      ((A.evalPrefix_zeroBias_succ_eq_tail w x (Fin.last L)).trans
-        ((A.tail.realize_def _ _).symm.trans
-          (congrFun (congrFun A.tail.realizeWeights_def (Fin.tail w)).symm _)))))
+  simp only [realizeWeights_def]
+  dsimp only [Function.comp_def]
+  simp only [realize_def]
+  exact A.evalPrefix_zeroBias_succ_eq_tail w x (Fin.last L)
 
 /-- On bias-free parameters assembled by `Fin.cons`, `A` realizes the composite of `w₀.mulVec`,
 layer `0`'s activation, and `A.tail.realizeWeights w`. -/
@@ -320,27 +206,20 @@ theorem realizeWeights_cons (A : MLPSpec K (L + 1))
     (w₀ : Matrix (Fin (A.width 1)) (Fin (A.width 0)) K) (w : A.tail.Weights) :
     A.realizeWeights (Fin.cons w₀ w) =
       A.tail.realizeWeights w ∘ Neuromanifold.activation (A.layerActivation 0) () ∘ w₀.mulVec := by
-  let W := fun i : Fin (L + 1) => Matrix (Fin (A.width i.succ)) (Fin (A.width i.castSucc)) K
-  exact (A.realizeWeights_eq_tail_comp (Fin.cons (α := W) w₀ w)).trans
-    ((congrArg (fun p => A.tail.realizeWeights p ∘
-        Neuromanifold.activation (A.layerActivation 0) () ∘ (Fin.cons (α := W) w₀ w 0).mulVec)
-      (Fin.tail_cons (α := W) w₀ w)).trans
-      (congrArg (fun p₀ => A.tail.realizeWeights w ∘
-          Neuromanifold.activation (A.layerActivation 0) () ∘ Matrix.mulVec p₀)
-        (Fin.cons_zero (α := W) w₀ w)))
+  rw [realizeWeights_eq_tail_comp, Fin.tail_def]
+  rfl
 
 /-- Under `Fin.consEquiv`, `A.realizeWeights` is `Neuromanifold.compose` of bias-free layer `0`
 (including its activation) and `A.tail.realizeWeights`. -/
 theorem realizeWeights_comp_consEquiv (A : MLPSpec K (L + 1)) :
     A.realizeWeights ∘ Fin.consEquiv _ =
       compose (fun w₀ => Neuromanifold.activation (A.layerActivation 0) () ∘ w₀.mulVec)
-        A.tail.realizeWeights :=
-  funext fun p =>
-    (Function.comp_apply (f := A.realizeWeights) (x := p)).trans
-      ((congrArg A.realizeWeights (Fin.consEquiv_apply _ p)).trans
-        ((A.realizeWeights_cons p.1 p.2).trans
-          (compose_apply (fun w₀ => Neuromanifold.activation (A.layerActivation 0) () ∘ w₀.mulVec)
-            A.tail.realizeWeights p).symm))
+        A.tail.realizeWeights := by
+  funext p
+  simp only [Function.comp_apply, Fin.consEquiv_apply]
+  exact (A.realizeWeights_cons p.1 p.2).trans
+    (compose_apply (fun w₀ => Neuromanifold.activation (A.layerActivation 0) () ∘ w₀.mulVec)
+      A.tail.realizeWeights p).symm
 
 end TailEvaluation
 
@@ -446,8 +325,9 @@ theorem realize_succ_eq_dense_comp_dfoldl (A : MLPSpec K (L + 1)) (θ : A.Parame
         Fin.dfoldl L (fun i => Fin (A.width i.castSucc) → K)
           (fun i => Neuromanifold.activation (A.activation i) () ∘ dense (θ i.castSucc)) := by
   funext x
-  exact (A.realize_succ_eq_dense θ x).trans
-    (congrArg (dense (θ (Fin.last L))) (A.evalPrefix_last_castSucc_eq_dfoldl θ x))
+  dsimp only [Function.comp_def]
+  rw [realize_succ, dense_apply, evalPrefix_last_castSucc_eq_dfoldl]
+  rfl
 
 /-- In positive depth `L + 1`, the bias-free realization composes the linear output head
 `(w (Fin.last L)).mulVec` with the `L`-step hidden fold. -/
@@ -460,13 +340,30 @@ theorem realizeWeights_succ_eq_mulVec_comp_dfoldl (A : MLPSpec K (L + 1)) (w : A
   simp_rw [zeroBias_apply, dense_mk_zero] at h
   exact (congrFun A.realizeWeights_def w).trans h
 
+/-- When every hidden activation of `A` is `id`, its affine realization folds `dense` directly
+across all `L` layers. -/
+theorem realize_eq_dfoldl_of_activation_eq_id (A : MLPSpec K L)
+    (h : ∀ j, A.activation j = id) (θ : A.Parameters) :
+    A.realize θ =
+      Fin.dfoldl L (fun i => Fin (A.width i) → K) (fun i => dense (θ i)) := by
+  rw [realize_eq_dfoldl]
+  simp_rw [A.layerActivation_eq_id_of_activation_eq_id h, activation_id, Function.id_comp]
+
+/-- When every hidden activation of `A` is `id`, its bias-free realization folds `Matrix.mulVec`
+directly across all `L` layers. -/
+theorem realizeWeights_eq_dfoldl_of_activation_eq_id (A : MLPSpec K L)
+    (h : ∀ j, A.activation j = id) (w : A.Weights) :
+    A.realizeWeights w =
+      Fin.dfoldl L (fun i => Fin (A.width i) → K) (fun i => (w i).mulVec) := by
+  rw [realizeWeights_eq_dfoldl]
+  simp_rw [A.layerActivation_eq_id_of_activation_eq_id h, activation_id, Function.id_comp]
+
 /-- An identity-activation MLP with biases is the `L`-step fold of its dense affine layers. -/
 theorem realize_linear_eq_dfoldl (d : Fin (L + 1) → ℕ) (θ : (linear d : MLPSpec K L).Parameters) :
     (linear d).realize θ =
       Fin.dfoldl L (fun i => Fin ((linear d : MLPSpec K L).width i) → K)
-        (fun i => dense (θ i)) := by
-  simpa only [layerActivation_linear, activation_id, Function.id_comp] using
-    (linear d).realize_eq_dfoldl θ
+        (fun i => dense (θ i)) :=
+  (linear d).realize_eq_dfoldl_of_activation_eq_id (linear_activation d) θ
 
 /-- A bias-free identity-activation MLP is the `L`-step fold of its linear layers
 `Matrix.mulVec`. -/
@@ -474,13 +371,22 @@ theorem realizeWeights_linear_eq_dfoldl (d : Fin (L + 1) → ℕ)
     (w : (linear d : MLPSpec K L).Weights) :
     (linear d).realizeWeights w =
       Fin.dfoldl L (fun i => Fin ((linear d : MLPSpec K L).width i) → K)
-        (fun i => (w i).mulVec) := by
-  simpa only [layerActivation_linear, activation_id, Function.id_comp] using
-    (linear d).realizeWeights_eq_dfoldl w
+        (fun i => (w i).mulVec) :=
+  (linear d).realizeWeights_eq_dfoldl_of_activation_eq_id (linear_activation d) w
 
 end IteratedComposition
 
 /-! ### Monomial specialization -/
+
+/-- Coordinatewise activation by hidden activation `j` of `MLPSpec.monomial d r` is the power layer
+`powerActivation (r j)`. -/
+@[simp]
+theorem activation_monomial_eq_powerActivation [Monoid K] {ι : Type*} (d : Fin (L + 1) → ℕ)
+    (r : Fin (L - 1) → ℕ) (j : Fin (L - 1)) :
+    Neuromanifold.activation (ι := ι) ((monomial d r : MLPSpec K L).activation j) =
+      powerActivation (r j) := by
+  rw [powerActivation_def]
+  exact congrArg Neuromanifold.activation (funext (monomial_activation d r j))
 
 section Monomial
 
@@ -494,9 +400,7 @@ theorem evalPrefix_zeroBias_monomial_last_castSucc_eq_dfoldl (d : Fin (L + 2) �
     (monomial d r).evalPrefix ((monomial d r).zeroBias w) x (Fin.last L).castSucc =
       Fin.dfoldl L (fun i => Fin ((monomial d r : MLPSpec K (L + 1)).width i.castSucc) → K)
         (fun i => powerActivation (r i) () ∘ (w i.castSucc).mulVec) x := by
-  have hact : ∀ i : Fin L, (monomial d r : MLPSpec K (L + 1)).activation i = fun t => t ^ r i :=
-    fun i => funext (monomial_activation d r i)
-  simpa only [hact, ← powerActivation_def] using
+  simpa only [activation_monomial_eq_powerActivation] using
     (monomial d r).evalPrefix_zeroBias_last_castSucc_eq_dfoldl w x
 
 /-- In positive depth `L + 1`, the affine realization of `MLPSpec.monomial d r` composes the
@@ -508,9 +412,7 @@ theorem realize_monomial_eq_dense_comp_dfoldl (d : Fin (L + 2) → ℕ) (r : Fin
       dense (θ (Fin.last L)) ∘
         Fin.dfoldl L (fun i => Fin ((monomial d r : MLPSpec K (L + 1)).width i.castSucc) → K)
           (fun i => powerActivation (r i) () ∘ dense (θ i.castSucc)) := by
-  have hact : ∀ i : Fin L, (monomial d r : MLPSpec K (L + 1)).activation i = fun t => t ^ r i :=
-    fun i => funext (monomial_activation d r i)
-  simpa only [hact, ← powerActivation_def] using
+  simpa only [activation_monomial_eq_powerActivation] using
     (monomial d r).realize_succ_eq_dense_comp_dfoldl θ
 
 /-- In positive depth `L + 1`, the bias-free realization of `MLPSpec.monomial d r` composes the
@@ -523,9 +425,7 @@ theorem realizeWeights_monomial_eq_mulVec_comp_dfoldl (d : Fin (L + 2) → ℕ) 
       (w (Fin.last L)).mulVec ∘
         Fin.dfoldl L (fun i => Fin ((monomial d r : MLPSpec K (L + 1)).width i.castSucc) → K)
           (fun i => powerActivation (r i) () ∘ (w i.castSucc).mulVec) := by
-  have hact : ∀ i : Fin L, (monomial d r : MLPSpec K (L + 1)).activation i = fun t => t ^ r i :=
-    fun i => funext (monomial_activation d r i)
-  simpa only [hact, ← powerActivation_def] using
+  simpa only [activation_monomial_eq_powerActivation] using
     (monomial d r).realizeWeights_succ_eq_mulVec_comp_dfoldl w
 
 end Monomial
@@ -540,13 +440,15 @@ variable [NonUnitalNonAssocSemiring K]
 @[simp]
 theorem realizedFunctions_realize_depth_zero (A : MLPSpec K 0) :
     realizedFunctions A.realize = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, realize_depth_zero_eq_id]
+  rw [realizedFunctions_def, Set.range_unique, funext (A.realize_depth_zero default)]
+  rfl
 
 /-- A depth-zero bias-free MLP realizes only the identity function. -/
 @[simp]
 theorem realizedFunctions_realizeWeights_depth_zero (A : MLPSpec K 0) :
     realizedFunctions A.realizeWeights = {id} := by
-  rw [realizedFunctions_def, Set.range_unique, realizeWeights_depth_zero_eq_id]
+  rw [realizedFunctions_def, Set.range_unique, funext (A.realizeWeights_depth_zero default)]
+  rfl
 
 /-- The affine neuromanifold of `A : MLPSpec K (L + 1)` consists of the composites
 `g ∘ Neuromanifold.activation (A.layerActivation 0) () ∘ f` with `f` a dense affine layer and `g`
@@ -570,48 +472,43 @@ theorem realizedFunctions_realizeWeights_succ (A : MLPSpec K (L + 1)) :
 @[simp]
 theorem realizedFunctions_realize_depth_one (A : MLPSpec K 1) :
     realizedFunctions A.realize = realizedFunctions dense := by
-  let P := fun i : Fin 1 =>
-    Matrix (Fin (A.width i.succ)) (Fin (A.width i.castSucc)) K × (Fin (A.width i.succ) → K)
-  ext f
-  simp only [mem_realizedFunctions]
-  exact ⟨fun ⟨θ, h⟩ => ⟨θ 0, (A.realize_depth_one_eq_dense θ).symm.trans h⟩,
-    fun ⟨θ₀, h⟩ => ⟨Fin.cons (α := P) θ₀ (fun i => i.elim0),
-      (A.realize_depth_one_eq_dense _).trans
-        ((congrArg dense (Fin.cons_zero (α := P) θ₀ (fun i => i.elim0))).trans h)⟩⟩
+  let e : A.Parameters ≃ Matrix (Fin (A.width 1)) (Fin (A.width 0)) K × (Fin (A.width 1) → K) :=
+    Equiv.piUnique _
+  have h : A.realize = dense ∘ e := funext A.realize_depth_one_eq_dense
+  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
 
 /-- A one-layer bias-free MLP has the same neuromanifold as `Matrix.mulVec`. -/
 @[simp]
 theorem realizedFunctions_realizeWeights_depth_one (A : MLPSpec K 1) :
     realizedFunctions A.realizeWeights = realizedFunctions Matrix.mulVec := by
-  let W := fun i : Fin 1 => Matrix (Fin (A.width i.succ)) (Fin (A.width i.castSucc)) K
-  ext f
-  simp only [mem_realizedFunctions]
-  exact ⟨fun ⟨w, h⟩ => ⟨w 0, (A.realizeWeights_depth_one_eq_mulVec w).symm.trans h⟩,
-    fun ⟨w₀, h⟩ => ⟨Fin.cons (α := W) w₀ (fun i => i.elim0),
-      (A.realizeWeights_depth_one_eq_mulVec _).trans
-        ((congrArg Matrix.mulVec (Fin.cons_zero (α := W) w₀ (fun i => i.elim0))).trans h)⟩⟩
+  let e : A.Weights ≃ Matrix (Fin (A.width 1)) (Fin (A.width 0)) K := Equiv.piUnique _
+  have h : A.realizeWeights = Matrix.mulVec ∘ e :=
+    funext fun w => funext (A.realizeWeights_depth_one w)
+  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
 
 /-- In depth at least two, the affine neuromanifold splits off the first hidden layer
 `Neuromanifold.activation (A.activation 0) () ∘ dense`. -/
 theorem realizedFunctions_realize_succ_succ (A : MLPSpec K (L + 2)) :
     realizedFunctions A.realize =
       Set.image2 (fun f g => g ∘ Neuromanifold.activation (A.activation (0 : Fin (L + 1))) () ∘ f)
-        (realizedFunctions dense) (realizedFunctions A.tail.realize) :=
-  A.realizedFunctions_realize_succ.trans
-    (congrArg (fun σ => Set.image2 (fun f g => g ∘ Neuromanifold.activation σ () ∘ f)
-      (realizedFunctions dense) (realizedFunctions A.tail.realize))
-      (A.layerActivation_castSucc (0 : Fin (L + 1))))
+        (realizedFunctions dense) (realizedFunctions A.tail.realize) := by
+  have h0 : A.layerActivation 0 = A.activation (0 : Fin (L + 1)) :=
+    A.layerActivation_castSucc (0 : Fin (L + 1))
+  rw [realizedFunctions_realize_succ]
+  simp_rw [h0]
+  rfl
 
 /-- In depth at least two, the bias-free neuromanifold splits off the first hidden layer
 `Neuromanifold.activation (A.activation 0) () ∘ Matrix.mulVec`. -/
 theorem realizedFunctions_realizeWeights_succ_succ (A : MLPSpec K (L + 2)) :
     realizedFunctions A.realizeWeights =
       Set.image2 (fun f g => g ∘ Neuromanifold.activation (A.activation (0 : Fin (L + 1))) () ∘ f)
-        (realizedFunctions Matrix.mulVec) (realizedFunctions A.tail.realizeWeights) :=
-  A.realizedFunctions_realizeWeights_succ.trans
-    (congrArg (fun σ => Set.image2 (fun f g => g ∘ Neuromanifold.activation σ () ∘ f)
-      (realizedFunctions Matrix.mulVec) (realizedFunctions A.tail.realizeWeights))
-      (A.layerActivation_castSucc (0 : Fin (L + 1))))
+        (realizedFunctions Matrix.mulVec) (realizedFunctions A.tail.realizeWeights) := by
+  have h0 : A.layerActivation 0 = A.activation (0 : Fin (L + 1)) :=
+    A.layerActivation_castSucc (0 : Fin (L + 1))
+  rw [realizedFunctions_realizeWeights_succ]
+  simp_rw [h0]
+  rfl
 
 end RealizedFunctions
 
@@ -624,15 +521,8 @@ theorem realizedFunctions_realize_monomial_succ_succ [Semiring K] (d : Fin (L + 
       Set.image2 (fun f g => g ∘ powerActivation (r 0) () ∘ f)
         (realizedFunctions dense)
         (realizedFunctions (monomial d r : MLPSpec K (L + 2)).tail.realize) := by
-  let A : MLPSpec K (L + 2) := monomial d r
-  have hact : Neuromanifold.activation (ι := Fin (A.width 1)) (A.activation (0 : Fin (L + 1))) () =
-      powerActivation (ι := Fin (A.width 1)) (r 0) () :=
-    congrFun ((congrArg (Neuromanifold.activation (ι := Fin (A.width 1)))
-      (funext (monomial_activation d r (0 : Fin (L + 1))))).trans
-      (powerActivation_def (ι := Fin (A.width 1)) (r 0)).symm) ()
-  exact A.realizedFunctions_realize_succ_succ.trans
-    (congrArg (fun a => Set.image2 (fun f g => g ∘ a ∘ f)
-      (realizedFunctions dense) (realizedFunctions A.tail.realize)) hact)
+  simpa only [activation_monomial_eq_powerActivation] using
+    (monomial d r : MLPSpec K (L + 2)).realizedFunctions_realize_succ_succ
 
 /-- In depth `L + 2`, the bias-free neuromanifold of `MLPSpec.monomial d r` consists of the
 composites `g ∘ powerActivation (r 0) () ∘ f` of a linear layer `f` and a function `g` realized by
@@ -643,15 +533,8 @@ theorem realizedFunctions_realizeWeights_monomial_succ_succ [Semiring K] (d : Fi
       Set.image2 (fun f g => g ∘ powerActivation (r 0) () ∘ f)
         (realizedFunctions Matrix.mulVec)
         (realizedFunctions (monomial d r : MLPSpec K (L + 2)).tail.realizeWeights) := by
-  let A : MLPSpec K (L + 2) := monomial d r
-  have hact : Neuromanifold.activation (ι := Fin (A.width 1)) (A.activation (0 : Fin (L + 1))) () =
-      powerActivation (ι := Fin (A.width 1)) (r 0) () :=
-    congrFun ((congrArg (Neuromanifold.activation (ι := Fin (A.width 1)))
-      (funext (monomial_activation d r (0 : Fin (L + 1))))).trans
-      (powerActivation_def (ι := Fin (A.width 1)) (r 0)).symm) ()
-  exact A.realizedFunctions_realizeWeights_succ_succ.trans
-    (congrArg (fun a => Set.image2 (fun f g => g ∘ a ∘ f)
-      (realizedFunctions Matrix.mulVec) (realizedFunctions A.tail.realizeWeights)) hact)
+  simpa only [activation_monomial_eq_powerActivation] using
+    (monomial d r : MLPSpec K (L + 2)).realizedFunctions_realizeWeights_succ_succ
 
 end MLPSpec
 
