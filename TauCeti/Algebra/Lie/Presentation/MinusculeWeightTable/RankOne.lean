@@ -74,6 +74,19 @@ theorem sl2BlockMatrix_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R) (a b : ι) :
       else (1 : Matrix ι ι R) a b :=
   (rfl)
 
+omit [Fintype ι] in
+/-- The block matrix action commutes with homomorphisms of coefficient rings. -/
+@[simp]
+theorem map_sl2BlockMatrix {S : Type*} [CommRing S]
+    (f : R →+* S) (i : B) (g : Matrix (Fin 2) (Fin 2) R) :
+    (T.sl2BlockMatrix i g).map f = T.sl2BlockMatrix i (g.map f) := by
+  have hone (a b : ι) :
+      f ((1 : Matrix ι ι R) a b) = (1 : Matrix ι ι S) a b :=
+    congrFun (congrFun (Matrix.map_one f (map_zero f) (map_one f)) a) b
+  ext a b
+  simp only [Matrix.map_apply, sl2BlockMatrix_apply]
+  split_ifs <;> simp only [map_add, map_mul, hone]
+
 private theorem mul_sl2BlockMatrix_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R)
     (M : Matrix ι ι R) (a b : ι) :
     (M * T.sl2BlockMatrix i g) a b =
@@ -159,6 +172,18 @@ theorem coe_sl2BlockSL (i : B) (g : Matrix.SpecialLinearGroup (Fin 2) R) :
     (T.sl2BlockSL i g : Matrix ι ι R) = T.sl2BlockMatrix i (g : Matrix (Fin 2) (Fin 2) R) := by
   simp only [sl2BlockSL, MonoidHom.comp_apply, coe_sl2BlockGL,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
+
+/-- The special-linear block action is natural in its coefficient ring. -/
+@[simp]
+theorem map_sl2BlockSL {S : Type*} [CommRing S]
+    (f : R →+* S) (i : B) (g : Matrix.SpecialLinearGroup (Fin 2) R) :
+    Matrix.GeneralLinearGroup.map f (T.sl2BlockSL i g) =
+      T.sl2BlockSL i (Matrix.SpecialLinearGroup.map f g) := by
+  apply Units.ext
+  ext a b
+  simp only [Matrix.GeneralLinearGroup.map_apply, coe_sl2BlockSL,
+    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+  exact congrFun (congrFun (T.map_sl2BlockMatrix f i g.val) a) b
 
 /-- A weight of coordinate `-1` at the node makes the special-linear block representation
 faithful. -/
