@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -43,6 +43,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
   form a difference-quotient argument supplies, with `Lᵖ` weak derivatives of the components
   `⟪∇u, eⱼ⟫` of the weak gradient.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
+* `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
+  everywhere.
 
 ## References
 
@@ -366,5 +368,21 @@ theorem Wkp.inner_iteratedGradient_one_apply_ae_eq (u : Wkp mu Omega p 2) (v w :
     simpa only [innerSL_apply_apply] using
       (Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 u)).hasWeakLineDerivOn c
   exact (hcomp w v).ae_eq ((hval v).comm (hcomp v w) (hval w))
+
+/-- **The weak Hessian is self-adjoint.** For `u ∈ W^{2,p}(Ω)`, the weak Hessian
+`D²u(x) = TauCeti.Wkp.iteratedGradient 1 u x` is a self-adjoint endomorphism of `E` for almost
+every `x ∈ Ω`. -/
+theorem Wkp.adjoint_iteratedGradient_one_ae_eq (u : Wkp mu Omega p 2) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      (Wkp.iteratedGradient 1 u x).adjoint = Wkp.iteratedGradient 1 u x := by
+  set b := stdOrthonormalBasis ℝ E
+  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j =>
+    Wkp.inner_iteratedGradient_one_apply_ae_eq u (b i) (b j)] with x hx
+  -- symmetry along an orthonormal basis gives self-adjointness
+  refine (ContinuousLinearMap.coe_injective ?_).symm
+  rw [← ContinuousLinearMap.adjoint_toLinearMap]
+  refine (LinearMap.eq_adjoint_iff_basis b.toBasis b.toBasis _ _).2 fun i j => ?_
+  simpa only [ContinuousLinearMap.coe_coe, OrthonormalBasis.coe_toBasis] using
+    (hx i j).trans (real_inner_comm _ _).symm
 
 end TauCeti
