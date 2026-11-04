@@ -7,7 +7,6 @@ module
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Adic
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyStronglySheafy
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetherian
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
@@ -74,9 +73,9 @@ example : IsStronglySheafy ℚ_[p] ∧ ¬ IsRingOfIntegralElements (⊤ : Subrin
   exact hlt.not_ge hle
 
 /-- *locallyNoetherianAnalytic_padic*: `Spa(ℚ_[p], ℚ_[p]°)` is nonempty, locally noetherian
-analytic, locally strongly sheafy, and analytic, with both Part II predicates recovered by the
-bridge and `analyticLocus.ι` an isomorphism, and every morphism into `Spa(ℚ_[p], ℚ_[p]°)` is adic
-(`IsAdic.of_isAnalytic`). -/
+analytic, locally strongly sheafy, and analytic, with `IsLocallyNoetherian` and `IsAnalytic`
+recovered via `isLocallyNoetherianAnalytic_iff` and `analyticLocus.ι` an isomorphism, and every
+morphism into `Spa(ℚ_[p], ℚ_[p]°)` is adic (`IsAdic.of_isAnalytic`). -/
 example (Y : AdicSpace.{0}) :
     let hP : (Padic.pairOfDefinition (p := p)).ringOfDefinition ≤ (Pair.powerBounded ℚ_[p]).plus :=
       by rw [Pair.powerBounded_plus]; exact (Padic.pairOfDefinition (p := p)).le_powerBoundedSubring

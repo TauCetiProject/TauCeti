@@ -530,16 +530,12 @@ theorem spaBasicOpen_mem_propOpens (Q : ObjectProperty PreAdicSpace.{u})
   have _ := isUniformAddGroup_locUniformSpace P T s _ hden
   have _ := isTopologicalRing_locUniformSpace P T s _ hden
   have _ := isHuberRing_completion_locTopology P T s _ hden
-  have key : ∀ (Bplus : Subring (UniformSpace.Completion (Localization.Away s)))
-      (_ : Bplus = completedPlusSubring P Aplus T s (Localization.Away s) hden) (hBplus) (hPB),
-      Q (presentationLimitPreAdicSpace (completionLocalization P T s (Localization.Away s) hden)
-        Bplus hBplus hPB) →
-      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q := by
-    rintro _ rfl _ _ hQ'
-    exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
-      ObjectProperty.prop_of_iso Q (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-        hQ'
-  exact key _ (completedPlusPair_plus P Aplus hAplus hP T s (Localization.Away s) hden) _ _ hQ
+  have hQ' := hQ
+  -- `completedPlusPair` is sealed outside `Pair.lean`, and the `Prop` arguments of
+  -- `presentationLimitPreAdicSpace` depend on its `.plus` subring, so rewrite via `simp`.
+  simp only [completedPlusPair_plus] at hQ'
+  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
+    ObjectProperty.prop_of_iso Q (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm hQ'
 
 /-- If `Q` holds on every rational open `R(T/s)` with `T` spanning an open ideal, then every
 rational open of `Spa(A, A⁺)` lies in `propOpens Q`. -/

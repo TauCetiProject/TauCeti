@@ -15,9 +15,10 @@ import TauCeti.RingTheory.Huber.Restricted.Noetherian
 /-!
 # Affinoid adic spaces from strongly noetherian Tate pairs
 
-The presentation-limit pre-adic space of a strongly noetherian Tate pair is an affinoid adic
-space. This packages the sheafiness theorem for strongly noetherian Tate pairs with the general
-criterion that a sheafy affinoid pre-adic space is adic.
+The presentation-limit pre-adic space of a sheafy Huber pair — and in particular of a strongly
+noetherian Tate pair — is an affinoid adic space. This packages `IsSheafyRing` and the sheafiness
+theorem for strongly noetherian Tate pairs with the general criterion that a sheafy affinoid
+pre-adic space is adic.
 
 The main source of strongly noetherian Tate rings is finite type over one: a ring `B` topologically
 of finite type over a strongly noetherian Tate ring is again a strongly noetherian Tate ring, and
@@ -32,6 +33,8 @@ is an affinoid adic space as well.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isSheafyRing`: the adic
+  spectrum of a sheafy Huber pair, with its presentation-limit structure sheaf, is an adic space.
 * `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isStronglyNoetherian`:
   the adic spectrum of a strongly noetherian Tate pair, with its presentation-limit structure
   sheaf, is an adic space.
@@ -45,7 +48,7 @@ is an affinoid adic space as well.
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Definition 7.56,
-  Remark 6.37, Definition 8.22 and Theorem 8.28(b).
+  Remark 6.37, Definition 8.22, Definition 8.26 and Theorem 8.28(b).
 -/
 
 public section
@@ -57,6 +60,21 @@ namespace TauCeti.ValuationSpectrum
 open TauCeti.Huber
 
 universe u
+
+section SheafyRing
+
+/-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
+complete, Hausdorff, or Tate. -/
+theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
+    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
+    PreAdicSpace.isAdic
+      (presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP) :=
+  isAdic_presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP
+    (isSheaf_presentationLimitPresheaf_of_isSheafyRing P hAplus hP hA)
+
+end SheafyRing
 
 section StronglyNoetherian
 

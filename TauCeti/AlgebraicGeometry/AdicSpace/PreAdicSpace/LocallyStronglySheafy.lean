@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyNoetherian
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyTate
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetherian
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglySheafy
 public import TauCeti.RingTheory.Huber.NoetherianType.Tate
 import TauCeti.RingTheory.Huber.LocalizationTopology.Noetherian
@@ -14,9 +15,8 @@ import TauCeti.RingTheory.Huber.LocalizationTopology.Noetherian
 /-!
 # Locally noetherian analytic and locally strongly sheafy adic spaces
 
-Étale geometry on adic spaces requires open Tate affinoid charts whose coordinate rings remain
-sheafy after passing to finite étale and restricted power-series extensions. Two space-level
-classes provide these charts:
+Two space-level classes equip an adic space with open Tate affinoid charts whose coordinate rings
+remain sheafy under restricted power-series extensions (Hansen–Kedlaya, Definition 4.1):
 
 * `TauCeti.AdicSpace.IsLocallyNoetherianAnalytic`: every point has an open affinoid neighbourhood
   `Spa(A, A⁺)` whose coordinate ring `A` is a complete Hausdorff strongly noetherian Tate ring
@@ -68,9 +68,10 @@ hypotheses on `A`), `Spa(A, A⁺)` is an adic space and is locally strongly shea
   immersions and the analytic locus of a locally noetherian adic space.
 * `TauCeti.AdicSpace.IsLocallyNoetherianAnalytic.isLocallyStronglySheafy`: locally noetherian
   analytic adic spaces are locally strongly sheafy.
-* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isSheafyRing` and
-  `TauCeti.AdicSpace.IsLocallyStronglySheafy.spa`: the adic spectrum of a sheafy Huber pair is an
-  adic space, and for a strongly sheafy Tate Huber pair it is locally strongly sheafy.
+* `TauCeti.AdicSpace.IsLocallyNoetherianAnalytic.spa` and
+  `TauCeti.AdicSpace.IsLocallyStronglySheafy.spa`: for a Tate ring of noetherian type (respectively
+  a strongly sheafy Tate Huber pair), `Spa(A, A⁺)` is locally noetherian analytic (respectively
+  locally strongly sheafy), without completeness or Hausdorffness hypotheses on `A`.
 
 ## References
 
@@ -400,21 +401,6 @@ end AdicSpace
 
 /-! ### Strongly sheafy Tate affinoids and locally strongly sheafy adic spaces -/
 
-namespace ValuationSpectrum
-
-/-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
-complete, Hausdorff, or Tate. -/
-theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommRing A]
-    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
-    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
-    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
-    PreAdicSpace.isAdic
-      (presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP) :=
-  isAdic_presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP
-    (isSheaf_presentationLimitPresheaf_of_isSheafyRing P hAplus hP hA)
-
-end ValuationSpectrum
-
 namespace PreAdicSpace
 
 /-- An object of `𝒱^pre` is a *strongly sheafy Tate affinoid* when it is isomorphic to the
@@ -489,22 +475,18 @@ theorem isStronglySheafyAffinoid_presentationLimitPreAdicSpace {A : Type u} [Com
   have _ := P.isTateRing_completion_locTopology_of_isTateRing ({1} : Finset A) 1 A hden
   have hcomp_ss := P.isStronglySheafy_completion_locTopology_denom_one ({1} : Finset A)
     (by simp [isPowerBounded_one]) hA
-  have key : ∀ (Bplus : Subring (UniformSpace.Completion A))
-      (_ : Bplus = P.completedPlusSubring S.plus ({1} : Finset A) 1 A hden) (hBplus) (hPB),
-      isStronglySheafyAffinoid (presentationLimitPreAdicSpace
-        (P.completionLocalization ({1} : Finset A) 1 A hden) Bplus hBplus hPB) →
-      isStronglySheafyAffinoid (presentationLimitPreAdicSpace P S.plus
-        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
-    rintro _ rfl _ _ h
-    exact ObjectProperty.prop_of_iso isStronglySheafyAffinoid
-      (presentationLimitPreAdicSpaceCompleteIso P S.plus
-        S.isRingOfIntegralElements.isPowerBounded_of_mem hP A hden).symm h
-  exact key _ (P.rationalLocalizationPair_plus S hP ({1} : Finset A) 1 A hden) _ _
-    (isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_completeSpace hcomp_ss
+  have hmodel :=
+    isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_completeSpace hcomp_ss
       (P.rationalLocalizationPair S hP ({1} : Finset A) 1 A hden)
       (P.completionLocalization ({1} : Finset A) 1 A hden)
       (P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP
-        ({1} : Finset A) 1 A hden))
+        ({1} : Finset A) 1 A hden)
+  -- `rationalLocalizationPair` is sealed outside `Pair.lean`, and the `Prop` arguments of
+  -- `presentationLimitPreAdicSpace` depend on its `.plus` subring, so rewrite via `simp`.
+  simp only [PairOfDefinition.rationalLocalizationPair_plus] at hmodel
+  exact ObjectProperty.prop_of_iso isStronglySheafyAffinoid
+    (presentationLimitPreAdicSpaceCompleteIso P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP A hden).symm hmodel
 
 variable (X : PreAdicSpace.{u})
 
