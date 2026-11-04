@@ -84,6 +84,18 @@ instance : Group Γ.Aut where
   inv_mul_cancel φ := ext (fun v => φ.equivV.symm_apply_apply v)
     (fun e => φ.equivE.symm_apply_apply e)
 
+@[simp] theorem one_equivV : (1 : Γ.Aut).equivV = Equiv.refl Γ.V := (rfl)
+
+@[simp] theorem one_equivE : (1 : Γ.Aut).equivE = Equiv.refl Γ.E := (rfl)
+
+@[simp] theorem mul_equivV (φ ψ : Γ.Aut) : (φ * ψ).equivV = ψ.equivV.trans φ.equivV := (rfl)
+
+@[simp] theorem mul_equivE (φ ψ : Γ.Aut) : (φ * ψ).equivE = ψ.equivE.trans φ.equivE := (rfl)
+
+@[simp] theorem inv_equivV (φ : Γ.Aut) : φ⁻¹.equivV = φ.equivV.symm := (rfl)
+
+@[simp] theorem inv_equivE (φ : Γ.Aut) : φ⁻¹.equivE = φ.equivE.symm := (rfl)
+
 /-- Automorphisms act on vertices. -/
 instance : MulAction Γ.Aut Γ.V where
   smul φ v := φ.equivV v
