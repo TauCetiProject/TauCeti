@@ -13,10 +13,10 @@ public import TauCeti.RepresentationTheory.Symmetric.PermutationModule.Basic
 
 The Young permutation module `M^μ` has a basis indexed by the `μ`-tabloids, and the bilinear form
 declaring that basis orthonormal is the **tabloid form**.  It is the specialisation to `M^μ` of the
-invariant form on a permutation representation, so the whole orthogonality API of
-`TauCeti.permutationForm` applies verbatim: the tabloid form is symmetric, positive definite, and
-preserved by the symmetric group, and the orthogonal complement of a subrepresentation of `M^μ` is
-again a subrepresentation and is a complement.
+invariant form on a permutation representation. Over every commutative ring it is symmetric and
+  preserved
+by the symmetric group. The rational specialization is positive definite, so the orthogonal
+complement of a rational subrepresentation of `M^μ` is a complement.
 
 This file names the form, reads it on the tabloid basis and on coset representatives, and records
 the two statements that the theory of Specht modules uses: invariance under the symmetric group and
@@ -51,6 +51,8 @@ public section
 
 namespace TauCeti
 
+variable {R : Type*} [CommRing R]
+
 open LinearMap (BilinForm)
 
 variable {n : ℕ} (μ : n.Partition)
@@ -58,20 +60,21 @@ variable {n : ℕ} (μ : n.Partition)
 /-- The **tabloid form** on the Young permutation module `M^μ`: the bilinear form for which the
 tabloid basis is orthonormal. -/
 noncomputable abbrev tabloidForm :
-    BilinForm ℚ (MonoidAlgebra ℚ (Equiv.Perm (Fin n) ⧸ youngSubgroup μ)) :=
-  permutationForm ℚ (Equiv.Perm (Fin n) ⧸ youngSubgroup μ)
+    BilinForm R (MonoidAlgebra R (Equiv.Perm (Fin n) ⧸ youngSubgroup μ)) :=
+  permutationForm R (Equiv.Perm (Fin n) ⧸ youngSubgroup μ)
 
 /-- The tabloid basis of `M^μ` is orthonormal for the tabloid form. -/
 theorem tabloidForm_basis_basis (i j : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) [Decidable (i = j)] :
-    tabloidForm μ (permutationModuleBasis μ i) (permutationModuleBasis μ j) =
+    tabloidForm (R := R) μ (permutationModuleBasis (R := R) μ i) (permutationModuleBasis (R :=
+      R) μ j) =
       if i = j then 1 else 0 := by
-  simpa using permutationForm_single_single i j (1 : ℚ) 1
+  simpa using permutationForm_single_single i j (1 : R) 1
 
 /-- Two permutations describe the same `μ`-tabloid exactly when they differ by an element of the
 Young subgroup, and then the corresponding basis vectors pair to `1`. -/
 theorem tabloidForm_single_coe_single_coe_of_mem {g h : Equiv.Perm (Fin n)}
     (hgh : g⁻¹ * h ∈ youngSubgroup μ) :
-    tabloidForm μ (MonoidAlgebra.single (g : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) 1)
+    tabloidForm (R := R) μ (MonoidAlgebra.single (g : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) 1)
         (MonoidAlgebra.single (h : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) 1) = 1 := by
   classical
   rw [permutationForm_single_single, ite_eq_left (QuotientGroup.eq.mpr hgh), mul_one]
@@ -80,7 +83,7 @@ theorem tabloidForm_single_coe_single_coe_of_mem {g h : Equiv.Perm (Fin n)}
 the corresponding basis vectors pair to `0`. -/
 theorem tabloidForm_single_coe_single_coe_of_notMem {g h : Equiv.Perm (Fin n)}
     (hgh : g⁻¹ * h ∉ youngSubgroup μ) :
-    tabloidForm μ (MonoidAlgebra.single (g : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) 1)
+    tabloidForm (R := R) μ (MonoidAlgebra.single (g : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) 1)
         (MonoidAlgebra.single (h : Equiv.Perm (Fin n) ⧸ youngSubgroup μ) 1) = 0 := by
   classical
   rw [permutationForm_single_single, ite_eq_right fun hq => hgh (QuotientGroup.eq.mp hq)]
@@ -88,16 +91,17 @@ theorem tabloidForm_single_coe_single_coe_of_notMem {g h : Equiv.Perm (Fin n)}
 /-- The symmetric group acts on `M^μ` by isometries of the tabloid form: it permutes the tabloid
 basis. -/
 theorem tabloidForm_invariant (σ : Equiv.Perm (Fin n))
-    (v w : MonoidAlgebra ℚ (Equiv.Perm (Fin n) ⧸ youngSubgroup μ)) :
-    tabloidForm μ ((permutationModule μ).ρ σ v) ((permutationModule μ).ρ σ w) =
-      tabloidForm μ v w :=
+    (v w : MonoidAlgebra R (Equiv.Perm (Fin n) ⧸ youngSubgroup μ)) :
+    tabloidForm (R := R) μ ((permutationModule (R := R) μ).ρ σ v) ((permutationModule (R := R)
+      μ).ρ σ w) =
+      tabloidForm (R := R) μ v w :=
   permutationForm_ofMulAction_invariant σ v w
 
 /-- **Invariant orthogonal complements in `M^μ`.**  A subrepresentation of the Young permutation
 module is complemented by its orthogonal complement for the tabloid form.  Unlike the complement
 produced by Maschke's theorem, this one is canonical: it is cut out by an explicit pairing. -/
 theorem isCompl_orthogonalSubrepresentation_permutationModule
-    (σ : Subrepresentation (permutationModule μ).ρ) :
+    (σ : Subrepresentation (permutationModule (R := ℚ) μ).ρ) :
     IsCompl σ (orthogonalSubrepresentation σ) :=
   isCompl_orthogonalSubrepresentation σ
 
