@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Coalgebra.GroupLike
-public import TauCeti.Algebra.Category.FiniteHopfModuleCat.RightRigid
-public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import Mathlib.RingTheory.HopfAlgebra.GroupLike
+public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Rigid
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Basic
 
 /-!
 # Monoidal trivializations of the double dual of finite-dimensional Hopf modules
@@ -41,6 +41,8 @@ evaluation, transposition and the tensor product pairing from
   `TauCeti.FiniteHopfModuleCat.unitEvalIso_tensor_hom` and
   `TauCeti.FiniteHopfModuleCat.unitEvalNatIso_isMonoidal`: for group-like `g`, the natural
   isomorphism is monoidal.
+* `TauCeti.FiniteHopfModuleCat.pivotalCategory`: the pivotal structure for a group-like element,
+  with the inverse-antipode left duals of `rigidCategory`.
 
 ## References
 
@@ -223,5 +225,53 @@ theorem unitEvalNatIso_isMonoidal (hg₁ : IsGroupLikeElem k (g : H)) :
   -- The unit and tensor comparisons of the identity functor are identities.
   unit := (Category.id_comp _).trans (unitEvalIso_unit_hom hg hg₁)
   tensor X Y := (Category.id_comp _).trans (unitEvalIso_tensor_hom hg hg₁ X Y)
+
+/-- A group-like element implementing the square of the antipode gives the pivotal structure
+on finite-dimensional Hopf modules. The explicit bijectivity proof selects the inverse-antipode
+left duals of `rigidCategory`; the pivot uses the native unit of the group-like element. -/
+@[instance_reducible]
+def pivotalCategory
+    (hS : Function.Bijective (HopfAlgebra.antipode k : H →ₗ[k] H))
+    (g : GroupLike k H)
+    (hg : ∀ a : H, HopfAlgebra.antipode k (HopfAlgebra.antipode k a) =
+      (g : H) * a * HopfAlgebra.antipode k (g : H)) :
+    letI := rigidCategory hS
+    PivotalCategory (FiniteHopfModuleCat k H) := by
+  letI := rigidCategory hS
+  exact
+    { pivotalIso := unitEvalNatIso (GroupLike.toUnits k g) hg
+      pivotalIso_isMonoidal := unitEvalNatIso_isMonoidal hg g.isGroupLikeElem_val }
+
+/-- The pivotal comparison for a group-like element is evaluation after its action. -/
+theorem pivotalIsoApp_pivotalCategory
+    (hS : Function.Bijective (HopfAlgebra.antipode k : H →ₗ[k] H))
+    (g : GroupLike k H)
+    (hg : ∀ a : H, HopfAlgebra.antipode k (HopfAlgebra.antipode k a) =
+      (g : H) * a * HopfAlgebra.antipode k (g : H))
+    (M : FiniteHopfModuleCat k H) :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    pivotalIsoApp M = unitEvalIso (GroupLike.toUnits k g) hg M := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  exact Iso.ext (pivotalIso_hom_app M).symm
+
+/-- The pivotal isomorphism associated to a group-like element evaluates a functional after
+the action of that element. -/
+@[simp]
+theorem dualEquiv_pivotalIsoApp_hom_apply
+    (hS : Function.Bijective (HopfAlgebra.antipode k : H →ₗ[k] H))
+    (g : GroupLike k H)
+    (hg : ∀ a : H, HopfAlgebra.antipode k (HopfAlgebra.antipode k a) =
+      (g : H) * a * HopfAlgebra.antipode k (g : H))
+    (M : FiniteHopfModuleCat k H) (m : M) (φ : (Mᘁ : FiniteHopfModuleCat k H)) :
+    letI := rigidCategory hS
+    letI := pivotalCategory hS g hg
+    dualEquiv k H (Mᘁ : FiniteHopfModuleCat k H) ((pivotalIsoApp M).hom.hom.hom m) φ =
+      dualEquiv k H M φ ((g : H) • m) := by
+  let := rigidCategory hS
+  let := pivotalCategory hS g hg
+  rw [pivotalIsoApp_pivotalCategory]
+  exact dualEquiv_unitEvalIso_hom_apply (GroupLike.toUnits k g) hg M m φ
 
 end TauCeti.FiniteHopfModuleCat
