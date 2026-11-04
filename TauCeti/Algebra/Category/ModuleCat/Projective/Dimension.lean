@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.Baer
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
-public import Mathlib.RingTheory.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 import TauCeti.LinearAlgebra.FreeModule.PID
 
@@ -59,24 +59,11 @@ theorem _root_.ModuleCat.hasProjectiveDimensionLT_of_isFiniteLength
     (X : ModuleCat.{v} R) (n : ℕ)
     (h : ∀ S : ModuleCat.{v} R, IsSimpleModule R S → HasProjectiveDimensionLT S n)
     (hX : IsFiniteLength R X) : HasProjectiveDimensionLT X n := by
-  -- The induction adapts the proof of `TauCeti.isEulerAdmissible_of_isFiniteLength`
-  -- in `TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.FiniteLength`.
-  suffices key : ∀ (M : Type v) [AddCommGroup M] [Module R M], IsFiniteLength R M →
-      HasProjectiveDimensionLT (ModuleCat.of R M) n from key X hX
-  intro M _ _ hM
-  induction hM with
-  | @of_subsingleton M _ _ _ =>
-    let _ := (ModuleCat.isZero_of_subsingleton (ModuleCat.of R M)).hasProjectiveDimensionLT_zero
-    exact hasProjectiveDimensionLT_of_ge _ 0 n (Nat.zero_le n)
-  | @of_simple_quotient M _ _ N _ _ ih =>
-    let T : ShortComplex (ModuleCat.{v} R) :=
-      ShortComplex.mk (ModuleCat.ofHom N.subtype) (ModuleCat.ofHom N.mkQ) (by
-        ext x
-        exact (LinearMap.exact_subtype_mkQ N).apply_apply_eq_zero x)
-    have hT : T.ShortExact := ModuleCat.shortComplex_shortExact T
-      (LinearMap.exact_subtype_mkQ N) N.injective_subtype N.mkQ_surjective
-    exact hT.hasProjectiveDimensionLT_X₂ n ih
-      (h (ModuleCat.of R (M ⧸ N)) inferInstance)
+  refine X.prop_of_isFiniteLength hX (fun M ↦ HasProjectiveDimensionLT M n) ?_ h
+    (fun hS h₁ h₃ ↦ hS.hasProjectiveDimensionLT_X₂ n h₁ h₃)
+  intro M hM
+  let _ := hM.hasProjectiveDimensionLT_zero
+  exact hasProjectiveDimensionLT_of_ge M 0 n (Nat.zero_le n)
 
 /-- Over a left Noetherian ring, vanishing of `Extⁿ(M,L)` for every finite target `L`
 detects projective dimension `< n` of a finite source `M`. No commutativity is required.

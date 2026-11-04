@@ -244,6 +244,20 @@ theorem weierstrassMod_polynomialToRestricted_of_degree_lt {p : Polynomial R}
     (hp : p.degree < s) : hg.weierstrassMod hc (polynomialToRestricted c p) = p :=
   hg.weierstrassMod_eq_of_mul_add_eq hc (q := 0) hp (by simp)
 
+/-- For a monic polynomial divisor, the Weierstrass remainder of a polynomial agrees with
+ordinary polynomial remainder. -/
+@[simp]
+theorem weierstrassMod_polynomialToRestricted_eq_modByMonic {p : Polynomial R}
+    (hp : p.IsMonicOfDegree s)
+    (hg : IsMulDistinguished c s (polynomialToRestricted c p : PowerSeries R))
+    (f : Polynomial R) :
+    hg.weierstrassMod hc (polynomialToRestricted c f) = f %ₘ p := by
+  have : Nontrivial R := hg.nontrivial
+  apply hg.weierstrassMod_eq_of_mul_add_eq hc (q := polynomialToRestricted c (f /ₘ p))
+  · simpa [Polynomial.degree_eq_natDegree hp.ne_zero, hp.natDegree_eq] using
+      Polynomial.degree_modByMonic_lt f hp.monic
+  · rw [← map_mul, ← map_add, add_comm, Polynomial.modByMonic_add_div]
+
 /-- The Weierstrass remainder of `f` vanishes exactly when `g` divides `f` in the ring of
 restricted series. -/
 theorem weierstrassMod_eq_zero_iff_dvd {f : PowerSeries.IsRestricted.subring (R := R) c} :
