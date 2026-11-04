@@ -236,13 +236,9 @@ module `S` into `M` exactly when `S` occurs among the simple factors of `M`. -/
 theorem finrank_linearMap_pos_iff_exists_nonempty_linearEquiv {M : Type*} [AddCommGroup M]
     [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     0 < Module.finrank k (S →ₗ[A] M) ↔ ∃ i, Nonempty (S ≃ₗ[A] N i) := by
-  have : Module.Finite k (Module.End A S) :=
-    finiteDimensional_linearMap_of_isSimpleModule
   have : Nontrivial S := IsSimpleModule.nontrivial A S
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
-    mul_pos_iff_of_pos_right
-      (Module.finrank_pos : 0 < Module.finrank k (Module.End A S)), Nat.card_pos_iff,
-    nonempty_subtype]
+    mul_pos_iff_of_pos_right (finrank_end_pos (k := k)), Nat.card_pos_iff, nonempty_subtype]
   exact and_iff_left inferInstance
 
 end Multiplicity
@@ -590,12 +586,7 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
       let _ : IsSimpleModule A S := hS
       let _ : Module.Finite k S :=
         Module.Finite.of_injective (S.subtype.restrictScalars k) Subtype.val_injective
-      let _ : Module.Finite k (Module.End A S) :=
-        .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
-      have hendpos : 0 < Module.finrank k (Module.End A S) := by
-        let _ : Nontrivial S := IsSimpleModule.nontrivial A S
-        let _ : Nontrivial (Module.End A S) := inferInstance
-        exact Module.finrank_pos
+      have hendpos := finrank_end_pos (k := k) (A := A) (S := S)
       have hpredM (i : Fin n) : simpleModuleClass A (SM i) =
           SimpleSubmoduleClasses.mk S ↔ Nonempty (S ≃ₗ[A] SM i) := by
         rw [simpleModuleClass_eq_mk_iff]
