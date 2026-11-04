@@ -299,9 +299,7 @@ theorem mem_range_indexSubobject_arrow_f_iff (p n : ℤ)
     (f : (m.coefficientCochainComplex hM).X n) :
     f ∈ LinearMap.range ((m.indexSubobject hM hm p).arrow.f n).hom ↔
       ∀ x, p < ind x → (m.coefficientCochainComplexXEquiv hM n f : P →₀ M) x = 0 := by
-  rw [indexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f,
-    ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
+  rw [indexSubobject_eq_mk, range_subobjectMk_arrow_f_hom]
   exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
     mem_rowFiniteIndexGrading_iff.trans <| and_iff_left <|
       (mem_rowFiniteTotalGrading_iff ℳ ind).mp (m.coefficientCochainComplexXEquiv hM n f).2
@@ -366,8 +364,8 @@ theorem indexCochainComplexProj_f_apply (p n : ℤ) (f : (m.indexCochainComplex 
       rowFiniteIndexProjection ind p ⟨_, rowFiniteIndexGrading_le_rowFiniteIndexFiltration p n
         (m.indexCochainComplexXEquiv hM hm p n f).2⟩ := by
   simp only [indexCochainComplexProj, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply]
-  rfl
+    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply,
+    Submodule.inclusion_apply]
 
 @[reassoc (attr := simp)]
 theorem indexCochainComplexMap_comp_proj (p : ℤ) :

@@ -533,9 +533,7 @@ theorem TwistingCocycle.mem_range_twistedIndexSubobject_arrow_f_iff (p n : ℤ)
     f ∈ LinearMap.range ((m.twistedIndexSubobject hM p).arrow.f n).hom ↔
       ∀ x, p < ind x →
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x = 0 := by
-  rw [m.twistedIndexSubobject_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk,
-    HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _
-      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
+  rw [m.twistedIndexSubobject_eq_mk, range_subobjectMk_arrow_f_hom]
   exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
     mem_twistedIndexGrading_iff.trans <| and_iff_left <| mem_twistedTotalGrading_iff.mp
       (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f).property
