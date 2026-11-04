@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.Fiber
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Geometry.Manifold.Submersion
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # The manifold structure of a family of tori
