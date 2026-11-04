@@ -41,55 +41,6 @@ variable {𝕜 A E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Extend a bounded bilinear action to the ℓ¹ unitization by letting its new identity
-act as the identity on `E`. The algebra argument comes first, also for right actions. -/
-noncomputable def unitizationActionL (M : A →L[𝕜] E →L[𝕜] E) :
-    WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E :=
-  let f : WithLp 1 (Unitization 𝕜 A) →ₗ[𝕜] E →L[𝕜] E :=
-    ((fstHom 𝕜 A).toLinearMap.smulRight (ContinuousLinearMap.id 𝕜 E) +
-      M.toLinearMap.comp (sndHom 𝕜 𝕜 A)).comp (unitizationAlgEquiv 𝕜).toLinearMap
-  f.mkContinuous (1 + ‖M‖) fun u ↦ by
-    -- The linear-map expression above computes to the sum of the two coordinate actions.
-    dsimp [f]
-    calc
-      ‖(ofLp u).fst • ContinuousLinearMap.id 𝕜 E + M (ofLp u).snd‖ ≤
-          ‖(ofLp u).fst‖ * 1 + ‖M‖ * ‖(ofLp u).snd‖ := by
-        exact (norm_add_le _ _).trans (add_le_add
-          ((norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left
-            (norm_id_le : ‖ContinuousLinearMap.id 𝕜 E‖ ≤ 1) (norm_nonneg _)))
-          (M.le_opNorm _))
-      _ ≤ (1 + ‖M‖) * ‖u‖ := by
-        rw [unitization_norm_def]
-        nlinarith [norm_nonneg (ofLp u).fst, norm_nonneg (ofLp u).snd,
-          mul_nonneg (norm_nonneg M) (norm_nonneg (ofLp u).fst)]
-
-/-- The coordinate formula for the unitized bounded action. -/
-@[simp]
-theorem unitizationActionL_apply (M : A →L[𝕜] E →L[𝕜] E)
-    (u : WithLp 1 (Unitization 𝕜 A)) (x : E) :
-    M.unitizationActionL u x = (ofLp u).fst • x + M (ofLp u).snd x := (rfl)
-
-/-- Restricting the unitized action to the original algebra recovers the action. -/
-@[simp]
-theorem unitizationActionL_toLp_inr (M : A →L[𝕜] E →L[𝕜] E) (a : A) :
-    M.unitizationActionL (toLp 1 (a : Unitization 𝕜 A)) = M a := by
-  ext x
-  simp
-
-/-- The new identity acts as the identity, even if the original action was degenerate. -/
-@[simp]
-theorem unitizationActionL_one (M : A →L[𝕜] E →L[𝕜] E) :
-    M.unitizationActionL 1 = ContinuousLinearMap.id 𝕜 E := by
-  ext x
-  simp
-
-/-- The bounded extension need not be contractive; its norm is at most `1 + ‖M‖`. -/
-theorem norm_unitizationActionL_le (M : A →L[𝕜] E →L[𝕜] E) :
-    ‖M.unitizationActionL‖ ≤ 1 + ‖M‖ := by
-  unfold unitizationActionL
-  apply LinearMap.mkContinuous_norm_le
-  positivity
-
 /-- A unital bounded action is uniquely determined by its restriction to `A`. -/
 theorem eq_unitizationActionL (Φ : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
     (M : A →L[𝕜] E →L[𝕜] E) (h1 : Φ 1 = ContinuousLinearMap.id 𝕜 E)
@@ -100,14 +51,6 @@ theorem eq_unitizationActionL (Φ : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E �
     apply (unitizationAlgEquiv 𝕜).injective
     ext <;> simp
   rw [hu, map_add, map_smul, h1, hM]
-  simp
-
-/-- For an associative left action, the bounded extension agrees with its unital
-algebra-homomorphism extension. -/
-theorem unitizationActionL_eq_unitizationAction (L : A →L[𝕜] E →L[𝕜] E)
-    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (u : WithLp 1 (Unitization 𝕜 A)) :
-    L.unitizationActionL u = L.unitizationAction hL u := by
-  ext x
   simp
 
 /-- Left associativity is preserved and reflected by unitization. -/
