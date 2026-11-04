@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-import Mathlib.Algebra.Module.ZLattice.Summable
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
 # Fourier coefficients of smooth functions on the torus
@@ -49,6 +51,9 @@ Fourier-series proof of the Schwartz kernel theorem.
 * `UnitAddTorus.mFourierCoeff_comp_add`: the coefficients of a translate.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_smul_of_hasDerivAt`: the coefficients of a directional
   derivative.
+* `TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq_iteratedFDeriv` and
+  `TauCeti.UnitAddTorus.exists_forall_norm_iteratedFDeriv_le`: a continuous iterated derivative of
+  the lift descends to a continuous function on the torus, and is bounded.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv`: the coefficients of an
   iterated derivative of a `C^k` function.
 * `TauCeti.UnitAddTorus.pow_mul_norm_mFourierCoeff_le`: the decay estimate in terms of a bound for
@@ -80,23 +85,6 @@ private local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :
 
 namespace TauCeti
 
-/-- The sup norms of the integer vectors `n : d → ℤ` satisfy `∑ n, ‖n‖ ^ r < ∞` when
-`r < -card d`. Here `‖0‖ ^ r = 0`. -/
-theorem summable_pi_int_norm_rpow {d : Type*} [Fintype d] (r : ℝ) (hr : r < -Fintype.card d) :
-    Summable fun n : d → ℤ ↦ ‖n‖ ^ r := by
-  classical
-  set L := Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))
-  have hrank : Module.finrank ℤ L = Fintype.card d := by
-    rw [ZLattice.rank ℝ L, Module.finrank_fintype_fun_eq_card]
-  have hmem (n : d → ℤ) : (fun i ↦ (n i : ℝ)) ∈ L :=
-    (Submodule.mem_span_range_iff_exists_fun ℤ).2 ⟨n, by ext i; simp [Pi.single_apply]⟩
-  have hinj : Function.Injective fun n : d → ℤ ↦ (⟨_, hmem n⟩ : L) := fun m n h ↦ by
-    ext i
-    simpa using congr_fun (congrArg Subtype.val h) i
-  refine ((ZLattice.summable_norm_rpow L r (hrank ▸ hr)).comp_injective hinj).congr fun n ↦ ?_
-  have hn (i : d) : ‖(n i : ℝ)‖₊ = ‖n i‖₊ := NNReal.eq (Int.norm_cast_real _)
-  simp [Pi.norm_def, hn]
-
 namespace UnitAddTorus
 
 open _root_.UnitAddTorus
@@ -117,41 +105,13 @@ private theorem toTorus_add (x y : d → ℝ) : toTorus (x + y) = toTorus x + to
 private theorem toTorus_smul (t : ℝ) (w : d → ℝ) :
     toTorus (t • w) = fun i ↦ ((t * w i : ℝ) : UnitAddCircle) := rfl
 
-private theorem surjective_toTorus : Function.Surjective (toTorus (d := d)) := fun z ↦
-  ⟨fun i ↦ (z i).out, by ext i; simp [toTorus_apply]⟩
+-- `toTorus` is by definition the map of `UnitAddTorus.surjective_coe` and
+-- `UnitAddTorus.isOpenQuotientMap_coe`; these restate them for it.
+private theorem surjective_toTorus : Function.Surjective (toTorus (d := d)) :=
+  surjective_coe
 
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap (toTorus (d := d)) :=
-  (IsOpenQuotientMap.piMap fun _ ↦ QuotientAddGroup.isOpenQuotientMap_mk).isQuotientMap
-
-private theorem toTorus_intCast (m : d → ℤ) : toTorus (fun i ↦ (m i : ℝ)) = 0 := by
-  ext i
-  simp [toTorus_apply]
-
-/-- Two points of `d → ℝ` have the same image on the torus exactly when they differ by an integer
-vector. -/
-private theorem exists_eq_add_of_toTorus_eq {x y : d → ℝ} (h : toTorus x = toTorus y) :
-    ∃ m : d → ℤ, y = x + fun i ↦ (m i : ℝ) := by
-  choose m hm using fun i ↦ AddSubgroup.mem_zmultiples_iff.1
-    (QuotientAddGroup.eq_iff_sub_mem.1 (congr_fun h i).symm)
-  refine ⟨m, funext fun i ↦ ?_⟩
-  simp only [Pi.add_apply]
-  have := hm i
-  simp only [zsmul_eq_mul, mul_one] at this
-  linarith
-
-/-- A function on `d → ℝ` which is invariant under integer translations descends to a function on
-the torus, and the function is continuous when the lift is. -/
-private theorem exists_continuous_comp_toTorus_eq {X : Type*} [TopologicalSpace X]
-    {G : (d → ℝ) → X} (hG : Continuous G)
-    (hper : ∀ (m : d → ℤ) (x : d → ℝ), G (x + fun i ↦ (m i : ℝ)) = G x) :
-    ∃ g : UnitAddTorus d → X, Continuous g ∧ ∀ x, g (toTorus x) = G x := by
-  have hfac : Function.FactorsThrough G toTorus := fun x y h ↦ by
-    obtain ⟨m, rfl⟩ := exists_eq_add_of_toTorus_eq h
-    exact (hper m x).symm
-  refine ⟨isQuotientMap_toTorus.lift (f := ⟨toTorus, isQuotientMap_toTorus.continuous⟩)
-    ⟨G, hG⟩ hfac, ContinuousMap.continuous _, fun x ↦ ?_⟩
-  exact DFunLike.congr_fun (isQuotientMap_toTorus.lift_comp
-    (f := ⟨toTorus, isQuotientMap_toTorus.continuous⟩) ⟨G, hG⟩ hfac) x
+  isOpenQuotientMap_coe.isQuotientMap
 
 variable [Fintype d] [NormedSpace ℂ E]
 
@@ -273,29 +233,23 @@ section Lift
 
 variable (f : UnitAddTorus d → E)
 
-/-- The iterated derivatives of the lift of a function on the torus are `ℤ^d`-periodic. -/
-private theorem iteratedFDeriv_add_intCast (j : ℕ) (m : d → ℤ) (x : d → ℝ) :
-    iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f (toTorus x)) (x + fun i ↦ (m i : ℝ)) =
-      iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f (toTorus x)) x := by
-  have h := congr_fun (iteratedFDeriv_comp_add_right' (𝕜 := ℝ)
-    (f := fun x : d → ℝ ↦ f (toTorus x)) j fun i ↦ (m i : ℝ)) x
-  simp only [toTorus_add, toTorus_intCast, add_zero] at h
-  exact h.symm
+/-- If the `j`-th derivative of the lift of a function `f` on the torus is continuous, then its
+values on fixed directions `v` descend to a continuous function on the torus. -/
+theorem exists_continuous_comp_coe_eq_iteratedFDeriv {j : ℕ}
+    (hc : Continuous (iteratedFDeriv ℝ j fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)))
+    (v : Fin j → d → ℝ) :
+    ∃ g : UnitAddTorus d → E, Continuous g ∧ ∀ x : d → ℝ, g (fun i ↦ (x i : UnitAddCircle)) =
+      iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) x v :=
+  exists_continuous_comp_coe_eq ((continuous_eval_const v).comp hc)
+    fun m x ↦ by simp only [((periodic_comp_coe f m).iteratedFDeriv j) x]
 
-/-- A continuous iterated derivative of the lift, evaluated on fixed directions, descends to a
-continuous function on the torus. -/
-private theorem exists_continuous_comp_toTorus_eq_iteratedFDeriv {j : ℕ}
-    (hc : Continuous (iteratedFDeriv ℝ j fun x : d → ℝ ↦ f (toTorus x))) (v : Fin j → d → ℝ) :
-    ∃ g : UnitAddTorus d → E, Continuous g ∧
-      ∀ x, g (toTorus x) = iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f (toTorus x)) x v :=
-  exists_continuous_comp_toTorus_eq ((continuous_eval_const v).comp hc)
-    fun m x ↦ by simp only [iteratedFDeriv_add_intCast]
-
-/-- A continuous iterated derivative of the lift is bounded. -/
-private theorem exists_forall_norm_iteratedFDeriv_le {j : ℕ}
-    (hc : Continuous (iteratedFDeriv ℝ j fun x : d → ℝ ↦ f (toTorus x))) :
-    ∃ M, ∀ x, ‖iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f (toTorus x)) x‖ ≤ M := by
-  obtain ⟨g, hg, hgx⟩ := exists_continuous_comp_toTorus_eq hc (iteratedFDeriv_add_intCast f j)
+/-- If the `j`-th derivative of the lift of a function `f` on the torus is continuous, then it is
+bounded. -/
+theorem exists_forall_norm_iteratedFDeriv_le {j : ℕ}
+    (hc : Continuous (iteratedFDeriv ℝ j fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle))) :
+    ∃ M, ∀ x, ‖iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) x‖ ≤ M := by
+  obtain ⟨g, hg, hgx⟩ :=
+    exists_continuous_comp_coe_eq hc fun m ↦ (periodic_comp_coe f m).iteratedFDeriv j
   refine ⟨‖(⟨g, hg⟩ : C(UnitAddTorus d, _))‖, fun x ↦ ?_⟩
   rw [← hgx]
   exact (ContinuousMap.mk g hg).norm_coe_le_norm _
@@ -324,8 +278,9 @@ theorem mFourierCoeff_eq_prod_smul_of_iteratedFDeriv {f g : UnitAddTorus d → E
       rw [hg, iteratedFDeriv_zero_apply]
     simp
   | succ k ih =>
-    obtain ⟨g', hg'c, hg'⟩ := exists_continuous_comp_toTorus_eq_iteratedFDeriv f
+    obtain ⟨g', hg'c, hg'⟩ := exists_continuous_comp_coe_eq_iteratedFDeriv f
       (hf.continuous_iteratedFDeriv (by norm_cast; omega)) (Fin.tail v)
+    change ∀ x, g' (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x (Fin.tail v) at hg'
     have hgc : Continuous g := by
       refine isQuotientMap_toTorus.continuous_iff.2 ?_
       simpa only [Function.comp_def, hg] using
@@ -374,8 +329,10 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
   obtain ⟨i, -, hi⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty fun i ↦ ‖n i‖₊
   have hni : ‖n‖ = |(n i : ℝ)| := by
     rw [← coe_nnnorm, Pi.nnnorm_def, hi, coe_nnnorm, Int.norm_eq_abs]
-  obtain ⟨g, -, hg⟩ := exists_continuous_comp_toTorus_eq_iteratedFDeriv f
+  obtain ⟨g, -, hg⟩ := exists_continuous_comp_coe_eq_iteratedFDeriv f
     (hf.continuous_iteratedFDeriv le_rfl) fun _ ↦ Pi.single i 1
+  change ∀ x, g (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x
+    fun _ ↦ Pi.single i 1 at hg
   have hcoeff := mFourierCoeff_eq_prod_smul_of_iteratedFDeriv hf _ hg n
   have hsum : ∑ j, (n j : ℂ) * (((Pi.single i 1 : d → ℝ) j : ℝ) : ℂ) = n i := by
     rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
