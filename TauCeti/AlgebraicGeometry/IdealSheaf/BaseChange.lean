@@ -152,8 +152,7 @@ theorem map_comap_of_isClosedImmersion {Y : Scheme.{u}} (J : Y.IdealSheafData) (
   have : IsIso e := IsClosedImmersion.isIso_lift u (J.comap j).subschemeι huker
   have he : e ≫ J'.subschemeι = (J.comap j).subschemeι ≫ j := by
     rw [← hu, ← Category.assoc, IsClosedImmersion.lift_fac]
-  change ((J.comap j).subschemeι ≫ j).ker = J'
-  rw [← he, Scheme.Hom.ker_comp_of_isIso, J'.ker_subschemeι]
+  rw [IdealSheafData.map, ← he, Scheme.Hom.ker_comp_of_isIso, J'.ker_subschemeι]
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme
