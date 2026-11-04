@@ -77,8 +77,7 @@ theorem _root_.OrthonormalBasis.sum_sq_norm_apply_eq_norm_sq [Fintype ι]
   simp_rw [InnerProductSpace.toDual_symm_apply]
 
 /-- **Bessel's inequality for a functional.** The values of a continuous linear functional `φ` on
-an orthonormal family are square summable, with sum at most `‖φ‖²`. The space need not be
-complete. -/
+an orthonormal family are square summable. The space need not be complete. -/
 theorem _root_.Orthonormal.summable_norm_apply_sq {v : ι → E} (hv : Orthonormal 𝕜 v)
     (φ : StrongDual 𝕜 E) : Summable fun i ↦ ‖φ (v i)‖ ^ 2 := by
   refine summable_of_sum_le (c := ‖φ‖ ^ 2) (fun _ ↦ by positivity) fun s ↦ ?_

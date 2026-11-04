@@ -12,11 +12,14 @@ public import TauCeti.Topology.Order.DecreasingRearrangement
 /-!
 # Approximation numbers from a Schmidt series
 
-Let `T : E →L[𝕜] F` send a Hilbert basis `(bᵢ)` of `E` to pairwise orthogonal vectors. Then the
-approximation numbers of `T` are the norms `‖T bᵢ‖` listed in nonincreasing order with
-multiplicity and padded by zeros: `aₙ(T)` is the `n`-th term of the decreasing rearrangement
-`TauCeti.decreasingRearrangement` of the family `i ↦ ‖T bᵢ‖`. The index type is arbitrary and no
-enumeration of the indices is chosen.
+Let `T : E →L[𝕜] F` send a Hilbert basis `(bᵢ)` of `E` to pairwise orthogonal vectors. Then
+`aₙ(T)` is the `n`-th term of the decreasing rearrangement `TauCeti.decreasingRearrangement` of
+the family `i ↦ ‖T bᵢ‖`: the supremum of the common lower bounds of `n + 1` distinct norms
+`‖T bᵢ‖`, and of zero. The index type is arbitrary and no enumeration of the indices is chosen.
+When `‖T bᵢ‖` tends to zero cofinitely, for instance when `T` is compact, this lists the norms
+`‖T bᵢ‖` in nonincreasing order with multiplicity, padded by zeros. In general a rearranged term
+need not be one of the norms: if `‖T bᵢ‖ = 1 - 1 / (i + 2)` for `i : ℕ`, every rearranged term
+is `1`.
 
 Both bounds come from the min–max bounds for approximation numbers. At most `n` indices have
 `‖T bᵢ‖` above the `n`-th rearranged value `rₙ`, and `T` is bounded by `rₙ` on the orthogonal
@@ -103,7 +106,9 @@ theorem le_singularValue_of_pairwise_inner_eq_zero
 
 /-- **Approximation numbers of a map with orthogonal basis images.** If `T` sends the Hilbert
 basis `(bᵢ)` to pairwise orthogonal vectors, then `aₙ(T)` is the `n`-th term of the decreasing
-rearrangement of the norms `‖T bᵢ‖`, with multiplicity and padded by zeros. -/
+rearrangement of the norms `‖T bᵢ‖`: the supremum of the common lower bounds of `n + 1` distinct
+norms, and of zero. When `‖T bᵢ‖` tends to zero cofinitely, this lists the norms with
+multiplicity, padded by zeros. -/
 theorem singularValue_eq_decreasingRearrangement
     (hT : Pairwise fun i j ↦ ⟪T (b i), T (b j)⟫_𝕜 = 0) (n : ℕ) :
     (T.singularValue n : ℝ) = TauCeti.decreasingRearrangement (fun i ↦ ‖T (b i)‖) n := by
