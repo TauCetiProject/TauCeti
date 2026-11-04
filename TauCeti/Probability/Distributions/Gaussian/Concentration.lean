@@ -148,20 +148,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsGaussian μ]
   {f : E → ℝ} {v : ℝ≥0}
 
-/-- For a centred Gaussian measure `μ`, the exponential moment of a continuous linear functional
-`L` is `exp (c² / 2 · Var[L; μ])`. -/
-private lemma lintegral_exp_mul_dual_of_centered (hμ : μ[id] = 0) (L : StrongDual ℝ E) (c : ℝ) :
-    ∫⁻ y, .ofReal (exp (c * L y)) ∂μ = .ofReal (exp (c ^ 2 / 2 * Var[L; μ])) := by
-  have hint : Integrable (fun y ↦ exp (c * L y)) μ := by
-    have := IsGaussian.integrableExpSet_dual (μ := μ) L
-    rw [Set.eq_univ_iff_forall] at this
-    exact this _
-  rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (exp_pos _).le)]
-  have hμ' : ∫ y, y ∂μ = 0 := by simpa using hμ
-  have h := IsGaussian.mgf_dual (μ := μ) L c
-  rw [mgf, IsGaussian.integral_dual, hμ', map_zero] at h
-  rw [h, mul_zero, zero_add]
-
 /-- **The Maurey–Pisier inequality.** For a centred Gaussian measure `μ` and a `C¹` function `f`,
 `∫∫ exp (t (f y - f x)) dμ(x) dμ(y) ≤ ∫ exp (π² t² / 8 · Var[f' x; μ]) dμ(x)`. -/
 theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t : ℝ) :
@@ -201,7 +187,8 @@ theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t :
   -- The remaining integral is an exponential moment of the Gaussian variable `f' x`.
   have hmgf (x : E) : ∫⁻ y, .ofReal (exp (t * (π / 2) * fderiv ℝ f x y)) ∂μ =
       .ofReal (exp (π ^ 2 * t ^ 2 / 8 * Var[fderiv ℝ f x; μ])) := by
-    rw [lintegral_exp_mul_dual_of_centered hμ]
+    have hμ' : ∫ y, y ∂μ = 0 := by simpa using hμ
+    rw [lintegral_ofReal_exp_mul_dual, integral_dual, hμ', map_zero, mul_zero, zero_add]
     congr 2
     ring
   calc ∫⁻ p, .ofReal (exp (t * (f p.2 - f p.1))) ∂μ.prod μ
