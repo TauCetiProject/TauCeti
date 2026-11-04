@@ -71,11 +71,11 @@ theorem fourierCoeff_of (hρ : Function.Injective ρ) (g : G)
 /-- The norm of a Fourier coefficient is at most the regular crossed-product norm. -/
 theorem norm_fourierCoeff_apply_le (hρ : Function.Injective ρ) (g : G)
     (x : regularAlgebra α ρ Measure.count) : ‖fourierCoeff α ρ hρ g x‖ ≤ ‖x‖ := by
-  induction x using induction_on α ρ Measure.count with
-  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-  | ih f =>
-    rw [fourierCoeff_of]
-    exact norm_coefficientEval_le α ρ hρ g f
+  simpa only [fourierCoeff, one_mul] using
+    LinearMap.norm_extendOfNorm_apply_le (f := coefficientEval α g)
+      (denseRange_of α ρ Measure.count) 1
+      (fun f => by simpa only [one_mul, LinearMap.coe_ofClass] using
+        norm_coefficientEval_le α ρ hρ g f) x
 
 /-- The coefficient of an adjoint is the action-twisted adjoint of the inverse coefficient. -/
 @[simp]
@@ -108,10 +108,13 @@ linear maps. -/
 theorem fourierCoeff_unique (hρ : Function.Injective ρ) (g : G)
     (F : regularAlgebra α ρ Measure.count →L[ℂ] A)
     (hF : ∀ f, F (of α ρ Measure.count f) = f.ofConv g) : F = fourierCoeff α ρ hρ g := by
-  ext x
-  exact induction_on α ρ Measure.count x
-    (isClosed_eq F.continuous (fourierCoeff α ρ hρ g).continuous)
-    (fun f => (hF f).trans (fourierCoeff_of α ρ hρ g f).symm)
+  symm
+  apply LinearMap.extendOfNorm_unique (Eₗ := regularAlgebra α ρ Measure.count)
+    (f := coefficientEval α g) (denseRange_of α ρ Measure.count) 1
+    (fun f => by simpa only [one_mul, LinearMap.coe_ofClass] using
+      norm_coefficientEval_le α ρ hρ g f) F
+  ext f
+  exact hF f
 
 /-- Fourier coefficients recover every matrix entry of a concrete regular crossed-product
 operator between singleton-supported vectors. -/
