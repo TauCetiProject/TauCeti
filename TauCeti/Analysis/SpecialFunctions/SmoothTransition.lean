@@ -164,6 +164,19 @@ theorem lintegral_ofReal_mul_deriv (a : ℝ) {c : ℝ} (hc : 0 < c) :
   simp [integral_const_mul, integral_sub_left_eq_self (fun s => deriv smoothTransition (c * s)),
     Measure.integral_comp_mul_left, abs_of_pos hc, hc.ne']
 
+/-- The rescaled derivative `s ↦ ψ'(c s - a)` of the smooth transition function `ψ` has integral
+`|c|⁻¹` for `c ≠ 0`, the total increase of `ψ` divided by the speed `|c|` at which it is traversed.
+-/
+theorem lintegral_ofReal_deriv_mul_sub (a : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (c * s - a)) = ENNReal.ofReal |c|⁻¹ := by
+  have hint : Integrable fun s => deriv smoothTransition (c * s - a) :=
+    (integrable_deriv.comp_sub_right a).comp_mul_left' hc
+  rw [← ofReal_integral_eq_lintegral_ofReal hint
+      (.of_forall fun _ => smoothTransition.monotone.deriv_nonneg),
+    Measure.integral_comp_mul_left (fun y => deriv smoothTransition (y - a)),
+    integral_sub_right_eq_self (fun y => deriv smoothTransition y), integral_deriv, smul_eq_mul,
+    mul_one, abs_inv]
+
 /-- The rescaled derivatives `y ↦ c ψ'(c (y - a))` of the smooth transition function `ψ` integrate
 to one: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`. -/
 @[simp]

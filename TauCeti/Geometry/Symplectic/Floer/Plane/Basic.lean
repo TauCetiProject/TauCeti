@@ -25,12 +25,16 @@ two planes (`TauCeti.Floer.PSSPlane`):
   `w = exp (-2π (s + i t))`, so that `s → -∞` at `∞`.
 
 Writing `ε = ±1` for the sign of the end, the end lift is `φ(z) = exp (2π ε z)`
-(`TauCeti.Floer.PSSPlane.endLift`), which is holomorphic and preserves the orientation `ds ∧ dt`.
+(`TauCeti.Floer.PSSPlane.cylindricalEndLift`), which is holomorphic and preserves the orientation
+`ds ∧ dt`.
 It is inverted on `ℂ ∖ {0}` by the end coordinate `ζ(w) = ε log w / (2π)`
 (`TauCeti.Floer.PSSPlane.endCoord`), up to an integer shift of the angular coordinate `t`. The
 signed longitudinal coordinate is `ε s = log ‖w‖ / (2π)` for both planes
 (`TauCeti.Floer.PSSPlane.endSign_mul_re_endCoord`), and the angular one-form `dt` is
-`v ↦ Im (v / (2π ε w))` (`TauCeti.Floer.PSSPlane.endAngularForm`).
+`v ↦ Im (v / (2π ε w))` (`TauCeti.Floer.PSSPlane.endAngularForm`). The angular coordinate and the
+angular form are those of the end at `0` of the thrice-punctured sphere, up to the sign `-ε`
+(`TauCeti.Floer.PSSPlane.im_endCoord_eq_neg_endSign_mul` and
+`TauCeti.Floer.PSSPlane.endAngularForm_eq_neg_endSign_smul`).
 
 Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.perturbation` is
 `β(ε s - 1) H(t) dt` in end coordinates, for the smooth transition `β` from `0` on `(-∞, 0]` to
@@ -40,9 +44,9 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   closed pole disc `‖w‖ ≤ exp (2π)`, where the Morse incidence condition is imposed;
 * `TauCeti.Floer.PSSPlane.contMDiff_perturbation`: it is smooth on the whole of `ℂ × M`,
   including across the pole;
-* `TauCeti.Floer.PSSPlane.perturbation_endLift`: its pullback along the end lift is the
+* `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift`: its pullback along the end lift is the
   continuation datum `β(ε s - 1) H(t) dt` at every point of the cylinder;
-* `TauCeti.Floer.PSSPlane.perturbation_endLift_of_two_le` and
+* `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift_of_two_le` and
   `TauCeti.Floer.PSSPlane.perturbation_eq_smul_endAngularForm`: on the part `ε s ≥ 2` of the end
   it is `H(t) dt`, so it agrees there with the Floer datum of the end;
 * `TauCeti.Floer.PSSPlane.endComponent_one` and `TauCeti.Floer.PSSPlane.endComponent_I`: its
@@ -102,48 +106,49 @@ theorem endSign_ne_zero (p : PSSPlane) : p.endSign ≠ 0 := by
 
 /-- The end lift `z ↦ exp (2π ε z)`, from the cylinder coordinates `z = s + i t` of the end to the
 plane. -/
-def endLift (p : PSSPlane) (z : ℂ) : ℂ :=
+def cylindricalEndLift (p : PSSPlane) (z : ℂ) : ℂ :=
   Complex.exp ((2 * π * p.endSign : ℝ) * z)
 
-theorem endLift_def (p : PSSPlane) (z : ℂ) :
-    p.endLift z = Complex.exp ((2 * π * p.endSign : ℝ) * z) :=
+theorem cylindricalEndLift_def (p : PSSPlane) (z : ℂ) :
+    p.cylindricalEndLift z = Complex.exp ((2 * π * p.endSign : ℝ) * z) :=
   (rfl)
 
 /-- The end lift never takes the value `0`, the pole of the plane. -/
-theorem endLift_ne_zero (p : PSSPlane) (z : ℂ) : p.endLift z ≠ 0 :=
+theorem cylindricalEndLift_ne_zero (p : PSSPlane) (z : ℂ) : p.cylindricalEndLift z ≠ 0 :=
   Complex.exp_ne_zero _
 
 /-- The end lift is holomorphic, with derivative `2π ε exp (2π ε z)`. -/
-theorem hasDerivAt_endLift (p : PSSPlane) (z : ℂ) :
-    HasDerivAt p.endLift ((2 * π * p.endSign : ℝ) * p.endLift z) z := by
+theorem hasDerivAt_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
+    HasDerivAt p.cylindricalEndLift ((2 * π * p.endSign : ℝ) * p.cylindricalEndLift z) z := by
   have h := ((hasDerivAt_id z).const_mul ((2 * π * p.endSign : ℝ) : ℂ)).cexp
   simp only [id_eq, mul_one] at h
-  rw [endLift_def, mul_comm]
+  rw [cylindricalEndLift_def, mul_comm]
   exact h
 
-theorem deriv_endLift (p : PSSPlane) (z : ℂ) :
-    deriv p.endLift z = (2 * π * p.endSign : ℝ) * p.endLift z :=
-  (p.hasDerivAt_endLift z).deriv
+theorem deriv_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
+    deriv p.cylindricalEndLift z = (2 * π * p.endSign : ℝ) * p.cylindricalEndLift z :=
+  (p.hasDerivAt_cylindricalEndLift z).deriv
 
-theorem contDiff_endLift (p : PSSPlane) {n : WithTop ℕ∞} : ContDiff ℂ n p.endLift := by
-  unfold endLift
+theorem contDiff_cylindricalEndLift (p : PSSPlane) {n : WithTop ℕ∞} :
+    ContDiff ℂ n p.cylindricalEndLift := by
+  unfold cylindricalEndLift
   fun_prop
 
 /-- The end lift is periodic with period one in the angular coordinate. -/
-theorem periodic_endLift (p : PSSPlane) (s : ℝ) :
-    Function.Periodic (fun t : ℝ ↦ p.endLift (s + t * Complex.I)) 1 := by
+theorem periodic_cylindricalEndLift (p : PSSPlane) (s : ℝ) :
+    Function.Periodic (fun t : ℝ ↦ p.cylindricalEndLift (s + t * Complex.I)) 1 := by
   intro t
   have h : ((2 * π * p.endSign : ℝ) : ℂ) * ((s : ℂ) + (t + 1 : ℝ) * Complex.I) =
       ((2 * π * p.endSign : ℝ) : ℂ) * ((s : ℂ) + t * Complex.I) +
         (p.endSign : ℂ) * (2 * π * Complex.I) := by
     push_cast
     ring
-  simp only [endLift_def, h, Complex.exp_add]
+  simp only [cylindricalEndLift_def, h, Complex.exp_add]
   cases p <;> simp [Complex.exp_neg]
 
 /-- The end coordinate `ζ(w) = ε log w / (2π)`. It inverts the end lift on `ℂ ∖ {0}`
-(`endLift_endCoord`); its real part is the longitudinal coordinate `s` and its imaginary part an
-angular coordinate `t`, determined by the point only modulo `1`. -/
+(`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate `s` and its imaginary
+part an angular coordinate `t`, determined by the point only modulo `1`. -/
 def endCoord (p : PSSPlane) (w : ℂ) : ℂ :=
   (p.endSign / (2 * π) : ℝ) * Complex.log w
 
@@ -167,25 +172,32 @@ theorem endSign_mul_re_endCoord (p : PSSPlane) (w : ℂ) :
     p.endSign * (p.endCoord w).re = Real.log ‖w‖ / (2 * π) := by
   rw [re_endCoord, ← mul_assoc, mul_div_assoc', endSign_mul_endSign, one_div_mul_eq_div]
 
+/-- **The signed angular coordinate is the argument.** On both planes `ε t = arg w / (2π)`. -/
+@[simp]
+theorem endSign_mul_im_endCoord (p : PSSPlane) (w : ℂ) :
+    p.endSign * (p.endCoord w).im = Complex.arg w / (2 * π) := by
+  rw [im_endCoord, ← mul_assoc, mul_div_assoc', endSign_mul_endSign, one_div_mul_eq_div]
+
 /-- The pole `0` has longitudinal coordinate `0`, the junk value of the logarithm of `0`. -/
 @[simp]
 theorem endCoord_zero (p : PSSPlane) : p.endCoord 0 = 0 := by
   simp [endCoord_def]
 
 /-- The end coordinate is a right inverse of the end lift away from the pole. -/
-theorem endLift_endCoord (p : PSSPlane) {w : ℂ} (hw : w ≠ 0) : p.endLift (p.endCoord w) = w := by
+theorem cylindricalEndLift_endCoord (p : PSSPlane) {w : ℂ} (hw : w ≠ 0) :
+    p.cylindricalEndLift (p.endCoord w) = w := by
   have hπ : (2 * π : ℝ) ≠ 0 := by positivity
-  rw [endLift_def, endCoord_def, ← mul_assoc, ← Complex.ofReal_mul,
+  rw [cylindricalEndLift_def, endCoord_def, ← mul_assoc, ← Complex.ofReal_mul,
     show 2 * π * p.endSign * (p.endSign / (2 * π)) = p.endSign * p.endSign by field_simp,
     endSign_mul_endSign, Complex.ofReal_one, one_mul, Complex.exp_log hw]
 
 /-- The end coordinate recovers a cylinder point from its image under the end lift, up to an
 integer shift of the angular coordinate. -/
-theorem exists_endCoord_endLift (p : PSSPlane) (z : ℂ) :
-    ∃ k : ℤ, p.endCoord (p.endLift z) = z + k * Complex.I := by
+theorem exists_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
+    ∃ k : ℤ, p.endCoord (p.cylindricalEndLift z) = z + k * Complex.I := by
   obtain ⟨n, hn⟩ := Complex.log_exp_exists ((2 * π * p.endSign : ℝ) * z)
   have hπ : (π : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
-  rw [endCoord_def, endLift_def, hn]
+  rw [endCoord_def, cylindricalEndLift_def, hn]
   cases p
   · refine ⟨n, ?_⟩
     simp only [endSign_positive]
@@ -199,14 +211,15 @@ theorem exists_endCoord_endLift (p : PSSPlane) (z : ℂ) :
 
 /-- The longitudinal coordinate of the image of a cylinder point is its real part. -/
 @[simp]
-theorem re_endCoord_endLift (p : PSSPlane) (z : ℂ) : (p.endCoord (p.endLift z)).re = z.re := by
-  obtain ⟨k, hk⟩ := p.exists_endCoord_endLift z
+theorem re_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
+    (p.endCoord (p.cylindricalEndLift z)).re = z.re := by
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
   simp [hk]
 
 /-- The norm of the image of a cylinder point is `exp (2π ε s)`. -/
-theorem norm_endLift (p : PSSPlane) (z : ℂ) :
-    ‖p.endLift z‖ = Real.exp (2 * π * (p.endSign * z.re)) := by
-  rw [endLift_def, Complex.norm_exp, Complex.re_ofReal_mul, mul_assoc]
+theorem norm_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
+    ‖p.cylindricalEndLift z‖ = Real.exp (2 * π * (p.endSign * z.re)) := by
+  rw [cylindricalEndLift_def, Complex.norm_exp, Complex.re_ofReal_mul, mul_assoc]
 
 /-- The longitudinal coordinate is smooth away from the pole. -/
 theorem contDiffAt_re_endCoord (p : PSSPlane) {w : ℂ} (hw : w ≠ 0) {n : WithTop ℕ∞} :
@@ -220,10 +233,8 @@ up to the sign `-ε`. -/
 theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
     (p.endCoord w).im =
       -p.endSign * (ThricePuncturedSphere.Puncture.zero.endCoord w).im := by
-  rw [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord,
-    ThricePuncturedSphere.Puncture.endCenter_zero,
-    ThricePuncturedSphere.Puncture.endScale_zero, sub_zero, div_div_eq_mul_div, div_one,
-    show (2 : ℂ) = ((2 : ℝ) : ℂ) by norm_num, Complex.arg_mul_real two_pos]
+  simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
+    Complex.arg_mul_real]
   ring
 
 section Periodic
@@ -274,20 +285,26 @@ theorem endAngularForm_apply (p : PSSPlane) (w v : ℂ) :
 /-- The angular form pulls back to `dt` along the end lift: it sends the image `φ'(z) v` of a
 tangent vector `v` of the cylinder to `Im v`. -/
 @[simp]
-theorem endAngularForm_endLift (p : PSSPlane) (z v : ℂ) :
-    p.endAngularForm (p.endLift z) (deriv p.endLift z * v) = v.im := by
-  have hc : ((2 * π * p.endSign : ℝ) : ℂ) * p.endLift z ≠ 0 :=
-    mul_ne_zero (by simp [Real.pi_ne_zero, p.endSign_ne_zero]) (p.endLift_ne_zero z)
-  rw [endAngularForm_apply, deriv_endLift, ← mul_assoc, inv_mul_cancel₀ hc, one_mul]
+theorem endAngularForm_cylindricalEndLift (p : PSSPlane) (z v : ℂ) :
+    p.endAngularForm (p.cylindricalEndLift z) (deriv p.cylindricalEndLift z * v) = v.im := by
+  have hc : ((2 * π * p.endSign : ℝ) : ℂ) * p.cylindricalEndLift z ≠ 0 :=
+    mul_ne_zero (by simp [Real.pi_ne_zero, p.endSign_ne_zero]) (p.cylindricalEndLift_ne_zero z)
+  rw [endAngularForm_apply, deriv_cylindricalEndLift, ← mul_assoc, inv_mul_cancel₀ hc, one_mul]
+
+/-- The angular form of the plane is that of the end at `0` of the thrice-punctured sphere, up to
+the sign `-ε`. -/
+theorem endAngularForm_eq_neg_endSign_smul (p : PSSPlane) (w : ℂ) :
+    p.endAngularForm w =
+      (-p.endSign) • ThricePuncturedSphere.Puncture.zero.endAngularForm w := by
+  ext v
+  cases p <;> simp [endAngularForm_apply, mul_comm]
 
 /-- The angular form is smooth away from the pole. -/
 theorem contDiffAt_endAngularForm (p : PSSPlane) {w : ℂ} (hw : w ≠ 0) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n p.endAngularForm w := by
-  have hc : ((2 * π * p.endSign : ℝ) : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, p.endSign_ne_zero]
-  have h : ContDiffAt ℂ n (fun w : ℂ ↦ (((2 * π * p.endSign : ℝ) : ℂ) * w)⁻¹) w :=
-    (contDiffAt_const.mul contDiffAt_id).inv (mul_ne_zero hc hw)
-  exact contDiffAt_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp w (h.restrict_scalars ℝ))
+  have h := (ThricePuncturedSphere.Puncture.zero.contDiffAt_endAngularForm (n := n)
+    (by simpa using hw)).const_smul (-p.endSign)
+  exact h.congr_of_eventuallyEq (.of_forall p.endAngularForm_eq_neg_endSign_smul)
 
 /-! ### The perturbation -/
 
@@ -333,22 +350,23 @@ theorem eventually_perturbation_eq_zero {w : ℂ} (hw : ‖w‖ < Real.exp (2 * 
 /-- **The perturbation on the end.** At every point of the cylinder, the pullback of the
 perturbation along the end lift `φ` is the continuation datum `β(ε s - 1) H(t) dt`: it sends a
 tangent vector `v` of the cylinder to `Im v · β(ε s - 1) H(t)`. -/
-theorem perturbation_endLift (hH : Function.Periodic H 1) (z : ℂ) (x : M) (v : ℂ) :
-    p.perturbation H (p.endLift z) x (deriv p.endLift z * v) =
+theorem perturbation_cylindricalEndLift (hH : Function.Periodic H 1) (z : ℂ) (x : M) (v : ℂ) :
+    p.perturbation H (p.cylindricalEndLift z) x (deriv p.cylindricalEndLift z * v) =
       v.im * (smoothTransition (p.endSign * z.re - 1) * H z.im x) := by
-  obtain ⟨k, hk⟩ := p.exists_endCoord_endLift z
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
   have hp : H (z.im + k) x = H z.im x := by simpa using congrFun (hH.int_mul k z.im) x
-  rw [perturbation_def, smul_apply, endAngularForm_endLift,
-    re_endCoord_endLift, hk]
+  rw [perturbation_def, smul_apply, endAngularForm_cylindricalEndLift,
+    re_endCoord_cylindricalEndLift, hk]
   simp [hp, mul_comm]
 
 /-- **The perturbation is `H(t) dt` far out on the end.** On the part `ε s ≥ 2` of the end, the
 pullback of the perturbation along the end lift `φ` sends a tangent vector `v` of the cylinder to
 `Im v · H(t)`: its `ds` component vanishes and its `dt` component is `H(t)`. -/
-theorem perturbation_endLift_of_two_le (hH : Function.Periodic H 1) {z : ℂ}
+theorem perturbation_cylindricalEndLift_of_two_le (hH : Function.Periodic H 1) {z : ℂ}
     (hz : 2 ≤ p.endSign * z.re) (x : M) (v : ℂ) :
-    p.perturbation H (p.endLift z) x (deriv p.endLift z * v) = v.im * H z.im x := by
-  rw [perturbation_endLift hH, smoothTransition.one_of_one_le (by linarith), one_mul]
+    p.perturbation H (p.cylindricalEndLift z) x (deriv p.cylindricalEndLift z * v) =
+      v.im * H z.im x := by
+  rw [perturbation_cylindricalEndLift hH, smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-- **The perturbation is `H(t) dt` far out on the end.** At a point `w` of the part `ε s ≥ 2` of
 the end, the perturbation is the angular form scaled by `H` at the angular coordinate of `w`. -/
@@ -367,18 +385,19 @@ coordinates `z = (s, t)`: the pullback of the perturbation along the end lift `�
 point `s + i t` on `v`. The components `K_s` and `K_t` of the pulled-back datum `K_s ds + K_t dt`
 are those along `v = 1` and `v = i`. -/
 def endComponent (p : PSSPlane) (H : ℝ → M → ℝ) (v : ℂ) (z : ℝ × ℝ) (x : M) : ℝ :=
-  p.perturbation H (p.endLift ⟨z.1, z.2⟩) x (deriv p.endLift ⟨z.1, z.2⟩ * v)
+  p.perturbation H (p.cylindricalEndLift ⟨z.1, z.2⟩) x (deriv p.cylindricalEndLift ⟨z.1, z.2⟩ * v)
 
 theorem endComponent_def (p : PSSPlane) (H : ℝ → M → ℝ) (v : ℂ) (z : ℝ × ℝ) (x : M) :
     p.endComponent H v z x =
-      p.perturbation H (p.endLift ⟨z.1, z.2⟩) x (deriv p.endLift ⟨z.1, z.2⟩ * v) :=
+      p.perturbation H (p.cylindricalEndLift ⟨z.1, z.2⟩) x
+        (deriv p.cylindricalEndLift ⟨z.1, z.2⟩ * v) :=
   (rfl)
 
 /-- The component of the perturbation along `v` in end coordinates is `Im v · β(ε s - 1) H(t)`. -/
 theorem endComponent_eq (hH : Function.Periodic H 1) (v : ℂ) :
     p.endComponent H v = fun z x ↦ v.im * (smoothTransition (p.endSign * z.1 - 1) * H z.2 x) := by
   funext z x
-  exact perturbation_endLift hH _ x v
+  exact perturbation_cylindricalEndLift hH _ x v
 
 /-- The `ds` component of the perturbation in end coordinates vanishes. -/
 theorem endComponent_one (hH : Function.Periodic H 1) : p.endComponent H 1 = fun _ _ ↦ 0 := by
