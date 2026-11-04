@@ -9,8 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairi
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
--- Proof-only: identify `dualityMap1` with the evaluation cup in the naturality theorem.
-import all TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 
 /-!
 # The Weil pairing on first Galois cohomology
@@ -116,7 +114,7 @@ theorem torsionH1WeilPairing_eq_explicitCup11
     (fun _ _ ↦ by simp only [DistribMulActionHom.id_apply, AddMonoidHom.flip_apply,
       InternalHom.evalPairing_apply, toAddMonoidHom_torsionCoeffWeilDual]) a b
   simpa only [explicitCoeff2_id, explicitCoeff1_id, AddMonoidHom.id_apply,
-    torsionH1WeilPairing_eq_dualityMap1, dualityMap1] using h.symm
+    torsionH1WeilPairing_eq_dualityMap1, dualityMap1_eq_explicitCup11] using h.symm
 
 end WeierstrassCurve
 
