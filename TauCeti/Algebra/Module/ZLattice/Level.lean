@@ -76,7 +76,9 @@ by tauceti-ai-for-science in
 * `ZLattice.level_nsmul_mem`: `level L • x ∈ L` for `x ∈ L^∨`.
 * `ZLattice.exponent_discriminantGroup_dvd_level`: the exponent of `A_L` divides the level.
 * `ZLattice.card_discriminantGroup_dvd_level_pow`: for a full lattice `|A_L|` divides
-  `level L ^ n`, and `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level.
+  `level L ^ n`, `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level, and
+  `ZLattice.coprime_card_discriminantGroup_of_coprime_level`: every natural number coprime to
+  `level L` is coprime to `|A_L|`.
 * `ZLattice.IsEven.level_eq_one_iff`: an even lattice has level one exactly when it is unimodular.
 * `ZLattice.level_comap`: the level is invariant under linear isometry equivalences.
 * `ZLattice.level_orthSum`: the level of an orthogonal direct sum `L ⊕ M` is
@@ -244,6 +246,11 @@ For an integral lattice this order is `det L`. -/
 theorem prime_dvd_level {p : ℕ} (hp : p.Prime) (hpd : p ∣ Nat.card (DiscriminantGroup L)) :
     p ∣ level L :=
   hp.dvd_of_dvd_pow (hpd.trans card_discriminantGroup_dvd_level_pow)
+
+/-- Any natural number coprime to `level L` is coprime to the order of `DiscriminantGroup L`. -/
+theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprime (level L)) :
+    a.Coprime (Nat.card (DiscriminantGroup L)) :=
+  (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
 /-- An even full lattice has level one exactly when it is unimodular. -/
 theorem IsEven.level_eq_one_iff (h : IsEven L) : level L = 1 ↔ IsUnimodular L := by
