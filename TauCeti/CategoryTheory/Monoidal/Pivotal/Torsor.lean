@@ -31,7 +31,8 @@ of the universal grading group.
 ## Main declarations
 
 * `TauCeti.PivotalCategory.instMulAction`: the action of `Aut_⊗(𝟭_C)` on pivotal structures,
-  computed by `TauCeti.PivotalCategory.smul_pivotalIso`;
+  computed by `TauCeti.PivotalCategory.smul_pivotalIso` and, on objects,
+  `TauCeti.PivotalCategory.smul_pivotalIsoApp`;
 * `TauCeti.PivotalCategory.instSDiv`: the monoidal automorphism `φ /ₛ ψ` relating two pivotal
   structures, computed by `TauCeti.PivotalCategory.forgetAut_sdiv`;
 * `TauCeti.PivotalCategory.instTorsor`: the pivotal structures of `C`, if there are any, form a
@@ -69,6 +70,19 @@ noncomputable instance instSMul : SMul (Aut (LaxMonoidalFunctor.of (𝟭 C))) (P
 theorem smul_pivotalIso (u : Aut (LaxMonoidalFunctor.of (𝟭 C))) (P : PivotalCategory C) :
     (u • P).pivotalIso = (LaxMonoidalFunctor.forgetAut (𝟭 C) u).asIso ≪≫ P.pivotalIso :=
   (rfl)
+
+/-- The component of a twisted pivotal structure is the automorphism component followed by the
+original pivotal component. -/
+@[simp]
+theorem smul_pivotalIsoApp (u : Aut (LaxMonoidalFunctor.of (𝟭 C))) (P : PivotalCategory C)
+    (X : C) :
+    @pivotalIsoApp C _ _ _ (u • P) X =
+      (LaxMonoidalFunctor.forgetAut (𝟭 C) u).asIso.app X ≪≫ @pivotalIsoApp C _ _ _ P X := by
+  -- Chaining equalities avoids rewriting the implicit object of the double-dual functor.
+  exact (Iso.ext (@pivotalIso_hom_app C _ _ _ (u • P) X)).symm.trans
+    ((congrArg (fun φ ↦ φ.app X) (smul_pivotalIso u P)).trans
+      ((NatIso.trans_app _ _ X).trans
+        (congrArg (_ ≪≫ ·) (Iso.ext (@pivotalIso_hom_app C _ _ _ P X)))))
 
 /-- The monoidal natural automorphisms of `𝟭 C` act on the pivotal structures of `C`. -/
 noncomputable instance instMulAction :
