@@ -107,12 +107,12 @@ private theorem dividedPower_two_representation_matrix_apply {X D : Matrix n n �
 /-- The standard coordinate lattice is preserved by the Kostant `ℤ`-form of any family of cube-zero
 integral matrices whose squares are even integral matrices. -/
 theorem kostantForm_integralMatrix_mem_coordinateLattice {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0)
-    (u : _root_.UniversalEnvelopingAlgebra ℚ (Matrix n n ℚ))
-    (hu : u ∈ kostantForm (fun i => TauCeti.matrixIntCastLieHom ℚ (E i)) Empty.elim)
-    (v : n → ℚ) (hv : v ∈ (TauCeti.coordinateLattice n).toAddSubgroup) :
-    representation ℚ (Matrix n n ℚ) (n → ℚ) u v ∈
-      (TauCeti.coordinateLattice n).toAddSubgroup := by
+    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0) :
+    ∀ u ∈ kostantForm (fun i => TauCeti.matrixIntCastLieHom ℚ (E i)) Empty.elim,
+      ∀ v ∈ (TauCeti.coordinateLattice n).toAddSubgroup,
+        representation ℚ (Matrix n n ℚ) (n → ℚ) u v ∈
+          (TauCeti.coordinateLattice n).toAddSubgroup := by
+  intro u hu v hv
   refine kostantForm_apply_mem_coordinateLattice_of_pow_eq_zero
     (fun i => TauCeti.matrixIntCastLieHom ℚ (E i)) Empty.elim
     (representation ℚ (Matrix n n ℚ) (n → ℚ))
