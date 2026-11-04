@@ -329,7 +329,7 @@ private theorem exists_amicePolynomial_eq_C_mul (h n a : ℕ) :
   have hu : IsUnit (F.coeff N) := PadicInt.isUnit_iff.mpr hlead
   obtain ⟨c, hc⟩ : ∃ c : ℤ_[p], (n ! : ℤ_[p]) * c = ((n / p ^ h)! : ℤ_[p]) * K := by
     refine ⟨(amicePolynomial p h n a).coeff N * ↑hu.unit⁻¹, ?_⟩
-    have := congrArg (coeff · N) hA
+    have := congrArg (AddMonoidAlgebra.coeff · N) hA
     simp only [coeff_C_mul] at this
     rw [← mul_assoc, this, mul_assoc, IsUnit.mul_val_inv, mul_one]
   have hn : (n ! : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (factorial_ne_zero n)

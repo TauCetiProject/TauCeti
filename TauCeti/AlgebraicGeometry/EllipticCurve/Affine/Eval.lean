@@ -122,8 +122,8 @@ theorem linearIndependent_X_root_one :
     rw [← hg, Fin.sum_univ_three, add_right_comm]
     simp only [Algebra.smul_def, AdjoinRoot.algebraMap_eq, AdjoinRoot.algebraMap_eq', algebraMap_eq,
       RingHom.comp_apply, map_add, map_mul, mul_one, AdjoinRoot.mk_X, Matrix.cons_val]
-  have h0 : g 0 = 0 := by simpa using congrArg (coeff · 1) hp
-  have h2 : g 2 = 0 := by simpa using congrArg (coeff · 0) hp
+  have h0 : g 0 = 0 := by simpa using congrArg (fun p : R[X] ↦ p.coeff 1) hp
+  have h2 : g 2 = 0 := by simpa using congrArg (fun p : R[X] ↦ p.coeff 0) hp
   exact fun i ↦ by fin_cases i <;> [exact h0; exact C_eq_zero.mp hq; exact h2]
 
 section EvaluationTarget

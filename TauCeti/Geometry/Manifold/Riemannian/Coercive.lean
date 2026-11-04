@@ -76,7 +76,7 @@ def coerciveRiemannianMetric (g : F → F →L[ℝ] F →L[ℝ] ℝ) (hg : ContD
     nlinarith [h (e v)]
   contMDiff := by
     intro x
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     convert hg.contMDiff.contMDiffAt (x := x) using 1
     ext y v w
     simp only [hom_trivializationAt_apply]

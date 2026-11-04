@@ -48,8 +48,8 @@ theorem ContMDiffWithinAt.smul_totalSpace {a : M → 𝕜} {g : M → TotalSpace
     (hg : ContMDiffWithinAt J (I.prod 𝓘(𝕜, F)) n g s x) :
     ContMDiffWithinAt J (I.prod 𝓘(𝕜, F)) n
       (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) s x := by
-  obtain ⟨hb, hv⟩ := Bundle.contMDiffWithinAt_totalSpace.mp hg
-  refine Bundle.contMDiffWithinAt_totalSpace.mpr ⟨hb, ?_⟩
+  obtain ⟨hb, hv⟩ := Bundle.contMDiffWithinAt_totalSpace_iff.mp hg
+  refine Bundle.contMDiffWithinAt_totalSpace_iff.mpr ⟨hb, ?_⟩
   let e := trivializationAt F V (g x).proj
   have he : ∀ᶠ y in 𝓝[s] x, (g y).proj ∈ e.baseSet :=
     hb.continuousWithinAt.preimage_mem_nhdsWithin

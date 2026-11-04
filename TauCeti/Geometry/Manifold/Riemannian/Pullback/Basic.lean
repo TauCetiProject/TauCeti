@@ -88,8 +88,8 @@ theorem contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates {f : M → N}
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
         ((ContinuousLinearMap.precomp ℝ (L x)).comp ((b x).comp (L x)))) x₀ := by
-  refine (contMDiffAt_section x₀).2 ?_
-  obtain ⟨hfn, hg⟩ := contMDiffAt_totalSpace.1 hb
+  refine (contMDiffAt_section_iff x₀).2 ?_
+  obtain ⟨hfn, hg⟩ := contMDiffAt_totalSpace_iff.1 hb
   -- In the coordinates centred at `x₀` and `f x₀`, the pulled-back form is the coordinate
   -- expression of `b x` pulled back along `L x` read in those coordinates.
   apply (ContinuousLinearMap.contDiff_precomp_comp.contMDiff.contMDiffAt.comp x₀

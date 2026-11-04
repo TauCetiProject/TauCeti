@@ -103,7 +103,7 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → 
   let ι : 𝕜 × 𝕜 → TangentBundle 𝓘(𝕜, 𝕜 × 𝕜) (𝕜 × 𝕜) := fun z ↦ TotalSpace.mk' (𝕜 × 𝕜) z (0, 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, 𝕜 × 𝕜).tangent m ι := by
     intro z
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_id, ?_⟩
     refine (contMDiffAt_const (c := ((0 : 𝕜), (1 : 𝕜)))).congr_of_eventuallyEq ?_
     filter_upwards with r

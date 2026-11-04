@@ -92,7 +92,7 @@ theorem exists_eq_X_pow_add_C_coeff_zero_mul {f : R[X]} (hf : f.IsEisensteinAt (
     · simp [coeff_X_pow, hi.ne', coeff_eq_zero_of_natDegree_lt hi]
   obtain ⟨g, hg⟩ := hdvd
   refine ⟨g, ?_, by rw [← hg]; ring⟩
-  have := congrArg (coeff · 0) hg
+  have := congrArg (AddMonoidAlgebra.coeff · 0) hg
   simp only [coeff_sub, coeff_X_pow, hdeg.ne, ite_false, sub_zero, coeff_C_mul] at this
   exact (mul_eq_left₀ hirr.ne_zero).mp this.symm
 

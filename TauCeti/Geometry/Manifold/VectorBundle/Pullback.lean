@@ -59,7 +59,7 @@ theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)}
       ContMDiffAt IX I' n (fun y => (q y).proj) x ∧
         ContMDiffAt IX (I.prod 𝓘(𝕜, F)) n
           (fun y => Pullback.lift f (q y)) x := by
-  simp only [Bundle.contMDiffAt_totalSpace, trivializationAt,
+  simp only [Bundle.contMDiffAt_totalSpace_iff, trivializationAt,
     FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
   exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp x hq, hcoord⟩,
     fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩

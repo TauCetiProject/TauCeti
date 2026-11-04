@@ -111,7 +111,7 @@ instance finiteDimensional_modularForm_finiteIndex
     (by exact_mod_cast Nat.lt_succ_self _) (PowerSeries.nat_le_order _ _ fun i hi ↦ ?_))
   have hval : PowerSeries.trunc N (qExpansion 𝒢.strictWidthInfty f) = 0 := by
     simpa using congrArg Subtype.val hf
-  have hcoeff := congrArg (fun p ↦ Polynomial.coeff p i) hval
+  have hcoeff := congrArg (fun p ↦ AddMonoidAlgebra.coeff p i) hval
   rwa [PowerSeries.coeff_trunc, ite_eq_left hi, Polynomial.coeff_zero] at hcoeff
 
 /-- **Finite-dimensionality of cusp forms.** A cusp form is a modular form, injectively, so this

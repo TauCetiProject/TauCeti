@@ -547,8 +547,8 @@ instance isAlgebraic_residueField_restrict :
   obtain ⟨q, hq⟩ := hlift
   rw [coe_mapRingHom] at hq
   refine ⟨q.map (algebraMap _ (P'.restrict k F).ResidueField), fun h ↦ ?_, ?_⟩
-  · have hc := congrArg (coeff · i₀) h
-    have hc' := congrArg (coeff · i₀) hq
+  · have hc := congrArg (fun r : (P'.restrict k F).ResidueField[X] ↦ r.coeff i₀) h
+    have hc' := congrArg (fun r : F[X] ↦ r.coeff i₀) hq
     simp only [coeff_map, coeff_zero, IsLocalRing.ResidueField.algebraMap_eq,
       IsLocalRing.residue_eq_zero_iff] at hc
     simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hi₀] at hc'

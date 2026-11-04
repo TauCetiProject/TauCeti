@@ -347,13 +347,13 @@ theorem contMDiffAt_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 
     -- The section `y ↦ e₁.symm y w` is `C^n` near `x`: read in `e₁`, it is constant.
     have hs : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
         (fun y ↦ TotalSpace.mk' F₁ y (e₁.symm y w)) x := by
-      rw [contMDiffAt_section]
+      rw [contMDiffAt_section_iff]
       refine (contMDiffAt_const (c := w)).congr_of_eventuallyEq ?_
       filter_upwards [e₁.open_baseSet.mem_nhds h₁] with y hy
       exact congr(Prod.snd $(e₁.apply_mk_symm hy w))
     -- Applying the total-space map to this section and reading the result in `e₂` gives the
     -- coordinate expression of `ϕ` applied to `w`.
-    have ht := (contMDiffAt_totalSpace.1 ((hϕ (e₁.symm x w)).comp x hs)).2
+    have ht := (contMDiffAt_totalSpace_iff.1 ((hϕ (e₁.symm x w)).comp x hs)).2
     refine ht.congr_of_eventuallyEq ?_
     filter_upwards [e₁.open_baseSet.mem_nhds h₁, e₂.open_baseSet.mem_nhds h₂] with y hy₁ hy₂
     simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]

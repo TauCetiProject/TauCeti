@@ -183,9 +183,9 @@ theorem exists_polynomial_map_eq_lazardEval (f : MvPolynomial (Fin (n + 1)) R)
     simp only [c, eval_eval₂, hC, hcoords, eval₂_id, T,
       eval_coeff_taylor_map_C]
   refine ⟨∑ j ∈ Finset.range (f.degreeOf (Fin.last n) + 1), Polynomial.monomial j (c j),
-    fun α hα ↦ Polynomial.ext fun j ↦ ?_⟩
+    fun α hα ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun j ↦ ?_⟩
   rw [Polynomial.coeff_map, Polynomial.finsetSum_coeff]
-  simp only [Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range]
+  simp only [Polynomial.coeff_monomial_apply, Finset.sum_ite_eq', Finset.mem_range]
   rw [coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast, hα]
   split_ifs with hj
   · exact hc α j

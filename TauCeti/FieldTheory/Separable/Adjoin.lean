@@ -53,7 +53,14 @@ theorem isSeparable_adjoin_iff {s : Set A} (hcomm : s.Pairwise Commute) :
   | mem x hx =>
     exact (isSeparable_map_iff (adjoin K s).val Subtype.val_injective).mp (hsep x hx)
   | algebraMap r => exact isSeparable_algebraMap r
-  | add x y hx hy ihx ihy => exact Field.isSeparable_add ihx ihy
-  | mul x y hx hy ihx ihy => exact Field.isSeparable_mul ihx ihy
+  | add x y hx hy ihx ihy =>
+    -- Elaborating these lemmas against the goal directly times out in unification, since
+    -- the goal uses the subalgebra ring structure rather than the local field structure.
+    -- Elaborating them first leaves a cheap closing check.
+    have h := Field.isSeparable_add ihx ihy
+    exact h
+  | mul x y hx hy ihx ihy =>
+    have h := Field.isSeparable_mul ihx ihy
+    exact h
 
 end Set.Pairwise

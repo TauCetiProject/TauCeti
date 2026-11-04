@@ -27,7 +27,7 @@ topology of `Bundle.TotalSpace F E` and is identified with it by the homeomorphi
 space with its self model, this identification is a `C^n` diffeomorphism to Mathlib's charts.
 
 The main tool for maps into the total space is `TauCeti.ManifoldTotalSpace.contMDiffWithinAt_iff`,
-which mirrors Mathlib's `Bundle.contMDiffWithinAt_totalSpace`: a map is `C^n` exactly when its
+which mirrors Mathlib's `Bundle.contMDiffWithinAt_totalSpace_iff`: a map is `C^n` exactly when its
 projection to the base is `C^n` and its fibre coordinate in the trivialization at the base point
 is `C^n` into `F`. The trivializations of the atlas are `C^n` on their sources with `C^n` inverses,
 and the projection is `C^n`.
@@ -84,7 +84,7 @@ right action is constant on the fibres, because each fibre is a single orbit.
 * I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer,
   1993, §9.1 and §9.2 (fibre bundles, their atlases and smooth transition functions).
 * The characterization of maps into the total space follows the proof of Mathlib's
-  `Bundle.contMDiffWithinAt_totalSpace`, with a manifold fibre model in place of the fibre.
+  `Bundle.contMDiffWithinAt_totalSpace_iff`, with a manifold fibre model in place of the fibre.
 * The groupoid compatibility of the atlas and the resulting `IsManifold` instance follow Mathlib's
   `ContMDiffFiberwiseLinear.hasGroupoid` and `Bundle.TotalSpace.isManifold`, generalized from
   fibrewise-linear transitions to `TauCeti.contMDiffGroupoid`.
@@ -532,7 +532,7 @@ copy is `C^n` from the charts `FiberBundle.chartedSpace` to the charts through t
 theorem contMDiff_homeomorph :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n (homeomorph F E) := fun _ ↦
   ManifoldTotalSpace.contMDiffAt_iff (f := fun y ↦ y).2
-    ⟨Bundle.contMDiffAt_proj E, (Bundle.contMDiffAt_totalSpace.1 contMDiffAt_id).2⟩
+    ⟨Bundle.contMDiffAt_proj E, (Bundle.contMDiffAt_totalSpace_iff.1 contMDiffAt_id).2⟩
 
 variable (n F E IB) in
 /-- For a normed space fibre with its self model, the identification of the copy of the total
@@ -540,7 +540,7 @@ space with the total space is `C^n` from the charts through the fibre to the cha
 `FiberBundle.chartedSpace`. -/
 theorem contMDiff_homeomorph_symm :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n (homeomorph F E).symm := fun x ↦
-  Bundle.contMDiffAt_totalSpace.2 ⟨contMDiff_proj n F E IB 𝓘(𝕜, F) x,
+  Bundle.contMDiffAt_totalSpace_iff.2 ⟨contMDiff_proj n F E IB 𝓘(𝕜, F) x,
     contMDiffAt_trivializationAt_snd n IB 𝓘(𝕜, F) x⟩
 
 end ManifoldTotalSpace

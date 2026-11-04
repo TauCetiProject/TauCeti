@@ -146,9 +146,9 @@ theorem IsEntirePreparation.unique (h : IsEntirePreparation c d F P G)
   -- Both `P` and `P'` are multiples of `ω` with constant coefficient `1`, so their leading
   -- coefficients are both the inverse of the constant coefficient of `ω`.
   have h1 : P.leadingCoeff * ω.coeff 0 = 1 := by
-    rw [← smul_eq_mul, ← Polynomial.coeff_smul, ← hP, h.coeff_zero_eq_one]
+    rw [← smul_eq_mul, ← AddMonoidAlgebra.coeff_smul_apply, ← hP, h.coeff_zero_eq_one]
   have h2 : P'.leadingCoeff * ω.coeff 0 = 1 := by
-    rw [hω, Units.smul_def, Polynomial.coeff_smul, smul_eq_mul, ← mul_assoc,
+    rw [hω, Units.smul_def, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, ← mul_assoc,
       h'.isUnit_leadingCoeff.mul_val_inv, one_mul, h'.coeff_zero_eq_one]
   have ha : P.leadingCoeff = P'.leadingCoeff :=
     calc P.leadingCoeff = P.leadingCoeff * (P'.leadingCoeff * ω.coeff 0) := by rw [h2, mul_one]
@@ -184,7 +184,9 @@ theorem IsMulDistinguished.exists_isEntirePreparation [CompleteSpace R]
     rw [← hF0, ← heω, map_mul, ← Polynomial.coeff_coe, coeff_zero_eq_constantCoeff_apply]
   let v : Rˣ := ⟨constantCoeff (e : R⟦X⟧), ω.coeff 0, h0, by rw [mul_comm]; exact h0⟩
   refine ⟨v • ω, ((v⁻¹ : Rˣ) : R) • (e : R⟦X⟧),
-    { coeff_zero_eq_one := by rw [Units.smul_def, Polynomial.coeff_smul, smul_eq_mul]; exact h0
+    { coeff_zero_eq_one := by
+        rw [Units.smul_def, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
+        exact h0
       natDegree_eq := by
         rw [Polynomial.natDegree_smul_of_smul_regular ω (IsSMulRegular.all _), hω.natDegree_eq]
       isUnit_leadingCoeff := by

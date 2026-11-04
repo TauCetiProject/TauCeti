@@ -144,7 +144,7 @@ private theorem contMDiffOn_covariantDerivative_apply_of_isLeviCivitaConnection
     refine contMDiffOn_hom_of_localFrame (I := I) (e := trivializationAt E (TangentSpace I) x)
       (e' := trivializationAt ℝ (Trivial M ℝ) x) (finBasis ℝ E) contMDiffOn_snd hbase
       fun j q hq ↦ ?_
-    rw [contMDiffWithinAt_totalSpace]
+    rw [contMDiffWithinAt_totalSpace_iff]
     refine ⟨contMDiffWithinAt_snd, ?_⟩
     simpa [Trivial.eq_trivialization, ← chartLocalFrame_def] using heval j q hq
   -- The fibrewise inverses of the metrics are jointly regular, and recover the vectors.

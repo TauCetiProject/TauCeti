@@ -302,7 +302,7 @@ lemma equation_point : pointedCurve.toAffine.Equation (polyToField (C X)) (polyT
     ((curve.map (algebraMap _ Universal.Field)).toAffine.polynomial) = 0
   have h : (evalEvalRingHom (polyToField (C X)) (polyToField Y)).comp
       (mapRingHom <| mapRingHom (algebraMap _ Universal.Field)) = polyToField := by
-    ext <;> simp [polyToField, algebraMap_field_eq_comp]
+    ext <;> simp [polyToField, algebraMap_field_eq_comp, single_eq_monomial]
   have : ∀ p, evalEval (polyToField (C X)) (polyToField Y)
       (p.map (mapRingHom (algebraMap _ Universal.Field))) = polyToField p :=
     fun p ↦ congr($h p)
@@ -485,7 +485,7 @@ lemma ringEval_root : ringEval eqn (AdjoinRoot.root _) = y := by
 point does not disturb the substitution of `W`'s coefficients. -/
 @[simp]
 lemma polyEval_comp_eq_specialize : (polyEval W x y).comp (algebraMap _ _) = W.specialize := by
-  ext <;> simp [polyEval]
+  ext <;> simp [polyEval, Polynomial.single_eq_monomial]
 
 /-- The `Universal.Ring` counterpart of `polyEval_comp_eq_specialize`: `ringEval eqn` also restricts
 to `W.specialize` on the coefficient ring. This is the compatibility that makes

@@ -50,7 +50,7 @@ theorem ContMDiffWithinAt.add_sectionAlong
     (ht : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u x₀) :
     ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) u x₀ := by
-  rw [contMDiffWithinAt_totalSpace] at hs ht ⊢
+  rw [contMDiffWithinAt_totalSpace_iff] at hs ht ⊢
   let e := trivializationAt F V (b x₀)
   -- Near `x₀` the base point stays in the base set of `e`, where `e` is linear on the fibres.
   have he : ∀ᶠ x in 𝓝[u] x₀, b x ∈ e.baseSet :=

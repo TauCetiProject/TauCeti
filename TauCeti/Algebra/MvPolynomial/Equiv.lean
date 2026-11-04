@@ -299,8 +299,7 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
       ite_and]
     split_ifs <;> simp [Polynomial.coeff_monomial, *]
   | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, Polynomial.coeff_add, hp,
-      hq]
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp, hq]
 
 end Last
 
