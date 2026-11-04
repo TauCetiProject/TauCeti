@@ -46,8 +46,9 @@ variable {𝕜 X₀ X₁ V : Type*} [NormedField 𝕜]
   (C : CompatibleCouple 𝕜 X₀ X₁ V)
 
 /-- Peetre's `K`-functional `K(t, u) = inf {‖x₀‖ + t ‖x₁‖ | u = x₀ + x₁}` on the sum space of a
-compatible couple. It is meaningful for `t ≥ 0`, which the lemmas below assume where needed; for
-`t < 0` the infimum is not bounded below and the value is meaningless. -/
+compatible couple. It is meaningful for `t ≥ 0`, which the lemmas below assume where needed.
+Negative parameters are outside the intended API: for `t < 0` the infimum need not be bounded
+below, and no property of the value is claimed. -/
 def kFunctional (t : ℝ) (u : C.SumSpace) : ℝ :=
   ⨅ x : {x : X₀ × X₁ // C.fstToSum x.1 + C.sndToSum x.2 = u}, ‖x.1.1‖ + t * ‖x.1.2‖
 
@@ -160,10 +161,13 @@ theorem min_mul_kFunctional_le (hs : 0 < s) (ht : 0 ≤ t) (u : C.SumSpace) :
     _ ≤ 1 * ‖x₀‖ + t / s * (s * ‖x₁‖) := by gcongr
     _ = ‖x₀‖ + t * ‖x₁‖ := by field_simp
 
+/-- For `t ≥ 0`, `K(t, u)` is at most `max 1 t` times the sum norm of `u`. -/
 theorem kFunctional_le_max_one_mul_norm (ht : 0 ≤ t) (u : C.SumSpace) :
     C.kFunctional t u ≤ max 1 t * ‖u‖ := by
   simpa using kFunctional_le_max_mul zero_lt_one ht u
 
+/-- For `t ≥ 0`, `K(t, u)` is at least `min 1 t` times the sum norm of `u`; with the upper bound
+`kFunctional_le_max_one_mul_norm`, `K(t, ·)` is equivalent to the sum norm for `t > 0`. -/
 theorem min_one_mul_norm_le_kFunctional (ht : 0 ≤ t) (u : C.SumSpace) :
     min 1 t * ‖u‖ ≤ C.kFunctional t u := by
   simpa using min_mul_kFunctional_le zero_lt_one ht u
@@ -177,6 +181,7 @@ theorem kFunctional_eq_zero_iff [T1Space V] (ht : 0 < t) :
   have hu : ‖u‖ ≤ 0 := nonpos_of_mul_nonpos_right h' (lt_min zero_lt_one ht)
   exact norm_le_zero_iff.1 hu
 
+/-- For `t ≥ 0`, `K(t, ·)` is subadditive: `K(t, u + v) ≤ K(t, u) + K(t, v)`. -/
 theorem kFunctional_add_le (ht : 0 ≤ t) (u v : C.SumSpace) :
     C.kFunctional t (u + v) ≤ C.kFunctional t u + C.kFunctional t v := by
   refine le_of_forall_pos_lt_add fun ε hε => ?_
@@ -200,6 +205,7 @@ private lemma kFunctional_smul_le (ht : 0 ≤ t) (c : 𝕜) (u : C.SumSpace) :
   · simp only [norm_smul]
     ring
 
+/-- For `t ≥ 0`, `K(t, ·)` is absolutely homogeneous: `K(t, c • u) = ‖c‖ * K(t, u)`. -/
 theorem kFunctional_smul (ht : 0 ≤ t) (c : 𝕜) (u : C.SumSpace) :
     C.kFunctional t (c • u) = ‖c‖ * C.kFunctional t u := by
   refine le_antisymm (kFunctional_smul_le ht c u) ?_

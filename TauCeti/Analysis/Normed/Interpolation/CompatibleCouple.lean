@@ -34,6 +34,8 @@ We realise both spaces without choosing a norm on `V`:
   inclusions `interFst`, `interSnd`.
 * `TauCeti.CompatibleCouple.SumSpace`: the sum, with its norm-nonincreasing inclusions
   `fstToSum`, `sndToSum` and the injective map `sumSpaceEmbed` into `V`.
+* `TauCeti.CompatibleCouple.sumLift`: the extension to the sum of continuous linear maps on `X₀`
+  and `X₁` that agree on the intersection.
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
   the infimum description of the sum norm.
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
@@ -88,6 +90,8 @@ def inter : Submodule 𝕜 (X₀ × X₁) :=
 theorem mem_inter_iff {x : X₀ × X₁} : x ∈ C.inter ↔ C.embed₀ x.1 = C.embed₁ x.2 :=
   Iff.rfl
 
+/-- The norm of an element of the intersection is the larger of the norms of its two
+components. -/
 theorem norm_inter (x : C.inter) : ‖x‖ = max ‖(x : X₀ × X₁).1‖ ‖(x : X₀ × X₁).2‖ :=
   Prod.norm_def _
 
@@ -276,6 +280,7 @@ theorem injective_sumSpaceEmbed : Function.Injective C.sumSpaceEmbed :=
 theorem sumSpace_ext {u v : C.SumSpace} (h : C.sumSpaceEmbed u = C.sumSpaceEmbed v) : u = v :=
   C.injective_sumSpaceEmbed h
 
+/-- The image of the sum space in the ambient space is the sum of the two ranges. -/
 theorem range_sumSpaceEmbed :
     C.sumSpaceEmbed.range = C.embed₀.range ⊔ C.embed₁.range := by
   ext v
@@ -296,6 +301,67 @@ theorem injective_sndToSum : Function.Injective C.sndToSum := fun x y h =>
 /-- The two routes from the intersection to the sum agree. -/
 theorem fstToSum_interFst (x : C.inter) : C.fstToSum (C.interFst x) = C.sndToSum (C.interSnd x) :=
   C.sumSpace_ext <| by simpa using C.embed₀_interFst x
+
+section Lift
+
+variable {W : Type*} [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
+
+/-- A continuous linear map out of the sum space is determined by its restrictions to `X₀` and
+`X₁`. -/
+theorem sumSpace_hom_ext {f g : C.SumSpace →L[𝕜] W} (h₀ : f.comp C.fstToSum = g.comp C.fstToSum)
+    (h₁ : f.comp C.sndToSum = g.comp C.sndToSum) : f = g := by
+  ext u
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  rw [map_add, map_add]
+  exact congr_arg₂ (· + ·) (DFunLike.congr_fun h₀ x₀) (DFunLike.congr_fun h₁ x₁)
+
+variable [ContinuousAdd W]
+
+/-- The extension to the sum space of continuous linear maps `T₀ : X₀ →L W`, `T₁ : X₁ →L W` that
+agree on the intersection: `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁`. This is the universal property of the sum
+(`sumLift_fstToSum`, `sumLift_sndToSum`, `sumLift_unique`). -/
+def sumLift (T₀ : X₀ →L[𝕜] W) (T₁ : X₁ →L[𝕜] W)
+    (h : ∀ x : C.inter, T₀ (C.interFst x) = T₁ (C.interSnd x)) : C.SumSpace →L[𝕜] W :=
+  C.sumKer.liftQL (T₀.comp (WithLp.fstL 1 𝕜 X₀ X₁) + T₁.comp (WithLp.sndL 1 𝕜 X₀ X₁))
+    fun x hx => by
+      have hx' : C.embed₀ x.fst = C.embed₁ (-x.snd) := by
+        rw [map_neg, eq_neg_iff_add_eq_zero]
+        exact hx
+      have := h ⟨(x.fst, -x.snd), hx'⟩
+      simp only [interFst_apply, interSnd_apply, map_neg] at this
+      simp [this]
+
+variable (T₀ : X₀ →L[𝕜] W) (T₁ : X₁ →L[𝕜] W)
+  (h : ∀ x : C.inter, T₀ (C.interFst x) = T₁ (C.interSnd x))
+
+@[simp]
+theorem sumLift_sumMk (x : WithLp 1 (X₀ × X₁)) :
+    C.sumLift T₀ T₁ h (C.sumMk x) = T₀ x.fst + T₁ x.snd :=
+  (rfl)
+
+@[simp]
+theorem sumLift_fstToSum (x : X₀) : C.sumLift T₀ T₁ h (C.fstToSum x) = T₀ x := by
+  simp [fstToSum]
+
+@[simp]
+theorem sumLift_sndToSum (x : X₁) : C.sumLift T₀ T₁ h (C.sndToSum x) = T₁ x := by
+  simp [sndToSum]
+
+@[simp]
+theorem sumLift_comp_fstToSum : (C.sumLift T₀ T₁ h).comp C.fstToSum = T₀ :=
+  ContinuousLinearMap.ext <| C.sumLift_fstToSum T₀ T₁ h
+
+@[simp]
+theorem sumLift_comp_sndToSum : (C.sumLift T₀ T₁ h).comp C.sndToSum = T₁ :=
+  ContinuousLinearMap.ext <| C.sumLift_sndToSum T₀ T₁ h
+
+/-- `sumLift T₀ T₁ h` is the only continuous linear map out of the sum space restricting to `T₀`
+on `X₀` and to `T₁` on `X₁`. -/
+theorem sumLift_unique {f : C.SumSpace →L[𝕜] W} (h₀ : f.comp C.fstToSum = T₀)
+    (h₁ : f.comp C.sndToSum = T₁) : f = C.sumLift T₀ T₁ h :=
+  C.sumSpace_hom_ext (by rw [h₀, sumLift_comp_fstToSum]) (by rw [h₁, sumLift_comp_sndToSum])
+
+end Lift
 
 end Sum
 
