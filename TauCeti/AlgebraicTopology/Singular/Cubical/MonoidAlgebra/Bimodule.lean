@@ -39,6 +39,8 @@ system.
   the left action is strictly associative and unital.
 * `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule.
 * `TauCeti.NormalizedCubicalChain.leftAct_act`: the left and right actions commute.
+* `TauCeti.NormalizedCubicalChain.augment_leftAct`: the augmentation is multiplicative on the left
+  action of `0`-chains.
 * `TauCeti.cubicalChainModule_isDGLeftModule`: the chains form a DG left module.
 * `TauCeti.cubicalChainModule_isDGBimodule`: with commuting actions, they form a DG bimodule.
 
@@ -156,6 +158,11 @@ theorem leftAct_act {H : Type*} [TopologicalSpace H] [SMul Hᵐᵒᵖ Y] [Contin
   refine map_crossProduct_map_assoc R ?_ a c b
   ext x
   simp [Homeomorph.prodAssoc, Equiv.prodAssoc, smul_comm]
+
+/-- **The augmentation is multiplicative** on the left action of a `0`-chain on a `0`-chain. -/
+theorem augment_leftAct (a : NormalizedCubicalChain G R 0) (c : NormalizedCubicalChain Y R 0) :
+    augment Y R (leftAct G Y R 0 0 a c) = augment G R a * augment Y R c := by
+  rw [leftAct_def, ← LinearMap.comp_apply (augment Y R), augment_map, augment_crossProduct]
 
 end LeftAct
 
