@@ -57,7 +57,7 @@ theorem IsRowCompact.finrank_ker_pow_mapCoeffs (hu : u.IsRowCompact)
 /-- At every scalar there is a common stabilization bound before and after bounded field
 extension. Beyond that bound the generalized eigenspaces have equal dimensions. In particular,
 no choice of multiplicity or splitting over the larger field is needed. -/
-theorem IsRowCompact.exists_finrank_ker_pow_mapCoeffs (hu : u.IsRowCompact)
+theorem IsRowCompact.exists_isGoodZero_finrank_ker_pow_mapCoeffs (hu : u.IsRowCompact)
     (f : K →+* L) (hf : ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖) (a : K) :
     ∃ h, u.matrixCoeff.charPowerSeries.IsGoodZero a h ∧ ∀ n, h ≤ n →
       Module.finrank L (LinearMap.ker
