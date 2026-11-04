@@ -128,14 +128,14 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
     have hP : P.Monic := minpoly.monic (Algebra.IsIntegral.isIntegral y)
     have hroot : aeval y (P.map (algebraMap K M')) = 0 := by
       rw [aeval_map_algebraMap, minpoly.aeval]
-    calc spectralNorm M' N y = spectralAlgNorm M' N y := rfl
+    calc spectralNorm M' N y = spectralAlgNorm M' N y := (spectralAlgNorm_def y).symm
       _ ≤ spectralValue (P.map (algebraMap K M')) :=
           norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm
             (hP.map _) hroot
       _ = spectralValue P :=
           (algebraMap K M').spectralValue_map_of_norm_eq
             norm_algebraMap_withAbs_spectralAbsoluteValue P
-      _ = spectralNorm K N y := rfl
+      _ = spectralNorm K N y := by rw [spectralNorm]
   · -- Raise `Q = minpoly M' y` to a `p ^ n`-th power whose coefficients descend to `K`.
     classical
     set Q := minpoly M' y
@@ -178,7 +178,7 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
       exact hQ.pow q
     have hR_root : aeval y R = 0 := by
       rw [← aeval_map_algebraMap M' y R, hR_map, map_pow, minpoly.aeval, zero_pow hq.ne']
-    calc spectralNorm K N y = spectralAlgNorm K N y := rfl
+    calc spectralNorm K N y = spectralAlgNorm K N y := (spectralAlgNorm_def y).symm
       _ ≤ spectralValue R :=
           norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm
             hR_monic hR_root
@@ -192,7 +192,7 @@ theorem spectralNorm_withAbs_spectralAbsoluteValue {K M N : Type*} [NormedField 
       _ = spectralValue Q := by
           rw [← Real.rpow_natCast, ← Real.rpow_mul (spectralValue_nonneg Q),
             mul_one_div_cancel (Nat.cast_ne_zero.mpr hq.ne'), Real.rpow_one]
-      _ = spectralNorm M' N y := rfl
+      _ = spectralNorm M' N y := by rw [spectralNorm]
 
 end TauCeti
 

@@ -23,6 +23,7 @@ This file collects elementary invariance, scaling, and tower-descent lemmas for 
 * `Polynomial.spectralValue_map_iterateFrobenius_le`: mapping a polynomial over a reduced
   seminormed commutative ring by `iterateFrobenius R p n` bounds its `spectralValue` by
   `spectralValue P ^ p ^ n`.
+* `AlgHom.spectralNorm_map`: `K`-algebra homomorphisms of fields preserve `spectralNorm K`.
 * `RingEquiv.spectralNorm_eq_of_norm_eq`: compatible ring isomorphisms whose base map preserves
   norms preserve `spectralNorm`.
 * `Module.Dual.exists_bound_spectralNorm_of_tower`: in a field tower `K → L → N`, spectral
@@ -142,6 +143,18 @@ theorem spectralValue_map_iterateFrobenius_le {R : Type*} [SeminormedCommRing R]
   · exact pow_nonneg (spectralValue_nonneg P) q
 
 end Polynomial
+
+namespace AlgHom
+
+/-- The spectral norm over `K` is invariant under `K`-algebra maps of fields. -/
+theorem spectralNorm_map {K : Type*} [NormedField K] {E L : Type*} [Field E]
+    [Algebra K E] [Field L] [Algebra K L] (ψ : E →ₐ[K] L) (y : E) :
+    spectralNorm K L (ψ y) = spectralNorm K E y := by
+  -- `spectralNorm K L y` is by definition `spectralValue (minpoly K y)`, and the injective map `ψ`
+  -- preserves minimal polynomials.
+  rw [spectralNorm, spectralNorm, minpoly.algHom_eq ψ ψ.injective]
+
+end AlgHom
 
 namespace RingEquiv
 

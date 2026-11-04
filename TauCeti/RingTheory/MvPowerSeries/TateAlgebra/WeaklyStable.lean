@@ -209,31 +209,24 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
   let F' := GaussFractionField σ K' r
   have : ExpChar F' p := expChar_of_injective_algebraMap (algebraMap K' F').injective p
   have hq : p ^ e ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
+  -- Step 1: Extend the isometric Tate-algebra map `Ψ : T →+* T'` across fractions to `F →+* F'`.
   let Ψ : T →+* T' :=
     (restrictedExpand (p ^ e) hq hr).toRingHom.comp (restrictedMap (algebraMap K K') h_iso)
   have hΨ_norm (f : T) : ‖Ψ f‖ = ‖f‖ := by
     dsimp only [Ψ, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     rw [norm_restrictedExpand, norm_restrictedMap _ _ FrobeniusRoot.norm_algebraMap]
-  have hΨ_unit (s : nonZeroDivisors T) : IsUnit (((algebraMap T' F').comp Ψ) s) := by
-    refine IsUnit.mk0 _ ?_
-    rw [RingHom.comp_apply, ← norm_pos_iff, norm_algebraMap_gaussFractionField, hΨ_norm,
-      norm_pos_iff]
-    exact nonZeroDivisors.ne_zero s.2
-  let Ψ_F : F →+* F' := IsLocalization.lift hΨ_unit
-  have hΨ_F_alg (f : T) : Ψ_F (algebraMap T F f) = algebraMap T' F' (Ψ f) :=
-    IsLocalization.lift_eq hΨ_unit f
-  have hΨ_F_norm (z : F) : ‖Ψ_F z‖ = ‖z‖ := by
-    obtain ⟨f, d, _, rfl⟩ := IsFractionRing.div_surjective T z
-    rw [map_div₀, hΨ_F_alg, hΨ_F_alg, norm_div, norm_div,
-      norm_algebraMap_gaussFractionField σ K' r _, norm_algebraMap_gaussFractionField σ K' r _,
-      norm_algebraMap_gaussFractionField σ K c _, norm_algebraMap_gaussFractionField σ K c _,
-      hΨ_norm, hΨ_norm]
-  let _ : Algebra F F' := Ψ_F.toAlgebra
+  have hΨ_inj : Function.Injective Ψ :=
+    ((AddMonoidHomClass.isometry_iff_norm Ψ).mpr hΨ_norm).injective
+  let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
+  have hF_alg : algebraMap F F' = Ψ.gaussFractionFieldMap hΨ_inj :=
+    RingHom.algebraMap_toAlgebra _
+  -- Step 2: Pick an `F`-basis `b` of `M` with `b j ^ p ^ e ∈ T` and `p ^ e`-th roots in `T'`.
   obtain ⟨m, b, g, hg⟩ :=
     IsPurelyInseparable.exists_basis_iterateFrobenius_eq_algebraMap T F M p he
   let rootG (j : Fin m) : T' := tateRoot p e hr_def (g j)
   have hrootG_pow (j : Fin m) : rootG j ^ p ^ e = Ψ (g j) :=
     tateRoot_pow hr_def hr (g j)
+  -- Step 3: Embed `M` `F`-linearly into `F'` by sending `b` to the `p ^ e`-th roots `rootG`.
   have hspan_b : IntermediateField.adjoin F (Set.range b) = ⊤ := by
     rw [eq_top_iff]
     intro y _
@@ -246,24 +239,24 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
     refine IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq F M p he F' hspan_b ?_
     rintro _ ⟨j, rfl⟩
     refine ⟨algebraMap T' F' (rootG j), ?_⟩
-    rw [← map_pow, hrootG_pow, ← hΨ_F_alg, hg]
-    rfl
+    rw [← map_pow, hrootG_pow, ← Ψ.gaussFractionFieldMap_algebraMap hΨ_inj, ← hF_alg, hg]
+  -- Step 4: Verify scalar compatibility, spectral-norm isometry, and images of the basis `b`.
   refine ⟨Ψ, m, b, rootG, ι₀.toRingHom, fun _ ↦ rfl, hΨ_norm, fun f ↦ ?_, fun y ↦ ?_, fun j ↦ ?_⟩
-  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
-    exact hΨ_F_alg f
+  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes, hF_alg]
+    exact Ψ.gaussFractionFieldMap_algebraMap hΨ_inj f
   · obtain ⟨k, a, ha⟩ := IsPurelyInseparable.pow_mem F p y
     have hpk : p ^ k ≠ 0 := (pow_pos (expChar_pos K p) k).ne'
     refine (pow_left_inj₀ (norm_nonneg _) (spectralNorm_nonneg _) hpk).mp ?_
-    have hι_pow : (ι₀ y) ^ p ^ k = Ψ_F a := by
-      rw [← map_pow, ← ha, AlgHom.commutes]
-      rfl
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← norm_pow, hι_pow, hΨ_F_norm,
+    have hι_pow : (ι₀ y) ^ p ^ k = Ψ.gaussFractionFieldMap hΨ_inj a := by
+      rw [← map_pow, ← ha, AlgHom.commutes, hF_alg]
+    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← norm_pow, hι_pow,
+      Ψ.norm_gaussFractionFieldMap hΨ_inj hΨ_norm,
       TauCeti.spectralNorm_pow_eq_norm_of_pow_eq_algebraMap hpk ha.symm]
   · refine iterateFrobenius_inj F' p e ?_
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, iterateFrobenius_def]
     rw [← map_pow, ← IsPurelyInseparable.algebraMap_iterateFrobenius F p he (b j),
-      AlgHom.commutes, ← map_pow, hrootG_pow, ← hg]
-    exact hΨ_F_alg (g j)
+      AlgHom.commutes, hF_alg, ← map_pow, hrootG_pow, ← hg]
+    exact Ψ.gaussFractionFieldMap_algebraMap hΨ_inj (g j)
 
 private theorem algebraMap_sum_mul_eq_mul
     {K' : Type*} [NormedField K'] [IsUltrametricDist K']

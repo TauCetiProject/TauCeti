@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Field.WithAbs
 public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 
 /-!
 # The Frobenius-root normed algebra of an ultrametric field
@@ -41,13 +42,17 @@ public section
 
 namespace TauCeti
 
+private theorem isNonarchimedean_toAbsoluteValue_norm (K : Type*) [NormedField K]
+    [IsUltrametricDist K] :
+    IsNonarchimedean (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)) := fun x y ↦ by
+  simpa only [IsAbsoluteValue.toAbsoluteValue_apply] using
+    IsUltrametricDist.norm_add_le_max x y
+
 /-- The real absolute value `x ↦ ‖x‖ ^ (p ^ e)⁻¹` on an ultrametric normed field `K`. -/
 noncomputable def frobeniusRootAbs (K : Type*) [NormedField K] [IsUltrametricDist K]
     (p : ℕ) [ExpChar K p] (e : ℕ) : AbsoluteValue K ℝ :=
   (IsAbsoluteValue.toAbsoluteValue (norm : K → ℝ)).nonarchRpow
-    (Eq.mp (congrArg IsNonarchimedean
-      (funext (IsAbsoluteValue.toAbsoluteValue_apply (norm : K → ℝ))).symm)
-      IsUltrametricDist.isNonarchimedean_norm)
+    (isNonarchimedean_toAbsoluteValue_norm K)
     (inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e)))
 
 @[simp]

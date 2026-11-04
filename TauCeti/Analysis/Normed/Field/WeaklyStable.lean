@@ -74,8 +74,12 @@ theorem IsWeaklyStable.exists_bound_spectralNorm {K : Type u} [NormedField K]
   let e : Shrink.{u} L ≃ₐ[K] L := Shrink.algEquiv K L
   obtain ⟨C, hC⟩ := hK (Shrink.{u} L) (φ.comp e.toLinearMap)
   refine ⟨C, fun y ↦ ?_⟩
-  simpa only [AlgEquiv.apply_symm_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    spectralNorm, minpoly.algEquiv_eq] using hC (e.symm y)
+  have hφ : (φ.comp e.toLinearMap) (e.symm y) = φ y := by
+    rw [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, e.apply_symm_apply]
+  have hspec : spectralNorm K (Shrink.{u} L) (e.symm y) = spectralNorm K L y := by
+    rw [← AlgEquiv.coe_toAlgHom, e.symm.toAlgHom.spectralNorm_map]
+  rw [← hφ, ← hspec]
+  exact hC (e.symm y)
 
 /-- **Purely inseparable criterion for weak stability.** An ultrametric normed field `K` is weakly
 stable as soon as every `K`-linear functional on each finite purely inseparable extension of `K` is
@@ -129,7 +133,8 @@ private theorem isWeaklyStable_of_norm_eq {K : Type*} {K' : Type*} [NormedField 
   let _ : Algebra K K' := e.toRingHom.toAlgebra
   have : Module.Finite K K' := RingHom.Finite.of_surjective _ e.surjective
   let _ : Algebra K L' := ((algebraMap K' L').comp e.toRingHom).toAlgebra
-  have : IsScalarTower K K' L' := .of_algebraMap_eq' rfl
+  have : IsScalarTower K K' L' := .of_algebraMap_eq' <| by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra]
   have : FiniteDimensional K L' := Module.Finite.trans K' L'
   let eAlg : K ≃ₐ[K] K' :=
     AlgEquiv.ofRingEquiv (f := e) fun a ↦ by
@@ -141,8 +146,12 @@ private theorem isWeaklyStable_of_norm_eq {K : Type*} {K' : Type*} [NormedField 
   have hnorm : ‖φ y‖ = ‖φ' y‖ := by
     rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, AlgEquiv.toLinearMap_apply,
       AlgEquiv.ofRingEquiv_symm_apply, ← he (e.symm (φ' y)), e.apply_symm_apply]
+  have hcomp : (algebraMap K' L').comp e.toRingHom =
+      (RingEquiv.refl L').toRingHom.comp (algebraMap K L') := by
+    rw [RingEquiv.toRingHom_eq_coe (RingEquiv.refl L'), RingEquiv.toRingHom_refl, RingHom.id_comp,
+      RingHom.algebraMap_toAlgebra]
   have hspec : spectralNorm K' L' y = spectralNorm K L' y :=
-    e.spectralNorm_eq_of_norm_eq he (RingEquiv.refl L') rfl y
+    e.spectralNorm_eq_of_norm_eq he (RingEquiv.refl L') hcomp y
   rw [← hnorm, hspec]
   exact hC y
 
