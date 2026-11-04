@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Projectivization.Action
 import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.MulVec
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # The special isometry group of a sesquilinear Gram matrix
@@ -44,7 +45,6 @@ sub-`MulAction` `Matrix.isotropicPoints Q σ`, the natural permutation domain of
 ## Main results
 
 * `Matrix.mem_specialIsometryGroup_iff`: the defining matrix equation.
-* `Matrix.comp_mulVec_dotProduct_mulVec_mulVec`: an element of the group preserves the form.
 * `Matrix.mem_isotropicPoints_iff`: a point is isotropic when its chosen representative is.
 * `Matrix.mk_mem_isotropicPoints_iff`: the point of a nonzero vector is isotropic exactly when the
   vector is.
@@ -95,14 +95,6 @@ theorem mem_specialIsometryGroup_iff {g : SpecialLinearGroup n K} :
     g ∈ Q.specialIsometryGroup σ ↔ ((g : Matrix n n K).map σ)ᵀ * Q * g = Q :=
   Iff.rfl
 
-/-- **An isometry preserves the sesquilinear form**: `h(g x, g y) = h(x, y)`. -/
-theorem comp_mulVec_dotProduct_mulVec_mulVec {g : SpecialLinearGroup n K}
-    (hg : g ∈ Q.specialIsometryGroup σ) (x y : n → K) :
-    (σ ∘ ((g : Matrix n n K) *ᵥ x)) ⬝ᵥ (Q *ᵥ ((g : Matrix n n K) *ᵥ y)) =
-      (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
-  rw [comp_mulVec_eq_vecMul_transpose_map, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec,
-    (mem_specialIsometryGroup_iff).mp hg]
-
 end CommRing
 
 section Field
@@ -130,7 +122,7 @@ def isotropicPoints : SubMulAction (Q.specialIsometryGroup σ) (ℙ K (n → K))
     simp only [Set.mem_ofPred_eq, comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff] at hp ⊢
     rw [Subgroup.smul_def, Projectivization.smul_mk,
       comp_rep_mk_dotProduct_mulVec_rep_mk_eq_zero_iff, SpecialLinearGroup.smul_def, smul_eq_mulVec,
-      comp_mulVec_dotProduct_mulVec_mulVec g.2, hp]
+      comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.2), hp]
 
 /-- A point lies in `isotropicPoints` exactly when its chosen representative is isotropic. -/
 theorem mem_isotropicPoints_iff {p : ℙ K (n → K)} :

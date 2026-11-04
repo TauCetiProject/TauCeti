@@ -67,7 +67,7 @@ x² + ny²*, Chapter 3, and F. Lemmermeyer, *Reciprocity Laws*, Chapter 6.
 public section
 
 open Polynomial
-open scoped NumberField nonZeroDivisors
+open scoped NumberField nonZeroDivisors symmDiff
 open NumberField (ramifiedPrimes)
 
 namespace TauCeti.Multiquadratic
@@ -201,10 +201,9 @@ theorem prod_classGroupMk0_eq_prod_sdiff (hmin : minpoly ℤ θ = X ^ 2 - C d)
     _ = (∏ p ∈ S, ClassGroup.mk0 (Q p)) *
         ∏ p ∈ d.natAbs.primeFactors, ClassGroup.mk0 (Q p) := by
       rw [prod_classGroupMk0_eq_one Q hmin hgen hsf hprime hover, mul_one]
-    _ = ∏ p ∈ S \ d.natAbs.primeFactors ∪ d.natAbs.primeFactors \ S,
-        ClassGroup.mk0 (Q p) :=
-      (prod_sdiff_union_sdiff _ (fun p hp ↦ hsq p (Finset.mem_inter.mp hp).1)).symm
-    _ = _ := by rw [Finset.sdiff_eq_empty_iff_subset.mpr hS, Finset.empty_union]
+    _ = ∏ p ∈ S ∆ d.natAbs.primeFactors, ClassGroup.mk0 (Q p) :=
+      (prod_symmDiff _ (fun p hp ↦ hsq p (Finset.mem_inter.mp hp).1)).symm
+    _ = _ := by rw [symmDiff_of_le hS]
 
 /-- **The classes of the ramified primes generate a subgroup of order at most
 `2 ^ (t - 1)`.** Let `s` be a finite set of ramified primes of `K = ℚ(√d)` containing every
@@ -213,7 +212,7 @@ prime factor of `d`, with `Q p` the prime of `𝓞 K` above `p ∈ s`. Then the 
 
 The classes are involutions, so the subgroup they generate is the set of sub-products, of which
 there are at most `2 ^ #s`; the relation `prod_classGroupMk0_eq_one` over the prime factors of `d`
-removes one generator (`TauCeti.natCard_closure_image_le_two_pow_card_sub_one`). The hypothesis
+removes one generator (`Finset.natCard_closure_image_le_two_pow_card_sub_one`). The hypothesis
 `1 < |d|` excludes `d = -1`, the one radicand with no prime factor and hence no relation.
 
 This is only an upper bound in the ordinary class group; no matching lower bound is asserted. -/
@@ -225,7 +224,7 @@ theorem natCard_closure_image_classGroupMk0_le (hmin : minpoly ℤ θ = X ^ 2 - 
     (hs : d.natAbs.primeFactors ⊆ s) (hd : 1 < d.natAbs) :
     Nat.card (Subgroup.closure ((fun p ↦ ClassGroup.mk0 (Q p)) '' (↑s : Set ℕ))) ≤
       2 ^ (s.card - 1) :=
-  natCard_closure_image_le_two_pow_card_sub_one s _
+  s.natCard_closure_image_le_two_pow_card_sub_one _
     (fun p hp ↦ by
       let _ := hprime p hp
       let _ := hover p hp

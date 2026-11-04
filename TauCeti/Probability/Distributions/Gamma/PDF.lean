@@ -54,6 +54,14 @@ theorem gammaPDFReal_nat_div_pow {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hr : r �
   have := Nat.factorial_pos (k - 1)
   field_simp
 
+/-- The gamma density is integrable: it is a nonnegative function whose Lebesgue integral is `1`. -/
+theorem integrable_gammaPDFReal {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    Integrable (gammaPDFReal a r) := by
+  refine ⟨(measurable_gammaPDFReal a r).aestronglyMeasurable, ?_⟩
+  have h : ∫⁻ y, ENNReal.ofReal (gammaPDFReal a r y) = 1 := lintegral_gammaPDF_eq_one ha hr
+  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ (gammaPDFReal_nonneg ha hr)), h]
+  exact ENNReal.one_lt_top
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A variable with a Gamma law has a density. -/

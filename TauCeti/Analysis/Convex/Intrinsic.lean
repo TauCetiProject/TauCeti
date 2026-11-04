@@ -39,6 +39,16 @@ set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intri
 These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
 bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
 
+Read in the ambient space, `x` is an intrinsic interior point of `s` when it lies in the affine
+span of `s` and the points of that span near `x` lie in `s`
+(`TauCeti.mem_intrinsicInterior_iff_eventually`). A subset `u` of a convex set `s` which meets the
+intrinsic interior of `s` has its intrinsic interior inside that of `s`
+(`TauCeti.intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty`). Consequently, if the
+intrinsic interiors of two convex sets meet, the intrinsic interior of their intersection is the
+intersection of their intrinsic interiors (`TauCeti.intrinsicInterior_inter`; Rockafellar,
+*Convex Analysis*, Theorem 6.5). This computes the intrinsic interiors of the cells `σ ∩ τ` cut
+out by two triangulations.
+
 A closed bounded convex set `C` of a real normed space, with a point `c` of its intrinsic
 interior, is homeomorphic to the closed unit ball of the direction `V` of its affine span
 (`TauCeti.convexClosedBallHomeomorph`). Translating by `-c` turns `C` into a closed bounded convex
@@ -136,6 +146,29 @@ theorem _root_.IsClosed.sdiff_intrinsicInterior (hs : IsClosed s) :
     s \ intrinsicInterior 𝕜 s = intrinsicFrontier 𝕜 s := by
   rw [← intrinsicClosure_sdiff_intrinsicInterior,
     (hs.preimage continuous_subtype_val).intrinsicClosure]
+
+/-- Membership in the intrinsic interior, read in the ambient space: `x` is an intrinsic interior
+point of `s` when it lies in the affine span of `s` and every point of that span close to `x` lies
+in `s`. -/
+theorem mem_intrinsicInterior_iff_eventually {x : P} :
+    x ∈ intrinsicInterior 𝕜 s ↔
+      x ∈ affineSpan 𝕜 s ∧ ∀ᶠ y in nhds x, y ∈ affineSpan 𝕜 s → y ∈ s := by
+  refine ⟨fun ⟨z, hz, hzx⟩ ↦ ?_, fun ⟨hx, h⟩ ↦ ⟨⟨x, hx⟩, ?_, rfl⟩⟩
+  · obtain ⟨u, hu, hus⟩ := (mem_nhds_subtype _ _ _).1 (mem_interior_iff_mem_nhds.1 hz)
+    exact hzx ▸ ⟨z.2, Filter.mem_of_superset hu fun y hy hyA ↦ hus (a := ⟨y, hyA⟩) hy⟩
+  · exact mem_interior_iff_mem_nhds.2 ((mem_nhds_subtype _ _ _).2 ⟨_, h, fun y hy ↦ hy y.2⟩)
+
+/-- A point in the intrinsic interiors of two sets is in the intrinsic interior of their
+intersection. -/
+theorem intrinsicInterior_inter_intrinsicInterior_subset :
+    intrinsicInterior 𝕜 s ∩ intrinsicInterior 𝕜 t ⊆ intrinsicInterior 𝕜 (s ∩ t) := by
+  rintro x ⟨hxs, hxt⟩
+  have hx : x ∈ s ∩ t := ⟨intrinsicInterior_subset hxs, intrinsicInterior_subset hxt⟩
+  rw [mem_intrinsicInterior_iff_eventually] at hxs hxt ⊢
+  refine ⟨subset_affineSpan 𝕜 _ hx, ?_⟩
+  filter_upwards [hxs.2, hxt.2] with y hys hyt hy
+  exact ⟨hys (affineSpan_mono 𝕜 inter_subset_left hy),
+    hyt (affineSpan_mono 𝕜 inter_subset_right hy)⟩
 
 end AffineSpan
 
@@ -314,6 +347,41 @@ theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicIn
   have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
   simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+
+/-- A subset `u` of a convex set `s` meeting the intrinsic interior of `s` has its intrinsic
+interior inside that of `s`. -/
+theorem intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty {s u : Set E}
+    (hs : Convex ℝ s) (hus : u ⊆ s) (h : (u ∩ intrinsicInterior ℝ s).Nonempty) :
+    intrinsicInterior ℝ u ⊆ intrinsicInterior ℝ s := by
+  intro y hy
+  obtain ⟨z, hzu, hzs⟩ := h
+  -- Push `y` slightly away from `z` inside `u`; then `y` lies strictly between `z` and that point.
+  have hv : y - z ∈ (affineSpan ℝ u).direction := by
+    rw [direction_affineSpan]
+    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hy) hzu
+  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hy hv).filter_mono
+    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  replace hεpos : 0 < ε := mem_Ioi.1 hεpos
+  refine hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hzs
+    (subset_intrinsicClosure (hus hε)) ⟨ε / (1 + ε), 1 / (1 + ε), by positivity, by positivity,
+      by field_simp; ring, ?_⟩
+  match_scalars
+  · field_simp
+    ring
+  · field_simp
+
+/-- **The intrinsic interior of an intersection** (Rockafellar, Theorem 6.5). If the intrinsic
+interiors of two convex sets meet, the intrinsic interior of their intersection is the
+intersection of their intrinsic interiors. -/
+theorem intrinsicInterior_inter {s t : Set E} (hs : Convex ℝ s) (ht : Convex ℝ t)
+    (h : (intrinsicInterior ℝ s ∩ intrinsicInterior ℝ t).Nonempty) :
+    intrinsicInterior ℝ (s ∩ t) = intrinsicInterior ℝ s ∩ intrinsicInterior ℝ t := by
+  obtain ⟨z, hzs, hzt⟩ := h
+  have hz : z ∈ s ∩ t := ⟨intrinsicInterior_subset hzs, intrinsicInterior_subset hzt⟩
+  exact (subset_inter
+    (intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty hs inter_subset_left ⟨z, hz, hzs⟩)
+    (intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty ht inter_subset_right
+      ⟨z, hz, hzt⟩)).antisymm intrinsicInterior_inter_intrinsicInterior_subset
 
 /-- **A closed bounded convex set is a ball around each intrinsic interior point.** For a closed
 bounded convex set `C` of a real normed space and a point `c` of its intrinsic interior, the closed

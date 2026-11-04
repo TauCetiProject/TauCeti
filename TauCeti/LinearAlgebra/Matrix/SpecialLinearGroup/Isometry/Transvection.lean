@@ -71,9 +71,8 @@ theorem coe_mul_unitaryTransvection_mul_coe_inv {g : SpecialLinearGroup n K}
     (hg : g ∈ Q.specialIsometryGroup σ) (v : n → K) (a : K) :
     (g : Matrix n n K) * Q.unitaryTransvection σ v a * ((g⁻¹ : SpecialLinearGroup n K) :
       Matrix n n K) = Q.unitaryTransvection σ ((g : Matrix n n K) *ᵥ v) a :=
-  mul_unitaryTransvection_mul_of_mul_eq_one
-    (by rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one])
-    ((mem_specialIsometryGroup_iff).mp hg) v a
+  by rw [mul_unitaryTransvection (mem_specialIsometryGroup_iff.mp hg), Matrix.mul_assoc,
+    ← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one, Matrix.mul_one]
 
 /-- **Admissible unitary transvections are isometries.** If `σ` is an involution, `Q` is
 `ε`-Hermitian, `v` is isotropic and `a + ε σ(a) = 0`, then `τ_{v,a}` is the matrix of an element of
@@ -84,8 +83,8 @@ theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection (hσ : Functi
     ∃ g ∈ Q.specialIsometryGroup σ, (g : Matrix n n K) = Q.unitaryTransvection σ v a := by
   let t : SpecialLinearGroup n K := ⟨_, det_unitaryTransvection hv a⟩
   refine ⟨t, ?_, rfl⟩
-  rw [mem_specialIsometryGroup_iff, SpecialLinearGroup.coe_mk,
-    transpose_map_unitaryTransvection_mul_mul hσ hQ hv, ha, zero_smul, add_zero]
+  rw [mem_specialIsometryGroup_iff, SpecialLinearGroup.coe_mk]
+  exact transpose_map_unitaryTransvection_mul_mul_self hσ hQ hv ha
 
 end CommRing
 
@@ -113,7 +112,7 @@ def unitaryTransvectionSubgroup (p : Q.isotropicPoints σ) :
     have h₁ : ((g : SpecialLinearGroup n K) : Matrix n n K) *
         Q.unitaryTransvection σ (p : ℙ K (n → K)).rep (-a) = 1 := by
       rw [ha, unitaryTransvection_mul_unitaryTransvection (comp_rep_dotProduct_mulVec_rep p),
-        add_neg_cancel, unitaryTransvection_zero_right]
+        add_neg_cancel, unitaryTransvection_zero]
     have h₂ : ((g : SpecialLinearGroup n K) : Matrix n n K) *
         ((g⁻¹ : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) = 1 := by
       rw [← SpecialLinearGroup.coe_mul, ← Subgroup.coe_mul, mul_inv_cancel, Subgroup.coe_one,
