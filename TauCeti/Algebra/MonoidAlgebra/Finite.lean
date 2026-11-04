@@ -29,7 +29,10 @@ it supplies the finiteness condition in the character description of their isoge
 Without commutativity, `R[N]` is still a finitely generated `R[M]`-module through any monoid
 homomorphism `p : M →* N` into a finite monoid, since it is already finitely generated over `R`
 (`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_finite`). This is the finiteness behind
-restricting representations of a finite group along a homomorphism.
+restricting representations of a finite group along a homomorphism. For a submonoid inclusion
+`S ≤ T` in a commutative monoid, finitely many coset-like translates covering `T` over `S` suffice
+for `(mapDomainRingHom R (Submonoid.inclusion hST)).Finite`
+(`MonoidAlgebra.finite_mapDomainRingHom_inclusion_of_exists_finset_mul` and its additive form).
 -/
 
 public section
@@ -117,3 +120,41 @@ theorem mapDomainRingHom_moduleFinite_of_finite {R : Type*} [Semiring R] {M N : 
   exact Module.Finite.of_restrictScalars_finite R (MonoidAlgebra R M) (MonoidAlgebra R N)
 
 end TauCeti.MonoidAlgebra
+
+namespace MonoidAlgebra
+
+/-- If a submonoid `T` containing `S` is covered by finitely many translates of `S`, then `R[T]` is
+a finite `R[S]`-algebra along the inclusion map. -/
+@[to_additive (dont_translate := R)
+/-- If an additive submonoid `T` containing `S` is covered by finitely many shifts of `S`, then
+`R[T]` is a finite `R[S]`-algebra along the inclusion map. -/]
+theorem finite_mapDomainRingHom_inclusion_of_exists_finset_mul {M : Type*} [CommMonoid M]
+    {S T : Submonoid M} (hST : S ≤ T)
+    (hF : ∃ F : Finset M, (F : Set M) ⊆ T ∧ ∀ x ∈ T, ∃ z ∈ F, ∃ s ∈ S, x = z * s)
+    (R : Type*) [CommRing R] :
+    (mapDomainRingHom R (Submonoid.inclusion hST)).Finite := by
+  obtain ⟨F, hF_sub, hF_mul⟩ := hF
+  set ι := Submonoid.inclusion hST
+  let := (mapDomainRingHom R ι).toAlgebra
+  apply Module.Finite.of_fg_top
+  refine Submodule.fg_def.mpr
+    ⟨Set.range fun z : F => single ⟨z.1, hF_sub z.2⟩ (1 : R), Set.finite_range _, ?_⟩
+  apply top_unique
+  intro x hx
+  clear hx
+  induction x using induction_linear with
+  | zero => exact Submodule.zero_mem _
+  | add _ _ hx hy => exact Submodule.add_mem _ hx hy
+  | single t r =>
+    obtain ⟨z, hz, s, hs, htz⟩ := hF_mul t.1 t.2
+    have hprod : ι ⟨s, hs⟩ * ⟨z, hF_sub hz⟩ = t := Subtype.ext (by simp [ι, htz, mul_comm])
+    have hz_mem : single (⟨z, hF_sub hz⟩ : T) (1 : R) ∈
+        Set.range fun w : F => single (⟨w.1, hF_sub w.2⟩ : T) (1 : R) := ⟨⟨z, hz⟩, rfl⟩
+    have hmem := Submodule.smul_mem
+      (Submodule.span (MonoidAlgebra R S)
+        (Set.range fun w : F => single (⟨w.1, hF_sub w.2⟩ : T) (1 : R)))
+      (single ⟨s, hs⟩ r) (Submodule.subset_span hz_mem)
+    simpa only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
+      mapDomain_single, single_mul_single, mul_one, hprod] using hmem
+
+end MonoidAlgebra
