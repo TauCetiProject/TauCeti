@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -18,15 +19,23 @@ Mathlib records the lower bound `1 + x + x ^ 2 / 2 ≤ exp x` for `0 ≤ x`
 * `Real.exp_le_one_add_add_sq_div_two_of_nonpos`: for `x ≤ 0`,
   `exp x ≤ 1 + x + x ^ 2 / 2`;
 * `Real.exp_le_one_add_add_sq_div_of_le`: if `x ≤ c` with `0 ≤ c < 3`, then
-  `exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3))`.
+  `exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3))`;
+* `Real.exp_le_one_add_add_sq_div_two_mul_exp_abs`: for every real `x`,
+  `exp x ≤ 1 + x + x ^ 2 / 2 * exp |x|`;
+* `Real.one_sub_rpow_neg_half_le_exp`: for `0 ≤ u ≤ 1 / 2`,
+  `(1 - u) ^ (-1 / 2 : ℝ) ≤ exp u`.
 
-The second bound is the exponential estimate behind Bernstein's inequality: applied to `t X` for a
-centred random variable `X ≤ b` it bounds the moment-generating function by the second moment.
+The Bernstein bound applied to `t X` for a centred random variable `X ≤ b` controls the
+moment-generating function by the second moment, while the two-sided remainder bound and the
+`(1 - u) ^ (-1 / 2)` bound play the corresponding roles for centred sub-exponential variables and
+Gaussian quadratic forms.
 
 ## References
 
 * S. Boucheron, G. Lugosi and P. Massart, *Concentration Inequalities: A Nonasymptotic Theory of
   Independence*, Oxford University Press (2013), §2.8.
+* R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*,
+  Cambridge University Press (2018), §§2.7, 6.2.
 -/
 
 public section
@@ -84,5 +93,45 @@ theorem exp_le_one_add_add_sq_div_of_le {x c : ℝ} (hxc : x ≤ c) (hc0 : 0 ≤
     · nlinarith
     · linarith
   · exact exp_le_one_add_add_sq_div_of_nonneg_of_le hx hxc hc3
+
+/-- For every real `x`, the second-order Taylor remainder `exp x - 1 - x` is bounded above by
+`x ^ 2 / 2 * exp |x|`. -/
+theorem exp_le_one_add_add_sq_div_two_mul_exp_abs (x : ℝ) :
+    exp x ≤ 1 + x + x ^ 2 / 2 * exp |x| := by
+  rcases le_total x 0 with hx | hx
+  · refine (exp_le_one_add_add_sq_div_two_of_nonpos hx).trans ?_
+    have hexp : 1 ≤ exp |x| := one_le_exp (abs_nonneg x)
+    nlinarith [sq_nonneg x]
+  · rw [abs_of_nonneg hx]
+    have hs : HasSum (fun n : ℕ ↦ x ^ n / n !) (exp x) := by
+      rw [exp_eq_exp_ℝ]
+      exact NormedSpace.expSeries_div_hasSum_exp x
+    have hs2 : HasSum (fun n : ℕ ↦ x ^ (n + 2) / (n + 2)!) (exp x - 1 - x) := by
+      have := (hasSum_nat_add_iff' 2).2 hs
+      simpa [Finset.sum_range_succ, sub_sub] using this
+    have hg : HasSum (fun n : ℕ ↦ x ^ 2 / 2 * (x ^ n / n !)) (x ^ 2 / 2 * exp x) :=
+      hs.mul_left _
+    have hterm (n : ℕ) : x ^ (n + 2) / (n + 2)! ≤ x ^ 2 / 2 * (x ^ n / n !) := by
+      have hfac_nat : 2 * n ! ≤ (n + 2)! := by
+        calc 2 * n ! = n ! * 2 := mul_comm _ _
+          _ ≤ n ! * ((n + 2) * (n + 1)) := Nat.mul_le_mul_left _ (by nlinarith)
+          _ = (n + 2)! := by simp only [Nat.factorial_succ]; ring
+      have hfac : (2 * n ! : ℝ) ≤ (n + 2)! := by exact_mod_cast hfac_nat
+      rw [div_le_iff₀ (by positivity), pow_add]
+      calc x ^ n * x ^ 2 = x ^ 2 / 2 * (x ^ n / n !) * (2 * n !) := by field_simp
+        _ ≤ x ^ 2 / 2 * (x ^ n / n !) * (n + 2)! := by gcongr
+    linarith [hasSum_le hterm hs2 hg]
+
+/-- For `0 ≤ u ≤ 1 / 2`, the Gaussian quadratic-form factor `(1 - u) ^ (-1 / 2)` is bounded above
+by `exp u`. -/
+theorem one_sub_rpow_neg_half_le_exp {u : ℝ} (hu0 : 0 ≤ u) (hu : u ≤ 1 / 2) :
+    (1 - u) ^ (-1 / 2 : ℝ) ≤ exp u := by
+  have hu1 : 0 < 1 - u := by linarith
+  have hexp : exp (-(2 * u)) ≤ 1 - u :=
+    (exp_le_one_add_add_sq_div_two_of_nonpos (by linarith)).trans (by nlinarith)
+  rw [← rpow_le_rpow_iff (rpow_nonneg hu1.le _) (exp_pos u).le (by norm_num : (0 : ℝ) < 2),
+    ← rpow_mul hu1.le, (by norm_num : (-1 / 2 : ℝ) * 2 = -1), rpow_neg_one, ← exp_mul,
+    mul_comm u 2, ← neg_neg (2 * u), exp_neg]
+  exact inv_anti₀ (exp_pos _) hexp
 
 end Real
