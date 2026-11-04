@@ -87,7 +87,7 @@ theorem IsMinimal.subsingleton_gradedExt_of_lt (hr : r.IsMinimal) {c : ℤ}
     Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) := by
   classical
   choose lb hlb using fun m ↦ (r.grading m).finite_piece_ne_bot.bddBelow
-  have hshift : Subsingleton (Ext.{w} M (N.shiftObj j) n) :=
+  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.2 <|
     hr.subsingleton_ext_of_lt hM lb
       (fun m p hp ↦ by
         by_contra hne
@@ -95,9 +95,6 @@ theorem IsMinimal.subsingleton_gradedExt_of_lt (hr : r.IsMinimal) {c : ℤ}
         omega)
       (p := j) hjn _ fun q hq ↦ by
         simpa [sub_eq_add_neg] using hN (q - j) (sub_ne_zero.mpr hq)
-  rw [← GradedModuleCat.shiftFunctor_obj] at hshift
-  exact (extLinearEquivOfIso k (Iso.refl M)
-    ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).injective.subsingleton
 
 /-- Each fixed internal shift `N{j}` of a degree-zero target is Ext-bounded against `M` by the
 explicit cutoff `(j - c + 1).toNat`. -/
@@ -189,12 +186,9 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
 vanishes, with no minimality or termwise finite-dimensionality assumption. -/
 theorem IsLinear.subsingleton_gradedExt_of_ne (hr : r.IsLinear) {N : GradedModuleCat.{v} 𝒜}
     (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥) {n : ℕ} {j : ℤ} (hnj : (n : ℤ) ≠ j) :
-    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) := by
-  have hshift : Subsingleton (Ext.{w} M (N.shiftObj j) n) :=
-    hr.subsingleton_ext_shiftObj_of_ne hN n j hnj
-  rw [← GradedModuleCat.shiftFunctor_obj] at hshift
-  exact (extLinearEquivOfIso k (Iso.refl M)
-    ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).injective.subsingleton
+    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) M N n j) :=
+  GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.2
+    (hr.subsingleton_ext_shiftObj_of_ne hN n j hnj)
 
 /-- Each fixed internal shift `N{j}` of a degree-zero target is Ext-bounded against a linearly
 resolved module `M` by `(j + 1).toNat`. -/

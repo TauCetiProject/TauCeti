@@ -400,6 +400,15 @@ section CommRing
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
+/-- Bigraded `Ext` in internal degree `j` is a subsingleton if and only if ordinary `Ext` into the
+explicit internal shift `Y{j}` is a subsingleton. -/
+theorem GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj
+    {X Y : GradedModuleCat.{v} 𝒜} {n : ℕ} {j : ℤ} :
+    Subsingleton (GradedExt.{w} (GradedModuleCat.shift 𝒜) X Y n j) ↔
+      Subsingleton (Ext.{w} X (Y.shiftObj j) n) :=
+  (extAddEquivOfIso (Iso.refl X)
+    ((GradedModuleCat.shiftPowIso 𝒜 j).app Y) n).toEquiv.subsingleton_congr
+
 /-- Any integer internal shift of a source preserves a uniform cohomological bound on its
 graded Ext groups. -/
 theorem IsGradedExtBoundedBy.shiftObj {X Y : GradedModuleCat.{v} 𝒜} {N : ℕ}

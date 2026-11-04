@@ -310,11 +310,8 @@ private theorem cartan_eulerPowerSeries_eq_diagonal_aux
         have h0 := congrArg (fun f : LaurentPolynomial ℤ ↦ f.coeff 0) (hne hij)
         rwa [GradedModuleCat.coeff_smulGradedDimension, AddMonoidAlgebra.coeff_zero,
           Finsupp.zero_apply] at h0
-    · have hbot : (S j).obj.grading.piece (0 + -(a : ℤ)) = ⊥ :=
-        hconc j _ (by omega)
-      have hsmul : e i • (⊥ : Submodule k (S j).obj) = ⊥ :=
-        (Submodule.eq_bot_iff _).mpr (by rintro _ ⟨x, hx, rfl⟩; simp at hx; simp [hx])
-      rw [hbot, hsmul, Module.finrank_zero_of_subsingleton, Nat.cast_zero]
+    · rw [hconc j _ (by omega), Submodule.smul_bot', Module.finrank_zero_of_subsingleton,
+        Nat.cast_zero]
       simp only [Matrix.diagonal_apply]
       split_ifs with hij
       · rw [PowerSeries.coeff_C, ite_eq_right ha0]

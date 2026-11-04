@@ -82,6 +82,16 @@ structure HasEulerPowerSeries (P : PowerSeries (LaurentPolynomial R)) : Prop whe
   /-- Each nonnegative internal degree is nonzero in only finitely many Maslov degrees. -/
   finite_support (a : ℕ) : {n : ℕ | (PowerSeries.coeff n P).coeff (a : ℤ) ≠ 0}.Finite
 
+/-- In each nonnegative internal degree `a`, the Maslov coefficients of a series satisfying
+`HasEulerPowerSeries` vanish from some Maslov bound `N` onward. -/
+theorem HasEulerPowerSeries.exists_bound {P : PowerSeries (LaurentPolynomial R)}
+    (hP : HasEulerPowerSeries P) (a : ℕ) :
+    ∃ N : ℕ, ∀ n ≥ N, (PowerSeries.coeff n P).coeff (a : ℤ) = 0 := by
+  obtain ⟨N, hN⟩ := (hP.finite_support a).bddAbove
+  refine ⟨N + 1, fun n hn ↦ ?_⟩
+  by_contra h0
+  exact absurd (hN h0) (by omega)
+
 /-- The zero series has an Alexander-graded Euler power series. -/
 theorem HasEulerPowerSeries.zero :
     HasEulerPowerSeries (0 : PowerSeries (LaurentPolynomial R)) where
@@ -214,24 +224,16 @@ theorem eulerPowerSeries_add {P Q : PowerSeries (LaurentPolynomial R)}
     (hPQ : HasEulerPowerSeries (P + Q)) :
     eulerPowerSeries hPQ = eulerPowerSeries hP + eulerPowerSeries hQ := by
   ext a
-  classical
-  let s := (hP.finite_support a).toFinset ∪ (hQ.finite_support a).toFinset
-  have hsP : ∀ n ≥ s.sup id + 1, (PowerSeries.coeff n P).coeff (a : ℤ) = 0 := by
-    intro n hn
-    by_contra h0
-    have hmem : n ∈ s := Finset.mem_union_left _ ((hP.finite_support a).mem_toFinset.mpr h0)
-    have hle : n ≤ s.sup id := Finset.le_sup (f := id) hmem
-    omega
-  have hsQ : ∀ n ≥ s.sup id + 1, (PowerSeries.coeff n Q).coeff (a : ℤ) = 0 := by
-    intro n hn
-    by_contra h0
-    have hmem : n ∈ s := Finset.mem_union_right _ ((hQ.finite_support a).mem_toFinset.mpr h0)
-    have hle : n ≤ s.sup id := Finset.le_sup (f := id) hmem
-    omega
-  rw [map_add, coeff_eulerPowerSeries_eq_sum hPQ a (s.sup id + 1)
+  obtain ⟨N₁, hN₁⟩ := hP.exists_bound a
+  obtain ⟨N₂, hN₂⟩ := hQ.exists_bound a
+  have hsP : ∀ n ≥ max N₁ N₂, (PowerSeries.coeff n P).coeff (a : ℤ) = 0 :=
+    fun n hn ↦ hN₁ n (le_of_max_le_left hn)
+  have hsQ : ∀ n ≥ max N₁ N₂, (PowerSeries.coeff n Q).coeff (a : ℤ) = 0 :=
+    fun n hn ↦ hN₂ n (le_of_max_le_right hn)
+  rw [map_add, coeff_eulerPowerSeries_eq_sum hPQ a (max N₁ N₂)
       (fun n hn ↦ by simp [hsP n hn, hsQ n hn]),
-    coeff_eulerPowerSeries_eq_sum hP a (s.sup id + 1) hsP,
-    coeff_eulerPowerSeries_eq_sum hQ a (s.sup id + 1) hsQ, ← Finset.sum_add_distrib]
+    coeff_eulerPowerSeries_eq_sum hP a (max N₁ N₂) hsP,
+    coeff_eulerPowerSeries_eq_sum hQ a (max N₁ N₂) hsQ, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   simp [mul_add]
 
@@ -268,18 +270,8 @@ theorem coeff_maslovEulerPowerSeries_of_diagonal {P : PowerSeries (LaurentPolyno
     (hdiag : ∀ (n : ℕ) (a : ℤ), (n : ℤ) ≠ a → (PowerSeries.coeff n P).coeff a = 0) (n : ℕ) :
     PowerSeries.coeff n (maslovEulerPowerSeries P) =
       (-1 : R) ^ n * (PowerSeries.coeff n P).coeff (n : ℤ) := by
-  classical
-  rw [coeff_maslovEulerPowerSeries, laurentEval_one_eq_sum, Finsupp.sum]
-  congr 1
-  by_cases hn : (n : ℤ) ∈ (PowerSeries.coeff n P).coeff.support
-  · exact Finset.sum_eq_single (n : ℤ)
-      (fun a ha hne ↦ False.elim (Finsupp.mem_support_iff.mp ha (hdiag n a hne.symm)))
-      (fun hnot ↦ False.elim (hnot hn))
-  · rw [Finset.sum_eq_zero fun a ha ↦ ?_, Finsupp.notMem_support_iff.mp hn]
-    by_cases hna : (n : ℤ) = a
-    · subst hna
-      exact False.elim (hn ha)
-    · exact hdiag n a hna
+  rw [coeff_maslovEulerPowerSeries, laurentEval_one_eq_sum,
+    Finsupp.sum_eq_single (n : ℤ) (fun b _ hb ↦ hdiag n b (Ne.symm hb)) (fun _ ↦ rfl)]
 
 end MaslovEulerPowerSeries
 
