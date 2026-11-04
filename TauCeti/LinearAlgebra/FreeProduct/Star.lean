@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeProduct.Basic
+public import TauCeti.LinearAlgebra.FreeProduct.Basic
 public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Algebra.Star.Module
 import Mathlib.Algebra.Algebra.Opposite
 
@@ -16,8 +17,11 @@ import Mathlib.Algebra.Algebra.Opposite
 The algebraic free product of unital star algebras is itself a star algebra: its involution
 extends those of the factors, conjugates scalars, and reverses the order of products.
 `LinearAlgebra.FreeProduct.ιStar` and `LinearAlgebra.FreeProduct.liftStar` express its
-universal property for unital star algebra homomorphisms. Forgetting star recovers Mathlib's
-algebraic coproduct and its universal maps, not a different quotient.
+universal property for unital star algebra homomorphisms,
+`LinearAlgebra.FreeProduct.iSup_range_ιStar` records that the factor images generate the free
+product as a star subalgebra, and `LinearAlgebra.FreeProduct.isEmptyStarAlgEquiv` identifies the
+empty star free product with `R`. Forgetting star recovers Mathlib's algebraic coproduct and its
+universal maps, not a different quotient.
 
 This is an algebraic construction. No positivity, norm, completion or faithfulness of the
 factor maps is asserted. The index type can be empty.
@@ -201,5 +205,53 @@ theorem liftStar_comp {C : Type*} [Semiring C] [Algebra R C] [StarRing C] [StarM
     liftStar (fun {i} => g.comp (maps (i := i))) = g.comp (liftStar maps) := by
   ext i a
   simp
+
+section GenerationAndEmpty
+
+variable (R A)
+
+/-- The star-subalgebra images of the factor embeddings generate `FreeProduct R A`. -/
+theorem iSup_range_ιStar :
+    (⨆ i, (ιStar R A i).range) = (⊤ : StarSubalgebra R (FreeProduct R A)) := by
+  let S : StarSubalgebra R (FreeProduct R A) := ⨆ i, (ιStar R A i).range
+  let s : FreeProduct R A →⋆ₐ[R] S :=
+    liftStar fun {i} ↦ (ιStar R A i).codRestrict S fun a ↦
+      le_iSup (fun j ↦ (ιStar R A j).range) i ⟨a, rfl⟩
+  have hs : S.subtype.comp s = StarAlgHom.id R (FreeProduct R A) := by
+    refine starAlgHom_ext fun i a ↦ ?_
+    simp [s]
+  rw [eq_top_iff]
+  intro x _
+  have hx : S.subtype (s x) = x := DFunLike.congr_fun hs x
+  exact hx ▸ (s x).2
+
+/-- The unital star-algebraic free product over an empty index type is canonically star-isomorphic
+to the base star semiring `R`. -/
+def isEmptyStarAlgEquiv [IsEmpty I] : FreeProduct R A ≃⋆ₐ[R] R :=
+  StarAlgEquiv.ofStarAlgHom
+    (liftStar fun {i} ↦ isEmptyElim i)
+    (StarAlgHom.ofId R (FreeProduct R A))
+    (starAlgHom_ext fun i ↦ isEmptyElim i)
+    (StarAlgHom.ext fun r ↦ AlgHomClass.commutes (liftStar (R := R) (A := A) fun {i} ↦
+      isEmptyElim i) r)
+
+@[simp]
+theorem isEmptyStarAlgEquiv_toAlgEquiv [IsEmpty I] :
+    (isEmptyStarAlgEquiv R A).toAlgEquiv = isEmptyAlgEquiv R A :=
+  AlgEquiv.ext fun x ↦ AlgHom.congr_fun
+    (algHom_ext (f := (isEmptyStarAlgEquiv R A).toAlgEquiv.toAlgHom)
+      (g := (isEmptyAlgEquiv R A).toAlgHom) fun i ↦ isEmptyElim i) x
+
+@[simp]
+theorem isEmptyStarAlgEquiv_algebraMap [IsEmpty I] (r : R) :
+    isEmptyStarAlgEquiv R A (algebraMap R (FreeProduct R A) r) = r :=
+  AlgHomClass.commutes (isEmptyStarAlgEquiv R A) r
+
+@[simp]
+theorem isEmptyStarAlgEquiv_symm_apply [IsEmpty I] (r : R) :
+    (isEmptyStarAlgEquiv R A).symm r = algebraMap R (FreeProduct R A) r :=
+  (rfl)
+
+end GenerationAndEmpty
 
 end LinearAlgebra.FreeProduct

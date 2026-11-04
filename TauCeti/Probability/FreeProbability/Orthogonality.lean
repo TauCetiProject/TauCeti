@@ -45,41 +45,6 @@ section Algebraic
 variable {R A ι : Type*} [CommRing R] [StarRing R] [Ring A] [StarRing A]
   [Algebra R A] [StarModule R A] {φ : A →ₗ[R] R} {B : ι → StarSubalgebra R A}
 
-private theorem apply_star_prod_mul_middle_mul_prod_eq_zero
-    (h : IsFreelyIndependent φ fun i => (B i).toSubalgebra)
-    (hstar : ∀ a, φ (star a) = star (φ a))
-    (w v : List (ι × A)) {i : ι} {c : A}
-    (hw : (i :: w.map Prod.fst).IsChain (· ≠ ·))
-    (hv : (i :: v.map Prod.fst).IsChain (· ≠ ·))
-    (hwB : ∀ x ∈ w, x.2 ∈ B x.1) (hvB : ∀ x ∈ v, x.2 ∈ B x.1)
-    (hwφ : ∀ x ∈ w, φ x.2 = 0) (hvφ : ∀ x ∈ v, φ x.2 = 0)
-    (hcB : c ∈ B i) (hcφ : φ c = 0) :
-    φ (star (w.map Prod.snd).prod * c * (v.map Prod.snd).prod) = 0 := by
-  have hz := (isFreelyIndependent_iff.1 h) (w.reverse.map (fun x => (x.1, star x.2)) ++ (i, c) :: v)
-    (by simp) ?_ ?_ ?_
-  · have hs : star (w.map Prod.snd).prod =
-        (w.map (fun x => star x.2)).reverse.prod := by
-      simpa [List.map_map, Function.comp_def] using
-        unop_map_list_prod (starMulEquiv : A ≃* Aᵐᵒᵖ) (w.map Prod.snd)
-    simpa [List.map_append, List.map_map, List.map_reverse, Function.comp_def,
-      List.prod_append, hs, mul_assoc] using hz
-  · simp only [List.map_append, List.map_map, List.map_cons, List.map_reverse,
-      Function.comp_def]
-    apply List.isChain_split.mpr
-    exact ⟨by simpa [← List.reverse_cons, List.isChain_reverse, ne_comm] using hw, hv⟩
-  · intro x hx
-    simp only [List.mem_append, List.mem_map, List.mem_reverse, List.mem_cons] at hx
-    rcases hx with ⟨y, hy, rfl⟩ | rfl | hx
-    · exact (B y.1).star_mem' (hwB y hy)
-    · exact hcB
-    · exact hvB x hx
-  · intro x hx
-    simp only [List.mem_append, List.mem_map, List.mem_reverse, List.mem_cons] at hx
-    rcases hx with ⟨y, hy, rfl⟩ | rfl | hx
-    · simp [hstar, hwφ y hy]
-    · exact hcφ
-    · exact hvφ x hx
-
 variable [DecidableEq ι]
 
 /-- Reduced words have zero pairing unless their factor-label sequences coincide. When they
@@ -95,49 +60,25 @@ theorem apply_star_prod_mul_prod
     φ (star (w.map Prod.snd).prod * (v.map Prod.snd).prod) =
       if w.map Prod.fst = v.map Prod.fst then
         (List.zipWith (fun x y => φ (star x.2 * y.2)) w v).prod else 0 := by
-  induction w generalizing v with
-  | nil =>
-    cases v with
-    | nil => simp [hφ]
-    | cons y v =>
-      simpa using (isFreelyIndependent_iff.1 h) (y :: v) (by simp) hv hvB hvφ
-  | cons x w ih =>
-    cases v with
-    | nil =>
-      have hz := (isFreelyIndependent_iff.1 h) (x :: w) (by simp) hw hwB hwφ
-      simp only [List.map_nil, List.prod_nil, mul_one]
-      rw [hstar, hz]
-      simp
-    | cons y v =>
-      have hwB' : ∀ z ∈ w, z.2 ∈ B z.1 := fun z hz => hwB z (by simp [hz])
-      have hvB' : ∀ z ∈ v, z.2 ∈ B z.1 := fun z hz => hvB z (by simp [hz])
-      have hwφ' : ∀ z ∈ w, φ z.2 = 0 := fun z hz => hwφ z (by simp [hz])
-      have hvφ' : ∀ z ∈ v, φ z.2 = 0 := fun z hz => hvφ z (by simp [hz])
-      by_cases hxy : x.1 = y.1
-      · -- Center the product of the two leading letters. Its centered part gives a reduced
-        -- word with zero expectation; its scalar part leaves the pairing of the tails.
-        have hcB : star x.2 * y.2 ∈ B x.1 :=
-          (B x.1).mul_mem ((B x.1).star_mem' (hwB x (by simp)))
-            (hxy ▸ hvB y (by simp))
-        have hz := h.apply_star_prod_mul_middle_mul_prod_eq_zero hstar w v hw
-          (hxy ▸ hv) hwB' hvB' hwφ' hvφ'
-          ((B x.1).sub_mem hcB ((B x.1).algebraMap_mem (φ (star x.2 * y.2))))
-          (by simp [Algebra.algebraMap_eq_smul_one, hφ])
-        have hrec := ih v hw.tail hv.tail hwB' hvB' hwφ' hvφ'
-        simp only [mul_sub, sub_mul, map_sub, Algebra.algebraMap_eq_smul_one,
-          mul_smul_comm, smul_mul_assoc, map_smul, smul_eq_mul, mul_one, sub_eq_zero] at hz
-        have hz' : φ (star ((x :: w).map Prod.snd).prod *
-            ((y :: v).map Prod.snd).prod) =
-            φ (star x.2 * y.2) * φ (star (w.map Prod.snd).prod * (v.map Prod.snd).prod) := by
-          simpa only [List.map_cons, List.prod_cons, star_mul, mul_assoc] using hz
-        rw [hz', hrec]
-        simp [hxy]
-      · -- Distinct leading labels leave the entire concatenation reduced.
-        have hz := h.apply_star_prod_mul_middle_mul_prod_eq_zero hstar w (y :: v) hw
-          (by simpa using And.intro hxy hv) hwB' hvB hwφ' hvφ
-          ((B x.1).star_mem' (hwB x (by simp)))
-          (by simp [hstar, hwφ x (by simp)])
-        simpa [List.map_cons, List.prod_cons, star_mul, mul_assoc, hxy] using hz
+  let u : List (ι × A) := (w.map fun x => (x.1, star x.2)).reverse
+  have hs : star (w.map Prod.snd).prod = (u.map Prod.snd).prod := by
+    simpa [u, List.map_reverse, List.map_map, Function.comp_def] using
+      unop_map_list_prod (starMulEquiv : A ≃* Aᵐᵒᵖ) (w.map Prod.snd)
+  have hu : (u.map Prod.fst).IsChain (· ≠ ·) := by
+    simpa [u, List.map_reverse, List.map_map, Function.comp_def, List.isChain_reverse,
+      ne_comm] using hw
+  have huB : ∀ x ∈ u, x.2 ∈ (B x.1).toSubalgebra := by
+    intro x hx
+    simp only [u, List.mem_reverse, List.mem_map] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    exact (B y.1).star_mem' (hwB y hy)
+  have huφ : ∀ x ∈ u, φ x.2 = 0 := by
+    intro x hx
+    simp only [u, List.mem_reverse, List.mem_map] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    simp [hstar, hwφ y hy]
+  rw [hs, h.apply_prod_mul_prod hφ u v hu hv huB hvB huφ hvφ]
+  simp [u, Function.comp_def, List.zipWith_map_left]
 
 end Algebraic
 
