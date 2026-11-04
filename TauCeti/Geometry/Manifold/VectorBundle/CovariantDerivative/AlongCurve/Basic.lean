@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # A moving-chart formula for covariant differentiation along a curve
@@ -137,6 +138,14 @@ theorem alongCurveWithin_apply (s : Set 𝕜) (t : 𝕜) :
         (alongCurveInChartWithin cov γ V s (γ t) t) :=
   (rfl)
 
+/-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
+in the canonical tangent trivialization at that point. -/
+theorem alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero {s : Set 𝕜} {t : 𝕜}
+    (hV : V t = 0) :
+    alongCurveWithin cov γ V s t = derivWithin (sectionCoord (F := E) γ V (γ t)) s t := by
+  simp [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_apply, hV, map_zero]
+  rfl
+
 /-- The moving-chart candidate for the covariant derivative of `V` along `γ`, with unrestricted
 derivatives.  This is the `s = Set.univ` case of `alongCurveWithin`, and carries the same junk
 values and the same fixed local frame. -/
@@ -258,7 +267,7 @@ theorem alongCurve_const_smul (c : 𝕜) (t : 𝕜) :
 theorem alongCurveWithin_zero (s : Set 𝕜) (t : 𝕜) :
     alongCurveWithin cov γ (fun r : 𝕜 ↦ (0 : TangentSpace I (γ r))) s t = 0 := by
   rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, sectionCoord_zero (γ := γ)]
-  simp
+  simp only [derivWithin_zero, Pi.zero_apply, map_zero, zero_apply, add_zero]
 
 /-- The unrestricted moving-chart candidate of the zero field is zero. -/
 @[simp]
