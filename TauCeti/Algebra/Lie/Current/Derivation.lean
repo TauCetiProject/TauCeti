@@ -210,14 +210,9 @@ theorem vectorFieldDerivation_neg (h : R⸨X⸩) :
 /-- **The translation on modes**: `d/dt` sends `x_n = r tⁿ ⊗ x` to `n x_{n - 1}`. -/
 theorem vectorFieldDerivation_one_single_tmul (n : ℤ) (r : R) (x : L) :
     vectorFieldDerivation R L 1 (single n r ⊗ₜ x) = n • (single (n - 1) r ⊗ₜ x) := by
-  rw [vectorFieldDerivation_tmul, one_mul, TensorProduct.smul_tmul']
-  congr 1
-  ext m
-  rw [LaurentSeries.coeff_derivative, HahnSeries.coeff_smul]
-  obtain rfl | hm := eq_or_ne m (n - 1)
-  · simp
-  · rw [HahnSeries.coeff_single_of_ne (by omega), HahnSeries.coeff_single_of_ne hm, smul_zero,
-      smul_zero]
+  rw [vectorFieldDerivation_tmul, one_mul, LaurentSeries.derivative_apply,
+    LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one, TensorProduct.smul_tmul']
+  exact congrArg (· ⊗ₜ x) (map_zsmul (HahnSeries.single.addMonoidHom (n - 1)) n r)
 
 /-- **The commutator of vector fields**: `[h₁ d/dt, h₂ d/dt] = (h₁ h₂' - h₂ h₁') d/dt`. -/
 theorem lie_vectorFieldDerivation (h₁ h₂ : R⸨X⸩) :
@@ -242,11 +237,8 @@ theorem vectorFieldDerivation_mem_orderSubmodule_zero {h : R⸨X⸩} (hh : 0 ≤
   | mem u hu =>
     obtain ⟨f, x, hf, rfl⟩ := hu
     rw [vectorFieldDerivation_tmul]
-    refine tmul_mem_orderSubmodule R L _ ?_ x
-    have h₀ := add_le_add hh (LaurentSeries.zero_le_orderTop_derivative (R := R) (f := f)
-      (by exact_mod_cast hf))
-    rw [add_zero] at h₀
-    exact_mod_cast h₀.trans HahnSeries.orderTop_add_le_mul
+    exact tmul_mem_orderSubmodule R L _
+      (by exact_mod_cast LaurentSeries.zero_le_orderTop_mul_derivative hh (by exact_mod_cast hf)) x
   | zero => simp
   | add u v _ _ hu hv => simpa only [map_add] using add_mem hu hv
   | smul r u _ hu => simpa only [map_smul] using Submodule.smul_mem _ r hu
@@ -446,11 +438,10 @@ theorem lie_vectorFieldEnvelopingDerivation (h₁ h₂ : R⸨X⸩) :
       vectorFieldEnvelopingDerivation Φ hΦ hΦs a
         (h₁ * LaurentSeries.derivative R h₂ - h₂ * LaurentSeries.derivative R h₁) :=
   derivation_ext_envelopingι c a fun u ↦ by
-    rw [vectorFieldEnvelopingDerivation_envelopingι, ← lie_vectorFieldDerivation,
-      LieDerivation.commutator_apply, map_sub, LieSubalgebra.coe_bracket, Ring.lie_def,
-      LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-      vectorFieldEnvelopingDerivation_envelopingι, vectorFieldEnvelopingDerivation_envelopingι,
-      vectorFieldEnvelopingDerivation_envelopingι, vectorFieldEnvelopingDerivation_envelopingι]
+    -- The commutator of the current vector fields, then normalization of both commutators.
+    rw [vectorFieldEnvelopingDerivation_envelopingι, ← lie_vectorFieldDerivation]
+    simp only [LieDerivation.commutator_apply, map_sub, LieSubalgebra.coe_bracket, Ring.lie_def,
+      LinearMap.sub_apply, mul_apply_eq_comp, vectorFieldEnvelopingDerivation_envelopingι]
 
 /-- **The degree derivation on the mode generators**: `[d, x_n] = n x_n`. -/
 theorem vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul (n : ℤ) (r : R)

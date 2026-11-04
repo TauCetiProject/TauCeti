@@ -153,18 +153,19 @@ theorem lie_vacuumVectorField_envelopingAction {h : R⸨X⸩} (hh : 0 ≤ h.orde
         envelopingAction (M := VacuumModule Φ hΦ hΦs a) Φ hΦ hΦs a u⁆ =
       envelopingAction Φ hΦ hΦs a (vectorFieldDerivation R L h u) := by
   ext v
-  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-    envelopingAction_apply, envelopingAction_apply, envelopingAction_apply,
+  simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, envelopingAction_apply,
     vacuumVectorField_smul, vectorFieldEnvelopingDerivation_envelopingι, add_sub_cancel_right]
 
 /-- **The commutator relations of vector fields**: `[D_{h₁}, D_{h₂}] = D_{h₁ h₂' - h₂ h₁'}`, the
 bracket of `h₁ d/dt` and `h₂ d/dt` in `Der O`. -/
-theorem lie_vacuumVectorField {h₁ h₂ : R⸨X⸩} (hh₁ : 0 ≤ h₁.orderTop) (hh₂ : 0 ≤ h₂.orderTop)
-    (hh : 0 ≤ (h₁ * LaurentSeries.derivative R h₂ - h₂ * LaurentSeries.derivative R h₁).orderTop) :
+theorem lie_vacuumVectorField {h₁ h₂ : R⸨X⸩} (hh₁ : 0 ≤ h₁.orderTop) (hh₂ : 0 ≤ h₂.orderTop) :
     ⁅vacuumVectorField Φ hΦ hΦs a h₁ hh₁, vacuumVectorField Φ hΦ hΦs a h₂ hh₂⁆ =
       vacuumVectorField Φ hΦ hΦs a
-        (h₁ * LaurentSeries.derivative R h₂ - h₂ * LaurentSeries.derivative R h₁) hh := by
-  refine LinearMap.coe_injective (eq_vacuumVectorField hh (fun u v ↦ ?_) ?_)
+        (h₁ * LaurentSeries.derivative R h₂ - h₂ * LaurentSeries.derivative R h₁)
+        (HahnSeries.min_orderTop_le_orderTop_sub.trans'
+          (le_min (LaurentSeries.zero_le_orderTop_mul_derivative hh₁ hh₂)
+            (LaurentSeries.zero_le_orderTop_mul_derivative hh₂ hh₁))) := by
+  refine LinearMap.coe_injective (eq_vacuumVectorField _ (fun u v ↦ ?_) ?_)
   · -- The lift of the commutator of vector fields is the commutator of the lifts.
     have hδ := congrArg (fun D : derivationLieAlgebra R UK ↦ (D : Module.End R UK) u)
       (lie_vectorFieldEnvelopingDerivation Φ hΦ hΦs a h₁ h₂)
@@ -185,27 +186,29 @@ local notation "J" => currentField (envelopingAction (M := VacuumModule Φ hΦ h
   (Iff.mpr (isSmooth_envelopingAction_iff Φ hΦ hΦs a)
     (smoothModules_quotient_orderLeftIdeal Φ hΦ hΦs a 0))
 
-/-- The constant `-1` has nonnegative order. -/
-private theorem zero_le_orderTop_neg_one : 0 ≤ (-1 : R⸨X⸩).orderTop := by
-  rw [HahnSeries.orderTop_neg, ← HahnSeries.single_zero_one]
-  exact HahnSeries.orderTop_single_le
-
-/-- The series `-t` has nonnegative order. -/
-private theorem zero_le_orderTop_neg_single_one : 0 ≤ (-HahnSeries.single 1 1 : R⸨X⸩).orderTop := by
-  rw [HahnSeries.orderTop_neg]
-  exact HahnSeries.orderTop_single_le.trans' (by simp)
-
 /-- The **translation operator** `T = -d/dt` on the vacuum module, the action of the vector field
 `-d/dt`. It acts by `[T, xₙ] = -n xₙ₋₁` and kills the vacuum. -/
 def vacuumTranslation : Module.End R (VacuumModule Φ hΦ hΦs a) :=
-  vacuumVectorField Φ hΦ hΦs a (-1) zero_le_orderTop_neg_one
+  vacuumVectorField Φ hΦ hΦs a (-1)
+    (by rw [HahnSeries.orderTop_neg]; exact HahnSeries.zero_le_orderTop_one)
 
 /-- The **degree operator** `L₀ = -t d/dt` on the vacuum module, the action of the vector field
 `-t d/dt`. It acts by `[L₀, xₙ] = -n xₙ` and kills the vacuum. -/
 def vacuumDegreeOperator : Module.End R (VacuumModule Φ hΦ hΦs a) :=
-  vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single 1 1) zero_le_orderTop_neg_single_one
+  vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single 1 1)
+    (by rw [HahnSeries.orderTop_neg]; exact HahnSeries.zero_le_orderTop_single zero_le_one 1)
 
 variable {Φ hΦ hΦs a}
+
+/-- The translation operator is the action of the vector field `-d/dt`. -/
+theorem vacuumTranslation_def (hh : 0 ≤ (-1 : R⸨X⸩).orderTop) :
+    vacuumTranslation Φ hΦ hΦs a = vacuumVectorField Φ hΦ hΦs a (-1) hh := by
+  rw [vacuumTranslation]
+
+/-- The degree operator is the action of the vector field `-t d/dt`. -/
+theorem vacuumDegreeOperator_def (hh : 0 ≤ (-HahnSeries.single 1 1 : R⸨X⸩).orderTop) :
+    vacuumDegreeOperator Φ hΦ hΦs a = vacuumVectorField Φ hΦ hΦs a (-HahnSeries.single 1 1) hh := by
+  rw [vacuumDegreeOperator]
 
 /-- **Translation kills the vacuum.** -/
 @[simp]
@@ -223,9 +226,11 @@ theorem vacuumDegreeOperator_vacuum :
 coefficient form of `[T, J^x(z)] = ∂_z J^x(z)`. -/
 theorem lie_vacuumTranslation_ncoeff_currentField (x : L) (n : ℤ) :
     ⁅vacuumTranslation Φ hΦ hΦs a, (J x)[[n]]⁆ = -((n : R) • (J x)[[n - 1]]) := by
+  -- The commutator with a current, then the translation `d/dt` on modes.
   rw [ncoeff_currentField, ncoeff_currentField, vacuumTranslation,
-    lie_vacuumVectorField_envelopingAction, vectorFieldDerivation_neg, LieDerivation.neg_apply,
-    vectorFieldDerivation_one_single_tmul, map_neg, map_zsmul, ← Int.cast_smul_eq_zsmul R]
+    lie_vacuumVectorField_envelopingAction]
+  simp only [vectorFieldDerivation_neg, LieDerivation.neg_apply,
+    vectorFieldDerivation_one_single_tmul, map_neg, map_smul, ← Int.cast_smul_eq_zsmul R]
 
 /-- Translation of a vector `xₙ v`: `T(xₙ v) = xₙ T(v) - n xₙ₋₁ v`. -/
 theorem vacuumTranslation_ncoeff_currentField_apply (x : L) (n : ℤ)
@@ -260,9 +265,10 @@ theorem pow_vacuumTranslation_ncoeff_currentField_vacuum (x : L) (k : ℕ) :
 /-- **The degree of the modes**: `[L₀, J^x[[n]]] = -n J^x[[n]]`. -/
 theorem lie_vacuumDegreeOperator_ncoeff_currentField (x : L) (n : ℤ) :
     ⁅vacuumDegreeOperator Φ hΦ hΦs a, (J x)[[n]]⁆ = -((n : R) • (J x)[[n]]) := by
-  rw [ncoeff_currentField, vacuumDegreeOperator, lie_vacuumVectorField_envelopingAction,
-    vectorFieldDerivation_neg, LieDerivation.neg_apply,
-    vectorFieldDerivation_single_one_single_tmul, map_neg, map_zsmul, ← Int.cast_smul_eq_zsmul R]
+  -- The commutator with a current, then the degree derivation `t d/dt` on modes.
+  rw [ncoeff_currentField, vacuumDegreeOperator, lie_vacuumVectorField_envelopingAction]
+  simp only [vectorFieldDerivation_neg, LieDerivation.neg_apply,
+    vectorFieldDerivation_single_one_single_tmul, map_neg, map_smul, ← Int.cast_smul_eq_zsmul R]
 
 /-- **Translation raises the degree by one**: `[L₀, T] = T`. -/
 theorem lie_vacuumDegreeOperator_vacuumTranslation :
@@ -280,8 +286,7 @@ theorem lie_vacuumDegreeOperator_vacuumTranslation :
       -1 * LaurentSeries.derivative R (-HahnSeries.single 1 1) = (-1 : R⸨X⸩) := by
     rw [map_neg, map_neg, h₁, ht]
     ring
-  rw [vacuumDegreeOperator, vacuumTranslation,
-    lie_vacuumVectorField _ _ (by rw [key]; exact zero_le_orderTop_neg_one)]
+  rw [vacuumDegreeOperator, vacuumTranslation, lie_vacuumVectorField]
   -- The remaining goal is `key`, which `congr` closes.
   congr 1
 
