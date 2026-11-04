@@ -278,10 +278,7 @@ theorem fundamentalAlcoveStabilizerToPerm_injective [P.IsRootSystem] :
     rw [map_sub, this, sub_self]
   -- Hence so does every root, and the roots span the weight space.
   have hall (j : ι) : P.toLinearMap.flip (ω.1 x - x) (P.root j) = 0 := by
-    obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int j
-    rw [LinearMap.flip_apply, hf, map_sum, LinearMap.coe_sum, Finset.sum_apply]
-    exact Finset.sum_eq_zero fun i hi ↦ by
-      rw [map_zsmul, LinearMap.smul_apply, ← root', hsimple i hi, smul_zero]
+    simpa using P.flip.coroot'_eq_zero_of_forall_mem_support b.flip hsimple j
   have hzero : P.toLinearMap.flip (ω.1 x - x) = 0 :=
     LinearMap.ext_on_range IsRootSystem.span_root_eq_top fun j ↦ by simpa using hall j
   have := (LinearMap.IsPerfPair.bijective_right P.toLinearMap).1
