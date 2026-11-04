@@ -80,24 +80,28 @@ theorem complex_smul_apply (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x
 /-- Restricting complex scalars recovers the native real scalar action. -/
 instance complexSmoothFunctions_isScalarTower :
     IsScalarTower ℝ ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
-  smul_assoc r z f := by ext x; exact smul_assoc r z (f x)
+  smul_assoc r z f := by
+    ext x
+    simp [mul_assoc]
 
 /-- Real and complex constant scalar actions commute. -/
 instance complexSmoothFunctions_smulCommClass :
     SMulCommClass ℝ ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
-  smul_comm r z f := by ext x; exact smul_comm r z (f x)
+  smul_comm r z f := by
+    ext x
+    simp [mul_left_comm]
 
 /-- Real part of a complex-valued real-smooth function, as a real-linear map. -/
 def re : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ] C^n⟮I, M; ℝ⟯ where
   toFun f := ⟨fun x ↦ (f x).re, Complex.reCLM.contMDiff.comp f.contMDiff⟩
   map_add' f g := by ext x; exact Complex.add_re (f x) (g x)
-  map_smul' r f := by ext x; exact Complex.reCLM.map_smul r (f x)
+  map_smul' r f := by ext x; exact Complex.smul_re r (f x)
 
 /-- Imaginary part of a complex-valued real-smooth function, as a real-linear map. -/
 def im : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ] C^n⟮I, M; ℝ⟯ where
   toFun f := ⟨fun x ↦ (f x).im, Complex.imCLM.contMDiff.comp f.contMDiff⟩
   map_add' f g := by ext x; exact Complex.add_im (f x) (g x)
-  map_smul' r f := by ext x; exact Complex.imCLM.map_smul r (f x)
+  map_smul' r f := by ext x; exact Complex.smul_im r (f x)
 
 @[simp]
 theorem re_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : f.re x = (f x).re := by
@@ -118,12 +122,12 @@ theorem ofReal_apply (f : C^n⟮I, M; ℝ⟯) (x : M) :
   rfl
 
 @[simp]
-theorem re_ofReal (f : C^n⟮I, M; ℝ⟯) : (ofReal f).re = f := by
+theorem ofReal_re (f : C^n⟮I, M; ℝ⟯) : (ofReal f).re = f := by
   ext x
   simp
 
 @[simp]
-theorem im_ofReal (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
+theorem ofReal_im (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
   ext x
   simp
 
@@ -157,19 +161,41 @@ theorem equivRealProd_symm_apply (p : C^n⟮I, M; ℝ⟯ × C^n⟮I, M; ℝ⟯) 
     equivRealProd.symm p = ofReal p.1 + Complex.I • ofReal p.2 := by
   rfl
 
+/-- Complex smooth functions are determined by their real and imaginary parts. -/
+theorem ext_re_im {f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hre : f.re = g.re) (him : f.im = g.im) : f = g :=
+  equivRealProd.injective (by simp [hre, him])
+
+/-- Equality of complex smooth functions is equality of both real and imaginary parts. -/
+theorem re_eq_re_and_im_eq_im_iff {f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    f.re = g.re ∧ f.im = g.im ↔ f = g :=
+  ⟨fun h ↦ ext_re_im h.1 h.2, fun h ↦ by simp [h]⟩
+
 /-- Pointwise complex conjugation is an involutive real algebra equivalence. -/
 def conj : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₐ[ℝ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
   toRingEquiv :=
     { ContMDiffMap.compLeftRingHom I M (starRingEnd ℂ)
-        Complex.conjCLE.toContinuousLinearMap.contMDiff with
+        (Complex.conjCLE.toContinuousLinearMap.contMDiff.congr
+          fun z ↦ (Complex.conjCLE_apply z).symm) with
       invFun f := ⟨fun x ↦ star (f x),
-        Complex.conjCLE.toContinuousLinearMap.contMDiff.comp f.contMDiff⟩
+        (Complex.conjCLE.toContinuousLinearMap.contMDiff.comp f.contMDiff).congr
+          fun x ↦ (Complex.conjCLE_apply (f x)).symm⟩
       left_inv f := by ext x; exact star_star (f x)
       right_inv f := by ext x; exact star_star (f x) }
-  commutes' r := by ext x; exact Complex.conj_ofReal r
+  commutes' r := by
+    ext x
+    -- Mathlib has no application lemmas for compLeftRingHom or the real algebra map.
+    -- Expose their pointwise definitions before simplifying conjugation of a real constant.
+    dsimp [compLeftRingHom, algebraMap, C]
+    exact Complex.conj_ofReal r
 
 @[simp]
 theorem conj_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : conj f x = star (f x) := by
+  rfl
+
+@[simp]
+theorem conj_symm : (conj (I := I) (M := M) (n := n)).symm = conj := by
+  ext f x
   rfl
 
 @[simp]
@@ -178,13 +204,13 @@ theorem conj_ofReal (f : C^n⟮I, M; ℝ⟯) : conj (ofReal f) = ofReal f := by
   simp
 
 @[simp]
-theorem re_complexSmoothConstants (z : ℂ) :
+theorem complexSmoothConstants_re (z : ℂ) :
     (TauCeti.complexSmoothConstants (I := I) (M := M) (n := n) z).re = const z.re := by
   ext x
   rfl
 
 @[simp]
-theorem im_complexSmoothConstants (z : ℂ) :
+theorem complexSmoothConstants_im (z : ℂ) :
     (TauCeti.complexSmoothConstants (I := I) (M := M) (n := n) z).im = const z.im := by
   ext x
   rfl
@@ -208,24 +234,38 @@ theorem conj_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : conj (conj f) = f :
   simp
 
 @[simp]
-theorem re_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).re = f.re := by
+theorem conj_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).re = f.re := by
   ext x
   simp
 
 @[simp]
-theorem im_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).im = -f.im := by
+theorem conj_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).im = -f.im := by
   ext x
   simp
 
 /-- Real part of a product of complex-valued smooth functions. -/
-theorem re_mul (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+theorem mul_re (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     (f * g).re = f.re * g.re - f.im * g.im := by
   ext x
   simp [Complex.mul_re]
 
 /-- Imaginary part of a product of complex-valued smooth functions. -/
-theorem im_mul (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+theorem mul_im (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     (f * g).im = f.re * g.im + f.im * g.re := by
+  ext x
+  simp [Complex.mul_im]
+
+/-- Real part of a complex scalar multiple of a smooth function. -/
+@[simp]
+theorem complex_smul_re (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (z • f).re = z.re • f.re - z.im • f.im := by
+  ext x
+  simp [Complex.mul_re]
+
+/-- Imaginary part of a complex scalar multiple of a smooth function. -/
+@[simp]
+theorem complex_smul_im (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (z • f).im = z.re • f.im + z.im • f.re := by
   ext x
   simp [Complex.mul_im]
 
@@ -234,13 +274,13 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace N] [ChartedSpace H' N]
 
 @[simp]
-theorem re_comp (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M⟯) :
+theorem comp_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M⟯) :
     (f.comp g).re = f.re.comp g := by
   ext x
   rfl
 
 @[simp]
-theorem im_comp (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M⟯) :
+theorem comp_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M⟯) :
     (f.comp g).im = f.im.comp g := by
   ext x
   rfl
@@ -261,14 +301,14 @@ variable {U V : TopologicalSpace.Opens M}
 
 /-- Real part commutes with restriction to an open subset. -/
 @[simp]
-theorem re_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯) :
+theorem restrictRingHom_re (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯) :
     (restrictRingHom I 𝓘(ℝ, ℂ) ℂ h f).re = restrictRingHom I 𝓘(ℝ) ℝ h f.re := by
   ext x
   rfl
 
 /-- Imaginary part commutes with restriction to an open subset. -/
 @[simp]
-theorem im_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯) :
+theorem restrictRingHom_im (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯) :
     (restrictRingHom I 𝓘(ℝ, ℂ) ℂ h f).im = restrictRingHom I 𝓘(ℝ) ℝ h f.im := by
   ext x
   rfl
