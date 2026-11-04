@@ -28,6 +28,9 @@ remainders. For `0 < p` the pair of remainders, valued in `Fin p`, and quotients
   quotients.
 * `Finsupp.nsmul_add_eq_nsmul_add_iff`: `p • μ + ν` determines `μ` and `ν` when the entries of `ν`
   are below `p`.
+* `Finsupp.nsmul_add_injective`: for `p ≠ 0`, `μ ↦ p • μ + ν` is injective.
+* `Finsupp.exists_eq_nsmul_add`: for `p ≠ 0`, every exponent is `p • μ + ν` with the entries of `ν`
+  below `p`.
 -/
 
 public section
@@ -60,6 +63,18 @@ theorem nsmul_add_eq_nsmul_add_iff {μ μ' ν ν' : σ →₀ ℕ} (hν : ∀ i,
 section ModDivEquiv
 
 variable [NeZero p]
+
+/-- Adding a fixed exponent after scaling by `p ≠ 0` is injective on exponents. -/
+theorem nsmul_add_injective (ν : σ →₀ ℕ) : Function.Injective fun μ : σ →₀ ℕ ↦ p • μ + ν := by
+  intro μ μ' h
+  ext i
+  have hi : p * μ i + ν i = p * μ' i + ν i := by simpa using DFunLike.congr_fun h i
+  exact Nat.eq_of_mul_eq_mul_left (Nat.pos_of_neZero p) (Nat.add_right_cancel hi)
+
+/-- Every exponent is `p • μ + ν` with all entries of `ν` below `p`. -/
+theorem exists_eq_nsmul_add (α : σ →₀ ℕ) : ∃ μ ν : σ →₀ ℕ, (∀ i, ν i < p) ∧ α = p • μ + ν :=
+  ⟨α.mapRange (· / p) (Nat.zero_div p), α.mapRange (· % p) (Nat.zero_mod p),
+    fun _ ↦ Nat.mod_lt _ (Nat.pos_of_neZero p), (nsmul_mapRange_div_add_mapRange_mod p α).symm⟩
 
 /-- For `0 < p`, an exponent `α` is determined by its entrywise remainders by `p`, valued in
 `Fin p`, and its entrywise quotients by `p`: `α = p • (α / p) + α % p`. -/
