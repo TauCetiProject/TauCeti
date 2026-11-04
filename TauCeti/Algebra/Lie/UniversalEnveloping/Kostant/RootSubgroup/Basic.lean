@@ -31,7 +31,8 @@ functor of points can recover the scheme morphism `𝔾ₐ → GLₙ`.
 ## Main declarations
 
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints`: the root subgroup on
-  algebra-valued points.
+  algebra-valued points, with `generalLinearEquiv_kostantRootSubgroupPoints` identifying its
+  `generalLinearEquiv` image with `TauCeti.baseChangeExpHom`.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantRootSubgroupPoints`: naturality under a
   homomorphism of value rings.
 
@@ -95,11 +96,25 @@ divided-power exponential at the corresponding parameter. -/
 theorem kostantRootSubgroupPoints_val (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     (kostantRootSubgroupPoints e h ρ M hM i hnil f).val =
       baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
-        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv)
+        (dividedPower_smul_mem_of_kostantForm_apply_mem hM i)
         (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f)) := by
   refine LinearMap.ext fun z => ?_
   rw [← LinearMap.GeneralLinearGroup.coe_toLinearEquiv, kostantRootSubgroupPoints_toLinearEquiv,
     coe_baseChangeKostantExpHom]
+
+/-- Under `LinearMap.GeneralLinearGroup.generalLinearEquiv`, a Kostant root-subgroup point is the
+base-changed divided-power one-parameter subgroup `TauCeti.baseChangeExpHom` evaluated at its
+`𝔾ₐ`-parameter. -/
+theorem generalLinearEquiv_kostantRootSubgroupPoints
+    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
+        (kostantRootSubgroupPoints e h ρ M hM i hnil f) =
+      baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
+        (dividedPower_smul_mem_of_kostantForm_apply_mem hM i) hnil
+        (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) :=
+  LinearEquiv.toLinearMap_inj.mp <| by
+    rw [LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+      kostantRootSubgroupPoints_val, baseChangeExpHom_toLinearMap]
 
 /-- On an elementary tensor, a Kostant root-subgroup point acts by the expected finite
 divided-power formula. -/

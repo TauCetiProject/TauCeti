@@ -38,7 +38,8 @@ is built from; it is injective as soon as the value ring is reduced.
 ## Main declarations
 
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupParam`: the root subgroup map `x_α` with
-  its parameter read in the value ring itself.
+  its parameter read in the value ring itself, with `generalLinearEquiv_kostantRootSubgroupParam`
+  identifying its `generalLinearEquiv` image with `TauCeti.baseChangeExpHom`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantElementarySubgroup`: the elementary group `E(A)`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantElementaryMap`: the group homomorphism induced by a
   morphism of value rings.
@@ -106,13 +107,24 @@ theorem kostantRootSubgroupParam_apply (A : CommAlgCat.{w} ℤ) (t : Multiplicat
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm t) :=
   kostantRootSubgroupParam_apply_def e h ρ M hM i hnil A t
 
+/-- Under `LinearMap.GeneralLinearGroup.generalLinearEquiv`, a parametrized Kostant root-subgroup
+element is the divided-power one-parameter subgroup `TauCeti.baseChangeExpHom` at the same
+parameter. -/
+theorem generalLinearEquiv_kostantRootSubgroupParam (A : CommAlgCat.{w} ℤ) (t : Multiplicative A) :
+    LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
+        (kostantRootSubgroupParam e h ρ M hM i hnil A t) =
+      baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
+        (dividedPower_smul_mem_of_kostantForm_apply_mem hM i) hnil t := by
+  rw [kostantRootSubgroupParam_apply, generalLinearEquiv_kostantRootSubgroupPoints,
+    MulEquiv.apply_symm_apply]
+
 /-- The parametrized root-subgroup element acts through the corresponding base-changed
 divided-power exponential. -/
 theorem kostantRootSubgroupParam_val_apply (A : CommAlgCat.{w} ℤ) (t : Multiplicative A)
     (z : A ⊗[ℤ] M) :
     (kostantRootSubgroupParam e h ρ M hM i hnil A t).val z =
       baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M
-        (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv)
+        (dividedPower_smul_mem_of_kostantForm_apply_mem hM i)
         (Multiplicative.toAdd t) z := by
   rw [kostantRootSubgroupParam_apply, kostantRootSubgroupPoints_val,
     MulEquiv.apply_symm_apply]

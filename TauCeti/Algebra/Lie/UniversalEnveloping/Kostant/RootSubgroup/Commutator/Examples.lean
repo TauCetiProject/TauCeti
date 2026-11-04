@@ -5,23 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Matrix
 public import TauCeti.Algebra.Lie.G2.ShortRoot.Basic
-public import TauCeti.Algebra.Lie.Matrix.IntegralCast
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRelations
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G2.Relations
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.CubeZeroMatrix
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.IntegralMatrix
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.MultiplyLacedRelations
 
 /-!
 # Explicit matrix checks for Steinberg's Chevalley commutator relations
 
-This file instantiates the Kostant root-subgroup commutator relations on three explicit integral
-matrix representations over an arbitrary commutative ring `R`, verifying the exponents and signs in
-Steinberg's convention `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹` across singly, doubly, and triply laced root
-strings:
+This file instantiates the Kostant root-subgroup commutator relations, via
+`TauCeti.UniversalEnvelopingAlgebra.integralMatrixRootSubgroup`, on three explicit integral matrix
+representations over an arbitrary commutative ring `R`, verifying the structure constants, signs,
+and parameter exponents in Steinberg's convention `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`:
 
 1. **Type `A₂` on `R³`** (`a2RootMatrix`): `⁅x_α(u), x_β(v)⁆ = x_{α+β}(u * v)`, falsified upon
-   negating the exponent whenever `(2 : R) ≠ 0`.
+   negating the structure constant `N_{α,β}` (the sign of the parameter) whenever `(2 : R) ≠ 0`.
 2. **Type `C₂ = Sp₄` on `R⁴`** (`c2RootMatrix`): `⁅x_α(u), x_β(v)⁆ = x_{α+β}(-(u * v)) *
    x_{α+2β}(-(u * v ^ 2))`, with `(0, 2)` entry `-1` at `u = v = 1`, distinguishing Steinberg's
    `-1` sign on `c_{1,2}` from `+1` whenever `(2 : R) ≠ 0`.
@@ -29,20 +28,14 @@ strings:
    `⁅x_α(u), x_{α+β}(v)⁆` on the seven-dimensional short-root module, and checks that negating
    `c_{3,2}` or `c_{2,3}` falsifies the relation whenever `(4 : R) ≠ 0` or `(2 : R) ≠ 0`.
 
-## Main definitions
+## Main definitions and results
 
-* `TauCeti.UniversalEnvelopingAlgebra.integralMatrixRootSubgroup`: the Kostant root-subgroup
-  homomorphism `Multiplicative R →* Matrix.GeneralLinearGroup n R` attached to a cube-zero family of
-  integral matrices with integral divided squares on `coordinateLattice n`.
-* `TauCeti.UniversalEnvelopingAlgebra.a2RootMatrix`, `c2RootMatrix`, and `g2PosRootMatrix`: the
-  positive root-string matrix families in types `A₂`, `C₂`, and `G₂`.
-
-## Main results
-
+* `TauCeti.UniversalEnvelopingAlgebra.a2RootMatrix`, `c2RootMatrix`, `g2PosRootMatrix`, and root
+  subgroups `a2RootSubgroup`, `c2RootSubgroup`, `g2PosRootSubgroup`.
 * `TauCeti.UniversalEnvelopingAlgebra.commutatorElement_a2RootSubgroup`,
   `commutatorElement_c2RootSubgroup`, `commutatorElement_g2PosRootSubgroup_short_long`,
   `commutatorElement_g2PosRootSubgroup_long_short`, and
-  `commutatorElement_g2PosRootSubgroup_short_short` (with sign-falsification checks).
+  `commutatorElement_g2PosRootSubgroup_short_short` (with `_iff` sign-falsification checks).
 
 ## References
 
@@ -54,6 +47,7 @@ strings:
 public section
 
 open scoped Matrix commutatorElement
+open TauCeti (coordinateLattice coordinateLatticeBasis matrixIntCastLieHom)
 open TauCeti.AdditiveGroup (gaPointsMulEquiv)
 open Multiplicative (ofAdd toAdd)
 open _root_.UniversalEnvelopingAlgebra (ι)
@@ -61,175 +55,37 @@ open _root_.UniversalEnvelopingAlgebra (ι)
 namespace TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing LieAlgebra.ofAssociativeAlgebra
-attribute [local instance] TauCeti.moduleNNRat
 
-/-! ## Kostant root subgroups of cube-zero integral matrix families -/
-
-section IntegralMatrixFamily
+section LieHelpers
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-private theorem representation_matrix_ι (X : Matrix n n ℚ) :
-    representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ X) = Matrix.toLinAlgEquiv' X :=
-  LinearMap.ext fun v => by
-    rw [representation_ι_apply, Matrix.lie_apply, Matrix.toLinAlgEquiv'_apply]
-
-/-- An integral matrix that cubes to zero acts with vanishing cube on `n → ℚ`. -/
-theorem pow_three_representation_matrix_eq_zero {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
-    representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ X)) ^ 3 = 0 := by
-  rw [representation_matrix_ι, TauCeti.matrixIntCastLieHom_eq_map]
-  have hmap : X.map (Int.cast : ℤ → ℚ) = (RingHom.mapMatrix (Int.castRingHom ℚ)) X := by
-    ext a b; simp
-  rw [hmap, ← map_pow, ← map_pow, hcube]; simp
-
-/-- An integral matrix that cubes to zero acts nilpotently on `n → ℚ`. -/
-theorem isNilpotent_representation_matrix {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
-    IsNilpotent
-      (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ X))) :=
-  ⟨3, pow_three_representation_matrix_eq_zero hcube⟩
-
-private theorem dividedPower_two_representation_matrix_apply {X D : Matrix n n ℤ}
-    (hsq : X * X = 2 • D) (v : n → ℚ) :
-    Associative.dividedPower 2
-      (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ X))) v =
-      D.map (Int.castRingHom ℚ) *ᵥ v := by
-  have hmapX : TauCeti.matrixIntCastLieHom ℚ X = (RingHom.mapMatrix (Int.castRingHom ℚ)) X := by
-    ext a b; simp
-  have hsq' : representation ℚ (Matrix n n ℚ) (n → ℚ)
-      (ι ℚ (TauCeti.matrixIntCastLieHom ℚ X)) ^ 2 =
-      (2 : ℕ) • Matrix.toLinAlgEquiv' (D.map (Int.castRingHom ℚ)) := by
-    rw [representation_matrix_ι, hmapX, ← map_pow, ← map_pow, pow_two, hsq, map_nsmul,
-      map_nsmul, RingHom.mapMatrix_apply]
-  rw [Associative.dividedPower_def, LinearMap.smul_apply, hsq', LinearMap.smul_apply,
-    Matrix.toLinAlgEquiv'_apply, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
-  norm_num [Nat.factorial]
-
-/-- The standard coordinate lattice is preserved by the Kostant `ℤ`-form of any family of cube-zero
-integral matrices whose squares are even integral matrices. -/
-theorem kostantForm_integralMatrix_mem_coordinateLattice {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0) :
-    ∀ u ∈ kostantForm (fun i => TauCeti.matrixIntCastLieHom ℚ (E i)) Empty.elim,
-      ∀ v ∈ (TauCeti.coordinateLattice n).toAddSubgroup,
-        representation ℚ (Matrix n n ℚ) (n → ℚ) u v ∈
-          (TauCeti.coordinateLattice n).toAddSubgroup := by
-  intro u hu v hv
-  refine kostantForm_apply_mem_coordinateLattice_of_pow_eq_zero
-    (fun i => TauCeti.matrixIntCastLieHom ℚ (E i)) Empty.elim
-    (representation ℚ (Matrix n n ℚ) (n → ℚ))
-    (wt := fun _ => Empty.elim) 3 (fun i => pow_three_representation_matrix_eq_zero (hcube i))
-    (fun i m hm w hw => ?_)
-    (fun a => (isCartanWeightVector_iff Empty.elim _).mpr Empty.rec) hu hv
-  have hm' : m = 0 ∨ m = 1 ∨ m = 2 := by omega
-  rcases hm' with rfl | rfl | rfl
-  · simpa using hw
-  · rw [Associative.dividedPower_one, representation_ι_apply, Matrix.lie_apply]
-    exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (E i) hw
-  · rw [dividedPower_two_representation_matrix_apply (hsq i)]
-    have hD : (D i).map (Int.castRingHom ℚ) = TauCeti.matrixIntCastLieHom ℚ (D i) := by
-      ext a b; simp
-    rw [hD]; exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (D i) hw
-
-/-- **The Kostant root subgroup of a cube-zero integral matrix family** in the standard coordinate
-basis over `R`. -/
-noncomputable def integralMatrixRootSubgroup {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0)
-    (R : Type*) [CommRing R] (i : I) :
-    Multiplicative R →* _root_.Matrix.GeneralLinearGroup n R :=
-  (kostantRootSubgroupMatrix (fun k => TauCeti.matrixIntCastLieHom ℚ (E k)) Empty.elim
-    (representation ℚ (Matrix n n ℚ) (n → ℚ)) (TauCeti.coordinateLattice n).toAddSubgroup
-    (kostantForm_integralMatrix_mem_coordinateLattice E D hsq hcube) i
-    (isNilpotent_representation_matrix (hcube i))
-    (TauCeti.coordinateLatticeBasis n)).comp (gaPointsMulEquiv (R := ℤ) (A := R)).symm.toMonoidHom
-
-/-- The matrix of `integralMatrixRootSubgroup` at `u` is `1 + u • Eᵢ + u² • Dᵢ`. -/
-@[simp]
-theorem coe_integralMatrixRootSubgroup {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0)
-    (R : Type*) [CommRing R] (i : I) (u : Multiplicative R) :
-    ((integralMatrixRootSubgroup E D hsq hcube R i u : _root_.Matrix.GeneralLinearGroup n R) :
-        Matrix n n R) =
-      1 + toAdd u • (E i).map (Int.cast : ℤ → R) +
-        toAdd u ^ 2 • (D i).map (Int.cast : ℤ → R) := by
-  have hact₁ : ∀ s,
-      representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ (E i)))
-        ((TauCeti.coordinateLatticeBasis n s : TauCeti.coordinateLattice n) : n → ℚ) =
-        ∑ r, E i r s •
-          ((TauCeti.coordinateLatticeBasis n r : TauCeti.coordinateLattice n) : n → ℚ) := by
-    intro s; rw [representation_ι_apply, Matrix.lie_apply]
-    have hE : TauCeti.matrixIntCastLieHom ℚ (E i) = (E i).map (Int.castRingHom ℚ) := by
-      ext a b; simp
-    rw [hE]; exact Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (E i) s
-  have hact₂ : ∀ s,
-      Associative.dividedPower 2
-        (representation ℚ (Matrix n n ℚ) (n → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ (E i))))
-        ((TauCeti.coordinateLatticeBasis n s : TauCeti.coordinateLattice n) : n → ℚ) =
-        ∑ r, D i r s •
-          ((TauCeti.coordinateLatticeBasis n r : TauCeti.coordinateLattice n) : n → ℚ) := by
-    intro s; rw [dividedPower_two_representation_matrix_apply (hsq i)]
-    exact Matrix.intCast_mulVec_coordinateLatticeBasis_eq_sum (D i) s
-  simpa only [integralMatrixRootSubgroup, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply] using
-    kostantRootSubgroupMatrix_eq_one_add_smul_add_smul
-      (fun k => TauCeti.matrixIntCastLieHom ℚ (E k)) Empty.elim
-      (representation ℚ (Matrix n n ℚ) (n → ℚ)) (TauCeti.coordinateLattice n).toAddSubgroup
-      (kostantForm_integralMatrix_mem_coordinateLattice E D hsq hcube) i
-      (isNilpotent_representation_matrix (hcube i))
-      (TauCeti.coordinateLatticeBasis n) (E i) (D i)
-      (TauCeti.nilpotencyClass_le_of_pow_eq_zero
-        (pow_three_representation_matrix_eq_zero (hcube i)))
-      hact₁ hact₂ ((gaPointsMulEquiv (R := ℤ) (A := R)).symm u)
-
-/-- When the divided-square matrix `D i` vanishes, `integralMatrixRootSubgroup` is `1 + u • Eᵢ`. -/
-theorem coe_integralMatrixRootSubgroup_of_eq_zero {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0)
-    (R : Type*) [CommRing R] {i : I} (hD : D i = 0) (u : Multiplicative R) :
-    ((integralMatrixRootSubgroup E D hsq hcube R i u : _root_.Matrix.GeneralLinearGroup n R) :
-        Matrix n n R) =
-      1 + toAdd u • (E i).map (Int.cast : ℤ → R) := by
-  rw [coe_integralMatrixRootSubgroup, hD, Matrix.map_zero _ Int.cast_zero, smul_zero, add_zero]
-
-/-- An off-diagonal entry `±1` where the divided square vanishes makes the root-subgroup
-parametrization injective over every commutative ring. -/
-theorem integralMatrixRootSubgroup_eq_iff_of_entry_unit {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0)
-    {R : Type*} [CommRing R] {i : I} {r s : n} (hrs : r ≠ s)
-    (hE : E i r s = 1 ∨ E i r s = -1) (hD : D i r s = 0) (u v : R) :
-    integralMatrixRootSubgroup E D hsq hcube R i (ofAdd u) =
-      integralMatrixRootSubgroup E D hsq hcube R i (ofAdd v) ↔ u = v := by
-  refine ⟨fun h => ?_, fun h => congrArg _ (congrArg ofAdd h)⟩
-  have hentry := congrArg (fun g : _root_.Matrix.GeneralLinearGroup n R => (g : Matrix n n R) r s) h
-  simp only [coe_integralMatrixRootSubgroup, toAdd_ofAdd, Matrix.add_apply, Matrix.one_apply_ne hrs,
-    Matrix.smul_apply, Matrix.map_apply, hD, Int.cast_zero, smul_eq_mul, mul_zero, zero_add,
-    add_zero] at hentry
-  rcases hE with h1 | hm1
-  · simpa [h1] using hentry
-  · exact neg_inj.mp (by simpa [hm1] using hentry)
+private noncomputable abbrev gaSymm {R : Type*} [CommRing R] (u : R) :=
+  (gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd u)
 
 private theorem intLie {I : Type*} (E : I → Matrix n n ℤ) (i j k : I) (c : ℤ)
     (h : ⁅E i, E j⁆ = c • E k) :
-    ⁅TauCeti.matrixIntCastLieHom ℚ (E i), TauCeti.matrixIntCastLieHom ℚ (E j)⁆ =
-      c • TauCeti.matrixIntCastLieHom ℚ (E k) := by
-  rw [← (TauCeti.matrixIntCastLieHom ℚ).map_lie, h, map_zsmul]
+    ⁅matrixIntCastLieHom ℚ (E i), matrixIntCastLieHom ℚ (E j)⁆ =
+      c • matrixIntCastLieHom ℚ (E k) := by
+  rw [← (matrixIntCastLieHom ℚ).map_lie, h, map_zsmul]
 
 private theorem intZsmulLie {I : Type*} (E : I → Matrix n n ℤ) (i j k : I) (a b : ℤ)
     (h : a • ⁅E i, E j⁆ = b • E k) :
-    a • ⁅TauCeti.matrixIntCastLieHom ℚ (E i), TauCeti.matrixIntCastLieHom ℚ (E j)⁆ =
-      b • TauCeti.matrixIntCastLieHom ℚ (E k) := by
-  rw [← (TauCeti.matrixIntCastLieHom ℚ).map_lie, ← map_zsmul, h, map_zsmul]
+    a • ⁅matrixIntCastLieHom ℚ (E i), matrixIntCastLieHom ℚ (E j)⁆ =
+      b • matrixIntCastLieHom ℚ (E k) := by
+  rw [← (matrixIntCastLieHom ℚ).map_lie, ← map_zsmul, h, map_zsmul]
 
 private theorem intLieLie {I : Type*} (E : I → Matrix n n ℤ) (i j k : I) (c : ℤ)
     (h : ⁅E i, ⁅E i, E j⁆⁆ = c • E k) :
-    ⁅TauCeti.matrixIntCastLieHom ℚ (E i),
-        ⁅TauCeti.matrixIntCastLieHom ℚ (E i), TauCeti.matrixIntCastLieHom ℚ (E j)⁆⁆ =
-      c • TauCeti.matrixIntCastLieHom ℚ (E k) := by
-  rw [← (TauCeti.matrixIntCastLieHom ℚ).map_lie, ← (TauCeti.matrixIntCastLieHom ℚ).map_lie, h,
-    map_zsmul]
+    ⁅matrixIntCastLieHom ℚ (E i), ⁅matrixIntCastLieHom ℚ (E i), matrixIntCastLieHom ℚ (E j)⁆⁆ =
+      c • matrixIntCastLieHom ℚ (E k) := by
+  rw [← (matrixIntCastLieHom ℚ).map_lie, ← (matrixIntCastLieHom ℚ).map_lie, h, map_zsmul]
 
 private theorem intLieZero {I : Type*} (E : I → Matrix n n ℤ) (i j : I) (h : ⁅E i, E j⁆ = 0) :
-    ⁅TauCeti.matrixIntCastLieHom ℚ (E i), TauCeti.matrixIntCastLieHom ℚ (E j)⁆ = 0 := by
-  rw [← (TauCeti.matrixIntCastLieHom ℚ).map_lie, h, map_zero]
+    ⁅matrixIntCastLieHom ℚ (E i), matrixIntCastLieHom ℚ (E j)⁆ = 0 := by
+  rw [← (matrixIntCastLieHom ℚ).map_lie, h, map_zero]
 
-end IntegralMatrixFamily
+end LieHelpers
 
 /-! ## Check 1: Type `A₂` on `R³` -/
 
@@ -245,8 +101,7 @@ theorem a2RootMatrix_mul_self (i : Fin 3) :
   revert i; decide
 
 /-- Each positive root matrix of `A₂` cubes to zero. -/
-theorem a2RootMatrix_pow_three (i : Fin 3) : a2RootMatrix i ^ 3 = 0 := by
-  revert i; decide
+theorem a2RootMatrix_pow_three (i : Fin 3) : a2RootMatrix i ^ 3 = 0 := by revert i; decide
 
 /-- The Kostant root subgroups `x_α`, `x_β`, `x_{α+β}` of `A₂` in `GL₃(R)`. -/
 noncomputable abbrev a2RootSubgroup (R : Type*) [CommRing R] (i : Fin 3) :
@@ -254,7 +109,7 @@ noncomputable abbrev a2RootSubgroup (R : Type*) [CommRing R] (i : Fin 3) :
   integralMatrixRootSubgroup a2RootMatrix 0 a2RootMatrix_mul_self a2RootMatrix_pow_three R i
 
 private theorem a2Nil (i : Fin 3) : IsNilpotent (representation ℚ (Matrix (Fin 3) (Fin 3) ℚ)
-    (Fin 3 → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ (a2RootMatrix i)))) :=
+    (Fin 3 → ℚ) (ι ℚ (matrixIntCastLieHom ℚ (a2RootMatrix i)))) :=
   isNilpotent_representation_matrix (a2RootMatrix_pow_three i)
 
 /-- **Type-`A₂` Chevalley commutator check.** With `e_α = E₀₁`, `e_β = E₁₂`, and
@@ -262,25 +117,22 @@ private theorem a2Nil (i : Fin 3) : IsNilpotent (representation ℚ (Matrix (Fin
 theorem commutatorElement_a2RootSubgroup {R : Type*} [CommRing R] (u v : R) :
     ⁅a2RootSubgroup R 0 (ofAdd u), a2RootSubgroup R 1 (ofAdd v)⁆ =
       a2RootSubgroup R 2 (ofAdd (u * v)) := by
-  simpa only [a2RootSubgroup, integralMatrixRootSubgroup, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_one, one_mul] using
+  simpa only [a2RootSubgroup, integralMatrixRootSubgroup_apply, gaSymm, MulEquiv.apply_symm_apply,
+    toAdd_ofAdd, Int.cast_one, one_mul] using
     commutatorElement_kostantRootSubgroupMatrix_of_lie_eq'
-      (fun k => TauCeti.matrixIntCastLieHom ℚ (a2RootMatrix k)) Empty.elim
+      (fun k => matrixIntCastLieHom ℚ (a2RootMatrix k)) Empty.elim
       (representation ℚ (Matrix (Fin 3) (Fin 3) ℚ) (Fin 3 → ℚ))
-      (TauCeti.coordinateLattice (Fin 3)).toAddSubgroup
+      (coordinateLattice (Fin 3)).toAddSubgroup
       (kostantForm_integralMatrix_mem_coordinateLattice a2RootMatrix 0
-        a2RootMatrix_mul_self a2RootMatrix_pow_three)
-      (TauCeti.coordinateLatticeBasis (Fin 3))
+        a2RootMatrix_mul_self a2RootMatrix_pow_three) (coordinateLatticeBasis (Fin 3))
       (intLie a2RootMatrix 0 1 2 1 (by decide +kernel))
       (intLieZero a2RootMatrix 0 2 (by decide +kernel))
       (intLieZero a2RootMatrix 1 2 (by decide +kernel))
-      (a2Nil 0) (a2Nil 1) (a2Nil 2)
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd u))
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd v))
+      (a2Nil 0) (a2Nil 1) (a2Nil 2) (gaSymm u) (gaSymm v)
 
-/-- Flipping `c_{1,1} = N_{α,β}` to `-N_{α,β}` in `A₂` falsifies the commutator formula whenever
-`(2 : R) ≠ 0`. -/
-theorem commutatorElement_a2RootSubgroup_one_ne_neg {R : Type*} [CommRing R] :
+/-- Flipping `c_{1,1} = N_{α,β}` to `-N_{α,β}` in `A₂` falsifies the commutator formula if and only
+if `(2 : R) ≠ 0`. -/
+theorem commutatorElement_a2RootSubgroup_one_ne_neg_iff {R : Type*} [CommRing R] :
     ⁅a2RootSubgroup R 0 (ofAdd (1 : R)), a2RootSubgroup R 1 (ofAdd (1 : R))⁆ ≠
       a2RootSubgroup R 2 (ofAdd (-1 : R)) ↔ (2 : R) ≠ 0 := by
   rw [commutatorElement_a2RootSubgroup, mul_one, ne_eq,
@@ -307,8 +159,7 @@ theorem c2RootMatrix_mul_self (i : Fin 4) :
   revert i; decide
 
 /-- Each positive root matrix of `C₂` in the four-dimensional symplectic basis cubes to zero. -/
-theorem c2RootMatrix_pow_three (i : Fin 4) : c2RootMatrix i ^ 3 = 0 := by
-  revert i; decide
+theorem c2RootMatrix_pow_three (i : Fin 4) : c2RootMatrix i ^ 3 = 0 := by revert i; decide
 
 /-- The Kostant root subgroups `x_α`, `x_β`, `x_{α+β}`, `x_{α+2β}` of `C₂` in `GL₄(R)`. -/
 noncomputable abbrev c2RootSubgroup (R : Type*) [CommRing R] (i : Fin 4) :
@@ -316,7 +167,7 @@ noncomputable abbrev c2RootSubgroup (R : Type*) [CommRing R] (i : Fin 4) :
   integralMatrixRootSubgroup c2RootMatrix 0 c2RootMatrix_mul_self c2RootMatrix_pow_three R i
 
 private theorem c2Nil (i : Fin 4) : IsNilpotent (representation ℚ (Matrix (Fin 4) (Fin 4) ℚ)
-    (Fin 4 → ℚ) (ι ℚ (TauCeti.matrixIntCastLieHom ℚ (c2RootMatrix i)))) :=
+    (Fin 4 → ℚ) (ι ℚ (matrixIntCastLieHom ℚ (c2RootMatrix i)))) :=
   isNilpotent_representation_matrix (c2RootMatrix_pow_three i)
 
 /-- **Type-`C₂` Chevalley commutator check.** With `e_α = E₁₃` (long), `e_β = E₀₁ - E₃₂` (short),
@@ -325,23 +176,19 @@ is `⁅x_α(u), x_β(v)⁆ = x_{α+β}(-(u * v)) * x_{α+2β}(-(u * v ^ 2))`. -/
 theorem commutatorElement_c2RootSubgroup {R : Type*} [CommRing R] (u v : R) :
     ⁅c2RootSubgroup R 0 (ofAdd u), c2RootSubgroup R 1 (ofAdd v)⁆ =
       c2RootSubgroup R 2 (ofAdd (-(u * v))) * c2RootSubgroup R 3 (ofAdd (-(u * v ^ 2))) := by
-  simpa only [c2RootSubgroup, integralMatrixRootSubgroup, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg, Int.cast_one,
-    neg_one_mul] using
+  simpa only [c2RootSubgroup, integralMatrixRootSubgroup_apply, gaSymm, MulEquiv.apply_symm_apply,
+    toAdd_ofAdd, Int.cast_neg, Int.cast_one, neg_one_mul] using
     commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq'
-      (fun k => TauCeti.matrixIntCastLieHom ℚ (c2RootMatrix k)) Empty.elim
+      (fun k => matrixIntCastLieHom ℚ (c2RootMatrix k)) Empty.elim
       (representation ℚ (Matrix (Fin 4) (Fin 4) ℚ) (Fin 4 → ℚ))
-      (TauCeti.coordinateLattice (Fin 4)).toAddSubgroup
+      (coordinateLattice (Fin 4)).toAddSubgroup
       (kostantForm_integralMatrix_mem_coordinateLattice c2RootMatrix 0
-        c2RootMatrix_mul_self c2RootMatrix_pow_three)
-      (TauCeti.coordinateLatticeBasis (Fin 4))
+        c2RootMatrix_mul_self c2RootMatrix_pow_three) (coordinateLatticeBasis (Fin 4))
       (intLie c2RootMatrix 0 1 2 (-1) (by decide +kernel))
       (intLieLie c2RootMatrix 1 0 3 (2 * (1 : ℤ)) (by decide +kernel))
       (intLieZero c2RootMatrix 1 3 (by decide +kernel))
       (intLieZero c2RootMatrix 0 2 (by decide +kernel))
-      (c2Nil 0) (c2Nil 1) (c2Nil 2) (c2Nil 3)
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd u))
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd v))
+      (c2Nil 0) (c2Nil 1) (c2Nil 2) (c2Nil 3) (gaSymm u) (gaSymm v)
 
 /-- At `u = v = 1`, the `(0, 2)` entry (`(1, 3)` in `1`-indexed coordinates) of `⁅x_α(1), x_β(1)⁆`
 in `Sp₄(R)` is `-1`. -/
@@ -352,8 +199,8 @@ theorem commutatorElement_c2RootSubgroup_one_apply_zero_two {R : Type*} [CommRin
   simp only [c2RootSubgroup, coe_integralMatrixRootSubgroup, toAdd_ofAdd]; simp [c2RootMatrix]
 
 /-- Replacing Steinberg's constant `-1` sign on `c_{1,2} = -M_{β,α,2}` by `(-1) ^ 2 = +1` falsifies
-the `C₂` commutator formula whenever `(2 : R) ≠ 0`. -/
-theorem commutatorElement_c2RootSubgroup_one_ne_pos {R : Type*} [CommRing R] :
+the `C₂` commutator formula if and only if `(2 : R) ≠ 0`. -/
+theorem commutatorElement_c2RootSubgroup_one_ne_pos_iff {R : Type*} [CommRing R] :
     ⁅c2RootSubgroup R 0 (ofAdd (1 : R)), c2RootSubgroup R 1 (ofAdd (1 : R))⁆ ≠
       c2RootSubgroup R 2 (ofAdd (-1 : R)) * c2RootSubgroup R 3 (ofAdd (1 : R)) ↔ (2 : R) ≠ 0 := by
   rw [commutatorElement_c2RootSubgroup, mul_one, one_pow, mul_one, ne_eq, mul_right_inj,
@@ -382,15 +229,12 @@ matrices for the three short roots `α`, `α + β`, `2α + β`, and `0` for the 
 def g2PosDividedSquareMatrix : Fin 6 → Matrix (Fin 7) (Fin 7) ℤ :=
   ![Matrix.single 2 4 1, 0, -Matrix.single 1 5 1, Matrix.single 0 6 1, 0, 0]
 
-/-- Each positive root matrix of `G₂` on the seven-dimensional module squares to twice its
-integral divided-square matrix. -/
+/-- Each positive root matrix of `G₂` on `R⁷` squares to twice its divided-square matrix. -/
 theorem g2PosRootMatrix_mul_self (i : Fin 6) :
-    g2PosRootMatrix i * g2PosRootMatrix i = 2 • g2PosDividedSquareMatrix i := by
-  revert i; decide
+    g2PosRootMatrix i * g2PosRootMatrix i = 2 • g2PosDividedSquareMatrix i := by revert i; decide
 
-/-- Each positive root matrix of `G₂` on the seven-dimensional module cubes to zero. -/
-theorem g2PosRootMatrix_pow_three (i : Fin 6) : g2PosRootMatrix i ^ 3 = 0 := by
-  revert i; decide
+/-- Each positive root matrix of `G₂` on `R⁷` cubes to zero. -/
+theorem g2PosRootMatrix_pow_three (i : Fin 6) : g2PosRootMatrix i ^ 3 = 0 := by revert i; decide
 
 /-- The Kostant root subgroups `x_γ` for all six positive roots of `G₂` in `GL₇(R)`. -/
 noncomputable abbrev g2PosRootSubgroup (R : Type*) [CommRing R] (i : Fin 6) :
@@ -398,101 +242,76 @@ noncomputable abbrev g2PosRootSubgroup (R : Type*) [CommRing R] (i : Fin 6) :
   integralMatrixRootSubgroup g2PosRootMatrix g2PosDividedSquareMatrix
     g2PosRootMatrix_mul_self g2PosRootMatrix_pow_three R i
 
-private noncomputable abbrev g2E (k : Fin 6) := TauCeti.matrixIntCastLieHom ℚ (g2PosRootMatrix k)
-
+private noncomputable abbrev g2E (k : Fin 6) := matrixIntCastLieHom ℚ (g2PosRootMatrix k)
+private noncomputable abbrev g2Rep := representation ℚ (Matrix (Fin 7) (Fin 7) ℚ) (Fin 7 → ℚ)
 private abbrev g2Mem := kostantForm_integralMatrix_mem_coordinateLattice g2PosRootMatrix
   g2PosDividedSquareMatrix g2PosRootMatrix_mul_self g2PosRootMatrix_pow_three
-
-private theorem g2Nil (i : Fin 6) : IsNilpotent (representation ℚ (Matrix (Fin 7) (Fin 7) ℚ)
-    (Fin 7 → ℚ) (ι ℚ (g2E i))) :=
+private theorem g2Nil (i : Fin 6) : IsNilpotent (g2Rep (ι ℚ (g2E i))) :=
   isNilpotent_representation_matrix (g2PosRootMatrix_pow_three i)
+private theorem g2ZLie (i j k : Fin 6) (a b : ℤ)
+    (h : a • ⁅g2PosRootMatrix i, g2PosRootMatrix j⁆ = b • g2PosRootMatrix k := by decide +kernel) :
+    a • ⁅g2E i, g2E j⁆ = b • g2E k := intZsmulLie g2PosRootMatrix i j k a b h
+private theorem g2Zero (i j : Fin 6)
+    (h : ⁅g2PosRootMatrix i, g2PosRootMatrix j⁆ = 0 := by decide +kernel) :
+    ⁅g2E i, g2E j⁆ = 0 := intLieZero g2PosRootMatrix i j h
 
-private abbrev g2ZLie := intZsmulLie g2PosRootMatrix
-private abbrev g2Zero := intLieZero g2PosRootMatrix
-
-/-- **Type-`G₂` Chevalley commutator check (`α` short, `β` long).** On the seven-dimensional module,
+/-- **Type-`G₂` Chevalley commutator check (`α` short, `β` long).** On `R⁷`,
 `⁅x_α(u), x_β(v)⁆ = x_{α+β}(uv) x_{2α+β}(u²v) x_{3α+β}(u³v) x_{3α+2β}(2 u³v²)`, confirming
-`c_{3,2} = (2/3) M_{α+β,α,2}` (`= 2` in the normalized root vector `e_{3α+2β}`). -/
+`c_{3,2} = (2/3) M_{α+β,α,2} = 2` (with `M_{α+β,α,2} = 3` in the normalized `e_{3α+2β}`). -/
 theorem commutatorElement_g2PosRootSubgroup_short_long {R : Type*} [CommRing R] (u v : R) :
     ⁅g2PosRootSubgroup R 0 (ofAdd u), g2PosRootSubgroup R 1 (ofAdd v)⁆ =
       g2PosRootSubgroup R 2 (ofAdd (u * v)) * g2PosRootSubgroup R 3 (ofAdd (u ^ 2 * v)) *
         g2PosRootSubgroup R 4 (ofAdd (u ^ 3 * v)) *
         g2PosRootSubgroup R 5 (ofAdd (2 * (u ^ 3 * v ^ 2))) := by
-  simpa only [g2PosRootSubgroup, integralMatrixRootSubgroup, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_one, one_mul,
-    mul_one] using
-    commutatorElement_kostantRootSubgroupMatrix_of_lie_eq_three_nsmul' g2E Empty.elim
-      (representation ℚ (Matrix (Fin 7) (Fin 7) ℚ) (Fin 7 → ℚ))
-      (TauCeti.coordinateLattice (Fin 7)).toAddSubgroup g2Mem (TauCeti.coordinateLatticeBasis _)
-      (intLie g2PosRootMatrix 0 1 2 1 (by decide +kernel))
-      (g2ZLie 0 2 3 1 (2 * (1 : ℤ)) (by decide +kernel))
-      (g2ZLie 0 3 4 1 (3 * (1 : ℤ)) (by decide +kernel))
-      (g2ZLie 3 2 5 ((1 : ℤ) * 1) (3 * (1 : ℤ)) (by decide +kernel))
-      (g2Zero 0 4 (by decide +kernel)) (g2Zero 0 5 (by decide +kernel))
-      (g2Zero 1 2 (by decide +kernel)) (g2Zero 3 4 (by decide +kernel))
-      (g2Zero 2 5 (by decide +kernel)) (g2Zero 3 5 (by decide +kernel))
-      (g2Zero 4 5 (by decide +kernel)) (g2Nil 0) (g2Nil 1) (g2Nil 2) (g2Nil 3) (g2Nil 4) (g2Nil 5)
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd u))
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd v))
+  simpa only [g2PosRootSubgroup, integralMatrixRootSubgroup_apply, gaSymm,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_one, one_mul, mul_one] using
+    commutatorElement_kostantRootSubgroupMatrix_of_lie_eq_three_nsmul' g2E Empty.elim g2Rep
+      (coordinateLattice (Fin 7)).toAddSubgroup g2Mem (coordinateLatticeBasis _)
+      (intLie g2PosRootMatrix 0 1 2 1 (by decide +kernel)) (g2ZLie 0 2 3 1 (2 * 1))
+      (g2ZLie 0 3 4 1 (3 * 1)) (g2ZLie 3 2 5 (1 * 1) (3 * 1))
+      (g2Zero 0 4) (g2Zero 0 5) (g2Zero 1 2) (g2Zero 3 4) (g2Zero 2 5) (g2Zero 3 5) (g2Zero 4 5)
+      (g2Nil 0) (g2Nil 1) (g2Nil 2) (g2Nil 3) (g2Nil 4) (g2Nil 5) (gaSymm u) (gaSymm v)
 
-/-- **Type-`G₂` Chevalley commutator check (`β` long, `α` short).** Exchanging the roles of `e_α`
-and `e_β` gives `⁅x_β(u), x_α(v)⁆ = x_{α+β}(-uv) x_{2α+β}(-uv²) x_{3α+β}(-uv³) x_{3α+2β}(u²v³)`,
-confirming `c_{2,3} = (1/3) M_{α+β,β,2}`. -/
+/-- **Type-`G₂` Chevalley commutator check (`β` long, `α` short).** Exchanging `e_α` and `e_β`
+gives `⁅x_β(u), x_α(v)⁆ = x_{α+β}(-uv) x_{2α+β}(-uv²) x_{3α+β}(-uv³) x_{3α+2β}(u²v³)`, confirming
+`c_{2,3} = (1/3) M_{α+β,α,2} = 1` (since `M_{α+β,α,2} = 3` in the normalized `e_{3α+2β}`). -/
 theorem commutatorElement_g2PosRootSubgroup_long_short {R : Type*} [CommRing R] (u v : R) :
     ⁅g2PosRootSubgroup R 1 (ofAdd u), g2PosRootSubgroup R 0 (ofAdd v)⁆ =
       g2PosRootSubgroup R 2 (ofAdd (-(u * v))) * g2PosRootSubgroup R 3 (ofAdd (-(u * v ^ 2))) *
         g2PosRootSubgroup R 4 (ofAdd (-(u * v ^ 3))) *
         g2PosRootSubgroup R 5 (ofAdd (u ^ 2 * v ^ 3)) := by
-  simpa only [g2PosRootSubgroup, integralMatrixRootSubgroup, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg, Int.cast_one,
-    neg_one_mul, one_mul] using
-    commutatorElement_kostantRootSubgroupMatrix_of_lie_eq_three_nsmul_rev' g2E Empty.elim
-      (representation ℚ (Matrix (Fin 7) (Fin 7) ℚ) (Fin 7 → ℚ))
-      (TauCeti.coordinateLattice (Fin 7)).toAddSubgroup g2Mem (TauCeti.coordinateLatticeBasis _)
-      (intLie g2PosRootMatrix 1 0 2 (-1) (by decide +kernel))
-      (g2ZLie 2 0 3 (-1) (2 * (1 : ℤ)) (by decide +kernel))
-      (g2ZLie 0 3 4 1 (3 * (1 : ℤ)) (by decide +kernel))
-      (g2ZLie 2 3 5 ((1 : ℤ) * (-1)) (3 * (1 : ℤ)) (by decide +kernel))
-      (g2Zero 0 4 (by decide +kernel)) (g2Zero 0 5 (by decide +kernel))
-      (g2Zero 1 2 (by decide +kernel)) (g2Zero 3 4 (by decide +kernel))
-      (g2Zero 2 5 (by decide +kernel)) (g2Zero 3 5 (by decide +kernel))
-      (g2Zero 4 5 (by decide +kernel)) (g2Nil 1) (g2Nil 0) (g2Nil 2) (g2Nil 3) (g2Nil 4) (g2Nil 5)
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd u))
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd v))
+  simpa only [g2PosRootSubgroup, integralMatrixRootSubgroup_apply, gaSymm,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg, Int.cast_one, neg_one_mul, one_mul] using
+    commutatorElement_kostantRootSubgroupMatrix_of_lie_eq_three_nsmul_rev' g2E Empty.elim g2Rep
+      (coordinateLattice (Fin 7)).toAddSubgroup g2Mem (coordinateLatticeBasis _)
+      (intLie g2PosRootMatrix 1 0 2 (-1) (by decide +kernel)) (g2ZLie 2 0 3 (-1) (2 * 1))
+      (g2ZLie 0 3 4 1 (3 * 1)) (g2ZLie 2 3 5 (1 * (-1)) (3 * 1))
+      (g2Zero 0 4) (g2Zero 0 5) (g2Zero 1 2) (g2Zero 3 4) (g2Zero 2 5) (g2Zero 3 5) (g2Zero 4 5)
+      (g2Nil 1) (g2Nil 0) (g2Nil 2) (g2Nil 3) (g2Nil 4) (g2Nil 5) (gaSymm u) (gaSymm v)
 
-/-- **Type-`G₂` Chevalley commutator check for two short roots (`α` and `α + β`).** On the
-seven-dimensional module,
+/-- **Type-`G₂` Chevalley commutator check for two short roots (`α` and `α + β`).** On `R⁷`,
 `⁅x_α(u), x_{α+β}(v)⁆ = x_{2α+β}(2uv) x_{3α+β}(3u²v) x_{3α+2β}(-3uv²)`. -/
 theorem commutatorElement_g2PosRootSubgroup_short_short {R : Type*} [CommRing R] (u v : R) :
     ⁅g2PosRootSubgroup R 0 (ofAdd u), g2PosRootSubgroup R 2 (ofAdd v)⁆ =
-      g2PosRootSubgroup R 3 (ofAdd (2 * u * v)) *
-        g2PosRootSubgroup R 4 (ofAdd (3 * u ^ 2 * v)) *
+      g2PosRootSubgroup R 3 (ofAdd (2 * u * v)) * g2PosRootSubgroup R 4 (ofAdd (3 * u ^ 2 * v)) *
         g2PosRootSubgroup R 5 (ofAdd (-(3 * u * v ^ 2))) := by
-  simpa only [g2PosRootSubgroup, integralMatrixRootSubgroup, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg, Int.cast_one,
-    one_mul, neg_one_mul] using
-    commutatorElement_kostantRootSubgroupMatrix_of_g2_short_pair' g2E Empty.elim
-      (representation ℚ (Matrix (Fin 7) (Fin 7) ℚ) (Fin 7 → ℚ))
-      (TauCeti.coordinateLattice (Fin 7)).toAddSubgroup g2Mem (TauCeti.coordinateLatticeBasis _)
-      (intLie g2PosRootMatrix 0 2 3 (2 * (1 : ℤ)) (by decide +kernel))
-      (g2ZLie 0 3 4 1 (3 * (1 : ℤ)) (by decide +kernel))
-      (g2ZLie 3 2 5 1 (3 * (1 : ℤ)) (by decide +kernel))
-      (g2Zero 0 4 (by decide +kernel)) (g2Zero 0 5 (by decide +kernel))
-      (g2Zero 2 5 (by decide +kernel)) (g2Zero 3 4 (by decide +kernel))
-      (g2Zero 3 5 (by decide +kernel)) (g2Zero 4 5 (by decide +kernel))
-      (g2Nil 0) (g2Nil 2) (g2Nil 3) (g2Nil 4) (g2Nil 5)
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd u))
-      ((gaPointsMulEquiv (R := ℤ) (A := R)).symm (ofAdd v))
+  simpa only [g2PosRootSubgroup, integralMatrixRootSubgroup_apply, gaSymm,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd, Int.cast_neg, Int.cast_one, one_mul, neg_one_mul] using
+    commutatorElement_kostantRootSubgroupMatrix_of_g2_short_pair' g2E Empty.elim g2Rep
+      (coordinateLattice (Fin 7)).toAddSubgroup g2Mem (coordinateLatticeBasis _)
+      (intLie g2PosRootMatrix 0 2 3 (2 * 1) (by decide +kernel))
+      (g2ZLie 0 3 4 1 (3 * 1)) (g2ZLie 3 2 5 1 (3 * 1))
+      (g2Zero 0 4) (g2Zero 0 5) (g2Zero 2 5) (g2Zero 3 4) (g2Zero 3 5) (g2Zero 4 5)
+      (g2Nil 0) (g2Nil 2) (g2Nil 3) (g2Nil 4) (g2Nil 5) (gaSymm u) (gaSymm v)
 
 /-- Negating the `c_{3,2}` coefficient (`2 ↦ -2`) in `⁅x_α(1), x_β(1)⁆` falsifies the `G₂`
-short-long commutator formula whenever `(4 : R) ≠ 0`. -/
-theorem commutatorElement_g2PosRootSubgroup_short_long_one_ne_neg {R : Type*} [CommRing R] :
+short-long commutator formula if and only if `(4 : R) ≠ 0`. -/
+theorem commutatorElement_g2PosRootSubgroup_short_long_one_ne_neg_iff {R : Type*} [CommRing R] :
     ⁅g2PosRootSubgroup R 0 (ofAdd (1 : R)), g2PosRootSubgroup R 1 (ofAdd (1 : R))⁆ ≠
       g2PosRootSubgroup R 2 (ofAdd (1 : R)) * g2PosRootSubgroup R 3 (ofAdd (1 : R)) *
         g2PosRootSubgroup R 4 (ofAdd (1 : R)) *
         g2PosRootSubgroup R 5 (ofAdd (-2 : R)) ↔ (4 : R) ≠ 0 := by
-  rw [commutatorElement_g2PosRootSubgroup_short_long]
-  simp only [one_pow, mul_one]
+  rw [commutatorElement_g2PosRootSubgroup_short_long]; simp only [one_pow, mul_one]
   rw [ne_eq, mul_right_inj,
     integralMatrixRootSubgroup_eq_iff_of_entry_unit g2PosRootMatrix g2PosDividedSquareMatrix
       g2PosRootMatrix_mul_self g2PosRootMatrix_pow_three (r := 0) (s := 5) (by decide)
@@ -500,14 +319,13 @@ theorem commutatorElement_g2PosRootSubgroup_short_long_one_ne_neg {R : Type*} [C
   exact not_congr ⟨fun h => by linear_combination h, fun h => by linear_combination h⟩
 
 /-- Negating the `c_{2,3}` coefficient (`1 ↦ -1`) in `⁅x_β(1), x_α(1)⁆` falsifies the `G₂`
-long-short commutator formula whenever `(2 : R) ≠ 0`. -/
-theorem commutatorElement_g2PosRootSubgroup_long_short_one_ne_neg {R : Type*} [CommRing R] :
+long-short commutator formula if and only if `(2 : R) ≠ 0`. -/
+theorem commutatorElement_g2PosRootSubgroup_long_short_one_ne_neg_iff {R : Type*} [CommRing R] :
     ⁅g2PosRootSubgroup R 1 (ofAdd (1 : R)), g2PosRootSubgroup R 0 (ofAdd (1 : R))⁆ ≠
       g2PosRootSubgroup R 2 (ofAdd (-1 : R)) * g2PosRootSubgroup R 3 (ofAdd (-1 : R)) *
         g2PosRootSubgroup R 4 (ofAdd (-1 : R)) *
         g2PosRootSubgroup R 5 (ofAdd (-1 : R)) ↔ (2 : R) ≠ 0 := by
-  rw [commutatorElement_g2PosRootSubgroup_long_short]
-  simp only [one_pow, mul_one]
+  rw [commutatorElement_g2PosRootSubgroup_long_short]; simp only [one_pow, mul_one]
   rw [ne_eq, mul_right_inj,
     integralMatrixRootSubgroup_eq_iff_of_entry_unit g2PosRootMatrix g2PosDividedSquareMatrix
       g2PosRootMatrix_mul_self g2PosRootMatrix_pow_three (r := 0) (s := 5) (by decide)

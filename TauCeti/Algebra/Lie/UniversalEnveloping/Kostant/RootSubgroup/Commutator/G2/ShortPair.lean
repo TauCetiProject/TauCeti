@@ -109,19 +109,16 @@ theorem kostantRootSubgroupPoints_mul_of_g2_short_pair
   have hzw : Commute z w := ((commute_of_lie_eq_zero ρ hkl).smul_left c).smul_right d
   have hzs : Commute z s := ((commute_of_lie_eq_zero ρ hkm).smul_left c).smul_right a
   have hws : Commute w s := ((commute_of_lie_eq_zero ρ hlm).smul_left d).smul_right a
-  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
-  have hMw := dividedPower_zsmul_apply_mem e h ρ M hM d l
-  have hMs := dividedPower_zsmul_apply_mem e h ρ M hM a m
+  have hMz := dividedPower_zsmul_smul_mem c M (dividedPower_smul_mem_of_kostantForm_apply_mem hM k)
+  have hMw := dividedPower_zsmul_smul_mem d M (dividedPower_smul_mem_of_kostantForm_apply_mem hM l)
+  have hMs := dividedPower_zsmul_smul_mem a M (dividedPower_smul_mem_of_kostantForm_apply_mem hM m)
   -- Transfer integral scaling of the root vectors to scaling of the output parameters.
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
   rw [hp, hq, hr,
-    ← baseChangeExp_zsmul c M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk,
-    ← baseChangeExp_zsmul d M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl,
-    ← baseChangeExp_zsmul a M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM m n hv) hMs hm]
+    ← baseChangeExp_zsmul c M (dividedPower_smul_mem_of_kostantForm_apply_mem hM k) hMz hk,
+    ← baseChangeExp_zsmul d M (dividedPower_smul_mem_of_kostantForm_apply_mem hM l) hMw hl,
+    ← baseChangeExp_zsmul a M (dividedPower_smul_mem_of_kostantForm_apply_mem hM m) hMs hm]
   exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair M hxy hxz hzy hxw hxs hys hzw hzs hws
     hi hj (hk.smul c) _ _ hMz hMw hMs _ _
 
