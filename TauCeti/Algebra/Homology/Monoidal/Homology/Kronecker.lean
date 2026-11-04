@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.Algebra.Homology.Monoidal.Cup
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Tensor
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 
 /-!
