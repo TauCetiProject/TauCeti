@@ -171,4 +171,22 @@ theorem coe_rootSubgroupPoints_eq_one_add_smul (j : Fin 6 ⊕ Fin 6)
       (nilpotencyClass_rep_rootGenerator_le_two j) (rep_rootGenerator_matrixBasis_eq_sum j)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
 
+/-- Subtracting a coordinate vector from its image under a unit-parameter root point gives
+its reflected vector, with the sign of its minuscule summand, when its weight permits the move. -/
+theorem root_mulVec_single_sub (R : Type*) [CommRing R] (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
+    (ha : matrixWeight a (Sum.elim id id j) =
+      (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ)) :
+    (((rootSubgroupPoints j R (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 54) R) : Matrix (Fin 54) (Fin 54) R) *ᵥ
+          Pi.single a 1) - Pi.single a 1 =
+      (summandSign (matrixIndexEquiv.symm a) : R) •
+        Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
+          (matrixIndexEquiv.symm a))) 1 := by
+  rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
+    Matrix.smul_mulVec]
+  simp only [toAdd_ofAdd, one_smul, add_sub_cancel_left,
+    Matrix.mulVec_single_one]
+  ext b
+  simp [Matrix.map_apply, rootIntMatrix_apply, ha, Pi.single_apply]
+
 end TauCeti.E6DoubledMinuscule

@@ -14,20 +14,25 @@ The tensor product of two morphisms `eqToHom h` and `eqToHom h'` is the transpor
 equality of tensor products. This complements Mathlib's `MonoidalCategory.whiskerLeft_eqToHom` and
 `MonoidalCategory.eqToHom_whiskerRight`, which treat whiskering.
 
-Likewise, the inverse of an invertible tensor comparison `δ F a b` of an oplax monoidal functor
+The inverse tensor comparison of an oplax monoidal functor `F`, followed by the image under `F` of
+a morphism out of a tensor product, is unchanged when the factors and the target are transported
+along object equalities. In particular, the inverse of an invertible tensor comparison `δ F a b`
 followed by `F` applied to a transport of `a ⊗ b` is the transport of `F a ⊗ F b` followed by the
 inverse tensor comparison at the transported factors.
 
 ## Main results
 
 * `TauCeti.eqToHom_tensorHom_eqToHom`: `eqToHom h ⊗ₘ eqToHom h' = eqToHom _`.
+* `CategoryTheory.Functor.eqToHom_conjugate_inv_δ_comp_map`: transporting
+  `inv (δ F M N) ≫ F.map φ` along equalities `M = M'`, `N = N'` and `P = P'` gives
+  `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the transport of `φ`;
 * `CategoryTheory.Functor.inv_δ_comp_map_eqToHom`: transporting `inv (δ F a b)` along `a = a'`
   and `b = b'`.
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Functor.OplaxMonoidal
 
 universe v u
 
@@ -49,10 +54,24 @@ namespace CategoryTheory.Functor
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
 
+/-- The inverse tensor comparison of an oplax monoidal functor `F`, followed by the image under `F`
+of a morphism `φ : M ⊗ N ⟶ P`, is unchanged when `M`, `N` and `P` are transported along object
+equalities: transporting `φ` to `ψ : M' ⊗ N' ⟶ P'` transports `inv (δ F M N) ≫ F.map φ` to
+`inv (δ F M' N') ≫ F.map ψ`. -/
+theorem eqToHom_conjugate_inv_δ_comp_map {D : Type*} [Category* D] [MonoidalCategory D]
+    (F : C ⥤ D) [F.OplaxMonoidal] {M M' N N' P P' : C} (hM : M = M') (hN : N = N') (hP : P = P')
+    [IsIso (δ F M N)] [IsIso (δ F M' N')] (φ : M ⊗ N ⟶ P) (ψ : M' ⊗ N' ⟶ P')
+    (hψ : ψ = (eqToHom hM.symm ⊗ₘ eqToHom hN.symm) ≫ φ ≫ eqToHom hP) :
+    (eqToHom (congrArg F.obj hM) ⊗ₘ eqToHom (congrArg F.obj hN)) ≫
+        CategoryTheory.inv (δ F M' N') ≫ F.map ψ ≫ eqToHom (congrArg F.obj hP).symm =
+      CategoryTheory.inv (δ F M N) ≫ F.map φ := by
+  subst hM hN hP hψ
+  simp
+
 /-- The inverse tensor comparison of an oplax monoidal functor commutes with transports along
 identifications of the factors. -/
 @[reassoc]
-theorem inv_δ_comp_map_eqToHom {D : Type*} [Category D] [MonoidalCategory D] (F : C ⥤ D)
+theorem inv_δ_comp_map_eqToHom {D : Type*} [Category* D] [MonoidalCategory D] (F : C ⥤ D)
     [F.OplaxMonoidal] {a a' b b' : C} [IsIso (OplaxMonoidal.δ F a b)]
     [IsIso (OplaxMonoidal.δ F a' b')] (ha : a = a') (hb : b = b') (h : a ⊗ b = a' ⊗ b') :
     CategoryTheory.inv (OplaxMonoidal.δ F a b) ≫ F.map (eqToHom h) =

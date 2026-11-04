@@ -45,9 +45,13 @@ This file supplies general constructions for Lie modules that are missing from M
   each `L`-submodule of `V`.
 * `LieModule.toEnd_eq_zero_of_isTrivial` and `LieAlgebra.ad_eq_zero_of_isLieAbelian`: on a
   trivial Lie module, in particular in an abelian Lie algebra, every element acts by zero.
+* `LieModule.commute_toEnd_of_isLieAbelian`: the actions of two elements of an abelian Lie
+  algebra commute on every Lie module.
 * `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
   abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
+* `LieEquiv.map_engel`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
+  of its image.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
@@ -112,6 +116,13 @@ theorem LieModule.toEnd_eq_zero_of_isTrivial {R L M : Type*} [CommRing R] [LieRi
     [LieAlgebra R L] [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
     [LieModule.IsTrivial L M] (x : L) : LieModule.toEnd R L M x = 0 :=
   LinearMap.ext fun m ↦ by rw [LieModule.toEnd_apply_apply, trivial_lie_zero, LinearMap.zero_apply]
+
+/-- The actions of two elements of an abelian Lie algebra commute on every Lie module. -/
+theorem LieModule.commute_toEnd_of_isLieAbelian {R L M : Type*} [CommRing R] [LieRing L]
+    [LieAlgebra R L] [IsLieAbelian L] [AddCommGroup M] [Module R M] [LieRingModule L M]
+    [LieModule R L M] (x y : L) : Commute (LieModule.toEnd R L M x) (LieModule.toEnd R L M y) :=
+  LieModule.commute_toEnd_of_mem_center_left M
+    (by rw [(LieAlgebra.isLieAbelian_iff_center_eq_top R L).1 inferInstance]; trivial) y
 
 /-- In an abelian Lie algebra the adjoint action of every element vanishes. -/
 @[simp]
@@ -394,6 +405,18 @@ theorem _root_.LieHom.map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y :
   | succ n ih =>
     simp only [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply] at ih ⊢
     rw [ih, f.map_lie]
+
+/-- **A Lie algebra isomorphism carries Engel subalgebras to Engel subalgebras.** The image
+under `e` of the Engel subalgebra of `x` is the Engel subalgebra of `e x`. -/
+@[simp]
+theorem _root_.LieEquiv.map_engel (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    (LieSubalgebra.engel R x).map e.toLieHom = LieSubalgebra.engel R (e x) := by
+  ext y
+  simp only [LieSubalgebra.mem_map, LieSubalgebra.mem_engel_iff]
+  refine ⟨?_, fun ⟨n, hn⟩ ↦ ⟨e.symm y, ⟨n, e.injective ?_⟩, by simp⟩⟩
+  · rintro ⟨z, ⟨n, hn⟩, rfl⟩
+    exact ⟨n, by simpa [hn] using (e.toLieHom.map_ad_pow x n z).symm⟩
+  · simp [hn]
 
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
 to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/

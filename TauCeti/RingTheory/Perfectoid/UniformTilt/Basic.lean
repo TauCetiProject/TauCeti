@@ -461,6 +461,10 @@ end Limit
 
 namespace uniformTilt
 
+/-- The tilt of a subsingleton ring is subsingleton. -/
+instance instSubsingleton [Subsingleton B] : Subsingleton (uniformTilt p B) :=
+  ⟨fun _ _ ↦ Perfection.extMonoid fun _ ↦ Subsingleton.elim _ _⟩
+
 private theorem val_mul (x y : Perfection B p) : (x * y).1 = x.1 * y.1 := rfl
 
 private theorem val_pow (x : Perfection B p) (i m : ℕ) : x.1 (i + m) ^ p ^ m = x.1 i :=

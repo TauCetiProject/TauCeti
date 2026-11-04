@@ -9,14 +9,18 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.SpecialFunctions.Exponential
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 
 /-!
-# Smoothness of the logarithm and real powers of the continuous functional calculus
+# The logarithm of a product, and smoothness of the logarithm and real powers
 
 In a Banach algebra `A` with an isometric continuous functional calculus, `CFC.log` inverts the
 exponential: `log (exp a) = a` for self-adjoint `a` and `exp (log b) = b` for strictly positive
-`b`. If the derivative `TauCeti.expFDeriv 𝕂 a` of the exponential is invertible at a self-adjoint
+`b`. Since the exponential turns sums of commuting elements into products, the logarithm turns
+products of commuting strictly positive elements into sums, `log (a * b) = log a + log b`.
+
+If the derivative `TauCeti.expFDeriv 𝕂 a` of the exponential is invertible at a self-adjoint
 `a`, the inverse function theorem gives an analytic local inverse of `exp` near `exp a`, and the
 continuity of `CFC.log` identifies it with `CFC.log` on the strictly positive elements. Hence
 `CFC.log` is `C^n` on the strictly positive elements for every `n : ℕ∞ω`, including the analytic
@@ -30,6 +34,8 @@ The hypothesis on the derivative holds for matrices; see
 
 ## Main results
 
+* `CFC.log_mul_of_commute`: `log (a * b) = log a + log b` for commuting strictly positive `a`
+  and `b`.
 * `CFC.rpow_eq_exp_smul_log`: `a ^ s = exp (s • log a)` for strictly positive `a`.
 * `CFC.continuousOn_rpow_prod`: `(a, s) ↦ a ^ s` is jointly continuous on the strictly positive
   elements.
@@ -69,6 +75,26 @@ theorem rpow_eq_exp_smul_log (a : A) (s : ℝ) (ha : IsStrictlyPositive a := by 
     _ = exp (s • log a) := by rw [cfc_const_mul s Real.log a hlog, log]
 
 end RpowExpLog
+
+section LogMul
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+  [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [PartialOrder A] [StarOrderedRing A]
+  [NonnegSpectrumClass ℝ A]
+
+/-- The logarithm of a product of commuting strictly positive elements is the sum of their
+logarithms. -/
+theorem log_mul_of_commute {a b : A} (hab : Commute a b)
+    (ha : IsStrictlyPositive a := by cfc_tac) (hb : IsStrictlyPositive b := by cfc_tac) :
+    log (a * b) = log a + log b := by
+  have hlog : Commute (log a) (log b) := ((hab.cfc_real Real.log).symm.cfc_real Real.log).symm
+  -- `exp_add_of_commute` is stated for normed `ℚ`-algebras; `exp` itself does not depend on the
+  -- choice of `ℚ`-algebra structure.
+  let +nondep : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
+  conv_lhs => rw [← exp_log a, ← exp_log b, ← exp_add_of_commute hlog]
+  exact log_exp _ (IsSelfAdjoint.log.add IsSelfAdjoint.log)
+
+end LogMul
 
 section Continuity
 
