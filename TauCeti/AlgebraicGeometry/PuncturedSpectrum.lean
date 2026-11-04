@@ -75,6 +75,7 @@ theorem mem_puncturedSpectrum_iff (x : PrimeSpectrum R) :
 
 /-- A prime of an `R`-algebra `B` lies in the preimage of the punctured spectrum of `R` exactly
 when it does not lie over the maximal ideal of `R`. -/
+@[simp]
 theorem mem_preimage_puncturedSpectrum_iff {B : Type u} [CommRing B] [Algebra R B]
     (q : PrimeSpectrum B) :
     q ∈ Spec.map (CommRingCat.ofHom (algebraMap R B)) ⁻¹ᵁ puncturedSpectrum R ↔
