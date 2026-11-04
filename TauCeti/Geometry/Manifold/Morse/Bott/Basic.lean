@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
-public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Morse–Bott critical submanifolds and the normal Hessian
@@ -41,8 +38,6 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 
 ## Main declarations
 
-* `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
-  tangent to a family of critical points.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold`: a smooth embedding into the critical set of a
   function which is `C²` along it.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.normalHessian`: the normal Hessian.
@@ -79,45 +74,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   {f : M → ℝ}
-
-section Tangent
-
-variable [I.Boundaryless] [IsManifold I 2 M]
-
-/-- **The critical Hessian vanishes along the critical set.** If a map `γ`, differentiable at `s`,
-takes critical values of a function `f` which is `C²` at `γ s` at every point near `s`, then the
-critical Hessian of `f` at `γ s` vanishes on the image of the derivative of `γ`. -/
-theorem criticalHessian_mfderiv_apply_eq_zero {γ : S → M} {s : S}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (γ s)) (hγ : MDifferentiableAt J I γ s)
-    (hcrit : ∀ᶠ t in 𝓝 s, γ t ∈ criticalPoints I f) (u : TangentSpace J s)
-    (w : TangentSpace I (γ s)) :
-    criticalHessian I f (γ s) (mfderiv J I γ s u) w = 0 := by
-  -- Extend `w` to a vector field `Y`; then the Hessian against `w` differentiates `df(Y)`.
-  let Y := FiberBundle.extend E w
-  have hY : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) (γ s) :=
-    FiberBundle.mdifferentiableAt_extend I E w
-  have hH := criticalHessian_apply_eq_mvfderiv hf (mem_criticalPoints.mp hcrit.self_of_nhds) hY
-    (mfderiv J I γ s u)
-  rw [show Y (γ s) = w from FiberBundle.extend_apply_self E w] at hH
-  have hφ : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) (γ s) :=
-    ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp
-      (γ s) hY
-  -- The function `df(Y)` vanishes along `γ`, so its derivative kills the tangent directions.
-  have hzero : (fun y ↦ mvfderiv I f y (Y y)) ∘ γ =ᶠ[𝓝 s] fun _ ↦ (0 : ℝ) :=
-    hcrit.mono fun t ht ↦ by
-      simp only [comp_apply, mem_criticalPoints.mp ht, zero_apply]
-  rw [hH, ← mvfderiv_comp_apply s hφ hγ, hzero.mvfderiv_eq, mvfderiv_const, zero_apply]
-
-/-- **The critical Hessian vanishes along the critical set**, in the second argument. -/
-theorem criticalHessian_apply_mfderiv_eq_zero {γ : S → M} {s : S}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (γ s)) (hγ : MDifferentiableAt J I γ s)
-    (hcrit : ∀ᶠ t in 𝓝 s, γ t ∈ criticalPoints I f) (u : TangentSpace J s)
-    (w : TangentSpace I (γ s)) :
-    criticalHessian I f (γ s) w (mfderiv J I γ s u) = 0 := by
-  rw [criticalHessian_apply_swap hf]
-  exact criticalHessian_mfderiv_apply_eq_zero hf hγ hcrit u w
-
-end Tangent
 
 namespace SmoothEmbedding
 
@@ -169,12 +125,6 @@ private theorem tangentRange_le_ker_toBilinForm (s : S) :
   rw [ContinuousLinearMap.ker_toBilinForm]
   exact h.tangentRange_le_ker_criticalHessian hn s
 
-omit [IsManifold I 2 M] in
-/-- The bilinear form of the critical Hessian at a point of a critical submanifold is symmetric. -/
-private theorem isSymm_toBilinForm_criticalHessian (s : S) :
-    (criticalHessian I f (i s)).toBilinForm.IsSymm :=
-  ContinuousLinearMap.isSymm_toBilinForm_iff.mpr (criticalHessian_apply_swap (h.contMDiffAt s))
-
 omit h in
 /-- The **normal Hessian** of a critical submanifold `i` of `f` at `s`: the critical Hessian of
 `f` at `i s`, which vanishes on the tangent space of the submanifold, descended to a bilinear form
@@ -183,7 +133,8 @@ def normalHessian (h : i.IsCriticalSubmanifold f) (s : S) :
     LinearMap.BilinForm ℝ (i.NormalSpace s hn) :=
   -- `NormalSpace` is by definition the quotient by `tangentRange`, with its quotient structure.
   (LinearMap.IsRefl.liftQ₂ (criticalHessian I f (i s)).toBilinForm (i.tangentRange s hn)
-    (h.isSymm_toBilinForm_criticalHessian s).isRefl (h.tangentRange_le_ker_toBilinForm hn s) :
+    (isSymm_toBilinForm_criticalHessian (h.contMDiffAt s)).isRefl
+    (h.tangentRange_le_ker_toBilinForm hn s) :
     LinearMap.BilinForm ℝ (TangentSpace I (i s) ⧸ i.tangentRange s hn))
 
 /-- The normal Hessian evaluates on normal classes as the critical Hessian. -/
@@ -193,7 +144,7 @@ theorem normalHessian_normalClass (s : S) (v w : TangentSpace I (i s)) :
       criticalHessian I f (i s) v w := by
   rw [normalClass_def]
   exact LinearMap.liftQ₂_mk (h.tangentRange_le_ker_toBilinForm hn s)
-    ((h.isSymm_toBilinForm_criticalHessian s).isRefl.ker_flip ▸
+    ((isSymm_toBilinForm_criticalHessian (h.contMDiffAt s)).isRefl.ker_flip ▸
       h.tangentRange_le_ker_toBilinForm hn s) v w
 
 /-- The normal Hessian is symmetric. -/
@@ -241,7 +192,8 @@ the critical Hessian is the tangent space of the submanifold. -/
 theorem radical_criticalHessian (s : S) :
     (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.radical = i.tangentRange s hn := by
   have : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
-  rw [LinearMap.BilinForm.radical_toQuadraticMap _ (h.isSymm_toBilinForm_criticalHessian s),
+  rw [LinearMap.BilinForm.radical_toQuadraticMap _
+      (isSymm_toBilinForm_criticalHessian (h.contMDiffAt s)),
     ContinuousLinearMap.ker_toBilinForm, h.ker_criticalHessian hn s]
 
 /-- The normal Hessian of a nondegenerate critical submanifold has trivial kernel. -/
@@ -314,6 +266,12 @@ theorem IsCriticalSubmanifold.neg (h : i.IsCriticalSubmanifold f) :
     rw [criticalPoints_neg]
     exact h.mem_criticalPoints s
 
+/-- A smooth embedding is a critical submanifold of `f` exactly when it is one of `-f`. -/
+@[simp]
+theorem isCriticalSubmanifold_neg_iff :
+    i.IsCriticalSubmanifold (-f) ↔ i.IsCriticalSubmanifold f :=
+  ⟨fun h ↦ by simpa only [neg_neg] using h.neg, IsCriticalSubmanifold.neg⟩
+
 /-- A Morse–Bott critical submanifold of `f` is a Morse–Bott critical submanifold of `-f`. -/
 theorem IsNondegenerateCriticalSubmanifold.neg (h : i.IsNondegenerateCriticalSubmanifold f) :
     i.IsNondegenerateCriticalSubmanifold (-f) where
@@ -382,25 +340,6 @@ theorem isNondegenerateCriticalSubmanifold_id_const [IsManifold I n M] (c : ℝ)
 section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- The critical Hessian of `q ∘ Prod.snd` at a point `(x, 0)` is the second derivative of `q`
-at `0` on the second components. -/
-private theorem criticalHessian_comp_snd_apply {q : V → ℝ} (hq : ContDiffAt ℝ 2 q 0)
-    (hq₀ : fderiv ℝ q 0 = 0) (x : M) (v w : TangentSpace (I.prod 𝓘(ℝ, V)) (x, (0 : V))) :
-    criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, 0) v w =
-      fderiv ℝ (fderiv ℝ q) 0 v.2 w.2 := by
-  have hcomp : (q ∘ Prod.snd) ∘ (extChartAt (I.prod 𝓘(ℝ, V)) (x, (0 : V))).symm =
-      q ∘ Prod.snd := by
-    ext p
-    -- The second component of the product chart of `M × V` is the identity chart of `V`.
-    rfl
-  rw [criticalHessian_def, hcomp]
-  have hsnd : (extChartAt (I.prod 𝓘(ℝ, V)) (x, (0 : V)) (x, 0)).2 = 0 := by simp
-  have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (φ := Prod.snd)
-    (b := extChartAt (I.prod 𝓘(ℝ, V)) (x, (0 : V)) (x, 0)) (hsnd ▸ hq) contDiff_snd.contDiffAt
-    (hsnd ▸ hq₀) v w
-  refine key.trans ?_
-  simp only [fderiv_snd, hsnd, ContinuousLinearMap.coe_snd']
 
 /-- A tangent vector at `(x, 0)` in the kernel of the critical Hessian of `q ∘ Prod.snd` has
 vanishing second component when `0` is a nondegenerate critical point of `q`. -/
