@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.Basic
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RG
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RJ
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.SlitPlane
@@ -26,7 +24,8 @@ derivative formulas (DLMF §19.18) for Carlson's symmetric elliptic integrals:
 
 * `Complex.carlsonRC` in both arguments (`_left` and `_right`), including the closed-form
   difference-quotient derivatives obtained from the degenerate `R_D` identities
-  (DLMF 19.20.20, 19.20.21);
+  `Complex.sub_mul_carlsonRD_self_left` and `Complex.two_mul_sub_mul_carlsonRD_self_right`
+  (DLMF 19.20.21, 19.20.20);
 * `Complex.carlsonRJ` in its first three symmetric arguments (`_first`, `_second`, `_third`),
   both in integral form and in the closed form `(R_D - R_J) / (2 (z - p))` away from `p`;
 * `Complex.carlsonRD` in all three arguments (`_left`, `_middle`, `_right`), including the
@@ -41,9 +40,6 @@ holomorphy upgrades real-argument identities for Carlson's integrals to the comp
 
 ## Main results
 
-* `Complex.sub_mul_carlsonRD_self_left`, `Complex.two_mul_sub_mul_carlsonRD_self_right` —
-  evaluation of `R_D(y, y, x)` and `R_D(x, y, y)` in terms of `R_C(x, y)`
-  (DLMF 19.20.21, 19.20.20).
 * `Complex.hasDerivAt_carlsonRC_left`, `Complex.hasDerivAt_carlsonRC_left_of_ne`,
   `Complex.differentiableOn_carlsonRC_left`, `Complex.analyticOnNhd_carlsonRC_left` — first
   partial derivative and slit-plane holomorphy of `R_C`.
@@ -88,137 +84,6 @@ open MeasureTheory Set Filter Topology
 namespace Complex
 
 /-! ### Partial derivatives and holomorphy of `R_C` -/
-
-/-- **Degenerate `R_D` in terms of `R_C`** (DLMF 19.20.21): for `x, y ∈ slitPlane`,
-`(y - x) R_D(y, y, x) = 3 (x^(-1/2) - R_C(x, y))`. -/
-theorem sub_mul_carlsonRD_self_left {x y : ℂ} (hx : x ∈ slitPlane) (hy : y ∈ slitPlane) :
-    (y - x) * carlsonRD y y x = 3 * (x ^ (-(1 / 2) : ℂ) - carlsonRC x y) := by
-  have hint_diag := integrableOn_carlsonRF_integrand (Or.inl hx) hx hx
-  have hint_rc := integrableOn_carlsonRC_integrand (Or.inl hx) hy
-  -- Split `(y - x) (t + y)⁻¹ (t + x)^(-3/2) = (t + x)^(-3/2) - (t + x)^(-1/2) (t + y)⁻¹`.
-  have hpoint : EqOn
-      (fun t : ℝ => (y - x) * (((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
-        ((t : ℂ) + x) ^ (-(3 / 2) : ℂ)))
-      (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
-          ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) -
-        ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹) (Ioi 0) := by
-    intro t ht
-    dsimp only
-    have hx_ne : (t : ℂ) + x ≠ 0 :=
-      slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hx (le_of_lt ht))
-    have hy_ne : (t : ℂ) + y ≠ 0 :=
-      slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hy (le_of_lt ht))
-    have hpow : ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) *
-        ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) = ((t : ℂ) + x) ^ (-(3 / 2) : ℂ) := by
-      rw [← cpow_add _ _ hx_ne, ← cpow_add _ _ hx_ne]
-      norm_num
-    have hx_mul : ((t : ℂ) + x) * ((t : ℂ) + x) ^ (-(3 / 2) : ℂ) =
-        ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) := by
-      conv_lhs => enter [1]; rw [← cpow_one ((t : ℂ) + x)]
-      rw [← cpow_add _ _ hx_ne]
-      norm_num
-    have hy_inv : ((t : ℂ) + y) * ((t : ℂ) + y)⁻¹ = 1 := mul_inv_cancel₀ hy_ne
-    have hyx : y - x = ((t : ℂ) + y) - ((t : ℂ) + x) := by ring
-    rw [cpow_neg_half_mul_self, hpow, hyx]
-    linear_combination (((t : ℂ) + x) ^ (-(3 / 2) : ℂ)) * hy_inv - ((t : ℂ) + y)⁻¹ * hx_mul
-  rw [carlsonRD_eq_integral, ← mul_assoc, mul_comm (y - x) (3 / 2 : ℂ), mul_assoc,
-    ← integral_const_mul, setIntegral_congr_fun measurableSet_Ioi hpoint,
-    integral_sub hint_diag hint_rc, ← carlsonRF_self hx, carlsonRF_def, carlsonRC_eq_integral]
-  ring
-
-/-- **Degenerate `R_D` in terms of `R_C`, second case** (DLMF 19.20.20): for
-`x ∈ slitPlane ∪ {0}` and `y ∈ slitPlane`,
-`2 (y - x) R_D(x, y, y) = 3 (R_C(x, y) - x^(1/2) y⁻¹)`. -/
-theorem two_mul_sub_mul_carlsonRD_self_right {x y : ℂ} (hx : x ∈ slitPlane ∪ {0})
-    (hy : y ∈ slitPlane) :
-    2 * (y - x) * carlsonRD x y y = 3 * (carlsonRC x y - x ^ (1 / 2 : ℂ) * y⁻¹) := by
-  -- Antiderivative `G(t) = -2 (t + x)^(1/2) (t + y)⁻¹` on `[0, ∞)` and its derivative `G'`.
-  let G : ℝ → ℂ := fun t => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹
-  let G' : ℝ → ℂ := fun t => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹ -
-    2 * (y - x) * (((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
-      ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹)
-  -- Continuity of `G` at the left endpoint `t = 0` (even when `x = 0`, as `re (1/2) > 0`).
-  have hG0 : ContinuousWithinAt G (Ici 0) 0 := by
-    have hx_re : 0 ≤ (((0 : ℝ) : ℂ) + x).re ∨ (((0 : ℝ) : ℂ) + x).im ≠ 0 := by
-      rw [ofReal_zero, zero_add]
-      rcases hx with hx | hx
-      · exact (mem_slitPlane_iff.mp hx).imp le_of_lt id
-      · rw [Set.mem_singleton_iff.mp hx]; exact Or.inl le_rfl
-    have hc1 : ContinuousAt (fun t : ℝ => ((t : ℂ) + x) ^ (1 / 2 : ℂ)) 0 :=
-      ContinuousAt.comp (f := fun t : ℝ => (t : ℂ) + x)
-        (continuousAt_cpow_const_of_re_pos (w := 1 / 2) hx_re (by norm_num))
-        (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + x).continuousAt
-    have hc2 : ContinuousAt (fun t : ℝ => ((t : ℂ) + y)⁻¹) 0 :=
-      (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + y).continuousAt.inv₀
-        (by rw [ofReal_zero, zero_add]; exact slitPlane_ne_zero hy)
-    exact ((continuousAt_const.mul hc1).mul hc2).continuousWithinAt
-  -- Pointwise derivative `HasDerivAt G (G' t) t` on `(0, ∞)`.
-  have hG_deriv : ∀ t ∈ Ioi (0 : ℝ), HasDerivAt G (G' t) t := by
-    intro t ht
-    have htx : (t : ℂ) + x ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht
-    have hty : (t : ℂ) + y ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane hy (le_of_lt ht)
-    have htx_ne : (t : ℂ) + x ≠ 0 := slitPlane_ne_zero htx
-    have hty_ne : (t : ℂ) + y ≠ 0 := slitPlane_ne_zero hty
-    have hd1 : HasDerivAt (fun s : ℝ => ((s : ℂ) + x) ^ (1 / 2 : ℂ))
-        ((1 / 2 : ℂ) * ((t : ℂ) + x) ^ ((1 / 2 : ℂ) - 1) * 1) t := by
-      simpa using (((hasDerivAt_id (t : ℂ)).add_const x).cpow_const (c := (1 / 2 : ℂ))
-        htx).comp_ofReal
-    have hd2 : HasDerivAt (fun s : ℝ => ((s : ℂ) + y)⁻¹) (-(((t : ℂ) + y) ^ 2)⁻¹) t := by
-      simpa [div_eq_mul_inv] using (((hasDerivAt_id (t : ℂ)).add_const y).inv hty_ne).comp_ofReal
-    refine ((hd1.const_mul (-2 : ℂ)).fun_mul hd2).congr_deriv ?_
-    simp only [mul_one, G']
-    have hpow1 : ((t : ℂ) + x) ^ ((1 / 2 : ℂ) - 1) = ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) := by norm_num
-    have hpow2 : ((t : ℂ) + x) ^ (1 / 2 : ℂ) =
-        ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + x) := by
-      conv_rhs => enter [2]; rw [← cpow_one ((t : ℂ) + x)]
-      rw [← cpow_add _ _ htx_ne]; norm_num
-    rw [hpow1, hpow2]
-    set u : ℂ := ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)
-    set v : ℂ := (t : ℂ) + y
-    have hv : v ^ (-(1 / 2) : ℂ) * v ^ (-(1 / 2) : ℂ) = v⁻¹ := cpow_neg_half_mul_self _
-    have hv_inv : v * v⁻¹ = 1 := mul_inv_cancel₀ hty_ne
-    have hv2 : (v ^ 2)⁻¹ = v⁻¹ * v⁻¹ := by rw [sq, mul_inv]
-    have htx_eq : (t : ℂ) + x = v - (y - x) := by simp [v]; ring
-    rw [hv2, htx_eq, mul_assoc u, hv]
-    linear_combination (2 * u * v⁻¹) * hv_inv
-  -- Integrability of `G'` and decay `G(t) = O((1 + t)^(-1/2)) → 0` as `t → ∞`.
-  have hint : IntegrableOn G' (Ioi 0) := (integrableOn_carlsonRC_integrand hx hy).sub
-    ((integrableOn_carlsonRJ_integrand hx hy hy hy).const_mul (2 * (y - x)))
-  have hG_lim : Tendsto G atTop (𝓝 0) := by
-    obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
-    have h0 : Tendsto
-        (fun t : ℝ => 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * (1 + t) ^ (-(1 / 2) : ℝ))
-        atTop (𝓝 0) := by
-      simpa using ((tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).comp
-        (tendsto_atTop_add_const_left atTop 1 tendsto_id)).const_mul
-        (2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy)
-    refine squeeze_zero_norm' ?_ h0
-    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-    have h1t : 0 < 1 + t := by linarith
-    have htx_le : ‖(t : ℂ) + x‖ ≤ (1 + ‖x‖) * (1 + t) := by
-      calc ‖(t : ℂ) + x‖ ≤ ‖(t : ℂ)‖ + ‖x‖ := norm_add_le _ _
-        _ = t + ‖x‖ := by rw [norm_real, Real.norm_of_nonneg ht]
-        _ ≤ (1 + ‖x‖) * (1 + t) := by nlinarith [norm_nonneg x]
-    have hhalf : (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) := by norm_num
-    have hcpow_le : ‖((t : ℂ) + x) ^ (1 / 2 : ℂ)‖ ≤
-        (1 + ‖x‖) ^ (1 / 2 : ℝ) * (1 + t) ^ (1 / 2 : ℝ) := by
-      rw [hhalf, norm_cpow_real, ← Real.mul_rpow (by positivity) h1t.le]
-      exact Real.rpow_le_rpow (norm_nonneg _) htx_le (by norm_num)
-    have hrpow : (1 + t) ^ (1 / 2 : ℝ) * (1 + t)⁻¹ = (1 + t) ^ (-(1 / 2) : ℝ) := by
-      rw [← Real.rpow_neg_one, ← Real.rpow_add h1t]; norm_num
-    simp only [G, norm_mul, norm_neg, norm_ofNat]
-    calc 2 * ‖((t : ℂ) + x) ^ (1 / 2 : ℂ)‖ * ‖((t : ℂ) + y)⁻¹‖
-        ≤ 2 * ((1 + ‖x‖) ^ (1 / 2 : ℝ) * (1 + t) ^ (1 / 2 : ℝ)) * (Cy * (1 + t)⁻¹) :=
-          mul_le_mul (mul_le_mul_of_nonneg_left hcpow_le zero_le_two) (hCy t ht)
-            (norm_nonneg _) (by positivity)
-      _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * ((1 + t) ^ (1 / 2 : ℝ) * (1 + t)⁻¹) := by ring
-      _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * (1 + t) ^ (-(1 / 2) : ℝ) := by rw [hrpow]
-  have hftc := integral_Ioi_of_hasDerivAt_of_tendsto hG0 hG_deriv hint hG_lim
-  simp only [G', G, ofReal_zero, zero_add] at hftc
-  rw [integral_sub (integrableOn_carlsonRC_integrand hx hy)
-    ((integrableOn_carlsonRJ_integrand hx hy hy hy).const_mul _), integral_const_mul] at hftc
-  rw [carlsonRD_def, carlsonRJ_def, carlsonRC_eq_integral]
-  linear_combination -(3 / 2 : ℂ) * hftc
 
 /-- **First partial derivative of `R_C`.** For `x, y ∈ slitPlane`,
 `∂R_C(x, y)/∂x = -R_D(y, y, x) / 6`. -/
