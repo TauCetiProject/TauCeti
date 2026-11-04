@@ -96,7 +96,15 @@ jobs:
     # Maintenance repairs must not wait behind the ordinary PR backlog. These
     # use the same vetted Namespace sandbox shape as ordinary overflow, with
     # the existing staging priority. This changes scheduling, never merge gates.
-    runs-on: ${{ (inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
+    #
+    # Dedicated staging capacity. When the repository variable STAGING_RUNS_ON holds a
+    # JSON array of runner labels, every Bors staging candidate (repository_dispatch
+    # tauceti-bors-staging) is placed on exactly those labels and never shares a host
+    # with PR builds or worker agents. PR builds, maintenance builds and merge_group
+    # builds keep the picker's choice. The labels must be served in this organisation
+    # before the variable is set: an unserved label queues the required build until
+    # it expires. Clear the variable to return staging to the picker.
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -143,14 +151,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 42562a0359395bc9a43102fdc24c4e6dde361a16
+          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -688,6 +696,10 @@ jobs:
         with:
           project-dir: pr
           tooling-dir: gate
+          # Home-directory snapshot archives unpack relative to the publisher's
+          # workspace, which differs on fleet. Use the existing official-install
+          # fallback there; keep verified snapshot restoration on cloud runners.
+          cold: ${{ startsWith(runner.name, 'fleet-') && 'true' || 'false' }}
 
       # Workflow-pinned driver, candidate data only: run before package/cache setup and
       # compilation. The complete exact source inventory is essential even on a one-file PR:
@@ -857,6 +869,14 @@ jobs:
               "userns=$host_ns->$sb_ns); refusing to run candidate code"
             exit 1
           fi
+
+      - name: Hydrate optional trusted local dependency prefill
+        if: ${{ env.INFRA != '1' && env.IS_BATCH != 'true' && startsWith(runner.name, 'fleet-') }}
+        # Missing/mismatched payloads leave normal setup intact. Configuration has
+        # already passed the exact-head and integrated attestation above.
+        timeout-minutes: 2
+        continue-on-error: true
+        run: python3 gate/scripts/dependency_prefill.py pr
 
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store from a
       # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys
@@ -1148,6 +1168,9 @@ jobs:
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
             --setenv IS_BATCH "${IS_BATCH:-}" \
+            --setenv CI_RESOURCE_TESTED_HEAD "${CI_RESOURCE_TESTED_HEAD:-}" \
+            --setenv CI_RESOURCE_TESTED_BASE "${CI_RESOURCE_TESTED_BASE:-}" \
+            --setenv CI_RESOURCE_TESTED_COMMIT "${CI_RESOURCE_TESTED_COMMIT:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
             --chdir "$PWD/pr" \
@@ -1211,7 +1234,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1566,14 +1589,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 42562a0359395bc9a43102fdc24c4e6dde361a16
+          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

@@ -35,6 +35,8 @@ of the discounted process `e^{-μ t} S_t` and the conditional moments `E[S_t ^ q
 * `TauCeti.Probability.geometricBrownianMotion`: the process `s * exp ((μ - σ² / 2) t + σ W_t)`.
 * `TauCeti.Probability.geometricBrownianMotion_sub_mul_min`: the change of drift that accompanies
   a change of the driving process `W_t` to `W_t - θ t`.
+* `TauCeti.Probability.geometricBrownianMotion_eq_riskNeutral`: the change of drift from `μ` to
+  `r` that the Black–Scholes risk-neutral measure induces.
 * `TauCeti.Probability.rpow_geometricBrownianMotion`: real powers of `S_t` as multiples of
   exponential martingales.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_geometricBrownianMotion`: for `s > 0`, `S_t` is
@@ -107,6 +109,18 @@ theorem geometricBrownianMotion_sub_mul_min (s μ σ θ : ℝ) (W : ℝ≥0 → 
       geometricBrownianMotion s μ σ W t ω := by
   rw [geometricBrownianMotion_def, geometricBrownianMotion_def, min_eq_left htT]
   ring_nf
+
+/-- Up to the horizon `T`, the geometric Brownian motion with drift `μ` driven by `W` is the one
+with drift `r` driven by `W_t + κ min(t, T)`, `κ = (μ - r) / σ`. In the Black–Scholes market the
+latter driving process is a Brownian motion under the risk-neutral measure `P.tilted (-κ W_T ·)`. -/
+theorem geometricBrownianMotion_eq_riskNeutral (s μ r : ℝ) {σ : ℝ} (hσ : σ ≠ 0)
+    {W : ℝ≥0 → Ω → ℝ} {t T : ℝ≥0} (htT : t ≤ T) (ω : Ω) :
+    geometricBrownianMotion s μ σ W t ω = geometricBrownianMotion s r σ
+      (fun t ω ↦ W t ω - -((μ - r) / σ) * (min t T : ℝ≥0)) t ω := by
+  have hr : μ + σ * -((μ - r) / σ) = r := by
+    field_simp
+    ring
+  rw [← geometricBrownianMotion_sub_mul_min s μ σ (-((μ - r) / σ)) W htT ω, hr]
 
 /-- For a nonnegative initial value, a real power `S_t ^ q` of a geometric Brownian motion is
 `s ^ q exp ((q μ + q (q - 1) σ² / 2) t)` times the exponential martingale with parameter `q σ`. -/
