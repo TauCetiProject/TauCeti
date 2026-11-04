@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.RightVecMul
+public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 
 /-!
 # Ungraded differential algebras and modules, and matrices over them
@@ -25,9 +25,9 @@ all disappear, which is why the ungraded Leibniz rule is the right one there.
 
 The differential acts on matrices over `A` entrywise, through `Matrix.map`, and satisfies the
 Leibniz rule for matrix products (`TauCeti.IsUngradedDGAlgebra.map_mul_matrix`) and for the action
-`Matrix.rightVecMul` of matrices on row vectors with entries in a right module
-(`TauCeti.IsUngradedDGRightModule.map_rightVecMul`). Matrices are how type `D` structures and their
-morphisms are written in a basis.
+`TauCeti.continuationMap` of matrices on row vectors with entries in a right module
+(`TauCeti.IsUngradedDGRightModule.map_continuationMap`). Matrices are how type `D` structures and
+their morphisms are written in a basis.
 
 ## Main definitions
 
@@ -39,7 +39,7 @@ morphisms are written in a basis.
 * `TauCeti.IsUngradedDGAlgebra.isUngradedDGRightModule`: an ungraded differential algebra is an
   ungraded differential right module over itself.
 * `TauCeti.IsUngradedDGAlgebra.map_mul_matrix`: `d (F * G) = d F * G + F * d G` for matrices.
-* `TauCeti.IsUngradedDGRightModule.map_rightVecMul`: `dM (φ ⬝ F) = dM φ ⬝ F + φ ⬝ d F`.
+* `TauCeti.IsUngradedDGRightModule.map_continuationMap`: `dM (φ ⬝ F) = dM φ ⬝ F + φ ⬝ d F`.
 
 ## References
 
@@ -112,15 +112,17 @@ end IsUngradedDGAlgebra
 namespace IsUngradedDGRightModule
 
 variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
-  [Module Aᵐᵒᵖ M] {d : A →ₗ[R] A} {dM : M →ₗ[R] M} {m n : Type*} [Fintype m]
+  [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {d : A →ₗ[R] A} {dM : M →ₗ[R] M} {m n : Type*}
+  [Fintype m]
 
-/-- **The Leibniz rule for the action of matrices.** Applying the differential to `φ ⬝ F` gives
-`dM φ ⬝ F + φ ⬝ d F`. -/
-theorem map_rightVecMul (hM : IsUngradedDGRightModule d dM) (φ : m → M) (F : Matrix m n A)
+/-- **The Leibniz rule for the action of matrices.** Applying the differential to the row vector
+`φ ⬝ F = continuationMap R M F φ` gives `dM φ ⬝ F + φ ⬝ d F`. -/
+theorem map_continuationMap (hM : IsUngradedDGRightModule d dM) (φ : m → M) (F : Matrix m n A)
     (y : n) :
-    dM (Matrix.rightVecMul φ F y) =
-      Matrix.rightVecMul (fun x => dM (φ x)) F y + Matrix.rightVecMul φ (F.map d) y := by
-  simp [Matrix.rightVecMul_apply, hM.map_smul, Finset.sum_add_distrib]
+    dM (continuationMap R M F φ y) =
+      continuationMap R M F (fun x => dM (φ x)) y + continuationMap R M (F.map d) φ y := by
+  simp [continuationMap_apply (R := R) (M := M) F,
+    continuationMap_apply (R := R) (M := M) (F.map d), hM.map_smul, Finset.sum_add_distrib]
 
 end IsUngradedDGRightModule
 

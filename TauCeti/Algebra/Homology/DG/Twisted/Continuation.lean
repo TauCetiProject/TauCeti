@@ -89,6 +89,21 @@ theorem continuationMap_apply (f : P → M) (y : Q) :
     continuationMap R M ν f y = ∑ x, op (ν x y) • f x :=
   (rfl)
 
+/-- The continuation map is additive in the matrix. -/
+theorem continuationMap_add (ν₁ ν₂ : P → Q → A) :
+    continuationMap R M (ν₁ + ν₂) = continuationMap R M ν₁ + continuationMap R M ν₂ :=
+  LinearMap.ext fun f ↦ funext fun y ↦ by
+    simp only [LinearMap.add_apply, Pi.add_apply, continuationMap_apply, op_add, add_smul,
+      Finset.sum_add_distrib]
+
+variable (R M P Q) in
+/-- The zero matrix induces the zero map. -/
+@[simp]
+theorem continuationMap_zero : continuationMap R M (0 : P → Q → A) = 0 :=
+  LinearMap.ext fun f ↦ funext fun y ↦ by
+    simp only [continuationMap_apply, Pi.zero_apply, op_zero, zero_smul, Finset.sum_const_zero,
+      LinearMap.zero_apply]
+
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
 theorem continuationMap_single_apply [DecidableEq P] (x : P) (α : M) (y : Q) :

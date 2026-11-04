@@ -39,14 +39,15 @@ on matrices entrywise.
   product `M ⊠ N = M ⊗ N` over the idempotents has the differential
   `∂ (m ⊗ x) = dM m ⊗ x + ∑ y, m * coeff x y ⊗ y`. In the basis, `M ⊗ N` is the submodule of
   row vectors `φ : X → M` with `φ x * ι (idem x) = φ x` (`TauCeti.TypeDStructure.boxTensor`) and the
-  differential is `∂ φ = dM φ + φ ⬝ δ` (`TauCeti.TypeDStructure.boxDifferential`). It squares to
+  differential is `∂ φ = dM φ + φ ⬝ δ` (`TauCeti.TypeDStructure.boxDifferential`), where
+  `φ ⬝ F = TauCeti.continuationMap R M F φ` is the action of a matrix on row vectors. It squares to
   zero, and preserves `M ⊗ N` when the idempotents are cycles. Taking `M = A` gives the
   differential left module `A ⊠ N` induced by `N`.
 * **Functoriality.** A morphism `F` acts on box tensor products by `φ ↦ φ ⬝ F`, and
-  `∂ (φ ⬝ F) + (∂ φ) ⬝ F = φ ⬝ ∂F` (`TauCeti.TypeDStructure.boxDifferential_rightVecMul`). So
+  `∂ (φ ⬝ F) + (∂ φ) ⬝ F = φ ⬝ ∂F` (`TauCeti.TypeDStructure.boxDifferential_continuationMap`). So
   homomorphisms induce chain maps, a morphism `H` with `∂H = F + G` induces a chain homotopy
   between the maps of `F` and `G`, composition is preserved
-  (`Matrix.rightVecMul_rightVecMul`), and the identity morphism acts as the identity on `M ⊗ N`.
+  (`TauCeti.continuationMap_matMul`), and the identity morphism acts as the identity on `M ⊗ N`.
 
 Over a ring of characteristic two the type `D` structure equation, the box tensor product and the
 morphism complex need no signs; this is the setting of bordered Heegaard Floer homology over `𝔽₂`.
@@ -72,7 +73,7 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.boxDifferential_smul`: `A ⊠ N` is a differential left module.
 * `TauCeti.TypeDStructure.morphismDifferential_morphismDifferential`,
   `TauCeti.TypeDStructure.morphismDifferential_mul`: the morphisms form a differential category.
-* `TauCeti.TypeDStructure.boxDifferential_rightVecMul`: morphisms act on box tensor products
+* `TauCeti.TypeDStructure.boxDifferential_continuationMap`: morphisms act on box tensor products
   compatibly with the differentials.
 
 ## References
@@ -296,38 +297,32 @@ theorem mem_boxTensor_iff {φ : X → M} :
   Iff.rfl
 
 /-- `M ⊗ N` is the submodule of row vectors fixed by the identity morphism. -/
-theorem mem_boxTensor_iff_rightVecMul_idMorphism [DecidableEq X] {φ : X → M} :
-    φ ∈ N.boxTensor M ↔ Matrix.rightVecMul φ N.idMorphism = φ := by
-  simp only [mem_boxTensor_iff, idMorphism, funext_iff, Matrix.rightVecMul_diagonal]
+theorem mem_boxTensor_iff_continuationMap_idMorphism [DecidableEq X] {φ : X → M} :
+    φ ∈ N.boxTensor M ↔ continuationMap R M N.idMorphism φ = φ := by
+  simp only [mem_boxTensor_iff, funext_iff, continuationMap_apply (R := R) (M := M) N.idMorphism,
+    idMorphism_apply, apply_ite op, op_zero, ite_smul, zero_smul, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true]
 
 /-- The identity morphism acts as the identity on `M ⊗ N`. -/
-theorem rightVecMul_idMorphism [DecidableEq X] {φ : X → M} (hφ : φ ∈ N.boxTensor M) :
-    Matrix.rightVecMul φ N.idMorphism = φ :=
-  mem_boxTensor_iff_rightVecMul_idMorphism.mp hφ
+theorem continuationMap_idMorphism [DecidableEq X] {φ : X → M} (hφ : φ ∈ N.boxTensor M) :
+    continuationMap R M N.idMorphism φ = φ :=
+  mem_boxTensor_iff_continuationMap_idMorphism.mp hφ
 
 /-- A morphism `F` from `N` to `N'` sends row vectors into `M ⊗ N'`. -/
-theorem rightVecMul_mem_boxTensor {F : Matrix X X' A} (hF : F ∈ morphisms N N') (φ : X → M) :
-    Matrix.rightVecMul φ F ∈ N'.boxTensor M := by
+theorem continuationMap_mem_boxTensor {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    (φ : X → M) : continuationMap R M F φ ∈ N'.boxTensor M := by
   intro z
-  simp only [Matrix.rightVecMul_apply, Finset.smul_sum, ← mul_smul, ← op_mul, ((hF _ z).2)]
+  simp only [continuationMap_apply (R := R) (M := M) F, Finset.smul_sum, ← mul_smul, ← op_mul,
+    ((hF _ z).2)]
 
 variable (N) in
 /-- The **differential of the box tensor product** `M ⊠ N`, on row vectors `φ : X → M`:
 `∂ φ = dM φ + φ ⬝ δ`, that is `∂ (m ⊗ x) = dM m ⊗ x + ∑ y, m * coeff x y ⊗ y`. -/
-def boxDifferential (dM : M →ₗ[R] M) : (X → M) →ₗ[R] (X → M) where
-  toFun φ := (fun x => dM (φ x)) + Matrix.rightVecMul φ N.coeff
-  map_add' φ ψ := by
-    rw [Matrix.add_rightVecMul]
-    ext x
-    simp only [Pi.add_apply, map_add]
-    abel
-  map_smul' r φ := by
-    rw [Matrix.smul_rightVecMul]
-    ext x
-    simp
+noncomputable def boxDifferential (dM : M →ₗ[R] M) : (X → M) →ₗ[R] (X → M) :=
+  dM.compLeft X + continuationMap R M N.coeff
 
 theorem boxDifferential_apply (dM : M →ₗ[R] M) (φ : X → M) :
-    N.boxDifferential dM φ = (fun x => dM (φ x)) + Matrix.rightVecMul φ N.coeff :=
+    N.boxDifferential dM φ = (fun x => dM (φ x)) + continuationMap R M N.coeff φ :=
   (rfl)
 
 /-- **The box tensor differential squares to zero.** This uses only the structure equation of `N`
@@ -336,16 +331,25 @@ and the axioms of the differential module `M`. -/
 theorem boxDifferential_boxDifferential [CharP R 2] {dM : M →ₗ[R] M}
     (hM : IsUngradedDGRightModule d dM) (φ : X → M) :
     N.boxDifferential dM (N.boxDifferential dM φ) = 0 := by
-  have h := congrArg (Matrix.rightVecMul φ) N.map_coeff_add_coeff_mul_coeff
-  rw [Matrix.rightVecMul_add, Matrix.rightVecMul_zero] at h
+  have hadd : continuationMap R M (N.coeff.map d + N.coeff * N.coeff) =
+      continuationMap R M (N.coeff.map d) + continuationMap R M (N.coeff * N.coeff) :=
+    continuationMap_add _ _
+  have hmul : continuationMap R M (N.coeff * N.coeff) =
+      (continuationMap R M N.coeff).comp (continuationMap R M N.coeff) :=
+    continuationMap_matMul N.coeff N.coeff
+  have hzero : continuationMap R M (0 : Matrix X X A) = 0 := continuationMap_zero R M X X
+  have h := congrArg (fun F => continuationMap R M F φ) N.map_coeff_add_coeff_mul_coeff
+  simp only [hadd, hmul, hzero, LinearMap.add_apply, LinearMap.comp_apply,
+    LinearMap.zero_apply] at h
   ext z
   have hz := congrFun h z
   simp only [Pi.add_apply, Pi.zero_apply] at hz
-  simp only [boxDifferential_apply, Matrix.rightVecMul_rightVecMul, Pi.add_apply,
-    map_add, hM.map_map, hM.map_rightVecMul, Pi.zero_apply]
-  calc _ = (Matrix.rightVecMul (fun x => dM (φ x)) N.coeff z +
-        Matrix.rightVecMul (fun x => dM (φ x)) N.coeff z) +
-        (Matrix.rightVecMul φ (N.coeff.map d) z + Matrix.rightVecMul φ (N.coeff * N.coeff) z) := by
+  simp only [boxDifferential_apply, map_add, Pi.add_apply, hM.map_map, hM.map_continuationMap,
+    Pi.zero_apply]
+  calc _ = (continuationMap R M N.coeff (fun x => dM (φ x)) z +
+        continuationMap R M N.coeff (fun x => dM (φ x)) z) +
+        (continuationMap R M (N.coeff.map d) φ z +
+          continuationMap R M N.coeff (continuationMap R M N.coeff φ) z) := by
         abel
     _ = 0 := by rw [add_self_eq_zero_of_charTwo R, hz, add_zero]
 
@@ -354,13 +358,13 @@ theorem boxDifferential_mem_boxTensor (hι : ∀ s, d (ι s) = 0) {dM : M →ₗ
     (hM : IsUngradedDGRightModule d dM) {φ : X → M} (hφ : φ ∈ N.boxTensor M) :
     N.boxDifferential dM φ ∈ N.boxTensor M := by
   rw [boxDifferential_apply]
-  refine add_mem (fun x => ?_) (rightVecMul_mem_boxTensor (coeff_mem_morphisms N) φ)
+  refine add_mem (fun x => ?_) (continuationMap_mem_boxTensor (coeff_mem_morphisms N) φ)
   have h := hM.map_smul (ι (N.idem x)) (φ x)
   rwa [hφ x, hι, op_zero, zero_smul, add_zero, eq_comm] at h
 
 variable (N) in
 /-- The box tensor differential restricted to `M ⊗ N`, when the `ι s` are cycles. -/
-def boxTensorDifferential (hι : ∀ s, d (ι s) = 0) {dM : M →ₗ[R] M}
+noncomputable def boxTensorDifferential (hι : ∀ s, d (ι s) = 0) {dM : M →ₗ[R] M}
     (hM : IsUngradedDGRightModule d dM) : N.boxTensor M →ₗ[R] N.boxTensor M :=
   (N.boxDifferential dM).restrict fun _ hφ => N.boxDifferential_mem_boxTensor hι hM hφ
 
@@ -382,31 +386,45 @@ theorem boxTensorDifferential_boxTensorDifferential [CharP R 2] (hι : ∀ s, d 
 `∂ (φ ⬝ F) + (∂ φ) ⬝ F = φ ⬝ ∂F`. So a homomorphism `F` (`∂F = 0`) induces a chain map
 `φ ↦ φ ⬝ F` from `M ⊠ N` to `M ⊠ N'`, and a morphism `H` with `∂H = F + G` induces a chain
 homotopy between the maps of `F` and `G`. -/
-theorem boxDifferential_rightVecMul [CharP R 2] {dM : M →ₗ[R] M}
+theorem boxDifferential_continuationMap [CharP R 2] {dM : M →ₗ[R] M}
     (hM : IsUngradedDGRightModule d dM) (F : Matrix X X' A) (φ : X → M) :
-    N'.boxDifferential dM (Matrix.rightVecMul φ F) +
-        Matrix.rightVecMul (N.boxDifferential dM φ) F =
-      Matrix.rightVecMul φ (morphismDifferential N N' F) := by
+    N'.boxDifferential dM (continuationMap R M F φ) +
+        continuationMap R M F (N.boxDifferential dM φ) =
+      continuationMap R M (morphismDifferential N N' F) φ := by
+  have hFN : continuationMap R M (F * N'.coeff) =
+      (continuationMap R M N'.coeff).comp (continuationMap R M F) :=
+    continuationMap_matMul F N'.coeff
+  have hNF : continuationMap R M (N.coeff * F) =
+      (continuationMap R M F).comp (continuationMap R M N.coeff) :=
+    continuationMap_matMul N.coeff F
+  have hadd₁ : continuationMap R M (F.map d + F * N'.coeff + N.coeff * F) =
+      continuationMap R M (F.map d + F * N'.coeff) + continuationMap R M (N.coeff * F) :=
+    continuationMap_add _ _
+  have hadd₂ : continuationMap R M (F.map d + F * N'.coeff) =
+      continuationMap R M (F.map d) + continuationMap R M (F * N'.coeff) :=
+    continuationMap_add _ _
   ext z
-  simp only [boxDifferential_apply, morphismDifferential_apply, Matrix.add_rightVecMul,
-    Matrix.rightVecMul_add, Matrix.rightVecMul_rightVecMul, Pi.add_apply, hM.map_rightVecMul]
-  calc _ = (Matrix.rightVecMul (fun x => dM (φ x)) F z +
-        Matrix.rightVecMul (fun x => dM (φ x)) F z) +
-        (Matrix.rightVecMul φ (F.map d) z + Matrix.rightVecMul φ (F * N'.coeff) z +
-          Matrix.rightVecMul φ (N.coeff * F) z) := by abel
+  simp only [boxDifferential_apply, morphismDifferential_apply, hadd₁, hadd₂, hFN, hNF,
+    map_add, LinearMap.add_apply, LinearMap.comp_apply, Pi.add_apply, hM.map_continuationMap]
+  calc _ = (continuationMap R M F (fun x => dM (φ x)) z +
+        continuationMap R M F (fun x => dM (φ x)) z) +
+        (continuationMap R M (F.map d) φ z +
+          continuationMap R M N'.coeff (continuationMap R M F φ) z +
+          continuationMap R M F (continuationMap R M N.coeff φ) z) := by abel
     _ = _ := by rw [add_self_eq_zero_of_charTwo R, zero_add]
 
 /-- A homomorphism of type `D` structures induces a chain map of box tensor products. -/
-theorem boxDifferential_rightVecMul_of_morphismDifferential_eq_zero [CharP R 2] {dM : M →ₗ[R] M}
-    (hM : IsUngradedDGRightModule d dM) {F : Matrix X X' A}
+theorem boxDifferential_continuationMap_of_morphismDifferential_eq_zero [CharP R 2]
+    {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule d dM) {F : Matrix X X' A}
     (hF : morphismDifferential N N' F = 0) (φ : X → M) :
-    N'.boxDifferential dM (Matrix.rightVecMul φ F) =
-      Matrix.rightVecMul (N.boxDifferential dM φ) F := by
-  have h := boxDifferential_rightVecMul (N := N) (N' := N') hM F φ
-  rw [hF, Matrix.rightVecMul_zero] at h
-  calc _ = N'.boxDifferential dM (Matrix.rightVecMul φ F) +
-        (Matrix.rightVecMul (N.boxDifferential dM φ) F +
-          Matrix.rightVecMul (N.boxDifferential dM φ) F) := by
+    N'.boxDifferential dM (continuationMap R M F φ) =
+      continuationMap R M F (N.boxDifferential dM φ) := by
+  have hzero : continuationMap R M (0 : Matrix X X' A) = 0 := continuationMap_zero R M X X'
+  have h := boxDifferential_continuationMap (N := N) (N' := N') hM F φ
+  rw [hF, hzero, LinearMap.zero_apply] at h
+  calc _ = N'.boxDifferential dM (continuationMap R M F φ) +
+        (continuationMap R M F (N.boxDifferential dM φ) +
+          continuationMap R M F (N.boxDifferential dM φ)) := by
         rw [add_self_eq_zero_of_charTwo R, add_zero]
     _ = _ := by rw [← add_assoc, h, zero_add]
 
@@ -419,8 +437,9 @@ this makes `A ⊠ N` a differential left `A`-module. -/
 theorem boxDifferential_smul (hd : IsUngradedDGAlgebra d) (N : TypeDStructure d ι X) (b : A)
     (φ : X → A) : N.boxDifferential d (b • φ) = d b • φ + b • N.boxDifferential d φ := by
   ext z
-  simp only [boxDifferential_apply, Matrix.rightVecMul_eq_vecMul, Matrix.smul_vecMul,
-    Pi.add_apply, Pi.smul_apply, smul_eq_mul, hd.map_mul, mul_add]
+  simp only [boxDifferential_apply, continuationMap_apply (R := R) (M := A) N.coeff,
+    Pi.add_apply, Pi.smul_apply, smul_eq_mul, op_smul_eq_mul, hd.map_mul, mul_add,
+    Finset.mul_sum, mul_assoc]
   abel
 
 end TypeDStructure
