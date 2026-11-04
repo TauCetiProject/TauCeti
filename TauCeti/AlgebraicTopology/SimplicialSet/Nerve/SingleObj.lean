@@ -26,7 +26,8 @@ not homotopic to a constant map.
 * `CategoryTheory.nerve.edgeElem`: the element of `M` represented by an edge.
 * `CategoryTheory.nerve.edgeElem_app_δ_one`: the long edge of a `2`-simplex is the product of its
   short edges.
-* `CategoryTheory.nerve.edgeElem_const_app`: the edges of a constant map represent `1`.
+* `CategoryTheory.nerve.edgeElem_map`, `CategoryTheory.nerve.edgeElem_const_app`: degenerate
+  edges, such as the edges of a constant map, represent `1`.
 * `CategoryTheory.nerve.edgeElem_homotopy`: the relation between the vertical edges of a homotopy
   over the endpoints of an edge.
 -/
@@ -54,10 +55,17 @@ lemma edgeElem_app_δ_one {K : SSet.{u}} (f : K ⟶ nerve (SingleObj M)) (x : K 
   rw [hx, δ₁_mk₂_eq, δ₀_mk₂_eq, δ₂_mk₂_eq]
   exact SingleObj.comp_as_mul _ a b
 
+/-- The degenerate edges at a vertex of the nerve of `M` represent `1`. -/
+@[simp]
+lemma edgeElem_map (z : (nerve (SingleObj M)) _⦋0⦌) (φ : ⦋1⦌ ⟶ ⦋0⦌) :
+    edgeElem ((nerve (SingleObj M)).map φ.op z) = 1 := by
+  obtain rfl := Subsingleton.elim (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0) φ
+  exact (congrArg z.map (Subsingleton.elim _ _)).trans (z.map_id 0)
+
 /-- The edges of a constant map to the nerve of `M` represent `1`. -/
 lemma edgeElem_const_app {K : SSet.{u}} (z : (nerve (SingleObj M)) _⦋0⦌) (x : K _⦋1⦌) :
     edgeElem ((const z : K ⟶ _).app _ x) = 1 :=
-  (congrArg z.map (Subsingleton.elim _ _)).trans (z.map_id 0)
+  edgeElem_map z _
 
 /-- Let `H` be a homotopy from `f` to `g`, with values in the nerve of `M`. Over an edge `e` of `K`
 from `x₀ = K.δ 1 e` to `x₁ = K.δ 0 e`, the square `e × Δ[1]` is the union of two triangles with a
@@ -80,13 +88,15 @@ lemma edgeElem_homotopy {K : SSet.{u}} {f g : K ⟶ nerve (SingleObj M)} (H : SS
     Prod.ext ((δ_comp_σ_self_apply 1 e).trans (δ_comp_σ_succ_apply 0 e).symm)
       ((δ_comp_σ_succ_apply 0 y).trans (δ_comp_σ_self_apply 1 y).symm)
   have hP₀ : (K ⊗ Δ[1]).δ 0 P = verticalEdge (K.δ 0 e) :=
-    Prod.ext (δ_comp_σ_of_le_apply (i := 0) (j := 0) le_rfl e) (δ_comp_σ_self_apply 0 y)
+    Prod.ext ((δ_comp_σ_of_le_apply (i := 0) (j := 0) le_rfl e).trans (verticalEdge_fst _).symm)
+      ((δ_comp_σ_self_apply 0 y).trans (verticalEdge_snd _).symm)
   have hP₂ : (K ⊗ Δ[1]).δ 2 P = ι₀.app _ e :=
     Prod.ext (δ_comp_σ_succ_apply 1 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
   have hQ₀ : (K ⊗ Δ[1]).δ 0 Q = ι₁.app _ e :=
     Prod.ext (δ_comp_σ_self_apply 0 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
   have hQ₂ : (K ⊗ Δ[1]).δ 2 Q = verticalEdge (K.δ 1 e) :=
-    Prod.ext (δ_comp_σ_of_gt_apply (i := 1) (j := 0) (by decide) e) (δ_comp_σ_succ_apply 1 y)
+    Prod.ext ((δ_comp_σ_of_gt_apply (i := 1) (j := 0) (by decide) e).trans
+      (verticalEdge_fst _).symm) ((δ_comp_σ_succ_apply 1 y).trans (verticalEdge_snd _).symm)
   rw [hPQ, hP₀, hP₂, hb] at hP
   rw [hQ₀, hQ₂, ht] at hQ
   rw [← hP, hQ]

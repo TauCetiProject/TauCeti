@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Quasicategory.Core
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coskeletal
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+import TauCeti.CategoryTheory.ComposableArrows.Basic
 
 /-!
 # The nerve of a groupoid is a Kan complex
@@ -54,11 +55,6 @@ universe u v
 namespace CategoryTheory.nerve
 
 variable {C : Type u} [Category.{v} C]
-
-/-- Equal `1`-simplices `mk₁ f` and `mk₁ f'` of a nerve represent the same arrow. -/
-private lemma arrow_mk_eq_of_mk₁_eq {X₀ X₁ Y₀ Y₁ : C} {f : X₀ ⟶ X₁} {f' : Y₀ ⟶ Y₁}
-    (h : ComposableArrows.mk₁ f = ComposableArrows.mk₁ f') : Arrow.mk f = Arrow.mk f' :=
-  congrArg ComposableArrows.arrowEquiv h
 
 section
 
@@ -103,11 +99,11 @@ private lemma exists_horn₃₀ (y₁ y₂ y₃ : (nerve C) _⦋2⦌)
   rw [δ₂_mk₂_eq, δ₂_mk₂_eq] at h₂₃
   -- The faces `δ 2` and `δ 3` share the edge `f` from `0` to `1`, the faces `δ 1` and `δ 3` the
   -- edge `f ≫ g` from `0` to `2`, and the faces `δ 1` and `δ 2` the edge from `0` to `3`.
-  obtain ⟨rfl, rfl, hr⟩ := (Arrow.mk_eq_mk_iff _ _).1 (arrow_mk_eq_of_mk₁_eq h₂₃)
-  obtain ⟨rfl, rfl, hp⟩ := (Arrow.mk_eq_mk_iff _ _).1 (arrow_mk_eq_of_mk₁_eq h₁₃)
+  obtain ⟨rfl, rfl, hr⟩ := (Arrow.mk_eq_mk_iff _ _).1 (ComposableArrows.mk₁_eq_mk₁_iff.1 h₂₃)
+  obtain ⟨rfl, rfl, hp⟩ := (Arrow.mk_eq_mk_iff _ _).1 (ComposableArrows.mk₁_eq_mk₁_iff.1 h₁₃)
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id] at hr hp
   subst hr hp
-  obtain ⟨_, rfl, hs⟩ := (Arrow.mk_eq_mk_iff _ _).1 (arrow_mk_eq_of_mk₁_eq h₁₂)
+  obtain ⟨_, rfl, hs⟩ := (Arrow.mk_eq_mk_iff _ _).1 (ComposableArrows.mk₁_eq_mk₁_iff.1 h₁₂)
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id, Category.assoc] at hs
   -- Cancelling the isomorphism `r` identifies the edge `s` from `1` to `3` with `g ≫ q`.
   obtain rfl : s = g ≫ q := (cancel_epi r).1 hs.symm
@@ -128,11 +124,11 @@ private lemma exists_horn₃₃ (y₀ y₁ y₂ : (nerve C) _⦋2⦌)
   rw [δ₁_mk₂_eq, δ₁_mk₂_eq] at h₁₂
   -- The faces `δ 0` and `δ 1` share the edge `h` from `2` to `3`, the faces `δ 0` and `δ 2` the
   -- edge `g ≫ h` from `1` to `3`, and the faces `δ 1` and `δ 2` the edge from `0` to `3`.
-  obtain ⟨rfl, rfl, hq⟩ := (Arrow.mk_eq_mk_iff _ _).1 (arrow_mk_eq_of_mk₁_eq h₀₁)
-  obtain ⟨rfl, rfl, hs⟩ := (Arrow.mk_eq_mk_iff _ _).1 (arrow_mk_eq_of_mk₁_eq h₀₂)
+  obtain ⟨rfl, rfl, hq⟩ := (Arrow.mk_eq_mk_iff _ _).1 (ComposableArrows.mk₁_eq_mk₁_iff.1 h₀₁)
+  obtain ⟨rfl, rfl, hs⟩ := (Arrow.mk_eq_mk_iff _ _).1 (ComposableArrows.mk₁_eq_mk₁_iff.1 h₀₂)
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id] at hq hs
   subst hq hs
-  obtain ⟨rfl, _, hp⟩ := (Arrow.mk_eq_mk_iff _ _).1 (arrow_mk_eq_of_mk₁_eq h₁₂)
+  obtain ⟨rfl, _, hp⟩ := (Arrow.mk_eq_mk_iff _ _).1 (ComposableArrows.mk₁_eq_mk₁_iff.1 h₁₂)
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id, ← Category.assoc] at hp
   -- Cancelling the isomorphism `h` identifies the edge `p` from `0` to `2` with `r ≫ g`.
   obtain rfl : p = r ≫ g := (cancel_mono h).1 hp
