@@ -8,11 +8,14 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.Smooth.Regular
+import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
+import TauCeti.RingTheory.Etale.Reduced
 
 /-!
 # Differentials of smooth affine isogenies
@@ -21,6 +24,10 @@ An isogeny between smooth affine groups of finite type over a field preserves Li
 Its differential is therefore bijective exactly when its scheme-theoretic kernel is étale.
 In this case the differential gives a Lie algebra equivalence. The kernel need not be trivial:
 this comparison applies, for example, to central isogenies with nontrivial étale kernel.
+
+The cotangent-dual version is `cotangentDualLieEquivOfEtaleKernel`. In characteristic
+zero, `cotangentDualLieEquivOfCharZero` supplies this equivalence without additional
+smoothness or kernel hypotheses, using Cartier's theorem.
 
 Dimension equality uses the finite injective coordinate map after passage to an algebraic
 closure, where smoothness identifies Lie dimension with Krull dimension. The criterion then
@@ -151,5 +158,58 @@ theorem dualCotangentMap_bijective_of_etaleKernel (hf : IsIsogeny f)
       LieEquiv.coe_toLinearEquiv, lieEquivOfEtaleKernel_apply,
       Derivation.cotangentLinearEquiv_dualCotangentMap]
   exact (funext he : ⇑e = _) ▸ e.bijective
+
+/-- The differential of a smooth affine isogeny with étale kernel on the native
+cotangent-dual Lie algebras. -/
+noncomputable def cotangentDualLieEquivOfEtaleKernel (hf : IsIsogeny f)
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
+    Module.Dual k (Bialgebra.CotangentSpace k K) ≃ₗ⁅k⁆
+      Module.Dual k (Bialgebra.CotangentSpace k H) :=
+  (Derivation.cotangentDualLieEquiv (R := k) (H := K)).trans
+    ((hf.lieEquivOfEtaleKernel hker).trans
+      (Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm)
+
+/-- The cotangent-dual Lie equivalence acts by the existing differential. Use `rw`:
+a simp rule here would prevent cancellation with the inverse equivalence. -/
+theorem cotangentDualLieEquivOfEtaleKernel_apply (hf : IsIsogeny f)
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    hf.cotangentDualLieEquivOfEtaleKernel hker x = Derivation.dualCotangentMap f.hom x := by
+  apply (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).injective
+  simp only [cotangentDualLieEquivOfEtaleKernel, LieEquiv.trans_apply,
+    Derivation.cotangentDualLieEquiv_apply,
+    Derivation.cotangentDualLieEquiv_symm_apply, LinearEquiv.apply_symm_apply,
+    lieEquivOfEtaleKernel_apply, Derivation.cotangentLinearEquiv_dualCotangentMap]
+
+end TauCeti.CommHopfAlgCat.IsIsogeny
+
+namespace TauCeti.CommHopfAlgCat.IsIsogeny
+
+universe u
+
+variable {k : Type u} [Field k] [CharZero k]
+  {H K : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H] {f : H ⟶ K}
+
+/-- In characteristic zero a finite-type affine isogeny identifies the actual
+cotangent-dual Lie algebras. No connectedness or centrality hypothesis is needed. -/
+noncomputable def cotangentDualLieEquivOfCharZero (hf : IsIsogeny f) :
+    Module.Dual k (Bialgebra.CotangentSpace k K) ≃ₗ⁅k⁆
+      Module.Dual k (Bialgebra.CotangentSpace k H) := by
+  let _ := hf.finiteType_target
+  let _ : Algebra.Smooth k H :=
+    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H)
+  let _ : Algebra.Smooth k K :=
+    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k K)
+  let Q := _root_.CommHopfAlgCat.quotient K (kernelHopfIdeal f)
+  let _ : Module.Finite k Q := moduleFinite_quotient_kernelHopfIdeal hf.finite
+  let _ : _root_.IsReduced Q := HopfAlgebra.isReduced_of_charZero k Q
+  exact hf.cotangentDualLieEquivOfEtaleKernel (algebraEtale_of_finite_of_isReduced k Q)
+
+/-- The characteristic-zero Lie equivalence acts by the differential on cotangent duals.
+Use `rw` to retain cancellation of the equivalence and its inverse during simplification. -/
+theorem cotangentDualLieEquivOfCharZero_apply (hf : IsIsogeny f)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    hf.cotangentDualLieEquivOfCharZero x = Derivation.dualCotangentMap f.hom x := by
+  simp only [cotangentDualLieEquivOfCharZero, cotangentDualLieEquivOfEtaleKernel_apply]
 
 end TauCeti.CommHopfAlgCat.IsIsogeny
