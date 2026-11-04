@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Action.Rigid
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Symmetric
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.Symmetric
 import TauCeti.CategoryTheory.Action.TensorPow
 
 /-!

@@ -34,9 +34,6 @@ valid in arbitrary characteristic.
 
 ## Main declarations
 
-* `TauCeti.homTensorPowTwoLinearEquiv` (with `TauCeti.homTensorPowTwoLinearEquiv_apply` and
-  `TauCeti.homTensorPowTwoLinearEquiv_symm_apply`): the `k`-linear Frobenius reciprocity
-  equivalence `(𝟙_ C ⟶ tensorPow V 2) ≃ₗ[k] (Vᘁ ⟶ V)`;
 * `TauCeti.frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso` and
   `TauCeti.frobeniusSchurIndicator_two_eq_one_or_eq_neg_one_of_nonempty_iso`: the non-self-dual
   and self-dual cases for `ν₂(V)`;
@@ -61,42 +58,6 @@ universe w v u
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Preadditive C] [MonoidalPreadditive C]
-
-section Semiring
-
-variable (k : Type w) [Semiring k] [Linear k C] [MonoidalLinear k C]
-
-/-- Frobenius reciprocity identifies `𝟙_ C ⟶ tensorPow V 2` `k`-linearly with `Vᘁ ⟶ V`. -/
-noncomputable def homTensorPowTwoLinearEquiv (V : C) [HasRightDual V] :
-    (𝟙_ C ⟶ tensorPow V 2) ≃ₗ[k] (Vᘁ ⟶ V) :=
-  (Linear.homCongr k (Iso.refl (𝟙_ C)) (whiskerLeftIso V (ρ_ V))).trans
-    ((tensorLeftHomLinearEquiv k (𝟙_ C) V Vᘁ V).symm.trans
-      (Linear.homCongr k (ρ_ Vᘁ) (Iso.refl V)))
-
--- Not `@[simp]`: `tensorPow` is `@[reducible]`, so `DiscrTree.getMatch` reduces `tensorPow V 2`
--- inside `DFunLike.coe` while `SimpTheorems` indexes it unreduced (`noIndexAtArgs := true`),
--- causing `simpNF` to reject `@[simp]`.
-/-- Evaluating `homTensorPowTwoLinearEquiv` closes up the first factor of `tensorPow V 2` against
-`Vᘁ` with `ε_ V Vᘁ`. -/
-theorem homTensorPowTwoLinearEquiv_apply (V : C) [HasRightDual V] (f : 𝟙_ C ⟶ tensorPow V 2) :
-    homTensorPowTwoLinearEquiv k V f =
-      (ρ_ Vᘁ).inv ≫ Vᘁ ◁ (f ≫ V ◁ (ρ_ V).hom) ≫ (α_ Vᘁ V V).inv ≫ ε_ V Vᘁ ▷ V ≫ (λ_ V).hom := by
-  simp only [homTensorPowTwoLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,
-    Iso.refl_inv, Iso.refl_hom, whiskerLeftIso_hom, Category.id_comp, Category.comp_id,
-    tensorLeftHomLinearEquiv_symm_apply, tensorLeftHomEquiv, Equiv.coe_fn_symm_mk]
-
--- Not `@[simp]` for the same `simpNF` reason as `homTensorPowTwoLinearEquiv_apply`.
-/-- The inverse of `homTensorPowTwoLinearEquiv` sends `g : Vᘁ ⟶ V` to `η_ V Vᘁ` composed with `g`
-on the second factor, up to the right unitor of `V`. -/
-theorem homTensorPowTwoLinearEquiv_symm_apply (V : C) [HasRightDual V] (g : Vᘁ ⟶ V) :
-    (homTensorPowTwoLinearEquiv k V).symm g = η_ V Vᘁ ≫ V ◁ (g ≫ (ρ_ V).inv) := by
-  simp only [homTensorPowTwoLinearEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    Linear.homCongr_symm_apply, Iso.refl_inv, Iso.refl_hom, whiskerLeftIso_inv,
-    Category.id_comp, Category.comp_id, LinearEquiv.symm_symm,
-    tensorLeftHomLinearEquiv_apply, tensorLeftHomEquiv, Equiv.coe_fn_mk]
-  monoidal
-
-end Semiring
 
 section Pivotal
 

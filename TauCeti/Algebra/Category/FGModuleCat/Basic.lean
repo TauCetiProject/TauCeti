@@ -207,15 +207,9 @@ variable {R : Type u} [CommRing R]
 /-- Morphisms out of the monoidal unit `𝟙_ (FGModuleCat R)` identify `R`-linearly with the elements
 of the target module by evaluation at `1 : R`. -/
 def tensorUnitHomLinearEquiv (W : FGModuleCat.{u} R) :
-    (𝟙_ (FGModuleCat.{u} R) ⟶ W) ≃ₗ[R] W where
-  toFun f := f.hom.hom (1 : R)
-  invFun w := ofHom (LinearMap.toSpanSingleton R W w)
-  left_inv f := by
-    ext : 1
-    exact LinearMap.ext_ring (LinearMap.toSpanSingleton_apply_one R W _)
-  right_inv w := LinearMap.toSpanSingleton_apply_one R W w
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+    (𝟙_ (FGModuleCat.{u} R) ⟶ W) ≃ₗ[R] W :=
+  InducedCategory.homLinearEquiv ≪≫ₗ ModuleCat.homLinearEquiv ≪≫ₗ
+    LinearMap.ringLmapEquivSelf R R W
 
 /-- `tensorUnitHomLinearEquiv` evaluates a morphism out of `𝟙_ (FGModuleCat R)` at `1 : R`. -/
 @[simp]
@@ -235,7 +229,9 @@ theorem conj_tensorUnitHomLinearEquiv_rightComp {W : FGModuleCat.{u} R} (f : W �
     (tensorUnitHomLinearEquiv W).conj (Linear.rightComp R (𝟙_ (FGModuleCat.{u} R)) f) =
       f.hom.hom := by
   ext w
-  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, Linear.rightComp_apply]
+  simp only [LinearEquiv.conj_apply_apply, Linear.rightComp_apply,
+    tensorUnitHomLinearEquiv_apply, hom_hom_comp, LinearMap.comp_apply,
+    tensorUnitHomLinearEquiv_symm_apply_hom_hom]
   exact congrArg f.hom.hom (LinearMap.toSpanSingleton_apply_one R W w)
 
 end FGModuleCat
