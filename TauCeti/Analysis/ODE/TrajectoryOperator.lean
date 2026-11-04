@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The bounded first-order trajectory operator
@@ -20,6 +22,9 @@ both the value and its weak derivative. No new Sobolev carrier is introduced.
 between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary differential
 equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
 the operator agrees almost everywhere with the classical expression `u' + A u`.
+
+On the line, for a path with a `C¹` representative `φ`, the squared norm of `D_A u` is the
+integral of `‖φ' + A φ‖²` (`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
 
 These statements supply the bounded realization to which coercive estimates and compact-error
 criteria can be applied. They do not assert Fredholmness, asymptotic invertibility, or density
@@ -251,5 +256,35 @@ theorem trajectoryOperator_apply_ae_eq_deriv_add
   filter_upwards [trajectoryOperator_apply_ae A u, hweak.ae_eq_fderiv hdv hvd, hv]
     with s hs hd hs'
   rw [hs, hd, hs', fderiv_apply_one_eq_deriv]
+
+end TauCeti.WeakDerivStep
+
+/-! ### The norm of `D_A` on a path with a `C¹` representative on the line -/
+
+namespace TauCeti.WeakDerivStep
+
+open MeasureTheory TopologicalSpace
+open scoped ENNReal
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {u : WeakDerivStep volume ⊤ 2
+    (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
+  {A : ℝ → F →L[ℝ] F}
+
+/-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
+`∫ ‖φ' + A φ‖²`. -/
+theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ)
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    ‖trajectoryOperator AL u‖ ^ 2 = ∫ s, ‖deriv φ s + A s (φ s)‖ ^ 2 := by
+  have hTu := trajectoryOperator_apply_ae_eq_deriv_add AL u hu
+    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
+    fun s _ ↦ hφ.differentiable one_ne_zero s
+  rw [← Lp.integral_norm_sq_eq_norm_sq,
+    integral_congr_ae (g := fun s ↦ ‖deriv φ s + A s (φ s)‖ ^ 2) (by
+      filter_upwards [hTu, hAL] with s hs hAs
+      rw [hs, hAs])]
+  simp
 
 end TauCeti.WeakDerivStep
