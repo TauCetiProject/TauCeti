@@ -214,38 +214,16 @@ theorem quasiIso_coefficientCochainComplexMap (hm : ∀ x y, ind x ≤ ind y →
   obtain ⟨u, v, hu, huv⟩ := m.exists_coefficientDifferential_eq_of_forall_exists hM hN hm f
     ((DGRightModuleHom.isQuasiIso_iff_forall_exists f).mp hf) hp₀ hdg hgk
   -- The homogeneous components of `u` and `v` in the matching degrees still work.
-  have hDM (w : P →₀ M) (i : ℤ) :
-      m.coefficientDifferential hM (DirectSum.decompose (rowFiniteTotalGrading ℳ ind) w i) =
-        (DirectSum.decompose (rowFiniteTotalGrading ℳ ind) (m.coefficientDifferential hM w)
-          (i + 1) : P →₀ M) :=
-    DirectSum.map_decompose_shift (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ ind)
-      (m.coefficientDifferential hM).toAddMonoidHom (· + 1)
-      (add_left_injective 1)
-      (fun _ _ hy ↦ (m.isHomogeneous_coefficientDifferential hM).map_mem hy) i w
-  have hDN (w : P →₀ N) (i : ℤ) :
-      m.coefficientDifferential hN (DirectSum.decompose (rowFiniteTotalGrading 𝒩 ind) w i) =
-        (DirectSum.decompose (rowFiniteTotalGrading 𝒩 ind) (m.coefficientDifferential hN w)
-          (i + 1) : P →₀ N) :=
-    DirectSum.map_decompose_shift (rowFiniteTotalGrading 𝒩 ind) (rowFiniteTotalGrading 𝒩 ind)
-      (m.coefficientDifferential hN).toAddMonoidHom (· + 1)
-      (add_left_injective 1)
-      (fun _ _ hy ↦ (m.isHomogeneous_coefficientDifferential hN).map_mem hy) i w
-  have hF (w : P →₀ M) (i : ℤ) :
-      Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R)
-          (DirectSum.decompose (rowFiniteTotalGrading ℳ ind) w i) =
-        (DirectSum.decompose (rowFiniteTotalGrading 𝒩 ind)
-          (Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R) w) i : P →₀ N) :=
-    DirectSum.map_decompose_shift (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading 𝒩 ind)
-      (Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R)).toAddMonoidHom id
-      Function.injective_id (fun _ _ hy ↦ f.mapRange_mem_rowFiniteTotalGrading hy) i w
   refine ⟨DirectSum.decompose (rowFiniteTotalGrading ℳ ind) u n, SetLike.coe_mem _,
     DirectSum.decompose (rowFiniteTotalGrading 𝒩 ind) v (n - 1), SetLike.coe_mem _, ?_, ?_⟩
-  · rw [hDM, hu, DirectSum.decompose_of_mem_same _ hg]
+  · rw [(m.isHomogeneous_coefficientDifferential hM).map_decompose, hu,
+      DirectSum.decompose_of_mem_same _ hg]
   · have hk' := congrArg
       (fun w ↦ (DirectSum.decompose (rowFiniteTotalGrading 𝒩 ind) w n : P →₀ N)) huv
     simp only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
       DirectSum.decompose_of_mem_same _ hk] at hk'
-    rw [hF, hDN, sub_add_cancel]
+    rw [f.isHomogeneous_mapRange.map_decompose, add_zero,
+      (m.isHomogeneous_coefficientDifferential hN).map_decompose, sub_add_cancel]
     exact hk'
 
 end RowFiniteTwistingCocycle

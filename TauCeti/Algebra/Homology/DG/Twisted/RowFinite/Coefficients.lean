@@ -236,13 +236,21 @@ theorem _root_.TauCeti.DGRightModuleHom.mapRange_mem_rowFiniteTotalGrading
   intro x
   simpa using f.map_mem' (hg x)
 
+variable {hM hN} in
+/-- A morphism of DG right modules, applied to every coefficient, is homogeneous of degree zero
+for the total gradings. -/
+theorem _root_.TauCeti.DGRightModuleHom.isHomogeneous_mapRange (f : DGRightModuleHom hM hN) :
+    LinearMap.IsHomogeneous (Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R))
+      (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading 𝒩 ind) 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hg ↦ by
+    simpa only [add_zero] using f.mapRange_mem_rowFiniteTotalGrading hg
+
 /-- A morphism of DG right modules, applied to every coefficient, as a morphism of the row-finite
 twisted complexes with these coefficients. -/
 def coefficientCochainComplexMap (f : DGRightModuleHom hM hN) :
     m.coefficientCochainComplex hM ⟶ m.coefficientCochainComplex hN :=
   gradedCochainComplexHom (Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R))
-    (LinearMap.isHomogeneous_def.mpr fun _ _ hg ↦ by
-      simpa only [add_zero] using f.mapRange_mem_rowFiniteTotalGrading hg)
+    (f.isHomogeneous_mapRange (ind := ind))
     (LinearMap.ext fun g ↦ by
       rw [LinearMap.comp_apply, LinearMap.comp_apply]
       exact m.coefficientDifferential_mapRange hM hN f g)
