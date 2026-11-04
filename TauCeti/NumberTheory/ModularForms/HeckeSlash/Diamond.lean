@@ -251,7 +251,7 @@ theorem commute_heckeTNat_diamondOp (d : (ZMod N)ˣ) :
   have : (ConjAct.toConjAct (φ (natDiagGL 2 ![1, n]) * mapGL ℝ A)⁻¹ •
       (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ)) := hlevel ▸ ‹_›
   refine LinearMap.ext fun f ↦ DFunLike.coe_injective ?_
-  rw [Module.End.mul_apply, Module.End.mul_apply, coe_diamondOp k d ⟨A, hA⟩ hAd, coe_heckeTNat,
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, coe_diamondOp k d ⟨A, hA⟩ hAd, coe_heckeTNat,
     coe_heckeTNat,
     TauCeti.heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) hδ
       (Subgroup.map_mapGL (Gamma1 N)) (Subgroup.map_mapGL (Gamma1 N)) f,
@@ -296,7 +296,7 @@ theorem commute_heckeTCuspNat_diamondOpCusp (d : (ZMod N)ˣ) :
   apply LinearMap.ext
   intro f
   apply CuspForm.toModularFormₗ_injective
-  simpa only [Module.End.mul_apply, CuspForm.toModularFormₗ_eq_coe,
+  simpa only [mul_apply_eq_comp, CuspForm.toModularFormₗ_eq_coe,
     heckeTNat_coe_cuspForm, diamondOp_coe_cuspForm] using
     DFunLike.congr_fun (commute_heckeTNat_diamondOp k n d).eq
       (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)

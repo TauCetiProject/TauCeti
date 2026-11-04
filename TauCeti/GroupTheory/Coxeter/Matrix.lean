@@ -40,7 +40,7 @@ theorem coxeterMatrixA_eq_two (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) 
     CoxeterMatrix.A m i j = 2 := by
   rw [coxeterMatrixA_apply]
   split_ifs <;> simp_all
-  all_goals omega
+  omega
 
 /-- The Coxeter matrix of type `A_∞` on `ℕ`: neighbouring indices carry the entry `3` and indices
 at distance at least two carry the entry `2`. Its Coxeter group is the group of finitary

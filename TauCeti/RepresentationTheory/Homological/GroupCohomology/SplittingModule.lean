@@ -276,7 +276,7 @@ theorem splittingModuleCochain_coboundary (g h : G) :
   · rw [Prod.fst_add, Prod.fst_sub, TauCeti.AugmentationIdeal.ρ_singleSub]
     abel_nf
     simp
-  · simp only [Prod.snd_sub, Prod.snd_add, map_mul, Module.End.mul_apply,
+  · simp only [Prod.snd_sub, Prod.snd_add, map_mul, mul_apply_eq_comp,
       add_sub_cancel_left, splittingTwist_apply]
     rw [TauCeti.AugmentationIdeal.ι_singleSub]
     simp only [MonoidAlgebra.coeff_sub, MonoidAlgebra.coeff_single]

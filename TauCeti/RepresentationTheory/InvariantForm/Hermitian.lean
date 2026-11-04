@@ -202,7 +202,7 @@ theorem isInvariantSesqForm_sumOfConjugatesSesqForm (ρ : Representation R G V)
   intro h x y
   simp only [sumOfConjugatesSesqForm_apply]
   refine Fintype.sum_equiv (Equiv.mulRight h) _ _ fun g => ?_
-  simp [map_mul, Module.End.mul_apply]
+  simp [map_mul, mul_apply_eq_comp]
 
 end Group
 

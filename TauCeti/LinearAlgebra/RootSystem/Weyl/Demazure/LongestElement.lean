@@ -91,7 +91,7 @@ theorem isWeylInvariant_prod_map_demazureOperator {ω : List b.support}
   have hred := cs.isReduced_cons_of_isLeftDescent (hdesc ⟨i, hi⟩) hω' hw'.symm
   have heq := prod_map_demazureOperator_eq_of_wordProd_eq P b hω hred
     (by rw [cs.wordProd_cons, ← hw', cs.simple_mul_simple_cancel_left])
-  rw [heq, List.map_cons, List.prod_cons, Module.End.mul_apply]
+  rw [heq, List.map_cons, List.prod_cons, mul_apply_eq_comp]
   exact P.coeff_reflection_demazureOperator i _ x
 
 variable [Fintype P.weylGroup]
@@ -121,7 +121,7 @@ theorem dotAlternatization_prod_map_demazureOperator (ω : List b.support)
   induction ω with
   | nil => simp
   | cons i ω ih =>
-    rw [List.map_cons, List.prod_cons, Module.End.mul_apply,
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp,
       dotAlternatization_demazureOperator P b i.2, ih]
 
 /-- **Demazure's formula for the longest element**: for a reduced word `ω` of the longest element

@@ -39,6 +39,8 @@ particular a space of constant curvature has vanishing Weyl tensor.
 * `CovariantDerivative.sum_weylTensor_eq_zero`: the Weyl tensor is trace-free.
 * `CovariantDerivative.weylTensor_eq_zero_of_curvatureTensor_eq_zero`: a flat point has vanishing
   Weyl tensor.
+* `CovariantDerivative.curvatureTensor_eq_zero_iff_weylTensor_eq_zero_and_schoutenTensor_eq_zero`:
+  the curvature tensor vanishes exactly where the Weyl and Schouten tensors both do.
 * `CovariantDerivative.weylTensor_eq_zero_of_finrank_le_one`: the Weyl tensor vanishes in
   dimension at most `1`.
 * `CovariantDerivative.weylTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub`: constant
@@ -125,6 +127,19 @@ theorem weylTensor_eq_zero_of_curvatureTensor_eq_zero (x : M) (h : curvature x =
   have hs := cov.scalarCurvature_eq_zero_of_curvatureTensor_eq_zero x h
   ext u v w z
   simp [h, hs]
+
+/-- The curvature tensor vanishes at a point exactly when both the Weyl tensor and the Schouten
+tensor vanish there, since `Rm = W + P ⊙ g`. This holds in every dimension. -/
+theorem curvatureTensor_eq_zero_iff_weylTensor_eq_zero_and_schoutenTensor_eq_zero (x : M) :
+    curvature x = 0 ↔ cov.weylTensor x = 0 ∧ cov.schoutenTensor x = 0 := by
+  refine ⟨fun h ↦ ⟨cov.weylTensor_eq_zero_of_curvatureTensor_eq_zero x h,
+    cov.schoutenTensor_eq_zero_of_curvatureTensor_eq_zero x h⟩, fun ⟨hW, hP⟩ ↦ ?_⟩
+  refine LinearMap.ext fun u ↦ LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ ?_
+  -- With `P = 0`, the vanishing of `W` says `⟨R(u, v)w, z⟩ = 0` for every `z`.
+  have h := congr($hW u v w (curvature x u v w))
+  simp only [weylTensor_apply, hP, map_zero, LinearMap.zero_apply, sub_zero,
+    riemannCurvatureTensor_apply, inner_self_eq_zero] at h
+  simp [h]
 
 /-- On a base of tangent dimension at most one, the Weyl tensor of every smooth connection
 vanishes. -/

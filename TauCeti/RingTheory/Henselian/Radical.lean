@@ -32,11 +32,15 @@ variable {R : Type*} [CommRing R]
 
 /-- Taking the radical of the ideal of a henselian pair preserves henselianity. -/
 instance henselianRing_radical (I : Ideal R) [HenselianRing R I] : HenselianRing R I.radical where
-  jac := (isRadical_jacobson ⊥).radical_le_iff.2 HenselianRing.jac
+  jac := by
+    rw [← Ideal.jacobson_bot]
+    apply (isRadical_jacobson ⊥).radical_le_iff.mpr
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := R) (I := I))
   is_henselian f hf a₀ ha hu := by
     have hjac : I.radical ≤ jacobson ⊥ :=
-      (isRadical_jacobson ⊥).radical_le_iff.2 HenselianRing.jac
-    have := isLocalHom_of_le_jacobson_bot I.radical hjac
+      (isRadical_jacobson ⊥).radical_le_iff.2 (by
+        simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := R) (I := I)))
+    have := _root_.isLocalHom_of_le_jacobson (by simpa only [Ideal.jacobson_bot] using hjac)
     have hunit : IsUnit (f.derivative.eval a₀) := isUnit_of_map_unit _ _ hu
     have hnil : IsNilpotent (Polynomial.aeval (Quotient.mk I a₀) f) := by
       obtain ⟨n, hn⟩ := ha

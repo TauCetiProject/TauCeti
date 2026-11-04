@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
@@ -62,9 +63,12 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
   `AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ` is as smooth as `f`, and has the
-  derivative of `f`.
+  derivative of `f`. Conversely a continuous lift of a `C^n` map is `C^n`
+  (`AddCircle.contDiff_of_comp_coe_eq`).
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
+* `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
+  of `f`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
 * `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
   derivative multiplication by `p⁻¹ * q`.
@@ -418,6 +422,23 @@ theorem mfderiv_coe (t : ℝ) :
   (hasMFDerivAt_coe p t).mfderiv
 
 variable {p} in
+/-- If `f : ℝ → ℝ` has derivative `f'` at `t`, the curve `s ↦ x + [f s]` of `AddCircle p` has
+velocity `f'` at `t`, read in the tangent line of `AddCircle p`. -/
+theorem hasMFDerivAt_add_coe_comp {f : ℝ → ℝ} {f' t : ℝ} (hf : HasDerivAt f f' t)
+    (x : AddCircle p) :
+    HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun s ↦ x + (f s : AddCircle p)) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight f') := by
+  obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective x
+  -- The curve is the image of the real curve `s ↦ a + f s` under the quotient map, whose
+  -- derivative is the identity.
+  have h : (fun s ↦ (a : AddCircle p) + (f s : AddCircle p)) =
+      ((↑) : ℝ → AddCircle p) ∘ fun s ↦ a + f s :=
+    funext fun s ↦ (coe_add p a (f s)).symm
+  rw [h]
+  exact ((hasMFDerivAt_coe p (a + f t)).comp t
+    (hf.const_add a).hasFDerivAt.hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.id_comp _)
+
+variable {p} in
 /-- At the image of `t`, a differentiable map out of `AddCircle p` has the derivative of its
 periodic lift at `t`. -/
 theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -472,6 +493,16 @@ theorem contMDiff_of_comp_coe_eq {n : ℕ∞ω} {g : AddCircle p → AddCircle q
     (h : g ∘ (↑) = (↑) ∘ f) (hf : ContDiff ℝ n f) : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n g := by
   rw [← (isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl, h]
   exact (contMDiff_coe q n).comp hf.contMDiff
+
+/-- Conversely, a continuous lift `f : ℝ → ℝ` of a `C^n` map `g : AddCircle p → AddCircle q`, in
+the sense that `g ∘ (↑) = (↑) ∘ f`, is `C^n`, since the quotient map is a local diffeomorphism. -/
+theorem contDiff_of_comp_coe_eq {n : ℕ∞ω} {g : AddCircle p → AddCircle q} {f : ℝ → ℝ}
+    (h : g ∘ (↑) = (↑) ∘ f) (hf : Continuous f) (hg : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n g) :
+    ContDiff ℝ n f := by
+  refine contMDiff_iff_contDiff.1 ((ContMDiff.of_comp_isLocalDiffeomorph
+    (isLocalDiffeomorph_coe q n) hf) ?_)
+  rw [← h]
+  exact hg.comp (contMDiff_coe p n)
 
 /-- A map `g : AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ`, in the sense that
 `g ∘ (↑) = (↑) ∘ f`, has at the image of `t` the derivative of `f` at `t`. -/

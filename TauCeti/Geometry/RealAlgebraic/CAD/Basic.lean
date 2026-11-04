@@ -26,11 +26,12 @@ distinguished new coordinate is coordinate `0`, as for `TauCeti.cylinder`.
 `TauCeti.IsCAD n 𝒞` is this recursive definition, for a set `𝒞` of subsets of `Fin n → ℝ`. The
 cells are not assumed to be connected, nor the decomposition to be a partition: these are
 theorems. Every cell of a CAD is a nonempty, connected, semialgebraic set, there are finitely many
-cells, and they partition `ℝ ^ n`. Each cell is locally closed and homeomorphic to an open subset
-of some `ℝ ^ d`: a section is homeomorphic to the base cell below it, and a sector is open in the
-cylinder over its base cell. The projections of the cells of a CAD of `ℝ ^ (n + 1)` form a
-CAD of `ℝ ^ n`, and the decomposition is cylindrical: two cells have equal or disjoint
-projections, so each cell lies over the whole of the lower cell it meets.
+cells, and they partition `ℝ ^ n`. Each cell is locally closed and is mapped homeomorphically
+onto an open subset of some `ℝ ^ d` by a coordinate projection: a section is homeomorphic to the
+base cell below it, and a sector is open in the cylinder over its base cell. Each cell also
+contains the graph of a continuous function on its projection. The projections of the cells of a
+CAD of `ℝ ^ (n + 1)` form a CAD of `ℝ ^ n`, and the decomposition is cylindrical: two cells have
+equal or disjoint projections, so each cell lies over the whole of the lower cell it meets.
 
 A CAD is *adapted* to a family of polynomials when each of them is sign-invariant on each cell.
 Every set described by a condition on their signs is then a union of cells, so its projection is
@@ -48,8 +49,11 @@ together with the open intervals they cut out, form a CAD of `ℝ ^ 1`.
 * `TauCeti.IsCAD`: cylindrical algebraic decompositions, defined recursively.
 * `TauCeti.IsCAD.isPartition`, `TauCeti.IsCAD.finite`, `TauCeti.IsCAD.isSemialgebraic`,
   `TauCeti.IsCAD.isConnected`: a CAD is a finite partition into connected semialgebraic cells.
-* `TauCeti.IsCAD.isLocallyClosed`, `TauCeti.IsCAD.exists_isOpenEmbedding`: every cell is locally
-  closed and homeomorphic to an open subset of some `ℝ ^ d`.
+* `TauCeti.IsCAD.isLocallyClosed`, `TauCeti.IsCAD.exists_injective_isOpenEmbedding_comp`:
+  every cell is locally closed, and a coordinate projection maps it homeomorphically onto an open
+  subset of some `ℝ ^ d`.
+* `TauCeti.IsCAD.exists_continuous_cons_mem`: every cell contains the graph of a continuous
+  function on its projection.
 * `TauCeti.IsCAD.image_tail`, `TauCeti.IsCAD.image_tail_eq_or_disjoint`: projecting a CAD gives
   a CAD, and projections of cells are equal or disjoint.
 * `TauCeti.IsCAD.sUnion_sep_subset`: a set containing or missing each cell is the union of the
@@ -219,35 +223,71 @@ theorem isLocallyClosed (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)} (hE : E ∈
     · exact (isClosed_sectionSet ((hθ C hC).continuous i)).isLocallyClosed.image hcyl hrange
     · exact (isOpen_sectorSet (hθ C hC).continuous j).isLocallyClosed.image hcyl hrange
 
-/-- Every cell of a cylindrical algebraic decomposition is homeomorphic to an open subset of some
-coordinate space `ℝ ^ d`. A section of a stack is homeomorphic to its base cell, and a sector is
-an open subset of the cylinder over its base cell. -/
-theorem exists_isOpenEmbedding (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)} (hE : E ∈ 𝒞) :
-    ∃ d, ∃ f : E → Fin d → ℝ, IsOpenEmbedding f := by
+/-- Every cell `E` of a cylindrical algebraic decomposition of `ℝ ^ n` is mapped homeomorphically
+onto an open subset of some `ℝ ^ d` by a coordinate projection `x ↦ x ∘ ι`, with `ι : Fin d → Fin n`
+injective. A section of a stack is projected like its base cell, since it is the graph of a
+continuous function on that cell; a sector is open in the cylinder over its base cell, and its
+projection also keeps the new coordinate `0`. -/
+theorem exists_injective_isOpenEmbedding_comp (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)}
+    (hE : E ∈ 𝒞) :
+    ∃ d, ∃ ι : Fin d → Fin n, Injective ι ∧ IsOpenEmbedding fun x : E ↦ x.1 ∘ ι := by
   induction h with
   | zero =>
     rw [mem_singleton_iff.1 hE]
-    exact ⟨0, Subtype.val, isOpen_univ.isOpenEmbedding_subtypeVal⟩
+    exact ⟨0, id, injective_id, isOpen_univ.isOpenEmbedding_subtypeVal⟩
   | @succ n 𝒟 k θ h𝒟 hθ ih =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
-    obtain ⟨d, f, hf⟩ := ih hC
+    obtain ⟨d, ι, hι, hf⟩ := ih hC
     rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
     · -- A section is homeomorphic to the graph of a continuous function on `C`, hence to `C`.
       let e : C ≃ₜ cylinder C '' sectionSet (θ C) i :=
         (isEmbedding_graph ((hθ C hC).continuous i)).toHomeomorph.trans <|
           (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
             isEmbedding_cylinder.homeomorphImage _
-      exact ⟨d, f ∘ e.symm, hf.comp e.symm.isOpenEmbedding⟩
+      refine ⟨d, Fin.succ ∘ ι, (Fin.succ_injective _).comp hι, ?_⟩
+      convert hf.comp e.symm.isOpenEmbedding using 1
+      funext y
+      obtain ⟨c, rfl⟩ := e.surjective y
+      -- `e c` is the point of the cylinder over `c` at height `θ C i c`.
+      have hc : (e c : Fin (n + 1) → ℝ) = cylinder C (c, θ C i c) := rfl
+      funext l
+      simp [hc, cylinder_apply_succ]
     · -- A sector is an open subset of `C × ℝ`, which embeds openly into `ℝ ^ d × ℝ = ℝ ^ (d + 1)`.
       let e := isEmbedding_cylinder (S := C).homeomorphImage (sectorSet (θ C) j)
       let g : C × ℝ → Fin (d + 1) → ℝ :=
-        (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘ Prod.map f id
+        (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘
+          Prod.map (fun x : C ↦ x.1 ∘ ι) id
       have hg : IsOpenEmbedding g :=
         (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph.isOpenEmbedding.comp <|
           (Homeomorph.prodComm _ _).isOpenEmbedding.comp (hf.prodMap .id)
-      exact ⟨d + 1, g ∘ Subtype.val ∘ e.symm, hg.comp <|
-        (isOpen_sectorSet (hθ C hC).continuous j).isOpenEmbedding_subtypeVal.comp
-          e.symm.isOpenEmbedding⟩
+      refine ⟨d + 1, Fin.cons 0 (Fin.succ ∘ ι),
+        Fin.cons_injective_iff.2 ⟨fun ⟨l, hl⟩ ↦ Fin.succ_ne_zero _ hl,
+          (Fin.succ_injective _).comp hι⟩, ?_⟩
+      convert hg.comp <| (isOpen_sectorSet (hθ C hC).continuous j).isOpenEmbedding_subtypeVal.comp
+        e.symm.isOpenEmbedding using 1
+      funext y
+      obtain ⟨z, rfl⟩ := e.surjective y
+      simp only [comp_apply, Homeomorph.symm_apply_apply]
+      have hz : (e z : Fin (n + 1) → ℝ) = cylinder C z := rfl
+      funext l
+      cases l using Fin.cases <;> simp [hz, g, cylinder_apply_zero, cylinder_apply_succ]
+
+/-- Every cell of a cylindrical algebraic decomposition of `ℝ ^ (n + 1)` contains the graph of a
+continuous function on its projection `Fin.tail '' E`: a section is such a graph, and a sector
+contains one. -/
+theorem exists_continuous_cons_mem {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : IsCAD (n + 1) 𝒞)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞) :
+    ∃ g : Fin.tail '' E → ℝ, Continuous g ∧ ∀ x, Fin.cons (g x) x.1 ∈ E := by
+  cases h with
+  | succ k θ h𝒟 hθ =>
+    obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
+    rw [image_tail_of_mem_stackCells (hθ C hC).strictMono hE]
+    rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+    · exact ⟨θ C i, (hθ C hC).continuous i, fun x ↦ ⟨(x, θ C i x), by simp [mem_sectionSet],
+        cylinder_def _⟩⟩
+    · obtain ⟨g, hg, hgj⟩ :=
+        exists_continuous_forall_mem_sectorSet (hθ C hC).continuous (hθ C hC).strictMono j
+      exact ⟨g, hg, fun x ↦ ⟨(x, g x), hgj x, cylinder_def _⟩⟩
 
 /-- The cells of a cylindrical algebraic decomposition of `ℝ ^ n` partition `ℝ ^ n`. -/
 theorem isPartition (h : IsCAD n 𝒞) : Setoid.IsPartition 𝒞 := by

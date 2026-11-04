@@ -5,495 +5,489 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.SmoothApproximation
-public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Analysis.Calculus.Rademacher
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.BoundedVariation.Perimeter
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Geometry.Manifold.PartitionOfUnity
-import TauCeti.Analysis.Calculus.FDeriv.InfDist
-import TauCeti.Analysis.Calculus.FDeriv.LevelSet
+import TauCeti.Analysis.BoundedVariation.SmoothApproximation
+import TauCeti.Analysis.Calculus.ContDiff.LevelSet
+import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Normed.Group.Pointwise
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
-import TauCeti.Topology.MetricSpace.HausdorffDistance
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+import TauCeti.Topology.Order.Sublevel
 
 /-!
 # The sharp isoperimetric inequality for sets of finite volume
 
-Let `E` be a Euclidean space of dimension `n ≥ 1`, write `ω_n = volume (ball 0 1)`, and write
-`P(s)` for the perimeter of `s` in the whole space. Every null-measurable set `s` of finite
-positive volume satisfies
+Let `E` be a finite-dimensional real inner product space of dimension `n ≥ 1` with its volume,
+and write `ω_n = volume (ball 0 1)` and `P(s)` for the perimeter of `s` in the whole space. Every
+null-measurable set `s` of finite positive volume satisfies the sharp isoperimetric inequality
 
-`n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`
+`P(s)^n ≥ n^n ω_n |s|^(n-1)`
 
-(`TauCeti.ofReal_mul_volume_real_rpow_mul_le_perimeter`). No boundedness, regularity or finite
-perimeter is assumed. Equivalently, `P(s)^n ≥ n^n ω_n |s|^(n-1)`
-(`TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_volume_ne_zero`), and in
-dimension `n ≥ 2` this classical form holds for every set of finite volume
-(`TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`).
-Balls attain equality (`TauCeti.perimeter_ball_pow`), which fixes the constant.
+(`MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`),
+with no boundedness, connectedness or regularity hypothesis on `s`, and with `P(s)` finite or
+infinite. Equivalently `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`
+(`MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`), which is also
+stated in real numbers when the perimeter is finite
+(`MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`).
+In dimension `n ≥ 2` the inequality holds for every set of finite volume, the volume-zero case
+being trivial
+(`NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le`).
+Balls attain equality (`TauCeti.perimeter_ball_pow`), so the constant is sharp. Finite volume
+cannot be dropped: the complement of a ball has finite perimeter.
 
-The inequality is first proved for a bounded nonempty open set `U = {c < u}` with smooth
-boundary, where `u` is smooth and `c` is a regular value
-(`TauCeti.ofReal_mul_volume_real_rpow_mul_le_perimeter_of_contDiff`). Write `d` for the distance
-to the complement of `U` and `C_t = {t ≤ d}` for the inner parallel sets of `U`. Since
-`C_t + ball 0 t ⊆ U`, the Brunn–Minkowski inequality gives
-`|U \ C_t| ≥ n ω_n^(1/n) |C_t|^(1 - 1/n) t`. On the other hand the Lipschitz function
-`ψ_t = min 1 (d / t)` increases from `0` to `1` across the shell `U \ C_t`, and integrating it by
-parts against a test vector field `φ` gives `∫ ψ_t div φ = -∫ Dψ_t(φ)`. Near the boundary the
-gradient of `d` points from the nearest boundary point `y` into `U`. At a regular boundary point
-this direction is the inner unit normal `∇u(y) / ‖∇u(y)‖`, by the first-order condition for `y`
-to minimize the distance to `x` over the sublevel set `{u ≤ c}`. Choosing `φ` to be a smooth
-extension of the outer unit normal `-∇u / ‖∇u‖`, its uniform continuity makes `-Dψ_t(φ)` at
-least `(1 - ε) / t` almost everywhere on the shell for small `t`. Hence
-`(1 - ε) n ω_n^(1/n) |C_t|^(1 - 1/n) ≤ ∫ ψ_t div φ`, and letting `t → 0` bounds the left side
-for `U` by `∫_U div φ ≤ P(U)`.
+## Strategy
 
-A general set of finite volume is the limit, in volume and in perimeter, of such smooth sets
-(`MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation`), and the inequality
-passes to the limit.
+Every set of finite volume is a limit, in measure and in perimeter, of regular superlevel sets
+`{u > t}` of compactly supported smooth functions
+(`MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation`), so it suffices to treat
+such sets. For these, `w = (u - t) / √(‖∇u‖² + (u - t)²)` is a smooth defining function of
+`F = {u > t}` whose gradient has norm one on the boundary `{u = t}`
+(`ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt`). Near the boundary
+`‖∇w‖` lies within `ε` of one, and for small `η > 0`:
+
+* the `η / (1 + ε)`-neighbourhood of `G = {w ≥ η}` lies in `F`, so the Brunn–Minkowski inequality
+  bounds the volume of the shell `S = {0 < w < η} = F \ G` from below by
+  `n |G|^(1 - 1/n) ω_n^(1/n) η / (1 + ε)`;
+* for a test vector field `ψ` equal to `-∇w / ‖∇w‖` near the boundary, integration by parts against
+  the clamped function `max 0 (min w η)` gives the calibration estimate
+  `(1 - ε) |S| ≤ ∫_S ‖∇w‖ ≤ η (∫_F div ψ + ∫_S |div ψ|)`.
+
+Dividing by `η`, letting `η → 0` and then `ε → 0` gives `n ω_n^(1/n) |F|^(1 - 1/n) ≤ ∫_F div ψ`,
+and the right-hand side is at most `P(F)` by the definition of the perimeter. No identification of
+the perimeter with surface measure or Minkowski content is used.
 
 ## Main results
 
-* `TauCeti.ofReal_mul_volume_real_rpow_mul_le_perimeter_of_contDiff`: the inequality for bounded
-  open sets with smooth boundary.
-* `TauCeti.ofReal_mul_volume_real_rpow_mul_le_perimeter`: the inequality for null-measurable sets
-  of finite positive volume, in extended form.
-* `TauCeti.mul_volume_real_rpow_mul_le_perimeter_toReal`: the real-valued form, for sets of
-  finite perimeter.
-* `TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_volume_ne_zero`: the
-  form `P(s)^n ≥ n^n ω_n |s|^(n-1)` for sets of finite positive volume.
-* `TauCeti.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`: the same form in
-  dimension `n ≥ 2`, for every set of finite volume.
+* `MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`:
+  the sharp isoperimetric inequality `n^n ω_n |s|^(n-1) ≤ P(s)^n` in `ℝ≥0∞`.
+* `NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le`:
+  the same inequality in dimension `n ≥ 2` for every set of finite volume.
+* `MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`: the equivalent
+  form `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)` in `ℝ≥0∞`, with no hypothesis on the perimeter.
+* `MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`: its real form
+  for sets of finite perimeter.
+* `ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt`: the smooth case, for a
+  regular superlevel set `{u > t}` of a compactly supported smooth function `u` with `t > 0`.
 
 ## References
 
-* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 13 for the
-  approximation by smooth sets and Chapter 14 for the isoperimetric inequality.
-* R. J. Gardner, *The Brunn–Minkowski inequality*, Bull. Amer. Math. Soc. **39** (2002),
-  355–405, Section 5.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Cambridge University
+  Press, 2012, Chapters 13 and 14, for the approximation by smooth sets and the isoperimetric
+  inequality.
+* R. J. Gardner, *The Brunn–Minkowski inequality*, Bull. Amer. Math. Soc. **39** (2002), 355–405,
+  Section 5.
 -/
 
 public section
 
 noncomputable section
 
-namespace TauCeti
-
 open MeasureTheory Metric Module Set Filter TopologicalSpace TestFunction InnerProductSpace
-open scoped ENNReal Topology RealInnerProductSpace ContDiff Distributions Pointwise symmDiff
+open scoped ENNReal Topology ContDiff Distributions Gradient Pointwise symmDiff
+
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-! ### The inner Minkowski bound -/
-
-/-- **The cutoff across an inner shell.** Let `U` be an open set other than the whole space, and
-let `φ` be a vector field which, at points `x ∈ U` within distance `t₀` of the complement, makes
-`-⟪x - y, φ x⟫ ≥ (1 - ε) ‖x - y‖` for every nearest boundary point `y`. For `0 < t ≤ t₀`, the
-cutoff `ψ = min 1 (d / t)` built from the distance `d` to the complement then satisfies
-`-Dψ(φ) ≥ (1 - ε) / t` almost everywhere on the shell `U \ {t ≤ d}`, and `Dψ = 0` off it. -/
-private theorem ae_mul_indicator_le_neg_fderiv_apply {U : Set E} (hU : IsOpen U)
-    (hUu : U ≠ univ) {φ : E → E} {ε t t₀ : ℝ} (ht : 0 < t) (htt : t ≤ t₀)
-    (hφ : ∀ x ∈ U, ∀ y ∈ frontier U, infDist x Uᶜ < t₀ → infDist x Uᶜ = dist x y →
-      (1 - ε) * dist x y ≤ -⟪x - y, φ x⟫) :
-    ∀ᵐ x ∂volume, (1 - ε) * t⁻¹ * (U \ {x | t ≤ infDist x Uᶜ}).indicator 1 x ≤
-      -fderiv ℝ (fun z => min 1 (t⁻¹ * infDist z Uᶜ)) x (φ x) := by
-  set d : E → ℝ := fun x => infDist x Uᶜ
-  set ψ : E → ℝ := fun x => min 1 (t⁻¹ * d x)
-  have hψ (x : E) : ψ x = min 1 (t⁻¹ * d x) := rfl
-  have hdc : Continuous d := (lipschitz_infDist_pt Uᶜ).continuous
-  filter_upwards [(lipschitz_infDist_pt Uᶜ).ae_differentiableAt (μ := volume)] with x hdx
-  by_cases hx : x ∈ U \ {x | t ≤ d x}
-  · obtain ⟨hxU, hxC⟩ := hx
-    have hxC' : d x < t := not_le.1 hxC
-    -- Near `x` the cutoff is `d / t`, and `d` has derivative `⟪(x - y) / ‖x - y‖, ·⟫`.
-    have hloc : ψ =ᶠ[𝓝 x] fun z => t⁻¹ * d z := by
-      filter_upwards [(isOpen_lt hdc continuous_const).mem_nhds hxC'] with z hz
-      exact min_eq_right ((inv_mul_le_one₀ ht).2 hz.le)
-    obtain ⟨y, hyfr, hxy⟩ := exists_mem_frontier_infDist_compl_eq_dist hxU hUu
-    have hyU : y ∈ Uᶜ := by
-      rw [hU.frontier_eq] at hyfr
-      exact hyfr.2
-    have hxy0 : x ≠ y := fun h => hyU (h ▸ hxU)
-    have h1 : 1 - ε ≤ -⟪x - y, φ x⟫ / dist x y := by
-      rw [le_div_iff₀ (dist_pos.2 hxy0)]
-      exact hφ x hxU y hyfr (hxC'.trans_le htt) hxy
-    rw [indicator_of_mem ((Set.mem_sdiff x).2 ⟨hxU, hxC⟩), Pi.one_apply, mul_one,
-      hloc.fderiv_eq, fderiv_const_mul hdx, smul_apply, smul_eq_mul,
-      fderiv_infDist_apply hyU hxy hxy0 hdx]
-    calc (1 - ε) * t⁻¹ ≤ (-⟪x - y, φ x⟫ / dist x y) * t⁻¹ :=
-          mul_le_mul_of_nonneg_right h1 (inv_nonneg.2 ht.le)
-      _ = -(t⁻¹ * (⟪x - y, φ x⟫ / dist x y)) := by ring
-  · rw [indicator_of_notMem hx, mul_zero]
-    rw [Set.mem_sdiff, not_and_or, not_not] at hx
-    rcases hx with hxU | hxC
-    · -- Off `U` the cutoff attains its minimum `0`.
-      have h0 : ψ x = 0 := min_one_inv_mul_infDist_eq_zero t hxU
-      have hmin : IsLocalMin ψ x := Eventually.of_forall fun z => by
-        rw [h0, hψ]
-        exact le_min zero_le_one (mul_nonneg (inv_nonneg.2 ht.le) infDist_nonneg)
-      simp [hmin.fderiv_eq_zero]
-    · -- On `{t ≤ d}` the cutoff attains its maximum `1`.
-      have h1 : ψ x = 1 := min_one_inv_mul_infDist_eq_one ht hxC
-      have hmax : IsLocalMax ψ x := Eventually.of_forall fun z => by
-        rw [h1, hψ]
-        exact min_le_left _ _
-      simp [hmax.fderiv_eq_zero]
-
-/-- **The inner Minkowski bound at a fixed scale.** Let `U` be an open set of finite volume other
-than the whole space, and let `φ` be a test vector field which, at points `x ∈ U` within distance
-`t₀` of the complement, makes `-⟪x - y, φ x⟫ ≥ (1 - ε) ‖x - y‖` for every nearest boundary point
-`y`. For `0 < t ≤ t₀` with nonempty inner parallel set `C = {t ≤ d}`, where `d` is the distance
-to the complement, the cutoff `ψ = min 1 (d / t)` satisfies
-`(1 - ε) n ω_n^(1/n) |C|^(1 - 1/n) ≤ ∫ ψ div φ`. -/
-private theorem mul_le_integral_divergenceCLM_mul_min {U : Set E} (hn : finrank ℝ E ≠ 0)
-    (hU : IsOpen U) (hUu : U ≠ univ) (hUfin : volume U ≠ ⊤) (φ : 𝓓(⊤, E)) {ε t t₀ : ℝ}
-    (hε : ε < 1) (ht : 0 < t) (htt : t ≤ t₀) (hCne : {x | t ≤ infDist x Uᶜ}.Nonempty)
-    (hφ : ∀ x ∈ U, ∀ y ∈ frontier U, infDist x Uᶜ < t₀ → infDist x Uᶜ = dist x y →
-      (1 - ε) * dist x y ≤ -⟪x - y, φ x⟫) :
-    (1 - ε) * (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real {x | t ≤ infDist x Uᶜ} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
-      ∫ x, divergenceCLM φ x * min 1 (t⁻¹ * infDist x Uᶜ) := by
-  set C := {x | t ≤ infDist x Uᶜ}
-  set ψ : E → ℝ := fun x => min 1 (t⁻¹ * infDist x Uᶜ)
-  set K := finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹
-  have hψlip := lipschitzWith_min_one_inv_mul_infDist Uᶜ ht
-  have hCclosed : IsClosed C := isClosed_le continuous_const (lipschitz_infDist_pt Uᶜ).continuous
-  have hCU := setOf_le_infDist_compl_add_ball_subset U t
-  have hCsub : C ⊆ U := fun x hx => hCU ⟨x, hx, 0, mem_ball_self ht, add_zero x⟩
-  -- Integrate the cutoff by parts against `φ`.
-  have hibp := (hψlip.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv
-    (μ := volume) (Ω := ⊤)).integral_divergenceCLM_smul_eq_neg_integral φ
-  simp only [smul_eq_mul] at hibp
-  rw [hibp, ← integral_neg]
-  have hmeasS : MeasurableSet (U \ C) := hU.measurableSet.diff hCclosed.measurableSet
-  have hSfin : volume (U \ C) ≠ ⊤ := ne_top_of_le_ne_top hUfin (measure_mono sdiff_subset)
-  have hlow : Integrable (fun x => (1 - ε) * t⁻¹ * (U \ C).indicator 1 x) volume :=
-    ((integrable_indicator_iff hmeasS).2 (integrableOn_const hSfin)).const_mul _
-  have hint : Integrable (fun x => -fderiv ℝ ψ x (φ x)) volume := by
-    refine Integrable.neg (Integrable.mono'
-      ((φ.continuous.norm.integrable_of_hasCompactSupport φ.hasCompactSupport.norm).const_mul
-        t⁻¹) ?_ (Eventually.of_forall fun x => ?_))
-    · exact (ContinuousLinearMap.id ℝ (E →L[ℝ] ℝ)).aestronglyMeasurable_comp₂
-        (measurable_fderiv ℝ ψ).aestronglyMeasurable φ.continuous.aestronglyMeasurable
-    · refine (ContinuousLinearMap.le_opNorm _ _).trans
-        (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-      simpa [Real.coe_toNNReal _ (inv_pos.2 ht).le] using
-        norm_fderiv_le_of_lipschitz ℝ hψlip (x₀ := x)
-  -- Brunn–Minkowski bounds `t K |C|^(1 - 1/n)` by the volume of the shell `U \ C`, which the
-  -- cutoff crosses at rate at least `(1 - ε) / t` along `φ`.
-  have hBM := mul_volume_real_rpow_mul_le_volume_real_sub_of_add_ball_subset hn hCne
-    hCclosed.measurableSet.nullMeasurableSet hUfin ht hCU
-  calc (1 - ε) * (K * volume.real C ^ (1 - (finrank ℝ E : ℝ)⁻¹))
-      = (1 - ε) * t⁻¹ * (K * volume.real C ^ (1 - (finrank ℝ E : ℝ)⁻¹) * t) := by
-        field_simp
-    _ ≤ (1 - ε) * t⁻¹ * volume.real (U \ C) := by
-        rw [measureReal_sdiff hCsub hCclosed.measurableSet hUfin]
-        exact mul_le_mul_of_nonneg_left hBM (mul_nonneg (by linarith) (inv_nonneg.2 ht.le))
-    _ = ∫ x, (1 - ε) * t⁻¹ * (U \ C).indicator 1 x := by
-        rw [integral_const_mul, integral_indicator_one hmeasS]
-    _ ≤ ∫ x, -fderiv ℝ ψ x (φ x) := integral_mono_ae hlow hint
-        (ae_mul_indicator_le_neg_fderiv_apply hU hUu ht htt hφ)
-
-/-- **The inner Minkowski bound.** Let `U` be a bounded nonempty open set, and let `φ` be a test
-vector field which, at points `x ∈ U` within distance `t₀` of the complement, makes
-`-⟪x - y, φ x⟫ ≥ (1 - ε) ‖x - y‖` for every nearest boundary point `y`. Then
-`(1 - ε) n ω_n^(1/n) |U|^(1 - 1/n) ≤ ∫_U div φ`. -/
-private theorem mul_le_setIntegral_divergenceCLM {U : Set E} (hn : finrank ℝ E ≠ 0)
-    (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hUne : U.Nonempty) (φ : 𝓓(⊤, E))
-    {ε t₀ : ℝ} (hε : ε < 1) (ht₀ : 0 < t₀)
-    (hφ : ∀ x ∈ U, ∀ y ∈ frontier U, infDist x Uᶜ < t₀ → infDist x Uᶜ = dist x y →
-      (1 - ε) * dist x y ≤ -⟪x - y, φ x⟫) :
-    (1 - ε) * (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real U ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
-      ∫ x in U, divergenceCLM φ x := by
-  set n := finrank ℝ E
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hn)
-  have hUu : U ≠ univ := fun h => NormedSpace.unbounded_univ ℝ E (h ▸ hUb)
-  set d : E → ℝ := fun x => infDist x Uᶜ
-  have hdpos (x : E) (hx : x ∈ U) : 0 < d x :=
-    (hU.isClosed_compl.notMem_iff_infDist_pos (nonempty_compl.2 hUu)).1 (not_not_intro hx)
-  have hUfin : volume U ≠ ⊤ := hUb.measure_lt_top.ne
-  have hVpos : 0 < volume.real U :=
-    ENNReal.toReal_pos (hU.measure_ne_zero volume hUne) hUfin
-  obtain ⟨x₀, hx₀⟩ := hUne
-  set t₁ := min t₀ (d x₀)
-  have ht₁ : 0 < t₁ := lt_min ht₀ (hdpos x₀ hx₀)
-  -- The inner parallel sets `C t = {t ≤ d}`.
-  set C : ℝ → Set E := fun t => {x | t ≤ d x}
-  set K := n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹
-  -- Let `t → 0` along `t₁ / (k + 1)`. Then `C t` increases to `U` and the cutoff
-  -- `min 1 (d / t)` increases to the indicator of `U`.
-  set tk : ℕ → ℝ := fun k => t₁ / (k + 1)
-  have htk (k : ℕ) : 0 < tk k := by positivity
-  have htk1 (k : ℕ) : tk k ≤ t₁ :=
-    div_le_self ht₁.le (by linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)])
-  have htk0 : Tendsto tk atTop (𝓝 0) := by
-    simpa [tk, div_eq_mul_inv] using
-      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul t₁
-  have hev (x : E) (hx : x ∈ U) : ∀ᶠ k in atTop, tk k ≤ d x :=
-    htk0.eventually (eventually_le_nhds (hdpos x hx))
-  have hmono : Monotone fun k => C (tk k) := fun k l hkl x hx =>
-    (div_le_div_of_nonneg_left ht₁.le (by positivity) (by gcongr)).trans hx
-  have hUnion : ⋃ k, C (tk k) = U :=
-    Subset.antisymm (iUnion_subset fun k x hx => setOf_le_infDist_compl_add_ball_subset U _
-        ⟨x, hx, 0, mem_ball_self (htk k), add_zero x⟩) fun x hx =>
-      mem_iUnion.2 (hev x hx).exists
-  have hVk : Tendsto (fun k => volume.real (C (tk k))) atTop (𝓝 (volume.real U)) := by
-    have h := tendsto_measure_iUnion_atTop (μ := volume) hmono
-    rw [hUnion] at h
-    exact (ENNReal.tendsto_toReal hUfin).comp h
-  have hIk : Tendsto (fun k => ∫ x, divergenceCLM φ x * min 1 ((tk k)⁻¹ * d x)) atTop
-      (𝓝 (∫ x in U, divergenceCLM φ x)) := by
-    rw [← integral_indicator hU.measurableSet]
-    refine tendsto_integral_of_dominated_convergence (fun x => ‖divergenceCLM φ x‖)
-      (fun k => ((divergenceCLM φ).continuous.mul
-        (lipschitzWith_min_one_inv_mul_infDist Uᶜ (htk k)).continuous).aestronglyMeasurable)
-      ((divergenceCLM φ).continuous.integrable_of_hasCompactSupport
-        (divergenceCLM φ).hasCompactSupport).norm (fun k => Eventually.of_forall fun x => ?_)
-      (Eventually.of_forall fun x => ?_)
-    · rw [norm_mul]
-      refine mul_le_of_le_one_right (norm_nonneg _) ?_
-      rw [Real.norm_of_nonneg (le_min zero_le_one
-        (mul_nonneg (inv_nonneg.2 (htk k).le) infDist_nonneg))]
-      exact min_le_left _ _
-    · by_cases hx : x ∈ U
-      · rw [indicator_of_mem hx]
-        refine tendsto_const_nhds.congr' ?_
-        filter_upwards [hev x hx] with k hk
-        rw [min_one_inv_mul_infDist_eq_one (htk k) hk, mul_one]
-      · rw [indicator_of_notMem hx]
-        refine tendsto_const_nhds.congr fun k => ?_
-        rw [min_one_inv_mul_infDist_eq_zero _ (show x ∈ Uᶜ from hx), mul_zero]
-  have hLk : Tendsto (fun k => (1 - ε) * (K * volume.real (C (tk k)) ^ (1 - (n : ℝ)⁻¹)))
-      atTop (𝓝 ((1 - ε) * (K * volume.real U ^ (1 - (n : ℝ)⁻¹)))) :=
-    (((Real.continuousAt_rpow_const _ _ (Or.inl hVpos.ne')).tendsto.comp hVk).const_mul
-      K).const_mul (1 - ε)
-  exact le_of_tendsto_of_tendsto' hLk hIk fun k =>
-    mul_le_integral_divergenceCLM_mul_min hn hU hUu hUfin φ hε (htk k)
-      ((htk1 k).trans (min_le_left _ _)) ⟨x₀, (htk1 k).trans (min_le_right _ _)⟩ hφ
-
-/-! ### Bounded open sets with smooth boundary -/
-
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- **A smooth extension of the outer unit normal.** Let `u` be smooth and `c` a regular value
-of `u` on the boundary of the bounded superlevel set `U = {c < u}`. There is a test vector field
-`φ` with `‖φ‖ ≤ 1` which equals the outer unit normal `-∇u / ‖∇u‖` on the frontier of `U`. By
-uniform continuity, for every `ε > 0` it makes `-⟪x - y, φ x⟫ ≥ (1 - ε) ‖x - y‖` at points
-`x ∈ U` close to the complement and their nearest boundary points `y`. -/
-private theorem exists_testFunction_outer_normal {u : E → ℝ} {c : ℝ} (hu : ContDiff ℝ ∞ u)
-    (hreg : ∀ x, u x = c → fderiv ℝ u x ≠ 0) (hb : Bornology.IsBounded {x | c < u x}) :
-    ∃ φ : 𝓓(⊤, E), (∀ x, ‖φ x‖ ≤ 1) ∧ ∀ ε > 0, ∃ t₀ > 0, ∀ x ∈ {x | c < u x},
-      ∀ y ∈ frontier {x | c < u x}, infDist x {x | c < u x}ᶜ < t₀ →
-        infDist x {x | c < u x}ᶜ = dist x y → (1 - ε) * dist x y ≤ -⟪x - y, φ x⟫ := by
-  set U := {x | c < u x}
-  set G := gradient u
-  have hG : ContDiff ℝ ∞ G := hu.gradient_right (by simp)
-  -- The frontier of `U` is a compact part of the level `{u = c}` where `∇u ≠ 0`.
-  have hZc : IsCompact (frontier U) :=
-    hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure
-  have hZlev (y : E) (hy : y ∈ frontier U) : u y = c :=
-    (frontier_lt_subset_eq continuous_const hu.continuous hy).symm
-  have hZO : frontier U ⊆ {x | G x ≠ 0} := fun x hx h0 => hreg x (hZlev x hx) (by
-    rw [← (toDual ℝ E).apply_symm_apply (fderiv ℝ u x)]
-    exact (toDual ℝ E).map_eq_zero_iff.2 h0)
-  -- A smooth cutoff `χ`, equal to one exactly on the frontier and supported where `∇u ≠ 0`.
-  obtain ⟨δ, hδ, hδO⟩ :=
-    hZc.exists_cthickening_subset_open (isOpen_ne_fun hG.continuous continuous_const) hZO
-  obtain ⟨χ, hχ, hχr, hχs, hχ1⟩ := exists_contDiff_support_eq_eq_one_iff (n := ⊤)
-    isOpen_thickening isClosed_frontier (self_subset_thickening hδ (frontier U))
-  have hχts : tsupport χ ⊆ cthickening δ (frontier U) := by
-    rw [tsupport, hχs]
-    exact closure_thickening_subset_cthickening δ _
-  -- The field `χ N` with `N = -∇u / ‖∇u‖`.
-  set N : E → E := fun x => -(‖G x‖⁻¹ • G x)
-  set f : E → E := fun x => χ x • N x
-  have hf : ContDiff ℝ ∞ f := by
+/-- A smooth function `w` whose derivative does not vanish on its zero level, with `{w ≥ -δ}`
+compact, admits an admissible test vector field equal to `-∇w / ‖∇w‖` near the zero level. Its
+derivative pairing with `w` there is `-‖Dw‖`. -/
+private theorem exists_testFunction_fderiv_apply_eq_neg_norm {w : E → ℝ} (hw : ContDiff ℝ ∞ w)
+    {δ : ℝ} (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x})
+    (hreg : ∀ x, w x = 0 → fderiv ℝ w x ≠ 0) :
+    ∃ η > 0, ∃ ψ : 𝓓(⊤, E), (∀ x, ‖ψ x‖ ≤ 1) ∧
+      ∀ x, |w x| ≤ η → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖ := by
+  obtain ⟨η, hη, hηδ, hηC⟩ := exists_forall_abs_le_notMem hw.continuous hδ hK
+    (isClosed_eq (hw.continuous_fderiv (by simp)) continuous_const) fun x hx h0 => hreg x h0 hx
+  -- `G` is the gradient of `w`, and `ρ ∘ w` cuts off to `{|w| < η}`.
+  let G : E → E := ∇ w
+  have hG : ContDiff ℝ ∞ G := hw.gradient_right le_rfl
+  have hGnorm (x : E) : ‖G x‖ = ‖fderiv ℝ w x‖ := norm_gradient_eq_norm_fderiv w x
+  have hGapp (x : E) : fderiv ℝ w x (G x) = ‖G x‖ ^ 2 := by
+    rw [← toDual_gradient, toDual_apply_apply, real_inner_self_eq_norm_sq]
+  have hG0 {x : E} (hx : |w x| ≤ η) : G x ≠ 0 := by
+    rw [← norm_ne_zero_iff, hGnorm, norm_ne_zero_iff]
+    exact hηC x hx
+  let ρ : ContDiffBump (0 : ℝ) := ⟨η / 2, η, half_pos hη, half_lt_self hη⟩
+  have hρ0 {x : E} (hx : η ≤ |w x|) : ρ (w x) = 0 := by
+    rw [← Function.notMem_support, ρ.support_eq, mem_ball_zero_iff, Real.norm_eq_abs]
+    exact hx.not_gt
+  have hρ1 {x : E} (hx : |w x| ≤ η / 2) : ρ (w x) = 1 :=
+    ρ.one_of_mem_closedBall (by rwa [mem_closedBall_zero_iff, Real.norm_eq_abs])
+  let ψ : E → E := fun x => -((ρ (w x) * ‖G x‖⁻¹) • G x)
+  have hψs : ContDiff ℝ ∞ ψ := by
     refine contDiff_iff_contDiffAt.2 fun x => ?_
-    by_cases hx : G x = 0
-    · have h0 : f =ᶠ[𝓝 x] fun _ => 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.1
-          fun h => hδO (hχts h) hx] with z hz
-        simp [f, hz]
-      exact contDiffAt_const.congr_of_eventuallyEq h0
-    · have hGx := hG.contDiffAt (x := x)
-      exact hχ.contDiffAt.smul ((((contDiffAt_norm ℝ hx).comp x hGx).inv
-        (norm_ne_zero_iff.2 hx)).smul hGx).neg
-  have hχc : HasCompactSupport χ :=
-    hZc.cthickening.of_isClosed_subset (isClosed_tsupport _) hχts
-  have hfc : HasCompactSupport f := hχc.smul_right
-  have hNle (x : E) : ‖N x‖ ≤ 1 := by
-    rw [norm_neg, norm_smul, norm_inv, norm_norm]
-    rcases eq_or_ne ‖G x‖ 0 with h | h
-    · simp [h]
-    · rw [inv_mul_cancel₀ h]
-  have hN1 (y : E) (hy : y ∈ frontier U) : ‖N y‖ = 1 := by
-    rw [norm_neg, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 (hZO hy))]
-  have hfN (y : E) (hy : y ∈ frontier U) : f y = N y := by
-    simp [f, (hχ1 y).1 hy]
-  refine ⟨⟨f, hf, hfc, by simp⟩, fun x => ?_, fun ε hε => ?_⟩
-  · have hχx := hχr ⟨x, rfl⟩
-    rw [coe_mk, norm_smul, Real.norm_of_nonneg hχx.1]
-    simpa using mul_le_mul hχx.2 (hNle x) (norm_nonneg _) zero_le_one
-  obtain ⟨η, hη, hηf⟩ := Metric.uniformContinuous_iff.1
-    (hfc.uniformContinuous_of_continuous hf.continuous) ε hε
-  refine ⟨η, hη, fun x hx y hyfr hd hxy => ?_⟩
-  rw [coe_mk]
-  -- At the nearest boundary point, `x - y` is a nonnegative multiple of `∇u(y)`, so of `-N y`.
-  have hw : x - y = -‖x - y‖ • N y := by
-    have hy : y ∈ Uᶜ := by
-      rw [isOpen_lt continuous_const hu.continuous |>.frontier_eq] at hyfr
-      exact hyfr.2
-    have hmin (z : E) (hz : u z ≤ u y) : dist x y ≤ dist x z :=
-      hxy ▸ infDist_le_dist_of_mem (show z ∉ U from not_lt.2 (hz.trans (hZlev y hyfr).le))
-    conv_lhs => rw [(hu.differentiable (by simp) y).sub_eq_smul_gradient_of_forall_dist_le
-      (hZO hyfr) hmin]
-    simp only [N, smul_neg, smul_smul, div_eq_mul_inv, G, neg_mul, neg_smul, neg_neg]
-  have hin : 1 - ε ≤ ⟪N y, f x⟫ := by
-    have h1 : ⟪N y, f x⟫ = ‖N y‖ ^ 2 + ⟪N y, f x - f y⟫ := by
-      rw [inner_sub_right, hfN y hyfr, real_inner_self_eq_norm_sq]
-      ring
-    have h2 := (abs_le.1 ((abs_real_inner_le_norm (N y) (f x - f y)).trans_eq
-      (by rw [hN1 y hyfr, one_mul]))).1
-    have h3 : ‖f x - f y‖ < ε := by
-      rw [← dist_eq_norm]
-      exact hηf (hxy ▸ hd)
-    rw [h1, hN1 y hyfr]
-    linarith
-  have hinner : ⟪x - y, f x⟫ = -‖x - y‖ * ⟪N y, f x⟫ := by
-    conv_lhs => rw [hw]
-    rw [real_inner_smul_left]
-  rw [hinner, dist_eq_norm]
-  nlinarith [norm_nonneg (x - y)]
+    by_cases hGx : G x = 0
+    · -- Where the gradient vanishes, `|w| > η`, so `ψ` vanishes nearby.
+      have hx : η < |w x| := lt_of_not_ge fun h => hG0 h hGx
+      refine contDiffAt_const (c := (0 : E)).congr_of_eventuallyEq ?_
+      filter_upwards [(hw.continuous.abs.isOpen_preimage _ isOpen_Ioi).mem_nhds hx] with y hy
+      simp [ψ, hρ0 (le_of_lt hy)]
+    · exact (((ρ.contDiff.comp hw).contDiffAt.mul
+        ((hG.contDiffAt.norm ℝ hGx).inv (norm_ne_zero_iff.2 hGx))).smul hG.contDiffAt).neg
+  have hψc : HasCompactSupport ψ := HasCompactSupport.intro hK fun x hx => by
+    have hx : w x < -δ := not_le.1 hx
+    have : η ≤ |w x| := hηδ.trans (le_abs.2 (Or.inr (by linarith)))
+    simp [ψ, hρ0 this]
+  refine ⟨η / 2, half_pos hη, ⟨ψ, hψs, hψc, by simp⟩, fun x => ?_, fun x hx => ?_⟩
+  · simp only [coe_mk, ψ]
+    by_cases hGx : G x = 0
+    · simp [hGx]
+    rw [norm_neg, norm_smul,
+      Real.norm_of_nonneg (mul_nonneg ρ.nonneg (inv_nonneg.2 (norm_nonneg _))), mul_assoc,
+      inv_mul_cancel₀ (norm_ne_zero_iff.2 hGx), mul_one]
+    exact ρ.le_one
+  · have hGx := hG0 (hx.trans (half_le_self hη.le))
+    simp only [coe_mk, ψ, map_neg, map_smul, smul_eq_mul, hGapp, hρ1 hx, one_mul, ← hGnorm]
+    field_simp [norm_ne_zero_iff.2 hGx]
 
-/-- **The isoperimetric inequality for bounded open sets with smooth boundary.** Let `u` be a
-smooth function and `c` a regular value of `u`, so that the derivative of `u` vanishes nowhere on
-the level `{u = c}`. If the superlevel set `U = {c < u}` is bounded and nonempty, then in
-dimension `n ≥ 1` it satisfies `n ω_n^(1/n) |U|^(1 - 1/n) ≤ P(U)`, where
-`ω_n = volume (ball 0 1)`. -/
-theorem ofReal_mul_volume_real_rpow_mul_le_perimeter_of_contDiff {u : E → ℝ} {c : ℝ}
-    (hn : finrank ℝ E ≠ 0) (hu : ContDiff ℝ ∞ u) (hreg : ∀ x, u x = c → fderiv ℝ u x ≠ 0)
-    (hb : Bornology.IsBounded {x | c < u x}) (hne : {x | c < u x}.Nonempty) :
+/-- **The calibration estimate.** If a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on the
+shell `S = {0 < w < η}`, as `-∇w / ‖∇w‖` does, then
+`∫_S ‖Dw‖ ≤ η (∫_{w > 0} div ψ + ∫_S |div ψ|)`. -/
+private theorem setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1 w) {η : ℝ} (hη : 0 < η)
+    (ψ : 𝓓(⊤, E)) (hψ : ∀ x, w x ∈ Ioo 0 η → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖) :
+    ∫ x in w ⁻¹' Ioo 0 η, ‖fderiv ℝ w x‖ ≤
+      η * ((∫ x, divergenceCLM ψ x * {x | 0 < w x}.indicator 1 x) +
+        ∫ x in w ⁻¹' Ioo 0 η, |divergenceCLM ψ x|) := by
+  set S := w ⁻¹' Ioo 0 η
+  set F := {x | 0 < w x}
+  let v : E → ℝ := fun y => max 0 (min (w y) η)
+  let D : E → ℝ := divergenceCLM ψ
+  have hS : MeasurableSet S := hw.continuous.measurable measurableSet_Ioo
+  have hF : MeasurableSet F := measurableSet_lt measurable_const hw.continuous.measurable
+  have hD : Integrable D :=
+    (divergenceCLM ψ).continuous.integrable_of_hasCompactSupport (divergenceCLM ψ).hasCompactSupport
+  have hv : LocallyLipschitz v := (hw.locallyLipschitz.min_const η).const_max 0
+  -- Integration by parts against the clamped function `v` gives `∫ D v = ∫_S ‖Dw‖`.
+  have hibp : ∫ x, D x * v x = ∫ x in S, ‖fderiv ℝ w x‖ := by
+    have := (hv.locallyLipschitzOn (s := ((⊤ : Opens E) : Set E))).hasWeakFDerivOn_fderiv
+      (μ := volume) |>.integral_divergenceCLM_smul_eq_neg_integral ψ
+    simp only [smul_eq_mul] at this
+    rw [this, ← integral_indicator hS, ← integral_neg]
+    refine integral_congr_ae (.of_forall fun x => ?_)
+    simp only [v]
+    rw [fderiv_max_min_eq_indicator hw.continuous hη x]
+    by_cases hx : x ∈ S
+    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_mem hx, hψ x hx, neg_neg]
+    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_notMem hx]
+      simp
+  -- The clamped function agrees with `η 1_F` off `S`, and differs from it by at most `η` on `S`.
+  have hpt (x : E) : ‖D x * (η * F.indicator 1 x - v x)‖ ≤ η * S.indicator (fun x => |D x|) x := by
+    have hcl := abs_mul_indicator_sub_max_min_le (w := w) hη.le x
+    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+    by_cases hxS : x ∈ S
+    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
+      rw [indicator_of_mem hxS, mul_comm η (|D x|)]
+      exact mul_le_mul_of_nonneg_left hcl (abs_nonneg _)
+    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
+      rw [indicator_of_notMem hxS, mul_zero]
+      exact (mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _) hcl)
+  have hbdd (f : E → ℝ) (hf : Measurable f) (c : ℝ) (hfc : ∀ x, ‖f x‖ ≤ c) :
+      Integrable fun x => D x * f x :=
+    hD.mul_bdd hf.aestronglyMeasurable (.of_forall hfc)
+  have hFm : Measurable (F.indicator (1 : E → ℝ)) := measurable_const.indicator hF
+  have hvm : Measurable v := hv.continuous.measurable
+  have hFb (x : E) : ‖F.indicator (1 : E → ℝ) x‖ ≤ 1 := by
+    by_cases hx : x ∈ F <;> simp [hx]
+  have hvb (x : E) : ‖v x‖ ≤ η := by
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨by linarith [le_max_left 0 (min (w x) η)], max_le hη.le (min_le_right _ _)⟩
+  have hdiff : ∫ x, D x * (η * F.indicator 1 x - v x) =
+      η * (∫ x, D x * F.indicator 1 x) - ∫ x, D x * v x := by
+    rw [← integral_const_mul, ← integral_sub ((hbdd _ hFm 1 hFb).const_mul η) (hbdd _ hvm η hvb)]
+    refine integral_congr_ae (.of_forall fun x => ?_)
+    ring
+  have hrem : ‖∫ x, D x * (η * F.indicator 1 x - v x)‖ ≤ η * ∫ x in S, |D x| := by
+    rw [← integral_indicator hS, ← integral_const_mul]
+    exact norm_integral_le_of_norm_le (((hD.abs.indicator hS)).const_mul η) (.of_forall hpt)
+  rw [Real.norm_eq_abs] at hrem
+  rw [← hibp, mul_add]
+  linarith [neg_abs_le (∫ x, D x * (η * F.indicator 1 x - v x))]
+
+/-- **One step of the smooth isoperimetric argument.** Suppose that `‖Dw‖` lies within `ε < 1`
+of `1` on `{0 ≤ w ≤ η}` and that a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on
+`S = {0 < w < η}`. Then, with `F = {w > 0}` of finite volume and `G = {w ≥ η}` nonempty,
+`(1 - ε) / (1 + ε) n ω_n ^ (1 / n) (volume G ^ (1 / n)) ^ (n - 1) ≤ ∫_F div ψ + ∫_S |div ψ|`. -/
+private theorem div_mul_le_integral_add_setIntegral {w : E → ℝ} (hw : ContDiff ℝ 1 w)
+    (hn : finrank ℝ E ≠ 0) {η ε : ℝ} (hη : 0 < η) (hε : 0 < ε) (hε1 : ε < 1)
+    (hF : volume {x | 0 < w x} ≠ ⊤) (hG : {x | η ≤ w x}.Nonempty)
+    (hgrad : ∀ x, 0 ≤ w x → w x ≤ η → |‖fderiv ℝ w x‖ - 1| < ε)
+    (hint : IntegrableOn (fun x => ‖fderiv ℝ w x‖) (w ⁻¹' Ioo 0 η)) (ψ : 𝓓(⊤, E))
+    (hψ : ∀ x, w x ∈ Ioo 0 η → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖) :
+    (1 - ε) / (1 + ε) * (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+        (volume.real {x | η ≤ w x} ^ (finrank ℝ E : ℝ)⁻¹) ^ (finrank ℝ E - 1)) ≤
+      (∫ x, divergenceCLM ψ x * {x | 0 < w x}.indicator 1 x) +
+        ∫ x in w ⁻¹' Ioo 0 η, |divergenceCLM ψ x| := by
+  set n := finrank ℝ E
+  set F := {x | 0 < w x}
+  set G := {x | η ≤ w x}
+  set S := w ⁻¹' Ioo 0 η
+  have hGm : MeasurableSet G := measurableSet_le measurable_const hw.continuous.measurable
+  have hGF : G ⊆ F := fun x hx => hη.trans_le hx
+  have hSFG : S = F \ G := by
+    ext x
+    simp [S, F, G, not_le]
+  have hSm : MeasurableSet S := hw.continuous.measurable measurableSet_Ioo
+  have hSfin : volume S ≠ ⊤ := ne_top_of_le_ne_top hF (measure_mono (hSFG ▸ sdiff_subset))
+  -- The `η / (1 + ε)`-neighbourhood of `G` stays in `F`, so Brunn–Minkowski bounds `|S|` below.
+  have hsub : G + ball (0 : E) (η / (1 + ε)) ⊆ F := by
+    rintro _ ⟨x, hx, z, hz, rfl⟩
+    refine lt_apply_add_of_norm_fderiv_le (hw.differentiable one_ne_zero) (L := 1 + ε) (by linarith)
+      (fun y hy1 hy2 => ?_) hx ?_
+    · linarith [(abs_lt.1 (hgrad y hy1 hy2)).2]
+    · rw [mem_ball_zero_iff, lt_div_iff₀ (by linarith)] at hz
+      linarith
+  have hshell := finrank_mul_rpow_pow_mul_le_volume_real_sub hn hGm.nullMeasurableSet hG hF
+    (div_pos hη (by linarith)) hsub
+  rw [← measureReal_sdiff hGF hGm hF, ← hSFG] at hshell
+  -- On `S` the gradient has norm at least `1 - ε`, and the calibration bounds its integral.
+  have hlow : (1 - ε) * volume.real S ≤ ∫ x in S, ‖fderiv ℝ w x‖ :=
+    setIntegral_ge_of_const_le_real hSm hSfin
+      (fun x hx => by linarith [(abs_lt.1 (hgrad x hx.1.le hx.2.le)).1]) hint
+  have hcal := setIntegral_norm_fderiv_le hw hη ψ hψ
+  refine le_of_mul_le_mul_left ?_ hη
+  calc η * ((1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
+          (volume.real G ^ (n : ℝ)⁻¹) ^ (n - 1)))
+      = (1 - ε) * (n * (volume.real G ^ (n : ℝ)⁻¹) ^ (n - 1) *
+          (η / (1 + ε) * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹)) := by
+        field_simp
+    _ ≤ (1 - ε) * volume.real S := mul_le_mul_of_nonneg_left hshell (by linarith)
+    _ ≤ _ := hlow.trans hcal
+
+/-- **The limit over shrinking shells.** Let `w` be smooth with `{w ≥ -δ}` compact and
+`‖Dw‖ = 1` on its zero level, let `F = {w > 0}` have positive volume, and let the test vector
+field `ψ` satisfy `Dw (ψ) = -‖Dw‖` on `{|w| ≤ η₀}`. Then for every `0 < ε < 1`,
+`(1 - ε) / (1 + ε) n ω_n ^ (1 / n) (|F| ^ (1 / n)) ^ (n - 1) ≤ ∫_F div ψ`. -/
+private theorem div_mul_le_integral_mul_indicator {w : E → ℝ} (hw : ContDiff ℝ ∞ w) {δ : ℝ}
+    (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) (hnorm : ∀ x, w x = 0 → ‖fderiv ℝ w x‖ = 1)
+    (hn : finrank ℝ E ≠ 0) (hV : volume {x | 0 < w x} ≠ 0) (ψ : 𝓓(⊤, E)) {η₀ : ℝ}
+    (hη₀ : 0 < η₀) (hψ : ∀ x, |w x| ≤ η₀ → fderiv ℝ w x (ψ x) = -‖fderiv ℝ w x‖) {ε : ℝ}
+    (hε : 0 < ε) (hε1 : ε < 1) :
+    (1 - ε) / (1 + ε) * (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+        (volume.real {x | 0 < w x} ^ (finrank ℝ E : ℝ)⁻¹) ^ (finrank ℝ E - 1)) ≤
+      ∫ x, divergenceCLM ψ x * {x | 0 < w x}.indicator 1 x := by
+  set n := finrank ℝ E
+  set F := {x | 0 < w x}
+  have hF : volume F ≠ ⊤ := ne_top_of_le_ne_top hK.measure_lt_top.ne
+    (measure_mono fun x hx => ((neg_lt_zero.2 hδ).trans hx).le)
+  have hfd : Continuous fun x => ‖fderiv ℝ w x‖ := (hw.continuous_fderiv (by simp)).norm
+  -- Near the zero level, `‖Dw‖` lies within `ε` of `1`.
+  obtain ⟨η₁, hη₁, -, hη₁C⟩ := exists_forall_abs_le_notMem hw.continuous hδ hK
+    (C := {x | ε ≤ |‖fderiv ℝ w x‖ - 1|})
+    (isClosed_le continuous_const (hfd.sub continuous_const).abs) fun x hx h0 => by
+      have hx : ε ≤ |‖fderiv ℝ w x‖ - 1| := hx
+      rw [hnorm x h0, sub_self, abs_zero] at hx
+      linarith
+  -- Along `η k = min η₀ η₁ / (k + 1)`, apply the one-step estimate and let `k → ∞`.
+  set m := min η₀ η₁
+  have hm : 0 < m := lt_min hη₀ hη₁
+  let η : ℕ → ℝ := fun k => m / (k + 1)
+  have hηpos (k : ℕ) : 0 < η k := by positivity
+  have hηm (k : ℕ) : η k ≤ m := div_le_self hm.le (by linarith [k.cast_nonneg (α := ℝ)])
+  have hηanti : Antitone η := fun i j hij =>
+    div_le_div_of_nonneg_left hm.le (by positivity) (by gcongr)
+  have hηlim : Tendsto η atTop (𝓝 0) := by
+    have := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul m
+    rw [mul_zero] at this
+    exact this.congr fun k => by simp only [η]; ring
+  let G : ℕ → Set E := fun k => {x | η k ≤ w x}
+  let S : ℕ → Set E := fun k => w ⁻¹' Ioo 0 (η k)
+  -- The superlevel sets `G k` exhaust `F`, and the shells `S k` shrink to the empty set.
+  have hGlim : Tendsto (fun k => volume (G k)) atTop (𝓝 (volume F)) := by
+    have hU : (⋃ k, G k) = F := by
+      ext x
+      simp only [mem_iUnion]
+      refine ⟨fun ⟨k, hk⟩ => (hηpos k).trans_le hk, fun hx => ?_⟩
+      exact ((hηlim.eventually (gt_mem_nhds hx)).exists).imp fun k hk => hk.le
+    have hmono : Monotone G := fun i j hij x (hx : η i ≤ w x) => (hηanti hij).trans hx
+    have := tendsto_measure_iUnion_atTop (μ := volume) hmono
+    rwa [hU] at this
+  have hSlim : Tendsto (fun k => ∫ x in S k, |divergenceCLM ψ x|) atTop (𝓝 0) := by
+    have hI : (⋂ k, S k) = ∅ := by
+      refine eq_empty_of_forall_notMem fun x hx => ?_
+      simp only [mem_iInter] at hx
+      obtain ⟨k, hk⟩ := (hηlim.eventually (gt_mem_nhds (hx 0).1)).exists
+      exact (hx k).2.not_gt hk
+    have hanti : Antitone S := fun i j hij x (hx : w x ∈ Ioo 0 (η j)) =>
+      ⟨hx.1, hx.2.trans_le (hηanti hij)⟩
+    have hDint : Integrable fun x => |divergenceCLM ψ x| :=
+      ((divergenceCLM ψ).continuous.integrable_of_hasCompactSupport
+        (divergenceCLM ψ).hasCompactSupport).abs
+    have := tendsto_setIntegral_of_antitone (μ := volume)
+      (fun k => hw.continuous.measurable measurableSet_Ioo) hanti ⟨0, hDint.integrableOn⟩
+    rwa [hI, setIntegral_empty] at this
+  have hlhs : Tendsto (fun k => (1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
+      (volume.real (G k) ^ (n : ℝ)⁻¹) ^ (n - 1))) atTop
+      (𝓝 ((1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
+        (volume.real F ^ (n : ℝ)⁻¹) ^ (n - 1)))) := by
+    have hreal := (ENNReal.tendsto_toReal hF).comp hGlim
+    exact (((Real.continuous_rpow_const (by positivity)).tendsto _).comp hreal).pow _
+      |>.const_mul _ |>.const_mul _
+  refine le_of_tendsto_of_tendsto hlhs
+    (by simpa only [add_zero] using hSlim.const_add (∫ x, divergenceCLM ψ x * F.indicator 1 x)) ?_
+  filter_upwards [hGlim.eventually_ne hV] with k hk
+  refine div_mul_le_integral_add_setIntegral (hw.of_le (by simp)) hn (hηpos k) hε hε1 hF
+    (nonempty_of_measure_ne_zero hk) (fun x hx0 hxη => ?_)
+    ((hfd.continuousOn.integrableOn_compact hK).mono_set fun x hx => ?_) ψ fun x hx => ?_
+  · exact lt_of_not_ge (hη₁C x (abs_le.2 ⟨by linarith [hηpos k], hxη.trans
+      ((hηm k).trans (min_le_right _ _))⟩))
+  · exact ((neg_lt_zero.2 hδ).trans (hx : w x ∈ Ioo 0 (η k)).1).le
+  · exact hψ x (abs_le.2 ⟨by linarith [hx.1], hx.2.le.trans ((hηm k).trans (min_le_left _ _))⟩)
+
+/-- **The sharp isoperimetric inequality for a normalized smooth defining function.** Let `w` be
+smooth with `{w ≥ -δ}` compact for some `δ > 0` and `‖Dw‖ = 1` on its zero level. In dimension
+`n ≥ 1`, if `F = {w > 0}` has positive volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`. -/
+private theorem ofReal_le_perimeter_setOf_pos {w : E → ℝ} (hw : ContDiff ℝ ∞ w) {δ : ℝ}
+    (hδ : 0 < δ) (hK : IsCompact {x | -δ ≤ w x}) (hnorm : ∀ x, w x = 0 → ‖fderiv ℝ w x‖ = 1)
+    (hn : finrank ℝ E ≠ 0) (hV : volume {x | 0 < w x} ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real {x | c < u x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
-      perimeter volume ⊤ {x | c < u x} := by
-  set U := {x | c < u x}
-  set A := (finrank ℝ E : ℝ) * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-    volume.real U ^ (1 - (finrank ℝ E : ℝ)⁻¹)
-  have hUo : IsOpen U := isOpen_lt continuous_const hu.continuous
-  obtain ⟨φ, hφ1, hnorm⟩ := exists_testFunction_outer_normal hu hreg hb
-  -- Each `ε ∈ (0, 1)` gives `(1 - ε) A ≤ ∫_U div φ ≤ P(U)`; let `ε → 0`.
-  have hP (ε : ℝ) (hε : 0 < ε) (hε1 : ε < 1) :
-      ENNReal.ofReal ((1 - ε) * A) ≤ perimeter volume ⊤ U := by
-    obtain ⟨t₀, ht₀, h⟩ := hnorm ε hε
-    calc ENNReal.ofReal ((1 - ε) * A) ≤ ENNReal.ofReal (∫ x in U, divergenceCLM φ x) :=
-          ENNReal.ofReal_le_ofReal (mul_le_setIntegral_divergenceCLM hn hUo hb hne φ hε1 ht₀ h)
-      _ ≤ perimeter volume ⊤ U := by
-          rw [perimeter_eq_iSup hUo.measurableSet.nullMeasurableSet]
-          exact le_iSup₂_of_le (f := fun (φ : 𝓓(⊤, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
-            ENNReal.ofReal (∫ x in U, divergenceCLM φ x ∂volume)) φ hφ1 le_rfl
-  have hlim : Tendsto (fun ε : ℝ => ENNReal.ofReal ((1 - ε) * A)) (𝓝[>] 0)
-      (𝓝 (ENNReal.ofReal A)) := by
-    refine ENNReal.tendsto_ofReal ?_
-    have : Continuous fun ε : ℝ => (1 - ε) * A := by fun_prop
-    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-  refine le_of_tendsto hlim ?_
-  filter_upwards [Ioo_mem_nhdsGT one_pos] with ε hε using hP ε hε.1 hε.2
+        volume.real {x | 0 < w x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
+      perimeter volume ⊤ {x | 0 < w x} := by
+  set n := finrank ℝ E
+  obtain ⟨η₀, hη₀, ψ, hψ1, hψ⟩ := exists_testFunction_fderiv_apply_eq_neg_norm hw hδ hK
+    fun x hx h0 => by
+      have := hnorm x hx
+      rw [h0, norm_zero] at this
+      exact zero_ne_one this
+  -- It suffices to bound `∫_F div ψ`, which is at most the perimeter of `F`.
+  refine le_trans (ENNReal.ofReal_le_ofReal ?_)
+    ((ofReal_integral_le_totalVariationOn ψ hψ1).trans_eq perimeter_def.symm)
+  have hpow : volume.real {x | 0 < w x} ^ (1 - (n : ℝ)⁻¹) =
+      (volume.real {x | 0 < w x} ^ (n : ℝ)⁻¹) ^ (n - 1) := by
+    rw [← Real.rpow_mul_natCast measureReal_nonneg, Nat.cast_pred (Nat.pos_of_ne_zero hn),
+      mul_sub, mul_one, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn)]
+  rw [hpow]
+  -- Let the gradient tolerance `ε` tend to zero.
+  have hlim : Tendsto (fun ε : ℝ => (1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^
+      (n : ℝ)⁻¹ * (volume.real {x | 0 < w x} ^ (n : ℝ)⁻¹) ^ (n - 1))) (𝓝[>] 0)
+      (𝓝 (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
+        (volume.real {x | 0 < w x} ^ (n : ℝ)⁻¹) ^ (n - 1))) := by
+    have : ContinuousAt (fun ε : ℝ => (1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^
+        (n : ℝ)⁻¹ * (volume.real {x | 0 < w x} ^ (n : ℝ)⁻¹) ^ (n - 1))) 0 := by
+      fun_prop (disch := norm_num)
+    simpa using this.tendsto.mono_left nhdsWithin_le_nhds
+  exact le_of_tendsto hlim (by
+    filter_upwards [Ioo_mem_nhdsGT one_pos] with ε hε using
+      div_mul_le_integral_mul_indicator hw hδ hK hnorm hn hV ψ hη₀ hψ hε.1 hε.2)
 
-/-! ### Sets of finite volume -/
+end TauCeti
 
-/-- **The isoperimetric inequality.** In dimension `n ≥ 1`, every null-measurable set `s` of
-finite positive volume satisfies `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`, where
-`ω_n = volume (ball 0 1)` and `P(s)` is the perimeter of `s` in the whole space. The perimeter may
-be infinite, and `s` need not be bounded. -/
-theorem ofReal_mul_volume_real_rpow_mul_le_perimeter {s : Set E} (hn : finrank ℝ E ≠ 0)
-    (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0) :
+section ContDiff
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **The sharp isoperimetric inequality for regular superlevel sets.** Let `u` be smooth and
+compactly supported, and let `t > 0` be a regular value of `u`. In dimension `n ≥ 1`, if
+`F = {u > t}` has positive volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`. -/
+theorem ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt {u : E → ℝ}
+    (hu : ContDiff ℝ ∞ u) (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t)
+    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) (hn : finrank ℝ E ≠ 0)
+    (hV : volume {x | t < u x} ≠ 0) :
+    ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+        volume.real {x | t < u x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
+      perimeter volume ⊤ {x | t < u x} := by
+  obtain ⟨w, hw, hK, hnorm, hset⟩ := hu.exists_contDiff_setOf_pos_eq_setOf_lt huc ht hreg
+  rw [← hset] at hV ⊢
+  exact ofReal_le_perimeter_setOf_pos hw (by norm_num) hK hnorm hn hV
+
+end ContDiff
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **The sharp isoperimetric inequality, extended-real form.** In a Euclidean space of dimension
+`n ≥ 1`, every null-measurable set `s` of finite positive volume satisfies
+`n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
+perimeter of `s` in the whole space, finite or infinite. No boundedness or regularity is
+assumed. -/
+theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
+    (hs0 : volume s ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤ perimeter volume ⊤ s := by
-  obtain ⟨u, t, hprop, hvol, hper⟩ := hs.exists_smooth_perimeter_approximation hμs
-  set U : ℕ → Set E := fun k => {x | t k < u k x}
-  have hUm (k : ℕ) : NullMeasurableSet (U k) volume :=
-    (isOpen_lt continuous_const (hprop k).1.continuous).measurableSet.nullMeasurableSet
-  have hUb (k : ℕ) : Bornology.IsBounded (U k) :=
-    (hprop k).2.2.2.2.1.isBounded.subset subset_closure
-  have hUfin (k : ℕ) : volume (U k) ≠ ⊤ := (hUb k).measure_lt_top.ne
-  -- The volumes converge.
-  have h0 : Tendsto (fun k => volume.real (U k ∆ s)) atTop (𝓝 0) := by
-    simpa [Function.comp_def, measureReal_def] using
-      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hvol
-  have hVk : Tendsto (fun k => volume.real (U k)) atTop (𝓝 (volume.real s)) := by
-    refine tendsto_iff_norm_sub_tendsto_zero.2
-      (squeeze_zero (fun _ => norm_nonneg _) (fun k => ?_) h0)
-    rw [Real.norm_eq_abs]
-    exact abs_measureReal_sub_le_measureReal_symmDiff' (hUm k) hs (hUfin k) hμs
-  have hV0 : 0 < volume.real s := ENNReal.toReal_pos hs0 hμs
-  -- Eventually the approximations are nonempty, and the smooth case applies.
-  have hev : ∀ᶠ k in atTop,
-      ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real (U k) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤ perimeter volume ⊤ (U k) := by
-    filter_upwards [hVk.eventually (lt_mem_nhds hV0)] with k hk
-    obtain ⟨hu, -, -, hreg, -⟩ := hprop k
-    refine ofReal_mul_volume_real_rpow_mul_le_perimeter_of_contDiff hn hu
-      (fun x hx h0 => ?_) (hUb k) (nonempty_of_measure_ne_zero (μ := volume) fun h => ?_)
-    · obtain ⟨v, hv⟩ := hreg x hx 1
-      simp [h0] at hv
-    · exact hk.ne' ((congrArg ENNReal.toReal h).trans ENNReal.toReal_zero)
-  exact le_of_tendsto_of_tendsto (ENNReal.tendsto_ofReal
-    (((Real.continuousAt_rpow_const _ _ (Or.inl hV0.ne')).tendsto.comp hVk).const_mul _))
-    hper hev
+  obtain ⟨u, t, hprop, hsymm, hP⟩ := hs.exists_smooth_perimeter_approximation hμs
+  set F : ℕ → Set E := fun k => {x | t k < u k x}
+  have hFm (k : ℕ) : NullMeasurableSet (F k) volume := by
+    obtain ⟨hu, -⟩ := hprop k
+    exact (measurableSet_lt measurable_const hu.continuous.measurable).nullMeasurableSet
+  have hFfin (k : ℕ) : volume (F k) ≠ ⊤ := by
+    obtain ⟨-, -, -, -, hcl, -⟩ := hprop k
+    exact ne_top_of_le_ne_top hcl.measure_lt_top.ne (measure_mono subset_closure)
+  -- The volumes of the approximations converge to the volume of `s`.
+  have hV : Tendsto (fun k => volume.real (F k)) atTop (𝓝 (volume.real s)) := by
+    have h0 : Tendsto (fun k => volume.real (F k ∆ s)) atTop (𝓝 0) := by
+      have := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hsymm
+      rwa [ENNReal.toReal_zero] at this
+    refine tendsto_iff_dist_tendsto_zero.2 (squeeze_zero (fun _ => dist_nonneg) (fun k => ?_) h0)
+    rw [Real.dist_eq]
+    exact abs_measureReal_sub_le_measureReal_symmDiff' (hFm k) hs (hFfin k) hμs
+  have hpos : 0 < volume.real s := ENNReal.toReal_pos hs0 hμs
+  refine le_of_tendsto_of_tendsto (ENNReal.tendsto_ofReal ((((Real.continuous_rpow_const
+    (sub_nonneg.2 (inv_le_one_of_one_le₀ (Nat.one_le_cast.2 (Nat.pos_of_ne_zero hn))))).tendsto
+      _).comp hV).const_mul _)) hP ?_
+  filter_upwards [hV.eventually (lt_mem_nhds hpos)] with k hk
+  obtain ⟨hu, huc, htk, hreg, -⟩ := hprop k
+  refine hu.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt huc htk.1
+    (fun x hx h0 => ?_) hn ?_
+  · obtain ⟨v, hv⟩ := hreg x hx 1
+    simp [h0] at hv
+  · intro h
+    rw [measureReal_def, (h : volume (F k) = 0), ENNReal.toReal_zero] at hk
+    exact hk.false
 
-/-- **The isoperimetric inequality, in real-valued form.** In dimension `n ≥ 1`, every
-null-measurable set `s` of finite positive volume and finite perimeter satisfies
-`n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`, where `ω_n = volume (ball 0 1)`. -/
-theorem mul_volume_real_rpow_mul_le_perimeter_toReal {s : Set E} (hn : finrank ℝ E ≠ 0)
-    (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0)
-    (hP : perimeter volume ⊤ s ≠ ⊤) :
+/-- **The sharp isoperimetric inequality, real-valued form.** In a Euclidean space of dimension
+`n ≥ 1`, every null-measurable set `s` of finite positive volume and finite perimeter satisfies
+`n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
+perimeter of `s` in the whole space. No boundedness or regularity is assumed. -/
+theorem mul_volume_real_rpow_mul_le_perimeter_toReal
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
+    (hs0 : volume s ≠ 0) (hP : perimeter volume ⊤ s ≠ ⊤) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤ (perimeter volume ⊤ s).toReal :=
   (ENNReal.ofReal_le_iff_le_toReal hP).1
-    (ofReal_mul_volume_real_rpow_mul_le_perimeter hn hs hμs hs0)
+    (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0)
 
-/-- The isoperimetric bound `n^n ω_n |s|^(n-1)` is the `n`-th power of the real quantity
-`n ω_n^(1/n) |s|^(1 - 1/n)`, read in `ℝ≥0∞`, for every set `s` of finite volume in dimension
-`n ≥ 1`. Here `ω_n = volume (ball 0 1)`. -/
-theorem finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal {s : Set E} (hn : finrank ℝ E ≠ 0)
-    (hμs : volume s ≠ ⊤) :
-    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
-        volume s ^ (finrank ℝ E - 1) =
-      ENNReal.ofReal ((finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
-        volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ^ finrank ℝ E) := by
-  rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow measureReal_nonneg hn,
-    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg hn]
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
-  simp [ENNReal.ofReal_pow, measure_ball_lt_top.ne, hμs]
-
-/-- **The isoperimetric inequality.** In dimension `n ≥ 1`, every null-measurable set `s` of
-finite positive volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where `ω_n = volume (ball 0 1)` and
-`P(s)` is the perimeter of `s` in the whole space. -/
-theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_volume_ne_zero
-    {s : Set E} (hn : finrank ℝ E ≠ 0) (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤)
+/-- **The sharp isoperimetric inequality.** In a Euclidean space of dimension `n ≥ 1`, every
+null-measurable set `s` of finite positive volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where
+`ω_n = volume (ball 0 1)` and `P(s)` is the perimeter of `s` in the whole space, finite or
+infinite. No boundedness or regularity is assumed. Balls attain equality
+(`TauCeti.perimeter_ball_pow`). -/
+theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
     (hs0 : volume s ≠ 0) :
-    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
-        volume s ^ (finrank ℝ E - 1) ≤ perimeter volume ⊤ s ^ finrank ℝ E := by
-  rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hn hμs,
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) * volume s ^ (finrank ℝ E - 1) ≤
+      perimeter volume ⊤ s ^ finrank ℝ E := by
+  rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
-  exact pow_le_pow_left₀ zero_le (ofReal_mul_volume_real_rpow_mul_le_perimeter hn hs hμs hs0) _
+  exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0) _
 
-/-- **The isoperimetric inequality.** In dimension `n ≥ 2`, every null-measurable set `s` of finite
-volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
-perimeter of `s` in the whole space. -/
-theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow {s : Set E}
-    (hn : 2 ≤ finrank ℝ E) (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) :
-    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
-        volume s ^ (finrank ℝ E - 1) ≤ perimeter volume ⊤ s ^ finrank ℝ E := by
+/-- **The sharp isoperimetric inequality in dimension `n ≥ 2`.** In a Euclidean space of
+dimension `n ≥ 2`, every null-measurable set `s` of finite volume satisfies
+`P(s)^n ≥ n^n ω_n |s|^(n-1)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the perimeter of `s`
+in the whole space, finite or infinite. Sets of volume zero satisfy it trivially, since then
+`n^n ω_n |s|^(n-1) = 0`. -/
+theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : 2 ≤ finrank ℝ E) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) * volume s ^ (finrank ℝ E - 1) ≤
+      perimeter volume ⊤ s ^ finrank ℝ E := by
   rcases eq_or_ne (volume s) 0 with hs0 | hs0
   · rw [hs0, zero_pow (by omega), mul_zero]
     exact zero_le
-  exact finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_volume_ne_zero (by omega)
-    hs hμs hs0
+  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs (by omega) hs0
 
-end TauCeti
+end MeasureTheory.NullMeasurableSet

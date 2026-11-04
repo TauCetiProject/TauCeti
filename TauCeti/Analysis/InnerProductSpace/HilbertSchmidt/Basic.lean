@@ -116,7 +116,7 @@ theorem hilbertSchmidtEnergy_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜]
     (b : HilbertBasis ι 𝕜 E) :
     (A ∘L T).hilbertSchmidtEnergy b ≤ ‖A‖ₑ ^ 2 * T.hilbertSchmidtEnergy b := by
   rw [hilbertSchmidtEnergy_def, hilbertSchmidtEnergy_def, ← ENNReal.tsum_mul_left]
-  refine ENNReal.tsum_le_tsum fun i ↦ ?_
+  refine _root_.tsum_le_tsum fun i ↦ ?_
   rw [← mul_pow]
   exact pow_le_pow_left₀ zero_le (A.le_opENorm _) 2
 
@@ -129,7 +129,7 @@ theorem rpow_hilbertSchmidtEnergy_add_le (S T : E →L[𝕜] F) (b : HilbertBasi
   simp only [ENNReal.rpow_two] at h
   refine le_trans ?_ h
   gcongr
-  exact ENNReal.tsum_le_tsum fun i ↦ by gcongr; exact enorm_add_le _ _
+  exact _root_.tsum_le_tsum fun i ↦ by gcongr; exact enorm_add_le _ _
 
 section Complete
 
@@ -142,7 +142,7 @@ theorem hilbertSchmidtEnergy_adjoint (T : E →L[𝕜] F) (b : HilbertBasis ι �
     (c : HilbertBasis κ 𝕜 F) :
     (adjoint T).hilbertSchmidtEnergy c = T.hilbertSchmidtEnergy b := by
   rw [hilbertSchmidtEnergy_eq_tsum_tsum _ c b, hilbertSchmidtEnergy_eq_tsum_tsum _ b c,
-    ENNReal.tsum_comm]
+    _root_.tsum_comm]
   simp_rw [adjoint_inner_right, ← ofReal_norm, norm_inner_symm]
 
 /-- **Basis independence of the Hilbert–Schmidt energy.** Any two Hilbert bases of the source give
@@ -180,7 +180,7 @@ theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis 
   have key (x : E) : ‖T x‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b * ‖x‖ₑ ^ 2 := by
     rw [← hilbertSchmidtEnergy_adjoint T b c, hilbertSchmidtEnergy_def, ← ENNReal.tsum_mul_right,
       ← c.tsum_enorm_sq_inner]
-    refine ENNReal.tsum_le_tsum fun j ↦ ?_
+    refine _root_.tsum_le_tsum fun j ↦ ?_
     rw [← adjoint_inner_left, ← mul_pow]
     exact pow_le_pow_left₀ zero_le (enorm_inner_le_enorm _ _) 2
   set M := T.hilbertSchmidtEnergy b ^ (2⁻¹ : ℝ)

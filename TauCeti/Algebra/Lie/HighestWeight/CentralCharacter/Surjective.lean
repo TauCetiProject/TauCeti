@@ -31,8 +31,10 @@ while translation by `-ρ` only changes lower-degree terms. So `hcProjectionLine
 with it `q - hcProjectionLinear b z`, is a Weyl invariant of degree strictly less than `n`, to
 which the induction hypothesis applies.
 
-Injectivity, and hence the Harish-Chandra isomorphism `Z(U(L)) ≃ S(H)^W`, needs in addition that
-the PBW symbol of a central element is a Lie invariant; it is not proved here.
+Injectivity (`TauCeti.hcProjection_injective`) needs in addition that the PBW symbol of a central
+element is a Lie invariant; the resulting Harish-Chandra isomorphism
+`Z(U(L)) ≃ S(H)^W` is `TauCeti.harishChandraLinearIso` in
+`TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Isomorphism`.
 
 ## Main results
 

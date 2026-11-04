@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Rademacher
-public import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The derivative of the distance to a set
@@ -22,17 +20,11 @@ equation `‖D (infDist · s)‖ = 1` almost everywhere off the closure of `s`, 
 vanishes on the closure (`TauCeti.norm_fderiv_infDist_ae_eq_indicator`). This is the identity that
 turns the coarea formula for the distance function into a formula for the volume of parallel
 sets.
-
-In a real inner product space the derivative is determined by a nearest point: if `y ∈ s`
-realizes the distance from `x`, then wherever the distance function is differentiable at `x ≠ y`
-its derivative is the inner product with the unit vector `(x - y) / ‖x - y‖`
-(`TauCeti.fderiv_infDist_apply`).
 -/
 
 public section
 
 open Metric Set MeasureTheory Filter
-open scoped RealInnerProductSpace
 
 namespace TauCeti
 
@@ -91,32 +83,6 @@ theorem norm_fderiv_infDist_eq_one {s : Set E} (hs : s.Nonempty) {x : E} (hx : x
     rw [hv, mul_one, Real.norm_eq_abs] at h
     exact (neg_le_abs _).trans h
   linarith
-
-section InnerProduct
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- **The derivative of the distance at a nearest point.** If `y ∈ s` realizes the distance from
-`x ≠ y` to `s`, and the distance function `infDist · s` is differentiable at `x`, then its
-derivative at `x` is the inner product with the unit vector `(x - y) / ‖x - y‖`. -/
-theorem fderiv_infDist_apply {s : Set F} {x y : F} (hy : y ∈ s) (hxy : infDist x s = dist x y)
-    (hxy0 : x ≠ y) (hd : DifferentiableAt ℝ (infDist · s) x) (v : F) :
-    fderiv ℝ (infDist · s) x v = ⟪x - y, v⟫ / dist x y := by
-  -- `z ↦ ‖z - y‖² - (infDist z s)²` is nonnegative and vanishes at `x`.
-  have hmin : IsLocalMin (fun z => ‖z - y‖ ^ 2 - infDist z s ^ 2) x := by
-    refine Eventually.of_forall fun z => ?_
-    have h1 : infDist z s ≤ ‖z - y‖ := (infDist_le_dist_of_mem hy).trans_eq (dist_eq_norm z y)
-    have h2 : infDist x s = ‖x - y‖ := hxy.trans (dist_eq_norm x y)
-    simp only [h2, sub_self]
-    nlinarith [infDist_nonneg (x := z) (s := s)]
-  have hf := ((hasFDerivAt_id x).sub_const y).norm_sq.sub (hd.hasFDerivAt.pow 2)
-  have h0 : 2 * (⟪x, v⟫ - ⟪y, v⟫) - 2 * infDist x s * fderiv ℝ (infDist · s) x v = 0 := by
-    simpa using congrArg (fun L : F →L[ℝ] ℝ => L v) (hmin.hasFDerivAt_eq_zero hf)
-  rw [hxy] at h0
-  rw [eq_div_iff (dist_pos.2 hxy0).ne', inner_sub_left]
-  linarith
-
-end InnerProduct
 
 section Rademacher
 

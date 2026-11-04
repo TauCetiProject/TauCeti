@@ -131,7 +131,7 @@ def weightStringSubmodule (P : t.HasPrimitiveVectorWith m μ) :
     (key e fun i ↦ by
       match i with
       | 0 =>
-        rw [pow_zero, Module.End.one_apply, P.lie_e]
+        rw [pow_zero, one_apply_eq_self, P.lie_e]
         exact Submodule.zero_mem _
       | i + 1 =>
         rw [P.lie_e_pow_succ_toEnd_f]
@@ -179,7 +179,7 @@ theorem pow_toEnd_e_pow_toEnd_f_self (P : t.HasPrimitiveVectorWith m μ) (j : �
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [pow_succ (toEnd K L M e), Module.End.mul_apply, toEnd_apply_apply,
+    rw [pow_succ (toEnd K L M e), mul_apply_eq_comp, toEnd_apply_apply,
       P.lie_e_pow_succ_toEnd_f j, map_smul, ih, smul_smul, Finset.prod_range_succ]
     congr 1
     ring
@@ -190,7 +190,7 @@ operator kills. -/
 theorem pow_toEnd_e_pow_toEnd_f_eq_zero (P : t.HasPrimitiveVectorWith m μ) {i j : ℕ}
     (hij : i < j) : (toEnd K L M e ^ j) ((toEnd K L M f ^ i) m) = 0 := by
   refine Module.End.pow_map_zero_of_le hij ?_
-  rw [pow_succ' (toEnd K L M e), Module.End.mul_apply, pow_toEnd_e_pow_toEnd_f_self P i, map_smul,
+  rw [pow_succ' (toEnd K L M e), mul_apply_eq_comp, pow_toEnd_e_pow_toEnd_f_self P i, map_smul,
     toEnd_apply_apply, P.lie_e, smul_zero]
 
 end CommRing
@@ -239,7 +239,7 @@ theorem ad_pow_lie_eq_zero_of_isSl2Triple_of_lie_h_eq_smul_of_lie_f_eq_zero
         (hasPrimitiveVectorWith_symm_of_ne_zero_of_lie_h_eq_smul_of_lie_f_eq_zero
           (K := K) ht hm hhm hfm)
     have h0 := pow_toEnd_f_toNat_add_one_eq_zero_of_hasPrimitiveVectorWith (K := K) P
-    rw [pow_succ, Module.End.mul_apply, LieModule.toEnd_apply_apply] at h0
+    rw [pow_succ, mul_apply_eq_comp, LieModule.toEnd_apply_apply] at h0
     -- `LieAlgebra.ad` is definitionally the adjoint `LieModule.toEnd`.
     exact h0
 
@@ -426,7 +426,7 @@ noncomputable def lieModuleEquivOfHasPrimitiveVectorWith
       have he : ∀ w : M, φ ⁅e, w⁆ = ⁅e, φ w⁆ := by
         refine key e fun i ↦ ?_
         rcases i with _ | i
-        · rw [pow_zero, Module.End.one_apply, pow_zero, Module.End.one_apply, P.lie_e, P'.lie_e,
+        · rw [pow_zero, one_apply_eq_self, pow_zero, one_apply_eq_self, P.lie_e, P'.lie_e,
             map_zero]
         · rw [P.lie_e_pow_succ_toEnd_f, P'.lie_e_pow_succ_toEnd_f, map_smul, hψ]
       intro x y

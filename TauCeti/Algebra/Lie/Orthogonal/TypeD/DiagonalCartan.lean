@@ -106,6 +106,18 @@ theorem typeDDiagonalMatrix_apply (d : ι → K) (i j : ι ⊕ ι) :
 
 end NegZero
 
+section NegZeroClass
+
+variable [NegZeroClass K] [DecidableEq ι]
+
+/-- `diag(d, -d)` as a block matrix. -/
+theorem typeDDiagonalMatrix_eq_fromBlocks (d : ι → K) :
+    typeDDiagonalMatrix d = fromBlocks (diagonal d) 0 0 (-diagonal d) := by
+  rw [typeDDiagonalMatrix, typeDDiagonalValue, Pi.neg_def d, ← fromBlocks_diagonal,
+    ← diagonal_neg]
+
+end NegZeroClass
+
 section Ring
 
 variable [Ring K]

@@ -168,18 +168,25 @@ private lemma pontryaginChainMap_self [IsCommMonObj G]
       abel
   -- and it vanishes on the diagonal of each simplex, hence on the whole diagonal
   have hdiag (d : ((TauCeti.singularChains k).obj G).X 1) : B d d = 0 := by
-    obtain ⟨f, rfl⟩ := (TauCeti.singularChainsLinearEquivFinsupp k G 1).symm.surjective d
+    -- the singular `1`-chains are the finitely supported functions on singular `1`-simplices
+    let e : ((TauCeti.singularChains k).obj G).X 1 ≃ₗ[k] ((toSSet.obj G) _⦋1⦌ →₀ k) :=
+      (toSSet.obj G).chainsLinearEquivFinsupp k 1
+    obtain ⟨f, rfl⟩ := e.symm.surjective d
     induction f using Finsupp.induction_linear with
     | zero => simp
     | add f g hf hg =>
-      have h := LinearMap.congr_fun₂ hanti
-        ((TauCeti.singularChainsLinearEquivFinsupp k G 1).symm f)
-        ((TauCeti.singularChainsLinearEquivFinsupp k G 1).symm g)
+      have h := LinearMap.congr_fun₂ hanti (e.symm f) (e.symm g)
       simp only [LinearMap.add_apply, LinearMap.flip_apply, LinearMap.zero_apply] at h
       simp only [map_add, LinearMap.add_apply, hf, hg, zero_add, add_zero]
       rw [add_comm, h]
     | single σ a =>
-      rw [TauCeti.singularChainsLinearEquivFinsupp_symm_single, TauCeti.simplexChain_eq_smul,
+      -- `SSet.chainsLinearEquivFinsupp_symm_single` holds as stated here only up to unfolding the
+      -- local abbreviation `e` and the `abbrev` `TauCeti.simplexChain σ a`, which is
+      -- `(toSSet.obj G).ιChainComplex σ a` with coefficients `ModuleCat.of k k`; stating it in the
+      -- abbreviated form lets the rewrites below see `simplexChain` and `B`
+      have hsingle : e.symm (Finsupp.single σ a) = TauCeti.simplexChain σ a :=
+        SSet.chainsLinearEquivFinsupp_symm_single _ σ a
+      rw [hsingle, TauCeti.simplexChain_eq_smul,
         map_smul, map_smul, LinearMap.smul_apply, hB, simplexMul_comm ((toSSet.obj G).σ 1 σ),
         sub_self, smul_zero, smul_zero]
   exact hdiag c

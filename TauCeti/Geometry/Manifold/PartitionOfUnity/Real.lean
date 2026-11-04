@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Calculus.Deriv.LocallyFinite
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Smooth partitions of unity of the real line
@@ -16,13 +18,16 @@ The real line has a smooth partition of unity indexed by `ℤ` whose `k`-th func
 in `(k - 1, k + 1)` (`TauCeti.exists_smoothPartitionOfUnity_isSubordinate_Ioo_int`). Gluing
 small constant multiples of its functions puts a positive `C¹` function with derivative bounded
 by `1` below any positive continuous function
-(`Continuous.exists_contDiff_pos_le_abs_deriv_le_one`).
+(`Continuous.exists_contDiff_pos_le_abs_deriv_le_one`). Above any continuous function there is
+a smooth function which is constant near each member of a locally finite family of pairwise
+disjoint compact sets, with values there above prescribed constants
+(`Continuous.exists_contDiff_lt_eventuallyEq_const`).
 -/
 
 public section
 
 open Set
-open scoped Manifold
+open scoped Manifold ContDiff
 
 namespace TauCeti
 
@@ -97,3 +102,63 @@ theorem Continuous.exists_contDiff_pos_le_abs_deriv_le_one {δ : ℝ → ℝ} (h
       rw [deriv_const_mul _ ((hρd k).differentiable one_ne_zero).differentiableAt]
       exact hcB k x
     exact this.trans hs1'
+
+open Filter Function Metric Topology in
+/-- Let `K i` be pairwise disjoint compact subsets of `ℝ` forming a locally finite family. Above a
+continuous function `G` there is a smooth function `F` which is constant on a neighbourhood of
+each `K i`, with a value there above a prescribed constant `M i`. -/
+theorem Continuous.exists_contDiff_lt_eventuallyEq_const {G : ℝ → ℝ} (hG : Continuous G)
+    {ι : Type*} {K : ι → Set ℝ} (hK : ∀ i, IsCompact (K i)) (hdisj : Pairwise (Disjoint on K))
+    (hlf : LocallyFinite K) (M : ι → ℝ) :
+    ∃ F : ℝ → ℝ, ContDiff ℝ ∞ F ∧ (∀ x, G x < F x) ∧
+      ∀ i, ∃ c, M i < c ∧ ∀ᶠ x in 𝓝ˢ (K i), F x = c := by
+  -- Neighbourhoods `V i ⊆ D i ⊆ W i ⊆ C i` of `K i`, the thickenings by `r i / 2` (open and
+  -- closed) and by `r i` (open and closed). The `D i` form a locally finite family and the
+  -- compact sets `C i` are pairwise disjoint.
+  obtain ⟨δ, hδ, hδd⟩ := hlf.exists_cthickenings_pairwiseDisjoint hK hdisj
+  set r : ι → ℝ := fun i ↦ min (δ i) 1
+  have hr0 (i : ι) : 0 < r i := lt_min (hδ i) one_pos
+  have hCd : Pairwise (Disjoint on fun i ↦ cthickening (r i) (K i)) := fun i j hij ↦
+    (hδd hij).mono (cthickening_mono (min_le_left _ _) _) (cthickening_mono (min_le_left _ _) _)
+  have hD : LocallyFinite fun i ↦ cthickening (r i / 2) (K i) :=
+    hlf.cthickening (R := 1) fun i ↦ by linarith [min_le_right (δ i) 1]
+  have hDW (i : ι) : cthickening (r i / 2) (K i) ⊆ thickening (r i) (K i) :=
+    cthickening_subset_thickening' (hr0 i) (half_lt_self (hr0 i)) _
+  -- The value `c i` near `K i` lies above `G` on `C i` and above `M i`.
+  have hB (i : ι) : ∃ B, ∀ y ∈ cthickening (r i) (K i), G y ≤ B :=
+    (hK i).cthickening.bddAbove_image hG.continuousOn |>.imp fun _ hB y hy ↦
+      hB (mem_image_of_mem _ hy)
+  choose B hB using hB
+  set c : ι → ℝ := fun i ↦ max (M i + 1) (B i + 1)
+  -- Glue the constraints `G < F`, and `F = c i` on `V i`, by a smooth partition of unity.
+  obtain ⟨F, hF⟩ := exists_contMDiffMap_forall_mem_convex_of_local_const 𝓘(ℝ, ℝ) (n := ⊤)
+    (t := fun x ↦ Ioi (G x) ∩ ⋂ i, ⋂ (_ : x ∈ thickening (r i / 2) (K i)), {c i})
+    (fun x ↦ (convex_Ioi _).inter <| convex_iInter fun i ↦ convex_iInter fun _ ↦
+      convex_singleton _) fun x ↦ by
+      by_cases hx : ∃ i, x ∈ cthickening (r i / 2) (K i)
+      · -- Near a point of `D i`, only the constraint `F = c i` is active.
+        obtain ⟨i, hi⟩ := hx
+        refine ⟨c i, ?_⟩
+        filter_upwards [isOpen_thickening.mem_nhds (hDW i hi)] with y hy
+        have hyC := thickening_subset_cthickening _ _ hy
+        refine ⟨mem_Ioi.2 ((hB i y hyC).trans_lt ((lt_add_one _).trans_le (le_max_right _ _))),
+          mem_iInter₂.2 fun j hj ↦ ?_⟩
+        obtain rfl : j = i := by
+          by_contra hji
+          exact (hCd hji).ne_of_mem
+            (thickening_subset_cthickening_of_le (half_le_self (hr0 j).le) _ hj) hyC rfl
+        rfl
+      · -- Away from the closed union of the `D i`, only the constraint `G < F` is active.
+        push Not at hx
+        refine ⟨G x + 1, ?_⟩
+        have hcl : IsClosed (⋃ i, cthickening (r i / 2) (K i)) :=
+          hD.isClosed_iUnion fun _ ↦ isClosed_cthickening
+        filter_upwards [hcl.isOpen_compl.mem_nhds (by simpa using hx),
+          hG.continuousAt.eventually_lt continuousAt_const (lt_add_one (G x))] with y hy hyG
+        refine ⟨hyG, mem_iInter₂.2 fun j hj ↦ ?_⟩
+        exact absurd (mem_iUnion.2 ⟨j, thickening_subset_cthickening _ _ hj⟩) hy
+  refine ⟨F, F.contMDiff.contDiff, fun x ↦ (hF x).1, fun i ↦
+    ⟨c i, (lt_add_one _).trans_le (le_max_left _ _), ?_⟩⟩
+  filter_upwards [isOpen_thickening.mem_nhdsSet.2 (self_subset_thickening (half_pos (hr0 i)) _)]
+    with y hy
+  exact mem_singleton_iff.1 (mem_iInter₂.1 (hF y).2 i hy)

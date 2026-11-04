@@ -282,7 +282,7 @@ theorem hilbertSymbol_two_unramified [Invertible (2 : K)] {Δ : Kˣ}
     Units.ext (by simp)
   rw [hilbertSymbol_comm, hilbertSymbol_unramified hΔ, hunit, normalizedValuation_natCast,
     toAdd_ofAdd]
-  simp only [Int.even_coe_nat, dyadicLevel_def]
+  simp only [Int.even_natCast, dyadicLevel_def]
   rcases Nat.even_or_odd (natCastValuation K 2 (by exact_mod_cast h2)) with h | h
   · simp [h, h.neg_one_pow]
   · simp [Nat.not_even_iff_odd.2 h, h.neg_one_pow]
