@@ -48,10 +48,7 @@ private theorem coeff_mul_X_pow_sub_mul_sum_eq {σ R : Type*} [CommRing R]
   have hPX : coeff μ₀ (P * X i₀ ^ N) = 0 := by
     rw [X_pow_eq, coeff_mul_monomial]
     split_ifs with hle
-    · exfalso
-      have h := hle i₀
-      rw [Finsupp.single_eq_same] at h
-      omega
+    · have h := hle i₀; rw [Finsupp.single_eq_same] at h; omega
     · rfl
   have hQX_pos {m : ℕ} (hm : 0 < m) : coeff μ₀ (Q * X i₀ ^ m) = 0 := by
     rw [X_pow_eq, coeff_mul_monomial]
@@ -59,9 +56,7 @@ private theorem coeff_mul_X_pow_sub_mul_sum_eq {σ R : Type*} [CommRing R]
     · rw [mul_one]
       by_contra hne
       have hmin_sub := hQ_min (μ₀ - Finsupp.single i₀ m) hne
-      have hm_le : m ≤ μ₀ i₀ := by
-        have h := hle i₀
-        rwa [Finsupp.single_eq_same] at h
+      have hm_le : m ≤ μ₀ i₀ := by simpa only [Finsupp.single_eq_same] using hle i₀
       simp only [Finsupp.coe_tsub, Pi.sub_apply, Finsupp.single_eq_same] at hmin_sub
       omega
     · rfl
@@ -72,10 +67,8 @@ private theorem coeff_mul_X_pow_sub_mul_sum_eq {σ R : Type*} [CommRing R]
     · rw [Nat.sub_self, pow_zero, mul_one, mul_comm, coeff_C_mul]
     · intro k hk hk_ne
       have hkN : k < N := Finset.mem_range.mp hk
-      have hm : 0 < N - 1 - k := by omega
-      rw [← mul_assoc, mul_comm Q, mul_assoc, coeff_C_mul, hQX_pos hm, mul_zero]
-    · intro hnot
-      exact absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
+      rw [← mul_assoc, mul_comm Q, mul_assoc, coeff_C_mul, hQX_pos (by omega), mul_zero]
+    · exact fun hnot ↦ absurd (Finset.mem_range.mpr (Nat.sub_lt hN_pos one_pos)) hnot
   rw [map_sub, hPX, hQP, zero_sub]
 
 end MvPowerSeries
@@ -306,8 +299,7 @@ by `(‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1)`. -/
 private theorem norm_coeff_mul_prod_le_of_norm_rem_le
     (i₀ : σ) {a : K} (ha_pos : 0 < ‖a‖) (P Q : Tate)
     {μ₀ : σ →₀ ℕ} (hQ_min : ∀ μ, coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0 → μ₀ i₀ ≤ μ i₀)
-    {N : ℕ} (hNd : μ₀ i₀ < N)
-    (rem : Tate)
+    {N : ℕ} (hNd : μ₀ i₀ < N) (rem : Tate)
     (hrem_def :
       let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
       rem = P * X₀ ^ N -
@@ -316,16 +308,11 @@ private theorem norm_coeff_mul_prod_le_of_norm_rem_le
     ‖coeff μ₀ (Q : _root_.MvPowerSeries σ K)‖ * μ₀.prod (c · ^ ·) ≤
       (‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1) := by
   have hc₀ : 0 < c i₀ := Fact.out
-  have hrem_upper : ‖rem‖ ≤ ‖a‖ ^ (N ^ 2) * ((‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1)) := by
-    calc ‖rem‖
-        ≤ (‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1)) * ‖Q‖ * c i₀ ^ N := hrem_norm
-      _ = ‖a‖ ^ ((N + 1) ^ 2) * (‖Q‖ / c i₀) := by
-          rw [pow_succ (c i₀) N]
-          field_simp [hc₀.ne']
+  have hrem_upper : ‖rem‖ ≤ ‖a‖ ^ (N ^ 2) * ((‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1)) :=
+    calc ‖rem‖ ≤ (‖a‖ ^ ((N + 1) ^ 2) / c i₀ ^ (N + 1)) * ‖Q‖ * c i₀ ^ N := hrem_norm
+      _ = ‖a‖ ^ ((N + 1) ^ 2) * (‖Q‖ / c i₀) := by rw [pow_succ (c i₀) N]; field_simp [hc₀.ne']
       _ = ‖a‖ ^ (N ^ 2) * ((‖Q‖ / c i₀) * ‖a‖ ^ (2 * N + 1)) := by
-          have hexp : (N + 1) ^ 2 = N ^ 2 + (2 * N + 1) := by ring
-          rw [hexp, pow_add]
-          ring
+          rw [show (N + 1) ^ 2 = N ^ 2 + (2 * N + 1) by ring, pow_add]; ring
   have hN_pos : 0 < N := (Nat.zero_le _).trans_lt hNd
   have hcoeff_rem : coeff μ₀ (rem : _root_.MvPowerSeries σ K) =
       -(a ^ (N ^ 2) * coeff μ₀ (Q : _root_.MvPowerSeries σ K)) := by
@@ -365,8 +352,7 @@ theorem not_completeSpace_gaussFractionField :
   let X₀ : Tate := ⟨X i₀, isRestricted_monomial c (Finsupp.single i₀ 1) (1 : K)⟩
   have hX₀_F_norm : ‖algebraMap Tate F X₀‖ = c i₀ := by
     rw [norm_algebraMap_gaussFractionField, norm_X]
-  have hX₀_F_ne : algebraMap Tate F X₀ ≠ 0 :=
-    norm_ne_zero_iff.mp (hX₀_F_norm.trans_ne hc₀.ne')
+  have hX₀_F_ne : algebraMap Tate F X₀ ≠ 0 := norm_ne_zero_iff.mp (hX₀_F_norm.trans_ne hc₀.ne')
   obtain ⟨z, hz_bound⟩ := exists_tendsto_sum_pow_sq_div_pow (c := c) i₀ ha_pos ha1 hac
   let s (N : ℕ) : F := ∑ k ∈ Finset.range N,
     algebraMap K F (a ^ ((k + 1) ^ 2)) / (algebraMap Tate F X₀) ^ (k + 1)
@@ -375,9 +361,8 @@ theorem not_completeSpace_gaussFractionField :
     IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hQ_mem
   -- Choose a multi-index `μ₀` in the support of `Q` of minimal `i₀`-degree `d`.
   have hQ_supp : ∃ d : ℕ, ∃ μ : σ →₀ ℕ, μ i₀ = d ∧ coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0 := by
-    have hQ_coe : (Q : _root_.MvPowerSeries σ K) ≠ 0 :=
-      Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hQ_mem)
-    obtain ⟨μ, hμ⟩ := not_forall.mp (mt _root_.MvPowerSeries.ext hQ_coe)
+    obtain ⟨μ, hμ⟩ := not_forall.mp (mt _root_.MvPowerSeries.ext
+      (Subtype.coe_ne_coe.mpr (nonZeroDivisors.ne_zero hQ_mem)))
     exact ⟨μ i₀, μ, rfl, by simpa using hμ⟩
   obtain ⟨μ₀, hμ₀_deg, hμ₀_ne⟩ := Nat.find_spec hQ_supp
   have hQ_min (μ : σ →₀ ℕ) (hμ : coeff μ (Q : _root_.MvPowerSeries σ K) ≠ 0) : μ₀ i₀ ≤ μ i₀ :=
@@ -389,12 +374,10 @@ theorem not_completeSpace_gaussFractionField :
     simp only [s, P_num, Finset.sum_mul, map_sum, map_mul, map_pow,
       ← IsScalarTower.algebraMap_apply K Tate F]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hsplit : N = (k + 1) + (N - 1 - k) := by
-      have := Finset.mem_range.mp hk
-      omega
+    have hkN := Finset.mem_range.mp hk
     rw [div_eq_mul_inv, mul_assoc]
     refine congrArg (algebraMap K F a ^ ((k + 1) ^ 2) * ·) ?_
-    nth_rw 1 [hsplit]
+    nth_rw 1 [show N = (k + 1) + (N - 1 - k) by omega]
     rw [pow_add _ (k + 1) (N - 1 - k), inv_mul_cancel_left₀ (pow_ne_zero _ hX₀_F_ne)]
   -- Compare weighted coefficient lower bound with the approximation upper bound as `N → ∞`.
   let δ : ℝ := ‖coeff μ₀ (Q : _root_.MvPowerSeries σ K)‖ * μ₀.prod (c · ^ ·)
@@ -416,9 +399,8 @@ theorem not_completeSpace_gaussFractionField :
       tendsto_const_nhds.mul (tendsto_pow_atTop_nhds_zero_of_lt_one ha_pos.le ha1)
   obtain ⟨K₀, hK₀⟩ := (hlim0.eventually (gt_mem_nhds hδ_pos)).exists_forall_of_atTop
   set N := max (μ₀ i₀ + 1) K₀
-  have hNd : μ₀ i₀ < N := Nat.lt_of_succ_le (le_max_left _ _)
   have hK_le : K₀ ≤ N := le_max_right _ _
-  exact (hbound_N hNd).not_gt (hK₀ (2 * N + 1) (by omega))
+  exact (hbound_N (Nat.lt_of_succ_le (le_max_left _ _))).not_gt (hK₀ (2 * N + 1) (by omega))
 
 end Incomplete
 
