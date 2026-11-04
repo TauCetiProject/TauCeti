@@ -261,7 +261,7 @@ variable
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {η : ℝ → N}
 
 /-- Pairing a `C^n` curve with a piecewise `C^n` curve gives a piecewise `C^n` curve. -/
-theorem IsPiecewiseContMDiffOn.prodMk_of_contMDiffOn
+private theorem IsPiecewiseContMDiffOn.prodMk_of_contMDiffOn
     (hη : IsPiecewiseContMDiffOn J n η a b)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Icc a b)) :
     IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) a b := by
