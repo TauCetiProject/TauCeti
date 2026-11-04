@@ -45,6 +45,26 @@ variable {𝕜 A M ι κ : Type*} [RCLike 𝕜] [Semiring A] [StarRing A]
 
 namespace OrthonormalBasis
 
+omit [Coalgebra 𝕜 A] [Comodule 𝕜 A M] in
+private theorem toMatrix_map_conjTranspose_mul_self [DecidableEq κ]
+    (b : OrthonormalBasis ι 𝕜 M) (c : OrthonormalBasis κ 𝕜 M) :
+    ((b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A))ᴴ *
+      (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) = 1 := by
+  classical
+  rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
+    c.coe_toBasis, b.toMatrix_orthonormalBasis_conjTranspose_mul_self c]
+  simp
+
+omit [Coalgebra 𝕜 A] [Comodule 𝕜 A M] in
+private theorem toMatrix_map_self_mul_conjTranspose [DecidableEq ι]
+    (b : OrthonormalBasis ι 𝕜 M) (c : OrthonormalBasis κ 𝕜 M) :
+    (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) *
+      ((b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A))ᴴ = 1 := by
+  classical
+  rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
+    c.coe_toBasis, b.toMatrix_orthonormalBasis_self_mul_conjTranspose c]
+  simp
+
 /-- An orthonormal change of basis conjugates the coefficient matrix by the scalar
 change-of-basis matrix. The index types need not be the same. -/
 theorem coefficientMatrix_eq_conjTranspose_mul
@@ -54,13 +74,8 @@ theorem coefficientMatrix_eq_conjTranspose_mul
         coefficientMatrix (C := A) b.toBasis *
           (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) := by
   classical
-  have hP : ((b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A))ᴴ *
-      (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A) = 1 := by
-    rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
-      c.coe_toBasis, b.toMatrix_orthonormalBasis_conjTranspose_mul_self c]
-    simp
   rw [Matrix.mul_assoc, b.toBasis.coefficientMatrix_mul_toMatrix c.toBasis,
-    ← Matrix.mul_assoc, hP, Matrix.one_mul]
+    ← Matrix.mul_assoc, b.toMatrix_map_conjTranspose_mul_self c, Matrix.one_mul]
 
 /-- Transfer unitarity across an orthonormal change of coefficient basis. -/
 private theorem coefficientMatrix_mem_unitary [DecidableEq ι] [DecidableEq κ]
@@ -68,30 +83,23 @@ private theorem coefficientMatrix_mem_unitary [DecidableEq ι] [DecidableEq κ]
     (h : coefficientMatrix (C := A) b.toBasis ∈ unitary (Matrix ι ι A)) :
     coefficientMatrix (C := A) c.toBasis ∈ unitary (Matrix κ κ A) := by
   let P := (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A)
-  have hP : Pᴴ * P = 1 := by
-    dsimp [P]
-    rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
-      b.toMatrix_orthonormalBasis_conjTranspose_mul_self c]
-    simp
-  have hP' : P * Pᴴ = 1 := by
-    dsimp [P]
-    rw [← Matrix.conjTranspose_map _ algebraMap_star_comm, ← Matrix.map_mul,
-      b.toMatrix_orthonormalBasis_self_mul_conjTranspose c]
-    simp
+  have hP : Pᴴ * P = 1 := b.toMatrix_map_conjTranspose_mul_self c
+  have hP' : P * Pᴴ = 1 := b.toMatrix_map_self_mul_conjTranspose c
+  -- Cancel the rectangular inverse pair before applying either unitary identity.
+  have hcancel (X Y : Matrix ι ι A) :
+      (Pᴴ * X * P) * (Pᴴ * Y * P) = Pᴴ * (X * Y) * P := by
+    calc
+      _ = Pᴴ * (X * (P * Pᴴ) * Y) * P := by simp only [Matrix.mul_assoc]
+      _ = _ := by rw [hP', Matrix.mul_one]
   rw [b.coefficientMatrix_eq_conjTranspose_mul c]
-  -- Use the two rectangular inverse identities, rather than a square change-of-basis unit.
   rw [Unitary.mem_iff, Matrix.star_eq_conjTranspose] at h ⊢
   constructor
-  · simp only [Matrix.conjTranspose_mul, Matrix.conjTranspose_conjTranspose,
-      Matrix.mul_assoc]
-    rw [← Matrix.mul_assoc P Pᴴ, hP', Matrix.one_mul,
-      ← Matrix.mul_assoc _ (coefficientMatrix (C := A) b.toBasis), h.1,
-      Matrix.one_mul, hP]
-  · simp only [Matrix.conjTranspose_mul, Matrix.conjTranspose_conjTranspose,
-      Matrix.mul_assoc]
-    rw [← Matrix.mul_assoc P Pᴴ, hP', Matrix.one_mul,
-      ← Matrix.mul_assoc _ (coefficientMatrix (C := A) b.toBasis)ᴴ, h.2,
-      Matrix.one_mul, hP]
+  · simpa only [h.1, Matrix.mul_one, hP, Matrix.conjTranspose_mul,
+      Matrix.conjTranspose_conjTranspose, Matrix.mul_assoc] using
+      hcancel (coefficientMatrix (C := A) b.toBasis)ᴴ (coefficientMatrix (C := A) b.toBasis)
+  · simpa only [h.2, Matrix.mul_one, hP, Matrix.conjTranspose_mul,
+      Matrix.conjTranspose_conjTranspose, Matrix.mul_assoc] using
+      hcancel (coefficientMatrix (C := A) b.toBasis) (coefficientMatrix (C := A) b.toBasis)ᴴ
 
 /-- Unitarity of the coefficient matrix is independent of the orthonormal basis, even when
 the two bases use different finite index types. -/
