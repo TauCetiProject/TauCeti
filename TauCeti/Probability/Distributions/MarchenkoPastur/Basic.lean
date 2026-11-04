@@ -229,8 +229,9 @@ theorem support_marchenkoPastur_of_one_le {y : ℝ≥0} (hy : 1 ≤ y) :
   · have hyr : (1 : ℝ) < y := mod_cast hy'
     have hc : ENNReal.ofReal (((y : ℝ) - 1) / y) ≠ 0 :=
       (ENNReal.ofReal_pos.2 (div_pos (by linarith) (by linarith))).ne'
-    rw [marchenkoPastur_def, Measure.support_add, Measure.support_smul hc, Measure.support_dirac,
-      isClosed_singleton.closure_eq, support_withDensity_inv_semicircleReal, singleton_union]
+    rw [marchenkoPastur_def, Measure.support_add, Measure.support_smul_measure _ _ hc,
+      Measure.support_dirac, isClosed_singleton.closure_eq,
+      support_withDensity_inv_semicircleReal, singleton_union]
 
 /-- The exact topological support of the Marchenko–Pastur law `MP_y`: the interval
 `[(1 - √y)², (1 + √y)²]`, together with `{0}` when `1 < y`. -/

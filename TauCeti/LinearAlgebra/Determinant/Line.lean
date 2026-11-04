@@ -215,7 +215,8 @@ def detLineCongr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M
   TensorProduct.congr
     (LinearEquiv.detLineCongr (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁ e₂ h)))
     (LinearEquiv.detLineCongr
-      (Submodule.Quotient.equiv _ _ e₂ (f.map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.dualMap
+      (Submodule.Quotient.equiv _ _ e₂
+        (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.dualMap
 
 @[simp]
 theorem detLineCongr_tmul (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M')
@@ -224,7 +225,7 @@ theorem detLineCongr_tmul (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
     f.detLineCongr e₁ e₂ h (x ⊗ₜ φ) =
       LinearEquiv.detLineCongr (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁ e₂ h)) x ⊗ₜ
         (φ ∘ₗ (LinearEquiv.detLineCongr (Submodule.Quotient.equiv _ _ e₂
-          (f.map_range_eq_range_of_comp_eq e₁ e₂ h))).symm.toLinearMap) :=
+          (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.toLinearMap) :=
   (rfl)
 
 /-- Transport along the identity square is the identity. -/
@@ -239,8 +240,8 @@ theorem detLineCongr_refl :
     ext x
     simp only [LinearEquiv.ofSubmodules_apply, LinearEquiv.refl_apply]
   have hc : Submodule.Quotient.equiv (range f) (range f) (LinearEquiv.refl R N)
-      (f.map_range_eq_range_of_comp_eq (LinearEquiv.refl R M) (LinearEquiv.refl R N)
-        (by simp)) = LinearEquiv.refl R _ := by
+      (f.map_range_eq_range_of_comp_eq (LinearEquiv.refl R M).surjective (by simp)) =
+        LinearEquiv.refl R _ := by
     rw [Submodule.Quotient.equiv_refl]
     exact LinearEquiv.toLinearMap_injective (Submodule.linearMap_qext _ (by ext; simp))
   refine LinearEquiv.ext fun z ↦ ?_
@@ -262,8 +263,10 @@ theorem detLineCongr_trans (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {k : M'' �
         (e₁'.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq _ _ h')) := by
     ext x
     simp only [LinearEquiv.ofSubmodules_apply, LinearEquiv.trans_apply]
-  have hc := Submodule.Quotient.equiv_trans _ _ _ e₂ e₂' (f.map_range_eq_range_of_comp_eq _ _ h)
-    (g.map_range_eq_range_of_comp_eq _ _ h') (f.map_range_eq_range_of_comp_eq _ _ h'')
+  have hc := Submodule.Quotient.equiv_trans _ _ _ e₂ e₂'
+    (f.map_range_eq_range_of_comp_eq e₁.surjective h)
+    (g.map_range_eq_range_of_comp_eq e₁'.surjective h')
+    (f.map_range_eq_range_of_comp_eq (e₁.trans e₁').surjective h'')
   refine LinearEquiv.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
   | tmul x φ =>
