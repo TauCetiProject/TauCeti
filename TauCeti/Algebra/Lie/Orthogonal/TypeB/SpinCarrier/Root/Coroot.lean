@@ -170,7 +170,7 @@ theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
 theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector n (B := B)) := by
   simpa only [funext (cartanVector_eq_derivationComp_corootCocharacter n (B := B)),
     corootCocharacter_def, derivationCompLieHom_apply] using
-    (SplitTorus.linearIndependent_derivationComp_cocharacter
+    (SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
       (B := B) (weightTorusIntegralCoordinateMap n).hom
       (derivationCompLieHom_weightTorusIntegralCoordinateMap_injective n (B := B)))
 
