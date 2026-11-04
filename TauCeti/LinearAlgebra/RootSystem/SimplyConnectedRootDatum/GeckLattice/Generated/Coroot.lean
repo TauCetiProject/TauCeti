@@ -83,6 +83,7 @@ variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The matrix differential of a simple cocharacter is diagonal, with weight–coroot pairings
 multiplied by its multiplicative tangent parameter. -/
+@[simp↓]
 theorem tangentMatrix_derivationComp_geckGeneratedCorootCocharacter (i : Fin t.rank)
     (d : Derivation R (LaurentPolynomial R)
       (Bialgebra.CounitAlgebra R (LaurentPolynomial R) B)) :
@@ -116,6 +117,16 @@ theorem geckGeneratedCorootVector_def (i : Fin t.rank) :
         (MultiplicativeGroup.tangentLinearEquiv.symm (1 : B)) :=
   (rfl)
 
+/-- The weight-torus differential sends a coordinate tangent vector to its simple-coroot vector. -/
+theorem derivationCompLieHom_geckGeneratedWeightTorusCoordinateMap_tangentBasis
+    (i : Fin t.rank) :
+    derivationCompLieHom (B := B) (t.geckGeneratedWeightTorusCoordinateMap ht R).hom
+        (SplitTorus.tangentBasis (R := R) (B := B) i) =
+      t.geckGeneratedCorootVector ht R (B := B) i := by
+  rw [SplitTorus.derivationCompLieHom_tangentBasis,
+    geckGeneratedCorootVector_def, geckGeneratedCorootCocharacter_def,
+    derivationCompLieHom_apply]
+
 /-- The normalized simple-coroot differential has diagonal entries given by the corresponding
 fundamental-weight coordinates of the Geck weights. -/
 @[simp]
@@ -138,8 +149,8 @@ theorem range_derivationCompLieHom_geckGeneratedWeightTorusCoordinateMap_eq_span
   congr 1
   apply congrArg Set.range
   funext i
-  rw [geckGeneratedCorootVector_def, geckGeneratedCorootCocharacter_def,
-    derivationCompLieHom_apply]
+  rw [← SplitTorus.derivationCompLieHom_tangentBasis,
+    derivationCompLieHom_geckGeneratedWeightTorusCoordinateMap_tangentBasis]
 
 /-- Full character-lattice span makes the generated weight-torus differential injective over
 any coefficient algebra, including nonreduced algebras in bad characteristic. -/
@@ -167,8 +178,8 @@ theorem linearIndependent_geckGeneratedCorootVector
     (t.geckGeneratedWeightTorusCoordinateMap ht R).hom
     (t.derivationCompLieHom_geckGeneratedWeightTorusCoordinateMap_injective ht R hwt) using 1
   funext i
-  rw [geckGeneratedCorootVector_def, geckGeneratedCorootCocharacter_def,
-    derivationCompLieHom_apply]
+  rw [← SplitTorus.derivationCompLieHom_tangentBasis,
+    derivationCompLieHom_geckGeneratedWeightTorusCoordinateMap_tangentBasis]
 
 /-- A basis of the span of the numbered simple-coroot differentials, equivalently the toral
 tangent image, when the Geck weights span the full character lattice. -/
