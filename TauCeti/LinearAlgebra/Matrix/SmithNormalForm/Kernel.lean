@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Module.Submodule.Equiv
@@ -208,5 +209,56 @@ theorem kerEquivProdTorsionOfDiagonalization_symm_apply
     LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply,
     LinearEquiv.coe_ofEq_apply, toLinearEquiv_basisFun_apply]
   rw [funext (f.diagonalKerEquiv_symm_apply d z)]
+
+/-- Fixed vectors after specialization, computed from a diagonalization of `γ - 1`.
+The nonzero diagonal factors retain all torsion in the coefficient ring. -/
+noncomputable def fixedEquivOfDiagonalization (γ : Matrix ι ι R)
+    (U V : GeneralLinearGroup ι R) (d : ι → R)
+    (h : (U : Matrix ι ι R) * (γ - 1) * (V : Matrix ι ι R) = diagonal d)
+    (f : R →+* A) :
+    (γ.map f).mulVecLin.fixedSubmodule ≃ₗ[A]
+      ({i // d i = 0} → A) ×
+        ((i : {i // d i ≠ 0}) → Submodule.torsionBy A A (f (d i))) :=
+  (LinearEquiv.ofEq _ _ (by
+    rw [Matrix.map_sub f (map_sub f), Matrix.map_one f (map_zero f) (map_one f)]
+    ext v
+    simp only [LinearMap.mem_fixedSubmodule_iff, LinearMap.mem_ker,
+      mulVecLin_apply, sub_mulVec, one_mulVec, sub_eq_zero])).trans
+    (kerEquivProdTorsionOfDiagonalization (γ - 1) U V d h f)
+
+/-- The free fixed-vector coordinates are read by the inverse column transformation. -/
+@[simp]
+theorem fixedEquivOfDiagonalization_fst_apply (γ : Matrix ι ι R)
+    (U V : GeneralLinearGroup ι R) (d : ι → R)
+    (h : (U : Matrix ι ι R) * (γ - 1) * (V : Matrix ι ι R) = diagonal d)
+    (f : R →+* A) (v : (γ.map f).mulVecLin.fixedSubmodule) (i : {i // d i = 0}) :
+    (fixedEquivOfDiagonalization γ U V d h f v).1 i =
+      ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
+  simp [fixedEquivOfDiagonalization]
+
+/-- The torsion fixed-vector coordinates are read by the inverse column transformation. -/
+@[simp]
+theorem fixedEquivOfDiagonalization_snd_apply (γ : Matrix ι ι R)
+    (U V : GeneralLinearGroup ι R) (d : ι → R)
+    (h : (U : Matrix ι ι R) * (γ - 1) * (V : Matrix ι ι R) = diagonal d)
+    (f : R →+* A) (v : (γ.map f).mulVecLin.fixedSubmodule) (i : {i // d i ≠ 0}) :
+    ((fixedEquivOfDiagonalization γ U V d h f v).2 i : A) =
+      ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
+  simp [fixedEquivOfDiagonalization]
+
+open Classical in
+/-- Reconstruct a fixed vector by the specialized column transformation. -/
+@[simp]
+theorem fixedEquivOfDiagonalization_symm_apply (γ : Matrix ι ι R)
+    (U V : GeneralLinearGroup ι R) (d : ι → R)
+    (h : (U : Matrix ι ι R) * (γ - 1) * (V : Matrix ι ι R) = diagonal d)
+    (f : R →+* A)
+    (z : ({i // d i = 0} → A) ×
+      ((i : {i // d i ≠ 0}) → Submodule.torsionBy A A (f (d i)))) :
+    ((fixedEquivOfDiagonalization γ U V d h f).symm z : ι → A) =
+      (GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ
+        (fun i ↦ if hi : d i = 0 then z.1 ⟨i, hi⟩ else (z.2 ⟨i, hi⟩).val) := by
+  classical
+  simp [fixedEquivOfDiagonalization]
 
 end Matrix
