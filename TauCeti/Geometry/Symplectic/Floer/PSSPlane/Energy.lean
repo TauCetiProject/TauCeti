@@ -90,7 +90,7 @@ theorem hamiltonianCurvature_pssPlaneEndComponent (ω : SymplecticForm V) (hH : 
       (deriv smoothTransition (P.sign * z.1 - 1) * P.sign) z.1 :=
     (((hasDerivAt_id z.1).const_mul P.sign).sub_const 1).smoothTransition.congr_deriv
       (by simp)
-  rw [pssPlaneEndComponent_one hH, pssPlaneEndComponent_I hH,
+  rw [pssPlaneEndComponent_one, pssPlaneEndComponent_I hH,
     ω.hamiltonianCurvature_continuation (β := fun s ↦ smoothTransition (P.sign * s - 1))
       hβ.differentiableAt hHx, hβ.deriv]
   ring
@@ -145,7 +145,7 @@ theorem integral_floerEnergyDensity_pssPlaneEndComponent (ω : SymplecticForm V)
           (fun t ↦ u (a, t)) -
         ∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature (pssPlaneEndComponent P H 1)
           (pssPlaneEndComponent P H Complex.I) z (u z) := by
-  rw [pssPlaneEndComponent_one hH, pssPlaneEndComponent_I hH]
+  rw [pssPlaneEndComponent_one, pssPlaneEndComponent_I hH]
   exact ω.integral_floerEnergyDensity_continuation_eq_hamiltonianAction_sub
     (β := fun s ↦ smoothTransition (P.sign * s - 1))
     (smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const))

@@ -31,7 +31,8 @@ on both planes (`PSSPlane.sign_mul_re_endCoord`).
 
 From a period-one Hamiltonian `H` this file constructs the perturbation
 `TauCeti.Floer.pssPlanePerturbation`, the one-form `β(σ s - 1) H(t) dt` where `β` is the smooth
-transition from `0` on `(-∞, 1]` to `1` on `[2, ∞)`:
+transition from `0` on `(-∞, 0]` to `1` on `[1, ∞)`, so that the shifted cutoff `β(σ s - 1)`
+transitions across `1 ≤ σ s ≤ 2`:
 
 * `TauCeti.Floer.pssPlanePerturbation_eq_zero_of_norm_le`: it vanishes on the pole disc
   `‖w‖ ≤ exp (2π)`, so near the pole the equation is the unperturbed Cauchy–Riemann equation.
@@ -226,16 +227,17 @@ theorem endAngularForm_endLift (P : PSSPlane) (z v : ℂ) :
     (-P.sign * z + Real.log 2 / (2 * π)) (-P.sign * v)
   rw [Puncture.deriv_cylindricalEndLift, Puncture.endCenter_inf, sub_zero,
     ← endLift_eq_cylindricalEndLift] at h
-  rw [endAngularForm_eq_neg_sign_smul, deriv_endLift, smul_apply,
-    show 2 * π * P.sign * P.endLift z * v = -(2 * π * P.endLift z) * (-P.sign * v) by ring, h,
+  -- Regroup the tangent vector as the image `-(2π φ(z)) (-σ v)` of `-σ v` under the derivative of
+  -- the end lift of the thrice-punctured sphere, so that `h` applies.
+  have hv : 2 * π * P.sign * P.endLift z * v = -(2 * π * P.endLift z) * (-P.sign * v) := by ring
+  rw [endAngularForm_eq_neg_sign_smul, deriv_endLift, smul_apply, hv, h,
     ← Complex.ofReal_neg, Complex.im_ofReal_mul, smul_eq_mul, ← mul_assoc, neg_mul_neg,
     sign_mul_sign, one_mul]
 
 /-- The angular form is smooth away from the pole. -/
 theorem contDiffAt_endAngularForm (P : PSSPlane) {w : ℂ} (hw : w ≠ 0) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n P.endAngularForm w := by
-  rw [show P.endAngularForm = fun w ↦ -P.sign • Puncture.inf.endAngularForm w from
-    funext P.endAngularForm_eq_neg_sign_smul]
+  rw [funext P.endAngularForm_eq_neg_sign_smul]
   exact (contDiffAt_const (c := -P.sign)).smul
     (Puncture.inf.contDiffAt_endAngularForm (by simpa using hw))
 
@@ -295,7 +297,7 @@ variable {M : Type*}
 /-- The Hamiltonian perturbation one-form on the plane `P` given by a period-one Hamiltonian `H`.
 At `w ∈ ℂ` and `x ∈ M` it is the covector `β(σ s(w) - 1) H(t(w), x) dt`, where `(s, t)` are the
 end coordinates, `σ` is the sign of the plane, and `β` is the smooth transition from `0` on
-`(-∞, 1]` to `1` on `[2, ∞)`. -/
+`(-∞, 0]` to `1` on `[1, ∞)`, so that `β(σ s - 1)` transitions across `1 ≤ σ s ≤ 2`. -/
 def pssPlanePerturbation (P : PSSPlane) (H : ℝ → M → ℝ) (w : ℂ) (x : M) : ℂ →L[ℝ] ℝ :=
   (smoothTransition (P.sign * (P.endCoord w).re - 1) * H (P.endCoord w).im x) •
     P.endAngularForm w
@@ -367,11 +369,10 @@ theorem pssPlaneEndComponent_def (P : PSSPlane) (H : ℝ → M → ℝ) (v : ℂ
   (rfl)
 
 /-- In end coordinates the `ds` component of the perturbation vanishes everywhere. -/
-theorem pssPlaneEndComponent_one (hH : Function.Periodic H 1) :
-    pssPlaneEndComponent P H 1 = fun _ _ => 0 := by
+theorem pssPlaneEndComponent_one : pssPlaneEndComponent P H 1 = fun _ _ => 0 := by
   funext z x
-  rw [pssPlaneEndComponent_def, pssPlanePerturbation_endLift hH]
-  simp
+  rw [pssPlaneEndComponent_def, pssPlanePerturbation_def, smul_apply,
+    PSSPlane.endAngularForm_endLift, Complex.one_im, smul_zero]
 
 /-- In end coordinates the `dt` component of the perturbation is `β(σ s - 1) H(t)` everywhere. -/
 theorem pssPlaneEndComponent_I (hH : Function.Periodic H 1) :

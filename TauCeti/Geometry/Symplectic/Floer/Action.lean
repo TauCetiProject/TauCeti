@@ -143,11 +143,9 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticFor
       ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
   have h := ω.integral_floerEnergyDensity_continuation_eq_hamiltonianAction_sub
     (β := fun _ ↦ 1) contDiff_const hH hU hu hab hRU hper
-  simp only [one_mul] at h
-  refine h.trans ?_
-  rw [show (fun z ↦ ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ H w.2 y) z (u z)) =
-      fun _ ↦ 0 from funext fun z ↦ ω.hamiltonianCurvature_cylindrical H z (u z),
-    integral_zero, sub_zero]
+  have hR (z : ℝ × ℝ) : ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ H w.2 y) z (u z) = 0 :=
+    ω.hamiltonianCurvature_cylindrical H z (u z)
+  simpa only [one_mul, hR, integral_zero, sub_zero] using h
 
 /-- The Floer energy density of a solution of the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the cylindrical perturbation `K = H_t dt` is
