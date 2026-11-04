@@ -43,6 +43,8 @@ of `R` to be bijective and so applies to every ring of sections, including the z
 * `AlgebraicGeometry.Scheme.IsPerfect.isReduced`: a perfect scheme is reduced.
 * `AlgebraicGeometry.Scheme.IsPerfect.of_etale`: a scheme étale over a perfect scheme is perfect;
   in particular open subschemes of a perfect scheme are perfect.
+* `AlgebraicGeometry.Scheme.IsPerfect.of_openCover`: a scheme covered by perfect open subschemes
+  is perfect.
 * `AlgebraicGeometry.Scheme.IsPerfect.pullback`: a fibre product of perfect schemes over a perfect
   scheme is perfect.
 * `AlgebraicGeometry.Scheme.not_isPerfect_Spec_polynomial`: the affine line `Spec R[X]` over a
@@ -147,6 +149,18 @@ theorem of_etale (f : X ⟶ Y) [Etale f] [h : IsPerfect Y p] : IsPerfect X p :=
 /-- An open subscheme of a perfect scheme is perfect. -/
 instance opens [IsPerfect X p] (U : X.Opens) : IsPerfect U p :=
   of_etale U.ι
+
+/-- **Perfectness is local**: a scheme on which `p` vanishes is perfect if it is covered by perfect
+open subschemes, since its absolute Frobenius restricts to theirs. -/
+theorem of_openCover (𝒰 : X.OpenCover) (h𝒰 : ∀ i, IsPerfect (𝒰.X i) p)
+    (hX : (p : Γ(X, ⊤)) = 0) : IsPerfect X p := by
+  refine (isPerfect_iff_isIso hX).2 ((isomorphisms.iff _).1 ?_)
+  refine MorphismProperty.IsLocalAtTarget.of_zeroHypercover 𝒰 fun i ↦ ?_
+  -- Over the open `𝒰.X i`, the absolute Frobenius of `X` is that of `𝒰.X i`.
+  have h := ((𝒰.f i).isPullback_frobenius_of_etale p hX).flip
+  have := (h𝒰 i).isIso_frobenius
+  rw [← h.isoPullback_inv_snd]
+  exact (isomorphisms.iff _).2 inferInstance
 
 /-- **A fibre product of perfect schemes over a perfect scheme is perfect**: its absolute Frobenius
 is the map induced by the absolute Frobenii of the factors and of the base. -/
