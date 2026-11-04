@@ -43,8 +43,7 @@ theorem ncard_color_ne_comap_le [Finite W]
   apply Set.ncard_le_ncard_of_injOn (Set.powersetCard.map 3 f)
   · intro s hs
     simpa only [Set.mem_ofPred, color_comap] using hs
-  · intro s _ t _ h
-    exact Subtype.ext (Finset.map_injective f (congrArg Subtype.val h))
+  · exact (Set.powersetCard.map_injective 3 f).injOn
 
 /-- Extending with a common default color creates exactly the images of the original edits. -/
 theorem color_ne_extend_eq_image (H H' : Colored3Graph κ V) (f : V ↪ W) (c : κ) :
@@ -69,8 +68,7 @@ theorem ncard_color_ne_extend (H H' : Colored3Graph κ V) (f : V ↪ W) (c : κ)
     {s | (H.extend f c).color s ≠ (H'.extend f c).color s}.ncard =
       {s | H.color s ≠ H'.color s}.ncard := by
   rw [color_ne_extend_eq_image]
-  exact Set.ncard_image_of_injective _ fun s t h ↦
-    Subtype.ext (Finset.map_injective f (congrArg Subtype.val h))
+  exact Set.ncard_image_of_injective _ (Set.powersetCard.map_injective 3 f)
 
 /-- Restricting a coloring cannot increase its unnormalized edit count. -/
 theorem editDiscrepancy3_comap_mul_card_pow_le [Finite W]

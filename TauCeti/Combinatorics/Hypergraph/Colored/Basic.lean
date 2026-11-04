@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Set.PowersetCard
+public import TauCeti.Data.Set.PowersetCard
 
 /-!
 # Totally colored three-uniform hypergraphs
@@ -75,10 +75,8 @@ noncomputable def extend (H : Colored3Graph κ V) (f : V ↪ W) (c : κ) : Color
 theorem color_extend_map (H : Colored3Graph κ V) (f : V ↪ W) (c : κ)
     (s : Set.powersetCard V 3) :
     (H.extend f c).color (Set.powersetCard.map 3 f s) = H.color s := by
-  have hinj : Function.Injective (Set.powersetCard.map 3 f) := fun s t h ↦
-    Subtype.ext (Finset.map_injective f (congrArg Subtype.val h))
   simp only [extend]
-  exact hinj.extend_apply _ _ s
+  exact (Set.powersetCard.map_injective 3 f).extend_apply _ _ s
 
 /-- A triple outside the image of the induced triple map receives the default color. -/
 @[simp]
