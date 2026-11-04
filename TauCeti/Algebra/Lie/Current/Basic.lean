@@ -263,6 +263,28 @@ theorem lie_mem_orderSubmodule {M N : ℤ} {u v : currentAlgebra R L}
   simpa only [TensorProduct.smul_tmul', smul_eq_mul] using
     smul_mem_orderSubmodule R L hf (tmul_mem_orderSubmodule R L N hg ⁅x, y⁆)
 
+/-- The Lie subalgebra of currents of order at least the nonnegative integer `n`. -/
+def orderLieSubalgebra (n : ℕ) : LieSubalgebra R (currentAlgebra R L) where
+  toSubmodule := orderSubmodule R L n
+  lie_mem' {u v} hu hv := orderSubmodule_antitone R L (by omega : (n : ℤ) ≤ n + n)
+    (lie_mem_orderSubmodule R L hu hv)
+
+/-- The underlying submodule of `a_n` is the order submodule. -/
+@[simp]
+theorem orderLieSubalgebra_toSubmodule (n : ℕ) :
+    (orderLieSubalgebra R L n).toSubmodule = orderSubmodule R L n :=
+  (rfl)
+
+/-- Membership in `a_n` is the order condition. -/
+@[simp]
+theorem mem_orderLieSubalgebra (n : ℕ) (u : currentAlgebra R L) :
+    u ∈ orderLieSubalgebra R L n ↔ u ∈ orderSubmodule R L n :=
+  (Iff.rfl)
+
+/-- The current Lie subalgebras decrease with the order. -/
+theorem orderLieSubalgebra_antitone : Antitone (orderLieSubalgebra R L) :=
+  fun m n h u hu ↦ orderSubmodule_antitone R L (by exact_mod_cast h) hu
+
 /-- **Currents of a perfect Lie algebra are sums of brackets of higher-order currents.** If `L` is
 perfect, every current of order at least `M + N` is a linear combination of brackets of currents
 of orders at least `M` and `N`. -/
