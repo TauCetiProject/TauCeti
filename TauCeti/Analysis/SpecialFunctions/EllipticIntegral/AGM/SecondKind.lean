@@ -166,19 +166,21 @@ The differences of squares equal the squared half-gaps from the preceding step. 
 theorem legendreEc_eq_agmSeries {k : ℝ} (hk : k ^ 2 < 1) :
     legendreEc k = legendreK k * (1 - k ^ 2 / 2 - ∑' n,
       (2 : ℝ) ^ n *
-        (((NNReal.agmSequences 1 (.mk √(1 - k ^ 2) (sqrt_nonneg _)) n).2 : ℝ) ^ 2 -
-          ((NNReal.agmSequences 1 (.mk √(1 - k ^ 2) (sqrt_nonneg _)) n).1 : ℝ) ^ 2)) := by
+        (((NNReal.agmSequences 1 (√(1 - k ^ 2)).toNNReal n).2 : ℝ) ^ 2 -
+          ((NNReal.agmSequences 1 (√(1 - k ^ 2)).toNNReal n).1 : ℝ) ^ 2)) := by
   have hc : 0 < √(1 - k ^ 2) := sqrt_pos.2 (by linarith)
   have hc₁ : √(1 - k ^ 2) ≤ 1 := sqrt_le_one.2 (by nlinarith)
   have h := hasSum_agmSequences_secondKind (a := 1)
-    (b := .mk √(1 - k ^ 2) (sqrt_nonneg _)) (NNReal.coe_pos.1 hc) (NNReal.coe_le_coe.1 hc₁)
+    (b := (√(1 - k ^ 2)).toNNReal) (toNNReal_pos.2 hc)
+    (by simpa only [← NNReal.coe_le_coe, coe_toNNReal _ hc.le, NNReal.coe_one] using hc₁)
   have he : legendreEc √(k ^ 2) = legendreEc k := by
     rw [sqrt_sq_eq_abs]
     rcases abs_choice k with h | h <;> simp [h]
   have hκ : legendreK √(k ^ 2) = legendreK k := by
     rw [sqrt_sq_eq_abs]
     rcases abs_choice k with h | h <;> simp [h]
-  simp only [NNReal.coe_one, NNReal.coe_mk, one_pow, div_one, sq_sqrt (by linarith : 0 ≤ 1 - k ^ 2),
+  simp only [NNReal.coe_one, coe_toNNReal _ hc.le, one_pow, div_one,
+    sq_sqrt (by linarith : 0 ≤ 1 - k ^ 2),
     sub_sub_cancel, he, hκ, one_mul] at h
   rw [h.tsum_eq]
   field_simp [(legendreK_pos hk).ne']
