@@ -150,6 +150,12 @@ noncomputable def contractingAction (t : IsSl2Triple h e f) : Kˣ →* Module.En
     rw [mul_comm d⁻¹, gradingAut_mul_apply, smul_smul]
     ring_nf
 
+/-- The contracting action at `c` is `c ^ 2` times the grading automorphism at `c⁻¹`. -/
+theorem contractingAction_apply (t : IsSl2Triple h e f)
+    (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K)) (c : Kˣ) (x : L) :
+    t.contractingAction c x = (c : K) ^ 2 • gradingAut hh c⁻¹ x :=
+  (rfl)
+
 /-- **The weights of the contracting action.** The unit `c` acts on the `j`-eigenspace of `ad h`
 by `c ^ (2 - j)`. -/
 theorem contractingAction_apply_of_mem (t : IsSl2Triple h e f) (c : Kˣ) {j : ℤ} {x : L}
