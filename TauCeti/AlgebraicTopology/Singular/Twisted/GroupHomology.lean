@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Pullback
+public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
-public import TauCeti.AlgebraicTopology.Singular.ModuleChains.EquivariantMap
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
 public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
+public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.LongExactSequence
+import TauCeti.RepresentationTheory.Homological.GroupHomology.Resolution
 
 /-!
 # Twisted homology of the base of a contractible free cover is group homology
@@ -37,16 +39,11 @@ homology of `B` with local coefficients in `A` is the group homology of `G` with
 
 `Hₙ(B; A) ≅ Hₙ(G, A)`.
 
-Both identifications are natural in the coefficients and in the group: a morphism of
-representations `f : A ⟶ A'` induces a morphism of associated local systems
-(`IsQuotientCoveringMap.associatedLocalSystemMap`) corresponding on homology to
+Both identifications are natural in the coefficients: a morphism of representations `f : A ⟶ A'`
+induces a morphism of associated local systems (`IsQuotientCoveringMap.associatedLocalSystemMap`),
+and the induced map on twisted homology corresponds to Mathlib's map
 `groupHomology.map (MonoidHom.id G) f`
-(`IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`). More generally, for a
-second quotient covering `q : F ⟶ C` of a group `H`, an equivariant map `f : E ⟶ F` along
-`φ : G →* H` over `b : B ⟶ C`, and a compatible morphism `ψ : A ⟶ Rep.res φ M`, the composite of
-the coefficient map `IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap` with the base
-pushforward `twistedHomologyMap b` corresponds to `groupHomology.map φ ψ`
-(`IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_changeOfGroups`).
+(`IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`).
 
 The identification also respects the coefficient long exact sequences. A short exact sequence
 `0 ⟶ A₁ ⟶ A₂ ⟶ A₃ ⟶ 0` of representations gives a short exact sequence of associated local
@@ -71,11 +68,6 @@ complexes whose connecting maps these are.
   `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`,
   `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality`: the comparisons of
   chains and of homology are natural in the coefficients.
-* `IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted_hom_changeOfGroups`,
-  `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_changeOfGroups`,
-  `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_pullback`: the comparisons of chains
-  and of homology are natural with respect to equivariant maps of quotient covers along arbitrary
-  group homomorphisms.
 * `IsQuotientCoveringMap.twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom`,
   `IsQuotientCoveringMap.groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv`: the comparison
   of homology carries the coefficient connecting map of twisted homology to the connecting map of
@@ -83,7 +75,7 @@ complexes whose connecting maps these are.
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4, III.1, and III.8.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4 and III.1.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.H.
 -/
@@ -390,6 +382,17 @@ def twistedHomologyIsoGroupHomology [ContractibleSpace E] (n : ℕ) :
       (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A)).symm ≪≫
     (groupHomologyIso A n (singularChainsResolution k E G)).symm
 
+/-- The homology comparison is the inverse chain identification followed by the inverse
+comparison from a projective resolution to group homology. -/
+theorem twistedHomologyIsoGroupHomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    letI := Classical.decEq G
+    (hG.twistedHomologyIsoGroupHomology k A n).hom =
+      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
+        (groupHomologyIso A n (singularChainsResolution k E G)).inv :=
+  (rfl)
+
 variable {A' : Rep.{u} k G}
 
 /-- **The comparison of twisted chains with coinvariant chains is natural in the coefficients**:
@@ -445,11 +448,7 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality [ContractibleSpace E] (f 
           (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
       hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality k f]
-  have e (C : Rep.{u} k G) : (hG.twistedHomologyIsoGroupHomology k C n).hom =
-      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k C).inv n ≫
-        (groupHomologyIso C n (singularChainsResolution k E G)).inv :=
-    (rfl)
-  rw [e, e]
+  rw [twistedHomologyIsoGroupHomology_hom_eq, twistedHomologyIsoGroupHomology_hom_eq]
   -- `singularChainsResolution` and `singularChainsRep` agree only up to unfolding, so the
   -- remaining steps are explicit transitivity rather than rewriting.
   exact ((HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans
@@ -578,208 +577,5 @@ theorem twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom (n m : ℕ) (
     groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv]
 
 end LongExactSequence
-
-section ChangeOfGroups
-
-/-- Two twisted `n`-chains supported on equal simplices of `B`, with the same representation
-element and sheets over the initial vertices having the same underlying point in `E`, are equal. -/
-private lemma ιTwistedChainComplex_coinvariantsTensorMk_congr (n : ℕ) (a : A)
-    {σ₁ σ₂ : (TopCat.toSSet.obj B) _⦋n⦌} (hσ : σ₁ = σ₂)
-    (e₁ : p ⁻¹' {(initialVertex σ₁).as}) (e₂ : p ⁻¹' {(initialVertex σ₂).as})
-    (he : (e₁ : E) = e₂) (r : k) :
-    (ιTwistedChainComplex.{u, u, u} (hG.associatedLocalSystem k A) n σ₁).hom
-        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj (initialVertex σ₁)) a
-          (Finsupp.single e₁ r)) =
-      (ιTwistedChainComplex.{u, u, u} (hG.associatedLocalSystem k A) n σ₂).hom
-        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj (initialVertex σ₂)) a
-          (Finsupp.single e₂ r)) := by
-  subst hσ
-  exact congrArg _ (congrArg _ (congrArg (Finsupp.single · r) (Subtype.ext he)))
-
-variable {F C : _root_.TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-  (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-  (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-  (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-
-/-- **The comparison of twisted chains with coinvariant chains is natural in the covering and the
-group**: for an equivariant map `f : E ⟶ F` along `φ : G →* H` lying over `b : B ⟶ C` and a
-compatible morphism `ψ : A ⟶ Rep.res φ M`, the change-of-groups map `(A ⊗ C(E; k))_G ⟶
-(M ⊗ C(F; k))_H` corresponds to changing local coefficients along
-`IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap` and pushing twisted chains forward
-along `b`. No contractibility hypothesis is needed at the chain level. -/
-@[reassoc]
-theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_changeOfGroups
-    {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) :
-    haveI := hG.toContinuousConstSMul
-    haveI := hH.toContinuousConstSMul
-    φ.coinvariantsTensorChainMap ψ (singularChainsRepResMap k f hf) ≫
-        (hH.coinvariantsTensorSingularChainsRepIsoTwisted k M).hom =
-      (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom ≫
-        twistedChainComplexCoefficientMap.{u, u, u}
-          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) ≫
-        twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k M) := by
-  have := hG.toContinuousConstSMul
-  have := hH.toContinuousConstSMul
-  refine HomologicalComplex.hom_ext _ _ fun n ↦ Rep.coinvariantsTensor_hom_ext
-    (LinearMap.ext fun a ↦ singularChains_linearMap_ext fun τ ↦ ?_)
-  let σ₁ : (TopCat.toSSet.obj C) _⦋n⦌ :=
-    (TopCat.toSSet.map b).app _ ((TopCat.toSSet.map p).app _ τ)
-  let σ₂ : (TopCat.toSSet.obj C) _⦋n⦌ :=
-    (TopCat.toSSet.map q).app _ ((TopCat.toSSet.map f).app _ τ)
-  have hσ : σ₁ = σ₂ := by
-    simpa only [σ₁, σ₂, Functor.map_comp, NatTrans.comp_app, types_comp_apply] using
-      congrArg (fun t ↦ (TopCat.toSSet.map t).app _ τ) hb
-  let e' : q ⁻¹' {(initialVertex σ₁).as} :=
-    ⟨f (initialSheet τ).1, (ConcreteCategory.congr_hom hb (initialSheet τ).1).symm.trans
-      (congrArg b.hom (initialSheet τ).2)⟩
-  -- Both sides send `⟦a ⊗ τ⟧` to `⟦ψ a ⊗ f (initialSheet τ)⟧` in the summand of `b ∘ p ∘ τ =
-  -- q ∘ f ∘ τ`.
-  have hlhs : ((φ.coinvariantsTensorChainMap ψ (singularChainsRepResMap k f hf) ≫
-        (hH.coinvariantsTensorSingularChainsRepIsoTwisted k M).hom).f n).hom
-      (Rep.coinvariantsTensorMk A ((singularChainsRep k E G).X n) a (simplexChain τ 1)) =
-      (ιTwistedChainComplex.{u, u, u} (hH.associatedLocalSystem k M) n σ₂).hom
-        (Rep.coinvariantsTensorMk M ((hH.permutationRepFunctor k).obj (initialVertex σ₂))
-          (ψ.hom a) (Finsupp.single (initialSheet ((TopCat.toSSet.map f).app _ τ)) 1)) :=
-    (congrArg ((hH.coinvariantsTensorSingularChainsRepIsoTwisted k M).hom.f n).hom
-      ((φ.coinvariantsTensorChainMap_f_mk ψ (singularChainsRepResMap k f hf) n a
-        (simplexChain τ 1)).trans
-        (congrArg (Rep.coinvariantsTensorMk M ((singularChainsRep k F H).X n) (ψ.hom a))
-          ((singularChainsRepResMap_f_hom_apply k f hf n (simplexChain τ 1)).trans
-            (singularChains_map_f_simplexChain f τ 1))))).trans
-      (hH.coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk k n (ψ.hom a)
-        ((TopCat.toSSet.map f).app _ τ))
-  have hrhs : (((hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom ≫
-        twistedChainComplexCoefficientMap.{u, u, u}
-          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) ≫
-        twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k M)).f n).hom
-      (Rep.coinvariantsTensorMk A ((singularChainsRep k E G).X n) a (simplexChain τ 1)) =
-      (ιTwistedChainComplex.{u, u, u} (hH.associatedLocalSystem k M) n σ₁).hom
-        (Rep.coinvariantsTensorMk M ((hH.permutationRepFunctor k).obj (initialVertex σ₁))
-          (ψ.hom a) (Finsupp.single e' 1)) :=
-    (congrArg ((twistedChainComplexCoefficientMap.{u, u, u}
-          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) ≫
-        twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k M)).f n).hom
-      (hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk k n a τ)).trans <|
-      (congrArg ((twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k M)).f n).hom
-        ((twistedChainComplexCoefficientMap_f_ι_apply
-          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) n
-          ((TopCat.toSSet.map p).app _ τ) _).trans
-          (congrArg (ιTwistedChainComplex.{u, u, u}
-              ((LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k M)) n
-              ((TopCat.toSSet.map p).app _ τ)).hom
-            (hG.associatedLocalSystemChangeOfGroupsMap_app_coinvariantsTensorMk_single k hH
-              f hf b hb ψ (initialVertex ((TopCat.toSSet.map p).app _ τ)) a
-              (initialSheet τ) e' rfl 1)))).trans
-        (twistedChainComplexMap_f_ι_apply b (hH.associatedLocalSystem k M) n
-          ((TopCat.toSSet.map p).app _ τ) _)
-  exact hlhs.trans ((ιTwistedChainComplex_coinvariantsTensorMk_congr hH k n (ψ.hom a) hσ e'
-    (initialSheet ((TopCat.toSSet.map f).app _ τ)) rfl 1).symm.trans hrhs.symm)
-
-/-- The inverse comparison of twisted chains with coinvariant chains is natural with respect to
-equivariant maps of quotient covers. -/
-@[reassoc]
-theorem coinvariantsTensorSingularChainsRepIsoTwisted_inv_changeOfGroups
-    {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) :
-    haveI := hG.toContinuousConstSMul
-    haveI := hH.toContinuousConstSMul
-    twistedChainComplexCoefficientMap.{u, u, u}
-        (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) ≫
-      twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k M) ≫
-      (hH.coinvariantsTensorSingularChainsRepIsoTwisted k M).inv =
-      (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv ≫
-        φ.coinvariantsTensorChainMap ψ (singularChainsRepResMap k f hf) := by
-  have := hG.toContinuousConstSMul
-  have := hH.toContinuousConstSMul
-  apply (cancel_mono (hH.coinvariantsTensorSingularChainsRepIsoTwisted k M).hom).1
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  rw [hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_changeOfGroups k hH f hf b hb ψ,
-    Iso.inv_hom_id_assoc]
-
-/-- **The identification of twisted homology with group homology is natural in the covering and the
-group**: for quotient covering maps `p : E ⟶ B` and `q : F ⟶ C` with contractible total spaces, an
-equivariant map `f : E ⟶ F` along any group homomorphism `φ : G →* H` lying over `b : B ⟶ C`, and a
-compatible morphism `ψ : A ⟶ Rep.res φ M`, the identifications `Hₙ(B; A) ≅ Hₙ(G, A)` and
-`Hₙ(C; M) ≅ Hₙ(H, M)` carry the composite of the change-of-groups coefficient map with `b_*` to
-Mathlib's change-of-group map `groupHomology.map φ ψ`. -/
-@[reassoc]
-theorem twistedHomologyIsoGroupHomology_hom_changeOfGroups [ContractibleSpace E]
-    [ContractibleSpace F] {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) (n : ℕ) :
-    twistedHomologyCoefficientMap.{u, u, u}
-        (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) n ≫
-      twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k M) n ≫
-      (hH.twistedHomologyIsoGroupHomology k M n).hom =
-      (hG.twistedHomologyIsoGroupHomology k A n).hom ≫ groupHomology.map φ ψ n := by
-  have := hG.toContinuousConstSMul
-  have := hH.toContinuousConstSMul
-  have := hG.isCancelSMul
-  have := hH.isCancelSMul
-  let := Classical.decEq G
-  let := Classical.decEq H
-  have h₁ : HomologicalComplex.homologyMap
-        (φ.coinvariantsTensorChainMap ψ (singularChainsRepResMap k f hf)) n ≫
-      (groupHomologyIso M n (singularChainsResolution k F H)).inv =
-      (groupHomologyIso A n (singularChainsResolution k E G)).inv ≫ groupHomology.map φ ψ n :=
-    φ.groupHomologyIso_inv_naturality ψ (singularChainsResolution k E G)
-      (singularChainsResolution k F H) (singularChainsRepResMap k f hf)
-      (singularChainsRepResMap_f_zero_comp_augmentation k f hf) n
-  have h₂ := hG.coinvariantsTensorSingularChainsRepIsoTwisted_inv_changeOfGroups k hH f hf b hb ψ
-  have eG : (hG.twistedHomologyIsoGroupHomology k A n).hom =
-      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
-        (groupHomologyIso A n (singularChainsResolution k E G)).inv := (rfl)
-  have eH : (hH.twistedHomologyIsoGroupHomology k M n).hom =
-      HomologicalComplex.homologyMap (hH.coinvariantsTensorSingularChainsRepIsoTwisted k M).inv n ≫
-        (groupHomologyIso M n (singularChainsResolution k F H)).inv := (rfl)
-  rw [eG, eH]
-  -- `singularChainsResolution` and `singularChainsRep` agree only up to unfolding, so the
-  -- homology-level steps are assembled by explicit transitivity.
-  exact ((HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans <|
-    (HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans <|
-    (congrArg (fun t ↦ HomologicalComplex.homologyMap t n ≫ _) h₂).trans <|
-    (HomologicalComplex.homologyMap_comp_assoc _ _ _ _).trans <|
-    (congrArg _ h₁).trans (Category.assoc _ _ _).symm)
-
-/-- The inverse identification of group homology with twisted homology is natural in the covering
-and the group. -/
-@[reassoc]
-theorem twistedHomologyIsoGroupHomology_inv_changeOfGroups [ContractibleSpace E]
-    [ContractibleSpace F] {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) (n : ℕ) :
-    groupHomology.map φ ψ n ≫ (hH.twistedHomologyIsoGroupHomology k M n).inv =
-      (hG.twistedHomologyIsoGroupHomology k A n).inv ≫
-        twistedHomologyCoefficientMap.{u, u, u}
-          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) n ≫
-        twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k M) n := by
-  rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
-    hG.twistedHomologyIsoGroupHomology_hom_changeOfGroups k hH f hf b hb ψ n,
-    Iso.inv_hom_id_assoc]
-
-/-- Pushing twisted homology forward along `b : B ⟶ C` from the pulled-back associated local system
-`b^* L_M` corresponds, via `IsQuotientCoveringMap.associatedLocalSystemPullbackIso`, to the
-change-of-group map `groupHomology.map φ (𝟙 (Rep.res φ M))` in group homology. -/
-@[reassoc]
-theorem twistedHomologyIsoGroupHomology_hom_pullback [ContractibleSpace E] [ContractibleSpace F]
-    (M : Rep.{u} k H) (n : ℕ) :
-    twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k M) n ≫
-        (hH.twistedHomologyIsoGroupHomology k M n).hom =
-      twistedHomologyCoefficientMap.{u, u, u}
-          (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).inv n ≫
-        (hG.twistedHomologyIsoGroupHomology k (Rep.res φ M) n).hom ≫
-        groupHomology.map φ (𝟙 (Rep.res φ M)) n := by
-  have h := hG.twistedHomologyIsoGroupHomology_hom_changeOfGroups k hH f hf b hb
-    (𝟙 (Rep.res φ M)) n
-  rw [← associatedLocalSystemPullbackIso_hom] at h
-  calc
-    twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k M) n ≫
-        (hH.twistedHomologyIsoGroupHomology k M n).hom
-      = (twistedHomologyCoefficientMap.{u, u, u}
-            (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).inv n ≫
-          twistedHomologyCoefficientMap.{u, u, u}
-            (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom n) ≫
-        twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k M) n ≫
-        (hH.twistedHomologyIsoGroupHomology k M n).hom := by
-      rw [← twistedHomologyCoefficientMap_comp, Iso.inv_hom_id,
-        twistedHomologyCoefficientMap_id, Category.id_comp]
-    _ = _ := by rw [Category.assoc, h]
-
-end ChangeOfGroups
 
 end IsQuotientCoveringMap

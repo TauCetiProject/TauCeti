@@ -8,58 +8,48 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 
 /-!
-# Pullback and change of groups for associated local coefficient systems
+# Pullback and functoriality of associated local coefficient systems
 
 Let `p : E ⟶ B` and `q : F ⟶ C` be quotient covering maps of actions of groups `G` and `H`, in the
 sense of Mathlib's `IsQuotientCoveringMap`, and let `f : E ⟶ F` be a continuous map equivariant
 along a group homomorphism `φ : G →* H` and lying over `b : B ⟶ C` (`p ≫ b = f ≫ q`).
 
-Over each point `x` of `B`, restricting `f` to the fibre `p ⁻¹' {x}` lands in `q ⁻¹' {b x}` and
-intertwines the `G`-action with the `H`-action restricted along `φ`. Because covering-space
-monodromy commutes with maps of covers over maps of bases (`IsCoveringMap.coe_monodromy_map`), the
-resulting linear maps on formal sums of sheets assemble into a natural transformation
-`IsQuotientCoveringMap.permutationRepFunctorResMap` from `hG.permutationRepFunctor k` to the
-restriction along `φ` of `hH.permutationRepFunctor k` pulled back along `b`.
+For a commutative ring `k`, representations `A` of `G` and `D` of `H`, and a compatible morphism
+`ξ : A ⟶ Rep.res φ D`, `IsQuotientCoveringMap.associatedLocalSystemMapOver` is the induced morphism
+of local coefficient systems on `B`:
 
-For a commutative ring `k`, representations `A` of `G` and `M` of `H`, and a compatible morphism
-`ψ : A ⟶ Rep.res φ M`, applying `MonoidHom.coinvariantsTensorMap φ ψ` fibrewise gives a morphism
-of local coefficient systems on `B`
-(`IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap`):
+`L_A ⟶ b^* L_D`,
 
-`L_A ⟶ b^* L_M`,
+sending the class of `a ⊗ [e]` over `x` to the class of `ξ a ⊗ [f e]` over `b x`. Choosing any
+sheet `e ∈ p ⁻¹' {x}` identifies `(A ⊗ k[p⁻¹ x])_G` with `A` and its image `f e ∈ q ⁻¹' {b x}`
+identifies `(D ⊗ k[q⁻¹ (b x)])_H` with `D` (`IsQuotientCoveringMap.associatedLocalSystemFiberIso`),
+and in these sheet coordinates the morphism is the underlying linear map of `ξ`
+(`IsQuotientCoveringMap.associatedLocalSystemMapOver_app_comp_fiberIso_hom`).
 
-sending the class of `a ⊗ [e]` over `x` to the class of `ψ a ⊗ [f e]` over `b x`.
-
-When `A = Rep.res φ M` and `ψ` is the identity, this morphism is an isomorphism of local systems
+When `A = Rep.res φ D` and `ξ` is the identity, this morphism is an isomorphism of local systems
 (`IsQuotientCoveringMap.associatedLocalSystemPullbackIso`), for *every* group homomorphism
-`φ : G →* H` with no injectivity or surjectivity hypothesis. Even when `f` is neither injective nor
-surjective on sheets, choosing any sheet `e ∈ p ⁻¹' {x}` identifies `(Rep.res φ M ⊗ k[p⁻¹ x])_G`
-with `M` and `f e ∈ q ⁻¹' {b x}` identifies `(M ⊗ k[q⁻¹ (b x)])_H` with `M`
-(`IsQuotientCoveringMap.associatedLocalSystemFiberIso`), and in these sheet coordinates the map on
-tensor coinvariants is the identity on `M`. For general `ψ : A ⟶ Rep.res φ M`, the change-of-groups
-morphism factors as `associatedLocalSystemMap` followed by the pullback isomorphism
-(`IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap_eq`).
+`φ : G →* H` with no injectivity or surjectivity hypothesis: even when `f` is neither injective nor
+surjective on sheets, in sheet coordinates at `e` and `f e` the fibre map is the identity on `D`.
+For general `ξ : A ⟶ Rep.res φ D`, the morphism `associatedLocalSystemMapOver` factors as
+`associatedLocalSystemMap` followed by the pullback isomorphism
+(`IsQuotientCoveringMap.associatedLocalSystemMapOver_eq`).
 
 ## Main definitions
 
-* `IsQuotientCoveringMap.fiberRepresentationResHom`: the equivariant map on fibre permutation
-  representations over a point.
-* `IsQuotientCoveringMap.permutationRepFunctorResMap`: the natural transformation of fibre
-  permutation representation functors along a map of quotient covers.
-* `IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap`: the morphism `L_A ⟶ b^* L_M` of
-  associated local systems induced by `ψ : A ⟶ Rep.res φ M`.
 * `IsQuotientCoveringMap.associatedLocalSystemPullbackIso`: the canonical isomorphism
-  `L_{Res(φ)(M)} ≅ b^* L_M` of local coefficient systems on `B`.
+  `L_{Res(φ)(D)} ≅ b^* L_D` of local coefficient systems on `B`.
 
 ## Main results
 
-* `IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap_app_comp_fiberIso_hom`:
-  compatibility of the change-of-groups morphism with sheet coordinates.
-* `IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap_eq`: factorization of the
-  change-of-groups morphism through `associatedLocalSystemPullbackIso`.
-* `IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap_id`,
-  `IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap_comp`: identity and composition
-  laws for maps of quotient covers.
+* `IsQuotientCoveringMap.associatedLocalSystemMapOver_app_comp_fiberIso_hom`:
+  compatibility of `associatedLocalSystemMapOver` with sheet coordinates.
+* `IsQuotientCoveringMap.isIso_associatedLocalSystemMapOver_id`: for `𝟙 (Rep.res φ D)`,
+  `associatedLocalSystemMapOver` is an isomorphism of local systems.
+* `IsQuotientCoveringMap.associatedLocalSystemMapOver_eq`: factorization of
+  `associatedLocalSystemMapOver` through `associatedLocalSystemPullbackIso`.
+* `IsQuotientCoveringMap.associatedLocalSystemMapOver_id`,
+  `IsQuotientCoveringMap.associatedLocalSystemMapOver_comp`: identity and composition laws for
+  maps of quotient covers.
 
 ## References
 
@@ -81,147 +71,64 @@ namespace IsQuotientCoveringMap
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G)
 
-/-- A map `f : E ⟶ F` over `b : B ⟶ C` sends the fibre of `p` over `x` into the fibre of `q` over
-`b.hom x`. -/
-private def coverFiberMap {F C : TopCat.{u}} {q : F ⟶ C} (f : E ⟶ F) (b : B ⟶ C)
-    (hb : p ≫ b = f ≫ q) (x : B) (e : p ⁻¹' {x}) : q ⁻¹' {b.hom x} :=
-  ⟨f e.1,
-    have he : p e.1 = x := e.2
-    (ConcreteCategory.congr_hom hb e.1).symm.trans (congrArg b.hom he)⟩
-
-/-- The fibre map intertwines the `G`-action on `p ⁻¹' {x}` with the `H`-action on
-`q ⁻¹' {b.hom x}` restricted along `φ`. -/
-private lemma coverFiberMap_smul
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (x : B) (g : G) (e : p ⁻¹' {x}) :
-    letI := hG.mulActionFiber x
-    letI := hH.mulActionFiber (b.hom x)
-    coverFiberMap f b hb x (g • e) = φ g • coverFiberMap f b hb x e := by
-  let := hG.mulActionFiber x
-  let := hH.mulActionFiber (b.hom x)
-  exact Subtype.ext (hf g e)
-
 section Permutation
 
 variable (k : Type u) [Ring k]
 
-/-- The morphism of fibre permutation representations over `x` induced by an equivariant map of
-quotient covers along `φ : G →* H`. -/
-def fiberRepresentationResHom
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (x : B) :
-    Rep.of (hG.fiberRepresentation k x) ⟶
-      Rep.res φ (Rep.of (hH.fiberRepresentation k (b.hom x))) :=
-  Rep.ofHom
-    { toLinearMap := Finsupp.lmapDomain k k (coverFiberMap f b hb x)
-      isIntertwining' g := by
-        let := hG.mulActionFiber x
-        let := hH.mulActionFiber (b.hom x)
-        refine Finsupp.lhom_ext fun e r ↦ ?_
-        simp [coverFiberMap_smul hG hH f hf b hb x g e] }
+/-- Along the identity map of a quotient cover, `permutationRepMap` acts as the identity on formal
+sums of sheets over each point. -/
+theorem permutationRepMap_id_app_hom_apply (x : FundamentalGroupoid B) (v : p ⁻¹' {x.as} →₀ k) :
+    ((hG.permutationRepMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ rfl) (𝟙 B) rfl).app x).hom
+      v = v := by
+  induction v using Finsupp.induction_linear with
+  | zero => exact map_zero _
+  | add v₁ v₂ h₁ h₂ => exact (map_add _ v₁ v₂).trans (congrArg₂ (· + ·) h₁ h₂)
+  | single e r =>
+    exact (hG.permutationRepMap_app_hom_single k hG (φ := MonoidHom.id G) (𝟙 E) (fun _ _ ↦ rfl)
+      (𝟙 B) rfl x e r).trans
+      (congrArg (Finsupp.single · r) (Subtype.ext (CommSq.fiberMap_apply_coe _ _ _)))
 
-/-- On a basis vector at sheet `e`, the fibre representation map evaluates to the basis vector at
-its image sheet `e'` over `b.hom x`. -/
-theorem fiberRepresentationResHom_hom_single
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    (x : B) (e : p ⁻¹' {x}) (e' : q ⁻¹' {b.hom x}) (he : f e = e') (r : k) :
-    (hG.fiberRepresentationResHom k hH f hf b hb x).hom (Finsupp.single e r) =
-      Finsupp.single e' r := by
-  obtain rfl : e' = coverFiberMap f b hb x e := Subtype.ext he.symm
-  simp [fiberRepresentationResHom]
-
-/-- Along the identity map of a quotient cover, `fiberRepresentationResHom` is the identity linear
-map on formal sums of sheets. -/
-theorem fiberRepresentationResHom_id_hom_apply (x : B) (v : p ⁻¹' {x} →₀ k) :
-    (hG.fiberRepresentationResHom k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ rfl) (𝟙 B) rfl
-      x).hom v = v := by
-  refine LinearMap.congr_fun (f := (hG.fiberRepresentationResHom k hG (𝟙 E) (φ := MonoidHom.id G)
-      (fun _ _ ↦ rfl) (𝟙 B) rfl x).hom.toLinearMap) (g := LinearMap.id)
-    (Finsupp.lhom_ext fun e r ↦ ?_) v
-  exact hG.fiberRepresentationResHom_hom_single k hG (𝟙 E) (fun _ _ ↦ rfl) (𝟙 B) rfl x e e rfl r
-
-/-- Along a composite of maps of quotient covers, `fiberRepresentationResHom` is the composite of
-the two linear maps on formal sums of sheets. -/
-theorem fiberRepresentationResHom_comp_hom_apply
+/-- Along a composite of maps of quotient covers, `permutationRepMap` acts on formal sums of sheets
+as the composite of the two fibre maps. -/
+theorem permutationRepMap_comp_app_hom_apply
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H)
-    {D W : TopCat.{u}} {r : D ⟶ W} {K : Type u} [Group K] [MulAction K D]
+    {S W : TopCat.{u}} {r : S ⟶ W} {K : Type u} [Group K] [MulAction K S]
     (hK : IsQuotientCoveringMap r K)
     {φ : G →* H} {φ' : H →* K}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e) (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    (f' : F ⟶ D) (hf' : ∀ h y, f' (h • y) = φ' h • f' y) (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
-    (x : B) (v : p ⁻¹' {x} →₀ k) :
-    (hG.fiberRepresentationResHom k hK (f ≫ f') (φ := φ'.comp φ)
+    (f' : F ⟶ S) (hf' : ∀ h y, f' (h • y) = φ' h • f' y) (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
+    (x : FundamentalGroupoid B) (v : p ⁻¹' {x.as} →₀ k) :
+    ((hG.permutationRepMap k hK (f ≫ f') (φ := φ'.comp φ)
         (fun g e ↦ by simp [hf, hf']) (b ≫ b')
-        (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]) x).hom v =
-      (hH.fiberRepresentationResHom k hK f' hf' b' hb' (b.hom x)).hom
-        ((hG.fiberRepresentationResHom k hH f hf b hb x).hom v) := by
-  refine LinearMap.congr_fun
-    (f := (hG.fiberRepresentationResHom k hK (f ≫ f') (φ := φ'.comp φ)
-      (fun g e ↦ by simp [hf, hf']) (b ≫ b')
-      (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]) x).hom.toLinearMap)
-    (g := (hH.fiberRepresentationResHom k hK f' hf' b' hb' (b.hom x)).hom.toLinearMap ∘ₗ
-      (hG.fiberRepresentationResHom k hH f hf b hb x).hom.toLinearMap)
-    (Finsupp.lhom_ext fun e s ↦ ?_) v
-  let e₁ : q ⁻¹' {b.hom x} := coverFiberMap f b hb x e
-  let e₂ : r ⁻¹' {(b ≫ b').hom x} := coverFiberMap f' b' hb' (b.hom x) e₁
-  rw [LinearMap.comp_apply]
-  exact (hG.fiberRepresentationResHom_hom_single k hK (f ≫ f') _ (b ≫ b') _ x e e₂ rfl s).trans <|
-    (hH.fiberRepresentationResHom_hom_single k hK f' hf' b' hb' (b.hom x) e₁ e₂ rfl s).symm.trans
-      (congrArg (hH.fiberRepresentationResHom k hK f' hf' b' hb' (b.hom x)).hom
-        (hG.fiberRepresentationResHom_hom_single k hH f hf b hb x e e₁ rfl s).symm)
-
-/-- An equivariant map of quotient covers induces a natural transformation from the fibre
-permutation representation functor of the source cover to the restricted functor of the target
-cover pulled back along `b`. -/
-def permutationRepFunctorResMap
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) :
-    hG.permutationRepFunctor k ⟶
-      FundamentalGroupoid.map b.hom ⋙ hH.permutationRepFunctor k ⋙ Rep.resFunctor φ where
-  app x := hG.fiberRepresentationResHom k hH f hf b hb x.as
-  naturality {x y} γ := by
-    refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| Finsupp.lhom_ext fun e r ↦ ?_
-    have hqf : ⇑q ∘ ⇑f.hom = ⇑b.hom ∘ ⇑p.hom :=
-      funext fun z ↦ (ConcreteCategory.congr_hom hb z).symm
-    have hmon : coverFiberMap f b hb y.as (hG.isCoveringMap.monodromy γ e) =
-        hH.isCoveringMap.monodromy (γ.map b.hom) (coverFiberMap f b hb x.as e) :=
-      Subtype.ext (hG.isCoveringMap.coe_monodromy_map hH.isCoveringMap hqf γ e
-        (coverFiberMap f b hb x.as e) rfl).symm
-    -- Expose the underlying linear maps of the composite morphisms of representations so that
-    -- `Finsupp` evaluation applies on the single-sheet generator.
-    change (hG.fiberRepresentationResHom k hH f hf b hb y.as).hom
-        (((hG.permutationRepFunctor k).map γ).hom (Finsupp.single e r)) =
-      ((hH.permutationRepFunctor k).map ((FundamentalGroupoid.map b.hom).map γ)).hom
-        ((hG.fiberRepresentationResHom k hH f hf b hb x.as).hom (Finsupp.single e r))
-    rw [permutationRepFunctor_map_hom_apply, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single,
-      hG.fiberRepresentationResHom_hom_single k hH f hf b hb y.as _
-        (coverFiberMap f b hb y.as (hG.isCoveringMap.monodromy γ e)) rfl,
-      hG.fiberRepresentationResHom_hom_single k hH f hf b hb x.as e
-        (coverFiberMap f b hb x.as e) rfl]
-    exact ((hH.permutationRepFunctor_map_hom_apply k ((FundamentalGroupoid.map b.hom).map γ)
-        (Finsupp.single (coverFiberMap f b hb x.as e) r)).trans <|
-      (Finsupp.mapDomain_single (a := coverFiberMap f b hb x.as e) (b := r)).trans
-        (congrArg (Finsupp.single · r) hmon.symm)).symm
-
-@[simp]
-theorem permutationRepFunctorResMap_app
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (x : FundamentalGroupoid B) :
-    (hG.permutationRepFunctorResMap k hH f hf b hb).app x =
-      hG.fiberRepresentationResHom k hH f hf b hb x.as :=
-  (rfl)
+        (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc])).app x).hom v =
+      ((hH.permutationRepMap k hK f' hf' b' hb').app ((FundamentalGroupoid.map b.hom).obj x)).hom
+        (((hG.permutationRepMap k hH f hf b hb).app x).hom v) := by
+  have hcomp : p ≫ (b ≫ b') = (f ≫ f') ≫ r := by
+    rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]
+  let m₁ := ((hG.permutationRepMap k hK (f ≫ f') (φ := φ'.comp φ)
+    (fun g e ↦ by simp [hf, hf']) (b ≫ b') hcomp).app x).hom
+  let m₂ := ((hG.permutationRepMap k hH f hf b hb).app x).hom
+  let m₃ := ((hH.permutationRepMap k hK f' hf' b' hb').app
+    ((FundamentalGroupoid.map b.hom).obj x)).hom
+  induction v using Finsupp.induction_linear with
+  | zero =>
+    exact (map_zero m₁).trans ((map_zero m₃).symm.trans (congrArg m₃ (map_zero m₂).symm))
+  | add v₁ v₂ h₁ h₂ =>
+    exact (map_add m₁ v₁ v₂).trans <| (congrArg₂ (· + ·) h₁ h₂).trans <|
+      (map_add m₃ (m₂ v₁) (m₂ v₂)).symm.trans (congrArg m₃ (map_add m₂ v₁ v₂).symm)
+  | single e s =>
+    have he : (CommSq.mk hcomp.symm).fiberMap x.as e =
+        (CommSq.mk hb'.symm).fiberMap (b x.as) ((CommSq.mk hb.symm).fiberMap x.as e) :=
+      Subtype.ext <| (CommSq.fiberMap_apply_coe (CommSq.mk hcomp.symm) x.as e).trans <|
+        (congrArg f'.hom (CommSq.fiberMap_apply_coe (CommSq.mk hb.symm) x.as e).symm).trans
+          (CommSq.fiberMap_apply_coe (CommSq.mk hb'.symm) (b x.as) _).symm
+    exact (hG.permutationRepMap_app_hom_single k hK (φ := φ'.comp φ) (f ≫ f') _ (b ≫ b')
+      hcomp x e s).trans <|
+      (congrArg (Finsupp.single · s) he).trans <|
+      (hH.permutationRepMap_app_hom_single k hK f' hf' b' hb'
+        ((FundamentalGroupoid.map b.hom).obj x) ((CommSq.mk hb.symm).fiberMap x.as e) s).symm.trans
+        (congrArg m₃ (hG.permutationRepMap_app_hom_single k hH f hf b hb x e s).symm)
 
 end Permutation
 
@@ -229,130 +136,96 @@ section AssociatedLocalSystem
 
 variable (k : Type u) [CommRing k]
 
-/-- **Change of groups on associated local coefficient systems.** Given quotient covers `p : E ⟶ B`
-and `q : F ⟶ C`, a map `f : E ⟶ F` equivariant along `φ : G →* H` over `b : B ⟶ C`, and a
-compatible morphism of representations `ψ : A ⟶ Rep.res φ M`, this is the induced morphism of local
-coefficient systems `L_A ⟶ b^* L_M` on `B`, sending `⟦a ⊗ [e]⟧` to `⟦ψ a ⊗ [f e]⟧`. -/
-def associatedLocalSystemChangeOfGroupsMap
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) :
-    hG.associatedLocalSystem k A ⟶
-      (LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k M) where
-  app x := φ.coinvariantsTensorMap ψ ((hG.permutationRepFunctorResMap k hH f hf b hb).app x)
-  naturality {x y} γ :=
-    φ.coinvariantsTensorMap_naturality ψ
-      ((hG.permutationRepFunctorResMap k hH f hf b hb).app x)
-      ((hG.permutationRepFunctorResMap k hH f hf b hb).app y)
-      ((hG.permutationRepFunctor k).map γ)
-      ((hH.permutationRepFunctor k).map ((FundamentalGroupoid.map b.hom).map γ))
-      ((hG.permutationRepFunctorResMap k hH f hf b hb).naturality γ).symm
-
-/-- Over `x`, the change-of-groups morphism of associated local systems is the tensor-coinvariant
-map induced by `ψ` and `fiberRepresentationResHom`. -/
-@[simp]
-theorem associatedLocalSystemChangeOfGroupsMap_app
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) (x : FundamentalGroupoid B) :
-    (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x =
-      φ.coinvariantsTensorMap ψ (hG.fiberRepresentationResHom k hH f hf b hb x.as) :=
-  (rfl)
-
-/-- On a pure tensor class `⟦a ⊗ v⟧`, the change-of-groups morphism sends `a` via `ψ` and pushes
-formal sums of sheets forward via `fiberRepresentationResHom`. -/
+/-- On a pure tensor class `⟦a ⊗ v⟧`, `associatedLocalSystemMapOver` sends `a` via `ξ` and pushes
+formal sums of sheets forward via `permutationRepMap`. -/
 -- Not a simp lemma: `simp` unfolds `Rep.coinvariantsTensorMk` on the left-hand side first.
-theorem associatedLocalSystemChangeOfGroupsMap_app_coinvariantsTensorMk
+theorem associatedLocalSystemMapOver_app_coinvariantsTensorMk
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
     (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M)
+    {A : Rep.{u} k G} {D : Rep.{u} k H} (ξ : A ⟶ Rep.res φ D)
     (x : FundamentalGroupoid B) (a : A) (v : p ⁻¹' {x.as} →₀ k) :
-    ((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x).hom
-        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a v) =
-      Rep.coinvariantsTensorMk M (Rep.of (hH.fiberRepresentation k (b.hom x.as))) (ψ.hom a)
-        ((hG.fiberRepresentationResHom k hH f hf b hb x.as).hom v) :=
-  φ.coinvariantsTensorMap_mk ψ (hG.fiberRepresentationResHom k hH f hf b hb x.as) a v
+    ((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
+        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v) =
+      Rep.coinvariantsTensorMk D
+        ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a)
+        (((hG.permutationRepMap k hH f hf b hb).app x).hom v) := by
+  let L := ((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
+  let mk₁ := Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a
+  let mk₂ := Rep.coinvariantsTensorMk D
+    ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) (ξ.hom a)
+  let P := ((hG.permutationRepMap k hH f hf b hb).app x).hom
+  induction v using Finsupp.induction_linear with
+  | zero =>
+    exact (congrArg L (map_zero mk₁)).trans <|
+      (map_zero L).trans ((map_zero mk₂).symm.trans (congrArg mk₂ (map_zero P).symm))
+  | add v₁ v₂ h₁ h₂ =>
+    exact (congrArg L (map_add mk₁ v₁ v₂)).trans <| (map_add L (mk₁ v₁) (mk₁ v₂)).trans <|
+      (congrArg₂ (· + ·) h₁ h₂).trans <|
+      (map_add mk₂ (P v₁) (P v₂)).symm.trans (congrArg mk₂ (map_add P v₁ v₂).symm)
+  | single e r =>
+    exact (hG.associatedLocalSystemMapOver_app_mk_single k hH f hf b hb ξ x a e r).trans
+      (congrArg mk₂ (hG.permutationRepMap_app_hom_single k hH f hf b hb x e r).symm)
 
-/-- On a tensor class at a single sheet `e`, the change-of-groups morphism sends `⟦a ⊗ r[e]⟧` to
-`⟦ψ a ⊗ r[e']⟧`, where `e'` is the image sheet `f e` over `b.hom x.as`. -/
-theorem associatedLocalSystemChangeOfGroupsMap_app_coinvariantsTensorMk_single
-    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
-    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
-    (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M)
-    (x : FundamentalGroupoid B) (a : A)
-    (e : p ⁻¹' {x.as}) (e' : q ⁻¹' {b.hom x.as}) (he : f e = e') (r : k) :
-    ((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x).hom
-        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
-          (Finsupp.single e r)) =
-      Rep.coinvariantsTensorMk M (Rep.of (hH.fiberRepresentation k (b.hom x.as))) (ψ.hom a)
-        (Finsupp.single e' r) :=
-  (φ.coinvariantsTensorMap_mk ψ
-    (hG.fiberRepresentationResHom k hH f hf b hb x.as) a (Finsupp.single e r)).trans
-    (congrArg
-      (Rep.coinvariantsTensorMk M (Rep.of (hH.fiberRepresentation k (b.hom x.as))) (ψ.hom a))
-      (hG.fiberRepresentationResHom_hom_single k hH f hf b hb x.as e e' he r))
-
-/-- Under the sheet identifications at `e` and its image `e'` over `b.hom x.as`, the
-change-of-groups morphism of associated local systems is the underlying linear map of `ψ`. -/
+/-- Under the sheet identifications at `e` and its image `e'` over `b.hom x.as`,
+`associatedLocalSystemMapOver` is the underlying linear map of `ξ`. -/
 @[reassoc]
-theorem associatedLocalSystemChangeOfGroupsMap_app_comp_fiberIso_hom
+theorem associatedLocalSystemMapOver_app_comp_fiberIso_hom
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
     (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M)
+    {A : Rep.{u} k G} {D : Rep.{u} k H} (ξ : A ⟶ Rep.res φ D)
     {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as})
     (e' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj x).as}) (he : f e = e') :
-    ((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x) ≫
-        (hH.associatedLocalSystemFiberIso k M e').hom =
-      (hG.associatedLocalSystemFiberIso k A e).hom ≫ ModuleCat.ofHom ψ.hom.toLinearMap := by
+    ((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x) ≫
+        (hH.associatedLocalSystemFiberIso k D e').hom =
+      (hG.associatedLocalSystemFiberIso k A e).hom ≫ ModuleCat.ofHom ξ.hom.toLinearMap := by
+  obtain rfl : e' = (CommSq.mk hb.symm).fiberMap x.as e :=
+    Subtype.ext (he.symm.trans (CommSq.fiberMap_apply_coe _ _ _).symm)
   apply (cancel_epi (hG.associatedLocalSystemFiberIso k A e).inv).1
   rw [Iso.inv_hom_id_assoc]
   refine ModuleCat.hom_ext <| LinearMap.ext fun a ↦ ?_
   -- The pulled-back fibre over `x` and the fibre over `b.hom x.as` agree by definition of
   -- `pullback`, so the composite is evaluated in term mode rather than via `rw`.
-  exact (congrArg ((hH.associatedLocalSystemFiberIso k M e').hom.hom ∘
-      ((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x).hom)
+  let e₁ := (CommSq.mk hb.symm).fiberMap x.as e
+  exact (congrArg ((hH.associatedLocalSystemFiberIso k D e₁).hom.hom ∘
+      ((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom)
     (hG.associatedLocalSystemFiberIso_inv_apply k A e a)).trans <|
-    (congrArg (hH.associatedLocalSystemFiberIso k M e').hom.hom
-      (hG.associatedLocalSystemChangeOfGroupsMap_app_coinvariantsTensorMk_single k hH f hf b hb ψ
-        x a e e' he 1)).trans <|
-    (hH.associatedLocalSystemFiberIso_hom_coinvariantsTensorMk k M e' e' (ψ.hom a) 1).trans
+    (congrArg (hH.associatedLocalSystemFiberIso k D e₁).hom.hom
+      (hG.associatedLocalSystemMapOver_app_mk_single k hH f hf b hb ξ x a e 1)).trans <|
+    (hH.associatedLocalSystemFiberIso_hom_coinvariantsTensorMk k D e₁ e₁ (ξ.hom a) 1).trans
       (by simp)
 
-/-- For the restricted representation `Rep.res φ M`, the change-of-groups morphism is an
+/-- For the restricted representation `Rep.res φ D`, `associatedLocalSystemMapOver` is an
 isomorphism on every fibre: in sheet coordinates at any sheet `e` over `x` and its image `f e` over
-`b.hom x.as`, it is the identity on `M`. -/
-instance isIso_associatedLocalSystemChangeOfGroupsMap_id
+`b.hom x.as`, it is the identity on `D`. -/
+instance isIso_associatedLocalSystemMapOver_id
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (M : Rep.{u} k H) :
-    IsIso (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb (𝟙 (Rep.res φ M))) := by
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (D : Rep.{u} k H) :
+    IsIso (hG.associatedLocalSystemMapOver k hH f hf b hb (𝟙 (Rep.res φ D))) := by
   have : ∀ x : FundamentalGroupoid B,
-      IsIso ((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb
-        (𝟙 (Rep.res φ M))).app x) := fun x ↦ by
+      IsIso ((hG.associatedLocalSystemMapOver k hH f hf b hb
+        (𝟙 (Rep.res φ D))).app x) := fun x ↦ by
     obtain ⟨e₀, he₀⟩ := hG.surjective x.as
     let e : p ⁻¹' {x.as} := ⟨e₀, he₀⟩
-    let e' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj x).as} := coverFiberMap f b hb x.as e
-    let f_app : (hG.associatedLocalSystem k (Rep.res φ M)).obj x ⟶
-        (hH.associatedLocalSystem k M).obj ((FundamentalGroupoid.map b.hom).obj x) :=
-      (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb (𝟙 (Rep.res φ M))).app x
+    let e' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj x).as} :=
+      (CommSq.mk hb.symm).fiberMap x.as e
+    let f_app : (hG.associatedLocalSystem k (Rep.res φ D)).obj x ⟶
+        (hH.associatedLocalSystem k D).obj ((FundamentalGroupoid.map b.hom).obj x) :=
+      (hG.associatedLocalSystemMapOver k hH f hf b hb (𝟙 (Rep.res φ D))).app x
     have hf_app : IsIso f_app := by
       have hcomp : f_app =
-          (hG.associatedLocalSystemFiberIso k (Rep.res φ M) e).hom ≫
-            (hH.associatedLocalSystemFiberIso k M e').inv := by
+          (hG.associatedLocalSystemFiberIso k (Rep.res φ D) e).hom ≫
+            (hH.associatedLocalSystemFiberIso k D e').inv := by
         rw [Iso.eq_comp_inv]
-        exact (hG.associatedLocalSystemChangeOfGroupsMap_app_comp_fiberIso_hom k hH f hf b hb
-          (𝟙 (Rep.res φ M)) e e' rfl).trans (Category.comp_id _)
+        exact (hG.associatedLocalSystemMapOver_app_comp_fiberIso_hom k hH f hf b hb
+          (𝟙 (Rep.res φ D)) e e'
+          (CommSq.fiberMap_apply_coe (CommSq.mk hb.symm) x.as e).symm).trans
+          (Category.comp_id _)
       rw [hcomp]
       infer_instance
     exact hf_app
@@ -360,149 +233,147 @@ instance isIso_associatedLocalSystemChangeOfGroupsMap_id
 
 /-- **Pullback of associated local coefficient systems along a map of quotient covers.** For an
 equivariant map `f : E ⟶ F` along any group homomorphism `φ : G →* H` lying over `b : B ⟶ C` and a
-representation `M` of `H`, the local system on `B` associated to the restricted representation
-`Rep.res φ M` is canonically isomorphic to the pullback along `b` of the local system on `C`
-associated to `M`. -/
+representation `D` of `H`, the local system on `B` associated to the restricted representation
+`Rep.res φ D` is canonically isomorphic to the pullback along `b` of the local system on `C`
+associated to `D`. -/
 def associatedLocalSystemPullbackIso
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (M : Rep.{u} k H) :
-    hG.associatedLocalSystem k (Rep.res φ M) ≅
-      (LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k M) :=
-  asIso (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb (𝟙 (Rep.res φ M)))
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (D : Rep.{u} k H) :
+    hG.associatedLocalSystem k (Rep.res φ D) ≅
+      (LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k D) :=
+  asIso (hG.associatedLocalSystemMapOver k hH f hf b hb (𝟙 (Rep.res φ D)))
 
-/-- The forward morphism of `associatedLocalSystemPullbackIso` is the change-of-groups morphism for
-the identity of `Rep.res φ M`. -/
+/-- The forward morphism of `associatedLocalSystemPullbackIso` is `associatedLocalSystemMapOver`
+for the identity of `Rep.res φ D`. -/
 @[simp]
 theorem associatedLocalSystemPullbackIso_hom
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (M : Rep.{u} k H) :
-    (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom =
-      hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb (𝟙 (Rep.res φ M)) :=
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (D : Rep.{u} k H) :
+    (hG.associatedLocalSystemPullbackIso k hH f hf b hb D).hom =
+      hG.associatedLocalSystemMapOver k hH f hf b hb (𝟙 (Rep.res φ D)) :=
   (rfl)
 
-/-- On a tensor class at a single sheet `e`, the pullback isomorphism sends `⟦m ⊗ r[e]⟧` to
-`⟦m ⊗ r[e']⟧`, where `e'` is the image sheet `f e` over `b.hom x.as`. -/
-theorem associatedLocalSystemPullbackIso_hom_app_coinvariantsTensorMk_single
+/-- On a tensor class at a single sheet `e`, the pullback isomorphism sends `⟦d ⊗ r[e]⟧` to
+`⟦d ⊗ r[f e]⟧`. -/
+@[simp↓]
+theorem associatedLocalSystemPullbackIso_hom_app_mk_single
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (M : Rep.{u} k H)
-    (x : FundamentalGroupoid B) (m : M)
-    (e : p ⁻¹' {x.as}) (e' : q ⁻¹' {b.hom x.as}) (he : f e = e') (r : k) :
-    ((hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom.app x).hom
-        (Rep.coinvariantsTensorMk (Rep.res φ M) (Rep.of (hG.fiberRepresentation k x.as)) m
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (D : Rep.{u} k H)
+    (x : FundamentalGroupoid B) (d : D) (e : p ⁻¹' {x.as}) (r : k) :
+    ((hG.associatedLocalSystemPullbackIso k hH f hf b hb D).hom.app x).hom
+        (Rep.coinvariantsTensorMk (Rep.res φ D) ((hG.permutationRepFunctor k).obj x) d
           (Finsupp.single e r)) =
-      Rep.coinvariantsTensorMk M (Rep.of (hH.fiberRepresentation k (b.hom x.as))) m
-        (Finsupp.single e' r) :=
-  hG.associatedLocalSystemChangeOfGroupsMap_app_coinvariantsTensorMk_single k hH f hf b hb
-    (𝟙 (Rep.res φ M)) x m e e' he r
+      Rep.coinvariantsTensorMk D
+        ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) d
+        (Finsupp.single ((CommSq.mk hb.symm).fiberMap x.as e) r) :=
+  hG.associatedLocalSystemMapOver_app_mk_single k hH f hf b hb (𝟙 (Rep.res φ D)) x d e r
 
-/-- On a tensor class at the image sheet `e'`, the inverse pullback isomorphism sends
-`⟦m ⊗ r[e']⟧` back to `⟦m ⊗ r[e]⟧`. -/
-theorem associatedLocalSystemPullbackIso_inv_app_coinvariantsTensorMk_single
+/-- On a tensor class at the image sheet `f e`, the inverse pullback isomorphism sends
+`⟦d ⊗ r[f e]⟧` back to `⟦d ⊗ r[e]⟧`. -/
+@[simp↓]
+theorem associatedLocalSystemPullbackIso_inv_app_mk_single
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
-    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (M : Rep.{u} k H)
-    (x : FundamentalGroupoid B) (m : M)
-    (e : p ⁻¹' {x.as}) (e' : q ⁻¹' {b.hom x.as}) (he : f e = e') (r : k) :
-    ((hG.associatedLocalSystemPullbackIso k hH f hf b hb M).inv.app x).hom
-        (Rep.coinvariantsTensorMk M (Rep.of (hH.fiberRepresentation k (b.hom x.as))) m
-          (Finsupp.single e' r)) =
-      Rep.coinvariantsTensorMk (Rep.res φ M) (Rep.of (hG.fiberRepresentation k x.as)) m
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) (D : Rep.{u} k H)
+    (x : FundamentalGroupoid B) (d : D) (e : p ⁻¹' {x.as}) (r : k) :
+    ((hG.associatedLocalSystemPullbackIso k hH f hf b hb D).inv.app x).hom
+        (Rep.coinvariantsTensorMk D
+          ((hH.permutationRepFunctor k).obj ((FundamentalGroupoid.map b.hom).obj x)) d
+          (Finsupp.single ((CommSq.mk hb.symm).fiberMap x.as e) r)) =
+      Rep.coinvariantsTensorMk (Rep.res φ D) ((hG.permutationRepFunctor k).obj x) d
         (Finsupp.single e r) := by
   apply (ModuleCat.mono_iff_injective
-    ((hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom.app x)).mp inferInstance
-  have hcancel := (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).inv_hom_id_app x
+    ((hG.associatedLocalSystemPullbackIso k hH f hf b hb D).hom.app x)).mp inferInstance
+  have hcancel := (hG.associatedLocalSystemPullbackIso k hH f hf b hb D).inv_hom_id_app x
   exact (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom hcancel) _).trans
-    (hG.associatedLocalSystemPullbackIso_hom_app_coinvariantsTensorMk_single k hH f hf b hb M
-      x m e e' he r).symm
+    (hG.associatedLocalSystemPullbackIso_hom_app_mk_single k hH f hf b hb D x d e r).symm
 
-/-- **Factorization of change-of-groups morphisms of local systems.** For `ψ : A ⟶ Rep.res φ M`,
-the change-of-groups morphism `L_A ⟶ b^* L_M` is the coefficient map induced by `ψ` followed by
-the pullback isomorphism `L_{Res(φ)(M)} ≅ b^* L_M`. -/
-theorem associatedLocalSystemChangeOfGroupsMap_eq
+/-- **Factorization of change-of-groups morphisms of local systems.** For `ξ : A ⟶ Rep.res φ D`,
+`associatedLocalSystemMapOver` is the coefficient map induced by `ξ` followed by the pullback
+isomorphism `L_{Res(φ)(D)} ≅ b^* L_D`. -/
+theorem associatedLocalSystemMapOver_eq
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
     (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) :
-    hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ =
-      hG.associatedLocalSystemMap k ψ ≫
-        (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom := by
+    {A : Rep.{u} k G} {D : Rep.{u} k H} (ξ : A ⟶ Rep.res φ D) :
+    hG.associatedLocalSystemMapOver k hH f hf b hb ξ =
+      hG.associatedLocalSystemMap k ξ ≫
+        (hG.associatedLocalSystemPullbackIso k hH f hf b hb D).hom := by
   refine NatTrans.ext <| funext fun x ↦
     Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a v ↦ ?_)
-  exact (φ.coinvariantsTensorMap_mk ψ
-      ((hG.permutationRepFunctorResMap k hH f hf b hb).app x) a v).trans <|
-    (φ.coinvariantsTensorMap_mk (𝟙 (Rep.res φ M))
-      ((hG.permutationRepFunctorResMap k hH f hf b hb).app x) (ψ.hom a) v).symm.trans
-      (congrArg ((hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom.app x).hom
-        (hG.associatedLocalSystemMap_app_coinvariantsTensorMk k ψ x a v).symm)
+  exact (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hH f hf b hb ξ x a v).trans <|
+    (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hH f hf b hb
+      (𝟙 (Rep.res φ D)) x (ξ.hom a) v).symm.trans
+      (congrArg ((hG.associatedLocalSystemPullbackIso k hH f hf b hb D).hom.app x).hom
+        (hG.associatedLocalSystemMap_app_coinvariantsTensorMk k ξ x a v).symm)
 
-/-- Precomposing the change-of-groups morphism with a morphism of `G`-representations composes the
+/-- Precomposing `associatedLocalSystemMapOver` with a morphism of `G`-representations composes the
 compatible coefficient map on the left. -/
 @[simp, reassoc]
-theorem associatedLocalSystemMap_comp_changeOfGroupsMap
+theorem associatedLocalSystemMap_comp_mapOver
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
     (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A A' : Rep.{u} k G} {M : Rep.{u} k H} (α : A' ⟶ A) (ψ : A ⟶ Rep.res φ M) :
+    {A A' : Rep.{u} k G} {D : Rep.{u} k H} (α : A' ⟶ A) (ξ : A ⟶ Rep.res φ D) :
     hG.associatedLocalSystemMap k α ≫
-        hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ =
-      hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb (α ≫ ψ) := by
-  rw [hG.associatedLocalSystemChangeOfGroupsMap_eq k hH f hf b hb ψ,
-    hG.associatedLocalSystemChangeOfGroupsMap_eq k hH f hf b hb (α ≫ ψ),
+        hG.associatedLocalSystemMapOver k hH f hf b hb ξ =
+      hG.associatedLocalSystemMapOver k hH f hf b hb (α ≫ ξ) := by
+  rw [hG.associatedLocalSystemMapOver_eq k hH f hf b hb ξ,
+    hG.associatedLocalSystemMapOver_eq k hH f hf b hb (α ≫ ξ),
     associatedLocalSystemMap_comp_assoc]
 
-/-- Postcomposing the change-of-groups morphism with a pulled-back morphism of `H`-representations
+/-- Postcomposing `associatedLocalSystemMapOver` with a pulled-back morphism of `H`-representations
 composes the compatible coefficient map with the restricted morphism on the right. -/
 @[simp, reassoc]
-theorem associatedLocalSystemChangeOfGroupsMap_comp_pullback_map
+theorem associatedLocalSystemMapOver_comp_pullback_map
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
     (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {A : Rep.{u} k G} {M M' : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) (β : M ⟶ M') :
-    hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ ≫
+    {A : Rep.{u} k G} {D D' : Rep.{u} k H} (ξ : A ⟶ Rep.res φ D) (β : D ⟶ D') :
+    hG.associatedLocalSystemMapOver k hH f hf b hb ξ ≫
         (LocalCoefficientSystem.pullback b.hom).map (hH.associatedLocalSystemMap k β) =
-      hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb
-        (ψ ≫ (Rep.resFunctor φ).map β) := by
+      hG.associatedLocalSystemMapOver k hH f hf b hb
+        (ξ ≫ (Rep.resFunctor φ).map β) := by
   refine NatTrans.ext <| funext fun x ↦
     Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a v ↦ ?_)
   -- Evaluate both composites on a pure tensor class `⟦a ⊗ v⟧`.
   change (((hH.associatedLocalSystemMap k β).app ((FundamentalGroupoid.map b.hom).obj x)).hom
-      (((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x).hom
+      (((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
         (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v))) =
-    ((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb
-      (ψ ≫ (Rep.resFunctor φ).map β)).app x).hom
+    ((hG.associatedLocalSystemMapOver k hH f hf b hb
+      (ξ ≫ (Rep.resFunctor φ).map β)).app x).hom
         (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v)
   exact (congrArg ((hH.associatedLocalSystemMap k β).app _).hom
-    (φ.coinvariantsTensorMap_mk ψ
-      ((hG.permutationRepFunctorResMap k hH f hf b hb).app x) a v)).trans
-    ((hH.associatedLocalSystemMap_app_coinvariantsTensorMk k β _ (ψ.hom a) _).trans
-      (φ.coinvariantsTensorMap_mk (ψ ≫ (Rep.resFunctor φ).map β)
-        ((hG.permutationRepFunctorResMap k hH f hf b hb).app x) a v).symm)
+    (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hH f hf b hb ξ x a v)).trans
+    ((hH.associatedLocalSystemMap_app_coinvariantsTensorMk k β _ (ξ.hom a) _).trans
+      (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hH f hf b hb
+        (ξ ≫ (Rep.resFunctor φ).map β) x a v).symm)
 
-/-- `associatedLocalSystemPullbackIso` is natural in the representation `M` of `H`. -/
+/-- `associatedLocalSystemPullbackIso` is natural in the representation `D` of `H`. -/
 @[reassoc]
 theorem associatedLocalSystemPullbackIso_hom_naturality
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
     (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    {M M' : Rep.{u} k H} (β : M ⟶ M') :
+    {D D' : Rep.{u} k H} (β : D ⟶ D') :
     hG.associatedLocalSystemMap k ((Rep.resFunctor φ).map β) ≫
-        (hG.associatedLocalSystemPullbackIso k hH f hf b hb M').hom =
-      (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom ≫
+        (hG.associatedLocalSystemPullbackIso k hH f hf b hb D').hom =
+      (hG.associatedLocalSystemPullbackIso k hH f hf b hb D).hom ≫
         (LocalCoefficientSystem.pullback b.hom).map (hH.associatedLocalSystemMap k β) := by
   rw [associatedLocalSystemPullbackIso_hom, associatedLocalSystemPullbackIso_hom,
-    associatedLocalSystemMap_comp_changeOfGroupsMap,
-    associatedLocalSystemChangeOfGroupsMap_comp_pullback_map, Category.id_comp, Category.comp_id]
+    associatedLocalSystemMap_comp_mapOver,
+    associatedLocalSystemMapOver_comp_pullback_map, Category.id_comp, Category.comp_id]
 
 end AssociatedLocalSystem
 
@@ -510,100 +381,98 @@ section Functoriality
 
 variable (k : Type u) [CommRing k]
 
-/-- Along the identity map of a quotient cover, the change-of-groups morphism for `ψ : A ⟶ A'`
-followed by `pullbackIdIso` is `associatedLocalSystemMap k ψ`. -/
+/-- Along the identity map of a quotient cover, `associatedLocalSystemMapOver` for `ξ : A ⟶ A'`
+followed by `pullbackIdIso` is `associatedLocalSystemMap k ξ`. -/
 @[simp]
-theorem associatedLocalSystemChangeOfGroupsMap_id {A A' : Rep.{u} k G} (ψ : A ⟶ A') :
-    hG.associatedLocalSystemChangeOfGroupsMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ rfl)
-        (𝟙 B) rfl ψ ≫
+theorem associatedLocalSystemMapOver_id {A A' : Rep.{u} k G} (ξ : A ⟶ A') :
+    hG.associatedLocalSystemMapOver k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ rfl)
+        (𝟙 B) rfl ξ ≫
       (LocalCoefficientSystem.pullbackIdIso.{u, u, u} B).hom.app
         (hG.associatedLocalSystem k A') =
-      hG.associatedLocalSystemMap k ψ := by
+      hG.associatedLocalSystemMap k ξ := by
   refine NatTrans.ext <| funext fun x ↦
     Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a v ↦ ?_)
   -- `pullback (.id B)` and `𝟭 _` agree on fibres only by definition, so the identity component of
   -- `pullbackIdIso` is applied in term mode on a pure tensor class `⟦a ⊗ v⟧`.
   exact (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
       (LocalCoefficientSystem.pullbackIdIso_hom_app_app B (hG.associatedLocalSystem k A') x))
-    (((hG.associatedLocalSystemChangeOfGroupsMap k hG (𝟙 E) (φ := MonoidHom.id G)
-      (fun _ _ ↦ rfl) (𝟙 B) rfl ψ).app x).hom
+    (((hG.associatedLocalSystemMapOver k hG (𝟙 E) (φ := MonoidHom.id G)
+      (fun _ _ ↦ rfl) (𝟙 B) rfl ξ).app x).hom
       (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v))).trans <|
-    ((MonoidHom.id G).coinvariantsTensorMap_mk ψ
-      ((hG.permutationRepFunctorResMap k hG (𝟙 E) (fun _ _ ↦ rfl) (𝟙 B) rfl).app x) a v).trans <|
-    (congrArg (Rep.coinvariantsTensorMk A' ((hG.permutationRepFunctor k).obj x) (ψ.hom a))
-      (hG.fiberRepresentationResHom_id_hom_apply k x.as v)).trans
-      (hG.associatedLocalSystemMap_app_coinvariantsTensorMk k ψ x a v).symm
+    (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hG (φ := MonoidHom.id G)
+      (𝟙 E) (fun _ _ ↦ rfl) (𝟙 B) rfl ξ x a v).trans <|
+    (congrArg (Rep.coinvariantsTensorMk A' ((hG.permutationRepFunctor k).obj x) (ξ.hom a))
+      (hG.permutationRepMap_id_app_hom_apply k x v)).trans
+      (hG.associatedLocalSystemMap_app_coinvariantsTensorMk k ξ x a v).symm
 
-/-- Along a composite of maps of quotient covers, the change-of-groups morphism factors as the
-composite of the two change-of-groups morphisms, up to `pullbackCompIso`. -/
-theorem associatedLocalSystemChangeOfGroupsMap_comp
+/-- Along a composite of maps of quotient covers, `associatedLocalSystemMapOver` factors as the
+composite of the two morphisms, up to `pullbackCompIso`. -/
+theorem associatedLocalSystemMapOver_comp
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H)
-    {D W : TopCat.{u}} {r : D ⟶ W} {K : Type u} [Group K] [MulAction K D]
+    {S W : TopCat.{u}} {r : S ⟶ W} {K : Type u} [Group K] [MulAction K S]
     (hK : IsQuotientCoveringMap r K)
     {φ : G →* H} {φ' : H →* K}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e) (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    (f' : F ⟶ D) (hf' : ∀ h y, f' (h • y) = φ' h • f' y) (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
-    {A : Rep.{u} k G} {M : Rep.{u} k H} {N : Rep.{u} k K}
-    (ψ : A ⟶ Rep.res φ M) (ψ' : M ⟶ Rep.res φ' N) :
-    hG.associatedLocalSystemChangeOfGroupsMap k hK (f ≫ f') (φ := φ'.comp φ)
+    (f' : F ⟶ S) (hf' : ∀ h y, f' (h • y) = φ' h • f' y) (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
+    {A : Rep.{u} k G} {D : Rep.{u} k H} {V : Rep.{u} k K}
+    (ξ : A ⟶ Rep.res φ D) (ζ : D ⟶ Rep.res φ' V) :
+    hG.associatedLocalSystemMapOver k hK (f ≫ f') (φ := φ'.comp φ)
         (fun g e ↦ by simp [hf, hf']) (b ≫ b')
         (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc])
-        (ψ ≫ (Rep.resFunctor φ).map ψ') =
-      hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ ≫
+        (ξ ≫ (Rep.resFunctor φ).map ζ) =
+      hG.associatedLocalSystemMapOver k hH f hf b hb ξ ≫
         (LocalCoefficientSystem.pullback b.hom).map
-          (hH.associatedLocalSystemChangeOfGroupsMap k hK f' hf' b' hb' ψ') ≫
+          (hH.associatedLocalSystemMapOver k hK f' hf' b' hb' ζ) ≫
         (LocalCoefficientSystem.pullbackCompIso.{u, u, u, u} b.hom b'.hom).inv.app
-          (hK.associatedLocalSystem k N) := by
+          (hK.associatedLocalSystem k V) := by
   refine NatTrans.ext <| funext fun x ↦
     Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a v ↦ ?_)
-  -- As in `associatedLocalSystemChangeOfGroupsMap_id`, `pullbackCompIso` acts between fibres that
-  -- agree by definition, so both composites are evaluated on `⟦a ⊗ v⟧` in term mode.
+  -- As in `associatedLocalSystemMapOver_id`, `pullbackCompIso` acts between fibres that agree by
+  -- definition, so both composites are evaluated on `⟦a ⊗ v⟧` in term mode.
   have hrhs := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
       (LocalCoefficientSystem.pullbackCompIso_inv_app_app b.hom b'.hom
-        (hK.associatedLocalSystem k N) x))
+        (hK.associatedLocalSystem k V) x))
     ((((LocalCoefficientSystem.pullback b.hom).map
-      (hH.associatedLocalSystemChangeOfGroupsMap k hK f' hf' b' hb' ψ')).app x).hom
-      (((hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ).app x).hom
+      (hH.associatedLocalSystemMapOver k hK f' hf' b' hb' ζ)).app x).hom
+      (((hG.associatedLocalSystemMapOver k hH f hf b hb ξ).app x).hom
         (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj x) a v)))
-  exact ((φ'.comp φ).coinvariantsTensorMap_mk (ψ ≫ (Rep.resFunctor φ).map ψ')
-      ((hG.permutationRepFunctorResMap k hK (f ≫ f') (fun g e ↦ by simp [hf, hf']) (b ≫ b')
-        _).app x) a v).trans <|
-    (congrArg (Rep.coinvariantsTensorMk N
+  exact (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hK (φ := φ'.comp φ)
+      (f ≫ f') (fun g e ↦ by simp [hf, hf']) (b ≫ b') _
+      (ξ ≫ (Rep.resFunctor φ).map ζ) x a v).trans <|
+    (congrArg (Rep.coinvariantsTensorMk V
         ((hK.permutationRepFunctor k).obj ((FundamentalGroupoid.map (b ≫ b').hom).obj x))
-        ((ψ ≫ (Rep.resFunctor φ).map ψ').hom a))
-      (hG.fiberRepresentationResHom_comp_hom_apply k hH hK f hf b hb f' hf' b' hb' x.as
-        v)).trans <|
-    (φ'.coinvariantsTensorMap_mk ψ'
-      ((hH.permutationRepFunctorResMap k hK f' hf' b' hb').app
-        ((FundamentalGroupoid.map b.hom).obj x)) (ψ.hom a)
-      (((hG.permutationRepFunctorResMap k hH f hf b hb).app x).hom v)).symm.trans <|
+        ((ξ ≫ (Rep.resFunctor φ).map ζ).hom a))
+      (hG.permutationRepMap_comp_app_hom_apply k hH hK f hf b hb f' hf' b' hb' x v)).trans <|
+    (hH.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hK f' hf' b' hb' ζ
+      ((FundamentalGroupoid.map b.hom).obj x) (ξ.hom a)
+      (((hG.permutationRepMap k hH f hf b hb).app x).hom v)).symm.trans <|
     (congrArg (((LocalCoefficientSystem.pullback b.hom).map
-        (hH.associatedLocalSystemChangeOfGroupsMap k hK f' hf' b' hb' ψ')).app x).hom
-      (φ.coinvariantsTensorMap_mk ψ
-        ((hG.permutationRepFunctorResMap k hH f hf b hb).app x) a v).symm).trans hrhs.symm
+        (hH.associatedLocalSystemMapOver k hK f' hf' b' hb' ζ)).app x).hom
+      (hG.associatedLocalSystemMapOver_app_coinvariantsTensorMk k hH f hf b hb ξ x a v).symm).trans
+      hrhs.symm
 
 /-- Along a composite of maps of quotient covers, `associatedLocalSystemPullbackIso` factors as
 the composite of the two pullback isomorphisms, up to `pullbackCompIso`. -/
 theorem associatedLocalSystemPullbackIso_hom_comp
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H)
-    {D W : TopCat.{u}} {r : D ⟶ W} {K : Type u} [Group K] [MulAction K D]
+    {S W : TopCat.{u}} {r : S ⟶ W} {K : Type u} [Group K] [MulAction K S]
     (hK : IsQuotientCoveringMap r K)
     {φ : G →* H} {φ' : H →* K}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e) (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
-    (f' : F ⟶ D) (hf' : ∀ h y, f' (h • y) = φ' h • f' y) (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
-    (N : Rep.{u} k K) :
+    (f' : F ⟶ S) (hf' : ∀ h y, f' (h • y) = φ' h • f' y) (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
+    (V : Rep.{u} k K) :
     (hG.associatedLocalSystemPullbackIso k hK (f ≫ f') (φ := φ'.comp φ)
         (fun g e ↦ by simp [hf, hf']) (b ≫ b')
-        (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]) N).hom =
-      (hG.associatedLocalSystemPullbackIso k hH f hf b hb (Rep.res φ' N)).hom ≫
+        (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]) V).hom =
+      (hG.associatedLocalSystemPullbackIso k hH f hf b hb (Rep.res φ' V)).hom ≫
         (LocalCoefficientSystem.pullback b.hom).map
-          (hH.associatedLocalSystemPullbackIso k hK f' hf' b' hb' N).hom ≫
+          (hH.associatedLocalSystemPullbackIso k hK f' hf' b' hb' V).hom ≫
         (LocalCoefficientSystem.pullbackCompIso.{u, u, u, u} b.hom b'.hom).inv.app
-          (hK.associatedLocalSystem k N) := by
-  have h := hG.associatedLocalSystemChangeOfGroupsMap_comp k hH hK f hf b hb f' hf' b' hb'
-    (𝟙 (Rep.res (φ'.comp φ) N)) (𝟙 (Rep.res φ' N))
+          (hK.associatedLocalSystem k V) := by
+  have h := hG.associatedLocalSystemMapOver_comp k hH hK f hf b hb f' hf' b' hb'
+    (𝟙 (Rep.res (φ'.comp φ) V)) (𝟙 (Rep.res φ' V))
   rw [(Rep.resFunctor φ).map_id, Category.id_comp] at h
   exact h
 

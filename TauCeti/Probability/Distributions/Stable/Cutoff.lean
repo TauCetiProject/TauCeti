@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Stable.Approximation.Basic
+public import TauCeti.Probability.Distributions.Stable.SmallJumpRemainder
 public import TauCeti.Probability.Distributions.CompoundPoisson.Intensity
 
 /-!
@@ -42,12 +43,9 @@ zero Lévy intensity. -/
 theorem stableCompensatedPoissonMeasure_split (α β : ℝ) {ε r : ℝ}
     (hε : 0 < ε) (hεr : ε ≤ r) :
     stableCompensatedPoissonMeasure α β ε =
-      (compoundPoissonMeasure
-        ((stableLevyMeasure α β) {x : ℝ | ε < |x| ∧ |x| ≤ r}).toNNReal
-        (cond (stableLevyMeasure α β) {x : ℝ | ε < |x| ∧ |x| ≤ r})).map
-        (fun x ↦ x - ∫ y in {y : ℝ | ε < |y| ∧ |y| ≤ r}, sin y
-          ∂stableLevyMeasure α β) ∗
+      stableSmallJumpRemainderMeasure α β ε r ∗
         stableCompensatedPoissonMeasure α β r := by
+  rw [stableSmallJumpRemainderMeasure_def]
   let ν := stableLevyMeasure α β
   let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
   let large : Set ℝ := {x | r < |x|}
