@@ -87,8 +87,9 @@ theorem affineBlowupι_preimage_basicOpen (ha : a ∈ I) {b : R} (hb : b ∈ I) 
     Proj.awayι_preimage_basicOpen _ _ _ (monomialDegreeOne_mem_grade hb) one_pos,
     SpecMap_preimage_basicOpen]
   congr 1
-  rw [RingEquiv.toCommRingCatIso_hom, CommRingCat.ofHom_apply, RingEquiv.coe_toRingHom,
-    AlgEquiv.coe_toRingEquiv, ← awayEquivAffineBlowup_apply_mk_monomialDegreeOne S ha hb]
+  simp only [RingEquiv.toCommRingCatIso_hom, CommRingCat.hom_ofHom, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv]
+  rw [← awayEquivAffineBlowup_apply_mk_monomialDegreeOne S ha hb]
   -- `(b t)/(a t)` is the localization element `(b t)¹/(a t)¹` of `D₊(a t) ∩ D₊(b t)`.
   simp only [HomogeneousLocalization.Away.isLocalizationElem, pow_one]
 

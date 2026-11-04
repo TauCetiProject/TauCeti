@@ -10,7 +10,9 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.RingTheory.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node.Basic
+import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
+import TauCeti.RingTheory.GradedAlgebra.FiniteType
 
 /-!
 # The blowup of the node `xy = π²a` at its origin
@@ -53,6 +55,9 @@ computation used in resolving nodal models of curves.
   the chart of the coordinate `xᵢ` is the basic open `D(xᵢ/π)`.
 * `TauCeti.NodeAlgebra.preimage_basicOpen_coord_le_opensRange_blowupCoordChartι`: the part of the
   blowup lying over `D(xᵢ)` is contained in the chart of `xᵢ`.
+* `TauCeti.NodeAlgebra.isProper_blowup`: the blowup is proper over `Spec A`.
+* `TauCeti.NodeAlgebra.isIso_morphismRestrict_iSup_basicOpen_coord`: the blowup is an isomorphism
+  over `D(x₀) ∪ D(x₁)`.
 * `TauCeti.NodeAlgebra.flat_blowup`, `TauCeti.NodeAlgebra.locallyOfFinitePresentation_blowup`,
   `TauCeti.NodeAlgebra.pureRelativeDimension_blowup`: the blowup is flat, locally of finite
   presentation and of pure relative dimension one over `Spec R`.
@@ -172,8 +177,9 @@ theorem blowupBaseChartι_preimage_opensRange_blowupCoordChartι (i : Fin 2)
   rw [opensRange_blowupCoordChartι, blowupBaseChartι, Scheme.Hom.comp_preimage,
     affineBlowupι_preimage_basicOpen, SpecMap_preimage_basicOpen]
   congr 1
-  rw [RingEquiv.toCommRingCatIso_hom, CommRingCat.ofHom_apply, RingEquiv.coe_toRingHom,
-    AlgEquiv.coe_toRingEquiv, AlgEquiv.symm_apply_eq]
+  simp only [RingEquiv.toCommRingCatIso_hom, CommRingCat.hom_ofHom, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv]
+  rw [AlgEquiv.symm_apply_eq]
   exact Subtype.ext (coe_affineBlowupBaseEquiv_coord hπ i).symm
 
 /-- **The blowup over `D(xᵢ)` lies in the chart of `xᵢ`.** For a nonzerodivisor `π` of `R`, the
@@ -189,6 +195,36 @@ theorem preimage_basicOpen_coord_le_opensRange_blowupCoordChartι (i : Fin 2)
     (coord_mem_originIdeal π _ i), opensRange_blowupCoordChartι,
     ← opensRange_affineBlowupι (Localization.Away (coord (π ^ 2 * a) i))]
   exact Scheme.Hom.image_le_opensRange _ _
+
+variable (π) in
+/-- **The blowup of a node is proper.** The morphism `Proj A[It] ⟶ Spec A` from the blowup of
+`A = R[x, y] ⧸ (xy - π²a)` along `I = (π, x, y)` is proper. -/
+theorem isProper_blowup :
+    IsProper (Proj.toSpecZero (grade (originIdeal π (π ^ 2 * a))) ≫
+      Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) := by
+  -- The Rees algebra of the finitely generated ideal `(π, x, y)` is of finite type, so the
+  -- blowup `Proj` is proper over its degree-zero part.
+  have := reesAlgebra.finiteType_of_fg
+    (by rw [originIdeal_def]; exact Submodule.fg_span (Set.toFinite _) :
+      (originIdeal π (π ^ 2 * a)).FG)
+  -- Instance search does not find `ContainsIdentities` through `IsMultiplicative` here.
+  have : MorphismProperty.ContainsIdentities @IsProper :=
+    MorphismProperty.IsMultiplicative.toContainsIdentities
+  exact MorphismProperty.comp_mem (W := @IsProper) _ _ inferInstance (MorphismProperty.of_isIso _ _)
+
+variable (π) in
+/-- **The blowup of a node is an isomorphism away from its center.** The morphism
+`Proj A[It] ⟶ Spec A` from the blowup of `A = R[x₀, x₁] ⧸ (x₀x₁ - π²a)` along `I = (π, x₀, x₁)`
+is an isomorphism over the open `D(x₀) ∪ D(x₁)`, which is disjoint from `V(I)`. -/
+theorem isIso_morphismRestrict_iSup_basicOpen_coord :
+    IsIso ((Proj.toSpecZero (grade (originIdeal π (π ^ 2 * a))) ≫
+      Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) ∣_
+        (⨆ i, PrimeSpectrum.basicOpen (coord (π ^ 2 * a) i) :
+          (Spec (.of (NodeAlgebra R (π ^ 2 * a)))).Opens)) := by
+  refine isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
+    (Set.disjoint_left.mpr fun p hp hz ↦ ?_)
+  obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hp
+  exact hi (hz (coord_mem_originIdeal π _ i))
 
 /-! ### The open cover by the three charts -/
 

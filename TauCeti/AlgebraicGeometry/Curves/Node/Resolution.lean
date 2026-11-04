@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Blowup.Node
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 import TauCeti.RingTheory.GradedAlgebra.FiniteType
-import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
 import TauCeti.AlgebraicGeometry.Gluing.Extension
 import TauCeti.AlgebraicGeometry.Restrict
 
@@ -72,26 +71,29 @@ private theorem hasResolution_of_isRegularRing {a : R} [IsRegularRing (NodeAlgeb
     rw [Category.id_comp]
     exact atWorstNodalOfRelativeDimensionOne a⟩
 
-/-- A scheme `Y'` covered by an open immersion `ι` from a regular scheme and by the inverse image of
-an open `V` over which `f' : Y' ⟶ B` is an isomorphism is regular as soon as `B` has regular local
-rings at the points of `V` and `Y'` is locally Noetherian. -/
-private theorem isRegular_of_isIso_morphismRestrict {Y Y' B : Scheme.{u}} [IsRegular Y]
-    [IsLocallyNoetherian Y'] (ι : Y ⟶ Y') [IsOpenImmersion ι] (f' : Y' ⟶ B) (V : B.Opens)
-    [IsIso (f' ∣_ V)] (hcov : ι.opensRange ⊔ f' ⁻¹ᵁ V = ⊤)
-    (hV : ∀ b ∈ V, IsRegularLocalRing (B.presheaf.stalk b)) : IsRegular Y' := by
-  refine ⟨fun p ↦ ?_⟩
-  rcases TopologicalSpace.Opens.mem_sup.mp (hcov.ge (by trivial : p ∈ (⊤ : Y'.Opens))) with
-    ⟨y, rfl⟩ | hp
-  · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion ι y).mpr inferInstance
-  -- Over `V`, the local ring of `Y'` at `p` is that of `f' ⁻¹ᵁ V ≅ V`, hence that of `B` at `f' p`.
-  let p' : (f' ⁻¹ᵁ V).toScheme := ⟨p, hp⟩
-  have e : V.ι ((f' ∣_ V) p') = f' p := by
-    rw [← Scheme.Hom.comp_apply, morphismRestrict_ι]
-    rfl
-  have hB := hV (f' p) hp
-  exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ⁻¹ᵁ V).ι p').mpr
-    ((isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ∣_ V) p').mp
-      ((isRegularLocalRing_stalk_iff_of_isOpenImmersion V.ι _).mp (e ▸ hB)))
+/-- An extension `f' : Y' ⟶ Proj A[It]` of a nodal `f : Y ⟶ Spec R[x, y] ⧸ (xy - a)` along the
+`π`-chart of the blowup of `xy = π²a`, covered by `Y` and by an open over which `f'` is an
+isomorphism, is nodal over `R`: on `Y` it is `f`, and elsewhere it is an open of the blowup. -/
+private theorem atWorstNodalOfRelativeDimensionOne_comp_blowupToSpec {a : R}
+    (hπ0 : π ∈ nonZeroDivisors R) {Y Y' : Scheme.{u}} {f : Y ⟶ Spec (.of (NodeAlgebra R a))}
+    {ι : Y ⟶ Y'} [IsOpenImmersion ι] {f' : Y' ⟶ Proj (grade (originIdeal π (π ^ 2 * a)))}
+    {V : (Proj (grade (originIdeal π (π ^ 2 * a)))).Opens} [IsIso (f' ∣_ V)]
+    (hpb : IsPullback f ι (blowupBaseChartι a hπ0) f') (hcov : ι.opensRange ⊔ f' ⁻¹ᵁ V = ⊤)
+    (hfn : AtWorstNodalOfRelativeDimensionOne
+      (f ≫ Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a))))) :
+    AtWorstNodalOfRelativeDimensionOne (f' ≫ blowupToSpec π a) := by
+  refine IsZariskiLocalAtSource.of_iSup_eq_top (fun t ↦ cond t ι.opensRange (f' ⁻¹ᵁ V))
+    (by rwa [iSup_bool_eq]) fun t ↦ ?_
+  cases t
+  · dsimp only [Bool.cond_false]
+    rw [← morphismRestrict_ι_assoc,
+      MorphismProperty.cancel_left_of_respectsIso (P := @AtWorstNodalOfRelativeDimensionOne)]
+    exact IsZariskiLocalAtSource.comp (atWorstNodalOfRelativeDimensionOne_blowup a hπ0) _
+  · rw [← MorphismProperty.cancel_left_of_respectsIso (P := @AtWorstNodalOfRelativeDimensionOne)
+      ι.isoOpensRange.hom]
+    dsimp only [Bool.cond_true]
+    rw [Scheme.Hom.isoOpensRange_hom_ι_assoc, ← hpb.w_assoc, blowupBaseChartι_blowupToSpec]
+    exact hfn
 
 /-- **The induction step.** If the node `xy = a` has a resolution, so does `xy = π²a`: glue the
 resolution of the `π`-chart `xy = a` of the blowup of `xy = π²a` at its origin into the blowup,
@@ -119,28 +121,14 @@ private theorem hasResolution_pow_two_mul [IsDomain R] [IsDiscreteValuationRing 
   have : IsProper f' := IsZariskiLocalAtTarget.of_isPullback_of_isIso_morphismRestrict
     (P := @IsProper) hpb hiso
     (opensRange_blowupBaseChartι_sup_iSup_opensRange_blowupCoordChartι a hπ0) hfp
-  -- The Rees algebra of the finitely generated ideal `(π, x, y)` is of finite type, so the
-  -- blowup `Proj` is proper over its degree-zero part.
-  have : Algebra.FiniteType (NodeAlgebra R (π ^ 2 * a))
-      (_root_.reesAlgebra (originIdeal π (π ^ 2 * a))) :=
-    ⟨(_root_.reesAlgebra _).fg_top.mpr (reesAlgebra.fg
-      (by rw [originIdeal_def]; exact Submodule.fg_span (Set.toFinite _)))⟩
   have : IsNoetherianRing (NodeAlgebra R (π ^ 2 * a)) := Algebra.FiniteType.isNoetherianRing R _
   have : IsRegularRing (NodeAlgebra R π) := by
     have h1 := (isRegularRing_pow_iff hπ 1).mpr le_rfl
     rwa [pow_one] at h1
-  have : IsProper b :=
-    MorphismProperty.comp_mem (W := @IsProper) _ _ inferInstance (MorphismProperty.of_isIso _ _)
-  have : IsProper (f' ≫ b) := inferInstance
-  refine ⟨Y', f' ≫ b, this, ?_, ?_, ?_⟩
+  have : IsProper b := isProper_blowup π a
+  refine ⟨Y', f' ≫ b, inferInstance, ?_, ?_, ?_⟩
   · -- Over `D(x) ∪ D(y)` the blowup is an isomorphism with image in `V`, over which so is `f'`.
     rw [morphismRestrict_comp]
-    have hb : IsIso (b ∣_ (⨆ i, PrimeSpectrum.basicOpen (coord (π ^ 2 * a) i) :
-        (Spec (.of (NodeAlgebra R (π ^ 2 * a)))).Opens)) := by
-      refine isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
-        (Set.disjoint_left.mpr fun p hp hz ↦ ?_)
-      obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hp
-      exact hi (hz (coord_mem_originIdeal π _ i))
     have hf' : IsIso (f' ∣_ b ⁻¹ᵁ (⨆ i, PrimeSpectrum.basicOpen (coord (π ^ 2 * a) i) :
         (Spec (.of (NodeAlgebra R (π ^ 2 * a)))).Opens)) := by
       refine (MorphismProperty.isomorphisms.iff _).mp
@@ -150,28 +138,17 @@ private theorem hasResolution_pow_two_mul [IsDomain R] [IsDiscreteValuationRing 
       obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hx
       exact TopologicalSpace.Opens.mem_iSup.mpr
         ⟨i, preimage_basicOpen_coord_le_opensRange_blowupCoordChartι a i hπ0 hi⟩
-    exact IsIso.comp_isIso' hf' hb
+    exact IsIso.comp_isIso' hf' (isIso_morphismRestrict_iSup_basicOpen_coord π a)
   · -- `Y'` is covered by `Y` and by the regular coordinate charts.
     have := LocallyOfFiniteType.isLocallyNoetherian (f' ≫ b)
-    refine isRegular_of_isIso_morphismRestrict ι f' V hcov fun x hx ↦ ?_
+    refine IsRegular.of_isIso_morphismRestrict ι f' V hcov fun x hx ↦ ?_
     obtain ⟨i, q, rfl⟩ := TopologicalSpace.Opens.mem_iSup.mp hx
     exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
   · -- On `Y` the composite is the resolution of `xy = a`, and over `V` it is the blowup.
     have hb : b ≫ Spec.map (CommRingCat.ofHom (algebraMap R _)) = blowupToSpec π a := by
       rw [blowupToSpec_def, Category.assoc]
     rw [Category.assoc, hb]
-    refine IsZariskiLocalAtSource.of_iSup_eq_top (fun t ↦ cond t ι.opensRange (f' ⁻¹ᵁ V))
-      (by rwa [iSup_bool_eq]) fun t ↦ ?_
-    cases t
-    · dsimp only [Bool.cond_false]
-      rw [← morphismRestrict_ι_assoc,
-        MorphismProperty.cancel_left_of_respectsIso (P := @AtWorstNodalOfRelativeDimensionOne)]
-      exact IsZariskiLocalAtSource.comp (atWorstNodalOfRelativeDimensionOne_blowup a hπ0) _
-    · rw [← MorphismProperty.cancel_left_of_respectsIso (P := @AtWorstNodalOfRelativeDimensionOne)
-        ι.isoOpensRange.hom]
-      dsimp only [Bool.cond_true]
-      rw [Scheme.Hom.isoOpensRange_hom_ι_assoc, ← hpb.w_assoc, blowupBaseChartι_blowupToSpec]
-      exact hfn
+    exact atWorstNodalOfRelativeDimensionOne_comp_blowupToSpec hπ0 hpb hcov hfn
 
 /-- The node `xy = πⁿ` has a resolution for every `n`, by induction on `n` in steps of two. -/
 private theorem hasResolution_pow [IsDomain R] [IsDiscreteValuationRing R] (hπ : Irreducible π) :

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Morphisms.Basic
 import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 
 /-!
 # Extending a morphism from an open subscheme
@@ -24,8 +25,6 @@ inside `U` (such as a sequence of blowups at closed points of `U`) is extended t
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.range_pushout_inl_union_range_pushout_inr`: a pushout of two open
-  immersions is covered by the images of its two pieces.
 * `AlgebraicGeometry.Scheme.Hom.exists_isPullback_isIso_morphismRestrict`: the extension `f'` of
   `f` along `j`, with `f` its base change along `j` and `f'` an isomorphism over `V`.
 * `AlgebraicGeometry.IsZariskiLocalAtTarget.of_isPullback_of_isIso_morphismRestrict`: a property
@@ -45,22 +44,6 @@ open CategoryTheory Limits
 universe u
 
 namespace AlgebraicGeometry
-
-/-- **A pushout of open immersions is covered by its two pieces.** Every point of the pushout of
-two open immersions `X ⟵ W ⟶ Z` of schemes lies in the image of `X` or of `Z`. -/
-theorem Scheme.range_pushout_inl_union_range_pushout_inr {W X Z : Scheme.{u}} (g : W ⟶ X)
-    (h : W ⟶ Z) [IsOpenImmersion g] [IsOpenImmersion h] :
-    Set.range (pushout.inl g h) ∪ Set.range (pushout.inr g h) = Set.univ := by
-  refine Set.eq_univ_of_forall fun p ↦ ?_
-  -- Every point of a locally directed colimit comes from one of the three pieces of the span,
-  -- and the apex maps through the left piece.
-  obtain ⟨i, q, rfl⟩ := Scheme.IsLocallyDirected.ι_jointly_surjective (span g h) p
-  rcases i with _ | _ | _
-  · refine Or.inl ⟨g q, ?_⟩
-    rw [← Scheme.Hom.comp_apply, ← colimit.w (span g h) (WidePushoutShape.Hom.init .left)]
-    rfl
-  · exact Or.inl ⟨q, rfl⟩
-  · exact Or.inr ⟨q, rfl⟩
 
 namespace Scheme.Hom
 
@@ -95,8 +78,7 @@ private theorem preimage_opensRange_gluedToBase :
     obtain ⟨u, hu⟩ := hp
     rw [← Scheme.Hom.comp_apply, gluedToBase, pushout.inr_desc] at hu
     have hu' : u ∈ j ⁻¹ᵁ V := by
-      change j u ∈ V
-      rw [hu]
+      rw [Scheme.Hom.mem_preimage, hu]
       exact v.2
     obtain ⟨w, hw⟩ := (f ∣_ j ⁻¹ᵁ V).surjective ⟨u, hu'⟩
     refine ⟨(f ⁻¹ᵁ j ⁻¹ᵁ V).ι w, ?_⟩
