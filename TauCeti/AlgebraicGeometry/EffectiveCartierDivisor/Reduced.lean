@@ -37,7 +37,8 @@ universe u
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
 
-local instance : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
+local instance nonemptyTopForSquarefreeGerm : Nonempty (⊤ : X.Opens) :=
+  ⟨⟨genericPoint X, trivial⟩⟩
 
 /-- If the orders of a nonzero global function at all codimension-one points are at most one,
 its germs in factorial local rings are squarefree. -/
