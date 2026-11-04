@@ -10,7 +10,6 @@ import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyStronglySheafy
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetherian
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
-import TauCeti.RingTheory.Huber.NoetherianType.Tate
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
@@ -96,9 +95,6 @@ example (Y : AdicSpace.{0}) :
     IsLocallyNoetherianAnalytic.spa (Padic.pairOfDefinition (p := p))
       (Pair.powerBounded ℚ_[p]).plus
       (Pair.powerBounded ℚ_[p]).isRingOfIntegralElements.isPowerBounded_of_mem hP
-      (isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian
-        (Padic.pairOfDefinition (p := p)) hP
-        (Pair.powerBounded ℚ_[p]).isRingOfIntegralElements.isPowerBounded_of_mem)
   have hne : (spa (Pair.powerBounded ℚ_[p]).plus).Nonempty := by
     rw [Set.nonempty_iff_ne_empty, Ne,
       spa_eq_empty_iff_subsingleton _ (Pair.powerBounded ℚ_[p]).isRingOfIntegralElements]
@@ -113,8 +109,8 @@ example (Y : AdicSpace.{0}) :
 example (S : Pair ℚ_[p]) (P : PairOfDefinition ℚ_[p]) (hP : P.ringOfDefinition ≤ S.plus) :
     IsLocallyStronglySheafy ⟨presentationLimitPreAdicSpace P S.plus
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP,
-      isAdic_presentationLimitPreAdicSpace_of_isStronglySheafy P S.isRingOfIntegralElements hP
-        .of_isStronglyNoetherian⟩ :=
+      isAdic_presentationLimitPreAdicSpace_of_isSheafyRing P S.isRingOfIntegralElements hP
+        IsStronglySheafy.of_isStronglyNoetherian.isSheafyRing⟩ :=
   IsLocallyStronglySheafy.spa .of_isStronglyNoetherian S P hP
 
 /-- *test_tateAlgebra*: for every `m : ℕ` and Huber pair `S` on `ℚ_p⟨X₁, …, Xₘ⟩` with compatible
@@ -132,8 +128,6 @@ example (m : ℕ) (S : Pair (restrictedMvPowerSeriesCompletion m ℚ_[p]))
   have hX : X.IsLocallyNoetherianAnalytic :=
     IsLocallyNoetherianAnalytic.spa P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP
-      (isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian P hP
-        S.isRingOfIntegralElements.isPowerBounded_of_mem)
   exact ⟨hX, hX.isLocallyStronglySheafy⟩
 
 end PadicField

@@ -126,12 +126,10 @@ theorem isTateAffinoid.isAffinoid {X : PreAdicSpace.{u}} (hX : isTateAffinoid X)
     ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
       inferInstance, S, P, hP, e⟩
 
-/-- The presentation-limit pre-adic space of a complete Hausdorff Tate Huber pair is a Tate
-affinoid. For a general Tate Huber pair whose ring need not be complete or Hausdorff, see
-`TauCeti.PreAdicSpace.isTateAffinoid_presentationLimitPreAdicSpace_of_isTateRing`. -/
-theorem isTateAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
-    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T2Space A]
-    [IsTateRing A] (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
+private theorem isTateAffinoid_presentationLimitPreAdicSpace_of_completeSpace {A : Type u}
+    [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A]
+    [T2Space A] [IsTateRing A] (S : Pair A) (P : PairOfDefinition A)
+    (hP : P.ringOfDefinition ≤ S.plus) :
     isTateAffinoid (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
   ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
@@ -193,20 +191,12 @@ private theorem spaBasicOpen_mem_tateAffinoidOpens_of_isTateRing_completion {T :
       IsTateRing (UniformSpace.Completion (Localization.Away s))) :
     spaBasicOpen Aplus T s ∈
       (presentationLimitPreAdicSpace P Aplus hAplus hP).tateAffinoidOpens := by
-  let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ : IsTateRing (UniformSpace.Completion (Localization.Away s)) := htate
-  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
-    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
-      Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
-    ObjectProperty.prop_of_iso PreAdicSpace.isTateAffinoid
-      (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-      (PreAdicSpace.isTateAffinoid_presentationLimitPreAdicSpace S'
-        (completionLocalization P T s _ hden)
-        (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isTateAffinoid hT ?_
+  intro _ _ _
+  have : _ := htate
+  exact PreAdicSpace.isTateAffinoid_presentationLimitPreAdicSpace_of_completeSpace _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s _
+      (hasDenominatorPower_of_isOpen_span P T s _ hT))
 
 /-- **Rational subsets at a topologically nilpotent denominator are open Tate affinoids.** For any
 Huber ring `A` (which need not be Tate or complete), if `T` spans an open ideal and `s` is
@@ -234,10 +224,12 @@ theorem exists_mem_propOpens_of_mem_analyticPoints (Q : ObjectProperty PreAdicSp
     ∃ W ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q, y ∈ W := by
   classical
   obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
-  rw [analyticPoints_presentationLimitPreAdicSpace] at hy
-  replace hy : (y : spa Aplus).1 ∈ spaAnalytic Aplus := hy
-  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hy
-  obtain ⟨g, hg, hyg⟩ := Set.mem_iUnion₂.mp hy
+  -- `presentationLimitPreAdicSpace` has underlying type `spa Aplus`, so `Set.mem_preimage`
+  -- views `y` as an element of `spa Aplus`.
+  have hy' : (y : spa Aplus).1 ∈ spaAnalytic Aplus :=
+    Set.mem_preimage.mp (by rwa [analyticPoints_presentationLimitPreAdicSpace] at hy)
+  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hy'
+  obtain ⟨g, hg, hyg⟩ := Set.mem_iUnion₂.mp hy'
   refine ⟨spaBasicOpen Aplus (G.image (↑)) g, hQ ?_ ?_, mem_spaBasicOpen.mpr hyg⟩
   · exact P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition
   · exact P.isTopologicallyNilpotent_of_mem_idealOfDefinition
@@ -264,11 +256,9 @@ theorem spaBasicOpen_mem_tateAffinoidOpens {T : Finset A} {s : A}
 /-- **The open Tate affinoid subspaces form a basis of `Spa(A, A⁺)`** when `A` is a Tate ring,
 since the rational opens do. -/
 theorem isBasis_tateAffinoidOpens_presentationLimitPreAdicSpace :
-    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).tateAffinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
-  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
-  exact ⟨_, spaBasicOpen_mem_tateAffinoidOpens P Aplus hAplus hP hT, hxV, hVU⟩
+    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).tateAffinoidOpens :=
+  isBasis_propOpens_presentationLimitPreAdicSpace P Aplus hAplus hP PreAdicSpace.isTateAffinoid
+    fun hT ↦ spaBasicOpen_mem_tateAffinoidOpens P Aplus hAplus hP hT
 
 end TateBase
 
@@ -277,19 +267,16 @@ end ValuationSpectrum
 namespace PreAdicSpace
 
 /-- The presentation-limit pre-adic space of any Tate Huber pair is a Tate affinoid, without
-completeness or Hausdorffness hypotheses on `A`: its trivial rational open `R({1}/1) = ⊤` identifies
-it with the adic spectrum of its completed Hausdorff Tate model. -/
-theorem isTateAffinoid_presentationLimitPreAdicSpace_of_isTateRing {A : Type u} [CommRing A]
+completeness or Hausdorffness hypotheses on `A`. -/
+theorem isTateAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
     [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] (S : Pair A)
     (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
     isTateAffinoid (presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
-  rw [← top_mem_propOpens_iff _ isTateAffinoid]
-  have htop : spaBasicOpen S.plus ({1} : Finset A) 1 = ⊤ := by
-    ext x
-    simp [mem_spaBasicOpen, rationalSubset_singleton_one]
-  exact htop ▸ spaBasicOpen_mem_tateAffinoidOpens P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP (by simp)
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+  (top_mem_propOpens_iff _ isTateAffinoid).mp <|
+    top_mem_propOpens_presentationLimitPreAdicSpace P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP isTateAffinoid
+      fun hT ↦ spaBasicOpen_mem_tateAffinoidOpens P S.plus _ hP hT
 
 /-- **On a Tate affinoid the open Tate affinoid subspaces form a basis.** -/
 theorem isTateAffinoid.isBasis_tateAffinoidOpens {X : PreAdicSpace.{u}} (hX : isTateAffinoid X) :

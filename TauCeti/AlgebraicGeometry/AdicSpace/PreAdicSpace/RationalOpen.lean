@@ -66,6 +66,12 @@ rings determined by `j(y)` and by `y` (`comap_presentationLimitLocIso_rationalLo
 * `TauCeti.ValuationSpectrum.restrictSpaBasicOpenIso`: the restriction of `Spa(A, A⁺)` to the
   rational subset `R(T/s)` is isomorphic to `Spa(A⟨T/s⟩, A_U⁺)`; on points, its inverse followed
   by the inclusion of `R(T/s)` is `j` (`restrictSpaBasicOpenIso_inv_base_inclusion'`).
+* `TauCeti.ValuationSpectrum.spaBasicOpen_mem_propOpens`,
+  `TauCeti.ValuationSpectrum.spaRationalOpens_subset_propOpens`,
+  `TauCeti.ValuationSpectrum.isBasis_propOpens_presentationLimitPreAdicSpace`,
+  `TauCeti.ValuationSpectrum.top_mem_propOpens_presentationLimitPreAdicSpace`: generic transport of
+  an isomorphism-closed property `Q` from completed rational localisations to `propOpens Q`, its
+  basis property, and `⊤ ∈ propOpens Q`.
 * `TauCeti.ValuationSpectrum.spaBasicOpen_mem_affinoidOpens`,
   `TauCeti.ValuationSpectrum.spaRationalOpens_subset_affinoidOpens`: rational subsets are open
   affinoid subspaces.
@@ -499,6 +505,71 @@ theorem restrictSpaBasicOpenIso_inv_base_inclusion' :
   rw [PreAdicSpace.comp_base, PreAdicSpace.comp_base, hinv] at h
   exact h.trans (Category.id_comp _)
 
+/-- **Rational subsets into `propOpens`**: for any isomorphism-closed property `Q` of objects of
+`𝒱^pre` and any rational subset `R(T/s)` with `T` spanning an open ideal, if `Q` holds on the
+presentation-limit pre-adic space `Spa(A⟨T/s⟩, A_U⁺)` of the completed localisation, then `R(T/s)`
+belongs to `propOpens Q`. -/
+theorem spaBasicOpen_mem_propOpens (Q : ObjectProperty PreAdicSpace.{u})
+    [Q.IsClosedUnderIsomorphisms] {T : Finset A} {s : A}
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hQ :
+      letI hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+      letI := locUniformSpace P T s (Localization.Away s) hden
+      ∀ [IsUniformAddGroup (Localization.Away s)]
+        [IsTopologicalRing (Localization.Away s)]
+        [IsHuberRing (UniformSpace.Completion (Localization.Away s))],
+      Q (presentationLimitPreAdicSpace (completionLocalization P T s (Localization.Away s) hden)
+        (completedPlusPair P Aplus hAplus hP T s (Localization.Away s) hden).plus
+        (completedPlusPair P Aplus hAplus hP T s
+          (Localization.Away s) hden).isRingOfIntegralElements.isPowerBounded_of_mem
+        (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s
+          (Localization.Away s) hden))) :
+    spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q := by
+  let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+  let _ := locUniformSpace P T s _ hden
+  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
+  have _ := isTopologicalRing_locUniformSpace P T s _ hden
+  have _ := isHuberRing_completion_locTopology P T s _ hden
+  have key : ∀ (Bplus : Subring (UniformSpace.Completion (Localization.Away s)))
+      (_ : Bplus = completedPlusSubring P Aplus T s (Localization.Away s) hden) (hBplus) (hPB),
+      Q (presentationLimitPreAdicSpace (completionLocalization P T s (Localization.Away s) hden)
+        Bplus hBplus hPB) →
+      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q := by
+    rintro _ rfl _ _ hQ'
+    exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
+      ObjectProperty.prop_of_iso Q (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
+        hQ'
+  exact key _ (completedPlusPair_plus P Aplus hAplus hP T s (Localization.Away s) hden) _ _ hQ
+
+/-- If `Q` holds on every rational open `R(T/s)` with `T` spanning an open ideal, then every
+rational open of `Spa(A, A⁺)` lies in `propOpens Q`. -/
+theorem spaRationalOpens_subset_propOpens (Q : ObjectProperty PreAdicSpace.{u})
+    (hQ : ∀ {T : Finset A} {s : A}, IsOpen (Ideal.span (T : Set A) : Set A) →
+      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q) :
+    spaRationalOpens Aplus ⊆ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q := by
+  intro U hU
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
+  exact hQ hT
+
+/-- If every rational open `R(T/s)` with `T` spanning an open ideal lies in `propOpens Q`, then
+`propOpens Q` forms a basis of the topology of `Spa(A, A⁺)`. -/
+theorem isBasis_propOpens_presentationLimitPreAdicSpace (Q : ObjectProperty PreAdicSpace.{u})
+    (hQ : ∀ {T : Finset A} {s : A}, IsOpen (Ideal.span (T : Set A) : Set A) →
+      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q) :
+    Opens.IsBasis ((presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q) := by
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
+  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
+  exact ⟨V, spaRationalOpens_subset_propOpens P Aplus hAplus hP Q hQ hV, hxV, hVU⟩
+
+/-- If every rational open `R(T/s)` with `T` spanning an open ideal lies in `propOpens Q`, then
+the whole space `⊤ = R({1}/1)` lies in `propOpens Q`. -/
+theorem top_mem_propOpens_presentationLimitPreAdicSpace (Q : ObjectProperty PreAdicSpace.{u})
+    (hQ : ∀ {T : Finset A} {s : A}, IsOpen (Ideal.span (T : Set A) : Set A) →
+      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q) :
+    ⊤ ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q :=
+  spaBasicOpen_singleton_one Aplus ▸ hQ (by simp)
+
 /-- **Rational subsets are open affinoid subspaces.** For `T` spanning an open ideal, the rational
 subset `R(T/s)` of the presentation-limit pre-adic space `Spa(A, A⁺)` is an open affinoid subspace:
 the restriction to it is isomorphic in `𝒱^pre` to `Spa(A⟨T/s⟩, A_U⁺)`
@@ -506,35 +577,26 @@ the restriction to it is isomorphic in `𝒱^pre` to `Spa(A⟨T/s⟩, A_U⁺)`
 theorem spaBasicOpen_mem_affinoidOpens {T : Finset A} {s : A}
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).affinoidOpens := by
-  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ := isHuberRing_completion_locTopology P T s _ hden
-  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
-    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P Aplus
-      (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact (PreAdicSpace.mem_propOpens_iff _).mpr <| ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
-    (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-    (PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace S' (completionLocalization P T s _ hden)
-      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isAffinoid hT ?_
+  intro _ _ _
+  exact PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s _
+      (hasDenominatorPower_of_isOpen_span P T s _ hT))
 
 /-- **Every rational open is an open affinoid subspace** of the presentation-limit pre-adic space
 `Spa(A, A⁺)`. -/
 theorem spaRationalOpens_subset_affinoidOpens :
-    spaRationalOpens Aplus ⊆ (presentationLimitPreAdicSpace P Aplus hAplus hP).affinoidOpens := by
-  intro U hU
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
-  exact spaBasicOpen_mem_affinoidOpens P Aplus hAplus hP hT
+    spaRationalOpens Aplus ⊆ (presentationLimitPreAdicSpace P Aplus hAplus hP).affinoidOpens :=
+  spaRationalOpens_subset_propOpens P Aplus hAplus hP PreAdicSpace.isAffinoid
+    fun hT ↦ spaBasicOpen_mem_affinoidOpens P Aplus hAplus hP hT
 
 /-- **The open affinoid subspaces of `Spa(A, A⁺)` form a basis of its topology**, since the
 rational opens do. This is the basis hypothesis of
 `TauCeti.PreAdicSpace.isSheafy_of_isAdapted_of_isSheaf_affinoidOpens`. -/
-theorem isBasis_affinoidOpens_presentationLimitPreAdicSpace [IsHuberRing A] :
-    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).affinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
-  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
-  exact ⟨V, spaRationalOpens_subset_affinoidOpens P Aplus hAplus hP hV, hxV, hVU⟩
+theorem isBasis_affinoidOpens_presentationLimitPreAdicSpace :
+    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).affinoidOpens :=
+  isBasis_propOpens_presentationLimitPreAdicSpace P Aplus hAplus hP PreAdicSpace.isAffinoid
+    fun hT ↦ spaBasicOpen_mem_affinoidOpens P Aplus hAplus hP hT
 
 /-- **`Spa(A, A⁺)` is a pre-adic space** (Wedhorn, Remark and Definition 8.10): the
 presentation-limit pre-adic space of `A` with a plus ring `A⁺` of power-bounded elements containing

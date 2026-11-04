@@ -8,9 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyNoetherian
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyTate
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglySheafy
+public import TauCeti.RingTheory.Huber.NoetherianType.Tate
 import TauCeti.RingTheory.Huber.LocalizationTopology.Noetherian
-import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
-import TauCeti.RingTheory.Huber.NoetherianType.Tate
 
 /-!
 # Locally noetherian analytic and locally strongly sheafy adic spaces
@@ -69,9 +68,9 @@ hypotheses on `A`), `Spa(A, A⁺)` is an adic space and is locally strongly shea
   immersions and the analytic locus of a locally noetherian adic space.
 * `TauCeti.AdicSpace.IsLocallyNoetherianAnalytic.isLocallyStronglySheafy`: locally noetherian
   analytic adic spaces are locally strongly sheafy.
-* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isStronglySheafy` and
-  `TauCeti.AdicSpace.IsLocallyStronglySheafy.spa`: the adic spectrum of a strongly sheafy Tate
-  Huber pair is an adic space and is locally strongly sheafy.
+* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isSheafyRing` and
+  `TauCeti.AdicSpace.IsLocallyStronglySheafy.spa`: the adic spectrum of a sheafy Huber pair is an
+  adic space, and for a strongly sheafy Tate Huber pair it is locally strongly sheafy.
 
 ## References
 
@@ -146,14 +145,10 @@ theorem isStronglyNoetherianAffinoid.isAffinoid {X : PreAdicSpace.{u}}
     (hX : isStronglyNoetherianAffinoid X) : isAffinoid X :=
   hX.isTateAffinoid.isAffinoid
 
-/-- The presentation-limit pre-adic space of a complete Hausdorff Tate Huber pair of noetherian
-type (in particular, of a complete Hausdorff strongly noetherian Tate pair) is a strongly
-noetherian Tate affinoid: on Tate rings, noetherian type is strong noetherianness
-(`TauCeti.Huber.IsNoetherianType.isStronglyNoetherian`). -/
-theorem isStronglyNoetherianAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
-    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T2Space A]
-    [IsTateRing A] [IsNoetherianType A] (S : Pair A) (P : PairOfDefinition A)
-    (hP : P.ringOfDefinition ≤ S.plus) :
+private theorem isStronglyNoetherianAffinoid_presentationLimitPreAdicSpace_of_completeSpace
+    {A : Type u} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+    [CompleteSpace A] [T2Space A] [IsTateRing A] [IsNoetherianType A] (S : Pair A)
+    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
     isStronglyNoetherianAffinoid (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
   have := IsNoetherianType.isStronglyNoetherian (A := A)
@@ -206,22 +201,15 @@ private theorem spaBasicOpen_mem_stronglyNoetherianAffinoidOpens_of_isTateRing_c
       IsTateRing (UniformSpace.Completion (Localization.Away s))) :
     spaBasicOpen Aplus T s ∈
       (presentationLimitPreAdicSpace P Aplus hAplus hP).stronglyNoetherianAffinoidOpens := by
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isStronglyNoetherianAffinoid hT
+    ?_
+  intro _ _ _
   let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ : IsTateRing (UniformSpace.Completion (Localization.Away s)) := htate
-  have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P
+  have : _ := htate
+  have := isNoetherianType_completion_locTopology_of_isNoetherianType P
     (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
-  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
-    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
-      Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
-    ObjectProperty.prop_of_iso PreAdicSpace.isStronglyNoetherianAffinoid
-      (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-      (PreAdicSpace.isStronglyNoetherianAffinoid_presentationLimitPreAdicSpace S'
-        (completionLocalization P T s _ hden)
-        (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
+  exact PreAdicSpace.isStronglyNoetherianAffinoid_presentationLimitPreAdicSpace_of_completeSpace _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s _ hden)
 
 /-- **Rational subsets at a topologically nilpotent denominator over a noetherian-type base are
 open strongly noetherian Tate affinoids.** For `A` of noetherian type (not necessarily Tate or
@@ -258,11 +246,10 @@ theorem spaBasicOpen_mem_stronglyNoetherianAffinoidOpens {T : Finset A} {s : A}
 Tate ring of noetherian type (equivalently, a strongly noetherian Tate ring). -/
 theorem isBasis_stronglyNoetherianAffinoidOpens_presentationLimitPreAdicSpace :
     Opens.IsBasis
-      (presentationLimitPreAdicSpace P Aplus hAplus hP).stronglyNoetherianAffinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
-  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
-  exact ⟨_, spaBasicOpen_mem_stronglyNoetherianAffinoidOpens P Aplus hAplus hP hT, hxV, hVU⟩
+      (presentationLimitPreAdicSpace P Aplus hAplus hP).stronglyNoetherianAffinoidOpens :=
+  isBasis_propOpens_presentationLimitPreAdicSpace P Aplus hAplus hP
+    PreAdicSpace.isStronglyNoetherianAffinoid
+    fun hT ↦ spaBasicOpen_mem_stronglyNoetherianAffinoidOpens P Aplus hAplus hP hT
 
 end StronglyNoetherianTateBase
 
@@ -273,17 +260,15 @@ namespace PreAdicSpace
 /-- The presentation-limit pre-adic space of any Tate Huber pair of noetherian type (in particular,
 of any strongly noetherian Tate Huber pair) is a strongly noetherian Tate affinoid, without
 completeness or Hausdorffness hypotheses on `A`. -/
-theorem isStronglyNoetherianAffinoid_presentationLimitPreAdicSpace_of_isNoetherianType
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
-    [IsNoetherianType A] (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
+theorem isStronglyNoetherianAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] [IsNoetherianType A] (S : Pair A)
+    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
     isStronglyNoetherianAffinoid (presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
-  rw [← top_mem_propOpens_iff _ isStronglyNoetherianAffinoid]
-  have htop : spaBasicOpen S.plus ({1} : Finset A) 1 = ⊤ := by
-    ext x
-    simp [mem_spaBasicOpen, rationalSubset_singleton_one]
-  exact htop ▸ spaBasicOpen_mem_stronglyNoetherianAffinoidOpens P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP (by simp)
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
+  (top_mem_propOpens_iff _ isStronglyNoetherianAffinoid).mp <|
+    top_mem_propOpens_presentationLimitPreAdicSpace P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP isStronglyNoetherianAffinoid
+      fun hT ↦ spaBasicOpen_mem_stronglyNoetherianAffinoidOpens P S.plus _ hP hT
 
 /-- **On a strongly noetherian Tate affinoid the open strongly noetherian Tate affinoids form a
 basis.** -/
@@ -346,10 +331,7 @@ theorem IsLocallyNoetherianAnalytic.isAnalytic (h : X.IsLocallyNoetherianAnalyti
   isAnalytic_iff.mpr fun x ↦ let ⟨U, hU, hxU⟩ := h x
     ⟨U, stronglyNoetherianAffinoidOpens_subset_tateAffinoidOpens hU, hxU⟩
 
-/-- **Locally noetherian and analytic implies locally noetherian analytic**: every point `x` of `X`
-is analytic and lies in an open affinoid `V ≅ Spa(A, A⁺)` of noetherian type, so `x` lies in a
-standard analytic rational open `R(G/g)` inside `V` whose completed localisation `A⟨G/g⟩` is both
-Tate and of noetherian type, hence strongly noetherian. -/
+/-- An adic space that is both locally noetherian and analytic is locally noetherian analytic. -/
 theorem IsLocallyNoetherianAnalytic.of_isLocallyNoetherian_of_isAnalytic
     (hN : X.IsLocallyNoetherian) (hA : X.IsAnalytic) : X.IsLocallyNoetherianAnalytic := by
   intro x
@@ -400,18 +382,19 @@ theorem isLocallyNoetherianAnalytic_of_isEmpty (X : AdicSpace.{u}) [IsEmpty X.ob
   fun x ↦ IsEmpty.elim ‹IsEmpty X.obj› x
 
 /-- **`Spa(A, A⁺)` is locally noetherian analytic** when `A` is a Tate ring of noetherian type
-(equivalently, a strongly noetherian Tate ring) and the structure presheaf is a sheaf. Neither
-completeness nor Hausdorffness of `A` is required. -/
+(equivalently, a strongly noetherian Tate ring). Neither completeness nor Hausdorffness of `A` is
+required. -/
 theorem IsLocallyNoetherianAnalytic.spa {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsTateRing A] [IsNoetherianType A] (P : PairOfDefinition A)
     (Aplus : Subring A) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-    (hP : P.ringOfDefinition ≤ Aplus)
-    (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-      (presentationLimitPresheaf P Aplus)) :
+    (hP : P.ringOfDefinition ≤ Aplus) :
     IsLocallyNoetherianAnalytic ⟨presentationLimitPreAdicSpace P Aplus hAplus hP,
-      isAdic_presentationLimitPreAdicSpace P Aplus hAplus hP hs⟩ :=
-  .of_isLocallyNoetherian_of_isAnalytic
-    (IsLocallyNoetherian.spa P Aplus hAplus hP hs) (IsAnalytic.spa P Aplus hAplus hP hs)
+      letI : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
+      haveI : IsStronglyNoetherian A := IsNoetherianType.isStronglyNoetherian
+      isAdic_presentationLimitPreAdicSpace P Aplus hAplus hP
+        (isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian P hP hAplus)⟩ :=
+  isLocallyNoetherianAnalytic_iff_isBasis_stronglyNoetherianAffinoidOpens.mpr
+    (isBasis_stronglyNoetherianAffinoidOpens_presentationLimitPreAdicSpace P Aplus hAplus hP)
 
 end AdicSpace
 
@@ -419,31 +402,16 @@ end AdicSpace
 
 namespace ValuationSpectrum
 
-/-- **The structure presheaf of `Spa(A, A⁺)` is a sheaf when `A` is strongly sheafy** and `A⁺` is
-a ring of integral elements: a strongly sheafy Huber ring is sheafy
-(`TauCeti.Huber.IsStronglySheafy.isSheafyRing`), so every ring of integral elements satisfies
-`TauCeti.Huber.IsSheafyForEveryPresentation`. Neither completeness nor a Tate hypothesis on `A` is
-required. -/
-theorem isSheaf_presentationLimitPresheaf_of_isStronglySheafy {A : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] (P : PairOfDefinition A)
-    {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
-    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsStronglySheafy A) :
-    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
-      (presentationLimitPresheaf P Aplus) := by
-  let _ : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
-  have _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
-  exact (hA.isSheafyRing.isSheafyForEveryPresentation hAplus).isSheaf P hP
-
-/-- **The adic spectrum of a strongly sheafy Huber pair is an affinoid adic space.** The ring need
-not be complete, Hausdorff, or Tate. -/
-theorem isAdic_presentationLimitPreAdicSpace_of_isStronglySheafy {A : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] (P : PairOfDefinition A)
-    {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
-    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsStronglySheafy A) :
+/-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
+complete, Hausdorff, or Tate. -/
+theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
+    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
     PreAdicSpace.isAdic
       (presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP) :=
   isAdic_presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP
-    (isSheaf_presentationLimitPresheaf_of_isStronglySheafy P hAplus hP hA)
+    (isSheaf_presentationLimitPresheaf_of_isSheafyRing P hAplus hP hA)
 
 end ValuationSpectrum
 
@@ -497,14 +465,9 @@ theorem isStronglyNoetherianAffinoid.isStronglySheafyAffinoid {X : PreAdicSpace.
   exact ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, IsStronglySheafy.of_isStronglyNoetherian, S, P, hP, e⟩
 
-/-- The presentation-limit pre-adic space of a complete Hausdorff strongly sheafy Tate Huber pair
-is a strongly sheafy Tate affinoid. For a general strongly sheafy Tate pair whose ring need not be
-complete or Hausdorff, see
-`TauCeti.PreAdicSpace.isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_isStronglySheafy`.
--/
-theorem isStronglySheafyAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
-    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T2Space A]
-    [IsTateRing A] (hA : IsStronglySheafy A) (S : Pair A) (P : PairOfDefinition A)
+private theorem isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_completeSpace {A : Type u}
+    [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A]
+    [T2Space A] [IsTateRing A] (hA : IsStronglySheafy A) (S : Pair A) (P : PairOfDefinition A)
     (hP : P.ringOfDefinition ≤ S.plus) :
     isStronglySheafyAffinoid (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
@@ -513,51 +476,35 @@ theorem isStronglySheafyAffinoid_presentationLimitPreAdicSpace {A : Type u} [Com
 
 /-- **Complete-model invariance for strongly sheafy Tate pairs**: the presentation-limit pre-adic
 space of any strongly sheafy Tate Huber pair `(A, A⁺)` is a strongly sheafy Tate affinoid, without
-completeness or Hausdorffness hypotheses on `A`. At the trivial presentation `({1}, 1)` carried by
-`A` itself, the localisation topology agrees with the topology of `A`
-(`TauCeti.Huber.PairOfDefinition.locTopology_denom_one`), so the completed model is the completion
-`Â`, which is strongly sheafy by `TauCeti.Huber.isStronglySheafy_completion_iff`. -/
-theorem isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_isStronglySheafy
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
-    (hA : IsStronglySheafy A) (S : Pair A) (P : PairOfDefinition A)
-    (hP : P.ringOfDefinition ≤ S.plus) :
+completeness or Hausdorffness hypotheses on `A`. -/
+theorem isStronglySheafyAffinoid_presentationLimitPreAdicSpace {A : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] (hA : IsStronglySheafy A)
+    (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
     isStronglySheafyAffinoid (presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
-  have hden := PairOfDefinition.hasDenominatorPower_denom_one P ({1} : Finset A) A
-  let u := PairOfDefinition.locUniformSpace P ({1} : Finset A) 1 A hden
-  have hu_grp := PairOfDefinition.isUniformAddGroup_locUniformSpace P ({1} : Finset A) 1 A hden
-  have hu_ring := PairOfDefinition.isTopologicalRing_locUniformSpace P ({1} : Finset A) 1 A hden
-  have htop : u.toTopologicalSpace = ‹TopologicalSpace A› :=
-    (PairOfDefinition.locUniformSpace_toTopologicalSpace P ({1} : Finset A) 1 A hden).trans
-      (PairOfDefinition.locTopology_denom_one P ({1} : Finset A) (by simp [isPowerBounded_one]))
-  have hu_huber : @IsHuberRing A _ u.toTopologicalSpace hu_ring :=
-    PairOfDefinition.isHuberRing_locUniformSpace P ({1} : Finset A) 1 A hden
-  have hu_ss : @IsStronglySheafy A _ u.toTopologicalSpace hu_ring hu_huber := by
-    refine (@isStronglySheafy_congr A A _ ‹TopologicalSpace A› _ _ _
-      u.toTopologicalSpace hu_ring hu_huber (RingEquiv.refl A) ?_ ?_).mp hA
-    · exact continuous_def.mpr fun _ hs ↦ htop ▸ hs
-    · exact continuous_def.mpr fun _ hs ↦ htop.symm ▸ hs
-  let _ : UniformSpace A := u
-  have _ : IsUniformAddGroup A := hu_grp
-  have _ : @IsTopologicalRing (UniformSpace.Completion A) _ _ := inferInstance
-  have _ := PairOfDefinition.isTateRing_completion_locTopology_of_isTateRing P
-    ({1} : Finset A) 1 A hden
-  have hcomp_ss : IsStronglySheafy (UniformSpace.Completion A) :=
-    (@isStronglySheafy_completion_iff A _ u hu_grp hu_ring hu_huber).mpr hu_ss
-  let S' : Pair (UniformSpace.Completion A) :=
-    PairOfDefinition.rationalLocalizationPair P S hP ({1} : Finset A) 1 A hden
-  have hP' :
-      (PairOfDefinition.completionLocalization P ({1} : Finset A) 1 A hden).ringOfDefinition ≤
-        S'.plus := by
-    simpa only [S', PairOfDefinition.rationalLocalizationPair_plus] using
-      PairOfDefinition.completionLocalization_ringOfDefinition_le_completedPlusSubring P S.plus hP
-        ({1} : Finset A) 1 A hden
-  refine ⟨UniformSpace.Completion A, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, hcomp_ss, S',
-    PairOfDefinition.completionLocalization P ({1} : Finset A) 1 A hden, hP', ⟨?_⟩⟩
-  simpa only [S', PairOfDefinition.rationalLocalizationPair_plus] using
-    presentationLimitPreAdicSpaceCompleteIso P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP A hden
+  let hden := P.hasDenominatorPower_denom_one ({1} : Finset A) A
+  let _ := P.locUniformSpace ({1} : Finset A) 1 A hden
+  have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) 1 A hden
+  have _ := P.isTopologicalRing_locUniformSpace ({1} : Finset A) 1 A hden
+  have _ := P.isTateRing_completion_locTopology_of_isTateRing ({1} : Finset A) 1 A hden
+  have hcomp_ss := P.isStronglySheafy_completion_locTopology_denom_one ({1} : Finset A)
+    (by simp [isPowerBounded_one]) hA
+  have key : ∀ (Bplus : Subring (UniformSpace.Completion A))
+      (_ : Bplus = P.completedPlusSubring S.plus ({1} : Finset A) 1 A hden) (hBplus) (hPB),
+      isStronglySheafyAffinoid (presentationLimitPreAdicSpace
+        (P.completionLocalization ({1} : Finset A) 1 A hden) Bplus hBplus hPB) →
+      isStronglySheafyAffinoid (presentationLimitPreAdicSpace P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP) := by
+    rintro _ rfl _ _ h
+    exact ObjectProperty.prop_of_iso isStronglySheafyAffinoid
+      (presentationLimitPreAdicSpaceCompleteIso P S.plus
+        S.isRingOfIntegralElements.isPowerBounded_of_mem hP A hden).symm h
+  exact key _ (P.rationalLocalizationPair_plus S hP ({1} : Finset A) 1 A hden) _ _
+    (isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_completeSpace hcomp_ss
+      (P.rationalLocalizationPair S hP ({1} : Finset A) 1 A hden)
+      (P.completionLocalization ({1} : Finset A) 1 A hden)
+      (P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP
+        ({1} : Finset A) 1 A hden))
 
 variable (X : PreAdicSpace.{u})
 
@@ -628,18 +575,19 @@ theorem isLocallyStronglySheafy_of_isEmpty (X : AdicSpace.{u}) [IsEmpty X.obj] :
     X.IsLocallyStronglySheafy :=
   fun x ↦ IsEmpty.elim ‹IsEmpty X.obj› x
 
-/-- **`Spa(A, A⁺)` is locally strongly sheafy** for every strongly sheafy Tate Huber pair `(A, A⁺)`
-(the whole space `⊤` is an open strongly sheafy Tate affinoid). Neither completeness nor
-Hausdorffness of `A` is required. -/
+/-- **`Spa(A, A⁺)` is locally strongly sheafy** for every strongly sheafy Tate Huber pair
+`(A, A⁺)`. Neither completeness nor Hausdorffness of `A` is required. -/
 theorem IsLocallyStronglySheafy.spa {A : Type u} [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsTateRing A] (hA : IsStronglySheafy A) (S : Pair A)
     (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
     IsLocallyStronglySheafy ⟨presentationLimitPreAdicSpace P S.plus
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP,
-      isAdic_presentationLimitPreAdicSpace_of_isStronglySheafy P S.isRingOfIntegralElements hP
-        hA⟩ :=
+      letI : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
+      haveI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
+      isAdic_presentationLimitPreAdicSpace_of_isSheafyRing P S.isRingOfIntegralElements hP
+        hA.isSheafyRing⟩ :=
   fun _ ↦ ⟨⊤, (top_mem_propOpens_iff _ isStronglySheafyAffinoid).mpr
-    (isStronglySheafyAffinoid_presentationLimitPreAdicSpace_of_isStronglySheafy hA S P hP),
+    (isStronglySheafyAffinoid_presentationLimitPreAdicSpace hA S P hP),
     trivial⟩
 
 end AdicSpace

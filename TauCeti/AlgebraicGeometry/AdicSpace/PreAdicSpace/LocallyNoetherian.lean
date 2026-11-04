@@ -159,31 +159,21 @@ theorem spaBasicOpen_mem_noetherianAffinoidOpens {T : Finset A} {s : A}
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     spaBasicOpen Aplus T s ∈
       (presentationLimitPreAdicSpace P Aplus hAplus hP).noetherianAffinoidOpens := by
-  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ := isHuberRing_completion_locTopology P T s _ hden
-  have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isNoetherianAffinoid hT ?_
+  intro _ _ _
+  let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+  have := isNoetherianType_completion_locTopology_of_isNoetherianType P
     (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
-  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
-    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
-      Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
-    ObjectProperty.prop_of_iso PreAdicSpace.isNoetherianAffinoid
-    (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
-    (PreAdicSpace.isNoetherianAffinoid_presentationLimitPreAdicSpace S'
-      (completionLocalization P T s _ hden)
-      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
+  exact PreAdicSpace.isNoetherianAffinoid_presentationLimitPreAdicSpace _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s _ hden)
 
 /-- **The open affinoids of noetherian type form a basis of `Spa(A, A⁺)`** when `A` is of noetherian
 type, since the rational opens do. -/
 theorem isBasis_noetherianAffinoidOpens_presentationLimitPreAdicSpace :
-    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).noetherianAffinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
-  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
-  exact ⟨_, spaBasicOpen_mem_noetherianAffinoidOpens P Aplus hAplus hP hT, hxV, hVU⟩
+    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).noetherianAffinoidOpens :=
+  isBasis_propOpens_presentationLimitPreAdicSpace P Aplus hAplus hP
+    PreAdicSpace.isNoetherianAffinoid
+    fun hT ↦ spaBasicOpen_mem_noetherianAffinoidOpens P Aplus hAplus hP hT
 
 end ValuationSpectrum
 
