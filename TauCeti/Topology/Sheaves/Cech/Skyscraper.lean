@@ -20,8 +20,9 @@ positive degrees, and Čech cohomology `M` in degree `0`, both for every family 
 whose members contains `p`, and for the Čech cohomology of `X` defined as a colimit over covers.
 No separation axiom is assumed on `X`, and no cover need be finite.
 
-The proof is a direct computation, not an appeal to flasqueness (which would only give the result
-for finite covers). Given a family `U`, enlarge each member that contains `p` to all of `X`,
+The proof is a direct computation, valid for arbitrary families of opens and for coefficients in
+any preadditive category with a zero object, products and homology. Given a family `U`, enlarge
+each member that contains `p` to all of `X`,
 obtaining a family `W`. A finite intersection of members of `U` contains `p` exactly when the
 corresponding intersection of members of `W` does, so the restriction maps of `M_p` from the
 intersections of `W` to those of `U` are isomorphisms, and the Čech complexes of `M_p` for `U` and
@@ -37,7 +38,8 @@ long exact sequence of `0 ⟶ 𝒪_D ⟶ 𝒪_{D+p} ⟶ ℂ_p ⟶ 0` end in degr
   of whose members contains `p`, the augmented Čech complex `0 ⟶ M ⟶ Č⁰(U, M_p) ⟶ Č¹(U, M_p) ⟶ ⋯`
   is exact.
 * `TauCeti.Topology.isZero_homology_cechComplex_skyscraperPresheaf`: the Čech cohomology of `M_p`
-  for such a family vanishes in every positive degree.
+  for any family of opens vanishes in every positive degree. If no member contains `p`, the Čech
+  complex itself is zero.
 * `TauCeti.Topology.homologyZeroCechComplexSkyscraperPresheafIso`: its degree `0` Čech cohomology
   for such a family is `M`.
 * `TauCeti.Topology.isZero_cechCohomology_skyscraperPresheaf`: the Čech cohomology of `M_p` on
@@ -99,12 +101,26 @@ theorem quasiIso_cechAugmentation_skyscraperPresheaf :
     (⟨id, φ⟩ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ W)]
   infer_instance
 
-/-- The Čech cohomology of a skyscraper presheaf, for a family of opens one of whose members
-contains the point, vanishes in every positive degree. -/
+omit h₀ in
+/-- **The Čech cohomology of a skyscraper presheaf vanishes in positive degrees, for any family
+of opens.** If some member of the family contains the point, the augmented Čech complex is exact
+(`quasiIso_cechAugmentation_skyscraperPresheaf`); otherwise no finite intersection of members
+contains the point, so the Čech complex is zero. -/
 theorem isZero_homology_cechComplex_skyscraperPresheaf (n : ℕ) :
-    IsZero (((cechComplexFunctor U).obj (skyscraperPresheaf p₀ M)).homology (n + 1)) :=
-  (((quasiIso_cechAugmentation_iff U isTerminalTop _).1
-    (quasiIso_cechAugmentation_skyscraperPresheaf p₀ M U h₀)).2 n).isZero_homology
+    IsZero (((cechComplexFunctor U).obj (skyscraperPresheaf p₀ M)).homology (n + 1)) := by
+  by_cases h : ∃ i, p₀ ∈ U i
+  · obtain ⟨i₀, h₀⟩ := h
+    exact (((quasiIso_cechAugmentation_iff U isTerminalTop _).1
+      (quasiIso_cechAugmentation_skyscraperPresheaf p₀ M U h₀)).2 n).isZero_homology
+  · -- every factor of the cochains is a value of `M_p₀` on an open not containing `p₀`
+    have hX : IsZero (((cechComplexFunctor U).obj (skyscraperPresheaf p₀ M)).X (n + 1)) := by
+      refine (IsZero.iff_id_eq_zero _).2 <| Pi.hom_ext _ _ fun a ↦ ?_
+      have ha : p₀ ∉ (∏ᶜ fun j ↦ U (a j) : Opens X) := fun hp ↦
+        h ⟨a 0, leOfHom (Pi.π (fun j ↦ U (a j)) 0) hp⟩
+      have hT : IsTerminal ((skyscraperPresheaf p₀ M).obj (op (∏ᶜ fun j ↦ U (a j)))) :=
+        (ite_eq_right ha).symm.ndrec terminalIsTerminal
+      exact ((isZero_zero A).of_iso (hT.uniqueUpToIso HasZeroObject.zeroIsTerminal)).eq_of_tgt _ _
+    exact ShortComplex.isZero_homology_of_isZero_X₂ _ hX
 
 /-- The degree `0` Čech cohomology of the skyscraper presheaf with value `M`, for a family of opens
 one of whose members contains the point, is `M`: the augmentation identifies it with the global
@@ -144,8 +160,7 @@ vanishes in every positive degree. -/
 theorem isZero_cechCohomology_skyscraperPresheaf (n : ℕ) :
     IsZero ((cechCohomology X A (n + 1)).obj (skyscraperPresheaf p₀ M)) :=
   (IsZero.iff_id_eq_zero _).2 (cechCohomology_obj_hom_ext fun V ↦
-    (isZero_homology_cechComplex_skyscraperPresheaf p₀ M V.opens (V.mem_opens p₀) n).eq_of_src
-      _ _)
+    (isZero_homology_cechComplex_skyscraperPresheaf p₀ M V.opens n).eq_of_src _ _)
 
 /-- The degree `0` Čech cohomology of the skyscraper presheaf with value `M` at a point is `M`. -/
 def cechCohomologyZeroSkyscraperPresheafIso :
