@@ -107,7 +107,7 @@ theorem norm_fullCrossedProductMap_subtypeHom (hmul : ∀ a : A, ∀ x ∈ I, a 
       continuous_norm
   | ih f =>
     rw [Hom.fullCrossedProductMap_of, norm_of, norm_of,
-      ConvolutionAlgebra.fullSeminorm_convolutionMap_subtypeHom hI μ hmul f]
+      hI.fullSeminorm_convolutionMap_subtypeHom μ hmul f]
 
 /-- The induced full crossed-product map from a closed invariant two-sided star ideal is an
 isometry. -/
@@ -155,18 +155,17 @@ theorem mul_mem_range_fullCrossedProductMap_subtypeHom_left
     (a : FullCrossedProduct α μ) {y : FullCrossedProduct α μ}
     (hy : y ∈ (hI.subtypeHom.fullCrossedProductMap μ).range) :
     a * y ∈ (hI.subtypeHom.fullCrossedProductMap μ).range := by
-  rw [hI.range_fullCrossedProductMap_subtypeHom_eq_topologicalClosure μ hmul] at hy ⊢
-  refine NonUnitalStarSubalgebra.mul_mem_topologicalClosure_of_dense _
-    (denseRange_of (α := α) (μ := μ)) ?_ a hy
+  rw [hI.range_fullCrossedProductMap_subtypeHom_eq_topologicalClosure μ hmul,
+    ← SetLike.mem_coe, NonUnitalStarSubalgebra.topologicalClosure_coe] at hy ⊢
+  refine map_mem_closure₂ continuous_mul (denseRange_of (α := α) (μ := μ) a) hy ?_
   rintro _ ⟨f, rfl⟩ z hz
   obtain ⟨g, rfl⟩ := ((of α μ).comp (hI.subtypeHom.convolutionMap μ)).mem_range.1 hz
   simp only [NonUnitalStarAlgHom.comp_apply, ← map_mul]
   obtain ⟨k, hk⟩ := (hI.subtypeHom.convolutionMap μ).mem_range.1 <|
     hI.mul_mem_range_convolutionMap_subtypeHom_left μ hmul f
       ((hI.subtypeHom.convolutionMap μ).mem_range.2 ⟨g, rfl⟩)
-  exact NonUnitalStarSubalgebra.le_topologicalClosure _
-    (((of α μ).comp (hI.subtypeHom.convolutionMap μ)).mem_range.2
-      ⟨k, by rw [NonUnitalStarAlgHom.comp_apply, hk]⟩)
+  exact ((of α μ).comp (hI.subtypeHom.convolutionMap μ)).mem_range.2
+    ⟨k, by rw [NonUnitalStarAlgHom.comp_apply, hk]⟩
 
 /-- The embedded full crossed product of a closed invariant two-sided star ideal is closed under
 right multiplication in `FullCrossedProduct α μ`. -/

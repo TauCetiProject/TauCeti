@@ -126,17 +126,17 @@ theorem tendsto_nonUnitalMultiplierExtension_apply [PartialOrder A] {l : Filter 
     (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (ξ : H) :
     Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (π.nonUnitalMultiplierExtension m ξ)) := by
   rw [π.nonUnitalMultiplierExtension_eq_extendByZero, Submodule.extendByZero_apply]
-  let u := π.essentialSubspace.orthogonalProjectionOnto ξ
   have hlim := (π.essentialSubspace.subtypeL.continuous.tendsto _).comp
-    (tendsto_multiplierExtension_apply π.isNondegenerate_restrictEssentialSubspace hl m u)
+    (tendsto_multiplierExtension_apply π.isNondegenerate_restrictEssentialSubspace hl m
+      (π.essentialSubspace.orthogonalProjectionOnto ξ))
   refine hlim.congr fun e => ?_
-  calc (π.restrictEssentialSubspace (m.fst e) u : H)
+  calc (π.restrictEssentialSubspace (m.fst e)
+        (π.essentialSubspace.orthogonalProjectionOnto ξ) : H)
       = π (m.fst e) (π.essentialSubspace.starProjection ξ) +
           π (m.fst e) (ξ - π.essentialSubspace.starProjection ξ) := by
-        rw [π.coe_restrictEssentialSubspace_apply,
+        rw [π.coe_restrictEssentialSubspace_apply, Submodule.coe_orthogonalProjectionOnto_apply,
           π.apply_eq_zero_of_mem_orthogonal_essentialSubspace
             (π.essentialSubspace.sub_starProjection_mem_orthogonal ξ), add_zero]
-        rfl
     _ = π (m.fst e) ξ := by rw [← map_add, add_sub_cancel]
 
 /-- Strict left continuity of a norm-bounded family of multipliers implies strong continuity under

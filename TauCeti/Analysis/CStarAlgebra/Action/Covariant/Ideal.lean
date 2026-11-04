@@ -38,7 +38,7 @@ C⋆-seminorm `ConvolutionAlgebra.fullSeminorm` identically.
   `TauCeti.CStarAction.CovariantRepresentation.eq_idealExtension_iff`, and
   `TauCeti.CStarAction.CovariantRepresentation.eq_idealExtension_of_comap_eq`: pullback recovery
   and uniqueness of the extended covariant pair.
-* `TauCeti.CStarAction.ConvolutionAlgebra.fullSeminorm_convolutionMap_subtypeHom`: the equivariant
+* `IsInvariant.fullSeminorm_convolutionMap_subtypeHom`: the equivariant
   inclusion of a closed invariant two-sided star ideal is isometric for the full C⋆-seminorm on
   compactly supported functions.
 
@@ -230,7 +230,9 @@ end IdealExtension
 
 end TauCeti.CStarAction.CovariantRepresentation
 
-namespace TauCeti.CStarAction.ConvolutionAlgebra
+namespace IsInvariant
+
+open TauCeti CStarAction ConvolutionAlgebra
 
 universe u v
 
@@ -251,4 +253,4 @@ theorem fullSeminorm_convolutionMap_subtypeHom (hmul : ∀ a : A, ∀ x ∈ I, a
   exact norm_integratedStarAlgHom_le_fullSeminorm
     (P.idealExtension hmul) (hI.subtypeHom.convolutionMap μ f)
 
-end TauCeti.CStarAction.ConvolutionAlgebra
+end IsInvariant

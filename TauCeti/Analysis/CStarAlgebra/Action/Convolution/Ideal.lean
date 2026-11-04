@@ -79,6 +79,19 @@ theorem mem_range_convolutionMap_subtypeHom_iff {f : CStarAction.ConvolutionAlge
     ext s
     simp [g]
 
+/-- Pointwise membership of the twisted convolution integrand in `I` places `f * g` in the range
+of `hI.subtypeHom.convolutionMap μ`. -/
+private theorem mul_mem_range_convolutionMap_subtypeHom_of_forall_mem
+    {f g : CStarAction.ConvolutionAlgebra α μ}
+    (hfg : ∀ r s : G, f.ofConv r * α r (g.ofConv (r⁻¹ * s)) ∈ I) :
+    f * g ∈ (hI.subtypeHom.convolutionMap μ).range := by
+  refine (hI.mem_range_convolutionMap_subtypeHom_iff μ).2 fun s => ?_
+  let φ : G → I := fun r => ⟨f.ofConv r * α r (g.ofConv (r⁻¹ * s)), hfg r s⟩
+  have hint : (∫ r, f.ofConv r * α r (g.ofConv (r⁻¹ * s)) ∂μ) = ((∫ r, φ r ∂μ : I) : A) :=
+    I.toSubmodule.subtypeₗᵢ.integral_comp_comm φ
+  rw [CStarAction.ConvolutionAlgebra.ofConv_mul, CStarAction.convolution_apply, hint]
+  exact (∫ r, φ r ∂μ).2
+
 /-- When `I` is a closed invariant two-sided star ideal of `A`, the range of
 `hI.subtypeHom.convolutionMap μ` absorbs left twisted convolution by arbitrary elements of
 `ConvolutionAlgebra α μ`. -/
@@ -87,14 +100,8 @@ theorem mul_mem_range_convolutionMap_subtypeHom_left (hmul : ∀ a : A, ∀ x �
     (hg : g ∈ (hI.subtypeHom.convolutionMap μ).range) :
     f * g ∈ (hI.subtypeHom.convolutionMap μ).range := by
   have hg' := (hI.mem_range_convolutionMap_subtypeHom_iff μ).1 hg
-  refine (hI.mem_range_convolutionMap_subtypeHom_iff μ).2 fun s => ?_
-  let φ : G → I := fun r =>
-    ⟨f.ofConv r * α r (g.ofConv (r⁻¹ * s)),
-      hmul (f.ofConv r) _ (hI.apply_mem r (hg' (r⁻¹ * s)))⟩
-  have hint : (∫ r, (φ r : A) ∂μ) = ((∫ r, φ r ∂μ : I) : A) :=
-    I.toSubmodule.subtypeₗᵢ.integral_comp_comm φ
-  simpa only [CStarAction.ConvolutionAlgebra.ofConv_mul, CStarAction.convolution_apply, φ] using
-    hint ▸ (∫ r, φ r ∂μ).2
+  exact hI.mul_mem_range_convolutionMap_subtypeHom_of_forall_mem μ fun r s =>
+    hmul (f.ofConv r) _ (hI.apply_mem r (hg' (r⁻¹ * s)))
 
 /-- When `I` is a closed invariant two-sided star ideal of `A`, the range of
 `hI.subtypeHom.convolutionMap μ` absorbs right twisted convolution by arbitrary elements of
@@ -105,13 +112,7 @@ theorem mul_mem_range_convolutionMap_subtypeHom_right (hmul : ∀ a : A, ∀ x �
     (g : CStarAction.ConvolutionAlgebra α μ) :
     f * g ∈ (hI.subtypeHom.convolutionMap μ).range := by
   have hf' := (hI.mem_range_convolutionMap_subtypeHom_iff μ).1 hf
-  refine (hI.mem_range_convolutionMap_subtypeHom_iff μ).2 fun s => ?_
-  let φ : G → I := fun r =>
-    ⟨f.ofConv r * α r (g.ofConv (r⁻¹ * s)),
-      StarMemClass.mul_mem_right_of_mul_mem_left hmul (α r (g.ofConv (r⁻¹ * s))) (hf' r)⟩
-  have hint : (∫ r, (φ r : A) ∂μ) = ((∫ r, φ r ∂μ : I) : A) :=
-    I.toSubmodule.subtypeₗᵢ.integral_comp_comm φ
-  simpa only [CStarAction.ConvolutionAlgebra.ofConv_mul, CStarAction.convolution_apply, φ] using
-    hint ▸ (∫ r, φ r ∂μ).2
+  exact hI.mul_mem_range_convolutionMap_subtypeHom_of_forall_mem μ fun r _ =>
+    StarMemClass.mul_mem_right_of_mul_mem_left hmul (α r (g.ofConv _)) (hf' r)
 
 end IsInvariant

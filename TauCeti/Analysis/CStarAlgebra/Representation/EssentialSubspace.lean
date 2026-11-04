@@ -111,17 +111,12 @@ agree on `π.essentialSubspaceᗮ` are equal everywhere on `H`. -/
 theorem ext_of_orthogonal_essentialSubspace {S T : H →L[ℂ] H}
     (hmul : ∀ a, S * π a = T * π a) (horth : ∀ ξ ∈ π.essentialSubspaceᗮ, S ξ = T ξ) :
     S = T := by
-  -- First establish agreement on the closed essential subspace by linearity and continuity.
-  have hspan : ∀ η ∈ Submodule.span ℂ (⋃ a, Set.range (π a)), S η = T η := fun η hη => by
-    induction hη using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨a, v, rfl⟩ := Set.mem_iUnion.1 hx
-      exact congr($(hmul a) v)
-    | zero => simp
-    | add x y _ _ hx hy => simp [hx, hy]
-    | smul c x _ hx => simp [hx]
   have hess : ∀ η ∈ π.essentialSubspace, S η = T η := fun η hη =>
-    isClosed_eq S.continuous T.continuous |>.closure_subset_iff.2 hspan hη
+    ContinuousLinearMap.eqOn_closure_span (R₁ := ℂ) (s := ⋃ a, Set.range (π a))
+      (fun _ hx => by obtain ⟨a, v, rfl⟩ := Set.mem_iUnion.1 hx; exact congr($(hmul a) v))
+      (by
+        simpa only [essentialSubspace, ← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+          using hη)
   ext ξ
   have hdecomp : ξ = π.essentialSubspace.starProjection ξ +
       (ξ - π.essentialSubspace.starProjection ξ) := (add_sub_cancel _ _).symm

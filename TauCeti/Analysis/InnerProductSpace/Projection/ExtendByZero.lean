@@ -160,7 +160,7 @@ theorem extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL {T : E →L[�
     U.starProjection_eq_self_iff.2 (hrange _)
   have hdecomp : x = U.starProjection x + (x - U.starProjection x) := (add_sub_cancel _ _).symm
   calc U.extendByZero (U.orthogonalProjectionOnto ∘L T ∘L U.subtypeL) x
-      = U.starProjection (T (U.starProjection x)) := rfl
+      = U.starProjection (T (U.starProjection x)) := by simp
     _ = T (U.starProjection x) + T (x - U.starProjection x) := by
         rw [hproj, hker _ (U.sub_starProjection_mem_orthogonal x), add_zero]
     _ = T x := by rw [← map_add, ← hdecomp]

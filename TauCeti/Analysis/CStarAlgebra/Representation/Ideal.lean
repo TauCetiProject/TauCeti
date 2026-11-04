@@ -35,7 +35,7 @@ to extend with the same unitary group representation.
 
 * Jacques Dixmier, *C*-Algebras*, Proposition 2.10.4.
 * Iain Raeburn and Dana Williams, *Morita Equivalence and Continuous-Trace C*-Algebras*,
-  Proposition 2.50 and Corollary 2.54.
+  Propositions 2.50 and 2.54.
 * Dana Williams, *Crossed Products of C*-Algebras*, Proposition 3.19.
 -/
 
