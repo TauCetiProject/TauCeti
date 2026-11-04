@@ -218,6 +218,24 @@ theorem summandSign_inl (a : Fin 27) : summandSign (.inl a) = 1 := (rfl)
 @[simp]
 theorem summandSign_inr (a : Fin 27) : summandSign (.inr a) = -1 := (rfl)
 
+/-- A simple reflection preserves the root-matrix sign of its minuscule summand. -/
+@[simp]
+theorem summandSign_reflection (i : Fin 6) (a : Fin 27 ⊕ Fin 27) :
+    summandSign (reflection i a) = summandSign a := by
+  cases a <;> simp
+
+/-- The root-matrix sign on either minuscule summand squares to one. -/
+@[simp]
+theorem summandSign_mul_self (a : Fin 27 ⊕ Fin 27) :
+    summandSign a * summandSign a = 1 := by
+  cases a <;> simp
+
+/-- The summand sign still squares to one after changing the coefficient ring. -/
+@[simp]
+theorem summandSign_cast_sq {A : Type*} [Ring A] (a : Fin 27 ⊕ Fin 27) :
+    (summandSign a : A) ^ 2 = 1 := by
+  rw [sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
+
 /-- The Cartan generators are diagonal with the doubled minuscule weights on the diagonal. -/
 @[simp]
 theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :

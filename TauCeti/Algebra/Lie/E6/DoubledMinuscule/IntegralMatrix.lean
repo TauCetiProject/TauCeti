@@ -204,6 +204,28 @@ theorem coe_rootSubgroupPoints_eq_one_add_smul (j : Fin 6 ⊕ Fin 6)
       (nilpotencyClass_rep_rootGenerator_le_two j) (rep_rootGenerator_matrixBasis_eq_sum j)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
 
+/-- A root point acts on a coordinate vector along its signed raising or lowering edge. -/
+@[simp↓]
+theorem rootSubgroupPoints_mulVec_single {A : Type*} [CommRing A]
+    (j : Fin 6 ⊕ Fin 6) (t x : A) (k : Fin 54) :
+    ((rootSubgroupPoints j A (Multiplicative.ofAdd t) :
+        Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) *ᵥ
+          Pi.single k x =
+      Pi.single k x +
+        if matrixWeight k (Sum.elim id id j) =
+            (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ) then
+          Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
+            (matrixIndexEquiv.symm k)))
+              (t * (summandSign (matrixIndexEquiv.symm k) : A) * x)
+        else 0 := by
+  rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, Matrix.add_mulVec,
+    Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.mulVec_single]
+  ext l
+  simp only [Matrix.col_apply, Matrix.map_apply, rootIntMatrix_apply,
+    Pi.add_apply, Pi.smul_apply, Pi.single_apply, ite_apply, Pi.zero_apply,
+    op_smul_eq_smul, smul_eq_mul]
+  split_ifs <;> ring
+
 /-- Subtracting a coordinate vector from its image under a unit-parameter root point gives
 its reflected vector, with the sign of its minuscule summand, when its weight permits the move. -/
 theorem root_mulVec_single_sub (R : Type*) [CommRing R] (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
@@ -215,11 +237,7 @@ theorem root_mulVec_single_sub (R : Type*) [CommRing R] (j : Fin 6 ⊕ Fin 6) (a
       (summandSign (matrixIndexEquiv.symm a) : R) •
         Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
           (matrixIndexEquiv.symm a))) 1 := by
-  rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul, add_sub_cancel_left,
-    Matrix.mulVec_single_one]
   ext b
-  simp [Matrix.map_apply, rootIntMatrix_apply, ha, Pi.single_apply]
+  simp [rootSubgroupPoints_mulVec_single, ha, Pi.single_apply]
 
 end TauCeti.E6DoubledMinuscule
