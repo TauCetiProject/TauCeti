@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
+public import TauCeti.Algebra.BigOperators.Finset.Range
 public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -48,6 +49,8 @@ which `σ` is `finRotate`.
 * `Equiv.Perm.sigmaCycleEquiv_symm_fst`: a point lies in the enumerated cycle it belongs to.
 * `Equiv.Perm.prod_range_minimalPeriod`: a product over the iterates of a point below the length
   of its cycle is the product over the points of that cycle.
+* `Equiv.Perm.prod_range_pow_eq_pow_prod_cycle`: a product over complete periods is a power
+  of the distinct-cycle product, with exponent the number of periods.
 * `Equiv.Perm.prod_fin_eq_prod_range_minimalPeriod`,
   `Equiv.Perm.prod_sigmaCycleEquiv_eq_prod_range`: a product along an enumerated cycle is the
   product over the iterates of its representative below the length of the cycle.
@@ -176,6 +179,28 @@ theorem prod_range_minimalPeriod [Fintype α] [DecidableRel σ.SameCycle] {M : T
     have hpos := minimalPeriod_pos_of_mem_periodicPts (σ.injective.mem_periodicPts x)
     refine ⟨k % minimalPeriod σ x, Finset.mem_range.mpr (Nat.mod_lt k hpos), ?_⟩
     rw [coe_pow, coe_pow, iterate_mod_minimalPeriod_eq]
+
+/-- A product over complete periods repeats the distinct-cycle product with multiplicity
+`k / minimalPeriod σ x`. Only the point `x` needs to be periodic with period `k`. -/
+@[to_additive sum_range_pow_eq_nsmul_sum_cycle
+  /-- A sum over complete periods repeats the distinct-cycle sum with multiplicity
+  `k / minimalPeriod σ x`. Only the point `x` needs to be periodic with period `k`. -/]
+theorem prod_range_pow_eq_pow_prod_cycle [Fintype α] [DecidableRel σ.SameCycle]
+    {M : Type*} [CommMonoid M] (f : α → M) {k : ℕ} (x : α) (hk : IsPeriodicPt σ k x) :
+    ∏ r ∈ Finset.range k, f ((σ ^ r) x) =
+      (∏ y with σ.SameCycle x y, f y) ^ (k / minimalPeriod σ x) := by
+  have hperiod : IsFixedPt (σ ^ minimalPeriod σ x) x := by
+    simpa only [coe_pow] using (isPeriodicPt_minimalPeriod σ x).isFixedPt
+  have hstep (j l : ℕ) :
+      (σ ^ (minimalPeriod σ x * j + l)) x = (σ ^ l) x := by
+    calc
+      (σ ^ (minimalPeriod σ x * j + l)) x =
+          (σ ^ l) (((σ ^ minimalPeriod σ x) ^ j) x) := by
+        rw [Nat.add_comm, pow_add, pow_mul, Perm.mul_apply]
+      _ = (σ ^ l) x := congrArg (σ ^ l) (hperiod.perm_pow j)
+  conv_lhs => rw [← Nat.mul_div_cancel' hk.minimalPeriod_dvd]
+  rw [Finset.prod_range_mul_eq_prod_prod]
+  simp only [hstep, Finset.prod_const, Finset.card_range, prod_range_minimalPeriod]
 
 /-- A product over the positions `Fin (minimalPeriod σ x - 1 + 1)` of the cycle of `x` is the
 product over the natural numbers below the length of that cycle. -/
