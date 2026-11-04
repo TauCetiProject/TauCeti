@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Basic
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
+public import TauCeti.Algebra.Polynomial.BigOperators
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -42,8 +42,6 @@ Conversely, the strong inequalities together with the Euler--Poincaré equality 
 polynomial identity, which is how it is obtained when no chain complex is at hand.  For sequences
 of natural numbers `b` and `c`:
 
-* `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add`: the relations `cᵢ = bᵢ + qᵢ + qᵢ₋₁`
-  give the polynomial identity, over any semiring.
 * `TauCeti.exists_sum_range_monomial_eq_add_mul`: if the strong inequalities hold below degree
   `n` and the Euler--Poincaré equality holds in degree `n`, then
   `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` with `Q ∈ ℕ[t]`, and the coefficient of `tⁱ` in `Q`
@@ -65,33 +63,6 @@ open CategoryTheory Module Polynomial
 universe u v
 
 namespace TauCeti
-
-/-- **The polynomial form of `cᵢ = bᵢ + qᵢ + qᵢ₋₁`.**  If `c₀ = b₀ + q₀` and
-`cᵢ₊₁ = bᵢ₊₁ + qᵢ₊₁ + qᵢ` for `i < n`, then
-`∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`. -/
-theorem sum_range_monomial_add_monomial_eq_of_eq_add {R : Type*} [Semiring R]
-    {b c q : ℕ → R} {n : ℕ} (h₀ : c 0 = b 0 + q 0)
-    (hsucc : ∀ i < n, c (i + 1) = b (i + 1) + q (i + 1) + q i) :
-    ∑ i ∈ Finset.range (n + 1), monomial i (c i) + monomial (n + 1) (q n) =
-      ∑ i ∈ Finset.range (n + 1), monomial i (b i) +
-        (1 + X) * ∑ i ∈ Finset.range (n + 1), monomial i (q i) := by
-  -- Multiplying by `1 + X` shifts a copy of `∑ᵢ qᵢ Xⁱ` up by one degree.
-  rw [add_mul, one_mul, Finset.mul_sum]
-  simp only [X_mul_monomial]
-  induction n with
-  | zero =>
-    simp only [zero_add, Finset.sum_range_one, h₀, map_add]
-    abel
-  | succ n ih =>
-    have ih := ih fun i hi ↦ hsucc i (hi.trans n.lt_succ_self)
-    rw [Finset.sum_range_succ, Finset.sum_range_succ _ (n + 1), Finset.sum_range_succ _ (n + 1),
-      Finset.sum_range_succ (fun i ↦ monomial (i + 1) (q i)) (n + 1), hsucc n n.lt_succ_self]
-    simp only [map_add]
-    -- Split off the left side of the identity in degree `n` and substitute it.
-    calc _ = (∑ i ∈ Finset.range (n + 1), monomial i (c i) + monomial (n + 1) (q n)) +
-          monomial (n + 1) (b (n + 1)) + monomial (n + 1) (q (n + 1)) +
-          monomial (n + 1 + 1) (q (n + 1)) := by abel
-      _ = _ := by rw [ih]; abel
 
 /-- **The Morse polynomial identity from the strong inequalities.**  Let `b` and `c` be sequences
 of natural numbers satisfying the strong Morse inequalities
@@ -174,18 +145,6 @@ theorem eq_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
   cases i with
   | zero => have := hzero 0; omega
   | succ i => have := hsucc i; have := hzero i; have := hzero (i + 1); omega
-
-/-- Scaling a weighted sum of natural numbers `cᵢ` by a natural number `d` gives the same weighted
-sum of the products `cᵢ d`: `d ∑ᵢ sᵢ cᵢ = ∑ᵢ sᵢ (cᵢ d)`. This turns the strong inequalities for
-counts `cᵢ` weighted by the dimension `d` of a coefficient space into strong inequalities for the
-sequence `cᵢ d`, to which the results above apply. -/
-theorem natCast_mul_sum_mul_natCast {ι R : Type*} [CommSemiring R] (d : ℕ) (s : ι → R)
-    (c : ι → ℕ) (t : Finset ι) :
-    (d : R) * ∑ i ∈ t, s i * c i = ∑ i ∈ t, s i * ((c i * d : ℕ) : R) := by
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  push_cast
-  ring
 
 end TauCeti
 
