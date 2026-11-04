@@ -106,6 +106,11 @@ theorem localHomologyMap_fundamentalClassOn_preimage_singleton (f : C(M, N)) {y 
   rw [localDegree, dite_eq_left h]
   exact ((isLocalOrientation_iff _ _ _).1 (o' y).property _).choose_spec.symm
 
+/-- The local degree vanishes at a point whose fibre is not compact. -/
+theorem localDegree_of_not_isCompact (f : C(M, N)) {y : N} (h : ¬IsCompact (f ⁻¹' {y})) :
+    o.localDegree o' hE f y = 0 := by
+  rw [localDegree, dite_eq_right h]
+
 include hF in
 /-- **The defining property of the local degree**: at a point `y` with compact fibre, the local
 degree is the integer `c` with `f_*[M]_{f⁻¹(y)} = c • o' y`. -/
@@ -178,11 +183,20 @@ point (`TauCeti.HomologicalOrientation.localDegree_eq_degree`), and the degree i
 def degree (f : C(M, N)) : ℤ :=
   if h : Nonempty N then o.localDegree o' hE f h.some else 0
 
+/-- On a nonempty target, the degree is the local degree at the chosen point `h.some`. -/
+theorem degree_eq_localDegree_some (f : C(M, N)) (h : Nonempty N) :
+    o.degree o' hE f = o.localDegree o' hE f h.some := by
+  rw [degree, dite_eq_left h]
+
+/-- The degree of a map to an empty manifold vanishes. -/
+theorem degree_of_isEmpty [IsEmpty N] (f : C(M, N)) : o.degree o' hE f = 0 := by
+  rw [degree, dite_eq_right (not_nonempty_iff.2 ‹_›)]
+
 include hF in
 /-- The local degree of a proper map onto a preconnected manifold is its degree at every point. -/
 theorem localDegree_eq_degree [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f) (y : N) :
     o.localDegree o' hE f y = o.degree o' hE f := by
-  rw [degree, dite_eq_left ⟨y⟩]
+  rw [degree_eq_localDegree_some o o' hE f ⟨y⟩]
   exact (o.isLocallyConstant_localDegree o' hE hF hf).apply_eq_of_preconnectedSpace _ _
 
 /-- **The degree computes the image of every fundamental class**: for a proper map `f` onto a
@@ -234,7 +248,7 @@ theorem localDegree_id (y : M) : o.localDegree o hE (ContinuousMap.id M) y = 1 :
 /-- The identity of a nonempty manifold has degree `1`. -/
 @[simp]
 theorem degree_id [Nonempty M] : o.degree o hE (ContinuousMap.id M) = 1 := by
-  rw [degree, dite_eq_left ‹_›, localDegree_id]
+  rw [degree_eq_localDegree_some o o hE _ ‹_›, localDegree_id]
 
 include hF in
 /-- Reversing the orientation of the source negates the local degree. -/
@@ -244,7 +258,8 @@ theorem localDegree_neg_left (f : C(M, N)) (y : N) :
   by_cases h : IsCompact (f ⁻¹' {y})
   · rw [localDegree_eq_iff (-o) o' hE hF f h, fundamentalClassOn_neg, map_neg,
       localHomologyMap_fundamentalClassOn_preimage_singleton o o' hE f h, neg_zsmul]
-  · rw [localDegree, localDegree, dite_eq_right h, dite_eq_right h, neg_zero]
+  · rw [localDegree_of_not_isCompact _ _ hE f h, localDegree_of_not_isCompact o o' hE f h,
+      neg_zero]
 
 include hF in
 /-- Reversing the orientation of the target negates the local degree. -/
@@ -254,23 +269,26 @@ theorem localDegree_neg_right (f : C(M, N)) (y : N) :
   by_cases h : IsCompact (f ⁻¹' {y})
   · rw [localDegree_eq_iff o (-o') hE hF f h, localHomologyMap_fundamentalClassOn_preimage_singleton
       o o' hE f h, neg_apply, LocalOrientation.coe_neg, neg_zsmul, zsmul_neg, neg_neg]
-  · rw [localDegree, localDegree, dite_eq_right h, dite_eq_right h, neg_zero]
+  · rw [localDegree_of_not_isCompact _ _ hE f h, localDegree_of_not_isCompact o o' hE f h,
+      neg_zero]
 
 include hF in
 /-- Reversing the orientation of the source negates the degree. -/
 @[simp]
 theorem degree_neg_left (f : C(M, N)) : (-o).degree o' hE f = -o.degree o' hE f := by
-  by_cases h : Nonempty N
-  · rw [degree, degree, dite_eq_left h, dite_eq_left h, localDegree_neg_left o o' hE hF]
-  · rw [degree, degree, dite_eq_right h, dite_eq_right h, neg_zero]
+  rcases isEmpty_or_nonempty N with h | h
+  · rw [degree_of_isEmpty, degree_of_isEmpty, neg_zero]
+  · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
+      localDegree_neg_left o o' hE hF]
 
 include hF in
 /-- Reversing the orientation of the target negates the degree. -/
 @[simp]
 theorem degree_neg_right (f : C(M, N)) : o.degree (-o') hE f = -o.degree o' hE f := by
-  by_cases h : Nonempty N
-  · rw [degree, degree, dite_eq_left h, dite_eq_left h, localDegree_neg_right o o' hE hF]
-  · rw [degree, degree, dite_eq_right h, dite_eq_right h, neg_zero]
+  rcases isEmpty_or_nonempty N with h | h
+  · rw [degree_of_isEmpty, degree_of_isEmpty, neg_zero]
+  · rw [degree_eq_localDegree_some _ _ hE f h, degree_eq_localDegree_some o o' hE f h,
+      localDegree_neg_right o o' hE hF]
 
 include hG in
 /-- **Local degrees multiply under composition**: for proper maps `f : M → N` and `g : N → P` with
@@ -291,11 +309,10 @@ preconnected manifolds, `deg (g ∘ f) = deg g * deg f`. -/
 theorem degree_comp [PreconnectedSpace N] [PreconnectedSpace P] {g : C(N, P)} {f : C(M, N)}
     (hg : IsProperMap g) (hf : IsProperMap f) :
     o.degree o'' hE (g.comp f) = o'.degree o'' hF g * o.degree o' hE f := by
-  by_cases h : Nonempty P
-  · obtain ⟨z⟩ := h
-    rw [← o.localDegree_eq_degree o'' hE hG (hg.comp hf) z,
+  rcases isEmpty_or_nonempty P with h | ⟨⟨z⟩⟩
+  · rw [degree_of_isEmpty, degree_of_isEmpty, zero_mul]
+  · rw [← o.localDegree_eq_degree o'' hE hG (hg.comp hf) z,
       localDegree_comp o o' o'' hE hF hG hg hf, o'.localDegree_eq_degree o'' hF hG hg, mul_comm]
-  · rw [degree, degree, dite_eq_right h, dite_eq_right h, zero_mul]
 
 include hF in
 /-- **Invariance of the local degree under proper homotopies**: if `H` is a homotopy from `f₀`
@@ -333,9 +350,10 @@ include hF in
 proper as a map `[0, 1] × M → N` have the same degree. -/
 theorem degree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH : IsProperMap H) :
     o.degree o' hE f₀ = o.degree o' hE f₁ := by
-  by_cases h : Nonempty N
-  · rw [degree, degree, dite_eq_left h, dite_eq_left h, o.localDegree_eq_of_homotopy o' hE hF H hH]
-  · rw [degree, degree, dite_eq_right h, dite_eq_right h]
+  rcases isEmpty_or_nonempty N with h | h
+  · rw [degree_of_isEmpty, degree_of_isEmpty]
+  · rw [degree_eq_localDegree_some o o' hE f₀ h, degree_eq_localDegree_some o o' hE f₁ h,
+      o.localDegree_eq_of_homotopy o' hE hF H hH]
 
 end HomologicalOrientation
 
