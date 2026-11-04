@@ -422,6 +422,14 @@ theorem comap_subtype_algebraMap (b : NovikovSeries R K (N.comp K.subtype)) :
   ext k
   simp
 
+/-- The algebra map induced by inclusion of a subgroup of exponents is injective. -/
+theorem algebraMap_addSubgroup_injective :
+    Function.Injective (algebraMap (NovikovSeries R K (N.comp K.subtype))
+      (NovikovSeries R H N)) :=
+  Function.LeftInverse.injective
+    (comap_subtype_algebraMap (exists_period_rescale_subtype K)
+      (by simp [K.subtype.ker_eq_bot K.subtype_injective]))
+
 /-- The projection formula: restriction of coefficients to `K` is linear over Novikov series
 on `K`. -/
 theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))

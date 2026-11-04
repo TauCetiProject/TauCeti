@@ -64,11 +64,8 @@ theorem algebraMap_addSubgroup_mem_nonZeroDivisors_iff
     (a : NovikovSeries R K (N.comp K.subtype)) :
     algebraMap _ (NovikovSeries R H N) a ∈ (NovikovSeries R H N)⁰ ↔
       a ∈ (NovikovSeries R K (N.comp K.subtype))⁰ := by
-  refine ⟨fun ha => mem_nonZeroDivisors_of_injective ?_ ha,
+  exact ⟨fun ha => mem_nonZeroDivisors_of_injective algebraMap_addSubgroup_injective ha,
     algebraMap_addSubgroup_mem_nonZeroDivisors⟩
-  intro b c hbc
-  ext k
-  simpa using congrArg (fun x : NovikovSeries R H N => x.coeff (k : H)) hbc
 
 /-- If the period map is injective on a subgroup, every nonzero series from that subgroup
 is a nonzerodivisor in the ambient completion. -/
@@ -113,7 +110,7 @@ variable [CommRing R] {K : AddSubgroup H}
 /-- The subgroup completion embeds into every nontrivial ring image of the ambient total
 quotient ring if periods are injective on the subgroup and the ground ring has no zero divisors.
 In particular it embeds into each field component. -/
-theorem injective_toFractionRing_component_of_injective_period [NoZeroDivisors R]
+theorem injective_comp_algebraMap_addSubgroup_of_injective_period [NoZeroDivisors R]
     (hN : Function.Injective (N.comp K.subtype))
     (Q : Type*) [CommRing Q] [Algebra (NovikovSeries R H N) Q]
     [IsFractionRing (NovikovSeries R H N) Q] {F : Type*} [Ring F] [Nontrivial F] (f : Q →+* F) :
