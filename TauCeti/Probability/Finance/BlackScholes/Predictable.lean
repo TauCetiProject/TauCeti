@@ -64,16 +64,12 @@ private theorem isStronglyPredictable_before_maturity
     (hf : Measurable[ℱ.predictable] f)
     (hu : ∀ (t : ℝ≥0) ω, (t : ℝ) < T → u t ω = f (t, ω)) :
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then u t ω else 0) := by
-  have htm := (ℱ.measurable_fst_predictable).coe_nnreal_real
-  have hh : Measurable[ℱ.predictable]
-      (fun p : ℝ≥0 × Ω => if (p.1 : ℝ) < T then f p else 0) :=
-    hf.ite (measurableSet_lt htm measurable_const) measurable_const
-  rw [IsStronglyPredictable]
-  convert hh.stronglyMeasurable using 1
-  ext p
-  simp only [Function.uncurry]
+  have hh := hf.isStronglyPredictable_ite_zero
+    (measurableSet_lt measurable_coe_nnreal_real measurable_const (g := fun _ => T))
+  convert hh using 1
+  ext t ω
   split_ifs with ht
-  · exact hu p.1 p.2 ht
+  · exact hu t ω ht
   · rfl
 
 /-- The call delta along a predictable positive spot process, extended by zero at and

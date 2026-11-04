@@ -18,7 +18,8 @@ on the predictable time-zero slice. Continuous paths give a corollary. This supp
 of continuous asset processes and hence of Borel functions of time and those assets.
 
 The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
-time dependence can be combined with predictable processes.
+time dependence can be combined with predictable processes. A predictably measurable function
+remains strongly predictable when extended by zero outside a measurable set of times.
 -/
 
 public section
@@ -147,3 +148,16 @@ theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m :
   intro t
   simpa only [Set.prod_univ] using
     measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := t) MeasurableSet.univ
+
+/-- A predictably measurable function, extended by zero outside a measurable set of times,
+defines a strongly predictable process. In particular, the time predicate can impose a
+deterministic maturity cutoff without any continuity assumption at maturity. -/
+theorem Measurable.isStronglyPredictable_ite_zero {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
+    [OrderTopology ι] [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
+    [TopologicalSpace E] [PseudoMetrizableSpace E] [SecondCountableTopology E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] [Zero E]
+    {ℱ : Filtration ι m} {f : ι × Ω → E} (hf : Measurable[ℱ.predictable] f)
+    {P : ι → Prop} [DecidablePred P] (hP : MeasurableSet {t | P t}) :
+    IsStronglyPredictable ℱ (fun t ω => if P t then f (t, ω) else 0) :=
+  (hf.ite (hP.preimage ℱ.measurable_fst_predictable) measurable_const).stronglyMeasurable
