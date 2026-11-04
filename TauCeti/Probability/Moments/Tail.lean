@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -76,35 +76,19 @@ also at every fixed positive multiple of the threshold. -/
 theorem tendsto_rpow_mul_measureReal_abs_gt {Y : Ω → ℝ} {α c : ℝ} (hα : 0 < α)
     (hY : Integrable (fun ω ↦ |Y ω| ^ α) μ) (hc : 0 < c) :
     Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | c * x < |Y ω|}) atTop (𝓝 0) := by
-  have ht := hY.tendsto_mul_measureReal_gt.comp
-    ((tendsto_rpow_atTop hα).comp (tendsto_id.const_mul_atTop hc))
-  have heq (x : ℝ) (hx : 0 ≤ x) :
-      {ω | (c * x) ^ α < |Y ω| ^ α} = {ω | c * x < |Y ω|} := by
-    ext ω
-    exact rpow_lt_rpow_iff (mul_nonneg hc.le hx) (abs_nonneg _) hα
-  have ht' := ht.div_const (c ^ α)
-  simp only [zero_div] at ht'
-  apply ht'.congr'
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
-  dsimp only [Function.comp_apply, id_eq]
-  rw [heq x hx, mul_rpow hc.le hx]
-  field_simp [(rpow_pos_of_pos hc α).ne']
+  have ht : Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | x < |Y ω|}) atTop (𝓝 0) := by
+    apply (hY.tendsto_mul_measureReal_gt.comp (tendsto_rpow_atTop hα)).congr'
+    filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+    simp only [Function.comp_apply, rpow_lt_rpow_iff hx (abs_nonneg _) hα]
+  simpa only [zero_div] using ht.rpow_mul_comp_const_mul hc
 
 /-- Adding a perturbation with a finite absolute `α`th moment preserves a finite right-tail
 constant of exponent `α > 0`. The variables may be dependent, and the constant may be zero.
 The base measure need only be finite. -/
-theorem tendsto_rpow_mul_measureReal_gt_add [IsFiniteMeasure μ] {X Y : Ω → ℝ} {α C : ℝ}
+theorem tendsto_rpow_mul_measureReal_add_gt [IsFiniteMeasure μ] {X Y : Ω → ℝ} {α C : ℝ}
     (hα : 0 < α) (hX : Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | x < X ω}) atTop (𝓝 C))
     (hY : Integrable (fun ω ↦ |Y ω| ^ α) μ) :
     Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | x < X ω + Y ω}) atTop (𝓝 C) := by
-  have hscale (c : ℝ) (hc : 0 < c) :
-      Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | c * x < X ω}) atTop (𝓝 (C / c ^ α)) := by
-    have ht := hX.comp (tendsto_id.const_mul_atTop hc)
-    apply (ht.div_const (c ^ α)).congr'
-    filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
-    dsimp only [Function.comp_apply, id_eq]
-    rw [mul_rpow hc.le hx]
-    field_simp [(rpow_pos_of_pos hc α).ne']
   have hC : Tendsto (fun c : ℝ ↦ C / c ^ α) (𝓝 1) (𝓝 C) := by
     have hc : ContinuousAt (fun c : ℝ ↦ C / c ^ α) 1 :=
       continuousAt_const.div (continuousAt_rpow_const (1 : ℝ) α (by simp)) (by simp)
@@ -119,7 +103,7 @@ theorem tendsto_rpow_mul_measureReal_gt_add [IsFiniteMeasure μ] {X Y : Ω → �
     obtain ⟨c, hc, hac⟩ := (hcgt.and hbound).exists
     have hc0 : 0 < c := lt_trans zero_lt_one hc
     have he := tendsto_rpow_mul_measureReal_abs_gt hα hY (sub_pos.mpr hc)
-    have hl := (hscale c hc0).sub he
+    have hl := (hX.rpow_mul_comp_const_mul hc0).sub he
     simp only [sub_zero] at hl
     filter_upwards [hl.eventually (lt_mem_nhds hac), eventually_gt_atTop (0 : ℝ)] with x hx hx0
     have hsub : {ω | c * x < X ω} ⊆
@@ -138,7 +122,7 @@ theorem tendsto_rpow_mul_measureReal_gt_add [IsFiniteMeasure μ] {X Y : Ω → �
       (hC.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hb)
     obtain ⟨c, hc, hcb⟩ := (hcIoo.and hbound).exists
     have he := tendsto_rpow_mul_measureReal_abs_gt hα hY (sub_pos.mpr hc.2)
-    have hu := (hscale c hc.1).add he
+    have hu := (hX.rpow_mul_comp_const_mul hc.1).add he
     simp only [add_zero] at hu
     filter_upwards [hu.eventually (gt_mem_nhds hcb), eventually_gt_atTop (0 : ℝ)] with x hx hx0
     have hsub : {ω | x < X ω + Y ω} ⊆
@@ -153,12 +137,12 @@ theorem tendsto_rpow_mul_measureReal_gt_add [IsFiniteMeasure μ] {X Y : Ω → �
 
 /-- Adding a perturbation with a finite absolute `α`th moment preserves a finite left-tail
 constant of exponent `α > 0`, without requiring independence. -/
-theorem tendsto_rpow_mul_measureReal_lt_add [IsFiniteMeasure μ] {X Y : Ω → ℝ} {α C : ℝ}
+theorem tendsto_rpow_mul_measureReal_add_lt_neg [IsFiniteMeasure μ] {X Y : Ω → ℝ} {α C : ℝ}
     (hα : 0 < α) (hX : Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | X ω < -x}) atTop (𝓝 C))
     (hY : Integrable (fun ω ↦ |Y ω| ^ α) μ) :
     Tendsto (fun x : ℝ ↦ x ^ α * μ.real {ω | X ω + Y ω < -x}) atTop (𝓝 C) := by
   simpa only [← neg_add, lt_neg, neg_neg] using
-    tendsto_rpow_mul_measureReal_gt_add (X := fun ω ↦ -X ω) (Y := fun ω ↦ -Y ω) hα
+    tendsto_rpow_mul_measureReal_add_gt (X := fun ω ↦ -X ω) (Y := fun ω ↦ -Y ω) hα
       (by simpa only [lt_neg, neg_neg] using hX)
       (by simpa only [abs_neg] using hY)
 
@@ -171,7 +155,7 @@ variable (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν] {α C :
 /-- Convolution with a finite measure having a finite absolute `α`th moment multiplies a
 right-tail constant by its total mass. For a probability convolution factor the constant is
 unchanged. -/
-theorem tendsto_rpow_mul_real_Ioi_conv (hα : 0 < α)
+theorem tendsto_rpow_mul_conv_real_Ioi (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hν : Integrable (fun y : ℝ ↦ |y| ^ α) ν) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ ∗ ν).real (Ioi x)) atTop (𝓝 (C * ν.real univ)) := by
@@ -179,7 +163,7 @@ theorem tendsto_rpow_mul_real_Ioi_conv (hα : 0 < α)
       atTop (𝓝 (C * ν.real univ)) := by
     have heq (x : ℝ) : {z : ℝ × ℝ | x < z.1} = Ioi x ×ˢ univ := by ext; simp
     simpa only [heq, measureReal_prod_prod, ← mul_assoc] using hμ.mul_const (ν.real univ)
-  have ht := TauCeti.tendsto_rpow_mul_measureReal_gt_add hα hfst (hν.comp_snd μ)
+  have ht := TauCeti.tendsto_rpow_mul_measureReal_add_gt hα hfst (hν.comp_snd μ)
   have hpre (x : ℝ) : (fun z : ℝ × ℝ ↦ z.1 + z.2) ⁻¹' Ioi x =
       {z : ℝ × ℝ | x < z.1 + z.2} := by ext; simp
   simpa only [conv, map_measureReal_apply (f := fun z : ℝ × ℝ ↦ z.1 + z.2)
@@ -187,7 +171,7 @@ theorem tendsto_rpow_mul_real_Ioi_conv (hα : 0 < α)
 
 /-- Convolution with a finite measure having a finite absolute `α`th moment multiplies a
 left-tail constant by its total mass. Zero tail constants are included. -/
-theorem tendsto_rpow_mul_real_Iio_conv (hα : 0 < α)
+theorem tendsto_rpow_mul_conv_real_Iio_neg (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Iio (-x))) atTop (𝓝 C))
     (hν : Integrable (fun y : ℝ ↦ |y| ^ α) ν) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ ∗ ν).real (Iio (-x))) atTop
@@ -196,7 +180,7 @@ theorem tendsto_rpow_mul_real_Iio_conv (hα : 0 < α)
       atTop (𝓝 (C * ν.real univ)) := by
     have heq (x : ℝ) : {z : ℝ × ℝ | z.1 < -x} = Iio (-x) ×ˢ univ := by ext; simp
     simpa only [heq, measureReal_prod_prod, ← mul_assoc] using hμ.mul_const (ν.real univ)
-  have ht := TauCeti.tendsto_rpow_mul_measureReal_lt_add hα hfst (hν.comp_snd μ)
+  have ht := TauCeti.tendsto_rpow_mul_measureReal_add_lt_neg hα hfst (hν.comp_snd μ)
   have hpre (x : ℝ) : (fun z : ℝ × ℝ ↦ z.1 + z.2) ⁻¹' Iio (-x) =
       {z : ℝ × ℝ | z.1 + z.2 < -x} := by ext; simp
   simpa only [conv, map_measureReal_apply (f := fun z : ℝ × ℝ ↦ z.1 + z.2)
