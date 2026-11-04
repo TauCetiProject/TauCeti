@@ -31,6 +31,11 @@ The condition `ζ ^ n = 1` cannot be dropped from the last item: over `ℚ[ε]/(
 `1 + ε` is a primitive first root of unity modulo the only prime ideal, but is not a root of
 `Φ_1 = X - 1`.
 
+Coprime powers preserve cyclotomic roots even without invertibility of `n`
+(`Polynomial.isRoot_cyclotomic_pow_of_coprime`). When `n` is invertible, distinct
+powers with exponents less than `n` have unit difference
+(`Polynomial.isUnit_pow_sub_pow_of_isRoot_cyclotomic`).
+
 Finally, `R[X]/(Φ_n)` is finite and free over `R`, of rank `φ(n)` when `R` is nontrivial
 (`Polynomial.finrank_adjoinRoot_cyclotomic`), and it is étale over `R` when `n` is a unit
 (`Polynomial.etale_adjoinRoot_cyclotomic`).
@@ -116,6 +121,37 @@ theorem isRoot_cyclotomic_iff_forall_isPrimitiveRoot (hn : IsUnit (n : R)) {ζ :
     have hdvd := ((h m hm.isPrime).pow_eq_one_iff_dvd d).mp
       (by simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.mpr hmem)
     exact absurd (Nat.le_of_dvd (Nat.pos_of_mem_properDivisors hd) hdvd) (not_le.mpr hd'.2)
+
+/-- Distinct powers, with exponents less than `n`, of a cyclotomic root have unit
+difference when `n` is invertible. Distinctness alone would not suffice over a ring. -/
+theorem isUnit_pow_sub_pow_of_isRoot_cyclotomic (hn : IsUnit (n : R)) {ζ : R}
+    (hζ : (cyclotomic n R).IsRoot ζ) {i j : ℕ} (hi : i < n) (hj : j < n) (hij : i ≠ j) :
+    IsUnit (ζ ^ i - ζ ^ j) := by
+  by_contra hu
+  obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu
+  have hp := ((isRoot_cyclotomic_iff_forall_isPrimitiveRoot hn).mp hζ).2 m hm.isPrime
+  have he : (Ideal.Quotient.mk m ζ) ^ i = (Ideal.Quotient.mk m ζ) ^ j := by
+    simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.mpr hmem
+  exact hij (hp.pow_inj hi hj he)
+
+/-- A power of a cyclotomic root with exponent coprime to `n` is again a cyclotomic
+root over any commutative ring, including in ramified characteristics. -/
+theorem isRoot_cyclotomic_pow_of_coprime {ζ : R}
+    (hζ : (cyclotomic n R).IsRoot ζ) {a : ℕ} (ha : a.Coprime n) :
+    (cyclotomic n R).IsRoot (ζ ^ a) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simpa using hζ
+  have hp := Complex.isPrimitiveRoot_exp n hn.ne'
+  have hd := minpoly.isIntegrallyClosed_dvd (hp.isIntegral hn)
+    (p := (cyclotomic n ℤ).comp (X ^ a)) (by
+    rw [aeval_comp]
+    simpa [aeval_def, eval₂_eq_eval_map, map_cyclotomic] using
+      ((hp.pow_of_coprime a ha).isRoot_cyclotomic hn).eq_zero)
+  rw [← cyclotomic_eq_minpoly hp hn] at hd
+  have hdR : cyclotomic n R ∣ (cyclotomic n R).comp (X ^ a) := by
+    simpa only [map_comp, Polynomial.map_pow, map_X, map_cyclotomic_int] using
+      Polynomial.map_dvd (Int.castRingHom R) hd
+  simpa only [isRoot_comp, eval_pow, eval_X] using hζ.dvd hdR
 
 instance : Module.Free R (AdjoinRoot (cyclotomic n R)) :=
   (cyclotomic.monic n R).free_adjoinRoot

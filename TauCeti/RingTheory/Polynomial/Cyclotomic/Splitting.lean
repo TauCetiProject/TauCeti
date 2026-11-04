@@ -34,36 +34,6 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R] {n : ℕ} {ζ : R}
 
-/-- Distinct powers, with exponents less than `n`, of a cyclotomic root have unit
-difference when `n` is invertible. Distinctness alone would not suffice over a ring. -/
-theorem isUnit_pow_sub_pow_of_isRoot_cyclotomic (hn : IsUnit (n : R))
-    (hζ : (cyclotomic n R).IsRoot ζ) {i j : ℕ} (hi : i < n) (hj : j < n) (hij : i ≠ j) :
-    IsUnit (ζ ^ i - ζ ^ j) := by
-  by_contra hu
-  obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu
-  have hp := ((isRoot_cyclotomic_iff_forall_isPrimitiveRoot hn).mp hζ).2 m hm.isPrime
-  have he : (Ideal.Quotient.mk m ζ) ^ i = (Ideal.Quotient.mk m ζ) ^ j := by
-    simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-  exact hij (hp.pow_inj hi hj he)
-
-/-- A power of a cyclotomic root with exponent coprime to `n` is again a cyclotomic
-root over any commutative ring, including in ramified characteristics. -/
-theorem isRoot_cyclotomic_pow_of_coprime
-    (hζ : (cyclotomic n R).IsRoot ζ) {a : ℕ} (ha : a.Coprime n) :
-    (cyclotomic n R).IsRoot (ζ ^ a) := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simpa using hζ
-  have hp := Complex.isPrimitiveRoot_exp n hn.ne'
-  have hd := minpoly.isIntegrallyClosed_dvd (hp.isIntegral hn)
-    (p := (cyclotomic n ℤ).comp (X ^ a)) (by
-    rw [aeval_def, eval₂_comp, eval₂_pow, eval₂_X, eval₂_eq_eval_map, map_cyclotomic]
-    exact ((hp.pow_of_coprime a ha).isRoot_cyclotomic hn).eq_zero)
-  rw [← cyclotomic_eq_minpoly hp hn] at hd
-  have hdR : cyclotomic n R ∣ (cyclotomic n R).comp (X ^ a) := by
-    simpa only [map_comp, Polynomial.map_pow, map_X, map_cyclotomic_int] using
-      Polynomial.map_dvd (Int.castRingHom R) hd
-  simpa only [isRoot_comp, eval_pow, eval_X] using hζ.dvd hdR
-
 /-- Evaluation at the power of a chosen primitive root labelled by a unit modulo `n`. -/
 noncomputable def cyclotomicEval
     (hζ : (cyclotomic n R).IsRoot ζ) (a : (ZMod n)ˣ) :
@@ -99,7 +69,9 @@ theorem bijective_pi_cyclotomicEval (hn : IsUnit (n : R))
         AdjoinRoot (cyclotomic n R) → Fin (cyclotomic n R).natDegree → R) =
         (Equiv.piCongrLeft' (fun _ : (ZMod n)ˣ ↦ R) e.symm) ∘
           AlgHom.pi (cyclotomicEval hζ) := by
-      rfl
+      ext x i
+      simp only [Function.comp_apply, Equiv.piCongrLeft'_apply, Equiv.symm_symm,
+        AlgHom.pi_apply]
     rw [he] at hb
     exact (Equiv.comp_bijective _ _).mp hb
   · simp only [cyclotomicEval_root]

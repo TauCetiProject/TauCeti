@@ -55,9 +55,10 @@ theorem bijective_pi_of_isUnit_sub (hf : f.Monic)
     ext i
     dsimp only [e, LinearEquiv.trans_apply]
     rw [Matrix.toLinearEquiv_apply, Matrix.toLin_eq_toLin', Matrix.toLin'_apply]
-    change (∑ j : Fin f.natDegree, v i ^ (j : ℕ) * b.repr x j) = s i x
+    simp only [Matrix.mulVec, dotProduct, Matrix.vandermonde_apply,
+      Module.Basis.equivFun_apply, AlgHom.pi_apply]
     rw [eval_eq_sum]
     exact Finset.sum_congr rfl (fun j _ ↦ mul_comm _ _)
-  exact (funext he : (e : AdjoinRoot f → Fin f.natDegree → R) = AlgHom.pi s) ▸ e.bijective
+  exact congrArg Function.Bijective (funext he) ▸ e.bijective
 
 end AdjoinRoot
