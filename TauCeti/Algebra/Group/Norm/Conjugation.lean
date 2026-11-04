@@ -10,10 +10,11 @@ public import Mathlib.Algebra.BigOperators.Group.List.Lemmas
 public import TauCeti.Data.List.Rotate
 
 /-!
-# Conjugation-invariant group norms
+# Conjugation-invariant group seminorms and norms
 
-A group norm is conjugation invariant exactly when its associated left-invariant metric is
-also right invariant. Such norms give orientation-independent norms of products around loops:
+The algebraic conjugation identities hold for group seminorms. A group norm is conjugation
+invariant exactly when its associated left-invariant metric is also right invariant.
+Such seminorms give orientation-independent seminorms of products around loops:
 cyclically rotating the factors, or reversing them and inverting each factor, preserves the norm.
 These identities are useful for holonomy with noncommutative coefficients.
 
@@ -34,18 +35,12 @@ invariance. Reversing the word alone need not preserve the seminorm. -/
     ℓ (l.map (fun g => g⁻¹)).reverse.prod = ℓ l.prod := by
   rw [← List.prod_inv_reverse, map_inv_eq_map]
 
-end GroupSeminorm
-
-namespace GroupNorm
-
-variable {G : Type*} [Group G]
-
-/-- A group norm is conjugation invariant if conjugating an element preserves its norm. -/
-def IsConjInvariant (ℓ : GroupNorm G) : Prop :=
+/-- A group seminorm is conjugation invariant if conjugating an element preserves its seminorm. -/
+def IsConjInvariant (ℓ : GroupSeminorm G) : Prop :=
   ∀ g h : G, ℓ (h * g * h⁻¹) = ℓ g
 
 /-- Conjugation invariance is equivalent to invariance under exchanging two factors. -/
-theorem isConjInvariant_iff_mul_comm (ℓ : GroupNorm G) :
+theorem isConjInvariant_iff_mul_comm (ℓ : GroupSeminorm G) :
     ℓ.IsConjInvariant ↔ ∀ g h : G, ℓ (g * h) = ℓ (h * g) := by
   constructor
   · intro hℓ g h
@@ -55,32 +50,44 @@ theorem isConjInvariant_iff_mul_comm (ℓ : GroupNorm G) :
 
 namespace IsConjInvariant
 
-variable {ℓ : GroupNorm G} (hℓ : ℓ.IsConjInvariant)
+variable {ℓ : GroupSeminorm G} (hℓ : ℓ.IsConjInvariant)
 
 include hℓ
 
-/-- A cyclic exchange of two blocks of factors preserves a conjugation-invariant norm. -/
+/-- A cyclic exchange of two blocks of factors preserves a conjugation-invariant seminorm. -/
 theorem map_mul_comm (g h : G) : ℓ (g * h) = ℓ (h * g) :=
   (isConjInvariant_iff_mul_comm ℓ).mp hℓ g h
 
-/-- Conjugating an element preserves its norm. -/
+/-- Conjugating an element preserves its seminorm. -/
 @[simp] theorem map_conj (g h : G) : ℓ (h * g * h⁻¹) = ℓ g :=
   hℓ g h
 
-/-- Conjugation by the inverse of an element also preserves the norm. -/
+/-- Conjugation by the inverse of an element also preserves the seminorm. -/
 @[simp] theorem map_inv_mul_mul (g h : G) : ℓ (h⁻¹ * g * h) = ℓ g := by
   simpa using hℓ g h⁻¹
 
-/-- The norm of a list product is invariant under any cyclic rotation. -/
+/-- The seminorm of a list product is invariant under any cyclic rotation. -/
 theorem map_prod_rotate (l : List G) (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.prod := by
   exact List.IsRotated.apply_prod_eq hℓ.map_mul_comm (List.IsRotated.forall l n)
 
 end IsConjInvariant
 
+/-- Every group seminorm on a commutative group is conjugation invariant. -/
+theorem isConjInvariant_of_commGroup {A : Type*} [CommGroup A] (ℓ : GroupSeminorm A) :
+    ℓ.IsConjInvariant := by
+  intro g h
+  simp [mul_comm h g, mul_assoc]
+
+end GroupSeminorm
+
+namespace GroupNorm
+
+variable {G : Type*} [Group G]
+
 /-- The associated metric is right invariant exactly when the norm is conjugation invariant.
 Left invariance is already supplied by `GroupNorm.toNormedGroup`. -/
 theorem isConjInvariant_iff_dist_mul_right (ℓ : GroupNorm G) :
-    ℓ.IsConjInvariant ↔
+    ℓ.toGroupSeminorm.IsConjInvariant ↔
       letI := ℓ.toNormedGroup
       ∀ g h k : G, dist (g * k) (h * k) = dist g h := by
   let := ℓ.toNormedGroup
@@ -90,12 +97,6 @@ theorem isConjInvariant_iff_dist_mul_right (ℓ : GroupNorm G) :
     simpa [mul_assoc] using hℓ.map_inv_mul_mul (g⁻¹ * h) k
   · intro hdist g h
     simpa [mul_assoc] using hdist 1 g h⁻¹
-
-/-- Every group norm on a commutative group is conjugation invariant. -/
-theorem isConjInvariant_of_commGroup {A : Type*} [CommGroup A] (ℓ : GroupNorm A) :
-    ℓ.IsConjInvariant := by
-  intro g h
-  simp [mul_comm h g, mul_assoc]
 
 section Metric
 
@@ -124,9 +125,9 @@ theorem ofLeftInvariantMetric_dist
 theorem isConjInvariant_ofLeftInvariantMetric
     (hleft : ∀ g h k : G, dist (k * g) (k * h) = dist g h)
     (hright : ∀ g h k : G, dist (g * k) (h * k) = dist g h) :
-    (ofLeftInvariantMetric hleft).IsConjInvariant := by
+    (ofLeftInvariantMetric hleft).toGroupSeminorm.IsConjInvariant := by
   intro g h
-  simp only [ofLeftInvariantMetric_apply]
+  simp only [toGroupSeminorm_eq_coe, ofLeftInvariantMetric_apply]
   calc
     dist 1 (h * g * h⁻¹) = dist h (h * g) := by
       simpa using hright h (h * g) h⁻¹
