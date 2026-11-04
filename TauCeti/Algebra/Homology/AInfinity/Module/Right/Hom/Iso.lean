@@ -106,10 +106,8 @@ private noncomputable def unipotentTaylorDiff : (M ⊗[R] TensorWords R A) →�
 
 private theorem unipotentTaylorDiff_tmul_one (x : M) :
     unipotentTaylorDiff f hf (x ⊗ₜ[R] (1 : TensorWords R A)) = 0 := by
-  rw [unipotentTaylorDiff, LinearMap.sub_apply, LinearMap.comp_apply, ← linearPart_apply,
-    LinearEquiv.coe_coe, LinearEquiv.ofBijective_symm_apply_apply, LinearMap.comp_apply,
-    LinearMap.lTensor_tmul, TensorWords.counit_eq_counit, TensorWords.counit_one,
-    LinearEquiv.coe_coe, TensorProduct.rid_tmul, one_smul, sub_self]
+  simp [unipotentTaylorDiff, ← linearPart_apply, TensorWords.counit_eq_counit,
+    TensorWords.counit_one]
 
 /-- The endomorphism `(f₁⁻¹ ⊗ 1) F` is the identity plus the cofree lift of a map vanishing on the
 empty algebra word. -/
@@ -156,16 +154,19 @@ private theorem barMap_comp_inverseBarHom :
   set e := LinearEquiv.ofBijective f.linearPart hf
   have h := Ring.mul_inverse_cancel _ (isUnit_unipotentBarHom f hf)
   rw [Module.End.mul_eq_comp, Module.End.one_eq_id] at h
-  -- `F = (f₁ ⊗ 1) G`, since `(f₁ ⊗ 1) (f₁⁻¹ ⊗ 1) = 1`.
+  -- `(f₁ ⊗ 1) (f₁⁻¹ ⊗ 1) = 1`.
+  have he : e.toLinearMap.rTensor (TensorWords R A) ∘ₗ
+      e.symm.toLinearMap.rTensor (TensorWords R A) = LinearMap.id := by
+    rw [← LinearMap.rTensor_comp, e.comp_symm, LinearMap.rTensor_id]
+  -- `F = (f₁ ⊗ 1) G`.
   have hF : f.barMap = e.toLinearMap.rTensor (TensorWords R A) ∘ₗ
       (unipotentBarHom f hf).toLinearMap := by
     rw [unipotentBarHom, Comodule.Hom.comp_toLinearMap, Comodule.Hom.cofreeMap_toLinearMap,
-      ← LinearMap.comp_assoc, ← LinearMap.rTensor_comp, e.comp_symm, LinearMap.rTensor_id,
-      LinearMap.id_comp]
+      ← LinearMap.comp_assoc, he, LinearMap.id_comp]
   rw [hF, inverseBarHom, Comodule.Hom.comp_toLinearMap, Comodule.Hom.ringInverse_toLinearMap,
-    Comodule.Hom.cofreeMap_toLinearMap, LinearMap.comp_assoc, ← LinearMap.comp_assoc _ _
-      ((unipotentBarHom f hf).toLinearMap), h, LinearMap.id_comp, ← LinearMap.rTensor_comp,
-    e.comp_symm, LinearMap.rTensor_id]
+    Comodule.Hom.cofreeMap_toLinearMap]
+  simp only [← LinearMap.comp_assoc] at h ⊢
+  rw [LinearMap.comp_assoc _ (unipotentBarHom f hf).toLinearMap, h, LinearMap.comp_id, he]
 
 /-- The bar map of a module morphism with bijective linear part, as a linear equivalence. -/
 noncomputable def barEquiv : (M ⊗[R] TensorWords R A) ≃ₗ[R] N ⊗[R] TensorWords R A :=
@@ -235,9 +236,8 @@ theorem comp_inverse_cancel : f.comp (f.inverse hf) = AInfinityRightModuleHom.id
 include hf in
 /-- The bar map of a module morphism with bijective linear part is bijective. -/
 theorem barMap_bijective_of_linearPart_bijective : Function.Bijective f.barMap := by
-  refine Function.bijective_iff_has_inverse.2 ⟨(f.inverse hf).barMap, fun z ↦ ?_, fun z ↦ ?_⟩
-  · rw [← LinearMap.comp_apply, ← barMap_comp, inverse_comp_cancel, barMap_id, LinearMap.id_apply]
-  · rw [← LinearMap.comp_apply, ← barMap_comp, comp_inverse_cancel, barMap_id, LinearMap.id_apply]
+  rw [← f.coe_barEquiv hf]
+  exact (f.barEquiv hf).bijective
 
 /-- The linear part of the inverse is the inverse of the linear part. -/
 @[simp]
@@ -362,10 +362,19 @@ namespace AInfinityRightModuleCat
 /-- A morphism of bundled right `A∞` modules is an isomorphism in the category of right `A∞`
 modules exactly when it is an isomorphism of right `A∞` modules. -/
 theorem isIso_iff {M N : AInfinityRightModuleCat.{uR, uA, uM} AA} (f : M ⟶ N) :
-    CategoryTheory.IsIso f ↔ AInfinityRightModuleHom.IsIso f :=
-  ⟨fun _ ↦ ⟨CategoryTheory.inv f, CategoryTheory.IsIso.hom_inv_id f,
-      CategoryTheory.IsIso.inv_hom_id f⟩,
-    fun ⟨g, hg₁, hg₂⟩ ↦ ⟨g, hg₁, hg₂⟩⟩
+    CategoryTheory.IsIso f ↔ AInfinityRightModuleHom.IsIso f := by
+  -- Both notions of inverse are compared through bar maps, where categorical composition and
+  -- identities are `barMap_comp` and `barMap_id`.
+  refine ⟨fun _ ↦ ⟨CategoryTheory.inv f, ?_, ?_⟩, fun ⟨g, hg₁, hg₂⟩ ↦ ⟨g, ?_, ?_⟩⟩ <;>
+    refine AInfinityRightModuleHom.barMap_injective ?_
+  · rw [AInfinityRightModuleHom.barMap_comp, ← barMap_comp, CategoryTheory.IsIso.hom_inv_id,
+      barMap_id, AInfinityRightModuleHom.barMap_id]
+  · rw [AInfinityRightModuleHom.barMap_comp, ← barMap_comp, CategoryTheory.IsIso.inv_hom_id,
+      barMap_id, AInfinityRightModuleHom.barMap_id]
+  · rw [barMap_comp, ← AInfinityRightModuleHom.barMap_comp, hg₁, barMap_id,
+      AInfinityRightModuleHom.barMap_id]
+  · rw [barMap_comp, ← AInfinityRightModuleHom.barMap_comp, hg₂, barMap_id,
+      AInfinityRightModuleHom.barMap_id]
 
 end AInfinityRightModuleCat
 

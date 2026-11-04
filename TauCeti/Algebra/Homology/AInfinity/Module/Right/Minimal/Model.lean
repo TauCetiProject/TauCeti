@@ -111,12 +111,6 @@ theorem differential_minimalModel : MM.minimalModel.differential = 0 :=
 theorem isMinimal_minimalModel : MM.minimalModel.IsMinimal :=
   (isMinimal_def _).2 MM.differential_minimalModel
 
-/-- Every element of the minimal model is a cycle. -/
-theorem mem_cycles_minimalModel
-    (y : MM.differential.homology MM.differential_comp_self_eq_zero) :
-    y ∈ MM.minimalModel.cycles := by
-  rw [mem_cycles, differential_minimalModel, LinearMap.zero_apply]
-
 /-- The quasi-isomorphism from the minimal model to the module, extending the choice of cycle
 representatives of homology classes. -/
 noncomputable def minimalModelInclusion : AInfinityRightModuleHom MM.minimalModel MM :=
@@ -155,7 +149,7 @@ minimal model goes to `y`. -/
 theorem cohomologyEquivHomology_cohomologyMap_minimalModelInclusion
     (y : MM.differential.homology MM.differential_comp_self_eq_zero) :
     MM.cohomologyEquivHomology (MM.minimalModelInclusion.cohomologyMap
-      (MM.minimalModel.cohomologyClass (MM.mem_cycles_minimalModel y))) = y := by
+      (MM.minimalModel.cohomologyClass (MM.isMinimal_minimalModel.mem_cycles y))) = y := by
   rw [AInfinityRightModuleHom.cohomologyMap_cohomologyClass,
     cohomologyEquivHomology_cohomologyClass]
   exact MM.homologyπ_linearPart_minimalModelInclusion y
@@ -201,7 +195,8 @@ model. -/
 theorem cohomologyMap_minimalModelProjection_cohomologyClass {x : M} (hx : x ∈ MM.cycles) :
     MM.minimalModelProjection.cohomologyMap (MM.cohomologyClass hx) =
       MM.minimalModel.cohomologyClass
-        (MM.mem_cycles_minimalModel (MM.cohomologyEquivHomology (MM.cohomologyClass hx))) := by
+        (MM.isMinimal_minimalModel.mem_cycles
+          (MM.cohomologyEquivHomology (MM.cohomologyClass hx))) := by
   rw [AInfinityRightModuleHom.cohomologyMap_cohomologyClass]
   congr 1
   rw [cohomologyEquivHomology_cohomologyClass, linearPart_minimalModelProjection_of_mem_ker]
