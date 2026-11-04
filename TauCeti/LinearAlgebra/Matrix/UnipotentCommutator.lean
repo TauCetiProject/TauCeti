@@ -78,7 +78,7 @@ theorem coe_commutatorElement_eq_one_add_smul_lie_add_smul_mul_mul
     rw [← map_mul, ← map_mul,
       mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero A B hA hAAB, map_zero]
   simp only [← hf] at hx hy ⊢
-  rw [Units.val_commutatorElement_eq_one_add_lie_add_mul_mul x y
+  rw [Units.val_commutatorElement_eq_one_add_lie_add x y
     (s • f A) (t • f B) hx hy]
   · have hlie : ⁅s • f A, t • f B⁆ = (s * t) • f ⁅A, B⁆ := by
       simp only [Ring.lie_def, map_sub, map_mul, smul_mul_assoc, mul_smul_comm,

@@ -12,22 +12,33 @@ import TauCeti.LinearAlgebra.Matrix.UnipotentCommutator
 /-!
 # Double-bond commutators in the type-B spin carrier
 
-This file computes the commutator of the numbered long and short simple-root points in the
-full-weight spin carrier. Its matrix is `1 + st [X,Y] + st² YXY`, with `X` the long-root matrix
-and `Y` the short-root matrix. The cubic matrix term is retained: discarding it would give the
-single-bond formula, which is not the type-B double-bond relation.
+For a long simple root `α` and the adjacent short simple root `β`, write `E` and `F` for their
+integral matrices in the full-weight spin lattice. The group commutator of the corresponding
+root points is
 
-The positive and negative formulas hold over every commutative value ring. The Serre relation
-and cancellation of two are used on the integral lattice, before specialization, so no bad
-prime is inverted in the value ring. These are matrix formulas for the existing root points;
-no parametrization of nonsimple root subgroups is asserted.
+`1 + (s * t) • ⁅E, F⁆ + (s * t²) • (F * E * F)`.
+
+The last summand is the `α + 2β` correction. It must not be discarded in characteristic two:
+although the iterated Lie bracket is `-2 • (F * E * F)`, the group formula has no factor two.
+The positive and negative formulas below require only `-1 ≤ B j i`, giving
+`⁅E, ⁅E, F⁆⁆ = 0`, so they also apply to single bonds, nonadjacent nodes and coincident nodes.
+At the terminal double bond, take `i` to be the long node and `j` the short node. The Cartan
+matrix has roots as rows; the Serre system uses its transpose.
+
+All vanishing products are proved in the integral lattice before changing coefficients. The
+formulas therefore hold over arbitrary commutative rings, including nonreduced rings. They
+compute matrices of actual carrier points, but do not construct the two nonsimple root subgroup
+schemes or identify the carrier with an independently pinned simply connected group.
 
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
-* The integral-lattice transport uses the existing Kostant root-operator construction
-  `TauCeti.UniversalEnvelopingAlgebra.kostantRootOperator`.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate II.
+
+The integral-lattice transport uses the existing Kostant root-operator construction
+`TauCeti.UniversalEnvelopingAlgebra.kostantRootOperator`; the group calculation uses
+`Units.val_commutatorElement_eq_one_add_lie_add`.
 -/
 
 public section
