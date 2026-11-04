@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Data.Matrix.PEquiv
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 
 /-!
 # Kronecker powers of matrices
@@ -33,6 +35,10 @@ diagonal, and that of the matrix of an equivalence `f` is the matrix of the equi
   the Kronecker power is multiplicative, sends `1` to `1` and commutes with transposition.
 * `Matrix.transpose_kroneckerPower_mul_self`: the Kronecker power of a matrix with `Aᵀ * A = 1`
   satisfies the same identity.
+* `Matrix.toMatrix_piTensorProductMap_mulVecLin`: the Kronecker power is the matrix of `A` acting
+  in every factor of the tensor power, in the monomial basis.
+* `Matrix.apply_comp_mul_prod_of_commute_kroneckerPower`: a matrix commuting with the Kronecker
+  power of a monomial matrix is invariant under the relabelling of its indices, up to the weights.
 * `Matrix.kroneckerPower_diagonal` and `Matrix.kroneckerPower_toMatrix_toPEquiv`: the Kronecker
   powers of diagonal and permutation-type matrices.
 -/
@@ -84,6 +90,40 @@ theorem transpose_kroneckerPower_mul_self [CommSemiring R] [Fintype n] [Decidabl
     (A.kroneckerPower κ)ᵀ * A.kroneckerPower κ = 1 := by
   rw [transpose_kroneckerPower, ← kroneckerPower_mul, hA, kroneckerPower_one]
 
+/-- **The Kronecker power is the matrix of the tensor power.** The matrix of `A` acting in every
+factor of the `κ`-indexed tensor power of `m → R`, in the monomial basis built from the standard
+bases, is the Kronecker power of `A`. -/
+theorem toMatrix_piTensorProductMap_mulVecLin [CommSemiring R] [Fintype m] [DecidableEq m]
+    [Fintype κ] [DecidableEq κ] (A : Matrix m m R) :
+    LinearMap.toMatrix (Basis.piTensorProduct fun _ : κ => Pi.basisFun R m)
+        (Basis.piTensorProduct fun _ : κ => Pi.basisFun R m)
+        (PiTensorProduct.map fun _ : κ => A.mulVecLin) =
+      A.kroneckerPower κ := by
+  ext v u
+  simp [LinearMap.toMatrix_apply]
+
+/-- **Commuting with the Kronecker power of a monomial matrix.** Let `A` be the monomial matrix
+sending the `y`-th basis vector to `d y` times the `π y`-th one, so `A x y = d y` when `x = π y`
+and `0` otherwise. If `M` commutes with the Kronecker power of `A`, then relabelling both indices
+of an entry of `M` by `π` satisfies the cross-multiplied identity
+`M (π ∘ v) (π ∘ u) * ∏ i, d (u i) = (∏ i, d (v i)) * M v u`,
+with the column weight `∏ i, d (u i)` on the left and the row weight `∏ i, d (v i)` on the right.
+When the column weight is invertible, the relabelled entry is therefore the original entry
+multiplied by the row weight and divided by the column weight. -/
+theorem apply_comp_mul_prod_of_commute_kroneckerPower [CommSemiring R] [Fintype m]
+    [DecidableEq m] [Fintype κ] [DecidableEq κ] {M : Matrix (κ → m) (κ → m) R}
+    (π : Equiv.Perm m) (d : m → R)
+    (hM : Commute M ((Matrix.of fun x y => if x = π y then d y else 0).kroneckerPower κ))
+    (v u : κ → m) :
+    M (π ∘ v) (π ∘ u) * ∏ i, d (u i) = (∏ i, d (v i)) * M v u := by
+  have hK (w x : κ → m) :
+      (Matrix.of fun x y => if x = π y then d y else 0).kroneckerPower κ w x =
+        if w = π ∘ x then ∏ i, d (x i) else 0 := by
+    simp [Finset.prod_ite_zero, funext_iff]
+  have h := congrFun (congrFun hM.eq (π ∘ v)) u
+  have hinj (w : κ → m) : (π ∘ v = π ∘ w) ↔ v = w := π.injective.comp_left.eq_iff
+  simp only [Matrix.mul_apply, hK, mul_ite, mul_zero, ite_mul, zero_mul, hinj] at h
+  simpa using h
 /-- The Kronecker power of a diagonal matrix is the diagonal matrix with entry `∏ i, d (v i)` at
 the index function `v`. -/
 @[simp]
