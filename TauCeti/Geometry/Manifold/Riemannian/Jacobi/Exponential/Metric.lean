@@ -23,11 +23,13 @@ They do not require completeness or injectivity of the exponential map. The curv
 hypothesis is imposed only along the radial segment. The coefficient includes all signs of
 curvature and zero initial velocity.
 
-The construction uses the radial Jacobi field from `Jacobi.Exponential.Basic` and its explicit
-length from `Jacobi.Model`, rather than an assumed formula for the model metric.
+The resulting pullback metric `exp_p^* g` at `v` is the constant-curvature model metric
+for the equality case of Rauch comparison.
 
 ## References
 
+* Formal ingredients: the radial Jacobi field in `Jacobi.Exponential.Basic` and its
+  constant-curvature length formula in `Jacobi.Model`.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 10--11
   (Jacobi fields and the metric in geodesic polar coordinates).
 -/
@@ -85,8 +87,8 @@ theorem norm_mfderiv_riemannianExp_of_inner_eq_zero_of_hasSectionalCurvatureAt
   rw [hD, hvel, sub_zero, one_smul, zero_smul, riemannianExp_zero] at hnorm
   simpa only [one_smul] using hnorm
 
-/-- The exponential pullback metric on angular vectors in constant curvature. No division by
-the model sine is used, so the identity also describes singular exponential differentials. -/
+/-- The exponential pullback metric on angular vectors in constant curvature. The identity
+holds even when `curvatureSine (κ * ‖v‖ ^ 2) 1 = 0`. -/
 theorem inner_mfderiv_riemannianExp_of_inner_eq_zero_of_hasSectionalCurvatureAt
     (hv : v ∈ expDomain I M p)
     (hK : ∀ t ∈ Icc (0 : ℝ) 1, (leviCivitaConnection I M).HasSectionalCurvatureAt
