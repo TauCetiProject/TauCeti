@@ -251,18 +251,32 @@ theorem IsMorseOneForm.isMorse_of_mextDeriv_eq_mpullback (hα : IsMorseOneForm �
     (hdg : mextDeriv (RoughForm.ofFunction I g) = TauCeti.mpullback I I π α) : IsMorse I g :=
   (isMorseOneForm_mextDeriv_ofFunction_iff hg).mp (hdg ▸ hα.mpullback hπ)
 
-/-- **Morse indices of a lifted potential.** If `π` is a smooth local diffeomorphism, `α` is a
-Morse one-form and `g` is a differentiable function with `dg = π^* α`, then at a point `x` over a
-zero of `α` the Morse index of `g` is the Morse index at `π x` of any local primitive of `α`. -/
+omit [IsManifold I 1 M] in
+/-- **Morse indices of a lifted potential.** If `π` is a smooth local diffeomorphism and `g` is a
+differentiable function with `dg = π^* α`, then at a point `x` over a zero of `α` the Morse index
+of `g` is the Morse index at `π x` of any local primitive of `α` which is `C²` at `π x`. The
+zero need not be nondegenerate. -/
+theorem _root_.IsLocalDiffeomorph.manifoldMorseIndex_eq_of_mextDeriv_eq_mpullback
+    (hπ : IsLocalDiffeomorph I I ∞ π) (hg : MDifferentiable I 𝓘(ℝ) g)
+    (hdg : mextDeriv (RoughForm.ofFunction I g) = TauCeti.mpullback I I π α) {x : N}
+    (hf : IsPrimitiveOn α f U) (hf₂ : ContMDiffAt I 𝓘(ℝ) 2 f (π x)) (hxU : π x ∈ U)
+    (hx : α (π x) = 0) :
+    manifoldMorseIndex I g x = manifoldMorseIndex I f (π x) := by
+  rw [(isPrimitiveOn_univ_of_mextDeriv_eq hg hdg).manifoldMorseIndex_eq
+      (hf.mpullback (hπ.contMDiff.mdifferentiable (by simp))) (mem_univ x) hxU,
+    (hπ x).manifoldMorseIndex_comp (by simp) hf₂ ((hf.eq_zero_iff_mem_criticalPoints hxU).1 hx)]
+
+/-- **Morse indices of a lifted potential of a Morse one-form.** If `π` is a smooth local
+diffeomorphism, `α` is a Morse one-form and `g` is a differentiable function with `dg = π^* α`,
+then at a point `x` over a zero of `α` the Morse index of `g` is the Morse index at `π x` of any
+local primitive of `α`. -/
 theorem IsMorseOneForm.manifoldMorseIndex_eq_of_mextDeriv_eq_mpullback (hα : IsMorseOneForm α)
     (hπ : IsLocalDiffeomorph I I ∞ π) (hg : MDifferentiable I 𝓘(ℝ) g)
     (hdg : mextDeriv (RoughForm.ofFunction I g) = TauCeti.mpullback I I π α) {x : N}
     (hf : IsPrimitiveOn α f U) (hxU : π x ∈ U) (hx : α (π x) = 0) :
-    manifoldMorseIndex I g x = manifoldMorseIndex I f (π x) := by
-  have hcrit := hα.isManifoldNondegenerateCriticalPoint hf hxU hx
-  rw [(isPrimitiveOn_univ_of_mextDeriv_eq hg hdg).manifoldMorseIndex_eq
-      (hf.mpullback (hπ.contMDiff.mdifferentiable (by simp))) (mem_univ x) hxU,
-    (hπ x).manifoldMorseIndex_comp (by simp) hcrit.contMDiffAt hcrit.mem_criticalPoints]
+    manifoldMorseIndex I g x = manifoldMorseIndex I f (π x) :=
+  hπ.manifoldMorseIndex_eq_of_mextDeriv_eq_mpullback hg hdg hf
+    (hα.isManifoldNondegenerateCriticalPoint hf hxU hx).contMDiffAt hxU hx
 
 end Pullback
 
