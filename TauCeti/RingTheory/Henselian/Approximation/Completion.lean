@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.UniformRing
@@ -40,27 +41,28 @@ variable {R : Type*} [CommRing R]
 
 /-- The `n`-th ideal in the `(t, I)`-adic filtration. -/
 def filtrationIdeal (t : R) (I : Ideal R) (n : ℕ) : Ideal R :=
-  Ideal.span {t} ^ n * I
+  ((Ideal.span {t}).stableFiltration I).N n
 
 /-- The filtration uses a power of the parameter ideal, multiplied by `I` only once. -/
 theorem filtrationIdeal_def (t : R) (I : Ideal R) (n : ℕ) :
-    filtrationIdeal t I n = Ideal.span {t} ^ n * I := (rfl)
+    filtrationIdeal t I n = Ideal.span {t} ^ n * I := by
+  simp only [filtrationIdeal, Ideal.stableFiltration_N, Ideal.smul_eq_mul]
 
 /-- The ideals `tⁿ I` decrease with `n`. -/
 theorem filtrationIdeal_antitone (t : R) (I : Ideal R) : Antitone (filtrationIdeal t I) :=
-  fun _ _ h ↦ Ideal.mul_mono_left (Ideal.pow_le_pow_right h)
+  ((Ideal.span {t}).stableFiltration I).antitone
 
 @[simp]
 theorem filtrationIdeal_zero (t : R) (I : Ideal R) : filtrationIdeal t I 0 = I := by
-  simp [filtrationIdeal]
+  simp [filtrationIdeal_def]
 
 @[simp]
 theorem filtrationIdeal_one (I : Ideal R) (n : ℕ) : filtrationIdeal (1 : R) I n = I := by
-  simp [filtrationIdeal, Ideal.top_pow]
+  simp [filtrationIdeal_def, Ideal.top_pow]
 
 @[simp]
 theorem filtrationIdeal_bot (t : R) (n : ℕ) : filtrationIdeal t (⊥ : Ideal R) n = ⊥ := by
-  simp [filtrationIdeal]
+  simp [filtrationIdeal_def]
 
 private theorem filtrationBasis (t : R) (I : Ideal R) :
     RingSubgroupsBasis (fun n ↦ (filtrationIdeal t I n).toAddSubgroup) where
@@ -95,7 +97,8 @@ theorem ringTopology_top (t : R) :
   apply TopologicalSpace.ext_nhds
   intro a
   apply (ringTopology_nhds t ⊤ a).eq_of_same_basis
-  simpa only [filtrationIdeal, Ideal.smul_eq_mul, Ideal.mul_top, Submodule.mem_toAddSubgroup] using
+  simpa only [filtrationIdeal_def, Ideal.smul_eq_mul, Ideal.mul_top,
+    Submodule.mem_toAddSubgroup] using
     ((Ideal.span {t}).adic_basis.toRing_subgroups_basis.hasBasis_nhds a)
 
 /-- For the zero ideal the topology is discrete. -/
@@ -119,6 +122,10 @@ instance (t : R) (I : Ideal R) (n : ℕ) : DiscreteUniformity (Residue t I n) :=
 /-- Reduction to the `n`-th residue ring. -/
 def residueMap (t : R) (I : Ideal R) (n : ℕ) : R →+* Residue t I n :=
   Ideal.Quotient.mk _
+
+/-- Reduction sends an element to its quotient class. -/
+theorem residueMap_apply (t : R) (I : Ideal R) (n : ℕ) (a : R) :
+    residueMap t I n a = Ideal.Quotient.mk (filtrationIdeal t I n) a := by rfl
 
 /-- Reduction identifies two elements exactly when their difference lies in `tⁿ I`. -/
 @[simp]
@@ -253,8 +260,7 @@ theorem completion_nhds (t : R) (I : Ideal R) (x : completion t I) :
     have h := congrArg (transition t I (Finset.le_sup (f := id) hn)) hy
     simp only [transition_eval, id_eq] at h
     have hx : eval t I n x ∈ W n := mem_of_mem_nhds (hW n)
-    have hm : eval t I n y ∈ W n := h.symm ▸ hx
-    exact hm
+    exact (h.symm ▸ hx : eval t I n y ∈ W n)
   · rintro ⟨n, _, hn⟩
     exact Filter.mem_of_superset
       ((continuous_eval t I n).continuousAt
@@ -280,7 +286,7 @@ theorem isInducing_completionMap (t : R) (I : Ideal R) :
   apply (ringTopology_nhds t I a).eq_of_same_basis
   convert (completion_nhds t I (completionMap t I a)).comap (completionMap t I) using 1
   ext n b
-  exact (Ideal.Quotient.eq (I := filtrationIdeal t I n) (x := b) (y := a)).symm
+  simp only [Set.mem_ofPred_eq, Set.mem_preimage, eval_completionMap, residueMap_eq_iff]
 
 /-- Completion is continuous for the `(t, I)`-adic topology. -/
 @[fun_prop]
@@ -294,17 +300,15 @@ private theorem eval_injective_of_constant (t : R) (I : Ideal R)
   intro x y hxy
   apply completion_ext
   intro n
+  have heq (z : Residue t I n) :
+      Ideal.quotEquivOfEq ((hc n).trans (hc 0).symm) z =
+        transition t I (Nat.zero_le n) z := by
+    obtain ⟨a, rfl⟩ := residueMap_surjective t I n z
+    rw [transition_residueMap, residueMap_apply, Ideal.quotEquivOfEq_mk,
+      residueMap_apply]
   apply (Ideal.quotEquivOfEq ((hc n).trans (hc 0).symm)).injective
-  calc
-    _ = transition t I (Nat.zero_le n) (eval t I n x) := by
-      unfold transition
-      exact Ideal.quotEquivOfEq_eq_factor _ _
-    _ = transition t I (Nat.zero_le n) (eval t I n y) :=
-      (transition_eval t I (Nat.zero_le n) x).trans
-        (hxy.trans (transition_eval t I (Nat.zero_le n) y).symm)
-    _ = _ := by
-      unfold transition
-      exact (Ideal.quotEquivOfEq_eq_factor _ _).symm
+  rw [heq, heq, transition_eval, transition_eval]
+  exact hxy
 
 /-- With unit parameter `1`, the completion is the quotient `R / I`, not the `I`-adic
 completion. The comparison is given by the zeroth residue coordinate. -/
@@ -313,11 +317,17 @@ noncomputable def completionOneEquiv (I : Ideal R) : completion (1 : R) I ≃+* 
     ⟨eval_injective_of_constant 1 I (filtrationIdeal_one I), eval_surjective 1 I 0⟩).trans
       (Ideal.quotEquivOfEq (filtrationIdeal_zero 1 I))
 
+/-- The unit-parameter comparison is the zeroth coordinate, with its ideal identified with `I`. -/
+theorem completionOneEquiv_apply (I : Ideal R) (x : completion (1 : R) I) :
+    completionOneEquiv I x =
+      Ideal.quotEquivOfEq (filtrationIdeal_zero 1 I) (eval 1 I 0 x) := by rfl
+
 /-- The unit-parameter comparison sends the canonical image of `a` to its class modulo `I`. -/
 @[simp]
 theorem completionOneEquiv_completionMap (I : Ideal R) (a : R) :
     completionOneEquiv I (completionMap 1 I a) = Ideal.Quotient.mk I a := by
-  exact Ideal.quotEquivOfEq_mk (filtrationIdeal_zero 1 I) a
+  rw [completionOneEquiv_apply, eval_completionMap, residueMap_apply,
+    Ideal.quotEquivOfEq_mk]
 
 /-- The completion for unit parameter is discrete, as is the quotient `R / I`. -/
 instance completionOne_discrete (I : Ideal R) : DiscreteTopology (completion (1 : R) I) :=
@@ -332,8 +342,8 @@ theorem completionMap_bot_bijective (t : R) :
   constructor
   · intro a b hab
     have h := congrArg (eval t ⊥ 0) hab
-    have hm := Ideal.Quotient.eq.mp h
-    simpa only [filtrationIdeal_bot, Ideal.mem_bot, sub_eq_zero] using hm
+    simpa only [eval_completionMap, residueMap_eq_iff, filtrationIdeal_bot,
+      Ideal.mem_bot, sub_eq_zero] using h
   · intro x
     obtain ⟨a, ha⟩ := residueMap_surjective t ⊥ 0 (eval t ⊥ 0 x)
     exact ⟨a, he ha⟩
