@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Geometry.Manifold.Morse.RelCWComplex
+public import TauCeti.Topology.CWComplex.Classical.Image
 public import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
@@ -24,7 +25,7 @@ No property of `X` beyond its topology is used: `X` may be singular along `A`. T
 example is a compact pair `(X, A)` whose complement `X \ A` is a manifold, with a continuous
 function `F` vanishing on `A` whose positive superlevel sets are compact subsets of `X \ A`. Then
 for `0 < a` the sublevels `{F ≤ a}` of `X` are neighbourhoods of `A` and every band
-`F⁻¹[a, b]` is compact. The two theorems below then describe, one band at a time, how a sublevel
+`F⁻¹[a, b]` is compact. The theorems below then describe, one band at a time, how a sublevel
 of `F` is obtained from a lower one, up to a deformation fixing the lower sublevel and hence `A`:
 nothing changes across a band without critical points of `F ∘ j`, and across a critical level one
 cell is attached at each critical point on the level.
@@ -37,6 +38,9 @@ cell is attached at each critical point on the level.
   level `c`, `{F ≤ c + ε}` strong deformation retracts onto `{F ≤ c - ε}` together with the image
   of a finite relative CW complex over `{F ∘ j ≤ c - ε}` with one cell for each critical point on
   the level, of dimension its Morse index.
+* `TauCeti.IsMorse.exists_relCWComplex_sublevel_of_isOpenEmbedding`: when `M` and `X` lie in a
+  common universe, `{F ≤ c - ε} ∪ j '' C` is itself a finite CW complex in `X` relative to
+  `{F ≤ c - ε}`, onto which `{F ≤ c + ε}` strong deformation retracts.
 
 ## References
 
@@ -115,5 +119,45 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation_of_isOpenEmbedding
   -- Points of `{F ≤ c + ε}` lie in the target exactly when they lie in its second factor.
   convert H' using 3
   exact funext fun x ↦ propext (and_iff_right x.2).symm
+
+/-- **Milnor's cell attachment across a critical level, as a relative CW complex in the ambient
+space.** When `M` and `X` lie in a common universe, `{F ≤ c + ε}` strong deformation retracts onto
+a finite CW complex `C' ⊆ {F ≤ c + ε}` in `X` relative to `{F ≤ c - ε}`, whose `m`-cells correspond
+to the critical points of index `m` of `F ∘ j` on the level `c`. -/
+theorem IsMorse.exists_relCWComplex_sublevel_of_isOpenEmbedding {X : Type u} [TopologicalSpace X]
+    {j : M → X} {F : X → ℝ} (hj : IsOpenEmbedding j) (hF : Continuous F) (hf : IsMorse I (F ∘ j))
+    {c δ : ℝ} (hδ : 0 < δ) (hcompact : IsCompact (F ⁻¹' Icc (c - δ) (c + δ)))
+    (hA : ∀ x ∉ range j, F x < c - δ) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧ ∃ (C' : Set X) (_ : RelCWComplex C' {x | F x ≤ c - ε})
+      (_ : RelCWComplex.Finite C') (hC' : C' ⊆ {x | F x ≤ c + ε}),
+      (∀ m, Nonempty (cell C' m ≃
+        {p : ↥(criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' {c}) //
+          manifoldMorseIndex I (F ∘ j) p = m})) ∧
+      ∃ r : C({x | F x ≤ c + ε}, C'),
+        (∀ x, r (ContinuousMap.inclusion hC' x) = x) ∧
+        Nonempty (((ContinuousMap.inclusion hC').comp r).HomotopyRel
+          (ContinuousMap.id _) {x | (x : X) ∈ C'}) := by
+  obtain ⟨ε, hε, hεδ, C, _, _, hC, hcell, r, hr, ⟨G⟩⟩ :=
+    hf.exists_relCWComplex_sublevel_deformation_of_isOpenEmbedding hj hF hδ hcompact hA
+  let C' : Set X := {x | F x ≤ c - ε} ∪ j '' C
+  have hC' : C' ⊆ {x | F x ≤ c + ε} := union_subset
+    (fun _ hx ↦ le_trans hx.out (by linarith))
+    (by rintro _ ⟨x, hx, rfl⟩; exact hC hx)
+  have hD' : IsClosed {x | F x ≤ c - ε} := isClosed_le hF continuous_const
+  have hcompl : (range j)ᶜ ⊆ interior {x | F x ≤ c - ε} :=
+    Subset.trans (b := {x | F x < c - ε}) (fun x hx ↦ (hA x hx).trans_le (by linarith))
+      ((isOpen_lt hF continuous_const).subset_interior_iff.2 fun _ hx ↦ hx.out.le)
+  let instCW : RelCWComplex C' {x | F x ≤ c - ε} := hj.relCWComplex hD' rfl hcompl rfl
+  let instFin : @RelCWComplex.Finite X _ C' {x | F x ≤ c - ε} instCW :=
+    hj.finite_relCWComplex hD' rfl hcompl rfl
+  let r' : C({x | F x ≤ c + ε}, C') := (ContinuousMap.inclusion inter_subset_right).comp r
+  have hcomp : (ContinuousMap.inclusion hC').comp r' =
+      (ContinuousMap.inclusion inter_subset_left).comp r :=
+    ContinuousMap.ext fun _ ↦ rfl
+  refine ⟨ε, hε, hεδ, C', instCW, instFin, hC',
+    fun m ↦ ⟨(hj.relCWComplexCellEquiv hD' rfl hcompl rfl m).trans (hcell m).some⟩,
+    r', fun x ↦ ?_, ⟨hcomp.symm ▸ G⟩⟩
+  have hx := congrArg Subtype.val (hr ⟨x.1, hC' x.2, x.2⟩)
+  exact Subtype.ext hx
 
 end TauCeti

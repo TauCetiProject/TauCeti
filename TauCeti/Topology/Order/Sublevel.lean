@@ -18,11 +18,15 @@ import Mathlib.Tactic.Positivity
 
 If a real function has a unique global minimum and one compact sublevel strictly above it,
 then sufficiently small sublevels lie in any prescribed open neighbourhood of the minimum
-(`TauCeti.exists_pos_sublevel_subset_of_unique_min`).
-This allows local descriptions near the minimum to describe whole sublevels. Continuity is
-needed only on the one compact sublevel, not on the entire space. Similarly, if a superlevel
-`{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
-whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
+(`TauCeti.exists_pos_sublevel_subset_of_unique_min`). More generally, if `f` is strictly positive
+outside a set `A` and one positive sublevel `{f ≤ a}` is compact with `f` continuous on it, every
+neighbourhood of `A` contains a positive sublevel `{f ≤ δ}`
+(`TauCeti.exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet`, and on a compact space
+`TauCeti.exists_pos_sublevel_subset_of_mem_nhdsSet`). This allows local descriptions near `A` to
+describe whole sublevels; continuity is needed only on the one compact sublevel, not on the entire
+space. Similarly, if a superlevel `{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding
+the zero level of `w` avoids a whole band `{|w| ≤ η}` around it
+(`TauCeti.exists_forall_abs_le_notMem`).
 
 Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
 sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
@@ -54,7 +58,7 @@ band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_pr
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
 
@@ -86,6 +90,35 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
   · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
+
+/-- If `f` is strictly positive outside a set `A` and one positive sublevel `{f ≤ a}` (`a > 0`) is
+compact with `f` continuous on it, then every neighbourhood `W` of `A` contains a positive sublevel
+`{f ≤ δ}` (`δ > 0`). -/
+theorem exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet {X : Type*} [TopologicalSpace X]
+    {f : X → ℝ} {a : ℝ} (ha : 0 < a) (hcompact : IsCompact {x | f x ≤ a})
+    (hf : ContinuousOn f {x | f x ≤ a}) {A W : Set X} (hpos : ∀ x ∉ A, 0 < f x)
+    (hW : W ∈ 𝓝ˢ A) : ∃ δ > 0, {x | f x ≤ δ} ⊆ W := by
+  have hAint : A ⊆ interior W := subset_interior_iff_mem_nhdsSet.2 hW
+  by_cases hne : ({x | f x ≤ a} \ interior W).Nonempty
+  · obtain ⟨z, hz, hzm⟩ := (hcompact.diff isOpen_interior).exists_isMinOn hne
+      (hf.mono sdiff_subset)
+    have hfz : 0 < f z := hpos z fun hzA ↦ hz.2 (hAint hzA)
+    refine ⟨min a (f z) / 2, half_pos (lt_min ha hfz), fun y hy ↦ interior_subset ?_⟩
+    by_contra hyW
+    have hy' : f y ≤ min a (f z) / 2 := hy
+    have hyK : y ∈ {x | f x ≤ a} \ interior W :=
+      ⟨hy'.trans (by linarith [min_le_left a (f z)]), hyW⟩
+    have hzy : f z ≤ f y := hzm hyK
+    linarith [min_le_right a (f z)]
+  · exact ⟨a, ha, fun y hy ↦ interior_subset (by_contra fun hyW ↦ hne ⟨y, hy, hyW⟩)⟩
+
+/-- On a compact space `X`, if `f : X → ℝ` is continuous and strictly positive outside `A`, then
+every neighbourhood `W` of `A` contains a positive sublevel `{f ≤ δ}` (`δ > 0`). -/
+theorem exists_pos_sublevel_subset_of_mem_nhdsSet {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    {f : X → ℝ} (hf : Continuous f) {A W : Set X} (hpos : ∀ x ∉ A, 0 < f x) (hW : W ∈ 𝓝ˢ A) :
+    ∃ δ > 0, {x | f x ≤ δ} ⊆ W :=
+  exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet zero_lt_one
+    (isClosed_Iic.preimage hf).isCompact hf.continuousOn hpos hW
 
 /-- If the superlevel `{w ≥ -δ}` of a continuous real function `w` is compact, then a closed set
 avoiding the zero level of `w` also avoids the band `{|w| ≤ η}` for some `0 < η ≤ δ`. -/
