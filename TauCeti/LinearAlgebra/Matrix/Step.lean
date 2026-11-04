@@ -22,10 +22,10 @@ of course square.
 
 This file records the property as `Matrix.IsStep` and the closure properties that make it useful
 for computation: a product of step matrices is the step matrix of the composed targets and the
-coefficients multiplied along the way, and entrywise application of a ring morphism preserves the
-property. Since each entry of such a product is a single product of table lookups rather than a
-sum over an index type, identities between explicitly tabulated step matrices reduce to finitely
-many entrywise identities that need no summation.
+coefficients multiplied along the way, and entrywise application of a zero-preserving map
+preserves the property. Since each entry of such a product is a single product of table lookups
+rather than a sum over an index type, identities between explicitly tabulated step matrices
+reduce to finitely many entrywise identities that need no summation.
 
 The property is stated as the conjunction of the value at the target of each column and the
 vanishing of that column elsewhere, so that it needs no decidable equality on the rows; the
@@ -110,18 +110,14 @@ end Zero
 
 /-- A diagonal matrix is the step matrix of the identity target and its own diagonal. -/
 @[simp]
-theorem isStep_diagonal [DecidableEq n] [Zero R] (d : n → R) : (diagonal d).IsStep id d := by
-  refine isStep_of_apply fun a b => ?_
-  rw [diagonal_apply, Function.id_def]
-  split_ifs with h
-  · rw [h]
-  · rfl
+theorem isStep_diagonal [DecidableEq n] [Zero R] (d : n → R) : (diagonal d).IsStep id d :=
+  isStep_of_apply_target_of_apply_of_ne (diagonal_apply_eq d) fun _ _ => diagonal_apply_ne d
 
 /-- The identity matrix is the step matrix of the identity target and the constant coefficient
 one. -/
 @[simp]
 theorem isStep_one [DecidableEq n] [Zero R] [One R] : (1 : Matrix n n R).IsStep id 1 :=
-  isStep_of_apply fun _ _ => Matrix.one_apply
+  isStep_of_apply_target_of_apply_of_ne (fun _ => one_apply_eq _) fun _ _ => one_apply_ne
 
 /-- **A product of step matrices is a step matrix**, with the composite target function and with
 each coefficient the product of the two coefficients met along the way. -/
@@ -129,20 +125,12 @@ theorem IsStep.mul [Fintype m] [NonUnitalNonAssocSemiring R]
     {M : Matrix l m R} {N : Matrix m n R} {t : m → l} {t' : n → m} {c : m → R} {c' : n → R}
     (hM : M.IsStep t c) (hN : N.IsStep t' c') :
     (M * N).IsStep (t ∘ t') fun b => c (t' b) * c' b := by
-  refine isStep_of_apply_target_of_apply_of_ne (fun b => ?_) fun a b hab => ?_
-  · rw [Matrix.mul_apply, Finset.sum_eq_single (t' b)]
-    · rw [Function.comp_apply, hM.apply_target, hN.apply_target]
-    · intro i _ hi
-      rw [hN.apply_of_ne hi, mul_zero]
-    · intro hb
-      exact absurd (Finset.mem_univ (t' b)) hb
+  refine isStep_of_apply_target_of_apply_of_ne (fun b => ?_) fun a b hab => ?_ <;>
+    rw [Matrix.mul_apply,
+      Fintype.sum_eq_single (t' b) fun i hi => by rw [hN.apply_of_ne hi, mul_zero]]
+  · rw [Function.comp_apply, hM.apply_target, hN.apply_target]
   · rw [Function.comp_apply] at hab
-    rw [Matrix.mul_apply, Finset.sum_eq_single (t' b)]
-    · rw [hM.apply_of_ne hab, zero_mul]
-    · intro i _ hi
-      rw [hN.apply_of_ne hi, mul_zero]
-    · intro hb
-      exact absurd (Finset.mem_univ (t' b)) hb
+    rw [hM.apply_of_ne hab, zero_mul]
 
 /-- Entrywise application of a zero-preserving map to a step matrix gives the step matrix of the
 same target and the transformed coefficients. Only the value at zero is used, so no additive or
