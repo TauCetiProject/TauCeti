@@ -40,16 +40,20 @@ point is needed in this version.
 
 * `AlgebraicGeometry.Scheme.Hom.isIso_app_of_isBasis`: a morphism of schemes induces
   isomorphisms on the sections over all opens once it does so over a basis of opens.
-* `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_flat`: `f_* 𝒪_X = 𝒪_S` is stable under
+* `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_flat` and
+  `TauCeti.AlgebraicGeometry.isIso_app_pullback_snd_of_flat`: `f_* 𝒪_X = 𝒪_S` is stable under
   flat base change for quasi-compact quasi-separated `f`.
 * `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_isIso_appTop`: over a field, a
   quasi-compact quasi-separated scheme with constant global functions satisfies
   `p_* 𝒪_{X_T} = 𝒪_T` after every base change.
 * `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_section`: the same for a universally
   closed quasi-separated integral scheme with a rational point, such as a proper one.
-* `isIso_app_pullback_fst_of_geometricallyReduced_of_geometricallyConnected`: the same for a
-  universally closed quasi-separated geometrically reduced and geometrically connected scheme
-  over a field, without a rational point or irreducibility.
+* `AlgebraicGeometry.Scheme.Hom.isIso_app_of_universallyClosed_of_geometricallyIntegral`: over a
+  field, a universally closed geometrically integral morphism satisfies `f_* 𝒪_X = 𝒪_{Spec K}`
+  without requiring quasi-separatedness or a rational point.
+* `isIso_app_pullback_fst_of_geometricallyReduced_of_geometricallyConnected`: the same universal
+  base-change equality for a universally closed quasi-separated geometrically reduced and
+  geometrically connected scheme over a field, without a rational point or irreducibility.
 
 ## References
 
@@ -130,6 +134,18 @@ theorem isIso_app_pullback_fst_of_flat [QuasiCompact f] [QuasiSeparated f] [Flat
     have := hpush.isIso_inr_of_isIso
     rwa [Scheme.Hom.appLE_eq_app] at this
 
+/-- **Flat base change for `f_* 𝒪_X = 𝒪_S`, second projection.** If `f : X ⟶ S` is quasi-compact
+and quasi-separated and induces isomorphisms `Γ(S, V) ≅ Γ(X, f⁻¹ V)` on all affine opens `V` of
+`S`, then for every flat `g : T ⟶ S` the second projection `X ×_S T ⟶ T` induces isomorphisms on
+the sections over all opens of `T`. -/
+theorem isIso_app_pullback_snd_of_flat [QuasiCompact f] [QuasiSeparated f] [Flat g]
+    (hf : ∀ V : S.affineOpens, IsIso (f.app V)) (U : T.Opens) :
+    IsIso ((pullback.snd f g).app U) := by
+  have hsymm : pullback.snd f g = (pullbackSymmetry f g).hom ≫ pullback.fst g f := by simp
+  rw [hsymm, Scheme.Hom.comp_app]
+  exact (isIso_app_pullback_fst_of_flat f g hf U).comp_isIso'
+    ((pullbackSymmetry f g).hom.isIso_app _ fun x _ ↦ ⟨(pullbackSymmetry f g).inv x, by simp⟩)
+
 variable {K : Type u} [Field K]
 
 /-- **`f_* 𝒪_X = 𝒪` universally over a field.** If `X` is quasi-compact and quasi-separated over a
@@ -161,6 +177,26 @@ namespace AlgebraicGeometry.Scheme.Hom
 universe u
 
 variable {K : Type u} [Field K] {X T : Scheme.{u}}
+
+/-- A universally closed geometrically integral morphism `f : X ⟶ Spec K` over a field `K` induces
+isomorphisms `Γ(Spec K, V) ≅ Γ(X, f⁻¹ V)` on the sections over all opens `V` of `Spec K`, without
+requiring quasi-separatedness or a `K`-rational point of `X`. -/
+theorem isIso_app_of_universallyClosed_of_geometricallyIntegral
+    (f : X ⟶ Spec (.of K)) [UniversallyClosed f] [GeometricallyIntegral f]
+    (V : (Spec (.of K)).Opens) :
+    IsIso (f.app V) := by
+  let _ : X.Over (Spec (.of K)) := ⟨f⟩
+  have : UniversallyClosed (X ↘ Spec (.of K)) := inferInstanceAs (UniversallyClosed f)
+  have : GeometricallyIntegral (X ↘ Spec (.of K)) := inferInstanceAs (GeometricallyIntegral f)
+  have h : Function.Bijective (⇑(ConcreteCategory.hom f.appTop) ∘
+      ⇑(ConcreteCategory.hom (Scheme.ΓSpecIso (.of K)).inv)) := by
+    convert X.baseRingToGlobalSections_bijective_of_geometricallyIntegral K using 1
+    ext c
+    exact (Modules.baseRingToGlobalSections_apply K X c).symm
+  have : IsIso f.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr
+    ((Function.Bijective.of_comp_iff _
+      (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso (.of K)).inv)).mp h)
+  exact f.isIso_app_of_isIso_appTop V
 
 /-- **Universal structure-sheaf equality for geometrically reduced connected schemes.** A
 universally closed quasi-separated geometrically reduced and geometrically connected scheme over

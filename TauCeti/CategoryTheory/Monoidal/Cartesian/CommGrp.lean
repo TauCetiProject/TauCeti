@@ -37,6 +37,9 @@ so `f + g` corresponds to the product of the underlying morphisms (`CommGrp.add_
 
 ## Main results
 
+* `CategoryTheory.GrpObj.isCommMonObj_of_isMonHom_inv` and
+  `CategoryTheory.GrpObj.isCommMonObj_iff_isMonHom_inv`: a group object in a braided cartesian
+  monoidal category is commutative if and only if its inversion morphism is a monoid homomorphism.
 * `CategoryTheory.CommGrp.add_hom_hom_hom`, `CategoryTheory.CommGrp.zero_hom_hom_hom`,
   `CategoryTheory.CommGrp.neg_hom_hom_hom`, `CategoryTheory.CommGrp.sub_hom_hom_hom` and
   `CategoryTheory.CommGrp.zsmul_hom_hom_hom`: the group operations on morphisms of `CommGrp C`
@@ -49,6 +52,34 @@ so `f + g` corresponds to the product of the underlying morphisms (`CommGrp.add_
 public section
 
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj
+
+open scoped CategoryTheory.MonObj
+
+namespace CategoryTheory.GrpObj
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] [BraidedCategory C]
+
+/-- A group object in a braided cartesian monoidal category whose inversion morphism is a monoid
+homomorphism is commutative. -/
+@[to_additive
+/-- An additive group object in a braided cartesian monoidal category whose negation morphism is an
+additive monoid homomorphism is commutative. -/]
+theorem isCommMonObj_of_isMonHom_inv (G : C) [GrpObj G] [IsMonHom ι[G]] : IsCommMonObj G := by
+  rw [isCommMonObj_iff_isMulCommutative]
+  refine fun X ↦ ⟨⟨fun f g ↦ inv_injective ?_⟩⟩
+  rw [_root_.mul_inv_rev g f, Hom.inv_def (f * g), MonObj.mul_comp, ← Hom.inv_def, ← Hom.inv_def]
+
+/-- A group object in a braided cartesian monoidal category is commutative if and only if its
+inversion morphism is a monoid homomorphism. -/
+@[to_additive
+/-- An additive group object in a braided cartesian monoidal category is commutative if and only if
+its negation morphism is an additive monoid homomorphism. -/]
+theorem isCommMonObj_iff_isMonHom_inv (G : C) [GrpObj G] : IsCommMonObj G ↔ IsMonHom ι[G] :=
+  ⟨fun _ ↦ inferInstance, fun _ ↦ isCommMonObj_of_isMonHom_inv G⟩
+
+end CategoryTheory.GrpObj
 
 namespace CategoryTheory.CommGrp
 
