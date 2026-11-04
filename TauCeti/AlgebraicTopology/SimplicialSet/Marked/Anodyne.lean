@@ -26,8 +26,9 @@ following generators (HTT Definition 3.1.1.1):
 4. the morphisms `K♭ ⟶ K♯` for every Kan complex `K`.
 
 Being defined by a left lifting property, they form a weakly saturated class. They are the
-anodyne extensions of the marked models for Cartesian fibrations: the fibrations of these models
-are the morphisms with the right lifting property with respect to them, and in the marked model
+anodyne extensions of the marked models for Cartesian fibrations. The morphisms with the right
+lifting property with respect to them are the marked fibrations. An object of the Cartesian
+model structure is fibrant exactly when its morphism to the base has this lifting property, and
 over a point the fibrant objects are the quasicategories marked at their equivalences (HTT
 Proposition 3.1.4.1).
 
@@ -44,8 +45,6 @@ That every equivalence of `X` is marked is not proved here.
 
 ## Main definitions
 
-* `TauCeti.MarkedSSet.ofEdges X S`: the simplicial set `X` marked at the edges in `S` and at its
-  degenerate edges.
 * `TauCeti.MarkedSSet.markedAnodyneGenerators`: the four families of generators above.
 * `TauCeti.MarkedSSet.markedAnodyneExtensions`: the marked anodyne extensions.
 
@@ -89,34 +88,6 @@ namespace TauCeti
 
 namespace MarkedSSet
 
-section ofEdges
-
-/-- The simplicial set `X` marked at the edges in `S` and at its degenerate edges. -/
-abbrev ofEdges (X : SSet.{u}) (S : Set (X _⦋1⦌)) : MarkedSSet.{u} where
-  toSSet := X
-  marked := Set.range (X.σ 0) ∪ S
-  σ_mem_marked x := Or.inl ⟨x, rfl⟩
-
-lemma mem_ofEdges_marked_iff {X : SSet.{u}} {S : Set (X _⦋1⦌)} {e : X _⦋1⦌} :
-    e ∈ (ofEdges X S).marked ↔ (∃ x, X.σ 0 x = e) ∨ e ∈ S :=
-  Iff.rfl
-
-/-- A morphism of simplicial sets out of `X` which sends the edges in `S` to marked edges, as a
-morphism of marked simplicial sets out of `ofEdges X S`. -/
-def ofEdgesHom {X : SSet.{u}} {S : Set (X _⦋1⦌)} {Y : MarkedSSet.{u}} (f : X ⟶ Y.toSSet)
-    (hf : ∀ e ∈ S, f.app _ e ∈ Y.marked) : ofEdges X S ⟶ Y :=
-  ⟨f, by
-    rintro e (⟨x, rfl⟩ | he)
-    · exact map_σ_mem_marked f x
-    · exact hf e he⟩
-
-@[simp]
-lemma ofEdgesHom_hom {X : SSet.{u}} {S : Set (X _⦋1⦌)} {Y : MarkedSSet.{u}} (f : X ⟶ Y.toSSet)
-    (hf : ∀ e ∈ S, f.app _ e ∈ Y.marked) : (ofEdgesHom f hf).hom = f :=
-  (rfl)
-
-end ofEdges
-
 section generators
 
 /-- The standard simplex `Δ[n + 1]` marked at its last edge, from `n` to `n + 1`. -/
@@ -138,7 +109,7 @@ def lastEdgeHornι (n : ℕ) : lastEdgeHorn.{u} n ⟶ lastEdgeSimplex n :=
 @[simp]
 lemma lastEdgeHornι_hom (n : ℕ) :
     (lastEdgeHornι.{u} n).hom = Λ[n + 1, Fin.last (n + 1)].ι :=
-  (rfl)
+  ofEdgesHom_hom _ _
 
 /-- The standard simplex `Δ[2]` marked at the two edges of its spine `Λ[2, 1]`, the faces `δ 2`
 from `0` to `1` and `δ 0` from `1` to `2`. This is the pushout of `Λ[2, 1]♭ ⟶ Λ[2, 1]♯` along
@@ -235,7 +206,9 @@ lemma rlp_markedAnodyneExtensions_sharp_map {A B : SSet.{u}} (p : A ⟶ B)
   rw [← forgetSharpAdj.hasLiftingProperty_iff]
   induction hi with
   | innerHorn i h0 _ => exact hp i h0
-  | lastEdgeHorn n => exact hp (Fin.last (n + 1)) (Fin.last_pos)
+  | lastEdgeHorn n =>
+    rw [forget_map, lastEdgeHornι_hom]
+    exact hp (Fin.last (n + 1)) Fin.last_pos
   | spine =>
     have : IsIso (forget.map spineMarkedToSharp.{u}) := by
       rw [forget_map, spineMarkedToSharp_hom]
@@ -322,26 +295,52 @@ lemma mem_marked_of_compStruct (hX : markedAnodyneExtensions.rlp (toUnit X))
   simpa [← SSet.yonedaEquiv_comp, SSet.stdSimplex.δ_comp_yonedaEquiv_symm] using
     key (ofEdgesHom _ ha) (fun _ ↦ mem_tensorUnit_marked _) (SSet.yonedaEquiv (SSet.stdSimplex.δ 1))
 
-/-- In a fibrant marked simplicial set, a horn `Λ[n + 1, n + 1]` whose last edge is marked has a
-filler. -/
-private lemma exists_fill_lastEdgeHorn (hX : markedAnodyneExtensions.rlp (toUnit X)) (n : ℕ)
-    (φ : (Λ[n + 1, Fin.last (n + 1)] : SSet.{u}) ⟶ X.toSSet)
-    (hφ : ∀ t ∈ Λ[n + 1, Fin.last (n + 1)].ι.app _ ⁻¹'
-      {SSet.stdSimplex.edge (n + 1) (Fin.last n).castSucc (Fin.last (n + 1)) (Fin.le_last _)},
-      φ.app _ t ∈ X.marked) :
-    ∃ τ : Δ[n + 1] ⟶ X.toSSet, Λ[n + 1, Fin.last (n + 1)].ι ≫ τ = φ := by
-  obtain ⟨b, hb⟩ := exists_lift hX (.lastEdgeHorn n) (ofEdgesHom φ hφ)
-  exact ⟨b.hom, by simpa using congrArg Hom.hom hb⟩
-
-private lemma yonedaEquiv_stdSimplex_δ_zero_two :
-    SSet.yonedaEquiv (SSet.stdSimplex.δ.{u} (0 : Fin 3)) =
-      SSet.stdSimplex.edge (1 + 1) (Fin.last 1).castSucc (Fin.last (1 + 1)) (Fin.le_last _) := by
+private lemma stdSimplex_edge_last_one_eq :
+    SSet.stdSimplex.edge.{u} (0 + 1) (Fin.last 0).castSucc (Fin.last (0 + 1)) (Fin.le_last _) =
+      SSet.yonedaEquiv (𝟙 Δ[1]) := by
   decide
 
-private lemma yonedaEquiv_stdSimplex_δ_zero_δ_zero_three :
-    SSet.yonedaEquiv (SSet.stdSimplex.δ.{u} (0 : Fin 3) ≫ SSet.stdSimplex.δ (0 : Fin 4)) =
-      SSet.stdSimplex.edge (2 + 1) (Fin.last 2).castSucc (Fin.last (2 + 1)) (Fin.le_last _) := by
+private lemma stdSimplex_edge_last_two_eq :
+    SSet.stdSimplex.edge.{u} (1 + 1) (Fin.last 1).castSucc (Fin.last (1 + 1)) (Fin.le_last _) =
+      SSet.yonedaEquiv (SSet.stdSimplex.δ (0 : Fin 3)) := by
   decide
+
+private lemma stdSimplex_δ_zero_app_edge (n : ℕ) :
+    (SSet.stdSimplex.δ.{u} (0 : Fin (n + 3))).app _
+        (SSet.stdSimplex.edge (n + 1) (Fin.last n).castSucc (Fin.last (n + 1)) (Fin.le_last _)) =
+      SSet.stdSimplex.edge (n + 2) (Fin.last (n + 1)).castSucc (Fin.last (n + 2))
+        (Fin.le_last _) := by
+  ext i
+  fin_cases i <;> rfl
+
+/-- In a fibrant marked simplicial set, a compatible family of faces of the horn `Λ[n + 2, n + 2]`
+whose face `0` sends the last edge of `Δ[n + 1]` to a marked edge consists of the faces of an
+`(n + 2)`-simplex: the last edge of the horn is the last edge of its face `0`, so the horn
+extends along the generator `lastEdgeHornι (n + 1)`. -/
+private lemma exists_δ_eq_of_isCompatible (hX : markedAnodyneExtensions.rlp (toUnit X)) {n : ℕ}
+    {f : ∀ j : Fin (n + 3), j ≠ Fin.last (n + 2) → (Δ[n + 1] ⟶ X.toSSet)}
+    (hf : SSet.horn.IsCompatible f)
+    (hf₀ : (f 0 (by simp)).app _ (SSet.stdSimplex.edge (n + 1) (Fin.last n).castSucc
+      (Fin.last (n + 1)) (Fin.le_last _)) ∈ X.marked) :
+    ∃ s : X.toSSet _⦋n + 2⦌, ∀ j hj, X.toSSet.δ j s = SSet.yonedaEquiv (f j hj) := by
+  have hmarked : ∀ t ∈ Λ[n + 2, Fin.last (n + 2)].ι.app _ ⁻¹'
+      {SSet.stdSimplex.edge (n + 2) (Fin.last (n + 1)).castSucc (Fin.last (n + 2))
+        (Fin.le_last _)}, hf.desc.app _ t ∈ X.marked := by
+    intro t ht
+    rw [Set.mem_preimage, Set.mem_singleton_iff] at ht
+    obtain rfl : t = (SSet.horn.ι (Fin.last (n + 2)) 0 (by simp)).app _
+        (SSet.stdSimplex.edge (n + 1) (Fin.last n).castSucc (Fin.last (n + 1))
+          (Fin.le_last _)) := by
+      refine injective_of_mono (SSet.Subcomplex.ι.{u} _ |>.app _) (ht.trans ?_)
+      rw [← NatTrans.comp_app_apply, SSet.horn.ι_ι, stdSimplex_δ_zero_app_edge]
+    rwa [← NatTrans.comp_app_apply, SSet.horn.IsCompatible.ι_desc]
+  obtain ⟨b, hb⟩ := exists_lift hX (.lastEdgeHorn (n + 1)) (ofEdgesHom hf.desc hmarked)
+  obtain ⟨s, hs⟩ := SSet.yonedaEquiv.symm.surjective b.hom
+  have hι : Λ[n + 2, Fin.last (n + 2)].ι ≫ SSet.yonedaEquiv.symm s = hf.desc := by
+    simpa [hs] using congrArg Hom.hom hb
+  refine ⟨s, fun j hj ↦ ?_⟩
+  rw [← SSet.yonedaEquiv.apply_symm_apply s, ← SSet.stdSimplex.yonedaEquiv_δ_comp,
+    ← SSet.horn.ι_ι_assoc _ j hj, hι, SSet.horn.IsCompatible.ι_desc]
 
 /-- In a fibrant marked simplicial set, a marked edge `e : x₀ ⟶ x₁` has a right inverse up to a
 `2`-simplex: filling the horn `Λ[2, 2]` with faces `e` (from `1` to `2`) and `id x₁` (from `0`
@@ -357,18 +356,9 @@ private lemma exists_compStruct_id_of_mem_marked (hX : markedAnodyneExtensions.r
     intro j k hj hk hjk
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢
     simp [f, SSet.stdSimplex.δ_comp_yonedaEquiv_symm, -SSet.Edge.id_edge]
-  obtain ⟨τ, hτ⟩ := exists_fill_lastEdgeHorn hX 1 hf.desc (by
-    intro t (ht : _ = _)
-    -- The last edge of the horn is the face `1 ⟶ 2`, on which the horn is `e`.
-    obtain rfl : t = SSet.yonedaEquiv (SSet.horn.ι (Fin.last 2) 0 (by decide)) := by
-      refine injective_of_mono (SSet.Subcomplex.ι.{u} _ |>.app _) (ht.trans ?_)
-      rw [← SSet.yonedaEquiv_comp, SSet.horn.ι_ι, yonedaEquiv_stdSimplex_δ_zero_two]
-    rw [← SSet.yonedaEquiv_comp, SSet.horn.IsCompatible.ι_desc]
+  obtain ⟨s, hs⟩ := exists_δ_eq_of_isCompatible hX hf (by
+    rw [stdSimplex_edge_last_one_eq]
     simpa [f] using he)
-  obtain ⟨s, rfl⟩ := SSet.yonedaEquiv.symm.surjective τ
-  have hs (j : Fin 3) (hj : j ≠ Fin.last 2) : X.toSSet.δ j s = SSet.yonedaEquiv (f j hj) := by
-    rw [← SSet.yonedaEquiv.apply_symm_apply s, ← SSet.stdSimplex.yonedaEquiv_δ_comp,
-      ← SSet.horn.ι_ι_assoc _ j hj, hτ, SSet.horn.IsCompatible.ι_desc]
   have hs₀ : X.toSSet.δ 0 s = e.edge := by simpa [f] using hs 0 (by decide)
   have hs₁ : X.toSSet.δ 1 s = (SSet.Edge.id x₁).edge := by
     simpa [f, -SSet.Edge.id_edge] using hs 1 (by decide)
@@ -396,20 +386,9 @@ private lemma nonempty_compStruct_id_of_mem_marked (hX : markedAnodyneExtensions
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢ <;>
       simp [f, SSet.stdSimplex.δ_comp_yonedaEquiv_symm, -SSet.Edge.id_edge,
         -SSet.Edge.CompStruct.idComp_simplex, -SSet.Edge.CompStruct.compId_simplex]
-  obtain ⟨τ, hτ⟩ := exists_fill_lastEdgeHorn hX 2 hf.desc (by
-    intro t (ht : _ = _)
-    -- The last edge of the horn is the edge `1 ⟶ 2` of the face `0`, on which the horn is `e`.
-    obtain rfl : t = SSet.yonedaEquiv (SSet.stdSimplex.δ 0 ≫ SSet.horn.ι (Fin.last 3) 0
-        (by decide)) := by
-      refine injective_of_mono (SSet.Subcomplex.ι.{u} _ |>.app _) (ht.trans ?_)
-      rw [← SSet.yonedaEquiv_comp, Category.assoc, SSet.horn.ι_ι,
-        yonedaEquiv_stdSimplex_δ_zero_δ_zero_three]
-    rw [← SSet.yonedaEquiv_comp, Category.assoc, SSet.horn.IsCompatible.ι_desc]
+  obtain ⟨w, hw⟩ := exists_δ_eq_of_isCompatible hX hf (by
+    rw [stdSimplex_edge_last_two_eq, ← SSet.yonedaEquiv_comp]
     simpa [f, SSet.stdSimplex.δ_comp_yonedaEquiv_symm] using he)
-  obtain ⟨w, rfl⟩ := SSet.yonedaEquiv.symm.surjective τ
-  have hw (j : Fin 4) (hj : j ≠ Fin.last 3) : X.toSSet.δ j w = SSet.yonedaEquiv (f j hj) := by
-    rw [← SSet.yonedaEquiv.apply_symm_apply w, ← SSet.stdSimplex.yonedaEquiv_δ_comp,
-      ← SSet.horn.ι_ι_assoc _ j hj, hτ, SSet.horn.IsCompatible.ι_desc]
   exact ⟨.mk (X.toSSet.δ 3 w)
     ((SSet.δ_comp_δ_apply (i := 2) (j := 2) le_rfl w).trans (by
       simpa [f, -SSet.Edge.CompStruct.compId_simplex] using
