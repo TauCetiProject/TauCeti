@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.AlgebraicTopology.SimplicialNerve.SimplicialThickening
 public import TauCeti.CategoryTheory.Enriched.EnrichedCat
-public import TauCeti.CategoryTheory.Enriched.Ordinary.Basic
 
 /-!
 # The simplicial nerve as a functor, and its low-dimensional simplices
@@ -18,10 +17,12 @@ simplicial category `C` functorial in simplicial functors, and identifies its ve
 
 A functor `G : J ⥤ C` out of a linear order induces a simplicial functor
 `SimplicialThickening.ofFunctor G : C[Δ^J] ⥤ C`, which sends every chain of paths from `i` to `j`
-to the image of the unique morphism `i ⟶ j`. Applied to `J = Fin (n + 1)` this gives a map of
-simplicial sets `SimplicialNerve.fromNerve C : nerve C ⟶ SimplicialNerve C` from the ordinary nerve
-of the underlying category. When no element of `J` lies strictly between two others, every poset
-of paths is a subsingleton and `ofFunctor` is a bijection (`SimplicialThickening.functorEquiv`).
+to the image of the unique morphism `i ⟶ j` (see
+`TauCeti.AlgebraicTopology.SimplicialNerve.SimplicialThickening`). Applied to `J = Fin (n + 1)`
+this gives a map of simplicial sets `SimplicialNerve.fromNerve C : nerve C ⟶ SimplicialNerve C`
+from the ordinary nerve of the underlying category. When no element of `J` lies strictly between
+two others, every poset of paths is a subsingleton and `ofFunctor` is a bijection
+(`SimplicialThickening.functorEquiv`).
 Hence `fromNerve C` is bijective in degrees `0` and `1`: the vertices of `SimplicialNerve C` are
 the objects of `C` and its edges are the morphisms of `C`. In higher degrees `fromNerve C` need not
 be surjective: a `2`-simplex of `SimplicialNerve C` with edges `f`, `g` and long edge `h` records
@@ -33,10 +34,6 @@ an edge from `h` to `g ∘ f` in a mapping simplicial set, not an equality.
   functor.
 * `CategoryTheory.simplicialNerveFunctor`: the simplicial nerve as a functor from the category of
   small simplicial categories to simplicial sets.
-* `CategoryTheory.SimplicialThickening.toFunctor`: the ordinary functor underlying a simplicial
-  functor out of `C[Δ^J]`.
-* `CategoryTheory.SimplicialThickening.functorEquiv`: simplicial functors out of `C[Δ^J]` are
-  ordinary functors out of `J`, when all posets of paths are subsingletons.
 * `CategoryTheory.SimplicialNerve.fromNerve`: the comparison map from the ordinary nerve of the
   underlying category, with `bijective_fromNerve_app` in degrees at most one.
 * `CategoryTheory.SimplicialNerve.vertexEquiv`: vertices of `SimplicialNerve C` are objects of `C`.
@@ -49,7 +46,7 @@ an edge from `h` to `g ∘ f` in a mapping simplicial set, not an equality.
 
 public section
 
-open CategoryTheory EnrichedCategory MonoidalCategory CartesianMonoidalCategory Opposite Simplicial
+open CategoryTheory EnrichedCategory Opposite Simplicial
 
 universe v u
 
@@ -106,121 +103,6 @@ lemma simplicialNerveFunctor_map {C D : EnrichedCat.{v, v + 1, u} SSet.{v}} (F :
 end Functoriality
 
 variable {C : Type u} [Category.{v} C] [SimplicialCategory C]
-
-namespace SimplicialThickening
-
-variable {J : Type v} [LinearOrder J]
-
-/-- The map of mapping simplicial sets underlying `ofFunctor G`: a chain of paths from `i` to `j`
-is sent to the image under `G` of the morphism `i ⟶ j`. -/
-def ofFunctorMap (G : J ⥤ C) (i j : SimplicialThickening J) :
-    (i ⟶[SSet] j) ⟶ (G.obj i.as ⟶[SSet] G.obj j.as) where
-  app n := ↾fun p ↦ (eHomEquiv SSet (G.map (homOfLE (Path.le (p.obj 0))))).app n PUnit.unit
-  naturality _ _ f := by
-    ext p
-    simpa using ConcreteCategory.congr_hom
-      ((eHomEquiv SSet (G.map (homOfLE (Path.le (p.obj 0))))).naturality f) PUnit.unit
-
-/-- On a pair `i ≤ j`, the map `ofFunctorMap G i j` is constant at the image of `i ⟶ j`. -/
-private lemma ofFunctorMap_eq {G : J ⥤ C} {i j : SimplicialThickening J} (h : i.as ≤ j.as) :
-    ofFunctorMap G i j = toUnit _ ≫ eHomEquiv SSet (G.map (homOfLE h)) :=
-  (rfl)
-
-/-- The simplicial functor `C[Δ^J] ⥤ C` induced by an ordinary functor `G : J ⥤ C`. It sends
-every chain of paths from `i` to `j` to the image under `G` of the morphism `i ⟶ j`, so it only
-depends on the endpoints of the chains. -/
-@[expose, implicit_reducible]
-def ofFunctor (G : J ⥤ C) : EnrichedFunctor SSet (SimplicialThickening J) C where
-  obj i := G.obj i.as
-  map := ofFunctorMap G
-  map_id i := by
-    rw [ofFunctorMap_eq le_rfl, Subsingleton.elim (homOfLE _) (𝟙 i.as), Functor.map_id,
-      eHomEquiv_id, comp_toUnit_assoc]
-    exact Category.id_comp _
-  map_comp i j k := by
-    by_cases hij : i.as ≤ j.as
-    · by_cases hjk : j.as ≤ k.as
-      · rw [ofFunctorMap_eq hij, ofFunctorMap_eq hjk, ofFunctorMap_eq (hij.trans hjk),
-          toUnit_eHomEquiv_tensorHom_comp_eComp, ← Functor.map_comp, homOfLE_comp,
-          comp_toUnit_assoc]
-      · ext n ⟨p, q⟩
-        exact absurd (Path.le (q.obj 0)) hjk
-    · ext n ⟨p, q⟩
-      exact absurd (Path.le (p.obj 0)) hij
-
-@[simp]
-lemma ofFunctor_obj (G : J ⥤ C) (i : SimplicialThickening J) : (ofFunctor G).obj i = G.obj i.as :=
-  rfl
-
-lemma ofFunctor_map_eq (G : J ⥤ C) {i j : SimplicialThickening J} (h : i.as ≤ j.as) :
-    (ofFunctor G).map i j = toUnit _ ≫ eHomEquiv SSet (G.map (homOfLE h)) :=
-  ofFunctorMap_eq h
-
-/-- The ordinary functor underlying a simplicial functor `C[Δ^J] ⥤ C`: a morphism `i ⟶ j` is
-sent to the image of the path from `i` to `j` through every element in between. -/
-@[expose, implicit_reducible]
-def toFunctor (F : EnrichedFunctor SSet (SimplicialThickening J) C) : J ⥤ C where
-  obj i := F.obj ⟨i⟩
-  map {i j} h :=
-    (eHomEquiv SSet).symm (pathVertex (i := ⟨i⟩) (j := ⟨j⟩) (leOfHom h) ≫ F.map ⟨i⟩ ⟨j⟩)
-  map_id i := by
-    rw [pathVertex_refl, EnrichedFunctor.map_id, ← eHomEquiv_id, Equiv.symm_apply_apply]
-  map_comp {i j k} f g := by
-    apply (eHomEquiv SSet).injective
-    simp only [eHomEquiv_comp, Equiv.apply_symm_apply]
-    rw [← pathVertex_comp (leOfHom f) (leOfHom g)]
-    simp [EnrichedFunctor.map_comp, tensorHom_comp_tensorHom_assoc]
-
-@[simp]
-lemma toFunctor_obj (F : EnrichedFunctor SSet (SimplicialThickening J) C) (i : J) :
-    (toFunctor F).obj i = F.obj ⟨i⟩ :=
-  rfl
-
-lemma eHomEquiv_toFunctor_map (F : EnrichedFunctor SSet (SimplicialThickening J) C) {i j : J}
-    (h : i ⟶ j) :
-    eHomEquiv SSet ((toFunctor F).map h) =
-      pathVertex (i := ⟨i⟩) (j := ⟨j⟩) (leOfHom h) ≫ F.map ⟨i⟩ ⟨j⟩ :=
-  Equiv.apply_symm_apply _ _
-
-section Subsingleton
-
-variable [∀ i j : J, Subsingleton (Path i j)]
-
-/-- When there is at most one path between any two elements of `J`, simplicial functors out of
-the simplicial thickening `C[Δ^J]` are ordinary functors out of `J`. This applies to linear orders
-with at most two elements, which give the vertices and edges of the simplicial nerve. -/
-def functorEquiv : (J ⥤ C) ≃ EnrichedFunctor SSet (SimplicialThickening J) C where
-  toFun := ofFunctor
-  invFun := toFunctor
-  left_inv G := Functor.ext (fun _ ↦ rfl) fun i j h ↦ by
-    dsimp only [toFunctor]
-    rw [ofFunctor_map_eq _ (leOfHom h), comp_toUnit_assoc, toUnit_unit, Category.id_comp]
-    exact (Equiv.symm_apply_apply _ _).trans (by
-      simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
-      exact congrArg G.map (Subsingleton.elim _ _))
-  right_inv F := by
-    refine EnrichedFunctor.ext SSet (fun _ ↦ rfl) fun ⟨i⟩ ⟨j⟩ ↦ ?_
-    by_cases h : i ≤ j
-    · rw [ofFunctor_map_eq _ h]
-      dsimp only [toFunctor]
-      rw [Equiv.apply_symm_apply, ← Category.assoc,
-        hom_ext_of_subsingleton (toUnit _ ≫ pathVertex _) (𝟙 _), Category.id_comp]
-      simp
-    · ext n p
-      exact absurd (Path.le (p.obj 0)) h
-
-@[simp]
-lemma functorEquiv_apply (G : J ⥤ C) : functorEquiv G = ofFunctor G :=
-  (rfl)
-
-@[simp]
-lemma functorEquiv_symm_apply (F : EnrichedFunctor SSet (SimplicialThickening J) C) :
-    functorEquiv.symm F = toFunctor F :=
-  (rfl)
-
-end Subsingleton
-
-end SimplicialThickening
 
 namespace SimplicialNerve
 
