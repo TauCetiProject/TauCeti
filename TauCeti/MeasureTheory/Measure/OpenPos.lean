@@ -15,7 +15,8 @@ positive measure to every ball of positive radius. In a proper space, where ball
 so have finite measure under a measure finite on compact sets, the same holds for the real-valued
 measure `μ.real`, and likewise for closed balls. For a locally finite measure, closed balls of
 small positive radius around a point have positive finite measure, so proportions of sets in
-shrinking balls are well behaved.
+shrinking balls are well behaved. Since a property holding almost everywhere holds on a dense
+set, an almost everywhere inequality between continuous functions holds everywhere.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
 almost everywhere means everywhere.
@@ -27,6 +28,7 @@ almost everywhere means everywhere.
   measure.
 * `Metric.eventually_measure_closedBall_ne_zero_ne_top`: closed balls of small positive radius
   have positive finite measure.
+* `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
 -/
@@ -63,6 +65,18 @@ theorem _root_.Metric.eventually_measure_closedBall_ne_zero_ne_top {X : Type*}
   filter_upwards [Ioo_mem_nhdsGT hε] with r hr
   exact ⟨(Metric.measure_closedBall_pos μ x hr.1).ne',
     ((measure_mono ((Metric.closedBall_subset_ball hr.2).trans hεU)).trans_lt hUμ).ne⟩
+
+/-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
+continuous functions into an order-closed space holds everywhere. -/
+theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (μ : Measure X) [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
+    [OrderClosedTopology Y] {f g : X → Y} (hf : Continuous f) (hg : Continuous g) :
+    f ≤ᵐ[μ] g ↔ f ≤ g :=
+  -- The closed set where `f ≤ g` is dense, hence everything.
+  ⟨fun h x => (isClosed_le hf hg).closure_subset <| by
+      rw [(μ.dense_of_ae h).closure_eq]
+      exact Set.mem_univ x,
+    fun h => Eventually.of_forall h⟩
 
 /-- On a discrete space, a measure positive on nonempty open sets charges every point, so
 almost everywhere means everywhere. -/
