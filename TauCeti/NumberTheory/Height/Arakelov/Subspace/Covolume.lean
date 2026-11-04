@@ -153,10 +153,7 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
     (⨆ s, v (plucker (fun k j ↦ (a k : K) * (b k : ι → K) j) s)) = 1 := by
   cases nonempty_fintype ι
   set x : Matrix (Fin p) ι K := Matrix.of fun k j ↦ (a k : K) * (b k : ι → K) j
-  have ha0 (k : Fin p) : (a k : K) ≠ 0 := by
-    intro h0
-    have := ha_eq k
-    simp [h0] at this
+  have ha0 (k : Fin p) : (a k : K) ≠ 0 := fun h0 ↦ by simpa [h0] using ha_eq k
   have hx_li : LinearIndependent K x.row := by
     rw [Fintype.linearIndependent_iff]
     intro c hc k
@@ -169,7 +166,8 @@ private theorem iSup_apply_plucker_scaled_eq_one {W : Submodule K (ι → K)} {p
   -- Every row of `x` is `(a k : K) • b k ∈ W ∩ (𝓞 K)^ι`, so its entries have `v ≤ 1`.
   have hx_le (k : Fin p) (j : ι) : v (x k j) ≤ 1 := by
     obtain ⟨z, hz⟩ := hW.coe_smul_basis_mem_range ⟨a k, haJ k, rfl⟩ j
-    exact (show (z : K) = x k j from hz) ▸ v.apply_le_one z
+    have hzx : x k j = (z : K) := by simpa [x] using hz.symm
+    exact hzx ▸ v.apply_le_one z
   obtain ⟨e, hP0, hP_sup, hPx⟩ := v.val.exists_pivot_inv_mul_le_one hx_li
   set P := x.submatrix id e
   have hP_one : v P.det = 1 :=
@@ -521,22 +519,18 @@ theorem covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeig
     rw [harch, relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b]
     dsimp only [y] at hfin hy ⊢
     have harak : arakelovMulHeight y =
-        (∏ w : InfinitePlace K,
-          (∑ s, ‖w.embedding (y s)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) *
+        (∏ w : InfinitePlace K, (∑ s, ‖w.embedding (y s)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) *
         ∏ᶠ v : FinitePlace K, ⨆ s, v (y s) := by
       rw [arakelovMulHeight_eq hy]; congr!
-    rw [harak]
     -- Rewrite the `((w.mult : ℝ) / 2)`-rpow square at each infinite place as `^ w.mult`.
     have hinf_sq :
         (∏ w : InfinitePlace K,
-          (∑ s, ‖w.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^
-            ((w.mult : ℝ) / 2)) ^ 2 =
+          (∑ s, ‖w.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ ((w.mult : ℝ) / 2)) ^ 2 =
           ∏ w : InfinitePlace K,
             (∑ s, ‖w.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.mult := by
       rw [← Finset.prod_pow]
       refine Finset.prod_congr rfl fun w _ ↦ ?_
-      rw [← Real.rpow_natCast _ 2,
-        ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
+      rw [← Real.rpow_natCast _ 2, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
         Nat.cast_ofNat, div_mul_cancel₀ _ two_ne_zero, Real.rpow_natCast]
     have hprod_split :
         (∏ k : Fin (finrank K W),
@@ -544,7 +538,7 @@ theorem covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeig
           (∏ k : Fin (finrank K W), (Ideal.absNorm (J k) : ℝ)) *
             ZLattice.covolume (mixedEmbedding.integerLattice K) ^ finrank K W := by
       rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-    rw [mul_pow, mul_pow, hinf_sq, hfin, hprod_split]
+    rw [harak, mul_pow, mul_pow, hinf_sq, hfin, hprod_split]
     ring
   exact (pow_left_inj₀ (ZLattice.covolume_pos _ volume).le hrhs_nonneg two_ne_zero).mp hsq
 
@@ -625,15 +619,6 @@ theorem covolume_intLattice {ι : Type*} [Fintype ι] [LinearOrder ι] (V : Subm
   rw [V.covolume_intLattice_eq_covolume_integerLattice, V.covolume_integerLattice,
     IsTotallyReal.nrComplexPlaces_eq_zero, discr_rat, finrank_self]
   norm_num
-
-/-- The line through `(1, 2)` in `ℚ²` cuts out a lattice of covolume `√5` in its real span. -/
-example : ZLattice.covolume (ℚ ∙ ![(1 : ℚ), 2]).intLattice = √5 := by
-  have h : ![(1 : ℚ), 2] = ((↑) : ℤ → ℚ) ∘ ![1, 2] := by
-    ext i
-    fin_cases i <;> simp
-  rw [covolume_intLattice, subspaceHeight_span_singleton (by simp), h,
-    TauCeti.height2_intCast_eq_sqrt_of_gcd_eq_one (by decide)]
-  norm_num [Fin.sum_univ_two]
 
 end Submodule
 

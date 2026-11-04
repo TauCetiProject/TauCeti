@@ -549,6 +549,14 @@ theorem coe_integerPointsEquivIntPoints_apply (V : Submodule ℚ (ι → ℚ)) (
     (V.integerPointsEquivIntPoints z : ι → ℤ) i = Rat.ringOfIntegersEquiv ((z : ι → 𝓞 ℚ) i) := by
   simp [integerPointsEquivIntPoints]
 
+/-- Coordinates of `V.integerPointsEquivIntPoints.symm z`. -/
+@[simp]
+theorem coe_integerPointsEquivIntPoints_symm_apply (V : Submodule ℚ (ι → ℚ)) (z : V.intPoints)
+    (i : ι) :
+    (V.integerPointsEquivIntPoints.symm z : ι → 𝓞 ℚ) i =
+      Rat.ringOfIntegersEquiv.symm ((z : ι → ℤ) i) := by
+  simp [integerPointsEquivIntPoints]
+
 open Classical in
 private theorem map_euclideanSpan_rat [Fintype ι] (V : Submodule ℚ (ι → ℚ)) :
     V.euclideanSpan.map
@@ -588,7 +596,7 @@ theorem coe_euclideanSpanEquivRealSpan_apply [Fintype ι] (V : Submodule ℚ (ι
       mixedSpaceRatEquivReal ((w : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace ℚ) i) := by
   rw [euclideanSpanEquivRealSpan, LinearIsometryEquiv.trans_apply,
     LinearIsometryEquiv.coe_ofEq_apply]
-  simp
+  simp [-mixedSpaceRatEquivReal_apply]
 
 open Classical in
 /-- Over `ℚ`, pulling `V.intLattice` back along `V.euclideanSpanEquivRealSpan` recovers

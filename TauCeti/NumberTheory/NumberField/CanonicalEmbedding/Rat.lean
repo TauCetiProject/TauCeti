@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
-import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # Identification of the Euclidean Minkowski space of `ℚ` with `ℝ`
@@ -22,7 +22,8 @@ sending the canonical embedding of `q : ℚ` to `(q : ℝ)` and identifying
 ## Main definitions and results
 
 * `TauCeti.NumberField.mixedEmbedding.euclidean.mixedSpaceRatEquivReal`: the canonical linear
-  isometry `NumberField.mixedEmbedding.euclidean.mixedSpace ℚ ≃ₗᵢ[ℝ] ℝ`.
+  isometry `NumberField.mixedEmbedding.euclidean.mixedSpace ℚ ≃ₗᵢ[ℝ] ℝ`, with evaluation lemmas
+  `mixedSpaceRatEquivReal_apply` and `mixedSpaceRatEquivReal_symm_apply`.
 * `TauCeti.NumberField.mixedEmbedding.euclidean.mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding`:
   `mixedSpaceRatEquivReal` sends `(toMixed ℚ).symm (mixedEmbedding ℚ q)` to `(q : ℝ)`.
 * `TauCeti.NumberField.mixedEmbedding.euclidean.mem_integerLattice_rat_iff`: a point of
@@ -71,13 +72,29 @@ def mixedSpaceRatEquivReal : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ
       simp [mixedRatEquivReal] }
 
 open Classical in
-/-- `mixedSpaceRatEquivReal` sends the canonical embedding of `q : ℚ` to `(q : ℝ)`. -/
+/-- `mixedSpaceRatEquivReal` evaluates the real coordinate at `Rat.infinitePlace`. -/
 @[simp]
+theorem mixedSpaceRatEquivReal_apply (x : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ) :
+    mixedSpaceRatEquivReal x =
+      (NumberField.mixedEmbedding.euclidean.toMixed ℚ x).1
+        ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ := by
+  simp [mixedSpaceRatEquivReal, mixedRatEquivReal]
+
+open Classical in
+/-- The inverse of `mixedSpaceRatEquivReal` embeds `r : ℝ` with mixed-space coordinates
+`(fun _ ↦ r, isEmptyElim)`. -/
+@[simp]
+theorem mixedSpaceRatEquivReal_symm_apply (r : ℝ) :
+    mixedSpaceRatEquivReal.symm r =
+      (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (fun _ ↦ r, isEmptyElim) :=
+  mixedSpaceRatEquivReal.injective (by simp)
+
+open Classical in
+/-- `mixedSpaceRatEquivReal` sends the canonical embedding of `q : ℚ` to `(q : ℝ)`. -/
 theorem mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding (q : ℚ) :
     mixedSpaceRatEquivReal
-        ((NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ q)) =
-      (q : ℝ) := by
-  simp [mixedSpaceRatEquivReal, mixedRatEquivReal]
+        ((NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ q)) = (q : ℝ) := by
+  simp
 
 open Classical in
 /-- A point of `euclidean.mixedSpace ℚ` lies in `euclidean.integerLattice ℚ` if and only if its
@@ -85,18 +102,17 @@ image in `ℝ` under `mixedSpaceRatEquivReal` is an integer. -/
 theorem mem_integerLattice_rat_iff (x : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ) :
     x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ ↔
       ∃ z : ℤ, mixedSpaceRatEquivReal x = z := by
+  let e := NumberField.mixedEmbedding.euclidean.toMixed ℚ
   rw [show (x ∈ NumberField.mixedEmbedding.euclidean.integerLattice ℚ) ↔
-      ∃ a : 𝓞 ℚ, mixedEmbedding ℚ a = NumberField.mixedEmbedding.euclidean.toMixed ℚ x by
-    simp [NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]]
+      ∃ a : 𝓞 ℚ, mixedEmbedding ℚ a = e x by
+    simp [e, NumberField.mixedEmbedding.euclidean.integerLattice, ZLattice.comap]]
   refine ⟨fun ⟨a, ha⟩ ↦ ⟨Rat.ringOfIntegersEquiv a, ?_⟩,
     fun ⟨z, hz⟩ ↦ ⟨Rat.ringOfIntegersEquiv.symm z, ?_⟩⟩
-  · rw [show x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ a) from
-        (NumberField.mixedEmbedding.euclidean.toMixed ℚ).injective (by simpa using ha.symm),
-      mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding,
-      RingOfIntegers.coe_eq_algebraMap, ← Rat.ringOfIntegersEquiv_apply_coe, Rat.cast_intCast]
-  · rw [show x = (NumberField.mixedEmbedding.euclidean.toMixed ℚ).symm (mixedEmbedding ℚ (z : ℚ))
-        from mixedSpaceRatEquivReal.injective
-          (by rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast]),
+  · rw [show x = e.symm (mixedEmbedding ℚ a) from e.injective (by simpa using ha.symm),
+      mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, RingOfIntegers.coe_eq_algebraMap,
+      ← Rat.ringOfIntegersEquiv_apply_coe, Rat.cast_intCast]
+  · rw [show x = e.symm (mixedEmbedding ℚ (z : ℚ)) from mixedSpaceRatEquivReal.injective
+        (by rw [hz, mixedSpaceRatEquivReal_toMixed_symm_mixedEmbedding, Rat.cast_intCast]),
       ContinuousLinearEquiv.apply_symm_apply, Rat.ringOfIntegersEquiv_symm_apply_coe]
 
 end TauCeti.NumberField.mixedEmbedding.euclidean

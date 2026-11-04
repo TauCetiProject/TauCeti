@@ -159,6 +159,12 @@ theorem linearIndependent_mixedBasisElem (hI : I ≠ ⊥) :
   ((basisOfFractionalIdeal K (toFractionalIdealUnit hI)).linearIndependent.restrict_scalars' ℤ).comp
     _ (indexEquivChooseBasis hI).injective
 
+open Classical in
+private theorem mixedBasisElem_eq_comp (hI : I ≠ ⊥) :
+    I.mixedBasisElem hI =
+      basisOfFractionalIdeal K (toFractionalIdealUnit hI) ∘ indexEquivChooseBasis hI :=
+  funext fun _ ↦ rfl
+
 /-- The `ℤ`-span of `I.mixedBasisElem hI` in `K` is `IsLocalization.coeSubmodule K I`. -/
 @[simp]
 theorem span_int_mixedBasisElem (hI : I ≠ ⊥) :
@@ -166,10 +172,8 @@ theorem span_int_mixedBasisElem (hI : I ≠ ⊥) :
       (IsLocalization.coeSubmodule K I).restrictScalars ℤ := by
   classical
   ext x
-  change x ∈ Submodule.span ℤ
-      (range (basisOfFractionalIdeal K (toFractionalIdealUnit hI) ∘ indexEquivChooseBasis hI)) ↔ _
-  rw [Submodule.restrictScalars_mem, range_comp, Equiv.range_eq_univ, image_univ,
-    mem_span_basisOfFractionalIdeal]
+  rw [I.mixedBasisElem_eq_comp hI, Submodule.restrictScalars_mem, range_comp, Equiv.range_eq_univ,
+    image_univ, mem_span_basisOfFractionalIdeal]
   simp [toFractionalIdealUnit]
 
 /-- Every element `I.mixedBasisElem hI ν` belongs to `IsLocalization.coeSubmodule K I`. -/
