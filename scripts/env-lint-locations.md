@@ -7,8 +7,10 @@ diagnostic. The source hint was unavailable to the existing bors log parser.
 The compiled driver now collects optional declaration origins and selection ranges
 from its existing candidate environment and structured linter results. It does not
 elaborate the library again, search sources for declaration names, or substitute
-parent ranges for generated declarations. Private/generated declarations, missing
-ranges, unsupported modules and unsupported report names remain unknown.
+parent ranges for generated declarations. Every declaration with a listed defining
+module gets that module, including private and generated declarations; a
+selection range is added only when the declaration has its own. Unsupported
+modules, unresolvable origins and unsupported report names remain unknown.
 
 `LINT-ENV-ORIGINS` is internal driver output, before the existing report region.
 Only after the existing nonce, report-count, default-linter, baseline and allowlist
@@ -24,8 +26,11 @@ The final log record is one line:
 LINT-ENV-LOCATIONS {"version":1,"complete":true,"findings":[{"linter":"simpNF","declaration":"TauCeti.element_annihilator_flat_baseChange","path":"TauCeti/RingTheory/Flat/Annihilator.lean","line":77,"column":9}]}
 ```
 
-Unknown findings instead contain `linter`, `declaration` and `unknown`, with no
-location. Bounds: 128 records, 1 MiB per metadata envelope, 1,024 characters per
+A finding whose declaration has a listed module but no range entry of its own
+(for example an auto-generated auxiliary) carries `path` without `line`/`column`;
+that path-only record needs the TauCetiTools join at pin `b49bb4fd` or later,
+which accepts module-only origins. Unknown findings instead contain `linter`,
+`declaration` and `unknown`, with no location. Bounds: 128 records, 1 MiB per metadata envelope, 1,024 characters per
 declaration/report name, 512 per path, and at most 1 MiB of source characters read
 per validated location. A record-limit envelope has `complete:false`. Duplicate,
 missing, ambiguous, malformed or truncated origins become unknowns. Optional hint
@@ -84,8 +89,8 @@ bash scripts/build-lint-driver.sh "$PWD" "$PWD/scripts/LintEnvDriver.lean" /tmp/
 python3 scripts/test_lint_env_driver.py "$PWD" /tmp/lint-driver/lint-env-driver
 ```
 
-The smoke test creates a temporary fixture library and checks Unicode/escaped
-names, real source positions and a private theorem's explicit unknown. Shell tests
+The fast check creates a temporary fixture library and checks Unicode/escaped
+names and real source positions, including a private theorem's module and range. Shell tests
 execute the existing audit parser with controlled Lean process output, verifying
 unchanged clean/baselined/ratchet/new-failure verdicts and nonce/forged-report
 rejections. The bors companion adds actual Python-parser-to-Elixir mapper/planner

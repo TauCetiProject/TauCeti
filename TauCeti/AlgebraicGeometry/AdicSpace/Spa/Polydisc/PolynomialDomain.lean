@@ -442,7 +442,7 @@ theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
       ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} := by
     ext x
     have hx := Set.ext_iff.mp hV (Homeomorph.setCongr (closedPolydisc_def 1 K) x)
-    simp only [Set.mem_preimage, Homeomorph.setCongr_apply, TauCeti.Homeomorph.setCongr_symm_apply,
+    simp only [Set.mem_preimage, Homeomorph.setCongr_apply, Homeomorph.setCongr_symm_apply,
       mem_rationalSubset_iff, Finset.mem_image, forall_exists_index, and_imp,
       forall_apply_eq_imp_iff₂] at hx
     have hv : x.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ x.2

@@ -153,6 +153,13 @@ identically zero, so it does not represent a surviving Dirac mass `δ_m`. -/
 def truncatedNormalPDFReal (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (x : ℝ) : ℝ :=
   s.indicator (gaussianPDFReal m v) x / (gaussianReal m v).real s
 
+/-- The real truncated normal density is the Gaussian density restricted to the truncation
+event and divided by its Gaussian mass. -/
+theorem truncatedNormalPDFReal_def (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (x : ℝ) :
+    truncatedNormalPDFReal m v s x =
+      s.indicator (gaussianPDFReal m v) x / (gaussianReal m v).real s := by
+  rw [truncatedNormalPDFReal]
+
 /-- The extended nonnegative counterpart of `truncatedNormalPDFReal`: a Lebesgue density of the
 truncated normal law at positive variance and for a measurable truncation set, and identically
 zero at `v = 0`. -/

@@ -52,6 +52,9 @@ and none of an odd number of positions.
   `|s| = 2 n`, and `card_isPairing_eq_zero` — `|NC₂(s)| = 0` when `|s|` is odd.
 * `TauCeti.NoncrossingPartition.card_isPairing_fin_eq_catalan` — `|NC₂(2n)| = catalan n` for the
   positions of `Fin (2 * n)`.
+* `TauCeti.NoncrossingPartition.sum_prod_ite_card_eq_two` — weighting the parts of size two by `v`
+  and all others by `0`, the noncrossing partitions of `2 n` positions have total weight
+  `v ^ n * catalan n`, and those of an odd number of positions total weight `0`.
 
 ## References
 
@@ -674,6 +677,26 @@ theorem card_isPairing_fin_eq_catalan (n : ℕ) :
     Fintype.card {P : NoncrossingPartition (univ : Finset (Fin (2 * n))) // P.1.IsPairing} =
       catalan n :=
   card_isPairing_eq_catalan (by rw [card_univ, Fintype.card_fin])
+
+/-- Weighting each part of size two by `v` and every other part by `0`, the total weight of the
+noncrossing partitions of `s` is `v ^ (#s / 2) * catalan (#s / 2)` for `#s` even and `0` for `#s`
+odd: only the noncrossing pairings contribute, each with weight `v ^ (#s / 2)`. These are the
+moments of a semicircular element of variance `v`, whose only nonzero free cumulant is the second
+one. -/
+theorem sum_prod_ite_card_eq_two {M : Type*} [CommSemiring M] (s : Finset α) (v : M) :
+    ∑ P : NoncrossingPartition s, ∏ B ∈ P.1.parts, (if #B = 2 then v else 0) =
+      if Even #s then v ^ (#s / 2) * catalan (#s / 2) else 0 := by
+  have h (P : NoncrossingPartition s) : ∏ B ∈ P.1.parts, (if #B = 2 then v else 0) =
+      if P.1.IsPairing then v ^ (#s / 2) else 0 := by
+    simp only [prod_ite_zero, prod_const, ← Finpartition.isPairing_iff]
+    split_ifs with hP
+    · rw [hP.card_eq_two_mul, Nat.mul_div_cancel_left _ two_pos]
+    · rfl
+  rw [sum_congr rfl fun P _ => h P, ← sum_filter, sum_const, ← Fintype.card_subtype, nsmul_eq_mul,
+    mul_comm]
+  split_ifs with hs
+  · rw [card_isPairing_eq_catalan (n := #s / 2) (Nat.two_mul_div_two_of_even hs).symm]
+  · rw [card_isPairing_eq_zero (Nat.not_even_iff_odd.1 hs), Nat.cast_zero, mul_zero]
 
 end Pairing
 

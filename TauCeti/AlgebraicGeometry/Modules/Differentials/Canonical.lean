@@ -38,9 +38,9 @@ theorem `dim H⁰(X, L) - dim H⁰(X, Ω_{X/k} ⊗ L⁻¹) = deg L + 1 - g`.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Sections I.5 and IV.3.
 
 The local comparison is `mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg`, the
-separating function comes from `finrank_kaehlerDifferential_functionField_of_isInvertible` and
-`finrank_kaehlerDifferential_eq_one_iff`, and the rational basis and Weil divisor are those of
-`kaehlerBasisOfSeparating` and `weilDifferentialDivisor`.
+separating function comes from `exists_transcendental_and_isSeparable_adjoin_of_isInvertible`, and
+the rational basis and Weil divisor are those of `kaehlerBasisOfSeparating` and
+`weilDifferentialDivisor`.
 -/
 
 public section
@@ -223,11 +223,7 @@ bundle. The constant field need not be perfect. -/
 theorem nonempty_iso_relativeDifferentials_canonicalBundle :
     Nonempty (X.relativeDifferentials k ≅
       (InvertibleSheaf.canonicalBundle hex hdim hF hk).obj) := by
-  have := hF.essFiniteType
-  have : Algebra.Transcendental k X.functionField :=
-    Algebra.transcendental_def.mpr hF.exists_transcendental
-  obtain ⟨t, ht, hsep⟩ := finrank_kaehlerDifferential_eq_one_iff.mp
-    (finrank_kaehlerDifferential_functionField_of_isInvertible k (X := X))
+  obtain ⟨t, ht, hsep⟩ := exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF
   let := hsep
   let ω := weilDifferentialOfSeparating hF ht
   have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 :=

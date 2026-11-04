@@ -24,6 +24,8 @@ degree one.
 Mathlib's extension class defines the connecting morphism in the contravariant
 long exact Ext sequence. For a projective middle term, this morphism is surjective
 with kernel the maps extending to that term, giving the quotient identification.
+In higher degrees, composition with the extension class of such a sequence is a bijection
+`Ext^{n+1}(P₁, Y) ⟶ Ext^{n+2}(M, Y)` (`TauCeti.precomp_extClass_bijective`).
 
 ## References
 
@@ -175,5 +177,17 @@ theorem homCokernelEquiv_trans {U : ShortComplex C} (hT : T.ShortExact) (hU : U.
   simp
 
 end Ring
+
+/-- **Dimension shifting against a projective middle term**: if `S` is short exact with `S.X₂`
+projective, composition with the extension class is a bijection
+`Ext^{n+1}(S.X₁, Y) ⟶ Ext^{n+2}(S.X₃, Y)`. -/
+theorem precomp_extClass_bijective (hS : S.ShortExact) [Projective S.X₂] (Y : C) (n : ℕ) :
+    Function.Bijective (Ext.precomp hS.extClass Y (show 1 + (n + 1) = n + 2 by lia)) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun e ↦ ?_⟩
+  · obtain ⟨y, rfl⟩ := Ext.contravariant_sequence_exact₁ hS Y x (n₁ := n + 2) (by lia) hx
+    rw [Ext.eq_zero_of_projective y, Ext.comp_zero]
+  · obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₃ hS Y e (Ext.eq_zero_of_projective _)
+      (n₀ := n + 1) (by lia)
+    exact ⟨x, rfl⟩
 
 end TauCeti

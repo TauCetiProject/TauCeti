@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Tangent images on open submanifolds
 
 Restriction to an open source preserves the tangent image at each point. Inclusion of an open
 target maps the tangent image by the canonical tangent-space equivalence. These identities let
-pointwise conditions on tangent images be checked in open submanifolds.
+pointwise conditions on tangent images be checked in open submanifolds. Since the differential of
+the inclusion of an open subset is the identity of the model space, restricting a map to an open
+source, or following a map into an open target by the inclusion, does not change its differential
+applied to a tangent vector.
 -/
 
 public section
@@ -51,5 +54,22 @@ theorem range_mfderiv_subtype_val_comp {U : Opens M} {f : N → U} (x : N)
     mfderiv_subtype_val, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp]
   -- Both projections of the continuous linear equivalence use its underlying linear map.
   rfl
+
+/-- Restricting a differentiable map to an open source does not change its differential. -/
+theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
+    (hf : MDifferentiableAt J I f (x : N)) (v : TangentSpace J x) :
+    mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
+  rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
+    ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    tangentSpaceOpenEquiv_apply]
+
+/-- Following a differentiable map into an open target by the inclusion does not change its
+differential. -/
+theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
+    (hf : MDifferentiableAt J I f x) (v : TangentSpace J x) :
+    mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
+  rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
+    ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
+  exact tangentSpaceOpenEquiv_apply _ _
 
 end TauCeti.Manifold

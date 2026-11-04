@@ -125,10 +125,10 @@ theorem hasParallelCurvature_iff_curvatureOperator :
     rw [← sub_eq_zero, ← hx]
     abel
   · ext v u w s
-    obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E v
-    obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-    obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-    obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E s
+    obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+    obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+    obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+    obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E ∞ s
     rw [derivCurvatureTensor_apply_eq_curvatureOperator cov cov x hX hY hZ hW,
       h hX hY hZ hW x]
     simp only [LinearMap.zero_apply, sub_sub, sub_self]
@@ -157,10 +157,10 @@ theorem IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul
       cov.curvatureTensor y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u))
     (hκx : MDifferentiableAt I 𝓘(ℝ) κ x) (v u w s : TangentSpace I x) :
     cov.derivCurvatureTensor cov x v u w s = mvfderiv I κ x v • (⟪w, s⟫_ℝ • u - ⟪u, s⟫_ℝ • w) := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E s
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E ∞ s
   rw [derivCurvatureTensor_apply_eq_curvatureOperator cov cov x hX hY hZ hW]
   exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hW hκx
 
