@@ -104,38 +104,38 @@ end DimensionBound
 
 /-! ### Legendrian immersions and embeddings -/
 
-variable [FiniteDimensional ℝ E]
+variable [CompleteSpace E] [FiniteDimensional ℝ E] [IsManifold I 2 M]
 
 variable (J) in
-/-- A **Legendrian immersion** for a distribution `D` on a manifold of dimension `2 n + 1` is a
-smooth immersion `f : N → M`, horizontal for `D`, from a manifold of dimension `n`. For a contact
-structure `D` this is the largest dimension of an isotropic immersion
+/-- A **Legendrian immersion** for a contact structure `D` on a manifold of dimension `2 n + 1` is
+a smooth immersion `f : N → M`, horizontal for `D`, from a manifold of dimension `n`. This is the
+largest dimension of an isotropic immersion
 (`TauCeti.IsHorizontalMap.two_mul_finrank_add_one_le`). Its image may have self-intersections. -/
 structure IsLegendrianImmersion (D : Π x : M, Submodule ℝ (TangentSpace I x)) (f : N → M) :
     Prop where
+  /-- The distribution of a Legendrian immersion is a contact structure. -/
+  isContactDistribution : IsContactDistribution I 1 D
   /-- A Legendrian immersion is a smooth immersion. -/
   isImmersion : Manifold.IsImmersion J I ∞ f
-  /-- A Legendrian immersion is tangent to the distribution. -/
+  /-- A Legendrian immersion is tangent to the contact structure. -/
   isHorizontalMap : IsHorizontalMap J D f
   /-- A Legendrian immersion has a source of dimension `n` in a manifold of dimension
   `2 n + 1`. -/
   two_mul_finrank_add_one : 2 * finrank ℝ E' + 1 = finrank ℝ E
 
 variable (J) in
-/-- A **Legendrian embedding** for a distribution `D` is a Legendrian immersion which is a
+/-- A **Legendrian embedding** for a contact structure `D` is a Legendrian immersion which is a
 homeomorphism onto its image. It parametrizes an embedded Legendrian submanifold. -/
 structure IsLegendrianEmbedding (D : Π x : M, Submodule ℝ (TangentSpace I x)) (f : N → M) : Prop
     extends IsLegendrianImmersion J D f where
   /-- A Legendrian embedding is a homeomorphism onto its image. -/
   isEmbedding : Topology.IsEmbedding f
 
-omit [FiniteDimensional ℝ E] in
 /-- A Legendrian embedding is a smooth embedding. -/
 theorem IsLegendrianEmbedding.isSmoothEmbedding (h : IsLegendrianEmbedding J D f) :
     Manifold.IsSmoothEmbedding J I ∞ f :=
   ⟨h.isImmersion, h.isEmbedding⟩
 
-omit [FiniteDimensional ℝ E] in
 /-- A smooth embedding is a Legendrian embedding exactly when it is a Legendrian immersion. -/
 @[simp]
 theorem isLegendrianEmbedding_iff_of_isSmoothEmbedding (hf : Manifold.IsSmoothEmbedding J I ∞ f) :
@@ -145,12 +145,13 @@ theorem isLegendrianEmbedding_iff_of_isSmoothEmbedding (hf : Manifold.IsSmoothEm
 /-- A smooth isotropic immersion into a contact manifold of dimension `2 n + 1` from a nonempty
 manifold is a Legendrian immersion exactly when its source has the largest possible dimension
 `n`, equivalently when `2 dim N + 1 ≥ dim M`. -/
-theorem isLegendrianImmersion_iff_finrank_le [CompleteSpace E] [IsManifold I 2 M]
-    [IsManifold J 2 N] [Nonempty N] {n : ℕ∞ω} [IsManifold I (n + 1) M]
-    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) (hf : Manifold.IsImmersion J I ∞ f)
-    (hfD : IsHorizontalMap J D f) :
+theorem isLegendrianImmersion_iff_finrank_le [IsManifold J 2 N] [Nonempty N] {n : ℕ∞ω}
+    [IsManifold I (n + 1) M] (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
+    (hf : Manifold.IsImmersion J I ∞ f) (hfD : IsHorizontalMap J D f) :
     IsLegendrianImmersion J D f ↔ finrank ℝ E ≤ 2 * finrank ℝ E' + 1 := by
-  refine ⟨fun h ↦ h.two_mul_finrank_add_one.ge, fun h ↦ ⟨hf, hfD, le_antisymm ?_ h⟩⟩
+  refine ⟨fun h ↦ h.two_mul_finrank_add_one.ge, fun h ↦
+    ⟨⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩, hf, hfD,
+      le_antisymm ?_ h⟩⟩
   obtain ⟨y⟩ := ‹Nonempty N›
   exact hfD.two_mul_finrank_add_one_le hD hn ((hf.contMDiff y).of_le (by simp))
     (hf.mfderiv_injective (by simp) y)

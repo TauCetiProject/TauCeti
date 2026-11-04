@@ -43,10 +43,11 @@ form of `θ + dg` (`TauCeti.mpullback_contactizationShift_contactization`). So t
 are identified by a strict contactomorphism.
 
 For smooth maps `ι : L → W` and `h : L → ℝ`, the map `x ↦ (ι x, h x)` pulls `dz - θ` back to
-`dh - ι^* θ` (`TauCeti.SmoothForm.mpullback_prodMk_contactization`). Hence it is horizontal, that
-is isotropic, for the contact distribution `ker (dz - θ)` exactly when `ι^* θ = dh`
-(`TauCeti.SmoothForm.isHorizontalMap_contactization_iff`). This is the **Legendrian lift**: an
-exact Lagrangian map `ι` with primitive `h` lifts to the isotropic map `(ι, h)`, which is a
+`dh - ι^* θ` (`TauCeti.SmoothForm.mpullback_prodMk_contactization`). Hence it is horizontal for
+the distribution `ker (dz - θ)` exactly when `ι^* θ = dh`
+(`TauCeti.SmoothForm.isHorizontalMap_contactization_iff`). This is the **Legendrian lift**: when
+`ω = -dθ` is nondegenerate, so that `ker (dz - θ)` is a contact structure, an exact Lagrangian
+map `ι` for `ω` with primitive `h` lifts to the isotropic map `(ι, h)`, which is a
 Legendrian immersion when `ι` is an immersion and a Legendrian embedding when `ι` is an embedding
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_contactization`,
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianEmbedding_contactization`).
@@ -322,27 +323,33 @@ theorem IsExactLagrangianMap.isHorizontalMap_contactization (hL : hσ.IsExactLag
     SmoothForm.coe_mpullback]
   exact hL.mpullback_eq
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless]
+variable [CompleteSpace E] [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless]
 
-/-- **The Legendrian lift of an exact Lagrangian immersion.** If `ι : L → W` is an immersion from
-a nonempty manifold which is an exact Lagrangian map with primitive `h`, then
-`x ↦ (ι x, h x)` is a Legendrian immersion for the kernel of the contactization form `dz - θ`. -/
+/-- **The Legendrian lift of an exact Lagrangian immersion.** Let `σ = -dθ`. If `ι : L → W` is an
+immersion from a nonempty manifold which is an exact Lagrangian map with primitive `h`, then
+`x ↦ (ι x, h x)` is a Legendrian immersion for the contact structure `ker (dz - θ)`. -/
 theorem IsExactLagrangianMap.isLegendrianImmersion_contactization [Nonempty L]
-    (hL : hσ.IsExactLagrangianMap J θ ι h) (hι : Manifold.IsImmersion J I ∞ ι) :
+    (hθ : σ = -mextDerivₗ I 1 θ) (hL : hσ.IsExactLagrangianMap J θ ι h)
+    (hι : Manifold.IsImmersion J I ∞ ι) :
     IsLegendrianImmersion J θ.contactization.kerDistribution (fun x ↦ (ι x, h x)) where
+  isContactDistribution :=
+    -- The kernel of `dz - θ` is a `C¹` contact structure, which needs a `C²` manifold structure.
+    have : IsManifold (I.prod 𝓘(ℝ)) (1 + 1) (W × ℝ) := .of_le (n := ∞) (by norm_num)
+    (SmoothForm.isContactForm_contactization_iff.2 (hθ ▸ hσ)).isContactDistribution_kerDistribution
   isImmersion := hι.prodMk hL.contMDiff_primitive (by simp)
   isHorizontalMap := hL.isHorizontalMap_contactization hι.contMDiff
   two_mul_finrank_add_one := by
     rw [finrank_prod, finrank_self, hL.isLagrangianMap.two_mul_finrank
       (hι.mfderiv_injective (by simp) (Classical.arbitrary L))]
 
-/-- **The Legendrian lift of an exact Lagrangian embedding.** If `ι : L → W` is a smooth embedding
-of a nonempty manifold which is an exact Lagrangian map with primitive `h`, then
-`x ↦ (ι x, h x)` is a Legendrian embedding for the kernel of the contactization form `dz - θ`. -/
+/-- **The Legendrian lift of an exact Lagrangian embedding.** Let `σ = -dθ`. If `ι : L → W` is a
+smooth embedding of a nonempty manifold which is an exact Lagrangian map with primitive `h`, then
+`x ↦ (ι x, h x)` is a Legendrian embedding for the contact structure `ker (dz - θ)`. -/
 theorem IsExactLagrangianMap.isLegendrianEmbedding_contactization [Nonempty L]
-    (hL : hσ.IsExactLagrangianMap J θ ι h) (hι : Manifold.IsSmoothEmbedding J I ∞ ι) :
+    (hθ : σ = -mextDerivₗ I 1 θ) (hL : hσ.IsExactLagrangianMap J θ ι h)
+    (hι : Manifold.IsSmoothEmbedding J I ∞ ι) :
     IsLegendrianEmbedding J θ.contactization.kerDistribution (fun x ↦ (ι x, h x)) where
-  toIsLegendrianImmersion := hL.isLegendrianImmersion_contactization hι.isImmersion
+  toIsLegendrianImmersion := hL.isLegendrianImmersion_contactization hθ hι.isImmersion
   isEmbedding := .of_comp (hι.isImmersion.contMDiff.continuous.prodMk
     hL.contMDiff_primitive.continuous) continuous_fst hι.isEmbedding
 

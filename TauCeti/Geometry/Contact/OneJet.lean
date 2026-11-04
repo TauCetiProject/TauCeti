@@ -14,8 +14,9 @@ import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 
 Let `θ` be a one-form on a manifold `W`, and give `W × ℝ` the contactization form `dz - θ`
 (`TauCeti.SmoothForm.contactization`). For smooth maps `ι : L → W` and `h : L → ℝ`, the map
-`x ↦ (ι x, h x)` is horizontal, that is isotropic, for the contact distribution `ker (dz - θ)`
-exactly when `ι^* θ = dh` (`TauCeti.SmoothForm.isHorizontalMap_contactization_iff`, in
+`x ↦ (ι x, h x)` is horizontal for the distribution `ker (dz - θ)`, a contact structure when
+`-dθ` is nondegenerate, exactly when `ι^* θ = dh`
+(`TauCeti.SmoothForm.isHorizontalMap_contactization_iff`, in
 `TauCeti.Geometry.Contact.Contactization`).
 
 For the cotangent bundle `W = T*Q` with its Liouville form `λ`, the contactization `dz - λ` is the
@@ -72,7 +73,7 @@ theorem isHorizontalMap_contactization_liouvilleForm_iff (α : SmoothForm I M �
   rw [SmoothForm.isHorizontalMap_contactization_iff _ (SmoothForm.degreeOneEquiv α).contMDiff hg,
     mpullback_liouvilleForm]
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless]
+variable [CompleteSpace E] [FiniteDimensional ℝ E] [I.Boundaryless]
 
 /-- **One-jets of functions are Legendrian.** For a smooth function `g` on `M` with differential
 `α = dg`, the one-jet `j¹g : q ↦ (dg_q, g q)` is a Legendrian embedding of `M` into the one-jet
@@ -81,13 +82,16 @@ theorem isLegendrianEmbedding_contactization_liouvilleForm (α : SmoothForm I M 
     (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hα : α.1 = mextDeriv (RoughForm.ofFunction I g)) :
     IsLegendrianEmbedding I (liouvilleForm I M).contactization.kerDistribution
       (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  -- The kernel of `dz - λ` is a `C¹` contact structure, which needs a `C²` manifold structure.
+  have : IsManifold ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (1 + 1) (CotangentBundle I M × ℝ) :=
+    .of_le (n := ∞) (by norm_num)
   -- The base projection of `T*M × ℝ` is a smooth left inverse of the one-jet.
   have hemb := ((SmoothForm.degreeOneEquiv α).contMDiff.prodMk hg).isSmoothEmbedding_of_leftInverse
     (by simp) ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)).comp contMDiff_fst)
     (g := fun p ↦ p.1.proj) fun _ ↦ rfl
   refine (isLegendrianEmbedding_iff_of_isSmoothEmbedding hemb).2
-    ⟨hemb.isImmersion, (isHorizontalMap_contactization_liouvilleForm_iff α hg).2 hα, ?_⟩
+    ⟨isContactForm_contactization_liouvilleForm.isContactDistribution_kerDistribution,
+      hemb.isImmersion, (isHorizontalMap_contactization_liouvilleForm_iff α hg).2 hα, ?_⟩
   rw [finrank_prod, finrank_prod, finrank_self, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 /-- For a smooth function `g`, the section `q ↦ (α_q, g q)` of the one-jet space defined by a
