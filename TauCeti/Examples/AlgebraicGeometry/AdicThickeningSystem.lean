@@ -27,8 +27,9 @@ This file illustrates the definitions and sharpness of `AdicThickeningSystem`, `
   has thickenings for all transitions, yet fails the adic power equation `(ι 1).ker =
   (levelMap X ι 2).ker ^ 2`, since `(ι 1).ker = ⊥` while `(t)² = (t²) ≠ 0` in `k[t] ⧸ (t³)`.
 * `Spf.padicInt_points`: every level of `Spf ℤ_[p]` has a unique point.
-* `Spf.discreteEqSpec` and `ofSchemeSpf`: for an adic ring with zero ideal of definition,
-  `Spf A` is isomorphic to the constant system `Spec A`.
+* `Spf.isoOfIdealEqBot` and `Spf.ofScheme`: for an adic ring with zero ideal of definition,
+  `Spf A` is isomorphic to the constant system `Spec A`, and any commutative ring viewed as a
+  constant system is `Spf` with the zero ideal.
 * `Spf.not_spec_powerSeries`: every level of `Spf k⟦t⟧` has `1` point whereas `Spec k⟦t⟧` has `2`
   points (generic and closed), so `Spf k⟦t⟧` is not isomorphic to the constant system `Spec k⟦t⟧`.
 * `Spf.homEquivPadic`: every ring endomorphism of `ℤ_[p]` is the identity, so `Spf ℤ_[p]` has a
@@ -134,13 +135,13 @@ theorem Spf.padicInt_points (p : ℕ) [Fact p.Prime] (n : ℕ) :
 
 /-- When the ideal of definition of an adic ring `A` is zero, `Spf A` is isomorphic to the constant
 system associated to `Spec A`. -/
-noncomputable def Spf.discreteEqSpec (A : AdicRing.{u}) (h : A.ideal = ⊥) :
+noncomputable example (A : AdicRing.{u}) (h : A.ideal = ⊥) :
     Spf A ≅ AdicThickeningSystem.ofScheme.obj (Spec (.of A.carrier)) :=
   Spf.isoOfIdealEqBot A h
 
 /-- A commutative ring viewed as a constant adic thickening system is isomorphic to `Spf` with the
 zero ideal of definition. -/
-noncomputable def ofSchemeSpf (R : Type u) [CommRing R] :
+noncomputable example (R : Type u) [CommRing R] :
     AdicThickeningSystem.ofScheme.obj (Spec (.of R)) ≅ Spf (AdicRing.ofBot R) :=
   (Spf.ofScheme R).symm
 
