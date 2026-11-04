@@ -205,10 +205,7 @@ theorem MulAction.card_orbitRelQuotient_anti {H K : Subgroup G} (hHK : H ≤ K)
     Nat.card (MulAction.orbitRel.Quotient K X) ≤
       Nat.card (MulAction.orbitRel.Quotient H X) := by
   let f := Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-  apply Nat.card_le_card_of_surjective f
-  intro q
-  induction q using Quotient.inductionOn'
-  exact ⟨Quotient.mk'' _, rfl⟩
+  exact Nat.card_le_card_of_surjective f (Setoid.map_of_le_surjective _)
 
 /-- The map from the bottom-subgroup quotient to the `H`-quotient is the `H`-orbit class map
 under the bottom quotient equivalence. -/
@@ -770,6 +767,9 @@ variable {Y Z : Type*}
 
 /-- **Descent of an invariant map to the orbit space.** A map `f : X → Y` that is invariant under
 the action of `G` factors through the orbit projection `X → MulAction.orbitRel.Quotient G X`. -/
+@[to_additive AddAction.orbitRelQuotientLift
+  /-- **Descent of an invariant map to the orbit space.** A map invariant under an additive group
+action factors through the orbit projection. -/]
 def MulAction.orbitRelQuotientLift (f : X → Y) (hf : ∀ (g : G) (x : X), f (g • x) = f x) :
     MulAction.orbitRel.Quotient G X → Y :=
   Quotient.lift f <| by
@@ -779,19 +779,24 @@ def MulAction.orbitRelQuotientLift (f : X → Y) (hf : ∀ (g : G) (x : X), f (g
 variable {f : X → Y} {hf : ∀ (g : G) (x : X), f (g • x) = f x}
 
 /-- The descent of `f` sends the orbit of `x` to `f x`. -/
-@[simp]
+@[to_additive (attr := simp) AddAction.orbitRelQuotientLift_mk
+  /-- The descent of `f` sends the orbit of `x` to `f x`. -/]
 theorem MulAction.orbitRelQuotientLift_mk (x : X) :
     MulAction.orbitRelQuotientLift f hf (Quotient.mk (MulAction.orbitRel G X) x) = f x :=
   (rfl)
 
 /-- The descent of `f` composed with the orbit projection is `f`. -/
-@[simp]
+@[to_additive (attr := simp) AddAction.orbitRelQuotientLift_comp_mk
+  /-- The descent of `f` composed with the orbit projection is `f`. -/]
 theorem MulAction.orbitRelQuotientLift_comp_mk :
     MulAction.orbitRelQuotientLift f hf ∘ Quotient.mk (MulAction.orbitRel G X) = f :=
   (rfl)
 
 /-- **Uniqueness of the descent**: a map out of the orbit space is the descent of `f` exactly when
 its composite with the orbit projection is `f`. -/
+@[to_additive AddAction.eq_orbitRelQuotientLift_iff
+  /-- **Uniqueness of the descent**: a map out of the orbit space is the descent of `f` exactly
+when its composite with the orbit projection is `f`. -/]
 theorem MulAction.eq_orbitRelQuotientLift_iff {φ : MulAction.orbitRel.Quotient G X → Y} :
     φ = MulAction.orbitRelQuotientLift f hf ↔ φ ∘ Quotient.mk (MulAction.orbitRel G X) = f := by
   refine ⟨fun h ↦ h ▸ MulAction.orbitRelQuotientLift_comp_mk, fun h ↦ funext fun q ↦ ?_⟩

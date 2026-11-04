@@ -124,7 +124,7 @@ private theorem reflectionWord_restrict_apply (Q : QuadraticForm K V)
   | nil => simp [reflectionWord]
   | cons x l ih =>
       simp only [List.map_cons, reflectionWord, List.prod_cons, Subgroup.coe_mul,
-        LinearEquiv.mul_apply]
+        mul_apply_eq_comp]
       -- Multiplication in the orthogonal subgroup evaluates by composing the underlying linear
       -- equivalences; make that coercion explicit before applying the pointwise induction step.
       change ((anisotropicReflection Q (anisotropicVectorOfRestrict Q U x) :
@@ -448,7 +448,7 @@ private theorem exists_reflectionWord_of_finrank_eq
     (g : QuadraticMap.orthogonalGroup Q) :
     ∃ l : List (AnisotropicVector Q), l.length ≤ n ∧ reflectionWord Q l = g := by
   induction n using Nat.strong_induction_on generalizing V with
-  | h n ih =>
+  | ind n ih =>
       let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
       have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
       have hBsymm : B.IsSymm := by
@@ -523,7 +523,7 @@ private theorem exists_reflectionWord_of_finrank_eq
           | nil => simp [reflectionWord]
           | cons z l ihl =>
               simp only [List.map_cons, reflectionWord, List.prod_cons,
-                Subgroup.coe_mul, LinearEquiv.mul_apply]
+                Subgroup.coe_mul, mul_apply_eq_comp]
               -- Expose subgroup multiplication as composition of the underlying equivalences;
               -- simplification does not cross both the subgroup and subtype coercions here.
               change ((anisotropicReflection Q (lift z) :

@@ -32,6 +32,9 @@ none of the further theory built on it.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
+* `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
+  `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
+  conjugates the indices of the coefficients.
 
 ## References
 
@@ -182,5 +185,26 @@ instance instHasUniqueDiv [HasUniqueDiv R] : HasUniqueDiv (MonoidAlgebra R M) :=
     coeffAddEquiv.injective
 
 end TorsionFree
+
+/-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
+noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=
+  Units.map (of R G) (toUnits g)
+
+@[simp]
+theorem coe_singleOneUnit (g : G) :
+    ((singleOneUnit (R := R) g : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) = single g 1 := by
+  rfl
+
+@[simp]
+theorem coe_inv_singleOneUnit (g : G) :
+    (((singleOneUnit (R := R) g)⁻¹ : (MonoidAlgebra R G)ˣ) : MonoidAlgebra R G) =
+      single g⁻¹ 1 := by
+  rfl
+
+/-- Conjugating by a basis element conjugates the indices of the coefficients:
+`(g x g⁻¹)_h = x_{g⁻¹ h g}`. -/
+theorem coeff_single_mul_mul_single_inv (g h : G) (x : MonoidAlgebra R G) :
+    (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
+  simp [mul_assoc]
 
 end MonoidAlgebra

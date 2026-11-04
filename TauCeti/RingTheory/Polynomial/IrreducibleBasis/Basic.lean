@@ -220,7 +220,7 @@ theorem exists_eq_C_mul_prod_irreducible (f : D[X]) :
   classical
   let := Classical.arbitrary (NormalizedGCDMonoid D)
   induction hn : f.natDegree using Nat.strong_induction_on generalizing f with
-  | h n ih =>
+  | ind n ih =>
     by_cases hf : f.natDegree = 0
     · exact ⟨f.coeff 0, 0, by simp, by simpa using eq_C_of_natDegree_eq_zero hf⟩
     have hp := f.isPrimitive_primPart

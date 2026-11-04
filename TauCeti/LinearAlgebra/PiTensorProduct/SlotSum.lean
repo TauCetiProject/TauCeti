@@ -42,9 +42,9 @@ that every element of `M` is its own additive inverse, which holds over a ring o
 cochains regarded over `ℤ`. A tensor power with at least one factor then inherits the property
 (`PiTensorProduct.add_self_eq_zero`), so terms appearing twice cancel.
 
-A contraction also passes to the tensor power. If `h` is a homotopy with `d h + h d = 1 - e`, where
-`e` commutes with `d` (typically `e = ι ∘ π` for an augmentation `ι` and a retraction `π`), then for
-a linear order on `ι` the **slot homotopy**
+Contractions also pass to a tensor product of a dependent family. If each `h i` is a homotopy
+with `d i * h i + h i * d i = 1 - e i`, where `e i` commutes with `d i` (typically the composite
+of an augmentation and a retraction), then for a linear order on `ι` the **slot homotopy**
 
 ```text
 H = ∑ i, e ⊗ ⋯ ⊗ e ⊗ h ⊗ 1 ⊗ ⋯ ⊗ 1        (`e` before the slot `i`, `h` at `i`, `1` after it)
@@ -54,16 +54,19 @@ satisfies `D H + H D = 1 - e ⊗ ⋯ ⊗ e` (`TauCeti.PiTensorProduct.slotSum_co
 cross terms appear twice and cancel, and the diagonal terms telescope. This is the sign-free,
 characteristic-two form of the tensor trick, whose Koszul-signed version on words of every length
 is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The homotopy depends on
-the ordering, but it need not be equivariant for anything.
+the ordering, but it need not be equivariant for anything. Like the slot sum, it is natural in
+factorwise maps intertwining the data `e` and `h` (`TauCeti.PiTensorProduct.slotHomotopy_comp_map`).
+Dependent factors arise when tensor induction is regrouped by double cosets: each orbit contributes
+its own tensor-induced resolution.
 
 Finally, gradings `ℳ i` of the factors `M i` induce the total-degree grading of `⨂[R] i, M i`
 (`TauCeti.PiTensorProduct.totalDegreePiece`), spanned by pure tensors of homogeneous factors whose
 degrees add up to the given degree. Factorwise maps of degrees `a i` shift total degree by
 `∑ i, a i`, while the slot sum of a family `f i` of common degree `a` shifts total degree by `a`.
-For a constant family, the slot homotopy shifts total degree by the degree of `h`. For a grading
-without negative pieces, the tensor power of a retraction vanishing in positive degrees vanishes
-in positive total degree, while the slot homotopy of a homotopy vanishing in degree zero vanishes
-in total degree zero.
+When all the `h i` have the same degree, the slot homotopy shifts total degree by that degree.
+For a grading without negative pieces, the tensor product of retractions vanishing in positive
+degrees vanishes in positive total degree. The slot homotopy of homotopies vanishing in degree
+zero vanishes in total degree zero.
 
 These are the data with which a tensor power of the total coinduced resolution, with its
 contraction by evaluation at `1`, is again a contracted resolution: the input of Evens'
@@ -82,8 +85,9 @@ representing cocycle in the tensor-induced resolution.
 
 * `TauCeti.PiTensorProduct.slotSum_comp_slotSum`: if every element of each `M i` is its own
   additive inverse, the slot sum of a family of square-zero endomorphisms `f i` squares to zero.
-* `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of `M` is its own
-  additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
+* `TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`: if every element of each factor is its
+  own additive inverse, the slot homotopy contracts the tensor product,
+  `D H + H D = 1 - ⨂ i, e i`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
 * `TauCeti.PiTensorProduct.subsingletonEquiv_slotSum` and
@@ -319,6 +323,32 @@ theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
     ← σ.symm.sum_comp p]
   exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
+/-- Reindexing a tensor product detects as well as preserves total degree. -/
+@[simp]
+theorem reindex_mem_totalDegreePiece_iff [Fintype κ]
+    (ℳ : ∀ i, A → Submodule R (M i)) (σ : ι ≃ κ) (n : A) (z : ⨂[R] i, M i) :
+    PiTensorProduct.reindex R M σ z ∈ totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
+      z ∈ totalDegreePiece ι ℳ n := by
+  constructor
+  · intro hz
+    have h : totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ≤
+        (totalDegreePiece ι ℳ n).comap (PiTensorProduct.reindex R M σ).symm.toLinearMap := by
+      refine totalDegreePiece_le_iff.2 ?_
+      intro p m hm hp
+      obtain ⟨m, rfl⟩ := (Equiv.piCongrLeft' M σ).surjective m
+      rw [funext (Equiv.piCongrLeft'_apply M σ m)] at hm ⊢
+      simp only [Submodule.mem_comap, LinearEquiv.coe_coe,
+        PiTensorProduct.reindex_symm_tprod]
+      rw [← hp, ← σ.sum_comp p]
+      apply tprod_mem_totalDegreePiece
+      intro i
+      obtain ⟨j, rfl⟩ := σ.symm.surjective i
+      simpa only [σ.apply_symm_apply] using hm j
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply] using h hz
+  · intro hz
+    simpa only [LinearEquiv.coe_coe, add_zero] using (isHomogeneous_reindex σ).map_mem hz
+
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
 theorem isHomogeneous_map_update [DecidableEq ι]
@@ -387,23 +417,27 @@ end Grading
 section SlotHomotopy
 
 variable [Fintype ι] [LinearOrder ι]
+  {M : ι → Type uM} {N : ι → Type uN}
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
 
 variable (ι) in
-/-- The **slot homotopy** of a homotopy `h` relative to an endomorphism `e`, for a linear order on
-the index type: the sum over the slots `i` of the tensor map applying `e` in the factors before
-`i`, `h` in the factor `i` and the identity after it. When `d h + h d = 1 - e` and `e` commutes
-with `d`, it contracts the tensor power in characteristic two
+/-- The **slot homotopy** of a family of homotopies `h` relative to endomorphisms `e`, for a linear
+order on the index type: the sum over the slots `i` of the tensor map applying `e j` in the factors
+`j < i`, `h i` in the factor `i` and the identity after it. When `d h + h d = 1 - e` and `e`
+commutes with `d` in every factor, it contracts the tensor product in characteristic two
 (`TauCeti.PiTensorProduct.slotSum_comp_slotHomotopy_add`). -/
-noncomputable def slotHomotopy (e h : Module.End R M) : Module.End R (⨂[R] _ : ι, M) :=
-  ∑ i, PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h)
+noncomputable def slotHomotopy (e h : ∀ i, Module.End R (M i)) :
+    Module.End R (⨂[R] i, M i) :=
+  ∑ i, PiTensorProduct.map (update (fun j ↦ if j < i then e j else LinearMap.id) i (h i))
 
 /-- On a pure tensor, the slot homotopy applies `e` before the slot, `h` at it and the identity
 after it. -/
 @[simp]
-theorem slotHomotopy_tprod (e h : Module.End R M) (m : ι → M) :
+theorem slotHomotopy_tprod (e h : ∀ i, Module.End R (M i)) (m : ∀ i, M i) :
     slotHomotopy ι e h (PiTensorProduct.tprod R m) =
       ∑ i, PiTensorProduct.tprod R
-        (update (fun j ↦ if j < i then e (m j) else m j) i (h (m i))) := by
+        (update (fun j ↦ if j < i then e j (m j) else m j) i (h i (m i))) := by
   simp only [slotHomotopy, LinearMap.sum_apply, PiTensorProduct.map_tprod]
   refine Finset.sum_congr rfl fun i _ ↦ congrArg _ (funext fun j ↦ ?_)
   rcases eq_or_ne j i with rfl | hj
@@ -411,26 +445,46 @@ theorem slotHomotopy_tprod (e h : Module.End R M) (m : ι → M) :
   · simp only [update_of_ne hj]
     split_ifs <;> rfl
 
-variable [AddCommMonoid A] {ℳ : A → Submodule R M}
+/-- **Naturality of the slot homotopy**: a family of factorwise maps intertwining `e'` with `e`
+and `h'` with `h` intertwines their slot homotopies. -/
+theorem slotHomotopy_comp_map {e h : ∀ i, Module.End R (M i)} {e' h' : ∀ i, Module.End R (N i)}
+    (g : ∀ i, N i →ₗ[R] M i) (he : ∀ i, e i ∘ₗ g i = g i ∘ₗ e' i)
+    (hh : ∀ i, h i ∘ₗ g i = g i ∘ₗ h' i) :
+    slotHomotopy ι e h ∘ₗ PiTensorProduct.map g =
+      PiTensorProduct.map g ∘ₗ slotHomotopy ι e' h' := by
+  ext m
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, PiTensorProduct.map_tprod,
+    slotHomotopy_tprod, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ (funext fun j ↦ ?_)
+  rcases eq_or_ne j i with rfl | hj
+  · simpa using LinearMap.congr_fun (hh j) (m j)
+  · simp only [update_of_ne hj]
+    split_ifs
+    · exact LinearMap.congr_fun (he j) (m j)
+    · rfl
 
-/-- The slot homotopy of a homotopy of degree `a`, relative to an endomorphism of degree zero,
-shifts the total degree by `a`. -/
-theorem isHomogeneous_slotHomotopy {e h : Module.End R M} {a : A}
-    (he : LinearMap.IsHomogeneous e ℳ ℳ 0) (hh : LinearMap.IsHomogeneous h ℳ ℳ a) :
-    LinearMap.IsHomogeneous (slotHomotopy ι e h) (totalDegreePiece ι (fun _ ↦ ℳ))
-      (totalDegreePiece ι (fun _ ↦ ℳ)) a :=
+variable [AddCommMonoid A] {ℳ : ∀ i, A → Submodule R (M i)}
+
+/-- A family of homotopies of common degree `a`, relative to endomorphisms of degree zero,
+gives a slot homotopy shifting the total degree by `a`. -/
+theorem isHomogeneous_slotHomotopy {e h : ∀ i, Module.End R (M i)} {a : A}
+    (he : ∀ i, LinearMap.IsHomogeneous (e i) (ℳ i) (ℳ i) 0)
+    (hh : ∀ i, LinearMap.IsHomogeneous (h i) (ℳ i) (ℳ i) a) :
+    LinearMap.IsHomogeneous (slotHomotopy ι e h) (totalDegreePiece ι ℳ)
+      (totalDegreePiece ι ℳ) a :=
   Finset.sum_induction _ (LinearMap.IsHomogeneous · _ _ a) (fun _ _ ↦ .add)
     (LinearMap.isHomogeneous_zero _ _ _) fun i _ ↦
       isHomogeneous_map_update i (fun j _ ↦ by
         split_ifs
-        exacts [he, LinearMap.isHomogeneous_id ℳ]) hh
+        exacts [he j, LinearMap.isHomogeneous_id (ℳ j)]) (hh i)
 
 /-- For a grading without negative pieces, the slot homotopy of a homotopy vanishing in degree
 zero vanishes in total degree zero: a pure tensor of homogeneous factors of total degree zero has
 all its factors in degree zero. -/
 theorem slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero [LinearOrder A] [IsOrderedAddMonoid A]
-    {e h : Module.End R M} (hneg : ∀ p < 0, ℳ p = ⊥) (hh : ∀ v ∈ ℳ 0, h v = 0)
-    {v : ⨂[R] _ : ι, M} (hv : v ∈ totalDegreePiece ι (fun _ ↦ ℳ) 0) : slotHomotopy ι e h v = 0 := by
+    {e h : ∀ i, Module.End R (M i)} (hneg : ∀ i p, p < 0 → ℳ i p = ⊥)
+    (hh : ∀ i v, v ∈ ℳ i 0 → h i v = 0)
+    {v : ⨂[R] i, M i} (hv : v ∈ totalDegreePiece ι ℳ 0) : slotHomotopy ι e h v = 0 := by
   refine (totalDegreePiece_le_iff (P := LinearMap.ker (slotHomotopy ι e h)).2 ?_) hv
   rintro p m hm hp
   rw [LinearMap.mem_ker]
@@ -440,10 +494,10 @@ theorem slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero [LinearOrder A] [IsOrd
     rw [slotHomotopy_tprod]
     refine Finset.sum_eq_zero fun i _ ↦ (PiTensorProduct.tprod R).map_coord_zero i ?_
     rw [update_self]
-    exact hh _ (hp0 i ▸ hm i)
+    exact hh i _ (hp0 i ▸ hm i)
   · obtain ⟨j, hj⟩ := not_forall.1 hpos
     rw [not_le] at hj
-    have hmj : m j = 0 := by simpa [hneg _ hj] using hm j
+    have hmj : m j = 0 := by simpa [hneg j _ hj] using hm j
     rw [(PiTensorProduct.tprod R).map_coord_zero j hmj, map_zero]
 
 end SlotHomotopy
@@ -452,56 +506,61 @@ end Semiring
 
 section Ring
 
-variable [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [LinearOrder ι]
+variable [CommRing R] {M : ι → Type uM} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+  [Fintype ι] [LinearOrder ι]
 
 omit [Fintype ι] in
 /-- Off the diagonal, applying `d` in the slot `k` commutes with the summand of the slot homotopy
-at another slot `i`, since `d` commutes with `e`; so when every element of `M` is its own additive
-inverse the two composites cancel. -/
-private theorem slotSum_slotHomotopy_cross (hM : ∀ m : M, m + m = 0) {d e h : Module.End R M}
-    (hde : d ∘ₗ e = e ∘ₗ d) {i k : ι} (hki : k ≠ i) :
-    PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k d) *
-        PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) +
-      PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) *
-        PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k d) = 0 := by
+at another slot `i`, since `d` commutes with `e` in every factor; so in characteristic two the two
+composites cancel. -/
+private theorem slotSum_slotHomotopy_cross (hM : ∀ i (m : M i), m + m = 0)
+    {d e h : ∀ i, Module.End R (M i)} (hde : ∀ i, d i ∘ₗ e i = e i ∘ₗ d i)
+    {i k : ι} (hki : k ≠ i) :
+    PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k (d k)) *
+        PiTensorProduct.map (update (fun j ↦ if j < i then e j else LinearMap.id) i (h i)) +
+      PiTensorProduct.map (update (fun j ↦ if j < i then e j else LinearMap.id) i (h i)) *
+        PiTensorProduct.map (update (fun _ ↦ LinearMap.id) k (d k)) = 0 := by
   rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul]
   refine (congrArg (· + _) (congrArg PiTensorProduct.map (funext fun j ↦ ?_))).trans
-    (LinearMap.ext fun x ↦ have : Nonempty ι := ⟨i⟩; PiTensorProduct.add_self_eq_zero _ hM)
+    (LinearMap.ext fun x ↦ PiTensorProduct.add_self_eq_zero _ i (hM i))
   rcases eq_or_ne j k with rfl | hjk
   · simp only [update_self, update_of_ne hki]
     split_ifs
-    · exact hde
+    · exact hde _
     · simp [Module.End.mul_eq_comp]
   · rcases eq_or_ne j i with rfl | hji <;> simp [*, Module.End.mul_eq_comp]
 
 omit [Fintype ι] in
 /-- On the diagonal, applying `d` and the summand of the slot homotopy at the same slot `i` in
 both orders replaces `h` in the slot `i` by `d h + h d = 1 - e`: one step of the telescope. -/
-private theorem slotSum_slotHomotopy_diag {d e h : Module.End R M}
-    (hdh : d ∘ₗ h + h ∘ₗ d = LinearMap.id - e) (i : ι) :
-    PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i d) *
-        PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) +
-      PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i h) *
-        PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i d) =
-      PiTensorProduct.map (update (fun j ↦ if j < i then e else LinearMap.id) i
-        (LinearMap.id - e)) := by
+private theorem slotSum_slotHomotopy_diag {d e h : ∀ i, Module.End R (M i)}
+    (hdh : ∀ i, d i ∘ₗ h i + h i ∘ₗ d i = LinearMap.id - e i) (i : ι) :
+    PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i (d i)) *
+        PiTensorProduct.map (update (fun j ↦ if j < i then e j else LinearMap.id) i (h i)) +
+      PiTensorProduct.map (update (fun j ↦ if j < i then e j else LinearMap.id) i (h i)) *
+        PiTensorProduct.map (update (fun _ ↦ LinearMap.id) i (d i)) =
+      PiTensorProduct.map (update (fun j ↦ if j < i then e j else LinearMap.id) i
+        (LinearMap.id - e i)) := by
   rw [← PiTensorProduct.map_mul, ← PiTensorProduct.map_mul,
     map_add_map_eq_map_update _ _ i fun j hj ↦ by simp [hj, Module.End.mul_eq_comp]]
   congr 1
   funext j
   rcases eq_or_ne j i with rfl | hj
-  · simpa [Module.End.mul_eq_comp] using hdh
+  · simpa [Module.End.mul_eq_comp] using hdh j
   · simp [hj, Module.End.mul_eq_comp]
 
-/-- In characteristic two, **the slot homotopy contracts the tensor power**: if `h` is a homotopy
-from the identity to an endomorphism `e` commuting with `d`, in the sense `d h + h d = 1 - e`,
-then `D H + H D = 1 - e ⊗ ⋯ ⊗ e` for the slot sum `D` of `d` and the slot homotopy `H`.
-Characteristic two is asked only of `M`: every element of `M` is its own additive inverse. -/
-theorem slotSum_comp_slotHomotopy_add (hM : ∀ m : M, m + m = 0) {d e h : Module.End R M}
-    (hde : d ∘ₗ e = e ∘ₗ d) (hdh : d ∘ₗ h + h ∘ₗ d = LinearMap.id - e) :
-    slotSum ι (fun _ ↦ d) ∘ₗ slotHomotopy ι e h +
-      slotHomotopy ι e h ∘ₗ slotSum ι (fun _ ↦ d) =
-      LinearMap.id - PiTensorProduct.map fun _ ↦ e := by
+/-- In characteristic two, **the slot homotopy contracts the tensor product**: if each `h i` is a
+homotopy from the identity to an endomorphism `e i` commuting with `d i`, in the sense
+`d i * h i + h i * d i = 1 - e i`, then `D H + H D = 1 - ⨂ i, e i` for the slot sum `D` of `d`
+and the slot homotopy `H`.
+Characteristic two is asked only of the factors: every element of each `M i` is its own additive
+inverse. The family may be empty; then the differential and homotopy are zero and the tensor of
+the endomorphisms is the identity. -/
+theorem slotSum_comp_slotHomotopy_add (hM : ∀ i (m : M i), m + m = 0)
+    {d e h : ∀ i, Module.End R (M i)} (hde : ∀ i, d i ∘ₗ e i = e i ∘ₗ d i)
+    (hdh : ∀ i, d i ∘ₗ h i + h i ∘ₗ d i = LinearMap.id - e i) :
+    slotSum ι d ∘ₗ slotHomotopy ι e h + slotHomotopy ι e h ∘ₗ slotSum ι d =
+      LinearMap.id - PiTensorProduct.map e := by
   -- Expanding both products, the cross terms cancel and the diagonal terms telescope.
   rw [slotSum, slotHomotopy, ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp,
     Finset.sum_mul_sum, Finset.sum_mul_sum, Finset.sum_comm (s := Finset.univ) (t := Finset.univ),
@@ -510,13 +569,13 @@ theorem slotSum_comp_slotHomotopy_add (hM : ∀ m : M, m + m = 0) {d e h : Modul
     (Finset.sum_eq_single i (fun k _ hki ↦ slotSum_slotHomotopy_cross hM hde hki) (by simp))).trans
       (slotSum_slotHomotopy_diag hdh i)]
   -- The telescope of the diagonal terms, with `e` before the slot and the identity after it.
-  have htel := (PiTensorProduct.mapMultilinear R (fun _ : ι ↦ M) (fun _ ↦ M)).map_sub_map_piecewise
-    (fun _ ↦ e) (fun _ ↦ LinearMap.id) Finset.univ
+  have htel := (PiTensorProduct.mapMultilinear R M M).map_sub_map_piecewise
+    e (fun _ ↦ LinearMap.id) Finset.univ
   simp only [Finset.piecewise_univ, PiTensorProduct.mapMultilinear_apply, PiTensorProduct.map_id,
     Finset.mem_univ, forall_const] at htel
-  rw [← neg_sub (PiTensorProduct.map fun _ ↦ e), htel, ← Finset.sum_neg_distrib]
+  rw [← neg_sub (PiTensorProduct.map e), htel, ← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← neg_sub e, ← PiTensorProduct.mapMultilinear_apply, MultilinearMap.map_update_neg,
+  rw [← neg_sub (e i), ← PiTensorProduct.mapMultilinear_apply, MultilinearMap.map_update_neg,
     PiTensorProduct.mapMultilinear_apply]
   congr 2
   funext j

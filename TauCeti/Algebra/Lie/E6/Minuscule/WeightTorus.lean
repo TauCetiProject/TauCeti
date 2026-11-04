@@ -165,10 +165,10 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, _root_.CommHopfAlgCat.hom_comp, hcomp]
-  have h := GeneralLinear.pointsMulEquiv_mapDomain_weightTorusCoordinateBialgHom
+  have h := GeneralLinear.pointsMulEquiv_comp_weightTorusCoordinateBialgHom
     weightTable.weight A q
   apply Units.ext
-  simpa only [BialgHom.mapDomain_apply, coe_weightTorusPoints,
+  simpa only [coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe] using
     congrArg (fun g : GL (Fin 27) A ↦ (g : Matrix (Fin 27) (Fin 27) A)) h
 

@@ -73,8 +73,7 @@ theorem pointsMulEquiv_mapPointsFunctor_geckGeneratedWeightTorusCoordinateMap
   rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, _root_.CommHopfAlgCat.hom_comp,
     hom_geckGeneratedWeightTorusCoordinateMap_comp]
-  simpa only [BialgHom.mapDomain_apply] using
-    GeneralLinear.pointsMulEquiv_mapDomain_weightTorusCoordinateBialgHom (t.geckWeightFin ht) A q
+  exact GeneralLinear.pointsMulEquiv_comp_weightTorusCoordinateBialgHom (t.geckWeightFin ht) A q
 
 variable (hwt : Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤)
 
