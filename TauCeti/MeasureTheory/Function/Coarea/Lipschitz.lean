@@ -96,17 +96,6 @@ public section
 open Filter Function MeasureTheory Measure Metric Module Set
 open scoped ENNReal NNReal Topology
 
-/-- Integrating `μHE[k] (g y)` pulls out the Euclidean normalization scalar factor in front of
-`∫⁻ y, μH[(k : ℝ)] (g y)`. -/
-private theorem lintegral_euclideanHausdorffMeasure {α X : Type*} [MeasurableSpace α]
-    [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] (μ : Measure α) (k : ℕ) (g : α → Set X) :
-    ∫⁻ y, μHE[k] (g y) ∂μ =
-      (addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin k))) μH[(k : ℝ)] : ℝ≥0∞) *
-        ∫⁻ y, μH[(k : ℝ)] (g y) ∂μ := by
-  rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-  refine lintegral_congr fun y ↦ ?_
-  rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
-
 namespace TauCeti
 
 /-- The linear model `(v, u) ↦ A v + ε • u` on `WithLp 2 (E × F)` of the derivative of
@@ -241,7 +230,7 @@ private theorem mul_lintegral_hausdorffMeasure_le_setLIntegral_coareaPerturbDeri
         exact hfib y
     _ = volume B * ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ⁻¹' {y}) := by
         rw [lintegral_const_mul' _ _ measure_ball_lt_top.ne,
-          lintegral_euclideanHausdorffMeasure volume (finrank ℝ E), mul_left_comm]
+          lintegral_euclideanHausdorffMeasure (finrank ℝ E), mul_left_comm]
     _ = volume B * ∫⁻ w in S,
           ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
         rw [hco]
@@ -626,7 +615,7 @@ theorem integrableOn_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
       rw [hdim, ← euclideanHausdorffMeasure_lt_top_iff,
         InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
       exact ht_fin
-    rw [lintegral_euclideanHausdorffMeasure]
+    rw [TauCeti.lintegral_euclideanHausdorffMeasure]
     refine ENNReal.mul_ne_top ENNReal.coe_ne_top ?_
     refine ((hf.mono inter_subset_right).lintegral_hausdorffMeasure_inter_preimage_le volume
       k.cast_nonneg).trans_lt ?_ |>.ne

@@ -17,10 +17,12 @@ The coarea formula integrates the Hausdorff measures `y ↦ μH[t] (A ∩ f ⁻�
 a map `f`. This file shows that this integrand is measurable, so that the formula is an identity
 between genuine integrals, and so that it can be summed over a countable partition of `A`.
 
-Fiber measures on compact and σ-compact sets are Borel measurable by
-`IsCompact.measurable_hausdorffMeasure_inter_preimage` and
-`IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage` in
-`TauCeti.MeasureTheory.Measure.Hausdorff`. This file extends them to measurable sets.
+Fiber measures on compact and σ-compact sets (and on sets σ-compact up to a fiberwise-null
+remainder) are measurable by `IsCompact.measurable_hausdorffMeasure_inter_preimage`,
+`IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage`, and
+`TauCeti.aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero` in
+`TauCeti.MeasureTheory.Measure.Hausdorff`. This file extends them to measurable sets via
+Eilenberg's inequality.
 
 If `f` is Lipschitz (or, in a second-countable domain, locally Lipschitz) on `A` with values in a
 finite-dimensional real normed space with additive Haar measure `μ`, and `A` is σ-compact up to a
@@ -57,20 +59,8 @@ variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 section FiberMeasurability
 
-variable [NormedAddCommGroup Y] [MeasurableSpace Y] [BorelSpace Y] (μ : Measure Y) {K : ℝ≥0} {t : ℝ}
-
-/-- If `f` is continuous on a σ-compact subset `S ⊆ A` and almost every fiber of `A \ S` is
-`μH[t]`-null, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. -/
-private theorem aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero {f : X → Y}
-    {A S : Set X} (hSA : S ⊆ A) (hS : IsSigmaCompact S) (hf : ContinuousOn f S)
-    (hnull : ∀ᵐ y ∂μ, μH[t] ((A \ S) ∩ f ⁻¹' {y}) = 0) :
-    AEMeasurable (fun y ↦ μH[t] (A ∩ f ⁻¹' {y})) μ := by
-  refine (hS.measurable_hausdorffMeasure_inter_preimage hf t).aemeasurable.congr ?_
-  filter_upwards [hnull] with y hy
-  exact measure_eq_measure_of_null_sdiff (inter_subset_inter_left _ hSA)
-    (by rwa [← inter_sdiff_distrib_right])
-
-variable [NormedSpace ℝ Y] [FiniteDimensional ℝ Y] [μ.IsAddHaarMeasure]
+variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y] [MeasurableSpace Y]
+  [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure] {K : ℝ≥0} {t : ℝ}
 
 /-- **Fiber measures of a Lipschitz map are almost everywhere measurable.** Let `f` be Lipschitz
 on `A`, with values in an `m`-dimensional real normed space with additive Haar measure `μ`, and
@@ -80,7 +70,8 @@ theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → 
     (hf : LipschitzOnWith K f A) (ht : 0 ≤ t) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
     (hAS : μH[finrank ℝ Y + t] (A \ S) = 0) :
     AEMeasurable (fun y ↦ μH[t] (A ∩ f ⁻¹' {y})) μ :=
-  aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero μ hSA hS (hf.continuousOn.mono hSA)
+  TauCeti.aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero hSA hS
+    (hf.continuousOn.mono hSA)
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht hAS)
 
 /-- **Fiber measures of a locally Lipschitz map on a second-countable domain are almost everywhere
@@ -94,7 +85,8 @@ theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
     (hf : LocallyLipschitzOn A f) (ht : 0 ≤ t) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
     (hAS : μH[finrank ℝ Y + t] (A \ S) = 0) :
     AEMeasurable (fun y ↦ μH[t] (A ∩ f ⁻¹' {y})) μ :=
-  aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero μ hSA hS (hf.continuousOn.mono hSA)
+  TauCeti.aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero hSA hS
+    (hf.continuousOn.mono hSA)
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ ht hAS)
 
 /-- **Normalized fiber measures of a locally Lipschitz map on a Lebesgue measurable set are almost
