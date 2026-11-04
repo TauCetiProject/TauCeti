@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.RCLike.Lemmas
-public import TauCeti.Analysis.InnerProductSpace.Contraction
 public import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
