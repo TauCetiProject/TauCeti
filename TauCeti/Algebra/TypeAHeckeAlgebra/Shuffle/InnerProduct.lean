@@ -105,6 +105,8 @@ theorem continuous_shuffleHilbertRep (hρ : ∀ i, Continuous (ρ (T q i)))
   | mem x hx =>
     obtain ⟨i, rfl⟩ := hx
     classical
+    -- Expose the conjugation defining shuffleHilbertRep as toLp ∘ shuffleRep ∘ ofLp
+    -- so continuous_toLp applies; the coordinate lemma alone does not rewrite this map.
     change Continuous (fun f => WithLp.toLp 2 (shuffleRep k ρ (T q i) (WithLp.ofLp f)))
     apply (PiLp.continuous_toLp 2 _).comp
     apply continuous_pi
@@ -172,11 +174,14 @@ theorem piLpCongrRight_shuffleHilbertRep (e : U ≃ₗᵢ[𝕜] V)
         (LinearIsometryEquiv.piLpCongrRight 2 (fun _ : ShuffleMask k l => e) f) := by
   apply PiLp.ext
   intro S
-  -- Both the Hilbert action and piLpCongrRight wrap the coordinatewise algebraic maps
-  -- with toLp/ofLp; at a fixed coordinate these inverse wrappers cancel definitionally.
-  change e (shuffleRep k ρ x (WithLp.ofLp f) S) =
-    shuffleRep k ρ' x (fun S => e (f S)) S
-  exact congrFun (LinearMap.congr_fun (compLeft_comp_shuffleRep e.toLinearMap he x)
-    (WithLp.ofLp f)) S
+  simp only [piLpCongrRight_apply, PiLp.toLp_apply, shuffleHilbertRep_apply]
+  have hcomp (g : ShuffleMask k l → U) :
+      e.toLinearMap.compLeft (ShuffleMask k l) g = fun S => e (g S) := by
+    funext S
+    simp only [LinearMap.compLeft_apply, Function.comp_apply, LinearEquiv.coe_coe,
+      coe_toLinearEquiv]
+  simpa only [LinearMap.comp_apply, hcomp] using
+    congrFun (LinearMap.congr_fun (compLeft_comp_shuffleRep e.toLinearMap he x)
+      (WithLp.ofLp f)) S
 
 end LinearIsometryEquiv
