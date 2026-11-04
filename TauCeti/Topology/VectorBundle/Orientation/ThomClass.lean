@@ -24,8 +24,9 @@ read off along any trivialization carrying `o b` to `ω`, or the negative of the
 along one carrying `o b` to `-ω`, is a class of the fibre pair that depends only on `o b`.
 
 Over a compact base these fibre classes glue to a class of the Thom pair `(E, E₀)`
-(`TauCeti.VectorBundleOrientation.exists_singularCohomology_thomPair_fiber`): near each point the
-orientation reads as a constant orientation of `F` in the preferred trivialization, so the local
+(`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_of_compactSpace`):
+near each point the orientation reads as a constant orientation of `F` in the preferred
+trivialization, so the local
 classes over the trivializing sets obtained by pulling back `±g` agree on every fibre where two of
 the sets meet, and the Mayer–Vietoris gluing over finite trivializing covers
 (`TauCeti.exists_singularCohomology_thomPairOver_biUnion`) assembles them. When `g` generates
@@ -43,15 +44,13 @@ is normalized by both `ω` and `g`; no preferred model-fibre generator is fixed 
 
 ## Main results
 
-* `TauCeti.VectorBundleOrientation.exists_singularCohomology_thomPair_fiber`: over a compact base,
-  there is a class of `Hʳ(E, E₀)` restricting on every fibre to the class read off from `g` along
-  trivializations carrying the orientation of the fibre to `ω`, and to its negative along those
-  carrying it to `-ω`.
+* `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_of_compactSpace`:
+  over a compact base, there is a unique class of `Hʳ(E, E₀)` restricting on every fibre to the
+  class read off from `g` along trivializations carrying the orientation of the fibre to `ω`,
+  and to its negative along those carrying it to `-ω`.
 * `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle over a
   compact base has a Thom class with coefficients in any commutative ring.
 
-* `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_of_compactSpace`:
-  uniqueness of the class with the prescribed fibre restrictions.
 * `TauCeti.VectorBundleOrientation.thomClass`: the normalized class, with fibre restrictions
   `singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq` and
   `singularCohomologyMap_fiberThomPairMap_thomClass_of_mapOrientation_eq_neg`.
@@ -199,7 +198,7 @@ orientation of the model fibre `F` and `g ∈ Hʳ(F, F ∖ {0}; R, M)`, with `R`
 class of `Hʳ(E, E₀; R, M)` whose restriction to the fibre pair `(E_b, E_b ∖ {0})` is the pull-back
 of `g` along every linear trivialization carrying the orientation `o b` of `E_b` to `ω`, and the
 negative of that pull-back along every linear trivialization carrying `o b` to `-ω`. -/
-theorem exists_singularCohomology_thomPair_fiber [CompactSpace B]
+private theorem exists_singularCohomology_thomPair_fiber [CompactSpace B]
     (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) (ω : Orientation ℝ F ι)
     (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
       (finrank ℝ F)) :
