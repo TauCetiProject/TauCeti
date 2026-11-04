@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Enumerative.Catalan
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Interval
+public import TauCeti.Combinatorics.NoncrossingPartition.Kreweras
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Range
 
@@ -16,7 +17,8 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 
 The free cumulants of a word are obtained from its block moments by Möbius inversion on the
 lattice `NC(s)` of noncrossing partitions, so the values of its Möbius function `μ` are the
-coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`.
+coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`
+and identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement.
 
 First, `μ(0̂, π)` is multiplicative: the lower interval `[0̂, π]` is the product of the lattices
 `NC(B)` over the parts `B` of `π`, and accordingly `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -33,6 +35,8 @@ positions. Together with multiplicativity this gives the recurrence
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod_mu` — `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
 * `TauCeti.NoncrossingPartition.mu_bot_top` — `μ(0̂, 1̂) = (-1)^(|s|-1) C_(|s|-1)` on `NC(s)`, and
   `TauCeti.NoncrossingPartition.mu_bot_top_fin` — `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on `NC(n)`.
+* `TauCeti.NoncrossingPartition.mu_top_eq_mu_bot_kreweras` — Kreweras duality of upper and
+  lower Möbius intervals on `NC(n)`.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod` — the blockwise formula
   `μ(0̂, π) = ∏_{B ∈ π} (-1)^(|B|-1) C_(|B|-1)`.
 
@@ -287,5 +291,12 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
     mu 𝕜 ⊥ π = ∏ B ∈ π.1.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_bot_eq_prod_mu]
   exact prod_congr rfl fun B _ => mu_bot_top B
+
+/-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
+theorem mu_top_eq_mu_bot_kreweras {n : ℕ}
+    (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
+  have h := OrderIso.mu_apply (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
+  simpa only [krewerasOrderIso_apply, kreweras_top, mu_toDual] using h.symm
 
 end TauCeti.NoncrossingPartition

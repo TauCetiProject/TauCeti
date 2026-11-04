@@ -8,7 +8,9 @@ module
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
 
 /-!
-# Converse Möbius inversion and Weisner's theorem
+# Order invariance, converse Möbius inversion and Weisner's theorem
+
+The Möbius function is invariant under order isomorphisms (`OrderIso.mu_apply`).
 
 Mathlib's `IncidenceAlgebra.moebius_inversion_bot` recovers `f` from its lower sums
 `g x = ∑_{y ≤ x} f y` as `f x = ∑_{y ≤ x} μ(y, x) g y`. This file proves the converse direction:
@@ -35,7 +37,39 @@ the Möbius function of the lattice of noncrossing partitions is computed.
 
 public section
 
-open Finset
+open Finset IncidenceAlgebra
+
+namespace OrderIso
+
+variable {𝕜 α β : Type*} [AddCommGroup 𝕜] [One 𝕜]
+  [PartialOrder α] [LocallyFiniteOrder α] [DecidableEq α]
+  [PartialOrder β] [LocallyFiniteOrder β] [DecidableEq β]
+
+/-- The Möbius function is invariant under order isomorphisms. -/
+@[simp]
+theorem mu_apply (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b := by
+  induction hn : #(Icc a b) using Nat.strong_induction_on generalizing b with
+  | _ n ih =>
+    by_cases hab : a = b
+    · subst b
+      simp
+    rw [mu_eq_neg_sum_Ico_of_ne (e.injective.ne hab), mu_eq_neg_sum_Ico_of_ne hab]
+    congr 1
+    refine sum_bij (fun x _ => e.symm x) (fun x hx => ?_) ?_ ?_ ?_
+    · exact mem_Ico.2 ⟨by simpa using e.symm.monotone (mem_Ico.1 hx).1,
+        by simpa using e.symm.strictMono (mem_Ico.1 hx).2⟩
+    · intro x hx y hy hxy
+      exact e.symm.injective hxy
+    · intro x hx
+      exact ⟨e x, by simpa using hx, e.symm_apply_apply x⟩
+    · intro x hx
+      have h := mem_Ico.1 hx
+      have hlt : #(Icc a (e.symm x)) < #(Icc a b) := card_lt_card
+        (Icc_ssubset_Icc_right (by simpa using e.symm.monotone (h.1.trans h.2.le)) le_rfl
+          (by simpa using e.symm.strictMono h.2))
+      simpa using ih _ (hn ▸ hlt) (e.symm x) rfl
+
+end OrderIso
 
 namespace IncidenceAlgebra
 
