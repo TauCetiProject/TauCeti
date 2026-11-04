@@ -60,6 +60,7 @@ tangent vectors `1` and `i`.
 public section
 
 open Set Real Function MeasureTheory Filter Manifold
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti
@@ -83,7 +84,7 @@ theorem hamiltonianCurvature_pssPlaneEndComponent (ω : SymplecticForm V) (hH : 
       (by simp)
   have h := ω.hamiltonianCurvature_continuation hβ.differentiableAt hHx
   beta_reduce at h
-  rw [endComponent_one hH, endComponent_I hH, h, hβ.deriv]
+  rw [endComponent_one, endComponent_I hH, h, hβ.deriv]
   ring
 
 /-- **The curvature is supported in the collar.** On the parts `ε s < 1` and `ε s > 2` of the end
@@ -105,7 +106,7 @@ theorem hamiltonianCurvature_pssPlaneEndComponent_eq_zero (ω : SymplecticForm V
     rw [endComponent_I hH]
     beta_reduce
     rw [hw]
-  rw [endComponent_one hH, ω.hamiltonianCurvature_congr_of_eventuallyEq (EventuallyEq.refl _ _) ht]
+  rw [endComponent_one, ω.hamiltonianCurvature_congr_of_eventuallyEq (EventuallyEq.refl _ _) ht]
   exact ω.hamiltonianCurvature_cylindrical (fun t x ↦ c * H t x) z x
 
 /-! ### The integrated curvature over the plane -/

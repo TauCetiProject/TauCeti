@@ -76,6 +76,7 @@ public section
 
 open Set Real Function MeasureTheory Filter Manifold TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
+open TauCeti.Complex (realChart realChart_apply hasFDerivAt_realChart contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import Mathlib.MeasureTheory.Function.Jacobian
+public import TauCeti.Analysis.Complex.RealChart
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -43,8 +44,6 @@ domain.
 
 * `TauCeti.Floer.perturbationPullback`: the pullback `φ^*K` of a perturbation datum, evaluated on
   a tangent vector.
-* `TauCeti.Floer.realChart`: a map `f : ℂ → ℂ` of the plane, written in the real coordinates
-  `ℝ × ℝ ≃ ℂ`.
 
 ## Main results
 
@@ -80,6 +79,7 @@ domain.
 public section
 
 open Function MeasureTheory Set
+open TauCeti.Complex (realChart realChart_apply fderiv_realChart_apply)
 
 namespace TauCeti
 
@@ -159,39 +159,6 @@ theorem fderiv_perturbationPullback_apply {φ : ℝ × ℝ → ℝ × ℝ} {Ks K
   ring
 
 /-! ### Holomorphic changes of coordinates -/
-
-/-- A map `f : ℂ → ℂ` of the plane, written in the real coordinates `ℝ × ℝ ≃ ℂ` in which
-perturbation data are pulled back. -/
-noncomputable def realChart (f : ℂ → ℂ) : ℝ × ℝ → ℝ × ℝ :=
-  Complex.equivRealProdCLM ∘ f ∘ Complex.equivRealProdCLM.symm
-
-theorem realChart_apply (f : ℂ → ℂ) (z : ℝ × ℝ) :
-    realChart f z = Complex.equivRealProdCLM (f (Complex.equivRealProdCLM.symm z)) :=
-  (rfl)
-
-/-- In real coordinates, the derivative of a map with complex derivative `f'` is multiplication
-by `f'`. -/
-theorem hasFDerivAt_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
-    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) :
-    HasFDerivAt (realChart f)
-      ((Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).comp
-        (((ContinuousLinearMap.toSpanSingleton ℂ f').restrictScalars ℝ).comp
-          (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ))) w :=
-  Complex.equivRealProdCLM.hasFDerivAt.comp w
-    ((hf.hasFDerivAt.restrictScalars ℝ).comp w Complex.equivRealProdCLM.symm.hasFDerivAt)
-
-theorem fderiv_realChart_apply {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
-    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) (v : ℝ × ℝ) :
-    fderiv ℝ (realChart f) w v =
-      Complex.equivRealProdCLM (f' * Complex.equivRealProdCLM.symm v) := by
-  rw [(hasFDerivAt_realChart hf).fderiv]
-  simp [mul_comm]
-
-/-- A holomorphic map is smooth in real coordinates. -/
-theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff ℂ n f) :
-    ContDiff ℝ n (realChart f) :=
-  Complex.equivRealProdCLM.contDiff.comp
-    ((hf.restrict_scalars ℝ).comp Complex.equivRealProdCLM.symm.contDiff)
 
 /-- The pullback along a holomorphic map `f` of a datum `P` on `ℂ`, written in the real
 coordinates through its values on `1` and `i`, evaluates `P` at the image point `f w` on the image

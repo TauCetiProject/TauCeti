@@ -77,6 +77,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 
 namespace TauCeti.Floer
 
