@@ -22,8 +22,9 @@ ball with constant `D N`, where `D` depends only on `α`, the Hölder constant o
 their values at the centre (`TauCeti.exists_holderOnWith_fderiv_apply_add_mul_ball`). This is
 how lower-order terms are absorbed in Schauder estimates.
 
-The functions `u` and `Du` are `N`-Lipschitz on the convex ball, whose diameter is at most `2`,
-hence `α`-Hölder with constant `N 2^{1-α}` (`HolderOnWith.of_le`). The two products are then
+The functions `u` and `Du` are `N`-Lipschitz on the convex ball `B(x, R)`, whose diameter is at most
+`2R`, hence `α`-Hölder with constant `N (2R)^{1-α}`
+(`TauCeti.holderOnWith_and_holderOnWith_fderiv_ball_of_norm_le`). The two products are then
 Hölder by the bilinear estimate `ContinuousLinearMap.holderOnWith_comp₂`, applied to evaluation
 and multiplication.
 -/
@@ -36,6 +37,35 @@ open scoped NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- On the ball `B(x, R)`, a `C²` function `u` with `‖Du‖ ≤ N` and `‖D²u‖ ≤ N`, and its derivative
+`Du`, are `α`-Hölder with constant `N (2R)^{1-α}`: they are `N`-Lipschitz on the convex ball, whose
+diameter is at most `2R`. -/
+theorem holderOnWith_and_holderOnWith_fderiv_ball_of_norm_le {u : E → ℝ} {x : E} {R : ℝ}
+    {N α : ℝ≥0} (hα : α ≤ 1) (hu : ContDiffOn ℝ 2 u (ball x R))
+    (hN₁ : ∀ y ∈ ball x R, ‖fderiv ℝ u y‖ ≤ N)
+    (hN₂ : ∀ y ∈ ball x R, ‖iteratedFDeriv ℝ 2 u y‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α u (ball x R) ∧
+      HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ u) (ball x R) := by
+  have hdiam : ∀ y ∈ ball x R, ∀ z ∈ ball x R, edist y z ≤ (2 * R).toNNReal := by
+    intro y hy z hz
+    rw [edist_dist]
+    refine ENNReal.ofReal_le_ofReal ?_
+    linarith [dist_triangle_right y z x, mem_ball.1 hy, mem_ball.1 hz]
+  have hcda (y : E) (hy : y ∈ ball x R) : ContDiffAt ℝ 2 u y :=
+    hu.contDiffAt (isOpen_ball.mem_nhds hy)
+  have hLu : LipschitzOnWith N u (ball x R) :=
+    (convex_ball x R).lipschitzOnWith_of_nnnorm_fderiv_le
+      (fun y hy => (hcda y hy).differentiableAt (by norm_num))
+      fun y hy => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hN₁ y hy
+  have hLDu : LipschitzOnWith N (fderiv ℝ u) (ball x R) :=
+    (convex_ball x R).lipschitzOnWith_of_nnnorm_fderiv_le
+      (fun y hy => ((hcda y hy).fderiv_right (m := 1) le_rfl).differentiableAt (by norm_num))
+      fun y hy => by
+        rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+        exact hN₂ y hy
+  exact ⟨by simpa using (holderOnWith_one.2 hLu).of_le hdiam hα,
+    by simpa using (holderOnWith_one.2 hLDu).of_le hdiam hα⟩
 
 /-- On a ball of radius at most one, the lower-order part `y ↦ Du(y) (b y) + c(y) u(y)` of a `C²`
 function `u` with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N` there is `α`-Hölder with constant
@@ -69,29 +99,15 @@ theorem exists_holderOnWith_fderiv_apply_add_mul_ball {α : ℝ≥0} (hα : α �
     rw [← dist_eq_norm] at h3
     simp only [γ, NNReal.coe_add, coe_nnnorm]
     nlinarith [L.coe_nonneg]
-  -- `u` and `Du` are `N`-Lipschitz on the convex ball, whose diameter is at most `2`, hence
-  -- `α`-Hölder with constant `N κ`.
-  have hdiam : ∀ y ∈ ball x R, ∀ z ∈ ball x R, edist y z ≤ (2 : ℝ≥0) := fun y hy z hz => by
-    rw [edist_dist, ENNReal.coe_ofNat]
-    refine ENNReal.ofReal_le_of_le_toReal ?_
-    norm_num
-    linarith [dist_triangle_right y z x, mem_ball.1 hy, mem_ball.1 hz]
-  have hcda (y : E) (hy : y ∈ ball x R) : ContDiffAt ℝ 2 u y :=
-    hu.contDiffAt (isOpen_ball.mem_nhds hy)
-  have hLu : LipschitzOnWith N u (ball x R) :=
-    (convex_ball x R).lipschitzOnWith_of_nnnorm_fderiv_le
-      (fun y hy => (hcda y hy).differentiableAt (by norm_num))
-      fun y hy => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hN₁ y hy
-  have hLDu : LipschitzOnWith N (fderiv ℝ u) (ball x R) :=
-    (convex_ball x R).lipschitzOnWith_of_nnnorm_fderiv_le
-      (fun y hy => ((hcda y hy).fderiv_right (m := 1) le_rfl).differentiableAt (by norm_num))
-      fun y hy => by
-        rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-        exact hN₂ y hy
-  have hHu : HolderOnWith (N * κ) α u (ball x R) := by
-    simpa using (holderOnWith_one.2 hLu).of_le hdiam hα
-  have hHDu : HolderOnWith (N * κ) α (fderiv ℝ u) (ball x R) := by
-    simpa using (holderOnWith_one.2 hLDu).of_le hdiam hα
+  -- `u` and `Du` are `α`-Hölder with constant `N (2R)^{1-α} ≤ N κ`, as `2R ≤ 2`.
+  have hκ : N * (2 * R).toNNReal ^ ((1 : ℝ) - α) ≤ N * κ := by
+    refine mul_le_mul_right (NNReal.rpow_le_rpow ?_ (sub_nonneg.2 (by exact_mod_cast hα))) N
+    rw [Real.toNNReal_le_iff_le_coe]
+    push_cast
+    linarith
+  obtain ⟨hHu, hHDu⟩ := holderOnWith_and_holderOnWith_fderiv_ball_of_norm_le hα hu hN₁ hN₂
+  replace hHu := hHu.mono_const hκ
+  replace hHDu := hHDu.mono_const hκ
   -- Both products are Hölder by the bilinear estimate, applied to evaluation and multiplication.
   have h1 : HolderOnWith (N * L + β * (N * κ)) α (fun y => fderiv ℝ u y (b y)) (ball x R) :=
     ((ContinuousLinearMap.id ℝ (E →L[ℝ] ℝ)).holderOnWith_comp₂ hHDu hb hN₁ hbM).mono_const
