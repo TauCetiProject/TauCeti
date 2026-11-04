@@ -53,7 +53,8 @@ theorem IsExtendTransChart.contMDiffOn_symm {e : OpenPartialHomeomorph M F}
 omit [ChartedSpace H M] in
 /-- Reading vector-space coordinates back in a boundaryless model through a continuous linear
 equivalence does not change the source of a chart. -/
-theorem trans_linearEquiv_source (e : OpenPartialHomeomorph M F) (L : F ≃L[𝕜] E) :
+theorem trans_continuousLinearEquiv_trans_modelSymm_source
+    (e : OpenPartialHomeomorph M F) (L : F ≃L[𝕜] E) :
     (e.trans (L.toHomeomorph.trans I.toHomeomorph.symm).toOpenPartialHomeomorph).source =
       e.source := by
   simp [mfld_simps]
@@ -61,7 +62,8 @@ theorem trans_linearEquiv_source (e : OpenPartialHomeomorph M F) (L : F ≃L[�
 omit [ChartedSpace H M] in
 /-- In model-vector-space coordinates, a chart read back through a continuous linear equivalence
 is the original chart followed by that equivalence. -/
-theorem trans_linearEquiv_apply (e : OpenPartialHomeomorph M F) (L : F ≃L[𝕜] E) (w : M) :
+theorem trans_continuousLinearEquiv_trans_modelSymm_apply
+    (e : OpenPartialHomeomorph M F) (L : F ≃L[𝕜] E) (w : M) :
     I (e.trans (L.toHomeomorph.trans I.toHomeomorph.symm).toOpenPartialHomeomorph w) =
       L (e w) := by
   simp only [mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
@@ -69,12 +71,13 @@ theorem trans_linearEquiv_apply (e : OpenPartialHomeomorph M F) (L : F ≃L[𝕜
 
 /-- A smoothly moved extended chart, read back in a boundaryless model through a continuous
 linear equivalence, belongs to the maximal atlas. -/
-theorem IsExtendTransChart.trans_mem_maximalAtlas [IsManifold I m M]
+theorem IsExtendTransChart.trans_continuousLinearEquiv_trans_modelSymm_mem_maximalAtlas
+    [IsManifold I m M]
     {e : OpenPartialHomeomorph M F} (he : e.IsExtendTransChart I m) (L : F ≃L[𝕜] E) :
     e.trans (L.toHomeomorph.trans I.toHomeomorph.symm).toOpenPartialHomeomorph ∈
       IsManifold.maximalAtlas I m M := by
   refine mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
-  · rw [trans_linearEquiv_source]
+  · rw [trans_continuousLinearEquiv_trans_modelSymm_source]
     refine (I.contMDiffOn_symm.comp (L.contDiff.contMDiff.comp_contMDiffOn he.contMDiffOn)
       (fun w _ ↦ by rw [I.range_eq_univ]; trivial)).congr fun w _ ↦ ?_
     simp [mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]

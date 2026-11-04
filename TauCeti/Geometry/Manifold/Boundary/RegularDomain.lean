@@ -58,8 +58,10 @@ theorem isSmoothEmbedding_subtypeVal_of_forall_chartAt_eq_halfSpaceChart
   -- Read the ambient chart back in H through a linear, rather than nonlinear, identification.
   let d : OpenPartialHomeomorph M H :=
     e.trans (L.toHomeomorph.trans I.toHomeomorph.symm).toOpenPartialHomeomorph
-  have hdsource : d.source = e.source := e.trans_linearEquiv_source L
-  have hdapply (w : M) : I (d w) = L (e w) := e.trans_linearEquiv_apply L w
+  have hdsource : d.source = e.source :=
+    e.trans_continuousLinearEquiv_trans_modelSymm_source L
+  have hdapply (w : M) : I (d w) = L (e w) :=
+    e.trans_continuousLinearEquiv_trans_modelSymm_apply L w
   have hx : (x : M) ∈ e.source := by
     have hx' := mem_chart_source (EuclideanHalfSpace (n + 1)) x
     rwa [hchart, OpenPartialHomeomorph.halfSpaceChart_source] at hx'
@@ -67,7 +69,7 @@ theorem isSmoothEmbedding_subtypeVal_of_forall_chartAt_eq_halfSpaceChart
     ((ContinuousLinearEquiv.prodUnique ℝ _ _).trans L)
     (chartAt (EuclideanHalfSpace (n + 1)) x) d (mem_chart_source _ x)
     (by rwa [hdsource]) (IsManifold.chart_mem_maximalAtlas _)
-    (hc.trans_mem_maximalAtlas L) ?_ ?_
+    (hc.trans_continuousLinearEquiv_trans_modelSymm_mem_maximalAtlas L) ?_ ?_
   · rw [hchart, OpenPartialHomeomorph.halfSpaceChart_source, hdsource]
   · intro v hv
     have hv' : v ∈ range (𝓡∂ (n + 1)) :=
