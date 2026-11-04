@@ -194,6 +194,14 @@ section Sphere
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
+variable (n) in
+include n in
+/-- The unit sphere of an `(n + 1)`-dimensional real inner product space is nonempty, so it has a
+height function in the direction of some unit vector. -/
+theorem nonempty_sphere : Nonempty (sphere (0 : E) 1) :=
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out (p := finrank ℝ E = n + 1))
+  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+
 /-- The **height function** on the unit sphere in the direction of the unit vector `v`: the inner
 product with `v`. It is the standard Morse function on the sphere, with the poles `v` and `-v` as
 its only critical points. -/
