@@ -173,11 +173,7 @@ private theorem rectangleIntegral_flatten {φ : RoughForm I M F 2} (hφ : IsSmoo
     rectangleIntegral φ (flatten u) (0, 0) (1, 1) = rectangleIntegral φ u (0, 0) (1, 1) := by
   let σ : (ℝ × ℝ) × ℝ → ℝ := fun p ↦
     (1 - p.2) * p.1.1 + p.2 * Real.smoothTransition (2 * p.1.1 - 1)
-  have hσ : ContDiff ℝ ∞ σ := by
-    have := (Real.smoothTransition.contDiff (n := ⊤)).comp
-      (show ContDiff ℝ ∞ fun p : (ℝ × ℝ) × ℝ ↦ 2 * p.1.1 - 1 by fun_prop)
-    exact ((contDiff_const.sub contDiff_snd).mul (contDiff_fst.comp contDiff_fst)).add
-      (contDiff_snd.mul this)
+  have hσ : ContDiff ℝ ∞ σ := by fun_prop
   have hσI {p : (ℝ × ℝ) × ℝ} (hs : p.1.1 ∈ Icc (0 : ℝ) 1) (hc : p.2 ∈ Icc (0 : ℝ) 1) :
       σ p ∈ Icc (0 : ℝ) 1 := by
     have h₀ := Real.smoothTransition.nonneg (2 * p.1.1 - 1)
@@ -220,23 +216,13 @@ private theorem contMDiff_glue (hu : IsSmoothCap I u γ) (hv : IsSmoothCap I v �
   have hL (c d : ℝ) : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) ∞
       (fun z : ℝ × ℝ ↦ (c * z.1 + d, z.2)) :=
     (by fun_prop : ContDiff ℝ ∞ fun z : ℝ × ℝ ↦ (c * z.1 + d, z.2)).contMDiff
-  intro z
-  rcases lt_trichotomy z.1 (1 / 2) with h | h | h
-  · refine ((hu.contMDiff_flatten.comp (hL (-2) 1)) z).congr_of_eventuallyEq ?_
-    filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds (Iio_mem_nhds h)] with y hy
-    have hy' : y.1 ≤ 1 / 2 := (show y.1 < 1 / 2 from hy).le
-    simp only [Function.comp_apply, glue, hy', ↓reduceIte]
-  · have hγ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ fun y : ℝ × ℝ ↦ u (0, y.2) :=
-      hu.contMDiff.comp (by fun_prop : ContDiff ℝ ∞ fun y : ℝ × ℝ ↦ ((0 : ℝ), y.2)).contMDiff
-    refine (hγ z).congr_of_eventuallyEq ?_
-    filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds
-      (Ioo_mem_nhds (show (1 / 4 : ℝ) < z.1 by linarith) (show z.1 < 3 / 4 by linarith))]
-      with y hy
-    rw [glue_of_mem hu hv (Ioo_subset_Icc_self hy), hu.apply_zero_fst]
-  · refine ((hv.contMDiff_flatten.comp (hL 2 (-1))) z).congr_of_eventuallyEq ?_
-    filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds (Ioi_mem_nhds h)] with y hy
-    have hy' : ¬y.1 ≤ 1 / 2 := not_le.mpr (show 1 / 2 < y.1 from hy)
-    simp only [Function.comp_apply, glue, hy', ↓reduceIte]
+  refine (hu.contMDiff_flatten.comp (hL (-2) 1)).piecewise (s := {z | z.1 ≤ 1 / 2})
+    (hv.contMDiff_flatten.comp (hL 2 (-1))) fun z hz ↦ ?_
+  have hz' : z.1 = 1 / 2 := frontier_le_subset_eq continuous_fst continuous_const hz
+  filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds
+    (Ioo_mem_nhds (a := 1 / 4) (b := 3 / 4) (by linarith) (by linarith))] with y hy
+  rw [Function.comp_apply, Function.comp_apply, hu.flatten_of_le (by linarith [hy.1]),
+    hv.flatten_of_le (by linarith [hy.2])]
 
 omit [IsManifold I 2 M] in
 private theorem isSmoothSphere_glue (hu : IsSmoothCap I u γ) (hv : IsSmoothCap I v γ) :
@@ -330,34 +316,6 @@ theorem IsWeaklyExact.rectangleIntegral_eq (hφ : φ.IsWeaklyExact) (hc : φ.IsC
     IsSmoothCap.rectangleIntegral_flatten h₁ hc hv, sub_eq_zero] at h
   exact h.symm
 
-omit [IsManifold I 1 M] [IsManifold I 2 M] [CompleteSpace F] in
-/-- Along a map of the plane, the pullback of a form evaluated on `∂_t` at `(s, t)` is the pullback
-along the line `t ↦ w (s, t)`. -/
-private theorem mpullback_apply_inr (α : RoughForm I M F 1) {w : ℝ × ℝ → M}
-    (hw : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I w) (s t : ℝ) :
-    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w α (s, t) (fun _ ↦ (0, 1)) =
-      TauCeti.mpullback 𝓘(ℝ) I (fun t ↦ w (s, t)) α t (fun _ ↦ 1) := by
-  have h := mpullback_comp_apply_of_hasFDerivAt (u := w) (L := fun t : ℝ ↦ (s, t))
-    ((hasFDerivAt_const s t).prodMk (hasFDerivAt_id t)) (hw _) α
-  simp only [Function.comp_def] at h
-  rw [h]
-  refine Eq.trans ?_ (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
-  congr 1
-
-omit [IsManifold I 1 M] [IsManifold I 2 M] [CompleteSpace F] in
-/-- Along a map of the plane, the pullback of a form evaluated on `∂_s` at `(s, t)` is the pullback
-along the line `s ↦ w (s, t)`. -/
-private theorem mpullback_apply_inl (α : RoughForm I M F 1) {w : ℝ × ℝ → M}
-    (hw : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I w) (s t : ℝ) :
-    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w α (s, t) (fun _ ↦ (1, 0)) =
-      TauCeti.mpullback 𝓘(ℝ) I (fun s ↦ w (s, t)) α s (fun _ ↦ 1) := by
-  have h := mpullback_comp_apply_of_hasFDerivAt (u := w) (L := fun s : ℝ ↦ (s, t))
-    ((hasFDerivAt_id s).prodMk (hasFDerivAt_const t s)) (hw _) α
-  simp only [Function.comp_def] at h
-  rw [h]
-  refine Eq.trans ?_ (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
-  congr 1
-
 omit [CompleteSpace F] in
 /-- **Exact forms are weakly exact.** By Stokes' formula the integral of `dα` over a sphere is the
 integral of `α` around the boundary of the square: the two constant boundary loops contribute
@@ -387,7 +345,7 @@ theorem isWeaklyExact_of_mextDeriv_eq {φ : SmoothForm I M F 2} {α : RoughForm 
     have hev : (fun t ↦ w (x, t)) =ᶠ[𝓝 t] fun _ ↦ w (x, 0) := by
       filter_upwards [Ioo_mem_nhds ht.1 ht.2] with t' ht'
       exact hx t' (Ioo_subset_Icc_self ht')
-    refine (mpullback_apply_inr α hwd x t).trans ?_
+    refine (mpullback_apply_inr α (hwd _)).trans ?_
     rw [hev.mpullback_eq α, TauCeti.mpullback_apply]
     simp only [mfderiv_const, zero_apply]
     exact (α _).map_coord_zero (0 : Fin 1) rfl
@@ -398,8 +356,8 @@ theorem isWeaklyExact_of_mextDeriv_eq {φ : SmoothForm I M F 2} {α : RoughForm 
     have hev : (fun s ↦ w (s, 1)) =ᶠ[𝓝 s] fun s ↦ w (s, 0) := by
       filter_upwards [Ioo_mem_nhds hs.1 hs.2] with s' hs'
       exact hw.apply_one_snd s' (Ioo_subset_Icc_self hs')
-    refine (mpullback_apply_inl α hwd s 1).trans
-      (Eq.trans ?_ (mpullback_apply_inl α hwd s 0).symm)
+    refine (mpullback_apply_inl α (hwd _)).trans
+      (Eq.trans ?_ (mpullback_apply_inl α (hwd _)).symm)
     rw [hev.mpullback_eq α]
   rw [hconst hw.apply_zero_fst, hconst hw.apply_one_fst, hedge]
   simp
@@ -411,6 +369,19 @@ every smooth cap (`TauCeti.SmoothForm.IsWeaklyExact.capArea_eq`). -/
 def capArea (γ : ℝ → M) : F :=
   open Classical in
   if h : ∃ u, IsSmoothCap I u γ then rectangleIntegral φ.1 h.choose (0, 0) (1, 1) else 0
+
+omit [IsManifold I 2 M] [CompleteSpace F] in
+open Classical in
+/-- Unfolding `TauCeti.SmoothForm.capArea`. -/
+theorem capArea_def (γ : ℝ → M) : φ.capArea γ =
+    if h : ∃ u, IsSmoothCap I u γ then rectangleIntegral φ.1 h.choose (0, 0) (1, 1) else 0 := by
+  rw [capArea]
+
+omit [IsManifold I 2 M] [CompleteSpace F] in
+/-- A loop without a smooth cap has zero cap area. -/
+@[simp]
+theorem capArea_eq_zero_of_not_exists (h : ¬ ∃ u, IsSmoothCap I u γ) : φ.capArea γ = 0 := by
+  simp [capArea_def, h]
 
 /-- For a closed weakly exact form, `capArea` is the integral over any smooth cap. -/
 theorem IsWeaklyExact.capArea_eq (hφ : φ.IsWeaklyExact) (hc : φ.IsClosed)
