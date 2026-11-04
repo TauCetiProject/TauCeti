@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.WeightTorus
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
+public import TauCeti.Algebra.Lie.E6.Minuscule.Root.Coordinates
 
 /-!
 # Simple-coroot differentials of the generated doubled E₆ group
@@ -30,7 +30,7 @@ group scheme of type E₆.
 
 * `generatedCorootCocharacter_eq_cocharacter_coroot_simpleIndex`: identification with the
   numbered simply connected root datum.
-* `tangentMatrix_derivationComp_generatedCorootCocharacter`: the represented differential.
+* `tangentMatrixLieHom_derivationComp_generatedCorootCocharacter`: the represented differential.
 * `linearIndependent_generatedCorootVector`: independence of the simple-coroot differentials.
 * `generatedCorootBasis`: their basis of the toral tangent image, expressed as their span.
 
@@ -77,23 +77,14 @@ theorem generatedCorootCocharacter_eq_cocharacter_coroot_simpleIndex
           ((DynkinType.E6.simplyConnectedRootDatum ht).coroot
             (DynkinType.E6.simpleIndex ht i))) := by
   rw [generatedCorootCocharacter_def]
-  congr 1
-  apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have hcoroot : (DynkinType.E6.simplyConnectedRootDatum ht).coroot
-      (DynkinType.E6.simpleIndex ht i) = (Pi.single i 1 : Fin 6 → ℤ) := by
-    -- Index both sides by the datum's rank; E₆ has rank six, but `Pi.single` is dependent.
-    change (DynkinType.E6.simplyConnectedRootDatum ht).coroot
-      (DynkinType.E6.simpleIndex ht i) = (Pi.single i 1 : Fin DynkinType.E6.rank → ℤ)
-    exact DynkinType.E6.coroot_simpleIndex ht i
-  rw [hcoroot]
-  exact SplitTorus.cocharEquiv_applyAddHom i
+  exact congrArg _ (E6Minuscule.cocharEquiv_symm_coroot_simpleIndex ht i).symm
 
 variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The differential of a simple coroot is diagonal in the doubled weight basis, with
 entries the coordinate weight pairings times the multiplicative tangent parameter. -/
 @[simp]
-theorem tangentMatrix_derivationComp_generatedCorootCocharacter (i : Fin 6)
+theorem tangentMatrixLieHom_derivationComp_generatedCorootCocharacter (i : Fin 6)
     (d : Derivation R (LaurentPolynomial R)
       (Bialgebra.CounitAlgebra R (LaurentPolynomial R) B)) :
     GeneralLinear.tangentMatrixLieHom (generatedCoordinateMap R).hom
@@ -111,8 +102,7 @@ theorem tangentMatrix_derivationComp_generatedCorootCocharacter (i : Fin 6)
       ((Finsupp.applyAddHom i).toMultiplicative
         (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (matrixWeight a)))).toAdd =
       matrixWeight a i := by
-    -- The multiplicative tags encode the same coordinate evaluation on a finite weight.
-    rfl
+    simp
   simp only [heval]
 
 /-- The simple-coroot tangent vector, normalized by the unit tangent parameter of `𝔾ₘ`.
@@ -138,15 +128,11 @@ theorem tangentMatrixLieHom_generatedCorootVector (ht : DynkinType.E6.Valid) (i 
       Matrix.diagonal (fun a ↦
         ((DynkinType.E6.simplyConnectedRootDatum ht).coroot'
           (DynkinType.E6.simpleIndex ht i) (matrixWeight a) : B)) := by
-  rw [generatedCorootVector_def, tangentMatrix_derivationComp_generatedCorootCocharacter,
+  rw [generatedCorootVector_def, tangentMatrixLieHom_derivationComp_generatedCorootCocharacter,
     LinearEquiv.apply_symm_apply]
   congr 1
   funext a
-  have hpair : (DynkinType.E6.simplyConnectedRootDatum ht).coroot'
-      (DynkinType.E6.simpleIndex ht i) (matrixWeight a) = matrixWeight a i := by
-    simpa only [DynkinType.rank_E6] using
-      DynkinType.E6.coroot'_simpleIndex_apply ht i (matrixWeight a)
-  rw [hpair]
+  rw [E6Minuscule.coroot'_simpleIndex_apply ht i (matrixWeight a)]
   exact zsmul_one _
 
 /-- The torus differential sends a coordinate tangent vector to the corresponding coroot vector.
