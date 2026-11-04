@@ -410,23 +410,11 @@ component. -/
 lemma _root_.CategoryTheory.CommMon.gradedSectionsMap_apply (φ : A ⟶ B) (U : X.Opens)
     (x : ⨁ n, Γ(A.X n, U)) (i : ℕ) :
     gradedSectionsMap φ U x i = (φ.hom.hom i).app U (x i) := by
-  induction x using DirectSum.induction_on with
-  | zero =>
-    rw [map_zero, DirectSum.zero_apply, DirectSum.zero_apply]
-    exact (AddMonoidHom.map_zero _).symm
-  | of n y =>
-    rw [gradedSectionsMap_of]
-    -- the sections of the components are stated with explicit families, since `A.X` and
-    -- `A.toMon.X` are only unfolded to each other by elaboration
-    obtain rfl | hn := eq_or_ne n i
-    · exact (DirectSum.of_eq_same (β := fun i ↦ Γ(B.X i, U)) n _).trans
-        (congrArg _ (DirectSum.of_eq_same (β := fun i ↦ Γ(A.X i, U)) n y).symm)
-    · exact (DirectSum.of_eq_of_ne (β := fun i ↦ Γ(B.X i, U)) n i _ hn.symm).trans
-        ((congrArg _ (DirectSum.of_eq_of_ne (β := fun i ↦ Γ(A.X i, U)) n i y hn.symm)).trans
-          (AddMonoidHom.map_zero _)).symm
-  | add x y hx hy =>
-    rw [map_add, DirectSum.add_apply, DirectSum.add_apply, hx, hy]
-    exact (AddMonoidHom.map_add _ _ _).symm
+  have h : (gradedSectionsMap φ U).toAddMonoidHom =
+      DirectSum.map fun n ↦ ((φ.hom.hom n).app U).hom :=
+    DirectSum.addHom_ext fun n y ↦ (gradedSectionsMap_of φ U n y).trans
+      (DirectSum.map_of (fun n ↦ ((φ.hom.hom n).app U).hom) n y).symm
+  exact congrArg (· i) (DFunLike.congr_fun h x)
 
 /-- The identity morphism induces the identity on graded rings of sections. -/
 @[simp]
