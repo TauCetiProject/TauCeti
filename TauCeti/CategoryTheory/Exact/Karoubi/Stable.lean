@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Karoubi.Frobenius
 public import TauCeti.CategoryTheory.Exact.Stable.Functor.Triangulated
-public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!
 # The stable category of the idempotent completion

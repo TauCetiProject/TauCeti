@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Frobenius
 public import TauCeti.CategoryTheory.Exact.Karoubi
-public import Mathlib.CategoryTheory.Idempotents.Biproducts
 
 /-!
 # The idempotent completion of a Frobenius exact category
@@ -19,9 +18,9 @@ Frobenius when `E` is.
 * The image `toKaroubi P` of a relatively projective object `P` is relatively projective: a
   deflation of `E.karoubi` is a retract of the image of a deflation `d` of `E`, and a morphism
   out of `toKaroubi P` lifts through `d` since `toKaroubi` is fully faithful.
-* Every object `X` of `Karoubi C` is a direct summand of `toKaroubi X.X`, and the projection is a
-  split deflation. Composing it with the image of a projective presentation of `X.X` gives a
-  projective presentation of `X`.
+* Every object `X` of `Karoubi C` is a direct summand of `toKaroubi X.X`, and the projection is
+  a split deflation (`TauCeti.ExactStructure.karoubi_isDeflation_decompId_p`). Composing it
+  with the image of a projective presentation of `X.X` gives a projective presentation of `X`.
 * Hence the relative projectives of `E.karoubi` are the retracts of images of relative
   projectives of `E`, and dually for injectives. When `E` is Frobenius these two classes agree.
 
@@ -30,9 +29,6 @@ Frobenius when `E` is.
 * `TauCeti.ExactStructure.karoubi_isProjective_toKaroubi_obj` and
   `TauCeti.ExactStructure.karoubi_isInjective_toKaroubi_obj`: `toKaroubi` preserves relative
   projectives and injectives.
-* `TauCeti.ExactStructure.karoubi_isDeflation_decompId_p` and
-  `TauCeti.ExactStructure.karoubi_isInflation_decompId_i`: the summand `X` of `toKaroubi X.X` is
-  split off by a deflation and an inflation.
 * `TauCeti.ExactStructure.karoubi_enoughProjectives`,
   `TauCeti.ExactStructure.karoubi_enoughInjectives`: enough projectives and injectives pass to
   the idempotent completion.
@@ -70,9 +66,9 @@ theorem karoubi_isProjective_toKaroubi_obj {P : C} (hP : E.isProjective P) :
   refine isProjective_iff.2 fun X Y p hp f ↦ ?_
   obtain ⟨B, D, d, hd, ⟨r⟩⟩ := (E.karoubi_isDeflation_iff p).1 hp
   obtain ⟨h, hh⟩ := isProjective_iff.1 hP hd ((toKaroubi C).preimage (f ≫ r.i.right))
-  refine ⟨(toKaroubi C).map h ≫ r.r.left, ?_⟩
-  rw [Category.assoc, r.r_w, ← Category.assoc, ← Functor.map_comp, hh, Functor.map_preimage,
-    Category.assoc, r.retract_right, Category.comp_id]
+  have hh' : (toKaroubi C).map h ≫ (toKaroubi C).map d = f ≫ r.i.right := by
+    rw [← Functor.map_comp, hh, Functor.map_preimage]
+  exact ⟨(toKaroubi C).map h ≫ r.r.left, by simp [r.r_w, reassoc_of% hh']⟩
 
 /-- **`toKaroubi` preserves relative injectives**: a morphism into `toKaroubi I` extends along an
 inflation of the idempotent completion, a retract of the image of an inflation `a` of `E`, by
@@ -82,27 +78,9 @@ theorem karoubi_isInjective_toKaroubi_obj {I : C} (hI : E.isInjective I) :
   refine isInjective_iff.2 fun X Y i hi f ↦ ?_
   obtain ⟨A, B, a, ha, ⟨r⟩⟩ := (E.karoubi_isInflation_iff i).1 hi
   obtain ⟨h, hh⟩ := isInjective_iff.1 hI ha ((toKaroubi C).preimage (r.r.left ≫ f))
-  refine ⟨r.i.right ≫ (toKaroubi C).map h, ?_⟩
-  rw [← Category.assoc, ← r.i_w, Category.assoc, ← Functor.map_comp, hh, Functor.map_preimage,
-    ← Category.assoc, r.retract_left, Category.id_comp]
-
-/-- The projection of `toKaroubi X.X` onto its summand `X` is a split deflation. -/
-theorem karoubi_isDeflation_decompId_p (X : Karoubi C) : E.karoubi.IsDeflation X.decompId_p := by
-  have h : X.decompId_p = X.decomposition.inv ≫ biprod.fst := (biprod.lift_fst _ _).symm
-  rw [h]
-  refine MorphismProperty.RespectsIso.precomp _ _ _ (E.karoubi.isDeflation_g
-    (S := ShortComplex.mk (biprod.inr : X.complement ⟶ X ⊞ X.complement) biprod.fst (by simp))
-    (E.karoubi.conflation_of_splitting
-      { r := biprod.snd, s := biprod.inl, f_r := by simp, s_g := by simp, id := ?_ }))
-  rw [add_comm]
-  exact biprod.total
-
-/-- The inclusion of the summand `X` into `toKaroubi X.X` is a split inflation. -/
-theorem karoubi_isInflation_decompId_i (X : Karoubi C) : E.karoubi.IsInflation X.decompId_i := by
-  have h : X.decompId_i = biprod.inl ≫ X.decomposition.hom := (biprod.inl_desc _ _).symm
-  rw [h]
-  exact MorphismProperty.RespectsIso.postcomp _ _ _ (E.karoubi.isInflation_f
-    (E.karoubi.conflation_biprodShortComplex X X.complement))
+  have hh' : (toKaroubi C).map a ≫ (toKaroubi C).map h = r.r.left ≫ f := by
+    rw [← Functor.map_comp, hh, Functor.map_preimage]
+  exact ⟨r.i.right ≫ (toKaroubi C).map h, by simp [← r.i_w_assoc, hh']⟩
 
 variable {E}
 
