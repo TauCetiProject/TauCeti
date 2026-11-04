@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Uniform derivative bounds for a linear change of variables
@@ -29,6 +31,9 @@ chart, with `τ` the transition map and `L z` the pullback along its derivative.
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
   convergence to zero.
+* `TauCeti.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
+  and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
+  the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
 -/
 
 public section
@@ -115,3 +120,27 @@ theorem ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp {ι : 
     _ < ε := by
       rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [abs_nonneg C]
+
+namespace TauCeti
+
+/-- A `C^k` function on `E × F` satisfies, for `x` in a compact set and `ξ` in a ball, the
+estimate `‖D^k f(x, ξ)‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for every real `r`: the derivative is bounded
+there, and the weight is bounded below. -/
+theorem exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [ProperSpace F] [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ}
+    {f : E × F → G} (hf : ContDiff ℝ k f) {K : Set E} (hK : IsCompact K) (R r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : F, ‖ξ‖ ≤ R →
+      ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  have hw : (0 : ℝ) < (1 + R ^ 2) ^ (-|r| / 2) := by positivity
+  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
+  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
+        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
+    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+        mul_le_mul_of_nonneg_left (one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
+          (by positivity)
+
+end TauCeti
