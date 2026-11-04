@@ -12,10 +12,10 @@ public import TauCeti.Geometry.Manifold.TwoForm.Basic
 # The Hamiltonian action functional on contractible loops
 
 Let `σ` be a closed two-form on a manifold `M`, typically a symplectic form, and `K : ℝ → M → ℝ`
-a time-dependent Hamiltonian. The action of a loop `γ` with a smooth cap `γ̄`, a cylinder from `γ`
+a time-dependent Hamiltonian. The action of a loop `γ` with a smooth cap `u`, a cylinder from `γ`
 to a constant loop (`TauCeti.IsSmoothCap`), is
 
-`𝒜_K(γ) = ∫ γ̄^* σ - ∫₀¹ K(t, γ(t)) dt`
+`𝒜_K(γ) = ∫ u^* σ - ∫₀¹ K(t, γ(t)) dt`
 
 (`TauCeti.SmoothTwoForm.actionFunctional`). When `σ` is weakly exact, that is, when its integral
 over every smooth sphere vanishes (`TauCeti.SmoothForm.IsWeaklyExact`), the area term does not
@@ -23,7 +23,7 @@ depend on the cap, so the action is a function on the loops that bound a smooth 
 computed with any cap (`TauCeti.SmoothTwoForm.actionFunctional_eq`). A constant loop at `x` has
 action `-∫₀¹ K(t, x) dt` (`TauCeti.SmoothTwoForm.actionFunctional_const`).
 
-This is the convention `𝒜_K(γ) = ∫ γ̄^* σ - ∫ K dt` of Barraud, Damian, Humilière and Oancea, with
+This is the convention `𝒜_K(γ) = ∫ u^* σ - ∫ K dt` of Barraud, Damian, Humilière and Oancea, with
 the cylinder oriented from the loop to the reference loop, here a constant loop. The capped
 convention `A_K(γ, D) = ∫ K dt + ∫_D σ` of `TauCeti.SymplecticForm.hamiltonianAction` takes the disc
 `D` from a point to the loop, that is with the opposite orientation, and has the opposite sign.
@@ -66,8 +66,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 variable (σ) in
 /-- The **Hamiltonian action functional** of a two-form `σ` and a time-dependent Hamiltonian `K`
-on a loop `γ`: `𝒜_K(γ) = ∫ γ̄^* σ - ∫₀¹ K(t, γ(t)) dt`, where the area term
-`TauCeti.SmoothForm.capArea` is the integral over a smooth cap `γ̄` of `γ`, a cylinder from `γ` to a
+on a loop `γ`: `𝒜_K(γ) = ∫ u^* σ - ∫₀¹ K(t, γ(t)) dt`, where the area term
+`TauCeti.SmoothForm.capArea` is the integral over a smooth cap `u` of `γ`, a cylinder from `γ` to a
 constant loop. For a closed weakly exact form it does not depend on the cap
 (`TauCeti.SmoothTwoForm.actionFunctional_eq`). For a loop without a smooth cap the area term is
 `0`. -/
