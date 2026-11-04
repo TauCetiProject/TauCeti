@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.RankOne.Long
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 
 /-!
 # Long rank-one subgroups of the short-root F4 prime-field carrier
@@ -42,16 +43,12 @@ private theorem longRankOneGL_mem_of_root_mem {H : Subgroup (GL (Fin 26) K)}
     (hneg : ∀ t : Multiplicative K,
       (rootSubgroupPoints (.inr (i.castAdd 2)) K t : GL (Fin 26) K) ∈ H)
     (g : SL(2, K)) : longRankOneGL K i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · rw [longRankOneGL_upper_transvection, ← coe_rootSubgroupPoints]
-      exact hpos _
-    · rw [longRankOneGL_lower_transvection, ← coe_rootSubgroupPoints]
-      exact hneg _
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
+  apply (longRankOneGL K i).sl2_range_le_of_transvection_mem
+    (fun t => ?_) (fun t => ?_) ⟨g, rfl⟩
+  · simpa only [longRankOneGL_upper_transvection, ← coe_rootSubgroupPoints] using
+      hpos (Multiplicative.ofAdd t)
+  · simpa only [longRankOneGL_lower_transvection, ← coe_rootSubgroupPoints] using
+      hneg (Multiplicative.ofAdd t)
 
 /-- The faithful SL₂ map at a long simple node into the short-root F₄ prime-field carrier. -/
 noncomputable def longRankOnePoints : SL(2, K) →* points K :=
@@ -102,24 +99,11 @@ theorem range_longRankOnePoints :
     (longRankOnePoints K i).range = Subgroup.closure
       (Set.range (rootSubgroupPoints (.inl (i.castAdd 2)) K) ∪
         Set.range (rootSubgroupPoints (.inr (i.castAdd 2)) K)) := by
-  apply le_antisymm
-  · rintro _ ⟨g, rfl⟩
-    rw [← Subgroup.mem_map_iff_mem (points K).subtype_injective, Subgroup.subtype_apply,
-      coe_longRankOnePoints]
-    apply longRankOneGL_mem_of_root_mem K i
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.subset_closure
-        (Set.mem_union_left _ (Set.mem_range_self t)), rfl⟩
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.subset_closure
-        (Set.mem_union_right _ (Set.mem_range_self t)), rfl⟩
-  · rw [Subgroup.closure_le]
-    rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
-    · refine ⟨Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1)
-        (Multiplicative.toAdd t), ?_⟩
-      rw [longRankOnePoints_upper_transvection, ofAdd_toAdd]
-    · refine ⟨Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0)
-        (Multiplicative.toAdd t), ?_⟩
-      rw [longRankOnePoints_lower_transvection, ofAdd_toAdd]
+  rw [(longRankOnePoints K i).sl2_range_eq_closure]
+  congr 2 <;>
+    simpa only [Function.comp_def, longRankOnePoints_upper_transvection,
+      longRankOnePoints_lower_transvection] using
+      (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+        (rootSubgroupPoints _ K)
 
 end TauCeti.F4ShortRoot.PrimeField

@@ -81,6 +81,21 @@ private theorem long_lowering_raising_lowering (i : Fin 2) :
   revert i a b
   decide +kernel
 
+-- Standard blocks: coordinates (3,4) at node 0 and (2,3) at node 1.
+private def longBlock (i : Fin 2) (a : Fin 2) : Fin 26 :=
+  if i = 0 then (if a = 0 then 3 else 4) else (if a = 0 then 2 else 3)
+
+private theorem longBlock_data (i : Fin 2) :
+    Function.Injective (longBlock i) ∧
+    (∀ a b, raisingMatrix (i.castAdd 2) (longBlock i a) (longBlock i b) =
+      if a = 0 ∧ b = 1 then 1 else 0) ∧
+    (∀ a b, loweringMatrix (i.castAdd 2) (longBlock i a) (longBlock i b) =
+      if a = 1 ∧ b = 0 then 1 else 0) ∧
+    (∀ a, f4ShortRootWeight (longBlock i a) (i.castAdd 2) = if a = 0 then 1 else -1) := by
+  simp only [raisingMatrix_apply, loweringMatrix_apply]
+  revert i
+  decide +kernel
+
 variable (R : Type*) [CommRing R] (i : Fin 2)
 
 /-- The faithful SL₂ action at a long simple node of the short-root F₄ module. It acts by the
@@ -115,15 +130,12 @@ theorem longRankOneGL_injective : Function.Injective (longRankOneGL R i) := by
   intro g h heq
   apply Matrix.SpecialLinearGroup.ext
   intro a b
-  -- Each node has an actual standard block: coordinates (3,4) at node 0 and (2,3) at node 1.
-  let block : Fin 2 → Fin 26 := fun j => if i = 0 then (if j = 0 then 3 else 4)
-    else (if j = 0 then 2 else 3)
-  have he := congrArg (fun k : GL (Fin 26) R => (k : Matrix _ _ R) (block a) (block b)) heq
-  simp only [coe_longRankOneGL] at he
-  fin_cases i <;> fin_cases a <;> fin_cases b <;>
-    simpa [block, Matrix.add_apply, Matrix.smul_apply, Matrix.diagonal_apply,
-      Matrix.one_apply, Matrix.map_apply, raisingMatrix_apply, loweringMatrix_apply,
-      raisingTarget, raisingCoeff, loweringTarget, loweringCoeff, f4ShortRootWeight] using he
+  have he := congrArg
+    (fun k : GL (Fin 26) R => (k : Matrix _ _ R) (longBlock i a) (longBlock i b)) heq
+  rcases longBlock_data i with ⟨hinj, hraise, hlower, hweight⟩
+  simp only [coe_longRankOneGL, Matrix.add_apply, Matrix.smul_apply, Matrix.diagonal_apply,
+    Matrix.one_apply, Matrix.map_apply, hinj.eq_iff, hraise, hlower, hweight] at he
+  fin_cases a <;> fin_cases b <;> simpa using he
 
 /-- The upper transvection maps to the numbered positive-root point with unchanged parameter. -/
 @[simp]
