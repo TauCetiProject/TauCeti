@@ -82,7 +82,8 @@ not claimed. This file is the numbered input those later steps consume.
 * `TauCeti.DynkinType.rootGeneratorWeight_inl_eq_root_simpleIndex` and
   `TauCeti.DynkinType.rootGeneratorWeight_inr_eq_neg_root_simpleIndex`: that integral root is the
   simple root of `TauCeti.DynkinType.simplyConnectedRootDatum` with the same Bourbaki node number,
-  respectively its negative.
+  respectively its negative; in particular it is nonzero
+  (`TauCeti.DynkinType.rootGeneratorWeight_ne_zero`).
 * `TauCeti.DynkinType.geckRepresentation_mem_geckOrbit` and
   `TauCeti.DynkinType.span_geckOrbit_eq_top`: the integral orbit is stable under the Kostant form
   and spans the Geck module over `ℚ`.
@@ -213,6 +214,17 @@ theorem rootGeneratorWeight_inr_eq_neg_root_simpleIndex (i : Fin t.rank) :
       -(t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i) := by
   funext j
   rw [rootGeneratorWeight_inr, Pi.neg_apply, root_simpleIndex]
+
+/-- **Every numbered root generator has a nonzero root**, being plus or minus a simple root. -/
+theorem rootGeneratorWeight_ne_zero (i : Fin t.rank ⊕ Fin t.rank) :
+    t.rootGeneratorWeight ht i ≠ 0 := by
+  cases i with
+  | inl i =>
+    rw [rootGeneratorWeight_inl_eq_root_simpleIndex]
+    exact (t.simplyConnectedRootDatum ht).ne_zero _
+  | inr i =>
+    rw [rootGeneratorWeight_inr_eq_neg_root_simpleIndex, neg_ne_zero]
+    exact (t.simplyConnectedRootDatum ht).ne_zero _
 
 /-- **The pinned Cartan generators act on a numbered root generator through its root.** -/
 theorem lie_lieBasis_h_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) (j : Fin t.rank) :
