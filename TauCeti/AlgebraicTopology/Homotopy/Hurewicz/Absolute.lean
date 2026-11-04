@@ -32,6 +32,7 @@ maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and hence everywhere.
 
 ## Main results
 
+* `HomotopyGroup.hurewiczIntHom`: the integral Hurewicz homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`.
 * `HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz`: the Hurewicz map is `ε` times
   the cubical Hurewicz map, transported to simplicial singular homology, for a universal sign `ε`.
 * `HomotopyGroup.bijective_hurewicz` and `HomotopyGroup.hurewiczAddEquiv`: **the Hurewicz
@@ -54,8 +55,10 @@ namespace HomotopyGroup
 
 open TauCeti
 
-/-- The Hurewicz homomorphism with integer coefficients, evaluated at `1 : ℤ`. -/
-private def hurewiczIntHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
+/-- **The integral Hurewicz homomorphism** `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the
+Hurewicz homomorphism `HomotopyGroup.hurewiczHom` with integer coefficients, evaluated at
+`1 : ℤ`. -/
+def hurewiczIntHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
     Additive (HomotopyGroup (Fin (n + 1)) X x) →+
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
         (TopCat.of X) where
@@ -63,10 +66,21 @@ private def hurewiczIntHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
   map_zero' := by simp
   map_add' a b := by simp
 
-private lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
+lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
     (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
     hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
   congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
+
+/-- **Naturality of the integral Hurewicz homomorphism**: for a based map `f : (X, x) → (Y, y)`,
+the Hurewicz class of `f_* a` is the image of the Hurewicz class of `a` under
+`f_* : Hₙ₊₁(X; ℤ) → Hₙ₊₁(Y; ℤ)`. -/
+theorem hurewiczIntHom_map {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
+    (f : C(X, Y)) (hf : f x = y) {n : ℕ} (a : HomotopyGroup (Fin (n + 1)) X x) :
+    hurewiczIntHom Y y n (Additive.ofMul (map f hf a)) =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
+        (TopCat.ofHom f)).hom (hurewiczIntHom X x n (Additive.ofMul a)) := by
+  rw [hurewiczIntHom_apply, hurewiczIntHom_apply, toMul_ofMul, toMul_ofMul, hurewicz_map,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
 
 /-- The cubical Hurewicz class of a generalized loop `p`, read in simplicial singular homology, is
 the image of that of the tautological loop `TauCeti.sphereGenLoop (n + 2)` under
