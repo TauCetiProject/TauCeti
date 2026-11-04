@@ -34,8 +34,9 @@ value at `b` is bounded by a constant multiple of the Gauss norm at `r`
 ## Main results
 
 * `PowerSeries.OnOpenDisc.hasSum_evalAt`: the series `∑ aₙ • bⁿ` converges to `f(b)`.
-* `PowerSeries.OnOpenDisc.evalAt_add`, `PowerSeries.OnOpenDisc.evalAt_mul`: evaluation is additive
-  and multiplicative.
+* `PowerSeries.OnOpenDisc.evalAt_add`, `PowerSeries.OnOpenDisc.evalAt_sum` and
+  `PowerSeries.OnOpenDisc.evalAt_mul`: evaluation preserves addition, finite sums and
+  multiplication.
 * `PowerSeries.OnOpenDisc.map_evalAt`: naturality in continuous algebra homomorphisms.
 * `PowerSeries.OnOpenDisc.evalAtHom_comp_inclusion`: entire series are evaluated as such.
 * `TauCeti.PowerSeries.OnOpenDisc.isRestrictedEvalAtHom_comp_restrict`: restricting to a closed

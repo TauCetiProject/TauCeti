@@ -21,7 +21,27 @@ Evaluation of the translate at `b` is evaluation of the original series at `b + 
 The estimate at a closed radius `r` containing `a` is contractive whenever the weighted
 coefficients are bounded. To prove open-disc restrictedness, apply that estimate at a slightly
 larger radius still inside the open disc. No radius needs to be realized by a scalar and no
-factorial is inverted.
+factorial is inverted. Translation preserves the Gauss norm on every closed disc of positive
+radius `r` with `‖a‖ ≤ r < R₀`.
+
+## Main definitions
+
+* `TauCeti.PowerSeries.OnOpenDisc.taylorHom`: translation by an interior point as a ring
+  homomorphism on the open-disc algebra.
+* `TauCeti.PowerSeries.OnOpenDisc.taylorEquiv`: translation as a ring automorphism, with inverse
+  translation by the negative centre.
+
+## Main results
+
+* `PowerSeries.OnOpenDisc.taylor`: translation preserves the open-disc radius condition.
+* `TauCeti.PowerSeries.OnOpenDisc.continuous_taylorHom`: translation is continuous.
+* `TauCeti.PowerSeries.OnOpenDisc.taylorHom_taylorHom`: translations compose by addition.
+* `TauCeti.PowerSeries.OnOpenDisc.taylorHom_polynomialHom`: translation agrees with polynomial
+  Taylor translation.
+* `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_taylorHom`: translation preserves the Gauss norm
+  on every smaller positive-radius closed disc containing the centre.
+* `TauCeti.PowerSeries.OnOpenDisc.evalAt_taylorHom`: evaluation at an algebra point `b` after
+  translation is evaluation at `b + algebraMap R A a`.
 
 ## References
 

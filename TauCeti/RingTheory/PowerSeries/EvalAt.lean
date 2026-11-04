@@ -64,9 +64,10 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm`: a Gauss-norm bound in any normed algebra.
-* `PowerSeries.evalAt_add_of_summable_norm` and `PowerSeries.evalAt_mul_of_summable_norm`: in a
-  complete normed algebra, evaluation is additive and multiplicative on series whose terms at the
-  point are absolutely summable.
+* `PowerSeries.evalAt_add_of_summable_norm`, `PowerSeries.evalAt_sum_of_summable_norm` and
+  `PowerSeries.evalAt_mul_of_summable_norm`: in a complete normed algebra, evaluation preserves
+  addition, finite sums and multiplication on series whose terms at the point are absolutely
+  summable.
 * `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
   `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
   `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series.
