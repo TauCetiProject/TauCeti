@@ -254,25 +254,6 @@ theorem mk_eq_mk_iff (K L : GromovWassersteinPresentation.{u} p Z) :
   exact gromovWassersteinEDist_eq_zero_iff K.aestronglyMeasurable_kernel
     L.aestronglyMeasurable_kernel (ne_of_gt (lt_of_lt_of_le zero_lt_one Fact.out))
 
-/-- **The common-parametrization bound** on GW classes along a.e.-measurable maps. -/
-theorem edist_mk_le_eLpNorm_of_hasLaw {Ω : Type*} [MeasurableSpace Ω] {γ : Measure Ω} [SFinite γ]
-    {K L : GromovWassersteinPresentation.{u} p Z} {f : Ω → K.Carrier} {g : Ω → L.Carrier}
-    (hf : ProbabilityTheory.HasLaw f K.measure γ)
-    (hg : ProbabilityTheory.HasLaw g L.measure γ) :
-    edist (mk K) (mk L) ≤ eLpNorm
-      (fun q : Ω × Ω ↦ edist (K.kernel (f q.1, f q.2)) (L.kernel (g q.1, g q.2)))
-      p (γ.prod γ) :=
-  GromovWassersteinPresentation.edist_le_eLpNorm_of_hasLaw hf hg
-
-/-- **The common-parametrization bound** on GW classes along measure-preserving maps. -/
-theorem edist_mk_le_eLpNorm {Ω : Type*} [MeasurableSpace Ω] {γ : Measure Ω} [SFinite γ]
-    {K L : GromovWassersteinPresentation.{u} p Z} {f : Ω → K.Carrier} {g : Ω → L.Carrier}
-    (hf : MeasurePreserving f γ K.measure) (hg : MeasurePreserving g γ L.measure) :
-    edist (mk K) (mk L) ≤ eLpNorm
-      (fun q : Ω × Ω ↦ edist (K.kernel (f q.1, f q.2)) (L.kernel (g q.1, g q.2)))
-      p (γ.prod γ) :=
-  GromovWassersteinPresentation.edist_le_eLpNorm hf hg
-
 /-- **Convergence in GW space from a common parametrization.** Along any filter `l`, if
 a.e.-measurable maps `f i` (eventually along `l`) and `g` push an s-finite measure `γ` forward to
 `(Ks i).measure` and `L.measure`, and the `L^p (γ ⊗ γ)` discrepancy between the pulled-back kernels

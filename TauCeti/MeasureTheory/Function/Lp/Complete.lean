@@ -144,28 +144,20 @@ theorem exists_eLpNorm_edist_le_tsum [CompleteSpace Z] (hp : 1 ≤ p) {f : ℕ �
   obtain ⟨g, hg, hlim⟩ := exists_stronglyMeasurable_limit_of_tendsto_ae hf
     (hcauchy.mono fun _ hx ↦ cauchySeq_tendsto_of_complete hx)
   refine ⟨g, hg, hlim, fun n ↦ ?_⟩
-  -- Finite triangle steps bound the `Lᵖ` distance along the chain before passing to the a.e. limit.
-  have hstep : ∀ N, eLpNorm (fun x ↦ edist (f n x) (f (n + N) x)) p μ ≤
-      ∑ k ∈ Finset.range N, b (n + k) := fun N ↦ by
-    induction N with
-    | zero => simp
-    | succ N ih =>
-      calc eLpNorm (fun x ↦ edist (f n x) (f (n + (N + 1)) x)) p μ
-          ≤ eLpNorm ((fun x ↦ edist (f n x) (f (n + N) x)) +
-              fun x ↦ edist (f (n + N) x) (f (n + N + 1) x)) p μ :=
-            eLpNorm_mono_enorm (((hf n).edist (hf (n + (N + 1)))).aestronglyMeasurable) fun x ↦ by
-              simpa [Pi.add_apply, ← Nat.add_assoc] using
-                edist_triangle (f n x) (f (n + N) x) (f (n + N + 1) x)
-        _ ≤ eLpNorm (fun x ↦ edist (f n x) (f (n + N) x)) p μ +
-              eLpNorm (fun x ↦ edist (f (n + N) x) (f (n + N + 1) x)) p μ := eLpNorm_add_le hp
-        _ ≤ (∑ k ∈ Finset.range N, b (n + k)) + b (n + N) := add_le_add ih (hjump (n + N))
-        _ = ∑ k ∈ Finset.range (N + 1), b (n + k) := (Finset.sum_range_succ _ _).symm
   refine eLpNorm_ennreal_le_of_ae_tendsto (u := atTop)
-    (fun N ↦ (hf n).edist (hf (n + N))) ?_
-    (.of_forall fun N ↦ (hstep N).trans (sum_le_tsum _))
-  filter_upwards [hlim] with x hx
-  exact tendsto_const_nhds.edist
-    (hx.comp (tendsto_atTop_mono (fun N ↦ Nat.le_add_left N n) tendsto_id))
+    (fun N ↦ (hf n).edist (hf (n + N))) ?_ (.of_forall fun N ↦ ?_)
+  · filter_upwards [hlim] with x hx
+    exact tendsto_const_nhds.edist
+      (hx.comp (tendsto_atTop_mono (fun N ↦ Nat.le_add_left N n) tendsto_id))
+  · calc eLpNorm (fun x ↦ edist (f n x) (f (n + N) x)) p μ
+        ≤ eLpNorm (∑ k ∈ Finset.range N, fun x ↦ edist (f (n + k) x) (f (n + k + 1) x)) p μ :=
+          eLpNorm_mono_enorm (((hf n).edist (hf (n + N))).aestronglyMeasurable) fun x ↦ by
+            simpa [Finset.sum_apply, ← Nat.add_assoc] using
+              edist_le_range_sum_edist (fun k ↦ f (n + k) x) N
+      _ ≤ ∑ k ∈ Finset.range N, eLpNorm (fun x ↦ edist (f (n + k) x) (f (n + k + 1) x)) p μ :=
+          eLpNorm_sum_le hp
+      _ ≤ ∑ k ∈ Finset.range N, b (n + k) := Finset.sum_le_sum fun k _ ↦ hjump (n + k)
+      _ ≤ ∑' k, b (n + k) := sum_le_tsum _
 
 /-- **Completeness of metric `Lᵖ` discrepancies under a vanishing Cauchy modulus.** For `1 ≤ p` and
 a complete pseudo-extended-metric target `Z`, a sequence of a.e. strongly measurable functions
