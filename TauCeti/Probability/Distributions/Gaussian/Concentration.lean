@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Moments.Basic
 import TauCeti.Probability.Distributions.Uniform.Basic
 
 /-!
@@ -111,19 +112,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ}
 private instance : IsProbabilityMeasure (uniformMeasure 0 (π / 2)) :=
   isProbabilityMeasure_uniformMeasure (by positivity)
 
-/-- A continuous function is integrable for the uniform measure on `(0, π / 2]`. -/
-private lemma integrable_uniformMeasure_zero_pi_div_two {g : ℝ → ℝ} (hg : Continuous g) :
-    Integrable g (uniformMeasure 0 (π / 2)) := by
-  rw [uniformMeasure_eq_smul]
-  exact hg.integrableOn_Ioc.smul_measure (by simp [pi_pos])
-
-/-- The average of `g` over `(0, π / 2]` is `2 / π` times its integral over `0..π / 2`. -/
-private lemma integral_uniformMeasure_zero_pi_div_two (g : ℝ → ℝ) :
-    ∫ θ, g θ ∂uniformMeasure 0 (π / 2) = 2 / π * ∫ θ in (0)..(π / 2), g θ := by
-  rw [uniformMeasure_eq_smul, integral_smul_measure,
-    intervalIntegral.integral_of_le (by positivity), sub_zero, ENNReal.toReal_inv,
-    ENNReal.toReal_ofReal (by positivity), smul_eq_mul, inv_div]
-
 /-- Jensen's inequality along the interpolation path: `exp (t (f y - f x))` is at most the
 average over `θ ∈ (0, π / 2]` of `exp (t π / 2 · f' (R θ (x, y)).1 (R θ (x, y)).2)`. -/
 private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E × E) :
@@ -138,57 +126,15 @@ private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E �
     fun_prop
   have hmean : ∫ θ, t * (π / 2) * g θ ∂uniformMeasure 0 (π / 2) = t * (f p.2 - f p.1) := by
     simp only [g]
-    rw [integral_const_mul, integral_uniformMeasure_zero_pi_div_two,
-      sub_eq_integral_fderiv_rotation hf p]
+    rw [integral_const_mul, integral_uniformMeasure (by positivity),
+      sub_eq_integral_fderiv_rotation hf p, sub_zero, smul_eq_mul]
     field_simp
   rw [← hmean]
   exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
-    ((integrable_uniformMeasure_zero_pi_div_two hg).const_mul _)
-    (integrable_uniformMeasure_zero_pi_div_two (continuous_exp.comp (continuous_const.mul hg)))
+    ((integrable_uniformMeasure hg.integrableOn_Ioc).const_mul _)
+    (integrable_uniformMeasure (continuous_exp.comp (continuous_const.mul hg)).integrableOn_Ioc)
 
 end Jensen
-
-section Symmetrization
-
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ}
-
-/-- **Symmetrization by Jensen's inequality.** For a probability measure `μ`, the moment
-generating function of `f - 𝔼 f` at `t` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`. -/
-private lemma ofReal_mgf_sub_integral_le_lintegral (hfm : Measurable f) (hfi : Integrable f μ)
-    {t : ℝ} (hint : Integrable (fun x ↦ exp (t * (f x - ∫ y, f y ∂μ))) μ)
-    (hneg : Integrable (fun x ↦ exp (-t * f x)) μ) :
-    ENNReal.ofReal (mgf (fun x ↦ f x - ∫ y, f y ∂μ) μ t) ≤
-      ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ := by
-  set m := ∫ y, f y ∂μ
-  have hexp (x y : Ω) : exp (t * (f x - f y)) = exp (t * f x) * exp (-t * f y) := by
-    rw [← exp_add]
-    congr 1
-    ring
-  have hexpi (x : Ω) : Integrable (fun y ↦ exp (t * (f x - f y))) μ := by
-    simp_rw [hexp]
-    exact hneg.const_mul _
-  -- Jensen's inequality in `y`, for each fixed `x`.
-  have hjensen (x : Ω) : exp (t * (f x - m)) ≤ ∫ y, exp (t * (f x - f y)) ∂μ := by
-    have hmean : ∫ y, t * (f x - f y) ∂μ = t * (f x - m) := by
-      rw [integral_const_mul, integral_sub (integrable_const _) hfi]
-      simp [m]
-    rw [← hmean]
-    exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
-      (((integrable_const _).sub hfi).const_mul t) (hexpi x)
-  have hF : Measurable fun p : Ω × Ω ↦ ENNReal.ofReal (exp (t * (f p.1 - f p.2))) :=
-    ENNReal.measurable_ofReal.comp (by fun_prop)
-  rw [mgf]
-  calc ENNReal.ofReal (∫ x, exp (t * (f x - m)) ∂μ)
-      = ∫⁻ x, .ofReal (exp (t * (f x - m))) ∂μ :=
-        ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (exp_pos _).le)
-    _ ≤ ∫⁻ x, .ofReal (∫ y, exp (t * (f x - f y)) ∂μ) ∂μ :=
-        lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal (hjensen x)
-    _ = ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ := by
-        rw [lintegral_prod _ hF.aemeasurable]
-        refine lintegral_congr fun x ↦ ?_
-        rw [ofReal_integral_eq_lintegral_ofReal (hexpi x) (.of_forall fun _ ↦ (exp_pos _).le)]
-
-end Symmetrization
 
 end TauCeti.Probability
 
@@ -238,7 +184,7 @@ theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t :
     have hint : Integrable (fun θ ↦ exp (t * (π / 2) *
         fderiv ℝ f (ContinuousLinearMap.rotation θ p).1
           (ContinuousLinearMap.rotation θ p).2)) (uniformMeasure 0 (π / 2)) := by
-      refine TauCeti.Probability.integrable_uniformMeasure_zero_pi_div_two ?_
+      refine TauCeti.Probability.integrable_uniformMeasure (Continuous.integrableOn_Ioc ?_)
       simp only [ContinuousLinearMap.rotation_apply]
       fun_prop
     calc ENNReal.ofReal (exp (t * (f p.2 - f p.1)))
@@ -328,7 +274,7 @@ theorem hasSubgaussianMGF_sub_integral_of_variance_fderiv_le (hμ : μ[id] = 0)
   rw [hc, ← ENNReal.ofReal_le_ofReal_iff (exp_pos _).le]
   calc ENNReal.ofReal (mgf (fun x ↦ f x - m) μ t)
       ≤ ∫⁻ p, .ofReal (exp (t * (f p.1 - f p.2))) ∂μ.prod μ :=
-        TauCeti.Probability.ofReal_mgf_sub_integral_le_lintegral hf.continuous.measurable hfi
+        TauCeti.ofReal_mgf_sub_integral_le_lintegral hf.continuous.measurable hfi
           (hint t) (integrable_exp_mul_of_variance_fderiv_le hμ hf hv (-t))
     _ = ∫⁻ p, .ofReal (exp ((-t) * (f p.2 - f p.1))) ∂μ.prod μ :=
         lintegral_congr fun p ↦ by congr 2; ring
