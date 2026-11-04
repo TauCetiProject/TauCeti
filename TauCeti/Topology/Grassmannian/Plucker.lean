@@ -10,8 +10,6 @@ public import TauCeti.Topology.Algebra.Plucker
 public import TauCeti.Topology.Algebra.Projectivization
 public import TauCeti.Topology.Grassmannian.Basic
 
-import TauCeti.Algebra.Module.Submodule.Map
-
 /-!
 # The continuous Plücker map of a finite Grassmannian
 
@@ -59,8 +57,8 @@ theorem pluckerMap_frameSpan (f : finiteFullRankFrame 𝕜 r N) :
   let b := Module.finBasisOfFinrankEq 𝕜 (frameSpan f).1 (frameSpan f).2
   rw [pluckerMap_eq_mk _ b]
   apply (mk_plucker_eq_mk_plucker_iff b.linearIndependent_coe_basis f.2).2
-  simpa only [LinearMap.id_apply, Submodule.map_id, coe_frameSpan] using
-    (Submodule.map_eq_span_basis (frameSpan f).1 b LinearMap.id).symm
+  simpa only [coe_frameSpan] using
+    (Submodule.span_range_subtype_eq_top_iff _ fun i ↦ (b i).2).1 b.span_eq
 
 /-- The Plücker point determines the subspace. -/
 theorem pluckerMap_injective :

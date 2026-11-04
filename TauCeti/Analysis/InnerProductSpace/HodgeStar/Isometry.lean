@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import Mathlib.Analysis.InnerProductSpace.PiL2

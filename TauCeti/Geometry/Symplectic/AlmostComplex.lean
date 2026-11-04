@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Determinant.Prod
 
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -44,6 +45,11 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
+* `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
+* `TauCeti.IsComplexLinearMap.apply_apply_eq_of_apply_eq`: a complex-linear map acting on `v` by
+  `a + b i` acts on `J v` by the same number.
+* `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
+  their complex eigenlines by complex numbers of modulus one.
 * `TauCeti.SymplecticForm.Invariant.apply_add_apply_eq_zero`: invariance of `ω` under `J` in the
   form `ω (J v) w + ω v (J w) = 0`, which is linear in `J`.
 * `TauCeti.AlmostComplexStructure.tangentSpace J`: the tangent condition `Y J + J Y = 0` for
@@ -268,6 +274,19 @@ theorem bilinForm_apply_apply_self_eq_zero (J : AlmostComplexStructure V)
   rw [← hg.eq v (J v)] at h
   linarith
 
+/-- The restriction of an almost complex structure to a subspace it preserves. -/
+def restrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x ∈ L, J x ∈ L) :
+    AlmostComplexStructure L where
+  toLinearMap := J.toLinearMap.restrict hL
+  square_neg := by
+    ext x
+    simp [J.apply_apply]
+
+@[simp]
+lemma coe_restrict_apply (J : AlmostComplexStructure V) (L : Submodule ℝ V)
+    (hL : ∀ x ∈ L, J x ∈ L) (x : L) : (J.restrict L hL x : V) = J x :=
+  (rfl)
+
 /-- The tangent condition at a complex structure `J`: the endomorphisms `Y` with
 `Y J + J Y = 0`. Velocities of families of complex structures through `J` satisfy it
 (`AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt`), and for a tame `J` it is exactly the
@@ -447,6 +466,14 @@ lemma isComplexLinearMap_comp_almostComplexStructure_toLinearMap_iff
   ⟨fun hF => hF.of_comp_almostComplexStructure_toLinearMap,
     fun hF => hF.comp_almostComplexStructure_toLinearMap⟩
 
+/-- A complex-linear map acting on `v` by the complex number `a + b i`, that is
+`f v = a v + b J v`, acts on `J v` by the same number: `f (J v) = -b v + a J v`. -/
+lemma IsComplexLinearMap.apply_apply_eq_of_apply_eq {J : AlmostComplexStructure V}
+    {f : V →ₗ[ℝ] V} (hf : IsComplexLinearMap J J f) {v : V} {a b : ℝ}
+    (h : f v = a • v + b • J v) : f (J v) = (-b) • v + a • J v := by
+  rw [(isComplexLinearMap_iff_apply J J f).1 hf v, h, map_add, map_smul, map_smul,
+    J.apply_apply, smul_neg, neg_smul, add_comm]
+
 end ComplexLinearMap
 
 /-- The ordered pairing `B (F v) (F (J₀ v))` of an alternating bilinear form `B` is unchanged when
@@ -520,6 +547,16 @@ lemma apply_smul_add_smul_det (ω : SymplecticForm V) (B : (ℝ × ℝ) →ₗ[�
     ω ((B (1, 0)).1 • x + (B (1, 0)).2 • y) ((B (0, 1)).1 • x + (B (0, 1)).2 • y) =
       LinearMap.det B * ω x y := by
   rw [ω.apply_smul_add_smul, LinearMap.det_finTwoProd]
+
+/-- A `J`-complex-linear map `f` preserving `ω` which sends a vector `v` with `ω(v, J v) ≠ 0` to
+`a v + b J v` multiplies `v` by a complex number `a + b i` of modulus one. -/
+theorem sq_add_sq_eq_one_of_apply_eq {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    {f : V →ₗ[ℝ] V} (hf : ∀ x y, ω (f x) (f y) = ω x y) (hfJ : IsComplexLinearMap J J f) {v : V}
+    (hv : ω v (J v) ≠ 0) {a b : ℝ} (h : f v = a • v + b • J v) : a ^ 2 + b ^ 2 = 1 := by
+  have h₁ := hf v (J v)
+  rw [h, hfJ.apply_apply_eq_of_apply_eq h, ω.apply_smul_add_smul] at h₁
+  have h₂ : (a ^ 2 + b ^ 2 - 1) * ω v (J v) = 0 := by linear_combination h₁
+  linear_combination (mul_eq_zero.1 h₂).resolve_right hv
 
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the

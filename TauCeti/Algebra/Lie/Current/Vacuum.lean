@@ -85,6 +85,7 @@ noncomputable section
 
 open scoped LaurentSeries VertexOperator
 open PowerSeries LieAlgebra TauCeti.UniversalEnvelopingAlgebra
+open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
@@ -95,7 +96,8 @@ section Vacuum
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
-local notation "UK" => CentralQuotient R (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+local notation "UK" => CentralQuotient R (centralElement c) a
 
 /-- The **vacuum module** `V = U / I₀` of the residue central extension of `Φ` at the central
 value `a`: the module induced from the character of `L[[t]] ⊕ R K` which kills the nonnegative
@@ -126,7 +128,7 @@ theorem smul_vacuum_eq_zero_iff {u : UK} :
 /-- The currents of nonnegative order kill the vacuum. -/
 @[simp]
 theorem envelopingι_smul_vacuum {u : currentAlgebra R L} (hu : u ∈ orderSubmodule R L 0) :
-    envelopingι Φ hΦ hΦs a u • vacuum Φ hΦ hΦs a = 0 :=
+    envelopingι c a u • vacuum Φ hΦ hΦs a = 0 :=
   smul_vacuum_eq_zero_iff.2 (envelopingι_mem_orderLeftIdeal hu)
 
 /-- Every vector of the vacuum module is `u |0⟩` for some `u`. -/
@@ -141,25 +143,26 @@ theorem span_vacuum_eq_top : Submodule.span UK {vacuum Φ hΦ hΦs a} = ⊤ :=
 
 section Lift
 
-variable {M : Type*} [AddCommGroup M] [Module (CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+variable {M : Type*} [AddCommGroup M]
+  [Module (CentralQuotient R (centralElement (twoCocycleOfBilinear R L Φ hΦ hΦs)) a) M]
 
 /-- The `U`-linear map from the vacuum module sending `|0⟩` to a vector `m` killed by the currents
 of nonnegative order. -/
-def vacuumLift (m : M) (hm : ∀ u ∈ orderSubmodule R L 0, envelopingι Φ hΦ hΦs a u • m = 0) :
+def vacuumLift (m : M) (hm : ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0) :
     VacuumModule Φ hΦ hΦs a →ₗ[UK] M :=
   (orderLeftIdeal Φ hΦ hΦs a 0).liftQ (LinearMap.toSpanSingleton UK M m)
     (orderLeftIdeal_le_iff.2 fun u hu ↦ hm u hu)
 
 /-- The lift sends `u |0⟩` to `u m`. -/
 theorem vacuumLift_smul_vacuum (m : M)
-    (hm : ∀ u ∈ orderSubmodule R L 0, envelopingι Φ hΦ hΦs a u • m = 0) (u : UK) :
+    (hm : ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0) (u : UK) :
     vacuumLift m hm (u • vacuum Φ hΦ hΦs a) = u • m := by
   rw [← mk_eq_smul_vacuum, vacuumLift, Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply]
 
 /-- The lift sends the vacuum to `m`. -/
 @[simp]
 theorem vacuumLift_vacuum (m : M)
-    (hm : ∀ u ∈ orderSubmodule R L 0, envelopingι Φ hΦ hΦs a u • m = 0) :
+    (hm : ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0) :
     vacuumLift m hm (vacuum Φ hΦ hΦs a) = m := by
   simpa using vacuumLift_smul_vacuum m hm 1
 
@@ -175,7 +178,7 @@ theorem vacuumModule_hom_ext {f g : VacuumModule Φ hΦ hΦs a →ₗ[UK] M}
 evaluation at the vacuum identifies the `U`-linear maps `V → M` with the vectors of `M` killed by
 the currents of nonnegative order. -/
 def vacuumHomEquiv : (VacuumModule Φ hΦ hΦs a →ₗ[UK] M) ≃
-    {m : M // ∀ u ∈ orderSubmodule R L 0, envelopingι Φ hΦ hΦs a u • m = 0} where
+    {m : M // ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0} where
   toFun f := ⟨f (vacuum Φ hΦ hΦs a), fun u hu ↦ by
     rw [← map_smul, envelopingι_smul_vacuum hu, map_zero]⟩
   invFun m := vacuumLift m.1 m.2
@@ -191,7 +194,7 @@ theorem vacuumHomEquiv_apply_coe (f : VacuumModule Φ hΦ hΦs a →ₗ[UK] M) :
 /-- The inverse of the universal property is `vacuumLift`. -/
 @[simp]
 theorem vacuumHomEquiv_symm_apply
-    (m : {m : M // ∀ u ∈ orderSubmodule R L 0, envelopingι Φ hΦ hΦs a u • m = 0}) :
+    (m : {m : M // ∀ u ∈ orderSubmodule R L 0, envelopingι c a u • m = 0}) :
     vacuumHomEquiv.symm m = vacuumLift m.1 m.2 :=
   (rfl)
 
@@ -215,7 +218,8 @@ section Coordinate
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
 variable (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
 
-local notation "UK" => CentralQuotient K (centralElement Φ hΦ hΦs) a
+local notation "c" => twoCocycleOfBilinear K L Φ hΦ hΦs
+local notation "UK" => CentralQuotient K (centralElement c) a
 
 /-- The lift of a coordinate change, as a semilinear map of the left regular module, preserves
 `I₀`. -/
@@ -232,8 +236,8 @@ private def vacuumCoordinateMap (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) :
     (coordinateEnvelopingAut Φ hΦ hΦs a σ : UK →+* UK).toSemilinearMap
     (orderLeftIdeal_le_comap_coordinateEnvelopingAut Φ hΦ hΦs a σ)
   map_add' := map_add _
-  map_smul' c v := by
-    rw [← algebraMap_smul UK c v, LinearMap.map_smulₛₗ, RingHom.coe_coe, AlgEquiv.commutes,
+  map_smul' r v := by
+    rw [← algebraMap_smul UK r v, LinearMap.map_smulₛₗ, RingHom.coe_coe, AlgEquiv.commutes,
       algebraMap_smul, RingHom.id_apply]
 
 variable {Φ hΦ hΦs a}

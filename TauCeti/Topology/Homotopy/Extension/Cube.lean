@@ -32,6 +32,8 @@ the cube `I × (I × I^N)`, which homotopies of relative cubes are defined on.
   extension property.
 * `TauCeti.hasHomotopyExtensionProperty_boundary_prod`: the boundary of `I × (I × I^N)` has the
   homotopy extension property.
+* `TauCeti.hasHomotopyExtensionProperty_zero_one`: the end points `{0, 1}` of the unit interval,
+  the boundary of the one-dimensional cube, have the homotopy extension property.
 -/
 
 public section
@@ -69,5 +71,14 @@ theorem hasHomotopyExtensionProperty_boundary_prod :
   ext ⟨t, w⟩
   rw [Homeomorph.image_eq_preimage_symm, mem_preimage]
   simp [← piOptionEquivProdHomeomorph_mem_prodBoundary_iff]
+
+/-- The end points `{0, 1}` of the unit interval have the homotopy extension property in `I`: they
+form the boundary of the one-dimensional cube `I^Unit`. -/
+theorem hasHomotopyExtensionProperty_zero_one : HasHomotopyExtensionProperty ({0, 1} : Set I) := by
+  convert (hasHomotopyExtensionProperty_cubeBoundary (N := Unit)).image
+    (Homeomorph.funUnique Unit I) using 1
+  ext t
+  rw [Homeomorph.image_eq_preimage_symm]
+  simp [Cube.boundary]
 
 end TauCeti

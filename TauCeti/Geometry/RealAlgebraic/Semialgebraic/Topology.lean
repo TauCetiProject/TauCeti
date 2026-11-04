@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.RealAlgebraic.CAD.Existence
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image
+import TauCeti.Topology.LocallyClosed
 
 /-!
 # Balls, closures and interiors of real semialgebraic sets
@@ -19,6 +20,10 @@ This file shows that the basic metric and topological constructions on the real 
   on `σ → ℝ`, and for the Euclidean norm of `EuclideanSpace ℝ σ`. In particular every point has
   arbitrarily small open semialgebraic neighbourhoods of either kind.
 * The closure, interior and frontier of a semialgebraic set are semialgebraic.
+* A semialgebraic subset of `ℝ ^ n` with empty interior is nowhere dense. It is the union of the
+  cells of an adapted cylindrical algebraic decomposition that it contains, and these are locally
+  closed with empty interior, hence nowhere dense. This fails for arbitrary sets, as the rationals
+  in `ℝ` show.
 
 The ball statements only use the polynomial description of the two norms. The closure statement
 uses the Tarski–Seidenberg theorem in the form of projection closure
@@ -37,6 +42,8 @@ and differences.
   Euclidean balls, read in the coordinates `σ → ℝ`.
 * `TauCeti.IsSemialgebraic.closure`, `TauCeti.IsSemialgebraic.interior`,
   `TauCeti.IsSemialgebraic.frontier`.
+* `TauCeti.IsSemialgebraic.isNowhereDense_iff`: a semialgebraic set is nowhere dense exactly when
+  its interior is empty.
 
 ## References
 
@@ -178,5 +185,20 @@ theorem IsSemialgebraic.interior [Finite σ] {s : Set (σ → ℝ)} (hs : IsSemi
 theorem IsSemialgebraic.frontier [Finite σ] {s : Set (σ → ℝ)} (hs : IsSemialgebraic s) :
     IsSemialgebraic (frontier s) :=
   hs.closure.sdiff hs.interior
+
+/-! ### Nowhere dense semialgebraic sets -/
+
+/-- A semialgebraic set is nowhere dense exactly when its interior is empty. -/
+theorem IsSemialgebraic.isNowhereDense_iff {n : ℕ} {s : Set (Fin n → ℝ)} (hs : IsSemialgebraic s) :
+    IsNowhereDense s ↔ _root_.interior s = ∅ := by
+  refine ⟨fun h ↦ subset_empty_iff.1 (h ▸ interior_mono subset_closure), fun h ↦ ?_⟩
+  -- `s` is the finite union of the cells of an adapted CAD that it contains, which are locally
+  -- closed with empty interior.
+  obtain ⟨𝒞, h𝒞, hsub⟩ := hs.exists_isCAD_subset_or_disjoint
+  rw [← h𝒞.sUnion_sep_subset hsub] at h ⊢
+  have := (h𝒞.finite.subset (sep_subset 𝒞 (· ⊆ s))).to_subtype
+  rw [sUnion_eq_iUnion]
+  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.2.1).isNowhereDense_iff.2 <|
+    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.2))
 
 end TauCeti

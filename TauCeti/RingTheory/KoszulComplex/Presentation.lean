@@ -39,6 +39,13 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 def koszulRelations (φ : Module.Dual R M) : Submodule R M :=
   LinearMap.range ((exteriorPower.oneEquiv R M).toLinearMap ∘ₗ koszulDifferential φ 1)
 
+/-- The Koszul relation submodule is the range of the degree-one differential,
+identified with a map to `M` by `exteriorPower.oneEquiv`. -/
+theorem koszulRelations_def (φ : Module.Dual R M) :
+    koszulRelations φ =
+      LinearMap.range ((exteriorPower.oneEquiv R M).toLinearMap ∘ₗ koszulDifferential φ 1) :=
+  (rfl)
+
 /-- Each elementary Koszul relation belongs to the relation submodule. -/
 theorem smul_sub_smul_mem_koszulRelations (φ : Module.Dual R M) (u v : M) :
     φ u • v - φ v • u ∈ koszulRelations φ := by
