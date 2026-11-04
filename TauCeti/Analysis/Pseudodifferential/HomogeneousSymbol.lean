@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -71,24 +72,6 @@ noncomputable section
 
 open Filter Metric Set
 open scoped ContDiff Topology
-
-namespace ContinuousMultilinearMap
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F G : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
-  [NormedSpace 𝕜 G]
-
-/-- The operator-norm bound for a multilinear map on `E × F` evaluated on `j` directions in `E`
-followed by `l` directions in `F`. -/
-theorem norm_apply_append_prod_le {j l : ℕ} (D : (E × F) [×(j + l)]→L[𝕜] G) (u : Fin j → E)
-    (w : Fin l → F) :
-    ‖D (Fin.append (fun i => (u i, 0)) (fun i => (0, w i)))‖ ≤
-      ‖D‖ * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖) := by
-  refine (D.le_opNorm _).trans_eq ?_
-  simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
-    norm_nonneg, max_eq_left, max_eq_right]
-
-end ContinuousMultilinearMap
 
 namespace TauCeti
 
