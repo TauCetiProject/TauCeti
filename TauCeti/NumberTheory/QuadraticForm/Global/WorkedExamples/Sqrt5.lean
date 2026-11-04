@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
-public import TauCeti.NumberTheory.QuadraticForm.Global.LocalRealization
+public import TauCeti.NumberTheory.QuadraticForm.Global.Rank.Three
 import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Invariants
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Units
@@ -26,20 +26,24 @@ The single finite sign `-1` therefore makes the total Hasse product one. The two
 small-rank realization exceptions do not apply in rank three.
 
 The system has regular local realizations at every finite and real place, by the local
-realization theorem. It is also realized by an explicit regular global form, `⟨1, θ, θ⟩`. Its
+realization theorem. The global existence theorem for admissible ternary systems then produces
+a regular global form with exactly these invariants, independently of an explicit formula.
+
+Separately, the system is realized by the explicit regular global form `⟨1, θ, θ⟩`. Its
 discriminant is the class of `θ²`. Since `θ` has norm `-1`, it is positive at one real place and
 negative at the other, which gives the two positive indices. Its Hasse sign at a finite place `v`
 is `(θ, θ)_v = (θ, -1)_v`. Away from `(2)` both entries are units at an odd place, so the symbol is
 `1`. At `(2)` the sign comes from Hilbert's product formula for `θ` and `-1`: the two real symbols
-multiply to `-1`, so the remaining finite symbol at `(2)` is `-1`. The global form is written down
-directly rather than produced by the existence theorem for admissible systems.
+multiply to `-1`, so the remaining finite symbol at `(2)` is `-1`. Thus the explicit computation
+and the existence theorem give two independent ways of realizing the same local data.
 
 ## Main results
 
 * `TauCeti.NumberField.QuadraticForm.Sqrt5.globalInvariants_weightedSumSquares_one_self_self`:
   the system of local invariants of `⟨1, θ, θ⟩`.
 * `TauCeti.NumberField.QuadraticForm.Sqrt5.exists_admissible_rank_three`: the admissible
-  mixed-signature system, its local realizations, and its realization by `⟨1, θ, θ⟩`.
+  mixed-signature system, its local realizations, and a global realization obtained from
+  admissibility.
 
 ## References
 
@@ -173,8 +177,8 @@ end GlobalForm
 open scoped Classical in
 /-- Over `ℚ(√5)` there is an admissible rank-three system of trivial discriminant, with
 positive indices three and one at its two real places and Hasse sign `-1` exactly at the
-prime `(2)`. The finite and real local forms realizing this system are regular, and the system is
-that of the regular global form `⟨1, θ, θ⟩`. -/
+prime `(2)`. The system has regular local realizations and a regular global realization with
+these prescribed invariants. -/
 theorem exists_admissible_rank_three
     (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
@@ -201,7 +205,7 @@ theorem exists_admissible_rank_three
     ⟨Ideal.span {(2 : 𝓞 K)}, hprime, by simp⟩
   -- Enumerate both real places, so the real Hasse product has exactly two factors.
   -- Order them so that `θ` is positive at the first and negative at the second.
-  obtain ⟨w₁, w₂, hne, hw, hθ₁, hθ₂⟩ :=
+  obtain ⟨w₁, w₂, hne, hw, -, -⟩ :=
     TauCeti.NumberField.Sqrt5.exists_realPlaces_pos_neg hmin hgen
   let I : GlobalFormInvariants K :=
     { rank := 3
@@ -232,20 +236,9 @@ theorem exists_admissible_rank_three
   have hw' (w : {w : InfinitePlace K // w.IsReal}) : w = w₁ ∨ w = w₂ := by
     have : w ∈ (Finset.univ : Finset {w : InfinitePlace K // w.IsReal}) := Finset.mem_univ w
     simpa [hw] using this
-  have hQ : (weightedSumSquares K ![1, (θ : K), (θ : K)]).Nondegenerate :=
-    nondegenerate_weightedSumSquares fun i => by
-      fin_cases i
-      exacts [isRegular_one, (thetaUnit hmin).isUnit.isRegular, (thetaUnit hmin).isUnit.isRegular]
-  refine ⟨v₂, w₁, w₂, rfl, hne, hw', I, hI, rfl, rfl, fun _ => rfl, ?_, ?_,
-    hI.exists_isLocalRealization, _, hQ, ?_⟩
-  · simp [I]
-  · simp [I, hne.symm]
-  -- The global form `⟨1, θ, θ⟩` has exactly these invariants.
-  rw [globalInvariants_weightedSumSquares_one_self_self hmin hgen hQ]
-  refine GlobalFormInvariants.ext rfl rfl (funext fun v => ?_) (funext fun w => ?_)
-  · simp [I, v₂, HeightOneSpectrum.ext_iff]
-  · rcases hw' w with rfl | rfl
-    · simp [I, hθ₁]
-    · simp [I, hθ₂.not_gt, hne.symm]
+  -- Produce the global form from admissibility, without using the explicit diagonal form.
+  exact ⟨v₂, w₁, w₂, rfl, hne, hw', I, hI, rfl, rfl, fun _ => rfl,
+    by simp [I], by simp [I, hne.symm], hI.exists_isLocalRealization,
+    hI.exists_globalForm_of_rank_eq_three rfl⟩
 
 end TauCeti.NumberField.QuadraticForm.Sqrt5
