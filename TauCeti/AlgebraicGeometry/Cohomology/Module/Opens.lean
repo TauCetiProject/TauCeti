@@ -23,8 +23,9 @@ sheaf on an open subset is a localization of the cohomology on a larger one.
 The restriction maps (`Scheme.Modules.cohomologyOnResLinear`) and the connecting maps of the
 Mayer-Vietoris sequence (`Scheme.Modules.mayerVietorisδLinear`) are linear. In degree zero the
 action is the action of the restriction of `r` to `U` on the sections of `M` over `U`
-(`Scheme.Modules.cohomologyOnZeroEquiv_smul`), where `Scheme.Modules.cohomologyOnZeroEquiv`
-identifies `H⁰(U, M)` with the sections of `M` over `U`.
+(`Scheme.Modules.cohomologyOnZeroEquiv_smul`), under the identification
+`Scheme.Modules.cohomologyOnZeroEquiv` of `H⁰(U, M)` with the sections of `M` over `U` from
+`TauCeti.AlgebraicGeometry.Cohomology.Basic`.
 
 The construction mirrors the action of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` on the
 cohomology of the whole scheme, with the cohomology presheaf `U ↦ Hⁿ(U, M)` in place of the
@@ -162,18 +163,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.mayerVietorisδLinear_apply (U V :
     mayerVietorisδLinear M U V n₀ n₁ h x = mayerVietorisδ M U V n₀ n₁ h x :=
   (rfl)
 
-/-- Degree-zero cohomology over an open subset `U` is the group of sections of `M` over `U`. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv (U : X.Opens) :
-    cohomologyOn M 0 U ≃+ Γ(M, U) :=
-  cohomologyZeroSectionsEquiv ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U
-
-/-- The identification of degree-zero cohomology with sections commutes with restriction. -/
-lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_cohomologyOnRes
-    {U V : X.Opens} (h : U ≤ V) (x : cohomologyOn M 0 V) :
-    cohomologyOnZeroEquiv M U (cohomologyOnRes M 0 h x) =
-      M.presheaf.map (homOfLE h).op (cohomologyOnZeroEquiv M V x) :=
-  cohomologyZeroSectionsEquiv_naturality_left _ (homOfLE h) x
-
 /-- In degree zero, a global function `r` acts on `H⁰(U, M)`, identified with the sections of `M`
 over `U`, through its restriction to `U`. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_smul (U : X.Opens)
@@ -181,10 +170,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_smul (U : X.
     cohomologyOnZeroEquiv M U (r • x) =
       X.presheaf.map U.leTop.op r • cohomologyOnZeroEquiv M U x := by
   rw [cohomologyOn_smul_def]
-  refine (cohomologyZeroSectionsEquiv_naturality_right _ U x).trans ?_
-  -- The underlying morphism of abelian sheaves of `globalSectionsSmul M r` acts on sections over
-  -- `U` as `globalSectionsSmul M r` does; Mathlib has no lemma relating `toSheaf` to `Hom.app`.
-  change (M.globalSectionsSmul r).app U (cohomologyOnZeroEquiv M U x) = _
+  refine (cohomologyOnZeroEquiv_naturality M (M.globalSectionsSmul r) U x).trans ?_
   rw [globalSectionsSmul_app]
   exact M.smul_apply _ _
 

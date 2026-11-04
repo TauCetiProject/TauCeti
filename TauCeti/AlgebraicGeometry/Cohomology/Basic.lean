@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
@@ -24,7 +25,8 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
 * `Scheme.Modules.cohomologyZeroEquiv`, the canonical equivalence
   `H⁰(X, M) ≃+ Γ(M, ⊤)` with global sections;
 * `Scheme.Modules.cohomologyOn M n U`, the cohomology `Hⁿ(U, M)` of an open subset,
-  `Scheme.Modules.cohomologyOnRes` its restriction maps, and
+  `Scheme.Modules.cohomologyOnRes` its restriction maps,
+  `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
   `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`.
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
@@ -134,6 +136,28 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnRes_comp_apply (n : �
     cohomologyOnRes M n hUV (cohomologyOnRes M n hVW x) =
       cohomologyOnRes M n (hUV.trans hVW) x := by
   rw [← ConcreteCategory.comp_apply, cohomologyOnRes_comp]
+
+/-- Degree-zero cohomology over an open subset `U` is the group of sections of `M` over `U`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv (U : Opens X) :
+    cohomologyOn M 0 U ≃+ Γ(M, U) :=
+  TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U
+
+/-- The identification of degree-zero cohomology with sections commutes with restriction. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_cohomologyOnRes
+    {U V : Opens X} (h : U ≤ V) (x : cohomologyOn M 0 V) :
+    M.cohomologyOnZeroEquiv U (cohomologyOnRes M 0 h x) =
+      M.presheaf.map (homOfLE h).op (M.cohomologyOnZeroEquiv V x) :=
+  TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv_naturality_left _ (homOfLE h) x
+
+/-- The identification of degree-zero cohomology with sections is natural in the coefficient
+sheaf. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_naturality {N : X.Modules}
+    (f : M ⟶ N) (U : Opens X) (x : cohomologyOn M 0 U) :
+    N.cohomologyOnZeroEquiv U (((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ 0).map
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).app (Opposite.op U) x) =
+      f.app U (M.cohomologyOnZeroEquiv U x) :=
+  TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv_naturality_right _ U x
 
 /-- The cohomology of the whole space is the cohomology of the scheme. -/
 noncomputable abbrev cohomologyOnTopIso (n : ℕ) :
