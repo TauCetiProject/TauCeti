@@ -20,8 +20,8 @@ space `Hom_(Matrix ι ι R)(R^ι, M)`. Under this identification Mathlib's couni
 
 The column module uses the scoped `Matrix.Module.matrixModule` action. The scalar action
 on `M` used by the native inverse functor is restriction along `Matrix.scalar`; it agrees
-with any given `R`-action satisfying the scalar tower law. No finiteness assumption is
-imposed on `M`.
+with any given `R`-action satisfying the scalar tower law by
+`IsScalarTower.algebraMap_smul`. No finiteness assumption is imposed on `M`.
 
 ## References
 
@@ -38,18 +38,21 @@ open scoped Matrix.Module TensorProduct
 
 namespace MatrixModCat
 
-variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+variable {R ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- Restriction along the scalar-matrix homomorphism recovers a given scalar action
-whenever it satisfies the scalar tower law. -/
-theorem compHom_scalar_smul {E : Type*} [AddCommGroup E] [Module R E]
-    [Module (Matrix ι ι R) E] [IsScalarTower R (Matrix ι ι R) E] (r : R) (x : E) :
-    @SMul.smul R E (Module.compHom E (Matrix.scalar ι)).toSMul r x = r • x := by
-  -- The restricted action is scalar-matrix multiplication, and a scalar matrix is r • 1.
-  change Matrix.scalar ι r • x = r • x
-  rw [Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal, smul_assoc, one_smul]
+section Ring
 
-variable (M : ModuleCat (Matrix ι ι R))
+variable [Ring R] (M : ModuleCat (Matrix ι ι R))
+
+/-- The matrix-unit relation underlying evaluation at a chosen standard vector. -/
+theorem single_smul_map_single (T : (ι → R) →ₗ[Matrix ι ι R] M) (i j : ι) :
+    (single i j 1 : Matrix ι ι R) • T (Pi.single j 1) = T (Pi.single i 1) := by
+  rw [← T.map_smul]
+  simp
+
+end Ring
+
+variable [CommRing R] (M : ModuleCat (Matrix ι ι R))
 
 /-- The scalar structure selected by Mathlib's inverse matrix functor. -/
 local instance nativeScalarModule : Module R M := Module.compHom M (Matrix.scalar ι)
@@ -57,12 +60,6 @@ local instance nativeScalarModule : Module R M := Module.compHom M (Matrix.scala
 /-- The scalar tower of the native inverse matrix functor. -/
 local instance nativeScalarTower : IsScalarTower R (Matrix ι ι R) M :=
   isScalarTower_toModuleCat R M
-
-/-- The matrix-unit relation underlying evaluation at a chosen standard vector. -/
-theorem single_smul_map_single (T : (ι → R) →ₗ[Matrix ι ι R] M) (i j : ι) :
-    (single i j 1 : Matrix ι ι R) • T (Pi.single j 1) = T (Pi.single i 1) := by
-  rw [← T.map_smul]
-  simp
 
 /-- Evaluation at `eⱼ`, with codomain the actual corner used by the native inverse functor. -/
 def homToCorner (j : ι) : ((ι → R) →ₗ[Matrix ι ι R] M) →ₗ[R] toModuleCatObj R M j where
