@@ -135,13 +135,10 @@ theorem exists_dual_pointMap_eq_of_mem_ker
     (hP : P ∈ (Hom.ofIsogeny φ).pointMapHom.ker) :
     ∃ S : Submodule.torsionBy ℤ W₂.Point (φ.degree : ℤ),
       (Hom.ofIsogeny φ.dual).pointMap S = P := by
-  have hs := φ.dual.torsionToDualKer_surjective
-  have hs' : ∀ Q : (Hom.ofIsogeny φ.dual.dual).pointMapHom.ker,
-      ∃ S : Submodule.torsionBy ℤ W₂.Point (φ.dual.degree : ℤ),
-        (Hom.ofIsogeny φ.dual).pointMap S = Q := fun Q ↦ by
-    obtain ⟨S, hS⟩ := hs Q
-    exact ⟨S, by simpa only [coe_torsionToDualKer] using congrArg Subtype.val hS⟩
-  rw [degree_dual, dual_dual] at hs'
-  exact hs' ⟨P, hP⟩
+  obtain ⟨S, hS⟩ := φ.dual.toPointHom_surjective P
+  rw [← Hom.pointMap_ofIsogeny_eq_toPointHom] at hS
+  refine ⟨⟨S, ?_⟩, hS⟩
+  rw [Submodule.mem_torsionBy_iff, natCast_zsmul, ← φ.pointMap_pointMap_dual, hS]
+  exact (Hom.mem_ker_pointMapHom_iff _ _).mp hP
 
 end TauCeti.Isogeny
