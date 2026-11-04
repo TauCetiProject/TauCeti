@@ -19,11 +19,14 @@ polynomial in the elementary symmetric polynomials `e₁, …, eₙ`. If `P` is 
 that polynomial in `e₁, …, eₙ` is weighted homogeneous of weight `m` when the variable standing for
 `eᵢ₊₁` is given weight `i + 1` (`MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm`).
 
-Specialising `e₁, …, eₙ₋₁` to `0` and `eₙ` to `(-1) ^ (n - 1) * X` defines an `R`-algebra
-homomorphism `MvPolynomial.symmetricSubalgebra.evalTopEsymm : symmetricSubalgebra σ R →ₐ[R] R[X]`.
-When `Z ^ n - X = ∏_{j=1}^n (Z - ζⱼ)` splits, Vieta's formulas give `eₖ(ζ₁, …, ζₙ) = 0` for
-`1 ≤ k < n` and `eₙ(ζ₁, …, ζₙ) = (-1) ^ (n - 1) * X`, so `evalTopEsymm` is the algebraic
-specialisation `P(ζ₁, …, ζₙ) ∈ R[X]` defined without adjoining `n`-th roots to `R`.
+Specialising `e₁, …, eₙ₋₁` to `0` and, when `0 < n`, `eₙ` to `(-1) ^ (n - 1) * X` defines an
+`R`-algebra homomorphism
+`MvPolynomial.symmetricSubalgebra.evalTopEsymm : symmetricSubalgebra σ R →ₐ[R] R[X]`
+(when `n = 0`, `symmetricSubalgebra σ R` consists of constants and `evalTopEsymm` is the canonical
+inclusion `R →ₐ[R] R[X]`). When `0 < n` and `Z ^ n - X = ∏_{j=1}^n (Z - ζⱼ)` splits, Vieta's
+formulas give `eₖ(ζ₁, …, ζₙ) = 0` for `1 ≤ k < n` and `eₙ(ζ₁, …, ζₙ) = (-1) ^ (n - 1) * X`, so
+`evalTopEsymm` is the algebraic specialisation `P(ζ₁, …, ζₙ) ∈ R[X]` defined without adjoining
+`n`-th roots to `R`.
 
 On a homogeneous symmetric polynomial of degree `m` (with `σ` nonempty), `evalTopEsymm` vanishes
 unless `n ∣ m`, and in degree `k * n` it produces a scalar multiple of `X ^ k`. By Newton's
@@ -35,8 +38,8 @@ of symmetric multivariate power series, this evaluation constructs Cartier's Fro
 ## Main definitions
 
 * `MvPolynomial.symmetricSubalgebra.evalTopEsymm`: the `R`-algebra homomorphism
-  `symmetricSubalgebra σ R →ₐ[R] Polynomial R` sending `eₖ` (`1 ≤ k < n`) to `0` and `eₙ` to
-  `(-1) ^ (n - 1) * X`, where `n = Fintype.card σ`.
+  `symmetricSubalgebra σ R →ₐ[R] Polynomial R` sending `eₖ` (`1 ≤ k < n`) to `0` and, when
+  `0 < n`, `eₙ` to `(-1) ^ (n - 1) * X`, where `n = Fintype.card σ`.
 
 ## Main results
 
@@ -124,8 +127,9 @@ section EvalTopEsymm
 variable (σ R : Type*) [Fintype σ] [CommRing R]
 
 /-- The `R`-algebra homomorphism `symmetricSubalgebra σ R →ₐ[R] Polynomial R` sending `eₖ` to `0`
-for `1 ≤ k < Fintype.card σ` and `e_{Fintype.card σ}` to `(-1) ^ (Fintype.card σ - 1) * X`. This is
-the universal evaluation of symmetric polynomials at the roots of `Z ^ (Fintype.card σ) - X`. -/
+for `1 ≤ k < Fintype.card σ` and, when `σ` is nonempty, `e_{Fintype.card σ}` to
+`(-1) ^ (Fintype.card σ - 1) * X`. For nonempty `σ`, this is the algebraic evaluation of symmetric
+polynomials at the roots of `Z ^ (Fintype.card σ) - X`. -/
 noncomputable def evalTopEsymm : symmetricSubalgebra σ R →ₐ[R] Polynomial R :=
   (aeval fun i : Fin (Fintype.card σ) ↦
     if (i : ℕ) + 1 = Fintype.card σ then (-1 : Polynomial R) ^ (i : ℕ) * Polynomial.X else 0).comp
@@ -176,8 +180,25 @@ theorem evalTopEsymm_esymm_of_pos {k : ℕ} (hk : 0 < k) :
       exact Finset.sum_eq_zero fun t _ ↦
         absurd (t.2 ▸ Finset.card_le_univ (t : Finset σ)) hgt.not_ge
     have hsub : (⟨esymm σ R k, esymm_isSymmetric σ R k⟩ : symmetricSubalgebra σ R) = 0 :=
-      Subtype.ext hzero
+        Subtype.ext hzero
     simp [hsub, hgt.ne']
+
+/-- Any product in `symmetricSubalgebra σ R` containing `eₐ` with `0 < a` and `a ≠ Fintype.card σ`
+is killed by `evalTopEsymm`. -/
+private theorem evalTopEsymm_mul_esymm_mul_eq_zero {a : ℕ} (ha0 : 0 < a)
+    (hane : a ≠ Fintype.card σ) (x y : symmetricSubalgebra σ R) :
+    evalTopEsymm σ R (x * ⟨esymm σ R a, esymm_isSymmetric σ R a⟩ * y) = 0 := by
+  rw [map_mul, map_mul, evalTopEsymm_esymm_of_pos ha0, ite_eq_right hane, mul_zero, zero_mul]
+
+private theorem neg_one_pow_succ_mul_neg_one_pow_pred {α : Type*} [Ring α] {n : ℕ} (hn : 0 < n) :
+    (-1 : α) ^ (n + 1) * (-1) ^ (n - 1) = 1 := by
+  have hexp : n + 1 + (n - 1) = 2 * n := by omega
+  rw [← pow_add, hexp, pow_mul, neg_one_sq, one_pow]
+
+private theorem neg_neg_one_pow_mul_neg_one_pow_pred {α : Type*} [Ring α] {n : ℕ} (hn : 0 < n) :
+    -((-1 : α) ^ n * (-1) ^ (n - 1)) = 1 := by
+  have hexp : n + (n - 1) = 2 * (n - 1) + 1 := by omega
+  rw [← pow_add, hexp, pow_succ, pow_mul, neg_one_sq, one_pow, one_mul, neg_neg]
 
 section Nonempty
 
@@ -198,6 +219,8 @@ private theorem coeff_aeval_topEsymm_eq_zero {φ : MvPolynomial (Fin (Fintype.ca
   | monomial d r hr =>
     have hn : 0 < Fintype.card σ := Fintype.card_pos
     let last : Fin (Fintype.card σ) := ⟨Fintype.card σ - 1, by omega⟩
+    -- Either `d` involves some variable below `last` (which evaluates to `0`), or `d` is supported
+    -- solely on `last` so its weight `d last * card σ = m` forces `k ≠ d last`.
     by_cases hsupp : ∃ i : Fin (Fintype.card σ), i ≠ last ∧ d i ≠ 0
     · obtain ⟨i, hilast, hdi⟩ := hsupp
       have hi_ne : (i : ℕ) + 1 ≠ Fintype.card σ := fun h ↦ hilast (Fin.ext (by simp [last]; omega))
@@ -268,6 +291,9 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
   have hn : 0 < Fintype.card σ := Fintype.card_pos
   induction m using Nat.strong_induction_on with
   | _ m ih =>
+    -- Expand `pₘ` via Newton's identity
+    -- `pₘ = (-1)^(m+1) m eₘ - ∑_{0 < a₁ < m} (-1)^a₁ e_{a₁} p_{a₂}`
+    -- and split into the cases `m < n`, `m = n`, and `m > n` (`n = Fintype.card σ`).
     let E (k : ℕ) : symmetricSubalgebra σ R := ⟨esymm σ R k, esymm_isSymmetric σ R k⟩
     have hnewton : (⟨psum σ R m, psum_isSymmetric σ R m⟩ : symmetricSubalgebra σ R) =
         (-1) ^ (m + 1) * (m : symmetricSubalgebra σ R) * E m -
@@ -277,33 +303,32 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
     rw [hnewton, map_sub, map_mul, map_mul, map_pow, map_neg, map_one, map_natCast, map_sum,
       evalTopEsymm_esymm_of_pos hm]
     rcases lt_trichotomy m (Fintype.card σ) with hlt | heq | hgt
-    · have hndvd : ¬ Fintype.card σ ∣ m := Nat.not_dvd_of_pos_of_lt hm hlt
+    · -- Case `m < n`: both `eₘ` and every `e_{a₁}` (`0 < a₁ < m < n`) vanish under `evalTopEsymm`.
+      have hndvd : ¬ Fintype.card σ ∣ m := Nat.not_dvd_of_pos_of_lt hm hlt
       rw [ite_eq_right hlt.ne, ite_eq_right hndvd, mul_zero, zero_sub, neg_eq_zero]
       refine Finset.sum_eq_zero fun a ha ↦ ?_
       rw [mem_filter, Set.mem_Ioo] at ha
-      rw [map_mul, map_mul, evalTopEsymm_esymm_of_pos ha.2.1, ite_eq_right (ha.2.2.trans hlt).ne,
-        mul_zero, zero_mul]
-    · subst heq
+      exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 (ha.2.2.trans hlt).ne _ _
+    · -- Case `m = n`: every `e_{a₁}` (`0 < a₁ < n`) vanishes, leaving `(-1)^(n+1) n eₙ = n X`.
+      subst heq
       rw [ite_eq_left rfl, ite_eq_left dvd_rfl, Nat.div_self hn, pow_one]
       have hsum : (∑ x ∈ antidiagonal (Fintype.card σ) with x.1 ∈ Set.Ioo 0 (Fintype.card σ),
           evalTopEsymm σ R
             ((-1) ^ x.1 * E x.1 * ⟨psum σ R x.2, psum_isSymmetric σ R x.2⟩)) = 0 := by
         refine Finset.sum_eq_zero fun a ha ↦ ?_
         rw [mem_filter, Set.mem_Ioo] at ha
-        rw [map_mul, map_mul, evalTopEsymm_esymm_of_pos ha.2.1, ite_eq_right ha.2.2.ne,
-          mul_zero, zero_mul]
+        exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 ha.2.2.ne _ _
       rw [hsum, sub_zero]
-      have hexp : Fintype.card σ + 1 + (Fintype.card σ - 1) = 2 * Fintype.card σ := by omega
-      have hsign :
-          (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (-1) ^ (Fintype.card σ - 1) = 1 := by
-        rw [← pow_add, hexp, pow_mul, neg_one_sq, one_pow]
       calc
         (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (Fintype.card σ : Polynomial R) *
             ((-1) ^ (Fintype.card σ - 1) * Polynomial.X)
           = ((-1 : Polynomial R) ^ (Fintype.card σ + 1) * (-1) ^ (Fintype.card σ - 1)) *
               ((Fintype.card σ : Polynomial R) * Polynomial.X) := by ring
-        _ = (Fintype.card σ : Polynomial R) * Polynomial.X := by rw [hsign, one_mul]
-    · rw [ite_eq_right hgt.ne', mul_zero, zero_sub]
+        _ = (Fintype.card σ : Polynomial R) * Polynomial.X := by
+          rw [neg_one_pow_succ_mul_neg_one_pow_pred hn, one_mul]
+    · -- Case `m > n`: `eₘ = 0` and only the `a = (n, m - n)` summand survives, reducing to
+      -- `p_{m-n}` by strong induction.
+      rw [ite_eq_right hgt.ne', mul_zero, zero_sub]
       have hmem : (Fintype.card σ, m - Fintype.card σ) ∈
           {a ∈ antidiagonal m | a.1 ∈ Set.Ioo 0 m} := by
         rw [mem_filter, mem_antidiagonal, Set.mem_Ioo]
@@ -311,11 +336,6 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
       rw [Finset.sum_eq_single (Fintype.card σ, m - Fintype.card σ)]
       · rw [map_mul, map_mul, map_pow, map_neg, map_one, evalTopEsymm_esymm_of_pos hn,
           ite_eq_left rfl, ih (m - Fintype.card σ) (by omega) (by omega)]
-        have hexp : Fintype.card σ + (Fintype.card σ - 1) = 2 * (Fintype.card σ - 1) + 1 := by
-          omega
-        have hsign :
-            -((-1 : Polynomial R) ^ Fintype.card σ * (-1) ^ (Fintype.card σ - 1)) = 1 := by
-          rw [← pow_add, hexp, pow_succ, pow_mul, neg_one_sq, one_pow, one_mul, neg_neg]
         have hdvd : Fintype.card σ ∣ m - Fintype.card σ ↔ Fintype.card σ ∣ m := by
           conv_rhs => rw [← Nat.sub_add_cancel hgt.le]
           exact Nat.dvd_add_self_right.symm
@@ -336,14 +356,13 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
                   ring
             _ = (Fintype.card σ : Polynomial R) *
                   (Polynomial.X ^ ((m - Fintype.card σ) / Fintype.card σ) * Polynomial.X) := by
-              rw [hsign, one_mul]
+              rw [neg_neg_one_pow_mul_neg_one_pow_pred hn, one_mul]
         · rw [ite_eq_right h₁, ite_eq_right (mt hdvd.mpr h₁)]
           simp
       · intro a ha hne
         rw [mem_filter, mem_antidiagonal, Set.mem_Ioo] at ha
         have ha1 : a.1 ≠ Fintype.card σ := fun h ↦ hne (Prod.ext h (by omega))
-        rw [map_mul, map_mul, evalTopEsymm_esymm_of_pos ha.2.1, ite_eq_right ha1,
-          mul_zero, zero_mul]
+        exact evalTopEsymm_mul_esymm_mul_eq_zero ha.2.1 ha1 _ _
       · intro hnot
         exact absurd hmem hnot
 

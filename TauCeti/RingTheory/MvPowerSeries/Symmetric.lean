@@ -21,26 +21,28 @@ A multivariable formal power series `f : MvPowerSeries σ R` is symmetric
 via `MvPowerSeries.rename`. Symmetric power series form an `R`-subalgebra
 `MvPowerSeries.symmetricSubalgebra σ R`.
 
-When `σ` is finite of cardinality `n`, every degree-`m` homogeneous component of a symmetric power
-series is a symmetric homogeneous polynomial of degree `m`. Evaluating the degree-`(k * n)`
-component under `MvPolynomial.symmetricSubalgebra.evalTopEsymm σ R` — which sends the `j`-th
-elementary symmetric polynomial to `0` for `1 ≤ j < n` and the `n`-th elementary symmetric
-polynomial to `(-1) ^ (n - 1) * X` — extracts a single coefficient at `X ^ k`. Assembling these
-coefficients defines an `R`-algebra homomorphism
+When `σ` is finite and nonempty of cardinality `n`, every degree-`m` homogeneous component of a
+symmetric power series is a symmetric homogeneous polynomial of degree `m`. Evaluating the
+degree-`(k * n)` component under `MvPolynomial.symmetricSubalgebra.evalTopEsymm σ R` — which sends
+the `j`-th elementary symmetric polynomial to `0` for `1 ≤ j < n` and the `n`-th elementary
+symmetric polynomial to `(-1) ^ (n - 1) * X` — extracts a single coefficient at `X ^ k`. Assembling
+these coefficients defines an `R`-algebra homomorphism
 
 `MvPowerSeries.symmetricSubalgebra.evalTopEsymm σ R : symmetricSubalgebra σ R →ₐ[R] PowerSeries R`
 
 extending polynomial `evalTopEsymm` (`evalTopEsymm_coe`), commuting with coefficient ring
 homomorphisms (`map_evalTopEsymm`) and with formal power series substitution
-(`evalTopEsymm_subst`), and sending the symmetric coordinate sum `∑ i : σ, γ(Xᵢ)` to
-`n • PowerSeries.cartier R n 0 γ` (`evalTopEsymm_sum_toMvPowerSeries`). This last property is the
-power-series input to Cartier's Frobenius operators on curves of formal group laws.
+(`evalTopEsymm_subst`), and sending the symmetric coordinate sum `∑ i : σ, γ(Xᵢ)` — whose degree-`m`
+homogeneous component is `coeff m γ • psum σ R m`
+(`homogeneousComponentPolynomial_sum_toMvPowerSeries`) — to `n • PowerSeries.cartier R n 0 γ`
+(`evalTopEsymm_sum_toMvPowerSeries`). This last property is the power-series input to Cartier's
+Frobenius operators on curves of formal group laws.
 
 ## References
 
 * P. Cartier, *Modules associés à un groupe formel commutatif. Courbes typiques*, C. R. Acad. Sci.
   Paris Sér. A-B 265 (1967), A129–A132.
-* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978]
+* [M. Hazewinkel, *Formal Groups and Applications*][hazewinkel1978], Chapter III, §16.2.
 -/
 
 public section
@@ -164,34 +166,6 @@ section Homogeneous
 
 variable [CommSemiring R]
 
-/-- Variable renaming commutes with taking a homogeneous component. -/
-theorem rename_homogeneousComponent (e : σ ≃ τ) (m : ℕ) (f : MvPowerSeries σ R) :
-    rename e (homogeneousComponent m f) = homogeneousComponent m (rename e f) := by
-  ext d
-  let u := Finsupp.embDomain e.symm.toEmbedding d
-  have hd : d = Finsupp.embDomain e.toEmbedding u := by
-    simp [u, Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp]
-  have hren (g : MvPowerSeries σ R) : rename e g = rename e.toEmbedding g := rfl
-  rw [hd, hren, hren, coeff_embDomain_rename, coeff_homogeneousComponent,
-    coeff_homogeneousComponent, coeff_embDomain_rename, Finsupp.embDomain_eq_mapDomain,
-    Finsupp.degree_mapDomain]
-
-/-- Variable renaming by a permutation commutes with `homogeneousComponentPolynomial`. -/
-theorem rename_homogeneousComponentPolynomial [Finite σ] (e : Equiv.Perm σ) (m : ℕ)
-    (f : MvPowerSeries σ R) :
-    MvPolynomial.rename e (homogeneousComponentPolynomial m f) =
-      homogeneousComponentPolynomial m (rename e f) := by
-  apply MvPolynomial.coe_inj.mp
-  rw [← rename_coe, coe_homogeneousComponentPolynomial, coe_homogeneousComponentPolynomial,
-    rename_homogeneousComponent]
-
-/-- Variable renaming by a permutation commutes with `truncTotal`. -/
-theorem rename_truncTotal [Finite σ] (e : Equiv.Perm σ) (N : ℕ) (f : MvPowerSeries σ R) :
-    MvPolynomial.rename e (truncTotal N f) = truncTotal N (rename e f) := by
-  apply MvPolynomial.coe_inj.mp
-  rw [← rename_coe, truncTotal_eq_sum, truncTotal_eq_sum, map_sum]
-  exact Finset.sum_congr rfl fun m _ ↦ rename_homogeneousComponent e m f
-
 theorem IsSymmetric.homogeneousComponent {f : MvPowerSeries σ R} (hf : f.IsSymmetric) (m : ℕ) :
     (homogeneousComponent m f).IsSymmetric := fun e ↦ by
   rw [rename_homogeneousComponent, hf e]
@@ -205,13 +179,36 @@ theorem IsSymmetric.truncTotal [Finite σ] {f : MvPowerSeries σ R} (hf : f.IsSy
     (truncTotal N f).IsSymmetric := fun e ↦ by
   rw [rename_truncTotal, hf e]
 
-private theorem truncTotal_eq_sum_homogeneousComponentPolynomial [Finite σ] (N : ℕ)
-    (f : MvPowerSeries σ R) :
-    truncTotal N f = ∑ m ∈ Finset.range N, homogeneousComponentPolynomial m f := by
+/-- The degree-`m` homogeneous component of the coordinate sum `∑ i : σ, γ(Xᵢ)` is
+`coeff m γ • psum σ R m`. -/
+theorem homogeneousComponentPolynomial_sum_toMvPowerSeries [Fintype σ] (m : ℕ)
+    (γ : PowerSeries R) :
+    homogeneousComponentPolynomial m (∑ i : σ, γ.toMvPowerSeries i) =
+      PowerSeries.coeff m γ • MvPolynomial.psum σ R m := by
+  classical
   apply MvPolynomial.coe_inj.mp
-  rw [truncTotal_eq_sum, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply, map_sum]
-  exact Finset.sum_congr rfl fun m _ ↦ by
-    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, coe_homogeneousComponentPolynomial]
+  rw [coe_homogeneousComponentPolynomial, MvPolynomial.coe_smul, MvPolynomial.psum,
+    ← MvPolynomial.coeToMvPowerSeries.ringHom_apply,
+    map_sum MvPolynomial.coeToMvPowerSeries.ringHom]
+  ext d
+  rw [coeff_homogeneousComponent, map_sum (coeff d), coeff_smul, map_sum (coeff d), Finset.mul_sum]
+  split_ifs with hd
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coe_pow,
+      MvPolynomial.coe_X, X_pow_eq, PowerSeries.coeff_toMvPowerSeries]
+    by_cases hdi : d = Finsupp.single i m
+    · subst hdi
+      simp
+    · have hne : d ≠ Finsupp.single i (d i) := fun h ↦ hdi <| by
+        have hdeg : d i = m := by
+          simpa [Finsupp.degree_single] using (congrArg Finsupp.degree h).symm.trans hd
+        rwa [← hdeg]
+      rw [ite_eq_right hne, coeff_monomial_ne hdi, mul_zero]
+  · refine (Finset.sum_eq_zero fun i _ ↦ ?_).symm
+    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coe_pow,
+      MvPolynomial.coe_X, X_pow_eq]
+    have hne : d ≠ Finsupp.single i m := fun h ↦ hd (by rw [h, Finsupp.degree_single])
+    rw [coeff_monomial_ne hne, mul_zero]
 
 end Homogeneous
 
@@ -305,6 +302,8 @@ noncomputable def evalTopEsymm : symmetricSubalgebra σ R →ₐ[R] PowerSeries 
       Subtype.ext (truncTotal_one (Nat.succ_ne_zero _))
     rw [h1, map_one, Polynomial.coeff_one, PowerSeries.coeff_one]
   map_mul' P Q := by
+    -- Truncating at `N = k * card σ + 1` captures every degree contributing to `X ^ k` in `P * Q`
+    -- as well as in each antidiagonal factor of `coeff k (evalTopEsymm P * evalTopEsymm Q)`.
     ext k
     let N := k * Fintype.card σ + 1
     have hN : k * Fintype.card σ < N := Nat.lt_succ_self _
@@ -438,6 +437,8 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
   have hcard : 0 < Fintype.card σ := Fintype.card_pos
   have hkN : k + 1 ≤ N := by nlinarith
   rw [coeff_evalTopEsymm_eq_coeff_truncTotal PS hN]
+  -- Step 1: Truncating `g.subst a` at total degree `N = k * card σ + 1` reduces to polynomial
+  -- evaluation `Q = aeval aN (truncTotal N g)` modulo total degree `N`.
   let aN : τ → MvPolynomial.symmetricSubalgebra σ R := fun t ↦ symmTruncTotal N (a t)
   let Q : MvPolynomial.symmetricSubalgebra σ R := MvPolynomial.aeval aN (truncTotal N g)
   have hQ_val : Q.1 = MvPolynomial.aeval (fun t ↦ (aN t).1) (truncTotal N g) :=
@@ -445,10 +446,12 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
   have htrunc_lhs : truncTotal N ((symmTruncTotal N PS).1 : MvPowerSeries σ R) =
       truncTotal N (Q.1 : MvPowerSeries σ R) := by
     have h0 : N ≠ 0 := Nat.succ_ne_zero _
-    dsimp only [PS, symmTruncTotal]
-    rw [(truncTotal_coe_eq_self_iff _ h0).mpr (totalDegree_truncTotal_lt _ h0),
-      truncTotal_subst ha, hQ_val, ← subst_coe_eq_coe_aeval]
-    rfl
+    have hPS : (symmTruncTotal N PS).1 = truncTotal N (g.subst fun t ↦ (a t).1) := (rfl)
+    have haN : (fun t ↦ ((aN t).1 : MvPowerSeries σ R)) =
+        fun t ↦ (truncTotal N (a t).1 : MvPowerSeries σ R) := (rfl)
+    rw [hPS, (truncTotal_coe_eq_self_iff _ h0).mpr (totalDegree_truncTotal_lt _ h0),
+      truncTotal_subst ha, hQ_val, ← subst_coe_eq_coe_aeval, haN]
+  -- Step 2: Push polynomial `evalTopEsymm` through `aeval` into univariate power-series `subst`.
   let Φ : MvPolynomial.symmetricSubalgebra σ R →ₐ[R] Polynomial R :=
     MvPolynomial.symmetricSubalgebra.evalTopEsymm σ R
   have hΦQ : Φ Q = MvPolynomial.aeval (fun t ↦ Φ (aN t)) (truncTotal N g) :=
@@ -464,6 +467,7 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
     simp_rw [hΨ]
   rw [coeff_poly_evalTopEsymm_eq_of_truncTotal_eq hN htrunc_lhs, hΦQ, ← Polynomial.coeff_coe,
     hcoe_aeval]
+  -- Step 3: Compare univariate substitutions modulo degree `k + 1` (using `k + 1 ≤ N`).
   have hb0 : ∀ t, constantCoeff (evalTopEsymm σ R (a t) : MvPowerSeries Unit R) = 0 := fun t ↦ by
     rw [← PowerSeries.constantCoeff_eq, constantCoeff_evalTopEsymm, ha t]
   have hc0 : ∀ t, constantCoeff (((Φ (aN t) : Polynomial R) : PowerSeries R) :
@@ -471,13 +475,6 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
     rw [← PowerSeries.constantCoeff_eq, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
       Polynomial.coeff_coe, ← coeff_evalTopEsymm_eq_coeff_truncTotal (a t) (by simp [N]),
       PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_evalTopEsymm, ha t]
-  have htrunc_g :
-      truncTotal (k + 1) (truncTotal N g : MvPowerSeries τ R) = truncTotal (k + 1) g := by
-    ext d
-    by_cases hd : d.degree < k + 1
-    · rw [coeff_truncTotal _ hd, coeff_truncTotal _ hd, MvPolynomial.coeff_coe,
-        coeff_truncTotal _ (hd.trans_le hkN)]
-    · rw [coeff_truncTotal_eq_zero _ (not_lt.mp hd), coeff_truncTotal_eq_zero _ (not_lt.mp hd)]
   have htrunc_a : ∀ t,
       truncTotal (k + 1) (((Φ (aN t) : Polynomial R) : PowerSeries R) : MvPowerSeries Unit R) =
         truncTotal (k + 1) (evalTopEsymm σ R (a t) : MvPowerSeries Unit R) := fun t ↦ by
@@ -485,12 +482,9 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
     by_cases hd : d.degree < k + 1
     · rw [coeff_truncTotal _ hd, coeff_truncTotal _ hd, ← PowerSeries.coeff_def rfl,
         Polynomial.coeff_coe]
-      have hd_eq : d = Finsupp.single () (d ()) := Finsupp.ext fun _ ↦ Finsupp.single_eq_same.symm
-      have hd_deg : d () = d.degree := by
-        conv_rhs => rw [hd_eq]
-        simp [Finsupp.degree_eq_sum]
+      have hd_le : d () ≤ k := Nat.lt_succ_iff.mp ((Finsupp.le_degree () d).trans_lt hd)
       have hdN : d () * Fintype.card σ < N :=
-        (Nat.mul_le_mul_right _ (Nat.lt_succ_iff.mp (hd_deg ▸ hd))).trans_lt hN
+        (Nat.mul_le_mul_right _ hd_le).trans_lt hN
       exact (coeff_evalTopEsymm_eq_coeff_truncTotal (a t) hdN).symm
     · rw [coeff_truncTotal_eq_zero _ (not_lt.mp hd), coeff_truncTotal_eq_zero _ (not_lt.mp hd)]
   have htrunc_unit :
@@ -499,9 +493,10 @@ theorem evalTopEsymm_subst [Nonempty σ] [Finite τ] (g : MvPowerSeries τ R)
             fun t ↦ (((Φ (aN t) : Polynomial R) : PowerSeries R) : MvPowerSeries Unit R)) =
         truncTotal (k + 1)
           (g.subst fun t ↦ (evalTopEsymm σ R (a t) : MvPowerSeries Unit R)) := by
-    rw [truncTotal_subst hc0, truncTotal_subst hb0, htrunc_g]
+    rw [truncTotal_subst hc0, truncTotal_subst hb0, truncTotal_truncTotal_coe hkN g]
     simp_rw [htrunc_a]
-  have hdeg : (Finsupp.single () k : Unit →₀ ℕ).degree < k + 1 := by simp [Finsupp.degree_eq_sum]
+  have hdeg : (Finsupp.single () k : Unit →₀ ℕ).degree < k + 1 := by
+    simp [Finsupp.degree_single]
   rw [← PowerSeries.coeff_coeToMvPowerSeries, ← PowerSeries.coeff_coeToMvPowerSeries,
     ← coeff_truncTotal _ hdeg, htrunc_unit, coeff_truncTotal _ hdeg]
 
@@ -514,68 +509,31 @@ theorem evalTopEsymm_sum_toMvPowerSeries [Nonempty σ] (γ : PowerSeries R) :
           (mem_symmetricSubalgebra _).mpr (IsSymmetric.sum_toMvPowerSeries γ)⟩ =
       (Fintype.card σ : R) • PowerSeries.cartier R (Fintype.card σ) 0 γ := by
   have hn : 0 < Fintype.card σ := Fintype.card_pos
+  -- Each homogeneous component of `∑ i, γ(Xᵢ)` is `coeff m γ` times the `m`-th power sum `psum`.
+  have hcomp : ∀ m : ℕ,
+      (⟨homogeneousComponentPolynomial m (∑ i : σ, γ.toMvPowerSeries i),
+        (MvPolynomial.mem_symmetricSubalgebra _).mpr
+          ((IsSymmetric.sum_toMvPowerSeries γ).homogeneousComponentPolynomial m)⟩ :
+        MvPolynomial.symmetricSubalgebra σ R) =
+      PowerSeries.coeff m γ •
+        ⟨MvPolynomial.psum σ R m,
+          (MvPolynomial.mem_symmetricSubalgebra _).mpr (MvPolynomial.psum_isSymmetric σ R m)⟩ :=
+    fun m ↦ Subtype.ext (homogeneousComponentPolynomial_sum_toMvPowerSeries m γ)
   ext k
-  rw [coeff_evalTopEsymm, PowerSeries.coeff_smul, PowerSeries.coeff_cartier, add_zero,
-    smul_eq_mul, mul_comm (Fintype.card σ) k]
+  rw [coeff_evalTopEsymm, hcomp, map_smul, Polynomial.coeff_smul, PowerSeries.coeff_smul,
+    PowerSeries.coeff_cartier, add_zero, smul_eq_mul, smul_eq_mul, mul_comm (Fintype.card σ) k]
   rcases eq_or_ne k 0 with rfl | hk
-  · rw [zero_mul]
-    have hsub : (⟨homogeneousComponentPolynomial 0 (∑ i : σ, γ.toMvPowerSeries i),
-        (MvPolynomial.mem_symmetricSubalgebra _).mpr
-          ((IsSymmetric.sum_toMvPowerSeries γ).homogeneousComponentPolynomial 0)⟩ :
-        MvPolynomial.symmetricSubalgebra σ R) =
-        (Fintype.card σ : R) • algebraMap R _ (PowerSeries.coeff 0 γ) := by
-      apply Subtype.ext
-      apply MvPolynomial.coe_inj.mp
-      rw [coe_homogeneousComponentPolynomial, homogeneousComponent_zero, map_sum,
-        Subalgebra.coe_smul, MvPolynomial.coe_smul, PowerSeries.coeff_zero_eq_constantCoeff]
-      have hc : ∀ i : σ, constantCoeff (γ.toMvPowerSeries i) = PowerSeries.constantCoeff γ :=
-        fun i ↦ by rw [PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]; rfl
-      simp_rw [hc]
-      simp [Algebra.algebraMap_eq_smul_one, MvPolynomial.smul_eq_C_mul, smul_eq_C_mul]
-    rw [hsub, map_smul, AlgHom.commutes, Polynomial.algebraMap_eq, Polynomial.coeff_smul,
-      Polynomial.coeff_C_zero, smul_eq_mul]
-  · have hkn : 0 < k * Fintype.card σ := Nat.mul_pos (Nat.pos_of_ne_zero hk) hn
-    have hsub : (⟨homogeneousComponentPolynomial (k * Fintype.card σ)
-        (∑ i : σ, γ.toMvPowerSeries i),
-        (MvPolynomial.mem_symmetricSubalgebra _).mpr
-          ((IsSymmetric.sum_toMvPowerSeries γ).homogeneousComponentPolynomial _)⟩ :
-        MvPolynomial.symmetricSubalgebra σ R) =
-        PowerSeries.coeff (k * Fintype.card σ) γ •
-          ⟨MvPolynomial.psum σ R (k * Fintype.card σ),
-            (MvPolynomial.mem_symmetricSubalgebra _).mpr
-              (MvPolynomial.psum_isSymmetric σ R (k * Fintype.card σ))⟩ := by
-      classical
-      apply Subtype.ext
-      apply MvPolynomial.coe_inj.mp
-      rw [Subalgebra.coe_smul]
-      dsimp only
-      rw [coe_homogeneousComponentPolynomial, MvPolynomial.coe_smul,
-        MvPolynomial.psum, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-        map_sum MvPolynomial.coeToMvPowerSeries.ringHom]
-      ext d
-      rw [coeff_homogeneousComponent, map_sum (coeff d), coeff_smul, map_sum (coeff d),
-        Finset.mul_sum]
-      split_ifs with hd
-      · refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coe_pow,
-          MvPolynomial.coe_X, X_pow_eq, PowerSeries.coeff_toMvPowerSeries]
-        by_cases hdi : d = Finsupp.single i (k * Fintype.card σ)
-        · subst hdi
-          simp
-        · have hne : d ≠ Finsupp.single i (d i) := fun h ↦ hdi <| by
-            have hdeg : d i = k * Fintype.card σ := by
-              simpa [Finsupp.degree_eq_sum] using (congrArg Finsupp.degree h).symm.trans hd
-            rwa [← hdeg]
-          rw [ite_eq_right hne, coeff_monomial_ne hdi, mul_zero]
-      · refine (Finset.sum_eq_zero fun i _ ↦ ?_).symm
-        rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coe_pow,
-          MvPolynomial.coe_X, X_pow_eq]
-        have hne : d ≠ Finsupp.single i (k * Fintype.card σ) := fun h ↦
-          hd (by simp [h, Finsupp.degree_eq_sum])
-        rw [coeff_monomial_ne hne, mul_zero]
-    rw [hsub, map_smul, MvPolynomial.symmetricSubalgebra.evalTopEsymm_psum hkn,
-      ite_eq_left (dvd_mul_left _ _), Nat.mul_div_cancel _ hn, Polynomial.coeff_smul,
-      Polynomial.coeff_natCast_mul, Polynomial.coeff_X_pow_self, mul_one, smul_eq_mul, mul_comm]
+  · -- For `k = 0`, `psum σ R 0 = card σ`.
+    have hp0 : (⟨MvPolynomial.psum σ R 0,
+        (MvPolynomial.mem_symmetricSubalgebra _).mpr (MvPolynomial.psum_isSymmetric σ R 0)⟩ :
+        MvPolynomial.symmetricSubalgebra σ R) = algebraMap R _ (Fintype.card σ : R) :=
+      Subtype.ext (by simp [MvPolynomial.psum_zero])
+    rw [zero_mul, hp0, AlgHom.commutes, Polynomial.algebraMap_eq, Polynomial.coeff_C_zero, mul_comm]
+  · -- For `k ≠ 0`, `evalTopEsymm` sends `psum σ R (k * card σ)` to `card σ * X ^ k`.
+    have hkn : 0 < k * Fintype.card σ := Nat.mul_pos (Nat.pos_of_ne_zero hk) hn
+    rw [MvPolynomial.symmetricSubalgebra.evalTopEsymm_psum hkn, ite_eq_left (dvd_mul_left _ _),
+      Nat.mul_div_cancel _ hn, Polynomial.coeff_natCast_mul, Polynomial.coeff_X_pow_self, mul_one,
+      mul_comm]
 
 end EvalTopEsymm
 
