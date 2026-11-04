@@ -31,7 +31,8 @@ distance, to the counting measure `∑_{V ∈ R_σ} δ_V` of the roots of `P_σ`
 (`TauCeti.exists_forall_abs_integral_sub_sum_roots_le`). The tolerance depends only on `m`, `R`
 and the required accuracy; no rate is asserted. The same holds against any fixed continuous test
 function (`TauCeti.exists_forall_norm_integral_sub_sum_roots_le`), for instance the mixed
-monomials `wˡ w̄`, which compares the mixed moments `∫ wˡ w̄ dσ` with `∑_{V ∈ R_σ} Vˡ V̄`.
+monomials `wˡ * conj w`, which compares the mixed moments `∫ wˡ * conj w dσ` with
+`∑_{V ∈ R_σ} Vˡ * conj V`.
 
 In the large-parameter analysis of the Seiberg–Witten equations near a pseudoholomorphic curve,
 `σ` is the normalized curvature density on a normal disc, and these statements identify it with
@@ -538,8 +539,8 @@ theorem exists_forall_abs_integral_sub_sum_roots_le (m : ℕ) (R : ℝ) {ε : �
 `R` and `ε`, with the following property. If `σ = μ - ν` is a signed measure on `ℂ`, given by
 finite measures `μ`, `ν` carried by the closed disc of radius `R`, with total mass `m`, negative
 mass `ν(ℂ)` at most `δ` and Newton variance `∫ |P(w)|² dμ(w)` at most `δ`, then the integral of
-`g` against `σ` is within `ε` of the sum of `g` over the roots of `P`. For `g(w) = wˡ w̄` this
-compares the mixed moments of `σ` with those of the roots. -/
+`g` against `σ` is within `ε` of the sum of `g` over the roots of `P`. For
+`g(w) = wˡ * conj w` this compares the mixed moments of `σ` with those of the roots. -/
 theorem exists_forall_norm_integral_sub_sum_roots_le {𝕜 : Type*} [RCLike 𝕜] (m : ℕ) (R : ℝ)
     {g : ℂ → 𝕜} (hg : Continuous g) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ (μ ν : Measure ℂ) [IsFiniteMeasure μ] [IsFiniteMeasure ν],
