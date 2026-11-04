@@ -141,6 +141,12 @@ theorem basis_inl [DecidableEq I] (i : I) : basis B (.inl i) = cartan B (Pi.sing
 theorem basis_inr (a : B.normTwoShell) : basis B (.inr a) = root B a := by
   simp [basis, root, Basis.prod_apply]
 
+/-- A Cartan vector has its original lattice coordinates in the Cartan part of the shell basis. -/
+@[simp]
+theorem basis_repr_cartan_inl (h : I → ℤ) (i : I) :
+    (basis B).repr (cartan B h) (.inl i) = h i := by
+  simp [basis, Basis.map_repr, Basis.prod_repr_inl]
+
 /-- The coordinates of an integral root vector in the Cartan-and-root basis. -/
 @[simp]
 theorem basis_repr_root (a : B.normTwoShell) :
@@ -186,6 +192,37 @@ theorem rootBracket_of_notMem_of_add_ne_zero {a b : B.normTwoShell}
     (h : (a : I → ℤ) + b ∉ B.normTwoShell) (h' : (a : I → ℤ) + b ≠ 0) :
     rootBracket B a b = 0 := by
   rw [rootBracket, dite_eq_right h, ite_eq_right h', smul_zero]
+
+variable {B} in
+/-- Only opposite roots contribute to the Cartan coordinates of a root bracket. -/
+@[simp]
+theorem basis_repr_rootBracket_inl (a b : B.normTwoShell) (i : I) :
+    (basis B).repr (rootBracket B a b) (.inl i) =
+      if (a : I → ℤ) + b = 0 then
+        ((B.orderedSignForm a b).negOnePow : ℤ) * a.val i else 0 := by
+  classical
+  by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
+  · have hz : (a : I → ℤ) + b ≠ 0 := ne_zero_of_mem_normTwoShell hm
+    simp [rootBracket_of_mem hm, Units.smul_def, ← basis_inr, hz]
+  · by_cases hz : (a : I → ℤ) + b = 0
+    · simp [Units.smul_def, hz]
+    · simp [rootBracket_of_notMem_of_add_ne_zero hm hz, hz]
+
+variable {B} in
+/-- The coefficient of `x_c` in a root bracket is its ordered sign exactly when the two roots
+sum to `c`. -/
+@[simp]
+theorem basis_repr_rootBracket_inr (a b c : B.normTwoShell) :
+    (basis B).repr (rootBracket B a b) (.inr c) =
+      if (a : I → ℤ) + b = c then ((B.orderedSignForm a b).negOnePow : ℤ) else 0 := by
+  classical
+  by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
+  · simp [rootBracket_of_mem hm, Units.smul_def, ← basis_inr,
+      Finsupp.single_apply, Subtype.ext_iff, eq_comm]
+  · have hc : (a : I → ℤ) + b ≠ c := fun hc ↦ hm (hc ▸ c.property)
+    by_cases hz : (a : I → ℤ) + b = 0
+    · simp [rootBracket_of_add_eq_zero hz, Units.smul_def, hc]
+    · simp [rootBracket_of_notMem_of_add_ne_zero hm hz, hc]
 
 variable {B} in
 /-- For a symmetric `B`, two root vectors whose roots have nonnegative pairing have bracket zero:
