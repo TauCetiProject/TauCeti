@@ -18,8 +18,7 @@ to be separated; the chosen sample eigenvector may lie in a repeated eigenspace.
 Adapted from `yuWangSamworth_eigenvector_frame_le` in
 `YuWangSamworth2015/YuWangSamworth2015/Core/Statistics.lean`, Kitware DKPS
 (Jon Crall and GPT 5.6 High; Apache-2.0), following Yu, Wang and Samworth,
-Biometrika 102 (2015), Corollary 1. The proof uses the accepted population-gap sine
-and Procrustes theorems directly. It does not require an aligned-frame perturbation theorem.
+Biometrika 102 (2015), Corollary 1.
 -/
 
 public section
@@ -46,11 +45,8 @@ theorem exists_norm_eq_one_and_norm_smul_sub_eigenvector_le
       ‖c • v - u‖ ≤ 2 * Real.sqrt 2 * ‖(B - A).toContinuousLinearMap‖ / δ := by
   classical
   let e : Fin 1 ↪ Fin n := ⟨fun _ => j, fun _ _ _ => Subsingleton.elim _ _⟩
-  have hon : ∀ x : E, ‖x‖ = 1 → Orthonormal 𝕜 (fun _ : Fin 1 => x) := by
-    intro x hx
-    rw [orthonormal_iff_ite]
-    intro i k
-    simp [Subsingleton.elim i k, inner_self_eq_norm_sq_to_K, hx]
+  have hon : ∀ x : E, ‖x‖ = 1 → Orthonormal 𝕜 (fun _ : Fin 1 => x) :=
+    fun _ hx => orthonormal_subsingleton_iff.mpr fun _ => hx
   have hframeA : IsOrderedEigenframe hA hn e (fun _ => u) :=
     isOrderedEigenframe_iff.mpr ⟨hon u hu, fun _ => hAu⟩
   have hframeB : IsOrderedEigenframe hB hn e (fun _ => v) :=
