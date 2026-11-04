@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Basic
-public import TauCeti.RingTheory.LaurentSeries.Level.Trace
+public import TauCeti.RingTheory.LaurentSeries.Level.Trace.Basic
 
 /-!
 # Continuous one-forms of a ramified level and their trace

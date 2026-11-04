@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.FieldTheory.Galois.Cyclic
 public import TauCeti.RingTheory.LaurentSeries.Level.Kummer
-public import TauCeti.RingTheory.LaurentSeries.Level.Trace
+public import TauCeti.RingTheory.LaurentSeries.Level.Trace.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.AlgClosure
 
 /-!
