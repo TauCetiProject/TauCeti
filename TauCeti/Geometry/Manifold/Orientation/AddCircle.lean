@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 
 /-!
@@ -41,6 +42,8 @@ circles whose derivative is multiplication by a positive (negative) real number 
 * `AddCircle.orientation_eq_orientationAt_orientation_iff`, `AddCircle.orientationAt_orientation`:
   its tangent orientations.
 * `AddCircle.orientation_eq_isOrientedAtlas_orientation`: it is the orientation of the atlas.
+* `AddCircle.orientationAt_orientation_prod_orientation`: the product orientation of a torus of
+  circles is the orientation of the standard frame of `ℝ × ℝ`.
 * `AddCircle.isOrientationPreservingAt_coe`, `AddCircle.isOrientationPreservingAt_of_mem_atlas`:
   the quotient map and the charts are orientation preserving for the standard orientation of `ℝ`.
 * `AddCircle.isOrientationPreservingAt_add_right`, `AddCircle.isOrientationPreservingAt_zsmul`,
@@ -158,6 +161,30 @@ theorem orientation_eq_isOrientedAtlas_orientation {n : ℕ∞ω} [NeZero n] :
   -- Tangent vectors at `x` are real numbers, and `L⁻¹ 1 = 1`.
   exact one_pos.trans_eq ((L.toLinearEquiv.symm_apply_eq.mpr (hL' _).symm).trans
     (Module.Basis.singleton_apply (Fin 1) ℝ 0)).symm
+
+/-- At every point of the torus `AddCircle p × AddCircle q`, whose tangent spaces are read as
+`ℝ × ℝ`, the product of the positive orientations of the two circles is the orientation of the
+standard frame `((1, 0), (0, 1))`. -/
+theorem orientationAt_orientation_prod_orientation (q : ℝ) [Fact (0 < q)]
+    (x : AddCircle p × AddCircle q) :
+    ((AddCircle.orientation p).prod (AddCircle.orientation q)).orientationAt x =
+      (Module.Basis.finTwoProd ℝ).orientation := by
+  -- The ordered product of the two standard bases of `ℝ` is the standard basis of `ℝ × ℝ`.
+  have hb : ((Module.Basis.singleton (Fin 1) ℝ).prod (Module.Basis.singleton (Fin 1) ℝ)).reindex
+      finSumFinEquiv = Module.Basis.finTwoProd ℝ := by
+    refine Module.Basis.eq_of_apply_eq (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+    · have h0 : finSumFinEquiv.symm (0 : Fin (1 + 1)) = Sum.inl 0 :=
+        finSumFinEquiv_symm_apply_castAdd 0
+      rw [Module.Basis.finTwoProd_zero]
+      simp [Module.Basis.prod_apply, h0]
+    · have h1 : finSumFinEquiv.symm (1 : Fin (1 + 1)) = Sum.inr 0 :=
+        finSumFinEquiv_symm_apply_natAdd 0
+      rw [Module.Basis.finTwoProd_one]
+      simp [Module.Basis.prod_apply, h1]
+  rw [Manifold.Orientation.orientationAt_prod, orientationAt_orientation,
+    orientationAt_orientation]
+  exact (_root_.Orientation.prod_basis_orientation _ _ _ _).trans
+    (congrArg Module.Basis.orientation hb)
 
 /-! ### Orientation behaviour of maps -/
 
