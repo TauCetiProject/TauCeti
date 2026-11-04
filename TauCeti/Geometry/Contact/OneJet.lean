@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Contact.Contactization
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
@@ -36,7 +35,6 @@ smooth functions are Legendrian.
 
 ## Main results
 
-* `TauCeti.SmoothForm.mpullback_prodMk_contactization`: `(f, h)^*(dz - θ) = dh - f^*θ`.
 * `TauCeti.SmoothForm.isIsotropicMap_prodMk_contactization_iff`: the lift criterion.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_prodMk`:
   Legendrian lifts of exact Lagrangian immersions.
@@ -68,19 +66,6 @@ variable {E H W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {f : N → W} {h : N → ℝ}
 
 namespace SmoothForm
-
-/-- **Pullback of the contactization form.** A map `y ↦ (f y, h y)` into `W × ℝ`, with `f` and
-`h` differentiable, pulls the contactization form `dz - θ` back to `dh - f^*θ`. -/
-theorem mpullback_prodMk_contactization (θ : SmoothForm I W ℝ 1) (hf : MDifferentiable J I f)
-    (hh : MDifferentiable J 𝓘(ℝ) h) :
-    TauCeti.mpullback J (I.prod 𝓘(ℝ)) (fun y ↦ (f y, h y)) θ.contactization.1 =
-      mextDeriv (RoughForm.ofFunction J h) - TauCeti.mpullback J I f θ.1 := by
-  have hfh : MDifferentiable J (I.prod 𝓘(ℝ)) (fun y ↦ (f y, h y)) := hf.prodMk hh
-  -- Pull `dz` and `θ` back along the two components of `(f, h)`.
-  rw [coe_contactization, sub_eq_add_neg, ← neg_one_smul ℝ, TauCeti.mpullback_add,
-    TauCeti.mpullback_smul, ← TauCeti.mpullback_comp hfh mdifferentiable_snd,
-    ← TauCeti.mpullback_comp hfh mdifferentiable_fst, neg_one_smul, ← sub_eq_add_neg]
-  exact congrArg (· - _) (mpullback_realLineCoordForm h)
 
 /-- **The Legendrian lift criterion.** A map `y ↦ (f y, h y)` into the contactization `W × ℝ`, with
 `f` and `h` differentiable, is isotropic for the distribution `ker (dz - θ)` exactly when
@@ -128,15 +113,6 @@ namespace CotangentBundle
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {h : M → ℝ}
 
-/-- The tautological property `s_α^*λ = α` of the Liouville form, for the underlying rough
-forms. -/
-private theorem coe_mpullback_section_liouvilleForm (α : SmoothForm I M ℝ 1) :
-    TauCeti.mpullback I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x))
-      (liouvilleForm I M).1 = α.1 := by
-  rw [← SmoothForm.coe_mpullback _ (SmoothForm.degreeOneEquiv α).contMDiff,
-    mpullback_liouvilleForm]
-
 /-- **The graph criterion in `J¹M`.** For a smooth one-form `α` and a differentiable function `h`
 on `M`, the map `x ↦ ((x, α_x), h x)` into the one-jet space `J¹M = T*M × ℝ` is isotropic for the
 contact distribution `ker (dz - λ)` exactly when `α = dh`. -/
@@ -145,9 +121,9 @@ theorem isIsotropicMap_section_prodMk_iff (α : SmoothForm I M ℝ 1)
     IsIsotropicMap I (liouvilleForm I M).contactization.kerDistribution
         (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), h x)) ↔
       α.1 = mextDeriv (RoughForm.ofFunction I h) := by
-  rw [SmoothForm.isIsotropicMap_prodMk_contactization_iff _
-    ((SmoothForm.degreeOneEquiv α).contMDiff.mdifferentiable (by simp)) hh,
-    coe_mpullback_section_liouvilleForm]
+  have hs := (SmoothForm.degreeOneEquiv α).contMDiff
+  rw [SmoothForm.isIsotropicMap_prodMk_contactization_iff _ (hs.mdifferentiable (by simp)) hh,
+    ← SmoothForm.coe_mpullback _ hs, mpullback_liouvilleForm]
 
 /-- **One-jets are Legendrian.** On a finite-dimensional boundaryless manifold `M`, for a smooth
 one-form `α` and a smooth function `h`, the map `x ↦ ((x, α_x), h x)` is a Legendrian immersion
@@ -166,7 +142,7 @@ theorem isLegendrianImmersion_section_prodMk_iff [FiniteDimensional ℝ E] [I.Bo
     (fun x ↦ Bundle.mfderiv_injective_of_proj_comp_eq_id (hs.mdifferentiableAt (by simp)) rfl)
     hh ?_ ?_
   · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
-  · rw [coe_mpullback_section_liouvilleForm, hα]
+  · rw [← SmoothForm.coe_mpullback _ hs, mpullback_liouvilleForm, hα]
 
 end CotangentBundle
 
