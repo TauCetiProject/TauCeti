@@ -82,31 +82,26 @@ private theorem starConvex_slitCompl (p v : ℂ) (σ : ℝ) :
 private theorem self_mem_slitCompl (p v : ℂ) (σ : ℝ) : p ∈ slitCompl p v σ :=
   Or.inr (by simp)
 
-private theorem notMem_slitCompl_add_smul {p v : ℂ} {h : ℝ} (hv : v ≠ 0) (hh : 0 < h) :
-    p + h • (I * v) ∉ slitCompl p v 1 := by
-  have hdiv : (p + h • (I * v) - p) / v = (h : ℂ) * I := by
-    rw [Complex.real_smul]
-    field_simp
-    ring
+private theorem notMem_slitCompl_smul {p v : ℂ} {σ h : ℝ} (hv : v ≠ 0)
+    (hσ : 0 < σ ^ 2) (hh : 0 < h) :
+    p + (σ * h) • (I * v) ∉ slitCompl p v σ := by
+  have hdiv : (p + (σ * h) • (I * v) - p) / v = ((σ * h : ℝ) : ℂ) * I := by
+    rw [Complex.real_smul]; field_simp; ring
   rintro (hre | him)
   · rw [hdiv] at hre
     exact hre (by simp)
   · rw [hdiv] at him
-    have him' : ((h : ℂ) * I).im = h := by simp
-    linarith
+    simp only [mul_im, ofReal_re, ofReal_im, I_re, I_im, mul_one, mul_zero, add_zero] at him
+    nlinarith
+
+private theorem notMem_slitCompl_add_smul {p v : ℂ} {h : ℝ} (hv : v ≠ 0) (hh : 0 < h) :
+    p + h • (I * v) ∉ slitCompl p v 1 := by
+  simpa using notMem_slitCompl_smul (p := p) hv (by norm_num : (0 : ℝ) < 1 ^ 2) hh
 
 private theorem notMem_slitCompl_sub_smul {p v : ℂ} {h : ℝ} (hv : v ≠ 0) (hh : 0 < h) :
     p - h • (I * v) ∉ slitCompl p v (-1) := by
-  have hdiv : (p - h • (I * v) - p) / v = -((h : ℂ) * I) := by
-    rw [Complex.real_smul]
-    field_simp
-    ring
-  rintro (hre | him)
-  · rw [hdiv] at hre
-    exact hre (by simp)
-  · rw [hdiv] at him
-    have him' : (-((h : ℂ) * I)).im = -h := by simp
-    linarith
+  simpa [sub_eq_add_neg, neg_smul] using
+    notMem_slitCompl_smul (p := p) hv (by norm_num : (0 : ℝ) < (-1 : ℝ) ^ 2) hh
 
 /-- From a Fréchet derivative bound `‖w - p - (t - t₀) • v‖ ≤ (‖v‖ / 2) * |t - t₀|`, the
 normalized tangential coordinate `((w - p) / v).re` has the strict sign of `t - t₀`. -/
@@ -219,17 +214,10 @@ private theorem re_localTangentCurve_ne_zero_left {γ : ℝ → ℂ} {t₀ δ : 
   have hlin : (γ (t₀ - δ) + s • ((γ t₀ - (δ / 2) • v) - γ (t₀ - δ)) - γ t₀) / v =
       ((1 - s : ℝ) : ℂ) * ((γ (t₀ - δ) - γ t₀) / v) + (s : ℂ) * (-(δ / 2) : ℝ) := by
     simp only [Complex.real_smul, ofReal_sub, ofReal_one, ofReal_neg, ofReal_div, ofReal_ofNat]
-    field_simp
-    ring
+    field_simp; ring
   rw [hlin]
   simp only [add_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero]
-  rcases hs0.eq_or_lt with hs_eq | hs_pos
-  · rw [← hs_eq]
-    linarith
-  · have h1 : (1 - s) * ((γ (t₀ - δ) - γ t₀) / v).re ≤ 0 :=
-      mul_nonpos_of_nonneg_of_nonpos (by linarith) hleft.le
-    have h2 : s * -(δ / 2) < 0 := mul_neg_of_pos_of_neg hs_pos (by linarith)
-    linarith
+  rcases hs0.eq_or_lt with _ | _ <;> nlinarith
 
 private theorem re_localTangentCurve_ne_zero_right {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ}
     (hv : v ≠ 0) (hδ : 0 < δ) (hright : 0 < ((γ (t₀ + δ) - γ t₀) / v).re)
@@ -242,16 +230,10 @@ private theorem re_localTangentCurve_ne_zero_right {γ : ℝ → ℂ} {t₀ δ :
   have hlin : (γ t₀ + (δ / 2) • v + s • (γ (t₀ + δ) - (γ t₀ + (δ / 2) • v)) - γ t₀) / v =
       ((1 - s : ℝ) : ℂ) * ((δ / 2 : ℝ) : ℂ) + (s : ℂ) * ((γ (t₀ + δ) - γ t₀) / v) := by
     simp only [Complex.real_smul, ofReal_sub, ofReal_one, ofReal_div, ofReal_ofNat]
-    field_simp
-    ring
+    field_simp; ring
   rw [hlin]
   simp only [add_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero]
-  rcases hs0.eq_or_lt with hs_eq | hs_pos
-  · rw [← hs_eq]
-    linarith
-  · have h1 : 0 ≤ (1 - s) * (δ / 2) := mul_nonneg (by linarith) (half_pos hδ).le
-    have h2 : 0 < s * ((γ (t₀ + δ) - γ t₀) / v).re := mul_pos hs_pos hright
-    linarith
+  rcases hs0.eq_or_lt with _ | _ <;> nlinarith
 
 private theorem localTangentCurve_mem_slitCompl {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ}
     (hv : v ≠ 0) (hδ : 0 < δ) (hleft : ((γ (t₀ - δ) - γ t₀) / v).re < 0)
@@ -320,6 +302,11 @@ private theorem windingNumber_sub_eq_add_three_of_notMem {γ : ℝ → ℂ} {a b
       (mt (image_mono hsub₂ ·) hw₂) (mt (image_mono hsub₃ ·) hw₂)]
   ring
 
+private theorem tendsto_add_smul_nhdsWithin_zero (p u : ℂ) :
+    Tendsto (fun h : ℝ ↦ p + h • u) (𝓝[>] 0) (𝓝 p) := by
+  simpa using (Continuous.tendsto (by fun_prop : Continuous fun h : ℝ ↦ p + h • u) 0).mono_left
+    nhdsWithin_le_nhds
+
 /-- When an absolutely continuous curve on `[c, d]` avoids `p`, the normal-crossing difference of
 its winding numbers at `p ± h • (I * v)` tends to `0` as `h → 0⁺`. -/
 private theorem tendsto_windingNumber_sub_zero_of_notMem {γ : ℝ → ℂ} {c d : ℝ} {p v : ℂ}
@@ -330,15 +317,10 @@ private theorem tendsto_windingNumber_sub_zero_of_notMem {γ : ℝ → ℂ} {c d
   have hc : ContinuousAt (fun w ↦ windingNumber γ c d w) p :=
     continuousAt_windingNumber_of_avoidance hγ.continuousOn
       (fun t ht heq ↦ hp ⟨t, ht, heq⟩) (hγ.intervalIntegrable_inv_sub_mul_deriv hp)
-  have hadd : Tendsto (fun h : ℝ ↦ p + h • (I * v)) (𝓝[>] 0) (𝓝 p) := by
-    have h0 : Tendsto (fun h : ℝ ↦ p + h • (I * v)) (𝓝 0) (𝓝 (p + (0 : ℝ) • (I * v))) :=
-      Continuous.tendsto (by fun_prop) 0
-    simpa using h0.mono_left nhdsWithin_le_nhds
   have hsub : Tendsto (fun h : ℝ ↦ p - h • (I * v)) (𝓝[>] 0) (𝓝 p) := by
-    have h0 : Tendsto (fun h : ℝ ↦ p - h • (I * v)) (𝓝 0) (𝓝 (p - (0 : ℝ) • (I * v))) :=
-      Continuous.tendsto (by fun_prop) 0
-    simpa using h0.mono_left nhdsWithin_le_nhds
-  simpa using (hc.tendsto.comp hadd).sub (hc.tendsto.comp hsub)
+    simpa [sub_eq_add_neg, smul_neg] using tendsto_add_smul_nhdsWithin_zero p (-(I * v))
+  simpa using (hc.tendsto.comp (tendsto_add_smul_nhdsWithin_zero p (I * v))).sub
+    (hc.tendsto.comp hsub)
 
 /-- Near `t₀`, `localTangentCurve` has winding-number normal jump tending to `1`. -/
 private theorem tendsto_windingNumber_localTangentCurve_sub {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ}
@@ -405,16 +387,14 @@ private theorem tendsto_windingNumber_localTangentCurve_sub {γ : ℝ → ℂ} {
     (tendsto_windingNumber_segment_sub (z₀ := γ t₀ - v * (t₀ : ℂ)) hv hs)).add
     (tendsto_windingNumber_sub_zero_of_notMem hac₃ hp₃ (v := v))
 
-/-- When `γ` lies in `slitCompl (γ t₀) v (±1)` on `[t₀ - δ, t₀ + δ]` and avoids `γ t₀` on the
-remaining closed outer intervals, both normal test points `γ t₀ ± h • (I * v)` eventually miss the
-full trace `γ '' uIcc a b`. -/
-private theorem eventually_notMem_trace_add_sub_I_mul {γ : ℝ → ℂ} {a b t₀ δ : ℝ} {v : ℂ}
-    (hab : a < b) (hγ : ContinuousOn γ (uIcc a b)) (hv : v ≠ 0)
+/-- When `γ` lies in `slitCompl (γ t₀) v σ` (`0 < σ ^ 2`) on `[t₀ - δ, t₀ + δ]` and avoids `γ t₀`
+on the outer intervals, `γ t₀ + (σ * h) • (I * v)` eventually misses `γ '' uIcc a b`. -/
+private theorem eventually_notMem_trace_smul {γ : ℝ → ℂ} {a b t₀ δ σ : ℝ} {v : ℂ}
+    (hab : a < b) (hγ : ContinuousOn γ (uIcc a b)) (hv : v ≠ 0) (hσ : 0 < σ ^ 2)
     (haδ : a < t₀ - δ) (hbδ : t₀ + δ < b) (hle_mid : t₀ - δ ≤ t₀ + δ)
     (hp₁ : γ t₀ ∉ γ '' uIcc a (t₀ - δ)) (hp₃ : γ t₀ ∉ γ '' uIcc (t₀ + δ) b)
-    (hγ_slit : ∀ σ : ℝ, ∀ t ∈ uIcc (t₀ - δ) (t₀ + δ), γ t ∈ slitCompl (γ t₀) v σ) :
-    ∀ᶠ h : ℝ in 𝓝[>] 0,
-      γ t₀ + h • (I * v) ∉ γ '' uIcc a b ∧ γ t₀ - h • (I * v) ∉ γ '' uIcc a b := by
+    (hγ_slit : ∀ t ∈ uIcc (t₀ - δ) (t₀ + δ), γ t ∈ slitCompl (γ t₀) v σ) :
+    ∀ᶠ h : ℝ in 𝓝[>] 0, γ t₀ + (σ * h) • (I * v) ∉ γ '' uIcc a b := by
   have hsub₁ : uIcc a (t₀ - δ) ⊆ uIcc a b := by
     rw [uIcc_of_le haδ.le, uIcc_of_le hab.le]; exact Icc_subset_Icc le_rfl (by linarith)
   have hsub₃ : uIcc (t₀ + δ) b ⊆ uIcc a b := by
@@ -422,38 +402,30 @@ private theorem eventually_notMem_trace_add_sub_I_mul {γ : ℝ → ℂ} {a b t�
   have hK : IsClosed (γ '' uIcc a (t₀ - δ) ∪ γ '' uIcc (t₀ + δ) b) :=
     ((isCompact_uIcc.image_of_continuousOn (hγ.mono hsub₁)).union
       (isCompact_uIcc.image_of_continuousOn (hγ.mono hsub₃))).isClosed
-  have hp_compl : γ t₀ ∈ (γ '' uIcc a (t₀ - δ) ∪ γ '' uIcc (t₀ + δ) b)ᶜ :=
-    fun h ↦ h.elim hp₁ hp₃
-  have hadd_mem : ∀ᶠ h : ℝ in 𝓝[>] 0,
-      γ t₀ + h • (I * v) ∉ γ '' uIcc a (t₀ - δ) ∪ γ '' uIcc (t₀ + δ) b := by
-    have htend : Tendsto (fun h : ℝ ↦ γ t₀ + h • (I * v)) (𝓝[>] 0) (𝓝 (γ t₀)) := by
-      simpa using (Continuous.tendsto (by fun_prop : Continuous fun h : ℝ ↦ γ t₀ + h • (I * v))
-        0).mono_left nhdsWithin_le_nhds
-    exact htend.eventually (hK.isOpen_compl.mem_nhds hp_compl)
-  have hsub_mem : ∀ᶠ h : ℝ in 𝓝[>] 0,
-      γ t₀ - h • (I * v) ∉ γ '' uIcc a (t₀ - δ) ∪ γ '' uIcc (t₀ + δ) b := by
-    have htend : Tendsto (fun h : ℝ ↦ γ t₀ - h • (I * v)) (𝓝[>] 0) (𝓝 (γ t₀)) := by
-      simpa using (Continuous.tendsto (by fun_prop : Continuous fun h : ℝ ↦ γ t₀ - h • (I * v))
-        0).mono_left nhdsWithin_le_nhds
-    exact htend.eventually (hK.isOpen_compl.mem_nhds hp_compl)
-  filter_upwards [self_mem_nhdsWithin, hadd_mem, hsub_mem] with h hh hpos hneg
-  refine ⟨?_, ?_⟩
-  · rintro ⟨t, ht, heq⟩
-    have ht' : t ∈ Icc a b := uIcc_of_le hab.le ▸ ht
-    rcases lt_or_ge t (t₀ - δ) with hlt | hge
-    · exact hpos (Or.inl ⟨t, uIcc_of_le haδ.le ▸ ⟨ht'.1, hlt.le⟩, heq⟩)
-    · rcases le_or_gt t (t₀ + δ) with hle | hgt
-      · exact notMem_slitCompl_add_smul hv hh
-          (heq ▸ hγ_slit 1 t (uIcc_of_le hle_mid ▸ ⟨hge, hle⟩))
-      · exact hpos (Or.inr ⟨t, uIcc_of_le hbδ.le ▸ ⟨hgt.le, ht'.2⟩, heq⟩)
-  · rintro ⟨t, ht, heq⟩
-    have ht' : t ∈ Icc a b := uIcc_of_le hab.le ▸ ht
-    rcases lt_or_ge t (t₀ - δ) with hlt | hge
-    · exact hneg (Or.inl ⟨t, uIcc_of_le haδ.le ▸ ⟨ht'.1, hlt.le⟩, heq⟩)
-    · rcases le_or_gt t (t₀ + δ) with hle | hgt
-      · exact notMem_slitCompl_sub_smul hv hh
-          (heq ▸ hγ_slit (-1) t (uIcc_of_le hle_mid ▸ ⟨hge, hle⟩))
-      · exact hneg (Or.inr ⟨t, uIcc_of_le hbδ.le ▸ ⟨hgt.le, ht'.2⟩, heq⟩)
+  have htend : Tendsto (fun h : ℝ ↦ γ t₀ + (σ * h) • (I * v)) (𝓝[>] 0) (𝓝 (γ t₀)) := by
+    simpa only [mul_comm σ, mul_smul] using tendsto_add_smul_nhdsWithin_zero (γ t₀) (σ • (I * v))
+  filter_upwards [self_mem_nhdsWithin,
+      htend.eventually (hK.isOpen_compl.mem_nhds fun h ↦ h.elim hp₁ hp₃)]
+    with h hh hout ⟨t, ht, heq⟩
+  have ht' : t ∈ Icc a b := uIcc_of_le hab.le ▸ ht
+  rcases lt_or_ge t (t₀ - δ) with hlt | hge
+  · exact hout (Or.inl ⟨t, uIcc_of_le haδ.le ▸ ⟨ht'.1, hlt.le⟩, heq⟩)
+  · rcases le_or_gt t (t₀ + δ) with hle | hgt
+    · exact notMem_slitCompl_smul hv hσ hh (heq ▸ hγ_slit t (uIcc_of_le hle_mid ▸ ⟨hge, hle⟩))
+    · exact hout (Or.inr ⟨t, uIcc_of_le hbδ.le ▸ ⟨hgt.le, ht'.2⟩, heq⟩)
+
+private theorem eventually_notMem_trace_add_sub_I_mul {γ : ℝ → ℂ} {a b t₀ δ : ℝ} {v : ℂ}
+    (hab : a < b) (hγ : ContinuousOn γ (uIcc a b)) (hv : v ≠ 0)
+    (haδ : a < t₀ - δ) (hbδ : t₀ + δ < b) (hle_mid : t₀ - δ ≤ t₀ + δ)
+    (hp₁ : γ t₀ ∉ γ '' uIcc a (t₀ - δ)) (hp₃ : γ t₀ ∉ γ '' uIcc (t₀ + δ) b)
+    (hγ_slit : ∀ σ : ℝ, ∀ t ∈ uIcc (t₀ - δ) (t₀ + δ), γ t ∈ slitCompl (γ t₀) v σ) :
+    ∀ᶠ h : ℝ in 𝓝[>] 0,
+      γ t₀ + h • (I * v) ∉ γ '' uIcc a b ∧ γ t₀ - h • (I * v) ∉ γ '' uIcc a b := by
+  filter_upwards [eventually_notMem_trace_smul hab hγ hv (by norm_num : (0 : ℝ) < 1 ^ 2)
+      haδ hbδ hle_mid hp₁ hp₃ (hγ_slit 1),
+    eventually_notMem_trace_smul hab hγ hv (by norm_num : (0 : ℝ) < (-1 : ℝ) ^ 2)
+      haδ hbδ hle_mid hp₁ hp₃ (hγ_slit (-1))] with h hpos hneg
+  exact ⟨by simpa using hpos, by simpa [sub_eq_add_neg, neg_smul] using hneg⟩
 
 /-- Choose a symmetric parameter window `[t₀ - δ, t₀ + δ] ⊂ (a, b)` on which `γ` lies in every
 normalized slit plane `slitCompl (γ t₀) v σ`, crosses from negative to positive normalized real

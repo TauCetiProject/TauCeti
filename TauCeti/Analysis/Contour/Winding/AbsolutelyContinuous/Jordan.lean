@@ -16,7 +16,7 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.TangentJump
 import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Deriv
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.NonzeroDeriv
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 import TauCeti.Topology.JordanCurve.Path
@@ -203,33 +203,28 @@ theorem jordanSign_congr {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} (h : EqOn γ₁
   jordanSign_eq_of_image_eq_and_windingNumber_eq (image_congr h) fun _ _ ↦
     windingNumber_congr_curve (h.mono uIoo_subset_uIcc_self)
 
+private theorem jordanSign_eq_zero_of_windingNumber_eq_zero {γ : ℝ → ℂ} {a b : ℝ}
+    (hw : ∀ z, windingNumber γ a b z = 0) : jordanSign γ a b = 0 := by
+  rcases jordanSign_eq_one_or_neg_one_or_zero γ a b with h | h | h
+  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_one_iff.mp h; simpa [hw z] using hall z hz
+  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_neg_one_iff.mp h; simpa [hw z] using hall z hz
+  · exact h
+
 /-- On a degenerate interval `[a, a]`, `jordanSign` vanishes. -/
 @[simp]
-theorem jordanSign_same (γ : ℝ → ℂ) (a : ℝ) : jordanSign γ a a = 0 := by
-  rcases jordanSign_eq_one_or_neg_one_or_zero γ a a with h | h | h
-  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_one_iff.mp h
-    have h0 := hall z hz
-    rw [windingNumber_same] at h0
-    norm_num at h0
-  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_neg_one_iff.mp h
-    have h0 := hall z hz
-    rw [windingNumber_same] at h0
-    norm_num at h0
-  · exact h
+theorem jordanSign_same (γ : ℝ → ℂ) (a : ℝ) : jordanSign γ a a = 0 :=
+  jordanSign_eq_zero_of_windingNumber_eq_zero (windingNumber_same γ a)
 
 /-- A constant curve has `jordanSign` equal to `0`. -/
 @[simp]
-theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 0 := by
-  rcases jordanSign_eq_one_or_neg_one_or_zero (fun _ ↦ c) a b with h | h | h
-  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_one_iff.mp h
-    have h0 := hall z hz
-    rw [windingNumber_const] at h0
-    norm_num at h0
-  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_neg_one_iff.mp h
-    have h0 := hall z hz
-    rw [windingNumber_const] at h0
-    norm_num at h0
-  · exact h
+theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 0 :=
+  jordanSign_eq_zero_of_windingNumber_eq_zero (windingNumber_const c a b)
+
+private theorem isJordanCurve_uIcc {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) : TauCeti.IsJordanCurve (γ '' uIcc a b) := by
+  rw [uIcc_of_le hab.le]
+  exact TauCeti.isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
 
 /-- Core dichotomy at any regular interior point of a simple closed AC curve: either the left
 normal ray enters `filledHull C \ C` with winding number `1` on all of `filledHull C \ C` and the
@@ -248,10 +243,7 @@ private theorem simple_closed_normal_dichotomy
         γ t₀ - h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
           γ t₀ + h • (I * v) ∉ filledHull (γ '' uIcc a b)) := by
   set C := γ '' uIcc a b
-  have hC : IsJordanCurve C := by
-    dsimp only [C]
-    rw [uIcc_of_le hab.le]
-    exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  have hC : TauCeti.IsJordanCurve C := isJordanCurve_uIcc hab hγ hclosed hinj
   have hjump := hγ.eventually_windingNumber_add_I_mul_eq_add_one hab hclosed hinj ht₀ hd hv
   have hzero_out : ∀ {w : ℂ}, w ∉ filledHull C → windingNumber γ a b w = 0 := fun hw ↦
     hγ.windingNumber_eq_zero_of_unbounded_component hclosed (mt mem_filledHull_iff.mpr hw)
@@ -408,9 +400,7 @@ theorem jordanSign_eq_one_or_neg_one
       fun heq ↦ (by linarith : a ≠ (a + b) / 2)
         (hinj ⟨le_rfl, hab⟩ ⟨by linarith, by linarith⟩ heq)⟩
   obtain ⟨t₀, ht₀, v, hv, hd⟩ := hγ.exists_mem_Ioo_hasDerivAt_ne_zero hnonconst
-  have hC : IsJordanCurve (γ '' uIcc a b) := by
-    rw [uIcc_of_le hab.le]
-    exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  have hC := isJordanCurve_uIcc hab hγ hclosed hinj
   rcases simple_closed_normal_dichotomy hab hγ hclosed hinj ht₀ hd hv with
     ⟨hall1, -⟩ | ⟨halln1, -⟩
   · exact Or.inl (jordanSign_of_windingNumber_eq_one hC.nonempty_filledHull_sdiff hall1)
@@ -459,9 +449,7 @@ theorem eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
       γ t₀ + h • ((jordanSign γ a b : ℝ) • (I * v)) ∈
         filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
       γ t₀ - h • ((jordanSign γ a b : ℝ) • (I * v)) ∉ filledHull (γ '' uIcc a b) := by
-  have hC : IsJordanCurve (γ '' uIcc a b) := by
-    rw [uIcc_of_le hab.le]
-    exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  have hC := isJordanCurve_uIcc hab hγ hclosed hinj
   rcases simple_closed_normal_dichotomy hab hγ hclosed hinj ht₀ hd hv with
     ⟨hall1, hev⟩ | ⟨halln1, hev⟩
   · rw [jordanSign_of_windingNumber_eq_one hC.nonempty_filledHull_sdiff hall1]
@@ -610,6 +598,13 @@ end TauCeti.Contour
 
 namespace BoundedVariationOn
 
+private theorem naturalParameterization_closed {γ : ℝ → ℂ} {a b : ℝ}
+    (hab : a ≤ b) (hγ : BoundedVariationOn γ (Icc a b)) (hclosed : γ a = γ b) :
+    naturalParameterization γ (Icc a b) a 0 =
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
+  (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab)).trans
+    (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
+
 /-- **Jordan index theorem for rectifiable simple closed curves (orientation sign dichotomy):**
 the arclength parametrization `naturalParameterization γ (Icc a b) a` on
 `[0, (eVariationOn γ (Icc a b)).toReal]` of a continuous simple closed curve of bounded variation
@@ -619,17 +614,11 @@ theorem jordanSign_naturalParameterization_eq_one_or_neg_one
     (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
     jordanSign (naturalParameterization γ (Icc a b) a) 0 (eVariationOn γ (Icc a b)).toReal = 1 ∨
       jordanSign (naturalParameterization γ (Icc a b) a) 0
-        (eVariationOn γ (Icc a b)).toReal = -1 := by
-  have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
-    hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
-  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
-      (eVariationOn γ (Icc a b)).toReal :=
-    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab.le
-  have hηclosed : naturalParameterization γ (Icc a b) a 0 =
-      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
-    (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab.le)).trans
-      (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab.le).symm)
-  exact hη.jordanSign_eq_one_or_neg_one hL hηclosed
+        (eVariationOn γ (Icc a b)).toReal = -1 :=
+  (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
+      hab.le).jordanSign_eq_one_or_neg_one
+    (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
+    (hγ.naturalParameterization_closed hab.le hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
 
 /-- **The Jordan index theorem for the arclength parametrization of a rectifiable simple closed
@@ -643,20 +632,14 @@ theorem windingNumber_naturalParameterization_eq_jordanSign
         (eVariationOn γ (Icc a b)).toReal z =
       jordanSign (naturalParameterization γ (Icc a b) a) 0
         (eVariationOn γ (Icc a b)).toReal := by
-  have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
-    hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
-  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
-      (eVariationOn γ (Icc a b)).toReal :=
-    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab.le
-  have hηclosed : naturalParameterization γ (Icc a b) a 0 =
-      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
-    (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab.le)).trans
-      (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab.le).symm)
   have hz' : z ∈ filledHull (naturalParameterization γ (Icc a b) a ''
       uIcc 0 (eVariationOn γ (Icc a b)).toReal) \
       (naturalParameterization γ (Icc a b) a '' uIcc 0 (eVariationOn γ (Icc a b)).toReal) := by
     rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization_Icc hcont hab.le]
-  exact hη.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hL hηclosed
+  exact (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
+      hab.le).windingNumber_eq_jordanSign_of_mem_filledHull_sdiff
+    (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
+    (hγ.naturalParameterization_closed hab.le hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) hz'
 
 /-- **Outside the filled hull of a rectifiable closed curve, the winding number of its arclength
@@ -667,17 +650,12 @@ theorem windingNumber_naturalParameterization_eq_zero_of_notMem_filledHull
     (hz : z ∉ filledHull (γ '' Icc a b)) :
     windingNumber (naturalParameterization γ (Icc a b) a) 0
         (eVariationOn γ (Icc a b)).toReal z = 0 := by
-  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
-      (eVariationOn γ (Icc a b)).toReal :=
-    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
-  have hηclosed : naturalParameterization γ (Icc a b) a 0 =
-      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
-    (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab)).trans
-      (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
   have hz' : z ∉ filledHull (naturalParameterization γ (Icc a b) a ''
       uIcc 0 (eVariationOn γ (Icc a b)).toReal) := by
     rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization_Icc hcont hab]
-  exact hη.windingNumber_eq_zero_of_notMem_filledHull hηclosed hz'
+  exact (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
+      hab).windingNumber_eq_zero_of_notMem_filledHull
+    (hγ.naturalParameterization_closed hab hclosed) hz'
 
 /-- **Increasing continuous reparametrizations preserve the arclength orientation sign of a
 rectifiable curve.** The reparametrization `φ` need not be absolutely continuous. -/
