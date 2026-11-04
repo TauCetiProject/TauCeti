@@ -135,14 +135,8 @@ theorem IsContactForm.apply_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsCont
 when its kernel is the whole tangent space. -/
 theorem apply_eq_zero_iff_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1}
     (hker : β.kerDistribution = α.kerDistribution) (x : M) : β.1 x = 0 ↔ α.1 x = 0 := by
-  have hzero (γ : SmoothForm I M ℝ 1) : γ.1 x = 0 ↔ ∀ v, v ∈ γ.kerDistribution x := by
-    refine ⟨fun h v ↦ by simp [h], fun h ↦ ContinuousAlternatingMap.ext fun w ↦ ?_⟩
-    have hw : w = ![w 0] := by
-      rw [Matrix.vec_single_eq_const]
-      exact funext fun i ↦ congrArg w (Subsingleton.elim _ _)
-    rw [hw]
-    simpa using h (w 0)
-  rw [hzero, hzero, hker]
+  rw [← RoughForm.ker_eq_top_iff, ← RoughForm.ker_eq_top_iff]
+  exact Eq.congr_left (congrFun hker x)
 
 /-- If `β = f α` for a nowhere vanishing function `f`, then `α` and `β` have the same kernel. -/
 theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
