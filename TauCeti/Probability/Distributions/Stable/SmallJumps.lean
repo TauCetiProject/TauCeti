@@ -190,11 +190,9 @@ theorem integrableOn_sq_stableLevyMeasure (α β r : ℝ) :
       integrableOn_abs_rpow_stableLevyMeasure ⟨h.1, h.2.1⟩ h.2.2 h.2.1 r
   · simp [IntegrableOn, stableLevyMeasure_eq_zero_of_not h]
 
-/-- The conditional law of jumps in a valid band has a finite second moment. -/
-theorem memLp_two_id_cond_stableLevyMeasure_smallJumpBand {α β ε r : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+/-- The conditional law of jumps in any band has a finite second moment. -/
+theorem memLp_two_id_cond_stableLevyMeasure_smallJumpBand {α β ε r : ℝ} :
     MemLp id 2 (cond (stableLevyMeasure α β) {x : ℝ | ε < |x| ∧ |x| ≤ r}) := by
-  let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
   refine MemLp.of_bound aestronglyMeasurable_id r ?_
   filter_upwards [ae_cond_mem (by measurability :
       MeasurableSet {x : ℝ | ε < |x| ∧ |x| ≤ r})] with x hx

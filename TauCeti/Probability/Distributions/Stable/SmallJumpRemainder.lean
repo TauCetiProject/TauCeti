@@ -92,7 +92,7 @@ theorem memLp_two_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
   let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
   have hjump : MemLp id 2 (cond ν band) :=
-    memLp_two_id_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
+    memLp_two_id_cond_stableLevyMeasure_smallJumpBand
   have hsum := memLp_two_id_compoundPoissonMeasure hjump (ν band).toNNReal
   rw [stableSmallJumpRemainderMeasure_def]
   simpa only [one_mul, sub_eq_add_neg, add_comm] using
@@ -114,7 +114,7 @@ theorem integral_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
   let _ := isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ hε hεr.le
   have hjump : MemLp id 2 (cond ν band) :=
-    memLp_two_id_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
+    memLp_two_id_cond_stableLevyMeasure_smallJumpBand
   have hjump_one : Integrable id (cond ν band) := hjump.integrable (by norm_num)
   have hsum : Integrable id (compoundPoissonMeasure (ν band).toNNReal (cond ν band)) :=
     integrable_id_compoundPoissonMeasure hjump_one _
@@ -162,7 +162,7 @@ theorem variance_id_stableSmallJumpRemainderMeasure {α β ε r : ℝ}
     (measure_mono fun _ hx ↦ hx.1)
   let _ := isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
   have hjump : MemLp id 2 (cond ν band) :=
-    memLp_two_id_cond_stableLevyMeasure_smallJumpBand hα hβ hε hεr
+    memLp_two_id_cond_stableLevyMeasure_smallJumpBand
   have hvariance := variance_id_map_affine
     (μ := compoundPoissonMeasure (ν band).toNNReal (cond ν band))
     (a := -(∫ y in band, sin y ∂ν)) (b := 1)
