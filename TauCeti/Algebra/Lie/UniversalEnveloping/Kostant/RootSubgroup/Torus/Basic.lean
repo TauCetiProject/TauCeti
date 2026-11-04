@@ -86,6 +86,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
   the same for a coroot value.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_conj_kostantRootSubgroupParam`: the
   pinning equation `t(s) xᵢ(u) t(s)⁻¹ = xᵢ(α(s) u)`.
+* `TauCeti.UniversalEnvelopingAlgebra.torusCharacter_eq_one_of_commute_kostantRootSubgroupParam`:
+  a torus point commuting with a faithful root subgroup is killed by its root.
 * `TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_coe_kostantRootOperator`: the root
   operator raises weights by the root `α`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_mul_baseChange_kostantRootOperator`: the
@@ -843,6 +845,25 @@ theorem kostantTorusPoints_conj_kostantRootSubgroupParam
   rw [mul_inv_eq_iff_eq_mul, kostantRootSubgroupParam_apply, kostantRootSubgroupParam_apply]
   refine kostantTorusPoints_mul_kostantRootSubgroupPoints e h ρ M hM b wt hwt hα hnil s _ _ ?_
   simp
+
+/-- **A torus point commuting with a faithful root subgroup is killed by its root.** If the root
+vector `eᵢ` has weight `α`, the root subgroup `xᵢ` is injective over `A`, and `t(s)` commutes
+with `xᵢ(1)`, then the root character `α` takes the value one at `s`. -/
+theorem torusCharacter_eq_one_of_commute_kostantRootSubgroupParam
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    {i : ι} {α : κ → ℤ} (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
+    (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (A : CommAlgCat.{w} ℤ)
+    (hinj : Function.Injective (kostantRootSubgroupParam e h ρ M hM i hnil A)) {s : κ → Aˣ}
+    (hcomm : Commute (kostantTorusPoints M b wt A s)
+      (kostantRootSubgroupParam e h ρ M hM i hnil A (Multiplicative.ofAdd 1))) :
+    torusCharacter s α = 1 := by
+  have hconj := kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα hnil
+    A s (Multiplicative.ofAdd 1)
+  rw [hcomm.eq, mul_inv_cancel_right] at hconj
+  have hval := congrArg Multiplicative.toAdd (hinj hconj)
+  rw [toAdd_ofAdd, toAdd_ofAdd, mul_one] at hval
+  exact Units.ext hval.symm
 
 include e hM in
 /-- **The torus normalizes the elementary group.** Conjugation by a torus point permutes the root
