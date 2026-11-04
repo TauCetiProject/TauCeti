@@ -232,18 +232,6 @@ private lemma injOn_cos_subst {e A : ℝ} (hA : A ≠ 0) :
   rw [div_eq_div_iff h₁.2.ne' h₂.2.ne'] at hst
   exact injOn_cos (Ioo_subset_Icc_self hs) (Ioo_subset_Icc_self ht) (by linarith)
 
-/-- For `k ^ 2 < 1`, the Lebesgue integral of the integrand of the first kind over `(0, π)` is
-`F(π, k) = 2 K(k)`. -/
-private lemma lintegral_Ioo_zero_pi_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) :
-    ∫⁻ θ in Ioo 0 π, ENNReal.ofReal ((1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) =
-      ENNReal.ofReal (2 * legendreK k) := by
-  have h2 : 2 * legendreK k = legendreF π k := by
-    simpa [legendreF_zero] using (legendreF_add_pi hk 0).symm
-  rw [h2, legendreF_def, intervalIntegral.integral_of_le pi_pos.le, integral_Ioc_eq_integral_Ioo,
-    ofReal_integral_eq_lintegral_ofReal
-      ((continuous_legendreF_integrand hk).integrableOn_Icc.mono_set Ioo_subset_Icc_self)
-      (ae_of_all _ fun θ ↦ zero_le_one.trans (one_le_legendreF_integrand hk θ))]
-
 /-- **The integral over `(e₁, ∞)` for a cubic with one real root.** For `b ≠ 0`, put
 `A = √((e₁ - a)² + b²)` and `k = √((A + a - e₁)/(2A))`. Then
 `∫_{(e₁, ∞)} (4(x - e₁)((x - a)² + b²))^(-1/2) dx = K(k) / √A`. In particular the integral

@@ -43,7 +43,8 @@ We prove the basic theory in the amplitude:
   particular the complete integrals are positive;
 * the integrals are odd in `φ` and even in `k`;
 * quasi-periodicity: `legendreF (φ + n * π) k = legendreF φ k + 2 * n * legendreK k` for integers
-  `n`, and likewise for the other two kinds;
+  `n`, and likewise for the other two kinds; in particular the Lebesgue integral of the
+  integrand of the first kind over `(0, π)` is `2 * legendreK k`;
 * `legendreFOrderIso`: for `k ^ 2 < 1`, the map `φ ↦ legendreF φ k` is an order isomorphism of `ℝ`,
   whose inverse is the Jacobi amplitude;
 * the degenerate modulus `k = 0`: `legendreF φ 0 = legendreE φ 0 = φ`, and
@@ -305,6 +306,18 @@ theorem legendreF_add_pi {k : ℝ} (hk : k ^ 2 < 1) (φ : ℝ) :
 theorem legendreF_int_mul_pi {k : ℝ} (hk : k ^ 2 < 1) (n : ℤ) :
     legendreF (n * π) k = 2 * n * legendreK k := by
   simpa using legendreF_add_int_mul_pi hk 0 n
+
+/-- For `k ^ 2 < 1`, the Lebesgue integral of the integrand of the first kind over `(0, π)` is
+`F(π, k) = 2 K(k)`, as an identity in `ℝ≥0∞`. -/
+theorem lintegral_Ioo_zero_pi_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) :
+    ∫⁻ θ in Ioo 0 π, ENNReal.ofReal ((1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) =
+      ENNReal.ofReal (2 * legendreK k) := by
+  have h2 : 2 * legendreK k = legendreF π k := by
+    simpa using (legendreF_int_mul_pi hk 1).symm
+  rw [h2, legendreF_def, intervalIntegral.integral_of_le pi_pos.le, integral_Ioc_eq_integral_Ioo,
+    ofReal_integral_eq_lintegral_ofReal
+      ((continuous_legendreF_integrand hk).integrableOn_Icc.mono_set Ioo_subset_Icc_self)
+      (ae_of_all _ fun θ ↦ zero_le_one.trans (one_le_legendreF_integrand hk θ))]
 
 /-- For `k ^ 2 < 1`, `F(φ, k)` tends to `+∞` as the amplitude `φ` tends to `+∞`. -/
 theorem tendsto_legendreF_atTop {k : ℝ} (hk : k ^ 2 < 1) :
