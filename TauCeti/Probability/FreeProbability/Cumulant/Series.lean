@@ -32,9 +32,10 @@ compositional inverse `PowerSeries.substInvOfIsUnit` of `z M(z)`, whose linear c
 `φ 1 = 1`. These are formal identities: nothing is said about convergence or about the analytic
 R-transform of a measure.
 
-The R-series behaves additively: it is additive on free elements, adding a scalar `c` to `a` adds
-the constant `c` to it, and rescaling `a` by `c` rescales `M` and `C` by `c`. The free cumulant
-series depends on `φ` and `a` only through the moment series.
+The R-series behaves additively: it is additive on elements of freely independent subalgebras,
+adding a scalar `c` to `a` adds the constant `c` to it, and rescaling `a` by `c` rescales `M` and
+`C` by `c`, so that `R_{c a}(z) = c R_a(c z)`. For normalised functionals, the free cumulant series
+and the moment series determine each other.
 
 ## Main definitions
 
@@ -53,11 +54,14 @@ series depends on `φ` and `a` only through the moment series.
 * `TauCeti.eq_freeCumulantSeries_of_subst_eq` and
   `TauCeti.freeCumulantSeries_eq_subst_substInvOfIsUnit` — the free cumulant series is the only
   solution of `C(z M(z)) = M(z)`, namely `C = M ∘ (z M)⁻¹`.
-* `TauCeti.freeCumulantSeries_congr` — equal moment series give equal free cumulant series.
-* `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
-  `TauCeti.IsFreelyIndependentElements.rSeries_add` — the R-series is additive on free elements.
-* `TauCeti.rSeries_add_algebraMap`, `TauCeti.momentSeries_smul` and
-  `TauCeti.freeCumulantSeries_smul` — shifts and dilations.
+* `TauCeti.freeCumulantSeries_congr` — equal moment series give equal free cumulant series, and
+  `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` — conversely for normalised functionals.
+* `TauCeti.IsFreelyIndependent.rSeries_sum` and `TauCeti.IsFreelyIndependent.rSeries_add` — the
+  R-series is additive on elements of freely independent subalgebras, with the element versions
+  `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
+  `TauCeti.IsFreelyIndependentElements.rSeries_add`.
+* `TauCeti.rSeries_add_algebraMap`, `TauCeti.momentSeries_smul`,
+  `TauCeti.freeCumulantSeries_smul` and `TauCeti.rSeries_smul` — shifts and dilations.
 
 ## References
 
@@ -169,6 +173,12 @@ theorem freeCumulantSeries_eq_one_add_X_mul_rSeries :
   · simp
   · simp [coeff_succ_X_mul]
 
+/-- The coefficient of the free cumulant series at `n + 1` is the coefficient of the R-series at
+`n`. -/
+theorem coeff_succ_freeCumulantSeries (n : ℕ) :
+    coeff (n + 1) (freeCumulantSeries φ a) = coeff n (rSeries φ a) := by
+  rw [coeff_freeCumulantSeries, coeff_rSeries]
+
 /-- The free cumulant series depends only on the moment series: if `φ (a ^ n) = ψ (b ^ n)` for
 every `n`, then `a` and `b` have the same free cumulants. No normalisation is needed. -/
 theorem freeCumulantSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
@@ -177,6 +187,13 @@ theorem freeCumulantSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
   ext n
   simp_rw [coeff_freeCumulantSeries, freeCumulant_eq_sum_mu_mul_partitionMoment,
     partitionMoment_const, ← coeff_momentSeries, h]
+
+/-- The R-series depends only on the moment series. No normalisation is needed. -/
+theorem rSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
+    (h : momentSeries φ a = momentSeries ψ b) : rSeries φ a = rSeries ψ b := by
+  ext n
+  rw [← coeff_succ_freeCumulantSeries, ← coeff_succ_freeCumulantSeries,
+    freeCumulantSeries_congr φ a h]
 
 variable {φ}
 
@@ -238,6 +255,19 @@ theorem freeCumulantSeries_eq_subst_substInvOfIsUnit (hφ : φ 1 = 1) :
   eq_subst_substInvOfIsUnit_of_subst_eq (by simp) _
     (freeCumulantSeries_subst_X_mul_momentSeries a hφ)
 
+/-- For normalised functionals, two elements have the same moment series exactly when they have the
+same free cumulant series. -/
+theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [Monoid B]
+    {ψ : B → R} {b : B} (hψ : ψ 1 = 1) :
+    freeCumulantSeries φ a = freeCumulantSeries ψ b ↔ momentSeries φ a = momentSeries ψ b := by
+  refine ⟨fun h => ?_, freeCumulantSeries_congr φ a⟩
+  -- Both moments are the noncrossing-partition sums of the common free cumulants.
+  ext n
+  have ha := apply_pow_eq_sum_prod_coeff_freeCumulantSeries a hφ (univ : Finset (Fin n))
+  have hb := apply_pow_eq_sum_prod_coeff_freeCumulantSeries b hψ (univ : Finset (Fin n))
+  rw [card_univ, Fintype.card_fin] at ha hb
+  rw [coeff_momentSeries, coeff_momentSeries, ha, hb, h]
+
 end Monoid
 
 section Algebra
@@ -264,24 +294,61 @@ theorem rSeries_add_algebraMap (hφ : φ 1 = 1) (a : A) (c : R) :
     exact freeCumulant_add_algebraMap φ (fun _ => a) hφ (fun _ => c)
       (by rw [card_univ, Fintype.card_fin]; omega)
 
+/-- Rescaling `a` by `c` transforms its R-series by `R_{c a}(z) = c R_a(c z)`. -/
+theorem rSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
+    rSeries φ (c • a) = c • rescale c (rSeries φ a) := by
+  ext n
+  simpa [pow_succ', mul_assoc] using congr(coeff (n + 1) $(freeCumulantSeries_smul φ c a))
+
+/-- The R-series of `0` vanishes. -/
+@[simp]
+theorem rSeries_zero : rSeries φ (0 : A) = 0 := by
+  ext n
+  rw [coeff_rSeries, ← freeCumulantMultilinear_apply,
+    (freeCumulantMultilinear φ).map_coord_zero 0 rfl, map_zero]
+
+/-- For a normalised `φ`, the R-series of the scalar `c • 1` is the constant `c`: its only nonzero
+free cumulant is its mean. -/
+@[simp]
+theorem rSeries_algebraMap (hφ : φ 1 = 1) (c : R) :
+    rSeries φ (algebraMap R A c) = PowerSeries.C c := by
+  simpa using rSeries_add_algebraMap hφ 0 c
+
+/-- *The R-series is additive on free families*: if each `a k` lies in the subalgebra `B k`, with
+`B` freely independent for a normalised `φ`, then `R_{∑ k ∈ T, a k} = ∑ k ∈ T, R_{a k}`. -/
+theorem IsFreelyIndependent.rSeries_sum {ι : Type*} {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {T : Finset ι} {a : ι → A}
+    (ha : ∀ k ∈ T, a k ∈ B k) :
+    rSeries φ (∑ k ∈ T, a k) = ∑ k ∈ T, rSeries φ (a k) := by
+  ext n
+  rw [coeff_rSeries, map_sum, h.freeCumulant_sum hφ (fun k hk _ _ => ha k hk) univ_nonempty]
+  simp
+
+/-- *The R-series is additive on two free subalgebras*: if `a ∈ B i` and `b ∈ B j` for `i ≠ j`,
+with `B` freely independent for a normalised `φ`, then `R_{a + b} = R_a + R_b`. -/
+theorem IsFreelyIndependent.rSeries_add {ι : Type*} {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) {a b : A}
+    (ha : a ∈ B i) (hb : b ∈ B j) :
+    rSeries φ (a + b) = rSeries φ a + rSeries φ b := by
+  ext n
+  rw [coeff_rSeries, map_add, h.freeCumulant_add hφ hij (fun _ _ => ha) (fun _ _ => hb)
+    univ_nonempty, coeff_rSeries, coeff_rSeries]
+
 /-- *The R-series is additive on free elements*: if the elements `c k` are freely independent
 for a normalised `φ`, then `R_{∑ k ∈ T, c k} = ∑ k ∈ T, R_{c k}`. -/
 theorem IsFreelyIndependentElements.rSeries_sum {ι : Type*} {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) :
-    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) := by
-  ext n
-  rw [coeff_rSeries, map_sum]
-  simp_rw [coeff_rSeries]
-  exact h.freeCumulant_sum hφ T univ_nonempty
+    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) :=
+  (isFreelyIndependentElements_iff.mp h).rSeries_sum hφ fun k _ =>
+    Algebra.self_mem_adjoin_singleton R (c k)
 
 /-- *The R-series is additive on two free elements*: if `c i` and `c j`, for `i ≠ j`, belong to a
 freely independent family for a normalised `φ`, then `R_{c i + c j} = R_{c i} + R_{c j}`. -/
 theorem IsFreelyIndependentElements.rSeries_add {ι : Type*} {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) :
-    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) := by
-  ext n
-  rw [coeff_rSeries, map_add, coeff_rSeries, coeff_rSeries]
-  exact h.freeCumulant_add hφ hij univ_nonempty
+    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) :=
+  (isFreelyIndependentElements_iff.mp h).rSeries_add hφ hij (Algebra.self_mem_adjoin_singleton R _)
+    (Algebra.self_mem_adjoin_singleton R _)
 
 end Algebra
 
