@@ -29,8 +29,11 @@ The unit `1` is primary, so the reciprocity statements carry their nonunit hypot
 * `TauCeti.isPrimaryGaussian_intCast_iff`: a rational integer is primary exactly when it is `1`
   modulo `4`.
 * `TauCeti.IsPrimaryGaussian.mul`, `TauCeti.IsPrimaryGaussian.mul_left_iff`,
-  `TauCeti.IsPrimaryGaussian.of_intCast_mul`: primary elements are closed under products, and
-  under division by a primary factor, in particular by a rational integer `m ≡ 1 (mod 4)`.
+  `TauCeti.IsPrimaryGaussian.of_intCast_mul`,
+  `TauCeti.IsPrimaryGaussian.exists_intCast_mul_add_mul_isCoprime`: primary elements are closed
+  under products and under division by a primary factor (in particular by a rational integer
+  `m ≡ 1 (mod 4)`), and every primary element factors out a signed rational integer `m ≡ 1 (mod 4)`
+  leaving a primary quotient with coprime coordinates.
 * `TauCeti.IsPrimaryGaussian.map`: the image of a primary element under a ring endomorphism of
   `𝓞 K`, such as complex conjugation, is primary.
 * `TauCeti.IsPrimaryGaussian.odd_norm`, `TauCeti.IsPrimaryGaussian.eq_one_of_isUnit`: a primary
@@ -241,6 +244,49 @@ theorem isPrimaryGaussian_ofNat_iff {n : ℕ} [n.AtLeastTwo] :
 theorem IsPrimaryGaussian.of_intCast_mul {m : ℤ} (hmx : IsPrimaryGaussian ((m : 𝓞 K) * x))
     (hm : m ≡ 1 [ZMOD 4]) : IsPrimaryGaussian x :=
   (isPrimaryGaussian_intCast_iff.mpr hm).mul_left_iff.mp hmx
+
+/-- Every primary element `x` of `𝓞 K = ℤ[i]` factors as `m * (a + b i)` with `m ≡ 1 (mod 4)` a
+rational integer, `a` and `b` coprime, and `a + b i` primary. -/
+theorem IsPrimaryGaussian.exists_intCast_mul_add_mul_isCoprime {ζ : K} (hζ : IsPrimitiveRoot ζ 4)
+    {x : 𝓞 K} (hx : IsPrimaryGaussian x) :
+    ∃ m a b : ℤ, m ≡ 1 [ZMOD 4] ∧ IsCoprime a b ∧
+      IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) ∧
+      x = (m : 𝓞 K) * ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) := by
+  obtain ⟨a₀, b₀, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  have hodd : Odd (a₀ + b₀) :=
+    (hζ.odd_norm_intCast_add_intCast_mul_toInteger_iff_of_four (a := a₀) (b := b₀)).mp hx.odd_norm
+  set g : ℕ := a₀.gcd b₀ with hg_def
+  have hg_odd : Odd g := by
+    by_contra hg_even
+    obtain ⟨k, hk⟩ := Nat.not_odd_iff_even.mp hg_even
+    have hdvd : (2 : ℤ) ∣ a₀ + b₀ :=
+      dvd_trans ⟨k, by omega⟩ (dvd_add (Int.gcd_dvd_left a₀ b₀) (Int.gcd_dvd_right a₀ b₀))
+    obtain ⟨u, hu⟩ := hodd
+    omega
+  obtain ⟨a₁, b₁, hcop₁, ha₀, hb₀⟩ := Int.exists_gcd_one hg_odd.pos
+  rw [← hg_def] at ha₀ hb₀
+  have hcop : IsCoprime a₁ b₁ := Int.isCoprime_iff_gcd_eq_one.mpr hcop₁
+  have hg_mod : (g : ℤ) ≡ 1 [ZMOD 4] ∨ (-(g : ℤ)) ≡ 1 [ZMOD 4] := by
+    obtain ⟨t, ht⟩ := hg_odd
+    simp only [Int.ModEq, ht]
+    push_cast
+    omega
+  rcases hg_mod with hg1 | hg3
+  · have hmul : (a₀ : 𝓞 K) + (b₀ : 𝓞 K) * hζ.toInteger =
+        ((g : ℤ) : 𝓞 K) * ((a₁ : 𝓞 K) + (b₁ : 𝓞 K) * hζ.toInteger) := by
+      rw [ha₀, hb₀]
+      push_cast
+      ring
+    exact ⟨g, a₁, b₁, hg1, hcop, IsPrimaryGaussian.of_intCast_mul (hmul ▸ hx) hg1, hmul⟩
+  · set m : ℤ := -(g : ℤ)
+    have hmul : (a₀ : 𝓞 K) + (b₀ : 𝓞 K) * hζ.toInteger =
+        (m : 𝓞 K) * (((-a₁ : ℤ) : 𝓞 K) + ((-b₁ : ℤ) : 𝓞 K) * hζ.toInteger) := by
+      simp only [m]
+      rw [ha₀, hb₀]
+      push_cast
+      ring
+    exact ⟨m, -a₁, -b₁, hg3, hcop.neg_left.neg_right,
+      IsPrimaryGaussian.of_intCast_mul (hmul ▸ hx) hg3, hmul⟩
 
 /-- The only primary unit of `𝓞 K = ℤ[i]` is `1`: of the units `±1, ±i`, only `1` is congruent
 to `1` modulo `(1 + i)³`. -/

@@ -36,8 +36,10 @@ are read in `K`, where the integer powers of `i` and `-1` live.
   `(i / λ)_4 = i ^ (-((a - 1) / 2))`.
 * `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_neg_one`:
   `(-1 / λ)_4 = (-1) ^ ((a - 1) / 2)`.
-* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger`:
-  `(i / m)_4 = (-1) ^ ((m - 1) / 4)` for a rational integer `m ≡ 1 (mod 4)`.
+* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger`,
+  `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd`:
+  `(i / m)_4 = (-1) ^ ((m - 1) / 4)` for a rational integer `m ≡ 1 (mod 4)`, and
+  `(i / m)_4 = (-1) ^ ((m ^ 2 - 1) / 8)` for every odd rational integer `m`.
 * `TauCeti.powerResidueSymbolIdeal_span_intCast_mk_neg_one`: `(-1 / m)_4 = 1` for an odd
   rational integer `m`.
 
@@ -98,6 +100,27 @@ theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger
   rw [hm₀, hx.powerResidueSymbolIdeal_mk_toInteger, h₂, h₄, zpow_mul, zpow_ofNat,
     hζ.sq_eq_neg_one]
   simp [zpow_neg, ← inv_zpow]
+
+/-- **The supplementary law for `i` at an odd rational integer.** If `m` is odd, then
+`(i / m)_4 = (-1) ^ ((m ^ 2 - 1) / 8)`, the symbol being taken at the ideal `m 𝓞 K` and read in
+`K`. -/
+theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd
+    (hζ : IsPrimitiveRoot ζ 4) {m : ℤ} (hm : Odd m) :
+    ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ hζ.toInteger) : 𝓞 K) :
+      K) = (-1) ^ ((m ^ 2 - 1) / 8) := by
+  wlog hm₁ : m ≡ 1 [ZMOD 4] generalizing m
+  · have h := this hm.neg (by obtain ⟨k, rfl⟩ := hm; simp only [Int.ModEq] at hm₁ ⊢; omega)
+    rwa [Int.cast_neg, span_singleton_neg, neg_sq] at h
+  obtain ⟨k, hk⟩ := hm₁.symm.dvd
+  have h4 : (m - 1) / 4 = k := by omega
+  have h8 : (m ^ 2 - 1) / 8 = 2 * k ^ 2 + k := by
+    have hsq : m ^ 2 - 1 = 8 * (2 * k ^ 2 + k) := by
+      have hm_eq : m = 4 * k + 1 := by omega
+      rw [hm_eq]
+      ring
+    rw [hsq, Int.mul_ediv_cancel_left _ (by decide)]
+  rw [hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger hm₁, h4, h8]
+  exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num) (Int.modEq_iff_dvd.mpr ⟨k ^ 2, by ring⟩)
 
 /-- **The supplementary law for `-1` at a rational integer.** If `m` is odd, then
 `(-1 / m)_4 = 1`, the symbol being taken at the ideal `m 𝓞 K`. -/

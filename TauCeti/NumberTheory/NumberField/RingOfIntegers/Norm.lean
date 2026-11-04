@@ -21,6 +21,9 @@ characteristic `n`.
 * `NumberField.RingOfIntegers.one_le_abs_norm`: `1 ≤ |N(α)|` for every nonzero `α : 𝓞 K`.
 * `NumberField.RingOfIntegers.intCast_dvd_intCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℤ`.
 * `NumberField.RingOfIntegers.natCast_dvd_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℕ`.
+* `NumberField.RingOfIntegers.isUnit_intCast`: `IsUnit (m : 𝓞 K) ↔ IsUnit m` for `m : ℤ`.
+* `NumberField.RingOfIntegers.isCoprime_intCast`: `IsCoprime (m : 𝓞 K) (n : 𝓞 K) ↔ IsCoprime m n`
+  for `m n : ℤ`.
 * `NumberField.RingOfIntegers.charP_quotient_span_natCast`: `𝓞 K / n 𝓞 K` has characteristic `n`.
 -/
 
@@ -49,6 +52,20 @@ theorem intCast_dvd_intCast {m n : ℤ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m �
 @[simp, norm_cast]
 theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
   simpa using (intCast_dvd_intCast (K := K) (m := m) (n := n)).trans Int.natCast_dvd_natCast
+
+/-- A rational integer is a unit in `𝓞 K` if and only if it is a unit in `ℤ`. -/
+@[simp, norm_cast]
+theorem isUnit_intCast {m : ℤ} : IsUnit (m : 𝓞 K) ↔ IsUnit m := by
+  rw [isUnit_iff_dvd_one, ← Int.cast_one (R := 𝓞 K), intCast_dvd_intCast, ← isUnit_iff_dvd_one]
+
+/-- Coprimality between rational integers is the same in `𝓞 K` as in `ℤ`. -/
+@[simp, norm_cast]
+theorem isCoprime_intCast {m n : ℤ} : IsCoprime (m : 𝓞 K) (n : 𝓞 K) ↔ IsCoprime m n := by
+  refine ⟨fun h ↦ Int.isCoprime_iff_gcd_eq_one.mpr ?_, IsCoprime.intCast⟩
+  have hu : IsUnit ((m.gcd n : ℤ) : 𝓞 K) :=
+    h.isUnit_of_dvd' (intCast_dvd_intCast.mpr (Int.gcd_dvd_left m n))
+      (intCast_dvd_intCast.mpr (Int.gcd_dvd_right m n))
+  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (isUnit_iff_dvd_one.mp (isUnit_intCast.mp hu)))
 
 variable (K) in
 /-- The residue ring `𝓞 K / n 𝓞 K` has characteristic `n`. -/

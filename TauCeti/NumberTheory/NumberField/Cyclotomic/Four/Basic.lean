@@ -41,7 +41,8 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
 * `TauCeti.exists_ringHom_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
-* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`;
+* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`,
+  and `TauCeti.apply_apply_eq_self_of_four` records that `σ` is an involution;
 * `TauCeti.absNorm_span_natCast_four`: the absolute norm of `q ℤ[i]` is `q²`;
 * `NumberField.RingOfIntegers.natCast_absNorm_span_singleton_of_four`: the absolute norm of
   `x ℤ[i]` is the norm of `x`;
@@ -186,6 +187,21 @@ theorem intCast_norm_eq_mul_of_four {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : �
   push_cast
   linear_combination (-((a : 𝓞 K) * b * hζ.toInteger) - (b : 𝓞 K) ^ 2 * (hζ.toInteger ^ 2 - 1)) *
     hsq
+
+/-- Any ring endomorphism `σ` of `𝓞 K = ℤ[i]` that cubes the fourth roots of unity is an
+involution. -/
+theorem apply_apply_eq_self_of_four {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3)
+    (x : 𝓞 K) : σ (σ x) = x := by
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  have h4 := hζ.toInteger_isPrimitiveRoot.pow_eq_one
+  have hi := hσ _ h4
+  have hi3 : σ (hζ.toInteger ^ 3) = hζ.toInteger := by
+    rw [map_pow, hi, ← pow_mul]
+    have h9 : hζ.toInteger ^ (3 * 3) = (hζ.toInteger ^ 4) ^ 2 * hζ.toInteger := by ring
+    rw [h9, h4, one_pow, one_mul]
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  rw [map_add, map_mul, map_intCast, map_intCast, hi, map_add, map_mul, map_intCast, map_intCast,
+    hi3]
 
 end TauCeti
 
