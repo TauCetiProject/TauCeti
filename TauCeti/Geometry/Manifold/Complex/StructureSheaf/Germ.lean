@@ -159,6 +159,26 @@ theorem exists_toFilterGerm_eq_of_eventually_contMDiffAt {x : X} {f : X → ℂ}
   exact ⟨ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hxt) fU,
     fun l hl ↦ toFilterGerm_germ hl hxt fU f fun y ↦ ofContMDiff_apply _ _ y⟩
 
+/-- Every holomorphic germ on the complex line has an analytic representative, simultaneously
+along every filter finer than the neighbourhood filter. -/
+theorem exists_toFilterGerm_eq_analyticAt (a : ℂ)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
+    ∃ f : ℂ → ℂ, AnalyticAt ℂ f a ∧
+      ∀ (l : Filter ℂ) (hl : l ≤ 𝓝 a), toFilterGerm 𝓘(ℂ) ℂ a l hl s = f := by
+  obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq a s
+  exact ⟨f, (contMDiffAt_iff_contDiffAt.mp hf.self_of_nhds).analyticAt, hfs⟩
+
+/-- A function analytic at a point of the complex line is manifold analytic near that point. -/
+theorem eventually_contMDiffAt_of_analyticAt {f : ℂ → ℂ} {a : ℂ} (hf : AnalyticAt ℂ f a) :
+    ∀ᶠ z in 𝓝 a, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f z :=
+  hf.eventually_analyticAt.mono fun _ hz ↦ contMDiffAt_iff_contDiffAt.mpr hz.contDiffAt
+
+/-- A function analytic at a point of the complex line represents a holomorphic stalk element. -/
+theorem exists_toFilterGerm_eq_of_analyticAt {f : ℂ → ℂ} {a : ℂ} (hf : AnalyticAt ℂ f a) :
+    ∃ s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a,
+      ∀ (l : Filter ℂ) (hl : l ≤ 𝓝 a), toFilterGerm 𝓘(ℂ) ℂ a l hl s = f :=
+  exists_toFilterGerm_eq_of_eventually_contMDiffAt (eventually_contMDiffAt_of_analyticAt hf)
+
 /-- A holomorphic germ is determined by its germ along `𝓝 x`. -/
 theorem toFilterGerm_nhds_injective (x : X) :
     Injective (toFilterGerm I X x (𝓝 x) le_rfl) := by
