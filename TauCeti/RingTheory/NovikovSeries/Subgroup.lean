@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.ZMultiples
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
 public import TauCeti.RingTheory.NovikovSeries.LeadingTerm
 public import Mathlib.RingTheory.Localization.FractionRing
@@ -92,16 +93,8 @@ theorem mem_nonZeroDivisors_of_support_subset_zmultiples [NoZeroDivisors R] {h :
     (hh : N h ≠ 0) {a : NovikovSeries R H N}
     (haH : a.support ⊆ (AddSubgroup.zmultiples h : Set H)) (ha : a ≠ 0) :
     a ∈ (NovikovSeries R H N)⁰ := by
-  apply mem_nonZeroDivisors_of_support_subset_of_injective_period (K := .zmultiples h) ?_ haH ha
-  intro x y hxy
-  obtain ⟨m, hm⟩ := AddSubgroup.mem_zmultiples_iff.1 x.property
-  obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.1 y.property
-  have hmn : m = n := by
-    have heq : (m : ℝ) * N h = (n : ℝ) * N h := by
-      simpa only [AddMonoidHom.comp_apply, AddSubgroup.subtype_apply, ← hm, ← hn,
-        map_zsmul, zsmul_eq_mul] using hxy
-    exact_mod_cast (mul_right_cancel₀ hh heq)
-  exact Subtype.ext (hm.symm.trans (hmn ▸ hn))
+  exact mem_nonZeroDivisors_of_support_subset_of_injective_period
+    (N.comp_zmultiples_subtype_injective hh) haH ha
 
 end Subgroup
 
@@ -122,5 +115,16 @@ theorem comp_algebraMap_addSubgroup_injective_of_injective_period [NoZeroDivisor
   have hu := IsLocalization.map_units Q
     ⟨_, algebraMap_addSubgroup_mem_nonZeroDivisors_of_injective_period hN ha0⟩
   exact (hu.map f).ne_zero ha
+
+/-- For an exponent of nonzero period, the cyclic subgroup completion embeds into every
+nontrivial ring image of the ambient total quotient ring, in particular each field component. -/
+theorem comp_algebraMap_zmultiples_injective [NoZeroDivisors R] {h : H} (hh : N h ≠ 0)
+    (Q : Type*) [CommRing Q] [Algebra (NovikovSeries R H N) Q]
+    [IsFractionRing (NovikovSeries R H N) Q] {F : Type*} [Ring F] [Nontrivial F] (f : Q →+* F) :
+    Function.Injective ((f.comp (algebraMap (NovikovSeries R H N) Q)).comp
+      (algebraMap (NovikovSeries R (AddSubgroup.zmultiples h)
+        (N.comp (AddSubgroup.zmultiples h).subtype)) (NovikovSeries R H N))) := by
+  exact comp_algebraMap_addSubgroup_injective_of_injective_period
+    (N.comp_zmultiples_subtype_injective hh) Q f
 
 end TauCeti.NovikovSeries
