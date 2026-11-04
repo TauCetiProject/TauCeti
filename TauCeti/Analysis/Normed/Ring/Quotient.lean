@@ -30,7 +30,7 @@ complete) and `I` is proper, also `1 ≤ ‖1‖`, because a proper ideal contai
 distance `1` of the identity. In particular a quotient of a Banach algebra with `‖1‖ = 1` by a
 proper closed ideal again has `‖1‖ = 1`.
 
-The quotient map `Ideal.Quotient.mkA` does not increase norms (`Submodule.Quotient.norm_mk_le`),
+The quotient map `Ideal.Quotient.mkA` does not increase norms (`Ideal.Quotient.norm_mkA_le`),
 and a continuous algebra homomorphism vanishing on `I` descends to a continuous algebra
 homomorphism `Ideal.Quotient.liftA` on `R ⧸ I` with the same bound on representatives. The
 continuous first isomorphism theorem says that a continuous surjective homomorphism `f : A → B`
@@ -47,6 +47,8 @@ bounded by the open mapping theorem, but it is in general not an isometry: the q
 
 ## Main results
 
+* `Ideal.Quotient.norm_mk_le_norm` and `Ideal.Quotient.exists_norm_mk_lt`: the quotient norm is
+  at most the norm of any representative, and is approached by representatives.
 * `Ideal.Quotient.norm_one_le` and `Ideal.Quotient.one_le_norm_one`: bounds for the norm of the
   identity of a quotient.
 * `Ideal.Quotient.norm_liftA_apply_le`: a norm bound for an induced homomorphism.
@@ -70,6 +72,16 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] (I : Ideal R) [I.IsTwoSided]
 
+/-- The quotient map by a two-sided ideal does not increase norms. -/
+theorem norm_mk_le_norm (a : R) : ‖Ideal.Quotient.mk I a‖ ≤ ‖a‖ :=
+  Submodule.Quotient.norm_mk_le I a
+
+/-- Every element of the quotient by a two-sided ideal has a representative of norm less than
+its quotient norm plus `ε`. -/
+theorem exists_norm_mk_lt {I : Ideal R} [I.IsTwoSided] (x : R ⧸ I) {ε : ℝ} (hε : 0 < ε) :
+    ∃ a : R, Ideal.Quotient.mk I a = x ∧ ‖a‖ < ‖x‖ + ε :=
+  Submodule.Quotient.norm_mk_lt x hε
+
 /-- The quotient of a seminormed ring by a two-sided ideal, with the quotient norm, is a
 seminormed ring. -/
 noncomputable instance seminormedRing : SeminormedRing (R ⧸ I) where
@@ -79,10 +91,10 @@ noncomputable instance seminormedRing : SeminormedRing (R ⧸ I) where
     -- `‖x * y‖` by `(‖x‖ + ε) * (‖y‖ + ε)`; let `ε` tend to `0`.
     have h : ∀ ε > 0, ‖x * y‖ ≤ (‖x‖ + ε) * (‖y‖ + ε) := by
       intro ε hε
-      obtain ⟨a, rfl, ha⟩ := Submodule.Quotient.norm_mk_lt (S := I) x hε
-      obtain ⟨b, rfl, hb⟩ := Submodule.Quotient.norm_mk_lt (S := I) y hε
-      rw [Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk, ← map_mul]
-      calc ‖Ideal.Quotient.mk I (a * b)‖ ≤ ‖a * b‖ := Submodule.Quotient.norm_mk_le _ _
+      obtain ⟨a, rfl, ha⟩ := exists_norm_mk_lt x hε
+      obtain ⟨b, rfl, hb⟩ := exists_norm_mk_lt y hε
+      rw [← map_mul]
+      calc ‖Ideal.Quotient.mk I (a * b)‖ ≤ ‖a * b‖ := norm_mk_le_norm I _
         _ ≤ ‖a‖ * ‖b‖ := norm_mul_le a b
         _ ≤ _ := mul_le_mul ha.le hb.le (norm_nonneg b) (by positivity)
     have hT : Filter.Tendsto (fun ε : ℝ ↦ (‖x‖ + ε) * (‖y‖ + ε)) (𝓝[>] 0)
@@ -97,7 +109,7 @@ noncomputable instance normedRing [IsClosed (I : Set R)] : NormedRing (R ⧸ I) 
 
 /-- The identity of a quotient has norm at most the norm of the identity. -/
 theorem norm_one_le : ‖(1 : R ⧸ I)‖ ≤ ‖(1 : R)‖ :=
-  Submodule.Quotient.norm_mk_le I 1
+  norm_mk_le_norm I 1
 
 variable (𝕜 : Type*) [NormedField 𝕜] [NormedAlgebra 𝕜 R]
 
@@ -115,11 +127,10 @@ variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R] {I : Ideal R} [I.I
 of the quotient by a proper two-sided ideal has norm at least `1`. -/
 theorem one_le_norm_one (hI : I ≠ ⊤) : 1 ≤ ‖(1 : R ⧸ I)‖ := by
   by_contra! h
-  obtain ⟨m, hm, hm1⟩ := Submodule.Quotient.norm_mk_lt (S := I) (1 : R ⧸ I) (sub_pos.2 h)
+  obtain ⟨m, hm, hm1⟩ := exists_norm_mk_lt (1 : R ⧸ I) (sub_pos.2 h)
   -- The representative `m` of `1` lies within distance `1` of `0`, so `1 - m ∈ I` is within
   -- distance `1` of the identity.
   refine hI (I.eq_top_of_norm_lt_one (x := 1 - m) ?_ (by simpa using hm1))
-  rw [Ideal.Quotient.mk_eq_mk] at hm
   rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, hm, sub_self]
 
 /-- A quotient of a normed ring with `‖1‖ = 1` and summable geometric series (for instance a
@@ -135,6 +146,11 @@ section ContinuousAlgHom
 variable {R A B : Type*} [CommSemiring R] [SeminormedRing A] [Algebra R A] (I : Ideal A)
   [I.IsTwoSided]
 
+/-- The quotient map by a two-sided ideal, as a continuous algebra homomorphism, does not increase
+norms. -/
+theorem norm_mkA_le (a : A) : ‖mkA R I a‖ ≤ ‖a‖ :=
+  (mkA_apply R I a).symm ▸ norm_mk_le_norm I a
+
 /-- A homomorphism bounded by `C` on `A` is bounded by `C` on the quotient. -/
 theorem norm_liftA_apply_le [SeminormedRing B] [Algebra R B] (f : A →A[R] B)
     (hI : ∀ a ∈ I, f a = 0) {C : ℝ} (hC : ∀ a, ‖f a‖ ≤ C * ‖a‖) (x : A ⧸ I) :
@@ -143,7 +159,7 @@ theorem norm_liftA_apply_le [SeminormedRing B] [Algebra R B] (f : A →A[R] B)
   rw [liftA_mk]
   rcases le_or_gt C 0 with hC0 | hC0
   · -- For `C ≤ 0` any representative `a` works, since `‖x‖ ≤ ‖a‖`.
-    exact (hC a).trans (mul_le_mul_of_nonpos_left (Submodule.Quotient.norm_mk_le I a) hC0)
+    exact (hC a).trans (mul_le_mul_of_nonpos_left (norm_mk_le_norm I a) hC0)
   · -- For `C > 0`, this is the bound for lifts of bounded additive group homomorphisms.
     exact (QuotientAddGroup.norm_lift_apply_le (S := I.toAddSubgroup)
       ((f : A →+ B).mkNormedAddGroupHom C hC) hI (Ideal.Quotient.mk I a)).trans
@@ -158,21 +174,6 @@ namespace ContinuousAlgHom
 
 variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
   [CompleteSpace A] [NormedRing B] [NormedAlgebra 𝕜 B] [CompleteSpace B]
-
-omit [CompleteSpace A] [CompleteSpace B] in
-/-- The algebraic first isomorphism `A ⧸ ker f ≃ B` is continuous, being the map
-`Ideal.Quotient.liftA` induced by `f`. -/
-private theorem continuous_quotientKerAlgEquivOfSurjective (f : A →A[𝕜] B)
-    (hf : Function.Surjective f) :
-    Continuous (Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf) := by
-  have h : ⇑(Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[𝕜] B)) hf) =
-      ⇑(Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id) := by
-    funext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
-    exact (Ideal.Quotient.liftA_mk _ f _ a).symm
-  rw [h]
-  exact (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
 
 /-- **The continuous first isomorphism theorem** for Banach algebras: a continuous surjective
 algebra homomorphism `f : A → B` induces an isomorphism of topological algebras

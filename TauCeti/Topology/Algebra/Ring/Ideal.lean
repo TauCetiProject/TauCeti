@@ -65,6 +65,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   continuous algebra homomorphism, and the universal property of the quotient for continuous
   algebra homomorphisms; `Ideal.Quotient.continuousAlgHom_ext` says that continuous algebra
   homomorphisms out of `R ⧸ I` are determined by their composites with the quotient map.
+* `ContinuousAlgHom.continuous_quotientKerAlgEquivOfSurjective`: the algebraic first isomorphism
+  `A ⧸ ker f ≃ B` induced by a continuous surjective algebra homomorphism is continuous.
 * `RingHom.isHomeomorph_kerLift`: the map `R ⧸ ker f →+* S` induced by `f` is a homeomorphism when
   `f` is a quotient map. `IsHomeomorph.homeomorph` bundles that as
   `R ⧸ ker f ≃ₜ S`, and the map bundled is the ring homomorphism `RingHom.kerLift`, so the ring
@@ -188,6 +190,27 @@ theorem liftA_comp_mkA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) :
 end ContinuousAlgHom
 
 end Ideal.Quotient
+
+namespace ContinuousAlgHom
+
+variable {R A B : Type*} [CommSemiring R] [Ring A] [TopologicalSpace A] [Algebra R A]
+  [Semiring B] [TopologicalSpace B] [Algebra R B]
+
+/-- The algebraic first isomorphism `A ⧸ ker f ≃ B` induced by a continuous surjective algebra
+homomorphism `f` is continuous, being the map `Ideal.Quotient.liftA` induced by `f`. -/
+theorem continuous_quotientKerAlgEquivOfSurjective (f : A →A[R] B)
+    (hf : Function.Surjective f) :
+    Continuous (Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[R] B)) hf) := by
+  have h : ⇑(Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[R] B)) hf) =
+      ⇑(Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id) := by
+    funext x
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
+    exact (Ideal.Quotient.liftA_mk _ f _ a).symm
+  rw [h]
+  exact (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
+
+end ContinuousAlgHom
 
 section FirstIsomorphism
 
