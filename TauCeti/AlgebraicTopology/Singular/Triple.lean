@@ -213,6 +213,14 @@ theorem isIso_singularHomologyδ_of_isZero (n m : ℕ)
     IsIso (T.singularHomologyδ R n m h) :=
   (T.shortExact_singularChainComplexShortComplex R).isIso_δ n m (by simpa) hn hm
 
+/-- **Vanishing passes from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
+`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. -/
+theorem isZero_singularHomology_totalPair (n : ℕ)
+    (hinner : IsZero ((innerPair.obj T).singularHomology R n))
+    (houter : IsZero ((outerPair.obj T).singularHomology R n)) :
+    IsZero ((totalPair.obj T).singularHomology R n) :=
+  (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
+
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
 connecting morphisms of a filtration compose to zero. -/
