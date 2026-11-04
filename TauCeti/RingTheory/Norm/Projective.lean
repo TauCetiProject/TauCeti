@@ -142,12 +142,10 @@ theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A]
     induction x using TensorProduct.inductionOn with
     | tmul a b =>
       have : φ a = a • (1 : A') := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
-      simp only [TensorProduct.map_tmul, this, AlgHom.coe_id, id_eq, he,
-        AlgebraTensorModule.cancelBaseChange_symm_tmul]
-      rw [TensorProduct.smul_tmul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+      simp [this, he, TensorProduct.smul_tmul, TensorProduct.smul_tmul']
     | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
-  rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul,
-    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul]
+  rfl
 
 end BaseChange
 
