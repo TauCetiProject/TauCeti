@@ -235,8 +235,6 @@ section Covariance
 variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [Fact (finrank ℝ V' = 4)]
   {o' : Orientation ℝ V' (Fin 4)} (hkl' : 2 + 2 = finrank ℝ V')
 
-local instance : FiniteDimensional ℝ V' := .of_fact_finrank_eq_succ 3
-
 /-- **Naturality of `deformationSymbol` under orientation-preserving linear isometries.** -/
 theorem deformationSymbol_map {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
     (ξ a : V) :
@@ -297,8 +295,6 @@ theorem deformationComplexStructure_apply_snd (J : AlmostComplexStructure V)
 section ComplexCovariance
 
 variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [Fact (finrank ℝ V' = 4)]
-
-local instance : FiniteDimensional ℝ V' := .of_fact_finrank_eq_succ 3
 
 /-- A complex-linear isometry between orthogonal almost complex four-spaces transports the Kähler
 two-vector. -/
