@@ -8,15 +8,16 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.ActionAngle
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
-import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 
 /-!
 # Smooth oscillator action–angle coordinates
 
 For positive mass and frequency, the positive-action cylinder is diffeomorphic to the
-punctured phase plane. The angular coordinate is the actual circle `Real.Angle`, with its
+punctured phase plane. The angular coordinate is the actual circle `AddCircle (2 * π)`, with its
 quotient smooth structure; it is not a choice of a discontinuous real argument.
 The diffeomorphism pulls `dq ∧ dp` back to `dθ ∧ dI`, with `dθ` the time form of the
 period-`2π` circle, and carries the Hamiltonian to `ν I`. Its inverse is the circle-valued angle
@@ -68,18 +69,17 @@ theorem oscillatorCylinderMap_coe (m ν θ J : ℝ) :
 
 variable {m ν : ℝ}
 
-private theorem contDiffOn_oscillatorActionAngle :
-    ContDiffOn ℝ ∞ (oscillatorActionAngle m ν) {y | 0 < y.2} := by
-  intro y hy
-  have hr : ContDiffAt ℝ ∞ (fun z : ℝ × ℝ ↦ √(2 * z.2)) y :=
-    (contDiffAt_const.mul contDiffAt_snd).sqrt (mul_pos two_pos hy).ne'
-  have heq : oscillatorActionAngle m ν = fun z : ℝ × ℝ ↦
-      (√(2 * z.2) / √(m * ν) * Real.sin z.1, √(m * ν) * √(2 * z.2) * Real.cos z.1) :=
-    funext (oscillatorActionAngle_apply m ν)
-  rw [heq]
-  exact ((hr.div_const _).mul (Real.contDiff_sin.contDiffAt.comp y contDiffAt_fst)).prodMk
-    ((contDiffAt_const.mul hr).mul (Real.contDiff_cos.contDiffAt.comp y contDiffAt_fst))
-    |>.contDiffWithinAt
+private theorem oscillatorCylinderMap_comp_coe :
+    oscillatorCylinderMap m ν ∘ Prod.map ((↑) : ℝ → AddCircle (2 * π)) id =
+      oscillatorActionAngle m ν :=
+  funext fun y ↦ oscillatorCylinderMap_coe m ν y.1 y.2
+
+private theorem isLocalDiffeomorphAt_oscillatorCylinderCover (p : ℝ × ℝ) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) ∞
+      (Prod.map ((↑) : ℝ → AddCircle (2 * π)) id) p := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact ((AddCircle.isLocalDiffeomorph_coe (2 * π) ∞).prodMap
+    (Diffeomorph.refl 𝓘(ℝ) ℝ ∞).isLocalDiffeomorph) p
 
 /-- The quotient action–angle map is smooth on the whole positive-action cylinder. -/
 theorem contMDiffOn_oscillatorCylinderMap :
@@ -87,22 +87,13 @@ theorem contMDiffOn_oscillatorCylinderMap :
       oscillatorActionCylinder := by
   rintro ⟨a, J⟩ hJ
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
-  have hq := (AddCircle.isLocalDiffeomorph_coe (2 * π) ∞).prodMap
-    (Diffeomorph.refl 𝓘(ℝ) ℝ ∞).isLocalDiffeomorph
-  have heq : oscillatorCylinderMap m ν ∘ Prod.map ((↑) : ℝ → AddCircle (2 * π)) id =
-      oscillatorActionAngle m ν := by
-    funext y
-    exact oscillatorCylinderMap_coe m ν y.1 y.2
+  -- Specify the real lift as the base point of the open positive-action half-plane.
   have hs := (contDiffOn_oscillatorActionAngle (m := m) (ν := ν)).contDiffAt
     ((isOpen_lt continuous_const continuous_snd :
       IsOpen {y : ℝ × ℝ | 0 < y.2}).mem_nhds
         (show (θ, J) ∈ {y : ℝ × ℝ | 0 < y.2} from hJ))
-  have hs' : ContMDiffAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) ∞
-      (oscillatorActionAngle m ν) (θ, J) := by
-    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
-    exact hs.contMDiffAt
-  exact ((hq (θ, J)).contMDiffAt_comp_iff le_rfl).1
-    (heq.symm ▸ hs') |>.contMDiffWithinAt
+  exact ((isLocalDiffeomorphAt_oscillatorCylinderCover (θ, J)).contMDiffAt_comp_iff le_rfl).1
+    (by rw [oscillatorCylinderMap_comp_coe]; exact hs.contMDiffAt) |>.contMDiffWithinAt
 
 /-- The action recovered from the cylinder map is its second coordinate. -/
 @[simp]
@@ -115,11 +106,21 @@ theorem oscillatorAction_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < ν)
   rw [oscillatorCylinderMap_coe]
   exact oscillatorAction_oscillatorActionAngle hm hν hy
 
+/-- The Hamiltonian of the cylinder parametrization is frequency times action. -/
+@[simp]
+theorem oscillatorHamiltonian_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < ν)
+    {y : AddCircle (2 * π) × ℝ} (hy : 0 ≤ y.2) :
+    oscillatorHamiltonian m ν (oscillatorCylinderMap m ν y) = ν * y.2 := by
+  obtain ⟨a, J⟩ := y
+  obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
+  rw [oscillatorCylinderMap_coe]
+  exact oscillatorHamiltonian_oscillatorActionAngle hm hν hy
+
 /-- The angle recovered from a point of positive action is its circle coordinate. -/
 @[simp]
 theorem oscillatorAngle_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < ν)
     {y : AddCircle (2 * π) × ℝ} (hy : 0 < y.2) :
-    oscillatorAngle m ν (oscillatorCylinderMap m ν y) = y.1 := by
+    (oscillatorAngle m ν (oscillatorCylinderMap m ν y) : AddCircle (2 * π)) = y.1 := by
   obtain ⟨θ, hθ⟩ := QuotientAddGroup.mk_surjective y.1
   obtain ⟨a, J⟩ := y
   dsimp only at hθ hy ⊢
@@ -134,44 +135,15 @@ theorem oscillatorCylinderMap_angle_action (hm : 0 < m) (hν : 0 < ν) (x : ℝ 
   rw [← hθ, oscillatorCylinderMap_coe]
   exact oscillatorActionAngle_oscillatorAction hm hν hθ
 
-private theorem isLocalDiffeomorphAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν)
-    {y : ℝ × ℝ} (hy : 0 < y.2) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) ∞ (oscillatorActionAngle m ν) y := by
-  let L := fderiv ℝ (oscillatorActionAngle m ν) y
-  let ι : (stdSymplecticForm (V := ℝ)).toBilinForm →bᵢ
-      (stdSymplecticForm (V := ℝ)).toBilinForm :=
-    { toLinearMap := L.toLinearMap
-      map_app' := stdSymplecticForm_fderiv_oscillatorActionAngle hm hν hy }
-  have hinj : Injective L := ι.injective (stdSymplecticForm (V := ℝ)).nondegenerate.1
-  let e := (LinearEquiv.ofBijective L.toLinearMap
-    ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩).toContinuousLinearEquiv
-  refine isLocalDiffeomorphAt_of_mfderiv_eq
-    contDiffOn_oscillatorActionAngle.contMDiffOn (isOpen_lt continuous_const continuous_snd)
-    hy BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (NormedSpace.fromTangentSpace y).trans
-      (e.trans (NormedSpace.fromTangentSpace (oscillatorActionAngle m ν y)).symm)) ?_
-  rw [mfderiv_eq_fderiv]
-  rfl
-
 /-- At every positive action the quotient parametrization is a local diffeomorphism. -/
 theorem isLocalDiffeomorphAt_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < ν)
     {y : AddCircle (2 * π) × ℝ} (hy : y ∈ oscillatorActionCylinder) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) ∞ (oscillatorCylinderMap m ν) y := by
   obtain ⟨a, J⟩ := y
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
-  have hq := (AddCircle.isLocalDiffeomorph_coe (2 * π) ∞).prodMap
-    (Diffeomorph.refl 𝓘(ℝ) ℝ ∞).isLocalDiffeomorph
-  have heq : oscillatorCylinderMap m ν ∘ Prod.map ((↑) : ℝ → AddCircle (2 * π)) id =
-      oscillatorActionAngle m ν := by
-    funext z
-    exact oscillatorCylinderMap_coe m ν z.1 z.2
   have hf := isLocalDiffeomorphAt_oscillatorActionAngle hm hν (y := (θ, J)) hy
-  rw [← heq] at hf
-  have hq' : IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) ∞
-      (Prod.map ((↑) : ℝ → AddCircle (2 * π)) id) (θ, J) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact hq (θ, J)
-  exact hf.of_comp_right hq'
+  rw [← oscillatorCylinderMap_comp_coe] at hf
+  exact hf.of_comp_right (isLocalDiffeomorphAt_oscillatorCylinderCover (θ, J))
 
 /-- The coordinate map from the positive-action cylinder into the punctured phase plane. -/
 private def oscillatorCoordinates (hm : 0 < m) (hν : 0 < ν)
@@ -196,8 +168,7 @@ private theorem bijective_oscillatorCoordinates (hm : 0 < m) (hν : 0 < ν) :
       simp only [coe_oscillatorCoordinates,
         oscillatorAngle_oscillatorCylinderMap hm hν y.property,
         oscillatorAngle_oscillatorCylinderMap hm hν z.property] at ha
-      -- `Real.Angle` is the type synonym for the period-`2π` additive circle.
-      convert! ha
+      exact ha
     · have ha := congrArg (oscillatorAction m ν) h
       simpa only [coe_oscillatorCoordinates,
         oscillatorAction_oscillatorCylinderMap hm hν y.property.le,
@@ -251,45 +222,74 @@ theorem oscillatorActionAngleDiffeomorph_symm_apply (hm : 0 < m) (hν : 0 < ν)
   exact congrArg Subtype.val (heq ▸ h)
 
 /-- The Hamiltonian in these global coordinates is `ν` times the action coordinate. -/
-@[simp↓]
 theorem oscillatorHamiltonian_oscillatorActionAngleDiffeomorph (hm : 0 < m) (hν : 0 < ν)
     (y : oscillatorActionCylinder) :
     oscillatorHamiltonian m ν (oscillatorActionAngleDiffeomorph hm hν y) = ν * y.val.2 := by
-  have h := oscillatorAction_oscillatorCylinderMap hm hν y.property.le
-  rw [oscillatorAction_apply, div_eq_iff hν.ne'] at h
-  simpa only [coe_oscillatorActionAngleDiffeomorph, mul_comm] using h
+  simpa only [coe_oscillatorActionAngleDiffeomorph] using
+    oscillatorHamiltonian_oscillatorCylinderMap hm hν y.property.le
+
+private theorem mfderiv_oscillatorActionAngle (y : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (oscillatorActionAngle m ν) y =
+      fderiv ℝ (oscillatorActionAngle m ν) y := by
+  -- Read both self-model tangent fibres in the real plane via the canonical equivalences.
+  ext v
+  simp only [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply,
+    NormedSpace.fromTangentSpace_symm_apply]
+  -- The equality of underlying model vectors uses the self-model tangent-space instances.
+  rfl
+
+private theorem mfderiv_oscillatorCylinderCover (p : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+      (Prod.map ((↑) : ℝ → AddCircle (2 * π)) id) p =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  rw [mfderiv_prodMap (AddCircle.hasMFDerivAt_coe (2 * π) p.1).mdifferentiableAt
+    mdifferentiableAt_id, AddCircle.mfderiv_coe, mfderiv_id]
+  -- The product tangent model is the real plane; both factor derivatives are identities.
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  exact Prod.ext (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.1 : ℝ))
+    (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.2 : ℝ))
 
 /-- The differential of the quotient parametrization is the existing real-coordinate derivative
 when read in a real angular lift. -/
-theorem mfderiv_oscillatorCylinderMap_coe (hm : 0 < m) (hν : 0 < ν)
-    (θ J : ℝ) (hJ : 0 < J) :
+theorem mfderiv_oscillatorCylinderMap_coe (θ J : ℝ) (hJ : 0 < J) :
     mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) (oscillatorCylinderMap m ν)
         ((θ : AddCircle (2 * π)), J) = fderiv ℝ (oscillatorActionAngle m ν) (θ, J) := by
-  let q := Prod.map ((↑) : ℝ → AddCircle (2 * π)) (id : ℝ → ℝ)
-  have hq : MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) q (θ, J) :=
-    ((AddCircle.contMDiff_coe (2 * π) ∞).prodMap contMDiff_id).mdifferentiableAt (by simp)
-  have hf : MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ)
-      (oscillatorCylinderMap m ν) (q (θ, J)) :=
-    (isLocalDiffeomorphAt_oscillatorCylinderMap hm hν hJ).contMDiffAt.mdifferentiableAt (by simp)
-  have heq : oscillatorCylinderMap m ν ∘ q = oscillatorActionAngle m ν :=
-    funext fun y ↦ oscillatorCylinderMap_coe m ν y.1 y.2
-  have h := mfderiv_comp (θ, J) hf hq
-  rw [heq] at h
-  have hq' : mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) q (θ, J) =
-      ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
-    rw [mfderiv_prodMap (AddCircle.hasMFDerivAt_coe (2 * π) θ).mdifferentiableAt
-      mdifferentiableAt_id, AddCircle.mfderiv_coe, mfderiv_id]
-    rfl
-  -- Tangent spaces of the product models are the real model plane.
-  erw [hq', ContinuousLinearMap.comp_id] at h
-  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, mfderiv_eq_fderiv] at h
-  -- For self models, `fromTangentSpace` is the identity; the circle tangent models are also real.
-  convert! h.symm using 1
+  have hy := (mem_oscillatorActionCylinder (y := ((θ : AddCircle (2 * π)), J))).mpr hJ
+  have hf := ((contMDiffOn_oscillatorCylinderMap (m := m) (ν := ν)).contMDiffAt
+    (oscillatorActionCylinder.isOpen.mem_nhds hy)).mdifferentiableAt (by simp)
+  have h := mfderiv_comp (θ, J) hf
+    ((isLocalDiffeomorphAt_oscillatorCylinderCover (θ, J)).mdifferentiableAt (by simp))
+  rw [oscillatorCylinderMap_comp_coe] at h
+  ext v
+  have hq : mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+      (Prod.map ((↑) : ℝ → AddCircle (2 * π)) id) (θ, J) v = v :=
+    DFunLike.congr_fun (mfderiv_oscillatorCylinderCover (θ, J)) v
+  have hq' := congrArg
+    (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ) (oscillatorCylinderMap m ν)
+      ((θ : AddCircle (2 * π)), J)) hq.symm
+  exact hq'.trans ((DFunLike.congr_fun h v).symm.trans
+    (DFunLike.congr_fun (mfderiv_oscillatorActionAngle (m := m) (ν := ν) (θ, J)) v))
+
+private theorem mfderiv_oscillatorCoordinates_apply (θ J : ℝ) (hJ : 0 < J)
+    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ))
+      (⟨((θ : AddCircle (2 * π)), J), hJ⟩ : oscillatorActionCylinder)) :
+    mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ × ℝ)
+      (fun z : oscillatorActionCylinder ↦ oscillatorCylinderMap m ν z)
+      ⟨((θ : AddCircle (2 * π)), J), hJ⟩ v =
+      fderiv ℝ (oscillatorActionAngle m ν) (θ, J) v := by
+  have hy := (mem_oscillatorActionCylinder (y := ((θ : AddCircle (2 * π)), J))).mpr hJ
+  have hf := ((contMDiffOn_oscillatorCylinderMap (m := m) (ν := ν)).contMDiffAt
+    (oscillatorActionCylinder.isOpen.mem_nhds hy)).mdifferentiableAt (by simp)
+  exact (Manifold.mfderiv_comp_subtype_val_apply hf v).trans
+    (DFunLike.congr_fun (mfderiv_oscillatorCylinderMap_coe (m := m) (ν := ν) θ J hJ) v)
 
 /-- On the positive-action cylinder the oscillator map pulls `dq ∧ dp` back to `dθ ∧ dI`,
 where `dθ` is the time form of the period-`2π` circle. -/
 private theorem eval₂_mpullback_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < ν)
-    {y : AddCircle (2 * π) × ℝ} (hy : y ∈ oscillatorActionCylinder) (v w : ℝ × ℝ) :
+    {y : AddCircle (2 * π) × ℝ} (hy : y ∈ oscillatorActionCylinder)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) (⟨y, hy⟩ : oscillatorActionCylinder)) :
     SmoothBundleForm.eval₂
       (SmoothForm.mpullback (fun z : oscillatorActionCylinder ↦ oscillatorCylinderMap m ν z)
         ((contMDiffOn_oscillatorCylinderMap).comp_contMDiff contMDiff_subtype_val
@@ -297,23 +297,23 @@ private theorem eval₂_mpullback_oscillatorCylinderMap (hm : 0 < m) (hν : 0 < 
       ⟨y, hy⟩ v w = v.1 * w.2 - w.1 * v.2 := by
   obtain ⟨a, J⟩ := y
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
-  -- Read open-submanifold tangent vectors in their real model coordinates.
-  erw [SmoothForm.eval₂_mpullback, SymplecticForm.constSmooth_apply]
-  have hf := (contMDiffOn_oscillatorCylinderMap (m := m) (ν := ν)).contMDiffAt
-    (oscillatorActionCylinder.isOpen.mem_nhds hy)
-  erw [mfderiv_comp
-    (f := (Subtype.val : oscillatorActionCylinder → AddCircle (2 * π) × ℝ))
-    (g := oscillatorCylinderMap m ν) (⟨((θ : AddCircle (2 * π)), J), hy⟩ : oscillatorActionCylinder)
-    (hf.mdifferentiableAt (by simp)) ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)),
-    Manifold.mfderiv_subtype_val, mfderiv_oscillatorCylinderMap_coe hm hν θ J hy]
-  -- The native open-submanifold tangent equivalence reads both vectors in the real model plane.
-  erw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    Manifold.tangentSpaceOpenEquiv_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply]
-  have hstd : (stdSymplecticForm (V := ℝ)) v w = v.1 * w.2 - w.1 * v.2 := by
+  refine (SmoothForm.eval₂_mpullback _ _ _ _ v w).trans ?_
+  simp only [SymplecticForm.constSmooth_apply, mfderiv_oscillatorCoordinates_apply θ J hy]
+  have hstd (v w : ℝ × ℝ) :
+      (stdSymplecticForm (V := ℝ)) v w = v.1 * w.2 - w.1 * v.2 := by
     simp only [stdSymplecticForm_apply, RCLike.inner_apply, RCLike.conj_to_real]
     ring
-  exact (stdSymplecticForm_fderiv_oscillatorActionAngle hm hν (y := (θ, J)) hy v w).trans hstd
+  exact (stdSymplecticForm_fderiv_oscillatorActionAngle hm hν (y := (θ, J)) hy v w).trans (hstd v w)
+
+private theorem eval₂_oscillatorCylinderForm (y : AddCircle (2 * π) × ℝ)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) y) :
+    SmoothBundleForm.eval₂
+      (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (2 * π)))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm)) y v w =
+      v.1 * w.2 - w.1 * v.2 := by
+  simp only [SmoothForm.eval₂_wedge_one_one, SmoothForm.mpullback_fst_apply,
+    SmoothForm.mpullback_snd_apply, AddCircle.timeForm_apply, SmoothForm.realLineCoordForm_apply,
+    Manifold.tangentSpaceProdEquiv_apply, Matrix.cons_val_zero]
 
 /-- The global oscillator diffeomorphism is symplectic: its pullback of the phase-plane form
 is the wedge of the positive angular time form and the differential of the action coordinate. -/
@@ -336,14 +336,15 @@ theorem mpullback_oscillatorActionAngleDiffeomorph (hm : 0 < m) (hν : 0 < ν) :
   simp only [hcomp]
   apply SmoothBundleForm.ext_eval₂
   intro y v w
-  -- Native tangent spaces of these open subsets are the real product model.
-  erw [eval₂_mpullback_oscillatorCylinderMap hm hν y.property v w,
-    SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
-    SmoothForm.eval₂_wedge_one_one]
-  simp only [SmoothForm.mpullback_fst_apply, SmoothForm.mpullback_snd_apply,
-    AddCircle.timeForm_apply, SmoothForm.realLineCoordForm_apply,
-    Manifold.tangentSpaceProdEquiv_apply, ContinuousLinearEquiv.coe_coe,
-    Manifold.tangentSpaceOpenEquiv_apply]
-  rfl
+  rw [eval₂_mpullback_oscillatorCylinderMap hm hν y.property v w]
+  symm
+  have h := SmoothForm.eval₂_mpullback (Subtype.val : oscillatorActionCylinder →
+    AddCircle (2 * π) × ℝ) contMDiff_subtype_val
+    (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (2 * π)))
+      (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm)) y v w
+  rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe] at h
+  exact h.trans ((eval₂_oscillatorCylinderForm y
+    (Manifold.tangentSpaceOpenEquiv y v) (Manifold.tangentSpaceOpenEquiv y w)).trans
+      (by simp only [Manifold.tangentSpaceOpenEquiv_apply]))
 
 end TauCeti
