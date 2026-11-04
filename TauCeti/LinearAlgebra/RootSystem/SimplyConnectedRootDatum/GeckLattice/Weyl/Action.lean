@@ -280,18 +280,14 @@ through the finite-function equivalence. -/
 theorem geckWeylCharacterAut_ofAdd
     (w : (t.simplyConnectedRootDatum ht).weylGroup) (μ : Fin t.rank →₀ ℤ) :
     t.geckWeylCharacterAut ht w (Multiplicative.ofAdd μ) =
-      Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
-        (w • Finsupp.equivFunOnFinite μ)) := by
-  have hμ : (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)) μ =
-      Finsupp.equivFunOnFinite μ := by
-    ext i
-    simp only [Finsupp.linearEquivFunOnFinite_apply, Finsupp.equivFunOnFinite_apply]
-  suffices h : (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)).symm
-      (w • (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)) μ) =
-      Finsupp.equivFunOnFinite.symm (w • Finsupp.equivFunOnFinite μ) by
-    simpa [geckWeylCharacterAut, MulAut.congr] using h
-  ext i
-  simp only [Finsupp.linearEquivFunOnFinite_symm_apply, Finsupp.coe_equivFunOnFinite_symm, hμ]
+      Multiplicative.ofAdd ((Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)).symm
+        (w • (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin t.rank)) μ)) := by
+  simp only [geckWeylCharacterAut, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulAut.congr_apply, MulEquiv.trans_apply, AddEquiv.toMultiplicative_apply_apply,
+    AddEquiv.toMultiplicative_apply_symm_apply, Representation.toMulAut_apply,
+    Representation.ofDistribMulAction_apply_apply, toAdd_ofAdd,
+    ← LinearEquiv.coe_toAddEquiv_symm, LinearEquiv.coe_toAddEquiv,
+    LinearEquiv.coe_addEquiv_apply, LinearEquiv.symm_symm]
 
 /-- On a weight written as an exponent vector, the character action is the usual Weyl action. -/
 @[simp↓]
@@ -299,8 +295,14 @@ theorem geckWeylCharacterAut_weightCharacter
     (w : (t.simplyConnectedRootDatum ht).weylGroup) (μ : Fin t.rank → ℤ) :
     t.geckWeylCharacterAut ht w (SplitTorus.weightCharacter μ) =
       SplitTorus.weightCharacter (w • μ) := by
-  simp only [SplitTorus.weightCharacter_def, geckWeylCharacterAut_ofAdd,
-    Equiv.apply_symm_apply]
+  simp only [SplitTorus.weightCharacter_def, geckWeylCharacterAut_ofAdd]
+  apply congrArg Multiplicative.ofAdd
+  apply Finsupp.ext
+  intro i
+  simp only [Finsupp.linearEquivFunOnFinite_symm_apply, Finsupp.coe_equivFunOnFinite_symm]
+  apply congrArg (fun ν : Fin t.rank → ℤ ↦ (w • ν) i)
+  funext j
+  simp only [Finsupp.linearEquivFunOnFinite_apply, Finsupp.coe_equivFunOnFinite_symm]
 
 /-- Pulling a torus point back along a Weyl character automorphism gives the inverse Weyl
 action on its torus parameters. -/
