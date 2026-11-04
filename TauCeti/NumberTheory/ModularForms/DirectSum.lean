@@ -59,22 +59,9 @@ variable {Γ : Subgroup (GL (Fin 2) ℝ)}
 
 namespace SlashInvariantForm
 
-/-- Coercion of a slash-invariant form of weight `k` to a function `ℍ → ℂ`, as an additive monoid
-homomorphism. -/
-def coeAddMonoidHom (Γ : Subgroup (GL (Fin 2) ℝ)) (k : ℤ) :
-    SlashInvariantForm Γ k →+ (ℍ → ℂ) where
-  toFun f := ⇑f
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-@[simp]
-theorem coeAddMonoidHom_apply (k : ℤ) (f : SlashInvariantForm Γ k) :
-    coeAddMonoidHom Γ k f = ⇑f :=
-  (rfl)
-
 /-- Pointwise evaluation of a graded sum of slash-invariant forms as a function `ℍ → ℂ`. -/
 def evalDirectSum : (⨁ k : ℤ, SlashInvariantForm Γ k) →+ (ℍ → ℂ) :=
-  DirectSum.toAddMonoid (coeAddMonoidHom Γ)
+  DirectSum.toAddMonoid fun k ↦ FunLike.coeAddMonoidHom (SlashInvariantForm Γ k) ℍ ℂ
 
 @[simp]
 theorem evalDirectSum_of (k : ℤ) (f : SlashInvariantForm Γ k) :
@@ -201,11 +188,7 @@ theorem coeLinearMap_apply [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
 `ℍ → ℂ`. -/
 def evalDirectSum [Γ.HasDetPlusMinusOne] :
     (⨁ k : ℤ, ModularForm Γ k) →+* (ℍ → ℂ) :=
-  DirectSum.toSemiring
-    (fun k ↦ (SlashInvariantForm.coeAddMonoidHom Γ k).comp
-      { toFun := toSlashInvariantForm
-        map_zero' := rfl
-        map_add' := fun _ _ ↦ rfl })
+  DirectSum.toSemiring (fun k ↦ FunLike.coeAddMonoidHom (ModularForm Γ k) ℍ ℂ)
     rfl (fun _ _ ↦ rfl)
 
 @[simp]
