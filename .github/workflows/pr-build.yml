@@ -96,7 +96,15 @@ jobs:
     # Maintenance repairs must not wait behind the ordinary PR backlog. These
     # use the same vetted Namespace sandbox shape as ordinary overflow, with
     # the existing staging priority. This changes scheduling, never merge gates.
-    runs-on: ${{ (inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
+    #
+    # Dedicated staging capacity. When the repository variable STAGING_RUNS_ON holds a
+    # JSON array of runner labels, every Bors staging candidate (repository_dispatch
+    # tauceti-bors-staging) is placed on exactly those labels and never shares a host
+    # with PR builds or worker agents. PR builds, maintenance builds and merge_group
+    # builds keep the picker's choice. The labels must be served in this organisation
+    # before the variable is set: an unserved label queues the required build until
+    # it expires. Clear the variable to return staging to the picker.
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -688,6 +696,10 @@ jobs:
         with:
           project-dir: pr
           tooling-dir: gate
+          # Home-directory snapshot archives unpack relative to the publisher's
+          # workspace, which differs on fleet. Use the existing official-install
+          # fallback there; keep verified snapshot restoration on cloud runners.
+          cold: ${{ startsWith(runner.name, 'fleet-') && 'true' || 'false' }}
 
       # Workflow-pinned driver, candidate data only: run before package/cache setup and
       # compilation. The complete exact source inventory is essential even on a one-file PR:
