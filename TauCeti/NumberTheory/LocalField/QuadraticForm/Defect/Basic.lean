@@ -686,9 +686,8 @@ theorem exists_eisenstein_coefficients_of_defectExponent_eq_odd {π : 𝒪[K]} (
       (t : K) = 2 * b / (π : K) ^ k ∧
       (c : K) = (b ^ 2 - (u : K)) / (π : K) ^ (2 * k) := by
   have hsq := not_isSquare_of_defectExponent_eq hd
-  have hπ1 : valuation K (π : K) < 1 :=
-    Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
-  have hπpos : 0 < valuation K (π : K) := Valuation.integer.v_irreducible_pos (v := valuation K) hπ
+  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
+  have hπpos : 0 < valuation K (π : K) := Valuation.integer.v_irreducible_pos hπ
   obtain ⟨b, y, hy, hyd⟩ := exists_defectExponent_eq hsq
   rw [hd, WithTop.coe_inj] at hyd
   have hyv : valuation K (y : K) = valuation K (π : K) ^ (2 * k + 1) := by
@@ -698,28 +697,20 @@ theorem exists_eisenstein_coefficients_of_defectExponent_eq_odd {π : 𝒪[K]} (
   have hcv : valuation K ((b ^ 2 - (u : K)) / (π : K) ^ (2 * k)) = valuation K (π : K) := by
     rw [map_div₀, ← neg_sub, Valuation.map_neg, ← hy, hyv, map_pow, pow_succ,
       mul_div_cancel_left₀ _ (pow_ne_zero _ hπpos.ne')]
-  let c : 𝒪[K] := ⟨(b ^ 2 - (u : K)) / (π : K) ^ (2 * k), hcv ▸ hπ1.le⟩
   have htv : valuation K (2 * b / (π : K) ^ k) < 1 := by
     by_cases h2 : (2 : K) = 0
     · simp [h2]
-    · have hb : valuation K b = 1 := by
-        have hylt : valuation K (y : K) < valuation K (u : K) :=
-          hu ▸ hyv ▸ pow_lt_one₀ zero_le hπ1 (Nat.succ_ne_zero _)
-        have hb2 : valuation K (b ^ 2) = 1 := by
-          rw [show b ^ 2 = (u : K) - y by rw [hy]; ring,
-            (valuation K).map_sub_eq_of_lt_left hylt, hu]
-        simpa only [map_pow, pow_eq_one_iff_left (by decide : 2 ≠ 0)] using hb2
+    · have hb : valuation K b ≤ 1 := valuation_le_one_of_sub_sq_le_one hu.le
+        (hy ▸ hyv ▸ pow_le_one₀ zero_le hπ1.le)
       have hk : k < natCastValuation K 2 h2 := by
         have h := defectExponent_le_two_mul_natCastValuation h2 hu hsq
-        rw [hd, WithTop.coe_le_coe, Nat.cast_le] at h
-        omega
-      have hv2 : valuation K (2 : K) = valuation K (π : K) ^ natCastValuation K 2 h2 := by
-        simpa only [Nat.cast_ofNat] using valuation_natCast_eq_pow hπ 2 h2
-      rw [map_div₀, map_mul, hv2, hb, mul_one, map_pow, div_lt_one₀ (pow_pos hπpos k)]
-      exact pow_lt_pow_right_of_lt_one₀ hπpos hπ1 hk
-  let t : 𝒪[K] := ⟨2 * b / (π : K) ^ k, htv.le⟩
-  exact ⟨b, t, c, hy ▸ hyv, (valuation K).mem_maximalIdeal_iff.mpr htv,
-    irreducible_of_valuation_eq hπ hcv, rfl, rfl⟩
+        rw [hd, WithTop.coe_le_coe, Nat.cast_le] at h; omega
+      rw [map_div₀, map_mul, show valuation K (2 : K) = _ from valuation_natCast_eq_pow hπ 2 h2,
+        map_pow, div_lt_one₀ (pow_pos hπpos k)]
+      exact (mul_le_mul' le_rfl hb).trans_lt
+        (by simpa only [mul_one] using pow_lt_pow_right_of_lt_one₀ hπpos hπ1 hk)
+  exact ⟨b, ⟨_, htv.le⟩, ⟨_, hcv.trans_le hπ1.le⟩, hy ▸ hyv,
+    (valuation K).mem_maximalIdeal_iff.mpr htv, irreducible_of_valuation_eq hπ hcv, rfl, rfl⟩
 
 end UnitDefect
 

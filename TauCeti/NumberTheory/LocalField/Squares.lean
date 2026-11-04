@@ -414,10 +414,10 @@ theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
 
 section ArtinSchreierQuotient
 
-private theorem finite_quotient_maximalIdeal_pow (N : ℕ) : Finite (𝒪[K] ⧸ 𝓂[K] ^ N) := by
-  apply Nat.finite_of_card_ne_zero
-  rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
-  exact (pow_pos Finite.card_pos N).ne'
+private theorem finite_quotient_maximalIdeal_pow (N : ℕ) : Finite (𝒪[K] ⧸ 𝓂[K] ^ N) :=
+  Nat.finite_of_card_ne_zero <| by
+    rw [TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
+    exact (pow_pos Finite.card_pos N).ne'
 
 /-- On the maximal-ideal classes in `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)`, the Artin–Schreier polynomial
 `y ↦ y ^ 2 - y` is a bijection. -/
@@ -426,22 +426,25 @@ noncomputable def artinSchreierMaximalIdealQuotientEquiv (K : Type*) [Field K] [
     {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} ≃
     {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
-      Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} := by
-  haveI : Finite (𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) := finite_quotient_maximalIdeal_pow (m + 1)
-  refine Equiv.ofBijective (fun x ↦ ⟨x.1 ^ 2 - x.1, by simp [map_sub, map_pow, x.2]⟩) ?_
-  refine Finite.injective_iff_bijective.mp fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ h ↦ ?_
-  obtain ⟨s₁, rfl⟩ := Ideal.Quotient.mk_surjective y₁
-  obtain ⟨s₂, rfl⟩ := Ideal.Quotient.mk_surjective y₂
-  have hs₁ : s₁ ∈ 𝓂[K] := Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₁)
-  have hs₂ : s₂ ∈ 𝓂[K] := Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₂)
-  have hmem : (s₁ - s₂) * (s₁ + s₂ - 1) ∈ 𝓂[K] ^ (m + 1) := by
-    have hq := Ideal.Quotient.eq.mp (by simpa [← map_pow, ← map_sub] using congrArg Subtype.val h)
-    rwa [show (s₁ ^ 2 - s₁) - (s₂ ^ 2 - s₂) = (s₁ - s₂) * (s₁ + s₂ - 1) by ring] at hq
-  have hw : IsUnit (s₁ + s₂ - 1) := by
-    have hu := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits (s₁ + s₂)
-      ((IsLocalRing.mem_maximalIdeal _).mp (add_mem hs₁ hs₂))
-    simpa only [neg_sub] using hu.neg
-  exact Subtype.ext (Ideal.Quotient.eq.mpr (((𝓂[K] ^ (m + 1)).mul_unit_mem_iff_mem hw).mp hmem))
+      Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} :=
+  Equiv.ofBijective
+    (fun x ↦ ⟨x.1 ^ 2 - x.1, by rw [map_sub, map_pow, x.2, zero_pow two_ne_zero, sub_self]⟩)
+    (by
+      have : Finite (𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) := finite_quotient_maximalIdeal_pow (m + 1)
+      refine Finite.injective_iff_bijective.mp fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ h ↦ ?_
+      obtain ⟨s₁, rfl⟩ := Ideal.Quotient.mk_surjective y₁
+      obtain ⟨s₂, rfl⟩ := Ideal.Quotient.mk_surjective y₂
+      have hmem : (s₁ - s₂) * (s₁ + s₂ - 1) ∈ 𝓂[K] ^ (m + 1) := by
+        have hq := Ideal.Quotient.eq.mp
+          (by simpa [← map_pow, ← map_sub] using congrArg Subtype.val h)
+        rwa [show (s₁ ^ 2 - s₁) - (s₂ ^ 2 - s₂) = (s₁ - s₂) * (s₁ + s₂ - 1) by ring] at hq
+      have hw : IsUnit (s₁ + s₂ - 1) := by
+        simpa only [neg_sub] using (IsLocalRing.isUnit_one_sub_self_of_mem_nonunits (s₁ + s₂)
+          ((IsLocalRing.mem_maximalIdeal _).mp (add_mem
+            (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₁))
+            (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy₂))))).neg
+      exact Subtype.ext
+        (Ideal.Quotient.eq.mpr (((𝓂[K] ^ (m + 1)).mul_unit_mem_iff_mem hw).mp hmem)))
 
 /-- Evaluating `artinSchreierMaximalIdealQuotientEquiv` applies `y ↦ y ^ 2 - y`. -/
 @[simp]
@@ -449,23 +452,20 @@ theorem coe_artinSchreierMaximalIdealQuotientEquiv_apply (m : ℕ)
     (x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0}) :
     (artinSchreierMaximalIdealQuotientEquiv K m x : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) = x.1 ^ 2 - x.1 := by
-  rfl
+  simp only [artinSchreierMaximalIdealQuotientEquiv, Equiv.ofBijective_apply]
 
 /-- For `v(β) = v(c)^n`, `n₁ = n + 1`, and `s ∈ 𝓂[K]`, the unit `1 + β s` lies in `U(K, n₁)`. -/
 noncomputable def mkScaledUnit {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ}
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
     {s : 𝒪[K]} (hs : s ∈ 𝓂[K]) : unitFiltration K n₁ :=
-  have hc1 : valuation K (c : K) < 1 :=
-    Valuation.integer.v_irreducible_lt_one (v := valuation K) hc
   have hle : valuation K ((β : K) * (s : K)) ≤ valuation K (c : K) ^ (n + 1) := by
     rw [map_mul, hvβ, pow_succ]
     exact mul_le_mul' le_rfl
       ((Set.ext_iff.mp (hc.maximalIdeal_eq_setOfPred_le_v_coe (valuation K)) s).mp hs)
-  have hlt : valuation K ((β : K) * (s : K)) < 1 :=
-    hle.trans_lt (pow_lt_one₀ zero_le hc1 (Nat.succ_ne_zero n))
   ⟨Units.mk0 (1 + (β : K) * (s : K)) fun h0 ↦ by
-      have hv1 := (valuation K).map_one_add_of_lt hlt
-      simp [h0] at hv1,
+      have hlt := hle.trans_lt
+        (pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hc) (by omega))
+      simpa [h0] using (valuation K).map_one_add_of_lt hlt,
     (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mpr
       (by simpa only [Units.val_mk0, add_sub_cancel_left, hn₁] using hle)⟩
 
@@ -475,53 +475,54 @@ theorem coe_mkScaledUnit {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ}
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
     {s : 𝒪[K]} (hs : s ∈ 𝓂[K]) :
     (((mkScaledUnit hc hvβ hn₁ hs : unitFiltration K n₁) : Kˣ) : K) = 1 + (β : K) * (s : K) := by
-  rfl
+  simp only [mkScaledUnit, Units.val_mk0]
 
 private noncomputable def scaledElemOfUnit {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ}
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
     (u : unitFiltration K n₁) : 𝒪[K] :=
   ⟨(((u : Kˣ) : K) - 1) / (β : K), by
-    have hc1 : valuation K (c : K) < 1 :=
-      Valuation.integer.v_irreducible_lt_one (v := valuation K) hc
-    have hc0 : 0 < valuation K (c : K) := Valuation.integer.v_irreducible_pos (v := valuation K) hc
     have hu := (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.2
     rw [Valuation.mem_integer_iff, map_div₀, hvβ]
-    refine (div_le_iff₀ (pow_pos hc0 n) |>.mpr ?_).trans hc1.le
+    refine ((div_le_iff₀ (pow_pos (Valuation.integer.v_irreducible_pos hc) n)).mpr ?_).trans
+      (Valuation.integer.v_irreducible_lt_one hc).le
     rwa [mul_comm, ← pow_succ, ← hn₁]⟩
 
 private theorem scaledElemOfUnit_mem_maximalIdeal {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ}
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
-    (u : unitFiltration K n₁) :
-    scaledElemOfUnit hc hvβ hn₁ u ∈ 𝓂[K] := by
-  have hc0 : 0 < valuation K (c : K) := Valuation.integer.v_irreducible_pos (v := valuation K) hc
-  have hu := (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.2
+    (u : unitFiltration K n₁) : scaledElemOfUnit hc hvβ hn₁ u ∈ 𝓂[K] := by
   refine (Set.ext_iff.mp (hc.maximalIdeal_eq_setOfPred_le_v_coe (valuation K)) _).mpr ?_
   change valuation K ((((u : Kˣ) : K) - 1) / (β : K)) ≤ valuation K (c : K)
-  rw [map_div₀, hvβ, div_le_iff₀ (pow_pos hc0 n), mul_comm, ← pow_succ, ← hn₁]
-  exact hu
+  rw [map_div₀, hvβ, div_le_iff₀ (pow_pos (Valuation.integer.v_irreducible_pos hc) n),
+    mul_comm, ← pow_succ, ← hn₁]
+  exact (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.2
+
+private theorem scaledElemOfUnit_mkScaledUnit {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ}
+    (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
+    {s : 𝒪[K]} (hs : s ∈ 𝓂[K]) :
+    scaledElemOfUnit hc hvβ hn₁ (mkScaledUnit hc hvβ hn₁ hs) = s := by
+  have hβ0 : (β : K) ≠ 0 := (Valuation.pos_iff _).mp
+    (hvβ ▸ pow_pos (Valuation.integer.v_irreducible_pos hc) n)
+  ext
+  simp only [scaledElemOfUnit, coe_mkScaledUnit, add_sub_cancel_left, mul_div_cancel_left₀ _ hβ0]
 
 private theorem scaledElemOfUnit_sub_mem_iff {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ n₂ m : ℕ}
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
     (hn₂ : n₂ = n + m + 1) (u₁ u₂ : unitFiltration K n₁) :
     scaledElemOfUnit hc hvβ hn₁ u₁ - scaledElemOfUnit hc hvβ hn₁ u₂ ∈ 𝓂[K] ^ (m + 1) ↔
       u₁⁻¹ * u₂ ∈ (unitFiltration K n₂).subgroupOf (unitFiltration K n₁) := by
-  have hc0 : 0 < valuation K (c : K) := Valuation.integer.v_irreducible_pos (v := valuation K) hc
   have hu₁ : valuation K ((u₁ : Kˣ) : K) = 1 :=
     (mem_unitFiltration_zero _).mp (unitFiltration_antitone (Nat.zero_le _) u₁.2)
-  have hmem : ∀ z : 𝒪[K], z ∈ 𝓂[K] ^ (m + 1) ↔
-      valuation K (z : K) ≤ valuation K (c : K) ^ (m + 1) :=
-    fun z ↦ Set.ext_iff.mp (hc.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) (m + 1)) z
-  rw [hmem, Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv,
+  rw [← SetLike.mem_coe,
+    Set.ext_iff.mp (hc.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) (m + 1)) _,
+    Set.mem_ofPred_eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv,
     mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc]
   have hid : ((scaledElemOfUnit hc hvβ hn₁ u₁ - scaledElemOfUnit hc hvβ hn₁ u₂ : 𝒪[K]) : K) =
       -((u₁ : Kˣ) : K) * ((((u₁ : Kˣ)⁻¹ * (u₂ : Kˣ) : Kˣ) : K) - 1) / (β : K) := by
-    dsimp only [scaledElemOfUnit]
-    push_cast
-    have hu₁0 : ((u₁ : Kˣ) : K) ≠ 0 := (u₁ : Kˣ).ne_zero
-    field_simp
-    ring
+    have : ((u₁ : Kˣ) : K) ≠ 0 := (u₁ : Kˣ).ne_zero
+    dsimp only [scaledElemOfUnit]; push_cast; field_simp; ring
   rw [hid, map_div₀, map_mul, Valuation.map_neg, hu₁, one_mul, hvβ,
-    div_le_iff₀ (pow_pos hc0 n), ← pow_add, show m + 1 + n = n₂ by omega]
+    div_le_iff₀ (pow_pos (Valuation.integer.v_irreducible_pos hc) n), ← pow_add,
+    show m + 1 + n = n₂ by omega]
 
 /-- When `v(β) = v(c)^n`, `n₁ = n + 1`, and `n₂ = n + m + 1`, the map `[s] ↦ [1 + β s]` is a
 bijection between the maximal-ideal classes in `𝒪[K] ⧸ 𝓂[K] ^ (m + 1)` and
@@ -548,13 +549,8 @@ noncomputable def maximalIdealQuotientEquivUnitFiltrationQuotient {c β : 𝒪[K
       (Ideal.Quotient.eq.mp (congrArg Subtype.val h)))
   · obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
     have hs : s ∈ 𝓂[K] := Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy)
-    have hβ0 : (β : K) ≠ 0 := (Valuation.pos_iff _).mp
-      (hvβ ▸ pow_pos (Valuation.integer.v_irreducible_pos (v := valuation K) hc) n)
-    refine ⟨QuotientGroup.mk (mkScaledUnit hc hvβ hn₁ hs), Subtype.ext ?_⟩
-    change Ideal.Quotient.mk _ (scaledElemOfUnit hc hvβ hn₁ (mkScaledUnit hc hvβ hn₁ hs)) = _
-    congr 1
-    ext
-    simp only [scaledElemOfUnit, coe_mkScaledUnit, add_sub_cancel_left, mul_div_cancel_left₀ _ hβ0]
+    exact ⟨QuotientGroup.mk (mkScaledUnit hc hvβ hn₁ hs),
+      Subtype.ext (congrArg (Ideal.Quotient.mk _) (scaledElemOfUnit_mkScaledUnit hc hvβ hn₁ hs))⟩
 
 /-- `maximalIdealQuotientEquivUnitFiltrationQuotient` sends the class of `s ∈ 𝓂[K]` to the coset
 of `mkScaledUnit hc hvβ hn₁ hs`. -/
@@ -566,16 +562,10 @@ theorem maximalIdealQuotientEquivUnitFiltrationQuotient_mk {c β : 𝒪[K]} (hc 
     maximalIdealQuotientEquivUnitFiltrationQuotient hc hvβ m hn₁ hn₂
         ⟨Ideal.Quotient.mk (𝓂[K] ^ (m + 1)) s, hs0⟩ =
       QuotientGroup.mk (mkScaledUnit hc hvβ hn₁ hs) := by
-  have hβ0 : (β : K) ≠ 0 := (Valuation.pos_iff _).mp
-    (hvβ ▸ pow_pos (Valuation.integer.v_irreducible_pos (v := valuation K) hc) n)
   unfold maximalIdealQuotientEquivUnitFiltrationQuotient
   rw [Equiv.symm_apply_eq]
-  apply Subtype.ext
-  change Ideal.Quotient.mk _ s =
-    Ideal.Quotient.mk _ (scaledElemOfUnit hc hvβ hn₁ (mkScaledUnit hc hvβ hn₁ hs))
-  congr 1
-  ext
-  simp only [scaledElemOfUnit, coe_mkScaledUnit, add_sub_cancel_left, mul_div_cancel_left₀ _ hβ0]
+  exact Subtype.ext
+    (congrArg (Ideal.Quotient.mk _) (scaledElemOfUnit_mkScaledUnit hc hvβ hn₁ hs).symm)
 
 /-- Below `2 v_K(2)`, if `v(β) = v(c) ^ (2e - 2k - 1)` (`k < e = v_K(2)`) and `1 + β (s² - s)` is a
 square in `K`, then either `s ∈ 𝓂[K]` or `1 - s ∈ 𝓂[K]`. -/
@@ -585,27 +575,20 @@ theorem mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub (h2 : (2 
     {s : 𝒪[K]} (hs : IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K)))) :
     s ∈ 𝓂[K] ∨ 1 - s ∈ 𝓂[K] := by
   by_contra! hnot
-  rcases hnot with ⟨hs0, h1s⟩
   obtain ⟨ξ, hξ⟩ := hs
-  have hsv : valuation K (s : K) = 1 :=
-    le_antisymm ((Valuation.mem_integer_iff _ _).mp s.2)
-      (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hs0))
+  have hsv : valuation K (s : K) = 1 := le_antisymm ((Valuation.mem_integer_iff _ _).mp s.2)
+    (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hnot.1))
   have h1sv : valuation K ((s : K) - 1) = 1 := by
-    have hv' : valuation K ((1 - s : 𝒪[K]) : K) = 1 :=
-      le_antisymm ((Valuation.mem_integer_iff _ _).mp (1 - s).2)
-        (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr h1s))
-    rw [show (s : K) - 1 = -((1 - s : 𝒪[K]) : K) by push_cast; ring, Valuation.map_neg, hv']
+    rw [show (s : K) - 1 = -((1 - s : 𝒪[K]) : K) by push_cast; ring, Valuation.map_neg]
+    exact le_antisymm ((Valuation.mem_integer_iff _ _).mp (1 - s).2)
+      (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hnot.2))
   apply valuation_sq_sub_one_ne_pow_odd h2 hc (by omega : natCastValuation K 2 h2 - k - 1 < _) ξ
-  have hξ2 : ξ ^ 2 - 1 = (β : K) * (s : K) * ((s : K) - 1) := by
-    rw [← sq] at hξ
-    linear_combination -hξ
-  rw [hξ2, map_mul, map_mul, hvβ, hsv, h1sv, mul_one, mul_one]
-  congr 1
-  omega
+  rw [show ξ ^ 2 - 1 = (β : K) * (s : K) * ((s : K) - 1) by rw [← sq] at hξ; linear_combination -hξ,
+    map_mul, map_mul, hvβ, hsv, h1sv, mul_one, mul_one]
+  congr 1; omega
 
 private theorem natCard_subtype_eq_two_mul_of_symm (m : ℕ)
-    {P : (𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) → Prop}
-    (hsym : ∀ y, P (1 - y) ↔ P y)
+    {P : (𝒪[K] ⧸ 𝓂[K] ^ (m + 1)) → Prop} (hsym : ∀ y, P (1 - y) ↔ P y)
     (hdich : ∀ y, P y →
       Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0 ∨
         Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) (1 - y) = 0) :
@@ -615,29 +598,23 @@ private theorem natCard_subtype_eq_two_mul_of_symm (m : ℕ)
   let fac := Ideal.Quotient.factor (Ideal.pow_le_self (I := 𝓂[K]) (Nat.succ_ne_zero m))
   have : Nontrivial (𝒪[K] ⧸ 𝓂[K]) :=
     Ideal.Quotient.nontrivial_iff.mpr (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top
-  have hnot_both : ∀ y, ¬ (fac y = 0 ∧ fac (1 - y) = 0) := by
-    rintro y ⟨hy, h1y⟩
-    rw [map_sub, map_one, hy, sub_zero] at h1y
-    exact one_ne_zero h1y
+  have hnot_both : ∀ y, ¬ (fac y = 0 ∧ fac (1 - y) = 0) := fun y ⟨hy, h1y⟩ ↦ by
+    rw [map_sub, map_one, hy, sub_zero] at h1y; exact one_ne_zero h1y
   let splitFn : Bool × {x : {y // fac y = 0} // P x.1} → {y // P y} :=
     fun ⟨b, x⟩ ↦ if b then ⟨x.1.1, x.2⟩ else ⟨1 - x.1.1, (hsym x.1.1).mpr x.2⟩
-  have hbij : Function.Bijective splitFn := by
-    refine ⟨?_, fun ⟨y, hyP⟩ ↦ ?_⟩
-    · rintro ⟨b₁, ⟨⟨y₁, hy₁⟩, _⟩⟩ ⟨b₂, ⟨⟨y₂, hy₂⟩, _⟩⟩ heq
-      cases b₁ <;> cases b₂ <;>
-        simp only [splitFn, Bool.false_eq_true, ↓reduceIte, Subtype.mk.injEq] at heq
-      · have hy : y₁ = y₂ := by linear_combination -heq
-        subst hy; rfl
-      · exact False.elim (hnot_both y₁ ⟨hy₁, heq ▸ hy₂⟩)
-      · exact False.elim (hnot_both y₂ ⟨hy₂, heq.symm ▸ hy₁⟩)
-      · subst heq; rfl
-    · rcases hdich y hyP with hy0 | h1y0
-      · exact ⟨⟨true, ⟨⟨y, hy0⟩, hyP⟩⟩, rfl⟩
-      · refine ⟨⟨false, ⟨⟨1 - y, h1y0⟩, (hsym y).mpr hyP⟩⟩, ?_⟩
-        ext
-        simp [splitFn]
-  rw [← Nat.card_congr (Equiv.ofBijective splitFn hbij), Nat.card_prod]
-  simp [fac]
+  refine (Nat.card_congr (Equiv.ofBijective splitFn ⟨?_, fun ⟨y, hyP⟩ ↦ ?_⟩).symm).trans
+    (by rw [Nat.card_prod]; simp [fac])
+  · rintro ⟨b₁, ⟨⟨y₁, hy₁⟩, _⟩⟩ ⟨b₂, ⟨⟨y₂, hy₂⟩, _⟩⟩ heq
+    cases b₁ <;> cases b₂ <;>
+      simp only [splitFn, Bool.false_eq_true, ↓reduceIte, Subtype.mk.injEq] at heq
+    · obtain rfl : y₁ = y₂ := by linear_combination -heq
+      rfl
+    · exact (hnot_both y₁ ⟨hy₁, heq ▸ hy₂⟩).elim
+    · exact (hnot_both y₂ ⟨hy₂, heq.symm ▸ hy₁⟩).elim
+    · subst heq; rfl
+  · rcases hdich y hyP with hy0 | h1y0
+    · exact ⟨⟨true, ⟨⟨y, hy0⟩, hyP⟩⟩, rfl⟩
+    · exact ⟨⟨false, ⟨⟨1 - y, h1y0⟩, (hsym y).mpr hyP⟩⟩, by ext; simp [splitFn]⟩
 
 private theorem isSquare_one_add_mul_sq_sub_congr (h2 : (2 : K) ≠ 0) {c β : 𝒪[K]}
     (hc : Irreducible c) {k : ℕ} (hk : k < natCastValuation K 2 h2)
@@ -645,48 +622,36 @@ private theorem isSquare_one_add_mul_sq_sub_congr (h2 : (2 : K) ≠ 0) {c β : �
     {s₁ s₂ : 𝒪[K]} (h : s₁ - s₂ ∈ 𝓂[K] ^ (2 * k + 2)) :
     IsSquare (1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K))) ↔
       IsSquare (1 + (β : K) * ((s₂ : K) ^ 2 - (s₂ : K))) := by
-  have hc1 : valuation K (c : K) < 1 :=
-    Valuation.integer.v_irreducible_lt_one (v := valuation K) hc
+  have hc1 : valuation K (c : K) < 1 := Valuation.integer.v_irreducible_lt_one hc
   have hlt : ∀ s : 𝒪[K], valuation K ((β : K) * ((s : K) ^ 2 - (s : K))) < 1 := fun s ↦ by
-    have hsm : (s : K) ^ 2 - (s : K) ∈ 𝒪[K] := sub_mem (pow_mem s.2 2) s.2
     rw [map_mul, hvβ]
-    exact (mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp hsm)).trans_lt
-      (by simpa using pow_lt_one₀ zero_le hc1 (by omega))
+    exact (mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp
+      (sub_mem (pow_mem s.2 2) s.2))).trans_lt (by simpa using pow_lt_one₀ zero_le hc1 (by omega))
   let u : 𝒪[K] → Kˣ := fun s ↦ Units.mk0 (1 + (β : K) * ((s : K) ^ 2 - (s : K))) fun h0 ↦ by
-    have hv1 := (valuation K).map_one_add_of_lt (hlt s)
-    simp [h0] at hv1
+    simpa [h0] using (valuation K).map_one_add_of_lt (hlt s)
   have hdiff : (u s₁)⁻¹ * u s₂ ∈ unitFiltration K (2 * dyadicLevel K h2 + 1) := by
     rw [dyadicLevel_def, mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc]
-    have hv1 : valuation K (1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K))) = 1 :=
-      (valuation K).map_one_add_of_lt (hlt s₁)
     have hd0 : 1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K)) ≠ 0 := (u s₁).ne_zero
     have hid : (((u s₁)⁻¹ * u s₂ : Kˣ) : K) - 1 =
         (β : K) * (((s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) : 𝒪[K]) : K) /
           (1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K))) := by
       simp only [u, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0]
-      rw [eq_div_iff hd0, sub_mul, inv_mul_eq_div, div_mul_cancel₀ _ hd0, one_mul]
-      push_cast
-      ring
+      rw [eq_div_iff hd0, sub_mul, inv_mul_eq_div, div_mul_cancel₀ _ hd0, one_mul]; push_cast; ring
     have hmem : (s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) ∈ 𝓂[K] ^ (2 * k + 2) := by
       rw [show (s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) = -(s₁ - s₂) * (s₁ + s₂ - 1) by ring]
       exact Ideal.mul_mem_right _ _ (neg_mem h)
-    have hle : valuation K (((s₂ ^ 2 - s₂) - (s₁ ^ 2 - s₁) : 𝒪[K]) : K) ≤
-        valuation K (c : K) ^ (2 * k + 2) := (Set.ext_iff.mp
-      (hc.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) (2 * k + 2)) _).mp hmem
-    rw [hid, map_div₀, hv1, div_one, map_mul, hvβ]
-    refine (mul_le_mul' le_rfl hle).trans_eq ?_
-    rw [← pow_add]
-    congr 1
-    omega
-  have hsq_diff : IsSquare ((u s₁)⁻¹ * u s₂) :=
+    rw [hid, map_div₀, (valuation K).map_one_add_of_lt (hlt s₁), div_one, map_mul, hvβ]
+    refine (mul_le_mul' le_rfl (Set.mem_ofPred_eq.mp ((Set.ext_iff.mp
+      (hc.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) (2 * k + 2)) _).mp
+        hmem))).trans_eq ?_
+    rw [← pow_add]; congr 1; omega
+  have hsq : IsSquare ((u s₁)⁻¹ * u s₂) :=
     Subgroup.mem_square.mp (unitFiltration_le_square h2 hdiff)
-  have hsq_inv : IsSquare ((u s₂)⁻¹ * u s₁) := by
-    simpa only [mul_inv_rev, inv_inv] using hsq_diff.inv
   rw [show 1 + (β : K) * ((s₁ : K) ^ 2 - (s₁ : K)) = ((u s₁ : Kˣ) : K) from rfl,
     show 1 + (β : K) * ((s₂ : K) ^ 2 - (s₂ : K)) = ((u s₂ : Kˣ) : K) from rfl,
     Units.isSquare_coe_iff, Units.isSquare_coe_iff]
-  exact ⟨fun h1 ↦ by simpa only [mul_inv_cancel_left] using h1.mul hsq_diff,
-    fun h2' ↦ by simpa only [mul_inv_cancel_left] using h2'.mul hsq_inv⟩
+  exact ⟨fun h1 ↦ by simpa only [mul_inv_cancel_left] using h1.mul hsq,
+    fun h2' ↦ by simpa only [mul_inv_rev, inv_inv, mul_inv_cancel_left] using h2'.mul hsq.inv⟩
 
 private noncomputable def artinSchreierMaximalIdealSquareEquiv (h2 : (2 : K) ≠ 0)
     {c β : 𝒪[K]} (hc : Irreducible c) {k : ℕ} (hk : k < natCastValuation K 2 h2)
@@ -704,8 +669,7 @@ private noncomputable def artinSchreierMaximalIdealSquareEquiv (h2 : (2 : K) ≠
   let E := (artinSchreierMaximalIdealQuotientEquiv K (2 * k + 1)).trans
     (maximalIdealQuotientEquivUnitFiltrationQuotient hc hvβ (2 * k + 1)
       (n₁ := 2 * e - 2 * k) (n₂ := 2 * e + 1) (by omega) (by omega))
-  refine Equiv.subtypeEquiv E ?_
-  rintro ⟨y, hy⟩
+  refine Equiv.subtypeEquiv E fun ⟨y, hy⟩ ↦ ?_
   obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
   have hs : s ∈ 𝓂[K] := Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using hy)
   have hsm : s ^ 2 - s ∈ 𝓂[K] := by
@@ -716,30 +680,25 @@ private noncomputable def artinSchreierMaximalIdealSquareEquiv (h2 : (2 : K) ≠
   let u_s : unitFiltration K (2 * e - 2 * k) := mkScaledUnit hc hvβ (by omega) hsm
   have hE_eq : E ⟨Ideal.Quotient.mk _ s, hy⟩ = QuotientGroup.mk u_s := by
     dsimp only [E, Equiv.trans_apply]
-    have h1 : artinSchreierMaximalIdealQuotientEquiv K (2 * k + 1) ⟨Ideal.Quotient.mk _ s, hy⟩ =
-        ⟨Ideal.Quotient.mk _ (s ^ 2 - s), hsm0⟩ := by ext; simp [map_sub, map_pow]
-    rw [h1, maximalIdealQuotientEquivUnitFiltrationQuotient_mk hc hvβ (2 * k + 1)
-      (by omega) (by omega) hsm hsm0]
-  have hmk : (∃ s' : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s' = Ideal.Quotient.mk _ s ∧
+    rw [show artinSchreierMaximalIdealQuotientEquiv K (2 * k + 1) ⟨Ideal.Quotient.mk _ s, hy⟩ =
+        ⟨Ideal.Quotient.mk _ (s ^ 2 - s), hsm0⟩ by ext; simp [map_sub, map_pow],
+      maximalIdealQuotientEquivUnitFiltrationQuotient_mk hc hvβ (2 * k + 1)
+        (by omega) (by omega) hsm hsm0]
+  rw [hE_eq, show (∃ s' : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s' = Ideal.Quotient.mk _ s ∧
       IsSquare (1 + (β : K) * ((s' : K) ^ 2 - (s' : K)))) ↔
-      IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K))) :=
+      IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K))) from
     ⟨fun ⟨s', hs', hsq⟩ ↦ (isSquare_one_add_mul_sq_sub_congr h2 hc hk hvβ
-      (Ideal.Quotient.eq.mp hs')).mp hsq, fun hsq ↦ ⟨s, rfl, hsq⟩⟩
-  rw [hE_eq, hmk]
+      (Ideal.Quotient.eq.mp hs')).mp hsq, fun hsq ↦ ⟨s, rfl, hsq⟩⟩]
   refine ⟨fun hsq ↦ ⟨u_s, rfl,
     Units.isSquare_coe_iff.mp (by simpa [u_s, coe_mkScaledUnit] using hsq)⟩, ?_⟩
   rintro ⟨u, hu_eq, hsq_u⟩
   have hdiff : (u : Kˣ)⁻¹ * (u_s : Kˣ) ∈ unitFiltration K (2 * dyadicLevel K h2 + 1) := by
-    rw [dyadicLevel_def]
-    simpa only [e, Subgroup.coe_mul, Subgroup.coe_inv] using
+    rw [dyadicLevel_def]; simpa only [e, Subgroup.coe_mul, Subgroup.coe_inv] using
       Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hu_eq)
   have hsq_mk : IsSquare ((u_s : Kˣ) : K) := Units.isSquare_coe_iff.mpr <| by
     simpa only [mul_inv_cancel_left] using
       hsq_u.mul (Subgroup.mem_square.mp (unitFiltration_le_square h2 hdiff))
-  dsimp only [u_s] at hsq_mk
-  rw [coe_mkScaledUnit] at hsq_mk
-  push_cast at hsq_mk
-  exact hsq_mk
+  simpa [u_s, coe_mkScaledUnit] using hsq_mk
 
 /-- Counting the Artin–Schreier square locus in `𝒪[K] ⧸ 𝓂[K] ^ (2k + 2)`: when
 `v(β) = v(c) ^ (2e - 2k - 1)` (`k < e = v_K(2)`), there are `#𝓀[K] ^ (k + 1)` classes `[s]` for
@@ -766,11 +725,10 @@ theorem natCard_artinSchreier_square_maximalIdeal_quotient (h2 : (2 : K) ≠ 0)
           push_cast; ring])
     (fun y hy ↦ by
       obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-      refine (mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub h2 hc hk hvβ
-        ((hP_mk s).mp hy)).imp ?_ ?_
-      · rw [Ideal.Quotient.factor_mk, Ideal.Quotient.eq_zero_iff_mem]; exact id
-      · rw [← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.factor_mk,
-          Ideal.Quotient.eq_zero_iff_mem]; exact id)
+      simpa only [← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.factor_mk,
+        Ideal.Quotient.eq_zero_iff_mem] using
+        mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub h2 hc hk hvβ
+          ((hP_mk s).mp hy))
   rw [hsplit, Nat.card_congr (artinSchreierMaximalIdealSquareEquiv h2 hc hk hvβ)]
   exact two_mul_natCard_squareCosets_unitFiltration h2 hk
 

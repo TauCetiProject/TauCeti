@@ -10,15 +10,10 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 /-!
 # Irreducible elements and the maximal ideal of a local ring
 
-In a commutative local semiring, every nonunit belongs to the unique maximal ideal. Consequently,
-every irreducible element lies in the maximal ideal and cannot be factored as a product of two
-elements of the maximal ideal.
-
-## Main results
-
-* `Irreducible.mem_maximalIdeal`: an irreducible element of a local ring lies in its maximal ideal.
-* `Irreducible.ne_mul_of_mem_maximalIdeal`: an irreducible element of a local ring is never the
-  product of two elements of the maximal ideal.
+In a commutative local semiring, every nonunit belongs to the unique maximal ideal, so every
+irreducible element lies in `IsLocalRing.maximalIdeal R` (`Irreducible.mem_maximalIdeal`) and is
+never a product of two elements of `IsLocalRing.maximalIdeal R`
+(`Irreducible.ne_mul_of_mem_maximalIdeal`).
 -/
 
 public section
