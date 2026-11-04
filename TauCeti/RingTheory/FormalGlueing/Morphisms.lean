@@ -67,21 +67,19 @@ theorem existsUnique_formalGlueing_lift
         (LocalizedModule.mkLinearMap (.powers g.1) N) f = fg g := by
   have hη := Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) N
   -- Apply element reconstruction to the image of each element of the source.
-  have hex (m : M) : ∃ n : N, (1 : S) ⊗ₜ[R] n = fS (1 ⊗ₜ m) := by
-    apply (TensorProduct.mem_range_mk_one_iff_locally_mem_range _ hI).mpr
-    intro g hg
-    refine ⟨fg ⟨g, hg⟩ (LocalizedModule.mkLinearMap (.powers g) M m), ?_⟩
-    have h := congrArg (fun k ↦ k (LocalizedModule.mkLinearMap (.powers g) M m))
-      (hcompat ⟨g, hg⟩)
-    simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply,
-      LinearMap.restrictScalars_apply, TensorProduct.mk_apply] using h.symm
+  have hex (m : M) := (TensorProduct.existsUnique_formalGlueing_lift (fS (1 ⊗ₜ m))
+    (fun g ↦ fg g (LocalizedModule.mkLinearMap (.powers g.1) M m)) hI (fun g ↦ by
+      have h := congrArg (fun k ↦ k (LocalizedModule.mkLinearMap (.powers g.1) M m))
+        (hcompat g)
+      simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply,
+        LinearMap.restrictScalars_apply, TensorProduct.mk_apply] using h.symm)).exists
   choose f hf using hex
   -- Faithful flatness makes the pointwise lift linear.
   let F : M →ₗ[R] N :=
     { toFun := f
-      map_add' := fun x y ↦ hη (by simp [hf, tmul_add])
-      map_smul' := fun r m ↦ hη (by simp [hf, tmul_smul]) }
-  have hF (m : M) : (1 : S) ⊗ₜ[R] F m = fS (1 ⊗ₜ m) := hf m
+      map_add' := fun x y ↦ hη (by simp [fun m ↦ (hf m).1, tmul_add])
+      map_smul' := fun r m ↦ hη (by simp [fun m ↦ (hf m).1, tmul_smul]) }
+  have hF (m : M) : (1 : S) ⊗ₜ[R] F m = fS (1 ⊗ₜ m) := (hf m).1
   have hbase : F.baseChange S = fS := by
     ext m
     exact hF m
@@ -92,13 +90,8 @@ theorem existsUnique_formalGlueing_lift
       (LocalizedModule.mkLinearMap (.powers g.1) M)
       (LocalizedModule.mkLinearMap (.powers g.1) N)
     ext m
-    apply IsLocalizedModule.map_injective (.powers g.1)
-      (LocalizedModule.mkLinearMap (.powers g.1) N)
-      (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] N)) _ hη
-    have h := congrArg (fun k ↦ k (LocalizedModule.mkLinearMap (.powers g.1) M m))
-      (hcompat g)
-    simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply,
-      LinearMap.restrictScalars_apply, TensorProduct.mk_apply, hF] using h
+    simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply, F,
+      LinearMap.coe_mk, AddHom.coe_mk] using (hf m).2 g
   refine ⟨F, ⟨hbase, hloc⟩, fun F' hF' ↦ ?_⟩
   ext m
   apply hη
