@@ -247,6 +247,11 @@ theorem card_resolvedCircle (D : PDCode n) (s : Fin n → Bool) :
   rw [Fintype.card_sum, Fintype.card_fin, stateLoopCount_def]
   omega
 
+/-- Every smoothing of a crossing-free diagram has one circle for each of its components. -/
+theorem card_resolvedCircle_eq_crossinglessComponentCount (D : PDCode 0) (s : Fin 0 → Bool) :
+    Fintype.card (D.ResolvedCircle s) = D.crossinglessComponentCount := by
+  rw [card_resolvedCircle, stateLoopCount_eq_crossinglessComponentCount]
+
 /-- Every smoothing of a diagram with a component has a circle. -/
 theorem one_le_card_resolvedCircle_of_componentCount_pos (D : PDCode n)
     (h : 0 < D.componentCount) (s : Fin n → Bool) : 1 ≤ Fintype.card (D.ResolvedCircle s) :=
