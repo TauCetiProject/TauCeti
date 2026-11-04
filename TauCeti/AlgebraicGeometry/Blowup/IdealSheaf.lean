@@ -191,9 +191,8 @@ generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/
 theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
     IsProper I.blowupToBase := by
   refine CommMon.isProper_relativeProjToBase (fun U hU ↦ ?_) (fun U hU ↦ ?_)
-  · have : Algebra.FiniteType Γ(X, U) (_root_.reesAlgebra (I.ideal ⟨U, hU⟩)) :=
-      ⟨(_root_.reesAlgebra _).fg_top.mpr (reesAlgebra.fg (hI ⟨U, hU⟩))⟩
-    exact Algebra.FiniteType.equiv this (I.reesAlgebraSectionsEquiv hU).symm
+  · exact Algebra.FiniteType.equiv (reesAlgebra.finiteType_of_fg (hI ⟨U, hU⟩))
+      (I.reesAlgebraSectionsEquiv hU).symm
   · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism, so `Γ(I⁰, U) ≅ Γ(X, U)`
     refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
       (Scheme.Modules.sectionsFunctor U).map I.reesAlgebra.obj.toMon.one).hom ?_

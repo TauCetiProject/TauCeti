@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 public import TauCeti.RingTheory.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node.Basic
+import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
 
 /-!
 # The blowup of the node `xy = π²a` at its origin
@@ -21,6 +22,9 @@ along `V(I)` as a scheme over `Spec R`:
 
 * it is covered by three open charts, the `π`-chart `Spec R[u, v] ⧸ (uv - a)` and, for each
   coordinate, the chart `Spec R[x, t] ⧸ (xt - π)`;
+* on the `π`-chart, the chart of the coordinate `xᵢ = π uᵢ` is the basic open `D(uᵢ)`, so the
+  part of the blowup outside the two coordinate charts is the closed subset `V(u, v)` of the
+  `π`-chart; the part of the blowup over `D(xᵢ)` lies in the chart of `xᵢ`;
 * consequently its structure morphism is at worst nodal of relative dimension one over
   `Spec R`, like `Spec A` itself.
 
@@ -49,6 +53,13 @@ of nodal models of curves by repeatedly blowing up the remaining singular point.
   three charts cover the blowup.
 * `TauCeti.NodeAlgebra.blowupBaseChartι_blowupToSpec`,
   `TauCeti.NodeAlgebra.blowupCoordChartι_blowupToSpec`: the charts are morphisms over `Spec R`.
+* `TauCeti.NodeAlgebra.blowupBaseChartι_preimage_opensRange_blowupCoordChartι`: on the `π`-chart,
+  the chart of the coordinate `xᵢ` is the basic open `D(xᵢ/π)`.
+* `TauCeti.NodeAlgebra.preimage_basicOpen_coord_le_opensRange_blowupCoordChartι`: the part of the
+  blowup lying over `D(xᵢ)` is contained in the chart of `xᵢ`.
+* `TauCeti.NodeAlgebra.isProper_blowup`: the blowup is proper over `Spec A`.
+* `TauCeti.NodeAlgebra.isIso_morphismRestrict_iSup_basicOpen_coord`: the blowup is an isomorphism
+  over `D(x₀) ∪ D(x₁)`.
 * `TauCeti.NodeAlgebra.flat_blowup`, `TauCeti.NodeAlgebra.locallyOfFinitePresentation_blowup`,
   `TauCeti.NodeAlgebra.pureRelativeDimension_blowup`: the blowup is flat, locally of finite
   presentation and of pure relative dimension one over `Spec R`.
@@ -165,6 +176,57 @@ theorem blowupCoordChartι_blowupToSpec (i : Fin 2) (hπ : π ∈ nonZeroDivisor
   congr 1
   ext r
   simp [← IsScalarTower.algebraMap_apply]
+
+/-- **The overlap of the `π`-chart with a coordinate chart.** On the `π`-chart
+`Spec R[u, v] ⧸ (uv - a)`, where `xᵢ = π uᵢ`, the chart of the coordinate `xᵢ` is the basic open
+`D(uᵢ)`: the fraction `(xᵢ t)/(π t)` is `xᵢ/π = uᵢ`. -/
+theorem blowupBaseChartι_preimage_opensRange_blowupCoordChartι (i : Fin 2)
+    (hπ : π ∈ nonZeroDivisors R) :
+    blowupBaseChartι a hπ ⁻¹ᵁ (blowupCoordChartι a i hπ).opensRange =
+      (PrimeSpectrum.basicOpen (coord a i) : (Spec (.of (NodeAlgebra R a))).Opens) := by
+  rw [opensRange_blowupCoordChartι, blowupBaseChartι, Scheme.Hom.comp_preimage,
+    affineBlowupι_preimage_basicOpen, SpecMap_preimage_basicOpen]
+  congr 1
+  simp only [RingEquiv.toCommRingCatIso_hom, CommRingCat.hom_ofHom, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv]
+  rw [AlgEquiv.symm_apply_eq]
+  exact Subtype.ext (coe_affineBlowupBaseEquiv_coord hπ i).symm
+
+/-- **The blowup over `D(xᵢ)` lies in the chart of `xᵢ`.** For a nonzerodivisor `π` of `R`, the
+inverse image in the blowup `Proj A[It]` of `A = R[x₀, x₁] ⧸ (x₀x₁ - π²a)` of the basic open
+`D(xᵢ)` of `Spec A` is contained in the chart `Spec R[x, t] ⧸ (xt - π)` of `xᵢ`. -/
+theorem preimage_basicOpen_coord_le_opensRange_blowupCoordChartι (i : Fin 2)
+    (hπ : π ∈ nonZeroDivisors R) :
+    (Proj.toSpecZero (grade (originIdeal π (π ^ 2 * a))) ≫
+        Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) ⁻¹ᵁ
+        PrimeSpectrum.basicOpen (coord (π ^ 2 * a) i) ≤
+      (blowupCoordChartι a i hπ).opensRange := by
+  rw [← affineBlowupι_image_basicOpen (Localization.Away (coord (π ^ 2 * a) i))
+    (coord_mem_originIdeal π _ i), opensRange_blowupCoordChartι,
+    ← opensRange_affineBlowupι (Localization.Away (coord (π ^ 2 * a) i))]
+  exact Scheme.Hom.image_le_opensRange _ _
+
+variable (π) in
+/-- **The blowup of a node is proper.** The morphism `Proj A[It] ⟶ Spec A` from the blowup of
+`A = R[x, y] ⧸ (xy - b)` along `I = (π, x, y)` is proper. -/
+theorem isProper_blowup (b : R) :
+    IsProper (Proj.toSpecZero (grade (originIdeal π b)) ≫
+      Spec.map (gradeZeroEquiv (originIdeal π b)).toCommRingCatIso.hom) :=
+  isProper_toSpecZero_reesAlgebra <| by
+    rw [originIdeal_def]; exact Submodule.fg_span (Set.toFinite _)
+
+variable (π) in
+/-- **The blowup of a node is an isomorphism away from its center.** The morphism
+`Proj A[It] ⟶ Spec A` from the blowup of `A = R[x₀, x₁] ⧸ (x₀x₁ - b)` along `I = (π, x₀, x₁)`
+is an isomorphism over the open `D(x₀) ∪ D(x₁)`, which is disjoint from `V(I)`. -/
+theorem isIso_morphismRestrict_iSup_basicOpen_coord (b : R) :
+    IsIso ((Proj.toSpecZero (grade (originIdeal π b)) ≫
+      Spec.map (gradeZeroEquiv (originIdeal π b)).toCommRingCatIso.hom) ∣_
+        (⨆ i, PrimeSpectrum.basicOpen (coord b i) : (Spec (.of (NodeAlgebra R b))).Opens)) := by
+  refine isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
+    (Set.disjoint_left.mpr fun p hp hz ↦ ?_)
+  obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hp
+  exact hi (hz (coord_mem_originIdeal π _ i))
 
 /-! ### The open cover by the three charts -/
 
