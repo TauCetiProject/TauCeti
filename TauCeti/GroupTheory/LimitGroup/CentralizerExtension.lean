@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
+public import TauCeti.GroupTheory.HNNExtension
 public import TauCeti.GroupTheory.NoncommPiCoprod
-public import Mathlib.GroupTheory.HNNExtension
 public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.GroupTheory.PushoutI
 
@@ -349,19 +349,12 @@ def equivProdOfMemCenter (hu : u ∈ center G) :
     equivProdOfMemCenter hu (t i) = (1, Pi.mulSingle i (.ofAdd 1)) :=
   toProd_t i
 
-private theorem commute_hnnExtension_of_t {c : G} (hc : c ∈ centralizer {u}) :
-    Commute (HNNExtension.of (A := centralizer {u}) (B := centralizer {u}) (φ := .refl _) c)
-      HNNExtension.t := by
-  have h := HNNExtension.of_mul_t (φ := MulEquiv.refl (centralizer {u})) ⟨c, hc⟩
-  simp only [MulEquiv.refl_symm, MulEquiv.refl_apply] at h
-  exact h
-
 /-- The homomorphism `G(u, ℤ) →* ⟨G, t | [c, t] = 1, c ∈ C_G(u)⟩` that is the identity on `G` and
 sends `t₀` to `t`. -/
 private def toHNNExtension :
     CentralizerExt u 1 →* HNNExtension G (centralizer {u}) (centralizer {u}) (.refl _) :=
   lift HNNExtension.of (fun _ => HNNExtension.t) (fun _ _ => Commute.refl _)
-    fun _ hc _ => commute_hnnExtension_of_t hc
+    fun _ hc _ => HNNExtension.commute_of_t_iff_mem.2 hc
 
 private theorem toHNNExtension_of (g : G) :
     toHNNExtension (of g : CentralizerExt u 1) = HNNExtension.of g :=

@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.LeftRegular
 # Cartan weights of the adjoint Clifford lift
 
 Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form and let `H` be a
-Cartan subalgebra. The coordinate formula for the adjoint Clifford lift can be decomposed into
+split Cartan subalgebra. The coordinate formula for the adjoint Clifford lift can be decomposed into
 opposite root-space projections:
 
 ```text
@@ -61,13 +61,13 @@ namespace CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {K : Type u} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} [Field K] [CharZero K]
   {L : Type v} [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [Invertible (2 : K)] [LieAlgebra.IsKilling K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
   [LieModule.IsTriangularizable K H L]
 
-omit [CharZero K] [IsAlgClosed K] in
+omit [CharZero K] in
 /-- The adjoint Clifford lift, decomposed using the `χ` and `-χ` projections of a basis and its
 Killing-dual basis. The coefficient is the quadratic normalization of the Killing form. -/
 theorem adjointCliffordHom_eq_sum_weight
@@ -105,7 +105,7 @@ theorem adjointCliffordHom_cartan_eq_sum_weight
   simp only [bivector_def, map_smul, smul_mul_assoc, mul_smul_comm]
   module
 
-omit [CharZero K] [IsAlgClosed K] in
+omit [CharZero K] in
 private theorem projectedBivectorSum_neg
     {iota : Type w} [Fintype iota] [DecidableEq iota]
     (b : Module.Basis iota K L) (chi : Weight K H L) :
@@ -210,7 +210,6 @@ theorem adjointCliffordHom_cartan_eq_sum_posRoots
   simpa only [c] using hregroup
 
 open scoped CliffordAlgebra in
-omit [LieModule.IsTriangularizable K H L] in
 /-- If `y` is a root vector of weight `χ` and `c` is a simultaneous eigenvector of weight `μ`,
 then `ι(y) * c` is a simultaneous eigenvector of weight `χ + μ` for Kostant's left-regular
 action. -/
@@ -228,7 +227,6 @@ theorem kostant_lie_ι_mul_of_mem_rootSpace
   module
 
 open scoped CliffordAlgebra in
-omit [LieModule.IsTriangularizable K H L] in
 /-- Left multiplication by the Clifford generator of a root vector raises a generalized weight
 by that root for Kostant's left-regular action. -/
 theorem mem_genWeightSpace_ι_mul_of_mem_rootSpace

@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.AlgebraicGeometry.QuasiAffine
 import Mathlib.RingTheory.Regular.Flat
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.CohenMacaulay.Normal
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.IntegralClosure.GoingDown
@@ -48,6 +49,9 @@ two, the morphism on spectra of global sections restricts to the original scheme
 Mathlib's `AlgebraicGeometry.Scheme.isPullback_toSpecΓ_toSpecΓ` after identifying the global
 sections of the punctured base with the local ring.
 
+In the finite normal case, the same bijectivity says that the base change of `Spec B` to the
+punctured spectrum of `A` has `B` as its ring of global functions.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat`: the flat case.
@@ -60,6 +64,8 @@ sections of the punctured base with the local ring.
   an affine form of Stacks, Lemma 58.20.1 (0BM8).
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed`: the finite
   normal case.
+* `TauCeti.IsLocalRing.isIso_appTop_pullback_fst_puncturedSpectrum`: the finite normal case,
+  as recovery of `B` from the base change of `Spec B` to the punctured spectrum.
 
 ## References
 
@@ -193,5 +199,33 @@ theorem isPullback_puncturedSpectrum_toSpecΓ
     simp [U]
   · simp only [e, asIso_hom, Spec.map_comp, Scheme.Hom.comp_appTop,
       Iso.refl_hom, Category.id_comp, Category.assoc, U]
+
+/-- Let `A` be a Noetherian integrally closed local domain of dimension at least two, and `B` a
+finite torsion-free `A`-algebra whose localizations at maximal ideals are integrally closed
+domains. Then the projection from the restriction of `Spec B` to the punctured spectrum onto
+`Spec B` is an isomorphism on global functions. -/
+theorem isIso_appTop_pullback_fst_puncturedSpectrum [IsDomain A] [IsIntegrallyClosed A]
+    (hdim : 2 ≤ ringKrullDim A) {B : Type u} [CommRing B] [Algebra A B] [Module.Finite A B]
+    [Module.IsTorsionFree A B]
+    (hnormal : ∀ (𝔮 : Ideal B) [𝔮.IsMaximal],
+      IsDomain (Localization.AtPrime 𝔮) ∧ IsIntegrallyClosed (Localization.AtPrime 𝔮)) :
+    IsIso (pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap A B)))
+      (puncturedSpectrum A).ι).appTop := by
+  set U := puncturedSpectrum A
+  set g := Spec.map (CommRingCat.ofHom (algebraMap A B))
+  -- Restriction from `Spec B` to the preimage of `U` is bijective by algebraic Hartogs, and the
+  -- base change identifies functions on that preimage with its global functions.
+  have hΓ := TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed
+    (A := A) (B := B) hdim hnormal (g ⁻¹ᵁ U) fun p hp ↦
+      (mem_puncturedSpectrum_iff A (g p)).mpr fun he ↦ hp (congrArg PrimeSpectrum.asIdeal he)
+  have := (IsPullback.of_hasPullback g U.ι).isIso_appLE
+  have : IsIso ((Spec (.of B)).presheaf.map (g ⁻¹ᵁ U).leTop.op) :=
+    (ConcreteCategory.isIso_iff_bijective _).mpr hΓ
+  have h : IsIso ((Spec (.of B)).presheaf.map (g ⁻¹ᵁ U).leTop.op ≫
+      (pullback.fst g U.ι).appLE (g ⁻¹ᵁ U) ⊤
+        (IsPullback.of_hasPullback g U.ι).toCommSq.top_le_preimage_preimage) := inferInstance
+  rw [Scheme.Hom.map_appLE] at h
+  rw [Scheme.Hom.appTop, Scheme.Hom.app_eq_appLE]
+  exact (Scheme.Hom.appLE_congr _ _ rfl (Scheme.Hom.preimage_top _) fun φ ↦ IsIso φ).mpr h
 
 end TauCeti.IsLocalRing

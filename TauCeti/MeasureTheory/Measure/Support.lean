@@ -8,14 +8,16 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
-# Topological support under continuous maps
+# Topological support under scalar multiplication and continuous maps
 
-This file identifies the support of a pushforward by a continuous map as the closure of the
-image of the source support. It also shows that pushing a measure forward along a homeomorphism
-transports its topological support onto the image of the original support.
+This file identifies the support of a nonzero scalar multiple of a measure and the support of a
+pushforward by a continuous map. It also shows that pushing a measure forward along a
+homeomorphism transports its topological support onto the image of the original support.
 
 ## Main result
 
+* `MeasureTheory.Measure.support_smul_measure` — multiplying a measure by a nonzero scalar
+  preserves its support.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
   equal to the closure of the image of the support, when the source support has full measure.
 * `MeasureTheory.Measure.support_map_eq_closure_range` — a continuous image of a full-support
@@ -27,8 +29,20 @@ transports its topological support onto the image of the original support.
 public section
 
 open Set
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Multiplying a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
+theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (c : ℝ≥0∞) (μ : Measure X) (hc : c ≠ 0) :
+    (c • μ).support = μ.support := by
+  rw [support_eq_forall_isOpen, support_eq_forall_isOpen]
+  ext x
+  simp only [Set.mem_ofPred_eq, smul_apply, smul_eq_mul]
+  constructor <;> intro h U hxU hU
+  · exact (ENNReal.mul_pos_iff.mp (h U hxU hU)).2
+  · exact ENNReal.mul_pos_iff.mpr ⟨pos_iff_ne_zero.mpr hc, h U hxU hU⟩
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
