@@ -52,11 +52,16 @@ monotone in `W`.
 
 * `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristic`: a level carries a closed
   characteristic contractible in `W`.
+* `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristicOfPeriodLE`: a level carries a closed
+  characteristic contractible in `W` of period at most `τ`.
 * `TauCeti.SmoothTwoForm.HasContractibleAlmostExistence`: the contractible almost existence
   property of a level.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul`:
+  a contractible periodic orbit of a rescaled Hamiltonian vector field, run at the compensating
+  speed, is a closed characteristic, with the period rescaled accordingly.
 * `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristic.of_hamiltonianVectorField_eq_smul`:
   closed characteristics are preserved by constant rescalings of the Hamiltonian vector field
   along the level.
@@ -122,6 +127,71 @@ theorem HasContractibleClosedCharacteristic.mono
     (⟨inclusion hW, continuous_inclusion hW⟩ : C(W, W')).comp g,
     hg.comp_right _, hgγ⟩
 
+/-! ### Closed characteristics of bounded period -/
+
+variable (σ W F c) in
+/-- The level `F⁻¹(c)` **carries a closed characteristic contractible in `W` of period at most
+`τ`**: the Hamiltonian vector field of `F` has a nonconstant `T`-periodic integral curve with
+`0 < T ≤ τ`, contained in the level, whose loop `ℝ/Tℤ → W` is contractible in `W`. A bound on the
+period is what the Hofer–Zehnder monotonicity argument produces near a level, and what a limit of
+closed characteristics on nearby levels needs. -/
+def HasContractibleClosedCharacteristicOfPeriodLE (τ : ℝ) : Prop :=
+  ∃ (T : ℝ) (γ : ℝ → M), 0 < T ∧ T ≤ τ ∧ IsMIntegralCurve γ (σ.hamiltonianVectorField F) ∧
+    Periodic γ T ∧ (∃ t, γ t ≠ γ 0) ∧ (∀ t, F (γ t) = c) ∧
+    ∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t
+
+theorem hasContractibleClosedCharacteristicOfPeriodLE_iff {τ : ℝ} :
+    σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ ↔
+      ∃ (T : ℝ) (γ : ℝ → M), 0 < T ∧ T ≤ τ ∧ IsMIntegralCurve γ (σ.hamiltonianVectorField F) ∧
+        Periodic γ T ∧ (∃ t, γ t ≠ γ 0) ∧ (∀ t, F (γ t) = c) ∧
+        ∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t :=
+  Iff.rfl
+
+/-- A level carries a closed characteristic contractible in `W` exactly when it carries one of
+some bounded period. -/
+theorem hasContractibleClosedCharacteristic_iff_exists_ofPeriodLE :
+    σ.HasContractibleClosedCharacteristic W F c ↔
+      ∃ τ, σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ := by
+  refine ⟨fun ⟨T, γ, hT, h⟩ ↦ ⟨T, T, γ, hT, le_rfl, h⟩, fun ⟨_, T, γ, hT, _, h⟩ ↦ ⟨T, γ, hT, h⟩⟩
+
+/-- A closed characteristic of bounded period is a closed characteristic. -/
+theorem HasContractibleClosedCharacteristicOfPeriodLE.hasContractibleClosedCharacteristic
+    {τ : ℝ} (h : σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ) :
+    σ.HasContractibleClosedCharacteristic W F c :=
+  hasContractibleClosedCharacteristic_iff_exists_ofPeriodLE.2 ⟨τ, h⟩
+
+/-- A closed characteristic contractible in `W` of period at most `τ` is contractible in every
+larger set and has period at most every `τ' ≥ τ`. -/
+theorem HasContractibleClosedCharacteristicOfPeriodLE.mono {τ τ' : ℝ}
+    (h : σ.HasContractibleClosedCharacteristicOfPeriodLE W F c τ) (hW : W ⊆ W') (hτ : τ ≤ τ') :
+    σ.HasContractibleClosedCharacteristicOfPeriodLE W' F c τ' := by
+  obtain ⟨T, γ, hT, hTτ, hγ, hper, hne, hlev, g, hg, hgγ⟩ := h
+  exact ⟨T, γ, hT, hTτ.trans hτ, hγ, hper, hne, hlev,
+    (⟨inclusion hW, continuous_inclusion hW⟩ : C(W, W')).comp g, hg.comp_right _, hgγ⟩
+
+/-- **Rescaling a contractible periodic orbit.** Let `γ` be a nonconstant integral curve of
+`a⁻¹ X_F`, `a ≠ 0`, lying in the level `F⁻¹(c)` and lifting a loop `ℝ/Tℤ → W`, `T > 0`, which is
+contractible in `W`. Then `t ↦ γ (t a)` is a closed characteristic of `F⁻¹(c)` contractible in `W`
+of period `T / |a|`. -/
+theorem hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul {T a : ℝ}
+    {γ : ℝ → M} (hT : 0 < T) (ha : a ≠ 0)
+    (hγ : IsMIntegralCurve γ (a⁻¹ • σ.hamiltonianVectorField F)) (hne : ∃ t, γ t ≠ γ 0)
+    (hlev : ∀ t, F (γ t) = c)
+    (hg : ∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t) :
+    σ.HasContractibleClosedCharacteristicOfPeriodLE W F c (T / |a|) := by
+  obtain ⟨t₀, ht₀⟩ := hne
+  obtain ⟨g, hg, hgγ⟩ := hg
+  obtain ⟨g', hg', hgg'⟩ := hg.exists_addCircle_comp_mul hT.ne' ha
+  have hgγ' (t : ℝ) : (g' t : M) = γ (t * a) := by rw [hgg', hgγ]
+  have hγa := hγ.comp_mul a
+  rw [smul_smul, mul_inv_cancel₀ ha, one_smul] at hγa
+  refine ⟨T / |a|, fun t ↦ γ (t * a), div_pos hT (abs_pos.2 ha), le_rfl, hγa, fun t ↦ ?_,
+    ⟨t₀ / a, ?_⟩, fun t ↦ hlev _, g', hg', hgγ'⟩
+  · simp only [← hgγ', AddCircle.coe_add_period]
+  · simpa [div_mul_cancel₀ _ ha] using ht₀
+
+/-! ### Rescaling closed characteristics -/
+
 /-- **Closed characteristics under rescaled Hamiltonian vector fields.** Let the level `F⁻¹(c)`
 lie in the level `G⁻¹(c')`, and let the Hamiltonian vector field of `G` for a second form `σ'` be
 `a` times that of `F` along `F⁻¹(c)`, for a constant `a ≠ 0`. Then every closed characteristic of
@@ -132,15 +202,11 @@ theorem HasContractibleClosedCharacteristic.of_hamiltonianVectorField_eq_smul
     (hX : ∀ x, F x = c →
       σ'.hamiltonianVectorField G x = a • σ.hamiltonianVectorField F x) :
     σ'.HasContractibleClosedCharacteristic W G c' := by
-  obtain ⟨T, γ, hT, hγ, -, ⟨t₀, ht₀⟩, hlev, g, hg, hgγ⟩ := h
-  obtain ⟨g', hg', hgg'⟩ := hg.exists_addCircle_comp_mul hT.ne' ha
-  have hgγ' (t : ℝ) : (g' t : M) = γ (t * a) := by rw [hgg', hgγ]
-  refine ⟨T / |a|, fun t ↦ γ (t * a), div_pos hT (abs_pos.2 ha), fun t ↦ ?_, fun t ↦ ?_,
-    ⟨t₀ / a, ?_⟩, fun t ↦ hG _ (hlev _), g', hg', hgγ'⟩
-  · rw [hX _ (hlev _)]
-    exact hγ.comp_mul a t
-  · simp only [← hgγ', AddCircle.coe_add_period]
-  · simpa [div_mul_cancel₀ _ ha] using ht₀
+  obtain ⟨T, γ, hT, hγ, -, hne, hlev, hg⟩ := h
+  refine (hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT ha
+    (fun t ↦ ?_) hne (fun t ↦ hG _ (hlev t)) hg).hasContractibleClosedCharacteristic
+  rw [Pi.smul_apply, hX _ (hlev t), inv_smul_smul₀ ha]
+  exact hγ t
 
 /-- **Closed characteristics under reparametrization of the energy.** If `φ` is differentiable at
 `c` with `φ'(c) ≠ 0` and `F` is differentiable along `F⁻¹(c)`, then a closed characteristic of
