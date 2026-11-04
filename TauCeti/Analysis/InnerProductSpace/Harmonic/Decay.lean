@@ -674,53 +674,17 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_add {f H : E → F}
         (4 * (2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2) + 2) *
           ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := by
   have hr : 0 < r := hρ.trans_le hρr
-  have hsubρ : ball x₀ ρ ⊆ ball x₀ r := ball_subset_ball hρr
-  have hfint : ∀ c, IntegrableOn (fun x => ‖f x - c‖ ^ 2) (ball x₀ r) μ :=
-    hf.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne
-  have hHint : ∀ c, IntegrableOn (fun x => ‖H x - c‖ ^ 2) (ball x₀ r) μ :=
-    hHm.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne
-  have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) (ball x₀ r) μ :=
-    (hf.sub hHm).integrable_norm_pow two_ne_zero
-  have hE0 : 0 ≤ ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ :=
-    setIntegral_nonneg measurableSet_ball fun _ _ => by positivity
-  have hψr : 0 ≤ ∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ :=
-    setIntegral_nonneg measurableSet_ball fun _ _ => by positivity
   have hD : (0 : ℝ) ≤ 2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2 := by positivity
-  have hq0 : 0 ≤ (ρ / r) ^ (finrank ℝ E + 2) := by positivity
   have hq1 : (ρ / r) ^ (finrank ℝ E + 2) ≤ 1 :=
     pow_le_one₀ (by positivity) ((div_le_one hr).2 hρr)
-  -- The decay of the harmonic `H` from `B_r` to `B_ρ`.
-  have hdecay := hH.setIntegral_ball_norm_sub_setAverage_sq_le (hHint (⨍ y in ball x₀ r, f y ∂μ))
-    hρ.le hρr
-  -- On `B_ρ`, compare `f` with the average of `H`, then split off `f - H`.
-  have step1 := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq
-    measure_ball_lt_top.ne (hf.integrableOn_of_subset one_le_two hsubρ measure_ball_lt_top.ne)
-    (hf.integrableOn_norm_sub_sq_of_subset hsubρ measure_ball_lt_top.ne
-      (⨍ y in ball x₀ ρ, H y ∂μ))
-  have step2 : ∫ x in ball x₀ ρ, ‖f x - ⨍ y in ball x₀ ρ, H y ∂μ‖ ^ 2 ∂μ ≤
-      2 * (∫ x in ball x₀ ρ, ‖H x - ⨍ y in ball x₀ ρ, H y ∂μ‖ ^ 2 ∂μ) +
-        2 * ∫ x in ball x₀ ρ, ‖f x - H x‖ ^ 2 ∂μ := by
-    simpa only [sub_add_sub_cancel'] using
-      setIntegral_norm_add_sq_le ((hHint _).mono_set hsubρ) (hfH.mono_set hsubρ)
-  -- On `B_r`, compare `H` with the average of `f`.
-  have step3 : ∫ x in ball x₀ r, ‖H x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ ≤
-      2 * (∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ) +
-        2 * ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := by
-    have hHf : IntegrableOn (fun x => ‖H x - f x‖ ^ 2) (ball x₀ r) μ := by
-      simpa only [norm_sub_rev (f _)] using hfH
-    simpa only [sub_add_sub_cancel', norm_sub_rev (H _)] using
-      setIntegral_norm_add_sq_le (hfint (⨍ y in ball x₀ r, f y ∂μ)) hHf
-  have step4 : ∫ x in ball x₀ ρ, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hsubρ.eventuallyLE
-  calc ∫ x in ball x₀ ρ, ‖f x - ⨍ y in ball x₀ ρ, f y ∂μ‖ ^ 2 ∂μ
-      ≤ 2 * (2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2 * (ρ / r) ^ (finrank ℝ E + 2) *
-          (2 * (∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ) +
-            2 * ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ)) +
-          2 * ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := by
-        refine step1.trans (step2.trans (add_le_add ?_ ?_))
-        · gcongr
-          exact hdecay.trans (by gcongr)
-        · gcongr
-    _ ≤ _ := by nlinarith [mul_le_mul_of_nonneg_left hq1 (mul_nonneg hD hE0)]
+  have hE0 : 0 ≤ ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
+  -- The decay of the harmonic `H` from `B_r` to `B_ρ`, measured about the average of `f`.
+  have hcomp := setIntegral_norm_sub_setAverage_sq_le_add_of_subset (ball_subset_ball hρr)
+    measure_ball_lt_top.ne hf hHm (by positivity)
+    (hH.setIntegral_ball_norm_sub_setAverage_sq_le
+      (hHm.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne
+        (⨍ y in ball x₀ r, f y ∂μ)) hρ.le hρr)
+  refine hcomp.trans ?_
+  linear_combination 4 * mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hq1 hD) hE0
 
 end InnerProductSpace.HarmonicOnNhd
