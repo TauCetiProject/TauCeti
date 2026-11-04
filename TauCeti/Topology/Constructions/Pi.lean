@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sigma
 
 /-!
 # Shrinking open sets into dense open sets of finite products
+
+The open unit cube in a finite product of copies of `ℝ` is open.
 
 Given nonempty open sets `V i` in a topological space `X` and a dense open set `U ⊆ κ → X` for a
 finite type `κ`, the sets `V i` can be shrunk to nonempty open subsets so that the box
@@ -23,6 +26,7 @@ proof of Mycielski's theorem.
 
 ## Main results
 
+* `TauCeti.isOpen_setOf_forall_abs_lt_one`: the finite-dimensional open unit cube is open.
 * `TauCeti.exists_univ_pi_subset`: shrinking along one injective tuple.
 * `TauCeti.exists_forall_univ_pi_subset`: when the index type is finite, shrinking along all
   injective tuples for finitely many dense open sets at once.
@@ -33,6 +37,14 @@ public section
 open Set Function
 
 namespace TauCeti
+
+/-- The open unit cube in a finite product of copies of `ℝ` is open. -/
+theorem isOpen_setOf_forall_abs_lt_one {ι : Type*} [Finite ι] :
+    IsOpen {z : ι → ℝ | ∀ i, |z i| < 1} := by
+  -- Express the coordinatewise bound as a finite product of open intervals.
+  rw [show {z : ι → ℝ | ∀ i, |z i| < 1} =
+      Set.univ.pi fun _ ↦ Set.Ioo (-1) 1 by ext z; simp [abs_lt]]
+  exact isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_Ioo
 
 variable {X : Type*} [TopologicalSpace X]
 

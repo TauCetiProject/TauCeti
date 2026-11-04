@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Topology.Constructions.Pi
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Matrix.Order
