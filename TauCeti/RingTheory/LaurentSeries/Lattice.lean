@@ -356,6 +356,22 @@ theorem latticeEquiv_symm_apply (a : ℤ) (f : TauCeti.LaurentSeries.lattice R V
 theorem lattice_antitone : Antitone (lattice R V) :=
   fun _ _ h ↦ Submodule.comap_mono (TauCeti.LaurentSeries.lattice_antitone h)
 
+/-- Convolution by a scalar series in `U_a(R)` sends `U_b(V)` into `U_(a+b)(V)`. -/
+theorem smul_mem_lattice {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    {a b : ℤ} {f : HahnSeries ℤ R} {g : HahnModule ℤ R V}
+    (hf : f ∈ TauCeti.LaurentSeries.lattice R R a) (hg : g ∈ lattice R V b) :
+    f • g ∈ lattice R V (a + b) := by
+  rw [mem_lattice_iff]
+  intro n hn
+  by_contra h
+  obtain ⟨i, hi, j, hj, hij⟩ := Set.mem_vadd.mp
+    (_root_.HahnModule.support_smul_subset_vadd_support h)
+  have ha : a ≤ i := le_of_not_gt fun hlt ↦
+    hi (TauCeti.LaurentSeries.mem_lattice_iff.mp hf i hlt)
+  have hb : b ≤ j := le_of_not_gt fun hlt ↦ hj ((mem_lattice_iff R V).mp hg j hlt)
+  simp only [vadd_eq_add] at hij
+  omega
+
 end Lattice
 
 section Quotient
@@ -426,6 +442,23 @@ end TauCeti.HahnModule
 namespace HahnModule
 
 open TauCeti.HahnModule
+
+/-- Multiplying by a Laurent monomial translates the lattice bound. -/
+theorem single_smul_mem_lattice_iff {R V : Type*} [Semiring R] [AddCommMonoid V]
+    [Module R V] (k a : ℤ) (f : HahnModule ℤ R V) :
+    HahnSeries.single k (1 : R) • f ∈ lattice R V (a + k) ↔ f ∈ lattice R V a := by
+  simp only [mem_lattice_iff]
+  constructor
+  · intro h n hn
+    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n)
+    rw [vadd_eq_add, one_smul] at hc
+    rw [← hc]
+    exact h (k + n) (by omega)
+  · intro h n hn
+    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n - k)
+    rw [vadd_eq_add, add_sub_cancel, one_smul] at hc
+    rw [hc]
+    exact h (n - k) (by omega)
 
 variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
 
