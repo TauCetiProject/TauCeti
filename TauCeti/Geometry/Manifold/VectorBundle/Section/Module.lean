@@ -69,13 +69,6 @@ instance instModuleContMDiffMap : Module C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯
   zero_smul s := by ext x; simp
   smul_zero f := by ext x; simp
 
-/-- Constant scalar functions recover the native ground-field action on sections. -/
-@[simp]
-theorem const_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) :
-    (ContMDiffMap.const (I := I) (I' := 𝓘(𝕜)) (M := M) (n := n) c) • s = c • s := by
-  ext x
-  exact smul_apply _ s x
-
 /-- Ground-field scalars and smooth scalar functions form a tower on sections. -/
 instance instIsScalarTowerContMDiffMap : IsScalarTower 𝕜 C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ where
   smul_assoc c f s := by ext x; simp [mul_smul]
