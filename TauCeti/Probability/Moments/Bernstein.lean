@@ -96,16 +96,8 @@ theorem mgf_sum_le_exp_of_ae_le {ι : Type*} {X : ι → Ω → ℝ} (h_indep : 
     mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t ≤
       exp ((∑ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ) * t ^ 2 / (2 * (1 - t * b / 3))) := by
   have : IsProbabilityMeasure μ := h_indep.isProbabilityMeasure
-  -- Restrict the family to `s`, where the measurability hypotheses hold.
-  have hprod : mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
-    have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀ (t := t)
-      (fun i : s ↦ (hX i i.2).aestronglyMeasurable.aemeasurable) Finset.univ
-    rw [Finset.prod_coe_sort s (fun i ↦ mgf (X i) μ t)] at h
-    rw [← h]
-    congr 1
-    ext ω
-    simp only [Finset.sum_apply]
-    exact (Finset.sum_coe_sort s (fun i ↦ X i ω)).symm
+  have hprod : mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t :=
+    h_indep.mgf_sum_of_aemeasurable fun i hi ↦ (hX i hi).aestronglyMeasurable.aemeasurable
   rw [hprod, Finset.sum_mul, Finset.sum_div, exp_sum]
   exact Finset.prod_le_prod₀ (fun i _ ↦ mgf_nonneg)
     (fun i hi ↦ (hX i hi).mgf_le_exp_of_ae_le (hmean i hi) (hb i hi) ht htb)
