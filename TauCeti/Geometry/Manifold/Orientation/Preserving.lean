@@ -128,6 +128,65 @@ theorem isOrientationReversingAt_iff_of_coe_eq [IsManifold I 1 M] [IsManifold I'
   · intro h
     exact ⟨e, he, h⟩
 
+omit [FiniteDimensional ℝ E'] [Fintype ι] in
+/-- The derivative at `x`, as the continuous linear equivalence carrying a basis `b` of the
+tangent space at `x` to the basis `b'` of the tangent space at `f x` onto which it maps `b`. -/
+private theorem exists_coe_eq_mfderiv_of_basis
+    {f : M → M'} {x : M} (b : Module.Basis ι ℝ (TangentSpace I x))
+    (b' : Module.Basis ι ℝ (TangentSpace I' (f x))) (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x),
+      (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
+        b.map e.toLinearEquiv = b' := by
+  refine ⟨(b.equiv b' (Equiv.refl ι)).toContinuousLinearEquiv,
+    ContinuousLinearMap.coe_injective <| b.ext fun i ↦ ?_, Module.Basis.eq_of_apply_eq fun i ↦ ?_⟩
+  · simp [Module.Basis.equiv_apply, hbb']
+  · simp
+
+/-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
+the tangent space at `f x`, then `f` preserves orientations at `x` exactly when `b` and `b'` are
+both positively or both negatively oriented. -/
+theorem isOrientationPreservingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I' 1 M']
+    [DecidableEq ι] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {f : M → M'} {x : M} (b : Module.Basis ι ℝ (TangentSpace I x))
+    (b' : Module.Basis ι ℝ (TangentSpace I' (f x)))
+    (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    IsOrientationPreservingAt o o' f x ↔
+      (b.orientation = o.orientationAt x ↔ b'.orientation = o'.orientationAt (f x)) := by
+  obtain ⟨e, he, hbe⟩ := exists_coe_eq_mfderiv_of_basis b b' hbb'
+  have hmap : _root_.Orientation.map ι e.toLinearEquiv b.orientation = b'.orientation := by
+    rw [← Module.Basis.orientation_map, hbe]
+  rw [isOrientationPreservingAt_iff_of_coe_eq o o' f x e he]
+  rcases (o.orientationAt x).eq_or_eq_neg b.orientation (o.finrank_tangentSpace_eq x).symm with
+    h | h
+  · rw [h, hmap, iff_true_left rfl]
+  · rw [h, _root_.Orientation.map_neg, hmap,
+      neg_eq_iff_eq_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
+      iff_false_left (Module.Ray.ne_neg_self _),
+      ← _root_.Orientation.ne_iff_eq_neg _ _ (o'.finrank_tangentSpace_eq (f x)).symm, Ne]
+
+/-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
+the tangent space at `f x`, then `f` reverses orientations at `x` exactly when `b'` is negatively
+oriented if `b` is positively oriented, and positively oriented if `b` is negatively oriented. -/
+theorem isOrientationReversingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I' 1 M']
+    [DecidableEq ι] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {f : M → M'} {x : M} (b : Module.Basis ι ℝ (TangentSpace I x))
+    (b' : Module.Basis ι ℝ (TangentSpace I' (f x)))
+    (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    IsOrientationReversingAt o o' f x ↔
+      (b.orientation = o.orientationAt x ↔ b'.orientation = -o'.orientationAt (f x)) := by
+  obtain ⟨e, he, hbe⟩ := exists_coe_eq_mfderiv_of_basis b b' hbb'
+  have hmap : _root_.Orientation.map ι e.toLinearEquiv b.orientation = b'.orientation := by
+    rw [← Module.Basis.orientation_map, hbe]
+  rw [isOrientationReversingAt_iff_of_coe_eq o o' f x e he]
+  rcases (o.orientationAt x).eq_or_eq_neg b.orientation (o.finrank_tangentSpace_eq x).symm with
+    h | h
+  · rw [h, hmap, iff_true_left rfl]
+  · rw [h, _root_.Orientation.map_neg, hmap,
+      neg_eq_iff_eq_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
+      neg_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
+      iff_false_left (Module.Ray.ne_neg_self _),
+      ← _root_.Orientation.ne_iff_eq_neg _ _ (o'.finrank_tangentSpace_eq (f x)).symm, Ne, not_not]
+
 /-- Given a continuous linear equivalence representing the derivative, every map is either
 orientation-preserving or orientation-reversing at the point. -/
 theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
