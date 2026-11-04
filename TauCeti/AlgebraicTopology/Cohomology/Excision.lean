@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.Excision
 
@@ -61,24 +62,6 @@ noncomputable section
 open CategoryTheory Limits Topology
 
 universe w v u
-
-namespace TauCeti
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-  {X : TopCat.{w}} {ι : Type*} (U : ι → Set X) (hU : ∀ i, IsOpen (U i))
-  (hcov : ⋃ i, U i = Set.univ)
-
-include hU hcov in
-/-- Restricting singular cochains to the chains subordinate to an open cover is a
-quasi-isomorphism, since the inclusion of those chains is a chain homotopy equivalence. -/
-theorem quasiIso_cochainComplexMap_smallSingularSubcomplex_ι :
-    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      (X.smallSingularSubcomplex U).ι) := by
-  have := ((smallSingularChainHomotopyEquiv R U hU hcov).linearYonedaFunctorMap k M).quasiIso_hom
-  rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, smallSingularChainHomotopyEquiv_hom] at this
-
-end TauCeti
 
 namespace TopPair
 
