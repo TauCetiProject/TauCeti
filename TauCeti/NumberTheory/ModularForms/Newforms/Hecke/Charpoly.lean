@@ -45,6 +45,8 @@ refinement needs the Galois stability of the set of newforms of nebentypus `χ`.
 
 * `TauCeti.heckeTCuspNewCharEnd_basisCharSpace`: `Tₙ f = aₙ(f) • f` on the basis.
 * `TauCeti.charpoly_heckeTCuspNewCharEnd`: `charpoly(Tₙ | S_k(N, χ)ⁿᵉʷ) = ∏_f (X - aₙ(f))`.
+* `TauCeti.isRoot_charpoly_heckeTCuspNewCharEnd`: every positive-index Fourier coefficient `aₙ(f)`
+  of a newform `f` is a root of `charpoly(Tₙ | S_k(N, f.χ)ⁿᵉʷ)`.
 * `TauCeti.trace_heckeTCuspNewCharEnd_pow`: `tr(Tₙʲ | S_k(N, χ)ⁿᵉʷ) = ∑_f aₙ(f)ʲ`, with
   `TauCeti.trace_heckeTCuspNewCharEnd` the case `j = 1`.
 * `TauCeti.isIntegral_coeff_charpoly_heckeTCuspNewCharEnd`: in weight at least two, the
@@ -123,6 +125,15 @@ theorem charpoly_heckeTCuspNewCharEnd [Fintype {f : Newform N k // f.χ = χ}] (
     (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
       (heckeTCuspNewCharEnd_basisCharSpace (χ := χ) n),
     Matrix.charpoly_diagonal]
+
+/-- Every positive-index Fourier coefficient `aₙ(f)` of a newform `f` is a root of the Hecke
+characteristic polynomial `(heckeTCuspNewCharEnd k f.χ n).charpoly` on `S_k(N, f.χ)ⁿᵉʷ`. -/
+theorem isRoot_charpoly_heckeTCuspNewCharEnd (f : Newform N k) (n : ℕ+) :
+    (heckeTCuspNewCharEnd k f.χ n).charpoly.IsRoot ((qExpansion 1 f.toCuspForm).coeff n) := by
+  have : Fintype {g : Newform N k // g.χ = f.χ} := Fintype.ofFinite _
+  rw [Polynomial.IsRoot.def, charpoly_heckeTCuspNewCharEnd, eval_prod]
+  exact Finset.prod_eq_zero (Finset.mem_univ (⟨f, rfl⟩ : {g : Newform N k // g.χ = f.χ}))
+    (by simp)
 
 /-- **The traces of the powers of `Tₙ` on `S_k(N, χ)ⁿᵉʷ` are the power sums of the Fourier
 coefficients of the newforms**: `tr(Tₙʲ) = ∑_f aₙ(f)ʲ`, over the newforms `f` of level `N`,

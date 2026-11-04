@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Charpoly
 public import TauCeti.NumberTheory.NumberField.NormalClosure
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.Minpoly
 
 /-!
 # Galois closures and Galois-group certification for newform coefficient fields
@@ -27,13 +29,13 @@ yields a complete certification pipeline for the Galois closure of `CoefficientF
 1. **Galois closure of the coefficient field.** `CoefficientFieldGaloisClosure f` is the normal
    closure of `CoefficientField f` inside `ℂ`. In weight `k ≥ 2` it is a number field, Galois over
    `ℚ`, and canonically equipped with `TauCeti.NumberField.NormalClosureData`.
-2. **Hecke characteristic-polynomial and single-coefficient generation bridge.** Every positive
-   Fourier coefficient `aₙ(f)` is a root of the Hecke characteristic polynomial
-   `(heckeTCuspNewCharEnd k f.χ n).charpoly` (`isRoot_charpoly_heckeTCuspNewCharEnd`). Whenever
-   `aₙ(f)` is annihilated by a monic polynomial `P : ℤ[X]` irreducible over `ℚ`, `minpoly ℚ aₙ(f)`
-   equals `P.map (Int.castRingHom ℚ)`, restriction gives a surjective homomorphism
-   `Gal(CoefficientFieldGaloisClosure f/ℚ) →* (P.map (Int.castRingHom ℚ)).Gal`, and when
-   `[CoefficientField f : ℚ] ≤ P.natDegree` the single coefficient `aₙ(f)` generates
+2. **Single-coefficient generation and Galois restriction.** Every positive Fourier coefficient
+   `aₙ(f)` is a root of the Hecke characteristic polynomial
+   `(heckeTCuspNewCharEnd k f.χ n).charpoly` (`TauCeti.isRoot_charpoly_heckeTCuspNewCharEnd`).
+   Whenever `aₙ(f)` is annihilated by a monic polynomial `P : ℤ[X]` irreducible over `ℚ`,
+   `minpoly ℚ aₙ(f)` equals `P.map (Int.castRingHom ℚ)`, restriction gives a surjective
+   homomorphism `Gal(CoefficientFieldGaloisClosure f/ℚ) →* (P.map (Int.castRingHom ℚ)).Gal`, and
+   when `[CoefficientField f : ℚ] ≤ P.natDegree` the single coefficient `aₙ(f)` generates
    `CoefficientField f` and this restriction upgrades to a group isomorphism.
 3. **Certificate-driven solvability and full symmetric group theorems.**
    * Any `cert : SolvabilityCertificate` with `cert.check P = true` and `cert.isSolvable = false`
@@ -50,11 +52,10 @@ yields a complete certification pipeline for the Galois closure of `CoefficientF
      single-coefficient generation (`CoefficientField_eq_adjoin_of_primeLinearQuadratic`), and
      `|Gal(CoefficientFieldGaloisClosure f/ℚ)| = d!`
      (`natCard_gal_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`).
-4. **Level-one bridge and the Ramanujan discriminant newform.** Every normalized full eigenform of
-   level one upgrades to `Newform 1 k` (`HeckeRing.GL2.Eigenform.toNewformOfLevelOne`), giving
-   `discriminantNewform : Newform 1 12` with `CoefficientField discriminantNewform = ⊥`,
-   `CoefficientFieldGaloisClosure discriminantNewform = ⊥`, and certified solvability via `τ(2) =
-   -24` and `X + 24`.
+4. **The Ramanujan discriminant newform.** Upgrading `discriminantEigenform` via
+   `HeckeRing.GL2.Eigenform.toNewformOfLevelOne` gives `discriminantNewform : Newform 1 12` with
+   `CoefficientField discriminantNewform = ⊥`, `CoefficientFieldGaloisClosure discriminantNewform =
+   ⊥`, and certified solvability via `τ(2) = -24` and `X + 24`.
 
 ## Main definitions and results
 
@@ -63,18 +64,23 @@ yields a complete certification pipeline for the Galois closure of `CoefficientF
   `TauCeti.isGalois_CoefficientFieldGaloisClosure`,
   `TauCeti.normalClosureDataCoefficientField`: number-field and Galois-closure structure in weight
   `k ≥ 2`.
-* `TauCeti.restrictCoefficientFieldGalHom`, `TauCeti.restrictCoefficientFieldGalHom_surjective`,
-  `TauCeti.galCoefficientFieldGaloisClosureEquiv`: restriction to and isomorphism with
-  `(minpoly ℚ α).Gal`.
+* `TauCeti.restrictCoefficientFieldGalHom`, `TauCeti.restrictCoefficientFieldGalHom_commutes`,
+  `TauCeti.coe_restrictCoefficientFieldGalHom_commutes`,
+  `TauCeti.restrictCoefficientFieldGalHom_surjective`,
+  `TauCeti.galCoefficientFieldGaloisClosureEquiv`,
+  `TauCeti.galCoefficientFieldGaloisClosureEquiv_commutes`,
+  `TauCeti.coe_galCoefficientFieldGaloisClosureEquiv_commutes`,
+  `TauCeti.galCoefficientFieldGaloisClosureEquiv_symm_apply`: restriction to and isomorphism with
+  `(minpoly ℚ α).Gal`, together with their action-intertwining lemmas.
 * `TauCeti.not_isSolvable_CoefficientFieldGaloisClosure_of_check_eq_true`,
   `TauCeti.isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true`,
   `TauCeti.not_isSolvable_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`,
   `TauCeti.CoefficientField_eq_adjoin_of_primeLinearQuadratic`,
   `TauCeti.natCard_gal_CoefficientFieldGaloisClosure_of_primeLinearQuadratic`: certificate-driven
   Galois-group and solvability theorems for newforms.
-* `HeckeRing.GL2.Eigenform.toNewformOfLevelOne`, `TauCeti.discriminantNewform`,
-  `TauCeti.isSolvable_CoefficientFieldGaloisClosure_discriminantNewform`: level-one bridge and
-  concrete end-to-end instantiation on `Δ`.
+* `TauCeti.discriminantNewform`,
+  `TauCeti.isSolvable_CoefficientFieldGaloisClosure_discriminantNewform`: concrete end-to-end
+  instantiation on `Δ`.
 
 ## References
 
@@ -90,34 +96,6 @@ noncomputable section
 open IntermediateField Polynomial UpperHalfPlane ModularForm CongruenceSubgroup HeckeRing.GL2
 open Matrix.SpecialLinearGroup
 open scoped MatrixGroups ModularForm
-
-/-! ### Level-one full eigenforms as newforms -/
-
-namespace HeckeRing.GL2.Eigenform
-
-/-- At level one there are no oldforms (`TauCeti.cuspFormsNew_one`), so every normalized full
-Hecke eigenform is a `Newform`. -/
-def toNewformOfLevelOne {k : ℤ} (f : Eigenform 1 k)
-    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) : Newform 1 k where
-  toEigenformAwayFromLevel := f.toEigenformAwayFromLevel
-  isNew := by rw [TauCeti.cuspFormsNew_one]; trivial
-  isNorm := by simpa using h₁
-
-/-- `toNewformOfLevelOne` preserves the underlying cusp form. -/
-@[simp]
-theorem toNewformOfLevelOne_toCuspForm {k : ℤ} (f : Eigenform 1 k)
-    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) :
-    (f.toNewformOfLevelOne h₁).toCuspForm = f.toCuspForm := by
-  simp [toNewformOfLevelOne]
-
-/-- `toNewformOfLevelOne` preserves the nebentypus character. -/
-@[simp]
-theorem toNewformOfLevelOne_χ {k : ℤ} (f : Eigenform 1 k)
-    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) :
-    (f.toNewformOfLevelOne h₁).χ = f.χ := by
-  simp [toNewformOfLevelOne]
-
-end HeckeRing.GL2.Eigenform
 
 namespace TauCeti
 
@@ -210,16 +188,7 @@ def normalClosureDataCoefficientField (f : Newform N k) (hk : 2 ≤ k) :
   { embedding := IntermediateField.inclusion (le_CoefficientFieldGaloisClosure f)
     isNormalClosure := isNormalClosure_CoefficientFieldGaloisClosure f hk }
 
-/-! ### Hecke characteristic polynomials and single-element generation -/
-
-/-- Every positive-index Fourier coefficient `aₙ(f)` of a newform `f` is a root of the Hecke
-characteristic polynomial `(heckeTCuspNewCharEnd k f.χ n).charpoly` on `S_k(N, f.χ)ⁿᵉʷ`. -/
-theorem isRoot_charpoly_heckeTCuspNewCharEnd (f : Newform N k) (n : ℕ+) :
-    (heckeTCuspNewCharEnd k f.χ n).charpoly.IsRoot ((qExpansion 1 f.toCuspForm).coeff n) := by
-  have : Fintype {g : Newform N k // g.χ = f.χ} := Fintype.ofFinite _
-  rw [Polynomial.IsRoot.def, charpoly_heckeTCuspNewCharEnd, eval_prod]
-  exact Finset.prod_eq_zero (Finset.mem_univ (⟨f, rfl⟩ : {g : Newform N k // g.χ = f.χ}))
-    (by simp)
+/-! ### Single-element generation of `CoefficientField f` -/
 
 /-- An element `α ∈ CoefficientField f` whose minimal polynomial over `ℚ` has degree at least
 `[CoefficientField f : ℚ]` generates `CoefficientField f` over `ℚ`. -/
@@ -229,7 +198,7 @@ theorem CoefficientField_eq_adjoin_of_finrank_le (f : Newform N k) (hk : 2 ≤ k
       Module.finrank ℚ (CoefficientField f) ≤ (minpoly ℚ α).natDegree) :
     CoefficientField f = ℚ⟮α⟯ := by
   have := finiteDimensional_CoefficientField f hk
-  exact (adjoin_simple_eq_of_finrank_le_natDegree_minpoly hα hdeg).symm
+  exact (TauCeti.IntermediateField.adjoin_simple_eq_of_finrank_le_natDegree_minpoly hα hdeg).symm
 
 /-- A positive-index Fourier coefficient `aₙ(f)` whose minimal polynomial over `ℚ` has degree at
 least `[CoefficientField f : ℚ]` generates `CoefficientField f` over `ℚ`. -/
@@ -243,6 +212,21 @@ theorem CoefficientField_eq_adjoin_coeff_of_finrank_le (f : Newform N k) (hk : 2
 /-! ### Restriction and isomorphism between `Gal(CoefficientFieldGaloisClosure f/ℚ)` and
 polynomial Galois groups -/
 
+/-- Every element of `CoefficientField f` (in weight `k ≥ 2`) is integral over `ℚ`. -/
+theorem isIntegral_rat_of_mem_CoefficientField (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
+    (hα : α ∈ CoefficientField f) : IsIntegral ℚ α := by
+  have := finiteDimensional_CoefficientField f hk
+  exact IntermediateField.isIntegral_iff.mp
+    (Algebra.IsIntegral.isIntegral (⟨α, hα⟩ : CoefficientField f))
+
+/-- For every `α ∈ CoefficientField f` in weight `k ≥ 2`, the normal closure of `ℚ⟮α⟯` in `ℂ`
+is contained in `CoefficientFieldGaloisClosure f`. -/
+theorem normalClosure_adjoin_le_CoefficientFieldGaloisClosure (f : Newform N k) (hk : 2 ≤ k)
+    {α : ℂ} (hα : α ∈ CoefficientField f) :
+    IntermediateField.normalClosure ℚ ℚ⟮α⟯ ℂ ≤ CoefficientFieldGaloisClosure f := by
+  have := finiteDimensional_CoefficientField f hk
+  exact normalClosure_mono_of_isAlgClosed (adjoin_simple_le_iff.mpr hα)
+
 /-- Restriction of automorphisms from `Gal(CoefficientFieldGaloisClosure f/ℚ)` to
 `(minpoly ℚ α).Gal` for any element `α ∈ CoefficientField f` in weight `k ≥ 2`. -/
 def restrictCoefficientFieldGalHom (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
@@ -250,6 +234,37 @@ def restrictCoefficientFieldGalHom (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
     Gal(CoefficientFieldGaloisClosure f/ℚ) →* (minpoly ℚ α).Gal :=
   letI := finiteDimensional_CoefficientField f hk
   restrictGalMinpolyHom hα
+
+/-- `restrictCoefficientFieldGalHom` intertwines the Galois action on
+`(minpoly ℚ α).SplittingField` with `Gal(CoefficientFieldGaloisClosure f/ℚ)` along
+`splittingFieldEquivNormalClosureOfIsAlgClosed` and the ambient normal-closure inclusion. -/
+@[simp]
+theorem restrictCoefficientFieldGalHom_commutes (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
+    (hα : α ∈ CoefficientField f) (hα_int : IsIntegral ℚ α)
+    (hle : IntermediateField.normalClosure ℚ ℚ⟮α⟯ ℂ ≤ CoefficientFieldGaloisClosure f)
+    (σ : Gal(CoefficientFieldGaloisClosure f/ℚ)) (y : (minpoly ℚ α).SplittingField) :
+    IntermediateField.inclusion hle
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int
+          (restrictCoefficientFieldGalHom f hk hα σ y)) =
+      σ (IntermediateField.inclusion hle
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int y)) := by
+  let _ := finiteDimensional_CoefficientField f hk
+  exact restrictGalMinpolyHom_commutes hα hα_int hle σ y
+
+/-- Ambient-field form of `restrictCoefficientFieldGalHom_commutes`: coerced to `ℂ`,
+`splittingFieldEquivNormalClosureOfIsAlgClosed` intertwines
+`restrictCoefficientFieldGalHom f hk hα σ` with `σ`. -/
+@[simp]
+theorem coe_restrictCoefficientFieldGalHom_commutes (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
+    (hα : α ∈ CoefficientField f) (hα_int : IsIntegral ℚ α)
+    (σ : Gal(CoefficientFieldGaloisClosure f/ℚ)) (y : (minpoly ℚ α).SplittingField) :
+    (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int
+        (restrictCoefficientFieldGalHom f hk hα σ y) : ℂ) =
+      (σ (IntermediateField.inclusion
+        (normalClosure_adjoin_le_CoefficientFieldGaloisClosure f hk hα)
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int y)) : ℂ) :=
+  congrArg Subtype.val (restrictCoefficientFieldGalHom_commutes f hk hα hα_int
+    (normalClosure_adjoin_le_CoefficientFieldGaloisClosure f hk hα) σ y)
 
 /-- **Surjectivity of Galois restriction to the minimal polynomial of any element of
 `CoefficientField f`.** -/
@@ -288,12 +303,67 @@ is isomorphic to `(minpoly ℚ α).Gal`. -/
 def galCoefficientFieldGaloisClosureEquiv (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
     (hK : CoefficientField f = ℚ⟮α⟯) :
     Gal(CoefficientFieldGaloisClosure f/ℚ) ≃* (minpoly ℚ α).Gal :=
-  letI : FiniteDimensional ℚ (CoefficientField f) := finiteDimensional_CoefficientField f hk
-  have hα_mem : α ∈ CoefficientField f := hK.symm ▸ IntermediateField.mem_adjoin_simple_self ℚ α
   have hα_int : IsIntegral ℚ α :=
-    IntermediateField.isIntegral_iff.mp
-      (Algebra.IsIntegral.isIntegral (⟨α, hα_mem⟩ : CoefficientField f))
+    isIntegral_rat_of_mem_CoefficientField f hk
+      (hK.symm ▸ IntermediateField.mem_adjoin_simple_self ℚ α)
   galNormalClosureEquivGalMinpoly hα_int hK.symm
+
+/-- `galCoefficientFieldGaloisClosureEquiv` intertwines the Galois action on
+`(minpoly ℚ α).SplittingField` with `Gal(CoefficientFieldGaloisClosure f/ℚ)` along
+`splittingFieldEquivNormalClosureOfIsAlgClosed` and the ambient normal-closure inclusion. -/
+@[simp]
+theorem galCoefficientFieldGaloisClosureEquiv_commutes (f : Newform N k) (hk : 2 ≤ k) {α : ℂ}
+    (hK : CoefficientField f = ℚ⟮α⟯) (hα_int : IsIntegral ℚ α)
+    (hle : IntermediateField.normalClosure ℚ ℚ⟮α⟯ ℂ ≤ CoefficientFieldGaloisClosure f)
+    (σ : Gal(CoefficientFieldGaloisClosure f/ℚ)) (y : (minpoly ℚ α).SplittingField) :
+    IntermediateField.inclusion hle
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int
+          (galCoefficientFieldGaloisClosureEquiv f hk hK σ y)) =
+      σ (IntermediateField.inclusion hle
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int y)) :=
+  galNormalClosureEquivGalMinpoly_commutes hα_int hK.symm hle σ y
+
+/-- Ambient-field form of `galCoefficientFieldGaloisClosureEquiv_commutes`. -/
+@[simp]
+theorem coe_galCoefficientFieldGaloisClosureEquiv_commutes (f : Newform N k) (hk : 2 ≤ k)
+    {α : ℂ} (hK : CoefficientField f = ℚ⟮α⟯) (hα_int : IsIntegral ℚ α)
+    (σ : Gal(CoefficientFieldGaloisClosure f/ℚ)) (y : (minpoly ℚ α).SplittingField) :
+    (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int
+        (galCoefficientFieldGaloisClosureEquiv f hk hK σ y) : ℂ) =
+      (σ (IntermediateField.inclusion
+        (normalClosure_adjoin_le_CoefficientFieldGaloisClosure f hk
+          (hK.symm ▸ IntermediateField.mem_adjoin_simple_self ℚ α))
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int y)) : ℂ) :=
+  congrArg Subtype.val (galCoefficientFieldGaloisClosureEquiv_commutes f hk hK hα_int
+    (normalClosure_adjoin_le_CoefficientFieldGaloisClosure f hk
+      (hK.symm ▸ IntermediateField.mem_adjoin_simple_self ℚ α)) σ y)
+
+/-- `(galCoefficientFieldGaloisClosureEquiv f hk hK).symm` intertwines `(minpoly ℚ α).Gal`
+with `Gal(CoefficientFieldGaloisClosure f/ℚ)` along
+`splittingFieldEquivNormalClosureOfIsAlgClosed` and the ambient normal-closure inclusion. -/
+@[simp]
+theorem galCoefficientFieldGaloisClosureEquiv_symm_apply (f : Newform N k) (hk : 2 ≤ k)
+    {α : ℂ} (hK : CoefficientField f = ℚ⟮α⟯) (hα_int : IsIntegral ℚ α)
+    (hle : IntermediateField.normalClosure ℚ ℚ⟮α⟯ ℂ ≤ CoefficientFieldGaloisClosure f)
+    (τ : (minpoly ℚ α).Gal) (y : (minpoly ℚ α).SplittingField) :
+    (galCoefficientFieldGaloisClosureEquiv f hk hK).symm τ
+        (IntermediateField.inclusion hle
+          (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int y)) =
+      IntermediateField.inclusion hle
+        (splittingFieldEquivNormalClosureOfIsAlgClosed hα_int (τ y)) :=
+  galNormalClosureEquivGalMinpoly_symm_apply hα_int hK.symm hle τ y
+
+/-- As a group homomorphism, `galCoefficientFieldGaloisClosureEquiv` agrees with
+`restrictCoefficientFieldGalHom`. -/
+theorem coe_galCoefficientFieldGaloisClosureEquiv_eq_restrictCoefficientFieldGalHom
+    (f : Newform N k) (hk : 2 ≤ k) {α : ℂ} (hK : CoefficientField f = ℚ⟮α⟯)
+    (hα : α ∈ CoefficientField f) :
+    (galCoefficientFieldGaloisClosureEquiv f hk hK :
+        Gal(CoefficientFieldGaloisClosure f/ℚ) →* (minpoly ℚ α).Gal) =
+      restrictCoefficientFieldGalHom f hk hα := by
+  let _ := finiteDimensional_CoefficientField f hk
+  exact coe_galNormalClosureEquivGalMinpoly_eq_restrictGalMinpolyHom
+    (isIntegral_rat_of_mem_CoefficientField f hk hα) hK.symm hα
 
 /-- When `CoefficientField f = ℚ⟮α⟯` (in weight `k ≥ 2`), `Gal(CoefficientFieldGaloisClosure f/ℚ)`
 is solvable if and only if `(minpoly ℚ α).Gal` is solvable. -/

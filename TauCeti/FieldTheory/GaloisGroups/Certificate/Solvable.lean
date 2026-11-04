@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Solvable
 public import TauCeti.FieldTheory.GaloisGroups.Certificate.Check
 public import TauCeti.FieldTheory.GaloisGroups.Symmetric.Basic
 
 import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.SpecificDegree
 import TauCeti.FieldTheory.GaloisGroups.Certificate.Examples
@@ -48,9 +46,6 @@ from `cert.check f = true` and `cert.isSolvable = false`.
 
 ## Main definitions and results
 
-* `Polynomial.HasFullSymmetricGaloisGroup.not_isSolvable`,
-  `Polynomial.HasFullSymmetricGaloisGroup.isSolvable_iff`: solvability of full symmetric polynomial
-  Galois groups.
 * `TauCeti.QuinticCertificate.isSolvable`,
   `TauCeti.QuinticCertificate.Verifies.isSolvable_iff`,
   `TauCeti.QuinticCertificate.check_isSolvable_iff`: solvability verdicts for quintic certificates.
@@ -73,32 +68,6 @@ public section
 noncomputable section
 
 open Polynomial
-
-namespace Polynomial
-
-variable {F : Type*} [Field F] {f : F[X]}
-
-/-- A polynomial of degree at least five with full symmetric Galois group has a non-solvable
-Galois group. -/
-theorem HasFullSymmetricGaloisGroup.not_isSolvable (hf : f.HasFullSymmetricGaloisGroup)
-    (hdeg : 5 ≤ f.natDegree) :
-    ¬ Group.IsSolvable f.Gal := by
-  obtain ⟨e⟩ := hf.nonempty_mulEquiv
-  intro hsolv
-  have : Group.IsSolvable (Equiv.Perm (Fin f.natDegree)) :=
-    Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective
-  refine Equiv.Perm.not_isSolvable (Fin f.natDegree) ?_ inferInstance
-  rw [Cardinal.mk_fin]
-  exact_mod_cast hdeg
-
-/-- For a polynomial with full symmetric Galois group, `f.Gal` is solvable if and only if
-`f.natDegree ≤ 4`. -/
-theorem HasFullSymmetricGaloisGroup.isSolvable_iff (hf : f.HasFullSymmetricGaloisGroup) :
-    Group.IsSolvable f.Gal ↔ f.natDegree ≤ 4 :=
-  ⟨fun hsolv ↦ not_lt.mp fun hlt ↦ hf.not_isSolvable hlt hsolv,
-    TauCeti.isSolvable_gal_of_natDegree_le_four⟩
-
-end Polynomial
 
 namespace TauCeti
 
