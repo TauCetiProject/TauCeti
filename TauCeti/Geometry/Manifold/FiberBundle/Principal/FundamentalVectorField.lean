@@ -258,6 +258,7 @@ theorem rightFundamentalVectorField_eq_zero_iff (x : ManifoldTotalSpace G P)
 
 /-- Two Lie algebra elements generate the same tangent vector at `x` if and only if they are
 equal. -/
+@[simp]
 theorem rightFundamentalVectorField_eq_iff (x : ManifoldTotalSpace G P)
     (ξ η : GroupLieAlgebra IG G) :
     rightFundamentalVectorField (IB.prod IG) ξ x =
@@ -329,20 +330,6 @@ end Vertical
 /-! ### Naturality under equivariant equivalences, pullback lifts, and trivializations -/
 
 section Naturality
-
-/-- `diffeomorphOfEquivariant` is equivariant for the right `G`-actions on the charted total
-spaces. -/
-theorem diffeomorphOfEquivariant_op_smul {Q : B → Type*}
-    [TopologicalSpace (TotalSpace G Q)] [∀ b, TopologicalSpace (Q b)] [FiberBundle G Q]
-    [∀ b, MulAction Gᵐᵒᵖ (Q b)] [PrincipalBundle G Q] [LieGroup IG n G]
-    (e : ∀ b, P b ≃ Q b) (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n
-      (ManifoldTotalSpace.fiberwiseMap (F := G) fun b => e b))
-    (g : G) (x : ManifoldTotalSpace G P) :
-    diffeomorphOfEquivariant G e he hf (op g • x) =
-      op g • diffeomorphOfEquivariant G e he hf x := by
-  obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
-  simp [he]
 
 /-- **Naturality under equivariant principal-bundle equivalences.** When `n ≠ 0`, the differential
 of `diffeomorphOfEquivariant` sends `ξ♯ x` to `ξ♯ (diffeomorphOfEquivariant x)`. -/

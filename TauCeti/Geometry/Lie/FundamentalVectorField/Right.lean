@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Action.LeftToRight
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
+public import TauCeti.Topology.Algebra.MulAction.LeftToRight
 import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!

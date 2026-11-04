@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Hom
 public import Mathlib.Algebra.Group.Action.Opposite
-public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.Algebra.Group.Equiv.Opposite
 public import Mathlib.GroupTheory.GroupAction.Defs
-public import Mathlib.Topology.Algebra.MulAction
 
 /-!
 # Converting left group actions into right actions by inversion
@@ -24,18 +23,17 @@ On `G` itself, Mathlib already endows `G` with the right-multiplication action
 left-translation action `g • p = g * p` by inversion produces `op g • p = g⁻¹ * p`. To avoid
 conflicting `MulAction Gᵐᵒᵖ` instances when both actions are in scope, the converted right action is
 placed on a type copy `TauCeti.LeftToRightAction G X`, identified with `X` by
-`TauCeti.LeftToRightAction.equiv` (and topologically by `TauCeti.LeftToRightAction.homeomorph`).
+`TauCeti.LeftToRightAction.equiv`. Topological structure and action continuity on this copy are
+developed in `TauCeti.Topology.Algebra.MulAction.LeftToRight`.
 
 Converting a left action to this right action preserves stabilizers, faithfulness, freeness, orbits,
-transitivity, Hausdorffness, and continuity of the action.
+and pretransitivity.
 
 ## Main definitions
 
 * `TauCeti.LeftToRightAction G X`: a type copy of `X` carrying the right action
   `op g • y = g⁻¹ • y` associated to a left `G`-action on `X`.
 * `TauCeti.LeftToRightAction.equiv G X`: the canonical equivalence `X ≃ LeftToRightAction G X`.
-* `TauCeti.LeftToRightAction.homeomorph G X`: the canonical homeomorphism when `X` is a topological
-  space.
 
 ## Main results
 
@@ -74,8 +72,8 @@ variable {G X : Type*}
 
 variable (G X) in
 /-- The identity equivalence from `X` to `LeftToRightAction G X`. -/
--- Lean's module system needs this body to lift `equiv` to `LeftToRightAction.diffeomorph` and
--- identify basepoints of tangent spaces across `equiv` and `equiv.symm`.
+-- Lean's module system needs this body to lift `equiv` to `LeftToRightAction.homeomorph` and
+-- `LeftToRightAction.diffeomorph`, and to identify basepoints of tangent spaces across `equiv`.
 @[expose] def equiv : X ≃ LeftToRightAction G X where
   toFun := id
   invFun := id
@@ -184,15 +182,9 @@ theorem orbit_equiv (x : X) :
 
 /-- Pretransitivity is preserved under converting a left action to a right action. -/
 theorem isPretransitive_iff :
-    MulAction.IsPretransitive Gᵐᵒᵖ (LeftToRightAction G X) ↔ MulAction.IsPretransitive G X := by
-  simp only [MulAction.isPretransitive_iff]
-  refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
-  · obtain ⟨g, hg⟩ := h (equiv G X x) (equiv G X y)
-    exact ⟨g.unop⁻¹, by simpa only [smul_equiv, Equiv.apply_eq_iff_eq] using hg⟩
-  · obtain ⟨x, rfl⟩ := (equiv G X).surjective x
-    obtain ⟨y, rfl⟩ := (equiv G X).surjective y
-    obtain ⟨g, hg⟩ := h x y
-    exact ⟨op g⁻¹, by simpa only [op_smul_equiv, inv_inv, Equiv.apply_eq_iff_eq] using hg⟩
+    MulAction.IsPretransitive Gᵐᵒᵖ (LeftToRightAction G X) ↔ MulAction.IsPretransitive G X :=
+  ⟨fun h ↦ MulAction.IsPretransitive.of_compHom (MulEquiv.inv' G).symm.toMonoidHom (h := h),
+    fun h ↦ have := h; MulAction.isPretransitive_compHom (G := X) (MulEquiv.inv' G).symm.surjective⟩
 
 instance instIsPretransitive [MulAction.IsPretransitive G X] :
     MulAction.IsPretransitive Gᵐᵒᵖ (LeftToRightAction G X) :=
@@ -205,51 +197,6 @@ theorem op_smul_equiv_self {H : Type*} [Group H] (g p : H) :
   (rfl)
 
 end Algebra
-
-section Topology
-
-variable {G X : Type*} [TopologicalSpace X]
-
-instance instTopologicalSpace : TopologicalSpace (LeftToRightAction G X) :=
-  inferInstanceAs (TopologicalSpace X)
-
-variable (G X) in
-/-- The identity homeomorphism from `X` to `LeftToRightAction G X`. -/
-def homeomorph : X ≃ₜ LeftToRightAction G X where
-  toEquiv := equiv G X
-  continuous_toFun := continuous_id
-  continuous_invFun := continuous_id
-
-@[simp]
-theorem homeomorph_toEquiv : (homeomorph G X).toEquiv = equiv G X :=
-  (rfl)
-
-@[simp]
-theorem coe_homeomorph : ⇑(homeomorph G X) = equiv G X :=
-  (rfl)
-
-@[simp]
-theorem coe_homeomorph_symm : ⇑(homeomorph G X).symm = (equiv G X).symm :=
-  (rfl)
-
-instance instT2Space [T2Space X] : T2Space (LeftToRightAction G X) :=
-  (homeomorph G X).t2Space
-
-instance instContinuousSMul [Group G] [TopologicalSpace G] [ContinuousInv G]
-    [MulAction G X] [ContinuousSMul G X] :
-    ContinuousSMul Gᵐᵒᵖ (LeftToRightAction G X) where
-  continuous_smul := by
-    have hfun : (fun p : Gᵐᵒᵖ × LeftToRightAction G X ↦ p.1 • p.2) =
-        fun p ↦ homeomorph G X (p.1.unop⁻¹ • (homeomorph G X).symm p.2) := by
-      funext ⟨g, y⟩
-      obtain ⟨x, rfl⟩ := (equiv G X).surjective y
-      simp only [coe_homeomorph, coe_homeomorph_symm, Equiv.symm_apply_apply, smul_equiv]
-    rw [hfun]
-    exact (homeomorph G X).continuous.comp
-      (((continuous_unop.comp continuous_fst).inv).smul
-        ((homeomorph G X).symm.continuous.comp continuous_snd))
-
-end Topology
 
 end LeftToRightAction
 
