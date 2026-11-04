@@ -48,9 +48,10 @@ exactly when
 
 `φ^* θ = dh`
 
-(`TauCeti.SmoothForm.isDistributionIsotropicMap_contactization_iff`). When `-dθ` is
-nondegenerate, this says that `φ` is an exact Lagrangian map with primitive `h`: an exact
-Lagrangian immersion `φ` lifts to the Legendrian immersion `(φ, h)`, its **contact lift**
+(`TauCeti.SmoothForm.isDistributionIsotropicMap_contactization_iff`). Then `φ^* dθ = 0`, so
+`φ` is isotropic for `-dθ`, with `h` a primitive of `φ^* θ`. With the injectivity and
+half-dimension conditions of a Lagrangian immersion, this gives the Legendrian correspondence: an
+exact Lagrangian immersion `φ` lifts to the Legendrian immersion `(φ, h)`, its **contact lift**
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianImmersion_contactization`),
 and conversely, for `σ = -dθ`, the projection `φ` of an isotropic map `(φ, h)` with injective
 differentials from a manifold of half the dimension of `W` is exact Lagrangian with primitive `h`

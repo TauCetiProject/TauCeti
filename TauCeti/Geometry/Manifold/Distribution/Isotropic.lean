@@ -29,6 +29,7 @@ map.
 ## Main declarations
 
 * `TauCeti.IsDistributionIsotropicMap`: maps tangent to a distribution.
+* `TauCeti.isDistributionIsotropicMap_iff_range_le`: isotropy as inclusion of the tangent images.
 * `TauCeti.IsDistributionIsotropicMap.mextDeriv_apply_mfderiv_eq_zero`: an isotropic map pulls
   back the exterior derivative of a local defining form to zero.
 -/
@@ -55,14 +56,25 @@ parametrized isotropic submanifolds.
 
 The tangent image is taken with `mfderiv`, which is `0` at points where `f` is not differentiable,
 so there the condition holds trivially. Isotropy is meaningful for differentiable maps. -/
-@[expose] def IsDistributionIsotropicMap (f : N → M) : Prop :=
+def IsDistributionIsotropicMap (f : N → M) : Prop :=
   ∀ y, LinearMap.range (mfderiv J I f y).toLinearMap ≤ D (f y)
+
+/-- A map is isotropic exactly when each tangent image lies in the distribution. -/
+theorem isDistributionIsotropicMap_iff_range_le :
+    IsDistributionIsotropicMap J D f ↔
+      ∀ y, LinearMap.range (mfderiv J I f y).toLinearMap ≤ D (f y) :=
+  Iff.rfl
+
+/-- The tangent image of an isotropic map lies in the distribution. -/
+theorem IsDistributionIsotropicMap.range_le (h : IsDistributionIsotropicMap J D f) (y : N) :
+    LinearMap.range (mfderiv J I f y).toLinearMap ≤ D (f y) :=
+  isDistributionIsotropicMap_iff_range_le.1 h y
 
 /-- A map is isotropic exactly when it sends every tangent vector into the distribution. -/
 theorem isDistributionIsotropicMap_iff :
     IsDistributionIsotropicMap J D f ↔ ∀ y v, mfderiv J I f y v ∈ D (f y) := by
-  simp only [IsDistributionIsotropicMap, LinearMap.range_le_iff_comap, Submodule.eq_top_iff',
-    Submodule.mem_comap, ContinuousLinearMap.coe_coe]
+  simp only [isDistributionIsotropicMap_iff_range_le, LinearMap.range_le_iff_comap,
+    Submodule.eq_top_iff', Submodule.mem_comap, ContinuousLinearMap.coe_coe]
 
 /-- An isotropic map sends every tangent vector into the distribution. -/
 theorem IsDistributionIsotropicMap.mfderiv_mem (h : IsDistributionIsotropicMap J D f) (y : N)
@@ -77,7 +89,8 @@ theorem _root_.Diffeomorph.isDistributionIsotropicMap_comp_diffeomorph_iff {E'' 
     {K : ModelWithCorners ℝ E'' H''} {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
     {n : ℕ∞ω} (φ : P ≃ₘ^n⟮K, J⟯ N) (hn : n ≠ 0) :
     IsDistributionIsotropicMap K D (f ∘ φ) ↔ IsDistributionIsotropicMap J D f := by
-  simp only [IsDistributionIsotropicMap, φ.range_mfderiv_comp_diffeomorph hn, Function.comp_apply]
+  simp only [isDistributionIsotropicMap_iff_range_le, φ.range_mfderiv_comp_diffeomorph hn,
+    Function.comp_apply]
   exact ⟨fun h y ↦ φ.apply_symm_apply y ▸ h (φ.symm y), fun h x ↦ h (φ x)⟩
 
 /-! ### Pulling back a local defining form -/

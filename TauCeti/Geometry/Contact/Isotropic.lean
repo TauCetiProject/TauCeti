@@ -112,7 +112,7 @@ private theorem IsDistributionIsotropicMap.finrank_comap_range
     (h : IsDistributionIsotropicMap J D f) (y : N) :
     finrank ℝ ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype) =
       finrank ℝ (LinearMap.range (mfderiv J I f y).toLinearMap) :=
-  (Submodule.comapSubtypeEquivOfLe (h y)).finrank_eq
+  (Submodule.comapSubtypeEquivOfLe (h.range_le y)).finrank_eq
 
 /-! ### Vanishing of the Levi form -/
 
