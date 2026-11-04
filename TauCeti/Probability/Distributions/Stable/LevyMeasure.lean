@@ -294,12 +294,20 @@ theorem map_abs_restrict_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| �
   have hneg : ((paretoMeasure ε α).map (fun x ↦ -x)).map abs = paretoMeasure ε α := by
     rw [Measure.map_map continuous_abs.measurable measurable_neg]
     simpa only [Function.comp_def, abs_neg] using hmap
-  rw [hset, Measure.restrict_union hd measurableSet_Ioi,
-    Measure.map_add _ _ continuous_abs.measurable, measure_union hd measurableSet_Ioi,
-    stableLevyMeasure_restrict_Iio hα hβ hε, stableLevyMeasure_restrict_Ioi hα hβ hε,
-    stableLevyMeasure_Iio hα hβ hε, stableLevyMeasure_Ioi hα hβ hε,
-    Measure.map_smul _ continuous_abs.measurable.aemeasurable,
-    Measure.map_smul _ continuous_abs.measurable.aemeasurable, hneg, hmap, add_smul]
+  calc
+    _ = ((stableLevyMeasure α β).restrict (Iio (-ε))).map abs +
+        ((stableLevyMeasure α β).restrict (Ioi ε)).map abs := by
+      rw [hset, Measure.restrict_union hd measurableSet_Ioi,
+        Measure.map_add _ _ continuous_abs.measurable]
+    _ = stableLevyMeasure α β (Iio (-ε)) • paretoMeasure ε α +
+        stableLevyMeasure α β (Ioi ε) • paretoMeasure ε α := by
+      simp only [stableLevyMeasure_restrict_Iio hα hβ hε,
+        stableLevyMeasure_restrict_Ioi hα hβ hε,
+        Measure.map_smul _ continuous_abs.measurable.aemeasurable, hneg, hmap,
+        stableLevyMeasure_Iio hα hβ hε, stableLevyMeasure_Ioi hα hβ hε]
+    _ = (stableLevyMeasure α β (Iio (-ε)) + stableLevyMeasure α β (Ioi ε)) •
+        paretoMeasure ε α := (add_smul _ _ _).symm
+    _ = _ := by rw [hset, measure_union hd measurableSet_Ioi]
 
 /-- The size of a stable Lévy jump conditioned to exceed a positive cutoff is Pareto,
 independently of the skewness parameter. -/
