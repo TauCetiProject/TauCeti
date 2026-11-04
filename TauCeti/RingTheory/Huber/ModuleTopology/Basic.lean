@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 
 import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Order.Filter.Pi
 
 /-!
 # The natural topology of a finite module over a Huber ring
@@ -54,15 +55,6 @@ namespace TauCeti.Huber.PairOfDefinition
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] {M : Type*} [AddCommGroup M] [Module A M]
 
-/-- The cubes `(Iⁿ)ᵏ` form a neighbourhood basis of `0` in a finite power of `A`. -/
-private theorem hasBasis_nhds_zero_pi (P : PairOfDefinition A) (ι : Type*) [Finite ι] :
-    (𝓝 (0 : ι → A)).HasBasis (fun _ : ℕ ↦ True)
-      fun n ↦ Set.univ.pi fun _ ↦ (P.idealImage n : Set A) := by
-  rw [nhds_pi]
-  exact P.hasBasis_nhds_zero.pi_self.to_hasBasis
-    (fun Ik _ ↦ ⟨Ik.2, trivial, fun x hx i _ ↦ hx i trivial⟩)
-    fun n _ ↦ ⟨(Set.univ, n), ⟨Set.finite_univ, trivial⟩, subset_rfl⟩
-
 /-- The linear-combination map of a finite family `v` carries the cube `(Iⁿ)ᵏ` onto
 `Iⁿ • span A₀ (range v)`. -/
 private theorem image_linearCombination_pi_idealImage (P : PairOfDefinition A) {ι : Type*}
@@ -106,8 +98,8 @@ theorem hasBasis_nhds_zero_idealOfDefinition_pow_smul (P : PairOfDefinition A)
       Submodule.span_span_of_tower]
   have hq := IsModuleTopology.isOpenQuotientMap_of_surjective hsurj
   rw [← map_zero (Fintype.linearCombination A v), ← hq.map_nhds_eq]
-  simpa only [image_linearCombination_pi_idealImage, hv] using
-    (P.hasBasis_nhds_zero_pi s).map (Fintype.linearCombination A v)
+  simpa only [nhds_pi, Pi.zero_apply, image_linearCombination_pi_idealImage, hv] using
+    (P.hasBasis_nhds_zero.pi_self_of_finite (ι := s)).map (Fintype.linearCombination A v)
 
 /-- **A spanning lattice is open.** If `M` is a finite `A`-module with its natural topology, every
 `A₀`-submodule of `M` spanning `M` over `A` is open in `M`. -/

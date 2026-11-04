@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 
+import TauCeti.Order.Filter.Pi
 import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 
 /-!
@@ -52,9 +53,7 @@ theorem hasBasis_nhds_zero_pow_smul (hI : IsAdic I)
   have hcube : (𝓝 (0 : Fin k → R)).HasBasis (fun _ : ℕ ↦ True)
       (fun n ↦ Set.univ.pi fun _ ↦ ((I ^ n : Ideal R) : Set R)) := by
     rw [nhds_pi]
-    exact hI.hasBasis_nhds_zero.pi_self.to_hasBasis
-      (fun s _ ↦ ⟨s.2, trivial, fun x hx i _ ↦ hx i trivial⟩)
-      (fun n _ ↦ ⟨(Set.univ, n), ⟨Set.finite_univ, trivial⟩, subset_rfl⟩)
+    exact hI.hasBasis_nhds_zero.pi_self_of_finite
   have himage (n : ℕ) :
       Fintype.linearCombination R v '' Set.univ.pi (fun _ ↦ ((I ^ n : Ideal R) : Set R)) =
         ((I ^ n • ⊤ : Submodule R M) : Set M) := by
