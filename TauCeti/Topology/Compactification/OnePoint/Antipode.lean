@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialU
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.UnitaryGroup
+import TauCeti.Topology.Compactification.OnePoint.Map
 
 /-!
 # The antipodal map of the projective line and the rotation group `PSU(2)`
@@ -130,13 +131,6 @@ private theorem antipode_eq_smul (x : OnePoint 𝕜) :
     · simp [hz, smul_some_eq_ite, antipodeGL_apply]
     · simp [antipode_coe hz, smul_some_eq_ite, antipodeGL_apply, hz, neg_div]
 
-omit [DecidableEq 𝕜] in
-private theorem map_conj_map_conj (x : OnePoint 𝕜) :
-    OnePoint.map (starRingEnd 𝕜) (OnePoint.map (starRingEnd 𝕜) x) = x := by
-  induction x using OnePoint.rec with
-  | infty => rfl
-  | coe z => simp
-
 /-- **Rotations commute with the antipodal map.** A special unitary matrix acts on the projective
 line by a Möbius transformation commuting with `z ↦ -1 / conj z`. -/
 theorem toPSL_smul_antipode (A : specialUnitaryGroup (Fin 2) 𝕜) (x : OnePoint 𝕜) :
@@ -145,26 +139,16 @@ theorem toPSL_smul_antipode (A : specialUnitaryGroup (Fin 2) 𝕜) (x : OnePoint
     antipode_eq_smul, map_smul, smul_smul, smul_smul]
   congr 1
   -- For a special unitary `A`, `conj A` is the adjugate transpose of `A`.
-  have hstar := specialUnitaryGroup.star_eq_adjugate A
-  have h00 : starRingEnd 𝕜 ((A : Matrix (Fin 2) (Fin 2) 𝕜) 0 0) =
-      (A : Matrix (Fin 2) (Fin 2) 𝕜) 1 1 := by
-    simpa [adjugate_fin_two] using congrFun (congrFun hstar 0) 0
-  have h10 : starRingEnd 𝕜 ((A : Matrix (Fin 2) (Fin 2) 𝕜) 1 0) =
-      -(A : Matrix (Fin 2) (Fin 2) 𝕜) 0 1 := by
-    simpa [adjugate_fin_two] using congrFun (congrFun hstar 0) 1
-  have h01 : starRingEnd 𝕜 ((A : Matrix (Fin 2) (Fin 2) 𝕜) 0 1) =
-      -(A : Matrix (Fin 2) (Fin 2) 𝕜) 1 0 := by
-    simpa [adjugate_fin_two] using congrFun (congrFun hstar 1) 0
-  have h11 : starRingEnd 𝕜 ((A : Matrix (Fin 2) (Fin 2) 𝕜) 1 1) =
-      (A : Matrix (Fin 2) (Fin 2) 𝕜) 0 0 := by
-    simpa [adjugate_fin_two] using congrFun (congrFun hstar 1) 1
+  have hstar := fun i j => congrFun (congrFun (specialUnitaryGroup.star_eq_adjugate A) i) j
+  simp only [star_apply, RCLike.star_def, adjugate_fin_two] at hstar
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, antipodeGL_apply, h00, h01, h10, h11]
+    simp [Matrix.mul_apply, Fin.sum_univ_two, antipodeGL_apply, hstar]
 
 /-- **`PSU(2)` is the group of Möbius transformations commuting with the antipodal map.** Over
 `ℝ` or `ℂ`, an element of `PSL(2, 𝕜)` lies in the range of `SU(2)` exactly when it commutes with
-`z ↦ -1 / conj z`. For the Riemann sphere these are the rotations of the round sphere. -/
+`z ↦ -1 / conj z`. Classically, for the Riemann sphere these are the rotations of the round
+sphere; that identification is not proved here. -/
 theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     g ∈ (specialUnitaryGroup.toPSL : specialUnitaryGroup (Fin 2) 𝕜 →* _).range ↔
       ∀ x : OnePoint 𝕜, g • antipode x = antipode (g • x) := by
@@ -178,7 +162,8 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     intro y
     have hy := h (OnePoint.map (starRingEnd 𝕜) y)
     rw [pslMk_smul, pslMk_smul, antipode_eq_smul, antipode_eq_smul, map_smul,
-      map_conj_map_conj, smul_smul, smul_smul] at hy
+      TauCeti.onePointMap_involutive (f := starRingEnd 𝕜) starRingEnd_self_apply, smul_smul,
+      smul_smul] at hy
     rw [mul_smul, ← hy, inv_smul_smul]
   -- Hence they differ by a scalar matrix.
   have hcen := TauCeti.mem_center_of_smul_zero_one_infty_eq_self (hfix _) (hfix _) (hfix _)
@@ -200,9 +185,15 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     have e01 := e 0 1
     have e10 := e 1 0
     have e11 := e 1 1
-    simp at e00 e01 e10 e11
+    simp only [Fin.isValue, of_apply, cons_val', cons_val_zero, cons_val_fin_one, zero_mul,
+      cons_val_one, neg_mul, one_mul, zero_add, mul_zero, mul_one, diagonal_apply_eq, mul_neg,
+      add_zero, ne_eq, one_ne_zero, not_false_eq_true, diagonal_apply_ne, zero_ne_one, neg_inj]
+      at e00 e01 e10 e11
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+    fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, Matrix.mul_apply, star_apply,
+        RCLike.star_def, Fin.sum_univ_two, scalar_apply, diagonal_apply_eq, ne_eq, zero_ne_one,
+        one_ne_zero, not_false_eq_true, diagonal_apply_ne]
     · linear_combination A 0 0 * e10 - A 1 0 * e00 + (u : 𝕜) * hdet
     · linear_combination A 0 1 * e10 - A 1 1 * e00
     · linear_combination A 0 0 * e11 + A 1 0 * e01

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import Mathlib.Topology.Maps.Strict.Group
 
 /-!
 # The projective special unitary group as a compact subgroup of `PSL(n, 𝕜)`
@@ -24,7 +25,7 @@ a compact and closed subgroup of `PSL(n, 𝕜)`, and the continuous bijection fr
 kernel of `toPSL` onto `PSU(n)` is a homeomorphism
 (`Matrix.specialUnitaryGroup.quotientKerToPSLContinuousMulEquiv`). For `n = 2` that kernel is
 `{1, -1}` (`Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`), so `PSU(2) ≃ₜ* SU(2) ⧸ {±1}`; for
-`𝕜 = ℂ` this is the compact group of rotations of the Riemann sphere.
+`𝕜 = ℂ` this is classically the group of rotations of the Riemann sphere, which is not proved here.
 
 ## Main declarations
 
@@ -62,14 +63,6 @@ theorem continuous_toPSL :
     Continuous (toPSL : specialUnitaryGroup n α →* ProjectiveSpecialLinearGroup n α) :=
   (QuotientGroup.continuous_mk.comp continuous_toSL).congr fun A => (toPSL_apply A).symm
 
-/-- The bijection from `SU(n)` modulo the kernel of `toPSL` onto its range `PSU(n)` is
-continuous. -/
-theorem continuous_quotientKerEquivRange_toPSL :
-    Continuous (QuotientGroup.quotientKerEquivRange
-      (toPSL : specialUnitaryGroup n α →* ProjectiveSpecialLinearGroup n α)) := by
-  refine (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr ?_
-  exact (continuous_toPSL.subtype_mk fun A => ⟨A, rfl⟩).congr fun A => rfl
-
 end TopologicalRing
 
 section RCLike
@@ -93,16 +86,14 @@ theorem isClosed_range_toPSL :
 
 /-- **`PSU(n)` as a quotient of `SU(n)`.** Over `ℝ` or `ℂ`, `SU(n)` modulo the kernel of
 `toPSL` is isomorphic as a topological group to the projective special unitary group `PSU(n)`,
-the range of `toPSL` with the topology induced from `PSL(n, 𝕜)`: the continuous bijection from a
-compact space to a Hausdorff space is a homeomorphism. For `n = 2` the kernel is `{1, -1}`
+the range of `toPSL` with the topology induced from `PSL(n, 𝕜)`: a continuous map from a
+compact space to a Hausdorff space is closed, hence strict. For `n = 2` the kernel is `{1, -1}`
 (`Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`). -/
 noncomputable def quotientKerToPSLContinuousMulEquiv :
     specialUnitaryGroup n 𝕜 ⧸ (toPSL : specialUnitaryGroup n 𝕜 →* _).ker ≃ₜ*
-      (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range where
-  toMulEquiv := QuotientGroup.quotientKerEquivRange toPSL
-  continuous_toFun := continuous_quotientKerEquivRange_toPSL
-  continuous_invFun := (continuous_quotientKerEquivRange_toPSL.homeoOfEquivCompactToT2
-    (f := (QuotientGroup.quotientKerEquivRange toPSL).toEquiv)).symm.continuous
+      (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range :=
+  ContinuousMulEquiv.quotientKerEquivRange (f := toPSL)
+    (continuous_toPSL.isClosedMap.isStrictMap continuous_toPSL)
 
 @[simp]
 theorem coe_quotientKerToPSLContinuousMulEquiv_mk (A : specialUnitaryGroup n 𝕜) :

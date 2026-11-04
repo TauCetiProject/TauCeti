@@ -36,8 +36,8 @@ sphere.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
 * `Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff`: over `ℝ` or `ℂ`, the class of a matrix of
   `SL(n)` lies in `PSU(n)` exactly when the matrix is unitary.
-* `Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`: over `ℝ` or `ℂ`, the kernel of
-  `SU(2) → PSL(2)` is `{1, -1}`.
+* `Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`: over a ring without zero divisors, such as
+  `ℝ` or `ℂ`, the kernel of `SU(2) → PSL(2)` is `{1, -1}`.
 
 ## References
 
@@ -97,6 +97,22 @@ theorem ker_toPSL :
       (Subgroup.center (SpecialLinearGroup n α)).comap toSL := by
   rw [toPSL, ← MonoidHom.comap_ker, QuotientGroup.ker_mk']
 
+/-- Over a ring without zero divisors, such as `ℝ` or `ℂ`, the kernel of `SU(2) → PSL(2)` is
+`{1, -1}`, so that `PSU(2) = SU(2) ⧸ {±1}`. -/
+theorem mem_ker_toPSL_iff [NoZeroDivisors α] {A : specialUnitaryGroup (Fin 2) α} :
+    A ∈ (toPSL : specialUnitaryGroup (Fin 2) α →* _).ker ↔
+      (A : Matrix (Fin 2) (Fin 2) α) = 1 ∨ (A : Matrix (Fin 2) (Fin 2) α) = -1 := by
+  rw [ker_toPSL, Subgroup.mem_comap, SpecialLinearGroup.mem_center_iff]
+  constructor
+  · rintro ⟨r, hr, hA⟩
+    have hr' : r * r = 1 := by simpa [sq] using hr
+    rcases mul_self_eq_one_iff.mp hr' with rfl | rfl
+    · exact Or.inl (by rw [← coe_toSL A, ← hA, map_one])
+    · exact Or.inr (by rw [← coe_toSL A, ← hA, map_neg, map_one])
+  · rintro (hA | hA)
+    · exact ⟨1, by simp, by rw [map_one, coe_toSL, hA]⟩
+    · exact ⟨-1, by norm_num, by rw [map_neg, map_one, coe_toSL, hA]⟩
+
 section RCLike
 
 variable {𝕜 : Type*} [RCLike 𝕜]
@@ -130,22 +146,6 @@ theorem mk_mem_range_toPSL_iff {A : SpecialLinearGroup n 𝕜} :
     center_le_range_toSL (QuotientGroup.eq.mp hB)
   rw [← mem_range_toSL_iff, show A = toSL B * ((toSL B)⁻¹ * A) by group]
   exact mul_mem ⟨B, rfl⟩ hcen
-
-/-- Over `ℝ` or `ℂ`, the kernel of `SU(2) → PSL(2)` is `{1, -1}`, so that
-`PSU(2) = SU(2) ⧸ {±1}`. -/
-theorem mem_ker_toPSL_iff {A : specialUnitaryGroup (Fin 2) 𝕜} :
-    A ∈ (toPSL : specialUnitaryGroup (Fin 2) 𝕜 →* _).ker ↔
-      (A : Matrix (Fin 2) (Fin 2) 𝕜) = 1 ∨ (A : Matrix (Fin 2) (Fin 2) 𝕜) = -1 := by
-  rw [ker_toPSL, Subgroup.mem_comap, SpecialLinearGroup.mem_center_iff]
-  constructor
-  · rintro ⟨r, hr, hA⟩
-    have hr' : r * r = 1 := by simpa [sq] using hr
-    rcases mul_self_eq_one_iff.mp hr' with rfl | rfl
-    · exact Or.inl (by rw [← coe_toSL A, ← hA, map_one])
-    · exact Or.inr (by rw [← coe_toSL A, ← hA, map_neg, map_one])
-  · rintro (hA | hA)
-    · exact ⟨1, by simp, by rw [map_one, coe_toSL, hA]⟩
-    · exact ⟨-1, by norm_num, by rw [map_neg, map_one, coe_toSL, hA]⟩
 
 end RCLike
 

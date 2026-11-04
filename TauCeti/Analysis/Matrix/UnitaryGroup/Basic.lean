@@ -75,9 +75,9 @@ theorem mem_unitaryGroup_of_star_mul_self_eq_scalar {𝕜 : Type*} [RCLike 𝕜]
   -- Its `card n`-th power is `‖det A‖ ^ 2 = 1`.
   have hpow : (∑ k, ‖A k i‖ ^ 2) ^ Fintype.card n = 1 := by
     have hd := congrArg det h
-    rw [det_mul, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def, RCLike.conj_mul,
-      hdet, scalar_apply, det_diagonal, Finset.prod_const, Finset.card_univ, hu,
-      RCLike.ofReal_one, one_pow] at hd
+    simp only [det_mul, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def,
+      RCLike.conj_mul, hdet, RCLike.ofReal_one, one_pow, scalar_apply, det_diagonal,
+      Finset.prod_const, Finset.card_univ, hu] at hd
     exact_mod_cast hd.symm
   rw [hu, (pow_eq_one_iff_of_nonneg (a := ∑ k, ‖A k i‖ ^ 2)
     (Finset.sum_nonneg fun _ _ => sq_nonneg _)
