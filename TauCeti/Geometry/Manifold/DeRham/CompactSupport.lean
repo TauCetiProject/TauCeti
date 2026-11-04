@@ -112,6 +112,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 2 M]
 
+/-- The exterior derivative of a compactly supported smooth form is compactly supported. -/
+theorem mextDerivₗ_mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ compactlySupportedForms I M k) :
+    mextDerivₗ I k φ ∈ compactlySupportedForms I M (k + 1) := by
+  rw [mem_compactlySupportedForms, mextDerivₗ_apply]
+  exact RoughForm.isCompact_tsupport_mextDeriv hφ
+
 namespace compactlySupportedForms
 
 variable (M) in
@@ -119,9 +126,8 @@ variable (M) in
 supports. -/
 def mextDerivₗ (k : ℕ) :
     compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedForms I M (k + 1) :=
-  (TauCeti.mextDerivₗ I (M := M) (F := ℝ) k).restrict fun φ hφ ↦ by
-    rw [mem_compactlySupportedForms, mextDerivₗ_apply]
-    exact RoughForm.isCompact_tsupport_mextDeriv hφ
+  (TauCeti.mextDerivₗ I (M := M) (F := ℝ) k).restrict fun _ ↦
+    mextDerivₗ_mem_compactlySupportedForms I
 
 /-- The exterior derivative of a compactly supported form is its exterior derivative as a smooth
 form. -/

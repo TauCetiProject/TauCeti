@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
-# The codifferential of an oriented Riemannian manifold
+# The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
 
 On an oriented Riemannian manifold `M` of dimension `m`, the codifferential of smooth real forms
 of degree `j = k + 1` is
@@ -37,10 +37,19 @@ The proof is Stokes' theorem for `α ∧ ⋆β`, whose exterior derivative is
 The codifferential does not depend on the orientation, since reversing it negates both stars,
 it squares to zero, and it does not enlarge supports.
 
+The Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms (only `d*d` in degree `0` and only
+`dd*` in the top degree) is the second-order operator of Hodge theory. By Green's formulas
+`∫_M ⟨d*dα, β⟩ vol = ∫_M ⟨dα, dβ⟩ vol` and
+`∫_M ⟨dd*α, β⟩ vol = ∫_M ⟨d*α, d*β⟩ vol` it is formally self-adjoint and nonnegative, and a
+compactly supported form is harmonic exactly when it is closed and coclosed. The sign identities
+`⋆d*β = (-1) ^ (k + 1) d⋆β` and `⋆dα = (-1) ^ (k + 1) d*⋆α` show that `Δ` commutes with the Hodge
+star.
+
 ## Main definitions
 
 * `TauCeti.SmoothForm.codifferential`: the codifferential `d* = (-1) ^ (m (k + 2) + 1) ⋆ d ⋆` of
   smooth `(k + 1)`-forms.
+* `TauCeti.SmoothForm.hodgeLaplacian`: the Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms.
 
 ## Main results
 
@@ -56,6 +65,17 @@ it squares to zero, and it does not enlarge supports.
   `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff`: the
   pairing is positive definite, `∫_M |α|² vol ≥ 0` with equality only for `α = 0` when `α` is
   smooth and compactly supported.
+* `TauCeti.SmoothForm.hodgeStar_mextDeriv`: `⋆dα = (-1) ^ (k + 1) d*⋆α`.
+* `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
+* `TauCeti.SmoothForm.integralTopForm_inner_codifferential_mextDeriv`,
+  `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_codifferential`: Green's formulas for `d*d`
+  and `dd*`.
+* `TauCeti.SmoothForm.integralTopForm_inner_hodgeLaplacian_eq_inner_hodgeLaplacian`: `Δ` is
+  formally self-adjoint, `∫_M ⟨Δα, β⟩ vol = ∫_M ⟨α, Δβ⟩ vol`.
+* `TauCeti.SmoothForm.integralTopForm_inner_hodgeLaplacian_self_nonneg`: `0 ≤ ∫_M ⟨Δα, α⟩ vol`.
+* `TauCeti.SmoothForm.hodgeLaplacian_eq_zero_iff`,
+  `TauCeti.SmoothForm.hodgeLaplacian_eq_zero_iff_mextDeriv_eq_zero`: a compactly supported form
+  is harmonic exactly when it is closed and coclosed.
 
 ## References
 
@@ -155,6 +175,14 @@ theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
   refine (RoughForm.tsupport_mextDeriv_subset _).trans ?_
   exact RoughForm.tsupport_hodgeStar_subset o hkl β.1
 
+/-- The codifferential of a compactly supported form is compactly supported. -/
+theorem codifferential_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) {β : SmoothForm I M ℝ (k + 1)}
+    (hβ : β ∈ compactlySupportedForms I M (k + 1)) :
+    codifferential o hkl β ∈ compactlySupportedForms I M k :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hβ).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (tsupport_codifferential_subset o hkl β))
+
 /-- **Green's formula for the codifferential**: for smooth forms `α` of degree `k` and `β` of
 degree `k + 1` on an oriented Riemannian manifold of dimension `k + l + 1`,
 `d (α ∧ ⋆β) = ⟨dα, β⟩ vol - ⟨α, d*β⟩ vol`, where `⟨·, ·⟩` is the pointwise inner product of forms
@@ -189,7 +217,131 @@ theorem mextDeriv_wedge_hodgeStar (o : Manifold.Orientation I M (Fin (k + l + 1)
   linear_combination (alternatingFormInner (TangentSpace I x) k (α.1 x)
     ((codifferential o _ β).1 x) * riemannianVolumeForm o x v) * hsign
 
-/-! ### Positivity of the `L²` pairing -/
+/-- `⋆dα = (-1) ^ (k + 1) d*⋆α` for a `k`-form `α`: the Hodge star of the exterior derivative is,
+up to sign, the codifferential of the Hodge star. -/
+theorem hodgeStar_mextDeriv (o : Manifold.Orientation I M (Fin m)) (hkl : k + (l + 1) = m)
+    (hlk : l + 1 + k = m) (hkl' : k + 1 + l = m) (α : SmoothForm I M ℝ k) :
+    hodgeStar o hkl' (mextDerivₗ I k α) =
+      (-1 : ℝ) ^ (k + 1) • codifferential o hlk (hodgeStar o hkl α) := by
+  have hsign : (-1 : ℝ) ^ (k + 1) * (-1) ^ (m * (l + 2) + 1) * (-1) ^ (k * (l + 1)) = 1 := by
+    subst hkl
+    rw [← pow_add, ← pow_add]
+    refine Even.neg_one_pow ?_
+    simp only [Nat.even_add, Nat.even_mul, Nat.even_add_one]
+    tauto
+  rw [codifferential_apply o hlk hkl', hodgeStar_hodgeStar, map_smul, map_smul, smul_smul,
+    smul_smul, hsign, one_smul]
+
+/-! ### The Hodge Laplacian -/
+
+/-- The Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms on an oriented Riemannian manifold of
+dimension `m = k + l`. In degree `0` only `d*d` is present, and in the top degree `k = m` only
+`dd*` is present, since there are no forms of negative degree and the `(m + 1)`-forms vanish; on
+a zero-dimensional manifold it is zero. This is the nonnegative sign convention:
+`0 ≤ ∫_M ⟨Δα, α⟩ vol` (`TauCeti.SmoothForm.integralTopForm_inner_hodgeLaplacian_self_nonneg`). -/
+def hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) :
+    ∀ {k l : ℕ}, k + l = m → SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ k
+  | 0, 0, _ => 0
+  | 0, l + 1, hkl => codifferential o (show 0 + 1 + l = m by omega) ∘ₗ mextDerivₗ I 0
+  | k + 1, 0, hkl => mextDerivₗ I k ∘ₗ codifferential o hkl
+  | k + 1, l + 1, hkl =>
+    codifferential o (show k + 1 + 1 + l = m by omega) ∘ₗ mextDerivₗ I (k + 1) +
+      mextDerivₗ I k ∘ₗ codifferential o hkl
+
+/-- On a zero-dimensional manifold the Hodge Laplacian of functions is zero. -/
+@[simp]
+theorem hodgeLaplacian_zero_zero (o : Manifold.Orientation I M (Fin m)) (hkl : 0 + 0 = m)
+    (f : SmoothForm I M ℝ 0) : hodgeLaplacian o hkl f = 0 :=
+  (rfl)
+
+/-- In positive dimension the Hodge Laplacian of functions is `Δf = d*df`. -/
+theorem hodgeLaplacian_zero_add_one (o : Manifold.Orientation I M (Fin m))
+    (hkl : 0 + (l + 1) = m) (hkl' : 0 + 1 + l = m) (f : SmoothForm I M ℝ 0) :
+    hodgeLaplacian o hkl f = codifferential o hkl' (mextDerivₗ I 0 f) :=
+  (rfl)
+
+/-- In the top degree the Hodge Laplacian is `Δα = dd*α`. -/
+theorem hodgeLaplacian_add_one_zero (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + 0 = m) (α : SmoothForm I M ℝ (k + 1)) :
+    hodgeLaplacian o hkl α = mextDerivₗ I k (codifferential o hkl α) :=
+  (rfl)
+
+/-- Strictly between degree `0` and the top degree the Hodge Laplacian is `Δα = d*dα + dd*α`. -/
+theorem hodgeLaplacian_add_one_add_one (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + (l + 1) = m) (hkl' : k + 1 + 1 + l = m) (α : SmoothForm I M ℝ (k + 1)) :
+    hodgeLaplacian o hkl α =
+      codifferential o hkl' (mextDerivₗ I (k + 1) α) + mextDerivₗ I k (codifferential o hkl α) :=
+  (rfl)
+
+/-- The Hodge Laplacian does not depend on the orientation. -/
+@[simp]
+theorem hodgeLaplacian_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
+    hodgeLaplacian (-o) hkl = hodgeLaplacian o hkl := by
+  ext α : 1
+  rcases k with _ | k <;> rcases l with _ | l
+  · simp
+  · simp [hodgeLaplacian_zero_add_one _ hkl (by omega)]
+  · simp [hodgeLaplacian_add_one_zero]
+  · simp [hodgeLaplacian_add_one_add_one _ hkl (by omega)]
+
+/-- The Hodge Laplacian does not enlarge supports. -/
+theorem tsupport_hodgeLaplacian_subset (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α : SmoothForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (hodgeLaplacian o hkl α).1 ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α.1 := by
+  -- Both `d*d` and `dd*` do not enlarge supports.
+  have hup {k l : ℕ} (hkl : k + 1 + l = m) (α : SmoothForm I M ℝ k) :
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (codifferential o hkl (mextDerivₗ I k α)).1 ⊆
+        _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α.1 := by
+    refine (tsupport_codifferential_subset o hkl _).trans ?_
+    rw [mextDerivₗ_apply]
+    exact RoughForm.tsupport_mextDeriv_subset _
+  have hdown {k l : ℕ} (hkl : k + 1 + l = m) (α : SmoothForm I M ℝ (k + 1)) :
+      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] ℝ) (mextDerivₗ I k (codifferential o hkl α)).1 ⊆
+        _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] ℝ) α.1 := by
+    rw [mextDerivₗ_apply]
+    exact (RoughForm.tsupport_mextDeriv_subset _).trans (tsupport_codifferential_subset o hkl α)
+  rcases k with _ | k <;> rcases l with _ | l
+  · rw [hodgeLaplacian_zero_zero, ← zero_smul ℝ α, Submodule.coe_smul]
+    exact RoughForm.tsupport_smul_subset _ _
+  · exact hup _ α
+  · exact hdown hkl α
+  · rw [hodgeLaplacian_add_one_add_one o hkl (by omega), Submodule.coe_add]
+    exact (tsupport_add _ _).trans (union_subset (hup _ α) (hdown hkl α))
+
+/-- **The Hodge star commutes with the Hodge Laplacian**: `⋆Δα = Δ⋆α`. -/
+theorem hodgeStar_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (hlk : l + k = m) (α : SmoothForm I M ℝ k) :
+    hodgeStar o hkl (hodgeLaplacian o hkl α) = hodgeLaplacian o hlk (hodgeStar o hkl α) := by
+  -- `⋆d*d = dd*⋆` and `⋆dd* = d*d⋆`, by the sign identities for `⋆d` and `⋆d*`.
+  have hsq (k : ℕ) : ((-1 : ℝ) ^ (k + 1)) * (-1) ^ (k + 1) = 1 := by
+    rw [← mul_pow]
+    norm_num
+  have hup {k l : ℕ} (hkl : k + 1 + l = m) (hkl' : k + (l + 1) = m) (hlk : l + 1 + k = m)
+      (α : SmoothForm I M ℝ k) :
+      hodgeStar o hkl' (codifferential o hkl (mextDerivₗ I k α)) =
+        mextDerivₗ I l (codifferential o hlk (hodgeStar o hkl' α)) := by
+    rw [hodgeStar_codifferential o hkl hkl', hodgeStar_mextDeriv o hkl' hlk hkl, map_smul,
+      smul_smul, hsq, one_smul]
+  have hdown {k l : ℕ} (hkl : k + 1 + l = m) (hkl' : k + (l + 1) = m) (hlk : l + 1 + k = m)
+      (α : SmoothForm I M ℝ (k + 1)) :
+      hodgeStar o hkl (mextDerivₗ I k (codifferential o hkl α)) =
+        codifferential o hlk (mextDerivₗ I l (hodgeStar o hkl α)) := by
+    rw [hodgeStar_mextDeriv o hkl' hlk hkl, hodgeStar_codifferential o hkl hkl', map_smul,
+      smul_smul, hsq, one_smul]
+  rcases k with _ | k <;> rcases l with _ | l
+  · simp
+  · rw [hodgeLaplacian_zero_add_one o hkl (by omega), hodgeLaplacian_add_one_zero,
+      hup (by omega) hkl hlk]
+  · rw [hodgeLaplacian_add_one_zero, hodgeLaplacian_zero_add_one o hlk (by omega),
+      hdown (l := 0) hkl (by omega) (by omega)]
+  · rw [hodgeLaplacian_add_one_add_one o hkl (by omega),
+      hodgeLaplacian_add_one_add_one o hlk (by omega), map_add,
+      hup (k := k + 1) (l := l) (by omega) (by omega) (by omega),
+      hdown (k := k) (l := l + 1) (by omega) (by omega) (by omega)]
+    exact add_comm _ _
+
+/-! ### The `L²` pairing -/
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- On a positively oriented tangent basis, the top form `|α|² vol` takes a nonnegative value. -/
@@ -243,6 +395,51 @@ theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero
     simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
     exact integralTopForm_zero o
 
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The `L²` pairing of forms is symmetric: `∫_M ⟨α, β⟩ vol = ∫_M ⟨β, α⟩ vol`. -/
+theorem _root_.TauCeti.RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
+    (o : Manifold.Orientation I M (Fin m)) (α β : RoughForm I M ℝ k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α x) (β x) •
+      riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β x) (α x) •
+        riemannianVolumeForm o x) := by
+  congr 1
+  funext x
+  rw [alternatingFormInner_comm]
+
+/-- The `L²` pairing of forms is additive in its first argument,
+`∫_M ⟨α + β, γ⟩ vol = ∫_M ⟨α, γ⟩ vol + ∫_M ⟨β, γ⟩ vol`, when `α` and `β` or `γ` are compactly
+supported. -/
+theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α β γ : SmoothForm I M ℝ k)
+    (h : (α ∈ compactlySupportedForms I M k ∧ β ∈ compactlySupportedForms I M k) ∨
+      γ ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((α + β).1 x) (γ.1 x) •
+      riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (γ.1 x) •
+        riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (γ.1 x) •
+        riemannianVolumeForm o x) := by
+  -- Each top form `⟨φ, γ⟩ vol` is compactly supported, read through the symmetric pairing.
+  have hc (φ : SmoothForm I M ℝ k) (hφ : φ ∈ compactlySupportedForms I M k ∨
+      γ ∈ compactlySupportedForms I M k) :
+      IsCompact (_root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
+        (fun x ↦ alternatingFormInner (TangentSpace I x) k (φ.1 x) (γ.1 x) •
+          riemannianVolumeForm o x)) := by
+    rcases hφ with hφ | hγ
+    · exact RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o φ.1 γ.1
+        ((mem_compactlySupportedForms I).1 hφ)
+    · have := RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o γ.1 φ.1
+        ((mem_compactlySupportedForms I).1 hγ)
+      simp_rw [alternatingFormInner_comm (γ.1 _)] at this
+      exact this
+  rw [← integralTopForm_add o ((isSmoothForm_inner_smul_riemannianVolumeForm o hkl α γ).of_le
+      bot_le) ((isSmoothForm_inner_smul_riemannianVolumeForm o hkl β γ).of_le bot_le)
+      (hc α (h.imp_left And.left)) (hc β (h.imp_left And.right))]
+  congr 1
+  funext x
+  rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
+
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 
 /-- **The codifferential is the formal adjoint of the exterior derivative**: on an oriented
@@ -280,6 +477,169 @@ theorem integralTopForm_inner_mextDeriv_eq_inner_codifferential
   all_goals rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl']
   · exact (mem_compactlySupportedForms I).mp ((cast_mem_compactlySupportedForms_iff I hkl').mpr hδ)
   · exact (isSmoothForm _).of_le bot_le
+
+/-! ### Green's formulas and positivity of the Hodge Laplacian -/
+
+/-- **Green's formula for `d*d`**: on an oriented boundaryless Riemannian manifold,
+`∫_M ⟨d*dα, β⟩ vol = ∫_M ⟨dα, dβ⟩ vol` for smooth `k`-forms `α` and `β`, one of them compactly
+supported. -/
+theorem integralTopForm_inner_codifferential_mextDeriv (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (α β : SmoothForm I M ℝ k)
+    (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((codifferential o hkl (mextDerivₗ I k α)).1 x) (β.1 x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((mextDerivₗ I k α).1 x) ((mextDerivₗ I k β).1 x) • riemannianVolumeForm o x) := by
+  rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm,
+    ← integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl β _
+      (h.symm.imp_right fun hα ↦ mextDerivₗ_mem_compactlySupportedForms I hα),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm]
+
+/-- **Green's formula for `dd*`**: on an oriented boundaryless Riemannian manifold,
+`∫_M ⟨dd*α, β⟩ vol = ∫_M ⟨d*α, d*β⟩ vol` for smooth `(k + 1)`-forms `α` and `β`, one of them
+compactly supported. -/
+theorem integralTopForm_inner_mextDeriv_codifferential (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (α β : SmoothForm I M ℝ (k + 1))
+    (h : α ∈ compactlySupportedForms I M (k + 1) ∨ β ∈ compactlySupportedForms I M (k + 1)) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((mextDerivₗ I k (codifferential o hkl α)).1 x) (β.1 x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((codifferential o hkl α).1 x) ((codifferential o hkl β).1 x) •
+          riemannianVolumeForm o x) :=
+  integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl _ β
+    (h.imp_left (codifferential_mem_compactlySupportedForms o hkl))
+
+/-- **The Dirichlet pairing of the Hodge Laplacian**: on an oriented boundaryless Riemannian
+manifold, strictly between degree `0` and the top degree,
+`∫_M ⟨Δα, β⟩ vol = ∫_M ⟨dα, dβ⟩ vol + ∫_M ⟨d*α, d*β⟩ vol` for smooth forms `α` and `β`, one of
+them compactly supported. -/
+theorem integralTopForm_inner_hodgeLaplacian_add_one_add_one
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + (l + 1) = m)
+    (α β : SmoothForm I M ℝ (k + 1))
+    (h : α ∈ compactlySupportedForms I M (k + 1) ∨ β ∈ compactlySupportedForms I M (k + 1)) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+        ((hodgeLaplacian o hkl α).1 x) (β.1 x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1 + 1)
+        ((mextDerivₗ I (k + 1) α).1 x) ((mextDerivₗ I (k + 1) β).1 x) •
+          riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((codifferential o hkl α).1 x) ((codifferential o hkl β).1 x) •
+          riemannianVolumeForm o x) := by
+  have hkl' : k + 1 + 1 + l = m := by omega
+  rw [hodgeLaplacian_add_one_add_one o hkl hkl', integralTopForm_inner_add_left o hkl _ _ _
+      (h.imp_left fun hα ↦ ⟨codifferential_mem_compactlySupportedForms o hkl'
+        (mextDerivₗ_mem_compactlySupportedForms I hα),
+        mextDerivₗ_mem_compactlySupportedForms I
+          (codifferential_mem_compactlySupportedForms o hkl hα)⟩),
+    integralTopForm_inner_codifferential_mextDeriv o hkl' α β h,
+    integralTopForm_inner_mextDeriv_codifferential o hkl α β h]
+
+/-- **The Hodge Laplacian is formally self-adjoint**: on an oriented boundaryless Riemannian
+manifold, `∫_M ⟨Δα, β⟩ vol = ∫_M ⟨α, Δβ⟩ vol` for smooth `k`-forms `α` and `β`, one of them
+compactly supported. -/
+theorem integralTopForm_inner_hodgeLaplacian_eq_inner_hodgeLaplacian
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) (α β : SmoothForm I M ℝ k)
+    (h : α ∈ compactlySupportedForms I M k ∨ β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        ((hodgeLaplacian o hkl α).1 x) (β.1 x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+        (α.1 x) ((hodgeLaplacian o hkl β).1 x) • riemannianVolumeForm o x) := by
+  -- Both sides are the symmetric Dirichlet pairing `∫ ⟨dα, dβ⟩ vol + ∫ ⟨d*α, d*β⟩ vol`.
+  rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
+    (β := (hodgeLaplacian o hkl β).1)]
+  rcases k with _ | k <;> rcases l with _ | l
+  · simp
+  · rw [hodgeLaplacian_zero_add_one o hkl (by omega), hodgeLaplacian_zero_add_one o hkl (by omega),
+      integralTopForm_inner_codifferential_mextDeriv o _ α β h,
+      integralTopForm_inner_codifferential_mextDeriv o _ β α h.symm,
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm]
+  · rw [hodgeLaplacian_add_one_zero, hodgeLaplacian_add_one_zero,
+      integralTopForm_inner_mextDeriv_codifferential o hkl α β h,
+      integralTopForm_inner_mextDeriv_codifferential o hkl β α h.symm,
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm]
+  · rw [integralTopForm_inner_hodgeLaplacian_add_one_add_one o hkl α β h,
+      integralTopForm_inner_hodgeLaplacian_add_one_add_one o hkl β α h.symm,
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm (β := (mextDerivₗ I _ α).1),
+      RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
+        (β := (codifferential o hkl α).1)]
+
+/-- **The Hodge Laplacian is nonnegative**: on an oriented boundaryless Riemannian manifold,
+`0 ≤ ∫_M ⟨Δα, α⟩ vol` for every compactly supported smooth form `α`. -/
+theorem integralTopForm_inner_hodgeLaplacian_self_nonneg (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
+    0 ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+      ((hodgeLaplacian o hkl α).1 x) (α.1 x) • riemannianVolumeForm o x) := by
+  rcases k with _ | k <;> rcases l with _ | l
+  · simp only [hodgeLaplacian_zero_zero, ZeroMemClass.coe_zero, Pi.zero_apply,
+      LinearMap.map_zero₂, zero_smul]
+    exact (integralTopForm_zero o).ge
+  · have : NeZero m := ⟨by omega⟩
+    rw [hodgeLaplacian_zero_add_one o hkl (by omega),
+      integralTopForm_inner_codifferential_mextDeriv o _ α α (.inl hα)]
+    exact RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _
+  · have : NeZero m := ⟨by omega⟩
+    rw [hodgeLaplacian_add_one_zero, integralTopForm_inner_mextDeriv_codifferential o hkl α α
+      (.inl hα)]
+    exact RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _
+  · have : NeZero m := ⟨by omega⟩
+    rw [integralTopForm_inner_hodgeLaplacian_add_one_add_one o hkl α α (.inl hα)]
+    exact add_nonneg (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
+      (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
+
+/-- **Harmonic functions are locally constant**: on an oriented boundaryless Riemannian manifold, a
+compactly supported smooth function `f` satisfies `Δf = 0` exactly when `df = 0`. -/
+theorem hodgeLaplacian_eq_zero_iff_mextDeriv_eq_zero (o : Manifold.Orientation I M (Fin m))
+    (hl : 0 + l = m) {f : SmoothForm I M ℝ 0} (hf : f ∈ compactlySupportedForms I M 0) :
+    hodgeLaplacian o hl f = 0 ↔ mextDerivₗ I 0 f = 0 := by
+  rcases l with _ | l
+  · simpa using (mextDerivₗ I 0 f).eq_zero_of_finrank_lt
+      (by rw [← o.card_eq, Fintype.card_fin]; omega)
+  have : NeZero m := ⟨by omega⟩
+  have hl' : 0 + 1 + l = m := by omega
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [hodgeLaplacian_zero_add_one o hl hl', h, map_zero]⟩
+  -- `0 = ∫ ⟨Δf, f⟩ vol = ∫ |df|² vol`, and the pairing is definite.
+  have hint := integralTopForm_inner_codifferential_mextDeriv o hl' f f (.inl hf)
+  rw [← hodgeLaplacian_zero_add_one o hl hl', h] at hint
+  refine (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hl'
+    (mextDerivₗ_mem_compactlySupportedForms I hf)).1 ?_
+  rw [← hint]
+  simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
+  exact integralTopForm_zero o
+
+/-- **Harmonic forms are closed and coclosed**: on an oriented boundaryless Riemannian manifold,
+a compactly supported smooth `(k + 1)`-form `α` satisfies `Δα = 0` exactly when `dα = 0` and
+`d*α = 0`. -/
+theorem hodgeLaplacian_eq_zero_iff (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    {α : SmoothForm I M ℝ (k + 1)} (hα : α ∈ compactlySupportedForms I M (k + 1)) :
+    hodgeLaplacian o hkl α = 0 ↔ mextDerivₗ I (k + 1) α = 0 ∧ codifferential o hkl α = 0 := by
+  have : NeZero m := ⟨by omega⟩
+  -- The pairing `∫ |d*α|² vol` is definite.
+  have hdown : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+      ((codifferential o hkl α).1 x) ((codifferential o hkl α).1 x) •
+        riemannianVolumeForm o x) = 0 ↔ codifferential o hkl α = 0 :=
+    integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o
+      (show k + (l + 1) = m by omega) (codifferential_mem_compactlySupportedForms o hkl hα)
+  have hzero : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
+      ((0 : SmoothForm I M ℝ (k + 1)).1 x) (α.1 x) • riemannianVolumeForm o x) = 0 := by
+    simp only [ZeroMemClass.coe_zero, Pi.zero_apply, LinearMap.map_zero₂, zero_smul]
+    exact integralTopForm_zero o
+  rcases l with _ | l
+  · have hd : mextDerivₗ I (k + 1) α = 0 :=
+      SmoothForm.eq_zero_of_finrank_lt (by rw [← o.card_eq, Fintype.card_fin]; omega) _
+    refine ⟨fun h ↦ ⟨hd, hdown.1 ?_⟩, fun h ↦ ?_⟩
+    · rw [← integralTopForm_inner_mextDeriv_codifferential o hkl α α (.inl hα),
+        ← hodgeLaplacian_add_one_zero, h, hzero]
+    · rw [hodgeLaplacian_add_one_zero, h.2, map_zero]
+  · have hkl' : k + 1 + 1 + l = m := by omega
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · -- `0 = ∫ ⟨Δα, α⟩ vol = ∫ |dα|² vol + ∫ |d*α|² vol`, a sum of nonnegative terms.
+      have hint := integralTopForm_inner_hodgeLaplacian_add_one_add_one o hkl α α (.inl hα)
+      rw [h, hzero, eq_comm, add_eq_zero_iff_of_nonneg
+        (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)
+        (RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o _)] at hint
+      exact ⟨(integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl'
+        (mextDerivₗ_mem_compactlySupportedForms I hα)).1 hint.1, hdown.1 hint.2⟩
+    · rw [hodgeLaplacian_add_one_add_one o hkl hkl', h.1, h.2, map_zero, map_zero, add_zero]
 
 end SmoothForm
 
