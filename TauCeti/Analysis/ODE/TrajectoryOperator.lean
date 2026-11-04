@@ -266,26 +266,6 @@ variable {u : WeakDerivStep volume ⊤ 2
   (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
   {A : ℝ → F →L[ℝ] F}
 
-/-- The squared `L²` norm of a path is the integral of the squared norm of a representative. -/
-theorem norm_prev_sq_eq_integral
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    ‖prev _ u‖ ^ 2 = ∫ s, ‖φ s‖ ^ 2 := by
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖φ s‖ ^ 2) (hu.mono fun s hs ↦ by rw [hs])]
-  simp
-
-/-- The squared `L²` norm of the weak derivative is that of the classical derivative of a `C¹`
-representative. -/
-theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
-    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
-    ‖weakFDeriv _ u‖ ^ 2 = ∫ s, ‖deriv φ s‖ ^ 2 := by
-  have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
-    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-    fun s _ ↦ hφ.differentiable one_ne_zero s
-  rw [← Lp.integral_norm_sq_eq_norm_sq,
-    integral_congr_ae (g := fun s ↦ ‖fderiv ℝ φ s‖ ^ 2) (hw.mono fun s hs ↦ by rw [hs])]
-  simp [← toSpanSingleton_deriv]
-
 /-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
 `∫ ‖φ' + A φ‖²`. -/
 theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
