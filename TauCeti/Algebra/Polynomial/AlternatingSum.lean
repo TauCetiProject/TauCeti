@@ -11,22 +11,22 @@ import TauCeti.Algebra.BigOperators.AlternatingSum
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Division by `1 + X` and alternating partial sums
+# Multiples of `1 + X` and alternating partial sums
 
 For a finite sequence `d₀, …, d_N` in a commutative ring, write
-`qₙ = dₙ - dₙ₋₁ + ⋯ ± d₀ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` for its alternating partial sums. Dividing
-`∑ᵢ₌₀ᴺ dᵢ Xⁱ` by `1 + X` leaves the quotient `∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ` and the remainder `q_N X^N`
+`qₙ = dₙ - dₙ₋₁ + ⋯ ± d₀ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` for its alternating partial sums. Telescoping gives
+the decomposition `∑ᵢ₌₀ᴺ dᵢ Xⁱ = (1 + X) ∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ + q_N X^N`
 (`Polynomial.sum_range_monomial_eq_one_add_X_mul_add_monomial`). So `1 + X` divides the polynomial
-exactly when `q_N = 0`, and then the quotient is determined
+exactly when `q_N = 0`, and then the quotient is `∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ`
 (`Polynomial.sum_range_monomial_eq_one_add_X_mul_iff`).
 
 Over `ℕ` this characterizes the numerical shape of the Morse inequalities. For sequences
 `b, c : ℕ → ℕ`, there is a polynomial `Q` with natural coefficients such that
 `∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` if and only if the alternating partial sums satisfy
 `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀` for `n < N`, with equality for `n = N`
-(`Polynomial.exists_sum_range_monomial_eq_add_one_add_X_mul_iff`). The coefficient of `Xⁿ` in `Q`
-is then the difference of the two alternating partial sums in degree `n`
-(`Polynomial.coeff_eq_sum_range_neg_one_pow_mul_sub`).
+(`Polynomial.exists_sum_range_monomial_eq_add_one_add_X_mul_iff`). If moreover `bᵢ = cᵢ` for
+`i > N`, then the coefficient of `Xⁿ` in `Q` is the difference of the two alternating partial sums
+in degree `n`, for every `n` (`Polynomial.coeff_eq_sum_range_neg_one_pow_mul_sub`).
 
 ## References
 
@@ -44,8 +44,10 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- **Division by `1 + X`.** Dividing `∑ᵢ₌₀ᴺ dᵢ Xⁱ` by `1 + X` leaves the quotient
-`∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ` and the remainder `q_N X^N`, where `qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ`. -/
+/-- **Telescoping against `1 + X`.** `∑ᵢ₌₀ᴺ dᵢ Xⁱ = (1 + X) ∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ + q_N X^N`, where
+`qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ`. This is not division with remainder by the monic `1 + X` (whose
+remainder is the constant `(-1)ᴺ q_N`), but it shows that `1 + X` divides the left side when
+`q_N = 0`. -/
 theorem sum_range_monomial_eq_one_add_X_mul_add_monomial (d : ℕ → R) (N : ℕ) :
     ∑ i ∈ range (N + 1), monomial i (d i) =
       (1 + X) * ∑ n ∈ range N, monomial n (∑ i ∈ range (n + 1), (-1) ^ (n - i) * d i) +
@@ -100,6 +102,25 @@ private theorem sum_range_monomial_sub_eq_one_add_X_mul {Q : ℕ[X]}
   simp only [monomial_sub, sum_sub_distrib, h']
   ring
 
+/-- The alternating partial sums of `c - b` are the differences of those of `c` and `b`. -/
+private theorem sum_range_neg_one_pow_mul_natCast_sub (n : ℕ) :
+    ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i) =
+      ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i -
+        ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i := by
+  simp only [mul_sub, sum_sub_distrib]
+
+variable {b c} in
+/-- If `Q ∈ ℕ[X]` maps to `∑ₙ₌₀ᴹ⁻¹ qₙ Xⁿ` in `ℤ[X]`, where `qₙ` are the alternating partial sums of
+`c - b`, then for `n < M` the coefficient of `Xⁿ` in `Q` is `qₙ`. -/
+private theorem coeff_eq_of_map_eq_sum_range_monomial {Q : ℕ[X]} {M : ℕ}
+    (hQ : Q.map (Nat.castRingHom ℤ) =
+      ∑ n ∈ range M, monomial n (∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i)))
+    {n : ℕ} (hn : n < M) :
+    (Q.coeff n : ℤ) = ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i -
+      ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i := by
+  simpa [coeff_map, finsetSum_coeff, coeff_monomial, hn,
+    sum_range_neg_one_pow_mul_natCast_sub] using congrArg (coeff · n) hQ
+
 /-- **Polynomial form of the Morse inequalities.** For `b, c : ℕ → ℕ`, there is a polynomial
 `Q ∈ ℕ[X]` with `∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` if and only if
 `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀` for every `n < N`, with equality for `n = N`. -/
@@ -110,21 +131,15 @@ theorem exists_sum_range_monomial_eq_add_one_add_X_mul_iff :
           ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i) ∧
         ∑ i ∈ range (N + 1), (-1 : ℤ) ^ (N - i) * b i =
           ∑ i ∈ range (N + 1), (-1 : ℤ) ^ (N - i) * c i := by
-  -- The alternating partial sums of `c - b` are the differences of those of `c` and `b`.
-  have hsub (n : ℕ) : ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i) =
-      ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i -
-        ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i := by
-    simp only [mul_sub, sum_sub_distrib]
+  have hsub := sum_range_neg_one_pow_mul_natCast_sub b c
   constructor
   · rintro ⟨Q, h⟩
     obtain ⟨hN, hQ⟩ := (sum_range_monomial_eq_one_add_X_mul_iff _ N).1
       (sum_range_monomial_sub_eq_one_add_X_mul b c N h)
     refine ⟨fun n hn ↦ ?_, by rw [hsub] at hN; linarith⟩
     -- The coefficients of `Q` are the differences of the alternating partial sums.
-    have hc := congrArg (coeff · n) hQ
-    simp only [coeff_map, eq_natCast, finsetSum_coeff, coeff_monomial, sum_ite_eq', mem_range,
-      hn, ite_true, hsub] at hc
-    linarith [(Nat.cast_nonneg (Q.coeff n) : (0 : ℤ) ≤ _)]
+    linarith [coeff_eq_of_map_eq_sum_range_monomial hQ hn,
+      (Nat.cast_nonneg (Q.coeff n) : (0 : ℤ) ≤ _)]
   · rintro ⟨hle, heq⟩
     refine ⟨∑ n ∈ range N,
       monomial n (∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i)).toNat, ?_⟩
@@ -157,11 +172,7 @@ theorem coeff_eq_sum_range_neg_one_pow_mul_sub {Q : ℕ[X]}
       rw [hbc i (by simpa using hi), sub_self, map_zero]
   have hQ := ((sum_range_monomial_eq_one_add_X_mul_iff _ _).1
     (hext ▸ sum_range_monomial_sub_eq_one_add_X_mul b c N h)).2
-  have hc := congrArg (coeff · n) hQ
-  simp only [coeff_map, eq_natCast, finsetSum_coeff, coeff_monomial, sum_ite_eq', mem_range,
-    show n < N + n + 1 by omega, ite_true] at hc
-  rw [hc]
-  simp only [mul_sub, sum_sub_distrib]
+  exact coeff_eq_of_map_eq_sum_range_monomial hQ (by omega)
 
 end Nat
 

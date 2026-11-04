@@ -159,11 +159,12 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
 theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
     ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * d i =
       d (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i := by
-  rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_mul, sub_eq_add_neg, add_comm,
-    ← Finset.sum_neg_distrib]
-  congr 1
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [Nat.succ_sub (Finset.mem_range_succ_iff.1 hi), pow_succ, mul_neg_one, neg_mul]
+  have h (i : ℕ) (hi : i ∈ Finset.range (n + 1)) :
+      (-1 : R) ^ (n + 1 - i) * d i = -((-1) ^ (n - i) * d i) := by
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le (Finset.mem_range_succ_iff.1 hi)
+    simp [show i + j + 1 - i = j + 1 by omega, pow_succ]
+  rw [Finset.sum_range_succ, Finset.sum_congr rfl h]
+  simp [neg_add_eq_sub]
 
 /-- The alternating partial sum `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` is `(-1)ⁿ ∑ᵢ₌₀ⁿ (-1)ⁱ dᵢ`. -/
 theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
@@ -171,7 +172,6 @@ theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : 
       (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * d i := by
   rw [Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [← mul_assoc, ← pow_add, show n + i = n - i + 2 * i by grind, pow_add, pow_mul, neg_one_sq,
-    one_pow, mul_one]
+  rw [← mul_assoc, ← pow_add, neg_one_pow_congr (m := n + i) (n := n - i) (by grind)]
 
 end TauCeti
