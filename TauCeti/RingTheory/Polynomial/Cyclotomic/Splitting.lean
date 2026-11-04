@@ -61,23 +61,13 @@ theorem bijective_pi_cyclotomicEval (hn : IsUnit (n : R))
   rcases subsingleton_or_nontrivial R with _ | _
   · have : Subsingleton (AdjoinRoot (cyclotomic n R)) := Module.subsingleton R _
     exact Function.bijective_of_subsingleton' _
-  let e : Fin (cyclotomic n R).natDegree ≃ (ZMod n)ˣ :=
-    Fintype.equivOfCardEq (by simp [natDegree_cyclotomic, ZMod.card_units_eq_totient])
-  have hb := AdjoinRoot.bijective_pi_of_isUnit_sub (cyclotomic.monic n R)
-    (fun i ↦ cyclotomicEval hζ (e i)) (fun i j hij ↦ ?_)
-  · have he : (AlgHom.pi (fun i ↦ cyclotomicEval hζ (e i)) :
-        AdjoinRoot (cyclotomic n R) → Fin (cyclotomic n R).natDegree → R) =
-        (Equiv.piCongrLeft' (fun _ : (ZMod n)ˣ ↦ R) e.symm) ∘
-          AlgHom.pi (cyclotomicEval hζ) := by
-      ext x i
-      simp only [Function.comp_apply, Equiv.piCongrLeft'_apply, Equiv.symm_symm,
-        AlgHom.pi_apply]
-    rw [he] at hb
-    exact (Equiv.comp_bijective _ _).mp hb
-  · simp only [cyclotomicEval_root]
-    apply isUnit_pow_sub_pow_of_isRoot_cyclotomic hn hζ (ZMod.val_lt _) (ZMod.val_lt _)
-    intro h
-    exact hij (e.injective (Units.ext (ZMod.val_injective n h.symm)))
+  apply AdjoinRoot.bijective_pi_of_isUnit_sub (cyclotomic.monic n R)
+    (by simp [natDegree_cyclotomic, ZMod.card_units_eq_totient]) (cyclotomicEval hζ)
+  intro i j hij
+  simp only [cyclotomicEval_root]
+  apply isUnit_pow_sub_pow_of_isRoot_cyclotomic hn hζ (ZMod.val_lt _) (ZMod.val_lt _)
+  intro h
+  exact hij (Units.ext (ZMod.val_injective n h.symm))
 
 /-- The splitting of the primitive-root algebra associated to a chosen primitive root.
 The factors are labelled by units modulo `n`, not by an arbitrary enumeration. -/
