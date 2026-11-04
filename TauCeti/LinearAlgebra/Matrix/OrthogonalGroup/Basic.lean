@@ -18,7 +18,8 @@ Over a ring without zero divisors an orthogonal matrix has determinant `1` or `-
 occur as soon as the index type is nonempty: the diagonal reflection negating one coordinate is an
 orthogonal matrix of determinant `-1`.
 
-Permutation matrices are orthogonal. For a trivial star operation the unitary elements of the
+Permutation matrices are orthogonal, and a matrix is orthogonal exactly when it preserves the dot
+product. For a trivial star operation the unitary elements of the
 general linear group are the orthogonal matrices.
 
 ## Main definitions
@@ -33,6 +34,8 @@ general linear group are the orthogonal matrices.
   is `1` or `-1`.
 * `TauCeti.det_orthogonalDiagonalReflection`: the diagonal reflection has determinant `-1`.
 * `Matrix.permMatrix_mem_orthogonalGroup`: a permutation matrix is orthogonal.
+* `Matrix.mem_orthogonalGroup_iff_dotProduct_mulVec`: a matrix is orthogonal exactly when it
+  preserves the dot product.
 * `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
   operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
@@ -101,6 +104,18 @@ theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (
     [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
   letI := starRingOfComm (R := R)
   permMatrix_mem_unitaryGroup σ
+
+/-- A square matrix is orthogonal exactly when it preserves the dot product. -/
+theorem mem_orthogonalGroup_iff_dotProduct_mulVec {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {A : Matrix n n R} :
+    A ∈ orthogonalGroup n R ↔ ∀ x y, (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = x ⬝ᵥ y := by
+  rw [mem_orthogonalGroup_iff']
+  refine ⟨fun h x y => ?_, fun h => Matrix.ext fun i j => ?_⟩
+  · rw [dotProduct_mulVec, ← mulVec_transpose, mulVec_mulVec, h, one_mulVec]
+  · have hij := h (Pi.single i 1) (Pi.single j 1)
+    simp only [mulVec_single_one, single_dotProduct, one_mul] at hij
+    rw [Matrix.mul_apply, Matrix.one_apply]
+    simpa [dotProduct, Pi.single_apply, eq_comm] using hij
 
 end Matrix
 
