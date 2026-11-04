@@ -105,7 +105,7 @@ theorem continuous_frameTopology_iff {P : Type*} [TopologicalSpace P]
   convert! Iff.rfl
 
 /-- A chosen frame-coordinate jet depends continuously on the section. -/
-theorem continuous_frameJet (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n) :
+theorem continuous_frameJet_apply (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n) :
     let _ := frameTopology (I := I) (n := n) e U hU
     Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦
       ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x m hm) := by
@@ -137,7 +137,7 @@ theorem continuous_frameCoordinates (i : ι) :
   intro x y m hm K hK W hW
   rw [ContMDiffMap.chartJetSet_self_target x y m hm K W]
   exact (ContinuousMap.isOpen_setOfPred_mapsTo hK hW).preimage
-    (continuous_frameJet e U hU i x m hm)
+    (continuous_frameJet_apply e U hU i x m hm)
 
 /-- Continuity into the frame topology can be checked on the weak Whitney spaces of
 coefficient functions. -/
@@ -276,7 +276,7 @@ theorem continuous_chartDerivativeSeminorm (i : ι) (x : U i)
     Continuous ((e i).chartDerivativeSeminorm (hU i) x K m hm) := by
   let _ := frameTopology (I := I) (n := n) e U hU
   have hjet := (ContinuousMap.continuous_restrict (K : Set (extChartAt I x).target)).comp
-    (continuous_frameJet e U hU i x m hm)
+    (continuous_frameJet_apply e U hU i x m hm)
   exact ((continuous_norm (E := C(K, E [×m]→L[𝕜] F))).comp hjet).congr fun s ↦
     ((e i).chartDerivativeSeminorm_apply (hU i) x K m hm s).symm
 
