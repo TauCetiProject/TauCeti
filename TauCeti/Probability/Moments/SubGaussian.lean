@@ -168,14 +168,6 @@ theorem mono {c₁ c₂ : ℝ≥0} (h : HasSubgaussianMGF X c₁ μ) (hle : c₁
   integrable_exp_mul := h.integrable_exp_mul
   mgf_le t := (h.mgf_le t).trans <| by gcongr
 
-/-- Scalar multiplication scales the sub-Gaussian variance proxy by `‖r‖₊ ^ 2`. -/
-theorem const_mul_nnnorm (h : HasSubgaussianMGF X c μ) (r : ℝ) :
-    HasSubgaussianMGF (fun ω ↦ r * X ω) (‖r‖₊ ^ 2 * c) μ where
-  integrable_exp_mul t := by simpa only [← mul_assoc] using h.integrable_exp_mul (t * r)
-  mgf_le t := by
-    rw [mgf_const_mul]; refine (h.mgf_le (r * t)).trans_eq ?_
-    congr 1; push_cast; simp only [Real.norm_eq_abs, sq_abs]; ring
-
 /-- Under a zero or probability measure, every sub-Gaussian random variable has expectation zero. -/
 theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF X c μ) :
     μ[X] = 0 := by
@@ -407,10 +399,11 @@ theorem hasSubgaussianMGF_re_star_mul_of_indepFun_re_im
     HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ := by
   rw [show (fun ω ↦ (star u * Z ω).re) = fun ω ↦ u.re * (Z ω).re + u.im * (Z ω).im from
     funext fun _ ↦ by simp [Complex.mul_re]]
-  refine ((hre.const_mul_nnnorm u.re).add_of_indepFun (him.const_mul_nnnorm u.im)
+  refine ((hre.const_mul u.re).add_of_indepFun (him.const_mul u.im)
     (hindep.comp (measurable_const_mul u.re) (measurable_const_mul u.im))).mono ?_
-  rw [← NNReal.coe_le_coe]; push_cast; simp only [Real.norm_eq_abs, sq_abs]
-  rw [Complex.sq_norm, Complex.normSq_apply]; exact le_of_eq (by ring)
+  rw [← NNReal.coe_le_coe]
+  change u.re ^ 2 * (K : ℝ) + u.im ^ 2 * (K : ℝ) ≤ ↑(‖u‖₊ ^ 2 * K)
+  push_cast; rw [Complex.sq_norm, Complex.normSq_apply]; exact le_of_eq (by ring)
 
 end ComplexSubGaussian
 

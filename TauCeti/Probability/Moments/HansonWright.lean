@@ -327,15 +327,18 @@ private lemma subgaussian_dotProduct_of_iIndepFun {X : ι → Ω → ℝ} (hinde
     {K : ℝ≥0} (hX : ∀ i, HasSubgaussianMGF (X i) K P) (w : ι → ℝ) (r : ℝ) :
     Integrable (fun ω ↦ exp (r * ((fun i ↦ X i ω) ⬝ᵥ w))) P ∧
       ∫ ω, exp (r * ((fun i ↦ X i ω) ⬝ᵥ w)) ∂P ≤ exp ((K : ℝ) * r ^ 2 / 2 * ∑ i, w i ^ 2) := by
-  have hsum : HasSubgaussianMGF (fun ω ↦ ∑ i : ι, w i * X i ω) (∑ i : ι, ‖w i‖₊ ^ 2 * K) P :=
+  have hsum : HasSubgaussianMGF (fun ω ↦ ∑ i : ι, w i * X i ω)
+      (∑ i : ι, ⟨w i ^ 2, sq_nonneg (w i)⟩ * K) P :=
     HasSubgaussianMGF.sum_of_iIndepFun
       (hindep.comp (fun i x ↦ w i * x) fun i ↦ measurable_const_mul (w i))
-      fun i _ ↦ (hX i).const_mul_nnnorm (w i)
+      fun i _ ↦ (hX i).const_mul (w i)
   have hdot (ω : Ω) : (fun i ↦ X i ω) ⬝ᵥ w = ∑ i, w i * X i ω := by simp only [dotProduct, mul_comm]
   refine ⟨(hsum.integrable_exp_mul r).congr (.of_forall fun ω ↦ by dsimp only; rw [hdot ω]), ?_⟩
   refine ((integral_congr_ae (.of_forall fun ω ↦ by dsimp only; rw [hdot ω])).trans_le
     (hsum.mgf_le r)).trans_eq ?_
-  congr 1; push_cast; simp only [Real.norm_eq_abs, sq_abs, ← Finset.sum_mul]; ring
+  congr 1; rw [NNReal.coe_sum]
+  change (∑ i : ι, w i ^ 2 * (K : ℝ)) * r ^ 2 / 2 = _
+  rw [← Finset.sum_mul]; ring
 
 variable [DecidableEq ι]
 
