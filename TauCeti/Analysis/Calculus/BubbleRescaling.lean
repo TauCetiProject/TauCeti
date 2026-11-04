@@ -56,8 +56,7 @@ theorem exists_bubble_rescalings
       (∀ i w, w ∈ closedBall 0 (R i) →
         ‖fderiv ℝ (fun w => u i (c i + ε i • w)) w‖ ≤ 2) := by
   -- Pick controlled balls before changing coordinates.
-  have hpick (i : ℕ) := exists_pos_mul_le_and_forall_le_two_mul (hr i) (hcont i)
-    (fun z _ => norm_nonneg (fderiv ℝ (u i) z)) (hpos i)
+  have hpick (i : ℕ) := exists_pos_mul_le_and_forall_le_two_mul (hr i) (hcont i) (hpos i)
   choose c hc δ hδ hδr hprod hnorm hsub hbound using hpick
   let M : ℕ → ℝ := fun i => ‖fderiv ℝ (u i) (c i)‖
   let ε : ℕ → ℝ := fun i => (M i)⁻¹

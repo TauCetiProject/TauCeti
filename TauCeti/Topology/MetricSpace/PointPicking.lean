@@ -14,7 +14,7 @@ import Mathlib.Tactic.Linarith
 /-!
 # Point picking on compact balls
 
-A continuous nonnegative function that is large at a point admits a nearby point where it is
+A continuous real-valued function that is positive at a point admits a nearby point where it is
 controlled by twice its value on a smaller ball, without losing the radius-times-value bound.
 Applied to a derivative norm, this selects centres and scales for bubbling arguments.
 
@@ -34,7 +34,7 @@ closed ball, and the function is at most twice its selected value throughout tha
 theorem exists_pos_mul_le_and_forall_le_two_mul
     {X : Type*} [PseudoMetricSpace X] [ProperSpace X] {f : X → ℝ} {x : X} {r : ℝ}
     (hr : 0 < r) (hf : ContinuousOn f (closedBall x (2 * r)))
-    (hn : ∀ y ∈ closedBall x (2 * r), 0 ≤ f y) (hx : 0 < f x) :
+    (hx : 0 < f x) :
     ∃ c ∈ closedBall x (2 * r), ∃ δ : ℝ, 0 < δ ∧ δ ≤ r ∧
       r * f x ≤ δ * f c ∧ 0 < f c ∧
       closedBall c δ ⊆ closedBall x (2 * r) ∧
@@ -48,8 +48,8 @@ theorem exists_pos_mul_le_and_forall_le_two_mul
   have hweight : 0 ≤ 2 * r - dist c x := sub_nonneg.mpr hc
   have hfc : 0 < f c := by
     by_contra h
-    have : f c = 0 := le_antisymm (le_of_not_gt h) (hn c hc)
-    rw [this, mul_zero] at hmaxx
+    have : (2 * r - dist c x) * f c ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos hweight (le_of_not_gt h)
     nlinarith
   have hweightpos : 0 < 2 * r - dist c x := by
     by_contra h
@@ -69,12 +69,14 @@ theorem exists_pos_mul_le_and_forall_le_two_mul
   · dsimp [δ]
     nlinarith
   · intro y hy
+    by_cases hneg : f y < 0
+    · linarith
+    have hnonneg := le_of_not_gt hneg
     have hmaxy : (2 * r - dist y x) * f y ≤ (2 * r - dist c x) * f c :=
       hmax (hsub hy)
     have htri := dist_triangle y c x
     have hyc : dist y c ≤ δ := hy
     have hwy : δ ≤ 2 * r - dist y x := by dsimp [δ] at *; linarith
-    have hnonneg := hn y (hsub hy)
     have hmul := mul_le_mul_of_nonneg_right hwy hnonneg
     have hbound : δ * f y ≤ δ * (2 * f c) := by
       dsimp [δ] at *
