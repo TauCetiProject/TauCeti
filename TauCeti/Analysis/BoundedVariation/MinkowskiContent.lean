@@ -362,10 +362,12 @@ private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : Cont
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   set m := min (min η₀ η₁) (ε / (C + 1))
   have hm : 0 < m := lt_min (lt_min hη₀ hη₁) (by positivity)
-  filter_upwards [Ioo_mem_nhdsGT (show 0 < m / (1 + ε) by positivity)] with r ⟨hr, hrm⟩
+  have hmε : 0 < m / (1 + ε) := by positivity
+  filter_upwards [Ioo_mem_nhdsGT hmε] with r ⟨hr, hrm⟩
   -- Write `η = (1 + ε) r` for the width of the outer shell `S = {-η < w < 0}`.
   set η := (1 + ε) * r
   have hη : 0 < η := by positivity
+  have hηε : η / (1 - 2 * ε) = (1 + ε) / (1 - 2 * ε) * r := by simp only [η]; ring
   have hηm : η ≤ m := by
     have := (lt_div_iff₀' (by linarith : (0 : ℝ) < 1 + ε)).1 hrm
     linarith
@@ -401,7 +403,7 @@ private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : Cont
           (ne_top_of_le_ne_top hK.measure_lt_top.ne (measure_mono hSK))
           ((hfd.continuousOn.integrableOn_compact hK).mono_set hSK)
     _ = ENNReal.ofReal ((1 + ε) / (1 - 2 * ε) * r) * perimeter volume ⊤ s := by
-        rw [show η / (1 - 2 * ε) = (1 + ε) / (1 - 2 * ε) * r by simp only [η]; ring]
+        rw [hηε]
 
 /-- **Outer Minkowski content of a regular superlevel set.** Let `u` be smooth and compactly
 supported, and let `t > 0` be a regular value of `u`. The closed superlevel set
@@ -439,7 +441,7 @@ theorem ContDiff.tendsto_volume_thickening_sdiff_div {u : E → ℝ} (hu : ContD
         simpa using this.tendsto.mono_left nhdsWithin_le_nhds
       simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal h) (Or.inl (by simp))
     refine ge_of_tendsto hlim ?_
-    filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < 1 / 2 by norm_num)] with ε ⟨hε, hε2⟩
+    filter_upwards [Ioo_mem_nhdsGT (one_half_pos : (0 : ℝ) < 1 / 2)] with ε ⟨hε, hε2⟩
     refine limsup_le_of_le (by isBoundedDefault) ?_
     filter_upwards [eventually_volume_thickening_sdiff_le hw (by norm_num) hK hnorm hε hε2]
       with r hr
