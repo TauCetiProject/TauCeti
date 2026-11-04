@@ -30,7 +30,7 @@ The file develops:
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
-  `m - |β|`;
+  `m - |β|`, together with their product rule for `HomogeneousSymbol.comp`;
 * the growth bound `HomogeneousSymbol.exists_norm_coefficient_le`: on a compact set of positions,
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖` by
@@ -119,6 +119,12 @@ theorem coefficient_mk'_of_ne_zero (f : X × E → V →L[ℂ] W) (hf : ContDiff
     (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) {x : X} {ξ : E}
     (hξ : ξ ≠ 0) : (mk' f hf hhom).coefficient (x, ξ) = f (x, ξ) := by
   simp [mk', hξ]
+
+/-- Rebuilding a homogeneous symbol from its own coefficient gives back the symbol. -/
+@[simp]
+theorem mk'_coefficient (a : HomogeneousSymbol X E V W m) :
+    mk' a.coefficient a.contDiffOn_coefficient (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) = a :=
+  ext_of_ne_zero fun _ _ hξ ↦ coefficient_mk'_of_ne_zero _ _ _ hξ
 
 end mk'
 
@@ -379,6 +385,42 @@ theorem frequencyDeriv_zero : a.frequencyDeriv 0 = 0 :=
   ext_of_ne_zero fun x ξ hξ ↦ by simp [frequencyDeriv, hξ, Prod.mk_zero_zero]
 
 end Deriv
+
+/-! ### The product rule for composition -/
+
+section CompDeriv
+
+variable (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m)
+
+/-- The product rule: away from the zero frequency, the derivative of the composition `b ∘ a` in
+the direction `q` is `b' q ∘ a + b ∘ a' q`. -/
+theorem fderiv_coefficient_comp {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
+    fderiv ℝ (b.comp a).coefficient p q =
+      (fderiv ℝ b.coefficient p q).comp (a.coefficient p) +
+        (b.coefficient p).comp (fderiv ℝ a.coefficient p q) := by
+  -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
+  have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).fderiv_of_bilinear
+    (b.differentiableAt_coefficient hp) (a.differentiableAt_coefficient hp)
+  rw [show (b.comp a).coefficient = _ from funext (coefficient_comp b a)]
+  simpa [add_comm] using congrArg (fun L ↦ L q) h
+
+/-- The product rule for the spatial derivative of a composition. -/
+theorem spatialDeriv_comp (v : X) :
+    (b.comp a).spatialDeriv v = (b.spatialDeriv v).comp a + b.comp (a.spatialDeriv v) :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [spatialDeriv, hξ, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
+
+/-- The product rule for the frequency derivative of a composition, stated on coefficients
+since the degrees `m' + m - 1`, `m' - 1 + m` and `m' + (m - 1)` are not definitionally equal. -/
+theorem coefficient_frequencyDeriv_comp (w : E) :
+    ((b.comp a).frequencyDeriv w).coefficient =
+      ((b.frequencyDeriv w).comp a).coefficient + (b.comp (a.frequencyDeriv w)).coefficient := by
+  funext ⟨x, ξ⟩
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp
+  · simp [frequencyDeriv, hξ, fderiv_coefficient_comp b a (p := (x, ξ)) hξ]
+
+end CompDeriv
 
 /-! ### Growth bounds and the cut-off term -/
 
