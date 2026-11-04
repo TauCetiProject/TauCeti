@@ -70,12 +70,9 @@ theorem generatedCorootCocharacter_eq_cocharacter_coroot_simpleIndex (i : Fin 6)
   rw [generatedCorootCocharacter_def]
   congr 1
   apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 6 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
   -- The generic formula uses `Fin E6.rank`, which is definitionally `Fin 6`.
-  exact heval.trans (DynkinType.E6.coroot_simpleIndex DynkinType.valid_E6 i).symm
+  exact (SplitTorus.cocharEquiv_applyAddHom i).trans
+    (DynkinType.E6.coroot_simpleIndex DynkinType.valid_E6 i).symm
 
 /-- The coroot differential has diagonal entries given by pairing each minuscule weight
 with the corresponding simple coroot. The tangent vector of `𝔾ₘ` is normalized to one. -/
