@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
@@ -20,7 +22,8 @@ acts by a map differentiable at `x`, the chain rule makes `g ↦ mfderiv I I (g 
 representation `TauCeti.tangentRepresentation` of the stabilizer on the tangent space `T_x M`.
 Moving `x` along its orbit by `h` conjugates this representation: the derivative of `h • ·` at `x`
 intertwines it with the tangent representation at `h • x`, along Mathlib's conjugation isomorphism
-`MulAction.stabilizerEquivStabilizer` of the two stabilizers.
+`MulAction.stabilizerEquivStabilizer` of the two stabilizers. When `G` is a manifold acting by a
+`C¹` map `G × M → M`, the tangent representation is continuous in the group element.
 
 For a finite stabilizer acting by `C¹` maps on a manifold without boundary over `ℝ` or `ℂ`,
 Bochner linearization identifies this representation with the linear action in an equivariant
@@ -42,6 +45,8 @@ orbifold as a quotient of its frame bundle by an orthogonal group.
 
 * `TauCeti.mfderiv_smul_comp_tangentRepresentation`: the tangent representations at `x` and
   `h • x` are intertwined by the derivative of `h • ·`.
+* `TauCeti.continuous_tangentRepresentation`: for a jointly `C¹` action of a manifold group, the
+  tangent representation is continuous.
 * `TauCeti.tangentRepresentation_eq_one_iff`, `TauCeti.ker_tangentRepresentation`: the kernel of
   the tangent representation of a finite stabilizer acting by `C¹` maps is the germ kernel.
 * `TauCeti.tangentRepresentation_eq_one_iff_forall_smul_eq`: on a connected Hausdorff manifold, an
@@ -120,6 +125,61 @@ theorem mfderiv_smul_comp_tangentRepresentation {h : G}
   exact hl.symm
 
 end Defs
+
+section Continuity
+
+variable {𝕜 E H M F HG G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 1 M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace HG] [TopologicalSpace G] [ChartedSpace HG G] [Group G] [MulAction G M] {x : M}
+
+/-- **Continuity of the tangent representation.** If a group `G`, modelled on `IG`, acts on `M`
+by a map `G × M → M` that is jointly `C¹`, then the tangent representation of the stabilizer of
+`x` is continuous for the subspace topology of the stabilizer. -/
+theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsManifold IG 1 G]
+    [ContMDiffSMul IG I 1 G M]
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
+    Continuous (tangentRepresentation hd) := by
+  rw [continuous_iff_continuousAt]
+  intro g₀
+  -- The derivative of `g • ·` at `x`, read in the tangent coordinates of the base points `x`
+  -- and `g • x`, is continuous in `g` at `g₀`.
+  have hf : ContMDiffAt (IG.prod I) I 1 (Function.uncurry fun (g : G) (y : M) ↦ g • y)
+      ((g₀ : G), x) :=
+    (ContMDiffSMul.contMDiff_smul (I := IG) (I' := I) (n := 1) (G := G) (M := M)).contMDiffAt
+  have h := (ContMDiffAt.mfderiv (fun (g : G) (y : M) ↦ g • y) (fun _ ↦ x) hf
+    (contMDiffAt_const (n := 0)) (by simp)).continuousAt
+  -- On the stabilizer both base points are `x`, so the coordinate changes are the identity.
+  have key : ∀ g : stabilizer G x,
+      inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
+        (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) g =
+        tangentRepresentation hd g := by
+    intro g
+    have hgx : (g : G) • x = x := g.2
+    have hg₀x : (g₀ : G) • x = x := g₀.2
+    rw [inTangentCoordinates_eq _ _ _ (mem_chart_source H x)
+      (by rw [hgx, hg₀x]; exact mem_chart_source H x)]
+    ext v
+    have hx : x ∈ (tangentBundleCore I M).baseSet (achart H x) := mem_chart_source H x
+    have h₁ : achart H ((g : G) • x) = achart H x := by rw [hgx]
+    have h₂ : achart H ((g₀ : G) • x) = achart H x := by rw [hg₀x]
+    have hx' : (g : G) • x ∈ (tangentBundleCore I M).baseSet (achart H x) := by
+      rw [hgx]
+      exact hx
+    simp only [ContinuousLinearMap.comp_apply, h₁, h₂, tangentRepresentation_apply,
+      (tangentBundleCore I M).coordChange_self _ _ hx']
+    -- `ContinuousLinearMap.comp_apply` does not fire on the inner composition, whose source is
+    -- `TangentSpace I x` rather than `E`; it is applied by definition.
+    exact congrArg (mfderiv I I (fun y : M ↦ (g : G) • y) x)
+      ((tangentBundleCore I M).coordChange_self _ _ hx v)
+  have hcomp : (tangentRepresentation hd : stabilizer G x → _) =
+      inTangentCoordinates I I (fun _ : G ↦ x) (fun g : G ↦ g • x)
+        (fun g : G ↦ mfderiv I I (fun y : M ↦ g • y) x) (g₀ : G) ∘ Subtype.val :=
+    funext fun g ↦ (key g).symm
+  rw [hcomp]
+  exact h.comp continuous_subtype_val.continuousAt
+
+end Continuity
 
 section Detection
 
