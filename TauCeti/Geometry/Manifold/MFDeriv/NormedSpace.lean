@@ -32,6 +32,8 @@ with `F`, so one vanishes exactly when the other does.
   differentiability hypothesis.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.injective_mvfderiv_iff`:
+  `Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x)`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
@@ -177,6 +179,14 @@ theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [mvfderiv, h]⟩
   ext u
   simpa [mvfderiv] using congrArg (fun L ↦ L u) h
+
+/-- The derivative of a vector-valued function, read in the target space, is injective if and only
+if its manifold derivative is. -/
+theorem injective_mvfderiv_iff {g : M → F} {x : M} :
+    Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x) := by
+  refine ⟨fun h v w hvw ↦ h (by rwa [mvfderiv_apply_eq_mfderiv_apply,
+    mvfderiv_apply_eq_mfderiv_apply]), fun h v w hvw ↦ h ?_⟩
+  rwa [← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply]
 
 /-- A vector-valued function whose derivative does not vanish on some tangent vector is
 differentiable there. -/
