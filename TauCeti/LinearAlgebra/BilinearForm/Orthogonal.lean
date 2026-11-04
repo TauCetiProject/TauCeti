@@ -83,8 +83,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal complements of an arbitrary bilinear form.
 * `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
   of a nondegenerate bilinear space has at most half the ambient dimension.
-* `LinearMap.two_mul_finrank_le_finrank_of_injective`: the same bound for a subspace on which an
-  injective bilinear map with values in a line vanishes.
+* `LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective`: the same bound for a
+  subspace on which an injective bilinear map with values in a line vanishes.
 
 ## References
 
@@ -638,8 +638,9 @@ If `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and `L` vanishes o
 `2 dim W ≤ dim V`. Identifying `Q` with the scalars turns `L` into a nondegenerate bilinear form
 for which `W` is contained in its orthogonal. This is the dimension bound for subspaces isotropic
 for the Levi form of a contact structure. -/
-theorem two_mul_finrank_le_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup V]
-    [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q] {L : V →ₗ[K] V →ₗ[K] Q}
+theorem two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective {K V Q : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q}
     (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) {W : Submodule K V}
     (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0) : 2 * Module.finrank K W ≤ Module.finrank K V := by
   have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ

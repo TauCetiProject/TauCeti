@@ -91,7 +91,7 @@ theorem IsHorizontalMap.two_mul_finrank_add_one_le [IsManifold I (n + 1) M]
   have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by
     rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
     exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy v w
-  have hle := LinearMap.two_mul_finrank_le_finrank_of_injective
+  have hle := LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective
     (hD.bijective_distributionLeviForm (f y)).injective (hD.finrank_quotient (f y)) hW
   have hWf : finrank ℝ W = finrank ℝ E' := by
     rw [LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe (hf.range_mfderiv_le y)),
