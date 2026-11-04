@@ -147,21 +147,17 @@ theorem hasMFDerivAt_generalLinearGroup_smul (A : GL ι ℤ) (x : ι → AddCirc
         (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) ∘ L :=
       funext (generalLinearGroup_smul_coe_pi p A)
     rw [hfun]
-    refine ((hasMFDerivAt_coe_pi p (L t)).comp t L.hasMFDerivAt).congr_mfderiv ?_
-    -- Composing with the identity of `ι → ℝ` changes nothing.
-    ext v
-    rfl
+    exact ((hasMFDerivAt_coe_pi p (L t)).comp t L.hasMFDerivAt).congr_mfderiv
+      (ContinuousLinearMap.id_comp L)
   have hd : MDifferentiableAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y) (fun i ↦ (t i : AddCircle p)) :=
     ((contMDiff_const_smul A).mdifferentiableAt (n := 1) one_ne_zero)
   have h := mfderiv_comp t hd (hasMFDerivAt_coe_pi p t).mdifferentiableAt
   rw [hcomp.mfderiv, (hasMFDerivAt_coe_pi p t).mfderiv] at h
-  -- Composing with the identity of `ι → ℝ` changes nothing.
   have h' : mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (fun y ↦ A • y) (fun i ↦ (t i : AddCircle p)) = L := by
     rw [h]
-    ext v
-    rfl
+    exact (ContinuousLinearMap.comp_id _).symm
   exact hd.hasMFDerivAt.congr_mfderiv h'
 
 /-- The derivative of the action of an integer matrix `A` on the torus sends a tangent vector

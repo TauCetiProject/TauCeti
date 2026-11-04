@@ -49,7 +49,9 @@ Lagrangian section only for `b = 0`
 (`TauCeti.CotangentBundle.exists_isExactLagrangianMap_section_sum_smul_torusTimeForm_iff`). The
 changes compose as integral affine maps of the actions:
 `Φ_(A, b) ∘ Φ_(A', b') = Φ_(A A', A⁻ᵀ b' + b)`
-(`TauCeti.CotangentBundle.integralAffineDiffeomorph_trans`), and `Φ_(1, 0)` is the identity.
+(`TauCeti.CotangentBundle.integralAffineDiffeomorph_trans`), `Φ_(1, 0)` is the identity, and
+the inverse of `Φ_(A, b)` is `Φ_(A⁻¹, -Aᵀ b)`
+(`TauCeti.CotangentBundle.integralAffineDiffeomorph_symm`).
 
 These pullback identities are instances of the general ones for a cotangent lift followed by a
 fibre translation
@@ -71,7 +73,8 @@ fibre translation
   symplectomorphism of `(T*Tⁿ, ω)`.
 * `TauCeti.CotangentBundle.mpullback_integralAffineDiffeomorph_liouvilleForm`: its effect on the
   Liouville form.
-* `TauCeti.CotangentBundle.integralAffineDiffeomorph_trans`: the composition law.
+* `TauCeti.CotangentBundle.integralAffineDiffeomorph_trans`,
+  `TauCeti.CotangentBundle.integralAffineDiffeomorph_symm`: the composition law and the inverse.
 
 ## References
 
@@ -99,6 +102,7 @@ variable (p : ℝ) [Fact (0 < p)] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The cotangent lift of the action of an integer matrix `A` on the torus sends a covector `ξ` to
 `ξ ∘ A⁻¹`: it evaluates a tangent vector `v` as `ξ` evaluates `A⁻¹ *ᵥ v`. -/
+@[simp]
 theorem generalLinearGroup_smul_snd_apply (A : GL ι ℤ)
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
     (v : ι → ℝ) :
@@ -117,6 +121,9 @@ theorem generalLinearGroup_smul_snd_apply_single (A : GL ι ℤ)
   -- The `i`-th column of `A⁻¹` has coordinates `A⁻¹ j i`.
   refine (LinearMap.pi_apply_eq_sum_univ z.2.toLinearMap _).trans ?_
   simp only [← Pi.single_apply, Pi.single_comm]
+  simp only [smul_eq_mul, Matrix.col_apply, Matrix.map_apply]
+  -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`, so
+  -- `ContinuousLinearMap.coe_coe` does not match its coercion to a linear map.
   rfl
 
 /-! ### Integral affine changes of action–angle coordinates -/
@@ -155,6 +162,7 @@ theorem proj_integralAffineDiffeomorph (A : GL ι ℤ) (b : ι → ℝ)
   exact proj_smul A z
 
 /-- The integral affine change sends a covector `ξ` to `ξ ∘ A⁻¹ + ∑ j, b j • dθ_j`. -/
+@[simp]
 theorem integralAffineDiffeomorph_snd_apply (A : GL ι ℤ) (b : ι → ℝ)
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
     (v : ι → ℝ) :
@@ -173,13 +181,12 @@ theorem integralAffineDiffeomorph_snd_apply_single (A : GL ι ℤ) (b : ι → �
     (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (i : ι) :
     (integralAffineDiffeomorph p A b z).2 (Pi.single i 1) =
       ∑ j, (((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ) j i : ℝ) * z.2 (Pi.single j 1) + b i := by
-  refine (integralAffineDiffeomorph_snd_apply p A b z _).trans ?_
-  rw [Matrix.mulVec_single_one]
-  congr 1
-  · refine (LinearMap.pi_apply_eq_sum_univ z.2.toLinearMap _).trans ?_
-    simp only [← Pi.single_apply, Pi.single_comm]
-    rfl
-  · simp [Pi.single_apply]
+  rw [integralAffineDiffeomorph_apply, vectorBundleTranslateDiffeomorph_apply]
+  -- The lifted covector gives `A⁻ᵀ I`; the translating form contributes `b i`.
+  exact congrArg₂ (· + ·) (generalLinearGroup_smul_snd_apply_single p A z i)
+    ((SmoothForm.degreeOneEquiv_apply_apply _ _ _).trans
+      ((sum_smul_torusTimeForm_apply (fun _ ↦ p) b (A • z).proj _).trans
+        (by simp [Pi.single_apply])))
 
 /-- The integral affine change carries the zero covector over `θ` to the value at `A θ` of the
 closed one-form `∑ j, b j • dθ_j`: it maps the zero section onto the graph of this form. -/
@@ -205,22 +212,12 @@ theorem mpullback_integralAffineDiffeomorph_liouvilleForm (A : GL ι ℤ) (b : �
               ι → AddCircle p) (contMDiff_proj _)
           (∑ k, (((↑A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b) k •
             torusTimeForm (fun _ ↦ p) k) := by
-  -- The action pulls `∑ j, b j • dθ_j` back to `∑ k, (Aᵀ b)_k • dθ_k`.
-  have hα : SmoothForm.mpullback (fun x : ι → AddCircle p ↦ A • x) (contMDiff_const_smul A)
-      (∑ j, b j • torusTimeForm (fun _ ↦ p) j) =
-        ∑ k, (((↑A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b) k • torusTimeForm (fun _ ↦ p) k := by
-    simp only [map_sum, map_smul, mpullback_generalLinearGroup_smul_torusTimeForm,
-      Finset.smul_sum, smul_smul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [← Finset.sum_smul]
-    congr 1
-    simp [Matrix.mulVec, dotProduct, mul_comm]
   have h := Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_liouvilleForm
     (Diffeomorph.constSmul (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞ A)
     (∑ j, b j • torusTimeForm (fun _ ↦ p) j)
   simp only [Diffeomorph.coe_constSmul] at h
-  rw [hα] at h
+  -- The action pulls `∑ j, b j • dθ_j` back to `∑ k, (Aᵀ b)_k • dθ_k`.
+  rw [mpullback_generalLinearGroup_smul_sum_smul_torusTimeForm] at h
   exact h
 
 /-- **Integral affine changes are symplectomorphisms.** The integral affine change of action–angle
@@ -229,15 +226,11 @@ coordinates pulls the canonical symplectic form `ω = ∑ dθ_i ∧ dI_i` of `T*
 theorem mpullback_integralAffineDiffeomorph_symplecticForm (A : GL ι ℤ) (b : ι → ℝ) :
     SmoothForm.mpullback _ (integralAffineDiffeomorph p A b).contMDiff
         (symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) =
-      symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p) := by
+      symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p) :=
   -- The translating one-form has constant coefficients, so it is closed.
-  have hclosed : (∑ j, b j • torusTimeForm (fun _ ↦ p) j).IsClosed := by
-    rw [SmoothForm.isClosed_iff_mextDerivₗ_eq_zero, map_sum]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    rw [map_smul, (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero _).1 (isClosed_torusTimeForm _ j),
-      smul_zero]
-  exact Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm
-    (Diffeomorph.constSmul (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞ A) hclosed
+  Diffeomorph.mpullback_cotangent_trans_vectorBundleTranslateDiffeomorph_symplecticForm
+    (Diffeomorph.constSmul (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞ A)
+    (isClosed_sum_smul_torusTimeForm (fun _ ↦ p) b)
 
 /-- The integral affine change with `A = 1` and `b = 0` is the identity. -/
 @[simp]
@@ -278,6 +271,27 @@ theorem integralAffineDiffeomorph_trans (A A' : GL ι ℤ) (b b' : ι → ℝ) :
       exact Matrix.dotProduct_mulVec b' _ w
     rw [congrArg z.2 (hz v), hb v, add_assoc, ← Finset.sum_add_distrib]
     simp only [Pi.add_apply, add_mul]
+
+/-- **Inverse of an integral affine change.** The inverse of `Φ_(A, b)` is the integral affine
+change `Φ_(A⁻¹, -Aᵀ b)`, matching the inverse `I ↦ Aᵀ (I - b)` of the action transformation
+`I ↦ A⁻ᵀ I + b`. -/
+@[simp]
+theorem integralAffineDiffeomorph_symm (A : GL ι ℤ) (b : ι → ℝ) :
+    (integralAffineDiffeomorph p A b).symm =
+      integralAffineDiffeomorph p A⁻¹ (-(((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b)) := by
+  -- `Φ_(A, b) ∘ Φ_(A⁻¹, -Aᵀ b) = Φ_(1, 0)`, the identity.
+  have hA : (A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *
+      ((A⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) = 1 :=
+    (Matrix.map_mul (f := Int.castRingHom ℝ)).symm.trans <| by
+      rw [Units.mul_inv, Matrix.map_one _ (map_zero _) (map_one _)]
+  have h : (integralAffineDiffeomorph p A⁻¹ (-(((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b))).trans
+      (integralAffineDiffeomorph p A b) = Diffeomorph.refl _ _ _ := by
+    rw [integralAffineDiffeomorph_trans, mul_inv_cancel, Matrix.mulVec_neg,
+      Matrix.mulVec_mulVec, ← Matrix.transpose_mul, hA, Matrix.transpose_one, Matrix.one_mulVec,
+      neg_add_cancel, integralAffineDiffeomorph_one_zero]
+  exact Diffeomorph.ext fun z ↦
+    (congrArg (integralAffineDiffeomorph p A b).symm (DFunLike.congr_fun h z)).symm.trans
+      ((integralAffineDiffeomorph p A b).symm_apply_apply _)
 
 end CotangentBundle
 

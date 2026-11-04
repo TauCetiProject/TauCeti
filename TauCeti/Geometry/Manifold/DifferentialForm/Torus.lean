@@ -30,7 +30,7 @@ of maps of circles pulls `dt_i` back to the coordinate pullback of the `i`-th fa
 `AddCircle (p i) ≃ AddCircle (q i)`, pulls `dt_i` back to `(p i)⁻¹ * q i` times `dt_i`. Reindexing
 the factors along a map `e` of index sets, `x ↦ (j ↦ x (e j))`, pulls `dt_j` back to `dt_(e j)`.
 When all periods are equal, an invertible integer matrix `A`, acting by `x ↦ A • x`, pulls `dt_i`
-back to `∑ j, A i j • dt_j`.
+back to `∑ j, A i j • dt_j`, so it pulls `∑ j, b j • dt_j` back to `∑ k, (Aᵀ b)_k • dt_k`.
 
 For an ordered index set `Fin n`, the ordered wedge product `dt_0 ∧ ⋯ ∧ dt_(n-1)` of the
 coordinate time forms is the volume form of the torus (`TauCeti.torusVolumeForm p`). It sends
@@ -48,7 +48,8 @@ pulls it back to `sign σ` times itself, and the diagonal rescaling of the perio
 
 * `TauCeti.torusTimeForm_apply`: `dt_i` sends a tangent vector to its `i`-th coordinate;
   `TauCeti.sum_smul_torusTimeForm_apply` evaluates a constant-coefficient combination.
-* `TauCeti.isClosed_torusTimeForm`: `dt_i` is closed.
+* `TauCeti.isClosed_torusTimeForm`, `TauCeti.isClosed_sum_smul_torusTimeForm`: `dt_i` and the
+  constant-coefficient combinations `∑ j, c j • dt_j` are closed.
 * `TauCeti.mpullback_update_torusTimeForm_self`,
   `TauCeti.mpullback_update_torusTimeForm_of_ne`: the restrictions of the coordinate time forms
   to a coordinate fiber.
@@ -64,7 +65,9 @@ pulls it back to `sign σ` times itself, and the diagonal rescaling of the perio
   of circles, and along the diagonal rescaling of the periods.
 * `TauCeti.mpullback_reindex_torusTimeForm`: naturality under reindexing of the factors.
 * `TauCeti.mpullback_generalLinearGroup_smul_torusTimeForm`: an invertible integer matrix `A`
-  acting on a torus of equal periods pulls `dt_i` back to `∑ j, A i j • dt_j`.
+  acting on a torus of equal periods pulls `dt_i` back to `∑ j, A i j • dt_j`;
+  `TauCeti.mpullback_generalLinearGroup_smul_sum_smul_torusTimeForm` pulls `∑ j, b j • dt_j` back
+  to `∑ k, (Aᵀ b)_k • dt_k`.
 * `TauCeti.torusVolumeForm_apply`, `TauCeti.torusVolumeForm_apply_ne_zero`: the determinant
   formula for the volume form, which vanishes nowhere.
 * `TauCeti.mpullback_reindex_torusVolumeForm`,
@@ -124,6 +127,14 @@ theorem sum_smul_torusTimeForm_apply (c : ι → ℝ) (x : ∀ i, AddCircle (p i
 theorem isClosed_torusTimeForm (i : ι) : (torusTimeForm p i).IsClosed :=
   (AddCircle.isClosed_timeForm (p i)).mpullback _ _
 
+/-- The constant-coefficient combinations `∑ j, c j • dt_j` of the coordinate time forms of the
+torus are closed. -/
+theorem isClosed_sum_smul_torusTimeForm (c : ι → ℝ) : (∑ j, c j • torusTimeForm p j).IsClosed := by
+  rw [SmoothForm.isClosed_iff_mextDerivₗ_eq_zero, map_sum]
+  refine Finset.sum_eq_zero fun j _ ↦ ?_
+  rw [map_smul, (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero _).1 (isClosed_torusTimeForm p j),
+    smul_zero]
+
 /-- A product of smooth maps `f i : AddCircle (p i) → AddCircle (q i)` pulls the coordinate time
 form `dt_i` back to the coordinate pullback of the pullback of `dt_(q i)` along `f i`. -/
 theorem mpullback_piMap_torusTimeForm {q : ι → ℝ} [∀ i, Fact (0 < q i)]
@@ -178,6 +189,22 @@ theorem mpullback_generalLinearGroup_smul_torusTimeForm (q : ℝ) [Fact (0 < q)]
   -- The derivative of `x ↦ A • x` is multiplication by `A`; take its `i`-th coordinate.
   simpa [Matrix.mulVec, dotProduct] using
     congrFun (AddCircle.mfderiv_generalLinearGroup_smul_apply q A x (v 0)) i
+
+open Matrix in
+/-- An invertible integer matrix `A`, acting on the torus `ι → AddCircle q` of equal periods, pulls
+the constant-coefficient combination `∑ j, b j • dt_j` back to `∑ k, (Aᵀ b)_k • dt_k`. -/
+theorem mpullback_generalLinearGroup_smul_sum_smul_torusTimeForm (q : ℝ) [Fact (0 < q)]
+    (A : GL ι ℤ) (b : ι → ℝ) :
+    SmoothForm.mpullback (fun x : ι → AddCircle q ↦ A • x) (contMDiff_const_smul A)
+        (∑ j, b j • torusTimeForm (fun _ ↦ q) j) =
+      ∑ k, (((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ))ᵀ *ᵥ b) k • torusTimeForm (fun _ ↦ q) k := by
+  simp only [map_sum, map_smul, mpullback_generalLinearGroup_smul_torusTimeForm,
+    Finset.smul_sum, smul_smul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [← Finset.sum_smul]
+  congr 1
+  simp [Matrix.mulVec, dotProduct, mul_comm]
 
 /-- On the coordinate fiber through `x` in the `i`-th coordinate, the coordinate time form `dt_i`
 restricts to the time form of the `i`-th circle. -/
