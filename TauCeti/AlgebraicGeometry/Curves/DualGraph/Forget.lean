@@ -138,8 +138,7 @@ theorem IsStable.isStable_of_stabilizationStep_reindex_some (hG : G.IsStable)
     exact hG.logCanonicalDegree_reindex_some_pos_of_ne (by omega) hy
   | @contractBridge x hx hm =>
     have hdeg := hx.logCanonicalDegree_eq
-    have hm₀ : (G.reindex some).numMarkings x = 0 := by
-      simpa [numMarkings_def, filter_eq_empty_iff] using hm
+    have hm₀ := (G.reindex some).numMarkings_eq_zero_iff.mpr hm
     refine (isStable_iff _).mpr fun ⟨y, hy⟩ ↦ ?_
     rw [logCanonicalDegree_contractBridge]
     exact hG.logCanonicalDegree_reindex_some_pos_of_ne (by omega) hy

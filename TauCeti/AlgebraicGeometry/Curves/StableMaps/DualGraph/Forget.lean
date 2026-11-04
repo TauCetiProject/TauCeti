@@ -191,9 +191,7 @@ theorem IsStable.isStable_of_stabilizationStep_forgetMarking (hD : D.IsStable)
     simpa only [hm₁, Nat.cast_one, sub_self, ite_self, add_zero] using hpos
   | @contractBridge _ _ x hx hm hd =>
     have hbridge := hx.logCanonicalDegree_eq
-    have hm₀ : (G.reindex some).numMarkings x = 0 := by
-      simpa only [numMarkings_def, card_eq_zero, filter_eq_empty_iff, mem_univ,
-        true_implies] using hm
+    have hm₀ := (G.reindex some).numMarkings_eq_zero_iff.mpr hm
     have hweight : D.forgetMarking.weightedLogCanonicalDegree x = 0 := by
       simp [weightedLogCanonicalDegree_eq_of_componentDegree_eq_zero _ hd, hbridge, hm₀]
     refine (isStable_iff_weightedLogCanonicalDegree_pos _).mpr fun ⟨z, hz⟩ ↦ ?_
