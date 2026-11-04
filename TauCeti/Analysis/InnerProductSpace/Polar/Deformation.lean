@@ -58,7 +58,7 @@ theorem polarDeformation_zero (T : E →L[ℝ] E) : T.polarDeformation 0 = T := 
 @[simp]
 theorem polarDeformation_one (T : E →L[ℝ] E) : T.polarDeformation 1 = T.polarFactor := by
   rw [polarDeformation_def, sub_self, CFC.rpow_zero _ T.modulus_nonneg]
-  exact mul_one T.polarFactor
+  rw [one_def, comp_id]
 
 /-- The polar deformation is continuous in the parameter in operator norm. -/
 theorem continuous_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) :
@@ -70,40 +70,75 @@ theorem continuous_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) :
     exact hexp.comp ((continuous_const.sub continuous_id).smul continuous_const)
   exact continuous_const.clm_comp hp
 
-/-- For an invertible operator, the norm along the deformation is the norm of the corresponding
+/-- For an injective operator, the norm along the deformation is the norm of the corresponding
 power of its modulus. -/
-theorem norm_polarDeformation_apply (T : E →L[ℝ] E) (hT : IsUnit T) (t : ℝ) (x : E) :
+theorem norm_polarDeformation_apply (T : E →L[ℝ] E) (hT : Function.Injective T)
+    (t : ℝ) (x : E) :
     ‖T.polarDeformation t x‖ = ‖(T.modulus ^ (1 - t)) x‖ := by
   rw [polarDeformation_def, comp_apply]
-  exact T.norm_polarFactor_apply_of_injective (isUnit_iff_bijective.mp hT).injective _
+  exact T.norm_polarFactor_apply_of_injective hT _
 
-/-- An expanding invertible operator deforms to its polar factor without shortening a vector
+/-- Every operator along the polar deformation of an invertible operator is invertible. -/
+@[simp]
+theorem isUnit_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) (t : ℝ) :
+    IsUnit (T.polarDeformation t) := by
+  have hP := (T.isStrictlyPositive_modulus hT).isUnit
+  have hU : IsUnit T.polarFactor := hP.mul_right_iff.mp (by
+    simpa only [mul_def, polarFactor_comp_modulus] using hT)
+  rw [polarDeformation_def, ← mul_def]
+  exact hU.mul (hP.cfcRpow _ T.modulus_nonneg)
+
+/-- The modulus along the polar deformation of an injective operator is the corresponding
+power of its original modulus. -/
+@[simp]
+theorem modulus_polarDeformation (T : E →L[ℝ] E) (hT : Function.Injective T) (t : ℝ) :
+    (T.polarDeformation t).modulus = T.modulus ^ (1 - t) := by
+  have hpos : (T.modulus ^ (1 - t)).IsPositive :=
+    nonneg_iff_isPositive.mp CFC.rpow_nonneg
+  refine (eq_modulus_iff.mpr ⟨hpos, ?_⟩).symm
+  have hgram := adjoint_comp_self_eq_adjoint_comp_self_iff.mpr
+    (fun x ↦ (T.norm_polarDeformation_apply hT t x).symm)
+  simpa only [hpos.isSelfAdjoint.adjoint_eq] using hgram
+
+/-- The polar factor is unchanged along the polar deformation of an invertible operator. -/
+@[simp]
+theorem polarFactor_polarDeformation (T : E →L[ℝ] E) (hT : IsUnit T) (t : ℝ) :
+    (T.polarDeformation t).polarFactor = T.polarFactor := by
+  refine (eq_polarFactor ?_ ?_).symm
+  · rw [T.modulus_polarDeformation (isUnit_iff_bijective.mp hT).injective,
+      polarDeformation_def]
+  · intro x hx
+    have hx₀ : x = 0 := (isUnit_iff_bijective.mp (T.isUnit_polarDeformation hT t)).injective
+      (by simpa using hx)
+    simp [hx₀]
+
+/-- An expanding operator deforms to its polar factor without shortening a vector
 below its original norm or lengthening it beyond its original image. -/
-theorem norm_le_norm_polarDeformation_apply_le (T : E →L[ℝ] E) (hT : IsUnit T)
+theorem norm_le_norm_polarDeformation_apply_le (T : E →L[ℝ] E)
     (hexpand : ∀ x, ‖x‖ ≤ ‖T x‖) {t : ℝ} (ht : t ∈ Icc 0 1) (x : E) :
     ‖x‖ ≤ ‖T.polarDeformation t x‖ ∧ ‖T.polarDeformation t x‖ ≤ ‖T x‖ := by
   have hP := T.one_le_modulus_of_forall_norm_le hexpand
-  have hunit := (T.isStrictlyPositive_modulus hT).isUnit
   have hpos := T.modulus_nonneg
-  rw [T.norm_polarDeformation_apply hT]
+  have hsp : IsStrictlyPositive T.modulus :=
+    (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos (R := ℝ) T.modulus).mpr
+      fun r hr ↦ zero_lt_one.trans_le ((CFC.one_le_iff (R := ℝ) _).mp hP r hr)
+  have hinj : Function.Injective T := (injective_iff_map_eq_zero T).mpr fun x hx ↦ by
+    exact norm_eq_zero.mp (le_antisymm (by simpa [hx] using hexpand x) (norm_nonneg x))
+  rw [T.norm_polarDeformation_apply hinj]
   constructor
   · have hcancel : (T.modulus ^ (t - 1)) ((T.modulus ^ (1 - t)) x) = x := by
-      have he : (t - 1) + (1 - t) = 0 := by ring
-      have hop := CFC.rpow_add hunit (x := t - 1) (y := 1 - t)
-      rw [he, CFC.rpow_zero _ hpos] at hop
-      exact congrArg (fun A : E →L[ℝ] E ↦ A x) hop.symm
+      rw [← mul_apply_eq_comp, ← neg_sub, CFC.rpow_neg_mul_rpow (1 - t) hsp,
+        one_apply_eq_self]
     calc
       ‖x‖ = ‖(T.modulus ^ (t - 1)) ((T.modulus ^ (1 - t)) x)‖ := congrArg norm hcancel.symm
-      _ ≤ ‖(T.modulus ^ (1 - t)) x‖ := by
-        simpa only [one_mul] using (T.modulus ^ (t - 1)).le_of_opNorm_le
-          (T.modulus.norm_rpow_le_one_of_one_le hP (sub_nonpos.mpr ht.2)) ((T.modulus ^ (1 - t)) x)
+      _ ≤ ‖(T.modulus ^ (1 - t)) x‖ :=
+        T.modulus.norm_rpow_apply_le_of_one_le_of_nonpos hP (sub_nonpos.mpr ht.2) _
   · have hfactor : (T.modulus ^ (1 - t)) x = (T.modulus ^ (-t)) (T.modulus x) := by
       have he : -t + 1 = 1 - t := by ring
-      have hop := CFC.rpow_add hunit (x := -t) (y := 1)
+      have hop := CFC.rpow_add hsp.isUnit (x := -t) (y := 1)
       rw [he, CFC.rpow_one _ hpos] at hop
-      exact congrArg (fun A : E →L[ℝ] E ↦ A x) hop
+      simpa only [mul_apply_eq_comp] using congrArg (fun A : E →L[ℝ] E ↦ A x) hop
     rw [hfactor, ← T.norm_modulus_apply x]
-    simpa only [one_mul] using (T.modulus ^ (-t)).le_of_opNorm_le
-      (T.modulus.norm_rpow_le_one_of_one_le hP (neg_nonpos.mpr ht.1)) (T.modulus x)
+    exact T.modulus.norm_rpow_apply_le_of_one_le_of_nonpos hP (neg_nonpos.mpr ht.1) _
 
 end ContinuousLinearMap

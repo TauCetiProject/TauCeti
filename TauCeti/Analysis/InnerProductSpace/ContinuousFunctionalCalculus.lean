@@ -234,7 +234,7 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
 
 /-- Negative real powers of a positive real Hilbert space operator above the identity are
 contractions in operator norm. -/
-theorem norm_rpow_le_one_of_one_le (P : X →L[ℝ] X) (hP : 1 ≤ P)
+theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
     {s : ℝ} (hs : s ≤ 0) : ‖P ^ s‖ ≤ 1 := by
   have hP₀ : 0 ≤ P := zero_le_one.trans hP
   rw [CFC.rpow_eq_cfc_real hP₀]
@@ -252,5 +252,11 @@ theorem norm_rpow_le_one_of_one_le (P : X →L[ℝ] X) (hP : 1 ≤ P)
   have hr₁ : 1 ≤ r := (CFC.one_le_iff (R := ℝ) P).mp hP r hr
   simpa only [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (by linarith) s)] using
     Real.rpow_le_one_of_one_le_of_nonpos hr₁ hs
+
+/-- Nonpositive real powers of an operator above the identity do not increase vector norms. -/
+theorem norm_rpow_apply_le_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
+    {s : ℝ} (hs : s ≤ 0) (y : X) : ‖(P ^ s) y‖ ≤ ‖y‖ := by
+  simpa only [one_mul] using (P ^ s).le_of_opNorm_le
+    (P.norm_rpow_le_one_of_one_le_of_nonpos hP hs) y
 
 end ContinuousLinearMap

@@ -212,21 +212,22 @@ theorem norm_comp_modulus {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 
     _ = ‖T ∘L D†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
     _ = ‖D ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
 
-section Real
+section RealAlgebra
 
-variable {X : Type*} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [CompleteSpace X]
+attribute [local instance] realAlgebra realIsScalarTower
 
-/-- The modulus of a pointwise expanding real Hilbert space operator is at least the identity
+/-- The modulus of a pointwise expanding Hilbert space operator is at least the identity
 in Loewner order. -/
-theorem one_le_modulus_of_forall_norm_le (T : X →L[ℝ] X)
+theorem one_le_modulus_of_forall_norm_le (T : E →L[𝕜] F)
     (hT : ∀ x, ‖x‖ ≤ ‖T x‖) : 1 ≤ T.modulus := by
-  have hgram : (1 : X →L[ℝ] X) ≤ T† ∘L T := by
+  have hgram : (1 : E →L[𝕜] E) ≤ T† ∘L T := by
     rw [le_def, isPositive_iff]
     refine ⟨(T.isPositive_adjoint_comp_self.isSelfAdjoint.sub
       (IsSelfAdjoint.one _)).isSymmetric, fun x ↦ ?_⟩
     have hsq : ‖x‖ ^ 2 ≤ ‖T x‖ ^ 2 := (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mpr (hT x)
     simpa [sub_apply, comp_apply, inner_sub_left, adjoint_inner_left,
-      real_inner_self_eq_norm_sq] using sub_nonneg.mpr hsq
+      inner_self_eq_norm_sq_to_K, RCLike.ofReal_sub, RCLike.ofReal_pow] using
+      (RCLike.ofReal_nonneg (K := 𝕜)).mpr (sub_nonneg.mpr hsq)
   have hgram₀ : 0 ≤ T† ∘L T := zero_le_one.trans hgram
   rw [modulus_eq_sqrt, CFC.sqrt_eq_rpow, CFC.rpow_eq_cfc_real hgram₀]
   rw [← cfc_const_one ℝ (T† ∘L T)]
@@ -234,6 +235,6 @@ theorem one_le_modulus_of_forall_norm_le (T : X →L[ℝ] X)
   intro r hr
   exact Real.one_le_rpow ((CFC.one_le_iff (R := ℝ) _).mp hgram r hr) (by norm_num)
 
-end Real
+end RealAlgebra
 
 end ContinuousLinearMap
