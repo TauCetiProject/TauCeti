@@ -33,7 +33,8 @@ smooth sphere vanishes. For a symplectic form this is the area half of symplecti
 exact form, any two smooth caps of the same loop have the same integral
 (`TauCeti.SmoothForm.IsWeaklyExact.rectangleIntegral_eq`). The cap area of a loop
 (`TauCeti.SmoothForm.capArea`) is therefore well defined; it is the area term of the Hamiltonian
-action functional on contractible loops.
+action functional on contractible loops. Loops are `1`-periodic maps `γ : ℝ → M`, so that they are
+determined by their values on `[0, 1]` (`TauCeti.SmoothForm.capArea_congr`).
 
 The proof glues the two caps into a sphere. After a reparametrization of the first coordinate that
 is constant near the loop, which does not change the integrals by homotopy invariance
@@ -53,13 +54,14 @@ Weak exactness is natural under pullback by smooth maps
 * `TauCeti.IsSmoothSphere`: a smooth sphere, presented as a cylinder between constant loops.
 * `TauCeti.IsSmoothCap`: a smooth cap of a loop.
 * `TauCeti.SmoothForm.IsWeaklyExact`: the integral over every smooth sphere vanishes.
-* `TauCeti.SmoothForm.capArea`: the integral over a smooth cap of a loop.
+* `TauCeti.SmoothForm.capArea`: the integral over a smooth cap of a `1`-periodic loop.
 
 ## Main results
 
 * `TauCeti.SmoothForm.IsWeaklyExact.rectangleIntegral_eq`: for a closed weakly exact form, any two
   smooth caps of a loop have the same integral.
 * `TauCeti.SmoothForm.IsWeaklyExact.capArea_eq`: the cap area is the integral over any smooth cap.
+* `TauCeti.SmoothForm.capArea_congr`: the cap area is a function of the loop on `[0, 1]`.
 * `TauCeti.SmoothForm.isWeaklyExact_of_mextDeriv_eq`: exact forms are weakly exact.
 
 ## References
@@ -363,19 +365,32 @@ theorem isWeaklyExact_of_mextDeriv_eq {φ : SmoothForm I M F 2} {α : RoughForm 
   simp
 
 variable (φ) in
-/-- The integral of a two-form over a smooth cap of the loop `γ`, for a cap chosen once and for
-all; it is `0` when `γ` has no smooth cap. For a closed weakly exact form it is the integral over
-every smooth cap (`TauCeti.SmoothForm.IsWeaklyExact.capArea_eq`). -/
+/-- The integral of a two-form over a smooth cap of the `1`-periodic loop `γ`, for a cap chosen once
+and for all; it is `0` when `γ` is not `1`-periodic or has no smooth cap. Periodicity makes the cap
+area a function of the loop on `[0, 1]` (`TauCeti.SmoothForm.capArea_congr`): a cap must match `γ`
+on the whole line `s = 0`, so without it the cap area would also depend on `γ` outside `[0, 1]`.
+For a closed weakly exact form it is the integral over every smooth cap
+(`TauCeti.SmoothForm.IsWeaklyExact.capArea_eq`). -/
 def capArea (γ : ℝ → M) : F :=
   open Classical in
-  if h : ∃ u, IsSmoothCap I u γ then rectangleIntegral φ.1 h.choose (0, 0) (1, 1) else 0
+  if h : Function.Periodic γ 1 ∧ ∃ u, IsSmoothCap I u γ then
+    rectangleIntegral φ.1 h.2.choose (0, 0) (1, 1)
+  else 0
 
 omit [IsManifold I 2 M] [CompleteSpace F] in
 open Classical in
 /-- Unfolding `TauCeti.SmoothForm.capArea`. -/
 theorem capArea_def (γ : ℝ → M) : φ.capArea γ =
-    if h : ∃ u, IsSmoothCap I u γ then rectangleIntegral φ.1 h.choose (0, 0) (1, 1) else 0 := by
+    if h : Function.Periodic γ 1 ∧ ∃ u, IsSmoothCap I u γ then
+      rectangleIntegral φ.1 h.2.choose (0, 0) (1, 1)
+    else 0 := by
   rw [capArea]
+
+omit [IsManifold I 2 M] [CompleteSpace F] in
+/-- A loop which is not `1`-periodic has zero cap area. -/
+theorem capArea_eq_zero_of_not_periodic (h : ¬ Function.Periodic γ 1) : φ.capArea γ = 0 := by
+  rw [capArea_def]
+  exact dite_eq_right fun h' ↦ h h'.1
 
 omit [IsManifold I 2 M] [CompleteSpace F] in
 /-- A loop without a smooth cap has zero cap area. -/
@@ -383,19 +398,33 @@ omit [IsManifold I 2 M] [CompleteSpace F] in
 theorem capArea_eq_zero_of_not_exists (h : ¬ ∃ u, IsSmoothCap I u γ) : φ.capArea γ = 0 := by
   simp [capArea_def, h]
 
-/-- For a closed weakly exact form, `capArea` is the integral over any smooth cap. -/
+omit [IsManifold I 2 M] [CompleteSpace F] in
+/-- **The cap area is a function of the loop on `[0, 1]`**: two `1`-periodic loops which agree on
+`[0, 1]` have the same cap area. -/
+theorem capArea_congr {γ' : ℝ → M} (hγ : Function.Periodic γ 1) (hγ' : Function.Periodic γ' 1)
+    (h : EqOn γ γ' (Icc 0 1)) : φ.capArea γ = φ.capArea γ' := by
+  congr 1
+  funext t
+  have ht : t - ⌊t⌋ * 1 ∈ Icc (0 : ℝ) 1 := by
+    rw [mul_one, ← Int.fract]
+    exact ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
+  rw [← hγ.sub_int_mul_eq ⌊t⌋, ← hγ'.sub_int_mul_eq ⌊t⌋, h ht]
+
+/-- For a closed weakly exact form, `capArea` of a `1`-periodic loop is the integral over any smooth
+cap. -/
 theorem IsWeaklyExact.capArea_eq (hφ : φ.IsWeaklyExact) (hc : φ.IsClosed)
-    (hu : IsSmoothCap I u γ) : φ.capArea γ = rectangleIntegral φ.1 u (0, 0) (1, 1) := by
-  unfold capArea
+    (hγ : Function.Periodic γ 1) (hu : IsSmoothCap I u γ) :
+    φ.capArea γ = rectangleIntegral φ.1 u (0, 0) (1, 1) := by
+  rw [capArea_def]
   split_ifs with h
-  · exact hφ.rectangleIntegral_eq hc h.choose_spec hu
-  · exact absurd ⟨u, hu⟩ h
+  · exact hφ.rectangleIntegral_eq hc h.2.choose_spec hu
+  · exact absurd ⟨hγ, u, hu⟩ h
 
 /-- For a closed weakly exact form, a constant loop has zero cap area. -/
 @[simp]
 theorem IsWeaklyExact.capArea_const (hφ : φ.IsWeaklyExact) (hc : φ.IsClosed) (x : M) :
     φ.capArea (fun _ ↦ x) = 0 := by
-  rw [hφ.capArea_eq hc (isSmoothCap_const x)]
+  rw [hφ.capArea_eq hc (fun _ ↦ rfl) (isSmoothCap_const x)]
   exact rectangleIntegral_comp_fst φ.1 (fun _ ↦ x) _ _
 
 end SmoothForm
