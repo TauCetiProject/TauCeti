@@ -60,14 +60,11 @@ theorem subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations (hp : serr
     Subsingleton (RelHomotopyGroup N ⟨TopPair.ofSubset (p ⁻¹' A), e⟩) := by
   refine RelHomotopyGroup.subsingleton_iff.2 fun γ ↦ ?_
   -- The projection of `γ` is a relative cube of `(B, A, p e)`.
-  let q : RelGenLoop N ⟨TopPair.ofSubset A, ⟨p e, e.2⟩⟩ :=
-    RelGenLoop.mk (p.hom.comp γ.1)
-      (fun t ↦ by
-        obtain ⟨x, hx⟩ := RelGenLoop.apply_zero_mem_range γ t
-        exact ⟨⟨p x.1, x.2⟩, congrArg p hx⟩)
-      (fun s t hst ↦ congrArg p ((RelGenLoop.mem_iff.1 γ.2).2 s t hst))
+  let π : (⟨TopPair.ofSubset (p ⁻¹' A), e⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, ⟨p e, e.2⟩⟩ :=
+    ⟨TopPair.ofSubsetMap p fun _ h ↦ h, Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩
+  let q := RelGenLoop.map π γ
   have hq (z : I × (N → I)) : q.1 z = p (γ.1 z) :=
-    RelGenLoop.mk_apply _ _ _ z
+    (RelGenLoop.map_apply π γ z).trans (TopPair.ofSubsetMap_fst_apply _ _ _)
   obtain ⟨q', ⟨F⟩, hq'⟩ := RelHomotopyGroup.subsingleton_iff.1 h q
   -- Lift the compression `F` of `q`, read on the cube `I^(Option N)`, starting at `γ` and
   -- stationary on the boundary of the cube.
