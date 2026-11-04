@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Conjugate.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential
 
 /-!
