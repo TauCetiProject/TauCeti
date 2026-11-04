@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
+import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -24,6 +25,8 @@ with `f(s, ·)` `α`-Hölder with constant `H` for almost every `0 < s < T`, whe
 
 * `TauCeti.heatDuhamelPotential_eq_integral`: **Duhamel's principle in integrated form**,
   `w(t, x) = ∫₀ᵗ (Δw(σ, x) + f(σ, x)) dσ` for `0 ≤ t ≤ T`.
+* `TauCeti.laplacian_heatDuhamelPotential_of_holderWith`: the Laplacian under the time integral,
+  `Δw(t, x) = ∫₀ᵗ Δ(K_{t-s} ⋆ f(s, ·))(x) ds`.
 * `TauCeti.continuousOn_laplacian_heatDuhamelPotential`: for `α < 2`, `σ ↦ Δw(σ, x)` is
   continuous on `[0, T]`.
 * `TauCeti.hasDerivWithinAt_heatDuhamelPotential`, `TauCeti.hasDerivAt_heatDuhamelPotential`:
@@ -81,28 +84,16 @@ of `f(s, ·)`: the Laplacian of `K_{σ-s} ⋆ f(s, ·)` at `x` for `σ > s`, and
 private def laplacianSlice (f : ℝ → E → F) (x : E) (s σ : ℝ) : F :=
   if s < σ then Δ (heatKernel (σ - s) ⋆ f s) x else 0
 
-/-- The Laplacian of the heat convolution of a bounded `α`-Hölder function with constant `H` is
-`O(H τ^((α - 2)/2))`. -/
-private theorem exists_norm_laplacian_heatKernel_convolution_le :
-    ∃ C ≥ 0, ∀ {g : E → F} {M τ : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
-      HolderWith H α g → 0 < τ → ∀ x,
-        ‖Δ (heatKernel τ ⋆ g) x‖ ≤ C * H * τ ^ (((α : ℝ) - 2) / 2) := by
-  obtain ⟨C, hC₀, hC⟩ :=
-    exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) 2 α.coe_nonneg
-  refine ⟨finrank ℝ E * C, by positivity, fun {g M τ H} hg hM hH hτ x => ?_⟩
-  have h₁ := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hτ hg hM hH
-    two_ne_zero x
-  have h₂ := mul_le_mul_of_nonneg_left (hC τ hτ) H.coe_nonneg
-  push_cast at h₂
-  have h₃ : ‖fderiv ℝ (fderiv ℝ (heatKernel τ ⋆ g)) x‖ =
-      ‖iteratedFDeriv ℝ 2 (heatKernel τ ⋆ g) x‖ := by
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  refine (norm_laplacian_le _ x).trans ?_
-  calc _ ≤ (finrank ℝ E : ℝ) * (H * (C * τ ^ (((α : ℝ) - 2) / 2))) := by
-        rw [h₃]
-        gcongr
-        linarith
-    _ = _ := by ring
+/-- For `α > 0`, the exponent `(α - 2)/2` of the Laplacian bound exceeds `-1`. -/
+private theorem neg_one_lt_sub_two_div_two (hα : 0 < α) : -1 < ((α : ℝ) - 2) / 2 := by
+  have : (0 : ℝ) < α := hα
+  linarith
+
+/-- For `α > 0`, `σ ↦ (σ - s)^((α - 2)/2)` is interval integrable on every interval. -/
+private theorem intervalIntegrable_sub_rpow (hα : 0 < α) (s a b : ℝ) :
+    IntervalIntegrable (fun σ => (σ - s) ^ (((α : ℝ) - 2) / 2)) volume a b := by
+  simpa using (intervalIntegral.intervalIntegrable_rpow' (neg_one_lt_sub_two_div_two hα)
+    (a := a - s) (b := b - s)).comp_sub_right s
 
 /-- Off the diagonal `σ = s`, the slice `σ ↦ u_s(σ - s, x)` has derivative `laplacianSlice`. -/
 private theorem hasDerivAt_heatCauchyPotential_sub {s σ : ℝ}
@@ -125,13 +116,8 @@ private theorem intervalIntegrable_laplacianSlice {s : ℝ} (hg : AEStronglyMeas
     (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hH : HolderWith H α (f s)) (hα : 0 < α) (x : E) (a b : ℝ) :
     IntervalIntegrable (laplacianSlice f x s) volume a b := by
   obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
-  have hp : -1 < ((α : ℝ) - 2) / 2 := by
-    have : (0 : ℝ) < α := hα
-    linarith
-  have hw : IntervalIntegrable (fun σ => (σ - s) ^ (((α : ℝ) - 2) / 2)) volume a b := by
-    simpa using
-      (intervalIntegral.intervalIntegrable_rpow' hp (a := a - s) (b := b - s)).comp_sub_right s
-  refine (hw.const_mul (C * H)).mono_fun ?_ (ae_of_all _ fun σ => ?_)
+  refine ((intervalIntegrable_sub_rpow hα s a b).const_mul (C * H)).mono_fun ?_
+    (ae_of_all _ fun σ => ?_)
   · refine (stronglyMeasurable_deriv
       (fun σ => heatCauchyPotential (f s) (σ - s) x)).aestronglyMeasurable.congr ?_
     filter_upwards [ae_restrict_of_ae ((countable_singleton s).ae_notMem volume)] with σ hσ
@@ -193,9 +179,7 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
       ((volume.restrict (Ioo 0 t)).prod (volume.restrict (Ioo 0 t))) := by
   obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
   set p : ℝ := ((α : ℝ) - 2) / 2 with hp_def
-  have hp : -1 < p := by
-    have : (0 : ℝ) < α := hα
-    linarith
+  have hp : -1 < p := neg_one_lt_sub_two_div_two hα
   have hp1 : 0 < p + 1 := by linarith
   have hfs (s : ℝ) : AEStronglyMeasurable (f s) :=
     (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
@@ -216,11 +200,8 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
     rw [uIcc_of_le hs.1.le] at hσ
     simp [laplacianSlice, not_lt.2 hσ.2]
   have hle : ∫ σ in s..t, ‖laplacianSlice f x s σ‖ ≤ ∫ σ in s..t, C * H * (σ - s) ^ p := by
-    have hw : IntervalIntegrable (fun σ => (σ - s) ^ p) volume s t := by
-      simpa using
-        (intervalIntegral.intervalIntegrable_rpow' hp (a := s - s) (b := t - s)).comp_sub_right s
-    refine intervalIntegral.integral_mono_on hs.2.le (hint s t).norm (hw.const_mul _)
-      fun σ hσ => ?_
+    refine intervalIntegral.integral_mono_on hs.2.le (hint s t).norm
+      ((intervalIntegrable_sub_rpow hα s s t).const_mul _) fun σ hσ => ?_
     simp only [laplacianSlice]
     split_ifs with h
     · exact hC (hfs s) hsM hsH (sub_pos.2 h) x
@@ -241,6 +222,28 @@ private theorem integrable_laplacianSlice (hf : StronglyMeasurable (Function.unc
         · linarith [hs.2]
         · linarith [hs.1]
 
+/-- **The Laplacian of the Duhamel potential.** Let `f` be jointly measurable and essentially
+bounded on `(0, t) × E`, with `f(s, ·)` `α`-Hölder for almost every `0 < s < t`, where `α > 0`.
+Then the Laplacian of `w(t, ·)` is computed under the time integral:
+`Δw(t, x) = ∫₀ᵗ Δ(K_{t-s} ⋆ f(s, ·))(x) ds`. -/
+theorem laplacian_heatDuhamelPotential_of_holderWith
+    (hf : StronglyMeasurable (Function.uncurry f))
+    (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M)
+    (hH : ∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) (hα : 0 < α) (ht : 0 < t)
+    (x : E) :
+    Δ (heatDuhamelPotential f t) x = ∫ s in 0..t, Δ (heatKernel (t - s) ⋆ f s) x := by
+  have hint := intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf hfM hH
+    hα ht le_rfl x
+  -- The Laplacian is a sum of values of the Hessian, each a continuous linear functional of it.
+  set L : Fin (finrank ℝ E) → ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F →L[ℝ] F :=
+    fun i => ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
+      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]
+  simp only [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  rw [congrFun (iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα ht le_rfl) x]
+  exact (Finset.sum_congr rfl fun i _ => ((L i).intervalIntegral_comp_comm hint).symm).trans
+    (intervalIntegral.integral_finsetSum fun i _ =>
+      ⟨(L i).integrable_comp hint.1, (L i).integrable_comp hint.2⟩).symm
+
 /-- **Duhamel's principle in integrated form**, together with the integrability of both terms. -/
 private theorem heatDuhamelPotential_eq_integral_add_integral
     (hf : StronglyMeasurable (Function.uncurry f))
@@ -260,26 +263,13 @@ private theorem heatDuhamelPotential_eq_integral_add_integral
   have hΔ : ∀ σ ∈ Ioo 0 t,
       ∫ s in Ioo 0 t, laplacianSlice f x s σ = Δ (heatDuhamelPotential f σ) x := by
     intro σ hσ
-    have hfM' := ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hσ.2.le) hfM
-    have hH' := ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hσ.2.le) hH
-    have hint := intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf hfM'
-      hH' hα hσ.1 le_rfl x
-    have hint' := hint.1.mono_set Ioo_subset_Ioc_self
-    have happly (i : Fin (finrank ℝ E)) : IntegrableOn (fun s =>
-        iteratedFDeriv ℝ 2 (heatKernel (σ - s) ⋆ f s) x
-          ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (Ioo 0 σ) :=
-      (ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F _).integrable_comp hint'
-    rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioo
-        (Ioo_subset_Ioo_right hσ.2.le) fun s hs => ?_,
-      setIntegral_congr_fun measurableSet_Ioo (g := fun s =>
-        ∑ i, iteratedFDeriv ℝ 2 (heatKernel (σ - s) ⋆ f s) x
-          ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) fun s hs => ?_,
-      integral_finsetSum _ fun i _ => happly i, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-    · beta_reduce
-      rw [congrFun (iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM' hH' hα hσ.1 le_rfl) x,
-        intervalIntegral.integral_of_le hσ.1.le, integral_Ioc_eq_integral_Ioo]
-      exact Finset.sum_congr rfl fun i _ => (ContinuousMultilinearMap.integral_apply hint' _).symm
-    · simp [laplacianSlice, hs.2, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+    rw [laplacian_heatDuhamelPotential_of_holderWith hf
+        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hσ.2.le) hfM)
+        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hσ.2.le) hH) hα hσ.1 x,
+      intervalIntegral.integral_of_le hσ.1.le, integral_Ioc_eq_integral_Ioo,
+      setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioo
+        (Ioo_subset_Ioo_right hσ.2.le) fun s hs => ?_]
+    · exact setIntegral_congr_fun measurableSet_Ioo fun s hs => by simp [laplacianSlice, hs.2]
     · have : ¬ s < σ := fun h => hs.2 ⟨hs.1.1, h⟩
       simp [laplacianSlice, this]
   -- Integrating `laplacianSlice` in `σ` gives the increment of the slice.
@@ -398,7 +388,7 @@ theorem hasDerivWithinAt_heatDuhamelPotential_of_holderOnWith
       (Δ (heatDuhamelPotential f t) x + f t x) (Icc 0 T) t := by
   have hH : ∀ᵐ s ∂volume.restrict (Ioo 0 T), HolderWith H α (f s) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs
-    exact holderWith_of_holderOnWith_slab hpar ⟨hs.1.le, hs.2.le⟩
+    exact ParabolicSpaceTime.holderWith_of_holderOnWith_slab hpar ⟨hs.1.le, hs.2.le⟩
   -- The time slice through `x` of the forcing is continuous on `[0, T]`.
   have hc : Continuous fun σ : ℝ => ParabolicSpaceTime.ofCoords x σ :=
     ParabolicSpaceTime.continuous_ofCoords.comp (continuous_const.prodMk continuous_id)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 
 /-!
 # The initial time derivative of the Duhamel heat potential
@@ -151,18 +152,6 @@ theorem hasDerivWithinAt_heatDuhamelPotential_zero
   simpa only [hslope] using
     (tendstoUniformly_inv_smul_heatDuhamelPotential hf hfM hH hL hα hT).tendsto_at x
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedSpace ℝ F] [CompleteSpace F] in
-/-- A forcing parabolically `α`-Hölder on a slab `E × [a, b]` is `α`-Hölder in space, with the
-same constant, on every time slice of the slab. -/
-theorem holderWith_of_holderOnWith_slab {a b s : ℝ}
-    (hpar : HolderOnWith H α (fun p : ParabolicSpaceTime E => f p.time p.space)
-      (ParabolicSpaceTime.slab a b)) (hs : s ∈ Icc a b) : HolderWith H α (f s) := by
-  intro y z
-  simpa [ParabolicSpaceTime.edist_ofCoords] using
-    hpar (ParabolicSpaceTime.ofCoords y s) (by simpa using hs)
-      (ParabolicSpaceTime.ofCoords z s) (by simpa using hs)
-
 /-- Parabolic Hölder forcing on a closed slab gives the initial time derivative `f(0, x)`
 of the Duhamel potential within that slab. -/
 theorem hasDerivWithinAt_heatDuhamelPotential_zero_of_holderOnWith
@@ -177,7 +166,7 @@ theorem hasDerivWithinAt_heatDuhamelPotential_zero_of_holderOnWith
     simpa using hs
   have hH : ∀ᵐ s ∂volume.restrict (Ioo 0 T), HolderWith H α (f s) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs
-    exact holderWith_of_holderOnWith_slab hpar ⟨hs.1.le, hs.2.le⟩
+    exact ParabolicSpaceTime.holderWith_of_holderOnWith_slab hpar ⟨hs.1.le, hs.2.le⟩
   have hL : ∀ᵐ s ∂volume.restrict (Ioo 0 T),
       ∀ y, ‖f s y - f 0 y‖ ≤ H * s ^ ((α : ℝ) / 2) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs y

@@ -38,6 +38,8 @@ seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the othe
   supremum of `dist (v p) (v q) / (dist x y + √|t - s|) ^ α`.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm`, `TauCeti.ParabolicSpaceTime.timeEHolderNorm`:
   the separate spatial and temporal seminorms.
+* `TauCeti.ParabolicSpaceTime.holderWith_of_holderOnWith_slab`: the time slices of a
+  parabolically Hölder function on a slab are Hölder in space with the same constant.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.memHolder_timeSlice_of_timeEHolderNorm_lt_top`: each time slice is
   controlled by the temporal seminorm.
@@ -96,6 +98,15 @@ theorem spaceEHolderNorm_le_iff [MetricSpace E] {α : ℝ≥0} {v : slab (E := E
     spaceEHolderNorm α v ≤ C ↔ ∀ (t : Icc a b) (x y : E),
       edist (v (slabMk x t)) (v (slabMk y t)) ≤ C * edist x y ^ (α : ℝ) := by
   simp only [spaceEHolderNorm, iSup_le_iff, eHolderNorm_le_iff]
+
+/-- A function of the coordinates that is parabolically `α`-Hölder on the slab `E × [a, b]` is
+`α`-Hölder in space, with the same constant, on every time slice of the slab. -/
+theorem holderWith_of_holderOnWith_slab [PseudoEMetricSpace E] {f : ℝ → E → F} {H α : ℝ≥0}
+    {s : ℝ} (hpar : HolderOnWith H α (fun p : ParabolicSpaceTime E => f p.time p.space)
+      (slab a b)) (hs : s ∈ Icc a b) : HolderWith H α (f s) := by
+  intro y z
+  simpa [edist_ofCoords] using hpar (ofCoords y s) (by simpa using hs) (ofCoords z s)
+    (by simpa using hs)
 
 /-- The temporal seminorm is bounded by `C` exactly when every spatial position satisfies the
 `γ`-Hölder inequality in time with constant `C`. -/
