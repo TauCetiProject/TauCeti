@@ -22,7 +22,7 @@ universe u
 
 variable {V : Type u} [CommRing V]
 
--- The comparison fixes the sign and the order of all three tensor factors.
+-- The identity is represented by the multiplication action `(x ⊗ y) ⊗ z ↦ x * y * z`.
 example : homLinearEquiv (classical ℤ) (ModuleCat.of ℤ ℤ) (ModuleCat.of ℤ ℤ) (𝟙 _)
     (((⟨2, by simp⟩ : (classical ℤ).ideal) ⊗ₜ (⟨3, by simp⟩ : (classical ℤ).ideal)) ⊗ₜ (5 : ℤ) +
       ((⟨7, by simp⟩ : (classical ℤ).ideal) ⊗ₜ (⟨11, by simp⟩ : (classical ℤ).ideal)) ⊗ₜ

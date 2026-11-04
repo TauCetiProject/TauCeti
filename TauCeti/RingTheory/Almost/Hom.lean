@@ -14,6 +14,15 @@ For a basic setup `(V, m)`, morphisms `Mᵃ → Nᵃ` are naturally identified w
 `(m ⊗[V] m) ⊗[V] M →ₗ[V] N`. The comparison uses the equivalence with firm modules and the
 adjunction between their inclusion and firmification. It is linear and natural in both modules.
 
+## Main definitions and results
+
+* `TauCeti.Almost.Module.homLinearEquiv`: the linear comparison, characterized by
+  `TauCeti.Almost.Module.toAlmost_map_homLinearEquiv`, with inverse formula
+  `TauCeti.Almost.Module.homLinearEquiv_symm_apply` and naturality
+  `TauCeti.Almost.Module.homLinearEquiv_natural`.
+* `TauCeti.Almost.Module.hom_eq_zero_of_ideal_smul`: almost Hom-modules have no nonzero
+  almost zero elements.
+
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, §2.2, (2.2.4).
@@ -29,25 +38,6 @@ namespace TauCeti.Almost.Module
 universe u
 
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
-
-/-- The equivalence between the Serre quotient of modules and the firm-module model. -/
-noncomputable def firmEquiv : Module S ≌ S.Firm :=
-  Localization.uniq (toAlmost S) S.firm S.almostZero.isoModSerre
-
-/-- The firm representative of an almostification is its firmification. -/
-noncomputable def toAlmostCompFirmIso : toAlmost S ⋙ (firmEquiv S).functor ≅ S.firm :=
-  Localization.compUniqFunctor (toAlmost S) S.firm S.almostZero.isoModSerre
-
-noncomputable instance :
-    Localization.Lifting (toAlmost S) S.almostZero.isoModSerre S.firm (firmEquiv S).functor :=
-  ⟨toAlmostCompFirmIso S⟩
-
-instance : (firmEquiv S).functor.Linear V :=
-  (Localization.functor_linear_iff (toAlmost S) S.almostZero.isoModSerre V S.firm
-    (firmEquiv S).functor).mp inferInstance
-
-instance : (firmEquiv S).functor.Additive :=
-  Functor.additive_of_preserves_binary_products _
 
 private noncomputable def homEquiv (M N : ModuleCat.{u} V) :
     ((toAlmost S).obj M ⟶ (toAlmost S).obj N) ≃ (S.isFirm.ι.obj (S.firm.obj M) ⟶ N) :=
@@ -88,7 +78,10 @@ private theorem ofHom_homLinearEquiv (M N : ModuleCat.{u} V)
     (f : (toAlmost S).obj M ⟶ (toAlmost S).obj N) :
     (ModuleCat.ofHom (homLinearEquiv S M N f) : ModuleCat.of V (S.tilde ⊗[V] M) ⟶ N) =
       (eqToIso (S.firm_obj_obj M)).inv ≫ homEquiv S M N f := by
-  rfl
+  simp only [homLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,
+    Iso.refl_hom, Category.comp_id]
+  rw [ModuleCat.homLinearEquiv_apply]
+  exact ModuleCat.ofHom_hom _
 
 private theorem firm_map_homEquiv (M N : ModuleCat.{u} V)
     (f : (toAlmost S).obj M ⟶ (toAlmost S).obj N) :
@@ -96,18 +89,17 @@ private theorem firm_map_homEquiv (M N : ModuleCat.{u} V)
       (toAlmostCompFirmIso S).inv.app M ≫ (firmEquiv S).functor.map f ≫
         (toAlmostCompFirmIso S).hom.app N := by
   apply (cancel_epi (S.firmInclusionAdj.unit.app (S.firm.obj M))).mp
+  rw [homEquiv_apply]
   have h := (S.firmInclusionAdj.homEquiv (S.firm.obj M) N).apply_symm_apply
     ((toAlmostCompFirmIso S).inv.app M ≫ (firmEquiv S).functor.map f ≫
       (toAlmostCompFirmIso S).hom.app N)
-  rw [Adjunction.homEquiv_apply] at h
-  refine h.trans ?_
-  exact ((Category.id_comp _).symm.trans
-    (congrArg (fun g => g ≫ _) (S.firmInclusionAdj.right_triangle_components M).symm)).trans
-      (Category.assoc _ _ _)
+  rw [Adjunction.homEquiv_apply, Adjunction.homEquiv_symm_apply] at h
+  simpa only [← Category.assoc, S.firmInclusionAdj.right_triangle_components,
+    Functor.id_obj, Category.id_comp] using h
 
 /-- Almostifying the linear representative of `f` is precomposition of `f` with the action
 map `m~ ⊗ M → M`. This equation fixes the comparison without unfolding its construction. -/
-theorem homLinearEquiv_apply (M N : ModuleCat.{u} V)
+theorem toAlmost_map_homLinearEquiv (M N : ModuleCat.{u} V)
     (f : (toAlmost S).obj M ⟶ (toAlmost S).obj N) :
     (toAlmost S).map (ModuleCat.ofHom (homLinearEquiv S M N f) :
       ModuleCat.of V (S.tilde ⊗[V] M) ⟶ N) =
@@ -115,24 +107,18 @@ theorem homLinearEquiv_apply (M N : ModuleCat.{u} V)
         ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M) ≫ f := by
   have act : (eqToIso (S.firm_obj_obj M)).inv ≫ S.firmInclusionAdj.counit.app M =
       (ModuleCat.ofHom (S.tildeAct M) : ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M) := by
+    -- `firm_obj_obj` is reflexive after unfolding the firm functor's object wrapper.
+    erw [eqToIso_refl (S.firm_obj_obj M), Iso.refl_inv, Category.id_comp]
     apply ModuleCat.hom_ext
-    simp only [ModuleCat.hom_comp, BasicSetup.firmInclusionAdj_counit_app_hom]
-    rfl
+    exact S.firmInclusionAdj_counit_app_hom M
+  -- Reduce to firm representatives, then cancel the comparison isomorphism's naturality squares.
   apply (firmEquiv S).functor.map_injective
   rw [Functor.map_comp, ← Functor.comp_map, ← NatIso.naturality_2 (toAlmostCompFirmIso S),
     ← Functor.comp_map, ← NatIso.naturality_2 (toAlmostCompFirmIso S),
     ofHom_homLinearEquiv, Functor.map_comp, firm_map_homEquiv]
-  simp only [Category.assoc]
-  rw [← Category.assoc (S.firm.map (eqToIso (S.firm_obj_obj M)).inv),
-    ← Functor.map_comp, act]
-  rw [Iso.hom_inv_id_app (toAlmostCompFirmIso S) N]
-  simp only [Functor.comp_obj, Category.comp_id]
-
-/-- The action map is inverted by almostification. -/
-instance isIso_toAlmost_map_tildeAct (M : ModuleCat.{u} V) :
-    IsIso ((toAlmost S).map (ModuleCat.ofHom (S.tildeAct M) :
-      ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M)) :=
-  (isIso_toAlmost_map_iff S _).mpr (S.isAlmostIso_tildeAct M)
+  have act_firm := congrArg S.firm.map act
+  simp only [Functor.map_comp] at act_firm
+  simp [← act_firm, Category.assoc]
 
 /-- Recover an almost morphism from its linear representative by inverting the almostified
 action map. -/
@@ -144,7 +130,7 @@ theorem homLinearEquiv_symm_apply (M N : ModuleCat.{u} V)
           (toAlmost S).map (ModuleCat.ofHom g : ModuleCat.of V (S.tilde ⊗[V] M) ⟶ N) := by
   apply (cancel_epi ((toAlmost S).map (ModuleCat.ofHom (S.tildeAct M) :
     ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M))).mp
-  rw [← homLinearEquiv_apply, LinearEquiv.apply_symm_apply]
+  rw [← toAlmost_map_homLinearEquiv, LinearEquiv.apply_symm_apply]
   simp
 
 /-- The representative of an almostified ordinary morphism is its composite with the action
@@ -154,11 +140,7 @@ theorem homLinearEquiv_toAlmost_map {M N : ModuleCat.{u} V} (g : M ⟶ N) :
     homLinearEquiv S M N ((toAlmost S).map g) = g.hom ∘ₗ S.tildeAct M := by
   apply (homLinearEquiv S M N).symm.injective
   rw [LinearEquiv.symm_apply_apply, homLinearEquiv_symm_apply]
-  have h : (ModuleCat.ofHom (g.hom ∘ₗ S.tildeAct M) :
-      ModuleCat.of V (S.tilde ⊗[V] M) ⟶ N) =
-      (ModuleCat.ofHom (S.tildeAct M) : ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M) ≫ g := rfl
-  rw [h, Functor.map_comp]
-  simp
+  simp [ModuleCat.ofHom_comp, Functor.map_comp]
 
 /-- The identity almost morphism is represented by the action map. -/
 @[simp]
@@ -181,11 +163,20 @@ theorem homLinearEquiv_natural {M' M N N' : ModuleCat.{u} V} (a : M' ⟶ M) (b :
           (ModuleCat.ofHom (S.tildeAct M) : ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M) := by
     apply ModuleCat.hom_ext
     exact (S.tildeAct_comp_lTensor a.hom).symm
-  rw [← Category.assoc, ← Category.assoc, ← Functor.map_comp, h, Functor.map_comp]
-  simp only [Category.assoc]
-  rw [← Category.assoc _ f ((toAlmost S).map b), ← homLinearEquiv_apply S M N f]
-  rw [← Functor.map_comp, ← Functor.map_comp]
-  rfl
+  -- Naturality of the action map moves precomposition to the tensor source;
+  -- the characterizing equation then identifies the middle composite.
+  have h_map := congrArg (toAlmost S).map h
+  simp only [Functor.map_comp] at h_map
+  have comp : (ModuleCat.ofHom (b.hom ∘ₗ homLinearEquiv S M N f ∘ₗ a.hom.lTensor S.tilde) :
+      ModuleCat.of V (S.tilde ⊗[V] M') ⟶ N') =
+      (ModuleCat.ofHom (a.hom.lTensor S.tilde) :
+        ModuleCat.of V (S.tilde ⊗[V] M') ⟶ ModuleCat.of V (S.tilde ⊗[V] M)) ≫
+          ModuleCat.ofHom (homLinearEquiv S M N f) ≫ b := by
+    apply ModuleCat.hom_ext
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_assoc]
+  rw [comp]
+  simpa only [Functor.map_comp, Category.assoc, toAlmost_map_homLinearEquiv] using
+    congrArg (fun k => k ≫ f ≫ (toAlmost S).map b) h_map
 
 /-- Hom-modules of almost modules contain no nonzero almost zero elements. -/
 theorem hom_eq_zero_of_ideal_smul {M N : Module S} (f : M ⟶ N)
@@ -196,7 +187,9 @@ theorem hom_eq_zero_of_ideal_smul {M N : Module S} (f : M ⟶ N)
   rw [Functor.map_zero]
   apply ModuleCat.hom_ext
   rw [ModuleCat.hom_zero]
-  apply ((S.isFirm_iff _).mp ((firmEquiv S).functor.obj M).property).linearMap_eq_zero_of_ideal_smul
+  apply BasicSetup.linearMap_eq_zero_of_ideal_smul
+    (BasicSetup.isFirm_iff_bijective.mp
+      ((S.isFirm_iff _).mp ((firmEquiv S).functor.obj M).property)).surjective
   intro ε hε
   have h := congrArg (fun g => (S.isFirm.ι.map ((firmEquiv S).functor.map g)).hom) (hf ε hε)
   simpa only [Functor.map_smul, Functor.map_zero, ModuleCat.hom_smul, ModuleCat.hom_zero] using h

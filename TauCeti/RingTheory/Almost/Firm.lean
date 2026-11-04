@@ -31,8 +31,8 @@ the almost isomorphisms, which fixes the category of firm modules as the localiz
 
 The basic input is that `m~` is an idempotent `V`-module
 (`TauCeti.Almost.BasicSetup.tildeTensorIdealEquiv`), so `m~` is itself firm. The flatness of `m~`
-is used for the closure of firm modules under kernels and extensions, and to see that `m~ ⊗[V] −`
-turns almost isomorphisms into isomorphisms.
+is used for the closure of firm modules under kernels and extensions. A morphism is an almost
+isomorphism if and only if `m~ ⊗[V] −` sends it to an isomorphism.
 
 ## Main definitions
 
@@ -57,6 +57,11 @@ turns almost isomorphisms into isomorphisms.
   and extensions.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso.bijective_of_isFirm`: an almost isomorphism between firm
   modules is bijective.
+* `TauCeti.Almost.BasicSetup.isAlmostIso_iff_lTensor_bijective`: almost isomorphisms are exactly
+  the maps that become bijective after tensoring with `m~`.
+* `TauCeti.Almost.BasicSetup.isAlmostIso_tildeAct`: the action map is an almost isomorphism.
+* `TauCeti.Almost.BasicSetup.linearMap_eq_zero_of_ideal_smul`: a linear map from a module with
+  surjective action map vanishes if every scalar in the setup ideal kills it.
 * `TauCeti.Almost.BasicSetup.firmInclusionAdj`: the inclusion of firm modules is left adjoint to
   `firm`.
 * `TauCeti.Almost.BasicSetup.firmAdj`: `firm` is left adjoint to `closure`, and `closure` is fully
@@ -185,11 +190,13 @@ theorem IsFirm.subsingleton_of_isAlmostZero (hM : S.IsFirm M) (h : S.IsAlmostZer
   hM.surjective.subsingleton
 
 variable {S M} in
-/-- A linear map out of a firm module vanishes if every scalar in the setup ideal kills it. -/
-theorem IsFirm.linearMap_eq_zero_of_ideal_smul (hM : S.IsFirm M) (f : M →ₗ[V] N)
+/-- A linear map from a module with surjective action map vanishes if every scalar in the
+setup ideal kills it. -/
+theorem linearMap_eq_zero_of_ideal_smul (hM : Function.Surjective (S.tildeAct M))
+    (f : M →ₗ[V] N)
     (hf : ∀ ε ∈ S.ideal, ε • f = 0) : f = 0 := by
   ext x
-  obtain ⟨t, rfl⟩ := hM.surjective x
+  obtain ⟨t, rfl⟩ := hM x
   induction t using TensorProduct.inductionOn with
   | add t u ht hu => simp [ht, hu]
   | tmul t y =>
