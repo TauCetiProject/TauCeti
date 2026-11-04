@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-public import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
+public import TauCeti.Geometry.Manifold.ContMDiff.Chart.Cutoff
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.Basic

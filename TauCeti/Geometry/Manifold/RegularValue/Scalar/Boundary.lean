@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ContMDiff.ChartLinear
+public import TauCeti.Geometry.Manifold.ContMDiff.Chart.Linear
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel
 
 /-!
@@ -72,16 +72,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ} {a b : ℝ}
   {n : ℕ} [I.Boundaryless] [FiniteDimensional ℝ E]
-
-/-- The preferred level charts for two equal model dimensions agree after reindexing along
-`Fin.cast`. -/
-private theorem regularLevelChartAt_apply_cast {c : ℝ}
-    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
-    {n₁ n₂ : ℕ} (h : n₁ = n₂) (hn₁ : finrank ℝ E - finrank ℝ ℝ = n₁)
-    (hn₂ : finrank ℝ E - finrank ℝ ℝ = n₂) (x w : {x : M // f x = c}) (i : Fin n₁) :
-    regularLevelChartAt hf hreg hn₂ x w (Fin.cast h i) = regularLevelChartAt hf hreg hn₁ x w i := by
-  subst h
-  rfl
 
 section Sublevel
 
@@ -344,6 +334,7 @@ noncomputable def scalarRegularBandBoundaryDiffeomorph (m : ℕ∞ω) :
 
 /-- `TauCeti.scalarRegularBandBoundaryDiffeomorph` sends a point of the lower level to the left
 summand. -/
+@[simp]
 theorem scalarRegularBandBoundaryDiffeomorph_of_eq_left (m : ℕ∞ω) :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     letI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
@@ -356,6 +347,7 @@ theorem scalarRegularBandBoundaryDiffeomorph_of_eq_left (m : ℕ∞ω) :
 
 /-- `TauCeti.scalarRegularBandBoundaryDiffeomorph` sends a point of the upper level to the right
 summand. -/
+@[simp]
 theorem scalarRegularBandBoundaryDiffeomorph_of_eq_right (m : ℕ∞ω) :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     letI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab

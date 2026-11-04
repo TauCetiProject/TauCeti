@@ -269,6 +269,15 @@ theorem regularLevelChartAt_apply (x w : {x : M // f x = c}) :
     comp_apply, Homeomorph.symm_apply_apply, sectionZeroChartAt_apply,
     BoundarylessModel.chartAt_apply, coe_zeroHomeomorph_symm, ← coe_zeroHomeomorph]
 
+/-- The preferred charts for two equal model dimensions `n₁ = n₂` agree after reindexing the
+coordinates along `Fin.cast`. -/
+theorem regularLevelChartAt_apply_cast {n₁ n₂ : ℕ} (h : n₁ = n₂)
+    (hn₁ : finrank ℝ E - finrank ℝ F = n₁) (hn₂ : finrank ℝ E - finrank ℝ F = n₂)
+    (x w : {x : M // f x = c}) (i : Fin n₁) :
+    regularLevelChartAt hf hreg hn₂ x w (Fin.cast h i) = regularLevelChartAt hf hreg hn₁ x w i := by
+  subst h
+  rfl
+
 /-- A preferred chart is centred at its point. -/
 @[simp]
 theorem regularLevelChartAt_apply_self (x : {x : M // f x = c}) :
