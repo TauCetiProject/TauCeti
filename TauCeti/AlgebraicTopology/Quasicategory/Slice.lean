@@ -37,6 +37,13 @@ pushout-join `(Λ[m, i] ⋆ Δ[n]) ∪ (Δ[m] ⋆ ∂Δ[n])` is the inner horn `
 * `SSet.slice.innerFibration_π`, `SSet.slice.quasicategory`: the projection of the slice of a
   quasicategory is an inner fibration, and the slice is a quasicategory.
 
+## Implementation notes
+
+The reduction of `SSet.coslice.hasLiftingProperty_map_horn_ι` to boundary inclusions and an
+inner anodyne pushout-join follows the shape of the proof of Mathlib's
+`SSet.innerFibration_pullbackObjObjπ` by Jack McKoen and Joël Riou, with coslices playing the
+role of the internal hom.
+
 ## References
 
 * J. Lurie, *Higher Topos Theory*, Lemma 2.1.2.3, Proposition 2.1.2.1 and Corollary 2.1.2.2.

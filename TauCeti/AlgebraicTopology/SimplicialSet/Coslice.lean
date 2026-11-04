@@ -30,7 +30,8 @@ through the isomorphism `(K ⋆ X)ᵒᵖ ≅ Xᵒᵖ ⋆ Kᵒᵖ` (`SSet.join.op
 * `SSet.coslice.π p`: the projection `C_{p/} ⟶ C`, restricting a simplex `K ⋆ Δ[n] ⟶ C` to
   `Δ[n]`.
 * `SSet.coslice.map i g h`: the map of coslices `C_{p/} ⟶ D_{q/}` induced by `i : L ⟶ K` and
-  `g : C ⟶ D` with `i ≫ p ≫ g = q`, restricting along `i` and composing with `g`.
+  `g : C ⟶ D` with `i ≫ p ≫ g = q`, restricting along `i` and composing with `g`; it is functorial
+  (`SSet.coslice.map_id`, `SSet.coslice.map_comp`).
 
 ## Main results
 
@@ -223,6 +224,21 @@ lemma homEquiv_comp_map_coe (F : X ⟶ coslice p) (i : L ⟶ K) (g : C ⟶ D) (h
   rw [map, homEquiv_comp_coe, Equiv.apply_symm_apply, hF, Category.assoc,
     ← join.map_comp_assoc, ← join.map_comp_assoc]
   simp
+
+/-- The map of coslices induced by identities is the identity. -/
+@[simp]
+lemma map_id (h : 𝟙 K ≫ p ≫ 𝟙 C = p) : map (𝟙 K) (𝟙 C) h = 𝟙 (coslice p) :=
+  hom_ext (by rw [← Category.id_comp (map _ _ h), homEquiv_comp_map_coe]; simp)
+
+/-- Maps of coslices compose by composing the restrictions and the postcompositions. -/
+@[reassoc]
+lemma map_comp {M E : SSet.{u}} {r : M ⟶ E} (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q)
+    (i' : M ⟶ L) (g' : D ⟶ E) (h' : i' ≫ q ≫ g' = r) :
+    map i g h ≫ map i' g' h' = map (i' ≫ i) (g ≫ g') (by simp [← h', ← h]) := by
+  refine hom_ext ?_
+  rw [← Category.id_comp (map i g h ≫ _), ← Category.assoc, homEquiv_comp_map_coe,
+    homEquiv_comp_map_coe, ← Category.id_comp (map (i' ≫ i) _ _), homEquiv_comp_map_coe]
+  simp [← join.map_comp_assoc]
 
 /-- The map of coslices induced by `i` and `g` lies over `g`. -/
 -- Not `@[simp]`: `SSet.coslice.comp_π` rewrites the left-hand side.

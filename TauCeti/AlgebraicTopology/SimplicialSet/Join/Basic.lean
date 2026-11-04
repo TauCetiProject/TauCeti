@@ -70,6 +70,10 @@ The universal property reduces Joyal's theorem to horn filling in `K`, `L` and `
 (`SSet.JoinData.exists_precomp_horn_ι_eq`): over `Δ[1]`, an inner horn lies either entirely over
 one vertex, or so that its parts over both vertices are faces contained in the horn.
 
+The pushout square `SSet.Subcomplex.unionJoin.isPushout` is obtained, as Mathlib's
+`SSet.Subcomplex.unionProd.isPushout` (Joël Riou and Jack McKoen) is for products, from the
+bicartesian square of subcomplexes formed by `A ⋆ B`, `A ⋆ L`, `K ⋆ B` and their union.
+
 ## References
 
 * J. Lurie, *Higher Topos Theory*, Definition 1.2.8.1 and Proposition 1.2.8.3.
