@@ -228,7 +228,8 @@ theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f μ) (hs 
     have hsub : IntegrableOn (fun y => f y - b) s μ :=
       ⟨(hf.sub aestronglyMeasurable_const).restrict,
         hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
-    exact hfs (by simpa only [Pi.add_def, sub_add_cancel] using hsub.add (integrable_const b))
+    simp_rw [sub_eq_add_neg] at hsub
+    exact hfs (integrable_add_const_iff.1 hsub)
   rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
 
 /-- The mean oscillation of `f + b` on a set is that of `f`, for a constant `b`. -/
@@ -247,7 +248,7 @@ theorem setLAverage_enorm_add_const_sub (hf : AEStronglyMeasurable f μ) (s : Se
       rw [h, setAverage_const h0 htop]
     simp_rw [havg, add_sub_add_right_eq_sub]
   · have hfbs : ¬IntegrableOn (fun y => f y + b) s μ := fun h =>
-      hfs (by simpa only [Pi.sub_def, add_sub_cancel_right] using h.sub (integrable_const b))
+      hfs (integrable_add_const_iff.1 h)
     rw [setLAverage_enorm_sub_const_eq_top hf htop hfs,
       setLAverage_enorm_sub_const_eq_top (f := fun y => f y + b)
         (hf.add aestronglyMeasurable_const) htop hfbs]

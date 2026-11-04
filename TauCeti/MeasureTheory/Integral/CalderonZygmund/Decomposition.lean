@@ -46,7 +46,6 @@ an arbitrary `g : (ι → ℝ) → ℝ≥0∞` in place of `‖f‖ₑ`.
   `TauCeti.lt_setLAverage_of_mem_calderonZygmundCubes`,
   `TauCeti.setLAverage_le_of_mem_calderonZygmundCubes`,
   `TauCeti.pairwiseDisjoint_calderonZygmundCubes`,
-  `TauCeti.pairwise_disjoint_calderonZygmundCubes`,
   `TauCeti.dyadicCube_subset_of_mem_calderonZygmundCubes_of_le`,
   `TauCeti.exists_mem_calderonZygmundCubes_of_lt_setLAverage`,
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
@@ -241,12 +240,6 @@ theorem ae_le_of_forall_notMem_calderonZygmundCubes [Nonempty ι] (hg : AEMeasur
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hg' ht hlt
   exact hnot q hq (hsub (mem_dyadicCube_dyadicIndex k x))
 
-/-- Distinct Calderón–Zygmund cubes are disjoint, in the form indexed by the subtype of cubes used
-by `measure_iUnion` and `lintegral_iUnion`. -/
-theorem pairwise_disjoint_calderonZygmundCubes :
-    Pairwise (Function.onFun Disjoint fun q : calderonZygmundCubes g t => dyadicCube q.1.1 q.1.2) :=
-  fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.2 q'.2 (Subtype.val_injective.ne hne)
-
 /-- The union of the Calderón–Zygmund cubes is measurable. -/
 theorem measurableSet_biUnion_calderonZygmundCubes (g : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
     MeasurableSet (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) :=
@@ -257,9 +250,10 @@ Calderón–Zygmund cubes of `g` at height `t` is at most the integral of `g` ov
 theorem mul_volume_biUnion_calderonZygmundCubes_le :
     t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) ≤
       ∫⁻ x in ⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2, g x := by
-  rw [biUnion_eq_iUnion,
-    measure_iUnion pairwise_disjoint_calderonZygmundCubes fun q => measurableSet_dyadicCube _ _,
-    lintegral_iUnion (fun q => measurableSet_dyadicCube _ _) pairwise_disjoint_calderonZygmundCubes,
+  rw [measure_biUnion (to_countable _) pairwiseDisjoint_calderonZygmundCubes
+      fun q _ => measurableSet_dyadicCube _ _,
+    lintegral_biUnion (to_countable _) (fun q _ => measurableSet_dyadicCube _ _)
+      pairwiseDisjoint_calderonZygmundCubes,
     ← ENNReal.tsum_mul_left]
   exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
@@ -370,11 +364,11 @@ theorem lintegral_enorm_calderonZygmundGood_le (f : (ι → ℝ) → E) (t : ℝ
   have hΩ : MeasurableSet Ω := measurableSet_biUnion_calderonZygmundCubes _ _
   rw [← lintegral_add_compl _ hΩ, ← lintegral_add_compl (fun x => ‖f x‖ₑ) hΩ]
   gcongr ?_ + ?_
-  · simp only [Ω, biUnion_eq_iUnion]
-    rw [lintegral_iUnion (fun q => measurableSet_dyadicCube _ _)
-        pairwise_disjoint_calderonZygmundCubes,
-      lintegral_iUnion (fun q => measurableSet_dyadicCube _ _)
-        pairwise_disjoint_calderonZygmundCubes]
+  · simp only [Ω]
+    rw [lintegral_biUnion (to_countable _) (fun q _ => measurableSet_dyadicCube _ _)
+        pairwiseDisjoint_calderonZygmundCubes,
+      lintegral_biUnion (to_countable _) (fun q _ => measurableSet_dyadicCube _ _)
+        pairwiseDisjoint_calderonZygmundCubes]
     refine tsum_le_tsum fun q => ?_
     rw [setLIntegral_congr_fun (measurableSet_dyadicCube _ _)
       fun x hx => by rw [calderonZygmundGood_of_mem q.2 hx], setLIntegral_const, mul_comm]
