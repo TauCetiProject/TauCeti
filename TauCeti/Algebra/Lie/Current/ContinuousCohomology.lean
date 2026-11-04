@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Cohomology.Continuous
+public import TauCeti.Algebra.Lie.Cohomology.Continuous.Basic
 public import TauCeti.Algebra.Lie.Current.ResidueCocycle
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
