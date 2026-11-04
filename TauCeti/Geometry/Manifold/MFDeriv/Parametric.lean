@@ -24,6 +24,11 @@ built from `F` and its manifold differentials in the parameter:
 * for a jointly `C²` family, the parameter derivative and the manifold differential commute:
   `∂ₜ (d (F t) x v) = d (∂ₜ F t) x v`.
 
+More generally, for a family `G : P → M → F'` parametrized by a manifold `P` and jointly `C^n`,
+the differential `d (G r) x` at a fixed point `x`, as a covector-valued function of the parameter
+`r`, loses one derivative of joint regularity. This is the regularity input for mixed second
+derivatives of functions on a product of manifolds.
+
 The second fact is the manifold form of the symmetry of mixed partial derivatives. It is read in
 the extended chart at `x`, within the range of the model with corners, so it also holds at
 boundary points.
@@ -37,6 +42,8 @@ boundary points.
   for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
   jointly `C²` family is the differential of its parameter derivative.
+* `TauCeti.Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry`: the differential at a fixed point
+  of a jointly `C^n` family parametrized by a manifold is `C^m` in the parameter for `m + 1 ≤ n`.
 -/
 
 public section
@@ -144,5 +151,32 @@ theorem hasDerivAt_mvfderiv_apply
     Function.id_comp]
   -- `tangentSpaceCastModel I x` is the identity of `E`, the tangent space at `x`.
   rfl
+
+section ManifoldParameter
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+  [IsManifold J 1 P] {G : P → M → F'} {p : P}
+
+/-- **Regularity of the differential in a manifold parameter.** If a family `G : P → M → F'` is
+jointly `C^n` at `(p, x)`, then the differential `d (G r) x`, as a function of `r` with values in
+the covectors `E →L[𝕜] F'` on the model space of `T_x M`, is `C^m` at `p` for every `m` with
+`m + 1 ≤ n`. -/
+theorem contMDiffAt_mvfderiv_of_contMDiffAt_uncurry
+    (hG : ContMDiffAt (J.prod I) 𝓘(𝕜, F') n (uncurry G) (p, x)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt (M' := E →L[𝕜] F') J 𝓘(𝕜, E →L[𝕜] F') m (fun r ↦ mvfderiv I (G r) x) p := by
+  refine (hG.mfderiv G (fun _ ↦ x) contMDiffAt_const hmn).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun r ↦ ?_)
+  ext v
+  simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates]
+  -- With the base point of `M` fixed, the source coordinate change is the derivative of the inverse
+  -- chart at its own centre, which is the identity, and the target coordinate change is that of the
+  -- model space `F'`. `erw` sees through the tangent spaces of `E` and `F'`, which are the model
+  -- spaces themselves.
+  erw [TangentBundle.symmL_trivializationAt (mem_chart_source H x),
+    mfderivWithin_range_extChartAt_symm, TangentBundle.continuousLinearMapAt_model_space]
+  rfl
+
+end ManifoldParameter
 
 end TauCeti.Manifold
