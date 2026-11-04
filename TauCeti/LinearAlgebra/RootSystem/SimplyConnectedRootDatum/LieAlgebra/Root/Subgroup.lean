@@ -45,8 +45,8 @@ over every ring of points, so that every root subgroup lies in the elementary gr
 the simple ones.
 
 Nothing about `V` beyond Kostant stability and nilpotence of the simple generators is used, so
-this applies to the full-weight lattice `TauCeti.DynkinType.scLattice`, to the fundamental
-lattices, to the Geck lattice, and to the lattice of every Chevalley datum.
+the construction applies to any Kostant-stable lattice on which the simple generators act
+nilpotently.
 
 ## Main definitions
 

@@ -139,11 +139,11 @@ variable {t ht} in
 /-- The sign `chevalleyWeylSign α β` is the only unit `ε` with `w_α e_β = ε e_{s_α β}`, since the
 root vector `e_{s_α β}` is nonzero. -/
 theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
-    weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-        (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
-      (ε : ℤ) • t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) ↔
-      ε = t.chevalleyWeylSign ht α β := by
-  refine ⟨fun h => ?_, fun h => h ▸ t.weylAut_chevalleySystem ht α β⟩
+    ε = t.chevalleyWeylSign ht α β ↔
+      weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
+        (ε : ℤ) • t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
+  refine ⟨fun h => h ▸ t.weylAut_chevalleySystem ht α β, fun h => ?_⟩
   rw [t.weylAut_chevalleySystem ht α β, ← sub_eq_zero, ← sub_smul, ← Int.cast_smul_eq_zsmul ℚ,
     smul_eq_zero, Int.cast_eq_zero, sub_eq_zero, Units.val_inj] at h
   exact (h.resolve_right (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).symm
