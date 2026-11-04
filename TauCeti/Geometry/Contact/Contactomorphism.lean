@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Contact.Transition
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Contactomorphisms
