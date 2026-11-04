@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.RingTheory.Regular.RegularSequence
-import TauCeti.LinearAlgebra.BilinearForm.DualLattice
+import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 import TauCeti.RingTheory.Etale.Discriminant
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Trace.Regular
