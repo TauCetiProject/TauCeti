@@ -76,24 +76,19 @@ theorem of_bijective_semilinearMap {A : Type*} [CommSemiring A] {σ : R →+* A}
     [Module R M] [Module R N] [Module A M'] [Module A N'] (f : M →ₗ[R] N) (f' : M' →ₗ[A] N')
     [IsLocalizedModule (S.map σ) f'] (eM : M →ₛₗ[σ] M') (eN : N →ₛₗ[σ] N')
     (heM : Function.Bijective eM) (heN : Function.Bijective eN) (h : ∀ x, eN (f x) = f' (eM x)) :
-    IsLocalizedModule S f where
-  map_units s := by
-    rw [Module.End.isUnit_iff]
-    have hs := (Module.End.isUnit_iff _).mp
-      (IsLocalizedModule.map_units f' ⟨σ s, Submonoid.mem_map_of_mem σ s.2⟩)
-    refine ⟨fun x y hxy ↦ heN.1 (hs.1 ?_), fun y ↦ ?_⟩
-    · simpa only [Module.algebraMap_end_apply, map_smulₛₗ] using congr(eN $hxy)
-    · obtain ⟨z, hz⟩ := hs.2 (eN y)
-      obtain ⟨x, rfl⟩ := heN.2 z
-      exact ⟨x, heN.1 (by simpa only [Module.algebraMap_end_apply, map_smulₛₗ] using hz)⟩
-  surj y := by
-    obtain ⟨⟨m', ⟨_, t, ht, rfl⟩⟩, e⟩ := IsLocalizedModule.surj (S.map σ) f' (eN y)
-    obtain ⟨m, rfl⟩ := heM.2 m'
-    refine ⟨⟨m, ⟨t, ht⟩⟩, heN.1 ?_⟩
-    simpa only [Submonoid.smul_def, map_smulₛₗ, h] using e
-  exists_of_eq {x₁ x₂} e := by
-    obtain ⟨⟨_, c, hc, rfl⟩, e'⟩ := IsLocalizedModule.exists_of_eq (S := S.map σ) (f := f')
-      (by rw [← h, ← h, e] : f' (eM x₁) = f' (eM x₂))
-    exact ⟨⟨c, hc⟩, heM.1 (by simpa only [Submonoid.smul_def, map_smulₛₗ] using e')⟩
+    IsLocalizedModule S f := by
+  -- View `M'` and `N'` as `R`-modules through `σ`; then `eM`, `eN` are `R`-linear bijections.
+  let := σ.toAlgebra
+  let := Module.compHom M' σ
+  let := Module.compHom N' σ
+  have : IsScalarTower R A M' := SMul.comp.isScalarTower σ
+  have : IsScalarTower R A N' := SMul.comp.isScalarTower σ
+  have : IsLocalizedModule (Algebra.algebraMapSubmonoid A S) f' := ‹_›
+  let eM' : M →ₗ[R] M' := ⟨eM.toAddHom, eM.map_smulₛₗ⟩
+  let eN' : N →ₗ[R] N' := ⟨eN.toAddHom, eN.map_smulₛₗ⟩
+  rw [← comp_iff_of_bijective_left S eN' heN,
+    show eN' ∘ₗ f = f'.restrictScalars R ∘ₗ eM' from LinearMap.ext h,
+    comp_iff_of_bijective_right S eM' heM]
+  exact restrictScalars S f'
 
 end IsLocalizedModule
