@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -40,6 +39,10 @@ space it satisfies the symbol estimates of order `m` on `K × E`, with the weigh
 (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_frequencyCutoff_smul_le`); changing the
 cutoff changes it by a smoothing term, whose derivatives decay faster than every power of `⟨ξ⟩`
 (`TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_frequencyCutoff_smul_le`).
+Near the zero frequency no decay is needed: for `x` in a compact set and `ξ` in a ball, the
+derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of `⟨ξ⟩`, since they are
+bounded there and the weight is bounded below
+(`TauCeti.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`).
 
 Derivatives are full Fréchet derivatives on `E × E`; a derivative in `j` position directions
 `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -59,6 +62,8 @@ Derivatives are full Fréchet derivatives on `E × E`; a derivative in `j` posit
   term is smooth and, on a proper space, satisfies the symbol estimates of order `m`.
 * `TauCeti.HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_frequencyCutoff_smul_le`: on a
   proper space, two cut-off terms differ by a smoothing term.
+* `TauCeti.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: the weighted estimate
+  of a `C^k` function of `(x, ξ)` for `x` in a compact set and `ξ` in a ball.
 
 ## References
 
@@ -78,6 +83,31 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E]
   {U V W : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] [NormedAddCommGroup V]
   [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+section Compact
+
+variable [NormedSpace ℝ E] {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [ProperSpace F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- A `C^k` function on `E × F` satisfies, for `x` in a compact set and `ξ` in a ball, the
+estimate `‖D^k f(x, ξ)‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for every real `r`: the derivative is bounded
+there, and the weight is bounded below. -/
+theorem exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {k : ℕ}
+    {f : E × F → G} (hf : ContDiff ℝ k f) {K : Set E} (hK : IsCompact K) (R r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : F, ‖ξ‖ ≤ R →
+      ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  have hw : (0 : ℝ) < (1 + R ^ 2) ^ (-|r| / 2) := by positivity
+  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
+  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
+        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
+    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+        mul_le_mul_of_nonneg_left (one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
+          (by positivity)
+
+end Compact
 
 section NormedSpace
 
