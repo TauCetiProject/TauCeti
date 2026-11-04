@@ -109,6 +109,10 @@ theorem toPEquiv_trans (φ ψ : StrandDiagram α) :
     (φ.trans ψ).toPEquiv = φ.toPEquiv.trans ψ.toPEquiv :=
   (rfl)
 
+@[simp]
+theorem trans_apply (φ ψ : StrandDiagram α) (i : α) : φ.trans ψ i = (φ i).bind ψ :=
+  (rfl)
+
 theorem mem_trans {φ ψ : StrandDiagram α} {i k : α} :
     k ∈ φ.trans ψ i ↔ ∃ j, j ∈ φ i ∧ k ∈ ψ j :=
   PEquiv.mem_trans _ _ _ _

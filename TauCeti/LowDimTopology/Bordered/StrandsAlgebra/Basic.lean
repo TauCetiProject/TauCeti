@@ -6,26 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Defs
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.StrandDiagram
 
 /-!
 # The strands algebra
 
-The strands algebra `A(n)` of Lipshitz, Ozsváth and Thurston is the algebra underlying the
-bordered Heegaard Floer invariants: the algebra `A(Z)` of a pointed matched circle `Z` with `4k`
-points is a (non-unital) subalgebra of `A(4k)`, and the type `A` and type `D` structures of a
-bordered three-manifold with boundary `Z` are modules over `A(Z)`. As a vector space over `𝔽₂`,
+The strands algebra `A(n)` of Lipshitz, Ozsváth and Thurston is the differential algebra
+underlying the bordered Heegaard Floer invariants: the algebra `A(Z)` of a pointed matched circle
+`Z` with `4k` points is a (non-unital) subalgebra of `A(4k)`, and for a bordered three-manifold `Y`
+with boundary `Z`, `CFA^(Y)` is an `A∞`-module over `A(Z)` and `CFD^(Y)` is a type `D` structure
+over `A(-Z)`. As a vector space over `𝔽₂`,
 `A(n)` has a basis of strand diagrams (`TauCeti.StrandDiagram`), the upward partial bijections
 `φ : S → T` of `{1, …, n}`. The product
 of two basis elements `φ : S → T` and `ψ : U → V` is the composite `ψ ∘ φ : S → V` when `T = U`
 and the inversion counts add, `inv (ψ ∘ φ) = inv φ + inv ψ`, and zero otherwise. The identity
 diagrams `I(S)` on the subsets `S` are orthogonal idempotents summing to the unit.
 
-This file constructs the strands algebra `TauCeti.StrandsAlgebra R α` of a finite linear order
-`α` over an arbitrary commutative semiring `R`. Lipshitz, Ozsváth and Thurston work over `𝔽₂`,
-which is the case `R = ZMod 2`, `α = Fin n`; the product of basis elements involves no
+This file constructs the underlying associative algebra `TauCeti.StrandsAlgebra R α` of the
+strands algebra of a finite linear order `α`, over an arbitrary commutative semiring `R`, without
+the differential that resolves crossings. Lipshitz, Ozsváth and Thurston work over `𝔽₂`, which is
+the case `R = ZMod 2`, `α = Fin n`; the product of basis elements involves no
 coefficients other than `0` and `1`, so its definition makes sense over any `R`. Associativity
 comes from the subadditivity of inversion counts
 (`TauCeti.StrandDiagram.trans_composable_and_composable_iff`).
@@ -57,16 +58,15 @@ public section
 
 noncomputable section
 
-open Finsupp
-
 namespace TauCeti
 
 variable (R α : Type*) [CommSemiring R] [LinearOrder α]
 
 /-- The strands algebra of a finite linear order `α` over a commutative semiring `R`: the free
 `R`-module on the strand diagrams of `α`, multiplied by concatenating composable diagrams. For
-`α = Fin n` and `R = ZMod 2` it is the strands algebra `A(n)` of Lipshitz, Ozsváth and Thurston,
-the direct sum of their algebras `A(n, k)` over the number `k` of strands. -/
+`α = Fin n` and `R = ZMod 2` it is the algebra underlying the strands algebra `A(n)` of Lipshitz,
+Ozsváth and Thurston, the direct sum of their algebras `A(n, k)` over the number `k` of strands,
+without the differential that resolves crossings. -/
 def StrandsAlgebra : Type _ :=
   StrandDiagram α →₀ R
 
@@ -117,23 +117,19 @@ theorem idem_def (s : Finset α) : (idem s : StrandsAlgebra R α) = of (StrandDi
 
 variable [Fintype α]
 
-/-- The strands product of two basis elements: their composite if they are composable, and zero
-otherwise. -/
-def mulBasis (φ ψ : StrandDiagram α) : StrandsAlgebra R α :=
-  if φ.Composable ψ then of (φ.trans ψ) else 0
-
-/-- The strands product, as a bilinear map. -/
-def mulₗ : StrandsAlgebra R α →ₗ[R] StrandsAlgebra R α →ₗ[R] StrandsAlgebra R α :=
-  linearCombination R fun φ ↦ linearCombination R fun ψ ↦ mulBasis φ ψ
-
+/-- The strands product: on basis elements, the composite of two diagrams if they are composable,
+and zero otherwise, extended bilinearly. -/
 instance : Mul (StrandsAlgebra R α) :=
-  ⟨fun x y ↦ mulₗ x y⟩
+  ⟨fun x y ↦ (basis R α).constr R (fun φ ↦ (basis R α).constr R fun ψ ↦
+    (if φ.Composable ψ then of (φ.trans ψ) else 0 : StrandsAlgebra R α)) x y⟩
 
 /-- The unit of the strands algebra: the sum of the idempotents `I(s)` over all subsets `s`. -/
 instance : One (StrandsAlgebra R α) :=
   ⟨∑ s : Finset α, idem s⟩
 
-theorem mul_def (x y : StrandsAlgebra R α) : x * y = mulₗ x y :=
+private theorem mul_def (x y : StrandsAlgebra R α) :
+    x * y = (basis R α).constr R (fun φ ↦ (basis R α).constr R fun ψ ↦
+      (if φ.Composable ψ then of (φ.trans ψ) else 0 : StrandsAlgebra R α)) x y :=
   (rfl)
 
 /-- The idempotents `I(s)` sum to the unit of the strands algebra. -/
@@ -144,14 +140,10 @@ theorem sum_idem : ∑ s : Finset α, (idem s : StrandsAlgebra R α) = 1 :=
 composable and zero otherwise. -/
 theorem of_mul_of (φ ψ : StrandDiagram α) :
     (of φ * of ψ : StrandsAlgebra R α) = if φ.Composable ψ then of (φ.trans ψ) else 0 := by
-  -- `StrandsAlgebra R α` is by definition `StrandDiagram α →₀ R` and `of φ` is `single φ 1`, so
-  -- `Finsupp.linearCombination_single` evaluates both arguments of the bilinear product.
-  have h₁ := linearCombination_single R
-    (v := fun φ ↦ linearCombination R fun ψ ↦ (mulBasis φ ψ : StrandsAlgebra R α)) 1 φ
-  have h₂ := linearCombination_single R (v := fun ψ ↦ (mulBasis φ ψ : StrandsAlgebra R α)) 1 ψ
-  rw [one_smul] at h₁ h₂
-  exact (LinearMap.congr_fun h₁ (of ψ)).trans h₂
+  rw [mul_def, ← basis_apply φ, ← basis_apply ψ, Module.Basis.constr_basis,
+    Module.Basis.constr_basis]
 
+@[simp]
 theorem of_mul_of_of_composable {φ ψ : StrandDiagram α} (h : φ.Composable ψ) :
     (of φ * of ψ : StrandsAlgebra R α) = of (φ.trans ψ) := by
   simp [of_mul_of, h]
@@ -192,6 +184,7 @@ theorem of_mul_idem_target (φ : StrandDiagram α) :
 
 /-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
 otherwise. -/
+@[simp]
 theorem idem_mul_idem (s t : Finset α) :
     (idem s * idem t : StrandsAlgebra R α) = if s = t then idem s else 0 := by
   rw [idem_def t, idem_mul_of, StrandDiagram.source_idOn]
@@ -204,10 +197,10 @@ theorem idem_mul_idem_of_ne {s t : Finset α} (h : s ≠ t) :
   simp [idem_mul_idem, h]
 
 instance : NonUnitalNonAssocSemiring (StrandsAlgebra R α) where
-  left_distrib x _ _ := map_add (mulₗ x) _ _
+  left_distrib _ _ _ := by simp only [mul_def, map_add]
   right_distrib _ _ z := by simp only [mul_def, map_add, LinearMap.add_apply]
   zero_mul _ := by simp only [mul_def, map_zero, LinearMap.zero_apply]
-  mul_zero x := map_zero (mulₗ x)
+  mul_zero _ := by simp only [mul_def, map_zero]
 
 instance : IsScalarTower R (StrandsAlgebra R α) (StrandsAlgebra R α) where
   smul_assoc _ _ _ := by simp only [smul_eq_mul, mul_def, map_smul, LinearMap.smul_apply]
