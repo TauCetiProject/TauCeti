@@ -186,23 +186,24 @@ theorem isConjugateOn_iff_curvatureSine_eq_zero
   omega
 
 /-- In positive constant curvature and dimension at least two, conjugate parameters
-are the integer multiples of `π / √(κ c²)`, where `c` is the nonzero initial speed.
+are the integer multiples of `π / √(κ c²)`, where `c` is the initial speed.
 Only multiples belonging to the prescribed geodesic parameter set are considered. -/
 theorem isConjugateOn_iff_exists_int_mul_pi_div_sqrt
     (hγ : IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) s)
     (hs : IsPreconnected s) (hsub : s ⊆ geodesicInterval I M p v)
     (h0 : (0 : ℝ) ∈ s) (hb : b ∈ s) (hb0 : b ≠ 0)
     (hn : 2 ≤ Module.finrank ℝ E) (hκpos : 0 < κ)
-    (hv : curveVelocityWithin I (fun t : ℝ ↦ riemannianExp I M p (t • v)) s 0 ≠ 0)
     (hκ : ∀ t ∈ s, (leviCivitaConnection I M).HasSectionalCurvatureAt
       (isMetricCompatible_leviCivitaConnection I) (riemannianExp I M p (t • v)) κ) :
     IsConjugateOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) s 0 b ↔
       ∃ n : ℤ, b = (n : ℝ) * Real.pi /
         √(κ * ‖curveVelocityWithin I (fun t : ℝ ↦ riemannianExp I M p (t • v)) s 0‖ ^ 2) := by
+  rw [isConjugateOn_iff_curvatureSine_eq_zero hγ hs hsub h0 hb hb0 hn hκ]
+  by_cases hv : curveVelocityWithin I (fun t : ℝ ↦ riemannianExp I M p (t • v)) s 0 = 0
+  · simp [hv, hb0]
   have hc := mul_pos hκpos (sq_pos_of_ne_zero (norm_ne_zero_iff.2 hv))
   have hroot := (Real.sqrt_pos.2 hc).ne'
-  rw [isConjugateOn_iff_curvatureSine_eq_zero hγ hs hsub h0 hb hb0 hn hκ,
-    curvatureSine_of_pos hc, div_eq_zero_iff, or_iff_left hroot, Real.sin_eq_zero_iff]
+  rw [curvatureSine_of_pos hc, div_eq_zero_iff, or_iff_left hroot, Real.sin_eq_zero_iff]
   constructor
   · rintro ⟨n, hn⟩
     exact ⟨n, (eq_div_iff hroot).2 (by simpa only [mul_comm] using hn.symm)⟩
