@@ -205,12 +205,8 @@ private theorem support_withDensity_inv_semicircleReal (y : ℝ≥0) :
   have hne : ∀ᵐ x ∂semicircleReal (1 + y) y, ENNReal.ofReal x⁻¹ ≠ 0 := by
     filter_upwards [ae_pos_semicircleReal h2 (by positivity)] with x hx
     exact (ENNReal.ofReal_pos.2 (inv_pos.2 hx)).ne'
-  have hsupp : ((semicircleReal (1 + y) y).withDensity fun x ↦ ENNReal.ofReal x⁻¹).support =
-      (semicircleReal (1 + y) y).support :=
-    Subset.antisymm (withDensity_absolutelyContinuous _ _).support_mono
-      (withDensity_absolutelyContinuous' (by fun_prop) hne).support_mono
   have hs := sq_sqrt y.coe_nonneg
-  rw [hsupp, support_semicircleReal]
+  rw [Measure.support_withDensity_eq (by fun_prop) hne, support_semicircleReal]
   congr 1 <;> linear_combination -hs
 
 /-- For `y ≤ 1`, the topological support of `marchenkoPastur y` is `[(1 - √y)², (1 + √y)²]`; at
@@ -233,12 +229,8 @@ theorem support_marchenkoPastur_of_one_le {y : ℝ≥0} (hy : 1 ≤ y) :
   · have hyr : (1 : ℝ) < y := mod_cast hy'
     have hc : ENNReal.ofReal (((y : ℝ) - 1) / y) ≠ 0 :=
       (ENNReal.ofReal_pos.2 (div_pos (by linarith) (by linarith))).ne'
-    have hdirac : (ENNReal.ofReal (((y : ℝ) - 1) / y) • Measure.dirac (0 : ℝ)).support = {0} := by
-      rw [Subset.antisymm Measure.smul_absolutelyContinuous.support_mono
-        (Measure.absolutelyContinuous_smul hc).support_mono, Measure.support_dirac,
-        isClosed_singleton.closure_eq]
-    rw [marchenkoPastur_def, Measure.support_add, hdirac, support_withDensity_inv_semicircleReal,
-      singleton_union]
+    rw [marchenkoPastur_def, Measure.support_add, Measure.support_smul hc, Measure.support_dirac,
+      isClosed_singleton.closure_eq, support_withDensity_inv_semicircleReal, singleton_union]
 
 /-- The exact topological support of the Marchenko–Pastur law `MP_y`: the interval
 `[(1 - √y)², (1 + √y)²]`, together with `{0}` when `1 < y`. -/

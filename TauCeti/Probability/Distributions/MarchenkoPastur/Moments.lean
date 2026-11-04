@@ -11,6 +11,7 @@ import Mathlib.Algebra.Polynomial.Div
 import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Combinatorics.NoncrossingPartition.PowerSeries
 import TauCeti.Probability.Distributions.MarchenkoPastur.ResolventTransform
 
@@ -85,6 +86,19 @@ private def momentSeries (y : ℝ≥0) : ℝ⟦X⟧ :=
 private def cumulantSeries (y : ℝ≥0) : ℝ⟦X⟧ :=
   PowerSeries.mk fun k ↦ if k = 0 then 1 else (y : ℝ) ^ (k - 1)
 
+/-- Along the positive imaginary axis `z = i t` (`t → +∞`), the reciprocal `(i t)⁻¹` tends to
+`0`. -/
+private lemma tendsto_inv_mul_I_atTop :
+    Tendsto (fun t : ℝ ↦ ((t : ℂ) * I)⁻¹) atTop (𝓝 0) := by
+  have hinv : Tendsto (fun t : ℝ ↦ (t : ℂ)⁻¹) atTop (𝓝 0) := by
+    simpa [Function.comp_def] using (continuous_ofReal.tendsto 0).comp tendsto_inv_atTop_zero
+  simpa using hinv.const_mul I⁻¹
+
+/-- For nonzero real `t`, `((t : ℂ) * I)⁻¹ * ((t : ℂ) * I) = 1`. -/
+private lemma inv_mul_I_mul_cancel {t : ℝ} (ht : t ≠ 0) :
+    ((t : ℂ) * I)⁻¹ * ((t : ℂ) * I) = 1 :=
+  inv_mul_cancel₀ (mul_ne_zero (ofReal_ne_zero.2 ht) I_ne_zero)
+
 /-- Along the imaginary axis `z = i t` (`t → +∞`), the `(n + 1)`-truncation of `momentSeries y`
 evaluated at `(i t)⁻¹` agrees with `-i t m(i t)` to order `o(t⁻ⁿ)`. -/
 private lemma tendsto_mul_I_pow_mul_aeval_trunc_momentSeries (y : ℝ≥0) (n : ℕ) :
@@ -94,17 +108,12 @@ private lemma tendsto_mul_I_pow_mul_aeval_trunc_momentSeries (y : ℝ≥0) (n : 
       atTop (𝓝 0) := by
   let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
   let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) (PowerSeries.trunc (n + 1) (momentSeries y))
-  have hw0 : Tendsto w atTop (𝓝 0) := by
-    have hinv : Tendsto (fun t : ℝ ↦ (t : ℂ)⁻¹) atTop (𝓝 0) := by
-      simpa [Function.comp_def] using (continuous_ofReal.tendsto 0).comp tendsto_inv_atTop_zero
-    simpa [w] using hinv.const_mul I⁻¹
-  have hsharp := hw0.mul <| tendsto_mul_I_pow_mul_resolventTransform_add_sum
+  have hsharp := tendsto_inv_mul_I_atTop.mul <| tendsto_mul_I_pow_mul_resolventTransform_add_sum
     (integrable_pow_marchenkoPastur y (n + 1))
   rw [zero_mul] at hsharp
   refine hsharp.congr' ?_
   filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
-  have hti : (t : ℂ) * I ≠ 0 := mul_ne_zero (ofReal_ne_zero.2 ht) I_ne_zero
-  have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_cancel₀ hti
+  have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_I_mul_cancel ht
   have hSeval : S t = ∑ k ∈ range (n + 1),
       ((∫ x, x ^ k ∂marchenkoPastur y : ℝ) : ℂ) * ((t : ℂ) * I)⁻¹ ^ k := by
     simpa [S, momentSeries, w, Polynomial.aeval_def] using
@@ -125,21 +134,21 @@ private lemma tendsto_mul_I_pow_mul_aeval_trunc_momentSeries (y : ℝ≥0) (n : 
     ((t : ℂ) * I) ^ n * S t * (w t * ((t : ℂ) * I))) * hwt +
     ((t : ℂ) * I) ^ n * S t * hwt
 
-/-- The moment generating series `M` of `marchenkoPastur y` satisfies the formal quadratic equation
-`y X M² + ((1 - y) X - 1) M + 1 = 0`. -/
-private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
-    PowerSeries.C (y : ℝ) * PowerSeries.X * momentSeries y ^ 2 +
-      (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * momentSeries y + 1 = 0 := by
+/-- Replacing `momentSeries y` by its `(n + 1)`-truncation in the Marchenko–Pastur quadratic
+expression leaves every coefficient of degree `< n + 1` unchanged. -/
+private lemma coeff_quadratic_trunc_momentSeries (y : ℝ≥0) {n d : ℕ} (hd : d < n + 1) :
+    (Polynomial.C (y : ℝ) * Polynomial.X * PowerSeries.trunc (n + 1) (momentSeries y) ^ 2 +
+      (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) *
+        PowerSeries.trunc (n + 1) (momentSeries y) + 1).coeff d =
+      PowerSeries.coeff d
+        (PowerSeries.C (y : ℝ) * PowerSeries.X * momentSeries y ^ 2 +
+          (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * momentSeries y + 1) := by
   set M := momentSeries y
-  set E : ℝ⟦X⟧ := PowerSeries.C (y : ℝ) * PowerSeries.X * M ^ 2 +
-    (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * M + 1
-  suffices ∀ n, PowerSeries.coeff n E = 0 from PowerSeries.ext this
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
   set P : ℝ[X] := PowerSeries.trunc (n + 1) M
   set F : ℝ[X] := Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
     (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1
+  set E : ℝ⟦X⟧ := PowerSeries.C (y : ℝ) * PowerSeries.X * M ^ 2 +
+    (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * M + 1
   have htrunc : PowerSeries.trunc (n + 1) (F : ℝ⟦X⟧) = PowerSeries.trunc (n + 1) E := by
     have hcoe : (F : ℝ⟦X⟧) = PowerSeries.C (y : ℝ) * PowerSeries.X * (P : ℝ⟦X⟧) ^ 2 +
         (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * (P : ℝ⟦X⟧) + 1 := by
@@ -151,21 +160,59 @@ private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
       congr 1
       rw [← PowerSeries.trunc_mul_trunc, PowerSeries.trunc_trunc_pow, PowerSeries.trunc_mul_trunc]
     · exact PowerSeries.trunc_mul_trunc _ _
-  have hFd {d : ℕ} (hd : d < n + 1) : F.coeff d = PowerSeries.coeff d E := by
-    rw [← Polynomial.coeff_coe, ← PowerSeries.coeff_coe_trunc_of_lt hd, htrunc,
-      PowerSeries.coeff_coe_trunc_of_lt hd]
-  obtain ⟨G, hFG⟩ := Polynomial.X_pow_dvd_iff.2 fun d hd ↦
-    (hFd (Nat.lt_succ_of_lt hd)).trans (ih d hd)
-  have hEG : PowerSeries.coeff n E = G.coeff 0 := by
-    rw [← hFd n.lt_succ_self, hFG]
-    simpa using Polynomial.coeff_X_pow_mul G n 0
+  rw [← Polynomial.coeff_coe, ← PowerSeries.coeff_coe_trunc_of_lt hd, htrunc,
+    PowerSeries.coeff_coe_trunc_of_lt hd]
+
+/-- For nonzero real `t`, the rescaled resolvent quantity `Q = -i t m_{MP_y}(i t)` satisfies the
+quadratic equation `y w Q² + ((1 - y) w - 1) Q + 1 = 0` at `w = (i t)⁻¹`. -/
+private lemma neg_mul_I_mul_resolventTransform_quadratic_eq_zero (y : ℝ≥0) {t : ℝ} (ht : t ≠ 0) :
+    (y : ℂ) * ((t : ℂ) * I)⁻¹ *
+        (-((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))) ^ 2 +
+      ((1 - (y : ℂ)) * ((t : ℂ) * I)⁻¹ - 1) *
+        (-((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))) + 1 = 0 := by
+  set w : ℂ := ((t : ℂ) * I)⁻¹
+  set Q : ℂ := -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))
+  have hq := resolventTransform_marchenkoPastur_quadratic_eq_zero (y := y) (z := (t : ℂ) * I)
+    (notMem_image_ofReal_of_im_ne_zero (by simpa using ht))
+  have hwt : w * ((t : ℂ) * I) = 1 := inv_mul_I_mul_cancel ht
+  have hmQ : resolventTransform (marchenkoPastur y) ((t : ℂ) * I) = -(w * Q) := by
+    dsimp only [Q]
+    linear_combination -resolventTransform (marchenkoPastur y) ((t : ℂ) * I) * hwt
+  rw [hmQ] at hq
+  linear_combination hq + (-(y : ℂ) * w * Q ^ 2 + Q) * hwt
+
+/-- The moment generating series `M` of `marchenkoPastur y` satisfies the formal quadratic equation
+`y X M² + ((1 - y) X - 1) M + 1 = 0`. -/
+private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
+    PowerSeries.C (y : ℝ) * PowerSeries.X * momentSeries y ^ 2 +
+      (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * momentSeries y + 1 = 0 := by
+  set M := momentSeries y
+  set E : ℝ⟦X⟧ := PowerSeries.C (y : ℝ) * PowerSeries.X * M ^ 2 +
+    (PowerSeries.C (1 - (y : ℝ)) * PowerSeries.X - 1) * M + 1
+  -- Show `coeff n E = 0` for all `n` by strong induction on `n`.
+  suffices ∀ n, PowerSeries.coeff n E = 0 from PowerSeries.ext this
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  set P : ℝ[X] := PowerSeries.trunc (n + 1) M
+  set F : ℝ[X] := Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
+    (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1
+  -- All coefficients of `F` below degree `n` agree with those of `E` and vanish by induction, so
+  -- `F = X ^ n * G` for a polynomial `G` whose constant term is `coeff n E`.
+  obtain ⟨G, hFG⟩ := (Polynomial.X_pow_dvd_iff (f := F)).2 fun d hd ↦
+    (coeff_quadratic_trunc_momentSeries y (Nat.lt_succ_of_lt hd)).trans (ih d hd)
+  have hEG : PowerSeries.coeff n E = G.coeff 0 :=
+    (coeff_quadratic_trunc_momentSeries y n.lt_succ_self).symm.trans <| by
+      change F.coeff n = G.coeff 0
+      rw [hFG]
+      simpa using Polynomial.coeff_X_pow_mul G n 0
+  -- Evaluate `F(w(t)) = w(t) ^ n * G(w(t))` along `w(t) = (i t)⁻¹ → 0` as `t → +∞`: continuity
+  -- gives `G(w(t)) → G.coeff 0`, whereas subtracting the resolvent quadratic equation for
+  -- `Q(t) = -i t m(i t)` and using `(i t) ^ n (S(t) - Q(t)) → 0` gives `G(w(t)) → 0`.
   let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
   let Q : ℝ → ℂ := fun t ↦ -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))
   let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) P
-  have hw0 : Tendsto w atTop (𝓝 0) := by
-    have hinv : Tendsto (fun t : ℝ ↦ (t : ℂ)⁻¹) atTop (𝓝 0) := by
-      simpa [Function.comp_def] using (continuous_ofReal.tendsto 0).comp tendsto_inv_atTop_zero
-    simpa [w] using hinv.const_mul I⁻¹
+  have hw0 : Tendsto w atTop (𝓝 0) := tendsto_inv_mul_I_atTop
   have hG_lim : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 ((G.coeff 0 : ℝ) : ℂ)) := by
     simpa [Function.comp_def, Polynomial.aeval_def, Polynomial.eval₂_at_zero] using
       (G.continuous_aeval.tendsto (0 : ℂ)).comp hw0
@@ -182,18 +229,9 @@ private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
         ((tendsto_const_nhds.mul hw0).sub tendsto_const_nhds))
     refine hprod.congr' ?_
     filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
-    have hti : (t : ℂ) * I ≠ 0 := mul_ne_zero (ofReal_ne_zero.2 ht) I_ne_zero
-    have hz_supp : (t : ℂ) * I ∉ ((↑) : ℝ → ℂ) '' (marchenkoPastur y).support := by
-      rintro ⟨x, -, hx⟩
-      exact ht (by simpa using (congrArg Complex.im hx).symm)
-    have hq := resolventTransform_marchenkoPastur_quadratic_eq_zero hz_supp
-    have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_cancel₀ hti
-    have hmQ : resolventTransform (marchenkoPastur y) ((t : ℂ) * I) = -(w t * Q t) := by
-      dsimp only [Q]
-      linear_combination -resolventTransform (marchenkoPastur y) ((t : ℂ) * I) * hwt
-    have hQeq : (y : ℂ) * w t * Q t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * Q t + 1 = 0 := by
-      rw [hmQ] at hq
-      linear_combination hq + (-(y : ℂ) * w t * Q t ^ 2 + Q t) * hwt
+    have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_I_mul_cancel ht
+    have hQeq : (y : ℂ) * w t * Q t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * Q t + 1 = 0 :=
+      neg_mul_I_mul_resolventTransform_quadratic_eq_zero y ht
     have hFeval : Polynomial.aeval (w t) F =
         (y : ℂ) * w t * S t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * S t + 1 := by
       simp [F, S]

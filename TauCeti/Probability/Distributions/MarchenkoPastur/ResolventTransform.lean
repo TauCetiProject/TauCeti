@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
+import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 
 /-!
@@ -115,8 +116,7 @@ theorem resolventTransform_semicircleReal_one_add_eq
 theorem resolventTransform_semicircleReal_one_add_eq_of_im_ne_zero (hz : z.im ≠ 0) :
     resolventTransform (semicircleReal (1 + y) y) z =
       1 + z * resolventTransform (marchenkoPastur y) z :=
-  resolventTransform_semicircleReal_one_add_eq fun ⟨x, _, hx⟩ ↦
-    hz (by simpa using (congrArg Complex.im hx).symm)
+  resolventTransform_semicircleReal_one_add_eq (notMem_image_ofReal_of_im_ne_zero hz)
 
 /-- In the upper half-plane, `z * m_{MP_y}(z)` has strictly positive imaginary part. -/
 theorem im_mul_resolventTransform_marchenkoPastur_pos (hz : 0 < z.im) :
@@ -223,11 +223,9 @@ theorem eq_resolventTransform_marchenkoPastur_iff (hz : 0 < z.im) {w : ℂ} :
     w = resolventTransform (marchenkoPastur y) z ↔
       0 < w.im ∧ (y : ℂ) * z * (w * w) + (z + y - 1) * w + 1 = 0 := by
   set m := resolventTransform (marchenkoPastur y) z
-  have hzU : z ∉ ((↑) : ℝ → ℂ) '' (marchenkoPastur y).support := by
-    rintro ⟨x, -, rfl⟩
-    simp at hz
   have hm : (y : ℂ) * z * (m * m) + (z + y - 1) * m + 1 = 0 :=
-    resolventTransform_marchenkoPastur_quadratic_eq_zero hzU
+    resolventTransform_marchenkoPastur_quadratic_eq_zero
+      (notMem_image_ofReal_of_im_ne_zero hz.ne')
   have hmim : 0 < m.im := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz
   refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨hwim, hw⟩ ↦ ?_⟩
   by_contra hne

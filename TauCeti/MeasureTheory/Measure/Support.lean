@@ -8,14 +8,17 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
-# Topological support under continuous maps
+# Topological support under scalar multiplication and continuous maps
 
-This file identifies the support of a pushforward by a continuous map as the closure of the
+This file shows that scaling a measure by a nonzero `ℝ≥0∞` scalar preserves its topological
+support, and identifies the support of a pushforward by a continuous map as the closure of the
 image of the source support. It also shows that pushing a measure forward along a homeomorphism
 transports its topological support onto the image of the original support.
 
-## Main result
+## Main results
 
+* `MeasureTheory.Measure.support_smul` — scaling a measure by a nonzero `ℝ≥0∞` scalar preserves its
+  topological support.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
   equal to the closure of the image of the support, when the source support has full measure.
 * `MeasureTheory.Measure.support_map_eq_closure_range` — a continuous image of a full-support
@@ -27,8 +30,17 @@ transports its topological support onto the image of the original support.
 public section
 
 open Set
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Scaling a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
+@[simp]
+theorem support_smul {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} {c : ℝ≥0∞} (hc : c ≠ 0) :
+    (c • μ).support = μ.support :=
+  Subset.antisymm smul_absolutelyContinuous.support_mono
+    (absolutelyContinuous_smul hc).support_mono
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
