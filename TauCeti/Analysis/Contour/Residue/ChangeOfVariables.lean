@@ -130,9 +130,8 @@ theorem residue_comp_mul_deriv {f φ : ℂ → ℂ} {p : ℂ} (hφ : AnalyticAt 
   case neg =>
     have hcomp : ¬ MeromorphicAt (fun z ↦ f (φ z) * deriv φ z) p := fun h ↦ by
       refine hf ((meromorphicAt_comp_iff_of_deriv_ne_zero hφ hφ').1 ?_)
-      refine (h.mul hφ.deriv.meromorphicAt.inv).congr ?_
-      filter_upwards [nhdsWithin_le_nhds (hφ.deriv.continuousAt.eventually_ne hφ')] with z hz
-      simp [mul_assoc, mul_inv_cancel₀ hz]
+      exact (meromorphicAt_mul_iff_of_ne_zero hφ.deriv hφ').mp
+        (h.congr (.of_forall fun z ↦ mul_comm (f (φ z)) (deriv φ z)))
     rw [residue_of_not_meromorphicAt hcomp, residue_of_not_meromorphicAt hf]
   obtain ⟨a, h, hh, hfh⟩ := exists_laurent_data_of_meromorphicAt hf
   generalize meromorphicPolarOrderAt f (φ p) = N at a hfh
