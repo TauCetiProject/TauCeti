@@ -62,6 +62,10 @@ one, which is not proved here (see the Roadmap section below).
   `TauCeti.serre_hom_ext`: `TauCeti.serreLift` sends the generators to the given Serre system, and
   is the unique homomorphism doing so; `TauCeti.serre_equiv_ext` is the same extensionality
   principle for equivalences out of the presented algebra.
+* `TauCeti.IsSerreSystem.lie_E_E_of_eq_zero` and `TauCeti.IsSerreSystem.lie_F_F_of_eq_zero`: in a
+  Serre system, two raising or two lowering elements commute at nodes `i`, `j` with `CMᵢⱼ = 0`;
+  `TauCeti.lie_serreE_serreE_of_eq_zero` and `TauCeti.lie_serreF_serreF_of_eq_zero` are the
+  same statements for the generators of the presented algebra.
 * `TauCeti.IsSerreSystem.changeScalars`: a Serre system over one base ring is one over any other
   base ring for which the same Lie ring has a Lie-algebra structure.
 * `TauCeti.IsSerreSystem.map`, `TauCeti.IsSerreSystem.submatrix`, `TauCeti.IsSerreSystem.perm` and
@@ -275,6 +279,43 @@ theorem isSerreSystem_serre :
   lie_H_F := lie_serreH_serreF R CM
   ad_pow_lie_E_E := ad_pow_lie_serreE_serreE R CM
   ad_pow_lie_F_F := ad_pow_lie_serreF_serreF R CM
+
+/-! ### Orthogonal generators commute
+
+When `CMᵢⱼ = 0` the higher Serre relation `(ad Eᵢ) ^ (-CMᵢⱼ).toNat ⁅Eᵢ, Eⱼ⁆ = 0` has exponent
+zero, so it says that `Eᵢ` and `Eⱼ` commute, and likewise for the `F`'s. -/
+
+section Orthogonal
+
+variable {R CM} {H E F : B → L}
+
+omit [DecidableEq B] in
+/-- In a Serre system, the raising elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
+theorem IsSerreSystem.lie_E_E_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : CM i j = 0) : ⁅E i, E j⁆ = 0 := by
+  simpa [hij] using h.ad_pow_lie_E_E i j
+
+omit [DecidableEq B] in
+/-- In a Serre system, the lowering elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
+theorem IsSerreSystem.lie_F_F_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : CM i j = 0) : ⁅F i, F j⁆ = 0 := by
+  simpa [hij] using h.ad_pow_lie_F_F i j
+
+variable (R CM)
+
+/-- The generators `Eᵢ` and `Eⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
+@[simp]
+theorem lie_serreE_serreE_of_eq_zero {i j : B} (hij : CM i j = 0) :
+    ⁅serreE R CM i, serreE R CM j⁆ = 0 :=
+  (isSerreSystem_serre R CM).lie_E_E_of_eq_zero hij
+
+/-- The generators `Fᵢ` and `Fⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
+@[simp]
+theorem lie_serreF_serreF_of_eq_zero {i j : B} (hij : CM i j = 0) :
+    ⁅serreF R CM i, serreF R CM j⁆ = 0 :=
+  (isSerreSystem_serre R CM).lie_F_F_of_eq_zero hij
+
+end Orthogonal
 
 /-! ### Stability of Serre systems
 
