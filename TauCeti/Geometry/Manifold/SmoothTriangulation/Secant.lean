@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 
+import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.SecantEstimate
+import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # Secant maps of smooth triangulations
@@ -195,59 +197,43 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion [DecidableEq ι] {f : Re
     (Finset.mem_univ a))
 
 /-- A secant map which is injective on a closed simplex is a `Cⁿ` immersion of that simplex, for
-every `n`: moving the barycenter along a direction on which its linear part vanishes would not
-change its value. -/
+every `n`. -/
 theorem isSimplexImmersion_secantMap_comp_faceInclusion_of_injOn {f : Realization K → E}
     {σ : Face K} (hinj : InjOn (K.secantMap f) (range (faceInclusion K σ))) :
     TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n (K.secantMap f ∘ faceInclusion K σ) := by
+  classical
   set L := Fintype.linearCombination ℝ fun a : σ.1 => f (vertex K a)
   have hL : K.secantMap f ∘ faceInclusion K σ = fun x : StandardSimplex σ.1 => L fun a => x.1 a :=
     funext fun x => by rw [comp_apply, secantMap_faceInclusion, Fintype.linearCombination_apply]
   rw [hL]
   refine LinearMap.isSimplexImmersion _ fun v hv hLv => ?_
-  -- Weight vectors on `σ` are the coordinates of points of the closed simplex.
-  have hpt {w : σ.1 → ℝ} (h0 : ∀ a, 0 ≤ w a) (h1 : ∑ a, w a = 1) :
-      ∃ x : StandardSimplex σ.1, (fun a : σ.1 => x.1 a) = w := by
-    have hw : w ∈ range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights :=
-      ⟨⟨Finsupp.equivFunOnFinite (α := σ.1).symm w, fun a => h0 a, by
-        rw [Finsupp.sum_fintype _ _ fun _ => rfl]
-        simpa using h1⟩, by simp⟩
-    rwa [← Finset.range_standardSimplex_coordinates] at hw
-  have hcard : (0 : ℝ) < σ.1.card := by
-    exact_mod_cast (K.isRelLowerSet_faces.prop_of_mem σ.2).card_pos
-  set c : ℝ := (σ.1.card : ℝ)⁻¹
-  have hc : 0 < c := inv_pos.2 hcard
-  have hsum : ∑ _a : σ.1, c = 1 := by
-    rw [Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul,
-      mul_inv_cancel₀ hcard.ne']
-  -- The barycenter `x₀` and its translate `x₁` by `t • v`, for small `t > 0`.
-  set t : ℝ := c / (∑ a, |v a| + 1)
-  have ht : 0 < t := by positivity
-  have hle (a : σ.1) : t * |v a| ≤ c := by
-    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-    have : |v a| ≤ ∑ b, |v b| :=
-      Finset.single_le_sum (fun b _ => abs_nonneg (v b)) (Finset.mem_univ a)
-    nlinarith
-  obtain ⟨x₀, hx₀⟩ := hpt (w := fun _ => c) (fun _ => hc.le) hsum
-  obtain ⟨x₁, hx₁⟩ := hpt (w := fun a => c + t * v a)
-    (fun a => by nlinarith [neg_abs_le (v a), hle a])
-    (by rw [Finset.sum_add_distrib, ← Finset.mul_sum, hv, mul_zero, add_zero, hsum])
-  have hval : K.secantMap f (faceInclusion K σ x₁) = K.secantMap f (faceInclusion K σ x₀) := by
-    have h₀ := congrFun hL x₀
-    have h₁ := congrFun hL x₁
-    simp only [comp_apply] at h₀ h₁
-    rw [h₀, h₁, hx₀, hx₁]
-    have : (fun a => c + t * v a) = (fun _ : σ.1 => c) + t • v := by
-      funext a
-      simp
-    rw [this, map_add, map_smul, hLv, smul_zero, add_zero]
-  have heq := congrArg Subtype.val (hinj ⟨x₁, rfl⟩ ⟨x₀, rfl⟩ hval)
-  rw [faceInclusion_val, faceInclusion_val] at heq
-  funext a
-  have hca := congrFun (hx₁.symm.trans ((congrArg (fun w : ι →₀ ℝ => fun a : σ.1 => w a)
-    heq).trans hx₀)) a
-  have : t * v a = 0 := by linarith
-  simpa [ht.ne'] using this
+  -- Moving the barycenter along a direction killed by `L` would not change its value, so `L` is
+  -- injective on the directions of the standard simplex, the convex hull of the unit vectors.
+  refine L.toAffineMap.eq_zero_of_injOn_convexHull
+    (s := range fun a : σ.1 => Pi.single a (1 : ℝ)) ?_ ?_ (by simpa using hLv)
+  · -- Points of the convex hull are the coordinates of points of the closed simplex.
+    have hhull : convexHull ℝ (range fun a : σ.1 => Pi.single a (1 : ℝ)) ⊆
+        range fun x : StandardSimplex σ.1 => fun a : σ.1 => x.1 a := by
+      rw [Finset.range_standardSimplex_coordinates]
+      exact convexHull_min (range_subset_iff.2 fun a => ⟨.single a, by
+        simp [Finsupp.single_eq_pi_single]⟩)
+        (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ.1)
+    rintro _ hw₁ _ hw₂ hw
+    obtain ⟨x₁, rfl⟩ := hhull hw₁
+    obtain ⟨x₂, rfl⟩ := hhull hw₂
+    have heq := congrArg Subtype.val (hinj ⟨x₁, rfl⟩ ⟨x₂, rfl⟩
+      (by simpa only [comp_apply] using (congrFun hL x₁).trans (hw.trans (congrFun hL x₂).symm)))
+    rw [faceInclusion_val, faceInclusion_val] at heq
+    exact congrArg (fun w : ι →₀ ℝ => fun a : σ.1 => w a) heq
+  · obtain ⟨a₀, ha₀⟩ := K.isRelLowerSet_faces.prop_of_mem σ.2
+    -- A vector with zero coordinate sum is a combination of edge vectors from the vertex `a₀`.
+    have hsum : v = ∑ a, v a •
+        ((Pi.single a (1 : ℝ) : σ.1 → ℝ) -ᵥ Pi.single ⟨a₀, ha₀⟩ (1 : ℝ)) := by
+      simpa only [vsub_eq_sub, smul_sub, Finset.sum_sub_distrib, ← Finset.sum_smul, hv, zero_smul,
+        sub_zero] using pi_eq_sum_univ' v
+    rw [hsum]
+    exact Submodule.sum_mem _ fun a _ => Submodule.smul_mem _ _ <|
+      vsub_mem_vectorSpan ℝ (mem_range_self a) (mem_range_self _)
 
 end AbstractSimplicialComplex
 
