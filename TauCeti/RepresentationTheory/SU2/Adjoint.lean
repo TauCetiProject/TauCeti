@@ -10,7 +10,10 @@ public import TauCeti.RepresentationTheory.SU2.Basic
 public import Mathlib.Topology.Algebra.Group.Quotient
 import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
+import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
 
 /-!
 # The double cover `SU(2) → SO(3)`
@@ -38,11 +41,13 @@ reflection fixing the complex line `ℂ u`, so
 sphere of traceless Hermitian matrices, where `P = u u*` is the orthogonal projection onto the
 line `ℂ u`, read in the orthonormal basis `σᵢ / √2`.
 
-Restricted to `SU(2)` the homomorphism is the **double cover** `TauCeti.SU2.toSO3`. It is
-surjective (`TauCeti.SU2.toSO3_surjective`): the formula above reaches every point of the sphere,
-and a rotation fixing the north pole is the image of a diagonal element `diag (z, z⁻¹)` of the
-maximal torus. Its kernel is `{1, -1}` (`TauCeti.SU2.toSO3_eq_one_iff`), and since `SU(2)` is
-compact and `SO(3)` is Hausdorff, it induces an isomorphism of topological groups
+Restricted to `SU(2)` the homomorphism is the **double cover** `TauCeti.SU2.toSO3`. Up to the
+factor `-i` and a fixed rotation of coordinates, the Pauli map is the matrix of the pure quaternion
+attached to a vector by `TauCeti.realCliffordThreeZeroPureQuaternionEquiv`, so `toSO3` is the
+vector action of `Spin(3) ≅ SU(2)` (`TauCeti.realSpinThreeEquivSpecialUnitary_action`); it is
+therefore surjective (`TauCeti.SU2.toSO3_surjective`). Its kernel is `{1, -1}`
+(`TauCeti.SU2.toSO3_eq_one_iff`), the center of `SU(2)` (`TauCeti.SU2.toSO3_ker`), and since
+`SU(2)` is compact and `SO(3)` is Hausdorff, it induces an isomorphism of topological groups
 `SU(2) ⧸ {±1} ≃ₜ* SO(3)` (`TauCeti.SU2.quotientKerToSO3`).
 
 ## Main definitions
@@ -63,6 +68,7 @@ compact and `SO(3)` is Hausdorff, it induces an isomorphism of topological group
 * `TauCeti.pauliRotation_mulVec_single_two`: the image of the north pole.
 * `TauCeti.pauliRotation_eq_one_iff`: the kernel of `U(2) → SO(3)` is the scalar matrices.
 * `TauCeti.SU2.toSO3_eq_one_iff`: the kernel of `SU(2) → SO(3)` is `{1, -1}`.
+* `TauCeti.SU2.toSO3_ker`: the kernel of `SU(2) → SO(3)` is the center of `SU(2)`.
 * `TauCeti.SU2.coe_toSO3_torusHom`: the maximal torus `diag (z, z⁻¹)` maps to the rotations about
   the axis `(0, 0, 1)`.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
@@ -78,7 +84,7 @@ compact and `SO(3)` is Hausdorff, it induces an isomorphism of topological group
 public section
 
 open Matrix Complex
-open scoped ComplexConjugate
+open scoped ComplexConjugate Quaternion
 
 namespace TauCeti
 
@@ -141,30 +147,29 @@ theorem pauliRotation_mul : pauliRotation (U * V) = pauliRotation U * pauliRotat
   rw [← mulVec_mulVec, pauli_pauliRotation_mulVec, pauli_pauliRotation_mulVec]
   simp [Submonoid.coe_mul, star_mul, mul_assoc]
 
+/-- Conjugation by a unitary matrix is multiplicative. -/
+private theorem mul_mul_mul_star (A B : Matrix (Fin 2) (Fin 2) ℂ) :
+    (U : Matrix (Fin 2) (Fin 2) ℂ) * (A * B) * star (U : Matrix (Fin 2) (Fin 2) ℂ) =
+      (U : Matrix (Fin 2) (Fin 2) ℂ) * A * star (U : Matrix (Fin 2) (Fin 2) ℂ) *
+        ((U : Matrix (Fin 2) (Fin 2) ℂ) * B * star (U : Matrix (Fin 2) (Fin 2) ℂ)) := by
+  simpa using map_mul (Unitary.conjStarAlgAut ℝ (Matrix (Fin 2) (Fin 2) ℂ) U) A B
+
 /-- Conjugation by a unitary matrix preserves the dot product of Pauli coordinates. -/
 theorem dotProduct_pauliRotation_mulVec (x y : Fin 3 → ℝ) :
     (pauliRotation U *ᵥ x) ⬝ᵥ (pauliRotation U *ᵥ y) = x ⬝ᵥ y := by
   have h := trace_pauli_mul_pauli (pauliRotation U *ᵥ x) (pauliRotation U *ᵥ y)
-  rw [pauli_pauliRotation_mulVec, pauli_pauliRotation_mulVec] at h
-  have hU := mem_unitaryGroup_iff'.mp U.2
-  rw [show (U : Matrix (Fin 2) (Fin 2) ℂ) * pauli x * star (U : Matrix (Fin 2) (Fin 2) ℂ) *
-      ((U : Matrix (Fin 2) (Fin 2) ℂ) * pauli y * star (U : Matrix (Fin 2) (Fin 2) ℂ)) =
-      (U : Matrix (Fin 2) (Fin 2) ℂ) * (pauli x * pauli y) *
-        star (U : Matrix (Fin 2) (Fin 2) ℂ) by
-      simp only [mul_assoc, ← mul_assoc (star _) (U : Matrix (Fin 2) (Fin 2) ℂ), hU, one_mul],
-    trace_mul_cycle, hU, one_mul, trace_pauli_mul_pauli] at h
+  rw [pauli_pauliRotation_mulVec, pauli_pauliRotation_mulVec, ← mul_mul_mul_star,
+    trace_mul_cycle, mem_unitaryGroup_iff'.mp U.2, one_mul, trace_pauli_mul_pauli] at h
   exact_mod_cast (mul_left_cancel₀ two_ne_zero h).symm
 
 /-- Conjugation by a unitary matrix preserves the cross product of Pauli coordinates. -/
 theorem pauliRotation_mulVec_cross (x y : Fin 3 → ℝ) :
     pauliRotation U *ᵥ (x ⨯₃ y) = (pauliRotation U *ᵥ x) ⨯₃ (pauliRotation U *ᵥ y) := by
   refine pauli_injective (smul_right_injective _ (mul_ne_zero two_ne_zero I_ne_zero) ?_)
-  have hU := mem_unitaryGroup_iff'.mp U.2
   dsimp only
   rw [← pauli_mul_sub_mul_pauli, pauli_pauliRotation_mulVec, pauli_pauliRotation_mulVec,
     pauli_pauliRotation_mulVec, ← smul_mul_assoc, ← mul_smul_comm, ← pauli_mul_sub_mul_pauli,
-    mul_sub, sub_mul]
-  simp only [mul_assoc, ← mul_assoc (star _) (U : Matrix (Fin 2) (Fin 2) ℂ), hU, one_mul]
+    mul_sub, sub_mul, mul_mul_mul_star, mul_mul_mul_star]
 
 /-- `pauliRotation U` is an orthogonal matrix. -/
 theorem pauliRotation_mem_orthogonalGroup : pauliRotation U ∈ orthogonalGroup (Fin 3) ℝ :=
@@ -299,74 +304,33 @@ theorem toSO3_eq_one_iff (g : SU2) :
     · exact ⟨1, by rw [h, one_smul]⟩
     · exact ⟨-1, by rw [h, neg_one_smul]⟩
 
-/-- The element of `SU(2)` with first column `(a, b)`, for `|a|² + |b|² = 1`. -/
-private noncomputable def ofColumn (a b : ℂ) (h : normSq a + normSq b = 1) : SU2 :=
-  ⟨!![a, -conj b; b, conj a], by
-    have h' : a * conj a + b * conj b = 1 := by
-      rw [mul_conj, mul_conj]
-      exact_mod_cast h
-    refine mem_specialUnitaryGroup_iff.mpr ⟨mem_unitaryGroup_iff.mpr ?_, ?_⟩
-    · ext i j
-      fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-      · linear_combination h'
-      · ring
-      · ring
-      · linear_combination h'
-    · rw [det_fin_two_of]
-      linear_combination h'⟩
+/-- `i σ(x)` lies in `SU(2)` for a unit vector `x`. -/
+private theorem smul_pauli_mem_specialUnitaryGroup {x : Fin 3 → ℝ} (hx : x ⬝ᵥ x = 1) :
+    I • pauli x ∈ specialUnitaryGroup (Fin 2) ℂ := by
+  refine mem_specialUnitaryGroup_iff.mpr ⟨mem_unitaryGroup_iff.mpr ?_, ?_⟩
+  · rw [star_smul, star_eq_conjTranspose, (isHermitian_pauli x).eq, smul_mul_smul_comm,
+      pauli_mul_self, hx]
+    simp
+  · simp [det_pauli, hx]
 
-private theorem coe_ofColumn_apply_zero_zero (a b : ℂ) (h : normSq a + normSq b = 1) :
-    (ofColumn a b h : Matrix (Fin 2) (Fin 2) ℂ) 0 0 = a :=
-  (rfl)
-
-private theorem coe_ofColumn_apply_one_zero (a b : ℂ) (h : normSq a + normSq b = 1) :
-    (ofColumn a b h : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = b :=
-  (rfl)
-
-/-- Every point of the unit sphere is the image of the north pole under some rotation coming
-from `SU(2)`. -/
-private theorem exists_toSO3_mulVec_single_two (n : Fin 3 → ℝ) (hn : n ⬝ᵥ n = 1) :
-    ∃ g : SU2, (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ Pi.single 2 1 = n := by
-  simp only [dotProduct, Fin.sum_univ_three] at hn
-  have hn2 : -1 ≤ n 2 := by nlinarith [sq_nonneg (n 0), sq_nonneg (n 1)]
-  rcases hn2.eq_or_lt with h2 | h2
-  · -- The south pole is the image of `!![0, -1; 1, 0]`.
-    have h0 : n 0 = 0 := by nlinarith [sq_nonneg (n 0), sq_nonneg (n 1)]
-    have h1 : n 1 = 0 := by nlinarith [sq_nonneg (n 0), sq_nonneg (n 1)]
-    refine ⟨ofColumn 0 1 (by simp), ?_⟩
-    rw [coe_toSO3, pauliRotation_mulVec_single_two]
-    ext i
-    fin_cases i <;> simp [Submonoid.coe_inclusion, coe_ofColumn_apply_zero_zero,
-      coe_ofColumn_apply_one_zero, h0, h1, ← h2]
-  · -- Otherwise take `a = √((1 + n₂) / 2) > 0` and `b = (n₀ + i n₁) / (2 a)`.
-    set a : ℝ := √((1 + n 2) / 2)
-    have ha : 0 < a := Real.sqrt_pos.mpr (by linarith)
-    have ha2 : a ^ 2 = (1 + n 2) / 2 := Real.sq_sqrt (by linarith)
-    set b : ℂ := (n 0 + n 1 * I) / (2 * a)
-    have hb : normSq b = (n 0 ^ 2 + n 1 ^ 2) / (4 * a ^ 2) := by
-      simp only [b, normSq_div, normSq_add_mul_I]
-      rw [show (2 * (a : ℂ)) = ((2 * a : ℝ) : ℂ) by push_cast; ring, normSq_ofReal]
-      ring
-    have hab : normSq (a : ℂ) + normSq b = 1 := by
-      rw [normSq_ofReal, hb]
-      field_simp
-      nlinarith
-    have ha0 : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
-    have hba : b * a = (n 0 + n 1 * I) / 2 := by
-      simp only [b]
-      field_simp
-    refine ⟨ofColumn a b hab, ?_⟩
-    rw [coe_toSO3, pauliRotation_mulVec_single_two]
-    simp only [Submonoid.coe_inclusion, coe_ofColumn_apply_zero_zero, coe_ofColumn_apply_one_zero,
-      conj_ofReal, normSq_ofReal, hba]
-    ext i
-    fin_cases i
-    · simp
-      ring
-    · simp
-      ring
-    · simp
-      nlinarith
+/-- The kernel of `SU(2) → SO(3)` is the center of `SU(2)`. -/
+theorem toSO3_ker : toSO3.ker = Subgroup.center SU2 := by
+  ext g
+  rw [MonoidHom.mem_ker, Subgroup.mem_center_iff]
+  constructor
+  · intro hg h
+    rcases (toSO3_eq_one_iff g).mp hg with hg | hg <;> exact Subtype.ext (by simp [hg])
+  · intro hg
+    rw [← Subtype.coe_inj, coe_toSO3, OneMemClass.coe_one, pauliRotation_eq_one_iff,
+      Submonoid.coe_inclusion]
+    -- `g` commutes with `i σ₃` and `i σ₁`, hence with `σ₃` and `σ₁`.
+    have hcomm (k : Fin 3) : (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single k 1) =
+        pauli (Pi.single k 1) * g := by
+      have h := congrArg Subtype.val
+        (hg ⟨_, smul_pauli_mem_specialUnitaryGroup (x := Pi.single k 1) (by simp)⟩)
+      rw [Submonoid.coe_mul, Submonoid.coe_mul, smul_mul_assoc, mul_smul_comm] at h
+      exact (smul_right_injective _ I_ne_zero h).symm
+    exact ⟨_, eq_smul_one_of_commute_pauli (hcomm 2) (hcomm 0)⟩
 
 /-- Conjugation by the torus element `diag (z, z⁻¹)` acts on `ℝ³` by the rotation about the axis
 `(0, 0, 1)` by the angle `-2 arg z`. -/
@@ -386,34 +350,6 @@ private theorem pauliCoord_torusMatrix_mul_pauli_mul_star (z : Circle) (x : Fin 
   · simp [mulVec, dotProduct, Fin.sum_univ_three, sq]
     linear_combination x 2 * hre
 
-/-- An orthogonal matrix of determinant one fixing `(0, 0, 1)` is a rotation about that axis. -/
-private theorem eq_of_mulVec_single_two {T : Matrix (Fin 3) (Fin 3) ℝ} (hT : Tᵀ * T = 1)
-    (hdet : T.det = 1) (hS : T *ᵥ Pi.single 2 1 = Pi.single 2 1) :
-    T = !![T 0 0, -T 1 0, 0; T 1 0, T 0 0, 0; 0, 0, 1] ∧ T 0 0 ^ 2 + T 1 0 ^ 2 = 1 := by
-  have hcol := congrFun hS
-  simp only [mulVec_single_one] at hcol
-  have h02 : T 0 2 = 0 := by simpa using hcol 0
-  have h12 : T 1 2 = 0 := by simpa using hcol 1
-  have h22 : T 2 2 = 1 := by simpa using hcol 2
-  have hTT := Matrix.ext_iff.mpr hT
-  have e20 := hTT 2 0
-  have e21 := hTT 2 1
-  have e00 := hTT 0 0
-  have e11 := hTT 1 1
-  have e01 := hTT 0 1
-  simp only [Matrix.mul_apply, Fin.sum_univ_three, transpose_apply, h02, h12, h22, one_apply_eq,
-    one_apply_ne, ne_eq, Fin.reduceEq, not_false_eq_true, zero_mul, one_mul, zero_add,
-    Fin.isValue] at e20 e21 e00 e11 e01
-  rw [det_fin_three, h02, h12, h22, e20, e21] at hdet
-  simp only [mul_one, mul_zero, sub_zero, zero_mul, add_zero] at hdet
-  -- The upper-left block is a rotation of the plane: `(T₀₀ - T₁₁)² + (T₀₁ + T₁₀)² = 0`.
-  have h11 : T 1 1 = T 0 0 := by
-    nlinarith [sq_nonneg (T 0 0 - T 1 1), sq_nonneg (T 0 1 + T 1 0)]
-  have h01 : T 0 1 = -T 1 0 := by
-    nlinarith [sq_nonneg (T 0 0 - T 1 1), sq_nonneg (T 0 1 + T 1 0)]
-  refine ⟨Matrix.ext fun i j => ?_, by nlinarith⟩
-  fin_cases i <;> fin_cases j <;> simp [h02, h12, h22, e20, e21, h11, h01]
-
 /-- The rotation attached to the torus element `diag (z, z⁻¹)`: the rotation about the axis
 `(0, 0, 1)` by the angle `-2 arg z`. -/
 theorem coe_toSO3_torusHom (z : Circle) :
@@ -424,59 +360,75 @@ theorem coe_toSO3_torusHom (z : Circle) :
   rw [coe_toSO3, pauliRotation_mulVec, Submonoid.coe_inclusion, coe_torusHom,
     pauliCoord_torusMatrix_mul_pauli_mul_star]
 
-/-- A rotation fixing `(0, 0, 1)` is the image of an element of the maximal torus. -/
-private theorem exists_coe_toSO3_torusHom_eq {T : Matrix (Fin 3) (Fin 3) ℝ} (hTo : Tᵀ * T = 1)
-    (hTd : T.det = 1) (hS : T *ᵥ Pi.single 2 1 = Pi.single 2 1) :
-    ∃ z : Circle, (toSO3 (torusHom z) : Matrix (Fin 3) (Fin 3) ℝ) = T := by
-  obtain ⟨hT, hT2⟩ := eq_of_mulVec_single_two hTo hTd hS
-  -- Choose `z` on the circle with `z² = T₀₀ - i T₁₀`.
-  set w : ℂ := T 0 0 - T 1 0 * I with hw_def
-  have hw : ‖w‖ = 1 := by
-    have hn : normSq w = 1 := by
-      rw [hw_def, show (T 0 0 : ℂ) - T 1 0 * I = (T 0 0 : ℂ) + ((-T 1 0 : ℝ) : ℂ) * I by
-        push_cast; ring, normSq_add_mul_I, neg_sq, hT2]
-    rw [Complex.norm_def, hn, Real.sqrt_one]
-  -- Take `z = exp (i arg w / 2)`.
-  have hz : ((Circle.exp (arg w / 2) : ℂ)) ^ 2 = w := by
-    rw [Circle.coe_exp, ← Complex.exp_nat_mul]
-    have h := norm_mul_exp_arg_mul_I w
-    rw [hw, ofReal_one, one_mul] at h
-    convert h using 2
-    push_cast
-    ring
-  refine ⟨Circle.exp (arg w / 2), ?_⟩
-  rw [coe_toSO3_torusHom, hz]
-  conv_rhs => rw [hT]
-  simp [w]
+/-- The fixed rotation of coordinates `x ↦ (x₁, -x₂, -x₀)` carrying the Pauli coordinates to the
+coordinates of `TauCeti.realCliffordThreeZeroPureQuaternionEquiv`. -/
+private def pauliQuaternionFrame : Matrix (Fin 3) (Fin 3) ℝ :=
+  !![0, 1, 0; 0, 0, -1; -1, 0, 0]
 
-/-- The double cover `SU(2) → SO(3)` is surjective. -/
+private theorem pauliQuaternionFrame_mem_specialOrthogonalGroup :
+    pauliQuaternionFrame ∈ specialOrthogonalGroup (Fin 3) ℝ := by
+  refine ⟨(mem_orthogonalGroup_iff' _ _).mpr ?_, ?_⟩
+  · ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [pauliQuaternionFrame, Matrix.mul_apply, Fin.sum_univ_three]
+  · simp [pauliQuaternionFrame, det_fin_three]
+
+/-- Up to the factor `-i` and the rotation of coordinates `pauliQuaternionFrame`, the Pauli map is
+the matrix of the pure quaternion attached to a vector by
+`TauCeti.realCliffordThreeZeroPureQuaternionEquiv`. -/
+private theorem pauli_eq_smul_toComplexMatrix (x : Fin 3 → ℝ) :
+    pauli x = (-I) • Quaternion.toComplexMatrix
+      (realCliffordThreeZeroPureQuaternionEquiv (pauliQuaternionFrame *ᵥ x) : ℍ[ℝ]) := by
+  rw [coe_realCliffordThreeZeroPureQuaternionEquiv_apply, Quaternion.toComplexMatrix_apply,
+    pauli_apply]
+  ext i j
+  fin_cases i <;> fin_cases j <;> apply Complex.ext <;>
+    simp [pauliQuaternionFrame, mulVec, dotProduct, Fin.sum_univ_three]
+
+/-- The double cover `SU(2) → SO(3)` is surjective. Through `pauli_eq_smul_toComplexMatrix` it is
+the vector action of `Spin(3) ≅ SU(2)` (`TauCeti.realSpinThreeEquivSpecialUnitary_action`), which
+is onto `SO(3)` (`CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_posDef`). -/
 theorem toSO3_surjective : Function.Surjective toSO3 := by
   intro S
-  set n := (S : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ Pi.single 2 1 with hn_def
-  have hn : n ⬝ᵥ n = 1 := by
-    have := Matrix.ext_iff.mpr ((mem_orthogonalGroup_iff' _ _).mp S.2.1) 2 2
-    simpa [n, mulVec_single_one, dotProduct, Matrix.mul_apply, Fin.sum_univ_three, sq] using this
-  obtain ⟨g, hg⟩ := exists_toSO3_mulVec_single_two n hn
-  obtain ⟨z, hz⟩ := exists_coe_toSO3_torusHom_eq
-    ((mem_orthogonalGroup_iff' _ _).mp ((toSO3 g)⁻¹ * S).2.1) ((toSO3 g)⁻¹ * S).2.2 (by
-    rw [← map_inv, Submonoid.coe_mul, ← mulVec_mulVec,
-      ← hn_def, ← hg, mulVec_mulVec,
-      ← Submonoid.coe_mul, ← map_mul, inv_mul_cancel, map_one, OneMemClass.coe_one, one_mulVec])
-  exact ⟨g * torusHom z, by rw [map_mul, Subtype.ext hz, mul_inv_cancel_left]⟩
+  let F : specialOrthogonalGroup (Fin 3) ℝ :=
+    ⟨pauliQuaternionFrame, pauliQuaternionFrame_mem_specialOrthogonalGroup⟩
+  -- The rotation `F S F⁻¹` of the pure-quaternion coordinates is the action of a Spin element.
+  let T := QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne (Fin 3) (F * S * F⁻¹)
+  have hT : (T : (Fin 3 → ℝ) ≃ₗ[ℝ] (Fin 3 → ℝ)) ∈
+      QuadraticMap.specialOrthogonalGroup (realCliffordForm 3 0) := by
+    rw [realCliffordForm_zero_eq_weightedSumSquares_one]
+    exact T.2
+  obtain ⟨s, hs⟩ := CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_posDef _
+    (posDef_realCliffordForm_zero 3) ⟨_, hT⟩
+  have hsx (x : Fin 3 → ℝ) :
+      s • (pauliQuaternionFrame *ᵥ x) = pauliQuaternionFrame *ᵥ (S *ᵥ x) := by
+    rw [CliffordAlgebra.spinGroup_smul_apply,
+      ← CliffordAlgebra.coe_spinToSpecialOrthogonal_apply, hs]
+    change (T : (Fin 3 → ℝ) ≃ₗ[ℝ] (Fin 3 → ℝ)) ((F : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x) = _
+    rw [QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply, toLin'_apply,
+      mulVec_mulVec, ← Submonoid.coe_mul, inv_mul_cancel_right, Submonoid.coe_mul, ← mulVec_mulVec]
+  refine ⟨realSpinThreeEquivSpecialUnitary s,
+    Subtype.ext ((pauliRotation_eq_iff _).mpr fun x => ?_)⟩
+  rw [Submonoid.coe_inclusion, pauli_eq_smul_toComplexMatrix, pauli_eq_smul_toComplexMatrix,
+    ← hsx, realSpinThreeEquivSpecialUnitary_action, mul_smul_comm, smul_mul_assoc]
 
 /-- The double cover `SU(2) → SO(3)` is continuous. -/
 theorem continuous_toSO3 : Continuous toSO3 := by
   refine continuous_induced_rng.mpr (continuous_pi fun i => continuous_pi fun j => ?_)
-  simp only [Function.comp_def, coe_toSO3, pauliRotation, LinearMap.toMatrix'_apply,
-    LinearMap.coe_comp, Function.comp_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply,
-    Submonoid.coe_inclusion]
-  have hc : Continuous fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) *
-      (pauli (Pi.single j 1) * star (g : Matrix (Fin 2) (Fin 2) ℂ)) :=
-    continuous_subtype_val.mul (continuous_const.mul continuous_subtype_val.star)
+  have h (g : SU2) : (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) i j = pauliCoord
+      ((g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single j 1) *
+        star (g : Matrix (Fin 2) (Fin 2) ℂ)) i := by
+    rw [coe_toSO3]
+    exact congrFun ((mulVec_single_one _ j).symm.trans (pauliRotation_mulVec _ _)) i
+  have hc : Continuous fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single j 1) *
+      star (g : Matrix (Fin 2) (Fin 2) ℂ) :=
+    (continuous_subtype_val.mul continuous_const).mul continuous_subtype_val.star
+  simp only [Function.comp_def, h]
   exact (continuous_apply i).comp ((LinearMap.continuous_of_finiteDimensional pauliCoord).comp hc)
 
 /-- The double cover induces an isomorphism of topological groups `SU(2) ⧸ {±1} ≃ₜ* SO(3)`:
-`SU(2)` is compact and `SO(3)` is Hausdorff. -/
+`SU(2)` is compact and `SO(3)` is Hausdorff. The kernel `toSO3.ker` is `{1, -1}`
+(`TauCeti.SU2.toSO3_eq_one_iff`), the center of `SU(2)` (`TauCeti.SU2.toSO3_ker`). -/
 noncomputable def quotientKerToSO3 : SU2 ⧸ toSO3.ker ≃ₜ* specialOrthogonalGroup (Fin 3) ℝ :=
   let e := QuotientGroup.quotientKerEquivOfSurjective toSO3 toSO3_surjective
   have hc : Continuous e :=
