@@ -52,8 +52,8 @@ integral and carries no meaning.
   scaling.
 * `Complex.carlsonRF_self`, `Complex.carlsonRC_self` — the diagonal values
   `R_F(x, x, x) = R_C(x, x) = x^(-1/2)`.
-* `Complex.carlsonRF_pos` — `R_F` is a positive real number at nonnegative real
-  arguments, at most one of them zero.
+* `Complex.carlsonRF_pos`, `Complex.carlsonRC_pos` — `R_F` and `R_C` are positive real numbers
+  at nonnegative real arguments, at most one of the symmetric ones zero.
 * `Complex.carlsonRC_eq_integral` — the defining integral of `R_C` (DLMF 19.2.17).
 * `Complex.carlsonRC_ofReal_eq_arccos`, `Complex.carlsonRC_ofReal_eq_arcosh` — the
   elementary evaluation of `R_C` at real arguments (DLMF 19.2.19, 19.2.20):
@@ -299,6 +299,12 @@ theorem carlsonRF_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
     show (1 / 2 : ℂ) * ((∫ t in Ioi (0 : ℝ), f t : ℝ) : ℂ) =
       ((1 / 2 * ∫ t in Ioi (0 : ℝ), f t : ℝ) : ℂ) by push_cast; ring]
   exact Complex.zero_lt_real.mpr (by positivity)
+
+/-- **`R_C` is positive at real arguments**: for real `x ≥ 0` and `y > 0`, `R_C(x, y)` is a
+positive real number (in the order `ComplexOrder`, so its imaginary part is `0`). -/
+theorem carlsonRC_pos {x y : ℝ} (hx : 0 ≤ x) (hy : 0 < y) :
+    0 < carlsonRC x y :=
+  carlsonRF_pos hx hy hy
 
 /-! ### Elementary evaluation of `R_C` -/
 
