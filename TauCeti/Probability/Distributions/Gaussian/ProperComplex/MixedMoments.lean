@@ -137,7 +137,7 @@ private theorem complexGaussianFourth_eq_sum_parts (m : ι → ℂ) (i j k l : �
     complexGaussianCoordinate_eq_sum_parts, star_complexGaussianCoordinate_eq_sum_parts]
   simp_rw [Fintype.sum_bool]
   simp only [complexGaussianFourthTerm, complexGaussianPartCoeff, complexGaussianPart]
-  ; ring
+  ring
 
 private theorem integrable_complexGaussianFourthTerm (m : ι → ℂ) (C : Matrix ι ι ℂ)
     [Fintype ι] [DecidableEq ι] (i j k l : ι) (a b c d : Bool) :
