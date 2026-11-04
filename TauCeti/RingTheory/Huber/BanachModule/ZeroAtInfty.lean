@@ -117,7 +117,7 @@ private theorem continuous_coeffBilin
     (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) :
     Continuous fun p : C₀(I, R) × E ↦ coeffBilin I hE p.1 p.2 := by
   obtain ⟨C, hC⟩ := hE
-  refine LinearMap.continuous_of_norm_apply_le _ C fun x m ↦ (norm_le (by positivity)).2 fun i ↦ ?_
+  refine LinearMap.continuous₂_of_bound _ C fun x m ↦ (norm_le (by positivity)).2 fun i ↦ ?_
   rw [coeffBilin_apply]
   exact (hC _ _).trans (by gcongr; exact norm_coe_le_norm x i)
 

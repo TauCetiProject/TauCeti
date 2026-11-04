@@ -16,7 +16,7 @@ cast `Int.castRingHom R` preserves norms. This makes lemmas stated for a `RingHo
 ring homomorphism, such as `Polynomial.supNorm_map`, apply to integer polynomials.
 
 Over a seminormed ring `R`, which need not be a field, an `R`-bilinear map `β` with
-`‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous_of_norm_apply_le`), and
+`‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous₂_of_bound`), and
 so is a scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`).
 -/
 
@@ -35,7 +35,7 @@ section BoundedBilinear
 variable {R : Type*} [SeminormedCommRing R]
 
 /-- An `R`-bilinear map bounded by `C * ‖x‖ * ‖y‖` is jointly continuous. -/
-theorem LinearMap.continuous_of_norm_apply_le {X Y Z : Type*} [SeminormedAddCommGroup X]
+theorem LinearMap.continuous₂_of_bound {X Y Z : Type*} [SeminormedAddCommGroup X]
     [Module R X] [SeminormedAddCommGroup Y] [Module R Y] [SeminormedAddCommGroup Z] [Module R Z]
     (β : X →ₗ[R] Y →ₗ[R] Z) (C : ℝ) (hβ : ∀ x y, ‖β x y‖ ≤ C * ‖x‖ * ‖y‖) :
     Continuous fun p : X × Y ↦ β p.1 p.2 :=
@@ -51,7 +51,7 @@ theorem LinearMap.continuous_of_norm_apply_le {X Y Z : Type*} [SeminormedAddComm
 theorem TauCeti.continuousSMul_of_norm_smul_le {M : Type*} [SeminormedAddCommGroup M]
     [Module R M]
     (h : ∃ C : ℝ≥0, ∀ (r : R) (m : M), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) : ContinuousSMul R M :=
-  h.elim fun C hC ↦ ⟨(LinearMap.lsmul R M).continuous_of_norm_apply_le C hC⟩
+  h.elim fun C hC ↦ ⟨(LinearMap.lsmul R M).continuous₂_of_bound C hC⟩
 
 end BoundedBilinear
 
