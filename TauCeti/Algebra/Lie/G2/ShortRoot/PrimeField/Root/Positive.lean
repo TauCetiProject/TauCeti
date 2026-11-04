@@ -54,7 +54,10 @@ noncomputable section
 private theorem simpleRootCharacter_height (i : Fin 2) :
     3 * simpleRootCharacter i (ULift.up 0) +
       5 * simpleRootCharacter i (ULift.up 1) = 1 := by
-  simp only [simpleRootCharacter_eq_liftCharacter, liftCharacter_apply]
+  have hrow : (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) =
+      fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
+    simpa only [rank_G2, cartanMatrix_G2_eq] using root_simpleIndex G2 valid_G2 i
+  simp only [simpleRootCharacter_apply, hrow]
   fin_cases i <;> norm_num
 
 /-- The differential of a numbered raising subgroup belongs to the tangent Lie algebra of the
