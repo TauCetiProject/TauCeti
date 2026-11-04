@@ -26,11 +26,11 @@ replacing `volume_ball` with `volume_closedBall`.
 
 ## Main results
 
-* `NumberField.mixedEmbedding.normAtPlace_congr`: `normAtPlace w x` depends only on the
-  `w`-coordinate of `x`.
 * `NumberField.mixedEmbedding.setOf_forall_normAtPlace_le_eq_prod`: the set
   `{x : mixedSpace K | ∀ w, normAtPlace w x ≤ f w}` is the product of the closed balls of radii
   `f w` at the real and complex places.
+* `NumberField.mixedEmbedding.coe_convexBodyLTFactor`: the coercion of `convexBodyLTFactor K` to `ℝ`
+  is `2 ^ nrRealPlaces K * π ^ nrComplexPlaces K`.
 * `NumberField.mixedEmbedding.volume_setOf_forall_normAtPlace_le` and
   `NumberField.mixedEmbedding.volume_real_setOf_forall_normAtPlace_le`: its `ℝ≥0∞`-valued volume
   (unconditionally, since `ENNReal.ofReal` vanishes on negative radii) and its `ℝ`-valued volume for
@@ -46,16 +46,6 @@ open ENNReal MeasureTheory Metric NNReal NumberField NumberField.InfinitePlace
 namespace NumberField.mixedEmbedding
 
 variable {K : Type*} [Field K]
-
-/-- `normAtPlace w` depends only on the `w`-coordinate of an element of `mixedSpace K`. -/
-theorem normAtPlace_congr (w : InfinitePlace K) {x y : mixedSpace K}
-    (h₁ : ∀ hw : IsReal w, x.1 ⟨w, hw⟩ = y.1 ⟨w, hw⟩)
-    (h₂ : ∀ hw : IsComplex w, x.2 ⟨w, hw⟩ = y.2 ⟨w, hw⟩) :
-    normAtPlace w x = normAtPlace w y := by
-  by_cases hw : IsReal w
-  · simp [normAtPlace_apply_of_isReal hw, h₁ hw]
-  · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw
-    simp [normAtPlace_apply_of_isComplex hwc, h₂ hwc]
 
 /-- The set of points of `mixedSpace K` bounded at every infinite place `w` by `f w` is the product
 of the closed balls of radii `f w` at the real and complex places. -/
@@ -83,6 +73,12 @@ theorem setOf_forall_normAtPlace_le_eq_empty_of_neg {f : InfinitePlace K → ℝ
     ((normAtPlace_nonneg w x).trans (hx w)).not_gt hw
 
 variable [NumberField K]
+
+/-- The coercion of `convexBodyLTFactor K` to `ℝ` is
+`2 ^ nrRealPlaces K * π ^ nrComplexPlaces K`. -/
+theorem coe_convexBodyLTFactor :
+    (convexBodyLTFactor K : ℝ) = 2 ^ nrRealPlaces K * Real.pi ^ nrComplexPlaces K := by
+  simp [convexBodyLTFactor]
 
 -- Adapted from `NumberField.mixedEmbedding.convexBodyLT_volume` in Mathlib.
 open scoped Classical in
@@ -119,11 +115,9 @@ the real volume of `{x : mixedSpace K | ∀ w, normAtPlace w x ≤ f w}` is
 theorem volume_real_setOf_forall_normAtPlace_le {f : InfinitePlace K → ℝ} (hf : ∀ w, 0 ≤ f w) :
     volume.real {x : mixedSpace K | ∀ w : InfinitePlace K, normAtPlace w x ≤ f w} =
       2 ^ nrRealPlaces K * Real.pi ^ nrComplexPlaces K * ∏ w, f w ^ mult w := by
-  rw [measureReal_def, volume_setOf_forall_normAtPlace_le, ENNReal.toReal_mul,
-    ENNReal.toReal_prod]
-  simp only [convexBodyLTFactor, coe_mul, ENNReal.coe_pow, coe_ofNat, ENNReal.toReal_mul,
-    ENNReal.toReal_pow, toReal_ofNat, coe_toReal, NNReal.coe_real_pi]
+  rw [measureReal_def, volume_setOf_forall_normAtPlace_le, ENNReal.toReal_mul, coe_toReal,
+    coe_convexBodyLTFactor, ENNReal.toReal_prod]
   congr 1
-  exact Finset.prod_congr rfl fun w _ ↦ by rw [toReal_ofReal (hf w)]
+  exact Finset.prod_congr rfl fun w _ ↦ by rw [ENNReal.toReal_pow, toReal_ofReal (hf w)]
 
 end NumberField.mixedEmbedding

@@ -9,12 +9,11 @@ public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproximationDomain
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 public import TauCeti.NumberTheory.NumberField.FinitePlace.ValueFloor
 
-import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ConvexBody
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ModuleCovolume
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
@@ -66,10 +65,6 @@ on `ι → K` are written as `LinearMap.det (LinearMap.pi (L v))`.
 
 * `TauCeti.NumberField.rpow_approxWeight`: for `0 < Q`, `Q ^ approxWeight S₀ c` equals the product
   of `(∏ i, Q ^ c v.1 i) ^ v.mult` over infinite places times `∏ v ∈ S₀, ∏ i, Q ^ c v.1 i`.
-* `TauCeti.NumberField.discreteTopology_mixedImage_approxModule` and
-  `TauCeti.NumberField.isZLattice_mixedImage_approxModule`: the mixed image of `approxModule` is
-  discrete when the forms at `S₀` are linearly independent, and a full `ℤ`-lattice when also
-  `Q ≠ 0`.
 * `TauCeti.NumberField.covolume_approxLattice`: for `0 < Q`, the covolume of
   `(approxModule S₀ L c Q).mixedImage` is
   `(∏ v ∈ S₀, v (det (L v)) * ∏ i, (v.floorValue (Q ^ c v.1 i))⁻¹) * covol (𝓞 K) ^ card ι`.
@@ -96,7 +91,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module NNReal NumberField NumberField.mixedEmbedding
-open NumberField.InfinitePlace
+open NumberField.InfinitePlace TauCeti.NumberField.mixedEmbedding
 open scoped ENNReal Matrix
 
 namespace TauCeti.NumberField
@@ -274,19 +269,11 @@ theorem rpow_approxWeight (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K �
 
 end Weight
 
-/-! ### Lattice structure and covolume of the finite-place module -/
+/-! ### Covolume of the finite-place lattice -/
 
 section Covolume
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
-
-/-- When the forms at `S₀` are linearly independent, the mixed image of `approxModule S₀ L c Q` is
-discrete in `ι → mixedSpace K`. -/
-theorem discreteTopology_mixedImage_approxModule [Finite ι] {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} (hL : ∀ v ∈ S₀, LinearIndependent K (L v.1))
-    (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) :
-    DiscreteTopology (approxModule S₀ L c Q).mixedImage :=
-  Submodule.discreteTopology_mixedImage_iff.mpr (fg_approxModule hL c Q)
 
 /-- Given vectors `y k : ι → K` already satisfying the local bound of `approxModule S₀ L c Q` at a
 chosen finite place `v`, some algebraic integer `d` with `v d = 1` scales every `y k` into
@@ -302,33 +289,39 @@ private theorem exists_apply_eq_one_forall_smul_mem_approxModule [Finite ι]
   have := Fintype.ofFinite ι
   have hQc (w : FinitePlace K) (i : ι) : 0 < |Q| ^ c w.1 i :=
     Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
+  -- Collect the finite places away from `v` where `S₀` imposes a form bound or some `y k j`
+  -- exceeds `1` in absolute value.
   let T₁ : Finset (FinitePlace K) :=
     Finset.univ.biUnion fun p : ι × ι ↦
       (FinitePlace.hasFiniteMulSupport_max_one (y p.1 p.2)).toFinset
   let T : Finset (FinitePlace K) := S₀.erase v ∪ T₁.erase v
   have hvT : v ∉ T := by simp [T]
+  -- Bound both normalized form values and coordinates at `w` by a single nonnegative sum `R w`,
+  -- then pick `d : 𝓞 K` with `v d = 1` and `w d * R w ≤ 1` for every `w ∈ T`.
   let R : FinitePlace K → ℝ := fun w ↦
-    (∑ p : ι × ι, w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2) + ∑ p : ι × ι, w (y p.1 p.2)
-  have hR₁ (w : FinitePlace K) : 0 ≤ ∑ p : ι × ι, w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 :=
-    Finset.sum_nonneg fun p _ ↦ div_nonneg (apply_nonneg _ _) (hQc w p.2).le
-  have hR₂ (w : FinitePlace K) : 0 ≤ ∑ p : ι × ι, w (y p.1 p.2) :=
-    Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
+    ∑ p : ι × ι, (w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2))
+  have hterm_nonneg (w : FinitePlace K) (p : ι × ι) :
+      0 ≤ w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2) :=
+    add_nonneg (div_nonneg (apply_nonneg _ _) (hQc w p.2).le) (apply_nonneg _ _)
+  have hR_pair (w : FinitePlace K) (k i : ι) :
+      w (L w.1 i (y k)) / |Q| ^ c w.1 i + w (y k i) ≤ R w :=
+    Finset.single_le_sum (fun p _ ↦ hterm_nonneg w p) (Finset.mem_univ (k, i))
+  have hR_form (w : FinitePlace K) (k i : ι) : w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i :=
+    (div_le_iff₀ (hQc w i)).mp ((le_add_of_nonneg_right (apply_nonneg _ _)).trans (hR_pair w k i))
+  have hR_coord (w : FinitePlace K) (k j : ι) : w (y k j) ≤ R w :=
+    (le_add_of_nonneg_left (div_nonneg (apply_nonneg _ _) (hQc w j).le)).trans (hR_pair w k j)
   obtain ⟨d, hdv, hdR⟩ := v.exists_apply_eq_one_forall_mul_apply_le hvT
-    fun w _ ↦ add_nonneg (hR₁ w) (hR₂ w)
+    fun w _ ↦ Finset.sum_nonneg fun p _ ↦ hterm_nonneg w p
+  -- Check the `S₀` and non-`S₀` conditions at `w = v` (using `v d = 1`) and at `w ≠ v`.
   refine ⟨d, hdv, fun k ↦ mem_approxModule.mpr ⟨fun w hw i ↦ ?_, fun w hw j ↦ ?_⟩⟩
   · rw [map_smul, smul_eq_mul, map_mul]
     by_cases hwv : w = v
     · subst hwv
       simpa [hdv] using hy_mem hw k i
     · have hwT : w ∈ T := Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hwv, hw⟩)
-      have hleR : w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i := by
-        rw [← div_le_iff₀ (hQc w i)]
-        exact (Finset.single_le_sum (f := fun p : ι × ι ↦ w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2)
-          (fun p _ ↦ div_nonneg (apply_nonneg _ _) (hQc w p.2).le)
-          (Finset.mem_univ (k, i))).trans (le_add_of_nonneg_right (hR₂ w))
       calc w (d : K) * w (L w.1 i (y k))
           ≤ w (d : K) * (R w * |Q| ^ c w.1 i) :=
-            mul_le_mul_of_nonneg_left hleR (apply_nonneg _ _)
+            mul_le_mul_of_nonneg_left (hR_form w k i) (apply_nonneg _ _)
         _ = w (d : K) * R w * |Q| ^ c w.1 i := (mul_assoc _ _ _).symm
         _ ≤ |Q| ^ c w.1 i := mul_le_of_le_one_left (hQc w i).le (hdR w hwT)
   · rw [Pi.smul_apply, smul_eq_mul, map_mul]
@@ -337,11 +330,7 @@ private theorem exists_apply_eq_one_forall_smul_mem_approxModule [Finite ι]
       simpa [hdv] using hy_notMem hw k j
     · by_cases hwT₁ : w ∈ T₁
       · have hwT : w ∈ T := Finset.mem_union_right _ (Finset.mem_erase.mpr ⟨hwv, hwT₁⟩)
-        have hleR : w (y k j) ≤ R w :=
-          (Finset.single_le_sum (f := fun p : ι × ι ↦ w (y p.1 p.2))
-            (fun _ _ ↦ apply_nonneg _ _) (Finset.mem_univ (k, j))).trans
-            (le_add_of_nonneg_left (hR₁ w))
-        exact (mul_le_mul_of_nonneg_left hleR (apply_nonneg _ _)).trans (hdR w hwT)
+        exact (mul_le_mul_of_nonneg_left (hR_coord w k j) (apply_nonneg _ _)).trans (hdR w hwT)
       · have hy1 : w (y k j) ≤ 1 := by
           by_contra! hgt
           refine hwT₁ (Finset.mem_biUnion.mpr ⟨(k, j), Finset.mem_univ _, ?_⟩)
@@ -351,17 +340,6 @@ private theorem exists_apply_eq_one_forall_smul_mem_approxModule [Finite ι]
           (one_mul 1)
 
 variable [Fintype ι]
-
-open scoped Classical in
-/-- When the forms at `S₀` are linearly independent and `Q ≠ 0`, the mixed image of
-`approxModule S₀ L c Q` is a full `ℤ`-lattice in `ι → mixedSpace K`. -/
-theorem isZLattice_mixedImage_approxModule {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} (hL : ∀ v ∈ S₀, LinearIndependent K (L v.1))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : Q ≠ 0) :
-    haveI := discreteTopology_mixedImage_approxModule hL c Q
-    IsZLattice ℝ (approxModule S₀ L c Q).mixedImage :=
-  letI := discreteTopology_mixedImage_approxModule hL c Q
-  Submodule.isZLattice_mixedImage (span_approxModule_eq_top S₀ L c hQ)
 
 /-- Outside `S₀`, the largest value of `v` on the determinants of `card ι` vectors of
 `approxModule S₀ L c Q` is `1`. -/
@@ -507,23 +485,20 @@ section Volume
 
 variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
 
-/-- Ring homomorphism assembling a family of elements `(g w)_w` at the infinite places into an
-element of `mixedSpace K` whose `w`-coordinate agrees with `mixedEmbedding K (g w)`. -/
-private noncomputable def mixedDiag :
-    (InfinitePlace K → K) →+* mixedSpace K :=
-  RingHom.prod
-    (RingHom.pi fun w ↦ (Pi.evalRingHom _ w).comp <|
-      (RingHom.fst _ _).comp <| (mixedEmbedding K).comp (Pi.evalRingHom _ w.1))
-    (RingHom.pi fun w ↦ (Pi.evalRingHom _ w).comp <|
-      (RingHom.snd _ _).comp <| (mixedEmbedding K).comp (Pi.evalRingHom _ w.1))
-
 open scoped Classical in
 /-- The `ℝ`-linear endomorphism of `ι → mixedSpace K` obtained by restricting scalars from the
-`mixedSpace K`-linear map with matrix `(mixedDiag (fun w ↦ L w.1 i (e_j)))_{i, j}`. -/
+`mixedSpace K`-linear map with matrix `(mixedDiag K (fun w ↦ L w.1 i (e_j)))_{i, j}`. -/
 private noncomputable def approxBodyLin (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
     (ι → mixedSpace K) →ₗ[ℝ] (ι → mixedSpace K) :=
   (Matrix.toLin' ((Matrix.of fun i j (w : InfinitePlace K) ↦
-    L w.1 i (Pi.basisFun K ι j)).map mixedDiag)).restrictScalars ℝ
+    L w.1 i (Pi.basisFun K ι j)).map (mixedDiag K))).restrictScalars ℝ
+
+open scoped Classical in
+private theorem approxBodyLin_apply (L : AbsoluteValue K ℝ → ι → Dual K (ι → K))
+    (z : ι → mixedSpace K) (i : ι) :
+    approxBodyLin L z i =
+      ∑ j, mixedDiag K (fun u ↦ L u.1 i (Pi.basisFun K ι j)) * z j := by
+  simp [approxBodyLin, Matrix.mulVec, dotProduct]
 
 open scoped Classical in
 /-- `approxBody L c Q` is the preimage under `approxBodyLin L` of the product of closed-ball boxes
@@ -536,12 +511,8 @@ private theorem approxBody_eq_preimage (L : AbsoluteValue K ℝ → ι → Dual 
   have hnorm_apply (w : InfinitePlace K) (i : ι) (z : ι → mixedSpace K) :
       normAtPlace w (approxBodyLin L z i) =
         normAtPlace w (∑ j, mixedEmbedding K (L w.1 i (Pi.basisFun K ι j)) * z j) := by
-    rw [show approxBodyLin L z i =
-        ∑ j, mixedDiag (fun u ↦ L u.1 i (Pi.basisFun K ι j)) * z j by
-      simp [approxBodyLin, Matrix.mulVec, dotProduct]]
-    exact normAtPlace_congr w
-      (fun hw ↦ by simp [mixedDiag, Prod.fst_sum])
-      (fun hwc ↦ by simp [mixedDiag, Prod.snd_sum])
+    rw [approxBodyLin_apply]
+    exact normAtPlace_congr w (fun hw ↦ by simp [Prod.fst_sum]) (fun hwc ↦ by simp [Prod.snd_sum])
   ext z
   simp only [mem_approxBody, Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_true_left,
     Set.mem_ofPred_eq, hnorm_apply]
@@ -558,7 +529,7 @@ private theorem abs_det_approxBodyLin (L : AbsoluteValue K ℝ → ι → Dual K
   let M : Matrix ι ι (InfinitePlace K → K) :=
     Matrix.of fun i j w ↦ L w.1 i (Pi.basisFun K ι j)
   have hnorm_det (w : InfinitePlace K) :
-      normAtPlace w (M.map mixedDiag).det = w (LinearMap.det (LinearMap.pi (L w.1))) := by
+      normAtPlace w (M.map (mixedDiag K)).det = w (LinearMap.det (LinearMap.pi (L w.1))) := by
     have hMdet : M.det w = LinearMap.det (LinearMap.pi (L w.1)) := by
       have heval : M.det w = (M.map (Pi.evalRingHom _ w)).det := by
         simpa only [Pi.evalRingHom_apply, RingHom.mapMatrix_apply] using
@@ -567,8 +538,7 @@ private theorem abs_det_approxBodyLin (L : AbsoluteValue K ℝ → ι → Dual K
       apply congrArg Matrix.det
       ext i j
       simp [M, LinearMap.toMatrix'_apply]
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, ← hMdet, ← normAtPlace_apply]
-    exact normAtPlace_congr w (fun hw ↦ by simp [mixedDiag]) (fun hwc ↦ by simp [mixedDiag])
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, normAtPlace_mixedDiag, hMdet]
   rw [approxBodyLin, LinearMap.det_restrictScalars, LinearMap.det_toLin', abs_algebraNorm,
     mixedEmbedding.norm_apply]
   exact Finset.prod_congr rfl fun v _ ↦ by rw [hnorm_det]
@@ -620,14 +590,8 @@ theorem volume_real_approxBody {L : AbsoluteValue K ℝ → ι → Dual K (ι �
         ∏ v : InfinitePlace K,
           ((v (LinearMap.det (LinearMap.pi (L v.1))))⁻¹ * ∏ i, Q ^ c v.1 i) ^ v.mult := by
   rw [measureReal_def, volume_approxBody hL c Q, ENNReal.toReal_mul, ENNReal.toReal_pow,
+    ENNReal.coe_toReal, coe_convexBodyLTFactor, mul_pow, ← pow_mul, ← pow_mul,
     ENNReal.toReal_prod]
-  have hfactor : (convexBodyLTFactor K : ℝ≥0∞).toReal ^ Fintype.card ι =
-      2 ^ (nrRealPlaces K * Fintype.card ι) * Real.pi ^ (nrComplexPlaces K * Fintype.card ι) := by
-    simp only [convexBodyLTFactor, ENNReal.coe_mul, ENNReal.coe_pow, ENNReal.coe_ofNat,
-      ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofNat, ENNReal.coe_toReal,
-      NNReal.coe_real_pi]
-    rw [mul_pow, ← pow_mul, ← pow_mul]
-  rw [hfactor]
   congr 1
   refine Finset.prod_congr rfl fun v _ ↦ ?_
   have hv0 : 0 < v (LinearMap.det (LinearMap.pi (L v.1))) :=
@@ -705,31 +669,13 @@ theorem approxConst_eq_discr (S₀ : Finset (FinitePlace K))
         Fintype.card ι /
         ((∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult) *
           ∏ v ∈ S₀, v (LinearMap.det (LinearMap.pi (L v.1)))) := by
-  have hcov :
-      2 ^ (nrRealPlaces K * Fintype.card ι) * Real.pi ^ (nrComplexPlaces K * Fintype.card ι) /
-          ((2⁻¹) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ Fintype.card ι =
-        (2 ^ nrRealPlaces K * (2 * Real.pi) ^ nrComplexPlaces K / √|(discr K : ℝ)|) ^
-          Fintype.card ι := by
-    rw [mul_pow, ← pow_mul, inv_pow, div_pow, mul_pow, mul_pow (2 : ℝ) Real.pi, mul_pow,
-      ← pow_mul, ← pow_mul, ← pow_mul]
-    have hdiscr : √|(discr K : ℝ)| ≠ 0 := by
-      rw [Real.sqrt_ne_zero (abs_nonneg _), abs_ne_zero, Int.cast_ne_zero]
-      exact NumberField.discr_ne_zero K
-    have h2 : (2 : ℝ) ^ (nrComplexPlaces K * Fintype.card ι) ≠ 0 :=
-      pow_ne_zero _ two_ne_zero
-    field_simp
-  rw [approxConst_def, mixedEmbedding.covolume_integerLattice]
-  calc _ = 2 ^ (nrRealPlaces K * Fintype.card ι) * Real.pi ^ (nrComplexPlaces K * Fintype.card ι) /
-        (((2⁻¹) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ Fintype.card ι *
-          ((∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult) *
-            ∏ v ∈ S₀, v (LinearMap.det (LinearMap.pi (L v.1))))) :=
-        congrArg _ (mul_assoc _ _ _)
-    _ = (2 ^ (nrRealPlaces K * Fintype.card ι) * Real.pi ^ (nrComplexPlaces K * Fintype.card ι) /
-          ((2⁻¹) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ Fintype.card ι) /
-        ((∏ v : InfinitePlace K, v (LinearMap.det (LinearMap.pi (L v.1))) ^ v.mult) *
-          ∏ v ∈ S₀, v (LinearMap.det (LinearMap.pi (L v.1)))) :=
-        div_mul_eq_div_div _ _ _
-    _ = _ := congrArg (· / _) hcov
+  rw [approxConst_def, mixedEmbedding.covolume_integerLattice, mul_assoc, ← div_div]
+  congr 1
+  have hdiscr : √|(discr K : ℝ)| ≠ 0 := by
+    rw [Real.sqrt_ne_zero (abs_nonneg _), abs_ne_zero, Int.cast_ne_zero]
+    exact NumberField.discr_ne_zero K
+  simp only [div_pow, mul_pow, inv_pow, ← pow_mul]
+  field_simp
 
 /-- When the linear forms are linearly independent at every infinite place and every `v ∈ S₀`, the
 constant `approxConst S₀ L` is strictly positive. -/
@@ -911,7 +857,8 @@ example :
   refine ⟨v, hv2, fun x ↦ ?_, ?_⟩
   · simp only [L₀, mem_approxModule, Finset.mem_singleton, Unique.forall_iff, forall_eq,
       LinearMap.proj_apply, Pi.one_apply, Real.rpow_one]
-    rw [show |(3 / 2 : ℝ)| = 3 / 2 by norm_num, v.apply_le_iff_le_floorValue (by norm_num), hfloor]
+    rw [abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2), v.apply_le_iff_le_floorValue (by norm_num),
+      hfloor]
     exact ⟨fun ⟨hx, hx'⟩ u ↦ by by_cases hu : u = v <;> [exact hu ▸ hx; exact hx' u hu],
       fun hx ↦ ⟨hx v, fun u _ ↦ hx u⟩⟩
   · have hLI : ∀ w ∈ ({v} : Finset (FinitePlace ℚ)), LinearIndependent ℚ (L₀ w.1) := by

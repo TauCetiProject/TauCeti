@@ -11,6 +11,7 @@ public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Finite places of number fields
@@ -199,10 +200,6 @@ private theorem exists_pow_prod_forall_apply_le {T : Finset (FinitePlace K)}
       (ge_mem_nhds (hε v hv))
   exact ((Filter.eventually_all_finset T).2 hpow).exists
 
-private theorem mul_le_one_of_le_inv_one_add {x R : ℝ} (hR : 0 ≤ R) (hx : x ≤ (1 + R)⁻¹) :
-    x * R ≤ 1 :=
-  (mul_le_mul_of_nonneg_right hx hR).trans ((inv_mul_le_iff₀ (by positivity)).mpr (by linarith))
-
 /-- Some nonzero algebraic integer is as small as prescribed at every place of a finite set of
 finite places. -/
 theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : FinitePlace K → ℝ}
@@ -219,7 +216,7 @@ theorem exists_ne_zero_forall_mul_apply_le (T : Finset (FinitePlace K)) {R : Fin
     (hR : ∀ v ∈ T, 0 ≤ R v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
   obtain ⟨d, hd0, hd⟩ := exists_ne_zero_forall_apply_le T (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
-  exact ⟨d, hd0, fun v hv ↦ mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
+  exact ⟨d, hd0, fun v hv ↦ TauCeti.mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
 
 /-- Given a finite place `u` outside a finite set `T` of finite places, some algebraic integer has
 absolute value `1` at `u` and is as small as prescribed at every place of `T`. -/
@@ -253,7 +250,7 @@ theorem exists_apply_eq_one_forall_mul_apply_le (u : FinitePlace K) {T : Finset 
     ∃ d : 𝓞 K, u (d : K) = 1 ∧ ∀ v ∈ T, v (d : K) * R v ≤ 1 := by
   obtain ⟨d, hdu, hd⟩ := u.exists_apply_eq_one_forall_apply_le hu (ε := fun v ↦ (1 + R v)⁻¹)
     fun v hv ↦ by have := hR v hv; positivity
-  exact ⟨d, hdu, fun v hv ↦ mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
+  exact ⟨d, hdu, fun v hv ↦ TauCeti.mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
 
 end NumberField.FinitePlace
 
