@@ -78,34 +78,29 @@ namespace PartitionOfUnity
 
 variable {s : Set M} {ρ : PartitionOfUnity ι M s}
 
-/-- A partition of unity reads a weighted sum of fibre elements as a finite sum over the indices
-whose weight is nonzero at the point. -/
-private theorem finsum_smul_eq_sum {A : Type*} [AddCommGroup A] [Module ℝ A] (x : M)
-    (φ : ι → A) : ∑ᶠ i, ρ i x • φ i = ∑ i ∈ ρ.finsupport x, ρ i x • φ i :=
-  (ρ.sum_finsupport_smul_eq_finsum (φ := fun i _ ↦ φ i)).symm
-
 /-- **Gluing covariant derivatives along a partition of unity.** If `cov i` is a covariant
 derivative over `U i` and `ρ` is a partition of unity on `s` subordinate to `U`, then
 `∑ᶠ i, ρ i • cov i` is a covariant derivative over `s`. -/
 theorem IsSubordinate.isCovariantDerivativeOn_finsum_smul (hρ : ρ.IsSubordinate U)
     (hcov : ∀ i, IsCovariantDerivativeOn F (cov i) (U i)) :
     IsCovariantDerivativeOn F (fun σ x ↦ ∑ᶠ i, ρ i x • cov i σ x) s := by
-  -- Only the indices with `ρ i x ≠ 0` contribute at `x`, and `x ∈ U i` for each of them.
-  have hU {x : M} {i : ι} (hi : i ∈ ρ.finsupport x) : x ∈ U i :=
-    hρ i (subset_tsupport _ ((ρ.mem_finsupport x).1 hi))
-  refine ⟨fun {σ σ' x} hσ hσ' _ ↦ ?_, fun {σ g x} hσ hg hx ↦ ?_⟩
-  · simp only [finsum_smul_eq_sum x, ← Finset.sum_add_distrib, ← smul_add]
-    exact Finset.sum_congr rfl fun i hi ↦ by rw [(hcov i).add hσ hσ' (hU hi)]
-  · simp only [finsum_smul_eq_sum x]
-    calc ∑ i ∈ ρ.finsupport x, ρ i x • cov i (g • σ) x
-        = ∑ i ∈ ρ.finsupport x, (g x • ρ i x • cov i σ x +
-            ρ i x • (mvfderiv I g x).smulRight (σ x)) :=
-          Finset.sum_congr rfl fun i hi ↦ by
-            rw [(hcov i).leibniz hσ hg (hU hi), smul_add, smul_comm]
-      _ = g x • ∑ i ∈ ρ.finsupport x, ρ i x • cov i σ x +
-            (mvfderiv I g x).smulRight (σ x) := by
-          rw [Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.sum_smul,
-            ρ.sum_finsupport hx, one_smul]
+  -- At `x`, the sum is the finite affine combination of the `cov i` with `ρ i x ≠ 0`, each of
+  -- which is a covariant derivative at `x` since `x ∈ tsupport (ρ i) ⊆ U i`.
+  have key {x : M} (hx : x ∈ s) := IsCovariantDerivativeOn.finite_affine_combination
+    (s := (Finset.univ : Finset (ρ.finsupport x))) (u := {x})
+    (cov := fun i : ρ.finsupport x ↦ cov i) (f := fun i _ ↦ ρ i x)
+    (fun i ↦ (hcov i).mono (singleton_subset_iff.2
+      (hρ i (subset_tsupport _ ((ρ.mem_finsupport x).1 i.2)))))
+    (by ext; simp [Finset.sum_attach _ fun i ↦ ρ i x, ρ.sum_finsupport hx])
+  -- `ρ.sum_finsupport_smul_eq_finsum` stated for the constant families of fibre elements at `x`;
+  -- rewriting with it backwards directly needs higher-order unification and does not fire.
+  have hsum {x : M} (φ : ι → TangentSpace I x →L[ℝ] V x) :
+      ∑ᶠ i, ρ i x • φ i = ∑ i : ρ.finsupport x, ρ i x • φ i := by
+    rw [Finset.sum_coe_sort _ fun i ↦ ρ i x • φ i]
+    exact (ρ.sum_finsupport_smul_eq_finsum (φ := fun i _ ↦ φ i)).symm
+  refine ⟨fun {σ σ' x} hσ hσ' hx ↦ ?_, fun {σ g x} hσ hg hx ↦ ?_⟩
+  · simpa only [hsum] using (key hx).add hσ hσ' rfl
+  · simpa only [hsum] using (key hx).leibniz hσ hg rfl
 
 end PartitionOfUnity
 
