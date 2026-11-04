@@ -45,6 +45,7 @@ these lines.
 * `TauCeti.gtLine_succ`: the line of a pattern is the image of the line of its truncation under
   any nonzero intertwiner from the Weyl module of the second row.
 * `TauCeti.finrank_gtLine`: each Gelfand–Tsetlin line is one-dimensional.
+* `TauCeti.span_singleton_eq_gtLine`: a nonzero vector of a line spans it.
 * `TauCeti.isInternal_gtLine`: the rational Weyl module is the internal direct sum of the
   Gelfand–Tsetlin lines of the patterns with its top weight.
 * `TauCeti.finrank_rationalWeylFDRep_eq_card_gtPattern`: the rational Weyl module `V_λ` has
@@ -156,6 +157,15 @@ theorem finrank_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
         (W := ↥(weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule) f).resolve_right hf
     rw [gtLine_succ l P f hf, ← (Submodule.equivMapOfInjective _ hinj _).finrank_eq]
     exact finrank_gtLine _ _
+
+/-- A nonzero vector of a Gelfand–Tsetlin line spans it. -/
+theorem span_singleton_eq_gtLine {n : ℕ} (l : DominantWeight n)
+    {P : {P : GTPattern n // P.topWeight = l}}
+    {v : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule} (hv : v ∈ gtLine l P) (hv0 : v ≠ 0) :
+    Submodule.span ℂ {v} = gtLine l P := by
+  -- Fix the additive group of the carrier before unifying with the one-dimensional lemma.
+  let _ : AddCommGroup (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule := inferInstance
+  exact (eq_span_singleton_of_mem_of_finrank_eq_one (finrank_gtLine l P) hv hv0).symm
 
 open scoped Classical in
 /-- **The Gelfand–Tsetlin decomposition.** The rational Weyl module `V_λ` of `GL n ℂ` is the
