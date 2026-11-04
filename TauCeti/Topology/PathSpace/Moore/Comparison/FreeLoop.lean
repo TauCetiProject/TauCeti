@@ -70,24 +70,6 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-! ### Comparison with closed unit-interval paths and circle maps -/
 
-variable (X) in
-/-- Basepoint evaluation `𝓛X → X`, bundled as a continuous map. -/
-def basepointMap : C(MooreFreeLoopSpace X, X) :=
-  ⟨basepoint, continuous_basepoint⟩
-
-@[simp]
-theorem basepointMap_apply (γ : MooreFreeLoopSpace X) : basepointMap X γ = γ.basepoint :=
-  (rfl)
-
-variable (X) in
-/-- The constant free Moore loops of duration zero, bundled as a continuous section `X → 𝓛X`. -/
-def constMap : C(X, MooreFreeLoopSpace X) :=
-  ⟨const, MooreFreeLoopSpace.continuous_const⟩
-
-@[simp]
-theorem constMap_apply (x : X) : constMap X x = const x :=
-  (rfl)
-
 /-- Reparametrize a free Moore loop to a closed path on the unit interval. -/
 def toClosedUnitPath : C(MooreFreeLoopSpace X, ClosedUnitPath X) where
   toFun γ := ⟨γ.toMoorePath.toUnitPath,
@@ -153,7 +135,7 @@ theorem toCircleMap_const (x : X) : toCircleMap (const x) = ContinuousMap.const 
 @[simp]
 theorem toCircleMap_comp_constMap :
     (toCircleMap (X := X)).comp (constMap X) = ContinuousMap.const' :=
-  ContinuousMap.ext toCircleMap_const
+  ContinuousMap.ext fun x ↦ by simp
 
 /-- Regard a circle map as a free Moore loop of duration one by precomposing with `unitToCircle`. -/
 def ofCircleMap : C(C(Circle, X), MooreFreeLoopSpace X) :=
@@ -244,7 +226,7 @@ def fiberHomotopyEquivCircleMap :
   comp_invFun := ContinuousMap.ext fun f ↦ by simp
   left_inv := ⟨{
     toHomotopy := (unitHomotopy (X := X)).toHomotopy
-    prop' := fun s ↦ ContinuousMap.ext fun γ ↦ basepoint_unitHomotopy s γ }⟩
+    prop' := fun s ↦ ContinuousMap.ext fun γ ↦ by simp }⟩
   right_inv := by
     have h : (toCircleMap (X := X)).comp ofCircleMap = ContinuousMap.id C(Circle, X) :=
       ContinuousMap.ext toCircleMap_ofCircleMap
@@ -297,29 +279,6 @@ theorem toMoorePath_constCircleHomotopy (s : I) (x : X) :
 
 /-! ### Contractible free loops -/
 
-private theorem joined_one_unitInterval (s : I) : Joined (1 : I) s :=
-  ⟨⟨⟨fun t : I ↦ σ (t * σ s), by fun_prop⟩, by simp, by simp⟩⟩
-
-variable (X) in
-/-- Basepoint evaluation `𝓛₀X → X` on contractible free Moore loops. -/
-def basepointContractible : C(contractibleLoops X, X) :=
-  (basepointMap X).comp (ContinuousMap.subtypeVal (contractibleLoops X))
-
-@[simp]
-theorem basepointContractible_apply (γ : contractibleLoops X) :
-    basepointContractible X γ = γ.1.basepoint :=
-  (rfl)
-
-variable (X) in
-/-- Constant contractible free Moore loops, bundled as a continuous section `X → 𝓛₀X`. -/
-def constContractibleMap : C(X, contractibleLoops X) :=
-  ⟨constContractible, continuous_constContractible⟩
-
-@[simp]
-theorem constContractibleMap_apply (x : X) :
-    constContractibleMap X x = constContractible x :=
-  (rfl)
-
 /-- `toCircleMap` sends contractible free Moore loops to contractible circle loops. -/
 theorem toCircleMap_mem_contractibleLoops {γ : MooreFreeLoopSpace X}
     (hγ : γ ∈ contractibleLoops X) :
@@ -336,10 +295,12 @@ theorem ofCircleMap_mem_contractibleLoops {f : C(Circle, X)}
     ofCircleMap f ∈ contractibleLoops X := by
   rw [TauCeti.mem_contractibleLoops_iff] at hf
   obtain ⟨x, hx⟩ := hf
-  have hconst : Joined (const x) (ofCircleMap (ContinuousMap.const Circle x)) :=
-    ⟨((constCircleHomotopy (X := X)).toHomotopy.evalAt x).symm⟩
+  have hconst : Joined (const x) (ofCircleMap (ContinuousMap.const Circle x)) := by
+    rw [← constMap_apply x]
+    exact ⟨((constCircleHomotopy (X := X)).toHomotopy.evalAt x).symm⟩
   exact mem_contractibleLoops.2 ⟨x, hconst.trans (hx.symm.map ofCircleMap.continuous)⟩
 
+-- Not `@[simp]`: `TauCeti.mem_contractibleLoops_iff` already simplifies the left-hand side.
 /-- `toCircleMap` detects contractibility of free Moore loops. -/
 theorem toCircleMap_mem_contractibleLoops_iff {γ : MooreFreeLoopSpace X} :
     toCircleMap γ ∈ TauCeti.contractibleLoops X ↔ γ ∈ contractibleLoops X where
@@ -359,7 +320,9 @@ theorem ofCircleMap_mem_contractibleLoops_iff {f : C(Circle, X)} :
 theorem unitHomotopy_mem_contractibleLoops (s : I) {γ : MooreFreeLoopSpace X}
     (hγ : γ ∈ contractibleLoops X) :
     unitHomotopy (s, γ) ∈ contractibleLoops X := by
-  have hγs := (joined_one_unitInterval s).map
+  have hI : PathConnectedSpace I :=
+    (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
+  have hγs := (hI.joined 1 s).map
     ((unitHomotopy (X := X)).continuous.comp (Continuous.prodMk_left γ))
   simp only [Function.comp_apply, unitHomotopy.apply_one, ContinuousMap.id_apply] at hγs
   exact mem_contractibleLoops_of_joined hγ hγs
@@ -397,7 +360,7 @@ theorem toCircleMapContractible_constContractible (x : X) :
 @[simp]
 theorem toCircleMapContractible_comp_constContractibleMap :
     (toCircleMapContractible (X := X)).comp (constContractibleMap X) = constContractibleLoop :=
-  ContinuousMap.ext toCircleMapContractible_constContractible
+  ContinuousMap.ext fun x ↦ by simp
 
 /-- `ofCircleMapContractible ∘ toCircleMapContractible` is homotopic to the identity of
 `contractibleLoops X` through maps preserving `basepointContractible X`. -/
@@ -410,7 +373,7 @@ def unitHomotopyContractible :
     (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
   map_zero_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_zero γ.1)
   map_one_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_one γ.1)
-  prop' s γ := basepoint_unitHomotopy s γ.1
+  prop' s γ := by simp
 
 variable (X) in
 /-- **Contractible free Moore loops and contractible circle loops are fibre homotopy equivalent
@@ -459,7 +422,9 @@ theorem homotopyEquivContractibleLoops_symm_apply (f : TauCeti.contractibleLoops
 /-- `constCircleHomotopy` stays inside `contractibleLoops X` at every intermediate time. -/
 theorem constCircleHomotopy_mem_contractibleLoops (s : I) (x : X) :
     constCircleHomotopy (s, x) ∈ contractibleLoops X := by
-  have hxs := (joined_one_unitInterval s).map
+  have hI : PathConnectedSpace I :=
+    (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
+  have hxs := (hI.joined 1 s).map
     ((constCircleHomotopy (X := X)).continuous.comp (Continuous.prodMk_left x))
   simp only [Function.comp_apply, constCircleHomotopy.apply_one, constMap_apply] at hxs
   exact mem_contractibleLoops_of_joined (const_mem_contractibleLoops x) hxs
@@ -475,7 +440,7 @@ def constContractibleHomotopy :
   continuous_toFun := (constCircleHomotopy (X := X)).continuous.subtype_mk _
   map_zero_left x := Subtype.ext (by simp)
   map_one_left x := Subtype.ext (((constCircleHomotopy (X := X)).apply_one x).trans (by simp))
-  prop' s x := (constCircleHomotopy (X := X)).prop s x
+  prop' s x := by simpa using (constCircleHomotopy (X := X)).prop s x
 
 @[simp]
 theorem coe_constContractibleHomotopy (s : I) (x : X) :

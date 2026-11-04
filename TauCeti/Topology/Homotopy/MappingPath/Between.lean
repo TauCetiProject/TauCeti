@@ -157,9 +157,8 @@ theorem endpoints_constantSection (x : ↥(A ∩ B)) :
   rw [endpoints_apply]
   exact Prod.ext (Subtype.ext (by simp [constantSection])) (Subtype.ext (by simp))
 
-/-- `MappingPathBetween A B` is canonically homeomorphic to `unitPathsBetween A B`: the starting
-point in `A` is determined by evaluating the path at `0`, which is an embedding on the graph of
-evaluation at `0`. -/
+/-- `MappingPathBetween A B` is canonically homeomorphic to `unitPathsBetween A B`: forgetting the
+starting-point coordinate in `A` is a homeomorphism, with continuous inverse `q ↦ (q 0, q)`. -/
 def homeomorphUnitPathsBetween : MappingPathBetween A B ≃ₜ unitPathsBetween A B where
   toFun p := ⟨p.val.val.2, (mem_unitPathsBetween A B).2
     ⟨p.val.property.symm ▸ p.val.val.1.property,

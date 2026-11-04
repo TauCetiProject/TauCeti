@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.MappingSpace.Sphere.Circle
 public import TauCeti.Topology.MappingSpace.Sphere.FreeLoop
 public import TauCeti.Topology.MappingSpace.Sphere.Group
-public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Between
 public import TauCeti.Topology.Sphere.Suspension
 
 /-!
@@ -26,7 +26,8 @@ comparisons gives homotopy and fibre homotopy equivalences with Moore models:
 * For any space `Q`, `TauCeti.sphere2FiberHomotopyEquivMoorePaths` is a fibre homotopy equivalence
   over `Q × Q` between the Moore path space `ConstContractibleMoorePaths Q` (paths in `𝓛₀Q`
   between constant loops) and `C(Sphere2, Q)` over evaluation at the north and south poles,
-  compatible with constant sections (`sphere2HomotopyEquivMoorePaths_comp_constSection`,
+  compatible with constant sections
+  (`sphere2FiberHomotopyEquivMoorePaths_toFun_comp_constContractibleMooreSection`,
   `sphere2ConstMooreSectionHomotopy`).
 * For a based space `(Q, x)`, `TauCeti.basedMapSphere2FiberHomotopyEquivMoorePaths` is a fibre
   homotopy equivalence over `Q` between `BasedConstContractibleMoorePaths Q x` (Moore paths in
@@ -40,9 +41,11 @@ comparisons gives homotopy and fibre homotopy equivalences with Moore models:
 * `TauCeti.mooreLoopSpaceHomotopyEquivBasedMapSphere1`,
   `TauCeti.mooreLoopSpaceHomotopyEquivBasedMapCircleOne`:
   `MooreLoopSpace X x ≃ₕ Map_*(S¹, X)`.
-* `TauCeti.sphere2FiberHomotopyEquivMoorePaths`, `TauCeti.sphere2HomotopyEquivMoorePaths`:
+* `TauCeti.contractibleConstLoopPathHomeomorphUnitPathsBetween`,
+  `TauCeti.sphere2FiberHomotopyEquivMoorePaths`, `TauCeti.sphere2HomotopyEquivMoorePaths`:
   `P_{Q→Q} 𝓛₀Q ≃ₕ Map(S², Q)` over `Q × Q`.
-* `TauCeti.basedMapSphere2FiberHomotopyEquivMoorePaths`,
+* `TauCeti.basedContractibleConstLoopPathHomeomorphUnitPathsBetween`,
+  `TauCeti.basedMapSphere2FiberHomotopyEquivMoorePaths`,
   `TauCeti.basedMapSphere2HomotopyEquivMoorePaths`:
   `P_{⋆→Q} 𝓛₀Q ≃ₕ Map_*(S², Q)` over `Q`.
 
@@ -136,35 +139,38 @@ def mooreLoopSpaceHomotopyEquivBasedMapSphere1 :
 
 variable {X x}
 
+-- `(⟨X, x⟩.iteratedLoopSpace 1).carrier` reduces to `Path x x` at default rather than `implicit`
+-- transparency, so apply `HomotopyEquiv.trans_apply` / `trans_symm_apply` directly via `Eq.trans`.
 theorem mooreLoopSpaceHomotopyEquivBasedMapSphere1_apply (γ : MooreLoopSpace X x) :
     mooreLoopSpaceHomotopyEquivBasedMapSphere1 X x γ =
       (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).symm γ.toPath := by
-  change (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).symm
-    (MooreLoopSpace.homotopyEquivPath x γ) = _
-  rw [MooreLoopSpace.homotopyEquivPath_apply]
+  rw [mooreLoopSpaceHomotopyEquivBasedMapSphere1]
+  refine (ContinuousMap.HomotopyEquiv.trans_apply (MooreLoopSpace.homotopyEquivPath x)
+    (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).symm.toHomotopyEquiv γ).trans ?_
+  exact (congrFun (Homeomorph.coe_toHomotopyEquiv _) _).trans
+    (congrArg (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).symm
+      (MooreLoopSpace.homotopyEquivPath_apply γ))
 
 @[simp]
 theorem mooreLoopSpaceHomotopyEquivBasedMapSphere1_symm_apply
     (φ : BasedMap Sphere1 X Sphere1.east x) :
     (mooreLoopSpaceHomotopyEquivBasedMapSphere1 X x).symm φ =
       (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩ φ).toMooreLoop := by
-  change (MooreLoopSpace.homotopyEquivPath x).symm
-    (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩ φ) = _
-  exact MooreLoopSpace.homotopyEquivPath_symm_apply _
+  rw [mooreLoopSpaceHomotopyEquivBasedMapSphere1]
+  refine (ContinuousMap.HomotopyEquiv.trans_symm_apply (MooreLoopSpace.homotopyEquivPath x)
+    (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).symm.toHomotopyEquiv φ).trans ?_
+  have hsymm :
+      (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).symm.toHomotopyEquiv.symm φ =
+        BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩ φ := by
+    rw [← Homeomorph.symm_toHomotopyEquiv, Homeomorph.symm_symm, Homeomorph.coe_toHomotopyEquiv]
+  exact (congrArg (MooreLoopSpace.homotopyEquivPath x).symm hsymm).trans
+    (MooreLoopSpace.homotopyEquivPath_symm_apply _)
 
 @[simp]
 theorem mooreLoopSpaceHomotopyEquivBasedMapSphere1_one :
     mooreLoopSpaceHomotopyEquivBasedMapSphere1 X x 1 = ⟨ContinuousMap.const Sphere1 x, rfl⟩ := by
-  apply (BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).injective
-  apply (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph 1 ⟨X, x⟩).injective
-  rw [mooreLoopSpaceHomotopyEquivBasedMapSphere1_apply, MooreLoopSpace.toPath_one]
-  refine (congrArg (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph 1 ⟨X, x⟩)
-    ((BasedTopologicalSpace.basedMapCircleHomeomorph ⟨X, x⟩).apply_symm_apply (Path.refl x))).trans
-    ?_
-  refine (BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_basepoint 1 ⟨X, x⟩).trans ?_
-  ext t
-  rw [BasedTopologicalSpace.iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph]
-  rfl
+  rw [mooreLoopSpaceHomotopyEquivBasedMapSphere1_apply, MooreLoopSpace.toPath_one,
+    BasedTopologicalSpace.basedMapCircleHomeomorph_symm_refl ⟨X, x⟩]
 
 variable (X x) in
 /-- **Based maps `(Circle, 1) → (X, x)` are homotopy equivalent to `MooreLoopSpace X x`**,
@@ -177,8 +183,8 @@ def mooreLoopSpaceHomotopyEquivBasedMapCircleOne :
 theorem mooreLoopSpaceHomotopyEquivBasedMapCircleOne_apply (γ : MooreLoopSpace X x) :
     mooreLoopSpaceHomotopyEquivBasedMapCircleOne X x γ =
       (basedMapCircleOneHomeomorphPath x).symm γ.toPath := by
-  change (basedMapCircleOneHomeomorphPath x).symm (MooreLoopSpace.homotopyEquivPath x γ) = _
-  rw [MooreLoopSpace.homotopyEquivPath_apply]
+  rw [mooreLoopSpaceHomotopyEquivBasedMapCircleOne, ContinuousMap.HomotopyEquiv.trans_apply,
+    Homeomorph.coe_toHomotopyEquiv, MooreLoopSpace.homotopyEquivPath_apply]
 
 @[simp]
 theorem mooreLoopSpaceHomotopyEquivBasedMapCircleOne_apply_unitToCircle
@@ -192,8 +198,9 @@ theorem mooreLoopSpaceHomotopyEquivBasedMapCircleOne_symm_apply
     (φ : BasedMap Circle X 1 x) :
     (mooreLoopSpaceHomotopyEquivBasedMapCircleOne X x).symm φ =
       (basedMapCircleOneHomeomorphPath x φ).toMooreLoop := by
-  change (MooreLoopSpace.homotopyEquivPath x).symm (basedMapCircleOneHomeomorphPath x φ) = _
-  exact MooreLoopSpace.homotopyEquivPath_symm_apply _
+  rw [mooreLoopSpaceHomotopyEquivBasedMapCircleOne, ContinuousMap.HomotopyEquiv.trans_symm_apply,
+    ← Homeomorph.symm_toHomotopyEquiv, Homeomorph.symm_symm, Homeomorph.coe_toHomotopyEquiv,
+    MooreLoopSpace.homotopyEquivPath_symm_apply]
 
 @[simp]
 theorem mooreLoopSpaceHomotopyEquivBasedMapCircleOne_one :
@@ -218,10 +225,8 @@ abbrev ConstContractibleMoorePaths : Type _ :=
 def constContractibleRangeToProd :
     C(↥(Set.range (constContractibleLoop (Q := Q))) ×
       ↥(Set.range (constContractibleLoop (Q := Q))), Q × Q) :=
-  ((constContractibleLoopRangeHomeomorph (Q := Q)).symm :
-    C(↥(Set.range (constContractibleLoop (Q := Q))), Q)).prodMap
-    ((constContractibleLoopRangeHomeomorph (Q := Q)).symm :
-      C(↥(Set.range (constContractibleLoop (Q := Q))), Q))
+  (basepointContractibleLoop.comp (ContinuousMap.subtypeVal _)).prodMap
+    (basepointContractibleLoop.comp (ContinuousMap.subtypeVal _))
 
 @[simp]
 theorem constContractibleRangeToProd_apply
@@ -253,6 +258,37 @@ theorem sphere2Poles_apply (f : C(Sphere2, Q)) :
     sphere2Poles Q f = (f Sphere2.north, f Sphere2.south) := by
   simp [sphere2Poles]
 
+variable {Q}
+
+/-- `ContractibleConstLoopPath Q` is canonically homeomorphic to `unitPathsBetween` from
+`range constContractibleLoop` to `range constContractibleLoop` in `𝓛₀Q`. -/
+def contractibleConstLoopPathHomeomorphUnitPathsBetween :
+    ContractibleConstLoopPath Q ≃ₜ
+      unitPathsBetween (Set.range (constContractibleLoop (Q := Q)))
+        (Set.range (constContractibleLoop (Q := Q))) where
+  toFun p := ⟨p.1, (mem_unitPathsBetween _ _).2
+    ⟨let ⟨q, hq⟩ := p.2.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := p.2.2; ⟨q, hq.symm⟩⟩⟩
+  invFun r :=
+    let hr := (mem_unitPathsBetween _ _).1 r.2
+    ⟨r.1, ⟨let ⟨q, hq⟩ := hr.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_subtype_val.subtype_mk _
+  continuous_invFun := continuous_subtype_val.subtype_mk _
+
+@[simp]
+theorem coe_contractibleConstLoopPathHomeomorphUnitPathsBetween (p : ContractibleConstLoopPath Q) :
+    (contractibleConstLoopPathHomeomorphUnitPathsBetween p : C(I, contractibleLoops Q)) = p.1 :=
+  (rfl)
+
+@[simp]
+theorem coe_contractibleConstLoopPathHomeomorphUnitPathsBetween_symm
+    (r : unitPathsBetween (Set.range (constContractibleLoop (Q := Q)))
+      (Set.range (constContractibleLoop (Q := Q)))) :
+    (contractibleConstLoopPathHomeomorphUnitPathsBetween.symm r).1 = r.1 :=
+  (rfl)
+
+variable (Q) in
 /-- Homeomorphism `C(Sphere2, Q) ≃ₜ unitPathsBetween (range constContractibleLoop)
 (range constContractibleLoop)` composing suspension currying with the `unitPathsBetween`
 identification. -/
@@ -262,8 +298,6 @@ def sphere2HomeomorphUnitPathsBetween :
         (Set.range (constContractibleLoop (Q := Q))) :=
   sphere2HomeomorphContractibleConstLoopPath.trans
     contractibleConstLoopPathHomeomorphUnitPathsBetween
-
-variable {Q}
 
 @[simp]
 theorem sphere2HomeomorphUnitPathsBetween_apply (f : C(Sphere2, Q)) (t : I) (z : Circle) :
@@ -378,7 +412,7 @@ theorem coe_constContractibleMooreSection (q : Q) :
   simp [constContractibleMooreSection]
 
 /-- Forward comparison sends `constContractibleMooreSection Q` to constant sphere maps. -/
-theorem sphere2HomotopyEquivMoorePaths_comp_constSection :
+theorem sphere2FiberHomotopyEquivMoorePaths_toFun_comp_constContractibleMooreSection :
     (sphere2FiberHomotopyEquivMoorePaths Q).toFun.comp (constContractibleMooreSection Q) =
       ContinuousMap.const' := by
   ext q s
@@ -425,8 +459,7 @@ abbrev BasedConstContractibleMoorePaths : Type _ :=
 def basedConstContractibleRangeToTarget :
     C(↥({constContractibleLoop x} : Set (contractibleLoops Q)) ×
       ↥(Set.range (constContractibleLoop (Q := Q))), Q) :=
-  ((constContractibleLoopRangeHomeomorph (Q := Q)).symm :
-    C(↥(Set.range (constContractibleLoop (Q := Q))), Q)).comp ContinuousMap.snd
+  (basepointContractibleLoop.comp (ContinuousMap.subtypeVal _)).comp ContinuousMap.snd
 
 /-- Target evaluation `P_{⋆→Q} 𝓛₀Q → Q`. -/
 def basedConstContractibleMooreTarget : C(BasedConstContractibleMoorePaths Q x, Q) :=
@@ -450,6 +483,38 @@ theorem basedMapSphere2South_apply (f : BasedMap Sphere2 Q Sphere2.north x) :
     basedMapSphere2South Q x f = f.1 Sphere2.south :=
   (rfl)
 
+variable {Q x}
+
+/-- `BasedContractibleConstLoopPath Q x` is canonically homeomorphic to `unitPathsBetween` from
+`{constContractibleLoop x}` to `range constContractibleLoop` in `𝓛₀Q`. -/
+def basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q) :
+    BasedContractibleConstLoopPath Q x ≃ₜ
+      unitPathsBetween {constContractibleLoop x}
+        (Set.range (constContractibleLoop (Q := Q))) where
+  toFun p := ⟨p.1.1, (mem_unitPathsBetween _ _).2 ⟨p.2, let ⟨q, hq⟩ := p.1.2.2; ⟨q, hq.symm⟩⟩⟩
+  invFun r :=
+    let hr := (mem_unitPathsBetween _ _).1 r.2
+    ⟨⟨r.1, ⟨⟨x, hr.1⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩, hr.1⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
+  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+
+@[simp]
+theorem coe_basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q)
+    (p : BasedContractibleConstLoopPath Q x) :
+    (basedContractibleConstLoopPathHomeomorphUnitPathsBetween x p : C(I, contractibleLoops Q)) =
+      p.1.1 :=
+  (rfl)
+
+@[simp]
+theorem coe_basedContractibleConstLoopPathHomeomorphUnitPathsBetween_symm (x : Q)
+    (r : unitPathsBetween {constContractibleLoop x}
+      (Set.range (constContractibleLoop (Q := Q)))) :
+    ((basedContractibleConstLoopPathHomeomorphUnitPathsBetween x).symm r).1.1 = r.1 :=
+  (rfl)
+
+variable (Q x) in
 /-- Homeomorphism `BasedMap Sphere2 Q Sphere2.north x ≃ₜ unitPathsBetween {constContractibleLoop x}
 (range constContractibleLoop)`. -/
 def basedMapSphere2HomeomorphUnitPathsBetween :
@@ -458,8 +523,6 @@ def basedMapSphere2HomeomorphUnitPathsBetween :
         (Set.range (constContractibleLoop (Q := Q))) :=
   (basedMapSphere2HomeomorphBasedContractibleConstLoopPath x).trans
     (basedContractibleConstLoopPathHomeomorphUnitPathsBetween x)
-
-variable {Q x}
 
 @[simp]
 theorem basedMapSphere2HomeomorphUnitPathsBetween_apply
