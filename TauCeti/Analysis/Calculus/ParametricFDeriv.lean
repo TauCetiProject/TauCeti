@@ -288,6 +288,19 @@ theorem hasFDerivAt_parameterFDeriv_apply {P : Type*} [NormedAddCommGroup P] [No
   exact ((hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt
     one_ne_zero).hasFDerivAt.clm_apply_const h
 
+/-- **Mixed partial derivatives commute.** For a map of two variables with the minimum smoothness
+needed for symmetric second derivatives, differentiating in the second variable in the direction
+`v` and then in the first variable in the direction `h` agrees with differentiating in the
+opposite order. -/
+theorem fderiv_fderiv_slice_apply_comm {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {p : P} {x : E} (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (p, x)) (h : P)
+    (v : E) :
+    fderiv 𝕜 (fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y)) x v) p h =
+      fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h) x v := by
+  rw [((hasFDerivAt_spatialFDeriv hF).clm_apply_const v).fderiv,
+    (hasFDerivAt_parameterFDeriv_apply (hF.of_le le_minSmoothness) h).fderiv]
+  simp only [ContinuousLinearMap.flip_apply]
+
 /-- **Mixed derivatives within a set, scalar parameter.** The case `P = 𝕜` of
 `hasFDerivAt_fderivWithin_slice`, with the parameter derivative written as `deriv`. -/
 theorem hasDerivAt_fderivWithin_slice {F : 𝕜 × E → F'} {s : Set E} {t : 𝕜} {x : E}
