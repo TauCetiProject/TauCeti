@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
+public import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!
 # Weyl normalization on a four-element root string
@@ -33,37 +34,27 @@ namespace IsSl2Triple
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
   {h e f : L}
 
-/-- On a lowest-weight vector of weight minus three killed by four raising brackets, the pinned
-Weyl automorphism is one sixth of the third raising bracket. -/
+/-- On a lowest-weight vector of weight minus three, the pinned Weyl automorphism is one sixth
+of the third raising bracket. -/
 theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
-    (hyh : ⁅h, y⁆ = (-3 : ℚ) • y) (hyf : ⁅f, y⁆ = 0)
-    (hye : ⁅e, ⁅e, ⁅e, ⁅e, y⁆⁆⁆⁆ = 0) :
+    (hyh : ⁅h, y⁆ = (-3 : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
     TauCeti.weylAut t he hf y = (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ := by
   let y₁ := ⁅e, y⁆
   let y₂ := ⁅e, y₁⁆
   let y₃ := ⁅e, y₂⁆
-  -- Jacobi determines the lowering coefficients 3, 4, 3 of this string.
-  have hh₁ : ⁅h, y₁⁆ = (-1 : ℚ) • y₁ := by
-    dsimp [y₁]
-    rw [leibniz_lie, t.lie_h_e_smul ℚ, hyh, smul_lie, lie_smul]
-    module
-  have hh₂ : ⁅h, y₂⁆ = (1 : ℚ) • y₂ := by
-    dsimp only [y₂]
-    rw [leibniz_lie, t.lie_h_e_smul ℚ, hh₁, smul_lie, lie_smul]
-    module
+  -- Specialize the string coefficients to 3, 4, 3.
   have hf₁ : ⁅f, y₁⁆ = (3 : ℚ) • y := by
-    dsimp only [y₁]
-    rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hyh, hyf, lie_zero]
-    module
+    simpa using t.lie_f_pow_succ_toEnd_e hyh hyf 0
   have hf₂ : ⁅f, y₂⁆ = (4 : ℚ) • y₁ := by
-    dsimp only [y₂]
-    rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hh₁, hf₁, lie_smul]
-    module
+    convert t.lie_f_pow_succ_toEnd_e hyh hyf 1 using 1 <;>
+      norm_num [y₁, y₂, pow_succ', mul_apply_eq_comp]
   have hf₃ : ⁅f, y₃⁆ = (3 : ℚ) • y₂ := by
-    dsimp only [y₃]
-    rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hh₂, hf₂, lie_smul]
-    module
+    convert t.lie_f_pow_succ_toEnd_e hyh hyf 2 using 1 <;>
+      norm_num [y₁, y₂, y₃, pow_succ', mul_apply_eq_comp]
+  have hye : ⁅e, ⁅e, ⁅e, ⁅e, y⁆⁆⁆⁆ = 0 := by
+    simpa [pow_succ', mul_apply_eq_comp] using
+      t.pow_ad_apply_eq_zero_of_weight_neg_nat he 3 hyh hyf
   have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
   have h₀ : TauCeti.expAd (-f) hnf y = y :=
     TauCeti.expAd_apply_of_lie_eq_zero hnf (by simp [hyf])
@@ -101,13 +92,12 @@ variable {A : Type*} [Ring A] [Algebra ℚ A] {H E F : A}
 of its third raising bracket. The division takes place in the rational algebra. -/
 theorem weylUnit_conj_of_weight_neg_three (t : IsSl2Triple H E F)
     (hE : IsNilpotent E) (hF : IsNilpotent F) {y : A}
-    (hyh : ⁅H, y⁆ = (-3 : ℚ) • y) (hyf : ⁅F, y⁆ = 0)
-    (hye : ⁅E, ⁅E, ⁅E, ⁅E, y⁆⁆⁆⁆ = 0) :
+    (hyh : ⁅H, y⁆ = (-3 : ℚ) • y) (hyf : ⁅F, y⁆ = 0) :
     ((TauCeti.weylUnit hE hF : Aˣ) : A) * y *
         (((TauCeti.weylUnit hE hF)⁻¹ : Aˣ) : A) =
       (6⁻¹ : ℚ) • ⁅E, ⁅E, ⁅E, y⁆⁆⁆ := by
   rw [← TauCeti.weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_weight_neg_three _ _ hyh hyf hye
+  exact t.weylAut_apply_of_weight_neg_three _ _ hyh hyf
 
 end Associative
 

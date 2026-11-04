@@ -44,7 +44,7 @@ variable (t : DynkinType) (ht : t.Valid)
 /-- At a directed Cartan entry minus three, the pinned Geck Weyl unit sends the raising
 operator to its third raising bracket divided by six. The Cartan matrix has roots as rows,
 so the hypothesis is on `(j,i)`, not `(i,j)`. -/
-theorem geckWeylUnit_conj_of_cartanMatrix_eq_neg_three (i j : Fin t.rank)
+theorem weylUnit_conj_geckRepresentation_of_cartanMatrix_eq_neg_three (i j : Fin t.rank)
     (hij : t.cartanMatrix j i = -3) :
     let E := fun k => t.geckRepresentation ht
       (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl k)))
@@ -63,33 +63,23 @@ theorem geckWeylUnit_conj_of_cartanMatrix_eq_neg_three (i j : Fin t.rank)
     omega
   have hh := S.lie_H_E i j
   have hf := S.lie_E_F_of_ne j i hne.symm
-  have he := S.ad_pow_lie_E_E i j
-  simp only [Matrix.transpose_apply, hij] at hh he
-  norm_num at he
+  simp only [Matrix.transpose_apply, hij] at hh
   -- Normalize the signed-generator triple using its characteristic equations, rather than
   -- unfolding the opaque root-generator definition.
-  have triple : IsSl2Triple (φ ((t.lieBasis ht).h i))
-      (φ ((t.lieBasis ht).e i)) (φ ((t.lieBasis ht).f i)) := by
-    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-      t.isSl2Triple_geckRepresentation ht i
-  have result := triple.weylUnit_conj_of_weight_neg_three
-    (by simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl] using
-      t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i))
-    (by simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inr] using
-      t.isNilpotent_geckRepresentation_rootGenerator ht (.inr i))
+  have triple := t.isSl2Triple_geckRepresentation ht i
+  have hE := t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i)
+  have hF := t.isNilpotent_geckRepresentation_rootGenerator ht (.inr i)
+  simp only [LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr]
+    at triple hE hF ⊢
+  exact triple.weylUnit_conj_of_weight_neg_three hE hF
     (y := φ ((t.lieBasis ht).e j))
     (by
       norm_num [Function.comp_apply] at hh ⊢
       exact hh)
     (by
-      simp only [Function.comp_apply] at hf
-      rw [← lie_skew, hf, neg_zero])
-    (by simpa only [Function.comp_apply, pow_succ, pow_zero, mul_apply_eq_comp,
-      one_apply_eq_self, LieAlgebra.ad_apply] using he)
-  simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using result
+      have lowering : ⁅φ ((t.lieBasis ht).f i), φ ((t.lieBasis ht).e j)⁆ = 0 := by
+        simp only [Function.comp_apply] at hf
+        rw [← lie_skew, hf, neg_zero]
+      exact lowering)
 
 end TauCeti.DynkinType
