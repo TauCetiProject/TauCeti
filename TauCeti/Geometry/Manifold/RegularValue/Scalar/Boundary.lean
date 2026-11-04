@@ -259,6 +259,7 @@ noncomputable def scalarRegularBandBoundaryHomeomorph :
 
 /-- A point of the boundary of the band on the lower level `f⁻¹(a)` is sent to itself in the
 copy of `f⁻¹(a)`. -/
+@[simp]
 theorem scalarRegularBandBoundaryHomeomorph_apply_of_eq_left
     (q : letI := scalarRegularBandChartedSpace hf hn ha hb hab
       ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) (hq : f q.1.1 = a) :
@@ -267,6 +268,7 @@ theorem scalarRegularBandBoundaryHomeomorph_apply_of_eq_left
 
 /-- A point of the boundary of the band on the upper level `f⁻¹(b)` is sent to itself in the
 copy of `f⁻¹(b)`. -/
+@[simp]
 theorem scalarRegularBandBoundaryHomeomorph_apply_of_eq_right
     (q : letI := scalarRegularBandChartedSpace hf hn ha hb hab
       ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) (hq : f q.1.1 = b) :
