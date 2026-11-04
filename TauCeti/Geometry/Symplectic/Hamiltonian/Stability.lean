@@ -14,8 +14,9 @@ public import TauCeti.Topology.Order.Sublevel
 Let `H` be a Hamiltonian on a finite-dimensional symplectic vector space `(V, ω)`, continuous near
 a point `x` at which it has a strict local minimum. Then `x` is a **Lyapunov stable** point of the
 Hamiltonian vector field `X_H`: for every neighbourhood `U` of `x`, every integral curve of `X_H`
-passing close enough to `x` stays in `U` for all times at which it is defined, in the past as well
-as in the future (`TauCeti.SymplecticForm.eventually_forall_mem_of_strictLocalMin`). This is the
+along which `H` is differentiable, passing close enough to `x`, stays in `U` for all times at which
+it is defined, in the past as well as in the future
+(`TauCeti.SymplecticForm.eventually_forall_mem_of_strictLocalMin`). This is the
 Lagrange–Dirichlet theorem. It needs no nondegeneracy of the minimum and no completeness of `X_H`.
 
 The proof combines conservation of energy along integral curves

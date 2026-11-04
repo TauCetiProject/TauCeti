@@ -173,6 +173,23 @@ theorem centralForceHamiltonian_effectivePotential_apply {m ℓ : ℝ} {U : ℝ 
   simp [Real.norm_of_nonneg hr, add_assoc]
 
 /-- On the half-line `r > 0`, the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
+continuous wherever `U` is. -/
+theorem continuousAt_centralForceHamiltonian_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hr : 0 < r) (hU : ContinuousAt U r) (p_r : ℝ) :
+    ContinuousAt (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) := by
+  have hV : ContinuousAt (effectivePotential m ℓ U) ‖((r, p_r) : ℝ × ℝ).1‖ := by
+    have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m) / r ^ 2 + U r :=
+      funext fun r ↦ by rw [effectivePotential_apply, div_div]
+    rw [Real.norm_of_nonneg hr.le, hUℓ]
+    exact (continuousAt_const.div (continuousAt_id.pow 2) (pow_ne_zero 2 hr.ne')).add hU
+  have hH : centralForceHamiltonian m (effectivePotential m ℓ U) =
+      fun y : ℝ × ℝ ↦ ‖y.2‖ ^ 2 / (2 * m) + effectivePotential m ℓ U ‖y.1‖ :=
+    funext fun y ↦ centralForceHamiltonian_apply m _ y.1 y.2
+  rw [hH]
+  exact ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
+    (hV.comp (f := fun x : ℝ × ℝ ↦ ‖x.1‖) continuous_fst.norm.continuousAt)
+
+/-- On the half-line `r > 0`, the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
 differentiable wherever `U` is. -/
 theorem differentiableAt_centralForceHamiltonian_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
     (hr : 0 < r) (hU : DifferentiableAt ℝ U r) (p_r : ℝ) :

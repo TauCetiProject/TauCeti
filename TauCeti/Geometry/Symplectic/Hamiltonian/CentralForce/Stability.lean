@@ -119,17 +119,7 @@ theorem eventually_forall_mem_of_strictLocalMin_effectivePotential (hm : 0 < m) 
     have hfst := (continuous_fst.tendsto ((r₀, 0) : ℝ × ℝ)).eventually
       ((eventually_gt_nhds hr₀).and hU)
     filter_upwards [hfst] with y ⟨hy, hUy⟩
-    have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m * r ^ 2) + U r :=
-      funext (effectivePotential_apply m ℓ U)
-    have hV : ContinuousAt (effectivePotential m ℓ U) ‖y.1‖ := by
-      rw [Real.norm_of_nonneg hy.le, hUℓ]
-      exact (continuousAt_const.div (by fun_prop) (by positivity)).add hUy
-    have hH : centralForceHamiltonian m (effectivePotential m ℓ U) =
-        fun y : ℝ × ℝ ↦ ‖y.2‖ ^ 2 / (2 * m) + effectivePotential m ℓ U ‖y.1‖ :=
-      funext fun y ↦ centralForceHamiltonian_apply m _ y.1 y.2
-    rw [hH]
-    exact ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
-      (hV.comp (f := fun x : ℝ × ℝ ↦ ‖x.1‖) continuous_fst.norm.continuousAt)
+    exact continuousAt_centralForceHamiltonian_effectivePotential hy hUy y.2
   filter_upwards [(stdSymplecticForm (V := ℝ)).eventually_forall_mem_of_strictLocalMin hcont
     (fun y (hy : ContinuousAt _ y) ↦ hy.continuousWithinAt)
     (eventually_centralForceHamiltonian_effectivePotential_lt hm hr₀ hmin) hW]
@@ -215,11 +205,12 @@ theorem not_hasEigenvalue_fderiv_hamiltonianVectorField_effectivePotential
   intro hμ
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
   -- Applying the square identity `A² = -(a / m)` to an eigenvector gives `μ² = -(a / m)`.
-  have h := hv.pow_apply 2
-  rw [sq, Module.End.mul_eq_comp, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-    ← ContinuousLinearMap.comp_apply,
-    fderiv_hamiltonianVectorField_effectivePotential_comp_self hr₀ hU ha p_r] at h
-  have hμ2 : -(a / m) = μ ^ 2 := smul_left_injective ℝ hv.2 (by simpa using h)
+  have h := DFunLike.congr_fun
+    (fderiv_hamiltonianVectorField_effectivePotential_comp_self hr₀ hU ha p_r) v
+  have hA := hv.apply_eq_smul
+  simp only [ContinuousLinearMap.coe_coe] at hA
+  simp only [ContinuousLinearMap.comp_apply, hA, map_smul] at h
+  have hμ2 : μ ^ 2 = -(a / m) := smul_left_injective ℝ hv.2 (by simpa [sq, smul_smul] using h)
   nlinarith [sq_nonneg μ]
 
 /-- **Circular orbits at a nondegenerate maximum are hyperbolic.** If `U_ℓ''(r₀) / m < 0`, the
@@ -243,8 +234,7 @@ theorem hasEigenvector_fderiv_hamiltonianVectorField_effectivePotential
   refine ⟨?_, by simp⟩
   ext
   · simp [hm]
-  · simp only [ContinuousLinearMap.prod_apply, neg_apply, FunLike.coe_smul, Pi.smul_apply,
-      ContinuousLinearMap.coe_fst', smul_eq_mul, mul_one, Prod.smul_mk]
+  · simp
     field_simp at hκ2
     linear_combination -hκ2
 
