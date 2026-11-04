@@ -67,6 +67,7 @@ private theorem coe_negativeSimpleLong (A : Type v) [CommRing A] [Algebra (ZMod 
 
 /-- The root parameter is linear, with exactly the matrix normalization of the previously
 constructed negative long-root vector. This holds even over nonreduced coefficient algebras. -/
+@[simp]
 theorem coe_negativeLongRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (u : Multiplicative A) :
     ((negativeLongRootSubgroupPoints i A u : Matrix.GeneralLinearGroup (Fin 7) A) :
