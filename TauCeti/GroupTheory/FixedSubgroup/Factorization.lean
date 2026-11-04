@@ -74,17 +74,15 @@ theorem mul_singleton_mul_inter_fixedSubgroup :
       ((U ⊓ fixedSubgroup F : Subgroup G) : Set G) * {n} *
         ((B ⊓ fixedSubgroup F : Subgroup G) : Set G) := by
   ext g
+  simp only [Set.mul_singleton]
+  simp only [← Set.image2_mul, Set.image2_image_left, Set.mem_inter_iff, Set.mem_image2]
   constructor
-  · rintro ⟨⟨_, ⟨u, hu, v, hv, rfl⟩, b, hb, rfl⟩, hfix⟩
-    have hv' : v = n := Set.mem_singleton_iff.mp hv
-    subst v
+  · rintro ⟨⟨u, hu, b, hb, rfl⟩, hfix⟩
     obtain ⟨huf, hbf⟩ := (U.mul_mul_mem_fixedSubgroup_iff B F hU hB hn h
       ⟨u, hu⟩ ⟨b, hb⟩).mp hfix
-    exact ⟨u * n, ⟨u, ⟨hu, huf⟩, n, rfl, rfl⟩, b, ⟨hb, hbf⟩, rfl⟩
-  · rintro ⟨_, ⟨u, ⟨hu, huf⟩, v, hv, rfl⟩, b, ⟨hb, hbf⟩, rfl⟩
-    have hv' : v = n := Set.mem_singleton_iff.mp hv
-    subst v
-    exact ⟨⟨u * n, ⟨u, hu, n, rfl, rfl⟩, b, hb, rfl⟩,
+    exact ⟨u, ⟨hu, huf⟩, b, ⟨hb, hbf⟩, rfl⟩
+  · rintro ⟨u, ⟨hu, huf⟩, b, ⟨hb, hbf⟩, rfl⟩
+    exact ⟨⟨u, hu, b, hb, rfl⟩,
       (U.mul_mul_mem_fixedSubgroup_iff B F hU hB hn h ⟨u, hu⟩ ⟨b, hb⟩).mpr ⟨huf, hbf⟩⟩
 
 /-- Every fixed element of the cell has unique coordinates in the fixed factors. -/
@@ -96,9 +94,9 @@ theorem existsUnique_fixed_mul_mul {g : G}
       ((B ⊓ fixedSubgroup F : Subgroup G) : Set G) :=
     (U.mul_singleton_mul_inter_fixedSubgroup B F hU hB hn h).subset
       ⟨hg, mem_fixedSubgroup.mpr hfix⟩
-  obtain ⟨_, ⟨u, hu, v, hv, rfl⟩, b, hb, rfl⟩ := hmem
-  have hv' : v = n := Set.mem_singleton_iff.mp hv
-  subst v
+  simp only [Set.mul_singleton] at hmem
+  simp only [← Set.image2_mul, Set.image2_image_left, Set.mem_image2] at hmem
+  obtain ⟨u, hu, b, hb, rfl⟩ := hmem
   refine ⟨(⟨u, hu⟩, ⟨b, hb⟩), rfl, ?_⟩
   intro q hq
   have hp := U.mul_mul_injective_of_disjoint B h

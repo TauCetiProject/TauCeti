@@ -361,13 +361,12 @@ theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
   intro p q hpq
   have heq : (p.1 : G) * (n * p.2 * n⁻¹) = (q.1 : G) * (n * q.2 * n⁻¹) := by
     simpa only [mul_assoc] using congrArg (fun x : G => x * n⁻¹) hpq
+  have hconj (b : B) : n * b * n⁻¹ ∈ B.map (MulAut.conj n).toMonoidHom := by
+    simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+      _root_.Subgroup.mem_map_of_mem (MulAut.conj n).toMonoidHom b.property
   have hpair := _root_.Subgroup.mul_injective_of_disjoint h
-    (a₁ := (p.1, ⟨n * p.2 * n⁻¹, by
-      simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
-        _root_.Subgroup.mem_map_of_mem (MulAut.conj n).toMonoidHom p.2.property⟩))
-    (a₂ := (q.1, ⟨n * q.2 * n⁻¹, by
-      simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
-        _root_.Subgroup.mem_map_of_mem (MulAut.conj n).toMonoidHom q.2.property⟩)) heq
+    (a₁ := (p.1, ⟨n * p.2 * n⁻¹, hconj p.2⟩))
+    (a₂ := (q.1, ⟨n * q.2 * n⁻¹, hconj q.2⟩)) heq
   refine Prod.ext (congrArg (fun r : U × B.map (MulAut.conj n).toMonoidHom => r.1) hpair) ?_
   apply Subtype.ext
   exact mul_left_cancel (mul_right_cancel (congrArg (fun x => (x.2 : G)) hpair))
