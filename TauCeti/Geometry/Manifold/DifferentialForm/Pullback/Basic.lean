@@ -298,6 +298,17 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
 
+/-- A one-form pulls back along `f` to zero at `x` exactly when the tangent image of `f` at `x`
+lies in its kernel at `f x`. -/
+theorem mpullback_apply_eq_zero_iff_mem_ker {f : M → M'} {x : M} {α : RoughForm I' M' ℝ 1} :
+    mpullback I I' f α x = 0 ↔ ∀ v, mfderiv I I' f x v ∈ α.ker (f x) := by
+  simp only [ContinuousAlternatingMap.ext_iff, mpullback_apply, ContinuousAlternatingMap.coe_zero,
+    Pi.zero_apply, RoughForm.mem_ker]
+  refine ⟨fun h v ↦ by simpa [Matrix.vec_single_eq_const] using h ![v], fun h v ↦ ?_⟩
+  convert h (v 0) using 2
+  ext i
+  rw [Fin.fin_one_eq_zero i, Matrix.cons_val_zero]
+
 /-- Within-set pullback preserves zero. -/
 @[simp]
 theorem mpullbackWithin_zero (f : M → M') (s : Set M) :

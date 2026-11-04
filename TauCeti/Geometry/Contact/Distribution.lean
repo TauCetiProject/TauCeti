@@ -115,6 +115,12 @@ theorem finrank_add_one (hD : IsContactDistribution I n D) (x : M) :
   have hE : finrank ℝ E ≠ 0 := fun h ↦ hD.ne_top x (Submodule.eq_top_of_finrank_eq (by omega))
   omega
 
+/-- The rank `dim E - 1` of a contact distribution is one less than the dimension of `M`. This is
+the rank hypothesis of results stated for `C^n` hyperplane fields. -/
+theorem finrank_sub_one_add_one (hD : IsContactDistribution I n D) (x : M) :
+    finrank ℝ E - 1 + 1 = finrank ℝ E :=
+  hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x
+
 /-- The contact line `T_x M ⧸ D x` of a contact distribution is one-dimensional. -/
 theorem finrank_quotient (hD : IsContactDistribution I n D) (x : M) :
     finrank ℝ (TangentSpace I x ⧸ D x) = 1 := by
@@ -191,8 +197,8 @@ theorem IsContactDistribution.exists_isContactFormAt [IsManifold I (n + 1) M]
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α.ker y = D y ∧ IsContactFormAt α y := by
-  obtain ⟨U, hU, hxU, α, hα, hαD⟩ := hD.isContMDiffDistribution.exists_roughForm_ker_eq
-    (hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x) x
+  obtain ⟨U, hU, hxU, α, hα, hαD⟩ :=
+    hD.isContMDiffDistribution.exists_roughForm_ker_eq (hD.finrank_sub_one_add_one x) x
   refine ⟨U, hU, hxU, α, hα, fun y hy ↦ ⟨(hαD y hy).2, ?_⟩⟩
   obtain ⟨V, hV, hyV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution y
   refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
