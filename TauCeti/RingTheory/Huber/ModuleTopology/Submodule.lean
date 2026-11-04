@@ -20,9 +20,9 @@ continuous `A`-linear maps into `M`.
 
 This file shows that any module-finite submodule `P` of a topological `A`-module `V` on which a
 family `φ : ι → V →L[A] M` separates points inherits the canonical `A`-module topology
-(`TauCeti.Huber.isModuleTopology_of_forall_apply_eq_zero`), is closed in `V` whenever `V` is
-Hausdorff (`TauCeti.Huber.isClosed_of_forall_apply_eq_zero`), and is complete whenever `V` is a
-uniform additive group (`TauCeti.Huber.completeSpace_of_forall_apply_eq_zero`), with no
+(`Submodule.isModuleTopology_of_forall_apply_eq_zero`), is closed in `V` whenever `V` is
+Hausdorff (`Submodule.isClosed_of_forall_apply_eq_zero`), and is complete whenever `V` is a
+uniform additive group (`Submodule.completeSpace_of_forall_apply_eq_zero`), with no
 completeness or metrizability assumption on `V`.
 
 The proof follows Buzzard, *Eigenvarieties*, Lemma 2.3, extended to Banach–Tate rings as in
@@ -41,14 +41,14 @@ Johansson–Newton, §2.1:
 
 ## Main results
 
-* `TauCeti.Huber.isModuleTopology_of_apply_eq_zero`,
-  `TauCeti.Huber.isClosed_of_apply_eq_zero`,
-  `TauCeti.Huber.completeSpace_of_apply_eq_zero`: module topology, closedness, and completeness of
+* `Submodule.isModuleTopology_of_apply_eq_zero`,
+  `Submodule.isClosed_of_apply_eq_zero`,
+  `Submodule.completeSpace_of_apply_eq_zero`: module topology, closedness, and completeness of
   a module-finite submodule injected by a single continuous linear map into a complete Hausdorff
   first-countable Noetherian `A`-module.
-* `TauCeti.Huber.isModuleTopology_of_forall_apply_eq_zero`,
-  `TauCeti.Huber.isClosed_of_forall_apply_eq_zero`,
-  `TauCeti.Huber.completeSpace_of_forall_apply_eq_zero`: the corresponding statements for an
+* `Submodule.isModuleTopology_of_forall_apply_eq_zero`,
+  `Submodule.isClosed_of_forall_apply_eq_zero`,
+  `Submodule.completeSpace_of_forall_apply_eq_zero`: the corresponding statements for an
   arbitrary family of continuous linear maps separating points of the submodule.
 
 ## References
@@ -62,10 +62,10 @@ Johansson–Newton, §2.1:
 
 public section
 
-open Topology
+open Topology TauCeti.Huber
 open scoped Uniformity
 
-namespace TauCeti.Huber
+namespace Submodule
 
 section SingleMap
 
@@ -175,7 +175,7 @@ theorem isModuleTopology_of_forall_apply_eq_zero [TopologicalSpace V] [Continuou
     IsModuleTopology A P := by
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero
     (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.1 p.2 hp))
-  exact isModuleTopology_of_apply_eq_zero P (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
+  exact P.isModuleTopology_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
     fun p hp hpS ↦ congrArg Subtype.val <| hS ⟨p, hp⟩ fun i hi ↦ congrFun hpS ⟨i, hi⟩
 
 /-- **Closedness of finite submodules from separating functionals** (Buzzard, *Eigenvarieties*,
@@ -188,7 +188,7 @@ theorem isClosed_of_forall_apply_eq_zero [TopologicalSpace V] [ContinuousAdd V] 
     IsClosed (P : Set V) := by
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero
     (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.1 p.2 hp))
-  exact isClosed_of_apply_eq_zero P (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
+  exact P.isClosed_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
     fun p hp hpS ↦ congrArg Subtype.val <| hS ⟨p, hp⟩ fun i hi ↦ congrFun hpS ⟨i, hi⟩
 
 /-- **Completeness of finite submodules from separating functionals**: in a uniform additive group
@@ -201,9 +201,9 @@ theorem completeSpace_of_forall_apply_eq_zero [UniformSpace V] [IsUniformAddGrou
     CompleteSpace P := by
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero
     (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.1 p.2 hp))
-  exact completeSpace_of_apply_eq_zero P (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
+  exact P.completeSpace_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
     fun p hp hpS ↦ congrArg Subtype.val <| hS ⟨p, hp⟩ fun i hi ↦ congrFun hpS ⟨i, hi⟩
 
 end Family
 
-end TauCeti.Huber
+end Submodule

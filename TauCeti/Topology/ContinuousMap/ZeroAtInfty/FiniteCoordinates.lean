@@ -26,7 +26,7 @@ Over a commutative ring `R`, any finitely generated submodule of `C₀(X, M)` wi
 Noetherian `R`-module `M` is already separated by finitely many point evaluations
 (`Submodule.exists_finset_eq_zero_of_coe_eq_zero`). When `R` is moreover a complete ultrametric
 Tate normed commutative ring and `M` is a complete normed `R`-module with bounded scalar action,
-`TauCeti.Huber.isClosed_of_forall_apply_eq_zero` shows that every finitely generated submodule of
+`Submodule.isClosed_of_forall_apply_eq_zero` shows that every finitely generated submodule of
 `C₀(X, M)` is closed, complete, and carries the canonical `R`-module topology
 (`Submodule.isClosed_zeroAtInfty_of_isNoetherian`,
 `Submodule.completeSpace_zeroAtInfty_of_isNoetherian`,
@@ -41,7 +41,7 @@ relative coordinate approximation and finite-coordinate norm bounds on arbitrary
 `Submodule.exists_finset_norm_le_of_isNoetherianRing`), with no freeness assumption on `P`.
 
 The argument uses `TauCeti.exists_linearCombination_eq_and_norm_le` to choose bounded coefficients
-for a finite generating family and `TauCeti.Huber.isClosed_of_forall_apply_eq_zero` to establish
+for a finite generating family and `Submodule.isClosed_of_forall_apply_eq_zero` to establish
 closedness over Noetherian Banach–Tate rings, following K. Buzzard, *Eigenvarieties*, Lemmas
 2.2–2.3, and C. Johansson and J. Newton, *Extended eigenvarieties for overconvergent cohomology*,
 §2.1.
@@ -153,7 +153,7 @@ finitely generated submodule of `C₀(X, M)` with values in a complete Noetheria
 is closed. -/
 theorem isClosed_zeroAtInfty_of_isNoetherian (P : Submodule R C₀(X, M))
     [Module.Finite R P] : IsClosed (P : Set C₀(X, M)) :=
-  TauCeti.Huber.isClosed_of_forall_apply_eq_zero P (evalCLM R)
+  P.isClosed_of_forall_apply_eq_zero (evalCLM R)
     fun _ _ hf ↦ ZeroAtInftyContinuousMap.ext fun x ↦ by simpa using hf x
 
 /-- Over a complete ultrametric Tate normed commutative ring `R`, every finitely generated
@@ -167,7 +167,7 @@ submodule of `C₀(X, M)` with values in a complete Noetherian normed `R`-module
 canonical `R`-module topology. -/
 theorem isModuleTopology_zeroAtInfty_of_isNoetherian (P : Submodule R C₀(X, M))
     [Module.Finite R P] : IsModuleTopology R P :=
-  TauCeti.Huber.isModuleTopology_of_forall_apply_eq_zero P (evalCLM R)
+  P.isModuleTopology_of_forall_apply_eq_zero (evalCLM R)
     fun _ _ hf ↦ ZeroAtInftyContinuousMap.ext fun x ↦ by simpa using hf x
 
 end NoetherianModule
