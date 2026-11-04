@@ -126,7 +126,7 @@ permutation of `t`, because two labels of `X` share a row of that tabloid. -/
 private theorem asAlgebraHom_antisymmetrizerOn_single_smul_tabloid_eq_zero (t : YoungTableau μ)
     {X : Finset (Fin μ.card)} {r : ℕ} (hX : ∀ k ∈ X, μ.colLen (colIndex t k) ≤ r)
     (hcard : r < X.card) {q : Equiv.Perm (Fin μ.card)} (hq : q ∈ colSubgroup t) :
-    (permutationModule (shapePartition μ)).ρ.asAlgebraHom (antisymmetrizerOn X)
+    (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (antisymmetrizerOn X)
         (MonoidAlgebra.single (q • tabloid t) (1 : ℚ)) = 0 := by
   obtain ⟨x, hx, y, hy, hxy, hrow⟩ := exists_ne_rowIndex_relabel_eq t hX hcard hq
   refine asAlgebraHom_antisymmetrizerOn_apply_eq_zero _
@@ -145,8 +145,8 @@ The labels of `X` cannot be spread over the rows of those columns, so every tabl
 theorem asAlgebraHom_antisymmetrizerOn_polytabloid_eq_zero (t : YoungTableau μ)
     {X : Finset (Fin μ.card)} {r : ℕ} (hX : ∀ k ∈ X, μ.colLen (colIndex t k) ≤ r)
     (hcard : r < X.card) :
-    (permutationModule (shapePartition μ)).ρ.asAlgebraHom (antisymmetrizerOn X)
-        (polytabloid t) = 0 := by
+    (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (antisymmetrizerOn X)
+        (polytabloid (R := ℚ) t) = 0 := by
   rw [polytabloid_eq_sum, map_sum]
   refine Finset.sum_eq_zero fun q _ => ?_
   rw [map_smul, asAlgebraHom_antisymmetrizerOn_single_smul_tabloid_eq_zero t hX hcard q.2,
@@ -160,7 +160,7 @@ theorem sum_sign_smul_polytabloid_relabel_eq_zero (t : YoungTableau μ)
     (hcard : r < X.card)
     [DecidablePred fun σ : Equiv.Perm (Fin μ.card) => ∀ k ∉ X, σ k = k] :
     ∑ σ ∈ {σ : Equiv.Perm (Fin μ.card) | ∀ k ∉ X, σ k = k},
-        ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (relabel σ t) = 0 := by
+        ((Equiv.Perm.sign σ : ℤ) : ℚ) • polytabloid (R := ℚ) (relabel σ t) = 0 := by
   rw [← asAlgebraHom_antisymmetrizerOn_polytabloid_eq_zero t hX hcard,
     asAlgebraHom_antisymmetrizerOn_apply]
   simp only [polytabloid_relabel]
@@ -258,8 +258,9 @@ theorem card_garnirSet (t : YoungTableau μ) {i j : ℕ} (h : (i, j + 1) ∈ μ)
 of the Garnir set of `t` at `(i, j)` annihilates the polytabloid of `t`. -/
 theorem asAlgebraHom_antisymmetrizerOn_garnirSet_polytabloid_eq_zero (t : YoungTableau μ) {i j : ℕ}
     (h : (i, j + 1) ∈ μ) :
-    (permutationModule (shapePartition μ)).ρ.asAlgebraHom (antisymmetrizerOn (garnirSet t i j))
-        (polytabloid t) = 0 :=
+    (permutationModule (R := ℚ) (shapePartition μ)).ρ.asAlgebraHom (antisymmetrizerOn (garnirSet
+      t i j))
+        (polytabloid (R := ℚ) t) = 0 :=
   asAlgebraHom_antisymmetrizerOn_polytabloid_eq_zero t
     (fun _ hk => colLen_colIndex_le_colLen_of_mem_garnirSet hk)
     (by rw [card_garnirSet t h]; exact Nat.lt_succ_self _)

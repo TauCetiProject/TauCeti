@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import TauCeti.RingTheory.DiscreteValuationRing.Kummer
-public import TauCeti.RingTheory.DiscreteValuationRing.UnramifiedBaseChange
+public import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 public import TauCeti.RingTheory.Etale.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Basic
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing

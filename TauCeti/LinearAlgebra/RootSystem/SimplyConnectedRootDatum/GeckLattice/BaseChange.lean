@@ -472,6 +472,16 @@ theorem mkQuotient_comp_geckWeightTorusIntegralCoordinateMap :
   rw [geckWeightTorusIntegralCoordinateMap_def]
   exact mkQuotient_comp_kostantWeightTorusToralCoordinateMap _ _ _ _ _ _ _ _
 
+/-- The underlying bialgebra map of the integral Geck weight torus factors the diagonal
+weight representation through the Geck defining ideal. -/
+theorem geckWeightTorusIntegralCoordinateMap_hom_comp_mkBialgHom :
+    (t.geckWeightTorusIntegralCoordinateMap ht).hom.comp
+        (Bialgebra.Quotient.mkBialgHom (t.geckDefiningIdeal ht).toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) (t.geckWeightFin ht) := by
+  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_geckWeightTorusIntegralCoordinateMap,
+    GeneralLinear.hom_weightTorusCoordinateMap]
+
 /-- The base-changed Geck weight-torus coordinate map factored through the transported Geck
 carrier. -/
 noncomputable def geckWeightTorusToBaseChangeCoordinateMap :

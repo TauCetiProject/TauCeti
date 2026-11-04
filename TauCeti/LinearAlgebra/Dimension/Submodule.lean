@@ -24,8 +24,10 @@ subspaces of a finite-dimensional subspace `U` have dimensions adding to at most
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
-`f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. Conjugating an
-endomorphism by a linear equivalence preserves the dimension of its kernel.
+`f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. The dimension of the range
+of a linear map is unchanged by composing on the left with an injective map and on the right with a
+surjective one. Conjugating an endomorphism by a linear equivalence preserves the dimension of its
+kernel.
 -/
 
 public section
@@ -132,6 +134,15 @@ theorem rank_prodMap (f : M →ₗ[𝕜] M') (g : N →ₗ[𝕜] N')
     [Module.Free 𝕜 f.range] [Module.Free 𝕜 g.range] :
     (f.prodMap g).rank = Cardinal.lift.{v} f.rank + Cardinal.lift.{u} g.rank := by
   rw [LinearMap.rank, range_prodMap, Submodule.rank_prod]
+
+omit [StrongRankCondition 𝕜] in
+/-- The dimension of the range of a linear map is unchanged by composing on the left with an
+injective map and on the right with a surjective one. -/
+theorem finrank_range_comp_comp {V : Type*} [AddCommMonoid V] [Module 𝕜 V] (A : N →ₗ[𝕜] N')
+    (L : M →ₗ[𝕜] N) (B : V →ₗ[𝕜] M) (hA : Function.Injective A) (hB : Function.Surjective B) :
+    finrank 𝕜 (range (A ∘ₗ L ∘ₗ B)) = finrank 𝕜 (range L) := by
+  rw [range_comp, range_comp_of_range_eq_top _ (range_eq_top.2 hB)]
+  exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
 
 end LinearMap
 

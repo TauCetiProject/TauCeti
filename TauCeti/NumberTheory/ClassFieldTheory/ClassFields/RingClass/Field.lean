@@ -170,7 +170,7 @@ theorem isUnramifiedAt_ringClassField {v : IsDedekindDomain.HeightOneSpectrum (ð
 /-- **The ring class field is unramified at the infinite places**: the conductor modulus of an
 order has no infinite part, so no real place of `K` becomes complex in the ring class field. -/
 theorem isUnramified_ringClassField (w : InfinitePlace (ringClassField O)) : w.IsUnramified K :=
-  (isAdmissibleModulus_ringClassField O).isUnramified_of_notMem_infinitePart
+  (isAdmissibleModulus_ringClassField O).isUnramified_of_forall_ne
     (v := w.comap (algebraMap K (ringClassField O))) (by simp [conductorModulus_infinitePart]) w
 
 /-- **The conductor of the ring class field divides the conductor of the order**, viewed as a
