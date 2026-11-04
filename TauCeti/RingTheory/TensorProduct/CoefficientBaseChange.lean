@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.TensorProduct.BaseChange
 public import TauCeti.RingTheory.TensorProduct.CentralBaseChange
 
 /-!
@@ -21,7 +22,8 @@ This is the change of coefficients along `R → S` of modules over `Λ` with coe
 an `R ⊗[k] Λ`-module is a `Λ`-module carrying a commuting `R`-linear structure, and
 `S ⊗[R] N` extends its coefficients to `S` while keeping the action of `Λ`. The action is the
 central base change `TauCeti.CentralBaseChange.module` of `N` along `R → S`, restricted along
-the algebra isomorphism `S ⊗[k] Λ ≃ S ⊗[R] (R ⊗[k] Λ)`.
+the algebra isomorphism `S ⊗[k] Λ ≃ S ⊗[R] (R ⊗[k] Λ)` of
+`TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`.
 
 Base change along the identity of `R` is the identity: `TensorProduct.lid` is linear over
 `R ⊗[k] Λ`. Base change along a composite `R → S → T` is the composite of the base changes: the
@@ -32,8 +34,6 @@ categories of modules over `R ⊗[k] Λ` for varying `R`.
 
 ## Main definitions
 
-* `TauCeti.CoefficientBaseChange.algEquiv`: the `S`-algebra isomorphism
-  `S ⊗[R] (R ⊗[k] Λ) ≃ S ⊗[k] Λ`, `s ⊗ (r ⊗ l) ↦ (r • s) ⊗ l`.
 * `TauCeti.CoefficientBaseChange.module`: the `S ⊗[k] Λ`-module structure on `S ⊗[R] N`.
 * `TauCeti.CoefficientBaseChange.map`: the `S ⊗[k] Λ`-linear map `S ⊗[R] N → S ⊗[R] P` induced
   by an `R ⊗[k] Λ`-linear map `N → P`. It is semilinear: `map (r • φ) = algebraMap R S r • map φ`
@@ -45,9 +45,12 @@ categories of modules over `R ⊗[k] Λ` for varying `R`.
 
 ## Implementation notes
 
-The definitions are not exposed. Downstream computations, including the comparison
-isomorphisms of `CommAlgCat.moduleCatBaseChange`, go through the evaluation lemmas on tensors
-(`map_tmul`, `lid_tmul`, `cancelBaseChange_tmul` and their inverses).
+The action `module` is an `abbrev`, so its body is exposed: it unfolds to `Module.compHom` along
+the inverse of `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`, and `smul_def` records
+this. The definitions `map`, `lid` and `cancelBaseChange` are not exposed. Downstream
+computations with them, including the comparison isomorphisms of
+`CommAlgCat.moduleCatBaseChange`, go through the evaluation lemmas on tensors (`map_tmul`,
+`lid_tmul`, `cancelBaseChange_tmul` and their inverses).
 
 ## References
 
@@ -62,51 +65,37 @@ open scoped TensorProduct
 
 namespace TauCeti.CoefficientBaseChange
 
+open TauCeti.Algebra.TensorProduct (baseChangeTowerAlgEquiv baseChangeTowerAlgEquiv_symm_tmul)
+
 variable (k : Type*) [CommRing k] (Λ : Type*) [Ring Λ] [Algebra k Λ]
   (R : Type*) [CommRing R] [Algebra k R]
   (S : Type*) [CommRing S] [Algebra k S] [Algebra R S] [IsScalarTower k R S]
-
-/-- The `S`-algebra isomorphism `S ⊗[R] (R ⊗[k] Λ) ≃ S ⊗[k] Λ`, `s ⊗ (r ⊗ l) ↦ (r • s) ⊗ l`.
-This is Mathlib's `Algebra.TensorProduct.cancelBaseChange` for a possibly noncommutative
-algebra `Λ`. -/
-noncomputable def algEquiv : S ⊗[R] (R ⊗[k] Λ) ≃ₐ[S] S ⊗[k] Λ :=
-  AlgEquiv.symm <| AlgEquiv.ofLinearEquiv
-    (TensorProduct.AlgebraTensorModule.cancelBaseChange k R S S Λ).symm
-    (by simp [Algebra.TensorProduct.one_def]) <|
-      LinearMap.map_mul_of_map_mul_tmul (fun _ _ _ _ ↦ by simp)
-
-@[simp]
-theorem algEquiv_tmul (s : S) (r : R) (l : Λ) :
-    algEquiv k Λ R S (s ⊗ₜ (r ⊗ₜ l)) = (r • s) ⊗ₜ l := (rfl)
-
-@[simp]
-theorem algEquiv_symm_tmul (s : S) (l : Λ) :
-    (algEquiv k Λ R S).symm (s ⊗ₜ l) = s ⊗ₜ (1 ⊗ₜ l) := (rfl)
 
 variable (N : Type*) [AddCommGroup N] [Module R N] [Module (R ⊗[k] Λ) N]
   [IsScalarTower R (R ⊗[k] Λ) N]
 
 /-- The `S ⊗[k] Λ`-module structure on `S ⊗[R] N`, with
 `(s ⊗ l) • (s' ⊗ n) = (s * s') ⊗ ((1 ⊗ l) • n)` (`TauCeti.CoefficientBaseChange.tmul_smul_tmul`):
-the central base change of `N` along `R → S`, restricted along
-`TauCeti.CoefficientBaseChange.algEquiv`.
+the central base change of `N` along `R → S`, restricted along the
+`S`-algebra isomorphism `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`.
 Like `TauCeti.CentralBaseChange.module`, on which it is built, it is not a global instance;
 activate it with `attribute [local instance low]`. -/
 noncomputable abbrev module : Module (S ⊗[k] Λ) (S ⊗[R] N) :=
   Module.compHom _ ((CentralBaseChange.lsmul R S (R ⊗[k] Λ) N).comp
-    (algEquiv k Λ R S).symm.toAlgHom).toRingHom
+    (baseChangeTowerAlgEquiv k R Λ S).symm.toAlgHom).toRingHom
 
 attribute [local instance low] module
 
 variable {k Λ R S N}
 
 theorem smul_def (t : S ⊗[k] Λ) (x : S ⊗[R] N) :
-    t • x = CentralBaseChange.lsmul R S (R ⊗[k] Λ) N ((algEquiv k Λ R S).symm t) x := (rfl)
+    t • x = CentralBaseChange.lsmul R S (R ⊗[k] Λ) N ((baseChangeTowerAlgEquiv k R Λ S).symm t) x :=
+  (rfl)
 
 @[simp]
 theorem tmul_smul_tmul (s s' : S) (l : Λ) (n : N) :
     (s ⊗ₜ[k] l) • (s' ⊗ₜ[R] n) = (s * s') ⊗ₜ[R] (((1 : R) ⊗ₜ[k] l) • n) := by
-  rw [smul_def, algEquiv_symm_tmul, ← CentralBaseChange.smul_def (A := R),
+  rw [smul_def, baseChangeTowerAlgEquiv_symm_tmul, ← CentralBaseChange.smul_def (A := R),
     CentralBaseChange.tmul_smul_tmul]
 
 /-- The `S`-action on `S ⊗[R] N` is the action of `S ⊗[k] Λ` through `s ↦ s ⊗ 1`. -/
@@ -151,7 +140,8 @@ noncomputable def map (φ : N →ₗ[R ⊗[k] Λ] P) : S ⊗[R] N →ₗ[S ⊗[k
     let _ := CentralBaseChange.module R S (R ⊗[k] Λ) N
     let _ := CentralBaseChange.module R S (R ⊗[k] Λ) P
     simpa only [CentralBaseChange.coe_map, CentralBaseChange.smul_def, smul_def,
-      RingHom.id_apply] using (CentralBaseChange.map S φ).map_smul ((algEquiv k Λ R S).symm t) x
+      RingHom.id_apply] using
+      (CentralBaseChange.map S φ).map_smul ((baseChangeTowerAlgEquiv k R Λ S).symm t) x
 
 theorem coe_map (φ : N →ₗ[R ⊗[k] Λ] P) :
     ⇑(map k Λ S φ) = (φ.restrictScalars R).lTensor S := (rfl)
