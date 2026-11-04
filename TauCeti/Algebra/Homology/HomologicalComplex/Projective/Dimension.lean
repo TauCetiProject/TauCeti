@@ -64,7 +64,7 @@ instance projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one
 /-- If every object has projective dimension at most one and every differential into `K.X i`
 vanishes, the homology at `i` of a projective term is projective: with no incoming boundaries,
 `K.homologyπ i` identifies `K.cycles i` with `K.homology i`. -/
-theorem projective_homology_of_d_eq_zero [Projective (K.X i)]
+theorem projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one [Projective (K.X i)]
     (h : ∀ j, c.Rel j i → K.d j i = 0) : Projective (K.homology i) := by
   have hd : K.d (c.prev i) i = 0 := by
     by_cases hrel : c.Rel (c.prev i) i
@@ -76,7 +76,8 @@ theorem projective_homology_of_d_eq_zero [Projective (K.X i)]
 `K.X i` is zero, the homology at `i` of a projective term is projective. -/
 theorem projective_homology_of_isZero_X [Projective (K.X i)]
     (h : ∀ j, c.Rel j i → IsZero (K.X j)) : Projective (K.homology i) :=
-  K.projective_homology_of_d_eq_zero i fun j hj ↦ (h j hj).eq_of_src _ _
+  K.projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one i
+    fun j hj ↦ (h j hj).eq_of_src _ _
 
 end HomologicalComplex
 
@@ -89,7 +90,8 @@ variable {C : Type*} [Category* C] [Abelian C] [∀ X : C, HasProjectiveDimensio
 of a chain complex vanishes and `K.X n` is projective, then `K.homology n` is projective. -/
 theorem projective_homology_of_d_eq_zero [Projective (K.X n)] (h : K.d (n + 1) n = 0) :
     Projective (K.homology n) :=
-  HomologicalComplex.projective_homology_of_d_eq_zero K n fun _ hj ↦ hj ▸ h
+  HomologicalComplex.projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one K n
+    fun _ hj ↦ hj ▸ h
 
 /-- In an abelian category of projective dimension at most one, if `K.X (n + 1)` is zero and
 `K.X n` is projective, then `K.homology n` is projective. -/
