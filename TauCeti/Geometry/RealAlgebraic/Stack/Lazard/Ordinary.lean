@@ -59,15 +59,6 @@ namespace TauCeti
 
 variable {ι : Type*} {n : ℕ} {F : ι → MvPolynomial (Fin (n + 1)) ℝ} {S : Set (Fin n → ℝ)}
 
-/-- Where no nonzero member is nullified at a point, its Lazard evaluation over that point is its
-ordinary fibre. -/
-private theorem lazardEval_eq_map_of_nullified {k : ι} {x : Fin n → ℝ}
-    (hnull : (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x) = 0 →
-      F k = 0) :
-    (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x) =
-      (optionEquivLeft ℝ (Fin n) (rename finSuccEquivLast (F k))).map (eval x) :=
-  lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_iff.2 ((ne_or_eq _ 0).imp_right hnull)
-
 namespace Delineation
 
 variable (D : Delineation fun k (x : S) ↦
@@ -105,10 +96,12 @@ def toLazardDelineation : LazardDelineation F S where
       exact fun hx ↦ hk (D.eq_zero_of_map_eq_zero hnull hx)
   multiplicity := D.multiplicity
   rootMultiplicity_root k i x := by
-    rw [lazardEval_eq_map_of_nullified (D.eq_zero_of_map_eq_zero hnull (x := x))]
+    rw [lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_of_nullified
+      (D.eq_zero_of_map_eq_zero hnull (x := x))]
     exact D.rootMultiplicity_root k i x
   exists_root_eq k x hk t ht := by
-    rw [lazardEval_eq_map_of_nullified (D.eq_zero_of_map_eq_zero hnull (x := x))] at ht
+    rw [lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_of_nullified
+      (D.eq_zero_of_map_eq_zero hnull (x := x))] at ht
     exact D.exists_root_eq k x (fun hx ↦ hk (D.eq_zero_of_map_eq_zero hnull hx)) t ht
   exists_multiplicity_pos := D.exists_multiplicity_pos
 
@@ -157,10 +150,10 @@ def toDelineation : Delineation fun k (x : S) ↦
   strictMono_root := D.strictMono_root
   multiplicity := D.multiplicity
   rootMultiplicity_root k i x := by
-    rw [← lazardEval_eq_map_of_nullified (hnull k x)]
+    rw [← lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_of_nullified (hnull k x)]
     exact D.rootMultiplicity_root k i x
   exists_root_eq k x hx t ht := by
-    rw [← lazardEval_eq_map_of_nullified (hnull k x)] at ht
+    rw [← lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_of_nullified (hnull k x)] at ht
     exact D.exists_root_eq k x (fun hk ↦ hx (by simp [hk])) t ht
   exists_multiplicity_pos := D.exists_multiplicity_pos
   eq_zero_or_ne_zero k := by

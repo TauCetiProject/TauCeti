@@ -128,6 +128,14 @@ theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_iff {α : Fin
     · exact lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map h
     · simp
 
+/-- If the ordinary fibre of `f` over `α` vanishes only when `f` is zero, then the Lazard
+evaluation of `f` over `α` agrees with that fibre. -/
+theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_of_nullified {α : Fin n → R}
+    (hnull : (optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α) = 0 → f = 0) :
+    (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval (Polynomial.C ∘ α) =
+      (optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α) :=
+  lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_iff.2 ((ne_or_eq _ 0).imp_right hnull)
+
 /-- **Lazard evaluation at a point over a base point.** The exponents removed by Lazard
 evaluation of `f` at `Fin.snoc α β` are those removed over the base point `α`, after moving the
 last variable into the coefficients, followed by the multiplicity of `β` as a root of the
