@@ -226,14 +226,10 @@ private theorem traversalEdge_involutive (n : ℕ) : Function.Involutive (traver
   · exact Prod.ext (Equiv.apply_symm_apply (finRotate _) i) rfl
   · exact Prod.ext (Equiv.symm_apply_apply (finRotate _) i) rfl
 
-private def traversalEdgePerm (n : ℕ) : Equiv.Perm (Fin (2 * n) × Bool) :=
-  Function.Involutive.toPerm _ (traversalEdge_involutive n)
-
 /-- Arc pairing on visit ends is a perfect matching. -/
 private def traversalEdgePair (n : ℕ) : PerfectMatching (Fin (2 * n) × Bool) :=
-  PerfectMatching.mk (traversalEdgePerm n)
-    (fun p => (traversalEdgePerm n).left_inv p)
-    (by rintro ⟨i, outgoing⟩ h; cases outgoing <;> simp [traversalEdgePerm, traversalEdge] at h)
+  PerfectMatching.ofInvolutive (traversalEdge_involutive n)
+    (by rintro ⟨i, outgoing⟩ h; cases outgoing <;> simp [traversalEdge] at h)
 
 /-- The permutation that places the four crossing slots into the half-edge enumeration induced by
 the Gauss traversal. -/
@@ -267,7 +263,7 @@ noncomputable def toOrientedPDCode (D : BasedOrientedGaussCode n) : OrientedPDCo
     rw [PerfectMatching.congr_val_apply]
     obtain ⟨i, outgoing⟩ := (visitHalfEdgeEquiv n).symm h
     rw [Equiv.symm_apply_apply]
-    cases outgoing <;> simp [traversalEdgePair, traversalEdgePerm, traversalEdge]
+    cases outgoing <;> simp [traversalEdgePair, traversalEdge]
   orientation_oppositeCrossingSlot := by
     intro c slot
     simp only [Equiv.trans_apply, Equiv.symm_apply_apply, crossingHalfEdgeEquiv_apply]
@@ -304,7 +300,7 @@ private theorem toOrientedPDCode_edgePair_outgoing_aux (D : BasedOrientedGaussCo
     (i : Fin (2 * n)) :
     D.toOrientedPDCode.edgePair.val (visitHalfEdgeEquiv n (i, true)) =
       visitHalfEdgeEquiv n (finRotate _ i, false) := by
-  simp [toOrientedPDCode, traversalEdgePair, traversalEdgePerm, traversalEdge]
+  simp [toOrientedPDCode, traversalEdgePair, traversalEdge]
 
 /-- Arc pairing follows the cyclic traversal, changing an outgoing end to the next incoming end
 and an incoming end to the previous outgoing end. -/
