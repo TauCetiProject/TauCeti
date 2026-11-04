@@ -101,6 +101,12 @@ theorem cubeState_eq_true_iff {S : Finset (Fin n)} {i : Fin n} :
     cubeState S i = true ↔ i ∉ S := by
   simp [cubeState]
 
+/-- The state of the complementary vertex `Sᶜ` is the complementary state: it exchanges the
+`A`- and `B`-smoothings at every crossing. -/
+@[simp]
+theorem cubeState_compl (S : Finset (Fin n)) (i : Fin n) : cubeState Sᶜ i = !cubeState S i := by
+  simp [cubeState]
+
 /-- The set of `B`-smoothings of the state of the vertex `S` is `S`. -/
 theorem filter_cubeState_eq_false (S : Finset (Fin n)) :
     ({i | cubeState S i = false} : Finset (Fin n)) = S := by

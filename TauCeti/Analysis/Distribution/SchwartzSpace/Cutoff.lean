@@ -15,8 +15,9 @@ import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
 Let `χ : E → ℝ` be a smooth compactly supported function that equals `1` near the origin. For a
 Schwartz function `f`, the truncations `x ↦ χ (R⁻¹ • x) • f x` are smooth and compactly supported,
-and they converge to `f` in the Schwartz topology as `R → ∞`. Consequently the smooth compactly
-supported functions are dense in `𝓢(E, F)` when `E` is finite-dimensional.
+and they converge to `f` in the Schwartz topology as `R → ∞`. Mathlib's
+`SchwartzMap.dense_hasCompactSupport` gives the resulting density of compactly supported
+functions in `𝓢(E, F)` when `E` is finite-dimensional.
 
 This is how a statement proved for smooth compactly supported test functions is passed to Schwartz
 test functions: any quantity controlled by finitely many Schwartz seminorms (for instance a
@@ -40,7 +41,7 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   supported.
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
   `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
-* `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
+* Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 
 ## References
@@ -208,19 +209,6 @@ theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
   refine (seminorm_sub_smulLeftCLM_comp_inv_smul_le hχ hB hr hχ1' f k n hR).trans_lt ?_
   rw [div_lt_iff₀ hR0]
   rwa [div_lt_iff₀ hε, mul_comm] at hKR
-
-/-- **Compactly supported functions are dense in Schwartz space.** -/
-theorem dense_hasCompactSupport [FiniteDimensional ℝ E] :
-    Dense {f : 𝓢(E, F) | HasCompactSupport f} := by
-  let b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  intro f
-  have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i b x‖ ≤ B :=
-    (b.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-      (b.hasCompactSupport.iteratedFDeriv i)
-  refine mem_closure_of_tendsto
-    (tendsto_smulLeftCLM_comp_inv_smul_atTop b.contDiff hbdd b.eventuallyEq_one f) ?_
-  filter_upwards [eventually_gt_atTop 0] with R hR
-  exact hasCompactSupport_smulLeftCLM_comp_inv_smul b.contDiff b.hasCompactSupport hR.ne' f
 
 section Truncation
 
