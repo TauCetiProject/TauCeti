@@ -229,6 +229,37 @@ theorem noncentralChiPDFReal_two_div_scale_eq_besselI (ν : ℝ≥0) (hs : 0 < s
   congr 2
   all_goals field_simp [hs.ne']
 
+/-- The real noncentral chi density is continuous on `(0, ∞)` for all parameter values. -/
+theorem continuousOn_noncentralChiPDFReal (k : ℝ) (δ : ℝ≥0) (s : ℝ) :
+    ContinuousOn (noncentralChiPDFReal k δ s) (Ioi 0) := by
+  rcases lt_or_ge k 0 with hk | hk
+  · exact continuousOn_const.congr fun x _ ↦ noncentralChiPDFReal_of_neg hk
+  rcases le_or_gt s 0 with hs | hs
+  · exact continuousOn_const.congr fun x _ ↦ noncentralChiPDFReal_of_scale_nonpos hs
+  rcases eq_or_ne δ 0 with rfl | hδ0
+  · rw [funext (noncentralChiPDFReal_zero_noncentrality k s)]
+    rcases hk.eq_or_lt' with rfl | hk'
+    · exact continuousOn_const.congr fun x _ ↦ chiPDFReal_of_not_pos fun h ↦ h.1.ne rfl
+    · refine ContinuousOn.congr ?_ fun x hx ↦ chiPDFReal_of_pos hk' hs hx
+      intro x (hx : 0 < x)
+      have hxs : 0 < x / s := div_pos hx hs
+      exact (((continuousAt_const.mul
+        ((continuousAt_id.div_const s).rpow continuousAt_const (Or.inl hxs.ne'))).mul
+        (by fun_prop)).div_const s).continuousWithinAt
+  · have hδ : 0 < δ := pos_iff_ne_zero.mpr hδ0
+    refine ContinuousOn.congr ?_ fun x hx ↦ noncentralChiPDFReal_eq_besselI hk hδ hs hx
+    intro x (hx : 0 < x)
+    have hbase : 0 < x / (s * (δ : ℝ)) := by positivity
+    have harg : 0 < (δ : ℝ) * x / s := by positivity
+    refine (((by fun_prop : ContinuousAt (fun y : ℝ ↦ y / s ^ 2 *
+        exp (-((y / s) ^ 2 + (δ : ℝ) ^ 2) / 2)) x).mul
+      ((continuousAt_id.div_const _).rpow continuousAt_const (Or.inl hbase.ne'))).mul ?_
+      ).continuousWithinAt
+    exact ContinuousAt.comp (g := fun p : ℝ × ℝ ↦ besselI p.1 p.2)
+      (f := fun z : ℝ ↦ (k / 2 - 1, (δ : ℝ) * z / s))
+      (Real.continuousAt_besselI (Or.inl harg.ne'))
+      (by fun_prop : Continuous fun z : ℝ ↦ (k / 2 - 1, (δ : ℝ) * z / s)).continuousAt
+
 /-- **Scaled square roots of the continuous noncentral chi-squared component.** The image of
 the continuous noncentral chi-squared component under `s * √·` is the continuous noncentral chi
 component; the substitution is `y = (x / s) ^ 2` on the positive half-line. -/
