@@ -137,7 +137,6 @@ theorem IsStable.weightedLogCanonicalDegree_forgetMarking_eq_zero_iff (hD : D.Is
 
 /-- Forgetting preserves stability exactly when the original weighted degree at the forgotten
 marking is at least two. -/
-@[simp]
 theorem IsStable.isStable_forgetMarking_iff (hD : D.IsStable) :
     D.forgetMarking.IsStable ↔ 1 < D.weightedLogCanonicalDegree (G.marking none) := by
   rw [isStable_iff_weightedLogCanonicalDegree_pos]
