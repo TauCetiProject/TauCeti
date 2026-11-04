@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # Natural numbers invertible in semirings and algebras
@@ -24,6 +25,8 @@ differentiation.
 
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
+* `Nat.Coprime.isUnit_natCast_of_prime`: if every prime distinct from `n` is a unit in `R`, then
+  every nonzero natural number coprime to `n` is a unit in `R`.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
 * `TauCeti.isUnit_natCast_of_ne_zero`: every nonzero natural number is a unit in a `ℚ`-algebra.
@@ -43,6 +46,27 @@ theorem IsUnit.natCast_ne_zero_of_algebra {K L : Type*} [CommSemiring K] [Semiri
 theorem IsUnit.neZero_natCast {R : Type*} [Semiring R] [Nontrivial R] {m : ℕ}
     (hm : IsUnit (m : R)) : NeZero m :=
   ⟨fun h ↦ hm.ne_zero (by rw [h, Nat.cast_zero])⟩
+
+/-- If every prime distinct from `n` is a unit in a semiring `R`, then every nonzero natural number
+coprime to `n` is a unit in `R`, as a product of prime factors distinct from `n`. -/
+theorem Nat.Coprime.isUnit_natCast_of_prime {R : Type*} [Semiring R] {m n : ℕ}
+    (h : m.Coprime n) (hm : m ≠ 0) (hunit : ∀ q : ℕ, q.Prime → q ≠ n → IsUnit (q : R)) :
+    IsUnit (m : R) := by
+  induction m using Nat.strong_induction_on with
+  | _ m ih =>
+    rcases eq_or_ne m 1 with rfl | hm1
+    · simp
+    set q := m.minFac
+    have hq : q.Prime := Nat.minFac_prime hm1
+    have hqm : m = q * (m / q) := (Nat.mul_div_cancel' (Nat.minFac_dvd m)).symm
+    have hmul : (q * (m / q)).Coprime n := hqm ▸ h
+    have hq_cop : q.Coprime n := (Nat.coprime_mul_iff_left.mp hmul).1
+    have hk_cop : (m / q).Coprime n := (Nat.coprime_mul_iff_left.mp hmul).2
+    have hqn : q ≠ n := fun hqn ↦ hq.ne_one (by simpa [← hqn, Nat.gcd_self] using hq_cop.gcd_eq_one)
+    have hk_lt : m / q < m := Nat.div_lt_self (Nat.pos_of_ne_zero hm) hq.one_lt
+    have hk0 : m / q ≠ 0 := right_ne_zero_of_mul (hqm ▸ hm)
+    rw [hqm, Nat.cast_mul]
+    exact (hunit q hq hqn).mul (ih (m / q) hk_lt hk_cop hk0)
 
 /-- A subalgebra over `K` contains `m * t` exactly when it contains `t`, provided the natural
 number `m` is invertible in `K`. -/
