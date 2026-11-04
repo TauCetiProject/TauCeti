@@ -1,0 +1,282 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+public import Mathlib.Analysis.RCLike.Lemmas
+public import TauCeti.Topology.Algebra.Module.Determinant
+
+/-!
+# Maximal-volume ellipsoids
+
+Let `E` be a finite-dimensional inner product space and `F` a normed space of the same dimension.
+For a continuous linear equivalence `T : E ≃L[𝕜] F`, the image `T(B)` of the Euclidean unit ball
+`B` of `E` is an ellipsoid in `F`, and it lies in the closed unit ball of `F` exactly when
+`‖T‖ ≤ 1`. Volumes of such images are compared through determinants on `E`: since
+`S = T ∘ (T⁻¹ ∘ S)`, for every Haar measure on `F` the volume of `S(B)` is that of `T(B)` times
+`|det (T⁻¹ ∘ S)|` over `ℝ`, and times `|det (T⁻¹ ∘ S)|²` over `ℂ`. Comparing determinants
+therefore needs no volume on `F` and no choice of basis.
+
+`ContinuousLinearEquiv.IsMaxVolumeEllipsoid T` says that `T` is a contraction whose ellipsoid has
+maximal volume in this sense among the images of the Euclidean ball under all contractions
+`S : E →L[𝕜] F`. These are the ellipsoids of John's theorem; when `T` is one, the norm
+`x ↦ ‖T x‖` on `E` is in *John's position*: its closed unit ball contains the Euclidean unit ball,
+which is the inscribed ellipsoid of maximal volume.
+
+Neither the definition nor the existence theorem uses an inner product: the definition makes sense
+over any nontrivially normed field, and the existence theorem holds over any locally compact one.
+
+## Main declarations
+
+* `ContinuousLinearEquiv.IsMaxVolumeEllipsoid`: `T` is a contraction maximizing the determinant.
+* `TauCeti.exists_isMaxVolumeEllipsoid`: between finite-dimensional spaces of equal dimension a
+  maximal-volume ellipsoid exists, by compactness of the unit ball of `E →L[𝕜] F`.
+* `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.isMaxVolumeEllipsoid_iff`: a contraction is maximal
+  exactly when its determinant relative to a maximal one has norm one.
+* `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.norm_eq_one`: over `ℝ` or `ℂ`, a maximal
+  contraction from a nonzero space has norm one.
+* `ContinuousLinearEquiv.IsMaxVolumeEllipsoid.exists_norm_eq_one_and_norm_apply_eq_one`: it has a
+  contact point, a unit vector `u` with `‖T u‖ = 1`.
+* `ContinuousLinearMap.re_inner_le_norm_mul_norm_apply`: if `S` is a contraction from an inner
+  product space and `‖S u‖ = ‖u‖`, then `re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖` for all `x`. At a contact point
+  of John's position, the functional `re ⟪·, u⟫` is therefore a support functional of the unit
+  ball of the norm `x ↦ ‖T x‖`.
+* `ContinuousLinearMap.norm_inner_le_norm_mul_norm_apply`: under the same hypotheses,
+  `‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖`.
+
+## References
+
+* K. Ball, *An Elementary Introduction to Modern Convex Geometry*, Lecture 3.
+* F. Albiac and N. J. Kalton, *Topics in Banach Space Theory*, §13.1.
+-/
+
+public section
+
+open Module Metric Filter Topology ComplexConjugate
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E F : Type*}
+
+section NormedField
+
+variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear equivalence `T : E ≃L[𝕜] F` is a *maximal-volume ellipsoid* if it is a
+contraction and, for every contraction `S : E →L[𝕜] F`, the determinant of `T⁻¹ ∘ S` has norm at
+most one. When `E` is an inner product space, `T` maps the Euclidean unit ball onto an ellipsoid of
+maximal volume among the ellipsoids contained in the closed unit ball of `F`. -/
+structure IsMaxVolumeEllipsoid (T : E ≃L[𝕜] F) : Prop where
+  /-- The ellipsoid lies in the closed unit ball. -/
+  norm_le_one : ‖(T : E →L[𝕜] F)‖ ≤ 1
+  /-- No contraction gives an ellipsoid of larger volume. -/
+  norm_det_le_one : ∀ S : E →L[𝕜] F, ‖S‖ ≤ 1 → ‖((T.symm : F →L[𝕜] E).comp S).det‖ ≤ 1
+
+namespace IsMaxVolumeEllipsoid
+
+variable {T : E ≃L[𝕜] F}
+
+/-- Two maximal-volume ellipsoids have the same volume. -/
+theorem norm_det_eq_one (hT : T.IsMaxVolumeEllipsoid) {U : E ≃L[𝕜] F}
+    (hU : U.IsMaxVolumeEllipsoid) : ‖((T.symm : F →L[𝕜] E).comp (U : E →L[𝕜] F)).det‖ = 1 := by
+  have h := det_symm_comp_mul_det_symm_comp T U T
+  rw [T.coe_symm_comp_coe, show (ContinuousLinearMap.id 𝕜 E).det = 1 from LinearMap.det_id] at h
+  have h₁ := hT.norm_det_le_one U hU.norm_le_one
+  have h₂ := hU.norm_det_le_one T hT.norm_le_one
+  have h₃ := congrArg norm h
+  rw [norm_mul, norm_one] at h₃
+  nlinarith [norm_nonneg ((T.symm : F →L[𝕜] E).comp (U : E →L[𝕜] F)).det,
+    norm_nonneg ((U.symm : F →L[𝕜] E).comp (T : E →L[𝕜] F)).det]
+
+/-- Given a maximal-volume ellipsoid `T`, a contraction `U` is a maximal-volume ellipsoid exactly
+when the determinant of `T⁻¹ ∘ U` has norm one. -/
+theorem isMaxVolumeEllipsoid_iff (hT : T.IsMaxVolumeEllipsoid) {U : E ≃L[𝕜] F}
+    (hU : ‖(U : E →L[𝕜] F)‖ ≤ 1) :
+    U.IsMaxVolumeEllipsoid ↔ ‖((T.symm : F →L[𝕜] E).comp (U : E →L[𝕜] F)).det‖ = 1 := by
+  refine ⟨hT.norm_det_eq_one, fun h ↦ ⟨hU, fun S hS ↦ ?_⟩⟩
+  have hS' := hT.norm_det_le_one S hS
+  rw [← det_symm_comp_mul_det_symm_comp T U S, norm_mul, h, one_mul] at hS'
+  exact hS'
+
+end IsMaxVolumeEllipsoid
+
+end NormedField
+
+end ContinuousLinearEquiv
+
+namespace TauCeti
+
+open ContinuousLinearEquiv
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Existence of maximal-volume ellipsoids.** Between finite-dimensional normed spaces of equal
+dimension over a locally compact field, some continuous linear equivalence is a maximal-volume
+ellipsoid. -/
+theorem exists_isMaxVolumeEllipsoid [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+    (h : finrank 𝕜 E = finrank 𝕜 F) : ∃ T : E ≃L[𝕜] F, T.IsMaxVolumeEllipsoid := by
+  -- Maximize `S ↦ ‖det (e⁻¹ ∘ S)‖` over the compact unit ball of `E →L[𝕜] F`, for a reference
+  -- equivalence `e`. A small multiple of `e` shows that the maximum is positive, so a maximizer
+  -- is invertible; the ratio of determinants then shows that it is maximal in the above sense.
+  have : ProperSpace 𝕜 := .of_locallyCompactSpace 𝕜
+  have : ProperSpace (E →L[𝕜] F) := FiniteDimensional.proper 𝕜 _
+  let e : E ≃L[𝕜] F := .ofFinrankEq h
+  let φ : (E →L[𝕜] F) → ℝ := fun S ↦ ‖((e.symm : F →L[𝕜] E).comp S).det‖
+  have hφ : Continuous φ :=
+    (ContinuousLinearMap.continuous_det.comp (continuous_const.clm_comp continuous_id)).norm
+  obtain ⟨S₀, hS₀, hmax⟩ := (isCompact_closedBall (0 : E →L[𝕜] F) 1).exists_isMaxOn
+    (nonempty_closedBall.2 zero_le_one) hφ.continuousOn
+  obtain ⟨c, hc₀, hc⟩ := NormedField.exists_norm_lt 𝕜
+    (inv_pos.2 (add_pos_of_nonneg_of_pos (norm_nonneg (e : E →L[𝕜] F)) one_pos))
+  have hce : c • (e : E →L[𝕜] F) ∈ closedBall (0 : E →L[𝕜] F) 1 := by
+    rw [mem_closedBall_zero_iff, norm_smul]
+    have := mul_lt_mul_of_pos_right hc (by positivity : 0 < ‖(e : E →L[𝕜] F)‖ + 1)
+    rw [inv_mul_cancel₀ (by positivity)] at this
+    nlinarith [norm_nonneg (e : E →L[𝕜] F)]
+  have hφce : φ (c • (e : E →L[𝕜] F)) = ‖c‖ ^ finrank 𝕜 E := by
+    have : (e.symm : F →L[𝕜] E).comp (c • (e : E →L[𝕜] F)) = c • ContinuousLinearMap.id 𝕜 E := by
+      rw [ContinuousLinearMap.comp_smul, e.coe_symm_comp_coe]
+    simp only [φ, this, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
+      ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one, norm_pow]
+  have hdet : ((e.symm : F →L[𝕜] E).comp S₀).det ≠ 0 := by
+    intro h0
+    have := hmax hce
+    simp only [Set.mem_ofPred_eq, hφce, φ, h0, norm_zero] at this
+    exact (pow_pos hc₀ _).not_ge this
+  -- The maximizer `S₀ = e ∘ (e⁻¹ ∘ S₀)` is bijective.
+  have hbij : Function.Bijective S₀ := by
+    have hunit := (LinearMap.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)
+    have hA := (Module.End.isUnit_iff _).1 hunit
+    have : (S₀ : E → F) = e ∘ ((e.symm : F →L[𝕜] E).comp S₀) := by
+      ext x
+      simp
+    rw [this]
+    exact e.bijective.comp hA
+  let T : E ≃L[𝕜] F := (LinearEquiv.ofBijective (S₀ : E →ₗ[𝕜] F) hbij).toContinuousLinearEquiv
+  have hT : (T : E →L[𝕜] F) = S₀ := by
+    ext x
+    simp [T]
+  refine ⟨T, ⟨by rwa [hT, ← mem_closedBall_zero_iff], fun S hS ↦ ?_⟩⟩
+  have hS' : φ S ≤ φ S₀ := hmax (mem_closedBall_zero_iff.2 hS)
+  have hφ₀ : 0 < φ S₀ := norm_pos_iff.2 hdet
+  simp only [φ, ← det_symm_comp_mul_det_symm_comp e T S, hT, norm_mul] at hS' hφ₀ ⊢
+  nlinarith [norm_nonneg ((T.symm : F →L[𝕜] E).comp S).det]
+
+end TauCeti
+
+namespace ContinuousLinearEquiv.IsMaxVolumeEllipsoid
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 E] {T : E ≃L[𝕜] F}
+
+/-- Over `ℝ` or `ℂ`, a maximal-volume ellipsoid from a nonzero finite-dimensional space has
+norm one: a contraction of norm `a < 1` could be enlarged by the factor `a⁻¹`. -/
+theorem norm_eq_one [Nontrivial E] (hT : T.IsMaxVolumeEllipsoid) : ‖(T : E →L[𝕜] F)‖ = 1 := by
+  refine le_antisymm hT.norm_le_one (not_lt.1 fun ha ↦ ?_)
+  set a := ‖(T : E →L[𝕜] F)‖
+  have ha₀ : 0 < a := by
+    obtain ⟨x, hx⟩ := exists_ne (0 : E)
+    exact norm_pos_iff.2 fun h ↦ hx (by simpa using congr($h x))
+  have hS : ‖((a⁻¹ : ℝ) : 𝕜) • (T : E →L[𝕜] F)‖ ≤ 1 := by
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha₀), inv_mul_cancel₀ ha₀.ne']
+  have h := hT.norm_det_le_one _ hS
+  have hn : 0 < finrank 𝕜 E := finrank_pos
+  simp only [ContinuousLinearMap.comp_smul, T.coe_symm_comp_coe, ContinuousLinearMap.det,
+    ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
+    LinearMap.det_id, mul_one, norm_pow, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha₀)] at h
+  exact (one_lt_pow₀ (one_lt_inv₀ ha₀ |>.2 ha) hn.ne').not_ge h
+
+/-- **Contact points.** Over `ℝ` or `ℂ`, a maximal-volume ellipsoid from a nonzero
+finite-dimensional space touches the unit sphere of `F`: some unit vector `u` has `‖T u‖ = 1`. -/
+theorem exists_norm_eq_one_and_norm_apply_eq_one [Nontrivial E] (hT : T.IsMaxVolumeEllipsoid) :
+    ∃ u : E, ‖u‖ = 1 ∧ ‖T u‖ = 1 := by
+  have : ProperSpace E := FiniteDimensional.proper_rclike 𝕜 E
+  obtain ⟨u, hu, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn
+    (Set.nonempty_coe_sort.1 (NormedSpace.sphere_nonempty_rclike 𝕜 zero_le_one))
+    T.continuous.norm.continuousOn
+  rw [mem_sphere_zero_iff_norm] at hu
+  refine ⟨u, hu, le_antisymm ?_ ?_⟩
+  · simpa [hu] using (T : E →L[𝕜] F).le_of_opNorm_le hT.norm_le_one u
+  · rw [← hT.norm_eq_one]
+    refine ContinuousLinearMap.opNorm_le_of_unit_norm (norm_nonneg _) fun x hx ↦ ?_
+    exact hmax (mem_sphere_zero_iff_norm.2 hx)
+
+end ContinuousLinearEquiv.IsMaxVolumeEllipsoid
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
+
+open RCLike in
+/-- If a contraction `S` from an inner product space preserves the norm of `u`, then
+`re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖` for every `x`. For a unit vector `u` with `‖S u‖ = 1`, the functional
+`re ⟪·, u⟫` is thus a support functional at `u` of the unit ball of the norm `x ↦ ‖S x‖`, which
+contains the Euclidean unit ball and touches its boundary at `u`. -/
+theorem re_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) {u : E}
+    (hu : ‖S u‖ = ‖u‖) (x : E) : re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖ := by
+  set v := x - u
+  -- For `0 < t ≤ 1`, the point `u + t v` lies on the segment from `u` to `x`, while `u - t v`
+  -- is controlled by the Euclidean norm; their sum is `2 u`. This gives an inequality whose
+  -- error term `t * ‖v‖ ^ 2 / 2` vanishes as `t → 0`.
+  have key : ∀ t : ℝ, 0 < t → t < 1 → re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2 ≤ ‖u‖ * ‖S x‖ := by
+    intro t ht₀ ht₁
+    have h₁ : ‖S (u - (t : 𝕜) • v)‖ ≤ ‖u - (t : 𝕜) • v‖ :=
+      (S.le_of_opNorm_le hS _).trans_eq (one_mul _)
+    have h₂ : ‖S (u + (t : 𝕜) • v)‖ ≤ (1 - t) * ‖u‖ + t * ‖S x‖ := by
+      have : u + (t : 𝕜) • v = ((1 - t : ℝ) : 𝕜) • u + (t : 𝕜) • x := by
+        simp only [v, smul_sub, ofReal_sub, ofReal_one, sub_smul, one_smul]
+        abel
+      rw [this, map_add, map_smul, map_smul]
+      refine (norm_add_le _ _).trans_eq ?_
+      rw [norm_smul, norm_smul, norm_ofReal, norm_ofReal, abs_of_pos (sub_pos.2 ht₁),
+        abs_of_pos ht₀, hu]
+    have h₃ : 2 * ‖u‖ ≤ ‖S (u + (t : 𝕜) • v)‖ + ‖S (u - (t : 𝕜) • v)‖ := by
+      calc 2 * ‖u‖ = ‖S (u + (t : 𝕜) • v) + S (u - (t : 𝕜) • v)‖ := by
+            rw [← map_add, add_add_sub_cancel, ← two_smul 𝕜, map_smul, norm_smul, hu]
+            simp
+        _ ≤ _ := norm_add_le _ _
+    have h₄ : ‖u - (t : 𝕜) • v‖ ^ 2 = ‖u‖ ^ 2 - 2 * t * re ⟪u, v⟫ + t ^ 2 * ‖v‖ ^ 2 := by
+      rw [@norm_sub_sq 𝕜, inner_smul_right, re_ofReal_mul, norm_smul, norm_ofReal,
+        abs_of_pos ht₀]
+      ring
+    have h₅ : re ⟪x, u⟫ = ‖u‖ ^ 2 + re ⟪u, v⟫ := by
+      rw [← inner_re_symm, show x = u + v by simp [v], inner_add_right, map_add,
+        inner_self_eq_norm_sq]
+    have h₆ : t * (re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2) ≤ t * (‖u‖ * ‖S x‖) := by
+      nlinarith [norm_nonneg u, norm_nonneg (u - (t : 𝕜) • v),
+        sq_nonneg (‖u‖ - ‖u - (t : 𝕜) • v‖)]
+    exact le_of_mul_le_mul_left h₆ ht₀
+  have hlim : Tendsto (fun t : ℝ ↦ re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2) (𝓝[>] 0) (𝓝 (re ⟪x, u⟫)) := by
+    have : Continuous fun t : ℝ ↦ re ⟪x, u⟫ - t * ‖v‖ ^ 2 / 2 := by fun_prop
+    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact le_of_tendsto hlim <| by
+    filter_upwards [Ioo_mem_nhdsGT (zero_lt_one' ℝ)] with t ht using key t ht.1 ht.2
+
+open RCLike in
+/-- If a contraction `S` from an inner product space preserves the norm of `u`, then
+`‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖` for every `x`. In particular, the contact points `u` of a
+maximal-volume ellipsoid `T` satisfy `‖⟪u, x⟫‖ ≤ ‖T x‖`. -/
+theorem norm_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) {u : E}
+    (hu : ‖S u‖ = ‖u‖) (x : E) : ‖⟪u, x⟫‖ ≤ ‖u‖ * ‖S x‖ := by
+  rw [norm_inner_symm]
+  rcases eq_or_ne ⟪x, u⟫ 0 with hz | hz
+  · rw [hz, norm_zero]
+    positivity
+  have hz' : ‖⟪x, u⟫‖ ≠ 0 := norm_ne_zero_iff.2 hz
+  -- Rotate `x` by the unit scalar `ω = ⟪x, u⟫ / ‖⟪x, u⟫‖`, which makes `⟪ω • x, u⟫` real.
+  have h := S.re_inner_le_norm_mul_norm_apply hS hu ((⟪x, u⟫ / (‖⟪x, u⟫‖ : 𝕜)) • x)
+  rwa [inner_smul_left, map_smul, norm_smul, norm_div, norm_ofReal, abs_norm, div_self hz',
+    one_mul, map_div₀, conj_ofReal, div_mul_eq_mul_div, RCLike.conj_mul, ← ofReal_pow, ← ofReal_div,
+    ofReal_re, sq, mul_div_cancel_right₀ _ hz'] at h
+
+end ContinuousLinearMap
