@@ -82,7 +82,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
-  says that this count is symmetric in the two factors, and
+  says that this count is symmetric in the two factors,
+  `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
+  half of the product when the second factor has two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
   subproduct of the product of two equal or disjoint finsets.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
@@ -220,6 +222,17 @@ theorem card_filter_ne_product_comm {α : Type*} [DecidableEq α] (s t : Finset 
     #{p ∈ t ×ˢ s | p.1 ≠ p.2} = #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
   apply card_equiv (Equiv.prodComm α α)
   simp [and_comm, ne_comm]
+
+/-- If `t` has at least two elements, then pairs with distinct coordinates make up at least half
+of `s ×ˢ t`. -/
+theorem card_mul_card_le_two_mul_card_filter_ne_product {α : Type*} [DecidableEq α]
+    (s t : Finset α) (ht : 2 ≤ #t) : #s * #t ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+  have hle : #s * (#t - 1) ≤ #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+    rw [card_filter_ne_product, ← smul_eq_mul, ← sum_const]
+    exact sum_le_sum fun u _ ↦ pred_card_le_card_erase
+  calc #s * #t ≤ #s * (2 * (#t - 1)) := Nat.mul_le_mul_left _ (by omega)
+    _ = 2 * (#s * (#t - 1)) := Nat.mul_left_comm _ _ _
+    _ ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := Nat.mul_le_mul_left _ hle
 
 /-- If `s` and `t` are equal or disjoint, then for `s' ⊆ s` and `t' ⊆ t` the pairs with distinct
 coordinates in `s' ×ˢ t'` are at most a `#s' / #s`-fraction of those in `s ×ˢ t`. For
