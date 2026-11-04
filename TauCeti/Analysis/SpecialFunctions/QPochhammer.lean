@@ -40,6 +40,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
   `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
   `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))` for `‖q‖ < 1`.
+* `TauCeti.norm_tprod_one_sub_pow_mul_sub_one_le`, `TauCeti.norm_tprod_one_add_pow_sub_one_le`:
+  the product is close to `1` for small `q`,
+  `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖)) - 1`, and
+  `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)` for `‖q‖ < 1/2`.
 * `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
   `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
   `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
@@ -84,16 +88,45 @@ theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
   simpa [norm_pow, pow_succ, mul_assoc] using
     (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
 
+/-- For `‖q‖ < 1`, `∑_{n ≥ 1} ‖qⁿ w‖ = ‖q‖ ‖w‖ / (1 - ‖q‖)`. -/
+theorem tsum_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ∑' n : ℕ, ‖q ^ (n + 1) * w‖ = ‖q‖ * ‖w‖ / (1 - ‖q‖) := by
+  simp only [norm_mul, norm_pow, pow_succ]
+  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg q) hq]
+  ring
+
 /-- For `‖q‖ < 1`, `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))`. -/
 theorem norm_tprod_one_sub_pow_mul_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     ‖∏' n : ℕ, (1 - q ^ (n + 1) * w)‖ ≤ Real.exp (‖q‖ * ‖w‖ / (1 - ‖q‖)) := by
   have h := norm_tprod_one_add_le_exp_tsum (f := fun n : ℕ ↦ -(q ^ (n + 1) * w))
     (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
-  simp only [← sub_eq_add_neg, norm_neg] at h
-  refine h.trans_eq (congrArg Real.exp ?_)
-  simp only [norm_mul, norm_pow, pow_succ]
-  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg q) hq]
-  ring
+  simpa only [← sub_eq_add_neg, norm_neg, tsum_norm_pow_succ_mul hq] using h
+
+/-- For `‖q‖ < 1`, `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖)) - 1`. -/
+theorem norm_tprod_one_sub_pow_mul_sub_one_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ‖∏' n : ℕ, (1 - q ^ (n + 1) * w) - 1‖ ≤ Real.exp (‖q‖ * ‖w‖ / (1 - ‖q‖)) - 1 := by
+  have h := norm_tprod_one_add_sub_one_le (f := fun n : ℕ ↦ -(q ^ (n + 1) * w))
+    (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
+  simpa only [← sub_eq_add_neg, norm_neg, tsum_norm_pow_succ_mul hq] using h
+
+/-- For `‖q‖ < 1/2`, `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`. -/
+theorem norm_tprod_one_add_pow_sub_one_le {q : 𝕜} (hq : 2 * ‖q‖ < 1) :
+    ‖∏' n : ℕ, (1 + q ^ (n + 1)) - 1‖ ≤ ‖q‖ / (1 - 2 * ‖q‖) := by
+  set A := ‖q‖
+  have hA : 0 ≤ A := norm_nonneg q
+  have h₁ : 0 < 1 - 2 * A := by linarith
+  have h := norm_tprod_one_sub_pow_mul_sub_one_le (by linarith : A < 1) (-1)
+  simp only [mul_neg, mul_one, sub_neg_eq_add, norm_neg, norm_one] at h
+  -- `e^y ≤ 1 / (1 - y)` with `y = A / (1 - A)`, and `1 / (1 - y) - 1 = A / (1 - 2A)`.
+  have hy : A / (1 - A) < 1 := by rw [div_lt_one (by linarith)]; linarith
+  have hexp := Real.exp_bound_div_one_sub_of_interval (div_nonneg hA (by linarith)) hy
+  have heq : 1 / (1 - A / (1 - A)) - 1 = A / (1 - 2 * A) := by
+    have h₂ : 1 - A / (1 - A) = (1 - 2 * A) / (1 - A) := by
+      field_simp [show 1 - A ≠ 0 by linarith]
+      ring
+    rw [h₂, one_div_div, div_sub_one h₁.ne']
+    ring
+  linarith
 
 /-- The **theta product** `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞`, written as
 `(1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`. The product converges for `‖q‖ < 1`; otherwise the
