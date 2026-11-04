@@ -66,6 +66,14 @@ noncomputable def affineBlowupι (ha : a ∈ I) :
   Spec.map (awayEquivAffineBlowup S ha).toRingEquiv.toCommRingCatIso.hom ≫
     Proj.awayι (grade I) (monomialDegreeOne ha) (monomialDegreeOne_mem_grade ha) one_pos
 
+/-- The chart `Spec R[I/a] ⟶ Proj R[It]` is the standard open immersion of `D₊(a t)`, through
+the identification `R[It]_(a t) ≃ R[I/a]`. -/
+theorem affineBlowupι_def (ha : a ∈ I) :
+    affineBlowupι S ha =
+      Spec.map (awayEquivAffineBlowup S ha).toRingEquiv.toCommRingCatIso.hom ≫
+        Proj.awayι (grade I) (monomialDegreeOne ha) (monomialDegreeOne_mem_grade ha) one_pos :=
+  (rfl)
+
 instance (ha : a ∈ I) : IsOpenImmersion (affineBlowupι S ha) :=
   IsOpenImmersion.comp _ _
 
