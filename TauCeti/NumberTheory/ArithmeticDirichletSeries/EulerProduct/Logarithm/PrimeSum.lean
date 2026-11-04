@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Deriv
 
 import Mathlib.NumberTheory.EulerProduct.ExpLog
-import TauCeti.Analysis.Calculus.BoundedOfDerivContinuousAt
+import TauCeti.Analysis.Calculus.Deriv.Bounded
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
@@ -141,13 +141,14 @@ theorem exists_norm_primePowSum_le (hw : ∀ I : Ideal (𝓞 K), ‖w I‖ ≤ 1
     (hC : AnalyticAt ℂ C 1) (hC1 : C 1 ≠ 0)
     (hCL : ∀ z : ℂ, 1 < z.re → C z = LSeries (normCoeff K w.toIdealArithmeticFunction) z) :
     ∃ B, ∀ᶠ t : ℝ in 𝓝[>] 1, ‖w.primePowSum t‖ ≤ B := by
-  refine exists_norm_le_of_hasDerivWithinAt_of_continuousWithinAt
-    (f := fun t : ℝ ↦ w.primePowSum t) (g := fun u : ℝ ↦ logDeriv C u) ?_
-    (eventually_nhdsWithin_of_forall fun u hu ↦
-      (hasDerivAt_primePowSum hw hCL (by simpa using hu)).comp_ofReal.hasDerivWithinAt)
   have hlog : ContinuousAt (logDeriv C) ((1 : ℝ) : ℂ) := by
     simpa [logDeriv] using hC.deriv.continuousAt.div hC.continuousAt hC1
-  exact (hlog.comp Complex.continuous_ofReal.continuousAt).continuousWithinAt
+  exact exists_norm_le_of_norm_hasDerivWithin_le
+    (f := fun t : ℝ ↦ w.primePowSum t) (g := fun u : ℝ ↦ logDeriv C u)
+    (eventually_nhdsWithin_of_forall fun u hu ↦
+      (hasDerivAt_primePowSum hw hCL (by simpa using hu)).comp_ofReal.hasDerivWithinAt)
+    ((hlog.comp Complex.continuous_ofReal.continuousAt).continuousWithinAt.norm.eventually_le_const
+      (lt_add_one _))
 
 /-- **The prime sum of a continued `L`-series stays bounded.** If the `L`-series of a weight
 bounded by `1` agrees on `Re s > 1` with a function analytic and nonzero at `s = 1`, then its prime

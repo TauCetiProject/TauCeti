@@ -42,6 +42,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 * `SSet.join.edgeMk`: the edge of `K ⋆ L` from a vertex of `K` to a vertex of `L`.
 * `SSet.joinFiberZeroRetraction`: the retraction of `Δ[m]` onto its part over the vertex `0` of
   `Δ[1]`, when that part contains the vertex `0`.
+* `SSet.Subcomplex.unionJoin A B`: for subcomplexes `A` of `K` and `B` of `L`, the subcomplex
+  `(A ⋆ L) ∪ (K ⋆ B)` of `K ⋆ L`, the domain of the pushout-join of their inclusions.
 
 ## Main results
 
@@ -51,6 +53,10 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   `0`.
 * `SSet.join.exists_eq_comp_inr_or_exists_eq_comp_map`: every simplex of `K ⋆ L` comes from `L`
   or is the image of a simplex of `Δ[m] ⋆ L` under `g ⋆ L` for a simplex `g : Δ[m] ⟶ K`.
+* `SSet.Subcomplex.mem_unionJoin_iff`: a simplex of `K ⋆ L` lies in `(A ⋆ L) ∪ (K ⋆ B)` exactly
+  when its part in `K` lies in `A` or its part in `L` lies in `B`.
+* `SSet.Subcomplex.unionJoin_le_iff`: `(A ⋆ L) ∪ (K ⋆ B)` lies in a subcomplex exactly when the
+  images of `A ⋆ L` and `K ⋆ B` do.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
@@ -117,6 +123,39 @@ lemma joinFiber_ι_comp (p : X ⟶ Δ[1]) (e : Fin 2) :
   induction n using Opposite.rec with | op n
   induction n using SimplexCategory.rec with | _ n
   exact stdSimplex.ext _ _ ((mem_joinFiber_iff p e x).1 hx)
+
+/-- The vertex `j` of `Δ[m]` lies over the vertex `e` of `Δ[1]` along `q` exactly when `q` sends
+`j` to `e`. -/
+lemma obj₀Equiv_symm_mem_joinFiber_iff {m : ℕ} (q : Δ[m] ⟶ Δ[1]) (e : Fin 2) (j : Fin (m + 1)) :
+    stdSimplex.obj₀Equiv.symm j ∈ (joinFiber q e).obj (op ⦋0⦌) ↔ yonedaEquiv q j = e := by
+  simp [stdSimplex.hom_app_apply]
+
+/-- Every vertex of a simplex of `Δ[d]` over the vertex `c` of `Δ[1]` along `q` is sent to `c` by
+`q`. -/
+lemma yonedaEquiv_apply_of_mem_joinFiber {d : ℕ} {q : Δ[d] ⟶ Δ[1]} {c : Fin 2} {a : ℕ}
+    {y : Δ[d] _⦋a⦌} (hy : y ∈ (joinFiber q c).obj _) (t : Fin (a + 1)) :
+    yonedaEquiv q (y t) = c := by
+  rw [← stdSimplex.hom_app_apply]
+  exact (mem_joinFiber_iff _ _ _).1 hy t
+
+/-- A map to `Δ[k]` from the part of `Δ[d]` over a vertex `c` of `Δ[1]` is monotone on the vertices
+over `c`. -/
+lemma joinFiber_hom_vertex_le {d k : ℕ} {q : Δ[d] ⟶ Δ[1]} {c : Fin 2}
+    (g : (joinFiber q c : SSet) ⟶ Δ[k]) {j l : Fin (d + 1)} (hjl : j ≤ l)
+    (hj : yonedaEquiv q j = c) (hl : yonedaEquiv q l = c) :
+    g.app _ ⟨stdSimplex.obj₀Equiv.symm j, (obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 hj⟩ 0 ≤
+      g.app _ ⟨stdSimplex.obj₀Equiv.symm l, (obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 hl⟩ 0 := by
+  have hy : stdSimplex.edge d j l hjl ∈ (joinFiber q c).obj _ := by
+    rw [mem_joinFiber_iff]
+    intro t
+    fin_cases t <;> simpa [stdSimplex.hom_app_apply]
+  -- The edge from `j` to `l` goes to an edge of `Δ[k]` from the image of `j` to that of `l`.
+  have h : g.app _ ⟨_, hy⟩ 0 ≤ g.app _ ⟨_, hy⟩ 1 := stdSimplex.monotone_apply _ (Fin.zero_le 1)
+  rw [stdSimplex.subcomplex_hom_app_apply g _ hy 0
+      ((obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 (by simpa using hj)),
+    stdSimplex.subcomplex_hom_app_apply g _ hy 1
+      ((obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 (by simpa using hl))] at h
+  simpa only [stdSimplex.edge_apply_zero, stdSimplex.edge_apply_one] using h
 
 section retraction
 
@@ -249,6 +288,12 @@ lemma precomp_right_app (d : JoinData X K L) (g : Y ⟶ X) {n : SimplexCategory�
     (hy : y ∈ (joinFiber (d.precomp g).p 1).obj n) :
     dsimp% (d.precomp g).right.app n ⟨y, hy⟩ = d.right.app n ⟨g.app n y, hy⟩ :=
   (rfl)
+
+/-- Along join data on `Δ[k]` restricted by `g : Δ[k'] ⟶ Δ[k]`, the vertex `j` of `Δ[k']` lies over
+the vertex of `Δ[1]` over which `yonedaEquiv g j` lies. -/
+lemma yonedaEquiv_precomp_p_apply {k k' : ℕ} (d : JoinData Δ[k] K L) (g : Δ[k'] ⟶ Δ[k])
+    (j : Fin (k' + 1)) : yonedaEquiv (d.precomp g).p j = yonedaEquiv d.p (yonedaEquiv g j) := by
+  rw [precomp_p, yonedaEquiv_comp, stdSimplex.hom_app_apply]
 
 @[simp]
 lemma precomp_id (d : JoinData X K L) : d.precomp (𝟙 X) = d :=
@@ -581,6 +626,22 @@ lemma univ_right_app_inr_app {n : SimplexCategoryᵒᵖ} (x : L.obj n)
     (univ K L).right.app n ⟨(inr K L).app n x, hx⟩ = x :=
   JoinData.congr_right_app (homEquiv.apply_symm_apply _) x hx (by simp)
 
+/-- The join data of the inclusion of `K` into `K ⋆ L` restrict to the identity of `K` over the
+vertex `0`. -/
+lemma homEquiv_inl_left_app {n : SimplexCategoryᵒᵖ} (x : K.obj n)
+    (hx : x ∈ (joinFiber (homEquiv (inl K L)).p 0).obj n) :
+    (homEquiv (inl K L)).left.app n ⟨x, hx⟩ = x :=
+  (JoinData.congr_left_app (homEquiv_apply _) x hx
+    (by rwa [homEquiv_apply] at hx)).trans (univ_left_app_inl_app x _)
+
+/-- The join data of the inclusion of `L` into `K ⋆ L` restrict to the identity of `L` over the
+vertex `1`. -/
+lemma homEquiv_inr_right_app {n : SimplexCategoryᵒᵖ} (x : L.obj n)
+    (hx : x ∈ (joinFiber (homEquiv (inr K L)).p 1).obj n) :
+    (homEquiv (inr K L)).right.app n ⟨x, hx⟩ = x :=
+  (JoinData.congr_right_app (homEquiv_apply _) x hx
+    (by rwa [homEquiv_apply] at hx)).trans (univ_right_app_inr_app x _)
+
 variable (K L) in
 /-- Every simplex of the join over the vertex `0` is the inclusion of its image in `K` under the map
 to `K` of the tautological join data. -/
@@ -806,7 +867,102 @@ lemma exists_eq_comp_inr_or_exists_eq_comp_map {m : ℕ} (s : Δ[m] ⟶ join K L
     rw [← homEquiv_symm_eq_comp_map _ h, Equiv.symm_apply_apply]
   · exact Or.inl (exists_eq_comp_inr s h)
 
+/-- The join data of the image of a simplex `s` under `f ⋆ g` is the composition of the join data
+of `s` with `f` and `g`. -/
+@[simp]
+lemma objEquiv_map_app (f : K ⟶ K') (g : L ⟶ L') {n : SimplexCategory}
+    (s : (join K L).obj (op n)) :
+    objEquiv ((map f g).app _ s) = (objEquiv s).postcomp f g := by
+  rw [map, homEquiv_symm_app, Equiv.apply_symm_apply, JoinData.precomp_postcomp,
+    univ_precomp_yonedaEquiv_symm]
+
+/-- A simplex of `K ⋆ L` lies in the image of `A ⋆ L` for a subcomplex `A` of `K` exactly when its
+part in `K` lies in `A`. -/
+lemma mem_range_map_ι_id_iff (A : K.Subcomplex) {n : SimplexCategory} (s : (join K L).obj (op n)) :
+    s ∈ (Subcomplex.range (map A.ι (𝟙 L))).obj _ ↔
+      ∀ (k : SimplexCategoryᵒᵖ) (x : (stdSimplex.obj n).obj k)
+        (hx : x ∈ (joinFiber (objEquiv s).p 0).obj k),
+          (objEquiv s).left.app k ⟨x, hx⟩ ∈ A.obj k := by
+  refine ⟨?_, fun h ↦ ⟨objEquiv.symm ⟨(objEquiv s).p, Subcomplex.lift (objEquiv s).left ?_,
+    (objEquiv s).right⟩, objEquiv.injective ?_⟩⟩
+  · rintro ⟨t, rfl⟩ k x hx
+    have hx' : x ∈ (joinFiber ((objEquiv t).postcomp A.ι (𝟙 L)).p 0).obj k := by
+      rwa [← objEquiv_map_app]
+    rw [JoinData.congr_left_app (objEquiv_map_app A.ι (𝟙 L) t) x hx hx',
+      JoinData.postcomp_left_app]
+    exact Subtype.property _
+  · rintro k _ ⟨y, rfl⟩
+    exact h k y.1 y.2
+  · rw [objEquiv_map_app, Equiv.apply_symm_apply]
+    -- `Subcomplex.lift (objEquiv s).left _ ≫ A.ι` is `(objEquiv s).left` by definition, since
+    -- `Subcomplex.lift` only restricts the codomain.
+    exact JoinData.ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
+
+/-- A simplex of `K ⋆ L` lies in the image of `K ⋆ B` for a subcomplex `B` of `L` exactly when its
+part in `L` lies in `B`. -/
+lemma mem_range_map_id_ι_iff (B : L.Subcomplex) {n : SimplexCategory} (s : (join K L).obj (op n)) :
+    s ∈ (Subcomplex.range (map (𝟙 K) B.ι)).obj _ ↔
+      ∀ (k : SimplexCategoryᵒᵖ) (x : (stdSimplex.obj n).obj k)
+        (hx : x ∈ (joinFiber (objEquiv s).p 1).obj k),
+          (objEquiv s).right.app k ⟨x, hx⟩ ∈ B.obj k := by
+  refine ⟨?_, fun h ↦ ⟨objEquiv.symm ⟨(objEquiv s).p, (objEquiv s).left,
+    Subcomplex.lift (objEquiv s).right ?_⟩, objEquiv.injective ?_⟩⟩
+  · rintro ⟨t, rfl⟩ k x hx
+    have hx' : x ∈ (joinFiber ((objEquiv t).postcomp (𝟙 K) B.ι).p 1).obj k := by
+      rwa [← objEquiv_map_app]
+    rw [JoinData.congr_right_app (objEquiv_map_app (𝟙 K) B.ι t) x hx hx',
+      JoinData.postcomp_right_app]
+    exact Subtype.property _
+  · rintro k _ ⟨y, rfl⟩
+    exact h k y.1 y.2
+  · rw [objEquiv_map_app, Equiv.apply_symm_apply]
+    -- `Subcomplex.lift (objEquiv s).right _ ≫ B.ι` is `(objEquiv s).right` by definition, since
+    -- `Subcomplex.lift` only restricts the codomain.
+    exact JoinData.ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
+
 end join
+
+namespace Subcomplex
+
+variable (A : K.Subcomplex) (B : L.Subcomplex)
+
+/-- For subcomplexes `A` of `K` and `B` of `L`, the subcomplex `(A ⋆ L) ∪ (K ⋆ B)` of `K ⋆ L`: the
+domain of the pushout-join of the inclusions of `A` and `B`. -/
+def unionJoin : (join K L).Subcomplex :=
+  range (join.map A.ι (𝟙 L)) ⊔ range (join.map (𝟙 K) B.ι)
+
+/-- `(A ⋆ L) ∪ (K ⋆ B)` is the union of the images of `A ⋆ L` and `K ⋆ B` in `K ⋆ L`. -/
+lemma unionJoin_def :
+    A.unionJoin B = range (join.map A.ι (𝟙 L)) ⊔ range (join.map (𝟙 K) B.ι) := (rfl)
+
+/-- The image of `A ⋆ L` in `K ⋆ L` is contained in `(A ⋆ L) ∪ (K ⋆ B)`. -/
+lemma range_join_map_ι_id_le_unionJoin : range (join.map A.ι (𝟙 L)) ≤ A.unionJoin B :=
+  le_sup_left
+
+/-- The image of `K ⋆ B` in `K ⋆ L` is contained in `(A ⋆ L) ∪ (K ⋆ B)`. -/
+lemma range_join_map_id_ι_le_unionJoin : range (join.map (𝟙 K) B.ι) ≤ A.unionJoin B :=
+  le_sup_right
+
+/-- `(A ⋆ L) ∪ (K ⋆ B)` is contained in a subcomplex `Z` of `K ⋆ L` exactly when the images of
+`A ⋆ L` and `K ⋆ B` are. -/
+lemma unionJoin_le_iff {Z : (join K L).Subcomplex} :
+    A.unionJoin B ≤ Z ↔ range (join.map A.ι (𝟙 L)) ≤ Z ∧ range (join.map (𝟙 K) B.ι) ≤ Z :=
+  sup_le_iff
+
+/-- A simplex of `K ⋆ L` lies in `(A ⋆ L) ∪ (K ⋆ B)` exactly when its part in `K` lies in `A` or its
+part in `L` lies in `B`. -/
+lemma mem_unionJoin_iff {n : SimplexCategory} (s : (join K L).obj (op n)) :
+    s ∈ (A.unionJoin B).obj _ ↔
+      (∀ (k : SimplexCategoryᵒᵖ) (x : (stdSimplex.obj n).obj k)
+        (hx : x ∈ (joinFiber (join.objEquiv s).p 0).obj k),
+          (join.objEquiv s).left.app k ⟨x, hx⟩ ∈ A.obj k) ∨
+      ∀ (k : SimplexCategoryᵒᵖ) (x : (stdSimplex.obj n).obj k)
+        (hx : x ∈ (joinFiber (join.objEquiv s).p 1).obj k),
+          (join.objEquiv s).right.app k ⟨x, hx⟩ ∈ B.obj k := by
+  rw [unionJoin, Subfunctor.max_obj, Set.mem_union, join.mem_range_map_ι_id_iff,
+    join.mem_range_map_id_ι_iff]
+
+end Subcomplex
 
 namespace JoinData
 
