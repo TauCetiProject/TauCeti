@@ -211,6 +211,16 @@ theorem coe_toWashnitzerAlgebra (f : intWashnitzerAlgebra σ R) :
     (toWashnitzerAlgebra σ R f : MvPowerSeries σ R) = f :=
   (rfl)
 
+/-- Overconvergent series form an algebra over their integral subring by inclusion. -/
+noncomputable instance : Algebra (intWashnitzerAlgebra σ R) (washnitzerAlgebra σ R) :=
+  (toWashnitzerAlgebra σ R).toAlgebra
+
+/-- The integral-algebra action is the inclusion of the underlying series. -/
+@[simp]
+theorem algebraMap_apply (f : intWashnitzerAlgebra σ R) :
+    algebraMap (intWashnitzerAlgebra σ R) (washnitzerAlgebra σ R) f =
+      toWashnitzerAlgebra σ R f := (rfl)
+
 /-- The inclusion into `R⟨X⟩†` sends an integral overconvergent series to itself. -/
 @[simp]
 theorem toWashnitzerAlgebra_mk (f : washnitzerAlgebra σ R)
@@ -264,6 +274,13 @@ theorem coe_algebraMap (a : Subring.unitClosedBall R) :
     (algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a : MvPowerSeries σ R) =
       C (a : R) :=
   (rfl)
+
+/-- Integral coefficients act compatibly through the integral overconvergent algebra. -/
+instance : IsScalarTower (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R)
+    (washnitzerAlgebra σ R) := .of_algebraMap_eq fun a ↦ by
+  apply Subtype.ext
+  simp [IsScalarTower.algebraMap_eq (Subring.unitClosedBall R) R (washnitzerAlgebra σ R),
+    MvPowerSeries.algebraMap_apply, Algebra.algebraMap_ofSubsemiring_apply]
 
 /-- The inclusion into `R⟨X⟩†` sends the constant `a ∈ R°` to the constant `a`. -/
 @[simp]
