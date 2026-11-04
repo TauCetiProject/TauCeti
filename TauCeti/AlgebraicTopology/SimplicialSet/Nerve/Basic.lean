@@ -15,7 +15,9 @@ An `n`-simplex of the nerve `CategoryTheory.nerve C` of a category is a string
 `F : ComposableArrows C n` of composable arrows. For positions `i ≤ j` its arrow from the `i`-th
 to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij`; the simplicial
 operators of the nerve reindex these arrows
-(`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`).
+(`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`), and prepending an arrow with
+`CategoryTheory.ComposableArrows.precomp` shifts them
+(`CategoryTheory.ComposableArrows.totalArrow_precomp_succ_succ`).
 
 An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its
 `i`-th arrow is an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
@@ -62,6 +64,39 @@ theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i �
 theorem totalArrow_self (F : ComposableArrows C n) (i : Fin (n + 1)) :
     F.totalArrow i i le_rfl = ⟨F.obj i, F.obj i, 𝟙 (F.obj i)⟩ := by
   simp [totalArrow_def]
+
+/-- The first arrow of a string obtained by prepending an arrow is that arrow, including
+when its target is identified with the first vertex by an equality. -/
+@[simp]
+theorem totalArrow_precomp_zero_one {n : ℕ} (a : Quiver.Total C)
+    (F : ComposableArrows C n) (h : a.right = F.left) :
+    (F.precomp (a.hom ≫ eqToHom h)).totalArrow 0 1 (Fin.zero_le _) = a := by
+  rcases a with ⟨x, z, f⟩
+  dsimp only at h
+  subst z
+  rw [totalArrow_def]
+  simp only [precomp, Precomp.obj_zero, Precomp.obj_one, Precomp.map_zero_one,
+    eqToHom_refl, Category.comp_id]
+
+/-- An arrow from the new first vertex to a later vertex is the prepended arrow followed by
+an arrow of the original string. -/
+@[simp]
+theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
+    (f : X ⟶ F.left) (j : ℕ) (hj : j + 2 < n + 1 + 1) :
+    (F.precomp f).totalArrow 0 ⟨j + 2, hj⟩ (Nat.zero_le _) =
+      ⟨X, F.obj' (j + 1) (by omega), f ≫ F.map' 0 (j + 1) (by omega) (by omega)⟩ := by
+  -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
+  rfl
+
+/-- Arrows between shifted vertices of a prepended string are the arrows of the original
+string. -/
+@[simp]
+theorem totalArrow_precomp_succ_succ (F : ComposableArrows C n) {X : C}
+    (f : X ⟶ F.left) (i j : Fin (n + 1)) (hij : i ≤ j) :
+    (F.precomp f).totalArrow i.succ j.succ (Fin.succ_le_succ_iff.mpr hij) =
+      F.totalArrow i j hij := by
+  -- Both endpoints lie in the shifted tail, where precomp retains the original map.
+  rfl
 
 /-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
 its arrows. -/

@@ -24,8 +24,10 @@ operators continuous with no hypothesis on `C`: an operator only reindexes the a
 string. Identity arrows are among them, so the objects of the string are recorded too. When
 source, target, units and composition are continuous, every arrow of a string is a continuous
 function of its consecutive arrows, so this is the subspace topology of composable strings in the
-product of arrow spaces. For action groupoids this identification is
-`TauCeti.ActionGroupoid.nerveHomeomorph`.
+product of arrow spaces. The general recursive identification is
+`CategoryTheory.ComposableArrows.precompHomeomorph` in
+`TauCeti.Topology.CategoryTheory.ComposableArrows`. For action groupoids the explicit coordinates
+are given by `TauCeti.ActionGroupoid.nerveHomeomorph`.
 
 The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realization
 (`TauCeti.fatRealization`) of the underlying semi-simplicial space, obtained by forgetting
