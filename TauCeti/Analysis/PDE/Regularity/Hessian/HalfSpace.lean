@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Sobolev
 public import TauCeti.Analysis.Sobolev.Trace.OddReflection
+import TauCeti.Analysis.InnerProductSpace.Positive.Definite
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -29,6 +32,13 @@ against test functions on `H`, in
 `TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq_of_normalHalfSpace`.
 The constant does not depend on the position `a` of the boundary.
 
+The same estimate holds for constant-coefficient operators: if `A` is an operator on `ℝ × E`
+with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, every such `u` solving `tr (A D²u) = f` strongly
+satisfies `‖D²u‖_{Lᵖ(H)} ≤ (C / λ) ‖f‖_{Lᵖ(H)}`, with the constant `C` of the Laplacian
+(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHalfSpace`).
+For an orthonormal basis `eᵢ`, `tr (A D²u) = ∑ᵢⱼ ⟪A eⱼ, eᵢ⟫ ∂ᵢ∂ⱼu`. The constant does not depend
+on `A` beyond `λ`, which is what freezing variable coefficients near the boundary requires.
+
 This is the flat-boundary model of the global `W^{2,p}` estimates for the Dirichlet problem:
 flattening the boundary of a `C^{1,1}` domain turns the equation near a boundary point into one on
 a half-space. The zero boundary condition enters through the odd reflection of `u`, which lies in
@@ -45,10 +55,25 @@ at most `2 ‖f‖_{Lᵖ(H)}` because `ρ` preserves volume. The whole-space est
 (`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`) bounds `D²v` by
 `Δv`, and `D²v` restricts to `D²u` on `H`.
 
+For constant coefficients, only the symmetric part `S = (A + A†) / 2` of `A` enters
+(`ContinuousLinearMap.traceCLM_symmPart_comp`), because the weak Hessian is self-adjoint almost
+everywhere (`TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`). Write `S = e e†` for a linear
+automorphism `e` whose adjoint maps the normal `(1, 0)` to a positive multiple `c (1, 0)`
+(`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`). Then `e`
+maps the half-space `{a / c < x.fst}` onto `H`, and `v = u ∘ e` lies in `W^{2,p}` of that
+half-space, with zero boundary values and weak Hessian `e† ∘ D²u(e ·) ∘ e`
+(`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`). Its trace is
+`tr (D²u(e ·) e e†) = tr (S D²u) ∘ e = f ∘ e`, so the estimate for the Laplacian applies to `v`.
+Since `‖e⁻¹‖ ≤ λ^(-1/2)`, `‖D²u ∘ e‖ ≤ λ⁻¹ ‖D²v‖` pointwise, and changing variables multiplies
+the `Lᵖ` norms of `D²u ∘ e` and of `f ∘ e` by the same Jacobian factor
+(`TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`).
+
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Theorem 9.9 and §9.5, Lemma 9.12 (the estimate near a flat boundary portion, by reflection).
+  Theorem 9.9 and §9.5, Lemma 9.12 (the estimate near a flat boundary portion, by reflection),
+  and Section 6.1 (reduction of a constant-coefficient operator to the Laplacian by a linear change
+  of variables).
 -/
 
 public section
@@ -228,5 +253,82 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq_o
   filter_upwards [(traceCLM ℝ (WithLp 2 (ℝ × E))).coeFn_compLpL (Wkp.iteratedGradient 1 u),
     (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
   rw [hx, traceCLM_apply, htr]
+
+/-! ### Constant coefficients -/
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- For `A` on `ℝ × E` with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, there is a linear automorphism `e`
+with `e e† = (A + A†) / 2` and `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` that maps each half-space `{a / c < x.fst}`
+onto `{a < x.fst}`, for a fixed `c`. -/
+private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
+    {A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {lam : ℝ} (hlam : 0 < lam)
+    (hA : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) :
+    ∃ (e : WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E)) (c : ℝ),
+      (e : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+        (e : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).adjoint = (2⁻¹ : ℝ) • (A + A.adjoint) ∧
+      (∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) ∧ ∀ a : ℝ,
+        ((normalHalfSpace (E := E) (a / c) : Opens (WithLp 2 (ℝ × E))) :
+          Set (WithLp 2 (ℝ × E))) =
+          e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
+  -- the symmetric part of `A` has the same quadratic form
+  have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
+      WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric := fun x y => by
+    simp [inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
+      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right]
+    ring
+  have hSA (ξ : WithLp 2 (ℝ × E)) :
+      ⟪((2⁻¹ : ℝ) • (A + A.adjoint)) ξ, ξ⟫_ℝ = ⟪A ξ, ξ⟫_ℝ := by
+    simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
+      real_inner_comm (A ξ) ξ]
+    ring
+  set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
+  have hν : ν ≠ 0 := fun h => one_ne_zero (congrArg (fun x => (WithLp.ofLp x).1) h)
+  obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
+    ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
+      (fun ξ => (hSA ξ).symm ▸ hA ξ) hν
+  have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
+    simp [ν, WithLp.prod_inner_apply]
+  -- `(e y).fst = ⟪e y, ν⟫ = ⟪y, e† ν⟫ = c y.fst`
+  have hfst (y : WithLp 2 (ℝ × E)) : (WithLp.ofLp (e y)).1 = c * (WithLp.ofLp y).1 := by
+    rw [← hinner, ← ContinuousLinearEquiv.coe_coe, ← ContinuousLinearMap.adjoint_inner_right,
+      hcν, inner_smul_right, hinner]
+  refine ⟨e, c, hee, he, fun a => ?_⟩
+  ext y
+  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, hfst, div_lt_iff₀' hc]
+
+/-- **The Calderón–Zygmund estimate on a half-space, for constant coefficients.** Let
+`1 < p < ∞`. There is a constant `C` such that for every operator `A` on `ℝ × E` with
+`λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, every half-space `H = {x | a < x.fst}`, and every
+`u ∈ W^{2,p}(H)` whose first-order part lies in `W^{1,p}_0(H)` and which solves `tr (A D²u) = f`
+almost everywhere on `H`, with `f ∈ Lᵖ(H)`,
+
+`‖D²u‖_{Lᵖ(H)} ≤ (C / λ) ‖f‖_{Lᵖ(H)}`,
+
+where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
+endomorphisms of `ℝ × E`. The constant depends only on `E` and `p`, not on `A` beyond `λ` and not
+on `a`. Only the symmetric part of `A` enters, since `D²u` is self-adjoint almost everywhere. -/
+theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHalfSpace
+    (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ {A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {lam : ℝ}, 0 < lam →
+      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) →
+      ∀ (a : ℝ) (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p 2)
+        (f : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict
+          (normalHalfSpace (E := E) a))),
+        Wkp.firstOrder 1 u ∈ w1p0Submodule volume (normalHalfSpace a) p →
+        (∀ᵐ x ∂((volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)),
+          traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L Wkp.iteratedGradient 1 u x) = f x) →
+        ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
+  obtain ⟨C, hC⟩ :=
+    exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq_of_normalHalfSpace (E := E)
+      hp hp_top
+  refine ⟨C, fun {A lam} hlam hA a u f hu hf => ?_⟩
+  -- A linear change of variables `e` with `e e† = (A + A†) / 2` maps the half-space
+  -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
+  obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
+  obtain ⟨v, -, hD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
+  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee hlam he (hH a) hD ?_
+    fun g hg => hC (a / c) v g (h0 hu) hg
+  filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2
+  rw [A.traceCLM_symmPart_comp _ h2, h1]
 
 end TauCeti
