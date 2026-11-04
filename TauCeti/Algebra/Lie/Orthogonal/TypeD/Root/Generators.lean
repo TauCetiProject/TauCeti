@@ -141,6 +141,11 @@ theorem forkLeft_ne_forkRight : forkLeft n hn ≠ forkRight n hn := by
   simp [forkLeft, forkRight] at this
   omega
 
+/-- The penultimate fork coordinate precedes the terminal one. -/
+theorem forkLeft_lt_forkRight : forkLeft n hn < forkRight n hn := by
+  simp only [Fin.lt_def, forkLeft_val, forkRight_val]
+  omega
+
 /-- The successor of the penultimate fork coordinate is the terminal coordinate. -/
 @[simp]
 theorem chainNext_forkLeft (h : (forkLeft n hn : ℕ) + 1 < n) :

@@ -68,10 +68,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b49bb4fd588d9e9b96660ce38aa1a37ba1e95d46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: b49bb4fd588d9e9b96660ce38aa1a37ba1e95d46
+          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
