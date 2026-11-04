@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -22,6 +25,10 @@ Mathlib's `Convex.norm_image_sub_le_of_norm_fderiv_le` needs the derivative boun
 whole segment; here it is only assumed on the band, which is what is available near a level set
 of a function whose gradient is controlled only there. The proof applies the one-variable mean
 value theorem on the part of the segment where the function crosses the band.
+
+The file also records the one-variable form of Mathlib's
+`Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
+against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
 -/
 
 public section
@@ -81,3 +88,23 @@ theorem lt_apply_add_of_norm_fderiv_le {w : E → ℝ} (hw : Differentiable ℝ 
   linarith
 
 end TauCeti
+
+namespace Convex
+
+variable {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {f f' : 𝕜 → G} {s : Set 𝕜} {x y : 𝕜}
+
+/-- Variant of the mean value inequality on a convex set in dimension 1, using a bound on the
+difference between the derivative and a fixed vector `φ`, rather than a bound on the derivative
+itself. Version with `HasDerivWithinAt`. -/
+theorem norm_image_sub_le_of_norm_hasDerivWithin_le' {φ : G} {C : ℝ}
+    (hf : ∀ x ∈ s, HasDerivWithinAt f (f' x) s x) (bound : ∀ x ∈ s, ‖f' x - φ‖ ≤ C)
+    (hs : Convex ℝ s) (xs : x ∈ s) (ys : y ∈ s) : ‖f y - f x - (y - x) • φ‖ ≤ C * ‖y - x‖ := by
+  have key := hs.norm_image_sub_le_of_norm_hasDerivWithin_le (f := fun z ↦ f z - z • φ)
+    (fun z hz ↦ ((hf z hz).sub ((hasDerivWithinAt_id z s).smul_const φ)).congr_deriv
+      (by rw [one_smul])) bound xs ys
+  convert key using 2
+  rw [sub_smul]
+  abel
+
+end Convex

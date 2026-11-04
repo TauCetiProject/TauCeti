@@ -9,10 +9,13 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FormalMultilinearSeries
 public import Mathlib.Analysis.Convex.Basic
 
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Topology.MetricSpace.Pseudo.Prod
 
 /-!
 # Mixed space-time partial derivatives
@@ -72,53 +75,6 @@ open scoped Topology
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [NormedSpace ℝ E] in
-/-- A property that holds eventually near `x` in space and near `t` within `s` in time holds on a
-box `‖y - x‖ < δ`, `τ ∈ s`, `|τ - t| < δ`. -/
-private theorem exists_forall_of_eventually_prod {P : E × ℝ → Prop} {s : Set ℝ} {x : E}
-    {t : ℝ} (h : ∀ᶠ p in 𝓝 x ×ˢ 𝓝[s] t, P p) :
-    ∃ δ > 0, ∀ y, ‖y - x‖ < δ → ∀ τ ∈ s, |τ - t| < δ → P (y, τ) := by
-  obtain ⟨ε₁, hε₁, pb, hpb, hP⟩ := Metric.eventually_nhds_prod_iff.1 h
-  obtain ⟨ε₂, hε₂, h₂⟩ := Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hpb)
-  refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun y hy τ hτ hτt ↦ hP ?_ (h₂ ?_ hτ)⟩
-  · rw [dist_eq_norm]
-    exact hy.trans_le (min_le_left _ _)
-  · rw [Real.dist_eq]
-    exact hτt.trans_le (min_le_right _ _)
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- Joint continuity at `(x, t)` within `univ ×ˢ s`, as an eventual bound near `x` and near `t`
-within `s`. -/
-private theorem eventually_norm_sub_lt_of_continuousWithinAt {w : E → ℝ → F} {s : Set ℝ}
-    {x : E} {t : ℝ} (hw : ContinuousWithinAt (fun p : E × ℝ ↦ w p.1 p.2) (univ ×ˢ s) (x, t))
-    {ε : ℝ} (hε : 0 < ε) : ∀ᶠ p in 𝓝 x ×ˢ 𝓝[s] t, ‖w p.1 p.2 - w x t‖ < ε := by
-  have h : Tendsto (fun p : E × ℝ ↦ w p.1 p.2) (𝓝 x ×ˢ 𝓝[s] t) (𝓝 (w x t)) := by
-    simpa [ContinuousWithinAt, nhdsWithin_prod_eq] using hw
-  simpa [dist_eq_norm] using Metric.tendsto_nhds.1 h ε hε
-
-/-- If `v` has derivative `w τ` within a convex set `s` at every `τ ∈ s` with `|τ - t| < δ`, and
-`w τ` is within `ε` of `W` there, then the increment of `v` from `t` to such a `σ` is
-`(σ - t) • W` up to `ε |σ - t|`. -/
-private theorem norm_sub_sub_smul_le_of_hasDerivWithinAt {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {v w : ℝ → G} {W : G} {s : Set ℝ} {t σ δ ε : ℝ} (hs : Convex ℝ s)
-    (ht : t ∈ s) (hσ : σ ∈ s) (hσt : |σ - t| < δ)
-    (hw : ∀ τ ∈ s, |τ - t| < δ → HasDerivWithinAt v (w τ) s τ)
-    (hbound : ∀ τ ∈ s, |τ - t| < δ → ‖w τ - W‖ ≤ ε) :
-    ‖v σ - v t - (σ - t) • W‖ ≤ ε * |σ - t| := by
-  have hmem : ∀ τ ∈ s ∩ ball t δ, τ ∈ s ∧ |τ - t| < δ := fun τ hτ ↦
-    ⟨hτ.1, by simpa [Real.dist_eq] using hτ.2⟩
-  have key := (hs.inter (convex_ball t δ)).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun τ ↦ v τ - τ • W) (f' := fun τ ↦ w τ - W)
-    (fun τ hτ ↦
-      (((hw τ (hmem τ hτ).1 (hmem τ hτ).2).mono inter_subset_left).sub
-        ((hasDerivWithinAt_id τ _).smul_const W)).congr_deriv (by rw [one_smul]))
-    (fun τ hτ ↦ hbound τ (hmem τ hτ).1 (hmem τ hτ).2) (y := σ) (x := t)
-    ⟨ht, mem_ball_self ((abs_nonneg _).trans_lt hσt)⟩ ⟨hσ, by simpa [Real.dist_eq] using hσt⟩
-  rw [Real.norm_eq_abs] at key
-  convert key using 2
-  rw [sub_smul]
-  abel
-
 /-- **Peano's theorem on mixed partial derivatives**, differentiating a time derivative in space.
 Let `u : E → ℝ → F`, let `s ⊆ ℝ` be convex, and let `t ∈ s` be a point at which derivatives within
 `s` are unique. Suppose that near `x` in space and near `t` within `s`, the spatial derivative of
@@ -134,6 +90,7 @@ theorem hasFDerivAt_timeDeriv_of_continuousWithinAt {u : E → ℝ → F}
     (hwc : ContinuousWithinAt (fun p : E × ℝ ↦ w p.1 p.2) (univ ×ˢ s) (x, t))
     (hg : ∀ᶠ y in 𝓝 x, HasDerivWithinAt (u y) (g y) s t) :
     HasFDerivAt g (w x t) x := by
+  rw [ContinuousWithinAt, nhdsWithin_prod_eq, nhdsWithin_univ, Metric.tendsto_nhds] at hwc
   have : (𝓝[s \ {t}] t).NeBot := accPt_principal_iff_nhdsWithin.1 hst.accPt
   -- Differentiate the time difference quotients `slope (u y) t σ` in space and let `σ → t`.
   refine hasFDerivAt_of_tendstoUniformlyOnFilter (l := 𝓝[s \ {t}] t)
@@ -141,33 +98,31 @@ theorem hasFDerivAt_timeDeriv_of_continuousWithinAt {u : E → ℝ → F}
     (g' := fun _ ↦ w x t) ?_ ?_ ?_
   · rw [Metric.tendstoUniformlyOnFilter_iff]
     intro ε hε
-    obtain ⟨δ, hδ, hbox⟩ := exists_forall_of_eventually_prod
-      (hw.and (eventually_norm_sub_lt_of_continuousWithinAt hwc (half_pos hε)))
-    have hσ : ∀ᶠ σ in 𝓝[s \ {t}] t, σ ∈ s ∧ σ ≠ t ∧ |σ - t| < δ := by
-      filter_upwards [self_mem_nhdsWithin,
-        nhdsWithin_le_nhds (Metric.ball_mem_nhds t hδ)] with σ hσ hσδ
-      exact ⟨hσ.1, hσ.2, by simpa [Real.dist_eq] using hσδ⟩
-    filter_upwards [hσ.prod_mk (Metric.ball_mem_nhds x hδ)] with ⟨σ, y⟩ ⟨⟨hσs, hσt, hσδ⟩, hy⟩
-    have hy : ‖y - x‖ < δ := by simpa [dist_eq_norm] using hy
-    have key := norm_sub_sub_smul_le_of_hasDerivWithinAt (v := v y) (w := w y) hs ht hσs hσδ
-      (fun τ hτ hτδ ↦ (hbox y hy τ hτ hτδ).1) (fun τ hτ hτδ ↦ (hbox y hy τ hτ hτδ).2.le)
+    obtain ⟨δ, hδ, hbox⟩ :=
+      Metric.eventually_nhds_prod_nhdsWithin_iff.1 (hw.and (hwc _ (half_pos hε)))
+    filter_upwards [prod_mem_prod
+      (inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds (Metric.ball_mem_nhds t hδ)))
+      (Metric.ball_mem_nhds x hδ)] with ⟨σ, y⟩ ⟨⟨⟨hσs, hσt⟩, hσδ⟩, hy⟩
+    have key := (hs.inter (convex_ball t δ)).norm_image_sub_le_of_norm_hasDerivWithin_le'
+      (s := s ∩ ball t δ) (f := v y) (f' := w y)
+      (fun τ hτ ↦ (hbox y hy τ hτ.1 hτ.2).1.mono inter_subset_left)
+      (fun τ hτ ↦ (mem_ball_iff_norm.1 (hbox y hy τ hτ.1 hτ.2).2).le)
+      ⟨ht, mem_ball_self hδ⟩ ⟨hσs, hσδ⟩
     have hσt' : 0 < |σ - t| := abs_pos.2 (sub_ne_zero.2 hσt)
     rw [dist_eq_norm, slope_def_module, norm_sub_rev,
       ← inv_smul_smul₀ (sub_ne_zero.2 hσt) (w x t), ← smul_sub, norm_smul, norm_inv,
       Real.norm_eq_abs]
+    rw [Real.norm_eq_abs] at key
     calc |σ - t|⁻¹ * ‖v y σ - v y t - (σ - t) • w x t‖
         ≤ |σ - t|⁻¹ * (ε / 2 * |σ - t|) := by gcongr
       _ = ε / 2 := by field_simp
       _ < ε := half_lt_self hε
-  · obtain ⟨δ, hδ, hbox⟩ := exists_forall_of_eventually_prod hv
-    have hσ : ∀ᶠ σ in 𝓝[s \ {t}] t, σ ∈ s ∧ |σ - t| < δ := by
-      filter_upwards [self_mem_nhdsWithin,
-        nhdsWithin_le_nhds (Metric.ball_mem_nhds t hδ)] with σ hσ hσδ
-      exact ⟨hσ.1, by simpa [Real.dist_eq] using hσδ⟩
-    filter_upwards [hσ.prod_mk (Metric.ball_mem_nhds x hδ)] with ⟨σ, y⟩ ⟨⟨hσs, hσδ⟩, hy⟩
-    have hy : ‖y - x‖ < δ := by simpa [dist_eq_norm] using hy
+  · obtain ⟨δ, hδ, hbox⟩ := Metric.eventually_nhds_prod_nhdsWithin_iff.1 hv
+    filter_upwards [prod_mem_prod
+      (inter_mem self_mem_nhdsWithin (nhdsWithin_le_nhds (Metric.ball_mem_nhds t hδ)))
+      (Metric.ball_mem_nhds x hδ)] with ⟨σ, y⟩ ⟨⟨hσs, hσδ⟩, hy⟩
     simp only [slope_def_module]
-    exact ((hbox y hy σ hσs hσδ).sub (hbox y hy t ht (by simpa using hδ))).const_smul _
+    exact ((hbox y hy σ hσs.1 hσδ).sub (hbox y hy t ht (mem_ball_self hδ))).const_smul _
   · filter_upwards [hg] with y hy
     exact hasDerivWithinAt_iff_tendsto_slope.1 hy
 
@@ -184,14 +139,13 @@ theorem hasDerivWithinAt_spatialDeriv_of_continuousWithinAt {u : E → ℝ → F
     (hw : ∀ᶠ p in 𝓝 x ×ˢ 𝓝[s] t, HasFDerivAt (g · p.2) (w p.1 p.2) p.1)
     (hwc : ContinuousWithinAt (fun p : E × ℝ ↦ w p.1 p.2) (univ ×ˢ s) (x, t)) :
     HasDerivWithinAt v (w x t) s t := by
+  rw [ContinuousWithinAt, nhdsWithin_prod_eq, nhdsWithin_univ, Metric.tendsto_nhds] at hwc
   rw [hasDerivWithinAt_iff_isLittleO, Asymptotics.isLittleO_iff]
   intro c hc
-  obtain ⟨δ, hδ, hbox⟩ := exists_forall_of_eventually_prod
-    ((hg.and hw).and (eventually_norm_sub_lt_of_continuousWithinAt hwc hc))
+  obtain ⟨δ, hδ, hbox⟩ := Metric.eventually_nhds_prod_nhdsWithin_iff.1 ((hg.and hw).and (hwc c hc))
   have hvt : HasFDerivAt (u · t) (v t) x := hv.self_of_nhdsWithin ht
   filter_upwards [hv, self_mem_nhdsWithin, nhdsWithin_le_nhds (Metric.ball_mem_nhds t hδ)]
     with σ hvσ hσs hσδ
-  have hσδ : |σ - t| < δ := by simpa [Real.dist_eq] using hσδ
   set W := w x t
   -- The spatial increment of `u(·, σ) - u(·, t)` is `(σ - t) • W` up to `c |σ - t|` per unit
   -- length, by the mean value theorem in time and then in space.
@@ -199,51 +153,23 @@ theorem hasDerivWithinAt_spatialDeriv_of_continuousWithinAt {u : E → ℝ → F
     (hvσ.sub hvt).sub (W.hasFDerivAt.const_smul (σ - t))
   refine hψ.le_of_lip' (by positivity) ?_
   filter_upwards [Metric.ball_mem_nhds x hδ] with y hy
-  have hy : ‖y - x‖ < δ := by simpa [dist_eq_norm] using hy
   -- The time derivative of `τ ↦ u y τ - u x τ` is within `c ‖y - x‖` of `W (y - x)`.
-  have hspace : ∀ τ ∈ s, |τ - t| < δ → ‖(g y τ - g x τ) - W (y - x)‖ ≤ c * ‖y - x‖ := by
-    intro τ hτ hτδ
-    have hmem : ∀ z ∈ ball x δ, ‖z - x‖ < δ := fun z hz ↦ by simpa [dist_eq_norm] using hz
-    have key := (convex_ball x δ).norm_image_sub_le_of_norm_hasFDerivWithin_le
-      (f := fun z ↦ g z τ - W z) (f' := fun z ↦ w z τ - W)
-      (fun z hz ↦ ((hbox z (hmem z hz) τ hτ hτδ).1.2.sub W.hasFDerivAt).hasFDerivWithinAt)
-      (fun z hz ↦ (hbox z (hmem z hz) τ hτ hτδ).2.le) (mem_ball_self hδ)
-      (by simpa [dist_eq_norm] using hy)
-    convert key using 2
-    rw [map_sub]
-    abel
-  have htime := norm_sub_sub_smul_le_of_hasDerivWithinAt (v := fun τ ↦ u y τ - u x τ)
-    (w := fun τ ↦ g y τ - g x τ) (W := W (y - x)) hs ht hσs hσδ
-    (fun τ hτ hτδ ↦ (hbox y hy τ hτ hτδ).1.1.sub (hbox x (by simpa using hδ) τ hτ hτδ).1.1)
-    hspace
+  have hspace : ∀ τ ∈ s ∩ ball t δ, ‖(g y τ - g x τ) - W (y - x)‖ ≤ c * ‖y - x‖ := fun τ hτ ↦
+    (convex_ball x δ).norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := (g · τ))
+      (fun z hz ↦ (hbox z hz τ hτ.1 hτ.2).1.2.hasFDerivWithinAt)
+      (fun z hz ↦ (mem_ball_iff_norm.1 (hbox z hz τ hτ.1 hτ.2).2).le) (mem_ball_self hδ) hy
+  have htime := (hs.inter (convex_ball t δ)).norm_image_sub_le_of_norm_hasDerivWithin_le'
+    (s := s ∩ ball t δ) (f := fun τ ↦ u y τ - u x τ) (f' := fun τ ↦ g y τ - g x τ)
+    (fun τ hτ ↦ ((hbox y hy τ hτ.1 hτ.2).1.1.sub
+      (hbox x (mem_ball_self hδ) τ hτ.1 hτ.2).1.1).mono inter_subset_left)
+    hspace ⟨ht, mem_ball_self hδ⟩ ⟨hσs, hσδ⟩
+  rw [Real.norm_eq_abs] at htime
   rw [Real.norm_eq_abs, mul_assoc, mul_comm |σ - t|, ← mul_assoc]
   convert htime using 2
   simp only [map_sub, smul_sub, sub_smul]
   abel
 
 section Iterated
-
-/-- Time derivatives commute with currying the first variable of a multilinear map. -/
-private theorem hasDerivWithinAt_curryLeft_iff {n : ℕ}
-    {f : ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F}
-    {f' : ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F} {s : Set ℝ} {t : ℝ} :
-    HasDerivWithinAt (fun σ ↦ (f σ).curryLeft) f'.curryLeft s t ↔ HasDerivWithinAt f f' s t := by
-  let L := continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F
-  -- `curryLeft` is the linear homeomorphism `L`, which commutes with difference quotients.
-  have hL : ∀ g, g.curryLeft = L g := fun _ ↦ rfl
-  have hslope : slope (fun σ ↦ (f σ).curryLeft) t = fun σ ↦ L (slope f t σ) := funext fun σ ↦ by
-    simp only [slope_def_module, hL, L.map_sub, L.map_smul]
-  refine (hasDerivWithinAt_iff_tendsto_slope (f := fun σ ↦ (f σ).curryLeft)).trans
-    (Iff.trans ?_ hasDerivWithinAt_iff_tendsto_slope.symm)
-  rw [hslope, hL]
-  exact L.toHomeomorph.isInducing.tendsto_nhds_iff.symm
-
-/-- Continuity is preserved by currying the first variable of a multilinear map. -/
-private theorem continuousOn_curryLeft {X : Type*} [TopologicalSpace X] {n : ℕ}
-    {f : X → ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F} {S : Set X}
-    (hf : ContinuousOn f S) : ContinuousOn (fun p ↦ (f p).curryLeft) S :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F).continuous.comp_continuousOn
-    hf
 
 variable {Q : ℕ → E → ℝ → FormalMultilinearSeries ℝ E F} {s : Set ℝ} {I : Set (ℕ × ℕ)}
 
@@ -274,16 +200,20 @@ theorem hasFDerivAt_of_isLowerSet (hI : IsLowerSet I) (hs : Convex ℝ s)
     have hI₂ : (r + 1, n) ∈ I := hI (by simp) hrn
     -- `Q (r + 1) · t n` is the time derivative of `Q r · · n`, whose spatial derivative is
     -- `Q r · · (n + 1)` by induction; the time derivative of the latter is the jointly continuous
-    -- mixed derivative `Q (r + 1) · · (n + 1)`.
+    -- mixed derivative `Q (r + 1) · · (n + 1)`. Spatial derivatives are identified through
+    -- `curryLeft`, a continuous linear equivalence, which commutes with time derivatives.
+    let L : (E [×n + 1]→L[ℝ] F) ≃L[ℝ] (E →L[ℝ] E [×n]→L[ℝ] F) :=
+      (continuousMultilinearCurryLeftEquiv ℝ _ F).toContinuousLinearEquiv
     refine hasFDerivAt_timeDeriv_of_continuousWithinAt (u := fun z τ ↦ Q r z τ n)
       (v := fun z τ ↦ (Q r z τ (n + 1)).curryLeft)
       (w := fun z τ ↦ (Q (r + 1) z τ (n + 1)).curryLeft) hs hts (hs' t hts) ?_ ?_
-      (continuousOn_curryLeft (hc r n hrn) (y, t) ⟨mem_univ _, hts⟩)
+      (L.continuous.comp_continuousOn (hc r n hrn) (y, t) ⟨mem_univ _, hts⟩)
       (Eventually.of_forall fun z ↦ ht r n hI₂ z t hts)
     · filter_upwards [prod_mem_prod univ_mem self_mem_nhdsWithin] with p hp
       exact ih hI₁ hp.2 p.1
     · filter_upwards [prod_mem_prod univ_mem self_mem_nhdsWithin] with p hp
-      exact hasDerivWithinAt_curryLeft_iff.2 (ht r (n + 1) hrn p.1 p.2 hp.2)
+      exact (L.hasFDerivAt (F := E →L[ℝ] E [×n]→L[ℝ] F)).comp_hasDerivWithinAt p.2
+        (ht r (n + 1) hrn p.1 p.2 hp.2)
 
 /-- **Mixed derivatives with spatial derivatives taken last.** Let `I ⊆ ℕ × ℕ` be a lower set of
 orders, and let `s ⊆ ℝ` be convex. Suppose that
@@ -310,11 +240,16 @@ theorem hasDerivWithinAt_of_isLowerSet (hI : IsLowerSet I) (hs : Convex ℝ s)
     have hI₂ : (r + 1, n) ∈ I := hI (by simp) hrn
     -- `Q r y · (n + 1)` is the spatial derivative of `Q r · · n`, whose time derivative is
     -- `Q (r + 1) · · n` by induction; the spatial derivative of the latter is the jointly
-    -- continuous mixed derivative `Q (r + 1) · · (n + 1)`.
-    refine hasDerivWithinAt_curryLeft_iff.1 <|
-      hasDerivWithinAt_spatialDeriv_of_continuousWithinAt (u := fun z τ ↦ Q r z τ n)
-        (g := fun z τ ↦ Q (r + 1) z τ n) (w := fun z τ ↦ (Q (r + 1) z τ (n + 1)).curryLeft) hs hts
-        ?_ ?_ ?_ (continuousOn_curryLeft (hc r n hrn) (y, t) ⟨mem_univ _, hts⟩)
+    -- continuous mixed derivative `Q (r + 1) · · (n + 1)`. Spatial derivatives are identified
+    -- through `curryLeft`, a continuous linear equivalence, which commutes with time derivatives.
+    let L : (E [×n + 1]→L[ℝ] F) ≃L[ℝ] (E →L[ℝ] E [×n]→L[ℝ] F) :=
+      (continuousMultilinearCurryLeftEquiv ℝ _ F).toContinuousLinearEquiv
+    suffices key : HasDerivWithinAt (fun τ ↦ L (Q r y τ (n + 1))) (L (Q (r + 1) y t (n + 1))) s t by
+      simpa [Function.comp_def] using
+        (L.symm.hasFDerivAt (E := E →L[ℝ] E [×n]→L[ℝ] F)).comp_hasDerivWithinAt t key
+    refine hasDerivWithinAt_spatialDeriv_of_continuousWithinAt (u := fun z τ ↦ Q r z τ n)
+      (g := fun z τ ↦ Q (r + 1) z τ n) (w := fun z τ ↦ (Q (r + 1) z τ (n + 1)).curryLeft) hs hts
+      ?_ ?_ ?_ (L.continuous.comp_continuousOn (hc r n hrn) (y, t) ⟨mem_univ _, hts⟩)
     · filter_upwards [self_mem_nhdsWithin] with τ hτ
       exact hx r n hI₁ τ hτ y
     · filter_upwards [prod_mem_prod univ_mem self_mem_nhdsWithin] with p hp
