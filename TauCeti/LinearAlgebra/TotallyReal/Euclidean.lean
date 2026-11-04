@@ -16,7 +16,8 @@ The real subspace `ℝⁿ ⊆ ℂⁿ` of vectors with real coordinates (`TauCeti
 totally real. Its image `M ℝⁿ` under a complex matrix (`Matrix.realImage`) is the real span of the
 columns of `M`. For invertible `M` it is again maximal totally real, and it only depends on `M` up
 to right multiplication by an invertible real matrix: two invertible matrices with the same image
-of `ℝⁿ` differ by such a matrix.
+of `ℝⁿ` differ by such a matrix. For unitary `M` it is moreover isotropic for the standard
+symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
 
 ## Main declarations
 
@@ -26,6 +27,10 @@ of `ℝⁿ` differ by such a matrix.
   for invertible `M` (`Matrix.isMaximalTotallyReal_realImage`).
 * `Matrix.realImage_mul_map_ofReal`, `Matrix.exists_eq_mul_map_ofReal`: `M ℝⁿ` determines an
   invertible `M` up to right multiplication by an invertible real matrix.
+* `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
+  continuous linear automorphism of `ℂⁿ` is its image under the automorphism.
+* `TauCeti.im_inner_eq_zero_of_mem_realImage`: the subspace `U ℝⁿ` is isotropic for
+  `Im ⟪·, ·⟫` when `U` is unitary.
 -/
 
 public section
@@ -136,8 +141,9 @@ theorem realImage_mul (M N : Matrix n n ℂ) :
 theorem realImage_map_ofReal {N : Matrix n n ℝ} (hN : IsUnit N) :
     (N.map ((↑) : ℝ → ℂ)).realImage = realSubspace n := by
   refine le_antisymm (realImage_map_ofReal_le N) fun v hv ↦ ?_
-  have hmul : N.map ((↑) : ℝ → ℂ) * N⁻¹.map ((↑) : ℝ → ℂ) = 1 := by
-    rw [← map_ofReal_mul, mul_nonsing_inv N ((isUnit_iff_isUnit_det _).1 hN), map_ofReal_one]
+  have hmul : N.map ((↑) : ℝ → ℂ) * N⁻¹.map ((↑) : ℝ → ℂ) = 1 :=
+    (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans
+      ((congrArg _ (mul_nonsing_inv N ((isUnit_iff_isUnit_det _).1 hN))).trans (map_one _))
   have h := congrArg (fun M : Matrix n n ℂ ↦ toEuclideanCLM (𝕜 := ℂ) M v) hmul
   simp only [map_mul, map_one, mul_apply_eq_comp, one_apply_eq_self] at h
   refine ⟨_, realImage_map_ofReal_le N⁻¹ ⟨v, hv, rfl⟩, ?_⟩
@@ -176,4 +182,33 @@ theorem exists_eq_mul_map_ofReal {M M' : GL n ℂ}
     apply Complex.ext <;> simp [hX i j]
   rw [hX', ← mul_assoc, Units.mul_inv, one_mul]
 
+/-- The image of `ℝⁿ` under the matrix of a continuous linear automorphism of `ℂⁿ` is its image
+under the automorphism. -/
+theorem GeneralLinearGroup.realImage_ofEuclideanCLE
+    (D : EuclideanSpace ℂ n ≃L[ℂ] EuclideanSpace ℂ n) :
+    (GeneralLinearGroup.ofEuclideanCLE D : Matrix n n ℂ).realImage =
+      (realSubspace n).map ((D.toLinearEquiv : EuclideanSpace ℂ n →ₗ[ℂ] _).restrictScalars ℝ) := by
+  rw [realImage_eq_map_toEuclideanCLE (GeneralLinearGroup.ofEuclideanCLE D).det_ne_zero,
+    GeneralLinearGroup.toEuclideanCLE_ofEuclideanCLE]
+
 end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The image of `ℝⁿ` under a unitary matrix is isotropic for the standard symplectic form
+`Im ⟪·, ·⟫` of `ℂⁿ`; being maximal totally real, it is a Lagrangian subspace. -/
+theorem im_inner_eq_zero_of_mem_realImage {U : Matrix n n ℂ} (hU : U ∈ unitaryGroup n ℂ)
+    {v w : EuclideanSpace ℂ n} (hv : v ∈ U.realImage) (hw : w ∈ U.realImage) :
+    (inner ℂ v w).im = 0 := by
+  obtain ⟨x, hx, rfl⟩ := mem_realImage.1 hv
+  obtain ⟨y, hy, rfl⟩ := mem_realImage.1 hw
+  simp only [mem_unitaryGroup_iff_inner_toEuclideanCLM.1 hU x y, PiLp.inner_apply,
+    Complex.im_sum]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  simp [Complex.mul_im, (mem_realSubspace.1 hx) i, (mem_realSubspace.1 hy) i]
+
+end TauCeti

@@ -50,7 +50,9 @@ A square matrix is unitary exactly when its continuous linear map preserves the 
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
   `apply`, `symm_apply`, coercion and determinant lemmas;
 * `Matrix.GeneralLinearGroup.ofEuclideanCLE` — the invertible matrix of a continuous linear
-  automorphism, inverse to `Matrix.toEuclideanCLE` and continuous in families.
+  automorphism, inverse to `Matrix.toEuclideanCLE`; both directions are continuous in families
+  (`Matrix.GeneralLinearGroup.continuous_ofEuclideanCLE`,
+  `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`).
 -/
 
 public section
@@ -215,6 +217,15 @@ theorem GeneralLinearGroup.continuous_ofEuclideanCLE {X : Type*} [TopologicalSpa
     (hD : Continuous fun x ↦ (D x : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
     Continuous fun x ↦ GeneralLinearGroup.ofEuclideanCLE (D x) :=
   Units.isOpenEmbedding_val.continuous_iff.2 (continuous_toEuclideanCLM_symm.comp hD)
+
+/-- The continuous linear equivalence of a continuous family of invertible matrices depends
+continuously on the parameter. -/
+theorem GeneralLinearGroup.continuous_toEuclideanCLE {X : Type*} [TopologicalSpace X]
+    {A : X → GL ι 𝕜} (hA : Continuous A) :
+    Continuous fun x ↦ ((A x : Matrix ι ι 𝕜).toEuclideanCLE (A x).det_ne_zero :
+      EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
+  simp only [coe_toEuclideanCLE]
+  exact continuous_toEuclideanCLM.comp (Units.continuous_val.comp hA)
 
 end Invertible
 

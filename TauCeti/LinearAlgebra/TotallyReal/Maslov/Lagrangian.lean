@@ -16,9 +16,9 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 A loop `Λ t = A t L₀` of maximal totally real subspaces of `ℂⁿ` (`TauCeti.TotallyRealLoop`) has
 the Maslov index of a loop `t ↦ U t ℝⁿ` with every `U t` unitary
 (`TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`). Each `U t ℝⁿ` is Lagrangian for the
-standard symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`. This is how the Maslov index of a totally real
-boundary condition is compared with invariants defined only for Lagrangian loops, such as the
-Robbin–Salamon index of their closed-loop specialization.
+standard symplectic form `Im ⟪·, ·⟫` of `ℂⁿ` (`TauCeti.im_inner_eq_zero_of_mem_realImage`). This
+is how the Maslov index of a totally real boundary condition is compared with invariants defined
+only for Lagrangian loops, such as the Robbin–Salamon index of their closed-loop specialization.
 
 The two loops are joined by a homotopy through loops of maximal totally real subspaces with
 continuous frames, built as follows. Write `Λ t = M t ℝⁿ` (`Matrix.realImage`) for a continuous
@@ -45,8 +45,6 @@ contraction of `M` need not close up.
 * `TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`: every loop of maximal totally real
   subspaces of `ℂⁿ` has the Maslov index of a loop `t ↦ U t ℝⁿ` with `U` a continuous path of
   unitary matrices.
-* `TauCeti.im_inner_eq_zero_of_mem_realImage`: the subspace `U ℝⁿ` is isotropic for
-  `Im ⟪·, ·⟫` when `U` is unitary.
 
 ## References
 
@@ -74,33 +72,9 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 `Re ⟪v, w⟫` of `ℂⁿ`. -/
 private abbrev realGram (M : Matrix n n ℂ) : Matrix n n ℝ := (Mᴴ * M).map Complex.re
 
-omit [DecidableEq n] in
-private theorem realGram_mul_map_ofReal (M : Matrix n n ℂ) (N : Matrix n n ℝ) :
-    realGram (M * N.map ((↑) : ℝ → ℂ)) = Nᵀ * realGram M * N := by
-  have h : (M * N.map ((↑) : ℝ → ℂ))ᴴ * (M * N.map ((↑) : ℝ → ℂ)) =
-      Nᵀ.map ((↑) : ℝ → ℂ) * (Mᴴ * M) * N.map ((↑) : ℝ → ℂ) := by
-    rw [conjTranspose_mul, ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
-      conjTranspose_eq_transpose_of_trivial]
-    simp only [Matrix.mul_assoc]
-  rw [realGram, h, map_re_mul_map_ofReal, map_re_map_ofReal_mul]
-
 /-- The real Gram matrix of an invertible complex matrix is positive definite. -/
-private theorem posDef_realGram (M : GL n ℂ) : (realGram (M : Matrix n n ℂ)).PosDef := by
-  have hK : ((M : Matrix n n ℂ)ᴴ * M).PosDef :=
-    Matrix.PosDef.conjTranspose_mul_self _ (Matrix.mulVec_injective_of_isUnit M.isUnit)
-  refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ fun x hx ↦ ?_
-  · ext i j
-    have := congrFun (congrFun hK.1 i) j
-    simp only [conjTranspose_apply, RCLike.star_def] at this
-    simp only [conjTranspose_apply, map_apply, star_trivial, ← this, Complex.conj_re]
-  · set xc : n → ℂ := fun i ↦ (x i : ℂ)
-    have hxc : xc ≠ 0 := fun h ↦ hx (funext fun i ↦ by simpa [xc] using congrFun h i)
-    have hpos := hK.dotProduct_mulVec_pos hxc
-    have hre : (star xc ⬝ᵥ (((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)) *ᵥ xc)).re =
-        star x ⬝ᵥ (realGram (M : Matrix n n ℂ) *ᵥ x) := by
-      simp [xc, dotProduct, mulVec, Complex.re_sum, Finset.mul_sum]
-    rw [← hre]
-    exact (Complex.pos_iff.1 hpos).1
+private theorem posDef_realGram (M : GL n ℂ) : (realGram (M : Matrix n n ℂ)).PosDef :=
+  (PosDef.conjTranspose_mul_self _ (mulVec_injective_of_isUnit M.isUnit)).map_re
 
 /-- The real matrix `Re (Mᴴ M) ^ (-1/2)`. Multiplying `M` by it on the right makes the columns
 orthonormal for `Re ⟪·, ·⟫`. -/
@@ -142,7 +116,8 @@ private theorem realImage_orthoFrame (M : GL n ℂ) :
 
 private theorem realGram_orthoFrame (M : GL n ℂ) :
     realGram (orthoFrame M : Matrix n n ℂ) = 1 := by
-  rw [coe_orthoFrame, realGram_mul_map_ofReal, gramNormalizer_mul_realGram_mul]
+  rw [coe_orthoFrame, realGram, map_re_conjTranspose_mul_self_mul_map_ofReal,
+    gramNormalizer_mul_realGram_mul]
 
 private theorem continuous_orthoFrame {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
     (hM : Continuous M) : Continuous fun x ↦ orthoFrame (M x) := by
@@ -163,8 +138,8 @@ private theorem exists_transpose_mul_self_eq_one {B B' : GL n ℂ}
     ∃ O : Matrix n n ℝ, Oᵀ * O = 1 ∧ (B' : Matrix n n ℂ) = B * O.map ((↑) : ℝ → ℂ) := by
   obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal h
   refine ⟨O, ?_, hO⟩
-  have := realGram_mul_map_ofReal (B : Matrix n n ℂ) O
-  rwa [← hO, hB', hB, mul_one, eq_comm] at this
+  have := map_re_conjTranspose_mul_self_mul_map_ofReal (B : Matrix n n ℂ) O
+  rwa [← hO, ← realGram, ← realGram, hB', hB, mul_one, eq_comm] at this
 
 /-- **The Lagrangian deformation of a closed frame.** A continuous path `M` of invertible complex
 matrices with `M 0 ℝⁿ = M 1 ℝⁿ` is deformed, through continuous paths `F (s, ·)` with
@@ -199,22 +174,6 @@ private theorem exists_frameHomotopy {M : I → GL n ℂ} (hM : Continuous M)
 
 /-! ### Loops of totally real subspaces of `ℂⁿ` -/
 
-/-- The continuous linear automorphism of `ℂⁿ` given by an invertible matrix. -/
-private abbrev frameCLE (A : GL n ℂ) : EuclideanSpace ℂ n ≃L[ℂ] EuclideanSpace ℂ n :=
-  (A : Matrix n n ℂ).toEuclideanCLE A.det_ne_zero
-
-private theorem realImage_ofEuclideanCLE (D : EuclideanSpace ℂ n ≃L[ℂ] EuclideanSpace ℂ n) :
-    (GeneralLinearGroup.ofEuclideanCLE D : Matrix n n ℂ).realImage =
-      (realSubspace n).map ((D.toLinearEquiv : EuclideanSpace ℂ n →ₗ[ℂ] _).restrictScalars ℝ) := by
-  rw [realImage_eq_map_toEuclideanCLE (GeneralLinearGroup.ofEuclideanCLE D).det_ne_zero,
-    GeneralLinearGroup.toEuclideanCLE_ofEuclideanCLE]
-
-private theorem continuous_coe_frameCLE {X : Type*} [TopologicalSpace X] {F : X → GL n ℂ}
-    (hF : Continuous F) :
-    Continuous fun x ↦ (frameCLE (F x) : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) := by
-  simp only [frameCLE, coe_toEuclideanCLE]
-  exact continuous_toEuclideanCLM.comp (Units.continuous_val.comp hF)
-
 /-- **Loops of totally real subspaces deform to Lagrangian loops.** Every loop `Λ` of maximal
 totally real subspaces of `ℂⁿ` has the Maslov index of a loop `t ↦ U t ℝⁿ` of Lagrangian
 subspaces, for a continuous path `U` of unitary matrices. -/
@@ -234,7 +193,7 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
       EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n)))).congr fun _ ↦
         ContinuousLinearEquiv.comp_coe _ _
   have hMΛ (t : I) : (M t : Matrix n n ℂ).realImage = Λ t := by
-    rw [realImage_ofEuclideanCLE, hA t, ← hC, ← Submodule.map_comp]
+    rw [GeneralLinearGroup.realImage_ofEuclideanCLE, hA t, ← hC, ← Submodule.map_comp]
     refine congrArg (fun f ↦ (realSubspace n).map f) (LinearMap.ext fun v ↦ ?_)
     simp
   obtain ⟨F, hFc, hF0, hFclosed, hF1⟩ :=
@@ -243,30 +202,20 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
   let Λ' : TotallyRealLoop (EuclideanSpace ℂ n) :=
     { toFun := fun t ↦ (F (1, t) : Matrix n n ℂ).realImage
       exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
-        fun t ↦ frameCLE (F (1, t)), continuous_coe_frameCLE hF1c,
+        fun t ↦ (F (1, t) : Matrix n n ℂ).toEuclideanCLE (F (1, t)).det_ne_zero,
+        GeneralLinearGroup.continuous_toEuclideanCLE hF1c,
         fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
       toFun_zero_eq_toFun_one := hFclosed 1 }
   refine ⟨fun t ↦ ⟨F (1, t), hF1 t⟩, (Units.continuous_val.comp hF1c).subtype_mk _,
     Λ', fun t ↦ rfl, ?_⟩
   refine (Λ.maslovIndex_eq_of_homotopy Λ' isMaximalTotallyReal_realSubspace
-    (fun p ↦ frameCLE (F p)) (continuous_coe_frameCLE hFc) (fun t ↦ ?_) (fun t ↦ ?_)
+    (fun p ↦ (F p : Matrix n n ℂ).toEuclideanCLE (F p).det_ne_zero)
+    (GeneralLinearGroup.continuous_toEuclideanCLE hFc) (fun t ↦ ?_) (fun t ↦ ?_)
     (fun s ↦ ?_)).symm
   · rw [← realImage_eq_map_toEuclideanCLE, ← hMΛ]
     exact (hF0 t).symm
   · rw [← realImage_eq_map_toEuclideanCLE]
   · rw [← realImage_eq_map_toEuclideanCLE, ← realImage_eq_map_toEuclideanCLE]
     exact hFclosed s
-
-/-- The image of `ℝⁿ` under a unitary matrix is isotropic for the standard symplectic form
-`Im ⟪·, ·⟫` of `ℂⁿ`; being maximal totally real, it is a Lagrangian subspace. -/
-theorem im_inner_eq_zero_of_mem_realImage {U : Matrix n n ℂ} (hU : U ∈ unitaryGroup n ℂ)
-    {v w : EuclideanSpace ℂ n} (hv : v ∈ U.realImage) (hw : w ∈ U.realImage) :
-    (inner ℂ v w).im = 0 := by
-  obtain ⟨x, hx, rfl⟩ := mem_realImage.1 hv
-  obtain ⟨y, hy, rfl⟩ := mem_realImage.1 hw
-  simp only [mem_unitaryGroup_iff_inner_toEuclideanCLM.1 hU x y, PiLp.inner_apply,
-    Complex.im_sum]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  simp [Complex.mul_im, (mem_realSubspace.1 hx) i, (mem_realSubspace.1 hy) i]
 
 end TauCeti
