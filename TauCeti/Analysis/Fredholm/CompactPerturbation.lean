@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 
 import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
@@ -100,15 +101,6 @@ theorem isFredholm_one_add {K : E →L[𝕜] E} (hK : IsCompactOperator K) :
 
 variable {T C : E →L[𝕜] F} {S : F →L[𝕜] E}
 
-omit [IsRCLikeNormedField 𝕜] [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- The a priori estimate attached to a left parametrix: `x = S (T x) - (S ∘ T - 1) x`. -/
-private lemma norm_le_opNorm_mul_norm_add_norm_comp_sub_one (x : E) :
-    ‖x‖ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : E →L[𝕜] E) x‖ := by
-  have hx : x = S (T x) - (S.comp T - 1 : E →L[𝕜] E) x := by simp
-  calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : E →L[𝕜] E) x‖ := congrArg _ hx
-    _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : E →L[𝕜] E) x‖ := norm_sub_le _ _
-    _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : E →L[𝕜] E) x‖ := by gcongr; exact S.le_opNorm _
-
 omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- An operator with a left parametrix modulo compact operators has finite-dimensional kernel:
 if `S ∘ T - 1` is compact then `ker T` is finite dimensional. No completeness of `E` or `F` is
@@ -116,7 +108,8 @@ needed. -/
 theorem _root_.ContinuousLinearMap.finiteDimensional_ker_of_isCompactOperator_comp_sub_one
     (T : E →L[𝕜] F) {S : F →L[𝕜] E} (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E)) :
     FiniteDimensional 𝕜 T.ker :=
-  T.finiteDimensional_ker_of_compact_estimate hST norm_le_opNorm_mul_norm_add_norm_comp_sub_one
+  T.finiteDimensional_ker_of_compact_estimate hST
+    (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
 
 omit [CompleteSpace F] in
 /-- An operator on a Banach space with a left parametrix modulo compact operators has closed
@@ -124,7 +117,7 @@ range: if `S ∘ T - 1` is compact then `range T` is closed. -/
 theorem _root_.ContinuousLinearMap.isClosed_range_of_isCompactOperator_comp_sub_one
     (T : E →L[𝕜] F) {S : F →L[𝕜] E} (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E)) :
     IsClosed (T.range : Set F) :=
-  T.isClosed_range_of_compact_estimate hST norm_le_opNorm_mul_norm_add_norm_comp_sub_one
+  T.isClosed_range_of_compact_estimate hST (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
 
 omit [CompleteSpace E] in
 /-- An operator with a right parametrix modulo compact operators has finite-codimensional range:
