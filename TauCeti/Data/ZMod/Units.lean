@@ -71,17 +71,17 @@ public section
 variable {d : ℕ}
 
 /-- **An integer is a unit mod `d` exactly when it is coprime to `d`.** The `Int.gcd` form is
-what consumers of `Nat.Coprime` want; `ZMod.coe_int_isUnit_iff_isCoprime` states the same
+what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
 equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
 theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
     IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
-  (ZMod.coe_int_isUnit_iff_isCoprime _ _).trans
+  (ZMod.isUnit_intCast_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 
 /-- An odd integer is a unit modulo any power of two, including exponent zero. -/
 theorem ZMod.isUnit_intCast_two_pow_of_odd (n : ℕ) {a : ℤ} (ha : Odd a) :
     IsUnit (a : ZMod (2 ^ n)) := by
-  apply (ZMod.coe_int_isUnit_iff_isCoprime a (2 ^ n)).mpr
+  apply (ZMod.isUnit_intCast_iff_isCoprime a (2 ^ n)).mpr
   simpa only [Nat.cast_pow, Nat.cast_ofNat] using (ha.isCoprime_two.pow_right (n := n)).symm
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
@@ -137,7 +137,7 @@ theorem IsCoprime.exists_int_lifts {a c : ZMod d}
         (a₀ : ZMod d) = a₁ ∧ (c₀ : ZMod d) = 0 ∧ IsCoprime a₀ c₀ := by
     intro a₁ hac
     have hunit : IsUnit (a₁ : ZMod d) := by rwa [isCoprime_zero_right] at hac
-    rw [ZMod.coe_int_isUnit_iff_isCoprime] at hunit
+    rw [ZMod.isUnit_intCast_iff_isCoprime] at hunit
     exact ⟨a₁, d, rfl, by simp, hunit.symm⟩
   intro n
   induction n with

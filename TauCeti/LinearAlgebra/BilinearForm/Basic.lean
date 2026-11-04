@@ -63,11 +63,23 @@ theorem eq_zero_of_smul_apply_basis_eq_zero {R M N : Type*} [CommSemiring R]
     (hω : ω.SeparatingLeft) {r : R} (hr : r • ω (b 0) (b 1) = 0) : r = 0 := by
   have hb : r • b 0 = 0 := hω _ fun y ↦ by
     conv_lhs => rw [← b.sum_repr y]
-    simp only [Fin.sum_univ_two, map_add, map_smul, smul_apply, halt (b 0), hr, smul_zero,
+    simp only [Fin.sum_univ_two, map_add, map_smul, LinearMap.smul_apply, halt (b 0), hr, smul_zero,
       add_zero]
   simpa using congr(b.repr $hb 0)
 
 end LinearMap.IsAlt
+
+namespace LinearMap.BilinForm
+
+/-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
+@[simp]
+theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (r : R) (B : LinearMap.BilinForm R M) (N : Submodule R M) :
+    (r • B).restrict N = r • B.restrict N := by
+  ext x y
+  simp
+
+end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm.IsSymm
 

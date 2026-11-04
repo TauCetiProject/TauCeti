@@ -81,7 +81,7 @@ theorem companionPencil_castSucc_apply (p : A[X]) (z : A) (i : Fin d) (j : Fin (
     companionPencil d p z i.castSucc j =
       (if i.castSucc = j then 1 else 0) - if j = i.succ then z else 0 := by
   rw [companionPencil, updateRow_ne (Fin.castSucc_ne_last i)]
-  simp [superdiagonalShift_apply, one_apply, Fin.ext_iff]
+  simp [superdiagonalShift_apply, Matrix.one_apply, Fin.ext_iff]
 
 /-- The companion pencil is a linear pencil in `z`: its value at `z` is its value at `0` minus
 `z` times the superdiagonal shift. -/
@@ -220,7 +220,7 @@ theorem companionHomotopy_map [Ring B] [Algebra R B] (f : A →ₐ[R] B) (p : A[
   · rw [diagonal_map (map_zero f), ← Function.comp_def, Fin.comp_snoc, Pi.comp_one, map_one,
       Function.const_one]
   · ext i j
-    simp [superdiagonalShift_apply, one_apply, apply_ite f]
+    simp [superdiagonalShift_apply, Matrix.one_apply, apply_ite f]
 
 end Homotopy
 

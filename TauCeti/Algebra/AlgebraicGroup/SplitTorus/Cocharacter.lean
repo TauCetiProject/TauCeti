@@ -103,6 +103,13 @@ theorem cocharEquiv_apply (ψ : Multiplicative (σ →₀ ℤ) →* Multiplicati
     cocharEquiv ψ i = (ψ (Multiplicative.ofAdd (Finsupp.single i 1))).toAdd := by
   simp [cocharEquiv, Equiv.piCongrRight_apply]
 
+/-- The coordinate evaluation cocharacter corresponds to the standard coordinate vector. -/
+@[simp]
+theorem cocharEquiv_applyAddHom [DecidableEq σ] (i : σ) :
+    cocharEquiv (Finsupp.applyAddHom i).toMultiplicative = (Pi.single i 1 : σ → ℤ) := by
+  ext j
+  simp [cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
+
 /-- Reading off cocharacter coordinates is additive: the trivial cocharacter has zero
 coordinates. -/
 @[simp]

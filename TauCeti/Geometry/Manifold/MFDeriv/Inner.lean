@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The derivative of an inner product of vector-valued functions on a manifold
@@ -16,13 +17,19 @@ differentiable at `x`, the derivative of `y ↦ ⟪g y, g' y⟫` obeys the produ
 `d⟪g, g'⟫ = ⟪dg, g'⟫ + ⟪g, dg'⟫`. This is the manifold counterpart of Mathlib's
 `fderiv_inner_apply`, stated for `mvfderiv`.
 
-## Main result
+On an open subset of a real inner product space, the derivative of the squared distance
+`y ↦ ‖y - a‖ ^ 2` vanishes exactly at the centre `a`.
+
+## Main results
 
 * `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
+* `TauCeti.mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff`: along the inclusion of an open subset,
+  the only critical point of squared distance is the centre.
 -/
 
 public section
 
+open TopologicalSpace
 open scoped Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -56,5 +63,40 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     hinner.differentiableAt hpair.mdifferentiableAt, hinner.fderiv,
     hpair']
   simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
+
+section Real
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+
+/-- Along the inclusion of an open subset of a real inner product space, the squared distance
+from `a` has a critical point exactly at `a`. -/
+@[simp]
+theorem mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff (U : Opens G) (a : G) (x : U) :
+    mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x = 0 ↔ (x : G) = a := by
+  have hd : HasFDerivAt (fun v : G ↦ ‖v - a‖ ^ 2)
+      (2 • (innerSL ℝ ((x : G) - a))) (x : G) :=
+    ((hasFDerivAt_id (x : G)).sub_const a).norm_sq.congr_fderiv (by simp)
+  have happ (v : G) : mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v =
+      2 * inner ℝ ((x : G) - a) v := by
+    calc mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v
+        = fderiv ℝ (fun v : G ↦ ‖v - a‖ ^ 2) x (mvfderiv 𝓘(ℝ, G) (Subtype.val : U → G) x v) :=
+          mvfderiv_comp_apply_of_differentiableAt hd.differentiableAt
+            ((contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero) v
+      _ = 2 * inner ℝ ((x : G) - a) v := by
+          rw [Manifold.mvfderiv_subtype_val_apply x v, hd.fderiv]
+          simp [inner_sub_left]
+  constructor
+  · intro h
+    have h0 := happ ((x : G) - a)
+    rw [h, real_inner_self_eq_norm_sq] at h0
+    have h1 : 2 * ‖(x : G) - a‖ ^ 2 = 0 := h0.symm
+    simpa [sub_eq_zero] using h1
+  · intro h
+    -- Tangent vectors of the open subset are read as vectors of `G`.
+    refine ContinuousLinearMap.ext fun v : G ↦ ?_
+    rw [happ v, h, sub_self, inner_zero_left, mul_zero]
+    rfl
+
+end Real
 
 end TauCeti

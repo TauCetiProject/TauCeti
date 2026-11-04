@@ -22,13 +22,16 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
 
 ## Main declarations
 
-* `TauCeti.globalFlow`: the flow of a complete `C¹` vector field.
+* `TauCeti.globalFlow`: the flow of a complete `C¹` vector field;
+  `TauCeti.flowOf_eq_globalFlow`: it agrees with the maximal flow `flowOf`.
 * `TauCeti.isMIntegralCurve_globalFlow`: its orbits are integral curves of the field.
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
+* `TauCeti.mfderiv_globalFlow_apply_self`: the differential of the time-`t` map preserves the
+  field.
 * `TauCeti.globalFlowDiffeomorph`: for a complete `C^n` field, the time-`t` map is a `C^n`
   diffeomorphism; `TauCeti.globalFlowDiffeomorph_symm_apply`: its inverse is the time-`(-t)` map.
 * `TauCeti.globalFlowDiffeomorphHom`: the flow as a homomorphism from the additive group `ℝ` to
@@ -77,6 +80,11 @@ include hv hcomplete
 theorem globalFlow_apply (t : ℝ) (x : M) :
     globalFlow v hv hcomplete t x = maximalIntegralCurve v x t := by
   rw [globalFlow]
+
+/-- For a complete `C¹` vector field, the maximal flow `flowOf v` is the global flow. -/
+theorem flowOf_eq_globalFlow : flowOf v = globalFlow v hv hcomplete := by
+  funext t x
+  rw [flowOf_apply, globalFlow_apply]
 
 /-- The orbits of the flow are integral curves of the field. -/
 theorem isMIntegralCurve_globalFlow (x : M) :
@@ -153,6 +161,28 @@ theorem contMDiff_globalFlow_apply {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M
     (hvn : ContMDiff I I.tangent n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (t : ℝ) :
     ContMDiff I I n (globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete t) :=
   (contMDiff_globalFlow_uncurry hcomplete hn hvn).comp (contMDiff_const.prodMk contMDiff_id)
+
+/-- **The flow preserves its generating field.** The differential of the time-`t` map of the flow
+of a complete `C¹` vector field `v` carries `v` at `x` to `v` at the image of `x`. -/
+theorem mfderiv_globalFlow_apply_self (t : ℝ) (x : M) :
+    mfderiv I I (globalFlow v hv hcomplete t) x (v x) = v (globalFlow v hv hcomplete t x) := by
+  set ψ := globalFlow v hv hcomplete
+  -- The velocity of an orbit at time `0` is the field at its starting point.
+  have hvel : ∀ y, Manifold.curveVelocityWithin I (fun τ ↦ ψ τ y) univ 0 = v y := fun y ↦ by
+    rw [Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+      (isMIntegralCurve_globalFlow hv hcomplete y 0).hasMFDerivWithinAt uniqueDiffWithinAt_univ]
+    exact congrArg v (ψ.map_zero_apply y)
+  -- The curve `τ ↦ ψ_t (ψ_τ x)` is the orbit `τ ↦ ψ_τ (ψ_t x)`, so at `τ = 0` its velocity is
+  -- both `dψ_t (v x)`, by the chain rule, and `v (ψ_t x)`.
+  have hcomp : (ψ t ∘ fun τ ↦ ψ τ x) = fun τ ↦ ψ τ (ψ t x) := by
+    funext τ
+    simp only [comp_apply, ← Flow.map_add, add_comm]
+  have key := Manifold.curveVelocityWithin_map (s := univ) (t := 0)
+    ((contMDiff_globalFlow_apply hcomplete le_rfl hv t).mdifferentiableAt one_ne_zero)
+    uniqueDiffWithinAt_univ
+    (isMIntegralCurve_globalFlow hv hcomplete x 0).mdifferentiableAt.mdifferentiableWithinAt
+  rw [hcomp, hvel, hvel, Flow.map_zero_apply] at key
+  exact key.symm
 
 omit hv in
 /-- The time-`t` map of the flow of a complete `C^n` vector field, `1 ≤ n`, as a `C^n`

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
+public import TauCeti.RingTheory.PowerSeries.Coordinate.Universal
 
 /-!
 # Strict coordinate changes of formal group laws are represented by `L[b₁, b₂, …]`
@@ -14,8 +15,9 @@ public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
 A strict formal coordinate over a commutative ring `R` is a series
 `φ(X) = X + ∑_{i ≥ 1} bᵢ X^(i + 1)`, determined by the arbitrary family `(bᵢ)` of its coefficients
 (`TauCeti.FormalCoordinate.strictCoeffsEquiv`). Together with the universal property of the Lazard
-ring `L`, this shows that pairs `(F, φ)` of a commutative formal group law `F` over `R` and a strict
-coordinate `φ` over `R` are the ring homomorphisms to `R` from the polynomial ring
+ring `L` and the universal strict coordinate (`TauCeti.FormalCoordinate.strictLift`), this shows
+that pairs `(F, φ)` of a commutative formal group law `F` over `R` and a strict coordinate `φ` over
+`R` are the ring homomorphisms to `R` from the polynomial ring
 
   `L[b₁, b₂, …] = MvPolynomial ℕ+ LazardRing`.
 
@@ -35,8 +37,6 @@ conjugation, and the remaining Hopf algebroid equations, are in
 
 ## Main definitions
 
-* `TauCeti.LazardRing.universalStrictCoordinate`: the strict coordinate `X + ∑ bᵢ X^(i + 1)` over
-  `L[b₁, b₂, …]`.
 * `TauCeti.LazardRing.coordinateChangeLift`: the bijection between pairs of a commutative formal
   group law and a strict coordinate over `R` and ring homomorphisms `L[b₁, b₂, …] →+* R`.
 * `TauCeti.LazardRing.rightUnit`: the right unit `η_R : L →+* L[b₁, b₂, …]`.
@@ -48,8 +48,6 @@ conjugation, and the remaining Hopf algebroid equations, are in
 * `TauCeti.LazardRing.coordinateChangeLift_comp_rightUnit`: `η_R` classifies the target `φ • F`.
 * `TauCeti.LazardRing.counit_comp_C`, `TauCeti.LazardRing.counit_comp_rightUnit`: `ε` is a
   retraction of both units.
-* `TauCeti.LazardRing.ringHom_ext_universalStrictCoordinate`: a ring homomorphism out of
-  `L[b₁, b₂, …]` is determined by the pair `(F, φ)` it classifies.
 * `TauCeti.LazardRing.map_comp_rightUnit`: the target of the strict isomorphism classified by any
   `f : L[b₁, b₂, …] →+* R` is classified by `f ∘ η_R`.
 
@@ -70,18 +68,7 @@ namespace LazardRing
 variable {R : Type*} [CommRing R]
 
 open MvPolynomial
-
-/-- The universal strict coordinate `X + ∑_{i ≥ 1} bᵢ X^(i + 1)` over `L[b₁, b₂, …]`, whose
-coefficients are the variables `bᵢ`. -/
-def universalStrictCoordinate : FormalCoordinate (MvPolynomial ℕ+ LazardRing) :=
-  FormalCoordinate.ofStrictCoeffs X
-
-/-- The strict coordinate `universalStrictCoordinate` has the variable `bᵢ` as its coefficient of
-`X^(i + 1)`. -/
-@[simp]
-theorem coeff_succ_universalStrictCoordinate (i : ℕ+) :
-    PowerSeries.coeff (i + 1) universalStrictCoordinate.toPowerSeries = X i :=
-  FormalCoordinate.coeff_succ_ofStrictCoeffs X i
+open FormalCoordinate (universalStrictCoordinate)
 
 /-- **Strict coordinate changes of commutative formal group laws are representable**: pairs of a
 commutative formal group law `F` and a strict coordinate `φ` over `R` correspond to ring
@@ -89,31 +76,21 @@ homomorphisms `L[b₁, b₂, …] →+* R`. The homomorphism attached to `(F, φ
 homomorphism `L →+* R` classifying `F` and sends `bᵢ` to the coefficient of `X^(i + 1)` in `φ`. -/
 def coordinateChangeLift :
     {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker ≃
-      (MvPolynomial ℕ+ LazardRing →+* R) where
-  toFun p := eval₂Hom (lift p.1) (FormalCoordinate.strictCoeffsEquiv.symm p.2)
-  invFun f := (lift.symm (f.comp C), FormalCoordinate.strictCoeffsEquiv (f ∘ X))
-  left_inv p := by
-    have h : ⇑(eval₂Hom (lift p.1) (FormalCoordinate.strictCoeffsEquiv.symm p.2)) ∘ X =
-        FormalCoordinate.strictCoeffsEquiv.symm p.2 :=
-      funext fun i ↦ eval₂Hom_X' _ _ i
-    refine Prod.ext ?_ ?_ <;> dsimp only
-    · rw [(RingHom.ext (eval₂Hom_C _ _) : (eval₂Hom (lift p.1) _).comp C = lift p.1),
-        Equiv.symm_apply_apply]
-    · rw [h, Equiv.apply_symm_apply]
-  right_inv f := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
+      (MvPolynomial ℕ+ LazardRing →+* R) :=
+  (lift.prodCongr (Equiv.refl _)).trans FormalCoordinate.strictLift
 
 /-- The commutative formal group law classified by `f : L[b₁, b₂, …] →+* R` is the one classified
 by its restriction along `η_L = C`. -/
 @[simp]
 theorem coordinateChangeLift_symm_apply_fst (f : MvPolynomial ℕ+ LazardRing →+* R) :
-    (coordinateChangeLift.symm f).1 = lift.symm (f.comp C) :=
-  (rfl)
+    (coordinateChangeLift.symm f).1 = lift.symm (f.comp C) := by
+  simp [coordinateChangeLift]
 
 /-- The strict coordinate classified by `f : L[b₁, b₂, …] →+* R` has coefficients `f (bᵢ)`. -/
 @[simp]
 theorem coordinateChangeLift_symm_apply_snd (f : MvPolynomial ℕ+ LazardRing →+* R) :
-    (coordinateChangeLift.symm f).2 = FormalCoordinate.strictCoeffsEquiv (f ∘ X) :=
-  (rfl)
+    (coordinateChangeLift.symm f).2 = FormalCoordinate.strictCoeffsEquiv (f ∘ X) := by
+  simp [coordinateChangeLift]
 
 /-- The homomorphism classifying `(F, φ)` restricts along `η_L = C` to the homomorphism classifying
 the source `F`. -/
@@ -121,7 +98,7 @@ the source `F`. -/
 theorem coordinateChangeLift_comp_C
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker) :
     (coordinateChangeLift p).comp C = lift p.1 :=
-  RingHom.ext (eval₂Hom_C _ _)
+  FormalCoordinate.strictLift_comp_C _
 
 /-- The homomorphism classifying `(F, φ)` agrees on constants with the homomorphism classifying the
 source `F`. -/
@@ -130,7 +107,7 @@ theorem coordinateChangeLift_C
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker)
     (r : LazardRing) :
     coordinateChangeLift p (C r) = lift p.1 r :=
-  RingHom.congr_fun (coordinateChangeLift_comp_C p) r
+  FormalCoordinate.strictLift_C _ r
 
 /-- The homomorphism classifying `(F, φ)` sends `bᵢ` to the coefficient of `X^(i + 1)` in `φ`. -/
 @[simp]
@@ -138,51 +115,26 @@ theorem coordinateChangeLift_X
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker)
     (i : ℕ+) :
     coordinateChangeLift p (X i) = PowerSeries.coeff (i + 1) p.2.1.toPowerSeries :=
-  (eval₂Hom_X' _ _ _).trans (FormalCoordinate.strictCoeffsEquiv_symm_apply p.2 i)
+  FormalCoordinate.strictLift_X _ i
 
 /-- The homomorphism classifying `(F, φ)` specializes the universal strict coordinate to `φ`. -/
 @[simp]
 theorem map_coordinateChangeLift_universalStrictCoordinate
     (p : {F : FormalGroup R // F.IsComm} × (FormalCoordinate.linearCoeff (R := R)).ker) :
-    FormalCoordinate.map (coordinateChangeLift p) universalStrictCoordinate = p.2.1 := by
-  have h : ⇑(coordinateChangeLift p) ∘ X = FormalCoordinate.strictCoeffsEquiv.symm p.2 :=
-    funext fun i ↦ by simp
-  rw [universalStrictCoordinate, FormalCoordinate.map_ofStrictCoeffs, h,
-    ← FormalCoordinate.coe_strictCoeffsEquiv_apply, Equiv.apply_symm_apply]
-
-/-- The base change of the universal strict coordinate along `f` is the strict coordinate
-`X + ∑ f(bᵢ) X^(i + 1)`. -/
-theorem map_universalStrictCoordinate (f : MvPolynomial ℕ+ LazardRing →+* R) :
-    FormalCoordinate.map f universalStrictCoordinate = FormalCoordinate.ofStrictCoeffs (f ∘ X) :=
-  FormalCoordinate.map_ofStrictCoeffs f X
-
-/-- Base change of the universal strict coordinate is strict. -/
-theorem map_universalStrictCoordinate_mem_ker (f : MvPolynomial ℕ+ LazardRing →+* R) :
-    FormalCoordinate.map f universalStrictCoordinate ∈ (FormalCoordinate.linearCoeff (R := R)).ker
-    := by
-  rw [map_universalStrictCoordinate]
-  exact FormalCoordinate.ofStrictCoeffs_mem_ker_linearCoeff _
-
-/-- A ring homomorphism out of `L[b₁, b₂, …]` is determined by its restriction to `L` and by its
-base change of the universal strict coordinate, that is, by the pair `(F, φ)` it classifies. -/
-theorem ringHom_ext_universalStrictCoordinate {f g : MvPolynomial ℕ+ LazardRing →+* R}
-    (hC : f.comp C = g.comp C)
-    (hφ : FormalCoordinate.map f universalStrictCoordinate =
-      FormalCoordinate.map g universalStrictCoordinate) : f = g :=
-  ringHom_ext' hC fun i ↦ by
-    simpa using congrArg (fun φ ↦ PowerSeries.coeff (i + 1) φ.toPowerSeries) hφ
+    FormalCoordinate.map (coordinateChangeLift p) universalStrictCoordinate = p.2.1 :=
+  FormalCoordinate.map_strictLift_universalStrictCoordinate _
 
 /-- The **right unit** `η_R : L →+* L[b₁, b₂, …]`: the homomorphism classifying the change of
 coordinate of the universal formal group law by the universal strict coordinate
 `X + ∑ bᵢ X^(i + 1)`. -/
 def rightUnit : LazardRing →+* MvPolynomial ℕ+ LazardRing :=
-  lift ⟨universalStrictCoordinate • formalGroup.map C, inferInstance⟩
+  lift ⟨universalStrictCoordinate (A := LazardRing) • formalGroup.map C, inferInstance⟩
 
 /-- The base change of the universal formal group law along `η_R` is the change of coordinate of
 its base change along `η_L` by the universal strict coordinate. -/
 @[simp]
 theorem map_rightUnit :
-    formalGroup.map rightUnit = universalStrictCoordinate • formalGroup.map C :=
+    formalGroup.map rightUnit = universalStrictCoordinate (A := LazardRing) • formalGroup.map C :=
   map_lift _
 
 /-- The homomorphism classifying `(F, φ)` restricts along `η_R` to the homomorphism classifying
@@ -209,7 +161,7 @@ theorem map_comp_rightUnit (f : MvPolynomial ℕ+ LazardRing →+* R) :
 /-- The **counit** `ε : L[b₁, b₂, …] →+* L`, classifying the universal formal group law with the
 identity coordinate. It sends every `bᵢ` to `0`. -/
 def counit : MvPolynomial ℕ+ LazardRing →+* LazardRing :=
-  coordinateChangeLift (⟨formalGroup, inferInstance⟩, 1)
+  FormalCoordinate.strictLift (RingHom.id _, 1)
 
 @[simp]
 theorem counit_X (i : ℕ+) : counit (X i) = 0 := by
@@ -219,25 +171,24 @@ theorem counit_X (i : ℕ+) : counit (X i) = 0 := by
 @[simp]
 theorem map_counit_universalStrictCoordinate :
     FormalCoordinate.map counit universalStrictCoordinate = 1 :=
-  map_coordinateChangeLift_universalStrictCoordinate _
+  FormalCoordinate.map_strictLift_universalStrictCoordinate _
 
 /-- The counit is a retraction of the left unit `η_L = C`. -/
 @[simp]
 theorem counit_comp_C : counit.comp C = RingHom.id LazardRing :=
-  (coordinateChangeLift_comp_C _).trans <| hom_ext <| by rw [map_lift, FormalGroup.map_id]
+  FormalCoordinate.strictLift_comp_C _
 
 /-- The counit is the identity on constants. -/
 @[simp]
 theorem counit_C (r : LazardRing) : counit (C r) = r :=
-  RingHom.congr_fun counit_comp_C r
+  FormalCoordinate.strictLift_C _ r
 
 /-- The counit is a retraction of the right unit `η_R`: changing the coordinate by the identity
 does not change a formal group law. -/
 @[simp]
 theorem counit_comp_rightUnit : counit.comp rightUnit = RingHom.id LazardRing :=
-  (coordinateChangeLift_comp_rightUnit _).trans <| hom_ext <| by
-    rw [map_lift, FormalGroup.map_id]
-    exact one_smul _ _
+  hom_ext <| by
+    rw [map_comp_rightUnit, map_counit_universalStrictCoordinate, counit_comp_C, one_smul]
 
 end LazardRing
 

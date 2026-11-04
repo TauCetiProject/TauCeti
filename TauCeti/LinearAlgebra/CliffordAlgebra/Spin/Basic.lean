@@ -16,10 +16,11 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 This file records the carrier-level criterion that a product of evenly many Clifford vectors whose
 norms multiply to one belongs to the Spin group, identifies membership in the range of
-`spinGroup.toUnits` with membership of the underlying Clifford value, includes the Spin group in
-the even Clifford subalgebra, writes every Spin element as a product of an even number of vectors
-of invertible norm when `2` is invertible, and proves that the Spin group of the zero module is
-trivial. The action and its orthogonal comparison are defined in `Spin.Action` and `Pin.Action`.
+`spinGroup.toUnits` with membership of the underlying Clifford value, shows that Spin elements
+are Clifford units, includes the Spin group in the even Clifford subalgebra, writes every Spin
+element as a product of an even number of vectors of invertible norm when `2` is invertible, and
+proves that the Spin group of the zero module is trivial. The action and its orthogonal comparison
+are defined in `Spin.Action` and `Pin.Action`.
 -/
 
 public section
@@ -43,6 +44,12 @@ theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
     refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
     apply Units.ext
     rfl
+
+/-- A Spin element is a unit of the Clifford algebra, with inverse its Clifford conjugate
+(`spinGroup.toUnits`). -/
+theorem _root_.spinGroup.isUnit_coe (x : spinGroup Q) : IsUnit (x : CliffordAlgebra Q) := by
+  rw [← spinGroup.val_toUnits_apply]
+  exact Units.isUnit _
 
 /-- **The inclusion of the Spin group into the even Clifford subalgebra**, the Spin group
 consisting of even elements by `spinGroup.mem_even`. -/

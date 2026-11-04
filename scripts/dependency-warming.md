@@ -9,8 +9,11 @@ Lean files and scripts are never checked out into the warm project.
 The producer installs the pinned official Lean release and downloads Mathlib's
 official cache with the validated config. It saves an exact-pin toolchain snapshot
 and the existing `mathlib-ltar-v1` compressed-download snapshot. Main CI also saves
-Mathlib downloads before TauCeti compiles. Staging restores toolchains only after
-attestation/bump validation; it has no snapshot save step. Toolchain provenance
+Mathlib downloads before TauCeti compiles. Toolchain setup runs only after
+attestation/bump validation; staging has no snapshot save step. Fleet PR and staging
+jobs skip toolchain snapshot restoration and use the existing exact official
+installation/retry path. Cloud runners retain verified snapshot restoration.
+Toolchain provenance
 records the main workflow commit, run, pin, file hashes, modes and internal symlinks.
 Hashes detect corruption; the isolated official-release producer supplies trust.
 
@@ -29,6 +32,14 @@ immutable key continues to take the fresh-install path; retire it by changing th
 `official-lean-v1` generation in the restore action after human review. Mathlib
 keeps its existing `cache get!` refetch fallback. The warmer refuses partial Mathlib
 cache availability and publishes no Mathlib snapshot after a failed fetch.
+
+Home-directory archives from the cloud warmer are relative to its workspace.
+Fleet workspaces use a different prefix, so those archives do not populate the
+expected Elan directory there. Snapshot transport followed by official installation
+was slower than the official-install portion alone in the observed fleet jobs.
+Re-enable fleet snapshot restoration only after a portable format is verified on
+a fresh fleet runner and an end-to-end comparison demonstrates a benefit. The
+Mathlib download-cache restore is independent and remains enabled on fleet.
 
 ## Verification
 

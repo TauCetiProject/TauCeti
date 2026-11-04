@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Orders.ClassNumber
 public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Conductor
 public import TauCeti.NumberTheory.NumberField.Quadratic.ResidueUnits
+public import TauCeti.NumberTheory.QuadraticOrder.Embedding
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
@@ -45,8 +46,12 @@ quadratic character of `K`, with `χ_D(p) = 0` at the ramified primes.
   discriminant of `O_f` is `f² D`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.eq_intAddMulOrder_iff`: an order is `O_f` exactly
   when its index is `f`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.eq_intAddMulOrder_iff_discr_eq`: an order is
+  `O_f` exactly when its discriminant is `f² D`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.conductor_injective`: an order of a quadratic field
   is determined by its conductor.
+* `TauCeti.QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder`: `O_f` is the canonical order
+  `ℤ[(f² D + √(f² D)) / 2]` of discriminant `f² D`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_mul_index_mul_totient`:
   the class number formula for `O_f` in terms of the residue units modulo `f`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_mul_index_mul_prod` and
@@ -95,6 +100,14 @@ theorem eq_intAddMulOrder_iff (hK : Module.finrank ℚ K = 2) {O : NumberFieldOr
     rw [index_intAddMulOrder, hK, pow_one]
   · rintro rfl
     exact eq_intAddMulOrder_index hK O
+
+/-- **The order of discriminant `f² D`.** An order of a quadratic field of discriminant `D` is
+`ℤ + f 𝓞 K` exactly when its discriminant is `f² D`. -/
+theorem eq_intAddMulOrder_iff_discr_eq (hK : Module.finrank ℚ K = 2) {O : NumberFieldOrder K}
+    {f : ℕ} [NeZero f] : O = intAddMulOrder K f ↔ O.discr = (f : ℤ) ^ 2 * NumberField.discr K := by
+  rw [eq_intAddMulOrder_iff hK, O.discr_eq_index_sq_mul,
+    mul_left_inj' (NumberField.discr_ne_zero K)]
+  exact_mod_cast (Nat.pow_left_injective two_ne_zero).eq_iff.symm
 
 /-- **An order of a quadratic field is determined by its conductor.** -/
 theorem conductor_injective (hK : Module.finrank ℚ K = 2) :
@@ -242,3 +255,19 @@ theorem card_pic_intAddMulOrder_eq {F : Type*} [Field F] [CharZero F]
   field_simp
 
 end TauCeti.GlobalNumberFields.NumberFieldOrder
+
+namespace TauCeti.QuadraticOrder
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **The order of conductor `f` is the canonical order of discriminant `f² D`.** In a quadratic
+field `K` of discriminant `D`, if `δ` is a square root of `f² D`, then the canonical order
+`ℤ[(f² D + δ) / 2]` of discriminant `f² D` is `ℤ + f 𝓞 K`. -/
+theorem numberFieldOrderOfSqrt_eq_intAddMulOrder (hK : Module.finrank ℚ K = 2) {f : ℕ} [NeZero f]
+    {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)]
+    (hDf : D = f ^ 2 * NumberField.discr K) (δ : K) (hδ : δ ^ 2 = (D : K)) :
+    numberFieldOrderOfSqrt D hD δ hδ hK = GlobalNumberFields.intAddMulOrder K f := by
+  rw [GlobalNumberFields.NumberFieldOrder.eq_intAddMulOrder_iff_discr_eq hK,
+    numberFieldOrderOfSqrt_discr, hDf]
+
+end TauCeti.QuadraticOrder

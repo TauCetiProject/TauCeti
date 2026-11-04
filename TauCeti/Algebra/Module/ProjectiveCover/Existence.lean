@@ -124,7 +124,7 @@ theorem exists_isProjectiveCover_comp_subtype [IsSemiprimaryRing R] {N : Type w}
     ebar (RingHom.mem_range.mpr (Ideal.endMapQ_surjective _ N ebar)) hebar
   have hfix : ∀ x ∈ LinearMap.range e, e x = x := by
     rintro _ ⟨y, rfl⟩
-    exact (Module.End.mul_apply e e y).symm.trans (DFunLike.congr_fun he.eq y)
+    exact (mul_apply_eq_comp e e y).symm.trans (DFunLike.congr_fun he.eq y)
   have hebar_mk : ∀ n : N, ebar (Submodule.Quotient.mk n) = Submodule.Quotient.mk (e n) := by
     intro n
     rw [← hee]

@@ -51,7 +51,7 @@ theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [Measu
     (hf : ∀ i, Measurable fun b => f b i) :
     Measurable fun b => Measure.sum fun i => f b i • Measure.dirac (g i) := by
   refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs, Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
+  simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
   exact Measurable.tsum fun i => (hf i).mul_const _
 
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry

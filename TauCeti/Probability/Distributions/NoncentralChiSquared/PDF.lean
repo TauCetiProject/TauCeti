@@ -220,7 +220,7 @@ private theorem withDensity_noncentralChiSquaredPDF (hk : 0 ≤ k) (l : ℝ≥0)
       poissonMeasure (l / 2) {n} * chiSquaredPDF (k + 2 * n) x) =
       ∑' n : ℕ, poissonMeasure (l / 2) {n} • chiSquaredPDF (k + 2 * n) := by
     ext x
-    rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ ENNReal.summable)]
+    rw [Pi.tsum_apply (Pi.summable.2 fun _ ↦ CompleteLattice.summable)]
     simp only [Pi.smul_apply, smul_eq_mul]
   rw [hfun, withDensity_tsum (fun n : ℕ ↦
     (measurable_chiSquaredPDF (k + 2 * n)).const_smul _)]
@@ -246,10 +246,10 @@ theorem noncentralChiSquaredMeasure_zero_degree_eq_atom_add_withDensity (l : ℝ
   congr 1
   ext s hs
   rw [Measure.sum_apply _ hs, Measure.sum_apply _ hs]
-  conv_rhs => rw [tsum_eq_zero_add' ENNReal.summable]
+  conv_rhs => rw [tsum_eq_zero_add' CompleteLattice.summable]
   simp only [Nat.cast_zero, mul_zero, zero_add, chiSquaredPDF_zero_degree, withDensity_zero,
-    Measure.smul_apply, smul_eq_mul]
-  simp only [Measure.coe_zero, Pi.zero_apply, mul_zero, zero_add]
+    _root_.smul_apply, smul_eq_mul]
+  simp only [FunLike.coe_zero, Pi.zero_apply, mul_zero, zero_add]
   congr 1
   funext n
   rw [chiSquaredMeasure_eq_withDensity (by positivity)]
@@ -310,7 +310,7 @@ theorem lintegral_noncentralChiSquaredPDF_zero_degree (l : ℝ≥0) :
   let := isProbabilityMeasure_noncentralChiSquaredMeasure (k := 0) (by norm_num) l
   have h : noncentralChiSquaredMeasure 0 l univ = 1 := measure_univ
   rw [noncentralChiSquaredMeasure_zero_degree_eq_atom_add_withDensity,
-    Measure.add_apply, Measure.smul_apply, withDensity_apply _ MeasurableSet.univ,
+    _root_.add_apply, _root_.smul_apply, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ] at h
   simp only [smul_eq_mul, measure_univ, mul_one] at h
   exact ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top (by simpa only [add_comm] using h)

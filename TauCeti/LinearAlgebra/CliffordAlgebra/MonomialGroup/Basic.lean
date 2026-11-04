@@ -326,9 +326,10 @@ theorem mem_monomialGroupSign_iff {u : monomialGroup Q v} :
     rintro ⟨k, rfl⟩
     rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
     · exact Or.inl (by
-        rw [← two_mul, zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, one_zpow])
+        rw [← two_mul, _root_.zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, _root_.one_zpow])
     · exact Or.inr (by
-        rw [zpow_add_one, zpow_mul, zpow_two, monomialGroupEpsilon_mul_self, one_zpow, one_mul])
+        rw [zpow_add_one, _root_.zpow_mul, zpow_two, monomialGroupEpsilon_mul_self,
+          _root_.one_zpow, one_mul])
   · rintro (rfl | rfl)
     · exact one_mem _
     · exact monomialGroupEpsilon_mem_monomialGroupSign v
@@ -1082,7 +1083,7 @@ private theorem two_mul_natCard_conjClasses_monomialGroup
       2 ^ (Fintype.card I + 1) + Nat.card (Subgroup.center (monomialGroup Q b)) := by
   have := Finite.of_equiv _ (monomialGroupEquiv hb hQ)
   rw [← natCard_monomialGroup hb hQ]
-  refine TauCeti.ConjClasses.two_mul_natCard_eq_of_forall_noncenter fun C hC ↦ ?_
+  refine ConjClasses.two_mul_natCard_eq_of_forall_noncenter fun C hC ↦ ?_
   obtain ⟨u, rfl⟩ := C.exists_rep
   exact natCard_carrier_monomialGroup_of_notMem_center b
     (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij))
@@ -1311,7 +1312,7 @@ theorem monomialGroupCharacter_injective (hb : (QuadraticMap.associated Q).IsOrt
   rw [monomialGroupCharacter_apply_of_val_eq hb hQ t (Or.inl hg),
     monomialGroupCharacter_apply_of_val_eq hb hQ t' (Or.inl hg)] at hi
   by_cases hit : i ∈ t <;> by_cases hit' : i ∈ t' <;>
-    simp [Finset.singleton_inter_of_mem, Finset.singleton_inter_of_notMem, hit, hit'] at hi ⊢
+    simp [Finset.singleton_inter_of_notMem, hit, hit'] at hi ⊢
 
 omit [Fintype I] in
 /-- **The characters trivial on `ε` are the sign characters.** For an orthogonal basis indexed by a
@@ -1356,7 +1357,7 @@ theorem existsUnique_monomialGroupCharacter_eq [Finite I]
     obtain rfl : x = g i := Subtype.ext (Units.ext (by rw [hx, hg, basis_singleton]))
     rw [MonoidHom.comp_apply, monomialGroupCharacter_apply_of_val_eq hb hQ _ (Or.inl (hg i))]
     by_cases hi : χ (g i) = -1
-    · simp [Finset.singleton_inter_of_mem, hi]
+    · simp [hi]
     · rw [Finset.singleton_inter_of_notMem (by simpa using hi), (hsign (g i)).resolve_right hi]
       simp
   refine ⟨_, hex, fun t ht ↦ monomialGroupCharacter_injective hb hQ

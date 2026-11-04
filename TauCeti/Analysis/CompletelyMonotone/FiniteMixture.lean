@@ -90,8 +90,8 @@ theorem finiteExponentialMixtureMeasure_apply {ι : Type*} (s : Finset ι)
     (w p : ι → ℝ≥0) {A : Set ℝ≥0} (hA : MeasurableSet A) :
     finiteExponentialMixtureMeasure s w p A =
       ∑ i ∈ s, A.indicator (fun _ => (w i : ℝ≥0∞)) (p i) := by
-  simp only [finiteExponentialMixtureMeasure, Measure.finsetSum_apply, hA,
-    Measure.smul_apply, Measure.dirac_apply']
+  simp only [finiteExponentialMixtureMeasure, _root_.sum_apply, hA,
+    _root_.smul_apply, Measure.dirac_apply']
   refine Finset.sum_congr rfl fun i _ => ?_
   by_cases hi : p i ∈ A <;> simp [hi, smul_eq_mul]
 

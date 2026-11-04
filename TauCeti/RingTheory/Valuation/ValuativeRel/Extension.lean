@@ -67,7 +67,8 @@ theorem ValuativeExtension.trans (A B C : Type*) [CommSemiring A] [CommSemiring 
     [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
     [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
     [ValuativeExtension A B] [ValuativeExtension B C] : ValuativeExtension A C where
-  vle_iff_vle a b := by
+  vle_iff_vle := by
+    intro a b
     simp only [IsScalarTower.algebraMap_apply A B C, ValuativeExtension.vle_iff_vle]
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]

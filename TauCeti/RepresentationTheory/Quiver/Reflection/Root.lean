@@ -186,7 +186,7 @@ theorem exists_isZero_coxeterFunctor_iterate (q : _root_.Quiver.{w} V)
         (indecomposable_and_dimVector_coxeterFunctor_or_isZero q hq hnd hall hl _ hind
           ((@isFinDim_iff.{u, v, w, max v w x} k V fld q _).mp hfin)).resolve_right hne
       refine ⟨h1, isFinDim_coxeterFunctor_obj q hq hnd hall hl _ hfin, ?_⟩
-      rw [h2, hdim, pow_succ', Module.End.mul_apply]
+      rw [h2, hdim, pow_succ', mul_apply_eq_comp]
   -- A dimension vector is nonnegative, and it is nonzero because `M` is not the zero object.
   have hnn : ∀ (N : ℕ) (i : V),
       0 ≤ ((@vertexPreReflectionList V q fV hq _ l) ^ N)
