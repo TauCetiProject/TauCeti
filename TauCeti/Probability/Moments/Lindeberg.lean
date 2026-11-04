@@ -124,11 +124,12 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
         abs_sub _ _
     _ ≤ _ := by rw [mul_add]; exact add_le_add (hb μ hμ) (hb ν hν)
 
-/-- Replacing one coordinate of a product of probability measures is controlled by the
-one-variable replacement bound. The assumptions allow the background space and test function to
-be arbitrary, including unbounded test functions. -/
+/-- Replacing one coordinate of a product of finite measures with matching moments, against a
+probability background measure, is controlled by the one-variable replacement bound. The
+assumptions allow the background space and test function to be arbitrary, including unbounded
+test functions. -/
 theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {β : Type*} [MeasurableSpace β]
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] {β : Type*} [MeasurableSpace β]
     (κ : Measure β) [IsProbabilityMeasure κ] {r : ℕ} {g : ℝ × β → ℝ} (M : ℝ)
     (hμg : Integrable g (μ.prod κ)) (hνg : Integrable g (ν.prod κ))
     (hμ : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) μ)
