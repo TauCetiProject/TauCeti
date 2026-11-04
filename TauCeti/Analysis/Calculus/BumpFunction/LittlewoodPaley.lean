@@ -223,6 +223,7 @@ theorem inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply (j : ℕ) (ξ : E) 
   simp [inhomogeneousLittlewoodPaley_succ_apply, smul_smul, pow_succ, mul_comm]
 
 /-- Each piece of the inhomogeneous partition is smooth. -/
+@[fun_prop]
 theorem contDiff_inhomogeneousLittlewoodPaley {n : ℕ∞} (j : ℕ) :
     ContDiff ℝ n (φ.inhomogeneousLittlewoodPaley j) := by
   rcases j with _ | j
@@ -355,6 +356,7 @@ theorem hasCompactSupport_inhomogeneousLittlewoodPaley (j : ℕ) :
 
 /-- Each piece of the inhomogeneous partition has temperate growth, so it is a Fourier multiplier
 on Schwartz functions and on tempered distributions. -/
+@[fun_prop]
 theorem hasTemperateGrowth_inhomogeneousLittlewoodPaley (j : ℕ) :
     (φ.inhomogeneousLittlewoodPaley j).HasTemperateGrowth :=
   (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).hasTemperateGrowth
@@ -364,7 +366,6 @@ theorem hasTemperateGrowth_inhomogeneousLittlewoodPaley (j : ℕ) :
 growth, so they are Fourier multipliers on Schwartz functions and on tempered distributions. -/
 theorem hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j : ℕ) :
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
-  have := φ.hasTemperateGrowth_inhomogeneousLittlewoodPaley j
   fun_prop
 
 /-- **Derivative bounds for the inhomogeneous partition.** The `k`-th derivative of `ψⱼ` is
