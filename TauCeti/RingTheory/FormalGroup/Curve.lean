@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.Logarithm.Naturality
 public import TauCeti.RingTheory.PowerSeries.Cartier
 import Mathlib.RingTheory.Localization.Defs
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
+import TauCeti.RingTheory.MvPowerSeries.Equiv
 import TauCeti.RingTheory.MvPowerSeries.Symmetric
 import TauCeti.RingTheory.PowerSeries.Expand
 
@@ -103,6 +104,10 @@ variable {F : FormalGroup R}
 
 attribute [simp] constantCoeff_toPowerSeries
 
+@[simp]
+theorem coeff_zero_toPowerSeries (γ : F.Curve) : PowerSeries.coeff 0 γ.toPowerSeries = 0 := by
+  rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, γ.constantCoeff_toPowerSeries]
+
 /-- Every curve has zero constant coefficient and therefore admits formal substitution. -/
 theorem hasSubst (γ : F.Curve) : PowerSeries.HasSubst γ.toPowerSeries :=
   .of_constantCoeff_zero' γ.constantCoeff_toPowerSeries
@@ -174,43 +179,32 @@ noncomputable instance : SMul ℤ F.Curve where
 theorem toPowerSeries_zsmul (n : ℤ) (γ : F.Curve) :
     (n • γ).toPowerSeries = PowerSeries.subst γ.toPowerSeries (F.zsmulSeries n) := (rfl)
 
-theorem toPoint_add (γ₁ γ₂ : F.Curve) : (γ₁ + γ₂).toPoint = γ₁.toPoint + γ₂.toPoint :=
-  Subtype.ext <| by
-    have h : (γ₁ + γ₂).toPoint.val = (γ₁.toPoint + γ₂.toPoint).val := by
-      rw [add_apply]
-      simp only [val_toPoint, toPowerSeries_add]
-    exact h
+@[simp]
+theorem toPoint_zero : (0 : F.Curve).toPoint = 0 :=
+  Subtype.ext ((val_toPoint 0).trans (zero_apply (F := F)).symm)
 
+@[simp]
+theorem toPoint_add (γ₁ γ₂ : F.Curve) : (γ₁ + γ₂).toPoint = γ₁.toPoint + γ₂.toPoint :=
+  Subtype.ext (by simp [add_apply])
+
+@[simp]
 theorem toPoint_neg (γ : F.Curve) : (-γ).toPoint = -γ.toPoint :=
-  Subtype.ext <| by
-    have h : (-γ).toPoint.val = (-γ.toPoint).val := by
-      rw [neg_apply]
-      simp only [val_toPoint, toPowerSeries_neg]
-    exact h
+  Subtype.ext (by simp [neg_apply])
 
 noncomputable instance : AddGroup F.Curve :=
   toPoint_injective.addGroup toPoint
-    (Subtype.ext ((val_toPoint 0).trans (zero_apply (F := F)).symm))
+    toPoint_zero
     toPoint_add
     toPoint_neg
-    (fun γ₁ γ₂ ↦ Subtype.ext <| by
-      have h : (γ₁ - γ₂).toPoint.val = (γ₁.toPoint - γ₂.toPoint).val := by
-        rw [sub_eq_add_neg, add_apply, neg_apply]
-        simp only [val_toPoint, toPowerSeries_sub, toPowerSeries_add, toPowerSeries_neg]
-      exact h)
-    (fun γ n ↦ by
-      have h := F.subst_nsmulSeries γ.toPoint n
-      rw [val_toPoint] at h
-      exact Subtype.ext ((val_toPoint (n • γ)).trans h))
-    (fun γ n ↦ by
-      have h := F.subst_zsmulSeries γ.toPoint n
-      rw [val_toPoint] at h
-      exact Subtype.ext ((val_toPoint (n • γ)).trans h))
+    (fun γ₁ γ₂ ↦ Subtype.ext (by simp [toPowerSeries_sub, sub_eq_add_neg, add_apply, neg_apply]))
+    (fun γ n ↦ Subtype.ext <| by
+      simpa only [val_toPoint, toPowerSeries_nsmul] using F.subst_nsmulSeries γ.toPoint n)
+    (fun γ n ↦ Subtype.ext <| by
+      simpa only [val_toPoint, toPowerSeries_zsmul] using F.subst_zsmulSeries γ.toPoint n)
 
 noncomputable instance [F.IsComm] : AddCommGroup F.Curve :=
   { (inferInstance : AddGroup F.Curve) with
-    add_comm := fun γ₁ γ₂ ↦ toPoint_injective <| by
-      rw [toPoint_add, toPoint_add, add_comm] }
+    add_comm := fun γ₁ γ₂ ↦ toPoint_injective (by rw [toPoint_add, toPoint_add, add_comm]) }
 
 /-- Adding a curve `δ` whose coefficients vanish below degree `m` leaves degrees `< m` unchanged
 and adds `coeff m δ` in degree `m`. -/
@@ -228,10 +222,7 @@ theorem coeff_add_of_forall_lt_coeff_eq_zero (γ δ : F.Curve) {m k : ℕ} (hm :
       · exact map_zero _) 1 r hm hk
   have hu : Function.update ![γ.toPowerSeries, 0] 1 (0 + PowerSeries.X ^ m * r) =
       ![γ.toPowerSeries, δ.toPowerSeries] := by
-    funext i
-    fin_cases i
-    · rfl
-    · simp [hr]
+    funext i; fin_cases i <;> simp [hr]
   have h0 : F.toPowerSeries.subst ![γ.toPowerSeries, 0] = γ.toPowerSeries := by
     simpa only [toPowerSeries_add, toPowerSeries_zero] using
       congrArg Curve.toPowerSeries (_root_.add_zero γ)
@@ -254,12 +245,12 @@ theorem coeff_add_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
     (h₂ : ∀ i ≤ k, PowerSeries.coeff i γ₂.toPowerSeries = PowerSeries.coeff i γ₂'.toPowerSeries) :
     PowerSeries.coeff k (γ₁ + γ₂).toPowerSeries =
       PowerSeries.coeff k (γ₁' + γ₂').toPowerSeries := by
-  have hdvd₁ : PowerSeries.X ^ (k + 1) ∣ (γ₁.toPowerSeries - γ₁'.toPowerSeries) :=
-    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by rw [map_sub, h₁ i (by omega), sub_self]
-  have hdvd₂ : PowerSeries.X ^ (k + 1) ∣ (γ₂.toPowerSeries - γ₂'.toPowerSeries) :=
-    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by rw [map_sub, h₂ i (by omega), sub_self]
-  obtain ⟨r₁, hr₁⟩ := hdvd₁
-  obtain ⟨r₂, hr₂⟩ := hdvd₂
+  obtain ⟨r₁, hr₁⟩ : PowerSeries.X ^ (k + 1) ∣ γ₁.toPowerSeries - γ₁'.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i (hi : i < k + 1) ↦ by
+      rw [map_sub, h₁ i (by omega), sub_self]
+  obtain ⟨r₂, hr₂⟩ : PowerSeries.X ^ (k + 1) ∣ γ₂.toPowerSeries - γ₂'.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i (hi : i < k + 1) ↦ by
+      rw [map_sub, h₂ i (by omega), sub_self]
   have hstep₁ := PowerSeries.coeff_subst_update_add_X_pow_mul F.toPowerSeries
     (PowerSeries.hasSubst_pair γ₁'.constantCoeff_toPowerSeries γ₂.constantCoeff_toPowerSeries)
     (fun s ↦ by
@@ -269,11 +260,7 @@ theorem coeff_add_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
   have hu₁ : Function.update ![γ₁'.toPowerSeries, γ₂.toPowerSeries] 0
       (γ₁'.toPowerSeries + PowerSeries.X ^ (k + 1) * r₁) =
       ![γ₁.toPowerSeries, γ₂.toPowerSeries] := by
-    funext i
-    fin_cases i
-    · change γ₁'.toPowerSeries + PowerSeries.X ^ (k + 1) * r₁ = γ₁.toPowerSeries
-      rw [← hr₁, add_sub_cancel]
-    · rfl
+    funext i; fin_cases i <;> simp [← hr₁]
   have hstep₂ := PowerSeries.coeff_subst_update_add_X_pow_mul F.toPowerSeries
     (PowerSeries.hasSubst_pair γ₁'.constantCoeff_toPowerSeries γ₂'.constantCoeff_toPowerSeries)
     (fun s ↦ by
@@ -283,11 +270,7 @@ theorem coeff_add_congr {γ₁ γ₁' γ₂ γ₂' : F.Curve} {k : ℕ}
   have hu₂ : Function.update ![γ₁'.toPowerSeries, γ₂'.toPowerSeries] 1
       (γ₂'.toPowerSeries + PowerSeries.X ^ (k + 1) * r₂) =
       ![γ₁'.toPowerSeries, γ₂.toPowerSeries] := by
-    funext i
-    fin_cases i
-    · rfl
-    · change γ₂'.toPowerSeries + PowerSeries.X ^ (k + 1) * r₂ = γ₂.toPowerSeries
-      rw [← hr₂, add_sub_cancel]
+    funext i; fin_cases i <;> simp [← hr₂]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Nat.succ_eq_add_one] at hstep₁ hstep₂
   rw [toPowerSeries_add, toPowerSeries_add, ← hu₁, hstep₁,
     ite_eq_right (Nat.ne_of_lt (Nat.lt_succ_self k)), _root_.add_zero, ← hu₂, hstep₂,
@@ -300,14 +283,14 @@ noncomputable def coeffOneHom (F : FormalGroup R) : F.Curve →+ R where
   map_add' γ₁ γ₂ := by
     have h := coeff_add_of_forall_lt_coeff_eq_zero γ₁ γ₂ one_ne_zero (le_refl 1) fun i hi ↦ by
       obtain rfl : i = 0 := by omega
-      rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, γ₂.constantCoeff_toPowerSeries]
+      exact γ₂.coeff_zero_toPowerSeries
     simpa only [ite_true] using h
 
 @[simp]
 theorem coeffOneHom_apply (γ : F.Curve) :
     coeffOneHom F γ = PowerSeries.coeff 1 γ.toPowerSeries := (rfl)
 
-@[simp]
+@[simp high]
 theorem toPowerSeries_add_𝔾ₐ (γ₁ γ₂ : (𝔾ₐ (R := R)).Curve) :
     (γ₁ + γ₂).toPowerSeries = γ₁.toPowerSeries + γ₂.toPowerSeries := by
   have ha := PowerSeries.hasSubst_pair γ₁.constantCoeff_toPowerSeries
@@ -319,16 +302,12 @@ noncomputable def map (φ : R →+* S) : F.Curve →+ (F.map φ).Curve where
   toFun γ :=
     ⟨γ.toPowerSeries.map φ, by
       rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
-        PowerSeries.coeff_zero_eq_constantCoeff_apply, γ.constantCoeff_toPowerSeries, map_zero]⟩
-  map_zero' := Curve.ext <| by
-    change PowerSeries.map φ (0 : F.Curve).toPowerSeries = (0 : (F.map φ).Curve).toPowerSeries
-    rw [toPowerSeries_zero, toPowerSeries_zero, map_zero]
+        γ.coeff_zero_toPowerSeries, map_zero]⟩
+  map_zero' := Curve.ext <| by simp
   map_add' γ₁ γ₂ := Curve.ext <| by
-    change MvPowerSeries.map φ (γ₁ + γ₂).toPowerSeries =
-      (F.map φ).toPowerSeries.subst ![γ₁.toPowerSeries.map φ, γ₂.toPowerSeries.map φ]
     have ha := PowerSeries.hasSubst_pair γ₁.constantCoeff_toPowerSeries
       γ₂.constantCoeff_toPowerSeries
-    rw [toPowerSeries_add, map_toPowerSeries, MvPowerSeries.map_subst ha]
+    simp only [toPowerSeries_add, map_toPowerSeries, PowerSeries.map, MvPowerSeries.map_subst ha]
     congr 1
     funext i
     fin_cases i <;> rfl
@@ -385,15 +364,8 @@ noncomputable def mapCurve (f : FormalGroupHom F G) : F.Curve →+ G.Curve where
     ⟨PowerSeries.subst γ.toPowerSeries f.toPowerSeries,
       PowerSeries.constantCoeff_subst_eq_zero γ.constantCoeff_toPowerSeries _ f.zero_constantCoeff⟩
   map_zero' := FormalGroup.Curve.ext <| by
-    change PowerSeries.subst (0 : F.Curve).toPowerSeries f.toPowerSeries =
-      (0 : G.Curve).toPowerSeries
-    rw [FormalGroup.Curve.toPowerSeries_zero, FormalGroup.Curve.toPowerSeries_zero,
-      PowerSeries.subst_zero_of_constantCoeff_zero f.zero_constantCoeff]
+    simp [PowerSeries.subst_zero_of_constantCoeff_zero f.zero_constantCoeff]
   map_add' γ₁ γ₂ := FormalGroup.Curve.ext <| by
-    change PowerSeries.subst (γ₁ + γ₂).toPowerSeries f.toPowerSeries =
-      G.toPowerSeries.subst
-        ![PowerSeries.subst γ₁.toPowerSeries f.toPowerSeries,
-          PowerSeries.subst γ₂.toPowerSeries f.toPowerSeries]
     simpa only [FormalGroup.Curve.toPowerSeries_add, FormalGroup.Curve.val_toPoint,
       applyPoint_val, FormalGroup.add_apply] using
       congrArg Subtype.val (f.applyPoint_add γ₁.toPoint γ₂.toPoint)
@@ -442,22 +414,6 @@ end FormalGroupHom
 
 namespace FormalGroupIso
 
-/-- Transport an isomorphism of formal group laws along an equality of formal group laws. -/
-noncomputable def ofEq {F₁ F₂ : FormalGroup R} (h : F₁ = F₂) : FormalGroupIso F₁ F₂ :=
-  h ▸ refl F₁
-
-@[simp]
-theorem ofEq_toHom_toPowerSeries {F₁ F₂ : FormalGroup R} (h : F₁ = F₂) :
-    (ofEq h).toHom.toPowerSeries = PowerSeries.X := by
-  subst h
-  simp [ofEq]
-
-@[simp]
-theorem ofEq_invHom_toPowerSeries {F₁ F₂ : FormalGroup R} (h : F₁ = F₂) :
-    (ofEq h).invHom.toPowerSeries = PowerSeries.X := by
-  subst h
-  simp [ofEq]
-
 /-- An isomorphism of formal group laws induces an isomorphism on their groups of curves. -/
 noncomputable def curveEquiv (e : FormalGroupIso F G) : F.Curve ≃+ G.Curve where
   toFun := e.toHom.mapCurve
@@ -476,6 +432,24 @@ theorem curveEquiv_apply (e : FormalGroupIso F G) (γ : F.Curve) :
 theorem curveEquiv_symm_apply (e : FormalGroupIso F G) (γ : G.Curve) :
     e.curveEquiv.symm γ = e.invHom.mapCurve γ := (rfl)
 
+@[simp]
+theorem curveEquiv_refl (F : FormalGroup R) :
+    (refl F).curveEquiv = AddEquiv.refl F.Curve := by
+  ext γ : 1
+  simp
+
+@[simp]
+theorem curveEquiv_trans (f : FormalGroupIso F G) (g : FormalGroupIso G H) :
+    (f.trans g).curveEquiv = f.curveEquiv.trans g.curveEquiv := by
+  ext γ : 1
+  simp [trans_toHom]
+
+@[simp]
+theorem curveEquiv_symm (f : FormalGroupIso F G) :
+    f.symm.curveEquiv = f.curveEquiv.symm := by
+  ext γ : 1
+  simp
+
 end FormalGroupIso
 
 end Hom
@@ -493,20 +467,15 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 noncomputable def verschiebungCurve (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) :
     F.Curve →+ F.Curve where
   toFun γ := ⟨PowerSeries.expand n hn γ.toPowerSeries, by simp⟩
-  map_zero' := Curve.ext <| by
-    change PowerSeries.expand n hn (0 : F.Curve).toPowerSeries = (0 : F.Curve).toPowerSeries
-    rw [Curve.toPowerSeries_zero, map_zero]
+  map_zero' := Curve.ext (by simp)
   map_add' γ₁ γ₂ := Curve.ext <| by
-    change PowerSeries.expand n hn (γ₁ + γ₂).toPowerSeries =
-      F.toPowerSeries.subst
-        ![PowerSeries.expand n hn γ₁.toPowerSeries, PowerSeries.expand n hn γ₂.toPowerSeries]
     have ha := PowerSeries.hasSubst_pair γ₁.constantCoeff_toPowerSeries
       γ₂.constantCoeff_toPowerSeries
-    rw [Curve.toPowerSeries_add, PowerSeries.expand_apply, PowerSeries.subst_def,
+    simp only [Curve.toPowerSeries_add, PowerSeries.expand_apply, PowerSeries.subst_def,
       subst_comp_subst_apply ha (PowerSeries.HasSubst.X_pow hn).const]
     congr 1
     funext i
-    fin_cases i <;> simp [PowerSeries.expand_apply, PowerSeries.subst_def]
+    fin_cases i <;> rfl
 
 @[simp]
 theorem toPowerSeries_verschiebungCurve (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) (γ : F.Curve) :
@@ -578,29 +547,26 @@ private noncomputable def coordPointHom (F : FormalGroup R) {σ : Type*} (i : σ
   toFun γ := ⟨γ.toPowerSeries.toMvPowerSeries i, by
     rw [PowerSeries.toMvPowerSeries_eq_subst]
     simpa [PowerSeries.coe_substAlgHom] using γ.hasSubst.comp (PowerSeries.HasSubst.X (S := R) i)⟩
-  map_zero' := Subtype.ext <| by
-    change (0 : F.Curve).toPowerSeries.toMvPowerSeries i = (0 : F.Point σ).val
-    rw [Curve.toPowerSeries_zero, map_zero, zero_apply]
+  map_zero' := Subtype.ext (by simp [zero_apply])
   map_add' γ₁ γ₂ := Subtype.ext <| by
-    change (γ₁ + γ₂).toPowerSeries.toMvPowerSeries i =
-      F.toPowerSeries.subst
-        ![γ₁.toPowerSeries.toMvPowerSeries i, γ₂.toPowerSeries.toMvPowerSeries i]
     have ha := PowerSeries.hasSubst_pair γ₁.constantCoeff_toPowerSeries
       γ₂.constantCoeff_toPowerSeries
-    rw [Curve.toPowerSeries_add, PowerSeries.toMvPowerSeries_eq_subst,
+    simp only [Curve.toPowerSeries_add, PowerSeries.toMvPowerSeries_eq_subst,
       PowerSeries.subst_def, subst_comp_subst_apply ha (PowerSeries.HasSubst.X (S := R) i).const]
     congr 1
     funext j
-    fin_cases j <;> simp [PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.subst_def]
+    fin_cases j <;> rfl
+
+@[simp]
+private theorem val_coordPointHom (F : FormalGroup R) {σ : Type*} (i : σ) (γ : F.Curve) :
+    (coordPointHom F i γ).val = γ.toPowerSeries.toMvPowerSeries i := rfl
 
 /-- Renaming variables is an additive homomorphism on power-series points of `F`. -/
 private noncomputable def renamePointHom (F : FormalGroup R) {σ τ : Type*} (e : σ ≃ τ) :
     F.Point σ →+ F.Point τ where
   toFun x := ⟨rename e x.val, by
-    change IsNilpotent (constantCoeff (rename e x.val))
-    rw [constantCoeff_rename]
-    exact x.prop⟩
-  map_zero' := Subtype.ext <| by simp
+    simpa only [PowerSeries.HasSubst, constantCoeff_rename] using x.prop⟩
+  map_zero' := Subtype.ext (by simp)
   map_add' x y := Subtype.ext <| by
     have hxy : HasSubst ![x.val, y.val] := hasSubst_of_constantCoeff_nilpotent fun i ↦ by
       fin_cases i
@@ -611,14 +577,17 @@ private noncomputable def renamePointHom (F : FormalGroup R) {σ τ : Type*} (e 
     funext i
     fin_cases i <;> rfl
 
+@[simp]
+private theorem val_renamePointHom (F : FormalGroup R) {σ τ : Type*} (e : σ ≃ τ) (x : F.Point σ) :
+    (renamePointHom F e x).val = rename e x.val := rfl
+
 /-- Base change of power-series points along a ring homomorphism `φ : R →+* S`. -/
 private noncomputable def mapPointHom (F : FormalGroup R) (φ : R →+* S) (σ : Type*) :
     F.Point σ →+ (F.map φ).Point σ where
   toFun x := ⟨MvPowerSeries.map φ x.val, by
-    change IsNilpotent (constantCoeff (MvPowerSeries.map φ x.val))
-    rw [constantCoeff_map]
+    rw [PowerSeries.HasSubst, constantCoeff_map]
     exact x.prop.map φ⟩
-  map_zero' := Subtype.ext <| by simp
+  map_zero' := Subtype.ext (by simp)
   map_add' x y := Subtype.ext <| by
     have hxy : HasSubst ![x.val, y.val] := hasSubst_of_constantCoeff_nilpotent fun i ↦ by
       fin_cases i
@@ -628,6 +597,10 @@ private noncomputable def mapPointHom (F : FormalGroup R) (φ : R →+* S) (σ :
     congr 1
     funext i
     fin_cases i <;> rfl
+
+@[simp]
+private theorem val_mapPointHom (F : FormalGroup R) (φ : R →+* S) (σ : Type*) (x : F.Point σ) :
+    (mapPointHom F φ σ x).val = MvPowerSeries.map φ x.val := rfl
 
 /-- The formal-group sum `γ(T₁) +_F ⋯ +_F γ(Tₙ)` of `n` copies of `γ` in distinct variables. -/
 private noncomputable def sumCoordPoint (F : FormalGroup R) [F.IsComm] (n : ℕ) :
@@ -646,24 +619,32 @@ private theorem constantCoeff_sumCoordPoint (F : FormalGroup R) [F.IsComm] (n : 
     (fun x y hx hy ↦ ?_) (by simp) (fun i _ ↦ ?_)
   · exact constantCoeff_subst_eq_zero (hasSubst_of_constantCoeff_zero fun j ↦ by
       fin_cases j <;> assumption) (fun j ↦ by fin_cases j <;> assumption) F.zero_constantCoeff
-  · change constantCoeff (γ.toPowerSeries.toMvPowerSeries i) = 0
-    rw [PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
+  · rw [val_coordPointHom, PowerSeries.toMvPowerSeries_apply, constantCoeff_rename]
     exact γ.constantCoeff_toPowerSeries
 
 private theorem isSymmetric_sumCoordPoint (F : FormalGroup R) [F.IsComm] (n : ℕ) (γ : F.Curve) :
     (sumCoordPoint F n γ).val.IsSymmetric :=
   isSymmetric_iff.mpr fun e ↦ by
-    change (renamePointHom F e (sumCoordPoint F n γ)).val = (sumCoordPoint F n γ).val
-    rw [sumCoordPoint_apply, map_sum]
     have hcoord : ∀ i : Fin n,
         renamePointHom F e (coordPointHom F i γ) = coordPointHom F (e i) γ := fun i ↦
       Subtype.ext <| by
-        change rename e (γ.toPowerSeries.toMvPowerSeries i) =
-          γ.toPowerSeries.toMvPowerSeries (e i)
-        rw [PowerSeries.toMvPowerSeries_apply, PowerSeries.toMvPowerSeries_apply, rename_rename]
+        rw [val_renamePointHom, val_coordPointHom, val_coordPointHom,
+          PowerSeries.toMvPowerSeries_apply, PowerSeries.toMvPowerSeries_apply, rename_rename]
         rfl
-    simp_rw [hcoord]
-    exact congrArg Subtype.val (Equiv.sum_comp e fun i ↦ coordPointHom F i γ)
+    have hsum : renamePointHom F e (sumCoordPoint F n γ) = sumCoordPoint F n γ := by
+      rw [sumCoordPoint_apply, map_sum]
+      simp_rw [hcoord]
+      exact Equiv.sum_comp e fun i ↦ coordPointHom F i γ
+    exact (val_renamePointHom F e (sumCoordPoint F n γ)).symm.trans
+      (congrArg (fun p : F.Point (Fin n) ↦ p.val) hsum)
+
+private noncomputable def symmSumCoordPoint (F : FormalGroup R) [F.IsComm] (n : ℕ) (γ : F.Curve) :
+    symmetricSubalgebra (Fin n) R :=
+  ⟨(sumCoordPoint F n γ).val, (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n γ)⟩
+
+@[simp]
+private theorem coe_symmSumCoordPoint (F : FormalGroup R) [F.IsComm] (n : ℕ) (γ : F.Curve) :
+    (symmSumCoordPoint F n γ : MvPowerSeries (Fin n) R) = (sumCoordPoint F n γ).val := rfl
 
 /-- **Cartier's Frobenius operator** `f_n` on curves of a commutative formal group law `F`: the
 formal-group sum `γ(T₁) +_F ⋯ +_F γ(Tₙ)` is symmetric in `T₁, …, Tₙ`, and evaluating its elementary
@@ -672,61 +653,34 @@ noncomputable def frobeniusCurve (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : 
     F.Curve →+ F.Curve :=
   letI : NeZero n := ⟨hn⟩
   { toFun γ :=
-      ⟨symmetricSubalgebra.evalTopEsymm (Fin n) R
-          ⟨(sumCoordPoint F n γ).val,
-            (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n γ)⟩,
-        by
-          rw [symmetricSubalgebra.constantCoeff_evalTopEsymm]
-          exact constantCoeff_sumCoordPoint F n γ⟩
+      ⟨symmetricSubalgebra.evalTopEsymm (Fin n) R (symmSumCoordPoint F n γ), by
+        rw [symmetricSubalgebra.constantCoeff_evalTopEsymm]
+        exact constantCoeff_sumCoordPoint F n γ⟩
     map_zero' := Curve.ext <| by
-      change symmetricSubalgebra.evalTopEsymm (Fin n) R
-          ⟨(sumCoordPoint F n 0).val,
-            (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n 0)⟩ = 0
-      have hv : (sumCoordPoint F n 0).val = 0 := by
-        rw [map_zero, zero_apply]
-      have h0 : (⟨(sumCoordPoint F n 0).val,
-          (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n 0)⟩ :
-            symmetricSubalgebra (Fin n) R) = 0 := Subtype.ext hv
+      have h0 : symmSumCoordPoint F n 0 = 0 :=
+        Subtype.ext (by rw [coe_symmSumCoordPoint, map_zero, zero_apply, ZeroMemClass.coe_zero])
       exact (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) h0).trans (map_zero _)
     map_add' γ₁ γ₂ := Curve.ext <| by
-      let s₁ : symmetricSubalgebra (Fin n) R :=
-        ⟨(sumCoordPoint F n γ₁).val,
-          (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n γ₁)⟩
-      let s₂ : symmetricSubalgebra (Fin n) R :=
-        ⟨(sumCoordPoint F n γ₂).val,
-          (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n γ₂)⟩
-      change symmetricSubalgebra.evalTopEsymm (Fin n) R
-          ⟨(sumCoordPoint F n (γ₁ + γ₂)).val,
-            (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n (γ₁ + γ₂))⟩ =
-        F.toPowerSeries.subst
-          ![symmetricSubalgebra.evalTopEsymm (Fin n) R s₁,
-            symmetricSubalgebra.evalTopEsymm (Fin n) R s₂]
+      let s : Fin 2 → symmetricSubalgebra (Fin n) R := ![symmSumCoordPoint F n γ₁,
+        symmSumCoordPoint F n γ₂]
+      have hs0 : ∀ j, constantCoeff (s j).1 = 0 := fun j ↦ by
+        fin_cases j
+        · exact constantCoeff_sumCoordPoint F n γ₁
+        · exact constantCoeff_sumCoordPoint F n γ₂
       have hv : (sumCoordPoint F n (γ₁ + γ₂)).val =
-          F.toPowerSeries.subst (fun t ↦ (![s₁, s₂] t).1) := by
+          F.toPowerSeries.subst (fun t ↦ (s t).1) := by
         rw [map_add, add_apply]
         congr 1
         funext j
         fin_cases j <;> rfl
-      have hsum : (⟨(sumCoordPoint F n (γ₁ + γ₂)).val,
-          (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n (γ₁ + γ₂))⟩ :
-            symmetricSubalgebra (Fin n) R) =
-          ⟨F.toPowerSeries.subst (fun t ↦ (![s₁, s₂] t).1),
+      have hsum : symmSumCoordPoint F n (γ₁ + γ₂) =
+          ⟨F.toPowerSeries.subst (fun t ↦ (s t).1),
             (mem_symmetricSubalgebra _).mpr <|
-              IsSymmetric.subst
-                (hasSubst_of_constantCoeff_zero fun j ↦ by
-                  fin_cases j
-                  · exact constantCoeff_sumCoordPoint F n γ₁
-                  · exact constantCoeff_sumCoordPoint F n γ₂)
-                (fun j ↦ by
-                  fin_cases j
-                  · exact isSymmetric_sumCoordPoint F n γ₁
-                  · exact isSymmetric_sumCoordPoint F n γ₂)⟩ := Subtype.ext hv
+              IsSymmetric.subst (hasSubst_of_constantCoeff_zero hs0)
+                (fun j ↦ symmetricSubalgebra.isSymmetric (s j))⟩ := Subtype.ext hv
+      dsimp only [Curve.toPowerSeries_add]
       refine (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) hsum).trans ?_
-      rw [symmetricSubalgebra.evalTopEsymm_subst F.toPowerSeries ![s₁, s₂]
-        (fun j ↦ by
-          fin_cases j
-          · exact constantCoeff_sumCoordPoint F n γ₁
-          · exact constantCoeff_sumCoordPoint F n γ₂)]
+      rw [symmetricSubalgebra.evalTopEsymm_subst F.toPowerSeries s hs0]
       congr 1
       funext j
       fin_cases j <;> rfl }
@@ -745,18 +699,17 @@ theorem map_frobeniusCurve (F : FormalGroup R) [F.IsComm] (φ : R →+* S) (n : 
   ext : 1
   simp only [Curve.toPowerSeries_map, frobeniusCurve, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
   rw [symmetricSubalgebra.map_evalTopEsymm]
-  have hsum_eq : ∑ i : Fin n, mapPointHom F φ (Fin n) (coordPointHom F i γ) =
-      ∑ i : Fin n, coordPointHom (F.map φ) i (Curve.map φ γ) :=
-    Finset.sum_congr rfl fun i _ ↦ Subtype.ext <| by
-      change MvPowerSeries.map φ (γ.toPowerSeries.toMvPowerSeries i) =
-        (γ.toPowerSeries.map φ).toMvPowerSeries i
-      rw [PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.toMvPowerSeries_eq_subst,
-        PowerSeries.map_subst (PowerSeries.HasSubst.X (S := R) i), map_X]
-  have hv : MvPowerSeries.map φ (sumCoordPoint F n γ).val =
-      (sumCoordPoint (F.map φ) n (Curve.map φ γ)).val := by
-    change (mapPointHom F φ (Fin n) (sumCoordPoint F n γ)).val = _
-    rw [sumCoordPoint_apply, sumCoordPoint_apply, map_sum, hsum_eq]
-  exact congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) S) (Subtype.ext hv)
+  have hsum_eq : mapPointHom F φ (Fin n) (sumCoordPoint F n γ) =
+      sumCoordPoint (F.map φ) n (Curve.map φ γ) := by
+    rw [sumCoordPoint_apply, sumCoordPoint_apply, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ Subtype.ext ?_
+    rw [val_mapPointHom, val_coordPointHom, val_coordPointHom, Curve.toPowerSeries_map]
+    exact PowerSeries.map_toMvPowerSeries φ i γ.toPowerSeries
+  have hval : MvPowerSeries.map φ (symmSumCoordPoint F n γ : MvPowerSeries (Fin n) R) =
+      (symmSumCoordPoint (F.map φ) n (Curve.map φ γ) : MvPowerSeries (Fin n) S) :=
+    (val_mapPointHom F φ (Fin n) (sumCoordPoint F n γ)).symm.trans
+      (congrArg (fun p : (F.map φ).Point (Fin n) ↦ p.val) hsum_eq)
+  exact congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) S) (Subtype.ext hval)
 
 theorem _root_.TauCeti.FormalGroupHom.mapCurve_frobeniusCurve {F G : FormalGroup R}
     [F.IsComm] [G.IsComm] (f : TauCeti.FormalGroupHom F G) (n : ℕ) (hn : n ≠ 0) (γ : F.Curve) :
@@ -765,34 +718,29 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_frobeniusCurve {F G : FormalGroup
   ext : 1
   simp only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, frobeniusCurve,
     AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-  let s : symmetricSubalgebra (Fin n) R :=
-    ⟨(sumCoordPoint F n γ).val,
-      (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint F n γ)⟩
   have hpoint : f.toAddMonoidHom (Fin n) (sumCoordPoint F n γ) =
       sumCoordPoint G n (f.mapCurve γ) := by
     rw [sumCoordPoint_apply, sumCoordPoint_apply, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ Subtype.ext ?_
-    rw [TauCeti.FormalGroupHom.toAddMonoidHom_apply, TauCeti.FormalGroupHom.applyPoint_val]
-    change PowerSeries.subst (γ.toPowerSeries.toMvPowerSeries i) f.toPowerSeries =
-      PowerSeries.toMvPowerSeries i (f.mapCurve γ).toPowerSeries
-    rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, PowerSeries.toMvPowerSeries_eq_subst,
-      PowerSeries.toMvPowerSeries_eq_subst,
+    rw [TauCeti.FormalGroupHom.toAddMonoidHom_apply, TauCeti.FormalGroupHom.applyPoint_val,
+      val_coordPointHom, val_coordPointHom, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
+      PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.toMvPowerSeries_eq_subst,
       PowerSeries.subst_comp_subst_apply γ.hasSubst (PowerSeries.HasSubst.X (S := R) i)]
   have hv : (sumCoordPoint G n (f.mapCurve γ)).val =
-      MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries := by
+      MvPowerSeries.subst (fun _ : Unit ↦ (symmSumCoordPoint F n γ).1) f.toPowerSeries := by
     rw [← hpoint, TauCeti.FormalGroupHom.toAddMonoidHom_apply,
       TauCeti.FormalGroupHom.applyPoint_val, PowerSeries.subst_def]
-  have hsub : (⟨(sumCoordPoint G n (f.mapCurve γ)).val,
-      (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint G n (f.mapCurve γ))⟩ :
-        symmetricSubalgebra (Fin n) R) =
-      ⟨MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries,
+    rfl
+  have hsub : symmSumCoordPoint G n (f.mapCurve γ) =
+      ⟨MvPowerSeries.subst (fun _ : Unit ↦ (symmSumCoordPoint F n γ).1) f.toPowerSeries,
         (mem_symmetricSubalgebra _).mpr <|
           IsSymmetric.subst
             (hasSubst_of_constantCoeff_zero fun _ ↦ constantCoeff_sumCoordPoint F n γ)
             (fun _ ↦ isSymmetric_sumCoordPoint F n γ)⟩ :=
     Subtype.ext hv
   rw [PowerSeries.subst_def]
-  exact (symmetricSubalgebra.evalTopEsymm_subst f.toPowerSeries (fun _ : Unit ↦ s)
+  exact (symmetricSubalgebra.evalTopEsymm_subst f.toPowerSeries
+    (fun _ : Unit ↦ symmSumCoordPoint F n γ)
     (fun _ ↦ constantCoeff_sumCoordPoint F n γ)).symm.trans
     (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) hsub.symm)
 
@@ -818,15 +766,11 @@ theorem toPowerSeries_frobeniusCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0) (γ : (�
           · exact (∑ i ∈ s, coordPointHom (𝔾ₐ (R := R)) i γ).prop
       rw [subst_add hxy, subst_X hxy, subst_X hxy, Matrix.cons_val_zero, Matrix.cons_val_one, ih]
       rfl
-  have hsum : (sumCoordPoint (𝔾ₐ (R := R)) n γ).val =
-      ∑ i : Fin n, γ.toPowerSeries.toMvPowerSeries i := hpt Finset.univ
   simp only [frobeniusCurve, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-  have hsub : (⟨(sumCoordPoint (𝔾ₐ (R := R)) n γ).val,
-      (mem_symmetricSubalgebra _).mpr (isSymmetric_sumCoordPoint (𝔾ₐ (R := R)) n γ)⟩ :
-        symmetricSubalgebra (Fin n) R) =
+  have hsub : symmSumCoordPoint (𝔾ₐ (R := R)) n γ =
       ⟨∑ i : Fin n, γ.toPowerSeries.toMvPowerSeries i,
         (mem_symmetricSubalgebra _).mpr (IsSymmetric.sum_toMvPowerSeries γ.toPowerSeries)⟩ :=
-    Subtype.ext hsum
+    Subtype.ext (hpt Finset.univ)
   refine (congrArg (symmetricSubalgebra.evalTopEsymm (Fin n) R) hsub).trans ?_
   rw [symmetricSubalgebra.evalTopEsymm_sum_toMvPowerSeries, Fintype.card_fin]
 
@@ -899,22 +843,22 @@ theorem Curve.exists_lift_of_isUnit_natCast (F : FormalGroup R) [F.IsComm] (γ :
   let F₀ : FormalGroup A := F_U.map (algebraMap U A)
   let γ₀ : F₀.Curve := Curve.map (algebraMap U A) γ_U
   have hF₀ : F₀.map π = F := by
-    rw [FormalGroup.map_comp, hπ_comp]
-    change (TauCeti.LazardRing.formalGroup.map MvPolynomial.C).map πU = F
-    rw [FormalGroup.map_comp]
+    dsimp only [F₀, F_U]
+    rw [FormalGroup.map_comp, hπ_comp, FormalGroup.map_comp]
     have hC : πU.comp MvPolynomial.C = TauCeti.LazardRing.lift ⟨F, inferInstance⟩ :=
       RingHom.ext fun r ↦ MvPolynomial.eval₂Hom_C _ _ r
     rw [hC, TauCeti.LazardRing.map_lift]
+  obtain ⟨e, he⟩ : ∃ e : TauCeti.FormalGroupIso (F₀.map π) F,
+      e.toHom.toPowerSeries = PowerSeries.X := hF₀ ▸ ⟨.refl _, by simp⟩
   refine ⟨A, Q, inferInstance, inferInstance, inferInstance, j, hj, hSA, F₀, inferInstance, γ₀,
-    π, TauCeti.FormalGroupIso.ofEq hF₀, ?_⟩
+    π, e, ?_⟩
   ext k
-  rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
-    TauCeti.FormalGroupIso.ofEq_toHom_toPowerSeries,
+  rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, he,
     PowerSeries.subst_X (Curve.map π γ₀).hasSubst,
     Curve.toPowerSeries_map, Curve.toPowerSeries_map, PowerSeries.coeff_map, PowerSeries.coeff_map,
     ← RingHom.comp_apply, hπ_comp]
   rcases eq_or_ne k 0 with rfl | hk0
-  · simp [γ_U, PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  · simp [γ_U]
   · dsimp only [U, γ_U, πU]
     simp [hk0]
 
@@ -936,7 +880,8 @@ private theorem frobeniusCurve_frobeniusCurve_of_ratAlgebra [Algebra ℚ R] (F :
   simp only [TauCeti.FormalGroupIso.curveEquiv_apply, logIso_toHom,
     F.logHom.mapCurve_frobeniusCurve, toPowerSeries_frobeniusCurve_𝔾ₐ, PowerSeries.coeff_smul,
     PowerSeries.coeff_cartier, Nat.add_zero, smul_eq_mul, Nat.cast_mul]
-  rw [mul_assoc, show n * (m * k) = m * n * k by ring]
+  have hmul : n * (m * k) = m * n * k := by ring
+  rw [mul_assoc, hmul]
 
 private theorem frobeniusCurve_verschiebungCurve_self_of_ratAlgebra [Algebra ℚ R]
     (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : n ≠ 0) (γ : F.Curve) :
@@ -971,9 +916,9 @@ private theorem frobeniusCurve_verschiebungCurve_of_coprime_of_ratAlgebra [Algeb
   by_cases hnk : n ∣ k
   · obtain ⟨q, rfl⟩ := hnk
     have hmn : n ∣ m * (n * q) := ⟨m * q, by ring⟩
+    have hcomm : m * (n * q) = n * (m * q) := by ring
     rw [ite_eq_left hmn, ite_eq_left ⟨q, rfl⟩,
-      Nat.mul_div_cancel_left q (Nat.pos_of_ne_zero hn),
-      show m * (n * q) = n * (m * q) by ring,
+      Nat.mul_div_cancel_left q (Nat.pos_of_ne_zero hn), hcomm,
       Nat.mul_div_cancel_left (m * q) (Nat.pos_of_ne_zero hn)]
   · have hmn : ¬ n ∣ m * k := fun hdvd ↦ hnk (hcop.symm.dvd_of_dvd_mul_left hdvd)
     rw [ite_eq_right hmn, ite_eq_right hnk, mul_zero]

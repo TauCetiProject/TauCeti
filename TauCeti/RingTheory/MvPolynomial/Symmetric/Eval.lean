@@ -164,19 +164,13 @@ theorem evalTopEsymm_esymm_of_pos {k : ℕ} (hk : 0 < k) :
     evalTopEsymm σ R ⟨esymm σ R k, esymm_isSymmetric σ R k⟩ =
       if k = Fintype.card σ then (-1 : Polynomial R) ^ (Fintype.card σ - 1) * Polynomial.X
       else 0 := by
-  rcases lt_trichotomy k (Fintype.card σ) with hlt | rfl | hgt
+  rcases le_or_gt k (Fintype.card σ) with hle | hgt
   · let i : Fin (Fintype.card σ) := ⟨k - 1, by omega⟩
     have hi : (i : ℕ) + 1 = k := by simp [i]; omega
     have hsub : (⟨esymm σ R k, esymm_isSymmetric σ R k⟩ : symmetricSubalgebra σ R) =
         ⟨esymm σ R ((i : ℕ) + 1), esymm_isSymmetric σ R _⟩ := Subtype.ext (by rw [hi])
-    rw [hsub, evalTopEsymm_apply, esymmAlgEquiv_symm_apply, aeval_X]
-    simp [hi, hlt.ne]
-  · let i : Fin (Fintype.card σ) := ⟨Fintype.card σ - 1, by omega⟩
-    have hi : (i : ℕ) + 1 = Fintype.card σ := by simp [i]; omega
-    have hsub : (⟨esymm σ R (Fintype.card σ), esymm_isSymmetric σ R _⟩ : symmetricSubalgebra σ R) =
-        ⟨esymm σ R ((i : ℕ) + 1), esymm_isSymmetric σ R _⟩ := Subtype.ext (by rw [hi])
-    rw [hsub, evalTopEsymm_apply, esymmAlgEquiv_symm_apply, aeval_X]
-    simp [i, hi]
+    rw [hsub, evalTopEsymm_apply, esymmAlgEquiv_symm_apply, aeval_X, hi]
+    split_ifs with hk' <;> simp [i, hk']
   · have hzero : esymm σ R k = 0 := by
       rw [esymm_eq_sum_subtype]
       exact Finset.sum_eq_zero fun t _ ↦
@@ -274,13 +268,12 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
   have hn : 0 < Fintype.card σ := Fintype.card_pos
   induction m using Nat.strong_induction_on with
   | _ m ih =>
-    let P (k : ℕ) : symmetricSubalgebra σ R := ⟨psum σ R k, psum_isSymmetric σ R k⟩
     let E (k : ℕ) : symmetricSubalgebra σ R := ⟨esymm σ R k, esymm_isSymmetric σ R k⟩
-    have hnewton : P m = (-1) ^ (m + 1) * (m : symmetricSubalgebra σ R) * E m -
-        ∑ a ∈ antidiagonal m with a.1 ∈ Set.Ioo 0 m, (-1) ^ a.1 * E a.1 * P a.2 := by
-      apply Subtype.ext
-      simpa [P, E] using psum_eq_mul_esymm_sub_sum σ R m hm
-    change evalTopEsymm σ R (P m) = _
+    have hnewton : (⟨psum σ R m, psum_isSymmetric σ R m⟩ : symmetricSubalgebra σ R) =
+        (-1) ^ (m + 1) * (m : symmetricSubalgebra σ R) * E m -
+          ∑ a ∈ antidiagonal m with a.1 ∈ Set.Ioo 0 m,
+            (-1) ^ a.1 * E a.1 * ⟨psum σ R a.2, psum_isSymmetric σ R a.2⟩ :=
+      Subtype.ext (by simpa [E] using psum_eq_mul_esymm_sub_sum σ R m hm)
     rw [hnewton, map_sub, map_mul, map_mul, map_pow, map_neg, map_one, map_natCast, map_sum,
       evalTopEsymm_esymm_of_pos hm]
     rcases lt_trichotomy m (Fintype.card σ) with hlt | heq | hgt
@@ -293,16 +286,17 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
     · subst heq
       rw [ite_eq_left rfl, ite_eq_left dvd_rfl, Nat.div_self hn, pow_one]
       have hsum : (∑ x ∈ antidiagonal (Fintype.card σ) with x.1 ∈ Set.Ioo 0 (Fintype.card σ),
-          evalTopEsymm σ R ((-1) ^ x.1 * E x.1 * P x.2)) = 0 := by
+          evalTopEsymm σ R
+            ((-1) ^ x.1 * E x.1 * ⟨psum σ R x.2, psum_isSymmetric σ R x.2⟩)) = 0 := by
         refine Finset.sum_eq_zero fun a ha ↦ ?_
         rw [mem_filter, Set.mem_Ioo] at ha
         rw [map_mul, map_mul, evalTopEsymm_esymm_of_pos ha.2.1, ite_eq_right ha.2.2.ne,
           mul_zero, zero_mul]
       rw [hsum, sub_zero]
+      have hexp : Fintype.card σ + 1 + (Fintype.card σ - 1) = 2 * Fintype.card σ := by omega
       have hsign :
           (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (-1) ^ (Fintype.card σ - 1) = 1 := by
-        rw [← pow_add, show Fintype.card σ + 1 + (Fintype.card σ - 1) = 2 * Fintype.card σ by omega,
-          pow_mul, neg_one_sq, one_pow]
+        rw [← pow_add, hexp, pow_mul, neg_one_sq, one_pow]
       calc
         (-1 : Polynomial R) ^ (Fintype.card σ + 1) * (Fintype.card σ : Polynomial R) *
             ((-1) ^ (Fintype.card σ - 1) * Polynomial.X)
@@ -317,11 +311,11 @@ theorem evalTopEsymm_psum {m : ℕ} (hm : 0 < m) :
       rw [Finset.sum_eq_single (Fintype.card σ, m - Fintype.card σ)]
       · rw [map_mul, map_mul, map_pow, map_neg, map_one, evalTopEsymm_esymm_of_pos hn,
           ite_eq_left rfl, ih (m - Fintype.card σ) (by omega) (by omega)]
+        have hexp : Fintype.card σ + (Fintype.card σ - 1) = 2 * (Fintype.card σ - 1) + 1 := by
+          omega
         have hsign :
             -((-1 : Polynomial R) ^ Fintype.card σ * (-1) ^ (Fintype.card σ - 1)) = 1 := by
-          rw [← pow_add,
-            show Fintype.card σ + (Fintype.card σ - 1) = 2 * (Fintype.card σ - 1) + 1 by omega,
-            pow_succ, pow_mul, neg_one_sq, one_pow, one_mul, neg_neg]
+          rw [← pow_add, hexp, pow_succ, pow_mul, neg_one_sq, one_pow, one_mul, neg_neg]
         have hdvd : Fintype.card σ ∣ m - Fintype.card σ ↔ Fintype.card σ ∣ m := by
           conv_rhs => rw [← Nat.sub_add_cancel hgt.le]
           exact Nat.dvd_add_self_right.symm
