@@ -55,8 +55,9 @@ Eisenstein series through their constant terms.
 ## Main results
 
 * `ModularForm.qExpansionAt_mul`: the `q`-expansion at a cusp is multiplicative.
-* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`: the dependence of the
-  `q`-expansion at a cusp on the representative.
+* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`,
+  `ModularForm.qExpansionAt_SL2Z`: the dependence of the `q`-expansion at a cusp on the
+  representative, and collapse to `qExpansion 1` at level one.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
 * `ModularForm.exists_qExpansion_translate_eq_expand_qExpansionAt`: at a strict period `N` of
@@ -218,6 +219,14 @@ theorem qExpansionAt_mul_left {h : SL(2, ℤ)} (hh : mapGL ℝ h ∈ Γ) (γ : S
     Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer (Γ.inv_mem hh))
   simp only [qExpansionAt_apply, coe_translate, map_mul, SlashAction.slash_mul,
     SlashInvariantFormClass.slash_action_eq f _ hh, _root_.mul_inv_rev, mul_smul, hΓ]
+
+/-- At level one, `SL₂(ℤ)` acts transitively on the cusps with trivial slash action, so the
+`q`-expansion at every representative `γ ∈ SL₂(ℤ)` is the expansion `qExpansion 1 f` at `∞`. -/
+@[simp]
+theorem qExpansionAt_SL2Z (γ : SL(2, ℤ)) (f : ModularForm 𝒮ℒ k) :
+    qExpansionAt γ f = qExpansion 1 f := by
+  have hγ : mapGL ℝ γ ∈ 𝒮ℒ := ⟨γ, rfl⟩
+  rw [← mul_one γ, qExpansionAt_mul_left hγ, qExpansionAt_one, Subgroup.strictWidthInfty_SL2Z]
 
 /-- Negating the representative multiplies the `q`-expansion at the cusp by `(-1)^k`. -/
 theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
