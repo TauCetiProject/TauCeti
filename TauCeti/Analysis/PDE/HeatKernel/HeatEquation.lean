@@ -202,9 +202,11 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_smul_integral (ht : 0 < t)
     rw [iteratedFDeriv_heatKernel_eq_rpow_smul ht, hpow, hinv, hφ_def]
     ext v
     simp [smul_inv_smul₀ hst.ne', mul_smul]
+  have hscalar : √t ^ finrank ℝ E * (√t)⁻¹ ^ (finrank ℝ E + m) = (√t)⁻¹ ^ m := by
+    simp [pow_add, hst.ne']
   rw [iteratedFDeriv_heatKernel_convolution ht hg hM, ← funext hφ,
     Measure.integral_comp_inv_smul_of_nonneg _ _ hst.le, hφ_def, integral_smul, smul_smul,
-    pow_add, ← mul_assoc, ← mul_pow, mul_inv_cancel₀ hst.ne', one_pow, one_mul]
+    hscalar]
 
 /-- **Cancellation in the derivatives of a heat convolution.** Since `∫ D^m K_t = 0` for `m ≥ 1`,
 the value of `g` at the base point can be subtracted under the integral:

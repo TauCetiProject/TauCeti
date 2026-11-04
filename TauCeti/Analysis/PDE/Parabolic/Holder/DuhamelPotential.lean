@@ -25,10 +25,11 @@ not needed for that estimate.
 continuous forcing on `E × [0,T]` to the spatial gradient `D w` of its Duhamel potential `w`, as a
 bounded continuous field on the slab, with operator norm at most `C √T` for a constant `C`
 independent of `T`. Its continuity is `TauCeti.continuousOn_fderiv_heatDuhamelPotential`; no
-Hölder regularity of the forcing is needed. For Hölder forcing it is the spatial derivative of the
-value field (`hasFDerivAt_heatDuhamelPotentialHolderL`), which is the gradient identity required
-of a map in the order-two space `ParabolicC2HolderSpace`. The second spatial derivative and the
-time derivative are not treated here.
+Hölder regularity of the forcing is needed. It is the spatial derivative of the Duhamel potential
+(`hasFDerivAt_heatDuhamelPotentialFDerivL`); for Hölder forcing it is therefore the spatial
+derivative of the value field (`hasFDerivAt_heatDuhamelPotentialHolderL`), which is the gradient
+identity required of a map in the order-two space `ParabolicC2HolderSpace`. The second spatial
+derivative and the time derivative are not treated here.
 
 ## Main declarations
 
@@ -37,8 +38,9 @@ time derivative are not treated here.
 * `TauCeti.heatDuhamelPotentialFDerivL`: its spatial gradient, as a bounded operator from bounded
   continuous forcing to bounded continuous gradient fields.
 * `TauCeti.exists_norm_heatDuhamelPotentialFDerivL_le`: the gradient operator has norm `O(√T)`.
-* `TauCeti.hasFDerivAt_heatDuhamelPotentialHolderL`: the gradient field is the spatial derivative
-  of the value field.
+* `TauCeti.hasFDerivAt_heatDuhamelPotentialFDerivL`,
+  `TauCeti.hasFDerivAt_heatDuhamelPotentialHolderL`: the gradient field is the spatial derivative
+  of the Duhamel potential, and of the value field for Hölder forcing.
 
 ## References
 
@@ -67,7 +69,10 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
           (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space) :=
   holderWith_heatDuhamelPotential
     (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
-    (fun s _ x => norm_timeExtension_le T.coe_nonneg f s x)
+    (fun s _ x => by
+      simpa only [HolderSpace.coe_toBoundedContinuousFunction, coe_nnnorm] using
+        (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
+          f.norm_toBoundedContinuousFunction_le)
     (fun s _ => holderWith_timeExtension T.coe_nonneg (f := f) (by
       simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
         f.memHolder.holderWith.mono f.nnHolderNorm_le) s) hα hα₂
@@ -80,7 +85,10 @@ private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T
   have hp := (slabTime p).2
   rw [coe_slabTime] at hp
   exact ((norm_heatDuhamelPotential_le hp.1
-    (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x) _).trans
+    (ae_of_all _ fun s => ae_of_all _ fun x => by
+      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
+        (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
+          f.norm_toBoundedContinuousFunction_le) _).trans
     (mul_le_mul_of_nonneg_left hp.2 (norm_nonneg f))).trans_eq (mul_comm _ _)
 
 private def potentialBCF (hα : 0 < α) (hα₂ : α ≤ 2)
@@ -126,6 +134,31 @@ private theorem norm_potential_le (hα : 0 < α) (hα₂ : α ≤ 2)
   push_cast at hH' ⊢
   linarith
 
+/-- The Duhamel potential of the clamped extension is additive in bounded continuous forcing. -/
+private theorem heatDuhamelPotential_timeExtension_add (f g : slab (E := E) 0 T →ᵇ F) {t : ℝ}
+    (ht : 0 ≤ t) :
+    heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg (⇑f + ⇑g) x s) t =
+      heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s) t +
+        heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg g x s) t := by
+  funext x
+  rw [timeExtension_add]
+  exact heatDuhamelPotential_add
+    (f := fun s x => timeExtension T.coe_nonneg f x s)
+    (g := fun s x => timeExtension T.coe_nonneg g x s)
+    (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
+    (ae_of_all _ fun s => ae_of_all _ fun y => norm_timeExtension_le T.coe_nonneg f s y)
+    (continuous_timeExtension T.coe_nonneg g.continuous).stronglyMeasurable
+    (ae_of_all _ fun s => ae_of_all _ fun y => norm_timeExtension_le T.coe_nonneg g s y) ht x
+
+/-- The Duhamel potential of the clamped extension is homogeneous in the forcing. -/
+private theorem heatDuhamelPotential_timeExtension_smul (c : ℝ) (f : slab (E := E) 0 T → F)
+    (t : ℝ) :
+    heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg (c • f) x s) t =
+      c • heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s) t := by
+  funext x
+  rw [timeExtension_smul]
+  exact heatDuhamelPotential_smul c _ t x
+
 /-- The Duhamel heat potential as a bounded linear endomorphism of the bounded parabolic
 `α`-Hölder space on `E × [0,T]`, for `0 < α ≤ 2`. Its values are independent of the constant
 extension of the forcing outside the slab used in the formula. -/
@@ -136,23 +169,15 @@ def heatDuhamelPotentialHolderL (hα : 0 < α) (hα₂ : α ≤ 2) :
       map_add' f g := by
         have hfg : ⇑(f + g) = ⇑f + ⇑g := funext (HolderSpace.add_apply f g)
         ext p
-        simp only [HolderSpace.add_apply, coe_potential, hfg, timeExtension_add, Pi.add_apply]
-        simpa only [Pi.add_def, coe_slabTime] using
-          heatDuhamelPotential_add
-            (f := fun s x => timeExtension T.coe_nonneg f x s)
-            (g := fun s x => timeExtension T.coe_nonneg g x s)
-            (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
-            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x)
-            (continuous_timeExtension T.coe_nonneg g.continuous).stronglyMeasurable
-            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg g s x)
-            (slabTime p).2.1 (p : ParabolicSpaceTime E).space
+        simp only [HolderSpace.add_apply, coe_potential, hfg]
+        simpa only [HolderSpace.coe_toBoundedContinuousFunction, Pi.add_apply] using
+          congrFun (heatDuhamelPotential_timeExtension_add f.toBoundedContinuousFunction
+            g.toBoundedContinuousFunction (mem_slab.1 p.2).1) (p : ParabolicSpaceTime E).space
       map_smul' c f := by
         have hcf : ⇑(c • f) = c • ⇑f := funext (HolderSpace.smul_apply c f)
         ext p
-        simp only [HolderSpace.smul_apply, coe_potential, RingHom.id_apply, hcf,
-          timeExtension_smul, Pi.smul_apply]
-        exact heatDuhamelPotential_smul c (fun s x => timeExtension T.coe_nonneg f x s)
-            (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space }
+        simp only [HolderSpace.smul_apply, coe_potential, RingHom.id_apply, hcf]
+        exact congrFun (heatDuhamelPotential_timeExtension_smul c f _) _ }
     (T * (2 + heatKernelMoment E α) + max 1 T : ℝ≥0)
     (norm_potential_le hα hα₂)
 
@@ -177,21 +202,6 @@ theorem norm_heatDuhamelPotentialHolderL_le (hα : 0 < α) (hα₂ : α ≤ 2) :
 
 section Gradient
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedSpace ℝ F] in
-/-- The clamped time extension of bounded continuous forcing is jointly continuous. -/
-private theorem continuous_uncurry_timeExtension (f : slab (E := E) 0 T →ᵇ F) :
-    Continuous (Function.uncurry fun s x => timeExtension T.coe_nonneg f x s) :=
-  continuous_timeExtension T.coe_nonneg f.continuous
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedSpace ℝ F] in
-/-- The clamped time extension of bounded continuous forcing is bounded by its norm. -/
-private theorem norm_timeExtension_le_norm (f : slab (E := E) 0 T →ᵇ F) (s : ℝ) (x : E) :
-    ‖timeExtension T.coe_nonneg f x s‖ ≤ ‖f‖ := by
-  rw [timeExtension_def]
-  exact f.norm_coe_le_norm _
-
 variable [CompleteSpace F]
 
 /-- A local shortcut for bounded gradient fields, keeping instance search shallow. -/
@@ -205,8 +215,9 @@ private theorem differentiable_potential (f : slab (E := E) 0 T →ᵇ F) {t : �
   rcases ht.eq_or_lt with rfl | ht
   · rw [heatDuhamelPotential_zero]
     exact differentiable_const 0
-  · exact (contDiff_heatDuhamelPotential (continuous_uncurry_timeExtension f).stronglyMeasurable
-      (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le_norm f s x)
+  · exact (contDiff_heatDuhamelPotential
+      (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
+      (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x)
       ht).differentiable one_ne_zero
 
 /-- A nonnegative constant in the gradient bound `‖D w(t, x)‖ ≤ C M √t`. -/
@@ -222,8 +233,9 @@ private theorem exists_nonneg_norm_fderiv_le :
   · rw [← h, heatDuhamelPotential_zero, fderiv_zero, Pi.zero_apply, norm_zero]
     positivity
   · calc _ ≤ C * ‖f‖ * √(p : ParabolicSpaceTime E).time :=
-          hC (continuous_uncurry_timeExtension f).stronglyMeasurable
-            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le_norm f s x) h _
+          hC (f := fun s x => timeExtension T.coe_nonneg f x s)
+            (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
+            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x) h _
       _ ≤ max C 0 * ‖f‖ * √(p : ParabolicSpaceTime E).time := by
           gcongr
           exact le_max_left _ _
@@ -249,8 +261,8 @@ private def gradient (f : slab (E := E) 0 T →ᵇ F) : slab (E := E) 0 T →ᵇ
   BoundedContinuousFunction.ofNormedAddCommGroup
     (fun p => fderiv ℝ (heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
       (p : ParabolicSpaceTime E).time) (p : ParabolicSpaceTime E).space)
-    ((continuousOn_fderiv_heatDuhamelPotential (continuous_uncurry_timeExtension f)
-      (norm_timeExtension_le_norm f)).comp_continuous
+    ((continuousOn_fderiv_heatDuhamelPotential (continuous_timeExtension T.coe_nonneg f.continuous)
+      (norm_timeExtension_le T.coe_nonneg f)).comp_continuous
         ((continuous_time.comp continuous_subtype_val).prodMk
           (continuous_space.comp continuous_subtype_val))
         fun p => ⟨(mem_slab.1 p.2).1, mem_univ _⟩)
@@ -281,34 +293,16 @@ def heatDuhamelPotentialFDerivL :
         have hfg : ⇑(f + g) = ⇑f + ⇑g := FunLike.coe_add f g
         ext p : 1
         have hp := (mem_slab.1 p.2).1
-        have hadd : heatDuhamelPotential
-            (fun s x => timeExtension T.coe_nonneg (f + g) x s) (p : ParabolicSpaceTime E).time =
-            heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
-                (p : ParabolicSpaceTime E).time +
-              heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg g x s)
-                (p : ParabolicSpaceTime E).time := by
-          funext x
-          rw [hfg, timeExtension_add]
-          exact heatDuhamelPotential_add (continuous_uncurry_timeExtension f).stronglyMeasurable
-              (ae_of_all _ fun s => ae_of_all _ fun y => norm_timeExtension_le_norm f s y)
-              (continuous_uncurry_timeExtension g).stronglyMeasurable
-              (ae_of_all _ fun s => ae_of_all _ fun y => norm_timeExtension_le_norm g s y) hp x
-        rw [_root_.add_apply, gradient_apply, gradient_apply, gradient_apply,
-          hadd, fderiv_add ((differentiable_potential f hp) _) ((differentiable_potential g hp) _)]
+        rw [_root_.add_apply, gradient_apply, gradient_apply, gradient_apply, hfg,
+          heatDuhamelPotential_timeExtension_add f g hp,
+          fderiv_add ((differentiable_potential f hp) _) ((differentiable_potential g hp) _)]
       map_smul' c f := by
         have hcf : ⇑(c • f) = c • ⇑f := FunLike.coe_smul c f
         ext p : 1
         have hp := (mem_slab.1 p.2).1
-        have hsmul : heatDuhamelPotential
-            (fun s x => timeExtension T.coe_nonneg (c • f) x s) (p : ParabolicSpaceTime E).time =
-            c • heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
-              (p : ParabolicSpaceTime E).time := by
-          funext x
-          rw [hcf, timeExtension_smul]
-          exact heatDuhamelPotential_smul c (fun s x => timeExtension T.coe_nonneg f x s)
-              (p : ParabolicSpaceTime E).time x
-        rw [RingHom.id_apply, _root_.smul_apply, gradient_apply,
-          gradient_apply, hsmul, fderiv_const_smul ((differentiable_potential f hp) _)] }
+        rw [RingHom.id_apply, _root_.smul_apply, gradient_apply, gradient_apply, hcf,
+          heatDuhamelPotential_timeExtension_smul,
+          fderiv_const_smul ((differentiable_potential f hp) _)] }
     (gradientConstant (E := E) (F := F) * √T) norm_gradient_le
 
 /-- Evaluation of the gradient operator: the spatial derivative of the Duhamel potential of the
@@ -328,6 +322,16 @@ theorem exists_norm_heatDuhamelPotentialFDerivL_le :
   ⟨gradientConstant (E := E) (F := F), fun T => ContinuousLinearMap.opNorm_le_bound _
     (by have := gradientConstant_nonneg (E := E) (F := F); positivity) norm_gradient_le⟩
 
+/-- **The gradient field is the spatial derivative of the Duhamel potential.** For bounded
+continuous forcing `f`, the gradient operator applied to `f` is the spatial derivative of the
+Duhamel potential of the clamped extension of `f`, on every time slice of the slab. -/
+theorem hasFDerivAt_heatDuhamelPotentialFDerivL (f : slab (E := E) 0 T →ᵇ F)
+    (t : Icc (0 : ℝ) T) (x : E) :
+    HasFDerivAt (heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s) t)
+      (heatDuhamelPotentialFDerivL f (slabMk x t)) x := by
+  rw [heatDuhamelPotentialFDerivL_apply, space_slabMk, time_slabMk]
+  exact ((differentiable_potential f t.2.1) x).hasFDerivAt
+
 /-- **The gradient field is the spatial derivative of the value field.** For Hölder forcing
 `f`, the value field of the Duhamel operator has spatial derivative given by the gradient
 operator applied to `f`, on every time slice of the slab. -/
@@ -341,8 +345,8 @@ theorem hasFDerivAt_heatDuhamelPotentialHolderL (hα : 0 < α) (hα₂ : α ≤ 
     funext y
     rw [heatDuhamelPotentialHolderL_apply, space_slabMk, time_slabMk,
       HolderSpace.coe_toBoundedContinuousFunction]
-  rw [hfun, heatDuhamelPotentialFDerivL_apply, space_slabMk, time_slabMk]
-  exact ((differentiable_potential f.toBoundedContinuousFunction t.2.1) x).hasFDerivAt
+  rw [hfun]
+  exact hasFDerivAt_heatDuhamelPotentialFDerivL _ t x
 
 end Gradient
 
