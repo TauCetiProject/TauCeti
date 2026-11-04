@@ -33,6 +33,7 @@ Noetherian local rings such a homomorphism both preserves and reflects regularit
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
+* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec_iff`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
 * `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_etale`
 -/
@@ -91,6 +92,14 @@ theorem isRegularRing_iff_isRegularLocalRing_stalk_Spec (R : CommRingCat.{u})
   have := (isRegularRing_iff_isRegularLocalRing_stalk (isAffineOpen_top (Spec R))).mpr
     fun x _ ↦ h x
   exact .of_ringEquiv e
+
+/-- The local ring of `Spec R` at `x` is the localization of `R` at the prime `x`
+(Mathlib `AlgebraicGeometry.Spec.stalkIso`), so one is regular exactly when the other is. -/
+theorem isRegularLocalRing_stalk_Spec_iff (R : CommRingCat.{u}) (x : PrimeSpectrum R) :
+    IsRegularLocalRing ((Spec R).presheaf.stalk x) ↔
+      IsRegularLocalRing (Localization.AtPrime x.asIdeal) :=
+  let e := (Spec.stalkIso R x).commRingCatIsoToRingEquiv
+  ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
 
 /-- An open immersion `f : X ⟶ Y` identifies the local ring of `X` at `x` with the local ring of
 `Y` at `f x`, so one is regular exactly when the other is. -/
