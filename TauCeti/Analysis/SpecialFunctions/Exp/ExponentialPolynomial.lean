@@ -6,17 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exp
 
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Analysis.Calculus.LocalExtr.Rolle
+import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
-# Real zeros of exponential polynomials
+# Zeros of exponential polynomials
 
 A real *exponential polynomial* is a function `f(x) = ∑ₖ pₖ(x) exp(γₖ x)` with real polynomials
 `pₖ` and real exponents `γₖ`, indexed by a finite set. If the index set is nonempty, the
@@ -29,6 +33,14 @@ This zero estimate is used in Schneider's proof of the Gelfond–Schneider theor
 numbers: an auxiliary function `∑ᵢⱼ aᵢⱼ zⁱ exp(j z log α)` cannot vanish at more real points
 than the number of its coefficients.
 
+Over the complex numbers, an *exponential sum* `E(z) = ∑ᵢ cᵢ exp(ρᵢ z)` with constant
+coefficients has derivatives `E⁽ᵏ⁾(z) = ∑ᵢ cᵢ ρᵢᵏ exp(ρᵢ z)`. If the frequencies `ρᵢ` are pairwise
+distinct and the coefficients are not all zero, then at every point `z₀` one of the first `N`
+derivatives is nonzero, `N` being the number of terms, because the Vandermonde matrix of the
+`ρᵢ` is invertible. So `E` vanishes to order less than `N` everywhere; in particular `E` is not
+identically zero. This bounds the order of the first nonvanishing derivative of Gelfond's
+auxiliary function `∑ₐ,ᵦ ηₐᵦ exp((a + bβ) λ z)` in his proof of the Gelfond–Schneider theorem.
+
 ## Main results
 
 * `Finset.hasDerivAt_sum_eval_mul_exp`: the derivative of `∑ₖ pₖ(x) exp(γₖ x)` is again an
@@ -38,10 +50,18 @@ than the number of its coefficients.
   fewer than `∑ₖ (deg pₖ + 1)` points.
 * `TauCeti.finite_setOf_sum_eval_mul_exp_eq_zero`: under the same hypotheses, the zero set of
   such a function is finite.
+* `Finset.iteratedDeriv_sum_mul_cexp`: the iterated derivatives of a complex exponential sum.
+* `TauCeti.exists_lt_card_iteratedDeriv_sum_mul_cexp_ne_zero`: with pairwise distinct frequencies
+  and coefficients not all zero, one of the first `N` derivatives of `∑ᵢ cᵢ exp(ρᵢ z)` is nonzero
+  at every point.
+* `TauCeti.analyticOrderAt_sum_mul_cexp_lt_card`: under the same hypotheses, the order of
+  vanishing of `∑ᵢ cᵢ exp(ρᵢ z)` at every point is less than the number `N` of terms.
 
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 4, §4.4, Lemma 4.23.
+* M. Karatarakis and F. Wiedijk, *A formalization of the Gelfond–Schneider theorem*,
+  arXiv:2603.24823 (2026), §3.
 -/
 
 public section
@@ -137,5 +157,51 @@ theorem finite_setOf_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs :
   by_contra h
   obtain ⟨Z, hZ, hcard⟩ := Set.Infinite.exists_subset_card_eq h (∑ i ∈ s, ((p i).natDegree + 1))
   exact (card_lt_of_sum_eval_mul_exp_eq_zero hs hγ hp fun x hx ↦ hZ hx).ne hcard
+
+end TauCeti
+
+/-! ### Complex exponential sums -/
+
+namespace Finset
+
+/-- The `k`-th derivative of the exponential sum `∑ᵢ cᵢ exp(ρᵢ z)` is `∑ᵢ cᵢ ρᵢᵏ exp(ρᵢ z)`. -/
+@[simp]
+theorem iteratedDeriv_sum_mul_cexp {ι : Type*} (s : Finset ι) (c ρ : ι → ℂ) (k : ℕ) :
+    iteratedDeriv k (fun z ↦ ∑ i ∈ s, c i * Complex.exp (ρ i * z)) =
+      fun z ↦ ∑ i ∈ s, c i * ρ i ^ k * Complex.exp (ρ i * z) := by
+  funext z
+  rw [iteratedDeriv_fun_sum fun i _ ↦ by fun_prop]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [iteratedDeriv_const_mul_field, iteratedDeriv_cexp_const_mul, mul_assoc]
+
+end Finset
+
+namespace TauCeti
+
+/-- Let the frequencies `ρ` be pairwise distinct on a finite set `s` of indices, and let the
+coefficients `c` be nonzero somewhere on `s`. Then at every point `z₀` one of the first `#s`
+derivatives of `z ↦ ∑ i ∈ s, c i * exp (ρ i * z)` is nonzero. -/
+theorem exists_lt_card_iteratedDeriv_sum_mul_cexp_ne_zero {ι : Type*} {s : Finset ι}
+    {ρ : ι → ℂ} (hρ : Set.InjOn ρ s) {c : ι → ℂ} (hc : ∃ i ∈ s, c i ≠ 0) (z₀ : ℂ) :
+    ∃ k < #s, iteratedDeriv k (fun z ↦ ∑ i ∈ s, c i * Complex.exp (ρ i * z)) z₀ ≠ 0 := by
+  obtain ⟨i, hi, hci⟩ := hc
+  obtain ⟨k, hk, hne⟩ := exists_lt_card_sum_mul_pow_ne_zero (w := fun i ↦ c i *
+    Complex.exp (ρ i * z₀)) hρ ⟨i, hi, mul_ne_zero hci (Complex.exp_ne_zero _)⟩
+  refine ⟨k, hk, ?_⟩
+  rw [s.iteratedDeriv_sum_mul_cexp]
+  convert hne using 2 with i
+  ring
+
+/-- Let the frequencies `ρ` be pairwise distinct on a finite set `s` of indices, and let the
+coefficients `c` be nonzero somewhere on `s`. Then the exponential sum
+`z ↦ ∑ i ∈ s, c i * exp (ρ i * z)` vanishes to order less than `#s` at every point. In particular
+it is not identically zero. -/
+theorem analyticOrderAt_sum_mul_cexp_lt_card {ι : Type*} {s : Finset ι} {ρ : ι → ℂ}
+    (hρ : Set.InjOn ρ s) {c : ι → ℂ} (hc : ∃ i ∈ s, c i ≠ 0) (z₀ : ℂ) :
+    analyticOrderAt (fun z ↦ ∑ i ∈ s, c i * Complex.exp (ρ i * z)) z₀ < #s := by
+  obtain ⟨k, hk, hne⟩ := exists_lt_card_iteratedDeriv_sum_mul_cexp_ne_zero hρ hc z₀
+  by_contra! h
+  have hE : AnalyticAt ℂ (fun z ↦ ∑ i ∈ s, c i * Complex.exp (ρ i * z)) z₀ := by fun_prop
+  exact hne ((natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hE).1 h k hk)
 
 end TauCeti
