@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
+import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
 # Interpolating circle diffeomorphisms to the identity

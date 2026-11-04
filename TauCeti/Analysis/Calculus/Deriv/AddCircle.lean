@@ -31,9 +31,9 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 ## Main declarations
 
 * `AddCircle.periodic_deriv_of_lift`: the derivative of a lift is `T`-periodic.
-* `AddCircle.add_mul_sub_add_period`, `AddCircle.hasDerivAt_add_mul_sub`,
-  `AddCircle.one_sub_add_mul_pos`: for a weight `c ∈ [0, 1]`, the interpolation
-  `x ↦ x + c * (F x - x)` between the identity and a lift `F` with `F' > 0` is again such a lift.
+* `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
+  `c ∈ [0, 1]`, the interpolation `x ↦ x + c * (F x - x)` between the identity and a lift `F`
+  with `F' > 0` (again a lift, `AddCircle.add_mul_sub_add_period`) has positive derivative.
 * `AddCircle.exists_pos_le_deriv_le_of_lift`: a lift with continuous positive derivative has
   derivative in some interval `[c, M]` with `0 < c`.
 * `AddCircle.exists_lift_inverse`: a lift with positive derivative has an inverse `G`, which is
@@ -58,13 +58,6 @@ theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
   have h₂ : HasDerivAt (fun y ↦ F (y + T)) (F' x) x := by
     simpa only [hper] using (hF x).add_const T
   exact h₁.unique h₂
-
-/-- Interpolating between the identity and a lift `F` with a weight `c` gives again a lift:
-`x ↦ x + c * (F x - x)` shifts `x + T` to the image of `x` plus `T`. -/
-theorem add_mul_sub_add_period (hper : ∀ x, F (x + T) = F x + T) (c x : ℝ) :
-    x + T + c * (F (x + T) - (x + T)) = x + c * (F x - x) + T := by
-  rw [hper]
-  ring
 
 /-- The interpolation `x ↦ x + c * (F x - x)` between the identity and `F` has derivative
 `1 - c + c * F'` wherever `F` has derivative `F'`. -/
