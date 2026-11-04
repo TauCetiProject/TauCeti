@@ -32,8 +32,11 @@ operators.
 ## Main results
 
 * `TauCeti.iteratedFDeriv_smul_snd_of_smul_snd_eq`: homogeneity of the derivatives.
-* `TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq` and
-  `TauCeti.exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq`: the estimate
+* `TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq`: for `x` in a compact set and `ξ ≠ 0`,
+  the derivative of order `k` in directions `v` is bounded by
+  `C ‖ξ‖ ^ m ∏ ‖((v i).1, ‖ξ‖⁻¹ • (v i).2)‖`, that is by `C ‖ξ‖ ^ m` once the `ξ`-components of
+  the directions are rescaled by `‖ξ‖⁻¹`.
+* `TauCeti.exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq`: the estimate
   `‖∂_x^j ∂_ξ^l f (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - l)` for `x` in a compact set and `ξ ≠ 0`.
 * `TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`: Mihlin's condition for maps
   homogeneous of degree `0`.
