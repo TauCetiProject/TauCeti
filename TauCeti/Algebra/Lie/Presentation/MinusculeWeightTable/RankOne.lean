@@ -201,4 +201,15 @@ theorem sl2BlockMatrix_diagonal (i : B) (d : Fin 2 → R) :
   all_goals by_cases hab : a = b
   all_goals simp [sl2BlockMatrix_apply, Matrix.one_apply, hb, hab]
 
+omit [Fintype ι] in
+/-- A determinant-one unit diagonal acts by the integral minuscule weights. -/
+theorem sl2BlockMatrix_diagonal_unit (i : B) (u : Rˣ) :
+    T.sl2BlockMatrix i (Matrix.diagonal
+      (fun r : Fin 2 ↦ if r = 0 then (u : R) else if r = 1 then ((u⁻¹ : Rˣ) : R) else 1)) =
+      Matrix.diagonal (fun a ↦ ((u ^ T.weight a i : Rˣ) : R)) := by
+  rw [sl2BlockMatrix_diagonal]
+  congr 1
+  funext a
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> simp [h]
+
 end TauCeti.MinusculeWeightTable

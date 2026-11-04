@@ -84,6 +84,25 @@ theorem rankOneGL_injective : Function.Injective (rankOneGL R i) := by
   simpa [coe_rankOneGL, Matrix.reindex_apply, Matrix.submatrix_apply,
     MinusculeWeightTable.coe_sl2BlockSL] using he
 
+private theorem reindex_root_blocks (A B : Matrix (Fin 27) (Fin 27) ℤ) (t : R) :
+    Matrix.reindex matrixIndexEquiv matrixIndexEquiv
+      (Matrix.fromBlocks (1 + t • A.map (Int.cast : ℤ → R)) 0 0
+        (1 + (-t) • B.map (Int.cast : ℤ → R))) =
+      1 + t • (Matrix.reindex matrixIndexEquiv matrixIndexEquiv
+        (Matrix.fromBlocks A 0 0 (-B))).map (Int.cast : ℤ → R) := by
+  -- The dual root block has the negative coefficient; scalar extension and reindexing
+  -- preserve the resulting block-diagonal sum.
+  have hblocks : Matrix.fromBlocks (1 + t • A.map (Int.cast : ℤ → R)) 0 0
+      (1 + (-t) • B.map (Int.cast : ℤ → R)) =
+      1 + t • (Matrix.fromBlocks A 0 0 (-B)).map (Int.cast : ℤ → R) := by
+    rw [Matrix.fromBlocks_map, ← Matrix.fromBlocks_one,
+      Matrix.fromBlocks_smul, Matrix.fromBlocks_add]
+    simp [Matrix.map_zero (Int.cast : ℤ → R) Int.cast_zero,
+      Matrix.map_neg (Int.cast : ℤ → R) Int.cast_neg]
+  rw [hblocks]
+  simp [Matrix.reindex_apply, Matrix.submatrix_add, Matrix.submatrix_smul,
+    Matrix.submatrix_one_equiv, Matrix.submatrix_map]
+
 /-- The upper transvection acts by the positive root parameter, including its negative dual
 block coefficient. -/
 @[simp]
@@ -94,18 +113,16 @@ theorem rankOneGL_upper_transvection (t : R) :
   apply Units.ext
   rw [coe_rankOneGL, toGL_transvection_eq_transvectionUnit,
     inverseTranspose_transvectionUnit]
+  -- Inverse transpose is stated for GL transvection units; return to SL transvections
+  -- to use the minuscule block-action equations.
   rw [← toGL_transvection_eq_transvectionUnit]
   simp only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
     MinusculeWeightTable.sl2BlockMatrix_upper_transvection,
     MinusculeWeightTable.sl2BlockMatrix_lower_transvection,
     E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix,
-    coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, rootIntMatrix_inl]
-  ext a b
-  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
-  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
-  cases a <;> cases b <;>
-    simp [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks,
-      Matrix.one_apply, neg_ite]
+    coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, rootIntMatrix_inl,
+    raisingMatrix_eq_fromBlocks]
+  exact reindex_root_blocks R _ _ t
 
 /-- The lower transvection acts by the negative root parameter. -/
 @[simp]
@@ -116,18 +133,15 @@ theorem rankOneGL_lower_transvection (t : R) :
   apply Units.ext
   rw [coe_rankOneGL, toGL_transvection_eq_transvectionUnit,
     inverseTranspose_transvectionUnit]
+  -- As above, switch back to SL transvections after computing inverse transpose in GL.
   rw [← toGL_transvection_eq_transvectionUnit]
   simp only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
     MinusculeWeightTable.sl2BlockMatrix_upper_transvection,
     MinusculeWeightTable.sl2BlockMatrix_lower_transvection,
     E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix,
-    coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, rootIntMatrix_inr]
-  ext a b
-  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
-  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
-  cases a <;> cases b <;>
-    simp [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks,
-      Matrix.one_apply, neg_ite, neg_eq_iff_eq_neg]
+    coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, rootIntMatrix_inr,
+    loweringMatrix_eq_fromBlocks]
+  exact reindex_root_blocks R _ _ t
 
 /-- The diagonal matrix maps to the numbered simple-coroot point. -/
 @[simp]
@@ -135,25 +149,24 @@ theorem rankOneGL_diag2nUnit (u : Rˣ) :
     rankOneGL R i (Matrix.SpecialLinearGroup.diag2nUnit
       (by decide : (0 : Fin 2) ≠ 1) u) =
         (weightTorusPoints R (Pi.mulSingle i u) : GL (Fin 54) R) := by
-  have hd : Matrix.SpecialLinearGroup.toGL
-      (Matrix.SpecialLinearGroup.diag2nUnit (by decide : (0 : Fin 2) ≠ 1) u) =
-        diagGL (![u, u⁻¹]) := by
-    apply Units.ext
-    simp [Matrix.SpecialLinearGroup.diag2nUnit_coe, diagGL_coe]
   apply Units.ext
-  rw [coe_rankOneGL, hd, inverseTranspose_diagGL]
+  rw [coe_rankOneGL, Matrix.SpecialLinearGroup.toGL_diag2nUnit, inverseTranspose_diagGL]
   simp only [diagGL_coe, Matrix.SpecialLinearGroup.diag2nUnit_coe,
-    MinusculeWeightTable.sl2BlockMatrix_diagonal, coe_weightTorusPoints,
-    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  ext a b
+    apply_ite (Inv.inv : Rˣ → Rˣ), inv_inv, inv_one,
+    apply_ite (fun x : Rˣ ↦ (x : R)), Units.val_one]
+  simp only [MinusculeWeightTable.sl2BlockMatrix_diagonal_unit,
+    coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  have hdual := E6Minuscule.weightTable.sl2BlockMatrix_diagonal_unit i u⁻¹
+  simp only [inv_inv] at hdual
+  rw [hdual, Matrix.fromBlocks_diagonal, Matrix.reindex_apply,
+    Matrix.submatrix_diagonal_equiv]
+  congr 1
+  funext a
   obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
-  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
-  have hw := E6Minuscule.weightTable.weight_eq_neg_one_or_eq_zero_or_eq_one
-    (Sum.elim id id b) i
-  cases a <;> cases b <;> rcases hw with hw | hw | hw <;>
-    simp_all [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.diagonal_apply,
-      Matrix.fromBlocks, matrixWeight_apply, torusCharacter_mulSingle,
-      E6Minuscule.weightTable_weight]
+  -- The doubled weight is the minuscule weight on the first block and its negative
+  -- on the dual block; inversion of the unit realizes the latter character.
+  cases a <;>
+    simp [matrixWeight_apply, torusCharacter_mulSingle, E6Minuscule.weightTable_weight]
 
 variable (K : Type*) [Field K] (i : Fin 6)
 
