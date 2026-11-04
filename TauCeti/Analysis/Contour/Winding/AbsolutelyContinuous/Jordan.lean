@@ -305,7 +305,6 @@ open TauCeti TauCeti.Contour
 namespace AbsolutelyContinuousOnInterval
 
 /-- **Reversing the interval orientation negates `jordanSign`.** -/
-@[simp]
 theorem jordanSign_symm {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) :
     jordanSign γ b a = -jordanSign γ a b :=
   jordanSign_eq_neg_of_image_eq_and_windingNumber_neg (by rw [uIcc_comm]) fun z hz ↦
