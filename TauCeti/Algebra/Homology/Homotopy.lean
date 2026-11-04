@@ -56,6 +56,9 @@ from a cochain complex `K` to an object `A` placed in degree `i`: the map given 
 null-homotopic if and only if `φ` factors through the differential `Kⁱ ⟶ Kⁱ⁺¹`. It is Mathlib's
 criterion `CochainComplex.HomComplex.Cocycle.toSingleMk_mem_coboundaries_iff`, translated from
 coboundaries to homotopies.
+Dually, `CochainComplex.nonempty_homotopy_zero_iff_of_single` characterizes null-homotopic chain
+maps from an object `X` placed in degree `p` to a cochain complex `K`: such a map is null-homotopic
+if and only if its component `X ⟶ Kᵖ` factors through the differential `Kᵖ⁻¹ ⟶ Kᵖ`.
 
 `Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
 homotopic maps as a factorization through a term of the target complex. In particular, these
@@ -340,6 +343,28 @@ lemma nonempty_homotopy_mkHomToSingle_zero_iff (K : CochainComplex C ℤ) {i j :
       Cochain.ofHom (HomologicalComplex.mkHomToSingle φ hφ) :=
     (Cochain.toSingleEquiv (add_zero i)).injective (by
       simp [Cochain.toSingleEquiv, HomologicalComplex.mkHomToSingle_f])
+  rw [h]
+  exact ⟨fun ⟨ho⟩ ↦ ⟨Cochain.ofHomotopy ho, by simp [δ_ofHomotopy]⟩,
+    fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
+
+open HomComplex in
+/-- **Null-homotopic chain maps from an object in one degree**: a chain map `χ` from `X` placed
+in degree `p` to `K` is null-homotopic if and only if its component `X ⟶ Kᵖ` factors through the
+differential `Kᵠ ⟶ Kᵖ`, where `q + 1 = p`. -/
+lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p q : ℤ}
+    (hqp : q + 1 = p) (χ : (singleFunctor C p).obj X ⟶ K) :
+    Nonempty (Homotopy χ 0) ↔
+      ∃ g : X ⟶ K.X q, g ≫ K.d q p =
+        (HomologicalComplex.singleObjXSelf (.up ℤ) p X).inv ≫ χ.f p := by
+  have hf : ((HomologicalComplex.singleObjXSelf (.up ℤ) p X).inv ≫ χ.f p) ≫ K.d p (p + 1) = 0 := by
+    rw [Category.assoc, χ.comm]
+    simp
+  rw [← Cocycle.fromSingleMk_mem_coboundaries_iff _ (add_zero p) (p + 1) rfl hf q hqp,
+    mem_coboundaries_iff _ (-1) (by simp)]
+  -- The cocycle of `Cocycle.fromSingleMk` is the zero-cochain of `χ`.
+  have h : (Cocycle.fromSingleMk _ (add_zero p) (p + 1) rfl hf : Cochain _ _ 0) =
+      Cochain.ofHom χ :=
+    (Cochain.fromSingleEquiv (add_zero p)).injective (by simp [Cochain.fromSingleEquiv_apply])
   rw [h]
   exact ⟨fun ⟨ho⟩ ↦ ⟨Cochain.ofHomotopy ho, by simp [δ_ofHomotopy]⟩,
     fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
