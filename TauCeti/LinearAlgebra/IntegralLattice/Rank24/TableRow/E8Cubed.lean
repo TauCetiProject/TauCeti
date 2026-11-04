@@ -18,9 +18,10 @@ The row `E₈³` (`TauCeti.RootfulNiemeierType.e8Cubed`) of Conway--Sloane's Tab
 and unimodular, its glue alphabet is trivial; the module of glue words of the row has a single
 element, and the generated glue subgroup is `⊥`.  Conversely, every other row of the rootful
 rank-24 table lists a nonzero printed glue word, so `E₈³` is the unique row whose glue subgroup is
-trivial (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff`) and equivalently the unique row
-whose uniform table lattice `r.lattice` coincides with the orthogonal sum `r.rootLattice` of its
-component root lattices (`TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff`).
+trivial (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`) and equivalently the
+unique row whose uniform table lattice `r.lattice` coincides with the orthogonal sum `r.rootLattice`
+of its component root lattices
+(`TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff_eq_e8Cubed`).
 
 Constructed through the uniform gluing API rather than as an ad hoc constant, the named lattice
 `TauCeti.e8CubedLattice` has the literal carrier consisting of families of three rational
@@ -46,12 +47,9 @@ number `720`, and the kissing number `720` follow.
 
 ## Main declarations
 
-* `TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff`,
-  `TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff`: `E₈³` is the unique row of the rootful
-  rank-24 table with trivial glue subgroup, and equivalently the unique row with
-  `r.lattice = r.rootLattice`.
 * `TauCeti.e8CubedLattice`: stable name for `RootfulNiemeierType.e8Cubed.lattice`, reducible so the
-  uniform row theorems (`isEven_lattice`, `isPosDef_lattice`, `finrank_lattice`) apply directly.
+  uniform row theorems (`isEven_lattice`, `isPosDef_lattice`, `finrank_lattice`) apply directly,
+  with `TauCeti.e8CubedLattice_eq_rootLattice`.
 * `TauCeti.mem_e8CubedLattice_carrier_iff`: literal integer-coordinate characterization of the
   table carrier.
 * `TauCeti.e8CubedSimpleRootIsometry`: explicit isometry onto
@@ -80,9 +78,9 @@ namespace TauCeti
 
 namespace RootfulNiemeierType
 
-open DynkinType IntegralLattice
+open DynkinType
 
-/-! ### Components, glue words, and uniqueness of trivial glue -/
+/-! ### Components of the row -/
 
 /-- The row `E₈³` has three components. -/
 @[simp]
@@ -94,60 +92,6 @@ theorem length_components_e8Cubed : e8Cubed.components.length = 3 :=
 theorem componentType_e8Cubed (i : Fin e8Cubed.components.length) :
     e8Cubed.componentType i = E8 :=
   congrArg Subtype.val (List.getElem_replicate _)
-
-/-- The module of glue words of `E₈³` has a single element, because every `E₈` component has a
-trivial glue alphabet. -/
-instance instSubsingletonGlueModuleE8Cubed : Subsingleton e8Cubed.glueModule :=
-  (Nat.card_eq_one_iff_unique.mp
-    ((glueOrder_sq_eq_natCard_glueModule .e8Cubed).symm.trans (by decide))).1
-
-/-- The printed glue-word set of `E₈³` consists solely of the zero word `[0, 0, 0]`. -/
-@[simp]
-theorem glueWords_e8Cubed : e8Cubed.glueWords = {[0, 0, 0]} := by
-  decide
-
-/-- The decoded glue-generator set of `E₈³` is `{0}`. -/
-theorem glueGenerators_e8Cubed : e8Cubed.glueGenerators = {0} := by
-  ext w
-  rw [Subsingleton.elim w 0, Set.mem_singleton_iff, mem_glueGenerators_iff, encodeGlueWord_zero]
-  decide
-
-/-- The glue subgroup of `E₈³` is trivial. -/
-theorem glueSubgroup_e8Cubed : e8Cubed.glueSubgroup = ⊥ := by
-  ext w
-  simp [Subsingleton.elim w 0]
-
-/-- Every row other than `E₈³` has a printed digit word distinct from the all-zero word. -/
-private theorem exists_mem_glueWords_ne_replicate_zero_of_ne {r : RootfulNiemeierType}
-    (hr : r ≠ .e8Cubed) :
-    ∃ l ∈ r.glueWords, l ≠ List.replicate r.components.length 0 := by
-  revert hr
-  cases r <;> decide
-
-/-- **`E₈³` is the unique row of the rootful rank-24 table whose glue subgroup is trivial.** -/
-@[simp]
-theorem glueSubgroup_eq_bot_iff (r : RootfulNiemeierType) :
-    r.glueSubgroup = ⊥ ↔ r = .e8Cubed := by
-  refine ⟨fun hbot ↦ ?_, ?_⟩
-  · by_contra hr
-    obtain ⟨l, hl, hne⟩ := exists_mem_glueWords_ne_replicate_zero_of_ne hr
-    obtain ⟨w, hw, hdec⟩ := exists_decodeGlueWord_mem_glueGenerators hl
-    have hwmem : w ∈ r.glueSubgroup := r.glueSubgroup_def ▸ AddSubgroup.subset_closure hw
-    rw [hbot, AddSubgroup.mem_bot] at hwmem
-    subst hwmem
-    have h0 : encodeGlueWord r.componentType r.isSimplyLaced_componentType
-        (0 : ∀ i, (r.componentType i).glueAlphabet (r.isSimplyLaced_componentType i)) = l :=
-      ((decodeGlueWord_eq_some_iff _ _ _ _).mp hdec).symm
-    exact hne (h0.symm.trans (encodeGlueWord_zero r.componentType r.isSimplyLaced_componentType))
-  · rintro rfl
-    exact glueSubgroup_e8Cubed
-
-/-- **`E₈³` is the unique row of the rootful rank-24 table whose glued lattice equals its
-component root lattice.** -/
-@[simp]
-theorem lattice_eq_rootLattice_iff (r : RootfulNiemeierType) :
-    r.lattice = r.rootLattice ↔ r = .e8Cubed :=
-  (lattice_eq_rootLattice_iff_glueSubgroup_eq_bot r).trans (glueSubgroup_eq_bot_iff r)
 
 end RootfulNiemeierType
 
@@ -167,7 +111,7 @@ noncomputable abbrev e8CubedLattice :
 sum of the three component `E₈` root lattices. -/
 theorem e8CubedLattice_eq_rootLattice :
     e8CubedLattice = RootfulNiemeierType.e8Cubed.rootLattice :=
-  (RootfulNiemeierType.lattice_eq_rootLattice_iff .e8Cubed).mpr rfl
+  (RootfulNiemeierType.lattice_eq_rootLattice_iff_eq_e8Cubed .e8Cubed).mpr rfl
 
 /-- **Literal carrier of `e8CubedLattice`**: a family of three rational vectors lies in the table
 lattice `E₈³` if and only if all twenty-four of its Bourbaki simple-root coordinates are
@@ -401,7 +345,12 @@ noncomputable def e8CubedRootEquiv :
 theorem coe_e8CubedRootEquiv_apply (p : Fin 3 × Fin 240) :
     (e8CubedRootEquiv p : e8CubedLattice) = e8CubedRootVector p.1 p.2 := by
   apply Subtype.ext
-  simp [e8CubedRootEquiv, e8CubedRootVector]
+  rw [e8CubedRootEquiv, e8CubedRootVector]
+  simp only [Equiv.trans_apply, Equiv.prodCongr_apply, Equiv.coe_refl, Prod.map_fst, Prod.map_snd,
+    id_eq, Equiv.sigmaEquivProd_symm_apply, Equiv.subtypeEquiv_apply, LinearEquiv.coe_toEquiv,
+    IntegralLattice.Isometry.coe_carrierEquiv_apply,
+    IntegralLattice.Isometry.coe_carrierEquiv_symm_apply,
+    IntegralLattice.coe_piVectorsOfNormTwoEquiv_apply, IntegralLattice.typeE₈RootEquiv_apply]
 
 /-- Distinct `(k, r)` pairs give distinct root vectors in `e8CubedLattice`. -/
 theorem e8CubedRootVector_injective :

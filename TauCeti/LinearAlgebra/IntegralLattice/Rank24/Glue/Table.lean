@@ -34,10 +34,12 @@ The uniform checks proved here, each a single statement over the row index, are:
   actual element of the module of glue words;
 * the `𝔽₄`-linear span mode is used only for the row `D₄⁶`, all of whose components are `D₄`;
 * `|H|² = |A_R|` for the expected order `|H|`
-  (`TauCeti.RootfulNiemeierType.glueOrder_sq_eq_natCard_glueModule`).
+  (`TauCeti.RootfulNiemeierType.glueOrder_sq_eq_natCard_glueModule`);
+* `E₈³` is the unique row whose glue subgroup `H_r` is trivial
+  (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`).
 
-The cardinality, isotropy and minimum-norm checks of the generated subgroups themselves are not
-proved here.
+The nontrivial cardinality, isotropy and minimum-norm checks of the generated subgroups themselves
+are not proved here.
 
 As in `TauCeti.LinearAlgebra.IntegralLattice.Rank24.RootSystems`, the data definitions are exposed
 so that finite checks over the table, in this file and later ones, are proof-producing
@@ -49,7 +51,8 @@ computations by `decide`.
 * `TauCeti.RootfulNiemeierType.gluePatterns`, `spanMode`, `glueOrder`: the glue columns.
 * `TauCeti.RootfulNiemeierType.glueWords`: the digit words denoted by a row's glue columns.
 * `TauCeti.RootfulNiemeierType.glueModule`: the glue words of a row's ordered components.
-* `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row.
+* `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row, trivial only for
+  `E₈³` (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`).
 * `TauCeti.RootfulNiemeierType.glueModuleIsometry`: the glue words of a row as the glue words of
   an explicit family of its components, with `map_glueSubgroup_glueModuleIsometry` describing
   `H_r` in these coordinates; the lemmas `*_of_map_glueModuleIsometry` transfer the order, the
@@ -377,6 +380,55 @@ theorem glueOrder_sq_eq_natCard_glueModule (r : RootfulNiemeierType) :
   rw [Nat.card_pi]
   simp only [DynkinType.natCard_glueAlphabet_eq_glueLabelCount]
   cases r <;> decide
+
+/-! ### Trivial glue -/
+
+/-- The module of glue words of `E₈³` has a single element, because every `E₈` component has a
+trivial glue alphabet. -/
+instance instSubsingletonGlueModuleE8Cubed : Subsingleton e8Cubed.glueModule :=
+  (Nat.card_eq_one_iff_unique.mp
+    ((glueOrder_sq_eq_natCard_glueModule .e8Cubed).symm.trans (by decide))).1
+
+/-- The printed glue-word set of `E₈³` consists solely of the zero word `[0, 0, 0]`. -/
+@[simp]
+theorem glueWords_e8Cubed : e8Cubed.glueWords = {[0, 0, 0]} := by
+  decide
+
+/-- The decoded glue-generator set of `E₈³` is `{0}`. -/
+theorem glueGenerators_e8Cubed : e8Cubed.glueGenerators = {0} := by
+  ext w
+  rw [Subsingleton.elim w 0, Set.mem_singleton_iff, mem_glueGenerators_iff, encodeGlueWord_zero]
+  decide
+
+/-- The glue subgroup of `E₈³` is trivial. -/
+theorem glueSubgroup_e8Cubed : e8Cubed.glueSubgroup = ⊥ := by
+  ext w
+  simp [Subsingleton.elim w 0]
+
+/-- Every row other than `E₈³` has a printed digit word distinct from the all-zero word. -/
+private theorem exists_mem_glueWords_ne_replicate_zero_of_ne {r : RootfulNiemeierType}
+    (hr : r ≠ .e8Cubed) :
+    ∃ l ∈ r.glueWords, l ≠ List.replicate r.components.length 0 := by
+  revert hr
+  cases r <;> decide
+
+/-- **`E₈³` is the unique row of the rootful rank-24 table whose glue subgroup is trivial.** -/
+@[simp]
+theorem glueSubgroup_eq_bot_iff_eq_e8Cubed (r : RootfulNiemeierType) :
+    r.glueSubgroup = ⊥ ↔ r = .e8Cubed := by
+  refine ⟨fun hbot ↦ ?_, ?_⟩
+  · by_contra hr
+    obtain ⟨l, hl, hne⟩ := exists_mem_glueWords_ne_replicate_zero_of_ne hr
+    obtain ⟨w, hw, hdec⟩ := exists_decodeGlueWord_mem_glueGenerators hl
+    have hwmem : w ∈ r.glueSubgroup := r.glueSubgroup_def ▸ AddSubgroup.subset_closure hw
+    rw [hbot, AddSubgroup.mem_bot] at hwmem
+    subst hwmem
+    have h0 : encodeGlueWord r.componentType r.isSimplyLaced_componentType
+        (0 : ∀ i, (r.componentType i).glueAlphabet (r.isSimplyLaced_componentType i)) = l :=
+      ((decodeGlueWord_eq_some_iff _ _ _ _).mp hdec).symm
+    exact hne (h0.symm.trans (encodeGlueWord_zero r.componentType r.isSimplyLaced_componentType))
+  · rintro rfl
+    exact glueSubgroup_e8Cubed
 
 end RootfulNiemeierType
 

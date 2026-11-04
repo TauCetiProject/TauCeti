@@ -42,7 +42,8 @@ glue minima, not from evenness, unimodularity or a root count.
 * `TauCeti.RootfulNiemeierType.rootLattice`: the orthogonal sum `R_r` of the component root
   lattices of a row.
 * `TauCeti.RootfulNiemeierType.lattice`: the lattice `N_r` glued from `R_r` along `H_r`, with
-  `TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff_glueSubgroup_eq_bot`.
+  `TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff_glueSubgroup_eq_bot` and
+  `TauCeti.RootfulNiemeierType.lattice_eq_rootLattice_iff_eq_e8Cubed`.
 * `TauCeti.RootfulNiemeierType.mem_lattice_carrier_iff`: the carrier of `N_r`.
 * `TauCeti.RootfulNiemeierType.lattice_carrier_eq_sup_span`,
   `TauCeti.RootfulNiemeierType.exists_lattice_carrier_eq_sup_span_glueMinimum`: `N_r` is spanned
@@ -108,6 +109,13 @@ theorem lattice_eq_rootLattice_iff_glueSubgroup_eq_bot (r : RootfulNiemeierType)
     (AddSubgroup.map_eq_bot_iff_of_injective r.glueSubgroup
       (DynkinType.glueWordIsometry r.componentType r.isSimplyLaced_componentType
         r.valid_componentType).toAddEquiv.injective)
+
+/-- **`E₈³` is the unique row of the rootful rank-24 table whose glued lattice equals its
+component root lattice.** -/
+@[simp]
+theorem lattice_eq_rootLattice_iff_eq_e8Cubed (r : RootfulNiemeierType) :
+    r.lattice = r.rootLattice ↔ r = .e8Cubed :=
+  (lattice_eq_rootLattice_iff_glueSubgroup_eq_bot r).trans (glueSubgroup_eq_bot_iff_eq_e8Cubed r)
 
 /-- **The carrier of `N_r`**: a vector lies in `N_r` exactly when it lies in the dual of `R_r` and
 the glue word of its discriminant class lies in the glue subgroup `H_r`. -/
