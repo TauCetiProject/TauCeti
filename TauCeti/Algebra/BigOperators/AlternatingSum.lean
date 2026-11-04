@@ -20,7 +20,9 @@ This file gives a telescoping formula for alternating sums of consecutive pairs 
 commutative group, and the cancellation of alternating double sums whose terms satisfy the
 simplicial identity, which is the combinatorial core of `d ∘ d = 0` for alternating face map
 differentials. It also provides finite Euler sums for explicitly supported `ℤ`-graded families,
-including support independence, additivity, and translation of the grading.
+including support independence, additivity, and translation of the grading. Finally, it relates
+the alternating partial sums `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` of a sequence to its alternating sums and records
+their recursion `qₙ₊₁ = dₙ₊₁ - qₙ`.
 -/
 
 public section
@@ -149,5 +151,27 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
       Fin.val_castLT, ← neg_smul]
     congr 1
     ring
+
+/-! ### Alternating partial sums -/
+
+/-- The alternating partial sums `qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` satisfy the recursion
+`qₙ₊₁ = dₙ₊₁ - qₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * d i =
+      d (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i := by
+  rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_mul, sub_eq_add_neg, add_comm,
+    ← Finset.sum_neg_distrib]
+  congr 1
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Nat.succ_sub (Finset.mem_range_succ_iff.1 hi), pow_succ, mul_neg_one, neg_mul]
+
+/-- The alternating partial sum `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` is `(-1)ⁿ ∑ᵢ₌₀ⁿ (-1)ⁱ dᵢ`. -/
+theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i =
+      (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * d i := by
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [← mul_assoc, ← pow_add, show n + i = n - i + 2 * i by grind, pow_add, pow_mul, neg_one_sq,
+    one_pow, mul_one]
 
 end TauCeti

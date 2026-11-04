@@ -1,0 +1,168 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Polynomial.Eval.Coeff
+public import Mathlib.Algebra.Polynomial.Monic
+import TauCeti.Algebra.BigOperators.AlternatingSum
+import Mathlib.Tactic.LinearCombination
+
+/-!
+# Division by `1 + X` and alternating partial sums
+
+For a finite sequence `d₀, …, d_N` in a commutative ring, write
+`qₙ = dₙ - dₙ₋₁ + ⋯ ± d₀ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` for its alternating partial sums. Dividing
+`∑ᵢ₌₀ᴺ dᵢ Xⁱ` by `1 + X` leaves the quotient `∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ` and the remainder `q_N X^N`
+(`Polynomial.sum_range_monomial_eq_one_add_X_mul_add_monomial`). So `1 + X` divides the polynomial
+exactly when `q_N = 0`, and then the quotient is determined
+(`Polynomial.sum_range_monomial_eq_one_add_X_mul_iff`).
+
+Over `ℕ` this characterizes the numerical shape of the Morse inequalities. For sequences
+`b, c : ℕ → ℕ`, there is a polynomial `Q` with natural coefficients such that
+`∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` if and only if the alternating partial sums satisfy
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀` for `n < N`, with equality for `n = N`
+(`Polynomial.exists_sum_range_monomial_eq_add_one_add_X_mul_iff`). The coefficient of `Xⁿ` in `Q`
+is then the difference of the two alternating partial sums in degree `n`
+(`Polynomial.coeff_eq_sum_range_neg_one_pow_mul_sub`).
+
+## References
+
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
+  Section 5.
+-/
+
+public section
+
+open Finset
+
+namespace Polynomial
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- **Division by `1 + X`.** Dividing `∑ᵢ₌₀ᴺ dᵢ Xⁱ` by `1 + X` leaves the quotient
+`∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ` and the remainder `q_N X^N`, where `qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ`. -/
+theorem sum_range_monomial_eq_one_add_X_mul_add_monomial (d : ℕ → R) (N : ℕ) :
+    ∑ i ∈ range (N + 1), monomial i (d i) =
+      (1 + X) * ∑ n ∈ range N, monomial n (∑ i ∈ range (n + 1), (-1) ^ (n - i) * d i) +
+        monomial N (∑ i ∈ range (N + 1), (-1) ^ (N - i) * d i) := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [sum_range_succ (fun i ↦ monomial i (d i)), ih,
+      sum_range_succ (fun n ↦ monomial n (∑ i ∈ range (n + 1), (-1 : R) ^ (n - i) * d i)) N,
+      TauCeti.sum_range_succ_neg_one_pow_sub_mul, monomial_sub]
+    linear_combination (X_mul_monomial N (∑ i ∈ range (N + 1), (-1 : R) ^ (N - i) * d i)).symm
+
+/-- `1 + X` divides `∑ᵢ₌₀ᴺ dᵢ Xⁱ`, with quotient `Q`, exactly when the alternating sum
+`q_N = ∑ᵢ₌₀ᴺ (-1)ᴺ⁻ⁱ dᵢ` vanishes and `Q = ∑ₙ₌₀ᴺ⁻¹ qₙ Xⁿ`. -/
+theorem sum_range_monomial_eq_one_add_X_mul_iff (d : ℕ → R) (N : ℕ) {Q : R[X]} :
+    ∑ i ∈ range (N + 1), monomial i (d i) = (1 + X) * Q ↔
+      ∑ i ∈ range (N + 1), (-1) ^ (N - i) * d i = 0 ∧
+        Q = ∑ n ∈ range N, monomial n (∑ i ∈ range (n + 1), (-1) ^ (n - i) * d i) := by
+  rw [sum_range_monomial_eq_one_add_X_mul_add_monomial]
+  set S := ∑ n ∈ range N, monomial n (∑ i ∈ range (n + 1), (-1 : R) ^ (n - i) * d i)
+  set q := ∑ i ∈ range (N + 1), (-1 : R) ^ (N - i) * d i
+  constructor
+  · intro h
+    -- Evaluating at `-1` kills the multiples of `1 + X`, leaving `q (-1)ᴺ = 0`.
+    have hq : q = 0 := by
+      have he := congrArg (eval (-1)) h
+      simpa only [eval_add, eval_mul, eval_one, eval_X, add_neg_cancel, zero_mul, zero_add,
+        eval_monomial, eq_comm (a := (0 : R)), mul_neg_one_pow_eq_zero_iff] using he
+    refine ⟨hq, ?_⟩
+    rw [hq, map_zero, add_zero] at h
+    have hmonic : (1 + X : R[X]).Monic := by
+      simpa only [map_one, add_comm] using monic_X_add_C (1 : R)
+    rw [← sub_eq_zero, ← hmonic.mul_right_eq_zero_iff, mul_sub, ← h, sub_self]
+  · rintro ⟨hq, rfl⟩
+    rw [hq, map_zero, add_zero]
+
+end CommRing
+
+section Nat
+
+variable (b c : ℕ → ℕ) (N : ℕ)
+
+/-- Mapping an identity `∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` over `ℕ` to `ℤ` exhibits
+`∑ᵢ₌₀ᴺ (cᵢ - bᵢ) Xⁱ` as a multiple of `1 + X`. -/
+private theorem sum_range_monomial_sub_eq_one_add_X_mul {Q : ℕ[X]}
+    (h : ∑ i ∈ range (N + 1), monomial i (c i) =
+      ∑ i ∈ range (N + 1), monomial i (b i) + (1 + X) * Q) :
+    ∑ i ∈ range (N + 1), monomial i ((c i : ℤ) - b i) = (1 + X) * Q.map (Nat.castRingHom ℤ) := by
+  have h' := congrArg (map (Nat.castRingHom ℤ)) h
+  simp only [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_sum, Polynomial.map_one,
+    map_X, map_monomial, eq_natCast] at h'
+  simp only [monomial_sub, sum_sub_distrib, h']
+  ring
+
+/-- **Polynomial form of the Morse inequalities.** For `b, c : ℕ → ℕ`, there is a polynomial
+`Q ∈ ℕ[X]` with `∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` if and only if
+`bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀` for every `n < N`, with equality for `n = N`. -/
+theorem exists_sum_range_monomial_eq_add_one_add_X_mul_iff :
+    (∃ Q : ℕ[X], ∑ i ∈ range (N + 1), monomial i (c i) =
+        ∑ i ∈ range (N + 1), monomial i (b i) + (1 + X) * Q) ↔
+      (∀ n < N, ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i ≤
+          ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i) ∧
+        ∑ i ∈ range (N + 1), (-1 : ℤ) ^ (N - i) * b i =
+          ∑ i ∈ range (N + 1), (-1 : ℤ) ^ (N - i) * c i := by
+  -- The alternating partial sums of `c - b` are the differences of those of `c` and `b`.
+  have hsub (n : ℕ) : ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i) =
+      ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i -
+        ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i := by
+    simp only [mul_sub, sum_sub_distrib]
+  constructor
+  · rintro ⟨Q, h⟩
+    obtain ⟨hN, hQ⟩ := (sum_range_monomial_eq_one_add_X_mul_iff _ N).1
+      (sum_range_monomial_sub_eq_one_add_X_mul b c N h)
+    refine ⟨fun n hn ↦ ?_, by rw [hsub] at hN; linarith⟩
+    -- The coefficients of `Q` are the differences of the alternating partial sums.
+    have hc := congrArg (coeff · n) hQ
+    simp only [coeff_map, eq_natCast, finsetSum_coeff, coeff_monomial, sum_ite_eq', mem_range,
+      hn, ite_true, hsub] at hc
+    linarith [(Nat.cast_nonneg (Q.coeff n) : (0 : ℤ) ≤ _)]
+  · rintro ⟨hle, heq⟩
+    refine ⟨∑ n ∈ range N,
+      monomial n (∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i)).toNat, ?_⟩
+    apply map_injective (Nat.castRingHom ℤ) Nat.cast_injective
+    have hS : ∑ n ∈ range N, monomial n
+          ((∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i)).toNat : ℤ) =
+        ∑ n ∈ range N, monomial n
+          (∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * ((c i : ℤ) - b i)) :=
+      sum_congr rfl fun n hn ↦ by
+        rw [Int.toNat_of_nonneg (by rw [hsub]; linarith [hle n (mem_range.1 hn)])]
+    have hd := sum_range_monomial_eq_one_add_X_mul_add_monomial (fun i ↦ (c i : ℤ) - b i) N
+    rw [hsub, ← heq, sub_self, map_zero, add_zero] at hd
+    simp only [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_sum, Polynomial.map_one,
+      map_X, map_monomial, eq_natCast, hS, ← hd, monomial_sub, sum_sub_distrib]
+    ring
+
+variable {b c N} in
+/-- If `∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` in `ℕ[X]`, and `bᵢ = cᵢ` for `i > N`, then the
+coefficient of `Xⁿ` in `Q` is `(cₙ - cₙ₋₁ + ⋯ ± c₀) - (bₙ - bₙ₋₁ + ⋯ ± b₀)`, for every `n`. -/
+theorem coeff_eq_sum_range_neg_one_pow_mul_sub {Q : ℕ[X]}
+    (h : ∑ i ∈ range (N + 1), monomial i (c i) =
+      ∑ i ∈ range (N + 1), monomial i (b i) + (1 + X) * Q)
+    (hbc : ∀ i, N < i → b i = c i) (n : ℕ) :
+    (Q.coeff n : ℤ) = ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i -
+      ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i := by
+  -- Since `cᵢ - bᵢ` vanishes for `i > N`, the sum may be extended to degree `N + n + 1 > n`.
+  have hext : ∑ i ∈ range (N + 1), monomial i ((c i : ℤ) - b i) =
+      ∑ i ∈ range (N + n + 1 + 1), monomial i ((c i : ℤ) - b i) :=
+    sum_subset (range_subset_range.2 (by omega)) fun i _ hi ↦ by
+      rw [hbc i (by simpa using hi), sub_self, map_zero]
+  have hQ := ((sum_range_monomial_eq_one_add_X_mul_iff _ _).1
+    (hext ▸ sum_range_monomial_sub_eq_one_add_X_mul b c N h)).2
+  have hc := congrArg (coeff · n) hQ
+  simp only [coeff_map, eq_natCast, finsetSum_coeff, coeff_monomial, sum_ite_eq', mem_range,
+    show n < N + n + 1 by omega, ite_true] at hc
+  rw [hc]
+  simp only [mul_sub, sum_sub_distrib]
+
+end Nat
+
+end Polynomial
