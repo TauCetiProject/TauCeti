@@ -273,7 +273,7 @@ private theorem isLiftable_reflectionSwap : M.IsLiftable (reflectionSwap cs) := 
     simp [TauCeti.prod_map_alternatingWord, hm]
   have hseq : ris (CoxeterSystem.alternatingWord i i' (2 * M i i'))
       = (lis (CoxeterSystem.alternatingWord i' i (2 * M i i'))).reverse := by
-    rw [← cs.rightInvSeq_reverse, TauCeti.reverse_alternatingWord_two_mul]
+    rw [← cs.rightInvSeq_reverse, TauCeti.reverse_alternatingWord, ite_eq_left (even_two_mul _)]
   refine Equiv.ext fun p ↦ ?_
   obtain ⟨w, e⟩ := p
   rw [← hprod, prod_map_reflectionSwap_apply, hword, hseq, List.count_reverse,
