@@ -29,8 +29,9 @@ its target (`TauCeti.extChartAt_prod_target`).
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions; for a boundaryless model, their domains are open. On an
-open subset, extended charts are restrictions of the ambient ones, so near a chart point the
-inverse charts of nested open subsets differ only by the inclusion. Over `ℝ`, every chart point has
+open subset, extended chart targets lie in the ambient chart targets, and inverse charts agree
+through inclusion on the smaller target. Near a chart point the inverse charts of nested open
+subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has
 a convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
@@ -483,6 +484,31 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
       ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
 
 end TauCeti
+
+namespace TopologicalSpace.Opens
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The target of an inherited extended chart is contained in the ambient chart target. -/
+theorem extChartAt_target_subset (U : Opens M) (x : U) :
+    (extChartAt I x).target ⊆ (extChartAt I (x : M)).target := by
+  intro z hz
+  simp only [extChartAt, OpenPartialHomeomorph.extend_target] at hz ⊢
+  exact ⟨(chartAt H (x : M)).subtypeRestr_target_subset ⟨x⟩ hz.1, hz.2⟩
+
+/-- On the inherited chart target, the inverse extended chart followed by inclusion is the
+ambient inverse extended chart. -/
+theorem coe_extChartAt_symm_apply (U : Opens M) (x : U) {z : E}
+    (hz : z ∈ (extChartAt I x).target) :
+    ((extChartAt I x).symm z : M) = (extChartAt I (x : M)).symm z := by
+  simp only [extChartAt, OpenPartialHomeomorph.extend_target] at hz
+  simpa only [extChartAt, OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply,
+    chartAt_eq] using (chartAt H (x : M)).subtypeRestr_symm_apply ⟨x⟩ hz.1
+
+end TopologicalSpace.Opens
 
 open scoped ContDiff
 
