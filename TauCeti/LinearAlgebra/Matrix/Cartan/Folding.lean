@@ -254,8 +254,8 @@ theorem foldedGramMatrix_eq_mul_mul_transpose :
     B.foldedGramMatrix σ =
       Matrix.of σ.orbitMean * B.map (Int.cast : ℤ → ℚ) * (Matrix.of σ.orbitMean)ᵀ := by
   ext O P
-  rw [foldedGramMatrix_apply, dotProduct_mulVec, mul_apply]
-  simp [vecMul, dotProduct, mul_apply]
+  rw [foldedGramMatrix_apply, dotProduct_mulVec, Matrix.mul_apply]
+  simp [vecMul, dotProduct, Matrix.mul_apply]
 
 variable {B} in
 /-- **The folded Gram matrix of a positive definite `B` is positive definite.** No invariance of
