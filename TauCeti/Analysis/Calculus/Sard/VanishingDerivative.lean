@@ -73,6 +73,8 @@ locus; for a one-dimensional target this complement is exactly the set of regula
 * `TauCeti.ContDiff.addHaar_image_vanishingFDeriv_eq_zero`: its global form for a smooth map.
 * `TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two`: the same conclusion at
   the sharp regularity `finrank ℝ E - finrank ℝ F + 1`, when `finrank ℝ E ≤ finrank ℝ F + 2`.
+* `TauCeti.addHaar_image_eq_zero_of_iteratedFDeriv_ne_zero`: the image of an intermediate stratum
+  `Σ_i \ Σ_{i+1}` is null at regularity `C^{i+1}`, when `finrank ℝ E ≤ (i + 1) * finrank ℝ F`.
 * `TauCeti.setOf_not_surjective_fderiv_eq_setOf_fderiv_eq_zero_of_finrank_eq_one`: for a
   one-dimensional target, the critical locus is exactly the vanishing-derivative locus.
 
@@ -244,12 +246,13 @@ omit [Nontrivial F] in
 which the derivatives of order `1 ≤ j ≤ i` vanish but the derivative of order `i + 1` does not, and
 at which `f` is `C^{i+1}`. Near each such point, `s` lies on a `C¹` hypersurface by
 `TauCeti.exists_parametrization_iteratedFDeriv_eq_zero`, so it has Hausdorff dimension at most
-`finrank ℝ E - 1`, and the flat-stratum estimate divides this by `i + 1` under `f`. -/
-private theorem addHaar_image_eq_zero_of_iteratedFDeriv_ne_zero {i : ℕ} (hi : 1 ≤ i)
+`finrank ℝ E - 1`, and the flat-stratum estimate divides this by `i + 1` under `f`. Hence
+`f '' s` is null as soon as `finrank ℝ E ≤ (i + 1) * finrank ℝ F`. -/
+theorem addHaar_image_eq_zero_of_iteratedFDeriv_ne_zero {i : ℕ} (hi : 1 ≤ i)
     (hf : ∀ x ∈ s, ContDiffAt ℝ (i + 1 : ℕ) f x)
     (hs : ∀ x ∈ s, (∀ j, 1 ≤ j → j ≤ i → iteratedFDeriv ℝ j f x = 0) ∧
       iteratedFDeriv ℝ (i + 1) f x ≠ 0)
-    (hdim : finrank ℝ E < (i + 1) * finrank ℝ F + 1) : ν (f '' s) = 0 := by
+    (hdim : finrank ℝ E ≤ (i + 1) * finrank ℝ F) : ν (f '' s) = 0 := by
   refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
     fun a ha ↦ ?_
   obtain ⟨hai, hai1⟩ := hs a ha

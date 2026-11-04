@@ -374,8 +374,9 @@ set `U` of a finite-dimensional real normed space, and let `s ⊆ U` be a set at
 every iterated derivative of order `1 ≤ i ≤ k` vanishes. If `finrank ℝ E ≤ k * finrank ℝ F` and
 the target is nontrivial, then `f '' s` has additive Haar measure zero.
 
-Compared with `TauCeti.addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero`, one derivative less is
-required, at the price of allowing equality in the dimension bound only. -/
+Compared with `TauCeti.addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero`, the regularity drops from
+`C^{k+1}` to `C^k`, while the dimension hypothesis tightens from
+`finrank ℝ E < (k + 1) * finrank ℝ F` to `finrank ℝ E ≤ k * finrank ℝ F`. -/
 theorem addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero_of_finrank_le_mul
     [FiniteDimensional ℝ F] [Nontrivial F] (ν : Measure F) [IsAddHaarMeasure ν]
     (hU : IsOpen U) (hf : ContDiffOn ℝ k f U) (hsU : s ⊆ U)
