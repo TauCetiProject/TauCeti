@@ -34,7 +34,8 @@ and hence `a - b + c` are units. Dividing by that coefficient gives the equation
 nonzerodivisor of `A`: since `P` is regular, `(x)` is prime, and it does not contain
 `a x² + b x y + y²` because it does not contain `y`
 (`TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`). The maximal ideal of `A`
-is not principal, since `f ∈ 𝔪_P²` imposes no relation on the cotangent plane of `P`. Finally
+is not principal, since `f ∈ 𝔪_P²` imposes no relation on the cotangent plane of `P`
+(`TauCeti.IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq`). Finally
 `y² = -x (a x + b y)` lies in `x 𝔪_A`, so the chart `Spec A[𝔪/x]` is the whole blowup
 (`TauCeti.AlgebraicGeometry.isIso_affineBlowupι_of_sq_mem`).
 
@@ -109,29 +110,17 @@ theorem exists_quadratic_relation_of_isUnit_det_hessian
   have hm : maximalIdeal P = Ideal.span {x, y} := by rw [hxy, hs, hs2]
   have hker' : RingHom.ker π = Ideal.span {a' * x ^ 2 + b' * x * y + y ^ 2} := by
     rw [hker, hfe, Ideal.span_singleton_mul_left_unit he]
-  have hprin : ¬ (maximalIdeal P).IsPrincipal := fun ⟨z, hz⟩ ↦ by
-    rw [Ideal.submodule_span_eq] at hz
-    exact hne z (hz ▸ Ideal.mem_span_singleton_self z) (hz.le.trans le_sup_left)
+  have hprin : ¬ (maximalIdeal P).IsPrincipal :=
+    IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq (π := RingHom.id P)
+      Function.surjective_id
+      (((RingHom.injective_iff_ker_eq_bot _).1 Function.injective_id).trans_le bot_le) hne
   have hmA : maximalIdeal A = Ideal.span {π x, π y} := by
     rw [← map_maximalIdeal_of_surjective π hπ, hm, Ideal.map_span, Set.image_pair]
   refine ⟨π x, π y, π a', π b', hmA,
     IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span hm hprin a' b' π hπ hker',
     ?_, ?_, ?_⟩
-  · -- A generator `π z` of `𝔪_A` would give `𝔪_P ≤ (z) + (f) ≤ (z) + 𝔪_P²`.
-    rintro ⟨z', hz'⟩
-    obtain ⟨z, rfl⟩ := hπ z'
-    rw [Ideal.submodule_span_eq] at hz'
-    have : IsLocalHom π := .of_surjective π hπ
-    have hzm : z ∈ maximalIdeal P := by
-      rw [← maximalIdeal_comap π, Ideal.mem_comap, hz']
-      exact Ideal.mem_span_singleton_self _
-    refine hne z hzm ?_
-    calc maximalIdeal P ≤ (maximalIdeal A).comap π := (maximalIdeal_comap π).ge
-      _ = Ideal.span {z} ⊔ RingHom.ker π := by
-        rw [hz', ← Set.image_singleton, ← Ideal.map_span, Ideal.comap_map_of_surjective _ hπ,
-          RingHom.ker_eq_comap_bot]
-      _ ≤ Ideal.span {z} ⊔ maximalIdeal P ^ 2 :=
-        sup_le_sup_left (hker ▸ (Ideal.span_singleton_le_iff_mem _).2 hf) _
+  · exact IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq hπ
+      (hker ▸ (Ideal.span_singleton_le_iff_mem _).2 hf) hne
   · have h := (RingHom.mem_ker (f := π)).1 (hker' ▸ Ideal.mem_span_singleton_self _)
     simpa only [map_add, map_mul, map_pow] using h
   · simpa only [discrim, map_sub, map_mul, map_pow, map_ofNat, map_one] using hd'.map π
