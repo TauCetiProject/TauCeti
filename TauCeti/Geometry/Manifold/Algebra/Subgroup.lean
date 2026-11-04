@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
-public import TauCeti.Geometry.Manifold.Diffeomorph.Sigma
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.Quotient
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sigma
 
 /-!
 # Subgroups of Lie groups with an open embedded Lie subgroup
