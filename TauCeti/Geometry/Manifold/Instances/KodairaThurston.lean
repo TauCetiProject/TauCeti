@@ -109,6 +109,14 @@ def z (p : Cover) : ℝ := (toProd p).2.2.1
 /-- The `t`-coordinate of a point of the cover. -/
 def t (p : Cover) : ℝ := (toProd p).2.2.2
 
+/-- The product representation of a point consists of its four coordinates. -/
+@[simp]
+theorem toProd_apply (p : Cover) : toProd p = (p.x, p.y, p.z, p.t) := (rfl)
+
+/-- The inverse product representation constructs a point from its coordinates. -/
+@[simp]
+theorem toProd_symm_apply (a b c d : ℝ) : toProd.symm (a, b, c, d) = mk a b c d := (rfl)
+
 @[simp] theorem x_mk (a b c d : ℝ) : (mk a b c d).x = a := (rfl)
 
 @[simp] theorem y_mk (a b c d : ℝ) : (mk a b c d).y = b := (rfl)
@@ -204,6 +212,23 @@ theorem smul_def (γ : DeckGroup) (p : Cover) :
 theorem smul_mk (γ : DeckGroup) (x y z t : ℝ) :
     γ • mk x y z t = mk (γ.1.x + x) (γ.1.y + y) (γ.1.z + z + γ.1.x * y) (γ.2.toAdd + t) :=
   (rfl)
+
+/-- The deck action translates the `x`-coordinate. -/
+@[simp]
+theorem x_deck_smul (γ : DeckGroup) (p : Cover) : (γ • p).x = γ.1.x + p.x := (rfl)
+
+/-- The deck action translates the `y`-coordinate. -/
+@[simp]
+theorem y_deck_smul (γ : DeckGroup) (p : Cover) : (γ • p).y = γ.1.y + p.y := (rfl)
+
+/-- The deck action shears and translates the `z`-coordinate. -/
+@[simp]
+theorem z_deck_smul (γ : DeckGroup) (p : Cover) :
+    (γ • p).z = γ.1.z + p.z + γ.1.x * p.y := (rfl)
+
+/-- The deck action translates the `t`-coordinate. -/
+@[simp]
+theorem t_deck_smul (γ : DeckGroup) (p : Cover) : (γ • p).t = γ.2.toAdd + p.t := (rfl)
 
 /-- The deck group acts on the cover. -/
 instance : MulAction DeckGroup Cover where
