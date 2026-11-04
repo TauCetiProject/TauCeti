@@ -155,16 +155,25 @@ theorem coordForm_apply (v : Fin (finrank 𝕜 E) → TangentSpace I x) :
       b.det fun i ↦ (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt 𝕜 x (v i) := by
   simp [coordForm, Function.comp_def]
 
+/-- Evaluated on the coordinate tangent vectors of its own chart, the coordinate form is the
+constant determinant form of the basis. This is the simp normal form of
+`TauCeti.CanonicalBundle.trivializationAt_apply_snd_coordForm`. -/
+@[simp]
+theorem coordForm_compContinuousLinearMap_symmL (hx : x ∈ (chartAt H x₀).source) :
+    (coordForm I x₀ b x).compContinuousLinearMap
+      ((trivializationAt E (TangentSpace I) x₀).symmL 𝕜 x) = b.continuousDet := by
+  have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
+  ext v
+  simp only [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
+    Trivialization.continuousLinearMapAt_symmL _ hx', Module.Basis.continuousDet_apply]
+
 /-- Read in the trivialization of its own chart, the coordinate form is the constant determinant
 form of the basis. -/
 theorem trivializationAt_apply_snd_coordForm (hx : x ∈ (chartAt H x₀).source) :
     (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x₀
       ⟨x, coordForm I x₀ b x⟩).2 = b.continuousDet := by
-  have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
-  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd]
-  ext v
-  simp only [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
-    Trivialization.continuousLinearMapAt_symmL _ hx', Module.Basis.continuousDet_apply]
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    coordForm_compContinuousLinearMap_symmL hx]
 
 /-- The coordinate form does not vanish on the source of its chart. -/
 @[simp]
