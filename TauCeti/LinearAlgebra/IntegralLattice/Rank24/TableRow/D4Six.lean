@@ -21,12 +21,10 @@ hexacode.
 
 This file connects the uniform table lattice `d4Sixth.lattice` to both models:
 
-* Using `TauCeti.RootfulNiemeierType.map_glueSubgroup_d4Sixth`, a glue word of the row lies in
-  `d4Sixth.glueSubgroup` exactly when its hexacode coordinates lie in `TauCeti.Hexacode.code ω`
-  (`TauCeti.RootfulNiemeierType.mem_glueSubgroup_d4Sixth_iff_hexacode`).
-* Naturality of gluing under equal families of components gives the coordinate-preserving isometry
-  `TauCeti.RootfulNiemeierType.d4SixthLatticeIsometry` from `d4Sixth.lattice` onto
-  `TauCeti.d4SixLattice`.
+* Naturality of gluing under equal families of components, together with
+  `TauCeti.RootfulNiemeierType.d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff`, gives the
+  coordinate-preserving isometry `TauCeti.RootfulNiemeierType.d4SixthLatticeIsometry` from
+  `d4Sixth.lattice` onto `TauCeti.d4SixLattice`.
 * Composing with `TauCeti.d4SixHexacodeOverlatticeIsometry` yields
   `TauCeti.RootfulNiemeierType.d4SixthLatticeHexacodeOverlatticeIsometry`, identifying
   `d4Sixth.lattice` with the hexacode gluing of `(D₄)⁶`, and transports monomial automorphisms of
@@ -49,24 +47,6 @@ namespace TauCeti
 namespace RootfulNiemeierType
 
 open DynkinType IntegralLattice
-
-/-! ### Hexacode characterization of the table glue subgroup -/
-
-/-- A glue word of the row `D₄⁶` lies in the table glue subgroup `d4Sixth.glueSubgroup` exactly
-when its image under `d4SixthGlueModuleIsometry` lies in `d4SixGlueSubgroup`. -/
-theorem d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff (w : d4Sixth.glueModule) :
-    d4SixthGlueModuleIsometry w ∈ d4SixGlueSubgroup ↔ w ∈ d4Sixth.glueSubgroup := by
-  rw [← map_glueSubgroup_d4Sixth]
-  exact AddSubgroup.mem_map_iff_mem d4SixthGlueModuleIsometry.injective
-
-/-- **The table glue subgroup of `D₄⁶` is the hexacode**: a glue word of the row lies in
-`d4Sixth.glueSubgroup` exactly when its image under `d4SixthGlueModuleIsometry` and
-`d4SixHexacodeIsometry` belongs to `Hexacode.code ω`. -/
-theorem mem_glueSubgroup_d4Sixth_iff_hexacode {F : Type*} [Field F] [Finite F]
-    (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0) (w : d4Sixth.glueModule) :
-    w ∈ d4Sixth.glueSubgroup ↔
-      d4SixHexacodeIsometry hF hω (d4SixthGlueModuleIsometry w) ∈ Hexacode.code ω := by
-  rw [← d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff, mem_d4SixGlueSubgroup_iff hF hω]
 
 /-! ### Unimodularity and root sublattice of `d4Sixth.lattice` -/
 

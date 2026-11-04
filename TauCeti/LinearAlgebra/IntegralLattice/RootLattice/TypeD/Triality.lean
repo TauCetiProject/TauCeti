@@ -55,7 +55,8 @@ act on a lattice glued from copies of `D₄`.
 * `TauCeti.DynkinType.typeD4ScalarIsometry`: the power of triality realizing a given unit of
   `F₄` on the glue alphabet (`typeD4ScalarIsometry_eq_pow`), compatible with
   `checkerboardScalarIsometry` under `rootLatticeIsometryCheckerboard`
-  (`typeD4ScalarIsometry_trans_rootLatticeIsometryCheckerboard`).
+  (`typeD4ScalarIsometry_eq_conjMulEquiv`,
+  `rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply`).
 
 ## References
 
@@ -394,19 +395,12 @@ theorem discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry (k : ℕ)
     (typeD4Triality ht ^ k).discriminantGroupEquiv ((D 4).glueAlphabetIsometry hv ht x) =
       (D 4).glueAlphabetIsometry hv ht ((typeD4GlueAlphabetQuaternaryIsometry hF hω).symm
         ((ω ^ 2) ^ k * typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
-  induction k generalizing x with
-  | zero =>
-    rw [pow_zero, pow_zero, one_mul, QuadraticMap.IsometryEquiv.symm_apply_apply,
-      Isometry.one_def, Isometry.discriminantGroupEquiv_refl]
-    -- `LinearEquiv.refl_apply` does not rewrite here: the argument is typed in the carrier of
-    -- the discriminant quadratic module rather than in the discriminant group.
-    rfl
-  | succ k ih =>
-    rw [pow_succ (typeD4Triality ht) k, Isometry.mul_def, Isometry.discriminantGroupEquiv_trans]
-    -- The composite is applied in two steps: first `typeD4Triality`, then its `k`-th power.
-    refine (congrArg _ (discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry ht hv hF hω
-      x)).trans ((ih _).trans ?_)
-    rw [QuadraticMap.IsometryEquiv.apply_symm_apply, pow_succ (ω ^ 2) k, mul_assoc]
+  rw [typeD4Triality, ← map_pow, glueAlphabetIsometry_D_four_apply hF hω,
+    glueAlphabetIsometry_D_four_apply hF hω]
+  refine (Isometry.discriminantGroupEquiv_conjMulEquiv_apply _ _ _).trans (congrArg _ ((
+    discriminantGroupEquiv_checkerboardTriality_pow_typeD4QuaternaryDiscriminantQuadraticIsometry
+      hF hω k _).trans ?_))
+  rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
 
 /-- **Triality realizes every nonzero scalar of `F₄` on the `D₄` glue alphabet.** For a unit `a`
 of a field `F` of four elements, this is the power of `typeD4Triality` acting on the glue
@@ -442,15 +436,6 @@ theorem rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply (a : Fˣ)
       checkerboardScalarIsometry hF hω a (rootLatticeIsometryCheckerboard 4 le_rfl ht x) := by
   rw [typeD4ScalarIsometry_apply, Isometry.apply_symm_apply]
 
-/-- **`rootLatticeIsometryCheckerboard` intertwines `typeD4ScalarIsometry` and
-`checkerboardScalarIsometry`.** -/
-theorem typeD4ScalarIsometry_trans_rootLatticeIsometryCheckerboard (a : Fˣ) :
-    (typeD4ScalarIsometry ht hF hω a).trans (rootLatticeIsometryCheckerboard 4 le_rfl ht) =
-      (rootLatticeIsometryCheckerboard 4 le_rfl ht).trans (checkerboardScalarIsometry hF hω a) :=
-  Isometry.ext fun x ↦ by
-    rw [Isometry.trans_apply, Isometry.trans_apply,
-      rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply]
-
 /-- **`typeD4ScalarIsometry a` acts on the `D₄` glue alphabet as multiplication by `a`**, read
 through `typeD4GlueAlphabetQuaternaryIsometry`. -/
 theorem discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry (a : Fˣ)
@@ -459,9 +444,12 @@ theorem discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry (a : F�
         ((D 4).glueAlphabetIsometry hv ht x) =
       (D 4).glueAlphabetIsometry hv ht ((typeD4GlueAlphabetQuaternaryIsometry hF hω).symm
         (a * typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
-  rw [typeD4ScalarIsometry,
-    discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry ht hv hF hω,
-    sq_pow_finFourEquiv_symm]
+  rw [typeD4ScalarIsometry_eq_conjMulEquiv, glueAlphabetIsometry_D_four_apply hF hω,
+    glueAlphabetIsometry_D_four_apply hF hω]
+  refine (Isometry.discriminantGroupEquiv_conjMulEquiv_apply _ _ _).trans (congrArg _ ((
+    discriminantGroupEquiv_checkerboardScalarIsometry_typeD4QuaternaryDiscriminantQuadraticIsometry
+      hF hω a _).trans ?_))
+  rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
 
 /-- **`typeD4ScalarIsometry a` is the power of triality realizing `a`**: if `(ω²)ᵏ = a`, then it
 is `typeD4Triality ^ k`. -/

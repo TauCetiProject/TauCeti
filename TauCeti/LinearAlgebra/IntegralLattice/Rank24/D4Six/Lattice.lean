@@ -165,15 +165,6 @@ theorem d4SixRootIsometry_apply (x : Fin 6 → Fin (D 4).rank → ℚ) (j : Fin 
         (rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4) (x j)) := by
   rw [d4SixRootIsometry, Isometry.pi_apply, Isometry.trans_apply]
 
-/-- Equivalent form of `d4SixRootIsometry_apply` applying `typeD4ScalarIsometry` in simple-root
-coordinates before passing to the checkerboard lattice. -/
-theorem d4SixRootIsometry_apply_eq_rootLatticeIsometryCheckerboard
-    (x : Fin 6 → Fin (D 4).rank → ℚ) (j : Fin 6) :
-    d4SixRootIsometry hF hω x j =
-      rootLatticeIsometryCheckerboard 4 le_rfl (isSimplyLaced_D 4)
-        (typeD4ScalarIsometry (isSimplyLaced_D 4) hF hω (d4SixHexacodeScaling hω j) (x j)) := by
-  rw [d4SixRootIsometry_apply, rootLatticeIsometryCheckerboard_typeD4ScalarIsometry_apply]
-
 /-- The inverse of `d4SixRootIsometry` undoes the `j`-th hexacode triality scaling in checkerboard
 coordinates and passes back to Bourbaki simple-root coordinates. -/
 -- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside the ambient codomain type on the left-hand
