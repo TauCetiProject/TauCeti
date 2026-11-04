@@ -304,11 +304,88 @@ lemma jointMapIso_inv_app (φ : L.Hom L') {p q : Γ} (g : p ⟶ q) (Y : L.jointF
       (φ.joint.naturality (g ×ₘ 𝟙 (SingleObj.star H)).toLoc).inv.toNatTrans.app Y :=
   (rfl)
 
+/-- The joint naturality cell respects the unit comparisons. -/
+@[reassoc]
+lemma jointMapIso_hom_app_comp_jointMapId (φ : L.Hom L') (p : Γ) (Y : L.jointFiber p) :
+    (φ.jointMapIso (𝟙 p)).hom.app Y ≫
+        (L'.jointMapId p).hom.app ((φ.jointFunctor p).obj Y) =
+      (φ.jointFunctor p).map ((L.jointMapId p).hom.app Y) := by
+  dsimp only [jointFunctor]
+  have h := congrArg (fun t => t.toNatTrans.app Y)
+    (φ.joint.naturality_id ⟨(p, SingleObj.star H)⟩)
+  simp only [jointMapIso_hom_app, EquivariantGroupoidLift.jointMapId_hom_app,
+    Pseudofunctor.mapId'_eq_mapId, ← prod_id, Quiver.Hom.id_toLoc]
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app,
+    Cat.whiskerRight_app, Cat.leftUnitor_hom_toNatTrans,
+    Cat.rightUnitor_inv_toNatTrans, Functor.leftUnitor_hom_app,
+    Functor.rightUnitor_inv_app] at h
+  exact h.trans ((congrArg (_ ≫ ·) (Category.id_comp _)).trans (Category.comp_id _))
+
+/-- The joint naturality cells respect the composition comparisons. -/
+@[reassoc]
+lemma jointMapIso_hom_app_comp_jointMapComp (φ : L.Hom L') {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+    (gh : p ⟶ r) (hgh : g ≫ h = gh) (Y : L.jointFiber p) :
+    (φ.jointMapIso gh).hom.app Y ≫
+        (L'.jointMapComp g h gh hgh).hom.app ((φ.jointFunctor p).obj Y) =
+      (φ.jointFunctor r).map ((L.jointMapComp g h gh hgh).hom.app Y) ≫
+        (φ.jointMapIso h).hom.app ((L.jointMap g).obj Y) ≫
+          (L'.jointMap h).map ((φ.jointMapIso g).hom.app Y) := by
+  have hc := φ.joint.naturality_comp'_hom_app
+    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
+    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc (by simp [← Quiver.Hom.comp_toLoc, hgh]) Y
+  rw [jointMapIso_hom_app, hc]
+  simp only [EquivariantGroupoidLift.jointMapComp_hom_app, jointMapIso_hom_app,
+    Category.assoc, Cat.Hom.inv_hom_id_toNatTrans_app]
+  exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (Category.comp_id _))
+
+/-- The joint naturality cells respect the inverse composition comparisons. -/
+@[reassoc]
+lemma jointMapIso_comp_inv_app (φ : L.Hom L') {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+    (gh : p ⟶ r) (hgh : g ≫ h = gh) (Y : L.jointFiber p) :
+    (φ.jointMapIso h).hom.app ((L.jointMap g).obj Y) ≫
+        (L'.jointMap h).map ((φ.jointMapIso g).hom.app Y) ≫
+          (L'.jointMapComp g h gh hgh).inv.app ((φ.jointFunctor p).obj Y) =
+      (φ.jointFunctor r).map ((L.jointMapComp g h gh hgh).inv.app Y) ≫
+        (φ.jointMapIso gh).hom.app Y := by
+  rw [← cancel_epi ((φ.jointFunctor r).map ((L.jointMapComp g h gh hgh).hom.app Y))]
+  erw [← φ.jointMapIso_hom_app_comp_jointMapComp_assoc]
+  simp only [← Functor.map_comp_assoc, Iso.hom_inv_id_app]
+  exact (Category.comp_id _).trans
+    (((congrArg (· ≫ _) ((φ.jointFunctor r).map_id _)).trans (Category.id_comp _)).symm)
+
 /-- The isomorphism `e_p⁻¹ ⋙ φ_p ≅ e'_p⁻¹` between inverse fiber comparisons, obtained from the
 fiber isomorphism `φ_p ⋙ e'_p ≅ e_p`. -/
 noncomputable def inverseFiberIso (φ : L.Hom L') (p : Γ) :
     (L.fiberEquivalence p).inverse ⋙ φ.jointFunctor p ≅ (L'.fiberEquivalence p).inverse :=
   Iso.inverseCompIso (Iso.isoCompInverse (φ.fiberFunctorIso p))
+
+/-- The inverse-fiber comparison is the mate of the specified fiber comparison. -/
+@[reassoc]
+lemma functor_map_inverseFiberIso_hom_app_comp_counit (φ : L.Hom L') (p : Γ) (X : fiber actions p) :
+    (L'.fiberEquivalence p).functor.map ((φ.inverseFiberIso p).hom.app X) ≫
+        (L'.fiberEquivalence p).counit.app X =
+      (φ.fiberFunctorIso p).hom.app ((L.fiberEquivalence p).inverse.obj X) ≫
+        (L.fiberEquivalence p).counit.app X := by
+  simp only [inverseFiberIso, Iso.inverseCompIso_hom_app, Iso.isoCompInverse_hom_app,
+    Functor.comp_obj, Functor.map_comp, Category.assoc]
+  -- The comparison has a composite strong-transformation source; identify its projections.
+  erw [(L'.fiberEquivalence p).counit_naturality,
+    (L'.fiberEquivalence p).counit_naturality_assoc,
+    (L'.fiberEquivalence p).functor_unit_comp_assoc]
+
+/-- The inverse-fiber comparison respects the units of the two chosen equivalences. -/
+@[reassoc]
+lemma inverseFiberIso_hom_app_comp_unitInv (φ : L.Hom L') (p : Γ) (Y : L.jointFiber p) :
+    (φ.inverseFiberIso p).hom.app ((L.fiberEquivalence p).functor.obj Y) ≫
+        (L'.fiberEquivalence p).inverse.map ((φ.fiberFunctorIso p).inv.app Y) ≫
+          (L'.fiberEquivalence p).unitInv.app ((φ.jointFunctor p).obj Y) =
+      (φ.jointFunctor p).map ((L.fiberEquivalence p).unitInv.app Y) := by
+  apply (L'.fiberEquivalence p).functor.map_injective
+  simp only [Functor.map_comp]
+  erw [← (L'.fiberEquivalence p).counit_app_functor, (L'.fiberEquivalence p).counit_naturality,
+    φ.functor_map_inverseFiberIso_hom_app_comp_counit_assoc,
+    (L.fiberEquivalence p).counit_app_functor, ← (φ.fiberFunctorIso p).hom.naturality_assoc]
+  simp only [Functor.id_obj, Functor.comp_map, Iso.hom_inv_id_app, Category.comp_id]
 
 /-- A morphism of lifts `φ : L ⟶ L'` identifies the transport functors of `L` and `L'` on the
 prescribed fibers: `E_g = e_p⁻¹ ⋙ F (g, 1) ⋙ e_q` is isomorphic to
