@@ -22,8 +22,8 @@ The same expansion bounds the norm of the `m`-th coefficient
 (`FormalMultilinearSeries.norm_taylorComp_le`): if the coefficients of `p` of orders `1` through
 `m` have norm at most `B`, it is at most `max 1 B ^ m` times the sum, over the ordered partitions
 `c` of `m`, of `‖q c.length‖`. For a composite `g ∘ f` this bounds the `m`-th derivative by the
-derivatives of `g` of order at most `m` (`norm_iteratedFDeriv_comp_le_sum`), keeping track of
-each order separately, as needed for changes of variables in Sobolev spaces.
+derivatives of `g` of order at most `m` (`ContDiffAt.norm_iteratedFDeriv_comp_le_sum`), keeping
+track of each order separately, as needed for changes of variables in Sobolev spaces.
 -/
 
 public section
@@ -72,7 +72,7 @@ theorem FormalMultilinearSeries.norm_taylorComp_le (q : FormalMultilinearSeries 
 `x`, and the derivatives of `f` at `x` of orders `1` through `m` have norm at most `B`, then the
 `m`-th derivative of `g ∘ f` at `x` has norm at most `max 1 B ^ m` times the sum, over the ordered
 partitions `c` of `m`, of the norms of the derivatives of `g` at `f x` of order `c.length ≤ m`. -/
-theorem norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E → F} {x : E} {m : ℕ}
+theorem ContDiffAt.norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E → F} {x : E} {m : ℕ}
     (hg : ContDiffAt 𝕜 m g (f x)) (hf : ContDiffAt 𝕜 m f x) {B : ℝ}
     (hB : ∀ k, 1 ≤ k → k ≤ m → ‖iteratedFDeriv 𝕜 k f x‖ ≤ B) :
     ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤

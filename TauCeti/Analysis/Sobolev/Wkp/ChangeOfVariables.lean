@@ -28,9 +28,9 @@ independent of the choice of charts.
 For a function `f` that is `Cᵏ` on `V`, the Faà di Bruno formula expresses the `i`-th derivative of
 `f ∘ Φ` at `x` as a sum, over the ordered partitions of `i`, of derivatives of `f` at `Φ x` of
 order at most `i` evaluated on derivatives of `Φ` at `x`; hence
-`‖Dⁱ(f ∘ Φ)(x)‖ ≤ max 1 L ^ i ∑_c ‖D^{|c|} f(Φ x)‖` (`norm_iteratedFDeriv_comp_le_sum`). The
-Jacobian bound makes precomposition bounded on `Lᵖ`
-(`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`), so if `f` represents
+`‖Dⁱ(f ∘ Φ)(x)‖ ≤ max 1 L ^ i ∑_c ‖D^{|c|} f(Φ x)‖`
+(`ContDiffAt.norm_iteratedFDeriv_comp_le_sum`). The Jacobian bound makes precomposition bounded on
+`Lᵖ` (`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`), so if `f` represents
 `u ∈ W^{k,p}(V)`, every classical derivative of `f ∘ Φ` through order `k` lies in `Lᵖ(U)`, and
 `f ∘ Φ` represents an element of `W^{k,p}(U)` of norm at most
 `TauCeti.Wkp.compLBound p k L c * ‖u‖`.
@@ -198,8 +198,8 @@ private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ
         refine eLpNorm_mono_ae_real ((ContinuousOn.continuousOn_iteratedFDeriv hfΦ U.isOpen
           hi').aestronglyMeasurable U.isOpen.measurableSet) ?_
         filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
-        exact norm_iteratedFDeriv_comp_le_sum
-          ((hf.contDiffAt (V.isOpen.mem_nhds (h.mapsTo hx))).of_le hi')
+        exact ((hf.contDiffAt (V.isOpen.mem_nhds (h.mapsTo hx))).of_le
+          hi').norm_iteratedFDeriv_comp_le_sum
           ((h.contDiffOn.contDiffAt (U.isOpen.mem_nhds hx)).of_le hi')
           fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
     _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
@@ -391,56 +391,57 @@ private theorem compLp_ae (h : IsChangeOfVariables k U V Φ L c) (g : Lp ℝ p (
   rw [compLp, hx, Function.comp_apply, hx']
 
 /-- **Change of variables in `W^{k,p}`.** If `Φ` is a change of variables of order `k` from `U`
-into `V` (`TauCeti.Wkp.IsChangeOfVariables`), then precomposition with `Φ` is a bounded linear
-operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`. For `1 ≤ p < ∞` its value is `u ∘ Φ`
+into `V` (`TauCeti.Wkp.IsChangeOfVariables`) and `1 ≤ p < ∞`, then precomposition with `Φ` is a
+bounded linear operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`. Its value is `u ∘ Φ`
 (`TauCeti.Wkp.value_compL_ae`), which characterizes it (`TauCeti.Wkp.compL_eq_iff`). It is
-constructed as the continuous extension of precomposition on the dense subspace of elements with
-`Cᵏ` representatives; for `p = ∞` that subspace is not dense, and no property of the extension is
-asserted. -/
-def compL (h : IsChangeOfVariables k U V Φ L c) : Wkp mu V p k →L[ℝ] Wkp mu U p k :=
+constructed as the continuous extension of precomposition on the subspace of elements with `Cᵏ`
+representatives, which is dense because `p < ∞`. -/
+def compL (h : IsChangeOfVariables k U V Φ L c) (_hp : p ≠ ⊤) :
+    Wkp mu V p k →L[ℝ] Wkp mu U p k :=
   (compSmoothₗ h).extendOfNorm (smoothSubmodule mu V p k).subtype
 
 private theorem compL_apply_smooth (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
     (u : smoothSubmodule mu V p k) :
-    compL h (u : Wkp mu V p k) = compSmooth h u :=
+    compL h hp (u : Wkp mu V p k) = compSmooth h u :=
   LinearMap.extendOfNorm_eq (denseRange_smoothSubmodule_subtype hp)
     ⟨compLBound p k L c, norm_compSmooth_le h⟩ u
 
 private theorem valueL_comp_compL (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
-    (valueL k).comp (compL h) = (compLp h).comp (valueL (mu := mu) (Omega := V) (p := p) k) := by
+    (valueL k).comp (compL h hp) =
+      (compLp h).comp (valueL (mu := mu) (Omega := V) (p := p) k) := by
   refine DFunLike.coe_injective (Continuous.ext_on (denseRange_smoothSubmodule_subtype hp)
-    ((valueL k).comp (compL h)).continuous ((compLp h).comp (valueL k)).continuous ?_)
+    ((valueL k).comp (compL h hp)).continuous ((compLp h).comp (valueL k)).continuous ?_)
   rintro _ ⟨u, rfl⟩
   refine Lp.ext ?_
   simp only [Submodule.coe_subtype, ContinuousLinearMap.coe_comp, Function.comp_apply,
     valueL_apply, compL_apply_smooth h hp]
   exact (value_compSmooth_ae h u).trans (compLp_ae h _).symm
 
-/-- The value of `compL h u` is `u ∘ Φ`, almost everywhere on `U`. -/
+/-- The value of `compL h hp u` is `u ∘ Φ`, almost everywhere on `U`. -/
 theorem value_compL_ae (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    (value k (compL h u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
+    (value k (compL h hp u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
   have he := congrArg (fun T => T u) (valueL_comp_compL h hp)
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, valueL_apply] at he
   rw [he]
   exact compLp_ae h _
 
-/-- An element of `W^{k,p}(U)` is `compL h u` exactly when its value is `u ∘ Φ` almost
+/-- An element of `W^{k,p}(U)` is `compL h hp u` exactly when its value is `u ∘ Φ` almost
 everywhere on `U`. -/
 theorem compL_eq_iff (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k)
     (w : Wkp mu U p k) :
-    compL h u = w ↔ (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) :=
+    compL h hp u = w ↔ (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) :=
   ⟨fun hw => hw ▸ value_compL_ae h hp u,
     fun hw => ext k (Lp.ext ((value_compL_ae h hp u).trans hw.symm))⟩
 
-/-- `compL h` increases norms by at most the factor `compLBound p k L c`. -/
+/-- `compL h hp` increases norms by at most the factor `compLBound p k L c`. -/
 theorem norm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    ‖compL h u‖ ≤ compLBound p k L c * ‖u‖ :=
+    ‖compL h hp u‖ ≤ compLBound p k L c * ‖u‖ :=
   LinearMap.norm_extendOfNorm_apply_le (denseRange_smoothSubmodule_subtype hp) _
     (norm_compSmooth_le h) u
 
-/-- `compL h` has operator norm at most `compLBound p k L c`. -/
+/-- `compL h hp` has operator norm at most `compLBound p k L c`. -/
 theorem opNorm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
-    ‖(compL h : Wkp mu V p k →L[ℝ] Wkp mu U p k)‖ ≤ compLBound p k L c :=
+    ‖(compL h hp : Wkp mu V p k →L[ℝ] Wkp mu U p k)‖ ≤ compLBound p k L c :=
   LinearMap.opNorm_extendOfNorm_le (denseRange_smoothSubmodule_subtype hp)
     (compLBound_nonneg p k L h.pos) (norm_compSmooth_le h)
 
@@ -450,20 +451,22 @@ end Extension
 
 section Compatibility
 
-/-- Precomposition commutes with forgetting the highest weak derivative. -/
+/-- Precomposition commutes with forgetting the highest weak derivative.
+Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem lowerOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p (k + 1)) :
-    lowerOrder k (compL h u) = compL (h.mono k.le_succ) (lowerOrder k u) := by
+    lowerOrder k (compL h hp u) = compL (h.mono k.le_succ) hp (lowerOrder k u) := by
   refine ((compL_eq_iff _ hp _ _).2 ?_).symm
   filter_upwards [value_compL_ae h hp u] with x hx
   rw [← value_succ, hx, value_succ]
 
-/-- **The chain rule.** The first-order part of `compL h u` is the first-order change of
+/-- **The chain rule.** The first-order part of `compL h hp u` is the first-order change of
 variables `TauCeti.W1p.compL` of the first-order part of `u`. In particular its weak gradient is
-`DΦ(x)* (∇u)(Φ x)` (`TauCeti.W1p.gradient_compL_ae`). -/
+`DΦ(x)* (∇u)(Φ x)` (`TauCeti.W1p.gradient_compL_ae`).
+Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p (k + 1)) :
-    firstOrder k (compL h u) =
+    firstOrder k (compL h hp u) =
       W1p.compL Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos h.le_abs_det
         (firstOrder k u) := by
   refine W1p.ext_value (Lp.ext ?_)
@@ -475,7 +478,7 @@ theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p �
 theorem compL_comp (hΦ : IsChangeOfVariables k V W Φ L c)
     (hΨ : IsChangeOfVariables k U V Ψ L' c') {L'' c'' : ℝ}
     (hΦΨ : IsChangeOfVariables k U W (Φ ∘ Ψ) L'' c'') (hp : p ≠ ⊤) (u : Wkp mu W p k) :
-    compL hΨ (compL hΦ u) = compL hΦΨ u := by
+    compL hΨ hp (compL hΦ hp u) = compL hΦΨ hp u := by
   refine (compL_eq_iff _ hp _ _).2 ?_
   filter_upwards [value_compL_ae hΦΨ hp u, hΨ.ae_comp (value_compL_ae hΦ hp u)] with x h1 h2
   rw [h1, h2, Function.comp_apply]
@@ -491,7 +494,7 @@ identity of `W^{k,p}(V)`. -/
 theorem compL_compL_of_rightInvOn (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
     (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    compL hΨ (compL hΦ u) = u := by
+    compL hΨ hp (compL hΦ hp u) = u := by
   refine (compL_eq_iff _ hp _ _).2 ?_
   filter_upwards [hΨ.ae_comp (value_compL_ae hΦ hp u), ae_restrict_mem V.isOpen.measurableSet]
     with y hy hyV
@@ -504,21 +507,21 @@ for `1 ≤ p < ∞` precomposition with `Φ` is an isomorphism of Banach spaces
 def compLEquiv (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariables k V U Ψ L' c')
     (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
     (hp : p ≠ ⊤) : Wkp mu V p k ≃L[ℝ] Wkp mu U p k :=
-  ContinuousLinearEquiv.equivOfInverse (compL hΦ) (compL hΨ)
+  ContinuousLinearEquiv.equivOfInverse (compL hΦ hp) (compL hΨ hp)
     (compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp) (compL_compL_of_rightInvOn hΨ hΦ hΨΦ hp)
 
 @[simp]
 theorem compLEquiv_apply (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    compLEquiv hΦ hΨ hΦΨ hΨΦ hp u = compL hΦ u :=
+    compLEquiv hΦ hΨ hΦΨ hΨΦ hp u = compL hΦ hp u :=
   (rfl)
 
 @[simp]
 theorem compLEquiv_symm_apply (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (hp : p ≠ ⊤) (u : Wkp mu U p k) :
-    (compLEquiv hΦ hΨ hΦΨ hΨΦ hp).symm u = compL hΨ u :=
+    (compLEquiv hΦ hΨ hΦΨ hΨΦ hp).symm u = compL hΨ hp u :=
   (rfl)
 
 end Equiv
