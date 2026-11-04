@@ -147,6 +147,11 @@ with height weights. -/
 noncomputable def component (j : F.ι) : AlgebraicCycle X ℤ :=
   AlgebraicCycle.map (F.i j) height height (AlgebraicCycle.div (F.r j))
 
+/-- The `j`-th summand is the pushforward `(i j)_* div (r j)`. -/
+lemma component_def (j : F.ι) :
+    F.component j = AlgebraicCycle.map (F.i j) height height (AlgebraicCycle.div (F.r j)) := by
+  rw [component]
+
 /-- At a point of `W j`, the `j`-th summand is the order of vanishing of `r j`. -/
 @[simp]
 lemma component_apply (j : F.ι) (y : F.W j) :

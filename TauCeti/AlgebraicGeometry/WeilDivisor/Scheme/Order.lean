@@ -27,7 +27,8 @@ order at only finitely many codimension-one points; no finiteness assumption is 
 
 Elementary facts about `Scheme.ord` itself are recorded first: the order of one vanishes
 (`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), orders
-are invariant under isomorphisms of schemes (`Scheme.ord_functionFieldMap`), and a
+are invariant under dominant open immersions, in particular isomorphisms, of schemes
+(`Scheme.ord_functionFieldMap`), and a
 function regular on `U` has nonnegative order at every point of `U`
 (`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
 element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
@@ -81,14 +82,14 @@ lemma ord_inv (f : X.functionField) {x : X} : X.ord f⁻¹ x = -X.ord f x := by
     omega
 
 open CategoryTheory in
-/-- **Orders of vanishing are invariant under isomorphisms.** For an isomorphism `f : W ⟶ X` of
-locally Noetherian integral schemes, the order of the pullback `f^* g` of a rational function `g`
-at a point `w` is the order of `g` at `f w`: the map of local rings `𝒪_{X,f w} ⟶ 𝒪_{W,w}` is an
-isomorphism compatible with `f^*`, and lengths are invariant under ring isomorphisms
-(`TauCeti.Ring.ordFrac_map_of_ringEquiv`). -/
+/-- **Orders of vanishing are local.** For a dominant open immersion `f : W ⟶ X` of locally
+Noetherian integral schemes (for instance an isomorphism), the order of the pullback `f^* g` of a
+rational function `g` at a point `w` is the order of `g` at `f w`: the map of local rings
+`𝒪_{X,f w} ⟶ 𝒪_{W,w}` is an isomorphism compatible with `f^*`, and lengths are invariant under
+ring isomorphisms (`TauCeti.Ring.ordFrac_map_of_ringEquiv`). -/
 @[simp]
 lemma ord_functionFieldMap {W : Scheme.{u}} [IsIntegral W] [IsLocallyNoetherian W] (f : W ⟶ X)
-    [IsIso f] (g : X.functionField) (w : W) :
+    [IsOpenImmersion f] [IsDominant f] (g : X.functionField) (w : W) :
     W.ord (f.functionFieldMap g) w = X.ord g (f w) := by
   by_cases hw : Order.coheight w = 1
   · have hfw : Order.coheight (f w) = 1 := (coheight_eq_of_isOpenImmersion f).trans hw

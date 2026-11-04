@@ -220,10 +220,7 @@ private lemma classGroupToChowGroup_injective (hn : topologicalKrullDim X = n) :
     Units.map (inv (F.i j)).functionFieldMap.hom.toMonoidHom (F.r j)
   have hcomp (j : F.ι) : F.component j = AlgebraicCycle.div (g j) := by
     have := hiso j
-    ext x
-    obtain ⟨y, rfl⟩ := (F.i j).surjective x
-    rw [RatEquivFamily.component_apply, ← AlgebraicCycle.map_height_div_of_isIso,
-      AlgebraicCycle.map_height_apply_of_isClosedImmersion, AlgebraicCycle.div_apply]
+    rw [RatEquivFamily.component_def, AlgebraicCycle.map_height_div_of_isIso]
   refine (WeilDivisor.OrderSystem.ofScheme X).mem_principalSubgroup.mpr
     ⟨∑ j, Additive.ofMul (g j), SchemeWeilDivisor.toAlgebraicCycle_injective ?_⟩
   rw [← WeilDivisor.OrderSystem.principalHom_apply, map_sum, map_sum,

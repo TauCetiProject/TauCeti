@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
+import TauCeti.RingTheory.Length
 
 /-!
 # Invariance and vanishing of the order of vanishing
@@ -52,8 +53,7 @@ theorem ord_ringEquiv (σ : R ≃+* R') (x : R) : Ring.ord R' (σ x) = Ring.ord 
       map_smul' := fun r q ↦ by
         induction q using Submodule.Quotient.induction_on
         simp [e, Algebra.smul_def] }
-  rw [Ring.ord, Ring.ord, Module.length, Module.length, WithBot.unbot_inj,
-    Order.krullDim_eq_of_orderIso (Submodule.orderIsoMapComapOfBijective f e.bijective)]
+  rw [Ring.ord, Ring.ord, f.length_eq_of_bijective e.bijective]
 
 /-- The order of vanishing, as a homomorphism to `ℤᵐ⁰`, is invariant under ring isomorphisms. -/
 @[simp]
