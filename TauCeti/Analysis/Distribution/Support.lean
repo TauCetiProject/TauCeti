@@ -35,14 +35,18 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 
 ## Main declarations
 
+* `Distribution.dsupport_zero`, `Distribution.dsupport_neg`, `Distribution.dsupport_smul_subset`,
+  `Distribution.dsupport_smul_of_ne_zero`: support under zero, negation, and scalar multiplication.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
 * `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values.
-* `Distribution.dsupport_eq_empty_iff`: an additive map on test functions vanishes exactly when its
-  support is empty.
-* `Distribution.dsupport_comp_smulLeftCLM_subset`: a smooth multiple `T ∘ (g ·)` is supported in
-  the supports of both `g` and `T`.
+* `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
+  additive map on test functions vanishes when and only when its support is empty.
+* `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_monoCLM_subset`,
+  `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`: support under smooth
+  multiples, open/regularity restriction, and existence of a test cutoff equal to one near the
+  support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`: the augmentation of a boundary is zero.
@@ -61,6 +65,35 @@ open scoped Distributions Topology
 
 namespace Distribution
 
+section Basic
+
+variable {α β 𝓕 R V : Type*} [FunLike 𝓕 α β] [TopologicalSpace α] [Zero β]
+
+/-- The distributional support of the zero map is empty. -/
+@[simp]
+theorem dsupport_zero [Zero V] : dsupport (0 : 𝓕 → V) = ∅ :=
+  univ_disjoint.1 (IsVanishingOn.disjoint_dsupport (fun _ _ ↦ rfl) isOpen_univ)
+
+/-- Negating a map does not change its distributional support. -/
+@[simp]
+theorem dsupport_neg [SubtractionMonoid V] (f : 𝓕 → V) : dsupport (-f) = dsupport f :=
+  (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]).antisymm
+    (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simpa using h φ hφ)
+
+/-- Scalar multiplication shrinks the distributional support. -/
+theorem dsupport_smul_subset [Zero V] [SMulZeroClass R V] (a : R) (f : 𝓕 → V) :
+    dsupport (a • f) ⊆ dsupport f :=
+  dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]
+
+/-- Nonzero scalar multiplication over a group with zero preserves the distributional support. -/
+theorem dsupport_smul_of_ne_zero [GroupWithZero R] [Zero V] [MulActionWithZero R V] {a : R}
+    (ha : a ≠ 0) (f : 𝓕 → V) : dsupport (a • f) = dsupport f :=
+  (dsupport_smul_subset a f).antisymm <|
+    dsupport_subset_dsupport fun _ _ h φ hφ ↦ by
+      simpa [inv_smul_smul₀ ha] using congrArg (a⁻¹ • ·) (h φ hφ)
+
+end Basic
+
 variable {E F V 𝓕 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
 
@@ -71,6 +104,20 @@ theorem dsupport_apply_apply_subset [AddZeroClass V] {x : E} (ℓ : F →+ V) :
   rw [mem_compl_iff, notMem_dsupport_iff]
   refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
   simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
+
+/-- The support of a continuous linear point evaluation `φ ↦ ℓ (φ x)` on test functions lies in
+`{x}`. -/
+theorem dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset
+    [TopologicalSpace V] [AddCommMonoid V] [Module ℝ V] (x : E) (ℓ : F →L[ℝ] V) :
+    dsupport (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+      (TestFunction.toBoundedContinuousFunctionCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] _)) ⊆ {x} := by
+  have h : ⇑(ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+      (TestFunction.toBoundedContinuousFunctionCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] _)) =
+      fun φ ↦ ℓ.toAddMonoidHom (φ x) := by
+    ext φ
+    simp
+  rw [h]
+  exact dsupport_apply_apply_subset ℓ.toAddMonoidHom
 
 section Localization
 
@@ -117,6 +164,12 @@ theorem dsupport_eq_empty_iff : dsupport T = ∅ ↔ ⇑T = 0 :=
   ⟨fun h ↦ funext fun φ ↦ map_eq_zero_of_disjoint_dsupport T (by simp [h]),
     fun h ↦ univ_disjoint.1 <|
       (isVanishingOn_iff_disjoint_dsupport T isOpen_univ).1 fun φ _ ↦ congrFun h φ⟩
+
+/-- An additive map on test functions whose support lies in `∅` is zero. -/
+theorem eq_zero_of_dsupport_subset_empty {T : 𝓕} [Zero 𝓕] [IsZeroApply 𝓕]
+    (hT : dsupport T ⊆ ∅) : T = 0 :=
+  DFunLike.coe_injective (((dsupport_eq_empty_iff T).1 (subset_empty_iff.1 hT)).trans
+    FunLike.coe_zero.symm)
 
 /-- The support of a sum of additive maps on test functions lies in the union of their supports. -/
 theorem dsupport_add_subset (S : 𝓖) : dsupport (⇑T + ⇑S) ⊆ dsupport T ∪ dsupport S := by
@@ -194,6 +247,29 @@ theorem augmentation_of_not_exists {f : 𝓓^{n}(Ω, F) → V}
     (h : ¬∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport f), χ x = 1) (c : F) :
     augmentation f c = 0 := by
   rw [augmentation, dite_eq_right h]
+
+/-- If a test function equals `1` on a neighbourhood of `dsupport f`, then `dsupport f` is a
+compact subset of `Ω`. -/
+theorem isCompact_dsupport_and_subset_of_eventually_eq_one {β : Type*} [Zero β] [FunLike 𝓕 E β]
+    {f : 𝓕 → V} {χ : 𝓓^{n}(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport f), χ x = 1) :
+    IsCompact (dsupport f) ∧ dsupport f ⊆ Ω := by
+  have hsub : dsupport f ⊆ tsupport χ := fun x hx ↦
+    subset_tsupport _ (by simp [hχ.self_of_nhdsSet x hx])
+  exact ⟨χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport hsub,
+    hsub.trans χ.tsupport_subset⟩
+
+/-- Precomposing a map on test functions with `TestFunction.monoCLM` shrinks its distributional
+support. -/
+theorem dsupport_comp_monoCLM_subset {Ω' : Opens E} {m : ℕ∞} (f : 𝓓^{n}(Ω, F) → V) :
+    dsupport (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{m}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) ⊆ dsupport f := by
+  refine compl_subset_compl.1 fun x hx ↦ ?_
+  obtain ⟨s, hf, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
+  refine (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hf (TestFunction.monoCLM ℝ φ) ?_, hs, hxs⟩
+  change tsupport ((TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) : E → F) ⊆ s
+  rw [TestFunction.monoCLM_apply]
+  split_ifs
+  · exact hφ
+  · simp
 
 /-- The support of a boundary `T ∘ d` lies in the support of `T`. -/
 theorem dsupport_comp_extDerivCLM_subset {k : ℕ} (f : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → V) :
@@ -283,9 +359,8 @@ theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
     (hS : IsCompact (dsupport S)) (hSΩ : dsupport S ⊆ Ω) (c : F) :
     augmentation (⇑T - ⇑S) c = augmentation T c - augmentation S c := by
   let N : 𝓓^{n}(Ω, F) →+ V := -(S : 𝓓^{n}(Ω, F) →+ V)
-  have hN : dsupport N = dsupport S :=
-    (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [N, h φ hφ]).antisymm
-      (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simpa [N] using h φ hφ)
+  have hN : dsupport N = dsupport S := by
+    rw [show ⇑N = -⇑S by ext; simp [N], dsupport_neg]
   have hNS : augmentation N c = -augmentation S c := by
     obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) hS hSΩ
     rw [augmentation_eq N (hN ▸ hχ), augmentation_eq S hχ]
@@ -310,6 +385,20 @@ theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F
   have hχx : χ x = 1 := hχ.self_of_nhdsSet x rfl
   exact (augmentation_eq A (hχ.filter_mono (nhdsSet_mono hA)) c).trans (by simp [A, hχx])
 
+/-- For `x ∈ Ω` and a continuous linear map `ℓ`, the point evaluation `φ ↦ ℓ (φ x)` has
+augmentation `ℓ c` at `c`. -/
+theorem augmentation_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
+    [TopologicalSpace V] [Module ℝ V] {x : E} (hx : x ∈ Ω) (ℓ : F →L[ℝ] V) (c : F) :
+    augmentation (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+      (TestFunction.toBoundedContinuousFunctionCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] _)) c = ℓ c := by
+  have h : ⇑(ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+      (TestFunction.toBoundedContinuousFunctionCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] _)) =
+      fun φ ↦ ℓ.toAddMonoidHom (φ x) := by
+    ext φ
+    simp
+  rw [h]
+  simpa using augmentation_apply_apply hx ℓ.toAddMonoidHom c
+
 /-- The Dirac distribution at a point of `Ω` has augmentation `c` at `c`. -/
 @[simp]
 theorem augmentation_delta {x : E} (hx : x ∈ Ω) (c : ℝ) :
@@ -332,10 +421,9 @@ theorem augmentation_smul (a : ℝ) (c : F) :
   have hA : ⇑A = a • ⇑T := by
     ext φ
     simp [A]
-  have hsub : dsupport A ⊆ dsupport T :=
-    dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [A, h φ hφ]
   by_cases h : ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1
   · obtain ⟨χ, hχ⟩ := h
+    have hsub : dsupport A ⊆ dsupport T := hA ▸ dsupport_smul_subset a ⇑T
     rw [← hA, augmentation_eq A (hχ.filter_mono (nhdsSet_mono hsub)), augmentation_eq T hχ]
     simp [A]
   rw [augmentation_of_not_exists h, smul_zero]
@@ -343,9 +431,7 @@ theorem augmentation_smul (a : ℝ) (c : F) :
   · unfold augmentation
     split_ifs <;> simp
   -- For `a ≠ 0` the supports agree, so no cutoff exists for `a • T` either.
-  have hsup : dsupport T ⊆ dsupport A :=
-    dsupport_subset_dsupport fun _ _ h' φ hφ ↦ by simpa [A, ha] using h' φ hφ
-  rw [← hA, augmentation_of_not_exists (hsub.antisymm hsup ▸ h)]
+  rw [augmentation_of_not_exists (by rwa [dsupport_smul_of_ne_zero ha])]
 
 end Module
 

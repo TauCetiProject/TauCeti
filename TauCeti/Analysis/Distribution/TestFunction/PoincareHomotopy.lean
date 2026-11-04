@@ -38,8 +38,7 @@ neighbourhood of `s`.
 * `TestFunction.coe_smulPoincareHomotopyCLM`, `TestFunction.smulPoincareHomotopyCLM_apply`: its
   pointwise values.
 * `TestFunction.tsupport_smulPoincareHomotopyCLM_subset_left`: its support lies in `tsupport χ`.
-* `TauCeti.poincareHomotopy_eventuallyEq_zero_of_disjoint`,
-  `TestFunction.smulPoincareHomotopyCLM_eventuallyEq_zero_of_disjoint`: vanishing in a
+* `TestFunction.smulPoincareHomotopyCLM_eventuallyEq_zero_of_disjoint`: vanishing in a
   neighbourhood of any set whose cone rays from `x₀` miss `tsupport ω`.
 * `TestFunction.norm_smulPoincareHomotopyCLM_apply_le`: the sharp radial pointwise bound
   `‖χ x • K ω x‖ ≤ |χ x| * (B * ‖x - x₀‖ / (k + 1))`.
@@ -60,49 +59,6 @@ noncomputable section
 
 open AffineMap Filter MeasureTheory Set TopologicalSpace TauCeti
 open scoped Distributions Interval Topology
-
-namespace TauCeti
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-
-/-- If a closed set `C` misses every segment `[x₀, x]` for `x ∈ s`, then for all `y` in a
-neighbourhood of `s`, the segment `[x₀, y]` also misses `C`. -/
-private theorem eventually_lineMap_notMem_of_disjoint {x₀ : E} {C s : Set E} (hC : IsClosed C)
-    (h : Disjoint C (⋃ x ∈ s, segment ℝ x₀ x)) :
-    ∀ᶠ y in 𝓝ˢ s, ∀ t ∈ Icc (0 : ℝ) 1, lineMap x₀ y t ∉ C := by
-  rw [eventually_iff_exists_mem]
-  have hcont : Continuous (fun p : E × ℝ ↦ lineMap x₀ p.1 p.2) := by
-    simp only [lineMap_apply_module']
-    exact (continuous_snd.smul (continuous_fst.sub continuous_const)).add continuous_const
-  have hO : IsOpen ((fun p : E × ℝ ↦ lineMap x₀ p.1 p.2) ⁻¹' Cᶜ) :=
-    hC.isOpen_compl.preimage hcont
-  refine ⟨{y : E | ∀ t ∈ Icc (0 : ℝ) 1, lineMap x₀ y t ∉ C}, ?_, fun _ hy ↦ hy⟩
-  rw [mem_nhdsSet_iff_forall]
-  intro x hxs
-  have hsub : ({x} : Set E) ×ˢ Icc (0 : ℝ) 1 ⊆ (fun p : E × ℝ ↦ lineMap x₀ p.1 p.2) ⁻¹' Cᶜ := by
-    rintro ⟨y, t⟩ ⟨rfl : y = x, ht⟩ hmem
-    exact h.le_bot ⟨hmem, mem_iUnion₂.2 ⟨y, hxs, lineMap_mem_segment ℝ x₀ y ht⟩⟩
-  obtain ⟨u, v, huo, -, hxu, hv, huv⟩ :=
-    generalized_tube_lemma isCompact_singleton isCompact_Icc hO hsub
-  refine Filter.mem_of_superset (huo.mem_nhds (hxu (mem_singleton x))) fun y hy t ht ↦ ?_
-  simpa only [mem_preimage, mem_compl_iff] using huv (mk_mem_prod hy (hv ht))
-
-/-- If the topological support of `ω` misses every segment `[x₀, x]` for `x ∈ s`, then
-`poincareHomotopy x₀ ω` vanishes on a neighbourhood of `s`. No compactness assumption on `s` or
-`tsupport ω` is needed: compactness of the parameter interval `[0, 1]` suffices via the tube
-lemma at each point of `s`. -/
-theorem poincareHomotopy_eventuallyEq_zero_of_disjoint {x₀ : E} {s : Set E}
-    {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
-    (h : Disjoint (tsupport ω) (⋃ x ∈ s, segment ℝ x₀ x)) :
-    poincareHomotopy x₀ ω =ᶠ[𝓝ˢ s] 0 := by
-  filter_upwards [eventually_lineMap_notMem_of_disjoint (isClosed_tsupport ω) h] with y hy
-  rw [Pi.zero_apply, poincareHomotopy_congr (ω₂ := 0) fun z hz ↦ ?_, poincareHomotopy_zero,
-    Pi.zero_apply]
-  rcases segment_eq_image_lineMap ℝ x₀ y ▸ hz with ⟨t, ht, rfl⟩
-  exact image_eq_zero_of_notMem_tsupport (hy t ht)
-
-end TauCeti
 
 namespace TestFunction
 
@@ -270,8 +226,7 @@ private def smulPoincareHomotopySupportedInCLM (x₀ : E) (χ : 𝓓(Ω, ℝ)) (
         funext y
         rw [poincareHomotopy_apply, ← intervalIntegral.integral_smul]
         refine intervalIntegral.integral_congr fun t _ ↦ ?_
-        rw [smul_comm (χ y), ← map_smul]
-        rfl
+        simp [L, smul_comm (χ y)]
       rw [hP, heq]
       refine h ω ω.contDiff ω.hasCompactSupport _ (fun j hj z ↦ ?_) x
       exact (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans

@@ -11,8 +11,10 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
@@ -59,6 +61,8 @@ term is split by the constant-coefficient Cartan formula
   map, it preserves invariance of forms under that map.
 * `TauCeti.norm_poincareHomotopy_le`: the sharp radial bound
   `‖poincareHomotopy x₀ ω x‖ ≤ B * ‖x - x₀‖ / (n + 1)`.
+* `TauCeti.poincareHomotopy_eventuallyEq_zero_of_disjoint`: vanishing on a neighbourhood of any
+  set whose segments from `x₀` miss `tsupport ω`.
 * `StarConvex.contDiffOn_poincareHomotopy`, `TauCeti.contDiff_poincareHomotopy`: it preserves
   `C^r` regularity.
 * `StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`,
@@ -84,7 +88,7 @@ public section
 noncomputable section
 
 open AffineMap MeasureTheory Set
-open scoped unitInterval
+open scoped Topology unitInterval
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
@@ -175,19 +179,23 @@ theorem norm_poincareHomotopy_le {x₀ x : E} {ω : E → E [⋀^Fin (n + 1)]→
             (norm_nonneg _)
   have hint : IntervalIntegrable (fun t : ℝ ↦ (B * ‖x - x₀‖) * t ^ n) volume 0 1 :=
     (continuousOn_const.mul (continuousOn_pow n)).intervalIntegrable
-  have hpow : ∫ t in (0 : ℝ)..1, t ^ n = 1 / (n + 1 : ℝ) := by
-    have hd : ∀ t ∈ uIcc (0 : ℝ) 1,
-        HasDerivAt (fun t : ℝ ↦ t ^ (n + 1) / (n + 1 : ℝ)) (t ^ n) t := fun t _ ↦ by
-      have hne : (n + 1 : ℝ) ≠ 0 := by positivity
-      refine ((hasDerivAt_pow (n + 1) t).div_const (n + 1 : ℝ)).congr_deriv ?_
-      simp [mul_div_cancel_left₀ _ hne]
-    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd (continuousOn_pow n).intervalIntegrable]
-    simp
   calc ‖∫ t in (0 : ℝ)..1, t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀)‖
       ≤ ∫ t in (0 : ℝ)..1, (B * ‖x - x₀‖) * t ^ n :=
         intervalIntegral.norm_integral_le_of_norm_le zero_le_one (ae_of_all _ hle) hint
     _ = (B * ‖x - x₀‖) * ∫ t in (0 : ℝ)..1, t ^ n := intervalIntegral.integral_const_mul _ _
-    _ = B * ‖x - x₀‖ / (n + 1) := by rw [hpow, mul_one_div]
+    _ = B * ‖x - x₀‖ / (n + 1) := by simp [integral_pow, div_eq_mul_inv]
+
+/-- If the topological support of `ω` is disjoint from every segment `[x₀, x]` for `x ∈ s`, then
+`poincareHomotopy x₀ ω` vanishes on a neighbourhood of `s`, with no compactness assumption on `s`
+or `tsupport ω`. -/
+theorem poincareHomotopy_eventuallyEq_zero_of_disjoint {x₀ : E} {s : Set E}
+    {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+    (h : Disjoint (tsupport ω) (⋃ x ∈ s, segment ℝ x₀ x)) :
+    poincareHomotopy x₀ ω =ᶠ[𝓝ˢ s] 0 := by
+  filter_upwards [(isClosed_tsupport ω).eventually_disjoint_segment h] with y hy
+  rw [Pi.zero_apply, poincareHomotopy_congr (ω₂ := 0) fun z hz ↦
+    image_eq_zero_of_notMem_tsupport (hy.notMem_of_mem_right hz), poincareHomotopy_zero,
+    Pi.zero_apply]
 
 /-- **Naturality of the Poincaré homotopy operator.** Contracting the pullback of a form along a
 continuous linear map `A` along the rays from `y₀` is the same as pulling back the contraction of
