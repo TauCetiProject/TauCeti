@@ -43,7 +43,7 @@ is Lipschitz with arbitrarily small constant in the original simplex coordinates
 conclusion, `A` places barycentric coordinates in the original simplex and `B` interpolates
 the values of `F` at its vertices. The estimate is uniform over faces and pairs of points,
 including boundary points, and does not lose a factor depending on the subdivision scale. -/
-theorem eventually_norm_secantError_sub_le_edgewiseSubdivision
+theorem eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision
     {ι E : Type*} [LinearOrder ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
     {σ : Finset ι} {F : (σ → ℝ) → E}
     (hF : ContDiffOn ℝ 1 F (range fun x : Convexity.StdSimplex ℝ σ => ⇑x.weights))
