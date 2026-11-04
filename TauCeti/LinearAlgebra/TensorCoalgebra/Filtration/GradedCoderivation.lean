@@ -75,6 +75,16 @@ theorem gradedCoderiv_mem_filtration (G : InternalGrading R M)
   gradedCoderiv_filtration_add_le G F q (apply_eq_zero_of_mem_filtration_zero R M F) n
     ⟨z, hz, rfl⟩
 
+/-- Every graded coderivation preserves the conilpotence filtration: it equals the graded Taylor
+expansion of its letter component, which never increases word length. -/
+theorem IsGradedCoderivation.mem_filtration {G : InternalGrading R M} {q : ℤ}
+    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    (hb : IsGradedCoderivation G q b) {n : ℕ} {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : b z ∈ filtration R M n := by
+  rw [hb.eq_of_letter_comp_eq (isGradedCoderivation_gradedCoderiv G (letter R M ∘ₗ b) q)
+    (letter_comp_gradedCoderiv G (letter R M ∘ₗ b) q).symm]
+  exact gradedCoderiv_mem_filtration G (letter R M ∘ₗ b) q hz
+
 /-- Graded coderivations whose Taylor maps agree on the words of length at most `n` agree on those
 words: each summand of the graded Taylor expansion of such a word applies the Taylor map to a
 block of it. -/

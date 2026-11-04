@@ -352,6 +352,22 @@ theorem minimalModelProjection_comp_minimalModelInclusion :
     𝒜.isHomogeneous_cohomologyContraction_incl
     𝒜.isHomogeneous_cohomologyContraction_proj
 
+/-- The composite of the minimal-model inclusion after the projection onto the minimal model is the
+corresponding composite of the general homotopy-transfer morphisms for
+`𝒜.cohomologyContraction`. -/
+theorem minimalModelInclusion_comp_minimalModelProjection :
+    𝒜.minimalModelInclusion.comp 𝒜.minimalModelProjection =
+      (𝒜.transferInclusion 𝒜.cohomologyContraction
+        𝒜.isHomogeneous_cohomologyContraction_homotopy
+        𝒜.isHomogeneous_cohomologyContraction_incl
+        𝒜.isHomogeneous_cohomologyContraction_proj).comp
+      (𝒜.transferProjection 𝒜.cohomologyContraction
+        𝒜.isHomogeneous_cohomologyContraction_homotopy
+        𝒜.isHomogeneous_cohomologyContraction_incl
+        𝒜.isHomogeneous_cohomologyContraction_proj) := by
+  unfold minimalModelInclusion minimalModelProjection minimalModel
+  rfl
+
 /-- The projection onto the minimal model induces the identity on cohomology, once the minimal
 model is identified with its own cohomology. -/
 @[simp]
