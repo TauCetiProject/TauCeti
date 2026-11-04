@@ -107,6 +107,7 @@ theorem localHomologyMap_fundamentalClassOn_preimage_singleton (f : C(M, N)) {y 
   exact ((isLocalOrientation_iff _ _ _).1 (o' y).property _).choose_spec.symm
 
 /-- The local degree vanishes at a point whose fibre is not compact. -/
+@[simp]
 theorem localDegree_of_not_isCompact (f : C(M, N)) {y : N} (h : ¬IsCompact (f ⁻¹' {y})) :
     o.localDegree o' hE f y = 0 := by
   rw [localDegree, dite_eq_right h]
@@ -124,6 +125,7 @@ theorem localDegree_eq_iff (f : C(M, N)) {y : N} (h : IsCompact (f ⁻¹' {y})) 
 include hF in
 /-- The local degree at a point outside the range of `f` vanishes: the fibre is empty, and the
 fundamental class along the empty set is zero. -/
+@[simp]
 theorem localDegree_eq_zero_of_notMem_range (f : C(M, N)) {y : N} (hy : y ∉ range f) :
     o.localDegree o' hE f y = 0 := by
   have h : f ⁻¹' {y} = ∅ := eq_empty_of_forall_notMem fun x hx ↦ hy ⟨x, hx⟩
@@ -189,6 +191,7 @@ theorem degree_eq_localDegree_some (f : C(M, N)) (h : Nonempty N) :
   rw [degree, dite_eq_left h]
 
 /-- The degree of a map to an empty manifold vanishes. -/
+@[simp]
 theorem degree_of_isEmpty [IsEmpty N] (f : C(M, N)) : o.degree o' hE f = 0 := by
   rw [degree, dite_eq_right (not_nonempty_iff.2 ‹_›)]
 
@@ -304,15 +307,15 @@ theorem localDegree_comp [PreconnectedSpace N] {g : C(N, P)} {f : C(M, N)} (hg :
     ← ModuleCat.comp_apply, localHomologyMap_comp]
 
 include hG in
-/-- **The degree is multiplicative**: for proper maps `f : M → N` and `g : N → P` onto
-preconnected manifolds, `deg (g ∘ f) = deg g * deg f`. -/
-theorem degree_comp [PreconnectedSpace N] [PreconnectedSpace P] {g : C(N, P)} {f : C(M, N)}
+/-- **The degree is multiplicative**: for proper maps `f : M → N` and `g : N → P` with `N`
+preconnected, `deg (g ∘ f) = deg g * deg f`. -/
+theorem degree_comp [PreconnectedSpace N] {g : C(N, P)} {f : C(M, N)}
     (hg : IsProperMap g) (hf : IsProperMap f) :
     o.degree o'' hE (g.comp f) = o'.degree o'' hF g * o.degree o' hE f := by
-  rcases isEmpty_or_nonempty P with h | ⟨⟨z⟩⟩
+  rcases isEmpty_or_nonempty P with h | h
   · rw [degree_of_isEmpty, degree_of_isEmpty, zero_mul]
-  · rw [← o.localDegree_eq_degree o'' hE hG (hg.comp hf) z,
-      localDegree_comp o o' o'' hE hF hG hg hf, o'.localDegree_eq_degree o'' hF hG hg, mul_comm]
+  · rw [degree_eq_localDegree_some _ _ hE _ h, degree_eq_localDegree_some _ _ hF _ h,
+      localDegree_comp o o' o'' hE hF hG hg hf, mul_comm]
 
 include hF in
 /-- **Invariance of the local degree under proper homotopies**: if `H` is a homotopy from `f₀`
