@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
@@ -50,11 +51,15 @@ action, `TauCeti.ActionGroupoid.isProperMap_source_target_iff` makes it a proper
   the `C^n` maps into the objects and into the arrows.
 * `TauCeti.ActionGroupoid.isLocalDiffeomorph_source` and
   `TauCeti.ActionGroupoid.isLocalDiffeomorph_target`: source and target are `C^n` local
-  diffeomorphisms.
+  diffeomorphisms; so is the point underlying the source
+  (`TauCeti.ActionGroupoid.isLocalDiffeomorph_back_left`).
 * `TauCeti.ActionGroupoid.contMDiff_sourceChart_symm`: each label gives a `C^n` section of the
   source map.
 * `TauCeti.ActionGroupoid.contMDiff_unit`, `TauCeti.ActionGroupoid.contMDiff_inverse` and
   `TauCeti.ActionGroupoid.contMDiff_comp`: units, inversion and composition are `C^n`.
+* `TauCeti.ActionGroupoid.contMDiff_map_obj`, `TauCeti.ActionGroupoid.contMDiff_map_total`: the
+  functor `CategoryTheory.ActionCategory.map` induced by a `C^n` equivariant map is `C^n` on
+  objects and on arrows.
 
 ## References
 
@@ -131,6 +136,16 @@ theorem isLocalDiffeomorph_source :
       (Quiver.Total.left : Quiver.Total (ActionCategory G X) → ActionCategory G X) :=
   (isLocalHomeomorph_source G X).isLocalDiffeomorph_chartedSpaceComap
 
+/-- The point underlying the source of an arrow of the action groupoid of a discrete monoid, as a
+map from the arrows to `X`, is a `C^n` local diffeomorphism: the source map followed by the object
+diffeomorphism. -/
+theorem isLocalDiffeomorph_back_left :
+    IsLocalDiffeomorph I I n fun f : Quiver.Total (ActionCategory G X) ↦ f.left.back := by
+  have h : IsLocalDiffeomorph I I n (objectDiffeomorph I n G X ∘ Quiver.Total.left) := fun a ↦
+    IsLocalDiffeomorphAt.comp (K := I) (hf := isLocalDiffeomorph_source I n G X a)
+      (hg := (objectDiffeomorph I n G X).isLocalDiffeomorph _)
+  simpa only [Function.comp_def, objectDiffeomorph_apply] using h
+
 variable {G X} in
 /-- A map into the arrows of the action category of a discrete monoid is `C^n` exactly when it is
 continuous and the sources of its arrows depend `C^n` on the parameter. -/
@@ -159,18 +174,11 @@ theorem contMDiff_target [ContMDiffConstSMul I n G X] :
       (Quiver.Total.right : Quiver.Total (ActionCategory G X) → ActionCategory G X) := by
   rw [contMDiff_objects_iff]
   intro f
-  -- Near `f` every arrow has the label of `f`, so there the target is the translate of the source
-  -- by that fixed label.
-  have hlabel : ∀ᶠ a in 𝓝 f, a.hom.hom = f.hom.hom :=
-    ((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl
   have hsmooth : ContMDiff I I n fun a : Quiver.Total (ActionCategory G X) ↦
       f.hom.hom • a.left.back := by
     simpa [Function.comp_def] using (contMDiff_const_smul f.hom.hom).comp
       ((objectDiffeomorph I n G X).contMDiff.comp (isLocalDiffeomorph_source I n G X).contMDiff)
-  refine (hsmooth f).congr_of_eventuallyEq ?_
-  filter_upwards [hlabel] with a ha
-  rw [← ha]
-  exact a.hom.map_val.symm
+  exact (hsmooth f).congr_of_eventuallyEq (eventually_back_right_eq_smul f)
 
 variable {G X} in
 /-- Composition in the action groupoid of a discrete monoid is `C^n`: composing two `C^n` families
@@ -183,6 +191,35 @@ theorem contMDiff_comp {a b : N → Quiver.Total (ActionCategory G X)} (ha : Con
       (isLocalDiffeomorph_source I n G X).contMDiff.comp ha
   exact (contMDiff_arrows_iff I n).2 ⟨(continuous_comp G X).comp
     ((ha.continuous.prodMk hb.continuous).subtype_mk h), hsource⟩
+
+section Map
+
+variable {G X} {G' Y : Type*} [Monoid G'] [MulAction G' Y] [TopologicalSpace Y]
+  [ChartedSpace H' Y] (φ : G →* G') (f : X →ₑ[φ] Y)
+
+omit [TopologicalSpace G] [DiscreteTopology G] in
+/-- The functor between action categories induced by a `C^n` equivariant map is `C^n` on objects.
+-/
+theorem contMDiff_map_obj (hf : ContMDiff I I' n f) : ContMDiff I I' n (map φ f).obj :=
+  (contMDiff_objects_iff I' n).2 <| by
+    simpa only [Function.comp_def, back_map_obj, objectDiffeomorph_apply] using
+      hf.comp (objectDiffeomorph I n G X).contMDiff
+
+/-- The functor between action categories of discrete monoids induced by a `C^n` equivariant map
+is `C^n` on arrows. -/
+theorem contMDiff_map_total [TopologicalSpace G'] [DiscreteTopology G'] (hf : ContMDiff I I' n f) :
+    ContMDiff I I' n fun a : Quiver.Total (ActionCategory G X) ↦
+      (⟨(map φ f).obj a.left, (map φ f).obj a.right, (map φ f).map a.hom⟩ :
+        Quiver.Total (ActionCategory G' Y)) := by
+  refine (contMDiff_arrows_iff I' n).2 ⟨?_,
+    (contMDiff_map_obj I n φ f hf).comp (isLocalDiffeomorph_source I n G X).contMDiff⟩
+  rw [← (arrowHomeomorph G' Y).comp_continuous_iff]
+  simpa only [Function.comp_def, arrowHomeomorph_apply, map_map_hom, back_map_obj,
+    objectHomeomorph_apply] using
+    ((continuous_of_discreteTopology (f := ⇑φ)).comp (continuous_label G X)).prodMk
+      (hf.continuous.comp ((objectHomeomorph G X).continuous.comp (continuous_source G X)))
+
+end Map
 
 end Monoid
 
