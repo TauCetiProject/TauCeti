@@ -59,6 +59,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base,
   base change along `j : T ⟶ S` is a bijection on morphisms `Y ⟶ Y'` into an affine `Y'` when
   `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism.
+* `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `S` is
+  recovered from its sections over an open `W` of `Spec S`, the sections of a scheme identified
+  with `W` over `Spec R` are `S`, compatibly with the maps from `R`.
 -/
 
 public section
@@ -238,5 +241,19 @@ theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine 
   apply Limits.pullback.hom_ext
   · exact (hmap _).trans hψ
   · exact (Limits.pullback.lift_snd _ _ _).trans hw.symm
+
+/-- Let `f : R ⟶ S` be a ring map and `W` an open of `Spec S` from which `S` is recovered: the
+restriction `Γ(Spec S, ⊤) → Γ(W, ⊤)` is bijective. If a scheme `X` over `Spec R` is identified
+with `W` over `Spec R`, then the map `R → Γ(X, ⊤)` induced by `X ⟶ Spec R` is `f` followed by
+an isomorphism. -/
+theorem Spec.exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f : R ⟶ S)
+    {X : Scheme.{u}} (p : X ⟶ Spec R) (W : (Spec S).Opens)
+    (hW : Function.Bijective W.ι.appTop) (e : X ≅ W.toScheme)
+    (he : e.hom ≫ W.ι ≫ Spec.map f = p) :
+    ∃ σ : S ⟶ Γ(X, ⊤), IsIso σ ∧ (Scheme.ΓSpecIso R).inv ≫ p.appTop = f ≫ σ := by
+  have : IsIso W.ι.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr hW
+  have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
+  refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
+  simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
 
 end TauCeti.AlgebraicGeometry

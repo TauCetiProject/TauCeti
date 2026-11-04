@@ -55,9 +55,6 @@ punctured spectrum of `A` has `B` as its ring of global functions.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat`: the flat case.
-* `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `B` is
-  recovered from its sections over `W`, the sections of a scheme identified with `W` over a base
-  are `B`, compatibly with the maps from the base ring.
 * `TauCeti.IsLocalRing.isPullback_puncturedSpectrum_toSpecΓ`: reconstruction of an affine
   scheme over the puncture by restricting the spectrum of its sections.
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegral`: the integral case,
@@ -146,20 +143,6 @@ theorem presheaf_map_leTop_bijective_of_isIntegrallyClosed [IsLocalRing A] [IsNo
     eq_maximalIdeal (inferInstance : (𝔮.under A).IsMaximal),
     maximalIdeal_height_eq_ringKrullDim]
   exact hdim
-
-/-- Let `f : R ⟶ S` be a ring map and `W` an open of `Spec S` from which `S` is recovered: the
-restriction `Γ(Spec S, ⊤) → Γ(W, ⊤)` is bijective. If a scheme `X` over `Spec R` is identified
-with `W` over `Spec R`, then the map `R → Γ(X, ⊤)` induced by `X ⟶ Spec R` is `f` followed by
-an isomorphism. -/
-theorem exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f : R ⟶ S)
-    {X : Scheme.{u}} (p : X ⟶ Spec R) (W : (Spec S).Opens)
-    (hW : Function.Bijective W.ι.appTop) (e : X ≅ W.toScheme)
-    (he : e.hom ≫ W.ι ≫ Spec.map f = p) :
-    ∃ σ : S ⟶ Γ(X, ⊤), IsIso σ ∧ (Scheme.ΓSpecIso R).inv ≫ p.appTop = f ≫ σ := by
-  have : IsIso W.ι.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr hW
-  have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
-  refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
-  simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
 
 end TauCeti.AlgebraicGeometry.Spec
 

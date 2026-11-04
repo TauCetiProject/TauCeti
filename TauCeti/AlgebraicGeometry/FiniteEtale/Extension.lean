@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # Extending finite étale covers from their sections
