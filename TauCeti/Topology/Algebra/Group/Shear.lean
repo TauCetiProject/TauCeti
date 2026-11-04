@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import TauCeti.Topology.Algebra.Group.Hom
 
 /-!
 # Shear automorphisms of a product
