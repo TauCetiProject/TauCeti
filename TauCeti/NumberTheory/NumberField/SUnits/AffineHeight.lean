@@ -141,7 +141,8 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
     (fun w ↦ w.mult / D * h - w.mult * log (⨆ j, w (x j)))
     (fun v ↦ h / D - log (⨆ j, FinitePlace.mk v (x j))) (by
       have hshare : (∑ w : InfinitePlace K, (w.mult : ℝ)) / D * h + #S * (h / D) = h := by
-        rw [div_mul_eq_mul_div, mul_div_assoc', ← add_div, div_eq_iff hDpos.ne', hD]
+        field_simp
+        rw [hD]
         ring
       rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.sum_div,
         Finset.sum_const, nsmul_eq_mul]
