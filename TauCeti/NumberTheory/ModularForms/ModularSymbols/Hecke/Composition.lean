@@ -48,14 +48,13 @@ caveat about its relation to the Hecke ring's structure constants, as on the for
 At level `Γ₁(N)` the single-coset criterion is applied to the upper-triangular representatives
 `!![1, j; 0, n]`: at indices `n`, `m` supported on the level (every prime factor dividing `N`)
 they multiply into the representatives at `n m`, so `T_{n m} = T_n T_m` on `𝕄_w(Γ₁(N); R)`
-(`heckeTSymbol_mul_of_primeFactors_subset`), such operators commute, and `T_{n^r} = T_n ^ r`.
+(`heckeTSymbol_mul_of_primeFactors_subset`) and `T_{n^r} = T_n ^ r`.
 At coprime indices `m`, `n`, with no condition relating them to the level, the double coset of
 `diag(1, m n)` is the product of those of `diag(1, m)` and `diag(1, n)`, and products of
 right-coset representatives do not collide (`Gamma1/CoprimeMul.lean`), so again
-`T_{m n} = T_m T_n` (`heckeTSymbol_mul_of_coprime`) and such operators commute. This is the
-commutativity of the Hecke action on symbols that the passage from the period pairing to the
-integrality of Hecke eigenvalues needs, since the transpose of a composite reverses its order,
-except between two indices sharing a prime factor outside the level.
+`T_{m n} = T_m T_n` (`heckeTSymbol_mul_of_coprime`). That any two Hecke operators commute,
+at every pair of indices, is `TauCeti.ModularSymbols.commute_heckeTSymbol`, from the
+multiplicity-weighted law and the Atkin–Lehner anti-involution.
 
 ## Main results
 
@@ -71,10 +70,9 @@ except between two indices sharing a prime factor outside the level.
   composition law `T_{D₁} ∘ T_{D₂} = ∑_D m(D₁, D₂; D) • T_D`.
 * `TauCeti.ModularSymbols.heckeTSymbol_mul_of_primeFactors_subset`: `T_{n m} = T_n T_m` on
   `𝕄_w(Γ₁(N); R)` at indices supported on the level, with
-  `TauCeti.ModularSymbols.commute_heckeTSymbol_of_primeFactors_subset` and
   `TauCeti.ModularSymbols.heckeTSymbol_pow_of_primeFactors_subset`.
 * `TauCeti.ModularSymbols.heckeTSymbol_mul_of_coprime`: `T_{m n} = T_m T_n` on `𝕄_w(Γ₁(N); R)`
-  at coprime indices, with `TauCeti.ModularSymbols.commute_heckeTSymbol_of_coprime`.
+  at coprime indices.
 
 ## References
 
@@ -339,15 +337,6 @@ theorem heckeTSymbol_mul_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero m
     simp only [upperTriRep_mul_upperTriRep, Prod.mk.eta] at h
     exact finProdFinEquiv.injective (op_upperTriRep_smul_injective h)
 
-/-- **The Hecke operators on modular symbols at indices supported on the level commute.** Both
-orders compute the operator at the product index. -/
-theorem commute_heckeTSymbol_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero m]
-    (hn : n.primeFactors ⊆ N.primeFactors) (hm : m.primeFactors ⊆ N.primeFactors) :
-    Commute (heckeTSymbol R w N n) (heckeTSymbol R w N m) := by
-  rw [commute_iff_eq, ← heckeTSymbol_mul_of_primeFactors_subset N hn hm,
-    ← heckeTSymbol_mul_of_primeFactors_subset N hm hn]
-  exact heckeTSymbol_congr N (mul_comm n m)
-
 /-- **`T_{n^r} = T_n ^ r` on modular symbols, at an index supported on the level.** -/
 @[simp]
 theorem heckeTSymbol_pow_of_primeFactors_subset {n : ℕ} [NeZero n]
@@ -394,14 +383,6 @@ theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.C
     refine Prod.ext (op_rightCosetRep_smul_injective _ ?_) rfl
     rw [rightCoset_eq_iff] at h ⊢
     simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using h
-
-/-- **The Hecke operators on modular symbols at coprime indices commute.** Both orders compute
-the operator at the product index. -/
-theorem commute_heckeTSymbol_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.Coprime n) :
-    Commute (heckeTSymbol R w N m) (heckeTSymbol R w N n) := by
-  rw [commute_iff_eq, ← heckeTSymbol_mul_of_coprime N hmn,
-    ← heckeTSymbol_mul_of_coprime N hmn.symm]
-  exact heckeTSymbol_congr N (mul_comm m n)
 
 end Gamma1
 
