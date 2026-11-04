@@ -42,6 +42,9 @@ and differences.
   Euclidean balls, read in the coordinates `σ → ℝ`.
 * `TauCeti.IsSemialgebraic.closure`, `TauCeti.IsSemialgebraic.interior`,
   `TauCeti.IsSemialgebraic.frontier`.
+* `TauCeti.IsSemialgebraic.setOf_mem_interior_fiber`,
+  `TauCeti.IsSemialgebraic.setOf_fiber_interior_nonempty`: interiors taken separately in the
+  fibers of a semialgebraic family, and the parameters where these interiors are nonempty.
 * `TauCeti.IsSemialgebraic.isNowhereDense_iff`: a semialgebraic set is nowhere dense exactly when
   its interior is empty.
 
@@ -185,6 +188,38 @@ theorem IsSemialgebraic.interior [Finite σ] {s : Set (σ → ℝ)} (hs : IsSemi
 theorem IsSemialgebraic.frontier [Finite σ] {s : Set (σ → ℝ)} (hs : IsSemialgebraic s) :
     IsSemialgebraic (frontier s) :=
   hs.closure.sdiff hs.interior
+
+/-! ### Interiors in families -/
+
+/-- Taking the interior separately in each fiber of a semialgebraic family preserves
+semialgebraicity. The parameters need not have finitely many coordinates. -/
+theorem IsSemialgebraic.setOf_mem_interior_fiber [Finite τ]
+    {s : Set (σ ⊕ τ → ℝ)} (hs : IsSemialgebraic s) :
+    IsSemialgebraic {z : σ ⊕ τ → ℝ |
+      z ∘ Sum.inr ∈ _root_.interior {y : τ → ℝ | Sum.elim (z ∘ Sum.inl) y ∈ s}} := by
+  cases nonempty_fintype τ
+  -- Encode a parameter, a center, a radius and a test point, in that order.
+  let p : σ ⊕ τ → ((σ ⊕ τ) ⊕ Unit) ⊕ τ :=
+    Sum.elim (Sum.inl ∘ Sum.inl ∘ Sum.inl) Sum.inr
+  let B : Set (((σ ⊕ τ) ⊕ Unit) ⊕ τ → ℝ) :=
+    {z | dist (fun i ↦ eval z (X (.inr i)))
+      (fun i ↦ eval z (X (.inl (.inl (.inr i))))) < eval z (X (.inl (.inr ())))}
+  have hB : IsSemialgebraic B := isSemialgebraic_setOf_dist_eval_lt _ _ _
+  have h := ((isSemialgebraic_eval_pos (X (.inr ()))).inter
+    (hB.compl.union (hs.preimage_comp p)).setOf_forall_sumElim).setOf_exists_sumElim
+  convert h using 1
+  ext z
+  simp only [mem_ofPred_eq, mem_interior_iff_mem_nhds, Metric.mem_nhds_iff,
+    subset_def, Metric.mem_ball, mem_inter_iff, mem_compl_iff, mem_union, mem_preimage,
+    B, p, eval_X, Sum.comp_elim, Sum.elim_comp_inr, ← imp_iff_not_or]
+  exact ⟨fun ⟨r, hr, h⟩ ↦ ⟨fun _ ↦ r, hr, h⟩, fun ⟨r, hr, h⟩ ↦ ⟨r (), hr, h⟩⟩
+
+/-- The parameters whose fiber has nonempty interior form a semialgebraic set. -/
+theorem IsSemialgebraic.setOf_fiber_interior_nonempty [Finite τ]
+    {s : Set (σ ⊕ τ → ℝ)} (hs : IsSemialgebraic s) :
+    IsSemialgebraic {x : σ → ℝ | (_root_.interior {y : τ → ℝ | Sum.elim x y ∈ s}).Nonempty} := by
+  simpa only [mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_comp_inr, ← nonempty_def] using
+    hs.setOf_mem_interior_fiber.setOf_exists_sumElim
 
 /-! ### Nowhere dense semialgebraic sets -/
 
