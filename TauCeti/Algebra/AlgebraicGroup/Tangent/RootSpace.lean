@@ -262,19 +262,6 @@ theorem mem_nontrivialAdjointWeights {π : H →ₐc[R] MonoidAlgebra R M} {α :
     α ∈ nontrivialAdjointWeights π ↔ α ≠ 1 ∧ adjointWeightSpace π α ≠ ⊥ :=
   Iff.rfl
 
-/-- Adjoint action by a normalizing rational point carries each adjoint weight space onto the
-weight space indexed by pullback along inverse conjugation. -/
-theorem map_adjointWeightSpace_basePointsRepresentation
-    (π : H →ₐc[R] MonoidAlgebra R M) (g : WithConv (H →ₐ[R] R)) (w : M ≃* M)
-    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
-      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) (α : M) :
-    (adjointWeightSpace π α).map
-        (Comodule.basePointsRepresentation (H := H)
-          (Module.Dual R (Bialgebra.CotangentSpace R H)) g) =
-      adjointWeightSpace π (w α) := by
-  unfold adjointWeightSpace
-  exact DiagonalizableGroup.map_weightSpace_basePointsRepresentation π g w hg α
-
 /-- Inverse conjugation by a normalizing rational point preserves membership in the set of
 nontrivial adjoint weights. For a split reductive pair these are the roots. -/
 theorem mem_nontrivialAdjointWeights_apply_iff

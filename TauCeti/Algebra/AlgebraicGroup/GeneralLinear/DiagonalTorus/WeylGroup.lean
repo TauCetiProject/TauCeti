@@ -102,6 +102,23 @@ private theorem pointsMulEquiv_toConv_diagonalTorusCoordinateMap :
   funext i
   exact diagonalTorusCoordinates_apply _ i
 
+/-- The generic point of the diagonal torus, followed by the coordinate map of `w`, is the
+diagonal matrix of the `w`-images of the coordinate characters. -/
+private theorem pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap
+    (w : Multiplicative (ULift.{u} (Fin N) →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) :
+    pointsMulEquiv N (toConv ((MonoidAlgebra.domCongr R R w).toAlgHom.comp
+        (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)) =
+      diagGL fun i ↦ Units.map
+        ((MonoidAlgebra.domCongr R R w : MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))
+          →+* MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))).toMonoidHom
+        (genericDiagonal (R := R) i) := by
+  have hmap := pointsMulEquiv_mapValue (R := R) (n := N)
+    (MonoidAlgebra.domCongr R R w).toAlgHom
+    (toConv (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)
+  rw [AlgHom.mapValue_apply, ofConv_toConv] at hmap
+  rw [hmap, pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_diagGL]
+  rfl
+
 /-- **The normalization equation on the generic point.** If inverse conjugation by a rational
 point `g` restricts to the diagonal torus as the coordinate map of `w`, then conjugating the
 generic diagonal matrix by the inverse of the matrix of `g` gives the diagonal matrix of the
@@ -126,15 +143,12 @@ private theorem map_inv_mul_diagGL_genericDiagonal_mul_of_comp_eq
         (genericDiagonal (R := R) i) := by
   have hpoints := congrArg (fun φ ↦ pointsMulEquiv (R := R)
     (A := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) N (toConv φ)) hg
-  have hmap := pointsMulEquiv_mapValue (R := R) (n := N)
-    (MonoidAlgebra.domCongr R R w).toAlgHom
-    (toConv (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)
-  rw [AlgHom.mapValue_apply, ofConv_toConv] at hmap
   have hg' : g⁻¹ = (pointsMulEquiv (R := R) (A := R) N).symm
       (pointsMulEquiv (R := R) (A := R) N g)⁻¹ := by
     rw [map_inv, MulEquiv.symm_apply_apply]
-  rw [hg', pointsMulEquiv_toConv_comp_pointConjugationAlgHom, hmap,
-    pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_diagGL] at hpoints
+  rw [hg', pointsMulEquiv_toConv_comp_pointConjugationAlgHom,
+    pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap,
+    pointsMulEquiv_toConv_diagonalTorusCoordinateMap] at hpoints
   exact hpoints
 
 /-- Relabelling the characters of the diagonal torus along a permutation `σ` of `Fin N` sends
@@ -161,13 +175,9 @@ theorem diagonalTorusCoordinateMap_comp_pointConjugationAlgHom_permutationGL
   apply toConv_injective
   apply (pointsMulEquiv (R := R)
     (A := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) N).injective
-  have hmap := pointsMulEquiv_mapValue (R := R) (n := N)
-    (MonoidAlgebra.domCongr R R
-      (SplitTorus.characterRelabel (Equiv.ulift.{u}.symm.permCongr σ))).toAlgHom
-    (toConv (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)
-  rw [AlgHom.mapValue_apply, ofConv_toConv] at hmap
-  rw [hmap, ← map_inv, pointsMulEquiv_toConv_comp_pointConjugationAlgHom,
-    pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_diagGL, map_inv, map_permutationGL,
+  rw [pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap, ← map_inv,
+    pointsMulEquiv_toConv_comp_pointConjugationAlgHom,
+    pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_inv, map_permutationGL,
     ← map_inv, permutationGL_mul_diagGL_mul_inv]
   congr 1
   funext i
@@ -196,12 +206,11 @@ noncomputable def permToDiagonalTorusWeylGroup :
   toFun σ := ⟨SplitTorus.characterRelabel (Equiv.ulift.{u}.symm.permCongr σ),
     characterRelabel_mem_weylGroup_diagonalTorusCoordinateMap σ⟩
   map_one' := Subtype.ext <| MulEquiv.ext fun x ↦ by
-    rw [SplitTorus.characterRelabel_apply, Equiv.Perm.one_def, Equiv.permCongr_refl,
-      Finsupp.equivMapDomain_refl, ofAdd_toAdd, OneMemClass.coe_one, MulAut.one_apply]
+    simp only [Equiv.Perm.one_def, Equiv.permCongr_refl]
+    exact DFunLike.congr_fun (SplitTorus.characterRelabel_one (sigma := ULift.{u} (Fin N))) x
   map_mul' σ ρ := Subtype.ext <| MulEquiv.ext fun x ↦ by
-    rw [Subgroup.coe_mul, MulAut.mul_apply, SplitTorus.characterRelabel_apply,
-      SplitTorus.characterRelabel_apply, SplitTorus.characterRelabel_apply, Equiv.permCongr_mul,
-      Equiv.Perm.mul_def, Finsupp.equivMapDomain_trans, toAdd_ofAdd]
+    simp only [Equiv.permCongr_mul]
+    exact (DFunLike.congr_fun (SplitTorus.characterRelabel_comp _ _) x).symm
 
 /-- The relabelling attached to `σ` is the character relabelling along `σ`. -/
 @[simp]
@@ -229,10 +238,8 @@ section Domain
 variable [IsDomain R]
 
 /-- Over a domain, **every element of the Weyl group of the diagonal torus of `GL_N` is a
-coordinate relabelling.** If inverse conjugation by `g` restricts to the diagonal torus as the
-coordinate map of `w`, then conjugating the generic diagonal matrix, whose entries are distinct,
-gives a diagonal matrix, so `g` is monomial and `w` relabels the coordinates along its
-permutation. -/
+coordinate relabelling**: it is the relabelling of the characters along some permutation of
+`Fin N`. -/
 theorem exists_characterRelabel_eq_of_mem_weylGroup_diagonalTorusCoordinateMap
     {w : MulAut (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))}
     (hw : w ∈ BialgHom.weylGroup (diagonalTorusCoordinateMap (R := R) (N := N)).hom
