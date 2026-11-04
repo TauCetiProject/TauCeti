@@ -91,7 +91,7 @@ theorem ker_baseChange_of_flat_quotient_range (f : M →ₗ[R] N) [Module.Flat R
 
 /-- For a flat scalar extension, the extended kernel of a surjection is finite whenever the
 extended source is finite and the extended target is finitely presented. -/
-theorem finite_tensorProduct_ker {S : Type*} [CommRing S] [Algebra R S] [Module.Flat R S]
+theorem finite_tensorProduct_ker {S : Type*} [Ring S] [Algebra R S] [Module.Flat R S]
     [Module.Finite S (S ⊗[R] M)] [Module.FinitePresentation S (S ⊗[R] N)]
     (f : M →ₗ[R] N) (hf : Function.Surjective f) : Module.Finite S (S ⊗[R] ker f) := by
   have hfg := Module.FinitePresentation.fg_ker (f.baseChange S) (f.lTensor_surjective S hf)
