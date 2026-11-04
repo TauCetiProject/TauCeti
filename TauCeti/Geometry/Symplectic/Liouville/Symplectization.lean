@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Symplectization
+public import TauCeti.Geometry.Contact.Symplectization.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 

@@ -68,6 +68,8 @@ cooriented contact structure. In terms of the annihilator line `(ker α)⁰ ⊂ 
   `TauCeti.SmoothForm.isLiouvilleVectorField_symplectization`: `∂_t` is the Liouville field.
 * `TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`: lifts of conformal maps of
   one-forms preserve the symplectization form.
+* `TauCeti.SmoothForm.mpullback_symplectizationLift_mextDerivₗ_symplectization`: they are
+  symplectic.
 
 ## References
 
@@ -327,6 +329,19 @@ theorem mpullback_symplectizationLift_symplectization {F : M → M'} (hF : ContM
     ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
   rw [h, symplectizationLift_apply, Real.exp_sub, Real.exp_log (hf₀ p.2)]
   field_simp [(hf₀ p.2).ne']
+
+/-- **Lifts of conformal maps are symplectic.** If a smooth map `F : M → M'` pulls a one-form `α'`
+back to `f α`, for a smooth positive function `f`, then its lift `(t, x) ↦ (t - log f(x), F(x))`
+pulls `d(eᵗ α')` back to `d(eᵗ α)`. -/
+theorem mpullback_symplectizationLift_mextDerivₗ_symplectization {F : M → M'}
+    (hF : ContMDiff I I' ∞ F) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 < f x)
+    {α : SmoothForm I M ℝ 1} {α' : SmoothForm I' M' ℝ 1}
+    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x) :
+    mpullback (symplectizationLift F f)
+        (contMDiff_symplectizationLift hF hf fun x ↦ (hf₀ x).ne')
+        (mextDerivₗ (𝓘(ℝ).prod I') 1 α'.symplectization) =
+      mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization := by
+  rw [← mextDerivₗ_mpullback, mpullback_symplectizationLift_symplectization hF hf hf₀ hα]
 
 end SmoothForm
 
