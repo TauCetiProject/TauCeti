@@ -21,6 +21,8 @@ Mathlib records this through `ContMDiffWithinAt.subtypeVal_comp_iff` within a se
 manifold is a local invariant property at *every* regularity, the same characterizations hold for
 arbitrary `n`; this file supplies them. In a convex open subset of a normed real space, these
 characterizations show that the clamped affine segment is `C^n` on `[0, 1]` at every regularity.
+In the other direction, a map out of an open submanifold that is `C^n` at a point stays `C^n`
+there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_one`.
 
 ## Main results
 
@@ -28,6 +30,8 @@ characterizations show that the clamped affine segment is `C^n` on `[0, 1]` at e
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
+* `ContMDiffAt.extend_subtypeVal`: an extension to `M` of a map on an open submanifold is `C^n` at
+  every point where the map is.
 * `TopologicalSpace.Opens.contMDiffOn_convexSegment`: the affine segment in a convex open subset
   of a normed real space is smooth on `[0, 1]` at every regularity.
 
@@ -85,6 +89,29 @@ theorem ContMDiff.subtypeVal_comp_iff (U : Opens M') (f : M → U) :
    fun h _ => (ContMDiffWithinAt.subtypeVal_comp_iff U f Set.univ _).mpr (h _)⟩
 
 end TauCeti
+
+section Extend
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+  {n : ℕ∞ω}
+
+/-- **Extending a map from an open submanifold.** If `g : U → M'` is `C^n` at a point `x` of the
+open set `U`, then any extension of `g` to all of `M`, for instance by zero, is `C^n` at `x`: it
+agrees with `g` on the neighbourhood `U` of `x`. -/
+theorem ContMDiffAt.extend_subtypeVal {U : Opens M} {g : U → M'} {x : U}
+    (hg : ContMDiffAt I I' n g x) (e : M → M') :
+    ContMDiffAt I I' n (Subtype.val.extend g e) x := by
+  rw [← contMDiffAt_subtype_iff]
+  refine hg.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦ ?_)
+  exact Subtype.val_injective.extend_apply g e z
+
+end Extend
 
 namespace TopologicalSpace.Opens
 
