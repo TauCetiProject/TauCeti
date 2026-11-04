@@ -199,16 +199,12 @@ theorem contMDiff_totalSpaceMap_id (Z : VectorBundleCore 𝕜 B F ι) :
 
 /-- The glued total-space map of the zero cocycle morphism is `C^n`. -/
 theorem contMDiff_totalSpaceMap_zero :
-    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (0 : CoordinateHom Z W).totalSpaceMap := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace]
-  simp only [totalSpaceMap_proj]
-  refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
-  refine (contMDiffAt_const (c := (0 : G))).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
-  rintro ⟨x, v⟩
-  rw [W.trivializationAt, ← W.localTrivAt_def]
-  simp only [totalSpaceMap_mk, localTriv_apply, fiberMap_zero]
-  exact map_zero (W.coordChange (W.indexAt x) (W.indexAt p₀.proj) x)
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (0 : CoordinateHom Z W).totalSpaceMap :=
+  ((contMDiff_zeroSection 𝕜 W.Fiber).comp (contMDiff_proj Z.Fiber)).congr fun _ ↦ by
+    rw [totalSpaceMap_def]
+    simp only [Function.comp_apply, fiberMap_zero, zeroSection]
+    -- The zero element of the core fibre `W.Fiber _` is `0 : G`.
+    rfl
 
 /-- Pointwise addition of cocycle morphisms preserves `C^n` regularity of glued total-space
 maps. -/
