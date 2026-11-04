@@ -45,7 +45,8 @@ drop under re-indexing.
   into the products of these local factors place by place.
 * `Height.iSup_option_elim_eq_max`, `Height.iSup_option_elim_smul_le`: the local factor
   `max (⨆ i, v (x i)) 1` for any nonnegative multiplicative `v`, and its bound for a scalar
-  multiple.
+  multiple; `Height.mul_log_iSup_option_elim_smul_le` turns a logarithmic bound for `v c` and
+  the local sup norm of `x` into one for the local factor of `c • x`.
 * `Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`: the nonarchimedean local factors are `1`
   at all but finitely many places.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
@@ -217,6 +218,22 @@ lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
   · simp only [Pi.smul_apply, smul_eq_mul, map_mul]
     exact mul_le_mul_of_nonneg_left (Finite.le_ciSup_of_le i le_rfl) (apply_nonneg v c)
   · exact mul_nonneg (apply_nonneg v c) (Real.iSup_nonneg_of_nonnegHomClass v _)
+
+/-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ m` and `0 ≤ B`
+bounds `m` times the logarithm of the local factor of the affine height of `c • x`. -/
+lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → K} (hx : x ≠ 0) {c : K} (hc : c ≠ 0)
+    {m B : ℝ} (hm : 0 ≤ m) (hB : 0 ≤ B) (h : m * log (v c) + m * log (⨆ i, v (x i)) ≤ B) :
+    m * log (⨆ o : Option ι, v (o.elim 1 (c • x))) ≤ B := by
+  have hs := iSup_apply_pos v hx
+  have hvc : 0 < v c := (apply_nonneg v c).lt_of_ne' ((map_ne_zero v).mpr hc)
+  calc m * log (⨆ o : Option ι, v (o.elim 1 (c • x)))
+      ≤ m * log (max (v c * ⨆ i, v (x i)) 1) :=
+        mul_le_mul_of_nonneg_left (log_le_log (zero_lt_one.trans_le
+          (one_le_iSup_option_elim v _)) (iSup_option_elim_smul_le v c x)) hm
+    _ ≤ B := by
+      rcases le_total (v c * ⨆ i, v (x i)) 1 with h1 | h1
+      · simpa [max_eq_right h1] using hB
+      · rwa [max_eq_left h1, log_mul hvc.ne' hs.ne', mul_add]
 
 end LocalFactor
 

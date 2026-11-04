@@ -67,45 +67,7 @@ universe u
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K]
-
-/-- The local estimate behind `TauCeti.NumberField.exists_forall_logHeightAff_smul_le`: by
-`Height.iSup_option_elim_smul_le`, a bound `m * log (v c * s) ≤ B` with `0 ≤ B`, where `s` is the
-local sup norm of `x`, bounds `m` times the logarithm of the local factor of the affine height of
-`c • x`. -/
-private lemma mul_log_iSup_option_elim_smul_le {F : Type*} [FunLike F K ℝ]
-    [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ] {ι : Type*} [Finite ι] (v : F)
-    {x : ι → K} (hx : x ≠ 0) {c : K} (hc : c ≠ 0) {m B : ℝ} (hm : 0 ≤ m) (hB : 0 ≤ B)
-    (h : m * log (v c) + m * log (⨆ j, v (x j)) ≤ B) :
-    m * log (⨆ o : Option ι, v (o.elim 1 (c • x))) ≤ B := by
-  have hs := iSup_apply_pos v hx
-  have hvc : 0 < v c := (apply_nonneg v c).lt_of_ne' ((map_ne_zero v).mpr hc)
-  calc m * log (⨆ o : Option ι, v (o.elim 1 (c • x)))
-      ≤ m * log (max (v c * ⨆ j, v (x j)) 1) :=
-        mul_le_mul_of_nonneg_left (log_le_log (zero_lt_one.trans_le
-          (one_le_iSup_option_elim v _)) (iSup_option_elim_smul_le v c x)) hm
-    _ ≤ B := by
-      rcases le_total (v c * ⨆ j, v (x j)) 1 with h1 | h1
-      · simpa [max_eq_right h1] using hB
-      · rwa [max_eq_left h1, log_mul hvc.ne' hs.ne', mul_add]
-
-variable [NumberField K]
-
-/-- The logarithm of the product of the local sup norms of `x` over the infinite places and the
-places of `S`, the form of the height in `NumberField.mulHeight_eq_prod_of_isPrimitive` and
-`NumberField.mulHeight_le_prod`, is the weighted sum of their logarithms when they are
-positive. -/
-private lemma log_prod_iSup_eq {ι : Type*} (S : Finset (HeightOneSpectrum (𝓞 K))) {x : ι → K}
-    (hI : ∀ w : InfinitePlace K, 0 < ⨆ j, w (x j))
-    (hF : ∀ v, 0 < ⨆ j, FinitePlace.mk v (x j)) :
-    log ((∏ w : InfinitePlace K, (⨆ j, w (x j)) ^ w.mult) *
-        ∏ v ∈ S, ⨆ j, FinitePlace.mk v (x j)) =
-      ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ j, w (x j)) +
-        ∑ v ∈ S, log (⨆ j, FinitePlace.mk v (x j)) := by
-  rw [log_mul (Finset.prod_ne_zero_iff.mpr fun w _ ↦ (pow_pos (hI w) _).ne')
-      (Finset.prod_ne_zero_iff.mpr fun v _ ↦ (hF v).ne'),
-    log_prod fun w _ ↦ (pow_pos (hI w) _).ne', log_prod fun v _ ↦ (hF v).ne']
-  simp only [log_pow]
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Every `S`-primitive tuple has an `S`-unit multiple of small affine height** (Bombieri and
 Gubler, Lemma 7.5.4). There is a constant `C`, depending only on `K` and `S` and chosen before
@@ -135,7 +97,7 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
   have hh : h = ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ j, w (x j)) +
       ∑ v ∈ S, log (⨆ j, FinitePlace.mk v (x j)) := by
     rw [hh_def, logHeight_eq_log_mulHeight, NumberField.mulHeight_eq_prod_of_isPrimitive S hx,
-      log_prod_iSup_eq S (fun w ↦ iSup_apply_pos w hx0) (fun v ↦ iSup_apply_pos _ hx0)]
+      log_prod_iSup_eq S (fun w ↦ iSup_apply_pos w hx0) (fun v _ ↦ iSup_apply_pos _ hx0)]
   -- an `S`-unit whose logarithms are close to the share `mult v / D` of the height at each place
   obtain ⟨u, hu, hu'⟩ := happrox
     (fun w ↦ w.mult / D * h - w.mult * log (⨆ j, w (x j)))
@@ -172,7 +134,7 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
     _ = ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ o, w (y o)) +
           ∑ v ∈ S, log (⨆ o, FinitePlace.mk v (y o)) :=
       log_prod_iSup_eq S (fun w ↦ zero_lt_one.trans_le (one_le_iSup_option_elim w _))
-        (fun v ↦ zero_lt_one.trans_le (one_le_iSup_option_elim (FinitePlace.mk v) _))
+        (fun v _ ↦ zero_lt_one.trans_le (one_le_iSup_option_elim (FinitePlace.mk v) _))
     _ ≤ ∑ w : InfinitePlace K, (w.mult / D * h + R) + ∑ v ∈ S, (h / D + R) :=
       add_le_add (Finset.sum_le_sum fun w _ ↦ hinf w) (Finset.sum_le_sum hfin)
     _ = h + (Fintype.card (InfinitePlace K) + #S) * R := by
