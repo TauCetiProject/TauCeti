@@ -63,9 +63,11 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
   `TauCeti.IntegralLattice.isUnimodular_realModel_iff`: the real model is even, resp. unimodular,
   exactly when `M` is.
 * `TauCeti.IntegralLattice.RealModelSpace.finrank_eq`: the real model space has the rank of `M`.
-* `TauCeti.IntegralLattice.det_realModel` and
-  `TauCeti.IntegralLattice.natCard_discriminantGroup_realModel`: the real model has the
-  determinant of `M`, and its discriminant group has the order of that of `M`.
+* `TauCeti.IntegralLattice.det_realModel`,
+  `TauCeti.IntegralLattice.natCard_discriminantGroup_realModel`, and
+  `TauCeti.IntegralLattice.IsPosDef.determinant_eq_card_discriminantGroup`: the real model has the
+  determinant of `M`, its discriminant group has the order of that of `M`, and
+  `M.determinant = |M.DiscriminantGroup|`.
 * `ZLattice.map_realModel_realModelRatModelIsometry`: the isometry carries the real model of the
   rational model onto `L`.
 * `TauCeti.IntegralLattice.Isometry.realModelMap_ofRealModel_apply`: the induced isometry agrees
@@ -475,6 +477,15 @@ theorem map_realModel_ne_realModel (hMN : IsEmpty (M.Isometry N))
   fun hf ↦ hMN.false (Isometry.ofRealModel f hf)
 
 end
+
+/-- The determinant of a positive definite rational integral lattice is the order of its
+discriminant group. -/
+theorem IsPosDef.determinant_eq_card_discriminantGroup {L : IntegralLattice V} (hL : L.IsPosDef) :
+    L.determinant = Nat.card L.DiscriminantGroup := by
+  borelize (L.RealModelSpace hL)
+  refine Int.cast_injective (α := ℝ) ?_
+  rw [← L.det_realModel hL, (L.isIntegral_realModel hL).det_eq_card_discriminantGroup,
+    L.natCard_discriminantGroup_realModel hL, Int.cast_natCast]
 
 end TauCeti.IntegralLattice
 
