@@ -25,15 +25,13 @@ If `G` acts by symplectomorphisms of a symplectic form `σ`, that is `g^* σ = �
 when `σ` is (`TauCeti.SmoothTwoForm.isSymplectic_descend_iff`). Closedness is
 `TauCeti.SmoothForm.isClosed_descend_iff`; nondegeneracy holds because `q` is a surjective local
 diffeomorphism, so its differentials identify the tangent spaces of `M` with those of `M ⧸ G`
-(`TauCeti.SmoothTwoForm.isNondegenerate_mpullback_iff_of_isLocalDiffeomorph`).
+(`IsLocalDiffeomorph.isNondegenerate_mpullback_iff`).
 
 The same criterion is stated for an arbitrary surjective local diffeomorphism, such as a covering
-map (`TauCeti.SmoothTwoForm.isSymplectic_mpullback_iff_of_isLocalDiffeomorph`).
+map (`IsLocalDiffeomorph.isSymplectic_mpullback_iff`).
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.isSymplectic_mpullback_iff_of_isLocalDiffeomorph`: a surjective local
-  diffeomorphism pulls a two-form back to a symplectic form exactly when the form is symplectic.
 * `TauCeti.SmoothTwoForm.isNondegenerate_descend_iff`,
   `TauCeti.SmoothTwoForm.isSymplectic_descend_iff`: the descent of an invariant two-form to the
   orbit space is nondegenerate, respectively symplectic, exactly when the form is.
@@ -58,24 +56,6 @@ namespace SmoothTwoForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-section LocalDiffeomorph
-
-variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
-  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂]
-  {σ : SmoothTwoForm I M}
-
-/-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
-back to a symplectic form exactly when the form is symplectic. -/
-theorem isSymplectic_mpullback_iff_of_isLocalDiffeomorph {f : M₂ → M}
-    (hf : IsLocalDiffeomorph I₂ I ∞ f) (hsurj : Function.Surjective f) :
-    SmoothTwoForm.IsSymplectic (SmoothForm.mpullback f hf.contMDiff σ) ↔ σ.IsSymplectic := by
-  refine ⟨fun h ↦ ⟨(hf.isClosed_mpullback_iff hsurj).1 h.isClosed,
-      (isNondegenerate_mpullback_iff_of_isLocalDiffeomorph hf hsurj).1 h.isNondegenerate⟩,
-    fun h ↦ ⟨(hf.isClosed_mpullback_iff hsurj).2 h.isClosed,
-      (isNondegenerate_mpullback_iff_of_isLocalDiffeomorph hf hsurj).2 h.isNondegenerate⟩⟩
-
-end LocalDiffeomorph
-
 section Quotient
 
 variable {G : Type*} [Group G] [MulAction G M] [ProperlyDiscontinuousSMul G M]
@@ -88,7 +68,7 @@ the form is. -/
 @[simp]
 theorem isNondegenerate_descend_iff :
     SmoothTwoForm.IsNondegenerate (SmoothForm.descend σ hσ) ↔ σ.IsNondegenerate := by
-  rw [← isNondegenerate_mpullback_iff_of_isLocalDiffeomorph isLocalDiffeomorph_quotientMk
+  rw [← isLocalDiffeomorph_quotientMk.isNondegenerate_mpullback_iff
     Quotient.mk_surjective, SmoothForm.mpullback_quotientMk_descend]
 
 /-- **Symplectic quotients by discrete groups.** The descent of a two-form invariant under a free,
@@ -97,7 +77,7 @@ when the form is symplectic. -/
 @[simp]
 theorem isSymplectic_descend_iff :
     SmoothTwoForm.IsSymplectic (SmoothForm.descend σ hσ) ↔ σ.IsSymplectic := by
-  rw [← isSymplectic_mpullback_iff_of_isLocalDiffeomorph isLocalDiffeomorph_quotientMk
+  rw [← isLocalDiffeomorph_quotientMk.isSymplectic_mpullback_iff
     Quotient.mk_surjective, SmoothForm.mpullback_quotientMk_descend]
 
 end Quotient

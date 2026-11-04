@@ -74,7 +74,7 @@ namespace KodairaThurston
 /-- The covering space `ℝ⁴` of the Kodaira–Thurston manifold, with coordinates `(x, y, z, t)`: a
 type synonym of `ℝ × ℝ × ℝ × ℝ` carrying the action of the deck group
 `TauCeti.KodairaThurston.DeckGroup`. -/
-@[expose] def Cover : Type := ℝ × ℝ × ℝ × ℝ
+def Cover : Type := ℝ × ℝ × ℝ × ℝ
 
 namespace Cover
 
@@ -140,6 +140,22 @@ theorem ext {p q : Cover} (hx : p.x = q.x) (hy : p.y = q.y) (hz : p.z = q.z) (ht
 @[simp] theorem z_add (p q : Cover) : (p + q).z = p.z + q.z := (rfl)
 
 @[simp] theorem t_add (p q : Cover) : (p + q).t = p.t + q.t := (rfl)
+
+@[simp] theorem x_neg (p : Cover) : (-p).x = -p.x := (rfl)
+
+@[simp] theorem y_neg (p : Cover) : (-p).y = -p.y := (rfl)
+
+@[simp] theorem z_neg (p : Cover) : (-p).z = -p.z := (rfl)
+
+@[simp] theorem t_neg (p : Cover) : (-p).t = -p.t := (rfl)
+
+@[simp] theorem x_sub (p q : Cover) : (p - q).x = p.x - q.x := (rfl)
+
+@[simp] theorem y_sub (p q : Cover) : (p - q).y = p.y - q.y := (rfl)
+
+@[simp] theorem z_sub (p q : Cover) : (p - q).z = p.z - q.z := (rfl)
+
+@[simp] theorem t_sub (p q : Cover) : (p - q).t = p.t - q.t := (rfl)
 
 @[simp] theorem x_zero : (0 : Cover).x = 0 := (rfl)
 
