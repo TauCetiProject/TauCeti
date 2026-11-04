@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
-public import TauCeti.LinearAlgebra.BilinearForm.DualLattice
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 public import TauCeti.RingTheory.Trace.Regular
 
 /-!
