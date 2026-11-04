@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.Quotient
+public import TauCeti.RingTheory.Huber.TensorProduct.Quotient.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Restricted
 public import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 
