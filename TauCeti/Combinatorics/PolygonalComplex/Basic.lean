@@ -193,7 +193,7 @@ vertex and dart types are exposed, so that germs and corners are vertices and da
     (c : {c : C.Corner // C.cornerVertex c = v}) :
     ((C.vertexLink v).src (c, false)).1 = C.graph.rev (C.incoming c.1) := (rfl)
 
-/-- A complex with finitely many faces has finite vertex links. -/
+/-- In a complex with finitely many faces, each vertex link has finitely many darts. -/
 instance [Finite C.Face] (v : C.graph.V) : Finite (C.vertexLink v).E :=
   inferInstanceAs (Finite ({c : C.Corner // C.cornerVertex c = v} × Bool))
 
@@ -204,8 +204,9 @@ theorem nonempty_vertexLink_path {x : C.graph.V} (c : {c : C.Corner // C.cornerV
     (hb : b.1 = C.graph.rev (C.incoming c.1)) : Nonempty ((C.vertexLink x).Path a b) :=
   ⟨Quiver.Hom.toPath (⟨(c, true), Subtype.ext ha.symm, Subtype.ext hb.symm⟩ : Quiver.Hom a b)⟩
 
-/-- The degree of the germ `e` in the link of its source: the number of link darts starting at
-`e`. A corner both of whose germs are `e` contributes two. -/
+/-- The degree of the germ `e` in the link of its source: the `Nat.card` of the link darts
+starting at `e`. A corner both of whose germs are `e` contributes two. As with `Nat.card`, this is
+`0` when there are infinitely many such darts; it is the ordinary count when `C.Face` is finite. -/
 noncomputable def linkDegree (e : C.graph.E) : ℕ :=
   Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e}
 
@@ -214,7 +215,9 @@ theorem linkDegree_def (e : C.graph.E) :
       Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e} :=
   (rfl)
 
-/-- The number of face sides attached along the dart `e`. -/
+/-- The number of face sides attached along the dart `e`, as the `Nat.card` of the corners whose
+outgoing side is `e`. As with `Nat.card`, this is `0` when there are infinitely many such corners;
+it is the ordinary count when `C.Face` is finite. -/
 noncomputable def sideCount (e : C.graph.E) : ℕ := Nat.card {c : C.Corner // C.outgoing c = e}
 
 theorem sideCount_def (e : C.graph.E) :

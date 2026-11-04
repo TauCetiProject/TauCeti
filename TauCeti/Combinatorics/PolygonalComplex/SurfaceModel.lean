@@ -88,7 +88,8 @@ theorem exists_outgoing_eq (e : S.graph.E) :
     ∃ c : S.Corner, S.outgoing c = e ∨ S.outgoing c = S.graph.rev e := by
   have h := S.sideCount_rev_add_sideCount_eq_one_or_two e
   rcases Nat.eq_zero_or_pos (S.sideCount e) with he | he
-  · obtain ⟨c, hc⟩ := S.sideCount_pos_iff.1 (show 0 < S.sideCount (S.graph.rev e) by omega)
+  · have hpos : 0 < S.sideCount (S.graph.rev e) := by omega
+    obtain ⟨c, hc⟩ := S.sideCount_pos_iff.1 hpos
     exact ⟨c, .inr hc⟩
   · obtain ⟨c, hc⟩ := S.sideCount_pos_iff.1 he
     exact ⟨c, .inl hc⟩
@@ -150,7 +151,7 @@ theorem linkDegree_eq_two_iff_notMem_boundaryDarts {e : S.graph.E} :
 def boundaryGerms (v : S.graph.V) : Set S.graph.E := {e ∈ S.boundaryDarts | S.graph.src e = v}
 
 variable {S} in
-theorem mem_boundaryGerms_iff {v : S.graph.V} {e : S.graph.E} :
+@[simp] theorem mem_boundaryGerms_iff {v : S.graph.V} {e : S.graph.E} :
     e ∈ S.boundaryGerms v ↔ e ∈ S.boundaryDarts ∧ S.graph.src e = v :=
   Iff.rfl
 
