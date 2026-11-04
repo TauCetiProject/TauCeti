@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.LinearAlgebra.Basis.LatticeOfMatrix
 public import TauCeti.LinearAlgebra.Matrix.HermiteNormalForm.Existence
 import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.LinearAlgebra.Matrix.HermiteNormalForm.Unique
 import Mathlib.NumberTheory.Zsqrtd.GaussianInt
-import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
 # The Hermite matrix of an ideal in a fixed integral basis
@@ -25,8 +25,6 @@ compared and labelled in computational algebraic number theory.
 
 ## Main definitions
 
-* `Module.Basis.latticeOfMatrix ω H`: the `ℤ`-submodule spanned by the vectors whose
-  `ω`-coordinates are the columns of the integer matrix `H`.
 * `Module.Basis.idealHermiteMatrix ω I`: the Hermite matrix `H_ω(I)` of an ideal `I`. If `I` does
   not have full rank (in a domain: if `I = 0`), the Hermite basis of `I` has fewer than `n` columns
   and is padded with zero columns; the zero ideal has the zero matrix.
@@ -39,8 +37,10 @@ compared and labelled in computational algebraic number theory.
 * `Module.Basis.idealHermiteMatrix_injective`: `I ↦ H_ω(I)` is injective.
 * `Module.Basis.isHermiteNormalForm_idealHermiteMatrix`: for a nonzero ideal of a domain, `H_ω(I)`
   is in Hermite normal form.
-* `Module.Basis.idealHermiteMatrix_eq_iff`, `Matrix.IsHermiteNormalForm.idealHermiteMatrix_eq`: a
-  square matrix is `H_ω(I)` if and only if it is in Hermite normal form and its columns span `I`.
+* `Module.Basis.idealHermiteMatrix_eq_iff`: for a nonzero ideal `I` of a domain, a square matrix
+  is `H_ω(I)` if and only if it is in Hermite normal form and its columns span `I`.
+* `Matrix.IsHermiteNormalForm.idealHermiteMatrix_eq`: for any ideal `I`, a square matrix in Hermite
+  normal form whose columns span `I` is `H_ω(I)`.
 * `Module.Basis.idealHermiteMatrix_top`, `Module.Basis.idealHermiteMatrix_span_intCast`:
   `H_ω(R) = 1` and `H_ω((m)) = m • 1` for `m > 0`.
 * `Module.Basis.comap_algebraMap_eq_span_idealHermiteMatrix`: if `ω 0 = 1`, then `I ∩ ℤ` is
@@ -59,61 +59,6 @@ public section
 open Matrix
 
 namespace Module.Basis
-
-/-! ### The lattice of an integer matrix in a basis -/
-
-section Lattice
-
-variable {M : Type*} [AddCommGroup M] {n k : ℕ} (ω : Basis (Fin n) ℤ M)
-
-/-- The *lattice* of an integer matrix `H` read in the basis `ω`: the `ℤ`-submodule spanned by the
-vectors `∑ i, H i j • ω i` whose `ω`-coordinates are the columns of `H`, see
-`Module.Basis.latticeOfMatrix_eq_span`. -/
-noncomputable def latticeOfMatrix (H : Matrix (Fin n) (Fin k) ℤ) : Submodule ℤ M :=
-  (LinearMap.range H.mulVecLin).map (ω.equivFun.symm : (Fin n → ℤ) →ₗ[ℤ] M)
-
-variable {ω} {H : Matrix (Fin n) (Fin k) ℤ}
-
-/-- A vector lies in the lattice of `H` if and only if its `ω`-coordinates are an integer
-combination of the columns of `H`. -/
-@[simp]
-theorem mem_latticeOfMatrix {x : M} : x ∈ ω.latticeOfMatrix H ↔ ∃ c, H *ᵥ c = ω.equivFun x := by
-  simp [latticeOfMatrix]
-
-/-- The lattice of `H` is `N` if and only if the column lattice of `H` is the lattice of
-`ω`-coordinates of `N`. -/
-theorem latticeOfMatrix_eq_iff {N : Submodule ℤ M} :
-    ω.latticeOfMatrix H = N ↔
-      LinearMap.range H.mulVecLin = N.map (ω.equivFun : M →ₗ[ℤ] Fin n → ℤ) := by
-  rw [latticeOfMatrix, Submodule.map_symm_eq_iff, eq_comm]
-
-variable (ω H) in
-/-- The lattice of `H` is spanned by the vectors `∑ i, H i j • ω i` whose `ω`-coordinates are the
-columns of `H`. -/
-theorem latticeOfMatrix_eq_span :
-    ω.latticeOfMatrix H = Submodule.span ℤ (Set.range fun j ↦ ∑ i, H i j • ω i) := by
-  rw [latticeOfMatrix, range_mulVecLin, Submodule.map_span, ← Set.range_comp]
-  congr 2
-  ext j
-  rw [Function.comp_apply, LinearEquiv.coe_coe, equivFun_symm_apply]
-  simp
-
-variable (ω) in
-/-- The lattice of the identity matrix is the whole module. -/
-@[simp]
-theorem latticeOfMatrix_one : ω.latticeOfMatrix (1 : Matrix (Fin n) (Fin n) ℤ) = ⊤ := by
-  simp [latticeOfMatrix]
-
-/-- The lattice of `H` is zero if and only if `H` is the zero matrix. -/
-@[simp]
-theorem latticeOfMatrix_eq_bot_iff : ω.latticeOfMatrix H = ⊥ ↔ H = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h, latticeOfMatrix]⟩
-  rw [latticeOfMatrix_eq_iff, Submodule.map_bot] at h
-  ext i j
-  have hj : H.col j = 0 := (Submodule.mem_bot ℤ).mp (h ▸ H.col_mem_range_mulVecLin j)
-  simpa using congrFun hj i
-
-end Lattice
 
 /-! ### The Hermite matrix of an ideal -/
 
