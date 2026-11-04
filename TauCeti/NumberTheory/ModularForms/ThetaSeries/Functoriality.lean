@@ -101,6 +101,7 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] (L : Submodule ℤ 
 /-- **The theta series of a translate of an orthogonal direct sum** is the product of the theta
 series of the translates of the summands by the components: `θ_{x + (L ⊕ M)} = θ_{x₁+L} θ_{x₂+M}`
 for `x = (x₁, x₂)`. -/
+@[simp]
 theorem thetaCoset_orthSum (x : WithLp 2 (E × F)) (τ : ℍ) :
     thetaCoset (orthSum L M) x τ = thetaCoset L x.fst τ * thetaCoset M x.snd τ := by
   rw [thetaCoset_apply, ← (orthSumEquivProd L M).symm.toEquiv.tsum_eq, thetaCoset_apply,
@@ -116,9 +117,11 @@ theorem thetaCoset_orthSum (x : WithLp 2 (E × F)) (τ : ℍ) :
 
 /-- **The theta series of an orthogonal direct sum** is the product of the theta series of the
 summands: `Θ_{L ⊕ M} = Θ_L Θ_M`. -/
+@[simp]
 theorem thetaSeries_orthSum (τ : ℍ) :
     thetaSeries (orthSum L M) τ = thetaSeries L τ * thetaSeries M τ := by
-  simpa using thetaCoset_orthSum L M 0 τ
+  rw [← thetaCoset_zero, thetaCoset_orthSum]
+  simp
 
 end OrthSum
 

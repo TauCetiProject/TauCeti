@@ -145,6 +145,7 @@ theorem coe_thetaForm (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank ℝ E 
   (rfl)
 
 /-- The theta series of an even unimodular lattice is a nonzero modular form. -/
+@[simp]
 theorem thetaForm_ne_zero (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank ℝ E = 2 * k) :
     thetaForm hL hU hk ≠ 0 := fun h ↦
   thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re (by
@@ -172,7 +173,7 @@ theorem thetaForm_orthSum (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank �
     thetaForm (isEven_orthSum_iff.mpr ⟨hL, hM⟩) (isUnimodular_orthSum_iff.mpr ⟨hU, hUM⟩)
         (by rw [(WithLp.linearEquiv 2 ℝ (E × F)).finrank_eq, finrank_prod, hk, hk', mul_add]) =
       mcast (Nat.cast_add k k').symm ((thetaForm hL hU hk).mul (thetaForm hM hUM hk')) :=
-  ModularForm.ext fun τ ↦ by rw [coe_thetaForm]; simp [thetaSeries_orthSum]
+  ModularForm.ext fun τ ↦ by rw [coe_thetaForm]; simp
 
 end Functoriality
 
