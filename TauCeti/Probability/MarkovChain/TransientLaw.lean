@@ -9,8 +9,6 @@ public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Distributions.Geometric.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.NCard
 
-import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
-
 /-!
 # The geometric law of visits to a transient state
 
@@ -24,10 +22,6 @@ We use `Set.ncard` for the positive-time visit count. It assigns zero to infinit
 choice does not affect the law because visits to a transient state are almost surely finite.
 The law is also transferred to processes on arbitrary sample spaces, using their path law.
 No countability assumption on the state space or finite-mean return-time assumption is needed.
-
-The proof consumes the successive-visit probabilities from
-`MeasureTheory.Measure.markovChainLaw_setOf_successiveVisit_ne_top` rather than constructing a
-second sequence of return times.
 
 ## References
 
@@ -46,7 +40,7 @@ variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 /-- The positive-time visit count has the geometric law with parameter equal to the
 nonreturn probability. The case `p = 1`, where there are no returns, is included. -/
-theorem hasLaw_ncard_pos_visits_geometricMeasure (hp : p ≠ 0)
+theorem hasLaw_ncard_setOf_succ_eq_geometricMeasure (hp : p ≠ 0)
     (hy : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = ENNReal.ofReal (1 - (p : ℝ))) :
     HasLaw (fun x : ℕ → α => {n | x (n + 1) = y}.ncard) (geometricMeasure p)
@@ -69,18 +63,8 @@ theorem hasLaw_ncard_pos_visits_geometricMeasure (hp : p ≠ 0)
       markovChainLaw (Measure.dirac y) κ]
       {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} := by
     filter_upwards [hfin, markovChainLaw_dirac_ae_apply_zero κ y] with x hx hx0
-    have hset : {n | x n = y} = insert 0 (Nat.succ '' {n | x (n + 1) = y}) := by
-      ext n
-      cases n with
-      | zero => simp [hx0]
-      | succ n => simp
-    have hcount : {n | x n = y}.ncard = {n | x (n + 1) = y}.ncard + 1 := by
-      have hsucc : (Nat.succ '' {n | x (n + 1) = y}).Finite :=
-        hx.subset (by rw [hset]; exact Set.subset_insert _ _)
-      rw [hset, Set.ncard_insert_of_notMem (by simp) hsucc,
-        Set.ncard_image_of_injective _ Nat.succ_injective]
     simp only [successiveVisit_ne_top_iff_lt_ncard (X := fun n (x : ℕ → α) => x n) hx,
-      hcount, Nat.lt_succ_iff]
+      ncard_setOf_eq_eq_ncard_setOf_succ_add_one hx hx0, Nat.lt_succ_iff]
   have htail : markovChainLaw (Measure.dirac y) κ
       {x | k ≤ {n | x (n + 1) = y}.ncard} = ENNReal.ofReal (1 - (p : ℝ)) ^ k := by
     rw [measure_congr hevent, markovChainLaw_dirac_setOf_successiveVisit_ne_top, hy]
@@ -93,40 +77,33 @@ theorem hasLaw_ncard_pos_visits_geometricMeasure (hp : p ≠ 0)
   exact (geometricMeasure_real_Ici hp k).symm
 
 /-- The probability of exactly `k` positive-time visits to a transient starting state. -/
-theorem markovChainLaw_ncard_pos_visits_eq (hp : p ≠ 0)
+theorem markovChainLaw_setOf_ncard_setOf_succ_eq_eq (hp : p ≠ 0)
     (hy : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = ENNReal.ofReal (1 - (p : ℝ))) (k : ℕ) :
     markovChainLaw (Measure.dirac y) κ {x | {n | x (n + 1) = y}.ncard = k} =
       ENNReal.ofReal ((1 - (p : ℝ)) ^ k * p) := by
-  have hlaw := κ.hasLaw_ncard_pos_visits_geometricMeasure y hp hy
+  have hlaw := κ.hasLaw_ncard_setOf_succ_eq_geometricMeasure y hp hy
   simpa only [Set.ofPred_eq_eq_singleton] using
     (hlaw.measure_eq (measurableSet_singleton k)).trans (geometricMeasure_singleton hp k)
 
 /-- The positive-time visit count of a transient starting state is integrable. -/
-theorem integrable_ncard_pos_visits (hp : p ≠ 0)
+theorem integrable_ncard_setOf_succ_eq (hp : p ≠ 0)
     (hy : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = ENNReal.ofReal (1 - (p : ℝ))) :
     Integrable (fun x : ℕ → α => ({n | x (n + 1) = y}.ncard : ℝ))
       (markovChainLaw (Measure.dirac y) κ) := by
-  have hgeom : Integrable id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
-    rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
-    have hp0 := unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)
-    let := isProbabilityMeasure_negativeBinomialMeasure zero_le_one hp0 p.2.2
-    exact (memLp_id_map_cast_negativeBinomialMeasure zero_le_one hp0 p.2.2 1).integrable le_rfl
-  have hcast : Integrable (Nat.cast : ℕ → ℝ) (geometricMeasure p) :=
-    (integrable_map_measure aestronglyMeasurable_id
-      (Measurable.of_discrete (f := (Nat.cast : ℕ → ℝ))).aemeasurable).mp hgeom
-  exact (κ.hasLaw_ncard_pos_visits_geometricMeasure y hp hy).integrable_fun_comp hcast
+  exact (κ.hasLaw_ncard_setOf_succ_eq_geometricMeasure y hp hy).integrable_fun_comp
+    integrable_cast_geometricMeasure
 
 /-- The expected positive-time visit count is the return probability divided by the
-nonreturn probability. Integrability is supplied by `integrable_ncard_pos_visits`. -/
-theorem integral_ncard_pos_visits (hp : p ≠ 0)
+nonreturn probability. Integrability is supplied by `integrable_ncard_setOf_succ_eq`. -/
+theorem integral_ncard_setOf_succ_eq (hp : p ≠ 0)
     (hy : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = ENNReal.ofReal (1 - (p : ℝ))) :
     ∫ x, ({n | x (n + 1) = y}.ncard : ℝ) ∂markovChainLaw (Measure.dirac y) κ =
       (1 - (p : ℝ)) / p := by
   have hlaw := (hasLaw_map (Measurable.of_discrete (f := (Nat.cast : ℕ → ℝ))).aemeasurable).fun_comp
-    (κ.hasLaw_ncard_pos_visits_geometricMeasure y hp hy)
+    (κ.hasLaw_ncard_setOf_succ_eq_geometricMeasure y hp hy)
   exact integral_of_hasLaw_map_cast_geometricMeasure hlaw
 
 end ProbabilityTheory.Kernel
@@ -138,11 +115,11 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSi
   {y : α} {p : unitInterval}
 
 /-- The geometric visit law depends only on the path law, not on the sample space. -/
-theorem ncard_pos_visits_geometricMeasure (hX : HasLaw (fun ω n => X n ω)
+theorem ncard_setOf_succ_eq_geometricMeasure (hX : HasLaw (fun ω n => X n ω)
     (markovChainLaw (Measure.dirac y) κ) P) (hp : p ≠ 0)
     (hy : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = ENNReal.ofReal (1 - (p : ℝ))) :
     HasLaw (fun ω => {n | X (n + 1) ω = y}.ncard) (geometricMeasure p) P := by
-  exact (κ.hasLaw_ncard_pos_visits_geometricMeasure y hp hy).fun_comp hX
+  exact (κ.hasLaw_ncard_setOf_succ_eq_geometricMeasure y hp hy).fun_comp hX
 
 end ProbabilityTheory.HasLaw
