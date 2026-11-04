@@ -158,15 +158,15 @@ theorem integral_associatedBilinForm_asymptoticOperator_comm [FiniteDimensional 
     ω.continuous_apply_comp (hSc.clm_apply hζ.continuous) hη.continuous
   have hc₂ : Continuous fun t ↦ ω (deriv ζ t) (η t) := ω.continuous_apply_comp hζ' hη.continuous
   have hc₃ : Continuous fun t ↦ ω (ζ t) (deriv η t) := ω.continuous_apply_comp hζ.continuous hη'
-  have hc₄ : Continuous fun t ↦ -ω (ζ t) (deriv η t) := hc₃.neg
-  rw [intervalIntegral.integral_congr
-      (g := fun t ↦ ω (deriv ζ t) (η t) - ω (S t (ζ t)) (η t)) (fun t _ ↦ hl t),
-    intervalIntegral.integral_congr
-      (g := fun t ↦ -ω (ζ t) (deriv η t) - ω (S t (ζ t)) (η t)) (fun t _ ↦ hr t),
-    intervalIntegral.integral_sub (hc₂.intervalIntegrable _ _) (hc₁.intervalIntegrable _ _),
-    intervalIntegral.integral_sub (hc₄.intervalIntegrable _ _) (hc₁.intervalIntegrable _ _),
-    sub_left_inj, intervalIntegral.integral_neg, eq_neg_iff_add_eq_zero,
-    ← intervalIntegral.integral_add (hc₂.intervalIntegrable _ _) (hc₃.intervalIntegrable _ _)]
+  have hL : ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (asymptoticOperator J S ζ t) (η t) =
+      (∫ t in (0 : ℝ)..1, ω (deriv ζ t) (η t)) - ∫ t in (0 : ℝ)..1, ω (S t (ζ t)) (η t) := by
+    rw [intervalIntegral.integral_congr (fun t _ ↦ hl t)]
+    exact intervalIntegral.integral_sub (hc₂.intervalIntegrable _ _) (hc₁.intervalIntegrable _ _)
+  have hR : ∫ t in (0 : ℝ)..1, ω.associatedBilinForm (J t) (ζ t) (asymptoticOperator J S η t) =
+      -(∫ t in (0 : ℝ)..1, ω (ζ t) (deriv η t)) - ∫ t in (0 : ℝ)..1, ω (S t (ζ t)) (η t) := by
+    rw [intervalIntegral.integral_congr (fun t _ ↦ hr t), ← intervalIntegral.integral_neg]
+    exact intervalIntegral.integral_sub (hc₃.neg.intervalIntegrable _ _)
+      (hc₁.intervalIntegrable _ _)
   -- The remaining integrand is the derivative of the periodic function `ω(ζ, η)`.
   have hd : ∀ t, HasDerivAt (fun t ↦ ω (ζ t) (η t))
       (ω (deriv ζ t) (η t) + ω (ζ t) (deriv η t)) t := fun t ↦ by
@@ -174,9 +174,13 @@ theorem integral_associatedBilinForm_asymptoticOperator_comm [FiniteDimensional 
       (fun _ ↦ (hζ.differentiable one_ne_zero t).hasDerivAt)
       (fun _ ↦ (hη.differentiable one_ne_zero t).hasDerivAt)
     simpa only [LinearMap.toContinuousBilinearMap_apply, add_comm] using this
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hd t)
-    ((hc₂.add hc₃).intervalIntegrable _ _)]
-  simp [show ζ 1 = ζ 0 by simpa using hζp 0, show η 1 = η 0 by simpa using hηp 0]
+  have hI : (∫ t in (0 : ℝ)..1, ω (deriv ζ t) (η t)) +
+      ∫ t in (0 : ℝ)..1, ω (ζ t) (deriv η t) = 0 := by
+    rw [← intervalIntegral.integral_add (hc₂.intervalIntegrable _ _) (hc₃.intervalIntegrable _ _),
+      intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hd t)
+        ((hc₂.add hc₃).intervalIntegrable _ _)]
+    simp [show ζ 1 = ζ 0 by simpa using hζp 0, show η 1 = η 0 by simpa using hηp 0]
+  linarith
 
 section Kernel
 
@@ -409,23 +413,29 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
       (ω.associatedBilinForm (J z.2) (ξs z) (ξs z) +
         ω.associatedBilinForm (J z.2) (w z) (w z)) + (φ₁ z + φ₂ z) := fun z ↦
     associatedBilinForm_add_apply_self (hJ z.2) (hS z.2) (ξ z) (ξt z) (ξs z) (M z)
+  -- `χ` has period one in `t`, so `∂t χ` integrates to zero.
+  have hχp (s : ℝ) : ω (ξ (s, 1)) (ξs (s, 1)) = ω (ξ (s, 0)) (ξs (s, 0)) := by
+    have h1 := fderiv_add_one_snd hper s 0
+    rw [zero_add] at h1
+    have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
+    simp only [ξs, h1, hξ1]
+  have h₂ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₂ z = 0 :=
+    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z ↦ ω (ξ z) (ξs z))
+      (hasDerivAt_apply_fderiv_fst_snd hξ) hχp
+  -- `∂s ψ` integrates to the difference of the boundary slice pairings.
+  have h₁ : ∫ z in Icc a b ×ˢ Icc 0 1, φ₁ z =
+      (∫ t in (0 : ℝ)..1, ω (w (b, t)) (ξ (b, t))) -
+        ∫ t in (0 : ℝ)..1, ω (w (a, t)) (ξ (a, t)) := by
+    rw [setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst (Φ := fun z ↦ ω (w z) (ξ z)) hφ₁
+        (hasDerivAt_slicePairing_fst hξ) hab,
+      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
+    exact intervalIntegral.integral_sub ((hψc b).intervalIntegrable _ _)
+      ((hψc a).intervalIntegrable _ _)
   rw [integral_congr_ae (Eventually.of_forall hpt),
     integral_add (hc₁.continuousOn.integrableOn_compact hR)
       (hc₂.continuousOn.integrableOn_compact hR),
     integral_add (hφ₁.continuousOn.integrableOn_compact hR)
-      (hφ₂.continuousOn.integrableOn_compact hR),
-    setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z ↦ ω (ξ z) (ξs z))
-      (hasDerivAt_apply_fderiv_fst_snd hξ) (fun s ↦ ?_), add_zero,
-    setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst (Φ := fun z ↦ ω (w z) (ξ z)) hφ₁
-      (hasDerivAt_slicePairing_fst hξ) hab,
-    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
-    intervalIntegral.integral_sub ((hψc b).intervalIntegrable _ _)
-      ((hψc a).intervalIntegrable _ _)]
-  -- `χ` has period one in `t`.
-  have h1 := fderiv_add_one_snd hper s 0
-  rw [zero_add] at h1
-  have hξ1 : ξ (s, 1) = ξ (s, 0) := by simpa using hper s 0
-  simp only [ξs, h1, hξ1]
+      (hφ₂.continuousOn.integrableOn_compact hR), h₁, h₂, add_zero]
 
 /-- The slice pairing `s ↦ ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` tends to zero as `|s| → ∞` when `ξ` and
 `∂t ξ` do, uniformly in `t`. -/
@@ -572,7 +582,7 @@ theorem floerLinearization_eq_stationaryCylinderOperator (ω : SymplecticForm V)
     have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2) _ (s, t) :=
       (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
     rw [h.fderiv]
-    simp [stdComplexLineImag]
+    simp [stdComplexLineImag_eq]
   rw [floerLinearization_def, Floer.stationaryCylinderOperator_def, hxt, sub_self, map_zero,
     hamiltonianVectorField_const]
   simp
