@@ -1,0 +1,302 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
+public import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
+
+/-!
+# Kernel and cokernel representations of intertwining maps
+
+Let a group `G` act on Hilbert spaces `E` and `F` by unitary representations `π` and `ρ` that are
+only *strongly* continuous, as the translation actions on spaces of `L²` sections are, and let
+`T : E → F` be a bounded operator intertwining them. The kernel of `T` is `π`-invariant and its
+range is `ρ`-invariant, so `G` acts on the kernel and on the cokernel `F ⧸ range T`. This file shows
+that when `T` is Fredholm these actions are *genuine* continuous finite-dimensional
+representations, continuous for the operator norm and not only strongly continuous. These are the
+two representations whose difference `[ker T] - [coker T]` is the equivariant index of `T`.
+
+The continuity is the finite-dimensional upgrade of strong continuity,
+`ContRepresentation.continuous_iff_continuous_apply`. For the kernel nothing more is needed. For the
+cokernel the quotient is identified, equivariantly and isometrically, with the orthogonal complement
+of the closed range, a finite-dimensional subrepresentation of `ρ` which is invariant because `ρ` is
+unitary. That complement is the kernel of the adjoint, which intertwines `ρ` with `π`, so the
+cokernel representation is also the kernel representation of the adjoint.
+
+Bundled as objects of the category `TopRep`, the same kernel and cokernel are `TopRep.ker` and
+`TopRep.coker`. Here they are kept as `ContRepresentation`s, the carrier on which continuity for the
+operator norm and the comparison with the orthogonal complement are stated.
+
+## Main definitions
+
+* `ContIntertwiningMap.kerRepresentation`: the action on the kernel of an intertwining map.
+* `ContIntertwiningMap.cokerRepresentation`: the action on the quotient by its range.
+* `ContIntertwiningMap.orthogonalRangeRepresentation`: for a unitary target, the action on the
+  orthogonal complement of the range.
+* `ContIntertwiningMap.cokerEquivOrthogonalRange`: the equivalence of representations between the
+  cokernel and the orthogonal complement of the range, when the range admits an orthogonal
+  projection (for instance, when it is closed in a Hilbert space).
+* `ContIntertwiningMap.cokerEquivKerAdjoint`: the equivalence of representations between the
+  cokernel and the kernel of the adjoint, for unitary representations on Hilbert spaces.
+
+## Main statements
+
+* `ContIntertwiningMap.continuous_kerRepresentation`: a finite-dimensional kernel of an
+  intertwining map out of a strongly continuous representation carries a continuous representation.
+* `ContIntertwiningMap.continuous_cokerRepresentation`: likewise for a finite-dimensional cokernel,
+  when the target representation is unitary and the range admits an orthogonal projection.
+* `ContIntertwiningMap.continuous_kerRepresentation_of_isFredholm` and
+  `ContIntertwiningMap.continuous_cokerRepresentation_of_isFredholm`: both apply to equivariant
+  Fredholm operators between Hilbert spaces.
+
+## References
+
+* M. F. Atiyah and I. M. Singer, *The index of elliptic operators: I*, Ann. of Math. 87 (1968),
+  484–530, for the equivariant index `[ker T] - [coker T]` of an operator commuting with a compact
+  group action, as a virtual representation.
+-/
+
+public section
+
+open ContRepresentation
+
+namespace ContIntertwiningMap
+
+/-! ### The kernel and cokernel representations -/
+
+section Representations
+
+variable {R G V W : Type*} [Ring R] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module R V] [AddCommGroup W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [Module R W]
+  {π : ContRepresentation R G V} {ρ : ContRepresentation R G W} (T : π →ⁱL ρ)
+
+/-- The action of `G` on the kernel of an intertwining map `T : π →ⁱL ρ`: the restriction of `π`
+to the invariant submodule `ker T`, as in Mathlib's `Representation.IntertwiningMap.ker`. -/
+def kerRepresentation : ContRepresentation R G T.toContinuousLinearMap.ker :=
+  π.subrepresentation _ fun g _ hv ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv
+
+/-- The kernel representation acts as `π` on the underlying vectors. -/
+@[simp]
+theorem coe_kerRepresentation_apply (g : G) (v : T.toContinuousLinearMap.ker) :
+    ((T.kerRepresentation g v : T.toContinuousLinearMap.ker) : V) = π g v :=
+  coe_subrepresentation_apply g v
+
+/-- The action of `G` on the cokernel of an intertwining map `T : π →ⁱL ρ`: the descent of `ρ` to
+the quotient by the invariant submodule `range T`, as in Mathlib's
+`Representation.IntertwiningMap.range`. -/
+def cokerRepresentation : ContRepresentation R G (W ⧸ T.toContinuousLinearMap.range) :=
+  ρ.quotient _ fun g _ hw ↦ T.toIntertwiningMap.range.apply_mem_toSubmodule g hw
+
+/-- The cokernel representation acts on the class of `w` as `ρ` acts on `w`. -/
+@[simp]
+theorem cokerRepresentation_apply_mk (g : G) (w : W) :
+    T.cokerRepresentation g (Submodule.Quotient.mk w) = Submodule.Quotient.mk (ρ g w) :=
+  quotient_apply_mk g w
+
+variable [TopologicalSpace G]
+
+/-- The kernel representation of an intertwining map out of a strongly continuous representation
+is strongly continuous. -/
+theorem continuous_kerRepresentation_apply (hπ : ∀ v, Continuous fun g ↦ π g v)
+    (v : T.toContinuousLinearMap.ker) : Continuous fun g ↦ T.kerRepresentation g v :=
+  continuous_subrepresentation_apply hπ v
+
+/-- The cokernel representation of an intertwining map into a strongly continuous representation
+is strongly continuous. -/
+theorem continuous_cokerRepresentation_apply (hρ : ∀ w, Continuous fun g ↦ ρ g w)
+    (x : W ⧸ T.toContinuousLinearMap.range) : Continuous fun g ↦ T.cokerRepresentation g x :=
+  continuous_quotient_apply hρ x
+
+end Representations
+
+/-! ### Continuity of the kernel representation -/
+
+section Kernel
+
+variable {𝕜 G E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
+  [TopologicalSpace G] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F} (T : π →ⁱL ρ)
+
+/-- **The kernel carries a continuous representation.** If an intertwining map out of a strongly
+continuous representation has finite-dimensional kernel, then the kernel representation is
+continuous for the operator norm. -/
+theorem continuous_kerRepresentation (hπ : ∀ v, Continuous fun g ↦ π g v)
+    [FiniteDimensional 𝕜 T.toContinuousLinearMap.ker] : Continuous T.kerRepresentation :=
+  continuous_iff_continuous_apply.mpr (T.continuous_kerRepresentation_apply hπ)
+
+/-- **The kernel of an equivariant Fredholm operator is a continuous representation.** For a
+Fredholm operator intertwining strongly continuous representations, the action on its
+finite-dimensional kernel is continuous for the operator norm. -/
+theorem continuous_kerRepresentation_of_isFredholm (hT : T.toContinuousLinearMap.IsFredholm)
+    (hπ : ∀ v, Continuous fun g ↦ π g v) : Continuous T.kerRepresentation :=
+  have := hT.finite_ker
+  T.continuous_kerRepresentation hπ
+
+end Kernel
+
+section KernelUnitary
+
+variable {𝕜 G E F : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F} (T : π →ⁱL ρ)
+
+/-- The kernel representation of an intertwining map out of a unitary representation is
+unitary. -/
+theorem isUnitary_kerRepresentation (hπ : π.IsUnitary) : T.kerRepresentation.IsUnitary :=
+  hπ.subrepresentation _
+
+end KernelUnitary
+
+/-! ### The cokernel as the orthogonal complement of the range -/
+
+section Cokernel
+
+variable {𝕜 G E F : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F} (T : π →ⁱL ρ)
+
+/-- For a unitary target representation `ρ`, the action of `G` on the orthogonal complement of the
+range of an intertwining map `T : π →ⁱL ρ`, which is invariant because the range is. -/
+def orthogonalRangeRepresentation (hρ : ρ.IsUnitary) :
+    ContRepresentation 𝕜 G T.toContinuousLinearMap.rangeᗮ :=
+  ρ.subrepresentation _ fun g _ hv ↦
+    hρ.apply_mem_orthogonal (fun g _ hw ↦ T.toIntertwiningMap.range.apply_mem_toSubmodule g hw) g hv
+
+/-- The representation on the orthogonal complement of the range acts as `ρ` on the underlying
+vectors. -/
+@[simp]
+theorem coe_orthogonalRangeRepresentation_apply (hρ : ρ.IsUnitary) (g : G)
+    (v : T.toContinuousLinearMap.rangeᗮ) :
+    ((T.orthogonalRangeRepresentation hρ g v : T.toContinuousLinearMap.rangeᗮ) : F) = ρ g v :=
+  coe_subrepresentation_apply g v
+
+/-- The representation on the orthogonal complement of the range is unitary. -/
+theorem isUnitary_orthogonalRangeRepresentation (hρ : ρ.IsUnitary) :
+    (T.orthogonalRangeRepresentation hρ).IsUnitary :=
+  hρ.subrepresentation _
+
+variable [TopologicalSpace G] in
+/-- A finite-dimensional orthogonal complement of the range of an intertwining map into a strongly
+continuous unitary representation carries a continuous representation. -/
+theorem continuous_orthogonalRangeRepresentation (hρ : ρ.IsUnitary)
+    (hρc : ∀ w, Continuous fun g ↦ ρ g w) [FiniteDimensional 𝕜 T.toContinuousLinearMap.rangeᗮ] :
+    Continuous (T.orthogonalRangeRepresentation hρ) :=
+  continuous_iff_continuous_apply.mpr (continuous_subrepresentation_apply hρc)
+
+section OrthogonalProjection
+
+variable [T.toContinuousLinearMap.range.HasOrthogonalProjection]
+
+/-- **The cokernel is the orthogonal complement of the range, equivariantly.** For a unitary target
+representation and a range admitting an orthogonal projection, Mathlib's isometric identification
+`Submodule.quotientEquivOrthogonal` of `F ⧸ range T` with `(range T)ᗮ` intertwines the cokernel
+representation with the representation on the orthogonal complement. Its inverse sends a vector of
+the orthogonal complement to its class (`cokerEquivOrthogonalRange_symm_apply`). -/
+noncomputable def cokerEquivOrthogonalRange (hρ : ρ.IsUnitary) :
+    T.cokerRepresentation.Equiv (T.orthogonalRangeRepresentation hρ) :=
+  (ContRepresentation.Equiv.mk
+    T.toContinuousLinearMap.range.quotientEquivOrthogonal.symm.toContinuousLinearEquiv
+    fun g ↦ by
+      ext ⟨v, hv⟩
+      simp [Submodule.quotientEquivOrthogonal_symm_eq_mk]).symm
+
+/-- The identification of the orthogonal complement of the range with the cokernel sends a vector
+to its class. -/
+@[simp]
+theorem cokerEquivOrthogonalRange_symm_apply (hρ : ρ.IsUnitary)
+    (v : T.toContinuousLinearMap.rangeᗮ) :
+    (T.cokerEquivOrthogonalRange hρ).symm v = Submodule.Quotient.mk (v : F) := by
+  simp [cokerEquivOrthogonalRange]
+
+/-- The identification of the cokernel with the orthogonal complement of the range sends the class
+of `w` to the orthogonal projection of `w` onto that complement. -/
+@[simp]
+theorem cokerEquivOrthogonalRange_apply_mk (hρ : ρ.IsUnitary) (w : F) :
+    T.cokerEquivOrthogonalRange hρ (Submodule.Quotient.mk w) =
+      T.toContinuousLinearMap.rangeᗮ.orthogonalProjectionOnto w := by
+  simp [cokerEquivOrthogonalRange, Submodule.orthogonalProjectionOnto_apply_eq_projectionOnto]
+
+variable [TopologicalSpace G] in
+/-- **The cokernel carries a continuous representation.** If an intertwining map into a strongly
+continuous unitary representation has finite-dimensional cokernel and a range admitting an
+orthogonal projection, then the cokernel representation is continuous for the operator norm. -/
+theorem continuous_cokerRepresentation (hρ : ρ.IsUnitary) (hρc : ∀ w, Continuous fun g ↦ ρ g w)
+    [FiniteDimensional 𝕜 (F ⧸ T.toContinuousLinearMap.range)] :
+    Continuous T.cokerRepresentation := by
+  have : FiniteDimensional 𝕜 T.toContinuousLinearMap.rangeᗮ :=
+    (T.cokerEquivOrthogonalRange hρ).toContinuousLinearEquiv.toLinearEquiv.finiteDimensional
+  rw [(T.cokerEquivOrthogonalRange hρ).continuous_iff]
+  exact T.continuous_orthogonalRangeRepresentation hρ hρc
+
+end OrthogonalProjection
+
+variable [TopologicalSpace G] [CompleteSpace F] in
+/-- **The cokernel of an equivariant Fredholm operator is a continuous representation.** For a
+Fredholm operator into a strongly continuous unitary representation on a Hilbert space, the action
+on its finite-dimensional cokernel is continuous for the operator norm. -/
+theorem continuous_cokerRepresentation_of_isFredholm (hT : T.toContinuousLinearMap.IsFredholm)
+    (hρ : ρ.IsUnitary) (hρc : ∀ w, Continuous fun g ↦ ρ g w) :
+    Continuous T.cokerRepresentation :=
+  have : CompleteSpace T.toContinuousLinearMap.range := hT.isClosed_range.completeSpace_coe
+  have := hT.finite_coker
+  T.continuous_cokerRepresentation hρ hρc
+
+end Cokernel
+
+/-! ### The cokernel as the kernel of the adjoint -/
+
+section Adjoint
+
+variable {𝕜 G E F : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+  {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F} (T : π →ⁱL ρ)
+
+variable [T.toContinuousLinearMap.range.HasOrthogonalProjection]
+
+/-- **The cokernel is the kernel of the adjoint, equivariantly.** For unitary representations on
+Hilbert spaces and a range admitting an orthogonal projection, the cokernel representation of `T`
+is equivalent to the kernel representation of the adjoint intertwining map
+`ContIntertwiningMap.adjoint`, through the orthogonal complement of the range, which is the kernel
+of the adjoint (`ContinuousLinearMap.orthogonal_range`). This is the equivariant form of
+`ContinuousLinearMap.cokerEquivKerAdjoint`. -/
+noncomputable def cokerEquivKerAdjoint (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    T.cokerRepresentation.Equiv (T.adjoint hπ hρ).kerRepresentation :=
+  (T.cokerEquivOrthogonalRange hρ).trans <| ContRepresentation.Equiv.mk
+    (LinearIsometryEquiv.ofEq _ _ <| by
+      rw [toContinuousLinearMap_adjoint]
+      exact T.toContinuousLinearMap.orthogonal_range).toContinuousLinearEquiv
+    fun g ↦ by
+      ext v
+      simp
+
+/-- The equivariant identification of the cokernel with the kernel of the adjoint sends the class
+of `w` to the orthogonal projection of `w` onto the orthogonal complement of the range. -/
+@[simp]
+theorem coe_cokerEquivKerAdjoint_apply_mk (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) (w : F) :
+    (T.cokerEquivKerAdjoint hπ hρ (Submodule.Quotient.mk w) : F) =
+      T.toContinuousLinearMap.rangeᗮ.orthogonalProjectionOnto w := by
+  simp [cokerEquivKerAdjoint]
+
+/-- The inverse of the equivariant identification of the cokernel with the kernel of the adjoint
+sends a kernel vector to its class. -/
+@[simp]
+theorem cokerEquivKerAdjoint_symm_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary)
+    (v : (T.adjoint hπ hρ).toContinuousLinearMap.ker) :
+    (T.cokerEquivKerAdjoint hπ hρ).symm v = Submodule.Quotient.mk (v : F) := by
+  have hv : (v : F) ∈ T.toContinuousLinearMap.rangeᗮ := by
+    rw [T.toContinuousLinearMap.orthogonal_range, ← toContinuousLinearMap_adjoint T hπ hρ]
+    exact v.2
+  apply EquivLike.injective (T.cokerEquivKerAdjoint hπ hρ)
+  ext
+  rw [ContRepresentation.Equiv.apply_symm_apply, coe_cokerEquivKerAdjoint_apply_mk,
+    ← Submodule.starProjection_apply, Submodule.starProjection_eq_self_iff.mpr hv]
+
+end Adjoint
+
+end ContIntertwiningMap
