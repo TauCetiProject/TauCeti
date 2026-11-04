@@ -14,6 +14,7 @@ import TauCeti.Dynamics.Flow.Conjugacy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Deformation of sublevels
@@ -216,14 +217,8 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
     ∃ e : ContinuousMap.HomotopyEquiv {x | f x ≤ a} {x | f x ≤ b},
       ∀ x : {x | f x ≤ a}, (e x : M) = x := by
   obtain ⟨r, hr, ⟨F⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
-  refine ⟨
-    { toFun := sublevelInclusion f a b hab
-      invFun := r
-      left_inv := ?_
-      right_inv := ⟨F.toHomotopy⟩ }, coe_sublevelInclusion_apply f hab⟩
-  have : r.comp (sublevelInclusion f a b hab) =
-      ContinuousMap.id _ := ContinuousMap.ext hr
-  exact this ▸ .refl _
+  exact ⟨.ofDeformationRetraction (sublevelInclusion f a b hab) r hr ⟨F.toHomotopy⟩,
+    coe_sublevelInclusion_apply f hab⟩
 
 /-- **Sublevels on either side of a band without critical points are diffeomorphic**
 (Milnor, Theorem 3.1). If `f` is smooth, `a ≤ b`, and the band `f⁻¹[a, b]` is compact and contains

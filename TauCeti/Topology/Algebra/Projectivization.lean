@@ -65,7 +65,9 @@ of projective space.
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
-  homeomorphism from `U_i` onto `Fin n → K`.
+  homeomorphism from `U_i` onto `Fin n → K`, with `Projectivization.affineChartSymmRestrict` and
+  `Projectivization.isOpenEmbedding_affineChartSymmRestrict` restricting its inverse to an open
+  embedding of the chart image of `X ∩ U_i` into any subset `X`.
 
 The topology and its quotient-map API (`instTopologicalSpace` through `isOpenQuotientMap_mk'`)
 follow Zayn Blore's Mathlib pull request
@@ -289,6 +291,48 @@ theorem continuous_affineChart_symm (i : Fin (n + 1)) :
   exact continuous_mk ((continuous_const (y := (1 : K))).finInsertNth (A := fun _ ↦ K) i
     continuous_id) _
 
+omit [TopologicalSpace K] in
+/-- The preimage of a subset `X` of projective space under the inverse of the `i`-th affine chart is
+the image under `affineChart i` of `X ∩ affineOpen i`. -/
+theorem preimage_affineChart_symm (i : Fin (n + 1)) (X : Set (ℙ K (Fin (n + 1) → K))) :
+    (affineChart i).symm ⁻¹' X = affineChart i '' (X ∩ affineOpen i) := by
+  ext z
+  refine ⟨fun hz ↦ ⟨(affineChart i).symm z, ⟨hz, by simp⟩,
+    (affineChart i).right_inv (by simp)⟩, ?_⟩
+  rintro ⟨x, ⟨hxX, hxU⟩, rfl⟩
+  rw [mem_preimage, (affineChart i).left_inv (by simpa using hxU)]
+  exact hxX
+
+omit [TopologicalSpace K] in
+/-- For a subset `X` of projective space whose intersection with the `i`-th affine open has chart
+image `Z`, the inverse of the `i`-th affine chart restricts to a map `Z → X`. -/
+noncomputable def affineChartSymmRestrict {X : Set (ℙ K (Fin (n + 1) → K))} (i : Fin (n + 1))
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z) (z : Z) : X :=
+  ⟨(affineChart i).symm z.1,
+    show z.1 ∈ (affineChart i).symm ⁻¹' X by rw [preimage_affineChart_symm, hZ]; exact z.2⟩
+
+omit [TopologicalSpace K] in
+/-- In the ambient projective space, `Projectivization.affineChartSymmRestrict` is the inverse of
+the `i`-th affine chart. -/
+@[simp]
+theorem coe_affineChartSymmRestrict {X : Set (ℙ K (Fin (n + 1) → K))} (i : Fin (n + 1))
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z) (z : Z) :
+    (affineChartSymmRestrict i hZ z : ℙ K (Fin (n + 1) → K)) = (affineChart i).symm z.1 :=
+  (rfl)
+
+omit [TopologicalSpace K] in
+/-- The range of `Projectivization.affineChartSymmRestrict i hZ` in `X` is the subset of points of
+`X` lying in `affineOpen i`. -/
+theorem range_affineChartSymmRestrict {X : Set (ℙ K (Fin (n + 1) → K))} (i : Fin (n + 1))
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z) :
+    range (affineChartSymmRestrict i hZ) =
+      {x : X | (x : ℙ K (Fin (n + 1) → K)) ∈ affineOpen i} := by
+  ext x
+  refine ⟨?_, fun hx ↦ ⟨⟨affineChart i x.1, hZ ▸ ⟨x.1, ⟨x.2, hx⟩, rfl⟩⟩,
+    Subtype.ext ((affineChart i).left_inv (by simpa using hx))⟩⟩
+  rintro ⟨z, rfl⟩
+  simp
+
 variable [ContinuousMul K] [ContinuousInv₀ K] [T1Space K]
 
 /-- The standard affine chart of projective space is continuous on its domain. -/
@@ -330,6 +374,23 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- The inverse of the standard affine chart is an open embedding onto `affineOpen i`. -/
+theorem isOpenEmbedding_affineChart_symm (i : Fin (n + 1)) :
+    IsOpenEmbedding (affineChart (K := K) i).symm :=
+  coe_affineOpenPartialHomeomorph_symm (K := K) i ▸
+    (affineOpenPartialHomeomorph (K := K) i).symm.isOpenEmbedding (by simp)
+
+/-- For a subset `X` of projective space whose intersection with `affineOpen i` has chart image
+`Z`, `Projectivization.affineChartSymmRestrict i hZ` is an open embedding of `Z` into `X`. -/
+theorem isOpenEmbedding_affineChartSymmRestrict {X : Set (ℙ K (Fin (n + 1) → K))}
+    (i : Fin (n + 1)) {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z) :
+    IsOpenEmbedding (affineChartSymmRestrict i hZ) where
+  toIsEmbedding := IsEmbedding.subtypeVal.of_comp_iff.1
+    ((isOpenEmbedding_affineChart_symm i).isEmbedding.comp .subtypeVal)
+  isOpen_range := by
+    rw [range_affineChartSymmRestrict]
+    exact (isOpen_affineOpen i).preimage continuous_subtype_val
 
 end AffineChart
 

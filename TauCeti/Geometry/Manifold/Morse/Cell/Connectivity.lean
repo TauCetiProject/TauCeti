@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Exhaustion
 public import TauCeti.Geometry.Manifold.Morse.OpenEmbedding
 
+import TauCeti.Topology.Homotopy.DeformationRetract
+
 /-!
 # Low-degree connectivity across Morse bands and compactified pairs
 
@@ -33,11 +35,11 @@ Taking `j = id` specializes these statements to a Morse function on `M` itself.
 Now suppose `A ⊆ X` lies in `{F ≤ 0}`, `F ≤ 0` outside `range j`, `F` is bounded above, every
 positive band `F⁻¹[a, b]` is compact, and `A` sits inside a subset `W ⊆ X` containing some positive
 sublevel `{F ≤ δ}` (`δ > 0`) such that the inclusion `A ↪ W` is a weak homotopy equivalence (or
-induces homology isomorphisms, for instance when `W` deformation retracts onto `A`). Choosing a
-regular value `0 < a < δ` sandwiches `{F ≤ a}` into `A ↪ {F ≤ a} ↪ W ↪ X`: the composite `A ↪ W` is
-an equivalence while `{F ≤ a} ↪ X` has the low-degree connectivity above, forcing the inclusion
-`A ↪ X` to inherit the same low-degree homotopy and homology connectivity without any smoothness
-assumption on `X` along `A`.
+induces homology isomorphisms in the relevant degrees, for instance when `W` deformation retracts
+onto `A`). Choosing a regular value `0 < a < δ` sandwiches `{F ≤ a}` into `A ↪ {F ≤ a} ↪ W ↪ X`:
+the composite `A ↪ W` is an equivalence while `{F ≤ a} ↪ X` has the low-degree connectivity above,
+forcing the inclusion `A ↪ X` to inherit the same low-degree homotopy and homology connectivity
+without any smoothness assumption on `X` along `A`.
 
 ## Main results
 
@@ -49,13 +51,14 @@ assumption on `X` along `A`.
 * `TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding`,
   `TauCeti.IsMorse.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding`,
   `TauCeti.IsMorse.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding`: low-degree homology
-  vanishing and inclusion-induced epimorphisms/isomorphisms across a compact band.
+  vanishing and inclusion-induced epimorphisms/isomorphisms across a compact band (and their
+  manifold specializations without `_of_isOpenEmbedding`).
 * `TauCeti.IsMorse.subsingleton_relHomotopyGroup_ofSubset_of_isOpenEmbedding`,
   `TauCeti.IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding`,
   `TauCeti.IsMorse.bijective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding`,
   `TauCeti.IsMorse.isZero_singularHomology_ofSubset_of_isOpenEmbedding`: homotopy and homology
-  connectivity of `(X, A)` when `A` has a weak-equivalence / homology-isomorphic neighbourhood
-  containing a positive sublevel of `F`.
+  connectivity of `(X, A)` when `A` has a weak-equivalence / degreewise homology-isomorphic
+  neighbourhood containing a positive sublevel of `F`.
 
 ## References
 
@@ -76,44 +79,88 @@ universe u v w
 
 namespace TauCeti
 
-/-- A strong deformation retraction exhibits the inclusion as a homotopy equivalence. -/
-private def homotopyEquivOfDeformation {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    (i : C(Y, Z)) (r : C(Z, Y)) (hri : ∀ y, r (i y) = y) {S : Set Z}
-    (G : (i.comp r).HomotopyRel (ContinuousMap.id Z) S) : Y ≃ₕ Z where
-  toFun := i
-  invFun := r
-  left_inv :=
-    have h : r.comp i = ContinuousMap.id Y := ContinuousMap.ext hri
-    ⟨h ▸ ContinuousMap.Homotopy.refl _⟩
-  right_inv := ⟨G.toHomotopy⟩
-
 section BandInduction
 
 variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X]
-  {j : M → X} {F : X → ℝ}
+  {j : M → X} {F : X → ℝ} {n : ℕ}
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- Around a level `c` in `(a, b)` where all critical points of `F ∘ j` in `F⁻¹[a, b]` have Morse
+index at least `n`, find `0 < ε ≤ δ` isolating `c` and a finite relative CW complex
+`(C', {F ≤ c - ε})` inside `{F ≤ c + ε}` with no cells of dimension `< n` onto which `{F ≤ c + ε}`
+strongly deformation retracts. -/
+private theorem IsMorse.exists_relCWComplex_sublevel_isEmpty_cell (hj : IsOpenEmbedding j)
+    (hF : Continuous F) (hf : IsMorse I (F ∘ j)) {a b c δ : ℝ} (hδ : 0 < δ) (hδa : a < c - δ)
+    (hδb : c + δ < b) (hcpt : IsCompact (F ⁻¹' Icc (c - δ) (c + δ)))
+    (hAc : ∀ x ∉ range j, F x < c - δ)
+    (hindex : ∀ p ∈ criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc a b,
+      n ≤ manifoldMorseIndex I (F ∘ j) p) :
+    ∃ ε, ∃ _ : 0 < ε, ε ≤ δ ∧
+      criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (c - ε) (c + ε) ⊆ (F ∘ j) ⁻¹' {c} ∧
+      ∃ (C' : Set X) (_ : RelCWComplex C' {x | F x ≤ c - ε})
+        (_ : RelCWComplex.Finite C') (hC' : C' ⊆ {x | F x ≤ c + ε}),
+        (∀ m < n, IsEmpty (cell C' m)) ∧
+        ∃ r : C({x | F x ≤ c + ε}, C'),
+          LeftInverse r (ContinuousMap.inclusion hC') ∧
+          Nonempty (((ContinuousMap.inclusion hC').comp r).HomotopyRel
+            (ContinuousMap.id _) {y | (y : X) ∈ C'}) := by
+  obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ
+    (hj.isInducing.isCompact_comp_preimage_Icc hAc hcpt)
+  have hcpt' : IsCompact (F ⁻¹' Icc (c - δ') (c + δ')) :=
+    hcpt.of_isClosed_subset (isClosed_Icc.preimage hF)
+      (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
+  obtain ⟨ε, hε, hεδ', C', instCW, instFin, hC', hcell, r, hri, hG⟩ :=
+    hf.exists_relCWComplex_sublevel_of_isOpenEmbedding hj hF hδ' hcpt'
+      fun x hx ↦ (hAc x hx).trans_le (by linarith)
+  refine ⟨ε, hε, hεδ'.trans hδ'δ,
+    fun p hp ↦ hsub ⟨hp.1, Icc_subset_Icc (by linarith) (by linarith) hp.2⟩,
+    C', instCW, instFin, hC', fun m hm ↦ (hcell m).some.isEmpty_congr.2
+      ⟨fun ⟨⟨p, hp, hpc⟩, hpm⟩ ↦ ?_⟩, r, hri, hG⟩
+  have hpc' : F (j p) = c := hpc
+  have := hindex p ⟨hp, by
+    simp only [mem_preimage, mem_Icc, Function.comp_apply]
+    constructor <;> linarith⟩
+  dsimp only at hpm
+  omega
+
 /-- Induction across the finitely many critical levels in a compact band `F⁻¹[a, b]` between regular
-values of `F ∘ j`, cutting just above the lowest critical value at each step. -/
+values of `F ∘ j` whose critical points all have Morse index at least `n`, supplying the strong
+deformation retraction on regular bands and the finite high-index relative CW complex across each
+critical level. -/
 private theorem IsMorse.sublevelBand_induction (hj : IsOpenEmbedding j) (hF : Continuous F)
     (hf : IsMorse I (F ∘ j)) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (F ⁻¹' Icc a b))
     (hA : ∀ x ∉ range j, F x < a) (ha : IsRegularValue I 𝓘(ℝ) (F ∘ j) a)
-    (hb : IsRegularValue I 𝓘(ℝ) (F ∘ j) b) {P : ∀ s t : ℝ, s ≤ t → Prop}
-    (hreg : ∀ {s t : ℝ} (hst : s ≤ t), a ≤ s → t ≤ b → IsCompact (F ⁻¹' Icc s t) →
-      (∀ x ∉ range j, F x < s) → (∀ p ∈ criticalPoints I (F ∘ j), F (j p) ∉ Icc s t) → P s t hst)
-    (hlevel : ∀ {c δ : ℝ}, 0 < δ → a < c - δ → c + δ < b →
-      IsCompact (F ⁻¹' Icc (c - δ) (c + δ)) → (∀ x ∉ range j, F x < c - δ) →
-      ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧
-        criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (c - ε) (c + ε) ⊆ (F ∘ j) ⁻¹' {c} ∧
-        P (c - ε) (c + ε) (by linarith))
-    (htrans : ∀ {s m t : ℝ} (hsm : s ≤ m) (hmt : m ≤ t), a ≤ s → t ≤ b →
+    (hb : IsRegularValue I 𝓘(ℝ) (F ∘ j) b)
+    (hindex : ∀ p ∈ criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc a b,
+      n ≤ manifoldMorseIndex I (F ∘ j) p)
+    {P : ∀ s t : ℝ, s ≤ t → Prop}
+    (hreg : ∀ {s t : ℝ} (hst : s ≤ t) (r : C({x | F x ≤ t}, {x | F x ≤ s})),
+      LeftInverse r (ContinuousMap.inclusion (sublevel_mono F hst)) →
+      (((ContinuousMap.inclusion (sublevel_mono F hst)).comp r).HomotopyRel
+        (ContinuousMap.id _) {x | (x : X) ∈ {x | F x ≤ s}}) →
+      P s t hst)
+    (hcell : ∀ {c ε : ℝ} (hε : 0 < ε) (C' : Set X) [RelCWComplex C' {x | F x ≤ c - ε}]
+      [RelCWComplex.Finite C'] (hC' : C' ⊆ {x | F x ≤ c + ε}),
+      (∀ m < n, IsEmpty (cell C' m)) →
+      ∀ (r : C({x | F x ≤ c + ε}, C')), LeftInverse r (ContinuousMap.inclusion hC') →
+      (((ContinuousMap.inclusion hC').comp r).HomotopyRel
+        (ContinuousMap.id _) {y | (y : X) ∈ C'}) →
+      P (c - ε) (c + ε) (by linarith))
+    (htrans : ∀ {s m t : ℝ} (hsm : s ≤ m) (hmt : m ≤ t),
       P s m hsm → P m t hmt → P s t (hsm.trans hmt)) :
     P a b hab := by
   rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
   have hcompact_sub {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (F ⁻¹' Icc s t) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hF) (preimage_mono (Icc_subset_Icc hs ht))
+  have hreg_band {s t : ℝ} (hst : s ≤ t) (hs : a ≤ s) (ht : t ≤ b)
+      (hAs : ∀ x ∉ range j, F x < s)
+      (hcrit : ∀ p ∈ criticalPoints I (F ∘ j), F (j p) ∉ Icc s t) : P s t hst := by
+    obtain ⟨r, hri, ⟨G⟩⟩ := exists_sublevelDeformation_of_isOpenEmbedding hj hF hf.contMDiff hst
+      (hcompact_sub hs ht)
+      (fun p hsp hpt hp ↦ hcrit p (mem_criticalPoints_iff_mfderiv_eq_zero.2 hp) ⟨hsp, hpt⟩) hAs
+    rw [sublevelInclusion_eq_inclusion] at hri G
+    exact hreg hst r hri G
   suffices ∀ K : ℕ, ∀ s, ∀ has : a ≤ s, ∀ hsb : s ≤ b,
       (criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc s b).ncard = K →
       s ∉ (F ∘ j) '' criticalPoints I (F ∘ j) → P s b hsb from
@@ -126,7 +173,7 @@ private theorem IsMorse.sublevelBand_induction (hj : IsOpenEmbedding j) (hF : Co
   have hS := hf.finite_criticalPoints_inter
     (hj.isInducing.isCompact_comp_preimage_Icc hAs (hcompact_sub has le_rfl))
   rcases (criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc s b).eq_empty_or_nonempty with hS₀ | hSne
-  · exact hreg hsb has le_rfl (hcompact_sub has le_rfl) hAs fun p hp hpb ↦ hS₀.subset ⟨hp, hpb⟩
+  · exact hreg_band hsb has le_rfl hAs fun p hp hpb ↦ hS₀.subset ⟨hp, hpb⟩
   -- Cut the band around the lowest critical value `c = F (j p)` in `[s, b]`.
   obtain ⟨p, ⟨hp, hpsb⟩, hpmin⟩ :=
     hS.isCompact.exists_isMinOn hSne hf.contMDiff.continuous.continuousOn
@@ -136,12 +183,14 @@ private theorem IsMorse.sublevelBand_induction (hj : IsOpenEmbedding j) (hF : Co
   have hδ : 0 < δ := half_pos (lt_min (sub_pos.2 hsc) (sub_pos.2 hcb))
   have hδs : s < F (j p) - δ := by linarith [hδ_def, min_le_left (F (j p) - s) (b - F (j p))]
   have hδb : F (j p) + δ < b := by linarith [hδ_def, min_le_right (F (j p) - s) (b - F (j p))]
-  obtain ⟨ε, hε, hεδ, hsub, hmid⟩ := hlevel hδ (has.trans_lt hδs) hδb
-    (hcompact_sub (has.trans hδs.le) hδb.le) fun x hx ↦ (hAs x hx).trans hδs
+  obtain ⟨ε, hε, hεδ, hsub, C', _, _, hC', hempty, r, hri, ⟨G⟩⟩ :=
+    hf.exists_relCWComplex_sublevel_isEmpty_cell hj hF hδ (has.trans_lt hδs) hδb
+      (hcompact_sub (has.trans hδs.le) hδb.le) (fun x hx ↦ (hAs x hx).trans hδs) hindex
+  have hmid : P (F (j p) - ε) (F (j p) + ε) (by linarith) :=
+    hcell hε C' hC' hempty r hri G
   have hlow : P s (F (j p) - ε) (by linarith) :=
-    hreg _ has (by linarith) (hcompact_sub has (by linarith)) hAs fun q hq hqI ↦ by
-      have : F (j p) ≤ F (j q) :=
-        hpmin ⟨hq, hqI.1, by simp only [comp_apply]; linarith [hqI.2]⟩
+    hreg_band _ has (by linarith) hAs fun q hq hqI ↦ by
+      have : F (j p) ≤ F (j q) := hpmin ⟨hq, hqI.1, hqI.2.trans (by linarith)⟩
       linarith [hqI.2]
   have hlt : (criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (F (j p) + ε) b).ncard < K := by
     rw [← hK]
@@ -152,27 +201,15 @@ private theorem IsMorse.sublevelBand_induction (hj : IsOpenEmbedding j) (hF : Co
     ih _ hlt _ (by linarith) (by linarith) rfl fun ⟨q, hq, hqc⟩ ↦ by
       have hqc' : F (j q) = F (j p) + ε := hqc
       have : F (j q) = F (j p) := hsub ⟨hq, by
-        simp only [mem_preimage, mem_Icc, comp_apply]
+        simp only [mem_preimage, mem_Icc, Function.comp_apply]
         constructor <;> linarith⟩
       linarith
-  exact htrans (by linarith) (by linarith) has le_rfl
-    (htrans (by linarith) (by linarith) has (by linarith) hlow hmid) hup
+  exact htrans (by linarith) (by linarith)
+    (htrans (by linarith) (by linarith) hlow hmid) hup
 
 end BandInduction
 
 section SublevelHomotopy
-
-private theorem surjective_homotopyGroupMap_congr {Y Z : Type*} [TopologicalSpace Y]
-    [TopologicalSpace Z] {N : Type*} {f g : C(Y, Z)} (h : f = g) (y : Y) :
-    Surjective (HomotopyGroup.map (N := N) f (rfl : f y = f y)) ↔
-      Surjective (HomotopyGroup.map (N := N) g (rfl : g y = g y)) := by
-  subst h; rfl
-
-private theorem injective_homotopyGroupMap_congr {Y Z : Type*} [TopologicalSpace Y]
-    [TopologicalSpace Z] {N : Type*} {f g : C(Y, Z)} (h : f = g) (y : Y) :
-    Injective (HomotopyGroup.map (N := N) f (rfl : f y = f y)) ↔
-      Injective (HomotopyGroup.map (N := N) g (rfl : g y = g y)) := by
-  subst h; rfl
 
 variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
@@ -196,27 +233,18 @@ private structure SublevelBandConnected (F : X → ℝ) (n : ℕ) (a b : ℝ) (h
 omit [T2Space X] in
 private theorem SublevelBandConnected.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m ≤ b}
     (h₁ : SublevelBandConnected F n a m ham) (h₂ : SublevelBandConnected F n m b hmb) :
-    SublevelBandConnected F n a b (ham.trans hmb) where
-  exists_joined hn y := by
-    obtain ⟨z, hz⟩ := h₂.exists_joined hn y
-    obtain ⟨x, hx⟩ := h₁.exists_joined hn z
-    exact ⟨x, (hx.map (ContinuousMap.inclusion (sublevel_mono F hmb)).continuous).trans hz⟩
-  surjective {k} hk x := by
-    have hcomp :
-        HomotopyGroup.map (N := Fin k) (ContinuousMap.inclusion (sublevel_mono F hmb)) rfl ∘
-          HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F ham))
-            (rfl : _ = ContinuousMap.inclusion (sublevel_mono F ham) x) =
-        HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F (ham.trans hmb))) rfl :=
-      HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.ext fun _ ↦ rfl) rfl rfl rfl
-    exact hcomp ▸ (h₂.surjective hk _).comp (h₁.surjective hk x)
-  injective {k} hk x := by
-    have hcomp :
-        HomotopyGroup.map (N := Fin k) (ContinuousMap.inclusion (sublevel_mono F hmb)) rfl ∘
-          HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F ham))
-            (rfl : _ = ContinuousMap.inclusion (sublevel_mono F ham) x) =
-        HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F (ham.trans hmb))) rfl :=
-      HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.ext fun _ ↦ rfl) rfl rfl rfl
-    exact hcomp ▸ (h₂.injective hk _).comp (h₁.injective hk x)
+    SublevelBandConnected F n a b (ham.trans hmb) := by
+  have hcomp (k : ℕ) (x : {x | F x ≤ a}) :
+      HomotopyGroup.map (N := Fin k) (ContinuousMap.inclusion (sublevel_mono F hmb)) rfl ∘
+        HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F ham))
+          (rfl : _ = ContinuousMap.inclusion (sublevel_mono F ham) x) =
+      HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F (ham.trans hmb))) rfl :=
+    HomotopyGroup.map_comp_map_of_comp_eq (ContinuousMap.ext fun _ ↦ rfl) rfl rfl rfl
+  refine ⟨fun hn y ↦ ?_, fun hk x ↦ hcomp _ x ▸ (h₂.surjective hk _).comp (h₁.surjective hk x),
+    fun hk x ↦ hcomp _ x ▸ (h₂.injective hk _).comp (h₁.injective hk x)⟩
+  obtain ⟨z, hz⟩ := h₂.exists_joined hn y
+  obtain ⟨x, hx⟩ := h₁.exists_joined hn z
+  exact ⟨x, (hx.map (ContinuousMap.inclusion (sublevel_mono F hmb)).continuous).trans hz⟩
 
 private theorem sublevelBandConnected_of_isOpenEmbedding (hj : IsOpenEmbedding j)
     (hF : Continuous F) (hf : IsMorse I (F ∘ j)) {a b : ℝ} (hab : a ≤ b)
@@ -225,47 +253,25 @@ private theorem sublevelBandConnected_of_isOpenEmbedding (hj : IsOpenEmbedding j
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc a b,
       n ≤ manifoldMorseIndex I (F ∘ j) p) :
     SublevelBandConnected F n a b hab := by
-  refine hf.sublevelBand_induction hj hF hab hcompact hA ha hb
-    (P := SublevelBandConnected F n) (fun {s t} hst _ _ hcpt hAs hcrit ↦ ?_)
-    (fun {c δ} hδ hδa hδb hcpt hAc ↦ ?_) (fun hsm hmt _ _ h₁ h₂ ↦ h₁.trans h₂)
-  · obtain ⟨r, hri, ⟨G⟩⟩ := exists_sublevelDeformation_of_isOpenEmbedding hj hF hf.contMDiff hst
-      hcpt (fun p hsp hpt hp ↦ hcrit p (mem_criticalPoints_iff_mfderiv_eq_zero.2 hp) ⟨hsp, hpt⟩)
-      hAs
-    rw [sublevelInclusion_eq_inclusion] at hri G
-    have he := (homotopyEquivOfDeformation (ContinuousMap.inclusion (sublevel_mono F hst)) r hri
-      G).isWeakHomotopyEquivalence
+  refine hf.sublevelBand_induction hj hF hab hcompact hA ha hb hindex
+    (P := SublevelBandConnected F n) (fun hst r hri G ↦ ?_)
+    (fun {c ε} hε C' _ _ hC' hempty r hri G ↦ ?_) (fun _ _ h₁ h₂ ↦ h₁.trans h₂)
+  · have he := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction
+        (ContinuousMap.inclusion (sublevel_mono F hst)) r hri
+        ⟨G.toHomotopy⟩).isWeakHomotopyEquivalence
     exact ⟨fun _ ↦ he.exists_joined, fun _ x ↦ (he.bijective _ x).surjective,
       fun _ x ↦ (he.bijective _ x).injective⟩
-  · obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ
-      (hj.isInducing.isCompact_comp_preimage_Icc hAc hcpt)
-    have hcpt' : IsCompact (F ⁻¹' Icc (c - δ') (c + δ')) :=
-      hcpt.of_isClosed_subset (isClosed_Icc.preimage hF)
-        (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
-    obtain ⟨ε, hε, hεδ', C', _, _, hC', hcell, r, hri, ⟨G⟩⟩ :=
-      hf.exists_relCWComplex_sublevel_of_isOpenEmbedding hj hF hδ' hcpt'
-        fun x hx ↦ (hAc x hx).trans_le (by linarith)
-    have hsubε : criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (c - ε) (c + ε) ⊆ (F ∘ j) ⁻¹' {c} :=
-      fun p hp ↦ hsub ⟨hp.1, Icc_subset_Icc (by linarith) (by linarith) hp.2⟩
-    have hempty : ∀ m < n, IsEmpty (cell C' m) := fun m hm ↦
-      (hcell m).some.isEmpty_congr.2 ⟨fun ⟨⟨p, hp, hpc⟩, hpm⟩ ↦ by
-        have hpc' : F (j p) = c := hpc
-        have := hindex p ⟨hp, by
-          simp only [mem_preimage, mem_Icc, comp_apply]
-          constructor <;> linarith⟩
-        dsimp only at hpm
-        omega⟩
-    have hg := (homotopyEquivOfDeformation (ContinuousMap.inclusion hC') r hri
-      G).isWeakHomotopyEquivalence
+  · have hg := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction
+      (ContinuousMap.inclusion hC') r hri ⟨G.toHomotopy⟩).isWeakHomotopyEquivalence
     have hgf : (ContinuousMap.inclusion hC').comp (ContinuousMap.inclusion base_subset_complex) =
         (ContinuousMap.inclusion (sublevel_mono F (a := c - ε) (b := c + ε) (by linarith))).comp
           (ContinuousMap.id _) :=
       ContinuousMap.ext fun _ ↦ rfl
-    refine ⟨ε, hε, hεδ'.trans hδ'δ, hsubε,
-      ⟨fun hn ↦ exists_joined_of_isEmpty_cell_of_comp_eq hempty hn .id hg hgf,
-       fun hk ↦ surjective_homotopyGroupMap_of_isEmpty_cell_of_comp_eq hempty
-         (by simpa using hk) .id hg hgf,
-       fun hk ↦ injective_homotopyGroupMap_of_isEmpty_cell_of_comp_eq hempty
-         (by simpa using hk) .id hg hgf⟩⟩
+    exact ⟨fun hn ↦ exists_joined_of_isEmpty_cell_of_comp_eq hempty hn .id hg hgf,
+      fun hk ↦ surjective_homotopyGroupMap_of_isEmpty_cell_of_comp_eq hempty
+        (by simpa using hk) .id hg hgf,
+      fun hk ↦ injective_homotopyGroupMap_of_isEmpty_cell_of_comp_eq hempty
+        (by simpa using hk) .id hg hgf⟩
 
 /-- **Path connectivity across a Morse band with indices at least `1`.** Across a compact band
 `F⁻¹[a, b]` between regular values of `F ∘ j` with `F < a` outside `range j`, if `0 < n` and every
@@ -295,20 +301,11 @@ theorem IsMorse.surjective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding
     (hN : Nat.card N < n) (x : {x | F x ≤ a}) :
     Surjective (HomotopyGroup.map (N := N) (sublevelInclusion F a b hab)
       (rfl : sublevelInclusion F a b hab x = sublevelInclusion F a b hab x)) := by
-  rw [surjective_homotopyGroupMap_congr (sublevelInclusion_eq_inclusion F hab)]
-  let e := Finite.equivFin N
-  have hsurj := (sublevelBandConnected_of_isOpenEmbedding hj hF hf hab hcompact hA ha hb
-    hindex).surjective hN x
-  have hmap : HomotopyGroup.map (N := N) (ContinuousMap.inclusion (sublevel_mono F hab))
-      (rfl : ContinuousMap.inclusion (sublevel_mono F hab) x =
-        ContinuousMap.inclusion (sublevel_mono F hab) x) =
-      (HomotopyGroup.congrEquiv e).symm ∘
-        HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F hab)) rfl ∘
-          HomotopyGroup.congrEquiv e := by
-    funext α
-    simp
-  rw [hmap]
-  exact (Equiv.surjective _).comp (hsurj.comp (Equiv.surjective _))
+  rw [HomotopyGroup.surjective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl,
+    ← HomotopyGroup.congrEquiv_symm_comp_map_comp_congrEquiv _ rfl (Finite.equivFin N)]
+  exact (Equiv.surjective _).comp
+    (((sublevelBandConnected_of_isOpenEmbedding hj hF hf hab hcompact hA ha hb
+      hindex).surjective hN x).comp (Equiv.surjective _))
 
 /-- **Injectivity on `π_k` for `k + 1 < n` across a Morse band.** Across a compact band `F⁻¹[a, b]`
 between regular values of `F ∘ j` with `F < a` outside `range j`, if every critical point in the
@@ -323,20 +320,11 @@ theorem IsMorse.injective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding
     (hN : Nat.card N + 1 < n) (x : {x | F x ≤ a}) :
     Injective (HomotopyGroup.map (N := N) (sublevelInclusion F a b hab)
       (rfl : sublevelInclusion F a b hab x = sublevelInclusion F a b hab x)) := by
-  rw [injective_homotopyGroupMap_congr (sublevelInclusion_eq_inclusion F hab)]
-  let e := Finite.equivFin N
-  have hinj := (sublevelBandConnected_of_isOpenEmbedding hj hF hf hab hcompact hA ha hb
-    hindex).injective hN x
-  have hmap : HomotopyGroup.map (N := N) (ContinuousMap.inclusion (sublevel_mono F hab))
-      (rfl : ContinuousMap.inclusion (sublevel_mono F hab) x =
-        ContinuousMap.inclusion (sublevel_mono F hab) x) =
-      (HomotopyGroup.congrEquiv e).symm ∘
-        HomotopyGroup.map (ContinuousMap.inclusion (sublevel_mono F hab)) rfl ∘
-          HomotopyGroup.congrEquiv e := by
-    funext α
-    simp
-  rw [hmap]
-  exact (Equiv.injective _).comp (hinj.comp (Equiv.injective _))
+  rw [HomotopyGroup.injective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl,
+    ← HomotopyGroup.congrEquiv_symm_comp_map_comp_congrEquiv _ rfl (Finite.equivFin N)]
+  exact (Equiv.injective _).comp
+    (((sublevelBandConnected_of_isOpenEmbedding hj hF hf hab hcompact hA ha hb
+      hindex).injective hN x).comp (Equiv.injective _))
 
 /-- **Bijectivity on `π_k` for `k + 1 < n` across a Morse band.** -/
 theorem IsMorse.bijective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding
@@ -366,10 +354,10 @@ theorem IsMorse.subsingleton_relHomotopyGroup_sublevelPair_of_isOpenEmbedding
     (hN : Nat.card N + 1 < n) (x : {x | F x ≤ a}) :
     Subsingleton (RelHomotopyGroup N ⟨sublevelPair F hab, x⟩) :=
   RelHomotopyGroup.subsingleton_of_injective_of_surjective
-    ((injective_homotopyGroupMap_congr (sublevelInclusion_eq_inclusion F hab) x).1
+    ((HomotopyGroup.injective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl).1
       (hf.injective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcompact hA ha
         hb hindex hN x))
-    ((surjective_homotopyGroupMap_congr (sublevelInclusion_eq_inclusion F hab) x).1
+    ((HomotopyGroup.surjective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl).1
       (hf.surjective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcompact hA ha
         hb hindex (by rw [_root_.Finite.card_option]; exact hN) x))
 
@@ -449,16 +437,12 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding (hj : Is
     (R : A_cat) {k : ℕ} (hk : k < n) :
     IsZero ((sublevelPair F hab).singularHomology R k) := by
   revert k
-  refine hf.sublevelBand_induction hj hF hab hcompact hA ha hb
+  refine hf.sublevelBand_induction hj hF hab hcompact hA ha hb hindex
     (P := fun s t hst ↦ ∀ {k : ℕ}, k < n → IsZero ((sublevelPair F hst).singularHomology R k))
-    (fun {s t} hst _ _ hcpt hAs hcrit {k} _ ↦ ?_)
-    (fun {c δ} hδ hδa hδb hcpt hAc ↦ ?_)
-    (fun {s m t} hsm hmt _ _ h₁ h₂ {k} hk ↦ ?_)
-  · obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevelDeformation_of_isOpenEmbedding hj hF hf.contMDiff hst
-      hcpt (fun p hsp hpt hp ↦ hcrit p (mem_criticalPoints_iff_mfderiv_eq_zero.2 hp) ⟨hsp, hpt⟩)
-      hAs
-    rw [sublevelInclusion_eq_inclusion] at G
-    refine TopPair.isZero_singularHomology_of_homotopy (f := TopPair.ofInclusionMap
+    (fun {_ _} hst r _ G {k} _ ↦ ?_)
+    (fun {_ _} _ C' _ _ hC' hempty r _ G {k} hk ↦ ?_)
+    (fun {_ _ _} hsm hmt h₁ h₂ {k} hk ↦ ?_)
+  · refine TopPair.isZero_singularHomology_of_homotopy (f := TopPair.ofInclusionMap
         (X := TopCat.of X) (sublevel_mono F hst) (sublevel_mono F hst)
         ((ContinuousMap.inclusion (sublevel_mono F hst)).comp r) fun x _ ↦ (r x).2)
       ?_ (TopCat.ofHom r) (by ext x; exact (TopPair.ofInclusionMap_fst_apply
@@ -468,25 +452,7 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_isOpenEmbedding (hj : Is
     have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
     rw [h]
     exact hx
-  · obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ
-      (hj.isInducing.isCompact_comp_preimage_Icc hAc hcpt)
-    have hcpt' : IsCompact (F ⁻¹' Icc (c - δ') (c + δ')) :=
-      hcpt.of_isClosed_subset (isClosed_Icc.preimage hF)
-        (preimage_mono (Icc_subset_Icc (by linarith) (by linarith)))
-    obtain ⟨ε, hε, hεδ', C', _, _, hC', hcell, r, -, ⟨G⟩⟩ :=
-      hf.exists_relCWComplex_sublevel_of_isOpenEmbedding hj hF hδ' hcpt'
-        fun x hx ↦ (hAc x hx).trans_le (by linarith)
-    have hsubε : criticalPoints I (F ∘ j) ∩ (F ∘ j) ⁻¹' Icc (c - ε) (c + ε) ⊆ (F ∘ j) ⁻¹' {c} :=
-      fun p hp ↦ hsub ⟨hp.1, Icc_subset_Icc (by linarith) (by linarith) hp.2⟩
-    refine ⟨ε, hε, hεδ'.trans hδ'δ, hsubε, fun {k} hk ↦ ?_⟩
-    have : IsEmpty (cell C' k) := (hcell k).some.isEmpty_congr.2
-      ⟨fun ⟨⟨p, hp, hpc⟩, hpk⟩ ↦ by
-        have hpc' : F (j p) = c := hpc
-        have := hindex p ⟨hp, by
-          simp only [mem_preimage, mem_Icc, comp_apply]
-          constructor <;> linarith⟩
-        dsimp only at hpk
-        omega⟩
+  · have : IsEmpty (cell C' k) := hempty k hk
     have : ∀ m, HasExactColimitsOfShape (Discrete (cell C' m)) A_cat := fun m ↦
       have : _root_.Finite (cell C' m) := FiniteType.finite_cell m
       @hasExactColimitsOfShape_discrete_finite A_cat _ _ Abelian.hasFiniteBiproducts _ _
@@ -532,7 +498,7 @@ theorem IsMorse.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding (hj : IsO
       R (by omega))
 
 /-- **Relative singular homology vanishes below the Morse index bound on a manifold.** -/
-theorem IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex {f : M → ℝ}
+theorem IsMorse.isZero_singularHomology_sublevelPair {f : M → ℝ}
     (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
     (hindex : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, n ≤ manifoldMorseIndex I f p)
@@ -542,7 +508,7 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex {f
     hcompact (fun _ h ↦ (h (mem_range_self _)).elim) ha hb hindex R hk
 
 /-- **Epimorphism on `H_k` for `k < n` across a Morse band on a manifold.** -/
-theorem IsMorse.epi_homologyMap_sublevelInclusion_of_le_manifoldMorseIndex {f : M → ℝ}
+theorem IsMorse.epi_homologyMap_sublevelInclusion {f : M → ℝ}
     (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
     (hindex : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, n ≤ manifoldMorseIndex I f p)
@@ -553,7 +519,7 @@ theorem IsMorse.epi_homologyMap_sublevelInclusion_of_le_manifoldMorseIndex {f : 
     (fun _ h ↦ (h (mem_range_self _)).elim) ha hb hindex R hk
 
 /-- **Isomorphism on `H_k` for `k + 1 < n` across a Morse band on a manifold.** -/
-theorem IsMorse.isIso_homologyMap_sublevelInclusion_of_le_manifoldMorseIndex {f : M → ℝ}
+theorem IsMorse.isIso_homologyMap_sublevelInclusion {f : M → ℝ}
     (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
     (hindex : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, n ≤ manifoldMorseIndex I f p)
@@ -571,6 +537,13 @@ variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X] [T2Space X]
   {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
+
+omit [T2Space X] in
+/-- When `F x ≤ b` for every `x : X`, the sublevel `{x | F x ≤ b}` is homeomorphic to `X` via
+`Subtype.val`. -/
+private def sublevelHomeoUniv {F : X → ℝ} {b : ℝ} (hFb : ∀ x, F x ≤ b) :
+    {x | F x ≤ b} ≃ₜ X :=
+  (Homeomorph.setCongr (eq_univ_of_forall hFb)).trans (Homeomorph.Set.univ X)
 
 omit [FiniteDimensional ℝ E] [T2Space M] [T2Space X] in
 /-- Choose a regular value `0 < a < δ` of `F ∘ j` and an upper bound `b > F` so `{F ≤ a} ⊆ W` and
@@ -631,8 +604,7 @@ theorem IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
       ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) := by
   obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let eb : {x | F x ≤ b} ≃ₜ X :=
-    (Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hFb x).le)).trans (Homeomorph.Set.univ X)
+  let eb := sublevelHomeoUniv fun x ↦ (hFb x).le
   let α : C(A, {x | F x ≤ a}) := ContinuousMap.inclusion hAa
   let β : C({x | F x ≤ a}, W) := ContinuousMap.inclusion haW
   let γ : C(W, X) := ⟨Subtype.val, continuous_subtype_val⟩
@@ -643,7 +615,7 @@ theorem IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
     rw [HomotopyGroup.map_comp_map, HomotopyGroup.map_comp_map]
     exact funext (HomotopyGroup.map_congr (ContinuousMap.ext fun _ ↦ rfl) _ _)
   have hsurj_inc : Surjective (HomotopyGroup.map (N := N) inc (rfl : inc (α a₀) = inc (α a₀))) :=
-    (surjective_homotopyGroupMap_congr (sublevelInclusion_eq_inclusion F hab) (α a₀)).1
+    (HomotopyGroup.surjective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl).1
       (hf.surjective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt
         ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN (α a₀))
   have hsurj_γβ : Surjective (HomotopyGroup.map (N := N) γ rfl ∘
@@ -672,8 +644,7 @@ theorem IsMorse.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
       ⟨Subtype.val, continuous_subtype_val⟩ (rfl : (a₀ : X) = (a₀ : X))) := by
   obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let eb : {x | F x ≤ b} ≃ₜ X :=
-    (Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hFb x).le)).trans (Homeomorph.Set.univ X)
+  let eb := sublevelHomeoUniv fun x ↦ (hFb x).le
   let α : C(A, {x | F x ≤ a}) := ContinuousMap.inclusion hAa
   let β : C({x | F x ≤ a}, W) := ContinuousMap.inclusion haW
   let inc : C({x | F x ≤ a}, {x | F x ≤ b}) := ContinuousMap.inclusion (sublevel_mono F hab)
@@ -684,7 +655,7 @@ theorem IsMorse.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding
   have hinj_α : Injective (HomotopyGroup.map (N := N) α (rfl : α a₀ = α a₀)) :=
     (hβα.symm ▸ (hW.map_bijective N a₀).injective).of_comp
   have hinj_inc : Injective (HomotopyGroup.map (N := N) inc (rfl : inc (α a₀) = inc (α a₀))) :=
-    (injective_homotopyGroupMap_congr (sublevelInclusion_eq_inclusion F hab) (α a₀)).1
+    (HomotopyGroup.injective_map_congr (sublevelInclusion_eq_inclusion F hab) rfl rfl).1
       (hf.injective_homotopyGroupMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt
         ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hN (α a₀))
   have hinj_rest : Injective (HomotopyGroup.map (N := N) eb.toHomotopyEquiv.toFun rfl ∘
@@ -721,26 +692,10 @@ theorem IsMorse.joined_subtypeVal_iff_of_isOpenEmbedding (hj : IsOpenEmbedding j
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j), n ≤ manifoldMorseIndex I (F ∘ j) p)
     {hAW : A ⊆ W} (hW : (ContinuousMap.inclusion hAW).IsWeakHomotopyEquivalence)
     (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hn : 1 < n) {a₀ a₁ : A} :
-    Joined (a₀ : X) (a₁ : X) ↔ Joined a₀ a₁ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map continuous_subtype_val⟩
-  let ι : C(A, X) := ⟨Subtype.val, continuous_subtype_val⟩
-  let φA := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := A) (Fin 0) a₀
-  let φX := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := X) (Fin 0) (a₀ : X)
-  let pt (c : A) : π_ 0 A a₀ := ⟦(genLoopHomeoOfIsEmpty (Fin 0) a₀).symm c⟧
-  have hpt (c : A) : ((genLoopHomeoOfIsEmpty (Fin 0) a₀).symm c) 0 = c := by
-    rw [← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply]
-  have hφA (c : A) : φA (pt c) = ZerothHomotopy.mk c := by
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hpt]
-  have hmap (c : A) : φX (HomotopyGroup.map ι rfl (pt c)) = ZerothHomotopy.mk (c : X) := by
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, hpt]
-    rfl
-  have hinj := hf.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding (N := Fin 0) hj hF hbdd
-    hA hAF hcompact hindex hW hδ (by simpa using hn) a₀
-  have h₀₁ : HomotopyGroup.map ι rfl (pt a₀) = HomotopyGroup.map ι rfl (pt a₁) :=
-    φX.injective <| by rw [hmap, hmap]; exact ZerothHomotopy.sound h.somePath
-  have := congrArg φA (hinj h₀₁)
-  rw [hφA, hφA] at this
-  exact Quotient.exact this
+    Joined (a₀ : X) (a₁ : X) ↔ Joined a₀ a₁ :=
+  ContinuousMap.joined_iff_of_injective_homotopyGroupMap ⟨Subtype.val, continuous_subtype_val⟩
+    (hf.injective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding (N := Fin 0) hj hF hbdd hA hAF
+      hcompact hindex hW hδ (by simpa using hn) a₀)
 
 /-- **Relative homotopy vanishing `π_{k+1}(X, A, a₀) = 0` for `k + 1 < n` on a compactified
 pair.** -/
@@ -762,46 +717,43 @@ section Homology
 
 variable {A_cat : Type v} [Category.{w} A_cat] [Abelian A_cat] [HasCoproducts.{u} A_cat]
 
-/-- **Epimorphism `H_k(A; R) ⟶ H_k(X; R)` for `k < n` on a compactified pair.** -/
+/-- **Epimorphism `H_k(A; R) ⟶ H_k(X; R)` for `k < n` on a compactified pair.** If `A ↪ W` induces
+a singular homology isomorphism in degree `k` on a set `W` containing a positive sublevel `{F ≤ δ}`,
+then `A ↪ X` induces an epimorphism `H_k(A; R) ⟶ H_k(X; R)` for `k < n`. -/
 theorem IsMorse.epi_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbedding j)
     (hF : Continuous F) (hf : IsMorse I (F ∘ j)) (hbdd : BddAbove (range F))
     (hA : ∀ x ∉ range j, F x ≤ 0) (hAF : ∀ x ∈ A, F x ≤ 0)
     (hcompact : ∀ a b, 0 < a → a ≤ b → IsCompact (F ⁻¹' Icc a b))
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j), n ≤ manifoldMorseIndex I (F ∘ j) p)
-    (R : A_cat) {hAW : A ⊆ W}
-    (hW : ∀ m, IsIso (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (ContinuousMap.inclusion hAW))) R m))
-    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) {k : ℕ} (hk : k < n) :
+    (R : A_cat) {k : ℕ} {hAW : A ⊆ W}
+    (hW : IsIso (SSet.homologyMap (TopCat.toSSet.map
+      (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
+    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k < n) :
     Epi (SSet.homologyMap (TopCat.toSSet.map
       (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)))) R k) := by
-  obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
+  obtain ⟨a, b, hab, -, -, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let eb : {x | F x ≤ b} ≃ₜ X :=
-    (Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hFb x).le)).trans (Homeomorph.Set.univ X)
+  let ebIso := TopCat.isoOfHomeo (X := TopCat.of ↥{x | F x ≤ b}) (Y := TopCat.of X)
+    (sublevelHomeoUniv fun x ↦ (hFb x).le)
   let H := (AlgebraicTopology.singularHomologyFunctor A_cat k).obj R
   let β : TopCat.of ↥{x | F x ≤ a} ⟶ TopCat.of W := TopCat.ofHom (ContinuousMap.inclusion haW)
   let γ : TopCat.of W ⟶ TopCat.of X := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
   let iAW : TopCat.of A ⟶ TopCat.of W := TopCat.ofHom (ContinuousMap.inclusion hAW)
-  have hepi_sub : Epi (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) := by
+  have : Epi (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) := by
     rw [singularHomologyFunctor_obj_map]
     exact hf.epi_homologyMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt ha_reg hb_reg
       (fun p hp ↦ hindex p hp.1) R hk
-  have hiso_eb : IsIso (H.map (TopCat.ofHom eb.toHomotopyEquiv.toFun)) := by
-    have := (eb.toHomotopyEquiv.singularHomologyIso R k).isIso_hom
-    rwa [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-  have hβγ : β ≫ γ = TopCat.ofHom (sublevelInclusion F a b hab) ≫
-      TopCat.ofHom eb.toHomotopyEquiv.toFun := by
-    rw [sublevelInclusion_eq_inclusion]
+  have hβγ : β ≫ γ = TopCat.ofHom (sublevelInclusion F a b hab) ≫ ebIso.hom := by
+    dsimp only [ebIso]
+    rw [sublevelInclusion_eq_inclusion, TopCat.isoOfHomeo_hom]
     ext x
     rfl
-  have hepi_βγ : Epi (H.map β ≫ H.map γ) := by
+  have : Epi (H.map β ≫ H.map γ) := by
     rw [← H.map_comp, hβγ, H.map_comp]
-    exact epi_comp (H.map (TopCat.ofHom (sublevelInclusion F a b hab)))
-      (H.map (TopCat.ofHom eb.toHomotopyEquiv.toFun))
+    exact epi_comp (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) (H.map ebIso.hom)
   have : Epi (H.map γ) := epi_of_epi (H.map β) (H.map γ)
   have : IsIso (H.map iAW) := by
-    rw [singularHomologyFunctor_obj_map]
-    exact hW k
+    rwa [singularHomologyFunctor_obj_map]
   have hcomp : iAW ≫ γ = TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)) := by
     ext x
     rfl
@@ -810,22 +762,24 @@ theorem IsMorse.epi_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbedd
   dsimp only [H] at hepi
   rwa [singularHomologyFunctor_obj_map] at hepi
 
-/-- **Monomorphism `H_k(A; R) ⟶ H_k(X; R)` for `k + 1 < n` on a compactified pair.** -/
+/-- **Monomorphism `H_k(A; R) ⟶ H_k(X; R)` for `k + 1 < n` on a compactified pair.** If `A ↪ W`
+induces a singular homology isomorphism in degree `k` on a set `W` containing a positive sublevel
+`{F ≤ δ}`, then `A ↪ X` induces a monomorphism `H_k(A; R) ⟶ H_k(X; R)` for `k + 1 < n`. -/
 theorem IsMorse.mono_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbedding j)
     (hF : Continuous F) (hf : IsMorse I (F ∘ j)) (hbdd : BddAbove (range F))
     (hA : ∀ x ∉ range j, F x ≤ 0) (hAF : ∀ x ∈ A, F x ≤ 0)
     (hcompact : ∀ a b, 0 < a → a ≤ b → IsCompact (F ⁻¹' Icc a b))
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j), n ≤ manifoldMorseIndex I (F ∘ j) p)
-    (R : A_cat) {hAW : A ⊆ W}
-    (hW : ∀ m, IsIso (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (ContinuousMap.inclusion hAW))) R m))
-    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) {k : ℕ} (hk : k + 1 < n) :
+    (R : A_cat) {k : ℕ} {hAW : A ⊆ W}
+    (hW : IsIso (SSet.homologyMap (TopCat.toSSet.map
+      (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
+    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k + 1 < n) :
     Mono (SSet.homologyMap (TopCat.toSSet.map
       (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)))) R k) := by
   obtain ⟨a, b, hab, -, hAa, haW, hA_lt, hFb, ha_reg, hb_reg, hcpt⟩ :=
     hf.exists_sandwich_levels hj hbdd hA hAF hcompact hδ
-  let eb : {x | F x ≤ b} ≃ₜ X :=
-    (Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hFb x).le)).trans (Homeomorph.Set.univ X)
+  let ebIso := TopCat.isoOfHomeo (X := TopCat.of ↥{x | F x ≤ b}) (Y := TopCat.of X)
+    (sublevelHomeoUniv fun x ↦ (hFb x).le)
   let H := (AlgebraicTopology.singularHomologyFunctor A_cat k).obj R
   let α : TopCat.of A ⟶ TopCat.of ↥{x | F x ≤ a} := TopCat.ofHom (ContinuousMap.inclusion hAa)
   let β : TopCat.of ↥{x | F x ≤ a} ⟶ TopCat.of W := TopCat.ofHom (ContinuousMap.inclusion haW)
@@ -833,8 +787,7 @@ theorem IsMorse.mono_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbed
     ext x
     rfl
   have : IsIso (H.map (TopCat.ofHom (ContinuousMap.inclusion hAW))) := by
-    rw [singularHomologyFunctor_obj_map]
-    exact hW k
+    rwa [singularHomologyFunctor_obj_map]
   have : Mono (H.map α ≫ H.map β) := by
     rw [← H.map_comp, hαβ]
     infer_instance
@@ -843,36 +796,34 @@ theorem IsMorse.mono_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbed
     rw [singularHomologyFunctor_obj_map]
     exact hf.isIso_homologyMap_sublevelInclusion_of_isOpenEmbedding hj hF hab hcpt hA_lt ha_reg
       hb_reg (fun p hp ↦ hindex p hp.1) R hk
-  have : IsIso (H.map (TopCat.ofHom eb.toHomotopyEquiv.toFun)) := by
-    have := (eb.toHomotopyEquiv.singularHomologyIso R k).isIso_hom
-    rwa [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-  have hcomp : α ≫ TopCat.ofHom (sublevelInclusion F a b hab) ≫
-      TopCat.ofHom eb.toHomotopyEquiv.toFun =
+  have hcomp : α ≫ TopCat.ofHom (sublevelInclusion F a b hab) ≫ ebIso.hom =
       TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)) := by
-    rw [sublevelInclusion_eq_inclusion]
+    dsimp only [ebIso]
+    rw [sublevelInclusion_eq_inclusion, TopCat.isoOfHomeo_hom]
     ext x
     rfl
-  let rest := TopCat.ofHom (sublevelInclusion F a b hab) ≫ TopCat.ofHom eb.toHomotopyEquiv.toFun
+  let rest := TopCat.ofHom (sublevelInclusion F a b hab) ≫ ebIso.hom
   have : Mono (H.map rest) := by
     dsimp only [rest]
     rw [H.map_comp]
-    exact mono_comp (H.map (TopCat.ofHom (sublevelInclusion F a b hab)))
-      (H.map (TopCat.ofHom eb.toHomotopyEquiv.toFun))
+    exact mono_comp (H.map (TopCat.ofHom (sublevelInclusion F a b hab))) (H.map ebIso.hom)
   have hmono : Mono (H.map α ≫ H.map rest) := mono_comp (H.map α) (H.map rest)
   rw [← H.map_comp] at hmono
   dsimp only [rest, H] at hmono
   rwa [hcomp, singularHomologyFunctor_obj_map] at hmono
 
-/-- **Isomorphism `H_k(A; R) ≅ H_k(X; R)` for `k + 1 < n` on a compactified pair.** -/
+/-- **Isomorphism `H_k(A; R) ≅ H_k(X; R)` for `k + 1 < n` on a compactified pair.** If `A ↪ W`
+induces a singular homology isomorphism in degree `k` on a set `W` containing a positive sublevel
+`{F ≤ δ}`, then `A ↪ X` induces an isomorphism `H_k(A; R) ≅ H_k(X; R)` for `k + 1 < n`. -/
 theorem IsMorse.isIso_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbedding j)
     (hF : Continuous F) (hf : IsMorse I (F ∘ j)) (hbdd : BddAbove (range F))
     (hA : ∀ x ∉ range j, F x ≤ 0) (hAF : ∀ x ∈ A, F x ≤ 0)
     (hcompact : ∀ a b, 0 < a → a ≤ b → IsCompact (F ⁻¹' Icc a b))
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j), n ≤ manifoldMorseIndex I (F ∘ j) p)
-    (R : A_cat) {hAW : A ⊆ W}
-    (hW : ∀ m, IsIso (SSet.homologyMap (TopCat.toSSet.map
-      (TopCat.ofHom (ContinuousMap.inclusion hAW))) R m))
-    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) {k : ℕ} (hk : k + 1 < n) :
+    (R : A_cat) {k : ℕ} {hAW : A ⊆ W}
+    (hW : IsIso (SSet.homologyMap (TopCat.toSSet.map
+      (TopCat.ofHom (ContinuousMap.inclusion hAW))) R k))
+    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k + 1 < n) :
     IsIso (SSet.homologyMap (TopCat.toSSet.map
       (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(A, X)))) R k) := by
   let f : TopCat.of A ⟶ TopCat.of X := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
@@ -884,20 +835,23 @@ theorem IsMorse.isIso_homologyMap_subtypeVal_of_isOpenEmbedding (hj : IsOpenEmbe
   exact isIso_of_mono_of_epi (SSet.homologyMap (TopCat.toSSet.map f) R k)
 
 /-- **Relative singular homology vanishing `H_k(X, A; R) = 0` for `k < n` on a compactified
-pair.** -/
+pair.** If `A ↪ W` induces singular homology isomorphisms in degree `k` and (when `k > 0`) degree
+`k - 1` on a set `W` containing a positive sublevel `{F ≤ δ}`, then `H_k(X, A; R) = 0` for
+`k < n`. -/
 theorem IsMorse.isZero_singularHomology_ofSubset_of_isOpenEmbedding (hj : IsOpenEmbedding j)
     (hF : Continuous F) (hf : IsMorse I (F ∘ j)) (hbdd : BddAbove (range F))
     (hA : ∀ x ∉ range j, F x ≤ 0) (hAF : ∀ x ∈ A, F x ≤ 0)
     (hcompact : ∀ a b, 0 < a → a ≤ b → IsCompact (F ⁻¹' Icc a b))
     (hindex : ∀ p ∈ criticalPoints I (F ∘ j), n ≤ manifoldMorseIndex I (F ∘ j) p)
-    (R : A_cat) {hAW : A ⊆ W}
-    (hW : ∀ m, IsIso (SSet.homologyMap (TopCat.toSSet.map
+    (R : A_cat) {k : ℕ} {hAW : A ⊆ W}
+    (hW : ∀ m, m = k ∨ m + 1 = k → IsIso (SSet.homologyMap (TopCat.toSSet.map
       (TopCat.ofHom (ContinuousMap.inclusion hAW))) R m))
-    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) {k : ℕ} (hk : k < n) :
+    (hδ : ∃ δ > 0, {x | F x ≤ δ} ⊆ W) (hk : k < n) :
     IsZero ((TopPair.ofSubset (X := TopCat.of X) A).singularHomology R k) := by
   let P := TopPair.ofSubset (X := TopCat.of X) A
   have hepi : Epi (SSet.homologyMap (TopCat.toSSet.map P.map) R k) :=
-    hf.epi_homologyMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex R hW hδ hk
+    hf.epi_homologyMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex R
+      (hW k (.inl rfl)) hδ hk
   have hπ : P.singularHomologyπ R k = 0 :=
     (cancel_epi (SSet.homologyMap (TopCat.toSSet.map P.map) R k)).1
       ((P.homologyMap_comp_singularHomologyπ R k).trans comp_zero.symm)
@@ -905,8 +859,8 @@ theorem IsMorse.isZero_singularHomology_ofSubset_of_isOpenEmbedding (hj : IsOpen
   · exact (IsZero.iff_id_eq_zero _).2 <| (cancel_epi (P.singularHomologyπ R 0)).1 <|
       (Category.comp_id _).trans (hπ.trans comp_zero.symm)
   · have hmono : Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R k) :=
-      hf.mono_homologyMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex R hW hδ
-        hk
+      hf.mono_homologyMap_subtypeVal_of_isOpenEmbedding hj hF hbdd hA hAF hcompact hindex R
+        (hW k (.inr rfl)) hδ hk
     have hδ₀ : P.singularHomologyδ R (k + 1) k rfl = 0 :=
       (cancel_mono (SSet.homologyMap (TopCat.toSSet.map P.map) R k)).1
         ((P.singularHomologyδ_comp R (k + 1) k rfl).trans zero_comp.symm)

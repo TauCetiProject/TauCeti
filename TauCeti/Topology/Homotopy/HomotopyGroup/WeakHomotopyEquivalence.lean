@@ -29,8 +29,9 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
 * `ContinuousMap.IsWeakHomotopyEquivalence`: the predicate.
 * `ContinuousMap.IsWeakHomotopyEquivalence.map_bijective`: the induced map on the homotopy group
   indexed by any finite type of cube directions is bijective.
-* `ContinuousMap.IsWeakHomotopyEquivalence.joined_iff`: a weak homotopy equivalence is injective
-  on path components.
+* `ContinuousMap.joined_iff_of_injective_homotopyGroupMap`,
+  `ContinuousMap.IsWeakHomotopyEquivalence.joined_iff`: injectivity on `π_0` (and in particular a
+  weak homotopy equivalence) means injectivity on path components.
 * `ContinuousMap.IsWeakHomotopyEquivalence.mapOfEq_bijective`: a weak homotopy
   equivalence induces bijections of fundamental groups.
 * `ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective`: on a path-connected space it
@@ -67,6 +68,33 @@ namespace ContinuousMap
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   {f : C(X, Y)} {g : C(Y, Z)}
 
+/-- If `f : C(X, Y)` induces an injection on the zeroth homotopy set `π_N(X, a)` (for an empty
+cube-direction type `N` such as `Fin 0`), then `f a` and `f b` lie in the same path component of `Y`
+if and only if `a` and `b` lie in the same path component of `X`. -/
+theorem joined_iff_of_injective_homotopyGroupMap {N : Type*} [IsEmpty N] (f : C(X, Y)) {a b : X}
+    (h : Function.Injective (HomotopyGroup.map (N := N) f (rfl : f a = f a))) :
+    Joined (f a) (f b) ↔ Joined a b := by
+  refine ⟨fun hab_join ↦ ?_, fun hab_join ↦ hab_join.map f.continuous⟩
+  -- `π_N(X, a)` for empty `N` is the set of path components of `X`: Mathlib's bijection
+  -- `homotopyGroupEquivZerothHomotopyOfIsEmpty` sends the class of the zero-dimensional
+  -- generalized loop at `c` (the constant map `I^N → X` with value `c`) to the path component of
+  -- `c`. Postcomposing that loop with `f` gives the loop at `f c`.
+  let φX := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := X) N a
+  let φY := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := Y) N (f a)
+  let pt (c : X) : HomotopyGroup N X a := ⟦(genLoopHomeoOfIsEmpty N a).symm c⟧
+  have hpt (c : X) : ((genLoopHomeoOfIsEmpty N a).symm c) 0 = c := by
+    rw [← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply]
+  have hφX (c : X) : φX (pt c) = ZerothHomotopy.mk c := by
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hpt]
+  have hmap (c : X) : φY (HomotopyGroup.map f rfl (pt c)) = ZerothHomotopy.mk (f c) := by
+    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply,
+      hpt]
+  have hab : HomotopyGroup.map f rfl (pt a) = HomotopyGroup.map f rfl (pt b) :=
+    φY.injective <| by rw [hmap, hmap]; exact ZerothHomotopy.sound hab_join.somePath
+  have := congrArg φX (h hab)
+  rw [hφX, hφX] at this
+  exact Quotient.exact this
+
 /-- A continuous map `f : X → Y` is a **weak homotopy equivalence** if every point of `Y` is
 joined by a path to a point of the image of `f`, and `f` induces a bijection
 `π_n(X, x) → π_n(Y, f x)` for every `n` and every `x : X`.
@@ -88,39 +116,15 @@ namespace IsWeakHomotopyEquivalence
 type of cube directions, not only on the groups `π_n` indexed by `Fin n`. -/
 theorem map_bijective (hf : f.IsWeakHomotopyEquivalence) (N : Type*) [Finite N] (x : X) :
     Function.Bijective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) := by
-  let e := Finite.equivFin N
-  have h : HomotopyGroup.map (N := N) f (rfl : f x = f x) =
-      (HomotopyGroup.congrEquiv e).symm ∘ HomotopyGroup.map f rfl ∘ HomotopyGroup.congrEquiv e := by
-    funext a
-    simp
-  rw [h]
+  rw [← HomotopyGroup.congrEquiv_symm_comp_map_comp_congrEquiv f rfl (Finite.equivFin N)]
   exact (Equiv.bijective _).comp ((hf.bijective _ x).comp (Equiv.bijective _))
 
 /-- A weak homotopy equivalence is injective on path components: two points of `X` are joined by
 a path exactly when their images are. -/
 @[simp]
 theorem joined_iff (hf : f.IsWeakHomotopyEquivalence) {a b : X} :
-    Joined (f a) (f b) ↔ Joined a b := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map f.continuous⟩
-  -- `π_0(X, a)` is the set of path components of `X`: Mathlib's bijection
-  -- `homotopyGroupEquivZerothHomotopyOfIsEmpty` sends the class of the zero-dimensional
-  -- generalized loop at `c` (the constant map `I^0 → X` with value `c`) to the path component of
-  -- `c`. Postcomposing that loop with `f` gives the loop at `f c`.
-  let φX := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := X) (Fin 0) a
-  let φY := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := Y) (Fin 0) (f a)
-  let pt (c : X) : π_ 0 X a := ⟦(genLoopHomeoOfIsEmpty (Fin 0) a).symm c⟧
-  have hpt (c : X) : ((genLoopHomeoOfIsEmpty (Fin 0) a).symm c) 0 = c := by
-    rw [← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply]
-  have hφX (c : X) : φX (pt c) = ZerothHomotopy.mk c := by
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hpt]
-  have hmap (c : X) : φY (HomotopyGroup.map f rfl (pt c)) = ZerothHomotopy.mk (f c) := by
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply,
-      hpt]
-  have hab : HomotopyGroup.map f rfl (pt a) = HomotopyGroup.map f rfl (pt b) :=
-    φY.injective <| by rw [hmap, hmap]; exact ZerothHomotopy.sound h.somePath
-  have := congrArg φX ((hf.bijective 0 a).injective hab)
-  rw [hφX, hφX] at this
-  exact Quotient.exact this
+    Joined (f a) (f b) ↔ Joined a b :=
+  f.joined_iff_of_injective_homotopyGroupMap (hf.bijective 0 a).injective
 
 /-- A map homotopic to a weak homotopy equivalence is a weak homotopy equivalence. -/
 theorem of_homotopic {f₀ f₁ : C(X, Y)} (hf : f₀.IsWeakHomotopyEquivalence) (h : f₀.Homotopic f₁) :
@@ -274,11 +278,8 @@ theorem surjective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
     rw [HomotopyGroup.map_comp_map_of_comp_eq hi rfl rfl hjx,
       HomotopyGroup.map_comp_map_of_comp_eq rfl hjx rfl hjx]
   -- The map induced by `j` lands in `π_N(Y', g (i x))` once composed along the square.
-  have hbase : ∀ {z : Y'} (h : j (f x) = z), Function.Surjective (HomotopyGroup.map (N := N) j h) ↔
-      Function.Surjective (HomotopyGroup.map (N := N) j (rfl : j (f x) = j (f x))) := by
-    rintro _ rfl
-    rfl
-  rw [← hbase hjx, ← Function.Surjective.of_comp_iff _ (hf.map_bijective N x).surjective, ← hsq,
+  rw [← HomotopyGroup.surjective_map_congr (rfl : j = j) hjx rfl,
+    ← Function.Surjective.of_comp_iff _ (hf.map_bijective N x).surjective, ← hsq,
     Function.Surjective.of_comp_iff' (hg.map_bijective N (i x))]
 
 /-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, the map
@@ -295,11 +296,8 @@ theorem injective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
     rw [HomotopyGroup.map_comp_map_of_comp_eq hi rfl rfl hjx,
       HomotopyGroup.map_comp_map_of_comp_eq rfl hjx rfl hjx]
   -- The map induced by `j` lands in `π_N(Y', g (i x))` once composed along the square.
-  have hbase : ∀ {z : Y'} (h : j (f x) = z), Function.Injective (HomotopyGroup.map (N := N) j h) ↔
-      Function.Injective (HomotopyGroup.map (N := N) j (rfl : j (f x) = j (f x))) := by
-    rintro _ rfl
-    rfl
-  rw [← hbase hjx, ← Function.Injective.of_comp_iff' _ (hf.map_bijective N x), ← hsq,
+  rw [← HomotopyGroup.injective_map_congr (rfl : j = j) hjx rfl,
+    ← Function.Injective.of_comp_iff' _ (hf.map_bijective N x), ← hsq,
     Function.Injective.of_comp_iff (hg.map_bijective N (i x)).injective]
 
 /-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, `j` induces
