@@ -41,6 +41,8 @@ calculation supplies reusable chain rules for functions along translated exponen
   translation at zero.
 * `HasMFDerivAt.hasDerivAt_comp_mulInvariantExp_smul_mul_zero`: the chain rule after right
   translation at zero.
+* `LeftInvariantDerivation.hasDerivAt_apply_mul_lieExp_smul`: a left-invariant derivation `X`
+  is the derivative along the exponential lines `t ↦ g * lieExp (t • X)` it generates.
 
 -/
 
@@ -345,3 +347,57 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zer
         (t • X, t • Y)) =
       (show E from t • (X + Y))
   exact hmul_model
+
+/-! ### Derivatives along exponential lines of left-invariant derivations -/
+
+section LieExp
+
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [IsManifold I 1 G] [T2Space G]
+  [BoundarylessManifold I G]
+
+namespace LeftInvariantDerivation
+
+/-- At time zero, a left-invariant derivation is the derivative along its exponential line
+through `g`. -/
+private theorem hasDerivAt_apply_mul_lieExp_smul_zero (X : LeftInvariantDerivation I G)
+    (f : C^∞⟮I, G; ℝ⟯) (g : G) :
+    HasDerivAt (fun t : ℝ ↦ f (g * lieExp (t • X))) (X f g) 0 := by
+  set v := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint X
+  have hX : X = tangentToLeftInvariantDerivation v := by
+    rw [← leftInvariantDerivationEquivGroupLieAlgebra_symm_apply
+      BoundarylessManifold.isInteriorPoint, LinearEquiv.symm_apply_apply]
+  have hf : HasMFDerivAt I 𝓘(ℝ, ℝ) f g (mfderiv I 𝓘(ℝ, ℝ) f g) :=
+    (f.contMDiff.mdifferentiable (by simp)).mdifferentiableAt.hasMFDerivAt
+  have hexp (t : ℝ) : lieExp (t • X) = mulInvariantExp (t • v) := by
+    rw [lieExp_eq_mulInvariantExp, map_smul]
+  simp only [hexp]
+  convert hf.hasDerivAt_comp_mul_mulInvariantExp_smul_zero v using 1
+  rw [hX, tangentToLeftInvariantDerivation_apply]
+  -- `mvfderiv` into `ℝ` is `mfderiv` followed by the identification of a tangent space of `ℝ`
+  -- with `ℝ`, which is the identity.
+  rfl
+
+/-- **A left-invariant derivation differentiates along its exponential lines.** The derivative of
+`t ↦ f (g * lieExp (t • X))` at every time `t` is `X f` at the current point. -/
+theorem hasDerivAt_apply_mul_lieExp_smul (X : LeftInvariantDerivation I G) (f : C^∞⟮I, G; ℝ⟯)
+    (g : G) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ f (g * lieExp (s • X))) (X f (g * lieExp (t • X))) t := by
+  have h0 := hasDerivAt_apply_mul_lieExp_smul_zero X f (g * lieExp (t • X))
+  rw [← sub_self t] at h0
+  have h := HasDerivAt.comp_sub_const t t h0
+  have hfun : (fun s : ℝ ↦ f (g * lieExp (t • X) * lieExp ((s - t) • X))) =
+      fun s ↦ f (g * lieExp (s • X)) := by
+    funext s
+    rw [mul_assoc, ← lieExp_add_smul, add_sub_cancel]
+  simpa only [hfun] using h
+
+/-- The derivative of `f` along the exponential lines of `X` is `X f` along the same lines. -/
+theorem deriv_apply_mul_lieExp_smul (X : LeftInvariantDerivation I G) (f : C^∞⟮I, G; ℝ⟯)
+    (g : G) :
+    deriv (fun s : ℝ ↦ f (g * lieExp (s • X))) = fun t ↦ X f (g * lieExp (t • X)) :=
+  funext fun t ↦ (hasDerivAt_apply_mul_lieExp_smul X f g t).deriv
+
+end LeftInvariantDerivation
+
+end LieExp

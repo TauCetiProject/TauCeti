@@ -17,7 +17,8 @@ the module triangularizable, and its weights are exactly the weights of the basi
 (`Module.Basis.genWeightSpace_ne_bot_iff_of_weight_basis`). A finite such
 basis expresses the formal character as the sum of the corresponding group-algebra basis
 elements, counting repeated weights with their multiplicities. If these weights are pairwise
-distinct, each occurring weight space is a line and each weight has coefficient one.
+distinct, each occurring weight space is a line and each weight has coefficient one. In every
+case the support of the character, the weight diagram, is the set of basis weights.
 
 These results connect explicit diagonal actions, such as the exterior model of spinors, to
 `TauCeti.formalCharacter` without requiring algebraic closedness or characteristic zero.
@@ -192,5 +193,21 @@ theorem formalCharacter_eq_sum_single_of_weight_basis :
   rw [finrank_span_eq_card hlin]
   simp [Fintype.card_subtype, AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single,
     Finsupp.single_apply, eq_comm]
+
+omit [Fintype ι] in
+/-- The weight diagram of a module with a finite basis of weight vectors: the support of its
+formal character is the set of weights of the basis vectors. -/
+theorem coe_support_formalCharacter_of_weight_basis [Finite ι] :
+    letI := b.finiteDimensional_of_finite
+    letI := b.linearWeights_of_weight_basis hb
+    ((TauCeti.formalCharacter K L M).coeff.support : Set (Module.Dual K L)) = Set.range μ := by
+  let _ := b.finiteDimensional_of_finite
+  let _ := b.linearWeights_of_weight_basis hb
+  let _ := Fintype.ofFinite ι
+  classical
+  ext χ
+  rw [b.formalCharacter_eq_sum_single_of_weight_basis hb]
+  simp [AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single, Finsupp.single_apply,
+    Finset.filter_eq_empty_iff]
 
 end Module.Basis

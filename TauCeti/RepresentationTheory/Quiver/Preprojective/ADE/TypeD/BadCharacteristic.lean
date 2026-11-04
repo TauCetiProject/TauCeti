@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.CyclicQuotient
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.InducedSubgraph
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 
 /-!
 # The bad characteristic of the type-`D` cyclic quotient
@@ -79,59 +76,14 @@ variable (k : Type*) [CommRing k] {n : ℕ}
 local notation "G" => diagramGraph (DynkinType.cartanMatrix (DynkinType.D n))
 local notation "Π" => signlessPreprojectiveAlgebra k (DoubledQuiver G)
 
--- Align the neighborhood enumerations of the two existing quotient constructions.
-attribute [local instance] d4NeighborSetFintype
-
-private noncomputable def d4ForkQuotient (hn : 4 ≤ n) :
-    Π →ₐ[k] signlessPreprojectiveAlgebra k (DoubledQuiver zigzagD4Graph) :=
-  (signlessPreprojectiveAlgebraEquiv k (d4ForkEmbedding hn).isoInduceRange.symm).toAlgHom.comp
-    (signlessPreprojectiveInducedSubgraphHom k G (Set.range (d4ForkEmbedding hn)))
-
-private theorem d4ForkQuotient_arrow (hn : 4 ≤ n) {i j : Fin 4}
-    (h : zigzagD4Graph.Adj i j) :
-    d4ForkQuotient k hn
-        (signlessArrow k G (d4ForkEmbedding hn i).val (d4ForkEmbedding hn j).val) =
-      signlessArrow k zigzagD4Graph i.val j.val := by
-  classical
-  have hi : d4ForkEmbedding hn i ∈ Set.range (d4ForkEmbedding hn) := ⟨i, rfl⟩
-  have hj : d4ForkEmbedding hn j ∈ Set.range (d4ForkEmbedding hn) := ⟨j, rfl⟩
-  rw [signlessArrow_of_adj k ((d4ForkEmbedding hn).map_adj_iff.mpr h),
-    signlessArrow_of_adj k h]
-  apply (signlessPreprojectiveAlgebraEquiv k (d4ForkEmbedding hn).isoInduceRange).injective
-  simp only [d4ForkQuotient, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
-    signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
-    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
-  -- Via Equiv.ofInjective, isoInduceRange sends each vertex i to ⟨f i, ⟨i, rfl⟩⟩;
-  -- these are the same range vertices chosen by the induced-subgraph quotient above.
-  rfl
-
 /-- In characteristic two, the signless preprojective algebra of `Dₙ`, `n ≥ 4`, has a
 homogeneous element of degree four which is not a sum of commutators. -/
 theorem exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule
     [Nontrivial k] (hn : 4 ≤ n) (h2 : (2 : k) = 0) :
     ∃ z : Π, z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 4 ∧
-      z ∉ commutatorSubmodule k Π := by
-  let f := d4ForkEmbedding hn
-  let a := fun i j : Fin 4 => signlessArrow k G (f i).val (f j).val
-  let z := a 2 1 * (a 1 2 * (a 0 1 * a 1 0))
-  have ha (i j : Fin 4) : a i j ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 1 :=
-    signlessArrow_mem_signlessPreprojectiveGrade_one k _ _
-  have hz : z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 4 :=
-    mul_mem_signlessPreprojectiveGrade k _ (ha 2 1)
-      (mul_mem_signlessPreprojectiveGrade k _ (ha 1 2)
-        (mul_mem_signlessPreprojectiveGrade k _ (ha 0 1) (ha 1 0)))
-  refine ⟨z, hz, fun h => ?_⟩
-  have hmap : d4ForkQuotient k hn z = signlessWord k zigzagD4Graph [1, 2, 1, 0, 1] := by
-    simp only [z, a, f, map_mul, d4ForkQuotient_arrow k hn (by decide : zigzagD4Graph.Adj 2 1),
-      d4ForkQuotient_arrow k hn (by decide : zigzagD4Graph.Adj 1 2),
-      d4ForkQuotient_arrow k hn (by decide : zigzagD4Graph.Adj 0 1),
-      d4ForkQuotient_arrow k hn (by decide : zigzagD4Graph.Adj 1 0),
-      signlessWord_cons_cons, signlessWord_singleton,
-      signlessArrow_mul_vertexIdempotent, ↓reduceIte]
-  apply signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2
-  rw [← hmap]
-  exact map_mem_commutatorSubmodule (d4ForkQuotient k hn) h
+      z ∉ commutatorSubmodule k Π :=
+  exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule_of_d4_embedding
+    k (d4ForkEmbedding hn) h2
 
 /-- In characteristic two, the additive preprojective algebra of every orientation of `Dₙ`,
 `n ≥ 4`, has a degree-four element which is not a sum of commutators. -/
