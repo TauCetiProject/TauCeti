@@ -50,8 +50,6 @@ All declarations are in the namespace `TauCeti.Probability.IsFilteredPreBrownian
 * `riskNeutralPrice_eq_condExp_geometricBrownianMotion`,
   `callValue_eq_condExp_geometricBrownianMotion`, `putValue_eq_condExp_geometricBrownianMotion`:
   conditional prices for a stock with drift `r`.
-* `geometricBrownianMotion_eq_riskNeutral`: up to the horizon, the stock with drift `μ` is the
-  stock with drift `r` driven by the Brownian motion of the risk-neutral measure.
 * `riskNeutralPrice_eq_condExp_tilted_geometricBrownianMotion`,
   `callValue_eq_condExp_tilted_geometricBrownianMotion`,
   `putValue_eq_condExp_tilted_geometricBrownianMotion`: conditional prices under the risk-neutral
@@ -168,18 +166,6 @@ theorem putValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownianR
     (sub_nonneg.2 (NNReal.coe_le_coe.2 hut))]
 
 /-! ### Conditional prices under the risk-neutral measure -/
-
-/-- Up to the horizon `T`, the stock with drift `μ` driven by `W` is the stock with drift `r`
-driven by the Brownian motion `W_t + κ min(t, T)` of the risk-neutral measure,
-`κ = (μ - r) / σ`. -/
-theorem geometricBrownianMotion_eq_riskNeutral (s μ r : ℝ) (hσ : σ ≠ 0) {t : ℝ≥0}
-    (htT : t ≤ T) (ω : Ω) :
-    geometricBrownianMotion s μ σ W t ω = geometricBrownianMotion s r σ
-      (fun t ω ↦ W t ω - -((μ - r) / σ) * (min t T : ℝ≥0)) t ω := by
-  have hr : μ + σ * -((μ - r) / σ) = r := by
-    field_simp
-    ring
-  rw [← geometricBrownianMotion_sub_mul_min s μ σ (-((μ - r) / σ)) W htT ω, hr]
 
 /-- **Conditional risk-neutral price in the Black–Scholes market.** Let the stock `S` have drift
 `μ` and volatility `σ ≠ 0` under `P`, let `κ = (μ - r) / σ` be the market price of risk and

@@ -28,9 +28,12 @@ between categories with topologies on their arrows is continuous.
 * `Prefunctor.obj_bijective_of_comp_eq_id`: mutually inverse prefunctors are bijective on vertices.
 * `Prefunctor.comp_comp_comp_eq_id`: composing two one-sided inverse pairs of prefunctors gives a
   one-sided inverse pair.
+* `Prefunctor.cast_mapPath_eq_of_eq`: equal prefunctors have equal path maps after casting the
+  endpoints.
 * `Prefunctor.cast_mapPath_mapPath`: a prefunctor that undoes another on vertices and arrows
   undoes it on paths.
-* `Prefunctor.mapTotal`: the map induced by a prefunctor on total spaces of arrows.
+* `Prefunctor.mapTotal`: the map induced by a prefunctor on total spaces of arrows, with its
+  identity and composition laws `Prefunctor.mapTotal_id` and `Prefunctor.mapTotal_comp`.
 
 ## References
 
@@ -85,6 +88,15 @@ theorem _root_.Prefunctor.comp_comp_comp_eq_id (φ : Q ⥤q R) (ψ : R ⥤q Q) (
     (φ.comp φ').comp (ψ'.comp ψ) = Prefunctor.id Q := by
   rw [Prefunctor.comp_assoc, ← Prefunctor.comp_assoc φ' ψ' ψ, hφψ', Prefunctor.id_comp, hφψ]
 
+/-- Equal prefunctors map a path equally after casting along the induced endpoint equalities. -/
+theorem _root_.Prefunctor.cast_mapPath_eq_of_eq {φ ψ : Q ⥤q R} (h : φ = ψ)
+    {a b : Q} (p : Quiver.Path a b) :
+    (φ.mapPath p).cast
+      (congrArg (fun ξ : Q ⥤q R ↦ ξ.obj a) h)
+      (congrArg (fun ξ : Q ⥤q R ↦ ξ.obj b) h) = ψ.mapPath p := by
+  subst ψ
+  rfl
+
 /-- **A prefunctor that undoes another on vertices and arrows undoes it on paths**: pushing a path
 along `φ` and then `ψ` returns the original path once its endpoints are transported back. -/
 theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
@@ -105,10 +117,10 @@ theorem _root_.Prefunctor.cast_mapPath_mapPath (φ : Q ⥤q R) (ψ : R ⥤q Q)
 
 /-- The map on total spaces of arrows induced by a prefunctor, sending `f : a ⟶ b` to
 `φ.map f : φ.obj a ⟶ φ.obj b`. -/
-def _root_.Prefunctor.mapTotal (φ : Q ⥤q R) (f : Quiver.Total Q) : Quiver.Total R :=
+@[expose] def _root_.Prefunctor.mapTotal (φ : Q ⥤q R) (f : Quiver.Total Q) : Quiver.Total R :=
   ⟨φ.obj f.left, φ.obj f.right, φ.map f.hom⟩
 
-/-- A prefunctor sends the total arrow of `f : a ⟶ b` to that of `φ.map f`. -/
+/-- The image of a total arrow given by its components is given by their images. -/
 @[simp]
 theorem _root_.Prefunctor.mapTotal_mk (φ : Q ⥤q R) {a b : Q} (f : a ⟶ b) :
     φ.mapTotal ⟨a, b, f⟩ = ⟨φ.obj a, φ.obj b, φ.map f⟩ := (rfl)
@@ -123,11 +135,17 @@ theorem _root_.Prefunctor.mapTotal_left (φ : Q ⥤q R) (f : Quiver.Total Q) :
 theorem _root_.Prefunctor.mapTotal_right (φ : Q ⥤q R) (f : Quiver.Total Q) :
     (φ.mapTotal f).right = φ.obj f.right := (rfl)
 
+/-- The arrow underlying the image of a total arrow is the image of its arrow. -/
+@[simp]
+theorem _root_.Prefunctor.mapTotal_hom (φ : Q ⥤q R) (f : Quiver.Total Q) :
+    (φ.mapTotal f).hom = φ.map f.hom := (rfl)
+
 /-- The identity prefunctor induces the identity on total arrows. -/
 @[simp]
-theorem _root_.Prefunctor.mapTotal_id : (Prefunctor.id Q).mapTotal = id := (rfl)
+theorem _root_.Prefunctor.mapTotal_id : (𝟭q Q).mapTotal = id := (rfl)
 
 /-- A composite of prefunctors induces the composite of the maps on total arrows. -/
+@[simp]
 theorem _root_.Prefunctor.mapTotal_comp (φ : Q ⥤q R) (ψ : R ⥤q S) :
     (φ ⋙q ψ).mapTotal = ψ.mapTotal ∘ φ.mapTotal := (rfl)
 

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
-public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.Combinatorics.Quiver.Prefunctor
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
 /-!
 # Functoriality of action categories and subgroup restrictions
@@ -38,6 +38,8 @@ topological action groupoid to a saturated open set of objects.
 ## Main declarations
 
 * `CategoryTheory.ActionCategory.map`: the functor induced by an equivariant map.
+* `CategoryTheory.ActionCategory.map_id`, `CategoryTheory.ActionCategory.map_comp`: it preserves
+  identities and composites.
 * `CategoryTheory.ActionCategory.faithful_map`: it is faithful along an injective homomorphism.
 * `CategoryTheory.ActionCategory.full_map_iff`: it is full exactly when arrows between image
   points lift.
@@ -92,6 +94,19 @@ theorem back_map_obj (a : ActionCategory M X) : ((map φ f).obj a).back = f a.ba
 @[simp]
 theorem map_map_hom {a b : ActionCategory M X} (g : a ⟶ b) :
     ((map φ f).map g).hom = φ g.hom := (rfl)
+
+variable (M X) in
+/-- The identity map induces the identity functor. -/
+theorem map_id : map (MonoidHom.id M) (MulActionHom.id M : X →[M] X) = 𝟭 _ :=
+  Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ HEq.rfl
+
+/-- The functor induced by a composite of equivariant maps is the composite of the induced
+functors. -/
+theorem map_comp {P Z : Type*} [Monoid P] [MulAction P Z] {ψ : N →* P} (g : Y →ₑ[ψ] Z)
+    {χ : M →* P} [MonoidHom.CompTriple φ ψ χ] :
+    map φ f ⋙ map ψ g = map χ (g.comp f) :=
+  Functor.hext (fun _ ↦ rfl) fun _ _ h ↦
+    heq_of_eq <| Functor.Elements.hom_ext (MonoidHom.CompTriple.comp_apply ‹_› h.hom)
 
 /-- The functor induced by an equivariant map along an injective homomorphism is faithful. -/
 theorem faithful_map (hφ : Function.Injective φ) : (map φ f).Faithful where
@@ -253,9 +268,8 @@ theorem range_inclusion_total (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈
       simpa [range_inclusion_obj] using hf.1
     obtain ⟨b, rfl⟩ : r ∈ Set.range (inclusion S).obj := by
       simpa [range_inclusion_obj] using hf.2
-    refine ⟨⟨a, b, (inclusion S).preimage g⟩, ?_⟩
-    rw [Prefunctor.mapTotal_mk]
-    exact congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)
+    exact ⟨⟨a, b, (inclusion S).preimage g⟩, (Prefunctor.mapTotal_mk _ _).trans <|
+      congrArg (Quiver.Total.mk _ _) ((inclusion S).map_preimage g)⟩
 
 end Inclusion
 

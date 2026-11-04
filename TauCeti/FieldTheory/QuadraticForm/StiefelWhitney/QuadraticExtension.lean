@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.QuadraticExtension
 
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.NumberTheory.HilbertSymbol.ExtensionNorm
 
 /-!
