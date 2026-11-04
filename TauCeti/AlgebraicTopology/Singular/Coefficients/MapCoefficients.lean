@@ -17,10 +17,11 @@ and let `R : C`. The singular `n`-chains of a space `X` with coefficients in `R`
 copies of `R`, one for each singular `n`-simplex, so applying `F` to them gives the singular
 `n`-chains with coefficients in `F R`. This identifies the singular chain complex with coefficients
 in `F R` with the image under `F` of the one with coefficients in `R`, naturally in `X`
-(`TauCeti.singularChainComplexFunctorObjCompMapIso`); it is Mathlib's simplicial statement
-`SSet.chainComplexFunctorObjCompMapIso` applied to the singular simplicial set. When `F` also
-preserves homology, for instance when it is an exact functor of abelian categories, it follows that
-`F` commutes with singular homology (`TauCeti.singularHomologyFunctorObjCompIso`):
+(`CategoryTheory.Functor.singularChainComplexFunctorObjCompMapIso`); it is Mathlib's simplicial
+statement `SSet.chainComplexFunctorObjCompMapIso` applied to the singular simplicial set. When `F`
+also preserves homology, for instance when it is an exact functor of abelian categories, it follows
+that `F` commutes with singular homology
+(`CategoryTheory.Functor.singularHomologyFunctorObjCompIso`):
 
 `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`.
 
@@ -34,8 +35,10 @@ Extension of scalars is another example of the chain-level statement, since it p
 
 ## Main declarations
 
-* `TauCeti.singularChainComplexFunctorObjCompMapIso`: `F (C(X; R)) ≅ C(X; F R)`, naturally in `X`.
-* `TauCeti.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`, naturally in `X`.
+* `CategoryTheory.Functor.singularChainComplexFunctorObjCompMapIso`: `F (C(X; R)) ≅ C(X; F R)`,
+  naturally in `X`.
+* `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`,
+  naturally in `X`.
 -/
 
 public section
@@ -46,7 +49,7 @@ open CategoryTheory Limits AlgebraicTopology Simplicial
 
 universe w v v' u u'
 
-namespace TauCeti
+namespace CategoryTheory.Functor
 
 variable {C : Type u} {D : Type u'} [Category.{v} C] [Category.{v'} D]
   [Preadditive C] [Preadditive D] [HasCoproducts.{w} C] [HasCoproducts.{w} D]
@@ -95,4 +98,4 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
           n :=
   (rfl)
 
-end TauCeti
+end CategoryTheory.Functor

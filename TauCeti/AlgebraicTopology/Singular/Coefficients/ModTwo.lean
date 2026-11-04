@@ -79,7 +79,7 @@ def singularHomologyModTwoIso (X : TopCat.{u}) (n : ℕ) :
   ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
       (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2)
         (ULift.{u} (ZMod 2))).symm).app X ≪≫
-    ((TauCeti.singularHomologyFunctorObjCompIso
+    ((Functor.singularHomologyFunctorObjCompIso
       (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
         (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) n).app X).symm
 
@@ -91,7 +91,7 @@ theorem singularHomologyModTwoIso_hom (X : TopCat.{u}) (n : ℕ) :
       ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
           (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := ZMod 2)
             (ULift.{u} (ZMod 2))).inv).app X ≫
-        (TauCeti.singularHomologyFunctorObjCompIso
+        (Functor.singularHomologyFunctorObjCompIso
           (ModuleCat.restrictScalars.{u} (algebraMap ℤ (ZMod 2)))
             (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) n).inv.app X :=
   (rfl)
@@ -106,7 +106,7 @@ theorem singularHomologyModTwoIso_hom_naturality {X Y : TopCat.{u}} (f : X ⟶ Y
           (((singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj
             (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).map f) := by
   rw [singularHomologyModTwoIso_hom, singularHomologyModTwoIso_hom, NatTrans.naturality_assoc]
-  exact congrArg _ ((TauCeti.singularHomologyFunctorObjCompIso _ _ n).inv.naturality f)
+  exact congrArg _ ((Functor.singularHomologyFunctorObjCompIso _ _ n).inv.naturality f)
 
 /-- Singular homology with coefficients in the integer module `ℤ/2` vanishes exactly when singular
 homology with coefficients in the field `𝔽₂` does. -/
