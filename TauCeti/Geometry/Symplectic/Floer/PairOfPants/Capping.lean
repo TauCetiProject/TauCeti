@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
-import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Capping an input of the pair of pants with a negative PSS plane
@@ -85,7 +84,8 @@ variable {M : Type*} {H : ℝ → M → ℝ}
 /-- The Hamiltonian perturbation one-form on the negative PSS plane with output Hamiltonian `H`.
 At `w ∈ ℂ` and `x ∈ M` it is the covector `β(-s(w) - 1) H(t(w), x) dt`, where `(s, t)` are the
 coordinates of the end at `∞` of the thrice-punctured sphere, with end lift `z ↦ 2 exp (-2πz)`
-on `Re z < 0`, and `β` is the smooth transition from `0` on `(-∞, 1]` to `1` on `[2, ∞)`. -/
+on `Re z < 0`, and `β = smoothTransition` is the smooth transition from `0` on `(-∞, 0]` to `1` on
+`[1, ∞)`. -/
 def negativePlanePerturbation (H : ℝ → M → ℝ) (w : ℂ) (x : M) : ℂ →L[ℝ] ℝ :=
   (smoothTransition (-(inf.endCoord w).re - 1) * H (inf.endCoord w).im x) • inf.endAngularForm w
 
@@ -171,29 +171,33 @@ variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
 /-- **The plane perturbation is smooth.** For a Hamiltonian of period one which is `C^n` on
-`ℝ × M`, the negative plane perturbation is `C^n` on `ℂ × M`. Away from the pole it is a product
-of smooth functions of the end coordinates, and near the pole it vanishes. -/
+`ℝ × M`, the negative plane perturbation is `C^n` on `ℂ × M`. Off the open pole disc it is the
+pair-of-pants perturbation with zero inputs, and on that disc it vanishes. -/
 theorem contMDiff_negativePlanePerturbation {n : ℕ∞} (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry H)) :
     ContMDiff (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × M => negativePlanePerturbation H p.1 p.2) := by
   rintro ⟨w, x⟩
-  rcases eq_or_ne w 0 with rfl | hw
-  · -- Near the pole, the perturbation vanishes.
+  rcases lt_or_ge ‖w‖ (2 * Real.exp (2 * π)) with hlt | hge
+  · -- On the open pole disc, the perturbation vanishes.
     refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
-    have h : ∀ᶠ p : ℂ × M in 𝓝 (0, x), ‖p.1‖ < 2 * Real.exp (2 * π) :=
-      continuous_fst.norm.continuousAt.eventually
-        (gt_mem_nhds (by simp only [norm_zero]; positivity))
-    filter_upwards [h] with p hp
+    filter_upwards [continuous_fst.norm.continuousAt.eventually (gt_mem_nhds hlt)] with p hp
     exact negativePlanePerturbation_eq_zero_of_norm_le hp.le p.2
-  · have hw' : w ≠ inf.endCenter := by simpa using hw
-    have hβ : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
-        (fun p : ℂ × M => smoothTransition (-(inf.endCoord p.1).re - 1)) (w, x) := by
-      convert contMDiffAt_smoothTransition_endCoord (n := n) (I := I) inf hw' x using 4
-      rw [endSign_inf, neg_one_mul]
-    exact (hβ.smul (inf.contMDiffAt_comp_im_endCoord hH hHs hw' x)).smul
-      (ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := inf.endAngularForm) _
-        (inf.contDiffAt_endAngularForm hw').contMDiffAt contMDiffAt_fst)
+  · -- Off it, the point lies in the pair of pants with zero inputs.
+    have h1 : 1 ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
+    have hw₀ : w ≠ 0 := by
+      rintro rfl
+      rw [norm_zero] at hge
+      linarith
+    have hw₁ : w ≠ 1 := by
+      rintro rfl
+      rw [norm_one] at hge
+      linarith
+    rw [← pairOfPantsPerturbation_single_inf]
+    exact contMDiffAt_pairOfPantsPerturbation
+      (forall_single_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
+      (forall_single_inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
+        contMDiff_const hHs) ⟨w, hw₀, hw₁⟩ x
 
 /-! ### Capping an input of the pair of pants -/
 
@@ -353,19 +357,8 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
     rw [mem_preimage, truncation_eq] at hz
     exact hz.2
   have hDT {z : ℝ × ℝ} (hz : z ∈ D \ T) :
-      ‖Complex.equivRealProdCLM.symm z‖ < 2 * Real.exp (2 * π) := by
-    have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-    have h1 : 1 ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
-    obtain ⟨hzD, hzT⟩ := hz
-    simp only [T, mem_preimage, truncation_eq, mem_inter_iff, mem_ofPred_eq] at hzT
-    have hnorm := norm_sub_norm_le (Complex.equivRealProdCLM.symm z) 1
-    rw [norm_one] at hnorm
-    by_cases h₀ : Real.exp (-(2 * π * R)) / 2 ≤ ‖Complex.equivRealProdCLM.symm z‖
-    · have h₁ : ‖Complex.equivRealProdCLM.symm z - 1‖ < Real.exp (-(2 * π * R)) / 2 := by
-        by_contra! h
-        exact hzT ⟨⟨h₀, h⟩, hzD⟩
-      linarith
-    · linarith
+      ‖Complex.equivRealProdCLM.symm z‖ < 2 * Real.exp (2 * π) :=
+    mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball (by linarith) hz)
   -- The three integrands are continuous, hence integrable on the compact disc.
   have hKs := contDiff_negativePlanePerturbation_apply hH hHs 1
   have hKt := contDiff_negativePlanePerturbation_apply hH hHs Complex.I
