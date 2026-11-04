@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
 public import TauCeti.Order.Filter.Cofinite.Basic
 public import TauCeti.RingTheory.NovikovSeries.ExpLog
 public import TauCeti.RingTheory.NovikovSeries.InfiniteProduct
@@ -48,18 +47,8 @@ Euler product with integer coefficients, so `ζ` has integer coefficients
 (`TauCeti.NovikovSeries.orbitZeta_eq_mapRingHom_eulerProduct`). Neither the injectivity of `N` nor
 the discreteness of its image is used, and the exponent group may have torsion.
 
-**Linearized return maps.** Let `f i` be an endomorphism of a finite-dimensional real vector space
-`V i`, the linearized return map of the `i`-th orbit, and give the `k`-fold iterate the Lefschetz
-sign `sgn det (1 - f i ^ k)`. If `1 - f i ^ k` is invertible for every `k ≥ 1`, these signs form a
-geometric sequence with ratio `(-1) ^ i₋(f i)` (`LinearMap.sign_det_one_sub_pow_succ`), where
-`i₊(f)`, `i₋(f)` and `i₀(f)` count the real eigenvalues of `f` in `(1, ∞)`, `(-∞, -1)` and
-`(-1, 1)`, with algebraic multiplicity. The product formula then reads
-
-`ζ = ∏ᵢ (1 - (-1) ^ i₋(f i) e^(γ i)) ^ (-(-1) ^ (i₊(f i) + i₋(f i)))`
-
-(`TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct`), and the exponent is
-`(-1) ^ (dim V i + i₀(f i) + 1)`
-(`TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct_finrank`).
+The specialisation of the product formula to the Lefschetz signs `sgn det (1 - f ^ k)` of
+linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.ReturnMap`.
 
 ## Main definitions
 
@@ -84,10 +73,6 @@ geometric sequence with ratio `(-1) ^ i₋(f i)` (`LinearMap.sign_det_one_sub_po
   function.
 * `TauCeti.NovikovSeries.orbitLog_sigma`, `TauCeti.NovikovSeries.orbitZeta_sigma`: listing the
   `i`-th orbit `c i` times multiplies its signs by `c i`.
-* `TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct`,
-  `TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct_finrank`,
-  `TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_mapRingHom_eulerProduct`: the product
-  formula and integrality when the signs are the Lefschetz signs of linearized return maps.
 
 ## References
 
@@ -335,80 +320,5 @@ theorem orbitZeta_sigma (hpos : ∀ i, 0 < N (γ i))
   rw [orbitZeta_def, orbitZeta_def, orbitLog_sigma hpos hfin]
 
 end OrbitZeta
-
-section ReturnMap
-
-/-! ### Lefschetz signs of linearized return maps
-
-Let `f i` be the linearized return map of the `i`-th primitive orbit on a finite-dimensional real
-vector space `V i`, and take the Lefschetz sign `sgn det (1 - f i ^ k)` as the sign of the `k`-fold
-iterate. If every iterate is nondegenerate, these signs form a geometric sequence with ratio
-`(-1) ^ i₋` (`LinearMap.sign_det_one_sub_pow_succ`), so the product formula applies. -/
-
-variable {ι H : Type*} [AddCommMonoid H] {N : H →+ ℝ} {γ : ι → H} {K : Type*} [CommRing K]
-  [Algebra ℚ K] {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module ℝ (V i)]
-  [∀ i, FiniteDimensional ℝ (V i)]
-
-/-- **The product formula for linearized return maps.** Let `f i` be an endomorphism of a
-finite-dimensional real vector space such that `1 - f i ^ k` is invertible for every `k ≥ 1`, and
-let the `k`-fold iterate of the `i`-th orbit have the Lefschetz sign `sgn det (1 - f i ^ k)`. Then
-the orbit zeta function is the Euler product
-`∏ᵢ (1 - (-1) ^ i₋(f i) e^(γ i)) ^ (-(-1) ^ (i₊(f i) + i₋(f i)))`, where `i₊(f)` and `i₋(f)` count
-the real roots of the characteristic polynomial of `f` in `(1, ∞)` and in `(-∞, -1)`, with
-multiplicity. -/
-theorem orbitZeta_sign_det_one_sub_pow_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
-    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (f : ∀ i, Module.End ℝ (V i))
-    (hf : ∀ i (k : ℕ), (1 - f i ^ (k + 1)).det ≠ 0) :
-    orbitZeta K N γ (fun i k => SignType.sign (1 - f i ^ k).det) =
-      eulerProduct γ hpos (fun i => (-1) ^ ((f i).charpoly.roots.filter (· < -1)).card)
-        (fun i => -(-1) ^ (((f i).charpoly.roots.filter (1 < ·)).card +
-          ((f i).charpoly.roots.filter (· < -1)).card)) := by
-  rw [orbitZeta_eq_eulerProduct hpos hfin _ (fun i => (-1) ^ ((f i).charpoly.roots.filter
-    (· < -1)).card) fun i k => by
-      rw [(f i).sign_det_one_sub_pow_succ k (hf i k), pow_one]
-      simp]
-  congr 1 <;> funext i
-  · simp
-  · rw [(f i).sign_det_one_sub_pow 1 (hf i 0)]
-    simp [pow_mul, pow_add]
-
-/-- **The product formula for linearized return maps, with dimension exponents.** Under the
-hypotheses of `TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct`, the exponent
-of the factor of the `i`-th orbit is `(-1) ^ (dim V i + i₀(f i) + 1)`, where `i₀(f)` counts the real
-roots of the characteristic polynomial of `f` in `(-1, 1)`, with multiplicity. For the return maps
-of a flow on a manifold `X`, acting on normal spaces of dimension `dim X - 1`, this exponent is
-`(-1) ^ (dim X + i₀(f i))`. -/
-theorem orbitZeta_sign_det_one_sub_pow_eq_eulerProduct_finrank (hpos : ∀ i, 0 < N (γ i))
-    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (f : ∀ i, Module.End ℝ (V i))
-    (hf : ∀ i (k : ℕ), (1 - f i ^ (k + 1)).det ≠ 0) :
-    orbitZeta K N γ (fun i k => SignType.sign (1 - f i ^ k).det) =
-      eulerProduct γ hpos (fun i => (-1) ^ ((f i).charpoly.roots.filter (· < -1)).card)
-        (fun i => (-1) ^ (Module.finrank ℝ (V i) +
-          ((f i).charpoly.roots.filter (|·| < 1)).card + 1)) := by
-  rw [orbitZeta_sign_det_one_sub_pow_eq_eulerProduct hpos hfin f hf]
-  congr 1
-  funext i
-  have h := congrArg (fun s : SignType => (s : ℤ))
-    ((f i).neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one (hf i 1))
-  simp only [SignType.coe_pow, SignType.coe_neg_one] at h
-  rw [h, pow_succ, mul_neg_one]
-
-/-- **Integrality of the orbit zeta function for linearized return maps.** Under the hypotheses of
-`TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct`, the orbit zeta function is
-the image of the Euler product `∏ᵢ (1 - (-1) ^ i₋(f i) e^(γ i)) ^ (-(-1) ^ (i₊(f i) + i₋(f i)))`
-with integer coefficients. -/
-theorem orbitZeta_sign_det_one_sub_pow_eq_mapRingHom_eulerProduct (hpos : ∀ i, 0 < N (γ i))
-    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (f : ∀ i, Module.End ℝ (V i))
-    (hf : ∀ i (k : ℕ), (1 - f i ^ (k + 1)).det ≠ 0) :
-    orbitZeta K N γ (fun i k => SignType.sign (1 - f i ^ k).det) =
-      mapRingHom (Int.castRingHom K) (AddMonoidHom.id H) ⟨1, one_pos, by simp⟩
-        (eulerProduct γ hpos (fun i => (-1) ^ ((f i).charpoly.roots.filter (· < -1)).card)
-          (fun i => -(-1) ^ (((f i).charpoly.roots.filter (1 < ·)).card +
-            ((f i).charpoly.roots.filter (· < -1)).card))) := by
-  rw [orbitZeta_sign_det_one_sub_pow_eq_eulerProduct hpos hfin f hf,
-    mapRingHom_eulerProduct _ _ _ hpos hfin]
-  simp
-
-end ReturnMap
 
 end TauCeti.NovikovSeries

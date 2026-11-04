@@ -37,7 +37,7 @@ iterates are nondegenerate, these identities make the exponential of the logarit
 `∑_k ε(A ^ k) t ^ k / k` equal to the factor `(1 - (-1) ^ i₋ t) ^ (-(-1) ^ (i₊ + i₋))` of a
 dynamical zeta function; that series identity is
 `TauCeti.NovikovSeries.orbitZeta_sign_det_one_sub_pow_eq_eulerProduct`, in
-`TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic`.
+`TauCeti.RingTheory.NovikovSeries.OrbitZeta.ReturnMap`.
 
 ## Main results
 
