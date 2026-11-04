@@ -811,6 +811,29 @@ theorem IsJordanSplitting.pow_succ_dvd_sub_apply_projectionOnto (h : B.IsJordanS
   obtain ⟨hx, hsub⟩ := h.sub_apply_projectionOnto j x y
   exact hsub ▸ h.pow_dvd_apply_of_mem_biSup hx _
 
+/-- When `2 ∣ π` and the constituent of index `j + 1` of a Jordan splitting is even at its own
+scale, the self-pairings of the vectors of the constituents of index above `j` are divisible by
+`2 * π ^ (j + 1)`: the constituent of index `j + 1` is even, and the pairings on the others are
+divisible by `π ^ (j + 2)`. -/
+theorem IsJordanSplitting.two_mul_pow_succ_dvd_apply_self_of_mem_biSup
+    (h : B.IsJordanSplitting π N) (h2 : 2 ∣ π) {j : ℕ}
+    (hnext : ∀ w ∈ N (j + 1), 2 * π ^ (j + 1) ∣ B w w) {x : M}
+    (hx : x ∈ ⨆ i ∈ Set.Ici (j + 1), N i) : 2 * π ^ (j + 1) ∣ B x x := by
+  have hset : Set.Ici (j + 1) = insert (j + 1) (Set.Ici (j + 2)) := by
+    ext i
+    simp only [Set.mem_Ici, Set.mem_insert_iff]
+    omega
+  rw [hset, iSup_insert] at hx
+  obtain ⟨a, ha, d, hd, rfl⟩ := Submodule.mem_sup.mp hx
+  have hdisj' : Disjoint ({j + 1} : Set ℕ) (Set.Ici (j + 2)) := by simp
+  simp only [map_add, LinearMap.add_apply,
+    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj' (by simpa using ha) hd,
+    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj'.symm hd (by simpa using ha),
+    add_zero, zero_add]
+  refine dvd_add (hnext a ha) ((mul_dvd_mul_right h2 _).trans ?_)
+  rw [← pow_succ']
+  exact h.pow_dvd_apply_of_mem_biSup hd d
+
 /-- Projecting to the sum of the constituents of index at most `j`, along those of index above `j`,
 preserves the self-pairings modulo `2 * π ^ (j + 1)` when `2 ∣ π` and the constituent of index
 `j + 1` is even at its own scale. -/
@@ -821,25 +844,7 @@ theorem IsJordanSplitting.two_mul_pow_succ_dvd_sub_apply_projectionOnto
       (h.isCompl_biSup_Iic_biSup_Ici j) x) ((⨆ i ∈ Set.Iic j, N i).projectionOnto _
       (h.isCompl_biSup_Iic_biSup_Ici j) x) := by
   obtain ⟨hx, hsub⟩ := h.sub_apply_projectionOnto j x x
-  rw [hsub]
-  set q := x - (⨆ i ∈ Set.Iic j, N i).projectionOnto _ (h.isCompl_biSup_Iic_biSup_Ici j) x
-  clear_value q
-  -- The constituent of index `j + 1` is even, and the others above it have scale `π ^ (j + 2)`.
-  have hset : Set.Ici (j + 1) = insert (j + 1) (Set.Ici (j + 2)) := by
-    ext i
-    simp only [Set.mem_Ici, Set.mem_insert_iff]
-    omega
-  rw [hset, iSup_insert] at hx
-  obtain ⟨a, ha, d, hd, had⟩ := Submodule.mem_sup.mp hx
-  have hdisj' : Disjoint ({j + 1} : Set ℕ) (Set.Ici (j + 2)) := by simp
-  rw [← had]
-  simp only [map_add, LinearMap.add_apply,
-    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj' (by simpa using ha) hd,
-    B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj'.symm hd (by simpa using ha),
-    add_zero, zero_add]
-  refine dvd_add (hnext a ha) ((mul_dvd_mul_right h2 _).trans ?_)
-  rw [← pow_succ']
-  exact h.pow_dvd_apply_of_mem_biSup hd d
+  exact hsub ▸ h.two_mul_pow_succ_dvd_apply_self_of_mem_biSup h2 hnext hx
 
 /-- Over a local domain, the sum of the constituents of index at most `j` of a Jordan splitting of
 a symmetric form on a finite free module has a Gram matrix `G` and a symmetric matrix `H` with
