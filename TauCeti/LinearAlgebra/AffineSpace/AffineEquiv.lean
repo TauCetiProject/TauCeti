@@ -27,6 +27,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 
 * `AffineEquiv.apply_eq_linear_add`: an affine equivalence between modules is its linear part
   followed by the translation by the image of `0`.
+* `AffineEquiv.apply_eq_linear_one_mul_add`: an affine self-equivalence of a commutative ring is
+  `x ↦ a * x + b`.
 * `TauCeti.AffineEquiv.commutatorElement_homothetyUnitsMulHom_zero_one`: the commutator of
   homotheties about `0` and `1` is a translation.
 -/
@@ -44,6 +46,12 @@ variable {k V₁ V₂ : Type*} [Ring k] [AddCommGroup V₁] [Module k V₁] [Add
 `f 0`; this is `AffineMap.decomp` evaluated at a point. -/
 theorem apply_eq_linear_add (f : V₁ ≃ᵃ[k] V₂) (x : V₁) : f x = f.linear x + f 0 :=
   congrFun f.toAffineMap.decomp x
+
+/-- An affine self-equivalence of a commutative ring is `x ↦ a * x + b`, with `a = f.linear 1` and
+`b = f 0`. -/
+theorem apply_eq_linear_one_mul_add {R : Type*} [CommRing R] (f : R ≃ᵃ[R] R) (x : R) :
+    f x = f.linear 1 * x + f 0 := by
+  rw [apply_eq_linear_add f x, mul_comm, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
 
 /-- The translation part of the inverse of an affine automorphism `f` of a module is
 `f⁻¹ 0 = f.linear⁻¹ (-f 0)`. -/
