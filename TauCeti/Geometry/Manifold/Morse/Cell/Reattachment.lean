@@ -63,9 +63,10 @@ relative to the image of `Φⱼ`. From this:
 * `TauCeti.homotopicRel_morseCellReattachment_of_leftInverse`: for a left inverse `g₀` of `Φ₀`,
   `E` is homotopic to `g₀ ∘ Φ₁` relative to the lower sublevel.
 * `TauCeti.homotopicRel_morseCellReattachment_morseCellReattachment`: two reattachment maps
-  between the same attachments are homotopic relative to the lower sublevel.
+  between the same attachments are homotopic relative to the lower sublevel, provided `Φ₀` has a
+  left inverse.
 * `TauCeti.homotopicRel_morseCellReattachment_comp_morseCellReattachment`: reattachment maps
-  compose up to homotopy relative to the lower sublevel.
+  compose up to homotopy relative to the lower sublevel, provided `Φ₀` has a left inverse.
 * `TauCeti.exists_homotopicRel_morseCellReattachment_comp`: **Milnor's Lemma 3.6 for Morse
   cells.** For admissible chart families, the reattachment map is a homotopy equivalence relative
   to the lower sublevel.
@@ -195,18 +196,6 @@ end Cylinder
 
 variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → ℝ} {c ε : ℝ}
 
-/-- On the boundary sphere, the characteristic map of a Morse cell is its attaching map. -/
-private theorem coe_morseCharacteristicMap_diskBoundaryInclusion {k : ℕ}
-    {ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n) (hε : 0 ≤ ε)
-    (hball : closedBall 0 √ε ⊆ ψ.target)
-    (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
-    (s : TopCat.diskBoundary.{u} k) :
-    ((ψ.morseCharacteristicMap hk hε hball hf).hom (TopCat.diskBoundaryInclusion k s) : M) =
-      ψ.morseAttachingMap hk hε hball hf s :=
-  (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply hball hf hk hε _).trans
-    ((congrArg _ (TopCat.coe_diskBoundaryInclusion_apply_down _ s)).trans
-      (OpenPartialHomeomorph.coe_morseAttachingMap_apply hball hf hk hε s).symm)
-
 section Reattachment
 
 open unitInterval
@@ -247,7 +236,8 @@ private theorem morseCellReattachmentFun_of_norm_eq (i : ι) {w : TopCat.disk.{u
     refine Subtype.ext ?_
     simp only [diskBoundaryInclusion_diskRadialSphere, diskTime_of_norm_le hw.ge,
       ContinuousMap.Homotopy.apply_one, TopCat.hom_comp, ContinuousMap.comp_apply, ← hs]
-    exact coe_morseCharacteristicMap_diskBoundaryInclusion (hk i) hε (hball₀ i) (hf₀ i) s
+    exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
+      (hball₀ i) (hf₀ i) (hk i) hε s
   rw [morseCellReattachmentFun, dite_eq_left hw.le, hseam, ← hs, ← ConcreteCategory.comp_apply,
     morseAttachingMap_comp_morseCellAttachmentIncl, ConcreteCategory.comp_apply]
 
@@ -302,7 +292,8 @@ private theorem morseCellReattachmentFun_diskBoundaryInclusion (i : ι)
   rw [morseCellReattachmentFun, dite_eq_left hw]
   refine congrArg _ (Subtype.ext ?_)
   simp only [hsph, diskTime_diskBoundaryInclusion, ContinuousMap.Homotopy.apply_zero]
-  exact coe_morseCharacteristicMap_diskBoundaryInclusion (hk i) hε (hball₁ i) (hf₁ i) s
+  exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
+    (hball₁ i) (hf₁ i) (hk i) hε s
 
 /-- **The reattachment map** `E : M_{c-ε} ∪_{α₁} ⨆ᵢ D^{k i} → M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i}` of a
 family of self-maps `h i` of the disc pairs `(D^{k i}, ∂D^{k i})` and of homotopies of maps of pairs
@@ -403,7 +394,8 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
     have hK₀ : (K i (diskCylinderPath (TopCat.diskBoundaryInclusion (k i) s, t)) : M) =
         (φ₁ i).morseAttachingMap (hk i) hε (hball₁ i) (hf₁ i) s := by
       rw [diskCylinderPath_diskBoundaryInclusion, ContinuousMap.Homotopy.apply_zero]
-      exact coe_morseCharacteristicMap_diskBoundaryInclusion (hk i) hε (hball₁ i) (hf₁ i) s
+      exact OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion
+        (hball₁ i) (hf₁ i) (hk i) hε s
     -- The right-hand side is `cell i` evaluated at the boundary point, that is `hK₀`'s left side.
     exact hK₀.symm
   let G := morseCellAttachmentDesc φ₁ k hk hε hball₁ hf₁ (TopCat.ofHom lower)
