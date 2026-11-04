@@ -47,11 +47,11 @@ The two results here supply injectivity and middle exactness on the native
 ## Flatness of completed localizations
 
 Let `R` be a noetherian ring, `J` an ideal of `R` and `S` a localization of `R` at a submonoid
-`M`. The completion `Ŝ` of `S` along `J S` is flat over the completion `R̂` of `R` along `J`.
+`M`. The completion `Ŝ` of `S` along `J S` is flat over the completion `R̂` of `R` along `J`.
 
 Write `T` for the localization of `R̂` at the image of `M`. The localization map `S → T` induces
 bijections `S ⧸ J ^ n S → T ⧸ J ^ n T` for every `n`, because modulo `J ^ n` both rings are the
-localization of `R ⧸ J ^ n` at `M`. Hence `Ŝ` is also the completion of `T` along `J T`. Now `T` is
+localization of `R ⧸ J ^ n` at `M`. Hence `Ŝ` is also the completion of `T` along `J T`. Now `T` is
 flat over `R̂`, being a localization, and the completion of `T` is flat over `T`, because `T` is
 noetherian.
 
