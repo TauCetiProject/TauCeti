@@ -265,29 +265,11 @@ lemma pullbackConstHomEquiv_symm_comp_snd
     (pullbackConstHomEquiv x y).symm τ ≫ pullback.snd _ _ = homEquiv.symm ⟨τ.1, τ.2.1⟩ :=
   pullback.lift_snd _ _ _
 
-/-- Maps `Δ[0] ⋆ Δ[0] ⟶ L` sending the cone point to `y` and the base to `x` are the edges from `y`
-to `x`, through `Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
-private noncomputable def edgeEquiv :
-    {τ : join Δ[0] Δ[0] ⟶ L // join.inl _ _ ≫ τ = const y ∧ join.inr _ _ ≫ τ = const x} ≃
-      Edge y x where
-  toFun τ := Edge.mk (yonedaEquiv ((join.stdSimplexIso 0 0).inv ≫ τ.1))
-    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% join.δ_one_comp_stdSimplexIso_inv, τ.2.1,
-      yonedaEquiv_const])
-    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% join.δ_zero_comp_stdSimplexIso_inv,
-      τ.2.2, yonedaEquiv_const])
-  invFun e := ⟨(join.stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge,
-    by rw [← join.δ_one_comp_stdSimplexIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
-      stdSimplex.δ_comp_yonedaEquiv_symm, e.src_eq, yonedaEquiv_symm_zero],
-    by rw [← join.δ_zero_comp_stdSimplexIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
-      stdSimplex.δ_comp_yonedaEquiv_symm, e.tgt_eq, yonedaEquiv_symm_zero]⟩
-  left_inv τ := Subtype.ext (by simp)
-  right_inv e := Edge.ext (by simp)
-
 /-- The vertices of the fibre `{x} ×_L L_{y/}` over `y` of the inclusion of the vertex `x` are the
 edges from `y` to `x`. -/
 noncomputable def pullbackConstObj₀Equiv :
     (pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) _⦋0⦌ ≃ Edge y x :=
-  yonedaEquiv.symm.trans ((pullbackConstHomEquiv x y).trans (edgeEquiv x y))
+  yonedaEquiv.symm.trans ((pullbackConstHomEquiv x y).trans (join.coneEdgeEquiv x y))
 
 /-- The edge attached to a vertex `s` of the fibre `{x} ×_L L_{y/}` is the map
 `Δ[1] ≅ Δ[0] ⋆ Δ[0] ⟶ L` corresponding to `s`. -/
@@ -296,7 +278,7 @@ lemma pullbackConstObj₀Equiv_apply_edge
     (pullbackConstObj₀Equiv x y s).edge =
       yonedaEquiv ((join.stdSimplexIso 0 0).inv ≫
         (pullbackConstHomEquiv x y (yonedaEquiv.symm s)).1) :=
-  (rfl)
+  join.coneEdgeEquiv_apply_edge x y _
 
 /-- If `L` is strict Segal, every simplex of the fibre `{x} ×_L L_{y/}` is totally degenerate: a
 map `Δ[0] ⋆ Δ[n] ⟶ L` sending `Δ[n]` to `x` is determined by its edge from the cone point to the
@@ -308,17 +290,13 @@ private lemma surjective_pullback_map_const [L.IsStrictSegal] (n : ℕ) :
   refine ⟨(pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))).map
     (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s, ?_⟩
   apply yonedaEquiv.symm.injective
-  rw [← yonedaEquiv_symm_naturality_left, ← yonedaEquiv_symm_naturality_left,
-    ← (pullbackConstHomEquiv x y).apply_eq_iff_eq, Subtype.ext_iff,
-    pullbackConstHomEquiv_comp_coe, pullbackConstHomEquiv_comp_coe]
+  rw [← (pullbackConstHomEquiv x y).apply_eq_iff_eq, Subtype.ext_iff]
+  simp only [← yonedaEquiv_symm_naturality_left, pullbackConstHomEquiv_comp_coe]
   apply join.hom_ext_of_isStrictSegal
   · -- The vertex `0` is fixed by the operator collapsing `⦋n⦌` onto its vertex `0`.
-    rw [← join.map_comp_assoc, ← join.map_comp_assoc, Category.comp_id, Category.comp_id,
-      ← Functor.map_comp, ← Functor.map_comp, Subsingleton.elim
-        (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0 ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _),
-      Category.id_comp]
-  · rw [join.inr_map_assoc, join.inr_map_assoc, (pullbackConstHomEquiv x y _).2.2, comp_const,
-      comp_const]
+    simp only [← join.map_comp_assoc, Category.comp_id, ← Functor.map_comp,
+      SimplexCategory.const_comp, SimplexCategory.const_apply]
+  · simp only [join.inr_map_assoc, (pullbackConstHomEquiv x y _).2.2, comp_const]
 
 /-- If `L` is strict Segal, sending an edge from `y` to `x` to the totally degenerate simplices at
 the corresponding vertex of the fibre `{x} ×_L L_{y/}` is an isomorphism from the discrete

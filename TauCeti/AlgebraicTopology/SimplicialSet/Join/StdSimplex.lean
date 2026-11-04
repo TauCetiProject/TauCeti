@@ -27,6 +27,8 @@ projections are right and left fibrations.
 ## Main definitions
 
 * `SSet.join.stdSimplexIso n m`: the isomorphism `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`.
+* `SSet.join.coneEdgeEquiv x y`: maps `Δ[0] ⋆ Δ[0] ⟶ X` sending the cone point to `y` and the base
+  to `x` are the edges from `y` to `x`.
 
 ## Main results
 
@@ -377,6 +379,37 @@ lemma δ_zero_comp_stdSimplexIso_inv :
   fin_cases i
   rfl
 
+/-- Maps `Δ[0] ⋆ Δ[0] ⟶ X` sending the cone point to `y` and the base to `x` are the edges from `y`
+to `x`, through `Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
+noncomputable def coneEdgeEquiv {X : SSet.{u}} (x y : X _⦋0⦌) :
+    {τ : join Δ[0] Δ[0] ⟶ X // inl _ _ ≫ τ = const y ∧ inr _ _ ≫ τ = const x} ≃ Edge y x where
+  toFun τ := Edge.mk (yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.1))
+    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_one_comp_stdSimplexIso_inv, τ.2.1,
+      yonedaEquiv_const])
+    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_zero_comp_stdSimplexIso_inv, τ.2.2,
+      yonedaEquiv_const])
+  invFun e := ⟨(stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge,
+    by rw [← δ_one_comp_stdSimplexIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
+      stdSimplex.δ_comp_yonedaEquiv_symm, e.src_eq, yonedaEquiv_symm_zero],
+    by rw [← δ_zero_comp_stdSimplexIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
+      stdSimplex.δ_comp_yonedaEquiv_symm, e.tgt_eq, yonedaEquiv_symm_zero]⟩
+  left_inv τ := Subtype.ext (by simp)
+  right_inv e := Edge.ext (by simp)
+
+/-- The edge attached to a map `τ : Δ[0] ⋆ Δ[0] ⟶ X` is its composite with `Δ[1] ≅ Δ[0] ⋆ Δ[0]`. -/
+@[simp]
+lemma coneEdgeEquiv_apply_edge {X : SSet.{u}} (x y : X _⦋0⦌)
+    (τ : {τ : join Δ[0] Δ[0] ⟶ X // inl _ _ ≫ τ = const y ∧ inr _ _ ≫ τ = const x}) :
+    (coneEdgeEquiv x y τ).edge = yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.1) :=
+  (rfl)
+
+/-- The map `Δ[0] ⋆ Δ[0] ⟶ X` attached to an edge `e` is the composite of `Δ[0] ⋆ Δ[0] ≅ Δ[1]`
+with `e`. -/
+@[simp]
+lemma coneEdgeEquiv_symm_apply_coe {X : SSet.{u}} (x y : X _⦋0⦌) (e : Edge y x) :
+    ((coneEdgeEquiv x y).symm e).1 = (stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge :=
+  (rfl)
+
 /-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the first edge of the spine of `Δ[n + 1]` is the cone on the
 vertex `0` of `Δ[n]`. -/
 lemma mkOfSucc_zero_comp_stdSimplexIso_inv (n : ℕ) :
@@ -395,10 +428,9 @@ lemma mkOfSucc_zero_comp_stdSimplexIso_inv (n : ℕ) :
     simp only [inl_map_assoc, Category.id_comp, yonedaEquiv_inl_comp_stdSimplexIso_hom,
       Fin.castLE_zero, yonedaEquiv_map]
     exact SimplexCategory.mkOfSucc_homToOrderHom_zero 0
-  · rw [hδ₀ ((stdSimplexIso 0 0).inv ≫ _), reassoc_of% δ_zero_comp_stdSimplexIso_inv,
-      inr_map_assoc, yonedaEquiv_comp, stdSimplex.hom_app_apply,
-      yonedaEquiv_inr_comp_stdSimplexIso_hom]
-    simp only [yonedaEquiv_map]
+  · rw [hδ₀ ((stdSimplexIso 0 0).inv ≫ _), reassoc_of% δ_zero_comp_stdSimplexIso_inv]
+    simp only [inr_map_assoc, yonedaEquiv_comp _ (inr _ _ ≫ (stdSimplexIso 0 n).hom),
+      stdSimplex.hom_app_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom, yonedaEquiv_map]
     -- Both sides are the vertex `1`: `mkOfSucc 0` sends `1` to `1`, and the constant map sends `0`
     -- to `0`; `simp` cannot see this through the dimension `⦋0 + 0 + 1⦌` of the edge.
     rfl
@@ -411,9 +443,11 @@ lemma mkOfSucc_succ_comp_stdSimplexIso_inv (n : ℕ) (j : Fin (0 + n)) :
   rw [Iso.comp_inv_eq]
   apply yonedaEquiv.injective
   refine stdSimplex.ext _ _ fun i ↦ ?_
-  rw [Category.assoc, yonedaEquiv_comp, stdSimplex.hom_app_apply,
-    yonedaEquiv_inr_comp_stdSimplexIso_hom, yonedaEquiv_map, stdSimplex.objEquiv_symm_apply,
-    yonedaEquiv_map, stdSimplex.objEquiv_symm_apply]
+  simp only [Category.assoc, yonedaEquiv_comp _ (inr _ _ ≫ (stdSimplexIso 0 n).hom),
+    stdSimplex.hom_app_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom, yonedaEquiv_map]
+  -- `simp` does not index the vertices of the edges produced by `yonedaEquiv_map` under
+  -- `stdSimplex.objEquiv_symm_apply`, so it is applied to both sides by `rw`.
+  rw [stdSimplex.objEquiv_symm_apply, stdSimplex.objEquiv_symm_apply]
   fin_cases i <;> simp [Fin.ext_iff] <;> omega
 
 /-- Maps from the cone `Δ[0] ⋆ Δ[n]` to a strict Segal simplicial set, such as the nerve of a
