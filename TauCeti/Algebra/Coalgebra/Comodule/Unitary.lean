@@ -94,12 +94,14 @@ private theorem coefficientMatrix_mem_unitary [DecidableEq ι] [DecidableEq κ]
   rw [b.coefficientMatrix_eq_conjTranspose_mul c]
   rw [Unitary.mem_iff, Matrix.star_eq_conjTranspose] at h ⊢
   constructor
-  · simpa only [h.1, Matrix.mul_one, hP, Matrix.conjTranspose_mul,
-      Matrix.conjTranspose_conjTranspose, Matrix.mul_assoc] using
-      hcancel (coefficientMatrix (C := A) b.toBasis)ᴴ (coefficientMatrix (C := A) b.toBasis)
-  · simpa only [h.2, Matrix.mul_one, hP, Matrix.conjTranspose_mul,
-      Matrix.conjTranspose_conjTranspose, Matrix.mul_assoc] using
-      hcancel (coefficientMatrix (C := A) b.toBasis) (coefficientMatrix (C := A) b.toBasis)ᴴ
+  · rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_mul,
+      Matrix.conjTranspose_conjTranspose,
+      ← Matrix.mul_assoc Pᴴ (coefficientMatrix (C := A) b.toBasis)ᴴ P, hcancel, h.1,
+      Matrix.mul_one, hP]
+  · rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_mul,
+      Matrix.conjTranspose_conjTranspose,
+      ← Matrix.mul_assoc Pᴴ (coefficientMatrix (C := A) b.toBasis)ᴴ P, hcancel, h.2,
+      Matrix.mul_one, hP]
 
 /-- Unitarity of the coefficient matrix is independent of the orthonormal basis, even when
 the two bases use different finite index types. -/
