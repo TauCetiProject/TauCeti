@@ -47,7 +47,7 @@ theorem isGeometricallyReduced_generatorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k (generatorCoordinateAlgebra n k j) := by
   intro j
   cases j with
-  | inl _ => exact isGeometricallyReduced_of_smooth k _
+  | inl _ => exact inferInstance
   | inr _ =>
       exact (DiagonalizableGroup.geometricallyReduced_coordinateRing k
         (SplitTorus.characterGroup (Fin n))).isGeometricallyReduced
