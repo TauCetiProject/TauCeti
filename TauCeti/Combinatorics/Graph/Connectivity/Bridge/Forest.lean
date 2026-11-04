@@ -167,29 +167,6 @@ theorem edgeSet_bridgeForest : E(G.bridgeForest) = G.bridgeSet := by
 
 /-! ### Projection of walks -/
 
-private def Walk.copyBridgeForest {C D C' D' : G.BridgeComponent}
-    (p : G.bridgeForest.Walk C D) (hC : C = C') (hD : D = D') :
-    G.bridgeForest.Walk C' D' := by
-  subst C'
-  subst D'
-  exact p
-
-@[simp]
-private theorem Walk.edges_copyBridgeForest {C D C' D' : G.BridgeComponent}
-    (p : G.bridgeForest.Walk C D) (hC : C = C') (hD : D = D') :
-    (p.copyBridgeForest hC hD).edges = p.edges := by
-  subst C'
-  subst D'
-  rfl
-
-@[simp]
-private theorem Walk.support_copyBridgeForest {C D C' D' : G.BridgeComponent}
-    (p : G.bridgeForest.Walk C D) (hC : C = C') (hD : D = D') :
-    (p.copyBridgeForest hC hD).support = p.support := by
-  subst C'
-  subst D'
-  rfl
-
 /-- Project a walk to the bridge forest by omitting each traversal of a non-bridge edge.
 
 The endpoint-membership arguments identify the bridge components containing the endpoints. -/
@@ -201,7 +178,7 @@ noncomputable def Walk.toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y
   | @cons x y z e h p ih =>
       by_cases he : G.IsBridge e
       · exact .cons e (he.isLink_bridgeForest h) (ih h.right_mem hy)
-      · exact (ih h.right_mem hy).copyBridgeForest
+      · exact (ih h.right_mem hy).copy
           ((bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).2
             (h.reachable_deleteEdges_bridgeSet he)).symm rfl
 
@@ -233,14 +210,14 @@ theorem Walk.edges_toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈
       · simpa [Walk.toBridgeForest, he] using ih h.right_mem hy
 
 /-- A nonbridge traversal is omitted; only the identification of its end components remains. -/
+@[simp]
 theorem Walk.toBridgeForest_cons_of_not_isBridge (h : G.IsLink e x y)
     (p : G.Walk y z) (he : ¬ G.IsBridge e) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
     (Walk.cons e h p).toBridgeForest hx hz =
       (p.toBridgeForest h.right_mem hz).copy
         ((G.bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
           (h.reachable_deleteEdges_bridgeSet he)).symm rfl := by
-  apply Walk.ext_edges
-  simp [he]
+  simp [Walk.toBridgeForest, he]
 
 /-- Projection retains the order and identity of the bridge traversals that remain. -/
 theorem Walk.edges_toBridgeForest_sublist (p : G.Walk x y) (hx : x ∈ V(G))
