@@ -688,6 +688,10 @@ jobs:
         with:
           project-dir: pr
           tooling-dir: gate
+          # Home-directory snapshot archives unpack relative to the publisher's
+          # workspace, which differs on fleet. Use the existing official-install
+          # fallback there; keep verified snapshot restoration on cloud runners.
+          cold: ${{ startsWith(runner.name, 'fleet-') && 'true' || 'false' }}
 
       # Workflow-pinned driver, candidate data only: run before package/cache setup and
       # compilation. The complete exact source inventory is essential even on a one-file PR:
