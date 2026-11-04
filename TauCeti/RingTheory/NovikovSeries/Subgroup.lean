@@ -111,9 +111,9 @@ end Subgroup
 variable [CommRing R] {K : AddSubgroup H}
 
 /-- The subgroup completion embeds into every nontrivial ring image of the ambient total
-quotient ring if periods are injective on the subgroup and the ground ring is a domain.
+quotient ring if periods are injective on the subgroup and the ground ring has no zero divisors.
 In particular it embeds into each field component. -/
-theorem injective_toFractionRing_component_of_injective_period [IsDomain R]
+theorem injective_toFractionRing_component_of_injective_period [NoZeroDivisors R]
     (hN : Function.Injective (N.comp K.subtype))
     (Q : Type*) [CommRing Q] [Algebra (NovikovSeries R H N) Q]
     [IsFractionRing (NovikovSeries R H N) Q] {F : Type*} [Ring F] [Nontrivial F] (f : Q →+* F) :
