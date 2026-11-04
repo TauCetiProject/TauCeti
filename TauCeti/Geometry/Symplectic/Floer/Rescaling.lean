@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Rescaling Floer solutions at a bubbling point
@@ -20,6 +19,8 @@ coordinates `w ↦ c + ε w`, whose derivative is `ε` times the identity and so
 Hence (`TauCeti.Floer.perturbationPullback`) the rescaled map solves the Floer equation for the
 rescaled perturbation `ε K(c + ε w)` and the almost complex structure `J(c + ε w, ·)`:
 
+* the pullback of `K` along `w ↦ c + ε w` is the rescaled perturbation `ε K(c + ε w)`
+  (`Floer.perturbationPullback_const_add_smul_stdComplexLineReal` and its `dt` analogue);
 * the perturbed derivative of `v` is `ε` times that of `u` at `c + ε w`
   (`SymplecticForm.perturbedFDeriv_rescale`), so for `ε ≠ 0` the map `v` solves the rescaled
   equation exactly when `u` solves the original one
@@ -75,11 +76,6 @@ namespace Floer
 
 variable {X : Type*} {c : ℝ × ℝ} {ε : ℝ}
 
-/-- The derivative of the affine rescaling `w ↦ c + ε w` is `ε` times the identity. -/
-private theorem hasFDerivAt_const_add_smul (c : ℝ × ℝ) (ε : ℝ) (w : ℝ × ℝ) :
-    HasFDerivAt (fun w ↦ c + ε • w) (ε • ContinuousLinearMap.id ℝ (ℝ × ℝ)) w :=
-  ((hasFDerivAt_id w).const_smul ε).const_add c
-
 /-- The `ds` component of the pullback of a perturbation along the rescaling `w ↦ c + ε w` is
 `ε K_s(c + ε w)`. -/
 @[simp]
@@ -87,7 +83,7 @@ theorem perturbationPullback_const_add_smul_stdComplexLineReal (Ks Kt : ℝ × �
     perturbationPullback (fun w ↦ c + ε • w) Ks Kt stdComplexLineReal =
       fun w x ↦ ε * Ks (c + ε • w) x := by
   funext w x
-  simp [perturbationPullback_apply, (Floer.hasFDerivAt_const_add_smul c ε w).fderiv,
+  simp [perturbationPullback_apply, fderiv_fun_const_smul differentiableAt_fun_id,
     stdComplexLineReal_eq]
 
 /-- The `dt` component of the pullback of a perturbation along the rescaling `w ↦ c + ε w` is
@@ -97,7 +93,7 @@ theorem perturbationPullback_const_add_smul_stdComplexLineImag (Ks Kt : ℝ × �
     perturbationPullback (fun w ↦ c + ε • w) Ks Kt stdComplexLineImag =
       fun w x ↦ ε * Kt (c + ε • w) x := by
   funext w x
-  simp [perturbationPullback_apply, (Floer.hasFDerivAt_const_add_smul c ε w).fderiv,
+  simp [perturbationPullback_apply, fderiv_fun_const_smul differentiableAt_fun_id,
     stdComplexLineImag_eq]
 
 end Floer
@@ -155,23 +151,21 @@ theorem floerEnergyDensity_rescale (ω : SymplecticForm V) :
 
 /-- **The curvature of rescaled data.** The curvature of the rescaled perturbation
 `ε K(c + ε w)` is `ε²` times the curvature of `K` at `c + ε w`. -/
-theorem hamiltonianCurvature_rescale (ω : SymplecticForm V) {x : V}
-    (hKs : DifferentiableAt ℝ (fun z ↦ Ks z x) (c + ε • w))
-    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (c + ε • w))
-    (hKs' : DifferentiableAt ℝ (Ks (c + ε • w)) x)
-    (hKt' : DifferentiableAt ℝ (Kt (c + ε • w)) x) :
+theorem hamiltonianCurvature_rescale (ω : SymplecticForm V) {x : V} :
     ω.hamiltonianCurvature (fun w x ↦ ε * Ks (c + ε • w) x) (fun w x ↦ ε * Kt (c + ε • w) x) w x =
       ε ^ 2 * ω.hamiltonianCurvature Ks Kt (c + ε • w) x := by
-  have hφ : ContDiffAt ℝ 2 (fun w : ℝ × ℝ ↦ c + ε • w) w :=
-    (ContDiff.add contDiff_const (contDiff_id.const_smul ε) :
-      ContDiff ℝ 2 fun w : ℝ × ℝ ↦ c + ε • w).contDiffAt
-  have h := ω.hamiltonianCurvature_perturbationPullback hφ hKs hKt hKs' hKt'
-  rw [perturbationPullback_const_add_smul_stdComplexLineReal,
-    perturbationPullback_const_add_smul_stdComplexLineImag,
-    (Floer.hasFDerivAt_const_add_smul c ε w).fderiv] at h
-  rw [h]
-  congr 1
-  simp [ContinuousLinearMap.det]
+  -- As for `SymplecticForm.perturbedFDeriv_rescale`, this needs no differentiability: the chain
+  -- rule for affine reparametrizations and the homogeneity of derivatives and Poisson brackets
+  -- under constant multiples hold for arbitrary functions.
+  have hd (K : ℝ × ℝ → V → ℝ) : fderiv ℝ (fun w ↦ ε * K (c + ε • w) x) w =
+      ε • ε • fderiv ℝ (fun z ↦ K z x) (c + ε • w) := by
+    -- The function `w ↦ ε * K (c + ε • w) x` is the scalar multiple `ε • (w ↦ K (c + ε • w) x)`.
+    refine (congrFun (fderiv_const_smul_field (f := fun w ↦ K (c + ε • w) x) ε) w).trans ?_
+    rw [Pi.smul_apply, fderiv_comp_smul (f := fun y ↦ K (c + y) x),
+      fderiv_comp_add_left (f := fun z ↦ K z x)]
+  simp only [hamiltonianCurvature_def, hd, poissonBracket_const_mul_left,
+    poissonBracket_const_mul_right, smul_apply, smul_eq_mul]
+  ring
 
 end Pointwise
 
@@ -180,11 +174,6 @@ section Limit
 variable {ι : Type*} {l : Filter ι} {u : ι → ℝ × ℝ → V} {c : ι → ℝ × ℝ} {ε : ι → ℝ}
   {z₀ : ℝ × ℝ}
 
-/-- The rescaled points `c i + ε i • w` tend to the limit `z₀` of the centres. -/
-private theorem tendsto_const_add_smul (hc : Tendsto c l (𝓝 z₀)) (hε : Tendsto ε l (𝓝 0))
-    (w : ℝ × ℝ) : Tendsto (fun i ↦ c i + ε i • w) l (𝓝 z₀) := by
-  simpa using hc.add (hε.smul_const w)
-
 /-- The perturbation terms `ε i • X_K(c i + ε i • w, x i)` of the rescaled equation tend to zero
 along points `(c i + ε i • w, x i)` converging to a point where `X_K` is continuous. -/
 private theorem tendsto_smul_hamiltonianVectorField (ω : SymplecticForm V) {K : ℝ × ℝ → V → ℝ}
@@ -192,7 +181,8 @@ private theorem tendsto_smul_hamiltonianVectorField (ω : SymplecticForm V) {K :
     (hx : Tendsto x l (𝓝 x₀))
     (hX : ContinuousAt (uncurry fun z ↦ ω.hamiltonianVectorField (K z)) (z₀, x₀)) :
     Tendsto (fun i ↦ ε i • ω.hamiltonianVectorField (K (c i + ε i • w)) (x i)) l (𝓝 0) := by
-  simpa using hε.smul (hX.tendsto.comp ((tendsto_const_add_smul hc hε w).prodMk_nhds hx))
+  have hz : Tendsto (fun i ↦ c i + ε i • w) l (𝓝 z₀) := by simpa using hc.add (hε.smul_const w)
+  simpa using hε.smul (hX.tendsto.comp (hz.prodMk_nhds hx))
 
 /-- The rescaled perturbed derivatives `ε i • (du - X_K)` of maps `u i` at the points
 `c i + ε i • w` converge to the limit `L` of the derivatives of the rescaled maps, when the
@@ -236,10 +226,11 @@ theorem isComplexLinearMap_of_tendsto_rescale (ω : SymplecticForm V) [l.NeBot]
   -- The rescaled perturbed derivative `ε i • P i` converges to `L`.
   have hP := ω.tendsto_smul_perturbedFDeriv_rescale hc hε hx hL hXs hXt
   -- The structures along the sequence converge to the frozen structure `J(z₀, x₀)`.
+  have hz : Tendsto (fun i ↦ c i + ε i • w) l (𝓝 z₀) := by simpa using hc.add (hε.smul_const w)
   have hJ' : Tendsto
       (fun i ↦ (J (c i + ε i • w) (u i (c i + ε i • w))).toLinearMap.toContinuousLinearMap) l
       (𝓝 (J z₀ x₀).toLinearMap.toContinuousLinearMap) :=
-    hJ.tendsto.comp ((tendsto_const_add_smul hc hε w).prodMk_nhds hx)
+    hJ.tendsto.comp (hz.prodMk_nhds hx)
   -- Pass to the limit in `ε i • P i (0, 1) = J_i (ε i • P i (1, 0))`.
   rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe]
   refine tendsto_nhds_unique (hP stdComplexLineImag) ?_
@@ -276,7 +267,7 @@ theorem isJHolomorphicAt_of_tendstoLocallyUniformlyOn_rescale (ω : SymplecticFo
   intro w hw
   have hvL : HasFDerivAt v (L w) w :=
     hasFDerivAt_of_tendstoLocallyUniformlyOn hΩ hL (fun i w' hw' ↦ ((hu i w' hw').comp w'
-      (Floer.hasFDerivAt_const_add_smul (c i) (ε i) w').differentiableAt).hasFDerivAt)
+      (((hasFDerivAt_id w').const_smul (ε i)).const_add (c i)).differentiableAt).hasFDerivAt)
       hv hw
   exact isJHolomorphicAt_of_hasFDerivAt hvL <|
     ω.isComplexLinearMap_of_tendsto_rescale hc hε (hv w hw) (hL.tendsto_at hw) (hJ w hw)
@@ -313,8 +304,8 @@ private theorem lintegral_symplecticForm_le_liminf_of_tendsto_rescale_of_subset
     have hinj : InjOn (φ i) (φ i ⁻¹' B) := fun a _ b _ hab ↦
       smul_right_injective _ h0 (add_left_cancel hab)
     refine le_trans (le_of_eq ?_) (lintegral_mono_set (image_preimage_subset (φ i) B))
-    rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hpre i)
-      (fun w _ ↦ (Floer.hasFDerivAt_const_add_smul (c i) (ε i) w).hasFDerivWithinAt) hinj]
+    rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (f := φ i) (hpre i)
+      (fun w _ ↦ (((hasFDerivAt_id w).const_smul (ε i)).const_add (c i)).hasFDerivWithinAt) hinj]
     refine setLIntegral_congr_fun (hpre i) fun w _ ↦ ?_
     rw [← ENNReal.ofReal_mul (abs_nonneg _)]
     simp only [φ]
@@ -329,8 +320,8 @@ private theorem lintegral_symplecticForm_le_liminf_of_tendsto_rescale_of_subset
   -- Pointwise, the cut-off densities converge to the area density of the limit `v`.
   have hlim (w : ℝ × ℝ) : Tendsto (fun i ↦ g i w) l (𝓝 (ENNReal.ofReal
       (ω (fderiv ℝ v w stdComplexLineReal) (fderiv ℝ v w stdComplexLineImag)))) := by
-    have hB : ∀ᶠ i in l, φ i w ∈ B :=
-      tendsto_const_add_smul hc hε w (isOpen_ball.mem_nhds (mem_ball_self hδ))
+    have hz : Tendsto (φ · w) l (𝓝 z₀) := by simpa [φ] using hc.add (hε.smul_const w)
+    have hB : ∀ᶠ i in l, φ i w ∈ B := hz (isOpen_ball.mem_nhds (mem_ball_self hδ))
     have hz₀ : (z₀, v w) ∈ U ×ˢ (univ : Set V) := ⟨hδU (mem_ball_self hδ), mem_univ _⟩
     have hUV := (hU.prod isOpen_univ).mem_nhds hz₀
     have hP := ω.tendsto_smul_perturbedFDeriv_rescale hc hε (hv w) (hdv w)
@@ -339,7 +330,7 @@ private theorem lintegral_symplecticForm_le_liminf_of_tendsto_rescale_of_subset
     have hω := ((ω.continuous_apply_comp continuous_fst continuous_snd).tendsto _).comp
       ((hP stdComplexLineReal).prodMk_nhds (hP stdComplexLineImag))
     refine (ENNReal.tendsto_ofReal hω).congr' (hB.mono fun i hi ↦ ?_)
-    simp only [g, indicator_of_mem (show w ∈ φ i ⁻¹' B from hi), floerEnergyDensity_def,
+    simp only [g, indicator_of_mem (mem_preimage.mpr hi), floerEnergyDensity_def,
       comp_apply, φ, map_smul, LinearMap.smul_apply, smul_eq_mul, sq, mul_assoc]
   -- Fatou's lemma.
   calc ∫⁻ w, ENNReal.ofReal

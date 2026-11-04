@@ -397,18 +397,6 @@ section Integral
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- For a perturbation component that is `C¹` over an open set `U` of the domain, its Hamiltonian
-vector field `X_{K z}(x)` is continuous jointly in the domain point `z ∈ U` and the target point
-`x`. -/
-theorem continuousOn_uncurry_hamiltonianVectorField (ω : SymplecticForm V) {K : ℝ × ℝ → V → ℝ}
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hK : ContDiffOn ℝ 1 (uncurry K) (U ×ˢ univ)) :
-    ContinuousOn (uncurry fun z ↦ ω.hamiltonianVectorField (K z)) (U ×ˢ univ) := by
-  -- View `(z, x) ↦ K z` as a family over the parameter space `(ℝ × ℝ) × V`, evaluated at `x`.
-  have hK' : ContDiffOn ℝ 1 (uncurry fun p : (ℝ × ℝ) × V ↦ K p.1) ((U ×ˢ univ) ×ˢ univ) :=
-    hK.comp (contDiff_fst.fst.prodMk contDiff_snd).contDiffOn fun q hq ↦ ⟨hq.1.1, mem_univ _⟩
-  exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
-    continuousOn_snd hK'
-
 /-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
 energy density is continuous on `U`. -/
 theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
