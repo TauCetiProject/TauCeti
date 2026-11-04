@@ -72,6 +72,17 @@ theorem norm_cauchyFueterKernel (q q₀ : ℍ) :
   simp
   ring
 
+/-- The kernel times the displacement is the inverse squared distance, `G(r) * r = ‖r‖⁻²`,
+including at the pole, where both sides are `0`. -/
+theorem _root_.Quaternion.cauchyFueterKernel_mul_sub (q q₀ : ℍ) :
+    cauchyFueterKernel q q₀ * (q - q₀) = ((‖q - q₀‖ ^ 2)⁻¹ : ℝ) := by
+  rw [cauchyFueterKernel_eq, smul_mul_assoc, Quaternion.star_mul_self, normSq_eq_norm_mul_self,
+    ← Quaternion.coe_smul, smul_eq_mul]
+  congr 1
+  by_cases hr : ‖q - q₀‖ = 0
+  · simp [hr]
+  · field_simp
+
 /-- Real dilation scales the kernel by the inverse cube, also with the totalized value
 at a zero dilation. -/
 theorem cauchyFueterKernel_smul (r : ℝ) (q q₀ : ℍ) :

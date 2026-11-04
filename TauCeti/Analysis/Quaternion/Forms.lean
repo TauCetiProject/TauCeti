@@ -102,6 +102,20 @@ theorem dq_single (i : Fin 4) (r : ℝ) :
 theorem coe_dq : ⇑dq = (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm :=
   (rfl)
 
+/-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
+`EuclideanSpace ℝ (Fin 4)`. -/
+theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
+  rw [← _root_.Quaternion.norm_toLp_equivTuple]
+  congr 2
+  simp only [coe_dq, _root_.Quaternion.equivTuple]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+
+/-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
+with them. -/
+theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
+    ∑ i : Fin 4, ⟪q, dq (Pi.single i 1)⟫ • dq (Pi.single i 1) = q := by
+  ext <;> simp [Fin.sum_univ_four, _root_.Quaternion.inner_def, dq_apply, Pi.single_apply]
+
 /-! ### The `3`-form `Dq` -/
 
 /-- The real `3`-form on `Fin 4 → ℝ` omitting the coordinate `i`: the determinant of the
