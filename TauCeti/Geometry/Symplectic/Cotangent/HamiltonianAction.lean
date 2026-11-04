@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Action
 public import TauCeti.Geometry.Symplectic.Floer.Action
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -131,7 +132,7 @@ there, converge uniformly on `[0, 1]` to a path `x`, and that the base component
 derivatives converge uniformly on `[0, 1]` to that of `x`. If `H` is jointly continuous and the
 endpoint potentials are continuous at the base points of `x 0` and `x 1`, then the Hamiltonian
 actions of the paths converge to that of `x`. -/
-theorem tendsto_cotangentHamiltonianAction_of_tendstoUniformlyOn [FiniteDimensional ℝ V]
+theorem tendsto_cotangentHamiltonianAction_of_tendstoUniformlyOn
     {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {γ : ι → ℝ → V × StrongDual ℝ V}
     {x : ℝ → V × StrongDual ℝ V} {h₀ h₁ : V → ℝ} {H : ℝ → V × StrongDual ℝ V → ℝ}
     (hH : Continuous (uncurry H)) (hγc : ∀ᶠ i in l, ContinuousOn (γ i) [[0, 1]])
@@ -146,37 +147,30 @@ theorem tendsto_cotangentHamiltonianAction_of_tendstoUniformlyOn [FiniteDimensio
   have hx : ContinuousOn x [[0, 1]] := hγ.continuousOn hγc.frequently
   have hx' : ContinuousOn (fun t ↦ (deriv x t).1) [[0, 1]] := hγ'.continuousOn hγc'.frequently
   -- The Liouville integrands converge uniformly: they evaluate the covectors of the paths on the
-  -- base components of their derivatives, and these pairs converge uniformly.
+  -- base components of their derivatives, and these pairs converge uniformly (`prodMk` converges
+  -- along `l ×ˢ l`, which we pull back along the diagonal).
   have hpair : TendstoUniformlyOn (fun i t ↦ ((γ i t).2, (deriv (γ i) t).1))
-      (fun t ↦ ((x t).2, (deriv x t).1)) l [[0, 1]] := by
-    rw [Metric.tendstoUniformlyOn_iff] at hγ hγ' ⊢
-    intro ε hε
-    filter_upwards [hγ ε hε, hγ' ε hε] with i hi hi' t ht
-    rw [Prod.dist_eq]
-    have hsnd : dist (x t).2 (γ i t).2 ≤ dist (x t) (γ i t) := by
-      rw [Prod.dist_eq (x := x t) (y := γ i t)]
-      exact le_max_right _ _
-    exact max_lt (hsnd.trans_lt (hi t ht)) (hi' t ht)
+      (fun t ↦ ((x t).2, (deriv x t).1)) l [[0, 1]] := fun _ hu ↦
+    tendsto_diag.eventually (((uniformContinuous_snd.comp_tendstoUniformlyOn hγ).prodMk hγ') _ hu)
   have hlio : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, (γ i t).2 (deriv (γ i) t).1) l
       (𝓝 (∫ t in (0 : ℝ)..1, (x t).2 (deriv x t).1)) :=
     TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn
       (hγc.and hγc' |>.mono fun i hi ↦ hi.1.snd.clm_apply hi.2)
-      (hpair.comp_continuous_of_isCompact (g := fun p : StrongDual ℝ V × V ↦ p.1 p.2)
-        isBoundedBilinearMap_apply.continuous
-        (isCompact_uIcc.image_of_continuousOn (hx.snd.prodMk hx')))
+      (ContinuousAt.comp_tendstoUniformlyOn_of_isCompact
+        (g := fun p : StrongDual ℝ V × V ↦ p.1 p.2)
+        (fun _ _ ↦ isBoundedBilinearMap_apply.continuous.continuousAt)
+        (isCompact_uIcc.image_of_continuousOn (hx.snd.prodMk hx')) hpair)
   -- The Hamiltonian integrands converge uniformly, as `H` is continuous.
-  have hgraph : TendstoUniformlyOn (fun i t ↦ (t, γ i t)) (fun t ↦ (t, x t)) l [[0, 1]] := by
-    rw [Metric.tendstoUniformlyOn_iff] at hγ ⊢
-    intro ε hε
-    filter_upwards [hγ ε hε] with i hi t ht
-    rw [Prod.dist_eq, dist_self]
-    exact max_lt hε (hi t ht)
+  have hid : TendstoUniformlyOn (fun (_ : ι) (t : ℝ) ↦ t) id l [[0, 1]] :=
+    fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+  have hgraph : TendstoUniformlyOn (fun i t ↦ (t, γ i t)) (fun t ↦ (t, x t)) l [[0, 1]] :=
+    fun _ hu ↦ tendsto_diag.eventually ((hid.prodMk hγ) _ hu)
   have hHint : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, H t (γ i t)) l
       (𝓝 (∫ t in (0 : ℝ)..1, H t (x t))) :=
     TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn
       (hγc.mono fun i hi ↦ hH.comp_continuousOn (continuousOn_id.prodMk hi))
-      (hgraph.comp_continuous_of_isCompact hH
-        (isCompact_uIcc.image_of_continuousOn (continuousOn_id.prodMk hx)))
+      (ContinuousAt.comp_tendstoUniformlyOn_of_isCompact (fun _ _ ↦ hH.continuousAt)
+        (isCompact_uIcc.image_of_continuousOn (continuousOn_id.prodMk hx)) hgraph)
   have hstart : Tendsto (fun i ↦ h₀ (γ i 0).1) l (𝓝 (h₀ (x 0).1)) :=
     hh₀.tendsto.comp (continuousAt_fst.tendsto.comp (hγ.tendsto_at (by simp)))
   have hend : Tendsto (fun i ↦ h₁ (γ i 1).1) l (𝓝 (h₁ (x 1).1)) :=
@@ -385,7 +379,7 @@ theorem lintegral_floerEnergyDensity_eq_of_tendstoUniformlyOn
   have hderiv (s : ℝ) {t : ℝ} (ht : t ∈ [[(0 : ℝ), 1]]) :
       deriv (fun t ↦ u (s, t)) t = fderiv ℝ u (s, t) stdComplexLineImag := by
     have hv : HasDerivAt (fun t ↦ ((s, t) : ℝ × ℝ)) stdComplexLineImag t :=
-      (hasDerivAt_const t s).prodMk (hasDerivAt_id t)
+      stdComplexLineImag_eq ▸ hasDerivAt_prodMk_right s t
     exact (((hu.differentiableOn two_ne_zero _ (hmem ht)).differentiableAt
       (hU.mem_nhds (hmem ht))).hasFDerivAt.comp_hasDerivAt t hv).deriv
   have hpath (s : ℝ) : ContinuousOn (fun t ↦ u (s, t)) [[0, 1]] :=
