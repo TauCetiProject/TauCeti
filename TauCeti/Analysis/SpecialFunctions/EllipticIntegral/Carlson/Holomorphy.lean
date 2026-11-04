@@ -25,18 +25,16 @@ This file establishes separate complex differentiability, slit-plane holomorphy,
 derivative formulas (DLMF §19.18) for Carlson's symmetric elliptic integrals:
 
 * `Complex.carlsonRC` in both arguments (`_left` and `_right`), including the closed-form
-  difference-quotient derivatives (DLMF 19.18.1, 19.18.2) obtained from the degenerate `R_D`
-  identities (DLMF 19.21.2);
+  difference-quotient derivatives obtained from the degenerate `R_D` identities
+  (DLMF 19.20.20, 19.20.21);
 * `Complex.carlsonRJ` in its first three symmetric arguments (`_first`, `_second`, `_third`),
-  both in integral form and in the closed form `(R_D - R_J) / (2 (z - p))` away from `p`
-  (DLMF 19.18.5);
+  both in integral form and in the closed form `(R_D - R_J) / (2 (z - p))` away from `p`;
 * `Complex.carlsonRD` in all three arguments (`_left`, `_middle`, `_right`), including the
-  closed-form symmetric derivatives `(R_D(x, z, y) - R_D(x, y, z)) / (2 (y - z))` away from `z`
-  (DLMF 19.18.4);
+  closed-form symmetric derivatives `(R_D(x, z, y) - R_D(x, y, z)) / (2 (y - z))` away from `z`;
 * `Complex.carlsonRG` in all three arguments (`_left`, `_middle`, `_right`), proving
   differentiability and holomorphy even when both fixed arguments vanish, together with the
   closed-form partial derivative `R_F(x, y, z) / 4 - z R_D(x, y, z) / 12` when at most one fixed
-  argument vanishes (DLMF 19.18.3).
+  argument vanishes.
 
 Together with the identity theorem on the simply connected domain `Complex.slitPlane`, separate
 holomorphy upgrades real-argument identities for Carlson's integrals to the complex slit plane.
@@ -44,32 +42,35 @@ holomorphy upgrades real-argument identities for Carlson's integrals to the comp
 ## Main results
 
 * `Complex.sub_mul_carlsonRD_self_left`, `Complex.two_mul_sub_mul_carlsonRD_self_right` —
-  evaluation of `R_D(y, y, x)` and `R_D(x, y, y)` in terms of `R_C(x, y)` (DLMF 19.21.2).
+  evaluation of `R_D(y, y, x)` and `R_D(x, y, y)` in terms of `R_C(x, y)`
+  (DLMF 19.20.21, 19.20.20).
 * `Complex.hasDerivAt_carlsonRC_left`, `Complex.hasDerivAt_carlsonRC_left_of_ne`,
   `Complex.differentiableOn_carlsonRC_left`, `Complex.analyticOnNhd_carlsonRC_left` — first
-  partial derivative and slit-plane holomorphy of `R_C` (DLMF 19.18.1).
+  partial derivative and slit-plane holomorphy of `R_C`.
 * `Complex.hasDerivAt_carlsonRC_right`, `Complex.hasDerivAt_carlsonRC_right_of_ne`,
   `Complex.differentiableOn_carlsonRC_right`, `Complex.analyticOnNhd_carlsonRC_right` — second
-  partial derivative and slit-plane holomorphy of `R_C` (DLMF 19.18.2).
+  partial derivative and slit-plane holomorphy of `R_C`.
 * `Complex.hasDerivAt_carlsonRJ_first`, `Complex.hasDerivAt_carlsonRJ_second`,
-  `Complex.hasDerivAt_carlsonRJ_third`, their `_of_ne` closed forms (DLMF 19.18.5), and
+  `Complex.hasDerivAt_carlsonRJ_third`, their `_of_ne` closed forms, and
   `Complex.differentiableOn_carlsonRJ_*`, `Complex.analyticOnNhd_carlsonRJ_*` — partial
   derivatives and slit-plane holomorphy of `R_J` in its three symmetric arguments.
 * `Complex.hasDerivAt_carlsonRD_left`, `Complex.hasDerivAt_carlsonRD_middle`,
   `Complex.hasDerivAt_carlsonRD_right`, the symmetric closed forms
-  `Complex.hasDerivAt_carlsonRD_left_of_ne` and `Complex.hasDerivAt_carlsonRD_middle_of_ne`
-  (DLMF 19.18.4), and `Complex.differentiableOn_carlsonRD_*`,
-  `Complex.analyticOnNhd_carlsonRD_*` — partial derivatives and slit-plane holomorphy of `R_D` in
-  all three arguments.
+  `Complex.hasDerivAt_carlsonRD_left_of_ne` and `Complex.hasDerivAt_carlsonRD_middle_of_ne`, and
+  `Complex.differentiableOn_carlsonRD_*`, `Complex.analyticOnNhd_carlsonRD_*` — partial
+  derivatives and slit-plane holomorphy of `R_D` in all three arguments.
 * `Complex.hasDerivAt_carlsonRG_left`, `Complex.hasDerivAt_carlsonRG_middle`,
-  `Complex.hasDerivAt_carlsonRG_right` (DLMF 19.18.3), their `_integral` forms allowing two zero
-  fixed arguments, and `Complex.differentiableOn_carlsonRG_*`, `Complex.analyticOnNhd_carlsonRG_*`
-  — partial derivatives and slit-plane holomorphy of `R_G` in all three arguments.
+  `Complex.hasDerivAt_carlsonRG_right`, their `_integral` forms allowing two zero fixed
+  arguments, and `Complex.differentiableOn_carlsonRG_*`, `Complex.analyticOnNhd_carlsonRG_*` —
+  partial derivatives and slit-plane holomorphy of `R_G` in all three arguments.
 
 ## References
 
-* NIST *Digital Library of Mathematical Functions*, §19.18 and §19.21,
-  <https://dlmf.nist.gov/19.18>.
+* NIST *Digital Library of Mathematical Functions*, §19.18(i) and §19.20(iv),
+  <https://dlmf.nist.gov/19.18> and <https://dlmf.nist.gov/19.20> (19.18.4–19.18.5 give the
+  partial-derivative relations for the general `R`-function alongside 19.18.1 for `∂R_F/∂z` and
+  19.18.2 for `(d/dx) R_G(x + a, x + b, x + c)`; 19.20.20–19.20.21 evaluate `R_D(x, y, y)` and
+  `R_D(x, x, z)` in terms of `R_C`).
 * B. C. Carlson, *Special Functions of Applied Mathematics*, Academic Press, 1977, Chapter 9.
 * B. C. Carlson, Numerical computation of real or complex elliptic integrals, *Numer. Algorithms*
   10 (1995), 13–26.
@@ -88,7 +89,7 @@ namespace Complex
 
 /-! ### Partial derivatives and holomorphy of `R_C` -/
 
-/-- **Degenerate `R_D` in terms of `R_C`** (DLMF 19.21.2): for `x, y ∈ slitPlane`,
+/-- **Degenerate `R_D` in terms of `R_C`** (DLMF 19.20.21): for `x, y ∈ slitPlane`,
 `(y - x) R_D(y, y, x) = 3 (x^(-1/2) - R_C(x, y))`. -/
 theorem sub_mul_carlsonRD_self_left {x y : ℂ} (hx : x ∈ slitPlane) (hy : y ∈ slitPlane) :
     (y - x) * carlsonRD y y x = 3 * (x ^ (-(1 / 2) : ℂ) - carlsonRC x y) := by
@@ -125,7 +126,7 @@ theorem sub_mul_carlsonRD_self_left {x y : ℂ} (hx : x ∈ slitPlane) (hy : y �
     integral_sub hint_diag hint_rc, ← carlsonRF_self hx, carlsonRF_def, carlsonRC_eq_integral]
   ring
 
-/-- **Degenerate `R_D` in terms of `R_C`, second case** (DLMF 19.21.2): for
+/-- **Degenerate `R_D` in terms of `R_C`, second case** (DLMF 19.20.20): for
 `x ∈ slitPlane ∪ {0}` and `y ∈ slitPlane`,
 `2 (y - x) R_D(x, y, y) = 3 (R_C(x, y) - x^(1/2) y⁻¹)`. -/
 theorem two_mul_sub_mul_carlsonRD_self_right {x y : ℂ} (hx : x ∈ slitPlane ∪ {0})
@@ -246,8 +247,8 @@ theorem hasDerivAt_carlsonRC_left {x y : ℂ} (hx : x ∈ slitPlane) (hy : y ∈
   rw [hint_eq]
   ring
 
-/-- **First partial derivative of `R_C`, closed form** (DLMF 19.18.1): for `x, y ∈ slitPlane` with
-`x ≠ y`, `∂R_C(x, y)/∂x = (R_C(x, y) - x^(-1/2)) / (2 (y - x))`. -/
+/-- **First partial derivative of `R_C`, closed form.** For `x, y ∈ slitPlane` with `x ≠ y`,
+`∂R_C(x, y)/∂x = (R_C(x, y) - x^(-1/2)) / (2 (y - x))`. -/
 theorem hasDerivAt_carlsonRC_left_of_ne {x y : ℂ} (hx : x ∈ slitPlane) (hy : y ∈ slitPlane)
     (hxy : x ≠ y) :
     HasDerivAt (fun w => carlsonRC w y)
@@ -292,8 +293,8 @@ theorem hasDerivAt_carlsonRC_right {x y : ℂ} (hx : x ∈ slitPlane ∪ {0}) (h
     norm_num
   rw [hint_eq]; ring
 
-/-- **Second partial derivative of `R_C`, closed form** (DLMF 19.18.2): for
-`x ∈ slitPlane ∪ {0}` and `y ∈ slitPlane` with `x ≠ y`,
+/-- **Second partial derivative of `R_C`, closed form.** For `x ∈ slitPlane ∪ {0}` and
+`y ∈ slitPlane` with `x ≠ y`,
 `∂R_C(x, y)/∂y = (x^(1/2) y⁻¹ - R_C(x, y)) / (2 (y - x))`. -/
 theorem hasDerivAt_carlsonRC_right_of_ne {x y : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane) (hxy : x ≠ y) :
@@ -342,8 +343,8 @@ theorem hasDerivAt_carlsonRJ_third {x y z p : ℂ} (hx : x ∈ slitPlane ∪ {0}
     setIntegral_congr_fun measurableSet_Ioi fun t _ => by norm_num; ring
   rw [hint_eq]; ring
 
-/-- **Third partial derivative of `R_J`, closed form** (DLMF 19.18.5): for `x ∈ slitPlane ∪ {0}`
-and `y, z, p ∈ slitPlane` with `z ≠ p`,
+/-- **Third partial derivative of `R_J`, closed form.** For `x ∈ slitPlane ∪ {0}` and
+`y, z, p ∈ slitPlane` with `z ≠ p`,
 `∂R_J(x, y, z, p)/∂z = (R_D(x, y, z) - R_J(x, y, z, p)) / (2 (z - p))`. -/
 theorem hasDerivAt_carlsonRJ_third_of_ne {x y z p : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) (hp : p ∈ slitPlane) (hzp : z ≠ p) :
@@ -408,8 +409,8 @@ theorem hasDerivAt_carlsonRJ_second {x y z p : ℂ} (hx : x ∈ slitPlane ∪ {0
   refine (hasDerivAt_carlsonRJ_third hx hz hy hp).congr_deriv ?_
   congr 1; exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by ring
 
-/-- **Second partial derivative of `R_J`, closed form** (DLMF 19.18.5): for `x ∈ slitPlane ∪ {0}`
-and `y, z, p ∈ slitPlane` with `y ≠ p`,
+/-- **Second partial derivative of `R_J`, closed form.** For `x ∈ slitPlane ∪ {0}` and
+`y, z, p ∈ slitPlane` with `y ≠ p`,
 `∂R_J(x, y, z, p)/∂y = (R_D(x, z, y) - R_J(x, y, z, p)) / (2 (y - p))`. -/
 theorem hasDerivAt_carlsonRJ_second_of_ne {x y z p : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) (hp : p ∈ slitPlane) (hyp : y ≠ p) :
@@ -440,8 +441,8 @@ theorem hasDerivAt_carlsonRJ_first {x y z p : ℂ} (hx : x ∈ slitPlane)
   refine (hasDerivAt_carlsonRJ_second hy hx hz hp).congr_deriv ?_
   congr 1; exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by ring
 
-/-- **First partial derivative of `R_J`, closed form** (DLMF 19.18.5): for `x, z, p ∈ slitPlane`
-and `y ∈ slitPlane ∪ {0}` with `x ≠ p`,
+/-- **First partial derivative of `R_J`, closed form.** For `x, z, p ∈ slitPlane` and
+`y ∈ slitPlane ∪ {0}` with `x ≠ p`,
 `∂R_J(x, y, z, p)/∂x = (R_D(y, z, x) - R_J(x, y, z, p)) / (2 (x - p))`. -/
 theorem hasDerivAt_carlsonRJ_first_of_ne {x y z p : ℂ} (hx : x ∈ slitPlane)
     (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane) (hp : p ∈ slitPlane) (hxp : x ≠ p) :
@@ -475,8 +476,8 @@ theorem hasDerivAt_carlsonRD_middle {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
   congr 1; refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
   rw [mul_assoc _ (((t : ℂ) + z) ^ (-(1 / 2) : ℂ)), TauCeti.cpow_mul_inv (by norm_num)]; norm_num
 
-/-- **Second partial derivative of `R_D`, closed form** (DLMF 19.18.4): for `x ∈ slitPlane ∪ {0}`
-and `y, z ∈ slitPlane` with `y ≠ z`,
+/-- **Second partial derivative of `R_D`, closed form.** For `x ∈ slitPlane ∪ {0}` and
+`y, z ∈ slitPlane` with `y ≠ z`,
 `∂R_D(x, y, z)/∂y = (R_D(x, z, y) - R_D(x, y, z)) / (2 (y - z))`. -/
 theorem hasDerivAt_carlsonRD_middle_of_ne {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) (hyz : y ≠ z) :
@@ -506,7 +507,7 @@ theorem hasDerivAt_carlsonRD_left {x y z : ℂ} (hx : x ∈ slitPlane) (hy : y �
   congr 1; refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
   rw [mul_assoc _ (((t : ℂ) + z) ^ (-(1 / 2) : ℂ)), TauCeti.cpow_mul_inv (by norm_num)]; norm_num
 
-/-- **First partial derivative of `R_D`, closed form** (DLMF 19.18.4): for `x, z ∈ slitPlane` and
+/-- **First partial derivative of `R_D`, closed form.** For `x, z ∈ slitPlane` and
 `y ∈ slitPlane ∪ {0}` with `x ≠ z`,
 `∂R_D(x, y, z)/∂x = (R_D(y, z, x) - R_D(x, y, z)) / (2 (x - z))`. -/
 theorem hasDerivAt_carlsonRD_left_of_ne {x y z : ℂ} (hx : x ∈ slitPlane)
@@ -797,8 +798,8 @@ theorem hasDerivAt_carlsonRG_right_integral {x y z : ℂ} (hx : x ∈ slitPlane 
   rw [← hw₂_eq]
   linear_combination (1 / 4 : ℂ) * hftc
 
-/-- **Third partial derivative of `R_G`, closed form** (DLMF 19.18.3): when at most one of `x, y`
-vanishes (`x ∈ slitPlane ∪ {0}`, `y, z ∈ slitPlane`),
+/-- **Third partial derivative of `R_G`, closed form.** When at most one of `x, y` vanishes
+(`x ∈ slitPlane ∪ {0}`, `y, z ∈ slitPlane`),
 `∂R_G(x, y, z)/∂z = R_F(x, y, z) / 4 - z R_D(x, y, z) / 12`. -/
 theorem hasDerivAt_carlsonRG_right {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane)
     (hz : z ∈ slitPlane) :
@@ -855,8 +856,8 @@ theorem hasDerivAt_carlsonRG_middle_integral {x y z : ℂ} (hx : x ∈ slitPlane
   refine (hasDerivAt_carlsonRG_right_integral hx hz hy).congr_deriv ?_
   congr 1; exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by ring
 
-/-- **Second partial derivative of `R_G`, closed form** (DLMF 19.18.3): when at most one of `x, z`
-vanishes (`x ∈ slitPlane ∪ {0}`, `y, z ∈ slitPlane`),
+/-- **Second partial derivative of `R_G`, closed form.** When at most one of `x, z` vanishes
+(`x ∈ slitPlane ∪ {0}`, `y, z ∈ slitPlane`),
 `∂R_G(x, y, z)/∂y = R_F(x, y, z) / 4 - y R_D(x, z, y) / 12`. -/
 theorem hasDerivAt_carlsonRG_middle {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane)
     (hz : z ∈ slitPlane) :
@@ -888,8 +889,8 @@ theorem hasDerivAt_carlsonRG_left_integral {x y z : ℂ} (hx : x ∈ slitPlane)
   refine (hasDerivAt_carlsonRG_middle_integral hy hx hz).congr_deriv ?_
   congr 1; exact setIntegral_congr_fun measurableSet_Ioi fun t _ => by ring
 
-/-- **First partial derivative of `R_G`, closed form** (DLMF 19.18.3): when at most one of `y, z`
-vanishes (`x, z ∈ slitPlane`, `y ∈ slitPlane ∪ {0}`),
+/-- **First partial derivative of `R_G`, closed form.** When at most one of `y, z` vanishes
+(`x, z ∈ slitPlane`, `y ∈ slitPlane ∪ {0}`),
 `∂R_G(x, y, z)/∂x = R_F(x, y, z) / 4 - x R_D(y, z, x) / 12`. -/
 theorem hasDerivAt_carlsonRG_left {x y z : ℂ} (hx : x ∈ slitPlane) (hy : y ∈ slitPlane ∪ {0})
     (hz : z ∈ slitPlane) :
