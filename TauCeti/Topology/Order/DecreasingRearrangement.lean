@@ -142,6 +142,33 @@ theorem setOf_lt_decreasingRearrangement {a : ℝ}
     obtain ⟨s, hsub, hs⟩ := exists_subset_card_eq (Nat.succ_le_of_lt hn)
     exact ⟨s, hs, fun i hi ↦ hfin.mem_toFinset.mp (hsub hi)⟩
 
+/-- Discarding entries that are not positive does not change the rearrangement: restricting `r`
+to a set of indices containing every positive entry has the same rearrangement. -/
+theorem decreasingRearrangement_comp_subtypeVal (hr : BddAbove (Set.range r)) {S : Set ι}
+    (hS : ∀ i, 0 < r i → i ∈ S) (n : ℕ) :
+    decreasingRearrangement (fun i : S ↦ r i) n = decreasingRearrangement r n := by
+  classical
+  have hr' : BddAbove (Set.range fun i : S ↦ r i) :=
+    hr.mono (Set.range_comp_subset_range _ r)
+  -- Both rearrangements have the same strict superlevels at nonnegative thresholds.
+  have key (a : ℝ) (ha : 0 ≤ a) :
+      a < decreasingRearrangement (fun i : S ↦ r i) n ↔ a < decreasingRearrangement r n := by
+    rw [lt_decreasingRearrangement_iff hr' ha, lt_decreasingRearrangement_iff hr ha]
+    constructor
+    · rintro ⟨t, ht, hta⟩
+      exact ⟨t.map (Function.Embedding.subtype _), by rw [card_map, ht], by simpa using hta⟩
+    · rintro ⟨t, ht, hta⟩
+      have htS : ∀ i ∈ t, i ∈ S := fun i hi ↦ hS i (ha.trans_lt (hta i hi))
+      refine ⟨t.subtype (· ∈ S), ?_, fun i hi ↦ hta i (mem_subtype.mp hi)⟩
+      rw [card_subtype, filter_true_of_mem htS, ht]
+  have h₀ := decreasingRearrangement_nonneg hr' n
+  have h₁ := decreasingRearrangement_nonneg hr n
+  rcases lt_trichotomy (decreasingRearrangement (fun i : S ↦ r i) n)
+    (decreasingRearrangement r n) with h | h | h
+  · exact absurd ((key _ h₀).mpr h) (lt_irrefl _)
+  · exact h
+  · exact absurd ((key _ h₁).mp h) (lt_irrefl _)
+
 /-- Every positive term of the rearrangement of a null family is an original entry. -/
 theorem exists_eq_decreasingRearrangement (hr : Tendsto r cofinite (𝓝 0)) {n : ℕ}
     (hn : 0 < decreasingRearrangement r n) : ∃ i, r i = decreasingRearrangement r n := by

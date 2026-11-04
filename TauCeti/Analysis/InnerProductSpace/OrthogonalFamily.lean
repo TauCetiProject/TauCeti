@@ -15,8 +15,9 @@ The spans of pairwise orthogonal vectors form an `OrthogonalFamily`. This constr
 orthogonal-series results for subspaces to apply directly to a vector family, including one with
 zero terms: the span of a zero vector is the zero subspace. In particular, the Pythagorean
 identity `OrthogonalFamily.norm_sum` gives `‖∑ i ∈ s, v i‖² = ∑ i ∈ s, ‖v i‖²` for pairwise
-orthogonal vectors. Applied to the images of an orthonormal basis under a linear map `T`, it gives
-`‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²` whenever these images are pairwise orthogonal.
+orthogonal vectors, and passing to the limit gives the same identity for a convergent series of
+pairwise orthogonal vectors. Applied to the images of an orthonormal basis under a linear map `T`,
+it gives `‖T x‖² = ∑ᵢ ‖⟪eᵢ, x⟫‖² ‖T eᵢ‖²` whenever these images are pairwise orthogonal.
 
 Orthogonality also gives linear independence: a nonzero vector followed by a linearly independent
 family of vectors orthogonal to it is linearly independent
@@ -49,6 +50,14 @@ theorem norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero {v : ι → E}
     ‖∑ i ∈ s, v i‖ ^ 2 = ∑ i ∈ s, ‖v i‖ ^ 2 :=
   (orthogonalFamily_span_singleton hv).norm_sum
     (fun i ↦ ⟨v i, Submodule.mem_span_singleton_self (v i)⟩) s
+
+/-- **Pythagoras for an orthogonal series.** If pairwise orthogonal vectors sum to `y`, then
+their squared norms sum to `‖y‖²`. -/
+theorem hasSum_norm_sq_of_pairwise_inner_eq_zero {v : ι → E}
+    (hv : Pairwise fun i j ↦ ⟪v i, v j⟫_𝕜 = 0) {y : E} (hy : HasSum v y) :
+    HasSum (fun i ↦ ‖v i‖ ^ 2) (‖y‖ ^ 2) :=
+  ((Filter.Tendsto.norm hy).pow 2).congr fun s ↦
+    norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv s
 
 end TauCeti
 

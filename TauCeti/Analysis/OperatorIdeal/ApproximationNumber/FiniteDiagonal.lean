@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.BasisSpan
-public import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
-public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
 
 /-!
 # Approximation numbers of finite diagonal maps
@@ -20,7 +18,10 @@ the images `T eᵢ` are pairwise orthogonal. Then `‖T x‖² = ∑ᵢ ‖⟪e�
 the dimensions of `E` and `F` is needed, and the target need be neither complete nor
 finite-dimensional.
 
-Both directions come from the min–max bounds for approximation numbers. If every basis vector
+Both directions are the finite cases of the bounds for a Hilbert basis,
+`HilbertBasis.singularValue_le_of_pairwise_inner_eq_zero` and
+`HilbertBasis.le_singularValue_of_pairwise_inner_eq_zero`, which come from the min–max bounds for
+approximation numbers. If every basis vector
 outside an `n`-element index set is sent to a vector of norm at most `c`, then `T` is bounded by `c`
 on the orthogonal complement of the span of that set, so `aₙ(T) ≤ c`. If more than `n` basis
 vectors are sent to vectors of norm at least `c`, then `T` is `c`-coercive on their span, so
@@ -71,25 +72,9 @@ theorem singularValue_le_of_pairwise_inner_eq_zero
     (hT : Pairwise fun i j ↦ ⟪T (e i), T (e j)⟫_𝕜 = 0) {n : ℕ} {s : Finset ι}
     (hs : s.card ≤ n) {c : ℝ≥0} (hc : ∀ i ∉ s, ‖T (e i)‖ ≤ c) : T.singularValue n ≤ c := by
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis e.toBasis
-  have hV : Module.rank 𝕜 (e.spanIndices s) ≤ n := by
-    rw [← Module.finrank_eq_rank, e.finrank_spanIndices]
-    exact_mod_cast hs
-  refine (T.singularValue_le_nnnorm_comp_orthogonal hV).trans ?_
-  refine NNReal.coe_le_coe.mp (opNorm_le_bound _ c.2 fun x ↦ ?_)
-  -- The coordinates of `x ∈ (span {eᵢ | i ∈ s})ᗮ` vanish on `s`.
-  have hx : ∀ i ∈ s, ⟪e i, (x : E)⟫_𝕜 = 0 := fun i hi ↦
-    (Submodule.mem_orthogonal _ _).mp x.2 _ (e.mem_spanIndices_of_mem hi)
-  have hpy : ‖T x‖ ^ 2 = _ :=
-    (T : E →ₗ[𝕜] F).norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero e hT x
-  have hsq : ‖T x‖ ^ 2 ≤ (c * ‖(x : E)‖) ^ 2 := by
-    rw [hpy, mul_pow, ← e.sum_sq_norm_inner_right, Finset.mul_sum]
-    refine Finset.sum_le_sum fun i _ ↦ ?_
-    by_cases hi : i ∈ s
-    · simp [hx i hi]
-    · rw [mul_comm]
-      gcongr
-      exact hc i hi
-  simpa using (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp hsq
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  exact e.toHilbertBasis.singularValue_le_of_pairwise_inner_eq_zero (by simpa using hT) hs
+    (by simpa using hc)
 
 /-- **Lower bound for a diagonal map.** Let `T` send an orthonormal basis `(eᵢ)` to pairwise
 orthogonal vectors. If `c ≤ ‖T eᵢ‖` for every index in a set of more than `n` indices, then
@@ -98,27 +83,9 @@ theorem le_singularValue_of_pairwise_inner_eq_zero
     (hT : Pairwise fun i j ↦ ⟪T (e i), T (e j)⟫_𝕜 = 0) {n : ℕ} {s : Finset ι}
     (hs : n < s.card) {c : ℝ} (hc : ∀ i ∈ s, c ≤ ‖T (e i)‖) : c ≤ T.singularValue n := by
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis e.toBasis
-  have hV : (n : Cardinal) < Module.rank 𝕜 (e.spanIndices s) := by
-    rw [← Module.finrank_eq_rank, e.finrank_spanIndices]
-    exact_mod_cast hs
-  rcases le_or_gt c 0 with hc0 | hc0
-  · exact hc0.trans (NNReal.coe_nonneg _)
-  refine T.le_singularValue_of_lt_rank hV fun x hx ↦ ?_
-  -- The coordinates of `x ∈ span {eᵢ | i ∈ s}` vanish off `s`.
-  have hx' : ∀ i ∉ s, ⟪e i, x⟫_𝕜 = 0 := fun i hi ↦ by
-    rw [← e.repr_apply_apply]
-    exact e.repr_eq_zero_of_mem_spanIndices hx hi
-  have hpy : ‖T x‖ ^ 2 = _ :=
-    (T : E →ₗ[𝕜] F).norm_apply_sq_eq_sum_of_pairwise_inner_eq_zero e hT x
-  have hsq : (c * ‖x‖) ^ 2 ≤ ‖T x‖ ^ 2 := by
-    rw [hpy, mul_pow, ← e.sum_sq_norm_inner_right, Finset.mul_sum]
-    refine Finset.sum_le_sum fun i _ ↦ ?_
-    by_cases hi : i ∈ s
-    · rw [mul_comm]
-      gcongr
-      exact hc i hi
-    · simp [hx' i hi]
-  exact (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp hsq
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  exact e.toHilbertBasis.le_singularValue_of_pairwise_inner_eq_zero (by simpa using hT) hs
+    (by simpa using hc)
 
 /-- **Approximation numbers of a diagonal map.** Let `T` send an orthonormal basis `(eᵢ)` to
 pairwise orthogonal vectors, and let `π` list `p` indices so that the norms `‖T e_{π k}‖` are
