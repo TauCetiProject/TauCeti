@@ -186,7 +186,11 @@ theorem mpullback_apply_inl (α : RoughForm I M F 1) {w : ℝ × ℝ → M} {s t
   simp only [Function.comp_def] at h
   rw [h]
   refine Eq.trans ?_ (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
-  congr 1
+  -- Identify the evaluation vector with the image of `1` under the derivative of the line;
+  -- the tangent spaces of `ℝ × ℝ` and `ℝ` are these model spaces by definition.
+  refine congrArg _ (funext fun _ ↦ ?_)
+  change ((1, 0) : ℝ × ℝ) = (ContinuousLinearMap.id ℝ ℝ).prod 0 (1 : ℝ)
+  simp
 
 omit [IsManifold I 1 M] in
 /-- Along a map of the plane, the pullback of a one-form evaluated on `∂_t` at `(s, t)` is the
@@ -200,7 +204,11 @@ theorem mpullback_apply_inr (α : RoughForm I M F 1) {w : ℝ × ℝ → M} {s t
   simp only [Function.comp_def] at h
   rw [h]
   refine Eq.trans ?_ (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).symm
-  congr 1
+  -- Identify the evaluation vector with the image of `1` under the derivative of the line;
+  -- the tangent spaces of `ℝ × ℝ` and `ℝ` are these model spaces by definition.
+  refine congrArg _ (funext fun _ ↦ ?_)
+  change ((0, 1) : ℝ × ℝ) = (0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ) (1 : ℝ)
+  simp
 
 namespace SmoothForm
 
