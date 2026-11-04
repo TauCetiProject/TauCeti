@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Different.Hilbert
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
+public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.Kummer.Extension
@@ -43,6 +44,7 @@ extension with its quadratic subextension: the third lower group of `ℚ₂(√2
   the Eisenstein polynomial and its integral root.
 * `TauCeti.DyadicSqrtTwo.finrank_eq_two`, `TauCeti.DyadicSqrtTwo.ramificationIndex_eq_two`,
   `TauCeti.DyadicSqrtTwo.absoluteRamificationIndex_eq_two`,
+  `TauCeti.DyadicSqrtTwo.dyadicLevel_eq_two`,
   `TauCeti.DyadicSqrtTwo.inertiaDegree_eq_one`, and
   `TauCeti.DyadicSqrtTwo.natCard_residueField`: the degree, ramification, and residue invariants.
 * `TauCeti.DyadicSqrtTwo.isTotallyRamified` and `TauCeti.DyadicSqrtTwo.not_isUnramified`:
@@ -179,6 +181,14 @@ theorem ramificationIndex_eq_two : ramificationIndex ℚ_[2] DyadicSqrtTwo = 2 :
 theorem absoluteRamificationIndex_eq_two : absoluteRamificationIndex DyadicSqrtTwo 2 = 2 := by
   rw [absoluteRamificationIndex_tower ℚ_[2] 2 DyadicSqrtTwo, ramificationIndex_eq_two,
     absoluteRamificationIndex_padic, mul_one]
+
+/-- The normalized valuation `v_K(2)` of `2` in `K = ℚ₂(√2)` is the absolute ramification index
+`2`. -/
+theorem dyadicLevel_eq_two (h2 : (2 : DyadicSqrtTwo) ≠ 0) :
+    dyadicLevel DyadicSqrtTwo h2 = 2 := by
+  rw [dyadicLevel_def]
+  exact (absoluteRamificationIndex_eq_natCastValuation (K := DyadicSqrtTwo) (p := 2)).symm.trans
+    absoluteRamificationIndex_eq_two
 
 /-- The residue degree of `ℚ₂(√2)/ℚ₂` is one. -/
 @[simp]
