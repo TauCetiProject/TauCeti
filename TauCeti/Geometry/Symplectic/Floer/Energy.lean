@@ -76,7 +76,8 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
-  `SymplecticForm.floerEnergyDensity_comp_add_right`).
+  `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
+  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 
 ## References
 
@@ -405,6 +406,20 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
 end Density
 
 section Integral
+
+/-- **Translations preserve the energy.** Translating the map and the perturbation data by `v`
+preserves the energy: the energy of the translate over `(· + v) ⁻¹' S` is the energy of the
+original over `S`. -/
+theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
+    ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
+        (ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z) =
+      ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
+  have hv : MeasurePreserving (· + v) volume volume :=
+    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
+  simp only [floerEnergyDensity_comp_add_right]
+  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
+    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 

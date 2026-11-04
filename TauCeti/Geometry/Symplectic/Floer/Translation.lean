@@ -16,13 +16,15 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 The Floer differential, and the cylinders inserted at the ends of a pair of pants, count solutions
 `u : ℝ × [0, 1] → V` of the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the
-cylindrical perturbation `K = H_t dt` up to the translations `(s, t) ↦ (s + c, t)`. The equation
-does not depend on `s`, so the translate of a solution is a solution
-(`SymplecticForm.perturbedFDeriv_comp_add_right`), and translations preserve the energy
-(`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`). This file identifies
-the fixed points of this action of `ℝ` on finite-energy solutions and shows that it is free
-elsewhere, so that the quotient by translations is taken only away from the stationary
-cylinders.
+cylindrical perturbation `K = H_t dt` up to the translations `(s, t) ↦ (s + c, t)`. The
+perturbation does not depend on `s`, so the perturbed derivative of the translate of `u` is the
+translate of the perturbed derivative of `u` (`SymplecticForm.perturbedFDeriv_comp_add_right`).
+Hence the translate of a solution for the almost complex structures `J` solves the equation for
+the translated structures `J(· + (c, 0))`, which are `J` itself when `J` does not depend on `s`,
+and translations preserve the energy (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+This file identifies the fixed points of this action of `ℝ` on finite-energy solutions and shows
+that it is free elsewhere, so that the quotient by translations is taken only away from the
+stationary cylinders.
 
 The *stationary* cylinders `u(s, t) = x(t)` are fixed by every translation. Such a cylinder solves
 the Floer equation exactly when `x' = X_{H_t}(x)`, that is, when `x` is a Hamiltonian orbit
@@ -47,8 +49,6 @@ compactness or transversality is asserted.
 
 ## Main results
 
-* `SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`: translations in `s` preserve the
-  energy of a cylinder.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`: stationary solutions are the
   Hamiltonian orbits.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`: a solution has zero energy exactly
@@ -78,34 +78,11 @@ section Cylinder
 
 /-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
 `(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
-theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
+private theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
     (u : ℝ × ℝ → V) (c : ℝ) (z : ℝ × ℝ) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
       ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
   simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
-
-/-- **Translations preserve the energy of a cylinder.** For the cylindrical perturbation
-`K = H_t dt`, the energy of the translate `(s, t) ↦ u(s + c, t)` over a strip `ℝ × T` is the
-energy of `u` over the same strip. -/
-theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
-    (u : ℝ × ℝ → V) (c : ℝ) (T : Set ℝ) :
-    ∫⁻ z in (univ : Set ℝ) ×ˢ T, ENNReal.ofReal
-        (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z) =
-      ∫⁻ z in (univ : Set ℝ) ×ˢ T,
-        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
-  -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-    rw [Measure.volume_eq_prod]
-    infer_instance
-  have hpre : (· + ((c : ℝ), (0 : ℝ))) ⁻¹' ((univ : Set ℝ) ×ˢ T) = (univ : Set ℝ) ×ˢ T := by
-    ext z
-    simp
-  have h := (measurePreserving_add_right volume ((c : ℝ), (0 : ℝ))).setLIntegral_comp_preimage_emb
-    (measurableEmbedding_addRight _)
-    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z))
-    ((univ : Set ℝ) ×ˢ T)
-  rw [hpre] at h
-  simpa only [floerEnergyDensity_cylindrical_comp_add_right] using h
 
 variable {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {z : ℝ × ℝ}
 
@@ -147,6 +124,16 @@ section Stationary
 
 variable {H : ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
 
+/-- The open strip `ℝ × (0, 1)` lies in the closed strip `ℝ × [0, 1]`. -/
+private theorem strip_Ioo_subset_Icc :
+    (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
+  prod_mono subset_rfl Ioo_subset_Icc_self
+
+/-- The closed strip `ℝ × [0, 1]` is the closure of the open strip `ℝ × (0, 1)`. -/
+private theorem closure_univ_prod_Ioo :
+    closure ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = (univ : Set ℝ) ×ˢ Icc 0 1 := by
+  rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one]
+
 /-- A map that is `C¹` on a neighbourhood of the closed strip `ℝ × [0, 1]`, solves the Floer
 equation for `K = H_t dt` and tamed almost complex structures there, and has zero energy density
 on the open strip `ℝ × (0, 1)`, is stationary on the closed strip. -/
@@ -159,19 +146,17 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
     (h0 : ∀ z ∈ (univ : Set ℝ) ×ˢ Ioo 0 1,
       ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z = 0) :
     ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s, t) = u (0, t) := by
-  have hIoo : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-    prod_mono subset_rfl Ioo_subset_Icc_self
   -- The `s`-derivative vanishes on the open strip, since the perturbed derivative does.
   have hds : EqOn (fun z ↦ fderiv ℝ u z stdComplexLineReal) 0 ((univ : Set ℝ) ×ˢ Ioo 0 1) := by
     intro z hz
-    have h := (ω.floerEnergyDensity_eq_zero_iff (hJ z (hIoo hz)) (hfloer z (hIoo hz))).1 (h0 z hz)
+    have hz' := strip_Ioo_subset_Icc hz
+    have h := (ω.floerEnergyDensity_eq_zero_iff (hJ z hz') (hfloer z hz')).1 (h0 z hz)
     simpa using congrArg (· stdComplexLineReal) h
   -- By continuity it vanishes on the closed strip.
   have hds' : EqOn (fun z ↦ fderiv ℝ u z stdComplexLineReal) 0 ((univ : Set ℝ) ×ˢ Icc 0 1) :=
     hds.of_subset_closure
       (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono hRU)
-      continuous_zero.continuousOn hIoo
-      (by rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one])
+      continuous_zero.continuousOn strip_Ioo_subset_Icc closure_univ_prod_Ioo.ge
   -- Along each horizontal line of the closed strip `u` has zero derivative, so it is constant.
   intro s t ht
   have hline (r : ℝ) : HasDerivAt (fun r ↦ u (r, t)) 0 r := by
@@ -199,20 +184,19 @@ private theorem floerEnergyDensity_eq_zero_of_lintegral_eq_zero (ω : Symplectic
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0) :
     ∀ z ∈ (univ : Set ℝ) ×ˢ Ioo 0 1,
       ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z = 0 := by
-  have hIoo : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-    prod_mono subset_rfl Ioo_subset_Icc_self
   have hopen : IsOpen ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) := isOpen_univ.prod isOpen_Ioo
   have hc : ContinuousOn (fun z ↦ ENNReal.ofReal
       (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) ((univ : Set ℝ) ×ˢ Ioo 0 1) :=
     ENNReal.continuous_ofReal.comp_continuousOn
       ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
-        (contDiff_uncurry_cylindrical hH).contDiffOn).mono (hIoo.trans hRU))
+        (contDiff_uncurry_cylindrical hH).contDiffOn).mono (strip_Ioo_subset_Icc.trans hRU))
   -- A continuous function with zero integral over an open set vanishes there.
   have hae := (lintegral_eq_zero_iff' (hc.aemeasurable hopen.measurableSet)).1 hE
   intro z hz
   have h := Measure.eqOn_open_of_ae_eq hae hopen hc continuous_zero.continuousOn hz
+  have hz' := strip_Ioo_subset_Icc hz
   exact le_antisymm (ENNReal.ofReal_eq_zero.1 h)
-    (ω.floerEnergyDensity_nonneg (hJ z (hIoo hz)) (hfloer z (hIoo hz)))
+    (ω.floerEnergyDensity_nonneg (hJ z hz') (hfloer z hz'))
 
 /-- **Zero energy characterizes stationary Floer cylinders.** Let `H` be a `C¹` time-dependent
 Hamiltonian and let `u` be `C¹` on an open neighbourhood `U` of the strip `ℝ × [0, 1]`, solving
@@ -229,11 +213,9 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
     ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0 ↔
       ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s, t) = u (0, t) := by
-  have hIoo : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-    prod_mono subset_rfl Ioo_subset_Icc_self
   refine ⟨fun hE ↦ eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
     (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer
-      (le_antisymm (hE ▸ lintegral_mono_set hIoo) zero_le)), fun hst ↦ ?_⟩
+      (le_antisymm (hE ▸ lintegral_mono_set strip_Ioo_subset_Icc) zero_le)), fun hst ↦ ?_⟩
   -- Near a point of the open strip `u` agrees with the stationary map `(s, t) ↦ u(0, t)`.
   have h0 : EqOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) 0
       ((univ : Set ℝ) ×ˢ Ioo 0 1) := by
@@ -252,8 +234,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
       ((univ : Set ℝ) ×ˢ Icc 0 1) :=
     h0.of_subset_closure ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
         (contDiff_uncurry_cylindrical hH).contDiffOn).mono hRU)
-      continuous_zero.continuousOn hIoo
-      (by rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one])
+      continuous_zero.continuousOn strip_Ioo_subset_Icc closure_univ_prod_Ioo.ge
   rw [setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ by
     rw [h0' hz, Pi.zero_apply, ENNReal.ofReal_zero]]
   exact lintegral_zero
@@ -276,8 +257,6 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0 := by
   set f : ℝ × ℝ → ENNReal := fun z ↦
     ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)
-  have hIoo : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-    prod_mono subset_rfl Ioo_subset_Icc_self
   -- `u` is also invariant under the translation by the positive period `|c|`.
   have hper' : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s + |c|, t) = u (s, t) := by
     intro s t ht
@@ -289,22 +268,15 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
     intro s t ht
     have hev : (fun w ↦ u (w + (|c|, 0))) =ᶠ[𝓝 (s, t)] u :=
       Filter.mem_of_superset ((isOpen_univ.prod isOpen_Ioo).mem_nhds ⟨mem_univ s, ht⟩)
-        fun w hw ↦ (congrArg u (Prod.ext (Prod.fst_add _ _)
-          ((Prod.snd_add _ _).trans (add_zero _)))).trans
-            (hper' w.1 w.2 (Ioo_subset_Icc_self hw.2))
+        fun ⟨a, b⟩ hw ↦ by simpa using hper' a b (Ioo_subset_Icc_self hw.2)
     have h := floerEnergyDensity_cylindrical_comp_add_right ω H u |c| (s, t)
     rw [ω.floerEnergyDensity_congr_of_eventuallyEq _ _ hev, Prod.mk_add_mk, add_zero] at h
     simp only [f, ← h]
-  -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-    rw [Measure.volume_eq_prod]
-    infer_instance
-  have hμ : MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1 + |c|, z.2)) volume volume := by
-    convert measurePreserving_add_right volume ((|c| : ℝ), (0 : ℝ)) using 2 with z
-    simp [Prod.ext_iff]
+  have hμ : MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1 + |c|, z.2)) volume volume :=
+    (measurePreserving_add_right volume |c|).prod (MeasurePreserving.id volume)
   -- The energy over the open strip vanishes, so `u` is stationary.
   have hE := setLIntegral_univ_prod_eq_zero_of_periodic measurableSet_Ioo (abs_pos.2 hc) hμ hf
-    (ne_top_of_le_ne_top hfin (lintegral_mono_set hIoo))
+    (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
   exact (ω.lintegral_floerEnergyDensity_eq_zero_iff hH hU hu hRU hJ hfloer).2
     (eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
       (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer hE))
