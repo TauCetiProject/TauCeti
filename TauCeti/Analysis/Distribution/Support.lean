@@ -44,9 +44,12 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
 * `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_monoCLM_subset`,
-  `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`: support under smooth
-  multiples, open/regularity restriction, and existence of a test cutoff equal to one near the
-  support.
+  `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`,
+  `Distribution.exists_eventually_eq_one_nhdsSet_dsupport_iff`,
+  `Distribution.isCompact_dsupport_apply_apply`,
+  `Distribution.isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM`: support under
+  smooth multiples, open/regularity restriction, existence of a test cutoff equal to one near the
+  support, and compactness of point-evaluation support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`: the augmentation of a boundary is zero.
@@ -105,6 +108,12 @@ theorem dsupport_apply_apply_subset [AddZeroClass V] {x : E} (ℓ : F →+ V) :
   refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
   simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
 
+/-- The distributional support of a point evaluation `φ ↦ ℓ (φ x)` followed by an additive map is
+compact. -/
+theorem isCompact_dsupport_apply_apply [AddZeroClass V] (x : E) (ℓ : F →+ V) :
+    IsCompact (dsupport (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x))) :=
+  isCompact_singleton.of_isClosed_subset isClosed_dsupport (dsupport_apply_apply_subset ℓ)
+
 /-- The support of a continuous linear point evaluation `φ ↦ ℓ (φ x)` on test functions lies in
 `{x}`. -/
 theorem dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset
@@ -118,6 +127,15 @@ theorem dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset
     simp
   rw [h]
   exact dsupport_apply_apply_subset ℓ.toAddMonoidHom
+
+/-- The distributional support of a continuous linear point evaluation `φ ↦ ℓ (φ x)` on test
+functions is compact. -/
+theorem isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
+    [TopologicalSpace V] [AddCommMonoid V] [Module ℝ V] (x : E) (ℓ : F →L[ℝ] V) :
+    IsCompact (dsupport (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ x ∘L
+      (TestFunction.toBoundedContinuousFunctionCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] _))) :=
+  isCompact_singleton.of_isClosed_subset isClosed_dsupport
+    (dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM_subset x ℓ)
 
 section Localization
 
@@ -258,6 +276,16 @@ theorem isCompact_dsupport_and_subset_of_eventually_eq_one {β : Type*} [Zero β
   exact ⟨χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport hsub,
     hsub.trans χ.tsupport_subset⟩
 
+/-- A test function on `Ω` equals `1` on a neighbourhood of `dsupport f` if and only if
+`dsupport f` is a compact subset of `Ω`. -/
+theorem exists_eventually_eq_one_nhdsSet_dsupport_iff [FiniteDimensional ℝ E]
+    {β : Type*} [Zero β] [FunLike 𝓕 E β] {f : 𝓕 → V} :
+    (∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport f), χ x = 1) ↔
+      IsCompact (dsupport f) ∧ dsupport f ⊆ Ω :=
+  ⟨fun ⟨_, hχ⟩ ↦ isCompact_dsupport_and_subset_of_eventually_eq_one hχ,
+    fun ⟨hc, hΩ⟩ ↦
+      let ⟨χ, hχ, _⟩ := TestFunction.exists_eventually_eq_one hc hΩ; ⟨χ, hχ⟩⟩
+
 /-- Precomposing a map on test functions with `TestFunction.monoCLM` shrinks its distributional
 support. -/
 theorem dsupport_comp_monoCLM_subset {Ω' : Opens E} {m : ℕ∞} (f : 𝓓^{n}(Ω, F) → V) :
@@ -265,7 +293,6 @@ theorem dsupport_comp_monoCLM_subset {Ω' : Opens E} {m : ℕ∞} (f : 𝓓^{n}(
   refine compl_subset_compl.1 fun x hx ↦ ?_
   obtain ⟨s, hf, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
   refine (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hf (TestFunction.monoCLM ℝ φ) ?_, hs, hxs⟩
-  change tsupport ((TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) : E → F) ⊆ s
   rw [TestFunction.monoCLM_apply]
   split_ifs
   · exact hφ
