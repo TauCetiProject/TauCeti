@@ -55,7 +55,7 @@ private def localPrincipalPart (D : WeilDivisor X) (x : X) :
     -- Addition of sections is inherited from the submodule of functions, hence pointwise.
     rfl
   map_smul' c f := by
-    rw [← principalPart_smul, ← mk_smul]
+    rw [← map_smul, ← mk_smul]
     -- Scalar multiplication of sections is likewise pointwise, including after chart composition.
     rfl
 
