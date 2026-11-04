@@ -348,10 +348,8 @@ variable [I.Boundaryless] [FiniteDimensional ℝ E]
 theorem isImmersion_closedOrbit (hn : 1 ≤ n) :
     IsImmersion 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ h) := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  rw [isImmersion_iff_forall_isImmersionAt]
-  intro θ
-  exact ((contMDiff_closedOrbit h).contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ
-    (mem_univ θ) hn).2 (injective_mfderiv_closedOrbit h hn0 θ)
+  exact (contMDiff_closedOrbit h).isImmersion_of_injective_mfderiv hn
+    (injective_mfderiv_closedOrbit h hn0)
 
 /-- The closed orbit is a smooth embedding of the circle exactly when its period `d` is the least
 period of `x`. -/
