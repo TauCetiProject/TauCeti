@@ -109,15 +109,17 @@ private theorem pointsMulEquiv_toConv_domCongr_comp_diagonalTorusCoordinateMap
     pointsMulEquiv N (toConv ((MonoidAlgebra.domCongr R R w).toAlgHom.comp
         (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)) =
       diagGL fun i ↦ Units.map
-        ((MonoidAlgebra.domCongr R R w : MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))
-          →+* MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))).toMonoidHom
+        (((MonoidAlgebra.domCongr R R w).toAlgHom :
+            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →+*
+              MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) :
+          MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →*
+            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))
         (genericDiagonal (R := R) i) := by
   have hmap := pointsMulEquiv_mapValue (R := R) (n := N)
     (MonoidAlgebra.domCongr R R w).toAlgHom
     (toConv (diagonalTorusCoordinateMap (R := R) (N := N)).hom.toAlgHom)
   rw [AlgHom.mapValue_apply, ofConv_toConv] at hmap
   rw [hmap, pointsMulEquiv_toConv_diagonalTorusCoordinateMap, map_diagGL]
-  rfl
 
 /-- **The normalization equation on the generic point.** If inverse conjugation by a rational
 point `g` restricts to the diagonal torus as the coordinate map of `w`, then conjugating the
@@ -138,8 +140,11 @@ private theorem map_inv_mul_diagGL_genericDiagonal_mul_of_comp_eq
           (algebraMap R (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))))
           (pointsMulEquiv (R := R) (A := R) N g)⁻¹)⁻¹ =
       diagGL fun i ↦ Units.map
-        ((MonoidAlgebra.domCongr R R w : MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))
-          →+* MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))).toMonoidHom
+        (((MonoidAlgebra.domCongr R R w).toAlgHom :
+            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →+*
+              MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) :
+          MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →*
+            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)))
         (genericDiagonal (R := R) i) := by
   have hpoints := congrArg (fun φ ↦ pointsMulEquiv (R := R)
     (A := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) N (toConv φ)) hg
@@ -157,7 +162,7 @@ private theorem characterRelabel_permCongr_single (σ : Equiv.Perm (Fin N)) (i :
     SplitTorus.characterRelabel (Equiv.ulift.{u}.symm.permCongr σ)
         (Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1)) =
       Multiplicative.ofAdd (Finsupp.single (ULift.up (σ i)) 1) := by
-  rw [SplitTorus.characterRelabel_ofAdd, Finsupp.equivMapDomain_single, Equiv.permCongr_apply]
+  rw [SplitTorus.characterRelabel_ofAdd_single, Equiv.permCongr_apply]
   simp
 
 /-- **Inverse conjugation by a permutation matrix restricts to the diagonal torus as the
@@ -270,9 +275,8 @@ theorem exists_characterRelabel_eq_of_mem_weylGroup_diagonalTorusCoordinateMap
   have hent (i : Fin N) : w (Multiplicative.ofAdd (Finsupp.single (ULift.up i) 1)) =
       Multiplicative.ofAdd (Finsupp.single (ULift.up (ρ⁻¹ i)) 1) := by
     have hi := congrArg Units.val (congrFun (diagGL_injective (hconj.symm.trans hpt)) i)
-    rw [Units.coe_map, coe_genericDiagonal, coe_genericDiagonal] at hi
-    simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, RingHom.coe_coe,
-      MonoidAlgebra.domCongr_single] at hi
+    rw [Units.coe_map, coe_genericDiagonal, coe_genericDiagonal, MonoidHom.coe_ofClass,
+      RingHom.coe_coe, AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_single] at hi
     exact (MonoidAlgebra.single_left_injective (R := R) one_ne_zero hi).symm
   -- The coordinate characters generate the character lattice.
   refine ⟨ρ⁻¹, MulEquiv.ext fun x ↦ ?_⟩
