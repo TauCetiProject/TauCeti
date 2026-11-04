@@ -29,6 +29,7 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
   and a coefficient map act as `Abelianization.map f ⊗ φ`.
 * `TauCeti.groupHomology.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
+* `TauCeti.groupHomology.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
 -/
 
 public noncomputable section
@@ -110,12 +111,24 @@ open _root_.groupHomology Rep
 
 /-- The maps of inhomogeneous chains induced by inclusions of subgroups compose: the inclusion of
 `S` into `T` followed by that of `T` into `G` is the inclusion of `S` into `G`. -/
+@[reassoc]
 theorem chainsMap_inclusion_comp_chainsMap_subtype (A : Rep R G) {S T : Subgroup G}
     (h : S ≤ T) :
     chainsMap (Subgroup.inclusion h) (resInclusionHom A h) ≫
         chainsMap T.subtype (𝟙 (res T.subtype A)) =
       chainsMap S.subtype (𝟙 (res S.subtype A)) := by
   rw [← chainsMap_comp]
+  congr 1
+  ext a
+  exact resInclusionHom_hom_apply A h a
+
+/-- The maps on group homology induced by inclusions of subgroups compose: the inclusion of `S`
+into `T` followed by that of `T` into `G` is the inclusion of `S` into `G`. -/
+@[reassoc]
+theorem map_inclusion_comp_map_subtype (A : Rep R G) {S T : Subgroup G} (h : S ≤ T) (n : ℕ) :
+    map (Subgroup.inclusion h) (resInclusionHom A h) n ≫ map T.subtype (𝟙 (res T.subtype A)) n =
+      map S.subtype (𝟙 (res S.subtype A)) n := by
+  rw [← map_comp]
   congr 1
   ext a
   exact resInclusionHom_hom_apply A h a
