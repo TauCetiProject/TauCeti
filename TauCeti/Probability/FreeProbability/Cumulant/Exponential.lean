@@ -14,7 +14,7 @@ public import TauCeti.Probability.FreeProbability.Cumulant.Series
 /-!
 # Exponential growth of free cumulants
 
-If `‖φ(a^k)‖ ≤ C^k`, then `‖κ_n(a, …, a)‖ ≤ (16 C)^n`. Indeed, Möbius inversion has at most
+If `‖φ(a^k)‖ ≤ C^k` for positive `k`, then `‖κ_n(a, …, a)‖ ≤ (16 C)^n`. Möbius inversion has at most
 `4^n` terms, each Möbius coefficient has norm at most `4^n`, and each block moment product
 has norm at most `C^n`. The constant `16` is not claimed to be optimal.
 
@@ -35,16 +35,16 @@ namespace TauCeti
 
 variable {R A α : Type*} [NormedCommRing R] [NormOneClass R] [Monoid A] [LinearOrder α]
 
-/-- Exponentially bounded moments give exponentially bounded free cumulants. The estimate
-includes the empty position set, whose cumulant is `1`. -/
+/-- Exponentially bounded positive-order moments give exponentially bounded free cumulants.
+The estimate includes the empty position set, whose cumulant is `1`. -/
 theorem norm_freeCumulant_const_le_pow (φ : A → R) (a : A) {s : Finset α} {C : ℝ}
-    (hC : 0 ≤ C) (hm : ∀ k ≤ #s, ‖φ (a ^ k)‖ ≤ C ^ k) :
+    (hC : 0 ≤ C) (hm : ∀ k, 0 < k → k ≤ #s → ‖φ (a ^ k)‖ ≤ C ^ k) :
     ‖freeCumulant φ (fun _ => a) s‖ ≤ (16 * C) ^ #s := by
   rw [freeCumulant_const_eq_coeff_freeCumulantSeries, coeff_freeCumulantSeries]
   have hbound : ‖freeCumulant φ (fun _ : Fin #s => a) univ‖ ≤
       ∑ π : NoncrossingPartition (univ : Finset (Fin #s)),
         ‖mu R π ⊤‖ * ∏ B ∈ π.1.parts, C ^ #B :=
-    norm_freeCumulant_const_le φ a (fun k hk => hm k (by simpa using hk))
+    norm_freeCumulant_const_le φ a (fun k hk hk' => hm k hk (by simpa using hk'))
   refine hbound.trans ?_
   calc
     (∑ π : NoncrossingPartition (univ : Finset (Fin #s)),
@@ -69,7 +69,7 @@ variable {φ : A → R} {a : A} {C : ℝ}
 
 /-- Absolute convergence of the free cumulant series on an explicit disk. -/
 theorem summable_norm_coeff_freeCumulantSeries_mul_pow (hC : 0 ≤ C)
-    (hm : ∀ k, ‖φ (a ^ k)‖ ≤ C ^ k) {z : R} (hz : 16 * C * ‖z‖ < 1) :
+    (hm : ∀ k, 0 < k → ‖φ (a ^ k)‖ ≤ C ^ k) {z : R} (hz : 16 * C * ‖z‖ < 1) :
     Summable (fun n => ‖coeff n (freeCumulantSeries φ a) * z ^ n‖) := by
   refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
     (summable_geometric_of_lt_one (by positivity : 0 ≤ 16 * C * ‖z‖) hz)
@@ -79,13 +79,13 @@ theorem summable_norm_coeff_freeCumulantSeries_mul_pow (hC : 0 ≤ C)
       refine (norm_mul_le _ _).trans (mul_le_mul ?_ (norm_pow_le z n) (norm_nonneg _) ?_)
       · rw [coeff_freeCumulantSeries]
         simpa using norm_freeCumulant_const_le_pow φ a (s := (univ : Finset (Fin n)))
-          hC (fun k _ => hm k)
+          hC (fun k hk _ => hm k hk)
       · positivity
     _ = (16 * C * ‖z‖) ^ n := (mul_pow _ _ _).symm
 
 /-- Absolute convergence of the shifted R-series on the same disk as the cumulant series. -/
 theorem summable_norm_coeff_rSeries_mul_pow (hC : 0 ≤ C)
-    (hm : ∀ k, ‖φ (a ^ k)‖ ≤ C ^ k) {z : R} (hz : 16 * C * ‖z‖ < 1) :
+    (hm : ∀ k, 0 < k → ‖φ (a ^ k)‖ ≤ C ^ k) {z : R} (hz : 16 * C * ‖z‖ < 1) :
     Summable (fun n => ‖coeff n (rSeries φ a) * z ^ n‖) := by
   refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
     ((summable_geometric_of_lt_one (by positivity : 0 ≤ 16 * C * ‖z‖) hz).mul_left (16 * C))
@@ -95,7 +95,7 @@ theorem summable_norm_coeff_rSeries_mul_pow (hC : 0 ≤ C)
       refine (norm_mul_le _ _).trans (mul_le_mul ?_ (norm_pow_le z n) (norm_nonneg _) ?_)
       · rw [coeff_rSeries]
         simpa using norm_freeCumulant_const_le_pow φ a (s := (univ : Finset (Fin (n + 1))))
-          hC (fun k _ => hm k)
+          hC (fun k hk _ => hm k hk)
       · positivity
     _ = 16 * C * (16 * C * ‖z‖) ^ n := by rw [pow_succ, mul_pow]; ring
 
