@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.AlternatingSum
 
 /-!
 # The Morse inequalities for chain complexes of vector spaces
@@ -63,16 +64,10 @@ theorem sum_range_neg_one_pow_mul_finrank_homology_le (n : ℕ)
     (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.homology i) ≤
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.X i) := by
-  -- Pull the sign `(-1) ^ n` out of both sums, using that `(-1) ^ m` squares to `1`.
+  -- Pull the sign `(-1) ^ n` out of both sums, using that `(-1) ^ n` squares to `1`.
   have hsq (m : ℕ) : ((-1 : ℤ) ^ m) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
-  have hrw (x : ℕ → ℤ) : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * x i =
-      (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * x i := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have h : (-1 : ℤ) ^ n = (-1) ^ (n - i) * (-1) ^ i := by
-      rw [← pow_add, Nat.sub_add_cancel (Finset.mem_range_succ_iff.1 hi)]
-    linear_combination (-(-1 : ℤ) ^ i * x i) * h - (-1 : ℤ) ^ (n - i) * x i * hsq i
-  rw [hrw, hrw, K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
+  rw [TauCeti.sum_range_neg_one_pow_sub_mul, TauCeti.sum_range_neg_one_pow_sub_mul,
+    K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
   -- The two sides now differ by `((-1) ^ n) ^ 2 * dim im (Kₙ₊₁ ⟶ Kₙ) ≥ 0`.
   have hq : (0 : ℤ) ≤ finrank k (LinearMap.range (K.d (n + 1) n).hom) := Nat.cast_nonneg _
   linear_combination -(finrank k (LinearMap.range (K.d (n + 1) n).hom) : ℤ) * hsq n + hq
