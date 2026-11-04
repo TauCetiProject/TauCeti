@@ -10,10 +10,14 @@ public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import Mathlib.Algebra.Squarefree.Basic
 
 /-!
-# Length of a quotient of a discrete valuation ring
+# Quotient lengths and squarefreeness in discrete valuation rings
 
 The length of `R/I` for a nonzero ideal of a discrete valuation ring is the exponent of its
 maximal ideal in `I`. This is the local length calculation used for different ideals.
+
+A nonzero element is squarefree exactly when the length of the quotient by its principal
+ideal (`Ring.ord`) is at most one. This detects reducedness of principal divisors at
+codimension-one points.
 -/
 
 public section

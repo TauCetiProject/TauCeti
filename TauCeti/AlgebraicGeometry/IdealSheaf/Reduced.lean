@@ -51,6 +51,18 @@ theorem isReduced_subscheme_iff_isRadical_ideal :
     exact IdealSheafData.ext (funext fun U ↦ Ideal.radical_eq_iff.mpr (h U))
 
 open CategoryTheory in
+/-- Mapping the radical of an ideal sheaf's ideal on an affine open to a stalk commutes with
+ taking the radical. -/
+theorem map_radical_ideal_germ (U : X.affineOpens) (x : X) (hx : x ∈ U.1) :
+    (I.ideal U).radical.map (X.presheaf.germ U.1 x hx).hom =
+      ((I.ideal U).map (X.presheaf.germ U.1 x hx).hom).radical := by
+  let := (X.presheaf.germ U.1 x hx).hom.toAlgebra
+  have := U.2.isLocalization_stalk ⟨x, hx⟩
+  simpa only [RingHom.algebraMap_toAlgebra] using
+    IsLocalization.map_radical (U.2.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl
+      (X.presheaf.stalk x) (I.ideal U)
+
+open CategoryTheory in
 /-- The zero scheme of a global function is reduced exactly when all of its germs are radical
 elements, that is, generate radical principal ideals. -/
 theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
@@ -67,25 +79,16 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
   · intro h x
     obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-    let := (X.presheaf.germ U x hxU).hom.toAlgebra
-    have := hU.isLocalization_stalk ⟨x, hxU⟩
     have hrad : (Ideal.span {X.presheaf.germ ⊤ x trivial f}).IsRadical := by
       apply Ideal.radical_eq_iff.mp
-      have hl := IsLocalization.map_radical
-        (hU.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl (X.presheaf.stalk x) (I.ideal ⟨U, hU⟩)
-      simp only [RingHom.algebraMap_toAlgebra] at hl
-      rw [← hmap ⟨U, hU⟩ x hxU, ← hl, Ideal.radical_eq_iff.mpr (h ⟨U, hU⟩)]
+      rw [← hmap ⟨U, hU⟩ x hxU, ← I.map_radical_ideal_germ ⟨U, hU⟩ x hxU,
+        Ideal.radical_eq_iff.mpr (h ⟨U, hU⟩)]
     exact isRadical_iff_span_singleton.mpr hrad
   · intro h U
     apply Ideal.radical_eq_iff.mp
     apply U.2.ideal_ext_iff.mpr
     intro x hxU
-    let := (X.presheaf.germ U.1 x hxU).hom.toAlgebra
-    have := U.2.isLocalization_stalk ⟨x, hxU⟩
-    have hl := IsLocalization.map_radical (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
-      (X.presheaf.stalk x) (I.ideal U)
-    simp only [RingHom.algebraMap_toAlgebra] at hl
-    rw [hl, hmap U x hxU]
+    rw [I.map_radical_ideal_germ U x hxU, hmap U x hxU]
     exact Ideal.radical_eq_iff.mpr (isRadical_iff_span_singleton.mp (h x))
 
 end AlgebraicGeometry.Scheme.IdealSheafData

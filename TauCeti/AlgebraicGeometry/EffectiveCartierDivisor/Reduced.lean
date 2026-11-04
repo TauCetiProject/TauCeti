@@ -92,7 +92,7 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff_ord_le_one
     have : IsDiscreteValuationRing (X.presheaf.stalk (η : X)) :=
       IsDiscreteValuationRing.of_ringKrullDim_eq_one (by
         rw [ringKrullDim_stalk_eq_coheight, η.property]
-        rfl)
+        norm_cast)
     have hb : X.presheaf.germ ⊤ (η : X) trivial f ≠ 0 := fun he ↦
       hf (germ_injective_of_isIntegral X η trivial (he.trans (map_zero _).symm))
     have hle := (TauCeti.Ring.squarefree_iff_ord_le_one hb).mp ((h η).squarefree hb)
