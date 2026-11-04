@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
+import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 
 /-!
 # Root subgroups of the pinned Chevalley system at every root
@@ -31,7 +32,7 @@ Groups*, Chapter 3.
 
 The input is the description of every root vector through the simple ones: the Weyl automorphism
 `w_α` of the triple `(α^∨, e_α, e_{-α})` satisfies `w_α e_β = ε e_{s_α β}` for a sign `ε = ±1`,
-recorded here as `TauCeti.DynkinType.chevalleyWeylSign`, and every root vector is reached from the
+recorded as `TauCeti.DynkinType.chevalleyWeylSign`, and every root vector is reached from the
 simple root vectors by simple Weyl automorphisms and signs. In the representation `w_αᵢ` is
 conjugation by Chevalley's Weyl element `nᵢ = xᵢ(1) x₋ᵢ(-1) xᵢ(1)`, which preserves `M`. Hence
 `ρ(e_γ)` is nilpotent and has divided powers preserving `M`, and the root subgroups satisfy
@@ -49,14 +50,11 @@ lattices, to the Geck lattice, and to the lattice of every Chevalley datum.
 
 ## Main definitions
 
-* `TauCeti.DynkinType.chevalleyWeylSign`: the sign `ε` with `w_α e_β = ε e_{s_α β}`.
 * `TauCeti.DynkinType.chevalleyRootSubgroup`: the root subgroup `x_γ` of every root on the points
   of a Kostant-stable lattice.
 
 ## Main results
 
-* `TauCeti.DynkinType.weylAut_chevalleySystem`: `w_α e_β = ε e_{s_α β}` with
-  `ε = chevalleyWeylSign α β`.
 * `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem` and
   `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem`: every root vector acts nilpotently,
   with divided powers preserving the lattice.
@@ -87,91 +85,11 @@ noncomputable section
 
 variable (t : DynkinType) (ht : t.Valid)
 
-/-! ## The sign of a Weyl automorphism on a root vector -/
-
-/-- **The sign of a Weyl automorphism on a root vector**: the unit `ε = ±1` with
-`w_α e_β = ε e_{s_α β}`, where `w_α` is the Weyl automorphism of the `sl₂` triple
-`(α^∨, e_α, e_{-α})` of the named Chevalley system and `s_α β` is the reflection of `β` in `α`
-(Carter's `η_{α,β}`). That it is such a sign is `TauCeti.DynkinType.weylAut_chevalleySystem`. -/
-def chevalleyWeylSign (α β : Fin t.numRoots) : ℤˣ :=
-  open Classical in
-  if weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-      (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
-      t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) then 1 else -1
-
-/-- **The Weyl automorphisms permute the named root vectors with a sign.** The Weyl automorphism
-of the triple `(α^∨, e_α, e_{-α})` sends `e_β` to `ε e_{s_α β}` for `ε = chevalleyWeylSign α β`. -/
-theorem weylAut_chevalleySystem (α β : Fin t.numRoots) :
-    weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-        (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
-      (t.chevalleyWeylSign ht α β : ℤ) •
-        t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) := by
-  rw [chevalleyWeylSign]
-  split_ifs with h
-  · rw [h, Units.val_one, one_zsmul]
-  · rw [(t.weylAut_chevalleySystem_eq_or_eq_neg ht α β).resolve_left h, Units.val_neg,
-      Units.val_one, neg_one_zsmul]
-
-variable {t ht} in
-/-- The sign `chevalleyWeylSign α β` is the only unit `ε` with `w_α e_β = ε e_{s_α β}`, since the
-root vector `e_{s_α β}` is nonzero. -/
-theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
-    weylAut (t.isSl2Triple_chevalleySystem ht α) (t.isNilpotent_ad_chevalleySystem ht α)
-        (t.isNilpotent_ad_chevalleySystem ht _) (t.chevalleySystem ht β) =
-      (ε : ℤ) • t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) ↔
-      ε = t.chevalleyWeylSign ht α β := by
-  refine ⟨fun h => ?_, fun h => h ▸ t.weylAut_chevalleySystem ht α β⟩
-  rw [t.weylAut_chevalleySystem ht α β, ← sub_eq_zero, ← sub_smul, ← Int.cast_smul_eq_zsmul ℚ,
-    smul_eq_zero, Int.cast_eq_zero, sub_eq_zero, Units.val_inj] at h
-  exact (h.resolve_right (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).symm
-
 /-! ## Root vectors acting on a Kostant-stable lattice -/
 
 section Lattice
 
 variable {t ht}
-
-/-- The Weyl automorphism of a simple root, read off its numbered generators: the triple of the
-simple root `αᵢ` in the named Chevalley system is `(αᵢ^∨, eᵢ, fᵢ)`, and the Weyl automorphism
-depends only on its raising and lowering elements. -/
-private theorem weylAut_simpleIndex_eq (i : Fin t.rank) {h₀ : t.lieAlgebra ht}
-    (T : IsSl2Triple h₀ ((t.lieBasis ht).rootGenerator (.inl i))
-      ((t.lieBasis ht).rootGenerator (.inr i)))
-    (he : IsNilpotent (ad ℚ (t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inl i))))
-    (hf : IsNilpotent (ad ℚ (t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inr i)))) :
-    weylAut (t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i))
-        (t.isNilpotent_ad_chevalleySystem ht _) (t.isNilpotent_ad_chevalleySystem ht _) =
-      weylAut T he hf := by
-  have key : ∀ (a b : t.lieAlgebra ht) (_ : a = (t.lieBasis ht).rootGenerator (.inl i))
-      (_ : b = (t.lieBasis ht).rootGenerator (.inr i)) {h₁ : t.lieAlgebra ht}
-      (T' : IsSl2Triple h₁ a b)
-      (ha : IsNilpotent (ad ℚ (t.lieAlgebra ht) a)) (hb : IsNilpotent (ad ℚ (t.lieAlgebra ht) b)),
-      weylAut T' ha hb = weylAut T he hf := by
-    rintro a b rfl rfl h₁ T' ha hb
-    ext y
-    rw [weylAut_apply ha hb, weylAut_apply he hf]
-  exact key _ _ ((t.chevalleySystem_simpleIndex ht i).trans (Basis.rootGenerator_inl _ i).symm)
-    ((t.chevalleySystem_reflectionPerm_simpleIndex ht i).trans (Basis.rootGenerator_inr _ i).symm)
-    _ _ _
-
-/-- The coroot of a simple root and its numbered generators form an `sl₂` triple. -/
-private theorem isSl2Triple_rootGenerator (i : Fin t.rank) :
-    IsSl2Triple ((coroot (t.rootEquiv ht (t.simpleIndex ht i) :
-        Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) : t.cartanSubalgebra ht) :
-          t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inl i))
-      ((t.lieBasis ht).rootGenerator (.inr i)) := by
-  have T := t.isSl2Triple_chevalleySystem ht (t.simpleIndex ht i)
-  rwa [chevalleySystem_simpleIndex, chevalleySystem_reflectionPerm_simpleIndex,
-    ← Basis.rootGenerator_inl, ← Basis.rootGenerator_inr] at T
-
-private theorem isNilpotent_ad_rootGenerator_inl (i : Fin t.rank) :
-    IsNilpotent (ad ℚ (t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inl i))) := by
-  simpa using t.isNilpotent_ad_chevalleySystem ht (t.simpleIndex ht i)
-
-private theorem isNilpotent_ad_rootGenerator_inr (i : Fin t.rank) :
-    IsNilpotent (ad ℚ (t.lieAlgebra ht) ((t.lieBasis ht).rootGenerator (.inr i))) := by
-  simpa using t.isNilpotent_ad_chevalleySystem ht
-    ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i))
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -313,17 +231,12 @@ theorem kostantWeylGL_conj_chevalleyRootSubgroup (i : Fin t.rank) (γ : Fin t.nu
         (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) γ))) := by
     rw [← weylAut_simpleIndex_eq i, weylAut_chevalleySystem, map_zsmul, map_zsmul]
-  rcases Int.units_eq_one_or (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) with h | h
-  · simp only [h, Units.val_one, one_smul] at hw
-    simp only [h, Units.val_one, Int.cast_one, one_mul]
-    exact baseChangeExp_congr hw M _ _ u
-  · simp only [h, Units.val_neg, Units.val_one, neg_smul, one_smul] at hw
-    simp only [h, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
-    have hM' := fun n => Associative.dividedPower_neg_smul_mem _ M
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) n)
-    exact (baseChangeExp_congr hw M _ hM' u).trans (baseChangeExp_neg _ M hM'
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil _)
+  exact (baseChangeExp_congr hw M _
+    (hw ▸ fun n => dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i))
+      (isSl2Triple_rootGenerator i) (isNilpotent_ad_rootGenerator_inl i)
+      (isNilpotent_ad_rootGenerator_inr i) n
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n)) u).trans
+    (baseChangeExp_zsmul _ M (dividedPower_chevalleySystem_smul_mem ρ M hM hnil _) _
       (isNilpotent_apply_ι_chevalleySystem ρ hnil _) u)
 
 /-- **Every root subgroup lies in the elementary group** generated by the root subgroups of the
@@ -349,16 +262,12 @@ theorem chevalleyRootSubgroup_mem_kostantElementarySubgroup (γ : Fin t.numRoots
       (t.lieBasis ht).h ρ M hM hnil (.inl i) (.inr i) A
     rw [hu, ← kostantWeylGL_conj_chevalleyRootSubgroup]
     exact mul_mem (mul_mem hn (hk _)) (inv_mem hn)
-  have hsupport {k : Fin t.numRoots} (hk : k ∈ (t.rationalBase ht).support) :
-      ∃ i, k = t.simpleIndex ht i := by
-    obtain ⟨i, hi⟩ := (t.simpleSupportEquiv ht).surjective ⟨k, hk⟩
-    exact ⟨i, by rw [← coe_simpleSupportEquiv, hi]⟩
   refine (t.rationalBase ht).induction_simple_reflect γ
     (p := fun k => ∀ u, chevalleyRootSubgroup ρ M hM hnil k A u ∈ E)
     (fun k hk => ?_) (fun k j hk hj => ?_) u
-  · obtain ⟨i, rfl⟩ := hsupport hk
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hk
     simpa using kostantRootSubgroupParam_mem_kostantElementarySubgroup _ _ ρ M hM hnil A (.inl i)
-  · obtain ⟨i, rfl⟩ := hsupport hj
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
     simpa only [reflectionPerm_rationalRootSystem] using step i k hk
 
 end Lattice

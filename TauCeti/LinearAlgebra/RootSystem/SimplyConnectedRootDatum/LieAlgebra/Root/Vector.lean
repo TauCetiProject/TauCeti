@@ -284,9 +284,7 @@ private theorem exists_eq_smul_of_height_pos {X y : Fin t.numRoots → t.lieAlge
   induction n using Nat.strong_induction_on generalizing γ with
   | _ n ih =>
   by_cases hs : γ ∈ (t.rationalBase ht).support
-  · obtain ⟨i, rfl⟩ : ∃ i, t.simpleIndex ht i = γ :=
-      ⟨(t.simpleSupportEquiv ht).symm ⟨γ, hs⟩, by
-        rw [← coe_simpleSupportEquiv, Equiv.apply_symm_apply]⟩
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hs
     exact ⟨1, one_mul 1, by rw [hys, hXs, one_smul]⟩
   · obtain ⟨i, β, hroot, hy⟩ := hystep γ ((RootPairing.Base.isPos_iff _).2 hγ) hs
     have hroot' : (t.rationalRootSystem ht).root β =
