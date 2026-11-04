@@ -35,10 +35,45 @@ namespace TauCeti
 
 variable {n : ℕ} {s : Set (Fin (n + 1) → ℝ)}
 
+/-- In an adapted CAD, the infinite-fiber locus is the union of the projections of the cells
+contained in the set that have an infinite fiber. -/
+theorem IsCAD.setOf_infinite_setOf_cons_mem_eq_biUnion_image_tail
+    {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : IsCAD (n + 1) 𝒞)
+    (hadapt : ∀ E ∈ 𝒞, E ⊆ s ∨ Disjoint E s) :
+    {x : Fin n → ℝ | {t : ℝ | Fin.cons t x ∈ s}.Infinite} =
+      ⋃ E ∈ {E ∈ {E ∈ 𝒞 | E ⊆ s} | ∃ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite},
+        Fin.tail '' E := by
+  classical
+  let A := {E ∈ 𝒞 | E ⊆ s}
+  have hA : A.Finite := h.finite.subset (sep_subset _ _)
+  have hcover : ⋃₀ A = s := h.sUnion_sep_subset hadapt
+  have hsector {E} (hE : E ∈ 𝒞) (hinf : ∃ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite) :
+      ∀ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite ↔ x ∈ Fin.tail '' E := by
+    rcases h.semialgebraicDim_setOf_cons_mem_cases hE with hfinite | hinfinite
+    · obtain ⟨x, hx⟩ := hinf
+      exact (hx (hfinite.2 x)).elim
+    · exact hinfinite.2
+  ext x
+  constructor
+  · intro hx
+    have hex : ∃ E ∈ A, {t : ℝ | Fin.cons t x ∈ E}.Infinite := by
+      by_contra! hfin
+      have hf : (⋃ E ∈ A, {t : ℝ | Fin.cons t x ∈ E}).Finite :=
+        hA.biUnion fun E hE ↦ hfin E hE
+      apply hx
+      refine hf.subset fun t ht ↦ ?_
+      obtain ⟨E, hE, ht⟩ := mem_sUnion.mp (hcover.symm ▸ ht)
+      exact mem_iUnion₂.mpr ⟨E, hE, ht⟩
+    obtain ⟨E, hE, hxE⟩ := hex
+    exact mem_iUnion₂.mpr ⟨E, ⟨hE, x, hxE⟩, (hsector hE.1 ⟨x, hxE⟩ x).mp hxE⟩
+  · intro hx
+    obtain ⟨E, hE, hxE⟩ := mem_iUnion₂.mp hx
+    exact ((hsector hE.1.1 hE.2 x).mpr hxE).mono fun _ ht ↦ hE.1.2 ht
+
 /-- **The fiber-dimension formula for forgetting one coordinate.** The total dimension is the
 larger of the image dimension and one plus the dimension of the locus of infinite fibers.
 Both sides are `⊥` for the empty set. -/
-theorem IsSemialgebraic.semialgebraicDim_eq_max_image_tail_infinite_fiber
+theorem IsSemialgebraic.semialgebraicDim_eq_max_image_tail_infinite_setOf_cons_mem
     (hs : IsSemialgebraic s) :
     semialgebraicDim s = max (semialgebraicDim (Fin.tail '' s))
       (semialgebraicDim {x : Fin n → ℝ | {t : ℝ | Fin.cons t x ∈ s}.Infinite} + 1) := by
@@ -49,34 +84,9 @@ theorem IsSemialgebraic.semialgebraicDim_eq_max_image_tail_infinite_fiber
   let S := {E ∈ A | ∃ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite}
   have hA : A.Finite := h𝒞.finite.subset (sep_subset _ _)
   have hS : S.Finite := hA.subset (sep_subset _ _)
-  have hcover : ⋃₀ A = s := h𝒞.sUnion_sep_subset hadapt
-  -- An infinite cell fiber distinguishes a sector from a section.
-  have hsector (E) (hE : E ∈ S) :
-      semialgebraicDim E = semialgebraicDim (Fin.tail '' E) + 1 ∧
-        ∀ x, {t : ℝ | Fin.cons t x ∈ E}.Infinite ↔ x ∈ Fin.tail '' E := by
-    rcases h𝒞.semialgebraicDim_fiber_cases hE.1.1 with hfinite | hinfinite
-    · obtain ⟨x, hx⟩ := hE.2
-      exact (hx (hfinite.2 x)).elim
-    · exact hinfinite
   -- The infinite-fiber locus is a finite union of projected sector cells.
-  have hB : B = ⋃ E ∈ S, Fin.tail '' E := by
-    ext x
-    constructor
-    · intro hx
-      have hex : ∃ E ∈ A, {t : ℝ | Fin.cons t x ∈ E}.Infinite := by
-        by_contra! h
-        have hf : (⋃ E ∈ A, {t : ℝ | Fin.cons t x ∈ E}).Finite :=
-          hA.biUnion fun E hE ↦ h E hE
-        apply hx
-        refine hf.subset fun t ht ↦ ?_
-        obtain ⟨E, hE, ht⟩ := mem_sUnion.mp (hcover.symm ▸ ht)
-        exact mem_iUnion₂.mpr ⟨E, hE, ht⟩
-      obtain ⟨E, hE, hxE⟩ := hex
-      have hES : E ∈ S := ⟨hE, x, hxE⟩
-      exact mem_iUnion₂.mpr ⟨E, hES, (hsector E hES).2 x |>.mp hxE⟩
-    · intro hx
-      obtain ⟨E, hE, hxE⟩ := mem_iUnion₂.mp hx
-      exact ((hsector E hE).2 x |>.mpr hxE).mono fun _ ht ↦ hE.1.2 ht
+  have hB : B = ⋃ E ∈ S, Fin.tail '' E :=
+    h𝒞.setOf_infinite_setOf_cons_mem_eq_biUnion_image_tail hadapt
   have hBdim : semialgebraicDim B = ⨆ E ∈ S, semialgebraicDim (Fin.tail '' E) := by
     rw [hB, ← sUnion_image]
     rw [semialgebraicDim_sUnion_of_isLocallyClosed (hS.image _)]
@@ -91,13 +101,16 @@ theorem IsSemialgebraic.semialgebraicDim_eq_max_image_tail_infinite_fiber
       have heq : semialgebraicDim B = semialgebraicDim (Fin.tail '' E) := by
         rw [hBdim]
         exact le_antisymm (iSup₂_le hmax) (le_iSup₂_of_le E hE le_rfl)
-      rw [heq, ← (hsector E hE).1]
-      exact semialgebraicDim_mono hE.1.2
+      rcases h𝒞.semialgebraicDim_setOf_cons_mem_cases hE.1.1 with hfinite | hinfinite
+      · obtain ⟨x, hx⟩ := hE.2
+        exact (hx (hfinite.2 x)).elim
+      · rw [heq, ← hinfinite.1]
+        exact semialgebraicDim_mono hE.1.2
   -- Every cell contributes either its base dimension or one additional dimension.
   refine le_antisymm ?_ (max_le hs.semialgebraicDim_image_tail_le hBle)
   rw [h𝒞.semialgebraicDim_eq_iSup hadapt]
   refine iSup₂_le fun E hE ↦ ?_
-  rcases h𝒞.semialgebraicDim_fiber_cases hE.1 with hfinite | hinfinite
+  rcases h𝒞.semialgebraicDim_setOf_cons_mem_cases hE.1 with hfinite | hinfinite
   · rw [hfinite.1]
     exact (semialgebraicDim_mono (image_mono hE.2)).trans (le_max_left _ _)
   · rw [hinfinite.1]

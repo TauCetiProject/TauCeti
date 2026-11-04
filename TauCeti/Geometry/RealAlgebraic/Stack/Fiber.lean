@@ -11,8 +11,9 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
 # Finite and infinite fibers of stack cells
 
 A section has a finite fiber over every ambient base point. A sector of a pointwise strictly
-ordered real stack has an infinite fiber exactly over its base. This requires no continuity
-of the section functions: a fiber fixes their base argument, leaving an open real interval.
+ordered stack in a dense linear order without endpoints has an infinite fiber exactly over its
+base. This requires no continuity of the section functions: a fiber fixes their base argument,
+leaving an open interval.
 These statements distinguish sections from sectors in dimension computations.
 -/
 
@@ -22,10 +23,10 @@ open Function Set Topology
 
 namespace TauCeti
 
-variable {n k : ℕ} {C : Set (Fin n → ℝ)} {θ : Fin k → C → ℝ}
+variable {n k : ℕ}
 
 /-- The fiber of a section over any ambient base point is finite, even outside the base. -/
-theorem finite_fiber_image_cylinder_sectionSet {α : Type*} {C : Set (Fin n → α)}
+theorem finite_setOf_cons_mem_image_cylinder_sectionSet {α : Type*} {C : Set (Fin n → α)}
     (θ : Fin k → C → α) (i : Fin k) (x : Fin n → α) :
     {t : α | Fin.cons t x ∈ cylinder C '' sectionSet θ i}.Finite := by
   by_cases hx : x ∈ C
@@ -43,31 +44,38 @@ theorem finite_fiber_image_cylinder_sectionSet {α : Type*} {C : Set (Fin n → 
     exact finite_empty
 
 /-- A sector has an infinite fiber exactly over its base. This includes unbounded sectors. -/
-theorem infinite_fiber_image_cylinder_sectorSet_iff
-    (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) (x : Fin n → ℝ) :
-    {t : ℝ | Fin.cons t x ∈ cylinder C '' sectorSet θ j}.Infinite ↔ x ∈ C := by
+theorem infinite_setOf_cons_mem_image_cylinder_sectorSet_iff {α : Type*} [LinearOrder α]
+    [DenselyOrdered α] [NoMinOrder α] [NoMaxOrder α] [Nonempty α]
+    {C : Set (Fin n → α)} {θ : Fin k → C → α}
+    (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) (x : Fin n → α) :
+    {t : α | Fin.cons t x ∈ cylinder C '' sectorSet θ j}.Infinite ↔ x ∈ C := by
   constructor
   · intro h
     obtain ⟨t, ht⟩ := h.nonempty
     obtain ⟨hx, _⟩ := (mem_image_cylinder (y := Fin.cons t x)).mp ht
     simpa only [Fin.tail_cons] using hx
   · intro hx
-    have he : {t : ℝ | Fin.cons t x ∈ cylinder C '' sectorSet θ j} =
+    have he : {t : α | Fin.cons t x ∈ cylinder C '' sectorSet θ j} =
         (fun t ↦ (⟨x, hx⟩, t)) ⁻¹' sectorSet θ j := by
       ext t
       simp only [mem_ofPred_eq, mem_image_cylinder, Fin.tail_cons, Fin.cons_zero, mem_preimage]
       exact ⟨fun ⟨_, ht⟩ ↦ ht, fun ht ↦ ⟨hx, ht⟩⟩
     rw [he]
-    have ho : IsOpen ((fun t : ℝ ↦ (⟨x, hx⟩, t)) ⁻¹' sectorSet θ j) := by
-      convert! (isOpen_sectorSet (θ := fun i (_ : Unit) ↦ θ i ⟨x, hx⟩)
-        (fun _ ↦ continuous_const) j).preimage
-        (continuous_const.prodMk continuous_id : Continuous fun t : ℝ ↦ ((), t)) using 1
-      ext t
-      simp only [mem_preimage, mem_sectorSet]
-    have hn : ((fun t : ℝ ↦ (⟨x, hx⟩, t)) ⁻¹' sectorSet θ j).Nonempty := by
-      obtain ⟨z, hz, he⟩ := (fst_image_sectorSet hθ j).superset (mem_univ (⟨x, hx⟩ : C))
-      exact ⟨z.2, by simpa only [mem_preimage, ← he, Prod.mk.eta] using hz⟩
-    obtain ⟨t, ht⟩ := hn
-    exact infinite_of_mem_nhds t (ho.mem_nhds ht)
+    cases k with
+    | zero =>
+      simpa only [sectorSet_fin_zero, preimage_univ] using (infinite_univ : (univ : Set α).Infinite)
+    | succ k =>
+      have hm : ∀ x, Monotone fun i ↦ θ i x := fun x ↦ (hθ x).monotone
+      cases j using Fin.cases with
+      | zero =>
+        simpa only [sectorSet_zero hm, preimage_ofPred_eq, Iio_def] using Iio_infinite (θ 0 ⟨x, hx⟩)
+      | succ j =>
+        cases j using Fin.lastCases with
+        | last =>
+          simpa only [Fin.succ_last, sectorSet_last hm, preimage_ofPred_eq, Ioi_def] using
+            Ioi_infinite (θ (Fin.last k) ⟨x, hx⟩)
+        | cast i =>
+          simpa only [sectorSet_castSucc_succ hm, preimage_ofPred_eq, Ioo_def] using
+            Ioo_infinite (hθ ⟨x, hx⟩ i.castSucc_lt_succ)
 
 end TauCeti

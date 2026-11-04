@@ -10,6 +10,7 @@ public import Mathlib.Order.Fin.Basic
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.Connected.Prod
+import Mathlib.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Sections and sectors of a stack
@@ -472,6 +473,47 @@ theorem continuous_cylinder : Continuous (cylinder S) := by
 theorem isEmbedding_cylinder : IsEmbedding (cylinder S) := by
   refine .of_comp continuous_cylinder (g := fun y ↦ (Fin.tail y, y 0)) (by fun_prop) ?_
   exact IsEmbedding.subtypeVal.prodMap .id
+
+/-- Forgetting the height identifies an ambient continuous section with its base by an
+open embedding. -/
+theorem isOpenEmbedding_tail_image_cylinder_sectionSet {θ : Fin k → S → α} (i : Fin k)
+    (hc : Continuous (θ i)) :
+    IsOpenEmbedding fun y : cylinder S '' sectionSet θ i ↦
+      (⟨Fin.tail y.1, (mem_image_cylinder.mp y.2).1⟩ : S) := by
+  let e : S ≃ₜ cylinder S '' sectionSet θ i :=
+    (isEmbedding_graph hc).toHomeomorph.trans <|
+      (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
+        isEmbedding_cylinder.homeomorphImage _
+  convert e.symm.isOpenEmbedding using 1
+  funext y
+  obtain ⟨x, rfl⟩ := e.surjective y
+  -- The graph homeomorphism sends `x` to the cylinder point at height `θ i x`.
+  have hx : (e x : Fin (n + 1) → α) = cylinder S (x, θ i x) := rfl
+  apply Subtype.ext
+  simp [hx]
+
+/-- An open embedding of the base extends over an ambient sector, retaining the height as the
+first coordinate. -/
+theorem isOpenEmbedding_cons_image_cylinder_sectorSet {S : Set (Fin n → ℝ)} {d : ℕ}
+    {θ : Fin k → S → ℝ} {f : S → Fin d → ℝ} (hf : IsOpenEmbedding f)
+    (hc : ∀ i, Continuous (θ i)) (j : Fin (k + 1)) :
+    IsOpenEmbedding fun y : cylinder S '' sectorSet θ j ↦
+      (Fin.cons (y.1 0) (f ⟨Fin.tail y.1, (mem_image_cylinder.mp y.2).1⟩) : Fin (d + 1) → ℝ) := by
+  let e := isEmbedding_cylinder (S := S).homeomorphImage (sectorSet θ j)
+  let g : S × ℝ → Fin (d + 1) → ℝ :=
+    (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘ Prod.map f id
+  have hg : IsOpenEmbedding g :=
+    (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph.isOpenEmbedding.comp <|
+      (Homeomorph.prodComm _ _).isOpenEmbedding.comp (hf.prodMap .id)
+  convert hg.comp ((isOpen_sectorSet hc j).isOpenEmbedding_subtypeVal.comp
+    e.symm.isOpenEmbedding) using 1
+  funext y
+  obtain ⟨z, rfl⟩ := e.surjective y
+  simp only [comp_apply, Homeomorph.symm_apply_apply]
+  -- The cylinder homeomorphism preserves both the base and height coordinates.
+  have hz : (e z : Fin (n + 1) → ℝ) = cylinder S z := rfl
+  funext l
+  cases l using Fin.cases <;> simp [hz, g]
 
 end Cylinder
 

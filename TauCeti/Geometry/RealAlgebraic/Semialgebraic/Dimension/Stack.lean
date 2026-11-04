@@ -35,13 +35,9 @@ variable {n k d : ℕ} {C : Set (Fin n → ℝ)} {θ : Fin k → C → ℝ}
 theorem semialgebraicDim_image_cylinder_sectionSet (hC : C.Nonempty)
     {f : C → Fin d → ℝ} (hf : IsOpenEmbedding f) (i : Fin k) (hc : Continuous (θ i)) :
     semialgebraicDim (cylinder C '' sectionSet θ i) = d := by
-  let e : C ≃ₜ cylinder C '' sectionSet θ i :=
-    (isEmbedding_graph hc).toHomeomorph.trans <|
-      (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
-        isEmbedding_cylinder.homeomorphImage _
   have := hC.to_subtype
   exact semialgebraicDim_eq_of_isOpenEmbedding ((sectionSet_nonempty θ i).image _)
-    (hf.comp e.symm.isOpenEmbedding)
+    (hf.comp (isOpenEmbedding_tail_image_cylinder_sectionSet i hc))
 
 /-- A sector over a nonempty Euclidean cell has one more dimension than its base. -/
 theorem semialgebraicDim_image_cylinder_sectorSet (hC : C.Nonempty)
@@ -49,20 +45,14 @@ theorem semialgebraicDim_image_cylinder_sectorSet (hC : C.Nonempty)
     (hθ : ∀ x, StrictMono fun i ↦ θ i x) (j : Fin (k + 1)) :
     semialgebraicDim (cylinder C '' sectorSet θ j) = (d + 1 : ℕ) := by
   have := hC.to_subtype
-  let e := isEmbedding_cylinder (S := C).homeomorphImage (sectorSet θ j)
-  let g : C × ℝ → Fin (d + 1) → ℝ :=
-    (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘ Prod.map f id
-  have hg : IsOpenEmbedding g :=
-    (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph.isOpenEmbedding.comp <|
-      (Homeomorph.prodComm _ _).isOpenEmbedding.comp (hf.prodMap .id)
   exact semialgebraicDim_eq_of_isOpenEmbedding ((sectorSet_nonempty hθ j).image _)
-    (hg.comp ((isOpen_sectorSet hc j).isOpenEmbedding_subtypeVal.comp e.symm.isOpenEmbedding))
+    (isOpenEmbedding_cons_image_cylinder_sectorSet hf hc j)
 
 namespace IsCAD
 
 /-- Each cylindrical cell either has finite fibers and its base dimension, or has infinite
 fibers over its entire base and dimension one larger than that base. -/
-theorem semialgebraicDim_fiber_cases {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
+theorem semialgebraicDim_setOf_cons_mem_cases {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
     (h : IsCAD (n + 1) 𝒞) {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞) :
     (semialgebraicDim E = semialgebraicDim (Fin.tail '' E) ∧
       ∀ x, {t : ℝ | Fin.cons t x ∈ E}.Finite) ∨
@@ -75,14 +65,14 @@ theorem semialgebraicDim_fiber_cases {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
     have hne := (h𝒟.isConnected hC).nonempty
     have hbase := image_tail_of_mem_stackCells (hθ C hC).strictMono hE
     rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-    · refine Or.inl ⟨?_, finite_fiber_image_cylinder_sectionSet (θ C) i⟩
+    · refine Or.inl ⟨?_, finite_setOf_cons_mem_image_cylinder_sectionSet (θ C) i⟩
       rw [semialgebraicDim_image_cylinder_sectionSet hne hf i ((hθ C hC).continuous i),
         hbase, hdim]
     · refine Or.inr ⟨?_, fun x ↦ ?_⟩
       · rw [semialgebraicDim_image_cylinder_sectorSet hne hf (hθ C hC).continuous
           (hθ C hC).strictMono j, hbase, hdim, Nat.cast_add, Nat.cast_one]
       · rw [hbase]
-        exact infinite_fiber_image_cylinder_sectorSet_iff (hθ C hC).strictMono j x
+        exact infinite_setOf_cons_mem_image_cylinder_sectorSet_iff (hθ C hC).strictMono j x
 
 end IsCAD
 end TauCeti
