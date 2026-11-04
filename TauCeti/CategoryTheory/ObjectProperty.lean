@@ -37,6 +37,8 @@ standard functors between full subcategories.
   `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
 * `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor defined as a lift through a full
   subcategory acts on morphisms as the lifted functor, up to the identifications of objects.
+* `CategoryTheory.ObjectProperty.essSurj_lift_iff`: a lift through a full subcategory is
+  essentially surjective exactly when the property is contained in the essential image.
 * `CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`: every property in an essentially
   small category is essentially small.
 * `CategoryTheory.ObjectProperty.ιOfLE_additive`: the inclusion of a smaller property into a larger
@@ -151,6 +153,16 @@ theorem lift_map_hom_of_eq {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [
   subst hG
   rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id, ObjectProperty.lift_map,
     ObjectProperty.homMk_hom]
+
+/-- The lift of a functor through a full subcategory is essentially surjective exactly when every
+object satisfying the property lies in the essential image of the original functor. -/
+theorem essSurj_lift_iff {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    (P : ObjectProperty D) (F : C ⥤ D) (hF : ∀ A, P (F.obj A)) :
+    (P.lift F hF).EssSurj ↔ P ≤ F.essImage := by
+  refine ⟨fun _ Y hY ↦ ?_, fun hPF ↦ ⟨fun Y ↦ ?_⟩⟩
+  · exact ⟨_, ⟨P.ι.mapIso ((P.lift F hF).objObjPreimageIso ⟨Y, hY⟩)⟩⟩
+  · obtain ⟨A, ⟨e⟩⟩ := hPF _ Y.property
+    exact ⟨A, ⟨P.isoMk e⟩⟩
 
 end ObjectProperty
 
