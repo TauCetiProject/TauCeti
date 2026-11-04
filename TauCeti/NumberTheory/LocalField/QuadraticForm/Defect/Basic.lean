@@ -9,9 +9,9 @@ import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.NumberTheory.LocalField.FractionalIdeal
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.NumberTheory.LocalField.Squares
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
-
-import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The quadratic defect
@@ -67,11 +67,15 @@ attained: sharpness supplies the value `2e`, and `1 + π^(2k+1)` has defect expo
   an element of odd valuation.
 * `TauCeti.defectExponent_le_two_mul_natCastValuation`: the defect exponent of a nonsquare unit
   is at most `2 v_K(2)`.
+* `TauCeti.dyadicLevel_ne_zero_of_defectExponent_eq`: a unit of positive defect exponent forces
+  `v_K(2) ≠ 0`.
 * `TauCeti.defectExponent_eq_two_mul_natCastValuation_or_odd` and
   `TauCeti.quadraticDefect_eq_maximalIdeal_zpow_or_odd`: the possible defects of a unit.
 * `TauCeti.exists_unit_defectExponent_eq_two_mul_natCastValuation` and
   `TauCeti.defectExponent_one_add_pow_odd`: every entry in that list is attained, with an explicit
   representative for each odd exponent.
+* `TauCeti.defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration`: every nonsquare in
+  `U(K, 2 v_K(2))` has the maximal defect exponent `2 v_K(2)`.
 
 ## References
 
@@ -506,6 +510,15 @@ theorem defectExponent_le_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) {u : Kˣ
   rw [← sq, mul_pow, hz, hw]
   group
 
+/-- **A unit of positive defect exponent forces `v_K(2) ≠ 0`.** Its defect exponent is at most
+`2 v_K(2)`; in odd residue characteristic every nonsquare unit has defect exponent `0`. -/
+theorem dyadicLevel_ne_zero_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) (hd0 : 0 < d) :
+    dyadicLevel K h2 ≠ 0 := by
+  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
+  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
+  omega
+
 /-- **The possible defects of a unit** (O'Meara 63:2). For a unit of `𝒪[K]` which is not a square,
 the defect exponent is either `2 v_K(2)` or an odd number below `2 v_K(2)`; equivalently, by
 `TauCeti.quadraticDefect_eq_maximalIdeal_zpow`, the defect is `𝓂[K] ^ (2 v_K(2)) = 4 𝒪[K]` or
@@ -558,17 +571,14 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       omega
     exact Or.inr ⟨k, by omega, by rw [← hxd, hd_eq]⟩
 
-/-- The maximal finite unit defect is attained. This is the defect-theoretic form of the
-sharpness of the local square theorem: a nonsquare in `U(K, 2 v_K(2))` is approximated by `1²`
-to order at least `2 v_K(2)`, while no nonsquare unit has larger defect exponent. -/
-theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) :
-    ∃ u : Kˣ, valuation K (u : K) = 1 ∧ ¬IsSquare u ∧
-      defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
+/-- A nonsquare in `U(K, 2 v_K(2))` has defect exponent exactly `2 v_K(2)`: it is approximated by
+`1²` to order at least `2 v_K(2)`, while no nonsquare unit has larger defect exponent. -/
+theorem defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration (h2 : (2 : K) ≠ 0)
+    {u : Kˣ} (hu : u ∈ unitFiltration K (2 * natCastValuation K 2 h2)) (hnsq : ¬IsSquare u) :
+    defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  obtain ⟨u, hu, hnsq⟩ := exists_mem_unitFiltration_not_isSquare h2
   have huval : valuation K (u : K) = 1 := ((mem_unitFiltration_iff_valuation_le hπ).mp hu).1
-  refine ⟨u, huval, hnsq, le_antisymm
-    (defectExponent_le_two_mul_natCastValuation h2 huval hnsq) ?_⟩
+  refine le_antisymm (defectExponent_le_two_mul_natCastValuation h2 huval hnsq) ?_
   have hu1 : valuation K ((u : K) - 1) ≤
       valuation K (π : K) ^ (2 * natCastValuation K 2 h2) :=
     ((mem_unitFiltration_iff_valuation_le hπ).mp hu).2
@@ -586,6 +596,16 @@ theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠
       ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) x).mpr
         (by simpa only [x, Units.val_mk0, zpow_natCast] using hu1)
   exact (WithTop.coe_le_coe.mpr hx).trans (le_defectExponent u 1 x (by simp [x]))
+
+/-- The maximal finite unit defect is attained. This is the defect-theoretic form of the
+sharpness of the local square theorem: every nonsquare in `U(K, 2 v_K(2))` has defect exponent
+`2 v_K(2)`. -/
+theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) :
+    ∃ u : Kˣ, valuation K (u : K) = 1 ∧ ¬IsSquare u ∧
+      defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
+  obtain ⟨u, hu, hnsq⟩ := exists_mem_unitFiltration_not_isSquare h2
+  exact ⟨u, (mem_unitFiltration_zero u).mp (unitFiltration_antitone (Nat.zero_le _) hu), hnsq,
+    defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration h2 hu hnsq⟩
 
 /-- For `k < v_K(2)`, the unit represented by `1 + π^(2k+1)` has defect exponent exactly
 `2k+1`. -/
