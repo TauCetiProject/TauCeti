@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.ComplexPairing
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Fourier.Decay
+import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
 # The wave front set of a distribution
@@ -74,21 +76,12 @@ namespace Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
 
-/-- The character `x ↦ 𝐞 (-⟪x, η⟫)` of the Fourier transform is smooth. -/
-private theorem contDiff_fourierChar_neg_inner (η : E) :
-    ContDiff ℝ ∞ fun x : E => (𝐞 (-⟪x, η⟫) : ℂ) := by
-  simp_rw [Real.fourierChar_apply]
-  exact Complex.contDiff_exp.comp
-    ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
-        contDiff_const)
-
 /-- The **localized Fourier transform** `η ↦ T (φ e_η)` of a complex distribution `T` on `Ω`, cut
 off by a complex test function `φ`, where `e_η x = 𝐞 (-⟪x, η⟫)`. It is the Fourier transform of
 the compactly supported distribution `φ T`. -/
 def localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) : ℂ :=
   T.complexPairing
-    (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (contDiff_fourierChar_neg_inner η) φ)
+    (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierChar_neg_inner η) φ)
 
 /-- The localized Fourier transform at `η` pairs `T` with any test function equal to
 `x ↦ φ x * 𝐞 (-⟪x, η⟫)`. -/
@@ -124,6 +117,7 @@ and `ξ ≠ 0` at which `T` is not microlocally smooth. -/
 def waveFrontSet (T : 𝓓'(Ω, ℂ)) : Set (E × E) :=
   {p | p.1 ∈ Ω ∧ p.2 ≠ 0 ∧ ¬ T.IsMicrolocallySmoothAt p.1 p.2}
 
+@[simp]
 theorem mem_waveFrontSet_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
     (x, ξ) ∈ T.waveFrontSet ↔ x ∈ Ω ∧ ξ ≠ 0 ∧ ¬ T.IsMicrolocallySmoothAt x ξ :=
   Iff.rfl
@@ -147,7 +141,7 @@ theorem isMicrolocallySmoothAt_smul_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} {t : ℝ
 /-- The wave front set is conic in the frequency variable. -/
 theorem smul_mem_waveFrontSet_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} {t : ℝ} (ht : 0 < t) :
     (x, t • ξ) ∈ T.waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
-  simp [mem_waveFrontSet_iff, isMicrolocallySmoothAt_smul_iff ht, ht.ne']
+  simp [isMicrolocallySmoothAt_smul_iff ht, ht.ne']
 
 /-- The set of points at which a distribution is microlocally smooth is open. -/
 theorem isOpen_setOf_isMicrolocallySmoothAt (T : 𝓓'(Ω, ℂ)) :
@@ -202,7 +196,7 @@ localized Fourier transform at the opposite frequency, with conjugate cutoff. -/
 theorem localFourier_conj (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (mapCLM conjCLE.toContinuousLinearMap T).localFourier φ η =
       conj (T.localFourier (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) (-η)) := by
-  set ψ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (contDiff_fourierChar_neg_inner η) φ
+  set ψ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierChar_neg_inner η) φ
   set ψ' := postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap ψ
   rw [localFourier_eq _ _ (ψ := ψ) fun x => rfl, localFourier_eq _ _ (ψ := ψ') fun x => ?_]
   · have hre : postcompCLM (𝕜 := ℝ) reCLM ψ' = postcompCLM (𝕜 := ℝ) reCLM ψ := by
@@ -250,9 +244,17 @@ theorem waveFrontSet_conj (T : 𝓓'(Ω, ℂ)) :
     (mapCLM conjCLE.toContinuousLinearMap T).waveFrontSet =
       Prod.map id Neg.neg ⁻¹' T.waveFrontSet := by
   ext ⟨x, ξ⟩
-  simp [mem_waveFrontSet_iff, isMicrolocallySmoothAt_conj_iff]
+  simp [isMicrolocallySmoothAt_conj_iff]
 
 /-! ### Support, smooth functions and point masses -/
+
+/-- A distribution whose localized Fourier transform, for a cutoff not vanishing at `x`, decays
+rapidly on all of `E` is microlocally smooth at `x` in every direction. -/
+theorem isMicrolocallySmoothAt_of_forall_decay {T : 𝓓'(Ω, ℂ)} {x : E} {φ : 𝓓(Ω, ℂ)}
+    (hφ : φ x ≠ 0) (h : ∀ N : ℕ, ∃ C, ∀ η, (1 + ‖η‖) ^ N * ‖T.localFourier φ η‖ ≤ C) (ξ : E) :
+    T.IsMicrolocallySmoothAt x ξ :=
+  ⟨φ, hφ, univ, isOpen_univ, mem_univ ξ, fun _ _ _ _ => mem_univ _,
+    fun N => (h N).imp fun _ hC η _ => hC η⟩
 
 /-- The localized Fourier transform of the complex point mass at `x₀`. -/
 @[simp]
@@ -264,24 +266,15 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
-/-- A test function on `Ω` equal to `1` at `x` and supported in a given neighbourhood of `x`. -/
-private theorem exists_testFunction_eq_one {x : E} {s : Set E} (hs : s ∈ 𝓝 x)
-    (hsΩ : s ⊆ Ω) : ∃ φ : 𝓓(Ω, ℂ), φ x = 1 ∧ tsupport φ ⊆ s := by
-  obtain ⟨u, hus, hu, hud, -, hux⟩ := exists_contDiff_tsupport_subset (n := ⊤) hs
-  let φ₀ : 𝓓(Ω, ℝ) := ⟨u, hud, hu, hus.trans hsΩ⟩
-  refine ⟨postcompCLM (𝕜 := ℝ) ofRealCLM φ₀, by simp [φ₀, hux], ?_⟩
-  rw [postcompCLM_apply]
-  exact (tsupport_comp_subset (map_zero _) _).trans hus
-
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/
 theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
     (hxT : x ∉ dsupport T) (ξ : E) : T.IsMicrolocallySmoothAt x ξ := by
-  obtain ⟨φ, hφx, hφ⟩ := exists_testFunction_eq_one
+  obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (isClosed_dsupport.isOpen_compl.mem_nhds hxT) (Ω.isOpen.mem_nhds hx))
-    inter_subset_right
-  refine ⟨φ, by simp [hφx], univ, isOpen_univ, mem_univ ξ, fun _ _ _ _ => mem_univ _,
-    fun N => ⟨0, fun η _ => ?_⟩⟩
+    inter_subset_right (1 : ℂ)
+  refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
+    (fun N => ⟨0, fun η => ?_⟩) ξ
   -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
   have hzero : T.localFourier φ η = 0 := by
     rw [localFourier, ← map_zero T.complexPairing]
@@ -311,11 +304,12 @@ theorem waveFrontSet_delta {x₀ : E} (hx₀ : x₀ ∈ Ω) :
   ext ⟨x, ξ⟩
   refine ⟨fun ⟨hx, hξ, hT⟩ => ⟨by_contra fun hne => hT ?_, hξ⟩, fun ⟨hx, hξ⟩ => ?_⟩
   · -- Away from `x₀`, a cutoff vanishing at `x₀` kills the localized Fourier transform.
-    obtain ⟨φ, hφx, hφ⟩ := exists_testFunction_eq_one
+    obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
       (inter_mem (isOpen_compl_singleton.mem_nhds hne) (Ω.isOpen.mem_nhds hx)) inter_subset_right
+      (1 : ℂ)
     have hφx₀ : φ x₀ = 0 := image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 rfl
-    exact ⟨φ, by simp [hφx], univ, isOpen_univ, mem_univ ξ, fun _ _ _ _ => mem_univ _,
-      fun N => ⟨0, fun η _ => by simp [hφx₀]⟩⟩
+    exact isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
+      (fun N => ⟨0, fun η => by simp [hφx₀]⟩) ξ
   · -- At `x₀` the localized Fourier transform has constant modulus `‖φ x₀‖` on every ray.
     rw [mem_singleton_iff] at hx
     subst hx
@@ -343,7 +337,7 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
     (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {φ : 𝓓(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) (η : E) : T.localFourier φ η = 𝓕 (fun y => φ y * f y) η := by
   have hψ : tsupport (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-      (contDiff_fourierChar_neg_inner η) φ) ⊆ U := by
+      (TauCeti.contDiff_fourierChar_neg_inner η) φ) ⊆ U := by
     rw [bilinLeftCLM_apply]
     exact (tsupport_mul_subset_left (f := φ)).trans hφ
   rw [localFourier, complexPairing_eq_integral hU hf hT hψ, Real.fourier_eq]
@@ -364,10 +358,10 @@ theorem isMicrolocallySmoothAt_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Se
     {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f U)
     (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {x : E} (hxU : x ∈ U)
     (hxΩ : x ∈ Ω) (ξ : E) : T.IsMicrolocallySmoothAt x ξ := by
-  obtain ⟨φ, hφx, hφ⟩ := exists_testFunction_eq_one
-    (inter_mem (hU.mem_nhds hxU) (Ω.isOpen.mem_nhds hxΩ)) inter_subset_right
+  obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
+    (inter_mem (hU.mem_nhds hxU) (Ω.isOpen.mem_nhds hxΩ)) inter_subset_right (1 : ℂ)
   have hφU : tsupport φ ⊆ U := hφ.trans inter_subset_left
-  -- The product `φ f` is smooth and compactly supported, so its Fourier transform is Schwartz.
+  -- The product `φ f` is smooth and compactly supported, so its Fourier transform decays rapidly.
   have hg : ContDiff ℝ ∞ fun y => φ y * f y := by
     refine contDiff_iff_contDiffAt.2 fun y => ?_
     by_cases hy : y ∈ U
@@ -375,16 +369,10 @@ theorem isMicrolocallySmoothAt_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Se
     · refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
       filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hy (hφU h)] with z hz
       simp [hz]
-  have hgc : HasCompactSupport fun y => φ y * f y := φ.hasCompactSupport.mul_right
-  have hcoe : ⇑(hgc.toSchwartzMap hg) = fun y => φ y * f y :=
-    funext (HasCompactSupport.toSchwartzMap_toFun hgc hg)
-  let G := 𝓕 (hgc.toSchwartzMap hg)
-  refine ⟨φ, by simp [hφx], univ, isOpen_univ, mem_univ ξ, fun _ _ _ _ => mem_univ _,
-    fun N => ⟨2 ^ N * (Finset.Iic (N, 0)).sup (fun m => SchwartzMap.seminorm ℂ m.1 m.2) G,
-      fun η _ => ?_⟩⟩
-  rw [localFourier_eq_fourier hU (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT hφU,
-    ← hcoe, ← SchwartzMap.fourier_coe]
-  simpa using SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (N, 0)) le_rfl le_rfl G η
+  refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx]) (fun N => ?_) ξ
+  simpa only [localFourier_eq_fourier hU (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT
+    hφU] using TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le hg
+      φ.hasCompactSupport.mul_right N
 
 /-- A function smooth on `Ω` is microlocally smooth at every point of `Ω` in every direction. -/
 theorem isMicrolocallySmoothAt_ofFun {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) {x : E}
