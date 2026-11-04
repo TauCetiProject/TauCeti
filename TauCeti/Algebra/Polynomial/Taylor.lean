@@ -28,6 +28,8 @@ shift, which removes the subleading coefficient whenever `p.natDegree` is invert
 
 ## Main results
 
+* `Polynomial.coeff_taylor_eq_sum`: the coefficients of the Taylor expansion as finite sums of
+  binomial multiples of the coefficients of `p` times powers of `r`.
 * `Polynomial.natTrailingDegree_taylor`: the Taylor expansion at `r` starts in degree
   `p.rootMultiplicity r`.
 * `Polynomial.coeff_taylor_rootMultiplicity`, `Polynomial.trailingCoeff_taylor`: its trailing
@@ -44,6 +46,17 @@ shift, which removes the subleading coefficient whenever `p.natDegree` is invert
 public section
 
 namespace Polynomial
+
+/-- The coefficients of the Taylor expansion `p(X + r)` as finite sums: the coefficient of `X ^ m`
+is `∑ₖ (k + m).choose m • (p.coeff (k + m) * r ^ k)`, summed over any range of indices `k`
+beyond the degree of `p`. -/
+theorem coeff_taylor_eq_sum {R : Type*} [Semiring R] {p : R[X]} {N : ℕ} (hN : p.natDegree < N)
+    (r : R) (m : ℕ) :
+    (taylor r p).coeff m = ∑ k ∈ Finset.range N, (k + m).choose m • (p.coeff (k + m) * r ^ k) := by
+  rw [taylor_coeff, eval_eq_sum_range' ((natDegree_hasseDeriv_le p m).trans_lt
+    ((Nat.sub_le _ _).trans_lt hN))]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [hasseDeriv_coeff, nsmul_eq_mul, mul_assoc]
 
 /-- The subleading coefficient of the Taylor expansion `p(X + r)` is that of `p` plus
 `p.natDegree * r * p.leadingCoeff`. -/
