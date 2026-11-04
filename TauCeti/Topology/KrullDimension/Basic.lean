@@ -40,6 +40,8 @@ have codimension at least two.
   most the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober T₀ space, the Krull dimension
   is the supremum of the codimensions of the points.
+* `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober T₀ space, the height
+  of a point for the specialization preorder is the Krull dimension of its closure.
 * `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
   the codimension of a point.
 * `GeneralizingMap.topologicalKrullDim_le_of_surjective`: the target of a continuous, surjective,
@@ -108,6 +110,25 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
     [T0Space α] : topologicalKrullDim α = ⨆ x : α, (coheight x : WithBot ℕ∞) := by
   rw [topologicalKrullDim, krullDim_eq_of_orderIso irreducibleSetEquivPoints,
     krullDim_eq_iSup_coheight]
+
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober T₀ topological space, the height of a point for the specialization preorder
+(`x ≤ y ↔ y ⤳ x`) is the Krull dimension of its closure: the points below `x` are the points of
+`closure {x}`, and they correspond to its irreducible closed subsets. -/
+theorem height_eq_topologicalKrullDim_closure_singleton {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] [T0Space α] (x : α) :
+    (height x : WithBot ℕ∞) = topologicalKrullDim (closure ({x} : Set α)) := by
+  have : QuasiSober (closure ({x} : Set α)) :=
+    isClosed_closure.isClosedEmbedding_subtypeVal.quasiSober
+  -- The points of the closure of `x`, ordered by specialization within the closure, are the
+  -- points below `x`. The order is passed explicitly: the closure also carries the order induced
+  -- from `α`, which agrees with it only propositionally.
+  let e : @OrderIso (closure ({x} : Set α)) (Set.Iic x)
+      (specializationOrder (closure ({x} : Set α))).toLE _ :=
+    ⟨Equiv.subtypeEquivRight fun _ ↦ specializes_iff_mem_closure.symm,
+      fun {a b} ↦ IsInducing.subtypeVal.specializes_iff (x := b) (y := a)⟩
+  rw [height_eq_krullDim_Iic, topologicalKrullDim,
+    krullDim_eq_of_orderIso (RelIso.trans irreducibleSetEquivPoints e)]
 
 end TauCeti
 
