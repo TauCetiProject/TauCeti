@@ -39,6 +39,10 @@ are the basic examples of the latter
 * `TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt`,
   `TauCeti.isImmersionAtOfComplement_isLocalDiffeomorphAt_comp`: the pointwise normal form with a
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
+* `TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff`,
+  `TauCeti.isImmersionAt_comp_isLocalDiffeomorphAt_iff`: on the source, precomposing with a local
+  diffeomorphism also reflects the pointwise normal form, since a local inverse is again a local
+  diffeomorphism.
 * `TauCeti.isImmersion_comp_isLocalDiffeomorph`, `TauCeti.isImmersion_isLocalDiffeomorphAt_comp`:
   the corresponding statements for immersions.
 * `TauCeti.isSmoothEmbedding_comp_isLocalDiffeomorph`,
@@ -119,6 +123,29 @@ theorem isSmoothEmbedding_comp_isLocalDiffeomorph [IsManifold I n M']
     {g : M' → M} (hg : IsLocalDiffeomorph I I n g) (hge : IsEmbedding g)
     (h : IsSmoothEmbedding I J n f) : IsSmoothEmbedding I J n (f ∘ g) :=
   ⟨isImmersion_comp_isLocalDiffeomorph hg h.isImmersion, h.isEmbedding.comp hge⟩
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys the
+immersion normal form at a point: `f ∘ g` is an immersion at `x`, with complement `F`, exactly
+when `f` is one at `g x`. -/
+theorem isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff [IsManifold I n M]
+    [IsManifold I n M'] {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsImmersionAtOfComplement F I J n (f ∘ g) x ↔ IsImmersionAtOfComplement F I J n f (g x) := by
+  refine ⟨fun h ↦ ?_, isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hg⟩
+  -- Near `g x`, `f` is `f ∘ g` composed with the local inverse of `g`, itself a local
+  -- diffeomorphism.
+  rw [← hg.localInverse_left_inv hg.localInverse_mem_target] at h
+  exact (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt
+    hg.localInverse_isLocalDiffeomorphAt h).congr_of_eventuallyEq
+    (hg.localInverse_eventuallyEq_right.fun_comp f)
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys
+immersions at a point: `f ∘ g` is an immersion at `x` exactly when `f` is one at `g x`. -/
+theorem isImmersionAt_comp_isLocalDiffeomorphAt_iff [IsManifold I n M] [IsManifold I n M']
+    {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsImmersionAt I J n (f ∘ g) x ↔ IsImmersionAt I J n f (g x) :=
+  ⟨fun h ↦ ((isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff hg).1
+    h.isImmersionAtOfComplement_complement).isImmersionAt,
+    isImmersionAt_comp_isLocalDiffeomorphAt hg⟩
 
 /-! ### Postcomposing with a local diffeomorphism -/
 
