@@ -133,14 +133,8 @@ place. -/
 @[simp]
 theorem equivDivisor_ofPoint (hxt : Transcendental k x)
     (p : CodimensionOnePoint (twoChartModel hF hx)) :
-    equivDivisor hxt (WeilDivisor.ofPoint p) = WeilDivisor.ofPoint (equivPlace hxt p) := by
-  ext P
-  by_cases hP : P = equivPlace hxt p
-  · subst hP
-    rw [coeff_equivDivisor_equivPlace, WeilDivisor.coeff_ofPoint_self,
-      WeilDivisor.coeff_ofPoint_self]
-  · have hp : (equivPlace hxt).symm P ≠ p := fun h ↦ hP (by rw [← h, Equiv.apply_symm_apply])
-    rw [coeff_equivDivisor, WeilDivisor.coeff_ofPoint_of_ne hp, WeilDivisor.coeff_ofPoint_of_ne hP]
+    equivDivisor hxt (WeilDivisor.ofPoint p) = WeilDivisor.ofPoint (equivPlace hxt p) :=
+  WeilDivisor.domCongr_ofPoint (equivPlace hxt) p
 
 /-- Pulling back a prime divisor of `F` gives the prime divisor at the corresponding point of
 `X_F`. -/

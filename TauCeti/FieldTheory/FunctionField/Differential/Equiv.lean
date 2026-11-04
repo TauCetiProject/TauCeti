@@ -61,19 +61,8 @@ variable (σ : k ≃+* k') (τ : F ≃+* F')
 `b ↦ σ (ω (τ⁻¹ b))` on `A_{F'}`. -/
 noncomputable def repartitionDualEquivOfRingEquiv :
     Module.Dual k ↥(repartitionSpace k F) ≃ₛₗ[(σ : k →+* k')]
-      Module.Dual k' ↥(repartitionSpace k' F') where
-  toFun ω :=
-    { toFun b := σ (ω ((repartitionSpaceEquivOfRingEquiv σ τ h).symm b))
-      map_add' b₁ b₂ := by simp
-      map_smul' c' b := by simp [LinearEquiv.map_smulₛₗ] }
-  invFun η :=
-    { toFun a := σ.symm (η (repartitionSpaceEquivOfRingEquiv σ τ h a))
-      map_add' a₁ a₂ := by simp
-      map_smul' c a := by simp [LinearEquiv.map_smulₛₗ] }
-  left_inv ω := LinearMap.ext fun a ↦ by simp
-  right_inv η := LinearMap.ext fun b ↦ by simp
-  map_add' ω₁ ω₂ := LinearMap.ext fun b ↦ by simp
-  map_smul' c ω := LinearMap.ext fun b ↦ by simp
+      Module.Dual k' ↥(repartitionSpace k' F') :=
+  (repartitionSpaceEquivOfRingEquiv σ τ h).arrowCongr σ.toSemilinearEquiv
 
 /-- Evaluation formula for a transported linear form on repartitions. -/
 @[simp]
