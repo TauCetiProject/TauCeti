@@ -203,6 +203,16 @@ theorem dividedPower_smul (q : ℚ) (n : ℕ) (x : A) :
   simpa only [Algebra.smul_def, map_pow] using
     dividedPower_mul_left (Algebra.commutes q x) n
 
+/-- Scaling an element by a natural number scales its `n`-th divided power by the `n`-th power
+of that number.
+
+This is deliberately not a `simp` lemma: `nsmul_eq_mul` rewrites the argument `m • x` of the
+left-hand side to `↑m * x`, so the statement is not in simp-normal form. -/
+theorem dividedPower_nsmul (m n : ℕ) (x : A) :
+    dividedPower n (m • x) = (m ^ n : ℕ) • dividedPower n x := by
+  simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_pow] using
+    dividedPower_smul (m : ℚ) n x
+
 /-- Divided powers are equivariant for conjugation by a unit.
 
 Conjugation is an algebra automorphism, so it commutes with the rational scalar as well as with
