@@ -26,8 +26,9 @@ contraction of a curve or the line bundle on its target.
 
 * `TauCeti.DualGraph.DegreeDecoration.weightedLogCanonicalDegree_forgetMarking`:
   forgetting one marking decreases the weighted degree by one precisely at its vertex.
-* `TauCeti.DualGraph.DegreeDecoration.isRationalTail_or_isRationalBridge_of_forgetMarking_eq_zero`:
-  classification of the component to be contracted.
+* `isRationalTail_or_isRationalBridge_of_weightedLogCanonicalDegree_eq_zero`, in the namespace
+  `TauCeti.DualGraph.DegreeDecoration` (from `Basic`): classification of the component to be
+  contracted, applied to the decoration after forgetting.
 * `IsStable.exists_reflGen_stabilizationStep_forgetMarking_isStable`, in the namespace
   `TauCeti.DualGraph.DegreeDecoration`: at most one map-aware stabilization step is needed.
 
@@ -69,6 +70,35 @@ lemma forgetMarking_zero : (0 : G.DegreeDecoration).forgetMarking = 0 :=
 lemma forgetMarking_add (E : G.DegreeDecoration) :
     (D + E).forgetMarking = D.forgetMarking + E.forgetMarking :=
   DegreeDecoration.ext rfl
+
+@[simp]
+lemma forgetMarking_smul (m : ℕ) : (m • D).forgetMarking = m • D.forgetMarking :=
+  DegreeDecoration.ext rfl
+
+/-- Forgetting a marking is injective on degree decorations. -/
+@[simp]
+theorem forgetMarking_inj {E : G.DegreeDecoration} :
+    D.forgetMarking = E.forgetMarking ↔ D = E := by
+  simp only [DegreeDecoration.ext_iff, funext_iff, componentDegree_forgetMarking]
+
+variable (G) in
+/-- Forgetting a marking identifies degree decorations additively, since vertices do not change. -/
+def forgetMarkingAddEquiv : G.DegreeDecoration ≃+ (G.reindex some).DegreeDecoration where
+  toFun D := D.forgetMarking
+  invFun D := ⟨D.componentDegree⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' := forgetMarking_add
+
+@[simp]
+lemma forgetMarkingAddEquiv_apply : forgetMarkingAddEquiv G D = D.forgetMarking :=
+  (rfl)
+
+@[simp]
+lemma componentDegree_forgetMarkingAddEquiv_symm_apply (E : (G.reindex some).DegreeDecoration)
+    (x : G.Vertex) :
+    ((forgetMarkingAddEquiv G).symm E).componentDegree x = E.componentDegree x :=
+  (rfl)
 
 variable [Fintype ι]
 
@@ -142,32 +172,6 @@ theorem IsStable.weightedLogCanonicalDegree_forgetMarking_pos_of_ne (hD : D.IsSt
   rw [weightedLogCanonicalDegree_forgetMarking, ite_eq_right (hmx.trans_ne hy.symm)]
   omega
 
-variable (D) in
-/-- In the numerical stable range a zero-weighted-degree component after forgetting is a rational
-tail with exactly one retained marking or an unmarked rational bridge. -/
-theorem isRationalTail_or_isRationalBridge_of_forgetMarking_eq_zero
-    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι + 3 * D.totalDegree)
-    {x : G.Vertex} (hx : D.forgetMarking.weightedLogCanonicalDegree x = 0) :
-    ((G.reindex some).IsRationalTail x ∧ (G.reindex some).numMarkings x = 1) ∨
-      ((G.reindex some).IsRationalBridge x ∧ ∀ i, (G.reindex some).marking i ≠ x) := by
-  have hd := D.forgetMarking.componentDegree_eq_zero_of_weightedLogCanonicalDegree_nonpos hx.le
-  have hlog : (G.reindex some).logCanonicalDegree x = 0 := by
-    simpa only [weightedLogCanonicalDegree_def, hd, Nat.cast_zero, mul_zero, add_zero] using hx
-  have hw : ∃ w, w ≠ x := by
-    by_contra! h
-    have hsum : ∑ w, D.forgetMarking.weightedLogCanonicalDegree w = 0 := by
-      apply sum_eq_zero
-      intro w _
-      rw [h w, hx]
-    rw [D.forgetMarking.sum_weightedLogCanonicalDegree, arithmeticGenus_reindex,
-      totalDegree_forgetMarking] at hsum
-    omega
-  rcases (G.reindex some).isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos
-      hlog.le hw with ⟨ht, _⟩ | hb
-  · have htail := ht.logCanonicalDegree_eq
-    exact .inl ⟨ht, by omega⟩
-  · exact .inr hb
-
 /-- Any stabilization step after forgetting one marking of a stable map gives a stable decorated
 graph. The weighted degrees of the remaining vertices do not decrease. -/
 theorem IsStable.isStable_of_stabilizationStep_forgetMarking (hD : D.IsStable)
@@ -179,7 +183,7 @@ theorem IsStable.isStable_of_stabilizationStep_forgetMarking (hD : D.IsStable)
     have hnef := hD.weightedLogCanonicalDegree_forgetMarking_nonneg x
     have hweight : D.forgetMarking.weightedLogCanonicalDegree x =
         -1 + (G.reindex some).numMarkings x := by
-      rw [weightedLogCanonicalDegree_def, hd, Nat.cast_zero, mul_zero, add_zero, htail]
+      rw [weightedLogCanonicalDegree_eq_of_componentDegree_eq_zero _ hd, htail]
     have hm₁ : (G.reindex some).numMarkings x = 1 := by omega
     refine (isStable_iff_weightedLogCanonicalDegree_pos _).mpr fun ⟨z, hz⟩ ↦ ?_
     rw [weightedLogCanonicalDegree_contractTail]
@@ -191,8 +195,7 @@ theorem IsStable.isStable_of_stabilizationStep_forgetMarking (hD : D.IsStable)
       simpa only [numMarkings_def, card_eq_zero, filter_eq_empty_iff, mem_univ,
         true_implies] using hm
     have hweight : D.forgetMarking.weightedLogCanonicalDegree x = 0 := by
-      rw [weightedLogCanonicalDegree_def, hd, Nat.cast_zero, mul_zero, add_zero, hbridge, hm₀]
-      rfl
+      simp [weightedLogCanonicalDegree_eq_of_componentDegree_eq_zero _ hd, hbridge, hm₀]
     refine (isStable_iff_weightedLogCanonicalDegree_pos _).mpr fun ⟨z, hz⟩ ↦ ?_
     rw [weightedLogCanonicalDegree_contractBridge]
     exact hD.weightedLogCanonicalDegree_forgetMarking_pos_of_ne hweight.le hz
