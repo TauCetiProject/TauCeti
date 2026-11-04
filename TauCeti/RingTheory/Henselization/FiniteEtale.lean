@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Henselization.Local
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Category.Ring.FinitePresentation
 import Mathlib.RingTheory.Finiteness.Small
+import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.RingTheory.Etale.NoetherianDescent
 
 /-!
@@ -156,79 +157,45 @@ private theorem algebraMap_quotient_extended_bijective (I : Ideal R) :
   exact he ▸ quotient_bijective I
 
 /-- Assemble the `(R ⧸ I)`-algebra equivalence `(R ⧸ I) ⊗[R] B' ≃ₐ[R ⧸ I] B₀` for a stage model
-`B'` of a finite étale `(algebra I)`-algebra `S` lifting `(algebra I ⧸ extended I) ⊗[R ⧸ I] B₀`. -/
+`B'` over `A` of an `H`-algebra `S` lifting `(H ⧸ IH) ⊗[R ⧸ I] B₀` in a scalar tower `R → A → H`. -/
 private noncomputable def stageFiberAlgEquiv (I : Ideal R) {B₀ : Type*} [CommRing B₀]
-    [Algebra (R ⧸ I) B₀] (N : Neighbourhood.{u, u} I) {B' : Type u} [CommRing B']
-    [Algebra R B'] [Algebra N.obj B'] [IsScalarTower R N.obj B']
-    {S : Type u} [CommRing S] [Algebra (algebra I) S]
-    (eN : letI : Algebra N.obj (algebra I) := (stage I N).toRingHom.toAlgebra
-      S ≃ₐ[algebra I] algebra I ⊗[N.obj] B')
-    (eS : (algebra I ⧸ extended I) ⊗[algebra I] S ≃ₐ[algebra I ⧸ extended I]
-      (algebra I ⧸ extended I) ⊗[R ⧸ I] B₀) :
+    [Algebra (R ⧸ I) B₀] {A H B' S : Type u} [CommRing A] [Algebra R A]
+    [CommRing H] [Algebra R H] [Algebra A H] [IsScalarTower R A H]
+    [CommRing B'] [Algebra R B'] [Algebra A B'] [IsScalarTower R A B']
+    [CommRing S] [Algebra H S]
+    (hAQ : I.map (algebraMap R A) ≤ (I.map (algebraMap R H)).comap (algebraMap A H))
+    (hQA : Function.Bijective (Ideal.quotientMap (I.map (algebraMap R H)) (algebraMap A H) hAQ))
+    (hQH : Function.Bijective (algebraMap (R ⧸ I) (H ⧸ I.map (algebraMap R H))))
+    (eN : S ≃ₐ[H] H ⊗[A] B')
+    (eS : (H ⧸ I.map (algebraMap R H)) ⊗[H] S ≃ₐ[H ⧸ I.map (algebraMap R H)]
+      (H ⧸ I.map (algebraMap R H)) ⊗[R ⧸ I] B₀) :
     (R ⧸ I) ⊗[R] B' ≃ₐ[R ⧸ I] B₀ := by
-  letI : Algebra N.obj (algebra I) := (stage I N).toRingHom.toAlgebra
-  let Q := algebra I ⧸ extended I
-  let J_N := I.map (algebraMap R N.obj)
-  let Q_N := N.obj ⧸ J_N
-  have hmap : I.map (algebraMap R B') = J_N.map (algebraMap N.obj B') := by
+  let J_H := I.map (algebraMap R H)
+  let Q := H ⧸ J_H
+  let J_A := I.map (algebraMap R A)
+  let Q_A := A ⧸ J_A
+  haveI : IsScalarTower R A Q := .of_algebraMap_eq fun r ↦ by
+    rw [IsScalarTower.algebraMap_apply R H Q, IsScalarTower.algebraMap_apply R A H,
+      ← IsScalarTower.algebraMap_apply A H Q]
+  have hmap : I.map (algebraMap R B') = J_A.map (algebraMap A B') := by
     rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq]
-  let eQNQ : Q_N ≃ₐ[N.obj] Q := AlgEquiv.ofBijective
-    { toRingHom := Ideal.quotientMap (extended I) (stage I N : N.obj →+* algebra I)
-        (map_le_comap_stage_extended I N)
-      commutes' r := by
-        dsimp only [Q_N, J_N, Q]
-        rw [Ideal.Quotient.algebraMap_eq, RingHom.toFun_eq_coe, Ideal.quotientMap_mk,
-          RingHom.coe_coe,
-          IsScalarTower.algebraMap_apply N.obj (algebra I) (algebra I ⧸ extended I),
-          Ideal.Quotient.algebraMap_eq, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-          RingHom.coe_coe] }
-    (quotientMap_stage_bijective I N)
-  let eQ : (R ⧸ I) ≃ₐ[R ⧸ I] Q :=
-    AlgEquiv.ofBijective (Algebra.ofId (R ⧸ I) Q) (algebraMap_quotient_extended_bijective I)
+  let eQAQ : Q_A ≃ₐ[A] Q :=
+    AlgEquiv.ofBijective (Ideal.quotientMapₐ J_H (Algebra.ofId A H) hAQ) hQA
+  let eQuot : (R ⧸ I) ⊗[R] B' ≃ₐ[R] Q ⊗[A] B' :=
+    ((Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' I).symm.restrictScalars R).trans <|
+    (Ideal.quotientEquivAlgOfEq R hmap).trans <|
+    (((Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' J_A).restrictScalars A
+      ).restrictScalars R).trans <|
+    (Algebra.TensorProduct.congr eQAQ (AlgEquiv.refl : B' ≃ₐ[A] B')).restrictScalars R
+  let eStage : Q ⊗[A] B' ≃ₐ[Q] Q ⊗[R ⧸ I] B₀ :=
+    (Algebra.TensorProduct.cancelBaseChange A H Q Q B').symm.trans <|
+    (Algebra.TensorProduct.congr (AlgEquiv.refl : Q ≃ₐ[Q] Q) eN.symm).trans eS
+  let eQ : (R ⧸ I) ≃ₐ[R ⧸ I] Q := AlgEquiv.ofBijective (Algebra.ofId (R ⧸ I) Q) hQH
   let eB₀ : Q ⊗[R ⧸ I] B₀ ≃ₐ[R ⧸ I] B₀ :=
     (Algebra.TensorProduct.congr eQ.symm (AlgEquiv.refl : B₀ ≃ₐ[R ⧸ I] B₀)).trans
       (Algebra.TensorProduct.lid (R ⧸ I) B₀)
-  let eRing : ((R ⧸ I) ⊗[R] B') ≃+* B₀ :=
-    (Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' I).symm.toRingEquiv.trans <|
-    (Ideal.quotientEquivAlgOfEq R hmap).toRingEquiv.trans <|
-    (Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' J_N).toRingEquiv.trans <|
-    (Algebra.TensorProduct.congr eQNQ (AlgEquiv.refl : B' ≃ₐ[N.obj] B')).toRingEquiv.trans <|
-    (Algebra.TensorProduct.cancelBaseChange N.obj (algebra I) (algebra I) Q
-      B').symm.toRingEquiv.trans <|
-    (Algebra.TensorProduct.congr (AlgEquiv.refl : Q ≃ₐ[algebra I] Q) eN.symm).toRingEquiv.trans <|
-    eS.toRingEquiv.trans eB₀.toRingEquiv
-  refine AlgEquiv.ofRingEquiv (f := eRing) fun x ↦ ?_
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-  have h1 : (Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' I).symm
-      (algebraMap (R ⧸ I) ((R ⧸ I) ⊗[R] B') (Ideal.Quotient.mk I r)) =
-      Ideal.Quotient.mk (I.map (algebraMap R B')) (algebraMap R B' r) :=
-    (Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' I).symm.commutes (Ideal.Quotient.mk I r)
-  have h2 : Ideal.quotientEquivAlgOfEq R hmap
-      (Ideal.Quotient.mk (I.map (algebraMap R B')) (algebraMap R B' r)) =
-      algebraMap Q_N (B' ⧸ J_N.map (algebraMap N.obj B'))
-        (Ideal.Quotient.mk J_N (algebraMap R N.obj r)) := by
-    rw [IsScalarTower.algebraMap_apply R N.obj B']
-    rfl
-  have h3 : Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' J_N
-      (algebraMap Q_N (B' ⧸ J_N.map (algebraMap N.obj B'))
-        (Ideal.Quotient.mk J_N (algebraMap R N.obj r))) =
-      Ideal.Quotient.mk J_N (algebraMap R N.obj r) ⊗ₜ[N.obj] 1 :=
-    (Algebra.TensorProduct.quotIdealMapEquivQuotTensor B' J_N).commutes _
-  have h4 : eQNQ (Ideal.Quotient.mk J_N (algebraMap R N.obj r)) =
-      algebraMap (R ⧸ I) Q (Ideal.Quotient.mk I r) := by
-    have hst : (stage I N : N.obj →+* algebra I) (algebraMap R N.obj r) =
-        algebraMap R (algebra I) r := (stage I N).commutes r
-    dsimp only [eQNQ, Q, AlgEquiv.ofBijective_apply, AlgHom.coe_mk]
-    rw [Ideal.quotientMap_mk, hst, Ideal.Quotient.algebraMap_quotient_map_quotient]
-  have h5 : eS (algebraMap (R ⧸ I) Q (Ideal.Quotient.mk I r) ⊗ₜ[algebra I] 1) =
-      algebraMap (R ⧸ I) (Q ⊗[R ⧸ I] B₀) (Ideal.Quotient.mk I r) :=
-    eS.commutes (algebraMap (R ⧸ I) Q (Ideal.Quotient.mk I r))
-  simp only [eRing, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
-    Algebra.TensorProduct.congr_apply, AlgEquiv.refl_toAlgHom]
-  rw [h1, h2, h3, Algebra.TensorProduct.map_tmul, AlgEquiv.coe_toAlgHom, AlgHom.id_apply, h4,
-    Algebra.TensorProduct.cancelBaseChange_symm_tmul, Algebra.TensorProduct.map_tmul,
-    AlgHom.id_apply, AlgEquiv.coe_toAlgHom, ← Algebra.TensorProduct.one_def, map_one, h5,
-    eB₀.commutes]
+  exact ((eQuot.trans (eStage.restrictScalars R)).extendScalarsOfSurjective
+    Ideal.Quotient.mk_surjective).trans eB₀
 
 /-- **Lifting finite étale algebras to an étale neighbourhood.** Given a commutative ring `R`, an
 ideal `I`, and a finite étale `(R ⧸ I)`-algebra `B₀`, there exist an étale neighbourhood `N` of
@@ -249,10 +216,14 @@ theorem exists_neighbourhood_etale_and_finite_and_tensorProduct_algEquiv (I : Id
       (extended I) (Q ⊗[R ⧸ I] B₀)
   obtain ⟨N, B', _, _, _, _, ⟨eN⟩⟩ :=
     exists_neighbourhood_etale_and_finite_and_algEquiv I S
+  let : Algebra N.obj (algebra I) := (stage I N).toRingHom.toAlgebra
+  have : IsScalarTower R N.obj (algebra I) :=
+    .of_algebraMap_eq fun r ↦ ((stage I N).commutes r).symm
   let : Algebra R B' := ((algebraMap N.obj B').comp (algebraMap R N.obj)).toAlgebra
   have : IsScalarTower R N.obj B' := .of_algebraMap_eq' rfl
   exact ⟨N, B', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, ⟨stageFiberAlgEquiv I N eN eS⟩⟩
+    inferInstance, ⟨stageFiberAlgEquiv I (map_le_comap_stage_extended I N)
+      (quotientMap_stage_bijective I N) (algebraMap_quotient_extended_bijective I) eN eS⟩⟩
 
 /-- Base change of finite étale algebras along `R ⧸ I → algebra I ⧸ extended I` is an equivalence
 of categories. -/
