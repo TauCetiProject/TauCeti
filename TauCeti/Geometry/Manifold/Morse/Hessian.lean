@@ -371,7 +371,9 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
   have hcomp : (q ∘ Prod.snd) ∘ (extChartAt (I.prod 𝓘(ℝ, V)) (x, y)).symm = q ∘ Prod.snd := by
     ext p
     -- The second component of the product chart of `M × V` is the identity chart of `V`.
-    rfl
+    simp only [extChartAt_prod, PartialEquiv.prod_symm, extChartAt_model_space_eq_id,
+      Function.comp_apply, PartialEquiv.prod_coe, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
+      id_eq]
   rw [criticalHessian_def, hcomp]
   have hsnd : (extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)).2 = y := by simp
   have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (φ := Prod.snd)

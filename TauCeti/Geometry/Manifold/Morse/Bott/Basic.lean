@@ -174,6 +174,13 @@ theorem ker_normalHessian (s : S) :
     have hv'' : criticalHessian I f (i s) v' = 0 := hv'
     rw [← hvv', normalHessian_normalClass, hv'', zero_apply, LinearMap.zero_apply]
 
+/-- The normal Hessian has trivial kernel exactly when the kernel of the critical Hessian lies in
+the tangent space of the submanifold. -/
+theorem ker_normalHessian_eq_bot_iff (s : S) :
+    LinearMap.ker (h.normalHessian hn s) = ⊥ ↔
+      (criticalHessian I f (i s)).ker ≤ i.tangentRange s hn := by
+  rw [h.ker_normalHessian, ← LinearMap.le_ker_iff_map, normalClass_ker]
+
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
@@ -197,9 +204,8 @@ theorem radical_criticalHessian (s : S) :
     ContinuousLinearMap.ker_toBilinForm, h.ker_criticalHessian hn s]
 
 /-- The normal Hessian of a nondegenerate critical submanifold has trivial kernel. -/
-theorem ker_normalHessian (s : S) : LinearMap.ker (h.normalHessian hn s) = ⊥ := by
-  rw [IsCriticalSubmanifold.ker_normalHessian, h.ker_criticalHessian hn s,
-    ← LinearMap.le_ker_iff_map, normalClass_ker]
+theorem ker_normalHessian (s : S) : LinearMap.ker (h.normalHessian hn s) = ⊥ :=
+  (h.toIsCriticalSubmanifold.ker_normalHessian_eq_bot_iff hn s).mpr (h.ker_criticalHessian_le s)
 
 /-- The quadratic form of the normal Hessian is the quadratic form of the critical Hessian
 descended to the quotient by its radical, the tangent space of the submanifold. -/
@@ -252,11 +258,9 @@ end IsNondegenerateCriticalSubmanifold
 nondegenerate exactly when its normal Hessian has trivial kernel at every point. -/
 theorem IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff [I.Boundaryless]
     [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f) :
-    i.IsNondegenerateCriticalSubmanifold f ↔ ∀ s, LinearMap.ker (h.normalHessian hn s) = ⊥ := by
-  refine ⟨fun h' s ↦ h'.ker_normalHessian hn s, fun hker ↦ ⟨h, fun s ↦ ?_⟩⟩
-  have hs := hker s
-  rw [h.ker_normalHessian, ← LinearMap.le_ker_iff_map, normalClass_ker] at hs
-  exact hs
+    i.IsNondegenerateCriticalSubmanifold f ↔ ∀ s, LinearMap.ker (h.normalHessian hn s) = ⊥ :=
+  ⟨fun h' s ↦ h'.ker_normalHessian hn s,
+    fun hker ↦ ⟨h, fun s ↦ (h.ker_normalHessian_eq_bot_iff hn s).mp (hker s)⟩⟩
 
 /-- A critical submanifold of `f` is a critical submanifold of `-f`. -/
 theorem IsCriticalSubmanifold.neg (h : i.IsCriticalSubmanifold f) :
