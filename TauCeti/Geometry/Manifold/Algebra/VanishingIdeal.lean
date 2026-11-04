@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Cotangent
-public import TauCeti.Geometry.Manifold.DerivationBundle
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -14,9 +18,10 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 # The vanishing ideal of a point and its cotangent space
 
 For a point `x` of a smooth real manifold `M`, the smooth real functions vanishing at `x` form an
-ideal `I_x` of the ring `C^∞⟮I, M; ℝ⟯`, the kernel of evaluation at `x`. Its square, the ideal of
-finite sums of products of two functions vanishing at `x`, consists exactly of the functions whose
-value and differential both vanish at `x`. Consequently the algebraic cotangent space
+ideal `I_x` of the ring `C^∞⟮I, M; ℝ⟯`, the kernel of evaluation at `x`. When `x` is an interior
+point of a finite-dimensional Hausdorff manifold, the square of `I_x`, the ideal of finite sums of
+products of two functions vanishing at `x`, consists exactly of the functions whose value and
+differential both vanish at `x`. Consequently, at such a point, the algebraic cotangent space
 `I_x / I_x²` is canonically the cotangent space `T_x*M`, the class of `f` going to `df_x`. This is
 the scalar foundation of the algebraic description of jets and differential operators.
 
@@ -120,17 +125,15 @@ theorem mem_smoothVanishingIdeal_sq_of_eventuallyEq_zero {x : M} {f : C^∞⟮I,
     (hf : (f : M → ℝ) =ᶠ[𝓝 x] 0) : f ∈ smoothVanishingIdeal I x ^ 2 := by
   obtain ⟨b, -, hb⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hf).mem_iff.mp hf
   let χ : C^∞⟮I, M; ℝ⟯ := ⟨b, b.contMDiff⟩
+  have hχ : ⇑χ = b := ContMDiffMap.coeFn_mk _ _
   have hfac : f = (1 - χ) * f := by
     ext y
-    rw [ContMDiffMap.coe_mul, ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.mul_apply,
-      Pi.sub_apply, Pi.one_apply, ContMDiffMap.coeFn_mk]
     by_cases hy : b y = 0
-    · rw [hy, sub_zero, one_mul]
-    · rw [show f y = 0 from hb hy, mul_zero]
+    · simp [hχ, hy]
+    · simp [show f y = 0 from hb hy]
   rw [hfac, sq]
   refine Ideal.mul_mem_mul ?_ (mem_smoothVanishingIdeal_iff.mpr hf.eq_of_nhds)
-  rw [mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.sub_apply,
-    Pi.one_apply, ContMDiffMap.coeFn_mk, b.eventuallyEq_one.eq_of_nhds, Pi.one_apply, sub_self]
+  simp [hχ]
 
 /-- **Hadamard's lemma for the vanishing ideal.** At an interior point `x`, a smooth function whose
 value and differential vanish at `x` lies in the square of the vanishing ideal at `x`. -/
@@ -157,10 +160,11 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
   -- Hadamard's lemma factors `g` through the coordinates of a basis, with coefficients vanishing
   -- at `F x`; pulling back by `F` gives a sum of products of functions vanishing at `x`.
   let b := Module.finBasis ℝ E
-  obtain ⟨a, hax, ha⟩ := exists_contMDiffMap_hadamard_coords g (F x) b
+  obtain ⟨a, hax, ha⟩ := ContMDiffMap.exists_hadamard_coords g (F x) b
   let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
     ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
       ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩
+  have hc (i) (y : M) : c i y = b.coord i (F y) - b.coord i (F x) := rfl
   let p : C^∞⟮I, M; ℝ⟯ := ∑ i, (a i).comp F * c i
   have hp : p ∈ smoothVanishingIdeal I x ^ 2 := by
     refine Ideal.sum_mem _ fun i _ ↦ ?_
@@ -173,10 +177,7 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
     refine mem_smoothVanishingIdeal_sq_of_eventuallyEq_zero ?_
     filter_upwards [hg] with y hy
     have hpy : p y = ∑ i, a i (F y) * (b.coord i (F y) - b.coord i (F x)) := by
-      -- Evaluation at `y` is a ring homomorphism; each summand then evaluates by unfolding.
-      change ContMDiffMap.evalRingHom y p = _
-      rw [map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ rfl
+      simp [p, hc]
     rw [Pi.zero_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hpy, ← ha (F y), hy,
       Function.comp_apply, hgF, sub_zero, sub_self]
   simpa using add_mem hfp hp
