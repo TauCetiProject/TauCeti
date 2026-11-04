@@ -18,7 +18,8 @@ coefficient matrix (`AlternatingMap.map_cons_cons_add_smul`). This is the two-di
 the multiplicativity of the determinant, with the remaining arguments held fixed, as in the
 orientation sign of a rotation in the plane spanned by `p` and `v`. When the second combination
 is instead the last argument, moving it to the second place contributes the sign `(-1)ⁿ` of a
-cycle (`AlternatingMap.map_cons_snoc_add_smul`).
+cycle (`AlternatingMap.map_cons_snoc_add_smul`), and scaling the remaining `n` arguments by `t`
+contributes `tⁿ` (`AlternatingMap.map_cons_snoc_smul_add_smul`).
 -/
 
 public section
@@ -60,5 +61,23 @@ theorem map_cons_snoc_add_smul (f : M [⋀^Fin (n + 1 + 1)]→ₗ[R] N) (p v : M
   simp only [Fin.insertNth_last', Fin.val_last, curryLeft_apply_apply, Matrix.vecCons] at hins
   rw [hins, map_cons_cons_add_smul]
   module
+
+/-- The version of `AlternatingMap.map_cons_snoc_add_smul` in which the remaining `n` arguments
+`w` are also scaled by `t`: the value is multiplied by `(-1)ⁿ tⁿ (a β - s α)`. -/
+theorem map_cons_snoc_smul_add_smul (f : M [⋀^Fin (n + 1 + 1)]→ₗ[R] N) (p v : M) (w : Fin n → M)
+    (a s α β t : R) :
+    f (Fin.cons (a • p + s • v) (Fin.snoc (t • w) (α • p + β • v))) =
+      ((-1) ^ n * t ^ n * (a * β - s * α)) • f (Fin.cons p (Fin.cons v w)) := by
+  have e (w : Fin n → M) : f (Fin.cons p (Fin.cons v w)) = (f.curryLeft p).curryLeft v w := by
+    rw [curryLeft_apply_apply, curryLeft_apply_apply]
+    -- `Matrix.vecCons` is `Fin.cons`.
+    rfl
+  have hs := ((f.curryLeft p).curryLeft v).map_smul_univ (fun _ ↦ t) w
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hs
+  rw [map_cons_snoc_add_smul, e, e]
+  -- `t • w` is `fun i ↦ t • w i` by definition of the scalar action on functions.
+  rw [show t • w = fun i ↦ t • w i from rfl, hs, smul_smul]
+  congr 1
+  ring
 
 end AlternatingMap

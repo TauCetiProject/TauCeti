@@ -128,43 +128,6 @@ theorem contMDiff_sphereRotationFamily (p : sphere (0 : E) 1) :
       ((Complex.imCLM.contDiff.contMDiff.comp hz).smul hv))
     fun x ↦ (sphereRotationFamily p x).2
 
-/-- The derivative of the inclusion `Sᵐ ⊆ p^⊥ ⊆ E`, read in `E`, is the derivative of the
-inclusion into `p^⊥` followed by the inclusion of `p^⊥`. -/
-private theorem mvfderiv_coe_coe_sphere_apply (p : sphere (0 : E) 1)
-    (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (a : TangentSpace (𝓡 m) v) :
-    mvfderiv (𝓡 m) (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) v a =
-      ((mvfderiv (𝓡 m) ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) v a :
-        (ℝ ∙ (p : E))ᗮ) : E) := by
-  have hι := (contMDiff_coe_sphere (E := (ℝ ∙ (p : E))ᗮ) (n := m) (m := 1) v).mdifferentiableAt
-    one_ne_zero
-  have h := mvfderiv_comp_apply (g := Submodule.subtypeL (ℝ ∙ (p : E))ᗮ) v
-    (Submodule.subtypeL (ℝ ∙ (p : E))ᗮ).mdifferentiableAt hι a
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.fderiv] at h
-  -- `mvfderiv` of the inclusion into `p^⊥` is its `mfderiv`, and the identification of the tangent
-  -- spaces of `p^⊥` with `p^⊥` is the identity.
-  exact h
-
-/-- The derivative of a real-linear function of the circle coordinate, read on the product. -/
-private theorem mvfderiv_clm_coe_snd_apply (p : sphere (0 : E) 1) (L : ℂ →L[ℝ] ℝ)
-    (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1)
-    (w : TangentSpace ((𝓡 m).prod (𝓡 1)) x) :
-    mvfderiv ((𝓡 m).prod (𝓡 1))
-        (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x w =
-      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-        (Manifold.tangentSpaceProdEquiv x w).2) := by
-  have hκ := (contMDiff_coe_sphere (E := ℂ) (n := 1) (m := 1) x.2).mdifferentiableAt one_ne_zero
-  have h := mvfderiv_comp_apply (g := L) x.2 L.mdifferentiableAt hκ
-    (Manifold.tangentSpaceProdEquiv x w).2
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.fderiv] at h
-  -- `mvfderiv_comp_snd_apply` rewrites the derivative of a composition `g ∘ Prod.snd`, so the
-  -- map, a lambda, is first written definitionally in that form.
-  rw [show (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
-    (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd from rfl, mvfderiv_comp_snd_apply,
-    Manifold.tangentSpaceProdEquiv_apply]
-  rw [Manifold.tangentSpaceProdEquiv_apply] at h
-  -- As above, `mvfderiv` of the inclusion of the circle is its `mfderiv`.
-  exact h
-
 /-- **The derivative of the rotation family.** Read in `E`, a tangent vector `(a, b)` at `(v, z)`
 is sent to `Re b • p + Im b • v + Im z • a`, where `a` and `b` are read in `p^⊥` and in `ℂ` through
 the derivatives of the inclusions. -/
@@ -199,9 +162,21 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
         ((y.1 : (ℝ ∙ (p : E))ᗮ) : E)) x w =
       ((mvfderiv (𝓡 m) ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) x.1
         (Manifold.tangentSpaceProdEquiv x w).1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-    rw [← mvfderiv_coe_coe_sphere_apply, Manifold.tangentSpaceProdEquiv_apply]
-    exact mvfderiv_comp_fst_apply
-      (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) x w
+    have h := (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_apply hι (Manifold.tangentSpaceProdEquiv x w).1
+    rw [Manifold.tangentSpaceProdEquiv_apply] at h ⊢
+    -- The inclusion `Sᵐ ⊆ E` is the inclusion into `p^⊥` followed by `subtypeL` by definition.
+    exact (mvfderiv_comp_fst_apply
+      (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) x w).trans h
+  have hL (L : ℂ →L[ℝ] ℝ) : mvfderiv ((𝓡 m).prod (𝓡 1))
+      (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x w =
+      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
+        (Manifold.tangentSpaceProdEquiv x w).2) := by
+    -- `mvfderiv_comp_snd_apply` rewrites the derivative of a composition `g ∘ Prod.snd`, so the
+    -- map, a lambda, is first written definitionally in that form.
+    rw [show (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
+      (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd from rfl, mvfderiv_comp_snd_apply,
+      Manifold.tangentSpaceProdEquiv_apply]
+    exact L.mvfderiv_comp_apply hκ _
   -- Write the map as a sum of products of scalar and vector-valued functions.
   rw [show (fun y ↦ (sphereRotationFamily p y : E)) =
     ((fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
@@ -211,9 +186,7 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
     mvfderiv_add (hre.smul mdifferentiableAt_const) (him.smul hv),
     mvfderiv_smul hre mdifferentiableAt_const, mvfderiv_smul him hv]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [mvfderiv_clm_coe_snd_apply p Complex.reCLM x w,
-    mvfderiv_clm_coe_snd_apply p Complex.imCLM x w,
-    hv', mvfderiv_const]
+  rw [hL Complex.reCLM, hL Complex.imCLM, hv', mvfderiv_const]
   simp only [zero_apply, smul_zero, zero_add, Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 
@@ -365,32 +338,6 @@ private theorem volumeForm_cons_cons_mvfderiv (o : Orientation ℝ E (Fin (m + 1
       Orientation.volumeForm_apply_pos_iff, Orientation.orientation_eq_orthogonalSpanSingleton_iff,
       hW]
 
-/-- The volume of the image under the derivative of the rotation family of the basis
-`(Im z • a, β)` of a point with circle coordinate `z`: moving the last vector to the second place
-costs the sign `(-1)ᵐ` of a cycle, scaling `m` vectors by `Im z` costs `(Im z)ᵐ`, and the first two
-vectors span the plane of `p` and `v` with the factor `Re z Im β - Im z Re β`
-(`AlternatingMap.map_cons_snoc_add_smul`). -/
-private theorem volumeForm_cons_snoc (o : Orientation ℝ E (Fin (m + 1 + 1))) (p v : E)
-    (a : Fin m → E) (z β : ℂ) :
-    o.volumeForm (Fin.cons (z.re • p + z.im • v)
-        (Fin.snoc (fun j ↦ z.im • a j) (β.re • p + β.im • v))) =
-      (-1) ^ m * z.im ^ m * (z.re * β.im - z.im * β.re) *
-        o.volumeForm (Fin.cons p (Fin.cons v a)) := by
-  -- Scaling the last `m` vectors by `Im z` multiplies the volume by `(Im z)ᵐ`.
-  have hs := o.volumeForm.map_smul_univ (Fin.cons 1 (Fin.cons 1 fun _ ↦ z.im))
-    (Fin.cons p (Fin.cons v a))
-  rw [Fin.prod_univ_succ, Fin.prod_univ_succ] at hs
-  simp only [Fin.cons_zero, Fin.cons_succ, one_mul, Finset.prod_const, Finset.card_univ,
-    Fintype.card_fin, smul_eq_mul] at hs
-  have hcons : (fun i ↦ (Fin.cons 1 (Fin.cons 1 fun _ ↦ z.im) : Fin (m + 1 + 1) → ℝ) i •
-      (Fin.cons p (Fin.cons v a) : Fin (m + 1 + 1) → E) i) =
-      Fin.cons p (Fin.cons v fun j ↦ z.im • a j) := by
-    ext i
-    refine Fin.cases ?_ (fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i) i <;> simp
-  rw [hcons] at hs
-  rw [AlternatingMap.map_cons_snoc_add_smul, hs, smul_eq_mul]
-  ring
-
 /-- A tangent basis of the unit sphere `Sᵐ` of `p^⊥` at `v`, positively or negatively oriented
 (when `m = 0` it is empty). -/
 private def sphereTangentBasis {p : sphere (0 : E) 1} (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
@@ -455,7 +402,10 @@ private theorem volumeForm_cons_mfderiv_sphereRotationFamily
     · simp [β, v, ContinuousLinearMap.map_zero]
     · simp [a, ContinuousLinearMap.map_zero]
   rw [himage, coe_sphereRotationFamily]
-  exact volumeForm_cons_snoc o p v a x.2 β
+  -- Moving the last vector to the second place costs the sign `(-1)ᵐ` of a cycle, scaling `m`
+  -- vectors by `Im z` costs `(Im z)ᵐ`, and the first two vectors span the plane of `p` and `v`
+  -- with the factor `Re z Im β - Im z Re β`.
+  exact (o.volumeForm.map_cons_snoc_smul_add_smul (p : E) v a _ _ _ _ _).trans (smul_eq_mul _ _)
 
 /-- At a point `(v, z)` with `Im z ≠ 0`, the derivative of the rotation family carries the product
 basis of a tangent basis `b` at `v` and a positively oriented tangent basis `c` at `z` to a linearly
