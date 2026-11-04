@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.FDeriv.Det
 import TauCeti.Analysis.Calculus.Morse.Linearization
+import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
 
 /-!
 # First variation of the classical Monge–Ampère equation
@@ -36,19 +37,6 @@ namespace TauCeti
 
 open Filter
 open scoped Gradient Matrix.Norms.Operator Topology
-
-private theorem trace_ringInverse_mul_eq_matrix_trace {E ι : Type*} [AddCommGroup E]
-    [Module ℝ E] [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι ℝ E) (A B : E →ₗ[ℝ] E) :
-    LinearMap.trace ℝ E (Ring.inverse A * B) =
-      Matrix.trace ((LinearMap.toMatrix b b A)⁻¹ * LinearMap.toMatrix b b B) := by
-  rw [LinearMap.trace_eq_matrix_trace ℝ b]
-  calc
-    _ = Matrix.trace (LinearMap.toMatrixAlgEquiv b (Ring.inverse A * B)) := by
-      rw [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
-    _ = _ := by
-      rw [map_mul, map_ringInverse, ← Matrix.nonsing_inv_eq_ringInverse]
-      simp only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
@@ -82,7 +70,7 @@ theorem trace_inv_hessian_directional_eq [FiniteDimensional ℝ E] {u f : E → 
     rw [(hchain.congr_of_eventuallyEq hlocal.symm).fderiv]
     simp only [ContinuousLinearMap.comp_apply, hu.fderiv_hessianOperator_apply]
     exact Matrix.fderiv_det_apply (isUnit_iff_ne_zero.mpr hdet_ne) _
-  rw [trace_ringInverse_mul_eq_matrix_trace b, ← hlocal.eq_of_nhds, hJacobi, mul_comm,
+  rw [LinearMap.trace_ringInverse_mul_eq_matrix_trace b, ← hlocal.eq_of_nhds, hJacobi, mul_comm,
     mul_div_cancel_right₀ _ hdet_ne]
   simp only [hM]
 
@@ -97,7 +85,7 @@ theorem _root_.OrthonormalBasis.sum_inv_hessian_directional_eq {ι : Type*} [Fin
       fderiv ℝ (fderiv ℝ (fun y ↦ fderiv ℝ u y v)) x (b i) (b j)) = fderiv ℝ f x v / f x := by
   let _ : FiniteDimensional ℝ E := Module.Finite.of_basis b.toBasis
   have h := trace_inv_hessian_directional_eq hu hne heq v
-  rw [trace_ringInverse_mul_eq_matrix_trace b.toBasis] at h
+  rw [LinearMap.trace_ringInverse_mul_eq_matrix_trace b.toBasis] at h
   simpa only [fderiv_gradient, Matrix.trace, Matrix.diag, Matrix.mul_apply,
     b.toMatrix_hessianOperator_apply, smul_eq_mul] using h
 

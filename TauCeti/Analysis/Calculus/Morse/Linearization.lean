@@ -149,23 +149,6 @@ theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
 
 end TauCeti
 
-namespace ContDiff
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  {f : E → ℝ}
-
-open TauCeti
-
-/-- The Hessian operator field of a `C^{m+2}` function is `Cᵐ`, being the derivative of its
-`C^{m+1}` gradient. -/
-theorem contDiff_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hmn : m + 2 ≤ n) :
-    ContDiff ℝ m (hessianOperator f) := by
-  rw [show hessianOperator f = fderiv ℝ (∇ f) from funext fun x ↦ (fderiv_gradient f x).symm]
-  exact (hf.gradient_right (m := m + 1) (by rwa [add_assoc, one_add_one_eq_two])).fderiv_right
-    le_rfl
-
-end ContDiff
-
 namespace ContDiffAt
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -249,6 +232,20 @@ theorem hasDerivAt_gradient_comp {γ : ℝ → E} {s : ℝ} {v : E} (hf : ContDi
   hf.hasFDerivAt_gradient.comp_hasDerivAt s hγ
 
 end ContDiffAt
+
+namespace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ}
+
+open TauCeti
+
+/-- The Hessian operator field of a `C^{m+2}` function is `Cᵐ`. -/
+theorem contDiff_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hmn : m + 2 ≤ n) :
+    ContDiff ℝ m (hessianOperator f) :=
+  contDiff_iff_contDiffAt.2 fun x ↦ (hf.contDiffAt (x := x)).contDiffAt_hessianOperator hmn
+
+end ContDiff
 
 namespace TauCeti
 
