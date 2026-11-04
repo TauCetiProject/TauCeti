@@ -43,11 +43,13 @@ exactly when `f` is nilpotent modulo `I`.
 
 * `TauCeti.FormalScheme.Spf.mem_carrier_iff_le`: for an ideal of definition `I`, a prime is open
   if and only if it contains `I`.
-* `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`:
-  the underlying space is the Zariski closed set `V(I)`.
+* `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`,
+  `TauCeti.FormalScheme.Spf.compactSpace_carrier`: the underlying space is the Zariski closed set
+  `V(I)`, hence quasi-compact.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
-* `TauCeti.FormalScheme.Spf.isBasis_basicOpen`: the basic open sets form a basis.
+* `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.isCompact_basicOpen`:
+  the basic open sets form a basis of quasi-compact opens.
 * `TauCeti.FormalScheme.Spf.basicOpen_le_basicOpen_iff`: `D(g) ⊆ D(f)` if and only if `g` lies
   in the radical of `f A + I`.
 * `TauCeti.FormalScheme.Spf.basicOpen_eq_bot_iff`: `D(f)` is empty if and only if `f` lies in
@@ -96,6 +98,10 @@ theorem carrier_eq_zeroLocus (hI : IsAdic I) : carrier A = zeroLocus I := by
 /-- The underlying set of the formal spectrum is Zariski closed in `Spec A`. -/
 theorem isClosed_carrier (hI : IsAdic I) : IsClosed (carrier A) :=
   carrier_eq_zeroLocus hI ▸ isClosed_zeroLocus _
+
+/-- If `I` defines the topology of `A`, the underlying space of `Spf A` is quasi-compact. -/
+theorem compactSpace_carrier (hI : IsAdic I) : CompactSpace (carrier A) :=
+  isCompact_iff_compactSpace.mp (isClosed_carrier hI).isCompact
 
 /-- For a discrete ring every prime is open, so the formal spectrum has the same points as the
 spectrum. -/
@@ -197,6 +203,18 @@ theorem isBasis_basicOpen : Opens.IsBasis (Set.range (basicOpen (A := A))) := by
   convert IsInducing.subtypeVal.isTopologicalBasis (isTopologicalBasis_basic_opens (R := A))
   ext
   simp [basicOpen, Function.comp_def]
+
+/-- If `I` defines the topology of `A`, every basic open set `D(f)` of `Spf A` is quasi-compact. -/
+theorem isCompact_basicOpen (hI : IsAdic I) (f : A) :
+    IsCompact (basicOpen f : Set (carrier A)) := by
+  rw [IsInducing.subtypeVal.isCompact_iff, basicOpen, Opens.coe_comap, ContinuousMap.coe_mk,
+    Set.image_preimage_eq_inter_range, Subtype.range_val]
+  exact (PrimeSpectrum.isCompact_basicOpen f).inter_right (isClosed_carrier hI)
+
+/-- If `I` defines the topology of `A`, every basic open set `D(f)` of `Spf A` is a compact space
+under the subspace topology. -/
+theorem compactSpace_basicOpen (hI : IsAdic I) (f : A) : CompactSpace (basicOpen f) :=
+  isCompact_iff_compactSpace.mp (isCompact_basicOpen hI f)
 
 /-- If `I` defines the topology of `A`, then `D(g) ⊆ D(f)` in `Spf A` if and only if `g` lies in
 the radical of `f A + I`, that is, if and only if `f` divides a power of `g` modulo `I`. -/
