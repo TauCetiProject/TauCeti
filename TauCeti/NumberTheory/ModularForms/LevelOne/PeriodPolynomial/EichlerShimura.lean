@@ -132,7 +132,6 @@ theorem evenPeriodPolynomial_injective (hk : k = w + 2) :
 an injective linear map between spaces of the same dimension. -/
 theorem oddPeriodPolynomial_surjective (hk : k = w + 2) :
     Function.Surjective (oddPeriodPolynomial hk) := by
-  have : FiniteDimensional ℂ (CuspForm 𝒮ℒ k) := .of_injective _ CuspForm.toModularFormₗ_injective
   have hdim : Module.finrank ℂ (CuspForm 𝒮ℒ k) = Module.finrank ℂ (oddPeriodPolynomials ℂ w) := by
     rw [finrank_oddPeriodPolynomials_eq_finrank_cuspForm w, hk]
     norm_cast
@@ -187,9 +186,8 @@ theorem PeriodRelation.oddPeriodPolynomialEquiv_conj_heckeTCuspLevelOne (hk : k 
   refine LinearMap.ext fun P ↦ ?_
   obtain ⟨f, rfl⟩ := (oddPeriodPolynomialEquiv hk).surjective P
   refine Subtype.ext ?_
-  rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, LinearMap.coe_restrict_apply,
-    oddPeriodPolynomialEquiv_apply, oddPeriodPolynomialEquiv_apply,
-    h.periodAction_oddPeriodPolynomial hk hw n f]
+  rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
+  simp [h.periodAction_oddPeriodPolynomial hk hw n f]
 
 /-- **The trace of `Tₙ` on cusp forms is its trace on odd period polynomials**: for `n ≥ 1` and
 every solution `ξ` of the period relation (A), `tr(Tₙ | S_k(SL(2, ℤ))) = tr(ξ | W_w^-)`,

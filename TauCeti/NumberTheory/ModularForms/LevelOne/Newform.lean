@@ -35,8 +35,6 @@ eigenvectors with distinct eigenvalue systems.
   nonzero cusp forms on `SL(2, ℤ)`.
 * `HeckeRing.GL2.Newform.heckeTCuspLevelOne_cuspFormGamma1OneEquiv`: a newform `g` of level one
   is an eigenvector of every `Tₙ` with eigenvalue `aₙ(g)`.
-* `HeckeRing.GL2.Newform.injective_qExpansion_coeff_pnat`: a newform is determined by its
-  Fourier coefficients `aₙ`, `n ≥ 1`.
 * `HeckeRing.GL2.Newform.span_range_cuspFormGamma1OneEquiv_toCuspForm`: the newforms of level one
   span `S_k(SL(2, ℤ))`.
 * `HeckeRing.GL2.Newform.L_cuspFormGamma1OneEquiv_ne_zero`: the `L`-function of a newform of
@@ -105,29 +103,18 @@ theorem heckeTCuspLevelOne_cuspFormGamma1OneEquiv (g : Newform 1 k) (n : ℕ+) :
   have h := congrArg (fun F : cuspFormCharSpace k g.χ ↦
       (qExpansion 1 (F : CuspForm ((Gamma1 1).map (mapGL ℝ)) k)).coeff m)
     (heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_qExpansion_coeff_smul g n)
-  dsimp only at h ⊢
-  rw [qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 n.ne_zero,
-    Submodule.coe_smul, FunLike.coe_smul,
+  rw [qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0 n.ne_zero] at h
+  simp only [Submodule.coe_smul, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map 1),
     PowerSeries.coeff_smul, smul_eq_mul] at h
-  rw [qExpansion_coeff_heckeTCuspLevelOne, FunLike.coe_smul,
-    ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL, coe_cuspFormGamma1OneEquiv,
-    PowerSeries.coeff_smul, smul_eq_mul, ← h]
+  rw [qExpansion_coeff_heckeTCuspLevelOne]
+  simp only [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL,
+    PowerSeries.coeff_smul, smul_eq_mul]
+  rw [coe_cuspFormGamma1OneEquiv, ← h]
   -- the character of `g` is trivial, as is every Dirichlet character modulo `1`
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [DirichletCharacter.level_one (MulChar.ofUnitHom g.χ),
     MulChar.one_apply (isUnit_of_subsingleton _), one_mul]
-
-/-- A newform is determined by its Fourier coefficients `aₙ`, `n ≥ 1`, its constant term being
-zero. -/
-theorem injective_qExpansion_coeff_pnat {N : ℕ} [NeZero N] :
-    Function.Injective fun (g : Newform N k) (n : ℕ+) ↦ (qExpansion 1 g.toCuspForm).coeff n := by
-  refine fun g h hgh ↦ Newform.ext <| CuspForm.qExpansion_injective one_pos
-    (one_mem_strictPeriods_Gamma1_map N) (PowerSeries.ext fun m ↦ ?_)
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · rw [CuspFormClass.qExpansion_coeff_zero _ one_pos (one_mem_strictPeriods_Gamma1_map N),
-      CuspFormClass.qExpansion_coeff_zero _ one_pos (one_mem_strictPeriods_Gamma1_map N)]
-  · exact congrFun hgh ⟨m, hm⟩
 
 /-- The newforms of level one span `S_k(SL(2, ℤ))`, every cusp form of level one being new. -/
 theorem span_range_cuspFormGamma1OneEquiv_toCuspForm :
