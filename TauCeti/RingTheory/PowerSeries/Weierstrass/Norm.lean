@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import Mathlib.RingTheory.QuotSMulTop
@@ -35,8 +36,9 @@ the class of `φ`. This file reads the kernel `N[φ]` and the cokernel `N ⧸ φ
 * over an infinite domain, when the norm vanishes, `N ⧸ φ N` is infinite;
 * for a polynomial `φ = P`, the norm is the resultant `Res(f, P)`.
 
-Over a discrete valuation ring `O` with finite residue field, `N ⧸ φ N` is therefore finite exactly
-when the norm of `φ` is nonzero. For a distinguished polynomial `G`, the module `O⟦X⟧ ⧸ (G)` is a
+Over an infinite principal ideal domain with finite quotients, such as a discrete valuation ring
+`O` with finite residue field, `N ⧸ φ N` is therefore finite exactly when the norm of `φ` is
+nonzero. For a distinguished polynomial `G`, the module `O⟦X⟧ ⧸ (G)` is a
 horizontal block of an elementary module over the Iwasawa algebra `Λ = O⟦X⟧`; this file computes
 the kernel and cokernel of multiplication by an element of `Λ`, for instance
 `ω_n = (1 + X) ^ p ^ n - 1`, on such a block: the kernel vanishes and the cokernel has
@@ -53,8 +55,9 @@ module.
   `#(N ⧸ φ N) = #(A ⧸ (norm φ))`.
 * `PowerSeries.IsWeierstrassFactorizationAt.infinite_quotSMulTop`: if the norm of `φ` vanishes
   and `A` is infinite, `N ⧸ φ N` is infinite.
-* `PowerSeries.IsWeierstrassFactorizationAt.finite_quotSMulTop_iff`: over a discrete valuation
-  ring with finite residue field, `N ⧸ φ N` is finite iff the norm of `φ` is nonzero.
+* `PowerSeries.IsWeierstrassFactorizationAt.finite_quotSMulTop_iff`: over an infinite principal
+  ideal domain with finite quotients, such as a discrete valuation ring with finite residue field,
+  `N ⧸ φ N` is finite iff the norm of `φ` is nonzero.
 * `PowerSeries.IsWeierstrassFactorizationAt.norm_mk_coe_eq_resultant`: the norm of a polynomial
   `P` is the resultant `Res(f, P)`.
 
@@ -128,11 +131,12 @@ theorem infinite_quotSMulTop [IsDomain A] [Infinite A] {φ : A⟦X⟧}
   rw [← TauCeti.Ideal.Quotient.restrictScalars_smul_top_eq_range_lmul] at this
   exact Infinite.of_injective _ (Submodule.Quotient.restrictScalarsEquiv A _).injective
 
-/-- **Finite cokernels on a Weierstrass quotient over a discrete valuation ring.** If `A` is a
-discrete valuation ring with finite residue field, then `A⟦X⟧ ⧸ (g)` modulo a series `φ` is finite
-exactly when the norm over `A` of the class of `φ` is nonzero. -/
-theorem finite_quotSMulTop_iff [IsDomain A] [IsDiscreteValuationRing A] [Finite (ResidueField A)]
-    (φ : A⟦X⟧) :
+/-- **Finite cokernels on a Weierstrass quotient.** If `A` is an infinite principal ideal domain
+whose quotients by nonzero ideals are finite, for instance a discrete valuation ring with finite
+residue field, then `A⟦X⟧ ⧸ (g)` modulo a series `φ` is finite exactly when the norm over `A` of the
+class of `φ` is nonzero. -/
+theorem finite_quotSMulTop_iff [IsDomain A] [IsPrincipalIdealRing A] [Infinite A]
+    [Ring.HasFiniteQuotients A] (φ : A⟦X⟧) :
     Finite (QuotSMulTop φ (A⟦X⟧ ⧸ Ideal.span {g})) ↔
       Algebra.norm A (Ideal.Quotient.mk (Ideal.span {g}) φ) ≠ 0 := by
   refine ⟨fun hfin hφ ↦ ?_, fun hφ ↦ ?_⟩
