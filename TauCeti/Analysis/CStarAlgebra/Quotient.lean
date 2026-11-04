@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
@@ -463,11 +464,8 @@ noncomputable def quotientKerEquivRange : A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[�
   StarAlgEquiv.ofBijective
     (TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ) φ.rangeRestrict
       fun _ ha => Subtype.ext ((TwoSidedIdeal.mem_ker φ).mp ha))
-    ⟨TwoSidedIdeal.Quotient.liftStarAlgHom_injective_of_ker_le _ fun a ha => by
-        rw [TwoSidedIdeal.mem_ker] at ha ⊢
-        exact congrArg Subtype.val ha,
-     TwoSidedIdeal.Quotient.liftStarAlgHom_surjective_of_surjective _ fun ⟨_, a, ha⟩ =>
-        ⟨a, Subtype.ext ha⟩⟩
+    ⟨TwoSidedIdeal.Quotient.liftStarAlgHom_injective_of_ker_le _ φ.ker_rangeRestrict.le,
+     TwoSidedIdeal.Quotient.liftStarAlgHom_surjective_of_surjective _ φ.rangeRestrict_surjective⟩
 
 @[simp]
 theorem quotientKerEquivRange_mk (a : A) :
@@ -514,39 +512,6 @@ instance isClosed_range : IsClosed (φ.range : Set B) := by
 theorem surjective_of_denseRange {φ : A →⋆ₐ[ℂ] B} (hφ : DenseRange φ) : Function.Surjective φ :=
   NonUnitalStarAlgHom.surjective_of_denseRange (φ := φ.toNonUnitalStarAlgHom) hφ
 
-private theorem ker_eq_ker_rangeRestrict :
-    TwoSidedIdeal.ker φ = TwoSidedIdeal.ker φ.rangeRestrict.toNonUnitalStarAlgHom := by
-  ext a
-  rw [TwoSidedIdeal.mem_ker, TwoSidedIdeal.mem_ker, Subtype.ext_iff]
-  rfl
-
-private theorem rangeRestrict_toNonUnitalStarAlgHom_surjective :
-    Function.Surjective φ.rangeRestrict.toNonUnitalStarAlgHom :=
-  φ.toAlgHom.rangeRestrict_surjective
-
-/-- First isometric `⋆`-isomorphism theorem for unital C⋆-algebras: `A ⧸ ker φ ≃⋆ₐ[ℂ] φ.range`. -/
-noncomputable def quotientKerEquivRange : A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[ℂ] φ.range :=
-  (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq (ker_eq_ker_rangeRestrict φ)).trans
-    (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
-      (φ := φ.rangeRestrict.toNonUnitalStarAlgHom)
-      (rangeRestrict_toNonUnitalStarAlgHom_surjective φ))
-
-@[simp]
-theorem quotientKerEquivRange_mk (a : A) :
-    φ.quotientKerEquivRange (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) =
-      φ.rangeRestrict a :=
-  (congrArg
-      (NonUnitalStarAlgHom.quotientKerEquivOfSurjective
-        (rangeRestrict_toNonUnitalStarAlgHom_surjective φ))
-      (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_mk (ker_eq_ker_rangeRestrict φ) a)).trans
-    (NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk
-      (φ := φ.rangeRestrict.toNonUnitalStarAlgHom)
-      (rangeRestrict_toNonUnitalStarAlgHom_surjective φ) a)
-
-theorem coe_quotientKerEquivRange_mk (a : A) :
-    (φ.quotientKerEquivRange (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) : B) = φ a :=
-  congrArg Subtype.val (φ.quotientKerEquivRange_mk a)
-
 /-- Isometric `⋆`-isomorphism `A ⧸ ker φ ≃⋆ₐ[ℂ] B` induced by a surjective unital `⋆`-homomorphism
 of C⋆-algebras. -/
 noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₐ[ℂ] B} (hφ : Function.Surjective φ) :
@@ -557,5 +522,22 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₐ[ℂ] B} (hφ : 
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk (φ := φ.toNonUnitalStarAlgHom) hφ a
+
+/-- First isometric `⋆`-isomorphism theorem for unital C⋆-algebras: `A ⧸ ker φ ≃⋆ₐ[ℂ] φ.range`. -/
+noncomputable def quotientKerEquivRange : A ⧸ TwoSidedIdeal.ker φ ≃⋆ₐ[ℂ] φ.range :=
+  (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq φ.ker_rangeRestrict.symm).trans
+    (quotientKerEquivOfSurjective φ.rangeRestrict_surjective)
+
+@[simp]
+theorem quotientKerEquivRange_mk (a : A) :
+    φ.quotientKerEquivRange (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) =
+      φ.rangeRestrict a :=
+  (congrArg (quotientKerEquivOfSurjective φ.rangeRestrict_surjective)
+      (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_mk φ.ker_rangeRestrict.symm a)).trans
+    (quotientKerEquivOfSurjective_mk φ.rangeRestrict_surjective a)
+
+theorem coe_quotientKerEquivRange_mk (a : A) :
+    (φ.quotientKerEquivRange (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) : B) = φ a :=
+  congrArg Subtype.val (φ.quotientKerEquivRange_mk a)
 
 end StarAlgHom
