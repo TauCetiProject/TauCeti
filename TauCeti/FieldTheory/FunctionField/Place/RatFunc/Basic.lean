@@ -287,9 +287,7 @@ theorem adicOfIrreducible_eq_adicOfIrreducible_iff {q r : k[X]} (hq : Irreducibl
     (hr : Irreducible r) :
     adicOfIrreducible hq = adicOfIrreducible hr ↔ Associated q r := by
   rw [adicOfIrreducible_def, adicOfIrreducible_def, (ofPrime_injective k (RatFunc k)).eq_iff,
-    ← Ideal.span_singleton_eq_span_singleton, ← HeightOneSpectrum.ofIrreducible_asIdeal hq,
-    ← HeightOneSpectrum.ofIrreducible_asIdeal hr]
-  exact ⟨congrArg HeightOneSpectrum.asIdeal, HeightOneSpectrum.ext⟩
+    HeightOneSpectrum.ofIrreducible_eq_ofIrreducible_iff]
 
 /-- **The residue field of the finite place of an irreducible polynomial `q` is `k[X] / (q)`**
 (Stichtenoth, Proposition 1.2.1(a)). -/
