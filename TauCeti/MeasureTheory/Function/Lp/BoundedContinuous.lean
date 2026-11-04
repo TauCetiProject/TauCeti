@@ -51,6 +51,8 @@ counting measure, or of a Haar measure on a discrete group, consists of all boun
 * `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, for a measure charging
   every point, every class in `L∞` is the class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
+* `ContinuousMap.norm_toLp_top`: on a compact finite-measure space whose measure is positive on
+  open sets, `‖ContinuousMap.toLp ∞ μ 𝕜 f‖ = ‖f‖`.
 -/
 
 public section
@@ -222,3 +224,25 @@ theorem toLpTopLinearIsometryEquiv_symm_linftyOne [DiscreteTopology α] [μ.IsOp
   rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
 
 end BoundedContinuousFunction
+
+namespace ContinuousMap
+
+variable {α E 𝕜 : Type*} [TopologicalSpace α] [CompactSpace α] [MeasurableSpace α] [BorelSpace α]
+  [NormedAddCommGroup E] [SecondCountableTopologyEither α E] (μ : Measure α) [IsFiniteMeasure μ]
+  [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- On a compact finite-measure space, the `L∞` norm of a continuous function is at most its
+supremum norm. -/
+theorem norm_toLp_top_le (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ ≤ ‖f‖ := by
+  rw [toLp_def, BoundedContinuousFunction.toLp_top_eq_toLpTop,
+    ← (linearIsometryBoundedOfCompact α E 𝕜).norm_map f]
+  exact BoundedContinuousFunction.norm_toLpTop_le μ _
+
+/-- On a compact finite-measure space whose measure is positive on nonempty open sets, the `L∞`
+norm of a continuous function equals its supremum norm. -/
+@[simp]
+theorem norm_toLp_top [μ.IsOpenPosMeasure] (f : C(α, E)) : ‖toLp ∞ μ 𝕜 f‖ = ‖f‖ := by
+  rw [toLp_def, BoundedContinuousFunction.toLp_top_eq_toLpTop,
+    BoundedContinuousFunction.norm_toLpTop, LinearIsometryEquiv.norm_map]
+
+end ContinuousMap
