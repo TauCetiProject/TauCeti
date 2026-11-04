@@ -10,6 +10,8 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Differentiating along a curve in a manifold
@@ -36,6 +38,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.hasDerivWithinAt_comp_curve`: the chain rule
   `(g ∘ γ)' (t) = d g (γ t) (γ' t)` for a function `g` from the manifold to a normed space,
   with `TauCeti.Manifold.hasDerivAt_comp_curve` its unrestricted case.
+* `TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq`: every tangent vector on a
+  boundaryless manifold is realized by a curve of the given regularity at the given parameter.
 * `TauCeti.Manifold.curveVelocityWithin` and `TauCeti.Manifold.curveVelocity`: the velocity of a
   curve within a parameter set and its unrestricted case, computed by
   `TauCeti.Manifold.curveVelocityWithin_apply` and `TauCeti.Manifold.curveVelocity_apply` and
@@ -700,3 +704,49 @@ theorem snd_curve
 end Prod
 
 end HasMFDerivAt
+
+namespace TauCeti.Manifold
+
+open Set
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : ℕ∞ω} [IsManifold I n M] [I.Boundaryless]
+
+/-- Every tangent vector to a boundaryless manifold is the velocity of a curve which is
+`C^n` near the prescribed parameter. No completeness or metric is required. -/
+theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
+    (v : TangentSpace I p) (t : 𝕜) :
+    ∃ γ : 𝕜 → M, γ t = p ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t ∧
+      curveVelocity I γ t = v := by
+  have : IsManifold I 1 M := IsManifold.of_le hn
+  let c := extChartAt I p
+  -- Use the model-space instances for the chart line, rather than the fibre instances.
+  let v' : E := v
+  let l : 𝕜 → E := fun r ↦ c p + (r - t) • v'
+  have hl : ContDiff 𝕜 n l := contDiff_const.add ((contDiff_id.sub contDiff_const).smul
+    contDiff_const)
+  have hlt : l t = c p := by simp [l]
+  have hc : ContMDiffAt 𝓘(𝕜, E) I n c.symm (c p) :=
+    (contMDiffWithinAt_extChartAt_symm_target_self p).contMDiffAt
+      (extChartAt_target_mem_nhds p)
+  have hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n (c.symm ∘ l) t :=
+    (hlt ▸ hc).comp t hl.contMDiff.contMDiffAt
+  have hγt : (c.symm ∘ l) t = p := by simp [Function.comp_apply, hlt, c]
+  refine ⟨c.symm ∘ l, hγt, hγ, ?_⟩
+  have heq : c ∘ (c.symm ∘ l) =ᶠ[𝓝 t] l := by
+    filter_upwards [hl.continuous.continuousAt.preimage_mem_nhds
+      (hlt ▸ extChartAt_target_mem_nhds p)] with r hr
+    exact c.right_inv hr
+  have hderiv : HasDerivAt l v' t := by
+    simpa only [l, Pi.add_apply, id_eq, zero_add, one_smul] using
+      (hasDerivAt_const t (c p)).fun_add
+      (((hasDerivAt_id t).sub_const t).smul_const v')
+  have hchart := hasDerivAt_extChartAt_comp_curve
+    (hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt (by positivity)))
+  rw [hγt] at hchart
+  exact hchart.unique (hderiv.congr_of_eventuallyEq heq)
+
+end TauCeti.Manifold
