@@ -129,7 +129,7 @@ theorem right_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
   simpa only [coe_right] using mulRight_mul_apply (𝕜 := 𝕜) a b t.1
 
 /-- The left and right outer actions commute. -/
-theorem left_right (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
+theorem left_right_comm (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
     left 𝕜 B a (right 𝕜 B b t) = right 𝕜 B b (left 𝕜 B a t) := by
   apply Subtype.ext
   simpa only [coe_left, coe_right] using mulLeft_mulRight_apply_comm (𝕜 := 𝕜) a b t.1
