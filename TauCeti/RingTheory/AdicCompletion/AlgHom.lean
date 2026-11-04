@@ -131,9 +131,9 @@ theorem bijective_mapₐ (f : S →ₐ[R] S') (hf : I ≤ I'.comap f)
   let g := liftAlgHom I (fun n ↦ (e n).symm.toAlgHom.comp ((evalₐ I' n).restrictScalars R))
     fun {m n} hle ↦ AlgHom.ext fun z ↦ (e m).injective <| by
       simpa [hfactor hle] using factor_evalₐ hle z
+  have hg (n : ℕ) : evalₐ I n (g y) = (e n).symm (evalₐ I' n y) := evalₐ_liftAlgHom _ _ _ n y
   refine ⟨g y, ext_evalₐ fun n ↦ ?_⟩
-  rw [evalₐ_mapₐ, show evalₐ I n (g y) = (e n).symm (evalₐ I' n y) from
-    evalₐ_liftAlgHom _ _ _ _ _]
+  rw [evalₐ_mapₐ, hg]
   exact (e n).apply_symm_apply _
 
 /-- An `R`-algebra isomorphism `e : S ≃ₐ[R] S'` carrying `I` onto `I'` induces an `R`-algebra
