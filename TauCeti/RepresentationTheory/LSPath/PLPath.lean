@@ -545,6 +545,17 @@ theorem straight_smul_mul_straight_smul {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ 
     straight 𝕜 (a • w) * straight 𝕜 (b • w) = straight 𝕜 ((a + b) • w) := by
   rw [add_smul, straight_add ((SameRay.sameRay_nonneg_smul_left w ha).nonneg_smul_right hb)]
 
+/-- A straight path along a natural multiple is the concatenation power of the original
+straight path. -/
+@[simp]
+theorem straight_natCast_smul (n : ℕ) (v : V) :
+    straight 𝕜 ((n : 𝕜) • v) = straight 𝕜 v ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.cast_succ, ← straight_smul_mul_straight_smul (Nat.cast_nonneg n) zero_le_one,
+      one_smul, ih, pow_succ]
+
 /-- Subdividing a segment along its ray does not change the presented path: for `0 ≤ a` and
 `0 ≤ b`, the segments `a • w` and `b • w` present the same path as the single segment
 `(a + b) • w`. -/
