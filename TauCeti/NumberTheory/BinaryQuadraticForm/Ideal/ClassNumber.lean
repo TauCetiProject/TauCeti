@@ -9,9 +9,12 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.PicEquivalence
 public import TauCeti.NumberTheory.BinaryQuadraticForm.PrimitiveReduced
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
+public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
+import Mathlib.RingTheory.ClassGroup.ExtendedHom
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Examples
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
+import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
 import TauCeti.NumberTheory.QuadraticOrder.Embedding
 import TauCeti.NumberTheory.QuadraticOrder.NormOne
@@ -33,10 +36,16 @@ When `-n` is a fundamental discriminant the order is the maximal order of `ℚ(�
 (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), whose Picard group is the ideal class group
 (`GlobalNumberFields.maximalOrderPicEquiv`). The class number of
 `ℚ(√(-n))` is then the number of primitive reduced forms of discriminant `-n`, a finite set the
-kernel can enumerate. Every quadratic field of discriminant `-n` is isomorphic to `ℚ(√(-n))`, by
-evaluation at `θ` or `2θ` for a square root `θ` of its squarefree radicand, so the same count is
-the class number of any such field. As a certified example, `ℚ(√(-20)) = ℚ(√(-5))` has class
-number two, so its ring of integers is not a unique factorization domain.
+kernel can enumerate.
+
+The same count applies to the order `ℤ + f 𝓞 K` of conductor `f` in any quadratic field `K` of
+discriminant `D` with `f² D = -n`. Evaluation at `f √D` identifies the order of discriminant `-n`
+of `ℚ(√(-n))` with the canonical order of discriminant `-n` in `K`
+(`QuadraticOrder.equivNumberFieldOrderOfSqrt`), and that order is `ℤ + f 𝓞 K`
+(`QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder`). So `#Pic(ℤ + f 𝓞 K)` is the
+number of primitive reduced forms of discriminant `f² D`. At `f = 1` this is the class number of
+`K`. As a certified example, `ℚ(√(-20)) = ℚ(√(-5))` has class number two, so its ring of integers
+is not a unique factorization domain.
 
 ## Main definitions and results
 
@@ -50,6 +59,9 @@ number two, so its ring of integers is not a unique factorization domain.
   number, is twice the order of that Picard group divided by the number of units of the order.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms`: for fundamental `-n`,
   the class number of `ℚ(√(-n))` is `#(primitiveReducedForms n)`.
+* `TauCeti.BinaryQuadraticForm.card_pic_intAddMulOrder_eq_card_primitiveReducedForms`: if
+  `f² D = -n`, the Picard group of the order `ℤ + f 𝓞 K` of conductor `f` in a quadratic field of
+  discriminant `D` has `#(primitiveReducedForms n)` elements.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`: the class
   number of any quadratic field of discriminant `-n` is `#(primitiveReducedForms n)`.
 * `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class number of `ℚ(√(-20))` is
@@ -127,26 +139,48 @@ theorem classNumber_eq_card_primitiveReducedForms (hfund : Int.IsFundamentalDisc
     ← (QuadraticOrder.numberFieldOrder_eq_maximal_iff _ hfund.emod_four_eq_zero_or_one).2 hfund,
     nat_card_pic]
 
+end Fundamental
+
+section Conductor
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Class numbers of imaginary quadratic orders from reduced forms.** Let `K` be a quadratic
+field of discriminant `D` and `f ≥ 1` with `f² D = -n`. The Picard group of the order
+`ℤ + f 𝓞 K` of conductor `f` has `#(primitiveReducedForms n)` elements. -/
+theorem card_pic_intAddMulOrder_eq_card_primitiveReducedForms (hK : Module.finrank ℚ K = 2)
+    {f : ℕ} [NeZero f] {n : ℕ} (hn : (f : ℤ) ^ 2 * NumberField.discr K = -n) :
+    Nat.card (Pic (intAddMulOrder K f)) = #(primitiveReducedForms n) := by
+  have : NeZero n := ⟨by
+    rintro rfl
+    simp [NeZero.ne f, NumberField.discr_ne_zero K] at hn⟩
+  have hn4 : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1 := by
+    rw [← hn, Int.mul_emod, Int.sq_emod_four]
+    rcases TauCeti.NumberField.discr_emod_four_eq_zero_or_one K with h | h <;>
+      rcases Int.emod_two_eq_zero_or_one (f : ℤ) with h' | h' <;> simp [h, h']
+  -- `f` times a square root of `D` is a square root of `-n = f² D`.
+  obtain ⟨δ, hδ⟩ := Multiquadratic.exists_sq_eq_discr hK
+  have hfδ : ((f : K) * δ) ^ 2 = ((-n : ℤ) : K) := by
+    rw [mul_pow, hδ, ← hn]
+    push_cast
+    ring
+  rw [← QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder hK hn4 hn.symm _ hfδ,
+    ← nat_card_pic n hn4]
+  exact Nat.card_congr (ClassGroup.mulEquiv ((Subalgebra.equivOfEq _ _
+    (QuadraticOrder.numberFieldOrder_toSubalgebra (-n) hn4)).trans
+      (QuadraticOrder.equivNumberFieldOrderOfSqrt (-n) hn4 _ hfδ hK)).toRingEquiv).toEquiv.symm
+
 /-- **Class numbers of quadratic fields of negative discriminant from reduced forms.** A
 quadratic number field of discriminant `-n` has class number `#(primitiveReducedForms n)`, the
 count for its model `ℚ(√(-n))`. -/
-theorem classNumber_eq_card_primitiveReducedForms_of_discr_eq {K : Type*} [Field K]
-    [NumberField K] (hK : Module.finrank ℚ K = 2) {n : ℕ} (hn : NumberField.discr K = -n) :
+theorem classNumber_eq_card_primitiveReducedForms_of_discr_eq (hK : Module.finrank ℚ K = 2)
+    {n : ℕ} (hn : NumberField.discr K = -n) :
     NumberField.classNumber K = #(primitiveReducedForms n) := by
-  have : NeZero n := ⟨by rintro rfl; exact NumberField.discr_ne_zero K (by simpa using hn)⟩
-  obtain ⟨θ, d, hmin, hgen, hsf⟩ := NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
-  -- The discriminant `-n` is `d` or `4 d`, so `θ` or `2 θ` is a square root of `-n` in `K`.
-  obtain ⟨δ, hδ⟩ : ∃ δ : K, δ ^ 2 = ((-n : ℤ) : K) := by
-    have hθ : (θ : K) ^ 2 = d := by simpa using NumberField.coe_gen_sq hmin
-    rw [← hn, Multiquadratic.discr_eq_fundamentalDiscriminant hmin hgen hsf,
-      Multiquadratic.fundamentalDiscriminant_def]
-    split_ifs
-    · exact ⟨θ, hθ⟩
-    · exact ⟨2 * θ, by rw [mul_pow, hθ]; push_cast; ring⟩
-  rw [← RingEquiv.classNumber_eq (QuadraticOrder.algEquivOfSqrt (-n) δ hδ hK).toRingEquiv,
-    classNumber_eq_card_primitiveReducedForms n (hn ▸ Multiquadratic.isFundamentalDiscr_discr hK)]
+  rw [NumberField.classNumber, ← Nat.card_eq_fintype_card,
+    ← NumberFieldOrder.card_pic_intAddMulOrder_one,
+    card_pic_intAddMulOrder_eq_card_primitiveReducedForms hK (by simpa using hn)]
 
-end Fundamental
+end Conductor
 
 section Examples
 

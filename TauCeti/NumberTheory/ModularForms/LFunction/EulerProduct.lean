@@ -22,6 +22,11 @@ This gives the Euler product for the coefficient L-series and, through the width
 normalization, for Mathlib's `ModularForm.L`. The full eigenform structure of a newform,
 including its bad-prime eigenrelations, gives the newform Euler product.
 
+Since the Euler product converges absolutely, the L-function does not vanish on its half-plane
+of absolute convergence (`HeckeRing.GL2.Eigenform.LSeries_ne_zero_of_lt_re`,
+`HeckeRing.GL2.Newform.L_ne_zero_of_lt_re`). In particular, the critical values `L(f, m)` of a
+normalized full eigenform with `k/2 + 1 < m` are nonzero.
+
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, Proposition 5.8.5 and §5.9.
@@ -53,11 +58,8 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
           (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p.val *
             (p.val : ℂ) ^ (k - 1) * (p.val : ℂ) ^ (-2 * s))⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
-  have habs := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
-  rw [strictWidthInfty_Gamma1] at habs
-  have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
-    LSeriesSummable_of_abscissaOfAbsConv_lt_re
-      (habs.trans_lt (by exact_mod_cast hs))
+  have hsum := CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
+  rw [strictWidthInfty_Gamma1] at hsum
   exact TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
@@ -88,11 +90,8 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
             (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p *
               (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s))⁻¹)
       atTop (𝓝 (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s)) := by
-  have habs := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le f.toCuspForm
-  rw [strictWidthInfty_Gamma1] at habs
-  have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
-    LSeriesSummable_of_abscissaOfAbsConv_lt_re
-      (habs.trans_lt (by exact_mod_cast hs))
+  have hsum := CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
+  rw [strictWidthInfty_Gamma1] at hsum
   exact TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
@@ -148,6 +147,34 @@ theorem L_eulerProduct (f : Eigenform N k)
     simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
   rw [← hL]
   exact f.LSeries_eulerProduct h₁ (by linarith)
+
+/-- **The L-series of a normalized full Hecke eigenform does not vanish** on `Re s > (k+1)/2`,
+where it converges absolutely: there it is an absolutely convergent Euler product of nonzero
+factors. -/
+theorem LSeries_ne_zero_of_lt_re (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) {s : ℂ}
+    (hs : ((k : ℝ) + 1) / 2 < s.re) :
+    LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s ≠ 0 := by
+  have hsum := CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
+  rw [strictWidthInfty_Gamma1] at hsum
+  exact TauCeti.LSeries.LSeries_ne_zero_of_recurrence
+    (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
+    (fun _ _ hmn ↦ f.qExpansion_coeff_mul h₁ hmn)
+    (fun p hp r ↦ by
+      simpa only [← mul_assoc] using f.qExpansion_coeff_prime_pow_add_two h₁ hp r)
+    hsum
+
+/-- **The L-function of a normalized full Hecke eigenform does not vanish** on
+`Re s > k/2 + 1`, in Mathlib's `ModularForm.L` normalization. -/
+theorem L_ne_zero_of_lt_re (f : Eigenform N k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (hk : 0 < k) {s : ℂ}
+    (hs : (k : ℝ) / 2 + 1 < s.re) :
+    ModularForm.L hk f.toCuspForm s ≠ 0 := by
+  have hL : LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s =
+      ModularForm.L hk f.toCuspForm s := by
+    simpa using CuspForm.LSeries_qExpansion_coeff_eq hk f.toCuspForm hs
+  rw [← hL]
+  exact f.LSeries_ne_zero_of_lt_re h₁ (by linarith)
 
 end HeckeRing.GL2.Eigenform
 
@@ -225,5 +252,19 @@ theorem L_eulerProduct (f : Newform N k) (hk : 0 < k) {s : ℂ}
   simpa only [dirichletLift_def, toEigenform_toCuspForm, toEigenform_χ] using
     (f.toEigenform.L_eulerProduct
       (by simpa only [toEigenform_toCuspForm] using f.isNorm) hk hs)
+
+/-- **The L-series of a newform does not vanish** on `Re s > (k+1)/2`, where it converges
+absolutely. -/
+theorem LSeries_ne_zero_of_lt_re (f : Newform N k) {s : ℂ} (hs : ((k : ℝ) + 1) / 2 < s.re) :
+    LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s ≠ 0 := by
+  simpa only [toEigenform_toCuspForm] using f.toEigenform.LSeries_ne_zero_of_lt_re
+    (by simpa only [toEigenform_toCuspForm] using f.isNorm) hs
+
+/-- **The L-function of a newform does not vanish** on `Re s > k/2 + 1`, in Mathlib's
+`ModularForm.L` normalization. -/
+theorem L_ne_zero_of_lt_re (f : Newform N k) (hk : 0 < k) {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
+    ModularForm.L hk f.toCuspForm s ≠ 0 := by
+  simpa only [toEigenform_toCuspForm] using f.toEigenform.L_ne_zero_of_lt_re
+    (by simpa only [toEigenform_toCuspForm] using f.isNorm) hk hs
 
 end HeckeRing.GL2.Newform

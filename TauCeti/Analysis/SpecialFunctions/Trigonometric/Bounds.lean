@@ -13,7 +13,8 @@ import Mathlib.Analysis.SpecialFunctions.Arcosh
 
 The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
 `x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
-nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, and
+nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
+`a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `θ ∈ [0, φ]`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Cosine is positive strictly between two
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`).
 
@@ -46,6 +47,16 @@ theorem one_sub_mul_sin_sq_pos {a : ℝ} (ha : a < 1) (θ : ℝ) : 0 < 1 - a * s
   have h₀ := sq_nonneg (sin θ)
   have h₁ := sin_sq_le_one θ
   rcases le_or_gt a 0 with h | h <;> nlinarith
+
+/-- A bound `a sin² φ < 1` propagates from `φ ≤ π / 2` to every `θ ∈ [0, φ]`. -/
+theorem mul_sin_sq_lt_one_of_le {a θ φ : ℝ} (ha : a * sin φ ^ 2 < 1) (h0 : 0 ≤ θ) (hθ : θ ≤ φ)
+    (hφ : φ ≤ π / 2) : a * sin θ ^ 2 < 1 := by
+  rcases le_or_gt 0 a with ha0 | ha0
+  · have hsin : sin θ ^ 2 ≤ sin φ ^ 2 :=
+      pow_le_pow_left₀ (sin_nonneg_of_nonneg_of_le_pi h0 (by linarith [pi_pos]))
+        (sin_le_sin_of_le_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ) 2
+    exact (mul_le_mul_of_nonneg_left hsin ha0).trans_lt ha
+  · nlinarith [sq_nonneg (sin θ)]
 
 /-- For every real `k`, `1 - k² ≤ 1 - k² sin² θ`. -/
 theorem one_sub_sq_le_one_sub_sq_mul_sin_sq (k θ : ℝ) :

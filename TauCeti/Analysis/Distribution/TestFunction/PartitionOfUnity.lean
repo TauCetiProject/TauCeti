@@ -127,6 +127,40 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
   exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχΩ⟩,
     subset_interior_iff_mem_nhdsSet.1 hχ1, fun x ↦ hχ01 ⟨x, rfl⟩⟩
 
+/-- A real test function bounded in norm by one can realize the signs of arbitrary coefficients
+on a finite subset of its domain. -/
+theorem exists_norm_le_one_mul_eq_abs {s : Finset E} (a : E → ℝ) (hs : (s : Set E) ⊆ Ω) :
+    ∃ φ : 𝓓^{n}(Ω, ℝ), (∀ x, ‖φ x‖ ≤ 1) ∧ ∀ x ∈ s, a x * φ x = |a x| := by
+  classical
+  obtain ⟨χ, hχ, hχ01⟩ := exists_eventually_eq_one (n := n) s.finite_toSet.isCompact hs
+  let p := s.filter fun x => 0 ≤ a x
+  let q := s.filter fun x => a x < 0
+  let U : Opens E := ⟨(Ω : Set E) \ (q : Set E), Ω.isOpen.sdiff q.finite_toSet.isClosed⟩
+  have hpU : (p : Set E) ⊆ U := by
+    intro x hx
+    simp only [p, Finset.mem_coe, Finset.mem_filter] at hx
+    exact ⟨hs hx.1, by simp [q, hx.1, not_lt.mpr hx.2]⟩
+  obtain ⟨ψ, hψ, hψ01⟩ :=
+    exists_eventually_eq_one (n := n) p.finite_toSet.isCompact hpU
+  let φ : 𝓓^{n}(Ω, ℝ) :=
+    ⟨fun x => χ x * (2 * ψ x - 1),
+      χ.contDiff.mul ((contDiff_const.mul ψ.contDiff).sub contDiff_const),
+      χ.hasCompactSupport.mul_right,
+      tsupport_mul_subset_left.trans χ.tsupport_subset⟩
+  refine ⟨φ, fun x => ?_, fun x hx => ?_⟩
+  · have h₁ := hχ01 x
+    have h₂ := hψ01 x
+    rw [Real.norm_eq_abs, abs_le]
+    dsimp [φ]
+    constructor <;> nlinarith [h₁.1, h₁.2, h₂.1, h₂.2]
+  · have hχx : χ x = 1 := hχ.self_of_nhdsSet x hx
+    by_cases hxpos : 0 ≤ a x
+    · have hψx : ψ x = 1 := hψ.self_of_nhdsSet x (by simp [p, hx, hxpos])
+      norm_num [φ, hχx, hψx, abs_of_nonneg hxpos]
+    · have hxU : x ∉ U := by simp [U, q, hx, lt_of_not_ge hxpos]
+      have hψx : ψ x = 0 := ψ.zero_on_compl hxU
+      simp [φ, hχx, hψx, abs_of_neg (lt_of_not_ge hxpos)]
+
 end TestFunction
 
 namespace AddMonoidHom
