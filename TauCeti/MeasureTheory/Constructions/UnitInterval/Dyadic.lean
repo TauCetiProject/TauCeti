@@ -52,7 +52,7 @@ partition `I`, and conditioning on it replaces a function on each atom by its av
   the averages over the atoms.
 * `TauCeti.unitInterval.iSup_dyadicFiltration`: the dyadic cells generate the σ-algebra of `I`.
 * `TauCeti.unitInterval.tendsto_eLpNorm_condExp_dyadicFiltration`: the dyadic conditional
-  expectations of `f ∈ Lᵖ` converge to `f` in `Lᵖ` for `1 ≤ p < ∞`.
+  expectations of a real or complex `f ∈ Lᵖ` converge to `f` in `Lᵖ` for `1 ≤ p < ∞`.
 * `TauCeti.unitInterval.tendsto_ae_condExp_dyadicFiltration`: the dyadic conditional expectations
   of an integrable function converge to it almost everywhere.
 
@@ -389,15 +389,17 @@ theorem iSup_dyadicFiltration :
   exact hval.comap_le
 
 /-- Conditioning an integrable function on the whole dyadic filtration recovers it. -/
-private theorem condExp_iSup_dyadicFiltration_ae_eq {f : I → ℝ} (hf : Integrable f) :
+private theorem condExp_iSup_dyadicFiltration_ae_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : I → E} (hf : Integrable f) :
     volume[f | ⨆ N, dyadicFiltration N] =ᵐ[volume] f := by
   rw [iSup_dyadicFiltration]
   exact condExp_of_aestronglyMeasurable' le_rfl hf.aestronglyMeasurable hf
 
-/-- **Dyadic conditional expectations converge in `Lᵖ`.** For `1 ≤ p < ∞` and `f ∈ Lᵖ(I)`, the
-conditional expectations of `f` with respect to the dyadic filtration converge to `f` in `Lᵖ`. -/
-theorem tendsto_eLpNorm_condExp_dyadicFiltration {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞)
-    {f : I → ℝ} (hf : MemLp f p) :
+/-- **Dyadic conditional expectations converge in `Lᵖ`.** For `1 ≤ p < ∞` and a real or complex
+`f ∈ Lᵖ(I)`, the conditional expectations of `f` with respect to the dyadic filtration converge to
+`f` in `Lᵖ`. -/
+theorem tendsto_eLpNorm_condExp_dyadicFiltration {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp1 : 1 ≤ p)
+    (hp : p ≠ ∞) {f : I → 𝕜} (hf : MemLp f p) :
     Tendsto (fun N => eLpNorm (volume[f | dyadicFiltration N] - f) p volume) atTop (𝓝 0) := by
   refine (hf.tendsto_eLpNorm_condExp (ℱ := dyadicFiltration) hp).congr fun N =>
     eLpNorm_congr_ae ?_
