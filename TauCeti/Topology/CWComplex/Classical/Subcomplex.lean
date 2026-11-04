@@ -199,8 +199,9 @@ namespace Topology.RelCWComplex
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
 
-/-- For `n ≤ m`, the `n`-skeleton of the subcomplex `skeletonLT C m`, as a CW complex in its own
-right, is the `n`-skeleton of `C`. -/
+/-- For `n ≤ m`, the subcomplex `skeletonLT C m`, viewed as a relative CW complex in its own right,
+has the same `skeletonLT _ n` as `C`: both are the union of the base `D` with the cells of
+dimension strictly less than `n`. -/
 lemma coe_skeletonLT_skeletonLT {n m : ℕ∞} (h : n ≤ m) :
     (skeletonLT (skeletonLT C m : Set X) n : Set X) = skeletonLT C n := by
   ext x

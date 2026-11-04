@@ -24,14 +24,6 @@ So a Serre fibration pulls `n`-connected pairs back to `n`-connected pairs. For 
 filtration of a fibration over `X` are `i`-connected, which is what places the first page of its
 spectral sequence in nonnegative fibre degrees.
 
-The first statement is proved through the compression criterion
-(`TauCeti.RelHomotopyGroup.subsingleton_iff`). A relative cube `γ` of `(E, p⁻¹(A), e)` projects
-to a relative cube `p ∘ γ` of `(B, A, p e)`, which is homotopic relative to the boundary of the
-cube to a map into `A`. That homotopy is lifted to `E` starting at `γ` and kept stationary on the
-boundary of the cube, by the relative cube lifting of a Serre fibration
-(`TauCeti.TopCat.exists_lift_openBox_of_mem_serreFibrations`). Its end lies over `A`, so it is a
-compression of `γ` into `p⁻¹(A)`.
-
 ## Main results
 
 * `TauCeti.TopCat.subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations`:
@@ -124,7 +116,9 @@ theorem exists_joined_preimage_of_mem_serreFibrations (hp : serreFibrations p) {
   obtain ⟨a, ha, ⟨γ⟩⟩ := h (p x)
   obtain ⟨Γ, hΓ₀, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp γ
   refine ⟨Γ 1, ?_, ⟨⟨Γ, hΓ₀, rfl⟩⟩⟩
-  rw [mem_preimage, show p (Γ 1) = γ 1 from congrFun hΓ 1, γ.target]
+  have hΓ₁ := congrFun hΓ 1
+  rw [Function.comp_apply] at hΓ₁
+  rw [mem_preimage, hΓ₁, γ.target]
   exact ha
 
 end TopCat

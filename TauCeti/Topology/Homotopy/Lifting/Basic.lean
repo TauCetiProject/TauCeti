@@ -112,7 +112,9 @@ theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProp
   obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(p ⁻¹' t, E)).comp f)
     ((⟨Subtype.val, continuous_subtype_val⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
   have hGt (x : I × A) : p (G x) ∈ t := by
-    rw [show p (G x) = H x from congrFun hG x]
+    have hx := congrFun hG x
+    simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] at hx
+    rw [hx]
     exact (H x).2
   exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
     fun a ↦ Subtype.ext (hG₀ a)⟩
