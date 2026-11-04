@@ -34,6 +34,9 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
+* `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
+  composing the differential of `Prod.map f g` with a slice inclusion commutes with the
+  differential on the varied factor.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
@@ -174,6 +177,58 @@ theorem _root_.HasDerivAt.mvfderiv_comp_fst_apply {g : 𝕜 → F} {g' : F} {p :
   -- `ContinuousLinearMap.toSpanSingleton 𝕜 g'` sends `s` to `s • g'`, read through
   -- `NormedSpace.fromTangentSpace`.
   rfl
+
+section ProdMap
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {G' : Type*} [TopologicalSpace G'] {J'' : ModelWithCorners 𝕜 F' G'}
+  {N'' : Type*} [TopologicalSpace N''] [ChartedSpace G' N'']
+
+/-- Composing the differential of `Prod.map f g` at `(x, y)` with the differential of the
+horizontal slice inclusion `x' ↦ (x', y)` equals the differential of `x' ↦ (x', g y)` composed with
+`df_x`. Differentiability is needed only for `g` at `y`: when `f` is not differentiable at `x`,
+neither is `Prod.map f g` at `(x, y)`, so both sides vanish. -/
+theorem mfderiv_prodMap_comp_prodMkLeft {f : M → M''} {g : N → N''} {x : M} {y : N}
+    (hg : MDifferentiableAt J J'' g y) :
+    (mfderiv (I.prod J) (I''.prod J'') (Prod.map f g) (x, y)).comp
+        (mfderiv I (I.prod J) (fun x' : M ↦ (x', y)) x) =
+      (mfderiv I'' (I''.prod J'') (fun x' : M'' ↦ (x', g y)) (f x)).comp
+        (mfderiv I I'' f x) := by
+  have hι : MDifferentiableAt I (I.prod J) (fun x' : M ↦ (x', y)) x :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_const
+  by_cases hf : MDifferentiableAt I I'' f x
+  · have hdiff : MDifferentiableAt (I.prod J) (I''.prod J'') (Prod.map f g) (x, y) :=
+      (hf.comp (x, y) mdifferentiableAt_fst).prodMk (hg.comp (x, y) mdifferentiableAt_snd)
+    exact (mfderiv_comp x hdiff hι).symm.trans
+      (mfderiv_comp x (mdifferentiableAt_id.prodMk mdifferentiableAt_const) hf)
+  · have hdiff : ¬MDifferentiableAt (I.prod J) (I''.prod J'') (Prod.map f g) (x, y) := fun h ↦
+      hf (h.comp x hι).fst
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hdiff,
+      ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
+
+/-- Composing the differential of `Prod.map f g` at `(x, y)` with the differential of the
+vertical slice inclusion `y' ↦ (x, y')` equals the differential of `y' ↦ (f x, y')` composed with
+`dg_y`. Differentiability is needed only for `f` at `x`: when `g` is not differentiable at `y`,
+neither is `Prod.map f g` at `(x, y)`, so both sides vanish. -/
+theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M} {y : N}
+    (hf : MDifferentiableAt I I'' f x) :
+    (mfderiv (I.prod J) (I''.prod J'') (Prod.map f g) (x, y)).comp
+        (mfderiv J (I.prod J) (fun y' : N ↦ (x, y')) y) =
+      (mfderiv J'' (I''.prod J'') (fun y' : N'' ↦ (f x, y')) (g y)).comp
+        (mfderiv J J'' g y) := by
+  have hι : MDifferentiableAt J (I.prod J) (fun y' : N ↦ (x, y')) y :=
+    mdifferentiableAt_const.prodMk mdifferentiableAt_id
+  by_cases hg : MDifferentiableAt J J'' g y
+  · have hdiff : MDifferentiableAt (I.prod J) (I''.prod J'') (Prod.map f g) (x, y) :=
+      (hf.comp (x, y) mdifferentiableAt_fst).prodMk (hg.comp (x, y) mdifferentiableAt_snd)
+    exact (mfderiv_comp y hdiff hι).symm.trans
+      (mfderiv_comp y (mdifferentiableAt_const.prodMk mdifferentiableAt_id) hg)
+  · have hdiff : ¬MDifferentiableAt (I.prod J) (I''.prod J'') (Prod.map f g) (x, y) := fun h ↦
+      hg (h.comp y hι).snd
+    rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hdiff,
+      ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
+
+end ProdMap
 
 end TauCeti
 
