@@ -75,7 +75,7 @@ open MeasureTheory Complex Topology Set
 open scoped Real
 
 /-- The measure on `ℝ / ℤ` is a probability measure. -/
-local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
+private local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
   ⟨by simp [AddCircle.measure_univ]⟩
 
 namespace TauCeti
