@@ -38,10 +38,11 @@ string-length identities `ε_i(π) = -min H_i(π)` and `φ_i(π) = H_i(π)(1) - 
 Littelmann's *integral paths* (`TauCeti.PLPath.IsIntegralPath`) are the paths with endpoint in
 `f(X)` whose entire `{e_i, f_i}`-orbit has integral minimum simple-coroot heights. They form the
 greatest crystal-admissible set of paths, carrying the ambient path crystal
-`TauCeti.PLPath.normalCrystal` into which every `normalCrystalOn` embeds strictly as a union of
-connected components (`TauCeti.PLPath.normalCrystalComponent`). For a finite-rank coweight lattice,
-scalar extension `P.baseChange 𝕜` supplies a canonical realization in `𝕜 ⊗[ℤ] X` with no auxiliary
-parameters (`TauCeti.PLPath.baseChangeNormalCrystal`).
+`TauCeti.PLPath.normalCrystal` into which every `normalCrystalOn` embeds via the strict morphism
+`TauCeti.PLPath.embedHom`, and whose connected components are the path crystals
+`TauCeti.PLPath.normalCrystalComponent`. For a finite free coweight lattice, scalar extension
+`P.baseChange 𝕜` supplies a canonical realization in `𝕜 ⊗[ℤ] X` with no auxiliary parameters
+(`TauCeti.PLPath.baseChangeNormalCrystal`).
 
 Categorical path operations (central straight paths, reversal, concatenation, compatible linear
 maps) and simple-root string examples are developed in
@@ -252,13 +253,18 @@ private theorem cast_εAux (hS : IsCrystalSet b f F S) (i : b.support) (π : S) 
 private noncomputable def φAux (hS : IsCrystalSet b f F S) (i : b.support) (π : S) : ℕ :=
   (P.coroot' i (wtAux hS π) - (hS.exists_minHeight_eq_intCast π.2 i).choose).toNat
 
+private theorem apply_endpoint_eq_coroot'_wtAux
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    (hS : IsCrystalSet b f F S) (i : b.support) (π : S) :
+    F i π.1.endpoint = (P.coroot' i (wtAux hS π) : 𝕜) := by
+  rw [← apply_wtAux hS π, hF]
+
 private theorem cast_φAux (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (i : b.support) (π : S) :
     (φAux hS i π : 𝕜) = F i π.1.endpoint - π.1.minHeight (F i) := by
   set z := (hS.exists_minHeight_eq_intCast π.2 i).choose
   have hz : π.1.minHeight (F i) = z := (hS.exists_minHeight_eq_intCast π.2 i).choose_spec
-  have hend : F i π.1.endpoint = (P.coroot' i (wtAux hS π) : 𝕜) := by
-    rw [← apply_wtAux hS π, hF]
+  have hend := apply_endpoint_eq_coroot'_wtAux hF hS i π
   have hle : z ≤ P.coroot' i (wtAux hS π) := by
     have : (z : 𝕜) ≤ (P.coroot' i (wtAux hS π) : 𝕜) :=
       hz ▸ hend ▸ minHeight_le_apply_endpoint (f := F i) π.1
@@ -308,9 +314,8 @@ noncomputable def normalCrystalOn (hf : Function.Injective f)
       Nat.cast_lt, Nat.lt_one_iff]
   φ_sub_ε i x := by
     apply Int.cast_injective (α := 𝕜)
-    have hend : F i x.1.endpoint = (P.coroot' i (wtAux hS x) : 𝕜) := by
-      rw [← apply_wtAux hS x, hF]
-    rw [Int.cast_sub, Int.cast_natCast, Int.cast_natCast, cast_φAux hF hS, cast_εAux, hend]
+    rw [Int.cast_sub, Int.cast_natCast, Int.cast_natCast, cast_φAux hF hS, cast_εAux,
+      apply_endpoint_eq_coroot'_wtAux hF hS i x]
     dsimp only [RootPairing.coroot', LinearMap.flip_apply]
     ring
 
@@ -529,7 +534,7 @@ theorem IsIntegralPath.of_lower_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
   h.of_rootStep (.of_lower_eq_some hl)
 
 /-- Root steps preserve and reflect integrality of paths. -/
-theorem rootStep_isIntegralPath_iff
+theorem RootStep.isIntegralPath_iff
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {π π' : PLPath 𝕜 V} (h : RootStep b f F π π') :
     IsIntegralPath b f F π ↔ IsIntegralPath b f F π' :=
@@ -551,7 +556,7 @@ theorem IsCrystalSet.subset_isIntegralPath {S : Set (PLPath 𝕜 V)} (hS : IsCry
 
 /-- A set of paths is crystal-admissible if and only if it is a root-operator-closed set of
 integral paths. -/
-theorem isCrystalSet_iff_subset_isIntegralPath {S : Set (PLPath 𝕜 V)} :
+theorem isCrystalSet_iff_subset_isIntegralPath_and_closed {S : Set (PLPath 𝕜 V)} :
     IsCrystalSet b f F S ↔
       S ⊆ {π | IsIntegralPath b f F π} ∧
         (∀ {i : b.support} {π π'}, raise (F i) (f (P.root i)) π = some π' → π ∈ S → π' ∈ S) ∧
@@ -601,16 +606,13 @@ theorem exists_endpoint_eq_zero_and_not_isIntegralPath [Nonempty b.support]
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
     ∃ π : PLPath 𝕜 V, π.endpoint = 0 ∧ ¬ IsIntegralPath b f F π := by
   obtain ⟨i⟩ := ‹Nonempty b.support›
-  let v := f (P.root i)
-  have hv : F i v = 2 := apply_root_eq_two hF i
-  let π : PLPath 𝕜 V := straight 𝕜 (-(4 : 𝕜)⁻¹ • v) * straight 𝕜 ((4 : 𝕜)⁻¹ • v)
+  let u := (4 : 𝕜)⁻¹ • f (P.root i)
+  let π : PLPath 𝕜 V := straight 𝕜 (-u) * straight 𝕜 u
   refine ⟨π, by simp [π], fun hπ ↦ ?_⟩
   obtain ⟨z, hz⟩ := hπ.exists_minHeight_eq_intCast i
-  have hpos : (0 : 𝕜) ≤ (4 : 𝕜)⁻¹ * 2 := by norm_num
-  have hneg : -((4 : 𝕜)⁻¹ * 2) ≤ (0 : 𝕜) := by norm_num
   have hmin : π.minHeight (F i) = -(2 : 𝕜)⁻¹ := by
-    simp only [π, minHeight_mul, minHeight_straight, endpoint_straight, map_smul, smul_eq_mul, hv,
-      neg_mul, min_eq_right hneg, min_eq_left hpos, add_zero, min_self]
+    rw [minHeight_straight_neg_mul_straight]
+    simp only [u, map_smul, smul_eq_mul, apply_root_eq_two hF i]
     norm_num
   rw [hmin] at hz
   have h2z : ((2 * z : ℤ) : 𝕜) = -1 := by
@@ -625,50 +627,18 @@ end Realization
 
 section BaseChange
 
-/-- The canonical additive embedding `x ↦ 1 ⊗ₜ x` of the weight lattice `X` into `𝕜 ⊗[ℤ] X`. -/
-noncomputable def baseChangeWeightHom (X 𝕜 : Type*) [AddCommGroup X] [Ring 𝕜] :
-    X →+ (𝕜 ⊗[ℤ] X) :=
-  (TensorProduct.mk ℤ 𝕜 X 1).toAddMonoidHom
-
-@[simp]
-theorem baseChangeWeightHom_apply {X 𝕜 : Type*} [AddCommGroup X] [Ring 𝕜] (x : X) :
-    baseChangeWeightHom X 𝕜 x = (1 : 𝕜) ⊗ₜ[ℤ] x :=
-  (rfl)
-
 variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
-
-theorem baseChangeWeightHom_injective (P : RootDatum ι X Y) (𝕜 : Type*)
-    [CommRing 𝕜] [FaithfulSMul ℤ 𝕜] :
-    Function.Injective (baseChangeWeightHom X 𝕜) :=
-  P.toLinearMap.tensorProduct_mk_injective_of_injective 𝕜
-    (LinearMap.IsPerfPair.bijective_left _).injective
-
-variable [Module.Free ℤ Y] [Module.Finite ℤ Y] {P : RootDatum ι X Y} (b : P.Base) (𝕜 : Type*)
-
-/-- The simple-coroot height forms on `𝕜 ⊗[ℤ] X` obtained from `P.baseChange 𝕜`. -/
-noncomputable def baseChangeHeightForm [CommRing 𝕜] [FaithfulSMul ℤ 𝕜] :
-    b.support → Dual 𝕜 (𝕜 ⊗[ℤ] X) :=
-  fun i ↦ (P.baseChange 𝕜).coroot' i.1
-
-@[simp]
-theorem baseChangeHeightForm_apply_tmul [CommRing 𝕜] [FaithfulSMul ℤ 𝕜]
-    (i : b.support) (a : 𝕜) (x : X) :
-    baseChangeHeightForm b 𝕜 i (a ⊗ₜ[ℤ] x) = a * (P.coroot' i x : 𝕜) := by
-  simp [baseChangeHeightForm, RootPairing.coroot', LinearMap.baseChangePairing_tmul_tmul]
-
-theorem baseChangeHeightForm_baseChangeWeightHom [CommRing 𝕜] [FaithfulSMul ℤ 𝕜]
-    (i : b.support) (x : X) :
-    baseChangeHeightForm b 𝕜 i (baseChangeWeightHom X 𝕜 x) = (P.coroot' i x : 𝕜) := by
-  simp
+  [Module.Free ℤ Y] [Module.Finite ℤ Y] {P : RootDatum ι X Y} (b : P.Base) (𝕜 : Type*)
 
 /-- **The canonical normal crystal of integral paths in `𝕜 ⊗[ℤ] X`** for a root datum `P` with
 finite free coweight lattice `Y` and base `b`, requiring no auxiliary realization parameters. -/
 noncomputable abbrev baseChangeNormalCrystal [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] :
     NormalCrystal P b
       {π : PLPath 𝕜 (𝕜 ⊗[ℤ] X) |
-        IsIntegralPath b (baseChangeWeightHom X 𝕜) (baseChangeHeightForm b 𝕜) π} :=
-  normalCrystal (P := P) (b := b) (baseChangeWeightHom_injective P 𝕜)
-    (baseChangeHeightForm_baseChangeWeightHom b 𝕜)
+        IsIntegralPath b (TensorProduct.mk ℤ 𝕜 X 1).toAddMonoidHom
+          (fun i ↦ (P.baseChange 𝕜).coroot' i.1) π} :=
+  normalCrystal (P := P) (b := b) (P.tensorProduct_mk_injective 𝕜)
+    fun i x ↦ by simp
 
 end BaseChange
 
