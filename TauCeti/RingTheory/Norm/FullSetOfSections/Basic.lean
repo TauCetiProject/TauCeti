@@ -429,7 +429,9 @@ theorem isFullSetOfSections_iff_of_isPushout {A' B' : Type*} [CommRing A'] [Comm
     {s' : ι → B' →ₐ[A'] A'}
     (hs : ∀ i b, s' i (algebraMap B B' b) = algebraMap A A' (s i b)) :
     IsFullSetOfSections s' ↔ IsFullSetOfSections fun i ↦ (s i).sectionBaseChange A' :=
-  (isFullSetOfSections_baseChange_iff (T := A') fun _ _ h ↦ h).symm.trans
+  -- the structure map of `A'` over itself is the identity
+  (isFullSetOfSections_baseChange_iff (T := A') (by
+    rw [Algebra.algebraMap_self, RingHom.coe_id]; exact Function.injective_id)).symm.trans
     (isFullSetOfSections_sectionBaseChange_iff_of_isPushout hs A')
 
 end IsPushout
