@@ -46,8 +46,8 @@ finite type it defines morphisms of weakly finite type
 * `TauCeti.AdicSpace.QuasiCompact.isMultiplicative`, `TauCeti.AdicSpace.QuasiCompact.respectsIso`:
   identities and isomorphisms are quasi-compact, and composites of quasi-compact morphisms are
   quasi-compact.
-* `TauCeti.AdicSpace.QuasiCompact.compactSpace`: the source of a quasi-compact morphism into a
-  quasi-compact adic space is quasi-compact.
+* `TauCeti.AdicSpace.QuasiCompact.compactSpace_of_compactSpace`: the source of a quasi-compact
+  morphism into a quasi-compact adic space is quasi-compact.
 * `TauCeti.AdicSpace.QuasiCompact.of_isOpenImmersion`: an open immersion with quasi-compact
   source into a quasi-separated adic space is quasi-compact.
 * `TauCeti.AdicSpace.quasiCompact_presentationLimitPreAdicSpaceComap`: the morphism of affinoid
@@ -144,8 +144,8 @@ theorem QuasiCompact.of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] : QuasiCompact f :
 /-- **The source of a quasi-compact morphism into a quasi-compact adic space is quasi-compact.**
 So no morphism from an adic space that is not quasi-compact, such as the open unit disc, to a
 quasi-compact one, such as an affinoid adic space, is quasi-compact. -/
-theorem QuasiCompact.compactSpace {f : X ⟶ Y} (hf : QuasiCompact f) [CompactSpace Y.obj] :
-    CompactSpace X.obj :=
+theorem QuasiCompact.compactSpace_of_compactSpace {f : X ⟶ Y} (hf : QuasiCompact f)
+    [CompactSpace Y.obj] : CompactSpace X.obj :=
   isCompact_univ_iff.mp (hf.isCompact_preimage (U := ⊤) isCompact_univ)
 
 /-- **An open immersion with quasi-compact source into a quasi-separated adic space is
