@@ -69,6 +69,15 @@ namespace Matrix.SpecialLinearGroup
 
 open Matrix (TransvectionStruct)
 
+/-- Transposition exchanges the indices of a determinant-one transvection. -/
+@[simp]
+theorem transpose_coe_transvection {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R]
+    {i j : n} (hij : i ≠ j) (c : R) :
+    ((transvection hij c : SpecialLinearGroup n R) : Matrix n n R).transpose =
+      (transvection hij.symm c : SpecialLinearGroup n R) := by
+  simp only [transvection_coe, Matrix.transpose_add, Matrix.transpose_one,
+    Matrix.transpose_single]
+
 private lemma transvection_mul_entry {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (σ : SpecialLinearGroup (Fin m) ℤ) (a b : Fin m) :
     (transvection hij c * σ).1 a b =

@@ -96,13 +96,8 @@ theorem rankOneMatrix_upper_transvection (t : R) :
   apply Units.ext
   rw [coe_rankOneMatrix, coe_rootSubgroupPoints_eq_one_add_smul, rootIntMatrix_inl,
     Matrix.SpecialLinearGroup.transvection_inv]
-  -- Determinant-one transvections have the same underlying elementary matrices.
-  have ht : ((Matrix.SpecialLinearGroup.transvection
-      (by decide : (0 : Fin 2) ≠ 1) (-t) : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)ᵀ =
-      (Matrix.SpecialLinearGroup.transvection
-        (by decide : (1 : Fin 2) ≠ 0) (-t) : SL(2, R)) :=
-    Matrix.transpose_transvection 0 1 (-t)
-  rw [ht, E6Minuscule.weightTable.sl2BlockMatrix_upper_transvection,
+  rw [Matrix.SpecialLinearGroup.transpose_coe_transvection,
+    E6Minuscule.weightTable.sl2BlockMatrix_upper_transvection,
     E6Minuscule.weightTable.sl2BlockMatrix_lower_transvection,
     E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix]
   ext a b
@@ -121,13 +116,8 @@ theorem rankOneMatrix_lower_transvection (t : R) :
   apply Units.ext
   rw [coe_rankOneMatrix, coe_rootSubgroupPoints_eq_one_add_smul, rootIntMatrix_inr,
     Matrix.SpecialLinearGroup.transvection_inv]
-  -- Determinant-one transvections have the same underlying elementary matrices.
-  have ht : ((Matrix.SpecialLinearGroup.transvection
-      (by decide : (1 : Fin 2) ≠ 0) (-t) : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)ᵀ =
-      (Matrix.SpecialLinearGroup.transvection
-        (by decide : (0 : Fin 2) ≠ 1) (-t) : SL(2, R)) :=
-    Matrix.transpose_transvection 1 0 (-t)
-  rw [ht, E6Minuscule.weightTable.sl2BlockMatrix_lower_transvection,
+  rw [Matrix.SpecialLinearGroup.transpose_coe_transvection,
+    E6Minuscule.weightTable.sl2BlockMatrix_lower_transvection,
     E6Minuscule.weightTable.sl2BlockMatrix_upper_transvection,
     E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix]
   ext a b
