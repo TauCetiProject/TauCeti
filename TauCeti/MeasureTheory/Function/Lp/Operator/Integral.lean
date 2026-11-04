@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -60,13 +61,6 @@ variable {α β 𝕜 F G : Type*} [MeasurableSpace α] [MeasurableSpace β]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {K : α → β → F →L[𝕜] G} {u : β → F} {p : ℝ≥0∞}
 
-/-- For `1 ≤ p ≤ ∞` the exponent `1 - 1/p` is nonnegative; for `p = ∞` it is `1`, as
-`ENNReal.toReal ∞ = 0`. -/
-private theorem one_sub_toReal_inv_nonneg (hp : 1 ≤ p) : 0 ≤ 1 - p.toReal⁻¹ := by
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · simp
-  · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hp_top hp))
-
 /-- The `Lᵖ` bound for the dominating function `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν`, from which both
 the integrability and the norm bound of the integral operator follow: Schur's test
 `TauCeti.eLpNorm_lintegral_mul_le` for the norm kernel `‖K x y‖ₑ`. -/
@@ -79,19 +73,6 @@ private theorem eLpNorm_lintegral_enorm_mul_le
   (eLpNorm_lintegral_mul_le (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB).trans_eq
     (by rw [eLpNorm_enorm _ hu])
 
-/-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is the
-coercion of the same expression in `ℝ≥0`. -/
-private theorem coe_schur_const (hp : 1 ≤ p) (A B : ℝ≥0) :
-    ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
-      (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ := by
-  rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ (one_sub_toReal_inv_nonneg hp),
-    ENNReal.coe_rpow_of_nonneg _ (by positivity)]
-
-/-- The constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is finite for finite `A` and `B`. -/
-private theorem schur_const_lt_top (hp : 1 ≤ p) (A B : ℝ≥0) :
-    (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ < ∞ :=
-  coe_schur_const hp A B ▸ ENNReal.coe_lt_top
-
 /-- For `u ∈ Lᵖ(ν)` the dominating function `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν` is finite almost
 everywhere. -/
 private theorem ae_lintegral_enorm_mul_lt_top
@@ -99,22 +80,11 @@ private theorem ae_lintegral_enorm_mul_lt_top
     {A B : ℝ≥0} (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A)
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν < ∞ := by
-  have hmeas : AEMeasurable (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) μ :=
-    (hK.enorm.mul hu.aestronglyMeasurable.enorm.comp_snd).lintegral_prod_right'
-  have hfin : eLpNorm (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ < ∞ :=
+  have hfin : MemLp (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ :=
     (eLpNorm_lintegral_enorm_mul_le hK hu.aestronglyMeasurable hp hA hB).trans_lt
-      (ENNReal.mul_lt_top (schur_const_lt_top hp A B) hu.eLpNorm_lt_top)
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · filter_upwards [ae_le_eLpNormEssSup (f := fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) (μ := μ)]
-      with x hx
-    rw [enorm_eq_self] at hx
-    exact hx.trans_lt (eLpNormEssSup_le_eLpNorm_top.trans_lt hfin)
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hr0 : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
-  have hlt := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hp_top hfin
-  simp only [enorm_eq_self] at hlt
-  filter_upwards [ae_lt_top' (hmeas.pow_const _) hlt.ne] with x hx
-  exact (ENNReal.rpow_lt_top_iff_of_pos hr0).1 hx
+      (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
+        hu.eLpNorm_lt_top)
+  simpa only [enorm_eq_self] using hfin.ae_enorm_lt_top (zero_lt_one.trans_le hp).ne'
 
 /-- For `u ∈ Lᵖ(ν)`, `1 ≤ p ≤ ∞`, and a kernel whose operator-norm row and column integrals are
 bounded, the integrand `y ↦ K x y (u y)` is integrable for almost every `x`. -/
@@ -158,7 +128,8 @@ theorem memLp_integral_apply (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     MemLp (fun x ↦ ∫ y, K x y (u y) ∂ν) p μ :=
   (eLpNorm_integral_apply_le hK hu.aestronglyMeasurable hp hA hB).trans_lt
-    (ENNReal.mul_lt_top (schur_const_lt_top hp A B) hu.eLpNorm_lt_top)
+    (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
+      hu.eLpNorm_lt_top)
 
 variable [SMulCommClass ℝ 𝕜 G]
 
@@ -193,7 +164,7 @@ def integralOperatorLp (K : α → β → F →L[𝕜] G) (p : ℝ≥0∞) [Fact
       refine (Lp.norm_toLp _ (memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB)).trans_le
         (ENNReal.toReal_le_of_le_ofReal (by positivity) ?_)
       rw [ENNReal.ofReal_mul NNReal.zero_le_coe, ENNReal.ofReal_coe_nnreal,
-        ofReal_norm, Lp.enorm_def, coe_schur_const Fact.out]
+        ofReal_norm, Lp.enorm_def, coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv Fact.out]
       exact eLpNorm_integral_apply_le hK (Lp.memLp u).aestronglyMeasurable Fact.out hA hB
 
 section integralOperatorLp
