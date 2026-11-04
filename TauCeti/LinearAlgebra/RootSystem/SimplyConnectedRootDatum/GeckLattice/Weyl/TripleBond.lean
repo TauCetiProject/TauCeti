@@ -63,7 +63,9 @@ theorem weylUnit_conj_geckRepresentation_of_cartanMatrix_eq_neg_three (i j : Fin
     omega
   have hh := S.lie_H_E i j
   have hf := S.lie_E_F_of_ne j i hne.symm
-  simp only [Matrix.transpose_apply, hij] at hh
+  -- Remove the composed Lie-map wrappers before using the operator-level normalization.
+  simp only [Matrix.transpose_apply, hij, Function.comp_apply, φ, LieHom.comp_apply,
+    AlgHom.toLieHom_apply] at hh hf
   -- Normalize the signed-generator triple using its characteristic equations, rather than
   -- unfolding the opaque root-generator definition.
   have triple := t.isSl2Triple_geckRepresentation ht i
@@ -72,14 +74,11 @@ theorem weylUnit_conj_geckRepresentation_of_cartanMatrix_eq_neg_three (i j : Fin
   simp only [LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr]
     at triple hE hF ⊢
   exact triple.weylUnit_conj_of_weight_neg_three hE hF
-    (y := φ ((t.lieBasis ht).e j))
+    (y := t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((t.lieBasis ht).e j)))
     (by
-      norm_num [Function.comp_apply] at hh ⊢
+      norm_num at hh ⊢
       exact hh)
-    (by
-      have lowering : ⁅φ ((t.lieBasis ht).f i), φ ((t.lieBasis ht).e j)⁆ = 0 := by
-        simp only [Function.comp_apply] at hf
-        rw [← lie_skew, hf, neg_zero]
-      exact lowering)
+    (by rw [← lie_skew, hf, neg_zero])
 
 end TauCeti.DynkinType
