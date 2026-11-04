@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Bockstein
-public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.Singular.Twisted.GroupHomology
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.CoinvariantsTensor
 public import TauCeti.RepresentationTheory.Rep.Ihom
@@ -40,14 +39,20 @@ trivial representation `A = k` the fibres `(k ⊗ k[p⁻¹ x])_G` of `L_A` are c
 `IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology` of untwisted singular cohomology.
 This is the cohomological counterpart of `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology`.
 
-The identification is natural in both coefficient variables. A linear map `g : N →ₗ[k] N'` acts on
-twisted cochains by postcomposition and on `Hⁿ(G, Homₖ(A, -))` through the induced map of internal
-homs (`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_right`). A
-morphism of representations `f : A ⟶ A'` induces a morphism of associated local systems
-`L_A ⟶ L_A'` (`IsQuotientCoveringMap.associatedLocalSystemMap`), hence a map
-`Hⁿ(B; L_A', N) ⟶ Hⁿ(B; L_A, N)`, which corresponds to the map on `Hⁿ(G, Homₖ(-, N))` given by
-precomposition with `f`
-(`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_left`).
+The identification is natural in both coefficient variables and in the group. A linear map
+`g : N →ₗ[k] N'` acts on twisted cochains by postcomposition and on `Hⁿ(G, Homₖ(A, -))` through the
+induced map of internal homs
+(`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_right`). A morphism of
+representations `f : A ⟶ A'` induces `L_A ⟶ L_A'`
+(`IsQuotientCoveringMap.associatedLocalSystemMap`), hence `Hⁿ(B; L_A', N) ⟶ Hⁿ(B; L_A, N)`, which
+corresponds to precomposition with `f` on `Hⁿ(G, Homₖ(-, N))`
+(`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_left`). More generally,
+for a second quotient covering `q : F ⟶ C` of a group `H`, an equivariant map `f : E ⟶ F` along
+`φ : G →* H` over `b : B ⟶ C`, and a compatible morphism `ψ : A ⟶ Rep.res φ M`, pulling twisted
+cohomology back along `b` and changing local coefficients along
+`IsQuotientCoveringMap.associatedLocalSystemChangeOfGroupsMap` corresponds to
+`groupCohomology.map φ (φ.ihomTrivialPrecomp N ψ)`
+(`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_changeOfGroups`).
 
 If the underlying module of `A` is projective over `k`, the fibres of `L_A` are projective, so a
 short exact sequence `0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0` of `k`-modules has a Bockstein homomorphism
@@ -70,13 +75,16 @@ sequences of cochain complexes, and `groupCohomologyIso` respects connecting map
 * `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_right`,
   `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_left`: the
   identification is natural in the module of values and in the representation.
+* `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_changeOfGroups`,
+  `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_inv_pullback`: the identification is
+  natural with respect to equivariant maps of quotient covers along arbitrary group homomorphisms.
 * `IsQuotientCoveringMap.twistedCohomologyBockstein_comp_twistedCohomologyIsoGroupCohomology_hom`:
   for `k`-projective `A`, the identification respects the long exact sequences in the module of
   values.
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4 and III.1.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4, III.1, and III.8.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.H.
 -/
@@ -283,5 +291,104 @@ theorem twistedCohomologyBockstein_comp_twistedCohomologyIsoGroupCohomology_hom
     (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) hδ).trans (Category.assoc _ _ _).symm
 
 end LongExactSequence
+
+section ChangeOfGroups
+
+variable {F C : _root_.TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+  (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+  (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
+  (b : B ⟶ C) (hb : p ≫ b = f ≫ q)
+
+/-- **The twisted cohomology of the base of a contractible free cover is naturally group
+cohomology, in the covering and the group**: for quotient covering maps `p : E ⟶ B` and
+`q : F ⟶ C` with contractible total spaces, an equivariant map `f : E ⟶ F` along any group
+homomorphism `φ : G →* H` lying over `b : B ⟶ C`, and a compatible morphism `ψ : A ⟶ Rep.res φ M`,
+the identifications `Hⁿ(C; L_M, N) ≅ Hⁿ(H, Homₖ(M, N))` and `Hⁿ(B; L_A, N) ≅ Hⁿ(G, Homₖ(A, N))`
+carry the composite of `b^*` with the change-of-groups coefficient map on twisted cohomology to
+Mathlib's change-of-group map `groupCohomology.map φ (φ.ihomTrivialPrecomp N ψ)`. -/
+@[reassoc]
+theorem twistedCohomologyIsoGroupCohomology_hom_changeOfGroups [ContractibleSpace E]
+    [ContractibleSpace F] {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) (n : ℕ) :
+    twistedCohomologyMap k (ModuleCat.of k N) b (hH.associatedLocalSystem k M) n ≫
+        twistedCohomologyCoefficientMap k (ModuleCat.of k N)
+          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) n ≫
+        (hG.twistedCohomologyIsoGroupCohomology k A N n).hom =
+      (hH.twistedCohomologyIsoGroupCohomology k M N n).hom ≫
+        groupCohomology.map φ (φ.ihomTrivialPrecomp N ψ) n := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  have := hG.isCancelSMul
+  have := hH.isCancelSMul
+  -- Dualize the change-of-groups naturality of `coinvariantsTensorSingularChainsRepIsoTwisted`,
+  -- noting that `linearYonedaFunctor` reverses composition, and paste with
+  -- `MonoidHom.groupCohomologyIhomIso_inv_naturality`.
+  have hchains := congrArg
+    (fun t ↦ (ChainComplex.linearYonedaFunctor k (ModuleCat.of k N)).map t.op)
+    (hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_changeOfGroups k hH f hf b hb ψ)
+  simp only [op_comp, Functor.map_comp, Category.assoc] at hchains
+  have hcochains := ((congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n).symm).trans
+    (HomologicalComplex.homologyMap_comp _ _ n).symm).trans <|
+    (congrArg (HomologicalComplex.homologyMap · n) hchains.symm).trans
+      (HomologicalComplex.homologyMap_comp _ _ n)
+  rw [twistedCohomologyIsoGroupCohomology_hom_eq, twistedCohomologyIsoGroupCohomology_hom_eq]
+  -- `singularChainsResolution` and `singularChainsRep` agree only by unfolding, so the cochain
+  -- and resolution squares are pasted in term mode.
+  exact (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans <|
+    (Category.assoc _ _ _).symm.trans <|
+    (congrArg (· ≫ _) hcochains).trans <|
+    (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·)
+      (φ.groupCohomologyIhomIso_inv_naturality ψ N (singularChainsResolution k E G)
+        (singularChainsResolution k F H) (singularChainsRepResMap k f hf)
+        (singularChainsRepResMap_f_zero_comp_augmentation k f hf) n)).trans
+      (Category.assoc _ _ _).symm
+
+/-- The inverse identification of group cohomology with twisted cohomology is natural in the
+covering and the group. -/
+@[reassoc]
+theorem twistedCohomologyIsoGroupCohomology_inv_changeOfGroups [ContractibleSpace E]
+    [ContractibleSpace F] {M : Rep.{u} k H} (ψ : A ⟶ Rep.res φ M) (n : ℕ) :
+    groupCohomology.map φ (φ.ihomTrivialPrecomp N ψ) n ≫
+        (hG.twistedCohomologyIsoGroupCohomology k A N n).inv =
+      (hH.twistedCohomologyIsoGroupCohomology k M N n).inv ≫
+        twistedCohomologyMap k (ModuleCat.of k N) b (hH.associatedLocalSystem k M) n ≫
+        twistedCohomologyCoefficientMap k (ModuleCat.of k N)
+          (hG.associatedLocalSystemChangeOfGroupsMap k hH f hf b hb ψ) n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
+    hG.twistedCohomologyIsoGroupCohomology_hom_changeOfGroups k N hH f hf b hb ψ n,
+    Iso.inv_hom_id_assoc]
+
+/-- Pulling twisted cohomology back along `b : B ⟶ C` from `L_M` to `b^* L_M` corresponds, via
+`IsQuotientCoveringMap.associatedLocalSystemPullbackIso`, to the change-of-group map
+`groupCohomology.map φ (φ.ihomTrivialPrecomp N (𝟙 (Rep.res φ M)))` in group cohomology. -/
+@[reassoc]
+theorem twistedCohomologyIsoGroupCohomology_inv_pullback [ContractibleSpace E]
+    [ContractibleSpace F] (M : Rep.{u} k H) (n : ℕ) :
+    (hH.twistedCohomologyIsoGroupCohomology k M N n).inv ≫
+        twistedCohomologyMap k (ModuleCat.of k N) b (hH.associatedLocalSystem k M) n =
+      groupCohomology.map φ (φ.ihomTrivialPrecomp N (𝟙 (Rep.res φ M))) n ≫
+        (hG.twistedCohomologyIsoGroupCohomology k (Rep.res φ M) N n).inv ≫
+        twistedCohomologyCoefficientMap k (ModuleCat.of k N)
+          (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).inv n := by
+  have h := hG.twistedCohomologyIsoGroupCohomology_inv_changeOfGroups k N hH f hf b hb
+    (𝟙 (Rep.res φ M)) n
+  rw [← associatedLocalSystemPullbackIso_hom] at h
+  simp only [← Category.assoc] at h
+  calc
+    (hH.twistedCohomologyIsoGroupCohomology k M N n).inv ≫
+        twistedCohomologyMap k (ModuleCat.of k N) b (hH.associatedLocalSystem k M) n
+      = (hH.twistedCohomologyIsoGroupCohomology k M N n).inv ≫
+        twistedCohomologyMap k (ModuleCat.of k N) b (hH.associatedLocalSystem k M) n ≫
+        (twistedCohomologyCoefficientMap k (ModuleCat.of k N)
+            (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).hom n ≫
+          twistedCohomologyCoefficientMap k (ModuleCat.of k N)
+            (hG.associatedLocalSystemPullbackIso k hH f hf b hb M).inv n) := by
+      rw [← twistedCohomologyCoefficientMap_comp, Iso.inv_hom_id,
+        twistedCohomologyCoefficientMap_id, Category.comp_id]
+    _ = _ := by
+      simp only [← Category.assoc]
+      rw [← h]
+
+end ChangeOfGroups
 
 end IsQuotientCoveringMap
