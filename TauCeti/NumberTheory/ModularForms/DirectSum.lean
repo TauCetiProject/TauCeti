@@ -213,20 +213,29 @@ theorem evalDirectSumAlgHom_toRingHom [Γ.HasDetOne] :
       evalDirectSum :=
   (rfl)
 
+private def toSlashInvariantFormAddMonoidHom (Γ : Subgroup (GL (Fin 2) ℝ)) (k : ℤ) :
+    ModularForm Γ k →+ SlashInvariantForm Γ k where
+  toFun := toSlashInvariantForm
+  map_zero' := rfl
+  map_add' _ _ := rfl
+
+private theorem evalDirectSum_eq_slashInvariantForm_evalDirectSum [Γ.HasDetPlusMinusOne]
+    (x : ⨁ k : ℤ, ModularForm Γ k) :
+    evalDirectSum x =
+      SlashInvariantForm.evalDirectSum (DirectSum.map (toSlashInvariantFormAddMonoidHom Γ) x) := by
+  have hcomp : (evalDirectSum (Γ := Γ)).toAddMonoidHom =
+      SlashInvariantForm.evalDirectSum.comp
+        (DirectSum.map (toSlashInvariantFormAddMonoidHom Γ)) := by
+    ext k f : 2
+    simp [toSlashInvariantFormAddMonoidHom]
+  exact DFunLike.congr_fun hcomp x
+
 /-- Evaluating `ModularForm.evalDirectSum x` at `z : ℍ` sums `x k z` across all weights `k`. -/
 theorem evalDirectSum_apply [Γ.HasDetPlusMinusOne]
     (x : ⨁ k : ℤ, ModularForm Γ k) (z : ℍ) :
     evalDirectSum x z = ∑ᶠ k : ℤ, x k z := by
-  let ι : ∀ k : ℤ, ModularForm Γ k →+ SlashInvariantForm Γ k := fun _ ↦
-    { toFun := toSlashInvariantForm
-      map_zero' := rfl
-      map_add' := fun _ _ ↦ rfl }
-  have hcomp : evalDirectSum.toAddMonoidHom =
-      SlashInvariantForm.evalDirectSum.comp (DirectSum.map ι) := by
-    ext k f : 2
-    simp [ι]
-  have hx := congrFun (DFunLike.congr_fun hcomp x) z
-  simpa [SlashInvariantForm.evalDirectSum_apply, ι] using hx
+  simp [evalDirectSum_eq_slashInvariantForm_evalDirectSum, SlashInvariantForm.evalDirectSum_apply,
+    toSlashInvariantFormAddMonoidHom]
 
 theorem evalDirectSumAlgHom_apply [Γ.HasDetOne]
     (x : ⨁ k : ℤ, ModularForm Γ k) (z : ℍ) :
@@ -237,21 +246,13 @@ theorem evalDirectSumAlgHom_apply [Γ.HasDetOne]
 with `SL₂(ℤ)`, `ModularForm.evalDirectSum` is injective. -/
 theorem evalDirectSum_injective [Γ.HasDetPlusMinusOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
     Function.Injective (evalDirectSum (Γ := Γ)) := by
-  let ι : ∀ k : ℤ, ModularForm Γ k →+ SlashInvariantForm Γ k := fun _ ↦
-    { toFun := toSlashInvariantForm
-      map_zero' := rfl
-      map_add' := fun _ _ ↦ rfl }
-  have hcomp : evalDirectSum.toAddMonoidHom =
-      SlashInvariantForm.evalDirectSum.comp (DirectSum.map ι) := by
-    ext k f : 2
-    simp [ι]
-  have hι : Function.Injective (DirectSum.map ι) :=
-    (DirectSum.map_injective (f := ι)).mpr fun _ _ _ h ↦
+  have hι : Function.Injective (DirectSum.map (toSlashInvariantFormAddMonoidHom Γ)) :=
+    (DirectSum.map_injective (f := toSlashInvariantFormAddMonoidHom Γ)).mpr fun _ _ _ h ↦
       DFunLike.coe_injective (congrArg (DFunLike.coe (F := SlashInvariantForm Γ _)) h)
   intro x y hxy
   apply hι
   apply SlashInvariantForm.evalDirectSum_injective
-  simpa [← AddMonoidHom.comp_apply, ← hcomp] using hxy
+  simpa only [evalDirectSum_eq_slashInvariantForm_evalDirectSum] using hxy
 
 @[simp]
 theorem evalDirectSum_inj [Γ.HasDetPlusMinusOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]

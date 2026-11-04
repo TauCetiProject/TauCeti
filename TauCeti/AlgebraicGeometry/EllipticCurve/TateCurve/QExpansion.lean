@@ -545,47 +545,55 @@ private theorem adjoinC₄C₆ΔToModularForms_aeval (P : MvPolynomial (Fin 3) �
     AlgEquiv.symm_apply_apply]
   rfl
 
+private noncomputable def adjoinGen (i : Fin 3) :
+    Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} :=
+  Universal.curve.adjoinC₄C₆ΔEquiv Universal.algebraicIndependent_c₄_c₆
+    (Ideal.Quotient.mk _ (MvPolynomial.X i))
+
+@[simp]
+private theorem coe_adjoinGen (i : Fin 3) :
+    (adjoinGen i : MvPolynomial Coeff ℤ) =
+      ![Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ] i := by
+  simp [adjoinGen]
+
+private theorem mk_eq_adjoinGen (i : Fin 3)
+    (h : ![Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ] i ∈
+      Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) :
+    (⟨![Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ] i, h⟩ :
+      Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) =
+      adjoinGen i := by
+  ext1
+  simp
+
+@[simp]
+private theorem adjoinC₄C₆ΔToModularForms_adjoinGen (i : Fin 3) :
+    adjoinC₄C₆ΔToModularForms (adjoinGen i) =
+      ![DirectSum.of (ModularForm 𝒮ℒ) 4 E₄,
+        DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆),
+        DirectSum.of (ModularForm 𝒮ℒ) 12
+          (CuspForm.discriminant : ModularForm 𝒮ℒ 12)] i := by
+  rw [adjoinGen, adjoinC₄C₆ΔToModularForms_aeval, MvPolynomial.aeval_X]
+
 @[simp]
 theorem adjoinC₄C₆ΔToModularForms_c₄ :
     adjoinC₄C₆ΔToModularForms
       ⟨Universal.curve.c₄, Algebra.subset_adjoin (by simp)⟩ =
-      DirectSum.of (ModularForm 𝒮ℒ) 4 E₄ := by
-  have h : (⟨Universal.curve.c₄, Algebra.subset_adjoin (by simp)⟩ :
-      Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) =
-      Universal.curve.adjoinC₄C₆ΔEquiv Universal.algebraicIndependent_c₄_c₆
-        (Ideal.Quotient.mk _ (MvPolynomial.X 0)) := by
-    ext1
-    simp
-  rw [h, adjoinC₄C₆ΔToModularForms_aeval]
-  simp
+      DirectSum.of (ModularForm 𝒮ℒ) 4 E₄ :=
+  mk_eq_adjoinGen 0 _ ▸ adjoinC₄C₆ΔToModularForms_adjoinGen 0
 
 @[simp]
 theorem adjoinC₄C₆ΔToModularForms_c₆ :
     adjoinC₄C₆ΔToModularForms
       ⟨Universal.curve.c₆, Algebra.subset_adjoin (by simp)⟩ =
-      DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆) := by
-  have h : (⟨Universal.curve.c₆, Algebra.subset_adjoin (by simp)⟩ :
-      Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) =
-      Universal.curve.adjoinC₄C₆ΔEquiv Universal.algebraicIndependent_c₄_c₆
-        (Ideal.Quotient.mk _ (MvPolynomial.X 1)) := by
-    ext1
-    simp
-  rw [h, adjoinC₄C₆ΔToModularForms_aeval]
-  simp
+      DirectSum.of (ModularForm 𝒮ℒ) 6 (-E₆) :=
+  mk_eq_adjoinGen 1 _ ▸ adjoinC₄C₆ΔToModularForms_adjoinGen 1
 
 @[simp]
 theorem adjoinC₄C₆ΔToModularForms_Δ :
     adjoinC₄C₆ΔToModularForms
       ⟨Universal.curve.Δ, Algebra.subset_adjoin (by simp)⟩ =
-      DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12) := by
-  have h : (⟨Universal.curve.Δ, Algebra.subset_adjoin (by simp)⟩ :
-      Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) =
-      Universal.curve.adjoinC₄C₆ΔEquiv Universal.algebraicIndependent_c₄_c₆
-        (Ideal.Quotient.mk _ (MvPolynomial.X 2)) := by
-    ext1
-    simp
-  rw [h, adjoinC₄C₆ΔToModularForms_aeval]
-  simp
+      DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12) :=
+  mk_eq_adjoinGen 2 _ ▸ adjoinC₄C₆ΔToModularForms_adjoinGen 2
 
 /-- **Compatibility of `adjoinC₄C₆ΔToModularForms` with `q`-expansions.** Applying
 `ModularForm.qExpansionRingHom` to the analytic image of `x ∈ ℤ[c₄, c₆, Δ]` recovers its Tate
@@ -649,18 +657,6 @@ theorem adjoinC₄C₆ΔToModularForms_eq_of {k : ℕ} {f : MvPolynomial Coeff �
   rw [qExpansionRingHom_adjoinC₄C₆ΔToModularForms, ModularForm.qExpansionRingHom_apply,
     qExpansion_integralModularFormToModularForm]
 
-private noncomputable def c₄Adjoin :
-    Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} :=
-  ⟨Universal.curve.c₄, Algebra.subset_adjoin (by simp)⟩
-
-private noncomputable def c₆Adjoin :
-    Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} :=
-  ⟨Universal.curve.c₆, Algebra.subset_adjoin (by simp)⟩
-
-private noncomputable def ΔAdjoin :
-    Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ} :=
-  ⟨Universal.curve.Δ, Algebra.subset_adjoin (by simp)⟩
-
 private noncomputable def complexAdjoinToModularForms :
     (ℂ ⊗[ℤ] Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) →ₐ[ℂ]
       DirectSum ℤ (ModularForm 𝒮ℒ) :=
@@ -671,13 +667,13 @@ private noncomputable def modularFormsToComplexAdjoin :
     DirectSum ℤ (ModularForm 𝒮ℒ) →ₐ[ℂ]
       (ℂ ⊗[ℤ] Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) :=
   (MvPolynomial.aeval (R := ℂ)
-    ![Algebra.TensorProduct.includeRight c₄Adjoin,
-      Algebra.TensorProduct.includeRight (-c₆Adjoin)]).comp
+    ![Algebra.TensorProduct.includeRight (adjoinGen 0),
+      Algebra.TensorProduct.includeRight (-adjoinGen 1)]).comp
     TauCeti.ModularForm.mvPolynomialEquivModularForms.symm.toAlgHom
 
 private theorem modularFormsToComplexAdjoin_E₄ :
     modularFormsToComplexAdjoin (DirectSum.of (ModularForm 𝒮ℒ) 4 E₄) =
-      Algebra.TensorProduct.includeRight c₄Adjoin := by
+      Algebra.TensorProduct.includeRight (adjoinGen 0) := by
   have h : DirectSum.of (ModularForm 𝒮ℒ) 4 E₄ =
       TauCeti.ModularForm.mvPolynomialEquivModularForms (MvPolynomial.X 0) := by
     simp
@@ -687,7 +683,7 @@ private theorem modularFormsToComplexAdjoin_E₄ :
 
 private theorem modularFormsToComplexAdjoin_E₆ :
     modularFormsToComplexAdjoin (DirectSum.of (ModularForm 𝒮ℒ) 6 E₆) =
-      Algebra.TensorProduct.includeRight (-c₆Adjoin) := by
+      Algebra.TensorProduct.includeRight (-adjoinGen 1) := by
   have h : DirectSum.of (ModularForm 𝒮ℒ) 6 E₆ =
       TauCeti.ModularForm.mvPolynomialEquivModularForms (MvPolynomial.X 1) := by
     simp
@@ -698,15 +694,16 @@ private theorem modularFormsToComplexAdjoin_E₆ :
 private theorem modularFormsToComplexAdjoin_discriminant :
     modularFormsToComplexAdjoin
       (DirectSum.of (ModularForm 𝒮ℒ) 12 (CuspForm.discriminant : ModularForm 𝒮ℒ 12)) =
-      Algebra.TensorProduct.includeRight ΔAdjoin := by
-  have hrel : c₄Adjoin ^ 3 - (-c₆Adjoin) ^ 2 = (1728 : ℕ) • ΔAdjoin := by
+      Algebra.TensorProduct.includeRight (adjoinGen 2) := by
+  have hrel : adjoinGen 0 ^ 3 - (-adjoinGen 1) ^ 2 = (1728 : ℕ) • adjoinGen 2 := by
     ext1
-    simpa [c₄Adjoin, c₆Adjoin, ΔAdjoin] using Universal.curve.c_relation.symm
-  -- Keep `includeRight (-c₆Adjoin)` unexpanded so cancellation stays at the `AlgHom` level.
+    rw [AddSubmonoidClass.coe_nsmul, nsmul_eq_mul, Nat.cast_ofNat]
+    simpa using Universal.curve.c_relation.symm
+  -- Keep `includeRight (-adjoinGen 1)` unexpanded so cancellation stays at the `AlgHom` level.
   have hrelT :
-      (Algebra.TensorProduct.includeRight c₄Adjoin : ℂ ⊗[ℤ] _) ^ 3 -
-        Algebra.TensorProduct.includeRight (-c₆Adjoin) ^ 2 =
-        (1728 : ℂ) • Algebra.TensorProduct.includeRight ΔAdjoin := by
+      (Algebra.TensorProduct.includeRight (adjoinGen 0) : ℂ ⊗[ℤ] _) ^ 3 -
+        Algebra.TensorProduct.includeRight (-adjoinGen 1) ^ 2 =
+        (1728 : ℂ) • Algebra.TensorProduct.includeRight (adjoinGen 2) := by
     simpa [-Algebra.TensorProduct.includeRight_apply, -map_neg, map_ofNat,
       ofNat_smul_eq_nsmul] using
       congrArg (Algebra.TensorProduct.includeRight (R := ℤ) (A := ℂ)) hrel
@@ -720,14 +717,8 @@ private theorem complexAdjoinToModularForms_comp_modularFormsToComplexAdjoin :
       TauCeti.ModularForm.mvPolynomialEquivModularForms.toAlgHom =
       TauCeti.ModularForm.mvPolynomialEquivModularForms.toAlgHom := by
     refine MvPolynomial.algHom_ext fun i ↦ match i with
-    | 0 => by
-      simp [modularFormsToComplexAdjoin_E₄, complexAdjoinToModularForms, c₄Adjoin]
-    | 1 => by
-      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-        TauCeti.ModularForm.mvPolynomialEquivModularForms_apply, evalE₄E₆_X_one,
-        modularFormsToComplexAdjoin_E₆, Algebra.TensorProduct.includeRight_apply,
-        complexAdjoinToModularForms, Algebra.TensorProduct.lift_tmul, map_one, one_mul, map_neg,
-        c₆Adjoin, adjoinC₄C₆ΔToModularForms_c₆, neg_neg]
+    | 0 => by simp [modularFormsToComplexAdjoin_E₄, complexAdjoinToModularForms]
+    | 1 => by simp [modularFormsToComplexAdjoin_E₆, complexAdjoinToModularForms]
   refine AlgHom.ext fun x ↦ ?_
   obtain ⟨p, rfl⟩ := TauCeti.ModularForm.mvPolynomialEquivModularForms.surjective x
   exact DFunLike.congr_fun hpoly p
@@ -749,27 +740,10 @@ private theorem modularFormsToComplexAdjoin_adjoinC₄C₆ΔToModularForms
         ((Universal.curve.adjoinC₄C₆ΔEquiv
           Universal.algebraicIndependent_c₄_c₆).toAlgHom.toRingHom.comp (Ideal.Quotient.mk _)) := by
     refine MvPolynomial.ringHom_ext (fun r ↦ by simp) fun i ↦ match i with
-    | 0 => by
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        AlgEquiv.coe_toAlgHom, MvPolynomial.aeval_X, Matrix.cons_val_zero,
-        modularFormsToComplexAdjoin_E₄]
-      congr 1
-      ext1
-      simp [c₄Adjoin]
+    | 0 => by simp [modularFormsToComplexAdjoin_E₄, adjoinGen]
     | 1 => by
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        AlgEquiv.coe_toAlgHom, MvPolynomial.aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero]
-      rw [map_neg, map_neg, modularFormsToComplexAdjoin_E₆, ← map_neg, neg_neg]
-      congr 1
-      ext1
-      simp [c₆Adjoin]
-    | 2 => by
-      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        AlgEquiv.coe_toAlgHom, MvPolynomial.aeval_X, Matrix.cons_val_two, Matrix.head_cons,
-        Matrix.tail_cons, modularFormsToComplexAdjoin_discriminant]
-      congr 1
-      ext1
-      simp [ΔAdjoin]
+      simp [-Algebra.TensorProduct.includeRight_apply, modularFormsToComplexAdjoin_E₆, adjoinGen]
+    | 2 => by simp [modularFormsToComplexAdjoin_discriminant, adjoinGen]
   exact DFunLike.congr_fun hhom P
 
 private theorem modularFormsToComplexAdjoin_comp_complexAdjoinToModularForms :
