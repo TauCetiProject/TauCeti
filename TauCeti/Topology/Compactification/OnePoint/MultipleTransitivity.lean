@@ -230,9 +230,9 @@ theorem existsUnique_psl_smul_eq_of_injective [IsAlgClosed K] {b p : Fin 3 → O
     (hb : Injective b) (hp : Injective p) : ∃! g : PSL(2, K), g • b = p := by
   obtain ⟨k, hk, -⟩ := existsUnique_psl_smul_zeroOneInftyTriple_eq hb
   obtain ⟨l, hl, hu⟩ := existsUnique_psl_smul_zeroOneInftyTriple_eq hp
-  refine ⟨l * k⁻¹, show (l * k⁻¹) • b = p by rw [mul_smul, ← hk, inv_smul_smul, hl],
-    fun g (hg : g • b = p) ↦ ?_⟩
-  rw [eq_mul_inv_iff_mul_eq]
-  exact hu (g * k) (show (g * k) • _ = p by rw [mul_smul, hk, hg])
+  refine ExistsUnique.intro (l * k⁻¹) ?_ fun g hg ↦ ?_
+  · rw [mul_smul, ← hk, inv_smul_smul, hl]
+  · rw [eq_mul_inv_iff_mul_eq]
+    exact hu (g * k) (by simp only [mul_smul, hk, hg])
 
 end OnePoint
