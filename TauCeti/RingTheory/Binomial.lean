@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+-- Proof-only: modules over `ℚ` are torsion-free.
+import Mathlib.Algebra.Module.Torsion.Field
 
 /-!
 # Products of generalized binomial coefficients
@@ -54,6 +56,8 @@ integrality input for commuting Cartan binomial coefficients past divided powers
 * `TauCeti.Ring.add_choose_two`: the second binomial coefficient of a sum of commuting elements.
 * `TauCeti.Ring.succ_nsmul_choose_succ_of_sq_eq_zero`: the binomial coefficients of a square-zero
   element `ε` satisfy `(n + 1) • (ε choose (n + 1)) = (-1) ^ n * ε`.
+* `TauCeti.Ring.choose_succ_smul_of_sq_eq_zero`: over a rational module, `ε choose (j + 1)` acts
+  as `ε • ((-1) ^ j / (j + 1))` for a square-zero element `ε`.
 * `TauCeti.Ring.choose_intCast`: generalized binomial coefficients commute with integer casts.
 * `TauCeti.Ring.choose_add_intCast_mem`: additive subgroups containing the coefficients of `r`
   up to degree `n` contain the degree-`n` coefficient of every integer translate of `r`.
@@ -365,13 +369,11 @@ theorem descPochhammer_succ_smeval_of_sq_eq_zero {ε : R} (hε : ε ^ 2 = 0) (n 
   induction n with
   | zero => simp [Polynomial.smeval_X]
   | succ n ih =>
-    rw [descPochhammer_succ_right, Polynomial.smeval_mul, ih, Polynomial.smeval_sub,
-      Polynomial.smeval_X, Polynomial.smeval_natCast, npow_one, npow_zero, smul_mul_assoc,
-      mul_sub, ← sq, hε, zero_sub, mul_smul_comm, mul_one, ← natCast_zsmul, smul_neg, smul_smul,
-      ← neg_smul]
-    congr 1
-    push_cast [Nat.factorial_succ]
-    ring
+    -- Multiplying by `ε - n` kills the square term and scales by `-n`.
+    rw [descPochhammer_succ_right, Polynomial.smeval_mul, ih]
+    simp [Polynomial.smeval_X, Polynomial.smeval_natCast, -zsmul_eq_mul, mul_sub, ← sq, hε,
+      Nat.factorial_succ, mul_add_one, -nsmul_eq_mul, ← nsmul_eq_mul' ε n]
+    module
 
 variable [BinomialRing R]
 
@@ -386,9 +388,23 @@ theorem succ_nsmul_choose_succ_of_sq_eq_zero {ε : R} (hε : ε ^ 2 = 0) (n : �
   dsimp only
   rw [smul_smul, mul_comm, ← Nat.factorial_succ,
     ← _root_.Ring.descPochhammer_eq_factorial_smul_choose,
-    descPochhammer_succ_smeval_of_sq_eq_zero hε,
-    show ((-1) ^ n * ε : R) = ((-1) ^ n : ℤ) • ε by simp [zsmul_eq_mul], ← natCast_zsmul,
-    smul_smul, mul_comm]
+    descPochhammer_succ_smeval_of_sq_eq_zero hε]
+  simp [mul_smul, ← mul_assoc, (Nat.cast_commute _ _).eq]
+
+/-- Over a rational module, a binomial coefficient of a square-zero element acts through its
+first-order Taylor coefficient: `(ε choose (j + 1)) • y = ε • ((-1) ^ j / (j + 1)) • y`. -/
+theorem choose_succ_smul_of_sq_eq_zero {M : Type*} [AddCommGroup M] [Module R M] [Module ℚ M]
+    {ε : R} (hε : ε ^ 2 = 0) (j : ℕ) (y : M) :
+    _root_.Ring.choose ε (j + 1) • y = ε • (((-1) ^ j / (j + 1 : ℕ) : ℚ) • y) := by
+  have hj : ((j + 1 : ℕ) : ℚ) ≠ 0 := Nat.cast_ne_zero.2 j.succ_ne_zero
+  -- Both sides are determined by their `(j + 1)`-fold multiples, since `M` is a `ℚ`-module.
+  apply smul_right_injective M hj
+  dsimp only
+  rw [Nat.cast_smul_eq_nsmul ℚ (j + 1) (_root_.Ring.choose ε (j + 1) • y), ← smul_assoc,
+    succ_nsmul_choose_succ_of_sq_eq_zero hε, smul_comm ((j + 1 : ℕ) : ℚ) ε,
+    smul_smul, mul_div_cancel₀ _ hj]
+  -- The sign `(-1) ^ j` acts as `±1` whether it is read in `R` or in `ℚ`.
+  rcases j.even_or_odd with h | h <;> simp [h.neg_one_pow]
 
 end Ring
 

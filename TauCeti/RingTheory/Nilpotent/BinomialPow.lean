@@ -8,25 +8,27 @@ module
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.RingTheory.Binomial
 public import TauCeti.RingTheory.Nilpotent.Log
-import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Binomial powers of unipotent elements
 
-Let `R` be a commutative binomial ring, for instance `ℤ`, a `ℚ`-algebra, or a polynomial ring over
-one, and let `A` be an associative `R`-algebra. For an element `u : A` with `u - 1` nilpotent
-and `t : R`, the **binomial power**
+Let `R` be a commutative binomial ring, for instance `ℤ`, the `p`-adic integers, or a
+`ℚ`-algebra such as a polynomial ring `k[t]` over a `ℚ`-algebra `k`, and let `A` be an associative
+`R`-algebra. For an element `u : A` with `u - 1` nilpotent and `t : R`, the **binomial power**
 
 ```text
 u ^ t = ∑ j < N, (t choose j) • (u - 1) ^ j,       (u - 1) ^ N = 0,
 ```
 
 is the finite binomial expansion of `(1 + (u - 1)) ^ t`. It does not depend on the bound `N`.
-Taking `R` to be a polynomial ring `k[t]` and evaluating at the indeterminate gives the
-polynomial curve `t ↦ u ^ t` through a unipotent matrix `u`: a one-parameter group of unipotent
-units whose value at `1` is `u` and whose first-order term at `0` is the finite logarithm of `u`.
-Unlike `TauCeti.expSMulHom`, the construction needs no rational structure, so it applies over `ℤ`
-and over the `p`-adic integers as well.
+Over a `ℚ`-algebra `k`, taking `R = k[t]` and evaluating at the indeterminate gives the
+polynomial curve `t ↦ u ^ t` through a unipotent matrix `u` over `k`: a one-parameter group of
+unipotent units whose value at `1` is `u` and whose first-order term at `0` is the finite
+logarithm of `u`. Polynomial rings over `ℤ` or `ℤ_[p]` are not binomial rings, so there the
+construction gives instead the families `t ↦ u ^ t` with `t` ranging over `ℤ` or `ℤ_[p]`. Unlike
+`TauCeti.expSMulHom`, which needs a rational structure on `A`, these families exist for unipotent
+elements over `ℤ` and over the `p`-adic integers as well.
 
 The main results are:
 
@@ -85,16 +87,6 @@ private theorem binomialPow_eq_aeval {u : A} {n : ℕ} (hn : (u - 1) ^ n = 0) (t
   rw [binomialPow_eq_sum hn, aeval_def, PowerSeries.eval₂_trunc_eq_sum_range]
   simp [Algebra.smul_def]
 
-omit [BinomialRing R] in
-/-- Evaluation at an element `x` with `x ^ n = 0` sees a power series only through its
-coefficients below `n`. -/
-private theorem aeval_trunc_eq_aeval {x : A} {n : ℕ} (hx : x ^ n = 0) {f : PowerSeries R}
-    {p : R[X]} (h : ∀ d < n, PowerSeries.coeff d f = p.coeff d) :
-    aeval x (PowerSeries.trunc n f) = aeval x p := by
-  obtain ⟨q, hq⟩ : (X : R[X]) ^ n ∣ PowerSeries.trunc n f - p :=
-    X_pow_dvd_iff.2 fun d hd => by simp [PowerSeries.coeff_trunc, hd, h d hd]
-  rw [← sub_eq_zero, ← map_sub, hq, map_mul, map_pow, aeval_X, hx, zero_mul]
-
 variable {u : A}
 
 /-- Every binomial power of one is one. -/
@@ -108,7 +100,8 @@ theorem binomialPow_one_left (t : R) : binomialPow (1 : A) t = 1 := by
 theorem binomialPow_natCast (hu : IsNilpotent (u - 1)) (m : ℕ) :
     binomialPow u (m : R) = u ^ m := by
   obtain ⟨n, hn⟩ := hu
-  rw [binomialPow_eq_aeval hn, aeval_trunc_eq_aeval hn (p := (1 + X) ^ m)]
+  rw [binomialPow_eq_aeval hn,
+    PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero hn (p := (1 + X) ^ m)]
   · simp
   · intro d _
     rw [PowerSeries.binomialSeries_nat, ← Polynomial.coeff_coe]
@@ -129,7 +122,7 @@ theorem binomialPow_add (hu : IsNilpotent (u - 1)) (t s : R) :
     binomialPow u (t + s) = binomialPow u t * binomialPow u s := by
   obtain ⟨n, hn⟩ := hu
   simp only [binomialPow_eq_aeval hn, ← map_mul]
-  refine aeval_trunc_eq_aeval hn fun d hd => ?_
+  refine PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero hn fun d hd => ?_
   rw [PowerSeries.binomialSeries_add, PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc _ _ hd,
     ← Polynomial.coe_mul, Polynomial.coeff_coe]
 
@@ -208,22 +201,6 @@ theorem map_binomialPow {B F : Type*} [Ring B] [Algebra R B] [FunLike F A B]
   have hn' : (f u - 1) ^ n = 0 := by simpa using congrArg f hn
   simp [binomialPow_eq_sum hn, binomialPow_eq_sum hn']
 
-/-- Over a rational module, a binomial coefficient of a square-zero element acts through its
-first-order Taylor coefficient: `(ε choose (j + 1)) • y = ε • ((-1) ^ j / (j + 1)) • y`. -/
-private theorem choose_succ_smul_of_sq_eq_zero [Module ℚ A] {ε : R} (hε : ε ^ 2 = 0) (j : ℕ)
-    (y : A) : Ring.choose ε (j + 1) • y = ε • (((-1) ^ j / (j + 1 : ℕ) : ℚ) • y) := by
-  have hj : ((j + 1 : ℕ) : ℚ) ≠ 0 := Nat.cast_ne_zero.2 j.succ_ne_zero
-  -- Both sides are determined by their `(j + 1)`-fold multiples, since `A` is a `ℚ`-module.
-  apply smul_right_injective A hj
-  dsimp only
-  rw [Nat.cast_smul_eq_nsmul ℚ (j + 1) (Ring.choose ε (j + 1) • y), ← smul_assoc,
-    TauCeti.Ring.succ_nsmul_choose_succ_of_sq_eq_zero hε, smul_comm ((j + 1 : ℕ) : ℚ) ε,
-    smul_smul, mul_div_cancel₀ _ hj, mul_smul, smul_comm ε]
-  -- The sign `(-1) ^ j` acts through `ℤ`, whether it is read in `R` or in `ℚ`.
-  rw [show ((-1) ^ j : R) = (((-1) ^ j : ℤ) : R) by push_cast; rfl,
-    show ((-1) ^ j : ℚ) = (((-1) ^ j : ℤ) : ℚ) by push_cast; rfl, Int.cast_smul_eq_zsmul,
-    Int.cast_smul_eq_zsmul]
-
 /-- **The tangent vector of a binomial power curve is the logarithm.** Over a rational algebra,
 a square-zero exponent `ε` gives `u ^ ε = 1 + ε • log u`. Taking `R` to be the dual numbers over
 the exponent ring, this says that the curve `t ↦ u ^ t` has derivative `log u` at `t = 0`. -/
@@ -231,11 +208,8 @@ theorem binomialPow_eq_one_add_smul_log [Module ℚ A] (hu : IsNilpotent (u - 1)
     (hε : ε ^ 2 = 0) : binomialPow u ε = 1 + ε • IsNilpotent.log u := by
   obtain ⟨n, hn⟩ := hu
   have hn' : (u - 1) ^ (n + 1) = 0 := pow_eq_zero_of_le n.le_succ hn
-  rw [binomialPow_eq_sum hn', IsNilpotent.log_eq_sum hn', sum_range_succ', sum_range_succ',
-    Ring.choose_zero_right, pow_zero, one_smul, add_comm, Nat.cast_zero, div_zero, zero_smul,
-    add_zero, smul_sum]
-  congr 1
-  refine sum_congr rfl fun j _ => ?_
-  rw [choose_succ_smul_of_sq_eq_zero hε, show (-1 : ℚ) ^ (j + 1 + 1) = (-1) ^ j by ring]
+  -- Split off the constant terms; the remaining terms match by the square-zero coefficients.
+  rw [binomialPow_eq_sum hn', IsNilpotent.log_eq_sum hn', sum_range_succ', sum_range_succ']
+  simp [smul_sum, Ring.choose_succ_smul_of_sq_eq_zero hε, pow_succ, add_comm _ (1 : A)]
 
 end TauCeti

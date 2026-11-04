@@ -74,6 +74,8 @@ of a completed group algebra attached to two topological generators.
   power is evaluation of a finite truncation.
 * `PowerSeries.subst_C_eq_C_aeval_trunc`: substitution at a nilpotent constant is the constant
   series obtained by evaluating a finite truncation.
+* `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
+  the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
 * `PowerSeries.order_subst`: `ord (f (φ)) = ord φ * ord f` when `φ` has zero constant
   coefficient.
 * `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
@@ -177,6 +179,16 @@ theorem subst_C_eq_C_aeval_trunc {x : S} {n : ℕ} (hn : x ^ n = 0) (f : R⟦X�
   rw [subst_eq_aeval_trunc_of_pow_eq_zero (n := n) (by rw [← map_pow, hn, map_zero])]
   simpa only [IsScalarTower.toAlgHom_apply, algebraMap_eq] using
     Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom R S S⟦X⟧) x (trunc n f)
+
+/-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
+power series only through its coefficients below `n`: any polynomial with the same coefficients
+below `n` has the same value as the truncation. -/
+theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Ring A] [Algebra R A] {x : A} {n : ℕ}
+    (hx : x ^ n = 0) {f : R⟦X⟧} {p : Polynomial R} (h : ∀ d < n, coeff d f = p.coeff d) :
+    Polynomial.aeval x (trunc n f) = Polynomial.aeval x p := by
+  obtain ⟨q, hq⟩ : (Polynomial.X : Polynomial R) ^ n ∣ trunc n f - p :=
+    Polynomial.X_pow_dvd_iff.2 fun d hd => by simp [coeff_trunc, hd, h d hd]
+  rw [← sub_eq_zero, ← map_sub, hq, map_mul, map_pow, Polynomial.aeval_X, hx, zero_mul]
 
 end Nilpotent
 
