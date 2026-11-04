@@ -6,95 +6,96 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.TripledWeight
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Positive
+import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
+-- The equal-length certificate computes the explicit classical root enumeration and its
+-- signed-pair indexing rather than introducing a second invariant form.
+import all TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import all TauCeti.Data.Fin.DistinctPairs
 
 /-!
-# Raising induction on the tripled D₄ weight diagram
+# Positive-root order on the tripled D₄ weight diagram
 
-If two tripled weights differ by a nonnegative integral combination of simple roots, a sequence
-of simple raising steps joins the lower weight to the higher one. Consequently every predicate
-stable under those steps is upward closed for the root order. The integrality condition matters:
-weights in different minuscule summands must not be compared using the rational root cone alone.
+A path of positive simple-root moves joins two tripled weights exactly when their difference
+lies in the integral positive root cone. The integrality condition matters: weights in different
+minuscule summands must not be compared using the rational root cone alone.
 
-This finite weight-diagram calculation lets raising-stable coordinate flags exclude all negative
-root directions, not just negative simple-root directions.
+The three summands have the same canonical root-form length, so the invariant-form raising-path
+criterion applies to the full table. These paths let raising-stable coordinate flags exclude all
+negative root directions, not just negative simple-root directions.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §13.4.
+
+The path argument follows `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Positive`.
 -/
 
 public section
 
-open scoped Matrix
-
 namespace TauCeti.DynkinType
 
--- This relation describes the three eight-vertex diagrams, each a chain with a middle diamond.
-private def tripledRaisingPrecedes (a b : Fin 24) : Prop :=
-  a.val / 8 = b.val / 8 ∧ b.val ≤ a.val ∧ ¬ (a.val % 8 = 4 ∧ b.val % 8 = 3)
+local notation "P" => typeDSimplyConnectedRootDatum 4 le_rfl
+local notation "μ" => d4TripledWeight
 
-private instance (a b : Fin 24) : Decidable (tripledRaisingPrecedes a b) :=
-  inferInstanceAs (Decidable (_ ∧ _ ∧ ¬ (_ ∧ _)))
+/-- A positive simple-root move on the twenty-four tripled D₄ weights. -/
+def D4TripledRaisingStep (a b : Fin 24) : Prop :=
+  ∃ i : Fin 4, μ a i = -1 ∧ d4TripledReflection i a = b
 
--- Twice the inverse Cartan matrix detects both positivity and membership in the root lattice.
-private def twiceInverse : Matrix (Fin 4) (Fin 4) ℤ :=
-  !![2, 2, 1, 1; 2, 4, 2, 2; 1, 2, 2, 1; 1, 2, 1, 2]
+/-- A raising move is simple reflection at a coroot value of minus one. -/
+theorem d4TripledRaisingStep_iff (a b : Fin 24) :
+    D4TripledRaisingStep a b ↔
+      ∃ i : Fin 4, μ a i = -1 ∧ d4TripledReflection i a = b := Iff.rfl
 
-private theorem cartan_mul_twiceInverse : CartanMatrix.D 4 * twiceInverse = 2 • 1 := by
-  rw [CartanMatrix.D_four]
-  decide
+private theorem rootForm_eq (a b : Fin 24) :
+    (P).RootForm (μ a) (μ a) = (P).RootForm (μ b) (μ b) := by
+  suffices ∀ a b : Fin 24, (P).RootForm (μ a) (μ a) = (P).RootForm (μ b) (μ b) from
+    this a b
+  simp only [RootPairing.rootForm_apply_apply, RootPairing.coroot', LinearMap.flip_apply,
+    toLinearMap_typeDSimplyConnectedRootDatum, coroot_typeDSimplyConnectedRootDatum]
+  decide +kernel
 
-private theorem vecMul_cartan_twiceInverse (c : Fin 4 → ℤ) :
-    (c ᵥ* CartanMatrix.D 4) ᵥ* twiceInverse = 2 • c := by
-  rw [Matrix.vecMul_vecMul, cartan_mul_twiceInverse, Matrix.vecMul_smul, Matrix.vecMul_one]
-
-private theorem tripledRaisingPrecedes_of_sub_eq (a b : Fin 24) (c : Fin 4 → ℤ)
-    (hc : ∀ i, 0 ≤ c i)
-    (hab : d4TripledWeight b - d4TripledWeight a = c ᵥ* CartanMatrix.D 4) :
-    tripledRaisingPrecedes a b := by
-  have hcertificate : ∀ a b : Fin 24,
-      (∀ i, 0 ≤ ((d4TripledWeight b - d4TripledWeight a) ᵥ* twiceInverse) i ∧
-        ((d4TripledWeight b - d4TripledWeight a) ᵥ* twiceInverse) i % 2 = 0) →
-      tripledRaisingPrecedes a b := by
-    decide +kernel
-  apply hcertificate a b
-  rw [hab, vecMul_cartan_twiceInverse]
-  intro i
-  have hi : 0 ≤ c i + c i ∧ (c i + c i) % 2 = 0 := by
-    have := hc i
-    omega
-  simpa only [Pi.smul_apply, two_smul] using hi
-
-private theorem exists_raising_step (a b : Fin 24) (hab : tripledRaisingPrecedes a b)
-    (hne : a ≠ b) :
-    ∃ i : Fin 4, d4TripledWeight a i = -1 ∧
-      tripledRaisingPrecedes (d4TripledReflection i a) b ∧
-      (d4TripledReflection i a).val < a.val := by
-  have hcertificate : ∀ a b : Fin 24, tripledRaisingPrecedes a b → a ≠ b →
-      ∃ i : Fin 4, d4TripledWeight a i = -1 ∧
-        tripledRaisingPrecedes (d4TripledReflection i a) b ∧
-        (d4TripledReflection i a).val < a.val := by
-    decide +kernel
-  exact hcertificate a b hab hne
-
-/-- A predicate on the tripled D₄ weights stable under simple raising steps is upward closed
-under nonnegative integral combinations of the Bourbaki simple roots. -/
-theorem d4TripledWeight_dominance_induction {P : Fin 24 → Prop}
-    (hstep : ∀ (i : Fin 4) (a : Fin 24), d4TripledWeight a i = -1 →
-      P a → P (d4TripledReflection i a))
-    (a b : Fin 24) (c : Fin 4 → ℤ) (hc : ∀ i, 0 ≤ c i)
-    (hab : d4TripledWeight b - d4TripledWeight a = c ᵥ* CartanMatrix.D 4)
-    (ha : P a) : P b := by
-  have hreach := tripledRaisingPrecedes_of_sub_eq a b c hc hab
-  suffices ∀ a : Fin 24, tripledRaisingPrecedes a b → P a → P b from this a hreach ha
-  intro a
-  induction a using WellFoundedLT.induction with
-  | ind a ih =>
-    intro hab ha
-    by_cases heq : a = b
-    · exact heq ▸ ha
-    · obtain ⟨i, hi, hib, hia⟩ := exists_raising_step a b hab heq
-      exact ih (d4TripledReflection i a) hia hib (hstep i a hi ha)
+/-- Positive simple-root paths are exactly positive integral differences of tripled D₄ weights.
+Membership in the cone already forces the endpoints to lie in the same minuscule summand. -/
+theorem d4Tripled_raisingPath_iff_mem_posRootCone (a b : Fin 24) :
+    Relation.ReflTransGen D4TripledRaisingStep a b ↔
+      μ b - μ a ∈ posRootCone P (typeDSimplyConnectedBase 4 le_rfl) := by
+  constructor
+  · intro h
+    induction h with
+    | refl => simp
+    | @tail b c h hbc ih =>
+      obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hbc
+      have hroot : (P).root (typeDSimpleIndex 4 le_rfl i) ∈
+          posRootCone P (typeDSimplyConnectedBase 4 le_rfl) :=
+        root_mem_posRootCone_of_mem_posRoots P (typeDSimplyConnectedBase 4 le_rfl)
+          (support_subset_posRoots P (typeDSimplyConnectedBase 4 le_rfl)
+            ((mem_typeDSimplyConnectedBase_support le_rfl).mpr (by
+              simpa only [typeDSimpleIndex_val] using i.isLt)))
+      have heq : μ (d4TripledReflection i b) - μ a =
+          (μ b - μ a) + (P).root (typeDSimpleIndex 4 le_rfl i) := by
+        rw [d4TripledWeight_reflection, hi, root_typeDSimpleIndex]
+        simp only [neg_smul, one_smul, sub_neg_eq_add]
+        abel
+      rw [heq]
+      exact (posRootCone P (typeDSimplyConnectedBase 4 le_rfl)).add_mem ih hroot
+  · intro h
+    obtain ⟨c, hc⟩ := (mem_typeD_posRootCone_iff le_rfl).mp h
+    refine (P).toInvariantForm.reflTransGen_of_sub_eq_sum
+      (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne)
+      d4TripledWeight_injective rootForm_eq
+      (f := typeDSimpleIndex 4 le_rfl) (fun a i hi ↦ ?_) hc
+    have hai : μ a i = -1 := by
+      have hpair : (P).coroot' (typeDSimpleIndex 4 le_rfl i) (μ a) = μ a i := by
+        simp only [RootPairing.coroot', LinearMap.flip_apply,
+          toLinearMap_typeDSimplyConnectedRootDatum, coroot_typeDSimpleIndex,
+          dotProduct_single, mul_one]
+      rw [hpair] at hi
+      rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> omega
+    refine ⟨d4TripledReflection i a, (d4TripledRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
+    rw [d4TripledWeight_reflection, hai, root_typeDSimpleIndex]
+    simp
 
 end TauCeti.DynkinType

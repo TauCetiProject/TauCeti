@@ -33,11 +33,11 @@ agreement with the specialization of the integral carrier is asserted.
 
 ## Main results
 
-* `quotient_genericMatrix_eq_zero_of_sub_eq_nonneg_cartanCombination`: universal vanishing
+* `quotient_genericMatrix_eq_zero_of_posRootCone`: universal vanishing
   opposite the strict root order.
-* `quotient_adjointWeightSpace_neg_cartanCombination_eq_bot`: negative root-cone weight
+* `quotient_adjointWeightSpace_neg_eq_bot_of_posRootCone`: negative root-cone weight
   exclusion for reduced connected solvable overgroups.
-* `borelCandidate_adjointWeightSpace_neg_cartanCombination_eq_bot`: the Borel-candidate
+* `borelCandidate_adjointWeightSpace_neg_eq_bot_of_posRootCone`: the Borel-candidate
   specialization.
 
 ## References
@@ -110,19 +110,39 @@ private theorem single_reflection_mem
     weightTable.single_reflection_mem_of_mulVec_mem N.toSubmodule i a
       (by simpa only [weightTable_weight] using ha) hv h
 
+private theorem single_mem_of_raising_path
+    (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) (hI : I ≤ definingIdeal k) :
+    let q := (CommHopfAlgCat.mkQuotient _ I).hom.comp (generatedCoordinateMap k).hom
+    let _ := GeneralLinear.corestrictStandardComodule k 24 q
+    ∀ (N : Subcomodule k (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal) (Fin 24 → k))
+      {a b : Fin 24}, Relation.ReflTransGen D4TripledRaisingStep a b →
+      Pi.single a (1 : k) ∈ N → Pi.single b (1 : k) ∈ N := by
+  let q := (CommHopfAlgCat.mkQuotient _ I).hom.comp (generatedCoordinateMap k).hom
+  let _ := GeneralLinear.corestrictStandardComodule k 24 q
+  dsimp only
+  intro N a b h
+  induction h with
+  | refl => exact id
+  | tail h hstep ih =>
+    obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hstep
+    exact fun ha ↦ single_reflection_mem I hI N i _ hi (ih ha)
+
 variable [IsAlgClosed k]
+
+local notation "C₊" => posRootCone (typeDSimplyConnectedRootDatum 4 le_rfl)
+  (typeDSimplyConnectedBase 4 le_rfl)
 
 /-- In a reduced connected solvable overgroup of the positive subgroup, a matrix entry
 vanishes if its column weight strictly dominates its row weight in the integral root order. -/
-theorem quotient_genericMatrix_eq_zero_of_sub_eq_nonneg_cartanCombination
+theorem quotient_genericMatrix_eq_zero_of_posRootCone
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) (hI : I ≤ definingIdeal k)
     [IsReduced (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal)]
     (hconn : geometricallyConnectedCommHopfAlgProperty k
       (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I))
     (hsolv : geometricallySolvablePointsCommHopfAlgProperty k
       (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I))
-    (a b : Fin 24) (c : Fin 4 → ℤ) (hc : ∀ i, 0 ≤ c i) (hcne : c ≠ 0)
-    (hab : d4TripledWeight b - d4TripledWeight a = c ᵥ* CartanMatrix.D 4) :
+    {a b : Fin 24} (hcone : d4TripledWeight b - d4TripledWeight a ∈ C₊)
+    (hne : d4TripledWeight b - d4TripledWeight a ≠ 0) :
     Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal
       ((generatedCoordinateMap k).hom (GeneralLinear.genericMatrix k 24 a b)) = 0 := by
   classical
@@ -158,21 +178,17 @@ theorem quotient_genericMatrix_eq_zero_of_sub_eq_nonneg_cartanCombination
       ((Pi.basisFun k (Fin 24)) '' {a | Pi.single a (1 : k) ∈ bas.flag r}) := by
     simpa only [F, Comodule.flagSubcomodule_toSubmodule, Pi.basisFun_apply,
       ← Subcomodule.mem_toSubmodule] using hcoord r
-  have hne : a ≠ b := by
+  have hab : a ≠ b := by
     intro heq
-    apply hcne
-    apply Matrix.eq_zero_of_vecMul_eq_zero (M := CartanMatrix.D 4)
-      (by rw [CartanMatrix.D_four]; decide)
-    rw [← hab, heq, sub_self]
-  -- Dominance induction extends raising stability to the whole integral root order.
+    exact hne (by rw [heq, sub_self])
+  have hpath := (d4Tripled_raisingPath_iff_mem_posRootCone a b).mpr hcone
+  -- Raising paths extend flag stability to the whole integral root order.
   have hz : Comodule.coefficientMatrix (C := H) (Pi.basisFun k (Fin 24)) a b = 0 := by
     apply Comodule.coefficient_eq_zero_of_coordinate_flag (Pi.basisFun k (Fin 24)) bas htri
     · simpa only [Pi.basisFun_apply] using hbas
-    · exact hne
+    · exact hab
     · intro N
-      simpa only [Pi.basisFun_apply] using
-        d4TripledWeight_dominance_induction
-          (fun i a ha ↦ single_reflection_mem I hI N i a ha) a b c hc hab
+      simpa only [Pi.basisFun_apply] using single_mem_of_raising_path I hI N hpath
   have hcoeff : Comodule.coefficientMatrix (C := H) (Pi.basisFun k (Fin 24)) =
       (GeneralLinear.genericMatrix k 24).map q := by
     let _ := GeneralLinear.standardComodule k 24
@@ -185,7 +201,7 @@ theorem quotient_genericMatrix_eq_zero_of_sub_eq_nonneg_cartanCombination
 /-- A reduced connected solvable overgroup of the positive tripled subgroup has no adjoint
 weight that is a nonzero negative integral combination of simple roots. The characters remain
 integral in every characteristic. -/
-theorem quotient_adjointWeightSpace_neg_cartanCombination_eq_bot
+theorem quotient_adjointWeightSpace_neg_eq_bot_of_posRootCone
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) (hI : I ≤ definingIdeal k)
     [IsReduced (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal)]
     (hconn : geometricallyConnectedCommHopfAlgProperty k
@@ -196,9 +212,8 @@ theorem quotient_adjointWeightSpace_neg_cartanCombination_eq_bot
       MonoidAlgebra k (Multiplicative (Fin 4 →₀ ℤ)))
     (hπ : π.comp (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal) =
       (generatedCoordinateLift k (.inr ())).hom)
-    (c : Fin 4 → ℤ) (hc : ∀ i, 0 ≤ c i) (hcne : c ≠ 0) :
-    Derivation.adjointWeightSpace π
-      (SplitTorus.weightCharacter (-(c ᵥ* CartanMatrix.D 4))) = ⊥ := by
+    {δ : Fin 4 → ℤ} (hδ : δ ∈ C₊) (hne : δ ≠ 0) :
+    Derivation.adjointWeightSpace π (SplitTorus.weightCharacter (-δ)) = ⊥ := by
   -- Present the overgroup as a quotient of GL₂₄ to use the tangent-matrix weight criterion.
   let J := I.comapOfSurjective (generatedCoordinateMap k).hom
     (generatedCoordinateMap_surjective k)
@@ -212,20 +227,19 @@ theorem quotient_adjointWeightSpace_neg_cartanCombination_eq_bot
       generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inr,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   have hzero : Derivation.adjointWeightSpace (π.comp e.hom.hom)
-      (SplitTorus.weightCharacter (-(c ᵥ* CartanMatrix.D 4))) = ⊥ := by
+      (SplitTorus.weightCharacter (-δ)) = ⊥ := by
     apply HopfIdeal.adjointWeightSpace_eq_bot_of_weightTorusCoordinateBialgHom
       J d4TripledWeight (π.comp e.hom.hom) htorus
     intro a b hab
     -- Equality of integral torus characters recovers the actual weight difference.
-    have hdiff : d4TripledWeight a - d4TripledWeight b =
-        -(c ᵥ* CartanMatrix.D 4) := by
+    have hdiff : d4TripledWeight a - d4TripledWeight b = -δ := by
       funext j
       simpa only [SplitTorus.toAdd_weightCharacter] using
         congrArg (fun c : Multiplicative (Fin 4 →₀ ℤ) ↦ Multiplicative.toAdd c j) hab
-    have hweight : d4TripledWeight b - d4TripledWeight a = c ᵥ* CartanMatrix.D 4 := by
+    have hweight : d4TripledWeight b - d4TripledWeight a = δ := by
       rw [← neg_sub, hdiff, neg_neg]
-    have hz := quotient_genericMatrix_eq_zero_of_sub_eq_nonneg_cartanCombination
-      I hI hconn hsolv a b c hc hcne hweight
+    have hz := quotient_genericMatrix_eq_zero_of_posRootCone
+      I hI hconn hsolv (hweight ▸ hδ) (hweight ▸ hne)
     apply (ConcreteCategory.bijective_of_isIso e.hom).1
     have he := BialgHom.congr_fun
       (_root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom
@@ -239,21 +253,20 @@ theorem quotient_adjointWeightSpace_neg_cartanCombination_eq_bot
 
 /-- Every Borel candidate containing the positive tripled subgroup has zero adjoint weight
 space at every nonzero negative integral combination of simple roots. -/
-theorem borelCandidate_adjointWeightSpace_neg_cartanCombination_eq_bot
+theorem borelCandidate_adjointWeightSpace_neg_eq_bot_of_posRootCone
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) (hI : I ≤ definingIdeal k)
     (hB : HopfIdeal.IsBorelCandidate k (generatedFiniteTypeCoordinateHopfAlgebra k) I)
     (π : (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal) →ₐc[k]
       MonoidAlgebra k (Multiplicative (Fin 4 →₀ ℤ)))
     (hπ : π.comp (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal) =
       (generatedCoordinateLift k (.inr ())).hom)
-    (c : Fin 4 → ℤ) (hc : ∀ i, 0 ≤ c i) (hcne : c ≠ 0) :
-    Derivation.adjointWeightSpace π
-      (SplitTorus.weightCharacter (-(c ᵥ* CartanMatrix.D 4))) = ⊥ := by
+    {δ : Fin 4 → ℤ} (hδ : δ ∈ C₊) (hne : δ ≠ 0) :
+    Derivation.adjointWeightSpace π (SplitTorus.weightCharacter (-δ)) = ⊥ := by
   let : Algebra.Smooth k (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal) :=
     (smoothCommHopfAlgProperty_iff _).mp hB.smooth
   let : IsReduced (generatedCoordinateHopfAlgebra k ⧸ I.toIdeal) := isReduced_of_smooth k _
-  exact quotient_adjointWeightSpace_neg_cartanCombination_eq_bot I hI
-    hB.geometricallyConnected hB.geometricallySolvable π hπ c hc hcne
+  exact quotient_adjointWeightSpace_neg_eq_bot_of_posRootCone I hI
+    hB.geometricallyConnected hB.geometricallySolvable π hπ hδ hne
 
 end
 
