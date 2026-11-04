@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.Basic
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
@@ -55,13 +55,13 @@ variable {B : Type v} [CommRing B] [Algebra R B]
 the torus generator of the generated full-spin group. -/
 def generatedCorootCocharacter (i : Fin n) :
     generatedCoordinateHopfAlgebra n hn R →ₐc[R] LaurentPolynomial R :=
-  (generatedCoordinateLift n hn R (.inr ())).hom.cocharacter
+  (generatedWeightTorusCoordinateMap n hn R).hom.cocharacter
     (Finsupp.applyAddHom i).toMultiplicative
 
 /-- The cocharacter is induced by evaluation at its fundamental-weight coordinate. -/
 theorem generatedCorootCocharacter_def (i : Fin n) :
     generatedCorootCocharacter n hn R i =
-      (generatedCoordinateLift n hn R (.inr ())).hom.cocharacter
+      (generatedWeightTorusCoordinateMap n hn R).hom.cocharacter
         (Finsupp.applyAddHom i).toMultiplicative :=
   (rfl)
 
@@ -69,7 +69,7 @@ theorem generatedCorootCocharacter_def (i : Fin n) :
 not those of an adjoint or half-spin form. -/
 theorem generatedCorootCocharacter_eq_cocharacter_coroot_simpleIndex (i : Fin n) :
     generatedCorootCocharacter n hn R i =
-      (generatedCoordinateLift n hn R (.inr ())).hom.cocharacter
+      (generatedWeightTorusCoordinateMap n hn R).hom.cocharacter
         (SplitTorus.cocharEquiv.symm
           (((DynkinType.D n).simplyConnectedRootDatum (DynkinType.valid_D.mpr hn)).coroot
             ((DynkinType.D n).simpleIndex (DynkinType.valid_D.mpr hn) i))) := by
@@ -89,11 +89,11 @@ theorem tangentMatrix_derivationComp_generatedCorootCocharacter (i : Fin n)
         (derivationComp (generatedCoordinateMap n hn R).hom
           (derivationComp (generatedCorootCocharacter n hn R i) d)) =
       Matrix.diagonal (fun a ↦ basisWeight n a i • MultiplicativeGroup.tangentLinearEquiv d) := by
-  have hπ : (generatedCoordinateLift n hn R (.inr ())).hom.comp
+  have hπ : (generatedWeightTorusCoordinateMap n hn R).hom.comp
       (generatedCoordinateMap n hn R).hom =
       GeneralLinear.weightTorusCoordinateBialgHom (S := R) (basisWeight n) := by
     rw [← _root_.CommHopfAlgCat.hom_comp,
-      generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inr,
+      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
   rw [generatedCorootCocharacter_def,
     GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
@@ -124,51 +124,62 @@ theorem tangentMatrix_generatedCorootVector (i : Fin n) :
     LinearEquiv.apply_symm_apply]
   simp only [zsmul_eq_mul, mul_one]
 
+/-- The coordinate cocharacter differential is the normalized simple-coroot vector. -/
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : Fin n) :
+    derivationCompLieHom
+        ((generatedWeightTorusCoordinateMap n hn R).hom.cocharacter
+          (Finsupp.applyAddHom i).toMultiplicative)
+        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) =
+      generatedCorootVector n hn R (B := B) i := by
+  rw [derivationCompLieHom_apply, generatedCorootVector_def, generatedCorootCocharacter_def]
+
 /-- The differential of the torus generator sends its coordinate tangent basis to the
 numbered simple-coroot vectors. -/
-theorem derivationCompLieHom_generatedCoordinateLift_torus_tangentBasis (i : Fin n) :
-    derivationCompLieHom (B := B) (generatedCoordinateLift n hn R (.inr ())).hom
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis (i : Fin n) :
+    derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom
         (SplitTorus.tangentBasis (R := R) (B := B) i) =
       generatedCorootVector n hn R (B := B) i := by
-  rw [SplitTorus.derivationCompLieHom_tangentBasis, generatedCorootVector_def,
-    generatedCorootCocharacter_def, derivationCompLieHom_apply]
+  rw [SplitTorus.derivationCompLieHom_tangentBasis,
+    derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter]
 
 /-- The toral tangent image is exactly the span of the numbered simple-coroot vectors. -/
-theorem range_derivationCompLieHom_generatedCoordinateLift_torus_eq_span :
+theorem range_derivationCompLieHom_generatedWeightTorusCoordinateMap_eq_span :
     LinearMap.range
-        (derivationCompLieHom (B := B) (generatedCoordinateLift n hn R (.inr ())).hom).toLinearMap =
+        (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom).toLinearMap =
       Submodule.span B (Set.range (generatedCorootVector n hn R (B := B))) := by
-  rw [SplitTorus.range_derivationCompLieHom]
-  congr 1
-  apply congrArg Set.range
-  funext i
-  rw [derivationCompLieHom_apply, generatedCorootVector_def, generatedCorootCocharacter_def]
+  simpa only [derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter n hn R
+    (B := B)] using
+    SplitTorus.range_derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom
+
+/-- The weight torus is a closed subgroup of the generated group: its coordinate map is
+surjective because the full-spin weights span the character lattice. -/
+theorem generatedWeightTorusCoordinateMap_surjective :
+    Function.Surjective (generatedWeightTorusCoordinateMap n hn R).hom := by
+  have h := (weightTorusToBaseChangeCoordinateMap_surjective n hn R).comp
+    (coordinateMap_surjective n hn R)
+  rw [← BialgHom.coe_comp, ← _root_.CommHopfAlgCat.hom_comp,
+    coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
+    ← generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap] at h
+  exact Function.Surjective.of_comp
+    (by simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
+
+/-- The weight-torus differential is injective over every commutative coefficient algebra. -/
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
+    (B : Type v) [CommRing B] [Algebra R B] :
+    Function.Injective
+      (derivationCompLieHom (B := B) (generatedWeightTorusCoordinateMap n hn R).hom) :=
+  derivationCompLieHom_injective_of_surjective _
+    (generatedWeightTorusCoordinateMap_surjective n hn R)
 
 /-- Simple-coroot differentials are independent over every commutative coefficient algebra,
 including in characteristic two, because the full-spin weights span the character lattice. -/
 theorem linearIndependent_generatedCorootVector :
     LinearIndependent B (generatedCorootVector n hn R (B := B)) := by
-  have hsurj : Function.Surjective (generatedCoordinateLift n hn R (.inr ())).hom := by
-    have h := (weightTorusToBaseChangeCoordinateMap_surjective n hn R).comp
-      (coordinateMap_surjective n hn R)
-    rw [← BialgHom.coe_comp, ← _root_.CommHopfAlgCat.hom_comp,
-      coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
-      ← generatorCoordinateMap_inr n hn R,
-      ← generatedCoordinateMap_comp_generatedCoordinateLift] at h
-    exact Function.Surjective.of_comp
-      (by simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
-  have h := SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
-    (generatedCoordinateLift n hn R (.inr ())).hom
-    (derivationCompLieHom_injective_of_surjective _ hsurj)
-  have heq : (fun i : Fin n ↦
-      derivationCompLieHom
-        ((generatedCoordinateLift n hn R (.inr ())).hom.cocharacter
-          (Finsupp.applyAddHom i).toMultiplicative)
-        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) =
-      generatedCorootVector n hn R (B := B) := by
-    funext i
-    rw [derivationCompLieHom_apply, generatedCorootVector_def, generatedCorootCocharacter_def]
-  rwa [heq] at h
+  simpa only [derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter n hn R
+    (B := B)] using
+    SplitTorus.linearIndependent_derivationComp_cocharacter (B := B)
+      (generatedWeightTorusCoordinateMap n hn R).hom
+      (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective n hn R B)
 
 /-- The simple-coroot differentials form a basis of their span, the toral tangent image. -/
 def generatedCorootBasis :
