@@ -12,8 +12,8 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 # Valued extensions with unchanged value group
 
 If the map on value groups of a valued extension is surjective, it is an order isomorphism.
-Thus discreteness and rank at most one pass to the extension. Uniformizers of a discrete
-valuation ring also remain uniformizers in the extended valuation ring. These statements
+Thus discreteness and rank at most one pass to the extension. Irreducible elements of the base
+valuation ring remain irreducible in the extended valuation ring. These statements
 apply to unramified algebraic extensions and to completions without requiring finite degree.
 -/
 
@@ -64,10 +64,10 @@ end ValuativeRel
 namespace Irreducible
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
-  [Algebra K L] [ValuativeExtension K L] [IsDiscreteValuationRing (valuation K).integer]
+  [Algebra K L] [ValuativeExtension K L]
 
-/-- A uniformizer remains a uniformizer in a valued extension with unchanged value group.
-The extended valuation ring need not be assumed discrete in advance. -/
+/-- An irreducible element remains irreducible in a valued extension with unchanged value group.
+Neither valuation ring needs to be assumed discrete. -/
 theorem algebraMap_integer_of_surjective_mapValueGroupWithZero {π : (valuation K).integer}
     (hπ : Irreducible π)
     (h : Function.Surjective (ValuativeExtension.mapValueGroupWithZero K L)) :
@@ -89,12 +89,15 @@ theorem algebraMap_integer_of_surjective_mapValueGroupWithZero {π : (valuation 
       obtain ⟨r, rfl⟩ := valuation_surjective γ
       rw [ValuativeExtension.mapValueGroupWithZero_valuation] at hγ
       have hr : valuation K r < 1 := he.lt_one_iff_lt_one.mp (by simpa [hγ] using hxv)
-      have hrm : (⟨r, hr.le⟩ : (valuation K).integer) ∈
-          IsLocalRing.maximalIdeal (valuation K).integer :=
-        (valuation K).mem_maximalIdeal_iff.mpr hr
-      rw [hπ.maximalIdeal_eq, Ideal.mem_span_singleton] at hrm
-      have hle : valuation K r ≤ valuation K (π : K) :=
-        (Valuation.integer.integers (valuation K)).dvd_iff_le.mp hrm
+      have hle : valuation K r ≤ valuation K (π : K) := by
+        by_cases hle : valuation K r ≤ valuation K (π : K)
+        · exact hle
+        have hd : (⟨r, hr.le⟩ : (valuation K).integer) ∣ π :=
+          (Valuation.integer.integers (valuation K)).dvd_iff_le.mpr (le_of_not_ge hle)
+        have hn : ¬IsUnit (⟨r, hr.le⟩ : (valuation K).integer) :=
+          Valuation.Integer.not_isUnit_iff_valuation_lt_one.mpr hr
+        exact (Valuation.integer.integers (valuation K)).dvd_iff_le.mp
+          (((hπ.dvd_iff.mp hd).resolve_left hn).dvd)
       have hxπ : valuation L (x : L) ≤ valuation L (π' : L) := by
         rw [TauCeti.coe_algebraMap_integerRing, ← hγ]
         simpa only [Valuation.comap_apply] using (he r (π : K)).mpr hle
