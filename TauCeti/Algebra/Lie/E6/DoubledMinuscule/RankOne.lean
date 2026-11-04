@@ -136,14 +136,9 @@ theorem rankOneMatrix_diag2nUnit (u : Rˣ) :
   apply Units.ext
   rw [coe_rankOneMatrix, coe_weightTorusPoints,
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe,
-    Matrix.SpecialLinearGroup.coe_inv, Matrix.SpecialLinearGroup.diag2nUnit_coe]
-  have hinv : (Matrix.adjugate (Matrix.diagonal (fun r : Fin 2 ↦
-      if r = 0 then (u : R) else if r = 1 then (↑u⁻¹ : R) else 1)))ᵀ =
-      Matrix.diagonal (fun r : Fin 2 ↦ if r = 0 then (↑u⁻¹ : R) else (u : R)) := by
-    rw [Matrix.adjugate_fin_two]
-    ext a b
-    fin_cases a <;> fin_cases b <;> simp
-  rw [hinv, E6Minuscule.weightTable.sl2BlockMatrix_diagonal,
+    Matrix.SpecialLinearGroup.diag2nUnit_inv]
+  simp only [Matrix.SpecialLinearGroup.diag2nUnit_coe, Matrix.diagonal_transpose, inv_inv]
+  rw [E6Minuscule.weightTable.sl2BlockMatrix_diagonal,
     E6Minuscule.weightTable.sl2BlockMatrix_diagonal]
   have hweights (a : Fin 27) :
       (if e6MinusculeWeight a i = 1 then (u : R)

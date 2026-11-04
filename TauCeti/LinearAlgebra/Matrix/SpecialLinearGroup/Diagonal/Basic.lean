@@ -67,6 +67,19 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_coe {R : Type u} [CommRing R
       if r = i then (a : R) else if r = j then ((a⁻¹ : Rˣ) : R) else 1) :=
   by rw [Matrix.SpecialLinearGroup.diag2nUnit]
 
+/-- Inverting a two-coordinate unit diagonal matrix inverts its defining unit. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_inv {R : Type u} [CommRing R]
+    {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) (a : Rˣ) :
+    (Matrix.SpecialLinearGroup.diag2nUnit hij a)⁻¹ =
+      Matrix.SpecialLinearGroup.diag2nUnit hij a⁻¹ := by
+  apply inv_eq_of_mul_eq_one_right
+  apply Subtype.ext
+  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.diag2nUnit_coe,
+    Matrix.diagonal_mul_diagonal, Matrix.SpecialLinearGroup.coe_one, Matrix.diagonal_eq_one]
+  funext r
+  split_ifs <;> simp_all
+
 /-- Mapping the coefficients of a unit diagonal matrix maps its defining unit. -/
 @[simp]
 theorem _root_.Matrix.SpecialLinearGroup.map_diag2nUnit
