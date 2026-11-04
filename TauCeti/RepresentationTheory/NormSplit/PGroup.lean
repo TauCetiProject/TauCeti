@@ -63,7 +63,7 @@ theorem id_mem_range_norm_linHom_of_ker_norm_le (hG : IsPGroup p G) (ρ : Repres
   have hfσ (h : G) (w : G → W) : f (σ h w) = ρ h (f w) := by
     rw [hf, hf, map_sum]
     refine Fintype.sum_equiv (Equiv.mulLeft h⁻¹) _ _ fun g ↦ ?_
-    simp [hσ, ← Module.End.mul_apply, ← map_mul]
+    simp [hσ, ← mul_apply_eq_comp, ← map_mul]
   -- `f` is injective: a fixed vector of its kernel is constant with value of norm zero in `W`.
   have hinj : Function.Injective f := by
     rw [← LinearMap.ker_eq_bot]

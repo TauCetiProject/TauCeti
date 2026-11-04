@@ -161,6 +161,20 @@ theorem successiveVisit_lt_succ (h : successiveVisit X a k ω ≠ ⊤) :
   rw [visitCount_succ_of_eq (x := fun i => X i ω) hx, hc] at hcount
   exact (lt_irrefl _) hcount
 
+/-- The indices of the existing visits are as many as the times at which the process is at `a`:
+`k ↦ successiveVisit X a k ω` enumerates the visit times. -/
+theorem encard_setOf_successiveVisit_ne_top :
+    {k | successiveVisit X a k ω ≠ ⊤}.encard = {n | X n ω = a}.encard := by
+  classical
+  have hinj : Set.InjOn (visitCount (fun i => X i ω) a) {n | X n ω = a} := by
+    intro n hn m hm h
+    exact Nat.count_injective (p := fun i => X i ω = a) hn hm
+      (by simpa only [visitCount_eq_count] using h)
+  rw [← hinj.encard_image]
+  congr 1
+  ext k
+  simp only [Set.mem_ofPred_eq, Set.mem_image, ne_eq, successiveVisit_eq_top_iff, not_not]
+
 private theorem successiveVisit_eq_hittingAfter_of_counts {s : ℕ}
     (h : ∀ m, k < visitCount (fun i => X i ω) a (m + 1) ↔
       ∃ j ∈ Set.Icc s m, X j ω = a) :
@@ -263,5 +277,11 @@ theorem measurable_successiveVisit (hX : ∀ n, Measurable (X n))
     -- Measurability depends on the filtration value through its domain instance.
     exact (Filtration.const_apply n).symm ▸ hX n
   exact (h.isStoppingTime_successiveVisit ha k).measurable'
+
+/-- With measurable coordinates, the event that the visit indexed by `k` exists is measurable. -/
+theorem measurableSet_setOf_successiveVisit_ne_top (hX : ∀ n, Measurable (X n))
+    (ha : MeasurableSet ({a} : Set α)) (k : ℕ) :
+    MeasurableSet {ω | successiveVisit X a k ω ≠ ⊤} :=
+  (measurableSet_singleton ⊤).compl.preimage (measurable_successiveVisit hX ha k)
 
 end TauCeti.Probability

@@ -271,7 +271,7 @@ theorem BlockTriangular.charpolyRev {α : Type*} [LinearOrder α] {b : ι → α
   rw [Matrix.charpolyRev, h'.det]
   refine Finset.prod_congr rfl fun a _ ↦ congrArg det ?_
   ext i j
-  simp [toSquareBlock_def, one_apply, Subtype.ext_iff]
+  simp [toSquareBlock_def, Matrix.one_apply, Subtype.ext_iff]
 
 /-- `det (1 - X A)` of an upper-triangular matrix is the product of the factors `1 - A i i X`. -/
 theorem charpolyRev_of_isUpperTriangular [LinearOrder ι] {A : Matrix ι ι R}

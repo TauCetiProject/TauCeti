@@ -93,7 +93,7 @@ theorem empiricalFiniteMeasure_apply {x : κ → α} {s : Set α} (hs : Measurab
     (empiricalFiniteMeasure x : Measure α) s = ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ *
       ∑ i, s.indicator (1 : α → ℝ≥0∞) (x i) := by
   rw [empiricalFiniteMeasure_toMeasure]
-  simp only [Measure.coe_finsetSum, Measure.coe_smul, Finset.sum_apply, Pi.smul_apply,
+  simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
     smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
 
 /-- A nonempty family has an empirical probability measure. -/
@@ -374,7 +374,7 @@ theorem empiricalMeasure_apply {x : ℕ → α} {n : ℕ} {s : Set α} (hs : Mea
     (empiricalMeasure x n : Measure α) s = ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ *
         ∑ i ∈ Finset.range (n + 1), s.indicator (1 : α → ℝ≥0∞) (x i) := by
   rw [empiricalMeasure_toMeasure]
-  simp only [Measure.coe_finsetSum, Measure.coe_smul, Finset.sum_apply, Pi.smul_apply,
+  simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
     smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
 
 /-- The real-valued form of `empiricalMeasure_apply`. -/
@@ -431,7 +431,7 @@ theorem measurable_empiricalMeasure {X : ℕ → Ω → α}
     simp_rw [empiricalMeasure_toMeasure]
     exact Finset.measurable_fun_sum _ fun i hi =>
       Measure.measurable_of_measurable_coe _ fun s hs => by
-        simp only [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
+        simp only [_root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
         exact measurable_const.mul (measurable_one.indicator (hX i hi hs))
   exact hmeasure.subtype_mk
 

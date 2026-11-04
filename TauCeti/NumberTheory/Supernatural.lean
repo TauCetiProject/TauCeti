@@ -114,7 +114,7 @@ theorem pow_apply (m : Supernatural) (n : ℕ) (p : Nat.Primes) : (m ^ n) p = n 
   induction n with
   | zero => simp
   | succ n ih =>
-      rw [pow_succ, mul_apply, ih, add_nsmul, one_nsmul]
+      rw [pow_succ, TauCeti.Supernatural.mul_apply, ih, add_nsmul, one_nsmul]
 
 @[simp]
 theorem inf_apply (m n : Supernatural) (p : Nat.Primes) : (m ⊓ n) p = m p ⊓ n p :=
@@ -207,7 +207,7 @@ theorem primePower_add (p : Nat.Primes) (m n : ℕ∞) :
     primePower p (m + n) = primePower p m * primePower p n := by
   apply ext
   intro q
-  rw [mul_apply]
+  rw [TauCeti.Supernatural.mul_apply]
   exact congrFun (Pi.single_add (f := fun _ : Nat.Primes ↦ ℕ∞) p m n) q
 
 /-- A prime power `p ^ m` is at most a supernatural number exactly when `m` is at most its
@@ -306,7 +306,7 @@ theorem ofNat_apply (n : ℕ+) (p : Nat.Primes) : ofNat n p = (padicValNat p n :
 @[simp]
 theorem ofNat_one : ofNat 1 = 1 := by
   ext p
-  simp [ofNat]
+  simp [ofNat, Nat.padicValNat_def]
 
 /-- The prime factorization embedding turns multiplication of positive natural numbers into
 multiplication of supernatural numbers, that is, into addition of exponents. -/
@@ -314,17 +314,20 @@ multiplication of supernatural numbers, that is, into addition of exponents. -/
 theorem ofNat_mul (m n : ℕ+) : ofNat (m * n) = ofNat m * ofNat n := by
   ext p
   have : Fact (p : ℕ).Prime := ⟨p.prop⟩
-  rw [mul_apply, ofNat_apply, ofNat_apply, ofNat_apply, PNat.mul_coe,
-    padicValNat.mul m.ne_zero n.ne_zero, Nat.cast_add]
+  rw [TauCeti.Supernatural.mul_apply, ofNat_apply, ofNat_apply, ofNat_apply,
+    Nat.padicValNat_def, PNat.mul_coe,
+    Nat.multiplicity_mul m.ne_zero n.ne_zero, Nat.cast_add]
+  simp only [Nat.padicValNat_def]
 
 /-- Prime factorization embeds positive natural numbers injectively into supernatural numbers. -/
 theorem ofNat_injective : Function.Injective ofNat := by
   intro m n h
   apply PNat.eq
-  rw [Nat.eq_iff_prime_padicValNat_eq m n m.ne_zero n.ne_zero]
+  rw [Nat.eq_iff_prime_multiplicity_eq m n m.ne_zero n.ne_zero]
   intro p hp
   have hv := congrFun h ⟨p, hp⟩
-  rw [ofNat_apply m ⟨p, hp⟩, ofNat_apply n ⟨p, hp⟩] at hv
+  rw [ofNat_apply m ⟨p, hp⟩, ofNat_apply n ⟨p, hp⟩, Nat.padicValNat_def] at hv
+  simp only [Nat.padicValNat_def] at hv
   exact_mod_cast hv
 
 /-- The embedding of positive natural numbers as a multiplicative homomorphism. -/
@@ -351,15 +354,16 @@ theorem ofNat_le_ofNat_iff {m n : ℕ+} : ofNat m ≤ ofNat n ↔ m ∣ n := by
     intro p
     by_cases hp : p.Prime
     · have hv := h ⟨p, hp⟩
-      rw [ofNat_apply m ⟨p, hp⟩, ofNat_apply n ⟨p, hp⟩, ENat.natCast_le_natCast] at hv
-      simpa [Nat.factorization_def _ hp] using hv
+      rw [ofNat_apply m ⟨p, hp⟩, ofNat_apply n ⟨p, hp⟩, ENat.natCast_le_natCast,
+        Nat.padicValNat_def] at hv
+      simpa [Nat.factorization_def _ hp, Nat.padicValNat_def] using hv
     · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
   · intro h p
     rw [PNat.dvd_iff, ← Nat.factorization_le_iff_dvd m.ne_zero n.ne_zero] at h
     have hp := h (p : ℕ)
     rw [Nat.factorization_def _ p.prop, Nat.factorization_def _ p.prop] at hp
-    rw [ofNat_apply, ofNat_apply, ENat.natCast_le_natCast]
-    exact hp
+    rw [ofNat_apply, ofNat_apply, ENat.natCast_le_natCast, Nat.padicValNat_def]
+    simpa only [Nat.padicValNat_def] using hp
 
 /-- Divisibility of positive natural numbers agrees with divisibility of their supernatural
 images. -/
@@ -376,7 +380,9 @@ theorem ofNat_gcd (m n : ℕ+) : ofNat (PNat.gcd m n) = ofNat m ⊓ ofNat n := b
   simp only [ofNat_apply, inf_apply]
   calc
     (padicValNat (p : ℕ) (PNat.gcd m n) : ℕ∞) =
-        (min (padicValNat (p : ℕ) m) (padicValNat (p : ℕ) n) : ℕ) := congr_arg _ h
+        (min (padicValNat (p : ℕ) m) (padicValNat (p : ℕ) n) : ℕ) :=
+          by simpa only [Nat.padicValNat_def, PNat.gcd_coe,
+            PNat.lcm_coe] using congr_arg (Nat.cast : ℕ → ℕ∞) h
     _ = min (padicValNat (p : ℕ) m : ℕ∞) (padicValNat (p : ℕ) n) :=
       Monotone.map_min fun _ _ hle ↦ ENat.natCast_le_natCast.mpr hle
 
@@ -390,7 +396,9 @@ theorem ofNat_lcm (m n : ℕ+) : ofNat (PNat.lcm m n) = ofNat m ⊔ ofNat n := b
   simp only [ofNat_apply, sup_apply]
   calc
     (padicValNat (p : ℕ) (PNat.lcm m n) : ℕ∞) =
-        (max (padicValNat (p : ℕ) m) (padicValNat (p : ℕ) n) : ℕ) := congr_arg _ h
+        (max (padicValNat (p : ℕ) m) (padicValNat (p : ℕ) n) : ℕ) :=
+          by simpa only [Nat.padicValNat_def, PNat.gcd_coe,
+            PNat.lcm_coe] using congr_arg (Nat.cast : ℕ → ℕ∞) h
     _ = max (padicValNat (p : ℕ) m : ℕ∞) (padicValNat (p : ℕ) n) :=
       Monotone.map_max fun _ _ hle ↦ ENat.natCast_le_natCast.mpr hle
 
@@ -425,10 +433,10 @@ private theorem finite_support_ofNat (n : ℕ+) : (support (ofNat n)).Finite := 
   rw [← Nat.support_factorization, Finsupp.mem_support_iff, Nat.factorization_def _ p.prop]
   intro h
   apply hp
-  simp [h]
+  simp [Nat.padicValNat_def, h]
 
 private theorem finite_values_ofNat (n : ℕ+) (p : Nat.Primes) : ofNat n p ≠ ⊤ := by
-  simp [ofNat]
+  simp [ofNat, Nat.padicValNat_def]
 
 /-- A supernatural number comes from a positive natural number exactly when it has finite
 support and every exponent is finite. -/
@@ -464,7 +472,7 @@ theorem isNatural_iff {n : Supernatural} :
       congrArg Subtype.val (Nat.factorizationEquiv.apply_symm_apply ⟨g, hgprime⟩)
     have hvaluation :
         padicValNat p ((Nat.factorizationEquiv.symm ⟨g, hgprime⟩ : ℕ+) : ℕ) = ENat.toNat (n p) := by
-      rw [← Nat.factorization_def _ p.prop, hfactorization]
+      rw [Nat.padicValNat_def, ← Nat.factorization_def _ p.prop, hfactorization]
       exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective f p
     rw [ofNat_apply, hvaluation]
     exact ENat.natCast_toNat (hfinite p)

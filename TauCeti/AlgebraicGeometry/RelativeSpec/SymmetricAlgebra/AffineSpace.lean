@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.AffineSpace
-public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Basic
+public import TauCeti.AlgebraicGeometry.AffineSpace.Ring
+public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Group
 
 /-!
 # The relative spectrum of the symmetric algebra of a free sheaf is affine space
@@ -24,6 +24,14 @@ descriptions: a point of `Spec_X (Sym 𝒪_X^I)` goes to the point of `𝔸(I; X
 coordinates (`comp_relativeSpecSymmetricAlgebraFreeIso_hom_left`), and conversely
 (`homOfVector_comp_relativeSpecSymmetricAlgebraFreeIso_inv_left`).
 
+The isomorphism also matches the additive group structures. The group of points of
+`Spec_X (Sym 𝒪_X^I)` over `T` is the group of module maps `𝒪_X^I ⟶ q_* 𝒪_T`
+(`relativeSpecSymmetricAlgebraHomAddEquiv`), and taking values on the basis sections is additive,
+so the coordinates of a sum of points are the sums of their coordinates
+(`relativeSpecSymmetricAlgebraFreeHomEquiv_add`). The group of points of `𝔸(I; X)` is `Γ(T, ⊤)ᴵ`
+(`AlgebraicGeometry.AffineSpace.homAsOverRingEquiv`), so the isomorphism is a homomorphism of
+additive group schemes over `X` (`isAddMonHom_relativeSpecSymmetricAlgebraFreeIso_hom`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraFreeHomEquiv`: morphisms
@@ -31,7 +39,9 @@ coordinates (`comp_relativeSpecSymmetricAlgebraFreeIso_hom_left`), and conversel
 * `TauCeti.AlgebraicGeometry.affineSpaceOver X I`: the affine space `𝔸(I; X)` as an affine scheme
   over `X`;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraFreeIso`: the isomorphism
-  `Spec_X (Sym 𝒪_X^I) ≅ 𝔸(I; X)` of affine schemes over `X`.
+  `Spec_X (Sym 𝒪_X^I) ≅ 𝔸(I; X)` of affine schemes over `X`;
+* `TauCeti.AlgebraicGeometry.isAddMonHom_relativeSpecSymmetricAlgebraFreeIso_hom`: it is an
+  isomorphism of additive group schemes over `X`.
 
 ## References
 
@@ -176,5 +186,83 @@ lemma relativeSpecSymmetricAlgebraFreeIso_hom_left_appTop_coord (i : I) :
     (relativeSpecSymmetricAlgebraFreeIso X I).hom.left.appTop (AffineSpace.coord X i) =
       relativeSpecSymmetricAlgebraFreeHomEquiv I _ (𝟙 _) i :=
   AffineSpace.homOfVector_appTop_coord _ _ i
+
+section Group
+
+open CartesianMonoidalCategory AddMonObj
+
+/-- The coordinates of a sum of points of `Spec_X (Sym 𝒪_X^I)` are the sums of their coordinates:
+the module map of a sum of points is the sum of their module maps
+(`relativeSpecSymmetricAlgebraHomEquiv_add`), and the values of module maps `𝒪_X^I ⟶ q_* 𝒪_T` on
+the basis sections are additive. -/
+lemma relativeSpecSymmetricAlgebraFreeHomEquiv_add (T : Over X)
+    (t₁ t₂ : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
+      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj (QuasicoherentSheaf.free X I))))) :
+    relativeSpecSymmetricAlgebraFreeHomEquiv I T (t₁ + t₂) =
+      relativeSpecSymmetricAlgebraFreeHomEquiv I T t₁ +
+        relativeSpecSymmetricAlgebraFreeHomEquiv I T t₂ := by
+  funext i
+  rw [relativeSpecSymmetricAlgebraFreeHomEquiv_apply, relativeSpecSymmetricAlgebraHomEquiv_add,
+    Pi.add_apply, relativeSpecSymmetricAlgebraFreeHomEquiv_apply,
+    relativeSpecSymmetricAlgebraFreeHomEquiv_apply, Scheme.Hom.freeHomPushforwardEquiv_apply,
+    Scheme.Hom.freeHomPushforwardEquiv_apply]
+  -- The sum of module maps given by `relativeSpecSymmetricAlgebraHomEquiv_add` is typed in
+  -- `linearFunctionalsPresheaf`, so `freeHomPushforwardEquiv_apply` applies to it only as a term.
+  -- Its value on a basis section is, by definition of the sum of morphisms of sheaves of modules
+  -- (`SheafOfModules.add_val`, `PresheafOfModules.add_app`), the sum of the values; Mathlib states
+  -- no lemma for `SheafOfModules.sectionsMap` of a sum.
+  exact (Scheme.Hom.freeHomPushforwardEquiv_apply _ I _ i).trans
+    ((congrArg _ rfl).trans (map_add _ _ _))
+
+/-- The point of `𝔸(I; X)` corresponding to a point `t` of `Spec_X (Sym 𝒪_X^I)` under the
+isomorphism `relativeSpecSymmetricAlgebraFreeIso` has the coordinates of `t`. -/
+lemma homAsOverEquiv_comp_relativeSpecSymmetricAlgebraFreeIso_hom (T : Over X)
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
+      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj (QuasicoherentSheaf.free X I))))) :
+    AffineSpace.homAsOverEquiv (S := X) T (t ≫ (MorphismProperty.Over.forget _ _ X).map
+        (relativeSpecSymmetricAlgebraFreeIso X I).hom) =
+      relativeSpecSymmetricAlgebraFreeHomEquiv I T t :=
+  funext fun i ↦ (AffineSpace.homAsOverEquiv_apply T _ i).trans <|
+    (congrArg (fun f ↦ f.appTop (AffineSpace.coord X i))
+      (comp_relativeSpecSymmetricAlgebraFreeIso_hom_left I T t)).trans
+        (AffineSpace.homOfVector_appTop_coord _ _ i)
+
+/-- **`Spec_X (Sym 𝒪_X^I) ≅ 𝔸(I; X)` is an isomorphism of additive group schemes.** The isomorphism
+`relativeSpecSymmetricAlgebraFreeIso` respects the zero sections and the additions, for the
+additive group structure of `Spec_X (Sym F)` (`addGrpObjRelativeSpecSymmetricAlgebra`) and the
+additive group of the ring scheme `𝔸(I; X)` (`AlgebraicGeometry.AffineSpace.commRingObjAsOver`). -/
+instance isAddMonHom_relativeSpecSymmetricAlgebraFreeIso_hom :
+    IsAddMonHom (N' := 𝔸(I; X).asOver X)
+      ((MorphismProperty.Over.forget _ _ X).map (relativeSpecSymmetricAlgebraFreeIso X I).hom) := by
+  -- Composing with the isomorphism is additive on points, since it preserves coordinates.
+  have hadd {T : Over X} (t₁ t₂ : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
+      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj (QuasicoherentSheaf.free X I))))) :
+      ((t₁ + t₂) ≫ (MorphismProperty.Over.forget _ _ X).map
+          (relativeSpecSymmetricAlgebraFreeIso X I).hom : T ⟶ 𝔸(I; X).asOver X) =
+        (t₁ ≫ (MorphismProperty.Over.forget _ _ X).map
+          (relativeSpecSymmetricAlgebraFreeIso X I).hom : T ⟶ 𝔸(I; X).asOver X) +
+          (t₂ ≫ (MorphismProperty.Over.forget _ _ X).map
+            (relativeSpecSymmetricAlgebraFreeIso X I).hom : T ⟶ 𝔸(I; X).asOver X) :=
+    (AffineSpace.homAsOverEquiv T).injective (by
+      rw [AffineSpace.homAsOverEquiv_add,
+        homAsOverEquiv_comp_relativeSpecSymmetricAlgebraFreeIso_hom,
+        homAsOverEquiv_comp_relativeSpecSymmetricAlgebraFreeIso_hom,
+        homAsOverEquiv_comp_relativeSpecSymmetricAlgebraFreeIso_hom,
+        relativeSpecSymmetricAlgebraFreeHomEquiv_add])
+  refine ⟨?_, ?_⟩
+  · -- The zero section is the zero point over `X`, and composing with the isomorphism is additive.
+    have h := (AddMonoidHom.mk' (fun t : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget _ _ X).obj
+        ((relativeSpec X).obj (op ((symmetricAlgebra X).obj (QuasicoherentSheaf.free X I)))) ↦
+      (t ≫ (MorphismProperty.Over.forget _ _ X).map (relativeSpecSymmetricAlgebraFreeIso X I).hom :
+        𝟙_ (Over X) ⟶ 𝔸(I; X).asOver X)) hadd).map_zero
+    simpa only [AddMonoidHom.mk'_apply, Hom.zero_def, toUnit_unique (toUnit _) (𝟙 _),
+      Category.id_comp] using h
+  · -- The addition is the sum of the two projections, and composing with the isomorphism is
+    -- additive.
+    have h := hadd (fst _ _) (snd _ _)
+    simp only [Hom.add_def, lift_fst_snd, Category.id_comp] at h
+    exact h.trans (congrArg (· ≫ _) (lift_fst_comp_snd_comp _ _))
+
+end Group
 
 end TauCeti.AlgebraicGeometry

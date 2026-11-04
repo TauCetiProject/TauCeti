@@ -165,6 +165,29 @@ theorem isSubbundleFrameOn (hX : IsDistributionFrameOn I n D X U) :
   linearIndependent := hX.linearIndependent
   span_eq := hX.span_eq
 
+/-- The operator of a `C^n` distribution frame, read in the tangent-bundle trivialization at
+`x`, is `C^n` where both the frame and the trivialization are defined. -/
+theorem contMDiffOn_trivOperator [Fintype ι] [IsManifold I (n + 1) M]
+    (hX : IsDistributionFrameOn I n D X U) (x : M) :
+    ContMDiffOn I 𝓘(𝕜, (ι → 𝕜) →L[𝕜] E) n
+      (IsSubbundleFrameOn.trivOperator 𝕜 E X x)
+      (U ∩ (trivializationAt E (TangentSpace I) x).baseSet) := by
+  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  let e := trivializationAt E (TangentSpace I) x
+  have heq : IsSubbundleFrameOn.trivOperator 𝕜 E X x = fun y ↦
+      ∑ i, ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+        (ContinuousLinearMap.proj i) (e ⟨y, X i y⟩).2 :=
+    funext fun y ↦ IsSubbundleFrameOn.trivOperator_eq_sum (𝕜 := 𝕜) (F := E) (X := X) x y
+  rw [heq]
+  apply contMDiffOn_finsetSum
+  intro i _
+  exact (ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+    (ContinuousLinearMap.proj i)).contMDiff.comp_contMDiffOn
+      (contMDiff_snd.comp_contMDiffOn
+        (e.contMDiffOn.comp ((hX.contMDiffOn i).mono inter_subset_left)
+          (fun y hy ↦ e.mem_source.mpr hy.2)))
+
 /-- The extension of a vector `u` of `D x` by a local frame `X` on a set `U` containing `x`: the
 vector field `∑ i, c i • X i`, where the constants `c i` are the coordinates of `u` in the basis
 `X · x` of `D x`. -/

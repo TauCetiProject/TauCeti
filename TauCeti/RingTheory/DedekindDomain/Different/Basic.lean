@@ -21,6 +21,10 @@ decides when an ideal `I` with `I * Q = p · B` divides the different ideal of a
 Dedekind domains.
 The multiplicity lemmas express divisibility by powers of a prime and Dedekind's universal
 `e - 1` bound as bounds on the different exponent.
+For finite separable fraction-field extensions, the different is nonzero. When it is principal,
+membership in the trace dual is tested by multiplication by a generator, and division by that
+generator identifies `S` with its trace dual. This equivalence feeds the length computation of
+the complementary-module quotient.
 -/
 
 public section
@@ -104,6 +108,84 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
       ((FractionalIdeal.mem_one_iff _).mp (h _ (FractionalIdeal.mem_coeIdeal_of_mem _ hy)))
   · obtain ⟨y, hy, rfl⟩ := (FractionalIdeal.mem_coeIdeal _).mp hw
     exact (FractionalIdeal.mem_one_iff _).mpr (Submodule.mem_one.mp (h y hy))
+
+include K L in
+/-- The different is nonzero when the chosen fraction-field extension is finite separable. -/
+theorem differentIdeal_ne_bot_of_isSeparable [IsDedekindDomain S] [IsTorsionFree R S] :
+    differentIdeal R S ≠ ⊥ := by
+  rw [ne_eq, ← FractionalIdeal.coeIdeal_inj (K := L),
+    coeIdeal_differentIdeal (K := K)]
+  simp
+
+include K in
+/-- A generator of the different has nonzero image in the separable fraction-field extension. -/
+theorem algebraMap_ne_zero_of_differentIdeal_eq_span
+    [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
+    (hδ : differentIdeal R S = Ideal.span {δ}) : algebraMap S L δ ≠ 0 := by
+  have hδ0 : δ ≠ 0 := by
+    intro h
+    exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa [h] using hδ)
+  simpa using (IsFractionRing.injective S L).ne hδ0
+
+/-- For a principal different, membership in the complementary module is tested by
+multiplication by its generator. -/
+theorem mem_traceDual_one_iff_mul_of_differentIdeal_eq_span
+    [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
+    (hδ : differentIdeal R S = Ideal.span {δ}) {x : L} :
+    x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
+      x * algebraMap S L δ ∈ (1 : Submodule S L) := by
+  rw [mem_traceDual_one_iff_forall_mem_differentIdeal, hδ]
+  refine ⟨fun h ↦ h δ (Ideal.subset_span (Set.mem_singleton δ)), fun h y hy ↦ ?_⟩
+  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton.mp hy
+  simpa [map_mul, mul_comm, mul_left_comm, Algebra.smul_def] using
+    (1 : Submodule S L).smul_mem b h
+
+/-- Division by a generator of the different identifies the integral closure with its
+complementary module. -/
+noncomputable def equivTraceDualOfDifferentIdealEqSpan
+    [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
+    (hδ : differentIdeal R S = Ideal.span {δ}) :
+    S ≃ₗ[S] Submodule.traceDual R K (1 : Submodule S L) := by
+  have hδL := algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) (L := L) hδ
+  let f : S →ₗ[S] Submodule.traceDual R K (1 : Submodule S L) :=
+    { toFun := fun b ↦ ⟨algebraMap S L b / algebraMap S L δ,
+        (mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ).mpr (by
+          rw [div_mul_cancel₀ _ hδL]
+          exact Submodule.mem_one.mpr ⟨b, rfl⟩)⟩
+      map_add' := fun b c ↦ Subtype.ext (by simp [add_div])
+      map_smul' := fun b c ↦ Subtype.ext (by simp [Algebra.smul_def, mul_div_assoc]) }
+  refine LinearEquiv.ofBijective f ⟨?_, ?_⟩
+  · intro b c h
+    exact IsFractionRing.injective S L ((div_left_inj' hδL).mp
+      (congrArg Subtype.val h))
+  · intro x
+    obtain ⟨b, hb⟩ := Submodule.mem_one.mp
+      ((mem_traceDual_one_iff_mul_of_differentIdeal_eq_span hδ).mp x.property)
+    exact ⟨b, Subtype.ext (by simp only [f, LinearMap.coe_mk, AddHom.coe_mk, hb,
+      mul_div_cancel_right₀ _ hδL])⟩
+
+/-- The complementary-module equivalence divides each integral element by the chosen
+generator of the different. -/
+@[simp]
+theorem equivTraceDualOfDifferentIdealEqSpan_apply
+    [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
+    (hδ : differentIdeal R S = Ideal.span {δ}) (b : S) :
+    (equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ b : L) =
+      algebraMap S L b / algebraMap S L δ := (rfl)
+
+/-- The inverse complementary-module equivalence multiplies by the chosen generator
+of the different. -/
+@[simp]
+theorem equivTraceDualOfDifferentIdealEqSpan_symm_apply
+    [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
+    (hδ : differentIdeal R S = Ideal.span {δ})
+    (x : Submodule.traceDual R K (1 : Submodule S L)) :
+    algebraMap S L ((equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ).symm x) =
+      (x : L) * algebraMap S L δ := by
+  have h := congrArg Subtype.val
+    ((equivTraceDualOfDifferentIdealEqSpan (K := K) (L := L) hδ).apply_symm_apply x)
+  rw [equivTraceDualOfDifferentIdealEqSpan_apply] at h
+  exact (div_eq_iff (algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) hδ)).mp h
 
 /-- **The different ideal is the inverse of the trace dual of `S`, elementwise**: an element of
 `S` lies in the different ideal of `S / R` exactly when it multiplies the trace dual of `S` into
