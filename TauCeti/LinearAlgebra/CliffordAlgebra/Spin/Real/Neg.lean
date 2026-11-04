@@ -90,7 +90,7 @@ theorem realCliffordEvenToNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
       -(ι (realCliffordForm q p) (realCliffordFormNegIsometry p q a) *
         ι (realCliffordForm q p) (realCliffordFormNegIsometry p q b)) := by
   rw [realCliffordEvenToNeg_apply, evenEquivEvenNeg_apply, evenToNeg_ι]
-  simp only [Subalgebra.coe_neg, even.ι, LinearMap.mk₂_apply, map_neg, map_mul,
+  simp only [Subalgebra.coe_neg, coe_even_ι_bilin, map_neg, map_mul,
     map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
 
 end TauCeti.CliffordAlgebra

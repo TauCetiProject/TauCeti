@@ -123,6 +123,7 @@ theorem realCliffordSpinNegSmoothHom_mul_ι_mul_inv (n : ℕ)
 
 /-- The Lie differential of the negative-metric realization is the even-algebra
 comparison applied to the quadratic Clifford coordinate. -/
+@[simp↓ high]
 theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinNegSmoothHom (n : ℕ)
     (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n))) :
     TauCeti.Lie.unitsLieAlgebraLieEquiv (lieMap (realCliffordSpinNegSmoothHom n) X) =
@@ -135,6 +136,7 @@ theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinNegSmoothHom (n : ℕ)
 
 /-- On a bivector the Lie differential has the geometric minus sign. The bivector uses
 the half-normalized commutator, so this equation also pins its normalization. -/
+@[simp↓ high + 1]
 theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinNegSmoothHom_bivector (n : ℕ)
     (a b : Fin (n + 0) → ℝ) :
     TauCeti.Lie.unitsLieAlgebraLieEquiv
@@ -152,8 +154,7 @@ theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinNegSmoothHom_bivector (n 
       (⅟ (2 : ℝ)) • ((even.ι (realCliffordForm n 0)).bilin a b -
         (even.ι (realCliffordForm n 0)).bilin b a) := by
     apply Subtype.ext
-    -- Mathlib's even-generator bilinear map is the pair product by definition.
-    simpa [even.ι] using
+    simpa only [Subalgebra.coe_smul, Subalgebra.coe_sub, coe_even_ι_bilin] using
       bivector_def (realCliffordForm n 0) a b
   rw [hb]
   simp only [map_smul, map_sub, realCliffordEvenToNeg_ι, bivector_def]
