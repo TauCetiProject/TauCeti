@@ -60,6 +60,9 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 * `TauCeti.CentralBaseChange.projective_of_forall_projective`: projectivity descends along a
   family of flat `A`-algebras that jointly detects the vanishing of finitely generated
   `A`-modules, when `A` is noetherian and `M` is finite over `A`.
+* `TauCeti.CentralBaseChange.projective_of_forall_projective_of_forall_subsingleton`: the same
+  along a family that jointly detects the vanishing of all `A`-modules, with no finiteness over
+  `A`.
 
 ## Implementation notes
 
@@ -345,6 +348,20 @@ theorem projective_of_faithfullyFlat [Module.FaithfullyFlat A S] [Module.FiniteP
     (surjective_lTensor_compRight (S := S) hπ) LinearMap.id
   exact Module.Projective.of_split σ π hσ
 
+/-- If every `S i ⊗[A] M` is projective and `π : Λⁿ → M` is onto, then the cokernel of composition
+with `π`, as a map `Hom_Λ(M, Λⁿ) → Hom_Λ(M, M)`, vanishes after every base change `S i ⊗[A] -`. -/
+private theorem subsingleton_lTensor_cokernel_compRight {ι : Type*} (S : ι → Type*)
+    [∀ i, CommRing (S i)] [∀ i, Algebra A (S i)] [∀ i, Module.Flat A (S i)]
+    [Module.FinitePresentation Λ M] [∀ i, Module.Projective (S i ⊗[A] Λ) (S i ⊗[A] M)]
+    {n : ℕ} {π : (Fin n → Λ) →ₗ[Λ] M} (hπ : Function.Surjective π) (i : ι) :
+    Subsingleton (S i ⊗[A] ((M →ₗ[Λ] M) ⧸ LinearMap.range (LinearMap.compRight A π :
+      (M →ₗ[Λ] (Fin n → Λ)) →ₗ[A] (M →ₗ[Λ] M)))) := by
+  refine subsingleton_of_forall_eq 0 fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := LinearMap.lTensor_surjective (S i) (Submodule.mkQ_surjective _) y
+  obtain ⟨z, rfl⟩ := surjective_lTensor_compRight (S := S i) hπ x
+  rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, LinearMap.range_mkQ_comp,
+    LinearMap.lTensor_zero, LinearMap.zero_apply]
+
 universe v in
 /-- **Descent of projectivity along a detecting family.** Let `A` be noetherian, and let `S i`
 be flat `A`-algebras that jointly detect the vanishing of finitely generated `A`-modules: a
@@ -362,20 +379,34 @@ theorem projective_of_forall_projective {M : Type v} [AddCommGroup M] [Module A 
     [IsNoetherianRing A] [Module.Finite A M] [Module.FinitePresentation Λ M]
     [∀ i, Module.Projective (S i ⊗[A] Λ) (S i ⊗[A] M)] : Module.Projective Λ M := by
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' Λ M
-  let c : (M →ₗ[Λ] (Fin n → Λ)) →ₗ[A] (M →ₗ[Λ] M) := LinearMap.compRight A π
   -- `M →ₗ[Λ] M` embeds into the finitely generated `A`-module `(Fin n → Λ) →ₗ[Λ] M`.
   have : IsNoetherian A (M →ₗ[Λ] M) :=
     isNoetherian_of_injective (LinearMap.lcomp A M π) (LinearMap.lcomp_injective_of_surjective π hπ)
-  -- The cokernel of `c` is finitely generated and vanishes after every base change, since `c`
-  -- becomes onto there.
-  have hc : LinearMap.range c = ⊤ := by
-    refine Submodule.Quotient.subsingleton_iff.mp (hS _ fun i ↦ ?_)
-    refine subsingleton_of_forall_eq 0 fun y ↦ ?_
-    obtain ⟨x, rfl⟩ := LinearMap.lTensor_surjective (S i) (LinearMap.range c).mkQ_surjective y
-    obtain ⟨z, rfl⟩ := surjective_lTensor_compRight (S := S i) hπ x
-    rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, LinearMap.range_mkQ_comp,
-      LinearMap.lTensor_zero, LinearMap.zero_apply]
-  obtain ⟨σ, hσ⟩ := LinearMap.range_eq_top.mp hc LinearMap.id
+  -- The cokernel of composition with `π` is finitely generated and vanishes after every base
+  -- change, so it vanishes.
+  obtain ⟨σ, hσ⟩ := LinearMap.range_eq_top.mp (Submodule.Quotient.subsingleton_iff.mp
+    (hS _ (subsingleton_lTensor_cokernel_compRight S hπ))) LinearMap.id
+  exact Module.Projective.of_split σ π hσ
+
+universe v in
+/-- **Descent of projectivity along a family detecting all modules.** Let `S i` be flat
+`A`-algebras that jointly detect the vanishing of arbitrary `A`-modules: an `A`-module `C`
+vanishes as soon as every `S i ⊗[A] C` does. A finitely presented `Λ`-module `M` is projective
+if every `S i ⊗[A] M` is a projective `S i ⊗[A] Λ`-module. Unlike
+`TauCeti.CentralBaseChange.projective_of_forall_projective`, no finiteness over `A` is needed.
+
+The detection hypothesis is only used for `A`-modules in the universe of `M`. -/
+theorem projective_of_forall_projective_of_forall_subsingleton {M : Type v} [AddCommGroup M]
+    [Module A M] [Module Λ M] [IsScalarTower A Λ M] {ι : Type*} (S : ι → Type*)
+    [∀ i, CommRing (S i)] [∀ i, Algebra A (S i)] [∀ i, Module.Flat A (S i)]
+    (hS : ∀ (C : Type v) [AddCommGroup C] [Module A C],
+      (∀ i, Subsingleton (S i ⊗[A] C)) → Subsingleton C)
+    [Module.FinitePresentation Λ M] [∀ i, Module.Projective (S i ⊗[A] Λ) (S i ⊗[A] M)] :
+    Module.Projective Λ M := by
+  obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' Λ M
+  -- The cokernel of composition with `π` vanishes after every base change, so it vanishes.
+  obtain ⟨σ, hσ⟩ := LinearMap.range_eq_top.mp (Submodule.Quotient.subsingleton_iff.mp
+    (hS _ (subsingleton_lTensor_cokernel_compRight S hπ))) LinearMap.id
   exact Module.Projective.of_split σ π hσ
 
 end TauCeti.CentralBaseChange
