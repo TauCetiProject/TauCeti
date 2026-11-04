@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Int.Defs
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
+public import Mathlib.CategoryTheory.Triangulated.Functor
 
 /-!
 # Shift compatibility of natural transformations and of shift functors
@@ -24,7 +25,9 @@ the shifts through the isomorphisms `X⟦a⟧⟦n⟧ ≅ X⟦n⟧⟦a⟧` of `sh
 sign `(-1)^(a * n)` (`TauCeti.shiftFunctorCommShift`). The sign is a homomorphism in `a`, so the
 twisted isomorphisms still satisfy the coherence conditions of `Functor.CommShift`. With it, the
 shifted mapping cocone `(mappingCone φ)⟦-1⟧` of a morphism of cochain complexes commutes with
-the shifts so that its projection to the source of `φ` does.
+the shifts so that its projection to the source of `φ` does. For this structure, the image of a
+triangle by `⟦n⟧` is isomorphic to its shift by `n` in the category of triangles
+(`TauCeti.shiftFunctorMapTriangleIso`).
 -/
 
 public section
@@ -129,6 +132,25 @@ lemma shiftFunctorCommShift_commShiftIso_hom_app (n a : ℤ) (X : C) :
     ((shiftFunctor C n).commShiftIso a).hom.app X =
       (a * n).negOnePow • (shiftFunctorComm C a n).hom.app X :=
   (rfl)
+
+open Pretriangulated in
+/-- With the commutation with the shifts `TauCeti.shiftFunctorCommShift`, the image of a
+triangle by `⟦n⟧` is isomorphic to its shift `Triangle.shiftFunctor C n`, in which the three
+morphisms carry the sign `(-1)^n`. The isomorphism is the identity on the first and third objects
+and `(-1)^n` on the second. -/
+noncomputable def shiftFunctorMapTriangleIso (n : ℤ) (T : Triangle C) :
+    letI := shiftFunctorCommShift C n
+    (shiftFunctor C n).mapTriangle.obj T ≅ (Triangle.shiftFunctor C n).obj T :=
+  letI := shiftFunctorCommShift C n
+  -- The triangles are given explicitly so that the morphisms agree up to reducible unfolding.
+  Triangle.isoMk
+    (Triangle.mk (T.mor₁⟦n⟧') (T.mor₂⟦n⟧')
+      (T.mor₃⟦n⟧' ≫ ((shiftFunctor C n).commShiftIso 1).hom.app T.obj₁))
+    (Triangle.mk (n.negOnePow • T.mor₁⟦n⟧') (n.negOnePow • T.mor₂⟦n⟧')
+      (n.negOnePow • T.mor₃⟦n⟧' ≫ (shiftFunctorComm C 1 n).hom.app T.obj₁))
+    (Iso.refl _) (n.negOnePow • Iso.refl _) (Iso.refl _) (by simp [Preadditive.smul_iso_hom])
+    (by simp [Preadditive.smul_iso_hom, smul_smul])
+    (by simp [shiftFunctorCommShift_commShiftIso_hom_app])
 
 end ShiftFunctor
 

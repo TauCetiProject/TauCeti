@@ -46,6 +46,12 @@ shifts, so does this functor: the shift of mapping cones is composed with the co
 signs cancel on the first component, so that the first projections
 `mappingCocone (τ.app X) ⟶ F.obj X` form a natural transformation compatible with the shifts
 (`NatTrans.mappingCoconeFunctorFst`).
+
+When `τ` is induced by a natural transformation `α : F ⟶ G` of additive functors, the mapping
+cocone functor sends the mapping cone triangle of a morphism `φ` to the mapping cone triangle of its
+image (`NatTrans.mappingCoconeFunctorMapTriangleIso`). This combines the corresponding statement
+for the mapping cone functor with the comparison `TauCeti.shiftFunctorMapTriangleIso` for `⟦-1⟧`
+and Mathlib's `mappingCone.shiftTriangleIso`.
 -/
 
 public section
@@ -334,5 +340,30 @@ instance : NatTrans.CommShift (mappingCoconeFunctorFst τ) ℤ := ⟨fun a ↦ b
   exact (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     (mappingCocone.shiftFunctor_map_shiftIso_inv_comp_fst _ _))).trans
       (mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _)⟩
+
+end CategoryTheory.NatTrans
+
+namespace CategoryTheory.NatTrans
+
+open CochainComplex TauCeti
+
+variable {A : Type*} [Category* A] [Preadditive A] [HasBinaryBiproducts A]
+  {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C] {F G : A ⥤ C}
+  [F.Additive] [G.Additive] (α : F ⟶ G) {K L : CochainComplex A ℤ} (φ : K ⟶ L)
+
+/-- For a natural transformation `α : F ⟶ G` of additive functors, the mapping cocone functor
+`K ↦ mappingCocone (α.app K)` of the induced natural transformation of functors on cochain
+complexes sends the mapping cone triangle of `φ` to the mapping cone triangle of its image,
+compatibly with its commutation with the shifts. -/
+noncomputable def mappingCoconeFunctorMapTriangleIso :
+    (mappingCoconeFunctor (NatTrans.mapHomologicalComplex α (ComplexShape.up ℤ))).mapTriangle.obj
+        (mappingCone.triangle φ) ≅
+      mappingCone.triangle
+        ((mappingCoconeFunctor (NatTrans.mapHomologicalComplex α (ComplexShape.up ℤ))).map φ) :=
+  letI := shiftFunctorCommShift (CochainComplex C ℤ) (-1)
+  (Functor.mapTriangleCompIso _ (CategoryTheory.shiftFunctor _ (-1))).app _ ≪≫
+    (CategoryTheory.shiftFunctor _ (-1)).mapTriangle.mapIso
+      (mappingConeFunctorMapTriangleIso α φ) ≪≫
+    shiftFunctorMapTriangleIso _ (-1) _ ≪≫ mappingCone.shiftTriangleIso _ (-1)
 
 end CategoryTheory.NatTrans
