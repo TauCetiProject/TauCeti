@@ -32,53 +32,6 @@ and `SemidirectProduct.range_monoidHomSubgroup` for the image of multiplication.
 
 public section
 
-namespace SemidirectProduct
-
-variable {G D : Type*} [Group G] [Group D] {H K : Subgroup G}
-variable (hLE : K ≤ Subgroup.normalizer (H : Set G))
-
-/-- The kernel of multiplication consists of the antidiagonal pairs in the intersection. -/
-theorem mem_ker_monoidHomSubgroup_iff
-    (x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) :
-    x ∈ (monoidHomSubgroup hLE).ker ↔ (x.left : G) = (x.right : G)⁻¹ := by
-  rw [MonoidHom.mem_ker, monoidHomSubgroup_apply, mul_eq_one_iff_eq_inv]
-
-variable (f : H →* D) (g : K →* D)
-variable (hconj : ∀ b : K,
-  f.comp (((H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)) b).toMonoidHom =
-    (MulAut.conj (g b)).toMonoidHom.comp f)
-
-/-- The semidirect-product map kills the kernel of multiplication exactly when its two
-restrictions agree on the intersection of the subgroups. -/
-theorem ker_monoidHomSubgroup_le_ker_lift_iff :
-    (monoidHomSubgroup hLE).ker ≤ (lift f g hconj).ker ↔
-      ∀ a : ↥(H ⊓ K), f ⟨a, a.property.1⟩ = g ⟨a, a.property.2⟩ := by
-  constructor
-  · intro h a
-    let x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K :=
-      ⟨⟨a, a.property.1⟩, ⟨(a : G)⁻¹, K.inv_mem a.property.2⟩⟩
-    have hx : x ∈ (monoidHomSubgroup hLE).ker := by
-      rw [mem_ker_monoidHomSubgroup_iff]
-      exact (inv_inv (a : G)).symm
-    have heq := MonoidHom.mem_ker.mp (h hx)
-    -- The second component of x is the inverse of a as an element of K.
-    have hval : lift f g hconj x = f ⟨a, a.property.1⟩ * (g ⟨a, a.property.2⟩)⁻¹ := by
-      exact congrArg (f ⟨a, a.property.1⟩ * ·) (map_inv g ⟨a, a.property.2⟩)
-    rw [hval, mul_inv_eq_one] at heq
-    exact heq
-  · intro hagree x hx
-    have hpair := (mem_ker_monoidHomSubgroup_iff hLE x).mp hx
-    have hright : (x.right : G) ∈ H := by
-      rw [← inv_inv (x.right : G), ← hpair]
-      exact H.inv_mem x.left.property
-    have heq := hagree ⟨x.right, hright, x.right.property⟩
-    have hleft : x.left = (⟨x.right, hright⟩ : H)⁻¹ :=
-      Subtype.ext hpair
-    simp only [MonoidHom.mem_ker, lift, MonoidHom.coe_mk, OneHom.coe_mk]
-    rw [hleft, map_inv, heq, inv_mul_cancel]
-
-end SemidirectProduct
-
 namespace Subgroup
 
 variable {G D : Type*} [Group G] [Group D] (H K : Subgroup G)
@@ -117,8 +70,7 @@ theorem liftSupOfRightLeNormalizer_mul (a : H) (b : K) :
     exact (SemidirectProduct.monoidHomSubgroup_apply hLE x).symm
   simp only [liftSupOfRightLeNormalizer, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     htransport, MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
-  -- The external lift evaluates a pair by multiplying the images of its two components.
-  simp only [SemidirectProduct.lift, x, MonoidHom.coe_mk, OneHom.coe_mk]
+  exact SemidirectProduct.lift_apply f g hconj x
 
 /-- The restriction of the glued map to `H` is the original map. -/
 @[simp]
