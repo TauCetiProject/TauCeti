@@ -9,12 +9,17 @@ public import Mathlib.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.TaylorIntegral
 
 /-!
-# Necessary derivative tests
+# Necessary and strict derivative tests
 
 This file records necessary versions of Mathlib's sufficient second-derivative tests. At a local
 maximum of a continuous real-valued function, the value `deriv (deriv g) t₀` is nonpositive; at a
 local minimum it is nonnegative. On a real normed space the same holds for every diagonal entry
 `fderiv ℝ (fderiv ℝ f) x w w` of the Hessian of a `C²` function at a local extremum.
+
+It also strengthens the conclusion of Mathlib's sufficient second-derivative test: at a critical
+point `x₀` with `deriv (deriv f) x₀ > 0` the function has a *strict* local minimum,
+`f x₀ < f x` for `x ≠ x₀` near `x₀`, and dually for `deriv (deriv f) x₀ < 0`. Strictness is what
+the stability of an equilibrium at a minimum of the energy needs.
 
 It also records the one-sided first-derivative tests at an endpoint: a function with a local
 maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there, and
@@ -28,6 +33,8 @@ top of the space-time cylinder.
   nonnegative.
 * `IsLocalMinOn.hasDerivWithinAt_Iic_nonpos`, `IsLocalMaxOn.hasDerivWithinAt_Ici_nonpos`,
   `IsLocalMinOn.hasDerivWithinAt_Ici_nonneg`: the dual endpoint tests.
+* `TauCeti.eventually_lt_of_deriv_deriv_pos`, `TauCeti.eventually_gt_of_deriv_deriv_neg`: the
+  strict second-derivative tests.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
 * `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the local-minimum version.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
@@ -100,6 +107,53 @@ local minimum on `Ici a` at `a`, then its right derivative at `a` is nonnegative
 theorem _root_.IsLocalMinOn.hasDerivWithinAt_Ici_nonneg {f : ℝ → ℝ} {f' a : ℝ}
     (h : IsLocalMinOn f (Set.Ici a) a) (hf : HasDerivWithinAt f f' (Set.Ici a) a) : 0 ≤ f' := by
   simpa using h.neg.hasDerivWithinAt_Ici_nonpos hf.neg
+
+/-- **Strict second-derivative test.** If `deriv f x₀ = 0` and `deriv (deriv f) x₀ > 0` for a
+function `f : ℝ → ℝ` continuous at `x₀`, then `x₀` is a strict local minimum of `f`:
+`f x₀ < f x` for every `x ≠ x₀` close to `x₀`. -/
+theorem eventually_lt_of_deriv_deriv_pos {f : ℝ → ℝ} {x₀ : ℝ} (hf : 0 < deriv (deriv f) x₀)
+    (hd : deriv f x₀ = 0) (hc : ContinuousAt f x₀) : ∀ᶠ x in 𝓝[≠] x₀, f x₀ < f x := by
+  -- Near `x₀`, the derivative of `f` has the sign of `x - x₀`.
+  obtain ⟨ε, hε, hsign⟩ :=
+    Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_sign_eq_of_deriv_pos hf hd)
+  have hderiv {x : ℝ} (hx : |x - x₀| < ε) (hne : x ≠ x₀) : deriv f x ≠ 0 := by
+    intro h
+    have := hsign (y := x) (by rwa [Real.dist_eq])
+    rw [h, sign_zero, eq_comm, sign_eq_zero_iff, sub_eq_zero] at this
+    exact hne this
+  have hcont {D : Set ℝ} (hD : ∀ x ∈ D, |x - x₀| < ε) : ContinuousOn f D := fun x hx ↦ by
+    rcases eq_or_ne x x₀ with rfl | hne
+    · exact hc.continuousWithinAt
+    · exact (differentiableAt_of_deriv_ne_zero (hderiv (hD x hx) hne)).continuousAt
+        |>.continuousWithinAt
+  -- So `f` is strictly decreasing on `(x₀ - ε, x₀]` and strictly increasing on `[x₀, x₀ + ε)`.
+  have hanti : StrictAntiOn f (Set.Ioc (x₀ - ε) x₀) := by
+    refine strictAntiOn_of_deriv_neg (convex_Ioc _ _)
+      (hcont fun x hx ↦ abs_sub_lt_iff.2 ⟨by linarith [hx.2], by linarith [hx.1]⟩) fun x hx ↦ ?_
+    rw [interior_Ioc] at hx
+    have h := hsign (y := x) (by
+      rw [Real.dist_eq, abs_sub_lt_iff]; constructor <;> linarith [hx.1, hx.2])
+    rwa [sign_neg (sub_neg.2 hx.2), sign_eq_neg_one_iff] at h
+  have hmono : StrictMonoOn f (Set.Ico x₀ (x₀ + ε)) := by
+    refine strictMonoOn_of_deriv_pos (convex_Ico _ _)
+      (hcont fun x hx ↦ abs_sub_lt_iff.2 ⟨by linarith [hx.2], by linarith [hx.1]⟩) fun x hx ↦ ?_
+    rw [interior_Ico] at hx
+    have h := hsign (y := x) (by
+      rw [Real.dist_eq, abs_sub_lt_iff]; constructor <;> linarith [hx.1, hx.2])
+    rwa [sign_pos (sub_pos.2 hx.1), sign_eq_one_iff] at h
+  filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds x₀ hε), self_mem_nhdsWithin]
+    with x hx hne
+  rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff] at hx
+  rcases lt_or_gt_of_ne (Set.mem_compl_singleton_iff.1 hne) with hlt | hgt
+  · exact hanti ⟨by linarith, hlt.le⟩ ⟨by linarith, le_rfl⟩ hlt
+  · exact hmono ⟨le_rfl, by linarith⟩ ⟨hgt.le, by linarith⟩ hgt
+
+/-- **Strict second-derivative test, maximum version.** If `deriv f x₀ = 0` and
+`deriv (deriv f) x₀ < 0` for a function `f : ℝ → ℝ` continuous at `x₀`, then `x₀` is a strict
+local maximum of `f`. -/
+theorem eventually_gt_of_deriv_deriv_neg {f : ℝ → ℝ} {x₀ : ℝ} (hf : deriv (deriv f) x₀ < 0)
+    (hd : deriv f x₀ = 0) (hc : ContinuousAt f x₀) : ∀ᶠ x in 𝓝[≠] x₀, f x < f x₀ := by
+  simpa using eventually_lt_of_deriv_deriv_pos (f := (-f ·)) (by simpa) (by simpa) hc.neg
 
 section NormedSpace
 
