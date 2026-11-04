@@ -579,8 +579,10 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap [Fintype κ]
     pointsMulEquiv N
         ((CommHopfAlgCat.Hom.mapPointsFunctor (weightTorusCoordinateMap (R := R) wt)).app A p) =
       diagGL fun i => torusCharacter (SplitTorus.pointsMulEquiv p) (wt i) := by
-  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hom_weightTorusCoordinateMap]
-  exact pointsMulEquiv_comp_weightTorusCoordinateBialgHom wt A p
+  rw [mapPointsFunctor_weightTorusCoordinateMap_app, pointsMulEquiv_diagonalTorusPoints]
+  congr 1
+  funext i
+  exact diagonalTorusCoordinates_pointsMap_weightCharacterMap wt A p i
 
 /-- A represented weight torus has determinant one when the sum of its weights is zero. -/
 theorem weightTorusCoordinateMap_determinantGroupLike [Finite κ]
