@@ -51,12 +51,14 @@ relative `Proj` of graded quasicoherent algebras.
 
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.pullbackGradedSections`: pullback of
   sections, as a ring homomorphism between graded rings of sections, with
-  `pullbackGradedSections_of` and `pullbackGradedSections_algebraMap`; its graded form is
+  `pullbackGradedSections_of`, `pullbackGradedSections_apply`,
+  `pullbackGradedSections_algebraMap` and compatibility with restriction
+  `pullbackGradedSections_restrictGradedSections`; its graded form is
   `pullbackGradedSectionsGradedHom`.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isPushout_pullbackGradedSections`: for
   affine `U` and `f⁻¹ U`, the square above is a pushout of commutative rings.
-* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.finiteType_pullbackGradedSections` and
-  `adjoin_pullbackGradedSectionsGrading_zero_union_one_eq_top`: finite generation and
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.finiteType_gradedSections_pullback` and
+  `adjoin_gradedSectionsGrading_zero_union_one_eq_top_pullback`: finite generation and
   generation in degree one pass to `f^* A`.
 
 ## References
@@ -132,15 +134,23 @@ private lemma pullbackSectionsDegree_gMul {i j : ℕ} (x : Γ(A.obj.X i, U))
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at hm
   -- Chain the steps from the product of the pullbacks back to the pullback of the product; the
   -- degree maps are by definition the transported pullbacks of sections.
+  let mul' := (((pullback f).obj A).obj.toMon.mul i j).app (f ⁻¹ᵁ U)
   let mulPull := ((Scheme.Modules.pullback f).map (A.obj.toMon.mul i j)).app (f ⁻¹ᵁ U)
-  let e := (pullbackComponentHom f A (i + j)).app (f ⁻¹ᵁ U)
+  let e : Γ((Scheme.Modules.pullback f).obj (A.obj.X (i + j)), f ⁻¹ᵁ U) →
+      Γ(((pullback f).obj A).obj.toMon.X (i + j), f ⁻¹ᵁ U) :=
+    (pullbackComponentHom f A (i + j)).app (f ⁻¹ᵁ U)
+  let δinv := (inv δ).app (f ⁻¹ᵁ U)
   rw [CommMon.sections_gMul_def, CommMon.sections_gMul_def]
-  refine Eq.symm <| (congrArg (fun t ↦ (((pullback f).obj A).obj.toMon.mul i j).app (f ⁻¹ᵁ U) t)
-    hn).trans <| hm.trans <| (congrArg (fun t ↦ e (mulPull ((inv δ).app (f ⁻¹ᵁ U) t))) hid).trans <|
-    (congrArg (fun t ↦ e (mulPull ((inv δ).app (f ⁻¹ᵁ U) t)))
-      (Scheme.Hom.δ_app_pullbackSections_μ f (A.obj.X i) U (A.obj.X j) x y).symm).trans <|
-    (congrArg (fun t ↦ e (mulPull t)) hδ).trans ?_
-  exact congrArg e (f.pullbackSections_naturality (A.obj.X i ⊗ A.obj.X j) U (A.obj.toMon.mul i j) z)
+  symm
+  calc _ = mul' ((pullbackComponentHom f A i ⊗ₘ pullbackComponentHom f A j).app (f ⁻¹ᵁ U) w) :=
+        congrArg mul' hn
+    _ = e (mulPull (δinv w)) := hm.trans (congrArg (fun t ↦ e (mulPull (δinv t))) hid)
+    _ = e (mulPull (δinv (δ.app (f ⁻¹ᵁ U)
+          (f.pullbackSections (A.obj.X i ⊗ A.obj.X j) U z)))) := by
+        rw [Scheme.Hom.δ_app_pullbackSections_μ]
+    _ = e (mulPull (f.pullbackSections (A.obj.X i ⊗ A.obj.X j) U z)) :=
+        congrArg (fun t ↦ e (mulPull t)) hδ
+    _ = _ := congrArg e (f.pullbackSections_naturality _ U (A.obj.toMon.mul i j) z)
 
 /-- Pullback of sections commutes with the structure maps `Γ(X, U) → Γ(A₀, U)` and
 `Γ(Y, f⁻¹ U) → Γ(f^* A₀, f⁻¹ U)`. -/
@@ -160,14 +170,18 @@ private lemma pullbackSectionsDegree_toFun (r : Γ(X, U)) :
     (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor (f ⁻¹ᵁ U)) (f.app U r)))
   simp only [Scheme.Modules.Hom.comp_app] at ho
   -- The degree-zero map is by definition the transported pullback of sections.
-  refine Eq.symm <| ho.trans <| (congrArg (fun t ↦ (pullbackComponentHom f A 0).app (f ⁻¹ᵁ U)
-    (((Scheme.Modules.pullback f).map A.obj.toMon.one).app (f ⁻¹ᵁ U)
-      ((Scheme.Modules.pullbackObjUnitIso f).inv.app (f ⁻¹ᵁ U) t)))
-        (f.pullbackObjUnitIso_hom_app_pullbackSections_ε U r).symm).trans <|
-    (congrArg (fun t ↦ (pullbackComponentHom f A 0).app (f ⁻¹ᵁ U)
-      (((Scheme.Modules.pullback f).map A.obj.toMon.one).app (f ⁻¹ᵁ U) t)) hu).trans ?_
-  exact congrArg ((pullbackComponentHom f A 0).app (f ⁻¹ᵁ U))
-    (f.pullbackSections_naturality (𝟙_ X.Modules) U A.obj.toMon.one _)
+  let e : Γ((Scheme.Modules.pullback f).obj (A.obj.X 0), f ⁻¹ᵁ U) →
+      Γ(((pullback f).obj A).obj.toMon.X 0, f ⁻¹ᵁ U) :=
+    (pullbackComponentHom f A 0).app (f ⁻¹ᵁ U)
+  let onePull := ((Scheme.Modules.pullback f).map A.obj.toMon.one).app (f ⁻¹ᵁ U)
+  let unitInv := (Scheme.Modules.pullbackObjUnitIso f).inv.app (f ⁻¹ᵁ U)
+  symm
+  calc _ = e (onePull (unitInv
+        (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor (f ⁻¹ᵁ U)) (f.app U r)))) := ho
+    _ = e (onePull (unitInv ((Scheme.Modules.pullbackObjUnitIso f).hom.app (f ⁻¹ᵁ U) v))) := by
+        rw [Scheme.Hom.pullbackObjUnitIso_hom_app_pullbackSections_ε]
+    _ = e (onePull v) := congrArg (fun t ↦ e (onePull t)) hu
+    _ = _ := congrArg e (f.pullbackSections_naturality (𝟙_ X.Modules) U A.obj.toMon.one _)
 
 /-- Pullback of sections preserves the unit. -/
 private lemma pullbackSectionsDegree_gOne :
@@ -203,6 +217,18 @@ lemma pullbackGradedSections_of (n : ℕ) (x : Γ(A.obj.X n, U)) :
         (f.pullbackSections (A.obj.X n) U x)) :=
   DirectSum.toSemiring_of _ _ _ _ _
 
+/-- Pullback of graded sections pulls back each homogeneous component, transported along the
+identification of the components of `f^* A` with the pullbacks of the components of `A`. -/
+@[simp]
+lemma pullbackGradedSections_apply (x : ⨁ n, Γ(A.obj.X n, U)) (n : ℕ) :
+    pullbackGradedSections f A U x n =
+      (eqToHom (pullback_obj_obj_X f A n).symm).app (f ⁻¹ᵁ U)
+        (f.pullbackSections (A.obj.X n) U (x n)) := by
+  have h : (pullbackGradedSections f A U).toAddMonoidHom =
+      DirectSum.map fun n ↦ (pullbackSectionsDegree f A U n).toAddMonoidHom :=
+    DirectSum.addHom_ext fun n y ↦ by simp; rfl
+  exact congrArg (· n) (DFunLike.congr_fun h x)
+
 /-- Pullback of graded sections lies over `f^♯ : Γ(X, U) → Γ(Y, f⁻¹ U)`. -/
 @[simp]
 lemma pullbackGradedSections_algebraMap (r : Γ(X, U)) :
@@ -234,6 +260,27 @@ theorem pullbackGradedSectionsGradedHom_toRingHom :
 theorem pullbackGradedSectionsGradedHom_apply (x : ⨁ n, Γ(A.obj.X n, U)) :
     pullbackGradedSectionsGradedHom f A U x = pullbackGradedSections f A U x :=
   (rfl)
+
+/-- Pullback of graded sections commutes with restriction to smaller opens. -/
+lemma pullbackGradedSections_restrictGradedSections {V : X.Opens} (i : V ⟶ U)
+    (x : ⨁ n, Γ(A.obj.X n, U)) :
+    pullbackGradedSections f A V (A.obj.restrictGradedSections i x) =
+      ((pullback f).obj A).obj.restrictGradedSections ((TopologicalSpace.Opens.map f.base).map i)
+        (pullbackGradedSections f A U x) := by
+  refine DFinsupp.ext fun n ↦ ?_
+  rw [pullbackGradedSections_apply, CommMon.restrictGradedSections_apply,
+    CommMon.restrictGradedSections_apply, pullbackGradedSections_apply,
+    ← Scheme.Hom.pullbackSections_restrict]
+  exact congr($((eqToHom (pullback_obj_obj_X f A n).symm).mapPresheaf.naturality
+    ((TopologicalSpace.Opens.map f.base).map i).op) (f.pullbackSections (A.obj.X n) U (x n)))
+
+/-- The graded pullback of sections commutes with restriction to smaller opens. -/
+theorem pullbackGradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom {V : X.Opens}
+    (i : V ⟶ U) :
+    (pullbackGradedSectionsGradedHom f A V).comp (A.obj.restrictGradedSectionsGradedHom i) =
+      (((pullback f).obj A).obj.restrictGradedSectionsGradedHom
+        ((TopologicalSpace.Opens.map f.base).map i)).comp (pullbackGradedSectionsGradedHom f A U) :=
+  GradedRingHom.ext fun x ↦ by simp [pullbackGradedSections_restrictGradedSections]
 
 variable {U}
 
@@ -290,7 +337,7 @@ theorem isPushout_pullbackGradedSections (hU : IsAffineOpen U) (hV : IsAffineOpe
 /-- Finite generation of the graded ring of sections over the ring of regular functions passes
 to the pullback: the graded ring of `f^* A` over `f⁻¹ U` is the base change of that of `A` over `U`
 (`isPushout_pullbackGradedSections`). -/
-theorem finiteType_pullbackGradedSections (hU : IsAffineOpen U) (hV : IsAffineOpen (f ⁻¹ᵁ U))
+theorem finiteType_gradedSections_pullback (hU : IsAffineOpen U) (hV : IsAffineOpen (f ⁻¹ᵁ U))
     [Algebra.FiniteType Γ(X, U) (⨁ n, Γ(A.obj.X n, U))] :
     Algebra.FiniteType Γ(Y, f ⁻¹ᵁ U) (⨁ n, Γ(((pullback f).obj A).obj.X n, f ⁻¹ᵁ U)) := by
   rw [← RingHom.finiteType_algebraMap]
@@ -303,7 +350,7 @@ theorem finiteType_pullbackGradedSections (hU : IsAffineOpen U) (hV : IsAffineOp
 `⨁ n, Γ(Aₙ, U)` over an affine open `U` is generated by its homogeneous elements of degrees `0`
 and `1`, and `f⁻¹ U` is affine, then the graded ring of sections `⨁ n, Γ(f^* Aₙ, f⁻¹ U)` is
 generated by its homogeneous elements of degrees `0` and `1`. -/
-theorem adjoin_pullbackGradedSectionsGrading_zero_union_one_eq_top (hU : IsAffineOpen U)
+theorem adjoin_gradedSectionsGrading_zero_union_one_eq_top_pullback (hU : IsAffineOpen U)
     (hV : IsAffineOpen (f ⁻¹ᵁ U))
     (h : Algebra.adjoin Γ(X, U) ((A.obj.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.obj.X n, U))) ∪
       A.obj.gradedSectionsGrading U 1) = ⊤) :
@@ -324,13 +371,8 @@ theorem adjoin_pullbackGradedSectionsGrading_zero_union_one_eq_top (hU : IsAffin
   have : Algebra.IsPushout Γ(X, U) (⨁ n, Γ(A.obj.X n, U)) Γ(Y, f ⁻¹ᵁ U)
       (⨁ n, Γ(((pullback f).obj A).obj.X n, f ⁻¹ᵁ U)) :=
     (CommRingCat.isPushout_iff_isPushout.mp (isPushout_pullbackGradedSections f A hU hV)).symm
-  -- The images of the generators of degrees `0` and `1` generate, and are homogeneous of the
-  -- same degrees.
-  refine top_unique ((Algebra.IsPushout.adjoin_image_eq_top h).ge.trans (Algebra.adjoin_mono ?_))
-  rintro _ ⟨y, hy, rfl⟩
-  rw [RingHom.algebraMap_toAlgebra, ← pullbackGradedSectionsGradedHom_apply]
-  exact hy.imp (pullbackGradedSectionsGradedHom f A U).map_mem
-    (pullbackGradedSectionsGradedHom f A U).map_mem
+  exact Algebra.IsPushout.adjoin_zero_union_one_eq_top (pullbackGradedSectionsGradedHom f A U)
+    (pullbackGradedSectionsGradedHom_apply f A U) h
 
 end GradedQuasicoherentAlgebra
 

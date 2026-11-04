@@ -137,13 +137,9 @@ theorem _root_.CategoryTheory.CommMon.adjoin_gradedSectionsGrading_zero_union_on
     .of_algebraMap_eq fun r ↦ (A.restrictGradedSections_algebraMap (homOfLE hVU) r).symm
   have : Algebra.IsPushout Γ(X, U) (⨁ n, Γ(A.X n, U)) Γ(X, V) (⨁ n, Γ(A.X n, V)) :=
     (CommRingCat.isPushout_iff_isPushout.mp (A.isPushout_restrictGradedSections hU hV hVU)).symm
-  -- The restrictions of the generators of degrees `0` and `1` over `U` generate, and are
-  -- homogeneous of the same degrees.
-  refine top_unique ((Algebra.IsPushout.adjoin_image_eq_top h).ge.trans (Algebra.adjoin_mono ?_))
-  rintro _ ⟨y, hy, rfl⟩
-  rw [RingHom.algebraMap_toAlgebra, ← CommMon.restrictGradedSectionsGradedHom_apply]
-  exact hy.imp (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
-    (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
+  exact Algebra.IsPushout.adjoin_zero_union_one_eq_top
+    (A.restrictGradedSectionsGradedHom (homOfLE hVU))
+    (A.restrictGradedSectionsGradedHom_apply (homOfLE hVU)) h
 
 end
 
