@@ -285,7 +285,7 @@ def fatClassifyingSpaceMap (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapT
 
 /-- The map of fat classifying spaces induced by a functor is the fat realization of the induced
 map of topological nerves, restricted to the semi-simplicial part. -/
-theorem fatClassifyingSpaceMap_eq (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
+theorem fatClassifyingSpaceMap_def (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
     fatClassifyingSpaceMap Φ hΦ =
       fatRealization.map (Functor.whiskerLeft toSimplexCategory.op (topologicalNerveMap Φ hΦ)) :=
   (rfl)

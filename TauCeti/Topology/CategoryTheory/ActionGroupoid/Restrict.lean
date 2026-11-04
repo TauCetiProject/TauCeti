@@ -85,7 +85,7 @@ induced by the inclusion `G ⋉ U ⥤ G ⋉ X` is an open embedding. -/
 theorem isOpenEmbedding_fatClassifyingSpaceMap_restrict (hU : IsOpen (U : Set X)) :
     IsOpenEmbedding (fatClassifyingSpaceMap (restrict U)
       (isEmbedding_mapTotal_restrict U).continuous) := by
-  rw [fatClassifyingSpaceMap_eq]
+  rw [fatClassifyingSpaceMap_def]
   exact fatRealization.isOpenEmbedding_map_of_range_eq_preimage (coarseAugmentation G X)
     (V := Quotient.mk _ '' (U : Set X))
     (fun _ => isOpenEmbedding_topologicalNerveMap_restrict U hU _)
@@ -96,7 +96,7 @@ a `G`-invariant subset `U` is the image of the fat classifying space of `G ⋉ U
 theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_restrict :
     coarseMap G X ⁻¹' (Quotient.mk _ '' (U : Set X)) =
       range (fatClassifyingSpaceMap (restrict U) (isEmbedding_mapTotal_restrict U).continuous) := by
-  rw [coarseMap_eq_augment, fatClassifyingSpaceMap_eq]
+  rw [coarseMap_eq_augment, fatClassifyingSpaceMap_def]
   exact fatRealization.preimage_augment_eq_range_map _ (range_topologicalNerveMap_restrict U)
 
 end TauCeti.ActionGroupoid
