@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Infinitary.Infinite
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import TauCeti.ModelTheory.Syntax
@@ -84,6 +85,23 @@ theorem modelsOf_bot : modelsOf (V := V) (⊥ : L.SentenceInf ι) = ∅ := by
 theorem modelsOf_top : modelsOf (V := V) (⊤ : L.SentenceInf ι) = Set.univ := by
   ext c
   simp
+
+/-- On an infinite carrier every configuration satisfies the infinitude sentence. -/
+@[simp]
+theorem modelsOf_infiniteSentence_of_infinite [Infinite V] :
+    modelsOf (V := V) L.infiniteSentence = Set.univ := by
+  ext c
+  simp only [mem_modelsOf, realize_infiniteSentence_iff, Set.mem_univ, iff_true]
+  infer_instance
+
+/-- On a finite carrier no configuration satisfies the infinitude sentence, including on the
+empty carrier. -/
+@[simp]
+theorem modelsOf_infiniteSentence_of_finite [Finite V] :
+    modelsOf (V := V) L.infiniteSentence = ∅ := by
+  ext c
+  simp only [mem_modelsOf, realize_infiniteSentence_iff, Set.mem_empty_iff_false, iff_false]
+  exact not_infinite_iff_finite.2 inferInstance
 
 /-- The model class of an implication is the complement of the model class of its hypothesis,
 joined with the model class of its conclusion. -/
