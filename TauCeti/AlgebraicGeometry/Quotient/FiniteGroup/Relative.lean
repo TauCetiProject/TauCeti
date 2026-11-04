@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.RingTheory.Invariant.Basic
+public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Fppf
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
 import Mathlib.RingTheory.RingHom.Injective
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
@@ -50,8 +51,19 @@ morphism `f : Spec_X(A) ⟶ Z` to an arbitrary scheme `Z` factors uniquely throu
 `TauCeti.AffineInvariantQuotient.existsUnique_desc_of_finite`. The stalk maps of the projection are
 injective, because they are on each affine chart, so the projection stays an epimorphism after base
 change to every open subscheme of `Spec_X(A)/G`; hence the local descents agree on overlaps and glue
-(`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`). The étaleness of the projection for
-free actions is not proved in this file.
+(`AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`).
+
+When the action is free, in the sense that over every affine open `U` of `X` and for every `g ≠ 1`
+the sections `g • a - a` with `a` in `Γ(A.X, U)` generate the unit ideal, the projection is a finite
+étale `G`-torsor and `Spec_X(A)/G` is the fppf quotient. Over each affine open `U` this is the
+affine statement (`TauCeti.AffineInvariantQuotient.etale_projection`,
+`TauCeti.AffineInvariantQuotient.isPullback_of_free`). Étaleness is local on the target. The torsor
+square, which identifies `∐_g Spec_X(A)` with `Spec_X(A) ×_{Spec_X(A)/G} Spec_X(A)`, is local on
+the source of the projection (`AlgebraicGeometry.Scheme.isPullback_of_openCover`): over the chart
+`Spec Γ(A.X, U)`, finite coproducts are stable under base change and the chart of `Spec_X(A)/G`
+over `U` has preimage the chart of `Spec_X(A)`, so the square restricts to the affine torsor
+square. The étale surjective projection generates an fppf covering sieve, and the fppf quotient
+statement follows from the kernel pair by `CategoryTheory.IsKernelPair.isColimitYonedaCofork`.
 
 The points of the quotient with values in a field are the orbits of `G` on such points of
 `Spec_X(A)`: a point of `Spec_X(A)` with values in a field lies over a single affine open `U` of
@@ -95,11 +107,18 @@ a presheaf of subalgebras, which also gives the relative spectrum of an equalize
   arbitrary target schemes.
 * `CommMon.exists_comp_relativeSpecMap_eq`: two points of `Spec_X(A)` with values in a field and
   the same image in the quotient differ by the action of an element of `G`.
+* `CommMon.etale_invariantSubalgebraPresheaf_relativeSpecπ_of_free` and
+  `CommMon.isFinite_invariantSubalgebraPresheaf_relativeSpecπ_of_free`: for a free action, the
+  projection is finite étale.
+* `CommMon.isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free`: for a free action,
+  `∐_g Spec_X(A)` is the kernel pair of the projection.
+* `CommMon.isColimitInvariantQuotientFppfYonedaCofork`: for a free action, `Spec_X(A)/G` represents
+  the fppf quotient sheaf of `Spec_X(A)` by `G`.
 
 ## References
 
 * M. Demazure and A. Grothendieck, *Schémas en groupes (SGA 3)*, Exposé V, §1 (quotients of
-  affine schemes by finite groups).
+  affine schemes by finite groups) and §4 (free actions and fppf quotients).
 * D. Mumford, *Abelian Varieties*, §7, Theorem 1 (quotients by finite groups as categorical
   quotients).
 * The Stacks Project, [Tag 01LL](https://stacks.math.columbia.edu/tag/01LL) (relative spectrum
@@ -483,6 +502,124 @@ lemma invariantQuotientDesc_relativeSpecπ_comp {Z : Scheme.{u}}
   invariantQuotient_hom_ext (relativeSpecπ_invariantQuotientDesc _ _)
 
 end UniversalProperty
+
+/-! ### Free actions -/
+
+section Free
+
+variable {ρ}
+
+omit [Finite G] [A.X.IsQuasicoherent] in
+/-- Over an affine open `U` of `X`, freeness of the action on the sections over `U`, in the form
+used by the affine invariant quotient. -/
+private lemma free_sectionsMulSemiringAction
+    (hG : ∀ (U : X.affineOpens) (g : G), g ≠ 1 →
+      Ideal.span (Set.range fun x : Γ(A.X, U) ↦ sectionsAlgHom (ρ g).asIso.hom U x - x) = ⊤)
+    (U : X.AffineZariskiSite) :
+    letI := sectionsMulSemiringAction ρ U.toOpens
+    ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun x : Γ(A.X, U.toOpens) ↦ g • x - x) = ⊤ := by
+  let := sectionsMulSemiringAction ρ U.toOpens
+  intro g hg
+  simpa only [sectionsMulSemiringAction_smul] using hG ⟨U.1, U.2⟩ g hg
+
+variable
+    (hG : ∀ (U : X.affineOpens) (g : G), g ≠ 1 →
+      Ideal.span (Set.range fun x : Γ(A.X, U) ↦ sectionsAlgHom (ρ g).asIso.hom U x - x) = ⊤)
+include hG
+
+/-- For a free action, the quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` is étale. -/
+theorem etale_invariantSubalgebraPresheaf_relativeSpecπ_of_free :
+    Etale (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  have := HasRingHomProperty.instIsZariskiLocalAtTarget @Etale.{u} (Q := RingHom.Etale)
+  refine ((invariantSubalgebraPresheaf ρ).relativeSpecπ_iff @Etale).mpr fun U ↦ ?_
+  let := sectionsMulSemiringAction ρ U.toOpens
+  have := TauCeti.AffineInvariantQuotient.etale_projection (free_sectionsMulSemiringAction hG U)
+  rw [invariantSubalgebraPresheaf_sections, specMap_invariantSections]
+  infer_instance
+
+/-- For a free action, the quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` is finite, with no
+finiteness hypothesis on `Spec_X(A)` over `X`. -/
+theorem isFinite_invariantSubalgebraPresheaf_relativeSpecπ_of_free :
+    IsFinite (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  have := etale_invariantSubalgebraPresheaf_relativeSpecπ_of_free hG
+  exact (IsFinite.iff_isIntegralHom_and_locallyOfFiniteType _).mpr ⟨inferInstance, inferInstance⟩
+
+open TauCeti.AffineInvariantQuotient in
+/-- **The torsor square of a free relative quotient.** For a free action, the identity and the
+action of `g` on the component of `g` exhibit `∐_g Spec_X(A)` as the kernel pair
+`Spec_X(A) ×_{Spec_X(A)/G} Spec_X(A)` of the quotient projection. -/
+theorem isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free :
+    IsPullback (Sigma.desc fun _ : G ↦ 𝟙 A.relativeSpec)
+      (Sigma.desc fun g : G ↦ relativeSpecMap (ρ g).asIso.hom)
+      (invariantSubalgebraPresheaf ρ).relativeSpecπ
+      (invariantSubalgebraPresheaf ρ).relativeSpecπ := by
+  refine Scheme.isPullback_of_openCover _ _ _ _ A.relativeSpecCover fun U ↦ ?_
+  let := sectionsMulSemiringAction ρ U.toOpens
+  -- Rebind the charts over `U` at their explicit sources, as in
+  -- `SubalgebraPresheaf.relativeSpecπ_relativeSpecToBase`.
+  let ι : Spec (CommRingCat.of Γ(A.X, U.toOpens)) ⟶ A.relativeSpec := A.relativeSpecCover.f U
+  let ιQ : Spec (CommRingCat.of (invariantSections ρ U.toOpens)) ⟶
+      (invariantSubalgebraPresheaf ρ).relativeSpec :=
+    (invariantSubalgebraPresheaf ρ).relativeSpecCover.f U
+  let e := chartIso ρ U.toOpens
+  -- The base change of `∐_g Spec_X(A)` along the chart over `U` is `∐_g` of the chart.
+  have hb : IsPullback (Sigma.desc fun g : G ↦ ι ≫ Sigma.ι (fun _ : G ↦ A.relativeSpec) g)
+      (Sigma.desc fun _ : G ↦ 𝟙 (Spec (CommRingCat.of Γ(A.X, U.toOpens))))
+      (Sigma.desc fun _ : G ↦ 𝟙 A.relativeSpec) ι := by
+    have hd (Z : Scheme.{u}) (f : G → (Spec (CommRingCat.of Γ(A.X, U.toOpens)) ⟶ Z)) :
+        Cofan.IsColimit.desc (coproductIsCoproduct _) f = Sigma.desc f :=
+      Sigma.hom_ext _ _ fun g ↦ (Cofan.IsColimit.fac _ _ g).trans (Sigma.ι_comp_desc _ g).symm
+    have h := IsUniversalColimit.isPullback_of_isColimit_right
+      (FinitaryPreExtensive.isUniversal_finiteCoproducts
+        (coproductIsCoproduct fun _ : G ↦ A.relativeSpec))
+      (fun _ ↦ 𝟙 _) (Sigma.desc fun _ : G ↦ 𝟙 A.relativeSpec) ι (fun _ ↦ ι) (fun _ ↦ 𝟙 _)
+      (fun _ ↦ IsPullback.id_vert ι)
+      (coproductIsCoproduct fun _ : G ↦ Spec (CommRingCat.of Γ(A.X, U.toOpens)))
+      (fun g ↦ Sigma.ι_comp_desc _ g)
+    rwa [hd, hd] at h
+  -- Over the chart, the square is the torsor square of the affine quotient, followed by the
+  -- chart of the quotient projection.
+  have hchart : IsPullback ι (projection Γ(A.X, U.toOpens) G)
+      (invariantSubalgebraPresheaf ρ).relativeSpecπ (e.hom ≫ ιQ) :=
+    ((isPullback_projection (ρ := ρ) U).of_iso (Iso.refl _) e.symm (Iso.refl _) (Iso.refl _)
+      (by simp [e]) ((Category.comp_id _).trans (Category.id_comp _).symm)
+      (by rw [Iso.symm_hom, Iso.inv_hom_id_assoc]; exact Category.comp_id _) (by simp)).flip
+  have hpaste :=
+    (isPullback_of_free Γ(A.X, U.toOpens) G (free_sectionsMulSemiringAction hG U)).flip.paste_horiz
+      hchart
+  refine hpaste.flip.of_iso hb.isoPullback (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
+  · exact (Category.comp_id _).trans hb.isoPullback_hom_snd.symm
+  · -- The components of the pulled-back cover are the first projections, as in
+    -- `PreZeroHypercover.pullback₁_f`, and `ι` is the chart over `U`.
+    refine Sigma.hom_ext _ _ fun g ↦ ?_
+    calc _ = specComap Γ(A.X, U.toOpens) G g ≫ ι := by simp
+      _ = ι ≫ relativeSpecMap (ρ g).asIso.hom := specComap_relativeSpecCover_f U g
+      _ = Sigma.ι _ g ≫ (hb.isoPullback.hom ≫ pullback.fst _ ι) ≫
+          Sigma.desc fun g ↦ relativeSpecMap (ρ g).asIso.hom := by
+        rw [hb.isoPullback_hom_fst]; simp
+      _ = _ := by rw [Category.assoc]; rfl
+  · exact (Category.comp_id _).trans (((Category.assoc _ _ _).symm.trans
+      (isPullback_projection (ρ := ρ) U).w).trans (Category.id_comp _).symm)
+  · simp
+
+/-- **The fppf quotient of a free relative action.** For a free action, under the Yoneda embedding
+into fppf sheaves, the quotient projection `Spec_X(A) ⟶ Spec_X(A)/G` is the coequalizer of the two
+maps `∐_g Spec_X(A) ⇉ Spec_X(A)` given by the identity and by the action of `g` on the component
+of `g`. Thus `Spec_X(A)/G` represents the fppf quotient sheaf of `Spec_X(A)` by `G`. -/
+def isColimitInvariantQuotientFppfYonedaCofork :
+    IsColimit (Cofork.ofπ
+        (Scheme.fppfTopology.yoneda.map (invariantSubalgebraPresheaf ρ).relativeSpecπ)
+        (by simp only [← Functor.map_comp,
+          (isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free hG).w]) :
+      Cofork (Scheme.fppfTopology.yoneda.map (Sigma.desc fun _ : G ↦ 𝟙 A.relativeSpec))
+        (Scheme.fppfTopology.yoneda.map
+          (Sigma.desc fun g : G ↦ relativeSpecMap (ρ g).asIso.hom))) :=
+  have := etale_invariantSubalgebraPresheaf_relativeSpecπ_of_free hG
+  IsKernelPair.isColimitYonedaCofork Scheme.fppfTopology
+    (isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free hG)
+    (Precoverage.generate_mem_toGrothendieck (Scheme.Hom.singleton_mem_fppfPrecoverage _))
+
+end Free
 
 end
 
