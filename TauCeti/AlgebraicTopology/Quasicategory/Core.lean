@@ -91,6 +91,13 @@ lemma isEquivalence_iff_of_edge_eq {y₀ y₁ : X _⦋0⦌} {e : Edge x₀ x₁}
   ⟨fun he ↦ (he.invStruct.ofEq h).isEquivalence,
     fun he ↦ (he.invStruct.ofEq h.symm).isEquivalence⟩
 
+/-- Transporting an edge along equalities of its endpoints does not change whether it is an
+equivalence. -/
+@[simp]
+lemma isEquivalence_ofEq_iff {y₀ y₁ : X _⦋0⦌} {e : Edge x₀ x₁} (h₀ : x₀ = y₀) (h₁ : x₁ = y₁) :
+    (e.ofEq h₀ h₁).IsEquivalence ↔ e.IsEquivalence :=
+  isEquivalence_iff_of_edge_eq (ofEq_edge e h₀ h₁)
+
 section Quasicategory
 
 open Truncated.HomotopyCategory₂
