@@ -10,13 +10,10 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Forest
 /-!
 # Paths in the bridge forest
 
-A walk projects to the bridge forest by omitting its nonbridge edges. Its edge list is
-exactly the original edge list filtered to bridges; in particular trails, and hence paths,
-project to paths. Conversely, a path in the bridge forest lifts to a native path between
-any prescribed vertices of its end components, retaining exactly the displayed bridges in
-order. The portions inside bridge components need not be unique.
-
-These operations refine the reachability correspondence to actual edge-labelled witnesses.
+This file refines the projection and lifting operations of `Bridge.Forest` to ordered
+edge lists and support control. Projection keeps exactly the original bridges, in order,
+and respects concatenation and reversal. A forest path lifts between arbitrary prescribed
+vertices of its end components, and projecting the canonical lift recovers the forest path.
 No finiteness assumptions on vertices or edges are needed.
 -/
 
@@ -33,42 +30,19 @@ variable {α : Type u} {β : Type v} {G : Graph α β} {x y z : α}
 namespace Walk
 
 open Classical in
-/-- Project a walk to the bridge forest, omitting traversals of nonbridges. -/
-noncomputable def toBridgeForest : {x y : α} → (p : G.Walk x y) →
-    (hx : x ∈ V(G)) → (hy : y ∈ V(G)) →
-    G.bridgeForest.Walk (G.bridgeComponentOf x hx) (G.bridgeComponentOf y hy)
-  | _, _, .nil, _, _ => .nil
-  | _, _, .cons e h p, hx, hy =>
-    if he : G.IsBridge e then
-      .cons e (he.isLink_bridgeForest h) (p.toBridgeForest h.right_mem hy)
-    else
-      ((G.bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
-        (h.reachable_deleteEdges_bridgeSet he)).symm ▸ p.toBridgeForest h.right_mem hy
-
-/-- A zero-length walk projects to the zero-length walk. -/
-@[simp]
-theorem toBridgeForest_nil (hx : x ∈ V(G)) :
-    (Walk.nil : G.Walk x x).toBridgeForest hx hx = .nil := (rfl)
-
-open Classical in
 /-- Projection retains exactly the original bridge identities, in their original order. -/
 @[simp]
 theorem edges_toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     (p.toBridgeForest hx hy).edges = p.edges.filter (fun e ↦ decide (G.IsBridge e)) := by
   classical
   induction p with
-  | nil => simp [toBridgeForest]
+  | nil => simp
   | cons e h p ih =>
-    by_cases he : G.IsBridge e <;> simp [toBridgeForest, he, ih]
-
-/-- A bridge traversal is retained by projection. -/
-@[simp]
-theorem toBridgeForest_cons_of_isBridge {e : β} (h : G.IsLink e x y)
-    (p : G.Walk y z) (he : G.IsBridge e) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
-    (cons e h p).toBridgeForest hx hz =
-      cons e (he.isLink_bridgeForest h) (p.toBridgeForest h.right_mem hz) := by
-  apply ext_edges
-  simp [he]
+    by_cases he : G.IsBridge e
+    · rw [toBridgeForest_cons_of_isBridge h p he]
+      simp [he, ih]
+    · rw [edges_toBridgeForest_cons_of_not_isBridge h p he]
+      simp [he, ih]
 
 /-- A nonbridge traversal is omitted; only the identification of its end components remains. -/
 @[simp]
@@ -105,17 +79,20 @@ theorem toBridgeForest_reverse (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈ V(
   apply ext_edges
   simp [List.filter_reverse]
 
+/-- Every vertex visited by a walk projects to a vertex visited by its projection. -/
+theorem bridgeComponentOf_mem_support_toBridgeForest (p : G.Walk x y)
+    (hx : x ∈ V(G)) (hy : y ∈ V(G)) {a : α} (ha : a ∈ V(G)) (h : a ∈ p.support) :
+    G.bridgeComponentOf a ha ∈ (p.toBridgeForest hx hy).support := by
+  obtain ⟨r, s, rfl⟩ := mem_support_iff_exists_append.mp h
+  rw [toBridgeForest_append r s hx ha hy, support_append]
+  exact List.mem_append_left _ (r.toBridgeForest hx ha).end_mem_support
+
 /-- Trails project to paths: filtering preserves distinct edges, and a forest trail is a path. -/
 theorem IsTrail.toBridgeForest {p : G.Walk x y} (hp : p.IsTrail)
     (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (p.toBridgeForest hx hy).IsPath := by
   apply (G.isForest_bridgeForest.isPath_iff_isTrail _).mpr
   rw [isTrail_def, edges_toBridgeForest]
   exact ((isTrail_def p).mp hp).filter _
-
-/-- Paths project to paths in the bridge forest. -/
-theorem IsPath.toBridgeForest {p : G.Walk x y} (hp : p.IsPath)
-    (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (p.toBridgeForest hx hy).IsPath :=
-  hp.isTrail.toBridgeForest hx hy
 
 end Walk
 
@@ -161,44 +138,40 @@ namespace Walk
 
 variable {C D : G.BridgeComponent}
 
-/-- Choose a path lifting a bridge-forest path between specified original endpoints.
-The choices concern only the paths inside bridge components. -/
-noncomputable def liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
-    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) : G.Walk x y :=
-  (hq.exists_lift_bridgeForest hx hy).choose
-
-/-- A chosen lift has no repeated vertices. -/
+/-- Projecting the canonical lift of a forest path recovers that path, with endpoints
+identified with the bridge components of the prescribed vertices. -/
 @[simp]
-theorem isPath_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
-    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) : (q.liftBridgeForest hq hx hy).IsPath :=
-  (hq.exists_lift_bridgeForest hx hy).choose_spec.1
+theorem toBridgeForest_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
+    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
+    (q.liftBridgeForest hx hy).toBridgeForest (BridgeComponent.mem_vertexSet hx)
+      (BridgeComponent.mem_vertexSet hy) =
+      q.copy (BridgeComponent.eq_bridgeComponentOf hx)
+        (BridgeComponent.eq_bridgeComponentOf hy) := by
+  apply G.isForest_bridgeForest.eq_of_isPath
+  · exact (q.isPath_liftBridgeForest hx hy).toBridgeForest _ _
+  · exact (isPath_copy _ _ _).mpr hq
 
 open Classical in
-/-- The bridges in the chosen lift are exactly the edges of the forest path, in order. -/
+/-- The bridges in the canonical lift are exactly the edges of the forest path, in order. -/
 @[simp]
 theorem filter_edges_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
     (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
-    (q.liftBridgeForest hq hx hy).edges.filter (fun e ↦ decide (G.IsBridge e)) = q.edges :=
-  (hq.exists_lift_bridgeForest hx hy).choose_spec.2.1
+    (q.liftBridgeForest hx hy).edges.filter (fun e ↦ decide (G.IsBridge e)) = q.edges := by
+  simpa only [edges_toBridgeForest, edges_copy] using
+    congrArg Walk.edges (toBridgeForest_liftBridgeForest q hq hx hy)
 
-/-- The lift stays in the union of the components on the forest path. -/
+/-- The canonical lift stays in the union of the components on the forest path. -/
 theorem exists_mem_support_of_mem_support_liftBridgeForest
     (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
     (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) {a : α}
-    (ha : a ∈ (q.liftBridgeForest hq hx hy).support) :
-    ∃ E ∈ q.support, a ∈ V(E.1) :=
-  (hq.exists_lift_bridgeForest hx hy).choose_spec.2.2 a ha
-
-/-- Projecting a lifted path recovers the original forest path. -/
-@[simp]
-theorem toBridgeForest_liftBridgeForest (hx : x ∈ V(G)) (hy : y ∈ V(G))
-    (q : G.bridgeForest.Walk (G.bridgeComponentOf x hx) (G.bridgeComponentOf y hy))
-    (hq : q.IsPath) :
-    (q.liftBridgeForest hq (mem_vertexSet_bridgeComponentOf_self hx)
-      (mem_vertexSet_bridgeComponentOf_self hy)).toBridgeForest hx hy = q := by
-  classical
-  apply ext_edges
-  simp
+    (ha : a ∈ (q.liftBridgeForest hx hy).support) :
+    ∃ E ∈ q.support, a ∈ V(E.1) := by
+  have haG := (q.liftBridgeForest hx hy).support_subset_vertexSet
+    (BridgeComponent.mem_vertexSet hx) a ha
+  refine ⟨G.bridgeComponentOf a haG, ?_, mem_vertexSet_bridgeComponentOf_self haG⟩
+  have hm := (q.liftBridgeForest hx hy).bridgeComponentOf_mem_support_toBridgeForest
+    (BridgeComponent.mem_vertexSet hx) (BridgeComponent.mem_vertexSet hy) haG ha
+  rwa [toBridgeForest_liftBridgeForest q hq hx hy, support_copy] at hm
 
 end Walk
 
