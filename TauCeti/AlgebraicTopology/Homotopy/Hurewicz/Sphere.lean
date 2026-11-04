@@ -21,7 +21,8 @@ proves that its Hurewicz class generates the top homology of the sphere: the mor
 coefficients `R` in any abelian category with coproducts
 (`TauCeti.isIso_hurewicz_sphereGenLoop`). In other words, the quotient map
 `(Iⁿ⁺¹, ∂Iⁿ⁺¹) → (Sⁿ⁺¹, N)` sends the fundamental class of the cube to a fundamental class of the
-sphere.
+sphere, and so induces an isomorphism `Hₙ₊₁(Iⁿ⁺¹, ∂Iⁿ⁺¹; R) ≅ Hₙ₊₁(Sⁿ⁺¹, N; R)`
+(`TauCeti.isIso_singularHomologyMap_toCubeBoundaryPairHom_sphereGenLoop`).
 
 Every generalized loop factors through the tautological one
 (`GenLoop.map_toSphere_sphereGenLoop`), so this is the universal example of the Hurewicz map: every
@@ -290,6 +291,17 @@ instance isIso_hurewicz_sphereGenLoop :
       ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
       diskBoundaryPairToCube_comp_toCubeBoundaryPairHom, TopPair.singularHomologyMap_comp]
   exact IsIso.of_isIso_fac_right hfac
+
+/-- **The collapse of the boundary of the cube induces an isomorphism on relative homology.** The
+map of pairs `TauCeti.cubeToSphere : (Iⁿ⁺¹, ∂Iⁿ⁺¹) → (Sⁿ⁺¹, N)` induces an isomorphism
+`Hₙ₊₁(Iⁿ⁺¹, ∂Iⁿ⁺¹; R) ≅ Hₙ₊₁(Sⁿ⁺¹, N; R)`. -/
+instance isIso_singularHomologyMap_toCubeBoundaryPairHom_sphereGenLoop :
+    IsIso (TopPair.singularHomologyMap
+      (GenLoop.toCubeBoundaryPairHom.{0} (sphereGenLoop (n + 1))) R (n + 1)) := by
+  rw [← Iso.hom_inv_id_assoc (singularHomologyCubeBoundaryPairIso R (n + 1))
+    (TopPair.singularHomologyMap _ R (n + 1)),
+    ← GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom]
+  infer_instance
 
 end TauCeti
 
