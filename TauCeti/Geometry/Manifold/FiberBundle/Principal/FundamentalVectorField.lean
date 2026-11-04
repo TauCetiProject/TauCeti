@@ -13,20 +13,18 @@ public import TauCeti.Geometry.Manifold.FiberBundle.Pullback
 # Fundamental vector fields on smooth principal bundles
 
 Let `P` be a `C^n` principal `G`-bundle over a manifold `B` modelled on `IB`, with structure group
-`G` modelled on `IG`. Its charted total space `TauCeti.ManifoldTotalSpace G P` carries the fibrewise
-right action `MulAction Gᵐᵒᵖ (ManifoldTotalSpace G P)` (`TauCeti.ManifoldTotalSpace.instMulAction`),
-so every Lie algebra element `ξ : GroupLieAlgebra IG G` directly generates the fundamental vector
-field `TauCeti.rightFundamentalVectorField (IB.prod IG) ξ` on `ManifoldTotalSpace G P` without a
-wrapper definition.
+`G` modelled on `IG`. Its charted total space `TauCeti.ManifoldTotalSpace G P` carries the smooth
+fibrewise right action `MulAction Gᵐᵒᵖ (ManifoldTotalSpace G P)`
+(`TauCeti.ManifoldTotalSpace.instMulAction`, `TauCeti.PrincipalBundle.contMDiff_op_smul`,
+`TauCeti.PrincipalBundle.instContMDiffConstSMul`), so every Lie algebra element
+`ξ : GroupLieAlgebra IG G` directly generates the fundamental vector field
+`TauCeti.rightFundamentalVectorField (IB.prod IG) ξ` on `ManifoldTotalSpace G P` without a wrapper
+definition.
 
 This file connects the general right-action theory of
 `TauCeti.Geometry.Lie.FundamentalVectorField.Right` to the smooth principal-bundle geometry of
 `TauCeti.Geometry.Manifold.FiberBundle.Principal`:
 
-* **Smoothness of the right action**: `(x, g) ↦ op g • x` on `ManifoldTotalSpace G P × G` is `C^n`
-  (`TauCeti.PrincipalBundle.contMDiff_op_smul`), and `ManifoldTotalSpace G P` carries a
-  `ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P)` instance so that right
-  translation by `g` is packaged by `Diffeomorph.constSmul (IB.prod IG) n (op g)`.
 * **Regularity, equivariance, bracket, and exponential flow**: `ξ♯` is `C^m` whenever `m + 1 ≤ n`,
   satisfies `d(R_g)_x (ξ♯ x) = (Ad(g⁻¹) ξ)♯ (x · g)` and `[ξ♯, η♯] = ⁅ξ, η⁆♯`, and over `ℝ` has
   integral curves `t ↦ x · exp(t ξ)` with initial velocity `ξ♯ x` at `0`.
@@ -52,8 +50,6 @@ This file connects the general right-action theory of
 
 ## Main results
 
-* `TauCeti.PrincipalBundle.contMDiff_op_smul`, `TauCeti.PrincipalBundle.instContMDiffConstSMul`:
-  joint and pointwise `C^n` smoothness of the right action on `ManifoldTotalSpace G P`.
 * `TauCeti.PrincipalBundle.contMDiff_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.mfderiv_op_smul_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.mlieBracket_rightFundamentalVectorField`,
@@ -99,46 +95,7 @@ variable {n : ℕ∞ω} {𝕜 B G : Type*} [NontriviallyNormedField 𝕜]
   {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
 
-section SmoothAction
-
-variable [ContMDiffMul IG n G]
-
-/-- **The right action on the charted total space of a principal bundle is jointly `C^n` whenever
-group multiplication is `C^n`.** -/
-theorem contMDiff_op_smul :
-    ContMDiff ((IB.prod IG).prod IG) (IB.prod IG) n
-      (fun p : ManifoldTotalSpace G P × G => op p.2 • p.1) := by
-  have hp : ContMDiff ((IB.prod IG).prod IG) (IB.prod IG) n
-      (fun p : ManifoldTotalSpace G P × G =>
-        ManifoldTotalSpace.homeomorph G P
-          ⟨((ManifoldTotalSpace.homeomorph G P).symm p.1).proj,
-            ((ManifoldTotalSpace.homeomorph G P).symm p.1).2⟩) :=
-    contMDiff_fst.congr fun p => by simp only [TotalSpace.eta, Homeomorph.apply_symm_apply]
-  exact (hp.totalSpaceMk_smul contMDiff_snd).congr fun ⟨x, g⟩ => by
-    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
-    rw [ManifoldTotalSpace.smul_homeomorph, Homeomorph.symm_apply_apply]
-
-/-- Each element of `Gᵐᵒᵖ` acts on `ManifoldTotalSpace G P` by a `C^n` map; in particular,
-`Diffeomorph.constSmul (IB.prod IG) n (op g)` packages right translation by `g` as a `C^n`
-diffeomorphism. -/
-instance instContMDiffConstSMul :
-    ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P) where
-  contMDiff_const_smul γ := by
-    have h := (contMDiff_op_smul (n := n) (G := G) (P := P) (IB := IB) (IG := IG)).comp
-      (contMDiff_id.prodMk (contMDiff_const (c := unop γ)))
-    exact h.congr fun x => by simp
-
-/-- Every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is `C^n`. -/
-theorem contMDiff_orbit (x : ManifoldTotalSpace G P) :
-    ContMDiff IG (IB.prod IG) n (fun g : G => op g • x) :=
-  contMDiff_op_smul.comp (contMDiff_const.prodMk contMDiff_id)
-
-/-- When `n ≠ 0`, every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is differentiable
-at every `g : G`. -/
-theorem mdifferentiableAt_orbit (hn : n ≠ 0) (x : ManifoldTotalSpace G P) (g : G) :
-    MDifferentiableAt IG (IB.prod IG) (fun h : G => op h • x) g :=
-  ((contMDiff_orbit (n := n) x) g).mdifferentiableAt hn
-
+variable [ContMDiffMul IG n G] in
 /-- On a `C¹` principal bundle with `C^n` group multiplication, the fundamental vector field
 `rightFundamentalVectorField` of `ξ` is `C^m` whenever `m + 1 ≤ n`. -/
 theorem contMDiff_rightFundamentalVectorField {m : ℕ∞ω} [IsManifold IB 1 B] [IsManifold IG 1 G]
@@ -148,8 +105,6 @@ theorem contMDiff_rightFundamentalVectorField {m : ℕ∞ω} [IsManifold IB 1 B]
         (⟨x, rightFundamentalVectorField (IB.prod IG) ξ x⟩ :
           TangentBundle (IB.prod IG) (ManifoldTotalSpace G P))) :=
   TauCeti.contMDiff_rightFundamentalVectorField hmn (contMDiff_op_smul (n := n)) ξ
-
-end SmoothAction
 
 omit [PrincipalBundle G P] in
 /-- At a transported point `ManifoldTotalSpace.homeomorph G P ⟨b, p⟩`, the fundamental vector field
