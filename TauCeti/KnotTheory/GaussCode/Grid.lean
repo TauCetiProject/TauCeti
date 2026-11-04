@@ -40,7 +40,9 @@ Listing the passes by increasing time (`TauCeti.GridDiagram.IsKnot.visitEquiv`) 
 oriented Gauss code `TauCeti.GridDiagram.IsKnot.gaussCode`, built with
 `TauCeti.BasedOrientedGaussCode.ofPerfectMatching`; its writhe is the sum of the crossing signs
 (`TauCeti.GridDiagram.IsKnot.writhe_gaussCode`). It can be passed on to an oriented PD-code by
-`TauCeti.BasedOrientedGaussCode.toOrientedPDCode`.
+`TauCeti.BasedOrientedGaussCode.toOrientedPDCode`. The construction adapts that of
+`Polygon.gaussCode` in `TauCeti.KnotTheory.GaussCode.Polygon.Basic`, the Gauss code of a projected
+polygonal knot, whose crossing passes are likewise listed by increasing time.
 
 Two families of grids check the conventions. The standard unknot grids have no crossings at all
 (`TauCeti.GridDiagram.crossings_unknot`), so their Gauss code is the crossing-free code

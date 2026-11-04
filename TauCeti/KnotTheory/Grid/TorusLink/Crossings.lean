@@ -28,9 +28,9 @@ namespace GridDiagram
 
 /-- **Every crossing of a torus link grid is negative.** In the first `p + 1` columns the vertical
 segment runs down from the `X`-marking `q + 1` rows above the diagonal, and every crossing on it
-lies in a row whose horizontal segment runs to the right; in the last `q + 1` columns the vertical
+lies in a row whose horizontal segment runs to the left; in the last `q + 1` columns the vertical
 segment runs up, and every crossing on it lies in a row whose horizontal segment runs to the
-left. -/
+right. -/
 theorem crossingSign_torusLink (p q : ℕ) {x : Fin (p + 1 + (q + 1)) × Fin (p + 1 + (q + 1))}
     (hx : x ∈ (torusLink p q).crossings) : (torusLink p q).crossingSign x = -1 := by
   obtain ⟨c, r⟩ := x
