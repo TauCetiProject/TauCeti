@@ -48,7 +48,7 @@ of primes in Galois extensions therefore apply to `D_x` and `I_x`.
   `TauCeti.SchemeInertia.inertia_apply_eq_map_conj`: moving the point by `g` conjugates the
   decomposition and inertia groups by `g`.
 * `TauCeti.SchemeInertia.decomposition_eq_stabilizer`,
-  `TauCeti.SchemeInertia.inertia_eq_ideal_inertia`: on a quasi-affine scheme, the decomposition and
+  `TauCeti.SchemeInertia.inertia_eq_idealInertia`: on a quasi-affine scheme, the decomposition and
   inertia groups of `x` are the stabilizer and the inertia group of the prime ideal of global
   functions vanishing at `x`.
 
@@ -68,26 +68,20 @@ namespace TauCeti.SchemeInertia
 
 variable {X : Scheme.{u}} {G : Type*} [Group G] (σ : G →* Aut X)
 
-/-- The action of `G` on the points of `X` through `σ`: `g • x = σ g x`. -/
-@[instance_reducible]
-private def pointAction : MulAction G X where
-  smul g x := (σ g).asIso.hom x
-  -- The `show`s unfold the `smul` field just defined, so that `simp` sees `σ` applied to `x`.
-  one_smul x := show (σ 1).asIso.hom x = x by simp
-  mul_smul g k x := show (σ (g * k)).asIso.hom x = (σ g).asIso.hom ((σ k).asIso.hom x) by simp
-
 /-- The **decomposition group** of a point `x` for an action `σ` of `G` on a scheme `X`: the
-stabilizer of `x`. -/
+stabilizer of `x` for the action `Scheme.pointMulAction σ` of `G` on points. -/
 def decomposition (x : X) : Subgroup G :=
-  letI := pointAction σ
+  letI := Scheme.pointMulAction σ
   MulAction.stabilizer G x
 
 variable {σ} in
 /-- An element lies in the decomposition group of `x` exactly when it fixes `x`. -/
 @[simp]
 theorem mem_decomposition_iff {x : X} {g : G} :
-    g ∈ decomposition σ x ↔ (σ g).asIso.hom x = x :=
-  .rfl
+    g ∈ decomposition σ x ↔ (σ g).asIso.hom x = x := by
+  let _ := Scheme.pointMulAction σ
+  rw [← Scheme.pointMulAction_smul_def]
+  exact MulAction.mem_stabilizer_iff
 
 /-- The map induced on `κ(x)` by `σ g` when `σ g` fixes `x`. Since pullback of functions
 reverses composition, `g ↦ residueFieldHom σ g` reverses products. -/
@@ -206,9 +200,10 @@ instance (x : X) : ((inertia σ x).subgroupOf (decomposition σ x)).Normal := by
 /-- **Conjugation of decomposition groups.** The decomposition group of `g x` is the conjugate of
 that of `x` by `g`. -/
 theorem decomposition_apply_eq_map_conj (g : G) (x : X) :
-    decomposition σ ((σ g).asIso.hom x) = (decomposition σ x).map (MulAut.conj g).toMonoidHom :=
-  letI := pointAction σ
-  MulAction.stabilizer_smul_eq_stabilizer_map_conj g x
+    decomposition σ ((σ g).asIso.hom x) = (decomposition σ x).map (MulAut.conj g).toMonoidHom := by
+  let _ := Scheme.pointMulAction σ
+  rw [← Scheme.pointMulAction_smul_def]
+  exact MulAction.stabilizer_smul_eq_stabilizer_map_conj g x
 
 /-- The map induced on `κ(σ g x)` by `σ (g k g⁻¹)`, for `k` fixing `x`, is the map induced on
 `κ(x)` by `σ k`, transported along the residue field maps of `σ g` and `σ g⁻¹`. -/
@@ -283,7 +278,7 @@ theorem decomposition_eq_stabilizer [X.IsQuasiAffine] (x : X) :
 
 /-- The inertia group of `x` acts trivially modulo the prime ideal of global functions vanishing at
 `x`. -/
-theorem inertia_le_ideal_inertia (x : X) :
+theorem inertia_le_idealInertia (x : X) :
     letI := Scheme.globalSectionsMulSemiringAction σ
     inertia σ x ≤ (X.toSpecΓ x).asIdeal.inertia G := by
   let _ := Scheme.globalSectionsMulSemiringAction σ
@@ -295,11 +290,11 @@ theorem inertia_le_ideal_inertia (x : X) :
 
 /-- On a quasi-affine scheme, the inertia group of `x` is the inertia group of the prime ideal of
 global functions vanishing at `x`: the elements acting trivially modulo this prime. -/
-theorem inertia_eq_ideal_inertia [X.IsQuasiAffine] (x : X) :
+theorem inertia_eq_idealInertia [X.IsQuasiAffine] (x : X) :
     letI := Scheme.globalSectionsMulSemiringAction σ
     inertia σ x = (X.toSpecΓ x).asIdeal.inertia G := by
   let _ := Scheme.globalSectionsMulSemiringAction σ
-  refine le_antisymm (inertia_le_ideal_inertia x) fun g hg ↦ ?_
+  refine le_antisymm (inertia_le_idealInertia x) fun g hg ↦ ?_
   have hgD : g ∈ decomposition σ x := by
     rw [decomposition_eq_stabilizer]
     exact Ideal.inertia_le_stabilizer _ hg

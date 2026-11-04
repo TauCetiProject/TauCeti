@@ -36,6 +36,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 ## Main definitions
 
+* `AlgebraicGeometry.Scheme.pointMulAction`: a group acting on a scheme `X` by `σ : G →* Aut X`
+  acts on the points of `X` by `g • x = σ g x`.
 * `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
   `Γ(X, ⊤)` by `g • a = (σ g⁻¹)^*(a)`.
 
@@ -156,6 +158,25 @@ theorem Scheme.Hom.span_range_appTop_sub_eq_top_iff {X : Scheme.{u}} [IsAffine X
     congr 2
     ext a
     exact Ideal.Quotient.eq.2 (Ideal.subset_span ⟨a, rfl⟩)
+
+/-- **A group acting on a scheme acts on its points**: `g • x = σ g x`. The action on global
+functions, `Scheme.globalSectionsMulSemiringAction`, pulls back along inverses so that it is also
+a left action. -/
+@[instance_reducible]
+def Scheme.pointMulAction {X : Scheme.{u}} {G : Type*} [Group G] (σ : G →* Aut X) :
+    MulAction G X where
+  smul g x := (σ g).asIso.hom x
+  -- The `show`s unfold the `smul` field just defined, so that `simp` sees `σ` applied to `x`.
+  one_smul x := show (σ 1).asIso.hom x = x by simp
+  mul_smul g k x := show (σ (g * k)).asIso.hom x = (σ g).asIso.hom ((σ k).asIso.hom x) by simp
+
+/-- Under `Scheme.pointMulAction σ`, `g` moves a point `x` to its image under `σ g`. -/
+@[simp]
+theorem Scheme.pointMulAction_smul_def {X : Scheme.{u}} {G : Type*} [Group G]
+    (σ : G →* Aut X) (g : G) (x : X) :
+    letI := Scheme.pointMulAction σ
+    g • x = (σ g).asIso.hom x :=
+  (rfl)
 
 /-- **A group acting on a scheme acts on its global functions**, by pullback along inverses:
 `g • a = (σ g⁻¹)^*(a)`. Pullback reverses composition, so pulling back along inverses makes this a
