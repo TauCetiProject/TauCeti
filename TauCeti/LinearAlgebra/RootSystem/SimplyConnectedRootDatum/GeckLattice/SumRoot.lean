@@ -46,34 +46,22 @@ attribute [local instance high] Algebra.toModule
 variable (t : DynkinType) (ht : t.Valid)
   (i j : Fin t.rank) (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1)
 
-include hji in
-private theorem raising_bracket_central_left :
-    ⁅(t.lieBasis ht).rootGenerator (.inl i),
-      ⁅(t.lieBasis ht).rootGenerator (.inl i), (t.lieBasis ht).rootGenerator (.inl j)⁆⁆ = 0 := by
-  simpa only [LieAlgebra.Basis.rootGenerator_inl, Matrix.transpose_apply, hji, neg_neg,
-    Int.toNat_one, pow_one, LieAlgebra.ad_apply] using
-    (t.isSerreSystem_lieBasis ht).ad_pow_lie_E_E i j
-
-include hij in
-private theorem raising_bracket_central_right :
-    ⁅(t.lieBasis ht).rootGenerator (.inl j),
-      ⁅(t.lieBasis ht).rootGenerator (.inl i), (t.lieBasis ht).rootGenerator (.inl j)⁆⁆ = 0 := by
-  have hc := t.raising_bracket_central_left ht j i hij
-  rw [← lie_skew ((t.lieBasis ht).rootGenerator (.inl i))
-    ((t.lieBasis ht).rootGenerator (.inl j)), lie_neg, hc, neg_zero]
-
 /-- The positive sum-root subgroup at a single bond, normalized by the ordered bracket of
 its pinned simple roots. The parameter is in the multiplicative copy of the additive ring. -/
 noncomputable def geckSumRootSubgroupPoints (A : Type v) [CommRing A] :
     Multiplicative A →* t.geckPoints ht A :=
   (MulEquiv.subgroupCongr (t.geckPoints_eq_kostantToralPointsSubgroup ht A).symm).toMonoidHom.comp
     (UniversalEnvelopingAlgebra.kostantToralBracketRootSubgroupPoints
+      (i := Sum.inl i) (j := Sum.inl j)
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
-      (t.raising_bracket_central_left ht i j hji) (t.raising_bracket_central_right ht i j hij) A)
+      (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+        (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+      (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+        (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij) A)
 
 /-- The sum-root matrix is the image of the integral exponential of the ordered bracket. -/
 @[simp]
@@ -87,8 +75,10 @@ theorem coe_geckSumRootSubgroupPoints (A : Type v) [CommRing A] (a : Multiplicat
           (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
           (t.geckCoordinateLattice ht).toAddSubgroup
           (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-          (by exact t.raising_bracket_central_left ht i j hji)
-          (by exact t.raising_bracket_central_right ht i j hij)
+          (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+            (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+          (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+            (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij)
           (t.isNilpotent_geckRepresentation_rootGenerator ht (.inl i)) (CommAlgCat.of ℤ A) a) := by
   simp only [geckSumRootSubgroupPoints, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_apply,
@@ -101,18 +91,55 @@ theorem commutatorElement_geckSimpleRaising_eq_sumRoot
         t.geckRootSubgroupPoints ht (.inl j) A (Multiplicative.ofAdd b)⁆ =
       t.geckSumRootSubgroupPoints ht i j hij hji A (Multiplicative.ofAdd (a * b)) := by
   have heq := UniversalEnvelopingAlgebra.commutatorElement_kostantToralRootSubgroupPoints_eq_bracket
+    (i := Sum.inl i) (j := Sum.inl j)
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
     (t.isNilpotent_geckRepresentation_rootGenerator ht)
     (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
-    (t.raising_bracket_central_left ht i j hji) (t.raising_bracket_central_right ht i j hij) A a b
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij) A a b
   apply Subtype.ext
   simpa only [commutatorElement_def, Subgroup.coe_mul, Subgroup.coe_inv,
     coe_geckRootSubgroupPoints, coe_geckSumRootSubgroupPoints,
     UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints,
     UniversalEnvelopingAlgebra.coe_kostantToralBracketRootSubgroupPoints] using
     congrArg Subtype.val heq
+
+/-- The positive sum-root subgroup has torus weight equal to the sum of the two
+numbered simple-root weights. -/
+@[simp]
+theorem geckWeightTorusPoints_conj_geckSumRootSubgroupPoints
+    (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) (u : Multiplicative A) :
+    t.geckWeightTorusPoints ht A s * t.geckSumRootSubgroupPoints ht i j hij hji A u *
+        (t.geckWeightTorusPoints ht A s)⁻¹ =
+      t.geckSumRootSubgroupPoints ht i j hij hji A
+        (Multiplicative.ofAdd
+          ((torusCharacter s (t.rootGeneratorWeight ht (.inl i) +
+            t.rootGeneratorWeight ht (.inl j)) : A) * u.toAdd)) := by
+  have heq :=
+    UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints_conj_bracketRootSubgroupPoints
+    (i := Sum.inl i) (j := Sum.inl j)
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+    (t.geckCoordinateLattice ht).toAddSubgroup
+    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+    (t.isNilpotent_geckRepresentation_rootGenerator ht)
+    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_of_eq_neg_one hji)
+    (by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+      (t.isSerreSystem_lieBasis ht).lie_E_lie_E_E_swap_of_eq_neg_one hij)
+    (t.isCartanWeightVector_geckCoordinateBasisFin ht)
+    (fun k ↦ t.lie_lieBasis_h_rootGenerator ht (.inl i) k)
+    (fun k ↦ t.lie_lieBasis_h_rootGenerator ht (.inl j) k) A s u
+  apply Subtype.ext
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_geckWeightTorusPoints,
+    coe_geckSumRootSubgroupPoints,
+    UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints,
+    UniversalEnvelopingAlgebra.coe_kostantToralBracketRootSubgroupPoints,
+    geckTorusMatrix] using congrArg Subtype.val heq
 
 end
 
