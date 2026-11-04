@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Submonoid.Finsupp
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # The SAGBI criterion for monic families
@@ -32,6 +33,9 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
 
 ## Main results
 
+* `MvPolynomial.aeval_monomial_sub_monomial_sub_eq_zero`: if `φ Q = φ (Y^u - Y^v)`, then the
+  relation `Y^u - Y^v - Q` lies in the kernel of `φ`; so does every `R`-linear combination of
+  monomial multiples of such relations (`MvPolynomial.aeval_eq_zero_of_mem_span_monomial_mul`).
 * `MonomialOrder.weightedHomogeneousComponent_mem_toricIdeal`: if all exponents `w` of `P` have
   `A w ≼ e` and the coefficient of `X^e` in `φ P` vanishes, then the part of `P` of weight `e`
   lies in the toric ideal.
@@ -72,6 +76,33 @@ public section
 
 open MvPolynomial
 
+namespace MvPolynomial
+
+variable {ι J R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {c : ι → S}
+
+/-- If `aeval c Q = aeval c (Y^u - Y^v)`, then the relation `Y^u - Y^v - Q` lies in the kernel of
+`aeval c`. -/
+theorem aeval_monomial_sub_monomial_sub_eq_zero {u v : ι →₀ ℕ} {Q : MvPolynomial ι R}
+    (hQ : aeval c Q = aeval c (monomial u (1 : R) - monomial v 1)) :
+    aeval c (monomial u (1 : R) - monomial v 1 - Q) = 0 := by
+  rw [map_sub, hQ, sub_self]
+
+/-- If `aeval c (Q j) = aeval c (Y^(u j) - Y^(v j))` for every `j`, then `aeval c` vanishes on the
+`R`-span of the monomial multiples `Y^x * (Y^(u j) - Y^(v j) - Q j)`, for any condition `p x j`
+selecting the multiples. -/
+theorem aeval_eq_zero_of_mem_span_monomial_mul {u v : J → ι →₀ ℕ} {Q : J → MvPolynomial ι R}
+    (hQ : ∀ j, aeval c (Q j) = aeval c (monomial (u j) (1 : R) - monomial (v j) 1))
+    {p : (ι →₀ ℕ) → J → Prop} {f : MvPolynomial ι R}
+    (hf : f ∈ Submodule.span R {f | ∃ x j, p x j ∧
+      monomial x 1 * (monomial (u j) 1 - monomial (v j) 1 - Q j) = f}) :
+    aeval c f = 0 := by
+  refine (Submodule.span_le (p := LinearMap.ker (aeval c).toLinearMap)).2 ?_ hf
+  rintro _ ⟨x, j, -, rfl⟩
+  exact (map_mul (aeval c) _ _).trans
+    (mul_eq_zero_of_right _ (aeval_monomial_sub_monomial_sub_eq_zero (hQ j)))
+
+end MvPolynomial
+
 namespace MonomialOrder
 
 variable {σ ι : Type*} {m : MonomialOrder σ}
@@ -91,15 +122,12 @@ theorem weightedHomogeneousComponent_mem_toricIdeal (hc : ∀ i, m.Monic (c i))
     weightedHomogeneousComponent (fun i ↦ m.degree (c i)) δ P ∈
       TauCeti.toricIdeal R (fun i ↦ m.degree (c i)) := by
   classical
-  have hA (w : ι →₀ ℕ) : Finsupp.weight (fun i ↦ m.degree (c i)) w =
-      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w := by
-    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
   rw [coeff_aeval_of_forall_le hc hP] at hδ
   rw [TauCeti.mem_toricIdeal_iff, weightedHomogeneousComponent_apply, map_sum]
   simp_rw [TauCeti.aeval_single_monomial, single_eq_monomial]
   rw [Finset.sum_congr rfl (g := fun w ↦ monomial δ (P.coeff w)) fun w hw ↦ by
-    rw [← hA, (Finset.mem_filter.1 hw).2], ← map_sum]
-  simp only [hA]
+    rw [← Finsupp.weight_apply_eq_linearCombination, (Finset.mem_filter.1 hw).2], ← map_sum]
+  simp only [Finsupp.weight_apply_eq_linearCombination]
   rw [hδ, map_zero]
 
 end CommSemiring
@@ -131,8 +159,7 @@ theorem exists_sub_mem_span_of_mem_toricIdeal {u v : J → ι →₀ ℕ}
   classical
   set a := fun i ↦ m.degree (c i)
   set A := Finsupp.linearCombination ℕ a
-  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := by
-    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
+  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := Finsupp.weight_apply_eq_linearCombination a w
   -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
   have hβ (j : J) :
       (monomial (u j) (1 : R) - monomial (v j) 1).IsWeightedHomogeneous a (A (u j)) := by
@@ -201,8 +228,7 @@ theorem exists_sub_mem_span_of_coeff_aeval_eq_zero (hc : ∀ i, m.Monic (c i))
   classical
   set a := fun i ↦ m.degree (c i)
   set A := Finsupp.linearCombination ℕ a
-  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := by
-    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
+  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := Finsupp.weight_apply_eq_linearCombination a w
   -- The cancelling part `P₀` of `P` of weight `δ` lies in the toric ideal; replace it by a
   -- congruent polynomial `P₁` all of whose exponents have weight below `δ`.
   set P₀ := weightedHomogeneousComponent a δ P with hP₀def
@@ -296,12 +322,8 @@ private theorem degree_aeval_mem_closure (hc : ∀ i, m.Monic (c i)) {u v : J �
     -- relations to a polynomial `P'` all of whose exponents have weight below `δ`.
     obtain ⟨P', hPP', hP'δ⟩ := exists_sub_mem_span_of_coeff_aeval_eq_zero hc hJ hQlt hPδ htop
     have hP' : aeval c P' = aeval c P := by
-      refine (sub_eq_zero.1 ?_).symm
-      rw [← map_sub]
-      refine (Submodule.span_le (p := LinearMap.ker (aeval c).toLinearMap)).2 ?_ hPP'
-      rintro _ ⟨x, j, -, rfl⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker, AlgHom.toLinearMap_apply, map_mul, map_sub, hQ j,
-        sub_self, mul_zero]
+      rw [eq_comm, ← sub_eq_zero, ← map_sub]
+      exact aeval_eq_zero_of_mem_span_monomial_mul hQ hPP'
     have hne : P'.support.Nonempty :=
       support_nonempty.2 fun h ↦ hP (by rw [← hP', h, map_zero])
     obtain ⟨w₀, hw₀, hmax⟩ := Finset.exists_max_image _ (fun w ↦ m.toSyn (A w)) hne
