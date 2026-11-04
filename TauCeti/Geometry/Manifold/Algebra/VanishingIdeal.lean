@@ -164,29 +164,21 @@ theorem mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero {x : M} (hx : I.IsInteri
   -- Hadamard's lemma for `g` at `F x` in the coordinates of a basis `b`, pulled back along `F`.
   let b := Module.finBasis ℝ E
   obtain ⟨a, hax, ha⟩ := exists_contMDiffMap_hadamard_coords g (F x) b
-  let q (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
-      ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub
-        contMDiff_const⟩
-  let h : C^∞⟮I, M; ℝ⟯ := ∑ i, (a i).comp F * q i
-  -- Each bundled `q i` evaluates as the function it was built from (`ContMDiffMap.coeFn_mk`).
-  have hq (i : Fin (Module.finrank ℝ E)) (y : M) :
-      q i y = b.coord i (F y) - b.coord i (F x) :=
-    rfl
-  have hh : h ∈ smoothVanishingIdeal x ^ 2 := by
+  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
+    ⟨fun y ↦ b.coord i (F y), (b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff⟩
+  -- The pulled-back identity holds pointwise by `ha`, as the bundled compositions evaluate as
+  -- the composed functions (`ContMDiffMap.comp_apply`, `ContMDiffMap.coeFn_mk`).
+  have hfactor := sub_algebraMap_eq_sum_mul_sub_algebraMap x (g.comp F) (fun i ↦ (a i).comp F) c
+    fun y ↦ ha (F y)
+  rw [show g.comp F x = 0 from hgx, map_zero, sub_zero] at hfactor
+  have hgF : g.comp F ∈ smoothVanishingIdeal x ^ 2 := by
+    rw [hfactor]
     refine Ideal.sum_mem _ fun i _ ↦ ?_
     rw [pow_two]
     refine Ideal.mul_mem_mul ?_ ?_
     · simp [hax, hdg]
-    · rw [mem_smoothVanishingIdeal, hq, sub_self]
-  have hfh : (f : M → ℝ) =ᶠ[𝓝 x] h := by
-    filter_upwards [hg] with y hy
-    have hhy : h y = ∑ i, (a i).comp F y * q i y := by
-      simpa using congr_fun (map_sum ContMDiffMap.coeFnRingHom (fun i ↦ (a i).comp F * q i)
-        Finset.univ) y
-    rw [hy, Function.comp_apply, ← sub_zero (g (F y)), ← hgx, ha, hhy]
-    simp only [ContMDiffMap.comp_apply, hq]
-  simpa using add_mem (sub_mem_smoothVanishingIdeal_sq_of_eventuallyEq hfh) hh
+    · simp [Algebra.algebraMap_eq_smul_one]
+  simpa using add_mem (sub_mem_smoothVanishingIdeal_sq_of_eventuallyEq (g := g.comp F) hg) hgF
 
 /-- At an interior point `x` of a finite-dimensional Hausdorff manifold, a smooth function lies in
 the square of the vanishing ideal of `x` exactly when it vanishes at `x` together with its
