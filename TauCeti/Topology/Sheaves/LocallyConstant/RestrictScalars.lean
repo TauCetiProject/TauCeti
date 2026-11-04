@@ -34,34 +34,7 @@ noncomputable section
 
 namespace TopCat
 
-variable (X : TopCat.{u}) {R S T : Type u} [Ring R] [Ring S] [Ring T]
-
-/-- Applying a ring homomorphism to the values of locally constant functions, as a morphism of
-sheaves of rings. -/
-def locallyConstantRingCatSheafMap (φ : R →+* S) :
-    locallyConstantRingCatSheaf X R ⟶ locallyConstantRingCatSheaf X S where
-  hom :=
-    { app := fun U ↦ RingCat.ofHom (LocallyConstant.mapRingHom φ)
-      naturality := fun {_ _} _ ↦ by ext; rfl }
-
-@[simp]
-lemma locallyConstantRingCatSheafMap_app_apply (φ : R →+* S) (U : (Opens X)ᵒᵖ)
-    (f : LocallyConstant U.unop R) :
-    (locallyConstantRingCatSheafMap X φ).hom.app U f = f.map φ :=
-  (rfl)
-
-@[simp]
-lemma locallyConstantRingCatSheafMap_id :
-    locallyConstantRingCatSheafMap X (RingHom.id R) = 𝟙 _ := by
-  ext
-  rfl
-
-@[simp]
-lemma locallyConstantRingCatSheafMap_comp (φ : R →+* S) (ψ : S →+* T) :
-    locallyConstantRingCatSheafMap X (ψ.comp φ) =
-      locallyConstantRingCatSheafMap X φ ≫ locallyConstantRingCatSheafMap X ψ := by
-  ext
-  rfl
+variable (X : TopCat.{u}) {R S : Type u} [Ring R] [Ring S]
 
 namespace Sheaf
 
@@ -69,13 +42,13 @@ variable {X} (F : X.Sheaf (ModuleCat.{u} S)) (φ : R →+* S)
 
 /-- After restriction of scalars, the action of a locally constant `R`-valued function is the
 action of its image under `φ`. -/
+@[simp]
 lemma restrictScalars_locallyConstant_smul {U : Opens X} (f : LocallyConstant U R)
     (s : F.presheaf.obj (op U)) :
-    let F' : X.Sheaf (ModuleCat.{u} R) :=
-      (sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars φ)).obj F
-    @HSMul.hSMul (LocallyConstant U R) (F'.presheaf.obj (op U)) _ _ f s =
+    @HSMul.hSMul (LocallyConstant U R)
+        (((sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars φ)).obj F).obj.obj
+          (op U)) _ _ f s =
       (f.map φ : LocallyConstant U S) • s := by
-  dsimp only
   symm
   refine (eq_smul_iff
     ((sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars φ)).obj F)
@@ -101,7 +74,10 @@ def toLocallyConstantModuleRestrictScalarsObjIso :
   (SheafOfModules.fullyFaithfulForget _).preimageIso
     (PresheafOfModules.isoMk (fun U ↦ ModuleCat.isoMk (Iso.refl _) fun f ↦ by
       ext s
-      exact (restrictScalars_locallyConstant_smul F φ f s).symm) fun {_ _} _ ↦ rfl)
+      exact (congrArg (fun g : LocallyConstant U.unop S ↦
+        @SMul.smul _ _ (instSMulLocallyConstant F U.unop) g s)
+        (locallyConstantRingCatSheafMap_app_apply X φ U f)).trans
+        (restrictScalars_locallyConstant_smul F φ f s).symm) fun {_ _} _ ↦ rfl)
 
 @[simp]
 lemma toLocallyConstantModuleRestrictScalarsObjIso_hom_val_app_apply (U : (Opens X)ᵒᵖ)
@@ -162,7 +138,10 @@ def restrictToConstantsRestrictScalarsIso :
     (NatIso.ofComponents (fun U ↦ ModuleCat.isoMk (Iso.refl _) fun r ↦ by
       ext m
       -- Both actions are by the constant `S`-valued function with value `φ r`.
-      rfl) fun _ ↦ rfl)) fun _ ↦ by ext; rfl
+      exact (congrArg (fun f : LocallyConstant U.unop S ↦
+        @HSMul.hSMul ((locallyConstantRingCatSheaf X S).obj.obj U) (M.val.obj U) _ _ f m)
+        (locallyConstantRingCatSheafMap_app_apply X φ U
+          (LocallyConstant.const U.unop r))).symm) fun _ ↦ rfl)) fun _ ↦ by ext; rfl
 
 /-- The comparison for restriction to constants fixes each section. -/
 @[simp]
