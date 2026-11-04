@@ -65,8 +65,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
 * `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
   integer floor, including at negative points;
-* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` shows that every level below one is
-  reached by a finite cumulative mass of a natural-valued law.
+* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` and
+  `MeasureTheory.Measure.exists_nat_lt_measureReal_Iic` show that every level below one is
+  reached and strictly exceeded by finite cumulative masses of a natural-valued law.
 
 ## Adapted from
 
@@ -241,6 +242,13 @@ theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u �
   refine ⟨⌈x⌉₊, ?_⟩
   have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
   simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
+
+/-- Every level strictly below one is strictly exceeded by a finite cumulative mass of a
+natural-valued probability law. -/
+theorem exists_nat_lt_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u < μ.real (Iic k) := by
+  have hmid : (u + 1) / 2 < 1 := by linarith
+  obtain ⟨k, hk⟩ := exists_nat_le_measureReal_Iic μ hmid
+  exact ⟨k, by linarith⟩
 
 /-- **CDF continuity from null singletons.** The cumulative distribution function of a
 probability measure on `ℝ` is continuous when every singleton has measure zero. -/
