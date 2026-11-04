@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct.Contraction
+import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 import TauCeti.RingTheory.Derivation.Nilpotent
 import TauCeti.RingTheory.Derivation.Basic
 
@@ -80,10 +80,7 @@ noncomputable def leftInvariantDerivation :
     Derivation R H (CounitAlgebra R H R) →ₗ⁅R⁆ Derivation R H H where
   toFun d :=
     Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
-      simp only [Comodule.differential_apply, Comodule.instSelf_coact,
-        _root_.Bialgebra.comul_mul,
-        Comodule.tensorComponent_mul (CounitAlgebra.algEquivSelf_comp_apply_mul d), smul_eq_mul]
-      simp [LinearMap.tensorComponent_def]
+      rw [ComoduleAlgebra.differential_mul, smul_eq_mul, smul_eq_mul]
       ring
   map_add' d e := by
     ext h

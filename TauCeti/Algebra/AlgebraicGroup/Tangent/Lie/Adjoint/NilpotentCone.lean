@@ -217,33 +217,23 @@ theorem coact_mem_map_includeLeft_nilpotentConeIdeal {p : SymmetricAlgebra k (Mo
     (hp : p ∈ nilpotentConeIdeal k H) :
     Comodule.coact (R := k) (C := H) p ∈
       (nilpotentConeIdeal k H).map (Algebra.TensorProduct.includeLeft (R := k) (S := k)
-        (A := SymmetricAlgebra k (Module.Dual k 𝔤)) (B := H)) := by
-  induction hp using Submodule.span_induction with
-  | mem q hq =>
-    rw [mem_adjointInvariantPolynomials.mp hq.1]
-    exact Ideal.mem_map_of_mem _ (Ideal.subset_span hq)
-  | zero => rw [map_zero]; exact zero_mem _
-  | add q q' _ _ hq hq' => rw [map_add]; exact add_mem hq hq'
-  | smul r q _ hq =>
-    rw [smul_eq_mul, ComoduleAlgebra.coact_mul]
-    exact Ideal.mul_mem_left _ _ hq
+        (A := SymmetricAlgebra k (Module.Dual k 𝔤)) (B := H)) :=
+  ComoduleAlgebra.coact_mem_map_includeLeft_span (fun _ ↦ And.left) hp
 
 variable (k H) in
 /-- The ideal of the nilpotent cone, as a subcomodule of the polynomial functions on the Lie
 algebra: the adjoint action of `G` on `O(𝔤)` restricts to it, and so descends to the coordinate
 ring of the cone. -/
 noncomputable def nilpotentConeSubcomodule :
-    Subcomodule k H (SymmetricAlgebra k (Module.Dual k 𝔤)) where
-  carrier := (nilpotentConeIdeal k H).restrictScalars k
-  coact_mem' p hp := by
-    rw [← LinearMap.rTensor_def, ← Ideal.map_includeLeft_eq]
-    exact coact_mem_map_includeLeft_nilpotentConeIdeal hp
+    Subcomodule k H (SymmetricAlgebra k (Module.Dual k 𝔤)) :=
+  ComoduleAlgebra.spanSubcomodule (S := {p | p ∈ adjointInvariantPolynomials k H ∧
+    SymmetricAlgebra.algebraMapInv p = 0}) fun _ ↦ And.left
 
 /-- Membership in the subcomodule of the nilpotent cone is membership in its ideal. -/
 @[simp]
 theorem mem_nilpotentConeSubcomodule {p : SymmetricAlgebra k (Module.Dual k 𝔤)} :
     p ∈ nilpotentConeSubcomodule k H ↔ p ∈ nilpotentConeIdeal k H :=
-  Iff.rfl
+  ComoduleAlgebra.mem_spanSubcomodule _
 
 /-- **Nilpotent elements lie on the nilpotent cone.** Over a field of characteristic zero, if the
 Killing form of the Lie algebra is nondegenerate, then evaluation at an `ad`-nilpotent element kills

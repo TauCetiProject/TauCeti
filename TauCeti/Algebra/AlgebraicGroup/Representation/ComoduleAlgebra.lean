@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.SymmetricAlgebra
-public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct.Contraction
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.OfEnd
 
 /-!
@@ -27,6 +26,8 @@ action on the polynomial functions on `V`.
 ## Main declarations
 
 * `TauCeti.ComoduleAlgebra.differential_mul`: the Leibniz rule for the differentiated action.
+* `TauCeti.ComoduleAlgebra.differential_symmetricAlgebra_ι`: on a symmetric algebra, it commutes
+  with the inclusion of generators.
 * `TauCeti.ComoduleAlgebra.differential_symmetricAlgebra`: on a symmetric algebra, it is the
   derivation `SymmetricAlgebra.derivationOfEnd` induced by the action on generators.
 
@@ -57,7 +58,7 @@ theorem differential_mul (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (a
       Comodule.differential (R := R) (H := H) d a * b +
         a * Comodule.differential (R := R) (H := H) d b := by
   rw [Comodule.differential_apply, Comodule.differential_apply, Comodule.differential_apply,
-    coact_mul, Comodule.tensorComponent_mul <|
+    coact_mul, LinearMap.tensorComponent_mul <|
       Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul d]
   simp only [← Comodule.coactComponent_apply, Comodule.coactComponent_counit, LinearMap.id_apply]
 
@@ -68,6 +69,15 @@ section SymmetricAlgebra
 variable {M : Type*} [AddCommGroup M] [Module R M] [Comodule R H M]
 
 attribute [local instance] symmetricAlgebra
+
+/-- The differentiated action on a symmetric algebra commutes with the inclusion of generators,
+since the coaction of a generator is the coaction on `M`. -/
+theorem differential_symmetricAlgebra_ι (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (m : M) :
+    Comodule.differential (R := R) (H := H) d (SymmetricAlgebra.ι R M m) =
+      SymmetricAlgebra.ι R M (Comodule.differential (R := R) (H := H) d m) := by
+  simp [Comodule.differential_apply, symmetricAlgebra_coact, LinearMap.rTensor_def,
+    LinearMap.tensorComponent_map]
 
 /-- **The differentiated action on a symmetric algebra.** A tangent vector at the identity acts on
 the symmetric algebra of a comodule `M` by the derivation extending its action on `M`. -/
@@ -81,10 +91,8 @@ theorem differential_symmetricAlgebra (d : Derivation R H (Bialgebra.CounitAlgeb
       ring
   have h : D = SymmetricAlgebra.derivationOfEnd R M (Comodule.differential (R := R) (H := H) d) :=
     SymmetricAlgebra.derivation_ext fun m ↦ by
-      rw [Derivation.coe_mk', SymmetricAlgebra.derivationOfEnd_ι,
-        Comodule.differential_apply, Comodule.differential_apply, symmetricAlgebra_coact,
-        AlgHom.toLinearMap_apply, Comodule.symmetricAlgebraCoact_ι, LinearMap.rTensor_def,
-        LinearMap.tensorComponent_map, LinearMap.comp_id]
+      rw [Derivation.coe_mk', differential_symmetricAlgebra_ι,
+        SymmetricAlgebra.derivationOfEnd_ι]
   exact LinearMap.ext fun p ↦ by
     rw [← h, Derivation.coe_mk'_linearMap]
 
