@@ -123,7 +123,7 @@ private theorem hasResolution_pow_two_mul [IsDomain R] [IsDiscreteValuationRing 
   have : IsRegularRing (NodeAlgebra R π) := by
     have h1 := (isRegularRing_pow_iff hπ 1).mpr le_rfl
     rwa [pow_one] at h1
-  have : IsProper b := isProper_blowup π a
+  have : IsProper b := isProper_blowup π (π ^ 2 * a)
   have hfb : IsProper (f' ≫ b) := inferInstance
   refine ⟨Y', f' ≫ b, hfb, ?_, ?_, ?_⟩
   · -- Over `D(x) ∪ D(y)` the blowup is an isomorphism with image in `V`, over which so is `f'`.
@@ -137,7 +137,7 @@ private theorem hasResolution_pow_two_mul [IsDomain R] [IsDiscreteValuationRing 
       obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hx
       exact TopologicalSpace.Opens.mem_iSup.mpr
         ⟨i, preimage_basicOpen_coord_le_opensRange_blowupCoordChartι a i hπ0 hi⟩
-    exact IsIso.comp_isIso' hf' (isIso_morphismRestrict_iSup_basicOpen_coord π a)
+    exact IsIso.comp_isIso' hf' (isIso_morphismRestrict_iSup_basicOpen_coord π (π ^ 2 * a))
   · -- `Y'` is covered by `Y` and by the regular coordinate charts.
     -- Instance search times out deriving this from `IsProper (f' ≫ b)`.
     have : LocallyOfFiniteType (f' ≫ b) := hfb.toLocallyOfFiniteType

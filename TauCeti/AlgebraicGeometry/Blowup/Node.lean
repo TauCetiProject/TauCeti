@@ -196,22 +196,21 @@ theorem preimage_basicOpen_coord_le_opensRange_blowupCoordChartι (i : Fin 2)
 
 variable (π) in
 /-- **The blowup of a node is proper.** The morphism `Proj A[It] ⟶ Spec A` from the blowup of
-`A = R[x, y] ⧸ (xy - π²a)` along `I = (π, x, y)` is proper. -/
-theorem isProper_blowup :
-    IsProper (Proj.toSpecZero (grade (originIdeal π (π ^ 2 * a))) ≫
-      Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) :=
+`A = R[x, y] ⧸ (xy - b)` along `I = (π, x, y)` is proper. -/
+theorem isProper_blowup (b : R) :
+    IsProper (Proj.toSpecZero (grade (originIdeal π b)) ≫
+      Spec.map (gradeZeroEquiv (originIdeal π b)).toCommRingCatIso.hom) :=
   isProper_toSpecZero_reesAlgebra <| by
     rw [originIdeal_def]; exact Submodule.fg_span (Set.toFinite _)
 
 variable (π) in
 /-- **The blowup of a node is an isomorphism away from its center.** The morphism
-`Proj A[It] ⟶ Spec A` from the blowup of `A = R[x₀, x₁] ⧸ (x₀x₁ - π²a)` along `I = (π, x₀, x₁)`
+`Proj A[It] ⟶ Spec A` from the blowup of `A = R[x₀, x₁] ⧸ (x₀x₁ - b)` along `I = (π, x₀, x₁)`
 is an isomorphism over the open `D(x₀) ∪ D(x₁)`, which is disjoint from `V(I)`. -/
-theorem isIso_morphismRestrict_iSup_basicOpen_coord :
-    IsIso ((Proj.toSpecZero (grade (originIdeal π (π ^ 2 * a))) ≫
-      Spec.map (gradeZeroEquiv (originIdeal π (π ^ 2 * a))).toCommRingCatIso.hom) ∣_
-        (⨆ i, PrimeSpectrum.basicOpen (coord (π ^ 2 * a) i) :
-          (Spec (.of (NodeAlgebra R (π ^ 2 * a)))).Opens)) := by
+theorem isIso_morphismRestrict_iSup_basicOpen_coord (b : R) :
+    IsIso ((Proj.toSpecZero (grade (originIdeal π b)) ≫
+      Spec.map (gradeZeroEquiv (originIdeal π b)).toCommRingCatIso.hom) ∣_
+        (⨆ i, PrimeSpectrum.basicOpen (coord b i) : (Spec (.of (NodeAlgebra R b))).Opens)) := by
   refine isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
     (Set.disjoint_left.mpr fun p hp hz ↦ ?_)
   obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hp
