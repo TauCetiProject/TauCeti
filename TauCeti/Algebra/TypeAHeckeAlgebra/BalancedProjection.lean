@@ -290,16 +290,22 @@ end BalancedProjectionAlgebra
 namespace InfiniteTypeAHeckeAlgebra
 
 variable {R} in
+/-- The Hecke generator is recovered from the eigenprojection `c • (T i + q⁻¹)`, for an inverse
+`c` of `q + q⁻¹`. -/
+private theorem T_eq_smul_sub {q : Rˣ} {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1) (i : ℕ) :
+    T q i = ((q : R) + ↑q⁻¹) • (c • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
+      algebraMap R _ (↑q⁻¹ : R) := by
+  rw [smul_smul, mul_comm, hc, one_smul, add_sub_cancel_right]
+
+variable {R} in
 /-- The eigenprojection `P = c • (T i + q⁻¹)` of the generator `T i`, for an inverse `c` of
 `q + q⁻¹`, is idempotent: the quadratic defect of `T i` is `(q + q⁻¹) ^ 2` times the idempotence
 defect of `P`. -/
 theorem isIdempotentElem_eigenprojection {q : Rˣ} {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1) (i : ℕ) :
     IsIdempotentElem (c • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hT : T q i = ((q : R) + ↑q⁻¹) • (c • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
-      algebraMap R _ (↑q⁻¹ : R) := by
-    rw [smul_smul, mul_comm, hc, one_smul, add_sub_cancel_right]
   refine sub_eq_zero.1 (((IsUnit.of_mul_eq_one_right c hc).pow 2).smul_eq_zero.1 ?_)
-  rw [← BalancedProjectionAlgebra.mul_self_sub_eq_smul hT, T_mul_self, sub_self]
+  rw [← BalancedProjectionAlgebra.mul_self_sub_eq_smul (T_eq_smul_sub hc i), T_mul_self,
+    sub_self]
 
 end InfiniteTypeAHeckeAlgebra
 
@@ -315,13 +321,6 @@ open InfiniteTypeAHeckeAlgebra (T)
 
 variable {q : Rˣ}
 
-/-- The Hecke generator is recovered from the projection `(q + q⁻¹)⁻¹ • (T i + q⁻¹)`. -/
-private theorem T_eq_smul_sub (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
-    T q i = ((q : R) + ↑q⁻¹) • ((τ * ((q : R) + ↑q⁻¹)) • (T q i + algebraMap R _ ↑q⁻¹)) -
-      algebraMap R (InfiniteTypeAHeckeAlgebra R q) ↑q⁻¹ := by
-  have h : ((q : R) + ↑q⁻¹) * (τ * ((q : R) + ↑q⁻¹)) = 1 := by linear_combination hτ
-  rw [smul_smul, h, one_smul, add_sub_cancel_right]
-
 /-- The projections `(q + q⁻¹)⁻¹ • (T i + q⁻¹)` of the Hecke algebra satisfy the balanced
 presentation. -/
 private def toHecke (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
@@ -335,11 +334,15 @@ private def toHecke (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
         (IsUnit.of_mul_eq_one_right τ hτ)).pow 3).smul_eq_zero.1 ?_)
       rw [← mul_mul_sub_mul_mul_eq_smul hτ
         (InfiniteTypeAHeckeAlgebra.isIdempotentElem_eigenprojection hc i)
-        (InfiniteTypeAHeckeAlgebra.isIdempotentElem_eigenprojection hc (i + 1)) (T_eq_smul_sub hτ i)
-        (T_eq_smul_sub hτ (i + 1)), InfiniteTypeAHeckeAlgebra.T_braid, sub_self])
+        (InfiniteTypeAHeckeAlgebra.isIdempotentElem_eigenprojection hc (i + 1))
+        (InfiniteTypeAHeckeAlgebra.T_eq_smul_sub hc i)
+        (InfiniteTypeAHeckeAlgebra.T_eq_smul_sub hc (i + 1)), InfiniteTypeAHeckeAlgebra.T_braid,
+        sub_self])
     (fun h ↦ by
+      have hc : τ * ((q : R) + ↑q⁻¹) * ((q : R) + ↑q⁻¹) = 1 := by linear_combination hτ
       refine sub_eq_zero.1 ((IsUnit.of_mul_eq_one_right τ hτ).smul_eq_zero.1 ?_)
-      rw [← mul_sub_mul_eq_smul (T_eq_smul_sub hτ _) (T_eq_smul_sub hτ _),
+      rw [← mul_sub_mul_eq_smul (InfiniteTypeAHeckeAlgebra.T_eq_smul_sub hc _)
+        (InfiniteTypeAHeckeAlgebra.T_eq_smul_sub hc _),
         (InfiniteTypeAHeckeAlgebra.commute_T (Or.inl h)).eq, sub_self])
 
 /-- The Hecke generators `(q + q⁻¹) • e i - q⁻¹` of the balanced projection algebra satisfy the
@@ -374,7 +377,7 @@ def heckeEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
     (InfiniteTypeAHeckeAlgebra.hom_ext fun i ↦ by
       simp only [AlgHom.comp_apply, ofHecke_T, toHecke_e, map_sub, map_smul, AlgHom.commutes,
         AlgHom.id_apply]
-      exact (T_eq_smul_sub hτ i).symm)
+      exact (InfiniteTypeAHeckeAlgebra.T_eq_smul_sub (by linear_combination hτ) i).symm)
     (hom_ext fun i ↦ by
       have h : τ * ((q : R) + ↑q⁻¹) * ((q : R) + ↑q⁻¹) = 1 := by linear_combination hτ
       simp only [AlgHom.comp_apply, toHecke_e, ofHecke_T, map_smul, map_add, AlgHom.commutes,
