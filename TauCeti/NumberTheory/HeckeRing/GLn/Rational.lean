@@ -585,7 +585,9 @@ noncomputable def commSemiringRationalHeckeRing (R : Type*) [CommSemiring R] :
 
 /-- The positive-determinant rational Hecke ring is a commutative ring over any commutative ring
 `R`, extending the ambient `Ring` instance. -/
-@[instance_reducible]
+-- `@[expose]` keeps `toRing` definitionally equal to the ambient `Ring` instance when activated
+-- as a local instance in downstream modules (e.g. `PolynomialRing/Localization.lean`).
+@[expose, instance_reducible]
 noncomputable def commRingRationalHeckeRing (R : Type*) [CommRing R] :
     CommRing (𝕋 (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R) :=
   { (inferInstance : Ring (𝕋 (Matrix.GLPos (Fin n) ℚ).toSubmonoid (SLnZ n) R)) with

@@ -67,23 +67,9 @@ namespace HeckeRing.GLn
 
 variable (n : ℕ)
 
-/-- Local `CommRing` instance on `RationalHeckeRing n` extending the ambient `Ring` instance so that
-`Subring.toCommRing` on `pLocalRationalSubring n p` is definitionally compatible with its ambient
-`Ring` structure (matching `commSemiringIntegralHeckeRingLocal` in `PolynomialRing/Basic.lean`). -/
-noncomputable local instance commRingRationalHeckeRingLocal :
-    CommRing (RationalHeckeRing n) :=
-  { (HeckeCosetModule.instRingHeckeRing : Ring (RationalHeckeRing n)) with
-    mul_comm := HeckeCosetModule.mul_comm_of_antiInvolution ℤ
-      (transposeRationalAntiInvolution n)
-      (transposeRationalAntiInvolution_onHeckeCoset_eq_self n) }
+attribute [local instance] commRingRationalHeckeRing
 
 section ScalarUnits
-
-/-- Every scalar matrix `natDiagGL n (fun _ ↦ c)` normalizes `SL_n(ℤ)` in `GL_n(ℚ)` (since it is
-central). -/
-theorem natDiagGL_const_mem_normalizer_SLnZ (c : ℕ) :
-    natDiagGL n (fun _ ↦ c) ∈ Subgroup.normalizer (SLnZ n : Set (GL (Fin n) ℚ)) :=
-  Subgroup.mem_normalizer_iff.mpr fun g ↦ by rw [natDiagGL_const_comm n c g, mul_inv_cancel_right]
 
 private lemma single_mul_natDiagGL_const (g : (Matrix.GLPos (Fin n) ℚ).toSubmonoid) (c : ℕ) :
     HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n) g) 1 *
@@ -99,7 +85,7 @@ private lemma single_mul_natDiagGL_const (g : (Matrix.GLPos (Fin n) ℚ).toSubmo
   HeckeCosetModule.single_mul_single_of_mem_normalizer_right (x := g)
     (y := ⟨natDiagGL n (fun _ ↦ c),
       posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c))⟩) ℤ
-    (natDiagGL_const_mem_normalizer_SLnZ n c)
+    (natDiagGL_const_mem_normalizer n c (SLnZ n))
 
 /-- The positive scalar operator `T(c, …, c)` (`0 < c`) as a central unit of `RationalHeckeRing n`,
 with inverse `[SL_n(ℤ) · diag(c⁻¹, …, c⁻¹) · SL_n(ℤ)]`. -/
@@ -108,7 +94,7 @@ noncomputable def scalarUnit {c : ℕ} (_hc : 0 < c) : (RationalHeckeRing n)ˣ :
     (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c)))
     ((Matrix.GLPos (Fin n) ℚ).inv_mem
       (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n (fun _ ↦ c))))
-    (natDiagGL_const_mem_normalizer_SLnZ n c)
+    (natDiagGL_const_mem_normalizer n c (SLnZ n))
 
 /-- The inverse of `scalarUnit` is the single double-coset operator of
 `(natDiagGL n (fun _ ↦ c))⁻¹`. -/
