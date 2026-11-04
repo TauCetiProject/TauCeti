@@ -24,6 +24,11 @@ argument together with a proof that the image fills it, rather than being fixed 
 the range of a different operator, say -- and matching the two ranges is a separate step that the
 caller has already done.
 
+The file also restricts intertwining maps and equivalences along a monoid homomorphism
+`f : H →* G`, keeping the underlying linear map. This is the unbundled form of `Rep.resFunctor`,
+and it is how an equivalence of representations of `G` is passed to a subgroup, for instance before
+taking invariants under it.
+
 ## Main definitions
 
 * `Representation.IntertwiningMap.codRestrict`: corestrict an intertwining map to a
@@ -32,6 +37,8 @@ caller has already done.
   onto a subrepresentation that its image fills.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
+  intertwining map or an equivalence along a monoid homomorphism `H →* G`.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
@@ -145,6 +152,39 @@ theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ
 
 end lcomp
 
+section Restriction
+
+variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Restriction of an intertwining map** along a monoid homomorphism `f : H →* G`: the same
+linear map intertwines the restricted representations `ρ ∘ f` and `σ ∘ f` of `H`. This is the
+unbundled counterpart of `Rep.resFunctor` on morphisms. -/
+def res (φ : IntertwiningMap ρ σ) (f : H →* G) : IntertwiningMap (ρ.comp f) (σ.comp f) where
+  toLinearMap := φ.toLinearMap
+  isIntertwining' h := φ.isIntertwining' (f h)
+
+@[simp]
+theorem coe_res (φ : IntertwiningMap ρ σ) (f : H →* G) : ⇑(φ.res f) = φ :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_res (φ : IntertwiningMap ρ σ) (f : H →* G) :
+    (φ.res f).toLinearMap = φ.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem res_id (f : H →* G) : (IntertwiningMap.id ρ).res f = .id (ρ.comp f) :=
+  (rfl)
+
+@[simp]
+theorem res_comp (ψ : IntertwiningMap σ τ) (φ : IntertwiningMap ρ σ) (f : H →* G) :
+    (ψ.comp φ).res f = (ψ.res f).comp (φ.res f) :=
+  (rfl)
+
+end Restriction
+
 end Representation.IntertwiningMap
 
 namespace Representation.Equiv
@@ -190,6 +230,43 @@ theorem ofBasisAction_symm_apply (ρ : Representation A G V)
   (rfl)
 
 end Basis
+
+section Restriction
+
+variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Restriction of an equivalence of representations** along a monoid homomorphism
+`f : H →* G`: the same linear isomorphism is an equivalence between the restricted
+representations `ρ ∘ f` and `σ ∘ f` of `H`. This is the unbundled counterpart of
+`Rep.resFunctor` on isomorphisms. -/
+def res (e : Equiv ρ σ) (f : H →* G) : Equiv (ρ.comp f) (σ.comp f) :=
+  .mk e.toLinearEquiv (e.toIntertwiningMap.res f).isIntertwining'
+
+@[simp]
+theorem res_apply (e : Equiv ρ σ) (f : H →* G) (v : V) : e.res f v = e v :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_res (e : Equiv ρ σ) (f : H →* G) :
+    (e.res f).toIntertwiningMap = e.toIntertwiningMap.res f :=
+  (rfl)
+
+@[simp]
+theorem symm_res (e : Equiv ρ σ) (f : H →* G) : (e.res f).symm = e.symm.res f :=
+  (rfl)
+
+@[simp]
+theorem res_refl (f : H →* G) : (refl ρ).res f = refl (ρ.comp f) :=
+  (rfl)
+
+@[simp]
+theorem res_trans (e : Equiv ρ σ) (e' : Equiv σ τ) (f : H →* G) :
+    (e.trans e').res f = (e.res f).trans (e'.res f) :=
+  (rfl)
+
+end Restriction
 
 section Tensor
 
