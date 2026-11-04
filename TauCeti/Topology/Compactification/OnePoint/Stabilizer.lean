@@ -69,54 +69,23 @@ variable {K : Type*} [Field K]
 
 /-! ### Affine maps of the line as Möbius transformations -/
 
-/-- The linear coefficient of an affine self-equivalence of a field is nonzero. -/
-private theorem affineEquiv_linear_one_ne_zero (φ : K ≃ᵃ[K] K) : φ.linear 1 ≠ 0 :=
-  φ.linear.map_ne_zero_iff.2 one_ne_zero
-
-/-- The invertible matrix `!![a, b; 0, 1]` of the affine map `z ↦ a * z + b`. -/
-private noncomputable def affineToGL (φ : K ≃ᵃ[K] K) : GL (Fin 2) K :=
-  GeneralLinearGroup.mkOfDetNeZero !![φ.linear 1, φ 0; 0, 1]
-    (by simp [det_fin_two_of, affineEquiv_linear_one_ne_zero φ])
-
-private theorem affineToGL_apply (φ : K ≃ᵃ[K] K) :
-    (affineToGL φ : Matrix (Fin 2) (Fin 2) K) = !![φ.linear 1, φ 0; 0, 1] :=
-  rfl
-
-/-- The matrices of affine maps multiply as the maps compose. -/
-private noncomputable def affineToGLHom : (K ≃ᵃ[K] K) →* GL (Fin 2) K where
-  toFun := affineToGL
-  map_one' := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [affineToGL_apply, AffineEquiv.one_def]
-  map_mul' φ ψ := by
-    -- The linear part of a composite is the composite of the linear parts.
-    have h1 : (φ * ψ).linear 1 = φ.linear 1 * ψ.linear 1 := by
-      have h : (φ * ψ).linear 1 = φ.linear (ψ.linear 1) := rfl
-      rw [h, mul_comm]
-      simpa [smul_eq_mul] using φ.linear.map_smul (ψ.linear 1) 1
-    have h0 : (φ * ψ) 0 = φ.linear 1 * ψ 0 + φ 0 := by
-      rw [AffineEquiv.coe_mul, Function.comp_apply, AffineEquiv.apply_eq_linear_one_mul_add φ]
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [affineToGL_apply, h1, h0, Matrix.mul_apply, Fin.sum_univ_two]
-
 variable [DecidableEq K]
 
 /-- The Möbius transformation of an affine map of the line. -/
 private noncomputable def affineToPGL : (K ≃ᵃ[K] K) →* PGL(2, K) :=
-  ProjGenLinGroup.mk.comp affineToGLHom
+  ProjGenLinGroup.mk.comp AffineEquiv.toGL
 
 /-- The Möbius transformation of an affine map acts on the affine part as the map does. -/
 private theorem affineToPGL_smul_coe (φ : K ≃ᵃ[K] K) (z : K) :
     affineToPGL φ • (z : OnePoint K) = (φ z : OnePoint K) := by
   rw [affineToPGL, MonoidHom.comp_apply, pglMk_smul, smul_some_eq_ite]
-  simp [affineToGLHom, affineToGL_apply, AffineEquiv.apply_eq_linear_one_mul_add φ z]
+  simp [AffineEquiv.apply_eq_linear_one_mul_add φ z]
 
 /-- The Möbius transformation of an affine map fixes `∞`. -/
 private theorem affineToPGL_smul_infty (φ : K ≃ᵃ[K] K) :
     affineToPGL φ • (∞ : OnePoint K) = ∞ := by
   rw [affineToPGL, MonoidHom.comp_apply, pglMk_smul, smul_infty_eq_self_iff]
-  simp [affineToGLHom, affineToGL_apply]
+  simp
 
 omit [DecidableEq K] in
 private theorem affineToPGL_injective : Injective (affineToPGL (K := K)) := by
@@ -208,7 +177,7 @@ private theorem range_unitsToPGL :
   · rintro ⟨h0, hinf⟩
     obtain ⟨φ, rfl⟩ := exists_affineToPGL_eq hinf
     have hφ0 : φ 0 = 0 := coe_injective (by rw [← affineToPGL_smul_coe, h0])
-    refine ⟨Units.mk0 _ (affineEquiv_linear_one_ne_zero φ), congrArg affineToPGL ?_⟩
+    refine ⟨Units.mk0 _ φ.linear_one_ne_zero, congrArg affineToPGL ?_⟩
     refine AffineEquiv.ext fun z ↦ ?_
     simp [AffineMap.homothety_apply, AffineEquiv.apply_eq_linear_one_mul_add φ z, hφ0, mul_comm]
 
@@ -281,19 +250,6 @@ section Roots
 variable (hK : ∀ r : Kˣ, ∃ k : Kˣ, k ^ 2 = r)
 include hK
 
-omit [DecidableEq K] in
-private theorem toPGL_surjective_of_roots :
-    Surjective (ProjectiveSpecialLinearGroup.toPGL (n := Fin 2) (R := K)) :=
-  ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK)
-
-/-- When every unit is a square, the inclusion `PSL(2, K) → PGL(2, K)` identifies a subgroup
-pulled back from `PGL(2, K)` with the subgroup it is pulled back from. -/
-private noncomputable def comapToPGLEquiv (H : Subgroup PGL(2, K)) :
-    H.comap ProjectiveSpecialLinearGroup.toPGL ≃* H :=
-  (Subgroup.equivMapOfInjective _ _ ProjectiveSpecialLinearGroup.toPGL_injective).trans
-    (MulEquiv.subgroupCongr (Subgroup.map_comap_eq_self_of_surjective
-      (toPGL_surjective_of_roots hK) H))
-
 /-- **The stabilizer of `∞` in `PSL(2, K)` is the affine group of the line** when every unit of
 `K` is a square, as for the automorphisms `PSL(2, ℂ)` of the Riemann sphere. An element fixing `∞`
 is sent to the affine map by which it acts on the affine part `K`
@@ -301,14 +257,18 @@ is sent to the affine map by which it acts on the affine part `K`
 noncomputable def pslStabilizerInftyEquiv :
     stabilizer PSL(2, K) (∞ : OnePoint K) ≃* (K ≃ᵃ[K] K) :=
   (MulEquiv.subgroupCongr (comap_toPGL_stabilizer ∞).symm).trans
-    ((comapToPGLEquiv hK _).trans pglStabilizerInftyEquiv)
+    ((ProjectiveSpecialLinearGroup.comapToPGLEquiv
+      (ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK)) _).trans
+      pglStabilizerInftyEquiv)
 
 /-- The affine map attached to an element of the stabilizer of `∞` in `PSL(2, K)` is its action on
 the affine part of the projective line. -/
 @[simp]
 theorem coe_pslStabilizerInftyEquiv_apply (g : stabilizer PSL(2, K) (∞ : OnePoint K)) (z : K) :
     (pslStabilizerInftyEquiv hK g z : OnePoint K) = (g : PSL(2, K)) • (z : OnePoint K) := by
-  simp [pslStabilizerInftyEquiv, comapToPGLEquiv, ProjectiveSpecialLinearGroup.toPGL_smul]
+  rw [pslStabilizerInftyEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    coe_pglStabilizerInftyEquiv_apply, ProjectiveSpecialLinearGroup.coe_comapToPGLEquiv_apply,
+    ProjectiveSpecialLinearGroup.toPGL_smul, MulEquiv.subgroupCongr_apply]
 
 /-- The element of the stabilizer of `∞` in `PSL(2, K)` attached to an affine map acts on the
 affine part of the projective line as the map does. -/
@@ -323,7 +283,9 @@ as `z ↦ a * z` for a unique unit `a` (`OnePoint.coe_pslFixingZeroInftyEquiv_mu
 noncomputable def pslFixingZeroInftyEquiv :
     fixingSubgroup PSL(2, K) {((0 : K) : OnePoint K), ∞} ≃* Kˣ :=
   (MulEquiv.subgroupCongr (comap_toPGL_fixingSubgroup _).symm).trans
-    ((comapToPGLEquiv hK _).trans pglFixingZeroInftyEquiv)
+    ((ProjectiveSpecialLinearGroup.comapToPGLEquiv
+      (ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK)) _).trans
+      pglFixingZeroInftyEquiv)
 
 /-- An element of `PSL(2, K)` fixing `0` and `∞` acts as the dilation by the attached unit. -/
 @[simp]
@@ -331,7 +293,9 @@ theorem coe_pslFixingZeroInftyEquiv_mul
     (g : fixingSubgroup PSL(2, K) {((0 : K) : OnePoint K), ∞}) (z : K) :
     (((pslFixingZeroInftyEquiv hK g : K) * z : K) : OnePoint K) =
       (g : PSL(2, K)) • (z : OnePoint K) := by
-  simp [pslFixingZeroInftyEquiv, comapToPGLEquiv, ProjectiveSpecialLinearGroup.toPGL_smul]
+  rw [pslFixingZeroInftyEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    coe_pglFixingZeroInftyEquiv_mul, ProjectiveSpecialLinearGroup.coe_comapToPGLEquiv_apply,
+    ProjectiveSpecialLinearGroup.toPGL_smul, MulEquiv.subgroupCongr_apply]
 
 /-- The element of `PSL(2, K)` fixing `0` and `∞` attached to a unit `a` acts as the dilation
 `z ↦ a * z`. -/

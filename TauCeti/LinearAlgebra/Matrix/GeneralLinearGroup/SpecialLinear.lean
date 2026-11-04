@@ -30,6 +30,9 @@ over an algebraically closed field. In both cases the conjugation orbits of `SL(
 `GL(n, K)` on `Matrix n n K` agree; over an algebraically closed field this holds for every index
 type, including the empty and the one-element ones.
 
+When the inclusion `PSL(n, K) → PGL(n, K)` is surjective, as when units have roots of degree the
+matrix size, it identifies every subgroup of `PGL(n, K)` with its preimage in `PSL(n, K)`.
+
 ## Main results
 
 * `Matrix.GeneralLinearGroup.exists_toGL_mul_scalar_eq`: over an algebraically closed field, an
@@ -38,6 +41,8 @@ type, including the empty and the one-element ones.
   `Matrix.GeneralLinearGroup.orbit_conjAct_specialLinearGroup_eq`: when units have roots of degree
   the matrix size, and over an algebraically closed field, the `SL(n, K)`- and
   `GL(n, K)`-conjugacy classes of a matrix agree.
+* `Matrix.ProjectiveSpecialLinearGroup.comapToPGLEquiv`: a surjective inclusion
+  `PSL(n, K) → PGL(n, K)` identifies a subgroup of `PGL(n, K)` with its preimage.
 -/
 
 public section
@@ -114,3 +119,27 @@ theorem orbit_conjAct_specialLinearGroup_eq (X : Matrix ι ι K) :
     (by rw [← hsz, map_mul, SpecialLinearGroup.coeToGL_det, one_mul]) X
 
 end Matrix.GeneralLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+open scoped MatrixGroups
+
+variable {ι K : Type*} [Fintype ι] [DecidableEq ι] [CommRing K]
+
+/-- When the inclusion `PSL(n, K) → PGL(n, K)` is surjective, it identifies a subgroup pulled back
+from `PGL(n, K)` with the subgroup it is pulled back from. Surjectivity holds when units have roots
+of degree the matrix size (`Matrix.ProjectiveSpecialLinearGroup.toPGL_surj_of_roots`). -/
+@[expose] noncomputable def comapToPGLEquiv (h : Function.Surjective (toPGL (n := ι) (R := K)))
+    (H : Subgroup PGL(ι, K)) : H.comap toPGL ≃* H :=
+  (Subgroup.equivMapOfInjective _ _ toPGL_injective).trans
+    (MulEquiv.subgroupCongr (Subgroup.map_comap_eq_self_of_surjective h H))
+
+/-- The identification `Matrix.ProjectiveSpecialLinearGroup.comapToPGLEquiv` is the inclusion
+`PSL(n, K) → PGL(n, K)`. -/
+@[simp]
+theorem coe_comapToPGLEquiv_apply (h : Function.Surjective (toPGL (n := ι) (R := K)))
+    (H : Subgroup PGL(ι, K)) (g : H.comap toPGL) :
+    (comapToPGLEquiv h H g : PGL(ι, K)) = toPGL (g : ProjectiveSpecialLinearGroup ι K) :=
+  rfl
+
+end Matrix.ProjectiveSpecialLinearGroup
