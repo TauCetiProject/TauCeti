@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.RelativeProj.Basic
 
