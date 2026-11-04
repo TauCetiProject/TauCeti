@@ -16,6 +16,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.MetricSpace.ClosedBallDiffBalls
 
 /-!
 # Stokes' formula for one-forms on rectangles and annuli
@@ -340,24 +341,9 @@ theorem integral_extDeriv_closedBall_diff_iUnion_ball {ι : Type*} [Fintype ι]
   have hballD (i : ι) : Metric.ball (c i) (ρ i) ⊆ D :=
     Metric.ball_subset_closedBall.trans ((hsub i).trans Metric.ball_subset_closedBall)
   -- The boundary circles of the holes lie in the region.
-  have hsphere {i : ι} {z : ℂ} (hz : ‖z - c i‖ = ρ i) : z ∈ Ω := by
-    have hzi : z ∈ Metric.closedBall (c i) (ρ i) := by
-      rw [Metric.mem_closedBall, dist_eq_norm, hz]
-    refine ⟨Metric.ball_subset_closedBall (hsub i hzi), ?_⟩
-    simp only [mem_iUnion, not_exists]
-    intro j hj
-    rcases eq_or_ne i j with rfl | hij
-    · rw [Metric.mem_ball, dist_eq_norm, hz] at hj
-      exact lt_irrefl _ hj
-    · exact (hdisj hij).ne_of_mem hzi (Metric.ball_subset_closedBall hj) rfl
-  -- So does the outer circle.
-  have houter {z : ℂ} (hz : ‖z - z₀‖ = r) : z ∈ Ω := by
-    refine ⟨by rw [Metric.mem_closedBall, dist_eq_norm, hz], ?_⟩
-    simp only [mem_iUnion, not_exists]
-    intro j hj
-    have h := hsub j (Metric.ball_subset_closedBall hj)
-    rw [Metric.mem_ball, dist_eq_norm, hz] at h
-    exact lt_irrefl _ h
+  have hsphere {i : ι} {z : ℂ} (hz : ‖z - c i‖ = ρ i) : z ∈ Ω :=
+    sphere_subset_closedBall_diff_iUnion_ball_of_disjoint hsub hdisj i
+      (by rwa [Metric.mem_sphere, dist_eq_norm])
   -- `ω` is `C¹` on a collar of uniform width `δ` inside each hole.
   have hΩc : IsCompact Ω :=
     (isCompact_closedBall z₀ r).diff (isOpen_iUnion fun i ↦ Metric.isOpen_ball)
@@ -468,11 +454,11 @@ theorem integral_extDeriv_closedBall_diff_iUnion_ball {ι : Type*} [Fintype ι]
     congr 1
     funext θ
     rw [(hα_eq (hs θ)).eq_of_nhds]
-  rw [hcirc z₀ r fun θ ↦ houter (by
-    rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hr])] at hD
+  rw [hcirc z₀ r fun θ ↦
+    sphere_subset_closedBall_diff_iUnion_ball hsub (circleMap_mem_sphere z₀ hr θ)] at hD
   have hH' (i : ι) := (hH i).trans (hcirc (c i) (ρ i) fun θ ↦
-    hsphere (i := i) (by
-      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_pos (hρ i)]))
+    sphere_subset_closedBall_diff_iUnion_ball_of_disjoint hsub hdisj i
+      (circleMap_mem_sphere (c i) (hρ i).le θ))
   rw [← hD, hsplit, hΩ, Finset.sum_congr rfl fun i _ ↦ hH' i]
   abel
 

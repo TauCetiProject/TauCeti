@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.SpecialFunctions.Log.DivLeIff
@@ -40,7 +41,10 @@ coordinate on at most one end (`Puncture.endSign_mul_re_endCoord_nonpos`). Bound
 longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punctured sphere
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) over which integrals of data on `S` are
-taken.
+taken. It is a closed disc with two round holes
+(`TauCeti.ThricePuncturedSphere.truncation_eq_closedBall_diff`), and its boundary loops
+`t ↦ cylindricalEndLift q (±R + i t)` are its three boundary circles, traversed clockwise once in
+unit time (`Puncture.cylindricalEndLift_zero_endSign_mul_add` and its analogues at `1` and `∞`).
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
 Hamiltonian terms `H(t) dt` of Floer perturbation data, as smooth data on the punctured sphere.
@@ -70,15 +74,6 @@ def endSign : Puncture → ℝ
 /-- The sign of an end has absolute value one. -/
 @[simp] theorem abs_endSign (q : Puncture) : |q.endSign| = 1 := by
   cases q <;> simp
-
-/-- A sum over the three punctures. -/
-theorem sum_univ {M : Type*} [AddCommMonoid M] (f : Puncture → M) :
-    ∑ q, f q = f zero + f one + f inf := by
-  have huniv : (Finset.univ : Finset Puncture) = {zero, one, inf} := by
-    ext q
-    cases q <;> simp
-  rw [huniv, Finset.sum_insert (by simp), Finset.sum_insert (by simp), Finset.sum_singleton,
-    add_assoc]
 
 /-- The sign of an end is `1` or `-1`. -/
 theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSign = -1 := by
@@ -451,6 +446,49 @@ theorem truncation_eq_closedBall_diff (R : ℝ) :
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_sdiff, Set.mem_union, Metric.mem_ball,
     dist_eq_norm, sub_zero, not_or, not_lt]
   tauto
+
+private theorem exp_neg_two_pi_mul_ofReal_add_mul_I (a t : ℝ) :
+    Complex.exp (-(2 * (π : ℂ)) * (↑a + ↑t * Complex.I)) =
+      ↑(Real.exp (-(2 * π * a))) * Complex.exp (↑(-(2 * π * t)) * Complex.I) := by
+  rw [Complex.ofReal_exp, ← Complex.exp_add]
+  push_cast
+  ring_nf
+
+/-- The boundary loop of the truncation at the end `0` is the circle of radius `exp (-2πR) / 2`
+about `0`, traversed clockwise once in unit time from angle `0`. -/
+theorem Puncture.cylindricalEndLift_zero_endSign_mul_add (R t : ℝ) :
+    zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I) =
+      circleMap 0 (Real.exp (-(2 * π * R)) / 2) (-(2 * π * t)) := by
+  simp only [cylindricalEndLift_zero, endSign_zero, one_mul, circleMap,
+    exp_neg_two_pi_mul_ofReal_add_mul_I]
+  push_cast
+  ring
+
+/-- The boundary loop of the truncation at the end `1` is the circle of radius `exp (-2πR) / 2`
+about `1`, traversed clockwise once in unit time from angle `π`. -/
+theorem Puncture.cylindricalEndLift_one_endSign_mul_add (R t : ℝ) :
+    one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I) =
+      circleMap 1 (Real.exp (-(2 * π * R)) / 2) (π - 2 * π * t) := by
+  have hπ : Complex.exp (↑(π - 2 * π * t) * Complex.I) =
+      -Complex.exp (↑(-(2 * π * t)) * Complex.I) := by
+    rw [show (↑(π - 2 * π * t) : ℂ) * Complex.I =
+        ↑(-(2 * π * t)) * Complex.I + ↑π * Complex.I by push_cast; ring,
+      Complex.exp_add, Complex.exp_pi_mul_I]
+    ring
+  simp only [cylindricalEndLift_one, endSign_one, one_mul, circleMap,
+    exp_neg_two_pi_mul_ofReal_add_mul_I, hπ]
+  push_cast
+  ring
+
+/-- The boundary loop of the truncation at the end `∞` is the circle of radius `2 exp (2πR)`
+about `0`, traversed clockwise once in unit time from angle `0`. -/
+theorem Puncture.cylindricalEndLift_inf_endSign_mul_add (R t : ℝ) :
+    inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I) =
+      circleMap 0 (2 * Real.exp (2 * π * R)) (-(2 * π * t)) := by
+  simp only [cylindricalEndLift_inf, endSign_inf, neg_one_mul, circleMap,
+    exp_neg_two_pi_mul_ofReal_add_mul_I]
+  push_cast
+  ring_nf
 
 /-- The truncation of the thrice-punctured sphere is compact. -/
 theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by

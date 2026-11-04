@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.Topology.MetricSpace.ClosedBallDiffBalls
 import Mathlib.Analysis.Calculus.Deriv.CompMul
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
@@ -145,8 +146,8 @@ theorem loopArea_comp_sub_two_pi_mul (ω : SymplecticForm V) {γ : ℝ → V}
       funext x
       exact hγ x
     simp only [hγ θ, hd]
-  have hsmul (x y : V) (a : ℝ) : ω x (a • y) = a * ω x y :=
-    (LinearMap.map_smul₂ ω.toBilinForm.flip a y x).trans (smul_eq_mul _ _)
+  have hsmul (x y : V) (a : ℝ) : ω x (a • y) = a * ω x y := by
+    simp [map_smul]
   have hsub := intervalIntegral.integral_comp_sub_mul (a := 0) (b := 1)
     (fun θ ↦ ω (γ θ) (deriv γ θ)) (by positivity : (2 * π : ℝ) ≠ 0) θ₀
   have hshift := hper.intervalIntegral_add_eq (θ₀ - 2 * π) (-π)
@@ -216,6 +217,25 @@ theorem integral_symplecticForm_fderiv_smul_eq_loopArea (ω : SymplecticForm V) 
 
 end LoopArea
 
+/-- The symplectic form as a continuous bilinear map whose antisymmetrization is `2ω`. This turns
+the bilinear Green formulas into Stokes' formulas for symplectic area. -/
+private theorem exists_continuousLinearMap_sub_swap [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) :
+    ∃ B : V →L[ℝ] V →L[ℝ] ℝ, (∀ x y, B x y = ω x y) ∧ ∀ x y, B x y - B y x = 2 * ω x y := by
+  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
+    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
+  have hB (x y : V) : B x y = ω x y := by simp [B]
+  refine ⟨B, hB, fun x y ↦ ?_⟩
+  rw [hB, hB, ← ω.neg_eq]
+  ring
+
+/-- The derivative of a map along a circle is its differential applied to the circle's velocity. -/
+private theorem deriv_comp_circleMap {u : ℂ → V} {z₁ : ℂ} {s θ : ℝ}
+    (hu : DifferentiableAt ℝ u (circleMap z₁ s θ)) :
+    deriv (fun θ ↦ u (circleMap z₁ s θ)) θ =
+      fderiv ℝ u (circleMap z₁ s θ) (circleMap 0 s θ * I) :=
+  (hu.hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₁ s θ)).deriv
+
 /-- **Stokes' formula for symplectic area on an annulus.** The pullback area of a `C²` map is
 the outer boundary action minus the inner boundary action for the primitive `λₓ(v) = ½ ω(x, v)`.
 This identity does not require any regularity on the inner disc or a holomorphicity hypothesis. -/
@@ -229,20 +249,14 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ)) -
       ∫ θ in -π..π, ω (u (circleMap z₀ a θ))
         (deriv (fun θ ↦ u (circleMap z₀ a θ)) θ)) := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
+  obtain ⟨B, hB, hskew⟩ := ω.exists_continuousLinearMap_sub_swap
   have hcircle (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) :
       deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
     have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
         abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
-    exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
-      (hasDerivAt_circleMap z₀ r θ)).deriv
+    exact deriv_comp_circleMap ((hu _ hm).differentiableAt (by norm_num))
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
@@ -266,43 +280,21 @@ theorem integral_fderiv_apply_closedBall_diff_iUnion_ball [FiniteDimensional ℝ
         (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)) -
       ∑ i, ∫ θ in -π..π, ω (u (circleMap (c i) (ρ i) θ))
         (deriv (fun θ ↦ u (circleMap (c i) (ρ i) θ)) θ)) := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
-    rw [hB, hB, ← ω.neg_eq]
-    ring
+  obtain ⟨B, hB, hskew⟩ := ω.exists_continuousLinearMap_sub_swap
   -- The derivative along a boundary circle, at points of the region.
   have hcircle (z₁ : ℂ) (s : ℝ)
       (hs : ∀ θ, circleMap z₁ s θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i))
       (θ : ℝ) :
       deriv (fun θ ↦ u (circleMap z₁ s θ)) θ =
         fderiv ℝ u (circleMap z₁ s θ) (circleMap 0 s θ * I) :=
-    (((hu _ (hs θ)).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
-      (hasDerivAt_circleMap z₁ s θ)).deriv
+    deriv_comp_circleMap ((hu _ (hs θ)).differentiableAt (by norm_num))
   have houter (θ : ℝ) :
-      circleMap z₀ r θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) := by
-    have hθ : ‖circleMap z₀ r θ - z₀‖ = r := by
-      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hr]
-    refine ⟨by rw [Metric.mem_closedBall, dist_eq_norm, hθ], ?_⟩
-    simp only [mem_iUnion, not_exists]
-    intro j hj
-    have h := hsub j (Metric.ball_subset_closedBall hj)
-    rw [Metric.mem_ball, dist_eq_norm, hθ] at h
-    exact lt_irrefl _ h
+      circleMap z₀ r θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) :=
+    sphere_subset_closedBall_diff_iUnion_ball hsub (circleMap_mem_sphere z₀ hr θ)
   have hinner (i : ι) (θ : ℝ) :
-      circleMap (c i) (ρ i) θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) := by
-    have hθ : ‖circleMap (c i) (ρ i) θ - c i‖ = ρ i := by
-      rw [circleMap_sub_center, norm_circleMap_zero, abs_of_pos (hρ i)]
-    have hmem : circleMap (c i) (ρ i) θ ∈ Metric.closedBall (c i) (ρ i) := by
-      rw [Metric.mem_closedBall, dist_eq_norm, hθ]
-    refine ⟨Metric.ball_subset_closedBall (hsub i hmem), ?_⟩
-    simp only [mem_iUnion, not_exists]
-    intro j hj
-    rcases eq_or_ne i j with rfl | hij
-    · rw [Metric.mem_ball, dist_eq_norm, hθ] at hj
-      exact lt_irrefl _ hj
-    · exact (hdisj hij).ne_of_mem hmem (Metric.ball_subset_closedBall hj) rfl
+      circleMap (c i) (ρ i) θ ∈ Metric.closedBall z₀ r \ ⋃ i, Metric.ball (c i) (ρ i) :=
+    sphere_subset_closedBall_diff_iUnion_ball_of_disjoint hsub hdisj i
+      (circleMap_mem_sphere (c i) (hρ i).le θ)
   have hgreen := B.integral_bilinear_fderiv_sub_closedBall_diff_iUnion_ball hr hρ hsub hdisj hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle z₀ r houter,

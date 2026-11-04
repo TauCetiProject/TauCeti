@@ -21,9 +21,11 @@ truncation `S_R` of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`, where ever
 end coordinate is at most `R`.
 
 The truncation is the closed disc of radius `2 exp (2πR)` about `0` with the open discs of radius
-`exp (-2πR) / 2` about `0` and `1` removed (`TauCeti.ThricePuncturedSphere.truncation_eq`). Its
-three boundary circles are the loops `x_q^R(t) = u(φ_q(±R + i t))` of a map `u` along the three
-ends, where `φ_q` is the end lift of `q`. Stokes' formula on a disc with holes
+`exp (-2πR) / 2` about `0` and `1` removed
+(`TauCeti.ThricePuncturedSphere.truncation_eq_closedBall_diff`). Its three boundary circles are
+the loops `x_q^R(t) = u(φ_q(±R + i t))` of a map `u` along the three ends, where `φ_q` is the end
+lift of `q` (`TauCeti.ThricePuncturedSphere.Puncture.cylindricalEndLift_zero_endSign_mul_add`
+and its analogues at `1` and `∞`). Stokes' formula on a disc with holes
 (`TauCeti.SymplecticForm.integral_fderiv_apply_closedBall_diff_iUnion_ball`) therefore computes the
 symplectic area of a `C²` map `u` on `S` as the signed sum of loop areas
 
@@ -73,37 +75,6 @@ namespace SymplecticForm
 open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- The boundary circles of the truncation, as reparametrized circles: the loop of `q` at `±R`
-is the circle about the center of `q` traversed clockwise once in unit time. -/
-private theorem cylindricalEndLift_endSign_mul_add (R t : ℝ) :
-    zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I) =
-        circleMap 0 (Real.exp (-(2 * π * R)) / 2) (0 - 2 * π * t) ∧
-      one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I) =
-        circleMap 1 (Real.exp (-(2 * π * R)) / 2) (π - 2 * π * t) ∧
-      inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I) =
-        circleMap 0 (2 * Real.exp (2 * π * R)) (0 - 2 * π * t) := by
-  have hexp (a : ℝ) : Complex.exp (-(2 * (π : ℂ)) * (↑a + ↑t * Complex.I)) =
-      ↑(Real.exp (-(2 * π * a))) * Complex.exp (↑(0 - 2 * π * t) * Complex.I) := by
-    rw [Complex.ofReal_exp, ← Complex.exp_add]
-    push_cast
-    ring_nf
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [cylindricalEndLift_zero, endSign_zero, one_mul, circleMap, hexp]
-    push_cast
-    ring
-  · have hπ : Complex.exp (↑(π - 2 * π * t) * Complex.I) =
-        -Complex.exp (↑(0 - 2 * π * t) * Complex.I) := by
-      rw [show (↑(π - 2 * π * t) : ℂ) * Complex.I =
-          ↑(0 - 2 * π * t) * Complex.I + ↑π * Complex.I by push_cast; ring,
-        Complex.exp_add, Complex.exp_pi_mul_I]
-      ring
-    simp only [cylindricalEndLift_one, endSign_one, one_mul, circleMap, hexp, hπ]
-    push_cast
-    ring
-  · simp only [cylindricalEndLift_inf, endSign_inf, neg_one_mul, circleMap, hexp]
-    push_cast
-    ring_nf
 
 /-- **The symplectic area of the truncated pair of pants.** Let `u` be `C²` on the
 thrice-punctured sphere `S = ℂ ∖ {0, 1}`, in the real coordinates `ℝ × ℝ ≃ ℂ`. For `R > 0`, the
@@ -190,15 +161,15 @@ theorem integral_symplecticForm_fderiv_truncation_eq_sum_loopArea [FiniteDimensi
   have hx₀ : (fun t : ℝ ↦ u (e (zero.cylindricalEndLift (↑(zero.endSign * R) + ↑t * Complex.I)))) =
       fun t ↦ v (circleMap 0 ρ (0 - 2 * π * t)) := by
     funext t
-    rw [(cylindricalEndLift_endSign_mul_add R t).1, hv_def, comp_apply]
+    rw [cylindricalEndLift_zero_endSign_mul_add, hv_def, comp_apply, zero_sub]
   have hx₁ : (fun t : ℝ ↦ u (e (one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I)))) =
       fun t ↦ v (circleMap 1 ρ (π - 2 * π * t)) := by
     funext t
-    rw [(cylindricalEndLift_endSign_mul_add R t).2.1, hv_def, comp_apply]
+    rw [cylindricalEndLift_one_endSign_mul_add, hv_def, comp_apply]
   have hx_inf : (fun t : ℝ ↦ u (e (inf.cylindricalEndLift (↑(inf.endSign * R) + ↑t * Complex.I)))) =
       fun t ↦ v (circleMap 0 r (0 - 2 * π * t)) := by
     funext t
-    rw [(cylindricalEndLift_endSign_mul_add R t).2.2, hv_def, comp_apply]
+    rw [cylindricalEndLift_inf_endSign_mul_add, hv_def, comp_apply, zero_sub]
   rw [hchange, htrunc, hstokes, Fin.sum_univ_two, Puncture.sum_univ, hx₀, hx₁,
     hx_inf, hloop, hloop, hloop]
   simp only [c, Matrix.cons_val_zero, Matrix.cons_val_one, endSign_zero, endSign_one, endSign_inf]
@@ -258,12 +229,12 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_s
   convert h using 2
   ring
 
-/-- **The output action of a Floer pair of pants is bounded by its input actions.** Let `u` be a
-`C²` solution of the Floer equation `(du - X_K)^{0,1} = 0` on the truncation `S_R`, `R ≥ 2`, for
-the pair-of-pants perturbation `K` of Hamiltonians bounded by `|H_q| ≤ B_q` and almost complex
-structures `J z` tamed by `ω`. Since the energy is nonnegative, the action of its loop at the
-output end is at most the sum of the actions of its loops at the input ends, up to the curvature
-constant:
+/-- **The output action of a Floer pair of pants is bounded by its input actions.** Let `u` be
+`C²` on `S = ℂ ∖ {0, 1}` and solve the Floer equation `(du - X_K)^{0,1} = 0` on the truncation
+`S_R`, `R ≥ 2`, for the pair-of-pants perturbation `K` of Hamiltonians bounded by `|H_q| ≤ B_q`
+and almost complex structures `J z` tamed by `ω`. Since the energy is nonnegative, the action of
+its loop at the output end is at most the sum of the actions of its loops at the input ends, up to
+the curvature constant:
 
 `A_{H_∞}(x_∞^R) ≤ A_{H_0}(x_0^R) + A_{H_1}(x_1^R) + B₀ + B₁ + B_∞`. -/
 theorem hamiltonianAction_inf_le_of_isComplexLinearMap (ω : SymplecticForm V)
