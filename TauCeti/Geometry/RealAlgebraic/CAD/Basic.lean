@@ -12,6 +12,7 @@ public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Cylindrical algebraic decompositions
@@ -54,6 +55,9 @@ together with the open intervals they cut out, form a CAD of `ℝ ^ 1`.
   subset of some `ℝ ^ d`.
 * `TauCeti.IsCAD.exists_continuous_cons_mem`: every cell contains the graph of a continuous
   function on its projection.
+* `TauCeti.IsCAD.injOn_tail_of_finite`, `TauCeti.IsCAD.isEmbedding_tail_of_injOn`: finite
+  vertical fibers force projection to be injective on a cell, and injective projection is an
+  embedding.
 * `TauCeti.IsCAD.image_tail`, `TauCeti.IsCAD.image_tail_eq_or_disjoint`: projecting a CAD gives
   a CAD, and projections of cells are equal or disjoint.
 * `TauCeti.IsCAD.sUnion_sep_subset`: a set containing or missing each cell is the union of the
@@ -288,6 +292,41 @@ theorem exists_continuous_cons_mem {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h :
     · obtain ⟨g, hg, hgj⟩ :=
         exists_continuous_forall_mem_sectorSet (hθ C hC).continuous (hθ C hC).strictMono j
       exact ⟨g, hg, fun x ↦ ⟨(x, g x), hgj x, cylinder_def _⟩⟩
+
+/-- A cylindrical cell with finite vertical fibers has injective vertical projection. -/
+theorem injOn_tail_of_finite {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
+    (h : IsCAD (n + 1) 𝒞) {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞)
+    (hfin : ∀ x, {t : ℝ | Fin.cons t x ∈ E}.Finite) : InjOn Fin.tail E := by
+  have hconn (x : Fin n → ℝ) : {t : ℝ | Fin.cons t x ∈ E}.OrdConnected := by
+    cases h with
+    | succ k θ h𝒟 hθ =>
+      obtain ⟨C, _, hEC⟩ := mem_iUnion₂.1 hE
+      exact ordConnected_setOf_cons_mem_of_mem_stackCells hEC x
+  have hsub (x : Fin n → ℝ) : {t : ℝ | Fin.cons t x ∈ E}.Subsingleton := by
+    intro a ha b hb
+    by_contra hab
+    exact (hfin x).not_infinite
+      ((hconn x).isPreconnected.infinite_of_nontrivial ⟨a, ha, b, hb, hab⟩)
+  intro x hx y hy hxy
+  have hzero : x 0 = y 0 := hsub (Fin.tail x)
+    (by simpa using hx) (by simpa [hxy] using hy)
+  exact Fin.cons_self_tail x ▸ Fin.cons_self_tail y ▸ congrArg₂ Fin.cons hzero hxy
+
+/-- Projection is a topological embedding on a cylindrical cell whenever it is injective
+there. The continuous section supplied by the stack is its inverse on the projected cell. -/
+theorem isEmbedding_tail_of_injOn {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
+    (h : IsCAD (n + 1) 𝒞) {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ 𝒞)
+    (hinj : InjOn Fin.tail E) : IsEmbedding fun x : E ↦ Fin.tail x.1 := by
+  obtain ⟨g, hg, hgE⟩ := h.exists_continuous_cons_mem hE
+  let p : E → Fin.tail '' E := fun x ↦ ⟨Fin.tail x.1, mem_image_of_mem _ x.2⟩
+  let r : Fin.tail '' E → Fin (n + 1) → ℝ := fun x ↦ Fin.cons (g x) x.1
+  have hp : Continuous p := by fun_prop
+  have hr : Continuous r := by fun_prop
+  have hrp : r ∘ p = Subtype.val := by
+    funext x
+    exact hinj (hgE (p x)) x.2 (by simp [p])
+  exact IsEmbedding.subtypeVal.comp
+    (IsEmbedding.of_comp hp hr (hrp ▸ IsEmbedding.subtypeVal))
 
 /-- The cells of a cylindrical algebraic decomposition of `ℝ ^ n` partition `ℝ ^ n`. -/
 theorem isPartition (h : IsCAD n 𝒞) : Setoid.IsPartition 𝒞 := by
