@@ -261,9 +261,9 @@ theorem exists_qExpansion_translate_eq_expand_qExpansionAt {N : ℕ} (hN : 0 < N
     rw [ha, Nat.cast_mul, Nat.cast_mul, hm]
     ring
   rw [qExpansionAt_apply, hNw]
-  exact TauCeti.qExpansion_nat_mul hw (Nat.mul_pos ha0 hm0)
+  exact TauCeti.qExpansion_nat_mul hw.ne' (Nat.mul_pos ha0 hm0)
     (SlashInvariantFormClass.periodic_comp_ofComplex _ Γγ.strictWidthInfty_mem_strictPeriods)
-    (ModularFormClass.bdd_at_infty _) (ModularFormClass.holo _)
+    (ModularFormClass.analyticAt_cuspFunction_zero _ hw Γγ.strictWidthInfty_mem_strictPeriods)
 
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
