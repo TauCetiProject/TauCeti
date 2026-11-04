@@ -40,7 +40,10 @@ coordinate on at most one end (`Puncture.endSign_mul_re_endCoord_nonpos`). Bound
 longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punctured sphere
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) over which integrals of data on `S` are
-taken.
+taken. The truncations increase with `R` and exhaust `S`
+(`TauCeti.ThricePuncturedSphere.truncation_mono`,
+`TauCeti.ThricePuncturedSphere.iUnion_truncation`), so integrals over `S` are their limits as
+`R → ∞`.
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
 Hamiltonian terms `H(t) dt` of Floer perturbation data, as smooth data on the punctured sphere.
@@ -437,5 +440,20 @@ theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
   exact (isCompact_closedBall _ _).inter_left
     ((isClosed_le continuous_const continuous_norm).inter
       (isClosed_le continuous_const (continuous_norm.comp (continuous_id.sub continuous_const))))
+
+/-- The truncations of the thrice-punctured sphere increase with the cutoff. -/
+theorem truncation_mono : Monotone truncation := fun _ _ hRR' _ hw =>
+  ⟨hw.1, hw.2.1, fun q => (hw.2.2 q).trans hRR'⟩
+
+/-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
+theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by
+  ext w
+  simp only [mem_iUnion, mem_truncation, mem_ofPred_eq]
+  constructor
+  · rintro ⟨R, h₀, h₁, -⟩
+    exact ⟨h₀, h₁⟩
+  · rintro ⟨h₀, h₁⟩
+    obtain ⟨R, hR⟩ := Finite.bddAbove_range fun q : Puncture => q.endSign * (q.endCoord w).re
+    exact ⟨R, h₀, h₁, fun q => hR ⟨q, rfl⟩⟩
 
 end TauCeti.ThricePuncturedSphere
