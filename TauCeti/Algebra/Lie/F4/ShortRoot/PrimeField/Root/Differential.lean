@@ -105,12 +105,8 @@ theorem map_genericMatrix_generator_inl (k : Fin 4 ⊕ Fin 4) :
     simp only [q, AlgHom.id_comp]
     -- The categorical point has the same algebra map after erasing its object wrapper.
     rfl
-  have hu : AdditiveGroup.gaPointsMulEquiv (R := ZMod 2) q =
-      Multiplicative.ofAdd (SymmetricAlgebra.ι (ZMod 2) (ZMod 2) 1) := by
-    rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv (R := ZMod 2) q),
-      AdditiveGroup.toAdd_gaPointsMulEquiv]
-    simp [q]
-  rw [← hu, coe_rootSubgroupPoints_gaPointsMulEquiv, hid,
+  rw [← AdditiveGroup.gaPointsMulEquiv_toConv_id,
+    coe_rootSubgroupPoints_gaPointsMulEquiv, hid,
     GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
     GeneralLinear.pointsMulEquiv_apply]
 

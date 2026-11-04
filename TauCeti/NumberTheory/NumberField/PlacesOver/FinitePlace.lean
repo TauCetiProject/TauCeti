@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 
 import TauCeti.Analysis.AbsoluteValue.Equivalence
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
@@ -168,51 +169,25 @@ private theorem ramificationIdx_mul_inertiaDeg_pos :
     0 < 𝔓.asIdeal.ramificationIdx (𝓞 K) * 𝔓.asIdeal.inertiaDeg (𝓞 K) :=
   mul_pos (𝔓.asIdeal.ramificationIdx_pos (𝓞 K)) (𝔓.asIdeal.inertiaDeg_pos (𝓞 K))
 
-/-- The absolute value `y ↦ FinitePlace.mk 𝔓 y ^ (e * f)⁻¹` of `F`. -/
-private noncomputable def rootOfFinitePlace : AbsoluteValue F ℝ :=
-  (FinitePlace.mk 𝔓).1.nonarchRpow (FinitePlace.mk 𝔓).add_le
-    (inv_pos.mpr (Nat.cast_pos.mpr (ramificationIdx_mul_inertiaDeg_pos K 𝔓)))
-
-private theorem rootOfFinitePlace_apply (y : F) :
-    rootOfFinitePlace K 𝔓 y = FinitePlace.mk 𝔓 y ^
-      ((𝔓.asIdeal.ramificationIdx (𝓞 K) : ℝ) * 𝔓.asIdeal.inertiaDeg (𝓞 K))⁻¹ := by
-  rw [← Nat.cast_mul]
-  -- `FinitePlace.mk 𝔓 y` is `(FinitePlace.mk 𝔓).1 y` by definition, `FinitePlace.coe_apply`; a
-  -- rewrite with it is not type correct here because `FinitePlace` is not reducible to a subtype.
-  exact nonarchRpow_apply _ _ _ y
-
-variable {K} in
-/-- On `K`, the root of the finite place of a prime `𝔓` over `𝔭` agrees with the finite place of
-`𝔭`. -/
-private theorem rootOfFinitePlace_algebraMap [𝔓.asIdeal.LiesOver 𝔭.asIdeal] (x : K) :
-    rootOfFinitePlace K 𝔓 (algebraMap K F x) = FinitePlace.mk 𝔭 x := by
-  rw [rootOfFinitePlace_apply, ← Nat.cast_mul, FinitePlace.mk_apply_algebraMap 𝔭 𝔓,
-    Real.pow_rpow_inv_natCast (by positivity) (ramificationIdx_mul_inertiaDeg_pos K 𝔓).ne']
-
-variable {K} in
-private theorem liesOver_rootOfFinitePlace [𝔓.asIdeal.LiesOver 𝔭.asIdeal] :
-    (rootOfFinitePlace K 𝔓).LiesOver (FinitePlace.mk 𝔭).1 :=
-  ⟨AbsoluteValue.ext fun x ↦ by
-    rw [under_def, comp_apply, rootOfFinitePlace_algebraMap (𝔭 := 𝔭), FinitePlace.coe_apply]⟩
-
-private theorem isEquiv_rootOfFinitePlace :
-    (FinitePlace.mk 𝔓).1.IsEquiv (rootOfFinitePlace K 𝔓) :=
-  isEquiv_nonarchRpow _ _ _
-
 end RootOfFinitePlace
 
 /-- An absolute value lying over `FinitePlace.mk 𝔭` is the root `FinitePlace.mk 𝔓 ^ (e * f)⁻¹` of
 the finite place of its prime `𝔓`. -/
-private theorem rootOfFinitePlace_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
-    rootOfFinitePlace K (primeOfLiesOver 𝔭 w) = w := by
-  have := liesOver_primeOfLiesOver (𝔭 := 𝔭) (w := w)
+private theorem relativeAbsValue_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
+    (FinitePlace.mk (primeOfLiesOver 𝔭 w)).relativeAbsValue K = w := by
+  have : (FinitePlace.mk (primeOfLiesOver 𝔭 w)).LiesOver (FinitePlace.mk 𝔭) :=
+    (FinitePlace.mk_liesOver_mk_iff _ _).mpr liesOver_primeOfLiesOver
   obtain ⟨a, ha, ha0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot 𝔭.ne_bot
   -- Both sides are equivalent, and they agree at the image of a nonzero element of `𝔭`.
-  refine ((isEquiv_rootOfFinitePlace K _).symm.trans isEquiv_primeOfLiesOver).eq_of_apply_eq
+  refine ((FinitePlace.isEquiv_relativeAbsValue _).symm.trans
+    isEquiv_primeOfLiesOver).eq_of_apply_eq
     (x := algebraMap K F a) (by simpa using ha0) ?_ ?_
-  · rw [rootOfFinitePlace_algebraMap (𝔭 := 𝔭), FinitePlace.mk_apply]
+  · rw [FinitePlace.relativeAbsValue_algebraMap (FinitePlace.mk (primeOfLiesOver 𝔭 w))
+      (FinitePlace.mk 𝔭), FinitePlace.mk_apply]
     exact ((FinitePlace.norm_lt_one_iff_mem K 𝔭 a).mpr ha).ne
-  · rw [rootOfFinitePlace_algebraMap (𝔭 := 𝔭), LiesOver.apply_algebraMap (FinitePlace.mk 𝔭).1,
+  · rw [FinitePlace.relativeAbsValue_algebraMap (FinitePlace.mk (primeOfLiesOver 𝔭 w))
+      (FinitePlace.mk 𝔭),
+      LiesOver.apply_algebraMap (FinitePlace.mk 𝔭).1,
       FinitePlace.coe_apply]
 
 /-- **Absolute values over a finite place.** Let `F / K` be a finite extension of number fields.
@@ -224,14 +199,18 @@ theorem existsUnique_finitePlace_rpow_inv_eq_of_liesOver [w.LiesOver (FinitePlac
       FinitePlace.mk 𝔓 y ^
         ((𝔓.asIdeal.ramificationIdx (𝓞 K) : ℝ) * 𝔓.asIdeal.inertiaDeg (𝓞 K))⁻¹ := by
   refine ⟨primeOfLiesOver 𝔭 w, ⟨liesOver_primeOfLiesOver, fun y ↦ ?_⟩, ?_⟩
-  · rw [← rootOfFinitePlace_apply, rootOfFinitePlace_primeOfLiesOver]
+  · simpa only [FinitePlace.relativeAbsValue_apply, FinitePlace.localDegree_def,
+      FinitePlace.maximalIdeal_mk, Nat.cast_mul] using
+      congrArg (fun f : AbsoluteValue F ℝ ↦ f y)
+        (relativeAbsValue_primeOfLiesOver (𝔭 := 𝔭) (w := w)).symm
   rintro 𝔔 ⟨-, h𝔔⟩
-  have hw : rootOfFinitePlace K 𝔔 = rootOfFinitePlace K (primeOfLiesOver 𝔭 w) := by
-    rw [rootOfFinitePlace_primeOfLiesOver]
+  have hw : (FinitePlace.mk 𝔔).relativeAbsValue K = w := by
     ext y
-    rw [rootOfFinitePlace_apply, h𝔔]
-  rw [← FinitePlace.mk_eq_iff, FinitePlace.eq_iff_isEquiv]
-  exact (isEquiv_rootOfFinitePlace K 𝔔).trans (hw ▸ (isEquiv_rootOfFinitePlace K _).symm)
+    simpa only [FinitePlace.relativeAbsValue_apply, FinitePlace.localDegree_def,
+      FinitePlace.maximalIdeal_mk, Nat.cast_mul] using (h𝔔 y).symm
+  apply FinitePlace.mk_eq_iff.mp
+  exact FinitePlace.relativeAbsValue_injective
+    (hw.trans relativeAbsValue_primeOfLiesOver.symm)
 
 /-- **Absolute values over a finite place.** Let `F / K` be a finite extension of number fields.
 An absolute value `w` of `F` lies over the finite place `FinitePlace.mk 𝔭` of `K` if and only if it
@@ -243,8 +222,13 @@ theorem liesOver_finitePlace_mk_iff :
         ((𝔓.asIdeal.ramificationIdx (𝓞 K) : ℝ) * 𝔓.asIdeal.inertiaDeg (𝓞 K))⁻¹ := by
   refine ⟨fun _ ↦ existsUnique_finitePlace_rpow_inv_eq_of_liesOver.exists, ?_⟩
   rintro ⟨𝔓, h𝔓, hw⟩
-  obtain rfl : rootOfFinitePlace K 𝔓 = w := ext fun y ↦ by rw [rootOfFinitePlace_apply, hw]
-  exact liesOver_rootOfFinitePlace 𝔓
+  obtain rfl : (FinitePlace.mk 𝔓).relativeAbsValue K = w := by
+    ext y
+    simpa only [FinitePlace.relativeAbsValue_apply, FinitePlace.localDegree_def,
+      FinitePlace.maximalIdeal_mk, Nat.cast_mul] using (hw y).symm
+  have : (FinitePlace.mk 𝔓).LiesOver (FinitePlace.mk 𝔭) :=
+    (FinitePlace.mk_liesOver_mk_iff _ _).mpr h𝔓
+  infer_instance
 
 /-- The integers at which an absolute value lying over `FinitePlace.mk 𝔭` is less than `1` form a
 prime of `𝓞 F` lying over `𝔭`. -/
@@ -260,8 +244,8 @@ theorem eq_of_liesOver_of_forall_apply_lt_one_iff {w' : AbsoluteValue F ℝ}
     (h : ∀ y : 𝓞 F, w y < 1 ↔ w' y < 1) : w = w' := by
   have : primeOfLiesOver 𝔭 w = primeOfLiesOver 𝔭 w' :=
     HeightOneSpectrum.ext (Ideal.ext fun y ↦ by rw [mem_primeOfLiesOver, mem_primeOfLiesOver, h])
-  rw [← rootOfFinitePlace_primeOfLiesOver (𝔭 := 𝔭) (w := w),
-    ← rootOfFinitePlace_primeOfLiesOver (𝔭 := 𝔭) (w := w'), this]
+  rw [← relativeAbsValue_primeOfLiesOver (𝔭 := 𝔭) (w := w),
+    ← relativeAbsValue_primeOfLiesOver (𝔭 := 𝔭) (w := w'), this]
 
 variable (w) in
 /-- **Absolute values over a finite place.** Let `F / K` be a finite extension of number fields.
@@ -316,15 +300,19 @@ finite place of the base. -/
 theorem finite_setOf_liesOver_finitePlace_mk :
     {w : AbsoluteValue F ℝ | w.LiesOver (FinitePlace.mk 𝔭).1}.Finite := by
   refine (Set.finite_range fun 𝔓 : {𝔓 : HeightOneSpectrum (𝓞 F) // 𝔓.asIdeal.LiesOver 𝔭.asIdeal} ↦
-    rootOfFinitePlace K 𝔓.1).subset fun w (hw : w.LiesOver _) ↦ ?_
+    (FinitePlace.mk 𝔓.1).relativeAbsValue K).subset fun w (hw : w.LiesOver _) ↦ ?_
   obtain ⟨𝔓, h𝔓, hw⟩ := liesOver_finitePlace_mk_iff.mp hw
-  exact ⟨⟨𝔓, h𝔓⟩, ext fun y ↦ by rw [rootOfFinitePlace_apply, hw]⟩
+  exact ⟨⟨𝔓, h𝔓⟩, ext fun y ↦ by
+    simpa only [FinitePlace.relativeAbsValue_apply, FinitePlace.localDegree_def,
+      FinitePlace.maximalIdeal_mk, Nat.cast_mul] using (hw y).symm⟩
 
 /-- Every finite place of the base has an absolute value of a finite extension of number fields
 lying over it. -/
 theorem nonempty_setOf_liesOver_finitePlace_mk :
     {w : AbsoluteValue F ℝ | w.LiesOver (FinitePlace.mk 𝔭).1}.Nonempty := by
   obtain ⟨𝔓, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 F) 𝔭
-  exact ⟨rootOfFinitePlace K 𝔓, liesOver_rootOfFinitePlace 𝔓⟩
+  have : (FinitePlace.mk 𝔓).LiesOver (FinitePlace.mk (𝔓.under (𝓞 K))) :=
+    (FinitePlace.mk_liesOver_mk_iff _ _).mpr inferInstance
+  exact ⟨(FinitePlace.mk 𝔓).relativeAbsValue K, inferInstance⟩
 
 end NumberField

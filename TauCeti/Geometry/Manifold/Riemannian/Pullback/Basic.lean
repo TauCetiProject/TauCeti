@@ -29,6 +29,9 @@ the metric that a manifold with a geometric structure receives through its chart
 
 ## Main results
 
+* `Bundle.contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates`: the pullback of a `C^n`
+  family of bilinear forms along a family of linear maps that is `C^n` in tangent coordinates is a
+  `C^n` section.
 * `Bundle.contMDiffAt_bilinearForm_pullback`: the pullback of a family of bilinear forms that is
   `C^n` at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`.
 * `Bundle.ContMDiffRiemannianMetric.contMDiffAt_pullback`: the special case of a `C^n` Riemannian
@@ -65,33 +68,32 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {n : ℕ∞ω}
 
-/- The proof of `Bundle.contMDiffAt_bilinearForm_pullback`, which reads the pulled-back section in
-tangent coordinates through `ContMDiffAt.mfderiv_const`, follows the proof pattern of
+/- The proof of `Bundle.contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates`, which reads
+the pulled-back section in tangent coordinates, follows the proof pattern of
 `TauCeti.inducedRiemannianMetric` in https://github.com/TauCetiProject/TauCeti/pull/11460, which
 treats the case of a flat target. -/
 
-/-- The pullback of a family `b` of bilinear forms on the tangent spaces of `N` that is a `C^n`
-section at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`: the family
-of bilinear forms `(v, w) ↦ b_{f x}(df_x v, df_x w)`. -/
-theorem contMDiffAt_bilinearForm_pullback
-    {b : ∀ y : N, TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ} {f : M → N} {x₀ : M}
-    (hb : ContMDiffAt J (J.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
-      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
-        (E := fun y : N ↦ TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ) y (b y)) (f x₀))
-    (hf : ContMDiffAt I J (n + 1) f x₀) :
+/-- Pull back a family `b x` of bilinear forms on the tangent spaces `T_{f x} N`, a `C^n` section
+along `f` at `x₀`, along a family of linear maps `L x : T_x M → T_{f x} N` that is `C^n` at `x₀` in
+tangent coordinates. The result, the family of bilinear forms `(v, w) ↦ b x (L x v, L x w)`, is a
+`C^n` section at `x₀`. -/
+theorem contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates {f : M → N}
+    {b : ∀ x : M, TangentSpace J (f x) →L[ℝ] TangentSpace J (f x) →L[ℝ] ℝ}
+    {L : ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace J (f x)} {x₀ : M}
+    (hb : ContMDiffAt I (J.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun y : N ↦ TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ) (f x) (b x)) x₀)
+    (hL : ContMDiffAt I 𝓘(ℝ, E →L[ℝ] F) n (inTangentCoordinates I J id f L x₀) x₀) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
-        ((ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
-          ((b (f x)).comp (mfderiv I J f x)))) x₀ := by
+        ((ContinuousLinearMap.precomp ℝ (L x)).comp ((b x).comp (L x)))) x₀ := by
   refine (contMDiffAt_section x₀).2 ?_
-  have hg := (contMDiffAt_section (f x₀)).1 hb
-  have hfn : ContMDiffAt I J n f x₀ := hf.of_le le_self_add
+  obtain ⟨hfn, hg⟩ := contMDiffAt_totalSpace.1 hb
   -- In the coordinates centred at `x₀` and `f x₀`, the pulled-back form is the coordinate
-  -- expression of `g` at `f x` pulled back along the differential of `f` read in those
-  -- coordinates.
+  -- expression of `b x` pulled back along `L x` read in those coordinates.
   apply (ContinuousLinearMap.contDiff_precomp_comp.contMDiff.contMDiffAt.comp x₀
-    ((hg.comp x₀ hfn).prodMk_space (hf.mfderiv_const le_rfl))).congr_of_eventuallyEq
+    (hg.prodMk_space hL)).congr_of_eventuallyEq
   filter_upwards [(trivializationAt E (TangentSpace I : M → Type _) x₀).open_baseSet.mem_nhds
       (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x₀),
     hfn.continuousAt.preimage_mem_nhds
@@ -109,13 +111,30 @@ theorem contMDiffAt_bilinearForm_pullback
     Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply, hyhom, hfyhom,
     ite_true, Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet, Set.mem_univ,
     Trivial.trivialization_apply, id, Set.mem_preimage.1 hfy, ContinuousLinearMap.precomp_apply]
-  -- Reading `df_y v` in the trivialization at `f x₀` and back recovers it.
+  -- Reading `L y v` in the trivialization at `f x₀` and back recovers it.
   have key (u : TangentSpace J (f y)) :
       (trivializationAt F (TangentSpace J) (f x₀)).symmL ℝ (f y)
         ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f y, u⟩).2 = u := by
     rw [Trivialization.symmL_apply _ hfy]
     exact Trivialization.symm_apply_apply_mk _ hfy u
   rw [key, key]
+
+/-- The pullback of a family `b` of bilinear forms on the tangent spaces of `N` that is a `C^n`
+section at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`: the family
+of bilinear forms `(v, w) ↦ b_{f x}(df_x v, df_x w)`. -/
+theorem contMDiffAt_bilinearForm_pullback
+    {b : ∀ y : N, TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ} {f : M → N} {x₀ : M}
+    (hb : ContMDiffAt J (J.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun y : N ↦ TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ) y (b y)) (f x₀))
+    (hf : ContMDiffAt I J (n + 1) f x₀) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
+        ((ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
+          ((b (f x)).comp (mfderiv I J f x)))) x₀ :=
+  contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates
+    (hb.comp x₀ (hf.of_le le_self_add)) (hf.mfderiv_const le_rfl)
 
 namespace ContMDiffRiemannianMetric
 
