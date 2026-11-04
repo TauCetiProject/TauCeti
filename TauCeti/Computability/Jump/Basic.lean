@@ -43,6 +43,8 @@ of the set oracles.
   `B`, then `A'` reduces one-one, and hence Turing, to `B'`.
 * `Set.oneOneEquiv_jump_jump`, `Set.turingEquivalent_jump_jump`: Turing equivalent sets have
   one-one equivalent, and hence Turing equivalent, jumps.
+* `Set.degree_mem_Ioo_of_incomparable`: Turing incomparable sets below `(∅ : Set ℕ).jump` have
+  degrees strictly between the computable degree and `(∅ : Set ℕ).jump`.
 
 ## References
 
@@ -201,5 +203,18 @@ theorem oneOneEquiv_jump_jump (h : TuringEquivalent A.oracle B.oracle) :
 theorem turingEquivalent_jump_jump (h : TuringEquivalent A.oracle B.oracle) :
     TuringEquivalent A.jump.oracle B.jump.oracle :=
   ⟨turingReducible_jump_jump h.1, turingReducible_jump_jump h.2⟩
+
+/-- If `A` and `B` are Turing incomparable sets both Turing reducible to `(∅ : Set ℕ).jump`, then
+the Turing degree of `A` lies strictly between the computable degree and `(∅ : Set ℕ).jump`. -/
+theorem degree_mem_Ioo_of_incomparable
+    (hA : TuringReducible A.oracle (∅ : Set ℕ).jump.oracle)
+    (hB : TuringReducible B.oracle (∅ : Set ℕ).jump.oracle)
+    (hAB : ¬TuringReducible A.oracle B.oracle) (hBA : ¬TuringReducible B.oracle A.oracle) :
+    toAntisymmetrization TuringReducible A.oracle ∈
+      Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
+        (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) := by
+  simp only [Set.mem_Ioo, lt_iff_le_not_ge, TauCeti.turingDegree_le_iff]
+  exact ⟨⟨empty_turingReducible _, fun h => hAB (h.trans (empty_turingReducible _))⟩,
+    ⟨hA, fun h => hBA (hB.trans h)⟩⟩
 
 end Set

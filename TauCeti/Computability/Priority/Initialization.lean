@@ -80,14 +80,6 @@ theorem initializationStages_eq_biUnion (action : ℕ → Option ℕ) (e : ℕ) 
   exact ⟨fun ⟨s, i, ht, hs, hi⟩ => ⟨i, hi, s, ht, hs⟩,
     fun ⟨i, hi, s, ht, hs⟩ => ⟨s, i, ht, hs, hi⟩⟩
 
-/-- Distinct requirements have disjoint attention stages. -/
-theorem disjoint_attentionStages {d e : ℕ} (h : d ≠ e) :
-    Disjoint (attentionStages action d) (attentionStages action e) :=
-  disjoint_left.mpr fun _ hd he => by
-    obtain ⟨s, rfl, hsd⟩ := mem_attentionStages.mp hd
-    obtain ⟨t, ht, hte⟩ := mem_attentionStages.mp he
-    exact h <| Option.some.inj <| hsd.symm.trans (Nat.succ.inj ht ▸ hte)
-
 /-- Initialization stages and attention stages of the same requirement are disjoint. -/
 theorem disjoint_initializationStages_attentionStages (action : ℕ → Option ℕ) (e : ℕ) :
     Disjoint (initializationStages action e) (attentionStages action e) :=
@@ -115,6 +107,55 @@ theorem ncard_initializationStages_eq_sum {e : ℕ}
       (finite_initializationStages_of_attention hlt) (h e (Nat.lt_succ_self e)),
       ih hlt, Finset.sum_range_succ]
 
+/-- Sending each attention stage `s + 1` after the first (`s₀ + 1`) to the latest initialization
+stage below `s + 1` injects `attentionStages action e \ {s₀ + 1}` into
+`initializationStages action e`. -/
+private theorem exists_mapsTo_injOn_attentionStages_sdiff {e s₀ : ℕ}
+    (hs₀ : action s₀ = some e) (hs₀_min : ∀ s, action s = some e → s₀ ≤ s)
+    (hepoch : ∀ s₁ s₂, s₁ < s₂ → action s₁ = some e → action s₂ = some e →
+      ∃ t, s₁ < t ∧ t < s₂ ∧ ∃ i < e, action t = some i) :
+    ∃ prev : ℕ → ℕ,
+      MapsTo prev (attentionStages action e \ {s₀ + 1}) (initializationStages action e) ∧
+        InjOn prev (attentionStages action e \ {s₀ + 1}) := by
+  classical
+  -- Map each `u` to the largest initialization stage of `e` strictly below `u`.
+  let F : ℕ → Finset ℕ := fun u => (Finset.range u).filter (· ∈ initializationStages action e)
+  let prev : ℕ → ℕ := fun u => (F u).sup id
+  have hmemF {a b : ℕ} (hab : a < b) (ha : action a = some e) (hb : action b = some e) :
+      ∃ t, a < t ∧ t + 1 ∈ F (b + 1) := by
+    obtain ⟨t, hat, htb, i, hie, hti⟩ := hepoch a b hab ha hb
+    exact ⟨t, hat, Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (Nat.succ_lt_succ htb),
+      succ_mem_initializationStages.mpr ⟨i, hie, hti⟩⟩⟩
+  -- Between `s₀` and any later action `s`, some `i < e` acts, so `F (s + 1)` is nonempty and its
+  -- supremum `prev (s + 1)` is an initialization stage below `s + 1`.
+  have hprev {s : ℕ} (hs : action s = some e) (hlt : s₀ < s) :
+      prev (s + 1) ∈ initializationStages action e ∧ prev (s + 1) < s + 1 := by
+    obtain ⟨t, -, htmem⟩ := hmemF hlt hs₀ hs
+    obtain ⟨w, hw, hsup⟩ := Finset.exists_mem_eq_sup _ ⟨t + 1, htmem⟩ id
+    have hpw : prev (s + 1) = w := by simpa [prev] using hsup
+    rw [hpw]
+    exact ⟨(Finset.mem_filter.mp hw).2, Finset.mem_range.mp (Finset.mem_filter.mp hw).1⟩
+  -- An initialization stage in `(s₁ + 1, s₂ + 1)` forces `prev` to grow strictly across later
+  -- actions of `e`, making `prev` injective off `s₀ + 1`.
+  have hstrict {s₁ s₂ : ℕ} (hs₁ : action s₁ = some e) (hs₂ : action s₂ = some e)
+      (h₀₁ : s₀ < s₁) (h₁₂ : s₁ < s₂) : prev (s₁ + 1) < prev (s₂ + 1) := by
+    have hp₁ := (hprev hs₁ h₀₁).2
+    obtain ⟨t, hs₁t, htmem⟩ := hmemF h₁₂ hs₁ hs₂
+    have htle : t + 1 ≤ prev (s₂ + 1) := Finset.le_sup (f := id) htmem
+    omega
+  refine ⟨prev, fun _ ⟨hatt, hne₀⟩ => ?_, ?_⟩
+  · obtain ⟨s, rfl, hs⟩ := mem_attentionStages.mp hatt
+    exact (hprev hs (lt_of_le_of_ne (hs₀_min s hs) fun h => hne₀ (by simp [h]))).1
+  · rintro _ ⟨hatt₁, h₁⟩ _ ⟨hatt₂, h₂⟩ heq
+    obtain ⟨s₁, rfl, hs₁⟩ := mem_attentionStages.mp hatt₁
+    obtain ⟨s₂, rfl, hs₂⟩ := mem_attentionStages.mp hatt₂
+    have h₀₁ : s₀ < s₁ := lt_of_le_of_ne (hs₀_min s₁ hs₁) fun h => h₁ (by simp [h])
+    have h₀₂ : s₀ < s₂ := lt_of_le_of_ne (hs₀_min s₂ hs₂) fun h => h₂ (by simp [h])
+    rcases lt_trichotomy s₁ s₂ with hlt | rfl | hgt
+    · exact absurd heq (hstrict hs₁ hs₂ h₀₁ hlt).ne
+    · rfl
+    · exact absurd heq.symm (hstrict hs₂ hs₁ h₀₂ hgt).ne
+
 /-- **At most one action per epoch.** If `e` is initialized finitely often and some `i < e` acts
 between any two actions of `e`, then `e` acts at most `(initializationStages action e).ncard + 1`
 times. -/
@@ -126,42 +167,12 @@ theorem finite_attentionStages_and_ncard_le_succ_initializationStages {e : ℕ}
       (attentionStages action e).ncard ≤ (initializationStages action e).ncard + 1 := by
   classical
   by_cases hne : ∃ s, action s = some e
-  · let s₀ := Nat.find hne
+  · -- Separate the least action `s₀` from the later attention stages, which inject into
+    -- `initializationStages action e`.
+    let s₀ := Nat.find hne
     have hs₀ : action s₀ = some e := Nat.find_spec hne
-    have hs₀_min : ∀ s, action s = some e → s₀ ≤ s := fun _ => Nat.find_min' hne
-    let F : ℕ → Finset ℕ := fun u => (Finset.range u).filter (· ∈ initializationStages action e)
-    let prev : ℕ → ℕ := fun u => (F u).sup id
-    have hmemF {a b : ℕ} (hab : a < b) (ha : action a = some e) (hb : action b = some e) :
-        ∃ t, a < t ∧ t + 1 ∈ F (b + 1) := by
-      obtain ⟨t, hat, htb, i, hie, hti⟩ := hepoch a b hab ha hb
-      exact ⟨t, hat, Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (Nat.succ_lt_succ htb),
-        succ_mem_initializationStages.mpr ⟨i, hie, hti⟩⟩⟩
-    have hprev {s : ℕ} (hs : action s = some e) (hlt : s₀ < s) :
-        prev (s + 1) ∈ initializationStages action e ∧ prev (s + 1) < s + 1 := by
-      obtain ⟨t, -, htmem⟩ := hmemF hlt hs₀ hs
-      obtain ⟨w, hw, hsup⟩ := Finset.exists_mem_eq_sup _ ⟨t + 1, htmem⟩ id
-      exact (show prev (s + 1) = w from hsup).symm ▸
-        ⟨(Finset.mem_filter.mp hw).2, Finset.mem_range.mp (Finset.mem_filter.mp hw).1⟩
-    have hmaps : MapsTo prev (attentionStages action e \ {s₀ + 1})
-        (initializationStages action e) := fun _ ⟨hatt, hne₀⟩ => by
-      obtain ⟨s, rfl, hs⟩ := mem_attentionStages.mp hatt
-      exact (hprev hs (lt_of_le_of_ne (hs₀_min s hs) fun h => hne₀ (by simp [h]))).1
-    have hstrict {s₁ s₂ : ℕ} (hs₁ : action s₁ = some e) (hs₂ : action s₂ = some e)
-        (h₀₁ : s₀ < s₁) (h₁₂ : s₁ < s₂) : prev (s₁ + 1) < prev (s₂ + 1) := by
-      have hp₁ := (hprev hs₁ h₀₁).2
-      obtain ⟨t, hs₁t, htmem⟩ := hmemF h₁₂ hs₁ hs₂
-      have htle : t + 1 ≤ prev (s₂ + 1) := Finset.le_sup (f := id) htmem
-      omega
-    have hinj : InjOn prev (attentionStages action e \ {s₀ + 1}) := by
-      rintro _ ⟨hatt₁, h₁⟩ _ ⟨hatt₂, h₂⟩ heq
-      obtain ⟨s₁, rfl, hs₁⟩ := mem_attentionStages.mp hatt₁
-      obtain ⟨s₂, rfl, hs₂⟩ := mem_attentionStages.mp hatt₂
-      have h₀₁ : s₀ < s₁ := lt_of_le_of_ne (hs₀_min s₁ hs₁) fun h => h₁ (by simp [h])
-      have h₀₂ : s₀ < s₂ := lt_of_le_of_ne (hs₀_min s₂ hs₂) fun h => h₂ (by simp [h])
-      rcases lt_trichotomy s₁ s₂ with hlt | rfl | hgt
-      · exact absurd heq (hstrict hs₁ hs₂ h₀₁ hlt).ne
-      · rfl
-      · exact absurd heq.symm (hstrict hs₂ hs₁ h₀₂ hgt).ne
+    obtain ⟨prev, hmaps, hinj⟩ := exists_mapsTo_injOn_attentionStages_sdiff hs₀
+      (fun _ => Nat.find_min' hne) hepoch
     have hdiff_fin := Finite.of_finite_image (hfin.subset hmaps.image_subset) hinj
     have hins := insert_sdiff_self_of_mem (mem_attentionStages.mpr ⟨s₀, rfl, hs₀⟩)
     refine ⟨hins ▸ hdiff_fin.insert (s₀ + 1), ?_⟩

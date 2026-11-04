@@ -116,6 +116,21 @@ theorem witness_eq_of_forall_lt_action_ne {k s₁ s₂ : ℕ} (hs : s₁ ≤ s�
     rw [witness_succ_eq_of_notMem_appointmentStages hnot,
       ih fun u hu₁ hu₂ => hno u hu₁ (Nat.lt_succ_of_lt hu₂)]
 
+/-- If no `i ≤ k` acts in `[s₁, s₂)`, then `restraint k` stays constant from `s₁` to `s₂`. -/
+theorem restraint_eq_of_forall_le_action_ne {k s₁ s₂ : ℕ} (hs : s₁ ≤ s₂)
+    (hno : ∀ t, s₁ ≤ t → t < s₂ → ∀ i ≤ k, action t ≠ some i) :
+    restraint k s₂ = restraint k s₁ := by
+  induction s₂, hs using Nat.le_induction with
+  | base => rfl
+  | succ t ht ih =>
+    rcases hatt : attention (state t) t with _ | ⟨m, d⟩
+    · rw [restraint_succ_of_attention_eq_none hatt,
+        ih fun u hu₁ hu₂ => hno u hu₁ (Nat.lt_succ_of_lt hu₂)]
+    · have hkm : k < m := not_le.mp fun hmk =>
+        hno t ht (Nat.lt_succ_self t) m hmk (action_eq_some_iff.mpr ⟨d, hatt⟩)
+      rw [restraint_succ_of_attention_eq_some_of_lt hatt hkm,
+        ih fun u hu₁ hu₂ => hno u hu₁ (Nat.lt_succ_of_lt hu₂)]
+
 /-- **At most one action per epoch.** Between any two actions of `k`, some `i < k` acts. -/
 theorem exists_lt_action_between (k : ℕ) {s₁ s₂ : ℕ} (hlt : s₁ < s₂)
     (hs₁ : action s₁ = some k) (hs₂ : action s₂ = some k) :
@@ -184,12 +199,11 @@ theorem finite_monitoredInjuryEvents_and_ncard_le (e : ℕ) :
       (monitoredInjuryEvents stage monitoredSide restraint e).ncard ≤ 2 ^ e - 1 := by
   obtain ⟨hfin_set, hle_set⟩ := finite_injurySet_and_ncard_le e
   have hinj : Set.InjOn (fun p : Bool × ℕ × ℕ => p.2.2)
-      (monitoredInjuryEvents stage monitoredSide restraint e) := by
-    rintro ⟨b₁, s₁, x₁⟩ h₁ ⟨b₂, s₂, x₂⟩ h₂ (rfl : x₁ = x₂)
-    obtain ⟨rfl, hx₁⟩ := mk_mem_monitoredInjuryEvents.mp h₁
-    obtain ⟨rfl, hx₂⟩ := mk_mem_monitoredInjuryEvents.mp h₂
-    rw [unique_entry_stage (monotone_stage _)
-      (injuriesAt_subset_fresh hx₁) (injuriesAt_subset_fresh hx₂)]
+      (monitoredInjuryEvents stage monitoredSide restraint e) := fun _ h₁ _ h₂ hx => by
+    rw [mem_monitoredInjuryEvents] at h₁ h₂
+    exact Prod.ext (h₁.1.trans h₂.1.symm)
+      (injOn_snd_injuryEvents (monotone_stage _)
+        (mem_injuryEvents.mpr h₁.2) (mem_injuryEvents.mpr h₂.2) hx)
   refine ⟨finite_monitoredInjuryEvents_iff_finite_injuryStages.mpr
     (finite_injuryStages_and_ncard_le e).1, ?_⟩
   rw [← hinj.ncard_image, image_number_monitoredInjuryEvents]
@@ -252,20 +266,10 @@ theorem zero_mem_eval_of_mem_set {k s₀ : ℕ}
     obtain ⟨u, hs₁u, -, i, hik, hui⟩ :=
       exists_lt_action_between k (Nat.lt_of_succ_le ht) hact₁ htk
     exact hno_after u (Nat.succ_le_of_lt hs₁u) i hik hui
-  have hrest : ∀ t ≥ s₁ + 1, restraint k t = some d.use := by
-    intro t ht
-    induction t, ht using Nat.le_induction with
-    | base => exact restraint_succ_of_attention_eq_some_self hd₁
-    | succ t ht ih =>
-      rcases hatt : attention (state t) t with _ | ⟨m, d'⟩
-      · rw [restraint_succ_of_attention_eq_none hatt, ih]
-      · have hm : action t = some m := action_eq_some_iff.mpr ⟨d', hatt⟩
-        have hkm : k < m := by
-          rcases lt_trichotomy m k with hmk | rfl | hkm
-          · exact absurd hm (hno_after t ht m hmk)
-          · exact absurd hm (hno_self t ht)
-          · exact hkm
-        rw [restraint_succ_of_attention_eq_some_of_lt hatt hkm, ih]
+  have hrest : ∀ t ≥ s₁ + 1, restraint k t = some d.use := fun t ht =>
+    (restraint_eq_of_forall_le_action_ne ht fun u hu _ i hik =>
+      (lt_or_eq_of_le hik).elim (hno_after u hu i) fun h => h ▸ hno_self u hu).trans
+      (restraint_succ_of_attention_eq_some_self hd₁)
   have hinj_empty : ∀ t ≥ s₁ + 1, injuriesAt (stage (monitoredSide k)) restraint k t = ∅ :=
     fun t ht => Finset.eq_empty_of_forall_notMem fun _ hz =>
       let ⟨i, hik, _, hti, _⟩ := exists_lt_of_mem_injuriesAt hz; hno_after t ht i hik hti
@@ -372,23 +376,12 @@ private theorem turingReducible_set_jump_empty (b : Bool) :
   exact Set.turingReducible_jump_of_recursiveIn ∅
     (Nat.Partrec.Code.exists_code.mpr ⟨FriedbergMuchnik.code b, rfl⟩).recursiveIn
 
-private theorem degree_mem_Ioo_of_incomparable {X Y : Set ℕ}
-    (hX : TuringReducible X.oracle (∅ : Set ℕ).jump.oracle)
-    (hY : TuringReducible Y.oracle (∅ : Set ℕ).jump.oracle)
-    (hXY : ¬TuringReducible X.oracle Y.oracle) (hYX : ¬TuringReducible Y.oracle X.oracle) :
-    toAntisymmetrization TuringReducible X.oracle ∈
-      Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
-        (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) := by
-  simp only [Set.mem_Ioo, lt_iff_le_not_ge, turingDegree_le_iff]
-  exact ⟨⟨Set.empty_turingReducible _, fun h => hXY (h.trans (Set.empty_turingReducible _))⟩,
-    ⟨hX, fun h => hYX (hY.trans h)⟩⟩
-
 /-- The Turing degree of `friedbergMuchnikSetA` lies strictly between `0` and `0'`. -/
 theorem degree_friedbergMuchnikSetA_mem_Ioo :
     toAntisymmetrization TuringReducible friedbergMuchnikSetA.oracle ∈
       Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
         (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) :=
-  degree_mem_Ioo_of_incomparable
+  Set.degree_mem_Ioo_of_incomparable
     (FriedbergMuchnik.set_false_eq ▸ turingReducible_set_jump_empty false)
     (FriedbergMuchnik.set_true_eq ▸ turingReducible_set_jump_empty true)
     not_turingReducible_friedbergMuchnikSetA_friedbergMuchnikSetB
@@ -399,7 +392,7 @@ theorem degree_friedbergMuchnikSetB_mem_Ioo :
     toAntisymmetrization TuringReducible friedbergMuchnikSetB.oracle ∈
       Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
         (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) :=
-  degree_mem_Ioo_of_incomparable
+  Set.degree_mem_Ioo_of_incomparable
     (FriedbergMuchnik.set_true_eq ▸ turingReducible_set_jump_empty true)
     (FriedbergMuchnik.set_false_eq ▸ turingReducible_set_jump_empty false)
     not_turingReducible_friedbergMuchnikSetB_friedbergMuchnikSetA
