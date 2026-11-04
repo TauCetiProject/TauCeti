@@ -29,11 +29,30 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 
 ## Main declarations
 
+* `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_smul`: the determinant of the identity
+  and of a scalar multiple.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
 * `ContinuousLinearEquiv.sum_cofactor_comp_apply_single`: the cofactor contraction identity.
 -/
 
 public section
+
+namespace ContinuousLinearMap
+
+variable {R M : Type*} [CommRing R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+
+/-- The identity has determinant one. -/
+@[simp]
+theorem det_id : (ContinuousLinearMap.id R M).det = 1 :=
+  LinearMap.det_id
+
+/-- Multiplying a map by a scalar `c` multiplies its determinant by `c ^ finrank R M`. -/
+@[simp]
+theorem det_smul [ContinuousConstSMul R M] [Module.Free R M] (c : R) (f : M →L[R] M) :
+    (c • f).det = c ^ Module.finrank R M * f.det :=
+  LinearMap.det_smul c (f : M →ₗ[R] M)
+
+end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
 

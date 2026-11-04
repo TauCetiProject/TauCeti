@@ -86,7 +86,7 @@ variable {T : E ≃L[𝕜] F}
 theorem norm_det_eq_one (hT : T.IsMaxVolumeEllipsoid) {U : E ≃L[𝕜] F}
     (hU : U.IsMaxVolumeEllipsoid) : ‖((T.symm : F →L[𝕜] E).comp (U : E →L[𝕜] F)).det‖ = 1 := by
   have h := det_symm_comp_mul_det_symm_comp T U T
-  rw [T.coe_symm_comp_coe, show (ContinuousLinearMap.id 𝕜 E).det = 1 from LinearMap.det_id] at h
+  rw [T.coe_symm_comp_coe, ContinuousLinearMap.det_id] at h
   have h₁ := hT.norm_det_le_one U hU.norm_le_one
   have h₂ := hU.norm_det_le_one T hT.norm_le_one
   have h₃ := congrArg norm h
@@ -143,23 +143,16 @@ theorem exists_isMaxVolumeEllipsoid [FiniteDimensional 𝕜 E] [FiniteDimensiona
   have hφce : φ (c • (e : E →L[𝕜] F)) = ‖c‖ ^ finrank 𝕜 E := by
     have : (e.symm : F →L[𝕜] E).comp (c • (e : E →L[𝕜] F)) = c • ContinuousLinearMap.id 𝕜 E := by
       rw [ContinuousLinearMap.comp_smul, e.coe_symm_comp_coe]
-    simp only [φ, this, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_smul,
-      ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one, norm_pow]
+    simp only [φ, this, ContinuousLinearMap.det_smul, ContinuousLinearMap.det_id, mul_one,
+      norm_pow]
   have hdet : ((e.symm : F →L[𝕜] E).comp S₀).det ≠ 0 := by
     intro h0
     have := hmax hce
     simp only [Set.mem_ofPred_eq, hφce, φ, h0, norm_zero] at this
     exact (pow_pos hc₀ _).not_ge this
-  -- The maximizer `S₀ = e ∘ (e⁻¹ ∘ S₀)` is bijective.
-  have hbij : Function.Bijective S₀ := by
-    have hunit := (LinearMap.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)
-    have hA := (Module.End.isUnit_iff _).1 hunit
-    have : (S₀ : E → F) = e ∘ ((e.symm : F →L[𝕜] E).comp S₀) := by
-      ext x
-      simp
-    rw [this]
-    exact e.bijective.comp hA
-  let T : E ≃L[𝕜] F := (LinearEquiv.ofBijective (S₀ : E →ₗ[𝕜] F) hbij).toContinuousLinearEquiv
+  -- The maximizer `S₀ = e ∘ (e⁻¹ ∘ S₀)` is invertible.
+  let T : E ≃L[𝕜] F :=
+    (((e.symm : F →L[𝕜] E).comp S₀).toContinuousLinearEquivOfDetNeZero hdet).trans e
   have hT : (T : E →L[𝕜] F) = S₀ := by
     ext x
     simp [T]
@@ -188,9 +181,9 @@ theorem norm_eq_one [Nontrivial E] (hT : T.IsMaxVolumeEllipsoid) : ‖(T : E →
     rw [norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha₀), inv_mul_cancel₀ ha₀.ne']
   have h := hT.norm_det_le_one _ hS
   have hn : 0 < finrank 𝕜 E := finrank_pos
-  simp only [ContinuousLinearMap.comp_smul, T.coe_symm_comp_coe, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id, LinearMap.det_smul,
-    LinearMap.det_id, mul_one, norm_pow, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha₀)] at h
+  simp only [ContinuousLinearMap.comp_smul, T.coe_symm_comp_coe,
+    ContinuousLinearMap.det_smul, ContinuousLinearMap.det_id, mul_one, norm_pow,
+    RCLike.norm_ofReal, abs_of_pos (inv_pos.2 ha₀)] at h
   exact (one_lt_pow₀ (one_lt_inv₀ ha₀ |>.2 ha) hn.ne').not_ge h
 
 /-- **Contact points.** Over `ℝ` or `ℂ`, a maximal-volume ellipsoid from a nonzero
@@ -220,8 +213,9 @@ local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 open RCLike in
 /-- If a contraction `S` from an inner product space preserves the norm of `u`, then
 `re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖` for every `x`. For a unit vector `u` with `‖S u‖ = 1`, the functional
-`re ⟪·, u⟫` is thus a support functional at `u` of the unit ball of the norm `x ↦ ‖S x‖`, which
-contains the Euclidean unit ball and touches its boundary at `u`. -/
+`re ⟪·, u⟫` is thus a support functional at `u` of the unit ball of the seminorm `x ↦ ‖S x‖`
+(a norm when `S` is injective), which contains the Euclidean unit ball and touches its boundary
+at `u`. -/
 theorem re_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) {u : E}
     (hu : ‖S u‖ = ‖u‖) (x : E) : re ⟪x, u⟫ ≤ ‖u‖ * ‖S x‖ := by
   set v := x - u
@@ -274,9 +268,14 @@ theorem norm_inner_le_norm_mul_norm_apply {S : E →L[𝕜] F} (hS : ‖S‖ ≤
     positivity
   have hz' : ‖⟪x, u⟫‖ ≠ 0 := norm_ne_zero_iff.2 hz
   -- Rotate `x` by the unit scalar `ω = ⟪x, u⟫ / ‖⟪x, u⟫‖`, which makes `⟪ω • x, u⟫` real.
-  have h := S.re_inner_le_norm_mul_norm_apply hS hu ((⟪x, u⟫ / (‖⟪x, u⟫‖ : 𝕜)) • x)
-  rwa [inner_smul_left, map_smul, norm_smul, norm_div, norm_ofReal, abs_norm, div_self hz',
-    one_mul, map_div₀, conj_ofReal, div_mul_eq_mul_div, RCLike.conj_mul, ← ofReal_pow, ← ofReal_div,
-    ofReal_re, sq, mul_div_cancel_right₀ _ hz'] at h
+  set ω : 𝕜 := ⟪x, u⟫ / (‖⟪x, u⟫‖ : 𝕜)
+  have hω : ‖ω‖ = 1 := by simp [ω, hz']
+  have hre : re ⟪ω • x, u⟫ = ‖⟪x, u⟫‖ := by
+    have : ⟪ω • x, u⟫ = (‖⟪x, u⟫‖ : 𝕜) := by
+      rw [inner_smul_left, map_div₀, conj_ofReal, div_mul_eq_mul_div, RCLike.conj_mul]
+      field_simp
+    rw [this, ofReal_re]
+  have h := S.re_inner_le_norm_mul_norm_apply hS hu (ω • x)
+  rwa [hre, map_smul, norm_smul, hω, one_mul] at h
 
 end ContinuousLinearMap
