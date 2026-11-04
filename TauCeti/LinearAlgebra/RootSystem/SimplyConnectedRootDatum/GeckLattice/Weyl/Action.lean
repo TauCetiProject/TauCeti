@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.AlgebraicGroup.SplitTorus.LinearMap
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
 import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import TauCeti.RepresentationTheory.ToMultiplicative
 
 /-!
 # The Weyl-group action on the Geck torus
@@ -268,35 +268,11 @@ theorem torusCharacter_geckWeylTorusAction
 
 /-- The Weyl action on the integral character group of the Geck weight torus. -/
 def geckWeylCharacterAut : (t.simplyConnectedRootDatum ht).weylGroup →*
-    MulAut (Multiplicative (Fin t.rank →₀ ℤ)) where
-  toFun w := MonoidHom.toMulEquiv
-    (SplitTorus.characterMapOfLinearMap (DistribMulAction.toModuleEnd ℤ (Fin t.rank → ℤ) w))
-    (SplitTorus.characterMapOfLinearMap (DistribMulAction.toModuleEnd ℤ (Fin t.rank → ℤ) w⁻¹))
-    (by
-      rw [SplitTorus.characterMapOfLinearMap_comp, ← Module.End.mul_eq_comp,
-        ← map_mul, inv_mul_cancel, map_one, Module.End.one_eq_id,
-        SplitTorus.characterMapOfLinearMap_id])
-    (by
-      rw [SplitTorus.characterMapOfLinearMap_comp, ← Module.End.mul_eq_comp,
-        ← map_mul, mul_inv_cancel, map_one, Module.End.one_eq_id,
-        SplitTorus.characterMapOfLinearMap_id])
-  map_one' := by
-    apply MulEquiv.ext
-    intro α
-    have h : SplitTorus.characterMapOfLinearMap
-        (DistribMulAction.toModuleEnd ℤ (Fin t.rank → ℤ)
-          (1 : (t.simplyConnectedRootDatum ht).weylGroup)) = MonoidHom.id _ := by
-      rw [map_one, Module.End.one_eq_id, SplitTorus.characterMapOfLinearMap_id]
-    simpa only [MonoidHom.toMulEquiv_apply, MonoidHom.id_apply, MulAut.one_apply] using
-      DFunLike.congr_fun h α
-  map_mul' w₁ w₂ := by
-    apply MulEquiv.ext
-    intro α
-    have h := SplitTorus.characterMapOfLinearMap_comp
-      (DistribMulAction.toModuleEnd ℤ (Fin t.rank → ℤ) w₁)
-      (DistribMulAction.toModuleEnd ℤ (Fin t.rank → ℤ) w₂)
-    rw [← Module.End.mul_eq_comp, ← map_mul] at h
-    exact (DFunLike.congr_fun h α).symm
+    MulAut (Multiplicative (Fin t.rank →₀ ℤ)) :=
+  (MulAut.congr
+    (Finsupp.linearEquivFunOnFinite ℤ ℤ _).symm.toAddEquiv.toMultiplicative).toMonoidHom.comp
+    (Representation.ofDistribMulAction ℤ (t.simplyConnectedRootDatum ht).weylGroup
+      (Fin t.rank → ℤ)).toMulAut
 
 /-- On an additive exponent vector, the character action is the Weyl action transported
 through the finite-function equivalence. -/
@@ -306,8 +282,9 @@ theorem geckWeylCharacterAut_ofAdd
     t.geckWeylCharacterAut ht w (Multiplicative.ofAdd μ) =
       Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm
         (w • Finsupp.equivFunOnFinite μ)) := by
-  exact SplitTorus.characterMapOfLinearMap_ofAdd
-    (DistribMulAction.toModuleEnd ℤ (Fin t.rank → ℤ) w) μ
+  simp [geckWeylCharacterAut, MulAut.congr]
+  -- The linear and ordinary finite-function equivalences have the same underlying maps.
+  rfl
 
 /-- On a weight written as an exponent vector, the character action is the usual Weyl action. -/
 @[simp↓]
