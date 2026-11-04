@@ -64,9 +64,9 @@ against the tensor product `U(t, x) = ψ(t / R) u(x)` (`SchwartzMap.prodSMul`) o
 profile `ψ` with `u`. For `v, w ∈ ℝⁿ`, `∂_{(0, v)} ∂_{(0, w)} U = ψ(· / R) ⊗ ∂_v ∂_w u` and
 `ΔU = ψ(· / R) ⊗ Δu + R⁻² ψ''(· / R) ⊗ u`. The `Lᵖ` norm of a tensor product is the product of the
 norms (`TauCeti.eLpNorm_prod_smul`), and the dilation `ψ(· / R)` multiplies `‖ψ‖_p` and `‖ψ''‖_p`
-by the same factor (`TauCeti.eLpNorm_comp_inv_smul`). Dividing by it and letting `R → ∞` leaves the
-estimate in `ℝⁿ`. This gives the planar case `n = 2`, where the Newtonian kernel is logarithmic
-and the kernel representation above is not available, and the case `n = 1`.
+by the same factor (`MeasureTheory.Measure.eLpNorm_comp_inv_smul`). Dividing by it and letting
+`R → ∞` leaves the estimate in `ℝⁿ`. This gives the planar case `n = 2`, where the Newtonian
+kernel is logarithmic and the kernel representation above is not available, and the case `n = 1`.
 
 The full Hessian is controlled through an orthonormal basis `(eᵢ)`: the norm of a bilinear map
 `M` is at most `∑ᵢⱼ ‖M(eᵢ, eⱼ)‖`
@@ -272,7 +272,7 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     set S := ENNReal.ofReal (R ^ ((Module.finrank ℝ ℝ : ℝ) / p.toReal))
     have hD_norm (f : 𝓢(ℝ, ℝ)) : eLpNorm (⇑(D f)) p volume = S * eLpNorm (⇑f) p volume := by
       have h : ⇑(D f) = fun t => f (R⁻¹ • t) := funext fun t => by simp [D, δ, mul_comm]
-      rw [h, eLpNorm_comp_inv_smul volume f hR p]
+      rw [h, Measure.eLpNorm_comp_inv_smul volume f hR p]
     have hD_deriv (f : 𝓢(ℝ, ℝ)) : ∂_{(1 : ℝ)} (D f) = R⁻¹ • D (∂_{(1 : ℝ)} f) := by
       have h : δ 1 = R⁻¹ • (1 : ℝ) := by simp [δ]
       rw [lineDerivOp_compCLMOfContinuousLinearEquiv, ← map_smul, h,
