@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondBianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -40,6 +41,8 @@ identity `derivCurvatureTensor_cyclic_eq_zero`.
 * `CovariantDerivative.derivCurvatureTensor_apply` and
   `CovariantDerivative.derivCurvatureTensor_apply_eq_curvatureOperator`: its value on smooth
   fields and sections.
+* `CovariantDerivative.derivCurvatureTensor_apply_of_contMDiffOn`: evaluation on local smooth
+  fields and sections, including local frames.
 * `CovariantDerivative.derivCurvatureTensor_antisymm`: `∇R` is antisymmetric in its two curvature
   arguments.
 * `CovariantDerivative.derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero`: `∇R = 0` for a
@@ -366,6 +369,61 @@ theorem derivCurvatureTensor_apply (x : M) (v : TangentSpace I x)
     funext fun y ↦ (curvatureTensor_apply cov y hY hZ hσ).symm
   rw [h]
   exact derivCurvatureValue_eq cov covT x v hY hZ hσ
+
+/-- The covariant curvature derivative evaluated on fields smooth only on a neighbourhood.
+This applies in particular to local frames, without choosing global frame extensions. -/
+theorem derivCurvatureTensor_apply_of_contMDiffOn (x : M) {U : Set M}
+    (hU : IsOpen U) (hx : x ∈ U) (v : TangentSpace I x)
+    (hY : CMDiff[U] ∞ (T% Y)) (hZ : CMDiff[U] ∞ (T% Z))
+    (hσ : CMDiff[U] ∞ (T% σ)) :
+    cov.derivCurvatureTensor covT x v (Y x) (Z x) (σ x) =
+      cov (curvatureOperator cov Y Z σ) x v -
+        cov.curvatureTensor x (covT Y x v) (Z x) (σ x) -
+          cov.curvatureTensor x (Y x) (covT Z x v) (σ x) -
+            cov.curvatureTensor x (Y x) (Z x) (cov σ x v) := by
+  -- Cut off the three local inputs to obtain globally smooth sections agreeing near `x`.
+  obtain ⟨ρ, hρ, -⟩ :=
+    (SmoothBumpFunction.nhds_basis_support (I := I) (hU.mem_nhds hx)).mem_iff.mp
+      (hU.mem_nhds hx)
+  have hY' : CMDiff ∞ (T% ((ρ : M → ℝ) • Y)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hY
+  have hZ' : CMDiff ∞ (T% ((ρ : M → ℝ) • Z)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hZ
+  have hσ' : CMDiff ∞ (T% ((ρ : M → ℝ) • σ)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρ hσ
+  have hYY' : Y =ᶠ[nhds x] (ρ : M → ℝ) • Y :=
+    ρ.eventuallyEq_one.mono fun y hy ↦ by
+      simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]
+      rfl
+  have hZZ' : Z =ᶠ[nhds x] (ρ : M → ℝ) • Z :=
+    ρ.eventuallyEq_one.mono fun y hy ↦ by
+      simp only [Pi.smul_apply', hy, Pi.one_apply, one_smul]
+      rfl
+  have hσσ' : ∀ᶠ y in nhds x, σ y = ((ρ : M → ℝ) • σ) y :=
+    ρ.eventuallyEq_one.mono fun y hy ↦ by simp [hy]
+  -- Locality transfers the differentiated curvature term as well as each correction term.
+  have hR : ∀ᶠ y in nhds x,
+      curvatureOperator cov Y Z σ y =
+        curvatureOperator cov ((ρ : M → ℝ) • Y) ((ρ : M → ℝ) • Z)
+          ((ρ : M → ℝ) • σ) y := by
+    filter_upwards [hYY'.eventuallyEq_nhds, hZZ'.eventuallyEq_nhds,
+      eventually_eventually_nhds.2 hσσ'] with y hYy hZy hσy
+    exact curvatureOperator_congr_of_eventuallyEq hY' hZ' hσ' hYy hZy hσy
+  have hdR' := (cov.contMDiff_curvatureOperator hY' hZ' hσ').mdifferentiable (by simp) x
+  have hdR : MDiffAt (T% (curvatureOperator cov Y Z σ)) x :=
+    hdR'.congr_of_eventuallyEq (hR.mono fun y hy ↦ by simp only [hy])
+  have hdY := (hY.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+  have hdZ := (hZ.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+  have hdσ := (hσ.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+  rw [hYY'.self_of_nhds, hZZ'.self_of_nhds, hσσ'.self_of_nhds,
+    derivCurvatureTensor_apply cov covT x v hY' hZ' hσ',
+    cov.isCovariantDerivativeOn.congr_of_eventuallyEq hdR hdR' Filter.univ_mem hR,
+    covT.isCovariantDerivativeOn.congr_of_eventuallyEq hdY
+      (hY'.mdifferentiableAt (by simp)) Filter.univ_mem hYY',
+    covT.isCovariantDerivativeOn.congr_of_eventuallyEq hdZ
+      (hZ'.mdifferentiableAt (by simp)) Filter.univ_mem hZZ',
+    cov.isCovariantDerivativeOn.congr_of_eventuallyEq hdσ
+      (hσ'.mdifferentiableAt (by simp)) Filter.univ_mem hσσ']
 
 /-- For a smooth connection `∇ᵀ` on the tangent bundle, the covariant derivative of the curvature
 tensor along a smooth vector field `X` is given entirely by curvature operators:

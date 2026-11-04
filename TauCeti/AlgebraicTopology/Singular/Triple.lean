@@ -217,6 +217,14 @@ theorem isIso_singularHomologyδ_of_isZero (n m : ℕ)
     IsIso (T.singularHomologyδ R n m h) :=
   (T.shortExact_singularChainComplexShortComplex R).isIso_δ n m (by simpa) hn hm
 
+/-- **Vanishing passes from the inner and outer pairs to the total pair**: if `Hₙ(A, B)` and
+`Hₙ(X, A)` vanish, so does `Hₙ(X, B)`. -/
+theorem isZero_singularHomology_totalPair (n : ℕ)
+    (hinner : IsZero ((innerPair.obj T).singularHomology R n))
+    (houter : IsZero ((outerPair.obj T).singularHomology R n)) :
+    IsZero ((totalPair.obj T).singularHomology R n) :=
+  (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
+
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
 connecting morphisms of a filtration compose to zero. -/
@@ -246,15 +254,6 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (singularChainComplexShortComplexMap φ R)
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
-
-/-- **Vanishing of relative homology glues across a triple**: if `Hₙ(A, B)` and `Hₙ(X, A)` vanish,
-then `Hₙ(X, B)` vanishes. -/
-theorem isZero_singularHomology_totalPair (n : ℕ)
-    (h₁ : IsZero ((innerPair.obj T).singularHomology R n))
-    (h₃ : IsZero ((outerPair.obj T).singularHomology R n)) :
-    IsZero ((totalPair.obj T).singularHomology R n) :=
-  (T.singularHomology_exact_total R n).isZero_of_both_zeros
-    (h₁.eq_of_src _ _) (h₃.eq_of_tgt _ _)
 
 /-- **Projectivity of top relative homology glues across a triple** in a hereditary abelian
 category: if `H_{d+1}(X, A)` vanishes and both `H_d(A, B)` and `H_d(X, A)` are projective, then
