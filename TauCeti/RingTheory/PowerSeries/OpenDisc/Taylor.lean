@@ -180,15 +180,24 @@ theorem norm_restrict_taylorHom (ha : ‖a‖ < R₀) (r : Set.Ioo (0 : ℝ) R�
   have : Fact (0 < R₀) := ⟨r.2.1.trans r.2.2⟩
   simpa [taylorHom_taylorHom] using h
 
-/-- Evaluating a translate at `b` evaluates the original series at `b + a`. -/
-theorem evalAt_taylorHom (ha : ‖a‖ < R₀) (hb : ‖b‖ < R₀)
-    (f : OnOpenDisc.subring R R₀) :
-    (taylorHom ha f : R⟦X⟧).evalAt b = (f : R⟦X⟧).evalAt (b + a) := by
-  have hba := (IsUltrametricDist.norm_add_le_max b a).trans_lt (max_lt hb ha)
+/-- Evaluating a translate at an algebra point `b` evaluates the original series at
+`b + algebraMap R A a`. -/
+theorem evalAt_taylorHom {A : Type*} [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+    [CompleteSpace A] [IsUltrametricDist A] [NormOneClass A] {b : A}
+    (ha : ‖a‖ < R₀) (hb : ‖b‖ < R₀) (f : OnOpenDisc.subring R R₀) :
+    (taylorHom ha f : R⟦X⟧).evalAt b =
+      (f : R⟦X⟧).evalAt (b + algebraMap R A a) := by
+  have haA : ‖algebraMap R A a‖ < R₀ := by
+    have h : ‖algebraMap R A a‖ ≤ ‖a‖ := by
+      simpa only [Algebra.algebraMap_eq_smul_one, norm_one, mul_one] using
+        (norm_smul_le a (1 : A))
+    exact h.trans_lt ha
+  have hba := (IsUltrametricDist.norm_add_le_max b (algebraMap R A a)).trans_lt
+    (max_lt hb haA)
   have h := ((continuous_evalAtHom (R := R) hb).comp (continuous_taylorHom ha)).ext_on
     denseRange_polynomialHom (continuous_evalAtHom hba) (fun _ ⟨p, hp⟩ ↦ ?_)
   · simpa only [Function.comp_apply, OnOpenDisc.evalAtHom_apply] using congrFun h f
   · subst hp
-    simp [Polynomial.taylor_eval]
+    simp [Polynomial.taylor_apply, Polynomial.aeval_comp]
 
 end TauCeti.PowerSeries.OnOpenDisc
