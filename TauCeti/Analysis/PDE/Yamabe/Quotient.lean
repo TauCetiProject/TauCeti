@@ -58,6 +58,9 @@ All in the namespace `TauCeti.Yamabe`.
 
 * `yamabeQuotient`: the Yamabe quotient `Q_g(u)`.
 * `yamabeQuotient_smul`: `Q_g(c u) = Q_g(u)` for `c ≠ 0`.
+* `yamabeQuotient_one`, `yamabeQuotient_const`, and
+  `yamabeQuotient_const_of_scalarCurvature_eq_const`: value of `Q_g` on nonzero constant
+  functions on compact manifolds.
 * `hasDerivAt_yamabeQuotient_add_smul`: the first variation of `Q_g`.
 * `forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`: the Euler–Lagrange
   equation `L_g u = λ |u| ^ (pₙ - 2) u` characterizes the critical points of `Q_g`.
@@ -81,6 +84,8 @@ open scoped ContDiff Manifold
 noncomputable section
 
 namespace TauCeti.Yamabe
+
+section Basic
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
@@ -139,11 +144,93 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : MDiff
       (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), hc2,
     mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
 
+end Basic
+
+/-! ### Constant functions -/
+
+section Constant
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- On a compact Riemannian manifold, the Yamabe quotient of the constant function `1` is the
+volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
+theorem yamabeQuotient_one :
+    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+          ∂riemannianVolume I M) /
+        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
+  rw [yamabeQuotient_def]
+  simp only [mgradient_const, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow, mul_zero, zero_add, one_pow, mul_one, abs_one, Real.one_rpow,
+    integral_const, smul_eq_mul, ← riemannianTotalVolume_def]
+
+/-- On a compact Riemannian manifold of dimension `n ∉ {0, 2}`, the Yamabe quotient of any nonzero
+constant function `c` equals the volume-normalized total scalar curvature
+`(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. (At `n = 0` or `n = 2`, `pₙ = 0`, so the denominator is `1`
+while the numerator scales by `c²`.) -/
+theorem yamabeQuotient_const (hn₀ : finrank ℝ E ≠ 0) (hn₂ : finrank ℝ E ≠ 2)
+    {c : ℝ} (hc : c ≠ 0) :
+    yamabeQuotient I (fun _ : M ↦ c) =
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+          ∂riemannianVolume I M) /
+        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
+  have hp : criticalExponent (finrank ℝ E) ≠ 0 := by
+    rw [criticalExponent_def]
+    exact div_ne_zero (mul_ne_zero two_ne_zero (Nat.cast_ne_zero.2 hn₀))
+      (sub_ne_zero.2 (by exact_mod_cast hn₂))
+  have hc2 : (|c| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) =
+      c ^ 2 := by
+    rw [← Real.rpow_mul (abs_nonneg c), mul_div_cancel₀ _ hp, Real.rpow_two, sq_abs]
+  rw [yamabeQuotient_def]
+  simp only [mgradient_const, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow, mul_zero, zero_add, ← mul_comm (c ^ 2), integral_const_mul,
+    integral_const, smul_eq_mul, ← riemannianTotalVolume_def]
+  rw [mul_comm (riemannianTotalVolume I M),
+    Real.mul_rpow (Real.rpow_nonneg (abs_nonneg c) _) riemannianTotalVolume_nonneg, hc2,
+    mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+
+/-- On a nonempty compact Riemannian manifold of dimension `n ∉ {0, 2}` with constant scalar
+curvature `S`, every nonzero constant function has Yamabe quotient `S · Vol(g) ^ (2 / n)`. -/
+theorem yamabeQuotient_const_of_scalarCurvature_eq_const [Nonempty M]
+    (hn₀ : finrank ℝ E ≠ 0) (hn₂ : finrank ℝ E ≠ 2) {S : ℝ}
+    (hS : ∀ x : M, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = S)
+    {c : ℝ} (hc : c ≠ 0) :
+    yamabeQuotient I (fun _ : M ↦ c) =
+      S * riemannianTotalVolume I M ^ (2 / (finrank ℝ E : ℝ)) := by
+  have hvol : 0 < riemannianTotalVolume I M := riemannianTotalVolume_pos
+  have hN0 : (finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn₀
+  have hexp : 1 - 2 / criticalExponent (finrank ℝ E) = 2 / (finrank ℝ E : ℝ) := by
+    rw [two_div_criticalExponent]
+    field_simp
+    ring
+  have hdiv : riemannianTotalVolume I M /
+      riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) =
+      riemannianTotalVolume I M ^ (2 / (finrank ℝ E : ℝ)) := by
+    rw [← hexp, Real.rpow_sub hvol, Real.rpow_one]
+  rw [yamabeQuotient_const hn₀ hn₂ hc]
+  simp_rw [hS]
+  rw [integral_const, smul_eq_mul, ← riemannianTotalVolume_def, mul_comm _ S, mul_div_assoc, hdiv]
+
+end Constant
+
 /-! ### The first variation -/
 
 section FirstVariation
 
-variable [CompactSpace M]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [CompactSpace M]
 
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- A continuous function on a compact Riemannian manifold is integrable. -/

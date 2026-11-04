@@ -30,6 +30,8 @@ to a fixed vector, depends continuously on the base point.
   a `C^0` Riemannian bundle.
 * `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
   Riemannian bundle as a continuous Riemannian bundle.
+* `TauCeti.instIsContinuousRiemannianBundleModelSpace`: the standard Riemannian metric on a
+  real inner product space is continuous.
 * `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
@@ -145,6 +147,13 @@ theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
   exact ⟨⟨g, hg.continuous, hinner⟩⟩
 
 end IsContMDiffRiemannianBundle
+
+/-- The standard Riemannian metric on a real inner product space is continuous. -/
+instance TauCeti.instIsContinuousRiemannianBundleModelSpace
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] :
+    IsContinuousRiemannianBundle F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+  Bundle.instIsContinuousRiemannianBundle
+    (riemannianMetricVectorSpace F).toContinuousRiemannianMetric
 
 namespace Bundle.ContMDiffRiemannianMetric
 

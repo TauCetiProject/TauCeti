@@ -119,11 +119,12 @@ theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
   · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
       Trivialization.symmL_apply_of_notMem _ hx]
 
-/-- On a boundaryless manifold, the derivative of a function along the chart-local frame at `α` is
-the partial derivative, along the corresponding basis vector of the model space, of the function
-read in the extended chart at `α`. -/
-theorem mvfderiv_chartLocalFrame [I.Boundaryless] (α : M) {y : M}
-    (hy : y ∈ (chartAt H α).source) {f : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f y)
+/-- On a boundaryless manifold, the derivative of a vector-space-valued map along the chart-local
+frame at `α` is the directional Fréchet derivative, along the corresponding basis vector of the
+model space, of the map read in the extended chart at `α`. -/
+theorem mvfderiv_chartLocalFrame [I.Boundaryless]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (α : M) {y : M}
+    (hy : y ∈ (chartAt H α).source) {f : M → F} (hf : MDifferentiableAt I 𝓘(ℝ, F) f y)
     (k : Fin (Module.finrank ℝ E)) :
     mvfderiv I f y (chartLocalFrame (I := I) α k y) =
       fderiv ℝ (f ∘ (extChartAt I α).symm) (extChartAt I α y) (Module.finBasis ℝ E k) := by
