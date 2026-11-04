@@ -18,10 +18,11 @@ probability space and characterizes completeness of the Gromov–Wasserstein spa
 its metric target `Z`, for every exponent `1 ≤ p ≤ ∞`.
 
 1. **Common-parametrization convergence.** Gluing a countable star of optimal couplings over a
-   reference kernel via `TauCeti.Measure.starMeasure` produces a single standard Borel probability
-   space realizing the exact Gromov–Wasserstein distance `edist (Ks n) L` as an `Lᵖ` discrepancy
-   simultaneously for every `n : ℕ` (`exists_isProbabilityMeasure_eLpNorm_eq_gromovWassersteinEDist`
-   and `GromovWassersteinPresentation.exists_measurePreserving_eLpNorm_eq_edist`). Consequently,
+   reference kernel via `MeasureTheory.Measure.starMeasure` produces a single standard Borel
+   probability space realizing the exact Gromov–Wasserstein distance `edist (Ks n) L` as an `Lᵖ`
+   discrepancy simultaneously for every `n : ℕ`
+   (`exists_isProbabilityMeasure_eLpNorm_eq_gromovWassersteinEDist` and
+   `GromovWassersteinPresentation.exists_measurePreserving_eLpNorm_eq_edist`). Consequently,
    sequential convergence in `GromovWassersteinPresentation` and `GromovWassersteinSpace` is
    equivalent to `Lᵖ` convergence of pulled-back kernels on a common standard Borel probability
    carrier, with no completeness or separability assumption on `Z`.
@@ -103,14 +104,14 @@ theorem exists_isProbabilityMeasure_eLpNorm_eq_gromovWassersteinEDist {X₀ : Ty
     exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace
       μ₀ (ν n) hω₀ (hω n) p
   have : ∀ n, IsProbabilityMeasure (π n) := fun n ↦ (hπ n).isProbabilityMeasure
-  let γ : Measure (X₀ × ((n : ℕ) → Y n)) := TauCeti.Measure.starMeasure μ₀ π
+  let γ : Measure (X₀ × ((n : ℕ) → Y n)) := μ₀.starMeasure π
   have hg : MeasurePreserving Prod.fst γ μ₀ :=
-    TauCeti.Measure.measurePreserving_fst_starMeasure μ₀ π
+    μ₀.measurePreserving_fst_starMeasure π
   have hf : ∀ n, MeasurePreserving (fun w : X₀ × ((k : ℕ) → Y k) ↦ w.2 n) γ (ν n) :=
-    TauCeti.Measure.measurePreserving_eval_snd_starMeasure hπ
+    MeasureTheory.Measure.measurePreserving_eval_snd_starMeasure hπ
   refine ⟨γ, inferInstance, hg, hf, fun n ↦ ?_⟩
   have hmap : γ.map (fun w ↦ (w.1, w.2 n)) = π n :=
-    TauCeti.Measure.map_prodMk_starMeasure_of_isCoupling hπ n
+    MeasureTheory.Measure.map_prodMk_starMeasure_of_isCoupling hπ n
   calc eLpNorm (fun q ↦ edist (ω n (q.1.2 n, q.2.2 n)) (ω₀ (q.1.1, q.2.1))) p (γ.prod γ)
       = eLpNorm (fun q ↦ edist (ω₀ (q.1.1, q.2.1)) (ω n (q.1.2 n, q.2.2 n))) p (γ.prod γ) :=
         eLpNorm_congr_ae (.of_forall fun _ ↦ edist_comm _ _)

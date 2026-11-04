@@ -28,9 +28,9 @@ measurable pathwise limit when almost every trajectory is Cauchy.
 
 The finite-prefix results project this path law to any initial segment of the supplied countable
 chain; see `TauCeti.Measure.map_adjacent_prefixChainMeasure`. Complementing sequential chains,
-`TauCeti.Measure.starMeasure` glues a countable star of finite plans sharing a common first marginal
-onto `X₀ × (∀ n, Y n)`, realizing every plan simultaneously as the `(w.1, w.2 n)`-marginal. This
-supplies the countable gluing constructions needed by optimal transport without rebuilding
+`MeasureTheory.Measure.starMeasure` glues a countable star of finite plans sharing a common first
+marginal onto `X₀ × (∀ n, Y n)`, realizing every plan simultaneously as the `(w.1, w.2 n)`-marginal.
+This supplies the countable gluing constructions needed by optimal transport without rebuilding
 Mathlib's trajectory-measure construction.
 -/
 
@@ -260,6 +260,16 @@ theorem exists_measurable_isCoupling_map_chainMeasure [UniformSpace Y]
 
 end CouplingChain
 
+end Measure
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti (IsCoupling)
+
+universe u
+
 section Star
 
 variable {X₀ : Type u} [MeasurableSpace X₀] {Y : ℕ → Type u} [∀ n, MeasurableSpace (Y n)]
@@ -393,6 +403,4 @@ theorem measurePreserving_eval_snd_starMeasure {μ₀ : Measure X₀}
 
 end Star
 
-end Measure
-
-end TauCeti
+end MeasureTheory.Measure
