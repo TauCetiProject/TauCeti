@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A11D7E6
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.IdentifiedRows
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 
 /-!
 # The table row `A₁₁ D₇ E₆` and its explicit norm-`4` glue generator

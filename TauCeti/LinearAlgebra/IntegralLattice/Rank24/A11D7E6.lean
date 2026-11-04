@@ -434,58 +434,85 @@ group of `A₁₁ ⊥ D₇ ⊥ E₆`. -/
 theorem mk_a11d7e6GlueDual :
     (Submodule.Quotient.mk a11d7e6GlueDual : a11d7e6RootLattice.DiscriminantGroup) =
       glueWordIsometry a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6 a11d7e6GlueWord := by
+  have hcomp {V W : Type} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+      {M : IntegralLattice V} {L : IntegralLattice W} (e : Isometry M L)
+      (v : M.dualCarrier) {c : M.DiscriminantGroup} {d : L.DiscriminantGroup}
+      (hc : Submodule.Quotient.mk v = c) (hd : d = e.discriminantGroupEquiv c) :
+      Submodule.Quotient.mk (e.dualCarrierEquiv v) = d := by
+    rw [hd, ← hc, Isometry.discriminantGroupEquiv_mk]
   apply (discriminantGroupPiEquiv fun i ↦
     (a11d7e6 i).rootLattice (isSimplyLaced_a11d7e6 i)).injective
   funext i
   rw [discriminantGroupPiEquiv_mk, discriminantGroupPiEquiv_glueWordIsometry, a11d7e6GlueDual,
     LinearEquiv.apply_symm_apply]
   fin_cases i
-  · exact (Isometry.discriminantGroupEquiv_mk _ _).symm.trans <|
-      (congrArg _ ((mk_typeAFundamentalWeightDual 11).trans
-        (typeADiscriminantGroupEquiv_apply_one 11).symm)).trans
-        (glueAlphabetIsometry_A_apply 11 (valid_a11d7e6 0) (isSimplyLaced_a11d7e6 0) 1).symm
-  · have h1 := nsmul_a11d7e6GlueWord_apply_one 1
-    rw [one_nsmul, Nat.cast_one] at h1
-    exact (Isometry.discriminantGroupEquiv_mk _ _).symm.trans <|
-      (congrArg _ (checkerboardSpinorClass_def 7).symm).trans <|
-        (congrArg _ ((zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one 7
-          (by decide)).symm.trans (congrArg _ h1.symm))).trans
-          (glueAlphabetIsometry_D_apply_of_odd 7 (valid_a11d7e6 1) (isSimplyLaced_a11d7e6 1)
-            (by decide) (a11d7e6GlueWord 1)).symm
-  · exact (Isometry.discriminantGroupEquiv_mk _ _).symm.trans <|
-      (congrArg _ (mk_typeE₆MinusculeWeightDual.trans
-        typeE₆DiscriminantGroupEquiv_apply_one.symm)).trans
-        (glueAlphabetIsometry_E6_apply (valid_a11d7e6 2) (isSimplyLaced_a11d7e6 2) 1).symm
+  · exact hcomp _ _
+      (by simp only [mk_typeAFundamentalWeightDual, typeADiscriminantGroupEquiv_apply_one])
+      (glueAlphabetIsometry_A_apply 11 (valid_a11d7e6 0) (isSimplyLaced_a11d7e6 0) 1)
+  · have h1 :
+        FiniteQuadraticModule.Isometry.ofEq
+          (glueAlphabet_D_of_odd 7 (isSimplyLaced_a11d7e6 1) (by decide))
+          (a11d7e6GlueWord 1) = (1 : ZMod 4) := by
+      simpa using nsmul_a11d7e6GlueWord_apply_one 1
+    have hclass :
+        (Submodule.Quotient.mk ⟨checkerboardSpinor 7, checkerboardSpinor_mem_dualCarrier⟩ :
+          (checkerboardLattice 7).DiscriminantGroup) =
+          zmodFourAddEquivCheckerboardDiscriminantGroup 7 (by decide)
+            (FiniteQuadraticModule.Isometry.ofEq
+              (glueAlphabet_D_of_odd 7 (isSimplyLaced_a11d7e6 1) (by decide))
+              (a11d7e6GlueWord 1)) := by
+      rw [← checkerboardSpinorClass_def,
+        ← zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one 7 (by decide)]
+      exact congrArg _ h1.symm
+    exact hcomp _ _ hclass
+      (glueAlphabetIsometry_D_apply_of_odd 7 (valid_a11d7e6 1) (isSimplyLaced_a11d7e6 1)
+        (by decide) (a11d7e6GlueWord 1))
+  · exact hcomp _ _
+      (by simp only [mk_typeE₆MinusculeWeightDual, typeE₆DiscriminantGroupEquiv_apply_one])
+      (glueAlphabetIsometry_E6_apply (valid_a11d7e6 2) (isSimplyLaced_a11d7e6 2) 1)
 
 /-- **The glue generator `a11d7e6GlueVector` has norm `4`**: `11/12 + 7/4 + 4/3 = 4`. -/
 theorem form_a11d7e6GlueVector_self :
     a11d7e6Lattice.form a11d7e6GlueVector a11d7e6GlueVector = 4 := by
+  have hform {V W : Type} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+      {L : IntegralLattice V} {M : IntegralLattice W} (e : Isometry L M) {x : V} {y : W}
+      (hx : e x = y) : L.form x x = M.form y y := by
+    rw [← hx, e.map_app]
   have h0 : ((a11d7e6 0).rootLattice (isSimplyLaced_a11d7e6 0)).form
-      (a11d7e6GlueVector 0) (a11d7e6GlueVector 0) = 11 / 12 :=
-    ((Isometry.ofEq (rootLattice_A 11 (isSimplyLaced_a11d7e6 0))).map_app _ _).symm.trans <|
-      (congrArg₂ (fun u v ↦ (typeARootLattice 11).form u v)
-        ((Isometry.ofEq_apply (rootLattice_A 11 (isSimplyLaced_a11d7e6 0)) _).trans
-          a11d7e6GlueVector_zero)
-        ((Isometry.ofEq_apply (rootLattice_A 11 (isSimplyLaced_a11d7e6 0)) _).trans
-          a11d7e6GlueVector_zero)).trans <|
-        (form_typeAFundamentalWeight_self 11).trans (by norm_num)
+      (a11d7e6GlueVector 0) (a11d7e6GlueVector 0) = 11 / 12 := by
+    calc ((a11d7e6 0).rootLattice (isSimplyLaced_a11d7e6 0)).form
+          (a11d7e6GlueVector 0) (a11d7e6GlueVector 0)
+        = (typeARootLattice 11).form (typeAFundamentalWeight 11) (typeAFundamentalWeight 11) :=
+          hform (Isometry.ofEq (rootLattice_A 11 (isSimplyLaced_a11d7e6 0)))
+            (by rw [a11d7e6GlueVector_zero]; exact Isometry.ofEq_apply _ _)
+      _ = 11 / 12 := by rw [form_typeAFundamentalWeight_self]; norm_num
   have h1 : ((a11d7e6 1).rootLattice (isSimplyLaced_a11d7e6 1)).form
-      (a11d7e6GlueVector 1) (a11d7e6GlueVector 1) = 7 / 4 :=
-    (congrArg₂ (fun u v ↦ ((a11d7e6 1).rootLattice (isSimplyLaced_a11d7e6 1)).form u v)
-      a11d7e6GlueVector_one a11d7e6GlueVector_one).trans <|
-      (Isometry.map_app _ _ _).trans <|
-        checkerboardLattice_form_checkerboardSpinor_self.trans (by norm_num)
+      (a11d7e6GlueVector 1) (a11d7e6GlueVector 1) = 7 / 4 := by
+    calc ((a11d7e6 1).rootLattice (isSimplyLaced_a11d7e6 1)).form
+          (a11d7e6GlueVector 1) (a11d7e6GlueVector 1)
+        = (checkerboardLattice 7).form (checkerboardSpinor 7) (checkerboardSpinor 7) :=
+          hform (rootLatticeIsometryCheckerboard 7 (by decide) (isSimplyLaced_a11d7e6 1))
+            rootLatticeIsometryCheckerboard_a11d7e6GlueVector_one
+      _ = 7 / 4 := by rw [checkerboardLattice_form_checkerboardSpinor_self]; norm_num
   have h2 : ((a11d7e6 2).rootLattice (isSimplyLaced_a11d7e6 2)).form
-      (a11d7e6GlueVector 2) (a11d7e6GlueVector 2) = 4 / 3 :=
-    ((Isometry.ofEq (rootLattice_E6 (isSimplyLaced_a11d7e6 2))).map_app _ _).symm.trans <|
-      (congrArg₂ (fun u v ↦ typeE₆RootLattice.form u v)
-        ((Isometry.ofEq_apply (rootLattice_E6 (isSimplyLaced_a11d7e6 2)) _).trans
-          a11d7e6GlueVector_two)
-        ((Isometry.ofEq_apply (rootLattice_E6 (isSimplyLaced_a11d7e6 2)) _).trans
-          a11d7e6GlueVector_two)).trans
-        form_typeE₆MinusculeWeight_self
+      (a11d7e6GlueVector 2) (a11d7e6GlueVector 2) = 4 / 3 := by
+    calc ((a11d7e6 2).rootLattice (isSimplyLaced_a11d7e6 2)).form
+          (a11d7e6GlueVector 2) (a11d7e6GlueVector 2)
+        = typeE₆RootLattice.form typeE₆MinusculeWeight typeE₆MinusculeWeight :=
+          hform (Isometry.ofEq (rootLattice_E6 (isSimplyLaced_a11d7e6 2)))
+            (by rw [a11d7e6GlueVector_two]; exact Isometry.ofEq_apply _ _)
+      _ = 4 / 3 := form_typeE₆MinusculeWeight_self
   rw [a11d7e6Lattice_form, pi_form, piForm_apply, Fin.sum_univ_three, h0, h1, h2]
   norm_num
+
+/-- The discriminant class of `(k : ℤ) • a11d7e6GlueDual` corresponds to `k • [111]`. -/
+private theorem mk_nsmul_a11d7e6GlueDual (k : ℕ) :
+    (Submodule.Quotient.mk ((k : ℤ) • a11d7e6GlueDual) :
+        a11d7e6RootLattice.DiscriminantGroup) =
+      glueWordIsometry a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6 (k • a11d7e6GlueWord) := by
+  rw [Submodule.Quotient.mk_smul, natCast_zsmul, mk_a11d7e6GlueDual]
+  exact (map_nsmul (glueWordIsometry a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6) k
+    a11d7e6GlueWord).symm
 
 /-- **The glue generator `a11d7e6GlueVector` belongs to the glued lattice `A₁₁ D₇ E₆`.** -/
 theorem a11d7e6GlueVector_mem_a11d7e6Lattice :
@@ -504,12 +531,9 @@ theorem a11d7e6GlueVector_mem_a11d7e6Lattice :
 theorem nsmul_a11d7e6GlueVector_mem_a11d7e6RootLattice_iff (k : ℕ) :
     k • a11d7e6GlueVector ∈ a11d7e6RootLattice.carrier ↔ 12 ∣ k := by
   rw [← natCast_zsmul, ← coe_a11d7e6GlueDual, ← Submodule.coe_smul,
-    ← a11d7e6RootLattice.discriminantGroup_mk_eq_zero_iff, Submodule.Quotient.mk_smul,
-    natCast_zsmul]
-  exact (congrArg (· = 0) ((congrArg (k • ·) mk_a11d7e6GlueDual).trans
-    (map_nsmul (glueWordIsometry a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6) k
-      a11d7e6GlueWord).symm)).to_iff.trans <|
-    (map_eq_zero_iff _ (EquivLike.injective _)).trans (nsmul_a11d7e6GlueWord_eq_zero_iff k)
+    ← a11d7e6RootLattice.discriminantGroup_mk_eq_zero_iff, mk_nsmul_a11d7e6GlueDual]
+  exact (map_eq_zero_iff _ (EquivLike.injective _)).trans
+    (nsmul_a11d7e6GlueWord_eq_zero_iff k)
 
 /-- An integer multiple `k • a11d7e6GlueVector` lies in `A₁₁ ⊥ D₇ ⊥ E₆` exactly when `12` divides
 `k`. -/
@@ -546,18 +570,16 @@ theorem mem_a11d7e6Lattice_carrier_iff_exists_sub_mem
     obtain ⟨k, hk, hkw⟩ := mem_a11d7e6GlueSubgroup_iff.mp hw
     refine ⟨k, hk, ?_⟩
     have hmk : (Submodule.Quotient.mk ⟨x, hxDual⟩ : a11d7e6RootLattice.DiscriminantGroup) =
-        Submodule.Quotient.mk ((k : ℤ) • a11d7e6GlueDual) :=
-      (AddEquiv.apply_symm_apply (glueWordIsometry _ _ valid_a11d7e6).toAddEquiv _).symm.trans <|
-        (congrArg (glueWordIsometry _ _ valid_a11d7e6).toAddEquiv hkw.symm).trans <|
-          (map_nsmul (glueWordIsometry _ _ valid_a11d7e6).toAddEquiv k a11d7e6GlueWord).trans <|
-            (congrArg (k • ·) mk_a11d7e6GlueDual.symm).trans <|
-              (natCast_zsmul _ _).symm.trans (Submodule.Quotient.mk_smul _ _ _).symm
+        Submodule.Quotient.mk ((k : ℤ) • a11d7e6GlueDual) := by
+      rw [(AddEquiv.symm_apply_eq _).mp hkw.symm]
+      exact (mk_nsmul_a11d7e6GlueDual k).symm
     have hdiff := (a11d7e6RootLattice.discriminantGroup_mk_eq_iff ⟨x, hxDual⟩
       ((k : ℤ) • a11d7e6GlueDual)).mp hmk
     rwa [Submodule.coe_sub, Submodule.coe_smul, coe_a11d7e6GlueDual, natCast_zsmul] at hdiff
   · rintro ⟨k, -, hmem⟩
-    exact sub_add_cancel x (k • a11d7e6GlueVector) ▸ a11d7e6Lattice.carrier.add_mem
-      (a11d7e6RootLattice_carrier_le_a11d7e6Lattice_carrier hmem)
-      (a11d7e6Lattice.carrier.nsmul_mem a11d7e6GlueVector_mem_a11d7e6Lattice k)
+    have hk_mem : k • a11d7e6GlueVector ∈ a11d7e6Lattice.carrier :=
+      a11d7e6Lattice.carrier.nsmul_mem a11d7e6GlueVector_mem_a11d7e6Lattice k
+    simpa only [sub_add_cancel] using a11d7e6Lattice.carrier.add_mem
+      (a11d7e6RootLattice_carrier_le_a11d7e6Lattice_carrier hmem) hk_mem
 
 end TauCeti
