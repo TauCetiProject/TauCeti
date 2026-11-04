@@ -36,11 +36,14 @@ cylinder `D × [0, 1]`, flattened onto the disc. The straight-line homotopy in t
 between this flattening and the bottom disc `D × {0}` fixes the boundary sphere, so
 `Φ₀ ∘ E_H` is homotopic to `Φ₁` relative to the lower sublevel
 (`TauCeti.homotopicRel_morseChartChange_comp_morseCellComparison`). Hence `E_H ≃ g₀ ∘ Φ₁` relative
-to the lower sublevel for every left inverse `g₀` of `Φ₀`. When the charts are smooth, the band
-`f⁻¹[c - ε, c + ε]` is compact and its critical points lie in both families of charts, Milnor's
-cell attachment theorem makes `Φ₀` and `Φ₁` homotopy equivalences relative to the lower sublevel,
-with left inverses `g₀` and `g₁`, and then `E_H` is a homotopy equivalence relative to the lower
-sublevel with homotopy inverse `g₁ ∘ Φ₀` (`TauCeti.exists_relHomotopyInverse_morseChartChange`).
+to the lower sublevel for every left inverse `g₀` of `Φ₀`. If `g₀` and `g₁` are left inverses of
+`Φ₀` and `Φ₁` which are homotopy inverses relative to the images of `Φ₀` and `Φ₁`, then `E_H` is a
+homotopy equivalence relative to the lower sublevel with homotopy inverse `g₁ ∘ Φ₀`
+(`TauCeti.relHomotopyInverse_morseChartChange_of_leftInverse`). Milnor's cell attachment theorem
+provides such `g₀` and `g₁` when `f` is smooth, both families consist of finitely many smooth charts
+with pairwise disjoint sources whose targets contain the closed ball of radius `√(2ε)`, the band
+`f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the charts of each family
+(`TauCeti.exists_relHomotopyInverse_morseChartChange`).
 
 The charts may have any indices; for a `0`-cell the disc is a point of norm `0`, on which `E_H` is
 `h i`, the identity of the point.
@@ -61,8 +64,11 @@ The charts may have any indices; for a `0`-cell the disc is a point of norm `0`,
   the lower sublevel.
 * `TauCeti.homotopicRel_morseChartChange_of_leftInverse`: `E_H ≃ g₀ ∘ Φ₁` relative to the lower
   sublevel for every left inverse `g₀` of `Φ₀`.
-* `TauCeti.exists_relHomotopyInverse_morseChartChange`: `E_H` is a homotopy equivalence relative to
-  the lower sublevel.
+* `TauCeti.relHomotopyInverse_morseChartChange_of_leftInverse`: `E_H` is a homotopy equivalence
+  relative to the lower sublevel, with homotopy inverse `g₁ ∘ Φ₀`, given relative homotopy inverses
+  `g₀`, `g₁` of `Φ₀`, `Φ₁`.
+* `TauCeti.exists_relHomotopyInverse_morseChartChange`: for smooth charts covering the critical
+  points of a compact band, `E_H` is a homotopy equivalence relative to the lower sublevel.
 
 ## References
 
@@ -92,9 +98,6 @@ variable {E : Type*} [NormedAddCommGroup E]
 private def cupTime (x : E) : ℝ :=
   2 - 2 * max ‖x‖ 2⁻¹
 
-private theorem max_norm_pos (x : E) : 0 < max ‖x‖ 2⁻¹ :=
-  lt_max_of_lt_right (by norm_num)
-
 private theorem continuous_cupTime : Continuous (cupTime : E → ℝ) := by
   unfold cupTime
   fun_prop
@@ -119,27 +122,20 @@ private theorem cupTime_mem {x : E} (hx : ‖x‖ ≤ 1) : cupTime x ∈ I := by
 variable [NormedSpace ℝ E]
 
 /-- The point coordinate of the flattening of the cup `D × {1} ∪ ∂D × [0, 1]` onto the disc:
-`x ↦ 2x` on the inner half-disc and `x ↦ x / ‖x‖` on the outer annulus. -/
+`x ↦ 2x` on the inner half-disc and `x ↦ x / ‖x‖` on the outer annulus, that is, twice the radial
+retraction onto the ball of radius `1/2`. -/
 private def cupPoint (x : E) : E :=
-  (max ‖x‖ 2⁻¹)⁻¹ • x
+  (2 : ℝ) • radialRetraction 2⁻¹ x
 
-private theorem continuous_cupPoint : Continuous (cupPoint : E → E) :=
-  ((continuous_norm.max continuous_const).inv₀ fun x ↦ (max_norm_pos x).ne').smul continuous_id
-
-private theorem norm_cupPoint_le_one (x : E) : ‖cupPoint x‖ ≤ 1 := by
-  rw [cupPoint, norm_smul, norm_inv, Real.norm_of_nonneg (max_norm_pos x).le,
-    inv_mul_le_iff₀ (max_norm_pos x), mul_one]
-  exact le_max_left _ _
+private theorem norm_cupPoint (x : E) : ‖cupPoint x‖ = 2 * min ‖x‖ 2⁻¹ := by
+  rw [cupPoint, norm_smul, norm_radialRetraction (by norm_num), Real.norm_two]
 
 private theorem cupPoint_of_le_norm {x : E} (hx : 2⁻¹ ≤ ‖x‖) : cupPoint x = ‖x‖⁻¹ • x := by
-  rw [cupPoint, max_eq_left hx]
+  rw [cupPoint, radialRetraction_of_le_norm hx, smul_smul, mul_div_assoc',
+    mul_inv_cancel₀ two_ne_zero, one_div]
 
 private theorem norm_cupPoint_of_le_norm {x : E} (hx : 2⁻¹ ≤ ‖x‖) : ‖cupPoint x‖ = 1 := by
-  have hx' : ‖x‖ ≠ 0 := (lt_of_lt_of_le (by norm_num) hx).ne'
-  rw [cupPoint_of_le_norm hx, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hx']
-
-private theorem cupPoint_of_norm_le {x : E} (hx : ‖x‖ ≤ 2⁻¹) : cupPoint x = (2 : ℝ) • x := by
-  rw [cupPoint, max_eq_right hx, inv_inv]
+  rw [norm_cupPoint, min_eq_right hx, mul_inv_cancel₀ two_ne_zero]
 
 private theorem cupPoint_of_norm_eq_one {x : E} (hx : ‖x‖ = 1) : cupPoint x = x := by
   rw [cupPoint_of_le_norm (by rw [hx]; norm_num), hx, inv_one, one_smul]
@@ -148,16 +144,17 @@ variable {k : ℕ}
 
 /-- The flattening of the cup onto the disc `D^k`, point coordinate. -/
 private def diskCup (w : TopCat.disk.{u} k) : TopCat.disk.{u} k :=
-  ULift.up ⟨cupPoint (w.down : EuclideanSpace ℝ (Fin k)),
-    mem_closedBall_zero_iff.2 (norm_cupPoint_le_one _)⟩
+  ULift.up ⟨cupPoint (w.down : EuclideanSpace ℝ (Fin k)), mem_closedBall_zero_iff.2 <| by
+    rw [norm_cupPoint]
+    linarith [min_le_right ‖(w.down : EuclideanSpace ℝ (Fin k))‖ 2⁻¹]⟩
 
 /-- The flattening of the cup onto the disc `D^k`, time coordinate. -/
 private def diskCupTime (w : TopCat.disk.{u} k) : I :=
   ⟨cupTime (w.down : EuclideanSpace ℝ (Fin k)), cupTime_mem (mem_closedBall_zero_iff.1 w.down.2)⟩
 
 private theorem continuous_diskCup : Continuous (diskCup.{u} (k := k)) :=
-  continuous_uliftUp.comp (((continuous_cupPoint.comp continuous_subtype_val).comp
-    continuous_uliftDown).subtype_mk _)
+  continuous_uliftUp.comp ((((continuous_const.radialRetraction (fun _ ↦ by norm_num)
+    continuous_subtype_val).const_smul (2 : ℝ)).comp continuous_uliftDown).subtype_mk _)
 
 private theorem continuous_diskCupTime : Continuous (diskCupTime.{u} (k := k)) :=
   (((continuous_cupTime.comp continuous_subtype_val).comp continuous_uliftDown).subtype_mk _)
@@ -184,7 +181,7 @@ private def diskCupHomotopy (w : TopCat.disk.{u} k) (s : I) : TopCat.disk.{u} k 
   ULift.up ⟨(1 - (s : ℝ)) • cupPoint (w.down : EuclideanSpace ℝ (Fin k)) +
       (s : ℝ) • (w.down : EuclideanSpace ℝ (Fin k)),
     convex_closedBall (0 : EuclideanSpace ℝ (Fin k)) 1
-      (mem_closedBall_zero_iff.2 (norm_cupPoint_le_one _)) w.down.2 (sub_nonneg.2 s.2.2) s.2.1
+      (diskCup w).down.2 w.down.2 (sub_nonneg.2 s.2.2) s.2.1
       (sub_add_cancel 1 _)⟩
 
 /-- The straight-line homotopy in the cylinder `D^k × [0, 1]` from the flattened cup to the bottom
@@ -200,8 +197,11 @@ private theorem continuous_diskCupHomotopy :
     (continuous_subtype_val.comp continuous_uliftDown).comp continuous_fst
   have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ ((p.2 : ℝ)) :=
     continuous_subtype_val.comp continuous_snd
-  exact continuous_uliftUp.comp ((((continuous_const.sub hs).smul
-    (continuous_cupPoint.comp hw)).add (hs.smul hw)).subtype_mk _)
+  have hcup : Continuous fun p : TopCat.disk.{u} k × I ↦
+      cupPoint (p.1.down : EuclideanSpace ℝ (Fin k)) :=
+    (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_diskCup)).comp continuous_fst
+  exact continuous_uliftUp.comp ((((continuous_const.sub hs).smul hcup).add
+    (hs.smul hw)).subtype_mk _)
 
 private theorem continuous_diskCupHomotopyTime :
     Continuous fun p : TopCat.disk.{u} k × I ↦ diskCupHomotopyTime p.1 p.2 := by
@@ -254,17 +254,6 @@ variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → �
   (hK : ∀ i t (w : TopCat.disk.{u} (k i)), ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 1 →
     f (K i (t, w)) ≤ c - ε)
 
-/-- A point of the attaching map of `φ₁ i` is the point of its characteristic map at the same point
-of the boundary sphere. -/
-private theorem coe_morseAttachingMap_eq_morseCharacteristicMap (i : ι)
-    (s : TopCat.diskBoundary.{u} (k i)) :
-    ((φ₁ i).morseAttachingMap (hk i) hε.le (hball₁ i) (hf₁ i) s : M) =
-      (φ₁ i).morseCharacteristicMap (hk i) hε.le (hball₁ i) (hf₁ i)
-        (TopCat.diskBoundaryInclusion (k i) s) := by
-  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply,
-    OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
-    TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down]
-
 /-- The disc part of `TauCeti.morseChartChange`, as a function. -/
 private def morseChartChangeCellFun (i : ι) (w : TopCat.disk.{u} (k i)) :
     morseCellAttachment φ₀ k hk hε.le hball₀ hf₀ :=
@@ -284,8 +273,7 @@ private theorem morseCellAttachmentCell_eq_morseCellAttachmentIncl (i : ι)
       morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀ z := by
   have hKv : (K i (1, v) : M) =
       (φ₀ i).morseCharacteristicMap (hk i) hε.le (hball₀ i) (hf₀ i) (h i v) := by
-    rw [(K i).apply_one]
-    rfl
+    rw [(K i).apply_one, ContinuousMap.comp_apply]
   have hmem : h i v ∈ (φ₀ i).morseCharacteristicMap (hk i) hε.le (hball₀ i) (hf₀ i) ⁻¹'
       {x | f x ≤ c - ε} := by
     rw [mem_preimage, mem_ofPred_eq, ← hKv]
@@ -297,9 +285,11 @@ private theorem morseCellAttachmentCell_eq_morseCellAttachmentIncl (i : ι)
     ← morseAttachingMap_comp_morseCellAttachmentIncl φ₀ k hk hball₀ hf₀ hε.le,
     ConcreteCategory.comp_apply]
   refine congrArg _ (Subtype.ext ?_)
-  rw [hz, hKv, ← hs, OpenPartialHomeomorph.coe_morseAttachingMap_apply,
-    OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
-    TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down]
+  rw [hz, hKv, ← hs]
+  have hsq := ConcreteCategory.congr_hom
+    ((φ₀ i).morseAttachingMap_comp_sublevelInclusion (hball₀ i) (hf₀ i) (hk i) hε.le) s
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.ofHom_apply] at hsq
+  rw [← hsq, coe_sublevelInclusion_apply]
 
 private theorem continuous_morseChartChangeCellFun (i : ι) :
     Continuous (morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i) := by
@@ -347,6 +337,11 @@ private def morseChartChangeCell (i : ι) :
   TopCat.ofHom ⟨morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i,
     continuous_morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i⟩
 
+private theorem morseChartChangeCell_apply (i : ι) (w : TopCat.disk.{u} (k i)) :
+    morseChartChangeCell φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w =
+      morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w :=
+  (rfl)
+
 /-- On the boundary sphere, where `K i` starts at `χ₁ i`, the disc part of
 `TauCeti.morseChartChange` is the attaching map of `φ₁ i`. -/
 private theorem morseAttachingMap_comp_morseCellAttachmentIncl_eq (i : ι) :
@@ -355,18 +350,20 @@ private theorem morseAttachingMap_comp_morseCellAttachmentIncl_eq (i : ι) :
       TopCat.diskBoundaryInclusion (k i) ≫
         morseChartChangeCell φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i := by
   ext s
+  rw [ConcreteCategory.comp_apply (TopCat.diskBoundaryInclusion (k i)), morseChartChangeCell_apply]
   set w := TopCat.diskBoundaryInclusion (k i) s
   have hw : ‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ = 1 :=
     (TauCeti.mem_range_diskBoundaryInclusion_iff w).1 (mem_range_self s)
   have hw' : ¬‖(w.down : EuclideanSpace ℝ (Fin (k i)))‖ ≤ 2⁻¹ := by
     rw [hw]
     norm_num
-  -- `morseChartChangeCell i` is `TopCat.ofHom` of `morseChartChangeCellFun i`.
-  change _ = morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w
   rw [morseChartChangeCellFun, dite_eq_right hw', ConcreteCategory.comp_apply]
   refine congrArg _ (Subtype.ext ?_)
   simp only [diskCupTime_of_norm_eq_one hw, diskCup_of_norm_eq_one hw, (K i).apply_zero]
-  exact coe_morseAttachingMap_eq_morseCharacteristicMap φ₁ k hk hε hball₁ hf₁ i s
+  have hsq := ConcreteCategory.congr_hom
+    ((φ₁ i).morseAttachingMap_comp_sublevelInclusion (hball₁ i) (hf₁ i) (hk i) hε.le) s
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.ofHom_apply] at hsq
+  rw [← hsq, coe_sublevelInclusion_apply]
 
 /-- **Milnor's change-of-chart comparison.** Let `φ₀ i` and `φ₁ i` be two families of charts with
 values in `ℝⁿ`, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²` and whose targets contain the
@@ -409,8 +406,8 @@ private theorem morseChartChange_morseCellAttachmentCell (i : ι) (w : TopCat.di
     morseChartChange φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK
         (morseCellAttachmentCell φ₁ k hk hε.le hball₁ hf₁ i w) =
       morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w := by
-  rw [← ConcreteCategory.comp_apply, morseChartChange, morseCellAttachmentCell_desc]
-  rfl
+  rw [← ConcreteCategory.comp_apply, morseChartChange, morseCellAttachmentCell_desc,
+    morseChartChangeCell_apply]
 
 /-- On the inner half-disc `‖w‖ ≤ 1/2` of the `i`-th cell, the change-of-chart comparison is
 `w ↦ h i (2w)`, followed by the `i`-th cell of the target. -/
@@ -422,7 +419,8 @@ theorem morseChartChange_morseCellAttachmentCell_of_norm_le (i : ι) {w v : TopC
       morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i (h i v) := by
   rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun, dite_eq_left hw]
   congr 2
-  exact ULift.ext (Subtype.ext ((cupPoint_of_norm_le hw).trans hv.symm))
+  exact ULift.ext (Subtype.ext
+    ((congrArg ((2 : ℝ) • ·) (radialRetraction_of_norm_le hw)).trans hv.symm))
 
 /-- On the outer annulus `1/2 ≤ ‖w‖` of the `i`-th cell, the change-of-chart comparison is
 `w ↦ K i (2 - 2‖w‖, w / ‖w‖)`, a point of the lower sublevel. -/
@@ -459,8 +457,7 @@ private theorem morseCellComparison_morseChartChange_morseCellAttachmentCell (i 
   rw [morseChartChange_morseCellAttachmentCell, morseChartChangeCellFun]
   split_ifs with hw
   · rw [← ConcreteCategory.comp_apply, morseCellAttachmentCell_comp_morseCellComparison,
-      diskCupTime_of_norm_le hw, (K i).apply_one]
-    rfl
+      diskCupTime_of_norm_le hw, (K i).apply_one, ContinuousMap.comp_apply]
   · exact Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl φ₀ k hk hball₀ hf₀ hε.le _)
 
 /-- The disc part of the homotopy from `Φ₀ ∘ E_H` to `Φ₁`: `K i` along the straight-line homotopy
@@ -497,7 +494,10 @@ private theorem morseAttachingMap_comp_morseChartChangeHomotopyIncl (i : ι) :
   refine (morseChartChangeHomotopyIncl_apply hε _ t).trans (Eq.trans ?_ (congrArg Subtype.val
     (morseChartChangeHomotopyCell_apply φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K i w t)).symm)
   rw [diskCupHomotopyTime_of_norm_eq_one hw, diskCupHomotopy_of_norm_eq_one hw, (K i).apply_zero]
-  exact coe_morseAttachingMap_eq_morseCharacteristicMap φ₁ k hk hε hball₁ hf₁ i s
+  have hsq := ConcreteCategory.congr_hom
+    ((φ₁ i).morseAttachingMap_comp_sublevelInclusion (hball₁ i) (hf₁ i) (hk i) hε.le) s
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopCat.ofHom_apply] at hsq
+  exact (coe_sublevelInclusion_apply f _ _).symm.trans (congrArg Subtype.val hsq)
 
 /-- The homotopy from `Φ₀ ∘ E_H` to `Φ₁`, as a map into the paths in `M_{c+ε}`. -/
 private def morseChartChangeHomotopyMap :
@@ -583,6 +583,68 @@ theorem homotopicRel_morseChartChange_of_leftInverse
   ext y
   exact (hg₀ _).symm
 
+/-- **The change-of-chart comparison is a homotopy equivalence relative to the lower sublevel.**
+Let `g₀` and `g₁` be left inverses of the handle-to-cell comparisons `Φ₀` and `Φ₁` of the charts
+`φ₀` and `φ₁` such that `Φ₀ ∘ g₀` and `Φ₁ ∘ g₁` are homotopic to the identity relative to the
+images of `Φ₀` and `Φ₁`. Then `g₁ ∘ Φ₀` is a homotopy inverse of the change-of-chart comparison
+`E_H : M_{c-ε} ∪_{α₁} ⨆ᵢ D^{k i} → M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i}`: it is the identity on the lower
+sublevel `M_{c-ε}`, and both homotopies are relative to `M_{c-ε}`. -/
+theorem relHomotopyInverse_morseChartChange_of_leftInverse
+    {g₀ : C({x | f x ≤ c + ε}, morseCellAttachment φ₀ k hk hε.le hball₀ hf₀)}
+    (hg₀ : LeftInverse g₀ (morseCellComparison φ₀ k hk hε.le hball₀ hf₀))
+    (hd₀ : (ContinuousMap.id _).HomotopicRel
+      ((morseCellComparison φ₀ k hk hε.le hball₀ hf₀).hom.comp g₀)
+      (range (morseCellComparison φ₀ k hk hε.le hball₀ hf₀)))
+    {g₁ : C({x | f x ≤ c + ε}, morseCellAttachment φ₁ k hk hε.le hball₁ hf₁)}
+    (hg₁ : LeftInverse g₁ (morseCellComparison φ₁ k hk hε.le hball₁ hf₁))
+    (hd₁ : (ContinuousMap.id _).HomotopicRel
+      ((morseCellComparison φ₁ k hk hε.le hball₁ hf₁).hom.comp g₁)
+      (range (morseCellComparison φ₁ k hk hε.le hball₁ hf₁))) :
+    morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀ ≫
+        TopCat.ofHom (g₁.comp (morseCellComparison φ₀ k hk hε.le hball₀ hf₀).hom) =
+      morseCellAttachmentIncl φ₁ k hk hε.le hball₁ hf₁ ∧
+    (TopCat.ofHom (g₁.comp (morseCellComparison φ₀ k hk hε.le hball₀ hf₀).hom) ≫
+        morseChartChange φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK).hom.HomotopicRel
+      (ContinuousMap.id _) (range (morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀)) ∧
+    (morseChartChange φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK ≫
+        TopCat.ofHom (g₁.comp (morseCellComparison φ₀ k hk hε.le hball₀ hf₀).hom)).hom.HomotopicRel
+      (ContinuousMap.id _) (range (morseCellAttachmentIncl φ₁ k hk hε.le hball₁ hf₁)) := by
+  set Φ₀ := morseCellComparison φ₀ k hk hε.le hball₀ hf₀
+  set Φ₁ := morseCellComparison φ₁ k hk hε.le hball₁ hf₁
+  set ι₀ := morseCellAttachmentIncl φ₀ k hk hε.le hball₀ hf₀
+  set ι₁ := morseCellAttachmentIncl φ₁ k hk hε.le hball₁ hf₁
+  have hE := homotopicRel_morseChartChange_of_leftInverse φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h
+    K hK hg₀
+  -- Both comparisons are the inclusion on the lower sublevel.
+  have hΦ (x : {x | f x ≤ c - ε}) : Φ₀ (ι₀ x) = Φ₁ (ι₁ x) :=
+    Subtype.ext ((coe_morseCellComparison_morseCellAttachmentIncl φ₀ k hk hball₀ hf₀ hε.le x).trans
+      (coe_morseCellComparison_morseCellAttachmentIncl φ₁ k hk hball₁ hf₁ hε.le x).symm)
+  have hg₁ι (x : {x | f x ≤ c - ε}) : g₁ (Φ₀ (ι₀ x)) = ι₁ x := by
+    rw [hΦ, hg₁]
+  refine ⟨?_, ?_, ?_⟩
+  · ext x
+    exact hg₁ι x
+  · -- `E_H ∘ g₁ ∘ Φ₀ ≃ g₀ ∘ Φ₁ ∘ g₁ ∘ Φ₀ ≃ g₀ ∘ Φ₀ = id`.
+    have h₁ := (hE.precomp (g₁.comp Φ₀.hom)).mono (T := range ι₀) (by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨x, (hg₁ι x).symm⟩)
+    have h₂ := ((hd₁.symm.precomp Φ₀.hom).mono (T := range ι₀) (by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨ι₁ x, (hΦ x).symm⟩)).comp_continuousMap g₀
+    have e : g₀.comp ((ContinuousMap.id _).comp Φ₀.hom) = ContinuousMap.id _ :=
+      ContinuousMap.ext hg₀
+    rw [e] at h₂
+    exact h₁.trans h₂
+  · -- `g₁ ∘ Φ₀ ∘ E_H ≃ g₁ ∘ Φ₀ ∘ g₀ ∘ Φ₁ ≃ g₁ ∘ Φ₁ = id`.
+    have h₁ := hE.comp_continuousMap (g₁.comp Φ₀.hom)
+    have h₂ := ((hd₀.symm.precomp Φ₁.hom).mono (T := range ι₁) (by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨ι₀ x, hΦ x⟩)).comp_continuousMap g₁
+    have e : g₁.comp ((ContinuousMap.id _).comp Φ₁.hom) = ContinuousMap.id _ :=
+      ContinuousMap.ext hg₁
+    rw [e] at h₂
+    exact h₁.trans h₂
+
 end ChartChange
 
 section Deformation
@@ -631,52 +693,12 @@ theorem exists_relHomotopyInverse_morseChartChange [Finite ι] (hfs : ContMDiff 
         (ContinuousMap.id _) (range (morseCellAttachmentIncl _ k hk hε.le _ hf₀)) ∧
       (morseChartChange _ _ k hk hε _ _ hf₀ hf₁ h K hK ≫ E').hom.HomotopicRel
         (ContinuousMap.id _) (range (morseCellAttachmentIncl _ k hk hε.le _ hf₁)) := by
-  set hball₀' : ∀ i, closedBall 0 √ε ⊆ (ψ₀ i).target := fun i ↦
-    (hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε))
-  set hball₁' : ∀ i, closedBall 0 √ε ⊆ (ψ₁ i).target := fun i ↦
-    (hball₁ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε))
-  set φ₀ := fun i ↦ (ψ₀ i).toOpenPartialHomeomorph
-  set φ₁ := fun i ↦ (ψ₁ i).toOpenPartialHomeomorph
-  set Φ₀ := morseCellComparison φ₀ k hk hε.le hball₀' hf₀
-  set Φ₁ := morseCellComparison φ₁ k hk hε.le hball₁' hf₁
-  set ι₀ := morseCellAttachmentIncl φ₀ k hk hε.le hball₀' hf₀
-  set ι₁ := morseCellAttachmentIncl φ₁ k hk hε.le hball₁' hf₁
-  set EH := morseChartChange φ₀ φ₁ k hk hε hball₀' hball₁' hf₀ hf₁ h K hK
   obtain ⟨g₀, hg₀, hd₀⟩ := exists_morseCellAttachment_deformation hfs ψ₀ hψ₀ k hk hε hball₀ hf₀
     hcompact hcrit₀
   obtain ⟨g₁, hg₁, hd₁⟩ := exists_morseCellAttachment_deformation hfs ψ₁ hψ₁ k hk hε hball₁ hf₁
     hcompact hcrit₁
-  have hE := homotopicRel_morseChartChange_of_leftInverse φ₀ φ₁ k hk hε hball₀' hball₁' hf₀ hf₁ h
-    K hK hg₀
-  -- Both comparisons are the inclusion on the lower sublevel.
-  have hΦ (x : {x | f x ≤ c - ε}) : Φ₀ (ι₀ x) = Φ₁ (ι₁ x) :=
-    Subtype.ext ((coe_morseCellComparison_morseCellAttachmentIncl φ₀ k hk hball₀' hf₀ hε.le x).trans
-      (coe_morseCellComparison_morseCellAttachmentIncl φ₁ k hk hball₁' hf₁ hε.le x).symm)
-  have hg₁ι (x : {x | f x ≤ c - ε}) : g₁ (Φ₀ (ι₀ x)) = ι₁ x := by
-    rw [hΦ, hg₁]
-  refine ⟨TopCat.ofHom (g₁.comp Φ₀.hom), ?_, ?_, ?_⟩
-  · ext x
-    exact hg₁ι x
-  · -- `E_H ∘ g₁ ∘ Φ₀ ≃ g₀ ∘ Φ₁ ∘ g₁ ∘ Φ₀ ≃ g₀ ∘ Φ₀ = id`.
-    have h₁ := (hE.precomp (g₁.comp Φ₀.hom)).mono (T := range ι₀) (by
-      rintro _ ⟨x, rfl⟩
-      exact ⟨x, (hg₁ι x).symm⟩)
-    have h₂ := ((hd₁.symm.precomp Φ₀.hom).mono (T := range ι₀) (by
-      rintro _ ⟨x, rfl⟩
-      exact ⟨ι₁ x, (hΦ x).symm⟩)).comp_continuousMap g₀
-    have e : g₀.comp ((ContinuousMap.id _).comp Φ₀.hom) = ContinuousMap.id _ :=
-      ContinuousMap.ext hg₀
-    rw [e] at h₂
-    exact h₁.trans h₂
-  · -- `g₁ ∘ Φ₀ ∘ E_H ≃ g₁ ∘ Φ₀ ∘ g₀ ∘ Φ₁ ≃ g₁ ∘ Φ₁ = id`.
-    have h₁ := hE.comp_continuousMap (g₁.comp Φ₀.hom)
-    have h₂ := ((hd₀.symm.precomp Φ₁.hom).mono (T := range ι₁) (by
-      rintro _ ⟨x, rfl⟩
-      exact ⟨ι₀ x, hΦ x⟩)).comp_continuousMap g₁
-    have e : g₁.comp ((ContinuousMap.id _).comp Φ₁.hom) = ContinuousMap.id _ :=
-      ContinuousMap.ext hg₁
-    rw [e] at h₂
-    exact h₁.trans h₂
+  exact ⟨_, relHomotopyInverse_morseChartChange_of_leftInverse _ _ k hk hε _ _ hf₀ hf₁ h K hK hg₀
+    hd₀ hg₁ hd₁⟩
 
 end Deformation
 
