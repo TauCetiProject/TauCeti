@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
 public import TauCeti.Geometry.Manifold.Sheaf.Smooth.Basic
+public import TauCeti.Logic.Function.Extend
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 
 /-!
@@ -82,17 +83,6 @@ private lemma mem_prod_iff {W W' : Opens (TopCat.of M)} {y : M} :
   rw [CompleteLattice.prod_eq_inf]
   exact Iff.rfl
 
-omit [NormedSpace ℝ V] in
-private lemma extend_zero_add {W : Opens (TopCat.of M)} (g g' : W → V) :
-    Subtype.val.extend (g + g') (0 : M → V) =
-      Subtype.val.extend g 0 + Subtype.val.extend g' 0 := by
-  rw [← Function.extend_add, add_zero]
-
-omit [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] in
-private lemma extend_zero_smul {W : Opens (TopCat.of M)} (c : 𝕜) (g : W → V) :
-    Subtype.val.extend (c • g) (0 : M → V) = c • Subtype.val.extend g 0 := by
-  rw [← Function.extend_smul, smul_zero]
-
 variable {U} in
 /-- The components, as functions, of a section of the product of the restrictions of the sheaf of
 smooth functions to the members of `U`. -/
@@ -138,7 +128,9 @@ private lemma glueFun_add {W : Opens (TopCat.of M)}
     glueFun U ρ (s + s') y = glueFun U ρ s y + glueFun U ρ s' y := by
   have h (i : ι) : ρ i y • Subtype.val.extend ((s + s') i) 0 y =
       ρ i y • Subtype.val.extend (s i) 0 y + ρ i y • Subtype.val.extend (s' i) 0 y := by
-    rw [← smul_add, Pi.add_apply, extend_zero_add]
+    have he := congrFun (Function.extend_add Subtype.val (s i) (s' i) (0 : M → V) 0) y
+    rw [add_zero] at he
+    rw [← smul_add, ← Pi.add_apply (Subtype.val.extend (s i) 0), ← he]
     rfl
   exact (finsum_congr h).trans
     (finsum_add_distrib (finite_support_glue U ρ s y) (finite_support_glue U ρ s' y))
@@ -148,7 +140,9 @@ private lemma glueFun_smul {W : Opens (TopCat.of M)} (c : 𝕜)
     glueFun U ρ (c • s) y = c • glueFun U ρ s y := by
   have h (i : ι) : ρ i y • Subtype.val.extend ((c • s) i) 0 y =
       c • (ρ i y • Subtype.val.extend (s i) 0 y) := by
-    rw [smul_comm c (ρ i y), Pi.smul_apply, extend_zero_smul]
+    have he := congrFun (Function.extend_smul c Subtype.val (s i) (0 : M → V)) y
+    rw [smul_zero] at he
+    rw [smul_comm c (ρ i y), ← Pi.smul_apply c (Subtype.val.extend (s i) 0), ← he]
     rfl
   exact (finsum_congr h).trans (smul_finsum' c (finite_support_glue U ρ s y)).symm
 
@@ -181,19 +175,6 @@ private lemma sectionsEquiv_glue (W : Opens (TopCat.of M))
     (sectionsEquiv I 𝕜 V W (glue U ρ hρ W x)).1 = fun y : W ↦ glueFun U ρ (component x) y := by
   simp only [glue, LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
 
-omit [NormedSpace ℝ V] in
-/-- Extending by zero is compatible with restriction to a smaller open set `Z'`, at the points
-which lie in `Z'` as soon as they lie in `Z`. -/
-private lemma extend_comp_inclusion {Z Z' : Opens (TopCat.of M)} (h : Z' ≤ Z) (g : Z → V)
-    {y : M} (hy : y ∈ Z → y ∈ Z') :
-    Subtype.val.extend (g ∘ Opens.inclusion h) (0 : M → V) y = Subtype.val.extend g 0 y := by
-  by_cases hZ : y ∈ Z
-  · exact (Subtype.val_injective.extend_apply _ (0 : M → V) ⟨y, hy hZ⟩).trans
-      (Subtype.val_injective.extend_apply g (0 : M → V) ⟨y, hZ⟩).symm
-  · have hZ' : y ∉ Z' := fun h' ↦ hZ (h h')
-    rw [Function.extend_apply' _ _ _ fun ⟨z, hz⟩ ↦ hZ' (hz ▸ z.2),
-      Function.extend_apply' _ _ _ fun ⟨z, hz⟩ ↦ hZ (hz ▸ z.2)]
-
 variable {U} in
 private lemma component_map {W W' : Opens (TopCat.of M)} (h : W' ⟶ W)
     (x : (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj).obj
@@ -224,7 +205,7 @@ private def glueHom :
     -- at a point of the smaller open, the extended components agree
     refine finsum_congr fun i ↦ congrArg (ρ i y • ·) ?_
     rw [component_map]
-    exact extend_comp_inclusion _ _ fun hy ↦
+    exact Function.extend_subtypeVal_comp_inclusion _ _ _ fun hy ↦
       mem_prod_iff.2 ⟨(mem_prod_iff.1 hy).1, y.2⟩
 
 private lemma sectionsEquiv_glueHom_app (W : Opens (TopCat.of M))
