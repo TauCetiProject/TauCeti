@@ -385,6 +385,23 @@ theorem singularCubicalHomologyIso_inv_naturality {P P' : TopPair.{u}} (f : P �
   rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality_assoc, Iso.hom_inv_id,
     Category.comp_id]
 
+/-- The inverse comparison isomorphisms of absolute and relative homology commute with the maps
+from absolute to relative homology: an absolute cubical class, read in relative cubical homology
+and then in relative singular homology, is its image in absolute singular homology read in
+relative singular homology. -/
+@[reassoc]
+theorem homologyMap_π_comp_singularCubicalHomologyIso_inv (P : TopPair.{u}) (n : ℕ) :
+    HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n ≫
+        (TopPair.singularCubicalHomologyIso k P n).inv =
+      (TauCeti.singularCubicalHomologyIso k P.fst n).inv ≫
+        P.singularHomologyπ (ModuleCat.of k k) n := by
+  rw [TopPair.singularCubicalHomologyIso_inv, TauCeti.singularCubicalHomologyIso_inv,
+    ← HomologicalComplex.homologyMap_comp, π_cubicalToSingularRel,
+    HomologicalComplex.homologyMap_comp, singularRelπ]
+  -- `P.singularHomologyπ` is, by definition, the map on homology induced by
+  -- `P.singularChainComplexπ`.
+  rfl
+
 end TopPair
 
 namespace TopPair.Homotopy
