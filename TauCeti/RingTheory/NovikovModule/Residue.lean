@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
+public import TauCeti.Algebra.Torsor.Sigma
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.GroupTheory.FreeGroup.Basic
 
 /-!
 # Orbit-invariant and residue gradings of completed combinations
@@ -20,7 +22,8 @@ completed combination is the finite sum of its homogeneous parts
 pieces (`NovikovModule.isInternal_gradeBy`).
 
 For a finite union of torsors `P i` under a group `H`, this applies to any degree that is
-constant on each orbit, which then has at most one value per orbit. Such a grading is moreover
+constant on each orbit, which then has at most one value per orbit
+(`TauCeti.AddTorsor.finite_range_sigma_of_forall_vadd_eq`). Such a grading is moreover
 preserved by the Novikov scalar action of *every* series, homogeneous or not
 (`NovikovModule.smul_mem_gradeBy_of_forall_vadd_eq`), so the homogeneous pieces are Novikov
 submodules (`NovikovModule.novikovGradeBy`) and the completion is their internal direct sum as a
@@ -28,11 +31,11 @@ module over the Novikov ring (`NovikovModule.isInternal_novikovGradeBy`).
 
 The main example is the residue of an equivariant degree. If recapping by `h` shifts the degree
 by `δ h` for a homomorphism `δ : H →+ D`, then the degree modulo the range of `δ` is constant on
-orbits (`NovikovModule.quotientMk_vadd`). For capped Hamiltonian Floer generators this is the
-Conley–Zehnder grading modulo twice the first Chern numbers of spherical classes: modulo `2N` for
-minimal Chern number `N` in the monotone case, and the integer grading itself when the first
-Chern class vanishes on spheres. In contrast, the integer grading has infinite range as soon as
-`δ ≠ 0`, and then the homogeneous integer pieces need not span the completion.
+orbits (`TauCeti.AddTorsor.quotientMk_sigma_vadd`). For capped Hamiltonian Floer generators this
+is the Conley–Zehnder grading modulo twice the first Chern numbers of spherical classes: modulo
+`2N` for minimal Chern number `N` in the monotone case, and the integer grading itself when the
+first Chern class vanishes on spheres. In contrast, the integer grading has infinite range as
+soon as `δ ≠ 0`, and then the homogeneous integer pieces need not span the completion.
 
 ## Main definitions
 
@@ -47,8 +50,8 @@ Chern class vanishes on spheres. In contrast, the integer grading has infinite r
   `TauCeti.NovikovModule.isInternal_of_forall_mem_iff`: independence of the homogeneous pieces,
   and the internal direct sum decomposition for a degree with finite range, over any ring of
   scalars for which the pieces are submodules.
-* `TauCeti.NovikovModule.finite_range_of_forall_vadd_eq`: an orbit-invariant degree on a finite
-  union of torsors has finite range.
+* `TauCeti.NovikovModule.smul_mem_gradeBy_of_forall_vadd_eq`: every Novikov series preserves the
+  homogeneous pieces of an orbit-invariant degree.
 * `TauCeti.NovikovModule.isInternal_novikovGradeBy`: the completion is the direct sum of its
   orbit-invariant homogeneous pieces as a Novikov module.
 
@@ -76,12 +79,6 @@ variable [Semiring R]
 section Generators
 
 variable {F : S → ℝ} {d : S → D}
-
-/-- Homogeneous combinations of degree `k` lie in the piece of degree `f k` for the degree
-`f ∘ d`; for instance integer-homogeneous combinations lie in the piece of their residue. -/
-theorem gradeBy_le_gradeBy_comp {D' : Type*} (f : D → D') (k : D) :
-    gradeBy R F d k ≤ gradeBy R F (f ∘ d) (f k) :=
-  fun _ ha => mem_gradeBy_iff.2 fun s hs => congrArg f (mem_gradeBy_iff.1 ha s hs)
 
 section Proj
 
@@ -209,15 +206,6 @@ variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*} [∀ i, AddT
   {d : (Σ i, P i) → D} (hd : ∀ i (h : H) (p : P i), d ⟨i, h +ᵥ p⟩ = d ⟨i, p⟩)
 
 include hd in
-/-- A degree that is constant on each orbit of a finite union of torsors has finitely many
-values. -/
-theorem finite_range_of_forall_vadd_eq : (range d).Finite := by
-  let r := fun i => Classical.arbitrary (P i)
-  refine (finite_range fun i => d ⟨i, r i⟩).subset ?_
-  rintro _ ⟨⟨i, p⟩, rfl⟩
-  exact ⟨i, by rw [← vsub_vadd p (r i), hd]⟩
-
-include hd in
 /-- Every Novikov series, homogeneous or not, preserves the homogeneous pieces of a degree that
 is constant on orbits. -/
 theorem smul_mem_gradeBy_of_forall_vadd_eq (b : NovikovSeries R H N) {k : D}
@@ -225,23 +213,14 @@ theorem smul_mem_gradeBy_of_forall_vadd_eq (b : NovikovSeries R H N) {k : D}
     letI := module (R := R) hF
     b • a ∈ gradeBy R F d k := by
   let := module (R := R) hF
-  let r := fun i => Classical.arbitrary (P i)
-  refine mem_gradeBy_iff.2 fun ⟨i, p⟩ hp => ?_
-  -- The coordinate of `b • a` in the orbit of `p` is `b` times that of `a`, so the latter is
-  -- nonzero, and the orbit of `p` meets the support of `a`.
-  have hc : (b * coordinates hF r a i).coeff (p -ᵥ r i) ≠ 0 := by
-    have h := congrArg (fun x : ι → NovikovSeries R H N => (x i).coeff (p -ᵥ r i))
-      (coordinates_smul hF r b a)
-    simp only [coordinates_coeff, vsub_vadd, Pi.smul_apply, smul_eq_mul] at h
-    rwa [← h]
-  obtain ⟨g, hg⟩ : ∃ g, (coordinates hF r a i).coeff g ≠ 0 := by
-    by_contra! h
-    exact hc (by rw [show coordinates hF r a i = 0 from NovikovSeries.ext h, mul_zero,
-      NovikovSeries.coeff_zero])
-  rw [coordinates_coeff] at hg
-  have hk := mem_gradeBy_iff.1 ha _ hg
-  rw [hd] at hk
-  rwa [← vsub_vadd p (r i), hd]
+  -- Relabel the degrees injectively in the free additive group on `D`, so that `d` shifts by the
+  -- zero homomorphism and every series has degree zero for `smul_mem_gradeBy`.
+  have h := smul_mem_gradeBy hF (0 : H →+ FreeAddGroup D) (d := FreeAddGroup.of ∘ d)
+    (fun i h p => by simp [hd]) (j := 0) (b := b)
+    (NovikovSeries.mem_gradeBy_iff.2 fun _ _ => rfl)
+    (gradeBy_le_gradeBy_comp FreeAddGroup.of k ha)
+  rw [zero_add] at h
+  exact mem_gradeBy_iff.2 fun s hs => FreeAddGroup.of_injective (mem_gradeBy_iff.1 h s hs)
 
 /-- For a degree that is constant on orbits, the completed combinations of degree `k` form a
 submodule over the Novikov ring. -/
@@ -266,25 +245,11 @@ theorem isInternal_novikovGradeBy [DecidableEq D] :
     letI := module (R := R) hF
     DirectSum.IsInternal (novikovGradeBy (R := R) hF hd) :=
   letI := module (R := R) hF
-  isInternal_of_forall_mem_iff (finite_range_of_forall_vadd_eq hd) fun _ _ => Iff.rfl
+  isInternal_of_forall_mem_iff (AddTorsor.finite_range_sigma_of_forall_vadd_eq hd)
+    fun _ _ => Iff.rfl
 
 end Orbit
 
 end Semiring
-
-section Residue
-
-variable {H ι : Type*} [AddGroup H] {P : ι → Type*} [∀ i, AddTorsor H (P i)]
-  [AddCommGroup D] {δ : H →+ D} {d : (Σ i, P i) → D}
-
-/-- If translating by `h` shifts the degree by `δ h`, then the residue of the degree modulo the
-range of `δ` is constant on orbits. -/
-theorem quotientMk_vadd (hd : ∀ i h (p : P i), d ⟨i, h +ᵥ p⟩ = δ h + d ⟨i, p⟩)
-    (i : ι) (h : H) (p : P i) :
-    (d ⟨i, h +ᵥ p⟩ : D ⧸ δ.range) = (d ⟨i, p⟩ : D ⧸ δ.range) := by
-  rw [hd, QuotientAddGroup.mk_add,
-    (QuotientAddGroup.eq_zero_iff _).2 (AddMonoidHom.mem_range.2 ⟨h, rfl⟩), zero_add]
-
-end Residue
 
 end TauCeti.NovikovModule

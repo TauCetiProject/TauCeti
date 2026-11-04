@@ -111,7 +111,7 @@ direct sum of its residue pieces as a module over the Floer Novikov ring
 theorem quotientMk_sub_vadd (n : ℤ) (i : ι) (γ : PeriodGroup ω c) (D : P i) :
     ((n - μ ⟨i, γ +ᵥ D⟩ : ℤ) : ℤ ⧸ (PeriodGroup.degree ω c).range) =
       ((n - μ ⟨i, D⟩ : ℤ) : ℤ ⧸ (PeriodGroup.degree ω c).range) := by
-  rw [QuotientAddGroup.mk_sub, QuotientAddGroup.mk_sub, NovikovModule.quotientMk_vadd hμ]
+  rw [QuotientAddGroup.mk_sub, QuotientAddGroup.mk_sub, AddTorsor.quotientMk_sigma_vadd hμ]
 
 /-- If the first Chern number vanishes on spherical classes, recapping does not change the
 grading of a generator. Hence the integer grading is constant on each orbit, and the completed
