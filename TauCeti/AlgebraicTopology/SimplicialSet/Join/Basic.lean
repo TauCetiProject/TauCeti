@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 
 /-!
@@ -57,6 +58,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   when its part in `K` lies in `A` or its part in `L` lies in `B`.
 * `SSet.Subcomplex.unionJoin_le_iff`: `(A ⋆ L) ∪ (K ⋆ B)` lies in a subcomplex exactly when the
   images of `A ⋆ L` and `K ⋆ B` do.
+* `SSet.Subcomplex.unionJoin.isPushout`: `(A ⋆ L) ∪ (K ⋆ B)` is the pushout of `A ⋆ L` and
+  `K ⋆ B` along `A ⋆ B`.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
@@ -66,6 +69,10 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 The universal property reduces Joyal's theorem to horn filling in `K`, `L` and `Δ[1]`
 (`SSet.JoinData.exists_precomp_horn_ι_eq`): over `Δ[1]`, an inner horn lies either entirely over
 one vertex, or so that its parts over both vertices are faces contained in the horn.
+
+The pushout square `SSet.Subcomplex.unionJoin.isPushout` is obtained, as Mathlib's
+`SSet.Subcomplex.unionProd.isPushout` (Joël Riou and Jack McKoen) is for products, from the
+bicartesian square of subcomplexes formed by `A ⋆ B`, `A ⋆ L`, `K ⋆ B` and their union.
 
 ## References
 
@@ -341,6 +348,14 @@ lemma precomp_postcomp (d : JoinData X K L) (h : Y ⟶ X) (f : K ⟶ K') (g : L 
     (d.postcomp f g).precomp h = (d.precomp h).postcomp f g :=
   ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
 
+/-- Composition of join data with monomorphisms is injective. -/
+lemma postcomp_injective (f : K ⟶ K') (g : L ⟶ L') [Mono f] [Mono g] :
+    Function.Injective fun d : JoinData X K L ↦ d.postcomp f g := by
+  rintro ⟨p, l, r⟩ ⟨p', l', r'⟩ h
+  obtain rfl : p = p' := congrArg JoinData.p h
+  simp only [postcomp, mk.injEq, heq_eq_eq, true_and, cancel_mono] at h
+  rw [h.1, h.2]
+
 variable (K L) in
 /-- Join data, as a presheaf on simplicial sets. -/
 @[expose, simps]
@@ -567,6 +582,11 @@ def map (f : K ⟶ K') (g : L ⟶ L') : join K L ⟶ join K' L' :=
 lemma homEquiv_comp_map (F : X ⟶ join K L) (f : K ⟶ K') (g : L ⟶ L') :
     homEquiv (F ≫ map f g) = (homEquiv F).postcomp f g := by
   rw [homEquiv_comp, map, Equiv.apply_symm_apply, homEquiv_apply, JoinData.precomp_postcomp]
+
+/-- The join of two monomorphisms is a monomorphism. -/
+instance mono_map (f : K ⟶ K') (g : L ⟶ L') [Mono f] [Mono g] : Mono (map f g) :=
+  ⟨fun a b h ↦ homEquiv.injective (JoinData.postcomp_injective f g (by
+    simp only [← homEquiv_comp_map, h]))⟩
 
 @[reassoc (attr := simp)]
 lemma map_π (f : K ⟶ K') (g : L ⟶ L') : map f g ≫ π K' L' = π K L := by
@@ -961,6 +981,68 @@ lemma mem_unionJoin_iff {n : SimplexCategory} (s : (join K L).obj (op n)) :
           (join.objEquiv s).right.app k ⟨x, hx⟩ ∈ B.obj k := by
   rw [unionJoin, Subfunctor.max_obj, Set.mem_union, join.mem_range_map_ι_id_iff,
     join.mem_range_map_id_ι_iff]
+
+/-- The images of `A ⋆ L` and `K ⋆ B` in `K ⋆ L` meet in the image of `A ⋆ B`. -/
+lemma range_join_map_ι_ι :
+    range (join.map A.ι B.ι) = range (join.map A.ι (𝟙 L)) ⊓ range (join.map (𝟙 K) B.ι) := by
+  refine le_antisymm (le_inf ?_ ?_) ?_
+  · have h : join.map A.ι B.ι = join.map (𝟙 _) B.ι ≫ join.map A.ι (𝟙 L) := by
+      simp [← join.map_comp]
+    rw [h]
+    exact Subfunctor.range_comp_le _ _
+  · have h : join.map A.ι B.ι = join.map A.ι (𝟙 _) ≫ join.map (𝟙 K) B.ι := by
+      simp [← join.map_comp]
+    rw [h]
+    exact Subfunctor.range_comp_le _ _
+  rintro ⟨n⟩ s ⟨hA, hB⟩
+  induction n using SimplexCategory.rec with | _ n
+  rw [join.mem_range_map_ι_id_iff] at hA
+  rw [join.mem_range_map_id_ι_iff] at hB
+  refine ⟨join.objEquiv.symm ⟨(join.objEquiv s).p, lift (join.objEquiv s).left ?_,
+    lift (join.objEquiv s).right ?_⟩, join.objEquiv.injective ?_⟩
+  · rintro k _ ⟨y, rfl⟩
+    exact hA k y.1 y.2
+  · rintro k _ ⟨y, rfl⟩
+    exact hB k y.1 y.2
+  · rw [join.objEquiv_map_app, Equiv.apply_symm_apply]
+    -- `lift _ _ ≫ ι` is the original map by definition, since `lift` only restricts the codomain.
+    exact JoinData.ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
+
+namespace unionJoin
+
+/-- The inclusion `A ⋆ L ⟶ (A ⋆ L) ∪ (K ⋆ B)`. -/
+noncomputable def ι₁ : join A L ⟶ A.unionJoin B :=
+  lift (join.map A.ι (𝟙 L)) (range_join_map_ι_id_le_unionJoin A B)
+
+/-- The inclusion `K ⋆ B ⟶ (A ⋆ L) ∪ (K ⋆ B)`. -/
+noncomputable def ι₂ : join K B ⟶ A.unionJoin B :=
+  lift (join.map (𝟙 K) B.ι) (range_join_map_id_ι_le_unionJoin A B)
+
+@[reassoc (attr := simp)]
+lemma ι₁_ι : ι₁ A B ≫ (A.unionJoin B).ι = join.map A.ι (𝟙 L) := lift_ι _ _
+
+@[reassoc (attr := simp)]
+lemma ι₂_ι : ι₂ A B ≫ (A.unionJoin B).ι = join.map (𝟙 K) B.ι := lift_ι _ _
+
+/-- In the lattice of subcomplexes of `K ⋆ L`, the square formed by the images of `A ⋆ B`,
+`A ⋆ L`, `K ⋆ B` and their union `(A ⋆ L) ∪ (K ⋆ B)` is bicartesian. -/
+lemma bicartSq : BicartSq (range (join.map A.ι B.ι)) (range (join.map A.ι (𝟙 L)))
+    (range (join.map (𝟙 K) B.ι)) (A.unionJoin B) where
+  sup_eq := rfl
+  inf_eq := (range_join_map_ι_ι A B).symm
+
+/-- **`(A ⋆ L) ∪ (K ⋆ B)` is the pushout of `A ⋆ L` and `K ⋆ B` along `A ⋆ B`.** Hence maps out
+of the domain of the pushout-join of the inclusions of `A` and `B` are glued from compatible maps
+out of `A ⋆ L` and `K ⋆ B`. -/
+lemma isPushout : IsPushout (join.map (𝟙 (A : SSet)) B.ι) (join.map A.ι (𝟙 (B : SSet)))
+    (ι₁ A B) (ι₂ A B) := by
+  refine (bicartSq A B).isPushout.of_iso' (asIso (toRange _)) (asIso (toRange _))
+    (asIso (toRange _)) (Iso.refl _) ?_ ?_ ?_ ?_
+  all_goals
+    rw [← cancel_mono (Subcomplex.ι _)]
+    simp [← join.map_comp]
+
+end unionJoin
 
 end Subcomplex
 
