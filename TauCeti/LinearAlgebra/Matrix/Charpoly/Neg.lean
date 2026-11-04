@@ -38,7 +38,7 @@ theorem charpoly_neg (A : Matrix n n R) :
     · simp [charmatrix_apply_ne _ _ _ hij]
   have hcomp : A.charpoly.comp (-X) = (-1) ^ Fintype.card n * (-A).charpoly := by
     rw [charpoly, ← coe_compRingHom_apply, RingHom.map_det, hmap, det_neg, charpoly]
-  rw [hcomp, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  simp [hcomp, ← mul_assoc, ← mul_pow]
 
 end Matrix
 

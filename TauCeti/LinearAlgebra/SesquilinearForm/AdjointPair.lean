@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
-public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
-public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.LinearAlgebra.Charpoly.Dual
+public import TauCeti.LinearAlgebra.Dimension.Submodule
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Neg
 
@@ -26,9 +22,9 @@ against the range of `p(g)`. This file develops the consequences for generalized
 * `B` pairs the generalized `μ`-eigenspace of `f` to zero against the generalized `ν`-eigenspace
   of `g` whenever `μ - ν` is a unit (`LinearMap.IsAdjointPair.apply_eq_zero_of_mem_genEigenspace`),
   and more generally kills `ker p(f) × ker q(g)` for coprime polynomials `p`, `q`;
-* when `B` is nondegenerate and `M` is Noetherian and Artinian, the Fitting decomposition of
-  `g - μ` shows that `B` restricts to a nondegenerate pairing between the maximal generalized
-  `μ`-eigenspaces of `f` and of `g`
+* when `B` is nondegenerate and `M` is Artinian, the kernel-range decomposition of a
+  sufficiently high power of `g - μ` gives a nondegenerate pairing between the maximal
+  generalized `μ`-eigenspaces of `f` and of `g`
   (`LinearMap.IsAdjointPair.nondegenerate_domRestrict₁₂_maxGenEigenspace`);
 * over a field, for nondegenerate `B` on a finite-dimensional space, `B` conjugates `g` to the
   transpose of `f` (`LinearMap.IsAdjointPair.conj_toDual_flip`). Hence `ker g` and `ker f` have
@@ -92,14 +88,9 @@ theorem pow (h : IsAdjointPair B B f g) (n : ℕ) : IsAdjointPair B B ⇑(f ^ n)
 theorem aeval (h : IsAdjointPair B B f g) (p : R[X]) :
     IsAdjointPair B B ⇑(aeval f p) ⇑(aeval g p) := by
   induction p using Polynomial.induction_on' with
-  | add p q hp hq =>
-    intro x y
-    rw [map_add, map_add, LinearMap.add_apply, LinearMap.add_apply, map_add₂, map_add, hp x y,
-      hq x y]
+  | add p q hp hq => simpa using hp.add hq
   | monomial n a =>
-    intro x y
-    rw [aeval_monomial, aeval_monomial, ← Algebra.smul_def, ← Algebra.smul_def,
-      LinearMap.smul_apply, LinearMap.smul_apply, map_smul₂, map_smul, (h.pow n) x y]
+    simpa [aeval_monomial, ← Algebra.smul_def] using (h.pow n).smul a
 
 /-- An adjoint pair with the arguments of the form exchanged. -/
 theorem flip (h : IsAdjointPair B B f g) : IsAdjointPair B.flip B.flip g f :=
@@ -117,11 +108,8 @@ theorem apply_eq_zero_of_isCoprime (h : IsAdjointPair B B f g) {p q : R[X]}
     (hw : Polynomial.aeval g q w = 0) : B v w = 0 := by
   obtain ⟨a, b, hab⟩ := hpq
   have hw' : w = Polynomial.aeval g p (Polynomial.aeval g a w) := by
-    have := congr(Polynomial.aeval g $hab w)
-    rw [map_add, map_mul, map_mul, map_one, LinearMap.add_apply, mul_apply_eq_comp,
-      mul_apply_eq_comp, hw, map_zero, add_zero, one_apply_eq_self] at this
-    calc w = Polynomial.aeval g a (Polynomial.aeval g p w) := this.symm
-      _ = _ := by rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, mul_comm]
+    rw [mul_comm a p] at hab
+    simpa [mul_apply_eq_comp, hw] using congr(Polynomial.aeval g $hab w).symm
   rw [hw', ← h.aeval p, hv, LinearMap.map_zero₂]
 
 /-- `B` pairs the generalized `μ`-eigenspace of `f` to zero against the generalized
@@ -138,26 +126,29 @@ theorem apply_eq_zero_of_mem_genEigenspace (h : IsAdjointPair B B f g) {μ ν : 
 
 section Fitting
 
-variable [IsNoetherian R M] [IsArtinian R M]
+variable [IsArtinian R M]
 
 /-- A vector of the maximal generalized `μ`-eigenspace of `f` which `B` pairs to zero with the
 maximal generalized `μ`-eigenspace of the adjoint `g` is zero, when `B` is left-separating. -/
 theorem eq_zero_of_mem_maxGenEigenspace (hB : B.SeparatingLeft) (h : IsAdjointPair B B f g)
     {μ : R} {v : M} (hv : v ∈ f.maxGenEigenspace μ)
     (hvw : ∀ w ∈ g.maxGenEigenspace μ, B v w = 0) : v = 0 := by
-  -- By the Fitting decomposition of `g - μ`, every `u` is `a + (g - μ)ⁿ c` with `a` in the maximal
-  -- generalized `μ`-eigenspace of `g`; `B v` kills `a` by hypothesis, and `(g - μ)ⁿ c` because
-  -- `(f - μ)ⁿ v = 0`.
+  -- The Artinian half of the Fitting argument gives ker (g - μ)ᵏ + range (g - μ)ᵏ = M.
+  -- Choose k large enough that (f - μ)ᵏ v = 0 as well.
   obtain ⟨n, hn⟩ := (Module.End.mem_maxGenEigenspace f μ v).1 hv
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
+    (eventually_codisjoint_ker_pow_range_pow (g - μ • 1))
+  have hn' : ((f - μ • 1) ^ (N + n)) v = 0 := by
+    simp [pow_add, hn]
   refine hB v fun u ↦ ?_
-  have hu : u ∈ (⨆ k, ker ((g - μ • 1) ^ k)) ⊔ ⨅ k, range ((g - μ • 1) ^ k) := by
-    rw [(isCompl_iSup_ker_pow_iInf_range_pow (g - μ • 1)).sup_eq_top]
+  have hu : u ∈ ker ((g - μ • 1) ^ (N + n)) ⊔ range ((g - μ • 1) ^ (N + n)) := by
+    rw [codisjoint_iff.1 (hN (N + n) (Nat.le_add_right N n))]
     exact Submodule.mem_top
   obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.1 hu
-  obtain ⟨c, rfl⟩ := mem_range.1 (Submodule.mem_iInf _ |>.1 hb n)
-  have ha' : a ∈ g.maxGenEigenspace μ := by
-    simpa [← Module.End.iSup_genEigenspace_eq, Module.End.genEigenspace_nat] using ha
-  rw [map_add, hvw a ha', ← (h.sub_smul_one μ).pow n, hn, LinearMap.map_zero₂, zero_add]
+  obtain ⟨c, rfl⟩ := mem_range.1 hb
+  have ha' : a ∈ g.maxGenEigenspace μ :=
+    (Module.End.mem_maxGenEigenspace g μ a).2 ⟨N + n, ha⟩
+  rw [map_add, hvw a ha', ← (h.sub_smul_one μ).pow (N + n), hn', LinearMap.map_zero₂, zero_add]
 
 /-- For a nondegenerate `B`, the maximal generalized `μ`-eigenspaces of an adjoint pair `f`, `g`
 are paired nondegenerately by `B`. -/
@@ -189,18 +180,9 @@ theorem conj_toDual_flip (hB : B.Nondegenerate) (h : IsAdjointPair B B f g) :
 kernels of the same dimension: `B` identifies `g` with the transpose of `f`. -/
 theorem finrank_ker_eq (hB : B.Nondegenerate) (h : IsAdjointPair B B f g) :
     finrank K (ker g) = finrank K (ker f) := by
-  let e := B.flip.toDual hB.flip
-  have hker : (ker g).map (e : V →ₗ[K] Dual K V) = ker f.dualMap := by
-    rw [← h.conj_toDual_flip hB]
-    ext φ
-    obtain ⟨y, rfl⟩ := e.surjective φ
-    simp [e, LinearEquiv.conj_apply_apply]
-  have hdual : finrank K (ker f.dualMap) = finrank K (ker f) := by
-    have h₁ := finrank_range_add_finrank_ker f.dualMap
-    have h₂ := finrank_range_add_finrank_ker f
-    rw [finrank_range_dualMap_eq_finrank_range, Subspace.dual_finrank_eq] at h₁
-    omega
-  rw [← hdual, ← hker, LinearEquiv.finrank_map_eq]
+  have hconj := ((B.flip.toDual hB.flip).finrank_ker_conj g).symm
+  rw [h.conj_toDual_flip hB] at hconj
+  exact hconj.trans f.finrank_ker_dualMap
 
 /-- For a nondegenerate bilinear form on a finite-dimensional space, adjoint endomorphisms have
 the same characteristic polynomial. -/
@@ -220,6 +202,8 @@ theorem finrank_genEigenspace_eq (hB : B.Nondegenerate) (h : IsAdjointPair B B f
       exact ((h.sub_smul_one μ).pow n).finrank_ker_eq hB
   induction k using ENat.recTopCoe with
   | top =>
+    -- The maximal-space lemmas use an abbreviation that rw does not unfold on their left side.
+    -- Spell out exponent ⊤ so the equalities match the generalized eigenspaces in the goal.
     rw [show g.genEigenspace μ ⊤ = _ from g.maxGenEigenspace_eq_genEigenspace_finrank μ,
       show f.genEigenspace μ ⊤ = _ from f.maxGenEigenspace_eq_genEigenspace_finrank μ]
     exact key _
@@ -231,29 +215,26 @@ end IsAdjointPair
 
 namespace IsSkewAdjoint
 
-/-- A skew-adjoint endomorphism has adjoint `-f`. -/
-theorem isAdjointPair (h : B.IsSkewAdjoint f) : IsAdjointPair B B ⇑f ⇑(-f) :=
-  fun x y ↦ by simpa using h x y
-
 /-- For a skew-adjoint `f`, the adjoint of `p(f)` is `p(-X)(f)`. -/
 theorem isAdjointPair_aeval (h : B.IsSkewAdjoint f) (p : R[X]) :
     IsAdjointPair B B ⇑(Polynomial.aeval f p) ⇑(Polynomial.aeval f (p.comp (-X))) := by
-  simpa [aeval_comp] using h.isAdjointPair.aeval p
+  simpa [aeval_comp] using IsAdjointPair.aeval (f := f) (g := -f) h p
 
 /-- For a skew-adjoint `f`, `B` pairs the generalized `μ`- and `ν`-eigenspaces of `f` to zero
 when `μ + ν` is a unit. -/
 theorem apply_eq_zero_of_mem_genEigenspace (h : B.IsSkewAdjoint f) {μ ν : R}
     (hμν : IsUnit (μ + ν)) {k l : ℕ∞} {v w : M} (hv : v ∈ f.genEigenspace μ k)
     (hw : w ∈ f.genEigenspace ν l) : B v w = 0 :=
-  h.isAdjointPair.apply_eq_zero_of_mem_genEigenspace (ν := -ν) (by simpa using hμν) hv
-    (by simpa using hw)
+  IsAdjointPair.apply_eq_zero_of_mem_genEigenspace (f := f) (g := -f) h (ν := -ν)
+    (by simpa using hμν) hv (by simpa using hw)
 
 /-- For a skew-adjoint `f`, `B` pairs the kernel of `p(f)` to zero against the kernel of `q(f)`
 when `p` and `q(-X)` are coprime. -/
 theorem apply_eq_zero_of_isCoprime (h : B.IsSkewAdjoint f) {p q : R[X]}
     (hpq : IsCoprime p (q.comp (-X))) {v w : M} (hv : Polynomial.aeval f p v = 0)
     (hw : Polynomial.aeval f q w = 0) : B v w = 0 :=
-  h.isAdjointPair.apply_eq_zero_of_isCoprime hpq hv (by simpa [aeval_comp] using hw)
+  IsAdjointPair.apply_eq_zero_of_isCoprime (f := f) (g := -f) h hpq hv
+    (by simpa [aeval_comp] using hw)
 
 /-- For a skew-adjoint `f`, `B` pairs the vectors killed by a power of `p(f)` to zero against those
 killed by a power of `q(f)` when `p` and `q(-X)` are coprime. -/
@@ -277,16 +258,19 @@ theorem apply_eq_zero_of_mem_genEigenspace_self (h : B.IsSkewAdjoint f) {μ : R}
 
 section Fitting
 
-variable [IsNoetherian R M] [IsArtinian R M]
+variable [IsArtinian R M]
 
 /-- For a nondegenerate `B` and skew-adjoint `f`, the maximal generalized `μ`- and
 `-μ`-eigenspaces of `f` are paired nondegenerately by `B`. -/
 theorem nondegenerate_domRestrict₁₂_maxGenEigenspace (hB : B.Nondegenerate)
     (h : B.IsSkewAdjoint f) (μ : R) :
     (B.domRestrict₁₂ (f.maxGenEigenspace μ) (f.maxGenEigenspace (-μ))).Nondegenerate := by
-  have := h.isAdjointPair.nondegenerate_domRestrict₁₂_maxGenEigenspace hB μ
+  have hpair :=
+    IsAdjointPair.nondegenerate_domRestrict₁₂_maxGenEigenspace (f := f) (g := -f) hB h μ
+  -- The negation lemma uses an exponent; specialize to ⊤ under the maximal-space abbreviation
+  -- so rw can match its left side without unfolding the subspaces.
   rwa [show (-f).maxGenEigenspace μ = f.maxGenEigenspace (-μ) from
-    Module.End.genEigenspace_neg f μ ⊤] at this
+    Module.End.genEigenspace_neg f μ ⊤] at hpair
 
 /-- For a nondegenerate `B`, skew-adjoint `f` and any polynomial `p`, the vectors killed by a power
 of `p(f)` are paired nondegenerately by `B` with those killed by a power of `p(-X)(f)`. -/
@@ -318,7 +302,7 @@ theorem finrank_genEigenspace_neg (hB : B.Nondegenerate) (h : B.IsSkewAdjoint f)
     (k : ℕ∞) :
     finrank K (f.genEigenspace (-μ) k) = finrank K (f.genEigenspace μ k) := by
   rw [← Module.End.genEigenspace_neg]
-  exact h.isAdjointPair.finrank_genEigenspace_eq hB μ k
+  exact IsAdjointPair.finrank_genEigenspace_eq (f := f) (g := -f) hB h μ k
 
 /-- For a nondegenerate bilinear form on a finite-dimensional space of dimension `n` and a
 skew-adjoint `f`, the characteristic polynomial satisfies `χ_f(-X) = (-1)ⁿ χ_f(X)`: the
@@ -326,9 +310,9 @@ eigenvalues of `f` are symmetric under `μ ↦ -μ`, with multiplicities. -/
 theorem charpoly_comp_neg_X (hB : B.Nondegenerate) (h : B.IsSkewAdjoint f) :
     f.charpoly.comp (-X) = (-1) ^ finrank K V * f.charpoly := by
   have hneg := charpoly_neg f
-  rw [h.isAdjointPair.charpoly_eq hB] at hneg
+  rw [IsAdjointPair.charpoly_eq (f := f) (g := -f) hB h] at hneg
   conv_rhs => rw [hneg]
-  rw [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  simp [← mul_assoc, ← mul_pow]
 
 /-- For a nondegenerate bilinear form on a finite-dimensional space and a skew-adjoint `f`, `-μ`
 is a generalized eigenvalue of `f` exactly when `μ` is. -/
