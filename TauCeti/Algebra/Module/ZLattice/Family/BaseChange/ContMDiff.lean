@@ -219,4 +219,26 @@ theorem contMDiff_torusFamilyBaseChangeHomeomorph_symm
   exact ⟨ha.congr (fun w ↦ congrArg Prod.fst (hcomp w)),
     hb.congr (fun w ↦ congrArg Prod.snd (hcomp w))⟩
 
+/-- A compatible pair of `C^n` maps to the new base and the original family lifts to a
+`C^n` map into the pulled-back family through the algebraic pullback equivalence
+`TauCeti.torusFamilyBaseChangeEquiv`. -/
+theorem contMDiff_torusFamilyBaseChangeEquiv_symm
+    (a : W → Z)
+    (b : letI := periodAddAction P; W → AddAction.orbitRel.Quotient Λ (Y × E))
+    (hab : ∀ w, torusFamilyProjection P (b w) = f (a w)) :
+    letI : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
+      (DiscreteTopology (LinearMap.range (P (f z))))
+    letI : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
+      (IsZLattice ℝ (LinearMap.range (P (f z))))
+    letI := periodAddAction P
+    letI := periodAddAction (P ∘ f)
+    letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
+    letI := torusFamilyChartedSpace (H := HZ) (P ∘ f)
+      (fun l ↦ ((hP l).comp hf).continuous) (fun z ↦ hinj (f z))
+    ContMDiff K J n a → ContMDiff K (I.prod 𝓘(𝕜, E)) n b →
+      ContMDiff K (J.prod 𝓘(𝕜, E)) n
+        (fun w ↦ (torusFamilyBaseChangeEquiv P f).symm ⟨(a w, b w), hab w⟩) := by
+  simpa only [← coe_torusFamilyBaseChangeHomeomorph_symm P f (fun l ↦ (hP l).continuous)
+    hf.continuous] using contMDiff_torusFamilyBaseChangeHomeomorph_symm P hinj hP f hf a b hab
+
 end TauCeti
