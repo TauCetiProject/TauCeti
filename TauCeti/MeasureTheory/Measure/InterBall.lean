@@ -24,11 +24,17 @@ almost every radius. Where `m` has a right derivative at `r`, the measures
 (`TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`). These are the
 difference quotients produced by cutting a set by balls with radial cutoffs.
 
+For an arbitrary measure, a bound `μ (closedBall x r) ≤ f r` on concentric closed balls holding
+for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is right-continuous there
+(`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
+
 ## Main results
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
 * `TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`: the lower difference
   quotient of `m` is its right derivative, where that exists.
+* `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a closed-ball bound for radii
+  arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 -/
 
 public section
@@ -76,3 +82,21 @@ theorem tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt [OpensMeas
       (measure_ne_top_of_subset hsub hfin)]
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric Filter Set
+open scoped ENNReal Topology
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+
+/-- A bound `μ (closedBall x r) ≤ f r` holding for radii `r` arbitrarily close to `ρ` from the
+right extends to the radius `ρ` itself when the gauge `f` is right-continuous at `ρ`, since
+`closedBall x ρ ⊆ closedBall x r` for `ρ ≤ r`. -/
+theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ≥0∞} {x : X} {ρ : ℝ}
+    (hf : ContinuousWithinAt f (Ioi ρ) ρ) (h : ∃ᶠ r in 𝓝[>] ρ, μ (closedBall x r) ≤ f r) :
+    μ (closedBall x ρ) ≤ f ρ :=
+  isClosed_Ici.mem_of_frequently_of_tendsto (h.mp (eventually_nhdsWithin_of_forall
+    fun r (hr : ρ < r) hle => (measure_mono (closedBall_subset_closedBall hr.le)).trans hle)) hf
+
+end MeasureTheory.Measure
