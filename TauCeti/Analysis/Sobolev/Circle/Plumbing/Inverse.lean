@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Circle.Plumbing.Basic
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import TauCeti.Analysis.Analytic.Inverse
 
 /-!
 # Local inverses of ambient neck evaluation
@@ -53,6 +53,15 @@ theorem neckEvaluationLinearEquiv_apply (p : CircleSobolev s ℂ × CircleSobole
     neckEvaluationLinearEquiv p z = (exp (p.1.coeff 0) * z.1, exp (p.2.coeff 0) * z.2) := by
   simp [neckEvaluationLinearEquiv]
 
+/-- The inverse normal derivative scales each branch by the reciprocal exponential. -/
+@[simp]
+theorem neckEvaluationLinearEquiv_symm_apply (p : CircleSobolev s ℂ × CircleSobolev s ℂ)
+    (z : ℂ × ℂ) :
+    (neckEvaluationLinearEquiv p).symm z =
+      (exp (-p.1.coeff 0) * z.1, exp (-p.2.coeff 0) * z.2) := by
+  apply (neckEvaluationLinearEquiv p).injective
+  simp [exp_neg]
+
 /-- Ambient neck evaluation together with the unchanged additional parameter. The data may
 depend on all ambient variables; in particular the smoothing argument may be `xy`. -/
 def neckEvaluationWithParameters {A : Type*}
@@ -98,53 +107,53 @@ theorem hasFDerivAt_neckEvaluationWithParameters
   · ext w <;> simp [neckEvaluation_fst, neckEvaluation_snd]
   · ext w <;> simp [neckEvaluationLinearEquiv_apply, diskFunction_apply_zero, mul_comm]
 
+private theorem hasStrictFDerivAt_neckEvaluationWithParameters
+    (hp : AnalyticAt ℂ p (0, t)) :
+    HasStrictFDerivAt (neckEvaluationWithParameters p)
+      (((neckEvaluationLinearEquiv (p (0, t))).prodCongr
+        (ContinuousLinearEquiv.refl ℂ A)) : ((ℂ × ℂ) × A) →L[ℂ] ((ℂ × ℂ) × A)) (0, t) :=
+  (hasFDerivAt_neckEvaluationWithParameters hp).fderiv ▸
+    (analyticAt_neckEvaluationWithParameters hp).hasStrictFDerivAt
+
 variable [CompleteSpace A]
 
 /-- A local ambient coordinate change at the node, retaining all parameters. Its inverse is
 holomorphic as a germ. No smallness of the constant logarithmic modes is required. -/
 def neckEvaluationChart (hp : AnalyticAt ℂ p (0, t)) :
     OpenPartialHomeomorph ((ℂ × ℂ) × A) ((ℂ × ℂ) × A) :=
-  let h := analyticAt_neckEvaluationWithParameters hp
-  let hd := hasFDerivAt_neckEvaluationWithParameters hp
-  (hd.fderiv ▸ h.hasStrictFDerivAt).toOpenPartialHomeomorph _
+  (hasStrictFDerivAt_neckEvaluationWithParameters hp).toOpenPartialHomeomorph _
 
 /-- The forward coordinate change is the original ambient evaluation, not a replacement map. -/
 @[simp]
 theorem coe_neckEvaluationChart (hp : AnalyticAt ℂ p (0, t)) :
     (neckEvaluationChart hp : ((ℂ × ℂ) × A) → (ℂ × ℂ) × A) =
       neckEvaluationWithParameters p :=
-  HasStrictFDerivAt.toOpenPartialHomeomorph_coe
-    ((hasFDerivAt_neckEvaluationWithParameters hp).fderiv ▸
-      (analyticAt_neckEvaluationWithParameters hp).hasStrictFDerivAt)
+  (hasStrictFDerivAt_neckEvaluationWithParameters hp).toOpenPartialHomeomorph_coe
 
 /-- The local coordinate change is defined at the central node. -/
 theorem node_mem_neckEvaluationChart_source (hp : AnalyticAt ℂ p (0, t)) :
     (0, t) ∈ (neckEvaluationChart hp).source :=
-  HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source
-    ((hasFDerivAt_neckEvaluationWithParameters hp).fderiv ▸
-      (analyticAt_neckEvaluationWithParameters hp).hasStrictFDerivAt)
+  (hasStrictFDerivAt_neckEvaluationWithParameters hp).mem_toOpenPartialHomeomorph_source
 
 /-- Its target also contains the central node. -/
 theorem node_mem_neckEvaluationChart_target (hp : AnalyticAt ℂ p (0, t)) :
     (0, t) ∈ (neckEvaluationChart hp).target := by
   simpa using (neckEvaluationChart hp).map_source (node_mem_neckEvaluationChart_source hp)
 
-/-- The ambient inverse is jointly holomorphic at the node and the chosen parameter. -/
-theorem analyticAt_neckEvaluationChart_symm (hp : AnalyticAt ℂ p (0, t)) :
-    AnalyticAt ℂ (neckEvaluationChart hp).symm (0, t) := by
-  have ha : AnalyticAt ℂ (neckEvaluationChart hp) (0, t) := by
-    simpa using analyticAt_neckEvaluationWithParameters hp
-  have hd := hasFDerivAt_neckEvaluationWithParameters hp
-  simpa using (neckEvaluationChart hp).analyticAt_symm'
-    (i := (neckEvaluationLinearEquiv (p (0, t))).prodCongr (ContinuousLinearEquiv.refl ℂ A))
-    (node_mem_neckEvaluationChart_source hp) ha (by simpa only [coe_neckEvaluationChart]
-      using hd.fderiv)
-
 /-- The inverse fixes the central node. -/
 @[simp]
 theorem neckEvaluationChart_symm_node (hp : AnalyticAt ℂ p (0, t)) :
     (neckEvaluationChart hp).symm (0, t) = (0, t) := by
   simpa using (neckEvaluationChart hp).left_inv (node_mem_neckEvaluationChart_source hp)
+
+/-- The ambient inverse is jointly holomorphic at the node and the chosen parameter. -/
+theorem analyticAt_neckEvaluationChart_symm (hp : AnalyticAt ℂ p (0, t)) :
+    AnalyticAt ℂ (neckEvaluationChart hp).symm (0, t) := by
+  have ha : AnalyticAt ℂ (neckEvaluationWithParameters p)
+      ((neckEvaluationChart hp).symm (0, t)) := by
+    simpa only [neckEvaluationChart_symm_node] using analyticAt_neckEvaluationWithParameters hp
+  exact (hasStrictFDerivAt_neckEvaluationWithParameters hp).analyticAt_toOpenPartialHomeomorph_symm
+    (node_mem_neckEvaluationChart_target hp) ha
 
 /-- The inverse preserves the additional parameter on its entire target. -/
 @[simp]
