@@ -551,7 +551,8 @@ lemma diskBoundaryIso_hom_comp_diskBoundaryInclusion :
     e.diskBoundaryIso.hom ≫ TopCat.diskBoundaryInclusion.{u} n =
       TopCat.diskBoundaryInclusion.{u} n ≫ e.diskIso.hom := by
   ext z
-  exact ULift.ext (Subtype.ext rfl)
+  refine ULift.ext (Subtype.ext ?_)
+  simp [TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down]
 
 /-- The antipodal map `TauCeti.diskBoundaryNeg` of the boundary sphere is induced by the linear
 isometry `x ↦ -x`. -/
@@ -559,7 +560,8 @@ isometry `x ↦ -x`. -/
 lemma diskBoundaryIso_neg_hom :
     (LinearIsometryEquiv.neg ℝ).diskBoundaryIso.hom = TauCeti.diskBoundaryNeg.{u} n := by
   ext z
-  exact ULift.ext (Subtype.ext rfl)
+  refine ULift.ext (Subtype.ext ?_)
+  simp
 
 end LinearIsometryEquiv
 

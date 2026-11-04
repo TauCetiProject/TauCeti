@@ -246,9 +246,8 @@ def morseCellAttachmentIso (φ₀ φ₁ : ι → OpenPartialHomeomorph M (Euclid
     (fun i ↦ (h i).inv ≫ morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i) fun i ↦ by
       have h₁ := (Iso.inv_comp_eq _).2 (hα i)
       have h₂ : (g i).inv ≫ TopCat.diskBoundaryInclusion (k i) =
-          TopCat.diskBoundaryInclusion (k i) ≫ (h i).inv := by
-        rw [Iso.inv_comp_eq, ← Category.assoc, hg, Category.assoc, Iso.hom_inv_id,
-          Category.comp_id]
+          TopCat.diskBoundaryInclusion (k i) ≫ (h i).inv :=
+        (CommSq.mk (hg i).symm).vert_inv.w.symm
       rw [← h₁, Category.assoc, morseAttachingMap_comp_morseCellAttachmentIncl,
         ← Category.assoc, h₂, Category.assoc]
   hom_inv_id := morseCellAttachment_hom_ext φ₁ k hk hball₁ hf₁ hε (by simp) fun i ↦ by simp

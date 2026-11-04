@@ -36,8 +36,9 @@ attaching map alone is not determined up to homotopy by the critical point.
 
 ## Main results
 
-* `TauCeti.coe_morseAttachingMap_doubleWellChart`,
-  `TauCeti.coe_morseAttachingMap_doubleWellNegChart`: the attaching maps `α±(s) = ±s √(1 - 1/√2)`.
+* `TauCeti.coe_morseAttachingMap_doubleWellChart_apply`,
+  `TauCeti.coe_morseAttachingMap_doubleWellNegChart_apply`: the attaching maps
+  `α±(s) = ±s √(1 - 1/√2)`.
 * `TauCeti.not_homotopic_morseAttachingMap_doubleWellChart_doubleWellNegChart`: `α₊` and `α₋`
   are not homotopic.
 * `TauCeti.morseAttachingMap_doubleWellNegChart`: `α₋ = α₊ ∘ r` for the reflection `r = -id`.
@@ -70,8 +71,10 @@ theorem doubleWell_def (x : ℝ) : doubleWell x = (x ^ 2 - 1) ^ 2 := (rfl)
 private theorem sqrt_one_sub_sq_mul (x : ℝ) (hx : x ∈ Ioo (-1 : ℝ) 1) :
     √(1 - (x * √(2 - x ^ 2)) ^ 2) = 1 - x ^ 2 := by
   have hx2 : x ^ 2 < 1 := by nlinarith [hx.1, hx.2]
-  rw [mul_pow, Real.sq_sqrt (by nlinarith)]
-  rw [show 1 - x ^ 2 * (2 - x ^ 2) = (1 - x ^ 2) ^ 2 by ring]
+  have h : 1 - (x * √(2 - x ^ 2)) ^ 2 = (1 - x ^ 2) ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt (by nlinarith)]
+    ring
+  rw [h]
   exact Real.sqrt_sq (by linarith)
 
 /-- The coordinate `y = x √(2 - x²)` on `(-1, 1)`, in which `doubleWell = 1 - y²`. It is a
@@ -95,8 +98,12 @@ def doubleWellCoord : OpenPartialHomeomorph ℝ ℝ where
     nlinarith [Real.sqrt_nonneg (1 - y ^ 2)]
   left_inv' x hx := by
     have hx2 : x ^ 2 < 1 := by nlinarith [hx.1, hx.2]
-    rw [sqrt_one_sub_sq_mul x hx, show 1 + (1 - x ^ 2) = 2 - x ^ 2 by ring,
-      mul_div_assoc, div_self (Real.sqrt_pos.2 (by linarith)).ne', mul_one]
+    have h : 1 + √(1 - (x * √(2 - x ^ 2)) ^ 2) = 2 - x ^ 2 := by
+      rw [sqrt_one_sub_sq_mul x hx]
+      ring
+    have h0 : √(2 - x ^ 2) ≠ 0 := (Real.sqrt_pos.2 (by linarith)).ne'
+    rw [h]
+    field_simp
   right_inv' y hy := by
     have hy2 : y ^ 2 < 1 := by nlinarith [hy.1, hy.2]
     have hs : 0 < 1 + √(1 - y ^ 2) := by positivity
@@ -208,15 +215,22 @@ theorem closedBall_subset_doubleWellNegChart_target :
 
 private theorem doubleWellCoord_symm_mul_sqrt {t : ℝ} (ht : t ^ 2 = 1) :
     doubleWellCoord.symm (t * √(1 / 2)) = t * √(1 - 1 / √2) := by
-  have ha : √(1 / 2) ^ 2 = 1 / 2 := Real.sq_sqrt (by norm_num)
-  have h2 : 1 / √2 = √(1 / 2) := by
-    rw [one_div, ← Real.sqrt_inv, one_div]
-  have ha0 : 0 ≤ √(1 / 2) := Real.sqrt_nonneg _
-  rw [doubleWellCoord_symm_apply, mul_pow, ht, one_mul, ha,
-    show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num, mul_div_assoc, h2, ← Real.sqrt_div (by norm_num)]
-  congr 2
-  rw [div_eq_iff (by positivity)]
-  nlinarith
+  have hs : √(1 / 2) = 1 / √2 := by
+    rw [Real.sqrt_div' 1 zero_le_two, Real.sqrt_one]
+  have h2 : √2 ^ 2 = 2 := Real.sq_sqrt zero_le_two
+  have h2pos : 0 < √2 := by positivity
+  have hinner : √(1 - (t * √(1 / 2)) ^ 2) = 1 / √2 := by
+    rw [mul_pow, ht, one_mul, Real.sq_sqrt (by norm_num), ← hs]
+    norm_num
+  have hq0 : 0 ≤ 1 - 1 / √2 := by
+    rw [sub_nonneg, div_le_one h2pos]
+    nlinarith
+  have hq : (1 - 1 / √2) * (1 + 1 / √2) = 1 / 2 := by
+    field_simp
+    nlinarith
+  have hprod : √(1 - 1 / √2) * √(1 + 1 / √2) = 1 / √2 := by
+    rw [← Real.sqrt_mul hq0, hq, hs]
+  rw [doubleWellCoord_symm_apply, hinner, div_eq_iff (by positivity), mul_assoc, hprod, hs]
 
 private theorem smul_piLpExtendByZero_apply_zero (ε : ℝ) (w : EuclideanSpace ℝ (Fin 1)) :
     (√ε • LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb le_rfl) w) 0 = √ε * w 0 := by
@@ -224,33 +238,35 @@ private theorem smul_piLpExtendByZero_apply_zero (ε : ℝ) (w : EuclideanSpace 
   simp
 
 /-- The cell parametrization of `ψ₊` is `w ↦ ψ₊⁻¹(√ε w)`. -/
-theorem doubleWellChart_morseCellMap (ε : ℝ) (w : EuclideanSpace ℝ (Fin 1)) :
+theorem morseCellMap_doubleWellChart (ε : ℝ) (w : EuclideanSpace ℝ (Fin 1)) :
     doubleWellChart.morseCellMap le_rfl ε w = doubleWellCoord.symm (√ε * w 0) := by
   rw [OpenPartialHomeomorph.morseCellMap_def, doubleWellChart_symm_apply,
     smul_piLpExtendByZero_apply_zero]
 
 /-- The cell parametrization of `ψ₋` is `w ↦ ψ₊⁻¹(-√ε w)`. -/
-theorem doubleWellNegChart_morseCellMap (ε : ℝ) (w : EuclideanSpace ℝ (Fin 1)) :
+theorem morseCellMap_doubleWellNegChart (ε : ℝ) (w : EuclideanSpace ℝ (Fin 1)) :
     doubleWellNegChart.morseCellMap le_rfl ε w = doubleWellCoord.symm (-(√ε * w 0)) := by
   rw [OpenPartialHomeomorph.morseCellMap_def, doubleWellNegChart_symm_apply,
     smul_piLpExtendByZero_apply_zero]
 
 /-- The attaching map `α₊ : S⁰ → {doubleWell ≤ 1/2}` of the chart `ψ₊` at the level `c = 1` with
 width `ε = 1/2` is `α₊(s) = s √(1 - 1/√2)`. -/
-theorem coe_morseAttachingMap_doubleWellChart (s : TopCat.diskBoundary.{0} 1) :
+@[simp]
+theorem coe_morseAttachingMap_doubleWellChart_apply (s : TopCat.diskBoundary.{0} 1) :
     (doubleWellChart.morseAttachingMap le_rfl one_half_pos.le
       closedBall_subset_doubleWellChart_target doubleWell_eq_one_add_sum_doubleWellChart s : ℝ) =
       (s.down : EuclideanSpace ℝ (Fin 1)) 0 * √(1 - 1 / √2) := by
-  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply, doubleWellChart_morseCellMap, mul_comm,
+  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_doubleWellChart, mul_comm,
     doubleWellCoord_symm_mul_sqrt (sq_diskBoundary_one_eq_one s)]
 
 /-- The attaching map `α₋ : S⁰ → {doubleWell ≤ 1/2}` of the chart `ψ₋` at the level `c = 1` with
 width `ε = 1/2` is `α₋(s) = -s √(1 - 1/√2)`. -/
-theorem coe_morseAttachingMap_doubleWellNegChart (s : TopCat.diskBoundary.{0} 1) :
+@[simp]
+theorem coe_morseAttachingMap_doubleWellNegChart_apply (s : TopCat.diskBoundary.{0} 1) :
     (doubleWellNegChart.morseAttachingMap le_rfl one_half_pos.le
       closedBall_subset_doubleWellNegChart_target doubleWell_eq_one_add_sum_doubleWellNegChart
       s : ℝ) = -((s.down : EuclideanSpace ℝ (Fin 1)) 0 * √(1 - 1 / √2)) := by
-  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply, doubleWellNegChart_morseCellMap,
+  rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_doubleWellNegChart,
     mul_comm, ← neg_mul, doubleWellCoord_symm_mul_sqrt (by rw [neg_sq, sq_diskBoundary_one_eq_one]),
     neg_mul]
 
@@ -273,15 +289,18 @@ theorem not_homotopic_morseAttachingMap_doubleWellChart_doubleWellNegChart :
   have hγ : Continuous γ := continuous_subtype_val.comp (H.continuous.comp (by fun_prop))
   have h0 : γ 0 = √(1 - 1 / √2) := by
     simp only [γ, ContinuousMap.Homotopy.apply_zero]
-    rw [coe_morseAttachingMap_doubleWellChart, hs₁, one_mul]
+    rw [coe_morseAttachingMap_doubleWellChart_apply, hs₁, one_mul]
   have h1 : γ 1 = -√(1 - 1 / √2) := by
     simp only [γ, ContinuousMap.Homotopy.apply_one]
-    rw [coe_morseAttachingMap_doubleWellNegChart, hs₁, one_mul]
-  obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hγ
-    (show (0 : ℝ) ∈ Icc (γ 1) (γ 0) by rw [h0, h1]; exact ⟨by linarith, ha.le⟩)
-  have hmem := (H (t, s₁)).2
-  rw [mem_ofPred_eq, show ((H (t, s₁) : {x | doubleWell x ≤ 1 - 1 / 2}) : ℝ) = 0 from ht,
-    doubleWell_def] at hmem
+    rw [coe_morseAttachingMap_doubleWellNegChart_apply, hs₁, one_mul]
+  have h01 : (0 : ℝ) ∈ Icc (γ 1) (γ 0) := by
+    rw [h0, h1]
+    exact ⟨by linarith, ha.le⟩
+  obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hγ h01
+  -- The value of the homotopy at `(t, s₁)` lies in the sublevel `{doubleWell ≤ 1/2}`.
+  have hmem : doubleWell (H (t, s₁) : ℝ) ≤ 1 - 1 / 2 := (H (t, s₁)).2
+  have ht0 : (H (t, s₁) : ℝ) = 0 := ht
+  rw [ht0, doubleWell_def] at hmem
   norm_num at hmem
 
 /-- The attaching maps of the two charts differ strictly by the reflection `r = -id` of the disc:
@@ -293,8 +312,8 @@ theorem morseAttachingMap_doubleWellNegChart :
       diskBoundaryNeg 1 ≫ doubleWellChart.morseAttachingMap le_rfl one_half_pos.le
         closedBall_subset_doubleWellChart_target doubleWell_eq_one_add_sum_doubleWellChart := by
   ext s
-  rw [ConcreteCategory.comp_apply, coe_morseAttachingMap_doubleWellNegChart,
-    coe_morseAttachingMap_doubleWellChart, diskBoundaryNeg_apply_down]
+  rw [ConcreteCategory.comp_apply, coe_morseAttachingMap_doubleWellNegChart_apply,
+    coe_morseAttachingMap_doubleWellChart_apply, diskBoundaryNeg_apply_down]
   simp [neg_mul]
 
 /-- Since `α₋ = α₊ ∘ r` strictly, the map which is the identity on `{doubleWell ≤ 1/2}` and the
@@ -346,13 +365,10 @@ theorem hasDerivAt_doubleWell (x : ℝ) : HasDerivAt doubleWell (4 * x * (x ^ 2 
 `0`. -/
 theorem criticalPoints_doubleWell : criticalPoints 𝓘(ℝ) doubleWell = {-1, 0, 1} := by
   ext x
-  rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero, extChartAt_model_space_eq_id,
-    PartialEquiv.refl_symm, PartialEquiv.refl_coe, Function.comp_id, id_eq, ← toSpanSingleton_deriv,
-    (hasDerivAt_doubleWell x).deriv, ← ContinuousLinearMap.toSpanSingleton_zero,
-    ContinuousLinearMap.toSpanSingleton_inj,
-    show 4 * x * (x ^ 2 - 1) = 4 * (x * ((x + 1) * (x - 1))) by ring]
-  simp only [mul_eq_zero, add_eq_zero_iff_eq_neg, sub_eq_zero, mem_insert_iff, mem_singleton_iff]
-  norm_num
+  have hfac : 4 * x * (x ^ 2 - 1) = 4 * (x * ((x + 1) * (x - 1))) := by ring
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, (hasDerivAt_doubleWell x).hasFDerivAt.fderiv,
+    ← ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.toSpanSingleton_inj, hfac]
+  simp [add_eq_zero_iff_eq_neg, sub_eq_zero]
   tauto
 
 /-- The band `doubleWell⁻¹[1/2, 3/2]` around the critical level `1` is compact. -/
