@@ -36,12 +36,17 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
-* `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
+* `Finsupp.weight_mapDomain`: pushing forward along `f : α → β` pulls the weight vector back to
+  `w ∘ f`.
+* `Finsupp.prod_pow_sumElim`, `Finsupp.weight_sumElim`: splitting variables splits the weighted
+  product into two factors, and the weight into two summands.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
   the summand `n • c none` from the weighted sum.
 * `Finsupp.pow_degree_le_pow_degree_optionElim`: `a ^ degree f ≤ b ^ degree (f.optionElim m)`
   for `0 ≤ a ≤ b` and `1 ≤ b`.
+* `Finsupp.weight_mono_of_nonneg`, `Finsupp.weight_mono`: nonnegative weights define a monotone
+  functional on `σ →₀ ℕ`.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
 * `Finsupp.weight_le_degree_nsmul_of_mem_support`: the same bound, assuming `w s ≤ c` only for
   the variables `s` occurring in `f`.
@@ -113,6 +118,19 @@ theorem prod_pow_sumElim {α β N : Type*} [CommMonoid N] (a : α →₀ ℕ) (b
     (a.sumElim b).prod (Sum.elim c d · ^ ·) = a.prod (c · ^ ·) * b.prod (d · ^ ·) := by
   simp only [prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
 
+/-- Pushing forward along `f : α → β` pulls the weight vector back along `f`. -/
+theorem weight_mapDomain {α β R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (w : β → M) (f : α → β) (a : α →₀ R) :
+    weight w (a.mapDomain f) = weight (w ∘ f) a :=
+  linearCombination_mapDomain (v' := w) (f := f) (l := a)
+
+/-- The weight on a disjoint union of variables is the sum of the weights on each part. -/
+theorem weight_sumElim {α β R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (w₁ : α → M) (w₂ : β → M) (a : α →₀ R) (b : β →₀ R) :
+    weight (Sum.elim w₁ w₂) (a.sumElim b) = weight w₁ a + weight w₂ b := by
+  rw [sumElim_eq_add, map_add, weight_mapDomain, weight_mapDomain,
+    Sum.elim_comp_inl, Sum.elim_comp_inr]
+
 /-- A weighted product on disjoint variables, multiplied by `x`, can be evaluated with the
 inner weight first and the outer weight last. -/
 theorem mul_prod_pow_sumElim {α β N : Type*} [CommMonoid N] (x : N)
@@ -136,6 +154,14 @@ namespace Finsupp
 
 variable {σ M : Type*} [AddCommMonoid M] [Preorder M] [AddLeftMono M]
 
+/-- Nonnegative weights define a monotone functional on `σ →₀ ℕ`. -/
+theorem weight_mono_of_nonneg {w : σ → M} (hw : ∀ s, 0 ≤ w s) :
+    Monotone (weight w : (σ →₀ ℕ) →+ M) := by
+  intro f g hfg
+  obtain ⟨d, rfl⟩ := le_iff_exists_add.mp hfg
+  rw [map_add, weight_apply w d, Finsupp.sum]
+  exact le_add_of_nonneg_right (Finset.sum_nonneg fun s _ ↦ nsmul_nonneg (hw s) (d s))
+
 /-- If every variable occurring in `f` has weight at most `c`, then the weight of `f` is at most
 its degree times `c`. -/
 theorem weight_le_degree_nsmul_of_mem_support (f : σ →₀ ℕ) {w : σ → M} {c : M}
@@ -155,6 +181,18 @@ weight of `f` is at most its degree times `w i`. -/
 theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w : σ → M}
     (hw : Monotone w) {i : σ} (hf : ∀ s ∈ f.support, s ≤ i) : weight w f ≤ degree f • w i :=
   weight_le_degree_nsmul_of_mem_support f fun s hs ↦ hw (hf s hs)
+
+end Finsupp
+
+namespace Finsupp
+
+/-- In a canonically ordered additive commutative monoid, every weight functional on `σ →₀ ℕ` is
+monotone. -/
+theorem weight_mono {σ M : Type*} [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M]
+    (w : σ → M) : Monotone (weight w : (σ →₀ ℕ) →+ M) := fun _ _ hfg ↦ by
+  obtain ⟨d, rfl⟩ := le_iff_exists_add.mp hfg
+  rw [map_add]
+  exact le_self_add
 
 end Finsupp
 
