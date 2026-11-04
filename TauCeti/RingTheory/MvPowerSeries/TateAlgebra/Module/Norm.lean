@@ -394,10 +394,10 @@ instance : Module (IsRestricted.subring (R := R) c) (Gauss c E) :=
   toAddSubgroupAddEquiv.module _
 
 omit hc in
+/-- Forgetting the Gauss topology preserves convolution by a restricted scalar series. -/
 @[simp]
-theorem isRestrictedSubring_smul_apply (f : IsRestricted.subring (R := R) c)
-    (a : Gauss c E) (t : σ →₀ ℕ) :
-    (f • a) t = MvPowerSeries.convSMul (f : MvPowerSeries σ R) a.toAddSubgroup t := (rfl)
+theorem toAddSubgroup_isRestrictedSubring_smul (f : IsRestricted.subring (R := R) c)
+    (a : Gauss c E) : (f • a).toAddSubgroup = f • a.toAddSubgroup := (rfl)
 
 /-- Convolution by a scalar restricted series satisfies the Gauss norm inequality. -/
 theorem norm_isRestrictedSubring_smul_le (f : IsRestricted.subring (R := R) c)
@@ -405,7 +405,8 @@ theorem norm_isRestrictedSubring_smul_le (f : IsRestricted.subring (R := R) c)
   classical
   apply norm_le_iff.mpr
   intro t
-  rw [isRestrictedSubring_smul_apply, convSMul_apply]
+  simp only [toAddSubgroup_isRestrictedSubring_smul, coe_isRestrictedSubring_smul,
+    convSMul_apply]
   have ht := (prod_pow_pos (c := c) t).le
   calc
     _ ≤ ((Finset.antidiagonal t).sup' (HasAntidiagonal.nonempty_antidiagonal t)
