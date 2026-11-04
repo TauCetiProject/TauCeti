@@ -106,7 +106,7 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4 and III.1.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4, III.1 and III.8.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.H.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.

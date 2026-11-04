@@ -92,7 +92,7 @@ change-of-group map `groupHomology.map φ α`
 
 ## References
 
-* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4 and III.1.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4, III.1 and III.8.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.H.
 -/
@@ -399,6 +399,18 @@ def twistedHomologyIsoGroupHomology [ContractibleSpace E] (n : ℕ) :
       (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A)).symm ≪≫
     (groupHomologyIso A n (singularChainsResolution k E G)).symm
 
+variable (A) in
+/-- The identification of twisted homology with group homology is the map induced by the inverse
+comparison of twisted chains with coinvariant chains, followed by Mathlib's `groupHomologyIso`. -/
+private lemma twistedHomologyIsoGroupHomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    letI := Classical.decEq G
+    (hG.twistedHomologyIsoGroupHomology k A n).hom =
+      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
+        (groupHomologyIso A n (singularChainsResolution k E G)).inv :=
+  (rfl)
+
 variable {A' : Rep.{u} k G}
 
 /-- **The comparison of twisted chains with coinvariant chains is natural in the coefficients**:
@@ -454,11 +466,7 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality [ContractibleSpace E] (f 
           (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
       hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality k f]
-  have e (C : Rep.{u} k G) : (hG.twistedHomologyIsoGroupHomology k C n).hom =
-      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k C).inv n ≫
-        (groupHomologyIso C n (singularChainsResolution k E G)).inv :=
-    (rfl)
-  rw [e, e]
+  rw [twistedHomologyIsoGroupHomology_hom_eq, twistedHomologyIsoGroupHomology_hom_eq]
   -- `singularChainsResolution` and `singularChainsRep` agree only up to unfolding, so the
   -- remaining steps are explicit transitivity rather than rewriting.
   exact ((HomologicalComplex.homologyMap_comp_assoc _ _ _ _).symm.trans
@@ -662,10 +670,7 @@ theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_map
   -- The initial sheet of `τ` lies over the initial vertex of `p ∘ τ`, so its image under `f`
   -- lies over the image of that vertex under `b`.
   let e' : q ⁻¹' {b (initialVertex ((TopCat.toSSet.map p).app _ τ)).as} :=
-    ⟨f (initialSheet (p := p) τ), by
-      have h : b (p (initialSheet (p := p) τ)) = q (f (initialSheet (p := p) τ)) :=
-        ConcreteCategory.congr_hom hb _
-      exact h.symm⟩
+    ⟨f (initialSheet (p := p) τ), map_mem_fiber f b hb _ _⟩
   have h₂ : ((twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k A')).f n).hom
       (((twistedChainComplexCoefficientMap.{u, u, u}
         (hG.associatedLocalSystemPullbackMap k hH f hf b hb α)).f n).hom
@@ -722,15 +727,7 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality_map [ContractibleSpace E]
         φ.coinvariantsTensorChainMap α (singularChainsRepResMap k f hf) := by
     rw [Iso.eq_inv_comp, ← Category.assoc, ← Category.assoc, Iso.comp_inv_eq, Category.assoc,
       hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_map k hH f hf b hb α]
-  have e₁ : (hG.twistedHomologyIsoGroupHomology k A n).hom =
-      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
-        (groupHomologyIso A n (singularChainsResolution k E G)).inv :=
-    (rfl)
-  have e₂ : (hH.twistedHomologyIsoGroupHomology k A' n).hom =
-      HomologicalComplex.homologyMap (hH.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv
-          n ≫ (groupHomologyIso A' n (singularChainsResolution k F H)).inv :=
-    (rfl)
-  rw [e₁, e₂]
+  rw [twistedHomologyIsoGroupHomology_hom_eq, twistedHomologyIsoGroupHomology_hom_eq]
   -- The complexes of `singularChainsResolution` are `singularChainsRep` only up to unfolding, so
   -- the chain-level square `hchains` and the naturality of `groupHomologyIso` are pasted in term
   -- mode.

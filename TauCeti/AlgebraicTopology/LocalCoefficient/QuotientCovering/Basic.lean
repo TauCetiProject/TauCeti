@@ -228,7 +228,7 @@ variable {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
 include hb in
 /-- A map of total spaces lying over a map of bases sends the fibre over `x` into the fibre over
 `b x`. -/
-private lemma map_mem_fiber (x : B) (e : p ⁻¹' {x}) : f e ∈ q ⁻¹' {b x} := by
+lemma map_mem_fiber (x : B) (e : p ⁻¹' {x}) : f e ∈ q ⁻¹' {b x} := by
   have h : b (p e) = q (f e) := ConcreteCategory.congr_hom hb e
   have he : p e = x := e.2
   exact h.symm.trans (congrArg b he)
