@@ -529,16 +529,6 @@ theorem ker_heisenbergTracePairing :
     refine (heisenbergBasis R).ext fun k => ?_
     fin_cases k <;> simp [h]
 
-/-- **A strictly lower triangular `3 × 3` matrix is the combination of `E₁₀`, `E₂₁` and `E₂₀`
-with its entries as coefficients**; these three matrix units span the strictly lower triangular
-matrices. -/
-theorem eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular
-    {Λ : Matrix (Fin 3) (Fin 3) R} (hΛ : Λ ∈ strictLowerTriangular R (Fin 3)) :
-    Λ = Λ 1 0 • single 1 0 1 + Λ 2 1 • single 2 1 1 + Λ 2 0 • single 2 0 1 := by
-  have h := mem_strictLowerTriangular_iff.mp hΛ
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [h]
-
 variable (R) in
 /-- The **lower triangular model of the dual** of the Heisenberg Lie algebra: the trace pairing
 `Λ ↦ (A ↦ tr (Λ A))` identifies the strictly lower triangular `3 × 3` matrices with the dual, the
