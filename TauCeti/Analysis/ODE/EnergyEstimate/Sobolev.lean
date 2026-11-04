@@ -44,6 +44,11 @@ error, so `D_A` is injective. This applies in particular to a constant invertibl
 
 ## Main declarations
 
+* `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
+  `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral` and
+  `TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`: for a path with a `C¹`
+  representative `φ`, on any real Hilbert space, the squared norms of the path, of its weak
+  derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`.
 * `TauCeti.WeakDerivStep.exists_mul_norm_sq_le_norm_trajectoryOperator_sq_add`: the estimate
   with a compact error on Sobolev paths.
 * `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: the kernel of `D_A` is finite
@@ -72,18 +77,17 @@ open scoped ENNReal Topology
 
 namespace TauCeti.WeakDerivStep
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A : ℝ → E →L[ℝ] E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A : ℝ → E →L[ℝ] E}
 
 /-! ### Norms of a path with a smooth compactly supported representative -/
 
 section Smooth
 
-variable {u : WeakDerivStep volume ⊤ 2
+variable [CompleteSpace E] {u : WeakDerivStep volume ⊤ 2
   (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → E}
 
 /-- The squared `L²` norm of a path is the integral of the squared norm of a representative. -/
-private theorem norm_prev_sq_eq_integral
+theorem norm_prev_sq_eq_integral
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
     ‖prev _ u‖ ^ 2 = ∫ s, ‖φ s‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq,
@@ -92,7 +96,7 @@ private theorem norm_prev_sq_eq_integral
 
 /-- The squared `L²` norm of the weak derivative is that of the classical derivative of a `C¹`
 representative. -/
-private theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
     ‖weakFDeriv _ u‖ ^ 2 = ∫ s, ‖deriv φ s‖ ^ 2 := by
   have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
@@ -104,7 +108,7 @@ private theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
 
 /-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
 `∫ ‖φ' + A φ‖²`. -/
-private theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
@@ -138,6 +142,8 @@ private theorem integral_Icc_le_norm_restrictBaseL_sq (hφ : Continuous φ)
     (Eventually.of_forall (Icc_subset_Ioo (by linarith) hR))
 
 end Smooth
+
+variable [FiniteDimensional ℝ E]
 
 /-- **The trajectory estimate on Sobolev paths.** For a `C¹` family of symmetric operators with
 invertible limits at both ends and derivative tending to zero, the trajectory operator satisfies
