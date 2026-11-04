@@ -76,6 +76,10 @@ variable (B) in
 noncomputable def foldedCartanLattice : Submodule ℤ (ShellLieAlgebra B) :=
   Submodule.span ℤ (Set.range (foldedH B σ))
 
+/-- The normalized Cartan lattice is the integral span of the folded Cartan generators. -/
+theorem foldedCartanLattice_def :
+    foldedCartanLattice B σ = Submodule.span ℤ (Set.range (foldedH B σ)) := (rfl)
+
 /-- Normalized folded Cartan generators lie in the actual fixed Cartan lattice. -/
 theorem foldedCartanLattice_le_fixedCartanLattice :
     foldedCartanLattice B σ ≤ fixedCartanLattice B σ := by
