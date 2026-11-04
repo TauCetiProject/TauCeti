@@ -40,18 +40,22 @@ namespace MonoidAlgebra
 variable {R : Type*} [Semiring R] {M N O : Type*}
 
 /-- Pushing the coefficients forward along the identity does nothing. -/
-@[simp]
+@[to_additive (attr := simp)
+/-- Pushing the coefficients forward along the identity does nothing. -/]
 theorem mapDomain_id (x : MonoidAlgebra R M) : mapDomain id x = x :=
   ext <| by rw [coeff_mapDomain, Finsupp.mapDomain_id]
 
 /-- Pushing the coefficients forward along two maps in turn is pushing them forward along the
 composite. -/
-@[simp]
+@[to_additive (attr := simp)
+/-- Pushing the coefficients forward along two maps in turn is pushing them forward along the
+composite. -/]
 theorem mapDomain_mapDomain (f : M → N) (g : N → O) (x : MonoidAlgebra R M) :
     mapDomain g (mapDomain f x) = mapDomain (g ∘ f) x :=
   ext <| by rw [coeff_mapDomain, coeff_mapDomain, coeff_mapDomain, Finsupp.mapDomain_comp]
 
 /-- Pushing the coefficients forward along a surjection is surjective. -/
+@[to_additive /-- Pushing the coefficients forward along a surjection is surjective. -/]
 theorem mapDomain_surjective {f : M → N} (hf : Function.Surjective f) :
     Function.Surjective (mapDomain (R := R) f) := fun y ↦ by
   obtain ⟨x, hx⟩ := Finsupp.mapDomain_surjective hf y.coeff

@@ -13,9 +13,11 @@ import Mathlib.Algebra.MonoidAlgebra.Grading
 import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Localization.LocalizationLocalization
+import TauCeti.Algebra.Group.Submonoid.Finiteness
 import TauCeti.Algebra.Group.UniqueProds.Submonoid
 import TauCeti.Algebra.Group.UniqueProds.TorsionFree
 import TauCeti.Algebra.MonoidAlgebra.Finite
+import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.MvPolynomial.IntegrallyClosed
 
 /-!
@@ -62,9 +64,8 @@ This file establishes the ring-theoretic normalization theory of `R[S]`:
 * `AddMonoidAlgebra.isIntegralClosure_nsmulSaturation` and
   `AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure`: `R[S.nsmulSaturation]` (resp.
   `R[S_sat]`) is the integral closure of `R[S]` inside `R[L]` (resp. `R[L_S]`) over any domain `R`.
-* `AddMonoidAlgebra.groupClosureToFractionRing` and
-  `AddMonoidAlgebra.nsmulSaturationToFractionRing`: canonical embeddings of `R[L_S]` and
-  `R[S_sat]` into any fraction ring `K` of `R[S]`.
+* `AddMonoidAlgebra.nsmulSaturationToFractionRing`: canonical embedding of `R[S_sat]` into any
+  fraction ring `K` of `R[S]` (extending `AddMonoidAlgebra.groupClosureToFractionRing`).
 * `AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure_fractionRing` and
   `AddMonoidAlgebra.nsmulSaturationEquivIntegralClosure`: `R[S_sat]` is the integral closure of
   `R[S]` in any fraction ring `K` over an integrally closed domain `R`.
@@ -89,6 +90,15 @@ namespace AddMonoidAlgebra
 
 section FiniteNormalization
 
+private theorem exists_finset_inclusion_add {M : Type*} [AddCommMonoid M] {S T : AddSubmonoid M}
+    (hST : S ≤ T) (hF : ∃ F : Finset M, (F : Set M) ⊆ T ∧ ∀ x ∈ T, ∃ z ∈ F, ∃ s ∈ S, x = z + s) :
+    ∃ F : Finset T, ∀ x : T, ∃ z ∈ F, ∃ s : S, x = z + AddSubmonoid.inclusion hST s := by
+  classical
+  obtain ⟨F, hF_sub, hF_add⟩ := hF
+  refine ⟨F.subtype (· ∈ T), fun x => ?_⟩
+  obtain ⟨z, hz, s, hs, hxz⟩ := hF_add x.1 x.2
+  exact ⟨⟨z, hF_sub hz⟩, Finset.mem_subtype.mpr hz, ⟨s, hs⟩, Subtype.ext hxz⟩
+
 /-- **Finite normalization in a finitely generated torsion-free abelian group.** For a finitely
 generated submonoid `S` of a finitely generated torsion-free abelian group `L`,
 `R[S.nsmulSaturation]` is a finite `R[S]`-algebra over any commutative ring `R`. -/
@@ -96,8 +106,8 @@ theorem finite_mapDomainRingHom_inclusion_nsmulSaturation {L : Type*} [AddCommGr
     [Module.Finite ℤ L] [HasUniqueDiv L] {S : AddSubmonoid L} (hS : S.FG)
     (R : Type*) [CommRing R] :
     (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
-  finite_mapDomainRingHom_inclusion_of_exists_finset_add S.le_nsmulSaturation
-    hS.exists_finset_subset_nsmulSaturation_add R
+  finite_mapDomainRingHom_of_exists_finset_add _
+    (exists_finset_inclusion_add S.le_nsmulSaturation hS.exists_finset_subset_nsmulSaturation_add) R
 
 /-- **Finite normalization in the generated subgroup.** For a finitely generated submonoid `S` of a
 torsion-free abelian group `G`, the algebra of the saturation of `S` inside
@@ -106,9 +116,9 @@ theorem finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure {G : Type*
     [HasUniqueDiv G] {S : AddSubmonoid G} (hS : S.FG) (R : Type*) [CommRing R] :
     (mapDomainRingHom R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
-  finite_mapDomainRingHom_inclusion_of_exists_finset_add
-    (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
-    hS.exists_finset_subset_nsmulSaturation_inf_closure_add R
+  finite_mapDomainRingHom_of_exists_finset_add _
+    (exists_finset_inclusion_add (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
+      hS.exists_finset_subset_nsmulSaturation_inf_closure_add) R
 
 end FiniteNormalization
 
@@ -143,13 +153,8 @@ theorem isIntegrallyClosed_of_addMonoidAlgebra {R M : Type*} [CommRing R] [AddCo
           (f * algebraMap R (AddMonoidAlgebra R M) b.1) =
         algebraMap (AddMonoidAlgebra R M) (FractionRing (AddMonoidAlgebra R M))
           (algebraMap R (AddMonoidAlgebra R M) a) := by
-    have hmap := congrArg gₐ hab
-    rw [map_mul, gₐ.commutes, gₐ.commutes, ← hf,
-      IsScalarTower.algebraMap_apply R (AddMonoidAlgebra R M)
-        (FractionRing (AddMonoidAlgebra R M)) b.1,
-      IsScalarTower.algebraMap_apply R (AddMonoidAlgebra R M)
-        (FractionRing (AddMonoidAlgebra R M)) a, ← map_mul] at hmap
-    exact hmap
+    simpa [gₐ.commutes, IsScalarTower.algebraMap_apply R (AddMonoidAlgebra R M)
+      (FractionRing (AddMonoidAlgebra R M)), ← hf] using congrArg gₐ hab
   have hmul : f * algebraMap R (AddMonoidAlgebra R M) b.1 =
       algebraMap R (AddMonoidAlgebra R M) a :=
     IsFractionRing.injective (AddMonoidAlgebra R M) (FractionRing (AddMonoidAlgebra R M)) hmul_frac
@@ -161,7 +166,7 @@ theorem isIntegrallyClosed_of_addMonoidAlgebra {R M : Type*} [CommRing R] [AddCo
 
 /-- Over an integrally closed domain `R`, the group algebra `R[G]` of any free abelian group `G`
 is integrally closed. -/
-theorem isIntegrallyClosed_of_free {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+instance isIntegrallyClosed_of_free {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
     [AddCommGroup G] [Module.Free ℤ G] : IsIntegrallyClosed (AddMonoidAlgebra R G) := by
   let b := Module.Free.chooseBasis ℤ G
   let ι := Module.Free.ChooseBasisIndex ℤ G
@@ -189,12 +194,8 @@ theorem isIntegrallyClosed_of_free {R G : Type*} [CommRing R] [IsDomain R] [IsIn
     IsIntegrallyClosed.of_equiv (mapDomainRingEquiv R eP) (h := hIC_mv)
   let := (mapDomainRingHom R P.toGroupClosure).toAlgebra
   have := P.isLocalization_addMonoidAlgebra_groupClosure R
-  have hM : MonoidHom.mrange (of R P) ≤ (AddMonoidAlgebra R P)⁰ := by
-    rintro _ ⟨m, rfl⟩
-    rw [mem_nonZeroDivisors_iff_ne_zero, of_apply]
-    exact single_ne_zero.mpr one_ne_zero
   have hIC_cl : IsIntegrallyClosed (AddMonoidAlgebra R (AddSubgroup.closure (P : Set (ι →₀ ℤ)))) :=
-    isIntegrallyClosed_of_isLocalization _ (MonoidHom.mrange (of R P)) hM
+    isIntegrallyClosed_of_isLocalization _ (MonoidHom.mrange (of R P)) mrange_of_le_nonZeroDivisors
   let eTop : AddSubgroup.closure (P : Set (ι →₀ ℤ)) ≃+ (ι →₀ ℤ) :=
     AddEquiv.ofBijective (AddSubgroup.closure (P : Set (ι →₀ ℤ))).subtype
       ⟨Subtype.val_injective, fun v => ⟨⟨v, hP_top.symm ▸ AddSubgroup.mem_top v⟩, rfl⟩⟩
@@ -203,6 +204,66 @@ theorem isIntegrallyClosed_of_free {R G : Type*} [CommRing R] [IsDomain R] [IsIn
 end CoeffAndFreeGroup
 
 section HalfSpaceAndGroupClosure
+
+private theorem le_inf_support_pow_coe {R G : Type*} [Semiring R] [AddCommMonoid G] (φ : G →+ ℤ)
+    {f : AddMonoidAlgebra R G} {μ : ℤ} (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (n : ℕ) :
+    ((n • μ : ℤ) : WithTop ℤ) ≤ (f ^ n).coeff.support.inf fun g => (φ g : WithTop ℤ) :=
+  have hf_inf : (μ : WithTop ℤ) ≤ f.coeff.support.inf fun g => (φ g : WithTop ℤ) :=
+    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (hf g hg)
+  (WithTop.coe_nsmul μ n).trans_le <| (nsmul_le_nsmul_right hf_inf n).trans <|
+    le_inf_support_pow (by simp) (fun a b => by simp [map_add, ← WithTop.coe_add]) n f
+
+private theorem lt_apply_of_mem_support_pow_sub_pow {R G : Type*} [CommRing R] [AddCommMonoid G]
+    (φ : G →+ ℤ) {f f₀ f₁ : AddMonoidAlgebra R G} (hf_split : f = f₀ + f₁) {μ : ℤ}
+    (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (hf₀ : ∀ g ∈ f₀.coeff.support, μ ≤ φ g)
+    (hf₁ : ∀ g ∈ f₁.coeff.support, μ < φ g) (n : ℕ) :
+    ∀ g ∈ (f ^ n - f₀ ^ n).coeff.support, n • μ < φ g := by
+  let degt : G → WithTop ℤ := fun g => (φ g : WithTop ℤ)
+  have degtm : ∀ a b, degt a + degt b ≤ degt (a + b) := fun a b => by
+    simp [degt, map_add, ← WithTop.coe_add]
+  have hf₀_inf : (μ : WithTop ℤ) ≤ f₀.coeff.support.inf degt :=
+    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (hf₀ g hg)
+  have hf₁_inf : ((μ + 1 : ℤ) : WithTop ℤ) ≤ f₁.coeff.support.inf degt :=
+    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (Int.add_one_le_iff.mpr (hf₁ g hg))
+  suffices ((n • μ + 1 : ℤ) : WithTop ℤ) ≤ (f ^ n - f₀ ^ n).coeff.support.inf degt from
+    fun g hg => Int.add_one_le_iff.mp (WithTop.coe_le_coe.mp (Finset.le_inf_iff.mp this g hg))
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hid : f ^ (n + 1) - f₀ ^ (n + 1) = (f ^ n - f₀ ^ n) * f₀ + f ^ n * f₁ := by
+      rw [hf_split, pow_succ, pow_succ]
+      ring
+    rw [hid]
+    refine (le_inf ?_ ?_).trans (le_inf_support_coeff_add degt _ _)
+    · rw [show (n + 1) • μ + 1 = (n • μ + 1) + μ by rw [succ_nsmul]; ring, WithTop.coe_add]
+      exact (add_le_add ih hf₀_inf).trans (le_inf_support_coeff_mul degtm _ _)
+    · rw [show (n + 1) • μ + 1 = n • μ + (μ + 1) by rw [succ_nsmul]; ring, WithTop.coe_add]
+      exact (add_le_add (le_inf_support_pow_coe φ hf n) hf₁_inf).trans
+        (le_inf_support_coeff_mul degtm _ _)
+
+private theorem lt_apply_of_mem_support_sum_mul_pow {R A G : Type*} [CommRing R] [Semiring A]
+    [AddCommMonoid G] (σ : A →+* AddMonoidAlgebra R G) (φ : G →+ ℤ)
+    (hσ : ∀ a : A, ∀ g ∈ (σ a).coeff.support, 0 ≤ φ g) {f : AddMonoidAlgebra R G} {μ : ℤ}
+    (hμ_neg : μ < 0) (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (c : ℕ → A) (d : ℕ) :
+    ∀ g ∈ (∑ i ∈ Finset.range d, σ (c i) * f ^ i).coeff.support, d • μ < φ g := by
+  let degt : G → WithTop ℤ := fun g => (φ g : WithTop ℤ)
+  have degtm : ∀ a b, degt a + degt b ≤ degt (a + b) := fun a b => by
+    simp [degt, map_add, ← WithTop.coe_add]
+  intro g hg
+  have hsum_ne : ∑ i ∈ Finset.range d, (σ (c i) * f ^ i).coeff g ≠ 0 := by
+    simpa [coeff_sum, Finsupp.finsetSum_apply] using Finsupp.mem_support_iff.mp hg
+  obtain ⟨i, hi, hgi_ne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum_ne
+  have hσ_inf : ((0 : ℤ) : WithTop ℤ) ≤ (σ (c i)).coeff.support.inf degt :=
+    Finset.le_inf_iff.mpr fun x hx => WithTop.coe_le_coe.mpr (hσ (c i) x hx)
+  have hterm_inf : ((i • μ : ℤ) : WithTop ℤ) ≤ (σ (c i) * f ^ i).coeff.support.inf degt := by
+    simpa using (add_le_add hσ_inf (le_inf_support_pow_coe φ hf i)).trans
+      (le_inf_support_coeff_mul degtm _ _)
+  have hterm : i • μ ≤ φ g :=
+    WithTop.coe_le_coe.mp (Finset.le_inf_iff.mp hterm_inf g (Finsupp.mem_support_iff.mpr hgi_ne))
+  have hlt : d • μ < i • μ := by
+    simpa [nsmul_eq_mul] using
+      mul_lt_mul_of_neg_right (Nat.cast_lt.mpr (Finset.mem_range.mp hi)) hμ_neg
+  exact hlt.trans_le hterm
 
 /-- **Half-space integral closedness.** Let `R` be a domain, `G` a torsion-free abelian group, and
 `φ : G →+ ℤ` an additive functional. If a ring homomorphism `σ : A →+* R[G]` lands in elements
@@ -233,45 +294,12 @@ theorem nonneg_on_support_coeff_of_isIntegralElem {R A G : Type*} [CommRing R] [
     Finsupp.mem_support_iff.mp hgMin_supp <| by
       have hc : f₀.coeff gMin = 0 := by simp [h0]
       rwa [coeff_ofCoeff, Finsupp.filter_apply_pos (fun g => φ g = μ) f.coeff hgMin_eq] at hc
-  let degt : G → WithTop ℤ := fun g => (φ g : WithTop ℤ)
-  have degt0 : 0 ≤ degt 0 := by simp [degt]
-  have degtm : ∀ a b, degt a + degt b ≤ degt (a + b) := fun a b => by
-    simp [degt, map_add, ← WithTop.coe_add]
-  have hf_inf : (μ : WithTop ℤ) ≤ f.coeff.support.inf degt :=
-    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (hμ_le g hg)
   have hf₀_grade : f₀ ∈ gradeBy R φ μ := (mem_gradeBy_iff R φ μ f₀).mpr fun g hg => by
     rw [Finset.mem_coe, coeff_ofCoeff, Finsupp.support_filter, Finset.mem_filter] at hg
     exact hg.2
-  have hf₀_inf : (μ : WithTop ℤ) ≤ f₀.coeff.support.inf degt :=
-    Finset.le_inf_iff.mpr fun g hg => WithTop.coe_le_coe.mpr (hf₀_grade g hg).ge
-  have hf₁_inf : ((μ + 1 : ℤ) : WithTop ℤ) ≤ f₁.coeff.support.inf degt :=
-    Finset.le_inf_iff.mpr fun g hg => by
-      rw [coeff_ofCoeff, Finsupp.support_filter, Finset.mem_filter] at hg
-      exact WithTop.coe_le_coe.mpr
-        (Int.add_one_le_iff.mpr (lt_of_le_of_ne (hμ_le g hg.1) (Ne.symm hg.2)))
-  have hdiff : ∀ n : ℕ,
-      ((n • μ + 1 : ℤ) : WithTop ℤ) ≤ (f ^ n - f₀ ^ n).coeff.support.inf degt := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      have hid : f ^ (n + 1) - f₀ ^ (n + 1) = (f ^ n - f₀ ^ n) * f₀ + f ^ n * f₁ := by
-        rw [hf_split, pow_succ, pow_succ]
-        ring
-      rw [hid]
-      refine (le_inf ?_ ?_).trans (le_inf_support_coeff_add degt _ _)
-      · have hL : ((n • μ + 1 + μ : ℤ) : WithTop ℤ) ≤
-            ((f ^ n - f₀ ^ n) * f₀).coeff.support.inf degt := by
-          rw [WithTop.coe_add]
-          exact (add_le_add ih hf₀_inf).trans (le_inf_support_coeff_mul degtm _ _)
-        rwa [show n • μ + 1 + μ = (n + 1) • μ + 1 by rw [succ_nsmul]; ring] at hL
-      · have hpow : ((n • μ : ℤ) : WithTop ℤ) ≤ (f ^ n).coeff.support.inf degt :=
-          (WithTop.coe_nsmul μ n).trans_le
-            ((nsmul_le_nsmul_right hf_inf n).trans (le_inf_support_pow degt0 degtm n f))
-        have hR : ((n • μ + (μ + 1) : ℤ) : WithTop ℤ) ≤ (f ^ n * f₁).coeff.support.inf degt := by
-          rw [WithTop.coe_add]
-          exact (add_le_add hpow hf₁_inf).trans (le_inf_support_coeff_mul degtm _ _)
-        rwa [show n • μ + (μ + 1) = (n + 1) • μ + 1 by rw [succ_nsmul]; ring] at hR
+  have hf₁_gt : ∀ g ∈ f₁.coeff.support, μ < φ g := fun g hg => by
+    rw [coeff_ofCoeff, Finsupp.support_filter, Finset.mem_filter] at hg
+    exact lt_of_le_of_ne (hμ_le g hg.1) (Ne.symm hg.2)
   -- In the monic relation for `f`, every term except `f₀ ^ d` has `φ`-value strictly above `d • μ`.
   obtain ⟨p, hp_monic, hp_eval⟩ := hf
   let d := p.natDegree
@@ -284,26 +312,9 @@ theorem nonneg_on_support_coeff_of_isIntegralElem {R A G : Type*} [CommRing R] [
     intro g hg
     rw [coeff_neg, Finsupp.support_neg, coeff_add] at hg
     rcases Finset.mem_union.mp (Finsupp.support_add hg) with hg_diff | hg_sum
-    · exact Int.add_one_le_iff.mp
-        (WithTop.coe_le_coe.mp (Finset.le_inf_iff.mp (hdiff d) g hg_diff))
-    · have hsum_ne : ∑ i ∈ Finset.range d, (σ (p.coeff i) * f ^ i).coeff g ≠ 0 := by
-        simpa [coeff_sum, Finsupp.finsetSum_apply] using Finsupp.mem_support_iff.mp hg_sum
-      obtain ⟨i, hi, hgi_ne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum_ne
-      have hσ_inf : ((0 : ℤ) : WithTop ℤ) ≤ (σ (p.coeff i)).coeff.support.inf degt :=
-        Finset.le_inf_iff.mpr fun x hx => WithTop.coe_le_coe.mpr (hσ (p.coeff i) x hx)
-      have hpow_inf : ((i • μ : ℤ) : WithTop ℤ) ≤ (f ^ i).coeff.support.inf degt :=
-        (WithTop.coe_nsmul μ i).trans_le
-          ((nsmul_le_nsmul_right hf_inf i).trans (le_inf_support_pow degt0 degtm i f))
-      have hterm_inf : ((i • μ : ℤ) : WithTop ℤ) ≤
-          (σ (p.coeff i) * f ^ i).coeff.support.inf degt := by
-        simpa using (add_le_add hσ_inf hpow_inf).trans (le_inf_support_coeff_mul degtm _ _)
-      have hterm : i • μ ≤ φ g :=
-        WithTop.coe_le_coe.mp
-          (Finset.le_inf_iff.mp hterm_inf g (Finsupp.mem_support_iff.mpr hgi_ne))
-      have hlt : d • μ < i • μ := by
-        simpa [nsmul_eq_mul] using
-          mul_lt_mul_of_neg_right (Nat.cast_lt.mpr (Finset.mem_range.mp hi)) hμ_neg
-      exact hlt.trans_le hterm
+    · exact lt_apply_of_mem_support_pow_sub_pow φ hf_split hμ_le
+        (fun x hx => (hf₀_grade x hx).ge) hf₁_gt d g hg_diff
+    · exact lt_apply_of_mem_support_sum_mul_pow σ φ hσ hμ_neg hμ_le p.coeff d g hg_sum
   -- Since `R[G]` is a domain, `f₀ ^ d ≠ 0`, contradicting `φ = d • μ` on its support.
   have hpow_ne : f₀ ^ d ≠ 0 := pow_ne_zero d hf₀_ne
   obtain ⟨gMin', hgMin'⟩ : (f₀ ^ d).coeff.support.Nonempty :=
@@ -353,76 +364,51 @@ torsion-free abelian group `G` and any integral domain `R`, the algebra of
 theorem isIntegralClosure_nsmulSaturation_inf_closure {R G : Type*} [CommRing R]
     [IsDomain R] [AddCommGroup G] [HasUniqueDiv G] {S : AddSubmonoid G} (hS : S.FG) :
     letI := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-    letI := (mapDomainRingHom R S.nsmulSaturationToGroupClosure).toAlgebra
+    letI := (mapDomainRingHom R
+      (AddSubmonoid.inclusion
+        (inf_le_right :
+          S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid ≤
+            (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :
+        _ →+ AddSubgroup.closure (S : Set G))).toAlgebra
     IsIntegralClosure
       (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
       (AddMonoidAlgebra R S)
       (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) := by
+  -- Transport `isIntegralClosure_nsmulSaturation` from the pullback `S₀ ≤ L_S` to `S` and `S_sat`.
   set L_S := AddSubgroup.closure (S : Set G)
   set S₀ := S.comap L_S.subtype
   have : Module.Finite ℤ L_S := Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
-  let algS₀ : Algebra (AddMonoidAlgebra R S₀) (AddMonoidAlgebra R L_S) :=
+  let _ : Algebra (AddMonoidAlgebra R S₀) (AddMonoidAlgebra R L_S) :=
     (mapDomainRingHom R S₀.subtype).toAlgebra
-  let algSat₀ : Algebra (AddMonoidAlgebra R S₀.nsmulSaturation) (AddMonoidAlgebra R L_S) :=
+  let _ : Algebra (AddMonoidAlgebra R S₀.nsmulSaturation) (AddMonoidAlgebra R L_S) :=
     (mapDomainRingHom R S₀.nsmulSaturation.subtype).toAlgebra
-  have hIC₀ : @IsIntegralClosure (AddMonoidAlgebra R S₀.nsmulSaturation)
-      (AddMonoidAlgebra R S₀) (AddMonoidAlgebra R L_S) _ _ _ algS₀ algSat₀ :=
-    isIntegralClosure_nsmulSaturation hS.comap_subtype_closure
-  let eS : S ≃+ S₀ :=
-    { toFun s := ⟨S.toGroupClosure s, by simp [S₀]⟩
-      invFun y := ⟨y.1.1, y.2⟩
-      left_inv s := Subtype.ext (S.coe_toGroupClosure s)
-      right_inv y := Subtype.ext (Subtype.ext (S.coe_toGroupClosure ⟨y.1.1, y.2⟩))
-      map_add' a b := Subtype.ext (map_add S.toGroupClosure a b) }
-  have hS_comp :
-      (mapDomainRingHom R S₀.subtype).comp (mapDomainRingHom R eS.toAddMonoidHom) =
-        mapDomainRingHom R S.toGroupClosure := by
-    rw [← mapDomainRingHom_comp]
-    rfl
-  have hS_comp_symm :
-      (mapDomainRingHom R S.toGroupClosure).comp (mapDomainRingHom R eS.symm.toAddMonoidHom) =
-        mapDomainRingHom R S₀.subtype := by
-    rw [← mapDomainRingHom_comp]
+  let _ : Algebra (AddMonoidAlgebra R S) (AddMonoidAlgebra R L_S) :=
+    (mapDomainRingHom R S.toGroupClosure).toAlgebra
+  let ιSat : ↥(S.nsmulSaturation ⊓ L_S.toAddSubmonoid) →+ L_S :=
+    AddSubmonoid.inclusion (inf_le_right : S.nsmulSaturation ⊓ L_S.toAddSubmonoid ≤ _)
+  let _ : Algebra (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ L_S.toAddSubmonoid))
+      (AddMonoidAlgebra R L_S) :=
+    (mapDomainRingHom R ιSat).toAlgebra
+  let eS : S₀ ≃+ S :=
+    { toFun y := ⟨y.1.1, y.2⟩
+      invFun s := ⟨S.toGroupClosure s, by simp [S₀]⟩
+      left_inv y := Subtype.ext (Subtype.ext (S.coe_toGroupClosure ⟨y.1.1, y.2⟩))
+      right_inv s := Subtype.ext (S.coe_toGroupClosure s)
+      map_add' _ _ := rfl }
+  refine (isIntegralClosure_nsmulSaturation hS.comap_subtype_closure).of_ringEquiv
+    (mapDomainRingEquiv R S.nsmulSaturationInfClosureEquiv.symm)
+    (mapDomainRingEquiv R eS) (.refl _) (fun r => ?_) (fun a => ?_)
+  · change mapDomain S₀.subtype r = mapDomain S.toGroupClosure (mapDomain eS r)
+    rw [mapDomain_mapDomain]
     congr 1
-    exact AddMonoidHom.ext fun y => Subtype.ext (S.coe_toGroupClosure ⟨y.1.1, y.2⟩)
-  have hSat_comp :
-      S₀.nsmulSaturation.subtype.comp S.nsmulSaturationInfClosureEquiv.toAddMonoidHom =
-        S.nsmulSaturationToGroupClosure :=
-    AddMonoidHom.ext fun x => S.coe_nsmulSaturationInfClosureEquiv x
-  have hSat_comp_symm :
-      S.nsmulSaturationToGroupClosure.comp S.nsmulSaturationInfClosureEquiv.symm.toAddMonoidHom =
-        S₀.nsmulSaturation.subtype :=
-    AddMonoidHom.ext fun z => by
-      rw [AddMonoidHom.comp_apply, ← hSat_comp, AddMonoidHom.comp_apply]
-      exact congrArg S₀.nsmulSaturation.subtype
-        (S.nsmulSaturationInfClosureEquiv.apply_symm_apply z)
-  let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  let := (mapDomainRingHom R S.nsmulSaturationToGroupClosure).toAlgebra
-  refine ⟨mapDomain_injective S.nsmulSaturationToGroupClosure_injective,
-    fun {f} => ⟨fun ⟨p, hp, hpf⟩ => ?_, ?_⟩⟩
-  · have hf₀ : @IsIntegral (AddMonoidAlgebra R S₀) (AddMonoidAlgebra R L_S) _ _ algS₀ f :=
-      ⟨p.map (mapDomainRingHom R eS.toAddMonoidHom), hp.map _, by
-        rw [RingHom.algebraMap_toAlgebra, eval₂_map, hS_comp]
-        rwa [RingHom.algebraMap_toAlgebra] at hpf⟩
-    obtain ⟨y₀, hy₀⟩ := hIC₀.isIntegral_iff.mp hf₀
-    refine ⟨mapDomain S.nsmulSaturationInfClosureEquiv.symm.toAddMonoidHom y₀, ?_⟩
-    rw [RingHom.algebraMap_toAlgebra, ← mapDomainRingHom_apply (R := R)
-      S.nsmulSaturationInfClosureEquiv.symm.toAddMonoidHom, ← RingHom.comp_apply,
-      ← mapDomainRingHom_comp, hSat_comp_symm]
-    rwa [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply] at hy₀
-  · rintro ⟨y, rfl⟩
-    rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
-    have hf₀ : @IsIntegral (AddMonoidAlgebra R S₀) (AddMonoidAlgebra R L_S) _ _ algS₀
-        (mapDomain S.nsmulSaturationToGroupClosure y) := by
-      refine hIC₀.isIntegral_iff.mpr ⟨mapDomain S.nsmulSaturationInfClosureEquiv.toAddMonoidHom y,
-        ?_⟩
-      rw [RingHom.algebraMap_toAlgebra, ← mapDomainRingHom_apply (R := R)
-        S.nsmulSaturationInfClosureEquiv.toAddMonoidHom, ← RingHom.comp_apply,
-        ← mapDomainRingHom_comp, hSat_comp, mapDomainRingHom_apply]
-    obtain ⟨p, hp, hpf⟩ := hf₀
-    refine ⟨p.map (mapDomainRingHom R eS.symm.toAddMonoidHom), hp.map _, ?_⟩
-    rw [RingHom.algebraMap_toAlgebra, eval₂_map, hS_comp_symm]
-    rwa [RingHom.algebraMap_toAlgebra] at hpf
+    funext y
+    exact (Subtype.ext (S.coe_toGroupClosure ⟨y.1.1, y.2⟩)).symm
+  · change mapDomain S₀.nsmulSaturation.subtype a =
+      mapDomain ιSat (mapDomain S.nsmulSaturationInfClosureEquiv.symm a)
+    rw [mapDomain_mapDomain]
+    congr 1
+    funext z
+    exact Subtype.ext (S.coe_nsmulSaturationInfClosureEquiv_symm_apply z).symm
 
 end HalfSpaceAndGroupClosure
 
@@ -430,63 +416,19 @@ section FractionFieldAndNormality
 
 variable {G : Type*} [AddCommGroup G]
 
-private theorem mrange_of_le_comap_nonZeroDivisors (S : AddSubmonoid G) (R : Type*) [CommRing R] :
-    MonoidHom.mrange (of R S) ≤
-      (AddMonoidAlgebra R S)⁰.comap (RingHom.id (AddMonoidAlgebra R S)) := by
-  rintro _ ⟨m, rfl⟩
-  rw [Submonoid.mem_comap, RingHom.id_apply, of_apply, mem_nonZeroDivisors_iff_right]
-  intro f hf
-  ext t
-  simpa [coeff_mul_single_eq_coeff_mul t (fun _ _ => add_left_inj _)] using
-    congr(($hf).coeff (t + m.toAdd))
-
-/-- The canonical ring homomorphism from the group algebra `R[AddSubgroup.closure (S : Set G)]`
-into any fraction ring `K` of `R[S]`. -/
-noncomputable def groupClosureToFractionRing (S : AddSubmonoid G) (R K : Type*) [CommRing R]
-    [CommRing K] [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] :
-    AddMonoidAlgebra R (AddSubgroup.closure (S : Set G)) →+* K :=
-  letI := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  haveI := S.isLocalization_addMonoidAlgebra_groupClosure R
-  IsLocalization.map (T := (AddMonoidAlgebra R S)⁰) K (RingHom.id (AddMonoidAlgebra R S))
-    (mrange_of_le_comap_nonZeroDivisors S R)
-
-/-- `groupClosureToFractionRing` extends `algebraMap (R[S]) K` along `S.toGroupClosure`. -/
-@[simp]
-theorem groupClosureToFractionRing_mapDomain_toGroupClosure (S : AddSubmonoid G) (R K : Type*)
-    [CommRing R] [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
-    [IsFractionRing (AddMonoidAlgebra R S) K] (f : AddMonoidAlgebra R S) :
-    groupClosureToFractionRing S R K (mapDomain S.toGroupClosure f) =
-      algebraMap (AddMonoidAlgebra R S) K f := by
-  let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  have := S.isLocalization_addMonoidAlgebra_groupClosure R
-  rw [← mapDomainRingHom_apply (R := R) S.toGroupClosure]
-  exact IsLocalization.map_eq (mrange_of_le_comap_nonZeroDivisors S R) f
-
-/-- `groupClosureToFractionRing` is injective. -/
-theorem groupClosureToFractionRing_injective (S : AddSubmonoid G) (R K : Type*) [CommRing R]
-    [CommRing K] [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] :
-    Function.Injective (groupClosureToFractionRing S R K) := by
-  let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  have := S.isLocalization_addMonoidAlgebra_groupClosure R
-  refine (injective_iff_map_eq_zero _).mpr fun x hx => ?_
-  obtain ⟨⟨a, m⟩, ham⟩ := IsLocalization.surj (MonoidHom.mrange (of R S)) x
-  have hmap := congrArg (groupClosureToFractionRing S R K) ham
-  have h1 : groupClosureToFractionRing S R K
-      (algebraMap (AddMonoidAlgebra R S) _ a) = algebraMap (AddMonoidAlgebra R S) K a :=
-    groupClosureToFractionRing_mapDomain_toGroupClosure S R K a
-  rw [map_mul, hx, zero_mul, h1] at hmap
-  have ha0 : a = 0 :=
-    IsFractionRing.injective (AddMonoidAlgebra R S) K (hmap.symm.trans (map_zero _).symm)
-  rw [ha0, map_zero] at ham
-  exact (IsLocalization.map_units _ m).mul_left_eq_zero.mp ham
-
 /-- The canonical ring homomorphism from the algebra of the saturation of `S` inside
 `AddSubgroup.closure (S : Set G)` into any fraction ring `K` of `R[S]`. -/
 noncomputable def nsmulSaturationToFractionRing (S : AddSubmonoid G) (R K : Type*) [CommRing R]
     [CommRing K] [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] :
     AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →+*
       K :=
-  (groupClosureToFractionRing S R K).comp (mapDomainRingHom R S.nsmulSaturationToGroupClosure)
+  (groupClosureToFractionRing S R K).comp
+    (mapDomainRingHom R
+      (AddSubmonoid.inclusion
+        (inf_le_right :
+          S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid ≤
+            (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :
+        _ →+ AddSubgroup.closure (S : Set G)))
 
 /-- `nsmulSaturationToFractionRing` extends `algebraMap (R[S]) K` along the inclusion of `S` into
 its saturation inside `AddSubgroup.closure (S : Set G)`. -/
@@ -498,22 +440,23 @@ theorem nsmulSaturationToFractionRing_mapDomain_inclusion (S : AddSubmonoid G) (
         (mapDomain
           (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) f) =
       algebraMap (AddMonoidAlgebra R S) K f := by
-  have hcomp : mapDomain S.nsmulSaturationToGroupClosure
-      (mapDomain
-        (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) f) =
-      mapDomain S.toGroupClosure f := by
-    rw [← mapDomainRingHom_apply, ← mapDomainRingHom_apply, ← RingHom.comp_apply,
-      ← mapDomainRingHom_comp, S.nsmulSaturationToGroupClosure_comp_inclusion,
-      mapDomainRingHom_apply]
-  simp only [nsmulSaturationToFractionRing, RingHom.comp_apply, mapDomainRingHom_apply, hcomp,
-    groupClosureToFractionRing_mapDomain_toGroupClosure]
+  have hcomp :
+      ((AddSubmonoid.inclusion
+          (inf_le_right :
+            S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid ≤
+              (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :
+          _ →+ AddSubgroup.closure (S : Set G)) : _ → _) ∘
+        AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) =
+      S.toGroupClosure :=
+    funext fun s => Subtype.ext (S.coe_toGroupClosure s).symm
+  simp [nsmulSaturationToFractionRing, mapDomain_mapDomain, hcomp]
 
 /-- `nsmulSaturationToFractionRing` is injective. -/
 theorem nsmulSaturationToFractionRing_injective (S : AddSubmonoid G) (R K : Type*) [CommRing R]
     [CommRing K] [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] :
     Function.Injective (nsmulSaturationToFractionRing S R K) :=
   (groupClosureToFractionRing_injective S R K).comp
-    (mapDomain_injective S.nsmulSaturationToGroupClosure_injective)
+    (mapDomain_injective (AddSubmonoid.inclusion_injective inf_le_right))
 
 /-- **Integral closure of `R[S]` in its own fraction ring.** Over an integrally closed domain `R`,
 for any finitely generated submonoid `S` of a torsion-free abelian group `G` and any fraction ring
@@ -531,7 +474,13 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure_fractionRing {R K : Type*}
     AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)
   set C := AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))
   let _ : Algebra A C := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  let _ : Algebra B C := (mapDomainRingHom R S.nsmulSaturationToGroupClosure).toAlgebra
+  let _ : Algebra B C :=
+    (mapDomainRingHom R
+      (AddSubmonoid.inclusion
+        (inf_le_right :
+          S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid ≤
+            (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :
+        _ →+ AddSubgroup.closure (S : Set G))).toAlgebra
   let _ : Algebra C K := (groupClosureToFractionRing S R K).toAlgebra
   let _ : Algebra B K := (nsmulSaturationToFractionRing S R K).toAlgebra
   have : IsScalarTower A C K := IsScalarTower.of_algebraMap_eq fun f =>
@@ -544,8 +493,8 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure_fractionRing {R K : Type*}
   have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
     Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
   have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
-  have : IsIntegrallyClosed C := isIntegrallyClosed_of_free
-  have : IsIntegrallyClosedIn C K := (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp ‹_›
+  have : IsIntegrallyClosedIn C K :=
+    (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp inferInstance
   have : IsIntegralClosure B A C := isIntegralClosure_nsmulSaturation_inf_closure hS
   exact IsIntegralClosure.of_isIntegralClosure_of_isIntegrallyClosedIn A B C K
 
@@ -615,7 +564,6 @@ theorem isIntegrallyClosed_nsmulSaturation {R L : Type*} [CommRing R] [IsDomain 
     {S : AddSubmonoid L} (hS : S.FG) :
     IsIntegrallyClosed (AddMonoidAlgebra R S.nsmulSaturation) := by
   have : Module.Free ℤ L := Module.free_of_finite_type_torsion_free'
-  have : IsIntegrallyClosed (AddMonoidAlgebra R L) := isIntegrallyClosed_of_free
   let ι₁ := AddSubmonoid.inclusion S.le_nsmulSaturation
   let _ : Algebra (AddMonoidAlgebra R S) (AddMonoidAlgebra R S.nsmulSaturation) :=
     (mapDomainRingHom R ι₁).toAlgebra
