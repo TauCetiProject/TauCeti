@@ -73,6 +73,10 @@ section Arrows
 
 variable {M : Type*} [Monoid M] {X : Type*} [MulAction M X]
 
+/-- Objects of the action category are determined by their underlying points. -/
+theorem back_injective : Function.Injective (ActionCategory.back : ActionCategory M X → X) :=
+  (objEquiv M X).symm.injective
+
 /-- An arrow of the action category goes from a point to its translate by the arrow's label. -/
 theorem hom_smul {x y : X} (f : objEquiv M X x ⟶ objEquiv M X y) :
     (f.hom : M) • x = y :=

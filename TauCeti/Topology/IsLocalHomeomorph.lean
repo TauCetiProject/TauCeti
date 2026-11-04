@@ -10,7 +10,7 @@ public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
-# Local homeomorphisms: local path-connectedness, local inverses and products
+# Local homeomorphisms: local path-connectedness, local inverses, products and base change
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -33,6 +33,8 @@ into the target of `L`. This is what identifies the transition maps of charts pu
   `p` agrees with any continuous local deck transformation sending `z` into the target of that
   local inverse.
 * `IsLocalHomeomorph.prodMap`: the product of two local homeomorphisms is a local homeomorphism.
+* `IsLocalHomeomorph.pullback_snd`: the base change of a local homeomorphism along a continuous
+  map is a local homeomorphism.
 -/
 
 public section
@@ -96,5 +98,44 @@ theorem _root_.IsLocalHomeomorph.prodMap {f : X → Y} {g : Z → W} (hf : IsLoc
   exact ⟨e.prod e', ⟨he, he'⟩, fun _ _ ↦ rfl⟩
 
 end Prod
+
+section Pullback
+
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- **Local homeomorphisms are stable under base change.** If `f : X → Y` is a local
+homeomorphism and `g : Z → Y` is continuous, the projection from the fiber product `X ×_Y Z` to
+`Z` is a local homeomorphism. Over a local chart `e` of `f`, the fiber product is identified with
+`g⁻¹ e.target` by `(x, z) ↦ z`, with inverse `z ↦ (e.symm (g z), z)`. -/
+theorem _root_.IsLocalHomeomorph.pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
+    (hg : Continuous g) : IsLocalHomeomorph (Function.Pullback.snd : f.Pullback g → Z) := by
+  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun q ↦ ?_
+  obtain ⟨e, he, rfl⟩ := hf q.fst
+  have hfst : Continuous (Function.Pullback.fst : (⇑e).Pullback g → X) :=
+    continuous_fst.comp continuous_subtype_val
+  have hsnd : Continuous (Function.Pullback.snd : (⇑e).Pullback g → Z) :=
+    continuous_snd.comp continuous_subtype_val
+  have hpb (p : (⇑e).Pullback g) : e p.fst = g p.snd := p.2
+  let U : Set ((⇑e).Pullback g) := Function.Pullback.fst ⁻¹' e.source
+  let W : Set Z := g ⁻¹' e.target
+  have hgU (p : U) : g p.1.snd ∈ e.target := hpb p.1 ▸ e.map_source p.2
+  have hfW (w : W) : e (e.symm (g w)) = g w := e.right_inv w.2
+  -- Over the chart `e`, the projection identifies `U` with `W`.
+  let φ : U ≃ₜ W :=
+    { toFun p := ⟨p.1.snd, hgU p⟩
+      invFun w := ⟨⟨(e.symm (g w), w), hfW w⟩, e.map_target w.2⟩
+      left_inv p := by
+        refine Subtype.ext (Subtype.ext (Prod.ext ?_ rfl))
+        -- The first component of the round trip is `e.symm (g p.1.snd)` by definition of `φ`.
+        exact (congrArg e.symm (hpb p.1)).symm.trans (e.left_inv p.2)
+      right_inv _ := rfl
+      continuous_toFun := (hsnd.comp continuous_subtype_val).subtype_mk _
+      continuous_invFun :=
+        (((e.continuousOn_symm.comp_continuous (hg.comp continuous_subtype_val) fun w ↦ w.2).prodMk
+          continuous_subtype_val).subtype_mk _).subtype_mk _ }
+  refine ⟨U, (e.open_source.preimage hfst).mem_nhds he, ?_⟩
+  exact ((e.open_target.preimage hg).isOpenEmbedding_subtypeVal.comp φ.isOpenEmbedding :)
+
+end Pullback
 
 end TauCeti
