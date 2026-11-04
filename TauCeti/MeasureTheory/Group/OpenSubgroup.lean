@@ -219,19 +219,8 @@ theorem modularCharacter_coe {G : Type*} [Group G] [TopologicalSpace G] [IsTopol
   have hKtop : ν K ≠ ∞ := hK.measure_lt_top.ne
   -- Compare right translation of `K` by `y` on `H` with right translation of `(↑) '' K` on `G`.
   have himg : ((↑) : H → G) '' ((· * y) ⁻¹' K) = (· * (y : G)) ⁻¹' (((↑) : H → G) '' K) := by
-    ext z
-    constructor
-    · rintro ⟨w, hw, rfl⟩
-      exact ⟨w * y, hw, rfl⟩
-    · rintro ⟨u, hu, huz⟩
-      have hzy : z * (y : G) ∈ H := by
-        dsimp only at huz
-        rw [← huz]
-        exact u.2
-      have hzH : z ∈ H := by simpa using H.mul_mem hzy (H.inv_mem y.2)
-      refine ⟨⟨z, hzH⟩, ?_, rfl⟩
-      have huy : u = ⟨z, hzH⟩ * y := Subtype.ext huz
-      simpa [← huy] using hu
+    simp only [← Set.image_mul_right', Set.image_image]
+    rfl
   have hν : (Measure.modularCharacter y : ℝ≥0∞) * ν K = ν ((· * y) ⁻¹' K) := by
     simpa [ν] using
       (Measure.measure_preimage_mul_right_eq_modularCharacter_mul_of_regular ν y K).symm

@@ -44,7 +44,6 @@ This file completes that bridge in three directions:
 
 public section
 
-open Set Topology
 open scoped ENNReal
 
 namespace MeasureTheory
@@ -202,13 +201,6 @@ theorem integral_subtype_comap_congr {E : Type*} [NormedAddCommGroup E] [NormedS
     ∫ x : s₁, f x ∂(μ.comap ((↑) : s₁ → α)) = ∫ x : s₂, f x ∂(μ.comap ((↑) : s₂ → α)) :=
   (integral_eq_subtype_comap_of_ae_eq_zero hs₁ hf₁).symm.trans
     (integral_eq_subtype_comap_of_ae_eq_zero hs₂ hf₂)
-
-/-- A function whose topological support lies in `s` vanishes almost everywhere on `sᶜ`. -/
-theorem ae_restrict_compl_eq_zero_of_tsupport_subset [TopologicalSpace α] [OpensMeasurableSpace α]
-    {β : Type*} [Zero β] {f : α → β} (hf : tsupport f ⊆ s) : f =ᵐ[μ.restrict sᶜ] 0 :=
-  ae_restrict_of_ae_restrict_of_subset (compl_subset_compl.2 hf) <|
-    ae_restrict_of_forall_mem (isClosed_tsupport f).isOpen_compl.measurableSet fun _ hx ↦
-      image_eq_zero_of_notMem_tsupport hx
 
 end AmbientAgreement
 
