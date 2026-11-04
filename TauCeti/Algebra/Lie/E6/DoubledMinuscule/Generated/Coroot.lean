@@ -120,20 +120,26 @@ theorem generatedCorootVector_def (i : Fin 6) :
         (MultiplicativeGroup.tangentLinearEquiv.symm (1 : B)) :=
   (rfl)
 
-/-- The represented coroot vector has the named simple-coroot pairings on its diagonal. -/
+/-- The represented coroot vector has the corresponding weight coordinates on its diagonal. -/
 @[simp]
-theorem tangentMatrixLieHom_generatedCorootVector (ht : DynkinType.E6.Valid) (i : Fin 6) :
+theorem tangentMatrixLieHom_generatedCorootVector (i : Fin 6) :
+    GeneralLinear.tangentMatrixLieHom (generatedCoordinateMap R).hom
+        (generatedCorootVector R (B := B) i) =
+      Matrix.diagonal (fun a ↦ (matrixWeight a i : B)) := by
+  rw [generatedCorootVector_def, tangentMatrixLieHom_derivationComp_generatedCorootCocharacter,
+    LinearEquiv.apply_symm_apply]
+  simp only [zsmul_one]
+
+/-- The represented coroot vector has the named simple-coroot pairings on its diagonal. -/
+theorem tangentMatrixLieHom_generatedCorootVector_eq_diagonal_coroot_simpleIndex
+    (ht : DynkinType.E6.Valid) (i : Fin 6) :
     GeneralLinear.tangentMatrixLieHom (generatedCoordinateMap R).hom
         (generatedCorootVector R (B := B) i) =
       Matrix.diagonal (fun a ↦
         ((DynkinType.E6.simplyConnectedRootDatum ht).coroot'
           (DynkinType.E6.simpleIndex ht i) (matrixWeight a) : B)) := by
-  rw [generatedCorootVector_def, tangentMatrixLieHom_derivationComp_generatedCorootCocharacter,
-    LinearEquiv.apply_symm_apply]
-  congr 1
-  funext a
-  rw [E6Minuscule.coroot'_simpleIndex_apply ht i (matrixWeight a)]
-  exact zsmul_one _
+  rw [tangentMatrixLieHom_generatedCorootVector]
+  simp only [E6Minuscule.coroot'_simpleIndex_apply]
 
 /-- The torus differential sends a coordinate tangent vector to the corresponding coroot vector.
 -/
