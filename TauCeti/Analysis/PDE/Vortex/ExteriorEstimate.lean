@@ -71,6 +71,20 @@ private theorem mass_mul_norm_sq_le_inner_add_laplacian {z : ℂ} {a : ℝ}
     mul_nonneg hp (sq_nonneg (η z 0)), mul_nonneg hp (sq_nonneg (η z 1)),
     mul_nonneg hq (sq_nonneg (η z 2)), mul_nonneg hq (sq_nonneg (η z 3))]
 
+/-- At a unit-modulus end, the squared mass eventually exceeds every `a < 1/4`,
+with a positive radius independent of any test field. -/
+theorem exists_exterior_lt_mass
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {a : ℝ} (ha : a < 1 / 4) :
+    ∃ R > 0, ∀ z, R < ‖z‖ → a < x z 2 ^ 2 + x z 3 ^ 2 := by
+  have he := hlim.eventually (lt_mem_nhds (by linarith : 4 * a < 1))
+  rw [← Metric.cobounded_eq_cocompact] at he
+  obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
+  refine ⟨max R 1, by positivity, fun z hz ↦ ?_⟩
+  have hv : 4 * a < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
+    hR (le_trans (le_max_left R 1) hz.le)
+  linarith
+
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
 /-- The vortex adjoint has squared `L²` lower bound `a ≤ 1/4` on any compactly supported
@@ -123,17 +137,12 @@ theorem exists_exterior_integral_norm_sq_gaugeFixedAdjoint_ge
     ∃ R > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η →
       HasCompactSupport η → (∀ z, ‖z‖ ≤ R → η z = 0) →
       c ^ 2 * (∫ z, ‖η z‖ ^ 2 ∂μ) ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
-  have hmass : 4 * c ^ 2 < 1 := by nlinarith
-  have he := hlim.eventually (lt_mem_nhds hmass)
-  rw [← Metric.cobounded_eq_cocompact] at he
-  obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
-  refine ⟨max R 1, by positivity, fun η hη hηc hzero ↦
+  have hmass : c ^ 2 < 1 / 4 := by nlinarith
+  obtain ⟨R, hR₀, hR⟩ := exists_exterior_lt_mass hlim hmass
+  refine ⟨R, hR₀, fun η hη hηc hzero ↦
     mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint hx hη hηc (fun z _ ↦ hsol z)
-      (by nlinarith) ?_⟩
+      hmass.le ?_⟩
   intro z hz
-  have hnorm : max R 1 < ‖z‖ := lt_of_not_ge fun h ↦ hz (hzero z h)
-  have hval : 4 * c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
-    hR (le_trans (le_max_left R 1) hnorm.le)
-  linarith
+  exact (hR z (lt_of_not_ge fun h ↦ hz (hzero z h))).le
 
 end TauCeti.Vortex
