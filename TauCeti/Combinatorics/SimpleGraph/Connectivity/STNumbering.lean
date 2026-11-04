@@ -42,7 +42,7 @@ between its two attachment vertices.
   `Fin (Fintype.card V)`, exchanging `s` and `t`.
 * `SimpleGraph.STNumbering.map`, `SimpleGraph.Iso.stNumberingEquiv`: transport of `st`-numberings
   along graph isomorphisms.
-* `SimpleGraph.STNumbering.mono`: preservation of an `st`-numbering upon adding edges on the same
+* `SimpleGraph.STNumbering.mapLe`: transport of an `st`-numbering to a supergraph on the same
   vertex type.
 * `SimpleGraph.STNumbering.toOrientation`: the `TauCeti.DoubledQuiver.Orientation` directing each
   edge toward its higher-numbered endpoint.
@@ -221,7 +221,7 @@ theorem lt_numbering_sink_iff (n : G.STNumbering s t) {v : V} :
   rw [lt_iff_le_and_ne, n.numbering.injective.ne_iff]
   exact and_iff_right (n.le_numbering_sink v)
 
-/-! ### Endpoint copy, reversal, monotonicity, and isomorphism transport -/
+/-! ### Endpoint copy, reversal, supergraph transport, and isomorphism transport -/
 
 /-- Copy an `st`-numbering across equalities of its source and sink vertices. -/
 def copy (n : G.STNumbering s t) {s' t' : V} (hs : s = s') (ht : t = t') :
@@ -295,8 +295,8 @@ theorem symmEquiv_symm (G : SimpleGraph V) (s t : V) :
     (symmEquiv G s t).symm = symmEquiv G t s :=
   (rfl)
 
-/-- Adding edges on the same vertex type preserves an `st`-numbering. -/
-def mono (hGH : G ≤ H) (n : G.STNumbering s t) : H.STNumbering s t where
+/-- Transport an `st`-numbering to a supergraph on the same vertex type. -/
+def mapLe (hGH : G ≤ H) (n : G.STNumbering s t) : H.STNumbering s t where
   numbering := n.numbering
   source_first := n.source_first
   sink_last := n.sink_last
@@ -308,22 +308,23 @@ def mono (hGH : G ≤ H) (n : G.STNumbering s t) : H.STNumbering s t where
     ⟨w, hGH hadj, hlt⟩
 
 @[simp]
-theorem mono_numbering (hGH : G ≤ H) (n : G.STNumbering s t) :
-    (n.mono hGH).numbering = n.numbering :=
+theorem mapLe_numbering (hGH : G ≤ H) (n : G.STNumbering s t) :
+    (n.mapLe hGH).numbering = n.numbering :=
   (rfl)
 
 @[simp]
-theorem mono_rfl (n : G.STNumbering s t) : n.mono le_rfl = n :=
+theorem mapLe_refl (n : G.STNumbering s t) : n.mapLe le_rfl = n :=
   (rfl)
 
-/-- Edge-monotonicity of `st`-numberings composes transitively. -/
-theorem mono_trans {K : SimpleGraph V} (hGH : G ≤ H) (hHK : H ≤ K) (n : G.STNumbering s t) :
-    (n.mono hGH).mono hHK = n.mono (hGH.trans hHK) :=
+/-- Supergraph transport of `st`-numberings composes transitively. -/
+@[simp]
+theorem mapLe_mapLe {K : SimpleGraph V} (hGH : G ≤ H) (hHK : H ≤ K) (n : G.STNumbering s t) :
+    (n.mapLe hGH).mapLe hHK = n.mapLe (hGH.trans hHK) :=
   (rfl)
 
 @[simp]
-theorem symm_mono (hGH : G ≤ H) (n : G.STNumbering s t) :
-    (n.mono hGH).symm = n.symm.mono hGH :=
+theorem symm_mapLe (hGH : G ≤ H) (n : G.STNumbering s t) :
+    (n.mapLe hGH).symm = n.symm.mapLe hGH :=
   (rfl)
 
 private def mapNumbering {W : Type*} [Fintype W] {G' : SimpleGraph W} (n : G.STNumbering s t)
@@ -669,20 +670,20 @@ theorem isSink_iff (n : G.STNumbering s t) (hG : G.Preconnected)
 /-- When `G` is preconnected, `s` is the unique vertex with no lower-numbered neighbour. -/
 theorem forall_not_adj_and_numbering_lt_iff (n : G.STNumbering s t) (hG : G.Preconnected) {v : V} :
     (∀ u, ¬(G.Adj u v ∧ n.numbering u < n.numbering v)) ↔ v = s := by
-  let e := OrientedQuiver.vertexEquiv G n.toOrientation
-  rw [← e.apply_eq_iff_eq (x := v) (y := s), OrientedQuiver.vertexEquiv_apply,
-    OrientedQuiver.vertexEquiv_apply, ← n.isSource_iff hG, TauCeti.Quiver.IsSource_def,
-    e.symm.forall_congr_left]
-  simp only [e, Equiv.symm_symm, OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
+  refine ⟨fun h ↦ by_contra fun hvs ↦ ?_, ?_⟩
+  · obtain rfl | hvt := eq_or_ne v t
+    · obtain ⟨u, hadj, -⟩ := Walk.exists_eq_cons_of_ne hvs (hG s v).some.reverse
+      exact h u ⟨hadj.symm, n.lt_numbering_sink_iff.2 hadj.ne'⟩
+    · obtain ⟨u, hadj, hlt⟩ := n.lower_neighbor hvs hvt
+      exact h u ⟨hadj, hlt⟩
+  · rintro rfl u ⟨-, hlt⟩
+    exact n.not_lt_numbering_source u hlt
 
 /-- When `G` is preconnected, `t` is the unique vertex with no higher-numbered neighbour. -/
 theorem forall_not_adj_and_lt_numbering_iff (n : G.STNumbering s t) (hG : G.Preconnected) {v : V} :
     (∀ w, ¬(G.Adj v w ∧ n.numbering v < n.numbering w)) ↔ v = t := by
-  let e := OrientedQuiver.vertexEquiv G n.toOrientation
-  rw [← e.apply_eq_iff_eq (x := v) (y := t), OrientedQuiver.vertexEquiv_apply,
-    OrientedQuiver.vertexEquiv_apply, ← n.isSink_iff hG, TauCeti.Quiver.IsSink_def,
-    e.symm.forall_congr_left]
-  simp only [e, Equiv.symm_symm, OrientedQuiver.vertexEquiv_apply, n.isEmpty_hom_iff]
+  rw [← n.symm.forall_not_adj_and_numbering_lt_iff hG]
+  simp only [adj_comm, symm_numbering_apply, Fin.rev_lt_rev]
 
 /-! ### `2`-vertex-connectivity from an `st`-numbering -/
 
@@ -817,20 +818,25 @@ private theorem IsPartialSTList.insertPath {G : SimpleGraph V} {s t a b : V} {A 
     exact (((List.singleton_sublist.2 hbB).append_left I).cons_cons a).trans
       (List.sublist_append_right A _)
   have hB_ne : B ≠ [] := List.ne_nil_of_mem hbB
+  have hmem_L' : ∀ v ∈ L', v ∈ L ∨ v ∈ I := by
+    intro v hv
+    simp only [L, L', List.mem_append, List.mem_cons] at hv ⊢
+    tauto
   refine ⟨L', ?_, hLL', fun v hv ↦ hRL'.subset hv⟩
   refine
-    { nodup := ?_
+    { -- (1) `L'` is a permutation of `I ++ L`, with `I` and `L` duplicate-free and disjoint.
+      nodup := ?_
+      -- (2) Inserting after `a` preserves the head vertex `s`.
       head?_eq := by cases A <;> simpa [L, L'] using hL.head?_eq
-      getLast?_eq := by
-        have hL_eq : L = (A ++ [a]) ++ B := by simp [L]
-        have hL'_eq : L' = (A ++ a :: I) ++ B := by simp [L']
-        have hlastL : L.getLast? = B.getLast? := by
-          rw [hL_eq, List.getLast?_append_of_ne_nil _ hB_ne]
-        have hlastL' : L'.getLast? = B.getLast? := by
-          rw [hL'_eq, List.getLast?_append_of_ne_nil _ hB_ne]
-        rw [hlastL', ← hlastL, hL.getLast?_eq]
-      lower := fun v hv hvs hvt ↦ ?_
-      higher := fun v hv hvs hvt ↦ ?_ }
+      -- (3) Since `B` is nonempty (`b ∈ B`), both `L` and `L'` share `B.getLast? = some t`.
+      getLast?_eq := ?_
+      -- (4) Vertices in `L` inherit `L`-neighbours; internal ear vertices use `R`-neighbours.
+      lower := fun v hv hvs hvt ↦ (hmem_L' v hv).elim
+        (fun hvL ↦ let ⟨u, hadj, huv⟩ := hL.lower hvL hvs hvt; ⟨u, hadj, huv.trans hLL'⟩)
+        (fun hvI ↦ let ⟨u, hadj, huv⟩ := (hI_nbrs v hvI).1; ⟨u, hadj, huv.trans hRL'⟩)
+      higher := fun v hv hvs hvt ↦ (hmem_L' v hv).elim
+        (fun hvL ↦ let ⟨w, hadj, hvw⟩ := hL.higher hvL hvs hvt; ⟨w, hadj, hvw.trans hLL'⟩)
+        (fun hvI ↦ let ⟨w, hadj, hvw⟩ := (hI_nbrs v hvI).2; ⟨w, hadj, hvw.trans hRL'⟩) }
   · have hperm : L' ~ I ++ L := by
       calc
         A ++ a :: (I ++ B) ~ a :: (I ++ B) ++ A := List.perm_append_comm
@@ -840,20 +846,46 @@ private theorem IsPartialSTList.insertPath {G : SimpleGraph V} {s t a b : V} {A 
           (by simpa [List.cons_append, List.append_assoc] using
             (List.perm_append_comm (l₁ := a :: B) (l₂ := A)))
     exact hperm.symm.nodup_iff.1 (hI_nd.append hL.nodup hIL)
-  · have hv_split : v ∈ L ∨ v ∈ I := by
-      simp only [L, L', List.mem_append, List.mem_cons] at hv ⊢; tauto
-    refine hv_split.elim (fun hvL ↦ ?_) (fun hvI ↦ ?_)
-    · obtain ⟨u, hadj, huv⟩ := hL.lower hvL hvs hvt
-      exact ⟨u, hadj, huv.trans hLL'⟩
-    · obtain ⟨u, hadj, huv⟩ := (hI_nbrs v hvI).1
-      exact ⟨u, hadj, huv.trans hRL'⟩
-  · have hv_split : v ∈ L ∨ v ∈ I := by
-      simp only [L, L', List.mem_append, List.mem_cons] at hv ⊢; tauto
-    refine hv_split.elim (fun hvL ↦ ?_) (fun hvI ↦ ?_)
-    · obtain ⟨w, hadj, hvw⟩ := hL.higher hvL hvs hvt
-      exact ⟨w, hadj, hvw.trans hLL'⟩
-    · obtain ⟨w, hadj, hvw⟩ := (hI_nbrs v hvI).2
-      exact ⟨w, hadj, hvw.trans hRL'⟩
+  · have hlast (M : List V) : (M ++ B).getLast? = B.getLast? :=
+      List.getLast?_append_of_ne_nil M hB_ne
+    have hL_eq : L = (A ++ [a]) ++ B := by simp [L]
+    have hL'_eq : L' = (A ++ a :: I) ++ B := by simp [L']
+    rw [hL'_eq, hlast, ← hlast (A ++ [a]), ← hL_eq, hL.getLast?_eq]
+
+/-- Given a vertex `x ∉ L`, `2`-vertex-connectivity of `G ⊔ SimpleGraph.edge s t` extends a partial
+`st`-list `L` to one containing `L` as a sublist together with `x`. -/
+private theorem IsPartialSTList.exists_extend [Finite V] {G : SimpleGraph V} {s t x : V}
+    {L : List V} (hL : IsPartialSTList G s t L) (hst : s ≠ t)
+    (hG : (G ⊔ SimpleGraph.edge s t).IsVertexConnected 2) (hxL : x ∉ L) :
+    ∃ L' : List V, IsPartialSTList G s t L' ∧ L <+ L' ∧ x ∈ L' := by
+  classical
+  -- Extract an open ear through `x` with endpoints in `L` and interior outside `L`.
+  obtain ⟨u₀, u₁, R₀, hu₀, hu₁, hu₀₁, hR₀_path, hxR₀, hR₀_int⟩ :=
+    hG.exists_open_ear_of_sup_edge hst
+      (List.mem_toFinset.2 (List.mem_of_mem_head? hL.head?_eq))
+      (List.mem_toFinset.2 (List.mem_of_mem_getLast? hL.getLast?_eq))
+      (List.mem_toFinset.not.2 hxL)
+  -- Orient the ear so that its start `a` precedes its end `b` in `L`.
+  obtain ⟨A₀, B₀, hLA₀⟩ := List.mem_iff_append.1 (List.mem_toFinset.1 hu₀)
+  have hu₁_mem : u₁ ∈ A₀ ∨ u₁ ∈ B₀ := by
+    have h1 := List.mem_toFinset.1 hu₁
+    rw [hLA₀, List.mem_append, List.mem_cons] at h1
+    exact h1.elim .inl fun h ↦ .inr (h.resolve_left hu₀₁.symm)
+  obtain ⟨a, b, A, B, R, rfl, hbB, hR_path, hxR, hR_int⟩ :
+      ∃ (a b : V) (A B : List V) (R : G.Walk a b),
+        L = A ++ a :: B ∧ b ∈ B ∧ R.IsPath ∧ x ∈ R.support ∧
+          ∀ v ∈ R.support, v ≠ a → v ≠ b → v ∉ L := by
+    rcases hu₁_mem with hA | hB
+    · obtain ⟨A₁, B₁, rfl⟩ := List.mem_iff_append.1 hA
+      refine ⟨u₁, u₀, A₁, B₁ ++ u₀ :: B₀, R₀.reverse, by simp [hLA₀, List.append_assoc],
+        by simp, hR₀_path.reverse, by simpa using hxR₀, fun v hv h1 h0 hvL ↦ ?_⟩
+      rw [Walk.support_reverse, List.mem_reverse] at hv
+      exact hR₀_int v hv h0 h1 (List.mem_toFinset.2 hvL)
+    · exact ⟨u₀, u₁, A₀, B₀, R₀, hLA₀, hB, hR₀_path, hxR₀,
+        fun v hv h0 h1 hvL ↦ hR₀_int v hv h0 h1 (List.mem_toFinset.2 hvL)⟩
+  -- Insert the ear's internal vertices immediately after `a`.
+  obtain ⟨L', hL', hLL', hRL'⟩ := hL.insertPath hbB R hR_path hR_int
+  exact ⟨L', hL', hLL', hRL' x hxR⟩
 
 /-- Convert a complete `IsPartialSTList` covering all of `V` into an `STNumbering`. -/
 private def IsPartialSTList.toSTNumbering [Fintype V] [DecidableEq V] {G : SimpleGraph V}
@@ -919,39 +951,10 @@ theorem nonempty_stNumbering_of_isVertexConnected_two_sup_edge [Fintype V] {G : 
     · exact ⟨hL.toSTNumbering hall⟩
     · push Not at hall
       obtain ⟨x, hxL⟩ := hall
-      obtain ⟨u₀, u₁, R₀, hu₀, hu₁, hu₀₁, hR₀_path, hxR₀, hR₀_int⟩ :=
-        hG.exists_open_ear_of_sup_edge hst
-          (List.mem_toFinset.2 (List.mem_of_mem_head? hL.head?_eq))
-          (List.mem_toFinset.2 (List.mem_of_mem_getLast? hL.getLast?_eq))
-          (List.mem_toFinset.not.2 hxL)
-      obtain ⟨A₀, B₀, hLA₀⟩ := List.mem_iff_append.1 (List.mem_toFinset.1 hu₀)
-      have hu₁_mem : u₁ ∈ A₀ ∨ u₁ ∈ B₀ := by
-        have h1 := List.mem_toFinset.1 hu₁
-        rw [hLA₀, List.mem_append, List.mem_cons] at h1
-        exact h1.elim .inl fun h ↦ .inr (h.resolve_left hu₀₁.symm)
-      have hsplit : ∃ (a b : V) (A B : List V) (R : G.Walk a b),
-          L = A ++ a :: B ∧ b ∈ B ∧ R.IsPath ∧ x ∈ R.support ∧
-            ∀ v ∈ R.support, v ≠ a → v ≠ b → v ∉ L := by
-        rcases hu₁_mem with hA | hB
-        · obtain ⟨A₁, B₁, rfl⟩ := List.mem_iff_append.1 hA
-          refine ⟨u₁, u₀, A₁, B₁ ++ u₀ :: B₀, R₀.reverse, by simp [hLA₀, List.append_assoc],
-            by simp, hR₀_path.reverse, by simpa using hxR₀, fun v hv h1 h0 hvL ↦ ?_⟩
-          rw [Walk.support_reverse, List.mem_reverse] at hv
-          exact hR₀_int v hv h0 h1 (List.mem_toFinset.2 hvL)
-        · exact ⟨u₀, u₁, A₀, B₀, R₀, hLA₀, hB, hR₀_path, hxR₀,
-            fun v hv h0 h1 hvL ↦ hR₀_int v hv h0 h1 (List.mem_toFinset.2 hvL)⟩
-      obtain ⟨a, b, A, B, R, rfl, hbB, hR_path, hxR, hR_int⟩ := hsplit
-      obtain ⟨L', hL', hLL', hRL'⟩ := hL.insertPath hbB R hR_path hR_int
-      have hssub : (A ++ a :: B).toFinset ⊂ L'.toFinset :=
-        (ssubset_iff_of_subset fun y hy ↦
-          List.mem_toFinset.2 (hLL'.subset (List.mem_toFinset.1 hy))).2
-          ⟨x, List.mem_toFinset.2 (hRL' x hxR), List.mem_toFinset.not.2 hxL⟩
-      have hlt_len : (A ++ a :: B).length < L'.length := by
-        simpa only [List.toFinset_card_of_nodup hL.nodup,
-          List.toFinset_card_of_nodup hL'.nodup] using card_lt_card hssub
-      have hle_card : L'.length ≤ Fintype.card V := by
-        simpa only [List.toFinset_card_of_nodup hL'.nodup, card_univ] using
-          card_le_univ L'.toFinset
+      obtain ⟨L', hL', hLL', hxL'⟩ := hL.exists_extend hst hG hxL
+      have hlt_len : L.length < L'.length :=
+        lt_of_not_ge fun hle ↦ hxL (hLL'.eq_of_length_le hle ▸ hxL')
+      have hle_card : L'.length ≤ Fintype.card V := hL'.nodup.length_le_card
       exact ih (Fintype.card V - L'.length) (by omega) L' hL' rfl
 
 /-- Any `2`-vertex-connected finite simple graph admits an `st`-numbering between any two distinct

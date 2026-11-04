@@ -62,16 +62,9 @@ theorem IsPath.exists_support_eq_cons_append {a b : V} {R : G.Walk a b} (hR : R.
       (∀ v ∈ I, (∃ u, G.Adj u v ∧ [u, v] <+ R.support) ∧
         (∃ w, G.Adj v w ∧ [v, w] <+ R.support)) := by
   have hRnil : ¬R.Nil := fun h ↦ hab h.eq
-  let I := R.support.tail.dropLast
-  have htail_ne : R.support.tail ≠ [] := List.ne_nil_of_mem (R.end_mem_tail_support hRnil)
-  have htail_last : R.support.tail.getLast htail_ne = b := by
-    have h2 : (a :: R.support.tail).getLast (List.cons_ne_nil _ _) = b := by
-      simpa only [cons_tail_support] using R.getLast_support
-    simpa only [List.getLast_cons htail_ne] using h2
+  let I := R.tail.support.dropLast
   have hsupp_eq : R.support = a :: (I ++ [b]) := by
-    rw [← R.cons_tail_support]
-    congr 1
-    simpa only [I, htail_last] using (List.dropLast_concat_getLast htail_ne).symm
+    rw [← cons_support_tail hRnil, ← R.tail.dropLast_support_concat]
   have hsupp_nd : (a :: (I ++ [b])).Nodup := hsupp_eq ▸ hR.support_nodup
   refine ⟨I, hsupp_eq, (List.nodup_cons.1 hsupp_nd).2.of_append_left, fun v hvI ↦ ?_,
     fun v hvI ↦ ?_⟩
