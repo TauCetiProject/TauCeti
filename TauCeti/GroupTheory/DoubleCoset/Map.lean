@@ -14,8 +14,11 @@ import Mathlib.Tactic.Group
 
 Enlarging either subgroup coarsens the double-coset relation.  This file packages the resulting
 surjections, records their values on representatives, and proves their identity and composition
-laws.  It also transports a double-coset space along a group isomorphism, and identifies the
-quotients by conjugate right subgroups by right translation.
+laws.  It also transports a double-coset space along a group isomorphism, identifies the
+quotients by conjugate right subgroups by right translation, and carries a single double coset
+along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image, and
+`DoubleCoset.mem_doubleCoset_image_iff` transports membership along an injective multiplicative
+map.
 
 These are the double-coset analogues of `Subgroup.quotientMapOfLE` and `QuotientGroup.congr` for
 ordinary coset spaces.
@@ -189,5 +192,19 @@ theorem quotientCongr_symm_apply_mk (H K : Subgroup G) {H' K' : Subgroup G'} (e 
     (hH : H.map e = H') (hK : K.map e = K') (g : G') :
     (quotientCongr H K e hH hK).symm (mk H' K' g) = mk H K (e.symm g) := by
   rw [Equiv.symm_apply_eq, quotientCongr_apply_mk, MulEquiv.apply_symm_apply]
+
+variable {α β F : Type*} [Mul α] [Mul β] [FunLike F α β] [MulHomClass F α β]
+
+/-- A multiplicative map sends the double coset of `a` by `s` and `t` onto the double coset of
+`f a` by the images of `s` and `t`. -/
+theorem image_doubleCoset (f : F) (a : α) (s t : Set α) :
+    f '' doubleCoset a s t = doubleCoset (f a) (f '' s) (f '' t) := by
+  simp only [doubleCoset, Set.image_mul, Set.image_singleton]
+
+/-- An injective multiplicative map transports membership in a double coset. -/
+theorem mem_doubleCoset_image_iff {f : F} (hf : Function.Injective f) (a : α) (s t : Set α)
+    (x : α) :
+    f x ∈ doubleCoset (f a) (f '' s) (f '' t) ↔ x ∈ doubleCoset a s t := by
+  rw [← image_doubleCoset, hf.mem_set_image]
 
 end DoubleCoset
