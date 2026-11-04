@@ -52,7 +52,9 @@ up to roots of unity.
   `g_r(τ + 1) = e^{π i / 6} g_{(r₁, r₁ + r₂)}(τ)`, the transformation under the translation
   `T = [[1, 1], [0, 1]]` acting on the row vector `r` on the right.
 * `TauCeti.ModularForm.siegelFunction_zero_half`, `TauCeti.ModularForm.siegelFunction_half_zero`,
-  `TauCeti.ModularForm.siegelFunction_half_half`: the product expansions of `g₀`, `g₁` and `g₂`.
+  `TauCeti.ModularForm.siegelFunction_half_half`: the product expansions of `g₀`, `g₁` and `g₂`,
+  and `TauCeti.ModularForm.siegelFunction_zero_half_pow_twelve`:
+  `g₀¹² = 4096 q ∏_{n ≥ 1} (1 + qⁿ)²⁴`.
 * `TauCeti.ModularForm.siegelFunction_zero_half_mul_half_zero_mul_half_half`:
   `g₀ g₁ g₂ = 2 ζ₈` on the upper half-plane.
 * `TauCeti.ModularForm.siegelFunction_zero_half_pow_four`,
@@ -379,6 +381,21 @@ theorem siegelFunction_zero_half {τ : ℂ} (hτ : 0 < τ.im) :
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [hw, hB, hph, qTheta_neg_one (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)]
   ring
+
+/-- `g_{(0, 1/2)}(τ)¹² = 4096 q (∏_{n ≥ 1} (1 + qⁿ))²⁴` on the upper half-plane, where
+`q = e^{2π i τ}`. -/
+theorem siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![0, 1 / 2] τ ^ 12 =
+      4096 * cexp (2 * π * I * τ) * (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) ^ 24 := by
+  have hI : (2 * I) ^ 12 = 4096 := by
+    rw [mul_pow, show I ^ 12 = (I ^ 4) ^ 3 by ring, I_pow_four]
+    norm_num
+  have he : cexp (π * I * τ / 6) ^ 12 = cexp (2 * π * I * τ) := by
+    rw [← Complex.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
+  rw [siegelFunction_zero_half hτ, mul_pow, mul_pow, hI, he, ← pow_mul]
 
 /-- `g_{(1/2, 0)}(τ) = -e^{-π i τ / 12} (∏_{n ≥ 0} (1 - s^{2n+1}))²` on the upper half-plane,
 where `s = e^{π i τ}`. -/
