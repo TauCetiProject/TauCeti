@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFr
 Every `C^(n+1)` real vector bundle of finite rank over a σ-compact Hausdorff smooth manifold
 modelled on a finite-dimensional space carries a `C^n` covariant derivative
 (`CovariantDerivative.exists_contMDiffCovariantDerivative`); in particular the type
-`CovariantDerivative I F V` of covariant derivatives on a `C^1` such bundle is nonempty. Here `n`
+`CovariantDerivative I F V` of covariant derivatives on a `C^1` finite-rank bundle over any
+paracompact Hausdorff manifold is nonempty (`CovariantDerivative.instNonempty`). Here `n`
 ranges over `ℕ∞`: the derivative is built with smooth partitions of unity, so the analytic case is
 not covered.
 
@@ -27,6 +28,14 @@ there contribute, and the coefficients sum to one, so the derivative of `ρᵢ` 
 `ρ` is smooth and each `∇ⁱ` is `C^n` on `Uᵢ`, the glued derivative is `C^n`. Applying this to the
 flat derivatives `TauCeti.Manifold.frameCovariantDerivative` of the local frames of the bundle
 trivializations gives existence.
+
+The gluing lemma is the locally finite version of Mathlib's
+`IsCovariantDerivativeOn.finite_affine_combination`, from which it is derived pointwise, and its
+regularity statement is the locally finite version of
+`ContMDiffCovariantDerivativeOn.finite_affine_combination`. Together with the existence theorem
+they carry out the TODO in Mathlib's
+`Mathlib/Geometry/Manifold/VectorBundle/CovariantDerivative/Basic.lean` asking for a locally
+finite version and the existence of `C^k` connections by a partition of unity argument.
 
 A covariant derivative is the basic input of the analysis of sections of a vector bundle: it
 splits the first-jet sequence of the bundle, defines curvature, and gives the connection
@@ -44,8 +53,9 @@ carried out on every bundle without first exhibiting a connection.
   along a partition of unity, with `CovariantDerivative.ofPartitionOfUnity_apply` computing it
   and `CovariantDerivative.contMDiffCovariantDerivative_ofPartitionOfUnity` its regularity.
 * `CovariantDerivative.exists_contMDiffCovariantDerivative`: existence of a `C^n` covariant
-  derivative on a `C^(n+1)` finite-rank vector bundle, and the instance
-  `CovariantDerivative.instNonempty`.
+  derivative on a `C^(n+1)` finite-rank vector bundle.
+* `CovariantDerivative.instNonempty`: a `C^1` finite-rank vector bundle over a paracompact
+  Hausdorff manifold carries a covariant derivative.
 
 ## References
 
@@ -141,6 +151,19 @@ theorem ofPartitionOfUnity_apply (ρ : PartitionOfUnity ι M) (hρ : ρ.IsSubord
     ofPartitionOfUnity ρ hρ hcov σ x = ∑ᶠ i, ρ i x • cov i σ x :=
   (rfl)
 
+/-- A `C^1` real vector bundle of finite rank over a paracompact Hausdorff manifold carries a
+covariant derivative: the flat derivatives of the local frames of its trivializations glue along a
+partition of unity. -/
+instance instNonempty [T2Space M] [ParacompactSpace M] [FiniteDimensional ℝ F]
+    [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I] :
+    Nonempty (CovariantDerivative I F V) :=
+  let b := Module.Basis.ofVectorSpace ℝ F
+  let ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate isClosed_univ
+    (fun x ↦ (trivializationAt F V x).baseSet) (fun x ↦ (trivializationAt F V x).open_baseSet)
+    fun x _ ↦ mem_iUnion.2 ⟨x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+  ⟨ofPartitionOfUnity ρ hρ
+    fun _ ↦ TauCeti.Manifold.isCovariantDerivativeOn_frameCovariantDerivative b⟩
+
 variable [VectorBundle ℝ F V]
 
 /-- The covariant derivative glued along a smooth partition of unity from `C^n` local covariant
@@ -172,11 +195,5 @@ theorem exists_contMDiffCovariantDerivative {n : ℕ∞} {k : ℕ∞ω} [ContMDi
     (fun x ↦ TauCeti.Manifold.isCovariantDerivativeOn_frameCovariantDerivative b)
     fun x ↦ TauCeti.Manifold.contMDiffCovariantDerivativeOn_frameCovariantDerivative b
       (m := ∞) (by exact_mod_cast le_top) hk⟩
-
-/-- A `C^1` real vector bundle of finite rank over a σ-compact Hausdorff smooth manifold modelled
-on a finite-dimensional space carries a covariant derivative. -/
-instance instNonempty [ContMDiffVectorBundle 1 F V I] : Nonempty (CovariantDerivative I F V) :=
-  let ⟨cov, _⟩ := exists_contMDiffCovariantDerivative (n := 0) (k := 1) (by simp)
-  ⟨cov⟩
 
 end CovariantDerivative
