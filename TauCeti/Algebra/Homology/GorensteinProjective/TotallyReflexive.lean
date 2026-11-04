@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Ext
-public import TauCeti.LinearAlgebra.Dual.Reflexive
-public import TauCeti.LinearAlgebra.Exact
-public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Splice
-public import TauCeti.Algebra.Homology.Ext.Basic
+public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Category.ModuleCat.Ext.Extension
+public import TauCeti.LinearAlgebra.Dual.Reflexive
+public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 
 /-!
 # Totally reflexive modules
@@ -49,14 +49,10 @@ A complete resolution is spliced from syzygies and cosyzygies
 
 ## Main definitions
 
-* `CategoryTheory.ShortComplex.moduleCatOpDual`: the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex
-  of left `A`-modules, as a short complex of right modules.
 * `TauCeti.IsTotallyReflexive`: totally reflexive modules.
 
 ## Main results
 
-* `CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`: the dual of a short exact sequence
-  along which every functional extends is short exact.
 * `TauCeti.IsGorensteinProjective.isTotallyReflexive`: Gorenstein-projective modules are totally
   reflexive.
 * `TauCeti.IsTotallyReflexive.isGorensteinProjective`: over a left and right noetherian ring,
@@ -80,31 +76,6 @@ public section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Abelian
 
 universe u
-
-namespace CategoryTheory.ShortComplex
-
-variable {A : Type u} [Ring A] (S : ShortComplex (ModuleCat.{u} A))
-
-/-- The `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short complex of
-right `A`-modules, that is, of `Aᵐᵒᵖ`-modules. -/
-noncomputable abbrev moduleCatOpDual : ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) :=
-  ModuleCat.shortComplexOfCompEqZero (R := Aᵐᵒᵖ) (M := Module.Dual A S.X₃)
-    (N := Module.Dual A S.X₂) (L := Module.Dual A S.X₁) (S.g.hom.lcomp Aᵐᵒᵖ A)
-    (S.f.hom.lcomp Aᵐᵒᵖ A) (LinearMap.ext fun φ ↦ LinearMap.ext fun x ↦ by
-      simp [← LinearMap.comp_apply S.g.hom S.f.hom, ← ModuleCat.hom_comp])
-
-variable {S}
-
-/-- **Dualizing a short exact sequence**: if every functional on `X₁` extends to `X₂`, the dual
-`0 ⟶ X₃* ⟶ X₂* ⟶ X₁* ⟶ 0` of a short exact sequence is short exact. -/
-theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
-    (hext : Function.Surjective (S.f.hom.lcomp Aᵐᵒᵖ A)) : S.moduleCatOpDual.ShortExact :=
-  ModuleCat.shortComplex_shortExact _
-    (((ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact).lcomp_of_surjective A
-      hS.moduleCat_surjective_g)
-    (LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g) hext
-
-end CategoryTheory.ShortComplex
 
 namespace TauCeti
 
@@ -157,42 +128,41 @@ private theorem bijective_opDualEval (m : ℤ) {N : ModuleCat.{u} A} (e : N ≅ 
   simp only [LinearMap.lcomp_apply', LinearMap.comp_apply, ModuleCat.hom_comp, this]
   simp
 
-/-- The short exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ⁺¹ ⟶ 0` of cycles. -/
-private noncomputable abbrev cyclesSES (P : CochainComplex (ModuleCat.{u} A) ℤ) (m : ℤ) :
-    ShortComplex (ModuleCat.{u} A) :=
-  ShortComplex.mk (P.iCycles m) (P.toCycles m (m + 1)) (P.iCycles_toCycles m (m + 1))
-
-omit hP in
-private theorem cyclesSES_shortExact (hP : P.IsTotallyAcyclic) (m : ℤ) :
-    (cyclesSES P m).ShortExact := by
-  have := P.cyclesShortComplex_shortExact m (m + 1) (by simp) (hP.acyclic (m + 1))
-  rwa [HomologicalComplex.cyclesShortComplex_def] at this
-
-/-- The dual short exact sequence `0 ⟶ (Zᵐ⁺¹)* ⟶ (Pᵐ)* ⟶ (Zᵐ)* ⟶ 0`. -/
-private theorem shortExact_dual (m : ℤ) : (cyclesSES P m).moduleCatOpDual.ShortExact :=
-  (cyclesSES_shortExact hP m).moduleCatOpDual (hP.exists_extend_iCycles m)
-
-/-- The duals of the cycles of a totally acyclic complex have no higher extensions by `A`. -/
-private theorem ext_dual_cycles_eq_zero (n : ℕ) : ∀ (m : ℤ)
-    (e : Ext.{u} (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (P.cycles m))) (ModuleCat.of Aᵐᵒᵖ A) (n + 1)),
+/-- The duals of the cycles of a totally acyclic complex have no higher extensions by `A`: the
+dual sequences `0 ⟶ (Zᵏ⁺¹)* ⟶ (Pᵏ)* ⟶ (Zᵏ)* ⟶ 0` form a chain, and a functional on `(Zᵏ⁺¹)*` is
+evaluation at some `z ∈ Zᵏ⁺¹`, the image of some `p ∈ Pᵏ`, so evaluation at `p` extends it. -/
+private theorem ext_dual_cycles_eq_zero (n : ℕ) (m : ℤ)
+    (e : Ext.{u} (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (P.cycles m))) (ModuleCat.of Aᵐᵒᵖ A) (n + 1)) :
     e = 0 := by
-  have (m : ℤ) : Projective (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (P.X m))) := by
-    have := hP.finite m
-    have := hP.projective m
-    infer_instance
-  induction n with
-  | zero =>
-    refine fun m ↦ (hP.shortExact_dual m).ext_eq_zero_of_exists_f_comp_eq fun x ↦ ?_
-    -- The functional `x` on `(Zᵐ⁺¹)*` is evaluation at some `z ∈ Zᵐ⁺¹`, the image of some `p ∈ Pᵐ`;
-    -- evaluation at `p` extends it to `(Pᵐ)*`.
-    obtain ⟨z, hz⟩ := (hP.bijective_opDualEval (m + 1) (Iso.refl _)).2 x.hom
-    obtain ⟨p, rfl⟩ := (cyclesSES_shortExact hP m).moduleCat_surjective_g z
-    refine ⟨ModuleCat.ofHom (opDualEval A (P.X m) p), ?_⟩
-    ext φ
-    rw [← hz]
-    simp
-  | succ n ih =>
-    exact fun m ↦ (hP.shortExact_dual m).ext_X₃_eq_zero_of_ext_X₁_eq_zero (ih (m + 1))
+  have hS (k : ℤ) := P.shortExact_mk_iCycles_toCycles k (k + 1) (by simp) (hP.acyclic (k + 1))
+  -- The dual sequences, indexed so that the cokernel of the `k`-th is `(Z⁻ᵏ)*`.
+  let D : ℤ → ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) := fun k ↦
+    (ShortComplex.mk (P.iCycles (-k)) (P.toCycles (-k) (-k + 1))
+      (P.iCycles_toCycles _ _)).moduleCatOpDual
+  have hD (k : ℤ) : (D k).ShortExact :=
+    (hS (-k)).moduleCatOpDual (hP.exists_extend_iCycles (-k))
+  have (k : ℤ) : Projective (D k).X₂ := by
+    have := hP.finite (-k)
+    have := hP.projective (-k)
+    exact inferInstanceAs (Projective (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (P.X (-k)))))
+  refine ext_eq_zero_of_iso (eqToIso (by
+      dsimp only [D]
+      rw [neg_neg]
+      rfl))
+    (ext_X₃_eq_zero_of_forall_exists_f_comp_eq hD
+      (fun k ↦ eqToIso (by
+        dsimp only [D]
+        rw [show -(k + 1) + 1 = -k by lia]
+        rfl))
+      (fun k φ ↦ ?_) n (-m)) e
+  obtain ⟨z, hz⟩ := (hP.bijective_opDualEval (-k + 1) (Iso.refl _)).2 φ.hom
+  obtain ⟨p, rfl⟩ := (hS (-k)).moduleCat_surjective_g z
+  refine ⟨ModuleCat.ofHom (opDualEval A (P.X (-k)) p), ?_⟩
+  ext ψ
+  rw [← hz]
+  change opDualEval A (P.X (-k)) p ((P.toCycles (-k) (-k + 1)).hom.lcomp Aᵐᵒᵖ A ψ) = _
+  rw [opDualEval_apply]
+  exact (opDualEval_apply A _ _ ψ).symm
 
 end CochainComplex.IsTotallyAcyclic
 
@@ -213,8 +183,7 @@ theorem IsGorensteinProjective.isTotallyReflexive {M : ModuleCat.{u} A}
       inv := ModuleCat.ofHom (i.inv.hom.lcomp Aᵐᵒᵖ A)
       hom_inv_id := by ext φ x; simp
       inv_hom_id := by ext φ x; simp }
-  rw [← Ext.mk₀_id_comp e, ← d.hom_inv_id, ← Ext.mk₀_comp_mk₀, Ext.comp_assoc_of_second_deg_zero,
-    hP.ext_dual_cycles_eq_zero n 0 ((Ext.mk₀ d.inv).comp e (zero_add _)), Ext.comp_zero]
+  exact ext_eq_zero_of_iso d (hP.ext_dual_cycles_eq_zero n 0) e
 
 end TauCeti
 
@@ -238,11 +207,10 @@ private theorem exists_syzygy [IsNoetherianRing A] (X : ModuleCat.{u} A)
   have hS : S.ShortExact := ModuleCat.shortComplex_shortExact S
     (LinearMap.exact_subtype_ker_map π) Subtype.val_injective hπ
   have : Projective S.X₂ := inferInstanceAs (Projective (ModuleCat.of A (Fin n → A)))
-  refine ⟨S, ⟨hS, inferInstanceAs (Module.Finite A (Fin n → A)), this, fun φ ↦ ?_⟩,
+  exact ⟨S, ⟨hS, inferInstanceAs (Module.Finite A (Fin n → A)), this,
+    hS.moduleCat_exists_comp_eq_of_ext_eq_zero (hX.2 0)⟩,
     ⟨inferInstanceAs (Module.Finite A (LinearMap.ker π)),
-      fun n ↦ hS.ext_X₁_eq_zero_of_ext_X₃_eq_zero (hX.2 (n + 1))⟩, ⟨Iso.refl _⟩⟩
-  obtain ⟨g, hg⟩ := hS.exists_f_comp_eq_of_ext_eq_zero (hX.2 0) (ModuleCat.ofHom φ)
-  exact ⟨g.hom, congrArg ModuleCat.Hom.hom hg⟩
+      fun n ↦ ext_X₁_eq_zero_of_ext_X₃_eq_zero hS (hX.2 (n + 1))⟩, ⟨Iso.refl _⟩⟩
 
 /-- Over a right noetherian ring, a totally reflexive module `M` is the first term of a sequence
 `0 ⟶ M ⟶ Aᵏ ⟶ M' ⟶ 0` with `M'` totally reflexive: the map to `Aᵏ` is given by generators of
@@ -276,22 +244,17 @@ private theorem exists_cosyzygy [IsNoetherianRing Aᵐᵒᵖ] (M : ModuleCat.{u}
     inferInstanceAs (Projective (ModuleCat.of Aᵐᵒᵖ (Module.Dual A (Fin k → A))))
   refine ⟨S, ⟨hS, inferInstanceAs (Module.Finite A (Fin k → A)), hproj, hj⟩,
     ⟨inferInstanceAs (Module.Finite A ((Fin k → A) ⧸ LinearMap.range j)), ?_,
-      fun n ↦ ?_, fun n ↦ hD.ext_X₁_eq_zero_of_ext_X₃_eq_zero (hM.ext_dual_eq_zero (n + 1))⟩,
+      fun n ↦ ?_, fun n ↦ ext_X₁_eq_zero_of_ext_X₃_eq_zero hD (hM.ext_dual_eq_zero (n + 1))⟩,
     ⟨Iso.refl _⟩⟩
   · -- Reflexivity of the cokernel; functionals on `M'*` extend to `(Aᵏ)*` as `Ext¹(M*, A) = 0`.
     refine opDualEval_bijective_of_exact_of_surjective A (LinearMap.exact_map_mkQ_range j)
       (Submodule.mkQ_surjective _) hj (fun χ ↦ ?_) hM.bijective_opDualEval.2
       (opDualEval_bijective A _)
-    obtain ⟨g, hg⟩ := hD.exists_f_comp_eq_of_ext_eq_zero (hM.ext_dual_eq_zero 0)
-      (ModuleCat.ofHom χ)
-    exact ⟨g.hom, congrArg ModuleCat.Hom.hom hg⟩
+    exact hD.moduleCat_exists_comp_eq_of_ext_eq_zero (hM.ext_dual_eq_zero 0) χ
   · -- `Ext^{n+1}(M', A) = 0` by dimension shifting, as functionals on `M` extend to `Aᵏ`.
     cases n with
-    | zero =>
-      refine hS.ext_eq_zero_of_exists_f_comp_eq fun φ ↦ ?_
-      obtain ⟨ψ, hψ⟩ := hj φ.hom
-      exact ⟨ModuleCat.ofHom ψ, ModuleCat.hom_ext hψ⟩
-    | succ n => exact hS.ext_X₃_eq_zero_of_ext_X₁_eq_zero (hM.ext_eq_zero n)
+    | zero => exact hS.moduleCat_ext_eq_zero_of_exists_comp_eq hj
+    | succ n => exact ext_X₃_eq_zero_of_ext_X₁_eq_zero hS (hM.ext_eq_zero n)
 
 /-- **Totally reflexive modules are Gorenstein-projective** over a left and right noetherian
 ring. -/

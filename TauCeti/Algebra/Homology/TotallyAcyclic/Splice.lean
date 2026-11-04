@@ -25,8 +25,8 @@ of modules that admit such sequences `0 ⟶ X' ⟶ P ⟶ X ⟶ 0` with `X'` agai
 
 * `CochainComplex.isTotallyAcyclic_splice`: a splice of short exact sequences with finitely
   generated projective middle terms, along which functionals extend, is totally acyclic.
-* `TauCeti.isGorensteinProjective_of_shortExact`: modules with iterated syzygies and cosyzygies of
-  this form are Gorenstein-projective.
+* `TauCeti.isGorensteinProjective_of_isCompleteResolutionStep`: modules with iterated syzygies
+  and cosyzygies of this form are Gorenstein-projective.
 -/
 
 public section
