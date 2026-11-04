@@ -56,6 +56,9 @@ assumed.
   crossed product are determined on the twisted convolution algebra.
 * `TauCeti.CStarAction.FullCrossedProduct.norm_le_iff`: the norm of the full crossed product is
   the least bound for the integrated forms of covariant representations.
+* `TauCeti.CStarAction.FullCrossedProduct.of_eq_of_iff`: two elements of the twisted convolution
+  algebra have the same image in the full crossed product exactly when all their integrated forms
+  agree.
 
 ## References
 
@@ -345,6 +348,14 @@ theorem starAlgHom_ext {B : Type*} [NonUnitalCStarAlgebra B]
   NonUnitalStarAlgHom.ext fun x => induction_on x (isClosed_eq (map_continuous φ)
     (map_continuous ψ)) fun f => congr($h f)
 
+/-- Continuous linear maps out of the full crossed product are determined by their values on
+the twisted convolution algebra. -/
+@[ext]
+theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
+    [Module ℂ E] {S T : FullCrossedProduct α μ →L[ℂ] E}
+    (h : ∀ f, S (of α μ f) = T (of α μ f)) : S = T :=
+  ContinuousLinearMap.ext fun x => induction_on x (isClosed_eq S.continuous T.continuous) h
+
 variable {D : Type*} [NonUnitalCStarAlgebra D]
   (ρ : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] D)
   (hρ : ∀ f, ‖ρ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f)
@@ -446,6 +457,20 @@ theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
           add_le_add (h H P) ((NonUnitalStarAlgHom.norm_apply_le _ _).trans hf'.le)
   calc ‖x‖ ≤ ‖of α μ f‖ + ‖x - of α μ f‖ := norm_le_insert' x (of α μ f)
     _ < c + ε := by linarith
+
+/-- Two elements of the twisted convolution algebra have the same image in the full crossed
+product exactly when their integrated forms agree for every covariant representation on a
+Hilbert space in the universe `max u v`. -/
+theorem of_eq_of_iff {f g : ConvolutionAlgebra α μ} :
+    of α μ f = of α μ g ↔
+      ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+        (P : CovariantRepresentation α H),
+          P.integratedStarAlgHom μ f = P.integratedStarAlgHom μ g := by
+  refine ⟨fun h H _ _ _ P => by simpa using congr(P.integratedFull μ $h), fun h => ?_⟩
+  rw [← sub_eq_zero, ← map_sub, ← norm_eq_zero, norm_of]
+  refine le_antisymm ((ConvolutionAlgebra.fullSeminorm_le_iff le_rfl).2 fun H _ _ _ P => ?_)
+    (apply_nonneg _ _)
+  rw [map_sub, h H P, sub_self, norm_zero]
 
 end FullCrossedProduct
 
