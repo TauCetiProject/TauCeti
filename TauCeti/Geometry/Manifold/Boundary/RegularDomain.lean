@@ -58,28 +58,16 @@ theorem isSmoothEmbedding_subtypeVal_of_forall_chartAt_eq_halfSpaceChart
   -- Read the ambient chart back in H through a linear, rather than nonlinear, identification.
   let d : OpenPartialHomeomorph M H :=
     e.trans (L.toHomeomorph.trans I.toHomeomorph.symm).toOpenPartialHomeomorph
-  have hdsource : d.source = e.source := by simp [d, mfld_simps]
-  have hdapply (w : M) : I (d w) = L (e w) := by
-    simp only [d, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
-    exact I.right_inv (by rw [I.range_eq_univ]; trivial)
-  have hdmem : d ∈ IsManifold.maximalAtlas I m M := by
-    refine d.mem_maximalAtlas_of_contMDiffOn ?_ ?_
-    · rw [hdsource]
-      refine (I.contMDiffOn_symm.comp (L.contDiff.contMDiff.comp_contMDiffOn hc.contMDiffOn)
-        (fun w _ ↦ by rw [I.range_eq_univ]; trivial)).congr fun w _ ↦ ?_
-      simp [d, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
-    · refine (hc.contMDiffOn_symm.comp
-        (L.symm.contDiff.contMDiff.comp I.contMDiff).contMDiffOn
-        (fun v hv ↦ ?_)).congr fun v _ ↦ ?_
-      · simpa [d, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply] using hv
-      · simp [d, mfld_simps, ModelWithCorners.toHomeomorph_apply]
+  have hdsource : d.source = e.source := e.trans_linearEquiv_source L
+  have hdapply (w : M) : I (d w) = L (e w) := e.trans_linearEquiv_apply L w
   have hx : (x : M) ∈ e.source := by
     have hx' := mem_chart_source (EuclideanHalfSpace (n + 1)) x
     rwa [hchart, OpenPartialHomeomorph.halfSpaceChart_source] at hx'
   refine IsImmersionAtOfComplement.mk_of_charts
     ((ContinuousLinearEquiv.prodUnique ℝ _ _).trans L)
     (chartAt (EuclideanHalfSpace (n + 1)) x) d (mem_chart_source _ x)
-    (by rwa [hdsource]) (IsManifold.chart_mem_maximalAtlas _) hdmem ?_ ?_
+    (by rwa [hdsource]) (IsManifold.chart_mem_maximalAtlas _)
+    (hc.trans_mem_maximalAtlas L) ?_ ?_
   · rw [hchart, OpenPartialHomeomorph.halfSpaceChart_source, hdsource]
   · intro v hv
     have hv' : v ∈ range (𝓡∂ (n + 1)) :=
