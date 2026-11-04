@@ -103,8 +103,12 @@ theorem mackeyHomCongr_symm_apply_hom (A : Action C H) (B : Action C K)
   change ψ = (A.ρ (⟨h₁, hh₁⟩ : H)⁻¹).asHom ≫ φ ≫
     (B.ρ (⟨h₂, hh₂⟩ : K)⁻¹).asHom
   rw [← h]
-  simp [← Category.assoc, ← End.mul_asHom, ← map_mul]
-  simp [Category.assoc, ← End.mul_asHom, ← map_mul]
+  -- Associate left to cancel the source action with its inverse, then right to cancel
+  -- the target action with its inverse. End multiplication reverses composition order.
+  simp only [← Category.assoc, ← End.mul_asHom, ← map_mul, mul_inv_cancel,
+    map_one, End.one_asHom, Category.id_comp]
+  simp only [Category.assoc, ← End.mul_asHom, ← map_mul, inv_mul_cancel,
+    map_one, End.one_asHom, Category.comp_id]
 
 /-- Representative transport is contravariantly natural in the source action. -/
 theorem mackeyHomCongr_naturality_left {A A' : Action C H} (B : Action C K)
