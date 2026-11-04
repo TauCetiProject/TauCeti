@@ -160,6 +160,12 @@ theorem coordinateDerivation_comm (j k : Fin 2) (a : SmoothNoncommutativeTorus �
   simp only [coeff_coordinateDerivation]
   exact mul_left_comm _ _ _
 
+/-- The coordinate derivations commute as linear endomorphisms. -/
+theorem commute_coordinateDerivation (j k : Fin 2) :
+    Commute ((coordinateDerivation j).1 : Module.End ℂ (SmoothNoncommutativeTorus θ))
+      (coordinateDerivation k).1 := by
+  exact LinearMap.ext (coordinateDerivation_comm j k)
+
 /-- The canonical trace annihilates each coordinate derivation. -/
 @[simp↓]
 theorem trace_coordinateDerivation (j : Fin 2) (a : SmoothNoncommutativeTorus θ) :
