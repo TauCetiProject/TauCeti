@@ -43,6 +43,9 @@ and more generally instantiates the `n` bound positions of a formula at a tuple 
   quantified formula after substituting closed terms extends the tuple of substituted terms.
 * `FirstOrder.Language.BoundedFormulaInf.IsAtomic.substBounds`: bound substitution keeps atomic
   formulas atomic.
+* `FirstOrder.Language.SentenceInf.realize_inst_of_realize_all` and
+  `FirstOrder.Language.SentenceInf.realize_inst_of_realize_equal`: a universal sentence implies its
+  instances, and equal closed terms can be exchanged in an instance.
 * `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds`: language maps commute with bound
   substitution.
 * `FirstOrder.Language.BoundedFormulaInf.relationsIn_substBounds`,
@@ -426,6 +429,31 @@ theorem functionsIn_substBounds_subset : ∀ {m k : ℕ} (σ : Fin m → L.Term 
     exact Set.union_subset_union_left _ (Set.subset_iUnion (fun i => (φs i).functionsIn) i)
 
 end BoundedFormulaInf
+
+namespace SentenceInf
+
+variable {L : Language.{u, v}} {ι : Type uι} {M : Type w} [L.Structure M]
+
+open BoundedFormulaInf
+
+/-- A universal sentence implies its instance at every closed term. -/
+theorem realize_inst_of_realize_all {φ : L.BoundedFormulaInf ι Empty 1}
+    (h : SentenceInf.Realize φ.all M) (t : L.Term (Empty ⊕ Fin 0)) :
+    SentenceInf.Realize (φ.inst t) M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at h
+  simp only [SentenceInf.realize_def, realize_inst]
+  simpa only [Fin.snoc_zero] using h _
+
+/-- **Substitution of equals**: if the closed terms `t` and `t'` are equal in `M`, the instance
+of `φ` at `t'` holds whenever the instance at `t` does. -/
+theorem realize_inst_of_realize_equal {t t' : L.Term (Empty ⊕ Fin 0)}
+    {φ : L.BoundedFormulaInf ι Empty 1} (ht : SentenceInf.Realize (equal t t' : L.SentenceInf ι) M)
+    (hφ : SentenceInf.Realize (φ.inst t) M) : SentenceInf.Realize (φ.inst t') M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_equal] at ht
+  simp only [SentenceInf.realize_def, realize_inst] at hφ ⊢
+  rwa [← ht]
+
+end SentenceInf
 
 namespace LHom
 
