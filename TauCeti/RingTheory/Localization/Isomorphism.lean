@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Adjoin.Basic
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
@@ -128,22 +128,6 @@ theorem exists_bijective_localizationAway (f : R →+* S) (hf : f.FiniteType)
   exact ⟨a * b, M.mul_mem ha hb,
     Localization.awayMap_injective_of_dvd f (dvd_mul_right a b) hinj,
     Localization.awayMap_surjective_of_dvd f (dvd_mul_left b a) hsurj⟩
-
-/-- Localization maps commute with `Localization.awayMap` through compatible algebra towers.
-Such towers arise, for example, when `Submonoid.powers a ≤ M`. -/
-theorem localizationMap_comp_algebraMap_away (f : R →+* S) (M : Submonoid R) (a : R)
-    {Rm Sm : Type*} [CommRing Rm] [CommRing Sm]
-    [Algebra R Rm] [IsLocalization M Rm] [Algebra S Sm] [IsLocalization (M.map f) Sm]
-    [Algebra (Localization.Away a) Rm] [IsScalarTower R (Localization.Away a) Rm]
-    [Algebra (Localization.Away (f a)) Sm] [IsScalarTower S (Localization.Away (f a)) Sm] :
-    (IsLocalization.map (S := Rm) Sm f (Submonoid.le_comap_map M)).comp
-        (algebraMap (Localization.Away a) Rm) =
-      (algebraMap (Localization.Away (f a)) Sm).comp (Localization.awayMap f a) := by
-  apply IsLocalization.ringHom_ext (.powers a)
-  ext x
-  simp [← IsScalarTower.algebraMap_apply R (Localization.Away a) Rm,
-    IsLocalization.Away.map, IsLocalization.map_eq,
-    ← IsScalarTower.algebraMap_apply S (Localization.Away (f a)) Sm]
 
 /-- A finitely presented ring map which becomes an isomorphism after localization is already
 an isomorphism on a principal neighbourhood. Neither ring needs to be Noetherian, and the
