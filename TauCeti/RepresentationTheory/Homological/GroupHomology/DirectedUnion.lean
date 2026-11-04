@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 
 /-!
 # Group homology of a directed union of subgroups
@@ -128,17 +127,6 @@ theorem exists_le_chainsMap_subtype_f_eq_of_directed {ι : Type*} {S : ι → Su
       exact hij.trans (le_iSup (fun j : { i // S i₀ ≤ S i } ↦ S j) ⟨j, hi₀j⟩)) x
   exact ⟨i, hi, y, hy⟩
 
-/-- The maps of inhomogeneous chains induced by inclusions of subgroups compose: the inclusion of
-`S` into `T` followed by that of `T` into `G` is the inclusion of `S` into `G`. -/
-private theorem chainsMap_inclusion_comp_chainsMap_subtype {S T : Subgroup G} (h : S ≤ T) :
-    chainsMap (Subgroup.inclusion h) (Rep.resInclusionHom A h) ≫
-        chainsMap T.subtype (𝟙 (res T.subtype A)) =
-      chainsMap S.subtype (𝟙 (res S.subtype A)) := by
-  rw [← chainsMap_comp]
-  congr 1
-  ext a
-  exact Rep.resInclusionHom_hom_apply A h a
-
 end TauCeti.groupHomology
 
 namespace groupHomology
@@ -171,7 +159,7 @@ theorem exists_map_inclusion_eq_zero {ι : Type*} {S : ι → Subgroup G}
       chainsMap_f_map_mono _ (𝟙 (res (S j).subtype A)) (S j).subtype_injective _)
     (ChainComplex.prev ℕ n) (P := fun j ↦ S i ≤ S j)
     (fun _ hj ↦ chainsMap (Subgroup.inclusion hj) (Rep.resInclusionHom A hj))
-    (fun _ hj ↦ TauCeti.groupHomology.chainsMap_inclusion_comp_chainsMap_subtype hj)
+    (fun _ hj ↦ TauCeti.groupHomology.chainsMap_inclusion_comp_chainsMap_subtype A hj)
     (TauCeti.groupHomology.exists_le_chainsMap_subtype_f_eq_of_directed hS hG i) y hy
 
 end groupHomology
