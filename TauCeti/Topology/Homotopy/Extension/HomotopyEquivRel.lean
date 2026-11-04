@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
-public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
 # Homotopy equivalences relative to subspaces with the homotopy extension property
