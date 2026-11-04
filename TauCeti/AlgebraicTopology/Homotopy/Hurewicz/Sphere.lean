@@ -27,7 +27,13 @@ Every generalized loop factors through the tautological one
 (`GenLoop.map_toSphere_sphereGenLoop`), so this is the universal example of the Hurewicz map: every
 Hurewicz class is the image of that of the tautological loop
 (`GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp`), which pins down the Hurewicz map on all spaces
-up to its value on `π_{n+1}(Sⁿ⁺¹)`.
+up to its value on `π_{n+1}(Sⁿ⁺¹)`. Since a homotopy of generalized loops along a path is a free
+homotopy of the corresponding maps out of the sphere
+(`TauCeti.GenLoop.HomotopyAlong.homotopic_toSphere`), and homotopic maps induce the same map on
+singular homology, base-point change along a path preserves Hurewicz classes
+(`HomotopyGroup.hurewicz_homotopyGroupTransport`), and the images of the integral Hurewicz
+homomorphisms at two points joined by a path coincide
+(`HomotopyGroup.range_hurewiczIntHom_eq_of_joined`).
 
 The proof reads the Hurewicz class in the local homology `Hₙ₊₁(Sⁿ⁺¹, Sⁿ⁺¹ ∖ {s})` at the south pole
 `s`, the image of the centre `0` of the disk `Dⁿ⁺¹` under `TauCeti.closedBallToSphere`, through
@@ -47,7 +53,8 @@ which `TauCeti.cubeToSphere` factors.
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 2.1, Proposition 2.22 (the quotient map of a good pair, here
-  `(Dⁿ, ∂Dⁿ) → (Dⁿ / ∂Dⁿ, pt)`), and Section 4.2, the Hurewicz map.
+  `(Dⁿ, ∂Dⁿ) → (Dⁿ / ∂Dⁿ, pt)`), Section 4.1, the change of base point for higher homotopy
+  groups, and Section 4.2, the Hurewicz map.
 -/
 
 public section
@@ -302,3 +309,52 @@ theorem hurewicz_eq_hurewicz_sphereGenLoop_comp (p : Ω^ (Fin (n + 1)) X x) :
   rw [← hurewicz_map R (toSphere p) (toSphere_sphereNorthPole p), map_toSphere_sphereGenLoop]
 
 end GenLoop
+
+namespace HomotopyGroup
+
+open TauCeti
+
+section Transport
+
+variable {X : Type} [TopologicalSpace X] {x y : X}
+  {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C] (R : C) (n : ℕ)
+
+/-- **The Hurewicz map is invariant under base-point change.** Transporting a class of
+`πₙ₊₁(X, x)` along a path does not change its Hurewicz class in `Hₙ₊₁(X; R)`. -/
+@[simp]
+theorem hurewicz_homotopyGroupTransport (γ : Path x y) (a : HomotopyGroup (Fin (n + 1)) X x) :
+    hurewicz R n (homotopyGroupTransport γ a) = hurewicz R n a := by
+  induction a using Quotient.inductionOn with | h f => ?_
+  rw [homotopyGroupTransport_mk, hurewicz_mk, hurewicz_mk,
+    GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp (p := GenLoop.transport γ f),
+    GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp (p := f)]
+  -- The two maps out of the sphere are freely homotopic, so they agree on singular homology.
+  obtain ⟨H⟩ := (GenLoop.collarHomotopyAlong γ f).homotopic_toSphere
+  exact congrArg (_ ≫ ·) (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
+    (f := TopCat.ofHom (GenLoop.toSphere (GenLoop.transport γ f)))
+    (g := TopCat.ofHom (GenLoop.toSphere f)) H.symm R (n + 1))
+
+end Transport
+
+/-- The integral Hurewicz homomorphism is invariant under base-point change. -/
+@[simp]
+theorem hurewiczIntHom_homotopyGroupTransport {X : Type} [TopologicalSpace X] {x y : X}
+    (γ : Path x y) {n : ℕ} (a : HomotopyGroup (Fin (n + 1)) X x) :
+    hurewiczIntHom X y n (Additive.ofMul (homotopyGroupTransport γ a)) =
+      hurewiczIntHom X x n (Additive.ofMul a) := by
+  rw [hurewiczIntHom_apply, hurewiczIntHom_apply, toMul_ofMul, toMul_ofMul,
+    hurewicz_homotopyGroupTransport]
+
+variable {X : Type} [TopologicalSpace X] {x y : X}
+
+/-- The images of the integral Hurewicz homomorphisms at two points joined by a path coincide. -/
+theorem range_hurewiczIntHom_eq_of_joined (h : Joined x y) (n : ℕ) :
+    (hurewiczIntHom X x n).range = (hurewiczIntHom X y n).range := by
+  -- Each range is contained in the other, by transport along the path and its reverse.
+  have key {x y : X} (γ : Path x y) :
+      (hurewiczIntHom X x n).range ≤ (hurewiczIntHom X y n).range := by
+    rintro _ ⟨a, rfl⟩
+    exact ⟨Additive.ofMul (homotopyGroupTransport γ a.toMul), by simp⟩
+  exact le_antisymm (key h.somePath) (key h.somePath.symm)
+
+end HomotopyGroup

@@ -53,6 +53,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `TauCeti.cubeToSphere`: the same for the cube `I^n`, a quotient map in positive dimension
   (`TauCeti.isQuotientMap_cubeToSphere`) collapsing exactly the boundary
   (`TauCeti.cubeToSphere_eq_cubeToSphere_iff`, `TauCeti.cubeToSphere_eq_sphereNorthPole_iff`).
+* `TauCeti.liftProdCubeToSphere`: a family of maps out of the cube, parametrised by `I` and
+  constant on the boundary at each time, as a family of maps out of the sphere.
 * `TauCeti.cubeQuotientHomeomorphSphere`: the pointed homeomorphism `Iⁿ / ∂Iⁿ ≃ₜ Sⁿ`.
 * `TauCeti.sphereGenLoop`: `TauCeti.cubeToSphere` as a generalized loop of the sphere.
 * `GenLoop.toSphere` and `GenLoop.sphereEquiv`: generalized loops are pointed maps out of the
@@ -65,6 +67,8 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
   boundary of the cube is homotopy relative to the north pole, and `πₙ(X, x)` is the set of pointed
   homotopy classes of maps `Sⁿ → X`, the classes of `TauCeti.pointedHomotopySetoid`.
+* `TauCeti.GenLoop.HomotopyAlong.homotopic_toSphere`: a homotopy of generalized loops along a path
+  is a free homotopy of the corresponding maps out of the sphere.
 * `HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`: a class is trivial exactly when the
   corresponding map `Sⁿ → X` is freely null-homotopic.
 
@@ -356,6 +360,46 @@ theorem isQuotientMap_cubeToSphere [NeZero n] : IsQuotientMap (cubeToSphere n) :
     (cubeToSphere_surjective n)
 
 variable (n) in
+/-- The product of the identity of `I` with `TauCeti.cubeToSphere` is a quotient map in positive
+dimension, as a continuous surjection from a compact space onto a Hausdorff space. -/
+theorem isQuotientMap_prodMap_cubeToSphere [NeZero n] :
+    IsQuotientMap ((ContinuousMap.id I).prodMap (cubeToSphere n)) :=
+  ((ContinuousMap.id I).prodMap (cubeToSphere n)).continuous.isClosedMap.isQuotientMap
+    ((ContinuousMap.id I).prodMap (cubeToSphere n)).continuous
+    (Function.surjective_id.prodMap (cubeToSphere_surjective n))
+
+private lemma factorsThrough_prodMap_cubeToSphere {X : Type*} [TopologicalSpace X]
+    {F : C(I × I^(Fin n), X)}
+    (hF : ∀ t, ∀ y ∈ Cube.boundary (Fin n), ∀ z ∈ Cube.boundary (Fin n), F (t, y) = F (t, z)) :
+    Function.FactorsThrough F ((ContinuousMap.id I).prodMap (cubeToSphere n)) := by
+  rintro ⟨s, y⟩ ⟨t, z⟩ h
+  simp only [ContinuousMap.prodMap_apply, ContinuousMap.id_apply, Prod.map_apply,
+    Prod.mk.injEq] at h
+  obtain ⟨rfl, h⟩ := h
+  rcases cubeToSphere_eq_cubeToSphere_iff.1 h with rfl | ⟨hy, hz⟩
+  · rfl
+  · exact hF s y hy z hz
+
+/-- A family of maps out of the cube, parametrised by `I` and constant on the boundary of the cube
+at each time, as a family of maps out of the sphere: the map `I × Sⁿ → X` through which it factors
+along `TauCeti.cubeToSphere` (`TauCeti.liftProdCubeToSphere_apply`). It turns homotopies of
+generalized loops, and homotopies of them along paths, into homotopies of maps out of the
+sphere. -/
+def liftProdCubeToSphere {X : Type*} [TopologicalSpace X] [NeZero n] (F : C(I × I^(Fin n), X))
+    (hF : ∀ t, ∀ y ∈ Cube.boundary (Fin n), ∀ z ∈ Cube.boundary (Fin n), F (t, y) = F (t, z)) :
+    C(I × sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, X) :=
+  (isQuotientMap_prodMap_cubeToSphere n).lift F (factorsThrough_prodMap_cubeToSphere hF)
+
+@[simp]
+theorem liftProdCubeToSphere_apply {X : Type*} [TopologicalSpace X] [NeZero n]
+    (F : C(I × I^(Fin n), X))
+    (hF : ∀ t, ∀ y ∈ Cube.boundary (Fin n), ∀ z ∈ Cube.boundary (Fin n), F (t, y) = F (t, z))
+    (t : I) (z : I^(Fin n)) :
+    liftProdCubeToSphere F hF (t, cubeToSphere n z) = F (t, z) :=
+  DFunLike.congr_fun ((isQuotientMap_prodMap_cubeToSphere n).lift_comp F
+    (factorsThrough_prodMap_cubeToSphere hF)) (t, z)
+
+variable (n) in
 /-- **The cube modulo its boundary is homeomorphic to the sphere**, by the map induced by
 `TauCeti.cubeToSphere`.  It is pointed: the class of the boundary goes to the north pole. -/
 def cubeQuotientHomeomorphSphere [NeZero n] :
@@ -486,43 +530,50 @@ generalized loops are homotopic relative to the boundary of the cube exactly whe
 maps out of the sphere are homotopic relative to the north pole. -/
 theorem homotopic_iff_toSphere {p q : Ω^ (Fin n) X x} :
     GenLoop.Homotopic p q ↔ (toSphere p).HomotopicRel (toSphere q) {sphereNorthPole n} := by
-  -- The product of `cubeToSphere` with the identity of `I` is again a quotient map, as a
-  -- continuous surjection from a compact space onto a Hausdorff space.
-  let c : C(I × I^(Fin n), I × sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-    (ContinuousMap.id I).prodMap (cubeToSphere n)
-  have hc : IsQuotientMap c :=
-    c.continuous.isClosedMap.isQuotientMap c.continuous
-      (Function.surjective_id.prodMap (cubeToSphere_surjective n))
   constructor
   · rintro ⟨H⟩
-    have hH : Function.FactorsThrough H.toContinuousMap c := by
-      rintro ⟨s, y⟩ ⟨t, z⟩ h
-      simp only [c, ContinuousMap.prodMap_apply, ContinuousMap.id_apply, Prod.map_apply,
-        Prod.mk.injEq] at h
-      obtain ⟨rfl, h⟩ := h
-      rcases cubeToSphere_eq_cubeToSphere_iff.1 h with rfl | ⟨hy, hz⟩
-      · rfl
-      · exact (H.eq_fst s hy).trans <|
-          (p.2 y hy).trans <| (p.2 z hz).symm.trans (H.eq_fst s hz).symm
-    have hlift (t : I) (z : I^(Fin n)) : hc.lift H.toContinuousMap hH (t, cubeToSphere n z) =
-        H (t, z) :=
-      DFunLike.congr_fun (hc.lift_comp H.toContinuousMap hH) (t, z)
-    refine ⟨⟨⟨hc.lift H.toContinuousMap hH, fun s ↦ ?_, fun s ↦ ?_⟩, fun t s hs ↦ ?_⟩⟩
+    have hH (t : I) (y : I^(Fin n)) (hy : y ∈ Cube.boundary (Fin n)) (z : I^(Fin n))
+        (hz : z ∈ Cube.boundary (Fin n)) : H (t, y) = H (t, z) :=
+      (H.eq_fst t hy).trans <| (p.2 y hy).trans <| (p.2 z hz).symm.trans (H.eq_fst t hz).symm
+    refine ⟨⟨⟨liftProdCubeToSphere H.toContinuousMap hH, fun s ↦ ?_, fun s ↦ ?_⟩, fun t s hs ↦ ?_⟩⟩
     · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
-      simpa using hlift 0 z
+      simp
     · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
-      simpa using hlift 1 z
+      simp
     · obtain rfl := Set.mem_singleton_iff.1 hs
       rw [← cubeToSphere_eq_sphereNorthPole_iff.2 zero_mem_cubeBoundary]
-      simpa using (hlift t 0).trans (H.eq_fst t zero_mem_cubeBoundary)
+      simpa using H.eq_fst t zero_mem_cubeBoundary
   · rintro ⟨G⟩
-    refine ⟨⟨⟨G.toContinuousMap.comp c, fun z ↦ ?_, fun z ↦ ?_⟩, fun t z hz ↦ ?_⟩⟩
-    · simp [c]
-    · simp [c]
-    · simpa [c] using G.eq_fst t
+    refine ⟨⟨⟨G.toContinuousMap.comp ((ContinuousMap.id I).prodMap (cubeToSphere n)),
+      fun z ↦ ?_, fun z ↦ ?_⟩, fun t z hz ↦ ?_⟩⟩
+    · simp
+    · simp
+    · simpa using G.eq_fst t
         (Set.mem_singleton_iff.2 (cubeToSphere_eq_sphereNorthPole_iff.2 hz))
 
 end GenLoop
+
+namespace TauCeti.GenLoop.HomotopyAlong
+
+variable {n : ℕ} [NeZero n] {X : Type*} [TopologicalSpace X] {x y : X}
+
+/-- **A homotopy of generalized loops along a path is a free homotopy of maps out of the
+sphere.** If `h` is a homotopy from `f` to `g` whose boundary traces a path from the base point of
+`f` to that of `g`, then the corresponding maps out of the sphere are homotopic. -/
+theorem homotopic_toSphere {γ : Path x y} {f : Ω^ (Fin n) X x} {g : Ω^ (Fin n) X y}
+    (h : HomotopyAlong γ f g) :
+    (_root_.GenLoop.toSphere f).Homotopic (_root_.GenLoop.toSphere g) := by
+  -- At each time the homotopy is constant on the boundary of the cube, so it descends to the
+  -- product of `I` with the sphere.
+  refine ⟨⟨liftProdCubeToSphere h.toContinuousMap
+    (fun t y hy z hz ↦ (h.map_boundary t y hy).trans (h.map_boundary t z hz).symm),
+    fun s ↦ ?_, fun s ↦ ?_⟩⟩
+  · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+    simp
+  · obtain ⟨z, rfl⟩ := cubeToSphere_surjective n s
+    simp
+
+end TauCeti.GenLoop.HomotopyAlong
 
 namespace GenLoop
 
