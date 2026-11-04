@@ -34,8 +34,6 @@ theorem exists_fg_baseChange_eq_top (R S M : Type*) [CommSemiring R] [CommSemiri
   rw [← hs, Submodule.span_le]
   intro x hx
   obtain ⟨y, rfl⟩ := hspan hx
-  -- `baseChange` is the range of the scalar-extended inclusion; `lTensor` has the same
-  -- underlying function but retains the original scalar ring.
-  exact ⟨y, rfl⟩
+  exact ⟨y, congr_fun (LinearMap.baseChange_eq_lTensor (A := S) P.subtype) y⟩
 
 end TauCeti

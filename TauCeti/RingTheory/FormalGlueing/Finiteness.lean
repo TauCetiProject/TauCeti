@@ -75,10 +75,7 @@ theorem finite_iff_baseChange_and_localized {R S M : Type*}
       (Submodule.baseChange_eq_top_iff_subsingleton (Localization.Away g) N).mp
         (hNloc ⟨g, hg⟩)
     exact (LocalizedModule.equivTensorProduct (.powers g) (M ⧸ N)).injective.subsingleton
-  have htop : N = ⊤ := by
-    apply top_unique
-    intro m _
-    simpa using (Subsingleton.elim (N.mkQ m) 0)
+  have htop : N = ⊤ := Submodule.Quotient.subsingleton_iff.mp this
   exact Module.Finite.of_fg_top (htop ▸ hN)
 
 end TauCeti
