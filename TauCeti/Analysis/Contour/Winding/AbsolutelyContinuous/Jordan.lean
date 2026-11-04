@@ -1,0 +1,781 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
+public import TauCeti.Analysis.Normed.Module.FilledHull
+public import TauCeti.Topology.MetricSpace.Arclength.SimpleClosed
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Normed.Affine.AddTorsor
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.TangentJump
+import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Contour.Winding.Number.Reverse
+import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
+import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
+import TauCeti.Topology.JordanCurve.Path
+
+/-!
+# The Jordan index theorem and orientation sign for absolutely continuous and rectifiable curves
+
+For a simple closed absolutely continuous curve `γ` on `[a, b]` (`a < b`, `γ a = γ b`,
+`InjOn γ (Ico a b)`), the trace `C = γ '' uIcc a b` is a planar Jordan curve. Its complement splits
+into two connected components: the bounded inside `Ω = filledHull C \ C` and the unbounded outside
+`(filledHull C)ᶜ`.
+
+This file defines the canonical orientation sign `TauCeti.Contour.jordanSign γ a b : ℤ` and proves
+the **Jordan index theorem**:
+
+1. `jordanSign γ a b ∈ {1, -1}` (`AbsolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one`),
+2. `windingNumber γ a b z = jordanSign γ a b` for every `z ∈ filledHull C \ C`
+   (`AbsolutelyContinuousOnInterval.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff`), and
+3. `windingNumber γ a b z = 0` for every `z ∉ filledHull C`
+   (`AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_notMem_filledHull`).
+
+At every interior parameter `t₀ ∈ (a, b)` where `γ` is differentiable with nonzero velocity `v ≠ 0`,
+`jordanSign γ a b` identifies the geometric normal orientation: the rotated vector
+`(jordanSign γ a b : ℝ) • (I * v)` points strictly into `Ω`, while its negation
+`-(jordanSign γ a b : ℝ) • (I * v)` points strictly into `(filledHull C)ᶜ`
+(`AbsolutelyContinuousOnInterval.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt`).
+
+We also record the reversal and monotone/antitone reparametrization laws of `jordanSign`, evaluate
+`jordanSign (circleMap c R) 0 (2 * π) = 1` for every `R ≠ 0`, and specialize the Jordan index
+theorem and continuous reparametrization laws to the arclength parametrization
+`naturalParameterization γ (Icc a b) a` of any rectifiable simple closed curve.
+
+## References
+
+* L. Ahlfors, *Complex Analysis*, Chapter 4, §2.
+* R. B. Burckel, *An Introduction to Classical Complex Analysis*, Vol. 1, Chapter IV & Chapter IX.
+-/
+
+public section
+
+open Bornology Complex Filter MeasureTheory Metric Set
+open scoped Topology
+
+namespace TauCeti.Contour
+
+/-! ### Definition and elementary properties of `jordanSign` -/
+
+open scoped Classical in
+/-- The **orientation sign** of a planar curve `γ` on `[a, b]`: equal to `1` (resp. `-1`) when the
+bounded inside `filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)` is nonempty and `windingNumber γ a b`
+is constantly `1` (resp. `-1`) there, and `0` otherwise.
+
+For a simple closed absolutely continuous curve with `a < b`, the Jordan index theorem proves that
+`jordanSign γ a b` is always `1` or `-1` and equals the winding number throughout the inside. -/
+noncomputable def jordanSign (γ : ℝ → ℂ) (a b : ℝ) : ℤ :=
+  if (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty ∧
+      ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = 1 then 1
+  else if (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty ∧
+      ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1 then -1
+  else 0
+
+open scoped Classical in
+/-- Defining formula for `TauCeti.Contour.jordanSign`. -/
+theorem jordanSign_def (γ : ℝ → ℂ) (a b : ℝ) :
+    jordanSign γ a b =
+      if (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty ∧
+          ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = 1 then 1
+      else if (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty ∧
+          ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1 then -1
+      else 0 :=
+  (rfl)
+
+/-- `jordanSign γ a b = 1` if and only if the bounded inside is nonempty and `windingNumber γ a b`
+is constantly `1` on it. -/
+@[simp]
+theorem jordanSign_eq_one_iff {γ : ℝ → ℂ} {a b : ℝ} :
+    jordanSign γ a b = 1 ↔
+      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty ∧
+        ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = 1 := by
+  classical
+  rw [jordanSign_def]
+  split_ifs with h₁ h₂
+  · exact iff_of_true rfl h₁
+  · exact iff_of_false (by decide) h₁
+  · exact iff_of_false (by decide) h₁
+
+/-- `jordanSign γ a b = -1` if and only if the bounded inside is nonempty and `windingNumber γ a b`
+is constantly `-1` on it. -/
+@[simp]
+theorem jordanSign_eq_neg_one_iff {γ : ℝ → ℂ} {a b : ℝ} :
+    jordanSign γ a b = -1 ↔
+      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty ∧
+        ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1 := by
+  classical
+  rw [jordanSign_def]
+  split_ifs with h₁ h₂
+  · refine iff_of_false (by decide) fun ⟨⟨z, hz⟩, hneg⟩ ↦ ?_
+    have heq : (1 : ℂ) = -1 := (h₁.2 z hz).symm.trans (hneg z hz)
+    norm_num at heq
+  · exact iff_of_true rfl h₂
+  · exact iff_of_false (by decide) h₂
+
+/-- If the bounded inside is nonempty and `windingNumber γ a b` is `1` throughout it, then
+`jordanSign γ a b = 1`. -/
+theorem jordanSign_of_windingNumber_eq_one {γ : ℝ → ℂ} {a b : ℝ}
+    (hne : (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty)
+    (h : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = 1) :
+    jordanSign γ a b = 1 :=
+  jordanSign_eq_one_iff.mpr ⟨hne, h⟩
+
+/-- If the bounded inside is nonempty and `windingNumber γ a b` is `-1` throughout it, then
+`jordanSign γ a b = -1`. -/
+theorem jordanSign_of_windingNumber_eq_neg_one {γ : ℝ → ℂ} {a b : ℝ}
+    (hne : (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).Nonempty)
+    (h : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1) :
+    jordanSign γ a b = -1 :=
+  jordanSign_eq_neg_one_iff.mpr ⟨hne, h⟩
+
+/-- Every value of `jordanSign` belongs to `{1, -1, 0}`. -/
+theorem jordanSign_eq_one_or_neg_one_or_zero (γ : ℝ → ℂ) (a b : ℝ) :
+    jordanSign γ a b = 1 ∨ jordanSign γ a b = -1 ∨ jordanSign γ a b = 0 := by
+  classical
+  rw [jordanSign_def]
+  split_ifs <;> simp
+
+/-- The absolute value of `jordanSign` never exceeds `1`. -/
+theorem abs_jordanSign_le_one (γ : ℝ → ℂ) (a b : ℝ) : |jordanSign γ a b| ≤ 1 := by
+  rcases jordanSign_eq_one_or_neg_one_or_zero γ a b with h | h | h <;> simp [h]
+
+private theorem jordanSign_eq_of_image_eq_and_windingNumber_eq
+    {γ₁ γ₂ : ℝ → ℂ} {a₁ b₁ a₂ b₂ : ℝ}
+    (himg : γ₁ '' uIcc a₁ b₁ = γ₂ '' uIcc a₂ b₂)
+    (hw : ∀ z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂),
+      windingNumber γ₁ a₁ b₁ z = windingNumber γ₂ a₂ b₂ z) :
+    jordanSign γ₁ a₁ b₁ = jordanSign γ₂ a₂ b₂ := by
+  classical
+  simp only [jordanSign_def, himg]
+  have h1 : (∀ z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂),
+      windingNumber γ₁ a₁ b₁ z = 1) ↔
+      ∀ z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂),
+        windingNumber γ₂ a₂ b₂ z = 1 :=
+    forall₂_congr fun z hz ↦ by rw [hw z hz]
+  have h2 : (∀ z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂),
+      windingNumber γ₁ a₁ b₁ z = -1) ↔
+      ∀ z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂),
+        windingNumber γ₂ a₂ b₂ z = -1 :=
+    forall₂_congr fun z hz ↦ by rw [hw z hz]
+  simp only [h1, h2]
+
+private theorem jordanSign_eq_neg_of_image_eq_and_windingNumber_neg
+    {γ₁ γ₂ : ℝ → ℂ} {a₁ b₁ a₂ b₂ : ℝ}
+    (himg : γ₁ '' uIcc a₁ b₁ = γ₂ '' uIcc a₂ b₂)
+    (hw : ∀ z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂),
+      windingNumber γ₁ a₁ b₁ z = -windingNumber γ₂ a₂ b₂ z) :
+    jordanSign γ₁ a₁ b₁ = -jordanSign γ₂ a₂ b₂ := by
+  rcases jordanSign_eq_one_or_neg_one_or_zero γ₂ a₂ b₂ with h₂ | h₂ | h₂
+  · rw [h₂]
+    obtain ⟨hne, hall⟩ := jordanSign_eq_one_iff.mp h₂
+    exact jordanSign_eq_neg_one_iff.mpr ⟨himg ▸ hne, fun z hz ↦ by
+      have hz' : z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂) := himg ▸ hz
+      rw [hw z hz', hall z hz']⟩
+  · rw [h₂, neg_neg]
+    obtain ⟨hne, hall⟩ := jordanSign_eq_neg_one_iff.mp h₂
+    exact jordanSign_eq_one_iff.mpr ⟨himg ▸ hne, fun z hz ↦ by
+      have hz' : z ∈ filledHull (γ₂ '' uIcc a₂ b₂) \ (γ₂ '' uIcc a₂ b₂) := himg ▸ hz
+      rw [hw z hz', hall z hz', neg_neg]⟩
+  · rw [h₂, neg_zero]
+    rcases jordanSign_eq_one_or_neg_one_or_zero γ₁ a₁ b₁ with h₁ | h₁ | h₁
+    · exfalso
+      obtain ⟨hne, hall⟩ := jordanSign_eq_one_iff.mp h₁
+      have h₂' : jordanSign γ₂ a₂ b₂ = -1 := jordanSign_eq_neg_one_iff.mpr
+        ⟨himg ▸ hne, fun z hz ↦ neg_eq_iff_eq_neg.mp ((hw z hz).symm.trans (hall z (himg ▸ hz)))⟩
+      omega
+    · exfalso
+      obtain ⟨hne, hall⟩ := jordanSign_eq_neg_one_iff.mp h₁
+      have h₂' : jordanSign γ₂ a₂ b₂ = 1 := jordanSign_eq_one_iff.mpr
+        ⟨himg ▸ hne, fun z hz ↦ neg_inj.mp ((hw z hz).symm.trans (hall z (himg ▸ hz)))⟩
+      omega
+    · exact h₁
+
+/-- `jordanSign` depends only on the values of the curve on `uIcc a b`. -/
+theorem jordanSign_congr {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} (h : EqOn γ₁ γ₂ (uIcc a b)) :
+    jordanSign γ₁ a b = jordanSign γ₂ a b :=
+  jordanSign_eq_of_image_eq_and_windingNumber_eq (image_congr h) fun _ _ ↦
+    windingNumber_congr_curve (h.mono uIoo_subset_uIcc_self)
+
+/-- On a degenerate interval `[a, a]`, `jordanSign` vanishes. -/
+@[simp]
+theorem jordanSign_same (γ : ℝ → ℂ) (a : ℝ) : jordanSign γ a a = 0 := by
+  rcases jordanSign_eq_one_or_neg_one_or_zero γ a a with h | h | h
+  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_one_iff.mp h
+    have h0 := hall z hz
+    rw [windingNumber_same] at h0
+    norm_num at h0
+  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_neg_one_iff.mp h
+    have h0 := hall z hz
+    rw [windingNumber_same] at h0
+    norm_num at h0
+  · exact h
+
+/-- A constant curve has `jordanSign` equal to `0`. -/
+@[simp]
+theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 0 := by
+  rcases jordanSign_eq_one_or_neg_one_or_zero (fun _ ↦ c) a b with h | h | h
+  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_one_iff.mp h
+    have h0 := hall z hz
+    rw [windingNumber_const] at h0
+    norm_num at h0
+  · obtain ⟨⟨z, hz⟩, hall⟩ := jordanSign_eq_neg_one_iff.mp h
+    have h0 := hall z hz
+    rw [windingNumber_const] at h0
+    norm_num at h0
+  · exact h
+
+/-- A simple closed continuous curve on `[a, b]` (`a < b`) traces a Jordan curve. -/
+private theorem isJordanCurve_image_Icc {X : Type*} [TopologicalSpace X] [T2Space X]
+    {γ : ℝ → X} {a b : ℝ} (hab : a < b) (hcont : ContinuousOn γ (Icc a b))
+    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
+    IsJordanCurve (γ '' Icc a b) := by
+  have hmap_cont : Continuous fun s : unitInterval ↦ AffineMap.lineMap a b (s : ℝ) := by
+    have heq : (fun s : unitInterval ↦ AffineMap.lineMap a b (s : ℝ)) =
+        fun s : unitInterval ↦ (b - a) * (s : ℝ) + a := by
+      ext s
+      simp only [AffineMap.lineMap_apply, smul_eq_mul, vsub_eq_sub, vadd_eq_add]
+      ring
+    rw [heq]
+    fun_prop
+  have hmaps : MapsTo (AffineMap.lineMap a b) (Icc (0 : ℝ) 1) (Icc a b) := by
+    rw [mapsTo_iff_image_subset, ← segment_eq_image_lineMap, segment_eq_Icc hab.le]
+  let p : Path (γ a) (γ a) :=
+    { toFun := fun s ↦ γ (AffineMap.lineMap a b (s : ℝ))
+      continuous_toFun := hcont.comp_continuous hmap_cont fun s ↦ hmaps s.2
+      source' := by simp
+      target' := by simp [hclosed] }
+  have hrange : range p = γ '' Icc a b := by
+    rw [← segment_eq_Icc hab.le, segment_eq_image_lineMap, ← image_comp]
+    ext x
+    simp [p, unitInterval]
+  rw [← hrange]
+  refine isJordanCurve_range_of_eq_or_eq_endpoints p fun s t hst ↦ ?_
+  have hmono : StrictMono (AffineMap.lineMap (k := ℝ) a b) := fun r u hru ↦ by
+    have hr : AffineMap.lineMap (k := ℝ) a b r = r * (b - a) + a := by
+      simp [AffineMap.lineMap_apply]
+    have hu : AffineMap.lineMap (k := ℝ) a b u = u * (b - a) + a := by
+      simp [AffineMap.lineMap_apply]
+    rw [hr, hu]
+    linarith [mul_lt_mul_of_pos_right hru (sub_pos.mpr hab)]
+  have hmem_Ico : ∀ {u : unitInterval}, u ≠ 1 → AffineMap.lineMap a b (u : ℝ) ∈ Ico a b := by
+    intro u hu1
+    have hlt1 : (u : ℝ) < 1 := u.2.2.lt_of_ne (Subtype.coe_ne_coe.mpr hu1)
+    exact ⟨by simpa using hmono.monotone u.2.1, by simpa using hmono hlt1⟩
+  by_cases hs1 : s = 1
+  · by_cases ht1 : t = 1
+    · exact Or.inl (hs1.trans ht1.symm)
+    · subst hs1
+      have heq : γ (AffineMap.lineMap a b (t : ℝ)) = γ a := by
+        simpa [p, hclosed.symm] using hst.symm
+      have ht0 : (t : ℝ) = 0 := hmono.injective <| by
+        simpa using hinj (hmem_Ico ht1) ⟨le_rfl, hab⟩ heq
+      exact Or.inr (Or.inr ⟨rfl, Subtype.ext ht0⟩)
+  · by_cases ht1 : t = 1
+    · subst ht1
+      have heq : γ (AffineMap.lineMap a b (s : ℝ)) = γ a := by
+        simpa [p, hclosed.symm] using hst
+      have hs0 : (s : ℝ) = 0 := hmono.injective <| by
+        simpa using hinj (hmem_Ico hs1) ⟨le_rfl, hab⟩ heq
+      exact Or.inr (Or.inl ⟨Subtype.ext hs0, rfl⟩)
+    · exact Or.inl (Subtype.ext (hmono.injective (hinj (hmem_Ico hs1) (hmem_Ico ht1) hst)))
+
+/-- Core dichotomy at any regular interior point of a simple closed AC curve: either the left
+normal ray enters `filledHull C \ C` with winding number `1` on all of `filledHull C \ C` and the
+right normal ray enters `(filledHull C)ᶜ`, or the reverse holds with winding number `-1`. -/
+private theorem simple_closed_normal_dichotomy
+    {γ : ℝ → ℂ} {a b t₀ : ℝ} {v : ℂ} (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hv : v ≠ 0) :
+    ((∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = 1) ∧
+      ∀ᶠ h : ℝ in 𝓝[>] 0,
+        γ t₀ + h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
+          γ t₀ - h • (I * v) ∉ filledHull (γ '' uIcc a b))
+    ∨
+    ((∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1) ∧
+      ∀ᶠ h : ℝ in 𝓝[>] 0,
+        γ t₀ - h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
+          γ t₀ + h • (I * v) ∉ filledHull (γ '' uIcc a b)) := by
+  set C := γ '' uIcc a b
+  have hC : IsJordanCurve C := by
+    dsimp only [C]
+    rw [uIcc_of_le hab.le]
+    exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  have hjump := hγ.eventually_windingNumber_add_I_mul_eq_add_one hab hclosed hinj ht₀ hd hv
+  have hzero_out : ∀ {w : ℂ}, w ∉ filledHull C → windingNumber γ a b w = 0 := fun hw ↦
+    hγ.windingNumber_eq_zero_of_unbounded_component hclosed (mt mem_filledHull_iff.mpr hw)
+  have hpointwise : ∀ h : ℝ,
+      (γ t₀ + h • (I * v) ∉ C ∧ γ t₀ - h • (I * v) ∉ C ∧
+        windingNumber γ a b (γ t₀ + h • (I * v)) =
+          windingNumber γ a b (γ t₀ - h • (I * v)) + 1) →
+      ((∀ z ∈ filledHull C \ C, windingNumber γ a b z = 1) ∧
+        γ t₀ + h • (I * v) ∈ filledHull C \ C ∧ γ t₀ - h • (I * v) ∉ filledHull C) ∨
+      ((∀ z ∈ filledHull C \ C, windingNumber γ a b z = -1) ∧
+        γ t₀ - h • (I * v) ∈ filledHull C \ C ∧ γ t₀ + h • (I * v) ∉ filledHull C) := by
+    rintro h ⟨hposC, hnegC, hdiff⟩
+    by_cases hposF : γ t₀ + h • (I * v) ∈ filledHull C
+    · by_cases hnegF : γ t₀ - h • (I * v) ∈ filledHull C
+      · exfalso
+        have heq := hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+          (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hnegF, hnegC⟩ ⟨hposF, hposC⟩)
+        have h10 : (1 : ℂ) = 0 := by
+          rw [← add_sub_cancel_left (windingNumber γ a b (γ t₀ - h • (I * v))) 1,
+            ← hdiff, heq, sub_self]
+        exact one_ne_zero h10
+      · left
+        have hw1 : windingNumber γ a b (γ t₀ + h • (I * v)) = 1 := by
+          rw [hdiff, hzero_out hnegF, zero_add]
+        refine ⟨fun z hz ↦ ?_, ⟨hposF, hposC⟩, hnegF⟩
+        rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+          (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hposF, hposC⟩ hz), hw1]
+    · by_cases hnegF : γ t₀ - h • (I * v) ∈ filledHull C
+      · right
+        have hwn1 : windingNumber γ a b (γ t₀ - h • (I * v)) = -1 := by
+          rw [hzero_out hposF] at hdiff
+          exact eq_neg_of_add_eq_zero_left hdiff.symm
+        refine ⟨fun z hz ↦ ?_, ⟨hnegF, hnegC⟩, hposF⟩
+        rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+          (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hnegF, hnegC⟩ hz), hwn1]
+      · exfalso
+        rw [hzero_out hposF, hzero_out hnegF, zero_add] at hdiff
+        exact zero_ne_one hdiff
+  obtain ⟨z₀, hz₀⟩ := hC.nonempty_filledHull_sdiff
+  obtain ⟨h₀, hh₀⟩ := hjump.exists
+  rcases hpointwise h₀ hh₀ with ⟨hall1, -, -⟩ | ⟨halln1, -, -⟩
+  · refine Or.inl ⟨hall1, hjump.mono fun h hh ↦ ?_⟩
+    rcases hpointwise h hh with ⟨-, hmem⟩ | ⟨halln1, -⟩
+    · exact hmem
+    · exfalso
+      have heq : (1 : ℂ) = -1 := (hall1 z₀ hz₀).symm.trans (halln1 z₀ hz₀)
+      norm_num at heq
+  · refine Or.inr ⟨halln1, hjump.mono fun h hh ↦ ?_⟩
+    rcases hpointwise h hh with ⟨hall1, -⟩ | ⟨-, hmem⟩
+    · exfalso
+      have heq : (1 : ℂ) = -1 := (hall1 z₀ hz₀).symm.trans (halln1 z₀ hz₀)
+      norm_num at heq
+    · exact hmem
+
+end TauCeti.Contour
+
+open TauCeti TauCeti.Contour
+
+/-! ### Unbounded vanishing, reparametrization laws, and Jordan index theorem for AC curves -/
+
+namespace AbsolutelyContinuousOnInterval
+
+/-- **The winding number of a closed absolutely continuous curve vanishes outside its filled
+hull.** -/
+theorem windingNumber_eq_zero_of_notMem_filledHull
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (hz : z ∉ filledHull (γ '' uIcc a b)) :
+    windingNumber γ a b z = 0 :=
+  hγ.windingNumber_eq_zero_of_unbounded_component hclosed (mt mem_filledHull_iff.mpr hz)
+
+/-- **Reversing the interval orientation negates `jordanSign`.** -/
+@[simp]
+theorem jordanSign_symm {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    jordanSign γ b a = -jordanSign γ a b :=
+  jordanSign_eq_neg_of_image_eq_and_windingNumber_neg (by rw [uIcc_comm]) fun z hz ↦
+    windingNumber_symm (cauchyPVExistsAt_of_avoidance hγ.continuousOn
+      (fun t ht heq ↦ hz.2 ⟨t, ht, heq⟩) (hγ.intervalIntegrable_inv_sub_mul_deriv hz.2))
+
+/-- **An increasing absolutely continuous reparametrization onto `[c, d]` preserves
+`jordanSign`.** -/
+theorem jordanSign_comp_of_monotoneOn
+    {γ : ℝ → ℂ} {θ : ℝ → ℝ} {a b c d : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ c d)
+    (hθ : AbsolutelyContinuousOnInterval θ a b) (hab : a ≤ b)
+    (hmono : MonotoneOn θ (Icc a b)) (ha : θ a = c) (hb : θ b = d) :
+    jordanSign (γ ∘ θ) a b = jordanSign γ c d := by
+  have hcd : c ≤ d := ha ▸ hb ▸ hmono (left_mem_Icc.mpr hab) (right_mem_Icc.mpr hab) hab
+  have hθc : ContinuousOn θ (Icc a b) := uIcc_of_le hab ▸ hθ.continuousOn
+  have himg : (γ ∘ θ) '' uIcc a b = γ '' uIcc c d := by
+    rw [image_comp, uIcc_of_le hab, uIcc_of_le hcd, hθc.image_Icc_of_monotoneOn hab hmono, ha, hb]
+  exact jordanSign_eq_of_image_eq_and_windingNumber_eq himg fun z hz ↦
+    hγ.windingNumber_comp_of_monotoneOn hθ hab hmono ha hb hz.2
+
+/-- **A decreasing absolutely continuous reparametrization onto `[c, d]` negates
+`jordanSign`.** -/
+theorem jordanSign_comp_of_antitoneOn
+    {γ : ℝ → ℂ} {θ : ℝ → ℝ} {a b c d : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ c d)
+    (hθ : AbsolutelyContinuousOnInterval θ a b) (hab : a ≤ b)
+    (hanti : AntitoneOn θ (Icc a b)) (ha : θ a = d) (hb : θ b = c) :
+    jordanSign (γ ∘ θ) a b = -jordanSign γ c d := by
+  have hcd : c ≤ d := ha ▸ hb ▸ hanti (left_mem_Icc.mpr hab) (right_mem_Icc.mpr hab) hab
+  have hθc : ContinuousOn θ (Icc a b) := uIcc_of_le hab ▸ hθ.continuousOn
+  have himg : (γ ∘ θ) '' uIcc a b = γ '' uIcc c d := by
+    rw [image_comp, uIcc_of_le hab, uIcc_of_le hcd, hθc.image_Icc_of_antitoneOn hab hanti, ha, hb]
+  exact jordanSign_eq_neg_of_image_eq_and_windingNumber_neg himg fun z hz ↦
+    hγ.windingNumber_comp_of_antitoneOn hθ hab hanti ha hb hz.2
+
+/-- **Affine normalization to `[0, 1]` preserves `jordanSign`**, carrying the orientation of the
+original ordered pair `(a, b)`. -/
+@[simp]
+theorem jordanSign_comp_lineMap
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    jordanSign (γ ∘ AffineMap.lineMap a b) 0 1 = jordanSign γ a b := by
+  have hseg : AffineMap.lineMap a b '' Icc (0 : ℝ) 1 = uIcc a b := by
+    rw [← segment_eq_image_lineMap, segment_eq_uIcc]
+  have himg : (γ ∘ AffineMap.lineMap a b) '' uIcc (0 : ℝ) 1 = γ '' uIcc a b := by
+    rw [image_comp, uIcc_of_le (zero_le_one' ℝ), hseg]
+  exact jordanSign_eq_of_image_eq_and_windingNumber_eq himg fun z hz ↦
+    hγ.windingNumber_comp_lineMap hz.2
+
+/-- **Parameter reflection `t ↦ γ (a + b - t)` on `[a, b]` negates `jordanSign`.** -/
+theorem jordanSign_comp_sub
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    jordanSign (fun t ↦ γ (a + b - t)) a b = -jordanSign γ a b := by
+  have hθ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ a + b - t) a b := by
+    have heq : (fun t : ℝ ↦ a + b - t) = AffineMap.lineMap (a + b) (a + b - 1) := by
+      ext t; simp [AffineMap.lineMap_apply]; ring
+    rw [heq]
+    exact (lipschitzWith_lineMap _ _).lipschitzOnWith.absolutelyContinuousOnInterval
+  rcases le_total a b with hab | hba
+  · exact hγ.jordanSign_comp_of_antitoneOn hθ hab
+      (fun _ _ _ _ hst ↦ sub_le_sub_left hst _) (by ring) (by ring)
+  · have hcomp : AbsolutelyContinuousOnInterval (fun t ↦ γ (a + b - t)) b a :=
+      hγ.symm.comp_antitoneOn hθ.symm
+        (fun _ _ _ _ hst ↦ sub_le_sub_left hst _)
+        (fun t ht ↦ by
+          rw [uIcc_of_le hba] at ht ⊢
+          exact ⟨by linarith [ht.2], by linarith [ht.1]⟩)
+    have hanti := hγ.symm.jordanSign_comp_of_antitoneOn hθ.symm hba
+      (fun _ _ _ _ hst ↦ sub_le_sub_left hst _) (by ring) (by ring)
+    dsimp only [Function.comp_def] at hanti
+    rw [hcomp.jordanSign_symm, hanti, hγ.symm.jordanSign_symm, neg_neg]
+
+/-- **Jordan index theorem (orientation sign dichotomy):** for a simple closed absolutely
+continuous curve on `[a, b]` (`a < b`), `jordanSign γ a b` is either `1` or `-1`, and equals the
+winding number at every point of `filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)`. -/
+theorem jordanSign_eq_one_or_neg_one
+    {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
+    jordanSign γ a b = 1 ∨ jordanSign γ a b = -1 := by
+  have hnonconst : ∃ s ∈ Icc a b, ∃ t ∈ Icc a b, γ s ≠ γ t :=
+    ⟨a, ⟨le_rfl, hab.le⟩, (a + b) / 2, ⟨by linarith, by linarith⟩,
+      fun heq ↦ (by linarith : a ≠ (a + b) / 2)
+        (hinj ⟨le_rfl, hab⟩ ⟨by linarith, by linarith⟩ heq)⟩
+  obtain ⟨t₀, ht₀, v, hv, hd⟩ := hγ.exists_mem_Ioo_hasDerivAt_ne_zero hab hnonconst
+  have hC : IsJordanCurve (γ '' uIcc a b) := by
+    rw [uIcc_of_le hab.le]
+    exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  rcases simple_closed_normal_dichotomy hab hγ hclosed hinj ht₀ hd hv with
+    ⟨hall1, -⟩ | ⟨halln1, -⟩
+  · exact Or.inl (jordanSign_of_windingNumber_eq_one hC.nonempty_filledHull_sdiff hall1)
+  · exact Or.inr (jordanSign_of_windingNumber_eq_neg_one hC.nonempty_filledHull_sdiff halln1)
+
+/-- The orientation sign of a simple closed absolutely continuous curve (`a < b`) has unit absolute
+value. -/
+@[simp]
+theorem abs_jordanSign_eq_one
+    {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
+    |jordanSign γ a b| = 1 := by
+  rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [h]
+
+/-- The orientation sign of a simple closed absolutely continuous curve (`a < b`) is nonzero. -/
+theorem jordanSign_ne_zero
+    {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
+    jordanSign γ a b ≠ 0 := by
+  rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> omega
+
+/-- **The Jordan index theorem for simple closed absolutely continuous curves:** on the bounded
+inside `filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)`, `windingNumber γ a b` is constantly equal to
+`jordanSign γ a b ∈ {1, -1}`. -/
+theorem windingNumber_eq_jordanSign_of_mem_filledHull_sdiff
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
+    (hz : z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)) :
+    windingNumber γ a b z = jordanSign γ a b := by
+  rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h
+  · rw [h, Int.cast_one]
+    exact (jordanSign_eq_one_iff.mp h).2 z hz
+  · rw [h, Int.cast_neg, Int.cast_one]
+    exact (jordanSign_eq_neg_one_iff.mp h).2 z hz
+
+/-- **Geometric normal identification of `jordanSign`:** at any interior parameter `t₀ ∈ (a, b)`
+where a simple closed absolutely continuous curve has nonzero derivative `v ≠ 0`, the vector
+`(jordanSign γ a b : ℝ) • (I * v)` points into the bounded inside
+`filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)`, while `-(jordanSign γ a b : ℝ) • (I * v)` points
+into the unbounded outside `(filledHull (γ '' uIcc a b))ᶜ`. -/
+theorem eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
+    {γ : ℝ → ℂ} {a b t₀ : ℝ} {v : ℂ} (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hv : v ≠ 0) :
+    ∀ᶠ h : ℝ in 𝓝[>] 0,
+      γ t₀ + h • ((jordanSign γ a b : ℝ) • (I * v)) ∈
+        filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
+      γ t₀ - h • ((jordanSign γ a b : ℝ) • (I * v)) ∉ filledHull (γ '' uIcc a b) := by
+  have hC : IsJordanCurve (γ '' uIcc a b) := by
+    rw [uIcc_of_le hab.le]
+    exact isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  rcases simple_closed_normal_dichotomy hab hγ hclosed hinj ht₀ hd hv with
+    ⟨hall1, hev⟩ | ⟨halln1, hev⟩
+  · rw [jordanSign_of_windingNumber_eq_one hC.nonempty_filledHull_sdiff hall1]
+    simpa using hev
+  · rw [jordanSign_of_windingNumber_eq_neg_one hC.nonempty_filledHull_sdiff halln1]
+    simpa [smul_neg, sub_eq_add_neg] using hev
+
+/-- At any regular interior point `t₀ ∈ (a, b)` (`HasDerivAt γ v t₀`, `v ≠ 0`), a simple closed AC
+curve is positively oriented (`jordanSign γ a b = 1`) if and only if the leftward normal `I * v`
+points into the bounded inside `filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)`. -/
+theorem jordanSign_eq_one_iff_eventually_mem_filledHull_sdiff
+    {γ : ℝ → ℂ} {a b t₀ : ℝ} {v : ℂ} (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hv : v ≠ 0) :
+    jordanSign γ a b = 1 ↔
+      ∀ᶠ h : ℝ in 𝓝[>] 0,
+        γ t₀ + h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) := by
+  have hev :=
+    hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
+      hab hclosed hinj ht₀ hd hv
+  constructor
+  · intro h1
+    rw [h1] at hev
+    exact hev.mono fun _ hh ↦ by simpa using hh.1
+  · intro hin
+    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h1 | hn1
+    · exact h1
+    · exfalso
+      rw [hn1] at hev
+      obtain ⟨h, hmem, hnot⟩ := (hin.and hev).exists
+      have hnot' : γ t₀ + h • (I * v) ∉ filledHull (γ '' uIcc a b) := by
+        simpa [smul_neg, sub_eq_add_neg] using hnot.2
+      exact hnot' hmem.1
+
+/-- Counterpart of `jordanSign_eq_one_iff_eventually_mem_filledHull_sdiff` for negative orientation
+(`jordanSign γ a b = -1`): `-(I * v)` points into the bounded inside. -/
+theorem jordanSign_eq_neg_one_iff_eventually_mem_filledHull_sdiff
+    {γ : ℝ → ℂ} {a b t₀ : ℝ} {v : ℂ} (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hv : v ≠ 0) :
+    jordanSign γ a b = -1 ↔
+      ∀ᶠ h : ℝ in 𝓝[>] 0,
+        γ t₀ - h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) := by
+  have hev :=
+    hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
+      hab hclosed hinj ht₀ hd hv
+  constructor
+  · intro hn1
+    rw [hn1] at hev
+    exact hev.mono fun _ hh ↦ by simpa [smul_neg, sub_eq_add_neg] using hh.1
+  · intro hin
+    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h1 | hn1
+    · exfalso
+      rw [h1] at hev
+      obtain ⟨h, hmem, hnot⟩ := (hin.and hev).exists
+      exact (by simpa using hnot.2 : γ t₀ - h • (I * v) ∉ filledHull (γ '' uIcc a b)) hmem.1
+    · exact hn1
+
+/-- For an absolutely continuous curve on `[a, b]` (`a ≤ b`), the off-trace winding number of its
+arclength parametrization `naturalParameterization γ (Icc a b) a` on
+`[0, (eVariationOn γ (Icc a b)).toReal]` agrees with `windingNumber γ a b`. -/
+theorem windingNumber_naturalParameterization
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hab : a ≤ b) (hz : z ∉ γ '' Icc a b) :
+    windingNumber (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal z = windingNumber γ a b z := by
+  have hBV : BoundedVariationOn γ (Icc a b) := uIcc_of_le hab ▸ hγ.boundedVariationOn
+  have hcont : ContinuousOn γ (Icc a b) := uIcc_of_le hab ▸ hγ.continuousOn
+  set θ := variationOnFromTo γ (Icc a b) a
+  set η := naturalParameterization γ (Icc a b) a
+  set L := (eVariationOn γ (Icc a b)).toReal
+  have hθa : θ a = 0 := variationOnFromTo.self _ _ _
+  have hθb : θ b = L := by simp only [θ, L, variationOnFromTo.eq_of_le _ _ hab, inter_self]
+  have hθ : AbsolutelyContinuousOnInterval θ a b := by
+    simpa only [θ, uIcc_of_le hab] using hγ.absolutelyContinuousOnInterval_variationOnFromTo
+  have hθm : MonotoneOn θ (Icc a b) :=
+    variationOnFromTo.monotoneOn hBV.locallyBoundedVariationOn (left_mem_Icc.mpr hab)
+  have hfactor : EqOn (η ∘ θ) γ (Icc a b) := fun t ht ↦
+    hBV.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
+      (left_mem_Icc.mpr hab) ht
+  have hη : AbsolutelyContinuousOnInterval η 0 L :=
+    hBV.absolutelyContinuousOnInterval_naturalParameterization hcont hab
+  have hzη : z ∉ η '' uIcc 0 L := by
+    rwa [uIcc_of_le ENNReal.toReal_nonneg, hBV.image_naturalParameterization_Icc hcont hab]
+  rw [← windingNumber_congr_curve (fun t ht ↦ hfactor (Ioo_subset_Icc_self (uIoo_of_le hab ▸ ht))),
+    hη.windingNumber_comp_of_monotoneOn hθ hab hθm hθa hθb hzη]
+
+/-- **Arclength invariance of `jordanSign` for absolutely continuous curves:** for `a ≤ b`,
+passing to `naturalParameterization γ (Icc a b) a` on `[0, (eVariationOn γ (Icc a b)).toReal]`
+preserves `jordanSign`. -/
+theorem jordanSign_naturalParameterization
+    {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
+    jordanSign (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal = jordanSign γ a b := by
+  have hBV : BoundedVariationOn γ (Icc a b) := uIcc_of_le hab ▸ hγ.boundedVariationOn
+  have hcont : ContinuousOn γ (Icc a b) := uIcc_of_le hab ▸ hγ.continuousOn
+  have himg : naturalParameterization γ (Icc a b) a ''
+      uIcc 0 (eVariationOn γ (Icc a b)).toReal = γ '' uIcc a b := by
+    rw [uIcc_of_le ENNReal.toReal_nonneg, uIcc_of_le hab,
+      hBV.image_naturalParameterization_Icc hcont hab]
+  exact jordanSign_eq_of_image_eq_and_windingNumber_eq himg fun z hz ↦
+    hγ.windingNumber_naturalParameterization hab (uIcc_of_le hab ▸ hz.2)
+
+end AbsolutelyContinuousOnInterval
+
+/-! ### Concrete evaluation on circles -/
+
+namespace TauCeti.Contour
+
+private theorem circleMap_ac (c : ℂ) (R a b : ℝ) :
+    AbsolutelyContinuousOnInterval (circleMap c R) a b := by
+  have hlip : LipschitzOnWith ‖R‖₊ (circleMap c R) (uIcc a b) :=
+    (convex_uIcc a b).lipschitzOnWith_of_nnnorm_deriv_le
+      (fun θ _ ↦ differentiable_circleMap c R θ)
+      (fun θ _ ↦ by simp [deriv_circleMap])
+  exact hlip.absolutelyContinuousOnInterval
+
+/-- **The standard circle `circleMap c R` (`R ≠ 0`) on `[0, 2π]` has orientation sign `1`.** -/
+@[simp]
+theorem jordanSign_circleMap (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
+    jordanSign (circleMap c R) 0 (2 * Real.pi) = 1 := by
+  have hab : (0 : ℝ) < 2 * Real.pi := Real.two_pi_pos
+  have hac : AbsolutelyContinuousOnInterval (circleMap c R) 0 (2 * Real.pi) :=
+    circleMap_ac c R 0 (2 * Real.pi)
+  have hclosed : circleMap c R 0 = circleMap c R (2 * Real.pi) := by
+    simpa using ((periodic_circleMap c R) 0).symm
+  have hinj : InjOn (circleMap c R) (Ico 0 (2 * Real.pi)) :=
+    injOn_circleMap_of_abs_sub_le' hR (by linarith)
+  have hc_not_trace : c ∉ circleMap c R '' uIcc 0 (2 * Real.pi) := by
+    rintro ⟨θ, -, hθ⟩
+    exact circleMap_ne_center hR hθ
+  have hc_wind : windingNumber (circleMap c R) 0 (2 * Real.pi) c = 1 :=
+    windingNumber_circleMap_center_eq_one hR
+  have hc_hull : c ∈ filledHull (circleMap c R '' uIcc 0 (2 * Real.pi)) := by
+    by_contra hnot
+    have h0 := hac.windingNumber_eq_zero_of_notMem_filledHull hclosed hnot
+    rw [hc_wind] at h0
+    exact one_ne_zero h0
+  have heq := hac.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hab hclosed hinj
+    ⟨hc_hull, hc_not_trace⟩
+  rw [hc_wind, ← Int.cast_one] at heq
+  exact Int.cast_inj.mp heq.symm
+
+/-- **The reversed circle `circleMap c R` (`R ≠ 0`) on `[2π, 0]` has orientation sign `-1`.** -/
+@[simp]
+theorem jordanSign_circleMap_symm (c : ℂ) {R : ℝ} (hR : R ≠ 0) :
+    jordanSign (circleMap c R) (2 * Real.pi) 0 = -1 := by
+  rw [(circleMap_ac c R 0 (2 * Real.pi)).jordanSign_symm, jordanSign_circleMap c hR]
+
+end TauCeti.Contour
+
+/-! ### Arclength specialization and continuous reparametrization laws for rectifiable curves -/
+
+namespace BoundedVariationOn
+
+/-- **Jordan index theorem for rectifiable simple closed curves (orientation sign dichotomy):**
+the arclength parametrization `naturalParameterization γ (Icc a b) a` on
+`[0, (eVariationOn γ (Icc a b)).toReal]` of a continuous simple closed curve of bounded variation
+(`a < b`) has orientation sign `1` or `-1`. -/
+theorem jordanSign_naturalParameterization_eq_one_or_neg_one
+    {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b) (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) :
+    jordanSign (naturalParameterization γ (Icc a b) a) 0 (eVariationOn γ (Icc a b)).toReal = 1 ∨
+      jordanSign (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal = -1 := by
+  have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
+    hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
+  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
+      (eVariationOn γ (Icc a b)).toReal :=
+    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab.le
+  have hηclosed : naturalParameterization γ (Icc a b) a 0 =
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
+    (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab.le)).trans
+      (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab.le).symm)
+  exact hη.jordanSign_eq_one_or_neg_one hL hηclosed
+    (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
+
+/-- **The Jordan index theorem for the arclength parametrization of a rectifiable simple closed
+curve:** on `filledHull (γ '' Icc a b) \ (γ '' Icc a b)`, the winding number of
+`naturalParameterization γ (Icc a b) a` equals its orientation sign `σ ∈ {1, -1}`. -/
+theorem windingNumber_naturalParameterization_eq_jordanSign
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hab : a < b) (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
+    (hz : z ∈ filledHull (γ '' Icc a b) \ (γ '' Icc a b)) :
+    windingNumber (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal z =
+      jordanSign (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal := by
+  have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
+    hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
+  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
+      (eVariationOn γ (Icc a b)).toReal :=
+    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab.le
+  have hηclosed : naturalParameterization γ (Icc a b) a 0 =
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
+    (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab.le)).trans
+      (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab.le).symm)
+  have hz' : z ∈ filledHull (naturalParameterization γ (Icc a b) a ''
+      uIcc 0 (eVariationOn γ (Icc a b)).toReal) \
+      (naturalParameterization γ (Icc a b) a '' uIcc 0 (eVariationOn γ (Icc a b)).toReal) := by
+    rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization_Icc hcont hab.le]
+  exact hη.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hL hηclosed
+    (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) hz'
+
+/-- **Outside the filled hull of a rectifiable closed curve, the winding number of its arclength
+parametrization vanishes.** -/
+theorem windingNumber_naturalParameterization_eq_zero_of_notMem_filledHull
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hab : a ≤ b) (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b)
+    (hz : z ∉ filledHull (γ '' Icc a b)) :
+    windingNumber (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal z = 0 := by
+  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
+      (eVariationOn γ (Icc a b)).toReal :=
+    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
+  have hηclosed : naturalParameterization γ (Icc a b) a 0 =
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
+    (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab)).trans
+      (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
+  have hz' : z ∉ filledHull (naturalParameterization γ (Icc a b) a ''
+      uIcc 0 (eVariationOn γ (Icc a b)).toReal) := by
+    rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization_Icc hcont hab]
+  exact hη.windingNumber_eq_zero_of_notMem_filledHull hηclosed hz'
+
+/-- **Increasing continuous reparametrizations preserve the arclength orientation sign of a
+rectifiable curve.** The reparametrization `φ` need not be absolutely continuous. -/
+theorem jordanSign_naturalParameterization_comp_of_monotoneOn
+    {γ : ℝ → ℂ} {φ : ℝ → ℝ} {a b c d : ℝ} (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
+    (hφm : MonotoneOn φ (Icc c d)) (hφc : φ c = a) (hφd : φ d = b) :
+    jordanSign (naturalParameterization (γ ∘ φ) (Icc c d) c) 0
+        (eVariationOn (γ ∘ φ) (Icc c d)).toReal =
+      jordanSign (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal := by
+  have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
+    rw [eVariationOn.comp_eq_of_monotoneOn _ _ hφm,
+      hφ.image_Icc_of_monotoneOn hcd hφm, hφc, hφd]
+  rw [hL]
+  exact jordanSign_congr (uIcc_of_le ENNReal.toReal_nonneg ▸
+    hγ.eqOn_naturalParameterization_comp_of_monotoneOn hcont hcd hφ hφm hφc hφd)
+
+/-- **Decreasing continuous reparametrizations negate the arclength orientation sign of a
+rectifiable curve.** The reparametrization `φ` need not be absolutely continuous. -/
+theorem jordanSign_naturalParameterization_comp_of_antitoneOn
+    {γ : ℝ → ℂ} {φ : ℝ → ℝ} {a b c d : ℝ} (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
+    (hφm : AntitoneOn φ (Icc c d)) (hφc : φ c = b) (hφd : φ d = a) :
+    jordanSign (naturalParameterization (γ ∘ φ) (Icc c d) c) 0
+        (eVariationOn (γ ∘ φ) (Icc c d)).toReal =
+      -jordanSign (naturalParameterization γ (Icc a b) a) 0
+        (eVariationOn γ (Icc a b)).toReal := by
+  have hab : a ≤ b := hφc ▸ hφd ▸ hφm (left_mem_Icc.mpr hcd) (right_mem_Icc.mpr hcd) hcd
+  have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
+    rw [eVariationOn.comp_eq_of_antitoneOn _ _ hφm,
+      hφ.image_Icc_of_antitoneOn hcd hφm, hφc, hφd]
+  have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
+      (eVariationOn γ (Icc a b)).toReal :=
+    hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
+  rw [hL, jordanSign_congr (uIcc_of_le ENNReal.toReal_nonneg ▸
+    hγ.eqOn_naturalParameterization_comp_of_antitoneOn hcont hcd hφ hφm hφc hφd)]
+  simpa only [zero_add] using hη.jordanSign_comp_sub
+
+end BoundedVariationOn
