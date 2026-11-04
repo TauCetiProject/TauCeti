@@ -21,13 +21,15 @@ the measures of that decomposition:
 * `archHaar K` is `dy / y = ∏_w dy_w / y_w`, the product over the infinite places of the measure
   `TauCeti.multHaar = dt / t` of `(0, ∞)`; it is Lebesgue measure on the positive orthant with
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
-  `y ↦ c y`, `c > 0` (`map_archHaar_smul`).
+  `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
+  (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
   and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite. Neukirch's canonical surface measure
   is `2 ^ r₂` times `surfaceHaar K`.
 * `archHaar_eq_map`: `dy / y` is the image of the product measure `d*x × dt / t` under
-  `(x, t) ↦ x t^(1/n)`.
+  `(x, t) ↦ x t^(1/n)`. The corresponding rectangle-mass formula is
+  `archHaar_surfacePart_preimage_inter`, allowing any measurable radial shell.
 
 The proof of the decomposition fixes a measurable `A ⊆ S` and pushes `dy / y`, restricted to the
 parameters with surface part in `A`, forward along the norm. The dilations of `y` move the norm by
@@ -100,6 +102,30 @@ theorem map_archHaar_smul {c : ℝ} (hc : 0 < c) : (archHaar K).map (c • ·) =
     simp
   rw [hsmul, archHaar, pi_map_pi fun _ ↦ (measurable_const_mul c).aemeasurable]
   simp_rw [map_multHaar_mul_left hc]
+
+/-- The product measure `dy / y` is invariant under independent positive dilations at the
+infinite places, not just a common scalar dilation. -/
+theorem map_archHaar_mul_left {c : realSpace K} (hc : ∀ w, 0 < c w) :
+    (archHaar K).map (c * ·) = archHaar K := by
+  have : ∀ w, SigmaFinite (multHaar.map (c w * ·)) := fun w ↦ by
+    rw [map_multHaar_mul_left (hc w)]
+    infer_instance
+  have hmul : (c * · : realSpace K → realSpace K) = fun y w ↦ c w * y w := by
+    ext y w
+    exact Pi.mul_apply c y w
+  rw [hmul, archHaar, pi_map_pi fun w ↦ (measurable_const_mul (c w)).aemeasurable]
+  simp_rw [map_multHaar_mul_left (hc _)]
+
+/-- Coordinatewise inversion preserves the product measure `dy / y`. -/
+theorem map_archHaar_inv : (archHaar K).map Inv.inv = archHaar K := by
+  have : SigmaFinite (multHaar.map Inv.inv) := by
+    rw [map_multHaar_inv]
+    infer_instance
+  have hinv : (Inv.inv : realSpace K → realSpace K) = fun y w ↦ (y w)⁻¹ := by
+    ext y w
+    exact Pi.inv_apply y w
+  rw [hinv, archHaar, pi_map_pi fun _ ↦ measurable_inv.aemeasurable]
+  simp_rw [map_multHaar_inv]
 
 /-! ### The Haar measure of the norm-one hypersurface -/
 
@@ -295,6 +321,22 @@ private theorem archHaar_toSurface_preimage_inter {A : Set (normOneSurface K)}
         (measure_spanningSets_lt_top _ i)).ne hB]
   rw [← Measure.restrict_apply (measurable_toSurface hA), ← map_apply measurable_toSurface hA,
     hmeas, smul_apply, smul_eq_mul, mul_comm]
+
+/-- The mass of parameters with surface coordinate in `A` and norm in `B` is the product
+of their surface and radial masses. In particular the defining shell `[1, e]` can be replaced
+by any measurable radial set of `dt / t`-mass one. -/
+theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
+    (hA : MeasurableSet A) {B : Set ℝ} (hB : MeasurableSet B) :
+    archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' B) =
+      surfaceHaar K A * multHaar B := by
+  rw [← archHaar_toSurface_preimage_inter hA hB]
+  apply measure_congr
+  apply Filter.eventuallyEqSet_iff.mpr
+  filter_upwards [ae_archHaar_pos] with y hy
+  refine and_congr_left' ⟨?_, fun h ↦ ⟨_, h, toSurface_of_pos hy⟩⟩
+  rintro ⟨x, hx, hxy⟩
+  have heq : toSurface y = x := Subtype.ext ((toSurface_of_pos hy).trans hxy.symm)
+  rwa [mem_preimage, heq]
 
 /-- **The decomposition `dy / y = d*x × dt / t`** (Neukirch VII §5): the multiplicative Haar measure
 of the archimedean parameters is the image of the product of `surfaceHaar K` and `dt / t` under

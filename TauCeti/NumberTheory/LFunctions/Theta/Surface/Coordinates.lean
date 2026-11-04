@@ -17,8 +17,10 @@ number-field degree, not the number of infinite places: complex places have mult
 `surfaceScale` and `surfacePart` give these coordinates on Mathlib's `realSpace K`.
 `archParamHomeomorphSurfaceProd` identifies the positive orthant with the product of the
 norm-one hypersurface and `(0, ∞)`. The coordinates commute with the unit action, which
-acts only on the norm-one factor. This is the change of variables for integrating a theta
-series over a unit fundamental domain and then taking its radial Mellin transform.
+acts only on the norm-one factor. Coordinatewise inversion and multiplication by a norm-one
+parameter give the homeomorphisms `surfaceInv` and `surfaceMul`, and commute with normalization.
+These are the changes of variables for integrating a theta series over a unit fundamental
+domain and then taking its radial Mellin transform.
 
 ## References
 
@@ -212,5 +214,68 @@ theorem surfaceScale_unitScale (u : (𝓞 K)ˣ) (x : realSpace K) (t : ℝ) :
 theorem surfacePart_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) :
     surfacePart (unitScale u y) = unitScale u (surfacePart y) := by
   simp [surfacePart_def]
+
+/-- Inverting a positive parameter inverts its surface coordinate. -/
+theorem surfacePart_inv {y : realSpace K} (hy : ∀ w, 0 < y w) :
+    surfacePart y⁻¹ = (surfacePart y)⁻¹ := by
+  ext w
+  simp only [surfacePart_def, surfaceScale_apply, Pi.inv_apply, archNorm_inv, inv_inv,
+    mul_inv, Real.inv_rpow (archNorm_pos hy).le]
+
+/-- Multiplication by a norm-one parameter translates only the surface coordinate. -/
+theorem surfacePart_mul {c : realSpace K} (hc : c ∈ normOneSurface K) (y : realSpace K) :
+    surfacePart (c * y) = c * surfacePart y := by
+  ext w
+  simp [surfacePart_def, map_mul, (mem_normOneSurface.mp hc).2, mul_assoc]
+
+variable (K) in
+/-- Coordinatewise inversion as a homeomorphism of the norm-one hypersurface. -/
+noncomputable def surfaceInv : normOneSurface K ≃ₜ normOneSurface K where
+  toFun x := ⟨(x : realSpace K)⁻¹, inv_mem_normOneSurface x.property⟩
+  invFun x := ⟨(x : realSpace K)⁻¹, inv_mem_normOneSurface x.property⟩
+  left_inv _ := Subtype.ext (inv_inv _)
+  right_inv _ := Subtype.ext (inv_inv _)
+  continuous_toFun := (continuous_pi fun w ↦
+    ((continuous_apply w).comp continuous_subtype_val).inv₀
+      fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
+  continuous_invFun := (continuous_pi fun w ↦
+    ((continuous_apply w).comp continuous_subtype_val).inv₀
+      fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
+
+@[simp]
+theorem surfaceInv_apply (x : normOneSurface K) :
+    (surfaceInv K x : realSpace K) = (x : realSpace K)⁻¹ := (rfl)
+
+@[simp]
+theorem surfaceInv_symm : (surfaceInv K).symm = surfaceInv K := (rfl)
+
+@[simp]
+theorem surfaceInv_surfaceInv (x : normOneSurface K) : surfaceInv K (surfaceInv K x) = x := by
+  simpa only [surfaceInv_symm] using (surfaceInv K).symm_apply_apply x
+
+/-- Translation by a norm-one parameter as a homeomorphism of the norm-one hypersurface. -/
+noncomputable def surfaceMul (c : normOneSurface K) :
+    normOneSurface K ≃ₜ normOneSurface K where
+  toFun x := ⟨(c : realSpace K) * x, mul_mem_normOneSurface c.property x.property⟩
+  invFun x := ⟨(c : realSpace K)⁻¹ * x,
+    mul_mem_normOneSurface (inv_mem_normOneSurface c.property) x.property⟩
+  left_inv x := Subtype.ext (by
+    ext w
+    simp [((mem_normOneSurface.mp c.property).1 w).ne'])
+  right_inv x := Subtype.ext (by
+    ext w
+    simp [((mem_normOneSurface.mp c.property).1 w).ne'])
+  continuous_toFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem surfaceMul_apply (c x : normOneSurface K) :
+    (surfaceMul c x : realSpace K) = (c : realSpace K) * x := (rfl)
+
+@[simp]
+theorem surfaceMul_symm (c : normOneSurface K) :
+    (surfaceMul c).symm = surfaceMul (surfaceInv K c) := by
+  ext x : 1
+  rfl
 
 end TauCeti.LFunctions
