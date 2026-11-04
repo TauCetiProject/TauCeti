@@ -61,8 +61,9 @@ variable {C : Type u} [Category.{v} C] {n : ℕ}
 theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ D)
     (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     ((Φ.mapComposableArrows n).obj F).totalArrow i j hij =
-      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) :=
-  (rfl)
+      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) := by
+  rw [totalArrow_def, totalArrow_def]
+  rfl
 
 variable [TopologicalSpace (Quiver.Total C)]
 
@@ -97,7 +98,9 @@ variable {D : Type*} [Category D] [TopologicalSpace (Quiver.Total D)]
 continuous. -/
 theorem continuous_mapComposableArrows_obj {Φ : C ⥤ D}
     (hΦ : Continuous Φ.toPrefunctor.mapTotal) : Continuous (Φ.mapComposableArrows n).obj :=
-  continuous_iff.2 fun i j hij ↦ hΦ.comp (continuous_totalArrow i j hij)
+  continuous_iff.2 fun i j hij ↦ by
+    simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
+      hΦ.comp (continuous_totalArrow i j hij)
 
 /-- Applying a family of functors to strings of composable arrows is jointly continuous in the
 parameter and the string when it is so on total arrows. -/
@@ -105,8 +108,9 @@ theorem continuous_uncurry_mapComposableArrows_obj {T : Type*} [TopologicalSpace
     {Φ : T → C ⥤ D}
     (hΦ : Continuous fun p : T × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2) :
     Continuous fun p : T × ComposableArrows C n ↦ ((Φ p.1).mapComposableArrows n).obj p.2 :=
-  continuous_iff.2 fun i j hij ↦
-    hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
+  continuous_iff.2 fun i j hij ↦ by
+    simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
+      hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
 
 end CategoryTheory.ComposableArrows
 
