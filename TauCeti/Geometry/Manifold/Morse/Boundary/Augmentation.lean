@@ -158,10 +158,8 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hX : IsAdaptedPseudoG
       exact Flow.disjoint_unstableSet hne |>.ne_of_mem
         ((Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1) hwu rfl
     -- The orbit of `y i` crosses the middle level only once.
-    have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf (haq i) (hy i)
-    obtain ⟨s, -, hs⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf (haq i)
-      (hy i) (c := (f (a i) + f q) / 2) (by linarith [hval.1, hval.2])
-      (by linarith [hval.1, hval.2])
+    obtain ⟨s, -, hs⟩ :=
+      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf (haq i) (hy i)
     refine ⟨i, hai, ?_⟩
     rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
   · rintro ⟨i, rfl, rfl⟩
@@ -203,10 +201,9 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
       (hmem i) (h.span_mtangentConeAt_sup_eq_top (ha i) hq (hmem i))
     omega
   -- The `i`-th orbit crosses the middle level between `a i` and `q` at the time `τ i`.
-  have hcross (i : Fin 2) : ∃ t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 := by
-    have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd (haq i) (hmem i)
-    exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd (haq i) (hmem i)
-      (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])).exists
+  have hcross (i : Fin 2) : ∃ t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 :=
+    (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hfd (haq i)
+      (hmem i)).exists
   choose τ hτ using hcross
   -- The crossings are distinct, since they lie on the disjoint orbits of `y₁` and `y₂`.
   have hz : Injective fun i ↦ hX.flow (τ i) (y i) := by
