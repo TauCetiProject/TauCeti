@@ -73,7 +73,7 @@ noncomputable def littlewoodPaleyBlock (φ : ContDiffBump (0 : E)) (j : ℕ) :
 variable (φ : ContDiffBump (0 : E))
 
 /-- Unfolding `TemperedDistribution.littlewoodPaleyBlock`. -/
-theorem littlewoodPaleyBlock_eq (j : ℕ) :
+theorem littlewoodPaleyBlock_eq_fourierMultiplierCLM (j : ℕ) :
     littlewoodPaleyBlock F φ j =
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) :=
   (rfl)
@@ -89,7 +89,7 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
 theorem sum_littlewoodPaleyBlock_range (N : ℕ) :
     ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j =
       fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
-  simp_rw [littlewoodPaleyBlock_eq]
+  simp_rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM]
   rw [← fourierMultiplierCLM_sum F
     fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
   simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
@@ -113,7 +113,7 @@ theorem littlewoodPaleyBlock_compL_littlewoodPaleyBlock (j k : ℕ) :
     littlewoodPaleyBlock F φ j ∘L littlewoodPaleyBlock F φ k =
       fourierMultiplierCLM F fun ξ ↦
         ((φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ : ℝ) : ℂ) := by
-  rw [littlewoodPaleyBlock_eq, littlewoodPaleyBlock_eq,
+  rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM, littlewoodPaleyBlock_eq_fourierMultiplierCLM,
     fourierMultiplierCLM_compL_fourierMultiplierCLM
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]

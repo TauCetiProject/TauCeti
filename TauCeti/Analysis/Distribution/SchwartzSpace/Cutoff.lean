@@ -224,8 +224,9 @@ theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f 
   have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
     f).comp (tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
   refine h.congr fun N ↦ ?_
-  exact (smulLeftCLM_ofReal ℂ (hφ.comp
-    (((2 : ℝ) ^ N)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f).symm
+  have hc : (fun ξ ↦ φ (((2 : ℝ) ^ N)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
+  rw [Function.comp_apply, Function.comp_apply, ← smulLeftCLM_ofReal ℂ hc,
+    RCLike.ofReal_eq_complex_ofReal]
 
 end Truncation
 
