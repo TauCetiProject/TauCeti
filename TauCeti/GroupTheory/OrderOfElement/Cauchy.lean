@@ -14,19 +14,21 @@ public import Mathlib.Data.Nat.Factorization.Induction
 Let `G` be a finite group and `k` a commutative semiring. The order of every element of `G`
 divides `#G`, and by Cauchy's theorem every prime dividing `#G` is the order of some element. So
 `#G` is a unit of `k` exactly when the order of every element of `G` is a unit of `k`
-(`isUnit_natCard_iff_forall_isUnit_orderOf`). For instance `#G` is invertible in a field of
-characteristic `p` exactly when `G` has no element of order `p`.
+(`TauCeti.isUnit_natCard_iff_forall_isUnit_orderOf`). For instance `#G` is invertible in a field
+of characteristic `p` exactly when `G` has no element of order `p`.
 
 The elementwise condition makes sense for infinite groups too, which is how it is used for locally
 finite groups: there it controls the orders of all finite subgroups at once.
 
 ## Main results
 
-* `isUnit_natCard_iff_forall_isUnit_orderOf`: `#G` is a unit of `k` exactly when the order of
-  every element of `G` is.
+* `TauCeti.isUnit_natCard_iff_forall_isUnit_orderOf`: `#G` is a unit of `k` exactly when the
+  order of every element of `G` is.
 -/
 
 public section
+
+namespace TauCeti
 
 /-- **The order of a finite group is invertible exactly when the orders of its elements are.** For
 a finite group `G` and a commutative semiring `k`, `#G` is a unit of `k` exactly when the order of
@@ -47,3 +49,5 @@ theorem isUnit_natCard_iff_forall_isUnit_orderOf {G k : Type*} [Group G] [Finite
     obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' p (dvd_of_mul_right_dvd hn)
     rw [Nat.cast_mul]
     exact (hg ▸ h g).mul (ih (dvd_of_mul_left_dvd hn))
+
+end TauCeti

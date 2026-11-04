@@ -83,7 +83,7 @@ theorem subsingleton_of_forall_isUnit_orderOf (A : Rep k G) (h : ∀ g : G, IsUn
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   obtain ⟨S, _, y, rfl⟩ := exists_finite_subgroup_map_eq x
   have := subsingleton_of_isUnit_natCard (Rep.res S.subtype A)
-    (isUnit_natCard_iff_forall_isUnit_orderOf.2 fun g ↦ Subgroup.orderOf_coe g ▸ h g) n
+    (TauCeti.isUnit_natCard_iff_forall_isUnit_orderOf.2 fun g ↦ Subgroup.orderOf_coe g ▸ h g) n
   rw [Subsingleton.elim y 0, map_zero]
 
 end groupHomology
