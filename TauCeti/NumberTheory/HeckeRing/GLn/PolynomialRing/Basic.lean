@@ -31,6 +31,8 @@ generators and the evaluation map; the theorem itself is proved in
 ## Main results
 
 * `HeckeRing.GLn.heckeGen_mem_pLocalSubring`: each generator lies in `pLocalSubring`.
+* `HeckeRing.GLn.heckeGenDiag_rev_zero`, `HeckeRing.GLn.heckeGen_rev_zero`: at the last index
+  `Fin.rev 0`, the generator is the scalar operator `T(p, …, p)`.
 * `HeckeRing.GLn.evalHom_apply`: the coefficient of the image of a polynomial at a double coset.
 * `HeckeRing.GLn.heckeGen_zero_eq_heckeTDiag`, `HeckeRing.GLn.heckeGen_one_eq_heckeTScalar`:
   for `n = 2` the generators are the classical `T(1, p)` and `T(p, p)`.
@@ -116,6 +118,12 @@ lemma heckeGenExponent_monotone (k : Fin n) : Monotone (heckeGenExponent n k) :=
 
 variable [NeZero n]
 
+/-- At the last generator index `Fin.rev 0 = n - 1`, `heckeGenDiag` is the constant tuple
+`(p, …, p)`. -/
+@[simp]
+theorem heckeGenDiag_rev_zero : heckeGenDiag n p (Fin.rev 0) = fun _ ↦ p := by
+  funext i; rw [heckeGenDiag_apply, Fin.val_rev, Fin.val_zero, ite_eq_right (by omega)]
+
 include hp in
 /-- The k-th generator of pLocalSubring: `T(1,...,1,p,...,p)` with `k+1` entries of `p`. -/
 noncomputable def heckeGen (k : Fin n) : IntegralHeckeRing n :=
@@ -125,6 +133,11 @@ include hp in
 omit hp [NeZero n] in
 /-- Defining equation for the sealed definition `heckeGen`. -/
 lemma heckeGen_def (k : Fin n) : heckeGen n p k = diagElem (heckeGenDiag n p k) := (rfl)
+
+/-- The last Shimura generator `heckeGen n p (Fin.rev 0)` is the scalar operator `T(p, …, p)`. -/
+@[simp]
+theorem heckeGen_rev_zero : heckeGen n p (Fin.rev 0) = diagElem (fun _ ↦ p) := by
+  rw [heckeGen_def, heckeGenDiag_rev_zero]
 
 include hp in
 omit hp in
