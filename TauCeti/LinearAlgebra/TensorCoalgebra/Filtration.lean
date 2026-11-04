@@ -323,4 +323,41 @@ theorem apply_lengthProj_of_mem_filtration {N : Type*} [AddCommMonoid N] [Module
 
 end ReducedTensorWords
 
+namespace ReducedTensorWords
+
+/-! ### Limits along the conilpotence filtration -/
+
+variable {R : Type uR} {M : Type uM} {P : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid P] [Module R P]
+
+/-- Limit of a sequence of linear maps `s n : Tᶜ(M) ⟶ P`, taking `s k` on words of length `k`. -/
+noncomputable def filtrationLimit (s : ℕ → (ReducedTensorWords R M →ₗ[R] P)) :
+    ReducedTensorWords R M →ₗ[R] P :=
+  DirectSum.toModule R {k : ℕ // 0 < k} P fun k ↦ s k.1 ∘ₗ of R M k
+
+private theorem apply_eq_of_stabilising_of_le {s : ℕ → (ReducedTensorWords R M →ₗ[R] P)}
+    (hs : ∀ n, ∀ z ∈ filtration R M n, s (n + 1) z = s n z) {k n : ℕ} (hkn : k ≤ n)
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M k) : s n z = s k z := by
+  induction n, hkn using Nat.le_induction with
+  | base => rfl
+  | succ n hkn ih => rw [hs n z (filtration_monotone R M hkn hz), ih]
+
+/-- On words of length at most `n`, `filtrationLimit s` agrees with `s n`. -/
+theorem filtrationLimit_apply_of_mem_filtration {s : ℕ → (ReducedTensorWords R M →ₗ[R] P)}
+    (hs : ∀ n, ∀ z ∈ filtration R M n, s (n + 1) z = s n z) {n : ℕ} {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : filtrationLimit s z = s n z := by
+  refine (show filtration R M n ≤ LinearMap.eqLocus (filtrationLimit s) (s n) from ?_) hz
+  rw [filtration_le_iff]; rintro k hk _ ⟨x, rfl⟩
+  rw [LinearMap.mem_eqLocus, filtrationLimit, toModule_of, LinearMap.comp_apply,
+    apply_eq_of_stabilising_of_le hs hk (of_mem_filtration R M le_rfl x)]
+
+/-- A map agreeing with `s n` on `filtration R M n` for every `n` equals `filtrationLimit s`. -/
+theorem eq_filtrationLimit {s : ℕ → (ReducedTensorWords R M →ₗ[R] P)}
+    (hs : ∀ n, ∀ z ∈ filtration R M n, s (n + 1) z = s n z) {f : ReducedTensorWords R M →ₗ[R] P}
+    (hf : ∀ n, ∀ z ∈ filtration R M n, f z = s n z) : f = filtrationLimit s :=
+  LinearMap.ext fun z ↦ let ⟨n, hn⟩ := exists_mem_filtration R M z
+    by rw [hf n z hn, filtrationLimit_apply_of_mem_filtration hs hn]
+
+end ReducedTensorWords
+
 end TauCeti

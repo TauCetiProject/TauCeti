@@ -47,19 +47,16 @@ private noncomputable def biderivStep (G : InternalGrading R M) (q : ℤ) (F D�
     HW R M N :=
   cutPrepend (letter R N ∘ₗ F) S +
     cutPrepend (letter R N ∘ₗ D₁ ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q)) D₂
-
 private def isBideriv (G : InternalGrading R M) (q : ℤ) (F F'' D₁ D₂ S : HW R M N)
     (w : ReducedTensorWords R M) : Prop :=
   deconcatenation R N (S w) = (TensorProduct.map S F'' +
     TensorProduct.map (D₁ ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q)) D₂ +
     TensorProduct.map F S) (deconcatenation R M w)
-
 private theorem biderivStep_apply_eq_zero_of_mem_filtration_one (G : InternalGrading R M) (q : ℤ)
     (F D₁ S D₂ : HW R M N) {z : ReducedTensorWords R M} (hz : z ∈ filtration R M 1) :
     biderivStep G q F D₁ S D₂ z = 0 := by
   simp only [biderivStep, LinearMap.add_apply, cutPrepend_apply_of_mem_filtration_one _ _ hz,
     add_zero]
-
 private theorem biderivStep_congr_of_mem_filtration (G : InternalGrading R M) (q : ℤ)
     (F D₁ : HW R M N) {S S' D₂ D₂' : HW R M N} {n : ℕ}
     (hS : ∀ w ∈ filtration R M n, S w = S' w) (hD₂ : ∀ w ∈ filtration R M n, D₂ w = D₂' w)
@@ -68,7 +65,6 @@ private theorem biderivStep_congr_of_mem_filtration (G : InternalGrading R M) (q
   simp only [biderivStep, LinearMap.add_apply,
     cutPrepend_congr_of_mem_filtration_succ (fun _ _ ↦ rfl) hS hz,
     cutPrepend_congr_of_mem_filtration_succ (fun _ _ ↦ rfl) hD₂ hz]
-
 private theorem isHomogeneous_biderivStep {G : InternalGrading R M} {H : InternalGrading R N}
     (q : ℤ) {F D₁ S D₂ : HW R M N} (hF : LinearMap.IsHomogeneous F (GP G) (GP H) 0)
     (hD₁ : LinearMap.IsHomogeneous D₁ (GP G) (GP H) (-1))
@@ -83,12 +79,10 @@ private theorem isHomogeneous_biderivStep {G : InternalGrading R M} {H : Interna
     simpa using (isHomogeneous_letter H).comp (hD₁.comp (isHomogeneous_map_koszulTwist G q))
   exact LinearMap.IsHomogeneous.add (by simpa using isHomogeneous_cutPrepend hα₁ hS)
     (by simpa only [show (-1 : ℤ) + -1 = -2 by decide] using isHomogeneous_cutPrepend hα₂ hD₂)
-
 private noncomputable def biderivSeq (G : InternalGrading R M) (F D₁ : HW R M N)
     (step : HW R M N → HW R M N) : ℕ → HW R M N
   | 0 => 0
   | n + 1 => biderivStep G 1 F D₁ (biderivSeq G F D₁ step n) (step (biderivSeq G F D₁ step n))
-
 private theorem biderivSeq_stabilises (G : InternalGrading R M) (F D₁ : HW R M N)
     {step : HW R M N → HW R M N} (hstep : ∀ {n} {S₁ S₂ : HW R M N},
       (∀ w ∈ filtration R M n, S₁ w = S₂ w) → ∀ w ∈ filtration R M n, step S₁ w = step S₂ w) :
@@ -97,10 +91,8 @@ private theorem biderivSeq_stabilises (G : InternalGrading R M) (F D₁ : HW R M
   | n + 1, _, hz =>
     let ih := biderivSeq_stabilises G F D₁ hstep n
     biderivStep_congr_of_mem_filtration G 1 F D₁ ih (hstep ih) hz
-
 private noncomputable def biderivFix (G : InternalGrading R M) (F D₁ : HW R M N)
     (step : HW R M N → HW R M N) : HW R M N := filtrationLimit (biderivSeq G F D₁ step)
-
 private theorem biderivFix_eq (G : InternalGrading R M) (F D₁ : HW R M N)
     {step : HW R M N → HW R M N} (hstep : ∀ {n} {S₁ S₂ : HW R M N},
       (∀ w ∈ filtration R M n, S₁ w = S₂ w) → ∀ w ∈ filtration R M n, step S₁ w = step S₂ w) :
@@ -112,7 +104,6 @@ private theorem biderivFix_eq (G : InternalGrading R M) (F D₁ : HW R M N)
     fun _ hw ↦ (filtrationLimit_apply_of_mem_filtration hs hw).symm
   rw [biderivFix, filtrationLimit_apply_of_mem_filtration hs hn1, biderivSeq]
   exact biderivStep_congr_of_mem_filtration G 1 F D₁ hlim (hstep hlim) hn1
-
 private theorem isHomogeneous_biderivFix {G : InternalGrading R M} {H : InternalGrading R N}
     {F D₁ : HW R M N} {step : HW R M N → HW R M N} (hstep : ∀ {n} {S₁ S₂ : HW R M N},
       (∀ w ∈ filtration R M n, S₁ w = S₂ w) → ∀ w ∈ filtration R M n, step S₁ w = step S₂ w)
@@ -125,25 +116,6 @@ private theorem isHomogeneous_biderivFix {G : InternalGrading R M} {H : Internal
   induction n with
   | zero => exact LinearMap.isHomogeneous_zero _ _ _
   | succ _ ih => exact isHomogeneous_biderivStep 1 hF₀ hD₁ ih (hhom ih)
-
-private theorem isGradedCoderivationAlong_comp_koszulTwist {G : InternalGrading R M} {q : ℤ}
-    {F F' D₁ : HW R M N} (hD₁ : IsGradedCoderivationAlong G q F F' D₁) :
-    let τ := ReducedTensorWords.map (R := R) (G.koszulTwist q)
-    IsGradedCoderivationAlong G q (F ∘ₗ τ) (F' ∘ₗ τ) (D₁ ∘ₗ τ) := by
-  intro τ; have hτ : IsCoalgHom R τ := isCoalgHom_map (G.koszulTwist q)
-  have hττ : τ ∘ₗ τ = LinearMap.id := by
-    rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
-      ReducedTensorWords.map_id]
-  rw [isGradedCoderivationAlong_iff]; refine LinearMap.ext fun z ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.add_apply]
-  rw [hD₁.deconcatenation_apply, hτ.deconcatenation_apply]
-  induction deconcatenation R M z using TensorProduct.inductionOn with
-  | tmul u v =>
-      have hu := LinearMap.congr_fun hττ u
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, τ] at hu
-      simp only [TensorProduct.map_tmul, LinearMap.rTensor_tmul, LinearMap.comp_apply, τ, hu]
-  | add _ _ hu hv => simp only [map_add] at hu hv ⊢; rw [add_add_add_comm, hu, hv, add_add_add_comm]
-
 private theorem map_rTensor_eq (f h : HW R M N) {K : HW R M M}
     (w : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
     TensorProduct.map f h (LinearMap.rTensor (ReducedTensorWords R M) K w) =
@@ -166,7 +138,8 @@ private theorem deconcatenation_biderivStep_of_mem_filtration {G : InternalGradi
       InternalGrading.koszulTwist_comp_self, ReducedTensorWords.map_id, LinearMap.comp_id]
   have hD₁τ : D₁ ∘ₗ τ = ofLetter R N ∘ₗ (letter R N ∘ₗ (D₁ ∘ₗ τ)) +
       cutPrepend (letter R N ∘ₗ (D₁ ∘ₗ τ)) (F' ∘ₗ τ) + cutPrepend (letter R N ∘ₗ F) (D₁ ∘ₗ τ) := by
-    have h1 := (isGradedCoderivationAlong_comp_koszulTwist hD₁).eq_gradedCoderivAlong
+    have h1 := (hD₁.comp_isCoalgHom (isCoalgHom_map _)
+      (isHomogeneous_map_koszulTwist G q)).eq_gradedCoderivAlong
       (hF.comp (isCoalgHom_map _)) (hF'.comp (isCoalgHom_map _))
     have h2 := gradedCoderivAlong_eq G q (F ∘ₗ τ) (F' ∘ₗ τ) (letter R N ∘ₗ (D₁ ∘ₗ τ))
     rw [hFττ, ← h1] at h2; exact h2
@@ -176,21 +149,15 @@ private theorem deconcatenation_biderivStep_of_mem_filtration {G : InternalGradi
       LinearMap.congr_fun hS_fix z
   rw [isBideriv, hSz, map_add, deconcatenation_cutPrepend_of_mem_filtration_succ _ ihS hz,
     deconcatenation_cutPrepend_of_mem_filtration_succ _ ihD₂ hz]
-  simp only [cutPrependLeft_add, cutPrependLeft_map, LinearMap.add_apply]
-  have hS_sum : cutPrepend (letter R N ∘ₗ F) S + cutPrepend (letter R N ∘ₗ (D₁ ∘ₗ τ)) D₂ = S :=
-    hS_fix.symm
-  have hF_sum : ofLetter R N ∘ₗ (letter R N ∘ₗ F) + cutPrepend (letter R N ∘ₗ F) F = F :=
-    hF.eq_ofLetter_add_cutPrepend.symm
-  calc
-    _ = TensorProduct.map (cutPrepend (letter R N ∘ₗ F) S +
-          cutPrepend (letter R N ∘ₗ (D₁ ∘ₗ τ)) D₂) F'' (deconcatenation R M z) +
+  calc _ = (TensorProduct.map (biderivStep G q F D₁ S D₂) F'' +
         TensorProduct.map (ofLetter R N ∘ₗ (letter R N ∘ₗ (D₁ ∘ₗ τ)) +
           cutPrepend (letter R N ∘ₗ (D₁ ∘ₗ τ)) (F' ∘ₗ τ) +
-          cutPrepend (letter R N ∘ₗ F) (D₁ ∘ₗ τ)) D₂ (deconcatenation R M z) +
+          cutPrepend (letter R N ∘ₗ F) (D₁ ∘ₗ τ)) D₂ +
         TensorProduct.map (ofLetter R N ∘ₗ (letter R N ∘ₗ F) +
-          cutPrepend (letter R N ∘ₗ F) F) S (deconcatenation R M z) := by
-      simp only [TensorProduct.map_add_left, LinearMap.add_apply]; abel
-    _ = _ := by rw [hS_sum, ← hD₁τ, hF_sum]
+          cutPrepend (letter R N ∘ₗ F) F) S) (deconcatenation R M z) := by
+        simp only [biderivStep, τ, cutPrependLeft_add, cutPrependLeft_map,
+          TensorProduct.map_add_left, LinearMap.add_apply]; abel
+    _ = _ := by rw [← hS_fix, ← hD₁τ, ← hF.eq_ofLetter_add_cutPrepend]
 
 private theorem deconcatenation_commutator_of_bideriv {G : InternalGrading R M}
     {H : InternalGrading R N} {F F' F'' D₁ S D₂ : HW R M N} {bM : HW R M M} {bN : HW R N N}
@@ -214,29 +181,19 @@ private theorem deconcatenation_commutator_of_bideriv {G : InternalGrading R M}
     rw [← LinearMap.comp_apply, hτ_def, ← ReducedTensorWords.map_comp,
       InternalGrading.koszulTwist_comp_self, ReducedTensorWords.map_id, LinearMap.id_apply]
   have hτF (w) : τN (F w) = F (τ w) := by
-    simpa only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.comp_apply] using LinearMap.congr_fun (hF₀.map_koszulTwist_comp 1) w
+    simpa [← hτN_def, ← hτ_def] using LinearMap.congr_fun (hF₀.map_koszulTwist_comp 1) w
   have hτS (w) : τN (S w) = S (τ w) := by
-    simpa only [show ((1 : ℤ) * (-2)).negOnePow = 1 by decide, Units.val_one, Int.cast_one,
-      one_smul, LinearMap.comp_apply] using LinearMap.congr_fun (hS_hom.map_koszulTwist_comp 1) w
+    simpa [show ((1 : ℤ) * -2).negOnePow = 1 by decide, ← hτN_def, ← hτ_def] using
+      LinearMap.congr_fun (hS_hom.map_koszulTwist_comp 1) w
   have hτD₁ (w) : τN (D₁ (τ w)) = -D₁ w := by
     have h := LinearMap.congr_fun (hD₁_hom.map_koszulTwist_comp 1) (τ w)
-    simp only [show ((1 : ℤ) * (-1)).negOnePow = -1 by decide, Units.val_neg, Units.val_one,
-      Int.cast_neg, Int.cast_one, neg_one_smul, LinearMap.comp_apply, LinearMap.smul_apply,
-      ← hτN_def, ← hτ_def] at h
-    rw [h, hττ]
+    simpa [show ((1 : ℤ) * -1).negOnePow = -1 by decide, ← hτN_def, ← hτ_def, hττ] using h
   have hτb (w) : τ (bM w) = -bM (τ w) := by
-    simpa only [show ((1 : ℤ) * 1).negOnePow = -1 by decide, Units.val_neg, Units.val_one,
-      Int.cast_neg, Int.cast_one, neg_one_smul, LinearMap.comp_apply, LinearMap.smul_apply] using
+    simpa [show ((1 : ℤ) * 1).negOnePow = -1 by decide, ← hτ_def] using
       LinearMap.congr_fun (hbM₁.map_koszulTwist_comp 1) w
-  have hD₁_eq' (w) : bN (D₁ w) + D₁ (bM w) = F w - F' w := by
-    simpa only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply] using
-      (LinearMap.congr_fun hD₁_eq w).symm
-  have hD₂_eq' (w) : bN (D₂ w) + D₂ (bM w) = F' w - F'' w := by
-    simpa only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply] using
-      (LinearMap.congr_fun hD₂_eq w).symm
   have hFb' (w) : bN (F w) = F (bM w) := LinearMap.congr_fun hFb w
   have hF''b' (w) : bN (F'' w) = F'' (bM w) := LinearMap.congr_fun hF''b w
+  rw [hD₁_eq, hD₂_eq]
   simp only [LinearMap.sub_apply, LinearMap.comp_apply, map_sub]
   rw [hbN.deconcatenation_apply, hSz, hSbMz, hbM.deconcatenation_apply]
   induction deconcatenation R M z using TensorProduct.inductionOn with
@@ -244,14 +201,9 @@ private theorem deconcatenation_commutator_of_bideriv {G : InternalGrading R M}
       simp only [map_add, LinearMap.add_apply, TensorProduct.map_tmul, LinearMap.rTensor_tmul,
         LinearMap.lTensor_tmul, LinearMap.comp_apply, LinearMap.sub_apply, ← hτN_def, ← hτ_def]
       simp only [hτF, hτS, hτD₁, hτb, hττ, hFb', hF''b', map_neg, TensorProduct.neg_tmul,
-        TensorProduct.sub_tmul, TensorProduct.tmul_sub]
-      calc _ = (bN (S u) ⊗ₜ[R] F'' v - S (bM u) ⊗ₜ[R] F'' v) +
-          (F (τ u) ⊗ₜ[R] bN (S v) - F (τ u) ⊗ₜ[R] S (bM v)) +
-          (bN (D₁ (τ u)) ⊗ₜ[R] D₂ v + D₁ (bM (τ u)) ⊗ₜ[R] D₂ v) -
-          (D₁ u ⊗ₜ[R] bN (D₂ v) + D₁ u ⊗ₜ[R] D₂ (bM v)) := by abel
-        _ = _ := by
-          rw [← TensorProduct.add_tmul (bN (D₁ (τ u))), hD₁_eq', TensorProduct.sub_tmul,
-            ← TensorProduct.tmul_add (D₁ u), hD₂_eq', TensorProduct.tmul_sub]
+        TensorProduct.add_tmul, TensorProduct.tmul_add, TensorProduct.sub_tmul,
+        TensorProduct.tmul_sub]
+      abel
   | add _ _ hu hv =>
       simp only [map_add] at hu hv ⊢; convert congrArg₂ (· + ·) hu hv using 1 <;> abel
 
@@ -301,6 +253,8 @@ theorem isHomogeneous_homotopyTrans {G : InternalGrading R M} {H : InternalGradi
   exact (hD₁.add hD₂).add (LinearMap.IsHomogeneous.sub (by simpa using hbN.comp hS)
     (by simpa using hS.comp hbM))
 
+/-- Under square-zero differentials `bM` and `bN`, `homotopyTrans` satisfies the composite homotopy
+equation between `F` and `F''` whenever `D₁` and `D₂` witness homotopies `F ~ F'` and `F' ~ F''`. -/
 theorem homotopyTrans_eq {G : InternalGrading R M}
     {F F' F'' D₁ D₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     {bM : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
@@ -326,12 +280,10 @@ theorem isGradedCoderivationAlong_homotopyTrans {G : InternalGrading R M} {H : I
     (hF₀ : LinearMap.IsHomogeneous F (gradedPiece G) (gradedPiece H) 0)
     (hbM : IsGradedCoderivation G 1 bM)
     (hbM₁ : LinearMap.IsHomogeneous bM (gradedPiece G) (gradedPiece G) 1)
-    (hbN : IsGradedCoderivation H 1 bN)
-    (hFb : bN ∘ₗ F = F ∘ₗ bM) (hF''b : bN ∘ₗ F'' = F'' ∘ₗ bM)
+    (hbN : IsGradedCoderivation H 1 bN) (hFb : bN ∘ₗ F = F ∘ₗ bM) (hF''b : bN ∘ₗ F'' = F'' ∘ₗ bM)
     (hD₁ : IsGradedCoderivationAlong G 1 F F' D₁)
     (hD₁_hom : LinearMap.IsHomogeneous D₁ (gradedPiece G) (gradedPiece H) (-1))
-    (hD₁_eq : F - F' = bN ∘ₗ D₁ + D₁ ∘ₗ bM)
-    (hD₂ : IsGradedCoderivationAlong G 1 F' F'' D₂)
+    (hD₁_eq : F - F' = bN ∘ₗ D₁ + D₁ ∘ₗ bM) (hD₂ : IsGradedCoderivationAlong G 1 F' F'' D₂)
     (hD₂_hom : LinearMap.IsHomogeneous D₂ (gradedPiece G) (gradedPiece H) (-1))
     (hD₂_eq : F' - F'' = bN ∘ₗ D₂ + D₂ ∘ₗ bM) :
     IsGradedCoderivationAlong G 1 F F'' (homotopyTrans G F D₁ D₂ bM bN) := by
@@ -340,10 +292,10 @@ theorem isGradedCoderivationAlong_homotopyTrans {G : InternalGrading R M} {H : I
   have hS_bideriv : ∀ n : ℕ, ∀ w ∈ filtration R M n, isBideriv G 1 F F'' D₁ D₂ S w := by
     intro n; induction n with
     | zero => intro w hw; rw [filtration_zero, Submodule.mem_bot] at hw; simp [isBideriv, hw]
-    | succ n ih =>
+    | succ _ ih =>
         exact fun w hw ↦ deconcatenation_biderivStep_of_mem_filtration
           (biderivFix_eq G F D₁ (step := fun _ ↦ D₂) (fun _ _ _ ↦ rfl)) hF hF' hD₁ ih
-          (fun u _ ↦ by rw [hD₂.deconcatenation_apply, map_rTensor_eq]; rfl) hw
+          (fun _ _ ↦ by rw [hD₂.deconcatenation_apply, map_rTensor_eq]; rfl) hw
   have hS_global (w) : isBideriv G 1 F F'' D₁ D₂ S w :=
     let ⟨n, hn⟩ := exists_mem_filtration R M w; hS_bideriv n w hn
   rw [isGradedCoderivationAlong_iff, show homotopyTrans G F D₁ D₂ bM bN =
@@ -356,25 +308,32 @@ theorem isGradedCoderivationAlong_homotopyTrans {G : InternalGrading R M} {H : I
       hFb hF''b hD₁_eq hD₂_eq (hS_global z) (hS_global (bM z))]
   simp only [← hτ_def, map_rTensor_eq]
   induction deconcatenation R M z using TensorProduct.inductionOn with
-  | tmul u v =>
+  | tmul _ _ =>
       simp only [TensorProduct.map_tmul, LinearMap.add_apply, LinearMap.sub_apply,
         LinearMap.comp_apply, TensorProduct.add_tmul, TensorProduct.tmul_add,
-        TensorProduct.sub_tmul, TensorProduct.tmul_sub]
-      abel
-  | add u v hu hv =>
+        TensorProduct.sub_tmul, TensorProduct.tmul_sub]; abel
+  | add _ _ hu hv =>
       simp only [map_add] at hu hv ⊢; convert congrArg₂ (· + ·) hu hv using 1 <;> abel
 
 /-! ### Symmetry of coderivation homotopies -/
 
 private noncomputable def symmStep (D : HW R M N) (bM : HW R M M) (bN : HW R N N) (S : HW R M N) :
     HW R M N := -D - (bN ∘ₗ S - S ∘ₗ bM)
-
 private theorem symmStep_congr {G : InternalGrading R M} {D : HW R M N} {bM : HW R M M}
     (hbM : IsGradedCoderivation G 1 bM) {bN : HW R N N} {n : ℕ} {S₁ S₂ : HW R M N}
     (hS : ∀ w ∈ filtration R M n, S₁ w = S₂ w) :
     ∀ w ∈ filtration R M n, symmStep D bM bN S₁ w = symmStep D bM bN S₂ w := fun w hw ↦ by
   simp only [symmStep, LinearMap.sub_apply, LinearMap.neg_apply, LinearMap.comp_apply,
     hS w hw, hS (bM w) (hbM.mem_filtration hw)]
+private theorem isHomogeneous_symmStep {G : InternalGrading R M} {H : InternalGrading R N}
+    {D S : HW R M N} {bM : HW R M M} {bN : HW R N N}
+    (hD : LinearMap.IsHomogeneous D (GP G) (GP H) (-1))
+    (hbM₁ : LinearMap.IsHomogeneous bM (GP G) (GP G) 1)
+    (hbN₁ : LinearMap.IsHomogeneous bN (GP H) (GP H) 1)
+    (hS : LinearMap.IsHomogeneous S (GP G) (GP H) (-2)) :
+    LinearMap.IsHomogeneous (symmStep D bM bN S) (GP G) (GP H) (-1) :=
+  hD.neg.sub (LinearMap.IsHomogeneous.sub (by simpa using hbN₁.comp hS)
+    (by simpa using hS.comp hbM₁))
 
 /-- **Reversal of a coderivation homotopy**: `-D - (b_N ∘ S - S ∘ b_M)`. -/
 noncomputable def homotopySymm (G : InternalGrading R M)
@@ -383,17 +342,6 @@ noncomputable def homotopySymm (G : InternalGrading R M)
     (bN : ReducedTensorWords R N →ₗ[R] ReducedTensorWords R N) :
     ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N :=
   symmStep D bM bN (biderivFix G F D (symmStep D bM bN))
-
-private theorem isHomogeneous_symmBideriv {G : InternalGrading R M} {H : InternalGrading R N}
-    {F D : HW R M N} {bM : HW R M M} {bN : HW R N N} (hbM : IsGradedCoderivation G 1 bM)
-    (hF₀ : LinearMap.IsHomogeneous F (GP G) (GP H) 0)
-    (hD : LinearMap.IsHomogeneous D (GP G) (GP H) (-1))
-    (hbM₁ : LinearMap.IsHomogeneous bM (GP G) (GP G) 1)
-    (hbN₁ : LinearMap.IsHomogeneous bN (GP H) (GP H) 1) :
-    LinearMap.IsHomogeneous (biderivFix G F D (symmStep D bM bN)) (GP G) (GP H) (-2) :=
-  isHomogeneous_biderivFix (symmStep_congr hbM) hF₀ hD fun hS ↦
-    hD.neg.sub (LinearMap.IsHomogeneous.sub (by simpa using hbN₁.comp hS)
-      (by simpa using hS.comp hbM₁))
 
 theorem homotopySymm_apply_of_mem_filtration_one {G : InternalGrading R M}
     (F D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
@@ -423,11 +371,12 @@ theorem isHomogeneous_homotopySymm {G : InternalGrading R M} {H : InternalGradin
     (hD : LinearMap.IsHomogeneous D (gradedPiece G) (gradedPiece H) (-1))
     (hbM₁ : LinearMap.IsHomogeneous bM (gradedPiece G) (gradedPiece G) 1)
     (hbN₁ : LinearMap.IsHomogeneous bN (gradedPiece H) (gradedPiece H) 1) :
-    LinearMap.IsHomogeneous (homotopySymm G F D bM bN) (gradedPiece G) (gradedPiece H) (-1) := by
-  have hS := isHomogeneous_symmBideriv hbM hF₀ hD hbM₁ hbN₁
-  exact hD.neg.sub (LinearMap.IsHomogeneous.sub (by simpa using hbN₁.comp hS)
-    (by simpa using hS.comp hbM₁))
+    LinearMap.IsHomogeneous (homotopySymm G F D bM bN) (gradedPiece G) (gradedPiece H) (-1) :=
+  isHomogeneous_symmStep hD hbM₁ hbN₁
+    (isHomogeneous_biderivFix (symmStep_congr hbM) hF₀ hD (isHomogeneous_symmStep hD hbM₁ hbN₁))
 
+/-- Under square-zero differentials `bM` and `bN`, `homotopySymm` satisfies the reversed homotopy
+equation between `F'` and `F` whenever `D` witnesses `F ~ F'`. -/
 theorem homotopySymm_eq {G : InternalGrading R M}
     {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     {bM : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
@@ -451,11 +400,10 @@ theorem isGradedCoderivationAlong_homotopySymm {G : InternalGrading R M} {H : In
     (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F')
     (hF₀ : LinearMap.IsHomogeneous F (gradedPiece G) (gradedPiece H) 0)
     (hbM : IsGradedCoderivation G 1 bM)
-    (hbM₁ : LinearMap.IsHomogeneous bM (gradedPiece G) (gradedPiece G) 1)
-    (hbM_sq : bM ∘ₗ bM = 0) (hbN : IsGradedCoderivation H 1 bN)
-    (hbN₁ : LinearMap.IsHomogeneous bN (gradedPiece H) (gradedPiece H) 1)
-    (hbN_sq : bN ∘ₗ bN = 0) (hFb : bN ∘ₗ F = F ∘ₗ bM)
-    (hD : IsGradedCoderivationAlong G 1 F F' D)
+    (hbM₁ : LinearMap.IsHomogeneous bM (gradedPiece G) (gradedPiece G) 1) (hbM_sq : bM ∘ₗ bM = 0)
+    (hbN : IsGradedCoderivation H 1 bN)
+    (hbN₁ : LinearMap.IsHomogeneous bN (gradedPiece H) (gradedPiece H) 1) (hbN_sq : bN ∘ₗ bN = 0)
+    (hFb : bN ∘ₗ F = F ∘ₗ bM) (hD : IsGradedCoderivationAlong G 1 F F' D)
     (hD_hom : LinearMap.IsHomogeneous D (gradedPiece G) (gradedPiece H) (-1))
     (hD_eq : F - F' = bN ∘ₗ D + D ∘ₗ bM) :
     IsGradedCoderivationAlong G 1 F' F (homotopySymm G F D bM bN) := by
@@ -463,7 +411,8 @@ theorem isGradedCoderivationAlong_homotopySymm {G : InternalGrading R M} {H : In
   set S := biderivFix G F D (symmStep D bM bN); set M' := homotopySymm G F D bM bN
   have hM'_unfold : M' = -D - (bN ∘ₗ S - S ∘ₗ bM) := rfl
   have hM'_eq : F' - F = bN ∘ₗ M' + M' ∘ₗ bM := homotopySymm_eq hbM_sq hbN_sq hD_eq
-  have hS_hom := isHomogeneous_symmBideriv hbM hF₀ hD_hom hbM₁ hbN₁
+  have hS_hom := isHomogeneous_biderivFix (symmStep_congr hbM) hF₀ hD_hom
+    (isHomogeneous_symmStep hD_hom hbM₁ hbN₁)
   have hcoupled : ∀ n : ℕ, (∀ w ∈ filtration R M n, isBideriv G 1 F F D M' S w) ∧
       (∀ w ∈ filtration R M n, deconcatenation R N (M' w) =
         (TensorProduct.map M' F + TensorProduct.map (F' ∘ₗ τ) M') (deconcatenation R M w)) := by
@@ -481,12 +430,11 @@ theorem isGradedCoderivationAlong_homotopySymm {G : InternalGrading R M} {H : In
             (hS_succ z hz) (hS_succ (bM z) (hbM.mem_filtration hz))]
         simp only [← hτ_def, hM'_unfold, map_rTensor_eq, LinearMap.add_apply]
         induction deconcatenation R M z using TensorProduct.inductionOn with
-        | tmul u v =>
+        | tmul _ _ =>
             simp only [TensorProduct.map_tmul, LinearMap.sub_apply, LinearMap.neg_apply,
               LinearMap.comp_apply, TensorProduct.neg_tmul, TensorProduct.tmul_neg,
-              TensorProduct.sub_tmul, TensorProduct.tmul_sub]
-            abel
-        | add u v hu hv =>
+              TensorProduct.sub_tmul, TensorProduct.tmul_sub]; abel
+        | add _ _ hu hv =>
             simp only [map_add] at hu hv ⊢; convert congrArg₂ (· + ·) hu hv using 1 <;> abel
   rw [isGradedCoderivationAlong_iff]; refine LinearMap.ext fun z ↦ ?_
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z

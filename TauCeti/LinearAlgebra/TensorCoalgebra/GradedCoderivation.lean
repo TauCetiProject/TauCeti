@@ -564,6 +564,13 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
   · intro a u _ hu
     rw [map_smul, hu, smul_smul, smul_smul, mul_comm a]
 
+/-- Applying the Koszul twist to every letter preserves the total degree of a word. -/
+theorem ReducedTensorWords.isHomogeneous_map_koszulTwist (G : InternalGrading R M) (q : ℤ) :
+    LinearMap.IsHomogeneous (ReducedTensorWords.map (R := R) (G.koszulTwist q))
+      (gradedPiece G) (gradedPiece G) 0 := by
+  rw [LinearMap.isHomogeneous_def]; intro D z hz
+  rw [add_zero, map_koszulTwist_apply_of_mem G hz q]; exact Submodule.smul_mem _ _ hz
+
 /-- A homogeneous linear map of reduced tensor words commutes with the letterwise Koszul twists
 up to the sign contributed by its degree. -/
 theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {N : Type uN} [AddCommMonoid N] [Module R N]

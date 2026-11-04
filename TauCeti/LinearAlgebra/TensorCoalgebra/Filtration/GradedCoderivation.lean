@@ -179,4 +179,14 @@ theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M)
   · rw [lengthProj_of_of_ne R M fun h ↦ hkj (congrArg Subtype.val h), map_zero]
     simp only [hkj, ite_false, Finset.sum_const_zero]
 
+/-- The filtration limit of maps homogeneous of degree `d` is homogeneous of degree `d`. -/
+theorem isHomogeneous_filtrationLimit {P : Type*} [AddCommMonoid P] [Module R P]
+    {G : InternalGrading R M} {Q : ℤ → Submodule R P} {d : ℤ}
+    {s : ℕ → (ReducedTensorWords R M →ₗ[R] P)}
+    (hs : ∀ n, ∀ z ∈ filtration R M n, s (n + 1) z = s n z)
+    (hhom : ∀ n, LinearMap.IsHomogeneous (s n) (gradedPiece G) Q d) :
+    LinearMap.IsHomogeneous (filtrationLimit s) (gradedPiece G) Q d := by
+  rw [LinearMap.isHomogeneous_def]; intro p z hz; obtain ⟨n, hn⟩ := exists_mem_filtration R M z
+  rw [filtrationLimit_apply_of_mem_filtration hs hn]; exact (hhom n).map_mem hz
+
 end TauCeti.ReducedTensorWords
