@@ -35,7 +35,8 @@ and Hölder continuous with every exponent at most one
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps.
+with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`).
 
 ## References
 
@@ -426,5 +427,23 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
         _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
     · rw [(hout x hx).1, (hout x hx).2, abs_zero, zero_mul, zero_mul, zero_mul, zero_add]
       positivity
+
+/-- **A smooth cutoff of the identity on the line.** For `0 < r < R`, some smooth `k : ℝ → ℝ`
+equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
+It is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in `[-R, R]`. -/
+theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
+    ∃ k : ℝ → ℝ, ContDiff ℝ ∞ k ∧ (∀ s, |s| ≤ r → k s = s) ∧ (∀ s, R ≤ |s| → k s = 0) ∧
+      ∀ s, |s| < r → HasDerivAt k 1 s := by
+  let χ : ContDiffBump (0 : ℝ) := ⟨r, R, hr, hrR⟩
+  have hsmall : ∀ s, |s| ≤ r → χ s * s = s := by
+    intro s hs
+    have : χ s = 1 := χ.one_of_mem_closedBall (by simpa [Real.dist_eq] using hs)
+    simp [this]
+  refine ⟨fun s => χ s * s, χ.contDiff.mul contDiff_id, hsmall, fun s hs => ?_, fun s hs => ?_⟩
+  · have : χ s = 0 := χ.zero_of_le_dist (by simpa [Real.dist_eq] using hs)
+    simp [this]
+  · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
+    filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
+    exact hsmall x hx.le
 
 end TauCeti

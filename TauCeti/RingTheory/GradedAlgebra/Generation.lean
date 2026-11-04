@@ -47,7 +47,7 @@ theorem span_eq_top_of_le_mul
   let M := Submodule.span B (↑(⨆ i : Fin (N + 1), 𝒜 i) : Set A)
   have hpiece (n : ℕ) : 𝒜 n ≤ M.restrictScalars R := by
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       by_cases hn : n ≤ N
       · intro x hx
         exact Submodule.subset_span ((le_iSup (fun i : Fin (N + 1) ↦ 𝒜 i)

@@ -377,7 +377,7 @@ theorem discr_mul {f g : R[X]} (hf : f.Monic) (hg : g.Monic) :
   apply hu.mul_right_injective
   ring_nf
   convert hdisc.symm using 1
-  all_goals ring
+  ring
 
 end Monic
 

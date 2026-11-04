@@ -11,6 +11,7 @@ import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.AdjointAction.RootExponential
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Subalgebra.Engel
 import TauCeti.Algebra.Lie.Weights.Dimension
 
@@ -50,6 +51,9 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
   elements.
 * `LieSubalgebra.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
+* `LieSubalgebra.engel_eq_cartan_of_isRegular`: a regular element of `H` has Engel subalgebra `H`.
+* `LieSubalgebra.engel_eq_map_of_isRegular`: if the image `e h` of `h ∈ H` under an automorphism
+  `e` is regular, then its Engel subalgebra is `e H`.
 * `LieSubalgebra.rank_eq_finrank_cartan`: for non-degenerate Killing form in characteristic zero,
   the rank of `L` is the dimension of every splitting Cartan subalgebra.
 * `LieSubalgebra.finrank_eq_rank_add_two_mul_card_isPos`: the parity identity
@@ -136,6 +140,30 @@ theorem rank_le_finrank_cartan [Infinite K] [LieModule.LinearWeights K H L]
   obtain ⟨h, hh⟩ := exists_engel_eq_cartan H
   rw [← hh]
   exact LieAlgebra.rank_le_finrank_engel K (h : L)
+
+/-- **A regular element of a Cartan subalgebra has Engel subalgebra equal to it.** If `h ∈ H` is
+regular in `L`, in the sense of `LieAlgebra.IsRegular`, then the Engel subalgebra of `h` is `H`. -/
+theorem engel_eq_cartan_of_isRegular [Infinite K] [LieModule.LinearWeights K H L]
+    [LieModule.IsTriangularizable K H L] {h : H} (hh : LieAlgebra.IsRegular K (h : L)) :
+    LieSubalgebra.engel K (h : L) = H := by
+  refine (LieSubalgebra.toSubmodule_injective
+    (Submodule.eq_of_le_of_finrank_le (H.le_engel_of_isNilpotent h) ?_)).symm
+  exact ((LieAlgebra.isRegular_iff_finrank_engel_eq_rank K _).mp hh).trans_le
+    (rank_le_finrank_cartan H)
+
+/-- **Transport of Cartan subalgebras along regular elements.** If the image `e h` of an element
+`h` of a Cartan subalgebra `H` under a Lie algebra automorphism `e` is regular, then its Engel
+subalgebra is `e H`. -/
+theorem engel_eq_map_of_isRegular [Infinite K] [LieModule.LinearWeights K H L]
+    [LieModule.IsTriangularizable K H L] (e : L ≃ₗ⁅K⁆ L) {h : L} (hh : h ∈ H)
+    (hx : LieAlgebra.IsRegular K (e h)) :
+    LieSubalgebra.engel K (e h) = H.map e.toLieHom := by
+  rw [LieAlgebra.isRegular_iff_finrank_engel_eq_rank, ← e.map_engel] at hx
+  -- `h` is regular too: its Engel subalgebra is isomorphic to that of `e h`
+  have hreg : LieAlgebra.IsRegular K ((⟨h, hh⟩ : H) : L) := by
+    rw [LieAlgebra.isRegular_iff_finrank_engel_eq_rank, ← hx]
+    exact (LieSubalgebra.equivMapOfInjective _ _ e.injective).toLinearEquiv.finrank_eq
+  rw [← e.map_engel, engel_eq_cartan_of_isRegular H hreg]
 
 /-- **The dimension of a splitting Cartan subalgebra is at most the rank**, for a Lie algebra with
 non-degenerate Killing form over a field of characteristic zero. This is the converse of

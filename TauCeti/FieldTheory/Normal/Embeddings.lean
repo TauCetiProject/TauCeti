@@ -109,7 +109,7 @@ theorem eq_one_of_forall_smul_eq (hgen : IntermediateField.normalClosure F L M =
     have hσ : σ ∈ IntermediateField.fixingSubgroup f.fieldRange := by
       rw [IntermediateField.mem_fixingSubgroup_iff]
       rintro _ ⟨x, rfl⟩
-      exact AlgEquiv.apply_of_smul_eq (h f) x
+      exact AlgEquiv.smul_algHom_eq_self_iff.1 (h f) x
     apply (IntermediateField.le_fixedField_iff_le_fixingSubgroup H f.fieldRange).2
     rw [hH, Subgroup.closure_le, Set.singleton_subset_iff]
     exact hσ
@@ -138,14 +138,9 @@ is needed. -/
 theorem stabilizer_algHom_eq_fixingSubgroup (φ : L →ₐ[F] M) :
     MulAction.stabilizer (M ≃ₐ[F] M) φ = φ.fieldRange.fixingSubgroup := by
   ext g
-  rw [MulAction.mem_stabilizer_iff, IntermediateField.mem_fixingSubgroup_iff]
-  constructor
-  · rintro h _ ⟨x, rfl⟩
-    exact AlgEquiv.apply_of_smul_eq h x
-  · intro h
-    ext x
-    rw [AlgEquiv.smul_algHom_apply]
-    exact h (φ x) ⟨x, rfl⟩
+  rw [MulAction.mem_stabilizer_iff, AlgEquiv.smul_algHom_eq_self_iff,
+    IntermediateField.mem_fixingSubgroup_iff]
+  exact ⟨fun h _ ⟨x, hx⟩ => hx ▸ h x, fun h x => h (φ x) ⟨x, rfl⟩⟩
 
 end TauCeti.FieldTheory
 

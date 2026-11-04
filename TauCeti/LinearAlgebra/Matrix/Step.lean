@@ -121,7 +121,7 @@ theorem isStep_diagonal [DecidableEq n] [Zero R] (d : n → R) : (diagonal d).Is
 one. -/
 @[simp]
 theorem isStep_one [DecidableEq n] [Zero R] [One R] : (1 : Matrix n n R).IsStep id 1 :=
-  isStep_of_apply fun _ _ => one_apply
+  isStep_of_apply fun _ _ => Matrix.one_apply
 
 /-- **A product of step matrices is a step matrix**, with the composite target function and with
 each coefficient the product of the two coefficients met along the way. -/
@@ -130,14 +130,14 @@ theorem IsStep.mul [Fintype m] [NonUnitalNonAssocSemiring R]
     (hM : M.IsStep t c) (hN : N.IsStep t' c') :
     (M * N).IsStep (t ∘ t') fun b => c (t' b) * c' b := by
   refine isStep_of_apply_target_of_apply_of_ne (fun b => ?_) fun a b hab => ?_
-  · rw [mul_apply, Finset.sum_eq_single (t' b)]
+  · rw [Matrix.mul_apply, Finset.sum_eq_single (t' b)]
     · rw [Function.comp_apply, hM.apply_target, hN.apply_target]
     · intro i _ hi
       rw [hN.apply_of_ne hi, mul_zero]
     · intro hb
       exact absurd (Finset.mem_univ (t' b)) hb
   · rw [Function.comp_apply] at hab
-    rw [mul_apply, Finset.sum_eq_single (t' b)]
+    rw [Matrix.mul_apply, Finset.sum_eq_single (t' b)]
     · rw [hM.apply_of_ne hab, zero_mul]
     · intro i _ hi
       rw [hN.apply_of_ne hi, mul_zero]

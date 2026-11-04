@@ -129,16 +129,18 @@ theorem exists_nonzero_from_simple_iff_exists_nonzero_to_simple {C : Type u} [Ca
   constructor
   · rintro ⟨f, hf⟩
     have := isSplitMono_of_nonzero_from_simple hf
-    exact ⟨retraction f, fun h ↦ id_nonzero S (by rw [← IsSplitMono.id f, h, comp_zero])⟩
+    exact ⟨retraction f, fun h ↦ CategoryTheory.id_ne_zero S (by rw [← IsSplitMono.id f, h,
+      comp_zero])⟩
   · rintro ⟨g, hg⟩
     have := isSplitEpi_of_nonzero_to_simple hg
-    exact ⟨section_ g, fun h ↦ id_nonzero S (by rw [← IsSplitEpi.id g, h, zero_comp])⟩
+    exact ⟨section_ g, fun h ↦ CategoryTheory.id_ne_zero S (by rw [← IsSplitEpi.id g, h,
+      zero_comp])⟩
 
 /-- The inclusion of a simple summand into an object decomposed as a biproduct is nonzero. -/
 theorem biproduct_ι_comp_inv_ne_zero {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
     {ι : Type*} {a : ι → C} [HasBiproduct a] {Y : C} (e : Y ≅ ⨁ a) (i : ι) [Simple (a i)] :
     biproduct.ι a i ≫ e.inv ≠ 0 := fun h ↦
-  id_nonzero (a i) (by simpa using h =≫ (e.hom ≫ biproduct.π a i))
+  CategoryTheory.id_ne_zero (a i) (by simpa using h =≫ (e.hom ≫ biproduct.π a i))
 
 /-- In a finite semisimple category, a nonzero object receives a nonzero morphism from a simple
 object: the inclusion of a summand of a decomposition into simple objects. -/

@@ -20,6 +20,8 @@ and one in dimension `n`.  In particular `χ(S⁰) = 2`, and the Euler character
 * `TauCeti.eulerChar_sphere`: `χ(Sⁿ) = 1 + (-1)ⁿ`.
 * `TauCeti.eulerChar_sphere_eq_one_sub`: the unit sphere of a `d`-dimensional space has
   `χ = 1 - (-1)ᵈ`, including the empty sphere in dimension zero.
+* `TauCeti.eulerChar_onePoint`: the one-point compactification of a `d`-dimensional real vector
+  space, a `d`-sphere, has `χ = 1 + (-1)ᵈ`. For the Riemann sphere `OnePoint ℂ` this is `2`.
 
 ## References
 
@@ -79,5 +81,16 @@ theorem eulerChar_sphere_eq_one_sub {E : Type u} [NormedAddCommGroup E] [NormedS
   · obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero hE.ne'
     rw [eulerChar_sphere hn, hn, pow_succ]
     ring
+
+/-- **The Euler characteristic of a one-point compactification.** The one-point compactification
+of a `d`-dimensional real vector space is homeomorphic to the `d`-sphere, so it has Euler
+characteristic `1 + (-1) ^ d`. For the Riemann sphere `OnePoint ℂ` this is `2`. -/
+@[simp]
+theorem eulerChar_onePoint {V : Type u} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] :
+    eulerChar (OnePoint V) = 1 + (-1) ^ finrank ℝ V := by
+  rw [(onePointEquivSphereOfFinrankEq
+      (ι := ULift.{u} (Fin (finrank ℝ V + 1))) (by simp)).eulerChar_eq,
+    eulerChar_sphere (n := finrank ℝ V) (by simp)]
 
 end TauCeti

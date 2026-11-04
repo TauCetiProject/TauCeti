@@ -234,6 +234,13 @@ theorem unitRestriction_eq_self_iff_psiMeasure_eq_zero (μ : D(ℤ_[p], R)) :
   rw [unitRestriction_eq_self_iff_restrictMultiples_eq_zero,
     psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]
 
+/-- Dilation by a unit preserves the kernel of measure psi. -/
+theorem psiMeasure_map_mulLeft_unit_eq_zero
+    (μ : D(ℤ_[p], R)) (a : ℤ_[p]ˣ) (hμ : psiMeasure μ = 0) :
+    psiMeasure (map (ContinuousMap.mulLeft (a : ℤ_[p])) μ) = 0 := by
+  rw [← unitRestriction_eq_self_iff_psiMeasure_eq_zero] at hμ ⊢
+  rw [unitRestriction_map_mulLeft_unit, hμ]
+
 /-- **`ψ` is determined by `φ`**: it is the unique linear map `ψ` for which `φ ψ` is the
 restriction to `pℤ_p`. Such a map is automatically a left inverse of `φ`
 (`psiMeasure_comp_phiMeasure`). -/

@@ -64,6 +64,8 @@ Markov property.
   added strand with the previous one does not change the trace.
 * `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`: the spin-model trace satisfies the
   abstract Markov-trace predicate.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_markovTrace`: at `δ = -(q + q⁻¹)` every Markov trace
+  is the spin-model trace.
 
 ## References
 
@@ -164,7 +166,7 @@ theorem spinGenerator_mul_apply {j k : Fin n} (hjk : j ≠ k)
     (spinGenerator q j k * X) s u =
       spinCup q (s j) (s k) * ∑ b, ∑ c, spinCap q b c * X (update (update s j b) k c) u := by
   classical
-  rw [mul_apply]
+  rw [Matrix.mul_apply]
   simp only [spinGenerator_apply, ite_mul, zero_mul]
   rw [← Finset.sum_filter]
   have himage : Finset.univ.filter (fun t : Fin n → Bool ↦ ∀ l ∉ ({j, k} : Finset (Fin n)),
@@ -510,6 +512,12 @@ theorem isMarkovTrace_markovTrace :
     fun _ x y ↦ markovTrace_mul_comm q hδ x y,
     fun _ x ↦ markovTrace_strandIncl q hδ x,
     fun _ x ↦ markovTrace_strandIncl_mul_e_last q hδ x⟩
+
+/-- Every Markov trace at a loop parameter `δ = -(q + q⁻¹)` is the spin-model trace, by
+uniqueness of Markov traces. -/
+theorem IsMarkovTrace.eq_markovTrace {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) : tr = fun _ ↦ markovTrace q hδ :=
+  htr.unique (isMarkovTrace_markovTrace q hδ)
 
 end MarkovTrace
 

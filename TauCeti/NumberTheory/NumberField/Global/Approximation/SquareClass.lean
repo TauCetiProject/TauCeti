@@ -105,7 +105,7 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
     have hhead (j : Fin n) : IsSquare
         (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e j.castSucc) /
           a v j.castSucc) := by
-      apply isSquare_units_val_iff.mp
+      apply Units.isSquare_coe_iff.mp
       -- Expand the square witness to normalize the scalar and unit coercions.
       simpa [e, IsSquare] using hc j v
     refine Fin.lastCases ?_ hhead i
@@ -119,7 +119,7 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
   · intro w i
     have hhead (j : Fin n) : IsSquare
         (Units.map (embedding_of_isReal w.1.2).toMonoidHom (e j.castSucc) / b w j.castSucc) := by
-      apply isSquare_units_val_iff.mp
+      apply Units.isSquare_coe_iff.mp
       -- Expand the square witness to normalize the scalar and unit coercions.
       simpa [e, IsSquare] using hr j w
     refine Fin.lastCases ?_ hhead i

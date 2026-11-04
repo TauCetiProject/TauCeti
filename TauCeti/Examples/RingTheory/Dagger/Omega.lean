@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Omega.Quotient
+public import TauCeti.RingTheory.Dagger.Omega.Kaehler
+public import Mathlib.Algebra.DualNumber
+public import Mathlib.RingTheory.Unramified.Field
 
 /-!
 # Differentials of a doubled dagger origin
@@ -14,6 +17,10 @@ The quotient presentation retains the relation `d(X²) = 2X dX`, not `dX = 0`.
 In characteristic two the relation vanishes entirely: the differentials of the doubled origin
 are the base change of the free differential module of the disc. The same finiteness instance
 also applies to the zero algebra.
+
+For finite algebras the comparison with algebraic Kähler differentials is an isomorphism.
+The tests below include scalar compatibility, finite separable extensions, the zero algebra,
+and dual numbers with a nonzero differential of their nilpotent coordinate.
 -/
 
 public section
@@ -67,3 +74,57 @@ theorem injective_quotientMap_doubledOrigin_of_charTwo [CharP K 2] :
   simp [hd]
 
 end TauCeti.Examples
+
+section KaehlerComparison
+
+open TauCeti.Dagger
+open scoped DualNumber
+
+-- No norm, completeness, separability or reducedness is required for the comparison.
+example (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [Module.Finite R A] :
+    Function.Bijective (Omega.ofKaehler R A) :=
+  ⟨Omega.ofKaehler_injective R A, Omega.ofKaehler_surjective R A⟩
+
+example (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [Module.Finite R A]
+    (a b : A) :
+    (Omega.ofKaehlerEquiv R A).symm (a • Omega.d R A b) =
+      a • KaehlerDifferential.D R A b := by simp
+
+example (R : Type*) [CommRing R] : Subsingleton (Omega R R) := inferInstance
+
+-- Separable extensions have no differentials; no such assertion is made for inseparable ones.
+example (K L : Type*) [Field K] [Field L] [Algebra K L] [Algebra.IsSeparable K L] :
+    Subsingleton (Omega K L) := by
+  have := Algebra.FormallyUnramified.of_isSeparable K L
+  infer_instance
+
+-- The comparison also includes the zero algebra, not just nonzero field extensions.
+example (R : Type*) [CommRing R] :
+    Function.Bijective (Omega.ofKaehler R (R ⧸ (⊤ : Ideal R))) :=
+  ⟨Omega.ofKaehler_injective R _, Omega.ofKaehler_surjective R _⟩
+
+-- The differential of a nilpotent is not generally zero, in any characteristic.
+example (R : Type*) [CommRing R] [Nontrivial R] :
+    Omega.d R R[ε] ε ≠ 0 := by
+  -- R[ε] is TrivSqZeroExt R R, whose underlying R-module is R × R.
+  -- inferInstanceAs exposes the product so instance search can use its finiteness instance.
+  have : Module.Finite R R[ε] := inferInstanceAs (Module.Finite R (R × R))
+  let D : Derivation R R[ε] R[ε] :=
+    { toLinearMap := (TrivSqZeroExt.inrHom R R).comp (TrivSqZeroExt.sndHom R R)
+      map_one_eq_zero' := by simp
+      leibniz' a b := by
+        ext <;> simp [smul_eq_mul, TrivSqZeroExt.snd_mul, mul_comm] }
+  have hD_eps : D.liftKaehlerDifferential (KaehlerDifferential.D R R[ε] ε) = ε := by
+    rw [Derivation.liftKaehlerDifferential_comp_D]
+    -- D applies inr to the second coordinate, and ε is definitionally inr 1.
+    rfl
+  intro h
+  have hD := congrArg D.liftKaehlerDifferential ((Omega.d_eq_zero_iff R R[ε] ε).mp h)
+  have heps : (ε : R[ε]) ≠ 0 := by
+    intro hzero
+    have := congrArg TrivSqZeroExt.snd hzero
+    simp at this
+  apply heps
+  simpa only [hD_eps, map_zero] using hD
+
+end KaehlerComparison

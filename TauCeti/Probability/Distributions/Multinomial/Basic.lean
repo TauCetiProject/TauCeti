@@ -142,7 +142,7 @@ theorem sum_multinomialWeight_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
 /-- The multinomial law is a probability measure. -/
 theorem isProbabilityMeasure_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     IsProbabilityMeasure (multinomialMeasure n p) := by
-  rw [isProbabilityMeasure_iff, multinomialMeasure, Measure.finsetSum_apply]
+  rw [isProbabilityMeasure_iff, multinomialMeasure, _root_.sum_apply]
   simpa using sum_multinomialWeight_eq_one n p
 
 /-- With no trials, the multinomial law is concentrated at the zero count vector. -/
@@ -157,7 +157,7 @@ zero elsewhere. -/
 theorem multinomialMeasure_singleton (n : ℕ) (p : StdSimplex NNReal ι) (k : ι → ℕ) :
     multinomialMeasure n p {k} =
       if ∑ i, k i = n then multinomialWeight p.weights k else 0 := by
-  simp [multinomialMeasure, Measure.finsetSum_apply, Pi.single_apply,
+  simp [multinomialMeasure, _root_.sum_apply, Pi.single_apply,
     mul_ite, Finset.mem_piAntidiag]
 
 /-- The real singleton mass of a multinomial law, in the usual factorial form. -/
@@ -221,7 +221,7 @@ size. -/
 @[simp]
 theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
     multinomialMeasure n p {k | ∑ i, k i = n} = 1 := by
-  rw [multinomialMeasure, Measure.finsetSum_apply]
+  rw [multinomialMeasure, _root_.sum_apply]
   calc
     _ = ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k := by
       apply Finset.sum_congr rfl

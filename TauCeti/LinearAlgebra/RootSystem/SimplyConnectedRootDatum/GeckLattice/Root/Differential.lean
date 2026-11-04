@@ -35,6 +35,8 @@ identified with an independently pinned simply connected group scheme.
   corresponding matrix of Geck's Lie algebra.
 * `TauCeti.DynkinType.geckRootIntMatrix_eq_zero_of_weight_ne`: it vanishes off its signed
   simple-root weight difference.
+* `TauCeti.DynkinType.lie_geckRootIntMatrix`: opposite simple-root matrices bracket to the
+  diagonal matrix of their integral Cartan weights.
 * `TauCeti.DynkinType.tangentMatrix_derivationComp_geckRootSubgroupCoordinateMap`: the
   differential of a numbered root subgroup is the tangent parameter times the integral root
   matrix.
@@ -68,6 +70,7 @@ universe v
 
 noncomputable section
 
+attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] TauCeti.moduleNNRat
 
 -- Use the algebra-induced integer module consistently for the counit coefficient synonyms.
@@ -110,6 +113,17 @@ theorem intCast_geckRootIntMatrix_apply (i : Fin t.rank ⊕ Fin t.rank)
     coe_kostantRootOperator_apply, coe_geckCoordinateBasisFin, geckRepresentation_ι_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- Casting an integral root matrix to the rationals recovers the reindexed Geck root
+generator. -/
+theorem map_intCast_geckRootIntMatrix (i : Fin t.rank ⊕ Fin t.rank) :
+    (t.geckRootIntMatrix ht i).map (Int.castRingHom ℚ) =
+      Matrix.reindexLieEquiv (R := ℚ) (Fintype.equivFin (t.GeckIndex ht))
+        ((t.lieBasis ht).rootGenerator i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
+  ext a b
+  simp only [Matrix.map_apply, Int.coe_castRingHom, Matrix.reindexLieEquiv_apply,
+    Matrix.reindex_apply, Matrix.submatrix_apply]
+  exact t.intCast_geckRootIntMatrix_apply ht i a b
+
 /-- **A numbered integral root matrix has no entries outside its signed simple-root weight
 difference.** The weights are the integral Geck coordinate weights, before any change of
 coefficient ring. -/
@@ -122,6 +136,22 @@ theorem geckRootIntMatrix_eq_zero_of_weight_ne (i : Fin t.rank ⊕ Fin t.rank)
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) (t.geckCoordinateBasisFin ht)
     (t.geckWeightFin ht) i (t.lie_lieBasis_h_rootGenerator ht i)
     (t.isCartanWeightVector_geckCoordinateBasisFin ht) hab
+
+/-- The integral commutator of the numbered raising and lowering matrices is the diagonal
+matrix of their Cartan weights. -/
+theorem lie_geckRootIntMatrix (i : Fin t.rank) :
+    ⁅t.geckRootIntMatrix ht (.inl i), t.geckRootIntMatrix ht (.inr i)⁆ =
+      Matrix.diagonal (fun a ↦ t.geckWeightFin ht a i) := by
+  classical
+  apply Matrix.map_injective (f := Int.castRingHom ℚ) Int.cast_injective
+  simp only [Ring.lie_def, Matrix.map_sub _ (map_sub _), Matrix.map_mul]
+  rw [map_intCast_geckRootIntMatrix, map_intCast_geckRootIntMatrix,
+    ← Ring.lie_def, ← LieEquiv.map_lie,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr,
+    ← LieSubalgebra.coe_bracket, ((t.lieBasis ht).sl2 i).lie_e_f]
+  rw [Matrix.diagonal_map (map_zero (Int.castRingHom ℚ))]
+  simpa only [Matrix.reindexLieEquiv_apply, Int.coe_castRingHom] using
+    t.reindex_lieBasis_h ht i
 
 /-! ## The root differentials -/
 

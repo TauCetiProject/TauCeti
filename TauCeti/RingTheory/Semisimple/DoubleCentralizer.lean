@@ -274,7 +274,7 @@ theorem _root_.Subalgebra.centralizer_centralizer_of_isSemisimpleModule
         -- `LinearMap.coe_restrictScalars`.
         have h := congrArg (fun t : Module.End K N => t m)
           (hx _ (A.restrictScalars_mem_centralizer g))
-        simpa only [Module.End.smul_def, RingHom.id_apply, Module.End.mul_apply,
+        simpa only [Module.End.smul_def, RingHom.id_apply, _root_.mul_apply_eq_comp,
           LinearMap.coe_restrictScalars] using h.symm }
   obtain ⟨a, ha⟩ := Module.Finite.toModuleEnd_moduleEnd_surjective (R := A) (M := N) f
   have hx' : x = (a : Module.End K N) := by
@@ -312,8 +312,8 @@ theorem _root_.Subalgebra.exists_mem_centralizer_apply_eq_iff_of_isSemisimpleMod
       ∀ a ∈ A, a w = 0 → a x = 0 := by
   refine ⟨?_, fun h => ?_⟩
   · rintro ⟨f, hf, rfl⟩ a ha haw
-    rw [← Module.End.mul_apply, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
-      Module.End.mul_apply, haw, map_zero]
+    rw [← _root_.mul_apply_eq_comp, (Subalgebra.mem_centralizer_iff K).1 hf a ha,
+      _root_.mul_apply_eq_comp, haw, map_zero]
   obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := A)).mpr
     fun a ha => h a a.2 ha
   exact ⟨f.restrictScalars K, A.restrictScalars_mem_centralizer f, hf⟩
