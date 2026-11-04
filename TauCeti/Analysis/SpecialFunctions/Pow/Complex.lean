@@ -57,6 +57,10 @@ integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`
   `r ≤ 0` along the positive real axis.
 * `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
   continuous in the real variable `t > 0`.
+* `Complex.cpow_half_re_nonneg`, `Complex.cpow_half_re_pos` -- the principal square root has
+  nonnegative real part, strictly positive on the slit plane.
+* `Complex.cpow_half_add_cpow_half_re_pos` -- a sum of principal square roots has positive real
+  part if at least one base lies in the slit plane.
 * `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
@@ -298,6 +302,15 @@ theorem cpow_half_re_pos {z : ℂ} (hz : z ∈ slitPlane) :
   · linarith [norm_nonneg z]
   · have := abs_re_lt_norm.mpr h
     linarith [neg_abs_le z.re]
+
+/-- A sum of principal square roots has positive real part if at least one base lies in
+the slit plane. -/
+theorem cpow_half_add_cpow_half_re_pos {a b : ℂ} (h : a ∈ slitPlane ∨ b ∈ slitPlane) :
+    0 < (a ^ (1 / 2 : ℂ) + b ^ (1 / 2 : ℂ)).re := by
+  rw [add_re]
+  rcases h with ha | hb
+  · exact add_pos_of_pos_of_nonneg (cpow_half_re_pos ha) (cpow_half_re_nonneg b)
+  · exact add_pos_of_nonneg_of_pos (cpow_half_re_nonneg a) (cpow_half_re_pos hb)
 
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by

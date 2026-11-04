@@ -76,25 +76,15 @@ theorem add_carlsonDuplicationLambda_mem_slitPlane {x y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) :
     x + carlsonDuplicationLambda x y z ∈ slitPlane := by
   rw [add_carlsonDuplicationLambda]
-  apply TauCeti.mul_mem_slitPlane_of_re_pos
-  · rw [add_re]
-    rcases hxy with hx | hy
-    · exact add_pos_of_pos_of_nonneg (cpow_half_re_pos hx) (cpow_half_re_nonneg y)
-    · exact add_pos_of_nonneg_of_pos (cpow_half_re_nonneg x) (cpow_half_re_pos hy)
-  · rw [add_re]
-    rcases hxz with hx | hz
-    · exact add_pos_of_pos_of_nonneg (cpow_half_re_pos hx) (cpow_half_re_nonneg z)
-    · exact add_pos_of_nonneg_of_pos (cpow_half_re_nonneg x) (cpow_half_re_pos hz)
+  exact TauCeti.mul_mem_slitPlane_of_re_pos
+    (cpow_half_add_cpow_half_re_pos hxy) (cpow_half_add_cpow_half_re_pos hxz)
 
 /-- The scaled node used in Carlson duplication lies strictly in the slit plane.
 The same criterion applies to the other nodes after permuting the inputs. -/
 theorem add_carlsonDuplicationLambda_div_four_mem_slitPlane {x y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) :
     (x + carlsonDuplicationLambda x y z) / 4 ∈ slitPlane := by
-  rcases mem_slitPlane_iff.mp (add_carlsonDuplicationLambda_mem_slitPlane hxy hxz) with h | h
-  · exact mem_slitPlane_iff.mpr (Or.inl (by simpa using div_pos h (by norm_num : (0 : ℝ) < 4)))
-  · apply mem_slitPlane_iff.mpr
-    right
-    simpa using div_ne_zero h (by norm_num : (4 : ℝ) ≠ 0)
+  exact TauCeti.div_ofReal_mem_slitPlane
+    (add_carlsonDuplicationLambda_mem_slitPlane hxy hxz) (by norm_num : (0 : ℝ) < 4)
 
 end Complex
