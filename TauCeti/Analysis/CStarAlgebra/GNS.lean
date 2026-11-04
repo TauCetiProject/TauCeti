@@ -81,6 +81,13 @@ theorem gnsNonUnitalStarAlgHom_apply_gnsVector (f : B →ₚ[ℂ] ℂ) (a : B) :
     f.gnsNonUnitalStarAlgHom a f.gnsVector = (f.toPreGNS a : f.GNS) := by
   simp [gnsVector_def]
 
+/-- Inner products of orbit vectors in the GNS representation recover the star pairing of
+the original functional. -/
+theorem inner_gnsStarAlgHom_gnsVector (f : B →ₚ[ℂ] ℂ) (a b : B) :
+    inner ℂ (f.gnsStarAlgHom a f.gnsVector) (f.gnsStarAlgHom b f.gnsVector) =
+      f (star a * b) := by
+  simp [preGNS_inner_def]
+
 /-- Pairing the canonical GNS vector with the class of `a` recovers the functional at `a`.
 Together with the action formula, this identifies the functional with its GNS vector state. -/
 @[simp]

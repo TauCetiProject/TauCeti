@@ -621,6 +621,22 @@ theorem loweringMatrix_pow_two (i : B) : T.loweringMatrix i ^ 2 = 0 := by
   · simp [hb, T.weight_reflection_self]
   · simp [hb]
 
+/-- The raising matrix cast into any ring squares to zero. -/
+theorem raisingMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
+    (T.raisingMatrix i).map (Int.cast : ℤ → R) * (T.raisingMatrix i).map (Int.cast : ℤ → R) =
+      0 := by
+  have h := congrArg (RingHom.mapMatrix (Int.castRingHom R)) (T.raisingMatrix_pow_two i)
+  rw [map_pow, map_zero] at h
+  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom, pow_two] using h
+
+/-- The lowering matrix cast into any ring squares to zero. -/
+theorem loweringMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
+    (T.loweringMatrix i).map (Int.cast : ℤ → R) * (T.loweringMatrix i).map (Int.cast : ℤ → R) =
+      0 := by
+  have h := congrArg (RingHom.mapMatrix (Int.castRingHom R)) (T.loweringMatrix_pow_two i)
+  rw [map_pow, map_zero] at h
+  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom, pow_two] using h
+
 
 
 private theorem lie_raisingMatrix_loweringMatrix_of_ne (i j : B) (hij : i ≠ j) :

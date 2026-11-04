@@ -304,6 +304,20 @@ theorem IsBounded.image_of_isOpenMap {F : Type*} [FunLike F M N] [ZeroHomClass F
 
 end Image
 
+/-- The inverse image of a bounded set under a subring inclusion is bounded for the subspace
+topology. -/
+theorem _root_.Subring.isBounded_preimage_subtype {R : Type*} [Ring R] [TopologicalSpace R]
+    (S : Subring R) {s : Set R} (hs : IsBounded s) :
+    IsBounded (Subtype.val ⁻¹' s : Set S) := by
+  rw [isBounded_iff] at hs ⊢
+  intro U hU
+  rw [nhds_induced] at hU
+  obtain ⟨W, hW, hWU⟩ := Filter.mem_comap.mp hU
+  obtain ⟨V, hV, hVW⟩ := hs W hW
+  refine ⟨Subtype.val ⁻¹' V, continuous_subtype_val.continuousAt.preimage_mem_nhds hV, ?_⟩
+  rintro _ ⟨x, hx, y, hy, rfl⟩
+  exact hWU (hVW (Set.mul_mem_mul hx hy))
+
 section Prod
 
 variable {M N : Type*} [MonoidWithZero M] [MonoidWithZero N]
