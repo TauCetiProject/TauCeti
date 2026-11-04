@@ -43,6 +43,9 @@ replaces the usual double complex argument by dimension shifting along the resol
   acyclic, when limits of that shape are exact.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_pi`: a product of acyclic presheaves is
   acyclic, when products of that shape are exact.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_retract_pi`: a presheaf which is a retract
+  of the product of its restrictions to the members of a family is acyclic for that family; this
+  is the Čech acyclicity of fine sheaves.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_quasiIso_prod`: two families each
   acyclic on the finite products of members of the other are acyclic together.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_quasiIso_prod_of_hom`: in a thin category,
@@ -105,6 +108,23 @@ theorem quasiIso_cechAugmentation_pi {J : Type w} [HasExactLimitsOfShape (Discre
     (G : J → Cᵒᵖ ⥤ A) (hG : ∀ j, QuasiIso (cechAugmentation U hT (G j))) :
     QuasiIso (cechAugmentation U hT (∏ᶜ G)) :=
   quasiIso_cechAugmentation_limit U hT (Discrete.functor G) fun j ↦ hG j.as
+
+/-- **Retracts of products of restrictions are acyclic.** Let `C` be thin. If products indexed by
+`ι` are exact in `A` and `P` is a retract of the product `∏ᵢ P(U i × -)` of its restrictions to
+the members of `U`, then the augmented Čech complex of `P` for `U` is exact. Each `P(U i × -)` is
+acyclic for `U`, since `U i` is itself a member of `U` (`quasiIso_cechAugmentation_prod_of_hom`).
+
+This is the Čech form of the acyclicity of fine sheaves. For an open cover `U` of a space and a
+sheaf of modules over a sheaf of rings with a partition of unity `ψ i` subordinate to `U`, the
+restrictions `P ⟶ ∏ᵢ P(U i ∩ -)` and the map `∏ᵢ P(U i ∩ -) ⟶ P` sending `(sᵢ)ᵢ` to the locally
+finite sum `∑ᵢ ψ i • sᵢ`, each term extended by zero off the support of `ψ i`, exhibit such a
+retract. -/
+theorem quasiIso_cechAugmentation_of_retract_pi [Quiver.IsThin C]
+    [HasExactLimitsOfShape (Discrete ι) A]
+    (P : Cᵒᵖ ⥤ A) (h : Retract P (∏ᶜ fun i ↦ (prod.functor.obj (U i)).op ⋙ P)) :
+    QuasiIso (cechAugmentation U hT P) :=
+  quasiIso_cechAugmentation_of_retract U hT P h <| quasiIso_cechAugmentation_pi U hT _ fun i ↦
+    quasiIso_cechAugmentation_prod_of_hom U hT P (U i) (𝟙 _)
 
 /-! ### Comparing two families
 
