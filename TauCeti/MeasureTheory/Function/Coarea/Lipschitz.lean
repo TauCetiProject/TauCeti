@@ -14,6 +14,7 @@ import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Measure.Regular
@@ -98,15 +99,67 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
+/-- The perturbation slab `K × ball 0 1` inside `WithLp 2 (E × F)`. -/
+private def coareaPerturbSlab (F : Type*) [PseudoMetricSpace F] [Zero F] {E : Type*} (K : Set E) :
+    Set (WithLp 2 (E × F)) :=
+  {w | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1}
+
+/-- When `K` is compact, the perturbation slab `K × ball 0 1` is Borel measurable. -/
+private theorem measurableSet_coareaPerturbSlab {E F : Type*} [TopologicalSpace E] [T2Space E]
+    [MeasurableSpace E] [BorelSpace E] [PseudoMetricSpace F] [Zero F] [MeasurableSpace F]
+    [OpensMeasurableSpace F] {K : Set E} (hK : IsCompact K) :
+    MeasurableSet (coareaPerturbSlab F K) :=
+  (hK.isClosed.measurableSet.preimage
+    (measurable_fst.comp (WithLp.measurable_ofLp 2 (E × F)))).inter
+    (isOpen_ball.measurableSet.preimage
+      (measurable_snd.comp (WithLp.measurable_ofLp 2 (E × F))))
+
+/-- When `K` is compact, the perturbation slab `K × ball 0 1` has finite Lebesgue measure. -/
+private theorem volume_coareaPerturbSlab_ne_top (F : Type*) {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {K : Set E} (hK : IsCompact K) :
+    volume (coareaPerturbSlab F K) ≠ ∞ :=
+  (((WithLp.prod_lipschitzWith_toLp 2 E F).isBounded_image
+    (hK.isBounded.prod (isBounded_ball (x := (0 : F)) (r := 1)))).subset
+    fun w hw ↦ ⟨WithLp.ofLp w, hw, rfl⟩).measure_lt_top.ne
+
+/-- Intersecting a `(w ↦ f w.fst + ε • w.snd)`-fibre of `coareaPerturbSlab F K` with the slice
+`WithLp.snd ⁻¹' {z}` (`z ∈ ball 0 1`) gives the slice embedding of `K ∩ f ⁻¹' {y - ε • z}`. -/
+private theorem coareaPerturbSlab_inter_preimage_inter_snd_preimage {E F : Type*}
+    [NormedAddCommGroup F] [SMul ℝ F] (f : E → F) (K : Set E) (ε : ℝ) (y : F) {z : F}
+    (hz : z ∈ ball (0 : F) 1) :
+    (coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) ∩ WithLp.snd ⁻¹' {z} =
+      (fun x : E ↦ WithLp.toLp 2 (x, z)) '' (K ∩ f ⁻¹' {y - ε • z}) := by
+  ext w
+  simp only [coareaPerturbSlab, mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff,
+    mem_image]
+  constructor
+  · rintro ⟨⟨⟨hwK, -⟩, hpw⟩, rfl⟩
+    exact ⟨w.fst, ⟨hwK, eq_sub_of_add_eq hpw⟩, (WithLp.ext_iff 2).2 (Prod.ext rfl rfl)⟩
+  · rintro ⟨x, ⟨hxK, hfx⟩, rfl⟩
+    simp [hxK, hz, hfx]
+
+/-- Integrating `z ↦ ϕ (y - ε • z)` over `s` and then over `y : F` factors out `volume s` by
+Tonelli's theorem and right-translation invariance of Lebesgue measure on `F`. -/
+private theorem lintegral_setLIntegral_sub_smul {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    {ϕ : F → ℝ≥0∞} (hϕ : Measurable ϕ) (s : Set F) (ε : ℝ) :
+    ∫⁻ y : F, ∫⁻ z in s, ϕ (y - ε • z) = volume s * ∫⁻ u : F, ϕ u := by
+  have hm : AEMeasurable (fun q : F × F ↦ ϕ (q.1 - ε • q.2))
+      (volume.prod (volume.restrict s)) :=
+    (hϕ.comp (continuous_fst.sub
+      (continuous_const.smul continuous_snd)).measurable).aemeasurable
+  rw [lintegral_lintegral_swap hm]
+  simp_rw [lintegral_sub_right_eq_self ϕ]
+  rw [setLIntegral_const, mul_comm]
+
 /-- The linear model `(v, u) ↦ A v + ε • u` on `WithLp 2 (E × F)` of the derivative of
 `(x, z) ↦ f x + ε • z`. -/
 private noncomputable def coareaPerturbDeriv {E F : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] (ε : ℝ)
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (ε : ℝ)
     (A : E →L[ℝ] F) : WithLp 2 (E × F) →L[ℝ] F :=
-  A ∘L (ContinuousLinearMap.fst ℝ E F ∘L
-      (WithLp.prodContinuousLinearEquiv 2 ℝ E F : WithLp 2 (E × F) →L[ℝ] E × F)) +
-    ε • (ContinuousLinearMap.snd ℝ E F ∘L
-      (WithLp.prodContinuousLinearEquiv 2 ℝ E F : WithLp 2 (E × F) →L[ℝ] E × F))
+  A ∘L WithLp.fstL 2 ℝ E F + ε • WithLp.sndL 2 ℝ E F
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -129,9 +182,43 @@ theorem measurableSet_setOf_differentiableAt_surjective_fderiv (f : E → F) :
   ext x
   exact and_congr_right' ContinuousLinearMap.normDet_adjoint_ne_zero_iff.symm
 
-/-- Slicing `S = K × ball 0 1` by `p ε (x, z) = f x + ε • z` (`ε ≠ 0`) and then by `(x, z) ↦ z`
-bounds `c * (volume (ball 0 1) * ∫⁻ u, μH[dim E - dim F] (K ∩ f ⁻¹' {u}))` above by
-`volume (ball 0 1) * ∫⁻ w in S, (coareaPerturbDeriv ε (fderiv ℝ f w.fst))†.normDet`. -/
+omit [FiniteDimensional ℝ E] in
+/-- Slicing a `(w ↦ f w.fst + ε • w.snd)`-fibre of `coareaPerturbSlab F K` along `WithLp.snd`
+bounds `∫⁻ z in ball 0 1, μH[dim E - dim F] (K ∩ f ⁻¹' {y - ε • z})` via Eilenberg's inequality. -/
+private theorem setLIntegral_ball_hausdorffMeasure_inter_preimage_le
+    (f : E → F) (K : Set E) (hdim : finrank ℝ F ≤ finrank ℝ E) (ε : ℝ) (y : F) :
+    ∫⁻ z in ball (0 : F) 1,
+      μH[((finrank ℝ E - finrank ℝ F : ℕ) : ℝ)] (K ∩ f ⁻¹' {y - ε • z}) ≤
+    volume (ball (0 : F) 1) *
+      μH[(finrank ℝ E : ℝ)]
+        (coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) := by
+  set k := finrank ℝ E - finrank ℝ F
+  have hsnd_lip : LipschitzWith 1 (WithLp.snd : WithLp 2 (E × F) → F) :=
+    LipschitzWith.of_edist_le WithLp.edist_snd_le
+  have hdim_add : (finrank ℝ F : ℝ) + (k : ℝ) = (finrank ℝ E : ℝ) := by
+    exact_mod_cast Nat.add_sub_of_le hdim
+  calc ∫⁻ z in ball (0 : F) 1, μH[(k : ℝ)] (K ∩ f ⁻¹' {y - ε • z})
+      = ∫⁻ z in ball (0 : F) 1, μH[(k : ℝ)]
+          ((coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) ∩
+            WithLp.snd ⁻¹' {z}) :=
+        setLIntegral_congr_fun isOpen_ball.measurableSet fun z hz ↦ by
+          rw [coareaPerturbSlab_inter_preimage_inter_snd_preimage f K ε y hz,
+            (WithLp.isometry_toLp_prodMk_right 2 z).hausdorffMeasure_image (Or.inl k.cast_nonneg)]
+    _ ≤ ∫⁻ z : F, μH[(k : ℝ)]
+          ((coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) ∩
+            WithLp.snd ⁻¹' {z}) :=
+        setLIntegral_le_lintegral _ _
+    _ ≤ volume (ball (0 : F) 1) * 1 ^ finrank ℝ F * μH[(finrank ℝ F : ℝ) + (k : ℝ)]
+          (coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) :=
+        hsnd_lip.lipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le volume k.cast_nonneg
+    _ = volume (ball (0 : F) 1) * μH[(finrank ℝ E : ℝ)]
+          (coareaPerturbSlab F K ∩ (fun w ↦ f w.fst + ε • w.snd) ⁻¹' {y}) := by
+        simp [hdim_add]
+
+/-- Slicing `coareaPerturbSlab F K` by `p ε (x, z) = f x + ε • z` (`ε ≠ 0`) and then by
+`w ↦ w.snd` bounds `c * (volume (ball 0 1) * ∫⁻ u, μH[dim E - dim F] (K ∩ f ⁻¹' {u}))` above by
+`volume (ball 0 1)` times
+`∫⁻ w in coareaPerturbSlab F K, (coareaPerturbDeriv ε (fderiv ℝ f w.fst))†.normDet`. -/
 private theorem mul_lintegral_hausdorffMeasure_le_setLIntegral_coareaPerturbDeriv
     {K : Set E} (hK : IsCompact K) (hdim : finrank ℝ F ≤ finrank ℝ E)
     (hd : ∀ x ∈ K, DifferentiableAt ℝ f x) {ε : ℝ} (hε : ε ≠ 0) :
@@ -140,128 +227,64 @@ private theorem mul_lintegral_hausdorffMeasure_le_setLIntegral_coareaPerturbDeri
       (volume (ball (0 : F) 1) *
         ∫⁻ u : F, μH[((finrank ℝ E - finrank ℝ F : ℕ) : ℝ)] (K ∩ f ⁻¹' {u})) ≤
       volume (ball (0 : F) 1) *
-        ∫⁻ w : WithLp 2 (E × F) in {w | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1},
+        ∫⁻ w in coareaPerturbSlab F K,
           ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
-  let W := WithLp 2 (E × F)
-  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  let π₁ : W →L[ℝ] E := ContinuousLinearMap.fst ℝ E F ∘L (e : W →L[ℝ] E × F)
-  let π₂ : W →L[ℝ] F := ContinuousLinearMap.snd ℝ E F ∘L (e : W →L[ℝ] E × F)
-  have hdimW : finrank ℝ W - finrank ℝ F = finrank ℝ E := by
-    have hW : finrank ℝ W = finrank ℝ E + finrank ℝ F := by
-      rw [e.toLinearEquiv.finrank_eq, Module.finrank_prod]
-    omega
-  let B : Set F := ball 0 1
-  let S : Set W := {w : W | w.fst ∈ K ∧ w.snd ∈ B}
-  have hSm : MeasurableSet S :=
-    (hK.isClosed.measurableSet.preimage π₁.continuous.measurable).inter
-      (isOpen_ball.measurableSet.preimage π₂.continuous.measurable)
-  let p (w : W) : F := f w.fst + ε • w.snd
-  have hp_deriv {w : W} (hw : w ∈ S) :
+  have hSm : MeasurableSet (coareaPerturbSlab F K) := measurableSet_coareaPerturbSlab hK
+  have hdimW : finrank ℝ (WithLp 2 (E × F)) - finrank ℝ F = finrank ℝ E := by
+    rw [(WithLp.prodContinuousLinearEquiv 2 ℝ E F).toLinearEquiv.finrank_eq, Module.finrank_prod,
+      Nat.add_sub_cancel]
+  let p (w : WithLp 2 (E × F)) : F := f w.fst + ε • w.snd
+  have hp_deriv {w : WithLp 2 (E × F)} (hw : w ∈ coareaPerturbSlab F K) :
       HasFDerivAt p (coareaPerturbDeriv ε (fderiv ℝ f w.fst)) w :=
-    ((hd w.fst hw.1).hasFDerivAt.comp w π₁.hasFDerivAt).add (π₂.hasFDerivAt.const_smul ε)
+    ((hd w.fst hw.1).hasFDerivAt.comp w (WithLp.fstL 2 ℝ E F).hasFDerivAt).add
+      ((WithLp.sndL 2 ℝ E F).hasFDerivAt.const_smul ε)
   have hD_surj (A : E →L[ℝ] F) : Surjective (coareaPerturbDeriv ε A) := fun v ↦
-    ⟨e.symm (0, ε⁻¹ • v), by simp [coareaPerturbDeriv, e, smul_inv_smul₀ hε]⟩
-  -- Since `p` has surjective derivative on `S`, the regular coarea formula applies.
-  have hco : ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ⁻¹' {y}) =
-      ∫⁻ w in S, ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
+    ⟨WithLp.toLp 2 (0, ε⁻¹ • v), by simp [coareaPerturbDeriv, smul_inv_smul₀ hε]⟩
+  -- Since `p` has surjective derivative on the slab, the regular coarea formula applies.
+  have hco : ∫⁻ y : F, μHE[finrank ℝ E] (coareaPerturbSlab F K ∩ p ⁻¹' {y}) =
+      ∫⁻ w in coareaPerturbSlab F K,
+        ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
     rw [← hdimW,
       lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv
-        hSm.nullMeasurableSet (fun w hw ↦ (hp_deriv hw).differentiableAt)
-        (fun w hw ↦ by rw [(hp_deriv hw).fderiv]; exact hD_surj _)]
-    exact setLIntegral_congr_fun hSm fun w hw ↦ by rw [(hp_deriv hw).fderiv]
-  -- Slice each `p`-fibre along the `1`-Lipschitz second projection `w ↦ w.snd`.
+        hSm.nullMeasurableSet (fun _ hw ↦ (hp_deriv hw).differentiableAt)
+        (fun _ hw ↦ by rw [(hp_deriv hw).fderiv]; exact hD_surj _)]
+    exact setLIntegral_congr_fun hSm fun _ hw ↦ by rw [(hp_deriv hw).fderiv]
   set k := finrank ℝ E - finrank ℝ F
   let ϕ : F → ℝ≥0∞ := fun u ↦ μH[(k : ℝ)] (K ∩ f ⁻¹' {u})
   have hϕm : Measurable ϕ :=
     hK.measurable_hausdorffMeasure_inter_preimage
       (fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt) (k : ℝ)
-  have hι (z : F) : Isometry (fun x : E ↦ WithLp.toLp 2 (x, z)) := by
-    refine Isometry.of_dist_eq fun x₁ x₂ ↦ ?_
-    rw [dist_eq_norm, dist_eq_norm]
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-    have hsub : WithLp.toLp 2 (x₁, z) - WithLp.toLp 2 (x₂, z) = WithLp.toLp 2 (x₁ - x₂, 0) :=
-      e.injective (by ext <;> simp [e])
-    rw [hsub, WithLp.prod_norm_sq_eq_of_L2]
-    simp
-  have hslice (y : F) {z : F} (hz : z ∈ B) :
-      (S ∩ p ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z} =
-        (fun x : E ↦ WithLp.toLp 2 (x, z)) '' (K ∩ f ⁻¹' {y - ε • z}) := by
-    ext w
-    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_image, S, p]
-    constructor
-    · rintro ⟨⟨⟨hwK, -⟩, hpw⟩, rfl⟩
-      refine ⟨w.fst, ⟨hwK, eq_sub_of_add_eq hpw⟩, ?_⟩
-      exact e.injective (by ext <;> simp [e])
-    · rintro ⟨x, ⟨hxK, hfx⟩, rfl⟩
-      simp [hxK, hz, hfx]
-  have hsnd_lip : LipschitzWith 1 (fun w : W ↦ w.snd) :=
-    LipschitzWith.of_edist_le WithLp.edist_snd_le
-  have hdim_add : (finrank ℝ F : ℝ) + (k : ℝ) = (finrank ℝ E : ℝ) := by
-    exact_mod_cast Nat.add_sub_of_le hdim
-  have hfib (y : F) : ∫⁻ z in B, ϕ (y - ε • z) ≤
-      volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ⁻¹' {y}) := by
-    have hBeq : ∫⁻ z in B, ϕ (y - ε • z) =
-        ∫⁻ z in B, μH[(k : ℝ)] ((S ∩ p ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z}) := by
-      refine setLIntegral_congr_fun isOpen_ball.measurableSet fun z hz ↦ ?_
-      rw [hslice y hz, (hι z).hausdorffMeasure_image (Or.inl k.cast_nonneg)]
-    calc ∫⁻ z in B, ϕ (y - ε • z)
-        ≤ ∫⁻ z : F, μH[(k : ℝ)] ((S ∩ p ⁻¹' {y}) ∩ (fun w : W ↦ w.snd) ⁻¹' {z}) := by
-          rw [hBeq]
-          exact setLIntegral_le_lintegral B _
-      _ ≤ volume B * 1 ^ finrank ℝ F *
-            μH[(finrank ℝ F : ℝ) + (k : ℝ)] (S ∩ p ⁻¹' {y}) :=
-          hsnd_lip.lipschitzOnWith.lintegral_hausdorffMeasure_inter_preimage_le volume
-            k.cast_nonneg
-      _ = volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ⁻¹' {y}) := by simp [hdim_add]
-  have hswap : ∫⁻ y : F, ∫⁻ z in B, ϕ (y - ε • z) = volume B * ∫⁻ u : F, ϕ u := by
-    have hm : AEMeasurable (fun q : F × F ↦ ϕ (q.1 - ε • q.2))
-        (volume.prod (volume.restrict B)) :=
-      (hϕm.comp (continuous_fst.sub
-        (continuous_const.smul continuous_snd)).measurable).aemeasurable
-    rw [lintegral_lintegral_swap hm]
-    simp_rw [lintegral_sub_right_eq_self ϕ]
-    rw [setLIntegral_const, mul_comm]
   let c := addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin (finrank ℝ E))))
     μH[(finrank ℝ E : ℝ)]
-  calc (c : ℝ≥0∞) * (volume B * ∫⁻ u : F, ϕ u)
-      = (c : ℝ≥0∞) * ∫⁻ y : F, ∫⁻ z in B, ϕ (y - ε • z) := by rw [hswap]
-    _ ≤ (c : ℝ≥0∞) * ∫⁻ y : F, volume B * μH[(finrank ℝ E : ℝ)] (S ∩ p ⁻¹' {y}) := by
+  calc (c : ℝ≥0∞) * (volume (ball (0 : F) 1) * ∫⁻ u : F, ϕ u)
+      = (c : ℝ≥0∞) * ∫⁻ y : F, ∫⁻ z in ball (0 : F) 1, ϕ (y - ε • z) := by
+        rw [lintegral_setLIntegral_sub_smul hϕm]
+    _ ≤ (c : ℝ≥0∞) * ∫⁻ y : F,
+          volume (ball (0 : F) 1) * μH[(finrank ℝ E : ℝ)] (coareaPerturbSlab F K ∩ p ⁻¹' {y}) := by
         gcongr with y
-        exact hfib y
-    _ = volume B * ∫⁻ y : F, μHE[finrank ℝ E] (S ∩ p ⁻¹' {y}) := by
+        exact setLIntegral_ball_hausdorffMeasure_inter_preimage_le f K hdim ε y
+    _ = volume (ball (0 : F) 1) *
+          ∫⁻ y : F, μHE[finrank ℝ E] (coareaPerturbSlab F K ∩ p ⁻¹' {y}) := by
         rw [lintegral_const_mul' _ _ measure_ball_lt_top.ne,
           lintegral_euclideanHausdorffMeasure (finrank ℝ E), mul_left_comm]
-    _ = volume B * ∫⁻ w in S,
+    _ = volume (ball (0 : F) 1) * ∫⁻ w in coareaPerturbSlab F K,
           ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet := by
         rw [hco]
 
 /-- As `ε → 0`, dominated convergence sends
-`∫⁻ w in K × ball 0 1, (coareaPerturbDeriv ε (fderiv ℝ f w.fst))†.normDet` to `0` whenever `K` is
-compact, `‖fderiv ℝ f‖ ≤ R` on `K`, and `(fderiv ℝ f x)†.normDet = 0` on `K`. -/
+`∫⁻ w in coareaPerturbSlab F K, (coareaPerturbDeriv ε (fderiv ℝ f w.fst))†.normDet` to `0` whenever
+`K` is compact, `‖fderiv ℝ f‖ ≤ R` on `K`, and `(fderiv ℝ f x)†.normDet = 0` on `K`. -/
 private theorem tendsto_setLIntegral_coareaPerturbDeriv_nhds_zero
     {K : Set E} (hK : IsCompact K) (R : ℝ)
     (h0 : ∀ x ∈ K, (fderiv ℝ f x).adjoint.normDet = 0)
     (hR' : ∀ x ∈ K, ‖fderiv ℝ f x‖ ≤ R) :
     Tendsto
       (fun ε : ℝ ↦
-        ∫⁻ w : WithLp 2 (E × F) in {w | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1},
+        ∫⁻ w in coareaPerturbSlab F K,
           ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet)
       (𝓝 0) (𝓝 0) := by
-  let W := WithLp 2 (E × F)
-  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  let π₁ : W →L[ℝ] E := ContinuousLinearMap.fst ℝ E F ∘L (e : W →L[ℝ] E × F)
-  let π₂ : W →L[ℝ] F := ContinuousLinearMap.snd ℝ E F ∘L (e : W →L[ℝ] E × F)
-  let S : Set W := {w : W | w.fst ∈ K ∧ w.snd ∈ ball (0 : F) 1}
-  have hSm : MeasurableSet S :=
-    (hK.isClosed.measurableSet.preimage π₁.continuous.measurable).inter
-      (isOpen_ball.measurableSet.preimage π₂.continuous.measurable)
-  have hSfin : volume S ≠ ∞ := by
-    have hSbdd : Bornology.IsBounded S :=
-      (e.symm.toContinuousLinearMap.lipschitzWith.isBounded_image
-        (hK.isBounded.prod (isBounded_ball (x := (0 : F)) (r := 1)))).subset
-        fun w hw ↦ ⟨e w, hw, e.symm_apply_apply w⟩
-    exact hSbdd.measure_lt_top.ne
-  have hcont : Continuous fun L : W →L[ℝ] F ↦ L.adjoint.normDet :=
+  have hSm : MeasurableSet (coareaPerturbSlab F K) := measurableSet_coareaPerturbSlab hK
+  have hcont : Continuous fun L : WithLp 2 (E × F) →L[ℝ] F ↦ L.adjoint.normDet :=
     ContinuousLinearMap.continuous_normDet_adjoint
   have hDcont : Continuous fun q : ℝ × (E →L[ℝ] F) ↦ coareaPerturbDeriv q.1 q.2 :=
     (continuous_snd.clm_comp continuous_const).add (continuous_fst.smul continuous_const)
@@ -269,24 +292,24 @@ private theorem tendsto_setLIntegral_coareaPerturbDeriv_nhds_zero
     (isCompact_closedBall (0 : E →L[ℝ] F) R)
     |>.exists_bound_of_continuousOn (hcont.comp hDcont).continuousOn
   have hlim : Tendsto
-      (fun ε : ℝ ↦ ∫⁻ w in S,
+      (fun ε : ℝ ↦ ∫⁻ w in coareaPerturbSlab F K,
         ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet) (𝓝 0)
-      (𝓝 (∫⁻ w in S,
+      (𝓝 (∫⁻ w in coareaPerturbSlab F K,
         ENNReal.ofReal (coareaPerturbDeriv 0 (fderiv ℝ f w.fst)).adjoint.normDet)) := by
     refine tendsto_lintegral_filter_of_dominated_convergence (fun _ ↦ ENNReal.ofReal M)
       (Eventually.of_forall fun ε ↦ ?_) ?_ ?_ (Eventually.of_forall fun w ↦ ?_)
     · exact ENNReal.measurable_ofReal.comp ((hcont.comp ((continuous_id.clm_comp
         continuous_const).add continuous_const)).measurable.comp
-        ((measurable_fderiv ℝ f).comp π₁.continuous.measurable))
+        ((measurable_fderiv ℝ f).comp (WithLp.continuous_fst 2 E F).measurable))
     · filter_upwards [Icc_mem_nhds (neg_one_lt_zero : (-1 : ℝ) < 0) zero_lt_one] with ε hε
       refine (ae_restrict_iff' hSm).2 (Eventually.of_forall fun w hw ↦ ?_)
       exact ENNReal.ofReal_le_ofReal ((le_abs_self _).trans
         (hM (ε, fderiv ℝ f w.fst) ⟨hε, mem_closedBall_zero_iff.2 (hR' w.fst hw.1)⟩))
     · rw [setLIntegral_const]
-      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hSfin
+      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (volume_coareaPerturbSlab_ne_top F hK)
     · exact (ENNReal.continuous_ofReal.comp (hcont.comp
         (hDcont.comp (continuous_id.prodMk continuous_const)))).tendsto 0
-  have hzero : ∫⁻ w in S,
+  have hzero : ∫⁻ w in coareaPerturbSlab F K,
       ENNReal.ofReal (coareaPerturbDeriv 0 (fderiv ℝ f w.fst)).adjoint.normDet = 0 := by
     refine (setLIntegral_congr_fun hSm fun w hw ↦ ?_).trans lintegral_zero
     have hns : ¬Surjective (coareaPerturbDeriv 0 (fderiv ℝ f w.fst)) := by
@@ -298,8 +321,8 @@ private theorem tendsto_setLIntegral_coareaPerturbDeriv_nhds_zero
   rwa [hzero] at hlim
 
 /-- Critical-rank fibre nullity on a compact set `K` where `fderiv ℝ f` is bounded and
-`dim F ≤ dim E`, proved by combining the slicing lower bound on `K × ball 0 1` with dominated
-convergence as `ε → 0`. -/
+`dim F ≤ dim E`, proved by combining the slicing lower bound on `coareaPerturbSlab F K` with
+dominated convergence as `ε → 0`. -/
 private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
     {K : Set E} (hK : IsCompact K) (R : ℝ) (hdim : finrank ℝ F ≤ finrank ℝ E)
     (hd : ∀ x ∈ K, DifferentiableAt ℝ f x)
@@ -317,7 +340,7 @@ private theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_isCompact
   have hB_fin : volume B < ∞ := measure_ball_lt_top
   have hlim : Tendsto
       (fun ε : ℝ ↦ volume B *
-        ∫⁻ w : WithLp 2 (E × F) in {w | w.fst ∈ K ∧ w.snd ∈ B},
+        ∫⁻ w in coareaPerturbSlab F K,
           ENNReal.ofReal (coareaPerturbDeriv ε (fderiv ℝ f w.fst)).adjoint.normDet)
       (𝓝[≠] 0) (𝓝 0) := by
     simpa only [mul_zero] using ENNReal.Tendsto.const_mul
