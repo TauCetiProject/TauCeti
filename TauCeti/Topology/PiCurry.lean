@@ -127,19 +127,15 @@ theorem piOptionEquivProdHomeomorph_symm_apply_some {ι : Type*} (Y : Option ι 
   (rfl)
 
 /-- Updating a coordinate of the `some` component before reassembling a family indexed by
-`Option ι` updates the coordinate `some i` of the reassembled family. -/
+`Option ι` updates the coordinate `some i` of the reassembled family. This is Mathlib's
+`Option.rec_update` stated for `piOptionEquivProdHomeomorph`, whose definition importing modules
+cannot unfold. -/
 theorem piOptionEquivProdHomeomorph_symm_update {ι : Type*} [DecidableEq ι]
     (Y : Option ι → Type*) [∀ i, TopologicalSpace (Y i)] (a : Y none)
     (f : ∀ i : ι, Y (some i)) (i : ι) (v : Y (some i)) :
     (piOptionEquivProdHomeomorph Y).symm (a, Function.update f i v) =
-      Function.update ((piOptionEquivProdHomeomorph Y).symm (a, f)) (some i) v := by
-  funext o
-  cases o with
-  | none => simp
-  | some k =>
-    rcases eq_or_ne k i with rfl | h
-    · simp
-    · simp [h]
+      Function.update ((piOptionEquivProdHomeomorph Y).symm (a, f)) (some i) v :=
+  Option.rec_update a f i v
 
 /-- Updating the `none` component of a family indexed by `Option ι` is reassembling it with the
 new `none` component. -/
