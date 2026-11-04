@@ -43,6 +43,9 @@ none of this assumes σ-finiteness.
 
 ## Main statements
 
+* `TauCeti.integral_isMulLeftInvariant_eq_haarScalarFactor_smul`: comparing Bochner integrals of
+  compactly supported continuous functions against a left-invariant locally finite measure and a
+  Haar measure via `Measure.haarScalarFactor`.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul`: right translation of compactly
   supported integrands.
 * `TauCeti.integral_modularCharacter_smul_inv_eq_self` and
@@ -120,7 +123,28 @@ theorem modularCharacter_rpow_mul_inv (r : ℝ) (x : G) :
 section Integral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsHaarMeasure]
+variable [MeasurableSpace G] [BorelSpace G]
+
+omit [LocallyCompactSpace G] in
+/-- **Uniqueness of left-invariant Bochner integrals**: integrating a compactly supported
+continuous vector-valued function against any left-invariant measure `μ'` finite on compacts
+scales the integral against a Haar measure `μ` by `Measure.haarScalarFactor μ' μ`. -/
+theorem integral_isMulLeftInvariant_eq_haarScalarFactor_smul
+    (μ' μ : Measure G) [μ.IsHaarMeasure] [IsFiniteMeasureOnCompacts μ'] [μ'.IsMulLeftInvariant]
+    {f : G → E} (hf : Continuous f) (hfc : HasCompactSupport f) :
+    ∫ x, f x ∂μ' = (Measure.haarScalarFactor μ' μ : ℝ) • ∫ x, f x ∂μ := by
+  -- Pass from real-valued integrands to `E`-valued ones by testing against the dual of `E`.
+  by_cases hE : CompleteSpace E
+  · refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
+    have hfi' : Integrable f μ' := hf.integrable_of_hasCompactSupport hfc
+    have hfi : Integrable f μ := hf.integrable_of_hasCompactSupport hfc
+    rw [map_smul, ← φ.integral_comp_comm hfi', ← φ.integral_comp_comm hfi,
+      Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ' μ
+        (f := fun x => φ (f x)) (φ.continuous.comp hf) (hfc.comp_left φ.map_zero),
+      integral_smul_nnreal_measure, NNReal.smul_def]
+  · simp [integral_of_not_completeSpace hE]
+
+variable {μ : Measure G} [μ.IsHaarMeasure]
 
 /-- **Right translation of a compactly supported integrand** multiplies its Haar integral by the
 modular character. No regularity of the Haar measure is needed. -/
