@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.AdicCompletion.Principal
 public import TauCeti.RingTheory.Huber.Pair.Complete
 public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots.Existence
 
@@ -21,8 +22,9 @@ of the approximation error by `p` is topologically nilpotent, hence lies in `R�
 Integral closedness then puts the approximate root in `R⁺` as well.
 
 We also produce a pseudouniformiser whose `p`-th power divides `p` with a
-topologically nilpotent quotient in `R⁺`. The surjectivity statement on Mathlib's
-`ModP` carrier is the Frobenius hypothesis needed by `surjective_fontaineTheta`.
+topologically nilpotent quotient in `R⁺`, so that `R⁺` is `p`-adically complete. The
+surjectivity statement on Mathlib's `ModP` carrier is the Frobenius hypothesis needed by
+`surjective_fontaineTheta`.
 
 ## References
 
@@ -95,6 +97,18 @@ theorem exists_pseudoUniformizer_natCast_eq_pow_mul
   simp only [Subring.coe_natCast, Subring.coe_mul, Subring.coe_pow, r.coe_rootPB]
   rw [hroot, ← mul_assoc, ← pow_succ', Nat.sub_add_cancel (Fact.out : p.Prime).one_le]
   exact hcR
+
+/-- Every ring of integral elements of a perfectoid Tate ring is `p`-adically complete and
+separated, including when `p` vanishes or is a zero divisor in the ambient ring. For the
+power-bounded subring this is `IsPerfectoidTateRing.isAdicComplete_span_natCast`. -/
+theorem isAdicComplete_span_natCast (hplus : IsRingOfIntegralElements Rplus) :
+    IsAdicComplete (Ideal.span {(p : Rplus)}) Rplus := by
+  have := IsPerfectoidTateRing.isUniform p (R := R)
+  obtain ⟨ϖ, hϖ, c, hc, -⟩ := hplus.exists_pseudoUniformizer_natCast_eq_pow_mul (p := p)
+  have := hplus.isAdicComplete_span_singleton ϖ hϖ
+  exact IsAdicComplete.span_singleton_of_dvd
+    ⟨ϖ ^ (p - 1) * c, by rw [hc, ← mul_assoc, ← pow_succ',
+      Nat.sub_add_cancel (Fact.out : p.Prime).one_le]⟩
 
 /-- In any ring of integral elements, perfectoid Frobenius is surjective even modulo
 `ϖ p` for every pseudouniformiser with `ϖᵖ ∣ p` in that ring. -/
