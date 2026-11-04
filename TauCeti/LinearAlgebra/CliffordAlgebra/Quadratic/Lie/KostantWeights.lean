@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.RootWeights
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Lie.Weights.Killing.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Square
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
@@ -121,13 +122,13 @@ private theorem commute_rootInvolution {χ ψ : Weight K H L} (hχ : χ.IsNonZer
   obtain ⟨e', he', f', hf', -, hX'⟩ := exists_rootInvolution_eq_bivector H hψ
   rw [hX, hX', commute_iff_lie_eq, lie_bivector_bivector,
     polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H he he'
-      (weight_add_ne_zero_of_ne_neg H hne'),
+      (weight_add_ne_zero_of_ne_neg hne'),
     polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H he hf'
-      (weight_add_ne_zero_of_ne_neg H (by rwa [neg_neg])),
+      (weight_add_ne_zero_of_ne_neg (by rwa [neg_neg])),
     polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H hf he'
-      (weight_add_ne_zero_of_ne_neg H (by rwa [ne_eq, neg_inj])),
+      (weight_add_ne_zero_of_ne_neg (by rwa [ne_eq, neg_inj])),
     polar_killingQuadraticForm_eq_zero_of_mem_rootSpace H hf hf'
-      (weight_add_ne_zero_of_ne_neg H (by rwa [neg_neg, ne_eq, neg_eq_iff_eq_neg]))]
+      (weight_add_ne_zero_of_ne_neg (by rwa [neg_neg, ne_eq, neg_eq_iff_eq_neg]))]
   simp [bivector_def]
 
 variable {H}

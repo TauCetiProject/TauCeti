@@ -39,6 +39,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
   submodule's generalized weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
+* `TauCeti.weight_add_ne_zero_of_ne_neg`: the sum of two weights vanishes only if they are
+  opposite.
 * `LieModuleHom.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear
   forms, then so do the weights of any module embedding in `N`.
 
@@ -248,6 +250,14 @@ theorem Weight.coe_neg_eq_add_of_coe_eq_add {μ : Weight K H L} {a b c d : H →
   have hy := congrFun hsum y
   simp only [Weight.coe_neg, hμ, Pi.add_apply, Pi.neg_apply, Pi.zero_apply] at hy ⊢
   linear_combination -hy
+
+/-- The sum of two weights vanishes only if they are opposite. -/
+theorem weight_add_ne_zero_of_ne_neg {χ ψ : Weight K H L} (h : χ ≠ -ψ) :
+    (χ : H → K) + (ψ : H → K) ≠ 0 := fun hc ↦
+  h <| Weight.ext fun u ↦ by
+    have := congrFun hc u
+    simp only [Pi.add_apply, Pi.zero_apply] at this
+    simpa using eq_neg_of_add_eq_zero_left this
 
 end TauCeti
 

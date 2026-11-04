@@ -42,8 +42,8 @@ theorem polar_killingQuadraticForm_eq_zero_of_mem_rootSpace {α β : H → K} {x
 
 /-- The root space of a nonzero weight is isotropic for the Killing quadratic form: when `2 ≠ 0`
 in `K`, a nonzero weight does not cancel itself. -/
-theorem killingQuadraticForm_eq_zero_of_mem_rootSpace [NeZero (2 : K)] {χ : Weight K H L}
-    (hχ : χ.IsNonZero) {x : L} (hx : x ∈ rootSpace H χ) : killingQuadraticForm K L x = 0 := by
+theorem killingQuadraticForm_eq_zero_of_mem_rootSpace [NeZero (2 : K)] {χ : H → K}
+    (hχ : χ ≠ 0) {x : L} (hx : x ∈ rootSpace H χ) : killingQuadraticForm K L x = 0 := by
   rw [killingQuadraticForm_apply]
   exact killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hx fun hc ↦
     hχ <| funext fun u ↦ by simpa [← two_mul, two_ne_zero] using congrFun hc u
