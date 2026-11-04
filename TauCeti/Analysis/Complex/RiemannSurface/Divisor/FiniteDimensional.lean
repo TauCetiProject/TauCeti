@@ -156,7 +156,7 @@ open TauCeti.AlgebraicGeometry (WeilDivisor)
 
 /-- The native sheaf's global section space is finite-dimensional, so it can be used directly
 in cohomological dimension calculations. -/
-instance divisorSheaf_finiteDimensional_globalSections {X : Type*} [TopologicalSpace X]
+instance finiteDimensional_divisorSheaf_globalSections {X : Type*} [TopologicalSpace X]
     [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X] [CompactSpace X]
     (D : WeilDivisor X) :
     FiniteDimensional ℂ ((divisorSheaf D).obj.obj (Opposite.op ⊤)) :=
