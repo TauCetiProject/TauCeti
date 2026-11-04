@@ -103,6 +103,9 @@ theorem tensorNormCocycleClass_cupCochain (t : U.toSubgroup.LeftTransversal) {m 
     (P.smoothTensorInduced U.toSubgroup U.isOpen' t).cup_coeffMap
       (trivialF2TopPairing G) e e e hpair]
   rw [tensorNormCocycleClass_def, tensorNormCocycleClass_def]
+  -- Unfold the local coefficient object and map. The source is the object presentation from
+  -- smoothTensorInductionFunctor_obj; the smooth/discrete dictionary preserves the carrier
+  -- definitionally, so no transport lemma is needed. The cocycle witnesses are proof-irrelevant.
   rfl
 
 /-- **The Evens norm is multiplicative** in every bidegree with trivial `𝔽₂` coefficients.
@@ -120,8 +123,8 @@ theorem evensNorm_cup {m n : ℕ}
   obtain ⟨b, hb, rfl⟩ := TopRep.exists_cochainClass_eq y
   have hab : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d (m + n) (m + n + 1)).hom
       ((trivialF2TopPairing U.toSubgroup).cupCochain m n a b) = 0 := by
-    rw [TopPairing.cupCochain_leibniz, ha, hb, map_zero, LinearMap.zero_apply, map_zero,
-      map_zero, smul_zero, add_zero]
+    simp only [TopPairing.cupCochain_leibniz, ha, hb, map_zero, LinearMap.zero_apply,
+      smul_zero, add_zero]
   rw [(trivialF2TopPairing U.toSubgroup).cup_cochainClass m n a ha b hb hab,
     evensNorm_cochainClass U default, evensNorm_cochainClass U default,
     evensNorm_cochainClass U default, tensorNormCocycleClass_cupCochain]
