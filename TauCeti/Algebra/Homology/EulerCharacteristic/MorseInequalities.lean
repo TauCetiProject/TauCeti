@@ -43,7 +43,7 @@ polynomial identity, which is how it is obtained when no chain complex is at han
 of natural numbers `b` and `c`:
 
 * `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add`: the relations `cᵢ = bᵢ + qᵢ + qᵢ₋₁`
-  give the polynomial identity, over any commutative semiring.
+  give the polynomial identity, over any semiring.
 * `TauCeti.exists_sum_range_monomial_eq_add_mul`: if the strong inequalities hold below degree
   `n` and the Euler--Poincaré equality holds in degree `n`, then
   `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` with `Q ∈ ℕ[t]`, and the coefficient of `tⁱ` in `Q`
@@ -69,26 +69,29 @@ namespace TauCeti
 /-- **The polynomial form of `cᵢ = bᵢ + qᵢ + qᵢ₋₁`.**  If `c₀ = b₀ + q₀` and
 `cᵢ₊₁ = bᵢ₊₁ + qᵢ₊₁ + qᵢ` for `i < n`, then
 `∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`. -/
-theorem sum_range_monomial_add_monomial_eq_of_eq_add {R : Type*} [CommSemiring R]
+theorem sum_range_monomial_add_monomial_eq_of_eq_add {R : Type*} [Semiring R]
     {b c q : ℕ → R} {n : ℕ} (h₀ : c 0 = b 0 + q 0)
     (hsucc : ∀ i < n, c (i + 1) = b (i + 1) + q (i + 1) + q i) :
     ∑ i ∈ Finset.range (n + 1), monomial i (c i) + monomial (n + 1) (q n) =
       ∑ i ∈ Finset.range (n + 1), monomial i (b i) +
         (1 + X) * ∑ i ∈ Finset.range (n + 1), monomial i (q i) := by
-  simp only [← C_mul_X_pow_eq_monomial]
+  -- Multiplying by `1 + X` shifts a copy of `∑ᵢ qᵢ Xⁱ` up by one degree.
+  rw [add_mul, one_mul, Finset.mul_sum]
+  simp only [X_mul_monomial]
   induction n with
   | zero =>
-    simp only [zero_add, Finset.sum_range_one, pow_zero, mul_one, pow_one, h₀, map_add]
-    ring
+    simp only [zero_add, Finset.sum_range_one, h₀, map_add]
+    abel
   | succ n ih =>
     have ih := ih fun i hi ↦ hsucc i (hi.trans n.lt_succ_self)
     rw [Finset.sum_range_succ, Finset.sum_range_succ _ (n + 1), Finset.sum_range_succ _ (n + 1),
-      hsucc n n.lt_succ_self]
+      Finset.sum_range_succ (fun i ↦ monomial (i + 1) (q i)) (n + 1), hsucc n n.lt_succ_self]
     simp only [map_add]
     -- Split off the left side of the identity in degree `n` and substitute it.
-    calc _ = (∑ i ∈ Finset.range (n + 1), C (c i) * X ^ i + C (q n) * X ^ (n + 1)) +
-          C (b (n + 1)) * X ^ (n + 1) + (1 + X) * (C (q (n + 1)) * X ^ (n + 1)) := by ring
-      _ = _ := by rw [ih]; ring
+    calc _ = (∑ i ∈ Finset.range (n + 1), monomial i (c i) + monomial (n + 1) (q n)) +
+          monomial (n + 1) (b (n + 1)) + monomial (n + 1) (q (n + 1)) +
+          monomial (n + 1 + 1) (q (n + 1)) := by abel
+      _ = _ := by rw [ih]; abel
 
 /-- **The Morse polynomial identity from the strong inequalities.**  Let `b` and `c` be sequences
 of natural numbers satisfying the strong Morse inequalities
@@ -112,10 +115,11 @@ theorem exists_sum_range_monomial_eq_add_mul {b c : ℕ → ℕ} {n : ℕ}
     ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * b j with hs_def
   have hs₀ : s 0 = c 0 - b 0 := by simp [hs_def]
   have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := by
-    simp only [hs_def, sum_range_succ_neg_one_pow_sub_mul]
-    ring
+    simp only [hs_def, ← smul_eq_mul, sum_range_succ_neg_one_pow_sub_smul]
+    abel
   have hsn : s n = 0 := by
-    simp only [hs_def, sum_range_neg_one_pow_sub_mul, heuler, sub_self]
+    simp only [hs_def, ← smul_eq_mul, sum_range_neg_one_pow_sub_smul]
+    simp only [smul_eq_mul, heuler, sub_self]
   have hpos (m : ℕ) (hm : m ≤ n) : 0 ≤ s m := by
     rcases hm.lt_or_eq with hm | rfl
     · exact sub_nonneg.2 (hstrong m hm)
@@ -151,8 +155,8 @@ theorem eq_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
     ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * b j with hs_def
   have hs₀ : s 0 = c 0 - b 0 := by simp [hs_def]
   have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := by
-    simp only [hs_def, sum_range_succ_neg_one_pow_sub_mul]
-    ring
+    simp only [hs_def, ← smul_eq_mul, sum_range_succ_neg_one_pow_sub_smul]
+    abel
   have hpos (m : ℕ) : 0 ≤ s m := sub_nonneg.2 (hstrong m)
   clear_value s
   -- The gap `sₘ` is at most `cₘ` and at most `cₘ₊₁`, so it vanishes.
@@ -170,6 +174,18 @@ theorem eq_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
   cases i with
   | zero => have := hzero 0; omega
   | succ i => have := hsucc i; have := hzero i; have := hzero (i + 1); omega
+
+/-- Scaling a weighted sum of natural numbers `cᵢ` by a natural number `d` gives the same weighted
+sum of the products `cᵢ d`: `d ∑ᵢ sᵢ cᵢ = ∑ᵢ sᵢ (cᵢ d)`. This turns the strong inequalities for
+counts `cᵢ` weighted by the dimension `d` of a coefficient space into strong inequalities for the
+sequence `cᵢ d`, to which the results above apply. -/
+theorem natCast_mul_sum_mul_natCast {ι R : Type*} [CommSemiring R] (d : ℕ) (s : ι → R)
+    (c : ι → ℕ) (t : Finset ι) :
+    (d : R) * ∑ i ∈ t, s i * c i = ∑ i ∈ t, s i * ((c i * d : ℕ) : R) := by
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  push_cast
+  ring
 
 end TauCeti
 
@@ -189,8 +205,9 @@ theorem sum_range_neg_one_pow_mul_finrank_homology_le (n : ℕ)
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.homology i) ≤
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.X i) := by
   -- Pull the sign `(-1) ^ n` out of both sums.
-  rw [TauCeti.sum_range_neg_one_pow_sub_mul, TauCeti.sum_range_neg_one_pow_sub_mul,
-    K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
+  simp only [← smul_eq_mul, TauCeti.sum_range_neg_one_pow_sub_smul]
+  simp only [smul_eq_mul]
+  rw [K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
   -- The two sides now differ by `((-1) ^ n) ^ 2 * dim im (Kₙ₊₁ ⟶ Kₙ) ≥ 0`.
   have hsq : ((-1 : ℤ) ^ n) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
   have hq : (0 : ℤ) ≤ finrank k (LinearMap.range (K.d (n + 1) n).hom) := Nat.cast_nonneg _

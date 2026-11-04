@@ -350,16 +350,6 @@ private theorem bandCount_eq_zero_or {a b : ℝ}
   obtain ⟨x, hx, hxi⟩ := nonempty_of_ncard_ne_zero hne.2
   exact h x hx y hy (by rw [hxi, hyi])
 
-omit [Module.Finite k V] in
-/-- Moving the factor `dim V` into a signed sum of counts. -/
-private theorem mul_sum_range_mul_eq (c : ℕ → ℕ) (s : ℕ → ℤ) (n : ℕ) :
-    (finrank k V : ℤ) * ∑ i ∈ Finset.range (n + 1), s i * c i =
-      ∑ i ∈ Finset.range (n + 1), s i * ((c i * finrank k V : ℕ) : ℤ) := by
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  push_cast
-  ring
-
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
   [Module.Finite k V] in
 /-- The Morse inequalities in the form of the Morse polynomial identity. -/
@@ -377,11 +367,10 @@ private theorem MorseInequalities.exists_sum_range_monomial_eq_add_mul {a b : �
   obtain ⟨Q, hQ, hcoeff, hzero⟩ := TauCeti.exists_sum_range_monomial_eq_add_mul
     (b := fun i ↦ finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k))
     (c := fun i ↦ bandCount I f a b i * finrank k V) (n := n)
-    (fun m _ ↦ (h m).2.2.1.trans_eq
-      (mul_sum_range_mul_eq V (bandCount I f a b) (fun i ↦ (-1 : ℤ) ^ (m - i)) m))
-    ((h n).2.2.2 hn |>.trans (mul_sum_range_mul_eq V (bandCount I f a b) (fun i ↦ (-1 : ℤ) ^ i) n))
+    (fun m _ ↦ (h m).2.2.1.trans_eq (natCast_mul_sum_mul_natCast _ _ _ _))
+    ((h n).2.2.2 hn |>.trans (natCast_mul_sum_mul_natCast _ _ _ _))
   refine ⟨Q, hQ, fun i hi ↦ ?_, hzero⟩
-  rw [hcoeff i hi, mul_sum_range_mul_eq V (bandCount I f a b) (fun j ↦ (-1 : ℤ) ^ (i - j)) i]
+  rw [hcoeff i hi, natCast_mul_sum_mul_natCast]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
   [Module.Finite k V] in
@@ -409,8 +398,7 @@ private theorem MorseInequalities.finrank_eq_of_eq_zero_or {a b : ℝ} {hab : a 
   congrFun (eq_of_forall_sum_range_neg_one_pow_mul_le
     (b := fun i ↦ finrank k ((sublevelPair f hab).singularHomology V i : ModuleCat k))
     (c := fun i ↦ bandCount I f a b i * finrank k V)
-    (fun m ↦ (h m).2.2.1.trans_eq
-      (mul_sum_range_mul_eq V (bandCount I f a b) (fun i ↦ (-1 : ℤ) ^ (m - i)) m))
+    (fun m ↦ (h m).2.2.1.trans_eq (natCast_mul_sum_mul_natCast _ _ _ _))
     fun i ↦ (hc i).imp (fun h ↦ by rw [h, zero_mul]) fun h ↦ by rw [h, zero_mul]) n
 
 /-- **Finiteness of relative homology for a band.** Let `f` be a Morse function, and `a ≤ b`
@@ -484,10 +472,10 @@ theorem IsMorse.exists_sum_range_monomial_sublevelPair_eq_add_mul (hf : IsMorse 
       ∀ i, n ≤ i → Q.coeff i = 0 :=
   (hf.morseInequalities V hab hcompact ha hb).exists_sum_range_monomial_eq_add_mul V hn
 
-/-- **The total Betti number of a band is at most its number of critical points.** Let `f` be a
-Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then for every `n`,
-`∑ᵢ₌₀ⁿ dim Hᵢ({f ≤ b}, {f ≤ a}; V)` is at most `dim V` times the number of critical points with
-values in `(a, b]`. -/
+/-- **The total Betti number of a band is at most `dim V` times its number of critical points.**
+Let `f` be a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then for
+every `n`, `∑ᵢ₌₀ⁿ dim Hᵢ({f ≤ b}, {f ≤ a}; V)` is at most `dim V` times the number of critical
+points with values in `(a, b]`. -/
 theorem IsMorse.sum_range_finrank_singularHomology_sublevelPair_le (hf : IsMorse I f) {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) (n : ℕ) :
@@ -629,9 +617,9 @@ theorem IsMorse.exists_sum_range_monomial_eq_add_mul (hf : IsMorse I f) {n : ℕ
   simp only [hr, ← hc]
   exact h.exists_sum_range_monomial_eq_add_mul V hn
 
-/-- **The total Betti number is at most the number of critical points.** For a Morse function `f`
-on a compact boundaryless manifold `M` and every `n`, `∑ᵢ₌₀ⁿ dim Hᵢ(M; V)` is at most `dim V` times
-the number of critical points of `f`. -/
+/-- **The total Betti number is at most `dim V` times the number of critical points.** For a Morse
+function `f` on a compact boundaryless manifold `M` and every `n`, `∑ᵢ₌₀ⁿ dim Hᵢ(M; V)` is at most
+`dim V` times the number of critical points of `f`. -/
 theorem IsMorse.sum_range_finrank_singularHomology_le (hf : IsMorse I f) (n : ℕ) :
     ∑ i ∈ Finset.range (n + 1),
         finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj

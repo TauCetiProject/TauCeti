@@ -155,32 +155,27 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
 
 /-! ### Alternating sums ending in degree `n` -/
 
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
 /-- The alternating sum `xₙ - xₙ₋₁ + ⋯ ± x₀` is `(-1)ⁿ (x₀ - x₁ + ⋯ ± xₙ)`. -/
-theorem sum_range_neg_one_pow_sub_mul (x : ℕ → R) (n : ℕ) :
-    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i =
-      (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * x i := by
-  rw [Finset.mul_sum]
+theorem sum_range_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) • x i =
+      (-1 : ℤ) ^ n • ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i • x i := by
+  rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have h : (-1 : R) ^ n = (-1) ^ (n - i) * (-1) ^ i := by
+  rw [smul_smul]
+  congr 1
+  have h : (-1 : ℤ) ^ n = (-1) ^ (n - i) * (-1) ^ i := by
     rw [← pow_add, Nat.sub_add_cancel (Finset.mem_range_succ_iff.1 hi)]
-  have hsq : ((-1 : R) ^ i) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
-  linear_combination (-(-1 : R) ^ i * x i) * h - (-1 : R) ^ (n - i) * x i * hsq
+  have hsq : ((-1 : ℤ) ^ i) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
+  linear_combination (-(-1 : ℤ) ^ i) * h - (-1 : ℤ) ^ (n - i) * hsq
 
 /-- The alternating sums `sₙ = xₙ - xₙ₋₁ + ⋯ ± x₀` satisfy `sₙ₊₁ = xₙ₊₁ - sₙ`. -/
-theorem sum_range_succ_neg_one_pow_sub_mul (x : ℕ → R) (n : ℕ) :
-    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * x i =
-      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i := by
-  rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_mul, sub_eq_add_neg, add_comm,
+theorem sum_range_succ_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : ℤ) ^ (n + 1 - i) • x i =
+      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) • x i := by
+  rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_smul, sub_eq_add_neg, add_comm,
     ← Finset.sum_neg_distrib]
   congr 1
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [Nat.sub_add_comm (Finset.mem_range_succ_iff.1 hi), pow_succ]
-  ring
-
-end CommRing
+  rw [Nat.sub_add_comm (Finset.mem_range_succ_iff.1 hi), pow_succ, mul_neg_one, neg_smul]
 
 end TauCeti
