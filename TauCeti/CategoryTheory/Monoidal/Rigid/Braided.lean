@@ -35,6 +35,10 @@ braiding is its own mate with respect to tensor product pairings
 braidings are identities. This is the identity that computes the Drinfeld isomorphism
 `X ≅ Xᘁᘁ` of a tensor product.
 
+Contracting the first factor of `(β_ X X).hom` between the braided coevaluation
+`η_ X X' ≫ (β_ X X').hom` and the evaluation `ε_ X X'` of an exact pairing `(X, X')` yields the
+identity on `𝟙_ C ⊗ X` (`TauCeti.coevaluation_braiding_comp_braiding_comp_evaluation`).
+
 ## References
 
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §8.9
@@ -63,6 +67,17 @@ theorem exactPairing_swap_coevaluation (X Y : C) [ExactPairing X Y] :
     @ExactPairing.coevaluation C _ _ Y X (exactPairing_swap X Y) =
       η_ X Y ≫ (β_ Y X).inv :=
   (rfl)
+
+/-- Contracting the first factor of `(β_ X X).hom` between the braided coevaluation
+`η_ X X' ≫ (β_ X X').hom` and the evaluation `ε_ X X'` of an exact pairing `(X, X')` yields the
+identity on `𝟙_ C ⊗ X`. -/
+@[reassoc]
+theorem coevaluation_braiding_comp_braiding_comp_evaluation (X X' : C) [ExactPairing X X'] :
+    (η_ X X' ≫ (β_ X X').hom) ▷ X ≫ (α_ X' X X).hom ≫
+      X' ◁ (β_ X X).hom ≫ (α_ X' X X).inv ≫ ε_ X X' ▷ X = 𝟙 (𝟙_ C ⊗ X) := by
+  rw [whiskerLeft_braiding_comp_whiskerRight, Iso.hom_inv_id_assoc, ← comp_whiskerRight_assoc,
+    Category.assoc, Iso.hom_inv_id, Category.comp_id, ExactPairing.evaluation_coevaluation_assoc,
+    Iso.inv_hom_id_assoc, Iso.hom_inv_id]
 
 end TauCeti
 

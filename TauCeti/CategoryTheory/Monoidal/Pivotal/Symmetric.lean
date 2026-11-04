@@ -120,21 +120,6 @@ theorem trace_eq_braiding {X : C} (f : X ⟶ X) :
     trace f = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
   rw [trace_eq_rightTrace, rightTrace_eq_braiding]
 
-/-- Left partial trace over the first factor of `(β_ X X).hom` is the identity on `X`. -/
-private theorem coevaluation_braiding_comp_braiding_comp_evaluation (X : C) :
-    (λ_ X).inv ≫ (η_ X Xᘁ ≫ (β_ X Xᘁ).hom) ▷ X ≫ (α_ Xᘁ X X).hom ≫
-      Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv ≫ ε_ X Xᘁ ▷ X ≫ (λ_ X).hom = 𝟙 X := by
-  have h : (β_ X Xᘁ).hom ▷ X ≫ (α_ Xᘁ X X).hom ≫ Xᘁ ◁ (β_ X X).hom ≫ (α_ Xᘁ X X).inv =
-      (α_ X Xᘁ X).hom ≫ (β_ X (Xᘁ ⊗ X)).hom := by
-    rw [braiding_tensor_right_hom, Iso.hom_inv_id_assoc]
-  rw [comp_whiskerRight, Category.assoc, reassoc_of% h,
-    ← braiding_naturality_right_assoc, braiding_tensorUnit_right]
-  calc _ = (λ_ X).inv ≫ (η_ X Xᘁ ▷ X ≫ (α_ X Xᘁ X).hom ≫ X ◁ ε_ X Xᘁ) ≫ (ρ_ X).hom := by
-        monoidal
-    _ = 𝟙 X := by
-        rw [evaluation_coevaluation]
-        monoidal
-
 /-- Contracting the first two factors of `(α_ X X Z)⁻¹ ≫ β_{X,X} ▷ Z ≫ α_ X X Z ≫ X ◁ h` in the
 categorical trace leaves the trace of `h : X ⊗ Z ⟶ X ⊗ Z`. -/
 theorem trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLeft {X Z : C}
@@ -153,8 +138,8 @@ theorem trace_associator_inv_braiding_whiskerRight_associator_hom_comp_whiskerLe
           rw [whisker_exchange]
           monoidal
       _ = h := by
-          rw [coevaluation_braiding_comp_braiding_comp_evaluation, id_whiskerRight,
-            Category.id_comp]
+          rw [coevaluation_braiding_comp_braiding_comp_evaluation_assoc, Iso.inv_hom_id,
+            id_whiskerRight, Category.id_comp]
   rw [trace_eq_leftTrace, trace_eq_leftTrace, leftTrace_tensorObj,
     pivotalExactPairing_coevaluation_eq_braiding, key]
 
