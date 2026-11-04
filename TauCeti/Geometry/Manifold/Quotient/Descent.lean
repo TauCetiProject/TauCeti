@@ -69,6 +69,9 @@ variable {G M N : Type*} [Group G] [MulAction G M] [TopologicalSpace M] [Topolog
 /-- For a free properly discontinuous action by `C^n` maps on a `C^n` manifold and `m ≤ n`, the
 descent of a `G`-invariant map is `C^m` at the orbit of `x` exactly when the map is `C^m` at
 `x`. -/
+@[to_additive contMDiffAt_addOrbitRelQuotientLift_iff /-- For a free properly discontinuous
+additive action by `C^n` maps and `m ≤ n`, the descent is `C^m` at the orbit of `x` exactly
+when the original map is `C^m` at `x`. -/]
 theorem contMDiffAt_orbitRelQuotientLift_iff (hm : m ≤ n) {x : M} :
     ContMDiffAt I I' m (MulAction.orbitRelQuotientLift f hf)
         (Quotient.mk (MulAction.orbitRel G M) x) ↔ ContMDiffAt I I' m f x := by
@@ -78,6 +81,9 @@ theorem contMDiffAt_orbitRelQuotientLift_iff (hm : m ≤ n) {x : M} :
 /-- For a free properly discontinuous action by `C^n` maps on a `C^n` manifold and `m ≤ n`, the
 descent of a `G`-invariant map is `C^m` exactly when the map is. For holomorphic actions on complex
 manifolds, this is the holomorphic descent of invariant holomorphic maps. -/
+@[to_additive contMDiff_addOrbitRelQuotientLift_iff /-- For a free properly discontinuous
+additive action by `C^n` maps and `m ≤ n`, the descent is `C^m` exactly when the original map
+is `C^m`. -/]
 theorem contMDiff_orbitRelQuotientLift_iff (hm : m ≤ n) :
     ContMDiff I I' m (MulAction.orbitRelQuotientLift f hf) ↔ ContMDiff I I' m f := by
   rw [← (isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G)).contMDiff_comp_iff

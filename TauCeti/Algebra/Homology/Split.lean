@@ -388,7 +388,7 @@ theorem nonempty_homotopy_id_zero_of_projective_cycles (hZ : ∀ i, Projective (
   -- The terms of `L` are its homology objects, which vanish because `K` is acyclic.
   have hLX (i : ι) : IsZero (L.X i) :=
     ((hK i).isZero_homology.of_iso (e.toHomologyIso i).symm).of_iso
-      ((L.iCyclesIso i (c.next i) rfl (hL _ _)).symm ≪≫ L.isoHomologyπ (c.prev i) i rfl (hL _ _))
+      (L.XIsoHomologyOfDEqZero i (hL _ _) (hL _ _))
   refine ⟨e.homotopyHomInvId.symm.trans (Homotopy.ofEq ?_)⟩
   ext i
   simp [(hLX i).eq_zero_of_tgt (e.hom.f i)]

@@ -115,13 +115,13 @@ theorem asAlgebraHom_columnAntisymmetrizer_single_eq_zero {lam : YoungDiagram}
     (t : YoungTableau lam) (μ : lam.card.Partition)
     (q : Equiv.Perm (Fin lam.card) ⧸ youngSubgroup μ) {p : Equiv.Perm (Fin lam.card)}
     (hp : p ∈ colSubgroup t) (hsign : Equiv.Perm.sign p = -1) (hfix : p • q = q) :
-    (permutationModule μ).ρ.asAlgebraHom (columnAntisymmetrizer t)
+    (permutationModule (R := ℚ) μ).ρ.asAlgebraHom (columnAntisymmetrizer (R := ℚ) t)
       (MonoidAlgebra.single q 1) = 0 := by
-  have hfix' : (permutationModule μ).ρ p (MonoidAlgebra.single q (1 : ℚ)) =
+  have hfix' : (permutationModule (R := ℚ) μ).ρ p (MonoidAlgebra.single q (1 : ℚ)) =
       MonoidAlgebra.single q 1 := by
     rw [Representation.ofMulAction_single, hfix]
   -- the permutation module is a `ℚ`-vector space, so doubling is injective on it
-  have : HasUniqueDiv (permutationModule μ) := .of_module_rat _
+  have : HasUniqueDiv (permutationModule (R := ℚ) μ) := .of_module_rat _
   rw [columnAntisymmetrizer_eq_subgroupCharSum]
   exact asAlgebraHom_subgroupCharSum_apply_eq_zero _ _ (nsmul_right_injective two_ne_zero) _ hp
     (by simp [hsign]) hfix'
@@ -135,7 +135,7 @@ vectors `b_t · q`, so one of those is nonzero and the shape of `t` dominates `�
 theorem dominates_of_asAlgebraHom_columnAntisymmetrizer_ne_zero {lam : YoungDiagram}
     (t : YoungTableau lam) (μ : lam.card.Partition)
     (q : Equiv.Perm (Fin lam.card) ⧸ youngSubgroup μ)
-    (h : (permutationModule μ).ρ.asAlgebraHom (columnAntisymmetrizer t)
+    (h : (permutationModule (R := ℚ) μ).ρ.asAlgebraHom (columnAntisymmetrizer (R := ℚ) t)
       (MonoidAlgebra.single q 1) ≠ 0) :
     (shapePartition lam).Dominates μ :=
   dominates_of_forall_swap_smul_ne t μ q fun _ _ hxy hcol hfix =>
@@ -154,9 +154,9 @@ This is to `TauCeti.dominates_of_asAlgebraHom_columnAntisymmetrizer_ne_zero` wha
 tabloid basis by linearity. -/
 theorem asAlgebraHom_columnAntisymmetrizer_apply_eq_zero_of_not_dominates {lam : YoungDiagram}
     (t : YoungTableau lam) (μ : lam.card.Partition) (h : ¬(shapePartition lam).Dominates μ)
-    (x : (permutationModule μ).V) :
-    (permutationModule μ).ρ.asAlgebraHom (columnAntisymmetrizer t) x = 0 := by
-  have hx : x ∈ Submodule.span ℚ (Set.range (permutationModuleBasis μ)) := by
+    (x : (permutationModule (R := ℚ) μ).V) :
+    (permutationModule (R := ℚ) μ).ρ.asAlgebraHom (columnAntisymmetrizer (R := ℚ) t) x = 0 := by
+  have hx : x ∈ Submodule.span ℚ (Set.range (permutationModuleBasis (R := ℚ) μ)) := by
     rw [Module.Basis.span_eq]
     exact Submodule.mem_top
   induction hx using Submodule.span_induction with
@@ -172,8 +172,8 @@ theorem asAlgebraHom_columnAntisymmetrizer_apply_eq_zero_of_not_dominates {lam :
 /-- **James's dominance lemma for an arbitrary vector.**  If the column antisymmetrizer of a
 `lam`-tableau does not annihilate some vector of `M^μ`, then the shape of `lam` dominates `μ`. -/
 theorem dominates_of_asAlgebraHom_columnAntisymmetrizer_apply_ne_zero {lam : YoungDiagram}
-    (t : YoungTableau lam) (μ : lam.card.Partition) {x : (permutationModule μ).V}
-    (hx : (permutationModule μ).ρ.asAlgebraHom (columnAntisymmetrizer t) x ≠ 0) :
+    (t : YoungTableau lam) (μ : lam.card.Partition) {x : (permutationModule (R := ℚ) μ).V}
+    (hx : (permutationModule (R := ℚ) μ).ρ.asAlgebraHom (columnAntisymmetrizer (R := ℚ) t) x ≠ 0) :
     (shapePartition lam).Dominates μ := by
   by_contra h
   exact hx (asAlgebraHom_columnAntisymmetrizer_apply_eq_zero_of_not_dominates t μ h x)

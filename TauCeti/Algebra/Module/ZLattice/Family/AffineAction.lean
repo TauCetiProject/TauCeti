@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.BirkhoffSum.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.LinearAction
 public import TauCeti.Algebra.Module.ZLattice.Family.Translation
 
@@ -40,6 +41,15 @@ translation by `b g y` fixes a point of that fibre exactly when `b g y` is the z
 over a fixed point is fixed exactly when its representative solves an affine equation modulo the
 periods (`TauCeti.torusFamilyAffineMap_mk_eq_mk_iff`).
 
+An element `g` with trivial linear part acts by translations. If `b g y = [g • y, β y]` for a
+vector lift `β : Y → E`, its `k`-th iterate is `[y, v] ↦ [g ^ k • y, v + ∑ j < k, β (g ^ j • y)]`
+(`TauCeti.torusFamilyAffineMap_iterate_mk_of_translation`), the sum being the Birkhoff sum
+`birkhoffSum (g • ·) β k y`. So if `g ^ m = 1` the orbit sum `∑ j < m, β (g ^ j • y)` is a
+period at `y` (`TauCeti.birkhoffSum_translation_mem_range_of_pow_eq_one`). For a continuous
+family of full lattices over a preconnected base and a continuous lift `β`, it is the same period
+at every point: there is one `l : Λ` with `∑ j < m, β (g ^ j • y) = P y l` for all `y`
+(`TauCeti.exists_birkhoffSum_translation_eq_period`).
+
 ## Main definitions
 
 * `TauCeti.torusFamilyAffineMap`: the affine map of the family defined by `g`.
@@ -55,6 +65,11 @@ periods (`TauCeti.torusFamilyAffineMap_mk_eq_mk_iff`).
   `g⁻¹ • [g • y, v] = [y, R g⁻¹ (g • y) (v - β)]`, for a representative `β` of `b g y`.
 * `TauCeti.torusFamilyAffineMap_mk_eq_mk_iff`: when two points of the family are related by an
   affine map.
+* `TauCeti.torusFamilyAffineMap_iterate_mk_of_translation`: the iterates of a translation.
+* `TauCeti.birkhoffSum_translation_mem_range_of_pow_eq_one`: the orbit sum of the translation
+  section of an element of order dividing `m` is a period.
+* `TauCeti.exists_birkhoffSum_translation_eq_period`: over a preconnected base, the orbit sum of a
+  continuous lift of such a translation section is the same period at every point.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction`: the affine action is free when the action on
   the base is free.
 * `TauCeti.faithfulSMul_torusFamilyAffineMulAction`: the affine action is faithful when the action
@@ -74,13 +89,13 @@ public section
 
 namespace TauCeti
 
-variable {Y Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
+variable {Y Λ E : Type*} [AddCommGroup Λ]
 
 /-! ### The affine maps -/
 
 section Monoid
 
-variable {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
+variable [AddCommGroup E] {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
   (P : Y → Λ →ₗ[ℤ] E) (ρ : Representation ℤ Γ Λ)
@@ -246,6 +261,45 @@ theorem faithfulSMul_torusFamilyAffineMulAction [FaithfulSMul Γ Y] :
   refine ⟨fun h ↦ eq_of_smul_eq_smul (α := Y) fun y ↦ ?_⟩
   simpa [hb] using congrArg (torusFamilyProjection P) (h (Quotient.mk _ (y, 0)))
 
+/-! ### Iterates of translations -/
+
+section Translation
+
+variable {g : Γ} (hR : ∀ y v, R g y v = v) {β : Y → E}
+  (hβ : ∀ y, b g y = Quotient.mk _ (g • y, β y))
+include hR hβ
+
+/-- **Iterates of a translation.** If `g` has trivial linear part and its translation section
+lifts to `β`, `b g y = [g • y, β y]`, then the `k`-th iterate of the affine map of `g` sends
+`[y, v]` to `[g ^ k • y, v + ∑ j < k, β (g ^ j • y)]`, the sum being the Birkhoff sum of `β`
+along `g`. -/
+theorem torusFamilyAffineMap_iterate_mk_of_translation (k : ℕ) (y : Y) (v : E) :
+    letI := periodAddAction P
+    (torusFamilyAffineMap R P ρ hP b hb g)^[k] (Quotient.mk _ (y, v)) =
+      Quotient.mk _ (g ^ k • y, v + birkhoffSum (g • ·) β k y) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb (hβ _), hR]
+    simp [pow_succ', mul_smul, birkhoffSum_succ_apply, add_assoc]
+
+include ρ hP hb hone hmul hbone hbmul in
+/-- **The orbit sum of a translation is a period.** Let `g` act on the family of tori by an affine
+action with trivial linear part, with translation section lifting to `β`,
+`b g y = [g • y, β y]`. If `g ^ m = 1`, then the orbit sum `∑ j < m, β (g ^ j • y)` is a period
+at `y`. -/
+theorem birkhoffSum_translation_mem_range_of_pow_eq_one {m : ℕ} (hg : g ^ m = 1) (y : Y) :
+    birkhoffSum (g • ·) β m y ∈ LinearMap.range (P y) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  have h := torusFamilyAffineMap_iterate_mk_of_translation R P ρ hP b hb hR hβ m y 0
+  rw [← funext (torusFamilyAffineMulAction_smul R hone hmul P ρ hP b hb hbone hbmul g),
+    smul_iterate_apply, hg] at h
+  simp only [one_smul, zero_add] at h
+  simpa using ((mem_orbit_periodAddAction_iff P).1 (Quotient.exact h.symm)).2
+
+end Translation
+
 /-! ### Topology of the affine action -/
 
 section Topology
@@ -291,9 +345,42 @@ end Topology
 
 end Monoid
 
+/-! ### Constant orbit sums over a connected base -/
+
+section ConstantOrbitSum
+
+variable [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y] [PreconnectedSpace Y]
+  [Module.Free ℤ Λ] [Module.Finite ℤ Λ] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] {Γ : Type*} [Monoid Γ] [MulAction Γ Y] [ContinuousConstSMul Γ Y]
+  (R : Γ → Y → E →+ E) (hone : ∀ (y : Y) (v : E), R 1 y v = v)
+  (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
+  (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+  [∀ y, IsZLattice ℝ (LinearMap.range (P y))] (ρ : Representation ℤ Γ Λ)
+  (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
+  (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
+  (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
+  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
+  (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hP b hb g (b h y))
+
+include hone hmul ρ hP hb hbone hbmul in
+/-- **The orbit sum of a translation is a constant period.** Over a preconnected base, let `g`
+act on a continuous family of full lattices by an affine action with trivial linear part, with
+translation section lifting to a continuous `β`, `b g y = [g • y, β y]`. If `g ^ m = 1`, there
+is one `l : Λ` with `∑ j < m, β (g ^ j • y) = P y l` for every `y`. -/
+theorem exists_birkhoffSum_translation_eq_period (hcont : ∀ l, Continuous fun y ↦ P y l)
+    (hinj : ∀ y, Function.Injective (P y)) {g : Γ} (hR : ∀ y v, R g y v = v) {β : Y → E}
+    (hβ : ∀ y, b g y = Quotient.mk _ (g • y, β y)) (hβc : Continuous β) {m : ℕ}
+    (hg : g ^ m = 1) :
+    ∃ l : Λ, ∀ y, birkhoffSum (g • ·) β m y = P y l :=
+  exists_eq_period_of_mem_range P hcont hinj continuous_id
+    (continuous_finsetSum _ fun j _ ↦ hβc.comp ((continuous_const_smul g).iterate j))
+    (birkhoffSum_translation_mem_range_of_pow_eq_one R hone hmul P ρ hP b hb hbone hbmul hR hβ hg)
+
+end ConstantOrbitSum
+
 section Group
 
-variable {Γ : Type*} [Group Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
+variable [AddCommGroup E] {Γ : Type*} [Group Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
   (P : Y → Λ →ₗ[ℤ] E) (ρ : Representation ℤ Γ Λ)
