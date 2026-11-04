@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 public import TauCeti.LinearAlgebra.Orientation.Transverse
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
@@ -69,34 +70,12 @@ variable {B : Type*} [TopologicalSpace B]
   {V : ∀ b, Submodule ℝ (E b)} [TopologicalSpace (TotalSpace F' fun b ↦ V b)]
   [FiberBundle F' fun b ↦ V b] [VectorBundle ℝ F' fun b ↦ V b] {k : ℕ}
 
-/-- The fibres of a vector bundle with model fibre of dimension `k + 1` have dimension `k + 1`. -/
-private theorem finrank_fiber (hF : finrank ℝ F = k + 1) (b : B) : finrank ℝ (E b) = k + 1 :=
-  ((trivializationAt F E b).linearEquivAt ℝ b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).finrank_eq.trans hF
-
-/-- The fibres of the subbundle have dimension `k`. -/
-private theorem finrank_subfiber (hF' : finrank ℝ F' = k) (b : B) : finrank ℝ (V b) = k :=
-  ((trivializationAt F' (fun b ↦ V b) b).linearEquivAt ℝ b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).finrank_eq.trans hF'
-
 /-- The fibrewise orientations of the subbundle induced by `o` and `ν`. -/
 private def fiberTransverse (hF : finrank ℝ F = k + 1) (hF' : finrank ℝ F' = k)
     (o : VectorBundleOrientation F E (Fin (k + 1))) {ν : ∀ b, E b} (hνV : ∀ b, ν b ∉ V b)
     (b : B) : Orientation ℝ (V b) (Fin k) :=
-  (o b).transverse (finrank_fiber hF b) (finrank_subfiber hF' b) (hνV b)
-
-/-- Reading an orientation of a fibre in a linear trivialization `e` gives the orientation of a
-basis `β` of the model fibre exactly when the orientation is that of the basis of the fibre carried
-from `β` by `e`. -/
-private theorem mapOrientation_eq_orientation_iff {F₀ : Type*} [NormedAddCommGroup F₀]
-    [NormedSpace ℝ F₀] {E₀ : B → Type*} [TopologicalSpace (TotalSpace F₀ E₀)]
-    [∀ b, AddCommGroup (E₀ b)] [∀ b, Module ℝ (E₀ b)] {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (e : Trivialization F₀ (π F₀ E₀)) [e.IsLinear ℝ] {x : B} (hx : x ∈ e.baseSet)
-    (β : Basis ι ℝ F₀) (y : Orientation ℝ (E₀ x) ι) :
-    e.mapOrientation ι hx y = β.orientation ↔
-      y = (β.map (e.linearEquivAt ℝ x hx).symm).orientation := by
-  rw [Trivialization.mapOrientation_apply, Basis.orientation_map, ← Orientation.map_symm]
-  exact (Equiv.eq_symm_apply _).symm
+  (o b).transverse ((VectorBundle.finrank_eq ℝ F E b).trans hF)
+    ((VectorBundle.finrank_eq ℝ F' (fun b ↦ V b) b).trans hF') (hνV b)
 
 variable [FiniteDimensional ℝ F] [FiniteDimensional ℝ F']
 
@@ -147,13 +126,15 @@ private theorem eventually_mapOrientation_fiberTransverse (hF : finrank ℝ F = 
       (β.map (g.linearEquivAt ℝ x hxg).symm).det
           (Fin.cons (ν x) ((V x).subtype ∘ β'.map (e'.linearEquivAt ℝ x hx).symm)) = d x := by
     rw [Basis.det_map, LinearEquiv.symm_symm, Fin.comp_cons]
-    congr 1
+    simp only [d, w, Function.comp_def, Basis.map_apply, Submodule.subtype_apply,
+      Trivialization.linearEquivAt_apply, Trivialization.linearEquivAt_symm_apply]
   -- So the induced orientation is read as `β'` exactly when the sign of `d x` matches whether `o x`
   -- is read as `β`.
   have hread (x : B) (hx : x ∈ e'.baseSet) (hxg : x ∈ g.baseSet) :
       e'.mapOrientation (Fin k) hx (fiberTransverse hF hF' o hνV x) = β'.orientation ↔
         (g.mapOrientation (Fin (k + 1)) hxg (o x) = β.orientation ↔ 0 < d x) := by
-    rw [mapOrientation_eq_orientation_iff, mapOrientation_eq_orientation_iff, fiberTransverse,
+    rw [Trivialization.mapOrientation_eq_orientation_iff,
+      Trivialization.mapOrientation_eq_orientation_iff, fiberTransverse,
       Orientation.transverse_eq_orientation_iff_det, hdet x hx hxg]
   -- The determinant `d` is continuous at `b₀` and nonzero there.
   have hw : ContinuousAt w b₀ := by
@@ -207,8 +188,9 @@ subbundle. -/
 @[simp]
 theorem transverse_neg : transverse hF hF' hV (-o) hν hνV = -transverse hF hF' hV o hν hνV := by
   ext b
-  rw [neg_apply, transverse_apply hF hF' hV _ hν hνV b (finrank_fiber hF b)
-    (finrank_subfiber hF' b), transverse_apply hF hF' hV _ hν hνV b (finrank_fiber hF b)
-    (finrank_subfiber hF' b), neg_apply, Orientation.transverse_neg]
+  have hE := (VectorBundle.finrank_eq ℝ F E b).trans hF
+  have hVb := (VectorBundle.finrank_eq ℝ F' (fun b ↦ V b) b).trans hF'
+  rw [neg_apply, transverse_apply hF hF' hV _ hν hνV b hE hVb,
+    transverse_apply hF hF' hV _ hν hνV b hE hVb, neg_apply, Orientation.transverse_neg]
 
 end TauCeti.VectorBundleOrientation

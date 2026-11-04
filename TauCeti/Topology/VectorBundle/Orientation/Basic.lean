@@ -124,6 +124,24 @@ theorem mapOrientation_eq_map_coordChangeL (e e' : Trivialization F (π F E)) [e
       _ = _ := by rw [LinearEquiv.self_trans_symm, LinearEquiv.refl_trans]
   simp only [mapOrientation_apply, ← Orientation.map_trans, hcomp]
 
+section AddCommGroup
+
+variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommGroup (E' b)]
+  [∀ b, Module ℝ (E' b)]
+
+/-- Reading an orientation of a fibre in a linear trivialization `e` gives the orientation of a
+basis `β` of the model fibre exactly when the orientation is that of the basis of the fibre carried
+from `β` by `e`. -/
+theorem mapOrientation_eq_orientation_iff [Fintype ι] [DecidableEq ι]
+    (e : Trivialization F (π F E')) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
+    (β : Basis ι ℝ F) (o : Orientation ℝ (E' b) ι) :
+    e.mapOrientation ι hb o = β.orientation ↔
+      o = (β.map (e.linearEquivAt ℝ b hb).symm).orientation := by
+  rw [mapOrientation_apply, Basis.orientation_map, ← Orientation.map_symm]
+  exact (Equiv.eq_symm_apply _).symm
+
+end AddCommGroup
+
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]
   [FiniteDimensional ℝ F]
 

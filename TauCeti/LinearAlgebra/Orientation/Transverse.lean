@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-public import Mathlib.LinearAlgebra.Orientation
+public import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # The orientation of a hyperplane transverse to a vector
@@ -40,8 +40,6 @@ continuity of induced orientations is checked in local trivializations.
 * `Orientation.transverse_neg`: reversing the orientation of `V` reverses the induced
   orientation.
 * `Module.Basis.det_finCons_ne_zero`: `v` followed by a basis of `W` is a basis of `V`.
-* `Module.Basis.eq_iff_eq_orientation_iff`: two orientations are equal exactly when they agree on
-  whether they are the orientation of a fixed basis.
 
 ## References
 
@@ -86,7 +84,9 @@ private theorem det_cons_eq_det (b b' : Basis (Fin k) R W) (c : Basis (Fin (k + 
     (hc : ⇑c = Fin.cons v (W.subtype ∘ b)) :
     c.det (Fin.cons v (W.subtype ∘ b')) = b.det b' := by
   let f : W [⋀^Fin k]→ₗ[R] R := (c.det.curryLeft v).compLinearMap W.subtype
-  have hf (u : Fin k → W) : f u = c.det (Fin.cons v (W.subtype ∘ u)) := (rfl)
+  have hf (u : Fin k → W) : f u = c.det (Fin.cons v (W.subtype ∘ u)) := by
+    simp only [f, AlternatingMap.compLinearMap_apply, AlternatingMap.curryLeft_apply_apply,
+      Matrix.vecCons, Function.comp_def]
   have h1 : f b = 1 := by rw [hf, ← hc, c.det_self]
   rw [← hf, f.eq_smul_basis_det b, h1, one_smul]
 
@@ -97,18 +97,6 @@ theorem _root_.Module.Basis.det_finCons_ne_zero (e : Basis (Fin (k + 1)) R V)
   have hV : finrank R V = k + 1 := by rw [finrank_eq_card_basis e, Fintype.card_fin]
   rw [← coe_consBasis hV hv b]
   exact (e.isUnit_det _).ne_zero
-
-/-- Two orientations are equal exactly when they agree on whether they are the orientation of a
-fixed basis `e`, since every orientation is that of `e` or its opposite. -/
-theorem _root_.Module.Basis.eq_iff_eq_orientation_iff [LinearOrder R] [IsStrictOrderedRing R]
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (e : Basis ι R V) (x y : Orientation R V ι) :
-    x = y ↔ (x = e.orientation ↔ y = e.orientation) := by
-  refine ⟨fun h ↦ h ▸ Iff.rfl, fun h ↦ ?_⟩
-  rcases e.orientation_eq_or_eq_neg x with hx | hx
-  · rw [hx, h.1 hx]
-  · rcases e.orientation_eq_or_eq_neg y with hy | hy
-    · exact absurd (h.2 hy) (hx ▸ (Module.Ray.ne_neg_self _).symm)
-    · rw [hx, hy]
 
 variable [LinearOrder R] [IsStrictOrderedRing R] (o : Orientation R V (Fin (k + 1)))
   (hV : finrank R V = k + 1) (hW : finrank R W = k) (hv : v ∉ W)
