@@ -42,14 +42,15 @@ theorem weylAut_apply_of_lie_eq_neg_two_smul (t : IsSl2Triple h e f)
     weylAut t he hf y = (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ := by
   have hf' : IsNilpotent (ad K L (-f)) := by simpa only [map_neg] using hf.neg
   have hfey : ⁅f, ⁅e, y⁆⁆ = (2 : ℚ) • y := by
-    rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hhy, hfy, lie_zero, add_zero,
-      neg_smul, neg_neg]
+    simpa only [t.lie_e_f, hhy, hfy, lie_zero, zero_sub, neg_smul, neg_inj] using
+      (lie_lie (m := y) (x := e) (y := f)).symm
   have hhey : ⁅h, ⁅e, y⁆⁆ = 0 := by
     rw [leibniz_lie, t.lie_h_e_smul ℚ, smul_lie, hhy, lie_smul]
     module
   have hfeey : ⁅f, ⁅e, ⁅e, y⁆⁆⁆ = (2 : ℚ) • ⁅e, y⁆ := by
-    rw [leibniz_lie, ← lie_skew f e, t.lie_e_f, neg_lie, hhey, neg_zero, hfey, lie_smul,
-      zero_add]
+    have hc := lie_lie (m := ⁅e, y⁆) (x := e) (y := f)
+    rw [t.lie_e_f, hhey, hfey, lie_smul] at hc
+    exact (sub_eq_zero.mp hc.symm).symm
   have hE0 : expAd e he y = y + ⁅e, y⁆ + (2⁻¹ : ℚ) • ⁅e, ⁅e, y⁆⁆ :=
     expAd_apply_of_lie_lie_lie_eq_zero he heeey
   have hF0 : expAd (-f) hf' y = y :=
