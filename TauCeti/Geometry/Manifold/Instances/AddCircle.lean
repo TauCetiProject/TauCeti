@@ -540,13 +540,6 @@ theorem mfderiv_add_right (a x : AddCircle p) :
     (funext fun u ↦ (coe_add p u s).symm)
     ((hasFDerivAt_id t).add_const s)).mfderiv
 
-/-- Multiplication by an integer `k` on `AddCircle p` is smooth: it lifts multiplication by `k` on
-`ℝ`. -/
-theorem contMDiff_zsmul (n : ℕ∞ω) (k : ℤ) :
-    ContMDiff 𝓘(ℝ) 𝓘(ℝ) n (fun y : AddCircle p ↦ k • y) :=
-  contMDiff_of_comp_coe_eq (funext fun u ↦ (QuotientAddGroup.mk_zsmul _ u k).symm)
-    (contDiff_id.const_smul k)
-
 /-- Multiplication by an integer `k` on `AddCircle p` has derivative multiplication by `k`, with its
 sign, at every point. -/
 @[simp]

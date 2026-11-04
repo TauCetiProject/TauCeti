@@ -128,7 +128,7 @@ instance instContMDiffConstSMulGeneralLinearGroup {n : ℕ∞ω} :
     ContMDiffConstSMul (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n (GL ι ℤ) (ι → AddCircle p) where
   contMDiff_const_smul A := contMDiff_pi_iff.2 fun i ↦ by
     simp only [generalLinearGroup_smul_apply]
-    exact ContMDiff.sum fun j _ ↦ (contMDiff_zsmul p n _).comp contMDiff_apply
+    exact ContMDiff.sum fun j _ ↦ (TauCeti.contMDiff_zsmul (I := 𝓘(ℝ)) _).comp contMDiff_apply
 
 /-- The derivative of the action of an integer matrix `A` on the torus `ι → AddCircle p` is, at
 every point, multiplication of tangent vectors `v : ι → ℝ` by the matrix `A`. -/

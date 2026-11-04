@@ -105,15 +105,6 @@ theorem generalLinearGroup_smul_snd_apply (A : GL ι ℤ)
   (smul_snd_apply A z v).trans
     (congrArg z.2 (AddCircle.mfderiv_generalLinearGroup_smul_apply p A⁻¹ _ v))
 
-/-- A linear form on `ι → ℝ` takes on `v` the combination of its values on the coordinate vectors
-with the coordinates of `v` as coefficients. -/
-private theorem apply_eq_sum_mul_apply_single (ξ : (ι → ℝ) →L[ℝ] ℝ) (v : ι → ℝ) :
-    ξ v = ∑ j, v j * ξ (Pi.single j 1) := by
-  conv_lhs => rw [← Finset.univ_sum_single v]
-  simp only [map_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [← smul_eq_mul, ← map_smul, ← Pi.single_smul', smul_eq_mul, mul_one]
-
 /-- **The cotangent lift of an integral linear automorphism changes the actions by the inverse
 transpose.** The action `I_i = ξ(e_i)` of `A • ξ` is `∑ j, A⁻¹ j i * I_j`. -/
 theorem generalLinearGroup_smul_snd_apply_single (A : GL ι ℤ)
@@ -123,7 +114,9 @@ theorem generalLinearGroup_smul_snd_apply_single (A : GL ι ℤ)
   refine (generalLinearGroup_smul_snd_apply p A z _).trans ?_
   rw [Matrix.mulVec_single_one]
   -- The `i`-th column of `A⁻¹` has coordinates `A⁻¹ j i`.
-  exact apply_eq_sum_mul_apply_single z.2 _
+  refine (LinearMap.pi_apply_eq_sum_univ z.2.toLinearMap _).trans ?_
+  simp only [← Pi.single_apply, Pi.single_comm]
+  rfl
 
 /-! ### Integral affine changes of action–angle coordinates -/
 
@@ -182,7 +175,9 @@ theorem integralAffineDiffeomorph_snd_apply_single (A : GL ι ℤ) (b : ι → �
   refine (integralAffineDiffeomorph_snd_apply p A b z _).trans ?_
   rw [Matrix.mulVec_single_one]
   congr 1
-  · exact apply_eq_sum_mul_apply_single z.2 _
+  · refine (LinearMap.pi_apply_eq_sum_univ z.2.toLinearMap _).trans ?_
+    simp only [← Pi.single_apply, Pi.single_comm]
+    rfl
   · simp [Pi.single_apply]
 
 /-- The integral affine change carries the zero covector over `θ` to the value at `A θ` of the
