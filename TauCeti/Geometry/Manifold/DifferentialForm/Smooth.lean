@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Smooth bundle-valued differential forms
@@ -644,6 +645,12 @@ theorem add_toRoughForm {k : ℕ} (φ ψ : SmoothForm I M F k) :
 theorem neg_toRoughForm {k : ℕ} (φ : SmoothForm I M F k) :
     (-φ).1 = -φ.1 :=
   rfl
+
+/-- A smooth form whose degree exceeds the dimension of the model space vanishes. -/
+theorem eq_zero_of_finrank_lt [FiniteDimensional ℝ E] (h : Module.finrank ℝ E < k)
+    (φ : SmoothForm I M F k) : φ = 0 :=
+  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.eq_zero_of_finrank_lt (φ.1 x)
+    (by rwa [Fintype.card_fin])
 
 /-- The constant smooth form whose value is the alternating map `A` in model-space coordinates. -/
 def const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
