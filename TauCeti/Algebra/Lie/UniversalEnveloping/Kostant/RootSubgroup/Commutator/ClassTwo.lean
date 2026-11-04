@@ -47,6 +47,21 @@ variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 
 attribute [local instance high] Algebra.toModule
 
+private theorem root_mul_eq_reverse_add_bracket :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) =
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
+        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) +
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆) :=
+  (sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie (R := ℚ) ρ (e i) (e j))
+
+private theorem isNilpotent_bracket
+    (hi : ⁅e i, ⁅e i, e j⁆⁆ = 0) (hj : ⁅e j, ⁅e i, e j⁆⁆ = 0)
+    (hni : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))) :
+    IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) :=
+  Associative.isNilpotent_of_commutator_eq (root_mul_eq_reverse_add_bracket e ρ)
+    (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni
+
 include hM in
 /-- Divided powers of a bracket centralizing its two factors preserve a Kostant-stable lattice.
 The bracket need not be one of the distinguished root vectors. -/
@@ -54,9 +69,9 @@ theorem dividedPower_lie_apply_mem
     (hi : ⁅e i, ⁅e i, e j⁆⁆ = 0) (hj : ⁅e j, ⁅e i, e j⁆⁆ = 0)
     (n : ℕ) {v : V} (hv : v ∈ M) :
     Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) v ∈ M := by
-  have hxy := (sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie (R := ℚ) ρ (e i) (e j))
   have hz := ((kostantForm e h).map ρ.toRingHom).dividedPower_mem_of_commutator_eq
-    hxy (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj)
+    (root_mul_eq_reverse_add_bracket e ρ)
+    (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj)
     (dividedPower_mem_map_kostantForm e h ρ i)
     (dividedPower_mem_map_kostantForm e h ρ j) n
   obtain ⟨a, ha, heq⟩ := hz
@@ -73,9 +88,7 @@ noncomputable def kostantBracketRootSubgroupParam
   (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).symm.toMonoidHom.comp
     (baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) M
       (fun n _ hv ↦ dividedPower_lie_apply_mem e h ρ M hM hi hj n hv)
-      (Associative.isNilpotent_of_commutator_eq
-        ((sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie (R := ℚ) ρ (e i) (e j)))
-        (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni))
+      (isNilpotent_bracket e ρ hi hj hni))
 
 /-- The bracket subgroup acts by the divided-power exponential of the bracket operator. -/
 theorem kostantBracketRootSubgroupParam_val
@@ -90,10 +103,9 @@ theorem kostantBracketRootSubgroupParam_val
       (kostantBracketRootSubgroupParam e h ρ M hM hi hj hni A t).toLinearEquiv =
         baseChangeExpHom (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ⁅e i, e j⁆)) M
           (fun n _ hv ↦ dividedPower_lie_apply_mem e h ρ M hM hi hj n hv)
-          (Associative.isNilpotent_of_commutator_eq
-            ((sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie (R := ℚ) ρ (e i) (e j)))
-            (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni) t := by
-    apply (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).apply_symm_apply
+          (isNilpotent_bracket e ρ hi hj hni) t := by
+    rw [kostantBracketRootSubgroupParam]
+    exact (LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)).apply_symm_apply _
   apply LinearMap.ext
   intro v
   rw [← LinearMap.GeneralLinearGroup.coe_toLinearEquiv, heq, coe_baseChangeExpHom]
@@ -123,7 +135,7 @@ theorem commutatorElement_kostantRootSubgroupParam_eq_bracket
       (Multiplicative.ofAdd u))
     rw [hx, hy, kostantBracketRootSubgroupParam_val]
     exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M
-      ((sub_eq_iff_eq_add').mp (mul_sub_mul_eq_map_ι_lie (R := ℚ) ρ (e i) (e j)))
+      (root_mul_eq_reverse_add_bracket e ρ)
       (commute_of_lie_eq_zero ρ hi) (commute_of_lie_eq_zero ρ hj) hni hnj _ _ _ t u
   have hyz : Commute y z := by
     apply Units.ext
@@ -133,35 +145,5 @@ theorem commutatorElement_kostantRootSubgroupParam_eq_bracket
     exact commute_baseChangeExp M (commute_of_lie_eq_zero ρ hj) _ _ _ _
   simp only [commutatorElement_def]
   rw [hxy, mul_inv_cancel_right, hyz.eq, mul_inv_cancel_right]
-
-/-- In a class-two root pair the commutator depends only on the product of the parameters. -/
-theorem commutatorElement_kostantRootSubgroupParam_eq_mul_one
-    (hi : ⁅e i, ⁅e i, e j⁆⁆ = 0) (hj : ⁅e j, ⁅e i, e j⁆⁆ = 0)
-    (hni : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hnj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-    (A : CommAlgCat.{w} ℤ) (t u : A) :
-    ⁅kostantRootSubgroupParam e h ρ M hM i hni A (Multiplicative.ofAdd t),
-        kostantRootSubgroupParam e h ρ M hM j hnj A (Multiplicative.ofAdd u)⁆ =
-      ⁅kostantRootSubgroupParam e h ρ M hM i hni A (Multiplicative.ofAdd (t * u)),
-        kostantRootSubgroupParam e h ρ M hM j hnj A (Multiplicative.ofAdd 1)⁆ := by
-  simp only [commutatorElement_kostantRootSubgroupParam_eq_bracket e h ρ M hM hi hj,
-    mul_one]
-
-/-- Fixing the second parameter at one makes the class-two root commutator additive. -/
-theorem commutatorElement_kostantRootSubgroupParam_add_one
-    (hi : ⁅e i, ⁅e i, e j⁆⁆ = 0) (hj : ⁅e j, ⁅e i, e j⁆⁆ = 0)
-    (hni : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (hnj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-    (A : CommAlgCat.{w} ℤ) (t u : A) :
-    ⁅kostantRootSubgroupParam e h ρ M hM i hni A (Multiplicative.ofAdd (t + u)),
-        kostantRootSubgroupParam e h ρ M hM j hnj A (Multiplicative.ofAdd 1)⁆ =
-      ⁅kostantRootSubgroupParam e h ρ M hM i hni A (Multiplicative.ofAdd t),
-        kostantRootSubgroupParam e h ρ M hM j hnj A (Multiplicative.ofAdd 1)⁆ *
-      ⁅kostantRootSubgroupParam e h ρ M hM i hni A (Multiplicative.ofAdd u),
-        kostantRootSubgroupParam e h ρ M hM j hnj A (Multiplicative.ofAdd 1)⁆ := by
-  simp only [commutatorElement_kostantRootSubgroupParam_eq_bracket e h ρ M hM hi hj,
-    mul_one]
-  exact map_mul (kostantBracketRootSubgroupParam e h ρ M hM hi hj hni A)
-    (Multiplicative.ofAdd t) (Multiplicative.ofAdd u)
 
 end TauCeti.UniversalEnvelopingAlgebra
