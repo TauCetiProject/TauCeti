@@ -23,6 +23,9 @@ denominator `1 - y ^ (-s)` stays bounded below.
 For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^ β`. This is how a
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
 
+For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`. This is
+how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates.
+
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
 `v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. This is
 Bernoulli's inequality made homogeneous, and it is the first-order optimality test for weighted
@@ -118,6 +121,18 @@ theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :
     refine ⟨c ^ β⁻¹, rpow_pos_of_pos hc0 _, rpow_lt_one hc0.le hc1 (inv_pos.2 hβ), ?_⟩
     rw [← rpow_mul hc0.le, inv_mul_cancel₀ hβ.ne', rpow_one]
     exact lt_max_of_lt_left (by linarith)
+
+/-- For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`, since
+`r ^ α → 0` as `r → 0`. -/
+theorem exists_pos_le_one_mul_rpow_le (c : ℝ) {α b : ℝ} (hα : 0 < α) (hb : 0 < b) :
+    ∃ r : ℝ, 0 < r ∧ r ≤ 1 ∧ c * r ^ α ≤ b := by
+  have ht : Filter.Tendsto (fun r : ℝ => c * r ^ α) (nhds 0) (nhds (c * 0 ^ α)) :=
+    ((continuous_rpow_const hα.le).tendsto 0).const_mul c
+  rw [zero_rpow hα.ne', mul_zero] at ht
+  obtain ⟨r, ⟨hrb, hr1⟩, hr⟩ := ((eventually_nhdsWithin_of_eventually_nhds
+    (s := Set.Ioi 0) ((ht.eventually (eventually_le_nhds hb)).and (eventually_le_nhds one_pos))).and
+    self_mem_nhdsWithin).exists
+  exact ⟨r, hr, hr1, hrb⟩
 
 /-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
 `u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
