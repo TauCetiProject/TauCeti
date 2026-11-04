@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
+public import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
 public import Mathlib.Data.ZMod.QuotientRing
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
@@ -40,6 +41,12 @@ size `f ^ n`. Hence `[𝓞 K : ℤ + f 𝓞 K] = f ^ (n - 1)`, the discriminant 
   `n ≥ 2`, `ℤ + f 𝓞 K ⊆ ℤ + g 𝓞 K` exactly when `g ∣ f`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.intAddMulOrder_inj`: for `n ≥ 2`, the orders
   `ℤ + f 𝓞 K` are pairwise distinct.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.map_mem_intAddMulOrder_iff`: an isomorphism of
+  number fields `K ≃+* L` carries `ℤ + f 𝓞 K` onto `ℤ + f 𝓞 L`; conversely, for `n ≥ 2`, it
+  carries `ℤ + f 𝓞 K` onto `ℤ + g 𝓞 L` only if `f = g`
+  (`TauCeti.GlobalNumberFields.NumberFieldOrder.eq_of_forall_map_mem_intAddMulOrder_iff`).
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_pic_intAddMulOrder_one`: the Picard group of
+  `ℤ + 1 𝓞 K` has `h_K` elements.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.index_range_unitsMap_intAddMulOrder_one`: the
   units of `ℤ + 1 𝓞 K` have index `1` in the units of `𝓞 K`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.card_units_quotientIntAddMulOrder`: the residue
@@ -178,6 +185,12 @@ theorem discr_intAddMulOrder :
 theorem intAddMulOrder_one : intAddMulOrder K 1 = maximalNumberFieldOrder K :=
   (index_eq_one_iff _).mp (by simp [index_intAddMulOrder])
 
+/-- **The maximal-order specialization.** The Picard group of `ℤ + 1 𝓞 K` has `h_K` elements. -/
+theorem card_pic_intAddMulOrder_one :
+    Nat.card (Pic (intAddMulOrder K 1)) = Nat.card (ClassGroup (𝓞 K)) := by
+  rw [intAddMulOrder_one]
+  exact Nat.card_congr (maximalOrderPicEquiv K).toEquiv
+
 /-- **The unit index of the maximal order.** Every unit of `𝓞 K` is a unit of `ℤ + 1 𝓞 K`, so
 `[(𝓞 K)ˣ : O_1ˣ] = 1`. -/
 @[simp]
@@ -212,6 +225,34 @@ theorem intAddMulOrder_inj (hK : 1 < Module.finrank ℚ K) {f g : ℕ} [NeZero f
   have hindex := congrArg index h
   rwa [index_intAddMulOrder, index_intAddMulOrder,
     Nat.pow_left_inj (by omega)] at hindex
+
+section Map
+
+variable {L : Type*} [Field L] [NumberField L] {f}
+
+/-- A ring homomorphism of number fields `K →+* L` maps `ℤ + f 𝓞 K` into `ℤ + f 𝓞 L`. -/
+theorem map_mem_intAddMulOrder (e : K →+* L) {x : K}
+    (hx : x ∈ (intAddMulOrder K f).toSubalgebra) : e x ∈ (intAddMulOrder L f).toSubalgebra := by
+  obtain ⟨a, y, rfl⟩ := hx
+  exact ⟨a, RingOfIntegers.mapRingHom e y, by simp⟩
+
+/-- **Isomorphisms of number fields preserve the orders `ℤ + f 𝓞 K`**: an isomorphism
+`e : K ≃+* L` carries `ℤ + f 𝓞 K` onto `ℤ + f 𝓞 L`. -/
+theorem map_mem_intAddMulOrder_iff (e : K ≃+* L) {x : K} :
+    e x ∈ (intAddMulOrder L f).toSubalgebra ↔ x ∈ (intAddMulOrder K f).toSubalgebra :=
+  ⟨fun h ↦ by simpa using map_mem_intAddMulOrder (e.symm : L →+* K) h,
+    map_mem_intAddMulOrder (e : K →+* L)⟩
+
+/-- **The integer `f` is an isomorphism invariant of `ℤ + f 𝓞 K`.** In degree at least two, if an
+isomorphism of number fields `e : K ≃+* L` carries `ℤ + f 𝓞 K` onto `ℤ + g 𝓞 L`, then `f = g`. -/
+theorem eq_of_forall_map_mem_intAddMulOrder_iff (hK : 1 < Module.finrank ℚ K) (e : K ≃+* L)
+    {f g : ℕ} [NeZero f] [NeZero g]
+    (h : ∀ x, e x ∈ (intAddMulOrder L g).toSubalgebra ↔ x ∈ (intAddMulOrder K f).toSubalgebra) :
+    f = g :=
+  (intAddMulOrder_inj hK).mp
+    (ext (Subalgebra.ext fun x ↦ (h x).symm.trans (map_mem_intAddMulOrder_iff e)))
+
+end Map
 
 variable {f} in
 /-- An element `a + f y` of `ℤ + f 𝓞 K` is congruent to `a` modulo `f 𝓞 K`. -/

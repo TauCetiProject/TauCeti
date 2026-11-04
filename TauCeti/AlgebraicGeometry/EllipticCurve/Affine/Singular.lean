@@ -47,6 +47,8 @@ equality. Every statement here holds in any characteristic, including two and th
   `WeierstrassCurve.Affine.equation_iff_sq_eq_cube_of_isSingular`: factor the equation along the
   tangents at a singular point, with a square when the tangent quadratic has a double root.
 * `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
+* `WeierstrassCurve.Affine.c₄_eq_of_isSingular`: at any singular point with tangent slope `α`,
+  `c₄ = (2 α + a₁) ^ 4`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
   the origin of the model translated there.
 * `WeierstrassCurve.Affine.isSingular_iff_equation_and_not_nonsingular`: the comparison with
@@ -202,6 +204,18 @@ theorem isSingular_iff_variableChange (W : WeierstrassCurve.Affine R) (x y : R) 
     W.IsSingular x y ↔ (VariableChange.mk 1 x 0 y • W).toAffine.IsSingular 0 0 := by
   rw [isSingular_iff_equation_and_not_nonsingular, isSingular_iff_equation_and_not_nonsingular,
     ← equation_iff_variableChange, ← nonsingular_iff_variableChange]
+
+/-- **`c₄` at a singular point is the fourth power of the difference of the tangent slopes.** If
+`α` is a root of the tangent quadratic `T² + a₁ T - (3 x + a₂)` at a singular point `(x, y)`, the
+other root is `-a₁ - α`, and `c₄ = (2 α + a₁) ^ 4`. Over a domain the singular point is therefore a
+node, with two distinct tangents, exactly when `c₄ ≠ 0`. -/
+theorem c₄_eq_of_isSingular {x y α : R} (h : W.IsSingular x y)
+    (hα : α ^ 2 + W.a₁ * α - (3 * x + W.a₂) = 0) : W.c₄ = (2 * α + W.a₁) ^ 4 := by
+  rw [← variableChange_translate_c₄ W x y,
+    c₄_eq_b₂_sq_of_isSingular_zero ((isSingular_iff_variableChange _ _ _).1 h)]
+  simp only [b₂, variableChange_a₁, variableChange_a₂, inv_one, Units.val_one]
+  linear_combination (-8 * (W.a₁ ^ 2 + 4 * (3 * x + W.a₂)) -
+    16 * (α ^ 2 + W.a₁ * α - (3 * x + W.a₂))) * hα
 
 /-- **Singularity is carried along a coefficient map.** -/
 theorem IsSingular.map {S : Type*} [CommRing S] (f : R →+* S) {x y : R} (h : W.IsSingular x y) :

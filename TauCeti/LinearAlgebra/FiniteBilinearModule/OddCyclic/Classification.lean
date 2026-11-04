@@ -123,18 +123,18 @@ theorem nonempty_isometry_oddCyclic_of_legendreSym_eq {p : ℕ} [Fact p.Prime] (
   · exact nonempty_isometry_oddCyclic_of_eq_zero hp rfl a b
   have hp2 : p ≠ 2 := by rintro rfl; exact Nat.not_even_iff_odd.2 hp even_two
   have hab0 : ((a * b : ℤ) : ZMod p) ≠ 0 :=
-    ((ZMod.coe_int_isUnit_iff_isCoprime _ p).2 (ha.mul_right hb)).ne_zero
+    ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (ha.mul_right hb)).ne_zero
   -- `ab` has `1 + (ab/p) = 2` square roots modulo `p^e`.
   have hcount := TauCeti.ZMod.natCard_sqrts_prime_pow_eq_legendreSym_add_one hp2 he.ne' hab0
   rw [legendreSym.mul, h, ← sq,
-    legendreSym.sq_one p ((ZMod.coe_int_isUnit_iff_isCoprime b p).2 hb).ne_zero] at hcount
+    legendreSym.sq_one p ((ZMod.isUnit_intCast_iff_isCoprime b p).2 hb).ne_zero] at hcount
   obtain ⟨⟨x, hx⟩⟩ := (Nat.card_pos_iff.1 (by omega : 0 < Nat.card
     {x : ZMod (p ^ e) // x ^ 2 = ((a * b : ℤ) : ZMod (p ^ e))})).1
   have hbu : IsUnit (b : ZMod (p ^ e)) :=
-    (ZMod.coe_int_isUnit_iff_isCoprime b (p ^ e)).2 (by simpa using hb.pow_left)
+    (ZMod.isUnit_intCast_iff_isCoprime b (p ^ e)).2 (by simpa using hb.pow_left)
   have hxu : IsUnit x := by
     have hau : IsUnit (a : ZMod (p ^ e)) :=
-      (ZMod.coe_int_isUnit_iff_isCoprime a (p ^ e)).2 (by simpa using ha.pow_left)
+      (ZMod.isUnit_intCast_iff_isCoprime a (p ^ e)).2 (by simpa using ha.pow_left)
     have : IsUnit (x ^ 2) := by rw [hx]; push_cast; exact hau.mul hbu
     exact isUnit_pow_iff two_ne_zero |>.1 this
   refine (nonempty_isometry_oddCyclic_iff _ _ a b).2 ⟨hxu.unit * hbu.unit⁻¹, ?_⟩

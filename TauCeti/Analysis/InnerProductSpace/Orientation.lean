@@ -17,9 +17,10 @@ This file packages Mathlib's oriented volume form as a continuous alternating ma
 construction is shared by the manifold Riemannian volume form and the planar complex area form.
 
 It also evaluates the volume form on an arbitrary, not necessarily orthonormal, family of vectors:
-its absolute value is the square root of the Gram determinant, and on a basis its sign records
-whether the basis is positively oriented. In a coordinate frame of a Riemannian manifold this is
-the familiar formula `vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
+its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
+dependent families, and on a basis its sign records whether the basis is positively oriented. In
+a coordinate frame of a Riemannian manifold this is the familiar formula
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
 
 Finally, two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
@@ -96,6 +97,22 @@ theorem volumeForm_apply_pos_iff {o : Orientation ℝ E (Fin n)} {b : Module.Bas
   rw [o.volumeForm_robust f (OrthonormalBasis.orientation_adjustToOrientation _ _),
     ← Module.Basis.orientation_eq_iff_det_pos, OrthonormalBasis.orientation_adjustToOrientation,
     eq_comm]
+
+/-- The volume form is nonzero on a family of vectors exactly when the family is linearly
+independent. -/
+theorem volumeForm_apply_ne_zero_iff {o : Orientation ℝ E (Fin n)} {v : Fin n → E} :
+    o.volumeForm v ≠ 0 ↔ LinearIndependent ℝ v := by
+  rcases n with - | n
+  · refine iff_of_true ?_ linearIndependent_empty_type
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hcard : Fintype.card (Fin (n + 1)) = Module.finrank ℝ E := by
+    simp [Fact.out (p := Module.finrank ℝ E = n + 1)]
+  let b : OrthonormalBasis (Fin (n + 1)) ℝ E :=
+    (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
+  rw [← abs_ne_zero, o.volumeForm_robust' b, abs_ne_zero, ← isUnit_iff_ne_zero,
+    ← b.toBasis.is_basis_iff_det]
+  exact ⟨And.left, fun h ↦ ⟨h, h.span_eq_top_of_card_eq_finrank hcard⟩⟩
 
 /-- The volume of a positively oriented basis is the square root of its Gram determinant. -/
 theorem volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n))

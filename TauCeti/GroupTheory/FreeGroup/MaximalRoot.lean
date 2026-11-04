@@ -66,7 +66,7 @@ theorem centralizer_singleton_eq_zpowers {x r : G} {k : ℕ} (hk : k ≠ 0)
     (hr : ¬IsProperPower r) (hx : r ^ k = x) : centralizer {x} = zpowers r := by
   have hr1 := ne_one_of_not_isProperPower hr
   have hx1 : x ≠ 1 := hx ▸ (pow_eq_one_iff_left hk).not.2 hr1
-  obtain ⟨t, ht⟩ := (Subgroup.isCyclic_iff_exists_zpowers_eq_top _).1 (isCyclic_centralizer hx1)
+  obtain ⟨t, ht⟩ := (Subgroup.isCyclic_iff_exists_zpowers_eq _).1 (isCyclic_centralizer hx1)
   have hrt : r ∈ zpowers t :=
     ht ▸ mem_centralizer_singleton_iff.2 (hx ▸ (Commute.self_pow r k).eq)
   rw [← ht]
@@ -101,7 +101,7 @@ theorem pow_eq_pow_iff_of_not_isProperPower {r s : G} {k l : ℕ} (hk : k ≠ 0)
 for a unique pair `(r, k)` with `k ≠ 0` and `r` not a proper power. -/
 theorem exists_maximalRoot {x : G} (hx : x ≠ 1) :
     ∃! p : G × ℕ, p.2 ≠ 0 ∧ p.1 ^ p.2 = x ∧ ¬IsProperPower p.1 := by
-  obtain ⟨t, ht⟩ := (Subgroup.isCyclic_iff_exists_zpowers_eq_top _).1 (isCyclic_centralizer hx)
+  obtain ⟨t, ht⟩ := (Subgroup.isCyclic_iff_exists_zpowers_eq _).1 (isCyclic_centralizer hx)
   obtain ⟨m, hm⟩ := mem_zpowers_iff.1 (ht ▸ mem_centralizer_singleton_iff.2 rfl : x ∈ _)
   -- Normalise the exponent of `x` in the generator `t` to be positive, replacing `t` by `t⁻¹`.
   obtain ⟨r, k, hrt, hk, hrk⟩ : ∃ r : G, ∃ k : ℕ, zpowers r = zpowers t ∧ k ≠ 0 ∧ r ^ k = x := by

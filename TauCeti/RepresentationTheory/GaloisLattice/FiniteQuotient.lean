@@ -61,11 +61,11 @@ theorem isOpen_ker_of_finite (rho : Representation R G V)
     one_smul x := by
       -- Expose the local action, whose scalar operation is definitionally `rho`.
       change rho 1 x = x
-      rw [map_one, Module.End.one_apply]
+      rw [map_one, one_apply_eq_self]
     mul_smul g h x := by
       -- Expose the local action, whose scalar operation is definitionally `rho`.
       change rho (g * h) x = rho g (rho h x)
-      rw [map_mul, Module.End.mul_apply]
+      rw [map_mul, mul_apply_eq_comp]
   }
   let U : Subgroup G :=
     ⨅ i : Fin n, MulAction.stabilizer G (s i)
@@ -82,7 +82,7 @@ theorem isOpen_ker_of_finite (rho : Representation R G V)
       rw [MulAction.mem_stabilizer_iff]
       -- The stabilizer uses the local action; expose its defining representation.
       change rho g (s i) = s i
-      rw [MonoidHom.mem_ker.mp hg, Module.End.one_apply]
+      rw [MonoidHom.mem_ker.mp hg, one_apply_eq_self]
   rw [← hU, Subgroup.coe_iInf]
   exact isOpen_iInter_of_finite fun i ↦ hopen (s i)
 

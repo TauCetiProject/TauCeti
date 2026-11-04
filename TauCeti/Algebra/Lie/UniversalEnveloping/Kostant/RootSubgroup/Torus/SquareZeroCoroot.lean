@@ -98,7 +98,7 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
       rw [kostantRootSubgroupParam_val_apply,
         baseChangeExp_tmul_of_pow_eq_zero _ M _ hsq, Finset.sum_range_succ, Finset.sum_range_one,
         integralDividedPower_zero]
-      simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.smul_apply,
+      simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, pow_zero, pow_one, one_mul, smul_tmul', smul_eq_mul]
       -- The remaining difference is the unexposed body of `kostantRootOperator`, the first
       -- divided power; the two agree on `V` by `coe_kostantRootOperator_apply`.
@@ -108,45 +108,6 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
   | add z₁ z₂ h₁ h₂ => simp only [map_add, h₁, h₂]
 
 variable {i j : ι} {c : κ}
-
-/-- The integral root operator computes the ambient action on a product. -/
-private theorem coe_kostantRootOperator_mul_apply (k l : ι) (v : M) :
-    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l) v : M) : V) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) (v : V)) := by
-  rw [Module.End.mul_apply, coe_kostantRootOperator_apply, coe_kostantRootOperator_apply]
-
-/-- The integral root operator computes the ambient action on a triple product. -/
-private theorem coe_kostantRootOperator_mul_mul_apply (k l n : ι) (v : M) :
-    (((kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
-        kostantRootOperator e h ρ M hM n) v : M) : V) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
-        (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e n)) (v : V))) := by
-  rw [Module.End.mul_apply, coe_kostantRootOperator_mul_apply, coe_kostantRootOperator_apply]
-
-/-- A vanishing product of ambient root vectors makes the product of integral root operators
-vanish. -/
-private theorem kostantRootOperator_mul_eq_zero {k l : ι}
-    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) = 0) :
-    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l = 0 := by
-  refine LinearMap.ext fun v => Subtype.ext ?_
-  rw [coe_kostantRootOperator_mul_apply, ← Module.End.mul_apply, hkl]
-  simp
-
-/-- The triple-product identity of ambient root vectors transfers to the integral root
-operators. -/
-private theorem kostantRootOperator_mul_mul_eq {k l : ι}
-    (hkl : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l)) *
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k)) =
-      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) :
-    kostantRootOperator e h ρ M hM k * kostantRootOperator e h ρ M hM l *
-        kostantRootOperator e h ρ M hM k = kostantRootOperator e h ρ M hM k := by
-  refine LinearMap.ext fun v => Subtype.ext ?_
-  rw [coe_kostantRootOperator_mul_mul_apply, coe_kostantRootOperator_apply,
-    ← Module.End.mul_apply, ← Module.End.mul_apply, hkl]
 
 end SquareZero
 
@@ -245,11 +206,11 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     have hPcoe : (((X * Y) (b x) : M) : V) =
         (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
           ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) ((b x : M) : V) := by
-      rw [hXdef, hYdef, coe_kostantRootOperator_mul_apply, Module.End.mul_apply]
+      rw [hXdef, hYdef, coe_kostantRootOperator_mul_apply, mul_apply_eq_comp]
     have hQcoe : (((Y * X) (b x) : M) : V) =
         (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
           ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ((b x : M) : V) := by
-      rw [hXdef, hYdef, coe_kostantRootOperator_mul_apply, Module.End.mul_apply]
+      rw [hXdef, hYdef, coe_kostantRootOperator_mul_apply, mul_apply_eq_comp]
     have hEF : E' * F' = (X * Y).baseChange (A : Type w) := by
       rw [hE'def, hF'def, LinearMap.baseChange_mul]
     have hFE : F' * E' = (Y * X).baseChange (A : Type w) := by
@@ -261,7 +222,7 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     · have hPM : (X * Y) (b x) = b x := Subtype.ext (by rw [hPcoe, hP])
       have hQM : (Y * X) (b x) = 0 := Subtype.ext (by rw [hQcoe, hQ, ZeroMemClass.coe_zero])
       rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
-      simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.smul_apply,
+      simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, hPM, hQM, tmul_zero, smul_zero, add_zero, smul_tmul',
         smul_eq_mul, mul_one, zpow_one]
       rw [← add_tmul]
@@ -269,13 +230,13 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     · have hPM : (X * Y) (b x) = 0 := Subtype.ext (by rw [hPcoe, hP, ZeroMemClass.coe_zero])
       have hQM : (Y * X) (b x) = 0 := Subtype.ext (by rw [hQcoe, hQ, ZeroMemClass.coe_zero])
       rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
-      simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.smul_apply,
+      simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, hPM, hQM, tmul_zero, smul_zero, add_zero, zpow_zero,
         Units.val_one, mul_one]
     · have hPM : (X * Y) (b x) = 0 := Subtype.ext (by rw [hPcoe, hP, ZeroMemClass.coe_zero])
       have hQM : (Y * X) (b x) = b x := Subtype.ext (by rw [hQcoe, hQ])
       rw [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis, hm, hEF, hFE]
-      simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.smul_apply,
+      simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
         LinearMap.baseChange_tmul, hPM, hQM, tmul_zero, smul_zero, add_zero, smul_tmul',
         smul_eq_mul, mul_one, zpow_neg, zpow_one]
       rw [← add_tmul]

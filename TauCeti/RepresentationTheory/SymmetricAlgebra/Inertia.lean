@@ -161,21 +161,21 @@ theorem isCyclic_inertia_span_singleton_ι [Finite G] (hG : (Nat.card G : K) ≠
     rw [hgℓ, map_smul, hφ, smul_eq_mul, mul_one]
   let χ : I →* K :=
     { toFun g := φ (ρ g ℓ)
-      map_one' := by rw [OneMemClass.coe_one, map_one, Module.End.one_apply, hφ]
+      map_one' := by rw [OneMemClass.coe_one, map_one, one_apply_eq_self, hφ]
       map_mul' g h := by
-        rw [Subgroup.coe_mul, map_mul, Module.End.mul_apply]
+        rw [Subgroup.coe_mul, map_mul, mul_apply_eq_comp]
         conv_lhs => rw [hχ h, map_smul, map_smul, smul_eq_mul]
         exact mul_comm _ _ }
   refine isCyclic_of_injective_ringHom χ ((injective_iff_map_eq_one χ).2 fun g hg ↦ ?_)
   -- An element of the kernel is `1 + N` with `N ∘ N = 0`; it has finite order, so `N = 0`.
   set N := ρ g - 1 with hN
   have hNℓ : N ℓ = 0 := by
-    rw [hN, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero, hχ g]
+    rw [hN, LinearMap.sub_apply, one_apply_eq_self, sub_eq_zero, hχ g]
     exact (congrArg (· • ℓ) hg).trans (one_smul K ℓ)
   have hNN : N ^ 2 = 0 := LinearMap.ext fun m ↦ by
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (hI g m)
     have hNm : N m = -(c • ℓ) := by
-      rw [hc, neg_sub, hN, LinearMap.sub_apply, Module.End.one_apply]
+      rw [hc, neg_sub, hN, LinearMap.sub_apply, one_apply_eq_self]
     simp [sq, hNm, hNℓ]
   have hcard : (1 + N) ^ Nat.card G = 1 := by
     rw [hN, add_sub_cancel, ← map_pow, pow_card_eq_one', map_one]

@@ -46,6 +46,8 @@ No finiteness or local finiteness is assumed.
 
 * `preimage_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem`: the polyhedron of
   `P` is the polyhedron of the full subcomplex of the subdivision spanned by the faces of `P`.
+* `image_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem`: equivalently, the
+  polyhedron of `P` is the image of the polyhedron of `subdivisionSubcomplex K P`.
 * `preimage_barycentricSubdivisionRealizationHomeomorph_openSimplicialNeighborhood`: the
   neighbourhood is the image of the open star of those face-vertices.
 * `AbstractSimplicialComplex.isOpen_openSimplicialNeighborhood` and
@@ -112,6 +114,26 @@ theorem preimage_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem :
   ext x
   rw [mem_preimage, barycentricSubdivisionRealizationHomeomorph_apply]
   exact support_barycentricSubdivisionRealizationMap_mem_iff K P x
+
+/-- The polyhedron of the subdivided subcomplex consists of the points of the subdivision whose
+support consists of faces of `P`. -/
+theorem setOf_support_mem_subdivisionSubcomplex :
+    {x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+        K.toPreAbstractSimplicialComplex) | x.1.support ∈ K.subdivisionSubcomplex P} =
+      {x | (x.1.support : Set (Face K)) ⊆ {σ | σ.1 ∈ P}} := by
+  ext x
+  rw [mem_ofPred_eq, mem_subdivisionSubcomplex_iff]
+  exact ⟨fun h σ hσ => h.2 σ hσ, fun h => ⟨support_mem _ x, fun σ hσ => h hσ⟩⟩
+
+/-- The subdivision homeomorphism carries the polyhedron of the subdivided subcomplex onto the
+polyhedron of `P`. -/
+theorem image_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem :
+    barycentricSubdivisionRealizationHomeomorph K ''
+        {x | x.1.support ∈ K.subdivisionSubcomplex P} =
+      {y : Realization K | y.1.support ∈ P} := by
+  rw [setOf_support_mem_subdivisionSubcomplex,
+    ← preimage_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem,
+    Homeomorph.image_preimage]
 
 /-- The open simplicial neighbourhood of `P` in the realization of `K`: the points whose set of
 vertices of largest barycentric coordinate is a face of `P`. It is the image of the open star, in

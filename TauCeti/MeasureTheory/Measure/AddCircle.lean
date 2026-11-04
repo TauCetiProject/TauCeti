@@ -17,7 +17,9 @@ restricted Lebesgue measure. For a law with density relative to normalized Haar 
 the real chart density is the lifted density divided by the period `T`.
 
 These identities allow cdfs and quantiles of circular laws to be computed in a fixed
-angle chart, with an explicit choice at the seam.
+angle chart, with an explicit choice at the seam. Covering `ℝ` by translates of one chart also
+shows that a set of the circle is null exactly when its preimage in `ℝ` is null
+(`AddCircle.volume_preimage_coe_eq_zero_iff`).
 
 In the other direction, reducing a real law with density `f` modulo `T` gives the circle law
 whose density relative to circle volume is the periodization
@@ -55,6 +57,21 @@ theorem map_coe_equivIco_volume (a : ℝ) :
   apply Measure.map_congr
   filter_upwards [ae_restrict_mem measurableSet_Ico] with x hx
   exact equivIco_coe_of_mem hx
+
+/-- A null-measurable set of the additive circle is null exactly when its preimage in `ℝ` is
+null. -/
+theorem volume_preimage_coe_eq_zero_iff {s : Set (AddCircle T)} (hs : NullMeasurableSet s) :
+    volume (((↑) : ℝ → AddCircle T) ⁻¹' s) = 0 ↔ volume s = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← (AddCircle.measurePreserving_mk T 0).measure_preimage hs]
+    exact nonpos_iff_eq_zero.1 (h ▸ Measure.restrict_apply_le _ _)
+  · -- The intervals `(k • T, k • T + T]` cover `ℝ`, and each meets the preimage in a null set.
+    refine measure_mono_null (t := ⋃ k : ℤ, ((↑) : ℝ → AddCircle T) ⁻¹' s ∩ Ioc (k • T) (k • T + T))
+      (fun x hx ↦ ?_) (measure_iUnion_null fun k ↦ ?_)
+    · obtain ⟨k, hk⟩ := mem_iUnion.1 ((iUnion_Ioc_zsmul hT.out).symm ▸ mem_univ x)
+      exact mem_iUnion.2 ⟨k, hx, by rwa [← add_one_zsmul]⟩
+    · rw [← Measure.restrict_apply' measurableSet_Ioc,
+        (AddCircle.measurePreserving_mk T (k • T)).measure_preimage hs, h]
 
 /-- The real density in `[a, a + T)` of a Haar-weighted circle law is its lifted Haar
 density divided by `T`. -/

@@ -203,15 +203,15 @@ theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [
 
 @[simp]
 theorem linearSubst_one [DecidableEq σ] : linearSubst (1 : Matrix σ σ R) = AlgHom.id R _ :=
-  algHom_ext fun i ↦ by simp [one_apply]
+  algHom_ext fun i ↦ by simp [Matrix.one_apply]
 
 /-- The substitution is a right action of the matrix monoid: substituting along `M * N` is
 substituting along `M` and then along `N`. -/
 theorem linearSubst_mul (M N : Matrix σ σ R) :
     linearSubst (M * N) = (linearSubst N).comp (linearSubst M) := by
   refine algHom_ext fun i ↦ ?_
-  simp only [linearSubst_X, AlgHom.comp_apply, map_sum, map_mul, algHom_C, mul_apply,
-    map_sum C, Finset.sum_mul, Finset.mul_sum, algebraMap_eq, mul_assoc]
+  simp only [map_sum C, Finset.sum_mul, mul_assoc, linearSubst_X, AlgHom.comp_apply, map_sum,
+    map_mul, algHom_C, Matrix.mul_apply, Finset.mul_sum, algebraMap_eq]
   exact Finset.sum_comm
 
 theorem linearSubst_mul_apply (M N : Matrix σ σ R) (p : MvPolynomial σ R) :

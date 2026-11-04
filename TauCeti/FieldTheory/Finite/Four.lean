@@ -30,12 +30,6 @@ public section
 
 namespace TauCeti
 
-/-- The Galois field of order four has four elements, independently of its enumeration. -/
-theorem card_galoisField_two_two [Fintype (GaloisField 2 2)] :
-    Fintype.card (GaloisField 2 2) = 4 := by
-  rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
-  decide
-
 variable {F : Type*} [Field F] [Finite F]
 
 /-- Every element other than zero and one in a field of order four is a root of
@@ -182,6 +176,22 @@ theorem finFourEquiv_apply (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (i : Fin 4) :
     finFourEquiv hF hω i = ![0, 1, ω, ω ^ 2] i := by
   fin_cases i <;> simp [finFourEquiv]
+
+/-- **Every unit of a field of four elements is a power of `ω²`.** Labelling the field as
+`0, 1, ω, ω²` by `finFourEquiv`, the unit with label `i` is `(ω²)ᵏ` for the exponent `k = 0, 2, 1`
+displayed at positions `1, 2, 3`. -/
+theorem sq_pow_finFourEquiv_symm (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
+    (a : Fˣ) : (ω ^ 2) ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a) = a := by
+  have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
+  obtain ⟨i, hi⟩ := (finFourEquiv hF hω).surjective a
+  rw [← hi, Equiv.symm_apply_apply, finFourEquiv_apply]
+  rw [finFourEquiv_apply] at hi
+  fin_cases i
+  · exact absurd hi.symm (by simp)
+  · simp
+  · simp only [Fin.reduceFinMk, Matrix.cons_val]
+    linear_combination ω * h3
+  · simp
 
 omit [Finite F] in
 /-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/

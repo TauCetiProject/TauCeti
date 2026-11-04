@@ -54,14 +54,16 @@ theorem algEquivOfRadicalEq_toAlgHom (h : I.radical = J.radical) :
       lift (J := (extended J).radical)
         ((Ideal.map_mono (Ideal.le_radical.trans h.le)).trans (Ideal.map_radical_le _)) := by
   exact algHom_ext_of_map_le_jacobson
-    ((map_le_radical_extended h.le).trans HenselianRing.jac)
+    ((map_le_radical_extended h.le).trans (by simpa only [Ideal.jacobson_bot] using
+      (HenselianRing.jac (R := algebra J) (I := (extended J).radical))))
 
 /-- Reversing the radical comparison gives the inverse algebra equivalence. -/
 theorem algEquivOfRadicalEq_symm (h : I.radical = J.radical) :
     (algEquivOfRadicalEq h).symm = algEquivOfRadicalEq h.symm := by
   apply AlgEquiv.coe_toAlgHom_injective
   exact algHom_ext_of_map_le_jacobson
-    ((map_le_radical_extended h.ge).trans HenselianRing.jac)
+    ((map_le_radical_extended h.ge).trans (by simpa only [Ideal.jacobson_bot] using
+      (HenselianRing.jac (R := algebra I) (I := (extended I).radical))))
 
 /-- The comparison of an ideal with itself is the identity. -/
 @[simp]
@@ -78,7 +80,8 @@ theorem algEquivOfRadicalEq_trans (hIJ : I.radical = J.radical)
       algEquivOfRadicalEq (hIJ.trans hJK) := by
   apply AlgEquiv.coe_toAlgHom_injective
   exact algHom_ext_of_map_le_jacobson
-    ((map_le_radical_extended (hIJ.trans hJK).le).trans HenselianRing.jac)
+    ((map_le_radical_extended (hIJ.trans hJK).le).trans (by simpa only [Ideal.jacobson_bot] using
+      (HenselianRing.jac (R := algebra K) (I := (extended K).radical))))
 
 /-- When the ideals are nested, the radical comparison is the existing functorial map of
 henselizations induced by the identity of the base ring. In particular, that map is bijective
