@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.RootSubgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme
+import TauCeti.Algebra.Group.OneParameterGauss
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Gauss
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Gauss
 
 /-!
-# Opposite-root Gauss factorization in the Geck carrier
+# Opposite-simple-root Gauss factorization in the Geck carrier
 
 For a valid Dynkin type `t`, the numbered simple raising and lowering generators at each Bourbaki
 node `i : Fin t.rank` form an `sl₂` pair in the defining matrix representation of Geck's Lie
@@ -19,22 +20,18 @@ the adjoint module, where root operators do not square to zero (root strings hav
 simply laced or long roots and four in type `G₂`).
 
 This file specializes the general Kostant opposite-root Gauss factorizations to the pinned Geck
-lattice and its toral-closure group scheme, and then transports them by Weyl conjugation to every
-root of `TauCeti.DynkinType.simplyConnectedRootDatum`. Over any commutative ring `A`:
+lattice and its toral-closure group scheme. Over any commutative ring `A` and for any `a, b ∈ A`
+such that `u = 1 + a b` is a unit of `A`, the opposite simple-root elements at Bourbaki node `i`
+factor in both multiplication orders through the `i`-th coordinate of the represented split weight
+torus (which corresponds to the simple coroot `αᵢ^∨`):
 
-* For any `a, b ∈ A` such that `u = 1 + a b` is a unit of `A`, the opposite simple-root elements at
-  node `i` factor in both multiplication orders through the `i`-th coordinate of the represented
-  split weight torus (which is the simple coroot `αᵢ^∨` by
-  `TauCeti.DynkinType.coroot_simpleIndex`):
-  ```text
-  xᵢ(a) x₋ᵢ(b) = x₋ᵢ(b u⁻¹) t(Pi.mulSingle i u) xᵢ(a u⁻¹),
-  x₋ᵢ(b) xᵢ(a) = xᵢ(a u⁻¹) t(Pi.mulSingle i u⁻¹) x₋ᵢ(b u⁻¹).
-  ```
-* For any Weyl word `l` and node `i`, the word presentations `(l, i)` and `(l ++ [i], i)` attach
-  opposite roots `α` and `-α` at `r = geckWeylRootIndex l i`. Because `x_{[i],i}(b) = x₋ᵢ(-b)`,
-  whenever `u = 1 - a b` is a unit of `A`, their root-subgroup elements factor through the coroot
-  cocharacter `k ↦ u ^ (coroot r k)` of `r` (depending only on the root index `r`, not on the word
-  `l` or node `i`).
+```text
+xᵢ(a) x₋ᵢ(b) = x₋ᵢ(b u⁻¹) t(Pi.mulSingle i u) xᵢ(a u⁻¹),
+x₋ᵢ(b) xᵢ(a) = xᵢ(a u⁻¹) t(Pi.mulSingle i u⁻¹) x₋ᵢ(b u⁻¹).
+```
+
+Weyl-word transport of these factorizations to every root of the simply connected root datum is
+developed in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Gauss`.
 
 ## Main results
 
@@ -44,9 +41,6 @@ root of `TauCeti.DynkinType.simplyConnectedRootDatum`. Over any commutative ring
 * `TauCeti.DynkinType.geckRootSubgroupPoints_inl_mul_inr` and
   `TauCeti.DynkinType.geckRootSubgroupPoints_inr_mul_inl`: opposite-simple-root Gauss factorizations
   inside the matrix point group `TauCeti.DynkinType.geckPoints`.
-* `TauCeti.DynkinType.geckWeylRootSubgroupPoints_mul_append_singleton_self` and
-  `TauCeti.DynkinType.geckWeylRootSubgroupPoints_append_singleton_self_mul`: opposite-root Gauss
-  factorizations at every Weyl-word root pair `(l, i)` and `(l ++ [i], i)`.
 
 ## References
 
@@ -119,11 +113,8 @@ theorem geckRootSubgroupParam_inr_mul_inl (i : Fin t.rank) (A : CommAlgCat.{v} �
       t.geckRootSubgroupParam ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) *
         t.geckTorusPoints ht A (Pi.mulSingle i u⁻¹) *
         t.geckRootSubgroupParam ht (.inr i) A (Multiplicative.ofAdd (b * ↑u⁻¹)) := by
-  have hneg : (u : A) = 1 + (-a) * (-b) := by simpa only [neg_mul_neg] using hu
-  have hinv := congrArg Inv.inv
-    (t.geckRootSubgroupParam_inl_mul_inr ht i A (-a) (-b) u hneg)
-  simpa only [mul_inv_rev, ← map_inv, ofAdd_neg, inv_inv, neg_mul, Pi.mulSingle_inv,
-    mul_assoc] using hinv
+  simpa only [Pi.mulSingle_inv] using map_ofAdd_mul_map_ofAdd_of_neg
+    (t.geckRootSubgroupParam_inl_mul_inr ht i A (-a) (-b) u (by rwa [neg_mul_neg]))
 
 /-! ## Point-group Gauss factorizations -/
 
@@ -168,79 +159,8 @@ theorem geckRootSubgroupPoints_inr_mul_inl (i : Fin t.rank) (A : Type v) [CommRi
       t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) *
         t.geckWeightTorusPoints ht A (Pi.mulSingle i u⁻¹) *
         t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (b * ↑u⁻¹)) := by
-  have hneg : (u : A) = 1 + (-a) * (-b) := by simpa only [neg_mul_neg] using hu
-  have hinv := congrArg Inv.inv
-    (t.geckRootSubgroupPoints_inl_mul_inr ht i A (-a) (-b) u hneg)
-  simpa only [mul_inv_rev, ← map_inv, ofAdd_neg, inv_inv, neg_mul, Pi.mulSingle_inv,
-    mul_assoc] using hinv
-
-/-! ## Opposite-root Gauss factorizations at every Weyl-word root -/
-
-/-- **Opposite-root Gauss factorization at any Weyl-word root pair (`(l, i)` times
-`(l ++ [i], i)`).** Because `x_{[i],i}(b) = x₋ᵢ(-b)`, whenever `u = 1 - a b` is a unit of `A`, the
-product `x_{l,i}(a) x_{l ++ [i],i}(b)` at the opposite roots `±α` (`α` at `geckWeylRootIndex l i`)
-factors through the coroot torus point `k ↦ u ^ (coroot (geckWeylRootIndex l i) k)`. -/
-theorem geckWeylRootSubgroupPoints_mul_append_singleton_self (l : List (Fin t.rank))
-    (i : Fin t.rank) (A : Type v) [CommRing A] (a b : A) (u : Aˣ) (hu : (u : A) = 1 - a * b) :
-    t.geckWeylRootSubgroupPoints ht l i A (Multiplicative.ofAdd a) *
-        t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b) =
-      t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd (b * ↑u⁻¹)) *
-        t.geckWeightTorusPoints ht A
-          (fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k)) *
-        t.geckWeylRootSubgroupPoints ht l i A (Multiplicative.ofAdd (a * ↑u⁻¹)) := by
-  have hu' : (u : A) = 1 + a * (-b) := by rw [mul_neg, ← sub_eq_add_neg]; exact hu
-  have hsimple := t.geckRootSubgroupPoints_inl_mul_inr ht i A a (-b) u hu'
-  rw [neg_mul] at hsimple
-  calc
-    t.geckWeylRootSubgroupPoints ht l i A (Multiplicative.ofAdd a) *
-        t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b)
-      = t.geckWeylWordPoint ht l A *
-          (t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd a) *
-            t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-b))) *
-          (t.geckWeylWordPoint ht l A)⁻¹ := by
-        rw [geckWeylRootSubgroupPoints_append_singleton_self, geckWeylRootSubgroupPoints_apply]
-        group
-    _ = t.geckWeylWordPoint ht l A *
-          (t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-(b * ↑u⁻¹))) *
-            t.geckWeightTorusPoints ht A (Pi.mulSingle i u) *
-            t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹))) *
-          (t.geckWeylWordPoint ht l A)⁻¹ := by
-        rw [hsimple]
-    _ = (t.geckWeylWordPoint ht l A *
-            t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-(b * ↑u⁻¹))) *
-            (t.geckWeylWordPoint ht l A)⁻¹) *
-          (t.geckWeylWordPoint ht l A *
-            t.geckWeightTorusPoints ht A (Pi.mulSingle i u) *
-            (t.geckWeylWordPoint ht l A)⁻¹) *
-          (t.geckWeylWordPoint ht l A *
-            t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (a * ↑u⁻¹)) *
-            (t.geckWeylWordPoint ht l A)⁻¹) := by
-        group
-    _ = t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd (b * ↑u⁻¹)) *
-          t.geckWeightTorusPoints ht A
-            (fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k)) *
-          t.geckWeylRootSubgroupPoints ht l i A (Multiplicative.ofAdd (a * ↑u⁻¹)) := by
-        rw [← geckWeylRootSubgroupPoints_append_singleton_self,
-          geckWeylWordPoint_conj_geckWeightTorusPoints, geckWeylWordTorusAction_mulSingle,
-          ← geckWeylRootSubgroupPoints_apply]
-
-/-- **Opposite-root Gauss factorization at any Weyl-word root pair (`(l ++ [i], i)` times
-`(l, i)`).** Whenever `u = 1 - a b` is a unit of `A`, the product `x_{l ++ [i],i}(b) x_{l,i}(a)`
-factors through the inverse coroot torus point
-`k ↦ (u⁻¹) ^ (coroot (geckWeylRootIndex l i) k)`. -/
-theorem geckWeylRootSubgroupPoints_append_singleton_self_mul (l : List (Fin t.rank))
-    (i : Fin t.rank) (A : Type v) [CommRing A] (a b : A) (u : Aˣ) (hu : (u : A) = 1 - a * b) :
-    t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd b) *
-        t.geckWeylRootSubgroupPoints ht l i A (Multiplicative.ofAdd a) =
-      t.geckWeylRootSubgroupPoints ht l i A (Multiplicative.ofAdd (a * ↑u⁻¹)) *
-        t.geckWeightTorusPoints ht A
-          (fun k ↦ u⁻¹ ^ ((t.simplyConnectedRootDatum ht).coroot (t.geckWeylRootIndex ht l i) k)) *
-        t.geckWeylRootSubgroupPoints ht (l ++ [i]) i A (Multiplicative.ofAdd (b * ↑u⁻¹)) := by
-  have hneg : (u : A) = 1 - (-a) * (-b) := by simpa only [neg_mul_neg] using hu
-  have hinv := congrArg Inv.inv
-    (t.geckWeylRootSubgroupPoints_mul_append_singleton_self ht l i A (-a) (-b) u hneg)
-  simpa only [mul_inv_rev, ← map_inv, ofAdd_neg, inv_inv, neg_mul, Pi.inv_def, ← inv_zpow,
-    mul_assoc] using hinv
+  simpa only [Pi.mulSingle_inv] using map_ofAdd_mul_map_ofAdd_of_neg
+    (t.geckRootSubgroupPoints_inl_mul_inr ht i A (-a) (-b) u (by rwa [neg_mul_neg]))
 
 end
 

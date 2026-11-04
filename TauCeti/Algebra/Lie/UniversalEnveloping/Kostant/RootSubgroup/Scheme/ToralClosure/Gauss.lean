@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Group.OneParameterGauss
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Gauss
 
 /-!
@@ -110,11 +111,8 @@ theorem kostantToralRootSubgroupPoints_mul_kostantToralRootSubgroupPoints_f_e
         kostantToralWeightTorusPoints e h ρ M hM hnil b wt A (Pi.mulSingle c u⁻¹) *
         kostantToralRootSubgroupPoints e h ρ M hM hnil b wt j A
           (Multiplicative.ofAdd (s * ↑u⁻¹)) := by
-  have hneg : (u : A) = 1 + (-r) * (-s) := by simpa only [neg_mul_neg] using hu
-  have hinv := congrArg Inv.inv
+  simpa only [Pi.mulSingle_inv] using map_ofAdd_mul_map_ofAdd_of_neg
     (kostantToralRootSubgroupPoints_mul_kostantToralRootSubgroupPoints_e_f (c := c) (α := α)
-      e h ρ M hM hnil b wt hwt hT hα hαneg A (-r) (-s) u hneg)
-  simpa only [mul_inv_rev, ← map_inv, ofAdd_neg, inv_inv, neg_mul, Pi.mulSingle_inv,
-    mul_assoc] using hinv
+      e h ρ M hM hnil b wt hwt hT hα hαneg A (-r) (-s) u (by rwa [neg_mul_neg]))
 
 end TauCeti.UniversalEnvelopingAlgebra

@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne
 import Mathlib.Algebra.MvPolynomial.CommRing
 import Mathlib.RingTheory.Localization.Away.Basic
-import Mathlib.RingTheory.MvPolynomial.Basic
+import TauCeti.Algebra.Group.OneParameterGauss
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne
 
 /-!
 # Opposite-root Gauss factorization for a Kostant root pair
@@ -70,36 +70,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
 attribute [local instance high] Algebra.toModule
 
-/-- Package a ring homomorphism between `CommAlgCat ℤ` objects as a `CommAlgCat ℤ` morphism via
-preservation of integer casts, avoiding dependence on the specific `Algebra ℤ` instance stored on
-each object. -/
-private def commAlgHomOfRingHom (B C : CommAlgCat.{w} ℤ) (f : B →+* C) : B ⟶ C :=
-  CommAlgCat.ofHom { f with commutes' z := by simp [eq_intCast] }
-
-@[simp]
-private theorem commAlgHomOfRingHom_hom_apply (B C : CommAlgCat.{w} ℤ) (f : B →+* C) (x : B) :
-    (commAlgHomOfRingHom B C f).hom x = f x := by
-  simp [commAlgHomOfRingHom]
-
-@[simp]
-private theorem commAlgHomOfRingHom_hom_toRingHom (B C : CommAlgCat.{w} ℤ) (f : B →+* C) :
-    ((commAlgHomOfRingHom B C f).hom : B →+* C) = f := by
-  ext x
-  exact commAlgHomOfRingHom_hom_apply B C f x
-
-/-- If `p` and `q` are nonzero elements of an integral domain `P` such that `p` becomes a unit in
-`Localization.Away q`, then the localization lift `Localization.Away p →+* Localization.Away q` is
-injective. -/
-private theorem away_lift_injective_of_ne_zero {P : Type*} [CommRing P] [IsDomain P]
-    {p q : P} (hp : p ≠ 0) (hq : q ≠ 0)
-    (hpq : IsUnit (algebraMap P (Localization.Away q) p)) :
-    Function.Injective (IsLocalization.Away.lift (S := Localization.Away p) p hpq) := by
-  have hPp : Function.Injective (algebraMap P (Localization.Away p)) :=
-    IsLocalization.injective _ (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hp))
-  have hPq : Function.Injective (algebraMap P (Localization.Away q)) :=
-    IsLocalization.injective _ (Submonoid.powers_le.mpr (mem_nonZeroDivisors_of_ne_zero hq))
-  exact (IsLocalization.lift_injective_iff _).mpr fun _ _ => hPp.eq_iff.trans hPq.eq_iff.symm
-
 private abbrev GaussPoly := MvPolynomial (ULift.{w} (Fin 2)) ℤ
 
 private noncomputable def gaussPolyP₀ : GaussPoly.{w} :=
@@ -152,32 +122,30 @@ private theorem exists_gaussUniv_embedding :
   have hp₀K : IsUnit (algebraMap GaussPoly.{w} K gaussPolyP₀.{w}) :=
     IsLocalization.Away.isUnit_of_dvd q₀ ⟨x₀ * x₁, by ring⟩
   let B₁ : CommAlgCat.{w} ℤ := CommAlgCat.of ℤ K
-  let ι₀ : Localization.Away gaussPolyP₀.{w} →+* K :=
-    IsLocalization.Away.lift (S := Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w} hp₀K
-  have hι₀_inj : Function.Injective ι₀ :=
-    away_lift_injective_of_ne_zero gaussPolyP₀_ne_zero hq₀ hp₀K
-  refine ⟨B₁, commAlgHomOfRingHom gaussUnivObj.{w} B₁ ι₀, hsK.unit, htK.unit, hp₀K.unit,
-    ?_, ?_, ?_, ?_, ?_⟩
-  · intro a b hab
-    rw [commAlgHomOfRingHom_hom_apply, commAlgHomOfRingHom_hom_apply] at hab
-    exact hι₀_inj hab
+  let fK : GaussPoly.{w} →ₐ[ℤ] K := IsScalarTower.toAlgHom ℤ GaussPoly.{w} K
+  have hp₀K' : IsUnit (fK gaussPolyP₀.{w}) := hp₀K
+  let ι₀ : Localization.Away gaussPolyP₀.{w} →ₐ[ℤ] K :=
+    IsLocalization.Away.liftAlgHom (A := ℤ) (S := Localization.Away gaussPolyP₀.{w})
+      gaussPolyP₀.{w} (f := fK) hp₀K'
+  have hPp₀ : Function.Injective (algebraMap GaussPoly.{w} (Localization.Away gaussPolyP₀.{w})) :=
+    IsLocalization.injective _ (powers_le_nonZeroDivisors_of_noZeroDivisors gaussPolyP₀_ne_zero)
+  have hPK : Function.Injective (algebraMap GaussPoly.{w} K) :=
+    IsLocalization.injective _ (powers_le_nonZeroDivisors_of_noZeroDivisors hq₀)
+  have hι₀_inj : Function.Injective ι₀ := by
+    dsimp only [ι₀]
+    rw [IsLocalization.Away.coe_liftAlgHom]
+    exact (IsLocalization.lift_injective_iff _).mpr fun _ _ => hPp₀.eq_iff.trans hPK.eq_iff.symm
+  refine ⟨B₁, CommAlgCat.ofHom ι₀, hsK.unit, htK.unit, hp₀K.unit,
+    hι₀_inj, ?_, ?_, ?_, ?_⟩
   · rw [IsUnit.unit_spec, IsUnit.unit_spec, IsUnit.unit_spec]
     -- Expose the carrier `K` so `simp` expands `algebraMap` on `gaussPolyP₀`.
     change algebraMap GaussPoly.{w} K gaussPolyP₀.{w} =
       1 + algebraMap GaussPoly.{w} K x₀ * algebraMap GaussPoly.{w} K x₁
     simp [gaussPolyP₀, x₀, x₁]
-  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivR]
-    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
-      gaussPolyP₀.{w} hp₀K x₀).trans hsK.unit_spec.symm
-  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivS]
-    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
-      gaussPolyP₀.{w} hp₀K x₁).trans htK.unit_spec.symm
+  · simp [ι₀, fK, gaussUnivR, x₀]
+  · simp [ι₀, fK, gaussUnivS, x₁]
   · apply Units.ext
-    rw [Units.coe_map, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-      commAlgHomOfRingHom_hom_toRingHom]
-    exact (congrArg ι₀ gaussUnivU_val).trans
-      ((IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
-        gaussPolyP₀.{w} hp₀K gaussPolyP₀.{w}).trans hp₀K.unit_spec.symm)
+    simp [ι₀, fK, gaussUnivU_val]
 
 /-- Specialize `gaussUnivObj = ℤ[x₀, x₁][(1 + x₀ x₁)⁻¹]` to any `A : CommAlgCat ℤ` along
 `(x₀, x₁) ↦ (r, s)` whenever `u = 1 + r * s` is a unit of `A`. -/
@@ -187,33 +155,24 @@ private theorem exists_gaussUniv_specialization (A : CommAlgCat.{w} ℤ) (r s : 
       ψ.hom gaussUnivR.{w} = r ∧
       ψ.hom gaussUnivS.{w} = s ∧
       Units.map ψ.hom.toRingHom.toMonoidHom gaussUnivU.{w} = u := by
-  let evP : GaussPoly.{w} →+* A :=
-    MvPolynomial.eval₂Hom (algebraMap ℤ A) (fun k => if k.down = 0 then r else s)
+  let evP : GaussPoly.{w} →ₐ[ℤ] A :=
+    MvPolynomial.aeval (fun k => if k.down = 0 then r else s)
   have hevP_x₀ : evP (MvPolynomial.X (.up 0)) = r :=
-    MvPolynomial.eval₂Hom_X' (algebraMap ℤ A)
-      (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨0⟩
+    MvPolynomial.aeval_X (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨0⟩
   have hevP_x₁ : evP (MvPolynomial.X (.up 1)) = s :=
-    MvPolynomial.eval₂Hom_X' (algebraMap ℤ A)
-      (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨1⟩
+    MvPolynomial.aeval_X (fun k : ULift.{w} (Fin 2) => if k.down = 0 then r else s) ⟨1⟩
   have hevP_p₀ : evP gaussPolyP₀.{w} = (u : A) := by
     rw [hu]
     simp [gaussPolyP₀, hevP_x₀, hevP_x₁]
   have hp₀_unit : IsUnit (evP gaussPolyP₀.{w}) := hevP_p₀ ▸ u.isUnit
-  let ψ₀ : Localization.Away gaussPolyP₀.{w} →+* A :=
-    IsLocalization.Away.lift (S := Localization.Away gaussPolyP₀.{w}) gaussPolyP₀.{w} hp₀_unit
-  refine ⟨commAlgHomOfRingHom gaussUnivObj.{w} A ψ₀, ?_, ?_, ?_⟩
-  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivR]
-    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
-      gaussPolyP₀.{w} hp₀_unit _).trans hevP_x₀
-  · rw [commAlgHomOfRingHom_hom_apply, gaussUnivS]
-    exact (IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
-      gaussPolyP₀.{w} hp₀_unit _).trans hevP_x₁
+  let ψ₀ : Localization.Away gaussPolyP₀.{w} →ₐ[ℤ] A :=
+    IsLocalization.Away.liftAlgHom (A := ℤ) (S := Localization.Away gaussPolyP₀.{w})
+      gaussPolyP₀.{w} (f := evP) hp₀_unit
+  refine ⟨CommAlgCat.ofHom ψ₀, ?_, ?_, ?_⟩
+  · simp [ψ₀, gaussUnivR, hevP_x₀]
+  · simp [ψ₀, gaussUnivS, hevP_x₁]
   · apply Units.ext
-    rw [Units.coe_map, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
-      commAlgHomOfRingHom_hom_toRingHom]
-    exact (congrArg ψ₀ gaussUnivU_val).trans
-      ((IsLocalization.Away.lift_eq (S := Localization.Away gaussPolyP₀.{w})
-        gaussPolyP₀.{w} hp₀_unit _).trans hevP_p₀)
+    simp [ψ₀, gaussUnivU_val, hevP_p₀]
 
 section Gauss
 
@@ -410,11 +369,9 @@ theorem kostantRootSubgroupParam_mul_kostantRootSubgroupParam_e_f
       kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (s * ↑u⁻¹)) *
         kostantCoordinateCocharacter M b wt A c u *
         kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (r * ↑u⁻¹)) := by
-  have hneg : (u : A) = 1 + (-r) * (-s) := by simpa only [neg_mul_neg] using hu
-  have hinv := congrArg Inv.inv
+  simpa only [inv_inv] using map_ofAdd_mul_map_ofAdd_of_neg
     (kostantRootSubgroupParam_mul_kostantRootSubgroupParam_f_e (c := c) (α := α)
-      e h ρ M hM hi hj b wt hwt hT hα hαneg A (-r) (-s) u hneg)
-  simpa only [mul_inv_rev, ← map_inv, ofAdd_neg, inv_inv, neg_mul, mul_assoc] using hinv
+      e h ρ M hM hi hj b wt hwt hT hα hαneg A (-r) (-s) u (by rwa [neg_mul_neg]))
 
 end Gauss
 

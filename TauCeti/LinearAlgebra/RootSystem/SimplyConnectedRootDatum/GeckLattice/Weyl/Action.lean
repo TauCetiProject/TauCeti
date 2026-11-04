@@ -274,20 +274,11 @@ theorem geckWeylTorusAction_mulSingle (w : (t.simplyConnectedRootDatum ht).weylG
       fun k ↦ u ^ ((t.simplyConnectedRootDatum ht).coroot
         ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i)) k) := by
   funext k
-  let eₖ : Fin t.rank → ℤ := Pi.single k 1
   rw [← TauCeti.weightChar_single A k (t.geckWeylTorusAction ht A w (Pi.mulSingle i u)),
     TauCeti.weightChar_apply, t.torusCharacter_geckWeylTorusAction ht,
-    TauCeti.torusCharacter_mulSingle]
-  congr 1
-  refine (t.coroot'_simpleIndex_apply ht i (w⁻¹ • eₖ)).symm.trans ?_
-  have hw := w.1.coroot'_weightEquiv (t.simpleIndex ht i) (w⁻¹ • eₖ)
-  have hsmul : w.1.weightEquiv (w⁻¹ • eₖ) = eₖ := smul_inv_smul w eₖ
-  rw [← hw, hsmul]
-  -- Unfold `coroot'` as `LinearMap.flip` of `toLinearMap` so the dot-product formula applies.
-  change (t.simplyConnectedRootDatum ht).toLinearMap (Pi.single k 1)
-    ((t.simplyConnectedRootDatum ht).coroot
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm w (t.simpleIndex ht i))) = _
-  rw [t.toLinearMap_simplyConnectedRootDatum ht, single_dotProduct, one_mul]
+    TauCeti.torusCharacter_mulSingle, ← t.coroot'_simpleIndex_apply ht i (w⁻¹ • Pi.single k 1),
+    ← (t.simplyConnectedRootDatum ht).coroot'_weylGroupToPerm_smul w, smul_inv_smul,
+    t.coroot'_simplyConnectedRootDatum_apply ht, single_dotProduct, one_mul]
 
 end
 
