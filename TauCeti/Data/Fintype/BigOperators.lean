@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Sums over finite types
@@ -24,6 +25,11 @@ the maps with prescribed values at `i` and `j`, and then over all values of the 
 substituted with `Function.update`. Telescoping arguments use this to test one pair of
 coordinates while the others stay fixed. The same splitting at three distinct coordinates tests
 one triple of coordinates.
+
+Splitting at a single coordinate `e` averages it out: if `G` does not see the value at `e`, the
+sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
+(`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
+use this to discard every term containing a coordinate that occurs only once.
 -/
 
 public section
@@ -136,5 +142,28 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   rw [sum_comm]
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
+
+/-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
+its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
+theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [Fintype α]
+    [NonUnitalNonAssocSemiring R] (e : ι) {a : α → R} (ha : ∑ v, a v = 0)
+    {G : (ι → α) → R} (hG : ∀ f v, G (Function.update f e v) = G f) :
+    ∑ f : ι → α, a (f e) * G f = 0 := by
+  obtain hα | ⟨⟨w⟩⟩ := isEmpty_or_nonempty α
+  · have : IsEmpty (ι → α) := ⟨fun f ↦ hα.elim (f e)⟩
+    simp
+  -- Split off the coordinate `e`; the remaining factor does not see its value.
+  rw [← (Equiv.funSplitAt e α).symm.sum_comp, Fintype.sum_prod_type, sum_comm]
+  refine Finset.sum_eq_zero fun r _ ↦ ?_
+  have hsplit (v : α) : (Equiv.funSplitAt e α).symm (v, r) =
+      Function.update ((Equiv.funSplitAt e α).symm (w, r)) e v := by
+    ext j
+    by_cases hj : j = e
+    · subst hj; simp
+    · simp [hj]
+  calc ∑ v, a ((Equiv.funSplitAt e α).symm (v, r) e) * G ((Equiv.funSplitAt e α).symm (v, r))
+      = ∑ v, a v * G ((Equiv.funSplitAt e α).symm (w, r)) :=
+        Finset.sum_congr rfl fun v _ ↦ by rw [hsplit v, hG, Function.update_self]
+    _ = 0 := by rw [← sum_mul, ha, zero_mul]
 
 end Fintype
