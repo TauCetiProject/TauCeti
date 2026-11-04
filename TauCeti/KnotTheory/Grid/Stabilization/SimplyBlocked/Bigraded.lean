@@ -26,19 +26,17 @@ so its restricted-scalar `R`-linear equivalence is homogeneous of bidegree `(0, 
 to specified `R`-linear equivalences on every homogeneous homology piece
 (`oneVariableSpecializationStabilizeXHomologyPieceEquiv`).
 
-For a knot grid `G`, this gives bigraded stabilization invariance of simply blocked grid homology
-`G-hat` (`GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyPieceEquiv`). Unlike fully blocked
-grid homology `GH~`, whose Poincaré series is multiplied by `W` under stabilization, both the
-bigraded Poincaré series (`bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX`) and the
-Alexander-graded Euler characteristic (`gradedSimplyBlockedHomologyEulerChar_stabilizeX`) of
-`G-hat` over a field of characteristic two are unchanged by `X`-stabilization.
+For a knot grid (`hG : G.IsKnot`), applying this equivalence to `hG.toOddComponentGridDiagram` gives
+bigraded stabilization invariance of simply blocked grid homology `G-hat`. Unlike fully blocked grid
+homology `GH~`, whose Poincaré series is multiplied by `W` under stabilization, both the bigraded
+Poincaré series (`bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX`) and the Alexander-graded
+Euler characteristic (`gradedSimplyBlockedHomologyEulerChar_stabilizeX`) of `G-hat` over a field of
+characteristic two are unchanged by `X`-stabilization.
 
 ## Main definitions
 
 * `TauCeti.OddComponentGridDiagram.oneVariableSpecializationStabilizeXHomologyPieceEquiv`: the
   `R`-linear equivalence on bidegree-`g` homology pieces of the one-variable specialization.
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyPieceEquiv`: the knot-grid
-  specialization on bidegree-`g` pieces of `G-hat`.
 
 ## Main results
 
@@ -148,21 +146,12 @@ noncomputable def oneVariableSpecializationStabilizeXHomologyPieceEquiv (g : ℤ
   (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).ofSubmodules _ _ (by
     dsimp only [stabilizeX]
     ext y
-    rw [Submodule.mem_map]
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      rw [LinearEquiv.coe_coe, GridDiagram.oneVariableSpecializationStabilizeXHomologyEquiv_apply]
-      exact G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece s i R hx
-    · intro hy
-      let x := (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y
-      refine ⟨x, ?_, LinearEquiv.apply_symm_apply _ y⟩
-      refine (G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff
-        s i R g x).mp ?_
-      have hx : (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R x :
-          (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) = y :=
-        (G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R x).symm.trans
-          (LinearEquiv.apply_symm_apply _ y)
-      rwa [hx])
+    rw [Submodule.mem_map_equiv]
+    have h := G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff
+      s i R g ((G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y)
+    rw [← GridDiagram.oneVariableSpecializationStabilizeXHomologyEquiv_apply,
+      LinearEquiv.apply_symm_apply] at h
+    exact h.symm)
 
 /-- On homogeneous classes, `oneVariableSpecializationStabilizeXHomologyPieceEquiv` is the
 semilinear stabilization comparison. -/
@@ -197,96 +186,11 @@ namespace TauCeti.GridDiagram.IsKnot
 open OddComponentGridDiagram
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s i : Fin n)
+  (R : Type*) [Field R] [CharP R 2]
 
 local notation "j" => Fin.succAbove (Fin.castSucc s) i
 local notation "hG'" => Iff.mpr
   (GridDiagram.isKnot_stabilizeX G (Fin.castSucc s) (Fin.castSucc (GridDiagram.X G s)) s) hG
-
-section CommRing
-
-variable (R : Type*) [CommRing R] [CharP R 2]
-
-local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
-local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
-local notation "BaseA" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)
-local notation "BaseS" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)
-
-/-- The stabilization comparison on `G-hat` preserves both O-Maslov and Alexander degrees. -/
-theorem simplyBlockedStabilizeXHomologyMap_mem_bigradedHatHomologyPiece {g : ℤ × ℤ}
-    {y : (BaseS).obj ((hG').simplyBlockedHomology R j)}
-    (hy : y ∈ (hG').toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) :
-    hG.simplyBlockedStabilizeXHomologyMap s i R y ∈
-      hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g := by
-  rw [simplyBlockedStabilizeXHomologyMap_eq_oneVariableSpecializationStabilizeXHomologyMap]
-  exact oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece
-    hG.toOddComponentGridDiagram s i R hy
-
-/-- The stabilization comparison on `G-hat` reflects homology bidegrees as well as preserving
-them. -/
-@[simp]
-theorem simplyBlockedStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff
-    (g : ℤ × ℤ) (y : (BaseS).obj ((hG').simplyBlockedHomology R j)) :
-    hG.simplyBlockedStabilizeXHomologyMap s i R y ∈
-        hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g ↔
-      y ∈ (hG').toOddComponentGridDiagram.bigradedHatHomologyPiece R j g := by
-  rw [simplyBlockedStabilizeXHomologyMap_eq_oneVariableSpecializationStabilizeXHomologyMap]
-  exact oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff
-    hG.toOddComponentGridDiagram s i R g y
-
-/-- **Bigraded stabilization invariance of `G-hat`.** For a knot grid `G`, the stabilization
-comparison identifies each homogeneous piece of `G-hat` of the stabilized grid with the piece of
-the same bidegree in `G`. -/
-noncomputable def simplyBlockedStabilizeXHomologyPieceEquiv (g : ℤ × ℤ) :
-    (hG').toOddComponentGridDiagram.bigradedHatHomologyPiece R j g ≃ₗ[R]
-      hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g :=
-  oneVariableSpecializationStabilizeXHomologyPieceEquiv
-    hG.toOddComponentGridDiagram s i R g
-
-/-- The knot-facing homogeneous piece equivalence is the piece equivalence on the underlying
-odd-component one-variable specialization. -/
-theorem simplyBlockedStabilizeXHomologyPieceEquiv_eq (g : ℤ × ℤ) :
-    hG.simplyBlockedStabilizeXHomologyPieceEquiv s i R g =
-      hG.toOddComponentGridDiagram.oneVariableSpecializationStabilizeXHomologyPieceEquiv
-        s i R g :=
-  (rfl)
-
-/-- On homogeneous classes, `simplyBlockedStabilizeXHomologyPieceEquiv` is the semilinear
-stabilization comparison on `G-hat`. -/
-@[simp]
-theorem coe_simplyBlockedStabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
-    (y : (hG').toOddComponentGridDiagram.bigradedHatHomologyPiece R j g) :
-    (hG.simplyBlockedStabilizeXHomologyPieceEquiv s i R g y :
-        (BaseA).obj (hG.simplyBlockedHomology R i)) =
-      hG.simplyBlockedStabilizeXHomologyMap s i R y.1 := by
-  rw [simplyBlockedStabilizeXHomologyPieceEquiv_eq,
-    simplyBlockedStabilizeXHomologyMap_eq_oneVariableSpecializationStabilizeXHomologyMap]
-  exact coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_apply
-    hG.toOddComponentGridDiagram s i R g y
-
-/-- The inverse piece equivalence on `G-hat` is the inverse of the total homology equivalence. -/
-@[simp]
-theorem coe_simplyBlockedStabilizeXHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
-    (y : hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g) :
-    ((hG.simplyBlockedStabilizeXHomologyPieceEquiv s i R g).symm y :
-        (BaseS).obj ((hG').simplyBlockedHomology R j)) =
-      (hG.simplyBlockedStabilizeXHomologyEquiv s i R).symm y := by
-  rw [simplyBlockedStabilizeXHomologyPieceEquiv_eq,
-    simplyBlockedStabilizeXHomologyEquiv_eq_oneVariableSpecializationStabilizeXHomologyEquiv]
-  exact coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_symm_apply
-    hG.toOddComponentGridDiagram s i R g y
-
-/-- Stabilization preserves the `R`-rank of simply blocked knot-grid homology after restricting
-scalars to the ground ring. -/
-theorem finrank_restrictScalars_simplyBlockedHomology_stabilizeX :
-    Module.finrank R ((BaseS).obj ((hG').simplyBlockedHomology R j)) =
-      Module.finrank R ((BaseA).obj (hG.simplyBlockedHomology R i)) :=
-  (hG.simplyBlockedStabilizeXHomologyEquiv s i R).finrank_eq
-
-end CommRing
-
-section Field
-
-variable (R : Type*) [Field R] [CharP R 2]
 
 /-- **Stabilization invariance of the Poincaré series of `G-hat`.** Over any field of
 characteristic two, splitting the `X`-marking of column `s` and blocking the transported old
@@ -295,10 +199,12 @@ knot-grid homology. -/
 theorem bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX :
     (hG').bigradedSimplyBlockedHomologyPoincareSeries R j =
       hG.bigradedSimplyBlockedHomologyPoincareSeries R i := by
+  have hstab : (hG').toOddComponentGridDiagram = hG.toOddComponentGridDiagram.stabilizeX s :=
+    Subtype.ext (hG.toOddComponentGridDiagram.val_stabilizeX s).symm
   ext g
   rw [coeff_bigradedSimplyBlockedHomologyPoincareSeries,
-    coeff_bigradedSimplyBlockedHomologyPoincareSeries]
-  exact (hG.simplyBlockedStabilizeXHomologyPieceEquiv s i R g).finrank_eq
+    coeff_bigradedSimplyBlockedHomologyPoincareSeries, hstab]
+  exact hG.toOddComponentGridDiagram.finrank_bigradedHatHomologyPiece_stabilizeX s i R g
 
 /-- **Stabilization invariance of the Alexander-graded Euler characteristic of `G-hat`.** Over any
 field of characteristic two, `X`-stabilization preserves the Alexander-graded Euler characteristic
@@ -309,7 +215,5 @@ theorem gradedSimplyBlockedHomologyEulerChar_stabilizeX :
   rw [gradedSimplyBlockedHomologyEulerChar_eq_euler,
     gradedSimplyBlockedHomologyEulerChar_eq_euler,
     hG.bigradedSimplyBlockedHomologyPoincareSeries_stabilizeX s i R]
-
-end Field
 
 end TauCeti.GridDiagram.IsKnot

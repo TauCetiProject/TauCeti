@@ -157,7 +157,7 @@ theorem stabilizeXChainMap_mem_ker {c : GridChainMinus R (n + 1)}
   rw [← stabilizeXChainMap_unblockedDifferential, hc, map_zero]
 
 /-- Every cycle of `GC⁻(G)` differs from the image of a cycle of `GC⁻(G')` by a boundary. -/
-private theorem exists_sub_stabilizeXChainMap_mem_range {c : GridChainMinus R n}
+theorem exists_sub_stabilizeXChainMap_mem_range {c : GridChainMinus R n}
     (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
     ∃ m ∈ LinearMap.ker ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedDifferential R),
       c - G.stabilizeXChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R) := by
@@ -168,7 +168,7 @@ private theorem exists_sub_stabilizeXChainMap_mem_range {c : GridChainMinus R n}
   exact ⟨m, hm, G.stabilizeXMap'_f_apply s R m ▸ hcm⟩
 
 /-- A cycle of `GC⁻(G')` whose image in `GC⁻(G)` is a boundary is itself a boundary. -/
-private theorem mem_range_of_stabilizeXChainMap_mem_range {m : GridChainMinus R (n + 1)}
+theorem mem_range_of_stabilizeXChainMap_mem_range {m : GridChainMinus R (n + 1)}
     (hm : m ∈ LinearMap.ker ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedDifferential R))
     (h : G.stabilizeXChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R)) :
     m ∈ LinearMap.range ((G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedDifferential R) := by

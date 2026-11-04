@@ -21,21 +21,20 @@ merges the two variables of the stabilization block along `s.predAbove` and sets
 
 This file descends that chain map to a specified semilinear map on the homology of the one-variable
 specialization for any grid diagram (`GridDiagram.oneVariableSpecializationStabilizeXHomologyMap`),
-and therefore on simply blocked grid homology `G-hat` for a knot grid
-(`GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyMap`), sending each cycle class to the class of
-its stabilization image.
+sending each cycle class to the class of its stabilization image. For a knot grid (`G.IsKnot`), the
+one-variable specialization is simply blocked grid homology `G-hat`
+(`GridDiagram.IsKnot.simplyBlockedHomology`), so these declarations apply directly to `G-hat`.
 
 It then proves that this map is bijective
-(`oneVariableSpecializationStabilizeXHomologyMap_bijective` and
-`IsKnot.simplyBlockedStabilizeXHomologyMap_bijective`), establishing invariance of `G-hat` under
-this `X`-stabilization. The proof lifts specialized chains to `GC⁻`, where specialization at
-`V_j = 0` or `V_i = 0` has kernel equal to the multiples of that variable, multiplication by a
-variable is injective, and `GridDiagram.stabilizeXChainMap` induces a bijection on unblocked
-homology (`GridDiagram.stabilizeXHomologyMap_bijective`) while carrying `V_j`-multiples to
-`V_i`-multiples. Since the coefficient homomorphism `simplyBlockedStabilizeXRingHom` fixes
-ground-ring scalars, restricting scalars along `MvPolynomial.C` packages the bijection as an
-`R`-linear equivalence (`oneVariableSpecializationStabilizeXHomologyEquiv` and
-`IsKnot.simplyBlockedStabilizeXHomologyEquiv`). Bigrading compatibility is treated in
+(`oneVariableSpecializationStabilizeXHomologyMap_bijective`), establishing invariance of the
+one-variable specialization—and hence of `G-hat` for a knot grid—under this `X`-stabilization. The
+proof lifts specialized chains to `GC⁻`, where specialization at `V_j = 0` or `V_i = 0` has kernel
+equal to the multiples of that variable, multiplication by a variable is injective, and
+`GridDiagram.stabilizeXChainMap` induces a bijection on unblocked homology
+(`GridDiagram.stabilizeXHomologyMap_bijective`) while carrying `V_j`-multiples to `V_i`-multiples.
+Since the coefficient homomorphism `simplyBlockedStabilizeXRingHom` fixes ground-ring scalars,
+restricting scalars along `MvPolynomial.C` packages the bijection as an `R`-linear equivalence
+(`oneVariableSpecializationStabilizeXHomologyEquiv`). Bigrading compatibility is treated in
 `TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Bigraded`.
 
 ## Main definitions
@@ -45,17 +44,12 @@ ground-ring scalars, restricting scalars along `MvPolynomial.C` packages the bij
   comparisons on cycles and homology of the one-variable specialization of an arbitrary grid.
 * `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXHomologyEquiv`: the homology comparison
   as an `R`-linear equivalence after restricting scalars to the ground ring.
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXCyclesMap`,
-  `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyMap`, and
-  `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyEquiv`: the knot-grid specializations
-  on `G-hat`.
 
 ## Main results
 
-* `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXHomologyMap_bijective`: the stabilization
-  comparison is bijective on the homology of the one-variable specialization of any grid diagram.
-* `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyMap_bijective`: **stabilization
-  invariance of `G-hat`** for the south-west corner `X`-stabilization.
+* `TauCeti.GridDiagram.oneVariableSpecializationStabilizeXHomologyMap_bijective`: **stabilization
+  invariance for the one-variable specialization** (and therefore of `G-hat` for a knot grid) under
+  the south-west corner `X`-stabilization.
 
 ## References
 
@@ -69,8 +63,6 @@ public section
 open CategoryTheory
 
 namespace TauCeti.GridDiagram
-
-section OneVariableSpecialization
 
 variable {n : ℕ} (G : GridDiagram n) (s i : Fin n)
   (R : Type*) [CommRing R] [CharP R 2]
@@ -203,36 +195,16 @@ private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
   rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
   simp [Fin.predAbove_succAbove]
 
-/-- A cycle of `GC⁻(G')` whose stabilization image in `GC⁻(G)` is a boundary is itself a
-boundary. -/
-private theorem mem_range_unblockedDifferential_of_stabilizeXChainMap
-    {m : GridChainMinus R (n + 1)}
-    (hm : m ∈ LinearMap.ker ((G').unblockedDifferential R))
-    (h : G.stabilizeXChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R)) :
-    m ∈ LinearMap.range ((G').unblockedDifferential R) := by
-  rw [← (G').unblockedHomologyClass_eq_zero_iff R ⟨m, hm⟩]
-  refine (G.stabilizeXHomologyMap_bijective s R).1 ?_
-  rw [G.stabilizeXHomologyMap_unblockedHomologyClass s R ⟨m, hm⟩, map_zero,
-    G.unblockedHomologyClass_eq_zero_iff]
-  exact h
-
-/-- Every cycle of `GC⁻(G)` differs from the stabilization image of a cycle of `GC⁻(G')` by an
-unblocked boundary. -/
-private theorem exists_sub_stabilizeXChainMap_mem_range_unblockedDifferential
-    {c : GridChainMinus R n}
-    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
-    ∃ m ∈ LinearMap.ker ((G').unblockedDifferential R),
-      c - G.stabilizeXChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R) := by
-  obtain ⟨y, hy⟩ := (G.stabilizeXHomologyMap_bijective s R).2
-    (G.unblockedHomologyClass R ⟨c, hc⟩)
-  obtain ⟨m, rfl⟩ := (G').unblockedHomologyClass_surjective R y
-  rw [G.stabilizeXHomologyMap_unblockedHomologyClass] at hy
-  have hsub : G.unblockedHomologyClass R ⟨c, hc⟩ -
-      G.unblockedHomologyClass R
-        ⟨G.stabilizeXChainMap s R m, G.stabilizeXChainMap_mem_ker s R m.2⟩ = 0 := by
-    rw [← hy, sub_self]
-  rw [← map_sub, G.unblockedHomologyClass_eq_zero_iff, Submodule.coe_sub] at hsub
-  exact ⟨m, m.2, hsub⟩
+/-- If `V_k • P = ∂ Z` in `GC⁻`, regularity of `V_k` and `∂² = 0` imply that `P` is a cycle. -/
+private theorem mem_ker_unblockedDifferential_of_X_smul_eq {m : ℕ} (H : GridDiagram m) (k : Fin m)
+    {P Z : GridChainMinus R m}
+    (hP : (MvPolynomial.X k : MvPolynomial (Fin m) R) • P = H.unblockedDifferential R Z) :
+    P ∈ LinearMap.ker (H.unblockedDifferential R) := by
+  rw [LinearMap.mem_ker]
+  refine X_smul_gridChainMinus_injective R k ?_
+  dsimp only
+  rw [smul_zero, ← LinearMap.map_smul, hP]
+  exact LinearMap.congr_fun (H.unblockedDifferential_comp_self_eq_zero R) Z
 
 /-- If an unblocked chain `Z'` of `G'` becomes a cycle at `V_j = 0` and its stabilization image
 becomes a boundary at `V_i = 0`, then `Z'` is already a boundary at `V_j = 0`. -/
@@ -255,12 +227,8 @@ private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
       G.unblockedDifferential R W + (MvPolynomial.X i : MvPolynomial (Fin n) R) • Q := by
     rw [hQ, add_sub_cancel]
   -- Since `∂' Z' = V_j • P'` and `∂'² = 0`, regularity of `V_j` shows `P'` is an unblocked cycle.
-  have hdP' : P' ∈ LinearMap.ker ((G').unblockedDifferential R) := by
-    rw [LinearMap.mem_ker]
-    refine X_smul_gridChainMinus_injective R j ?_
-    dsimp only
-    rw [smul_zero, ← LinearMap.map_smul, hP']
-    exact LinearMap.congr_fun ((G').unblockedDifferential_comp_self_eq_zero R) Z'
+  have hdP' : P' ∈ LinearMap.ker ((G').unblockedDifferential R) :=
+    mem_ker_unblockedDifferential_of_X_smul_eq R (G') j hP'
   -- Applying `S` to `∂' Z' = V_j • P'` and comparing with `∂ (S Z')` shows `S P' = ∂ Q`.
   have hSP' : G.stabilizeXChainMap s R P' = G.unblockedDifferential R Q := by
     have hdW : G.unblockedDifferential R (G.unblockedDifferential R W) = 0 :=
@@ -276,13 +244,13 @@ private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
       _ = (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.unblockedDifferential R Q := by
           rw [hSZ', map_add, LinearMap.map_smul, hdW, zero_add]
   obtain ⟨R', hR'⟩ :=
-    G.mem_range_unblockedDifferential_of_stabilizeXChainMap s R hdP' ⟨Q, hSP'.symm⟩
+    G.mem_range_of_stabilizeXChainMap_mem_range s R hdP' ⟨Q, hSP'.symm⟩
   -- Correct `Q` by `S R'` to obtain a cycle in `GC⁻(G)`, then lift its class to `M' ∈ ker ∂'`.
   have hdQ : Q - G.stabilizeXChainMap s R R' ∈ LinearMap.ker (G.unblockedDifferential R) := by
     rw [LinearMap.mem_ker, map_sub, ← G.stabilizeXChainMap_unblockedDifferential, hR',
       hSP', sub_self]
   obtain ⟨M', hM', U, hU⟩ :=
-    G.exists_sub_stabilizeXChainMap_mem_range_unblockedDifferential s R hdQ
+    G.exists_sub_stabilizeXChainMap_mem_range s R hdQ
   -- Subtracting `V_j • (R' + M')` does not change the specialization at `V_j = 0`, and turns `Z'`
   -- into an unblocked cycle whose image in `GC⁻(G)` is a boundary.
   let Z₀' := Z' - (MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • (R' + M')
@@ -295,7 +263,7 @@ private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
     simp only [Z₀', map_sub, G.stabilizeXChainMap_X_smul, map_add, hSZ', smul_sub, smul_add]
     abel
   obtain ⟨W', hW'⟩ :=
-    G.mem_range_unblockedDifferential_of_stabilizeXChainMap s R hdZ₀' hSZ₀'
+    G.mem_range_of_stabilizeXChainMap_mem_range s R hdZ₀' hSZ₀'
   refine ⟨simplyBlockedSpecialization R j W', ?_⟩
   rw [← (G').simplyBlockedSpecialization_unblockedDifferential R j W', hW']
   simp only [Z₀', map_sub, simplyBlockedSpecialization_X_smul, sub_zero]
@@ -313,14 +281,10 @@ private theorem exists_simplyBlockedSpecialization_stabilizeXChainMap_sub_mem_ra
             LinearMap.range (G.simplyBlockedDifferential R i) := by
   obtain ⟨P, hP⟩ : ∃ P, (MvPolynomial.X i : MvPolynomial (Fin n) R) • P = _ :=
     (exact_X_smul_simplyBlockedSpecialization R i _).mp hZ
-  have hdP : P ∈ LinearMap.ker (G.unblockedDifferential R) := by
-    rw [LinearMap.mem_ker]
-    refine X_smul_gridChainMinus_injective R i ?_
-    dsimp only
-    rw [smul_zero, ← LinearMap.map_smul, hP]
-    exact LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) Z
+  have hdP : P ∈ LinearMap.ker (G.unblockedDifferential R) :=
+    mem_ker_unblockedDifferential_of_X_smul_eq R G i hP
   obtain ⟨M', hM', U, hU⟩ :=
-    G.exists_sub_stabilizeXChainMap_mem_range_unblockedDifferential s R hdP
+    G.exists_sub_stabilizeXChainMap_mem_range s R hdP
   -- The cycle `V_j • M'` maps to `V_i • S M' = ∂ (Z - V_i • U)`, so it is an unblocked boundary
   -- `∂' C'`; then `C'` is a cycle at `V_j = 0`.
   have hdXM' : (MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • M' ∈
@@ -333,14 +297,14 @@ private theorem exists_simplyBlockedSpecialization_stabilizeXChainMap_sub_mem_ra
     rw [map_sub, LinearMap.map_smul, hU, smul_sub, hP, G.stabilizeXChainMap_X_smul]
     abel
   obtain ⟨C', hC'⟩ :=
-    G.mem_range_unblockedDifferential_of_stabilizeXChainMap s R hdXM' hSXM'
+    G.mem_range_of_stabilizeXChainMap_mem_range s R hdXM' hSXM'
   have hdZ' : (Z - (MvPolynomial.X i : MvPolynomial (Fin n) R) • U) -
       G.stabilizeXChainMap s R C' ∈ LinearMap.ker (G.unblockedDifferential R) := by
     rw [LinearMap.mem_ker, map_sub, ← G.stabilizeXChainMap_unblockedDifferential, hC',
       map_sub, LinearMap.map_smul, hU, smul_sub, hP, G.stabilizeXChainMap_X_smul]
     abel
   obtain ⟨N', hN', V, hV⟩ :=
-    G.exists_sub_stabilizeXChainMap_mem_range_unblockedDifferential s R hdZ'
+    G.exists_sub_stabilizeXChainMap_mem_range s R hdZ'
   refine ⟨C' + N', ?_, simplyBlockedSpecialization R i V, ?_⟩
   · rw [map_add, hC', LinearMap.mem_ker.mp hN', add_zero, simplyBlockedSpecialization_X_smul]
   · rw [← G.simplyBlockedSpecialization_unblockedDifferential R i V, hV]
@@ -416,101 +380,5 @@ theorem oneVariableSpecializationStabilizeXHomologyEquiv_apply
     G.oneVariableSpecializationStabilizeXHomologyEquiv s i R y =
       G.oneVariableSpecializationStabilizeXHomologyMap s i R y :=
   (rfl)
-
-end OneVariableSpecialization
-
-namespace IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s i : Fin n)
-  (R : Type*) [CommRing R] [CharP R 2]
-
-local notation "j" => Fin.succAbove (Fin.castSucc s) i
-local notation "G'" => GridDiagram.stabilizeX G (Fin.castSucc s)
-  (Fin.castSucc (GridDiagram.X G s)) s
-local notation "hG'" => Iff.mpr
-  (GridDiagram.isKnot_stabilizeX G (Fin.castSucc s) (Fin.castSucc (GridDiagram.X G s)) s) hG
-local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
-local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
-
-/-- Stabilization on simply blocked cycles, with the chosen old marking blocked in each grid. -/
-noncomputable def simplyBlockedStabilizeXCyclesMap :
-    (hG').simplyBlockedCycles R j →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
-      hG.simplyBlockedCycles R i :=
-  G.oneVariableSpecializationStabilizeXCyclesMap s i R
-
-/-- The knot-facing stabilization map on cycles is the stabilization map on cycles of the underlying
-one-variable specialization. -/
-theorem simplyBlockedStabilizeXCyclesMap_eq_oneVariableSpecializationStabilizeXCyclesMap :
-    hG.simplyBlockedStabilizeXCyclesMap s i R =
-      G.oneVariableSpecializationStabilizeXCyclesMap s i R :=
-  (rfl)
-
-/-- Under the explicit chain identifications, the map on cycles is the specialized
-stabilization map. -/
-@[simp]
-theorem simplyBlockedChainEquiv_simplyBlockedStabilizeXCyclesMap
-    (z : (hG').simplyBlockedCycles R j) :
-    G.simplyBlockedChainEquiv R i (hG.simplyBlockedStabilizeXCyclesMap s i R z) =
-      G.simplyBlockedStabilizeXMap s i R ((G').simplyBlockedChainEquiv R j z) :=
-  G.simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap s i R z
-
-/-- The specified semilinear stabilization comparison on simply blocked knot grid homology,
-from the stabilized grid to the old grid. -/
-noncomputable def simplyBlockedStabilizeXHomologyMap :
-    (hG').simplyBlockedHomology R j →ₛₗ[simplyBlockedStabilizeXRingHom s i R]
-      hG.simplyBlockedHomology R i :=
-  G.oneVariableSpecializationStabilizeXHomologyMap s i R
-
-/-- The knot-facing stabilization homology map is the stabilization map on the underlying
-one-variable specialization. -/
-theorem simplyBlockedStabilizeXHomologyMap_eq_oneVariableSpecializationStabilizeXHomologyMap :
-    hG.simplyBlockedStabilizeXHomologyMap s i R =
-      G.oneVariableSpecializationStabilizeXHomologyMap s i R :=
-  (rfl)
-
-/-- The stabilization comparison takes a cycle class to the class of its specified
-stabilization image. -/
-@[simp]
-theorem simplyBlockedStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
-    (z : (hG').simplyBlockedCycles R j) :
-    hG.simplyBlockedStabilizeXHomologyMap s i R
-        ((G').oneVariableSpecializationHomologyClass R j z) =
-      G.oneVariableSpecializationHomologyClass R i
-        (hG.simplyBlockedStabilizeXCyclesMap s i R z) :=
-  G.oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass s i R z
-
-/-- **Stabilization invariance of `G-hat`.** For a knot grid `G`, the stabilization map from the
-simply blocked homology of `G.stabilizeX s.castSucc (G.X s).castSucc s` (blocking the transported
-old marking `s.castSucc.succAbove i`) to `G-hat` of `G` (blocking column `i`) is bijective. -/
-theorem simplyBlockedStabilizeXHomologyMap_bijective :
-    Function.Bijective (hG.simplyBlockedStabilizeXHomologyMap s i R) :=
-  G.oneVariableSpecializationStabilizeXHomologyMap_bijective s i R
-
-/-- The stabilization comparison on simply blocked knot grid homology, packaged as an `R`-linear
-equivalence after restricting scalars to the ground ring `R`. -/
-noncomputable def simplyBlockedStabilizeXHomologyEquiv :
-    (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
-        ((hG').simplyBlockedHomology R j) ≃ₗ[R]
-      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
-        (hG.simplyBlockedHomology R i) :=
-  G.oneVariableSpecializationStabilizeXHomologyEquiv s i R
-
-/-- The knot-facing `R`-linear homology equivalence is the equivalence on the underlying
-one-variable specialization. -/
-theorem simplyBlockedStabilizeXHomologyEquiv_eq_oneVariableSpecializationStabilizeXHomologyEquiv :
-    hG.simplyBlockedStabilizeXHomologyEquiv s i R =
-      G.oneVariableSpecializationStabilizeXHomologyEquiv s i R :=
-  (rfl)
-
-/-- On elements, `simplyBlockedStabilizeXHomologyEquiv` is the semilinear stabilization map. -/
-@[simp]
-theorem simplyBlockedStabilizeXHomologyEquiv_apply
-    (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
-      ((hG').simplyBlockedHomology R j)) :
-    hG.simplyBlockedStabilizeXHomologyEquiv s i R y =
-      hG.simplyBlockedStabilizeXHomologyMap s i R y :=
-  (rfl)
-
-end IsKnot
 
 end TauCeti.GridDiagram
