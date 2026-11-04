@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
 
@@ -82,6 +83,12 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal complements of an arbitrary bilinear form.
 * `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
   of a nondegenerate bilinear space has at most half the ambient dimension.
+* `LinearMap.exists_nondegenerate_compr₂_of_injective`: identifying a line with the scalars turns
+  an injective line-valued bilinear form into a nondegenerate bilinear form.
+* `LinearMap.two_mul_finrank_le_finrank_of_injective`: a subspace isotropic for a nondegenerate
+  line-valued bilinear form has at most half the dimension.
+* `LinearMap.mem_of_injective_of_two_mul_finrank_eq`: such a subspace of exactly half the
+  dimension is its own orthogonal for that form.
 
 ## References
 
@@ -627,6 +634,60 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
   exact ⟨b, hb, hbzero, (hbsucc 0).trans (congrArg Subtype.val hvzero)⟩
 
 end LinearMap.BilinForm
+
+namespace LinearMap
+
+/-- **Identifying a line with the scalars turns an injective line-valued form into a
+nondegenerate bilinear form.** If `L : V → Hom(V, Q)` is injective and `Q` is one-dimensional,
+then some linear equivalence `e : Q ≃ K` makes `e ∘ L` a nondegenerate bilinear form on `V`. -/
+theorem exists_nondegenerate_compr₂_of_injective {K V Q : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q} (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1) :
+    ∃ e : Q ≃ₗ[K] K, BilinForm.Nondegenerate (L.compr₂ e.toLinearMap) := by
+  have : FiniteDimensional K Q := Module.finite_of_finrank_eq_succ hQ
+  refine ⟨LinearEquiv.ofFinrankEq Q K (by rw [hQ, Module.finrank_self]),
+    .ofSeparatingLeft fun v hv ↦ hinj ?_⟩
+  rw [map_zero]
+  ext w
+  simpa using hv w
+
+/-- **A subspace isotropic for a nondegenerate line-valued bilinear form has at most half the
+dimension.** If the bilinear form `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and
+`L` vanishes on `W × W`, then `2 dim W ≤ dim V`. This applies, for instance, to the Levi form of a
+contact structure. -/
+theorem two_mul_finrank_le_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q} (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1)
+    {W : Submodule K V} (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0) :
+    2 * Module.finrank K W ≤ Module.finrank K V := by
+  obtain ⟨e, hB⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
+  refine BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hB fun v hv ↦ ?_
+  rw [BilinForm.mem_orthogonal_iff]
+  intro w hw
+  simp [hW w hw v hv]
+
+/-- **An isotropic subspace of half the dimension is its own orthogonal.** If
+`L : V → Hom(V, Q)` is injective, `Q` is one-dimensional, `L` vanishes on `W × W` and
+`2 dim W = dim V`, then every vector `a` with `L a b = 0` for all `b ∈ W` lies in `W`. This is the
+maximality of Lagrangian subspaces for a line-valued nondegenerate form. -/
+theorem mem_of_injective_of_two_mul_finrank_eq {K V Q : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q} (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1)
+    {W : Submodule K V} (hW : ∀ v ∈ W, ∀ w ∈ W, L v w = 0)
+    (hdim : 2 * Module.finrank K W = Module.finrank K V) {a : V} (ha : ∀ b ∈ W, L a b = 0) :
+    a ∈ W := by
+  obtain ⟨e, hB⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
+  -- The flipped form `B b a = e (L a b)` is nondegenerate, and `W` is its own orthogonal.
+  let B : LinearMap.BilinForm K V := BilinForm.flip (L.compr₂ e.toLinearMap)
+  have hle : W ≤ B.orthogonal W := fun v hv ↦ (BilinForm.mem_orthogonal_iff).2 fun w hw ↦ by
+    simp [B, hW v hv w hw]
+  have heq : W = B.orthogonal W :=
+    Submodule.eq_of_le_of_finrank_eq hle (by rw [BilinForm.finrank_orthogonal hB.flip]; omega)
+  rw [heq, BilinForm.mem_orthogonal_iff]
+  intro b hb
+  simp [B, ha b hb]
+
+end LinearMap
 
 namespace LinearMap.BilinForm
 
