@@ -42,6 +42,8 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
 
 * `AddSubmonoid.FG.comap`: preimages of finitely generated additive submonoids are finitely
   generated when the source monoid is finitely generated and the target is cancellative.
+* `Submonoid.exists_finset_inclusion_mul` and `AddSubmonoid.exists_finset_inclusion_add`:
+  restricting an ambient finite translate covering of `T` over `S ≤ T` to the subtype `T`.
 * `AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_add` and
   `AddSubmonoid.FG.exists_finset_subset_nsmulSaturation_inf_closure_add`: bounded-shift covering of
   saturations over `S`.
@@ -87,6 +89,24 @@ theorem _root_.AddSubmonoid.FG.comap {M G : Type*} [AddCommMonoid M] [AddCommMon
 
 end TauCeti
 
+namespace Submonoid
+
+/-- Given submonoids `S ≤ T` of `M`, an ambient covering of `T` by finitely many left translates
+of `S` restricts to a finite covering of the subtype `T` along `Submonoid.inclusion hST`. -/
+@[to_additive
+/-- Given additive submonoids `S ≤ T` of `M`, an ambient covering of `T` by finitely many shifts
+of `S` restricts to a finite covering of the subtype `T` along `AddSubmonoid.inclusion hST`. -/]
+theorem exists_finset_inclusion_mul {M : Type*} [MulOneClass M] {S T : Submonoid M}
+    (hST : S ≤ T) (hF : ∃ F : Finset M, (F : Set M) ⊆ T ∧ ∀ x ∈ T, ∃ z ∈ F, ∃ s ∈ S, x = z * s) :
+    ∃ F : Finset T, ∀ x : T, ∃ z ∈ F, ∃ s : S, x = z * Submonoid.inclusion hST s := by
+  classical
+  obtain ⟨F, hF_sub, hF_mul⟩ := hF
+  refine ⟨F.subtype (· ∈ T), fun x => ?_⟩
+  obtain ⟨z, hz, s, hs, hxz⟩ := hF_mul x.1 x.2
+  exact ⟨⟨z, hF_sub hz⟩, Finset.mem_subtype.mpr hz, ⟨s, hs⟩, Subtype.ext hxz⟩
+
+end Submonoid
+
 namespace AddSubmonoid
 
 section AmbientLattice
@@ -97,16 +117,17 @@ private theorem abs_repr_le_of_nsmul_eq_sum {ι : Type*} (b : Module.Basis ι �
     {m n : ℕ} (hn : 0 < n) (a : Fin m → L) (r : Fin m → ℕ) (hr : ∀ j, r j < n) {z : L}
     (hz : n • z = ∑ j, r j • a j) (i : ι) :
     |b.repr z i| ≤ ∑ j, |b.repr (a j) i| := by
-  have h1 : (n : ℤ) * |b.repr z i| = |b.repr (n • z) i| := by
-    rw [map_nsmul, Finsupp.smul_apply, nsmul_eq_mul, abs_mul,
-      abs_of_pos (by exact_mod_cast hn : (0 : ℤ) < n)]
-  have h2 : |b.repr (n • z) i| ≤ (n : ℤ) * ∑ j, |b.repr (a j) i| := by
-    rw [hz, map_sum, Finsupp.finsetSum_apply, Finset.mul_sum]
-    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
-    rw [map_nsmul, Finsupp.smul_apply, nsmul_eq_mul, abs_mul,
-      abs_of_nonneg (Nat.cast_nonneg (r j))]
-    exact mul_le_mul_of_nonneg_right (Int.ofNat_le.mpr (hr j).le) (abs_nonneg _)
-  exact le_of_mul_le_mul_left (h1.trans_le h2) (by exact_mod_cast hn : (0 : ℤ) < n)
+  have hle : (n : ℤ) * |b.repr z i| ≤ (n : ℤ) * ∑ j, |b.repr (a j) i| := by
+    calc (n : ℤ) * |b.repr z i|
+      _ = |b.repr (n • z) i| := by simp [abs_mul]
+      _ = |∑ j, (r j : ℤ) * b.repr (a j) i| := by simp [hz]
+      _ ≤ ∑ j, |(r j : ℤ) * b.repr (a j) i| := Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ j, (n : ℤ) * |b.repr (a j) i| := Finset.sum_le_sum fun j _ => by
+          rw [abs_mul, Nat.abs_cast]
+          gcongr
+          exact (hr j).le
+      _ = (n : ℤ) * ∑ j, |b.repr (a j) i| := (Finset.mul_sum _ _ _).symm
+  exact le_of_mul_le_mul_left hle (by exact_mod_cast hn)
 
 variable [Module.Finite ℤ L] [HasUniqueDiv L]
 
@@ -145,12 +166,13 @@ theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S
   let r : Fin m → ℕ := fun j => k j % n
   let s : L := g q
   let z : L := x - s
+  have hqr : n • q + r = k := by
+    ext j
+    simp [q, r, Nat.div_add_mod]
   have hnz : n • z = g r := by
-    dsimp only [z, s]
-    rw [smul_sub, ← hk, hg_eq k, hg_eq q, hg_eq r, Finset.smul_sum, sub_eq_iff_eq_add,
-      ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [smul_smul, ← add_smul, add_comm, Nat.div_add_mod]
+    have hmap := congrArg g hqr
+    simp only [map_add, map_nsmul, hk] at hmap
+    simp [z, s, smul_sub, ← hmap]
   have hz_sat : z ∈ S.nsmulSaturation :=
     mem_nsmulSaturation.mpr ⟨n, hn, hnz ▸ hg ▸ ⟨r, rfl⟩⟩
   have hz_bound : ∀ i, |b.repr z i| ≤ B i :=
@@ -185,8 +207,7 @@ theorem FG.exists_finset_subset_nsmulSaturation_inf_closure_add {S : AddSubmonoi
         ∀ x ∈ S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid,
           ∃ z ∈ F, ∃ s ∈ S, x = z + s := by
   classical
-  have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
-    Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
+  have := hS.moduleFinite_addSubgroup_closure
   obtain ⟨F₀, hF₀_sub, hF₀_add⟩ :=
     hS.comap_subtype_closure.exists_finset_subset_nsmulSaturation_add
   refine ⟨F₀.image Subtype.val, ?_, fun x hx => ?_⟩
@@ -207,8 +228,7 @@ theorem FG.exists_finset_subset_nsmulSaturation_inf_closure_add {S : AddSubmonoi
 submonoid `S` to `AddSubgroup.closure (S : Set G)` is finitely generated. -/
 theorem FG.nsmulSaturation_comap_subtype_closure {S : AddSubmonoid G} (hS : S.FG) :
     (S.comap (AddSubgroup.closure (S : Set G)).subtype).nsmulSaturation.FG := by
-  have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
-    Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
+  have := hS.moduleFinite_addSubgroup_closure
   exact hS.comap_subtype_closure.nsmulSaturation
 
 /-- In any torsion-free abelian group `G`, the saturation of a finitely generated submonoid `S`

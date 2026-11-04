@@ -32,8 +32,8 @@ without enlarging the lattice.
 
 This file establishes the ring-theoretic normalization theory of `R[S]`:
 * **Finite normalization**: bounded-shift representatives of `S_sat` modulo `S` make `R[S_sat]` a
-  finite `R[S]`-algebra (`AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation` and
-  `AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure`).
+  finite `R[S]`-algebra (`AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_finite` and
+  `AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite`).
 * **Descent to coefficients and Laurent polynomial normality**: if `R[M]` is integrally closed for
   any commutative monoid `M`, then `R` is integrally closed
   (`AddMonoidAlgebra.isIntegrallyClosed_of_addMonoidAlgebra`); conversely, over an integrally
@@ -54,7 +54,7 @@ This file establishes the ring-theoretic normalization theory of `R[S]`:
 
 ## Main declarations
 
-* `AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure`: `R[S_sat]` is
+* `AddMonoidAlgebra.mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite`: `R[S_sat]` is
   finite over `R[S]`.
 * `AddMonoidAlgebra.isIntegrallyClosed_of_addMonoidAlgebra`: `IsIntegrallyClosed (R[M])` descends
   to `IsIntegrallyClosed R`.
@@ -90,34 +90,27 @@ namespace AddMonoidAlgebra
 
 section FiniteNormalization
 
-private theorem exists_finset_inclusion_add {M : Type*} [AddCommMonoid M] {S T : AddSubmonoid M}
-    (hST : S ≤ T) (hF : ∃ F : Finset M, (F : Set M) ⊆ T ∧ ∀ x ∈ T, ∃ z ∈ F, ∃ s ∈ S, x = z + s) :
-    ∃ F : Finset T, ∀ x : T, ∃ z ∈ F, ∃ s : S, x = z + AddSubmonoid.inclusion hST s := by
-  classical
-  obtain ⟨F, hF_sub, hF_add⟩ := hF
-  refine ⟨F.subtype (· ∈ T), fun x => ?_⟩
-  obtain ⟨z, hz, s, hs, hxz⟩ := hF_add x.1 x.2
-  exact ⟨⟨z, hF_sub hz⟩, Finset.mem_subtype.mpr hz, ⟨s, hs⟩, Subtype.ext hxz⟩
-
 /-- **Finite normalization in a finitely generated torsion-free abelian group.** For a finitely
 generated submonoid `S` of a finitely generated torsion-free abelian group `L`,
 `R[S.nsmulSaturation]` is a finite `R[S]`-algebra over any commutative ring `R`. -/
-theorem finite_mapDomainRingHom_inclusion_nsmulSaturation {L : Type*} [AddCommGroup L]
+theorem mapDomainRingHom_inclusion_nsmulSaturation_finite {L : Type*} [AddCommGroup L]
     [Module.Finite ℤ L] [HasUniqueDiv L] {S : AddSubmonoid L} (hS : S.FG)
     (R : Type*) [CommRing R] :
     (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
-  finite_mapDomainRingHom_of_exists_finset_add _
-    (exists_finset_inclusion_add S.le_nsmulSaturation hS.exists_finset_subset_nsmulSaturation_add) R
+  TauCeti.AddMonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_add _
+    (AddSubmonoid.exists_finset_inclusion_add S.le_nsmulSaturation
+      hS.exists_finset_subset_nsmulSaturation_add) R
 
 /-- **Finite normalization in the generated subgroup.** For a finitely generated submonoid `S` of a
 torsion-free abelian group `G`, the algebra of the saturation of `S` inside
 `AddSubgroup.closure (S : Set G)` is a finite `R[S]`-algebra over any commutative ring `R`. -/
-theorem finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure {G : Type*} [AddCommGroup G]
+theorem mapDomainRingHom_inclusion_nsmulSaturation_inf_closure_finite {G : Type*} [AddCommGroup G]
     [HasUniqueDiv G] {S : AddSubmonoid G} (hS : S.FG) (R : Type*) [CommRing R] :
     (mapDomainRingHom R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
-  finite_mapDomainRingHom_of_exists_finset_add _
-    (exists_finset_inclusion_add (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
+  TauCeti.AddMonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_add _
+    (AddSubmonoid.exists_finset_inclusion_add
+      (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
       hS.exists_finset_subset_nsmulSaturation_inf_closure_add) R
 
 end FiniteNormalization
@@ -353,9 +346,9 @@ theorem isIntegralClosure_nsmulSaturation {R L : Type*} [CommRing R] [IsDomain R
     have hcomp : (mapDomainRingHom R S.nsmulSaturation.subtype).comp (mapDomainRingHom R ι₁) =
         mapDomainRingHom R S.subtype := by
       rw [← mapDomainRingHom_comp, AddSubmonoid.subtype_comp_inclusion]
-    rw [IsIntegral, RingHom.IsIntegralElem, RingHom.algebraMap_toAlgebra,
-      RingHom.algebraMap_toAlgebra]
-    exact ⟨p, hp_monic, by rw [← hcomp, ← hom_eval₂, hp_eval, map_zero]⟩
+    rw [RingHom.algebraMap_toAlgebra]
+    refine ⟨p, hp_monic, ?_⟩
+    rw [RingHom.algebraMap_toAlgebra, ← hcomp, ← hom_eval₂, hp_eval, map_zero]
 
 /-- **Integral closure inside `R[L_S]`.** For any finitely generated submonoid `S` of a
 torsion-free abelian group `G` and any integral domain `R`, the algebra of
@@ -377,7 +370,7 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure {R G : Type*} [CommRing R]
   -- Transport `isIntegralClosure_nsmulSaturation` from the pullback `S₀ ≤ L_S` to `S` and `S_sat`.
   set L_S := AddSubgroup.closure (S : Set G)
   set S₀ := S.comap L_S.subtype
-  have : Module.Finite ℤ L_S := Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
+  have : Module.Finite ℤ L_S := hS.moduleFinite_addSubgroup_closure
   let _ : Algebra (AddMonoidAlgebra R S₀) (AddMonoidAlgebra R L_S) :=
     (mapDomainRingHom R S₀.subtype).toAlgebra
   let _ : Algebra (AddMonoidAlgebra R S₀.nsmulSaturation) (AddMonoidAlgebra R L_S) :=
@@ -389,26 +382,21 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure {R G : Type*} [CommRing R]
   let _ : Algebra (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ L_S.toAddSubmonoid))
       (AddMonoidAlgebra R L_S) :=
     (mapDomainRingHom R ιSat).toAlgebra
-  let eS : S₀ ≃+ S :=
-    { toFun y := ⟨y.1.1, y.2⟩
-      invFun s := ⟨S.toGroupClosure s, by simp [S₀]⟩
-      left_inv y := Subtype.ext (Subtype.ext (S.coe_toGroupClosure ⟨y.1.1, y.2⟩))
-      right_inv s := Subtype.ext (S.coe_toGroupClosure s)
-      map_add' _ _ := rfl }
   refine (isIntegralClosure_nsmulSaturation hS.comap_subtype_closure).of_ringEquiv
     (mapDomainRingEquiv R S.nsmulSaturationInfClosureEquiv.symm)
-    (mapDomainRingEquiv R eS) (.refl _) (fun r => ?_) (fun a => ?_)
-  · change mapDomain S₀.subtype r = mapDomain S.toGroupClosure (mapDomain eS r)
-    rw [mapDomain_mapDomain]
-    congr 1
-    funext y
-    exact (Subtype.ext (S.coe_toGroupClosure ⟨y.1.1, y.2⟩)).symm
-  · change mapDomain S₀.nsmulSaturation.subtype a =
-      mapDomain ιSat (mapDomain S.nsmulSaturationInfClosureEquiv.symm a)
-    rw [mapDomain_mapDomain]
-    congr 1
-    funext z
-    exact Subtype.ext (S.coe_nsmulSaturationInfClosureEquiv_symm_apply z).symm
+    (mapDomainRingEquiv R S.toGroupClosureEquiv.symm) (.refl _) (fun r => ?_) (fun a => ?_)
+  · rw [RingEquiv.refl_apply, RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
+      ← RingEquiv.coe_toRingHom, ← RingEquiv.toRingHom_eq_coe, toRingHom_mapDomainRingEquiv,
+      ← RingHom.comp_apply, ← mapDomainRingHom_comp]
+    congr 2
+    ext y
+    simp
+  · rw [RingEquiv.refl_apply, RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
+      ← RingEquiv.coe_toRingHom, ← RingEquiv.toRingHom_eq_coe, toRingHom_mapDomainRingEquiv,
+      ← RingHom.comp_apply, ← mapDomainRingHom_comp]
+    congr 2
+    ext z
+    simp
 
 end HalfSpaceAndGroupClosure
 
@@ -490,8 +478,7 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure_fractionRing {R K : Type*}
   have := S.isLocalization_addMonoidAlgebra_groupClosure R
   have : IsFractionRing C K :=
     IsFractionRing.isFractionRing_of_isDomain_of_isLocalization (MonoidHom.mrange (of R S)) C K
-  have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
-    Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
+  have := hS.moduleFinite_addSubgroup_closure
   have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
   have : IsIntegrallyClosedIn C K :=
     (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp inferInstance
@@ -543,18 +530,13 @@ theorem coe_nsmulSaturationEquivIntegralClosure {R : Type*} [CommRing R] [IsDoma
       ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :
     (nsmulSaturationEquivIntegralClosure hS K f : K) =
       nsmulSaturationToFractionRing S R K f := by
-  let := (mapDomainRingHom R
-    (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  let := (nsmulSaturationToFractionRing S R K).toAlgebra
-  have : IsScalarTower (AddMonoidAlgebra R S)
-      (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
-      K :=
-    IsScalarTower.of_algebraMap_eq fun g =>
-      (nsmulSaturationToFractionRing_mapDomain_inclusion S R K g).symm
-  have := isIntegralClosure_nsmulSaturation_inf_closure_fractionRing (R := R) hS (K := K)
-  exact IsIntegralClosure.algebraMap_equiv (AddMonoidAlgebra R S)
-    (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) K
-    (integralClosure (AddMonoidAlgebra R S) K) f
+  have h :
+      algebraMap (integralClosure (AddMonoidAlgebra R S) K) K
+          (nsmulSaturationEquivIntegralClosure hS K f) =
+        nsmulSaturationToFractionRing S R K f := by
+    rw [nsmulSaturationEquivIntegralClosure, IsIntegralClosure.algebraMap_equiv,
+      RingHom.algebraMap_toAlgebra]
+  simpa using h
 
 /-- **Hochster's theorem for the saturation.** Over an integrally closed domain `R`, the semigroup
 algebra of `S.nsmulSaturation` in a finitely generated torsion-free abelian group `L` is integrally
@@ -593,8 +575,7 @@ theorem isIntegrallyClosed_nsmulSaturation_inf_closure {R : Type*} [CommRing R] 
     [IsIntegrallyClosed R] [HasUniqueDiv G] {S : AddSubmonoid G} (hS : S.FG) :
     IsIntegrallyClosed (AddMonoidAlgebra R
       ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) := by
-  have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
-    Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
+  have := hS.moduleFinite_addSubgroup_closure
   have hIC := isIntegrallyClosed_nsmulSaturation (R := R) hS.comap_subtype_closure
   exact IsIntegrallyClosed.of_equiv
     (mapDomainRingEquiv R S.nsmulSaturationInfClosureEquiv.symm) (h := hIC)

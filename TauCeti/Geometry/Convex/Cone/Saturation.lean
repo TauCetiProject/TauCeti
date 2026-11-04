@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Torsion
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Geometry.Convex.Cone.Pointed
-public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
@@ -79,8 +78,7 @@ private theorem exists_pos_nsmul_eq_image_of_mem_hull_rat (i : M →+ V) (s : Se
     obtain ⟨n₂, hn₂, y₂, hy₂, h₂⟩ := ih₂
     refine ⟨n₁ * n₂, Nat.mul_pos hn₁ hn₂, n₂ • y₁ + n₁ • y₂,
       add_mem (nsmul_mem hy₁ _) (nsmul_mem hy₂ _), ?_⟩
-    rw [nsmul_add, mul_comm n₁ n₂, mul_smul, h₁, mul_comm n₂ n₁, mul_smul, h₂,
-      map_add, map_nsmul, map_nsmul]
+    simp [mul_smul, smul_comm n₁ n₂, h₁, h₂]
   | smul q w _ ih =>
     obtain ⟨n, hn, y, hy, h⟩ := ih
     let d : ℕ := q.1.den
@@ -90,9 +88,10 @@ private theorem exists_pos_nsmul_eq_image_of_mem_hull_rat (i : M →+ V) (s : Se
     have hden : (d : ℚ) * q.1 = (a : ℚ) := by
       rw [mul_comm, ha]
       exact q.1.mul_den_eq_num
+    have hdw : d • (q • w) = a • w := by
+      simp [← Nonneg.coe_smul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, hden]
     refine ⟨n * d, Nat.mul_pos hn q.1.den_pos, a • y, nsmul_mem hy _, ?_⟩
-    rw [← Nonneg.coe_smul, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ d, smul_smul, hden,
-      Nat.cast_smul_eq_nsmul ℚ a, smul_comm n a w, h, map_nsmul]
+    simp [mul_smul, hdw, smul_comm n a, h]
 
 /-- Along an injective homomorphism `i : M →+ V` into a `ℚ`-module, an element `x : M` maps into
 the rational cone hull of `i '' s` if and only if it belongs to the saturation of
@@ -108,8 +107,7 @@ theorem mem_hull_rat_image_iff_mem_nsmulSaturation_closure {i : M →+ V}
     have hmem : i (n • x) ∈ hull ℚ (i '' s) := image_closure_subset_hull_rat i s hnx
     let c : {r : ℚ // 0 ≤ r} := ⟨(n : ℚ)⁻¹, by positivity⟩
     have hsmul : c • i (n • x) = i x := by
-      rw [Nonneg.mk_smul, map_nsmul, ← Nat.cast_smul_eq_nsmul ℚ n, smul_smul,
-        inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hn.ne'), one_smul]
+      simp [c, Nonneg.mk_smul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, hn.ne']
     exact hsmul ▸ Submodule.smul_mem _ c hmem
 
 /-- Along an injective homomorphism `i : M →+ V` into a `ℚ`-module, `i x` belongs to the rational
@@ -188,8 +186,7 @@ theorem FG.mem_nsmulSaturation_iff_forall_nonneg_of_mem_closure {S : AddSubmonoi
     x ∈ S.nsmulSaturation ↔
       ∀ m : AddSubgroup.closure (S : Set G) →+ ℤ,
         (∀ s : S, 0 ≤ m (S.toGroupClosure s)) → 0 ≤ m ⟨x, hx⟩ := by
-  have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
-    Module.Finite.iff_addGroup_fg.mpr hS.addSubgroup_closure
+  have := hS.moduleFinite_addSubgroup_closure
   have hiff := hS.comap_subtype_closure.mem_nsmulSaturation_iff_forall_nonneg (x := ⟨x, hx⟩)
   rw [nsmulSaturation_comap, mem_comap, AddSubgroup.coe_subtype] at hiff
   refine hiff.trans ⟨fun h m hm => h m fun y hy => ?_, fun h m hm => ?_⟩

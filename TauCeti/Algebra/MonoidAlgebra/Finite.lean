@@ -32,9 +32,9 @@ homomorphism `p : M →* N` into a finite monoid, since it is already finitely g
 restricting representations of a finite group along a homomorphism. For any homomorphism
 `p : M →* N` of commutative monoids whose target is covered by finitely many translates of the
 image of `p`, `R[N]` is a finite `R[M]`-module over any commutative semiring `R`
-(`MonoidAlgebra.moduleFinite_mapDomainRingHom_of_exists_finset_mul`), and hence
+(`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_mul`), and hence
 `(mapDomainRingHom R p).Finite` holds over any commutative ring `R`
-(`MonoidAlgebra.finite_mapDomainRingHom_of_exists_finset_mul`).
+(`TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_mul`).
 -/
 
 public section
@@ -42,6 +42,8 @@ public section
 namespace TauCeti.MonoidAlgebra
 
 open _root_.MonoidAlgebra
+
+section CommGroup
 
 variable (R : Type*) {M N : Type*} [CommGroup M] [CommGroup N]
 
@@ -103,9 +105,11 @@ theorem mapDomainRingHom_finite_iff_finite_quotient [Nontrivial R] (p : M →* N
     rw [hcomp] at hfinite
     have : Module.Finite R (MonoidAlgebra R (N ⧸ p.range)) :=
       RingHom.finite_algebraMap.mp (RingHom.Finite.of_comp_finite hfinite)
-    exact Module.Finite.finite_basis (MonoidAlgebra.basis (N ⧸ p.range) R)
+    exact Module.Finite.finite_basis (_root_.MonoidAlgebra.basis (N ⧸ p.range) R)
   · intro h
     exact mapDomainRingHom_finite_of_finite_quotient R p
+
+end CommGroup
 
 /-- **Finiteness over the algebra of any monoid mapping to a finite one.** For a monoid
 homomorphism `p : M →* N` with `N` finite, `R[N]` is a finitely generated `R[M]`-module through
@@ -121,18 +125,15 @@ theorem mapDomainRingHom_moduleFinite_of_finite {R : Type*} [Semiring R] {M N : 
     simp [RingHom.toModule_smul, mapDomain_smul, smul_mul_assoc]⟩
   exact Module.Finite.of_restrictScalars_finite R (MonoidAlgebra R M) (MonoidAlgebra R N)
 
-end TauCeti.MonoidAlgebra
-
-namespace MonoidAlgebra
-
 /-- If the target of a commutative-monoid homomorphism `p : M →* N` is covered by finitely many
 translates of the image of `p`, then `R[N]` is a finite `R[M]`-module along `mapDomainRingHom R p`
 over any commutative semiring `R`. -/
 @[to_additive (dont_translate := R)
-/-- If the target of a commutative additive-monoid homomorphism `p : M →+ N` is covered by finitely
-many shifts of the image of `p`, then `R[N]` is a finite `R[M]`-module along `mapDomainRingHom R p`
-over any commutative semiring `R`. -/]
-theorem moduleFinite_mapDomainRingHom_of_exists_finset_mul {M N : Type*} [CommMonoid M]
+  TauCeti.AddMonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_add
+  /-- If the target of a commutative additive-monoid homomorphism `p : M →+ N` is covered by
+  finitely many shifts of the image of `p`, then `R[N]` is a finite `R[M]`-module along
+  `mapDomainRingHom R p` over any commutative semiring `R`. -/]
+theorem mapDomainRingHom_moduleFinite_of_exists_finset_mul {M N : Type*} [CommMonoid M]
     [CommMonoid N] (p : M →* N) (hF : ∃ F : Finset N, ∀ x : N, ∃ z ∈ F, ∃ s : M, x = z * p s)
     (R : Type*) [CommSemiring R] :
     letI := (mapDomainRingHom R p).toAlgebra
@@ -161,17 +162,19 @@ theorem moduleFinite_mapDomainRingHom_of_exists_finset_mul {M N : Type*} [CommMo
 /-- If the target of a commutative-monoid homomorphism `p : M →* N` is covered by finitely many
 translates of the image of `p`, then `mapDomainRingHom R p` is a finite ring homomorphism over any
 commutative ring `R` (`RingHom.Finite` requires commutative rings; see
-`MonoidAlgebra.moduleFinite_mapDomainRingHom_of_exists_finset_mul` for commutative semirings). -/
+`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_mul` for commutative
+semirings). -/
 @[to_additive (dont_translate := R)
-/-- If the target of a commutative additive-monoid homomorphism `p : M →+ N` is covered by finitely
-many shifts of the image of `p`, then `mapDomainRingHom R p` is a finite ring homomorphism over any
-commutative ring `R` (`RingHom.Finite` requires commutative rings; see
-`AddMonoidAlgebra.moduleFinite_mapDomainRingHom_of_exists_finset_add` for commutative
-semirings). -/]
-theorem finite_mapDomainRingHom_of_exists_finset_mul {M N : Type*} [CommMonoid M] [CommMonoid N]
+  TauCeti.AddMonoidAlgebra.mapDomainRingHom_finite_of_exists_finset_add
+  /-- If the target of a commutative additive-monoid homomorphism `p : M →+ N` is covered by
+  finitely many shifts of the image of `p`, then `mapDomainRingHom R p` is a finite ring
+  homomorphism over any commutative ring `R` (`RingHom.Finite` requires commutative rings; see
+  `TauCeti.AddMonoidAlgebra.mapDomainRingHom_moduleFinite_of_exists_finset_add` for commutative
+  semirings). -/]
+theorem mapDomainRingHom_finite_of_exists_finset_mul {M N : Type*} [CommMonoid M] [CommMonoid N]
     (p : M →* N) (hF : ∃ F : Finset N, ∀ x : N, ∃ z ∈ F, ∃ s : M, x = z * p s)
     (R : Type*) [CommRing R] :
     (mapDomainRingHom R p).Finite :=
-  moduleFinite_mapDomainRingHom_of_exists_finset_mul p hF R
+  mapDomainRingHom_moduleFinite_of_exists_finset_mul p hF R
 
-end MonoidAlgebra
+end TauCeti.MonoidAlgebra
