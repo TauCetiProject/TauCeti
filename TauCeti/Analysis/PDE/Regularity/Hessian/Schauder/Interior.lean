@@ -27,13 +27,16 @@ the open ball `B_R` with `α`-Hölder Hessian there satisfies
 `[D²u]_{α; closedBall x₀ ρ} ≤ C ([L u]_{α; B_R} + N)`,
 
 where `N` bounds `|u|`, `‖Du‖` and `‖D²u‖` on `B_R`. The Hölder constant of the Hessian on `B_R`
-enters only qualitatively: the estimate does not depend on it. This is the localized form of the
-Schauder estimate used to pass from coefficients of small oscillation on a ball to Hölder
-continuous coefficients on a domain, by covering a compact set with small balls.
+enters only qualitatively: the estimate does not depend on it. The constant `C` depends on the
+coefficients only through `λ`, `Λ`, `L` and a bound `M` for their entries on the ball, and not on
+the centre `x₀`. This is the localized form of the Schauder estimate used to pass from
+coefficients of small oscillation on a ball to Hölder continuous coefficients, by covering a
+compact set with finitely many small balls, or the whole space with balls of one radius.
 
 ## The argument
 
-Choose a smooth cutoff `ζ` equal to one near `closedBall x₀ ρ` with support in `B_R`, and put
+Choose a smooth cutoff `ζ` equal to one near `closedBall x₀ ρ` with support in `B_R`, the
+translate of one fixed cutoff about the origin so that its bounds do not depend on `x₀`, and put
 `w = ζ u`, which is `C²` on the whole space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). By the
 second-order product rule (`TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`),
 
@@ -327,28 +330,33 @@ private theorem interior_constant_le {κ lam Z B Q A K N X : ℝ} (hκ : 0 ≤ �
         nlinarith
 
 /-- **The interior Schauder estimate on small balls.** Let `0 < α < 1`. There is `C₀ > 0`,
-depending only on dimension and `α`, with the following property. Let `a` be `α`-Hölder entrywise
-with constant `L` on the closed ball `closedBall x₀ R`, where `R > 0`, and suppose `a x₀` has
-ellipticity bounds `λ, Λ`, with `λ > 0`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu` and
-`κ = C₀ (Λ / λ)^(1 + (n+1)/4 + α/2)`, and assume the scale condition
+depending only on dimension and `α`, with the following property. Let `0 < λ`, `Λ`, `L`, `M` and
+`0 < R` be given, put `κ = C₀ (Λ / λ)^(1 + (n+1)/4 + α/2)`, and assume the scale condition
 
 `2 κ (n+1)² (1 + 2ᵅ) L Rᵅ ≤ λ`.
 
-Then for every `ρ < R` there is `C`, independent of `u`, with the following property. Let `u` be
-`C²` on the open ball `B_R`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N` there and with `D²u`
-`α`-Hölder on `B_R` (with any constant). If `L u` is `α`-Hölder on `B_R` with constant `K`, then
-`D²u` is `α`-Hölder on `closedBall x₀ ρ` with constant `C (K + N)`. -/
+Then for every `ρ < R` there is `C`, depending only on `n`, `α`, `λ`, `Λ`, `L`, `M`, `R` and `ρ`,
+with the following property. Let `a` be `α`-Hölder entrywise with constant `L` and bounded entrywise
+by `M` on the closed ball `closedBall x₀ R`, and suppose `a x₀` has ellipticity bounds `λ, Λ`. Put
+`L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on the open ball `B_R`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded
+by `N` there and with `D²u` `α`-Hölder on `B_R` (with any constant). If `L u` is `α`-Hölder on `B_R`
+with constant `K`, then `D²u` is `α`-Hölder on `closedBall x₀ ρ` with constant `C (K + N)`.
+
+The constant `C` does not depend on the centre `x₀` or on the coefficient field `a` beyond the
+bounds `λ`, `Λ`, `L` and `M`; this uniformity is what makes the estimate usable on infinitely many
+balls at once. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) :
     ∃ C₀ : ℝ, 0 < C₀ ∧
-      ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ : E} {lam Lam : ℝ},
-      0 < lam → (∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a x₀).toQuadraticForm' ξ) →
-      (∀ ξ : E, (a x₀).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
-      ∀ {L : ℝ≥0} {R : ℝ}, 0 < R →
+      ∀ {lam Lam : ℝ} {L M : ℝ≥0} {R : ℝ}, 0 < lam → 0 < R →
       2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
         ((1 + 2 ^ (α : ℝ)) * L * R ^ (α : ℝ)) ≤ lam →
-      (∀ i j, HolderOnWith L α (fun x => a x i j) (closedBall x₀ R)) →
       ∀ {ρ : ℝ}, ρ < R → ∃ C : ℝ≥0,
+      ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ : E},
+      (∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a x₀).toQuadraticForm' ξ) →
+      (∀ ξ : E, (a x₀).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
+      (∀ i j, HolderOnWith L α (fun x => a x i j) (closedBall x₀ R)) →
+      (∀ x ∈ closedBall x₀ R, ∀ i j, |a x i j| ≤ M) →
       ∀ {u : E → ℝ} {N K V : ℝ≥0}, ContDiffOn ℝ 2 u (ball x₀ R) →
         (∀ x ∈ ball x₀ R, |u x| ≤ N) → (∀ x ∈ ball x₀ R, ‖fderiv ℝ u x‖ ≤ N) →
         (∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N) →
@@ -358,34 +366,52 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closedBall x₀ ρ) := by
   obtain ⟨C₀, hC₀, hCS⟩ :=
     exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall hα hα1 (n := n)
-  refine ⟨C₀, hC₀, fun {a x₀ lam Lam} hlam hEll hEll' {L R} hR hsmall hL {ρ} hρR => ?_⟩
-  -- The cutoff `ζ`, equal to one near `closedBall x₀ ρ` and supported in `B_R`, and its
-  -- constant `Z`.
-  obtain ⟨ζ, hζ, -, hζ1, hζc, hζs⟩ :=
-    (isCompact_closedBall x₀ ρ).exists_contDiff_cutoff isOpen_ball (closedBall_subset_ball hρR)
-  obtain ⟨Z, hZ0, hZ1, hZ2⟩ := exists_holderWith_and_abs_le_of_hasCompactSupport hα1.le hζ hζc
-  have hζ2 : ContDiffOn ℝ 2 ζ (ball x₀ R) := (hζ.of_le (by norm_cast)).contDiffOn
-  -- A bound `M` for the coefficients on `closedBall x₀ R`.
-  choose Ma hMa using fun i j => (isCompact_closedBall x₀ R).exists_bound_of_continuousOn
-    ((hL i j).continuousOn hα)
-  set M : ℝ≥0 := ∑ i, ∑ j, (Ma i j).toNNReal
-  have hM (x : E) (hx : x ∈ closedBall x₀ R) (i j : Fin (n + 1)) : |a x i j| ≤ M := by
-    calc |a x i j| ≤ Ma i j := by simpa only [Real.norm_eq_abs] using hMa i j x hx
-      _ ≤ (Ma i j).toNNReal := Real.le_coe_toNNReal _
-      _ ≤ M := by
-        exact_mod_cast (Finset.single_le_sum (f := fun j => (Ma i j).toNNReal)
-          (fun _ _ => zero_le) (Finset.mem_univ j)).trans
-          (Finset.single_le_sum (f := fun i => ∑ j, (Ma i j).toNNReal) (fun _ _ => zero_le)
-            (Finset.mem_univ i))
-  -- The constants of the estimate, which do not depend on `u`.
+  refine ⟨C₀, hC₀, fun {lam Lam L M R} hlam hR hsmall {ρ} hρR => ?_⟩
+  -- A cutoff `ζ₀`, equal to one near `closedBall 0 ρ` and supported in `B(0, R)`, and its
+  -- constant `Z`. Its translates serve as cutoffs about every centre, with the same constant.
+  obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ :=
+    (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff isOpen_ball
+      (closedBall_subset_ball hρR)
+  obtain ⟨Z, hZ0, hZ1, hZ2⟩ := exists_holderWith_and_abs_le_of_hasCompactSupport hα1.le hζ₀ hζ₀c
+  -- The constants of the estimate, which do not depend on `u`, `a` or `x₀`.
   set δ : ℝ≥0 := (2 * R).toNNReal ^ ((1 : ℝ) - α)
   set κ : ℝ := C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
   set Q : ℝ := ((n : ℝ) + 1) ^ 2 * (L * 2 ^ (α : ℝ)) / lam *
       (volume (ball (0 : E) R) ^ (-((2 : ℝ)⁻¹))).toReal + R ^ (-(((n : ℝ) + 1) / 2 + α))
   set B₂ : ℝ≥0 := (n + 1) ^ 2 * (M * Z + (3 * Z * L + M * (3 * (Z * δ + Z))))
-  set A₃ : ℝ := (volume (closedBall x₀ R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * (4 * Z))
+  set A₃ : ℝ := (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * (4 * Z))
   refine ⟨(2 * κ * (Z / lam + B₂ / lam + Q * A₃)).toNNReal,
-    fun {u N K V} hu hN0 hN1 hN2 hV hK => ?_⟩
+    fun {a x₀} hEll hEll' hL hM {u N K V} hu hN0 hN1 hN2 hV hK => ?_⟩
+  -- The cutoff `ζ` about `x₀`, the translate of `ζ₀`.
+  set ζ : E → ℝ := fun x => ζ₀ (x - x₀)
+  have hζ : ContDiff ℝ ∞ ζ := hζ₀.comp (contDiff_id.sub contDiff_const)
+  have hζ2 : ContDiffOn ℝ 2 ζ (ball x₀ R) := (hζ.of_le (by norm_cast)).contDiffOn
+  have hζ1 : closedBall x₀ ρ ⊆ interior (ζ ⁻¹' {1}) := fun x hx =>
+    preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
+      (hζ₀1 (by simpa [dist_eq_norm] using hx))
+  have hζs : tsupport ζ ⊆ ball x₀ R := fun x hx => by
+    simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
+      (continuous_id.sub continuous_const) hx)
+  have hD1 : fderiv ℝ ζ = fun x => fderiv ℝ ζ₀ (x - x₀) := funext fun _ => fderiv_comp_sub x₀
+  have hD2 : fderiv ℝ (fderiv ℝ ζ) = fun x => fderiv ℝ (fderiv ℝ ζ₀) (x - x₀) := by
+    rw [hD1]
+    exact funext fun _ => fderiv_comp_sub x₀
+  -- Translation keeps the global Hölder constants and the uniform bounds of `ζ₀` and its
+  -- derivatives.
+  have htr {g : E → ℝ} (h : HolderWith Z α g ∧ ∀ x, |g x| ≤ Z) :
+      HolderWith Z α (fun x => g (x - x₀)) ∧ ∀ x, |g (x - x₀)| ≤ Z :=
+    ⟨fun x y => by simpa only [edist_sub_right] using h.1 (x - x₀) (y - x₀), fun x => h.2 _⟩
+  replace hZ0 := htr hZ0
+  replace hZ1 : ∀ i, HolderWith Z α (fun x => fderiv ℝ ζ x (EuclideanSpace.single i 1)) ∧
+      ∀ x, |fderiv ℝ ζ x (EuclideanSpace.single i 1)| ≤ Z := fun i => by
+    rw [hD1]
+    exact htr (hZ1 i)
+  replace hZ2 : ∀ i j, HolderWith Z α (fun x =>
+        fderiv ℝ (fderiv ℝ ζ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) ∧
+      ∀ x, |fderiv ℝ (fderiv ℝ ζ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ Z :=
+    fun i j => by
+      rw [hD2]
+      exact htr (hZ2 i j)
   -- Bounds and Hölder constants of `u` and its derivatives on `B_R`.
   have hsR : ball x₀ R ⊆ closedBall x₀ R := ball_subset_closedBall
   obtain ⟨hHu, hHdu⟩ := holderOnWith_ball_of_norm_le hα1.le hu hN1 hN2
@@ -430,7 +456,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
       measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
       (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
       (le_of_eq ?_)
-    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity)]
+    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
+      Measure.addHaar_closedBall_center]
     simp only [A₃, ENNReal.toReal_ofNat]
     ring
   -- Comparison of the constants.
