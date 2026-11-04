@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Convex.Cone.Pointed
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Data.Set.Card
 
 /-!
 # The weight model of a torus action at a fixed point
@@ -54,6 +55,8 @@ The local invariants of the model are explicit:
 * `TauCeti.weightRotation θ`: the rotation `z_i ↦ exp(i θ_i) z_i`.
 * `TauCeti.weightGenerator θ`: its infinitesimal generator `z_i ↦ i θ_i z_i`.
 * `TauCeti.weightMomentMap α`: the moment map `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i`.
+* `TauCeti.weightModelCoords`: the real coordinates `(q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by
+  `ι ⊕ ι`.
 * `TauCeti.weightInfinitesimalAction α z`: the infinitesimal action `ξ ↦ ξ_M(z)` at `z`.
 
 ## Main results
@@ -64,11 +67,16 @@ The local invariants of the model are explicit:
 * `TauCeti.weightMomentMap_weightRotation`: `μ` is invariant under every rotation.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
   generator for the angles `α_i(ξ)`.
+* `TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`: the critical points of `μ^ξ` are the zeros
+  of the generator for the angles `α_i(ξ)`.
 * `TauCeti.hasDerivAt_weightRotation_hamiltonianVectorField`: `t ↦ (t ξ) • z` is the integral
   curve of the Hamiltonian vector field of `μ^ξ` through `z`.
 * `TauCeti.range_weightMomentMap`: the image of `μ` is the cone spanned by the `-α_i`.
 * `TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.weightGenerator_apply_eq_zero_iff`: the
   stabilizer and the infinitesimal stabilizer of a point.
+* `TauCeti.mem_ker_weightGenerator_iff`, `TauCeti.finrank_ker_weightGenerator`: the kernel of the
+  generator of `θ` is the subspace of `z` with `z_i = 0` whenever `θ_i ≠ 0`, of dimension twice
+  the number of `i` with `θ_i = 0`.
 * `TauCeti.range_fderiv_weightMomentMap`: the image of `dμ_z` is the span of the weights `α_i`
   with `z_i ≠ 0`.
 * `TauCeti.finrank_range_weightInfinitesimalAction`: the orbit through `z` has dimension the rank
@@ -248,6 +256,14 @@ theorem hamiltonianVectorField_weightMomentMap (α : ι → StrongDual ℝ 𝔱)
   rw [stdSymplecticForm_hamiltonianVectorField (hasFDerivAt_weightMomentMap_apply α ξ x)]
   ext i <;> simp
 
+/-- **Critical points of a component of the moment map.** A point is critical for `μ^ξ` exactly
+when the generator `ξ_M`, the rotation generator for the angles `α_i(ξ)`, vanishes there. -/
+theorem fderiv_weightMomentMap_apply_eq_zero_iff (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    fderiv ℝ (fun y ↦ weightMomentMap α y ξ) x = 0 ↔ weightGenerator (fun i ↦ α i ξ) x = 0 := by
+  rw [← SymplecticForm.hamiltonianVectorField_eq_zero_iff stdSymplecticForm,
+    hamiltonianVectorField_weightMomentMap]
+
 /-- The curve `t ↦ (t ξ) • z` is the integral curve of the Hamiltonian vector field of `μ^ξ`
 through `z`. -/
 theorem hasDerivAt_weightRotation_hamiltonianVectorField (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱)
@@ -331,6 +347,68 @@ theorem weightGenerator_apply_eq_zero_iff (θ : ι → ℝ)
     · exact Or.inr (by tauto)
     · exact Or.inl (h i hi)
     · exact Or.inr (by tauto)
+
+/-- The kernel of the generator of the rotation by the angles `θ` is the subspace of `z` with
+`z_i = q_i + i p_i = 0` whenever `θ_i ≠ 0`. -/
+theorem mem_ker_weightGenerator_iff (θ : ι → ℝ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    x ∈ LinearMap.ker (weightGenerator θ).toLinearMap ↔
+      ∀ i, θ i ≠ 0 → x.1 i = 0 ∧ x.2 i = 0 := by
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, weightGenerator_apply_eq_zero_iff]
+  exact forall_congr' fun i ↦ by tauto
+
+omit [Fintype ι] in
+/-- The real coordinates `(q, p) ↦ (q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by `ι ⊕ ι`. -/
+def weightModelCoords :
+    (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
+  ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).prodCongr (WithLp.linearEquiv 2 ℝ (ι → ℝ))).trans
+    (LinearEquiv.sumArrowLequivProdArrow ι ι ℝ ℝ).symm
+
+omit [Fintype ι] in
+@[simp]
+theorem weightModelCoords_apply_inl (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    weightModelCoords v (Sum.inl i) = v.1 i :=
+  (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem weightModelCoords_apply_inr (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    weightModelCoords v (Sum.inr i) = v.2 i :=
+  (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem weightModelCoords_symm_apply_fst (u : ι ⊕ ι → ℝ) (i : ι) :
+    (weightModelCoords.symm u).1 i = u (Sum.inl i) :=
+  (rfl)
+
+omit [Fintype ι] in
+@[simp]
+theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
+    (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
+  (rfl)
+
+/-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
+angles `θ` is spanned by the coordinates whose angle vanishes. -/
+theorem map_weightModelCoords_ker_weightGenerator (θ : ι → ℝ) :
+    (LinearMap.ker (weightGenerator θ).toLinearMap).map weightModelCoords.toLinearMap =
+      Pi.spanSubset ℝ {j | Sum.elim θ θ j = 0} := by
+  ext u
+  obtain ⟨v, rfl⟩ := weightModelCoords.surjective u
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, mem_ker_weightGenerator_iff,
+    Pi.mem_spanSubset_iff]
+  constructor
+  · rintro h (i | i) hi
+    · exact (h i hi).1
+    · exact (h i hi).2
+  · exact fun h i hi ↦ ⟨h (Sum.inl i) hi, h (Sum.inr i) hi⟩
+
+/-- **Fixed tangent directions in the weight model.** The kernel of the generator of the rotation
+by the angles `θ` has dimension twice the number of `i` with `θ_i = 0`. -/
+theorem finrank_ker_weightGenerator (θ : ι → ℝ) :
+    Module.finrank ℝ (LinearMap.ker (weightGenerator θ).toLinearMap) =
+      2 * {i | θ i = 0}.ncard := by
+  rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_ker_weightGenerator,
+    Pi.dim_spanSubset, Set.ncard_setOf_sumElim θ (· = 0)]
 
 /-- **The image of the derivative of the moment map.** At `z`, the derivative of `μ` has image the
 span of the weights `α_i` for which the coordinate `z_i = q_i + i p_i` is nonzero. -/
