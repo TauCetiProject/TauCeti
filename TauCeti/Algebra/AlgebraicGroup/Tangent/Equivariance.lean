@@ -152,18 +152,9 @@ theorem dualCotangentMap_basePointsRepresentation (φ : H →ₐc[R] K)
       Comodule.basePointsRepresentation (H := H) _ (mapDomain φ g) (dualCotangentMap φ x) := by
   let _ := adjointComodule (R := R) (H := K)
   let _ := adjointComodule (R := R) (H := H)
-  have haction {C : Type u} [CommRing C] [HopfAlgebra R C]
-      [Module.Finite R (Bialgebra.CotangentSpace R C)]
-      [Module.Projective R (Bialgebra.CotangentSpace R C)]
-      (p : WithConv (C →ₐ[R] R)) (y : R ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R C)) :
-      (letI := adjointComodule (R := R) (H := C)
-       Comodule.endOfPoint _ p.ofConv y) = (adjointAction (CommAlgCat.of R R) p).val y := by
-    apply (tangentScalarExtensionEquiv (R := R) (A := C) (B := R)).injective
-    exact (tangentScalarExtensionEquiv_adjointComodule_endOfPoint
-      (CommAlgCat.of R R) p y).trans
-        (tangentScalarExtensionEquiv_adjointAction (CommAlgCat.of R R) p y).symm
   have h := φ.lTensor_dualCotangentMap_adjointAction (CommAlgCat.of R R) g (1 ⊗ₜ[R] x)
-  rw [← haction, ← haction, LinearMap.lTensor_tmul] at h
+  rw [← adjointComodule_endOfPoint_eq_adjointAction,
+    ← adjointComodule_endOfPoint_eq_adjointAction, LinearMap.lTensor_tmul] at h
   simp only [Comodule.endOfPoint_tmul, one_smul,
     Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation,
     LinearMap.lTensor_tmul] at h

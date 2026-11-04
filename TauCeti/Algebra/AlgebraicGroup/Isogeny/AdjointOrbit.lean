@@ -64,7 +64,11 @@ theorem image_range_basePointsRepresentation (hf : IsIsogeny f)
     exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
   · rintro ⟨g, rfl⟩
     obtain ⟨q, hq⟩ := CommHopfAlgCat.mapPointsFunctor_app_surjective_of_injective k f hf.injective g
-    have hq' : BialgHom.mapDomain (A := k) f.hom q = g := hq
+    have hq' : BialgHom.mapDomain (A := k) f.hom q = g := by
+      -- The point-functor carrier is presented as a convolution group by these rewrites.
+      erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hq
+      erw [BialgHom.mapDomain_apply]
+      exact hq
     exact ⟨_, ⟨q, rfl⟩, (f.hom.dualCotangentMap_basePointsRepresentation q x).trans
       (congrArg (fun p => Comodule.basePointsRepresentation (H := H) _ p
         (dualCotangentMap f.hom x)) hq')⟩
@@ -90,6 +94,20 @@ theorem exists_basePointsRepresentation_eq_iff_of_injective (hf : IsIsogeny f)
   · rintro ⟨g, rfl⟩
     exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
 
+omit [IsAlgClosed k] [Algebra.FiniteType k H] in
+/-- A smooth affine isogeny with étale kernel preserves and reflects ad-nilpotence,
+including in positive characteristic. -/
+theorem isNilpotent_ad_dualCotangentMap_iff_of_etaleKernel (hf : IsIsogeny f)
+    [Algebra.Smooth k H] [Algebra.Smooth k K]
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
+      IsNilpotent (LieAlgebra.ad k _ x) := by
+  let e := hf.cotangentDualLieEquivOfEtaleKernel hker
+  rw [← hf.cotangentDualLieEquivOfEtaleKernel_apply hker x, ← LieAlgebra.conj_ad_apply]
+  exact IsNilpotent.map_iff (f := e.toLinearEquiv.conjAlgEquiv k)
+    (e.toLinearEquiv.conjAlgEquiv k).injective
+
 section CharZero
 
 variable [CharZero k]
@@ -103,11 +121,8 @@ theorem exists_basePointsRepresentation_eq_iff_of_charZero (hf : IsIsogeny f)
       Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x) =
         dualCotangentMap f.hom y) ↔
     ∃ g : WithConv (K →ₐ[k] k), Comodule.basePointsRepresentation (H := K) _ g x = y := by
-  have hinj : Function.Injective (dualCotangentMap f.hom) := by
-    intro x y h
-    apply hf.cotangentDualLieEquivOfCharZero.injective
-    simpa only [LieEquiv.coe_coe, cotangentDualLieEquivOfCharZero_apply] using h
-  exact hf.exists_basePointsRepresentation_eq_iff_of_injective hinj x y
+  exact hf.exists_basePointsRepresentation_eq_iff_of_injective
+    hf.dualCotangentMap_bijective_of_charZero.injective x y
 
 omit [IsAlgClosed k] in
 /-- A characteristic-zero affine isogeny preserves and reflects ad-nilpotence.

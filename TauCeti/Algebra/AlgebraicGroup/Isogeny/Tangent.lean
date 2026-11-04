@@ -181,6 +181,16 @@ theorem cotangentDualLieEquivOfEtaleKernel_apply (hf : IsIsogeny f)
     Derivation.cotangentDualLieEquiv_symm_apply, LinearEquiv.apply_symm_apply,
     lieEquivOfEtaleKernel_apply, Derivation.cotangentLinearEquiv_dualCotangentMap]
 
+/-- The forward linear map of the cotangent-dual Lie equivalence is the differential. -/
+@[simp]
+theorem cotangentDualLieEquivOfEtaleKernel_toLinearMap (hf : IsIsogeny f)
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
+    (hf.cotangentDualLieEquivOfEtaleKernel hker).toLinearMap =
+      Derivation.dualCotangentMap f.hom := by
+  apply LinearMap.ext
+  intro x
+  exact hf.cotangentDualLieEquivOfEtaleKernel_apply hker x
+
 end TauCeti.CommHopfAlgCat.IsIsogeny
 
 namespace TauCeti.CommHopfAlgCat.IsIsogeny
@@ -211,5 +221,20 @@ theorem cotangentDualLieEquivOfCharZero_apply (hf : IsIsogeny f)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     hf.cotangentDualLieEquivOfCharZero x = Derivation.dualCotangentMap f.hom x := by
   simp only [cotangentDualLieEquivOfCharZero, cotangentDualLieEquivOfEtaleKernel_apply]
+
+/-- The forward linear map of the characteristic-zero Lie equivalence is the differential. -/
+@[simp]
+theorem cotangentDualLieEquivOfCharZero_toLinearMap (hf : IsIsogeny f) :
+    hf.cotangentDualLieEquivOfCharZero.toLinearMap = Derivation.dualCotangentMap f.hom := by
+  apply LinearMap.ext
+  intro x
+  exact hf.cotangentDualLieEquivOfCharZero_apply x
+
+/-- The differential of a characteristic-zero finite-type affine isogeny is bijective on
+cotangent duals. -/
+theorem dualCotangentMap_bijective_of_charZero (hf : IsIsogeny f) :
+    Function.Bijective (Derivation.dualCotangentMap f.hom) := by
+  rw [← hf.cotangentDualLieEquivOfCharZero_toLinearMap]
+  exact hf.cotangentDualLieEquivOfCharZero.bijective
 
 end TauCeti.CommHopfAlgCat.IsIsogeny

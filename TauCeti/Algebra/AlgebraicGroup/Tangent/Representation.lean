@@ -321,6 +321,18 @@ theorem tangentScalarExtensionEquiv_adjointComodule_endOfPoint
   rw [← haction]
   exact tangentScalarExtensionEquiv_adjointAction A g x
 
+/-- The point action of the adjoint comodule agrees with the adjoint action on scalar
+extensions of the cotangent dual. -/
+theorem adjointComodule_endOfPoint_eq_adjointAction
+    (A : CommAlgCat.{max u v} R) (g : HopfAlgebra.points (H := H) A)
+    (x : A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    (letI := adjointComodule (R := R) (H := H)
+     Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv x) =
+      (adjointAction A g).val x := by
+  apply (tangentScalarExtensionEquiv (R := R) (A := H) (B := A)).injective
+  exact (tangentScalarExtensionEquiv_adjointComodule_endOfPoint A g x).trans
+    (tangentScalarExtensionEquiv_adjointAction A g x).symm
+
 /-- The coordinate Hopf-algebra morphism opposite to the adjoint representation in a basis
 indexed by `Fin n`. -/
 noncomputable def adjointCoordinateBialgHom {n : ℕ}
