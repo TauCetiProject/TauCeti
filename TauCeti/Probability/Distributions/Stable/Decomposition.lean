@@ -18,12 +18,11 @@ its compensated compound-Poisson large jumps and a unique small-jump probability
 The latter has characteristic exponent equal to the compensated Lévy integral over
 `{x | |x| ≤ r}`. Thus the finite-cutoff splitting persists after removing the lower cutoff.
 
-Existence uses the finite-band factors from `stableCompensatedPoissonMeasure_split`.
-Their characteristic functions converge to the quotient of the stable characteristic
-function by the large-jump characteristic function. This quotient is continuous at zero,
-and Lévy's continuity theorem supplies a probability law. Nonvanishing of the large-jump
-characteristic function gives uniqueness. This decomposition separates the finite-intensity
-jumps from the remaining small jumps for support and tail arguments.
+`existsUnique_conv_stableCompensatedPoissonMeasure_eq` gives existence and uniqueness of the
+small-jump probability factor, extending `stableCompensatedPoissonMeasure_split` to the limit.
+`charFun_of_conv_stableCompensatedPoissonMeasure_eq` identifies the characteristic function
+of any such factor without choosing a representative. This decomposition separates the
+finite-intensity jumps from the remaining small jumps for support and tail arguments.
 
 ## References
 
