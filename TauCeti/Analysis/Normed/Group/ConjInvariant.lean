@@ -39,6 +39,11 @@ invariance. Reversing the word alone need not preserve the seminorm. -/
 def IsConjInvariant (ℓ : GroupSeminorm G) : Prop :=
   ∀ g h : G, ℓ (h * g * h⁻¹) = ℓ g
 
+/-- A seminorm is conjugation invariant exactly when it preserves every conjugate. -/
+theorem isConjInvariant_iff (ℓ : GroupSeminorm G) :
+    ℓ.IsConjInvariant ↔ ∀ g h : G, ℓ (h * g * h⁻¹) = ℓ g :=
+  Iff.rfl
+
 /-- Conjugation invariance is equivalent to invariance under exchanging two factors. -/
 theorem isConjInvariant_iff_mul_comm (ℓ : GroupSeminorm G) :
     ℓ.IsConjInvariant ↔ ∀ g h : G, ℓ (g * h) = ℓ (h * g) := by
