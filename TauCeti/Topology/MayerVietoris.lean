@@ -8,15 +8,15 @@ module
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Topology.Sets.Opens
 
-import Mathlib.Data.Nat.Pairing
-import Mathlib.Data.Finset.Lattice.Prod
+import TauCeti.Order.SupClosed
 
 /-!
 # Mayer–Vietoris induction on open sets
 
-A property of open sets holds everywhere if it holds on an intersection-stable basis,
-passes from two opens and their intersection to their union, and passes to countable
-disjoint unions. This principle applies to cohomological comparison and duality maps.
+In a second-countable locally compact Hausdorff space, a property of open sets holds on
+every open set if it holds on the empty set and on an intersection-stable basis, passes
+from two opens and their intersection to their union, and passes to countable disjoint unions.
+This principle applies to cohomological comparison and duality maps.
 
 The topological ingredient is a cover by finite unions of basis members, with disjoint
 members in each of three residue classes. It comes from finite basis covers of the compact
@@ -51,7 +51,8 @@ theorem exists_nat_cover_finite_sup (hB : Opens.IsBasis B) (U : Opens X) :
       (⨆ n, (s n).sup id) = U := by
   classical
   let : LocallyCompactSpace U := U.isOpen.locallyCompactSpace
-  let K := (CompactExhaustion.choice U).shiftr
+  let K₀ := CompactExhaustion.choice U
+  let K := K₀.shiftr
   let C (n : ℕ) : Set X := Subtype.val '' K n
   let V (n : ℕ) : Opens X :=
     ⟨Subtype.val '' interior (K n), U.isOpen.isOpenMap_subtype_val _ isOpen_interior⟩
@@ -60,8 +61,7 @@ theorem exists_nat_cover_finite_sup (hB : Opens.IsBasis B) (U : Opens X) :
   have hVC (n : ℕ) : (V n : Set X) ⊆ C n := image_mono interior_subset
   have hmono {i j : ℕ} (hij : i ≤ j) : C i ⊆ C j := image_mono (K.subset hij)
   -- shiftr prepends the empty set, so the first shell also covers the innermost points.
-  have hKzero : K 0 = ∅ := rfl
-  have hzero : C 0 = ∅ := by simp only [C, hKzero, image_empty]
+  have hzero : C 0 = ∅ := image_empty Subtype.val
   let W (n : ℕ) : Opens X :=
     ⟨(V (n + 2) : Set X) \ C (n - 1), (V (n + 2)).isOpen.sdiff (hC (n - 1)).isClosed⟩
   have hshell (n : ℕ) : C (n + 1) \ (V n : Set X) ⊆ W n := by
@@ -85,20 +85,14 @@ theorem exists_nat_cover_finite_sup (hB : Opens.IsBasis B) (U : Opens X) :
         exact y.2
     · intro x hx
       let y : U := ⟨x, hx⟩
-      have hpos : 0 < K.find y := by
-        have h := K.mem_find y
-        by_contra hnot
-        have hz : K.find y = 0 := by omega
-        simp only [hz, hKzero, notMem_empty] at h
-      have hyC : x ∈ C (K.find y - 1 + 1) := by
-        exact ⟨y, by simpa [Nat.sub_add_cancel hpos] using K.mem_find y, rfl⟩
-      have hyV : x ∉ V (K.find y - 1) := by
+      have hy := K₀.mem_sdiff_shiftr_find y
+      have hyC : x ∈ C (K₀.find y + 1) := ⟨y, hy.1, rfl⟩
+      have hyV : x ∉ V (K₀.find y) := by
         rintro ⟨z, hz, heq⟩
         have hzy : z = y := Subtype.ext heq
         subst z
-        have hle := K.mem_iff_find_le.mp (interior_subset hz)
-        omega
-      exact Opens.mem_iSup.mpr ⟨K.find y - 1, hsK _ ⟨hyC, hyV⟩⟩
+        exact hy.2 (interior_subset hz)
+      exact Opens.mem_iSup.mpr ⟨K₀.find y, hsK _ ⟨hyC, hyV⟩⟩
 
 end TopologicalSpace.Opens.IsBasis
 
@@ -117,42 +111,15 @@ theorem mayerVietoris_induction {X : Type*} [TopologicalSpace X] [T2Space X]
       (∀ n, P (s n)) → P (⨆ n, s n)) :
     ∀ U, P U := by
   classical
-  -- First handle finite unions of basis members, including their intersections.
-  have hbase_fin (s : Finset (Opens X)) (hs : ∀ V ∈ s, V ∈ B) :
-      ∀ U ∈ B, P (U ⊓ s.sup id) := by
-    induction s using Finset.induction_on with
-    | empty => simpa using fun U (_ : U ∈ B) ↦ hbot
-    | @insert V s hVs ih =>
-      intro U hU
-      have hV := hs V (Finset.mem_insert_self V s)
-      have hs' : ∀ W ∈ s, W ∈ B := fun W hW ↦ hs W (Finset.mem_insert_of_mem hW)
-      simp only [Finset.sup_insert, id_eq, inf_sup_left]
-      apply hsup _ _ (hbase _ (hB_inf U hU V hV)) (ih hs' U hU)
-      simpa [inf_assoc, inf_left_comm, inf_comm] using ih hs' (U ⊓ V)
-        (hB_inf U hU V hV)
-  have hfin (s : Finset (Opens X)) (hs : ∀ V ∈ s, V ∈ B) : P (s.sup id) := by
-    induction s using Finset.induction_on with
-    | empty => simpa using hbot
-    | @insert V s hVs ih =>
-      have hV := hs V (Finset.mem_insert_self V s)
-      have hs' : ∀ W ∈ s, W ∈ B := fun W hW ↦ hs W (Finset.mem_insert_of_mem hW)
-      simpa only [Finset.sup_insert, id_eq] using
-        hsup V (s.sup id) (hbase V hV) (ih hs') (hbase_fin s hs' V hV)
   let F (U : Opens X) : Prop :=
     ∃ s : Finset (Opens X), (∀ V ∈ s, V ∈ B) ∧ s.sup id = U
   have hFP {U : Opens X} (hU : F U) : P U := by
     obtain ⟨s, hs, rfl⟩ := hU
-    exact hfin s hs
-  have hF_inf {U V : Opens X} (hU : F U) (hV : F V) : F (U ⊓ V) := by
-    obtain ⟨s, hs, rfl⟩ := hU
-    obtain ⟨t, ht, rfl⟩ := hV
-    refine ⟨(s ×ˢ t).image (fun p ↦ p.1 ⊓ p.2), ?_, ?_⟩
-    · intro W hW
-      obtain ⟨⟨U, V⟩, hp, rfl⟩ := Finset.mem_image.mp hW
-      obtain ⟨hU, hV⟩ := Finset.mem_product.mp hp
-      exact hB_inf U (hs U hU) V (ht V hV)
-    · simpa only [Finset.sup_image, Function.comp_def, id_eq] using
-        (Finset.sup_inf_sup s t id id).symm
+    exact finset_sup_of_inf_closed P (fun _ hU _ hV ↦ hB_inf _ hU _ hV)
+      hbot hbase hsup s hs
+  have hF_inf : InfClosed {U | F U} := by
+    rintro U ⟨s, hs, rfl⟩ V ⟨t, ht, rfl⟩
+    exact InfClosed.exists_finset_sup_inf (fun _ hU _ hV ↦ hB_inf _ hU _ hV) hs ht
   -- Disjoint countable unions of finite basis unions still have the property.
   -- Their intersections have the same form, indexed by pairs of natural numbers.
   let D (U : Opens X) : Prop := ∃ s : ℕ → Opens X,
@@ -160,20 +127,9 @@ theorem mayerVietoris_induction {X : Type*} [TopologicalSpace X] [T2Space X]
   have hDP {U : Opens X} (hU : D U) : P U := by
     obtain ⟨s, hs, hF, rfl⟩ := hU
     exact hdisjoint s hs (fun n ↦ hFP (hF n))
-  have hD_inf {U V : Opens X} (hU : D U) (hV : D V) : D (U ⊓ V) := by
-    obtain ⟨s, hs, hFs, rfl⟩ := hU
-    obtain ⟨t, ht, hFt, rfl⟩ := hV
-    let f (p : ℕ × ℕ) := s p.1 ⊓ t p.2
-    refine ⟨f ∘ Nat.unpair, ?_, fun n ↦ hF_inf (hFs _) (hFt _), ?_⟩
-    · intro i j hij
-      by_cases hfst : (Nat.unpair i).1 = (Nat.unpair j).1
-      · have hsnd : (Nat.unpair i).2 ≠ (Nat.unpair j).2 := by
-          intro heq
-          exact hij (Nat.pairEquiv.symm.injective (Prod.ext hfst heq))
-        exact Disjoint.mono inf_le_right inf_le_right (ht hsnd)
-      · exact Disjoint.mono inf_le_left inf_le_left (hs hfst)
-    · rw [Function.comp_def, Nat.surjective_unpair.iSup_comp]
-      exact iSup_inf_iSup.symm
+  have hD_inf : InfClosed {U | D U} := by
+    rintro U ⟨s, hs, hFs, rfl⟩ V ⟨t, ht, hFt, rfl⟩
+    exact hF_inf.exists_disjoint_iSup_inf hs ht hFs hFt
   -- Three disjoint families suffice for the shell cover. All intersections needed
   -- by the two binary Mayer–Vietoris steps are covered by hD_inf.
   intro U
@@ -192,19 +148,14 @@ theorem mayerVietoris_induction {X : Type*} [TopologicalSpace X] [T2Space X]
         (iSup_mono' fun n ↦ ⟨_, le_rfl⟩)) (iSup_mono' fun n ↦ ⟨_, le_rfl⟩)
     · apply iSup_le
       intro n
+      have hle : (s n).sup id ≤ A (n % 3) := by
+        have hn : 3 * (n / 3) + n % 3 = n := by omega
+        exact le_iSup_of_le (n / 3) (by rw [hn])
       have hmod : n % 3 = 0 ∨ n % 3 = 1 ∨ n % 3 = 2 := by omega
       rcases hmod with h | h | h
-      · apply le_sup_of_le_left
-        apply le_sup_of_le_left
-        have hn : 3 * (n / 3) + 0 = n := by omega
-        exact le_iSup_of_le (n / 3) (by rw [hn])
-      · apply le_sup_of_le_left
-        apply le_sup_of_le_right
-        have hn : 3 * (n / 3) + 1 = n := by omega
-        exact le_iSup_of_le (n / 3) (by rw [hn])
-      · apply le_sup_of_le_right
-        have hn : 3 * (n / 3) + 2 = n := by omega
-        exact le_iSup_of_le (n / 3) (by rw [hn])
+      · exact hle.trans (by rw [h]; exact le_sup_of_le_left le_sup_left)
+      · exact hle.trans (by rw [h]; exact le_sup_of_le_left le_sup_right)
+      · exact hle.trans (by rw [h]; exact le_sup_right)
   rw [← hcover]
   apply hsup _ _ (hsup _ _ (hDP (hDA 0)) (hDP (hDA 1))
     (hDP (hD_inf (hDA 0) (hDA 1)))) (hDP (hDA 2))
