@@ -13,10 +13,10 @@ public import Mathlib.LinearAlgebra.Dimension.Localization
 /-!
 # Khovanov homology and its graded Euler characteristic
 
-The Khovanov homology `Khⁱʲ(D; R)` of a planar oriented code `D` is the cohomology in cochain
-degree `i` of the quantum component `j` of the normalized Khovanov complex
-`TauCeti.OrientedPDCode.khovanovComplex`. Its graded Euler characteristic is the Laurent
-polynomial
+The Khovanov homology `Khⁱʲ(D; R)` of a planar oriented code `D`, defined in
+`TauCeti.KnotTheory.Khovanov.Homology`, is the cohomology in cochain degree `i` of the quantum
+component `j` of the normalized Khovanov complex `TauCeti.OrientedPDCode.khovanovComplex`.
+Its graded Euler characteristic is the Laurent polynomial
 
 `χ_q Kh(D; R) = ∑ⱼ (∑ᵢ (-1) ^ i rank Khⁱʲ(D; R)) qʲ`,
 
@@ -38,12 +38,16 @@ graded Euler characteristic `1`.
 
 ## Main definitions
 
-* `TauCeti.OrientedPDCode.khovanovHomology D hD R i j`: the Khovanov homology `Khⁱʲ(D; R)`.
 * `TauCeti.OrientedPDCode.khovanovEulerChar D hD R`: the graded Euler characteristic of the
   Khovanov homology of `D` with coefficients in `R`.
 
 ## Main results
 
+* `TauCeti.OrientedPDCode.homologyEulerChar_khovanovComplex_eq_negOnePow_mul`: normalization
+  multiplies the bracket homology Euler characteristic by `(-1)^n₋` and translates the quantum
+  index.
+* `TauCeti.OrientedPDCode.coeff_khovanovEulerChar_eq_sum`: each coefficient is the finite
+  alternating sum of homology ranks over the cochain interval `[-n₋, n₊]`.
 * `TauCeti.OrientedPDCode.homologyEulerChar_khovanovComplex`: Euler–Poincaré for each quantum
   component, whose Euler characteristic is the coefficient of `qʲ` in the enhanced state sum.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSum`: `χ_q Kh(D; R)` is the enhanced
@@ -112,19 +116,11 @@ variable [Nontrivial R]
 homology Euler characteristic. -/
 theorem finite_support_homologyEulerChar_khovanovComplex :
     (Function.support fun j ↦ (D.khovanovComplex hD R j).homologyEulerChar).Finite := by
-  -- The quantum component `j` is a shift of the quantum component `j - n₊ + 2n₋` of the bracket,
-  -- and only finitely many of those are nonzero.
-  refine ((D.toPDCode.finite_quantumSupport_khovanovBracket hD R).image
-    (· + ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount))).subset fun j hj ↦ ?_
-  refine ⟨j - D.positiveCrossingCount + 2 * D.negativeCrossingCount, fun hzero ↦ hj ?_,
-    by ring⟩
-  have hK : IsZero (D.khovanovComplex hD R j) :=
-    ((shiftFunctor _ (D.negativeCrossingCount : ℤ)).map_isZero hzero).of_iso
-      (D.khovanovComplexShiftIso hD R j)
-  refine finsum_eq_zero_of_forall_eq_zero fun i ↦ ?_
-  have hX : IsZero ((D.khovanovComplex hD R j).X i) := (HomologicalComplex.eval _ _ i).map_isZero hK
-  rw [ModuleCat.finrank_eq_zero_of_isZero (HomologicalComplex.ExactAt.of_isZero hX).isZero_homology,
-    Nat.cast_zero, mul_zero]
+  refine (D.finite_quantumSupport_khovanovComplex hD R).subset fun j hj hK ↦ hj ?_
+  exact finsum_eq_zero_of_forall_eq_zero fun i ↦ by
+    rw [ModuleCat.finrank_eq_zero_of_isZero
+      (ExactAt.of_isZero ((eval _ _ i).map_isZero hK)).isZero_homology,
+      Nat.cast_zero, mul_zero]
 
 /-- **The graded Euler characteristic of Khovanov homology** `χ_q Kh(D; R)` of a planar oriented
 code `D`: the Laurent polynomial in `q = T` whose coefficient of `qʲ` is the alternating sum
@@ -154,8 +150,7 @@ theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
         (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount)]
   apply Finset.sum_congr rfl
   intro i hi
-  rw [khovanovHomology_def]
-  rfl
+  simp only [ComplexShape.eulerCharSignsUpInt_χ]
 
 /-- The empty diagram has graded Euler characteristic `1` over every nontrivial
 commutative ring. -/
@@ -191,7 +186,7 @@ theorem homologyEulerChar_khovanovComplex (j : ℤ) :
       (fun _ ↦ inferInstance) 0 n,
     ← eulerChar_khovanovComplex,
     CochainComplex.eulerChar_eq_homologyEulerChar _
-      (fun _ ↦ by rw [khovanovComplex_X]; infer_instance)
+      (fun _ ↦ inferInstance)
       (-D.negativeCrossingCount) D.positiveCrossingCount]
 
 /-- **The graded Euler characteristic of Khovanov homology is the enhanced state sum**, over a

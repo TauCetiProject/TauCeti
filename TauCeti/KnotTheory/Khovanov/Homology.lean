@@ -54,7 +54,8 @@ theorem khovanovHomology_def (i j : ℤ) :
     D.khovanovHomology hD R i j = (D.khovanovComplex hD R j).homology i :=
   (rfl)
 
-/-- Normalization translates bracket homology by `(n₋, -n₊ + 2n₋)`.
+/-- `Khⁱʲ(D; R)` is isomorphic to bracket homology in cochain degree `i + n₋` and quantum
+degree `j - n₊ + 2n₋`.
 The comparison retains the degreewise sign in `khovanovComplexShiftIso`. -/
 def khovanovHomologyBracketIso (i j : ℤ) :
     D.khovanovHomology hD R i j ≅
