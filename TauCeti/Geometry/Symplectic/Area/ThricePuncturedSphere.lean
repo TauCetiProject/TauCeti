@@ -31,9 +31,9 @@ signs of the ends: `+` on the input ends `0` and `1`, `-` on the output end `∞
 
 The domain `S_R` is a disc with two holes, so the annulus formula
 `TauCeti.SymplecticForm.integral_fderiv_apply_annulus` does not apply to it directly. Instead the
-map is cut off near the puncture at `1`: the product `ũ = (1 - χ) u` with a bump function `χ`
-about `1` is `C²` on `ℂ ∖ {0}`, so the annulus formula applies to `ũ` on the annulus about `0`
-bounded by the circles at `0` and `∞`. The annulus formula for `ũ` and for `u` on two annuli
+map is cut off near the puncture at `1`: the product `uc = (1 - χ) u` with a bump function `χ`
+about `1` is `C²` on `ℂ ∖ {0}`, so the annulus formula applies to `uc` on the annulus about `0`
+bounded by the circles at `0` and `∞`. The annulus formula for `uc` and for `u` on two annuli
 about `1` then removes the contribution of the disc about `1`. No extension of `u` itself across
 the punctures is needed.
 
@@ -166,23 +166,23 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
       (isOpen_ne_fun continuous_id continuous_const)
   have hu' {w : ℂ} (h₀ : w ≠ 0) (h₁ : w ≠ 1) : ContDiffAt ℝ 2 u w :=
     hu.contDiffAt (hS.mem_nhds ⟨h₀, h₁⟩)
-  -- Cut `u` off near `1`: `ũ = (1 - χ) u` vanishes near `1` and equals `u` away from it.
+  -- Cut `u` off near `1`: `uc = (1 - χ) u` vanishes near `1` and equals `u` away from it.
   let χ : ContDiffBump (1 : ℂ) := ⟨1 / 4, 1 / 2, by norm_num, by norm_num⟩
-  let ũ : ℂ → V := fun w ↦ (1 - χ w) • u w
-  have hũ_eq {w : ℂ} (hw : 1 / 2 ≤ ‖w - 1‖) : ũ w = u w := by
-    simp [ũ, χ.zero_of_le_dist (by rw [dist_eq_norm]; exact hw)]
-  have hũ_zero {w : ℂ} (hw : ‖w - 1‖ ≤ 1 / 4) : ũ w = 0 := by
-    simp [ũ, χ.one_of_mem_closedBall (by rw [mem_closedBall, dist_eq_norm]; exact hw)]
-  have hũ_near_eq {w : ℂ} (hw : 1 / 2 < ‖w - 1‖) : ũ =ᶠ[𝓝 w] u := by
+  let uc : ℂ → V := fun w ↦ (1 - χ w) • u w
+  have huc_eq {w : ℂ} (hw : 1 / 2 ≤ ‖w - 1‖) : uc w = u w := by
+    simp [uc, χ.zero_of_le_dist (by rw [dist_eq_norm]; exact hw)]
+  have huc_zero {w : ℂ} (hw : ‖w - 1‖ ≤ 1 / 4) : uc w = 0 := by
+    simp [uc, χ.one_of_mem_closedBall (by rw [mem_closedBall, dist_eq_norm]; exact hw)]
+  have huc_near_eq {w : ℂ} (hw : 1 / 2 < ‖w - 1‖) : uc =ᶠ[𝓝 w] u := by
     filter_upwards [(isOpen_lt continuous_const
-      (continuous_id.sub continuous_const).norm).mem_nhds hw] with z hz using hũ_eq hz.le
-  have hũ_near_zero {w : ℂ} (hw : ‖w - 1‖ < 1 / 4) : ũ =ᶠ[𝓝 w] fun _ ↦ 0 := by
+      (continuous_id.sub continuous_const).norm).mem_nhds hw] with z hz using huc_eq hz.le
+  have huc_near_zero {w : ℂ} (hw : ‖w - 1‖ < 1 / 4) : uc =ᶠ[𝓝 w] fun _ ↦ 0 := by
     filter_upwards [(isOpen_lt (continuous_id.sub continuous_const).norm
-      continuous_const).mem_nhds hw] with z hz using hũ_zero hz.le
-  have hũ {w : ℂ} (h₀ : w ≠ 0) : ContDiffAt ℝ 2 ũ w := by
+      continuous_const).mem_nhds hw] with z hz using huc_zero hz.le
+  have huc {w : ℂ} (h₀ : w ≠ 0) : ContDiffAt ℝ 2 uc w := by
     by_cases h₁ : w = 1
     · subst h₁
-      exact contDiffAt_const.congr_of_eventuallyEq (hũ_near_zero (by norm_num))
+      exact contDiffAt_const.congr_of_eventuallyEq (huc_near_zero (by norm_num))
     · exact (contDiffAt_const.sub χ.contDiffAt).smul (hu' h₀ h₁)
   -- Norms of points on the circles and in the annuli.
   have hcircle (c : ℂ) {a : ℝ} (ha : 0 ≤ a) (θ : ℝ) : ‖circleMap c a θ - c‖ = a := by
@@ -231,10 +231,10 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
   have hsphere : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ sphere (1 : ℂ) (3 / 4) :=
     measure_eq_zero_iff_ae_notMem.1 (Measure.addHaar_sphere (μ := volume) (1 : ℂ) (3 / 4))
   -- The annulus about `0`, for the cut-off map.
-  have hI₀ : ∫ z in A₀, ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I) =
+  have hI₀ : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
-    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ hũ (hA₀ne hz)]
-    congr 1 <;> refine circleArea_congr ω fun θ ↦ hũ_eq ?_
+    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (hA₀ne hz)]
+    congr 1 <;> refine circleArea_congr ω fun θ ↦ huc_eq ?_
     · have := (htri (circleMap 0 ρ θ)).1
       rw [← sub_zero (circleMap 0 ρ θ), hcircle 0 (by linarith) θ] at this
       simp only [sub_zero] at this
@@ -244,16 +244,16 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
       simp only [sub_zero] at this
       linarith
   -- The disc about `1`, for the cut-off map: it vanishes near `1`.
-  have hball : ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I) =
+  have hball : ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ω.circleArea u 1 (3 / 4) := by
-    have hC : ∫ z in C, ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I) =
+    have hC : ∫ z in C, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
         ω.circleArea u 1 (3 / 4) := by
       rw [integral_annulus ω 1 (by norm_num) (by norm_num)
-        fun z hz ↦ hũ (hne₀ (by linarith [hz.2])),
+        fun z hz ↦ huc (hne₀ (by linarith [hz.2])),
         circleArea_eq_zero ω (c := 1) (r := 1 / 8) fun θ ↦
-          hũ_zero (by rw [hcircle 1 (by norm_num)]; norm_num),
+          huc_zero (by rw [hcircle 1 (by norm_num)]; norm_num),
         sub_zero]
-      exact circleArea_congr ω fun θ ↦ hũ_eq (by rw [hcircle 1 (by norm_num)]; norm_num)
+      exact circleArea_congr ω fun θ ↦ huc_eq (by rw [hcircle 1 (by norm_num)]; norm_num)
     rw [← hC, ← setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
       measurableSet_closedBall.nullMeasurableSet ball_subset_closedBall ?_]
     · refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_closedBall
@@ -263,7 +263,7 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
       · have hz' : ‖z - 1‖ < 1 / 8 := by
           by_contra h
           exact hz.2 ⟨not_lt.1 h, by simpa [dist_eq_norm] using hz.1⟩
-        rw [(hũ_near_zero (by linarith)).fderiv_eq]
+        rw [(huc_near_zero (by linarith)).fderiv_eq]
         simp
     · filter_upwards [hsphere] with z hz hz'
       exact absurd (mem_sphere.2 (le_antisymm hz'.1 (not_lt.1 hz'.2))) hz
@@ -277,18 +277,18 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
         simp only [sub_self, norm_zero] at this
         linarith
   -- Outside the disc about `1` the cut-off map is `u`.
-  have hAu : ∫ z in A, ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I) =
+  have hAu : ∫ z in A, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ∫ z in A, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) :=
     setIntegral_congr_fun hA.measurableSet fun z hz ↦ by
-      rw [(hũ_near_eq (by linarith [hAfar hz])).fderiv_eq]
-  have hAsplit : ∫ z in A₀, ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I) =
-      (∫ z in A, ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I)) +
-        ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ ũ z 1) (fderiv ℝ ũ z I) := by
+      rw [(huc_near_eq (by linarith [hAfar hz])).fderiv_eq]
+  have hAsplit : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
+      (∫ z in A, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I)) +
+        ∫ z in ball (1 : ℂ) (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) := by
     conv_lhs => rw [← sdiff_union_of_subset hballA₀]
     exact setIntegral_union disjoint_sdiff_left measurableSet_ball
-      (hint hA fun z hz ↦ hũ (hA₀ne hz.1))
+      (hint hA fun z hz ↦ huc (hA₀ne hz.1))
       ((hint (isCompact_closedBall 1 (3 / 4))
-        fun z hz ↦ hũ (hne₀ (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).mono_set
+        fun z hz ↦ huc (hne₀ (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).mono_set
         ball_subset_closedBall)
   -- The truncation is the part of `A₀` outside the disc about `1`, and the part of `B` inside.
   have hsplit : ∫ w in truncation R, ω (fderiv ℝ u w 1) (fderiv ℝ u w I) =
