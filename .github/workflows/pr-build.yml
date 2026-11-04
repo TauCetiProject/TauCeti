@@ -1168,6 +1168,9 @@ jobs:
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
             --setenv IS_BATCH "${IS_BATCH:-}" \
+            --setenv CI_RESOURCE_TESTED_HEAD "${CI_RESOURCE_TESTED_HEAD:-}" \
+            --setenv CI_RESOURCE_TESTED_BASE "${CI_RESOURCE_TESTED_BASE:-}" \
+            --setenv CI_RESOURCE_TESTED_COMMIT "${CI_RESOURCE_TESTED_COMMIT:-}" \
             --setenv TAUCETI_PROJECT_ROOT "$TAUCETI_PROJECT_ROOT" \
             --setenv TAUCETI_TRUSTED_SCRIPTS "$TAUCETI_TRUSTED_SCRIPTS" \
             --chdir "$PWD/pr" \
