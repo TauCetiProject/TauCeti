@@ -10,6 +10,7 @@ import Mathlib.Analysis.CStarAlgebra.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Analysis.Normed.Operator.Summable
 
 /-!
 # The Cotlar–Stein almost-orthogonality lemma
@@ -31,8 +32,6 @@ operator is decomposed dyadically, and the pieces are almost orthogonal in the a
 * `TauCeti.exists_hasSum_apply_of_almost_orthogonal`: the Cotlar–Stein lemma for an arbitrary
   family; the series converges in the strong operator topology to an operator of norm at
   most `A`.
-* `TauCeti.isClosed_setOf_summable_apply`: if the finite partial sums of a family of operators
-  are uniformly bounded, the vectors on which the series converges form a closed set.
 
 ## Implementation notes
 
@@ -44,9 +43,9 @@ geometric mean of these two bounds. Summing the geometric means one index at a t
 `‖(S† S) ^ n‖` by `card ι * A ^ (2 * n)`, and letting `n → ∞` removes the factor `card ι`.
 
 For an infinite family, the vectors on which the series converges form a closed subspace, by
-the uniform bound on the finite partial sums. It contains the range of every `(T j)†`, on which
-the series converges absolutely, so its orthogonal complement is killed by every `T j`, hence
-is zero.
+the uniform bound on the finite partial sums (`TauCeti.isClosed_setOf_summable_apply`). It
+contains the range of every `(T j)†`, on which the series converges absolutely, so its
+orthogonal complement is killed by every `T j`, hence is zero.
 
 ## References
 
@@ -63,37 +62,6 @@ open ContinuousLinearMap Filter Finset
 open scoped InnerProduct InnerProductSpace Topology
 
 namespace TauCeti
-
-section Summable
-
-variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-
-/-- If the finite partial sums of a family of operators are uniformly bounded, then the vectors
-`x` for which the series `∑ i, T i x` converges form a closed set. -/
-theorem isClosed_setOf_summable_apply {T : ι → E →L[𝕜] F} {A : ℝ}
-    (hT : ∀ s : Finset ι, ‖∑ i ∈ s, T i‖ ≤ A) : IsClosed {x | Summable fun i ↦ T i x} := by
-  refine isClosed_of_closure_subset fun x hx ↦ summable_iff_vanishing_norm.mpr fun ε hε ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.mp hx (ε / (2 * (|A| + 1))) (by positivity)
-  obtain ⟨s, hs⟩ := summable_iff_vanishing_norm.mp hy (ε / 2) (half_pos hε)
-  refine ⟨s, fun t ht ↦ ?_⟩
-  have hdist : (|A| + 1) * ‖x - y‖ < ε / 2 := by
-    rw [← dist_eq_norm]
-    calc (|A| + 1) * dist x y < (|A| + 1) * (ε / (2 * (|A| + 1))) := by gcongr
-      _ = ε / 2 := by field_simp
-  calc ‖∑ i ∈ t, T i x‖ = ‖(∑ i ∈ t, T i) (x - y) + ∑ i ∈ t, T i y‖ := by
-        simp [sum_apply, map_sub]
-    _ ≤ ‖∑ i ∈ t, T i‖ * ‖x - y‖ + ‖∑ i ∈ t, T i y‖ :=
-        norm_add_le_of_le (le_opNorm _ _) le_rfl
-    _ < ε / 2 + ε / 2 := by
-        gcongr ?_ + ?_
-        · calc ‖∑ i ∈ t, T i‖ * ‖x - y‖ ≤ (|A| + 1) * ‖x - y‖ := by
-                gcongr; linarith [hT t, le_abs_self A]
-            _ < ε / 2 := hdist
-        · exact hs t ht
-    _ = ε := add_halves ε
-
-end Summable
 
 variable {𝕜 E F ι : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
@@ -162,6 +130,40 @@ private lemma norm_le_of_sum_le (h₁ : ∀ i, ∑ j, √‖(T i)† ∘L T j‖
           (mem_univ i)
     _ ≤ A := h₁ i
 
+/-- One step of the summation of the geometric-mean bounds: splitting off the first pair of
+indices of the words of length `n + 1` that follow an operator with norms `f i`. -/
+private lemma sum_sqrt_mul_sqrt_succ_le {n : ℕ} {C : ℝ} (hC : 0 ≤ C)
+    (h₁ : ∀ i, ∑ j, √‖(T i)† ∘L T j‖ ≤ A)
+    (ih : ∀ k, ∑ w : Fin n → ι × ι,
+      √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) * √(chainBound T n k w) ≤ C)
+    (f : ι → ℝ) (hf : ∀ i, 0 ≤ f i) :
+    ∑ w : Fin (n + 1) → ι × ι, √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) *
+      √(f (w 0).1 * chainBound T n (w 0).2 (Fin.tail w)) ≤ C * ∑ j, √(f j) * A := by
+  calc ∑ w : Fin (n + 1) → ι × ι, √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) *
+        √(f (w 0).1 * chainBound T n (w 0).2 (Fin.tail w))
+      = ∑ p : ι × ι, √(f p.1) * √‖(T p.1)† ∘L T p.2‖ *
+          ∑ w : Fin n → ι × ι,
+            √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) * √(chainBound T n p.2 w) := by
+        rw [← (Fin.consEquiv fun _ ↦ ι × ι).sum_comp, Fintype.sum_prod_type]
+        refine sum_congr rfl fun p _ ↦ ?_
+        rw [mul_sum]
+        refine sum_congr rfl fun w _ ↦ ?_
+        simp only [Fin.consEquiv_apply, Fin.prod_univ_succ, Fin.cons_zero, Fin.cons_succ,
+          Fin.tail_cons]
+        rw [Real.sqrt_mul (norm_nonneg _), Real.sqrt_mul (hf _)]
+        ring
+    _ ≤ ∑ p : ι × ι, √(f p.1) * √‖(T p.1)† ∘L T p.2‖ * C :=
+        sum_le_sum fun p _ ↦ mul_le_mul_of_nonneg_left (ih p.2) (by positivity)
+    _ = C * ∑ j, √(f j) * ∑ l, √‖(T j)† ∘L T l‖ := by
+        rw [Fintype.sum_prod_type, mul_sum]
+        refine sum_congr rfl fun j _ ↦ ?_
+        rw [mul_sum, mul_sum]
+        refine sum_congr rfl fun l _ ↦ ?_
+        ring
+    _ ≤ C * ∑ j, √(f j) * A :=
+        mul_le_mul_of_nonneg_left
+          (sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_left (h₁ j) (Real.sqrt_nonneg _)) hC
+
 /-- Summing the geometric-mean bounds of the words that follow `T k`, one index at a time. -/
 private lemma sum_sqrt_mul_sqrt_chainBound_le (hA : 0 ≤ A)
     (h₁ : ∀ i, ∑ j, √‖(T i)† ∘L T j‖ ≤ A) (h₂ : ∀ i, ∑ j, √‖T i ∘L (T j)†‖ ≤ A) :
@@ -170,33 +172,12 @@ private lemma sum_sqrt_mul_sqrt_chainBound_le (hA : 0 ≤ A)
   | 0, k => by
     simpa [chainBound] using Real.sqrt_le_sqrt (norm_le_of_sum_le T h₁ k)
   | n + 1, k => by
-    have ih := sum_sqrt_mul_sqrt_chainBound_le hA h₁ h₂ n
-    set C := √A * (A ^ 2) ^ n
-    calc ∑ w : Fin (n + 1) → ι × ι,
-          √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) * √(chainBound T (n + 1) k w)
-        = ∑ p : ι × ι, √‖T k ∘L (T p.1)†‖ * √‖(T p.1)† ∘L T p.2‖ *
-            ∑ w : Fin n → ι × ι,
-              √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) * √(chainBound T n p.2 w) := by
-          rw [← (Fin.consEquiv fun _ ↦ ι × ι).sum_comp, Fintype.sum_prod_type]
-          refine sum_congr rfl fun p _ ↦ ?_
-          rw [mul_sum]
-          refine sum_congr rfl fun w _ ↦ ?_
-          simp only [Fin.consEquiv_apply, chainBound, Fin.prod_univ_succ, Fin.cons_zero,
-            Fin.cons_succ, Fin.tail_cons]
-          rw [Real.sqrt_mul (norm_nonneg _), Real.sqrt_mul (norm_nonneg _)]
-          ring
-      _ ≤ ∑ p : ι × ι, √‖T k ∘L (T p.1)†‖ * √‖(T p.1)† ∘L T p.2‖ * C :=
-          sum_le_sum fun p _ ↦ mul_le_mul_of_nonneg_left (ih p.2) (by positivity)
-      _ = C * ∑ j, √‖T k ∘L (T j)†‖ * ∑ l, √‖(T j)† ∘L T l‖ := by
-          rw [Fintype.sum_prod_type, mul_sum]
-          refine sum_congr rfl fun j _ ↦ ?_
-          rw [mul_sum, mul_sum]
-          refine sum_congr rfl fun l _ ↦ ?_
-          ring
-      _ ≤ C * ∑ j, √‖T k ∘L (T j)†‖ * A := by
-          gcongr with j
-          exact h₁ j
-      _ ≤ C * (A * A) := by
+    simp only [chainBound]
+    calc _ ≤ √A * (A ^ 2) ^ n * ∑ j, √‖T k ∘L (T j)†‖ * A :=
+          sum_sqrt_mul_sqrt_succ_le T (by positivity) h₁
+            (sum_sqrt_mul_sqrt_chainBound_le hA h₁ h₂ n) (fun i ↦ ‖T k ∘L (T i)†‖)
+            fun _ ↦ norm_nonneg _
+      _ ≤ √A * (A ^ 2) ^ n * (A * A) := by
           rw [← sum_mul]
           gcongr
           exact h₂ k
@@ -209,37 +190,16 @@ private lemma sum_sqrt_mul_sqrt_chainBound_le (hA : 0 ≤ A)
 private lemma sum_norm_wordOp_le (hA : 0 ≤ A)
     (h₁ : ∀ i, ∑ j, √‖(T i)† ∘L T j‖ ≤ A) (h₂ : ∀ i, ∑ j, √‖T i ∘L (T j)†‖ ≤ A) (n : ℕ) :
     ∑ w : Fin (n + 1) → ι × ι, ‖wordOp T (n + 1) w‖ ≤ Fintype.card ι * (A ^ 2) ^ (n + 1) := by
-  have hT : ∀ i, √‖T i‖ ≤ √A := fun i ↦ Real.sqrt_le_sqrt (norm_le_of_sum_le T h₁ i)
-  set C := √A * (A ^ 2) ^ n
   calc ∑ w : Fin (n + 1) → ι × ι, ‖wordOp T (n + 1) w‖
       ≤ ∑ w : Fin (n + 1) → ι × ι, √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) *
           √(‖T (w 0).1‖ * chainBound T n (w 0).2 (Fin.tail w)) :=
         sum_le_sum fun w _ ↦ norm_wordOp_le_sqrt_mul_sqrt T n w
-    _ = ∑ p : ι × ι, √‖T p.1‖ * √‖(T p.1)† ∘L T p.2‖ *
-          ∑ w : Fin n → ι × ι,
-            √(∏ m, ‖(T (w m).1)† ∘L T (w m).2‖) * √(chainBound T n p.2 w) := by
-        rw [← (Fin.consEquiv fun _ ↦ ι × ι).sum_comp, Fintype.sum_prod_type]
-        refine sum_congr rfl fun p _ ↦ ?_
-        rw [mul_sum]
-        refine sum_congr rfl fun w _ ↦ ?_
-        simp only [Fin.consEquiv_apply, Fin.prod_univ_succ, Fin.cons_zero, Fin.cons_succ,
-          Fin.tail_cons]
-        rw [Real.sqrt_mul (norm_nonneg _), Real.sqrt_mul (norm_nonneg _)]
-        ring
-    _ ≤ ∑ p : ι × ι, √A * √‖(T p.1)† ∘L T p.2‖ * C :=
-        sum_le_sum fun p _ ↦ mul_le_mul
-          (mul_le_mul_of_nonneg_right (hT p.1) (Real.sqrt_nonneg _))
-          (sum_sqrt_mul_sqrt_chainBound_le T hA h₁ h₂ n p.2)
-          (sum_nonneg fun _ _ ↦ by positivity) (by positivity)
-    _ = √A * C * ∑ j, ∑ l, √‖(T j)† ∘L T l‖ := by
-        rw [Fintype.sum_prod_type, mul_sum]
-        refine sum_congr rfl fun j _ ↦ ?_
-        rw [mul_sum]
-        refine sum_congr rfl fun l _ ↦ ?_
-        ring
-    _ ≤ √A * C * ∑ _j : ι, A := by
-        gcongr with j
-        exact h₁ j
+    _ ≤ √A * (A ^ 2) ^ n * ∑ j, √‖T j‖ * A :=
+        sum_sqrt_mul_sqrt_succ_le T (by positivity) h₁
+          (sum_sqrt_mul_sqrt_chainBound_le T hA h₁ h₂ n) (fun i ↦ ‖T i‖) fun _ ↦ norm_nonneg _
+    _ ≤ √A * (A ^ 2) ^ n * ∑ _j : ι, √A * A :=
+        mul_le_mul_of_nonneg_left (sum_le_sum fun j _ ↦ mul_le_mul_of_nonneg_right
+          (Real.sqrt_le_sqrt (norm_le_of_sum_le T h₁ j)) hA) (by positivity)
     _ = Fintype.card ι * (A ^ 2) ^ (n + 1) := by
         rw [sum_const, card_univ, nsmul_eq_mul]
         have : √A * √A = A := Real.mul_self_sqrt hA
