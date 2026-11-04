@@ -71,35 +71,28 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnAction (n : ℕ) (U : X.
   toFun r := cohomologyOnMap M (M.globalSectionsSmul r) n U
   map_one' := by
     ext x
-    apply (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U).injective
-    refine (H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul 1) n U x).trans ?_
-    simp only [globalSectionsSmul_one, CategoryTheory.Functor.map_id, Abelian.Ext.comp_mk₀_id]
+    dsimp only [cohomologyOnMap]
+    rw [globalSectionsSmul_one, CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
     rfl
   map_mul' r s := by
     ext x
-    apply (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U).injective
-    refine (H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul (r * s)) n U x).trans ?_
-    refine Eq.trans ?_ (H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul r) n U _).symm
-    rw [H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul s) n U x]
-    simp only [globalSectionsSmul_mul, CategoryTheory.Functor.map_comp, ← Abelian.Ext.mk₀_comp_mk₀]
-    exact (Abelian.Ext.comp_assoc _ _ _ (add_zero n) (add_zero 0) (by omega)).symm
+    dsimp only [cohomologyOnMap]
+    rw [globalSectionsSmul_mul, CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]
+    rfl
   map_zero' := by
     ext x
-    apply (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U).injective
-    refine (H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul 0) n U x).trans ?_
-    simp only [globalSectionsSmul_zero, CategoryTheory.Functor.map_zero, Abelian.Ext.mk₀_zero,
-      Abelian.Ext.comp_zero]
-    exact (map_zero _).symm
+    -- Evaluating the cohomology presheaf functor at `U` is the additive functor
+    -- `Abelian.extFunctorObj` out of the free abelian sheaf on `U`.
+    change ((Abelian.extFunctorObj _ n).map ((toSheaf X).map (M.globalSectionsSmul 0))) x = 0
+    rw [globalSectionsSmul_zero, CategoryTheory.Functor.map_zero, CategoryTheory.Functor.map_zero]
+    rfl
   map_add' r s := by
     ext x
-    apply (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U).injective
-    refine (H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul (r + s)) n U x).trans ?_
-    refine Eq.trans ?_
-      (map_add (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U) _ _).symm
-    rw [H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul r) n U x,
-      H'AddEquivExt_cohomologyOnMap M (M.globalSectionsSmul s) n U x]
-    simp only [globalSectionsSmul_add, CategoryTheory.Functor.map_add, Abelian.Ext.mk₀_add,
-      Abelian.Ext.comp_add]
+    change ((Abelian.extFunctorObj _ n).map ((toSheaf X).map (M.globalSectionsSmul (r + s)))) x =
+      ((Abelian.extFunctorObj _ n).map ((toSheaf X).map (M.globalSectionsSmul r))) x +
+        ((Abelian.extFunctorObj _ n).map ((toSheaf X).map (M.globalSectionsSmul s))) x
+    rw [globalSectionsSmul_add, CategoryTheory.Functor.map_add, CategoryTheory.Functor.map_add]
+    rfl
 
 /-- A global function `r` acts on `Hⁿ(U, M)` through the map induced by multiplication by `r` on
 `M`. -/
