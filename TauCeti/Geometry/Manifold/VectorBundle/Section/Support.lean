@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 
 /-!
 # Compactly supported smooth bundle sections
@@ -23,7 +24,7 @@ scalar function localizes even a section without compact support, and a cutoff e
 on the support acts as the identity. These operations provide the support stages and
 localizations used in test sections and their inductive-limit topologies.
 
-The smoothness of multiplication is supplied by Mathlib's `ContMDiff.smul_section`.
+Multiplication is the module action `ContMDiffSection.instModule'` of smooth scalar functions.
 -/
 
 public section
@@ -186,19 +187,9 @@ theorem compactlySupported_eq_top [CompactSpace M] : compactlySupported I F n V 
   intro s _
   exact s.isClosed_tsupport.isCompact
 
-/-- Multiplication of sections by a smooth scalar function as a linear map. -/
-def smulLinearMap (f : C^n⟮I, M; 𝕜⟯) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; F, V⟯ where
-  toFun s := ⟨fun x => f x • s x, f.contMDiff.smul_section s.contMDiff⟩
-  map_add' s t := by ext x; simp [smul_add]
-  map_smul' c s := by ext x; simp [smul_smul, mul_comm]
-
-@[simp]
-theorem smulLinearMap_apply (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (x : M) :
-    smulLinearMap f s x = f x • s x := (rfl)
-
 /-- Scalar localization is supported in both the scalar support and the section support. -/
-theorem tsupport_smulLinearMap_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
-    (smulLinearMap f s).tsupport ⊆ _root_.tsupport f ∩ s.tsupport := by
+theorem tsupport_smul_subset' (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    (f • s).tsupport ⊆ _root_.tsupport f ∩ s.tsupport := by
   apply (tsupport_subset_iff ((_root_.isClosed_tsupport f).inter s.isClosed_tsupport)).2
   intro x hx
   by_cases hf : x ∈ _root_.tsupport f
@@ -207,29 +198,29 @@ theorem tsupport_smulLinearMap_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I;
   · simp [_root_.image_eq_zero_of_notMem_tsupport hf]
 
 /-- Smooth multiplication preserves each fixed-support stage. -/
-theorem smulLinearMap_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
+theorem smul_mem_supportedIn' (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     {K : Set M} (hs : s ∈ supportedIn I F n V K) :
-    smulLinearMap f s ∈ supportedIn I F n V K :=
-  (tsupport_smulLinearMap_subset f s).trans (inter_subset_right.trans hs)
+    f • s ∈ supportedIn I F n V K :=
+  (tsupport_smul_subset' f s).trans (inter_subset_right.trans hs)
 
 /-- Smooth multiplication preserves compact support of the section. -/
-theorem smulLinearMap_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
+theorem smul_mem_compactlySupported' (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     (hs : s ∈ compactlySupported I F n V) :
-    smulLinearMap f s ∈ compactlySupported I F n V :=
-  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smulLinearMap_subset f s).trans
+    f • s ∈ compactlySupported I F n V :=
+  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_subset' f s).trans
     inter_subset_right)
 
 /-- A compactly supported smooth scalar function localizes any smooth section to compact
 support, even when the original section is not compactly supported. -/
-theorem smulLinearMap_mem_compactlySupported_of_hasCompactSupport (f : C^n⟮I, M; 𝕜⟯)
+theorem smul_mem_compactlySupported_of_hasCompactSupport (f : C^n⟮I, M; 𝕜⟯)
     (hf : HasCompactSupport f) (s : Cₛ^n⟮I; F, V⟯) :
-    smulLinearMap f s ∈ compactlySupported I F n V :=
-  hf.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smulLinearMap_subset f s).trans
+    f • s ∈ compactlySupported I F n V :=
+  hf.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_subset' f s).trans
     inter_subset_left)
 
 /-- A cutoff equal to one on a section's closed support leaves that section unchanged. -/
-theorem smulLinearMap_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯)
-    (hf : EqOn f 1 s.tsupport) : smulLinearMap f s = s := by
+theorem smul_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯)
+    (hf : EqOn f 1 s.tsupport) : f • s = s := by
   ext x
   by_cases hx : x ∈ s.tsupport
   · simp [hf hx]
