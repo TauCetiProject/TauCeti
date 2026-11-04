@@ -55,6 +55,8 @@ identification of the primitive on it with `r α|∂W` is not treated here.
   each point outside `W` lies on exactly one outgoing Liouville trajectory from `∂W`.
 * `TauCeti.IsLiouvilleCompletion.flowOf_flowOf`: the Liouville flow of a completion is a global
   flow, satisfying the group law.
+* `TauCeti.IsLiouvilleCompletion.flowOf_eq_globalFlowDiffeomorph`: its time-`t` map is a
+  diffeomorphism.
 * `TauCeti.IsLiouvilleCompletion.flowOf_neg_mem_interior`: the backward Liouville flow carries
   the Liouville domain into its interior.
 
@@ -245,6 +247,16 @@ theorem exists_flow_eq (h : IsLiouvilleCompletion ω α W)
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   exact ⟨globalFlow Z hZs (h.isCompleteVectorField hZ), fun t x ↦
     congrFun₂ (flowOf_eq_globalFlow hZs (h.isCompleteVectorField hZ)) t x⟩
+
+/-- On a completion, the time-`t` map of the Liouville flow is the diffeomorphism
+`TauCeti.globalFlowDiffeomorph` of the complete smooth Liouville field. -/
+theorem flowOf_eq_globalFlowDiffeomorph (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (t : ℝ) :
+    flowOf Z t =
+      globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top (h.contMDiff_of_interior_eq hZ) t :=
+  funext fun y ↦ by
+    rw [globalFlowDiffeomorph_apply, flowOf_eq_globalFlow
+      ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) (h.isCompleteVectorField hZ)]
 
 /-- The Liouville flow of a completion fixes every point at time zero. -/
 theorem flowOf_zero (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)

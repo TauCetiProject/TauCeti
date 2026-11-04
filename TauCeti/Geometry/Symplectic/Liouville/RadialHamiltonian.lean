@@ -160,20 +160,13 @@ theorem mfderiv_flowOf_hamiltonianVectorField_liouvilleRadialCoordinate
     (hx : x ∉ W) (hsx : flowOf Z s x ∉ W) :
     mfderiv I I (flowOf Z s) x (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x) =
       ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) (flowOf Z s x) := by
-  have hZs := h.contMDiff_of_interior_eq hZ
-  have hc := h.isCompleteVectorField hZ
   set r := liouvilleRadialCoordinate Z W
-  set ψ := globalFlowDiffeomorph hc le_top hZs s
-  have hψ : flowOf Z s = ψ := funext fun y ↦ by
-    rw [globalFlowDiffeomorph_apply, flowOf_eq_globalFlow (hZs.of_le (by simp)) hc]
-  have hZσ : IsLiouvilleVectorField ω.1 Z := by
-    have := isLiouvilleVectorField_mextDeriv_of_interior_eq (α.isSmoothForm.of_le (by simp))
-      (hZs.mdifferentiable (by simp)) (by rw [h.mextDeriv_eq, hZ])
-    rwa [h.mextDeriv_eq] at this
+  set ψ := globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
+    (h.contMDiff_of_interior_eq hZ) s
+  have hψ : flowOf Z s = ψ := h.flowOf_eq_globalFlowDiffeomorph hZ s
   -- The time-`s` map is conformally symplectic, `ψ_s^* ω = e^s ω`.
-  have hpull : SmoothForm.mpullback ψ ψ.contMDiff ω = Real.exp s • ω := Subtype.ext <| by
-    rw [SmoothForm.coe_mpullback, ← hψ, flowOf_eq_globalFlow (hZs.of_le (by simp)) hc]
-    exact hZσ.mpullback_globalFlow_eq_exp_smul hc (hZs.of_le (by simp)) ω.mdifferentiable s
+  have hpull : SmoothForm.mpullback ψ ψ.contMDiff ω = Real.exp s • ω :=
+    h.mpullback_globalFlowDiffeomorph_eq_exp_smul hZ s
   have hes : Real.exp s ≠ 0 := (Real.exp_pos s).ne'
   -- Near `x` the radial coordinate is rescaled by the flow, `r ∘ ψ_s = e^s r`.
   have hloc : r ∘ ψ =ᶠ[𝓝 x] Real.exp s • r := by
@@ -200,15 +193,11 @@ theorem isMIntegralCurve_flowOf_comp (h : IsLiouvilleCompletion ω α W)
     (hγW : ∀ t, γ t ∉ W) (hsγW : ∀ t, flowOf Z s (γ t) ∉ W) :
     IsMIntegralCurve (flowOf Z s ∘ γ)
       (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)) := by
-  have hZs := h.contMDiff_of_interior_eq hZ
-  have hc := h.isCompleteVectorField hZ
-  have hψ : flowOf Z s = globalFlowDiffeomorph hc le_top hZs s := funext fun y ↦ by
-    rw [globalFlowDiffeomorph_apply, flowOf_eq_globalFlow (hZs.of_le (by simp)) hc]
   rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
   refine hγ.map_of_mfderiv_eq (fun t _ ↦ ?_) fun t _ ↦
     h.mfderiv_flowOf_hamiltonianVectorField_liouvilleRadialCoordinate hZ (hγW t) (hsγW t)
-  rw [hψ]
-  exact (globalFlowDiffeomorph hc le_top hZs s).contMDiff.mdifferentiableAt (by simp)
+  rw [h.flowOf_eq_globalFlowDiffeomorph hZ s]
+  exact (Diffeomorph.contMDiff _).mdifferentiableAt (by simp)
 
 /-- **The periods of the radial field do not depend on the level.** On a completion, for levels
 `c, c' > 1` of the radial coordinate, the Hamiltonian vector field `X_r` of the radial coordinate
