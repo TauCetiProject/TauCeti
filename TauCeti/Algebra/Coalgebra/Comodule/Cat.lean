@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Semi
 public import Mathlib.CategoryTheory.ConcreteCategory.ReflectsIso
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
-public import TauCeti.Algebra.Coalgebra.Comodule.Hom
+public import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 
 /-!
 # The category of comodules over a coalgebra
@@ -387,14 +387,8 @@ coactions. -/
       map_coact := h }
   inv :=
     { toLinearMap := e.symm.toLinearMap
-      map_coact := by
-        ext n
-        have hn : TensorProduct.map e.toLinearMap LinearMap.id
-              (Comodule.coact (R := R) (C := C) (M := M) (e.symm n)) =
-            Comodule.coact (R := R) (C := C) (M := N) n := by
-          simpa using LinearMap.congr_fun h (e.symm n)
-        have hn' := congrArg (TensorProduct.map e.symm.toLinearMap LinearMap.id) hn
-        simpa [TensorProduct.map_map] using hn'.symm }
+      map_coact := Comodule.Hom.map_coact_of_comp_eq_id ⟨e.toLinearMap, h⟩ e.symm_comp
+        e.comp_symm }
   hom_inv_id := by
       ext m
       exact e.symm_apply_apply m
