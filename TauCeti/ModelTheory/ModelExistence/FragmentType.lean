@@ -56,8 +56,9 @@ theorem fragmentType_eq_inter (A : Fragment L) (a : Fin n → M) :
 
 /-- Restricting a fragment restricts the fragment type by intersection with its arity slice. -/
 theorem fragmentType_eq_inter_of_le (hAB : A ≤ B) (a : Fin n → M) :
-    fragmentType A M a = A.slice n ∩ fragmentType B M a :=
-  Set.sep_eq_inter_sep (Fragment.slice_mono hAB n)
+    fragmentType A M a = A.slice n ∩ fragmentType B M a := by
+  simpa only [fragmentType_eq_inter, Set.inter_def] using
+    (Set.sep_eq_inter_sep (p := fun φ => φ ∈ infinitaryType M a) (Fragment.slice_mono hAB n))
 
 /-- Fragment types are monotone in the fragment. -/
 theorem fragmentType_mono (hAB : A ≤ B) (a : Fin n → M) :
