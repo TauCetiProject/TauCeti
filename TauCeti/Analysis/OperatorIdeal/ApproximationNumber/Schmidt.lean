@@ -25,7 +25,8 @@ Both bounds come from the min–max bounds for approximation numbers. At most `n
 `‖T bᵢ‖` above the `n`-th rearranged value `rₙ`, and `T` is bounded by `rₙ` on the orthogonal
 complement of their span, so `aₙ(T) ≤ rₙ`. Below `rₙ` every threshold is exceeded on `n + 1`
 indices, and `T` is coercive with that constant on their span, so `rₙ ≤ aₙ(T)`. Neither bound
-uses compactness or completeness.
+uses compactness, and the target `F` need not be complete (a Hilbert basis already forces the
+source `E` to be complete).
 
 For a compact operator from a Hilbert space such a basis exists, and combining this with the
 Schmidt series gives its singular value decomposition: countable orthonormal families `(eᵢ)` and
