@@ -156,15 +156,6 @@ theorem oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecialization
 
 /-! ### Bijectivity via unblocked chain lifting -/
 
-omit [CharP R 2] in
-/-- Merging the stabilization variables carries `V_j`-multiples in `GC⁻(G')` to `V_i`-multiples in
-`GC⁻(G)`. -/
-private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
-    G.stabilizeXChainMap s R ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • c) =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXChainMap s R c := by
-  rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
-  simp [Fin.predAbove_succAbove]
-
 /-- If an unblocked chain `Z'` of `G'` becomes a cycle at `V_j = 0` and its stabilization image
 becomes a boundary at `V_i = 0`, then `Z'` is already a boundary at `V_j = 0`. -/
 private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
@@ -196,8 +187,8 @@ private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
     dsimp only
     calc (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXChainMap s R P'
         = G.stabilizeXChainMap s R
-            ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • P') :=
-          (G.stabilizeXChainMap_X_smul s i R P').symm
+            ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • P') := by
+          rw [G.stabilizeXChainMap_X_smul, Fin.predAbove_succAbove]
       _ = G.unblockedDifferential R (G.stabilizeXChainMap s R Z') := by
           rw [hP', G.stabilizeXChainMap_unblockedDifferential]
       _ = (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.unblockedDifferential R Q := by
@@ -219,7 +210,8 @@ private theorem simplyBlockedSpecialization_mem_range_of_stabilizeXChainMap
   have hSZ₀' : G.stabilizeXChainMap s R Z₀' ∈ LinearMap.range (G.unblockedDifferential R) := by
     refine ⟨W + (MvPolynomial.X i : MvPolynomial (Fin n) R) • U, ?_⟩
     rw [map_add, LinearMap.map_smul, hU]
-    simp only [Z₀', map_sub, G.stabilizeXChainMap_X_smul, map_add, hSZ', smul_sub, smul_add]
+    simp only [Z₀', map_sub, G.stabilizeXChainMap_X_smul, Fin.predAbove_succAbove, map_add,
+      hSZ', smul_sub, smul_add]
     abel
   obtain ⟨W', hW'⟩ :=
     G.mem_range_of_stabilizeXChainMap_mem_range s R hdZ₀' hSZ₀'
@@ -253,14 +245,16 @@ private theorem exists_simplyBlockedSpecialization_stabilizeXChainMap_sub_mem_ra
       ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • M') ∈
         LinearMap.range (G.unblockedDifferential R) := by
     refine ⟨Z - (MvPolynomial.X i : MvPolynomial (Fin n) R) • U, ?_⟩
-    rw [map_sub, LinearMap.map_smul, hU, smul_sub, hP, G.stabilizeXChainMap_X_smul]
+    rw [map_sub, LinearMap.map_smul, hU, smul_sub, hP, G.stabilizeXChainMap_X_smul,
+      Fin.predAbove_succAbove]
     abel
   obtain ⟨C', hC'⟩ :=
     G.mem_range_of_stabilizeXChainMap_mem_range s R hdXM' hSXM'
   have hdZ' : (Z - (MvPolynomial.X i : MvPolynomial (Fin n) R) • U) -
       G.stabilizeXChainMap s R C' ∈ LinearMap.ker (G.unblockedDifferential R) := by
     rw [LinearMap.mem_ker, map_sub, ← G.stabilizeXChainMap_unblockedDifferential, hC',
-      map_sub, LinearMap.map_smul, hU, smul_sub, hP, G.stabilizeXChainMap_X_smul]
+      map_sub, LinearMap.map_smul, hU, smul_sub, hP, G.stabilizeXChainMap_X_smul,
+      Fin.predAbove_succAbove]
     abel
   obtain ⟨N', hN', V, hV⟩ :=
     G.exists_sub_stabilizeXChainMap_mem_range s R hdZ'

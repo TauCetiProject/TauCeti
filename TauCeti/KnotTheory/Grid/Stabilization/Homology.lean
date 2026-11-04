@@ -93,6 +93,17 @@ theorem stabilizeXChainMap_apply (c : GridChainMinus R (n + 1)) :
       (G.stabilizeXOffCenterToCenter s R (G.stabilizeXOffCenterProjection s R c)) :=
   (rfl)
 
+/-- `stabilizeXChainMap` carries multiplication by `V_j` to multiplication by `V_{s.predAbove j}`,
+merging the two stabilization variables `V_{s.castSucc}` and `V_{s.succ}` into `V_s`.
+
+Not a `simp` lemma: `LinearMap.map_smulₛₗ` and `MvPolynomial.rename_X` already simplify the
+left-hand side. -/
+theorem stabilizeXChainMap_X_smul (j : Fin (n + 1)) (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXChainMap s R ((MvPolynomial.X j : S) • c) =
+      (MvPolynomial.X (s.predAbove j) : A) • G.stabilizeXChainMap s R c := by
+  rw [(G.stabilizeXChainMap s R).map_smulₛₗ]
+  simp
+
 variable [CharP R 2]
 
 /-- `GC⁻(G')` with scalars restricted to `A`, with its object and differential spelled out. -/
