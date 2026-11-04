@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Bicategory
+public import TauCeti.CategoryTheory.Category.Cat
 
 /-!
 # Invertibility of compatible modifications of lifts
@@ -80,47 +81,27 @@ instance subsingleton_hom₂ (φ ψ : L.Hom L') : Subsingleton (φ ⟶ ψ) where
 /-- Each component of the joint modification is invertible. -/
 instance isIso_modification_app {φ ψ : L.Hom L'} (Θ : φ ⟶ ψ) (p : Γ) :
     IsIso (Θ.joint.as.app ⟨(p, SingleObj.star H)⟩) := by
-  have h (Y : L.jointFiber p) :
+  have (Y : L.jointFiber p) :
       IsIso ((Θ.joint.as.app ⟨(p, SingleObj.star H)⟩).toNatTrans.app Y) := by
     have : IsIso ((L'.fiberEquivalence p).functor.map
         ((Θ.joint.as.app ⟨(p, SingleObj.star H)⟩).toNatTrans.app Y)) := by
       rw [map_modification_app]
       infer_instance
     exact isIso_of_reflects_iso _ (L'.fiberEquivalence p).functor
-  let e := NatIso.ofComponents (fun Y => asIso
-    ((Θ.joint.as.app ⟨(p, SingleObj.star H)⟩).toNatTrans.app Y))
-    (fun f => (Θ.joint.as.app ⟨(p, SingleObj.star H)⟩).toNatTrans.naturality f)
-  have he : (Cat.Hom.isoMk e).hom = Θ.joint.as.app ⟨(p, SingleObj.star H)⟩ := by
-    ext Y
-    rfl
-  rw [← he]
-  infer_instance
+  exact Cat.Hom₂.isIso_of_isIso_app _
 
 /-- Every compatible modification is invertible as a modification of joint pseudofunctors. -/
 instance isIso_joint {φ ψ : L.Hom L'} (Θ : φ ⟶ ψ) : IsIso Θ.joint := by
-  let e : φ.joint ≅ ψ.joint := Pseudofunctor.StrongTrans.isoMk
-    (fun x => by
-      obtain ⟨p, a⟩ := x
-      cases a
-      letI := isIso_modification_app Θ p
-      exact asIso (Θ.joint.as.app ⟨(p, SingleObj.star H)⟩))
-    (fun f => Θ.joint.as.naturality f)
-  have he : e.hom = Θ.joint := by
-    apply homCategory.ext
-    rintro ⟨p, a⟩
+  have (x : LocallyDiscrete (Γ × SingleObj H)) : IsIso (Θ.joint.as.app x) := by
+    obtain ⟨p, a⟩ := x
     cases a
-    rfl
-  rw [← he]
-  infer_instance
+    exact isIso_modification_app Θ p
+  exact Pseudofunctor.StrongTrans.isIso_of_isIso_app Θ.joint
 
 /-- The hom categories of coherent lifts are groupoids, without restricting their
 modifications. Together with `subsingleton_hom₂`, they are thin groupoids. -/
 instance isGroupoid : IsGroupoid (L.Hom L') where
-  all_isIso {φ ψ} Θ := by
-    let e : φ ≅ ψ := isoMk (asIso Θ.joint) Θ.comm
-    have he : e.hom = Θ := hom₂_ext (by simp [e])
-    rw [← he]
-    infer_instance
+  all_isIso Θ := isIso_of_isIso_joint Θ
 
 end TauCeti.EquivariantGroupoidLift.Hom
 
