@@ -495,6 +495,18 @@ lemma coe_supportedModuleHZeroEquiv_supportedModuleHPresheafMap_app (hZS : Z ≤
     (Z.complInclusion W) _ (𝟙 W) rfl F x).trans <| by
     rw [op_id, F.obj.map_id, ModuleCat.id_apply, coe_supportedModuleHZeroEquiv_apply]
 
+/-- Enlarging the closed support enlarges the submodule of supported sections. -/
+lemma supportedSubmodule_mono (hZS : Z ≤ S) (W : Opens X) :
+    F.supportedSubmodule Z W ≤ F.supportedSubmodule S W := by
+  intro s hs
+  obtain ⟨y, hy⟩ := (F.supportedModuleHZeroEquiv Z W).surjective ⟨s, hs⟩
+  have hS := (F.supportedModuleHZeroEquiv S W
+    ((F.supportedModuleHPresheafMap hZS 0).app (op W) y)).2
+  rw [coe_supportedModuleHZeroEquiv_supportedModuleHPresheafMap_app] at hS
+  have hval : (F.supportedModuleHZeroEquiv Z W y : F.obj.obj (op W)) = s :=
+    congr_arg Subtype.val hy
+  exact hval ▸ hS
+
 /-- The connecting map `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports for
 closed subsets `Z ≤ S`: the Yoneda product with the extension class of the short exact sequence
 `0 ⟶ Q_S(W ∖ Z) ⟶ Q_S(W) ⟶ Q_Z(W) ⟶ 0`. -/

@@ -105,6 +105,21 @@ lemma supportedSubmoduleSheaf_obj :
     (F.supportedSubmoduleSheaf S).obj = F.supportedSubmodulePresheaf S :=
   (rfl)
 
+/-- Support of a section of `Γ_S(F)` can be checked in `F`. -/
+@[simp]
+lemma mem_supportedSubmodule_supportedSubmoduleSheaf_iff (T : Closeds X) (W : Opens X)
+    (s : F.supportedSubmodule S W) :
+    s ∈ (F.supportedSubmoduleSheaf S).supportedSubmodule T W ↔
+      s.1 ∈ F.supportedSubmodule T W := by
+  -- Restriction in the supported-section sheaf is restriction in `F` on the subtype.
+  constructor
+  · intro hs
+    exact (F.mem_supportedSubmodule_iff).2 (congr_arg Subtype.val
+      (((F.supportedSubmoduleSheaf S).mem_supportedSubmodule_iff).1 hs))
+  · intro hs
+    exact ((F.supportedSubmoduleSheaf S).mem_supportedSubmodule_iff).2
+      (Subtype.ext ((F.mem_supportedSubmodule_iff).1 hs))
+
 /-- The inclusion of the supported-section sheaf into its ambient sheaf. -/
 def supportedSubmoduleι : F.supportedSubmoduleSheaf S ⟶ F :=
   ObjectProperty.homMk
