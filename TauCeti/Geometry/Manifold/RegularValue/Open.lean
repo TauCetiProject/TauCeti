@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue
-public import TauCeti.Analysis.Normed.Operator.Surjective
+public import TauCeti.Geometry.Manifold.RegularValue.Rank
 
 /-!
 # Regular points form an open set
 
 A point is a regular point of a map when its manifold derivative there is surjective
 (`TauCeti.IsRegularPoint`). For a `C¹` map into a manifold modelled on a finite-dimensional space,
-regularity is an open condition: the coordinate derivative depends continuously on the point, and a
-surjective linear map onto a finite-dimensional space stays surjective under small perturbations
-(`TauCeti.isOpen_setOf_surjective`). So the set of regular points of a `C¹` map is open, and a dense
-set of regular points is a dense open set.
+regularity is an open condition: the regular points are the points of maximal rank
+(`TauCeti.isRegularPoint_iff_mfderivRank_eq`), and the rank of a `C¹` map can only go up near a
+point (`TauCeti.eventually_mfderivRank_le_mfderivRank`). So the set of regular points of a `C¹` map
+is open, and a dense set of regular points is a dense open set.
 
 ## Main results
 
@@ -50,34 +49,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 there is a regular point. -/
 theorem IsRegularPoint.eventually_isRegularPoint (h : IsRegularPoint I J f x)
     (hf : ContMDiffAt I J n f x) (hn : 1 ≤ n) : ∀ᶠ y in 𝓝 x, IsRegularPoint I J f y := by
-  have hf₁ : ContMDiffAt I J 1 f x := hf.of_le hn
-  set g := extChartAt J (f x) ∘ f ∘ (extChartAt I x).symm
-  have hz : extChartAt I x x ∈ range I := mem_range_self _
-  -- The coordinate expression `g` is `C¹` on `range I ∩ u` for an open neighbourhood `u` of the
-  -- chart image of `x`, so its derivative within `range I` is continuous there.
-  obtain ⟨u, hu, hzu, hg⟩ := (contMDiffAt_iff.1 hf₁).2.contDiffOn' le_rfl (by simp)
-  rw [insert_eq_of_mem hz] at hg
-  have hcont := hg.continuousOn_fderivWithin (I.uniqueDiffOn.inter hu) le_rfl _ ⟨hz, hzu⟩
-  have hD : ∀ w ∈ range I ∩ u, fderivWithin 𝕜 g (range I ∩ u) w = fderivWithin 𝕜 g (range I) w :=
-    fun w hw ↦ fderivWithin_inter (hu.mem_nhds hw.2)
-  have hsurj : Surjective (fderivWithin 𝕜 g (range I ∩ u) (extChartAt I x x)) := by
-    rw [hD _ ⟨hz, hzu⟩]
-    exact (isRegularPoint_iff_surjective_fderivWithin (hf₁.mdifferentiableAt one_ne_zero)
-      (mem_chart_source H x) (mem_chart_source H' (f x))).1 h
-  -- Near the chart image of `x`, the derivative stays surjective.
-  have hev : ∀ᶠ w in 𝓝[range I] extChartAt I x x,
-      w ∈ u ∧ Surjective (fderivWithin 𝕜 g (range I) w) := by
-    rw [← nhdsWithin_inter_of_mem' (mem_nhdsWithin_of_mem_nhds (hu.mem_nhds hzu))]
-    filter_upwards [hcont (isOpen_setOf_surjective.mem_nhds hsurj),
-      self_mem_nhdsWithin] with w hw hwu
-    exact ⟨hwu.2, hD w hwu ▸ hw⟩
-  rw [← map_extChartAt_nhds, eventually_map] at hev
-  filter_upwards [hev, (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf₁,
-    (chartAt H x).open_source.mem_nhds (mem_chart_source H x),
-    hf₁.continuousAt.preimage_mem_nhds
-      ((chartAt H' (f x)).open_source.mem_nhds (mem_chart_source H' (f x)))] with y hy hfy hyx hfyx
-  exact (isRegularPoint_iff_surjective_fderivWithin (hfy.mdifferentiableAt one_ne_zero) hyx
-    hfyx).2 hy.2
+  filter_upwards [eventually_mfderivRank_le_mfderivRank hf hn] with y hy
+  rw [isRegularPoint_iff_mfderivRank_eq] at h ⊢
+  exact mfderivRank_le_finrank_target.antisymm (h ▸ hy)
 
 /-- **The regular points of a `C¹` map form an open set.** -/
 theorem isOpen_setOf_isRegularPoint (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
