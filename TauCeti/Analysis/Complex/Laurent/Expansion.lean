@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Laurent.Series
+import TauCeti.Topology.MetricSpace.EBall
 
 /-!
 # Laurent series expansion, uniqueness, removable singularities, and differentiation
@@ -149,8 +150,8 @@ theorem hasSum_circleLaurentCoeff_neg_add_one {f : ℂ → E} {c w : ℂ} {r : �
     ← circleIntegral.integral_smul]
   congr 1
   refine circleIntegral.integral_congr hr.le fun z _ => ?_
-  rw [zpow_natCast, ← Nat.cast_add_one, zpow_neg, zpow_natCast, pow_succ, mul_inv, ← inv_pow,
-    div_eq_mul_inv, mul_pow, smul_smul, smul_smul]
+  simp only [smul_smul, ← Int.negSucc_eq, zpow_negSucc, zpow_natCast, pow_succ, mul_inv,
+    div_eq_mul_inv, mul_pow, inv_pow]
   congr 1
   ring
 
@@ -221,16 +222,9 @@ namespace HasLaurentSeriesOnAnnulus
 `n`-th Laurent coefficient is `circleLaurentCoeff f c ρ n`. -/
 theorem circleLaurentCoeff_eq {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
     (h : HasLaurentSeriesOnAnnulus f a c r R) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R)
-    (n : ℤ) : circleLaurentCoeff f c ρ n = a n := by
-  have hρ_pos : 0 < ρ := h.r_nonneg.trans_lt hrρ
-  have hsphere : sphere c ρ ⊆ eball c R \ closedBall c r := fun z hz => by
-    have hdist : dist z c = ρ := mem_sphere.mp hz
-    refine ⟨?_, ?_⟩
-    · rw [mem_eball, edist_dist, hdist]
-      exact hρR
-    · rw [mem_closedBall, hdist, not_le]
-      exact hrρ
-  exact circleLaurentCoeff_eq_of_hasSum_sphere hρ_pos (fun z hz => h.hasSum (hsphere hz))
+    (n : ℤ) : circleLaurentCoeff f c ρ n = a n :=
+  circleLaurentCoeff_eq_of_hasSum_sphere (h.r_nonneg.trans_lt hrρ)
+    (fun _ hz => h.hasSum (sphere_subset_eball_sdiff_closedBall hrρ hρR hz))
     (h.summable_norm_mul_zpow hrρ hρR) n
 
 /-- **Uniqueness of Laurent series coefficients.** Two Laurent series converging to the same
@@ -238,12 +232,9 @@ function on the same open annulus have identical coefficients. -/
 theorem coeff_unique {f : ℂ → E} {a b : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0∞}
     (ha : HasLaurentSeriesOnAnnulus f a c r R) (hb : HasLaurentSeriesOnAnnulus f b c r R) :
     a = b := by
-  obtain ⟨q, hrq, hqR⟩ := exists_between ha.r_lt
-  lift q to ℝ≥0 using hqR.ne_top
-  have hrq' : r < (q : ℝ) := (ENNReal.ofReal_lt_coe_iff ha.r_nonneg).mp hrq
-  have hqR' : ENNReal.ofReal (q : ℝ) < R := by simpa using hqR
+  obtain ⟨ρ, hrρ, hρR⟩ := ha.exists_radius
   funext n
-  exact (ha.circleLaurentCoeff_eq hrq' hqR' n).symm.trans (hb.circleLaurentCoeff_eq hrq' hqR' n)
+  exact (ha.circleLaurentCoeff_eq hrρ hρR n).symm.trans (hb.circleLaurentCoeff_eq hrρ hρR n)
 
 end HasLaurentSeriesOnAnnulus
 
@@ -321,18 +312,15 @@ theorem hasLaurentSeriesOnAnnulus_of_differentiable_off_countable
       have hle : min ρ (dist w c) ≤ dist w c := min_le_right _ _
       dsimp [r']; linarith
     have hwR : ENNReal.ofReal (dist w c) < R := by simpa only [mem_eball, edist_dist] using hw.1
-    obtain ⟨q, hq_gt, hqR⟩ := exists_between (max_lt hρR hwR)
-    lift q to ℝ≥0 using hqR.ne_top
-    have hρq : ρ ≤ (q : ℝ) :=
-      ((ENNReal.ofReal_lt_coe_iff (hr.trans_lt hrρ).le).mp ((le_max_left _ _).trans_lt hq_gt)).le
-    have hwq : dist w c < (q : ℝ) :=
-      (ENNReal.ofReal_lt_coe_iff dist_nonneg).mp ((le_max_right _ _).trans_lt hq_gt)
-    have hqR' : ENNReal.ofReal (q : ℝ) < R := by simpa using hqR
-    have hsub : closedBall c (q : ℝ) \ ball c r' ⊆ eball c R \ closedBall c r := fun z hz =>
-      ⟨by rw [mem_eball, edist_dist]; exact (ENNReal.ofReal_le_ofReal hz.1).trans_lt hqR',
-        fun hzr => hz.2 (lt_of_le_of_lt hzr hrr')⟩
+    obtain ⟨R', -, hR'_gt, hR'R⟩ := ENNReal.lt_iff_exists_real_btwn.1 (max_lt hρR hwR)
+    have hρR' : ρ ≤ R' :=
+      (ENNReal.ofReal_lt_ofReal_iff'.1 ((le_max_left _ _).trans_lt hR'_gt)).1.le
+    have hwR' : dist w c < R' :=
+      (ENNReal.ofReal_lt_ofReal_iff'.1 ((le_max_right _ _).trans_lt hR'_gt)).1
+    have hsub : closedBall c R' \ ball c r' ⊆ eball c R \ closedBall c r :=
+      closedBall_sdiff_ball_subset_eball_sdiff_closedBall hrr' hR'R
     exact hasSum_circleLaurentCoeff_of_differentiable_on_annulus_off_countable
-      hr'_pos hr'ρ hρq hs ⟨hwq, not_le.mpr hr'w⟩ (hc.mono hsub)
+      hr'_pos hr'ρ hρR' hs ⟨hwR', not_le.mpr hr'w⟩ (hc.mono hsub)
       (fun z hz => hd z ⟨hsub ⟨ball_subset_closedBall hz.1.1,
         fun h => hz.1.2 (ball_subset_closedBall h)⟩, hz.2⟩)
 
@@ -356,10 +344,9 @@ theorem differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus
     DifferentiableOn ℂ f (eball c R \ closedBall c r) ↔
       ∃ a : ℤ → E, HasLaurentSeriesOnAnnulus f a c r R := by
   refine ⟨fun hf => ?_, fun ⟨_, ha⟩ => ha.differentiableOn⟩
-  obtain ⟨q, hrq, hqR⟩ := exists_between hrR
-  lift q to ℝ≥0 using hqR.ne_top
-  exact ⟨circleLaurentCoeff f c (q : ℝ),
-    hf.hasLaurentSeriesOnAnnulus hr ((ENNReal.ofReal_lt_coe_iff hr).mp hrq) (by simpa using hqR)⟩
+  obtain ⟨ρ, -, hrρ, hρR⟩ := ENNReal.lt_iff_exists_real_btwn.1 hrR
+  exact ⟨circleLaurentCoeff f c ρ,
+    hf.hasLaurentSeriesOnAnnulus hr (ENNReal.ofReal_lt_ofReal_iff'.1 hrρ).1 hρR⟩
 
 /-- For a complete target space `E`, complex analyticity on a nonempty open concentric annulus is
 equivalent to admitting a convergent Laurent series on that annulus. -/
@@ -382,7 +369,7 @@ private theorem coeff_eq_of_hasFPowerSeriesOnBall_eventuallyEq
   obtain ⟨ε, hε, hεfg⟩ := EMetric.mem_nhdsWithin_iff.1 hfg.symm
   let R₁ : ℝ≥0∞ := min R (min R₀ ε)
   have hR₁_pos : ENNReal.ofReal 0 < R₁ := by
-    simpa [R₁] using lt_min h.r_pos (lt_min hp.r_pos hε)
+    simpa [R₁] using lt_min h.outerRadius_pos (lt_min hp.r_pos hε)
   have h₁ := h.mono le_rfl (min_le_left _ _) hR₁_pos
   have h₂_g := hp.hasLaurentSeriesOnAnnulus.mono le_rfl
     ((min_le_right _ _).trans (min_le_left _ _)) hR₁_pos
@@ -396,10 +383,8 @@ theorem coeff_neg_add_one_eq_zero_of_analyticAt {f g : ℂ → E} {a : ℤ → E
     (h : HasLaurentSeriesOnAnnulus f a c 0 R) (hg : AnalyticAt ℂ g c) (hfg : f =ᶠ[𝓝[≠] c] g)
     (k : ℕ) : a (-((k : ℤ) + 1)) = 0 := by
   obtain ⟨p, R₀, hp⟩ := hg
-  have heq := congrFun (h.coeff_eq_of_hasFPowerSeriesOnBall_eventuallyEq hp hfg) (-((k : ℤ) + 1))
-  split_ifs at heq with hge
-  · omega
-  · exact heq
+  simpa only [← Int.negSucc_eq, Int.negSucc_not_nonneg, ↓reduceIte] using
+    congrFun (h.coeff_eq_of_hasFPowerSeriesOnBall_eventuallyEq hp hfg) (-((k : ℤ) + 1))
 
 /-- If `f` has a Laurent series on `Metric.eball c R \ {c}` and agrees on a punctured neighborhood
 of `c` with a function `g` analytic at `c`, then `a 0 = g c`. -/
@@ -419,7 +404,7 @@ theorem exists_analyticAt_eventuallyEq_iff {f : ℂ → E} {a : ℤ → E} {c : 
       ∀ k : ℕ, a (-((k : ℤ) + 1)) = 0 := by
   refine ⟨fun ⟨g, hg, hfg⟩ k => h.coeff_neg_add_one_eq_zero_of_analyticAt hg hfg k, fun ha => ?_⟩
   refine ⟨Function.update f c (a 0),
-    (h.analyticOnNhd_update_of_neg_eq_zero ha) c (mem_eball_self h.r_pos), ?_⟩
+    (h.analyticOnNhd_update_of_neg_eq_zero ha) c (mem_eball_self h.outerRadius_pos), ?_⟩
   exact eventually_nhdsWithin_iff.2
     (Eventually.of_forall fun z hzc => (Function.update_of_ne hzc _ _).symm)
 
@@ -437,16 +422,13 @@ theorem deriv {f : ℂ → E} {a : ℤ → E} {c : ℂ} {r : ℝ} {R : ℝ≥0�
     HasLaurentSeriesOnAnnulus (_root_.deriv f)
       (fun n : ℤ => ((n + 1 : ℤ) : ℂ) • a (n + 1)) c r R := by
   have hopen : IsOpen (eball c R \ closedBall c r) := isOpen_eball.sdiff isClosed_closedBall
-  obtain ⟨q, hrq, hqR⟩ := exists_between h.r_lt
-  lift q to ℝ≥0 using hqR.ne_top
-  have hrq' : r < (q : ℝ) := (ENNReal.ofReal_lt_coe_iff h.r_nonneg).mp hrq
-  have hqR' : ENNReal.ofReal (q : ℝ) < R := by simpa using hqR
-  have hser := (h.differentiableOn.deriv hopen).hasLaurentSeriesOnAnnulus h.r_nonneg hrq' hqR'
-  have hcoeff : circleLaurentCoeff (_root_.deriv f) c (q : ℝ) =
+  obtain ⟨ρ, hrρ, hρR⟩ := h.exists_radius
+  have hser := (h.differentiableOn.deriv hopen).hasLaurentSeriesOnAnnulus h.r_nonneg hrρ hρR
+  have hcoeff : circleLaurentCoeff (_root_.deriv f) c ρ =
       fun n : ℤ => ((n + 1 : ℤ) : ℂ) • a (n + 1) := by
     funext n
-    rw [circleLaurentCoeff_deriv h.differentiableOn h.r_nonneg hrq' hqR' n,
-      h.circleLaurentCoeff_eq hrq' hqR' (n + 1)]
+    rw [circleLaurentCoeff_deriv h.differentiableOn h.r_nonneg hrρ hρR n,
+      h.circleLaurentCoeff_eq hrρ hρR (n + 1)]
   rwa [hcoeff] at hser
 
 /-- Unshifted term-by-term differentiation formula: on the open annulus,

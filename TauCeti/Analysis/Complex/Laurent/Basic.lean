@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Topology.MetricSpace.EBall
 
 /-!
 # Circle Laurent coefficients and the two-circle Cauchy formula
@@ -154,16 +155,14 @@ theorem circleLaurentCoeff_eq_of_differentiable_on_open_annulus_off_countable
   let r' : ℝ := min ρ₁ ρ₂
   let R' : ℝ := max ρ₁ ρ₂
   have hr'_pos : 0 < r' := hr.trans_lt (lt_min hr₁ hr₂)
-  have hrr' : r < r' := lt_min hr₁ hr₂
   have hR'R : ENNReal.ofReal R' < R := by
     dsimp only [R']
     rcases max_choice ρ₁ ρ₂ with hmax | hmax <;> rwa [hmax]
-  have hsub : closedBall c R' \ ball c r' ⊆ eball c R \ closedBall c r := fun z hz =>
-    ⟨by rw [mem_eball, edist_dist]; exact (ENNReal.ofReal_le_ofReal hz.1).trans_lt hR'R,
-      fun hzr => hz.2 (lt_of_le_of_lt hzr hrr')⟩
+  have hsub : closedBall c R' \ ball c r' ⊆ eball c R \ closedBall c r :=
+    closedBall_sdiff_ball_subset_eball_sdiff_closedBall (lt_min hr₁ hr₂) hR'R
   have hsub_open : (ball c R' \ closedBall c r') \ s ⊆ (eball c R \ closedBall c r) \ s :=
-    fun z hz => ⟨hsub ⟨ball_subset_closedBall hz.1.1,
-      fun h => hz.1.2 (ball_subset_closedBall h)⟩, hz.2⟩
+    sdiff_subset_sdiff ((sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall).trans
+      hsub) Subset.rfl
   have heq := circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable
     hr'_pos (min_le_max) hs (hc.mono hsub) (fun z hz => hd z (hsub_open hz)) n
   rcases le_total ρ₁ ρ₂ with hle | hle
@@ -311,20 +310,11 @@ theorem circleLaurentCoeff_deriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ
     circleLaurentCoeff (deriv f) c ρ n = ((n + 1 : ℤ) : ℂ) • circleLaurentCoeff f c ρ (n + 1) := by
   have hρ_pos : 0 < ρ := hr.trans_lt hrρ
   have hopen : IsOpen (eball c R \ closedBall c r) := isOpen_eball.sdiff isClosed_closedBall
-  have hsphere : sphere c ρ ⊆ eball c R \ closedBall c r := fun z hz => by
-    have hdist : dist z c = ρ := mem_sphere.mp hz
-    exact ⟨by rw [mem_eball, edist_dist, hdist]; exact hρR,
-      by rw [mem_closedBall, hdist, not_le]; exact hrρ⟩
+  have hsphere : sphere c ρ ⊆ eball c R \ closedBall c r :=
+    sphere_subset_eball_sdiff_closedBall hrρ hρR
   have hdf : DifferentiableOn ℂ (deriv f) (eball c R \ closedBall c r) := hf.deriv hopen
   exact circleLaurentCoeff_deriv_of_differentiableAt hρ_pos
     (fun z hz => (hf z (hsphere hz)).differentiableAt (hopen.mem_nhds (hsphere hz)))
     ((hdf.continuousOn.mono hsphere).circleIntegrable hρ_pos.le) n
-
-/-- Derivatives have vanishing `(-1)`-st circle Laurent coefficient (zero residue). -/
-theorem circleLaurentCoeff_deriv_neg_one {f : ℂ → E} {c : ℂ} {R : ℝ}
-    (hR : 0 < R) (hd : ∀ z ∈ sphere c R, DifferentiableAt ℂ f z)
-    (hderiv : CircleIntegrable (deriv f) c R) :
-    circleLaurentCoeff (deriv f) c R (-1) = 0 := by
-  simpa using circleLaurentCoeff_deriv_of_differentiableAt hR hd hderiv (-1)
 
 end TauCeti

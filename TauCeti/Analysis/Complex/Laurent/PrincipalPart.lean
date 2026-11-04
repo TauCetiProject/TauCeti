@@ -20,15 +20,17 @@ meromorphic germs over `ℂ` (`TauCeti.meromorphicGerms.principalPart`,
 `TauCeti.holomorphicStructureSheaf.regularPart`, `TauCeti.holomorphicStructureSheaf.regularEval`)
 and contour residues (`TauCeti.Contour.residue`).
 
-For any meromorphic germ `φ : meromorphicGerms ℂ c` represented by `f : ℂ → ℂ`, both on
-sufficiently small circles around `c` and on every interior circle of radius `ρ ∈ (0, R)` when `f`
-is complex-differentiable on `Metric.eball c R \ {c}`:
+While `TauCeti.meromorphicGerms.coeff_principalPart_succ_eq_circleIntegral` computes negative
+Laurent coefficients on sufficiently small circles around `c`, this file establishes the full
+punctured-disk comparison for any representative `f : ℂ → ℂ` of `φ : meromorphicGerms ℂ c` that is
+complex-differentiable on `Metric.eball c R \ {c}` and any interior circle radius `ρ ∈ (0, R)`:
 
 * the negative circle Laurent coefficients `circleLaurentCoeff f c ρ (-(k + 1))` agree with
   `(principalPart φ).coeff (k + 1)`;
 * the `(-1)`-st circle Laurent coefficient equals `Contour.residue f c`;
 * the `0`-th circle Laurent coefficient equals the stalk evaluation at `c` of `regularPart c φ`
-  (and `regularEval c φ` when `φ` is regular);
+  (and `regularEval c φ` when `φ` is regular), both on `Metric.eball c R \ {c}` and on sufficiently
+  small circles around `c`;
 * the negative Laurent sum `laurentNegPart (circleLaurentCoeff f c ρ) c w` equals
   `(principalPart φ).eval (w - c)⁻¹`;
 * on `Metric.eball c R \ {c}`, the nonnegative Laurent sum
@@ -39,16 +41,16 @@ is complex-differentiable on `Metric.eball c R \ {c}`:
 * `Polynomial.hasLaurentSeriesOnAnnulus_eval_inv_sub` and
   `Polynomial.circleLaurentCoeff_eval_inv_sub`: Laurent expansion and circle Laurent coefficients of
   `w ↦ P.eval (w - c)⁻¹` for `P : ℂ[X]`.
-* `TauCeti.meromorphicGerms.eventually_circleLaurentCoeff_neg_add_one_eq_coeff_principalPart` and
-  `TauCeti.meromorphicGerms.circleLaurentCoeff_neg_add_one_eq_coeff_principalPart`: negative circle
-  Laurent coefficients compute the coefficients of `meromorphicGerms.principalPart`.
-* `TauCeti.eventually_circleLaurentCoeff_neg_one_eq_residue` and
-  `TauCeti.circleLaurentCoeff_neg_one_eq_residue`: the `(-1)`-st circle Laurent coefficient computes
-  `Contour.residue`.
-* `TauCeti.meromorphicGerms.eventually_circleLaurentCoeff_zero_eq_eval_regularPart`,
-  `TauCeti.meromorphicGerms.circleLaurentCoeff_zero_eq_eval_regularPart`, and
-  `TauCeti.holomorphicStructureSheaf.circleLaurentCoeff_zero_eq_regularEval`: the `0`-th circle
-  Laurent coefficient computes the value at `c` of `regularPart` / `regularEval`.
+* `TauCeti.meromorphicGerms.circleLaurentCoeff_neg_add_one_eq_coeff_principalPart`: negative circle
+  Laurent coefficients on punctured disks compute the coefficients of
+  `meromorphicGerms.principalPart`.
+* `TauCeti.circleLaurentCoeff_neg_one_eq_residue`: the `(-1)`-st circle Laurent coefficient on a
+  punctured disk computes `Contour.residue`.
+* `TauCeti.meromorphicGerms.circleLaurentCoeff_zero_eq_eval_regularPart`,
+  `TauCeti.meromorphicGerms.eventually_circleLaurentCoeff_zero_eq_eval_regularPart`,
+  `TauCeti.holomorphicStructureSheaf.circleLaurentCoeff_zero_eq_regularEval`, and
+  `TauCeti.holomorphicStructureSheaf.eventually_circleLaurentCoeff_zero_eq_regularEval`: the `0`-th
+  circle Laurent coefficient computes the value at `c` of `regularPart` / `regularEval`.
 * `TauCeti.meromorphicGerms.laurentNegPart_circleLaurentCoeff_eq_eval_principalPart` and
   `TauCeti.meromorphicGerms.laurentPosPart_circleLaurentCoeff_eq_sub_principalPart`: the analytic
   Laurent splitting `laurentPosPart + laurentNegPart` on a punctured disk agrees with the algebraic
@@ -76,7 +78,7 @@ private theorem hasSum_zpow_neg_add_one_smul_coeff_succ (P : ℂ[X]) (c w : ℂ)
   have hterm : ∀ k : ℕ,
       (w - c) ^ (-((k : ℤ) + 1)) • P.coeff (k + 1) =
         P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1) := fun k => by
-    rw [← Nat.cast_add_one, zpow_neg, zpow_natCast, ← inv_pow, smul_eq_mul, mul_comm]
+    simp only [← Int.negSucc_eq, zpow_negSucc, ← inv_pow, smul_eq_mul, mul_comm]
   simp_rw [hterm]
   have hsum : HasSum (fun k : ℕ => P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1))
       (∑ k ∈ Finset.range P.natDegree, P.coeff (k + 1) * ((w - c)⁻¹) ^ (k + 1)) := by
@@ -108,12 +110,10 @@ theorem _root_.Polynomial.hasLaurentSeriesOnAnnulus_eval_inv_sub (P : ℂ[X]) (c
     have hn : HasSum (fun k : ℕ =>
         (w - c) ^ (-((k : ℤ) + 1)) •
           (if -((k : ℤ) + 1) ≤ 0 then P.coeff (-(-((k : ℤ) + 1))).toNat else 0))
-        (P.eval (w - c)⁻¹ - P.coeff 0) := by
-      refine (hasSum_zpow_neg_add_one_smul_coeff_succ P c w).congr_fun fun k => ?_
-      split_ifs with hle
-      · have hnat : (-(-((k : ℤ) + 1))).toNat = k + 1 := by omega
-        rw [hnat]
-      · omega
+        (P.eval (w - c)⁻¹ - P.coeff 0) :=
+      (hasSum_zpow_neg_add_one_smul_coeff_succ P c w).congr_fun fun k => by
+        simp only [← Int.negSucc_eq, (Int.negSucc_lt_zero k).le, ↓reduceIte, Int.neg_negSucc,
+          Int.toNat_natCast]
     simpa only [add_sub_cancel] using HasSum.of_nat_of_neg_add_one
       (f := fun n : ℤ => (w - c) ^ n • (if n ≤ 0 then P.coeff (-n).toNat else 0)) hp hn
 
@@ -176,50 +176,12 @@ private theorem exists_hasLaurentSeriesOnAnnulus_of_coe_eq {c : ℂ} {φ : merom
       fun n : ℤ => if n < 0 then (principalPart φ).coeff (-n).toNat else p.coeff n.toNat := by
     funext n
     rcases lt_trichotomy n 0 with hn | rfl | hn
-    · split_ifs <;> first | omega | simp
+    · simp [hn, hn.le, not_le_of_gt hn]
     · simp [coeff_zero_principalPart]
-    · split_ifs <;> first | omega | simp
+    · simp [not_lt_of_gt hn, not_le_of_gt hn, hn.le]
   rw [hcoeff] at hsum_ser
   refine ⟨p, R₁, ?_, hsum_ser⟩
   rw [FormalMultilinearSeries.coeff, hp.coeff_zero 1, hg_eval]
-
-/-- For every sufficiently small circle radius `ρ > 0` (chosen uniformly across all degrees `k`),
-the negative circle Laurent coefficients `circleLaurentCoeff f c ρ (-(k + 1))` of any representative
-`f` of `φ : meromorphicGerms ℂ c` equal `(principalPart φ).coeff (k + 1)`. -/
-theorem eventually_circleLaurentCoeff_neg_add_one_eq_coeff_principalPart
-    {c : ℂ} {φ : meromorphicGerms ℂ c} {f : ℂ → ℂ} (hφ : (φ : Germ (𝓝[≠] c) ℂ) = f) :
-    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ∀ k : ℕ,
-      circleLaurentCoeff f c ρ (-((k : ℤ) + 1)) = (principalPart φ).coeff (k + 1) := by
-  obtain ⟨p, R₁, _, hser⟩ := exists_hasLaurentSeriesOnAnnulus_of_coe_eq hφ
-  obtain ⟨q, h0q, hqR₁⟩ := exists_between hser.r_lt
-  lift q to ℝ≥0 using hqR₁.ne_top
-  have hq_pos : 0 < (q : ℝ) := (ENNReal.ofReal_lt_coe_iff le_rfl).mp h0q
-  filter_upwards [Ioo_mem_nhdsGT hq_pos] with ρ ⟨hρ0, hρq⟩ k
-  have hρR₁ : ENNReal.ofReal ρ < R₁ :=
-    (ENNReal.ofReal_lt_coe_iff hρ0.le).mpr hρq |>.trans hqR₁
-  have heq := hser.circleLaurentCoeff_eq hρ0 hρR₁ (-((k : ℤ) + 1))
-  split_ifs at heq with hlt
-  · have hnat : (-(-((k : ℤ) + 1))).toNat = k + 1 := by omega
-    rwa [hnat] at heq
-  · omega
-
-/-- For every sufficiently small circle radius `ρ > 0`, the `0`-th circle Laurent coefficient of any
-representative `f` of `φ : meromorphicGerms ℂ c` equals the stalk evaluation at `c` of
-`holomorphicStructureSheaf.regularPart c φ`. -/
-theorem eventually_circleLaurentCoeff_zero_eq_eval_regularPart
-    {c : ℂ} {φ : meromorphicGerms ℂ c} {f : ℂ → ℂ} (hφ : (φ : Germ (𝓝[≠] c) ℂ) = f) :
-    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), circleLaurentCoeff f c ρ 0 =
-      holomorphicStructureSheaf.eval 𝓘(ℂ) ℂ c (holomorphicStructureSheaf.regularPart c φ) := by
-  obtain ⟨p, R₁, hp0, hser⟩ := exists_hasLaurentSeriesOnAnnulus_of_coe_eq hφ
-  obtain ⟨q, h0q, hqR₁⟩ := exists_between hser.r_lt
-  lift q to ℝ≥0 using hqR₁.ne_top
-  have hq_pos : 0 < (q : ℝ) := (ENNReal.ofReal_lt_coe_iff le_rfl).mp h0q
-  filter_upwards [Ioo_mem_nhdsGT hq_pos] with ρ ⟨hρ0, hρq⟩
-  have hρR₁ : ENNReal.ofReal ρ < R₁ :=
-    (ENNReal.ofReal_lt_coe_iff hρ0.le).mpr hρq |>.trans hqR₁
-  have heq := hser.circleLaurentCoeff_eq hρ0 hρR₁ 0
-  rw [ite_eq_right (lt_irrefl (0 : ℤ)), Int.toNat_zero] at heq
-  exact heq.trans hp0
 
 private theorem circleLaurentCoeff_eq_of_differentiableOn_punctured_eball
     {c : ℂ} {φ : meromorphicGerms ℂ c} {f : ℂ → ℂ} {ρ : ℝ} {R : ℝ≥0∞}
@@ -236,7 +198,7 @@ private theorem circleLaurentCoeff_eq_of_differentiableOn_punctured_eball
   have hdisk : HasLaurentSeriesOnAnnulus f (circleLaurentCoeff f c ρ) c 0 R :=
     hf'.hasLaurentSeriesOnAnnulus le_rfl hρ hρR
   have hmin_pos : ENNReal.ofReal 0 < min R R₁ := by
-    simpa only [ENNReal.ofReal_zero] using lt_min hdisk.r_pos hlocal.r_pos
+    simpa only [ENNReal.ofReal_zero] using lt_min hdisk.outerRadius_pos hlocal.outerRadius_pos
   refine ⟨p, hp0, ?_⟩
   exact (hdisk.mono le_rfl (min_le_left _ _) hmin_pos).coeff_unique
     (hlocal.mono le_rfl (min_le_right _ _) hmin_pos)
@@ -250,11 +212,8 @@ theorem circleLaurentCoeff_neg_add_one_eq_coeff_principalPart
     (hρ : 0 < ρ) (hρR : ENNReal.ofReal ρ < R) (k : ℕ) :
     circleLaurentCoeff f c ρ (-((k : ℤ) + 1)) = (principalPart φ).coeff (k + 1) := by
   obtain ⟨p, _, heq⟩ := circleLaurentCoeff_eq_of_differentiableOn_punctured_eball hf hφ hρ hρR
-  have hk := congrFun heq (-((k : ℤ) + 1))
-  split_ifs at hk with hlt
-  · have hnat : (-(-((k : ℤ) + 1))).toNat = k + 1 := by omega
-    rwa [hnat] at hk
-  · omega
+  simpa only [← Int.negSucc_eq, Int.negSucc_lt_zero, ↓reduceIte, Int.neg_negSucc,
+    Int.toNat_natCast] using congrFun heq (-((k : ℤ) + 1))
 
 /-- If `f` is complex-differentiable on `Metric.eball c R \ {c}` and represents
 `φ : meromorphicGerms ℂ c` at `c`, then on every interior circle of radius `ρ ∈ (0, R)` the `0`-th
@@ -269,6 +228,22 @@ theorem circleLaurentCoeff_zero_eq_eval_regularPart
   have h0 := congrFun heq 0
   rw [ite_eq_right (lt_irrefl (0 : ℤ)), Int.toNat_zero] at h0
   exact h0.trans hp0
+
+/-- For every sufficiently small circle radius `ρ > 0`, the `0`-th circle Laurent coefficient of any
+representative `f` of `φ : meromorphicGerms ℂ c` equals the stalk evaluation at `c` of
+`holomorphicStructureSheaf.regularPart c φ`. -/
+theorem eventually_circleLaurentCoeff_zero_eq_eval_regularPart
+    {c : ℂ} {φ : meromorphicGerms ℂ c} {f : ℂ → ℂ} (hφ : (φ : Germ (𝓝[≠] c) ℂ) = f) :
+    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), circleLaurentCoeff f c ρ 0 =
+      holomorphicStructureSheaf.eval 𝓘(ℂ) ℂ c (holomorphicStructureSheaf.regularPart c φ) := by
+  have hm : MeromorphicAt f c := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
+  obtain ⟨R, hR, han⟩ := EMetric.mem_nhdsWithin_iff.1 hm.eventually_analyticAt
+  have hf : DifferentiableOn ℂ f (eball c R \ {c}) := fun z hz =>
+    (han ⟨hz.1, hz.2⟩).differentiableAt.differentiableWithinAt
+  obtain ⟨q, -, hq0, hqR⟩ := ENNReal.lt_iff_exists_real_btwn.1 hR
+  filter_upwards [Ioo_mem_nhdsGT (ENNReal.ofReal_pos.1 hq0)] with ρ ⟨hρ0, hρq⟩
+  exact circleLaurentCoeff_zero_eq_eval_regularPart hf hφ hρ0
+    ((ENNReal.ofReal_le_ofReal hρq.le).trans_lt hqR)
 
 /-- **Analytic negative Laurent part equals algebraic principal part.** If `f` is
 complex-differentiable on `Metric.eball c R \ {c}` and represents `φ : meromorphicGerms ℂ c`, then
@@ -302,19 +277,6 @@ theorem laurentPosPart_circleLaurentCoeff_eq_sub_principalPart
   exact eq_sub_of_add_eq hsplit.symm
 
 end meromorphicGerms
-
-/-- For every sufficiently small circle radius `ρ > 0`, the `(-1)`-st circle Laurent coefficient of
-a function meromorphic at `c` equals `Contour.residue f c`. -/
-theorem eventually_circleLaurentCoeff_neg_one_eq_residue {f : ℂ → ℂ} {c : ℂ}
-    (hf : MeromorphicAt f c) :
-    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), circleLaurentCoeff f c ρ (-1) = Contour.residue f c := by
-  let φ : meromorphicGerms ℂ c := ⟨(f : Germ (𝓝[≠] c) ℂ), coe_mem_meromorphicGerms.2 hf⟩
-  have hφ : (φ : Germ (𝓝[≠] c) ℂ) = f := (rfl)
-  filter_upwards [meromorphicGerms.eventually_circleLaurentCoeff_neg_add_one_eq_coeff_principalPart
-    hφ] with ρ hρ
-  have h0 := hρ 0
-  rw [Nat.cast_zero, zero_add, meromorphicGerms.coeff_principalPart_one_eq_residue hφ] at h0
-  exact h0
 
 /-- If `f` is complex-differentiable on `Metric.eball c R \ {c}` and meromorphic at `c`, then on
 every interior circle of radius `ρ ∈ (0, R)` the `(-1)`-st circle Laurent coefficient equals
