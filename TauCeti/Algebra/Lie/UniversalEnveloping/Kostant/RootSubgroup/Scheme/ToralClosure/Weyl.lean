@@ -33,6 +33,8 @@ group of the root datum.
 
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint`: the Weyl representative as a point
   of the toral closure.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_inv`: its inverse is the same word
+  with the signs reversed.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantToralWeylPoint`: the representative is natural
   in the value ring.
 * `TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeylPoint`: its matrix is the integral Weyl
@@ -125,6 +127,17 @@ theorem kostantToralWeylPoint_def (i j : I) (A : Type v) [CommRing A] :
         kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
           (Multiplicative.ofAdd (1 : A)) :=
   (rfl)
+
+/-- The inverse of the Weyl representative is the word `xᵢ(-1) xⱼ(1) xᵢ(-1)`. -/
+theorem kostantToralWeylPoint_inv (i j : I) (A : Type v) [CommRing A] :
+    (kostantToralWeylPoint e h ρ M hM hnil b wt i j A)⁻¹ =
+      kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (-1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt j A
+          (Multiplicative.ofAdd (1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (-1 : A)) := by
+  simp [kostantToralWeylPoint_def, mul_assoc]
 
 /-- The carrier's Weyl representative is natural in the value ring. Applying a ring homomorphism
 entrywise sends the representative over the source ring to the representative over the target
