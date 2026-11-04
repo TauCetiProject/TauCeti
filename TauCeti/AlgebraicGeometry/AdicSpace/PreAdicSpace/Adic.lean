@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 
 /-!
 # Adic spaces and open adic subspaces
@@ -58,15 +59,18 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `TauCeti.PreAdicSpace.isPreAdic.isSheafy_of_directed`: a pre-adic space is sheafy if each open
   affinoid subspace lies in a sheafy open, for instance if it is exhausted by a directed family of
   sheafy opens.
-* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace`: `Spa(A, A⁺)` with a sheaf
-  structure presheaf is an adic space.
+* `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace` and
+  `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace_of_isSheafyRing`: `Spa(A, A⁺)`
+  with a sheaf structure presheaf — in particular, the adic spectrum of a sheafy Huber pair — is
+  an adic space.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionLocalization`: if the
   structure presheaf of `Spa(A, A⁺)` is a sheaf, so is that of every rational localisation
   `Spa(A⟨T/s⟩, A_U⁺)`.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22, Remark 8.27 and §8.2.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22, Definition 8.26, Remark 8.27
+  and §8.2.
 -/
 
 public section
@@ -258,6 +262,8 @@ namespace ValuationSpectrum
 
 open Huber
 
+section
+
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) (Aplus : Subring A) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
   (hP : P.ringOfDefinition ≤ Aplus)
@@ -302,6 +308,19 @@ theorem isSheaf_presentationLimitPresheaf_completionLocalization (T : Finset A) 
   ObjectProperty.prop_of_iso PreAdicSpace.isSheafy
     (presentationLimitPreAdicSpaceLocIso P Aplus T s S hden hAplus hP hT)
     (PreAdicSpace.isSheafy_restrict _ hs)
+
+end
+
+/-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
+complete, Hausdorff, or Tate. -/
+theorem isAdic_presentationLimitPreAdicSpace_of_isSheafyRing {A : Type u} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
+    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
+    PreAdicSpace.isAdic
+      (presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP) :=
+  isAdic_presentationLimitPreAdicSpace P Aplus hAplus.isPowerBounded_of_mem hP
+    (isSheaf_presentationLimitPresheaf_of_isSheafyRing P hAplus hP hA)
 
 end ValuationSpectrum
 

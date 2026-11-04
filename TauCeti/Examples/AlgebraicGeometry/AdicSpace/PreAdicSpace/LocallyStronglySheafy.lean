@@ -7,6 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Adic
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyStronglySheafy
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetherian
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra

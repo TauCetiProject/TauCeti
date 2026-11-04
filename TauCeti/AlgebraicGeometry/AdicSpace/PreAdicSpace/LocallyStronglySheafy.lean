@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyNoetherian
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyTate
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.StronglyNoetherian
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglySheafy
 public import TauCeti.RingTheory.Huber.NoetherianType.Tate
 import TauCeti.RingTheory.Huber.LocalizationTopology.Noetherian
