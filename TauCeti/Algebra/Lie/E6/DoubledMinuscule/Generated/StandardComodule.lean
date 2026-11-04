@@ -50,6 +50,10 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 6))).obj :=
   generatedCoordinateLift R (.inr ())
 
+/-- The generated weight-torus morphism is the torus member of the numbered generator lifts. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap R = generatedCoordinateLift R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient doubled minuscule weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
