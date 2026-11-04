@@ -34,6 +34,6 @@ theorem mem_lifts_of_forall_map_eq {S : Set (B ≃+* B)}
     (hS : ∀ c : B, (∀ σ ∈ S, σ c = c) → c ∈ Set.range f) {p : B[X]}
     (hp : ∀ σ ∈ S, p.map (σ : B →+* B) = p) : p ∈ lifts f :=
   (lifts_iff_coeff_lifts p).mpr fun n ↦ hS _ fun σ hσ ↦ by
-    simpa using congr(coeff $(hp σ hσ) n)
+    simpa using congr($(hp σ hσ).coeff n)
 
 end Polynomial
