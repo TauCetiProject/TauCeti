@@ -83,10 +83,10 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   orthogonal complements of an arbitrary bilinear form.
 * `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
   of a nondegenerate bilinear space has at most half the ambient dimension.
-* `LinearMap.two_mul_finrank_le_finrank_of_injective`: a subspace on which an injective map into a
-  line vanishes has at most half the dimension.
+* `LinearMap.two_mul_finrank_le_finrank_of_injective`: a subspace isotropic for a nondegenerate
+  line-valued bilinear form has at most half the dimension.
 * `LinearMap.mem_of_injective_of_two_mul_finrank_eq`: such a subspace of exactly half the
-  dimension is its own orthogonal.
+  dimension is its own orthogonal for that form.
 
 ## References
 
@@ -635,10 +635,10 @@ end LinearMap.BilinForm
 
 namespace LinearMap
 
-/-- **A subspace on which an injective map into a line vanishes has at most half the dimension.**
-If `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and `L` vanishes on `W × W`, then
-`2 dim W ≤ dim V`. This bounds the dimension of an isotropic subspace of a line-valued
-nondegenerate form, such as the Levi form of a contact structure. -/
+/-- **A subspace isotropic for a nondegenerate line-valued bilinear form has at most half the
+dimension.** If the bilinear form `L : V → Hom(V, Q)` is injective, `Q` is one-dimensional and
+`L` vanishes on `W × W`, then `2 dim W ≤ dim V`. This applies, for instance, to the Levi form of a
+contact structure. -/
 theorem two_mul_finrank_le_finrank_of_injective {K V Q : Type*} [Field K] [AddCommGroup V]
     [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
     {L : V →ₗ[K] V →ₗ[K] Q} (hinj : Function.Injective L) (hQ : Module.finrank K Q = 1)

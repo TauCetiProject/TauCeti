@@ -30,6 +30,8 @@ map.
 
 * `TauCeti.IsDistributionIsotropicMap`: maps tangent to a distribution.
 * `TauCeti.isDistributionIsotropicMap_iff_range_le`: isotropy as inclusion of the tangent images.
+* `Diffeomorph.isDistributionIsotropicMap_diffeomorph_comp_iff`: transport of isotropy by a
+  diffeomorphism whose differential carries one distribution onto the other.
 * `TauCeti.IsDistributionIsotropicMap.mextDeriv_apply_mfderiv_eq_zero`: an isotropic map pulls
   back the exterior derivative of a local defining form to zero.
 -/
@@ -92,6 +94,25 @@ theorem _root_.Diffeomorph.isDistributionIsotropicMap_comp_diffeomorph_iff {E'' 
   simp only [isDistributionIsotropicMap_iff_range_le, φ.range_mfderiv_comp_diffeomorph hn,
     Function.comp_apply]
   exact ⟨fun h y ↦ φ.apply_symm_apply y ▸ h (φ.symm y), fun h x ↦ h (φ x)⟩
+
+/-- **Transport by a diffeomorphism of the target.** If the differential of a diffeomorphism `ψ`
+carries the distribution `D` onto `D'`, then `ψ ∘ f` is isotropic for `D'` exactly when `f` is
+isotropic for `D`. -/
+theorem _root_.Diffeomorph.isDistributionIsotropicMap_diffeomorph_comp_iff {E'' H'' : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {I' : ModelWithCorners ℝ E'' H''} {M' : Type*} [TopologicalSpace M'] [ChartedSpace H'' M']
+    {D' : Π x : M', Submodule ℝ (TangentSpace I' x)} {n : ℕ∞ω} (ψ : M ≃ₘ^n⟮I, I'⟯ M')
+    (hn : n ≠ 0) (hψ : ∀ x v, v ∈ D x ↔ mfderiv I I' ψ x v ∈ D' (ψ x)) :
+    IsDistributionIsotropicMap J D' (ψ ∘ f) ↔ IsDistributionIsotropicMap J D f := by
+  simp only [isDistributionIsotropicMap_iff_range_le, ψ.range_mfderiv_diffeomorph_comp hn,
+    Submodule.map_le_iff_le_comap, Function.comp_apply]
+  refine forall_congr' fun y ↦ ?_
+  have hD : (D' (ψ (f y))).comap
+      (ψ.mfderivToContinuousLinearEquiv hn (f y)).toLinearEquiv.toLinearMap = D (f y) := by
+    ext v
+    rw [Submodule.mem_comap, hψ, ← ψ.mfderivToContinuousLinearEquiv_coe hn]
+    rfl
+  rw [hD]
 
 /-! ### Pulling back a local defining form -/
 

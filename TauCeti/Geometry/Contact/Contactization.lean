@@ -345,7 +345,9 @@ variable [I.Boundaryless] [J.Boundaryless] [FiniteDimensional ℝ E]
 
 /-- **Contact lifts of exact Lagrangian immersions are Legendrian.** If `φ` is an immersion from a
 nonempty manifold which is an exact Lagrangian map with primitive `h`, then its lift
-`y ↦ (φ y, h y)` is a Legendrian immersion for the contactization form `dz - θ`. -/
+`y ↦ (φ y, h y)` is a Legendrian immersion for the kernel of `dz - θ`. That kernel is a contact
+structure when `-dθ` is nondegenerate (`TauCeti.SmoothForm.isContactForm_contactization_iff`),
+for instance when `σ = -dθ`. -/
 theorem IsExactLagrangianMap.isLegendrianImmersion_contactization [Nonempty N]
     (hL : hσ.IsExactLagrangianMap J θ φ h) (hφ : IsImmersion J I ∞ φ) :
     IsLegendrianImmersion J θ.contactization.kerDistribution (fun y ↦ (φ y, h y)) := by

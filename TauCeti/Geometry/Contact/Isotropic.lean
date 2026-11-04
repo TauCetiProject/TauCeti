@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.Distribution.Isotropic
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -48,7 +49,11 @@ the maximal dimension, `2 dim N + 1 = dim M`; its image may have self-intersecti
 embedding. The tangent image of a Legendrian immersion at every point is its own orthogonal for
 the Levi form: a vector of `ξ (f y)` that is Levi-orthogonal to `df_y(T_y N)` lies in it
 (`TauCeti.IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero`). This is the
-contact counterpart of the fact that Lagrangian subspaces are maximal isotropic.
+contact counterpart of the fact that Lagrangian subspaces are maximal isotropic. Both notions are
+unchanged by reparametrizing the source
+(`Diffeomorph.isLegendrianEmbedding_comp_diffeomorph_iff`) and are transported by diffeomorphisms
+whose differential carries one distribution onto the other, such as contactomorphisms
+(`Diffeomorph.isLegendrianEmbedding_diffeomorph_comp_iff`).
 
 ## Main declarations
 
@@ -60,6 +65,9 @@ contact counterpart of the fact that Lagrangian subspaces are maximal isotropic.
   isotropic maps into a contact manifold.
 * `TauCeti.IsLegendrianImmersion`, `TauCeti.IsLegendrianEmbedding`: Legendrian immersions and
   embeddings.
+* `Diffeomorph.isLegendrianImmersion_comp_diffeomorph_iff`,
+  `Diffeomorph.isLegendrianImmersion_diffeomorph_comp_iff`: invariance under reparametrization and
+  transport by contactomorphisms, with their embedding counterparts.
 
 ## References
 
@@ -159,9 +167,9 @@ private theorem IsDistributionIsotropicMap.distributionLeviForm_eq_zero_of_mem_c
   obtain rfl : b = ⟨_, h.mfderiv_mem y v⟩ := Subtype.ext hv.symm
   exact h.distributionLeviForm_eq_zero hD hk hn hf u v
 
-/-- **Dimension bound for isotropic maps.** An isotropic map into a `(2 n + 1)`-dimensional contact
+/-- **Dimension bound for isotropic maps.** An isotropic map into a `(2 m + 1)`-dimensional contact
 manifold, `C²` and with injective differential at some point, comes from a manifold of dimension
-at most `n`: `2 dim N + 1 ≤ dim M`. -/
+at most `m`: `2 dim N + 1 ≤ dim M`. -/
 theorem IsDistributionIsotropicMap.two_mul_finrank_add_one_le [IsManifold I (n + 1) M]
     (hD : IsContactDistribution I n D) (hn : 1 ≤ n) (h : IsDistributionIsotropicMap J D f) {y : N}
     (hf : ContMDiffAt J I 2 f y) (hy : Injective (mfderiv J I f y)) :
@@ -178,15 +186,17 @@ theorem IsDistributionIsotropicMap.two_mul_finrank_add_one_le [IsManifold I (n +
 /-! ### Legendrian immersions and embeddings -/
 
 variable (J D) in
-/-- A **Legendrian immersion** into a manifold `M` of dimension `2 n + 1` with a contact structure
-`D` is a smooth immersion `f : N → M` which is isotropic for `D` and comes from a manifold of the
-maximal dimension `n`. Its image may have self-intersections. -/
+/-- A **Legendrian immersion** for a distribution `D` on `M` is a smooth immersion `f : N → M`
+which is isotropic for `D` and satisfies `2 dim N + 1 = dim M`. The predicate is defined for any
+distribution `D`; when `D` is a contact structure on a manifold of dimension `2 m + 1`, this is the
+usual notion of a Legendrian immersion, from a manifold of the maximal dimension `m`. Its image
+may have self-intersections. -/
 structure IsLegendrianImmersion (f : N → M) : Prop where
   /-- A Legendrian immersion is a smooth immersion. -/
   isImmersion : IsImmersion J I ∞ f
-  /-- A Legendrian immersion is tangent to the contact structure. -/
+  /-- A Legendrian immersion is tangent to the distribution. -/
   isDistributionIsotropicMap : IsDistributionIsotropicMap J D f
-  /-- A Legendrian immersion comes from a manifold of half the dimension of the hyperplanes. -/
+  /-- A Legendrian immersion satisfies `2 dim N + 1 = dim M`. -/
   two_mul_finrank_add_one : 2 * finrank ℝ E' + 1 = finrank ℝ E
 
 variable (J D) in
@@ -251,5 +261,64 @@ theorem IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero
       exact ha u
 
 end Levi
+
+section Reparametrization
+
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J ∞ N] [IsManifold J ∞ P]
+
+/-- Reparametrization by a diffeomorphism preserves and reflects Legendrian immersions. -/
+@[simp]
+theorem _root_.Diffeomorph.isLegendrianImmersion_comp_diffeomorph_iff (φ : P ≃ₘ⟮J, J⟯ N) :
+    IsLegendrianImmersion J D (f ∘ φ) ↔ IsLegendrianImmersion J D f :=
+  ⟨fun h ↦ ⟨(isImmersion_comp_diffeomorph_iff φ).1 h.isImmersion,
+      (φ.isDistributionIsotropicMap_comp_diffeomorph_iff (by simp)).1
+        h.isDistributionIsotropicMap, h.two_mul_finrank_add_one⟩,
+    fun h ↦ ⟨(isImmersion_comp_diffeomorph_iff φ).2 h.isImmersion,
+      (φ.isDistributionIsotropicMap_comp_diffeomorph_iff (by simp)).2
+        h.isDistributionIsotropicMap, h.two_mul_finrank_add_one⟩⟩
+
+/-- Reparametrization by a diffeomorphism preserves and reflects Legendrian embeddings. -/
+@[simp]
+theorem _root_.Diffeomorph.isLegendrianEmbedding_comp_diffeomorph_iff (φ : P ≃ₘ⟮J, J⟯ N) :
+    IsLegendrianEmbedding J D (f ∘ φ) ↔ IsLegendrianEmbedding J D f :=
+  ⟨fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      ((isSmoothEmbedding_comp_diffeomorph_iff φ).1 h.isSmoothEmbedding)).2
+      (φ.isLegendrianImmersion_comp_diffeomorph_iff.1 h.toIsLegendrianImmersion),
+    fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      (isSmoothEmbedding_comp_diffeomorph φ h.isSmoothEmbedding)).2
+      (φ.isLegendrianImmersion_comp_diffeomorph_iff.2 h.toIsLegendrianImmersion)⟩
+
+end Reparametrization
+
+section Transport
+
+variable {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂] [IsManifold I ∞ M]
+  [IsManifold I ∞ M₂] {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I x)}
+
+/-- A diffeomorphism whose differential carries `D` onto `D₂`, such as a contactomorphism,
+preserves and reflects Legendrian immersions. -/
+theorem _root_.Diffeomorph.isLegendrianImmersion_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂)
+    (hψ : ∀ x v, v ∈ D x ↔ mfderiv I I ψ x v ∈ D₂ (ψ x)) :
+    IsLegendrianImmersion J D₂ (ψ ∘ f) ↔ IsLegendrianImmersion J D f :=
+  ⟨fun h ↦ ⟨(isImmersion_diffeomorph_comp_iff ψ).1 h.isImmersion,
+      (ψ.isDistributionIsotropicMap_diffeomorph_comp_iff (by simp) hψ).1
+        h.isDistributionIsotropicMap, h.two_mul_finrank_add_one⟩,
+    fun h ↦ ⟨(isImmersion_diffeomorph_comp_iff ψ).2 h.isImmersion,
+      (ψ.isDistributionIsotropicMap_diffeomorph_comp_iff (by simp) hψ).2
+        h.isDistributionIsotropicMap, h.two_mul_finrank_add_one⟩⟩
+
+/-- A diffeomorphism whose differential carries `D` onto `D₂`, such as a contactomorphism,
+preserves and reflects Legendrian embeddings. -/
+theorem _root_.Diffeomorph.isLegendrianEmbedding_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂)
+    (hψ : ∀ x v, v ∈ D x ↔ mfderiv I I ψ x v ∈ D₂ (ψ x)) :
+    IsLegendrianEmbedding J D₂ (ψ ∘ f) ↔ IsLegendrianEmbedding J D f :=
+  ⟨fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      ((isSmoothEmbedding_diffeomorph_comp_iff ψ).1 h.isSmoothEmbedding)).2
+      ((ψ.isLegendrianImmersion_diffeomorph_comp_iff hψ).1 h.toIsLegendrianImmersion),
+    fun h ↦ (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+      (isSmoothEmbedding_diffeomorph_comp h.isSmoothEmbedding ψ)).2
+      ((ψ.isLegendrianImmersion_diffeomorph_comp_iff hψ).2 h.toIsLegendrianImmersion)⟩
+
+end Transport
 
 end TauCeti
