@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.RingTheory.Extension.SquareZero
+public import TauCeti.RingTheory.Extension.SquareZero.Basic
 
 /-!
 # Pushout of square-zero extensions along module maps
