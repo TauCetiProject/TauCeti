@@ -445,13 +445,11 @@ theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike
   · rw [← map_lift F, FormalGroup.map_toPowerSeries, coeff_map]
     exact h (coeff_formalGroup_mem_grading d)
   · obtain ⟨p, hp, rfl⟩ := mem_grading_iff.1 hx
-    -- Pushing the degrees forward along `e` preserves weighted homogeneity.
-    have hpe : p.IsWeightedHomogeneous (e ∘ degree) (e n) := fun d hd ↦ by
-      simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
-    -- The pieces are closed under the `ℤ`-action, as `IsWeightedHomogeneous.aeval_mem` requires.
-    have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
-    rw [← RingHom.comp_apply, lift_comp_mk]
-    refine hpe.aeval_mem fun ⟨i, j⟩ ↦ ?_
+    rw [← RingHom.comp_apply]
+    apply (MvPolynomial.WeightedHomogeneousSubmodule.map_mem_iff degree 𝒜 e
+      ((lift F).comp mk)).mpr ?_ hp
+    rintro ⟨i, j⟩
+    rw [RingHom.comp_apply, lift_mk_X]
     have hd := h (single 0 (i : ℕ) + single 1 (j : ℕ))
     rwa [map_add, Finsupp.degree_single, Finsupp.degree_single, ← degree_apply] at hd
 
