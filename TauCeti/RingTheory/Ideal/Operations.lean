@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Finsupp.Span
 import Mathlib.LinearAlgebra.Pi
@@ -128,23 +127,12 @@ theorem span_range_fin_two_eq_top_iff (v : Fin 2 → R) :
 `a v₀² + b v₀ v₁ + c v₁²`. -/
 theorem mem_span_range_fin_two_sq_iff (v : Fin 2 → R) {x : R} :
     x ∈ span (Set.range v) ^ 2 ↔ ∃ a b c : R, x = a * v 0 ^ 2 + b * v 0 * v 1 + c * v 1 ^ 2 := by
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · rw [sq] at hx
-    refine Submodule.mul_induction_on hx (fun m hm n hn ↦ ?_) ?_
-    · obtain ⟨u, rfl⟩ := mem_span_range_iff_exists_fun.mp hm
-      obtain ⟨w, rfl⟩ := mem_span_range_iff_exists_fun.mp hn
-      exact ⟨u 0 * w 0, u 0 * w 1 + u 1 * w 0, u 1 * w 1, by simp only [Fin.sum_univ_two]; ring⟩
-    · rintro _ _ ⟨a, b, c, rfl⟩ ⟨a', b', c', rfl⟩
-      exact ⟨a + a', b + b', c + c', by ring⟩
-  · rintro ⟨a, b, c, rfl⟩
-    have hv (i : Fin 2) : v i ∈ span (Set.range v) := subset_span ⟨i, rfl⟩
-    have hvv (i j : Fin 2) : v i * v j ∈ span (Set.range v) ^ 2 := by
-      rw [sq]
-      exact mul_mem_mul (hv i) (hv j)
-    refine add_mem (add_mem ?_ ?_) ?_
-    · simpa [sq, mul_assoc] using mul_mem_left _ a (hvv 0 0)
-    · simpa [mul_assoc] using mul_mem_left _ b (hvv 0 1)
-    · simpa [sq, mul_assoc] using mul_mem_left _ c (hvv 1 1)
+  have hv : Set.range v = {v 0, v 1} := by
+    ext x
+    simp [Fin.exists_fin_two, eq_comm]
+  rw [hv, sq, span_pair_mul_span_pair, mul_comm (v 1) (v 0), Set.insert_idem,
+    Submodule.mem_span_triple]
+  simp only [smul_eq_mul, sq, mul_assoc, eq_comm (a := x)]
 
 end CommSemiring
 
