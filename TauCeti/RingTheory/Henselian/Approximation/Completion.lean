@@ -97,9 +97,9 @@ theorem ringTopology_top (t : R) :
   apply TopologicalSpace.ext_nhds
   intro a
   apply (ringTopology_nhds t ⊤ a).eq_of_same_basis
-  simpa only [filtrationIdeal_def, Ideal.smul_eq_mul, Ideal.mul_top,
-    Submodule.mem_toAddSubgroup] using
-    ((Ideal.span {t}).adic_basis.toRing_subgroups_basis.hasBasis_nhds a)
+  convert (Ideal.span {t}).hasBasis_nhds_adic a using 1
+  ext n b
+  simp [filtrationIdeal_def, Set.image_add_left, neg_add_eq_sub]
 
 /-- For the zero ideal the topology is discrete. -/
 @[simp]
@@ -205,7 +205,7 @@ theorem completion_hom_ext {S : Type*} [NonAssocSemiring S] {t : R} {I : Ideal R
 
 /-- The canonical map sends an element to its compatible residue classes. -/
 def completionMap (t : R) (I : Ideal R) : R →+* completion t I :=
-  (RingHom.pi (residueMap t I)).codRestrict _ fun _ ↦ by simp [completionSubring]
+  (RingHom.pi (residueMap t I)).codRestrict _ fun _ ↦ by simp
 
 @[simp]
 theorem eval_completionMap (t : R) (I : Ideal R) (n : ℕ) (a : R) :
@@ -220,7 +220,7 @@ theorem eval_surjective (t : R) (I : Ideal R) (n : ℕ) :
     Function.Surjective (eval t I n) := by
   intro x
   obtain ⟨a, rfl⟩ := residueMap_surjective t I n x
-  exact ⟨completionMap t I a, rfl⟩
+  exact ⟨completionMap t I a, eval_completionMap t I n a⟩
 
 /-- Exactly the elements divisible into every filtration ideal die in the completion. -/
 theorem ker_completionMap (t : R) (I : Ideal R) :
@@ -232,7 +232,11 @@ theorem ker_completionMap (t : R) (I : Ideal R) :
 /-- The compatibility equations cut out a closed subring of the product of residues. -/
 private theorem isClosed_completionSubring (t : R) (I : Ideal R) :
     IsClosed (completionSubring t I : Set (∀ n, Residue t I n)) := by
-  simp only [completionSubring, Set.ofPred_forall]
+  have hcarrier : (completionSubring t I : Set (∀ n, Residue t I n)) =
+      ⋂ m, ⋂ n, ⋂ (h : m ≤ n), {x | transition t I h (x n) = x m} := by
+    ext x
+    simp
+  rw [hcarrier]
   exact isClosed_iInter fun m ↦ isClosed_iInter fun n ↦ isClosed_iInter fun h ↦
     isClosed_eq ((continuous_of_discreteTopology (f := transition t I h)).comp
       (continuous_apply n)) (continuous_apply m)
@@ -260,7 +264,8 @@ theorem completion_nhds (t : R) (I : Ideal R) (x : completion t I) :
     have h := congrArg (transition t I (Finset.le_sup (f := id) hn)) hy
     simp only [transition_eval, id_eq] at h
     have hx : eval t I n x ∈ W n := mem_of_mem_nhds (hW n)
-    exact (h.symm ▸ hx : eval t I n y ∈ W n)
+    rw [← h] at hx
+    exact hx
   · rintro ⟨n, _, hn⟩
     exact Filter.mem_of_superset
       ((continuous_eval t I n).continuousAt
