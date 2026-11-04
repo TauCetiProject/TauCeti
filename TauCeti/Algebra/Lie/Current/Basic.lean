@@ -155,6 +155,11 @@ theorem tmul_mem_orderSubmodule (N : ℤ) {f : R⸨X⸩}
     f ⊗ₜ[R] x ∈ orderSubmodule R L N :=
   Submodule.subset_span ⟨f, x, hf, rfl⟩
 
+/-- A mode `r tᵐ ⊗ x` has order at least `N` whenever `N ≤ m`. -/
+theorem single_tmul_mem_orderSubmodule {N m : ℤ} (h : N ≤ m) (r : R) (x : L) :
+    HahnSeries.single m r ⊗ₜ[R] x ∈ orderSubmodule R L N :=
+  tmul_mem_orderSubmodule R L N ((WithTop.coe_le_coe.mpr h).trans HahnSeries.orderTop_single_le) x
+
 /-- A current of order at least `N` has zero coefficients below `N`. -/
 theorem coeff_eq_zero_of_mem_orderSubmodule {N n : ℤ} {u : currentAlgebra R L}
     (hu : u ∈ orderSubmodule R L N) (hn : n < N) : coeff R L n u = 0 := by
