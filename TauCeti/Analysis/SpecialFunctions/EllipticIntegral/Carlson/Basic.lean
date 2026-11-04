@@ -59,6 +59,8 @@ integral and carries no meaning.
   elementary evaluation of `R_C` at real arguments (DLMF 19.2.19, 19.2.20):
   `R_C(x, y) = arccos √(x/y) / √(y - x)` for `0 ≤ x < y`, and
   `R_C(x, y) = arcosh √(x/y) / √(x - y)` for `0 < y < x`.
+* `Complex.carlsonRF_ofReal_eq_integral` — at nonnegative real arguments, `R_F` is the real
+  integral `½ ∫₀^∞ (√(t + x) √(t + y) √(t + z))⁻¹ dt`.
 
 ## References
 
@@ -264,6 +266,25 @@ theorem carlsonRC_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRC x x = x ^ (-
   carlsonRF_self hx
 
 /-! ### Real arguments -/
+
+/-- **`R_F` at nonnegative real arguments** is a real integral:
+`R_F(x, y, z) = ½ ∫₀^∞ (√(t + x) √(t + y) √(t + z))⁻¹ dt` for real `x, y, z ≥ 0`. The two integrands
+agree on `(0, ∞)`, so no convergence hypothesis is needed. -/
+theorem carlsonRF_ofReal_eq_integral {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hz : 0 ≤ z) :
+    carlsonRF x y z =
+      ((1 / 2 * ∫ t in Ioi (0 : ℝ), (√(t + x) * √(t + y) * √(t + z))⁻¹ : ℝ) : ℂ) := by
+  have hreal {w t : ℝ} (hw : 0 ≤ w) (ht : 0 < t) :
+      ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) = (((√(t + w))⁻¹ : ℝ) : ℂ) := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg (by linarith), Complex.ofReal_cpow (by linarith)]
+    push_cast
+    rfl
+  have heq : EqOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + z) ^ (-(1 / 2) : ℂ))
+      (fun t => (((√(t + x) * √(t + y) * √(t + z))⁻¹ : ℝ) : ℂ)) (Ioi 0) := fun t ht => by
+    simp only [hreal hx ht, hreal hy ht, hreal hz ht, mul_inv, Complex.ofReal_mul]
+  rw [carlsonRF_def, setIntegral_congr_fun measurableSet_Ioi heq, integral_complex_ofReal]
+  push_cast
+  ring
 
 /-- **`R_F` is positive at real arguments**: for real `x ≥ 0` and `y, z > 0`, `R_F(x, y, z)` is a
 positive real number (in the order `ComplexOrder`, so its imaginary part is `0`). By symmetry, any
