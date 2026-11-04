@@ -80,6 +80,14 @@ theorem toBasis_coord (b : OrthonormalBasis ι 𝕜 E) (i : ι) :
     b.toBasis.coord i = innerₛₗ 𝕜 (b i) :=
   LinearMap.ext fun v ↦ (b.coe_toBasis_repr_apply v i).trans (b.repr_apply_apply v i)
 
+/-- The coordinate functional of a real orthonormal basis, expressed using the real bilinear
+inner product. -/
+theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (b : OrthonormalBasis ι ℝ F) (i : ι) :
+    b.toBasis.coord i = innerₗ F (b i) := by
+  ext v
+  simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
 end OrthonormalBasis
 
 open Complex ComplexConjugate

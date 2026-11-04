@@ -62,7 +62,8 @@ theorem sum_wedgeLeft_comp_koszulDifferential_coord (n : ℕ) :
 
 /-- The increasing-pair creation/contraction sum is multiplication by the binomial
 coefficient of the degree. The ordering counts each unordered pair exactly once. -/
-theorem sum_wedgeLeft_wedgeLeft_koszulDifferential_coord (n : ℕ) :
+theorem sum_wedgeLeft_comp_wedgeLeft_comp_koszulDifferential_comp_koszulDifferential_coord
+    (n : ℕ) :
     ∑ ij ∈ Finset.univ.filter (fun ij : ι × ι ↦ ij.1 < ij.2),
       ExteriorAlgebra.wedgeLeft (b ij.2) (n + 1) ∘ₗ
         ExteriorAlgebra.wedgeLeft (b ij.1) n ∘ₗ
