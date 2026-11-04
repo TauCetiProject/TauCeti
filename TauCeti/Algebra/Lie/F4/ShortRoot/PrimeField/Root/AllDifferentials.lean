@@ -177,15 +177,15 @@ theorem map_coeff_one_rootSubgroupPointsAt (B : Type*) [CommRing B] [Algebra R B
         (HopfIdeal.quotientLieHom J (rootDerivationAt B k)) := by
   let l := (F4ShortRoot.rootSubgroupPresentation k).1
   let i := (F4ShortRoot.rootSubgroupPresentation k).2
-  have hW := coe_pointsMap (Polynomial.CAlgHom («R» := ZMod 2) (A := B)) (weylWordPoint l B)
+  have hW := coe_pointsMap_CAlgHom (weylWordPoint l B)
   rw [pointsMap_weylWordPoint] at hW
   rw [rootSubgroupPointsAt_def, weylRootSubgroupPoints_apply]
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul]
-  rw [hW, ← map_inv]
-  simp only [Matrix.GeneralLinearGroup.val_map_apply]
-  have hC : ((Polynomial.CAlgHom : B →ₐ[ZMod 2] Polynomial B) : B →+* Polynomial B) =
-      Polynomial.C := rfl
-  rw [hC]
+  rw [hW]
+  have hWinv := coe_pointsMap_CAlgHom ((weylWordPoint l B)⁻¹)
+  rw [map_inv, pointsMap_weylWordPoint] at hWinv
+  simp only [Subgroup.coe_inv] at hWinv
+  rw [hWinv]
   rw [Matrix.map_coeff_mul_map_C, Matrix.map_coeff_map_C_mul]
   have hroot : (((rootSubgroupPoints (.inl i) (Polynomial B)
       (Multiplicative.ofAdd (Polynomial.C c * Polynomial.X)) :
@@ -196,13 +196,10 @@ theorem map_coeff_one_rootSubgroupPointsAt (B : Type*) [CommRing B] [Algebra R B
     ext a b
     simp only [Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply,
       toAdd_ofAdd, smul_eq_mul]
-    have h12 : (1 : ℕ) ≠ 2 := by decide
+    simp only [mul_pow, ← Polynomial.C_pow, ← Polynomial.C_eq_intCast]
     by_cases hab : a = b <;>
-      simp only [Matrix.one_apply, hab, ↓reduceIte, mul_pow, ← Polynomial.C_pow,
-        ← Polynomial.C_eq_intCast, Polynomial.coeff_add, Polynomial.coeff_mul_C,
-        Polynomial.coeff_C_mul, Polynomial.coeff_X, Polynomial.coeff_X_pow,
-        Polynomial.coeff_one, one_ne_zero, h12, ↓reduceIte,
-        mul_one, mul_zero, zero_mul, zero_add, add_zero]
+      simp [Matrix.one_apply, hab, mul_assoc, Polynomial.coeff_one,
+        Polynomial.coeff_X_pow, -map_pow, -map_intCast]
   rw [hroot, Matrix.mul_smul, Matrix.smul_mul, tangentMatrix_rootDerivationAt]
 
 end

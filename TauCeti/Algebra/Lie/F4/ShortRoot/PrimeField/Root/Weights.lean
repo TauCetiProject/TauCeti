@@ -62,19 +62,17 @@ theorem weightTorusPoints_conj_tangentMatrix_rootDerivationAt
   have hT' : pointsMap (Polynomial.CAlgHom : B →ₐ[ZMod 2] Polynomial B)
       (weightTorusPoints B s) = weightTorusPoints (Polynomial B) s' :=
     pointsMap_weightTorusPoints _ s
-  have hT := coe_pointsMap (Polynomial.CAlgHom («R» := ZMod 2) (A := B))
-    (weightTorusPoints B s)
+  have hT := coe_pointsMap_CAlgHom (weightTorusPoints B s)
   rw [hT'] at hT
-  have hC : ((Polynomial.CAlgHom : B →ₐ[ZMod 2] Polynomial B) : B →+* Polynomial B) =
-      Polynomial.C := rfl
-  rw [hC] at hT
+  have hTinv := coe_pointsMap_CAlgHom ((weightTorusPoints B s)⁻¹)
+  rw [map_inv, hT'] at hTinv
+  simp only [Subgroup.coe_inv] at hTinv
   have hχ : (torusCharacter s' (root k) : Polynomial B) =
       Polynomial.C (torusCharacter s (root k) : B) := by
     exact congrArg Units.val (map_torusCharacter Polynomial.C s (root k)).symm
   rw [simplyConnectedRootDatum_F4, f4SimplyConnectedRootDatum_root] at h
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, toAdd_ofAdd] at h
-  rw [hT, ← map_inv] at h
-  simp only [Matrix.GeneralLinearGroup.val_map_apply] at h
+  rw [hT, hTinv] at h
   -- The named datum has rank definitionally four; `erw` retypes its root embedding.
   erw [hχ] at h
   have hc := congrArg (fun M : Matrix (Fin 26) (Fin 26) (Polynomial B) ↦
@@ -82,6 +80,7 @@ theorem weightTorusPoints_conj_tangentMatrix_rootDerivationAt
   rw [Matrix.map_coeff_mul_map_C, Matrix.map_coeff_map_C_mul] at hc
   have hc1 := map_coeff_one_rootSubgroupPointsAt B k 1
   simp only [map_one, one_mul, one_smul] at hc1
+  -- As above, `erw` retypes the named datum's `Fin F4.rank` character as `Fin 4`.
   erw [hc1, map_coeff_one_rootSubgroupPointsAt] at hc
   exact hc
 
@@ -107,6 +106,7 @@ theorem rootDerivationAt_mem_adjointWeightSpace (k : Fin F4.numRoots) :
     rw [← mapValue_rootDerivationAt (Algebra.ofId R K) k,
       HopfIdeal.quotientLieHom_mapValue, GeneralLinear.tangentMatrix_mapValue,
       tangentMatrix_apply, LinearEquiv.apply_symm_apply]
+    -- Coercing `Algebra.ofId R K` to a function gives the scalar map `algebraMap R K`.
     rfl
   have h := weightTorusPoints_conj_tangentMatrix_rootDerivationAt K k s
   rw [hmap, coe_weightTorusPoints, F4ShortRoot.coe_weightTorusPoints,

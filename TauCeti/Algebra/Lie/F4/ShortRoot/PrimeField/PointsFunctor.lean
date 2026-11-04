@@ -268,6 +268,18 @@ theorem coe_pointsMap {A : Type v} {B : Type w} [CommRing A] [CommRing B] [Algeb
   exact TauCeti.GeneralLinear.coe_mapHopfIdealPointsSubgroupCongr 26 definingIdeal
     (points_eq_hopfIdealPointsSubgroup A) (points_eq_hopfIdealPointsSubgroup B) f g
 
+/-- Extending carrier points to constant polynomials maps their matrix entries by `C`. -/
+theorem coe_pointsMap_CAlgHom {B : Type*} [CommRing B] [Algebra (ZMod 2) B]
+    (g : points B) :
+    ((pointsMap (Polynomial.CAlgHom : B →ₐ[ZMod 2] Polynomial B) g :
+        _root_.Matrix.GeneralLinearGroup (Fin 26) (Polynomial B)) :
+        _root_.Matrix (Fin 26) (Fin 26) (Polynomial B)) =
+      ((g : _root_.Matrix.GeneralLinearGroup (Fin 26) B) :
+        _root_.Matrix (Fin 26) (Fin 26) B).map Polynomial.C := by
+  rw [coe_pointsMap, _root_.Matrix.GeneralLinearGroup.val_map_apply]
+  -- The underlying ring homomorphism of `CAlgHom` is the polynomial constant map `C`.
+  rfl
+
 /-- The identity algebra homomorphism induces the identity on carrier points. -/
 @[simp]
 theorem pointsMap_id {A : Type v} [CommRing A] [Algebra (ZMod 2) A] :
