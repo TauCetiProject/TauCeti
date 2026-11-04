@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
+import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.Diffeomorph.Sphere
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
@@ -119,17 +120,6 @@ private theorem hasDerivAt_track_right (F : Concordance K K') (θ t : ℝ) :
   have h := ((contDiff_track F).differentiable (by simp) (θ, t)).hasFDerivAt.comp_hasDerivAt t
     ((hasDerivAt_const t θ).prodMk (hasDerivAt_id' t))
   exact h
-
-/-- **Correcting the speed by a boost.** If `x` has the direction of `w` and the length of `a`,
-that is `‖a‖⁻¹ • x = ‖w‖⁻¹ • w`, then stretching `x` by `exp (log (‖w‖ / ‖a‖))` gives `w`. -/
-private theorem exp_log_div_norm_smul_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {a w x : V} (ha : a ≠ 0) (hw : w ≠ 0) (hx : ‖a‖⁻¹ • x = ‖w‖⁻¹ • w) :
-    exp (log (‖w‖ / ‖a‖)) • x = w := by
-  have ha' := norm_ne_zero_iff.2 ha
-  have hw' := norm_ne_zero_iff.2 hw
-  have hx' : x = ‖a‖ • ‖w‖⁻¹ • w := by rw [← hx, smul_inv_smul₀ ha']
-  rw [Real.exp_log (div_pos (norm_pos_iff.2 hw) (norm_pos_iff.2 ha)), hx', smul_smul, smul_smul,
-    show ‖w‖ / ‖a‖ * ‖a‖ * ‖w‖⁻¹ = 1 by field_simp, one_smul]
 
 /-- **Making a concordance standard to first order along an arc.** Let `F` be a concordance
 between smooth circle embeddings `K` and `K'` into the unit sphere `Sⁿ`, `n ≥ 3`, which is the
@@ -370,7 +360,8 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
         fun θ => (L (Circle.exp θ) : E) :=
       funext fun θ => by rw [Prod.map_apply]
     rw [hslice, hD.deriv, hval, hLslice, ← hW_def]
-    simpa only [hα_def] using exp_log_div_norm_smul_eq (hA0 t) hW hdir
+    rw [hα_def, Real.exp_log (div_pos (norm_pos_iff.2 hW) (norm_pos_iff.2 (hA0 t)))]
+    exact norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize hdir
   · -- The time component: the shear cancels the time velocity `b t`.
     have hslice : (fun θ => (G (Circle.exp θ, t)).2) = fun θ => (track F (θ, σ θ)).2 :=
       funext fun θ => by simp only [hG, hΨ₂, hφ_def, timeShear_apply, track_apply, hσ_def]
