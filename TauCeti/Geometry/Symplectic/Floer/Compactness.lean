@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Compactness of Floer solutions away from finitely many bubbling points
@@ -77,11 +77,6 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- The area of a disc in `ℂ`. -/
-private theorem measureReal_ball_eq {z : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ) :
-    volume.real (ball z ρ) = π * ρ ^ 2 := by
-  simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hρ, mul_comm]
-
 /-- The graph of `u` has energy density `‖∂ₛU‖² = 1 + ‖∂ₛu‖²`. -/
 private theorem norm_fderiv_graph_one_sq {u : ℂ → V} {y : ℂ} (hu : DifferentiableAt ℝ u y) :
     ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 = 1 + ‖fderiv ℝ u y 1‖ ^ 2 := by
@@ -111,7 +106,7 @@ private theorem eventually_half_le_setIntegral_of_graph {ι : Type*} {l : Filter
   have hρvol : volume.real (ball z ρ ∩ Ω) ≤ δ / 2 := by
     calc volume.real (ball z ρ ∩ Ω) ≤ volume.real (ball z ρ) :=
           measureReal_mono inter_subset_left measure_ball_lt_top.ne
-      _ = π * ρ ^ 2 := measureReal_ball_eq hρ.le
+      _ = π * ρ ^ 2 := Complex.volume_real_ball z hρ.le
       _ ≤ π * Real.sqrt (δ / (2 * π)) ^ 2 := by
           gcongr
           exact min_le_right _ _
@@ -171,7 +166,7 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
     -- The energy of the graph on `B_ρ(z₀)` is its area `π ρ²` plus the energy of `u`.
     have hgE := setIntegral_norm_fderiv_graph_one_sq measurableSet_ball measure_ball_lt_top.ne
       (fun y hy ↦ hdiff y (hsub' hy)) (hint.mono_set hsub')
-    rw [measureReal_ball_eq hρ] at hgE
+    rw [Complex.volume_real_ball z₀ hρ] at hgE
     have hmono : ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤
         ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
       setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball
