@@ -47,6 +47,12 @@ singular cohomology. Only a charted space is required for the definitions.
   `TauCeti.smoothSingularSubcomplex`.
 * `TauCeti.SmoothSimplex.toContinuousMap`, `TauCeti.SmoothSimplex.mk`: a smooth simplex as a
   continuous map on `Δᵖ`, and back.
+* `TauCeti.SmoothSimplex.toContinuousMap_map_apply`,
+  `TauCeti.SmoothSimplex.toContinuousMap_δ_apply`,
+  `TauCeti.SmoothSimplex.toContinuousMap_σ_apply`: simplicial operators read on `Δᵖ`.
+* `TauCeti.SmoothSimplex.equiv₀`: smooth `0`-simplices identified with points of `M`.
+* `TauCeti.SmoothSimplex.ofContMDiffOn`, `TauCeti.SmoothSimplex.ofContMDiff`,
+  `TauCeti.SmoothSimplex.ofCurve`: smooth simplices from smooth maps on `ℝᵖ` and smooth curves.
 * `TauCeti.SmoothSimplex.extension`: a smooth simplex extended to `ℝᵖ`, smooth within `Δᵖ`.
 * `TauCeti.SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app`: a smooth map acts on
   smooth simplices by composition.
@@ -113,6 +119,16 @@ theorem mem_smoothSingularSubcomplex_of_contMDiffOn {k : SimplexCategoryᵒᵖ}
   rw [mem_smoothSingularSubcomplex_iff]
   convert hg.contMDiffOnSubset hU using 1
   exact funext hσ
+
+/-- Every singular `0`-simplex of `M` is smooth, since `Δ⁰` is a point. -/
+@[simp]
+theorem smoothSingularSubcomplex_obj_zero :
+    (smoothSingularSubcomplex I M).obj (op ⦋0⦌) = Set.univ := by
+  refine Set.eq_univ_of_forall fun σ ↦ ?_
+  refine mem_smoothSingularSubcomplex_of_contMDiffOn σ
+    (g := fun _ ↦ TopCat.toSSetObj₀Equiv σ) contMDiffOn_const Filter.univ_mem fun x ↦ ?_
+  rw [Subsingleton.elim (fullSimplexEquivStdSimplex 0 x) default]
+  exact (TopCat.toSSetObj₀Equiv_apply σ).symm
 
 variable (I M) in
 /-- The smooth singular `p`-simplices of `M`: the `p`-simplices of the subcomplex
@@ -185,6 +201,147 @@ theorem contMDiffOn_extension (σ : SmoothSimplex I M p) :
     ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ σ.extension (fullSimplex p) :=
   σ.contMDiffOnSubset_toContinuousMap.contMDiffOn σ.extension_coe
 
+/-- A simplicial operator on smooth simplices acts on `Δ^q` by precomposition with the ambient
+affine map `simplexMapAmbient`. -/
+theorem toContinuousMap_map_apply {q p : ℕ} (f : ⦋q⦌ ⟶ ⦋p⦌) (σ : SmoothSimplex I M p)
+    (x : fullSimplex q) :
+    toContinuousMap ((smoothSingularSubcomplex I M : SSet).map f.op σ) x =
+      σ.toContinuousMap ⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.2⟩ := by
+  have hx : (⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.2⟩ : fullSimplex p) =
+      (fullSimplexEquivStdSimplex p).symm ((fullSimplexEquivStdSimplex q x).map f.toOrderHom) :=
+    Subtype.ext (simplexMapAmbient_coe _ x)
+  rw [toContinuousMap_apply, hx, toContinuousMap_apply, Homeomorph.apply_symm_apply]
+  exact TopCat.toSSetObjEquiv_naturality_apply f σ.1 (fullSimplexEquivStdSimplex q x)
+
+-- `simp` reduces `SmoothSimplex` (`(smoothSingularSubcomplex I M).toSSet.obj _`) in implicit type
+-- arguments via `Subfunctor.toFunctor_obj` before looking up a lemma, so `simp` lemmas involving
+-- simplicial operators, `equiv₀`, or `smoothSingularSubcomplexMap` normalize their left-hand sides
+-- with `dsimp% only [Subfunctor.toFunctor_obj]`.
+/-- The `i`-th face of a smooth `(p + 1)`-simplex, read on `Δᵖ`, is its restriction along the
+`i`-th face inclusion `simplexFace p i`. -/
+@[simp]
+theorem toContinuousMap_δ_apply (i : Fin (p + 2)) (σ : SmoothSimplex I M (p + 1))
+    (x : fullSimplex p) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      (toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x)) =
+      σ.toContinuousMap (simplexFace p i x) := by
+  refine (toContinuousMap_map_apply (SimplexCategory.δ i) σ x).trans ?_
+  exact congrArg σ.toContinuousMap (Subtype.ext (simplexMapAmbient_succAbove_coe i x))
+
+/-- The `i`-th degeneracy of a smooth `p`-simplex, read on `Δᵖ⁺¹`, precomposes with the ambient
+projection `simplexMapAmbient i.predAbove`. -/
+theorem toContinuousMap_σ_apply (i : Fin (p + 1)) (σ : SmoothSimplex I M p)
+    (x : fullSimplex (p + 1)) :
+    toContinuousMap ((smoothSingularSubcomplex I M : SSet).σ i σ) x =
+      σ.toContinuousMap ⟨simplexMapAmbient i.predAbove x, mapsTo_simplexMapAmbient _ x.2⟩ :=
+  toContinuousMap_map_apply (SimplexCategory.σ i) σ x
+
+variable (I M) in
+/-- Smooth `0`-simplices of `M` correspond bijectively to points of `M`, restricting
+`TopCat.toSSetObj₀Equiv`. -/
+def equiv₀ : SmoothSimplex I M 0 ≃ M where
+  toFun σ := (TopCat.of M).toSSetObj₀Equiv σ.1
+  invFun x₀ := ⟨(TopCat.of M).toSSetObj₀Equiv.symm x₀, by simp⟩
+  left_inv σ := Subtype.ext ((TopCat.of M).toSSetObj₀Equiv.symm_apply_apply σ.1)
+  right_inv x₀ := (TopCat.of M).toSSetObj₀Equiv.apply_symm_apply x₀
+
+/-- The underlying singular `0`-simplex of `(equiv₀ I M).symm x₀` is
+`TopCat.toSSetObj₀Equiv.symm x₀`. -/
+@[simp]
+theorem coe_equiv₀_symm (x₀ : M) :
+    (dsimp% only [Subfunctor.toFunctor_obj] (((equiv₀ I M).symm x₀).1)) =
+      (TopCat.of M).toSSetObj₀Equiv.symm x₀ :=
+  (rfl)
+
+/-- The point of `M` corresponding to a smooth `0`-simplex is its value at the unique point of
+`Δ⁰`. -/
+@[simp]
+theorem equiv₀_apply (σ : SmoothSimplex I M 0) :
+    (dsimp% only [Subfunctor.toFunctor_obj] (equiv₀ I M σ)) =
+      σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩ := by
+  rw [equiv₀, Equiv.coe_fn_mk, TopCat.toSSetObj₀Equiv_apply, toContinuousMap_apply,
+    Subsingleton.elim (fullSimplexEquivStdSimplex 0 ⟨0, zero_mem_fullSimplex 0⟩) default]
+
+/-- Read on `Δ⁰`, the smooth `0`-simplex of `x₀` is the constant map to `x₀`. -/
+@[simp]
+theorem toContinuousMap_equiv₀_symm_apply (x₀ : M) (x : fullSimplex 0) :
+    (dsimp% only [Subfunctor.toFunctor_obj] (((equiv₀ I M).symm x₀).toContinuousMap x)) = x₀ := by
+  rw [Subsingleton.elim x ⟨0, zero_mem_fullSimplex 0⟩, ← equiv₀_apply, Equiv.apply_symm_apply]
+
+/-- A map `g : ℝᵖ → M` that is smooth on a neighbourhood of `Δᵖ` restricts to a smooth
+`p`-simplex. -/
+def ofContMDiffOn {U : Set (EuclideanSpace ℝ (Fin p))} {g : EuclideanSpace ℝ (Fin p) → M}
+    (hg : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ g U) (hU : U ∈ 𝓝ˢ (fullSimplex p)) :
+    SmoothSimplex I M p :=
+  mk ⟨(fullSimplex p).domRestrict g, (hg.continuousOn.mono (subset_of_mem_nhdsSet hU)).domRestrict⟩
+    (hg.contMDiffOnSubset hU)
+
+/-- Read on `Δᵖ`, `ofContMDiffOn` evaluates the ambient map. -/
+@[simp]
+theorem toContinuousMap_ofContMDiffOn_apply {U : Set (EuclideanSpace ℝ (Fin p))}
+    {g : EuclideanSpace ℝ (Fin p) → M}
+    (hg : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ g U) (hU : U ∈ 𝓝ˢ (fullSimplex p))
+    (x : fullSimplex p) :
+    (ofContMDiffOn hg hU).toContinuousMap x = g x := by
+  simp [ofContMDiffOn]
+
+/-- A smooth map `g : ℝᵖ → M` restricts to a smooth `p`-simplex. -/
+def ofContMDiff {g : EuclideanSpace ℝ (Fin p) → M}
+    (hg : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ g) : SmoothSimplex I M p :=
+  ofContMDiffOn hg.contMDiffOn Filter.univ_mem
+
+/-- Read on `Δᵖ`, `ofContMDiff` evaluates the smooth map. -/
+@[simp]
+theorem toContinuousMap_ofContMDiff_apply {g : EuclideanSpace ℝ (Fin p) → M}
+    (hg : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ g) (x : fullSimplex p) :
+    (ofContMDiff hg).toContinuousMap x = g x :=
+  toContinuousMap_ofContMDiffOn_apply hg.contMDiffOn Filter.univ_mem x
+
+/-- A smooth curve `γ : ℝ → M` defines a smooth `1`-simplex `x ↦ γ (x 0)`, lifting
+`TauCeti.TopCat.simplex₁`. -/
+def ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) : SmoothSimplex I M 1 :=
+  ⟨TauCeti.TopCat.simplex₁ (X := TopCat.of M)
+      ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩,
+    mem_smoothSingularSubcomplex_of_contMDiffOn _ (g := fun y ↦ γ (y 0))
+      (hγ.comp (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff).contMDiffOn
+      Filter.univ_mem fun x ↦ by
+        rw [TauCeti.TopCat.toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+          ContinuousMap.coe_mk, ContinuousMap.coe_ofClass, StdSimplex.homeomorphI_apply_coe]
+        -- `(0 : Fin 1).succ` is definitionally `1 : Fin 2`.
+        exact congrArg γ (fullSimplexEquivStdSimplex_weights_succ x 0)⟩
+
+/-- The underlying singular `1`-simplex of `SmoothSimplex.ofCurve` is `TauCeti.TopCat.simplex₁`. -/
+@[simp]
+theorem coe_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
+    (ofCurve hγ).1 = TauCeti.TopCat.simplex₁ (X := TopCat.of M)
+      ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩ :=
+  (rfl)
+
+/-- Read on `Δ¹`, the smooth `1`-simplex of `γ` evaluates `γ` at the unique coordinate. -/
+@[simp]
+theorem toContinuousMap_ofCurve_apply {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ)
+    (x : fullSimplex 1) :
+    (ofCurve hγ).toContinuousMap x = γ (x.1 0) := by
+  rw [toContinuousMap_apply, coe_ofCurve, TauCeti.TopCat.toSSetObjEquiv_simplex₁,
+    ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.coe_ofClass,
+    StdSimplex.homeomorphI_apply_coe]
+  -- `(0 : Fin 1).succ` is definitionally `1 : Fin 2`.
+  exact congrArg γ (fullSimplexEquivStdSimplex_weights_succ x 0)
+
+/-- The `0`-th face of the smooth `1`-simplex of `γ` is the smooth vertex `γ 1`. -/
+@[simp]
+theorem δ_zero_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((smoothSingularSubcomplex I M : SSet).δ 0 (ofCurve hγ))) = (equiv₀ I M).symm (γ 1) :=
+  Subtype.ext (TauCeti.TopCat.δ_zero_simplex₁ _)
+
+/-- The `1`-st face of the smooth `1`-simplex of `γ` is the smooth vertex `γ 0`. -/
+@[simp]
+theorem δ_one_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((smoothSingularSubcomplex I M : SSet).δ 1 (ofCurve hγ))) = (equiv₀ I M).symm (γ 0) :=
+  Subtype.ext (TauCeti.TopCat.δ_one_simplex₁ _)
+
 end SmoothSimplex
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -249,5 +406,39 @@ theorem SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app {p : ℕ}
   ext x
   rw [toContinuousMap_apply, h, TopCat.toSSetObjEquiv_toSSet_map_app]
   simp [toContinuousMap_apply]
+
+/-- A smooth map carries the smooth `0`-simplex of `x₀` to that of `φ x₀`. -/
+@[simp]
+theorem SmoothSimplex.smoothSingularSubcomplexMap_app_equiv₀_symm
+    (hφ : ContMDiff I J ∞ φ) (x₀ : M) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((smoothSingularSubcomplexMap φ hφ).app (op ⦋0⦌) ((equiv₀ I M).symm x₀))) =
+      (equiv₀ J N).symm (φ x₀) := by
+  refine SmoothSimplex.ext fun x ↦ ?_
+  rw [toContinuousMap_smoothSingularSubcomplexMap_app]
+  simp
+
+/-- A smooth map acts on `ofContMDiff` by postcomposition. -/
+@[simp]
+theorem SmoothSimplex.smoothSingularSubcomplexMap_app_ofContMDiff {p : ℕ}
+    (hφ : ContMDiff I J ∞ φ) {g : EuclideanSpace ℝ (Fin p) → M}
+    (hg : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ g) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((smoothSingularSubcomplexMap φ hφ).app (op ⦋p⦌) (ofContMDiff hg))) =
+      ofContMDiff (hφ.comp hg) := by
+  refine SmoothSimplex.ext fun x ↦ ?_
+  rw [toContinuousMap_smoothSingularSubcomplexMap_app]
+  simp
+
+/-- A smooth map acts on `ofCurve` by postcomposition of the curve. -/
+@[simp]
+theorem SmoothSimplex.smoothSingularSubcomplexMap_app_ofCurve
+    (hφ : ContMDiff I J ∞ φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
+    (dsimp% only [Subfunctor.toFunctor_obj]
+      ((smoothSingularSubcomplexMap φ hφ).app (op ⦋1⦌) (ofCurve hγ))) =
+      ofCurve (hφ.comp hγ) := by
+  refine SmoothSimplex.ext fun x ↦ ?_
+  rw [toContinuousMap_smoothSingularSubcomplexMap_app]
+  simp
 
 end TauCeti

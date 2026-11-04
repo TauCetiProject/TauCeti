@@ -444,6 +444,19 @@ theorem mpullback_eq_flat (f : E → E') (ω : RoughForm 𝓘(ℝ, E') E' F k) :
   -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
   rfl
 
+/-- The within-set chain rule for precomposition by a map of normed spaces: the within-set
+pullback along `u ∘ L`, for a map `L` carrying `s` into `t` with derivative `A` within `s` at `y`,
+is the within-set pullback along `u` at `L y` precomposed with `A`. -/
+theorem mpullbackWithin_comp_apply_of_hasFDerivWithinAt {u : E' → M} {L : E'' → E'}
+    {A : E'' →L[ℝ] E'} {s : Set E''} {t : Set E'} {y : E''}
+    (hL : HasFDerivWithinAt L A s y) (hu : MDifferentiableWithinAt 𝓘(ℝ, E') I u t (L y))
+    (hst : MapsTo L s t) (hs : UniqueDiffWithinAt ℝ s y) (ω : RoughForm I M F k) :
+    mpullbackWithin 𝓘(ℝ, E'') I (u ∘ L) s ω y =
+      (mpullbackWithin 𝓘(ℝ, E') I u t ω (L y)).compContinuousLinearMap A := by
+  rw [mpullbackWithin_comp_at hL.differentiableWithinAt.mdifferentiableWithinAt hu hst
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 hs), mpullbackWithin_eq_flat]
+  exact congrArg _ (hL.fderivWithin hs)
+
 /-- The chain rule for precomposition by a map of normed spaces: the pullback along `u ∘ L`, for a
 map `L` with derivative `A` at `y`, is the pullback along `u` at `L y` precomposed with `A`. -/
 theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A : E'' →L[ℝ] E'}
