@@ -219,6 +219,25 @@ theorem existsUnique_geckPositiveGeneratedCoordinateMap_comp_eq_generator
       exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker
         (t.geckPositiveGeneratorCoordinateMap ht A) j
 
+/-- Restriction to a positive numbered root subgroup or to the weight torus. -/
+noncomputable def geckPositiveGeneratedCoordinateLift (j : Sum (Fin t.rank) Unit) :
+    t.geckPositiveGeneratedCoordinateHopfAlgebra ht A ⟶
+      t.geckPositiveGeneratorCoordinateAlgebra A j :=
+  CommHopfAlgCat.liftQuotient (t.geckPositiveGeneratedDefiningIdeal ht A)
+    (t.geckPositiveGeneratorCoordinateMap ht A j) <| by
+      rw [geckPositiveGeneratedDefiningIdeal_def]
+      exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker
+        (t.geckPositiveGeneratorCoordinateMap ht A) j
+
+/-- Restricting the ambient coordinates through the positive generated subgroup recovers the
+original generator map. -/
+@[reassoc (attr := simp)]
+theorem geckPositiveGeneratedCoordinateMap_comp_lift (j : Sum (Fin t.rank) Unit) :
+    t.geckPositiveGeneratedCoordinateMap ht A ≫
+        t.geckPositiveGeneratedCoordinateLift ht A j =
+      t.geckPositiveGeneratorCoordinateMap ht A j :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
+
 /-- The positive generated coordinate Hopf algebra is of finite type over the base ring. -/
 instance : Algebra.FiniteType A (t.geckPositiveGeneratedCoordinateHopfAlgebra ht A) := by
   rw [geckPositiveGeneratedCoordinateHopfAlgebra_def]
