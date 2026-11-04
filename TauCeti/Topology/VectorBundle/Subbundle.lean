@@ -18,9 +18,12 @@ point `x` a subspace `V x` of the fibre `E x`. The total space of `V`, the pairs
 (`TauCeti.subbundleTopology`). This file shows that over `ℝ` or `ℂ` a continuous local frame of
 `V` gives a local trivialization of `V` for this topology, and that the coordinate changes between
 two such trivializations are continuous. For a family of subspaces with a continuous local frame of
-a fixed size near every point, these are the data and the two axioms of a topological vector bundle
-structure, a subbundle of `E`; `TauCeti.IsContMDiffDistribution.vectorBundle` assembles them for
-the distributions of a manifold.
+a fixed size near every point (`TauCeti.HasLocalSubbundleFrames`), these are the data and the two
+axioms of a topological vector bundle structure, a subbundle of `E`
+(`TauCeti.HasLocalSubbundleFrames.vectorBundle`), whose atlas consists of the trivializations of
+all continuous local frames. `TauCeti.IsContMDiffDistribution.vectorBundle` assembles the same
+data for the distributions of a manifold, keeping only `C^n` frames in its atlas so that the
+result is also a `C^n` vector bundle.
 
 A continuous local frame `X` of `V` on a set `U` (`TauCeti.IsSubbundleFrameOn F V X U`) is a
 family of sections of `E`, continuous on `U`, whose values form a basis of `V y` at each point
@@ -51,6 +54,9 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 * `TauCeti.IsSubbundleFrameOn.basis`: the basis of a fibre of `V` given by a local frame.
 * `TauCeti.IsSubbundleFrameOn.trivialization`: the local trivialization of `V` given by a local
   frame on an open set.
+* `TauCeti.HasLocalSubbundleFrames F ι V`: every point has an open neighbourhood with a continuous
+  local frame of `V` indexed by `ι`.
+* `TauCeti.HasLocalSubbundleFrames.fiberBundle`: the resulting fibre bundle structure on `V`.
 
 ## Main results
 
@@ -60,6 +66,11 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
   the total space of `V`.
 * `TauCeti.IsSubbundleFrameOn.continuousOn_coordChangeL`: the coordinate changes between the
   trivializations of two local frames are continuous on the overlap.
+* `TauCeti.HasLocalSubbundleFrames.vectorBundle`: a family of subspaces with continuous local
+  frames of a fixed finite size near every point is a topological vector bundle.
+* `Bundle.Trivialization.isSubbundleFrameOn_symm_comp`: a continuous family of injective
+  operators into the model fibre, read through a linear trivialization, is a local frame of the
+  subspaces corresponding to its ranges.
 
 ## References
 
@@ -212,6 +223,29 @@ private theorem coe_vec [Fintype ι] (hX : IsSubbundleFrameOn F V X U) {y : B} (
   rw [vec_of_mem hX hy, coe_basis_equivFun_symm]
 
 end IsSubbundleFrameOn
+
+variable (ι) in
+/-- Every point of the base has an open neighbourhood carrying a continuous local frame of the
+family of subspaces `V`, indexed by `ι`. Over `ℝ` or `ℂ` such a family, with the subspace
+topology, is a vector bundle with model fibre `ι → 𝕜`
+(`TauCeti.HasLocalSubbundleFrames.vectorBundle`): a subbundle of `E`. -/
+def HasLocalSubbundleFrames (V : Π x, Submodule 𝕜 (E x)) : Prop :=
+  ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧ ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U
+
+variable {F} in
+/-- Unfolding `TauCeti.HasLocalSubbundleFrames`. -/
+theorem hasLocalSubbundleFrames_iff {V : Π x, Submodule 𝕜 (E x)} :
+    HasLocalSubbundleFrames F ι V ↔
+      ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧ ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U :=
+  Iff.rfl
+
+variable {F} in
+/-- The subspaces of a family with local frames indexed by `ι` all have dimension `card ι`. -/
+theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype ι]
+    {V : Π x, Submodule 𝕜 (E x)} (hV : HasLocalSubbundleFrames F ι V) (x : B) :
+    finrank 𝕜 (V x) = Fintype.card ι := by
+  obtain ⟨U, -, hx, X, hX⟩ := hV x
+  exact hX.finrank_eq hx
 
 end Frame
 
@@ -462,6 +496,103 @@ end Trivialization
 
 end IsSubbundleFrameOn
 
+namespace HasLocalSubbundleFrames
+
+variable [IsRCLikeNormedField 𝕜] {F} {V : Π x, Submodule 𝕜 (E x)}
+
+/-- A family of subspaces with continuous local frames indexed by `ι` near every point is a fibre
+bundle with fibre `ι → 𝕜`, the topology of its total space being that of a subspace of the total
+space of `E`. Its trivializations are those of all continuous local frames of `V` on open sets
+(`TauCeti.IsSubbundleFrameOn.trivialization`). Use this definition as a local instance; it
+chooses a local frame near every point. -/
+@[instance_reducible]
+def fiberBundle [Finite ι] (hV : HasLocalSubbundleFrames F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    FiberBundle (ι → 𝕜) fun x ↦ V x :=
+  letI := subbundleTopology F (F' := ι → 𝕜) V
+  let U := fun x ↦ (hV x).choose
+  have hU := fun x ↦ (hV x).choose_spec
+  let X := fun x ↦ (hU x).2.2.choose
+  have hX := fun x ↦ (hU x).2.2.choose_spec
+  { totalSpaceMk_isInducing' := isInducing_totalSpaceMk_subbundle F (ι → 𝕜) V
+    trivializationAtlas' :=
+      {e | ∃ (U : Set B) (hU : IsOpen U) (Y : ι → Π x, E x) (hY : IsSubbundleFrameOn F V Y U),
+        hY.trivialization hU = e}
+    trivializationAt' := fun x ↦ (hX x).trivialization (hU x).1
+    mem_baseSet_trivializationAt' := fun x ↦ by
+      rw [IsSubbundleFrameOn.trivialization_baseSet]
+      exact (hU x).2.1
+    trivialization_mem_atlas' := fun x ↦ ⟨U x, (hU x).1, X x, hX x, rfl⟩ }
+
+/-- The trivializations of `hV.fiberBundle` are the trivializations of the continuous local frames
+of `V` on open sets. -/
+theorem mem_trivializationAtlas_fiberBundle_iff [Finite ι] (hV : HasLocalSubbundleFrames F ι V)
+    (e : letI := subbundleTopology F (F' := ι → 𝕜) V
+      Trivialization (ι → 𝕜) (π (ι → 𝕜) fun x ↦ V x)) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    letI := hV.fiberBundle
+    e ∈ trivializationAtlas (ι → 𝕜) (fun x ↦ V x) ↔
+      ∃ (U : Set B) (hU : IsOpen U) (Y : ι → Π x, E x) (hY : IsSubbundleFrameOn F V Y U),
+        hY.trivialization hU = e :=
+  Iff.rfl
+
+/-- **Local frame criterion for subbundles.** A family of subspaces with continuous local frames
+indexed by `ι` near every point, with the subspace topology of the total space of `E` and the
+atlas of `hV.fiberBundle`, is a topological vector bundle with model fibre `ι → 𝕜`. -/
+theorem vectorBundle [Fintype ι] (hV : HasLocalSubbundleFrames F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    letI := hV.fiberBundle
+    VectorBundle 𝕜 (ι → 𝕜) fun x ↦ V x := by
+  let := subbundleTopology F (F' := ι → 𝕜) V
+  let := hV.fiberBundle
+  refine { trivialization_linear' := ?_, continuousOn_coordChange' := ?_ }
+  · intro e he
+    obtain ⟨U, hU, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e).mp he.out
+    exact hY.isLinear_trivialization hU
+  · intro e e' he he'
+    obtain ⟨U, hU, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e).mp he.out
+    obtain ⟨U', hU', Y', hY', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e').mp he'.out
+    simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
+      hY.continuousOn_coordChangeL hU hY' hU'
+
+end HasLocalSubbundleFrames
+
 end Normed
 
 end TauCeti
+
+namespace Bundle.Trivialization
+
+open Function Set
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+
+/-- Read in a linear trivialization `e`, a continuous family of injective operators `κ x` whose
+ranges correspond to the subspaces `V x` gives a continuous local frame of `V`: the images under
+`e.symm x` of the values of `κ x` on a basis. -/
+theorem isSubbundleFrameOn_symm_comp {K ι : Type*} [NormedAddCommGroup K] [NormedSpace 𝕜 K]
+    {V : Π x, Submodule 𝕜 (E x)} (e : Trivialization F (π F E)) [e.IsLinear 𝕜] {U : Set B}
+    (hU : U ⊆ e.baseSet) {κ : B → K →L[𝕜] F} (hκ : ContinuousOn κ U) (b : Basis ι 𝕜 K)
+    (hinj : ∀ x ∈ U, Injective (κ x))
+    (hrange : ∀ x ∈ U, ∀ v, v ∈ (κ x).range ↔ e.symm x v ∈ V x) :
+    TauCeti.IsSubbundleFrameOn F V (fun i x ↦ e.symm x (κ x (b i))) U where
+  continuousOn i := e.continuousOn_symm.comp (continuousOn_id.prodMk (hκ.clm_apply
+    continuousOn_const)) fun x hx ↦ ⟨hU hx, mem_univ _⟩
+  linearIndependent {x} hx := by
+    let L := (e.linearEquivAt 𝕜 x (hU hx)).symm
+    simp_rw [← e.linearEquivAt_symm_apply (R := 𝕜) x (hU hx)]
+    exact (b.linearIndependent.map' (κ x : K →ₗ[𝕜] F) (LinearMap.ker_eq_bot.mpr (hinj x hx))).map'
+      L.toLinearMap L.ker
+  span_eq {x} hx := by
+    let L := (e.linearEquivAt 𝕜 x (hU hx)).symm
+    ext w
+    rw [show range (fun i ↦ e.symm x (κ x (b i))) = L.toLinearMap '' ((κ x : K →ₗ[𝕜] F) '' range b)
+      by rw [← range_comp, ← range_comp]; exact congrArg range (funext fun i ↦
+        (e.linearEquivAt_symm_apply (R := 𝕜) x (hU hx) _).symm),
+      ← Submodule.map_span, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      Submodule.mem_map_equiv, hrange x hx, LinearEquiv.symm_symm, e.linearEquivAt_apply,
+      e.symm_apply_apply_mk (hU hx)]
+
+end Bundle.Trivialization
