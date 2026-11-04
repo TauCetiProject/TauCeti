@@ -76,7 +76,8 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X : Scheme} [IsIntegral X] [IsLocallyNoetherian X]
 
-local instance : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
+local instance nonemptyTopForReducedDivisor : Nonempty (⊤ : X.Opens) :=
+  ⟨⟨genericPoint X, trivial⟩⟩
 
 /-- The zero scheme of a nonzero global function on a locally factorial, locally Noetherian
 integral scheme is reduced exactly when every codimension-one order is at most one. -/
