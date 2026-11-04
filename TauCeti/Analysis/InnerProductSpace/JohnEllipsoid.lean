@@ -68,11 +68,13 @@ section NormedField
 variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- A continuous linear equivalence `T : E ≃L[𝕜] F` is a *maximal-volume ellipsoid* if it is a
-contraction and, for every contraction `S : E →L[𝕜] F`, the determinant of `T⁻¹ ∘ S` has norm at
-most one. When `E` is an inner product space, `T` maps the Euclidean unit ball onto an ellipsoid of
-maximal volume among the ellipsoids contained in the closed unit ball of `F`. -/
-structure IsMaxVolumeEllipsoid (T : E ≃L[𝕜] F) : Prop where
+/-- A continuous linear equivalence `T : E ≃L[𝕜] F` from a finite-dimensional space is a
+*maximal-volume ellipsoid* if it is a contraction and, for every contraction `S : E →L[𝕜] F`, the
+determinant of `T⁻¹ ∘ S` has norm at most one. When `E` is an inner product space, `T` maps the
+Euclidean unit ball onto an ellipsoid of maximal volume among the ellipsoids contained in the closed
+unit ball of `F`. Finite dimensionality is required because determinants are only meaningful there:
+`LinearMap.det` is constantly `1` on infinite-dimensional spaces. -/
+structure IsMaxVolumeEllipsoid [FiniteDimensional 𝕜 E] (T : E ≃L[𝕜] F) : Prop where
   /-- The ellipsoid lies in the closed unit ball. -/
   norm_le_one : ‖(T : E →L[𝕜] F)‖ ≤ 1
   /-- No contraction gives an ellipsoid of larger volume. -/
@@ -80,7 +82,7 @@ structure IsMaxVolumeEllipsoid (T : E ≃L[𝕜] F) : Prop where
 
 namespace IsMaxVolumeEllipsoid
 
-variable {T : E ≃L[𝕜] F}
+variable [FiniteDimensional 𝕜 E] {T : E ≃L[𝕜] F}
 
 /-- Two maximal-volume ellipsoids have the same volume. -/
 theorem norm_det_eq_one (hT : T.IsMaxVolumeEllipsoid) {U : E ≃L[𝕜] F}
