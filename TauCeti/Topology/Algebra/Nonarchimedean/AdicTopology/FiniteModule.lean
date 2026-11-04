@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 import TauCeti.Order.Filter.Pi
 import TauCeti.RingTheory.Ideal.Operations
-import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 
 /-!
 # Adic topologies and finite module presentations
@@ -70,12 +69,8 @@ theorem adicModuleTopology_eq_moduleTopology (hI : IsAdic I) [Module.Finite R M]
   apply IsTopologicalAddGroup.ext
   · infer_instance
   · infer_instance
-  -- The submodules basis defining `adicModuleTopology` is indexed by the powers of `I`.
-  have hb : (@nhds M (I.adicModuleTopology M) 0).HasBasis (fun _ : ℕ ↦ True)
-      (fun n ↦ ((I ^ n • ⊤ : Submodule R M) : Set M)) := by
-    let := I.adicTopology
-    exact (I.ringFilterBasis.submodulesBasisIsBasis (I.adic_module_basis M)).hasBasis_nhds_zero
-  exact hb.eq_of_same_basis (hI.hasBasis_nhds_zero_pow_smul (M := M))
+  exact (I.hasBasis_nhds_zero_adicModuleTopology M).eq_of_same_basis
+    (hI.hasBasis_nhds_zero_pow_smul (M := M))
 
 /-- Any surjection from a finite free module presents the adic topology on its target as
 an actual quotient of the product topology on the source. -/
