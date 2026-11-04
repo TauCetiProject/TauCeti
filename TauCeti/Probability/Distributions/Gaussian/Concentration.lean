@@ -53,11 +53,12 @@ contributes the same amount, which is an exponential moment of the Gaussian vari
 ## Main results
 
 * `TauCeti.Probability.sub_eq_integral_fderiv_rotation`: the interpolation identity above.
-* `TauCeti.Probability.lintegral_exp_mul_sub_le`: the Maurey–Pisier inequality
+* `ProbabilityTheory.IsGaussian.lintegral_exp_mul_sub_le`: the Maurey–Pisier inequality
   `∫∫ exp (t (f y - f x)) dμ(x) dμ(y) ≤ ∫ exp (π² t² / 8 · Var[f' x; μ]) dμ(x)`.
-* `TauCeti.Probability.hasSubgaussianMGF_sub_integral`: `f - 𝔼 f` is sub-Gaussian with variance
-  proxy `π² v / 4`.
-* `TauCeti.Probability.measureReal_setOf_le_abs_sub_integral_le`: the two-sided tail bound.
+* `ProbabilityTheory.IsGaussian.hasSubgaussianMGF_sub_integral_of_variance_fderiv_le`:
+  `f - 𝔼 f` is sub-Gaussian with variance proxy `π² v / 4`.
+* `ProbabilityTheory.IsGaussian.measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le`:
+  the two-sided tail bound.
 * `TauCeti.Probability.measureReal_stdGaussian_setOf_le_abs_sub_integral_le`: the tail bound
   `2 exp (-2 ε² / (π² K²))` for the standard Gaussian measure and `‖f'‖ ≤ K`.
 
@@ -75,10 +76,10 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal NNReal
 
-namespace TauCeti.Probability
-
 /-- The uniform probability measure on the quarter period `(0, π / 2]`. -/
 local notation "ν" => volume[|Set.Ioc (0 : ℝ) (π / 2)]
+
+namespace TauCeti.Probability
 
 section Interpolation
 
@@ -117,6 +118,18 @@ private instance : IsProbabilityMeasure ν :=
   cond_isProbabilityMeasure_of_finite (by simp [pi_pos])
     (by simp)
 
+/-- A continuous function is integrable for the uniform measure `ν` on `(0, π / 2]`. -/
+private lemma integrable_nu {g : ℝ → ℝ} (hg : Continuous g) : Integrable g ν := by
+  rw [ProbabilityTheory.cond]
+  exact hg.integrableOn_Ioc.smul_measure (by simp [pi_pos])
+
+/-- The average of `g` over `ν` is `2 / π` times its integral over `0..π / 2`. -/
+private lemma integral_nu_eq (g : ℝ → ℝ) :
+    ∫ θ, g θ ∂ν = 2 / π * ∫ θ in (0)..(π / 2), g θ := by
+  rw [ProbabilityTheory.cond, integral_smul_measure, volume_Ioc_zero_pi_div_two,
+    intervalIntegral.integral_of_le (by positivity), ENNReal.toReal_inv,
+    ENNReal.toReal_ofReal (by positivity), smul_eq_mul, inv_div]
+
 /-- Jensen's inequality along the interpolation path: `exp (t (f y - f x))` is at most the
 average over `θ ∈ (0, π / 2]` of `exp (t π / 2 · f' (R θ (x, y)).1 (R θ (x, y)).2)`. -/
 private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E × E) :
@@ -128,25 +141,19 @@ private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E �
   have hg : Continuous g := by
     simp only [g, ContinuousLinearMap.rotation_apply]
     fun_prop
-  have hgi : Integrable g ν := by
-    rw [ProbabilityTheory.cond]
-    refine Integrable.smul_measure ?_ (by simp [pi_pos])
-    exact hg.integrableOn_Ioc
   have hmean : ∫ θ, t * (π / 2) * g θ ∂ν = t * (f p.2 - f p.1) := by
     simp only [g]
-    rw [integral_const_mul, ProbabilityTheory.cond, integral_smul_measure,
-      sub_eq_integral_fderiv_rotation hf p,
-      intervalIntegral.integral_of_le (by positivity), volume_Ioc_zero_pi_div_two,
-      ENNReal.toReal_inv, ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+    rw [integral_const_mul, integral_nu_eq, sub_eq_integral_fderiv_rotation hf p]
     field_simp
   rw [← hmean]
-  refine convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
-    (hgi.const_mul _) ?_
-  rw [ProbabilityTheory.cond]
-  refine Integrable.smul_measure ?_ (by simp [pi_pos])
-  exact (continuous_exp.comp (continuous_const.mul hg)).integrableOn_Ioc
+  exact convexOn_exp.map_integral_le continuous_exp.continuousOn isClosed_univ (by simp)
+    ((integrable_nu hg).const_mul _) (integrable_nu (continuous_exp.comp (continuous_const.mul hg)))
 
 end Jensen
+
+end TauCeti.Probability
+
+namespace ProbabilityTheory.IsGaussian
 
 section Gaussian
 
@@ -176,15 +183,13 @@ theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t :
     have hint : Integrable (fun θ ↦ exp (t * (π / 2) *
         fderiv ℝ f (ContinuousLinearMap.rotation θ p).1
           (ContinuousLinearMap.rotation θ p).2)) ν := by
-      rw [ProbabilityTheory.cond]
-      refine Integrable.smul_measure ?_ (by simp [pi_pos])
-      refine Continuous.integrableOn_Ioc ?_
+      refine TauCeti.Probability.integrable_nu ?_
       simp only [ContinuousLinearMap.rotation_apply]
       fun_prop
     calc ENNReal.ofReal (exp (t * (f p.2 - f p.1)))
         ≤ .ofReal (∫ θ, exp (t * (π / 2) * fderiv ℝ f (ContinuousLinearMap.rotation θ p).1
             (ContinuousLinearMap.rotation θ p).2) ∂ν) :=
-          ENNReal.ofReal_le_ofReal (exp_mul_sub_le_integral hf t p)
+          ENNReal.ofReal_le_ofReal (TauCeti.Probability.exp_mul_sub_le_integral hf t p)
       _ = ∫⁻ θ, G (ContinuousLinearMap.rotation θ p) ∂ν :=
           ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (exp_pos _).le)
   -- Each rotation preserves `μ ⊗ μ`.
@@ -200,8 +205,9 @@ theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t :
       rw [Set.eq_univ_iff_forall] at this
       exact this _
     rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (exp_pos _).le)]
+    have hμ' : ∫ y, y ∂μ = 0 := by simpa using hμ
     have h := IsGaussian.mgf_dual (μ := μ) (fderiv ℝ f x) (t * (π / 2))
-    rw [mgf, IsGaussian.integral_dual, show ∫ y, y ∂μ = 0 from hμ, map_zero] at h
+    rw [mgf, IsGaussian.integral_dual, hμ', map_zero] at h
     rw [h]
     congr 2
     ring
@@ -214,7 +220,7 @@ theorem lintegral_exp_mul_sub_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f) (t :
 
 /-- The Maurey–Pisier inequality when the variances of the derivative are at most `v` almost
 everywhere. -/
-theorem lintegral_exp_mul_sub_le_of_variance_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
+theorem lintegral_exp_mul_sub_le_of_variance_fderiv_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
     (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) (t : ℝ) :
     ∫⁻ p, .ofReal (exp (t * (f p.2 - f p.1))) ∂μ.prod μ ≤ .ofReal (exp (π ^ 2 * t ^ 2 / 8 * v)) :=
   calc _ ≤ _ := lintegral_exp_mul_sub_le hμ hf t
@@ -224,7 +230,7 @@ theorem lintegral_exp_mul_sub_le_of_variance_le (hμ : μ[id] = 0) (hf : ContDif
 
 /-- A `C¹` function whose derivative has variance at most `v` almost everywhere under a centred
 Gaussian measure has finite exponential moments of every order. -/
-theorem integrable_exp_mul_of_variance_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
+theorem integrable_exp_mul_of_variance_fderiv_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
     (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) (t : ℝ) :
     Integrable (fun x ↦ exp (t * f x)) μ := by
   have hfc : Continuous f := hf.continuous
@@ -232,7 +238,7 @@ theorem integrable_exp_mul_of_variance_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 
   have hF : Measurable F := ENNReal.measurable_ofReal.comp (by fun_prop)
   have hfin : ∫⁻ x, ∫⁻ y, F (x, y) ∂μ ∂μ ≠ ∞ := by
     rw [← lintegral_prod _ hF.aemeasurable]
-    exact ((lintegral_exp_mul_sub_le_of_variance_le hμ hf hv t).trans_lt
+    exact ((lintegral_exp_mul_sub_le_of_variance_fderiv_le hμ hf hv t).trans_lt
       ENNReal.ofReal_lt_top).ne
   obtain ⟨x₀, hx₀⟩ := (ae_lt_top' hF.lintegral_prod_right'.aemeasurable hfin).exists
   have hexp (y : E) : ENNReal.ofReal (exp (t * f y)) = .ofReal (exp (t * f x₀)) * F (x₀, y) := by
@@ -246,28 +252,22 @@ theorem integrable_exp_mul_of_variance_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 
 
 /-- A `C¹` function whose derivative has variance at most `v` almost everywhere under a centred
 Gaussian measure is integrable. -/
-theorem integrable_of_variance_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
+theorem integrable_of_variance_fderiv_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
     (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) : Integrable f μ := by
-  refine ((integrable_exp_mul_of_variance_le hμ hf hv 1).add
-    (integrable_exp_mul_of_variance_le hμ hf hv (-1))).mono'
-    hf.continuous.aestronglyMeasurable (.of_forall fun x ↦ ?_)
-  have h₁ := add_one_le_exp (f x)
-  have h₂ := add_one_le_exp (-f x)
-  have h₃ := exp_pos (f x)
-  have h₄ := exp_pos (-f x)
-  simp only [Pi.add_apply, one_mul, neg_one_mul, Real.norm_eq_abs]
-  exact abs_le.2 ⟨by linarith, by linarith⟩
+  have h : integrableExpSet f μ = Set.univ :=
+    Set.eq_univ_of_forall (integrable_exp_mul_of_variance_fderiv_le hμ hf hv)
+  exact integrable_of_mem_interior_integrableExpSet (by simp [h])
 
 /-- **Gaussian concentration, exponential-moment form.** If `f` is `C¹` and its derivative has
 variance at most `v` under a centred Gaussian measure `μ` at almost every point, then `f - 𝔼 f` is
 sub-Gaussian with variance proxy `π² v / 4`: `𝔼 exp (t (f - 𝔼 f)) ≤ exp (π² t² v / 8)`. -/
-theorem hasSubgaussianMGF_sub_integral (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
-    (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) :
+theorem hasSubgaussianMGF_sub_integral_of_variance_fderiv_le (hμ : μ[id] = 0)
+    (hf : ContDiff ℝ 1 f) (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) :
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂μ) (NNReal.pi ^ 2 / 4 * v) μ := by
   set m := ∫ y, f y ∂μ
-  have hfi := integrable_of_variance_le hμ hf hv
+  have hfi := integrable_of_variance_fderiv_le hμ hf hv
   have hint (t : ℝ) : Integrable (fun x ↦ exp (t * (f x - m))) μ := by
-    have h := (integrable_exp_mul_of_variance_le hμ hf hv t).mul_const (exp (-t * m))
+    have h := (integrable_exp_mul_of_variance_fderiv_le hμ hf hv t).mul_const (exp (-t * m))
     refine h.congr (.of_forall fun x ↦ ?_)
     simp only [← exp_add]
     ring_nf
@@ -277,7 +277,7 @@ theorem hasSubgaussianMGF_sub_integral (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f
     ring_nf
   have hexpi (x : E) : Integrable (fun y ↦ exp (t * (f x - f y))) μ := by
     simp_rw [hexp]
-    exact (integrable_exp_mul_of_variance_le hμ hf hv (-t)).const_mul _
+    exact (integrable_exp_mul_of_variance_fderiv_le hμ hf hv (-t)).const_mul _
   -- Jensen's inequality in `y`, for each fixed `x`.
   have hjensen (x : E) : exp (t * (f x - m)) ≤ ∫ y, exp (t * (f x - f y)) ∂μ := by
     have hmean : ∫ y, t * (f x - f y) ∂μ = t * (f x - m) := by
@@ -305,17 +305,17 @@ theorem hasSubgaussianMGF_sub_integral (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f
         simp only [neg_mul, mul_sub, sub_neg_eq_add]
         ring_nf
     _ ≤ .ofReal (exp (π ^ 2 * (-t) ^ 2 / 8 * v)) :=
-        lintegral_exp_mul_sub_le_of_variance_le hμ hf hv (-t)
+        lintegral_exp_mul_sub_le_of_variance_fderiv_le hμ hf hv (-t)
     _ = .ofReal (exp (π ^ 2 * t ^ 2 / 8 * v)) := by rw [neg_sq]
 
 /-- **Gaussian concentration.** If `f` is `C¹` and its derivative has variance at most `v` under
 a centred Gaussian measure `μ` at almost every point, then for `ε ≥ 0`,
 `μ {x | ε ≤ |f x - 𝔼 f|} ≤ 2 exp (-2 ε² / (π² v))`. -/
-theorem measureReal_setOf_le_abs_sub_integral_le (hμ : μ[id] = 0) (hf : ContDiff ℝ 1 f)
-    (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) {ε : ℝ} (hε : 0 ≤ ε) :
+theorem measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le (hμ : μ[id] = 0)
+    (hf : ContDiff ℝ 1 f) (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {x | ε ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-2 * ε ^ 2 / (π ^ 2 * v)) := by
   set m := ∫ y, f y ∂μ
-  have h := hasSubgaussianMGF_sub_integral hμ hf hv
+  have h := hasSubgaussianMGF_sub_integral_of_variance_fderiv_le hμ hf hv
   have hc : -ε ^ 2 / (2 * ((NNReal.pi ^ 2 / 4 * v : ℝ≥0) : ℝ)) = -2 * ε ^ 2 / (π ^ 2 * v) := by
     rw [show 2 * ((NNReal.pi ^ 2 / 4 * v : ℝ≥0) : ℝ) = π ^ 2 * v / 2 by
       push_cast [NNReal.coe_real_pi]; ring, div_div_eq_mul_div]
@@ -336,10 +336,21 @@ theorem measureReal_setOf_le_abs_sub_integral_le (hμ : μ[id] = 0) (hf : ContDi
 
 end Gaussian
 
+end ProbabilityTheory.IsGaussian
+
+namespace TauCeti.Probability
+
 section StdGaussian
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {f : E → ℝ} {K : ℝ≥0}
+
+/-- Under the standard Gaussian measure, the variance of the derivative of `f` is at most `K²`
+when `‖f' x‖ ≤ K` everywhere. -/
+private lemma variance_fderiv_stdGaussian_le (hK : ∀ x, ‖fderiv ℝ f x‖ ≤ K) (x : E) :
+    Var[fderiv ℝ f x; stdGaussian E] ≤ ((K ^ 2 : ℝ≥0) : ℝ) := by
+  rw [variance_dual_stdGaussian, NNReal.coe_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (hK x) 2
 
 /-- Under the standard Gaussian measure, a `C¹` function `f` with `‖f' x‖ ≤ K` everywhere (that
 is, a `C¹` function which is `K`-Lipschitz) is sub-Gaussian about its mean with variance proxy
@@ -347,10 +358,9 @@ is, a `C¹` function which is `K`-Lipschitz) is sub-Gaussian about its mean with
 theorem hasSubgaussianMGF_stdGaussian_sub_integral (hf : ContDiff ℝ 1 f)
     (hK : ∀ x, ‖fderiv ℝ f x‖ ≤ K) :
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂stdGaussian E)
-      (NNReal.pi ^ 2 / 4 * K ^ 2) (stdGaussian E) := by
-  refine hasSubgaussianMGF_sub_integral (by simp) hf (.of_forall fun x ↦ ?_)
-  rw [variance_dual_stdGaussian, NNReal.coe_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (hK x) 2
+      (NNReal.pi ^ 2 / 4 * K ^ 2) (stdGaussian E) :=
+  IsGaussian.hasSubgaussianMGF_sub_integral_of_variance_fderiv_le (by simp) hf
+    (.of_forall (variance_fderiv_stdGaussian_le hK))
 
 /-- **Gaussian concentration for the standard Gaussian measure.** If `f` is `C¹` with
 `‖f' x‖ ≤ K` everywhere, then for `ε ≥ 0`,
@@ -359,11 +369,8 @@ theorem measureReal_stdGaussian_setOf_le_abs_sub_integral_le (hf : ContDiff ℝ 
     (hK : ∀ x, ‖fderiv ℝ f x‖ ≤ K) {ε : ℝ} (hε : 0 ≤ ε) :
     (stdGaussian E).real {x | ε ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤
       2 * exp (-2 * ε ^ 2 / (π ^ 2 * K ^ 2)) := by
-  have h := measureReal_setOf_le_abs_sub_integral_le (μ := stdGaussian E) (v := K ^ 2) (by simp)
-    hf (.of_forall fun x ↦ ?_) hε
-  · simpa using h
-  rw [variance_dual_stdGaussian, NNReal.coe_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (hK x) 2
+  simpa using IsGaussian.measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le
+    (by simp) hf (.of_forall (variance_fderiv_stdGaussian_le hK)) hε
 
 end StdGaussian
 
