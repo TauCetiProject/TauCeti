@@ -176,12 +176,13 @@ private theorem isDomain_and_isIntegrallyClosed_localization_atPrime (q : Ideal 
     (Submonoid.powers f) (Localization.Away f) q
     ((Ideal.disjoint_powers_iff_notMem_of_isPrime f).mpr hfq)
   subst hP
-  -- The prime `(P.under S).under A` is definitionally `P.under A`, as `A → S_f` factors through
-  -- `S`; the type ascriptions transport the instances on its localization.
-  have : IsDomain (Localization.AtPrime (P.under A)) :=
-    (inferInstance : IsDomain (Localization.AtPrime ((P.under S).under A)))
-  have : IsIntegrallyClosed (Localization.AtPrime (P.under A)) :=
-    (inferInstance : IsIntegrallyClosed (Localization.AtPrime ((P.under S).under A)))
+  -- The prime `(P.under S).under A` is `P.under A`, as `A → S_f` factors through `S`.
+  have : IsDomain (Localization.AtPrime (P.under A)) := by
+    convert (inferInstance : IsDomain (Localization.AtPrime ((P.under S).under A))) using 3 <;>
+      exact (Ideal.under_under P).symm
+  have : IsIntegrallyClosed (Localization.AtPrime (P.under A)) := by
+    convert (inferInstance : IsIntegrallyClosed (Localization.AtPrime ((P.under S).under A)))
+      using 3 <;> exact (Ideal.under_under P).symm
   have := Etale.isDomain_localization_atPrime_of_localization_under A P
   have := Etale.isIntegrallyClosed_localization_atPrime_of_localization_under A P
   exact ⟨e.toMulEquiv.isDomain _, IsIntegrallyClosed.of_equiv e.symm⟩

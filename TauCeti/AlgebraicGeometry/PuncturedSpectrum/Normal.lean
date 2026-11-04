@@ -112,12 +112,13 @@ private theorem isIntegrallyClosedIn_of_toOpenₗ_bijective (hT : T ≤ B⁰)
   refine hbij.1 (((toOpenₗ B B U).map_zero).symm ▸ Subtype.ext (funext fun q ↦ ?_))
   have hcq := congrArg (fun r ↦ r.1 q) hc
   -- Evaluated at `q`, the two sections are the fractions `c / 1` and `b q / u q`.
-  change LocalizedModule.mk c 1 = LocalizedModule.mk (b q) ⟨u q, hu q⟩ at hcq
-  obtain ⟨v, hv⟩ := LocalizedModule.mk_eq.mp hcq
-  simp only [Submonoid.smul_def, OneMemClass.coe_one, smul_eq_mul, one_mul] at hv
-  -- A section of `Spec B` is a family of fractions, and `toOpenₗ` sends `c t - x` to the family
-  -- `(c t - x) / 1`; `change` evaluates both sides at `q`.
-  change LocalizedModule.mk (c * t - x) 1 = 0
+  rw [toOpenₗ_eq_const] at hcq
+  dsimp only [s] at hcq
+  obtain ⟨v, hv⟩ := LocalizedModule.mk_eq.mp ((const_apply _ _ _ _ _).symm.trans hcq)
+  simp only [Submonoid.smul_def, smul_eq_mul, one_mul] at hv
+  -- `toOpenₗ` sends `c t - x` to the family of fractions `(c t - x) / 1`.
+  rw [toOpenₗ_eq_const]
+  refine (const_apply _ _ _ _ _).trans ?_
   refine (LocalizedModule.mk_eq.mpr ⟨⟨v * w q * u q, ?_⟩, ?_⟩).trans (LocalizedModule.zero_mk 1)
   · exact q.1.isPrime.mul_notMem (q.1.isPrime.mul_notMem v.2 (hw q)) (hu q)
   simp only [Submonoid.smul_def, OneMemClass.coe_one, smul_eq_mul, one_mul, mul_zero]
@@ -148,8 +149,8 @@ theorem isReduced_of_presheaf_map_leTop_injective (W : (Spec (.of B)).Opens)
   have := hW q.1 q.2
   obtain ⟨c, hc⟩ := (IsLocalization.map_eq_zero_iff q.1.asIdeal.primeCompl _ _).mp
     (hb.map (algebraMap B (Localization.AtPrime q.1.asIdeal))).eq_zero
-  -- `toOpenₗ` sends `b` to the family of fractions `b / 1`; `change` evaluates it at `q`.
-  change LocalizedModule.mk b 1 = 0
+  -- `toOpenₗ` sends `b` to the family of fractions `b / 1`.
+  refine (congrArg (·.1 q) (toOpenₗ_eq_const _ b)).trans ((const_apply _ _ _ _ _).trans ?_)
   exact (LocalizedModule.mk_eq.mpr ⟨c, by simp [Submonoid.smul_def, hc]⟩).trans
     (LocalizedModule.zero_mk 1)
 
