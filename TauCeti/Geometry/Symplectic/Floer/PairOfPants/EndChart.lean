@@ -10,12 +10,13 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
-# The end charts of the pair of pants in real coordinates
+# The pair of pants and its end charts in real coordinates
 
 Integrals over the pair of pants `S = ℂ ∖ {0, 1}` are computed in the real coordinates
 `ℝ × ℝ ≃ ℂ`, where the coordinate formulas of `TauCeti.Geometry.Symplectic.Floer.Energy` and
-`TauCeti.Geometry.Symplectic.Floer.Pullback` live. This file transports the cylindrical end lifts
-of `S` to these coordinates. The end chart `φ_q` (`TauCeti.Floer.endChart q`) is the end lift of
+`TauCeti.Geometry.Symplectic.Floer.Pullback` live. This file transports `S`
+(`TauCeti.Floer.puncturedPlane`), the pair-of-pants perturbation and the cylindrical end lifts of
+`S` to these coordinates. The end chart `φ_q` (`TauCeti.Floer.endChart q`) is the end lift of
 the end `q` in real coordinates, a holomorphic change of coordinates from the cylinder of the end
 to `S`. On the strip `±s > 1/2`, `t ∈ [-1/2, 1/2)` (`TauCeti.Floer.endStrip q`) it is injective,
 and it preserves orientation, so the change of variables formula applies on the images of the
@@ -24,12 +25,17 @@ perturbation pulls back to its components in the end coordinates.
 
 ## Main definitions
 
+* `TauCeti.Floer.puncturedPlane`: the pair of pants `S` in the real coordinates `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endChart q`: the end lift of `q` in the real coordinates `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
 
 ## Main results
 
+* `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
+  components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
+* `TauCeti.Floer.endChart_mem_puncturedPlane`, `TauCeti.Floer.re_endCoord_endChart`: the end
+  chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal coordinate.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`: the end chart is
   injective on the strip and preserves orientation.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
@@ -55,6 +61,35 @@ namespace Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
+/-- The pair of pants `S = ℂ ∖ {0, 1}`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
+@[expose] def puncturedPlane : Set (ℝ × ℝ) :=
+  {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
+
+/-- A point lies in `S` when, as a complex number, it is neither `0` nor `1`. -/
+@[simp]
+theorem mem_puncturedPlane_iff {z : ℝ × ℝ} :
+    z ∈ puncturedPlane ↔
+      Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 :=
+  Iff.rfl
+
+/-- The pair of pants is open in real coordinates. -/
+theorem isOpen_puncturedPlane : IsOpen puncturedPlane :=
+  (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
+    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
+jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
+theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) (x : V)
+    (v : ℂ) :
+    ContDiffAt ℝ n
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      (z, x) :=
+  ((contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x).comp
+    (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
 /-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
 noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
   Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))
@@ -63,6 +98,26 @@ theorem endChart_apply (q : Puncture) (z : ℝ × ℝ) :
     endChart q z =
       Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
+
+/-- In complex coordinates the end chart is the end lift. -/
+@[simp]
+theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (endChart q z) =
+      q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) := by
+  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
+theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
+    (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
+  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm z)
+  rw [equivRealProdCLM_symm_endChart, hk]
+  simp
+
+/-- The end chart sends the part `±s > 0` of the end into `S`. -/
+theorem endChart_mem_puncturedPlane {q : Puncture} {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) :
+    endChart q z ∈ puncturedPlane := by
+  rw [mem_puncturedPlane_iff, equivRealProdCLM_symm_endChart]
+  exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
 
 /-- The part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates. It
 contains the support of the curvature of the end, and the end lift is injective on it. -/

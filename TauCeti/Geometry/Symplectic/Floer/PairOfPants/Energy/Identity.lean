@@ -167,14 +167,6 @@ private theorem hasCompactSupport_truncation (T : ℝ) : HasCompactSupport (trun
   by_contra h
   exact hz ⟨_, by simpa using not_lt.1 h, ContinuousLinearEquiv.apply_symm_apply _ _⟩
 
-/-- The thrice-punctured sphere `S = ℂ ∖ {0, 1}`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
-private def puncturedPlane : Set (ℝ × ℝ) :=
-  {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
-
-private theorem isOpen_puncturedPlane : IsOpen puncturedPlane :=
-  (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-
 /-- On the thrice-punctured sphere the cutoff is given by its product formula nearby. -/
 private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) :
@@ -233,17 +225,13 @@ private theorem tendsto_truncation {z : ℝ × ℝ}
 /-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
 private theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
     endHeight q (endChart q ζ) = q.endSign * ζ.1 := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
-  rw [endHeight, endChart_apply, ContinuousLinearEquiv.symm_apply_apply, hk]
-  simp
+  rw [endHeight, re_endCoord_endChart]
 
 /-- Along the end `q`, where `±s > 0`, the cutoff at height `T ≥ 0` is `1 - β(±s - T)`. -/
 private theorem truncation_endChart {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ : ℝ × ℝ}
     (hζ : 0 < q.endSign * ζ.1) :
     truncation T (endChart q ζ) = 1 - smoothTransition (q.endSign * ζ.1 - T) := by
-  have hw : Complex.equivRealProdCLM.symm (endChart q ζ) =
-      q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ) := by
-    rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+  have hw := equivRealProdCLM_symm_endChart q ζ
   have hζ' : 0 < q.endSign * (Complex.equivRealProdCLM.symm ζ).re := by simpa using hζ
   have hS := q.cylindricalEndLift_ne_zero_and_ne_one hζ'
   have hr (r : Puncture) (hr : r ≠ q) : endHeight r (endChart q ζ) ≤ 0 := by
@@ -284,23 +272,8 @@ private theorem contDiffAt_pairOfPantsPerturbation_comp (hH : ∀ q, Periodic (H
     (hu : ContDiffAt ℝ 1 u z) (v : ℂ) :
     ContDiffAt ℝ 1 (fun z ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) (u z) v)
       z :=
-  ((contDiffAt_pairOfPantsPerturbation_prod hH hHs hz (u z)).comp
-    (f := fun z ↦ (Complex.equivRealProdCLM.symm z, u z)) z
-    (Complex.equivRealProdCLM.symm.contDiff.contDiffAt.prodMk hu)).clm_apply contDiffAt_const
-
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation are differentiable jointly in the domain and target
-points, at points of the thrice-punctured sphere. -/
-private theorem differentiableAt_uncurry_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ puncturedPlane) (x : V)
-    (v : ℂ) :
-    DifferentiableAt ℝ
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) :=
-  (((contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x).comp
-    (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
-    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
-      contDiff_snd).contDiffAt).clm_apply contDiffAt_const).differentiableAt one_ne_zero
+  (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) v).comp
+    (f := fun z ↦ (z, u z)) z (contDiffAt_id.prodMk hu)
 
 private theorem contDiffOn_primitiveS (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) :
@@ -335,8 +308,8 @@ private theorem floerEnergyDensity_add_hamiltonianCurvature_eq_primitive (ω : S
   -- `primitiveS` and `primitiveT` are by definition the components of `α` in the general identity.
   ω.floerEnergyDensity_add_hamiltonianCurvature_eq
     (hu.contDiffAt (isOpen_puncturedPlane.mem_nhds hz))
-    (differentiableAt_uncurry_pairOfPantsPerturbation hH hHs hz _ _)
-    (differentiableAt_uncurry_pairOfPantsPerturbation hH hHs hz _ _)
+    ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz _ _).differentiableAt one_ne_zero)
+    ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz _ _).differentiableAt one_ne_zero)
 
 /-- A function continuous on the thrice-punctured sphere becomes integrable after multiplication
 by the cutoff. -/
@@ -421,15 +394,6 @@ end Parts
 section Ends
 
 variable {H : Puncture → ℝ → V → ℝ} {u : ℝ × ℝ → V}
-
-/-- Points of the end `q` with positive signed longitudinal coordinate lie in the
-thrice-punctured sphere. -/
-private theorem endChart_mem_puncturedPlane {q : Puncture} {ζ : ℝ × ℝ}
-    (hζ : 0 < q.endSign * ζ.1) : endChart q ζ ∈ puncturedPlane := by
-  have h := q.cylindricalEndLift_ne_zero_and_ne_one (z := Complex.equivRealProdCLM.symm ζ)
-    (by simpa using hζ)
-  simp only [puncturedPlane, mem_ofPred_eq, endChart_apply, ContinuousLinearEquiv.symm_apply_apply]
-  exact h
 
 omit [FiniteDimensional ℝ V] in
 /-- **The boundary term in end coordinates.** On the end `q`, for `T ≥ 2`, the two-form
@@ -521,7 +485,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
   set x : ℝ → V := fun t ↦ u (endChart q (s, t))
   have huq (t : ℝ) : ContDiffAt ℝ 2 (u ∘ endChart q) (s, t) :=
     (hu.contDiffAt (isOpen_puncturedPlane.mem_nhds
-      (endChart_mem_puncturedPlane (ζ := (s, t)) hs))).comp (s, t)
+      (endChart_mem_puncturedPlane (z := (s, t)) hs))).comp (s, t)
       (contDiff_endChart q 2).contDiffAt
   have hline (t : ℝ) : HasDerivAt (fun t : ℝ ↦ (s, t)) stdComplexLineImag t := by
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
@@ -635,7 +599,7 @@ private theorem boundaryForm_eq_zero (ω : SymplecticForm V) {T : ℝ} (hT : 2 �
         rw [not_lt, endHeight] at h
         exact hz (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)
       rw [(truncation_eventuallyEq_one hzS hT').fderiv_eq, fderiv_const_apply]
-    · simp only [puncturedPlane, mem_ofPred_eq, not_and_or, not_not] at hzS
+    · simp only [mem_puncturedPlane_iff, not_and_or, not_not] at hzS
       rw [(truncation_eventuallyEq_zero T hzS).fderiv_eq]
       simp
   simp [boundaryForm, hfd]
@@ -667,44 +631,6 @@ private theorem integral_truncation_mul_eq_sum (ω : SymplecticForm V)
 end Ends
 
 section Limit
-
-/-- Averaging a function `a` against `β'(±s - T)` recovers its limit along the end as `T → ∞`. -/
-private theorem tendsto_integral_deriv_smoothTransition_mul (q : Puncture) {a : ℝ → ℝ} {a₀ : ℝ}
-    (ha : Tendsto (fun σ ↦ a (q.endSign * σ)) atTop (𝓝 a₀))
-    (hint : ∀ᶠ T in atTop, Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) * a s) :
-    Tendsto (fun T ↦ ∫ s, deriv smoothTransition (q.endSign * s - T) * a s) atTop (𝓝 a₀) := by
-  have hsq : q.endSign * q.endSign = 1 := by cases q <;> simp
-  have hne : q.endSign ≠ 0 := fun h ↦ by simp [h] at hsq
-  have hβ (T : ℝ) : Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) :=
-    (smoothTransition.integrable_deriv.comp_sub_right T).comp_mul_left' hne
-  have hβ0 (y : ℝ) : 0 ≤ deriv smoothTransition y := smoothTransition.monotone.deriv_nonneg
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨R, hR⟩ := eventually_atTop.1 (Metric.tendsto_nhds.1 ha (ε / 2) (half_pos hε))
-  filter_upwards [hint, eventually_ge_atTop R] with T hT hTR
-  have hdiff : (∫ s, deriv smoothTransition (q.endSign * s - T) * a s) - a₀ =
-      ∫ s, deriv smoothTransition (q.endSign * s - T) * (a s - a₀) := by
-    simp only [mul_sub]
-    rw [integral_sub hT ((hβ T).mul_const a₀), integral_mul_const,
-      smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one, one_mul]
-  -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ R`, so `a s` is close to `a₀`.
-  have hpt (s : ℝ) : ‖deriv smoothTransition (q.endSign * s - T) * (a s - a₀)‖ ≤
-      deriv smoothTransition (q.endSign * s - T) * (ε / 2) := by
-    rw [norm_mul, Real.norm_of_nonneg (hβ0 _)]
-    by_cases hs : q.endSign * s - T < 0
-    · simp [smoothTransition.deriv_of_neg hs]
-    · refine mul_le_mul_of_nonneg_left ?_ (hβ0 _)
-      have h := hR (q.endSign * s) (by linarith)
-      rw [← mul_assoc, hsq, one_mul, Real.dist_eq, ← Real.norm_eq_abs] at h
-      exact h.le
-  calc dist (∫ s, deriv smoothTransition (q.endSign * s - T) * a s) a₀
-      = ‖∫ s, deriv smoothTransition (q.endSign * s - T) * (a s - a₀)‖ := by
-        rw [Real.dist_eq, hdiff, Real.norm_eq_abs]
-    _ ≤ ∫ s, deriv smoothTransition (q.endSign * s - T) * (ε / 2) :=
-        norm_integral_le_of_norm_le ((hβ T).mul_const _) (ae_of_all _ hpt)
-    _ < ε := by
-        rw [integral_mul_const, smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one]
-        linarith
 
 variable {H : Puncture → ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
@@ -773,9 +699,14 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm
   have hrhs : Tendsto (fun T ↦ ∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
       ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) atTop
       (𝓝 (∑ q, q.endSign * A q)) :=
-    tendsto_finsetSum _ fun q _ ↦ (tendsto_integral_deriv_smoothTransition_mul q (hA q)
-      (eventually_ge_atTop 2 |>.mono fun T hT ↦
-        (integral_image_endChart_boundaryForm ω hH hHs hu hT q).2)).const_mul _
+    tendsto_finsetSum _ fun q _ ↦ by
+      have hinv : q.endSign⁻¹ = q.endSign := by cases q <;> simp
+      have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
+        (by cases q <;> simp : q.endSign ≠ 0) (by simpa only [hinv] using hA q)
+        (eventually_ge_atTop 2 |>.mono fun T hT ↦
+          (integral_image_endChart_boundaryForm ω hH hHs hu hT q).2)
+      rw [abs_endSign, inv_one, one_mul] at h
+      exact h.const_mul _
   have heq : ∫ z, f z = ∑ q, q.endSign * A q :=
     tendsto_nhds_unique (hlhs.congr' (eventually_ge_atTop 2 |>.mono fun T hT ↦
       integral_truncation_mul_eq_sum ω hH hHs hu hT)) hrhs

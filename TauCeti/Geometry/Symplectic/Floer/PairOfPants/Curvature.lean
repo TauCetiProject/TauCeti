@@ -92,9 +92,9 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
     (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z := by
-  have hK := (contDiffAt_pairOfPantsPerturbation_prod hH hHs hz x).differentiableAt one_ne_zero
-  exact (hK.comp z (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
-    (differentiableAt_const x))).clm_apply (differentiableAt_const v)
+  exact ((contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).differentiableAt
+    one_ne_zero).comp (f := fun z' : ℝ × ℝ ↦ (z', x)) z
+      (differentiableAt_id.prodMk (differentiableAt_const x))
 
 /-- The components of the perturbation are differentiable in the target point, at points
 of `S`. -/
@@ -282,42 +282,14 @@ collar and the cylindrical part of the end inside the truncation `S_R`, over one
 private noncomputable def endPiece (q : Puncture) (R : ℝ) : Set (ℝ × ℝ) :=
   {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)
 
-/-- The points of `S`, in real coordinates, form an open set. -/
-private theorem isOpen_puncturedSphere :
-    IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1} :=
-  (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-
-/-- In complex coordinates the end chart is the end lift. -/
-private theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
-    Complex.equivRealProdCLM.symm (endChart q z) =
-      q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) := by
-  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- The end chart sends the part `±s > 0` of the end into `S`. -/
-private theorem endChart_mem_puncturedSphere (q : Puncture) {z : ℝ × ℝ}
-    (hz : 0 < q.endSign * z.1) :
-    Complex.equivRealProdCLM.symm (endChart q z) ≠ 0 ∧
-      Complex.equivRealProdCLM.symm (endChart q z) ≠ 1 := by
-  rw [equivRealProdCLM_symm_endChart]
-  exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
-
-/-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
-private theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
-    (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm z)
-  rw [equivRealProdCLM_symm_endChart, hk]
-  simp
-
 /-- The end pieces lie in the truncation. -/
 private theorem image_endPiece_subset (q : Puncture) {R : ℝ} (hR : 1 ≤ R) :
     endChart q '' endPiece q R ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
   rintro _ ⟨z, hz, rfl⟩
   have hz' : (1 ≤ q.endSign * z.1 ∧ q.endSign * z.1 ≤ R) ∧ z.2 ∈ Ico (-1 / 2 : ℝ) (1 / 2) := hz
   have hz₀ : 0 < q.endSign * z.1 := by linarith [hz'.1.1]
-  refine mem_truncation.2 ⟨(endChart_mem_puncturedSphere q hz₀).1,
-    (endChart_mem_puncturedSphere q hz₀).2, fun r => ?_⟩
+  refine mem_truncation.2 ⟨(mem_puncturedPlane_iff.1 (endChart_mem_puncturedPlane hz₀)).1,
+    (mem_puncturedPlane_iff.1 (endChart_mem_puncturedPlane hz₀)).2, fun r => ?_⟩
   by_cases hr : q = r
   · subst hr
     rw [re_endCoord_endChart]
@@ -406,7 +378,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
   have hpos {z : ℝ × ℝ} (hz : z ∈ U) : 0 < q.endSign * z.1 := by
     have h : 1 / 2 < q.endSign * z.1 := hz
     linarith
-  have hS {z : ℝ × ℝ} (hz : z ∈ U) := endChart_mem_puncturedSphere q (hpos hz)
+  have hS {z : ℝ × ℝ} (hz : z ∈ U) := endChart_mem_puncturedPlane (hpos hz)
   have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
   have hinj : InjOn (endChart q) s :=
     (injOn_endChart q).mono fun z hz => mem_endStrip_iff.2 ⟨hsU hz, hz.2⟩
@@ -414,7 +386,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
     (hasFDerivAt_endChart q w).differentiableAt
   have hud {w : ℝ × ℝ} (hw : w ∈ U) : DifferentiableAt ℝ u (endChart q w) :=
     (hu.differentiableOn one_ne_zero _ (hS hw)).differentiableAt
-      (isOpen_puncturedSphere.mem_nhds (hS hw))
+      (isOpen_puncturedPlane.mem_nhds (hS hw))
   -- Change variables to the cylinder coordinates of the end, in each of the three integrals.
   have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
     hmeas hinj (fun w _ => hφ w) (fun w _ => det_fderiv_endChart_nonneg q w)
@@ -539,13 +511,13 @@ private theorem integrableOn_truncation (ω : SymplecticForm V) (hH : ∀ q, Per
     fun z hz => ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
-  have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_puncturedSphere le_rfl
+  have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_puncturedPlane le_rfl
   refine ⟨?_, ?_, ?_⟩
-  · exact ((ω.continuousOn_floerEnergyDensity isOpen_puncturedSphere hu hKs hKt).mono
+  · exact ((ω.continuousOn_floerEnergyDensity isOpen_puncturedPlane hu hKs hKt).mono
       hTS).integrableOn_compact hT
   · exact ((ω.continuousOn_apply_comp (hdu.clm_apply continuousOn_const)
       (hdu.clm_apply continuousOn_const)).mono hTS).integrableOn_compact hT
-  · exact ((ω.continuousOn_hamiltonianCurvature_comp isOpen_puncturedSphere hu.continuousOn hKs
+  · exact ((ω.continuousOn_hamiltonianCurvature_comp isOpen_puncturedPlane hu.continuousOn hKs
       hKt).mono hTS).integrableOn_compact hT
 
 /-- **The energy identity on the truncated pair of pants.** Let `K` be the pair-of-pants
