@@ -23,9 +23,12 @@ are sums of the absolutely summable double series `∑ₙ,ₘ (n + m).choose n �
 its terms by `n` gives the translate at `b`, and grouping them by `n + m` gives `f` at `b + a` by
 the binomial theorem. Since Hasse derivatives commute with translation, translations compose,
 `taylor b (taylor a f) = taylor (b + a) f`, so translation by `-a` inverts translation by `a` and
-Taylor translation is injective on entire series. No factorial is inverted and no ultrametric
-hypothesis is used, so all of this holds in every characteristic and over `ℂ` as well as over
+Taylor translation is injective on entire series. These entire-series results invert no factorial
+and use no ultrametric hypothesis, so they hold in every characteristic and over `ℂ` as well as over
 nonarchimedean rings.
+
+Over an ultrametric normed commutative ring with norm-one unit, translation also preserves
+`HasGaussNorm` at any positive radius `r ≥ ‖a‖`, with the Gauss norm not increasing.
 
 Injectivity is what controls the zeros of entire series over a field: a nonzero entire series has a
 nonvanishing Hasse derivative at every point, so each of its zeros has a finite order
@@ -44,6 +47,13 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
   entire series.
 * `taylor_one`, `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
+* `taylor_add_of_summable_norm`, `taylor_mul_of_summable_norm`: translation is additive and
+  multiplicative when all Hasse derivatives have absolutely summable terms at the centre.
+* `norm_coeff_taylor_mul_pow_le`: weighted translated coefficients are bounded by the original
+  Gauss norm at any positive radius containing the centre, under the ultrametric norm-one
+  hypotheses.
+* `PowerSeries.HasGaussNorm.taylor`: translation preserves bounded weighted coefficients at such
+  a radius under the same hypotheses.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
   converges.
