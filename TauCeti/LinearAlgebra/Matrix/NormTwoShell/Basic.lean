@@ -379,6 +379,22 @@ theorem coe_normTwoShellCongr_symm_apply (he : B.reindex e e = B') (b : B'.normT
 
 end Reindex
 
+/-- Pairing with an invariant lattice vector is constant along a root orbit. -/
+theorem dotProduct_mulVec_pow_normTwoShellCongr (B : Matrix I I ℤ) (σ : Equiv.Perm I)
+    (hσ : B.reindex σ σ = B) (h : I → ℤ) (hh : h ∘ σ.symm = h)
+    (a : B.normTwoShell) (r : ℕ) :
+    h ⬝ᵥ B *ᵥ (((normTwoShellCongr hσ ^ r) a : B.normTwoShell) : I → ℤ) =
+      h ⬝ᵥ B *ᵥ (a : I → ℤ) := by
+  have step (b : B.normTwoShell) :
+      h ⬝ᵥ B *ᵥ ((normTwoShellCongr hσ b : B.normTwoShell) : I → ℤ) =
+        h ⬝ᵥ B *ᵥ (b : I → ℤ) := by
+    rw [coe_normTwoShellCongr_apply]
+    simpa only [hσ, hh] using comp_equiv_symm_dotProduct_reindex_mulVec σ B h (b : I → ℤ)
+  induction r with
+  | zero => rfl
+  | succ r ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply, step, ih]
+
 section Isometry
 
 variable {J : Type*} [Fintype J] {B' : Matrix J J ℤ}
