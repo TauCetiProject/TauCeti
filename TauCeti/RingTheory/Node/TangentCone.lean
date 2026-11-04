@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Node.ExceptionalFiber
 public import TauCeti.RingTheory.Node.PlaneCurve
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.Smooth.Regular
 
 /-!
@@ -33,7 +34,8 @@ and hence `a - b + c` are units. Dividing by that coefficient gives the equation
 (`TauCeti.exists_eq_unit_mul_quadratic_of_isUnit_discrim`). The generator `x` is then a
 nonzerodivisor of `A`: since `P` is regular, `(x)` is prime, and it does not contain
 `a x² + b x y + y²` because it does not contain `y`
-(`TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`). The maximal ideal of `A`
+(`TauCeti.IsLocalRing.notMem_span_singleton_of_span_pair_eq_maximalIdeal` and
+`TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`). The maximal ideal of `A`
 is not principal, since `f ∈ 𝔪_P²` imposes no relation on the cotangent plane of `P`
 (`TauCeti.IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq`). Finally
 `y² = -x (a x + b y)` lies in `x 𝔪_A`, so the chart `Spec A[𝔪/x]` is the whole blowup
@@ -116,8 +118,19 @@ theorem exists_quadratic_relation_of_isUnit_det_hessian
       (((RingHom.injective_iff_ker_eq_bot _).1 Function.injective_id).trans_le bot_le) hne
   have hmA : maximalIdeal A = Ideal.span {π x, π y} := by
     rw [← map_maximalIdeal_of_surjective π hπ, hm, Ideal.map_span, Set.image_pair]
+  -- `x` is a regular parameter, and `a' x² + b' x y + y² ∉ (x)` since `(x)` is prime and does
+  -- not contain `y`.
+  have hxm := IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal hm.symm
+  have hx2 := IsLocalRing.notMem_sq_of_span_pair_eq_maximalIdeal hprin hm.symm
+  have hg : a' * x ^ 2 + b' * x * y + y ^ 2 ∉ Ideal.span {x} := fun hg ↦
+    IsLocalRing.notMem_span_singleton_of_span_pair_eq_maximalIdeal hprin hm.symm <|
+      (IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq hxm hx2).mem_of_pow_mem 2 <| by
+        have hx : x * (a' * x + b' * y) ∈ Ideal.span {x} :=
+          Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self x)
+        simpa [show a' * x ^ 2 + b' * x * y + y ^ 2 - x * (a' * x + b' * y) = y ^ 2 by ring]
+          using sub_mem hg hx
   refine ⟨π x, π y, π a', π b', hmA,
-    IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span hm hprin a' b' π hπ hker',
+    IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span hxm hx2 hg π hπ hker',
     ?_, ?_, ?_⟩
   · exact IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq hπ
       (hker ▸ (Ideal.span_singleton_le_iff_mem _).2 hf) hne
