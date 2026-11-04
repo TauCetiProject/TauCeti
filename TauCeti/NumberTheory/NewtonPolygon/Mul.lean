@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Minkowski.SlopeData
+public import TauCeti.Analysis.Convex.Sequence.Vertex
 public import TauCeti.NumberTheory.NewtonPolygon.Slopes
 import Mathlib.Tactic.LinearCombination
 
@@ -34,6 +35,12 @@ If such contacts exist at every slope, the Newton polygon of the product is the 
 of the Newton polygons of the factors; the polynomial identity is the case of finitely many
 finite heights.
 
+At a common slope where both power-series polygons have finite faces, the product has the
+finite face whose absolute endpoints are the sums of those of the factors. This local law
+requires no convergence hypothesis and does not assert a global product identity outside the
+face. Singleton faces are allowed and contribute width zero; endpoints include any initial
+order of vanishing.
+
 ## Main results
 
 * `PowerSeries.addValuation_coeff_mul_eq_add_of_isLeast` and
@@ -53,6 +60,8 @@ finite heights.
 * `PowerSeries.newtonPolygon_mul_of_forall_exists_mem_supportingFace`: if the coefficient
   heights of both factors touch supporting lines of every slope, the Newton polygon of the
   product is the Minkowski sum of the Newton polygons of the factors.
+* `PowerSeries.isFiniteFace_newtonPolygon_mul`: finite faces at a common slope add under
+  multiplication, with both absolute endpoints adding.
 * `Polynomial.newtonPolygon_mul`: the Newton polygon of a product of polynomials is the
   Minkowski sum of the Newton polygons of the factors. No hypothesis is needed: if either
   factor has the empty polygon, so does the product.
@@ -71,7 +80,7 @@ finite heights.
   MIT 18.787, fall 2007, §§1–2. Kedlaya plots coefficient points at negative indices; our
   convention uses positive indices, so the slopes have the opposite sign.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
-  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
+  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §§3–4.
 -/
 
 public section
@@ -255,6 +264,59 @@ theorem newtonPolygon_mul_of_forall_exists_mem_supportingFace
   rw [supportingValue_minkowskiSum (newtonPolygon_ne_top_of_mem_supportingFace v hc₀ hi₀)
     (newtonPolygon_ne_top_of_mem_supportingFace v hd₀ hj₀),
     supportingValue_newtonPolygon_mul v hc hi hd hj]
+
+/-- Finite Newton faces at a common slope add under multiplication, with both absolute
+endpoints adding. This is a local product law: the polygons need not agree with their
+Minkowski sum away from this face. No convergence hypothesis is required. -/
+theorem isFiniteFace_newtonPolygon_mul {σ : ℝ} {l u l' u' : ℕ}
+    (hf : IsFiniteFace (f.newtonPolygon v) σ l u)
+    (hg : IsFiniteFace (g.newtonPolygon v) σ l' u') :
+    IsFiniteFace ((f * g).newtonPolygon v) σ (l + l') (u + u') := by
+  have hfa : IsAdmissible fun n => v (coeff n f) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top
+      (by simpa only [newtonPolygon_def] using hf.left_ne_top)
+  have hga : IsAdmissible fun n => v (coeff n g) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top
+      (by simpa only [newtonPolygon_def] using hg.left_ne_top)
+  have hF := isLowerConvexEnvelope_newtonPolygon hfa
+  have hG := isLowerConvexEnvelope_newtonPolygon hga
+  obtain ⟨c, hc, hfl, hfu⟩ :=
+    hF.exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace hf
+  obtain ⟨d, hd, hgl, hgu⟩ :=
+    hG.exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace hg
+  have hcF : IsSupportingLine (f.newtonPolygon v) σ c :=
+    isSupportingLine_iff_forall.mpr
+      (hF.greatest (isConvexSeq_affine c σ) (isSupportingLine_iff_forall.mp hc))
+  have hdG : IsSupportingLine (g.newtonPolygon v) σ d :=
+    isSupportingLine_iff_forall.mpr
+      (hG.greatest (isConvexSeq_affine d σ) (isSupportingLine_iff_forall.mp hd))
+  have hprod : IsAdmissible fun n => v (coeff n (f * g)) :=
+    (hc.minkowskiSum hd).isAdmissible.mono (minkowskiSum_le_addValuation_coeff_mul v)
+  have hle := minkowskiSum_newtonPolygon_le_newtonPolygon_mul v hfa hga
+  -- At either extreme split, the unique dominant coefficient makes the lower bound exact.
+  have hend (i j : ℕ)
+      (hi : i ∈ supportingFace (fun n => v (coeff n f)) σ c)
+      (hj : j ∈ supportingFace (fun n => v (coeff n g)) σ d)
+      (hij : v (coeff (i + j) (f * g)) = v (coeff i f) + v (coeff j g)) :
+      (f * g).newtonPolygon v (i + j) =
+        minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) (i + j) := by
+    have hiF := hF.supportingFace_subset hc hi
+    have hjG := hG.supportingFace_subset hd hj
+    have hfi : f.newtonPolygon v i = v (coeff i f) :=
+      (mem_supportingFace.mp hiF).trans (mem_supportingFace.mp hi).symm
+    have hgj : g.newtonPolygon v j = v (coeff j g) :=
+      (mem_supportingFace.mp hjG).trans (mem_supportingFace.mp hj).symm
+    apply le_antisymm ?_ (hle (i + j))
+    calc
+      (f * g).newtonPolygon v (i + j) ≤ v (coeff (i + j) (f * g)) :=
+        newtonPolygon_le hprod _
+      _ = f.newtonPolygon v i + g.newtonPolygon v j := by rw [hij, hfi, hgj]
+      _ = minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) (i + j) :=
+        (minkowskiSum_add_eq_of_mem_supportingFace hcF hiF hdG hjG).symm
+  exact (hf.minkowskiSum hg).of_le_of_eq_endpoints
+    (isConvexSeq_newtonPolygon (f * g) v) hle
+    (hend l l' hfl.1 hgl.1 (addValuation_coeff_mul_eq_add_of_isLeast v hc hfl hd hgl))
+    (hend u u' hfu.1 hgu.1 (addValuation_coeff_mul_eq_add_of_isGreatest v hc hfu hd hgu))
 
 end PowerSeries
 

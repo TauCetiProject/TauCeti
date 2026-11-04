@@ -148,6 +148,24 @@ theorem eq_right_of_isFiniteFace (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l 
     have heq := hf.unitSlope_eq (by omega) (Nat.lt_succ_self i)
     exact hh.eq_of_unitSlope_lt hi hnext (by simpa only [heq] using hs)
 
+/-- The absolute endpoints of a finite envelope face are the first and last original
+points touching its supporting line. Interior original points need not lie on the line. -/
+theorem exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace
+    (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u : ℕ}
+    (hf : IsFiniteFace h σ l u) :
+    ∃ c : ℝ, IsSupportingLine a σ c ∧
+      IsLeast (supportingFace a σ c) l ∧ IsGreatest (supportingFace a σ c) u := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hac : IsSupportingLine a σ c := isSupportingLine_iff_forall.mpr
+    fun n => (isSupportingLine_iff_forall.mp hc n).trans (hh.le n)
+  have hsub : supportingFace a σ c ⊆ Set.Icc l u :=
+    (hh.supportingFace_subset hac).trans hface.subset
+  refine ⟨c, hac, ⟨?_, fun n hn => (hsub hn).1⟩, ⟨?_, fun n hn => (hsub hn).2⟩⟩
+  · rw [mem_supportingFace, ← hh.eq_left_of_isFiniteFace hf]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  · rw [mem_supportingFace, ← hh.eq_right_of_isFiniteFace hf]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+
 end IsLowerConvexEnvelope
 
 end TauCeti

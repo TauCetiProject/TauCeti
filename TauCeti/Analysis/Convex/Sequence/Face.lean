@@ -266,6 +266,27 @@ theorem unique (hf : IsFiniteFace h σ l u) {l' u' : ℕ}
   subst d
   exact (Set.Icc_eq_Icc_iff hf.left_le_right).mp (hface.symm.trans hface')
 
+/-- If a convex sequence `g` lies above `h` and agrees with it at both endpoints of a finite
+face of `h`, then that is also a finite face of `g`. No new contacts appear outside its
+interval. -/
+theorem of_le_of_eq_endpoints (hf : IsFiniteFace h σ l u) {g : ℕ → WithTop ℝ}
+    (hg : IsConvexSeq g) (hhg : h ≤ g) (hl : g l = h l) (hu : g u = h u) :
+    IsFiniteFace g σ l u := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hgc : IsSupportingLine g σ c := fun n => (hc n).trans (hhg n)
+  have hgl : l ∈ supportingFace g σ c := by
+    rw [mem_supportingFace, hl]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  have hgu : u ∈ supportingFace g σ c := by
+    rw [mem_supportingFace, hu]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+  refine ⟨hf.left_le_right, c, hgc, Set.Subset.antisymm ?_ ?_⟩
+  · intro n hn
+    apply hface.subset
+    exact mem_supportingFace.mpr (le_antisymm
+      ((hhg n).trans_eq (mem_supportingFace.mp hn)) (hc n))
+  · exact (hg.ordConnected_supportingFace hgc).out hgl hgu
+
 /-- The height at the left endpoint of a finite face is finite. -/
 theorem left_ne_top (hf : IsFiniteFace h σ l u) : h l ≠ ⊤ := by
   obtain ⟨c, _, hface⟩ := hf.exists_intercept
