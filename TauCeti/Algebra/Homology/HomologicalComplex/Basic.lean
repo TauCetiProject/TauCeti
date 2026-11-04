@@ -35,7 +35,9 @@ are replaced by isomorphic objects (`HomologicalComplex.cyclesShortComplex_short
 likewise a monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
 `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). A morphism of complexes
 vanishing in some degree induces zero on homology there
-(`HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero`). Constructing the bundled cycle
+(`HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero`), and two morphisms of complexes agreeing on
+the cycles in some degree induce the same map on homology there
+(`HomologicalComplex.homologyMap_eq_of_iCycles_comp`). Constructing the bundled cycle
 sequence requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 In an abelian category, the map from the opcycles in degree `i` to the cycles in degree `j` is an
@@ -271,6 +273,14 @@ lemma homologyMap_eq_zero_of_f_eq_zero (φ : K ⟶ L) (i : ι) [K.HasHomology i]
   have hc : cyclesMap φ i = 0 := by
     rw [← cancel_mono (L.iCycles i), cyclesMap_i, h, comp_zero, zero_comp]
   rw [← cancel_epi (K.homologyπ i), homologyπ_naturality, hc, zero_comp, comp_zero]
+
+/-- Two morphisms of complexes that agree on the cycles in degree `i` induce the same map on
+homology in degree `i`. -/
+lemma homologyMap_eq_of_iCycles_comp {f g : K ⟶ L} {i : ι} [K.HasHomology i] [L.HasHomology i]
+    (h : K.iCycles i ≫ f.f i = K.iCycles i ≫ g.f i) : homologyMap f i = homologyMap g i := by
+  have hc : cyclesMap f i = cyclesMap g i := by
+    rw [← cancel_mono (L.iCycles i), cyclesMap_i, cyclesMap_i, h]
+  rw [← cancel_epi (K.homologyπ i), homologyπ_naturality, homologyπ_naturality, hc]
 
 end HomologicalComplex
 
