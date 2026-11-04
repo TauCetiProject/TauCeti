@@ -98,6 +98,12 @@ theorem encodeGlueWord_def (w : ∀ i, (t i).glueAlphabet (ht i)) :
       (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   simp [encodeGlueWord]
 
+/-- The glue word with prescribed labels encodes to the list of those labels. -/
+@[simp] theorem encodeGlueWord_glueLabelEquiv (d : ∀ i, Fin (t i).glueLabelCount) :
+    encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) (d i)) =
+      List.ofFn fun i ↦ (d i : ℕ) := by
+  simp [encodeGlueWord]
+
 /-- The zero glue word has every label zero. -/
 @[simp] theorem encodeGlueWord_zero : encodeGlueWord t ht 0 = List.replicate n 0 := by
   simp [encodeGlueWord, List.ofFn_const]
@@ -188,14 +194,7 @@ component. -/
 theorem decodeGlueWord_ofFn (d : Fin n → ℕ) (hd : ∀ i, d i < (t i).glueLabelCount) :
     decodeGlueWord t ht (List.ofFn d) =
       some fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩ := by
-  rw [decodeGlueWord_eq_some_iff]
-  apply List.ext_getElem
-  · simp
-  · intro i hi _
-    have h := getElem_encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩)
-      ⟨i, by simpa using hi⟩
-    simp only [Equiv.symm_apply_apply] at h
-    simpa using h.symm
+  rw [decodeGlueWord_eq_some_iff, encodeGlueWord_glueLabelEquiv]
 
 /-- **Decoding is natural under permutations of the components.** Reindexing the labels of a
 word along `σ : Fin m ≃ Fin n` and decoding against the reindexed components `k ↦ t (σ k)`
