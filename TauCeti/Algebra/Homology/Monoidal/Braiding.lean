@@ -79,7 +79,6 @@ namespace TauCeti
 variable (C : Type*) [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] [HasZeroObject C]
   [∀ (X Y : GradedObject ℤ C), GradedObject.HasTensor X Y]
-  [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
   [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
   [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X Y Z]
   [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X Y Z]
@@ -404,7 +403,8 @@ lemma ι_koszulBraiding_inv (X Y : CochainComplex C ℤ) (q p j : ℤ)
           (ComplexShape.up ℤ) p q j (by dsimp at h ⊢; omega)) :=
   ι_koszulBraidingInv C X Y q p j h
 
-variable [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
+variable [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
+  [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
 
 /-- **The second hexagon identity** for the Koszul braiding. -/
 lemma koszulBraidingHom_hexagon_reverse (X Y Z : CochainComplex C ℤ) :
@@ -514,7 +514,8 @@ lemma koszulBraidingHom_comp (X Y : CochainComplex C ℤ) :
     koszulBraidingHom C X Y ≫ koszulBraidingHom C Y X = 𝟙 _ := by
   simpa only [koszulBraiding_hom, koszulBraiding_inv] using (koszulBraiding C X Y).hom_inv_id
 
-variable [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
+variable [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X)]
+  [∀ (W X Y Z : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt W X Y Z]
 
 /-- The Koszul braiding over symmetric coefficients is symmetric. -/
 noncomputable instance koszulSymmetricCategory :
