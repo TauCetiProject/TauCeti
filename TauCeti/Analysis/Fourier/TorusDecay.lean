@@ -105,21 +105,13 @@ private theorem toTorus_add (x y : d → ℝ) : toTorus (x + y) = toTorus x + to
 private theorem toTorus_smul (t : ℝ) (w : d → ℝ) :
     toTorus (t • w) = fun i ↦ ((t * w i : ℝ) : UnitAddCircle) := rfl
 
--- `toTorus` is by definition the map of `UnitAddTorus.surjective_coe` and
--- `UnitAddTorus.isOpenQuotientMap_coe`; these restate them for it.
-private theorem surjective_toTorus : Function.Surjective (toTorus (d := d)) :=
-  surjective_coe
-
+-- `toTorus` is by definition the map of `UnitAddTorus.isOpenQuotientMap_coe`; this restates it.
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap (toTorus (d := d)) :=
   isOpenQuotientMap_coe.isQuotientMap
 
 variable [Fintype d] [NormedSpace ℂ E]
 
 /-! ### Translation and the Fourier coefficients -/
-
-private theorem mFourier_toTorus (n : d → ℤ) (x : d → ℝ) :
-    mFourier n (toTorus x) = cexp (2 * π * I * ∑ i, (n i : ℂ) * x i) :=
-  mFourier_coe_apply n x
 
 /-- The Fourier coefficients of `f` are integrals for the volume of the torus. Mathlib defines
 `mFourierCoeff` using the Haar probability measure on each circle factor; this is the volume. -/
@@ -188,7 +180,7 @@ theorem mFourierCoeff_eq_smul_of_hasDerivAt {f g : UnitAddTorus d → E}
   have hfg' : ∀ z, HasDerivAt (fun t : ℝ ↦ f (z + τ t)) (g z) 0 := hfg
   -- The coefficients of the translates `f (· + τ t)` are `exp (a t)` times those of `f`.
   have hexp (t : ℝ) : mFourierCoeff (fun z ↦ f (z + τ t)) n = cexp (a * t) • mFourierCoeff f n := by
-    rw [mFourierCoeff_comp_add, mFourier_toTorus]
+    rw [mFourierCoeff_comp_add, show mFourier n (τ t) = _ from mFourier_coe_apply n (t • w)]
     congr 2
     simp only [a, Pi.smul_apply, smul_eq_mul, ofReal_mul, Finset.mul_sum, Finset.sum_mul]
     congr 1 with i
@@ -274,7 +266,7 @@ theorem mFourierCoeff_eq_prod_smul_of_iteratedFDeriv {f g : UnitAddTorus d → E
   induction k generalizing g with
   | zero =>
     obtain rfl : g = f := funext fun z ↦ by
-      obtain ⟨x, rfl⟩ := surjective_toTorus z
+      obtain ⟨x, rfl⟩ : ∃ x, toTorus x = z := surjective_coe z
       rw [hg, iteratedFDeriv_zero_apply]
     simp
   | succ k ih =>
@@ -289,7 +281,7 @@ theorem mFourierCoeff_eq_prod_smul_of_iteratedFDeriv {f g : UnitAddTorus d → E
     -- `g` is the derivative of `g'` along `v 0`.
     have hderiv (z : UnitAddTorus d) : HasDerivAt
         (fun t : ℝ ↦ g' (z + fun i ↦ ((t * v 0 i : ℝ) : UnitAddCircle))) (g z) 0 := by
-      obtain ⟨x, rfl⟩ := surjective_toTorus z
+      obtain ⟨x, rfl⟩ : ∃ x, toTorus x = z := surjective_coe z
       have hline := ((hd x).hasFDerivAt.hasLineDerivAt (v 0) :)
       have h := (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ d → ℝ) E
         (Fin.tail v)).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hline
@@ -322,7 +314,7 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
     have hn : ‖n‖ = 0 := by simp [Subsingleton.elim n 0]
     rcases Nat.eq_zero_or_pos k with rfl | hk
     · refine (one_mul _).trans_le (norm_mFourierCoeff_le (fun z ↦ ?_) n)
-      obtain ⟨x, rfl⟩ := surjective_toTorus z
+      obtain ⟨x, rfl⟩ : ∃ x, toTorus x = z := surjective_coe z
       simpa [norm_iteratedFDeriv_zero] using hM x
     · simpa [hn, zero_pow hk.ne'] using hM0
   -- Differentiate `k` times along a coordinate direction `i` with `|n i| = ‖n‖`.
@@ -339,7 +331,7 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
     simp
   rw [hsum, Finset.prod_const, Finset.card_univ, Fintype.card_fin] at hcoeff
   have hgM : ∀ z, ‖g z‖ ≤ M := fun z ↦ by
-    obtain ⟨x, rfl⟩ := surjective_toTorus z
+    obtain ⟨x, rfl⟩ : ∃ x, toTorus x = z := surjective_coe z
     rw [hg]
     refine ((iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x).le_opNorm
       fun _ ↦ Pi.single i 1).trans ?_
