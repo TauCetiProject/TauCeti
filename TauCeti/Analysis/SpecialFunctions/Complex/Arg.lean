@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -16,8 +18,11 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
 the argument of their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
-Finally, a sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball
-about its vertex, is the image of an open rectangle in polar coordinates.
+A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball about its
+vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
+the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
+of the argument is smooth on the whole punctured plane: near the negative real axis it is computed
+from the argument of `-z`.
 
 ## Main results
 
@@ -28,6 +33,9 @@ about its vertex, is the image of an open rectangle in polar coordinates.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
+* `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
+  from the origin.
 -/
 
 public section
@@ -68,7 +76,38 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
         rw [h, exp_pi_mul_I]
         ring
 
+/-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
+logarithm. -/
+theorem contDiffAt_arg {z : ℂ} (hz : z ∈ slitPlane) {n : WithTop ℕ∞} : ContDiffAt ℝ n arg z := by
+  have h := (imCLM.contDiff.contDiffAt (n := n) (x := log z)).comp z
+    ((contDiffAt_log hz (n := n)).restrict_scalars ℝ)
+  exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ (log_im w).symm)
+
 end Complex
+
+/-- A `2π`-periodic function of the argument of a nonzero complex number `z` may be computed from
+the argument of `-z`, which differs from that of `z` by `π` modulo `2π`. -/
+theorem Function.Periodic.apply_arg_eq_apply_arg_neg_add_pi {α : Type*} {g : ℝ → α}
+    (hg : Function.Periodic g (2 * π)) {z : ℂ} (hz : z ≠ 0) :
+    g (Complex.arg z) = g (Complex.arg (-z) + π) := by
+  have h := Complex.arg_neg_coe_angle (neg_ne_zero.2 hz)
+  rw [neg_neg, ← Real.Angle.coe_add, Real.Angle.angle_eq_iff_two_pi_dvd_sub] at h
+  obtain ⟨k, hk⟩ := h
+  rw [show Complex.arg z = Complex.arg (-z) + π + k * (2 * π) by linarith]
+  exact hg.int_mul k _
+
+/-- A smooth `2π`-periodic function of the argument is smooth away from the origin, although the
+argument itself jumps across the negative real axis. -/
+theorem ContDiff.contDiffAt_comp_arg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {g : ℝ → E} {n : WithTop ℕ∞} (hg : ContDiff ℝ n g) (hper : Function.Periodic g (2 * π))
+    {z : ℂ} (hz : z ≠ 0) : ContDiffAt ℝ n (fun w ↦ g (Complex.arg w)) z := by
+  rcases Complex.mem_slitPlane_or_neg_mem_slitPlane hz with h | h
+  · exact hg.contDiffAt.comp z (Complex.contDiffAt_arg h)
+  · have h' : ContDiffAt ℝ n (fun w : ℂ ↦ Complex.arg (-w) + π) z :=
+      ((Complex.contDiffAt_arg h).comp z contDiff_neg.contDiffAt).add contDiffAt_const
+    refine (hg.contDiffAt.comp z h').congr_of_eventuallyEq ?_
+    filter_upwards [isOpen_ne.mem_nhds hz] with w hw
+    exact hper.apply_arg_eq_apply_arg_neg_add_pi hw
 
 namespace TauCeti
 

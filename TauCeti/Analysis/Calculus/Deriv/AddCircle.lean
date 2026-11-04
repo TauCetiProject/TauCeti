@@ -31,6 +31,9 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 ## Main declarations
 
 * `AddCircle.periodic_deriv_of_lift`: the derivative of a lift is `T`-periodic.
+* `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
+  `c ∈ [0, 1]`, the interpolation `x ↦ x + c * (F x - x)` between the identity and a lift `F`
+  with `F' > 0` (again a lift, `AddCircle.add_mul_sub_add_period`) has positive derivative.
 * `AddCircle.exists_pos_le_deriv_le_of_lift`: a lift with continuous positive derivative has
   derivative in some interval `[c, M]` with `0 < c`.
 * `AddCircle.exists_lift_inverse`: a lift with positive derivative has an inverse `G`, which is
@@ -55,6 +58,20 @@ theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
   have h₂ : HasDerivAt (fun y ↦ F (y + T)) (F' x) x := by
     simpa only [hper] using (hF x).add_const T
   exact h₁.unique h₂
+
+/-- The interpolation `x ↦ x + c * (F x - x)` between the identity and `F` has derivative
+`1 - c + c * F'` wherever `F` has derivative `F'`. -/
+theorem hasDerivAt_add_mul_sub {f' x : ℝ} (hF : HasDerivAt F f' x) (c : ℝ) :
+    HasDerivAt (fun y ↦ y + c * (F y - y)) (1 - c + c * f') x :=
+  ((hasDerivAt_id' x).add ((hF.sub (hasDerivAt_id' x)).const_mul c)).congr_deriv (by ring)
+
+/-- For a weight `c ∈ [0, 1]` and a positive derivative `f'` of a lift, the derivative
+`1 - c + c * f'` of the interpolating lift (`AddCircle.hasDerivAt_add_mul_sub`) is positive. -/
+theorem one_sub_add_mul_pos {c f' : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (hf' : 0 < f') :
+    0 < 1 - c + c * f' := by
+  rcases hc₁.lt_or_eq with hc₁ | rfl
+  · exact add_pos_of_pos_of_nonneg (by linarith) (mul_nonneg hc₀ hf'.le)
+  · simpa using hf'
 
 variable [hT : Fact (0 < T)]
 

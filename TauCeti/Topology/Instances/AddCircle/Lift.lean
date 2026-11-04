@@ -45,6 +45,9 @@ the circle is either strictly monotone of degree one or strictly antitone of deg
 * `AddCircle.exists_int_forall_add_period_eq_of_lift`: a continuous lift has an integer degree
   `d`, and then shifts integer multiples of the period by multiples of `d * T`
   (`AddCircle.lift_add_int_mul_of_degree`, stated for any real increment per period).
+* `AddCircle.add_mul_sub_add_period`: for any weight `c`, the interpolation
+  `x ↦ x + c * (F x - x)` between the identity and a lift `F` is again a lift.
+* `AddCircle.periodic_sub_of_lift`: the displacement `x ↦ F x - x` of a lift is periodic.
 * `Homeomorph.exists_addCircle_lift_symm_comp_eq_add`: for a homeomorphism `φ` of the circle, a
   continuous lift of `φ⁻¹` composed with a continuous lift of `φ` is a translation.
 * `AddCircle.strictMono_or_strictAnti_of_lift`: a continuous lift of a homeomorphism of the
@@ -78,6 +81,19 @@ theorem lift_add_int_mul_of_degree {a : ℝ} (hper : ∀ x, F (x + T) = F x + a)
 theorem lift_add_int_mul (hper : ∀ x, F (x + T) = F x + T) (x : ℝ) (k : ℤ) :
     F (x + k * T) = F x + k * T :=
   lift_add_int_mul_of_degree hper x k
+
+/-- Interpolating between the identity and a lift `F` with a weight `c` gives again a lift:
+`x ↦ x + c * (F x - x)` shifts `x + T` to the image of `x` plus `T`. -/
+theorem add_mul_sub_add_period (hper : ∀ x, F (x + T) = F x + T) (c x : ℝ) :
+    x + T + c * (F (x + T) - (x + T)) = x + c * (F x - x) + T := by
+  rw [hper]
+  ring
+
+/-- The displacement `x ↦ F x - x` of a lift `F` is periodic. -/
+theorem periodic_sub_of_lift (hper : ∀ x, F (x + T) = F x + T) :
+    Function.Periodic (fun x ↦ F x - x) T := fun x ↦ by
+  simp only [hper]
+  ring
 
 /-- A strictly monotone lift `F` maps the fundamental interval `(0, T]` into `(F 0, F 0 + T]`. -/
 theorem image_Ioc_subset_of_lift (hF : StrictMono F) (hper : ∀ x, F (x + T) = F x + T) :
