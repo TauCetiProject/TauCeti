@@ -132,6 +132,35 @@ theorem locallyConstantRingCatSheaf_obj :
     (locallyConstantRingCatSheaf X R).obj = locallyConstantRingCatPresheaf X R :=
   (rfl)
 
+variable {R} {S T : Type u} [Ring S] [Ring T]
+
+/-- Applying a ring homomorphism to the values of locally constant functions, as a morphism of
+sheaves of rings. -/
+def locallyConstantRingCatSheafMap (φ : R →+* S) :
+    locallyConstantRingCatSheaf X R ⟶ locallyConstantRingCatSheaf X S where
+  hom :=
+    { app := fun U ↦ RingCat.ofHom (LocallyConstant.mapRingHom φ)
+      naturality := fun {_ _} _ ↦ by ext; rfl }
+
+@[simp]
+lemma locallyConstantRingCatSheafMap_app_apply (φ : R →+* S) (U : (Opens X)ᵒᵖ)
+    (f : LocallyConstant U.unop R) :
+    (locallyConstantRingCatSheafMap X φ).hom.app U f = f.map φ :=
+  (rfl)
+
+@[simp]
+lemma locallyConstantRingCatSheafMap_id :
+    locallyConstantRingCatSheafMap X (RingHom.id R) = 𝟙 _ := by
+  ext
+  rfl
+
+@[simp]
+lemma locallyConstantRingCatSheafMap_comp (φ : R →+* S) (ψ : S →+* T) :
+    locallyConstantRingCatSheafMap X (ψ.comp φ) =
+      locallyConstantRingCatSheafMap X φ ≫ locallyConstantRingCatSheafMap X ψ := by
+  ext
+  rfl
+
 end Ring
 
 section CommRing
