@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
 
@@ -13,11 +12,11 @@ public import Mathlib.RingTheory.Nilpotent.Basic
 # Unit reflection and kernels of ring homomorphisms
 
 A surjective map of commutative rings whose kernel consists of nilpotent elements reflects
-units. The kernel of any unit-reflecting map is contained in the Jacobson radical.
-Here unit reflection is Mathlib's `IsLocalHom`; neither ring is required to be local.
+units. Here unit reflection is Mathlib's `IsLocalHom`; neither ring is required to be local.
 
-These facts allow unit reflection to propagate through inverse systems with locally nilpotent
-transition kernels. Elementwise nilpotence suffices, without a uniform exponent.
+Together with Mathlib's kernel containment for unit-reflecting maps, this allows unit reflection
+to propagate through inverse systems with locally nilpotent transition kernels. Elementwise
+nilpotence suffices, without a uniform exponent.
 -/
 
 public section
@@ -35,14 +34,5 @@ theorem isLocalHom_of_surjective_of_isNilpotent_ker (f : R →+* S)
   obtain ⟨y, hy⟩ := hf (↑hx.unit⁻¹)
   have hxy : IsNilpotent (x * y - 1) := hnil _ (by simp [hy, hx.mul_val_inv])
   exact isUnit_of_mul_isUnit_left (by simpa using hxy.isUnit_add_one)
-
-/-- The kernel of a unit-reflecting ring map is contained in the Jacobson radical. -/
-theorem ker_le_jacobson_bot (f : R →+* S) [IsLocalHom f] :
-    ker f ≤ Ideal.jacobson (⊥ : Ideal R) := by
-  intro x hx
-  rw [Ideal.jacobson_bot]
-  refine Ring.mem_jacobson_iff.mpr fun y ↦ isUnit_of_map_unit f _ ?_
-  simp only [mem_ker] at hx
-  simp [hx]
 
 end RingHom
