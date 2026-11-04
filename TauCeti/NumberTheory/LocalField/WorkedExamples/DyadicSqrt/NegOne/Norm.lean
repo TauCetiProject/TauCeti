@@ -38,7 +38,8 @@ theorem unitFiltration_two_le_quadraticNormSubgroup_neg_one_padicTwo :
     defectExponent_of_serreEps_eq_one_padicTwo (u := -1) (by simp) serreEps_neg_one
   have h := unitFiltration_le_quadraticNormSubgroup_of_defectExponent_eq
     (K := ℚ_[2]) two_ne_zero (a := -1) (by simp) (d := 1) hd
-  norm_num [dyadicLevel_def, Padic.natCastValuation_self] at h ⊢
+  rw [dyadicLevel_def, Padic.natCastValuation_self] at h
+  norm_num at h
   exact h
 
 /-- The unit norm class `1` has the representative `1 = 1² + 0²`. -/
