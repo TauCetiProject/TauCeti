@@ -43,7 +43,7 @@ on the completed capped modules. This file proves:
   (`TauCeti.Floer.potential_le_of_kernelOfMatrix_countMatrix_ne_zero`), so the product shifts
   action cutoffs by `C` (`TauCeti.Floer.novikovProductOfMatrix_countMatrix_mem_potentialFiltration`)
   and the matrix entries have the uniform lower valuation bound
-  (`TauCeti.Floer.countMatrix_mem_periodFiltration`).
+  (`TauCeti.Floer.coefficientComparison_mem_periodFiltration`).
 * **Degree from the index.** If every counted class satisfies the rigidity condition
   `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n`, and the gradings obey the recapping law
   `μ(γ # D) = 2 c₁(γ) + μ(D)`, then the kernel has raw degree `-n` on all capped generators
@@ -100,13 +100,6 @@ theorem countMatrix_apply (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G �
     (k : ι₀) : countMatrix q hq Q i j k = coefficientComparison q hq (Q i j k) :=
   (rfl)
 
-/-- The count matrix of a single class count `N q^A` is the monomial `N e^(-q A)`. -/
-@[simp]
-theorem countMatrix_single (A : G) (N : R) (i : ι₁) (j : ι₂) (k : ι₀) :
-    countMatrix q hq (fun _ _ _ => NovikovSeries.single A N) i j k =
-      NovikovSeries.single (-q A) N :=
-  coefficientComparison_single q hq A N
-
 /-- **The kernel of class-indexed counts on capped generators.** Its coefficient at capped
 generators `D₁`, `D₂`, `D₀` of the orbits `i`, `j`, `k` is the finite sum of the counts over all
 classes `A` with `q A = (D₁ - r₁) + (D₂ - r₂) - (D₀ - r₀)`: the pairs of pants whose glued output
@@ -138,24 +131,10 @@ section Ring
 
 variable [Ring R]
 
-omit [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)]
-  [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)] in
-/-- **The uniform lower valuation bound of the count matrix.** If every class `A` with nonzero
-count in `Q i j k` has area at least `F₀(r₀ k) - F₁(r₁ i) - F₂(r₂ j) - C`, as the energy identity
-gives for a curvature bound `C`, then the `(i, j, k)` entry has valuation at least this level. -/
-theorem countMatrix_mem_periodFiltration {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ}
-    {F₀ : (Σ k, P₀ k) → ℝ} {C : ℝ} {Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG}
-    (hE : ∀ i j k,
-      Q i j k ∈ periodFiltration R ωG (F₀ ⟨k, r₀ k⟩ - F₁ ⟨i, r₁ i⟩ - F₂ ⟨j, r₂ j⟩ - C))
-    (i : ι₁) (j : ι₂) (k : ι₀) :
-    countMatrix q hq Q i j k ∈
-      periodFiltration R (-area ω c) (F₀ ⟨k, r₀ k⟩ - F₁ ⟨i, r₁ i⟩ - F₂ ⟨j, r₂ j⟩ - C) :=
-  coefficientComparison_mem_periodFiltration q hq (hE i j k)
-
-/-- **Support of the kernel from the energy bound.** For actions obeying the recapping law, if the
-counts satisfy the energy bound of `TauCeti.Floer.countMatrix_mem_periodFiltration` relative to
-the reference caps, then the kernel obeys the potential bound `F₀ ≤ F₁ + F₂ + C` at all capped
-generators. -/
+/-- **Support of the kernel from the energy bound.** For actions obeying the recapping law, if
+every class `A` with nonzero count in `Q i j k` has area at least
+`F₀(r₀ k) - F₁(r₁ i) - F₂(r₂ j) - C`, as the energy identity gives for a curvature bound `C`, then
+the kernel obeys the potential bound `F₀ ≤ F₁ + F₂ + C` at all capped generators. -/
 theorem potential_le_of_kernelOfMatrix_countMatrix_ne_zero {F₁ : (Σ i, P₁ i) → ℝ}
     {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
     (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
@@ -168,7 +147,7 @@ theorem potential_le_of_kernelOfMatrix_countMatrix_ne_zero {F₁ : (Σ i, P₁ i
     (h : kernelOfMatrix r₁ r₂ r₀ (countMatrix q hq Q) p₁ p₂ p₀ ≠ 0) :
     F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C :=
   potential_le_of_kernelOfMatrix_ne_zero hF₁ hF₂ hF₀ r₁ r₂ r₀
-    (countMatrix_mem_periodFiltration r₁ r₂ r₀ q hq hE) p₁ p₂ p₀ h
+    (fun i j k => coefficientComparison_mem_periodFiltration q hq (hE i j k)) p₁ p₂ p₀ h
 
 end Ring
 
@@ -230,13 +209,6 @@ theorem novikovProductOfMatrix_countMatrix_mem_potentialFiltration {C : ℝ}
   rw [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ _ hn]
   exact kernelProduct_mem_potentialFiltration hn _ ha hb
 
-/-- The product of class-indexed counts on the reference caps: `r₁ i ⋆ r₂ j = ∑ₖ Mᵢⱼₖ r₀ k`
-for the count matrix `M`, so each pair of pants of class `A` contributes `e^(-q A)`. -/
-theorem coordinates_novikovProductOfMatrix_countMatrix_basis (i : ι₁) (j : ι₂) (k : ι₀) :
-    coordinates hF₀ r₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ (countMatrix q hq Q)
-      (basis hF₁ r₁ i) (basis hF₂ r₂ j)) k = coefficientComparison q hq (Q i j k) :=
-  coordinates_novikovProductOfMatrix_basis hF₁ hF₂ hF₀ r₁ r₂ r₀ _ i j k
-
 variable {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
   (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
   (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
@@ -282,14 +254,6 @@ section Reference
 variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A) [CommRing R]
 
-/-- The count matrix of the generating series multiplied by `q^g` is the count matrix multiplied
-by `e^(-q g)`. -/
-theorem countMatrix_single_mul (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG)
-    (g : ι₁ → ι₂ → ι₀ → G) (i : ι₁) (j : ι₂) (k : ι₀) :
-    countMatrix q hq (fun i j k => NovikovSeries.single (g i j k) 1 * Q i j k) i j k =
-      NovikovSeries.single (-q (g i j k)) 1 * countMatrix q hq Q i j k := by
-  rw [countMatrix_apply, countMatrix_apply, _root_.map_mul, coefficientComparison_single]
-
 /-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a
 pair of pants relative to the reference caps by `g₀ - g₁ - g₂`, so the generating series become
 `q^(g₀ - g₁ - g₂) Q`. The kernel on capped generators is unchanged. -/
@@ -300,8 +264,8 @@ theorem kernelOfMatrix_countMatrix_vadd (Q : ι₁ → ι₂ → ι₀ → Novik
         (countMatrix q hq fun i j k => NovikovSeries.single (g₀ k - g₁ i - g₂ j) 1 * Q i j k) =
       kernelOfMatrix r₁ r₂ r₀ (countMatrix q hq Q) := by
   funext ⟨i, D₁⟩ ⟨j, D₂⟩ ⟨k, D₀⟩
-  rw [kernelOfMatrix_apply, kernelOfMatrix_apply,
-    countMatrix_single_mul q hq Q (fun i j k => g₀ k - g₁ i - g₂ j), coeff_single_mul, one_mul,
+  rw [kernelOfMatrix_apply, kernelOfMatrix_apply, countMatrix_apply, countMatrix_apply,
+    _root_.map_mul, coefficientComparison_single, coeff_single_mul, one_mul,
     vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub, vsub_vadd_eq_vsub_sub, map_sub, map_sub]
   congr 1
   abel
