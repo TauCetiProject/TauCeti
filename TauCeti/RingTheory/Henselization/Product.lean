@@ -63,7 +63,7 @@ private theorem exists_coprime_idempotents [Fintype ι] (hI : Pairwise (IsCoprim
   let E := coprimeResidueEquiv I hI
   have ht : CompleteOrthogonalIdempotents (fun i ↦ E.symm (Pi.single i 1)) :=
     (CompleteOrthogonalIdempotents.single (R := fun i ↦ R ⧸ I i)).map E.symm.toRingHom
-  obtain ⟨e, ⟨he, hqe⟩, -⟩ := ht.existsUnique_lift_of_henselian
+  obtain ⟨e, ⟨he, hqe⟩, -⟩ := ht.existsUnique_lift_of_henselianRing
   have hcoord (i j : ι) : E (Ideal.Quotient.mk _ (e i)) j = (Pi.single i 1 : ∀ j, R ⧸ I j) j := by
     rw [hqe, E.apply_symm_apply]
   have hmul (i : ι) (r : R) (hr : r ∈ I i) :
@@ -100,16 +100,16 @@ private theorem exists_coprime_idempotents [Fintype ι] (hI : Pairwise (IsCoprim
 private noncomputable def factorEquiv {e : algebra (⨅ i, I i)} (i : ι)
     (hmul : ∀ r ∈ I i, algebraMap R (algebra (⨅ i, I i)) r * e ∈ extended (⨅ i, I i))
     (hfe : toFactor I i e = 1) :
-    (algebra (⨅ i, I i) ⧸ Ideal.span {1 - e}) ≃ₐ[R] algebra (I i) := by
+    (algebra (⨅ i, I i) ⧸ Ideal.span {1 - e}) ≃ₐ[R] algebra (I i) :=
   let L : Ideal (algebra (⨅ i, I i)) := Ideal.span {1 - e}
   let C := algebra (⨅ i, I i) ⧸ L
   let J := (extended (⨅ i, I i)).map (Ideal.Quotient.mk L)
-  have heq : Ideal.Quotient.mk L e = 1 := by
+  let heq : Ideal.Quotient.mk L e = 1 := by
     have h : Ideal.Quotient.mk L (1 - e) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
     rw [map_sub, map_one, sub_eq_zero] at h
     exact h.symm
-  have hIJ : (I i).map (algebraMap R C) ≤ J := by
+  let hIJ : (I i).map (algebraMap R C) ≤ J := by
     rw [Ideal.map_le_iff_le_comap]
     intro r hr
     rw [Ideal.mem_comap]
@@ -119,13 +119,21 @@ private noncomputable def factorEquiv {e : algebra (⨅ i, I i)} (i : ι)
     have hker : L ≤ RingHom.ker (toFactor I i).toRingHom := by
       rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
       simp [hfe]
-    exact fun a ha ↦ hker ha)
+    exact fun a ha ↦ RingHom.mem_ker.mp (hker ha))
   let g : algebra (I i) →ₐ[R] C := lift hIJ
-  refine AlgEquiv.ofAlgHom f g (algHom_ext_of_map_le_jacobson (extended_le_jacobson (I i))) ?_
-  apply Ideal.Quotient.algHom_ext
-  apply algHom_ext_of_map_le_jacobson
-  exact (Ideal.map_mono (iInf_le I i)).trans
-    (hIJ.trans (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))))
+  AlgEquiv.ofAlgHom f g (algHom_ext_of_map_le_jacobson (extended_le_jacobson (I i))) (by
+    apply Ideal.Quotient.algHom_ext
+    apply algHom_ext_of_map_le_jacobson
+    exact (Ideal.map_mono (iInf_le I i)).trans
+      (hIJ.trans (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J)))))
+
+private theorem factorEquiv_mk {e : algebra (⨅ i, I i)} (i : ι)
+    (hmul : ∀ r ∈ I i, algebraMap R (algebra (⨅ i, I i)) r * e ∈ extended (⨅ i, I i))
+    (hfe : toFactor I i e = 1) (x : algebra (⨅ i, I i)) :
+    factorEquiv I i hmul hfe (Ideal.Quotient.mk _ x) = toFactor I i x := by
+  dsimp only [factorEquiv]
+  rw [AlgEquiv.ofAlgHom_apply, Ideal.Quotient.liftₐ_apply]
+  exact Ideal.Quotient.lift_mk _ _ _
 
 private theorem bijective_pi_toFactor [Finite ι] (hI : Pairwise (IsCoprime on I)) :
     Function.Bijective (AlgHom.pi (toFactor I)) := by
@@ -136,7 +144,7 @@ private theorem bijective_pi_toFactor [Finite ι] (hI : Pairwise (IsCoprime on I
   have hcomp : (fun x i ↦ E i (Ideal.Quotient.mk (Ideal.span {1 - e i}) x)) =
       AlgHom.pi (toFactor I) := by
     funext x i
-    rfl
+    exact (factorEquiv_mk I i (hmul i) (hfe i) x).trans (AlgHom.pi_apply _ x i).symm
   rw [← hcomp]
   exact (Function.Bijective.piMap (fun i ↦ (E i).bijective)).comp he.bijective_pi
 
@@ -154,6 +162,7 @@ of the intersection in the corresponding ideal. -/
 theorem coprimeEquiv_apply [Finite ι] (hI : Pairwise (IsCoprime on I))
     (x : algebra (⨅ i, I i)) (i : ι) :
     coprimeEquiv I hI x i = map (RingHom.id R) (by simpa using iInf_le I i) x := by
+  rw [coprimeEquiv, AlgEquiv.ofBijective_apply, AlgHom.pi_apply]
   have h : (toFactor I i).toRingHom = map (RingHom.id R) (by simpa using iInf_le I i) :=
     map_unique _ _ _ (by ext r; simp)
   exact DFunLike.congr_fun h x

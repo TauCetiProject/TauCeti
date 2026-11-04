@@ -43,6 +43,9 @@ local rings.
 * `TauCeti.HenselianRing.bijOn_quotient_mk_isIdempotentElem`: for a Henselian pair `(S, J)`, the
   quotient map `S → S ⧸ J` is a bijection on idempotents (Stacks, Lemma 15.11.6 (09XI), condition
   (3) for the algebra `S` itself).
+* `CompleteOrthogonalIdempotents.existsUnique_lift_of_henselianRing`: a finite complete family
+  of orthogonal idempotents of `S ⧸ J` lifts uniquely to such a family in `S` for a Henselian
+  pair `(S, J)`.
 * `TauCeti.HenselianRing.injOn_quotient_mk_map_isIdempotentElem`: for a Henselian pair `(S, J)`
   and an integral `S`-algebra `T`, the quotient map `T → T ⧸ JT` is injective on idempotents (the
   injectivity half of conditions (3) and (4) of 09XI).
@@ -146,7 +149,7 @@ theorem existsUnique_isIdempotentElem_mk_eq (J : Ideal S) [HenselianRing S J] {t
 
 /-- A finite complete family of orthogonal idempotents lifts uniquely through a henselian
 quotient. In particular, a finite clopen decomposition of the closed fibre lifts to the ring. -/
-theorem _root_.CompleteOrthogonalIdempotents.existsUnique_lift_of_henselian
+theorem _root_.CompleteOrthogonalIdempotents.existsUnique_lift_of_henselianRing
     {ι : Type*} [Fintype ι] {J : Ideal S} [HenselianRing S J] {e : ι → S ⧸ J}
     (he : CompleteOrthogonalIdempotents e) :
     ∃! f : ι → S, CompleteOrthogonalIdempotents f ∧ ∀ i, Ideal.Quotient.mk J (f i) = e i := by
