@@ -38,8 +38,11 @@ unfolded by hand.
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
   alike on `ℍ`.
-* `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
-  of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
+  `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of the underlying matrix, the `SL(2, ℝ)`
+  counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
+  `SL(2, ℝ)`-action.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
@@ -90,6 +93,21 @@ theorem _root_.Matrix.SpecialLinearGroup.toGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
     ext i j
     simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
   rw [MulAction.compHom_smul_def, h]
+
+/-- The `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of its image under
+`Matrix.SpecialLinearGroup.mapGL`. -/
+theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
+    Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
+  (MulAction.compHom_smul_def _ _ _).symm
+
+/-- The automorphy factor is a cocycle for the `SL(2, ℝ)`-action on `ℍ`:
+`denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul (a b : SL(2, ℝ)) (τ : ℍ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ (a * b)) τ =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ a) ((b • τ : ℍ) : ℂ) *
+        denom (Matrix.SpecialLinearGroup.mapGL ℝ b) τ := by
+  rw [map_mul, denom_cocycle_σ, σ_eq_refl_of_det_pos (by simp), ContinuousAlgEquiv.refl_apply,
+    Matrix.SpecialLinearGroup.mapGL_smul]
 
 /-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
 @[simp]
