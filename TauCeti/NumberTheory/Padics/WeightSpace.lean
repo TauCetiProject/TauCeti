@@ -47,7 +47,8 @@ binomial series `(1 + X) ^ s ∈ ℤ_p⟦X⟧` can be evaluated at it, and
 (`TauCeti.WeightSpace.apply_eq_finiteChar_mul_aeval_binomialSeries`). Conversely every pair of a
 homomorphism `η : Δ →* Sˣ` and a topologically nilpotent `z ∈ S` is the finite part and the
 coordinate of exactly one weight, `TauCeti.WeightSpace.ofHasEval η hz`
-(`TauCeti.WeightSpace.existsUnique_character_of_hasEval`). When `S` is both normed and linearly
+(`TauCeti.WeightSpace.existsUnique_character_of_hasEval`), which gives the parametrisation
+`TauCeti.adicWeightSpaceEquiv p S`. When `S` is both normed and linearly
 topologised, as `ℤ_p` is, the two constructions agree (`TauCeti.WeightSpace.ofHasEval_eq_ofCoord`).
 
 ## Main definitions
@@ -65,6 +66,8 @@ topologised, as `ℤ_p` is, the two constructions agree (`TauCeti.WeightSpace.of
 * `TauCeti.WeightSpace.ofHasEval η hz`: the same weight over a complete linearly topologised
   algebra.
 * `TauCeti.weightSpaceEquiv p R`: the parametrisation `κ ↦ (η, T_κ)`.
+* `TauCeti.adicWeightSpaceEquiv p S`: the same parametrisation over a complete linearly
+  topologised algebra.
 
 ## Main results
 
@@ -240,6 +243,10 @@ theorem principalChar_one_eq_one_add_coord (κ : WeightSpace p R) :
     κ.principalChar 1 = 1 + κ.coord := by
   rw [principalChar_one, coord_def, add_sub_cancel]
 
+theorem coord_eq_principalChar_one_sub (κ : WeightSpace p R) :
+    κ.coord = κ.principalChar 1 - 1 := by
+  rw [coord_def, principalChar_one]
+
 /-- Over a Hausdorff ring, a weight is determined by its finite part and its coordinate: its
 principal part is a continuous additive character of `ℤ_p`, determined by its value
 `1 + T_κ` at `1`. -/
@@ -253,6 +260,17 @@ theorem ext_finiteChar_coord [T2Space R] {κ κ' : WeightSpace p R}
   rw [apply_eq_finiteChar_mul_principalChar, apply_eq_finiteChar_mul_principalChar, hη, hψ]
 
 end Ring
+
+section CommRing
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] [ContinuousMul R]
+
+@[simp]
+theorem coord_ofAddChar (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) (ψ : AddChar ℤ_[p] R)
+    (hψ : Continuous ψ) : (ofAddChar η ψ hψ).coord = ψ 1 - 1 := by
+  rw [coord_eq_principalChar_one_sub, principalChar_ofAddChar]
+
+end CommRing
 
 section Normed
 
@@ -336,8 +354,7 @@ theorem finiteChar_ofCoord (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) (t :
 @[simp]
 theorem coord_ofCoord (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) (t : R)
     (ht : Tendsto (t ^ ·) atTop (𝓝 0)) : (ofCoord η t ht).coord = t := by
-  rw [coord_def, coe_ofCoord_apply, padicIntUnitsEquivZModUnitsProd_padicUnitsGenerator]
-  simp
+  rw [ofCoord, coord_ofAddChar, PadicInt.addChar_of_value_at_one_def, add_sub_cancel_left]
 
 @[simp]
 theorem ofCoord_finiteChar_coord (κ : WeightSpace p R) :
@@ -360,8 +377,7 @@ topologically nilpotent, so power series over `ℤ_p` can be evaluated at it. -/
 theorem hasEval_coord {S : Type*} [CommRing S] [TopologicalSpace S] [IsTopologicalRing S]
     [IsLinearTopology S S] [Algebra ℤ_[p] S] [ContinuousSMul ℤ_[p] S] (κ : WeightSpace p S) :
     PowerSeries.HasEval κ.coord := by
-  rw [PowerSeries.hasEval_def, ← add_sub_cancel_left 1 κ.coord,
-    ← principalChar_one_eq_one_add_coord]
+  rw [PowerSeries.hasEval_def, coord_eq_principalChar_one_sub]
   exact AddChar.isTopologicallyNilpotent_eval_one_sub κ.continuous_principalChar
 
 variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [IsTopologicalRing S]
@@ -380,9 +396,8 @@ noncomputable def ofHasEval (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) {z 
 theorem coe_ofHasEval_apply (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) {z : S}
     (hz : PowerSeries.HasEval z) (x : ℤ_[p]ˣ) :
     (ofHasEval η hz x : S) = η (padicIntUnitsEquivZModUnitsProd p x).1 *
-      PowerSeries.aeval hz
-        (PowerSeries.binomialSeries ℤ_[p] (padicIntUnitsEquivZModUnitsProd p x).2.toAdd) := by
-  rw [ofHasEval, coe_ofAddChar_apply, PadicInt.binomialAddChar_apply]
+      PadicInt.binomialAddChar hz (padicIntUnitsEquivZModUnitsProd p x).2.toAdd :=
+  (rfl)
 
 @[simp]
 theorem finiteChar_ofHasEval (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) {z : S}
@@ -397,8 +412,7 @@ theorem principalChar_ofHasEval (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ)
 @[simp]
 theorem coord_ofHasEval (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) {z : S}
     (hz : PowerSeries.HasEval z) : (ofHasEval η hz).coord = z := by
-  rw [← add_sub_cancel_left 1 (ofHasEval η hz).coord, ← principalChar_one_eq_one_add_coord,
-    principalChar_ofHasEval, PadicInt.binomialAddChar_one, add_sub_cancel_left]
+  rw [ofHasEval, coord_ofAddChar, PadicInt.binomialAddChar_one, add_sub_cancel_left]
 
 /-- The principal part of a weight with values in a complete linearly topologised `ℤ_p`-algebra is
 the binomial character `s ↦ (1 + T_κ) ^ s` of its coordinate. -/
@@ -481,5 +495,36 @@ theorem weightSpaceEquiv_symm_apply
   (rfl)
 
 end Equiv
+
+section AdicEquiv
+
+variable (S : Type*) [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [IsTopologicalRing S]
+  [IsLinearTopology S S] [CompleteSpace S] [T2Space S] [Algebra ℤ_[p] S]
+  [ContinuousSMul ℤ_[p] S]
+
+/-- **The adic parametrisation of the weights of `ℤ_pˣ`.** For a complete separated linearly
+topologised commutative `ℤ_p`-algebra `S`, a weight `κ` is determined by its finite part
+`η = κ ∘ ω : (ℤ/qℤ)ˣ →* Sˣ` and its coordinate `T_κ = κ(γ) - 1`, at which power series over `ℤ_p`
+can be evaluated, and every such pair arises, through `TauCeti.WeightSpace.ofHasEval`. -/
+noncomputable def adicWeightSpaceEquiv :
+    WeightSpace p S ≃
+      ((ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) × {z : S // PowerSeries.HasEval z} where
+  toFun κ := (κ.finiteChar, ⟨κ.coord, κ.hasEval_coord⟩)
+  invFun ηz := WeightSpace.ofHasEval ηz.1 ηz.2.2
+  left_inv := WeightSpace.ofHasEval_finiteChar_coord
+  right_inv ηz := by ext <;> simp
+
+@[simp]
+theorem adicWeightSpaceEquiv_apply (κ : WeightSpace p S) :
+    adicWeightSpaceEquiv p S κ = (κ.finiteChar, ⟨κ.coord, κ.hasEval_coord⟩) :=
+  (rfl)
+
+@[simp]
+theorem adicWeightSpaceEquiv_symm_apply
+    (ηz : ((ZMod (p ^ padicUnitsDepth p))ˣ →* Sˣ) × {z : S // PowerSeries.HasEval z}) :
+    (adicWeightSpaceEquiv p S).symm ηz = WeightSpace.ofHasEval ηz.1 ηz.2.2 :=
+  (rfl)
+
+end AdicEquiv
 
 end TauCeti
