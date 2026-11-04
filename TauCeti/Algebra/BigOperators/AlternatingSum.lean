@@ -20,7 +20,9 @@ This file gives a telescoping formula for alternating sums of consecutive pairs 
 commutative group, and the cancellation of alternating double sums whose terms satisfy the
 simplicial identity, which is the combinatorial core of `d ∘ d = 0` for alternating face map
 differentials. It also provides finite Euler sums for explicitly supported `ℤ`-graded families,
-including support independence, additivity, and translation of the grading.
+including support independence, additivity, and translation of the grading. Finally, it relates
+the alternating partial sums `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` of a sequence to its alternating sums and records
+their recursion `qₙ₊₁ = dₙ₊₁ - qₙ`.
 -/
 
 public section
@@ -149,5 +151,27 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
       Fin.val_castLT, ← neg_smul]
     congr 1
     ring
+
+/-! ### Alternating partial sums -/
+
+/-- The alternating partial sums `qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` satisfy the recursion
+`qₙ₊₁ = dₙ₊₁ - qₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * d i =
+      d (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i := by
+  have h (i : ℕ) (hi : i ∈ Finset.range (n + 1)) :
+      (-1 : R) ^ (n + 1 - i) * d i = -((-1) ^ (n - i) * d i) := by
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le (Finset.mem_range_succ_iff.1 hi)
+    simp [show i + j + 1 - i = j + 1 by omega, pow_succ]
+  rw [Finset.sum_range_succ, Finset.sum_congr rfl h]
+  simp [neg_add_eq_sub]
+
+/-- The alternating partial sum `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` is `(-1)ⁿ ∑ᵢ₌₀ⁿ (-1)ⁱ dᵢ`. -/
+theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i =
+      (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * d i := by
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [← mul_assoc, ← pow_add, neg_one_pow_congr (m := n + i) (n := n - i) (by grind)]
 
 end TauCeti
