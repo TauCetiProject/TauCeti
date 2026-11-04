@@ -50,6 +50,8 @@ installing a coercion; it is additive.
   when neither `a` nor `b` is `⊥` and one of them is `⊤`.
 * `EReal.coe_mul_add_coe_mul_sub_coe_ne_top` — a combination `s a + t b - r` with nonnegative
   real weights and a real subtrahend is `≠ ⊤` when `a` and `b` are.
+* `EReal.coe_mul_add_coe_mul_sub_le_of_le` — such weighted combinations are monotone in their
+  endpoint values.
 * `EReal.coe_mul_add_coe_mul_sub_add_sub_comm` — two such combinations with the same weights add
   termwise.
 * `EReal.coe_mul_coe_mul_add_coe_mul_sub` — nonnegative real scaling distributes through a
@@ -248,6 +250,15 @@ theorem _root_.EReal.coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a �
   rw [sub_eq_add_neg, ← EReal.coe_neg]
   exact EReal.add_ne_top (EReal.add_ne_top (by simp [EReal.mul_ne_top, hs, ha])
     (by simp [EReal.mul_ne_top, ht, hb])) (EReal.coe_ne_top _)
+
+/-- A weighted sum with nonnegative real weights and a fixed subtrahend is monotone in both
+endpoint values. -/
+theorem _root_.EReal.coe_mul_add_coe_mul_sub_le_of_le {a b a' b' : EReal}
+    (ha : a ≤ a') (hb : b ≤ b') {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) (r : EReal) :
+    (s : EReal) * a + (t : EReal) * b - r ≤ (s : EReal) * a' + (t : EReal) * b' - r :=
+  EReal.sub_le_sub (add_le_add
+    (mul_le_mul_of_nonneg_left ha (EReal.coe_nonneg.2 hs))
+    (mul_le_mul_of_nonneg_left hb (EReal.coe_nonneg.2 ht))) le_rfl
 
 /-- Two combinations `s a + t b - r` with the same nonnegative real weights `s`, `t` and real
 subtrahends add termwise, as in `sub_add_sub_comm` for groups. -/

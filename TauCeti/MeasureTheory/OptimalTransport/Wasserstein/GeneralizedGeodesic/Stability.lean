@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
 import TauCeti.Data.EReal.Operations
+import TauCeti.Topology.Instances.EReal
 
 /-!
 # Stability of convexity along generalized geodesics
@@ -93,10 +94,8 @@ theorem ConvexAlongGeneralizedGeodesicPlan.iSup {ι : Sort*}
   intro t ht ν hν
   simp only [iSup_apply]
   refine iSup_le fun i ↦ (h i t ht ν hν).trans ?_
-  exact EReal.sub_le_sub (add_le_add
-    (mul_le_mul_of_nonneg_left (le_iSup (fun i ↦ φs i ν₀) i)
-      (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2)))
-    (mul_le_mul_of_nonneg_left (le_iSup (fun i ↦ φs i ν₁) i) (EReal.coe_nonneg.2 ht.1))) le_rfl
+  exact EReal.coe_mul_add_coe_mul_sub_le_of_le (le_iSup (fun i ↦ φs i ν₀) i)
+    (le_iSup (fun i ↦ φs i ν₁) i) (sub_nonneg.2 ht.2) ht.1 _
 
 /-- Convexity along a fixed three-plan passes to pointwise limits whose endpoint energies
 are different from `⊤`. -/
@@ -108,22 +107,10 @@ theorem ConvexAlongGeneralizedGeodesicPlan.of_tendsto {ι : Type*} {l : Filter �
     ConvexAlongGeneralizedGeodesicPlan m φ ν₀ ν₁ γ := by
   simp_rw [convexAlongGeneralizedGeodesicPlan_def] at h ⊢
   intro t ht ν hν
-  have hmul (s : ℝ) (z : WassersteinSpace 2 E) :=
-    EReal.Tendsto.const_mul (hφ z) (.inl (EReal.coe_ne_bot s)) (.inl (EReal.coe_ne_top s))
-  have hne {c : ℝ} (hc : 0 ≤ c) {d : EReal} (hd : d ≠ ⊤) : (c : EReal) * d ≠ ⊤ := by
-    simp [EReal.mul_ne_top, hc, hd]
-  have ha := hne (sub_nonneg.2 ht.2) h₀
-  have hb := hne ht.1 h₁
-  -- Finite-above endpoint values prevent the indeterminate sum `⊤ + ⊥` in the limit bound.
-  have hadd := (EReal.continuousAt_add (.inl ha) (.inr hb)).tendsto.comp
-    ((hmul (1 - t) ν₀).prodMk_nhds (hmul t ν₁))
-  have hR := (EReal.continuousAt_add (.inl (EReal.add_ne_top ha hb))
-    (.inr (EReal.coe_ne_top (-(m / 2 * t * (1 - t) *
-      ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd))))).tendsto.comp
-        (hadd.prodMk_nhds (tendsto_const_nhds
-          (x := ((-(m / 2 * t * (1 - t) * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd) : ℝ) : EReal))))
-  simp only [EReal.coe_neg] at hR
-  exact le_of_tendsto_of_tendsto (hφ ν) hR (h.mono fun i hi ↦ hi t ht ν hν)
+  exact le_of_tendsto_of_tendsto (hφ ν)
+    (EReal.tendsto_coe_mul_add_coe_mul_sub (hφ ν₀) (hφ ν₁) h₀ h₁
+      (sub_nonneg.2 ht.2) ht.1 _)
+    (h.mono fun i hi ↦ hi t ht ν hν)
 
 /-- The energy `φ` is `m`-convex along every quadratic generalized-geodesic plan based at `μ`
 whose endpoints have energy different from `⊤`. The remainder uses the quadratic cost of the
