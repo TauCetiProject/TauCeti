@@ -54,6 +54,8 @@ level are handled simultaneously.
   sublevel and the characteristic maps of its cells.
 * `TauCeti.morseCellAttachmentDesc`: the map out of `TauCeti.morseCellAttachment` induced by
   compatible maps on the lower sublevel and on the discs.
+* `TauCeti.morseCellAttachmentProdDesc`: the map `I × (M_{c-ε} ∪_α ⨆ᵢ D^{k i}) → Y` induced by
+  compatible maps on `I × M_{c-ε}` and on the cylinders `I × D^{k i}`.
 * `TauCeti.morseCellComparison`: the comparison map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → M_{c+ε}`.
 
 ## Main results
@@ -209,6 +211,58 @@ theorem range_morseCellAttachmentIncl_union_iUnion_range_morseCellAttachmentCell
   rw [TopCat.sigmaIsoSigma_inv_apply] at hz
   refine Or.inr (mem_iUnion.2 ⟨i, w, ?_⟩)
   rw [← hz, ← ConcreteCategory.comp_apply, Sigma.ι_comp_desc]
+
+section ProdDesc
+
+open unitInterval
+
+variable (hε : 0 ≤ ε) {Y : Type u} [TopologicalSpace Y] (L : C(I × {x | f x ≤ c - ε}, Y))
+  (C : ∀ i, C(I × TopCat.disk.{u} (k i), Y))
+  (hC : ∀ i t s, C i (t, TopCat.diskBoundaryInclusion (k i) s) =
+    L (t, (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s))
+
+/-- The map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → C(I, Y)` glued from the curried maps `L` and `C i`. -/
+private def morseCellAttachmentCurriedDesc :
+    morseCellAttachment φ k hk hε hball hf ⟶ TopCat.of C(I, Y) :=
+  morseCellAttachmentDesc φ k hk hε hball hf (TopCat.ofHom (L.comp ContinuousMap.prodSwap).curry)
+    (fun i ↦ TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry)
+    fun i ↦ by ext s t; exact (hC i t s).symm
+
+/-- The map `I × (M_{c-ε} ∪_α ⨆ᵢ D^{k i}) → Y` glued from a map `L : I × M_{c-ε} → Y` and maps
+`C i : I × D^{k i} → Y` that agree with `L` along the attaching maps: the form of
+`TauCeti.morseCellAttachmentDesc` for homotopies out of `TauCeti.morseCellAttachment`. Since `I` is
+locally compact, it is the uncurried map out of the attachment glued from the curried maps into
+`C(I, Y)`. -/
+def morseCellAttachmentProdDesc : C(I × morseCellAttachment φ k hk hε hball hf, Y) :=
+  ⟨fun p ↦ morseCellAttachmentCurriedDesc φ k hk hball hf hε L C hC p.2 p.1,
+    continuous_eval.comp
+      (((morseCellAttachmentCurriedDesc φ k hk hball hf hε L C hC).hom.continuous.comp
+        continuous_snd).prodMk continuous_fst)⟩
+
+/-- On the lower sublevel, the map glued by `TauCeti.morseCellAttachmentProdDesc` is `L`. -/
+@[simp]
+theorem morseCellAttachmentProdDesc_morseCellAttachmentIncl (t : I) (x : {x | f x ≤ c - ε}) :
+    morseCellAttachmentProdDesc φ k hk hball hf hε L C hC
+        (t, morseCellAttachmentIncl φ k hk hε hball hf x) = L (t, x) := by
+  have hx : morseCellAttachmentCurriedDesc φ k hk hball hf hε L C hC
+      (morseCellAttachmentIncl φ k hk hε hball hf x) = (L.comp ContinuousMap.prodSwap).curry x :=
+    ConcreteCategory.congr_hom (morseCellAttachmentIncl_desc _ _ _ _ _ _ _ _ _) x
+  exact congrArg (fun g : C(I, Y) ↦ g t) hx
+
+/-- On the cell of the chart `φ i`, the map glued by `TauCeti.morseCellAttachmentProdDesc` is
+`C i`. -/
+@[simp]
+theorem morseCellAttachmentProdDesc_morseCellAttachmentCell (t : I) (i : ι)
+    (w : TopCat.disk.{u} (k i)) :
+    morseCellAttachmentProdDesc φ k hk hball hf hε L C hC
+        (t, morseCellAttachmentCell φ k hk hε hball hf i w) = C i (t, w) := by
+  have hw : morseCellAttachmentCurriedDesc φ k hk hball hf hε L C hC
+      (morseCellAttachmentCell φ k hk hε hball hf i w) =
+        ((C i).comp ContinuousMap.prodSwap).curry w :=
+    ConcreteCategory.congr_hom (morseCellAttachmentCell_desc _ _ _ _ _ _ _ _ _ i) w
+  exact congrArg (fun g : C(I, Y) ↦ g t) hw
+
+end ProdDesc
 
 /-- The comparison map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → M_{c+ε}` from `TauCeti.morseCellAttachment` to
 the sublevel `M_{c+ε} = {f ≤ c + ε}`, induced on the pushout by the inclusion of the lower sublevel
