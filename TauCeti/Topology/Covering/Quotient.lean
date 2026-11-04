@@ -48,6 +48,8 @@ Neither normality nor a separation axiom is needed.
 
 ## Main results
 
+* `Subgroup.isLocalHomeomorph_quotientMk`, `AddSubgroup.isLocalHomeomorph_quotientMk`: the coset
+  projection by a discrete subgroup is a local homeomorphism.
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
 * `IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup down to
   the quotient by the whole group is a covering map.
@@ -86,6 +88,8 @@ public section
 
 /-- The native coset projection by a discrete subgroup of a topological group is a local
 homeomorphism. Neither normality nor a separation axiom is needed. -/
+@[to_additive /-- The native coset projection by a discrete additive subgroup of a topological
+additive group is a local homeomorphism. Neither normality nor a separation axiom is needed. -/]
 theorem Subgroup.isLocalHomeomorph_quotientMk {G : Type*} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (N : Subgroup G) [DiscreteTopology N] :
     IsLocalHomeomorph (QuotientGroup.mk (s := N)) :=

@@ -87,6 +87,21 @@ component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex 
 
 ## Main results
 
+### Discrete subgroups
+
+The following results also have additive counterparts in the `AddSubgroup` namespace.
+
+* `Subgroup.isLocalDiffeomorph_quotientMk`: the coset projection by a discrete subgroup is a
+  local diffeomorphism.
+* `Subgroup.instLieGroupDiscreteQuotient`: the quotient by a discrete normal subgroup is a
+  Lie group.
+* `Subgroup.contMDiff_quotient_iff`: smoothness on the coset space is equivalent to smoothness
+  after composition with the projection.
+* `Subgroup.contMDiff_quotientGroup_lift`: a smooth homomorphism killing a discrete normal
+  subgroup descends smoothly to the quotient group.
+
+### Discrete submodules
+
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
   group.
@@ -134,6 +149,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The charts on the native coset space are pushed forward from the Lie group along the
 covering projection. -/
+@[to_additive /-- The charts on the native additive coset space are pushed forward from the
+additive Lie group along the covering projection. -/]
 instance instChartedSpaceDiscreteQuotient : ChartedSpace H (G ⧸ N) :=
   N.isLocalHomeomorph_quotientMk.chartedSpace QuotientGroup.mk_surjective
 
@@ -141,6 +158,7 @@ variable [LieGroup I n G]
 
 omit [IsTopologicalGroup G] [DiscreteTopology N] in
 /-- Right multiplication by a subgroup element is a smooth deck transformation. -/
+@[to_additive /-- Translation by a subgroup element is a smooth deck transformation. -/]
 private theorem quotientMk_smooth_deck (z w : G)
     (h : (QuotientGroup.mk z : G ⧸ N) = QuotientGroup.mk w) :
     ∃ φ : G → G, ContMDiffAt I I n φ z ∧ φ z = w ∧
@@ -151,11 +169,15 @@ private theorem quotientMk_smooth_deck (z w : G)
   exact QuotientGroup.eq.mpr (by simpa using N.inv_mem hn)
 
 /-- A discrete subgroup's native coset space is a manifold, with the same model as the group. -/
+@[to_additive /-- A discrete additive subgroup's native coset space is a manifold, with the same
+model as the additive group. -/]
 instance instIsManifoldDiscreteQuotient : IsManifold I n (G ⧸ N) :=
   (isLocalHomeomorph_quotientMk N).isManifold_chartedSpaceOfRightInverse (I := I) (n := n)
     QuotientGroup.mk_surjective.hasRightInverse.choose_spec (quotientMk_smooth_deck N)
 
 /-- The native coset projection is a local diffeomorphism for the pushed-forward charts. -/
+@[to_additive /-- The native additive coset projection is a local diffeomorphism for the
+pushed-forward charts. -/]
 theorem isLocalDiffeomorph_quotientMk :
     IsLocalDiffeomorph I I n (QuotientGroup.mk (s := N)) :=
   (isLocalHomeomorph_quotientMk N).isLocalDiffeomorph_chartedSpaceOfRightInverse (I := I) (n := n)
@@ -163,6 +185,8 @@ theorem isLocalDiffeomorph_quotientMk :
 
 /-- Quotients by discrete normal subgroups are Lie groups for their native group structure
 and the covering charts. -/
+@[to_additive /-- Quotients by discrete normal additive subgroups are additive Lie groups for
+their native additive group structure and the covering charts. -/]
 instance instLieGroupDiscreteQuotient [N.Normal] : LieGroup I n (G ⧸ N) :=
   (isLocalDiffeomorph_quotientMk (I := I) (n := n) N).lieGroup
     (QuotientGroup.mk' N) QuotientGroup.mk_surjective
@@ -173,6 +197,9 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
 
 /-- A map out of the native coset space is smooth if and only if it is smooth on the covering
 group, for any differentiability order `m ≤ n`, where `n` is the regularity of the group. -/
+@[to_additive /-- A map out of the native additive coset space is smooth if and only if it is
+smooth on the covering additive group, for any differentiability order `m ≤ n`, where `n` is the
+regularity of the additive group. -/]
 theorem contMDiff_quotient_iff {m : ℕ∞ω} (hm : m ≤ n) (f : G ⧸ N → M) :
     ContMDiff I I' m f ↔ ContMDiff I I' m (f ∘ QuotientGroup.mk (s := N)) :=
   ((isLocalDiffeomorph_quotientMk (I := I) (n := n) N).contMDiff_comp_iff
@@ -181,6 +208,9 @@ theorem contMDiff_quotient_iff {m : ℕ∞ω} (hm : m ≤ n) (f : G ⧸ N → M)
 /-- A smooth homomorphism killing a discrete normal subgroup descends smoothly to the native
 quotient group. The target need only be a charted monoid, such as an endomorphism monoid;
 its operations need not be smooth. -/
+@[to_additive /-- A smooth additive homomorphism killing a discrete normal additive subgroup
+descends smoothly to the native quotient additive group. The target need only be a charted
+additive monoid; its operations need not be smooth. -/]
 theorem contMDiff_quotientGroup_lift [N.Normal] [Monoid M] (f : G →* M) (hN : N ≤ f.ker)
     {m : ℕ∞ω} (hm : m ≤ n) (hf : ContMDiff I I' m f) :
     ContMDiff I I' m (QuotientGroup.lift N f hN) := by
