@@ -35,7 +35,8 @@ whose projectivity hypotheses are found by instance search over a field.
   `TopCat.singularKronecker_singularCohomologyDualEquiv_symm`, with naturality
   `TopCat.singularCohomologyDualEquiv_singularCohomologyMap`.
 * `TopCat.finrank_singularCohomology` and `TopCat.finite_singularCohomology_iff`: cohomology and
-  homology over a field have the same dimension and are finite-dimensional together.
+  homology over a field have the same `finrank` (zero when infinite-dimensional) and are
+  finite-dimensional together.
 * `TopPair.singularCohomologyDualEquiv`, its naturality
   `TopPair.singularCohomologyDualEquiv_singularCohomologyMap`, `TopPair.finrank_singularCohomology`
   and `TopPair.finite_singularCohomology_iff`: the same for relative cohomology of a pair.
@@ -98,8 +99,9 @@ lemma singularCohomologyDualEquiv_singularCohomologyMap {Y : TopCat.{w}} (f : X 
         (ModuleCat.of k k)).map f).hom (Y.singularCohomologyDualEquiv n α) := by
   simp [singularKronecker_naturality, Dual.transpose_apply]
 
-/-- Over a field, singular cohomology and singular homology have the same dimension in every
-degree.  When `Hₙ(X; k)` is infinite-dimensional both sides are zero. -/
+/-- Over a field, singular cohomology and singular homology have the same `finrank` in every
+degree.  When `Hₙ(X; k)` is infinite-dimensional both sides have `finrank` zero; their cardinal
+dimensions then need not agree. -/
 @[simp]
 theorem finrank_singularCohomology (n : ℕ) :
     finrank k (X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) =
@@ -159,7 +161,8 @@ lemma singularCohomologyDualEquiv_singularCohomologyMap {P' : TopPair.{w}} (f : 
   simp [singularKronecker_naturality, Dual.transpose_apply]
 
 /-- Over a field, relative singular cohomology and relative singular homology of a pair have the
-same dimension in every degree.  When `Hₙ(X, A; k)` is infinite-dimensional both sides are zero. -/
+same `finrank` in every degree.  When `Hₙ(X, A; k)` is infinite-dimensional both sides have
+`finrank` zero; their cardinal dimensions then need not agree. -/
 @[simp]
 theorem finrank_singularCohomology (n : ℕ) :
     finrank k (P.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) =

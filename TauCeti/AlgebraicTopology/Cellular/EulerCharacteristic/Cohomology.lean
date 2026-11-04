@@ -12,10 +12,10 @@ public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
 # The Euler characteristic from singular cohomology
 
 Over a field `k`, singular cohomology is the dual of singular homology
-(`TopCat.singularCohomologyDualEquiv`), so the two have the same dimension in every degree.  For a
-space of finite CW type the homology is finite-dimensional and vanishes in large degrees, hence so
-does the cohomology, and the Euler characteristic is also the alternating sum of the dimensions of
-singular cohomology with coefficients in `k`.
+(`TopCat.singularCohomologyDualEquiv`).  For a space of finite CW type the homology is
+finite-dimensional and vanishes in large degrees, so the cohomology is finite-dimensional of the
+same dimension in every degree and also vanishes in large degrees.  Hence the Euler characteristic
+is also the alternating sum of the dimensions of singular cohomology with coefficients in `k`.
 
 ## Main declarations
 
