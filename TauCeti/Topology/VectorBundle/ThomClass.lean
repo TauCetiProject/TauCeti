@@ -532,10 +532,7 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb 
   have hcomp : (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom =
       (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom ≫
         TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
-    have h : e'.continuousLinearEquivAt ℝ b hb' =
-        (e.continuousLinearEquivAt ℝ b hb).trans (e.coordChangeL ℝ e' b) := by
-      ext x
-      simp [coe_coordChangeL e e' ⟨hb, hb'⟩, linearEquivAt_apply, e.symm_apply_apply_mk hb]
+    have h := (e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb').symm
     rw [h, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
     exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
   rw [hcomp, TopPair.singularCohomologyMap_comp,
