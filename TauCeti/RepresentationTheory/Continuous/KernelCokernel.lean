@@ -22,11 +22,12 @@ representations, continuous for the operator norm and not only strongly continuo
 two representations whose difference `[ker T] - [coker T]` is the equivariant index of `T`.
 
 The continuity is the finite-dimensional upgrade of strong continuity,
-`ContRepresentation.continuous_iff_continuous_apply`. For the kernel nothing more is needed. For the
-cokernel the quotient is identified, equivariantly and isometrically, with the orthogonal complement
-of the closed range, a finite-dimensional subrepresentation of `ρ` which is invariant because `ρ` is
-unitary. That complement is the kernel of the adjoint, which intertwines `ρ` with `π`, so the
-cokernel representation is also the kernel representation of the adjoint.
+`ContRepresentation.continuous_iff_continuous_apply`, applied to the kernel and to the quotient by
+the closed range. It needs neither unitarity nor an inner product. When `ρ` is unitary the cokernel
+is moreover identified, equivariantly and isometrically, with the orthogonal complement of the
+closed range, a subrepresentation of `ρ` which is invariant because `ρ` is unitary. That complement
+is the kernel of the adjoint, which intertwines `ρ` with `π`, so the cokernel representation is also
+the kernel representation of the adjoint.
 
 Bundled as objects of the category `TopRep`, the same kernel and cokernel are `TopRep.ker` and
 `TopRep.coker`. Here they are kept as `ContRepresentation`s, the carrier on which continuity for the
@@ -48,11 +49,14 @@ operator norm and the comparison with the orthogonal complement are stated.
 
 * `ContIntertwiningMap.continuous_kerRepresentation`: a finite-dimensional kernel of an
   intertwining map out of a strongly continuous representation carries a continuous representation.
-* `ContIntertwiningMap.continuous_cokerRepresentation`: likewise for a finite-dimensional cokernel,
-  when the target representation is unitary and the range admits an orthogonal projection.
+* `ContIntertwiningMap.continuous_cokerRepresentation`: likewise for a finite-dimensional cokernel
+  of an intertwining map with closed range into a strongly continuous representation.
 * `ContIntertwiningMap.continuous_kerRepresentation_of_isFredholm` and
   `ContIntertwiningMap.continuous_cokerRepresentation_of_isFredholm`: both apply to equivariant
-  Fredholm operators between Hilbert spaces.
+  Fredholm operators between normed spaces.
+* `ContIntertwiningMap.isometry_cokerEquivOrthogonalRange` and
+  `ContIntertwiningMap.isometry_cokerEquivKerAdjoint`: the identifications of the cokernel preserve
+  norms.
 
 ## References
 
@@ -115,7 +119,7 @@ theorem continuous_cokerRepresentation_apply (hρ : ∀ w, Continuous fun g ↦ 
 
 end Representations
 
-/-! ### Continuity of the kernel representation -/
+/-! ### Continuity of the kernel and cokernel representations -/
 
 section Kernel
 
@@ -137,6 +141,24 @@ theorem continuous_kerRepresentation_of_isFredholm (hT : T.toContinuousLinearMap
     (hπ : ∀ v, Continuous fun g ↦ π g v) : Continuous T.kerRepresentation :=
   have := hT.finite_ker
   T.continuous_kerRepresentation hπ
+
+/-- **The cokernel carries a continuous representation.** If an intertwining map into a strongly
+continuous representation has closed range and finite-dimensional cokernel, then the cokernel
+representation is continuous for the operator norm. -/
+theorem continuous_cokerRepresentation (hρ : ∀ w, Continuous fun g ↦ ρ g w)
+    [IsClosed (T.toContinuousLinearMap.range : Set F)]
+    [FiniteDimensional 𝕜 (F ⧸ T.toContinuousLinearMap.range)] :
+    Continuous T.cokerRepresentation :=
+  continuous_iff_continuous_apply.mpr (T.continuous_cokerRepresentation_apply hρ)
+
+/-- **The cokernel of an equivariant Fredholm operator is a continuous representation.** For a
+Fredholm operator intertwining strongly continuous representations, the action on its
+finite-dimensional cokernel is continuous for the operator norm. -/
+theorem continuous_cokerRepresentation_of_isFredholm (hT : T.toContinuousLinearMap.IsFredholm)
+    (hρ : ∀ w, Continuous fun g ↦ ρ g w) : Continuous T.cokerRepresentation :=
+  have := hT.isClosed_range
+  have := hT.finite_coker
+  T.continuous_cokerRepresentation hρ
 
 end Kernel
 
@@ -222,30 +244,21 @@ theorem cokerEquivOrthogonalRange_apply_mk (hρ : ρ.IsUnitary) (w : F) :
       T.toContinuousLinearMap.rangeᗮ.orthogonalProjectionOnto w := by
   simp [cokerEquivOrthogonalRange, Submodule.orthogonalProjectionOnto_apply_eq_projectionOnto]
 
-variable [TopologicalSpace G] in
-/-- **The cokernel carries a continuous representation.** If an intertwining map into a strongly
-continuous unitary representation has finite-dimensional cokernel and a range admitting an
-orthogonal projection, then the cokernel representation is continuous for the operator norm. -/
-theorem continuous_cokerRepresentation (hρ : ρ.IsUnitary) (hρc : ∀ w, Continuous fun g ↦ ρ g w)
-    [FiniteDimensional 𝕜 (F ⧸ T.toContinuousLinearMap.range)] :
-    Continuous T.cokerRepresentation := by
-  have : FiniteDimensional 𝕜 T.toContinuousLinearMap.rangeᗮ :=
-    (T.cokerEquivOrthogonalRange hρ).toContinuousLinearEquiv.toLinearEquiv.finiteDimensional
-  rw [(T.cokerEquivOrthogonalRange hρ).continuous_iff]
-  exact T.continuous_orthogonalRangeRepresentation hρ hρc
+/-- The identification of the cokernel with the orthogonal complement of the range preserves
+norms, since it is Mathlib's isometry `Submodule.quotientEquivOrthogonal`. -/
+@[simp]
+theorem norm_cokerEquivOrthogonalRange_apply (hρ : ρ.IsUnitary)
+    (x : F ⧸ T.toContinuousLinearMap.range) :
+    ‖(T.cokerEquivOrthogonalRange hρ x : F)‖ = ‖x‖ :=
+  T.toContinuousLinearMap.range.quotientEquivOrthogonal.norm_map x
+
+/-- The identification of the cokernel with the orthogonal complement of the range is an
+isometry. -/
+theorem isometry_cokerEquivOrthogonalRange (hρ : ρ.IsUnitary) :
+    Isometry (T.cokerEquivOrthogonalRange hρ) :=
+  AddMonoidHomClass.isometry_of_norm _ (T.norm_cokerEquivOrthogonalRange_apply hρ)
 
 end OrthogonalProjection
-
-variable [TopologicalSpace G] [CompleteSpace F] in
-/-- **The cokernel of an equivariant Fredholm operator is a continuous representation.** For a
-Fredholm operator into a strongly continuous unitary representation on a Hilbert space, the action
-on its finite-dimensional cokernel is continuous for the operator norm. -/
-theorem continuous_cokerRepresentation_of_isFredholm (hT : T.toContinuousLinearMap.IsFredholm)
-    (hρ : ρ.IsUnitary) (hρc : ∀ w, Continuous fun g ↦ ρ g w) :
-    Continuous T.cokerRepresentation :=
-  have : CompleteSpace T.toContinuousLinearMap.range := hT.isClosed_range.completeSpace_coe
-  have := hT.finite_coker
-  T.continuous_cokerRepresentation hρ hρc
 
 end Cokernel
 
@@ -296,6 +309,20 @@ theorem cokerEquivKerAdjoint_symm_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary
   ext
   rw [ContRepresentation.Equiv.apply_symm_apply, coe_cokerEquivKerAdjoint_apply_mk,
     ← Submodule.starProjection_apply, Submodule.starProjection_eq_self_iff.mpr hv]
+
+/-- The equivariant identification of the cokernel with the kernel of the adjoint preserves
+norms. -/
+@[simp]
+theorem norm_cokerEquivKerAdjoint_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary)
+    (x : F ⧸ T.toContinuousLinearMap.range) :
+    ‖(T.cokerEquivKerAdjoint hπ hρ x : F)‖ = ‖x‖ :=
+  T.norm_cokerEquivOrthogonalRange_apply hρ x
+
+/-- The equivariant identification of the cokernel with the kernel of the adjoint is an
+isometry. -/
+theorem isometry_cokerEquivKerAdjoint (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    Isometry (T.cokerEquivKerAdjoint hπ hρ) :=
+  AddMonoidHomClass.isometry_of_norm _ (T.norm_cokerEquivKerAdjoint_apply hπ hρ)
 
 end Adjoint
 
