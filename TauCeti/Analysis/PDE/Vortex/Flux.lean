@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
