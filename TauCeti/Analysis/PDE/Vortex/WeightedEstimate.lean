@@ -124,23 +124,19 @@ theorem mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator
   nlinarith
 
 /-- On a vortex with unit-modulus end, the smooth exponential weight
-`exp(c √(1 + |z|²))`, `|c| < 1/2`, has a positive exterior energy margin
-`(1/4 - c²)/2`. The same radius works for every compactly supported `C²` test field
-vanishing on the indicated disc. -/
+`exp(c √(1 + |z|²))` has exterior energy margin `a - c²` for every `a < 1/4`.
+The margin is positive when `c² < a`. The same radius works for every compactly
+supported `C²` test field vanishing on the indicated disc. -/
 theorem exists_exterior_integral_exp_mul_norm_sq_le_integral_exp_mul_inner_gaugeFixedOperator
     (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    {c : ℝ} (hc : |c| < 1 / 2) :
+    {a c : ℝ} (ha : a < 1 / 4) :
     ∃ R > 0, ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η →
       HasCompactSupport η → (∀ z, ‖z‖ ≤ R → η z = 0) →
-      ((1 / 4 - c ^ 2) / 2) *
+      (a - c ^ 2) *
           (∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
         ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
           ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ := by
-  -- Choose an actual exterior mass strictly between the weight rate and the vacuum mass.
-  let a : ℝ := (c ^ 2 + 1 / 4) / 2
-  have hc₂ : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
-  have ha : a < 1 / 4 := by dsimp [a]; linarith
   obtain ⟨R, hR₀, hR⟩ := exists_exterior_lt_mass hlim ha
   have hw : ContDiff ℝ 2 (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) :=
     contDiff_exp_mul_sqrt_one_add_norm_sq c
@@ -153,11 +149,7 @@ theorem exists_exterior_integral_exp_mul_norm_sq_le_integral_exp_mul_inner_gauge
   refine ⟨R, hR₀, fun η hη hηc hzero ↦ ?_⟩
   have hP (z : ℂ) (hz : η z ≠ 0) : a ≤ x z 2 ^ 2 + x z 3 ^ 2 :=
     (hR z (lt_of_not_ge fun h ↦ hz (hzero z h))).le
-  have hb := mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator (μ := μ)
+  exact mul_integral_mul_norm_sq_le_integral_mul_inner_gaugeFixedOperator (μ := μ)
     hx hη hηc hw (fun z _ ↦ hsol z) ha.le hP (fun z _ ↦ hdw z)
-  convert hb using 1
-  congr 1
-  dsimp [a]
-  ring
 
 end TauCeti.Vortex
