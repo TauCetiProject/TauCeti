@@ -34,8 +34,8 @@ weights `TauCeti.DominantWeight 1`, which only see the integers.
 * `TauCeti.IsGlHighestWeightVector.hasPrimitiveVectorWith`: a highest weight vector of weight
   `(μ₀, μ₁)` for `gl 2` is a primitive vector of weight `μ₀ - μ₁` for the standard triple of `sl 2`.
 * `TauCeti.nonempty_lieModuleEquiv_glIrreducible_sl2Std` and
-  `TauCeti.finrank_glIrreducible_fin_two`: `L(mu)` restricts to `V(μ₀ - μ₁)` and has dimension
-  `μ₀ - μ₁ + 1`.
+  `TauCeti.finrank_glIrreducible_fin_two`: when `μ₀ - μ₁ = n` is a natural number, `L(mu)` restricts
+  to `V(n)` and has dimension `n + 1`.
 * `TauCeti.one_lie_glIrreducible_fin_two` and
   `TauCeti.representation_glCasimir_glIrreducible_fin_two`: the scalars by which the identity matrix
   and the trace-form Casimir act.
@@ -105,9 +105,9 @@ theorem existsUnique_natCast_sub_and_nonempty_lieModuleEquiv_glIrreducible_fin_t
 
 variable [LieModule.IsIrreducible K (Matrix (Fin 2) (Fin 2) K) M] {mu : Fin 2 → K} {v : M} {n : ℕ}
 
-/-- **An irreducible `gl 2`-module with highest weight `(μ₀, μ₁)` restricts to `V(μ₀ - μ₁)`.** The
-module is not assumed finite-dimensional, that being a consequence of the classification
-`TauCeti.nonempty_lieModuleEquiv_glIrreducible`. -/
+/-- **An irreducible `gl 2`-module with highest weight `(μ₀, μ₁)`, where `μ₀ - μ₁ = n` is a natural
+number, restricts to `V(n)`.** The module is not assumed finite-dimensional: for such a weight that
+is a consequence of the classification `TauCeti.nonempty_lieModuleEquiv_glIrreducible`. -/
 theorem nonempty_lieModuleEquiv_sl2Std_of_isGlHighestWeightVector
     (hv : IsGlHighestWeightVector mu v) (hn : mu 0 - mu 1 = n) :
     Nonempty (M ≃ₗ⁅K, LieAlgebra.SpecialLinear.sl (Fin 2) K⁆ Sl2Std K n) := by
@@ -120,7 +120,9 @@ theorem nonempty_lieModuleEquiv_sl2Std_of_isGlHighestWeightVector
   have := (isIrreducible_iff_of_eq_top (M := M) htop).2 inferInstance
   exact ⟨lieModuleEquivOfEqTop htop (Sl2Std.lieModuleEquiv (hn ▸ hv.hasPrimitiveVectorWith))⟩
 
-/-- **An irreducible `gl 2`-module with highest weight `(μ₀, μ₁)` has dimension `μ₀ - μ₁ + 1`.** -/
+/-- **An irreducible `gl 2`-module with highest weight `(μ₀, μ₁)`, where `μ₀ - μ₁ = n` is a natural
+number, has dimension `n + 1`.** The module is not assumed finite-dimensional: for such a weight
+that is a consequence of the classification `TauCeti.nonempty_lieModuleEquiv_glIrreducible`. -/
 theorem finrank_eq_add_one_of_isGlHighestWeightVector_fin_two
     (hv : IsGlHighestWeightVector mu v) (hn : mu 0 - mu 1 = n) :
     finrank K M = n + 1 := by
@@ -131,7 +133,7 @@ end Module
 
 variable {mu : Fin 2 → K} {n : ℕ}
 
-/-- **`L(μ₀, μ₁)` restricts to `V(μ₀ - μ₁)` on `sl 2`.** -/
+/-- **`L(μ₀, μ₁)` restricts to `V(n)` on `sl 2`, where `μ₀ - μ₁ = n` is a natural number.** -/
 theorem nonempty_lieModuleEquiv_glIrreducible_sl2Std (hn : mu 0 - mu 1 = n) :
     Nonempty (glIrreducible 2 mu ≃ₗ⁅K, LieAlgebra.SpecialLinear.sl (Fin 2) K⁆ Sl2Std K n) :=
   have hmu := isGlDominantIntegral_fin_two_iff.mpr ⟨n, hn⟩
@@ -139,7 +141,7 @@ theorem nonempty_lieModuleEquiv_glIrreducible_sl2Std (hn : mu 0 - mu 1 = n) :
   nonempty_lieModuleEquiv_sl2Std_of_isGlHighestWeightVector
     (isGlHighestWeightVector_glIrreducibleGenerator hmu) hn
 
-/-- **`L(μ₀, μ₁)` has dimension `μ₀ - μ₁ + 1`.** -/
+/-- **`L(μ₀, μ₁)` has dimension `n + 1`, where `μ₀ - μ₁ = n` is a natural number.** -/
 theorem finrank_glIrreducible_fin_two (hn : mu 0 - mu 1 = n) :
     finrank K (glIrreducible 2 mu) = n + 1 :=
   have hmu := isGlDominantIntegral_fin_two_iff.mpr ⟨n, hn⟩
