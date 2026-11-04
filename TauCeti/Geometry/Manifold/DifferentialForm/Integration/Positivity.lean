@@ -24,6 +24,9 @@ then vacuous at that point, where the form contributes its value with a negative
 
 ## Main results
 
+* `TauCeti.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target`: a nonnegative function
+  continuous and integrable on a chart target has positive integral if it is positive at one
+  target point, for any measure positive on nonempty open sets.
 * `TauCeti.integralTopForm_nonneg`: the integral of a nonnegative top form is nonnegative.
 * `TauCeti.integralTopForm_pos`: the integral of a continuous, compactly supported, nonnegative
   top form that is positive somewhere is positive.
@@ -55,15 +58,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I 1 M] {k : ℕ}
 
 omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
-/-- A nonnegative function continuous on a chart target has positive Haar integral on that
-target if it is integrable there and positive at one target point. This also applies at boundary
-points, since the interior of the target is dense in the target. -/
-theorem _root_.Module.Basis.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target
-    [MeasurableSpace E] [BorelSpace E] (b : Module.Basis (Fin k) ℝ E) (α : M) {g : E → ℝ}
-    (hnn : ∀ y, 0 ≤ g y) (hint : IntegrableOn g (extChartAt I α).target b.addHaar)
+/-- A nonnegative function continuous on a chart target has positive integral on that target
+for any measure positive on nonempty open sets, if it is integrable there and positive at one
+target point. This also applies at boundary points, since the interior of the target is dense
+in the target. -/
+theorem setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target
+    [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure] (α : M) {g : E → ℝ}
+    (hnn : ∀ y, 0 ≤ g y) (hint : IntegrableOn g (extChartAt I α).target μ)
     (hcont : ContinuousOn g (extChartAt I α).target) {y₀ : E}
     (hy₀ : y₀ ∈ (extChartAt I α).target) (hg₀ : 0 < g y₀) :
-    0 < ∫ y in (extChartAt I α).target, g y ∂b.addHaar := by
+    0 < ∫ y in (extChartAt I α).target, g y ∂μ := by
   rw [setIntegral_pos_iff_support_of_nonneg_ae (Filter.Eventually.of_forall hnn) hint]
   -- Positivity reaches an open subset of the interior, including from a boundary point.
   let V := interior (extChartAt I α).target ∩ g ⁻¹' Ioi 0
@@ -74,7 +78,7 @@ theorem _root_.Module.Basis.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_targe
   obtain ⟨z, hzU, hz⟩ := mem_closure_iff.mp
     (extChartAt_target_subset_closure_interior hy₀) U hUo hxU
   have hVne : V.Nonempty := ⟨z, hz, hUg ⟨hzU, interior_subset hz⟩⟩
-  refine (hV.measure_pos b.addHaar hVne).trans_le (measure_mono fun y hy ↦ ?_)
+  refine (hV.measure_pos μ hVne).trans_le (measure_mono fun y hy ↦ ?_)
   exact ⟨(ne_of_gt hy.2 : g y ≠ 0), interior_subset hy.1⟩
 
 /-- In a preferred chart, the signed coefficient of a top form at the chart image of `x`, with the
@@ -167,7 +171,7 @@ private theorem setIntegral_signBasis_mul_signedInChartAt_pos [NeZero k] [Measur
     obtain ⟨r, hr, h⟩ := exists_pos_signBasis_mul_signedInChartAt_eq l φ b hx₀ c₀ hc₀
     simp only [g, h]
     exact mul_pos hr hφ₀
-  exact b.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target α
+  exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) α
     (signBasis_mul_signedInChartAt_nonneg l hnn b α) hint.integrableOn hcont hy₀ hg₀
 
 /-- **Nonnegativity of integration.** On an oriented manifold of positive dimension, a top form

@@ -14,8 +14,8 @@ import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 /-!
 # Surjectivity of integration on top compactly supported cohomology
 
-Every neighbourhood of a point of an oriented finite-dimensional smooth manifold with corners
-supports a smooth closed top form of integral one. Integration on top compactly supported
+Every neighbourhood of a point of an oriented Hausdorff finite-dimensional smooth manifold with
+corners supports a smooth closed top form of integral one. Integration on top compactly supported
 de Rham cohomology is therefore surjective on every nonempty, oriented, boundaryless,
 Hausdorff, sigma-compact finite-dimensional smooth manifold.
 Neither connectedness nor positive dimension is required. These localized representatives
@@ -112,7 +112,7 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
       (s := (extChartAt I x).target) (fun z hz ↦ by
         dsimp only [g]
         rw [RoughForm.signedInChartAt_apply, dite_eq_right hz])]
-    exact b.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target x hg
+    exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) x hg
       (hs.integrable_signedInChartAt_one hc b x).integrableOn hcont
       (mem_extChartAt_target x) (by rw [hgx]; exact zero_lt_one)
   -- The unsigned chart integral is positive; the actual orientation adds only unit signs.
@@ -128,7 +128,7 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
       mem_closedForms_of_finrank_le I (by simpa using l.card_eq.ge) _⟩⟩,
     hsub.trans (fun y hy ↦ (hχ hy).1), hi⟩
 
-/-- Every neighbourhood of a point of an oriented smooth manifold with corners supports a
+/-- Every neighbourhood of a point of an oriented Hausdorff smooth manifold with corners supports a
 compactly supported closed top form of integral one, also in dimension zero. -/
 theorem exists_compactlySupportedClosedForms_integralTopForm_eq_one
     (o : Manifold.Orientation I M (Fin n)) (x : M) {U : Set M} (hU : U ∈ 𝓝 x) :
