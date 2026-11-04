@@ -39,7 +39,8 @@ of the third raising bracket. -/
 theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
     (hyh : ⁅h, y⁆ = (-3 : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
-    TauCeti.weylAut t he hf y = (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ := by
+    TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
+      (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ := by
   let y₁ := ⁅e, y⁆
   let y₂ := ⁅e, y₁⁆
   let y₃ := ⁅e, y₂⁆
@@ -56,29 +57,32 @@ theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
     simpa [pow_succ', mul_apply_eq_comp] using
       t.pow_ad_apply_eq_zero_of_weight_neg_nat he 3 hyh hyf
   have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
-  have h₀ : TauCeti.expAd (-f) hnf y = y :=
-    TauCeti.expAd_apply_of_lie_eq_zero hnf (by simp [hyf])
-  have h₁ : TauCeti.expAd (-f) hnf y₁ = y₁ - (3 : ℚ) • y := by
-    rw [TauCeti.expAd_apply_of_lie_lie_eq_zero hnf (by simp [hf₁, hyf]),
+  have he' := he.exists_pow_apply_eq_zero
+  have hnf' := hnf.exists_pow_apply_eq_zero
+  have h₀ : TauCeti.expAd (-f) hnf' y = y :=
+    TauCeti.expAd_apply_of_lie_eq_zero hnf' (by simp [hyf])
+  have h₁ : TauCeti.expAd (-f) hnf' y₁ = y₁ - (3 : ℚ) • y := by
+    rw [TauCeti.expAd_apply_of_lie_lie_eq_zero hnf' (by simp [hf₁, hyf]),
       neg_lie, hf₁]
     module
-  have h₂ : TauCeti.expAd (-f) hnf y₂ =
+  have h₂ : TauCeti.expAd (-f) hnf' y₂ =
       y₂ - (4 : ℚ) • y₁ + (6 : ℚ) • y := by
-    rw [TauCeti.expAd_apply_of_lie_lie_lie_eq_zero hnf
+    rw [TauCeti.expAd_apply_of_lie_lie_lie_eq_zero hnf'
       (by simp [hf₂, hf₁, hyf])]
     simp only [neg_lie, lie_neg, lie_smul, hf₂, hf₁]
     module
   -- Expand only on these vectors: no global nilpotency exponent is needed.
-  have h₃ : TauCeti.expAd (-f) hnf y₃ =
+  have h₃ : TauCeti.expAd (-f) hnf' y₃ =
       y₃ - (3 : ℚ) • y₂ + (6 : ℚ) • y₁ - (6 : ℚ) • y := by
-    rw [TauCeti.expAd_apply_of_lie_lie_lie_lie_eq_zero hnf
+    rw [TauCeti.expAd_apply_of_lie_lie_lie_lie_eq_zero hnf'
       (by simp [hf₃, hf₂, hf₁, hyf])]
     simp only [neg_lie, lie_neg, lie_smul, hf₃, hf₂, hf₁]
     module
-  have he₀ : TauCeti.expAd e he y =
+  have he₀ : TauCeti.expAd e he' y =
       y + y₁ + (2⁻¹ : ℚ) • y₂ + (6⁻¹ : ℚ) • y₃ :=
-    TauCeti.expAd_apply_of_lie_lie_lie_lie_eq_zero he hye
-  rw [TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hnf t, h₀, he₀]
+    TauCeti.expAd_apply_of_lie_lie_lie_lie_eq_zero he' hye
+  rw [TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg he' hf.exists_pow_apply_eq_zero hnf' t,
+    h₀, he₀]
   simp only [map_add, map_rat_smul, h₀, h₁, h₂, h₃]
   module
 
@@ -97,7 +101,8 @@ theorem weylUnit_conj_of_weight_neg_three (t : IsSl2Triple H E F)
         (((TauCeti.weylUnit hE hF)⁻¹ : Aˣ) : A) =
       (6⁻¹ : ℚ) • ⁅E, ⁅E, ⁅E, y⁆⁆⁆ := by
   rw [← TauCeti.weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_weight_neg_three _ _ hyh hyf
+  exact t.weylAut_apply_of_weight_neg_three (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hyh hyf
 
 end Associative
 
