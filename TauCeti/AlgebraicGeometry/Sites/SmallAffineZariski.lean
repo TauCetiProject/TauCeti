@@ -8,7 +8,13 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.SmallAffineZariski
 
 /-!
-# Transition maps of the pulled-back directed affine cover
+# The small affine Zariski site as an open cover
+
+This file records that the affine opens of a scheme `X`, indexed by its small affine Zariski site
+`X.AffineZariskiSite`, form an open cover of `X`, together with the transition maps of the
+pulled-back directed affine cover.
+
+## Transition maps of the pulled-back directed affine cover
 
 Let `q : T ⟶ X` be a morphism of schemes. Pulling back Mathlib's directed cover of `X` by its
 affine opens (`AlgebraicGeometry.Scheme.AffineZariskiSite.directedCover`) along `q` gives a
@@ -20,6 +26,8 @@ images. This is the compatibility needed to glue morphisms out of `T` along this
 
 ## Main results
 
+* `Scheme.AffineZariskiSite.isOpenCover_toOpens`: the affine opens of `X`, indexed by the small
+  affine Zariski site, form an open cover of `X`.
 * `Scheme.AffineZariskiSite.directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom`: the
   transition map of `(directedCover X).pullback₁ q` along `U ⟶ V` is the inclusion
   `q⁻¹ U ⟶ q⁻¹ V`.
@@ -35,6 +43,15 @@ universe u
 namespace TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
 
 variable {X T : Scheme.{u}} (q : T ⟶ X)
+
+variable (X) in
+/-- The affine opens of `X` cover `X`, indexed by the small affine Zariski site. -/
+theorem isOpenCover_toOpens :
+    TopologicalSpace.IsOpenCover fun U : X.AffineZariskiSite ↦ U.toOpens := by
+  refine .mk (top_le_iff.1 fun x _ ↦ ?_)
+  obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.1
+    ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
+  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨U.1, U.2⟩, hxU⟩
 
 /-- Under the identification of the members of the pulled-back directed affine cover with inverse
 images of affine opens, its transition map along `U ⟶ V` is the inclusion `q⁻¹ U ⟶ q⁻¹ V`. -/

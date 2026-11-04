@@ -150,10 +150,19 @@ theorem of_etale (f : X ⟶ Y) [Etale f] [h : IsPerfect Y p] : IsPerfect X p :=
 instance opens [IsPerfect X p] (U : X.Opens) : IsPerfect U p :=
   of_etale U.ι
 
-/-- **Perfectness is local**: a scheme on which `p` vanishes is perfect if it is covered by perfect
-open subschemes, since its absolute Frobenius restricts to theirs. -/
-theorem of_openCover (𝒰 : X.OpenCover) (h𝒰 : ∀ i, IsPerfect (𝒰.X i) p)
-    (hX : (p : Γ(X, ⊤)) = 0) : IsPerfect X p := by
+/-- **Perfectness is local**: a scheme covered by perfect open subschemes is perfect, since `p`
+vanishes on it by separatedness of its structure sheaf and its absolute Frobenius restricts to
+theirs. -/
+theorem of_openCover (𝒰 : X.OpenCover) (h𝒰 : ∀ i, IsPerfect (𝒰.X i) p) : IsPerfect X p := by
+  -- `p` vanishes on the image of each chart, which is isomorphic to its ring of global sections.
+  have hX : (p : Γ(X, ⊤)) = 0 := by
+    refine X.IsSheaf.section_ext fun x _ ↦ ⟨(𝒰.f (𝒰.idx x)) ''ᵁ ⊤, le_top, ?_, ?_⟩
+    · obtain ⟨y, hy⟩ := 𝒰.covers x
+      exact ⟨y, trivial, hy⟩
+    · rw [map_natCast, map_zero]
+      refine (ConcreteCategory.bijective_of_isIso ((𝒰.f (𝒰.idx x)).app _)).1 ?_
+      rw [map_natCast, map_zero]
+      exact natCast_app_eq_zero (h𝒰 _).natCast_eq_zero _
   refine (isPerfect_iff_isIso hX).2 ((isomorphisms.iff _).1 ?_)
   refine MorphismProperty.IsLocalAtTarget.of_zeroHypercover 𝒰 fun i ↦ ?_
   -- Over the open `𝒰.X i`, the absolute Frobenius of `X` is that of `𝒰.X i`.

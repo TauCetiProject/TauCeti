@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Frobenius.Perfect
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
+public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 public import TauCeti.RingTheory.Perfect.Colimit
 
 /-!
@@ -336,7 +337,6 @@ perfections, which are perfect. -/
 instance isPerfect_perfection : IsPerfect (X.perfection p hX) p :=
   IsPerfect.of_openCover (X.perfectionCover p hX)
     (fun U ↦ isPerfect_Spec_colimitPerfection (natCast_app_eq_zero hX U.1))
-    (X.natCast_perfection_eq_zero p hX)
 
 /-- **A perfect scheme is its own perfection**: the structure morphism of the perfection of a
 perfect scheme is an isomorphism. -/
@@ -354,14 +354,6 @@ section UniversalProperty
 
 variable {X p hX} {T : Scheme.{u}} [IsPerfect T p]
 
-/-- The affine opens of `X` cover `X`, indexed by the small affine Zariski site. -/
-private theorem isOpenCover_affineZariskiSite :
-    TopologicalSpace.IsOpenCover fun U : X.AffineZariskiSite ↦ U.toOpens := by
-  refine .mk (top_le_iff.1 fun x _ ↦ ?_)
-  obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.1
-    ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
-  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨U.1, U.2⟩, hxU⟩
-
 omit [IsPerfect T p] in
 /-- A morphism to the perfection of `X` maps the preimage of an affine open `U` of `X` into the
 chart of the perfection over `U`. -/
@@ -378,7 +370,8 @@ private theorem range_comp_subset_range_perfectionCover_f (c : T ⟶ X.perfectio
 theorem perfection_hom_ext {a b : T ⟶ X.perfection p hX}
     (h : a ≫ X.fromPerfection p hX = b ≫ X.fromPerfection p hX) : a = b := by
   refine (T.openCoverOfIsOpenCover _
-    (isOpenCover_affineZariskiSite.comap (a ≫ X.fromPerfection p hX).base.1)).hom_ext _ _
+    ((Scheme.AffineZariskiSite.isOpenCover_toOpens X).comap
+      (a ≫ X.fromPerfection p hX).base.1)).hom_ext _ _
     fun (U : X.AffineZariskiSite) ↦ ?_
   -- Over the preimage `W` of the affine open `U`, both morphisms land in the chart over `U`, which
   -- is the spectrum of a `p`-radical extension of `Γ(X, U)`.
@@ -429,7 +422,8 @@ structure morphism `X^perf ⟶ X` is a bijection from morphisms `T ⟶ X^perf` t
 theorem bijective_comp_fromPerfection :
     Function.Bijective fun g : T ⟶ X.perfection p hX ↦ g ≫ X.fromPerfection p hX := by
   refine ⟨fun a b h ↦ perfection_hom_ext h, fun g ↦ ?_⟩
-  let 𝒱 := T.openCoverOfIsOpenCover _ (isOpenCover_affineZariskiSite.comap g.base.1)
+  let 𝒱 := T.openCoverOfIsOpenCover _
+    ((Scheme.AffineZariskiSite.isOpenCover_toOpens X).comap g.base.1)
   -- Glue the lifts over the preimages of the affine opens of `X`; they agree on overlaps by
   -- uniqueness of lifts from perfect schemes.
   have (U : X.AffineZariskiSite) : IsPerfect (𝒱.X U) p := IsPerfect.opens _
