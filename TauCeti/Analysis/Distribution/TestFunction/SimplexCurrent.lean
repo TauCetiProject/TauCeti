@@ -67,14 +67,6 @@ namespace TauCeti
 
 variable {p : ℕ} {n : ℕ∞}
 
-/-- Preimages of compact sets under the face maps of `Δᵖ⁺¹` are compact, so the face maps are
-proper from all of `ℝᵖ` and pull test forms back to test forms. -/
-theorem isCompact_inter_preimage_simplexMapAmbient_succAbove (i : Fin (p + 2))
-    {K : Set (EuclideanSpace ℝ (Fin (p + 1)))} (hK : IsCompact K) :
-    IsCompact (((⊤ : Opens (EuclideanSpace ℝ (Fin p))) : Set (EuclideanSpace ℝ (Fin p))) ∩
-      simplexMapAmbient i.succAbove ⁻¹' K) := by
-  simpa using (isClosedEmbedding_simplexMapAmbient_succAbove i).isCompact_preimage hK
-
 /-- The **oriented current of the standard simplex** `[[Δᵖ]]`: the continuous linear functional
 `ω ↦ ∫_{Δᵖ} ω(x)(e₀, …, e_{p-1}) dx` on test `p`-forms on an open set `Ω ⊆ ℝᵖ`, where `eᵢ` is the
 standard basis (`TauCeti.simplexCurrent_apply`). -/
@@ -158,7 +150,7 @@ theorem simplexCurrent_one_extDerivCLM (Ω : Opens (EuclideanSpace ℝ (Fin 1)))
     fin_cases k
     simp
   have h₁ : simplexMapAmbient (Fin.succAbove (1 : Fin 2)) 0 = 0 := by
-    rw [show (1 : Fin 2) = (0 : Fin 1).succ from rfl, simplexMapAmbient_succAbove_succ]
+    rw [← Fin.succ_zero_eq_one', simplexMapAmbient_succAbove_succ]
     ext k
     fin_cases k
     simp

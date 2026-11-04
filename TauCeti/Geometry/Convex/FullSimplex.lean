@@ -361,6 +361,14 @@ theorem isClosedEmbedding_simplexMapAmbient_succAbove (i : Fin (p + 2)) :
     Topology.IsClosedEmbedding (simplexMapAmbient (m := p) i.succAbove) :=
   ContinuousAffineMap.isClosedEmbedding_of_injective (simplexMapAmbient_succAbove_injective i)
 
+/-- Preimages of compact sets under the face maps of `Δᵖ⁺¹` are compact, so the face maps are
+proper from all of `ℝᵖ` and pull test forms back to test forms. -/
+theorem isCompact_inter_preimage_simplexMapAmbient_succAbove (i : Fin (p + 2))
+    {K : Set (EuclideanSpace ℝ (Fin (p + 1)))} (hK : IsCompact K) :
+    IsCompact (((⊤ : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin p))) :
+      Set (EuclideanSpace ℝ (Fin p))) ∩ simplexMapAmbient i.succAbove ⁻¹' K) := by
+  simpa using (isClosedEmbedding_simplexMapAmbient_succAbove i).isCompact_preimage hK
+
 end Faces
 
 end TauCeti
