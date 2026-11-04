@@ -178,4 +178,18 @@ theorem sum_range_succ_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   rw [Nat.sub_add_comm (Finset.mem_range_succ_iff.1 hi), pow_succ, mul_neg_one, neg_smul]
 
+/-- The alternating sum `xₙ - xₙ₋₁ + ⋯ ± x₀` in a ring is `(-1)ⁿ (x₀ - x₁ + ⋯ ± xₙ)`. -/
+theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i =
+      (-1 : R) ^ n * ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ i * x i := by
+  simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    sum_range_neg_one_pow_sub_smul x n
+
+/-- The alternating sums `sₙ = xₙ - xₙ₋₁ + ⋯ ± x₀` in a ring satisfy `sₙ₊₁ = xₙ₊₁ - sₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * x i =
+      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i := by
+  simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    sum_range_succ_neg_one_pow_sub_smul x n
+
 end TauCeti

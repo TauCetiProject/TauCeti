@@ -64,6 +64,23 @@ universe u v
 
 namespace TauCeti
 
+/-- The gap `(cₘ - cₘ₋₁ + ⋯ ± c₀) - (bₘ - bₘ₋₁ + ⋯ ± b₀)` in the `m`-th strong Morse inequality
+for sequences `b` and `c` of natural numbers. -/
+private def strongGap (b c : ℕ → ℕ) (m : ℕ) : ℤ :=
+  ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * c j -
+    ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * b j
+
+/-- The gap in the `0`-th strong Morse inequality is `c₀ - b₀`. -/
+private theorem strongGap_zero (b c : ℕ → ℕ) : strongGap b c 0 = c 0 - b 0 := by
+  simp [strongGap]
+
+/-- The gaps `sₘ` in the strong Morse inequalities satisfy `sₘ₊₁ = cₘ₊₁ - bₘ₊₁ - sₘ`. -/
+private theorem strongGap_succ (b c : ℕ → ℕ) (m : ℕ) :
+    strongGap b c (m + 1) = c (m + 1) - b (m + 1) - strongGap b c m := by
+  rw [strongGap, strongGap, sum_range_succ_neg_one_pow_sub_mul,
+    sum_range_succ_neg_one_pow_sub_mul]
+  abel
+
 /-- **The Morse polynomial identity from the strong inequalities.**  Let `b` and `c` be sequences
 of natural numbers satisfying the strong Morse inequalities
 `bₘ - bₘ₋₁ + ⋯ ± b₀ ≤ cₘ - cₘ₋₁ + ⋯ ± c₀` for `m < n` and the Euler--Poincaré equality
@@ -82,15 +99,12 @@ theorem exists_sum_range_monomial_eq_add_mul {b c : ℕ → ℕ} {n : ℕ}
         ∑ j ∈ Finset.range (i + 1), (-1 : ℤ) ^ (i - j) * b j) ∧
       ∀ i, n ≤ i → Q.coeff i = 0 := by
   -- The gap `sₘ` in the `m`-th strong inequality is nonnegative for `m < n` and zero for `m = n`.
-  set s : ℕ → ℤ := fun m ↦ ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * c j -
-    ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * b j with hs_def
-  have hs₀ : s 0 = c 0 - b 0 := by simp [hs_def]
-  have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := by
-    simp only [hs_def, ← smul_eq_mul, sum_range_succ_neg_one_pow_sub_smul]
-    abel
+  set s : ℕ → ℤ := strongGap b c with hs_def
+  have hs₀ : s 0 = c 0 - b 0 := strongGap_zero b c
+  have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := strongGap_succ b c m
   have hsn : s n = 0 := by
-    simp only [hs_def, ← smul_eq_mul, sum_range_neg_one_pow_sub_smul]
-    simp only [smul_eq_mul, heuler, sub_self]
+    rw [hs_def, strongGap, sum_range_neg_one_pow_sub_mul, sum_range_neg_one_pow_sub_mul, heuler,
+      sub_self]
   have hpos (m : ℕ) (hm : m ≤ n) : 0 ≤ s m := by
     rcases hm.lt_or_eq with hm | rfl
     · exact sub_nonneg.2 (hstrong m hm)
@@ -111,7 +125,7 @@ theorem exists_sum_range_monomial_eq_add_mul {b c : ℕ → ℕ} {n : ℕ}
     simpa only [hsn, Int.toNat_zero, map_zero, add_zero, e] using h
   · simp only [finsetSum_coeff, coeff_monomial, Finset.sum_ite_eq', Finset.mem_range, hi,
       ↓reduceIte]
-    rw [hq i hi.le, hs_def]
+    rw [hq i hi.le, hs_def, strongGap]
   · simp only [finsetSum_coeff, coeff_monomial, Finset.sum_ite_eq', Finset.mem_range,
       hi.not_gt, ↓reduceIte]
 
@@ -122,12 +136,9 @@ theorem eq_of_forall_sum_range_neg_one_pow_mul_le {b c : ℕ → ℕ}
     (hstrong : ∀ m, ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * b i ≤
       ∑ i ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - i) * c i)
     (hc : ∀ i, c i = 0 ∨ c (i + 1) = 0) : b = c := by
-  set s : ℕ → ℤ := fun m ↦ ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * c j -
-    ∑ j ∈ Finset.range (m + 1), (-1 : ℤ) ^ (m - j) * b j with hs_def
-  have hs₀ : s 0 = c 0 - b 0 := by simp [hs_def]
-  have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := by
-    simp only [hs_def, ← smul_eq_mul, sum_range_succ_neg_one_pow_sub_smul]
-    abel
+  set s : ℕ → ℤ := strongGap b c with hs_def
+  have hs₀ : s 0 = c 0 - b 0 := strongGap_zero b c
+  have hsucc (m : ℕ) : s (m + 1) = c (m + 1) - b (m + 1) - s m := strongGap_succ b c m
   have hpos (m : ℕ) : 0 ≤ s m := sub_nonneg.2 (hstrong m)
   clear_value s
   -- The gap `sₘ` is at most `cₘ` and at most `cₘ₊₁`, so it vanishes.
@@ -164,9 +175,8 @@ theorem sum_range_neg_one_pow_mul_finrank_homology_le (n : ℕ)
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.homology i) ≤
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * finrank k (K.X i) := by
   -- Pull the sign `(-1) ^ n` out of both sums.
-  simp only [← smul_eq_mul, TauCeti.sum_range_neg_one_pow_sub_smul]
-  simp only [smul_eq_mul]
-  rw [K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
+  rw [TauCeti.sum_range_neg_one_pow_sub_mul, TauCeti.sum_range_neg_one_pow_sub_mul,
+    K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite]
   -- The two sides now differ by `((-1) ^ n) ^ 2 * dim im (Kₙ₊₁ ⟶ Kₙ) ≥ 0`.
   have hsq : ((-1 : ℤ) ^ n) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
   have hq : (0 : ℤ) ≤ finrank k (LinearMap.range (K.d (n + 1) n).hom) := Nat.cast_nonneg _

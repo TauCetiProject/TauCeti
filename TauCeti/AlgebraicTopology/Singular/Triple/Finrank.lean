@@ -124,11 +124,9 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq
           finrank k ((outerPair.obj T).singularHomology V i : ModuleCat k)) =
       finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) := by
   -- Pull the sign `(-1) ^ n` out of the sum, reducing to the identity with signs `(-1) ^ i`.
-  simp only [← smul_eq_mul, TauCeti.sum_range_neg_one_pow_sub_smul]
-  simp only [smul_eq_mul]
-  -- The sign `(-1) ^ n` now appears squared.
-  rw [T.sum_range_neg_one_pow_mul_finrank_eq V n, ← mul_assoc, ← pow_add,
-    Even.neg_one_pow ⟨n, rfl⟩, one_mul]
+  -- The sign `(-1) ^ n` then appears squared.
+  rw [TauCeti.sum_range_neg_one_pow_sub_mul, T.sum_range_neg_one_pow_mul_finrank_eq V n,
+    ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
 
 /-- **Subadditivity of the alternating sums along a triple.** If the relative homology of `(A, B)`
 and of `(X, A)` is finite-dimensional in every degree, then `Sₙ(X, B) ≤ Sₙ(A, B) + Sₙ(X, A)`,
