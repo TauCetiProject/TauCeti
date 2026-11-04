@@ -805,6 +805,37 @@ theorem baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
   rw [quotientBaseChangeIsoOfMapEq, Iso.trans_hom, ← Category.assoc, hbase,
     mkQuotient_comp_quotientIsoOfComapEq_hom]
 
+/-- Base change commutes with a morphism descended through a Hopf-ideal quotient, under
+compatible identifications of the ambient and target Hopf algebras. -/
+@[reassoc]
+theorem baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    {H' L' : _root_.CommHopfAlgCat.{max w v} K} (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (e : baseChange (K := K) H ≅ H')
+    (hJ : (baseChangeHopfIdeal (K := K) J).map e.hom.hom = J')
+    (f : H ⟶ L) (hf : J.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom)
+    (f' : H' ⟶ L') (hf' : J'.toIdeal ≤ RingHom.ker f'.hom.toAlgHom.toRingHom)
+    (t : baseChange (K := K) L ≅ L')
+    (hcomp : (e.inv ≫ baseChangeMap f) ≫ t.hom = f') :
+    baseChangeMap (liftQuotient J f hf) ≫ t.hom =
+      (quotientBaseChangeIsoOfMapEq J J' e hJ).hom ≫ liftQuotient J' f' hf' := by
+  let F := baseChangeFunctor (k := k) (K := K)
+  have := ConcreteCategory.epi_of_surjective _
+    (baseChangeMap_surjective (K := K) _ (mkQuotient_surjective H J))
+  rw [← baseChangeFunctor_map] at this ⊢
+  apply (cancel_epi (F.map (mkQuotient H J))).mp
+  calc
+    _ = F.map f ≫ t.hom := by
+      rw [← Category.assoc, ← Functor.map_comp, mkQuotient_comp_liftQuotient]
+    _ = e.hom ≫ f' := by
+      rw [baseChangeFunctor_map]
+      exact (Iso.inv_comp_eq e).mp hcomp
+    _ = e.hom ≫ mkQuotient H' J' ≫ liftQuotient J' f' hf' := by
+      rw [mkQuotient_comp_liftQuotient]
+    _ = _ := by
+      simpa only [baseChangeFunctor_map, Category.assoc] using
+        congrArg (fun g ↦ g ≫ liftQuotient J' f' hf')
+          (baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom J J' e hJ).symm
+
 /-- Transport `quotientBaseChangeIsoOfMapEq` to Hopf algebras that are only propositionally
 presented as the two quotients, as happens for sealed named quotients. -/
 noncomputable def baseChangeIsoOfEqQuotient {A : _root_.CommHopfAlgCat.{v} k}

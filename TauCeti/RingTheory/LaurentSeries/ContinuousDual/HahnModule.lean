@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.RingTheory.LaurentSeries.Lattice
+import TauCeti.RingTheory.LaurentSeries.Multiplication
 
 /-!
 # The continuous residue dual of module-valued Laurent series
@@ -123,6 +124,31 @@ theorem residueDual_of_single (g : HahnModule ℤ R (Module.Dual R V)) (n : ℤ)
   rw [residueDual_apply, finsum_eq_single _ n fun m hm ↦ by
     rw [Equiv.symm_apply_apply, coeff_single_of_ne hm, map_zero]]
   rw [Equiv.symm_apply_apply, coeff_single_same]
+
+/-- On scalar series times constant vectors and covectors, the contraction-residue pairing
+is the scalar residue pairing times evaluation of the covector. -/
+theorem _root_.LaurentSeries.residueDual_smul_single_zero_smul_single_zero
+    (a b : LaurentSeries R)
+    (ℓ : Module.Dual R V) (v : V) :
+    residueDual (a • of R (single (0 : ℤ) ℓ)) (b • of R (single (0 : ℤ) v)) =
+      (a * b).coeff (-1) * ℓ v := by
+  classical
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp [residueDual_apply]
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  rw [residueDual_apply]
+  simp only [coeff_smul_single_zero, LinearMap.smul_apply, map_smul, smul_eq_mul]
+  rw [finsum_eq_sum_of_support_subset _ (s := Finset.Icc b.order (-1 - a.order)) ?_,
+    mul_comm a b, LaurentSeries.coeff_mul_eq_sum
+      (order_eq_orderTop_of_ne_zero hb).le (order_eq_orderTop_of_ne_zero ha).le,
+    Finset.sum_mul]
+  · exact Finset.sum_congr rfl fun n _ ↦ by ring
+  · intro n hn
+    have hne : b.coeff n * (a.coeff (-1 - n) * ℓ v) ≠ 0 := hn
+    have hb' := order_le_of_coeff_ne_zero (left_ne_zero_of_mul hne)
+    have ha' := order_le_of_coeff_ne_zero (left_ne_zero_of_mul (right_ne_zero_of_mul hne))
+    exact Finset.mem_Icc.mpr ⟨hb', by omega⟩
 
 /-- The coefficient of `g` at `n` is recovered by pairing with the monomials `v t⁻¹⁻ⁿ`. -/
 theorem coeff_apply_eq_residueDual_of_single (g : HahnModule ℤ R (Module.Dual R V)) (n : ℤ)
