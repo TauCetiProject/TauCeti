@@ -125,6 +125,34 @@ theorem tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix
     map_mul, map_intCast]
   ring
 
+/-- Multiplying a matrix-valued coordinate morphism on either side by constant base-ring
+matrices multiplies its differential by the same matrices after coefficient change. Neither
+invertibility of the constant matrices nor linearity of the original morphism is needed. -/
+theorem tangentMatrix_derivationComp_eq_mul_mul_of_map_genericMatrix
+    {H : Type*} [CommRing H] [Bialgebra R H]
+    (φ ψ : coordinateHopfAlgebra R n →ₐc[R] H)
+    (M N : Matrix (Fin n) (Fin n) R)
+    (hφ : (genericMatrix R n).map φ.toAlgHom =
+      M.map (algebraMap R H) * (genericMatrix R n).map ψ.toAlgHom *
+        N.map (algebraMap R H))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    tangentMatrix n (derivationComp (B := B) φ d) =
+      M.map (algebraMap R B) * tangentMatrix n (derivationComp (B := B) ψ d) *
+        N.map (algebraMap R B) := by
+  ext a b
+  rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
+  have hentry := congrFun (congrFun hφ a) b
+  rw [Matrix.map_apply] at hentry
+  rw [hentry]
+  simp only [Matrix.mul_apply, Matrix.map_apply, map_sum,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply_mul,
+    Derivation.map_algebraMap, map_zero, mul_zero, add_zero, zero_add,
+    Bialgebra.counit_algebraMap, tangentMatrix_apply,
+    algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
+  apply Finset.sum_congr rfl
+  intro c _
+  exact mul_comm _ _
+
 section Cotangent
 
 variable {k : Type u} [CommRing k] {n : ℕ} {i j : Fin n}
