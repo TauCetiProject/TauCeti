@@ -215,17 +215,17 @@ theorem surfacePart_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) :
     surfacePart (unitScale u y) = unitScale u (surfacePart y) := by
   simp [surfacePart_def]
 
-/-- Inverting a positive parameter inverts its surface coordinate. -/
-theorem surfacePart_inv {y : realSpace K} (hy : ∀ w, 0 < y w) :
+/-- Inverting a parameter of nonnegative norm inverts its surface coordinate. -/
+theorem surfacePart_inv {y : realSpace K} (hy : 0 ≤ archNorm y) :
     surfacePart y⁻¹ = (surfacePart y)⁻¹ := by
   ext w
   simp only [surfacePart_def, surfaceScale_apply, Pi.inv_apply, archNorm_inv, inv_inv,
-    mul_inv, Real.inv_rpow (archNorm_pos hy).le]
+    mul_inv, Real.inv_rpow hy]
 
 /-- Multiplication by a norm-one parameter translates only the surface coordinate. -/
-theorem surfacePart_mul {c : realSpace K} (hc : c ∈ normOneSurface K) (y : realSpace K) :
+theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K) :
     surfacePart (c * y) = c * surfacePart y := by
   ext w
-  simp [surfacePart_def, map_mul, (mem_normOneSurface.mp hc).2, mul_assoc]
+  simp [surfacePart_def, map_mul, hc, mul_assoc]
 
 end TauCeti.LFunctions

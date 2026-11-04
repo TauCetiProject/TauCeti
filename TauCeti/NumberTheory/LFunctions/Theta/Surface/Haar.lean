@@ -92,17 +92,6 @@ theorem ae_archHaar_pos : ∀ᵐ y ∂archHaar K, ∀ w, 0 < y w := by
   exact pi_eval_preimage_null (μ := fun _ : InfinitePlace K ↦ multHaar) (i := w)
     multHaar_Iic_zero
 
-/-- `dy / y` is invariant under the dilations `y ↦ c y`, `c > 0`. -/
-theorem map_archHaar_smul {c : ℝ} (hc : 0 < c) : (archHaar K).map (c • ·) = archHaar K := by
-  have : SigmaFinite (multHaar.map (c * ·)) := by
-    rw [map_multHaar_mul_left hc]
-    infer_instance
-  have hsmul : (c • · : realSpace K → realSpace K) = fun y w ↦ c * y w := by
-    ext
-    simp
-  rw [hsmul, archHaar, pi_map_pi fun _ ↦ (measurable_const_mul c).aemeasurable]
-  simp_rw [map_multHaar_mul_left hc]
-
 /-- The product measure `dy / y` is invariant under independent positive dilations at the
 infinite places, not just a common scalar dilation. -/
 theorem map_archHaar_mul_left {c : realSpace K} (hc : ∀ w, 0 < c w) :
@@ -115,6 +104,14 @@ theorem map_archHaar_mul_left {c : realSpace K} (hc : ∀ w, 0 < c w) :
     exact Pi.mul_apply c y w
   rw [hmul, archHaar, pi_map_pi fun w ↦ (measurable_const_mul (c w)).aemeasurable]
   simp_rw [map_multHaar_mul_left (hc _)]
+
+/-- `dy / y` is invariant under the dilations `y ↦ c y`, `c > 0`. -/
+theorem map_archHaar_smul {c : ℝ} (hc : 0 < c) : (archHaar K).map (c • ·) = archHaar K := by
+  have hsmul : (c • · : realSpace K → realSpace K) = ((fun _ ↦ c) * ·) := by
+    ext
+    simp
+  rw [hsmul]
+  exact map_archHaar_mul_left fun _ ↦ hc
 
 /-- Coordinatewise inversion preserves the product measure `dy / y`. -/
 theorem map_archHaar_inv : (archHaar K).map Inv.inv = archHaar K := by
@@ -146,7 +143,7 @@ theorem surfaceHaar_apply {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
     surfaceHaar K A =
       archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' Icc 1 (Real.exp 1)) := by
   have hA' : MeasurableSet (Subtype.val '' A) :=
-    (MeasurableEmbedding.subtype_coe (measurableSet_normOneSurface K)).measurableSet_image.mpr hA
+    (measurableSet_normOneSurface K).subtype_image hA
   rw [surfaceHaar, (MeasurableEmbedding.subtype_coe (measurableSet_normOneSurface K)).comap_apply,
     map_apply measurable_surfacePart hA',
     Measure.restrict_apply (measurable_surfacePart hA')]
@@ -225,6 +222,15 @@ private theorem toSurface_of_pos {y : realSpace K} (hy : ∀ w, 0 < y w) :
     (toSurface y : realSpace K) = surfacePart y := by
   simp [toSurface, hy]
 
+private theorem toSurface_preimage_ae_eq (A : Set (normOneSurface K)) :
+    toSurface ⁻¹' A =ᵐ[archHaar K] surfacePart ⁻¹' (Subtype.val '' A) := by
+  apply Filter.eventuallyEqSet_iff.mpr
+  filter_upwards [ae_archHaar_pos] with y hy
+  refine ⟨fun h ↦ ⟨_, h, toSurface_of_pos hy⟩, ?_⟩
+  rintro ⟨x, hx, hxy⟩
+  have hEq : toSurface y = x := Subtype.ext ((toSurface_of_pos hy).trans hxy.symm)
+  rwa [mem_preimage, hEq]
+
 private theorem measurable_toSurface : Measurable (toSurface (K := K)) := by
   classical
   have hP : MeasurableSet {y : realSpace K | ∀ w, 0 < y w} := by
@@ -286,12 +292,7 @@ private theorem map_normImage_mul_left {A : Set (normOneSurface K)} (hA : Measur
 private theorem normImage_Icc_one_exp_one {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
     normImage K A (Icc 1 (Real.exp 1)) = surfaceHaar K A := by
   rw [normImage_apply A measurableSet_Icc, surfaceHaar_apply hA]
-  refine measure_congr (Filter.eventuallyEqSet_iff.mpr ?_)
-  filter_upwards [ae_archHaar_pos] with y hy
-  refine and_congr_left' ⟨fun h ↦ ⟨_, h, toSurface_of_pos hy⟩, ?_⟩
-  rintro ⟨x, hx, hxy⟩
-  have hEq : toSurface y = x := Subtype.ext ((toSurface_of_pos hy).trans hxy.symm)
-  rwa [mem_preimage, hEq]
+  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEq.refl _ _))
 
 /-- For a measurable `A ⊆ S` of finite `d*x`-mass and a measurable set of norms `B`, the
 `dy / y`-mass of the parameters with surface part in `A` and norm in `B` is
@@ -330,13 +331,7 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
     archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' B) =
       surfaceHaar K A * multHaar B := by
   rw [← archHaar_toSurface_preimage_inter hA hB]
-  apply measure_congr
-  apply Filter.eventuallyEqSet_iff.mpr
-  filter_upwards [ae_archHaar_pos] with y hy
-  refine and_congr_left' ⟨?_, fun h ↦ ⟨_, h, toSurface_of_pos hy⟩⟩
-  rintro ⟨x, hx, hxy⟩
-  have heq : toSurface y = x := Subtype.ext ((toSurface_of_pos hy).trans hxy.symm)
-  rwa [mem_preimage, heq]
+  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEq.refl _ _))
 
 /-- **The decomposition `dy / y = d*x × dt / t`** (Neukirch VII §5): the multiplicative Haar measure
 of the archimedean parameters is the image of the product of `surfaceHaar K` and `dt / t` under

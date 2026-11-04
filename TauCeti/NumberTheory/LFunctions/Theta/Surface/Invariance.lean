@@ -41,7 +41,7 @@ theorem measurePreserving_surfaceMul (c : normOneSurface K) :
   ext A hA
   have hc := mem_normOneSurface.mp c.property
   have hCA : MeasurableSet (Subtype.val '' A) :=
-    (MeasurableEmbedding.subtype_coe (measurableSet_normOneSurface K)).measurableSet_image.mpr hA
+    (measurableSet_normOneSurface K).subtype_image hA
   have hC : MeasurableSet (surfacePart ⁻¹' (Subtype.val '' A) ∩
       archNorm ⁻¹' Icc 1 (Real.exp 1)) :=
     (measurable_surfacePart hCA).inter (continuous_archNorm.measurable measurableSet_Icc)
@@ -54,7 +54,7 @@ theorem measurePreserving_surfaceMul (c : normOneSurface K) :
     filter_upwards [ae_archHaar_pos] with y hy
     let x : normOneSurface K := ⟨surfacePart y, surfacePart_mem_normOneSurface hy⟩
     have hx : surfacePart y = (x : realSpace K) := rfl
-    simp only [mem_inter_iff, mem_preimage, surfacePart_mul c.property, map_mul, hc.2,
+    simp only [mem_inter_iff, mem_preimage, surfacePart_mul hc.2, map_mul, hc.2,
       one_mul, hx, ← surfaceMul_apply c x, Subtype.coe_injective.mem_set_image]
   rw [measure_congr heq, ← map_apply (measurable_const_mul c.val) hC,
     map_archHaar_mul_left hc.1, ← surfaceHaar_apply hA]
@@ -65,7 +65,7 @@ theorem measurePreserving_surfaceInv :
   refine ⟨(surfaceInv K).continuous.measurable, ?_⟩
   ext A hA
   have hCA : MeasurableSet (Subtype.val '' A) :=
-    (MeasurableEmbedding.subtype_coe (measurableSet_normOneSurface K)).measurableSet_image.mpr hA
+    (measurableSet_normOneSurface K).subtype_image hA
   have hC : MeasurableSet (surfacePart ⁻¹' (Subtype.val '' A) ∩
       archNorm ⁻¹' Icc (Real.exp 1)⁻¹ 1) :=
     (measurable_surfacePart hCA).inter (continuous_archNorm.measurable measurableSet_Icc)
@@ -82,7 +82,7 @@ theorem measurePreserving_surfaceInv :
     filter_upwards [ae_archHaar_pos] with y hy
     let x : normOneSurface K := ⟨surfacePart y, surfacePart_mem_normOneSurface hy⟩
     have hx : surfacePart y = (x : realSpace K) := rfl
-    simp only [mem_inter_iff, mem_preimage, surfacePart_inv hy, archNorm_inv, hx,
+    simp only [mem_inter_iff, mem_preimage, surfacePart_inv (archNorm_pos hy).le, archNorm_inv, hx,
       ← surfaceInv_apply x, Subtype.coe_injective.mem_set_image]
     congr 1
     apply propext
