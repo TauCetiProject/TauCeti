@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -30,10 +31,10 @@ sections are the holomorphic forms of top degree `n = finrank ℂ E`.
 
 Every fibre is a line (`TauCeti.CanonicalBundle.finrank_eq_one`). In the trivialization of `K_M`
 induced by the chart at `x₀`, a form `ω` at `x` becomes `ω` evaluated on the coordinate tangent
-vectors of that chart (`TauCeti.CanonicalBundle.trivializationAt_apply_snd`). Passing from the
-chart at `x₀` to the chart at `x₁` multiplies its value on a basis `b` of `E` by the determinant of
-`tangentCoordChange I x₁ x₀ x`, the derivative of the change from the coordinates of the chart at
-`x₁` to those of the chart at `x₀`
+vectors of that chart (`FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd`). Passing
+from the chart at `x₀` to the chart at `x₁` multiplies its value on a basis `b` of `E` by the
+determinant of `tangentCoordChange I x₁ x₀ x`, the derivative of the change from the coordinates of
+the chart at `x₁` to those of the chart at `x₀`
 (`TauCeti.CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul`). Thus the transition
 functions of the canonical bundle are the Jacobian determinants of the coordinate changes.
 
@@ -49,8 +50,6 @@ coordinate forms of two charts satisfy `dz⁰₁ ∧ ⋯ ∧ dz⁰ₙ = det (∂
 * `TauCeti.CanonicalBundle`: the canonical bundle, with fibres the top-degree alternating forms on
   the tangent spaces.
 * `TauCeti.CanonicalBundle.finrank_eq_one`: its fibres are lines.
-* `TauCeti.CanonicalBundle.trivializationAt_apply_snd`: a form read in the trivialization of a
-  chart.
 * `TauCeti.CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul`: the transition functions
   are the Jacobian determinants of the coordinate changes.
 * `TauCeti.CanonicalBundle.coordForm`: the coordinate form `dz₁ ∧ ⋯ ∧ dzₙ` of a chart, with
@@ -97,18 +96,6 @@ theorem finrank_eq_one [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] (x : M) :
 
 variable [IsManifold I 1 M]
 
-/-- In the trivialization of the canonical bundle induced by the chart at `x₀`, a form `ω` at `x`
-is read on the coordinate tangent vectors of that chart: it is precomposed with the inverse, at
-`x`, of the tangent-bundle trivialization of that chart. -/
-@[simp]
-theorem trivializationAt_apply_snd (x₀ : M) {x : M}
-    (ω : CanonicalBundle I M x) :
-    (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x₀ ⟨x, ω⟩).2 =
-      ω.compContinuousLinearMap ((trivializationAt E (TangentSpace I) x₀).symmL 𝕜 x) := by
-  ext v
-  simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply,
-    ContinuousAlternatingMap.inCoordinates]
-
 /-- The transition functions of the canonical bundle are the Jacobian determinants of the
 coordinate changes. Evaluated on a basis `b` of the model space, a form at `x` read in the
 trivialization of the chart at `x₁` is its value read in the trivialization of the chart at `x₀`,
@@ -133,7 +120,8 @@ theorem trivializationAt_apply_snd_basis_eq_det_mul {x₀ x₁ x : M}
     rw [← hcoord, ← e₁.comp_continuousLinearEquivAt_eq_coord_change e₀ hx]
     ext v
     simp [e₀.symmL_apply hx.2, e₁.symmL_apply hx.1, e₀.symm_apply_apply_mk hx.2]
-  rw [trivializationAt_apply_snd, trivializationAt_apply_snd, hsymm]
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd, hsymm]
   simpa only [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousLinearMap.coe_comp,
     Function.comp_assoc] using
     (ω.compContinuousLinearMap (e₀.symmL 𝕜 x)).compContinuousLinearMap_apply_basis b
@@ -173,12 +161,13 @@ theorem trivializationAt_apply_snd_coordForm (hx : x ∈ (chartAt H x₀).source
     (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x₀
       ⟨x, coordForm I x₀ b x⟩).2 = b.continuousDet := by
   have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
-  rw [trivializationAt_apply_snd]
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd]
   ext v
   simp only [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
     Trivialization.continuousLinearMapAt_symmL _ hx', Module.Basis.continuousDet_apply]
 
 /-- The coordinate form does not vanish on the source of its chart. -/
+@[simp]
 theorem coordForm_ne_zero (hx : x ∈ (chartAt H x₀).source) : coordForm I x₀ b x ≠ 0 := by
   intro h
   have := congrArg (fun ω : CanonicalBundle I M x ↦
@@ -198,7 +187,8 @@ theorem eq_smul_coordForm (hx : x ∈ (chartAt H x₀).source) (ω : CanonicalBu
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
     Trivialization.symmL_continuousLinearMapAt _ hx'] at h
   rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, coordForm_apply,
-    trivializationAt_apply_snd, ContinuousAlternatingMap.compContinuousLinearMap_apply, mul_comm]
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, mul_comm]
   exact h
 
 /-- The coordinate forms of two charts differ by the Jacobian determinant of the coordinate change:
