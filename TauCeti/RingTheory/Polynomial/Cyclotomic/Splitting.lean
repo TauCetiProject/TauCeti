@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Separable
 import TauCeti.RingTheory.AdjoinRoot.Splitting
-import TauCeti.RingTheory.AdjoinRoot.Basic
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # Splitting the algebra of primitive roots of unity
@@ -54,14 +54,14 @@ variable [NeZero n]
 
 /-- A chosen primitive root splits its cyclotomic algebra by evaluation at all primitive
 powers. The statement holds over arbitrary commutative rings with `n` invertible. -/
-theorem bijective_pi_cyclotomicEval (hn : IsUnit (n : R))
+theorem pi_cyclotomicEval_bijective (hn : IsUnit (n : R))
     (hζ : (cyclotomic n R).IsRoot ζ) :
     Function.Bijective (AlgHom.pi (cyclotomicEval hζ)) := by
   classical
   rcases subsingleton_or_nontrivial R with _ | _
   · have : Subsingleton (AdjoinRoot (cyclotomic n R)) := Module.subsingleton R _
     exact Function.bijective_of_subsingleton' _
-  apply AdjoinRoot.bijective_pi_of_isUnit_sub (cyclotomic.monic n R)
+  apply AdjoinRoot.pi_bijective_of_isUnit_sub (cyclotomic.monic n R)
     (by simp [natDegree_cyclotomic, ZMod.card_units_eq_totient]) (cyclotomicEval hζ)
   intro i j hij
   simp only [cyclotomicEval_root]
@@ -74,7 +74,7 @@ The factors are labelled by units modulo `n`, not by an arbitrary enumeration. -
 noncomputable def adjoinRootCyclotomicEquivPi (hn : IsUnit (n : R))
     (hζ : (cyclotomic n R).IsRoot ζ) :
     AdjoinRoot (cyclotomic n R) ≃ₐ[R] ((ZMod n)ˣ → R) :=
-  AlgEquiv.ofBijective (AlgHom.pi (cyclotomicEval hζ)) (bijective_pi_cyclotomicEval hn hζ)
+  AlgEquiv.ofBijective (AlgHom.pi (cyclotomicEval hζ)) (pi_cyclotomicEval_bijective hn hζ)
 
 /-- The splitting is evaluation in each labelled factor. -/
 @[simp]
@@ -103,6 +103,29 @@ noncomputable def cyclotomicBaseChangeEquivPi (hn : IsUnit (n : A))
   (AdjoinRoot.algebraTensorAlgEquiv A (cyclotomic n R)).trans <|
     (AdjoinRoot.algEquivOfEq A _ _ (map_cyclotomic n (algebraMap R A))).trans
       (adjoinRootCyclotomicEquivPi hn hξ)
+
+/-- The base-changed splitting is the labelled splitting after the canonical
+identification with the cyclotomic root algebra over the new base. -/
+@[simp]
+theorem cyclotomicBaseChangeEquivPi_apply (hn : IsUnit (n : A))
+    (hξ : (cyclotomic n A).IsRoot ξ) (x : A ⊗[R] AdjoinRoot (cyclotomic n R)) :
+    cyclotomicBaseChangeEquivPi R hn hξ x =
+      adjoinRootCyclotomicEquivPi hn hξ
+        (AdjoinRoot.algEquivOfEq A _ _ (map_cyclotomic n (algebraMap R A))
+          (AdjoinRoot.algebraTensorAlgEquiv A (cyclotomic n R) x)) :=
+  (rfl)
+
+/-- Evaluation of the inverse base-changed splitting recovers each prescribed value
+after the canonical identification with the new cyclotomic root algebra. -/
+@[simp]
+theorem cyclotomicEval_cyclotomicBaseChangeEquivPi_symm (hn : IsUnit (n : A))
+    (hξ : (cyclotomic n A).IsRoot ξ) (x : (ZMod n)ˣ → A) (a : (ZMod n)ˣ) :
+    cyclotomicEval hξ a
+      (AdjoinRoot.algEquivOfEq A _ _ (map_cyclotomic n (algebraMap R A))
+        (AdjoinRoot.algebraTensorAlgEquiv A (cyclotomic n R)
+          ((cyclotomicBaseChangeEquivPi R hn hξ).symm x))) = x a := by
+  simpa only [cyclotomicBaseChangeEquivPi_apply, adjoinRootCyclotomicEquivPi_apply] using
+    congrFun ((cyclotomicBaseChangeEquivPi R hn hξ).apply_symm_apply x) a
 
 /-- The base-changed splitting sends scalar multiples of the universal root to the
 corresponding multiples of all primitive powers of the chosen root. -/

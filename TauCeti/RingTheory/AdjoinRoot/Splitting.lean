@@ -29,7 +29,7 @@ variable {R : Type*} [CommRing R] {f : R[X]}
 
 /-- Evaluation at a degree-sized family of roots of a monic polynomial is bijective
 when the differences of distinct roots are units. -/
-theorem bijective_pi_of_isUnit_sub (hf : f.Monic)
+theorem pi_bijective_of_isUnit_sub (hf : f.Monic)
     {ι : Type*} [Fintype ι] (hι : Fintype.card ι = f.natDegree)
     (s : ι → AdjoinRoot f →ₐ[R] R)
     (hs : ∀ i j, i ≠ j → IsUnit (s j (root f) - s i (root f))) :

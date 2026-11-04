@@ -134,13 +134,13 @@ theorem isUnit_pow_sub_pow_of_isRoot_cyclotomic (hn : IsUnit (n : R)) {ζ : R}
     simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.mpr hmem
   exact hij (hp.pow_inj hi hj he)
 
-/-- A power of a cyclotomic root with exponent coprime to `n` is again a cyclotomic
-root over any commutative ring, including in ramified characteristics. -/
-theorem isRoot_cyclotomic_pow_of_coprime {ζ : R}
-    (hζ : (cyclotomic n R).IsRoot ζ) {a : ℕ} (ha : a.Coprime n) :
-    (cyclotomic n R).IsRoot (ζ ^ a) := by
+/-- If `a` is coprime to `n`, then `Φ_n(X)` divides `Φ_n(X ^ a)` over any
+commutative ring. -/
+theorem cyclotomic_dvd_comp_X_pow_of_coprime {a : ℕ} (ha : a.Coprime n) :
+    cyclotomic n R ∣ (cyclotomic n R).comp (X ^ a) := by
   rcases n.eq_zero_or_pos with rfl | hn
-  · simpa using hζ
+  · simp
+  -- Use Φ_n = minpoly ℤ (exp(2πi/n)); this root also annihilates Φ_n(X^a).
   have hp := Complex.isPrimitiveRoot_exp n hn.ne'
   have hd := minpoly.isIntegrallyClosed_dvd (hp.isIntegral hn)
     (p := (cyclotomic n ℤ).comp (X ^ a)) (by
@@ -148,10 +148,16 @@ theorem isRoot_cyclotomic_pow_of_coprime {ζ : R}
     simpa [aeval_def, eval₂_eq_eval_map, map_cyclotomic] using
       ((hp.pow_of_coprime a ha).isRoot_cyclotomic hn).eq_zero)
   rw [← cyclotomic_eq_minpoly hp hn] at hd
-  have hdR : cyclotomic n R ∣ (cyclotomic n R).comp (X ^ a) := by
-    simpa only [map_comp, Polynomial.map_pow, map_X, map_cyclotomic_int] using
-      Polynomial.map_dvd (Int.castRingHom R) hd
-  simpa only [isRoot_comp, eval_pow, eval_X] using hζ.dvd hdR
+  simpa only [map_comp, Polynomial.map_pow, map_X, map_cyclotomic_int] using
+    Polynomial.map_dvd (Int.castRingHom R) hd
+
+/-- A power of a cyclotomic root with exponent coprime to `n` is again a cyclotomic
+root over any commutative ring, including in ramified characteristics. -/
+theorem isRoot_cyclotomic_pow_of_coprime {ζ : R}
+    (hζ : (cyclotomic n R).IsRoot ζ) {a : ℕ} (ha : a.Coprime n) :
+    (cyclotomic n R).IsRoot (ζ ^ a) := by
+  simpa only [isRoot_comp, eval_pow, eval_X] using
+    hζ.dvd (cyclotomic_dvd_comp_X_pow_of_coprime ha)
 
 instance : Module.Free R (AdjoinRoot (cyclotomic n R)) :=
   (cyclotomic.monic n R).free_adjoinRoot
