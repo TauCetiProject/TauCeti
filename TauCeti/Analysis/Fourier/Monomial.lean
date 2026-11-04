@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Analysis.Fourier.AddCircleMulti
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
@@ -30,6 +30,10 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
+* `TauCeti.UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
+  `TauCeti.UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
+  monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
+  is `exp (2πi ∑ i, n i * x i)`.
 -/
 
 public section
@@ -146,5 +150,35 @@ theorem integral_fourier_mul_deriv_fourier_comp {F F' : ℝ → ℝ}
   rw [hIBP, hend, sub_self, zero_sub, intervalIntegral.integral_const_mul]
   push_cast
   ring
+
+namespace UnitAddTorus
+
+open _root_.UnitAddTorus
+
+variable {d : Type*} [Fintype d]
+
+/-- A multivariate Fourier monomial turns a sum of points into a product:
+`mFourier n (x + y) = mFourier n x * mFourier n y`. -/
+theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
+    mFourier n (x + y) = mFourier n x * mFourier n y := by
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, fourier_apply_add,
+    Finset.prod_mul_distrib]
+
+/-- The value of the multivariate Fourier monomial `mFourier n` at the image of `x : d → ℝ` is
+`exp (2πi ∑ i, n i * x i)`. -/
+theorem mFourier_coe_apply (n : d → ℤ) (x : d → ℝ) :
+    mFourier n (fun i ↦ (x i : UnitAddCircle)) = cexp (2 * π * I * ∑ i, (n i : ℂ) * x i) := by
+  simp only [mFourier, ContinuousMap.coe_mk, fourier_coe_apply, ← Complex.exp_sum]
+  rw [Finset.mul_sum]
+  refine congrArg cexp (Finset.sum_congr rfl fun i _ ↦ ?_)
+  push_cast
+  ring
+
+/-- Multivariate Fourier monomials take values in the unit circle. -/
+@[simp]
+theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
+  simp [mFourier, norm_prod]
+
+end UnitAddTorus
 
 end TauCeti
