@@ -97,6 +97,18 @@ private theorem mem_map_filter_manifoldMorseIndex_iff [Fintype (criticalPoints �
   rintro ⟨p, hp, rfl⟩
   exact ⟨mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2, hp⟩
 
+/-- A sum of mod-two coefficients over a finite set `S` of critical points vanishes when each
+coefficient counts a set `s p` and these counts add up to `2`. -/
+private theorem sum_eq_zero_of_sum_ncard_eq_two {S : Finset (criticalPoints 𝓘(ℝ, E) f)}
+    {c : criticalPoints 𝓘(ℝ, E) f → ZMod 2} {s : M → Set M}
+    (hc : ∀ p ∈ S, c p = (s p).ncard)
+    (hcount : ∑ x ∈ S.map (Embedding.subtype _), (s x).ncard = 2) :
+    ∑ p ∈ S, c p = 0 := by
+  rw [Finset.sum_map] at hcount
+  simp only [Embedding.coe_subtype] at hcount
+  rw [Finset.sum_congr rfl hc, ← Nat.cast_sum, hcount]
+  exact ZMod.natCast_self 2
+
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M]
 
 /-- The **mod-two fundamental chain** of a Morse function on a compact manifold of dimension `n`:
@@ -237,16 +249,11 @@ private theorem sum_morseBoundaryCoeff_of_eq_finrank [Fintype (criticalPoints �
       manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E), h.morseBoundaryCoeff hf p q = 0 := by
   classical
   by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E
-  · have hcount := sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank h hf
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hq
-      fun _ ↦ mem_map_filter_manifoldMorseIndex_iff
-    rw [Finset.sum_map] at hcount
-    rw [Finset.sum_congr rfl fun p hp ↦
-      h.morseBoundaryCoeff_eq_ncard hf ((Finset.mem_filter.1 hp).2.trans hq.symm),
-      ← Nat.cast_sum]
-    simp only [Embedding.coe_subtype] at hcount
-    rw [hcount]
-    exact ZMod.natCast_self 2
+  · exact sum_eq_zero_of_sum_ncard_eq_two (s := fun x ↦ hX.morseTrajectorySlice x q)
+      (fun p hp ↦ h.morseBoundaryCoeff_eq_ncard hf ((Finset.mem_filter.1 hp).2.trans hq.symm))
+      (sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank h hf
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hq
+        fun _ ↦ mem_map_filter_manifoldMorseIndex_iff)
   · exact Finset.sum_eq_zero fun p hp ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf
       (by rw [(Finset.mem_filter.1 hp).2]; omega)
 
@@ -258,16 +265,11 @@ private theorem sum_morseBoundaryCoeff_of_eq_zero [Fintype (criticalPoints 𝓘(
       manifoldMorseIndex 𝓘(ℝ, E) f q = 0), h.morseBoundaryCoeff hf p q = 0 := by
   classical
   by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 1
-  · have hcount := sum_ncard_morseTrajectorySlice_of_eq_one h hf
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp
-      fun _ ↦ mem_map_filter_manifoldMorseIndex_iff
-    rw [Finset.sum_map] at hcount
-    rw [Finset.sum_congr rfl fun q hq ↦
-      h.morseBoundaryCoeff_eq_ncard hf (by rw [hp, (Finset.mem_filter.1 hq).2]),
-      ← Nat.cast_sum]
-    simp only [Embedding.coe_subtype] at hcount
-    rw [hcount]
-    exact ZMod.natCast_self 2
+  · exact sum_eq_zero_of_sum_ncard_eq_two (s := hX.morseTrajectorySlice p)
+      (fun q hq ↦ h.morseBoundaryCoeff_eq_ncard hf (by rw [hp, (Finset.mem_filter.1 hq).2]))
+      (sum_ncard_morseTrajectorySlice_of_eq_one h hf
+        (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp
+        fun _ ↦ mem_map_filter_manifoldMorseIndex_iff)
   · exact Finset.sum_eq_zero fun q hq ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf
       (by rw [(Finset.mem_filter.1 hq).2]; exact hp)
 
