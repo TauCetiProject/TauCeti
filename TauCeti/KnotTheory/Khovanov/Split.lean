@@ -17,7 +17,10 @@ public import TauCeti.Logic.Basic
 The Frobenius pairing on a circle pairs `1` with `X` and `X` with `1`. On a finite set
 of circles it therefore pairs a labelling with its pointwise complement. We construct this
 perfect pairing using `Module.Basis.equiv` and `Module.Basis.dualBasis`, and define the split
-map along a map of circle sets as the adjoint of `PiTensorProduct.fiberwiseMul`.
+map along a map of circle sets as the adjoint of `PiTensorProduct.fiberwiseMul`. The pairing is
+symmetric, and since complementary labellings have opposite quantum degrees it restricts to a
+perfect pairing between the quantum pieces of degrees `p` and `-p`
+(`TauCeti.Khovanov.circlePieceDuality`).
 
 This construction retains all unaffected circles and makes no choice of circle order. Its
 coefficient formula is the transpose of the merge formula with both labellings complemented.
@@ -98,6 +101,11 @@ theorem circleDuality_apply_eq_repr_mul (x y : CircleTensor R ι) :
     rw [LinearEquiv.coe_coe, circleDuality_circleBasis]
     simp [tprod_mul_tprod]
   exact DFunLike.congr_fun (DFunLike.congr_fun this x) y
+
+/-- The circle pairing is symmetric, since it is the Frobenius form of a commutative algebra. -/
+theorem circleDuality_comm (x y : CircleTensor R ι) :
+    circleDuality R ι x y = circleDuality R ι y x := by
+  rw [circleDuality_apply_eq_repr_mul, circleDuality_apply_eq_repr_mul, mul_comm x y]
 
 /-- The split map along `f`, adjoint to multiplication along its fibres. It maps the tensor
 on `τ` to the tensor on `σ`; a two-element fibre splits that circle. -/
@@ -352,6 +360,41 @@ theorem isHomogeneous_fiberwiseSplit (f : σ → τ) :
     rw [labelingQuantumDegree_not] at hd hp
     omega
   · exact (hl rfl).elim
+
+variable {ι : Type*} [Fintype ι]
+
+variable (ι) in
+/-- The Frobenius pairing restricts to a **perfect pairing between the quantum pieces** of
+degrees `p` and `-p` of a circle tensor: complementary labellings have opposite degrees, so the
+basis of the degree-`p` piece is carried to the dual basis of the degree-`-p` piece
+(`TauCeti.Khovanov.circlePieceDuality_apply`). -/
+noncomputable def circlePieceDuality (p : ℤ) :
+    (circleQuantumGrading R ι).piece p ≃ₗ[R]
+      Module.Dual R ((circleQuantumGrading R ι).piece (-p)) :=
+  (circlePieceBasis R ι p).equiv (circlePieceBasis R ι (-p)).dualBasis
+    { toFun l := ⟨fun i ↦ !l.1 i, by rw [labelingQuantumDegree_not, l.2]⟩
+      invFun k := ⟨fun i ↦ !k.1 i, by rw [labelingQuantumDegree_not, k.2, neg_neg]⟩
+      left_inv l := by simp
+      right_inv k := by simp }
+
+/-- The pairing of the quantum pieces of degrees `p` and `-p` is the Frobenius pairing of the
+whole circle tensor. -/
+@[simp]
+theorem circlePieceDuality_apply {p : ℤ} (x : (circleQuantumGrading R ι).piece p)
+    (y : (circleQuantumGrading R ι).piece (-p)) :
+    circlePieceDuality R ι p x y = circleDuality R ι x y := by
+  suffices h : (circlePieceDuality R ι p).toLinearMap =
+      ((circleQuantumGrading R ι).piece (-p)).subtype.dualMap ∘ₗ
+        (circleDuality R ι).toLinearMap ∘ₗ ((circleQuantumGrading R ι).piece p).subtype from
+    DFunLike.congr_fun (LinearMap.congr_fun h x) y
+  refine (circlePieceBasis R ι p).ext fun l ↦ (circlePieceBasis R ι (-p)).ext fun k ↦ ?_
+  simp only [circlePieceDuality, LinearEquiv.coe_coe, Module.Basis.equiv_apply,
+    Module.Basis.dualBasis_apply_self, LinearMap.coe_comp, Function.comp_apply,
+    Submodule.coe_subtype, LinearMap.dualMap_apply, coe_circlePieceBasis,
+    circleDuality_apply_circleBasis, Module.Basis.repr_self, Finsupp.single_apply]
+  refine if_congr ?_ rfl rfl
+  simp only [Equiv.coe_fn_mk, Subtype.ext_iff, funext_iff]
+  exact forall_congr' fun i ↦ by cases k.1 i <;> cases l.1 i <;> simp
 
 end Grading
 
