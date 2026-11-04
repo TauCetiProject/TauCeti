@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import TauCeti.Algebra.Polynomial.ConjReciprocal
 public import TauCeti.Algebra.Polynomial.Eval.OnSet
 public import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 
 /-!
@@ -290,11 +289,9 @@ variable {m : ℕ}
 coefficient `u⁽ⁿ⁾(0) / n!` of `u` at the centre is `p.coeff n`. -/
 private theorem iteratedDeriv_zero_div_factorial_eq_coeff {p : ℂ[X]}
     (h : EqOn u (fun z => p.eval z) (closedBall 0 1)) (n : ℕ) :
-    iteratedDeriv n u 0 / n ! = p.coeff n := by
-  have hev : u =ᶠ[nhds 0] fun z => p.eval z :=
-    Filter.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos) h
-  rw [hev.iteratedDeriv_eq, Polynomial.iteratedDeriv_eval_zero,
-    mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
+    iteratedDeriv n u 0 / n ! = p.coeff n :=
+  iteratedDeriv_div_factorial_eq_coeff_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos) h) n
 
 /-- **Solutions for odd Maslov index.** For the boundary condition
 `u w = w ^ (2 * m + 1) * conj (u w)`, a solution agrees on the closed disc with

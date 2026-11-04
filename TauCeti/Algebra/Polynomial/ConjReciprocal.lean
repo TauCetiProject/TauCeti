@@ -169,7 +169,7 @@ theorem eq_zero_of_mem_conjReciprocalPolynomials_of_forall_coeff_eq_zero
 polynomials of degree at most `2 * m + 1`. -/
 private noncomputable def lowerCoeff (m : ℕ) :
     conjReciprocalPolynomials (2 * m + 1) →ₗ[ℝ] (Fin (m + 1) → ℂ) :=
-  LinearMap.pi fun j => ((lcoeff ℂ (j : ℕ)).restrictScalars ℝ).comp (Submodule.subtype _)
+  ((toFn (m + 1)).restrictScalars ℝ).comp (Submodule.subtype _)
 
 private theorem lowerCoeff_injective (m : ℕ) : Function.Injective (lowerCoeff m) := by
   refine (injective_iff_map_eq_zero _).mpr fun p hp => Subtype.ext ?_
