@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
@@ -31,8 +32,8 @@ For a map of pairs the inverse can be prescribed on the subspaces. If `h : X ≃
 a homotopy equivalence `h₀ : A ≃ₕ B`, then any `g₀ : B → A` with a homotopy `H₀ : g₀ ∘ h₀ ≃ id`
 extends to a homotopy inverse `g` of `h` with a homotopy `g ∘ h ≃ id` which is `H₀` on `A`
 (`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`). Applied stage by stage,
-this produces strictly compatible inverses and inverse homotopies along a tower of closed
-cofibrations, as needed to compare mapping telescopes with colimits.
+this produces strictly compatible inverses and compatible left-inverse homotopies `g ∘ h ≃ id`
+along a tower of closed cofibrations, as needed to compare mapping telescopes with colimits.
 
 ## Proof
 
@@ -82,22 +83,6 @@ tail is removed by
 public section
 
 noncomputable section
-
-namespace ContinuousMap.HomotopyEquiv
-
-/-- **A left homotopy inverse of a homotopy equivalence is a right homotopy inverse.** If
-`e : X ≃ₕ Y` and `g : Y → X` satisfy `g ∘ e ≃ id`, then also `e ∘ g ≃ id`, since
-`e g ≃ e g e e⁻¹ ≃ e e⁻¹ ≃ id`. -/
-theorem toFun_comp_homotopic_id_of_comp_toFun_homotopic_id {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (e : X ≃ₕ Y) {g : C(Y, X)}
-    (hg : (g.comp e.toFun).Homotopic (ContinuousMap.id X)) :
-    (e.toFun.comp g).Homotopic (ContinuousMap.id Y) := by
-  have h₁ := (Homotopic.refl (e.toFun.comp g)).comp e.right_inv.symm
-  have h₂ := (Homotopic.refl e.toFun).comp (hg.comp (Homotopic.refl e.invFun))
-  simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
-  exact (h₁.trans h₂).trans e.right_inv
-
-end ContinuousMap.HomotopyEquiv
 
 namespace TauCeti
 
