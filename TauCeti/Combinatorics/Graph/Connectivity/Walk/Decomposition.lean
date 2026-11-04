@@ -215,7 +215,7 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
 
 /-- Along any walk visiting a vertex set `S`, there is a first visited vertex of `S`: no vertex of
 `S` other than it appears in the initial segment up to it. -/
-theorem exists_mem_support_forall_mem_support_takeUntil {S : Set α} (p : G.Walk x y)
+theorem exists_mem_support_forall_mem_support_imp_eq {S : Set α} (p : G.Walk x y)
     (hS : ∃ z ∈ p.support, z ∈ S) :
     ∃ z ∈ S, ∃ hz : z ∈ p.support,
       ∀ w ∈ S, w ∈ (p.takeUntil z hz).support → w = z := by

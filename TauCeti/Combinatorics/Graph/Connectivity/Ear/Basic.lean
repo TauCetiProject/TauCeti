@@ -153,11 +153,8 @@ theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWa
     rfl
 
 /-- The graph traced by an ear. -/
-def toGraph (e : G.Ear H) : Graph α β :=
+@[expose] def toGraph (e : G.Ear H) : Graph α β :=
   G.walkGraph e.toWalk.2.2
-
-theorem toGraph_eq (e : G.Ear H) : e.toGraph = G.walkGraph e.toWalk.2.2 :=
-  (rfl)
 
 @[simp]
 theorem vertexSet_toGraph (e : G.Ear H) :
@@ -190,11 +187,8 @@ theorem compatible (e : G.Ear H) : H.Compatible e.toGraph :=
   .of_le_le e.base_le e.toGraph_le
 
 /-- The graph obtained by adjoining an ear to its base. -/
-def add (e : G.Ear H) : Graph α β :=
+@[expose] def add (e : G.Ear H) : Graph α β :=
   e.compatible.union
-
-theorem add_eq (e : G.Ear H) : e.add = e.compatible.union :=
-  (rfl)
 
 @[simp]
 theorem vertexSet_add (e : G.Ear H) : V(e.add) = V(H) ∪ V(e.toGraph) :=
@@ -222,6 +216,11 @@ theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
 theorem add_le (e : G.Ear H) : e.add ≤ G :=
   IsSubgraph.union_le e.base_le e.toGraph_le
 
+/-- Every edge traversed by an ear belongs to the edge set obtained by adjoining the ear. -/
+theorem mem_edgeSet_add_of_mem_edges (e : G.Ear H) {f : β} (hf : f ∈ e.toWalk.2.2.edges) :
+    f ∈ E(e.add) :=
+  e.toGraph_le_add.edgeSet_mono ((e.toWalk.2.2.mem_edgeSet_walkGraph f).mpr hf)
+
 /-- Every edge of an ear is absent from its base graph. -/
 theorem edge_notMem_base (e : G.Ear H) {f : β} (hf : f ∈ e.toWalk.2.2.edges) :
     f ∉ E(H) := by
@@ -239,6 +238,18 @@ theorem endpoints_ne (e : G.Ear H) (he : e.kind = .open) : e.toWalk.1 ≠ e.toWa
 theorem start_mem_base : ∀ e : G.Ear H, e.toWalk.1 ∈ V(H)
   | .open _ _ _ hs _ _ _ _ => hs
   | .closed _ _ _ hs _ _ => hs
+
+/-- Adjoining any ear over an edgeless single-vertex base produces the ear's traced graph. -/
+@[simp]
+theorem add_noEdge_singleton {s : α} (e : G.Ear (Graph.noEdge {s} β)) :
+    e.add = e.toGraph := by
+  refine (Compatible.of_le_le e.add_le e.toGraph_le).ext ?_ (by simp)
+  have hs : e.toWalk.1 = s := by simpa using e.start_mem_base
+  ext x
+  simp only [vertexSet_add, vertexSet_noEdge, vertexSet_toGraph, mem_union, mem_singleton_iff, ← hs,
+    or_iff_right_iff_imp]
+  rintro rfl
+  exact Walk.start_mem_support _
 
 /-- The ending vertex of an ear lies in its base graph. -/
 theorem end_mem_base : ∀ e : G.Ear H, e.toWalk.2.1 ∈ V(H)
@@ -361,6 +372,98 @@ theorem edges_toWalk_ofIsLoopAt {f : β} {s : α} (hHG : H ≤ G) (h : G.IsLoopA
     (ofIsLoopAt hHG h hs hf).toWalk.2.2.edges = [f] := by
   rw [toWalk_ofIsLoopAt, IsLink.edges_toWalk]
 
+/-- Any cycle based at `s` forms a closed ear over the edgeless single-vertex subgraph
+`Graph.noEdge {s} β`. -/
+def ofIsCycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    G.Ear (Graph.noEdge {s} β) :=
+  have hle : G.walkGraph walk ≤ G := walk.walkGraph_le_of_pos <|
+    Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil (Walk.length_eq_zero_iff.mp h)
+  have hs : s ∈ V(G) := hle.vertexSet_mono (by simp [Walk.start_mem_support])
+  .closed (Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr hs)) walk isCycle (by simp)
+    (fun _ _ hxs ↦ by simp [hxs]) (fun _ _ ↦ by simp)
+
+@[simp]
+theorem kind_ofIsCycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (Ear.ofIsCycle walk isCycle).kind = .closed := by
+  rw [ofIsCycle, kind_closed]
+
+@[simp]
+theorem toWalk_ofIsCycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (Ear.ofIsCycle walk isCycle).toWalk = ⟨s, s, walk⟩ := by
+  rw [ofIsCycle, toWalk_closed]
+
+@[simp]
+theorem toGraph_ofIsCycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (Ear.ofIsCycle walk isCycle).toGraph = G.walkGraph walk := by
+  rw [toGraph, toWalk_ofIsCycle]
+
+/-- Adjoining the closed ear of a cycle to its base vertex traces that cycle. -/
+theorem add_ofIsCycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (Ear.ofIsCycle walk isCycle).add = G.walkGraph walk := by
+  simp
+
+/-- Any ambient link outside `E(H)` whose endpoints both lie in `V(H)` yields an ear of `G` over
+`H`: a closed loop ear when the endpoints coincide, and a single-link open ear otherwise. -/
+theorem nonempty_of_isLink (hHG : H ≤ G) {f : β} {s t : α} (hl : G.IsLink f s t)
+    (hs : s ∈ V(H)) (ht : t ∈ V(H)) (hf : f ∉ E(H)) : Nonempty (G.Ear H) := by
+  by_cases hst : s = t
+  · subst hst
+    exact ⟨ofIsLoopAt hHG (isLink_self_iff.mp hl) hs hf⟩
+  · exact ⟨ofIsLink hHG hl hs ht hst hf⟩
+
+/-- If an ambient link `e₀` steps from `x ∈ V(H)` to `y ∉ V(H)` and `y` can reach some vertex of
+`H` in `G.deleteEdges {e₀}`, then `e₀` followed by a first-return path to `V(H)` in
+`G.deleteEdges {e₀}` forms an ear of `G` over `H`. -/
+theorem nonempty_of_isLink_reachable_deleteEdges (hHG : H ≤ G) {e₀ : β} {x y z : α}
+    (hl : G.IsLink e₀ x y) (hxH : x ∈ V(H)) (hyH : y ∉ V(H)) (hzH : z ∈ V(H))
+    (hreach : (G.deleteEdges {e₀}).Reachable y z) : Nonempty (G.Ear H) := by
+  have he₀H : e₀ ∉ E(H) := fun he₀ ↦ hyH (((hHG.isLink_iff he₀).mpr hl).right_mem)
+  -- Extract a path in `G - {e₀}` from `y` to `z` and truncate at its first hit in `H`.
+  obtain ⟨p₀, hp₀⟩ := hreach.exists_isPath
+  let p : G.Walk y z := p₀.mapLe deleteEdges_le
+  have hp : p.IsPath := (Walk.isPath_mapLe deleteEdges_le p₀).mpr hp₀
+  have he₀p : e₀ ∉ p.edges := by
+    intro hm
+    rw [Walk.edges_mapLe_eq_edges] at hm
+    have hm' := p₀.edges_subset_edgeSet hm
+    simp at hm'
+  classical
+  obtain ⟨t, htH, htp, hfirst⟩ :=
+    p.exists_mem_support_forall_mem_support_imp_eq (S := V(H)) ⟨z, p.end_mem_support, hzH⟩
+  let q : G.Walk y t := p.takeUntil t htp
+  have hq : q.IsPath := hp.takeUntil htp
+  -- No edge of the prefix `q` can lie in `E(H)`, since its starting endpoint precedes `t` on `q`.
+  have hq_edges_notMem : ∀ f ∈ q.edges, f ∉ E(H) := by
+    intro f hfq hfH
+    obtain ⟨a, _, hfab, haq, -, hat, -⟩ := hq.exists_isLink_mem_support_ne hfq
+    exact hat (hfirst a (((hHG.isLink_iff hfH).mpr hfab).left_mem) haq)
+  have hcons_edges : ∀ f ∈ (Walk.cons e₀ hl q).edges, f ∉ E(H) := by
+    intro f hf
+    rw [Walk.edges_cons, List.mem_cons] at hf
+    rcases hf with rfl | hfq
+    · exact he₀H
+    · exact hq_edges_notMem f hfq
+  -- Returning to `x` closes a cycle ear; returning to `t ≠ x` gives an open path ear.
+  by_cases hxt : x = t
+  · subst hxt
+    have he₀q : e₀ ∉ q.edges := fun hqe₀ ↦ he₀p (p.edges_takeUntil_subset_edges htp hqe₀)
+    have hcyc : (Walk.cons e₀ hl q).IsCycle :=
+      (Walk.cons_isCycle_iff e₀ hl q).mpr ⟨hq, he₀q⟩
+    refine ⟨.closed hHG (Walk.cons e₀ hl q) hcyc hxH (fun w hw hwx hwH ↦ ?_) hcons_edges⟩
+    rw [Walk.support_cons, List.mem_cons] at hw
+    rcases hw with rfl | hwq
+    · exact hwx rfl
+    · exact hwx (hfirst w hwH hwq)
+  · have hxq : x ∉ q.support := fun hxq ↦ hxt (hfirst x hxH hxq)
+    have hpath : (Walk.cons e₀ hl q).IsPath :=
+      (Walk.isPath_cons e₀ hl q).mpr ⟨hq, hxq⟩
+    refine ⟨.open hHG (Walk.cons e₀ hl q) hpath hxH htH hxt
+      (fun w hw hwx hwt hwH ↦ ?_) hcons_edges⟩
+    rw [Walk.support_cons, List.mem_cons] at hw
+    rcases hw with rfl | hwq
+    · exact hwx rfl
+    · exact hwt (hfirst w hwH hwq)
+
 end Ear
 
 /-- The possible initial graphs of an ear decomposition: one actual vertex or the graph traced by
@@ -375,9 +478,13 @@ namespace EarStart
 variable {G H : Graph α β}
 
 /-- Whether the initial graph is a cycle rather than a single vertex. -/
-def IsCycle : G.EarStart H → Prop
+@[expose] def IsCycle : G.EarStart H → Prop
   | .vertex _ => False
   | .cycle _ _ => True
+
+instance instDecidableIsCycle : ∀ start : G.EarStart H, Decidable start.IsCycle
+  | .vertex _ => isFalse not_false
+  | .cycle _ _ => isTrue trivial
 
 @[simp]
 theorem isCycle_vertex (v : V(G)) : (EarStart.vertex v).IsCycle ↔ False :=
@@ -390,8 +497,11 @@ theorem isCycle_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
 
 private theorem isCycle_transport {K L : Graph α β} (h : K = L) (start : G.EarStart K) :
     (h ▸ start).IsCycle ↔ start.IsCycle := by
-  subst h
-  rfl
+  subst h; rfl
+
+private theorem heq_transport {K L : Graph α β} (h : K = L) (start : G.EarStart K) :
+    HEq (h ▸ start) start := by
+  subst h; rfl
 
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
@@ -633,7 +743,7 @@ theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
 theorem initial_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
     (d.snoc ear).initial = d.initial := by
   have h0 : (0 : Fin ((d.snoc ear).length + 1)) =
-      (Fin.cast (length_snoc d ear).symm 0).castSucc := rfl
+      (Fin.cast (length_snoc d ear).symm 0).castSucc := Fin.ext (by simp)
   rw [initial_eq_graphAfter, h0, graphAfter_snoc_castSucc, ← initial_eq_graphAfter]
 
 @[simp]
@@ -827,7 +937,7 @@ theorem graphAfter_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
 theorem initial_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
     (d.prefix i).initial = d.initial := by
   have h0 : (0 : Fin ((d.prefix i).length + 1)) =
-      Fin.cast (congrArg (· + 1) (length_prefix d i).symm) 0 := rfl
+      Fin.cast (congrArg (· + 1) (length_prefix d i).symm) 0 := Fin.ext (by simp)
   rw [initial_eq_graphAfter, h0, graphAfter_prefix, Fin.castLE_zero, ← initial_eq_graphAfter]
 
 /-- Prefixing retains the original ears before the chosen index. -/
@@ -860,17 +970,17 @@ theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen)
 
 /-! ### Vertex and edge coverage -/
 
-/-- The actual vertices of the `i`-th stage graph are those of the initial graph together with
-those traced by the preceding ears. -/
-theorem vertexSet_graphAfter_eq_union_biUnion (d : G.EarDecomposition H)
+private theorem set_graphAfter_eq_union_biUnion {γ : Type*} (d : G.EarDecomposition H)
+    (f : Graph α β → Set γ)
+    (hadd : ∀ {K : Graph α β} (e : G.Ear K), f e.add = f K ∪ f e.toGraph)
     (i : Fin (d.length + 1)) :
-    V(d.graphAfter i) =
-      V(d.initial) ∪ ⋃ (j : Fin d.length) (_ : j.castSucc < i), V((d.earAt j).2.toGraph) := by
+    f (d.graphAfter i) =
+      f d.initial ∪ ⋃ (j : Fin d.length) (_ : j.castSucc < i), f (d.earAt j).2.toGraph := by
   induction i using Fin.induction with
   | zero =>
       simp
   | succ k ih =>
-      rw [d.graphAfter_succ, Ear.vertexSet_add, congrArg vertexSet (d.earAt_fst k), ih]
+      rw [d.graphAfter_succ, hadd, congrArg f (d.earAt_fst k), ih]
       ext x
       simp only [mem_union, mem_iUnion]
       constructor
@@ -885,6 +995,14 @@ theorem vertexSet_graphAfter_eq_union_biUnion (d : G.EarDecomposition H)
           · exact Or.inl (Or.inr ⟨j, Fin.castSucc_lt_castSucc_iff.mpr hjk, hxj⟩)
           · exact Or.inr hxj
 
+/-- The actual vertices of the `i`-th stage graph are those of the initial graph together with
+those traced by the preceding ears. -/
+theorem vertexSet_graphAfter_eq_union_biUnion (d : G.EarDecomposition H)
+    (i : Fin (d.length + 1)) :
+    V(d.graphAfter i) =
+      V(d.initial) ∪ ⋃ (j : Fin d.length) (_ : j.castSucc < i), V((d.earAt j).2.toGraph) :=
+  d.set_graphAfter_eq_union_biUnion vertexSet (fun e ↦ e.vertexSet_add) i
+
 /-- An ear decomposition covers every actual vertex of its final graph by its initial graph and
 displayed ears. -/
 theorem vertexSet_eq_union_iUnion (d : G.EarDecomposition H) :
@@ -897,25 +1015,8 @@ traced by the preceding ears. -/
 theorem edgeSet_graphAfter_eq_union_biUnion (d : G.EarDecomposition H)
     (i : Fin (d.length + 1)) :
     E(d.graphAfter i) =
-      E(d.initial) ∪ ⋃ (j : Fin d.length) (_ : j.castSucc < i), E((d.earAt j).2.toGraph) := by
-  induction i using Fin.induction with
-  | zero =>
-      simp
-  | succ k ih =>
-      rw [d.graphAfter_succ, Ear.edgeSet_add, congrArg edgeSet (d.earAt_fst k), ih]
-      ext e
-      simp only [mem_union, mem_iUnion]
-      constructor
-      · rintro ((he | ⟨j, hj, hej⟩) | hek)
-        · exact Or.inl he
-        · exact Or.inr ⟨j, hj.trans k.castSucc_lt_succ, hej⟩
-        · exact Or.inr ⟨k, k.castSucc_lt_succ, hek⟩
-      · rintro (he | ⟨j, hj, hej⟩)
-        · exact Or.inl (Or.inl he)
-        · have hjk : j ≤ k := not_lt.mp fun hkj ↦ hj.not_ge (Fin.succ_le_castSucc_iff.mpr hkj)
-          rcases lt_or_eq_of_le hjk with hjk | rfl
-          · exact Or.inl (Or.inr ⟨j, Fin.castSucc_lt_castSucc_iff.mpr hjk, hej⟩)
-          · exact Or.inr hej
+      E(d.initial) ∪ ⋃ (j : Fin d.length) (_ : j.castSucc < i), E((d.earAt j).2.toGraph) :=
+  d.set_graphAfter_eq_union_biUnion edgeSet (fun e ↦ e.edgeSet_add) i
 
 /-- An ear decomposition covers every actual edge of its final graph by its initial graph and
 displayed ears. -/
@@ -971,59 +1072,176 @@ theorem existsUnique_mem_edges_walkAt_of_not_isCycle {d : G.EarDecomposition H}
 
 /-! ### Replacing the initial stage and normalizing cycle starts -/
 
-private def replaceInitialAux (d : G.EarDecomposition H) (d₀ : G.EarDecomposition d.initial) :
-    (i : Fin (d.length + 1)) → G.EarDecomposition (d.graphAfter i) :=
-  Fin.induction (d₀.copy d.initial_eq_graphAfter) fun i ih ↦
-    ((ih.copy (d.earAt_fst i).symm).snoc (d.earAt i).2).copy (d.graphAfter_succ i).symm
+private def replaceInitialGraphAfter (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (k : Fin (d₀.length + d.length + 1)) : Graph α β :=
+  if hk : k.val ≤ d₀.length then
+    d₀.graphAfter ⟨k.val, Nat.lt_succ_of_le hk⟩
+  else
+    d.graphAfter ⟨k.val - d₀.length, by omega⟩
 
-private theorem length_replaceInitialAux (d : G.EarDecomposition H)
-    (d₀ : G.EarDecomposition d.initial) (i : Fin (d.length + 1)) :
-    (d.replaceInitialAux d₀ i).length = d₀.length + i.val := by
-  induction i using Fin.induction with
-  | zero => simp [replaceInitialAux]
-  | succ k ih =>
-      unfold replaceInitialAux at ih ⊢
-      rw [Fin.induction_succ, length_copy, length_snoc, length_copy, ih, Fin.val_castSucc,
-        Fin.val_succ, Nat.add_assoc]
+private theorem replaceInitialGraphAfter_left (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin (d₀.length + 1)) :
+    replaceInitialGraphAfter d d₀ ⟨i.val, by omega⟩ = d₀.graphAfter i := by
+  simp [replaceInitialGraphAfter, Nat.le_of_lt_succ i.isLt]
 
-private theorem initial_replaceInitialAux (d : G.EarDecomposition H)
+private theorem replaceInitialGraphAfter_right (d : G.EarDecomposition H)
     (d₀ : G.EarDecomposition d.initial) (i : Fin (d.length + 1)) :
-    (d.replaceInitialAux d₀ i).initial = d₀.initial := by
-  induction i using Fin.induction with
-  | zero => rfl
-  | succ k ih =>
-      unfold replaceInitialAux at ih ⊢
-      rw [Fin.induction_succ, initial_copy, initial_snoc, initial_copy, ih]
-
-private theorem start_isCycle_replaceInitialAux (d : G.EarDecomposition H)
-    (d₀ : G.EarDecomposition d.initial) (i : Fin (d.length + 1)) :
-    (d.replaceInitialAux d₀ i).start.IsCycle ↔ d₀.start.IsCycle := by
-  induction i using Fin.induction with
-  | zero => exact Iff.rfl
-  | succ k ih =>
-      unfold replaceInitialAux at ih ⊢
-      rw [Fin.induction_succ, start_isCycle_copy, start_isCycle_snoc, start_isCycle_copy, ih]
+    replaceInitialGraphAfter d d₀ ⟨d₀.length + i.val, by omega⟩ = d.graphAfter i := by
+  simp only [replaceInitialGraphAfter]
+  split_ifs with hk
+  · obtain rfl : i = 0 := Fin.ext (by simpa using hk)
+    have hlast : (⟨d₀.length + (0 : Fin (d.length + 1)).val, Nat.lt_succ_of_le hk⟩ :
+        Fin (d₀.length + 1)) = Fin.last d₀.length := Fin.ext (by simp)
+    rw [hlast, d₀.graphAfter_last, d.initial_eq_graphAfter]
+  · exact congrArg d.graphAfter (Fin.ext (by simp))
 
 /-- Replay the ears of `d` on top of an ear decomposition of its initial graph. -/
 def replaceInitial (d : G.EarDecomposition H) (d₀ : G.EarDecomposition d.initial) :
-    G.EarDecomposition H :=
-  (d.replaceInitialAux d₀ (Fin.last d.length)).copy d.graphAfter_last
+    G.EarDecomposition H where
+  length := d₀.length + d.length
+  graphAfter := replaceInitialGraphAfter d d₀
+  start := (replaceInitialGraphAfter_left d d₀ 0).symm ▸ d₀.start
+  earAt := Fin.addCases d₀.earAt d.earAt
+  earAt_fst k := by
+    refine k.addCases (fun i ↦ ?_) (fun i ↦ ?_)
+    · rw [Fin.addCases_left, d₀.earAt_fst i]
+      have hk : (Fin.castAdd d.length i).castSucc =
+          (⟨i.castSucc.val, by omega⟩ : Fin (d₀.length + d.length + 1)) := Fin.ext (by simp)
+      rw [hk, replaceInitialGraphAfter_left]
+    · rw [Fin.addCases_right, d.earAt_fst i]
+      have hk : (Fin.natAdd d₀.length i).castSucc =
+          (⟨d₀.length + i.castSucc.val, by omega⟩ : Fin (d₀.length + d.length + 1)) :=
+        Fin.ext (by simp)
+      rw [hk, replaceInitialGraphAfter_right]
+  graphAfter_succ k := by
+    refine k.addCases (fun i ↦ ?_) (fun i ↦ ?_)
+    · rw [Fin.addCases_left, ← d₀.graphAfter_succ i]
+      have hk : (Fin.castAdd d.length i).succ =
+          (⟨i.succ.val, by omega⟩ : Fin (d₀.length + d.length + 1)) := Fin.ext (by simp)
+      rw [hk, replaceInitialGraphAfter_left]
+    · rw [Fin.addCases_right, ← d.graphAfter_succ i]
+      have hk : (Fin.natAdd d₀.length i).succ =
+          (⟨d₀.length + i.succ.val, by omega⟩ : Fin (d₀.length + d.length + 1)) :=
+        Fin.ext (by simp [Nat.add_assoc])
+      rw [hk, replaceInitialGraphAfter_right]
+  graphAfter_last := by
+    have hlast : Fin.last (d₀.length + d.length) =
+        (⟨d₀.length + (Fin.last d.length).val, by omega⟩ : Fin (d₀.length + d.length + 1)) :=
+      Fin.ext (by simp)
+    rw [hlast, replaceInitialGraphAfter_right, d.graphAfter_last]
 
 @[simp]
 theorem length_replaceInitial (d : G.EarDecomposition H) (d₀ : G.EarDecomposition d.initial) :
-    (d.replaceInitial d₀).length = d₀.length + d.length := by
-  rw [replaceInitial, length_copy, length_replaceInitialAux, Fin.val_last]
+    (d.replaceInitial d₀).length = d₀.length + d.length := (rfl)
+
+/-- Replacing the initial stage retains every stage graph of `d₀`. -/
+@[simp]
+theorem graphAfter_replaceInitial_castLE (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin (d₀.length + 1)) :
+    (d.replaceInitial d₀).graphAfter
+      (Fin.castLE (Nat.succ_le_succ ((Nat.le_add_right d₀.length d.length).trans_eq
+        (d.length_replaceInitial d₀).symm)) i) = d₀.graphAfter i :=
+  replaceInitialGraphAfter_left d d₀ i
+
+/-- Replacing the initial stage shifts every stage graph of `d` by `d₀.length`. -/
+@[simp]
+theorem graphAfter_replaceInitial_natAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin (d.length + 1)) :
+    (d.replaceInitial d₀).graphAfter
+      (Fin.cast ((Nat.add_assoc d₀.length d.length 1).symm.trans
+        (congrArg (· + 1) (d.length_replaceInitial d₀).symm)) (Fin.natAdd d₀.length i)) =
+      d.graphAfter i :=
+  replaceInitialGraphAfter_right d d₀ i
 
 /-- Replacing the initial stage sets the initial graph to that of `d₀`. -/
 theorem initial_replaceInitial (d : G.EarDecomposition H) (d₀ : G.EarDecomposition d.initial) :
     (d.replaceInitial d₀).initial = d₀.initial := by
-  rw [replaceInitial, initial_copy, initial_replaceInitialAux]
+  have h0 : (0 : Fin ((d.replaceInitial d₀).length + 1)) =
+      Fin.castLE (Nat.succ_le_succ ((Nat.le_add_right d₀.length d.length).trans_eq
+        (d.length_replaceInitial d₀).symm)) 0 := Fin.ext (by simp)
+  rw [initial_eq_graphAfter, h0, graphAfter_replaceInitial_castLE, ← initial_eq_graphAfter]
+
+private theorem heq_start_replaceInitial (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) :
+    HEq (d.replaceInitial d₀).start d₀.start :=
+  EarStart.heq_transport (replaceInitialGraphAfter_left d d₀ 0).symm d₀.start
 
 @[simp]
 theorem start_isCycle_replaceInitial (d : G.EarDecomposition H)
     (d₀ : G.EarDecomposition d.initial) :
-    (d.replaceInitial d₀).start.IsCycle ↔ d₀.start.IsCycle := by
-  rw [replaceInitial, start_isCycle_copy, start_isCycle_replaceInitialAux]
+    (d.replaceInitial d₀).start.IsCycle ↔ d₀.start.IsCycle :=
+  EarStart.isCycle_transport (replaceInitialGraphAfter_left d d₀ 0).symm d₀.start
+
+/-- Replacing the initial stage retains every ear of `d₀` in the prefix positions. -/
+@[simp]
+theorem earAt_replaceInitial_castAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin d₀.length) :
+    (d.replaceInitial d₀).earAt
+      (Fin.cast (d.length_replaceInitial d₀).symm (Fin.castAdd d.length i)) =
+      d₀.earAt i := by
+  change Fin.addCases d₀.earAt d.earAt (Fin.cast rfl (Fin.castAdd d.length i)) = d₀.earAt i
+  rw [Fin.cast_eq_self, Fin.addCases_left]
+
+/-- Replacing the initial stage shifts every ear of `d` by `d₀.length`. -/
+@[simp]
+theorem earAt_replaceInitial_natAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin d.length) :
+    (d.replaceInitial d₀).earAt
+      (Fin.cast (d.length_replaceInitial d₀).symm (Fin.natAdd d₀.length i)) =
+      d.earAt i := by
+  change Fin.addCases d₀.earAt d.earAt (Fin.cast rfl (Fin.natAdd d₀.length i)) = d.earAt i
+  rw [Fin.cast_eq_self, Fin.addCases_right]
+
+/-- Replacing the initial stage retains the kind of every ear of `d₀`. -/
+theorem kindAt_replaceInitial_castAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin d₀.length) :
+    (d.replaceInitial d₀).kindAt
+      (Fin.cast (d.length_replaceInitial d₀).symm (Fin.castAdd d.length i)) =
+      d₀.kindAt i := by
+  rw [kindAt_eq, earAt_replaceInitial_castAdd, ← kindAt_eq]
+
+/-- Replacing the initial stage retains the kind of every shifted ear of `d`. -/
+theorem kindAt_replaceInitial_natAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin d.length) :
+    (d.replaceInitial d₀).kindAt
+      (Fin.cast (d.length_replaceInitial d₀).symm (Fin.natAdd d₀.length i)) =
+      d.kindAt i := by
+  rw [kindAt_eq, earAt_replaceInitial_natAdd, ← kindAt_eq]
+
+/-- Replacing the initial stage retains the walk of every ear of `d₀`. -/
+theorem walkAt_replaceInitial_castAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin d₀.length) :
+    (d.replaceInitial d₀).walkAt
+      (Fin.cast (d.length_replaceInitial d₀).symm (Fin.castAdd d.length i)) =
+      d₀.walkAt i := by
+  rw [walkAt_eq, earAt_replaceInitial_castAdd, ← walkAt_eq]
+
+/-- Replacing the initial stage retains the walk of every shifted ear of `d`. -/
+theorem walkAt_replaceInitial_natAdd (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) (i : Fin d.length) :
+    (d.replaceInitial d₀).walkAt
+      (Fin.cast (d.length_replaceInitial d₀).symm (Fin.natAdd d₀.length i)) =
+      d.walkAt i := by
+  rw [walkAt_eq, earAt_replaceInitial_natAdd, ← walkAt_eq]
+
+/-- Replacing the initial stage yields an open ear decomposition exactly when `d₀` is open and
+every ear of `d` is open. -/
+@[simp]
+theorem isOpen_replaceInitial (d : G.EarDecomposition H)
+    (d₀ : G.EarDecomposition d.initial) :
+    (d.replaceInitial d₀).IsOpen ↔ d₀.IsOpen ∧ ∀ i, d.kindAt i = .open := by
+  rw [isOpen_iff, isOpen_iff, start_isCycle_replaceInitial, and_assoc]
+  refine and_congr_right fun _ ↦ ⟨fun hk ↦ ⟨fun i ↦ ?_, fun i ↦ ?_⟩, fun ⟨hk₀, hk⟩ j ↦ ?_⟩
+  · simpa only [kindAt_replaceInitial_castAdd] using
+      hk (Fin.cast (d.length_replaceInitial d₀).symm (Fin.castAdd d.length i))
+  · simpa only [kindAt_replaceInitial_natAdd] using
+      hk (Fin.cast (d.length_replaceInitial d₀).symm (Fin.natAdd d₀.length i))
+  · have hall : ∀ k : Fin (d₀.length + d.length),
+        (d.replaceInitial d₀).kindAt (Fin.cast (d.length_replaceInitial d₀).symm k) = .open :=
+      fun k ↦ k.addCases
+        (fun i ↦ (d.kindAt_replaceInitial_castAdd d₀ i).trans (hk₀ i))
+        (fun i ↦ (d.kindAt_replaceInitial_natAdd d₀ i).trans (hk i))
+    simpa using hall (Fin.cast (d.length_replaceInitial d₀) j)
 
 end EarDecomposition
 
@@ -1036,25 +1254,42 @@ cycle start becomes a single-vertex start followed by one closed ear. -/
 def toVertexDecomposition : G.EarStart H → G.EarDecomposition H
   | .vertex v => .vertex v
   | .cycle (s := s) walk isCycle =>
-      have hle : G.walkGraph walk ≤ G := walk.walkGraph_le_of_pos <|
-        Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil (Walk.length_eq_zero_iff.mp h)
       have hs : s ∈ V(G) :=
-        hle.vertexSet_mono (by simp [Walk.vertexSet_walkGraph, walk.start_mem_support])
-      have hs₀ : s ∈ V(Graph.noEdge {s} β) := by simp
-      let ear : G.Ear (Graph.noEdge {s} β) :=
-        .closed (Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr hs)) walk isCycle hs₀
-          (fun _ _ hxs ↦ by simp [hxs]) (fun _ _ ↦ by simp)
-      have hw : ear.toWalk = ⟨s, s, walk⟩ := Ear.toWalk_closed _ _ _ _ _ _
-      have hadd : ear.add = G.walkGraph walk := by
-        refine (Compatible.of_le_le ear.add_le hle).ext ?_ ?_
-        · ext x
-          rw [Ear.vertexSet_add, vertexSet_noEdge, Ear.vertexSet_toGraph, hw,
-            Walk.vertexSet_walkGraph, mem_union, mem_singleton_iff, mem_ofPred_eq]
-          exact ⟨fun h ↦ h.elim (fun hx ↦ hx.symm ▸ walk.start_mem_support) id, Or.inr⟩
-        · ext e
-          rw [Ear.edgeSet_add, edgeSet_noEdge, empty_union, Ear.edgeSet_toGraph, hw,
-            Walk.edgeSet_walkGraph]
-      ((EarDecomposition.vertex ⟨s, hs⟩).snoc ear).copy hadd
+        (Ear.ofIsCycle walk isCycle).toGraph_le.vertexSet_mono
+          (by simp [Walk.start_mem_support])
+      ((EarDecomposition.vertex ⟨s, hs⟩).snoc (Ear.ofIsCycle walk isCycle)).copy
+        (Ear.add_ofIsCycle walk isCycle)
+
+@[simp]
+theorem toVertexDecomposition_vertex (v : V(G)) :
+    (EarStart.vertex v).toVertexDecomposition = .vertex v := (rfl)
+
+/-- A cycle start normalizes to a length-`1` vertex-started decomposition, whereas a vertex start
+has length `0`. -/
+theorem length_toVertexDecomposition (start : G.EarStart H) :
+    start.toVertexDecomposition.length = if start.IsCycle then 1 else 0 := by
+  cases start <;> rfl
+
+@[simp]
+theorem length_toVertexDecomposition_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (EarStart.cycle walk isCycle).toVertexDecomposition.length = 1 := (rfl)
+
+/-- Normalizing a cycle start sets the initial graph to its base vertex without edges. -/
+theorem initial_toVertexDecomposition_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (EarStart.cycle walk isCycle).toVertexDecomposition.initial = Graph.noEdge {s} β := by
+  unfold toVertexDecomposition
+  rw [EarDecomposition.initial_copy, EarDecomposition.initial_snoc,
+    EarDecomposition.initial_vertex]
+
+/-- The single ear of the normalized decomposition of a cycle start is `Ear.ofIsCycle`. -/
+@[simp]
+theorem earAt_toVertexDecomposition_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (EarStart.cycle walk isCycle).toVertexDecomposition.earAt
+      (Fin.cast (length_toVertexDecomposition_cycle walk isCycle).symm 0) =
+      ⟨Graph.noEdge {s} β, Ear.ofIsCycle walk isCycle⟩ := by
+  change Fin.lastCases (⟨Graph.noEdge {s} β, Ear.ofIsCycle walk isCycle⟩ : Σ K, G.Ear K) Fin.elim0
+    (Fin.last 0) = (⟨Graph.noEdge {s} β, Ear.ofIsCycle walk isCycle⟩ : Σ K, G.Ear K)
+  exact Fin.lastCases_last
 
 @[simp]
 theorem not_start_isCycle_toVertexDecomposition (start : G.EarStart H) :
@@ -1066,11 +1301,32 @@ theorem not_start_isCycle_toVertexDecomposition (start : G.EarStart H) :
       rw [EarDecomposition.start_isCycle_copy, EarDecomposition.start_isCycle_snoc]
       exact EarDecomposition.not_start_isCycle_vertex _
 
+private theorem toVertexDecomposition_of_not_isCycle {K : Graph α β} (start : G.EarStart K)
+    (h : ¬ start.IsCycle) :
+    start.toVertexDecomposition.length = 0 ∧
+      start.toVertexDecomposition.initial = K ∧
+      HEq start.toVertexDecomposition.start start := by
+  cases start with
+  | vertex v => exact ⟨rfl, rfl, HEq.rfl⟩
+  | cycle _ _ => exact False.elim (h trivial)
+
+/-- Every cycle-started `EarStart` is given by an underlying cycle in `G`. -/
+theorem exists_cycle_of_isCycle {K : Graph α β} {start : G.EarStart K} (h : start.IsCycle) :
+    ∃ (s : α) (walk : G.Walk s s) (isCycle : walk.IsCycle),
+      K = G.walkGraph walk ∧ HEq start (EarStart.cycle walk isCycle) := by
+  cases start with
+  | vertex _ => exact False.elim h
+  | cycle walk isCycle => exact ⟨_, walk, isCycle, rfl, HEq.rfl⟩
+
 end EarStart
 
 namespace EarDecomposition
 
 variable {G H : Graph α β}
+
+private theorem heq_fun_fin {n m : ℕ} {X : Sort*} {f : Fin n → X} {g : Fin m → X} (h : n = m)
+    (hfg : ∀ j : Fin m, f (Fin.cast h.symm j) = g j) : HEq f g := by
+  subst h; exact heq_of_eq (funext hfg)
 
 /-- Normalize any ear decomposition so that it starts from a single vertex, turning an initial
 cycle into a first closed ear. -/
@@ -1083,6 +1339,151 @@ theorem not_start_isCycle_toVertexStart (d : G.EarDecomposition H) :
   rw [toVertexStart, start_isCycle_replaceInitial, start_isCycle_copy]
   exact d.start.not_start_isCycle_toVertexDecomposition
 
+/-- Normalizing to a vertex start adds one ear when `d` starts at a cycle and keeps the length
+unchanged otherwise. -/
+theorem length_toVertexStart (d : G.EarDecomposition H) :
+    d.toVertexStart.length = (if d.start.IsCycle then 1 else 0) + d.length := by
+  rw [toVertexStart, length_replaceInitial, length_copy, d.start.length_toVertexDecomposition]
+
+/-- Normalizing a vertex-started decomposition preserves its length. -/
+theorem length_toVertexStart_of_not_isCycle {d : G.EarDecomposition H} (h : ¬ d.start.IsCycle) :
+    d.toVertexStart.length = d.length := by
+  simp [d.length_toVertexStart, h]
+
+/-- Normalizing a cycle-started decomposition increases its length by one. -/
+theorem length_toVertexStart_of_isCycle {d : G.EarDecomposition H} (h : d.start.IsCycle) :
+    d.toVertexStart.length = 1 + d.length := by
+  simp [d.length_toVertexStart, h]
+
+/-- The initial graph of `d.toVertexStart` is the single-vertex base of `d.start`. -/
+theorem initial_toVertexStart (d : G.EarDecomposition H) :
+    d.toVertexStart.initial = d.start.toVertexDecomposition.initial := by
+  rw [toVertexStart, initial_replaceInitial, initial_copy]
+
+/-- Normalizing a decomposition that already starts from a single vertex leaves it unchanged. -/
+theorem toVertexStart_eq_self {d : G.EarDecomposition H} (h : ¬ d.start.IsCycle) :
+    d.toVertexStart = d := by
+  obtain ⟨hlen₀, _, hstart₀⟩ := EarStart.toVertexDecomposition_of_not_isCycle d.start h
+  have hlen : d.toVertexStart.length = d.length := d.length_toVertexStart_of_not_isCycle h
+  let d₀ := d.start.toVertexDecomposition.copy d.initial_eq_graphAfter.symm
+  refine ext d.toVertexStart d hlen
+    (heq_fun_fin (congrArg (· + 1) hlen) fun i ↦ ?_)
+    ((d.heq_start_replaceInitial d₀).trans hstart₀)
+    (heq_fun_fin hlen fun i ↦ ?_)
+  · change (d.replaceInitial d₀).graphAfter _ = d.graphAfter i
+    have hi : Fin.cast (congrArg (· + 1) hlen.symm) i =
+        Fin.cast ((Nat.add_assoc d₀.length d.length 1).symm.trans
+          (congrArg (· + 1) (d.length_replaceInitial d₀).symm))
+          (Fin.natAdd d₀.length i) := Fin.ext (by simp [d₀, hlen₀])
+    rw [hi]
+    exact d.graphAfter_replaceInitial_natAdd d₀ i
+  · change (d.replaceInitial d₀).earAt _ = d.earAt i
+    have hi : Fin.cast hlen.symm i =
+        Fin.cast (d.length_replaceInitial d₀).symm (Fin.natAdd d₀.length i) :=
+      Fin.ext (by simp [d₀, hlen₀])
+    rw [hi]
+    exact d.earAt_replaceInitial_natAdd d₀ i
+
+/-- Every original stage graph of `d` appears at the corresponding shifted index in
+`d.toVertexStart`. -/
+theorem graphAfter_toVertexStart_natAdd (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
+    d.toVertexStart.graphAfter
+      (Fin.cast ((Nat.add_assoc _ d.length 1).symm.trans
+        (congrArg (· + 1) d.length_toVertexStart.symm))
+        (Fin.natAdd (if d.start.IsCycle then 1 else 0) i)) = d.graphAfter i := by
+  let d₀ := d.start.toVertexDecomposition.copy d.initial_eq_graphAfter.symm
+  change (d.replaceInitial d₀).graphAfter _ = d.graphAfter i
+  have hi : Fin.cast ((Nat.add_assoc _ d.length 1).symm.trans
+        (congrArg (· + 1) d.length_toVertexStart.symm))
+        (Fin.natAdd (if d.start.IsCycle then 1 else 0) i) =
+      Fin.cast ((Nat.add_assoc d₀.length d.length 1).symm.trans
+        (congrArg (· + 1) (d.length_replaceInitial d₀).symm))
+        (Fin.natAdd d₀.length i) :=
+    Fin.ext (by simp [d₀, d.start.length_toVertexDecomposition])
+  rw [hi]
+  exact d.graphAfter_replaceInitial_natAdd d₀ i
+
+/-- Every original ear of `d` appears at the corresponding shifted index in `d.toVertexStart`. -/
+theorem earAt_toVertexStart_natAdd (d : G.EarDecomposition H) (i : Fin d.length) :
+    d.toVertexStart.earAt
+      (Fin.cast d.length_toVertexStart.symm
+        (Fin.natAdd (if d.start.IsCycle then 1 else 0) i)) = d.earAt i := by
+  let d₀ := d.start.toVertexDecomposition.copy d.initial_eq_graphAfter.symm
+  change (d.replaceInitial d₀).earAt _ = d.earAt i
+  have hi : Fin.cast d.length_toVertexStart.symm
+        (Fin.natAdd (if d.start.IsCycle then 1 else 0) i) =
+      Fin.cast (d.length_replaceInitial d₀).symm (Fin.natAdd d₀.length i) :=
+    Fin.ext (by simp [d₀, d.start.length_toVertexDecomposition])
+  rw [hi]
+  exact d.earAt_replaceInitial_natAdd d₀ i
+
+private theorem toVertexDecomposition_of_heq_cycle {K : Graph α β} (start : G.EarStart K)
+    {s : α} {walk : G.Walk s s} {isCycle : walk.IsCycle}
+    (hK : K = G.walkGraph walk) (hstart : HEq start (EarStart.cycle walk isCycle)) :
+    start.toVertexDecomposition.initial = Graph.noEdge {s} β ∧
+      ∃ hlen : start.toVertexDecomposition.length = 1,
+        start.toVertexDecomposition.earAt (Fin.cast hlen.symm 0) =
+          ⟨Graph.noEdge {s} β, Ear.ofIsCycle walk isCycle⟩ := by
+  subst hK
+  cases eq_of_heq hstart
+  exact ⟨EarStart.initial_toVertexDecomposition_cycle walk isCycle, rfl,
+    EarStart.earAt_toVertexDecomposition_cycle walk isCycle⟩
+
+/-- When `d` starts from a cycle, `d.toVertexStart` starts at the cycle's base vertex and its first
+ear is the closed ear formed by that initial cycle. -/
+theorem exists_cycle_earAt_toVertexStart_zero {d : G.EarDecomposition H} (h : d.start.IsCycle) :
+    ∃ (s : α) (walk : G.Walk s s) (isCycle : walk.IsCycle),
+      d.initial = G.walkGraph walk ∧
+      d.toVertexStart.initial = Graph.noEdge {s} β ∧
+      d.toVertexStart.earAt
+        (Fin.cast (d.length_toVertexStart_of_isCycle h).symm (Fin.castAdd d.length 0)) =
+        ⟨Graph.noEdge {s} β, Ear.ofIsCycle walk isCycle⟩ := by
+  obtain ⟨s, walk, isCycle, hK, hheq⟩ := EarStart.exists_cycle_of_isCycle h
+  obtain ⟨hinit₀, hlen₀, hear₀⟩ := toVertexDecomposition_of_heq_cycle d.start hK hheq
+  let d₀ := d.start.toVertexDecomposition.copy d.initial_eq_graphAfter.symm
+  refine ⟨s, walk, isCycle, d.initial_eq_graphAfter.trans hK,
+    d.initial_toVertexStart.trans hinit₀, ?_⟩
+  change (d.replaceInitial d₀).earAt _ = _
+  have hd₀ : d₀.length = 1 := hlen₀
+  have hi : Fin.cast (d.length_toVertexStart_of_isCycle h).symm (Fin.castAdd d.length 0) =
+      Fin.cast (d.length_replaceInitial d₀).symm
+        (Fin.castAdd d.length (Fin.cast hd₀.symm 0)) := Fin.ext (by simp)
+  rw [hi, d.earAt_replaceInitial_castAdd d₀]
+  exact hear₀
+
+/-- Normalizing a single-cycle decomposition sets its initial graph to the cycle's base vertex. -/
+theorem initial_toVertexStart_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (cycle walk isCycle).toVertexStart.initial = Graph.noEdge {s} β := by
+  rw [initial_toVertexStart]
+  exact EarStart.initial_toVertexDecomposition_cycle walk isCycle
+
+@[simp]
+theorem length_toVertexStart_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (cycle walk isCycle).toVertexStart.length = 1 := by
+  simp [length_toVertexStart]
+
+/-- Normalizing a single-cycle decomposition yields `Ear.ofIsCycle` as its unique ear. -/
+@[simp]
+theorem earAt_toVertexStart_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
+    (cycle walk isCycle).toVertexStart.earAt
+      (Fin.cast (length_toVertexStart_cycle walk isCycle).symm 0) =
+      ⟨Graph.noEdge {s} β, Ear.ofIsCycle walk isCycle⟩ := by
+  let d₀ := (cycle walk isCycle).start.toVertexDecomposition.copy
+    (cycle walk isCycle).initial_eq_graphAfter.symm
+  have hd₀ : d₀.length = 1 := rfl
+  change ((cycle walk isCycle).replaceInitial d₀).earAt _ = _
+  have hi : Fin.cast (length_toVertexStart_cycle walk isCycle).symm (0 : Fin 1) =
+      Fin.cast ((cycle walk isCycle).length_replaceInitial d₀).symm
+        (Fin.castAdd (cycle walk isCycle).length (Fin.cast hd₀.symm 0)) := Fin.ext (by simp)
+  rw [hi, (cycle walk isCycle).earAt_replaceInitial_castAdd d₀]
+  exact EarStart.earAt_toVertexDecomposition_cycle walk isCycle
+
 end EarDecomposition
+
+/-- A subgraph admits an ear decomposition if and only if it admits one starting from a single
+vertex. -/
+theorem nonempty_earDecomposition_iff_exists_not_isCycle {G H : Graph α β} :
+    Nonempty (G.EarDecomposition H) ↔ ∃ d : G.EarDecomposition H, ¬ d.start.IsCycle :=
+  ⟨fun ⟨d⟩ ↦ ⟨d.toVertexStart, d.not_start_isCycle_toVertexStart⟩, fun ⟨d, _⟩ ↦ ⟨d⟩⟩
 
 end Graph

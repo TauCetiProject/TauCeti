@@ -10,9 +10,11 @@ public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Order.Minimal
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
+public import TauCeti.Combinatorics.Graph.Union
 
 import Mathlib.Basic.Finite.Sum
 import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 
 /-!
 # Connected components of multigraphs
@@ -426,6 +428,20 @@ theorem connected_iff_forall_reachable :
 theorem Connected.reachable (hG : G.Connected) {x y : α} (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     G.Reachable x y :=
   (connected_iff_forall_reachable.mp hG).2 hx hy
+
+/-- The union of two compatible connected multigraphs sharing an actual vertex is connected. -/
+theorem Compatible.connected_union (h : G.Compatible H) (hG : G.Connected) (hH : H.Connected)
+    (hinter : (V(G) ∩ V(H)).Nonempty) : h.union.Connected := by
+  obtain ⟨z, hzG, hzH⟩ := hinter
+  refine connected_iff_forall_reachable.mpr
+    ⟨⟨z, h.vertexSet_union.symm ▸ Or.inl hzG⟩, fun x y hx hy ↦ ?_⟩
+  have hreach : ∀ {w}, w ∈ V(h.union) → h.union.Reachable z w := by
+    intro w hw
+    rw [h.vertexSet_union] at hw
+    rcases hw with hw | hw
+    · exact (hG.reachable hzG hw).mono h.left_le_union
+    · exact (hH.reachable hzH hw).mono h.right_le_union
+  exact (hreach hx).symm.trans (hreach hy)
 
 /-- Finitely many actual vertices give finitely many connected-component subgraphs. -/
 instance [Finite V(G)] : Finite G.ConnectedComponent :=

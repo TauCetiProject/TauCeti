@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Delete
+public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Decomposition
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 public import TauCeti.Combinatorics.Graph.Union
@@ -149,6 +150,13 @@ theorem reachable_walkGraph_of_mem_support {a : α} (p : G.Walk x y) (ha : a ∈
 theorem reachable_walkGraph_of_mem_support_of_mem_support {a b : α} (p : G.Walk x y)
     (ha : a ∈ p.support) (hb : b ∈ p.support) : (G.walkGraph p).Reachable a b :=
   (p.reachable_walkGraph_of_mem_support ha).symm.trans (p.reachable_walkGraph_of_mem_support hb)
+
+/-- The graph traced by any walk is connected. -/
+theorem connected_walkGraph (p : G.Walk x y) : (G.walkGraph p).Connected := by
+  refine connected_iff_forall_reachable.mpr
+    ⟨⟨x, by simp [vertexSet_walkGraph]⟩, fun u v hu hv ↦ ?_⟩
+  rw [vertexSet_walkGraph] at hu hv
+  exact p.reachable_walkGraph_of_mem_support_of_mem_support hu hv
 
 /-- Mapping a walk to a supergraph does not change its traced graph. -/
 @[simp, grind =]

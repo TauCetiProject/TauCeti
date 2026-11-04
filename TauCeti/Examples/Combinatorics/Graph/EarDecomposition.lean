@@ -57,24 +57,16 @@ example :
     refine (Walk.cons_isCycle_iff 0 h01 h10.toWalk).mpr
       ⟨h10.isPath_toWalk_iff.mpr (by decide), ?_⟩
     simp [IsLink.edges_toWalk]
-  have hle : Graph.noEdge ({0} : Set ℕ) ℕ ≤ G :=
-    Graph.noEdge_le_iff.mpr (by simp [G])
-  let ear : G.Ear (Graph.noEdge {0} ℕ) :=
-    .closed hle c hc (by simp)
-      (fun x _ hx0 hx ↦ hx0 (by simpa using hx))
-      (fun e _ he ↦ by simp at he)
+  let ear : G.Ear (Graph.noEdge {0} ℕ) := Ear.ofIsCycle c hc
   have hadd : ear.add = G := by
     refine (Compatible.of_le_le ear.add_le le_rfl).ext ?_ ?_
     · ext x
-      dsimp only [ear, c, G]
-      simp only [Ear.vertexSet_add, vertexSet_noEdge, Ear.vertexSet_toGraph,
-        Ear.support_toWalk_closed, Walk.support_cons, IsLink.support_toWalk, vertexSet_banana,
-        mem_union, mem_insert_iff, mem_singleton_iff, mem_ofPred_eq, List.mem_cons,
-        List.not_mem_nil, or_false]
+      simp only [ear, Ear.add_noEdge_singleton, Ear.toGraph_ofIsCycle, Walk.vertexSet_walkGraph, c,
+        G, Walk.support_cons, IsLink.support_toWalk, vertexSet_banana, mem_insert_iff,
+        mem_singleton_iff, mem_ofPred_eq, List.mem_cons, List.not_mem_nil, or_false]
       omega
     · ext e
-      dsimp only [ear, c, G]
-      simp [IsLink.edges_toWalk]
+      simp [ear, c, G, IsLink.edges_toWalk]
   let d0 : G.EarDecomposition (Graph.noEdge {0} ℕ) :=
     EarDecomposition.vertex ⟨0, by simp [G]⟩
   let d : G.EarDecomposition G := (d0.snoc ear).copy hadd
