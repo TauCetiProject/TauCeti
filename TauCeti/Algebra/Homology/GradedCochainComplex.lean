@@ -8,9 +8,12 @@ module
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 import Mathlib.Algebra.Category.ModuleCat.Ulift
-public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.Algebra.Homology.Homotopy
 import Mathlib.Algebra.Homology.Additive
+import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
+import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # The cochain complex of a family of submodules with a differential
@@ -36,6 +39,10 @@ supplies: it serves the underlying complex of a DG algebra and of a DG module on
 * `TauCeti.gradedCochainComplexXEquiv`: its degree-`p` term identified with `ℳ p`.
 * `TauCeti.gradedCochainComplexInclusion`: the cochain map induced by inclusions of grading
   submodules preserved by the same ambient differential.
+* `TauCeti.gradedCochainComplexHom`: the cochain map induced by a degree-preserving linear map
+  commuting with the differentials, between carriers in one universe.
+* `TauCeti.gradedCochainComplexHomotopy`: the homotopy induced by a linear map `k` of degree `-1`
+  with `f = dN ∘ k + k ∘ dM + g`.
 * `TauCeti.gradedCochainComplexLift`: the same complex with its terms lifted to a larger
   module universe.
 * `TauCeti.gradedCochainComplexMap`: the induced map in a common module universe.
@@ -122,6 +129,172 @@ theorem gradedCochainComplexXEquiv_d (p : ℤ) (x : (gradedCochainComplex ℳ dM
     (eqToIso (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p)).hom_inv_id_apply x] at key
   exact congrArg Subtype.val key
 
+/-- The differential of `gradedCochainComplex` between any two consecutive degrees is `dM`,
+under `gradedCochainComplexXEquiv`. -/
+theorem gradedCochainComplexXEquiv_d_of_add_one_eq {p q : ℤ} (hpq : p + 1 = q)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    (gradedCochainComplexXEquiv q (((gradedCochainComplex ℳ dM hdeg hsq).d p q).hom x) : M) =
+      dM (gradedCochainComplexXEquiv p x) := by
+  subst hpq
+  exact gradedCochainComplexXEquiv_d p x
+
+section Hom
+
+variable {N : Type uM} [AddCommGroup N] [Module R N]
+  {𝒩 : ℤ → Submodule R N} {dN : N →ₗ[R] N}
+  {hdegN : LinearMap.IsHomogeneous dN 𝒩 𝒩 1}
+  {hsqN : ∀ p (x : 𝒩 p), dN (dN x) = 0}
+
+/-- A degree-preserving linear map commuting with the differentials induces a cochain map
+between the graded cochain complexes, when both carriers live in the same universe. -/
+noncomputable def gradedCochainComplexHom (f : M →ₗ[R] N)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM) :
+    gradedCochainComplex ℳ dM hdeg hsq ⟶ gradedCochainComplex 𝒩 dN hdegN hsqN :=
+  CochainComplex.ofHom
+    (fun p ↦ ModuleCat.ofHom (f.restrict fun _ hx ↦ by simpa only [add_zero] using hf.map_mem hx))
+    (fun p ↦ by
+      apply ModuleCat.hom_ext
+      apply LinearMap.ext
+      intro x
+      apply Subtype.ext
+      -- Unfolding exposes the restricted differentials of `CochainComplex.of`; the complex
+      -- terms are the grading submodules themselves, so both sides are ambient values.
+      dsimp [gradedCochainComplex, ModuleCat.hom_comp, LinearMap.comp_apply]
+      simp only [CochainComplex.of_d]
+      exact LinearMap.congr_fun hcomm (gradedCochainComplexXEquiv p x))
+
+/-- On a homogeneous element, the induced cochain map is the original linear map. -/
+@[simp]
+theorem gradedCochainComplexHom_f_apply (f : M →ₗ[R] N)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM) (p : ℤ) (x : ℳ p) :
+    (eqToHom (gradedCochainComplex_X (hdeg := hdegN) (hsq := hsqN) p)
+      ((gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) f hf hcomm).f p
+        (eqToHom (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p).symm x)) : N) = f x := by
+  rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
+  -- Both transports are now `eqToHom rfl`, and the component of `CochainComplex.ofHom` is the
+  -- restriction of `f`, so both sides are the same ambient value.
+  rfl
+
+/-- Under `gradedCochainComplexXEquiv`, the induced cochain map is the original linear map. -/
+@[simp]
+theorem gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply (f : M →ₗ[R] N)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM) (p : ℤ)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    (gradedCochainComplexXEquiv p
+      (((gradedCochainComplexHom (hdegN := hdegN) (hsqN := hsqN) f hf hcomm).f p).hom x) : N) =
+      f (gradedCochainComplexXEquiv p x) :=
+  -- The complex terms are the grading submodules and each component is the restriction of `f`,
+  -- so both sides are the same ambient value; there is no rewrite rule for `CochainComplex.ofHom`
+  -- components across the `eqToIso` in `gradedCochainComplexXEquiv`.
+  (rfl)
+
+/-- Two cochain maps between graded cochain complexes agree when they agree on homogeneous
+elements. -/
+theorem gradedCochainComplex_hom_ext
+    {φ ψ : gradedCochainComplex ℳ dM hdeg hsq ⟶ gradedCochainComplex 𝒩 dN hdegN hsqN}
+    (h : ∀ p (x : (gradedCochainComplex ℳ dM hdeg hsq).X p),
+      (gradedCochainComplexXEquiv p ((φ.f p).hom x) : N) =
+        gradedCochainComplexXEquiv p ((ψ.f p).hom x)) : φ = ψ := by
+  ext p x
+  exact (gradedCochainComplexXEquiv p).injective (Subtype.ext (h p x))
+
+/-- The cochain map induced by the identity is the identity. -/
+@[simp]
+theorem gradedCochainComplexHom_id :
+    gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdeg) (hsqN := hsq)
+      (LinearMap.id : M →ₗ[R] M) (LinearMap.isHomogeneous_id ℳ) rfl = 𝟙 _ :=
+  gradedCochainComplex_hom_ext fun _ _ ↦ by
+    simp only [gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.id_apply,
+      HomologicalComplex.id_f, ModuleCat.hom_id]
+
+/-- Cochain maps induced by linear maps preserve composition. -/
+theorem gradedCochainComplexHom_comp {P : Type uM} [AddCommGroup P] [Module R P]
+    {𝒦 : ℤ → Submodule R P} {dP : P →ₗ[R] P} {hdegP : LinearMap.IsHomogeneous dP 𝒦 𝒦 1}
+    {hsqP : ∀ p (x : 𝒦 p), dP (dP x) = 0} (f : M →ₗ[R] N) (g : N →ₗ[R] P)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g 𝒩 𝒦 0)
+    (hcommf : dN ∘ₗ f = f ∘ₗ dM) (hcommg : dP ∘ₗ g = g ∘ₗ dN) :
+    gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegP) (hsqN := hsqP)
+      (g ∘ₗ f) (by simpa only [add_zero] using hg.comp hf)
+      (LinearMap.comp_comm_comp hcommg hcommf) =
+      gradedCochainComplexHom (hdegN := hdegN) (hsqN := hsqN) f hf hcommf ≫
+        gradedCochainComplexHom g hg hcommg :=
+  gradedCochainComplex_hom_ext fun _ _ ↦ by
+    simp only [gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.comp_apply,
+      HomologicalComplex.comp_f, ModuleCat.hom_comp]
+
+/-- The degree `-1` cochain whose components are the restrictions of a linear map `k` of
+degree `-1`. -/
+private noncomputable def gradedCochainComplexCochain (k : M →ₗ[R] N)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) :
+    CochainComplex.HomComplex.Cochain (gradedCochainComplex ℳ dM hdeg hsq)
+      (gradedCochainComplex 𝒩 dN hdegN hsqN) (-1) :=
+  CochainComplex.HomComplex.Cochain.mk fun _ _ hpq ↦
+    ModuleCat.ofHom (k.restrict fun _ hx ↦ hpq ▸ hk.map_mem hx)
+
+private theorem gradedCochainComplexCochain_v_apply (k : M →ₗ[R] N)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (p q : ℤ) (hpq : p + -1 = q)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    (gradedCochainComplexXEquiv q
+      (((gradedCochainComplexCochain (hdegN := hdegN) (hsqN := hsqN) k hk).v p q hpq).hom x) :
+        N) = k (gradedCochainComplexXEquiv p x) :=
+  -- The complex terms are the grading submodules, and each component of the cochain is the
+  -- restriction of `k`; rewriting with `Cochain.mk_v` would produce an ill-typed motive.
+  (rfl)
+
+/-- A linear map `k` of degree `-1` with `f = dN ∘ k + k ∘ dM + g` is a homotopy between the
+cochain maps induced by `f` and `g`. -/
+noncomputable def gradedCochainComplexHomotopy {f g : M →ₗ[R] N}
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
+    (hcommf : dN ∘ₗ f = f ∘ₗ dM) (hcommg : dN ∘ₗ g = g ∘ₗ dM) (k : M →ₗ[R] N)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (hfg : f = dN ∘ₗ k + k ∘ₗ dM + g) :
+    Homotopy (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
+      (hsqN := hsqN) f hf hcommf) (gradedCochainComplexHom g hg hcommg) :=
+  (CochainComplex.HomComplex.Cochain.equivHomotopy _ _).symm
+    ⟨gradedCochainComplexCochain k hk, by
+      refine CochainComplex.HomComplex.Cochain.ext₀ _ _ fun p ↦ ?_
+      rw [CochainComplex.HomComplex.Cochain.add_v,
+        CochainComplex.HomComplex.δ_v (-1) 0 (neg_add_cancel 1) _ p p (add_zero p) (p - 1)
+          (p + 1) rfl rfl]
+      ext x
+      apply (gradedCochainComplexXEquiv p).injective
+      apply Subtype.ext
+      simp only [CochainComplex.HomComplex.Cochain.ofHom_v, Int.negOnePow_zero, one_smul,
+        ModuleCat.hom_add, ModuleCat.hom_comp, LinearMap.add_apply, LinearMap.comp_apply,
+        map_add, Submodule.coe_add, gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply]
+      rw [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel p 1),
+        gradedCochainComplexCochain_v_apply, gradedCochainComplexCochain_v_apply,
+        gradedCochainComplexXEquiv_d_of_add_one_eq rfl]
+      simpa only [LinearMap.add_apply, LinearMap.comp_apply, add_assoc] using
+        LinearMap.congr_fun hfg (gradedCochainComplexXEquiv p x)⟩
+
+/-- Under `gradedCochainComplexXEquiv`, the components of the homotopy induced by `k` are `k`. -/
+theorem gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply {f g : M →ₗ[R] N}
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
+    (hcommf : dN ∘ₗ f = f ∘ₗ dM) (hcommg : dN ∘ₗ g = g ∘ₗ dM) (k : M →ₗ[R] N)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (hfg : f = dN ∘ₗ k + k ∘ₗ dM + g) (p q : ℤ)
+    (hpq : p + -1 = q) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    (gradedCochainComplexXEquiv q
+      (((gradedCochainComplexHomotopy (hdegN := hdegN) (hsqN := hsqN) hf hg hcommf hcommg k hk
+        hfg).hom p q).hom x) : N) = k (gradedCochainComplexXEquiv p x) := by
+  rw [gradedCochainComplexHomotopy, equivHomotopy_symm_hom _ p q hpq]
+  exact gradedCochainComplexCochain_v_apply k hk p q hpq x
+
+/-- On a homogeneous element, the components of the homotopy induced by `k` are `k`. -/
+theorem gradedCochainComplexHomotopy_hom_apply {f g : M →ₗ[R] N}
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
+    (hcommf : dN ∘ₗ f = f ∘ₗ dM) (hcommg : dN ∘ₗ g = g ∘ₗ dM) (k : M →ₗ[R] N)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (hfg : f = dN ∘ₗ k + k ∘ₗ dM + g) (p q : ℤ)
+    (hpq : p + -1 = q) (x : ℳ p) :
+    (eqToHom (gradedCochainComplex_X (hdeg := hdegN) (hsq := hsqN) q)
+      ((gradedCochainComplexHomotopy (hdeg := hdeg) (hsq := hsq) hf hg hcommf hcommg k hk
+        hfg).hom p q (eqToHom (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p).symm x)) :
+        N) = k x := by
+  rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
+  exact gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hf hg hcommf hcommg k
+    hk hfg p q hpq x
+
+end Hom
+
 section Inclusion
 
 variable {𝒩 : ℤ → Submodule R M}
@@ -132,20 +305,8 @@ variable {𝒩 : ℤ → Submodule R M}
 use the same ambient differential. -/
 noncomputable def gradedCochainComplexInclusion (h : ∀ n, ℳ n ≤ 𝒩 n) :
     gradedCochainComplex ℳ dM hdeg hsq ⟶ gradedCochainComplex 𝒩 dM hdegN hsqN :=
-  CochainComplex.ofHom (fun n ↦ by
-    -- Both degree terms definitionally use their grading submodules, so the component is
-    -- the submodule inclusion with the scalar actions used by those terms.
-    change ModuleCat.of R (ℳ n) ⟶ ModuleCat.of R (𝒩 n)
-    exact ModuleCat.ofHom (Submodule.inclusion (h n))) (fun n ↦ by
-      apply ModuleCat.hom_ext
-      apply LinearMap.ext
-      intro x
-      apply Subtype.ext
-      dsimp [gradedCochainComplex, ModuleCat.hom_comp, LinearMap.comp_apply]
-      simp only [CochainComplex.of_d]
-      -- Both sides have ambient value `dM x`: inclusion preserves values, and the
-      -- restricted differential applies the same ambient map `dM`.
-      rfl)
+  gradedCochainComplexHom LinearMap.id (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    simpa only [add_zero, LinearMap.id_apply] using h _ hx) rfl
 
 /-- The cochain inclusion preserves the underlying homogeneous element. -/
 @[simp]
@@ -154,10 +315,8 @@ theorem gradedCochainComplexInclusion_apply (h : ∀ n, ℳ n ≤ 𝒩 n) (n : �
     (gradedCochainComplexXEquiv (hdeg := hdegN) (hsq := hsqN) n
       (((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
         (hdegN := hdegN) (hsqN := hsqN) h).f n).hom x) : M) =
-      gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) n x := by
-  unfold gradedCochainComplexXEquiv
-  rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
-  rfl
+      gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) n x :=
+  gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
 
 end Inclusion
 
