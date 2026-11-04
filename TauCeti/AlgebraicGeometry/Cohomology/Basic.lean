@@ -26,6 +26,7 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
   `H⁰(X, M) ≃+ Γ(M, ⊤)` with global sections;
 * `Scheme.Modules.cohomologyOn M n U`, the cohomology `Hⁿ(U, M)` of an open subset,
   `Scheme.Modules.cohomologyOnRes` its restriction maps,
+  `Scheme.Modules.cohomologyOnMap` its functoriality in the coefficient sheaf,
   `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
   `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`.
 
@@ -150,13 +151,29 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_cohomologyOn
       M.presheaf.map (homOfLE h).op (M.cohomologyOnZeroEquiv V x) :=
   TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv_naturality_left _ (homOfLE h) x
 
+/-- The map `Hⁿ(U, M) ⟶ Hⁿ(U, N)` induced by a morphism `f : M ⟶ N` of sheaves of modules. -/
+abbrev cohomologyOnMap {M N : X.Modules} (f : M ⟶ N)
+    (n : ℕ) (U : Opens X) : cohomologyOn M n U ⟶ cohomologyOn N n U :=
+  ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).app (Opposite.op U)
+
+@[simp]
+lemma cohomologyOnMap_id (n : ℕ) (U : Opens X) : cohomologyOnMap (𝟙 M) n U = 𝟙 _ :=
+  NatTrans.congr_app ((_root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
+    CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n : X.Modules ⥤ _).map_id M) (Opposite.op U)
+
+@[simp, reassoc]
+lemma cohomologyOnMap_comp {N P : X.Modules} (f : M ⟶ N) (g : N ⟶ P) (n : ℕ) (U : Opens X) :
+    cohomologyOnMap (f ≫ g) n U = cohomologyOnMap f n U ≫ cohomologyOnMap g n U :=
+  NatTrans.congr_app ((_root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
+    CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n : X.Modules ⥤ _).map_comp f g)
+      (Opposite.op U)
+
 /-- The identification of degree-zero cohomology with sections is natural in the coefficient
 sheaf. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_naturality {N : X.Modules}
     (f : M ⟶ N) (U : Opens X) (x : cohomologyOn M 0 U) :
-    N.cohomologyOnZeroEquiv U (((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ 0).map
-      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).app (Opposite.op U) x) =
-      f.app U (M.cohomologyOnZeroEquiv U x) :=
+    N.cohomologyOnZeroEquiv U (cohomologyOnMap f 0 U x) = f.app U (M.cohomologyOnZeroEquiv U x) :=
   TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv_naturality_right _ U x
 
 /-- The cohomology of the whole space is the cohomology of the scheme. -/
@@ -164,6 +181,14 @@ noncomputable abbrev cohomologyOnTopIso (n : ℕ) :
     cohomologyOn M n ⊤ ≅ AddCommGrpCat.of (Cohomology M n) :=
   ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M).cohomologyPresheafObjIsoH
     n isTerminalTop
+
+/-- The identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)` is natural in the coefficient sheaf. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnTopIso_hom_cohomologyOnMap
+    {N : X.Modules} (f : M ⟶ N) (n : ℕ) (x : cohomologyOn M n ⊤) :
+    (cohomologyOnTopIso N n).hom (cohomologyOnMap f n ⊤ x) =
+      (cohomologyFunctor X n).map f ((cohomologyOnTopIso M n).hom x) :=
+  ConcreteCategory.congr_hom ((CategoryTheory.Sheaf.cohomologyPresheafEvaluationIsoFunctorH _ n
+    isTerminalTop).hom.naturality ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)) x
 
 end Opens
 

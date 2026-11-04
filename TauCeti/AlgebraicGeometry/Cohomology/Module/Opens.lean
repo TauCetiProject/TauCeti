@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
@@ -20,12 +21,16 @@ For a sheaf of modules `M` on a scheme `X` and an open subset `U`, this file equ
 multiplication by `r` on `M`. This is the structure over which the cohomology of a quasi-coherent
 sheaf on an open subset is a localization of the cohomology on a larger one.
 
-The restriction maps (`Scheme.Modules.cohomologyOnResLinear`) and the connecting maps of the
+The maps induced by morphisms of coefficient sheaves (`Scheme.Modules.cohomologyOnMapLinear`), the
+restriction maps (`Scheme.Modules.cohomologyOnResLinear`) and the connecting maps of the
 Mayer-Vietoris sequence (`Scheme.Modules.mayerVietorisδLinear`) are linear. In degree zero the
 action is the action of the restriction of `r` to `U` on the sections of `M` over `U`
-(`Scheme.Modules.cohomologyOnZeroEquiv_smul`), under the identification
+(`Scheme.Modules.cohomologyOnZeroEquiv_smul`, bundled as
+`Scheme.Modules.cohomologyOnZeroSemilinearMap`), under the identification
 `Scheme.Modules.cohomologyOnZeroEquiv` of `H⁰(U, M)` with the sections of `M` over `U` from
-`TauCeti.AlgebraicGeometry.Cohomology.Basic`.
+`TauCeti.AlgebraicGeometry.Cohomology.Basic`. At `U = ⊤` the module `Hⁿ(⊤, M)` is the module
+`Hⁿ(X, M)` of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`
+(`Scheme.Modules.cohomologyOnTopLinearEquiv`).
 
 The construction mirrors the action of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` on the
 cohomology of the whole scheme, with the cohomology presheaf `U ↦ Hⁿ(U, M)` in place of the
@@ -50,16 +55,9 @@ open TauCeti.CategoryTheory
 
 variable {X : Scheme.{u}} (M : X.Modules)
 
-/-- The map `Hⁿ(U, M) ⟶ Hⁿ(U, N)` induced by a morphism `f : M ⟶ N` of sheaves of modules. -/
-private abbrev _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap {N : X.Modules}
-    (f : M ⟶ N) (n : ℕ) (U : X.Opens) :
-    cohomologyOn M n U →+ cohomologyOn N n U :=
-  (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
-    ((toSheaf X).map f)).app (op U)).hom
-
 private lemma _root_.AlgebraicGeometry.Scheme.Modules.H'AddEquivExt_cohomologyOnMap
     {N : X.Modules} (f : M ⟶ N) (n : ℕ) (U : X.Opens) (x : cohomologyOn M n U) :
-    _root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj N) n U (cohomologyOnMap M f n U x) =
+    _root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj N) n U (cohomologyOnMap f n U x) =
       (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U x).comp
         (Abelian.Ext.mk₀ ((toSheaf X).map f)) (add_zero n) :=
   _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor_map_app_apply _ n U x
@@ -69,16 +67,12 @@ ring homomorphism into additive endomorphisms: a global function `r` acts throug
 by multiplication by `r` on `M`. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnAction (n : ℕ) (U : X.Opens) :
     Γ(X, ⊤) →+* AddMonoid.End (cohomologyOn M n U) where
-  toFun r := cohomologyOnMap M (M.globalSectionsSmul r) n U
+  toFun r := (cohomologyOnMap (M.globalSectionsSmul r) n U).hom
   map_one' := by
-    ext x
-    dsimp only [cohomologyOnMap]
-    rw [globalSectionsSmul_one, CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
+    rw [globalSectionsSmul_one, cohomologyOnMap_id]
     rfl
   map_mul' r s := by
-    ext x
-    dsimp only [cohomologyOnMap]
-    rw [globalSectionsSmul_mul, CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]
+    rw [globalSectionsSmul_mul, cohomologyOnMap_comp]
     rfl
   map_zero' := by
     ext x
@@ -100,8 +94,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnAction (n : ℕ) (U : X.
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnAction_apply (n : ℕ) (U : X.Opens)
     (r : Γ(X, ⊤)) (x : cohomologyOn M n U) :
-    cohomologyOnAction M n U r x = ((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
-      ((toSheaf X).map (M.globalSectionsSmul r))).app (op U) x :=
+    cohomologyOnAction M n U r x = cohomologyOnMap (M.globalSectionsSmul r) n U x :=
   (rfl)
 
 /-- The cohomology `Hⁿ(U, M)` of an open subset is a module over the ring of global functions. -/
@@ -113,8 +106,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnModule (n : ℕ) (U
 `M`. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOn_smul_def (n : ℕ) (U : X.Opens)
     (r : Γ(X, ⊤)) (x : cohomologyOn M n U) :
-    r • x = ((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
-      ((toSheaf X).map (M.globalSectionsSmul r))).app (op U) x :=
+    r • x = cohomologyOnMap (M.globalSectionsSmul r) n U x :=
   (rfl)
 
 /-- On `Hⁿ(U, M)` viewed as an `Ext` group, a global function `r` acts by postcomposition with
@@ -126,6 +118,38 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.H'AddEquivExt_cohomologyOn_smul (n
         (Abelian.Ext.mk₀ ((toSheaf X).map
           (M.globalSectionsSmul r))) (add_zero n) :=
   H'AddEquivExt_cohomologyOnMap M _ n U x
+
+variable {M} in
+/-- The map `Hⁿ(U, M) ⟶ Hⁿ(U, N)` induced by a morphism of sheaves of modules is linear over
+global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMapLinear {N : X.Modules} (f : M ⟶ N)
+    (n : ℕ) (U : X.Opens) : cohomologyOn M n U →ₗ[Γ(X, ⊤)] cohomologyOn N n U where
+  toFun := cohomologyOnMap f n U
+  map_add' := map_add _
+  map_smul' r x := by
+    rw [RingHom.id_apply, cohomologyOn_smul_def, cohomologyOn_smul_def,
+      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← cohomologyOnMap_comp,
+      ← cohomologyOnMap_comp, globalSectionsSmul_naturality]
+
+variable {M} in
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMapLinear_apply {N : X.Modules}
+    (f : M ⟶ N) (n : ℕ) (U : X.Opens) (x : cohomologyOn M n U) :
+    cohomologyOnMapLinear f n U x = cohomologyOnMap f n U x :=
+  (rfl)
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMapLinear_id (n : ℕ) (U : X.Opens) :
+    cohomologyOnMapLinear (𝟙 M) n U = LinearMap.id :=
+  LinearMap.ext fun x ↦ ConcreteCategory.congr_hom (cohomologyOnMap_id M n U) x
+
+variable {M} in
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMapLinear_comp {N P : X.Modules}
+    (f : M ⟶ N) (g : N ⟶ P) (n : ℕ) (U : X.Opens) :
+    cohomologyOnMapLinear (f ≫ g) n U =
+      cohomologyOnMapLinear g n U ∘ₗ cohomologyOnMapLinear f n U :=
+  LinearMap.ext fun x ↦ ConcreteCategory.congr_hom (cohomologyOnMap_comp M f g n U) x
 
 /-- Restriction in cohomology along an inclusion `U ≤ V` of open subsets, as a linear map over
 global functions. -/
@@ -173,6 +197,38 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_smul (U : X.
   refine (cohomologyOnZeroEquiv_naturality M (M.globalSectionsSmul r) U x).trans ?_
   rw [globalSectionsSmul_app]
   exact M.smul_apply _ _
+
+/-- In degree zero, the identification `cohomologyOnZeroEquiv` of `H⁰(U, M)` with the sections of
+`M` over `U`, as a map that is semilinear along the restriction `Γ(X, ⊤) ⟶ Γ(X, U)`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroSemilinearMap (U : X.Opens) :
+    cohomologyOn M 0 U →ₛₗ[(X.presheaf.map U.leTop.op).hom] Γ(M, U) where
+  toFun := cohomologyOnZeroEquiv M U
+  map_add' := map_add _
+  map_smul' := cohomologyOnZeroEquiv_smul M U
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroSemilinearMap_apply (U : X.Opens)
+    (x : cohomologyOn M 0 U) : cohomologyOnZeroSemilinearMap M U x = cohomologyOnZeroEquiv M U x :=
+  (rfl)
+
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroSemilinearMap_bijective
+    (U : X.Opens) : Function.Bijective (cohomologyOnZeroSemilinearMap M U) :=
+  (cohomologyOnZeroEquiv M U).bijective
+
+/-- The identification `cohomologyOnTopIso` of the cohomology `Hⁿ(⊤, M)` of the open subset `⊤`
+with the cohomology `Hⁿ(X, M)` of the scheme is linear over global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnTopLinearEquiv (n : ℕ) :
+    cohomologyOn M n ⊤ ≃ₗ[Γ(X, ⊤)] Cohomology M n where
+  __ := (cohomologyOnTopIso M n).addCommGroupIsoToAddEquiv
+  map_smul' r x := by
+    -- The inherited additive-equivalence field computes through `cohomologyOnTopIso`.
+    change (cohomologyOnTopIso M n).hom (r • x) = r • (cohomologyOnTopIso M n).hom x
+    rw [cohomologyOn_smul_def, cohomologyOnTopIso_hom_cohomologyOnMap, cohomology_smul]
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnTopLinearEquiv_apply (n : ℕ)
+    (x : cohomologyOn M n ⊤) : cohomologyOnTopLinearEquiv M n x = (cohomologyOnTopIso M n).hom x :=
+  (rfl)
 
 end Scheme.Modules
 

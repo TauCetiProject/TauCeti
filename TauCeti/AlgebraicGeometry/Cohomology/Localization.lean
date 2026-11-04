@@ -53,7 +53,9 @@ quasi-compact opens of affine opens; induction on the number of opens concludes.
   and a quasi-compact quasi-separated open `U`, `Hⁿ(U ∩ D(g), M)` is the localization of
   `Hⁿ(U, M)` at the powers of `g`;
 * `Scheme.Modules.isLocalizedModule_cohomologyOnResLinear_basicOpen`: on a quasi-compact
-  quasi-separated scheme, `Hⁿ(X_g, M)` is the localization of `Hⁿ(X, M)` at the powers of `g`.
+  quasi-separated scheme, `Hⁿ(X_g, M)` is the localization of `Hⁿ(X, M)` at the powers of `g`;
+* `Scheme.Modules.isLocalizedModule_cohomologyOnResLinear_comp_cohomologyOnTopLinearEquiv_symm`:
+  the same statement for the cohomology `Scheme.Modules.Cohomology M n` of the scheme.
 
 ## References
 
@@ -104,14 +106,33 @@ private lemma toBiprod_apply_eq (U V : X.Opens) (n : ℕ) (y : cohomologyOn M n 
   rw [hp]
   exact (Opens.mayerVietorisSquare U V).toBiprod_apply _ y
 
+/-- Under `AddCommGrpCat.biprodIsoProd`, the Mayer-Vietoris map out of the biproduct is
+`resDiff`. -/
+private lemma resDiff_comp_biprodIsoProd (U V : X.Opens) (n : ℕ) :
+    (resDiff M U V n).toAddMonoidHom.comp
+        (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv.toAddMonoidHom =
+      ((Opens.mayerVietorisSquare U V).fromBiprod
+        ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n).hom :=
+  AddMonoidHom.ext fun z ↦ (resDiff_apply M U V n _).trans
+    (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z))
+
+/-- Under `AddCommGrpCat.biprodIsoProd`, the Mayer-Vietoris map into the biproduct is
+`resPair`. -/
+private lemma biprodIsoProd_comp_toBiprod (U V : X.Opens) (n : ℕ) :
+    (resPair M U V n).toAddMonoidHom =
+      (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv.toAddMonoidHom.comp
+        ((Opens.mayerVietorisSquare U V).toBiprod
+          ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n).hom :=
+  AddMonoidHom.ext fun y ↦ (Iso.inv_hom_id_apply (AddCommGrpCat.biprodIsoProd _ _) _).symm.trans
+    (congrArg _ (toBiprod_apply_eq M U V n y).symm)
+
 private lemma exact_resDiff_mayerVietorisδLinear (U V : X.Opens) (n : ℕ) :
     Function.Exact (resDiff M U V n) (mayerVietorisδLinear M U V n (n + 1) rfl) :=
   Function.Exact.of_ladder_addEquiv_of_exact
     (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv (.refl _) (.refl _)
     (g₁₂ := (resDiff M U V n).toAddMonoidHom)
     (g₂₃ := (mayerVietorisδLinear M U V n (n + 1) rfl).toAddMonoidHom)
-    (AddMonoidHom.ext fun z ↦ (resDiff_apply M U V n _).trans
-      (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z)))
+    (resDiff_comp_biprodIsoProd M U V n)
     (AddMonoidHom.ext fun x ↦ by exact mayerVietorisδLinear_apply M U V n (n + 1) rfl x)
     ((ShortComplex.ab_exact_iff_function_exact _).mp
       ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 1 2 3))
@@ -123,8 +144,7 @@ private lemma exact_mayerVietorisδLinear_resPair (U V : X.Opens) (n : ℕ) :
     (g₁₂ := (mayerVietorisδLinear M U V n (n + 1) rfl).toAddMonoidHom)
     (g₂₃ := (resPair M U V (n + 1)).toAddMonoidHom)
     (AddMonoidHom.ext fun x ↦ by exact mayerVietorisδLinear_apply M U V n (n + 1) rfl x)
-    (AddMonoidHom.ext fun y ↦ ((Iso.inv_hom_id_apply (AddCommGrpCat.biprodIsoProd _ _) _).symm.trans
-      (congrArg _ (toBiprod_apply_eq M U V (n + 1) y).symm)))
+    (biprodIsoProd_comp_toBiprod M U V (n + 1))
     ((ShortComplex.ab_exact_iff_function_exact _).mp
       ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 2 3 4))
 
@@ -133,10 +153,8 @@ private lemma exact_resPair_resDiff (U V : X.Opens) (n : ℕ) :
   Function.Exact.of_ladder_addEquiv_of_exact
     (.refl _) (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv (.refl _)
     (g₁₂ := (resPair M U V n).toAddMonoidHom) (g₂₃ := (resDiff M U V n).toAddMonoidHom)
-    (AddMonoidHom.ext fun y ↦ ((Iso.inv_hom_id_apply (AddCommGrpCat.biprodIsoProd _ _) _).symm.trans
-      (congrArg _ (toBiprod_apply_eq M U V n y).symm)))
-    (AddMonoidHom.ext fun z ↦ (resDiff_apply M U V n _).trans
-      (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z)))
+    -- Elaborating the squares after the equivalences avoids a costly unification.
+    (by exact biprodIsoProd_comp_toBiprod M U V n) (by exact resDiff_comp_biprodIsoProd M U V n)
     ((ShortComplex.ab_exact_iff_function_exact _).mp
       ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 0 1 2))
 
@@ -197,19 +215,19 @@ private lemma isLocalizedModule_cohomologyOnResLinear_zero {U W : X.Opens}
   have : IsLocalizedModule ((Submonoid.powers g).map σ) (M.basicOpenRestrict (σ g)) := by
     rw [Submonoid.map_powers]
     exact M.isLocalizedModule_basicOpenRestrict_of_qcqs hU hU' (σ g)
+  -- The target map is semilinear along `σ`, since `Γ(X, U)` acts on sections over
+  -- `X.basicOpen (σ g)` through restriction.
   refine IsLocalizedModule.of_bijective_semilinearMap _ _ (M.basicOpenRestrict (σ g))
-    { toFun := cohomologyOnZeroEquiv M U
-      map_add' := map_add _
-      map_smul' := cohomologyOnZeroEquiv_smul M U }
+    (cohomologyOnZeroSemilinearMap M U)
     { toFun := cohomologyOnZeroEquiv M _
       map_add' := map_add _
       map_smul' := fun r x ↦ ?_ }
-    (cohomologyOnZeroEquiv M U).bijective (cohomologyOnZeroEquiv M _).bijective fun x ↦ ?_
-  · -- `Γ(X, U)` acts on sections over `X.basicOpen (σ g)` through restriction.
-    rw [cohomologyOnZeroEquiv_smul, basicOpen_smul_def, ← ConcreteCategory.comp_apply,
+    (cohomologyOnZeroSemilinearMap_bijective M U) (cohomologyOnZeroEquiv M _).bijective fun x ↦ ?_
+  · rw [cohomologyOnZeroEquiv_smul, basicOpen_smul_def, ← ConcreteCategory.comp_apply,
       ← Functor.map_comp]
     rfl
-  · simp only [LinearMap.coe_mk, AddHom.coe_mk, cohomologyOnResLinear_apply]
+  · simp only [LinearMap.coe_mk, AddHom.coe_mk, cohomologyOnResLinear_apply,
+      cohomologyOnZeroSemilinearMap_apply]
     rw [cohomologyOnZeroEquiv_cohomologyOnRes, basicOpenRestrict_apply]
 
 /-- The restriction maps from `U` to `U ⊓ D(g)` are localizations at the powers of `g` in every
@@ -306,6 +324,17 @@ theorem isLocalizedModule_cohomologyOnResLinear_basicOpen [CompactSpace X]
     [QuasiSeparatedSpace X] (n : ℕ) :
     IsLocalizedModule (.powers g) (cohomologyOnResLinear M n (le_top : X.basicOpen g ≤ ⊤)) :=
   localizesAt_of_isCompact M g isCompact_univ isQuasiSeparated_univ _ _ (top_inf_eq _).symm n
+
+/-- **Cohomology of quasi-coherent sheaves commutes with localization.** On a quasi-compact and
+quasi-separated scheme `X`, for a quasi-coherent sheaf `M` and a global function `g`, the
+restriction map `Hⁿ(X, M) ⟶ Hⁿ(X_g, M)` from the cohomology `Scheme.Modules.Cohomology M n` of the
+scheme is the localization at the powers of `g`, for every `n`. -/
+theorem isLocalizedModule_cohomologyOnResLinear_comp_cohomologyOnTopLinearEquiv_symm
+    [CompactSpace X] [QuasiSeparatedSpace X] (n : ℕ) :
+    IsLocalizedModule (.powers g) (cohomologyOnResLinear M n (le_top : X.basicOpen g ≤ ⊤) ∘ₗ
+      (cohomologyOnTopLinearEquiv M n).symm.toLinearMap) :=
+  have := isLocalizedModule_cohomologyOnResLinear_basicOpen M g n
+  inferInstance
 
 end Localization
 

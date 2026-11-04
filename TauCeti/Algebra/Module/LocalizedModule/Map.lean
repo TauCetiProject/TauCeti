@@ -83,7 +83,8 @@ theorem of_bijective_semilinearMap {A : Type*} [CommSemiring A] {σ : R →+* A}
   let := Module.compHom N' σ
   have : IsScalarTower R A M' := SMul.comp.isScalarTower σ
   have : IsScalarTower R A N' := SMul.comp.isScalarTower σ
-  have : IsLocalizedModule (Algebra.algebraMapSubmonoid A S) f' := ‹_›
+  have : IsLocalizedModule (Algebra.algebraMapSubmonoid A S) f' := by
+    rwa [Algebra.algebraMapSubmonoid, RingHom.algebraMap_toAlgebra]
   let eM' : M →ₗ[R] M' := ⟨eM.toAddHom, eM.map_smulₛₗ⟩
   let eN' : N →ₗ[R] N' := ⟨eN.toAddHom, eN.map_smulₛₗ⟩
   rw [← comp_iff_of_bijective_left S eN' heN,
