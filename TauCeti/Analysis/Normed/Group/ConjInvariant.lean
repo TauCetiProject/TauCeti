@@ -6,7 +6,6 @@ Authors: pi
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Algebra.BigOperators.Group.List.Lemmas
 public import TauCeti.Data.List.Rotate
 
 /-!
