@@ -25,9 +25,10 @@ name and are not used below.
 The main result characterizes the projective special unitary group `PSU(2)`, the range of
 `Matrix.specialUnitaryGroup.toPSL`, inside `PSL(2, 𝕜)`: a Möbius transformation lies in `PSU(2)`
 exactly when it commutes with the antipodal map
-(`OnePoint.mem_range_toPSL_iff_forall_smul_antipode`). For instance the rotation `z ↦ e^{iθ} z`,
-the class of `diag (e^{iθ/2}, e^{-iθ/2})`, lies in `PSU(2)`. The dilation `z ↦ 2 z` fixes `0` and
-`∞` but does not: it sends `-1 = antipode 1` to `-2`, while `antipode 2 = -1 / 2`.
+(`Matrix.ProjectiveSpecialLinearGroup.mem_range_toPSL_iff_forall_smul_antipode`). For instance
+the rotation `z ↦ e^{iθ} z`, the class of `diag (e^{iθ/2}, e^{-iθ/2})`, lies in `PSU(2)`. The
+dilation `z ↦ 2 z` fixes `0` and `∞` but does not: it sends `-1 = antipode 1` to `-2`, while
+`antipode 2 = -1 / 2`.
 
 The proof writes the antipodal map as the Möbius transformation `z ↦ -1 / z` of the matrix
 `S = !![0, -1; 1, 0]` composed with complex conjugation, which conjugates the Möbius action by
@@ -41,9 +42,10 @@ is then a scalar matrix, and `A` is unitary because its determinant is one
 
 * `OnePoint.antipode`: the antipodal map `z ↦ -1 / conj z` of the projective line.
 * `OnePoint.antipode_antipode`, `OnePoint.antipode_ne_self`: it is a fixed-point-free involution.
-* `OnePoint.toPSL_smul_antipode`: special unitary Möbius transformations commute with it.
-* `OnePoint.mem_range_toPSL_iff_forall_smul_antipode`: the elements of `PSL(2, 𝕜)` commuting with
-  it are exactly those of `PSU(2)`.
+* `Matrix.specialUnitaryGroup.toPSL_smul_antipode`: special unitary Möbius transformations
+  commute with it.
+* `Matrix.ProjectiveSpecialLinearGroup.mem_range_toPSL_iff_forall_smul_antipode`: the elements of
+  `PSL(2, 𝕜)` commuting with it are exactly those of `PSU(2)`.
 
 ## References
 
@@ -131,12 +133,20 @@ private theorem antipode_eq_smul (x : OnePoint 𝕜) :
     · simp [hz, smul_some_eq_ite, antipodeGL_apply]
     · simp [antipode_coe hz, smul_some_eq_ite, antipodeGL_apply, hz, neg_div]
 
+end OnePoint
+
+open OnePoint
+
+namespace Matrix.specialUnitaryGroup
+
+variable {𝕜 : Type*} [RCLike 𝕜] [DecidableEq 𝕜]
+
 /-- **Rotations commute with the antipodal map.** A special unitary matrix acts on the projective
 line by a Möbius transformation commuting with `z ↦ -1 / conj z`. -/
 theorem toPSL_smul_antipode (A : specialUnitaryGroup (Fin 2) 𝕜) (x : OnePoint 𝕜) :
-    specialUnitaryGroup.toPSL A • antipode x = antipode (specialUnitaryGroup.toPSL A • x) := by
-  rw [specialUnitaryGroup.toPSL_apply, pslMk_smul, pslMk_smul, antipode_eq_smul,
-    antipode_eq_smul, map_smul, smul_smul, smul_smul]
+    toPSL A • antipode x = antipode (toPSL A • x) := by
+  rw [toPSL_apply, pslMk_smul, pslMk_smul, antipode_eq_smul,
+    antipode_eq_smul, OnePoint.map_smul, smul_smul, smul_smul]
   congr 1
   -- For a special unitary `A`, `conj A` is the adjugate transpose of `A`.
   have hstar := fun i j => congrFun (congrFun (specialUnitaryGroup.star_eq_adjugate A) i) j
@@ -144,6 +154,12 @@ theorem toPSL_smul_antipode (A : specialUnitaryGroup (Fin 2) 𝕜) (x : OnePoint
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, antipodeGL_apply, hstar]
+
+end Matrix.specialUnitaryGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+variable {𝕜 : Type*} [RCLike 𝕜] [DecidableEq 𝕜]
 
 /-- **`PSU(2)` is the group of Möbius transformations commuting with the antipodal map.** Over
 `ℝ` or `ℂ`, an element of `PSL(2, 𝕜)` lies in the range of `SU(2)` exactly when it commutes with
@@ -154,14 +170,14 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
       ∀ x : OnePoint 𝕜, g • antipode x = antipode (g • x) := by
   refine ⟨?_, fun h => ?_⟩
   · rintro ⟨A, rfl⟩ x
-    exact toPSL_smul_antipode A x
+    exact specialUnitaryGroup.toPSL_smul_antipode A x
   obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
   -- The two composites `A S` and `S conj(A)` agree on the projective line.
   have hfix : ∀ y : OnePoint 𝕜, ((SpecialLinearGroup.toGL A * antipodeGL)⁻¹ * (antipodeGL *
       GeneralLinearGroup.map (starRingEnd 𝕜) (SpecialLinearGroup.toGL A))) • y = y := by
     intro y
     have hy := h (OnePoint.map (starRingEnd 𝕜) y)
-    rw [pslMk_smul, pslMk_smul, antipode_eq_smul, antipode_eq_smul, map_smul,
+    rw [pslMk_smul, pslMk_smul, antipode_eq_smul, antipode_eq_smul, OnePoint.map_smul,
       TauCeti.onePointMap_involutive (f := starRingEnd 𝕜) starRingEnd_self_apply, smul_smul,
       smul_smul] at hy
     rw [mul_smul, ← hy, inv_smul_smul]
@@ -201,4 +217,4 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
   rw [specialUnitaryGroup.mk_mem_range_toPSL_iff]
   exact mem_unitaryGroup_of_star_mul_self_eq_scalar (by simp [A.2]) hAA
 
-end OnePoint
+end Matrix.ProjectiveSpecialLinearGroup
