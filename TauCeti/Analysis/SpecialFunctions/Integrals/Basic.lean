@@ -33,6 +33,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
   `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
+* `TauCeti.integral_inv_mul_one_add_mul`:
+  `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
+  `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -255,6 +258,23 @@ theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
     ∫ x in a..b, Real.exp (c * x) = (Real.exp (c * b) - Real.exp (c * a)) / c := by
   rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
     inv_mul_eq_div]
+
+/-- The integral of `σ ↦ 1 / (σ (1 + C σ))` between positive limits, for `C ≥ 0`: an
+antiderivative is `σ ↦ log (σ / (1 + C σ))`. -/
+theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC : 0 ≤ C) :
+    ∫ σ in s..t, (σ * (1 + C * σ))⁻¹ =
+      Real.log (t / (1 + C * t)) - Real.log (s / (1 + C * s)) := by
+  have hpos (σ : ℝ) (hσ : σ ∈ Set.uIcc s t) : 0 < σ := (lt_min hs ht).trans_le hσ.1
+  apply intervalIntegral.integral_eq_sub_of_hasDerivAt
+  · intro σ hσ
+    have h1 := hpos σ hσ
+    have h2 : 0 < 1 + C * σ := by positivity
+    have := ((hasDerivAt_id' σ).div (((hasDerivAt_id' σ).const_mul C).const_add 1) h2.ne').log
+      (div_ne_zero h1.ne' h2.ne')
+    exact this.congr_deriv (by simp only [Pi.div_apply]; field_simp; ring)
+  · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
+    have := hpos σ hσ
+    positivity
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/

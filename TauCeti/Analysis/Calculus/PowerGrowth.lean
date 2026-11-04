@@ -9,9 +9,11 @@ public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Monotone
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
+import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Power growth from a differential inequality
@@ -30,19 +32,23 @@ is the integration step of the lower density estimates for sets of finite perime
 The forced almost-Euler inequality `α f(σ) ≤ σ (1 + C σ) f'(σ) + A σ ^ n`, again only at almost
 every `σ` and for monotone `f`, makes `((1 + C σ) / σ) ^ α (f σ + A σ ^ n / (n - α))`
 nondecreasing (`TauCeti.rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add`). It follows from
-an almost-everywhere Grönwall inequality for monotone functions: `g s exp (∫ₛᵗ k) ≤ g t` whenever
-`k g ≤ g'` (`TauCeti.mul_exp_integral_le_of_mul_le_deriv`).
+the almost-everywhere Grönwall inequality for monotone functions in
+`TauCeti.Analysis.ODE.Gronwall`: `g s exp (∫ₛᵗ k) ≤ g t` whenever `k g ≤ g'`
+(`TauCeti.mul_exp_integral_le_of_mul_le_deriv`), with
+`∫ₛᵗ 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))`
+(`TauCeti.integral_inv_mul_one_add_mul`).
 
 In the normalization `f(σ) ≤ (σ / 2) (1 + C σ) (1 + δ) f'(σ) + A σ ^ 4` the exponent is
-`2 / (1 + δ)` (`TauCeti.rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add`). When `δ ≤ K h`, the
-power `σ ^ (2 / (1 + δ))` is comparable to `σ ^ 2` on all scales `σ ≥ c h`, with a constant
-independent of `h` (`TauCeti.rpow_two_div_one_add_le_exp_mul_sq`). Consequently a bound on `f`
-at a fixed radius gives the quadratic upper bound `f σ ≤ K' σ ^ 2`
-(`TauCeti.le_mul_sq_of_le_mul_deriv_add`), and a lower bound `m h ^ 2 ≤ f (c h)` gives a quadratic
-lower bound on all larger scales (`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`), both uniformly in
-`h`. This is the integration step of Taubes's monotonicity estimate for the local defect energy
-`r ∫_{B_σ} |1 - |ψ|²|` of the Seiberg–Witten equations on a symplectic four-manifold perturbed by
-a large multiple `r` of the symplectic form, where `h = r^(-1/2)`.
+`2 / (1 + δ)` (`TauCeti.rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add`). When `0 < h ≤ 1` and
+`δ ≤ K h`, the power `σ ^ (2 / (1 + δ))` is bounded by a constant times `σ ^ 2` for
+`c h ≤ σ ≤ 1`, with a constant independent of `h` (`TauCeti.rpow_two_div_one_add_le_exp_mul_sq`).
+Consequently a bound on `f` at a fixed radius `σ₀ ≤ 1` gives the quadratic upper bound
+`f σ ≤ K' σ ^ 2` for `c h ≤ σ ≤ σ₀` (`TauCeti.le_mul_sq_of_le_mul_deriv_add`), and a lower bound
+`m h ^ 2 ≤ f (c h)` gives a quadratic lower bound `m' σ ^ 2 ≤ f σ + A σ ^ 4` for `c h ≤ σ ≤ 1`
+(`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`), both uniformly in `h`. This is the integration step
+of Taubes's monotonicity estimate for the local defect energy `r ∫_{B_σ} |1 - |ψ|²|` of the
+Seiberg–Witten equations on a symplectic four-manifold perturbed by a large multiple `r` of the
+symplectic form, where `h = r^(-1/2)`.
 
 ## References
 
@@ -138,63 +144,6 @@ theorem mul_le_mul_rpow_of_rpow_one_sub_le_mul_deriv {m : ℝ → ℝ} {a K r : 
 
 /-! ### Almost-Euler inequalities with a forcing term -/
 
-/-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
-on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, for an interval
-integrable `k`, then `g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. -/
-theorem mul_exp_integral_le_of_mul_le_deriv {g k : ℝ → ℝ} {s t : ℝ} (hst : s ≤ t)
-    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s) (hk : IntervalIntegrable k volume s t)
-    (h : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ) :
-    g s * Real.exp (∫ σ in s..t, k σ) ≤ g t := by
-  have hgst : g s ≤ g t := hg ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst
-  rcases hgs.eq_or_lt with hgs0 | hgs0
-  · rw [← hgs0, zero_mul]
-    exact hgs.trans hgst
-  have hpos (σ : ℝ) (hσ : σ ∈ Icc s t) : 0 < g σ := hgs0.trans_le (hg ⟨le_rfl, hst⟩ hσ hσ.1)
-  set L : ℝ → ℝ := fun σ => Real.log (g σ)
-  have hL : MonotoneOn L (uIcc s t) := by
-    rw [uIcc_of_le hst]
-    exact fun x hx y hy hxy => Real.log_le_log (hpos x hx) (hg hx hy hxy)
-  -- `k ≤ (log g)' = g' / g` at almost every point of `[s, t]`.
-  have hlow : k ≤ᵐ[volume.restrict (Icc s t)] deriv L := by
-    rw [Filter.EventuallyLE, Measure.restrict_congr_set Ioo_ae_eq_Icc.symm,
-      ae_restrict_iff' measurableSet_Ioo]
-    filter_upwards [h, (hg.mono Ioo_subset_Icc_self).ae_differentiableWithinAt_of_mem]
-      with σ hσ hd hσI
-    have hgσ := hpos σ (Ioo_subset_Icc_self hσI)
-    have hd' := (hd hσI).differentiableAt (Ioo_mem_nhds hσI.1 hσI.2)
-    rw [(hd'.hasDerivAt.log hgσ.ne').deriv, le_div_iff₀ hgσ]
-    exact hσ hσI
-  -- Integrating, `∫ₛᵗ k ≤ ∫ₛᵗ (log g)' ≤ log (g t) - log (g s)`.
-  have hint := intervalIntegral.integral_mono_ae_restrict hst hk hL.intervalIntegrable_deriv hlow
-  have hup := hL.intervalIntegral_deriv_mem_uIcc
-  rw [uIcc_of_le (sub_nonneg.2 (Real.log_le_log hgs0 hgst))] at hup
-  calc g s * Real.exp (∫ σ in s..t, k σ) ≤ g s * Real.exp (L t - L s) := by
-        gcongr
-        exact hint.trans hup.2
-    _ = g t := by
-        rw [Real.exp_sub, Real.exp_log (hpos s ⟨le_rfl, hst⟩),
-          Real.exp_log (hpos t ⟨hst, le_rfl⟩)]
-        field_simp
-
-/-- The primitive of `1 / (σ (1 + C σ))` is `log (σ / (1 + C σ))`. -/
-private theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (hst : s ≤ t)
-    (hC : 0 ≤ C) :
-    ∫ σ in s..t, (σ * (1 + C * σ))⁻¹ =
-      Real.log (t / (1 + C * t)) - Real.log (s / (1 + C * s)) := by
-  have hpos (σ : ℝ) (hσ : σ ∈ uIcc s t) : 0 < σ := by
-    rw [uIcc_of_le hst] at hσ
-    exact hs.trans_le hσ.1
-  apply intervalIntegral.integral_eq_sub_of_hasDerivAt
-  · intro σ hσ
-    have h1 := hpos σ hσ
-    have h2 : 0 < 1 + C * σ := by positivity
-    have := ((hasDerivAt_id' σ).div (((hasDerivAt_id' σ).const_mul C).const_add 1) h2.ne').log
-      (div_ne_zero h1.ne' h2.ne')
-    exact this.congr_deriv (by simp only [Pi.div_apply]; field_simp; ring)
-  · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
-    have := hpos σ hσ
-    positivity
-
 /-- **Integrated almost-Euler inequality with a forcing term.** Let `C ≥ 0`, `A ≥ 0` and
 `α < n`. If `f` is monotone on `[s, t] ⊆ (0, ∞)`, `f s ≥ 0`, and
 `α f(σ) ≤ σ (1 + C σ) f'(σ) + A σ ^ n` at almost every `σ ∈ (s, t)`, then, with
@@ -257,7 +206,7 @@ theorem rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add {f : ℝ → ℝ} {
     linarith
   have ht : 0 < t := hs.trans_le hst
   have hexp : Real.exp (∫ σ in s..t, k σ) = (t / (1 + C * t)) ^ α / (s / (1 + C * s)) ^ α := by
-    rw [intervalIntegral.integral_const_mul, integral_inv_mul_one_add_mul hs hst hC,
+    rw [intervalIntegral.integral_const_mul, integral_inv_mul_one_add_mul hs ht hC,
       Real.rpow_def_of_pos (by positivity), Real.rpow_def_of_pos (by positivity), ← Real.exp_sub]
     ring_nf
   have key := mul_exp_integral_le_of_mul_le_deriv hst hg hgs hk hkg
@@ -307,8 +256,8 @@ theorem rpow_mul_le_rpow_mul_add_of_le_mul_deriv_add {f : ℝ → ℝ} {s t C δ
     _ ≤ (s / (1 + C * s)) ^ p * (f t + A * t ^ 4) := by
         gcongr
 
-/-- The power `s ^ (2 / (1 + δ))` is comparable to `s ^ 2`, uniformly on scales `s ≥ c h`, as
-long as `δ ≤ K h`: for `0 < h ≤ 1` and `c h ≤ s ≤ 1`,
+/-- The power `s ^ (2 / (1 + δ))` is bounded by a constant times `s ^ 2`, uniformly on scales
+`c h ≤ s ≤ 1`, as long as `δ ≤ K h`: for `0 < h ≤ 1` and `c h ≤ s ≤ 1`,
 `s ^ (2 / (1 + δ)) ≤ exp (2 K (1 + |log c|)) s ^ 2`. The constant does not depend on `h`. -/
 theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh : 0 < h)
     (hh1 : h ≤ 1) (hδ : 0 ≤ δ) (hδh : δ ≤ K * h) (hs : c * h ≤ s) (hs1 : s ≤ 1) :
@@ -324,12 +273,7 @@ theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh :
     rw [show -Real.log c - Real.log h = -Real.log (c * h) by
       rw [Real.log_mul hc.ne' hh.ne']; ring, neg_le_neg_iff]
     exact Real.log_le_log hch hs
-  have hhlog : -(h * Real.log h) ≤ 1 := by
-    have := Real.log_le_sub_one_of_pos (inv_pos.2 hh)
-    rw [Real.log_inv, le_sub_iff_add_le] at this
-    have := mul_le_mul_of_nonneg_left this hh.le
-    rw [mul_add, mul_inv_cancel₀ hh.ne'] at this
-    linarith
+  have hhlog : -(h * Real.log h) ≤ 1 := by linarith [Real.self_sub_one_le_mul_log hh.le]
   have hclog : -(h * Real.log c) ≤ |Real.log c| := by
     calc -(h * Real.log c) = h * -Real.log c := by ring
       _ ≤ h * |Real.log c| := mul_le_mul_of_nonneg_left (neg_le_abs _) hh.le
@@ -347,6 +291,17 @@ theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh :
       _ ≤ K * (1 + |Real.log c|) := mul_le_mul_of_nonneg_left (by linarith) hK
   nlinarith
 
+/-- The bound `rpow_two_div_one_add_le_exp_mul_sq` survives the factor `1 / (1 + C s)` for
+`C ≥ 0`: `(s / (1 + C s)) ^ (2 / (1 + δ)) ≤ exp (2 K (1 + |log c|)) s ^ 2` for `c h ≤ s ≤ 1`. -/
+private theorem div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq {s c h δ K C : ℝ}
+    (hC : 0 ≤ C) (hc : 0 < c) (hh : 0 < h) (hh1 : h ≤ 1) (hδ : 0 ≤ δ) (hδh : δ ≤ K * h)
+    (hs : c * h ≤ s) (hs1 : s ≤ 1) :
+    (s / (1 + C * s)) ^ (2 / (1 + δ)) ≤ Real.exp (2 * K * (1 + |Real.log c|)) * s ^ 2 := by
+  have hs0 : 0 < s := (mul_pos hc hh).trans_le hs
+  exact (Real.rpow_le_rpow (by positivity)
+    (div_le_self hs0.le (le_add_of_nonneg_right (by positivity))) (by positivity)).trans
+    (rpow_two_div_one_add_le_exp_mul_sq hc hh hh1 hδ hδh hs hs1)
+
 /-- **Quadratic upper bound from the monotonicity inequality.** Let `C, δ, A ≥ 0`,
 `0 < h ≤ 1`, `c > 0` and `δ ≤ K h`. Suppose `f` is monotone on `[σ, σ₀]`, where
 `c h ≤ σ ≤ σ₀ ≤ 1`, with `0 ≤ f σ` and `f σ₀ ≤ M`, and satisfies
@@ -354,8 +309,8 @@ theorem rpow_two_div_one_add_le_exp_mul_sq {s c h δ K : ℝ} (hc : 0 < c) (hh :
 `f σ ≤ exp (2 K (1 + |log c|)) ((1 + C σ₀) / σ₀) ^ 2 (M + A) σ ^ 2`.
 
 The constant depends neither on `h` nor on `δ`: with `h = r^(-1/2)`, a bound on the defect energy
-of the ball of fixed radius `σ₀` gives the quadratic bound on all balls of radius at least
-`c r^(-1/2)`, uniformly in `r`. -/
+of the ball of fixed radius `σ₀` gives the quadratic bound on balls of radius between
+`c r^(-1/2)` and `σ₀`, uniformly in `r`. -/
 theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M : ℝ} (hC : 0 ≤ C)
     (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hc : 0 < c) (hh : 0 < h) (hh1 : h ≤ 1) (hδh : δ ≤ K * h)
     (hσ : c * h ≤ σ) (hσσ₀ : σ ≤ σ₀) (hσ₀ : σ₀ ≤ 1) (hf : MonotoneOn f (Icc σ σ₀))
@@ -374,9 +329,7 @@ theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M
     exact mul_le_of_le_one_right hA (pow_le_one₀ hσ₀0.le hσ₀)
   -- `(σ / (1 + C σ)) ^ p ≤ σ ^ p ≤ Λ σ ^ 2`.
   have hb : (σ / (1 + C * σ)) ^ p ≤ Λ * σ ^ 2 :=
-    (Real.rpow_le_rpow (by positivity) (div_le_self hσ0.le (le_add_of_nonneg_right
-      (by positivity))) (by positivity)).trans
-      (rpow_two_div_one_add_le_exp_mul_sq hc hh hh1 hδ hδh hσ (hσσ₀.trans hσ₀))
+    div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq hC hc hh hh1 hδ hδh hσ (hσσ₀.trans hσ₀)
   -- `(σ₀ / (1 + C σ₀)) ^ (-p) = ((1 + C σ₀) / σ₀) ^ p ≤ ((1 + C σ₀) / σ₀) ^ 2`.
   have ha : ((σ₀ / (1 + C * σ₀)) ^ p)⁻¹ ≤ ((1 + C * σ₀) / σ₀) ^ 2 := by
     rw [← Real.inv_rpow (by positivity), inv_div, ← Real.rpow_two]
@@ -401,8 +354,8 @@ theorem le_mul_sq_of_le_mul_deriv_add {f : ℝ → ℝ} {σ σ₀ C δ A c h K M
 `m / (c ^ 2 (1 + C) ^ 2 exp (2 K (1 + |log c|))) σ ^ 2 ≤ f σ + A σ ^ 4`.
 
 With `h = r^(-1/2)`, a lower bound of order `r⁻¹` for the defect energy on the ball of radius
-`c r^(-1/2)` about a zero propagates to a quadratic lower bound on all larger balls, uniformly in
-`r`. -/
+`c r^(-1/2)` about a zero propagates to a quadratic lower bound for `E(σ) + A σ ^ 4` on the balls
+of radius between `c r^(-1/2)` and `1`, uniformly in `r`. -/
 theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m : ℝ} (hC : 0 ≤ C)
     (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hc : 0 < c) (hh : 0 < h) (hh1 : h ≤ 1) (hδh : δ ≤ K * h)
     (hσ : c * h ≤ σ) (hσ1 : σ ≤ 1) (hf : MonotoneOn f (Icc (c * h) σ)) (hm : 0 ≤ m)
@@ -434,19 +387,21 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
           Real.rpow_le_rpow_of_exponent_ge (by positivity) h1 hp2
   -- `(c h / (1 + C c h)) ^ p ≤ (c h) ^ p ≤ Λ (c h) ^ 2`.
   have ha : (c * h / (1 + C * (c * h))) ^ p ≤ Λ * (c * h) ^ 2 :=
-    (Real.rpow_le_rpow (by positivity) (div_le_self hch.le (le_add_of_nonneg_right
-      (by positivity))) (by positivity)).trans
-      (rpow_two_div_one_add_le_exp_mul_sq hc hh hh1 hδ hδh le_rfl (hσ.trans hσ1))
+    div_one_add_mul_rpow_two_div_one_add_le_exp_mul_sq hC hc hh hh1 hδ hδh le_rfl (hσ.trans hσ1)
   have hineq : (σ / (1 + C)) ^ 2 * (m * h ^ 2) ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) :=
     calc (σ / (1 + C)) ^ 2 * (m * h ^ 2) ≤ (σ / (1 + C * σ)) ^ p * f (c * h) := by
           gcongr
       _ ≤ (c * h / (1 + C * (c * h))) ^ p * (f σ + A * σ ^ 4) := key
       _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) := by gcongr
   have h1C : 0 < 1 + C := by positivity
-  rw [div_pow] at hineq
-  field_simp at hineq
+  -- Multiply `hineq` by `(1 + C) ^ 2` and cancel `h ^ 2`.
   rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-  linarith
+  refine le_of_mul_le_mul_right ?_ (pow_pos hh 2)
+  calc m * σ ^ 2 * h ^ 2 = (σ / (1 + C)) ^ 2 * (m * h ^ 2) * (1 + C) ^ 2 := by
+        rw [div_pow]
+        field_simp
+    _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) * (1 + C) ^ 2 := by gcongr
+    _ = (f σ + A * σ ^ 4) * (c ^ 2 * (1 + C) ^ 2 * Λ) * h ^ 2 := by ring
 
 end TauCeti
 
