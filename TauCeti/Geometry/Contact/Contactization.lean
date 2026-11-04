@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
+import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.Immersion.Differential

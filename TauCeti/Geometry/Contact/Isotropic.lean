@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Immersion
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Contact.Distribution
-public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -138,6 +137,7 @@ theorem IsLegendrianEmbedding.isSmoothEmbedding (h : IsLegendrianEmbedding J D f
 
 omit [FiniteDimensional ℝ E] in
 /-- A smooth embedding is a Legendrian embedding exactly when it is a Legendrian immersion. -/
+@[simp]
 theorem isLegendrianEmbedding_iff_of_isSmoothEmbedding (hf : Manifold.IsSmoothEmbedding J I ∞ f) :
     IsLegendrianEmbedding J D f ↔ IsLegendrianImmersion J D f :=
   ⟨fun h ↦ h.toIsLegendrianImmersion, fun h ↦ ⟨h, hf.isEmbedding⟩⟩

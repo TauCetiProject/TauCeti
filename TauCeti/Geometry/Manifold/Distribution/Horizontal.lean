@@ -21,6 +21,7 @@ differentiable, so the predicate is meaningful for differentiable maps.
 ## Main declarations
 
 * `TauCeti.IsHorizontalMap`: maps whose tangent images lie in a distribution.
+* `TauCeti.IsHorizontalMap.comp`: precomposing a horizontal map keeps it horizontal.
 * `TauCeti.isHorizontalMap_comp_diffeomorph_iff`, `TauCeti.isHorizontalMap_diffeomorph_comp_iff`:
   independence of the parametrization and transport by diffeomorphisms preserving the
   distributions.
@@ -81,6 +82,14 @@ section Transport
 
 variable {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
   {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] {n : ℕ∞ω}
+
+/-- Precomposing a horizontal map with a map `g` keeps it horizontal, wherever `g` and `f` are
+differentiable, since the tangent image of `f ∘ g` lies in that of `f`. -/
+theorem IsHorizontalMap.comp {g : P → N} (hf : IsHorizontalMap J D f)
+    (hg : ∀ x, MDifferentiableAt K J g x) (hfg : ∀ x, MDifferentiableAt J I f (g x)) :
+    IsHorizontalMap K D (f ∘ g) := fun x ↦ by
+  rw [mfderiv_comp x (hfg x) (hg x)]
+  exact (LinearMap.range_comp_le_range _ _).trans (hf (g x))
 
 /-- **Independence of the parametrization.** Precomposing with a diffeomorphism of the source
 does not change whether a map is horizontal. -/
