@@ -62,11 +62,15 @@ theorem weightTorusPoints_conj_tangentMatrix_rootDerivationAt
   have hT' : pointsMap (Polynomial.CAlgHom : B →ₐ[ZMod 2] Polynomial B)
       (weightTorusPoints B s) = weightTorusPoints (Polynomial B) s' :=
     pointsMap_weightTorusPoints _ s
-  have hT := coe_pointsMap_CAlgHom (weightTorusPoints B s)
+  have hT := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    (weightTorusPoints B s)
   rw [hT'] at hT
-  have hTinv := coe_pointsMap_CAlgHom ((weightTorusPoints B s)⁻¹)
+  have hTinv := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    ((weightTorusPoints B s)⁻¹)
   rw [map_inv, hT'] at hTinv
   simp only [Subgroup.coe_inv] at hTinv
+  -- The function underlying `CAlgHom` is definitionally the polynomial constant map.
+  rw [show ⇑(Polynomial.CAlgHom : B →ₐ[R] Polynomial B) = Polynomial.C from rfl] at hT hTinv
   have hχ : (torusCharacter s' (root k) : Polynomial B) =
       Polynomial.C (torusCharacter s (root k) : B) := by
     exact congrArg Units.val (map_torusCharacter Polynomial.C s (root k)).symm

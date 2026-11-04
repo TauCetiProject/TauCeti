@@ -177,15 +177,18 @@ theorem map_coeff_one_rootSubgroupPointsAt (B : Type*) [CommRing B] [Algebra R B
         (HopfIdeal.quotientLieHom J (rootDerivationAt B k)) := by
   let l := (F4ShortRoot.rootSubgroupPresentation k).1
   let i := (F4ShortRoot.rootSubgroupPresentation k).2
-  have hW := coe_pointsMap_CAlgHom (weylWordPoint l B)
+  have hW := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    (weylWordPoint l B)
   rw [pointsMap_weylWordPoint] at hW
-  rw [rootSubgroupPointsAt_def, weylRootSubgroupPoints_apply]
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul]
-  rw [hW]
-  have hWinv := coe_pointsMap_CAlgHom ((weylWordPoint l B)⁻¹)
+  have hWinv := coe_coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    ((weylWordPoint l B)⁻¹)
   rw [map_inv, pointsMap_weylWordPoint] at hWinv
   simp only [Subgroup.coe_inv] at hWinv
-  rw [hWinv]
+  -- The function underlying `CAlgHom` is definitionally the polynomial constant map.
+  rw [show ⇑(Polynomial.CAlgHom : B →ₐ[R] Polynomial B) = Polynomial.C from rfl] at hW hWinv
+  rw [rootSubgroupPointsAt_def, weylRootSubgroupPoints_apply]
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul]
+  rw [hW, hWinv]
   rw [Matrix.map_coeff_mul_map_C, Matrix.map_coeff_map_C_mul]
   have hroot : (((rootSubgroupPoints (.inl i) (Polynomial B)
       (Multiplicative.ofAdd (Polynomial.C c * Polynomial.X)) :
