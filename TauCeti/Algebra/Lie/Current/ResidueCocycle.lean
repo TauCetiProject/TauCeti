@@ -29,7 +29,8 @@ restricts to Mathlib's `LieAlgebra.LoopAlgebra.twoCochainOfBilinear`.
 The pairing vanishes on currents of orders at least `M` and `N` with `M + N > 0`, and on two
 currents of nonnegative order. In particular every current pairs to zero with all currents of
 sufficiently high order, and the pairing vanishes on the positive currents, those of order at
-least zero.
+least zero. Dually, it vanishes on polynomial currents of orders below `M` and `N` with
+`M + N ≤ 1`, in particular on the negative currents `t⁻¹ L[t⁻¹]`.
 
 The sign convention is Mathlib's: on modes `x_m = Xᵐ ⊗ x`, the pairing is
 `(x_m, y_n) ↦ n Φ(x, y) δ_{m + n, 0}`. The central extension cocycle `c_κ = -κ(x, y) Res(f dg)`
@@ -44,6 +45,8 @@ of an invariant symmetric form `κ` is the cocycle attached here to `Φ = -κ`.
   preserves their pairing.
 * `TauCeti.CurrentAlgebra.residuePairing_eq_zero_of_mem_orderSubmodule`: vanishing on currents of
   orders summing to a positive integer.
+* `TauCeti.CurrentAlgebra.residuePairing_eq_zero_of_mem_truncSubmodule`: vanishing on polynomial
+  currents of orders below `M` and `N` with `M + N ≤ 1`.
 * `TauCeti.CurrentAlgebra.residuePairing_lie`: the 2-cocycle identity for an invariant form.
 * `TauCeti.CurrentAlgebra.twoCochainOfBilinear`: the alternating 2-cochain of a symmetric form.
 * `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`: the 2-cocycle of an invariant symmetric form.
@@ -141,6 +144,18 @@ theorem residuePairing_eq_zero_of_mem_orderSubmodule_zero {u v : currentAlgebra 
     residuePairing R L Φ u v = 0 := by
   rw [residuePairing_eq_sum R L Φ hu hv, neg_zero, Finset.Icc_self, Finset.sum_singleton,
     zero_smul]
+
+/-- The residue pairing vanishes on polynomial currents of orders below `M` and `N` when
+`M + N ≤ 1`. In particular it vanishes on two negative currents. -/
+theorem residuePairing_eq_zero_of_mem_truncSubmodule {M N : ℤ} {u v : currentAlgebra R L}
+    (hu : u ∈ truncSubmodule R L M) (hv : v ∈ truncSubmodule R L N) (hMN : M + N ≤ 1) :
+    residuePairing R L Φ u v = 0 := by
+  rw [truncSubmodule_def] at hu hv
+  rw [← Submodule.mem_bot R]
+  refine LinearMap.BilinMap.apply_apply_mem_of_mem_span ⊥ _ _ (residuePairing R L Φ) ?_ u v hu hv
+  rintro _ ⟨m, hm, x, rfl⟩ _ ⟨n, hn, y, rfl⟩
+  rw [residuePairing_tmul, LaurentSeries.residuePairing_single, ite_eq_right (by omega), zero_mul]
+  exact zero_mem _
 
 /-- Every current pairs to zero with all currents of sufficiently high order. -/
 theorem exists_orderSubmodule_le_ker_residuePairing (u : currentAlgebra R L) :
