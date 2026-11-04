@@ -25,7 +25,8 @@ constructs pure tensors. `tensorMap` tensors native `H`-linear intertwiners.
 The coproduct action restricts `tensorPairAction` along `Bialgebra.comulAlgHom`.
 
 `BialgebraModule.Trivial` is the base semiring with `H` acting through its counit. The
-associativity equivalence `assoc` and the unit equivalences `lid` and `rid` are the native
+associativity equivalence `assoc` (with its naturality `tensorMap_tensorMap_assoc` and pentagon
+coherence `assoc_pentagon`) and the unit equivalences `lid` and `rid` are the native
 tensor-product equivalences, which are `H`-linear by coassociativity and the two counit laws.
 Together with the trivial module these are the data of the monoidal structure on modules over a
 bialgebra; see C. Kassel, *Quantum Groups*, Chapter III.
@@ -242,6 +243,56 @@ variable {M N} in
   intro m n
   simp
 
+variable {M N} in
+/-- Tensoring with the zero intertwiner on the left gives zero. -/
+@[simp] theorem tensorMap_zero_left (g : N →ₗ[H] N') :
+    tensorMap R H (0 : M →ₗ[H] M') g = 0 := by
+  apply Tensor.ext
+  intro m n
+  simp
+
+variable {M N} in
+/-- Tensoring with the zero intertwiner on the right gives zero. -/
+@[simp] theorem tensorMap_zero_right (f : M →ₗ[H] M') :
+    tensorMap R H f (0 : N →ₗ[H] N') = 0 := by
+  apply Tensor.ext
+  intro m n
+  simp
+
+variable {M N} in
+/-- `tensorMap` is additive in its left intertwiner argument. -/
+@[simp] theorem tensorMap_add_left (f₁ f₂ : M →ₗ[H] M') (g : N →ₗ[H] N') :
+    tensorMap R H (f₁ + f₂) g = tensorMap R H f₁ g + tensorMap R H f₂ g := by
+  apply Tensor.ext
+  intro m n
+  simp [add_tmul]
+
+variable {M N} in
+/-- `tensorMap` is additive in its right intertwiner argument. -/
+@[simp] theorem tensorMap_add_right (f : M →ₗ[H] M') (g₁ g₂ : N →ₗ[H] N') :
+    tensorMap R H f (g₁ + g₂) = tensorMap R H f g₁ + tensorMap R H f g₂ := by
+  apply Tensor.ext
+  intro m n
+  simp [tmul_add]
+
+variable {M N} in
+/-- `tensorMap` commutes with finite sums in its left intertwiner argument. -/
+theorem tensorMap_sum_left {ι : Type*} (s : Finset ι) (f : ι → (M →ₗ[H] M')) (g : N →ₗ[H] N') :
+    tensorMap R H (∑ i ∈ s, f i) g = ∑ i ∈ s, tensorMap R H (f i) g := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => rw [Finset.sum_insert ha, tensorMap_add_left, ih, Finset.sum_insert ha]
+
+variable {M N} in
+/-- `tensorMap` commutes with finite sums in its right intertwiner argument. -/
+theorem tensorMap_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[H] M') (g : ι → (N →ₗ[H] N')) :
+    tensorMap R H f (∑ i ∈ s, g i) = ∑ i ∈ s, tensorMap R H f (g i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => rw [Finset.sum_insert ha, tensorMap_add_right, ih, Finset.sum_insert ha]
+
 variable {M'' N'' : Type*}
 variable [AddCommMonoid M''] [Module R M''] [Module H M''] [IsScalarTower R H M'']
 variable [AddCommMonoid N''] [Module R N''] [Module H N''] [IsScalarTower R H N'']
@@ -410,6 +461,82 @@ variable {M N P} in
 @[simp] theorem assoc_symm_tmul (m : M) (n : N) (p : P) :
     (assoc R H M N P).symm (tmul R H m (tmul R H n p)) = tmul R H (tmul R H m n) p := by
   rw [LinearEquiv.symm_apply_eq, assoc_tmul]
+
+section Naturality
+
+variable {M N P}
+variable {M' N' P' : Type*}
+variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
+variable [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
+variable [AddCommMonoid P'] [Module R P'] [Module H P'] [IsScalarTower R H P']
+
+/-- The associativity equivalence is natural in all three module factors. -/
+theorem tensorMap_tensorMap_comp_assoc (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
+    (tensorMap R H f (tensorMap R H g h)).comp (assoc R H M N P).toLinearMap =
+      (assoc R H M' N' P').toLinearMap.comp (tensorMap R H (tensorMap R H f g) h) := by
+  apply Tensor.ext
+  intro x p
+  induction x using Tensor.inductionOn with
+  | htmul m n => simp
+  | hadd x y hx hy => simp only [add_tmul, map_add, hx, hy]
+
+/-- Pointwise naturality of the associativity equivalence with respect to `tensorMap`. -/
+theorem tensorMap_tensorMap_assoc (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
+    (x : Tensor R H (Tensor R H M N) P) :
+    tensorMap R H f (tensorMap R H g h) (assoc R H M N P x) =
+      assoc R H M' N' P' (tensorMap R H (tensorMap R H f g) h x) :=
+  LinearMap.congr_fun (tensorMap_tensorMap_comp_assoc R H f g h) x
+
+/-- The inverse associativity equivalence is natural in all three module factors. -/
+theorem tensorMap_tensorMap_comp_assoc_symm (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
+    (tensorMap R H (tensorMap R H f g) h).comp (assoc R H M N P).symm.toLinearMap =
+      (assoc R H M' N' P').symm.toLinearMap.comp (tensorMap R H f (tensorMap R H g h)) := by
+  apply Tensor.ext
+  intro m x
+  induction x using Tensor.inductionOn with
+  | htmul n p => simp
+  | hadd x y hx hy => simp only [tmul_add, map_add, hx, hy]
+
+/-- Pointwise naturality of the inverse associativity equivalence with respect to `tensorMap`. -/
+theorem tensorMap_tensorMap_assoc_symm (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
+    (x : Tensor R H M (Tensor R H N P)) :
+    tensorMap R H (tensorMap R H f g) h ((assoc R H M N P).symm x) =
+      (assoc R H M' N' P').symm (tensorMap R H f (tensorMap R H g h) x) :=
+  LinearMap.congr_fun (tensorMap_tensorMap_comp_assoc_symm R H f g h) x
+
+end Naturality
+
+section Pentagon
+
+variable (Q : Type*) [AddCommMonoid Q] [Module R Q] [Module H Q] [IsScalarTower R H Q]
+
+/-- Mac Lane's pentagon identity for the coproduct tensor associativity equivalence: the two
+ways of reassociating `((M ⊗ N) ⊗ P) ⊗ Q` into `M ⊗ (N ⊗ (P ⊗ Q))` agree. -/
+theorem assoc_pentagon :
+    (assoc R H (Tensor R H M N) P Q).trans (assoc R H M N (Tensor R H P Q)) =
+      ((tensorCongr R H (assoc R H M N P) (LinearEquiv.refl H Q)).trans
+        (assoc R H M (Tensor R H N P) Q)).trans
+        (tensorCongr R H (LinearEquiv.refl H M) (assoc R H N P Q)) := by
+  apply LinearEquiv.toLinearMap_injective
+  apply Tensor.ext
+  intro x q
+  induction x using Tensor.inductionOn with
+  | hadd x y hx hy => simp only [add_tmul, map_add, hx, hy]
+  | htmul y p =>
+    induction y using Tensor.inductionOn with
+    | hadd y z hy hz => simp only [add_tmul, map_add, hy, hz]
+    | htmul m n => simp
+
+variable {M N P Q} in
+/-- Pointwise form of Mac Lane's pentagon identity for `BialgebraModule.assoc`. -/
+theorem assoc_pentagon_apply (x : Tensor R H (Tensor R H (Tensor R H M N) P) Q) :
+    assoc R H M N (Tensor R H P Q) (assoc R H (Tensor R H M N) P Q x) =
+      tensorMap R H LinearMap.id (assoc R H N P Q).toLinearMap
+        (assoc R H M (Tensor R H N P) Q
+          (tensorMap R H (assoc R H M N P).toLinearMap LinearMap.id x)) :=
+  LinearEquiv.congr_fun (assoc_pentagon R H M N P Q) x
+
+end Pentagon
 
 end Coherence
 
