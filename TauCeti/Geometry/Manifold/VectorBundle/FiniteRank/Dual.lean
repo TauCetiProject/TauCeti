@@ -19,7 +19,8 @@ manifold this constructs the holomorphic dual on the existing dual-core carrier.
 `dualTotalSpaceDiffeomorph` identifies that construction with Mathlib's dual bundle, the
 bundle of continuous linear maps to the trivial line. Its underlying homeomorphism is
 `dualTotalSpaceHomeomorph`; in a frame it reads a dual coordinate vector as the functional
-with those coefficients. Thus it is complex-linear on fibres, not conjugate-linear.
+with those coefficients. It is `𝕜`-linear on fibres (complex-linear, not conjugate-linear,
+when `𝕜 = ℂ`).
 The naturality formula `dualFiberEquiv_fiberMap_dualMap` for the underlying identification
 also describes this diffeomorphism.
 
@@ -85,7 +86,7 @@ theorem contMDiff_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.2)
 
 /-- The dual core and Mathlib's dual bundle are `C^n` diffeomorphic by the canonical
-complex-linear (over `ℂ`) identification of each coordinate vector with a functional. -/
+`𝕜`-linear identification of each coordinate vector with a functional. -/
 noncomputable def dualTotalSpaceDiffeomorph (A : FiniteRankBundleCore 𝕜 B)
     (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     A.dual.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.dual.rank → 𝕜),
