@@ -208,16 +208,9 @@ instance isLattice_range_localizationToCompletion :
 the vectors `1 ⊗ x` with `x ∈ L`. -/
 theorem range_localizationToCompletion :
     LinearMap.range (L.localizationToCompletion p) = L.carrier.padicLocalization p := by
-  refine le_antisymm ?_ (Submodule.padicLocalization_le_iff.mpr fun x hx ↦
-    ⟨1 ⊗ₜ ⟨x, hx⟩, by simp⟩)
-  rintro _ ⟨t, rfl⟩
-  induction t using TensorProduct.inductionOn with
-  | tmul a x =>
-    have h : (a : ℚ_[p]) ⊗ₜ[ℚ] (x : V) = a • (1 : ℚ_[p]) ⊗ₜ[ℚ] (x : V) := by
-      simp [smul_tmul', Algebra.smul_def]
-    rw [localizationToCompletion_tmul, h]
-    exact Submodule.smul_mem _ a (Submodule.one_tmul_mem_padicLocalization x.2)
-  | add s t hs ht => simpa only [map_add] using add_mem hs ht
+  rw [localizationToCompletion, LinearMap.range_liftBaseChange, LinearMap.range_comp,
+    Submodule.range_subtype, Submodule.map_coe, Submodule.padicLocalization_def]
+  rfl
 
 section Coordinates
 

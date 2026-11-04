@@ -115,15 +115,11 @@ theorem padicLocalization_mono {M : Submodule ℤ V} (h : M ≤ N) :
 `v ∈ s`. -/
 theorem padicLocalization_span (s : Set V) :
     (span ℤ s).padicLocalization p = span ℤ_[p] ((fun v : V ↦ (1 : ℚ_[p]) ⊗ₜ[ℚ] v) '' s) := by
-  refine le_antisymm (padicLocalization_le_iff.mpr fun v hv ↦ ?_)
-    (span_mono (Set.image_mono subset_span))
-  induction hv using span_induction with
-  | mem v hv => exact subset_span ⟨v, hv, rfl⟩
-  | zero => simp
-  | add v w _ _ hv hw => simpa only [tmul_add] using add_mem hv hw
-  | smul n v _ hv =>
-    rw [tmul_smul]
-    exact zsmul_mem hv n
+  have h : (fun v : V ↦ (1 : ℚ_[p]) ⊗ₜ[ℚ] v) '' span ℤ s =
+      span ℤ ((fun v : V ↦ (1 : ℚ_[p]) ⊗ₜ[ℚ] v) '' s) :=
+    (map_coe ((TensorProduct.mk ℚ ℚ_[p] V 1).restrictScalars ℤ) _).symm.trans
+      (congrArg SetLike.coe (map_span _ s))
+  rw [padicLocalization, h, span_span_of_tower]
 
 variable (N p) in
 /-- The localization of a full lattice is a full `ℤ_p`-lattice in `ℚ_p ⊗[ℚ] V`. -/
@@ -308,12 +304,12 @@ private theorem exists_isLattice_padicLocalization_eq
   have hkX (p : Nat.Primes) {x} (hx : x ∈ X p) : (p : ℤ_[p]) ^ k p • x ∈ N.padicLocalization p := by
     by_cases h : X p = N.padicLocalization p
     · simpa [k, h] using h ▸ hx
-    · rw [show k p = k₂ p + k₁ p by simp [k, h, add_comm], pow_add, mul_smul]
+    · simp only [k, h, ite_false, add_comm (k₁ p), pow_add, mul_smul]
       exact smul_mem _ _ (hk₁ p x hx)
   have hkN (p : Nat.Primes) {x} (hx : x ∈ N.padicLocalization p) : (p : ℤ_[p]) ^ k p • x ∈ X p := by
     by_cases h : X p = N.padicLocalization p
     · simpa [k, h] using hx
-    · rw [show k p = k₁ p + k₂ p by simp [k, h], pow_add, mul_smul]
+    · simp only [k, h, ite_false, pow_add, mul_smul]
       exact smul_mem _ _ (hk₂ p x hx)
   -- Step 2: the integer `D = ∏_p p ^ k p` and its parts `D' p` prime to `p`.
   have hS : {p | k p ≠ 0}.Finite :=
