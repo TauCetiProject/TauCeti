@@ -40,6 +40,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.lift`: the factorisation through `toAlmost S` of an exact functor killing
   almost zero modules.
 * `TauCeti.Almost.Module.classicalEquiv`: for the classical setup, `ModuleCat V ≌ Module S`.
+* `TauCeti.Almost.Module.firmEquiv`: the equivalence `Module S ≌ S.Firm`, with comparison
+  `TauCeti.Almost.Module.toAlmostCompFirmIso` on almostifications.
 
 ## Main results
 
@@ -64,7 +66,7 @@ public section
 
 universe u
 
-open CategoryTheory Limits
+open CategoryTheory Limits TensorProduct
 
 namespace TauCeti.Almost
 
@@ -163,6 +165,12 @@ instance isIso_toAlmost_map_subtype :
     IsIso ((toAlmost S).map (ModuleCat.ofHom S.ideal.subtype)) :=
   (isIso_toAlmost_map_iff S _).mpr S.isAlmostIso_subtype
 
+/-- The action map is inverted by almostification. -/
+instance isIso_toAlmost_map_tildeAct (M : ModuleCat.{u} V) :
+    IsIso ((toAlmost S).map (ModuleCat.ofHom (S.tildeAct M) :
+      ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M)) :=
+  (isIso_toAlmost_map_iff S _).mpr (S.isAlmostIso_tildeAct M)
+
 /-- For the zero setup `(V, 0)`, every almost module is zero. -/
 theorem isZero_of_ideal_eq_bot (hS : S.ideal = ⊥) (X : Module S) : IsZero X := by
   refine ((isZero_toAlmost_obj_iff S _).mpr ?_).of_iso ((toAlmost S).objObjPreimageIso X).symm
@@ -211,6 +219,27 @@ noncomputable def liftUniq (G : Module S ⥤ D) (e : toAlmost S ⋙ G ≅ F) : G
   Localization.liftNatIso (toAlmost S) S.almostZero.isoModSerre F F G _ (Iso.refl F)
 
 end lift
+
+/-! ### The firm-module model -/
+
+/-- The equivalence between the Serre quotient of modules and the firm-module model. -/
+noncomputable def firmEquiv : Module S ≌ S.Firm :=
+  Localization.uniq (toAlmost S) S.firm S.almostZero.isoModSerre
+
+/-- The firm representative of an almostification is its firmification. -/
+noncomputable def toAlmostCompFirmIso : toAlmost S ⋙ (firmEquiv S).functor ≅ S.firm :=
+  Localization.compUniqFunctor (toAlmost S) S.firm S.almostZero.isoModSerre
+
+noncomputable instance :
+    Localization.Lifting (toAlmost S) S.almostZero.isoModSerre S.firm (firmEquiv S).functor :=
+  ⟨toAlmostCompFirmIso S⟩
+
+instance : (firmEquiv S).functor.Linear V :=
+  (Localization.functor_linear_iff (toAlmost S) S.almostZero.isoModSerre V S.firm
+    (firmEquiv S).functor).mp inferInstance
+
+instance : (firmEquiv S).functor.Additive :=
+  Functor.additive_of_preserves_binary_products _
 
 /-! ### The classical setup -/
 
