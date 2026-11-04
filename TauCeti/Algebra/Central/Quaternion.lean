@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Central.Defs
 public import Mathlib.Algebra.Quaternion
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Algebra.Quaternion.Basic
+import Mathlib.Data.Matrix.Basis
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -40,15 +42,16 @@ than excluding it.
   quaternions are those with vanishing imaginary part, and
   `TauCeti.Quaternion.forall_mul_comm_iff_im_eq_zero` restates this as commuting with every
   quaternion.
-* `TauCeti.Quaternion.forall_sub_mul_eq_zero_iff`, `TauCeti.Quaternion.forall_mul_sub_eq_zero_iff`
-  and `TauCeti.Quaternion.im_inv_eq_zero_iff`: over a linearly ordered field, a commutator with `x`
-  multiplied by a fixed `c` vanishes identically iff `c = 0` or `x` is real, and `x⁻¹` is real iff
-  `x` is.
+* `TauCeti.Quaternion.forall_sub_mul_eq_zero_iff` and
+  `TauCeti.Quaternion.forall_mul_sub_eq_zero_iff`: when `ℍ[R]` has no zero divisors (for instance
+  over a linearly ordered commutative ring), a commutator with `x` multiplied by a fixed `c`
+  vanishes identically iff `c = 0` or `x` is real.
+* `TauCeti.Quaternion.im_inv_eq_zero_iff`: over a linearly ordered field, `x⁻¹` is real iff `x` is.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
-  and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
-* `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
-  not isomorphic to a matrix algebra of size at least two, so over a field its Brauer class is
-  nontrivial.
+  and `2 ≠ 0` in `R`; in particular `ℍ[ℝ]` is a central `ℝ`-algebra.
+* `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: when `R` is nontrivial and `ℍ[R]` has no zero
+  divisors, `ℍ[R]` is not isomorphic to a matrix algebra of size at least two, so over a field
+  for which `ℍ[R]` is a division ring its Brauer class is nontrivial.
 
 ## Implementation notes
 
@@ -61,16 +64,16 @@ other products of imaginary units are not all zero there, since `i * j = k` and 
 
 The regularity hypothesis of `center_eq_bot` is carried as `IsLeftRegular (2 : R)`, which is exactly
 what the proof consumes. `instIsCentral` restates it with the typeclass assumptions
-`[NoZeroDivisors R] [NeZero (2 : R)]` so that instance search can discharge it; the roadmap's target
-`R = ℝ` is an instance of that form.
+`[NoZeroDivisors R] [NeZero (2 : R)]` so that instance search can discharge it, as it does for
+`R = ℝ`. Conversely, if `ℍ[R]` itself has no zero divisors then `2` is automatically left regular
+in `R`, since `(r + r i)² = 2 r² i` (`Quaternion.isLeftRegular_two`); the results stated under
+`[NoZeroDivisors ℍ[R]]` use this.
 
 ## References
 
-This file implements the Hamilton-quaternion worked example of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md`, whose `Suggested.lean` pins it
-as `quaternion_isCentral`. The centrality of `ℍ` and the nonsplitting statement are the two halves
-of the classical computation of the Brauer group of `ℝ`; see for instance P. Gille and
-T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §1.1 and §2.1.
+The centrality of `ℍ` and the nonsplitting statement are the two halves of the classical
+computation of the Brauer group of `ℝ`; see for instance P. Gille and T. Szamuely,
+*Central Simple Algebras and Galois Cohomology*, CUP (2006), §1.1 and §2.1.
 -/
 
 public section
@@ -96,25 +99,13 @@ theorem commute_iff :
       2 * (x.imJ * y.imK - x.imK * y.imJ) = 0 ∧
         2 * (x.imK * y.imI - x.imI * y.imK) = 0 ∧
         2 * (x.imI * y.imJ - x.imJ * y.imI) = 0 := by
-  rw [_root_.commute_iff_eq]
+  simp only [_root_.commute_iff_eq, _root_.Quaternion.ext_iff, _root_.Quaternion.re_mul,
+    _root_.Quaternion.imI_mul, _root_.Quaternion.imJ_mul, _root_.Quaternion.imK_mul]
   constructor
-  · intro h
-    refine ⟨?_, ?_, ?_⟩
-    · have h' := congrArg _root_.QuaternionAlgebra.imI h
-      simp only [_root_.Quaternion.imI_mul] at h'
-      linear_combination h'
-    · have h' := congrArg _root_.QuaternionAlgebra.imJ h
-      simp only [_root_.Quaternion.imJ_mul] at h'
-      linear_combination h'
-    · have h' := congrArg _root_.QuaternionAlgebra.imK h
-      simp only [_root_.Quaternion.imK_mul] at h'
-      linear_combination h'
+  · rintro ⟨-, hI, hJ, hK⟩
+    exact ⟨by linear_combination hI, by linear_combination hJ, by linear_combination hK⟩
   · rintro ⟨hI, hJ, hK⟩
-    refine _root_.Quaternion.ext _ _ ?_ ?_ ?_ ?_
-    · simp only [_root_.Quaternion.re_mul]; ring
-    · simp only [_root_.Quaternion.imI_mul]; linear_combination hI
-    · simp only [_root_.Quaternion.imJ_mul]; linear_combination hJ
-    · simp only [_root_.Quaternion.imK_mul]; linear_combination hK
+    exact ⟨by ring, by linear_combination hI, by linear_combination hJ, by linear_combination hK⟩
 
 /-- **Two quaternions commute exactly when the cross product of their imaginary parts vanishes**,
 once `2` is a left regular element of `R`. This is the classical form of
@@ -158,13 +149,10 @@ theorem mem_center_iff :
 /-- **The centre of `ℍ[R]` is the image of `R`** as soon as `2` is a left regular element of `R`. -/
 theorem center_eq_bot (h2 : IsLeftRegular (2 : R)) :
     Subalgebra.center R ℍ[R] = ⊥ := by
-  refine le_antisymm (fun x hx ↦ ?_) bot_le
+  refine le_antisymm (fun x hx ↦ Algebra.mem_bot.mpr ⟨x.re, ?_⟩) bot_le
   obtain ⟨hI, hJ, hK⟩ := mem_center_iff.mp hx
-  have hI' : x.imI = 0 := h2 (by simpa using hI)
-  have hJ' : x.imJ = 0 := h2 (by simpa using hJ)
-  have hK' : x.imK = 0 := h2 (by simpa using hK)
-  refine Algebra.mem_bot.mpr ⟨x.re, ?_⟩
-  refine _root_.Quaternion.ext _ _ rfl ?_ ?_ ?_ <;> simp [hI', hJ', hK']
+  ext <;> simp [h2.mul_left_eq_zero_iff.mp hI, h2.mul_left_eq_zero_iff.mp hJ,
+    h2.mul_left_eq_zero_iff.mp hK]
 
 /-- **A quaternion is central exactly when its imaginary part vanishes**, as soon as `2` is a left
 regular element of `R`. -/
@@ -189,59 +177,55 @@ instance instIsCentral [NoZeroDivisors R] [NeZero (2 : R)] : Algebra.IsCentral R
 
 end CommRing
 
-section LinearOrderedCommRing
+section NoZeroDivisors
 
-variable (R : Type*) [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [CommRing R] [NoZeroDivisors ℍ[R]]
 
-/-- **The Hamilton quaternions over a linearly ordered commutative ring are not split**: they are
-not isomorphic, as an `R`-algebra, to a matrix algebra of size at least two. Such a matrix algebra
-has nonzero zero divisors while `ℍ[R]` has none, so no isomorphism can exist.
-
-Together with `TauCeti.Quaternion.instIsCentral` and the simplicity of a division ring this says,
-for `R` a linearly ordered field, that the Brauer class of `ℍ[R]` is nontrivial; over `ℝ` it is the
-nonidentity element of the Brauer group. -/
-theorem isEmpty_algEquiv_matrix (n : Type*) [Fintype n] [DecidableEq n] [Nontrivial n] :
-    IsEmpty (ℍ[R] ≃ₐ[R] Matrix n n R) := by
-  refine ⟨fun f ↦ ?_⟩
-  -- Two complementary nonzero diagonal idempotents of `Matrix n n R`, with vanishing product.
-  obtain ⟨i, j, hij⟩ := exists_pair_ne n
-  obtain ⟨d, e, hd, he, hde⟩ : ∃ d e : Matrix n n R, d ≠ 0 ∧ e ≠ 0 ∧ d * e = 0 := by
-    refine ⟨Matrix.diagonal fun k ↦ if k = i then 1 else 0,
-      Matrix.diagonal fun k ↦ if k = i then 0 else 1, fun h ↦ ?_, fun h ↦ ?_, ?_⟩
-    · simpa using congrFun (Matrix.diagonal_eq_zero.mp h) i
-    · simpa [hij.symm] using congrFun (Matrix.diagonal_eq_zero.mp h) j
-    · rw [Matrix.diagonal_mul_diagonal, Matrix.diagonal_eq_zero]
-      funext k
-      by_cases hk : k = i <;> simp [hk]
-  -- Pulling them back along `f.symm` contradicts the absence of zero divisors in `ℍ[R]`.
-  have hsymm : f.symm d * f.symm e = 0 := by rw [← map_mul, hde, map_zero]
-  rcases mul_eq_zero.mp hsymm with h | h
-  · exact hd (by simpa using congrArg f h)
-  · exact he (by simpa using congrArg f h)
-
-end LinearOrderedCommRing
-
-section LinearOrderedField
-
-variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x c : ℍ[R]}
+variable {x c : ℍ[R]}
 
 /-- The commutator with `x` followed by right multiplication by `c` vanishes identically exactly
 when `c = 0` or `x` is real. -/
 theorem forall_sub_mul_eq_zero_iff : (∀ y, (x * y - y * x) * c = 0) ↔ c = 0 ∨ x.im = 0 := by
-  rw [← forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h]
+  rw [← forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two]
   simp only [mul_eq_zero, sub_eq_zero, forall_or_right, or_comm]
 
 /-- Left multiplication by `c` of the commutator with `x` vanishes identically exactly when `c = 0`
 or `x` is real. -/
 theorem forall_mul_sub_eq_zero_iff : (∀ y, c * (y * x - x * y) = 0) ↔ c = 0 ∨ x.im = 0 := by
-  rw [← forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h]
+  rw [← forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two]
   simp only [mul_eq_zero, sub_eq_zero, forall_or_left, eq_comm]
+
+variable (R) [Nontrivial R]
+
+/-- **The Hamilton quaternions are not split once they have no zero divisors**: `ℍ[R]` is then not
+isomorphic, as an `R`-algebra, to a matrix algebra of size at least two, since such a matrix algebra
+has nonzero zero divisors. This applies in particular over a linearly ordered commutative ring.
+
+Together with `TauCeti.Quaternion.instIsCentral` and the simplicity of a division ring this says,
+for a field `R` over which `ℍ[R]` is a division ring, that the Brauer class of `ℍ[R]` is
+nontrivial; over `ℝ` it is the nonidentity element of the Brauer group. -/
+theorem isEmpty_algEquiv_matrix (n : Type*) [Fintype n] [DecidableEq n] [Nontrivial n] :
+    IsEmpty (ℍ[R] ≃ₐ[R] Matrix n n R) := by
+  refine ⟨fun f ↦ ?_⟩
+  -- Two distinct diagonal matrix units are nonzero with vanishing product; pulling them back
+  -- along `f` contradicts the absence of zero divisors in `ℍ[R]`.
+  obtain ⟨i, j, hij⟩ := exists_pair_ne n
+  have h : f.symm (Matrix.single i i 1) * f.symm (Matrix.single j j 1) = 0 := by
+    rw [← map_mul, Matrix.single_mul_single_of_ne _ _ _ _ hij, map_zero]
+  rcases mul_eq_zero.mp h with h | h
+  · simpa using congr_fun₂ ((map_eq_zero_iff _ f.symm.injective).mp h) i i
+  · simpa using congr_fun₂ ((map_eq_zero_iff _ f.symm.injective).mp h) j j
+
+end NoZeroDivisors
+
+section LinearOrderedField
+
+variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x : ℍ[R]}
 
 /-- A quaternion is real exactly when its inverse is. -/
 @[simp]
 theorem im_inv_eq_zero_iff : x⁻¹.im = 0 ↔ x.im = 0 := by
-  have h2 : IsLeftRegular (2 : R) := fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h
-  simp_rw [← forall_mul_comm_iff_im_eq_zero h2, ← commute_iff_eq]
+  simp_rw [← forall_mul_comm_iff_im_eq_zero _root_.Quaternion.isLeftRegular_two, ← commute_iff_eq]
   exact ⟨fun H y ↦ by simpa using (H y).inv_left₀, fun H y ↦ (H y).inv_left₀⟩
 
 end LinearOrderedField

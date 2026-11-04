@@ -474,4 +474,41 @@ instance instIsRingFiltration :
 
 end wordFiltration
 
+/-- An ordered product of filtered factors has degree at most the sum of their degrees. -/
+theorem prod_map_mem_wordFiltration' {α : Type*} (l : List α) {g : α → A} {n : α → ℕ}
+    (hg : ∀ p ∈ l, g p ∈ wordFiltration f (n p)) :
+    (l.map g).prod ∈ wordFiltration f (l.map n).sum :=
+  SetLike.list_prod_map_mem_graded l n g hg
+
+section Ring
+
+variable {S B : Type*} [CommRing S] [Ring B] [_root_.Algebra S B] [Module S M]
+variable (f : M →ₗ[S] B)
+
+/-- Replacing filtered factors by factors with the same leading terms changes their ordered
+product only in strictly smaller total word-filtration degree. -/
+theorem prod_map_sub_prod_map_mem_wordFiltrationPrevious {α : Type*} (l : List α)
+    {g h : α → B} {n : α → ℕ}
+    (hg : ∀ p ∈ l, g p ∈ wordFiltration f (n p))
+    (hgh : ∀ p ∈ l, g p - h p ∈ wordFiltrationPrevious f (n p)) :
+    (l.map g).prod - (l.map h).prod ∈ wordFiltrationPrevious f (l.map n).sum := by
+  have hh (p : α) (hp : p ∈ l) : h p ∈ wordFiltration f (n p) := by
+    simpa only [sub_sub_cancel] using (wordFiltration f (n p)).sub_mem
+      (hg p hp) (wordFiltrationPrevious_le f (n p) (hgh p hp))
+  induction l with
+  | nil => simp
+  | cons p l ih =>
+    simp only [List.map_cons, List.prod_cons, List.sum_cons]
+    have hleft := mul_mem_wordFiltrationPrevious_left f
+      (hgh p List.mem_cons_self)
+      (prod_map_mem_wordFiltration' f l fun q hq ↦ hh q (List.mem_cons_of_mem p hq))
+    have hright := mul_mem_wordFiltrationPrevious_right f (hg p List.mem_cons_self)
+      (ih (fun q hq ↦ hg q (List.mem_cons_of_mem p hq))
+        (fun q hq ↦ hgh q (List.mem_cons_of_mem p hq))
+        (fun q hq ↦ hh q (List.mem_cons_of_mem p hq)))
+    simpa only [mul_sub, sub_mul, sub_add_sub_cancel] using
+      (wordFiltrationPrevious f (n p + (l.map n).sum)).add_mem hright hleft
+
+end Ring
+
 end TauCeti.Algebra

@@ -143,7 +143,7 @@ theorem norm_principalMinor_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ : 0 < �
   have h (i j : ι) : ‖A i j‖ ≤ σ ^ w i * σ ^ (-w' j) := by
     simpa only [← zpow_add₀ hσ.ne', sub_eq_add_neg] using hA i j
   simpa only [← zpow_add₀ hσ.ne', ← sub_eq_add_neg,
-    prod_zpow_eq_zpow_sum₀ s hσ.ne'] using norm_principalMinor_le_prod_mul h s
+    prod_zpow_eq_zpow_sum_of_isUnit s hσ.ne'.isUnit] using norm_principalMinor_le_prod_mul h s
 
 /-- **Nonleading minors.** If `‖A i j‖ ≤ r i` with `r` antitone, every principal minor of size
 `n + 1` other than the leading one on `range (n + 1)` has norm at most

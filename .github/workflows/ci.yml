@@ -68,10 +68,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2bac9bc93d54be82ded88d135445f164e82b9109
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 2bac9bc93d54be82ded88d135445f164e82b9109
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -151,7 +151,7 @@ jobs:
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
-          path: ${{ steps.mathlib_ltar_restore.outputs.cache-dir }}/*.ltar
+          path: ${{ steps.mathlib_ltar_restore.outputs.cache-path }}
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
