@@ -136,6 +136,7 @@ variable [IsDomain R]
 
 /-- **The Hermite matrix is in Hermite normal form.** For a nonzero ideal `I` of a domain, `H_ω(I)`
 is in Hermite normal form. -/
+@[simp]
 theorem isHermiteNormalForm_idealHermiteMatrix {I : Ideal R} (hI : I ≠ ⊥) :
     (ω.idealHermiteMatrix I).IsHermiteNormalForm := by
   set L := (I.restrictScalars ℤ).map (ω.equivFun : R →ₗ[ℤ] Fin n → ℤ)
