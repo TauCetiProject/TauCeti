@@ -12,10 +12,12 @@ public import Mathlib.RingTheory.Length
 -- Non-public: used only inside proofs.  Reindexing a matrix ring, and the comparison of simple
 -- modules over a simple Artinian ring (which brings with it simplicity and semisimplicity of a
 -- matrix ring over a division ring) are the engines of the arguments below; neither is mentioned
--- by an exported statement.
+-- by an exported statement.  Invariance of length under a bijective semilinear map comes from
+-- `TauCeti.RingTheory.Length`.
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Semisimple.SimpleArtinian
 
 /-!
@@ -274,9 +276,7 @@ theorem length_eq_card_of_ringEquiv_matrix (f : R ≃+* Matrix ι ι D) :
   have hpair := RingHomInvPair.of_ringEquiv f
   have := hpair.symm
   rw [← Matrix.length_self_eq_card ι D]
-  apply WithBot.coe_injective
-  rw [Module.coe_length, Module.coe_length]
-  exact Order.krullDim_eq_of_orderIso (Submodule.orderIsoMapComap f.toSemilinearEquiv)
+  exact f.toSemilinearEquiv.toLinearMap.length_eq_of_bijective f.toSemilinearEquiv.bijective
 
 section Algebra
 

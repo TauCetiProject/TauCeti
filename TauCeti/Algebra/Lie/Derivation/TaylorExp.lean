@@ -263,9 +263,9 @@ theorem taylorExp_eq_exp (h : IsNilpotent D.toLinearMap) : taylorExp D hD = exp 
   obtain ⟨k, hk⟩ := id h
   ext x
   have hkx : D^[k] x = 0 := by
-    simpa only [Module.End.pow_apply, coeFn_coe, LinearMap.zero_apply] using congr($hk x)
+    simpa only [pow_apply_eq_iterate, coeFn_coe, LinearMap.zero_apply] using congr($hk x)
   rw [taylorExp_apply_eq_sum D hD hkx, LieDerivation.exp_map_apply, IsNilpotent.exp_eq_sum hk]
-  simp [Module.End.pow_apply]
+  simp [pow_apply_eq_iterate]
 
 end TaylorExp
 

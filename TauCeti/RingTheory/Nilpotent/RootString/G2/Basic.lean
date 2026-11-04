@@ -98,7 +98,7 @@ theorem integralDividedPower_mul_integralDividedPower_of_commutator_eq_three_nsm
           integralDividedPower x M (m - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2)
             (hMx (m - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2)) := by
   ext a
-  simp only [Module.End.mul_apply, LinearMap.sum_apply, AddSubmonoidClass.coe_finsetSum,
+  simp only [mul_apply_eq_comp, LinearMap.sum_apply, AddSubmonoidClass.coe_finsetSum,
     coe_integralDividedPower_apply, ← mul_smul, ← Finset.sum_smul]
   congr 1
   simpa only [mul_assoc] using

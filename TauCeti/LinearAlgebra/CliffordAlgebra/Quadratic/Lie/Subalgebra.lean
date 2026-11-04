@@ -55,6 +55,8 @@ scope.
   products of Clifford generators.
 * `CliffordAlgebra.quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem`: the
   universal property of the underlying submodule, from which the containments below are read off.
+* `CliffordAlgebra.quadraticLieSubalgebra_eq_bot`: over the zero module there are no nonzero
+  quadratic elements.
 * `CliffordAlgebra.map_mem_quadraticLieSubalgebra`: the algebra map induced by a quadratic
   isometry preserves the quadratic elements.
 * `CliffordAlgebra.quadraticLieSubalgebra_le_evenOdd_zero`,
@@ -184,6 +186,13 @@ theorem quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem
   refine Submodule.span_le.2 ?_
   rintro _ ⟨p, rfl⟩
   exact hP _ _
+
+/-- Over the zero module there are no nonzero quadratic elements. -/
+@[simp]
+theorem quadraticLieSubalgebra_eq_bot [Subsingleton M] : quadraticLieSubalgebra Q = ⊥ :=
+  (LieSubalgebra.eq_bot_iff _).2 fun _ hx ↦ (Submodule.mem_bot R).1 <|
+    quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q (P := ⊥)
+      (fun a b ↦ by simp [Subsingleton.elim a 0, Subsingleton.elim b 0]) hx
 
 /-- The quadratic elements are even. -/
 theorem quadraticLieSubalgebra_le_evenOdd_zero :

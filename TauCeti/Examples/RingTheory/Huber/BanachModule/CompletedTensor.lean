@@ -14,7 +14,9 @@ public import Mathlib.Algebra.Algebra.Bilinear
 The elementary tensor map is the completion image of the algebraic tensor, so it respects signs
 and vanishes on a zero factor. Lifting multiplication of a complete nonarchimedean ring evaluates
 products, the zero bilinear map lifts to zero, and the functor `map` cancels two signs and kills a
-zero factor on the whole completion.
+zero factor on the whole completion. The unit isomorphism `lid` evaluates scalar multiples and
+kills everything when the module is zero; the comparison `finiteProjectiveEquiv` is zero in rank
+zero, recovers Mathlib's algebraic unit map in rank one, and keeps signs in rank two.
 -/
 
 public section
@@ -70,3 +72,48 @@ example :
   CompletedTensor.ext fun v w ↦ by simp
 
 end Ring
+
+section Unit
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
+  {M : Type*} [AddCommGroup M] [Module A M] [UniformSpace M] [IsUniformAddGroup M]
+  [NonarchimedeanAddGroup M] [ContinuousSMul A M] [CompleteSpace M] [T0Space M]
+
+/-- The completed tensor unit map sends `a ⊗ v - b ⊗ w` to `a • v - b • w`. -/
+example (a b : A) (v w : M) :
+    CompletedTensor.lid A M (CompletedTensor.tmul A A M a v - CompletedTensor.tmul A A M b w) =
+      a • v - b • w := by
+  simp
+
+/-- The inverse of the unit map sends `w` to `1 ⊗ w`. -/
+example (w : M) : (CompletedTensor.lid A M).symm w = CompletedTensor.tmul A A M 1 w := by
+  simp
+
+/-- For a zero module, every completed tensor and its image under the unit map are zero. -/
+example [Subsingleton M] (x : CompletedTensor A A M) : x = 0 ∧ CompletedTensor.lid A M x = 0 :=
+  ⟨(CompletedTensor.lid A M).injective (Subsingleton.elim _ _), Subsingleton.elim _ _⟩
+
+variable [IsTopologicalRing A]
+
+/-- In rank zero, the comparison sends the only algebraic tensor to zero. -/
+example (x : (Fin 0 → A) ⊗[A] M) :
+    CompletedTensor.finiteProjectiveEquiv A (Fin 0 → A) M x = 0 := by
+  rw [Subsingleton.elim x 0, map_zero]
+
+/-- In rank one, following the comparison by the completed unit map is Mathlib's algebraic unit
+map. -/
+example (x : A ⊗[A] M) :
+    CompletedTensor.lid A M (CompletedTensor.finiteProjectiveEquiv A A M x) =
+      TensorProduct.lid A M x := by
+  simp
+
+/-- In rank two, the comparison sends `e₀ ⊗ v - e₁ ⊗ w` to the same two completed elementary
+tensors, with their signs. -/
+example (v w : M) :
+    CompletedTensor.finiteProjectiveEquiv A (Fin 2 → A) M
+        (Pi.single 0 1 ⊗ₜ v - Pi.single 1 1 ⊗ₜ w) =
+      CompletedTensor.tmul A (Fin 2 → A) M (Pi.single 0 1) v -
+        CompletedTensor.tmul A (Fin 2 → A) M (Pi.single 1 1) w := by
+  simp
+
+end Unit
