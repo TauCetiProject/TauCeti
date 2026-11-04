@@ -31,6 +31,8 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.coordsHomeomorph`: the homeomorphism with ordinary `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.timeReverse`: reversal of time about `T`, an isometry.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.spatialSlice`, `TauCeti.ParabolicSpaceTime.timeSlice`: the
+  continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
 * `TauCeti.ParabolicSpaceTime.slabTimeReverse`: reversal of time about `T`, an isometry from the
   slab `E × [T - b, T - a]` onto `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
@@ -284,6 +286,22 @@ theorem continuous_slabMk {a b : ℝ} :
 @[fun_prop]
 theorem continuous_slabTime {a b : ℝ} : Continuous (slabTime : slab (E := E) a b → Icc a b) :=
   (continuous_time.comp continuous_subtype_val).subtype_mk _
+
+/-- The spatial slice `x ↦ (x, t)` of a slab at the time `t`, as a continuous map. -/
+def spatialSlice {a b : ℝ} (t : Icc a b) : C(E, slab (E := E) a b) :=
+  ⟨fun x => slabMk x t, continuous_slabMk.comp (continuous_id.prodMk continuous_const)⟩
+
+@[simp]
+theorem spatialSlice_apply {a b : ℝ} (t : Icc a b) (x : E) : spatialSlice t x = slabMk x t :=
+  (rfl)
+
+/-- The time slice `t ↦ (x, t)` of a slab at the position `x`, as a continuous map. -/
+def timeSlice {a b : ℝ} (x : E) : C(Icc a b, slab (E := E) a b) :=
+  ⟨slabMk x, continuous_slabMk.comp (continuous_const.prodMk continuous_id)⟩
+
+@[simp]
+theorem timeSlice_apply {a b : ℝ} (x : E) (t : Icc a b) : timeSlice x t = slabMk x t :=
+  (rfl)
 
 /-! ### Time reversal -/
 

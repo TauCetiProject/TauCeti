@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CentralCharacter.Basic
+public import TauCeti.Algebra.Category.ModuleCat.CentralCharacter.Action
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Quotient
 
 /-!
@@ -20,6 +20,13 @@ For the kernel of a central character, the annihilation condition is exactly
 the strict scalar-action equation. The resulting comparison uses the quotient
 topology and the actual closed two-sided ideal, without assuming that algebraic
 extensions retain the character.
+
+Continuous algebra automorphisms with continuous inverses that preserve the character preserve
+this closed ideal (`MonoidHom.map_closedCentralIdeal_ker`). The quotient presentation is then
+equivariant: its functor and inverse are left-linear for the twisting action on discrete modules
+over the closed central quotient and the coherent twisting action
+`MonoidHom.discreteCentralCharacterMonoidalLeftAction` on the strict character fiber, and the
+lineators of the functor are identity maps of the underlying modules.
 
 ## References
 
@@ -80,6 +87,8 @@ theorem discreteAnnihilatedModules_closedCentralIdeal_ker
     discreteCentralCharacterModules_iff, centralCharacterModules_iff_ker_smul_eq_zero]
 
 /-- The quotient presentation of a strict discrete central-character fiber. -/
+-- Exposed so that the underlying modules are available in the lineator formulas below.
+@[expose]
 noncomputable def discreteCentralCharacterQuotientEquivalence
     (χ : Subalgebra.center R A →ₐ[R] R) :
     (discreteModules.{v} (A ⧸ (closedCentralIdeal (RingHom.ker χ)).asIdeal)).FullSubcategory ≌
@@ -115,3 +124,89 @@ theorem discreteCentralCharacterQuotientEquivalence_inverse_comp_forget
   rfl
 
 end AlgHom
+
+namespace MonoidHom
+
+open TauCeti Ideal
+
+variable {H : Type*} [Monoid H] {R : Type*} [CommRing R] {A : Type u} [Ring A] [Algebra R A]
+  [TopologicalSpace A] [IsTopologicalRing A] (a : H →* (A ≃ₐ[R] A))
+  (χ : Subalgebra.center R A →ₐ[R] R) (ha : ∀ h, Continuous (a h).symm)
+  (ha' : ∀ h, Continuous (a h)) (hχ : ∀ h, χ.comp (centerCongr (a h)).symm.toAlgHom = χ)
+
+/-- The quotient presentation of a strict discrete character fiber is equivariant. The source
+carries the twisting action through the automorphisms of the closed central quotient induced by
+`a`, the target carries `discreteCentralCharacterMonoidalLeftAction`, and the lineators are the
+identity maps of `discreteQuotientEquivalence`. -/
+@[instance_reducible]
+noncomputable def leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor :
+    letI := (closedCentralIdeal (RingHom.ker χ)).asIdeal.discreteQuotientMonoidalLeftAction.{v}
+      _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
+    χ.discreteCentralCharacterQuotientEquivalence.functor.LeftLinear (Discrete H) :=
+  have hI := a.map_closedCentralIdeal_ker χ ha ha' hχ
+  letI := MonoidHom.restrictScalarsMonoidalLeftAction.{v}
+    ((MulSemiringAction.toRingEquiv (A ≃ₐ[R] A) A).comp a)
+  letI := discreteQuotientMonoidalLeftAction.{v} _ _ hI ha
+  letI := isStableUnderLeftAction_discreteAnnihilatedModules.{v} _ _ hI ha
+  letI := a.isStableUnderLeftAction_discreteCentralCharacterModules.{v} χ ha hχ
+  letI := leftLinearDiscreteQuotientEquivalenceFunctor.{v} _ _ hI ha
+  inferInstanceAs (((discreteQuotientEquivalence _).functor ⋙
+    ObjectProperty.ιOfLE χ.discreteAnnihilatedModules_closedCentralIdeal_ker.le).LeftLinear
+      (Discrete H))
+
+open Functor.LaxLeftLinear Functor.OplaxLeftLinear in
+/-- The lineators of the quotient presentation of a strict discrete character fiber are identity
+maps of the underlying modules. -/
+lemma leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor_μₗ_hom_apply (c : Discrete H)
+    (M : (discreteModules.{v} (A ⧸ (closedCentralIdeal (RingHom.ker χ)).asIdeal)).FullSubcategory)
+    (x : M.obj) :
+    letI := (closedCentralIdeal (RingHom.ker χ)).asIdeal.discreteQuotientMonoidalLeftAction.{v}
+      _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
+    letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
+    (μₗ χ.discreteCentralCharacterQuotientEquivalence.functor c M).hom x = x :=
+  -- By definition the functor is `(discreteQuotientEquivalence _).functor ⋙ ιOfLE _`, whose
+  -- lineators (`Functor.LaxLeftLinear.comp_μₗ`) are those of the first factor followed by the
+  -- identity lineators of `ιOfLE` (`ObjectProperty.ιOfLE_μₗ`). Simp cannot rewrite through the
+  -- private body of this structure, so the quotient-level formula closes the goal up to that
+  -- unfolding.
+  leftLinearDiscreteQuotientEquivalenceFunctor_μₗ_hom_apply
+    (closedCentralIdeal (RingHom.ker χ)).asIdeal _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    c M x
+
+open Functor.LaxLeftLinear Functor.OplaxLeftLinear in
+/-- The inverse lineators of the quotient presentation of a strict discrete character fiber are
+identity maps of the underlying modules. -/
+lemma leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor_δₗ_hom_apply (c : Discrete H)
+    (M : (discreteModules.{v} (A ⧸ (closedCentralIdeal (RingHom.ker χ)).asIdeal)).FullSubcategory)
+    (x : M.obj) :
+    letI := (closedCentralIdeal (RingHom.ker χ)).asIdeal.discreteQuotientMonoidalLeftAction.{v}
+      _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
+    letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
+    (δₗ χ.discreteCentralCharacterQuotientEquivalence.functor c M).hom x = x :=
+  -- By definition the functor is `(discreteQuotientEquivalence _).functor ⋙ ιOfLE _`, whose
+  -- lineators (`Functor.OplaxLeftLinear.comp_δₗ`) are those of the first factor followed by the
+  -- identity lineators of `ιOfLE` (`ObjectProperty.ιOfLE_δₗ`). Simp cannot rewrite through the
+  -- private body of this structure, so the quotient-level formula closes the goal up to that
+  -- unfolding.
+  leftLinearDiscreteQuotientEquivalenceFunctor_δₗ_hom_apply
+    (closedCentralIdeal (RingHom.ker χ)).asIdeal _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    c M x
+
+/-- The inverse of the quotient presentation of a strict discrete character fiber is equivariant,
+as the inverse of an equivariant equivalence. -/
+@[instance_reducible]
+noncomputable def leftLinearDiscreteCentralCharacterQuotientEquivalenceInverse :
+    letI := (closedCentralIdeal (RingHom.ker χ)).asIdeal.discreteQuotientMonoidalLeftAction.{v}
+      _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
+    χ.discreteCentralCharacterQuotientEquivalence.inverse.LeftLinear (Discrete H) :=
+  letI := (closedCentralIdeal (RingHom.ker χ)).asIdeal.discreteQuotientMonoidalLeftAction.{v}
+    _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+  letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
+  letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
+  χ.discreteCentralCharacterQuotientEquivalence.inverseLeftLinear (Discrete H)
+
+end MonoidHom
