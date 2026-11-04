@@ -45,6 +45,20 @@ theorem apply_eq_of_mkQ_eq (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M
       hf (s.piecewise (a - b) b) i (a i - b i) (hab i)
   · simp
 
+private theorem apply_update_out_eq (f : MultilinearMap R M P)
+    (N : ∀ i, Submodule R (M i))
+    (hf : ∀ [DecidableEq ι] (m : ∀ i, M i) (i : ι) (x : M i),
+      x ∈ N i → f (Function.update m i x) = 0)
+    [DecidableEq ι] (m : ∀ i, M i ⧸ N i) (i : ι) {z : M i ⧸ N i}
+    (w : M i) (hw : (N i).mkQ w = z) :
+    f (fun j ↦ (Function.update m i z j).out) =
+      f (Function.update (fun j ↦ (m j).out) i w) := by
+  apply f.apply_eq_of_mkQ_eq N hf
+  intro j
+  by_cases hj : j = i
+  · subst j; simp [Submodule.Quotient.mk_out, hw]
+  · simp [Function.update_of_ne hj]
+
 /-- Descend a multilinear map to a family of quotient modules. The hypothesis requires
 vanishing when any one coordinate belongs to its prescribed submodule. -/
 noncomputable def liftQ (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i))
@@ -54,39 +68,15 @@ noncomputable def liftQ (f : MultilinearMap R M P) (N : ∀ i, Submodule R (M i)
   toFun m := f (fun i ↦ (m i).out)
   map_update_add' m i x y := by
     classical
-    have h (z : M i ⧸ N i) :
-        f (fun j ↦ (Function.update m i z j).out) =
-          f (Function.update (fun j ↦ (m j).out) i z.out) := by
-      apply f.apply_eq_of_mkQ_eq N hf
-      intro j
-      by_cases hj : j = i
-      · subst j; simp [Submodule.Quotient.mk_out]
-      · simp [Function.update_of_ne hj]
-    rw [h]
-    have hxy : f (Function.update (fun j ↦ (m j).out) i (x + y).out) =
-        f (Function.update (fun j ↦ (m j).out) i (x.out + y.out)) := by
-      apply f.apply_eq_of_mkQ_eq N hf
-      intro j
-      by_cases hj : j = i
-      · subst j; simp [Submodule.Quotient.mk_out]
-      · simp [Function.update_of_ne hj]
-    rw [hxy, f.map_update_add, h, h]
+    rw [apply_update_out_eq f N hf m i (x.out + y.out)
+        (by simp [Submodule.Quotient.mk_out]), f.map_update_add,
+      apply_update_out_eq f N hf m i x.out (Submodule.Quotient.mk_out x),
+      apply_update_out_eq f N hf m i y.out (Submodule.Quotient.mk_out y)]
   map_update_smul' m i c x := by
     classical
-    have h : f (fun j ↦ (Function.update m i (c • x) j).out) =
-        f (Function.update (fun j ↦ (m j).out) i (c • x.out)) := by
-      apply f.apply_eq_of_mkQ_eq N hf
-      intro j
-      by_cases hj : j = i
-      · subst j; simp [Submodule.Quotient.mk_out]
-      · simp [Function.update_of_ne hj]
-    rw [h, f.map_update_smul]
-    congr 1
-    apply f.apply_eq_of_mkQ_eq N hf
-    intro j
-    by_cases hj : j = i
-    · subst j; simp [Submodule.Quotient.mk_out]
-    · simp [Function.update_of_ne hj]
+    rw [apply_update_out_eq f N hf m i (c • x.out)
+        (by simp [Submodule.Quotient.mk_out]), f.map_update_smul,
+      apply_update_out_eq f N hf m i x.out (Submodule.Quotient.mk_out x)]
 
 /-- Evaluation of the descended multilinear map on quotient classes. -/
 @[simp]

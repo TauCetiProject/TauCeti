@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Multilinear.Curry
 
 The quotient by degenerate tensors is canonically `A ⊗ (A / R1)^{⊗n}`. The equivalence
 `normalizedHochschildChains.tensorEquiv` sends a chain to its zeroth entry tensored with
-the quotient classes of all remaining entries. In degree zero the first factor is retained;
+the quotient classes of all remaining entries. In every degree the zeroth factor is retained;
 only the noninitial factors are divided by the span of the unit.
 
 These are the tensor coordinates of normalized universal differential forms for a unital
