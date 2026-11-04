@@ -124,6 +124,15 @@ theorem normalRay_normalCoord (t : EuclideanHalfSpace 1) : normalRay (t.1 0) = t
   rw [Subsingleton.elim i 0]
   simp [normalRay, max_eq_left t.2]
 
+/-- The normal ray is the inverse of the model with corners of the half-line, applied to the
+reals viewed as `ℝ¹`. -/
+theorem normalRay_eq_symm (r : ℝ) :
+    normalRay r = (𝓡∂ 1).symm ((PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm r) := by
+  refine EuclideanHalfSpace.ext _ _ ?_
+  ext i
+  rw [Subsingleton.elim i 0]
+  simp [modelWithCornersEuclideanHalfSpace_symm_apply]
+
 /-- The normal ray is continuous. -/
 theorem continuous_normalRay : Continuous normalRay := by
   refine Continuous.subtype_mk ?_ _

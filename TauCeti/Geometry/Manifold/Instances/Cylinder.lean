@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv

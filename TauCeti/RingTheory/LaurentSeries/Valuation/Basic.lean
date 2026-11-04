@@ -20,6 +20,7 @@ coefficient heights, so this lets it apply to polynomials over `R⸨X⸩`.
 ## Main definitions
 
 * `LaurentSeries.realAddVal R`: the real additive valuation `ord` on `R⸨X⸩`.
+* `LaurentSeries.embReal R`: `R⸨X⸩` read in the Hahn series with real exponents.
 
 ## Main results
 
@@ -29,6 +30,14 @@ coefficient heights, so this lets it apply to polynomials over `R⸨X⸩`.
   valuation by `k`.
 * `LaurentSeries.realAddVal_expand`: the ramification `X ↦ X ^ d` multiplies the valuation by
   `d`.
+
+The valuation can also be read in the Hahn series with real exponents, through the embedding
+`LaurentSeries.embReal R`, which is `HahnSeries.embDomainRingHom` along `ℤ → ℝ`:
+`realAddVal R f` is the order of the image of `f` (`LaurentSeries.realAddVal_eq_orderTop_embReal`),
+and it is at least `s` exactly when every real exponent of that image is
+(`LaurentSeries.le_realAddVal_iff_forall_mem_support`). `LaurentSeries.coeff_embReal_intCast`
+reads its coefficients at integers, and `LaurentSeries.coeff_embReal_of_notMem_range` says they
+vanish elsewhere.
 -/
 
 public section
@@ -37,6 +46,42 @@ open HahnSeries
 open scoped LaurentSeries
 
 namespace LaurentSeries
+
+section embReal
+
+variable (R : Type*) [NonAssocSemiring R]
+
+/-- A Laurent series read in the Hahn series with real exponents: the embedding
+`HahnSeries.embDomainRingHom` along the inclusion `ℤ → ℝ`. -/
+noncomputable def embReal : R⸨X⸩ →+* HahnSeries ℝ R :=
+  embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
+
+variable {R}
+
+/-- `embReal R` is `HahnSeries.embDomain` along `ℤ → ℝ`, as an order embedding. -/
+theorem embReal_apply (f : R⸨X⸩) :
+    embReal R f = embDomain ⟨⟨Int.castAddHom ℝ, Int.cast_injective⟩, Int.cast_le⟩ f :=
+  -- The ring homomorphism `HahnSeries.embDomainRingHom` has this `embDomain` as its underlying
+  -- function.
+  embDomainRingHom_apply _ _ _ f
+
+/-- Read in the Hahn series with real exponents, a Laurent series has its coefficients at the
+integers. -/
+@[simp]
+theorem coeff_embReal_intCast (f : R⸨X⸩) (k : ℤ) : (embReal R f).coeff (k : ℝ) = f.coeff k := by
+  rw [embReal_apply]
+  -- The order embedding `ℤ ↪o ℝ` above sends `k` to `(k : ℝ)` by definition.
+  exact embDomain_coeff (a := k)
+
+/-- Read in the Hahn series with real exponents, a Laurent series has zero coefficients away from
+the integers. -/
+theorem coeff_embReal_of_notMem_range {f : R⸨X⸩} {r : ℝ} (hr : r ∉ Set.range ((↑) : ℤ → ℝ)) :
+    (embReal R f).coeff r = 0 := by
+  rw [embReal_apply]
+  -- The order embedding `ℤ ↪o ℝ` above coerces to `Int.cast` by definition.
+  exact embDomain_of_notMem_range hr
+
+end embReal
 
 variable (R : Type*) [Ring R] [IsDomain R]
 
@@ -77,6 +122,30 @@ theorem realAddVal_le_of_coeff_ne_zero {f : R⸨X⸩} {k : ℤ} (hk : f.coeff k 
     realAddVal R f ≤ ((k : ℝ) : WithTop ℝ) := by
   rw [realAddVal_of_ne_zero (ne_zero_of_coeff_ne_zero hk), WithTop.coe_le_coe, Int.cast_le]
   exact order_le_of_coeff_ne_zero hk
+
+/-- The real valuation of a Laurent series is the order of the series read in the Hahn series with
+real exponents. -/
+theorem realAddVal_eq_orderTop_embReal (f : R⸨X⸩) : realAddVal R f = (embReal R f).orderTop := by
+  rw [realAddVal_apply, embReal_apply, orderTop_embDomain]
+  -- The order embedding `ℤ ↪o ℝ` above coerces to `Int.cast` by definition.
+  rfl
+
+/-- A Laurent series whose reading in the Hahn series with real exponents has a nonzero coefficient
+at `r` has valuation at most `r`. -/
+theorem realAddVal_le_of_coeff_embReal_ne_zero {f : R⸨X⸩} {r : ℝ}
+    (hr : (embReal R f).coeff r ≠ 0) : realAddVal R f ≤ (r : WithTop ℝ) := by
+  rw [realAddVal_eq_orderTop_embReal]
+  exact orderTop_le_of_coeff_ne_zero hr
+
+/-- The real valuation of a Laurent series is at least `s` exactly when every exponent of the
+series, read in the Hahn series with real exponents, is at least `s`. -/
+theorem le_realAddVal_iff_forall_mem_support {f : R⸨X⸩} {s : ℝ} :
+    (s : WithTop ℝ) ≤ realAddVal R f ↔
+      ∀ r ∈ (embReal R f).support, s ≤ r := by
+  refine ⟨fun h r hr => WithTop.coe_le_coe.mp
+    (h.trans (realAddVal_le_of_coeff_embReal_ne_zero hr)), fun h => ?_⟩
+  rw [realAddVal_eq_orderTop_embReal, le_orderTop_iff_forall]
+  exact fun r hr => by_contra fun hne => (WithTop.coe_lt_coe.mp hr).not_ge (h r hne)
 
 /-- The ramification `X ↦ X ^ d` multiplies the valuation by `d`. -/
 theorem realAddVal_expand {R : Type*} [CommRing R] [IsDomain R] (d : ℕ+) (f : R⸨X⸩) :

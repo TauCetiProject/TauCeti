@@ -27,6 +27,8 @@ punctured meromorphic germ, which defines an injective ring homomorphism
   `𝒪_a`, so it is identified with `FractionRing 𝒪_a` by `IsFractionRing.algEquiv`.
 * `exists_toMeromorphicGerms_eq_iff`: a meromorphic germ comes from a holomorphic germ exactly when
   its order at `a` is nonnegative.
+* `mem_range_toMeromorphicGerms_iff_exists_tendsto`: equivalently, exactly when it has a limit
+  along the punctured neighbourhoods of `a`.
 * `evalInvSub_principalPart_add_toMeromorphicGerms_regularPart` and
   `evalInvSub_add_toMeromorphicGerms_eq_iff`: every meromorphic germ `φ` at `a` splits uniquely as
   `φ = P((z - a)⁻¹) + s`, with `P` a polynomial without constant term, its principal part
@@ -34,6 +36,8 @@ punctured meromorphic germ, which defines an injective ring homomorphism
   `regularPart a φ`. If `φ` is the germ of `(z - a)⁻ᴺ h z` with `h` analytic at `a`, the regular
   part is the germ of the remainder `(swap dslope a)^[N] h` in Taylor's formula for `h`
   (`coe_toMeromorphicGerms_regularPart`).
+* `mem_range_toMeromorphicGerms_iff_principalPart_eq_zero`: a meromorphic germ comes from a
+  holomorphic germ exactly when its principal part vanishes.
 
 ## References
 
@@ -91,6 +95,14 @@ theorem exists_toMeromorphicGerms_eq_iff {f : ℂ → ℂ} (hf : MeromorphicAt f
   · rintro ⟨g, hg, hfg⟩
     obtain ⟨s, hs⟩ := exists_toMeromorphicGerms_eq_of_analyticAt hg
     exact ⟨s, hs.trans (Germ.coe_eq.2 hfg.symm)⟩
+
+/-- **Regular germs are those with a limit.** A meromorphic germ at `a` comes from a holomorphic
+germ exactly when it has a limit along the punctured neighbourhoods of `a`. -/
+theorem mem_range_toMeromorphicGerms_iff_exists_tendsto {φ : meromorphicGerms ℂ a} :
+    φ ∈ (toMeromorphicGerms a).range ↔ ∃ c, (φ : Germ (𝓝[≠] a) ℂ).Tendsto (𝓝 c) := by
+  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  simp_rw [← hφ, Germ.coe_tendsto, tendsto_nhds_iff_meromorphicOrderAt_nonneg hf,
+    ← exists_toMeromorphicGerms_eq_iff hf, hφ, RingHom.mem_range, Subtype.ext_iff]
 
 variable (a)
 
@@ -209,6 +221,14 @@ theorem evalInvSub_add_toMeromorphicGerms_eq_iff {φ : meromorphicGerms ℂ a} {
 theorem regularPart_toMeromorphicGerms (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
     regularPart a (toMeromorphicGerms a s) = s :=
   ((evalInvSub_add_toMeromorphicGerms_eq_iff (coeff_zero 0)).1 (by rw [map_zero, zero_add])).2
+
+open meromorphicGerms in
+/-- A meromorphic germ at `a` comes from a holomorphic germ exactly when its principal part
+vanishes. -/
+theorem mem_range_toMeromorphicGerms_iff_principalPart_eq_zero {φ : meromorphicGerms ℂ a} :
+    φ ∈ (toMeromorphicGerms a).range ↔ principalPart φ = 0 := by
+  refine ⟨fun ⟨s, hs⟩ ↦ hs ▸ principalPart_toMeromorphicGerms s, fun h ↦ ⟨regularPart a φ, ?_⟩⟩
+  rw [toMeromorphicGerms_regularPart, h, map_zero, sub_zero]
 
 open meromorphicGerms in
 /-- On the punctured neighbourhoods of `a`, the regular part of a polynomial in the inverse
