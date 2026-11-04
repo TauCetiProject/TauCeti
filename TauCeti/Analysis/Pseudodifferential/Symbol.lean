@@ -44,7 +44,7 @@ the frequency is not a symbol of order zero.
 
 Mixed derivatives `∂_x^α ∂_ξ^β` are indexed by lists of coordinates, so that they can be
 iterated one direction at a time; for smooth maps they do not depend on the order of the
-directions (`List.Perm.iteratedDirDeriv_eq`).
+directions (`List.Perm.iteratedLineDeriv_eq`).
 -/
 
 public section
@@ -67,7 +67,7 @@ variable {n : ℕ} {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
 `[j₁, …, jₖ]`, the derivative in the coordinate `jₖ` being taken first. -/
 def coordinateDeriv (indices : List (Fin n)) (f : CoordinateSpace n → A) :
     CoordinateSpace n → A :=
-  iteratedDirDeriv ℝ (indices.map fun j => EuclideanSpace.single j 1) f
+  iteratedLineDeriv ℝ (indices.map fun j => EuclideanSpace.single j 1) f
 
 @[simp]
 theorem coordinateDeriv_nil (f : CoordinateSpace n → A) : coordinateDeriv [] f = f := by
@@ -83,7 +83,7 @@ theorem coordinateDeriv_cons_apply (j : Fin n) (l : List (Fin n)) (f : Coordinat
 @[simp]
 theorem coordinateDeriv_cons_const (j : Fin n) (l : List (Fin n)) (c : A) :
     coordinateDeriv (j :: l) (fun _ : CoordinateSpace n => c) = 0 :=
-  iteratedDirDeriv_cons_const _ _ c
+  iteratedLineDeriv_cons_const _ _ c
 
 /-- The mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` of a function of a position `x` and a frequency
 `ξ`: first differentiate in the frequency along `β`, then in the position along `α`. -/
@@ -99,64 +99,71 @@ theorem mixedDeriv_nil_nil (a : CoordinateSpace n × CoordinateSpace n → A)
 /-- For a smooth map, the mixed derivative `∂_x^α ∂_ξ^β a` is the iterated directional derivative
 of `a` on `ℝⁿ × ℝⁿ` along the position directions of `α` followed by the frequency directions
 of `β`. -/
-theorem mixedDeriv_eq_iteratedDirDeriv {a : CoordinateSpace n × CoordinateSpace n → A}
+theorem mixedDeriv_eq_iteratedLineDeriv {a : CoordinateSpace n × CoordinateSpace n → A}
     (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = iteratedDirDeriv ℝ
+    mixedDeriv α β a x ξ = iteratedLineDeriv ℝ
       (α.map (fun j => (EuclideanSpace.single j 1, 0)) ++
         β.map (fun j => (0, EuclideanSpace.single j 1))) a (x, ξ) := by
-  have hinner : ∀ y, coordinateDeriv β (fun η => a (y, η)) ξ = iteratedDirDeriv ℝ
+  have hinner : ∀ y, coordinateDeriv β (fun η => a (y, η)) ξ = iteratedLineDeriv ℝ
       (β.map (fun j => (0, EuclideanSpace.single j 1))) a (y, ξ) := fun y => by
-    rw [coordinateDeriv, iteratedDirDeriv_comp_of_hasFDerivAt (hasFDerivAt_prodMk_right y) ha]
+    rw [coordinateDeriv, iteratedLineDeriv_comp_of_hasFDerivAt (hasFDerivAt_prodMk_right y) ha _
+      (by exact_mod_cast le_top)]
     simp [Function.comp_def]
   rw [mixedDeriv, funext hinner, coordinateDeriv,
-    iteratedDirDeriv_comp_of_hasFDerivAt (hasFDerivAt_prodMk_left · ξ) (ha.iteratedDirDeriv _),
-    iteratedDirDeriv_append]
+    iteratedLineDeriv_comp_of_hasFDerivAt (hasFDerivAt_prodMk_left · ξ)
+      (ha.iteratedLineDeriv (m := ∞) _ (by exact_mod_cast le_top)) _ (by exact_mod_cast le_top),
+    iteratedLineDeriv_append]
   simp [Function.comp_def]
 
+@[simp]
 theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (0 : CoordinateSpace n × CoordinateSpace n → A) x ξ = 0 := by
-  rw [mixedDeriv_eq_iteratedDirDeriv (a := 0) contDiff_zero_fun, iteratedDirDeriv_zero,
+  rw [mixedDeriv_eq_iteratedLineDeriv (a := 0) contDiff_zero_fun, iteratedLineDeriv_zero,
     Pi.zero_apply]
 
 theorem mixedDeriv_add {a b : CoordinateSpace n × CoordinateSpace n → A} (ha : ContDiff ℝ ∞ a)
     (hb : ContDiff ℝ ∞ b) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (a + b) x ξ = mixedDeriv α β a x ξ + mixedDeriv α β b x ξ := by
-  rw [mixedDeriv_eq_iteratedDirDeriv (a := a + b) (ha.add hb), iteratedDirDeriv_add ha hb,
-    mixedDeriv_eq_iteratedDirDeriv ha, mixedDeriv_eq_iteratedDirDeriv hb, Pi.add_apply]
+  rw [mixedDeriv_eq_iteratedLineDeriv (a := a + b) (ha.add hb),
+    iteratedLineDeriv_add ha hb _ (by exact_mod_cast le_top), mixedDeriv_eq_iteratedLineDeriv ha,
+    mixedDeriv_eq_iteratedLineDeriv hb, Pi.add_apply]
 
 theorem mixedDeriv_neg {a : CoordinateSpace n × CoordinateSpace n → A} (ha : ContDiff ℝ ∞ a)
     (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (-a) x ξ = -mixedDeriv α β a x ξ := by
-  rw [mixedDeriv_eq_iteratedDirDeriv (a := -a) ha.neg, iteratedDirDeriv_neg,
-    mixedDeriv_eq_iteratedDirDeriv ha, Pi.neg_apply]
+  rw [mixedDeriv_eq_iteratedLineDeriv (a := -a) ha.neg, iteratedLineDeriv_neg,
+    mixedDeriv_eq_iteratedLineDeriv ha, Pi.neg_apply]
 
 theorem mixedDeriv_sub {a b : CoordinateSpace n × CoordinateSpace n → A} (ha : ContDiff ℝ ∞ a)
     (hb : ContDiff ℝ ∞ b) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (a - b) x ξ = mixedDeriv α β a x ξ - mixedDeriv α β b x ξ := by
-  rw [mixedDeriv_eq_iteratedDirDeriv (a := a - b) (ha.sub hb), iteratedDirDeriv_sub ha hb,
-    mixedDeriv_eq_iteratedDirDeriv ha, mixedDeriv_eq_iteratedDirDeriv hb, Pi.sub_apply]
+  rw [mixedDeriv_eq_iteratedLineDeriv (a := a - b) (ha.sub hb),
+    iteratedLineDeriv_sub ha hb _ (by exact_mod_cast le_top), mixedDeriv_eq_iteratedLineDeriv ha,
+    mixedDeriv_eq_iteratedLineDeriv hb, Pi.sub_apply]
 
 theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
     [ContinuousConstSMul R A] {a : CoordinateSpace n × CoordinateSpace n → A}
     (ha : ContDiff ℝ ∞ a) (c : R) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
-  rw [mixedDeriv_eq_iteratedDirDeriv (a := c • a) (ha.const_smul c),
-    iteratedDirDeriv_const_smul ha, mixedDeriv_eq_iteratedDirDeriv ha, Pi.smul_apply]
+  rw [mixedDeriv_eq_iteratedLineDeriv (a := c • a) (ha.const_smul c),
+    iteratedLineDeriv_const_smul ha _ _ (by exact_mod_cast le_top),
+    mixedDeriv_eq_iteratedLineDeriv ha, Pi.smul_apply]
 
 /-- Coordinate derivatives of smooth maps are smooth. -/
 theorem _root_.ContDiff.coordinateDeriv {f : CoordinateSpace n → A} (hf : ContDiff ℝ ∞ f)
     (l : List (Fin n)) : ContDiff ℝ ∞ (coordinateDeriv l f) :=
-  hf.iteratedDirDeriv _
+  hf.iteratedLineDeriv _ (by exact_mod_cast le_top)
 
+@[simp]
 theorem coordinateDeriv_zero (l : List (Fin n)) :
     coordinateDeriv l (0 : CoordinateSpace n → A) = 0 :=
-  iteratedDirDeriv_zero _
+  iteratedLineDeriv_zero _
 
 /-- The mixed derivatives of a smooth map vanish wherever the map vanishes nearby. -/
 theorem mixedDeriv_eq_zero_of_eventuallyEq_zero {a : CoordinateSpace n × CoordinateSpace n → A}
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} (h : a =ᶠ[𝓝 (x, ξ)] 0)
     (α β : List (Fin n)) : mixedDeriv α β a x ξ = 0 := by
-  rw [mixedDeriv_eq_iteratedDirDeriv ha, iteratedDirDeriv_eq_zero_of_eventuallyEq_zero h]
+  rw [mixedDeriv_eq_iteratedLineDeriv ha, iteratedLineDeriv_eq_zero_of_eventuallyEq_zero h]
 
 /-- For a function of the position alone, the mixed derivatives without frequency directions
 are its coordinate derivatives. -/
@@ -191,13 +198,14 @@ theorem mixedDeriv_fderiv_spatial {a : CoordinateSpace n × CoordinateSpace n �
     mixedDeriv α β (fun p => fderiv ℝ a p (EuclideanSpace.single j 1, 0)) x ξ =
       mixedDeriv (α ++ [j]) β a x ξ := by
   have hfun : (fun p => fderiv ℝ a p (EuclideanSpace.single j 1, 0)) =
-      iteratedDirDeriv ℝ [(EuclideanSpace.single j 1, 0)] a := by
+      iteratedLineDeriv ℝ [(EuclideanSpace.single j 1, 0)] a := by
     funext p
     simp
-  rw [hfun, mixedDeriv_eq_iteratedDirDeriv (ha.iteratedDirDeriv _),
-    mixedDeriv_eq_iteratedDirDeriv ha, ← iteratedDirDeriv_append, List.map_append,
+  rw [hfun, mixedDeriv_eq_iteratedLineDeriv (ha.iteratedLineDeriv _ (by exact_mod_cast le_top)),
+    mixedDeriv_eq_iteratedLineDeriv ha, ← iteratedLineDeriv_append, List.map_append,
     List.append_assoc, List.append_assoc]
-  exact congrFun ((List.perm_append_comm.append_left _).iteratedDirDeriv_eq ha) _
+  exact congrFun
+    ((List.perm_append_comm.append_left _).iteratedLineDeriv_eq ha (by exact_mod_cast le_top)) _
 
 /-- Differentiating in the frequency coordinate `j` appends `j` to the frequency directions. -/
 theorem mixedDeriv_fderiv_frequency {a : CoordinateSpace n × CoordinateSpace n → A}
@@ -205,11 +213,11 @@ theorem mixedDeriv_fderiv_frequency {a : CoordinateSpace n × CoordinateSpace n 
     mixedDeriv α β (fun p => fderiv ℝ a p (0, EuclideanSpace.single j 1)) x ξ =
       mixedDeriv α (β ++ [j]) a x ξ := by
   have hfun : (fun p => fderiv ℝ a p (0, EuclideanSpace.single j 1)) =
-      iteratedDirDeriv ℝ [(0, EuclideanSpace.single j 1)] a := by
+      iteratedLineDeriv ℝ [(0, EuclideanSpace.single j 1)] a := by
     funext p
     simp
-  rw [hfun, mixedDeriv_eq_iteratedDirDeriv (ha.iteratedDirDeriv _),
-    mixedDeriv_eq_iteratedDirDeriv ha, ← iteratedDirDeriv_append, List.map_append,
+  rw [hfun, mixedDeriv_eq_iteratedLineDeriv (ha.iteratedLineDeriv _ (by exact_mod_cast le_top)),
+    mixedDeriv_eq_iteratedLineDeriv ha, ← iteratedLineDeriv_append, List.map_append,
     List.append_assoc]
   rfl
 
@@ -259,7 +267,7 @@ variable {S : Set (CoordinateSpace n)} {a b : CoordinateSpace n × CoordinateSpa
 
 private theorem BoundOn.zero :
     BoundOn S m (0 : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) :=
-  fun _ _ => ⟨0, le_rfl, fun x _ ξ => by simp [mixedDeriv_zero]⟩
+  fun _ _ => ⟨0, le_rfl, fun x _ ξ => by simp⟩
 
 private theorem BoundOn.add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (h₁ : BoundOn S m a)
     (h₂ : BoundOn S m b) : BoundOn S m (a + b) := fun α β => by
@@ -514,6 +522,11 @@ theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpat
   obtain ⟨K, hK, h⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [h x hx ξ]⟩
 
+theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
 theorem HasCompactSpatialSupport.const_smul {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (c : ℂ) : (c • a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, h⟩ := ha
@@ -582,12 +595,14 @@ theorem hasCompactSpatialSupport_ofSpatial {φ : CoordinateSpace n → V →L[�
 
 /-- A nonzero linear function of the position is a symbol of order zero which is not uniform: the
 symbol estimates of `x` at `ξ = 0` grow with `x`. -/
-theorem not_isUniform_ofSpatial (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W) (hL : L ≠ 0) :
+theorem _root_.ContinuousLinearMap.not_isUniform_ofSpatial
+    (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W) (hL : L ≠ 0) :
     ¬ (ofSpatial L L.contDiff).IsUniform := by
   rw [isUniform_ofSpatial_iff]
   intro h
   obtain ⟨C, hC⟩ := h []
-  exact hL (L.eq_zero_of_forall_norm_apply_le fun v => by simpa using hC v)
+  exact hL (ContinuousLinearMap.coe_injective
+    (LinearMap.eq_zero_of_forall_norm_apply_le (f := L.toLinearMap) fun v => by simpa using hC v))
 
 private theorem ofFrequencyLinear_bound (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W)
     (α β : List (Fin n)) : ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ, ‖mixedDeriv α β (fun p => L p.2) x ξ‖ ≤
@@ -604,7 +619,7 @@ private theorem ofFrequencyLinear_bound (L : CoordinateSpace n →L[ℝ] V →L[
       rw [mixedDeriv_nil_left_comp_snd, coordinateDeriv_cons_apply, coordinateDeriv_nil,
         ContinuousLinearMap.fderiv]
       simpa using L.le_opNorm (EuclideanSpace.single j 1)
-    · have h0 : coordinateDeriv (j :: k :: β) L = 0 := L.iteratedDirDeriv_cons_cons _ _ _
+    · have h0 : coordinateDeriv (j :: k :: β) L = 0 := L.iteratedLineDeriv_cons_cons _ _ _
       rw [mixedDeriv_nil_left_comp_snd, h0, Pi.zero_apply, norm_zero]
       exact mul_nonneg (norm_nonneg L) (weight_nonneg ξ _)
   · rw [mixedDeriv_cons_left_comp_snd, norm_zero]
@@ -634,7 +649,8 @@ theorem coefficient_ne_ofFrequencyLinear {L : CoordinateSpace n →L[ℝ] V →L
     (a : Symbol n V W 0) : a.coefficient ≠ (ofFrequencyLinear L).coefficient := by
   intro ha
   obtain ⟨C, -, hC⟩ := a.derivative_bound {0} isCompact_singleton [] []
-  refine hL (L.eq_zero_of_forall_norm_apply_le (C := C) fun v => ?_)
+  refine hL (ContinuousLinearMap.coe_injective
+    (LinearMap.eq_zero_of_forall_norm_apply_le (f := L.toLinearMap) (C := C) fun v => ?_))
   simpa [ha] using hC 0 rfl v
 
 end Symbol

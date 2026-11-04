@@ -11,11 +11,11 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 /-!
 # Basic facts about bounded operators
 
-For continuous semilinear maps from a seminormed space to a normed space, zero operator norm
-forces the map to vanish, and so do bounded values
-(`ContinuousLinearMap.eq_zero_of_forall_norm_apply_le`). The corresponding normed group
-structure is available as an explicit construction, including for strong duals of seminormed
-spaces.
+A semilinear map into a normed space with bounded values vanishes
+(`LinearMap.eq_zero_of_forall_norm_apply_le`). For continuous semilinear maps from a seminormed
+space to a normed space, zero operator norm forces the map to vanish. The corresponding normed
+group structure is available as an explicit construction, including for strong duals of
+seminormed spaces.
 
 This file also records a shared uniform-bound lemma for continuous linear maps between seminormed
 spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `T i` are eventually
@@ -50,6 +50,25 @@ public section
 open scoped Topology
 open Filter
 
+namespace LinearMap
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NormedField 𝕜₂] [AddCommGroup E]
+  [Module 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+
+/-- A semilinear map with bounded values is zero: scaling a vector with nonzero image by a scalar
+of large norm makes its image arbitrarily large. -/
+theorem eq_zero_of_forall_norm_apply_le {f : E →ₛₗ[σ] F} {C : ℝ} (h : ∀ x, ‖f x‖ ≤ C) :
+    f = 0 := by
+  ext x
+  by_contra hx
+  have hpos : 0 < ‖f x‖ := norm_pos_iff.2 hx
+  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 (C / ‖f x‖)
+  have := h (c • x)
+  rw [map_smulₛₗ, norm_smul, RingHomIsometric.norm_map] at this
+  exact ((le_div_iff₀ hpos).2 this).not_gt hc
+
+end LinearMap
+
 namespace ContinuousLinearMap
 
 section Semilinear
@@ -78,18 +97,6 @@ theorem opNNNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖₊ = 0 ↔ f = 0 := b
 @[simp]
 theorem opENorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ₑ = 0 ↔ f = 0 := by
   simpa only [enorm_eq_nnnorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
-
-/-- A continuous semilinear map with bounded values is zero: scaling a vector with nonzero image
-by a scalar of large norm makes its image arbitrarily large. -/
-theorem eq_zero_of_forall_norm_apply_le {f : E →SL[σ] F} {C : ℝ} (h : ∀ x, ‖f x‖ ≤ C) :
-    f = 0 := by
-  ext x
-  by_contra hx
-  have hpos : 0 < ‖f x‖ := norm_pos_iff.2 hx
-  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 (C / ‖f x‖)
-  have := h (c • x)
-  rw [map_smulₛₗ, norm_smul, RingHomIsometric.norm_map] at this
-  exact ((le_div_iff₀ hpos).2 this).not_gt hc
 
 /-- Continuous semilinear maps from a seminormed space to a normed space form a normed group
 for the operator norm. Use this construction locally when the source is only seminormed. -/
