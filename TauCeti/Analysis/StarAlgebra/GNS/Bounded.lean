@@ -42,17 +42,11 @@ bound with `R = ‖f a‖`.
 
 ## Main definitions
 
-* `TauCeti.StarPositiveFunctional.comp`: pullback along a (possibly non-unital) `⋆`-algebra
-  homomorphism.
-* `TauCeti.StarPositiveFunctional.ofPositiveLinearMap`: view an order-positive functional on a
-  `StarOrderedRing` as a `StarPositiveFunctional`.
 * `TauCeti.StarPositiveFunctional.HilbertGNS`: the Hilbert-space completion of `φ.GNS`.
 * `TauCeti.StarPositiveFunctional.hilbertClassMap`: the dense linear class map
   `A →ₗ[ℂ] φ.HilbertGNS`.
 * `TauCeti.StarPositiveFunctional.leftMulCLM`, `TauCeti.StarPositiveFunctional.hilbertLeftMul`:
   bounded left multiplication on `φ.GNS` and on `φ.HilbertGNS`.
-* `TauCeti.StarPositiveFunctional.algebraicPositiveLinearMap`: the positive vector functional on
-  algebraic endomorphisms `Module.End ℂ φ.GNS`.
 * `TauCeti.StarPositiveFunctional.hilbertCyclicVector`,
   `TauCeti.StarPositiveFunctional.hilbertPositiveLinearMap`: the cyclic vector in `φ.HilbertGNS`
   and its positive vector functional on `φ.HilbertGNS →L[ℂ] φ.HilbertGNS`.
@@ -79,58 +73,10 @@ namespace TauCeti
 
 namespace StarPositiveFunctional
 
-section Pullback
-
-variable {A B : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A]
-  [NonUnitalRing B] [Module ℂ B] [StarRing B]
-
-/-- Pull a `StarPositiveFunctional` back along any (possibly non-unital) `⋆`-algebra
-homomorphism. -/
-def comp (φ : StarPositiveFunctional B) {F : Type*} [FunLike F A B]
-    [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] (f : F) : StarPositiveFunctional A where
-  toLinearMap :=
-    { toFun a := φ (f a)
-      map_add' a b := by simp
-      map_smul' c a := by simp }
-  square_nonneg a := by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, map_mul, StarHomClass.map_star]
-    exact φ.square_nonneg (f a)
-
-@[simp]
-theorem comp_apply (φ : StarPositiveFunctional B) {F : Type*} [FunLike F A B]
-    [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] (f : F) (a : A) :
-    φ.comp f a = φ (f a) :=
-  (rfl)
-
-/-- Every order-positive linear functional on a `StarOrderedRing` is nonnegative on squares
-`star a * a`. -/
-def ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOrder C] [StarRing C]
-    [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) : StarPositiveFunctional C where
-  toLinearMap := ω.toLinearMap
-  square_nonneg a := ω.map_nonneg (star_mul_self_nonneg a)
-
-@[simp]
-theorem ofPositiveLinearMap_apply {C : Type*} [NonUnitalRing C] [PartialOrder C] [StarRing C]
-    [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) (a : C) :
-    ofPositiveLinearMap ω a = ω a :=
-  (rfl)
-
-@[simp]
-theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOrder C]
-    [StarRing C] [StarOrderedRing C] [Module ℂ C] (ω : C →ₚ[ℂ] ℂ) :
-    (ofPositiveLinearMap ω).toLinearMap = ω.toLinearMap :=
-  (rfl)
-
-end Pullback
-
 section NonUnital
 
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] (φ : StarPositiveFunctional A)
-
-theorem nonUnitalRepresentation_apply (a : A) :
-    φ.nonUnitalRepresentation a = φ.leftMul a :=
-  φ.classMap_ext fun b => by simp
 
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
@@ -402,36 +348,6 @@ section Unital
 
 variable {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
   (φ : StarPositiveFunctional A)
-
-theorem representation_apply (a : A) :
-    φ.representation a = φ.leftMul a :=
-  φ.classMap_ext fun b => by simp
-
-@[simp]
-theorem leftMul_cyclicVector (a : A) :
-    φ.leftMul a φ.cyclicVector = φ.classMap a := by
-  simp [φ.cyclicVector_def]
-
-/-- The positive vector functional `T ↦ ⟪φ.cyclicVector, T φ.cyclicVector⟫_ℂ` on algebraic linear
-endomorphisms of the pre-Hilbert GNS space `φ.GNS`. -/
-def algebraicPositiveLinearMap : Module.End ℂ φ.GNS →ₚ[ℂ] ℂ :=
-  LinearMap.innerPositiveLinearMap ℂ φ.cyclicVector
-
-theorem algebraicPositiveLinearMap_def :
-    φ.algebraicPositiveLinearMap = LinearMap.innerPositiveLinearMap ℂ φ.cyclicVector :=
-  (rfl)
-
-@[simp]
-theorem algebraicPositiveLinearMap_apply (T : Module.End ℂ φ.GNS) :
-    φ.algebraicPositiveLinearMap T = ⟪φ.cyclicVector, T φ.cyclicVector⟫_ℂ := by
-  simp [algebraicPositiveLinearMap]
-
-theorem algebraicPositiveLinearMap_one : φ.algebraicPositiveLinearMap 1 = φ 1 := by
-  simp
-
-theorem algebraicPositiveLinearMap_representation (a : A) :
-    φ.algebraicPositiveLinearMap (φ.representation a) = φ a := by
-  simp
 
 theorem continuous_leftMul_one : Continuous (φ.leftMul (1 : A)) := by
   have h : φ.leftMul (1 : A) = LinearMap.id := by

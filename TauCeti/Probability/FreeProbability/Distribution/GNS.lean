@@ -303,8 +303,8 @@ theorem apply_X_mul_star_X_le_of_cstar_starDistribution {C : Type*} [CStarAlgebr
 
 /-- Characterization of bounded GNS realizations with prescribed generator norm bounds `R i ≥ 0`:
 generator inequalities, generator and adjoint-generator inequalities, boundedness of GNS left
-multiplication, bounded GNS Hilbert representations, Hilbert-space vector-state realizations, and
-C⋆-algebra realizations are all equivalent. -/
+multiplication, bounded GNS Hilbert representations, Hilbert-space vector-functional realizations,
+and C⋆-algebra realizations are all equivalent. -/
 theorem boundedGNS_TFAE {ι : Type u} (φ : StarPositiveFunctional (StarPolynomial ℂ ι))
     {R : ι → ℝ} (hR : ∀ i, 0 ≤ R i) :
     [ ∀ i (p : StarPolynomial ℂ ι),
