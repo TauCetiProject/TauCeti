@@ -250,6 +250,15 @@ section Roots
 variable (hK : ∀ r : Kˣ, ∃ k : Kˣ, k ^ 2 = r)
 include hK
 
+omit [DecidableEq K] in
+/-- When every unit of `K` is a square, the inclusion `PSL(2, K) → PGL(2, K)` identifies the
+preimage of a subgroup of `PGL(2, K)` with that subgroup. -/
+private theorem bijective_toPGL_subgroupComap (H : Subgroup PGL(2, K)) :
+    Bijective (ProjectiveSpecialLinearGroup.toPGL.subgroupComap H) :=
+  ⟨MonoidHom.subgroupComap_injective _ _ ProjectiveSpecialLinearGroup.toPGL_injective,
+    MonoidHom.subgroupComap_surjective _ _
+      (ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK))⟩
+
 /-- **The stabilizer of `∞` in `PSL(2, K)` is the affine group of the line** when every unit of
 `K` is a square, as for the automorphisms `PSL(2, ℂ)` of the Riemann sphere. An element fixing `∞`
 is sent to the affine map by which it acts on the affine part `K`
@@ -257,8 +266,7 @@ is sent to the affine map by which it acts on the affine part `K`
 noncomputable def pslStabilizerInftyEquiv :
     stabilizer PSL(2, K) (∞ : OnePoint K) ≃* (K ≃ᵃ[K] K) :=
   (MulEquiv.subgroupCongr (comap_toPGL_stabilizer ∞).symm).trans
-    ((ProjectiveSpecialLinearGroup.comapToPGLEquiv
-      (ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK)) _).trans
+    ((MulEquiv.ofBijective _ (bijective_toPGL_subgroupComap hK _)).trans
       pglStabilizerInftyEquiv)
 
 /-- The affine map attached to an element of the stabilizer of `∞` in `PSL(2, K)` is its action on
@@ -266,9 +274,9 @@ the affine part of the projective line. -/
 @[simp]
 theorem coe_pslStabilizerInftyEquiv_apply (g : stabilizer PSL(2, K) (∞ : OnePoint K)) (z : K) :
     (pslStabilizerInftyEquiv hK g z : OnePoint K) = (g : PSL(2, K)) • (z : OnePoint K) := by
-  rw [pslStabilizerInftyEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    coe_pglStabilizerInftyEquiv_apply, ProjectiveSpecialLinearGroup.coe_comapToPGLEquiv_apply,
-    ProjectiveSpecialLinearGroup.toPGL_smul, MulEquiv.subgroupCongr_apply]
+  simp only [pslStabilizerInftyEquiv, MulEquiv.trans_apply, MulEquiv.ofBijective_apply,
+    coe_pglStabilizerInftyEquiv_apply]
+  exact ProjectiveSpecialLinearGroup.toPGL_smul (g : PSL(2, K)) (z : OnePoint K)
 
 /-- The element of the stabilizer of `∞` in `PSL(2, K)` attached to an affine map acts on the
 affine part of the projective line as the map does. -/
@@ -283,8 +291,7 @@ as `z ↦ a * z` for a unique unit `a` (`OnePoint.coe_pslFixingZeroInftyEquiv_mu
 noncomputable def pslFixingZeroInftyEquiv :
     fixingSubgroup PSL(2, K) {((0 : K) : OnePoint K), ∞} ≃* Kˣ :=
   (MulEquiv.subgroupCongr (comap_toPGL_fixingSubgroup _).symm).trans
-    ((ProjectiveSpecialLinearGroup.comapToPGLEquiv
-      (ProjectiveSpecialLinearGroup.toPGL_surj_of_roots (by simpa using hK)) _).trans
+    ((MulEquiv.ofBijective _ (bijective_toPGL_subgroupComap hK _)).trans
       pglFixingZeroInftyEquiv)
 
 /-- An element of `PSL(2, K)` fixing `0` and `∞` acts as the dilation by the attached unit. -/
@@ -293,9 +300,9 @@ theorem coe_pslFixingZeroInftyEquiv_mul
     (g : fixingSubgroup PSL(2, K) {((0 : K) : OnePoint K), ∞}) (z : K) :
     (((pslFixingZeroInftyEquiv hK g : K) * z : K) : OnePoint K) =
       (g : PSL(2, K)) • (z : OnePoint K) := by
-  rw [pslFixingZeroInftyEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    coe_pglFixingZeroInftyEquiv_mul, ProjectiveSpecialLinearGroup.coe_comapToPGLEquiv_apply,
-    ProjectiveSpecialLinearGroup.toPGL_smul, MulEquiv.subgroupCongr_apply]
+  simp only [pslFixingZeroInftyEquiv, MulEquiv.trans_apply, MulEquiv.ofBijective_apply,
+    coe_pglFixingZeroInftyEquiv_mul]
+  exact ProjectiveSpecialLinearGroup.toPGL_smul (g : PSL(2, K)) (z : OnePoint K)
 
 /-- The element of `PSL(2, K)` fixing `0` and `∞` attached to a unit `a` acts as the dilation
 `z ↦ a * z`. -/

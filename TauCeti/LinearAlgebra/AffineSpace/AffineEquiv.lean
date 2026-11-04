@@ -53,7 +53,6 @@ variable {k V₁ V₂ : Type*} [Ring k] [AddCommGroup V₁] [Module k V₁] [Add
 theorem apply_eq_linear_add (f : V₁ ≃ᵃ[k] V₂) (x : V₁) : f x = f.linear x + f 0 :=
   congrFun f.toAffineMap.decomp x
 
-
 /-- The translation part of the inverse of an affine automorphism `f` of a module is
 `f⁻¹ 0 = f.linear⁻¹ (-f 0)`. -/
 theorem inv_apply_zero (f : V₁ ≃ᵃ[k] V₁) : f⁻¹ 0 = f.linear⁻¹ (-f 0) := by
@@ -116,13 +115,12 @@ theorem isUnit_linear_one (f : R ≃ᵃ[R] R) : IsUnit (f.linear 1) :=
 
 /-- The linear coefficients of affine self-equivalences of a commutative ring multiply as the maps
 compose. -/
-theorem linear_mul_apply_one (f g : R ≃ᵃ[R] R) : (f * g).linear 1 = f.linear 1 * g.linear 1 := by
-  rw [← linearHom_apply, map_mul, mul_apply_eq_comp, linearHom_apply, linearHom_apply,
-    linear_apply_eq_linear_one_mul f]
+theorem linear_mul_apply_one (f g : R ≃ᵃ[R] R) : (f * g).linear 1 = f.linear 1 * g.linear 1 :=
+  linear_apply_eq_linear_one_mul f (g.linear 1)
 
 /-- The invertible matrix `!![a, b; 0, 1]` of an affine self-equivalence `x ↦ a * x + b` of a
 commutative ring. The matrices of affine maps multiply as the maps compose. -/
-@[expose] noncomputable def toGL : (R ≃ᵃ[R] R) →* GL (Fin 2) R where
+noncomputable def toGL : (R ≃ᵃ[R] R) →* GL (Fin 2) R where
   toFun f := Matrix.GeneralLinearGroup.mk'' !![f.linear 1, f 0; 0, 1]
     (by simpa [Matrix.det_fin_two_of] using f.isUnit_linear_one)
   map_one' := by
@@ -138,8 +136,8 @@ commutative ring. The matrices of affine maps multiply as the maps compose. -/
 /-- The matrix of an affine self-equivalence `x ↦ a * x + b` is `!![a, b; 0, 1]`. -/
 @[simp]
 theorem coe_toGL (f : R ≃ᵃ[R] R) :
-    (toGL f : Matrix (Fin 2) (Fin 2) R) = !![f.linear 1, f 0; 0, 1] :=
-  rfl
+    (toGL f : Matrix (Fin 2) (Fin 2) R) = !![f.linear 1, f 0; 0, 1] := by
+  simp [toGL]
 
 end Ring
 
