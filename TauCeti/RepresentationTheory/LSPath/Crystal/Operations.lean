@@ -246,17 +246,7 @@ noncomputable def reverseIso (hf : Function.Injective f)
       left_inv := fun π ↦ Subtype.ext (reverse_reverse π.1)
       right_inv := fun π ↦ Subtype.ext (reverse_reverse π.1) }
   wt_toFun π := hf (by simp)
-  e_toFun i π := by
-    cases h : (normalCrystal hf hF).f i π with
-    | none =>
-      have hl := normalCrystalOn_f_eq_none_iff.mp h
-      simp [NormalCrystal.dual_e, h, raise_reverse, hl]
-    | some π' =>
-      have hl := normalCrystalOn_f_eq_some_iff.mp h
-      have hr : raise (F i) (f (P.root i)) π.1.reverse = some π'.1.reverse := by
-        rw [raise_reverse, hl, Option.map_some]
-      simp only [NormalCrystal.dual_e, h, Option.map_some, normalCrystalOn_e_eq_some_iff]
-      exact hr
+  e_toFun i π := by simp [normalCrystalOn_e_eq_map_iff, raise_reverse]
 
 @[simp]
 theorem reverseIso_apply (hf : Function.Injective f)
@@ -359,26 +349,20 @@ noncomputable def mulOnHom (hf : Function.Injective f)
   e_toFun i x := by
     obtain ⟨x₁, x₂⟩ := x
     by_cases hle : (normalCrystalOn hf hF h₂).ε i x₂ ≤ (normalCrystalOn hf hF h₁).φ i x₁
-    · rw [NormalCrystal.tensor_e_of_le hle]
-      have hle' : -x₂.1.minHeight (F i) ≤ F i x₁.1.endpoint - x₁.1.minHeight (F i) := by
+    · have hle' : -x₂.1.minHeight (F i) ≤ F i x₁.1.endpoint - x₁.1.minHeight (F i) := by
         have : ((normalCrystalOn hf hF h₂).ε i x₂ : 𝕜) ≤ (normalCrystalOn hf hF h₁).φ i x₁ := by
           exact_mod_cast hle
         simpa [cast_normalCrystalOn_ε, cast_normalCrystalOn_φ] using this
-      have hr := raise_mul_of_le (x := f (P.root i)) hle'
-      cases hx₁ : (normalCrystalOn hf hF h₁).e i x₁ with
-      | none => simp [normalCrystalOn_e_eq_none_iff.mp hx₁, hr]
-      | some y₁ => simp [normalCrystalOn_e_eq_some_iff.mp hx₁, hr]
+      simp [NormalCrystal.tensor_e_of_le hle, Option.map_map, normalCrystalOn_e_eq_map_iff,
+        Function.comp_def, raise_mul_of_le (x := f (P.root i)) hle']
     · have hlt : (normalCrystalOn hf hF h₁).φ i x₁ < (normalCrystalOn hf hF h₂).ε i x₂ :=
         Nat.lt_of_not_ge hle
-      rw [NormalCrystal.tensor_e_of_lt hlt]
       have hr : F i x₁.1.endpoint - x₁.1.minHeight (F i) + 1 ≤ -x₂.1.minHeight (F i) := by
         have : (((normalCrystalOn hf hF h₁).φ i x₁ + 1 : ℕ) : 𝕜) ≤
             (normalCrystalOn hf hF h₂).ε i x₂ := by exact_mod_cast hlt
         simpa [cast_normalCrystalOn_φ, cast_normalCrystalOn_ε] using this
-      have hmul_r := raise_mul_of_add_one_le (x := f (P.root i)) hr
-      cases hx₂ : (normalCrystalOn hf hF h₂).e i x₂ with
-      | none => simp [normalCrystalOn_e_eq_none_iff.mp hx₂, hmul_r]
-      | some y₂ => simp [normalCrystalOn_e_eq_some_iff.mp hx₂, hmul_r]
+      simp [NormalCrystal.tensor_e_of_lt hlt, Option.map_map, normalCrystalOn_e_eq_map_iff,
+        Function.comp_def, raise_mul_of_add_one_le (x := f (P.root i)) hr]
 
 @[simp]
 theorem mulOnHom_apply (hf : Function.Injective f)
@@ -484,73 +468,70 @@ theorem IsIntegralPath.map {g : V →ₗ[𝕜] W}
 
 /-- A linear map intertwining two realizations `(f, F)` and `(f', F')` induces a strict crystal
 morphism between their integral-path crystals. -/
-noncomputable def mapHom (hf : Function.Injective f)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (hf' : Function.Injective f')
+noncomputable def mapHom (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (g : V →ₗ[𝕜] W) (hgf : ∀ x, g (f x) = f' x) (hFg : ∀ i, (F' i).comp g = F i) :
-    NormalCrystal.StrictHom (normalCrystal hf hF) (normalCrystal hf' hF') where
+    NormalCrystal.StrictHom
+      (normalCrystal (f := f) (F := F)
+        (Function.Injective.of_comp (f := g) ((funext hgf : ⇑g ∘ ⇑f = ⇑f').symm ▸ hf'))
+        fun i x ↦ by simp [← hFg, hgf, hF'])
+      (normalCrystal hf' hF') where
   toFun π := ⟨π.1.map g, π.2.map hgf hFg⟩
   wt_toFun π := hf' (by
     rw [apply_normalCrystalOn_wt, endpoint_map, ← hgf, apply_normalCrystalOn_wt])
-  e_toFun i π := by
-    have hr := raise_map π.1 (hFg i) (f (P.root i))
-    rw [hgf] at hr
-    cases hx : (normalCrystal hf hF).e i π with
-    | none => simp [normalCrystalOn_e_eq_none_iff.mp hx, hr]
-    | some π' => simp [normalCrystalOn_e_eq_some_iff.mp hx, hr]
+  e_toFun i π := by simp [normalCrystalOn_e_eq_map_iff, ← hgf, raise_map π.1 (hFg i)]
 
 @[simp]
-theorem mapHom_apply (hf : Function.Injective f)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (hf' : Function.Injective f')
+theorem mapHom_apply (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (g : V →ₗ[𝕜] W) (hgf : ∀ x, g (f x) = f' x) (hFg : ∀ i, (F' i).comp g = F i)
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    (mapHom hf hF hf' hF' g hgf hFg π).1 = π.1.map g :=
+    (mapHom hf' hF' g hgf hFg π).1 = π.1.map g :=
   (rfl)
 
 /-- A linear equivalence intertwining two realizations induces a strict crystal isomorphism between
 their integral-path crystals. -/
-noncomputable def mapIso (hf : Function.Injective f)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (hf' : Function.Injective f')
+noncomputable def mapIso (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (e : V ≃ₗ[𝕜] W) (hef : ∀ x, e (f x) = f' x) (hFe : ∀ i, (F' i).comp e.toLinearMap = F i) :
-    NormalCrystal.StrictIso (normalCrystal hf hF) (normalCrystal hf' hF') := by
+    NormalCrystal.StrictIso
+      (normalCrystal (f := f) (F := F)
+        (Function.Injective.of_comp (f := e) ((funext hef : ⇑e ∘ ⇑f = ⇑f').symm ▸ hf'))
+        fun i x ↦ by simp [← hFe, hef, hF'])
+      (normalCrystal hf' hF') := by
+  have hf : Function.Injective f :=
+    Function.Injective.of_comp (f := e) ((funext hef : ⇑e ∘ ⇑f = ⇑f').symm ▸ hf')
+  have hF (i : b.support) (x : X) : F i (f x) = (P.coroot' i x : 𝕜) := by
+    simp [← hFe, hef, hF']
   have hef_symm (x : X) : e.symm (f' x) = f x := e.symm_apply_eq.mpr (hef x).symm
   have hFe_symm (i : b.support) : (F i).comp e.symm.toLinearMap = F' i := by
     ext w
     simp [← hFe i]
   refine
     { toEquiv :=
-        { toFun := mapHom hf hF hf' hF' e.toLinearMap hef hFe
-          invFun := mapHom hf' hF' hf hF e.symm.toLinearMap hef_symm hFe_symm
+        { toFun := mapHom hf' hF' e.toLinearMap hef hFe
+          invFun := mapHom hf hF e.symm.toLinearMap hef_symm hFe_symm
           left_inv := fun π ↦ Subtype.ext (by simp)
           right_inv := fun π ↦ Subtype.ext (by simp) }
-      wt_toFun := (mapHom hf hF hf' hF' e.toLinearMap hef hFe).wt_toFun
-      e_toFun := (mapHom hf hF hf' hF' e.toLinearMap hef hFe).e_toFun }
+      wt_toFun := (mapHom hf' hF' e.toLinearMap hef hFe).wt_toFun
+      e_toFun := (mapHom hf' hF' e.toLinearMap hef hFe).e_toFun }
 
 @[simp]
-theorem mapIso_apply (hf : Function.Injective f)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (hf' : Function.Injective f')
+theorem mapIso_apply (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (e : V ≃ₗ[𝕜] W) (hef : ∀ x, e (f x) = f' x) (hFe : ∀ i, (F' i).comp e.toLinearMap = F i)
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    (mapIso hf hF hf' hF' e hef hFe π).1 = π.1.map e.toLinearMap :=
+    (mapIso hf' hF' e hef hFe π).1 = π.1.map e.toLinearMap :=
   (rfl)
 
 @[simp]
-theorem mapIso_symm_apply (hf : Function.Injective f)
-    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
-    (hf' : Function.Injective f')
+theorem mapIso_symm_apply (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (e : V ≃ₗ[𝕜] W) (hef : ∀ x, e (f x) = f' x) (hFe : ∀ i, (F' i).comp e.toLinearMap = F i)
     (π : {π : PLPath 𝕜 W | IsIntegralPath b f' F' π}) :
-    ((mapIso hf hF hf' hF' e hef hFe).symm π).1 = π.1.map e.symm.toLinearMap := by
+    ((mapIso hf' hF' e hef hFe).symm π).1 = π.1.map e.symm.toLinearMap := by
   have h := congrArg (fun x ↦ x.1.map e.symm.toLinearMap)
-    ((mapIso hf hF hf' hF' e hef hFe).apply_symm_apply π)
+    ((mapIso hf' hF' e hef hFe).apply_symm_apply π)
   rw [mapIso_apply, map_map] at h
   simpa using h
 

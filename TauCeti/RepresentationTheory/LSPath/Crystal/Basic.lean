@@ -385,6 +385,32 @@ theorem unattach_normalCrystalOn_f (i : b.support) (π : S) :
     ((normalCrystalOn hf hF hS).f i π).unattach = lower (F i) (f (P.root i)) π.1 :=
   Set.unattach_optionRestrict π
 
+theorem normalCrystalOn_e_eq_iff {i : b.support} {π : S} {o : Option S} :
+    (normalCrystalOn hf hF hS).e i π = o ↔ raise (F i) (f (P.root i)) π.1 = o.unattach := by
+  cases o <;> simp
+
+theorem normalCrystalOn_f_eq_iff {i : b.support} {π : S} {o : Option S} :
+    (normalCrystalOn hf hF hS).f i π = o ↔ lower (F i) (f (P.root i)) π.1 = o.unattach := by
+  cases o <;> simp
+
+theorem normalCrystalOn_e_eq_map_iff {B : Type*} {i : b.support} {π : S} {o : Option B}
+    {g : B → S} :
+    (normalCrystalOn hf hF hS).e i π = o.map g ↔
+      raise (F i) (f (P.root i)) π.1 = o.map (fun x ↦ (g x).1) := by
+  rw [normalCrystalOn_e_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
+
+theorem normalCrystalOn_f_eq_map_iff {B : Type*} {i : b.support} {π : S} {o : Option B}
+    {g : B → S} :
+    (normalCrystalOn hf hF hS).f i π = o.map g ↔
+      lower (F i) (f (P.root i)) π.1 = o.map (fun x ↦ (g x).1) := by
+  rw [normalCrystalOn_f_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
+
+private theorem unattach_bind {α β : Type*} {p : α → Prop} {q : β → Prop}
+    (o : Option {x // p x}) (g : {x // p x} → Option {y // q y}) (g' : α → Option β)
+    (hg : ∀ x : {x // p x}, (g x).unattach = g' x.1) :
+    (o.bind g).unattach = o.unattach.bind g' := by
+  cases o <;> simp [hg]
+
 @[simp]
 theorem unattach_normalCrystalOn_eIter (i : b.support) (n : ℕ) (π : S) :
     ((normalCrystalOn hf hF hS).eIter i n π).unattach =
@@ -392,10 +418,8 @@ theorem unattach_normalCrystalOn_eIter (i : b.support) (n : ℕ) (π : S) :
   induction n generalizing π with
   | zero => simp
   | succ n ih =>
-    rw [NormalCrystal.eIter_succ, raiseIter_succ]
-    cases h : (normalCrystalOn hf hF hS).e i π with
-    | none => simp [normalCrystalOn_e_eq_none_iff.mp h]
-    | some π' => simp [normalCrystalOn_e_eq_some_iff.mp h, ih]
+    rw [NormalCrystal.eIter_succ, raiseIter_succ, unattach_bind _ _ _ ih,
+      unattach_normalCrystalOn_e]
 
 @[simp]
 theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
@@ -404,10 +428,8 @@ theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
   induction n generalizing π with
   | zero => simp
   | succ n ih =>
-    rw [NormalCrystal.fIter_succ, lowerIter_succ]
-    cases h : (normalCrystalOn hf hF hS).f i π with
-    | none => simp [normalCrystalOn_f_eq_none_iff.mp h]
-    | some π' => simp [normalCrystalOn_f_eq_some_iff.mp h, ih]
+    rw [NormalCrystal.fIter_succ, lowerIter_succ, unattach_bind _ _ _ ih,
+      unattach_normalCrystalOn_f]
 
 /-- Adjacency in the crystal graph of `normalCrystalOn` is single-step root-operator adjacency. -/
 @[simp]
@@ -462,14 +484,7 @@ noncomputable def inclusionHom (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b 
     NormalCrystal.StrictHom (normalCrystalOn hf hF hS) (normalCrystalOn hf hF hT) where
   toFun := Set.inclusion hST
   wt_toFun π := hf (by simp)
-  e_toFun i π := by
-    cases h : (normalCrystalOn hf hF hS).e i π with
-    | none =>
-      simp only [Option.map_none, normalCrystalOn_e_eq_none_iff]
-      exact normalCrystalOn_e_eq_none_iff.mp h
-    | some π' =>
-      simp only [Option.map_some, normalCrystalOn_e_eq_some_iff]
-      exact normalCrystalOn_e_eq_some_iff.mp h
+  e_toFun i π := normalCrystalOn_e_eq_map_iff.mpr (unattach_normalCrystalOn_e i π).symm
 
 @[simp]
 theorem inclusionHom_apply (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T) (hST : S ⊆ T)

@@ -295,8 +295,7 @@ theorem minHeight_straight (v : V) : (straight 𝕜 v).minHeight f = min 0 (f v)
 /-- An excursion along `-v` followed by `v` has minimum height `min 0 (-f v)`. -/
 theorem minHeight_straight_neg_mul_straight (v : V) :
     (straight 𝕜 (-v) * straight 𝕜 v).minHeight f = min 0 (-f v) := by
-  rw [minHeight_mul, minHeight_straight, minHeight_straight, endpoint_straight, map_neg,
-    ← min_add_add_left, add_zero, neg_add_cancel, min_comm (-f v) 0, min_self]
+  simp [← min_add_add_left]
 
 end MinHeight
 
