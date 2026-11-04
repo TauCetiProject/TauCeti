@@ -68,6 +68,15 @@ theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
   · exact (norm_pow_le' x n.succ_pos).trans
       (le_mul_of_one_le_left (by positivity) (le_max_right _ _))
 
+/-- Without the normalisation `‖1‖ = 1`, a product with a power still satisfies
+`‖x * yⁿ‖ ≤ ‖x‖ * ‖y‖ⁿ`, including the case `n = 0`, where `x * y⁰ = x`. -/
+theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
+    ‖x * y ^ n‖ ≤ ‖x‖ * ‖y‖ ^ n := by
+  rcases n with _ | n
+  · simp
+  · exact (norm_mul_le _ _).trans
+      (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
+
 end TauCeti
 
 end
