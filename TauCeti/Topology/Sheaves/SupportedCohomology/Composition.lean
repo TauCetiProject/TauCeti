@@ -58,11 +58,9 @@ theorem isIso_supportedSubmoduleFunctor_map_ι (hZS : Z ≤ S) :
       IsIso (((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app W) := by
     apply (ConcreteCategory.isIso_iff_bijective _).2
     refine ⟨?_, fun s ↦ ?_⟩
-    · intro s t h
-      have hval := congr_arg (fun x : F.supportedSubmodule Z W.unop ↦ x.1) h
-      have hs := F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W s
-      have ht := F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W t
-      exact Subtype.ext (Subtype.ext (hs.symm.trans (hval.trans ht)))
+    · have := (Sheaf.Hom.mono_iff_presheaf_mono _ _
+        ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S))).1 inferInstance
+      exact (ModuleCat.mono_iff_injective _).1 inferInstance
     · refine ⟨⟨⟨s.1, F.supportedSubmodule_mono hZS W.unop s.2⟩, ?_⟩, ?_⟩
       · exact (F.mem_supportedSubmodule_supportedSubmoduleSheaf_iff S Z W.unop _).2 s.2
       · exact Subtype.ext (F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W _)
@@ -88,11 +86,7 @@ def supportedSubmoduleFunctorCompIso (hZS : Z ≤ S) :
       supportedSubmoduleFunctor Z :=
   NatIso.ofComponents (fun F ↦ F.supportedSubmoduleCompIso hZS)
     (fun {F G} f ↦ by
-      -- Each component of `asIso` is the mapped supported-section inclusion.
-      change (supportedSubmoduleFunctor Z).map ((supportedSubmoduleFunctor S).map f) ≫
-          (supportedSubmoduleFunctor Z).map (G.supportedSubmoduleι S) =
-        (supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S) ≫
-          (supportedSubmoduleFunctor Z).map f
+      rw [Functor.comp_map, supportedSubmoduleCompIso_hom, supportedSubmoduleCompIso_hom]
       rw [← Functor.map_comp, ← Functor.map_comp, supportedSubmoduleFunctor_map_ι])
 
 @[simp]
@@ -117,23 +111,6 @@ lemma coe_supportedSubmoduleCompIso_hom_app_apply (hZS : Z ≤ S)
   rw [supportedSubmoduleCompIso_hom]
   exact F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W s
 
-/-- The inverse comparison also leaves the ambient section unchanged. -/
-@[simp]
-lemma coe_coe_supportedSubmoduleCompIso_inv_app_apply (hZS : Z ≤ S)
-    (W : (Opens X)ᵒᵖ) (s : F.supportedSubmodule Z W.unop) :
-    Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule S W.unop))
-      (((F.supportedSubmoduleCompIso hZS).inv.hom.app W s).1) =
-        s.1 := by
-  have h := congr_arg (fun f ↦ f.hom.app W)
-    (F.supportedSubmoduleCompIso hZS).inv_hom_id
-  rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-    ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app] at h
-  have heval := congr_arg (fun f ↦ f s) h
-  -- The section subtype is the carrier of the bundled supported-section module.
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] at heval
-  exact (F.coe_supportedSubmoduleCompIso_hom_app_apply hZS W _).symm.trans
-    (congr_arg Subtype.val heval)
-
 /-- The composition comparison commutes with the inclusions into the ambient sheaf. -/
 @[reassoc (attr := simp)]
 lemma supportedSubmoduleCompIso_hom_ι (hZS : Z ≤ S) :
@@ -156,21 +133,50 @@ lemma supportedSubmoduleCompIso_inv_ι (hZS : Z ≤ S) :
         (F.supportedSubmoduleCompIso_hom_ι hZS).symm
     _ = _ := (F.supportedSubmoduleCompIso hZS).inv_hom_id_assoc _
 
+/-- The inverse comparison also leaves the ambient section unchanged. -/
+@[simp]
+lemma coe_coe_supportedSubmoduleCompIso_inv_app_apply (hZS : Z ≤ S)
+    (W : (Opens X)ᵒᵖ) (s : F.supportedSubmodule Z W.unop) :
+    Subtype.val (α := F.obj.obj W) (p := (· ∈ F.supportedSubmodule S W.unop))
+      (((F.supportedSubmoduleCompIso hZS).inv.hom.app W s).1) =
+        s.1 := by
+  have h := congr_arg (fun f ↦ f.hom.app W) (F.supportedSubmoduleCompIso_inv_ι hZS)
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app] at h
+  -- Instantiate the evaluation lemmas explicitly: the section subtypes and bundled
+  -- module carriers are definitionally equal, but generic simp matching does not see this.
+  have hcomp := ModuleCat.comp_apply ((F.supportedSubmoduleCompIso hZS).inv.hom.app W)
+    ((((F.supportedSubmoduleSheaf S).supportedSubmoduleι Z).hom.app W) ≫
+      (F.supportedSubmoduleι S).hom.app W) s
+  have hcomp' := ModuleCat.comp_apply
+    (((F.supportedSubmoduleSheaf S).supportedSubmoduleι Z).hom.app W)
+    ((F.supportedSubmoduleι S).hom.app W) ((F.supportedSubmoduleCompIso hZS).inv.hom.app W s)
+  have heval := hcomp'.symm.trans (hcomp.symm.trans (ConcreteCategory.congr_hom h s))
+  have hι := (F.supportedSubmoduleSheaf S).supportedSubmoduleι_hom_app_apply Z W
+    ((F.supportedSubmoduleCompIso hZS).inv.hom.app W s)
+  have hιS := F.supportedSubmoduleι_hom_app_apply S W
+    (((F.supportedSubmoduleSheaf S).supportedSubmoduleι Z).hom.app W
+      ((F.supportedSubmoduleCompIso hZS).inv.hom.app W s))
+  exact (congr_arg (fun t : F.supportedSubmodule S W.unop ↦ t.1) hι).symm.trans
+    (hιS.symm.trans (heval.trans (F.supportedSubmoduleι_hom_app_apply Z W s)))
+
 /-- Forgetting scalars commutes with flattening iterated supported sections. This formulation
 uses the canonical abelian inclusions, without choosing a second composition isomorphism. -/
 @[reassoc]
 lemma supportedSubmoduleFunctorCompIso_hom_app_forget_ι (hZS : Z ≤ S) :
-    let U := sheafCompose (Opens.grothendieckTopology X)
-      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})
-    U.map ((supportedSubmoduleFunctorCompIso (R := R) hZS).hom.app F) ≫
-        (F.supportedSubmoduleSheafForgetIso Z).hom ≫ (U.obj F).supportedSectionsι Z =
+    (sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).map
+        (F.supportedSubmoduleCompIso hZS).hom ≫
+        (F.supportedSubmoduleSheafForgetIso Z).hom ≫
+        ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedSectionsι
+          Z =
       ((F.supportedSubmoduleSheaf S).supportedSubmoduleSheafForgetIso Z).hom ≫
-        (U.obj (F.supportedSubmoduleSheaf S)).supportedSectionsι Z ≫
-          (F.supportedSubmoduleSheafForgetIso S).hom ≫ (U.obj F).supportedSectionsι S := by
-  dsimp only
+        ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj
+          (F.supportedSubmoduleSheaf S)).supportedSectionsι Z ≫
+        (F.supportedSubmoduleSheafForgetIso S).hom ≫
+        ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedSectionsι
+          S := by
   simp only [supportedSubmoduleSheafForgetIso_hom_ι,
     supportedSubmoduleSheafForgetIso_hom_ι_assoc, ← Functor.map_comp,
-    supportedSubmoduleFunctorCompIso_hom_app, supportedSubmoduleCompIso_hom_ι]
+    supportedSubmoduleCompIso_hom_ι]
 
 end
 

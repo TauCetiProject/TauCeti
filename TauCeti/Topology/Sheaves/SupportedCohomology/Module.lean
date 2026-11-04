@@ -150,6 +150,18 @@ lemma map_mem_supportedSubmodule_of_le {S : Closeds X} {W' W : Opens X} (h : W' 
   simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using
     congr(F.obj.map (homOfLE (inf_le_inf_right S.compl h)).op $hs)
 
+/-- Enlarging the closed support enlarges the submodule of supported sections. -/
+@[gcongr]
+lemma supportedSubmodule_mono {Z S : Closeds X} (hZS : Z ≤ S) (W : Opens X) :
+    F.supportedSubmodule Z W ≤ F.supportedSubmodule S W := by
+  intro s hs
+  rw [mem_supportedSubmodule_iff] at hs ⊢
+  have hcompl : S.compl ≤ Z.compl := (Closeds.complOrderIso X).monotone hZS
+  have hcomp : S.complInclusion W =
+      homOfLE (inf_le_inf_left W hcompl) ≫
+        Z.complInclusion W := Subsingleton.elim _ _
+  rw [hcomp, op_comp, F.obj.map_comp, ModuleCat.comp_apply, hs, map_zero]
+
 end CategoryTheory.Sheaf
 
 namespace TopologicalSpace.Closeds
@@ -494,18 +506,6 @@ lemma coe_supportedModuleHZeroEquiv_supportedModuleHPresheafMap_app (hZS : Z ≤
   (coe_relativeFreeModuleYonedaExtZeroEquiv_mk₀_comp _ R (S.complInclusion W)
     (Z.complInclusion W) _ (𝟙 W) rfl F x).trans <| by
     rw [op_id, F.obj.map_id, ModuleCat.id_apply, coe_supportedModuleHZeroEquiv_apply]
-
-/-- Enlarging the closed support enlarges the submodule of supported sections. -/
-lemma supportedSubmodule_mono (hZS : Z ≤ S) (W : Opens X) :
-    F.supportedSubmodule Z W ≤ F.supportedSubmodule S W := by
-  intro s hs
-  obtain ⟨y, hy⟩ := (F.supportedModuleHZeroEquiv Z W).surjective ⟨s, hs⟩
-  have hS := (F.supportedModuleHZeroEquiv S W
-    ((F.supportedModuleHPresheafMap hZS 0).app (op W) y)).2
-  rw [coe_supportedModuleHZeroEquiv_supportedModuleHPresheafMap_app] at hS
-  have hval : (F.supportedModuleHZeroEquiv Z W y : F.obj.obj (op W)) = s :=
-    congr_arg Subtype.val hy
-  exact hval ▸ hS
 
 /-- The connecting map `H_Sⁿ(W ∖ Z, F) ⟶ H_Zⁿ⁺¹(W, F)` of the long exact sequence of supports for
 closed subsets `Z ≤ S`: the Yoneda product with the extension class of the short exact sequence
