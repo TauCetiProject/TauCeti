@@ -183,8 +183,9 @@ theorem span_residue_apply_eq_top_of_le_span_sup_sq [Finite ι]
   rw [← hxi, hgrad]
   exact residue_apply_mem_span_range_of_mem_span hw hu
 
-/-- Elements of `𝔪` that span `𝔪` modulo `𝔪²` are at least as many as the coordinates: the
-cotangent space `𝔪/𝔪²` has dimension `n`. -/
+/-- Elements of `𝔪` that span `𝔪` modulo `𝔪²` are at least as many as the coordinates: the dual
+derivations make the classes of the coordinates `xᵢ` linearly independent in the cotangent space
+`𝔪/𝔪²`, whose dimension is therefore at least `Fintype.card ι`. -/
 theorem card_le_card_of_le_span_sup_sq [Fintype ι] [Fintype κ]
     (hx : ∀ i, x i ∈ maximalIdeal Q)
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {w : κ → Q}

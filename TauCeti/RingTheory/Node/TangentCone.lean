@@ -29,11 +29,14 @@ Write `f = a s₀² + b s₀ s₁ + c s₁²` (`Ideal.mem_span_pair_sq`). The He
 makes the coefficient of the square of the second generator a unit: swap `s₀` and `s₁` when `a`
 is a unit, and otherwise replace `s₀` by `s₀ + s₁`, since when `a, c ∈ 𝔪` the coefficient `b`
 and hence `a - b + c` are units. Dividing by that coefficient gives the equation
-`a x² + b x y + y²` with `b² - 4a` a unit. The generator `x` is then a nonzerodivisor of `A`:
-since `P` is regular, `(x)` is prime, and it does not contain `a x² + b x y + y²` because it does
-not contain `y`. The maximal ideal of `A` is not principal, since `f ∈ 𝔪_P²` imposes no relation
-on the cotangent plane of `P`. Finally `y² = -x (a x + b y)` lies in `x 𝔪_A`, so the chart
-`Spec A[𝔪/x]` is the whole blowup (`TauCeti.AlgebraicGeometry.isIso_affineBlowupι_of_sq_mem`).
+`a x² + b x y + y²` with `b² - 4a` a unit
+(`TauCeti.exists_eq_unit_mul_quadratic_of_isUnit_discrim`). The generator `x` is then a
+nonzerodivisor of `A`: since `P` is regular, `(x)` is prime, and it does not contain
+`a x² + b x y + y²` because it does not contain `y`
+(`TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`). The maximal ideal of `A`
+is not principal, since `f ∈ 𝔪_P²` imposes no relation on the cotangent plane of `P`. Finally
+`y² = -x (a x + b y)` lies in `x 𝔪_A`, so the chart `Spec A[𝔪/x]` is the whole blowup
+(`TauCeti.AlgebraicGeometry.isIso_affineBlowupι_of_sq_mem`).
 
 At a node, the regularity of `P` follows from `TauCeti.IsRegularLocalRing.of_formallySmooth`,
 since the local ring `P` produced by
@@ -42,12 +45,6 @@ of finite type over the base field.
 
 ## Main results
 
-* `TauCeti.exists_eq_unit_mul_quadratic_of_isUnit_discrim`: over a local ring, a binary quadratic
-  form with unit discriminant is, after a change of generators, a unit multiple of
-  `a' x² + b' x y + y²`, with `b'² - 4a'` a unit.
-* `TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`: in a regular local ring
-  whose maximal ideal `(x, y)` is not principal, `x` is a nonzerodivisor modulo
-  `a x² + b x y + y²`.
 * `TauCeti.exists_quadratic_relation_of_isUnit_det_hessian`: generators `x, y` of `𝔪_A` with a
   relation `a x² + b x y + y² = 0`, `b² - 4a` a unit and `x` a nonzerodivisor, as required by
   `TauCeti.adjoinRootEquivTensorAffineBlowup` and `TauCeti.etale_tensor_affineBlowup`.
@@ -73,105 +70,9 @@ open IsLocalRing Module TensorProduct
 
 namespace TauCeti
 
-section QuadraticForm
-
-variable {P : Type*} [CommRing P] [IsLocalRing P]
-
-/-- **Normal form of a binary quadratic form with unit discriminant.** Over a local ring, if
-`b² - 4ac` is a unit, then after replacing the generators `u, v` of the ideal `(u, v)` by suitable
-generators `x, y`, the form `a u² + b u v + c v²` becomes `e (a' x² + b' x y + y²)` for a unit `e`,
-with `b'² - 4a'` a unit. -/
-theorem exists_eq_unit_mul_quadratic_of_isUnit_discrim {u v a b c : P}
-    (hd : IsUnit (discrim a b c)) :
-    ∃ x y a' b' e : P, IsUnit e ∧ Ideal.span {x, y} = Ideal.span {u, v} ∧
-      a * u ^ 2 + b * u * v + c * v ^ 2 = e * (a' * x ^ 2 + b' * x * y + y ^ 2) ∧
-      IsUnit (discrim a' b' 1) := by
-  suffices h : ∃ x y a₁ b₁ c₁ : P, IsUnit c₁ ∧ Ideal.span {x, y} = Ideal.span {u, v} ∧
-      a * u ^ 2 + b * u * v + c * v ^ 2 = a₁ * x ^ 2 + b₁ * x * y + c₁ * y ^ 2 ∧
-      discrim a₁ b₁ c₁ = discrim a b c by
-    obtain ⟨x, y, a₁, b₁, _, ⟨e, rfl⟩, hxy, hf, hdisc⟩ := h
-    refine ⟨x, y, a₁ * ↑e⁻¹, b₁ * ↑e⁻¹, e, e.isUnit, hxy, ?_, ?_⟩
-    · rw [hf]
-      linear_combination (-(a₁ * x ^ 2 + b₁ * x * y)) * e.mul_inv
-    · have : discrim (a₁ * ↑e⁻¹) (b₁ * ↑e⁻¹) 1 = discrim a b c * ↑e⁻¹ ^ 2 := by
-        rw [← hdisc]
-        unfold discrim
-        linear_combination (4 * a₁ * ↑e⁻¹) * e.mul_inv
-      rw [this]
-      exact hd.mul (e⁻¹.isUnit.pow 2)
-  by_cases hc : IsUnit c
-  · exact ⟨u, v, a, b, c, hc, rfl, rfl, rfl⟩
-  by_cases ha : IsUnit a
-  · exact ⟨v, u, c, b, a, ha, Set.pair_comm _ _ ▸ rfl, by ring, by unfold discrim; ring⟩
-  -- Both `a` and `c` lie in `𝔪`, so `b` is a unit; the shear `u ↦ u + v` makes `a - b + c` the
-  -- new coefficient of the square of the second coordinate.
-  have ha' : a ∈ maximalIdeal P := (mem_maximalIdeal a).mpr ha
-  have hc' : c ∈ maximalIdeal P := (mem_maximalIdeal c).mpr hc
-  have hb : b ∉ maximalIdeal P := fun hb ↦ (mem_maximalIdeal _).mp
-    (sub_mem (pow_two b ▸ Ideal.mul_mem_left _ b hb)
-      (Ideal.mul_mem_right c _ (Ideal.mul_mem_left _ 4 ha'))) hd
-  refine ⟨u + v, v, a, b - 2 * a, a - b + c, ?_, ?_, by ring, by unfold discrim; ring⟩
-  · by_contra h
-    exact hb (by simpa using sub_mem (add_mem ha' hc') ((mem_maximalIdeal _).mpr h))
-  · refine le_antisymm (Ideal.span_le.2 ?_) (Ideal.span_le.2 ?_) <;>
-      simp only [Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe,
-        Ideal.mem_span_pair]
-    · exact ⟨⟨1, 1, by ring⟩, ⟨0, 1, by ring⟩⟩
-    · exact ⟨⟨1, -1, by ring⟩, ⟨0, 1, by ring⟩⟩
-
-end QuadraticForm
-
 section PlaneCurve
 
 variable {P A : Type*} [CommRing P] [CommRing A]
-
-/-- In a regular local ring whose maximal ideal `(x, y)` is not principal, `x` is a nonzerodivisor
-modulo `a x² + b x y + y²`. -/
-theorem IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span [IsRegularLocalRing P]
-    {x y : P} (hm : maximalIdeal P = Ideal.span {x, y}) (hprin : ¬ (maximalIdeal P).IsPrincipal)
-    (a b : P) (π : P →+* A) (hπ : Function.Surjective π)
-    (hker : RingHom.ker π = Ideal.span {a * x ^ 2 + b * x * y + y ^ 2}) :
-    π x ∈ nonZeroDivisors A := by
-  have hxm : x ∈ maximalIdeal P := hm ▸ Ideal.subset_span (Set.mem_insert _ _)
-  -- `x` is a regular parameter: otherwise Nakayama's lemma would give `𝔪 = (y)`.
-  have hx2 : x ∉ maximalIdeal P ^ 2 := by
-    intro hx2
-    refine hprin ⟨y, le_antisymm ?_ ?_⟩
-    · refine Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal P)
-        (IsNoetherian.noetherian _) (ringJacobson_eq_maximalIdeal P).ge ?_
-      rw [smul_eq_mul, ← pow_two, hm, Ideal.span_le]
-      rintro _ (rfl | rfl)
-      · exact Ideal.mem_sup_right (hm ▸ hx2)
-      · exact Ideal.mem_sup_left (Ideal.mem_span_singleton_self _)
-    · rw [Ideal.submodule_span_eq, Ideal.span_le, Set.singleton_subset_iff, hm]
-      exact Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
-  have hprime := IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq hxm hx2
-  -- `y ∉ (x)`, since `𝔪` is not principal; hence `a x² + b x y + y² ∉ (x)`, as `(x)` is prime.
-  have hy : y ∉ Ideal.span {x} := fun hy ↦ hprin ⟨x, by
-    rw [hm, Ideal.submodule_span_eq]
-    exact le_antisymm (Ideal.span_le.2 (Set.insert_subset_iff.2
-      ⟨Ideal.mem_span_singleton_self x, Set.singleton_subset_iff.2 hy⟩))
-      (Ideal.span_mono (Set.singleton_subset_iff.2 (Set.mem_insert _ _)))⟩
-  have hg : a * x ^ 2 + b * x * y + y ^ 2 ∉ Ideal.span {x} := fun hg ↦ hy <|
-    hprime.mem_of_pow_mem 2 <| by
-      have hx : x * (a * x + b * y) ∈ Ideal.span {x} := Ideal.mul_mem_right _ _
-        (Ideal.mem_span_singleton_self x)
-      simpa [show a * x ^ 2 + b * x * y + y ^ 2 - x * (a * x + b * y) = y ^ 2 by ring] using
-        sub_mem hg hx
-  have hx0 : x ≠ 0 := fun h ↦ hx2 (h ▸ zero_mem _)
-  -- If `r x ∈ (g)`, write `r x = t g`; then `t ∈ (x)` and cancelling `x` gives `r ∈ (g)`.
-  refine (mem_nonZeroDivisors_iff_right).2 ?_
-  intro r' hr'
-  obtain ⟨r, rfl⟩ := hπ r'
-  rw [← map_mul, ← RingHom.mem_ker, hker, Ideal.mem_span_singleton'] at hr'
-  obtain ⟨t, ht⟩ := hr'
-  have htx : t * (a * x ^ 2 + b * x * y + y ^ 2) ∈ Ideal.span {x} :=
-    ht ▸ Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self x)
-  obtain ⟨t', rfl⟩ := Ideal.mem_span_singleton'.1 ((hprime.mem_or_mem htx).resolve_right hg)
-  have hr : r = t' * (a * x ^ 2 + b * x * y + y ^ 2) :=
-    mul_right_cancel₀ hx0 (by rw [← ht]; ring)
-  rw [← RingHom.mem_ker, hker, hr]
-  exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
 
 variable [IsRegularLocalRing P] [IsLocalRing A] {R : Type*} [CommSemiring R] [Algebra R P]
   {s : Fin 2 → P} {D : Fin 2 → Derivation R P P} {f : P}
