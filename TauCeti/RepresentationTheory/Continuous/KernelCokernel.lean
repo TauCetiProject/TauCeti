@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 public import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
+public import TauCeti.RepresentationTheory.Continuous.TopRep.KernelCokernel
 
 /-!
 # Kernel and cokernel representations of intertwining maps
@@ -29,14 +30,14 @@ closed range, a subrepresentation of `ρ` which is invariant because `ρ` is uni
 is the kernel of the adjoint, which intertwines `ρ` with `π`, so the cokernel representation is also
 the kernel representation of the adjoint.
 
-Bundled as objects of the category `TopRep`, the same kernel and cokernel are `TopRep.ker` and
-`TopRep.coker`. Here they are kept as `ContRepresentation`s, the carrier on which continuity for the
-operator norm and the comparison with the orthogonal complement are stated.
+The kernel and cokernel actions are `ContIntertwiningMap.kerRepresentation` and
+`ContIntertwiningMap.cokerRepresentation`, the representations underlying the objects `TopRep.ker`
+and `TopRep.coker` of the category `TopRep`. Here they are studied as `ContRepresentation`s, the
+carrier on which continuity for the operator norm and the comparison with the orthogonal complement
+are stated.
 
 ## Main definitions
 
-* `ContIntertwiningMap.kerRepresentation`: the action on the kernel of an intertwining map.
-* `ContIntertwiningMap.cokerRepresentation`: the action on the quotient by its range.
 * `ContIntertwiningMap.orthogonalRangeRepresentation`: for a unitary target, the action on the
   orthogonal complement of the range.
 * `ContIntertwiningMap.cokerEquivOrthogonalRange`: the equivalence of representations between the
@@ -71,51 +72,26 @@ open ContRepresentation
 
 namespace ContIntertwiningMap
 
-/-! ### The kernel and cokernel representations -/
+/-! ### Strong continuity of the kernel and cokernel representations -/
 
 section Representations
 
 variable {R G V W : Type*} [Ring R] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
   [IsTopologicalAddGroup V] [Module R V] [AddCommGroup W] [TopologicalSpace W]
-  [IsTopologicalAddGroup W] [Module R W]
+  [IsTopologicalAddGroup W] [Module R W] [TopologicalSpace G]
   {π : ContRepresentation R G V} {ρ : ContRepresentation R G W} (T : π →ⁱL ρ)
-
-/-- The action of `G` on the kernel of an intertwining map `T : π →ⁱL ρ`: the restriction of `π`
-to the invariant submodule `ker T`, as in Mathlib's `Representation.IntertwiningMap.ker`. -/
-def kerRepresentation : ContRepresentation R G T.toContinuousLinearMap.ker :=
-  π.subrepresentation _ fun g _ hv ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv
-
-/-- The kernel representation acts as `π` on the underlying vectors. -/
-@[simp]
-theorem coe_kerRepresentation_apply (g : G) (v : T.toContinuousLinearMap.ker) :
-    ((T.kerRepresentation g v : T.toContinuousLinearMap.ker) : V) = π g v :=
-  coe_subrepresentation_apply g v
-
-/-- The action of `G` on the cokernel of an intertwining map `T : π →ⁱL ρ`: the descent of `ρ` to
-the quotient by the invariant submodule `range T`, as in Mathlib's
-`Representation.IntertwiningMap.range`. -/
-def cokerRepresentation : ContRepresentation R G (W ⧸ T.toContinuousLinearMap.range) :=
-  ρ.quotient _ fun g _ hw ↦ T.toIntertwiningMap.range.apply_mem_toSubmodule g hw
-
-/-- The cokernel representation acts on the class of `w` as `ρ` acts on `w`. -/
-@[simp]
-theorem cokerRepresentation_apply_mk (g : G) (w : W) :
-    T.cokerRepresentation g (Submodule.Quotient.mk w) = Submodule.Quotient.mk (ρ g w) :=
-  quotient_apply_mk g w
-
-variable [TopologicalSpace G]
 
 /-- The kernel representation of an intertwining map out of a strongly continuous representation
 is strongly continuous. -/
 theorem continuous_kerRepresentation_apply (hπ : ∀ v, Continuous fun g ↦ π g v)
     (v : T.toContinuousLinearMap.ker) : Continuous fun g ↦ T.kerRepresentation g v :=
-  continuous_subrepresentation_apply hπ v
+  T.kerRepresentation_eq_subrepresentation ▸ continuous_subrepresentation_apply hπ v
 
 /-- The cokernel representation of an intertwining map into a strongly continuous representation
 is strongly continuous. -/
 theorem continuous_cokerRepresentation_apply (hρ : ∀ w, Continuous fun g ↦ ρ g w)
     (x : W ⧸ T.toContinuousLinearMap.range) : Continuous fun g ↦ T.cokerRepresentation g x :=
-  continuous_quotient_apply hρ x
+  T.cokerRepresentation_eq_quotient ▸ continuous_quotient_apply hρ x
 
 end Representations
 
@@ -171,7 +147,7 @@ variable {𝕜 G E F : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup E] [I
 /-- The kernel representation of an intertwining map out of a unitary representation is
 unitary. -/
 theorem isUnitary_kerRepresentation (hπ : π.IsUnitary) : T.kerRepresentation.IsUnitary :=
-  hπ.subrepresentation _
+  T.kerRepresentation_eq_subrepresentation ▸ hπ.subrepresentation _
 
 end KernelUnitary
 

@@ -20,6 +20,8 @@ the category of topological modules.
 
 ## Main definitions
 
+* `ContIntertwiningMap.kerRepresentation`: the action on the kernel of an intertwining map.
+* `ContIntertwiningMap.cokerRepresentation`: the action on the quotient by its range.
 * `TopRep.ker`, `TopRep.kerι`: the kernel of a morphism, with its inclusion.
 * `TopRep.coker`, `TopRep.cokerπ`: the cokernel of a morphism, with its projection.
 
@@ -33,29 +35,63 @@ the category of topological modules.
 
 public section
 
+namespace ContIntertwiningMap
+
+variable {R G V W : Type*} [Ring R] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module R V] [AddCommGroup W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [Module R W]
+  {π : ContRepresentation R G V} {ρ : ContRepresentation R G W}
+  (T : ContIntertwiningMap π ρ)
+
+/-- The action of `G` on the kernel of an intertwining map `T : π →ⁱL ρ`: the restriction of `π`
+to the invariant submodule `ker T`, as in Mathlib's `Representation.IntertwiningMap.ker`. -/
+def kerRepresentation : ContRepresentation R G T.toContinuousLinearMap.ker :=
+  π.subrepresentation _ fun g _ hv ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv
+
+/-- The kernel representation acts as `π` on the underlying vectors. -/
+@[simp]
+theorem coe_kerRepresentation_apply (g : G) (v : T.toContinuousLinearMap.ker) :
+    ((T.kerRepresentation g v : T.toContinuousLinearMap.ker) : V) = π g v :=
+  ContRepresentation.coe_subrepresentation_apply g v
+
+/-- The kernel representation is the restriction of `π` to `ker T`, so the API of
+`ContRepresentation.subrepresentation` applies to it. -/
+theorem kerRepresentation_eq_subrepresentation :
+    T.kerRepresentation = π.subrepresentation _ fun g _ hv ↦
+      T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv :=
+  (rfl)
+
+/-- The action of `G` on the cokernel of an intertwining map `T : π →ⁱL ρ`: the descent of `ρ` to
+the quotient by the invariant submodule `range T`, as in Mathlib's
+`Representation.IntertwiningMap.range`. -/
+def cokerRepresentation : ContRepresentation R G (W ⧸ T.toContinuousLinearMap.range) :=
+  ρ.quotient _ fun g _ hw ↦ T.toIntertwiningMap.range.apply_mem_toSubmodule g hw
+
+/-- The cokernel representation acts on the class of `w` as `ρ` acts on `w`. -/
+@[simp]
+theorem cokerRepresentation_apply_mk (g : G) (w : W) :
+    T.cokerRepresentation g (Submodule.Quotient.mk w) = Submodule.Quotient.mk (ρ g w) :=
+  ContRepresentation.quotient_apply_mk g w
+
+/-- The cokernel representation is the descent of `ρ` to the quotient by `range T`, so the API of
+`ContRepresentation.quotient` applies to it. -/
+theorem cokerRepresentation_eq_quotient :
+    T.cokerRepresentation = ρ.quotient _ fun g _ hw ↦
+      T.toIntertwiningMap.range.apply_mem_toSubmodule g hw :=
+  (rfl)
+
+end ContIntertwiningMap
+
 namespace TopRep
 
 open CategoryTheory Limits
 
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Monoid G] {A B : TopRep k G} (f : A ⟶ B)
 
-/-- The operators of `A` preserve the kernel of a morphism out of `A`. -/
-theorem ρ_apply_mem_ker (g : G) (a : A) (ha : a ∈ f.hom.ker) :
-    A.ρ g a ∈ f.hom.ker := by
-  rw [LinearMap.mem_ker] at ha ⊢
-  simp only [ContinuousLinearMap.coe_coe, ContIntertwiningMap.toContinuousLinearMap_apply] at ha ⊢
-  rw [hom_comm_apply, ha, map_zero]
-
-/-- The operators of `B` preserve the range of a morphism into `B`. -/
-theorem ρ_apply_mem_range (g : G) (b : B) (hb : b ∈ f.hom.range) :
-    B.ρ g b ∈ f.hom.range := by
-  obtain ⟨a, rfl⟩ := hb
-  exact ⟨A.ρ g a, hom_comm_apply f g a⟩
-
 /-- The kernel of a morphism of continuous representations: the kernel of the underlying linear
 map with the subspace topology and the restricted action. -/
 abbrev ker : TopRep k G :=
-  .of (A.ρ.subrepresentation _ (ρ_apply_mem_ker f))
+  .of f.hom.kerRepresentation
 
 /-- The inclusion of the kernel of a morphism. -/
 def kerι : ker f ⟶ A :=
@@ -102,7 +138,7 @@ def isLimitKer : IsLimit (KernelFork.ofι (kerι f) (kerι_comp f)) :=
 /-- The cokernel of a morphism of continuous representations: the quotient by the range of the
 underlying linear map, with the quotient topology and the descended action. -/
 abbrev coker : TopRep k G :=
-  .of (B.ρ.quotient _ (ρ_apply_mem_range f))
+  .of f.hom.cokerRepresentation
 
 /-- The projection onto the cokernel of a morphism. -/
 def cokerπ : B ⟶ coker f :=

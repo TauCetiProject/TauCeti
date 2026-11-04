@@ -23,7 +23,6 @@ continuous representations.
 * `ContRepresentation.continuous_subrepresentation_apply` and
   `ContRepresentation.continuous_quotient_apply`: restriction to an invariant submodule and descent
   to the quotient by it preserve strong continuity.
-* `ContRepresentation.Equiv.continuous_iff`: equivalent representations are continuous together.
 -/
 
 public section
@@ -52,39 +51,5 @@ theorem continuous_quotient_apply (hπ : ∀ v, Continuous fun g ↦ π g v) (x 
   exact W.mkQL.continuous.comp (hπ v)
 
 end StrongContinuity
-
-section Equiv
-
-variable {𝕜 G V W : Type*} [NormedField 𝕜] [Monoid G] [TopologicalSpace G]
-  [AddCommGroup V] [TopologicalSpace V] [IsTopologicalAddGroup V] [Module 𝕜 V]
-  [ContinuousConstSMul 𝕜 V] [AddCommGroup W] [TopologicalSpace W] [IsTopologicalAddGroup W]
-  [Module 𝕜 W] [ContinuousConstSMul 𝕜 W]
-  {ρ : ContRepresentation 𝕜 G V} {σ : ContRepresentation 𝕜 G W}
-
-omit [TopologicalSpace G] [ContinuousConstSMul 𝕜 V] [ContinuousConstSMul 𝕜 W] in
-/-- An equivalence of representations conjugates each action operator of one into the other. -/
-theorem Equiv.symm_comp_comp (φ : ρ.Equiv σ) (g : G) :
-    φ.symm.toContinuousLinearMap ∘L σ g ∘L φ.toContinuousLinearMap = ρ g := by
-  ext v
-  have h := φ.toContIntertwiningMap.isIntertwining g v
-  simp only [Equiv.coe_toContIntertwiningMap] at h
-  simp [Equiv.toContinuousLinearEquiv_apply, ← h]
-
-/-- **Equivalent representations are continuous together.** Each action operator of `ρ` is the
-conjugate `φ⁻¹ ∘ σ g ∘ φ` of the corresponding one of `σ`, and composition with a fixed continuous
-linear map is continuous on the space of continuous linear maps. -/
-theorem Equiv.continuous_iff (φ : ρ.Equiv σ) : Continuous ρ ↔ Continuous σ := by
-  refine ⟨fun hρ ↦ ?_, fun hσ ↦ ?_⟩
-  · have h : Continuous fun g ↦
-        φ.symm.symm.toContinuousLinearMap ∘L ρ g ∘L φ.symm.toContinuousLinearMap :=
-      (ContinuousLinearMap.postcomp W _).continuous.comp
-        ((ContinuousLinearMap.precomp V _).continuous.comp hρ)
-    simpa only [φ.symm.symm_comp_comp] using h
-  · have h : Continuous fun g ↦ φ.symm.toContinuousLinearMap ∘L σ g ∘L φ.toContinuousLinearMap :=
-      (ContinuousLinearMap.postcomp V _).continuous.comp
-        ((ContinuousLinearMap.precomp W _).continuous.comp hσ)
-    simpa only [φ.symm_comp_comp] using h
-
-end Equiv
 
 end ContRepresentation
