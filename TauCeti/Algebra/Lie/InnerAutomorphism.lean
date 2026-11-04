@@ -185,6 +185,15 @@ lemma expAd_apply_of_lie_lie_lie_eq_zero {x y : L} (hx : ∀ z, ∃ k, ((ad K L 
   rw [expAd_apply_eq_sum (k := 3) hx (by simpa [pow_succ] using hy)]
   simp [Finset.sum_range_succ, pow_succ]
 
+/-- The four-term truncation of `exp (ad x)`, valid on a vector killed by four brackets with
+`x`. -/
+lemma expAd_apply_of_lie_lie_lie_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x))
+    (hy : ⁅x, ⁅x, ⁅x, ⁅x, y⁆⁆⁆⁆ = 0) :
+    expAd x hx y = y + ⁅x, y⁆ + (2⁻¹ : ℚ) • ⁅x, ⁅x, y⁆⁆ +
+      (6⁻¹ : ℚ) • ⁅x, ⁅x, ⁅x, y⁆⁆⁆ := by
+  rw [expAd_apply_eq_sum (k := 4) hx (by simpa [pow_succ] using hy)]
+  norm_num [Finset.sum_range_succ, pow_succ, Nat.factorial]
+
 /-! ## Conjugation by nilpotent exponentials -/
 
 section Associative
