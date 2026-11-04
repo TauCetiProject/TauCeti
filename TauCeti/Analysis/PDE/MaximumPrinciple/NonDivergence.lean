@@ -71,6 +71,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.abs_sum_mul_fderiv_fderiv_le`: the principal part is at most `n² Λ ‖D²f‖` when the
+  entries of `A` are at most `Λ` in absolute value.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -253,6 +255,23 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- **A bound for the principal part.** If every entry of `A` is at most `Λ` in absolute value,
+then `|∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x)| ≤ n² Λ ‖D²f(x)‖`, where `n` is the dimension. -/
+theorem abs_sum_mul_fderiv_fderiv_le {A : Matrix ι ι ℝ} {Λ : ℝ} (hA : ∀ i j, |A i j| ≤ Λ)
+    (f : EuclideanSpace ℝ ι → ℝ) (x : EuclideanSpace ℝ ι) :
+    |∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)| ≤ Fintype.card ι ^ 2 * Λ * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
+  have hentry (i j : ι) : |A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)| ≤ Λ * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
+    rw [abs_mul]
+    refine mul_le_mul (hA i j) ?_ (abs_nonneg _) ((abs_nonneg _).trans (hA i j))
+    simpa using (fderiv ℝ (fderiv ℝ f) x).le_opNorm₂ (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)
+  calc _ ≤ ∑ _i : ι, ∑ _j : ι, Λ * ‖fderiv ℝ (fderiv ℝ f) x‖ :=
+        (Finset.abs_sum_le_sum_abs _ _).trans <| Finset.sum_le_sum fun i _ ↦
+          (Finset.abs_sum_le_sum_abs _ _).trans <| Finset.sum_le_sum fun j _ ↦ hentry i j
+    _ = _ := by simp [Finset.card_univ]; ring
 
 variable [Nonempty ι]
 

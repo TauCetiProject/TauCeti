@@ -49,7 +49,9 @@ For mollification by a nonnegative compactly supported kernel `ρ` of integral `
 records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
 forward differences of `u` in a direction pass to the directional derivative of `ρ ⋆ u`: this is
 how a nonsmooth subsolution of a Hamilton–Jacobi inequality, such as a Hopf–Lax function, becomes
-a smooth one. And a bounded `u` has a mollification with bounded derivative.
+a smooth one. A bounded `u` has a mollification with bounded derivative, and more precisely
+every derivative of order `k ≥ 1` of `ρ ⋆ u` at `x` is controlled by the oscillation of `u` on
+`x - tsupport ρ`.
 
 ## Main declarations
 
@@ -69,6 +71,9 @@ a smooth one. And a bounded `u` has a mollification with bounded derivative.
   the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
 * `HasCompactSupport.norm_fderiv_convolution_left_le`: the mollification of a function bounded by
   `M` has derivative bounded by `M * ∫ ‖Dρ‖`.
+* `HasCompactSupport.norm_iteratedFDeriv_convolution_left_le_of_dist_le`: if `u` oscillates by
+  at most `δ` around `x` on `x - tsupport ρ`, the `k`-th derivative of `ρ ⋆ u` at `x`, `k ≥ 1`,
+  is bounded by `δ * ∫ ‖D^k ρ‖`.
 -/
 
 public section
@@ -350,6 +355,55 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
       _ = ‖fderiv ℝ ρ (x - y)‖ * (M * ‖d‖) := by ring
   · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖fderiv ℝ ρ y‖) μ x]
     ring
+
+/-- **Derivatives of a mollification are controlled by the oscillation.** Let `ρ` be a `C^N`
+compactly supported kernel and `u` a locally integrable function. If `u` differs from `u x` by
+at most `δ` at the points `x - y` with `y` in the support of `ρ`, then every derivative of order
+`1 ≤ k ≤ N` of `ρ ⋆ u` at `x` is bounded by `δ * ∫ ‖D^k ρ‖`. No regularity of `u` is needed. -/
+theorem _root_.HasCompactSupport.norm_iteratedFDeriv_convolution_left_le_of_dist_le
+    [IsLocallyFiniteMeasure μ] (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ N ρ) {u : G → E'}
+    (hu : LocallyIntegrable u μ) {k : ℕ} (hk : k ≠ 0) (hkN : k ≤ N) {x : G} {δ : ℝ}
+    (h : ∀ y ∈ tsupport ρ, dist (u (x - y)) (u x) ≤ δ) :
+    ‖iteratedFDeriv ℝ k (ρ ⋆[lsmul ℝ ℝ, μ] u) x‖ ≤ δ * ∫ y, ‖iteratedFDeriv ℝ k ρ y‖ ∂μ := by
+  set v : G → E' := fun y ↦ u y - u x
+  have hv : LocallyIntegrable v μ := hu.sub (locallyIntegrable_const _)
+  have hρi : Integrable ρ μ := hρ.continuous.integrable_of_hasCompactSupport hρc
+  -- Subtracting the constant `u x` from `u` changes `ρ ⋆ u` by a constant.
+  have hconst : (ρ ⋆[lsmul ℝ ℝ, μ] u) =
+      (ρ ⋆[lsmul ℝ ℝ, μ] v) + fun _ ↦ ∫ t, ρ t • u x ∂μ := by
+    funext z
+    rw [Pi.add_apply]
+    have h1 := (hρc.convolutionExists_left (lsmul ℝ ℝ) hρ.continuous hu z).integrable
+    simp only [convolution_def, lsmul_apply, v, smul_sub] at h1 ⊢
+    rw [integral_sub h1 (hρi.smul_const _), sub_add_cancel]
+  have hvc : ContDiff ℝ N (ρ ⋆[lsmul ℝ ℝ, μ] v) :=
+    hρc.contDiff_convolution_left (lsmul ℝ ℝ) hρ hv
+  have hkN' : (k : WithTop ℕ∞) ≤ N := by exact_mod_cast hkN
+  rw [hconst, iteratedFDeriv_add_apply (hvc.of_le hkN').contDiffAt contDiffAt_const,
+    iteratedFDeriv_const_of_ne hk, Pi.zero_apply, add_zero, ← convolution_flip,
+    hρc.iteratedFDeriv_convolution_right _ hv hρ hkN, convolution_def]
+  have hgi : Integrable (fun y ↦ ‖iteratedFDeriv ℝ k ρ y‖) μ :=
+    (hρ.continuous_iteratedFDeriv hkN').norm.integrable_of_hasCompactSupport
+      (hρc.iteratedFDeriv k).norm
+  refine (norm_integral_le_of_norm_le ((hgi.comp_sub_left x).const_mul δ)
+    (Eventually.of_forall fun t ↦ ?_)).trans_eq ?_
+  · -- At `t` with `D^k ρ (x - t) ≠ 0`, the point `x - t` lies in the support of `ρ`.
+    by_cases ht : iteratedFDeriv ℝ k ρ (x - t) = 0
+    · simp only [ContinuousLinearMap.comp_apply, compContinuousMultilinearMapL_apply, ht]
+      exact (norm_compContinuousMultilinearMap_le _ _).trans (by simp)
+    have hmem : x - t ∈ tsupport ρ := support_iteratedFDeriv_subset k ht
+    have hut : ‖v t‖ ≤ δ := by
+      simpa [v, dist_eq_norm] using h (x - t) hmem
+    simp only [ContinuousLinearMap.comp_apply, compContinuousMultilinearMapL_apply]
+    calc ‖((lsmul ℝ ℝ).flip (v t)).compContinuousMultilinearMap (iteratedFDeriv ℝ k ρ (x - t))‖
+        ≤ ‖(lsmul ℝ ℝ).flip (v t)‖ * ‖iteratedFDeriv ℝ k ρ (x - t)‖ :=
+          norm_compContinuousMultilinearMap_le _ _
+      _ ≤ δ * ‖iteratedFDeriv ℝ k ρ (x - t)‖ := by
+          gcongr
+          refine ((lsmul ℝ ℝ).flip.le_opNorm (v t)).trans ?_
+          rw [opNorm_flip]
+          exact (mul_le_of_le_one_left (norm_nonneg _) opNorm_lsmul_le).trans hut
+  · rw [integral_const_mul, integral_sub_left_eq_self (fun y ↦ ‖iteratedFDeriv ℝ k ρ y‖) μ x]
 
 end Mollifier
 
