@@ -29,7 +29,7 @@ study of limit groups: a finitely generated fully residually free group acts fre
 We prove that segments in a `Λ`-tree are unique, that `Λ` itself, with the metric `|a - b|`, is a
 `Λ`-tree whose segments are its closed intervals, and that a one-point space is a `Λ`-tree. The
 vertex set of a cycle of length four, with its path metric, is a geodesic `ℤ`-metric space which is
-not a `ℤ`-tree: axiom (T3) is not implied by the others.
+not a `ℤ`-tree, so geodesicity alone does not make a `Λ`-metric space a `Λ`-tree.
 
 ## Main definitions
 
