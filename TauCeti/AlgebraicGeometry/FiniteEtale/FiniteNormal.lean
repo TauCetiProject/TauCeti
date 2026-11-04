@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Extension
-import TauCeti.AlgebraicGeometry.AffineScheme
-import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.RingTheory.CohenMacaulay.Normal
@@ -61,10 +59,6 @@ part (1), purity of the punctured spectrum.
   maximal ideal.
 * `TauCeti.IsLocalRing.restrictPuncturedSpec.fullyFaithful`: restriction to the punctured spectrum
   is fully faithful on finite normal punctured-étale algebras.
-* `TauCeti.Algebra.etale_of_purityHolds_of_bijective`: over a Noetherian local ring of depth at
-  least two for which purity holds, a finite algebra is étale, provided it is étale at every prime
-  not lying over the closed point and is recovered from its sections over the preimage of the
-  punctured spectrum.
 * `TauCeti.Algebra.etale_of_finiteNormal_of_purityHolds`: over a Noetherian normal local domain of
   dimension at least two for which purity holds, a finite torsion-free algebra with normal
   localizations at maximal ideals, étale at every prime not lying over the closed point, is
@@ -239,49 +233,6 @@ namespace TauCeti.Algebra
 
 variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] [IsLocalRing A]
   [IsNoetherianRing A] [Module.Finite A B]
-
-/-- Let `A` be a Noetherian local ring of depth at least two for which purity holds, and let `B`
-be a finite `A`-algebra which is étale over `A` at every prime not lying over the maximal ideal.
-If restriction of sections from `Spec B` to the preimage of the punctured spectrum of `A` is
-bijective, then `B` is étale over `A`. -/
-theorem etale_of_purityHolds_of_bijective (hpurity : IsLocalRing.PurityHolds A)
-    (hdepth : 2 ≤ depth (ModuleCat.of A A))
-    (hsections : Function.Bijective (Spec.map (CommRingCat.ofHom (algebraMap A B)) ⁻¹ᵁ
-      IsLocalRing.puncturedSpectrum A).ι.appTop)
-    (hetale : ∀ (q : Ideal B) [q.IsPrime], q.under A ≠ maximalIdeal A →
-      Algebra.IsEtaleAt A q) :
-    Algebra.Etale A B := by
-  let U := IsLocalRing.puncturedSpectrum A
-  let g := Spec.map (CommRingCat.ofHom (algebraMap A B))
-  let W := g ⁻¹ᵁ U
-  have : IsFinite g := (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr ‹_›)
-  have : Algebra.FinitePresentation A B :=
-    Algebra.FinitePresentation.of_finiteType.mp inferInstance
-  -- Every point of `Spec B` over the punctured spectrum has an open neighbourhood on which
-  -- `Spec B ⟶ Spec A` is étale, so the restriction `V` of `Spec B` to the punctured spectrum is
-  -- finite étale over it.
-  have : Etale (g ∣_ U) := (g.etale_morphismRestrict_iff U).mpr <|
-    Set.disjoint_left.mpr fun (q : PrimeSpectrum B) hq hne ↦
-      Scheme.Hom.mem_nonEtaleLocus_iff.mp hne <| (Scheme.Hom.etaleAt_spec_iff q).mpr <|
-        hetale q.asIdeal ((IsLocalRing.mem_preimage_puncturedSpectrum_iff A q).mp hq)
-  let V := FiniteEtaleScheme.ofHom (g ∣_ U)
-  -- By purity `V` extends across the closed point, so its sections are finite étale over `A`.
-  let φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ U.ι).appTop
-  have hφ : φ.hom.Finite ∧ φ.hom.Etale :=
-    (IsLocalRing.extends_iff_sections_finiteEtale A hdepth V).mp
-      ((IsLocalRing.purityHolds_iff A).mp hpurity V)
-  -- The sections of `V` are those of `Spec B` over `W`, which recover `B`.
-  let e := (Over.forget U.toScheme).mapIso (eqToIso (FiniteEtaleScheme.ofHom_obj (g ∣_ U)))
-  have he : e.hom ≫ g ∣_ U = V.obj.hom :=
-    Over.w (eqToHom (FiniteEtaleScheme.ofHom_obj (g ∣_ U)))
-  obtain ⟨σ, _, hcomp⟩ := TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective
-    (CommRingCat.ofHom (algebraMap A B)) (V.obj.hom ≫ U.ι) W hsections e
-    (by rw [← he, Category.assoc, morphismRestrict_ι])
-  rw [← RingHom.etale_algebraMap]
-  refine (RingHom.Etale.respectsIso.cancel_right_isIso
-    (CommRingCat.ofHom (algebraMap A B)) σ).mp ?_
-  rw [← CommRingCat.hom_comp, ← hcomp]
-  exact hφ.2
 
 /-- **Purity for finite normal algebras from purity of the punctured spectrum.** Let `A` be a
 Noetherian normal local domain of dimension at least two for which purity holds: every finite
