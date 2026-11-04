@@ -159,12 +159,13 @@ private theorem descend_cochain {p : ℤ}
   have hT : T.ShortExact := hS.map_of_exact _
   have := hT.epi_g
   let b' : toGradedModuleCat L ⟶ (toGradedModuleCat I).shiftObj (-p) :=
-    GradedModuleCat.ofHom b.1 ((cochain_mem_iff_isHomogeneous_shift b.1).1 b.2)
+    GradedModuleCat.ofHom b.1
+      ((mem_dgRightModuleCochains_iff_isHomogeneous_shiftObj b.1).1 b.2)
   have hz : T.f ≫ b' = 0 := GradedModuleCat.hom_ext (LinearMap.ext hb)
   let c := hT.exact.desc b' hz
   refine ⟨⟨c.hom, ?_⟩, fun x ↦ congrArg (fun a : T.X₂ ⟶ _ ↦ a.hom x)
     (hT.exact.g_desc b' hz)⟩
-  exact (cochain_mem_iff_isHomogeneous_shift c.hom).2 c.isHomogeneous
+  exact (mem_dgRightModuleCochains_iff_isHomogeneous_shiftObj c.hom).2 c.isHomogeneous
 
 variable [Injective (toGradedModuleCat I)]
 
@@ -177,9 +178,9 @@ private theorem extend_cochain {p : ℤ}
     (hS.map_of_exact (forgetDifferential (h := h))).mono_f
   obtain ⟨b, hb, hba⟩ := GradedModuleCat.exists_isHomogeneous_comp_eq_of_mono
     (toGradedModuleCat I) ((forgetDifferential (h := h)).map f) (p := p) a.1
-    ((cochain_mem_iff_isHomogeneous a.1).1 a.2)
+    ((mem_dgRightModuleCochains_iff_isHomogeneous a.1).1 a.2)
   refine ⟨⟨b, ?_⟩, fun x ↦ congrArg (fun l ↦ l x) hba⟩
-  exact (cochain_mem_iff_isHomogeneous b).2 hb
+  exact (mem_dgRightModuleCochains_iff_isHomogeneous b).2 hb
 
 /-- Maps from a short-exact totalization to a graded-injective module are null-homotopic. -/
 private theorem totalization_map_eq_zero
