@@ -44,6 +44,8 @@ and so separate points.
   independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
+* `LinearIndependent.exists_sum_smul_eq_proj`: `#ι` linearly independent forms on `Kⁱ` express
+  every coordinate projection.
 -/
 
 public section
@@ -82,6 +84,14 @@ theorem finrank_ker_inf_add_one {f : Dual K V} {U : Submodule K V} [FiniteDimens
     rw [LinearMap.ker_domRestrict, Submodule.comap_inf, Submodule.comap_subtype_self, inf_top_eq]
   have hfin := finrank_ker_add_one_of_ne_zero hne
   rwa [hker, (Submodule.comapSubtypeEquivOfLe inf_le_right).finrank_eq] at hfin
+
+/-- A hyperplane contained in the kernel of a nonzero functional equals that kernel. -/
+theorem ker_eq_of_le_of_finrank_add_one [FiniteDimensional K V] (f : Dual K V)
+    (hf : f ≠ 0) {S : Submodule K V} (hle : S ≤ LinearMap.ker f)
+    (hdim : finrank K S + 1 = finrank K V) : LinearMap.ker f = S := by
+  apply (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  have hker := finrank_ker_add_one_of_ne_zero hf
+  omega
 
 /-- The kernel of a nonzero functional has codimension one. The ambient vector space need not be
 finite-dimensional. -/
@@ -214,5 +224,16 @@ theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : Linea
   simpa using hz'
 
 end Separation
+
+/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate projection is a
+combination of them. -/
+theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
+  have hspan : Submodule.span K (Set.range l) = ⊤ :=
+    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
+    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  exact ⟨a, ha⟩
 
 end LinearIndependent

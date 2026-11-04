@@ -122,9 +122,9 @@ theorem sum_apply_killingDualBasis_eq_sum_weight {W : Type*} [AddCommGroup W] [M
     rw [map_sum]
   rw [Finset.sum_congr rfl fun i _ ↦ second i, Finset.sum_comm]
   refine Finset.sum_eq_single (-χ) (fun ψ _ hψ ↦ ?_) (by simp)
-  have hmove := sum_apply_killingDualBasis_of_isAdjointPair
-    (f.comp (genWeightSpaceProjection K H L χ)) bs (isAdjointPair_genWeightSpaceProjection H ψ)
-  simp only [LinearMap.comp_apply] at hmove
+  have hmove := (f.comp (genWeightSpaceProjection K H L χ)).sum_apply_dualBasis_of_isAdjointPair
+    (IsKilling.killingForm_nondegenerate K L) bs (isAdjointPair_genWeightSpaceProjection H (-ψ))
+  simp only [LinearMap.comp_apply, neg_neg] at hmove
   rw [← hmove]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
   rw [genWeightSpaceProjection_apply_apply_of_ne (fun hc ↦ hψ (by rw [← hc, neg_neg])), map_zero,
@@ -193,11 +193,11 @@ theorem sum_killingExtend_mul_killingExtend_killingDualBasis {ι : Type*} [Decid
     ∑ i, killingExtend lam (bs i) * killingExtend lam (killingDualBasis bs i) =
       invForm lam lam := by
   have hrep := congrArg (killingExtend lam)
-    (sum_killingForm_smul_basis bs (((IsKilling.cartanEquivDual H).symm lam : H) : L))
+    (LinearMap.BilinForm.sum_apply_smul_dualBasis (IsKilling.killingForm_nondegenerate K L) bs
+      (((IsKilling.cartanEquivDual H).symm lam : H) : L))
   rw [map_sum] at hrep
   simp only [map_smul, smul_eq_mul, ← killingExtend_apply] at hrep
   rw [invForm_apply_apply, ← killingExtend_apply_cartan lam, ← hrep]
-  exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
 
 /-! ### The Casimir operator on a weight space -/
 
@@ -224,10 +224,10 @@ theorem representation_casimirElement_mem_genWeightSpace {mu : H → K} {m : M}
         (UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) m)
       = (((toEnd K H M x - mu x • (1 : Module.End K M)) ^ k) *
           UniversalEnvelopingAlgebra.representation K L M (casimirElement K L)) m :=
-        (Module.End.mul_apply _ _ _).symm
+        (mul_apply_eq_comp _ _ _).symm
     _ = (UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) *
           ((toEnd K H M x - mu x • (1 : Module.End K M)) ^ k)) m := by rw [(hcomm x).pow_left k]
-    _ = 0 := by rw [Module.End.mul_apply, hk, map_zero]
+    _ = 0 := by rw [mul_apply_eq_comp, hk, map_zero]
 
 variable (M) in
 /-- **The Casimir operator of a weight space**: the operator by which the Casimir element acts on
@@ -265,7 +265,7 @@ theorem casimirGenWeightSpaceEnd_eq_sum {ι : Type*} [DecidableEq ι] [Fintype �
   have hval := DFunLike.congr_fun (representation_casimirElement_eq_sum_weight (M := M) H bs)
     (m : M)
   rw [hswap] at hval
-  simp only [LinearMap.sum_apply, Module.End.mul_apply, toEnd_apply_apply] at hval
+  simp only [LinearMap.sum_apply, mul_apply_eq_comp, toEnd_apply_apply] at hval
   simpa only [coe_casimirGenWeightSpaceEnd_apply, LinearMap.sum_apply,
     AddSubmonoidClass.coe_finsetSum, coe_raiseLowerEnd_apply] using hval
 
@@ -340,18 +340,12 @@ theorem sum_trace_raiseLowerEnd_of_ne_zero {ι : Type*} [DecidableEq ι] [Fintyp
       apply hchi
       rw [halpha]
       exact Weight.coe_toLinear_eq_zero_iff.mpr (by simpa using h.neg)
-    have hcoef : ∀ i, c i = killingForm K L (genWeightSpaceProjection K H L (-chi) (bs i))
-        (killingDualBasis bs i) := by
+    have hcoef : ∀ i, c i = killingForm K L (killingDualBasis bs i)
+        (genWeightSpaceProjection K H L (-chi) (bs i)) := by
       intro i
-      have h1 : killingForm K L (genWeightSpaceProjection K H L (-chi) (bs i))
-          (killingDualBasis bs i) =
-          killingForm K L (genWeightSpaceProjection K H L (-chi) (bs i))
-            (genWeightSpaceProjection K H L chi (killingDualBasis bs i)) := by
-        conv_lhs => rw [← genWeightSpaceProjection_apply_apply (-chi) (bs i)]
-        rw [killingForm_genWeightSpaceProjection H (-chi), neg_neg]
-      simp only [hc, h1]
-      apply LieModule.traceForm_comm
-    rw [Finset.sum_congr rfl fun i _ ↦ hcoef i, sum_killingForm_killingDualBasis_eq_trace,
+      simp only [hc]
+      rw [killingForm_genWeightSpaceProjection H chi, genWeightSpaceProjection_apply_apply]
+    rw [Finset.sum_congr rfl fun i _ ↦ hcoef i, LinearMap.BilinForm.sum_apply_dualBasis_eq_trace,
       trace_genWeightSpaceProjection_eq_one H hnz]
   rw [Finset.sum_congr rfl fun i _ ↦ hstep i, Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_

@@ -162,10 +162,10 @@ private lemma shiftUnit_zpow_apply (n : ℤ) (x : ExactK0 E.toExactStructure) :
   | zero => simp
   | succ k ih =>
       rw [GradedExactStructure.shiftZPow_add_one_apply, ← shiftUnit_apply, ← ih,
-        ← Module.End.mul_apply, ← Units.val_mul, ← zpow_one_add, add_comm 1 (k : ℤ)]
+        ← mul_apply_eq_comp, ← Units.val_mul, ← zpow_one_add, add_comm 1 (k : ℤ)]
   | pred k ih =>
       rw [GradedExactStructure.shiftZPow_sub_one_apply, ← shiftUnit_inv_apply, ← ih,
-        ← Module.End.mul_apply, ← Units.val_mul, ← zpow_neg_one, ← zpow_add]
+        ← mul_apply_eq_comp, ← Units.val_mul, ← zpow_neg_one, ← zpow_add]
       have h : (-1 : ℤ) + (-(k : ℤ)) = -(k : ℤ) - 1 := by ring
       rw [h]
 
