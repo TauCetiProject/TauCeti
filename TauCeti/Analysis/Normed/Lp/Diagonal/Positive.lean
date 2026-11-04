@@ -66,23 +66,19 @@ are nonnegative. -/
 @[simp]
 theorem isPositive_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
     (diagonalCLM (p := 2) d).IsPositive ↔ ∀ i, 0 ≤ d i := by
-  refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨fun h i ↦ ?_, fun h ↦ ⟨ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.1 <|
+      (isSelfAdjoint_diagonalCLM_iff d).2 fun i ↦ (IsSelfAdjoint.of_nonneg (h i)).star_eq,
+    fun x ↦ ?_⟩⟩
   · classical
     simpa [lp.inner_single_left] using h.inner_nonneg_right (lp.single 2 i (1 : 𝕜))
-  · refine ⟨(ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.1 <|
-        (isSelfAdjoint_diagonalCLM_iff d).2 fun i ↦ (IsSelfAdjoint.of_nonneg (h i)).star_eq),
-      fun x ↦ ?_⟩
-    have hsum := RCLike.reCLM.map_tsum (lp.summable_inner (𝕜 := 𝕜) (diagonalCLM (p := 2) d x) x)
-    simp_rw [RCLike.reCLM_apply] at hsum
-    rw [← lp.inner_eq_tsum] at hsum
-    rw [ContinuousLinearMap.reApplyInnerSelf, hsum]
+  · rw [ContinuousLinearMap.reApplyInnerSelf, lp.inner_eq_tsum, ← RCLike.reCLM_apply,
+      RCLike.reCLM.map_tsum (lp.summable_inner (𝕜 := 𝕜) (diagonalCLM (p := 2) d x) x)]
     refine tsum_nonneg fun i ↦ ?_
-    have hdi : 0 ≤ RCLike.re (d i) := (RCLike.nonneg_iff.1 (h i)).1
-    have hconj : conj (d i) = d i := RCLike.conj_eq_iff_im.2 (RCLike.nonneg_iff.1 (h i)).2
-    rw [diagonalCLM_apply, ← smul_eq_mul, inner_smul_left, hconj, inner_self_eq_norm_sq_to_K]
-    have hmul : d i * ((‖x i‖ : 𝕜) ^ 2) = (‖x i‖ ^ 2 : ℝ) • d i := by
-      simp [Algebra.smul_def, mul_comm]
-    rw [hmul, RCLike.smul_re]
+    obtain ⟨hre, him⟩ := RCLike.nonneg_iff.1 (h i)
+    rw [RCLike.reCLM_apply, diagonalCLM_apply, ← smul_eq_mul, inner_smul_left,
+      RCLike.conj_eq_iff_im.2 him, inner_self_eq_norm_sq_to_K,
+      show d i * ((‖x i‖ : 𝕜) ^ 2) = (‖x i‖ ^ 2 : ℝ) • d i by simp [Algebra.smul_def, mul_comm],
+      RCLike.smul_re]
     positivity
 
 /-- The Loewner order between diagonal operators on `ℓ²(ι, 𝕜)` is the pointwise order on their
@@ -90,99 +86,52 @@ coefficients. -/
 @[simp]
 theorem diagonalCLM_le_diagonalCLM_iff (d e : ℓ^∞(ι, 𝕜)) :
     diagonalCLM (p := 2) d ≤ diagonalCLM (p := 2) e ↔ ∀ i, d i ≤ e i := by
-  have hsub {p : ℝ≥0∞} [Fact (1 ≤ p)] :
-      diagonalCLM (p := p) e - diagonalCLM (p := p) d = diagonalCLM (p := p) (e - d) := by
-    ext x i
-    simp [sub_mul]
+  have hsub : diagonalCLM (p := 2) e - diagonalCLM (p := 2) d = diagonalCLM (p := 2) (e - d) := by
+    ext x i; simp [sub_mul]
   simp [ContinuousLinearMap.le_def, hsub, sub_nonneg]
 
 section Truncation
 
 variable [DecidableEq ι]
 
-private theorem inner_diagonalTruncation_left (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) (x y : ℓ^2(ι, 𝕜)) :
-    ⟪diagonalTruncation (p := 2) d s x, y⟫_𝕜 = ∑ i ∈ s, conj (d i) * ⟪x i, y i⟫_𝕜 := by
-  rw [lp.inner_eq_tsum, tsum_eq_sum (s := s) fun i hi ↦ by simp [hi]]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [diagonalTruncation_apply, ite_eq_left hi, ← smul_eq_mul, inner_smul_left]
-
-private theorem inner_diagonalTruncation_right (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) (x y : ℓ^2(ι, 𝕜)) :
-    ⟪x, diagonalTruncation (p := 2) d s y⟫_𝕜 = ∑ i ∈ s, d i * ⟪x i, y i⟫_𝕜 := by
-  rw [lp.inner_eq_tsum, tsum_eq_sum (s := s) fun i hi ↦ by simp [hi]]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [diagonalTruncation_apply, ite_eq_left hi, ← smul_eq_mul, inner_smul_right]
+private theorem exists_diagonalCLM_eq_diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
+    ∃ e : ℓ^∞(ι, 𝕜), (∀ i, e i = if i ∈ s then d i else 0) ∧
+      diagonalTruncation (p := 2) d s = diagonalCLM (p := 2) e := by
+  refine ⟨⟨fun i ↦ if i ∈ s then d i else 0, memℓp_infty ⟨‖d‖, ?_⟩⟩, fun _ ↦ rfl, ?_⟩
+  · rintro _ ⟨i, rfl⟩
+    by_cases hi : i ∈ s <;> simp [hi, norm_apply_le_norm ENNReal.top_ne_zero d i]
+  · ext x i
+    by_cases hi : i ∈ s <;> simp [hi]
 
 /-- A finite coordinate truncation of a diagonal operator on `ℓ²(ι, 𝕜)` is positive if and only if
 the retained coefficients are nonnegative. -/
 @[simp]
 theorem isPositive_diagonalTruncation_iff (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     (diagonalTruncation (p := 2) d s).IsPositive ↔ ∀ i ∈ s, 0 ≤ d i := by
-  refine ⟨fun h i hi ↦ ?_, fun h ↦ ⟨fun x y ↦ ?_, fun x ↦ ?_⟩⟩
-  · simpa [lp.inner_single_left, hi] using h.inner_nonneg_right (lp.single 2 i (1 : 𝕜))
-  · simp only [ContinuousLinearMap.coe_coe, inner_diagonalTruncation_left,
-      inner_diagonalTruncation_right]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [RCLike.conj_eq_iff_im.2 (RCLike.nonneg_iff.1 (h i hi)).2]
-  · rw [ContinuousLinearMap.reApplyInnerSelf, inner_diagonalTruncation_left, map_sum]
-    refine Finset.sum_nonneg fun i hi ↦ ?_
-    have hdi : 0 ≤ RCLike.re (d i) := (RCLike.nonneg_iff.1 (h i hi)).1
-    have hconj : conj (d i) = d i := RCLike.conj_eq_iff_im.2 (RCLike.nonneg_iff.1 (h i hi)).2
-    rw [hconj, inner_self_eq_norm_sq_to_K]
-    have hmul : d i * ((‖x i‖ : 𝕜) ^ 2) = (‖x i‖ ^ 2 : ℝ) • d i := by
-      simp [Algebra.smul_def, mul_comm]
-    rw [hmul, RCLike.smul_re]
-    positivity
+  obtain ⟨e, he, hT⟩ := exists_diagonalCLM_eq_diagonalTruncation d s
+  rw [hT, isPositive_diagonalCLM_iff]
+  exact ⟨fun h i hi ↦ by simpa [he, hi] using h i, fun h i ↦ by by_cases hi : i ∈ s <;> simp_all⟩
 
 /-- For nonnegative diagonal coefficients, finite coordinate truncations on `ℓ²(ι, 𝕜)` are monotone
 in the retained set of coordinates. -/
 theorem diagonalTruncation_mono {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) :
-    Monotone (diagonalTruncation (p := 2) d) := by
-  intro s t hst
-  have hdiff : diagonalTruncation (p := 2) d t - diagonalTruncation (p := 2) d s =
-      diagonalTruncation (p := 2) d (t \ s) := by
-    ext x i
-    by_cases hit : i ∈ t <;> by_cases his : i ∈ s
-    · simp [hit, his]
-    · simp [hit, his]
-    · exact absurd (hst his) hit
-    · simp [hit, his]
-  rw [ContinuousLinearMap.le_def, hdiff, isPositive_diagonalTruncation_iff]
-  exact fun i _ ↦ hd i
+    Monotone (diagonalTruncation (p := 2) d) := fun s t hst ↦ by
+  obtain ⟨es, hes, hTs⟩ := exists_diagonalCLM_eq_diagonalTruncation d s
+  obtain ⟨et, het, hTt⟩ := exists_diagonalCLM_eq_diagonalTruncation d t
+  rw [hTs, hTt, diagonalCLM_le_diagonalCLM_iff]
+  intro i
+  by_cases his : i ∈ s
+  · simp [hes, het, his, hst his]
+  · by_cases hit : i ∈ t <;> simp [hes, het, his, hit, hd i]
 
 /-- For nonnegative diagonal coefficients, every finite coordinate truncation on `ℓ²(ι, 𝕜)` is
 bounded above in the Loewner order by the full diagonal operator. -/
 theorem diagonalTruncation_le_diagonalCLM {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) (s : Finset ι) :
     diagonalTruncation (p := 2) d s ≤ diagonalCLM (p := 2) d := by
-  rw [ContinuousLinearMap.le_def]
-  have hR {p : ℝ≥0∞} [Fact (1 ≤ p)] (x : ℓ^p(ι, 𝕜)) (i : ι) :
-      ((diagonalCLM (p := p) d - diagonalTruncation (p := p) d s) x) i =
-        if i ∈ s then 0 else d i * x i := by
-    by_cases hi : i ∈ s <;> simp [hi]
-  refine ⟨fun x y ↦ ?_, fun x ↦ ?_⟩
-  · simp only [ContinuousLinearMap.coe_coe, lp.inner_eq_tsum]
-    refine tsum_congr fun i ↦ ?_
-    rw [hR x i, hR y i]
-    by_cases hi : i ∈ s
-    · simp [hi]
-    · have hconj : conj (d i) = d i := RCLike.conj_eq_iff_im.2 (RCLike.nonneg_iff.1 (hd i)).2
-      rw [ite_eq_right hi, ite_eq_right hi, ← smul_eq_mul, ← smul_eq_mul, inner_smul_left,
-        inner_smul_right, hconj]
-  · have hsum := RCLike.reCLM.map_tsum
-      (lp.summable_inner (𝕜 := 𝕜) ((diagonalCLM (p := 2) d - diagonalTruncation (p := 2) d s) x) x)
-    simp_rw [RCLike.reCLM_apply] at hsum
-    rw [← lp.inner_eq_tsum] at hsum
-    rw [ContinuousLinearMap.reApplyInnerSelf, hsum]
-    refine tsum_nonneg fun i ↦ ?_
-    rw [hR x i]
-    by_cases hi : i ∈ s
-    · simp [hi]
-    · have hdi : 0 ≤ RCLike.re (d i) := (RCLike.nonneg_iff.1 (hd i)).1
-      have hconj : conj (d i) = d i := RCLike.conj_eq_iff_im.2 (RCLike.nonneg_iff.1 (hd i)).2
-      rw [ite_eq_right hi, ← smul_eq_mul, inner_smul_left, hconj, inner_self_eq_norm_sq_to_K]
-      have hmul : d i * ((‖x i‖ : 𝕜) ^ 2) = (‖x i‖ ^ 2 : ℝ) • d i := by
-        simp [Algebra.smul_def, mul_comm]
-      rw [hmul, RCLike.smul_re]
-      positivity
+  obtain ⟨e, he, hT⟩ := exists_diagonalCLM_eq_diagonalTruncation d s
+  rw [hT, diagonalCLM_le_diagonalCLM_iff]
+  intro i
+  by_cases hi : i ∈ s <;> simp [he, hi, hd i]
 
 end Truncation
 

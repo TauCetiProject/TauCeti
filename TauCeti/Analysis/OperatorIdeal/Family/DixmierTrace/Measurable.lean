@@ -237,17 +237,12 @@ theorem isDixmierMeasurable_of_parts {T : E →L[ℂ] E}
     (hre_neg : IsDixmierMeasurable (ℜ T : E →L[ℂ] E)⁻)
     (him_pos : IsDixmierMeasurable (ℑ T : E →L[ℂ] E)⁺)
     (him_neg : IsDixmierMeasurable (ℑ T : E →L[ℂ] E)⁻) :
-    IsDixmierMeasurable T := by
-  intro ω₁ ω₂ h₁ h₂
-  have hre1 := (isDixmierMeasurable_iff_of_isPositive
-    (nonneg_iff_isPositive.1 (CFC.posPart_nonneg (ℜ T : E →L[ℂ] E)))).1 hre_pos h₁ h₂
-  have hre2 := (isDixmierMeasurable_iff_of_isPositive
-    (nonneg_iff_isPositive.1 (CFC.negPart_nonneg (ℜ T : E →L[ℂ] E)))).1 hre_neg h₁ h₂
-  have him1 := (isDixmierMeasurable_iff_of_isPositive
-    (nonneg_iff_isPositive.1 (CFC.posPart_nonneg (ℑ T : E →L[ℂ] E)))).1 him_pos h₁ h₂
-  have him2 := (isDixmierMeasurable_iff_of_isPositive
-    (nonneg_iff_isPositive.1 (CFC.negPart_nonneg (ℑ T : E →L[ℂ] E)))).1 him_neg h₁ h₂
-  rw [complexDixmierTrace_of_mem ω₁ hTm, complexDixmierTrace_of_mem ω₂ hTm, hre1, hre2, him1, him2]
+    IsDixmierMeasurable T := fun ω₁ ω₂ h₁ h₂ ↦ by
+  have hp {X : E →L[ℂ] E} (hX : 0 ≤ X) (hm : IsDixmierMeasurable X) :=
+    (isDixmierMeasurable_iff_of_isPositive (nonneg_iff_isPositive.1 hX)).1 hm h₁ h₂
+  rw [complexDixmierTrace_of_mem ω₁ hTm, complexDixmierTrace_of_mem ω₂ hTm,
+    hp (CFC.posPart_nonneg _) hre_pos, hp (CFC.negPart_nonneg _) hre_neg,
+    hp (CFC.posPart_nonneg _) him_pos, hp (CFC.negPart_nonneg _) him_neg]
 
 /-- Conjugation by a linear isometric equivalence preserves Dixmier measurability. -/
 @[simp]
@@ -431,49 +426,34 @@ private theorem invMulLogSeq_antitone : Antitone invMulLogSeq := fun i j hij ↦
   · exact_mod_cast Nat.add_le_add_right hij 1
   · exact Real.log_le_log (by positivity) (by exact_mod_cast Nat.add_le_add_right hij 2)
 
-private theorem not_summable_invMulLogSeq : ¬ Summable invMulLogSeq := by
-  intro hsum
-  have hcond : Summable (fun k : ℕ ↦ (2 : ℝ) ^ k * invMulLogSeq (2 ^ k)) :=
-    (summable_condensed_iff_of_nonneg invMulLogSeq_nonneg
-      (fun _ _ _ hmn ↦ invMulLogSeq_antitone hmn)).2 hsum
+private theorem not_summable_invMulLogSeq : ¬ Summable invMulLogSeq := fun hsum ↦ by
   have hshift : Summable (fun k : ℕ ↦ (2 : ℝ) ^ (k + 1) * invMulLogSeq (2 ^ (k + 1))) :=
-    (summable_nat_add_iff 1).2 hcond
+    (summable_nat_add_iff 1).2 <| (summable_condensed_iff_of_nonneg invMulLogSeq_nonneg
+      fun _ _ _ hmn ↦ invMulLogSeq_antitone hmn).2 hsum
   have hdom : Summable (fun k : ℕ ↦ (2⁻¹ : ℝ) * (((k + 2 : ℕ) : ℝ))⁻¹) := by
     refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun k ↦ ?_) hshift
     set m := k + 1
-    have hm1 : 1 ≤ 2 ^ m := Nat.one_le_pow m 2 (by positivity)
     have hm2 : 2 ≤ 2 ^ m := by
       simpa using Nat.pow_le_pow_right (by positivity : 0 < 2) (Nat.succ_pos k)
-    have hpow1 : (((2 ^ m : ℕ) : ℝ) + 1) ≤ 2 * (2 : ℝ) ^ m := by
-      exact_mod_cast (by omega : 2 ^ m + 1 ≤ 2 * 2 ^ m)
     have hpow2 : (((2 ^ m : ℕ) : ℝ) + 2) ≤ (2 : ℝ) ^ (m + 1) := by
-      have : 2 ^ m + 2 ≤ 2 ^ (m + 1) := by
-        rw [pow_succ (a := 2) (n := m)]
-        omega
-      exact_mod_cast this
+      exact_mod_cast (by rw [pow_succ (a := 2) (n := m)]; omega : 2 ^ m + 2 ≤ 2 ^ (m + 1))
     have hlog2 : Real.log 2 ≤ 1 := by
       linarith [Real.log_le_sub_one_of_pos (by positivity : (0 : ℝ) < 2)]
-    have hlog_le : Real.log (((2 ^ m : ℕ) : ℝ) + 2) ≤ ((k + 2 : ℕ) : ℝ) := by
-      calc Real.log (((2 ^ m : ℕ) : ℝ) + 2)
-          ≤ Real.log ((2 : ℝ) ^ (m + 1)) := Real.log_le_log (by positivity) hpow2
-        _ = ((m + 1 : ℕ) : ℝ) * Real.log 2 := by rw [Real.log_pow]
-        _ ≤ ((m + 1 : ℕ) : ℝ) * 1 := by gcongr
-        _ = ((k + 2 : ℕ) : ℝ) := by simp [m, add_assoc]
+    have hlog_le : Real.log (((2 ^ m : ℕ) : ℝ) + 2) ≤ ((k + 2 : ℕ) : ℝ) :=
+      (Real.log_le_log (by positivity) hpow2).trans <| by
+        rw [Real.log_pow]
+        exact (mul_le_of_le_one_right (by positivity) hlog2).trans_eq (by simp [m, add_assoc])
     have hdenom : (((2 ^ m : ℕ) : ℝ) + 1) * Real.log (((2 ^ m : ℕ) : ℝ) + 2) ≤
         (2 * (2 : ℝ) ^ m) * ((k + 2 : ℕ) : ℝ) :=
-      mul_le_mul hpow1 hlog_le (Real.log_natCast_add_pos one_lt_two (2 ^ m)).le (by positivity)
-    have hpos : (0 : ℝ) < (((2 ^ m : ℕ) : ℝ) + 1) * Real.log (((2 ^ m : ℕ) : ℝ) + 2) :=
-      mul_pos (by positivity) (Real.log_natCast_add_pos one_lt_two _)
-    have hinv := inv_anti₀ hpos hdenom
-    calc (2⁻¹ : ℝ) * (((k + 2 : ℕ) : ℝ))⁻¹
-        = (2 : ℝ) ^ m * ((2 * (2 : ℝ) ^ m) * ((k + 2 : ℕ) : ℝ))⁻¹ := by
-          have h2m : (2 : ℝ) ^ m ≠ 0 := by positivity
-          field_simp [h2m]
-      _ ≤ (2 : ℝ) ^ m * invMulLogSeq (2 ^ m) :=
-          mul_le_mul_of_nonneg_left hinv (by positivity)
-  have h2 : Summable (fun k : ℕ ↦ (((k + 2 : ℕ) : ℝ))⁻¹) :=
+      mul_le_mul (by exact_mod_cast (by omega : 2 ^ m + 1 ≤ 2 * 2 ^ m)) hlog_le
+        (Real.log_natCast_add_pos one_lt_two (2 ^ m)).le (by positivity)
+    have hinv := inv_anti₀
+      (mul_pos (by positivity) (Real.log_natCast_add_pos one_lt_two (2 ^ m))) hdenom
+    refine (le_of_eq ?_).trans (mul_le_mul_of_nonneg_left hinv (by positivity))
+    have h2m : (2 : ℝ) ^ m ≠ 0 := by positivity
+    field_simp [h2m]
+  exact Real.not_summable_natCast_inv <| (summable_nat_add_iff 2).1 <|
     (hdom.mul_left 2).congr fun k ↦ by rw [← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul]
-  exact Real.not_summable_natCast_inv ((summable_nat_add_iff 2).1 h2)
 
 private theorem tendsto_kyFanLogMean_invMulLogSeq :
     Tendsto
@@ -482,56 +462,45 @@ private theorem tendsto_kyFanLogMean_invMulLogSeq :
       atTop (𝓝 0) := by
   set T := lp.diagonalCLM (p := 2)
     (nonnegAntitoneSeq invMulLogSeq invMulLogSeq_nonneg invMulLogSeq_antitone)
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  have hinv_tendsto : Tendsto (fun K : ℕ ↦ (Real.log ((K : ℝ) + 2))⁻¹) atTop (𝓝 0) :=
-    (Real.tendsto_log_natCast_add_atTop 2).inv_tendsto_atTop
-  obtain ⟨K, hK⟩ := (hinv_tendsto.eventually (gt_mem_nhds (half_pos hε))).exists
+  refine tendsto_order.2 ⟨fun b hb ↦ Eventually.of_forall fun N ↦
+    hb.trans_le (T.kyFanLogMean_nonneg N), fun ε hε ↦ ?_⟩
+  obtain ⟨K, hK⟩ := ((Real.tendsto_log_natCast_add_atTop 2).inv_tendsto_atTop.eventually
+    (gt_mem_nhds (half_pos hε))).exists
   set C := ∑ j ∈ Finset.range K, invMulLogSeq j
   set δ := (Real.log ((K : ℝ) + 2))⁻¹
   have hδpos : 0 < δ := inv_pos.2 (Real.log_natCast_add_pos one_lt_two K)
   have herr : Tendsto (fun N : ℕ ↦ (C + δ) / Real.log ((N : ℝ) + 2)) atTop (𝓝 0) := by
     simpa [div_eq_mul_inv] using
       (Real.tendsto_log_natCast_add_atTop 2).inv_tendsto_atTop.const_mul (C + δ)
-  obtain ⟨N₀, hN₀⟩ := Metric.tendsto_atTop.1 herr (ε / 2) (half_pos hε)
-  refine ⟨max K N₀, fun N hN ↦ ?_⟩
-  have hNK : K ≤ N + 1 := (le_max_left K N₀).trans (hN.trans (Nat.le_succ N))
+  filter_upwards [eventually_ge_atTop K, herr.eventually (gt_mem_nhds (half_pos hε))]
+    with N hKN herrN
+  have hNK : K ≤ N + 1 := hKN.trans (Nat.le_succ N)
   have hlogN : 0 < Real.log ((N : ℝ) + 2) := Real.log_natCast_add_pos one_lt_two N
   have htail : ∑ j ∈ Finset.Ico K (N + 1), invMulLogSeq j ≤ δ * (1 + Real.log ((N : ℝ) + 2)) := by
     calc ∑ j ∈ Finset.Ico K (N + 1), invMulLogSeq j
-        ≤ ∑ j ∈ Finset.Ico K (N + 1), δ * ((j : ℝ) + 1)⁻¹ := by
-          refine Finset.sum_le_sum fun j hj ↦ ?_
-          have hjK : K ≤ j := (Finset.mem_Ico.1 hj).1
-          have hlogK : 0 < Real.log ((K : ℝ) + 2) := Real.log_natCast_add_pos one_lt_two K
-          have hlog_mono : Real.log ((K : ℝ) + 2) ≤ Real.log ((j : ℝ) + 2) :=
-            Real.log_le_log (by positivity) (by exact_mod_cast Nat.add_le_add_right hjK 2)
+        ≤ ∑ j ∈ Finset.Ico K (N + 1), δ * ((j : ℝ) + 1)⁻¹ := Finset.sum_le_sum fun j hj ↦ by
           rw [invMulLogSeq, mul_inv, mul_comm]
-          exact mul_le_mul_of_nonneg_right (inv_anti₀ hlogK hlog_mono) (by positivity)
-      _ = δ * ∑ j ∈ Finset.Ico K (N + 1), ((j : ℝ) + 1)⁻¹ := (Finset.mul_sum _ _ _).symm
+          exact mul_le_mul_of_nonneg_right (inv_anti₀ (Real.log_natCast_add_pos one_lt_two K)
+            (Real.log_le_log (by positivity)
+              (by exact_mod_cast Nat.add_le_add_right (Finset.mem_Ico.1 hj).1 2))) (by positivity)
       _ ≤ δ * ∑ j ∈ Finset.range (N + 1), ((j : ℝ) + 1)⁻¹ := by
-          refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
+          rw [← Finset.mul_sum]
+          exact mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
             (fun j hj ↦ Finset.mem_range.2 (Finset.mem_Ico.1 hj).2) fun _ _ _ ↦ by positivity)
             hδpos.le
-      _ = δ * (harmonic (N + 1) : ℝ) := by simp [harmonic]
-      _ ≤ δ * (1 + Real.log ((N + 1 : ℕ) : ℝ)) :=
-          mul_le_mul_of_nonneg_left (harmonic_le_one_add_log (N + 1)) hδpos.le
       _ ≤ δ * (1 + Real.log ((N : ℝ) + 2)) := by
-          have hlog_step : Real.log ((N + 1 : ℕ) : ℝ) ≤ Real.log ((N : ℝ) + 2) :=
-            Real.log_le_log (by positivity) (by push_cast; linarith)
-          exact mul_le_mul_of_nonneg_left (by linarith) hδpos.le
+          have hH : ∑ j ∈ Finset.range (N + 1), ((j : ℝ) + 1)⁻¹ ≤ 1 + Real.log ((N : ℝ) + 2) := by
+            rw [show ∑ j ∈ Finset.range (N + 1), ((j : ℝ) + 1)⁻¹ = (harmonic (N + 1) : ℝ) by
+              simp [harmonic]]
+            linarith [harmonic_le_one_add_log (N + 1),
+              Real.log_le_log (by positivity : (0 : ℝ) < ((N + 1 : ℕ) : ℝ))
+                (by push_cast; linarith : ((N + 1 : ℕ) : ℝ) ≤ (N : ℝ) + 2)]
+          exact mul_le_mul_of_nonneg_left hH hδpos.le
   have hmean : T.kyFanLogMean N ≤ (C + δ) / Real.log ((N : ℝ) + 2) + δ := by
     rw [kyFanLogMean_def, kyFanGauge_diagonalCLM_nonnegAntitoneSeq,
-      ← Finset.sum_range_add_sum_Ico _ hNK, div_le_iff₀ hlogN]
-    calc (C + ∑ j ∈ Finset.Ico K (N + 1), invMulLogSeq j)
-        ≤ C + δ * (1 + Real.log ((N : ℝ) + 2)) := by linarith
-      _ = ((C + δ) / Real.log ((N : ℝ) + 2) + δ) * Real.log ((N : ℝ) + 2) := by
-          rw [add_mul, div_mul_cancel₀ _ hlogN.ne']
-          ring
-  have herrN : (C + δ) / Real.log ((N : ℝ) + 2) < ε / 2 := by
-    have hdist := hN₀ N ((le_max_right K N₀).trans hN)
-    have hC0 : 0 ≤ C := Finset.sum_nonneg fun j _ ↦ invMulLogSeq_nonneg j
-    have hnn : 0 ≤ (C + δ) / Real.log ((N : ℝ) + 2) := div_nonneg (by positivity) hlogN.le
-    rwa [Real.dist_eq, sub_zero, abs_of_nonneg hnn] at hdist
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (T.kyFanLogMean_nonneg N)]
+      ← Finset.sum_range_add_sum_Ico _ hNK, div_le_iff₀ hlogN, add_mul,
+      div_mul_cancel₀ _ hlogN.ne']
+    linarith
   have hδlt : δ < ε / 2 := hK
   linarith
 
@@ -550,12 +519,10 @@ theorem exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_
     (nonnegAntitoneSeq invMulLogSeq invMulLogSeq_nonneg invMulLogSeq_antitone)
   have hpos : T.IsPositive := isPositive_diagonalCLM_nonnegAntitoneSeq _ _ _
   have hlim : Tendsto T.kyFanLogMean atTop (𝓝 0) := tendsto_kyFanLogMean_invMulLogSeq
-  have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule :=
-    (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range
   have hnot_tc : T ∉ ((traceClass ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
     rw [mem_finiteSubmodule_traceClass_iff, ← NNReal.summable_coe]
     simpa only [T, singularValue_diagonalCLM_nonnegAntitoneSeq] using not_summable_invMulLogSeq
-  refine ⟨T, hpos, hmem, hnot_tc,
+  refine ⟨T, hpos, (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range, hnot_tc,
     isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean hpos hlim,
     fun ω ↦ dixmierTrace_eq_of_tendsto ω hlim, fun ω ↦ ?_⟩
   rw [complexDixmierTrace_of_isPositive ω hpos, dixmierTrace_eq_of_tendsto ω hlim,
@@ -563,17 +530,14 @@ theorem exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_
 
 /-! #### 3. Dependence on the dilation-invariant generalized limit -/
 
-private def lacunaryScale (m : ℕ) : ℕ :=
-  2 ^ (8 ^ m)
+private def lacunaryScale (m : ℕ) : ℕ := 2 ^ (8 ^ m)
 
-private def lacunaryStage (j : ℕ) : ℕ :=
-  Nat.log 8 (Nat.log 2 (max j 2))
+private def lacunaryStage (j : ℕ) : ℕ := Nat.log 8 (Nat.log 2 (max j 2))
 
 private theorem lacunaryScale_strictMono : StrictMono lacunaryScale :=
   (pow_right_strictMono₀ one_lt_two).comp (pow_right_strictMono₀ (by norm_num : 1 < 8))
 
-private theorem lacunaryScale_mono : Monotone lacunaryScale :=
-  lacunaryScale_strictMono.monotone
+private theorem lacunaryScale_mono : Monotone lacunaryScale := lacunaryScale_strictMono.monotone
 
 private theorem two_le_lacunaryScale (m : ℕ) : 2 ≤ lacunaryScale m := by
   simpa [lacunaryScale] using
@@ -582,8 +546,7 @@ private theorem two_le_lacunaryScale (m : ℕ) : 2 ≤ lacunaryScale m := by
 private theorem lacunaryStage_mono : Monotone lacunaryStage := fun _ _ hij ↦
   Nat.log_mono_right (Nat.log_mono_right (max_le_max_right 2 hij))
 
-private theorem lacunaryStage_lacunaryScale (m : ℕ) :
-    lacunaryStage (lacunaryScale m) = m := by
+private theorem lacunaryStage_lacunaryScale (m : ℕ) : lacunaryStage (lacunaryScale m) = m := by
   rw [lacunaryStage, max_eq_left (two_le_lacunaryScale m), lacunaryScale,
     Nat.log_pow one_lt_two, Nat.log_pow (by norm_num : 1 < 8)]
 
@@ -595,49 +558,39 @@ private theorem lacunaryScale_lacunaryStage_le {j : ℕ} (hj : 2 ≤ j) :
     (Nat.pow_log_le_self 8 (by omega))).trans (Nat.pow_log_le_self 2 (by omega))
 
 private theorem lt_lacunaryScale_lacunaryStage_succ (j : ℕ) :
-    j < lacunaryScale (lacunaryStage j + 1) := by
-  have h1 : j < 2 ^ (Nat.log 2 (max j 2) + 1) :=
-    (le_max_left j 2).trans_lt (Nat.lt_pow_succ_log_self one_lt_two (max j 2))
-  have h2 : Nat.log 2 (max j 2) + 1 ≤ 8 ^ (lacunaryStage j + 1) :=
-    Nat.succ_le_of_lt (Nat.lt_pow_succ_log_self (by norm_num : 1 < 8) (Nat.log 2 (max j 2)))
-  exact h1.trans_le (Nat.pow_le_pow_right (by positivity : 0 < 2) h2)
+    j < lacunaryScale (lacunaryStage j + 1) :=
+  ((le_max_left j 2).trans_lt (Nat.lt_pow_succ_log_self one_lt_two (max j 2))).trans_le <|
+    Nat.pow_le_pow_right (by positivity : 0 < 2) <|
+      Nat.succ_le_of_lt (Nat.lt_pow_succ_log_self (by norm_num : 1 < 8) (Nat.log 2 (max j 2)))
 
 private noncomputable def oscSeq (j : ℕ) : ℝ :=
   if Even (lacunaryStage j) then ((j : ℝ) + 1)⁻¹
   else ((lacunaryScale (lacunaryStage j + 1) : ℝ) + 1)⁻¹
 
-private theorem oscSeq_nonneg (j : ℕ) : 0 ≤ oscSeq j := by
-  unfold oscSeq
-  split_ifs <;> positivity
+private theorem oscSeq_nonneg (j : ℕ) : 0 ≤ oscSeq j := by unfold oscSeq; split_ifs <;> positivity
 
 private theorem oscSeq_le_inv (j : ℕ) : oscSeq j ≤ ((j : ℝ) + 1)⁻¹ := by
-  unfold oscSeq
-  split_ifs with h
+  unfold oscSeq; split_ifs with h
   · exact le_rfl
-  · have hj := lt_lacunaryScale_lacunaryStage_succ j
+  · have := lt_lacunaryScale_lacunaryStage_succ j
     exact inv_anti₀ (by positivity) (by exact_mod_cast (by omega : j + 1 ≤ _ + 1))
 
 private theorem inv_lacunaryScale_succ_le_oscSeq (j : ℕ) :
     ((lacunaryScale (lacunaryStage j + 1) : ℝ) + 1)⁻¹ ≤ oscSeq j := by
-  unfold oscSeq
-  split_ifs with h
-  · have hj := lt_lacunaryScale_lacunaryStage_succ j
+  unfold oscSeq; split_ifs with h
+  · have := lt_lacunaryScale_lacunaryStage_succ j
     exact inv_anti₀ (by positivity) (by exact_mod_cast (by omega : j + 1 ≤ _ + 1))
   · exact le_rfl
 
 private theorem oscSeq_antitone : Antitone oscSeq := fun i j hij ↦ by
-  have hst : lacunaryStage i ≤ lacunaryStage j := lacunaryStage_mono hij
-  rcases hst.eq_or_lt with heq | hlt
-  · unfold oscSeq
-    rw [heq]
-    split_ifs with h
+  rcases (lacunaryStage_mono hij).eq_or_lt with heq | hlt
+  · unfold oscSeq; rw [heq]; split_ifs
     · exact inv_anti₀ (by positivity) (by exact_mod_cast Nat.add_le_add_right hij 1)
     · exact le_rfl
   · have hj2 : 2 ≤ j := by
-      by_contra hlt2
-      have hi2 : max i 2 = 2 := max_eq_right (by omega)
-      have hj2' : max j 2 = 2 := max_eq_right (by omega)
-      exact hlt.ne (by simp [lacunaryStage, hi2, hj2'])
+      by_contra! hlt2
+      exact hlt.ne (by simp [lacunaryStage, max_eq_right (hij.trans hlt2.le),
+        max_eq_right hlt2.le])
     have hscale : lacunaryScale (lacunaryStage i + 1) ≤ j :=
       (lacunaryScale_mono (Nat.succ_le_of_lt hlt)).trans (lacunaryScale_lacunaryStage_le hj2)
     exact (oscSeq_le_inv j).trans
@@ -646,16 +599,23 @@ private theorem oscSeq_antitone : Antitone oscSeq := fun i j hij ↦ by
 
 private theorem pow_seven_mul_le_lacunaryScale_div {m S k : ℕ} (hk : 0 < k) (hkS : k ≤ S)
     (hS : S ≤ 2 ^ (8 ^ m)) :
-    2 ^ (7 * 8 ^ m) ≤ lacunaryScale (m + 1) / k := by
-  refine (Nat.le_div_iff_mul_le hk).2 ?_
-  calc 2 ^ (7 * 8 ^ m) * k
-      ≤ 2 ^ (7 * 8 ^ m) * S := Nat.mul_le_mul_left _ hkS
-    _ ≤ 2 ^ (7 * 8 ^ m) * 2 ^ (8 ^ m) := Nat.mul_le_mul_left _ hS
-    _ = lacunaryScale (m + 1) := by
-        rw [lacunaryScale, ← pow_add]
-        congr 1
-        rw [pow_succ]
-        ring
+    2 ^ (7 * 8 ^ m) ≤ lacunaryScale (m + 1) / k :=
+  (Nat.le_div_iff_mul_le hk).2 <|
+    (Nat.mul_le_mul_left _ (hkS.trans hS)).trans_eq
+      (by rw [lacunaryScale, ← pow_add]; congr 1; rw [pow_succ]; ring)
+
+private theorem seven_mul_le_log_lacunaryScale_div {m S k : ℕ} {c : ℝ} (hc : 0 ≤ c) (hk : 0 < k)
+    (hkS : k ≤ S) (hS : S ≤ 2 ^ (8 ^ m)) :
+    7 * ((8 : ℝ) ^ m * Real.log 2) ≤ Real.log (((lacunaryScale (m + 1) / k : ℕ) : ℝ) + c) := by
+  have h1 : ((2 : ℝ) ^ (7 * 8 ^ m)) ≤ ((lacunaryScale (m + 1) / k : ℕ) : ℝ) := by
+    exact_mod_cast pow_seven_mul_le_lacunaryScale_div hk hkS hS
+  rw [show 7 * ((8 : ℝ) ^ m * Real.log 2) = Real.log ((2 : ℝ) ^ (7 * 8 ^ m)) by
+    rw [Real.log_pow]; push_cast; ring]
+  exact Real.log_le_log (by positivity) (by linarith)
+
+private theorem harmonic_lacunaryScale_le (m : ℕ) :
+    (harmonic (lacunaryScale m) : ℝ) ≤ 1 + (8 : ℝ) ^ m * Real.log 2 :=
+  (harmonic_le_one_add_log _).trans_eq (by simp [lacunaryScale, Real.log_pow])
 
 private theorem oscDiag_kyFanLogMean_le_one_third {S r k : ℕ} (hk : 0 < k) (hkS : k ≤ S)
     (hS : S ≤ 2 ^ (8 ^ (2 * r + 1)))
@@ -666,60 +626,30 @@ private theorem oscDiag_kyFanLogMean_le_one_third {S r k : ℕ} (hk : 0 < k) (hk
   set q := lacunaryScale (2 * r + 2) / k
   set Z := (8 : ℝ) ^ (2 * r + 1) * Real.log 2
   have hlogq : 0 < Real.log ((q : ℝ) + 2) := Real.log_natCast_add_pos one_lt_two q
-  have hq_low : 2 ^ (7 * 8 ^ (2 * r + 1)) ≤ q :=
-    pow_seven_mul_le_lacunaryScale_div (m := 2 * r + 1) hk hkS hS
-  have hlogq_ge : 7 * Z ≤ Real.log ((q : ℝ) + 2) := by
-    have hcast : ((2 : ℝ) ^ (7 * 8 ^ (2 * r + 1))) ≤ (q : ℝ) + 2 := by
-      exact_mod_cast (hq_low.trans (Nat.le_add_right q 2))
-    calc 7 * Z = Real.log ((2 : ℝ) ^ (7 * 8 ^ (2 * r + 1))) := by
-          rw [Real.log_pow]
-          push_cast
-          ring
-      _ ≤ Real.log ((q : ℝ) + 2) := Real.log_le_log (by positivity) hcast
-  have hq_up : q + 1 ≤ lacunaryScale (2 * r + 2) + 1 :=
-    Nat.add_le_add_right (Nat.div_le_self _ _) 1
-  have hB_le : lacunaryScale (2 * r + 1) ≤ lacunaryScale (2 * r + 2) + 1 :=
-    (lacunaryScale_mono (by omega)).trans (Nat.le_succ _)
-  have hpart1 : ∑ j ∈ Finset.range (lacunaryScale (2 * r + 1)), oscSeq j ≤ 1 + Z := by
-    calc ∑ j ∈ Finset.range (lacunaryScale (2 * r + 1)), oscSeq j
-        ≤ ∑ j ∈ Finset.range (lacunaryScale (2 * r + 1)), ((j : ℝ) + 1)⁻¹ :=
-          Finset.sum_le_sum fun j _ ↦ oscSeq_le_inv j
-      _ = (harmonic (lacunaryScale (2 * r + 1)) : ℝ) := by simp [harmonic]
-      _ ≤ 1 + Real.log (lacunaryScale (2 * r + 1) : ℝ) :=
-          harmonic_le_one_add_log _
-      _ = 1 + Z := by
-          simp only [lacunaryScale, Nat.cast_pow, Nat.cast_ofNat, Real.log_pow, Z]
+  have hlogq_ge : 7 * Z ≤ Real.log ((q : ℝ) + 2) :=
+    seven_mul_le_log_lacunaryScale_div (m := 2 * r + 1) zero_le_two hk hkS hS
+  have hpart1 : ∑ j ∈ Finset.range (lacunaryScale (2 * r + 1)), oscSeq j ≤ 1 + Z :=
+    (Finset.sum_le_sum fun j _ ↦ oscSeq_le_inv j).trans
+      (by simpa [harmonic] using harmonic_lacunaryScale_le (2 * r + 1))
   have hpart2 : ∑ j ∈ Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1),
       oscSeq j ≤ 1 := by
     have hval : oscSeq (lacunaryScale (2 * r + 1)) =
-        ((lacunaryScale (2 * r + 2) : ℝ) + 1)⁻¹ := by
-      simp [oscSeq, lacunaryStage_lacunaryScale]
-    calc ∑ j ∈ Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1), oscSeq j
-        ≤ ∑ _ ∈ Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1),
-            ((lacunaryScale (2 * r + 2) : ℝ) + 1)⁻¹ :=
-          Finset.sum_le_sum fun j hj ↦ hval ▸ oscSeq_antitone (Finset.mem_Ico.1 hj).1
-      _ = ((Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1)).card : ℝ) *
-            ((lacunaryScale (2 * r + 2) : ℝ) + 1)⁻¹ := by simp
-      _ ≤ ((lacunaryScale (2 * r + 2) : ℝ) + 1) *
-            ((lacunaryScale (2 * r + 2) : ℝ) + 1)⁻¹ := by
-          have hcard :
-              (Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1)).card ≤
-                lacunaryScale (2 * r + 2) + 1 := by
-            rw [Nat.card_Ico]
-            omega
-          exact mul_le_mul_of_nonneg_right (by exact_mod_cast hcard) (by positivity)
-      _ = 1 := mul_inv_cancel₀ (by positivity)
+        ((lacunaryScale (2 * r + 2) : ℝ) + 1)⁻¹ := by simp [oscSeq, lacunaryStage_lacunaryScale]
+    have hcard : (Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1)).card ≤
+        lacunaryScale (2 * r + 2) + 1 := by rw [Nat.card_Ico]; omega
+    refine (Finset.sum_le_sum fun j hj ↦ hval ▸ oscSeq_antitone (Finset.mem_Ico.1 hj).1).trans ?_
+    rw [Finset.sum_const, nsmul_eq_mul]
+    exact (mul_le_mul_of_nonneg_right (by exact_mod_cast hcard) (by positivity)).trans_eq
+      (mul_inv_cancel₀ (by positivity))
   have hsum : (T.kyFanGauge (q + 1) : ℝ) ≤ 2 + Z := by
     rw [kyFanGauge_diagonalCLM_nonnegAntitoneSeq]
-    calc ∑ j ∈ Finset.range (q + 1), oscSeq j
-        ≤ ∑ j ∈ Finset.range (lacunaryScale (2 * r + 2) + 1), oscSeq j :=
-          Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono hq_up)
-            fun _ _ _ ↦ oscSeq_nonneg _
-      _ = (∑ j ∈ Finset.range (lacunaryScale (2 * r + 1)), oscSeq j) +
-            ∑ j ∈ Finset.Ico (lacunaryScale (2 * r + 1)) (lacunaryScale (2 * r + 2) + 1),
-              oscSeq j := (Finset.sum_range_add_sum_Ico _ hB_le).symm
-      _ ≤ (1 + Z) + 1 := add_le_add hpart1 hpart2
-      _ = 2 + Z := by ring
+    refine (Finset.sum_le_sum_of_subset_of_nonneg
+      (Finset.range_mono (Nat.add_le_add_right (Nat.div_le_self _ _) 1))
+      fun _ _ _ ↦ oscSeq_nonneg _).trans ?_
+    have hle : lacunaryScale (2 * r + 1) ≤ lacunaryScale (2 * r + 2) + 1 :=
+      (lacunaryScale_mono (by omega : 2 * r + 1 ≤ 2 * r + 2)).trans (Nat.le_succ _)
+    rw [← Finset.sum_range_add_sum_Ico _ hle]
+    linarith
   rw [kyFanLogMean_def, div_le_iff₀ hlogq]
   linarith
 
@@ -736,63 +666,48 @@ private theorem one_half_le_oscDiag_kyFanLogMean {S r k : ℕ} (hk : 0 < k) (hkS
   have hlogq : 0 < Real.log ((q : ℝ) + 2) := Real.log_natCast_add_pos one_lt_two q
   have hq_low : 2 ^ (7 * 8 ^ (2 * r)) ≤ q :=
     pow_seven_mul_le_lacunaryScale_div (m := 2 * r) hk hkS hS
-  have hBq : lacunaryScale (2 * r) ≤ q := by
-    have hexp : 8 ^ (2 * r) ≤ 7 * 8 ^ (2 * r) := by omega
-    exact (Nat.pow_le_pow_right (by positivity : 0 < 2) hexp).trans hq_low
+  have hBq : lacunaryScale (2 * r) ≤ q :=
+    (Nat.pow_le_pow_right (by positivity : 0 < 2) (by omega : 8 ^ (2 * r) ≤ 7 * 8 ^ (2 * r))).trans
+      hq_low
   have hq1 : 1 ≤ q := (Nat.one_le_of_lt (two_le_lacunaryScale (2 * r))).trans hBq
-  have hlogq1_ge : 7 * Y ≤ Real.log ((q : ℝ) + 1) := by
-    have hcast : ((2 : ℝ) ^ (7 * 8 ^ (2 * r))) ≤ (q : ℝ) + 1 := by
-      exact_mod_cast (hq_low.trans (Nat.le_succ q))
-    calc 7 * Y = Real.log ((2 : ℝ) ^ (7 * 8 ^ (2 * r))) := by
-          rw [Real.log_pow]
-          push_cast
-          ring
-      _ ≤ Real.log ((q : ℝ) + 1) := Real.log_le_log (by positivity) hcast
-  have hlogq2_le : Real.log ((q : ℝ) + 2) ≤ Real.log 2 + Real.log ((q : ℝ) + 1) := by
-    have h2 : (q : ℝ) + 2 ≤ 2 * ((q : ℝ) + 1) := by
-      exact_mod_cast (by omega : q + 2 ≤ 2 * (q + 1))
-    exact (Real.log_le_log (by positivity) h2).trans_eq
+  have hlogq1_ge : 7 * Y ≤ Real.log ((q : ℝ) + 1) :=
+    seven_mul_le_log_lacunaryScale_div (m := 2 * r) zero_le_one hk hkS hS
+  have hlogq2_le : Real.log ((q : ℝ) + 2) ≤ Real.log 2 + Real.log ((q : ℝ) + 1) :=
+    (Real.log_le_log (by positivity) (by exact_mod_cast (by omega : q + 2 ≤ 2 * (q + 1)))).trans_eq
       (Real.log_mul (by positivity) (by positivity))
-  have hq_up : q ≤ lacunaryScale (2 * r + 1) := Nat.div_le_self _ _
   have hIco_eq : ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, oscSeq j =
       (harmonic q : ℝ) - (harmonic (lacunaryScale (2 * r)) : ℝ) := by
     have hcongr : ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, oscSeq j =
-        ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, ((j : ℝ) + 1)⁻¹ := by
-      refine Finset.sum_congr rfl fun j hj ↦ ?_
-      have hj1 : lacunaryScale (2 * r) ≤ j := (Finset.mem_Ico.1 hj).1
-      have hj2 : j < lacunaryScale (2 * r + 1) := (Finset.mem_Ico.1 hj).2.trans_le hq_up
-      have hst_ge : 2 * r ≤ lacunaryStage j :=
-        lacunaryStage_lacunaryScale (2 * r) ▸ lacunaryStage_mono hj1
-      have hst_lt : lacunaryStage j < 2 * r + 1 := by
-        by_contra hge
-        have hj_two : 2 ≤ j := (two_le_lacunaryScale (2 * r)).trans hj1
-        have := (lacunaryScale_mono (Nat.le_of_not_lt hge)).trans
-          (lacunaryScale_lacunaryStage_le hj_two)
-        omega
-      have hst : lacunaryStage j = 2 * r := by omega
-      simp [oscSeq, hst]
+        ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, ((j : ℝ) + 1)⁻¹ :=
+      Finset.sum_congr rfl fun j hj ↦ by
+        have hj1 : lacunaryScale (2 * r) ≤ j := (Finset.mem_Ico.1 hj).1
+        have hj2 : j < lacunaryScale (2 * r + 1) :=
+          (Finset.mem_Ico.1 hj).2.trans_le (Nat.div_le_self _ _)
+        have hst_ge : 2 * r ≤ lacunaryStage j :=
+          lacunaryStage_lacunaryScale (2 * r) ▸ lacunaryStage_mono hj1
+        have hst_lt : lacunaryStage j < 2 * r + 1 := by
+          by_contra! hge
+          have := (lacunaryScale_mono hge).trans
+            (lacunaryScale_lacunaryStage_le ((two_le_lacunaryScale (2 * r)).trans hj1))
+          omega
+        simp [oscSeq, show lacunaryStage j = 2 * r by omega]
     have hsplit := Finset.sum_range_add_sum_Ico (fun j : ℕ ↦ ((j : ℝ) + 1)⁻¹) hBq
     have hharm (m : ℕ) : (harmonic m : ℝ) = ∑ j ∈ Finset.range m, ((j : ℝ) + 1)⁻¹ := by
       simp [harmonic]
-    rw [hcongr, hharm, hharm]
-    linarith
+    rw [hcongr, hharm, hharm]; linarith
   have hharm_low : Real.log ((q : ℝ) + 1) ≤ (harmonic q : ℝ) := by
     simpa using log_add_one_le_harmonic q
-  have hharm_up : (harmonic (lacunaryScale (2 * r)) : ℝ) ≤ 1 + Y := by
-    refine (harmonic_le_one_add_log _).trans ?_
-    simp [lacunaryScale, Real.log_pow, Y]
+  have hharm_up : (harmonic (lacunaryScale (2 * r)) : ℝ) ≤ 1 + Y :=
+    harmonic_lacunaryScale_le (2 * r)
   have hgauge_ge : Real.log ((q : ℝ) + 1) - (1 + Y) ≤ (T.kyFanGauge (q + 1) : ℝ) := by
     rw [kyFanGauge_diagonalCLM_nonnegAntitoneSeq]
-    calc Real.log ((q : ℝ) + 1) - (1 + Y)
-        ≤ (harmonic q : ℝ) - (harmonic (lacunaryScale (2 * r)) : ℝ) := by linarith
-      _ = ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, oscSeq j := hIco_eq.symm
-      _ ≤ ∑ j ∈ Finset.range (q + 1), oscSeq j :=
-          Finset.sum_le_sum_of_subset_of_nonneg
-            (fun j hj ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hj).2.trans_le (Nat.le_succ q)))
-            fun _ _ _ ↦ oscSeq_nonneg _
-  have hlog2_pos : 0 < Real.log 2 := Real.log_pos one_lt_two
+    refine (by linarith : Real.log ((q : ℝ) + 1) - (1 + Y) ≤
+      ∑ j ∈ Finset.Ico (lacunaryScale (2 * r)) q, oscSeq j).trans ?_
+    exact Finset.sum_le_sum_of_subset_of_nonneg
+      (fun j hj ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hj).2.trans_le (Nat.le_succ q)))
+      fun _ _ _ ↦ oscSeq_nonneg _
   rw [kyFanLogMean_def, le_div_iff₀ hlogq]
-  linarith
+  linarith [Real.log_pos one_lt_two]
 
 /-- **Non-uniqueness of the Dixmier trace (`ω`-dependence).** On `ℓ²(ℕ, ℂ)` there exists a
 positive diagonal operator in `L^(1,∞)` that is not Dixmier measurable: two dilation-invariant
@@ -805,54 +720,42 @@ theorem exists_isPositive_mem_logarithmic_not_isDixmierMeasurable :
   let T := lp.diagonalCLM (p := 2) (nonnegAntitoneSeq oscSeq oscSeq_nonneg oscSeq_antitone)
   have hpos : T.IsPositive := isPositive_diagonalCLM_nonnegAntitoneSeq _ _ _
   have hmem : T ∈ ((logarithmic ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
-    refine (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 ?_
-    obtain ⟨C, hC⟩ :=
-      (mem_finiteSubmodule_logarithmic_iff_bddAbove harmonicDiagonalCLM).1
-        harmonicDiagonalCLM_mem_logarithmic
-    refine ⟨C, ?_⟩
+    obtain ⟨C, hC⟩ := (mem_finiteSubmodule_logarithmic_iff_bddAbove harmonicDiagonalCLM).1
+      harmonicDiagonalCLM_mem_logarithmic
+    refine (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 ⟨C, ?_⟩
     rintro _ ⟨N, rfl⟩
-    refine (le_trans ?_ (hC ⟨N, rfl⟩))
-    rw [kyFanLogMean_def, kyFanLogMean_def]
-    refine div_le_div_of_nonneg_right ?_ (Real.log_natCast_add_pos one_lt_two N).le
-    rw [kyFanGauge_diagonalCLM_nonnegAntitoneSeq, kyFanGauge_harmonicDiagonalCLM]
-    exact Finset.sum_le_sum fun j _ ↦ oscSeq_le_inv j
+    refine le_trans ?_ (hC ⟨N, rfl⟩)
+    rw [kyFanLogMean_def, kyFanLogMean_def, kyFanGauge_diagonalCLM_nonnegAntitoneSeq,
+      kyFanGauge_harmonicDiagonalCLM]
+    exact div_le_div_of_nonneg_right (Finset.sum_le_sum fun j _ ↦ oscSeq_le_inv j)
+      (Real.log_natCast_add_pos one_lt_two N).le
   obtain ⟨g, hg⟩ := exists_coe_eq_kyFanLogMean hmem
-  have hpow_even : Tendsto (fun r : ℕ ↦ 2 ^ (8 ^ (2 * r))) atTop atTop :=
-    lacunaryScale_strictMono.tendsto_atTop.comp
-      (tendsto_atTop_atTop.2 fun b ↦ ⟨b, fun r hr ↦ (by omega : b ≤ 2 * r)⟩)
-  have hpow_odd : Tendsto (fun r : ℕ ↦ 2 ^ (8 ^ (2 * r + 1))) atTop atTop :=
-    lacunaryScale_strictMono.tendsto_atTop.comp
-      (tendsto_atTop_atTop.2 fun b ↦ ⟨b, fun r hr ↦ (by omega : b ≤ 2 * r + 1)⟩)
-  have hreal_even : Tendsto (fun r : ℕ ↦ (8 : ℝ) ^ (2 * r) * Real.log 2) atTop atTop :=
-    ((tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 8)).comp
-      (tendsto_atTop_atTop.2 fun b ↦ ⟨b, fun r hr ↦ (by omega : b ≤ 2 * r)⟩)).atTop_mul_const
-      (Real.log_pos one_lt_two)
-  have hreal_odd : Tendsto (fun r : ℕ ↦ (8 : ℝ) ^ (2 * r + 1) * Real.log 2) atTop atTop :=
-    ((tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 8)).comp
-      (tendsto_atTop_atTop.2 fun b ↦ ⟨b, fun r hr ↦ (by omega : b ≤ 2 * r + 1)⟩)).atTop_mul_const
+  have hlin (b : ℕ) : Tendsto (fun r : ℕ ↦ 2 * r + b) atTop atTop :=
+    tendsto_atTop_atTop.2 fun M ↦ ⟨M, fun r hr ↦ by omega⟩
+  have hpow (b : ℕ) : Tendsto (fun r : ℕ ↦ 2 ^ (8 ^ (2 * r + b))) atTop atTop :=
+    lacunaryScale_strictMono.tendsto_atTop.comp (hlin b)
+  have hreal (b : ℕ) : Tendsto (fun r : ℕ ↦ (8 : ℝ) ^ (2 * r + b) * Real.log 2) atTop atTop :=
+    ((tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 8)).comp (hlin b)).atTop_mul_const
       (Real.log_pos one_lt_two)
   obtain ⟨ω₁, hω₁, hle⟩ := GeneralizedLimit.exists_isDilationInvariant_apply_le (g := g)
     (c := 1 / 3) fun S _ ↦ Filter.frequently_atTop.2 fun M ↦ by
       obtain ⟨r, hM, hS, hZ⟩ :=
         ((lacunaryScale_strictMono.tendsto_atTop.eventually_ge_atTop M).and
-          ((hpow_odd.eventually_ge_atTop S).and (hreal_odd.eventually_ge_atTop 2))).exists
-      refine ⟨lacunaryScale (2 * r + 2), hM.trans (lacunaryScale_mono (by omega)),
-        fun k hk hkS ↦ ?_⟩
-      rw [congrFun hg]
-      exact oscDiag_kyFanLogMean_le_one_third hk hkS hS hZ
+          (((hpow 1).eventually_ge_atTop S).and ((hreal 1).eventually_ge_atTop 2))).exists
+      exact ⟨lacunaryScale (2 * r + 2), hM.trans (lacunaryScale_mono (by omega)),
+        fun k hk hkS ↦ (congrFun hg _).trans_le (oscDiag_kyFanLogMean_le_one_third hk hkS hS hZ)⟩
   obtain ⟨ω₂, hω₂, hge⟩ := GeneralizedLimit.exists_isDilationInvariant_le_apply (g := g)
     (c := 1 / 2) fun S _ ↦ Filter.frequently_atTop.2 fun M ↦ by
       obtain ⟨r, hM, hS, hY⟩ :=
         ((lacunaryScale_strictMono.tendsto_atTop.eventually_ge_atTop M).and
-          ((hpow_even.eventually_ge_atTop S).and
-            (hreal_even.eventually_ge_atTop (1 + Real.log 2)))).exists
-      refine ⟨lacunaryScale (2 * r + 1), hM.trans (lacunaryScale_mono (by omega)),
-        fun k hk hkS ↦ ?_⟩
-      rw [congrFun hg]
-      exact one_half_le_oscDiag_kyFanLogMean hk hkS hS hY
+          (((hpow 0).eventually_ge_atTop S).and
+            ((hreal 0).eventually_ge_atTop (1 + Real.log 2)))).exists
+      simp only [add_zero] at hS hY
+      exact ⟨lacunaryScale (2 * r + 1), hM.trans (lacunaryScale_mono (by omega)),
+        fun k hk hkS ↦ (one_half_le_oscDiag_kyFanLogMean hk hkS hS hY).trans_eq
+          (congrFun hg _).symm⟩
   refine ⟨T, hpos, hmem, fun hmeas ↦ ?_⟩
-  have heq : dixmierTrace ω₁ T = dixmierTrace ω₂ T :=
-    (isDixmierMeasurable_iff_of_isPositive hpos).1 hmeas hω₁ hω₂
+  have heq := (isDixmierMeasurable_iff_of_isPositive hpos).1 hmeas hω₁ hω₂
   rw [dixmierTrace_eq_apply ω₁ g hg, dixmierTrace_eq_apply ω₂ g hg] at heq
   linarith
 
