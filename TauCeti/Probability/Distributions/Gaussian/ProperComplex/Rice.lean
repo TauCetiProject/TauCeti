@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
+public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Affine
 public import TauCeti.Probability.Distributions.NoncentralChi.Gaussian
 
 /-!
@@ -23,8 +23,9 @@ The Rice density is available as `noncentralChiPDFReal_two_div_scale_eq_besselI`
 density, cdf, moment, and quantile theory of noncentral chi laws to be applied directly, without
 a separate Rice-family definition.
 
-The proof uses the real-coordinate marginal theorem `map_comp_multivariateGaussian` and
-the spherical Gaussian norm identity `map_norm_multivariateGaussian_noncentral_of_scale`.
+The proof uses the planar coordinate marginal theorem
+`map_finTwo_re_im_eval_properComplexGaussianMeasure` and the spherical Gaussian norm identity
+`map_norm_multivariateGaussian_noncentral_of_scale`.
 
 ## References
 
@@ -44,38 +45,6 @@ open scoped ComplexOrder NNReal
 namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- The real and imaginary parts of a proper complex Gaussian coordinate form a planar
-Gaussian with their respective means and spherical covariance equal to half the complex
-variance. Zero coordinate variance is included. -/
-@[simp]
-theorem map_finTwo_re_im_eval_properComplexGaussianMeasure (m : ι → ℂ)
-    {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (i : ι) :
-    (properComplexGaussianMeasure m C).map
-        (fun z ↦ WithLp.toLp 2 ![(z i).re, (z i).im]) =
-      multivariateGaussian (WithLp.toLp 2 ![(m i).re, (m i).im])
-        (((C i i).re / 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ)) := by
-  have him : (C i i).im = 0 := by
-    have h := congrArg Complex.im (hC.isHermitian.apply i i)
-    simp only [Complex.star_def, Complex.conj_im] at h
-    linarith
-  let f : Fin 2 → ι ⊕ ι := ![Sum.inl i, Sum.inr i]
-  have hcov : (complexGaussianRealCovariance C).submatrix f f =
-      ((C i i).re / 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
-    ext a b
-    fin_cases a <;> fin_cases b <;> simp [f, him]
-  have h := map_comp_multivariateGaussian (complexToRealEuclidean ι m)
-    ((posSemidef_complexGaussianRealCovariance_iff C).2 hC) f
-  rw [← map_complexToRealEuclidean_properComplexGaussianMeasure,
-    Measure.map_map (by fun_prop) (by fun_prop), hcov] at h
-  convert h using 1
-  · congr 1
-    funext z
-    ext a
-    fin_cases a <;> simp [f]
-  · congr 1
-    ext a
-    fin_cases a <;> simp [f]
 
 /-- A positive-variance proper complex Gaussian coordinate has Rice modulus: a noncentral chi
 law of degree two, scale `√(v / 2)`, and noncentrality `‖m‖ / √(v / 2)`. -/
