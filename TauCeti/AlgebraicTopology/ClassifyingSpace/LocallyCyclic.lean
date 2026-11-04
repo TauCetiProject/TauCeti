@@ -32,7 +32,8 @@ Through the identification of the homology of Milnor's classifying space with gr
 reduced homology of `BG = K(G, 1)` with coefficients in a ring of characteristic two vanishes when
 `G` is torsion-free, locally cyclic and two-divisible
 (`TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_exists_sq`). For
-`ℤ[1/2] = ⋃ᵣ 2⁻ʳℤ` this is the vanishing `H̃_*(K(ℤ[1/2], 1); 𝔽₂) = 0`
+`ℤ[1/2] = ⋃ᵣ 2⁻ʳℤ` this is the vanishing of the reduced homology of `K(ℤ[1/2], 1)` with
+coefficients in `𝔽₂`
 (`TauCeti.subsingleton_classifyingSpace_localizationAway_two_singularHomology`): the homology of
 `K(ℤ[1/2], 1)` is the colimit of the homology of circles along maps of degree two. This is the
 case `A = ℤ[1/2]` of the vanishing of the mod-two homology of `K(A, 1)` for a uniquely
@@ -48,9 +49,10 @@ connected space with vanishing reduced mod-two homology are uniquely two-divisib
 * `TauCeti.subsingleton_groupHomology_one_of_forall_exists_sq`: `H₁(G; k) = 0` when every element
   of `G` is a square and `2 = 0` in `k`.
 * `TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_exists_sq`:
-  `H̃_*(BG; k) = 0` for a torsion-free, locally cyclic, two-divisible group `G` and `2 = 0` in `k`.
+  the reduced homology of `BG` with coefficients in `k` vanishes for a torsion-free, locally
+  cyclic, two-divisible group `G` and `2 = 0` in `k`.
 * `TauCeti.subsingleton_classifyingSpace_localizationAway_two_singularHomology`:
-  `H̃_*(K(ℤ[1/2], 1); k) = 0` when `2 = 0` in `k`.
+  the reduced homology of `K(ℤ[1/2], 1)` with coefficients in `k` vanishes when `2 = 0` in `k`.
 
 ## References
 
