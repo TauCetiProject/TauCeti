@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
+public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
@@ -149,6 +150,8 @@ theorem isClosed_approximatePointSpectrum (T : E →L[𝕜] E) :
 /-- Every boundary point of the spectrum admits unit approximate eigenvectors. -/
 theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
     (T : E →L[𝕜] E) : frontier (spectrum 𝕜 T) ⊆ T.approximatePointSpectrum := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp [spectrum.of_subsingleton]
   intro z hz
   by_contra hnot
   obtain ⟨c, hc, hbound⟩ := (T.not_mem_approximatePointSpectrum_iff z).mp hnot
@@ -181,7 +184,7 @@ theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
     rw [div_mul_eq_mul_div]
     apply (le_div_iff₀ hc).mpr
     nlinarith
-  -- A Neumann-series perturbation now makes `z` a resolvent point as well.
+  -- Mathlib's nearby-unit construction makes `z` a resolvent point as well.
   let v : E →L[𝕜] E := (u : E →L[𝕜] E) - (algebraMap 𝕜 _ z - T)
   have hv : ‖v‖ ≤ ‖z - w‖ := by
     apply opNorm_le_bound _ (norm_nonneg _)
@@ -190,21 +193,18 @@ theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
       simp only [v, hu, sub_apply, algebraMap_apply, sub_smul]
       abel
     rw [heq, norm_smul, norm_sub_rev]
-  have hsmall : ‖(↑u⁻¹ : E →L[𝕜] E) * v‖ < 1 := by
-    calc ‖(↑u⁻¹ : E →L[𝕜] E) * v‖ ≤ ‖(↑u⁻¹ : E →L[𝕜] E)‖ * ‖v‖ := norm_mul_le _ _
-      _ ≤ (2 / c) * ‖z - w‖ := mul_le_mul hinv hv (norm_nonneg _) (by positivity)
+  have hnear : ‖(algebraMap 𝕜 _ z - T) - (u : E →L[𝕜] E)‖ <
+      ‖(↑u⁻¹ : E →L[𝕜] E)‖⁻¹ := by
+    rw [norm_sub_rev, ← one_div, lt_div_iff₀ (Units.norm_pos u⁻¹)]
+    calc ‖v‖ * ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ ‖z - w‖ * (2 / c) :=
+          mul_le_mul hv hinv (norm_nonneg _) (norm_nonneg _)
       _ < 1 := by
         have hpos : 0 < 2 / c := by positivity
-        have h := mul_lt_mul_of_pos_left hzw hpos
-        have heq : (2 / c) * (c / 4) = 1 / 2 := by field_simp; norm_num
+        have h := mul_lt_mul_of_pos_right hzw hpos
+        have heq : (c / 4) * (2 / c) = 1 / 2 := by field_simp; norm_num
         rw [heq] at h
         linarith
-  have hzunit := u.isUnit.mul (isUnit_one_sub_of_norm_lt_one hsmall)
-  have heq : (u : E →L[𝕜] E) * (1 - (↑u⁻¹ : E →L[𝕜] E) * v) =
-      algebraMap 𝕜 _ z - T := by
-    rw [mul_sub, mul_one, ← mul_assoc, Units.mul_inv, one_mul]
-    exact sub_sub_cancel _ _
-  rw [heq] at hzunit
+  have hzunit := (u.ofNearby (algebraMap 𝕜 _ z - T) hnear).isUnit
   exact (spectrum.mem_iff.mp ((spectrum.isClosed T).frontier_subset hz)) hzunit
 
 end ContinuousLinearMap
