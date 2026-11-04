@@ -17,8 +17,9 @@ parameters need not be gauge-equivalent to the ordinary parameter, and no symmet
 the functional is needed. In particular these results apply to the exterior-skew parameter on an
 odd cycle, even when the characteristic is not two.
 
-The functional is packaged using `LinearMap.IsFrobeniusFunctional`, so its dual-module
-identification and Nakayama automorphism are also available through the general Frobenius API.
+The functional is packaged using `LinearMap.IsFrobeniusFunctional`. Over a field, its dual-module
+identification and Nakayama automorphism are available through the general Frobenius API after
+installing `TauCeti.moduleFinite_skewZigzagQuotient` as a local instance.
 The functional depends on the incident edges used to normalize its volume classes, whereas
 self-injectivity does not; the self-injectivity statements therefore require only the existence
 of an incident edge at every vertex. These are statements about the relation quotient, not a
@@ -68,26 +69,26 @@ section Field
 
 variable [Field k] (c : SkewZigzagParameter k G) (hns : ∀ i : V, ∃ j, G.Adj i j)
 
+/-- Incident edges used only to choose a Frobenius functional for the self-injectivity proofs. -/
+private noncomputable def selfInjectiveIncidentEdges : ∀ i : V, {j : V // G.Adj i j} :=
+  fun i => ⟨(hns i).choose, (hns i).choose_spec⟩
+
 include hns
 
 /-- Every skew-zigzag relation quotient of a finite graph without isolated vertices is left
 self-injective. No condition on the gauge class of its parameter is required. -/
 theorem moduleInjective_skewZigzagQuotient :
     Module.Injective (skewZigzagQuotient k G c) (skewZigzagQuotient k G c) := by
-  let t : ∀ i : V, {j : V // G.Adj i j} := fun i => ⟨(hns i).choose, (hns i).choose_spec⟩
-  exact (LinearMap.IsPerfPair.bijective_right (skewZigzagTracePairing k G c t)).moduleInjective_self
-    (skewZigzagTracePairing_mul_assoc k G c t)
+  let t := selfInjectiveIncidentEdges G hns
+  let _ := moduleFinite_skewZigzagQuotient k G c t
+  exact (isFrobeniusFunctional_skewZigzagTrace k G c t).moduleInjective_self
 
 /-- Every skew-zigzag relation quotient of a finite graph without isolated vertices is right
 self-injective, expressed using its standard module structure over the opposite algebra. -/
 theorem moduleInjective_op_skewZigzagQuotient :
     Module.Injective (skewZigzagQuotient k G c)ᵐᵒᵖ (skewZigzagQuotient k G c) := by
-  classical
-  let t : ∀ i : V, {j : V // G.Adj i j} := fun i => ⟨(hns i).choose, (hns i).choose_spec⟩
-  let : Finite G.Dart :=
-    Finite.of_injective _ (SimpleGraph.Dart.toProd_injective (G := G))
-  let : Module.Finite k (skewZigzagQuotient k G c) :=
-    Module.Finite.of_basis (skewZigzagBasis k G c t)
+  let t := selfInjectiveIncidentEdges G hns
+  let _ := moduleFinite_skewZigzagQuotient k G c t
   exact (isFrobeniusFunctional_skewZigzagTrace k G c t).moduleInjective_op_self
 
 end Field
