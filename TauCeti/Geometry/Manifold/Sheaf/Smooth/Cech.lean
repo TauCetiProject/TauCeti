@@ -281,7 +281,6 @@ def retractPiRestrict : Retract (smoothSheafModule I M 𝕜 V).obj
 
 /-- The inclusion of `retractPiRestrict` is restriction: its component at `i` sends a section over
 `W` to its restriction to `U i ∩ W`. -/
-@[simp]
 theorem retractPiRestrict_i_app_π (W : Opens (TopCat.of M))
     (s : (smoothSheafModule I M 𝕜 V).obj.obj (op W)) (i : ι) :
     (Pi.π (fun i ↦ (prod.functor.obj (U i)).op ⋙ (smoothSheafModule I M 𝕜 V).obj) i).app (op W)
