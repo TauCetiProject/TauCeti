@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Polar.Deformation
-public import TauCeti.Analysis.Matrix.Polar.Symplectic
+public import TauCeti.Analysis.Matrix.Polar.GLSymplectic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.Topology.Algebra.Matrix.Realify
+public import TauCeti.Topology.Algebra.SymplecticGroup
 public import TauCeti.Topology.Circle.Degree
 
 /-!
@@ -21,7 +20,9 @@ realification of a unique complex unitary matrix `U_ℂ`, so `A` determines the 
 
 `ρ(A) = det_ℂ U_ℂ`
 
-of the unit circle (`TauCeti.GLSymplectic.maslovPhase`), with the determinant
+of the unit circle (`TauCeti.GLSymplectic.maslovPhase`), with the orthogonal polar factor
+`TauCeti.GLSymplectic.polarUnitary`, the realification `TauCeti.GLSymplectic.ofUnitary` and the
+determinant
 `Matrix.UnitaryGroup.detCircle`. It depends continuously on `A`, and on
 the orthogonal symplectic matrices, the realified unitary group `U(n)`, it is the complex
 determinant. The **Maslov index** `μ(Ψ)` of a loop `Ψ` of symplectic matrices
@@ -57,8 +58,6 @@ number of a symplectic bundle over a surface by clutching.
 
 ## Main definitions
 
-* `TauCeti.GLSymplectic.ofUnitary`: the realification `U(n) → Sp(2n, ℝ)`.
-* `TauCeti.GLSymplectic.polarUnitary`: the orthogonal polar factor of a symplectic matrix.
 * `TauCeti.GLSymplectic.maslovPhase`: the map `ρ : Sp(2n, ℝ) → S¹`.
 * `TauCeti.GLSymplectic.maslovIndex`: the Maslov index of a loop of symplectic matrices.
 * `TauCeti.GLSymplectic.scalarRotationLoop`: the loop `t ↦ e^{2π i t} I` in `U(n)`.
@@ -82,78 +81,6 @@ namespace TauCeti.GLSymplectic
 open Matrix.UnitaryGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-! ### The orthogonal polar factor -/
-
-/-- The polar deformation `P ^ (1 - t) U` of a symplectic matrix `A = P U` stays symplectic at
-every real time. -/
-theorem polarDeformation_mem {A : GL (n ⊕ n) ℝ} (hA : A ∈ GLSymplectic n ℝ) (t : ℝ) :
-    polarDeformation A t ∈ GLSymplectic n ℝ := by
-  rw [mem_iff_mem_symplecticGroup] at hA ⊢
-  rw [coe_polarDeformation]
-  exact Submonoid.mul_mem _ (SymplecticGroup.rpow_mem
-    (nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg _)) (SymplecticGroup.sqrt_mul_star_mem hA) _)
-    (SymplecticGroup.polarUnitary_mem hA)
-
-/-- The orthogonal polar factor `U` of a symplectic matrix `A = P U`, as an orthogonal symplectic
-matrix. -/
-noncomputable def polarUnitary (A : GLSymplectic n ℝ) :
-    ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
-  ⟨Unitary.toUnits (Units.polarUnitary (A : GL (n ⊕ n) ℝ)),
-    mem_iff_mem_symplecticGroup.2 (SymplecticGroup.polarUnitary_mem
-      (mem_iff_mem_symplecticGroup.1 A.2)), by simp⟩
-
-/-- The orthogonal polar factor, as a matrix, is the unitary polar factor `Units.polarUnitary`. -/
-@[simp]
-theorem coe_polarUnitary (A : GLSymplectic n ℝ) :
-    ((polarUnitary A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      Units.polarUnitary (A : GL (n ⊕ n) ℝ) :=
-  (rfl)
-
-/-- An orthogonal symplectic matrix is its own orthogonal polar factor. -/
-@[simp]
-theorem polarUnitary_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))) :
-    polarUnitary (Subgroup.inclusion inf_le_left U) = U := by
-  have hU : ((U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈
-      unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
-    simpa [mem_unitarySubgroup_iff, Units.unitary_eq] using (Subgroup.mem_inf.1 U.2).2
-  have h := Units.polarUnitary_eq_of_mul_eq (U : GL (n ⊕ n) ℝ) zero_le_one
-    (v := ⟨_, hU⟩) (one_mul _)
-  refine Subtype.ext (Units.ext ?_)
-  rw [coe_polarUnitary, Subgroup.coe_inclusion, h]
-
-/-- The orthogonal polar factor depends continuously on the symplectic matrix. -/
-theorem continuous_polarUnitary :
-    Continuous (polarUnitary : GLSymplectic n ℝ → _) := by
-  have h := (polarHomotopy (n ⊕ n) ℝ).continuous.comp
-    (continuous_const.prodMk continuous_id : Continuous fun A : GL (n ⊕ n) ℝ ↦ ((1 : I), A))
-  simp only [Function.comp_def, polarHomotopy_apply, Set.Icc.coe_one, polarDeformation_one] at h
-  exact (h.comp continuous_subtype_val).subtype_mk _
-
-/-! ### Realified unitary matrices -/
-
-/-- Realification `U(n) → Sp(2n, ℝ)`, identifying complex unitary matrices with the orthogonal
-symplectic matrices. -/
-noncomputable def ofUnitary : unitaryGroup n ℂ →* GLSymplectic n ℝ :=
-  (Subgroup.inclusion inf_le_left).comp
-    (unitaryGroupEquivSymplecticInfOrthogonal (n := n)).toMulEquiv.toMonoidHom
-
-/-- `ofUnitary U` is the orthogonal symplectic matrix realifying `U`. -/
-theorem ofUnitary_apply (U : unitaryGroup n ℂ) :
-    ofUnitary U = Subgroup.inclusion inf_le_left (unitaryGroupEquivSymplecticInfOrthogonal U) :=
-  (rfl)
-
-@[simp]
-theorem coe_ofUnitary (U : unitaryGroup n ℂ) :
-    ((ofUnitary U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (U : Matrix n n ℂ).realify := by
-  rw [ofUnitary_apply, Subgroup.coe_inclusion, unitaryGroupEquivSymplecticInfOrthogonal_apply]
-  simp
-
-/-- Realification of unitary matrices is continuous. -/
-theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GLSymplectic n ℝ) := by
-  refine continuous_induced_rng.2 ((continuous_subtype_val.comp
-    (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)))).congr fun U ↦ ?_)
-  rw [Function.comp_apply, Function.comp_apply, ofUnitary_apply, Subgroup.coe_inclusion]
 
 /-! ### The map `ρ` -/
 
@@ -252,13 +179,6 @@ theorem maslovIndex_map_ofUnitary {U : unitaryGroup n ℂ} (γ : Path U U) :
     maslovIndex (γ.map continuous_ofUnitary) = Circle.degree (γ.map continuous_detCircle) :=
   Circle.degree_congr _ _ fun t ↦ by simp
 
-/-- The orthogonal polar factor of a symplectic matrix depends continuously on it, as a
-symplectic matrix. -/
-theorem continuous_inclusion_polarUnitary :
-    Continuous fun A : GLSymplectic n ℝ ↦ Subgroup.inclusion inf_le_left (polarUnitary A) :=
-  continuous_induced_rng.2 ((continuous_subtype_val.comp continuous_polarUnitary).congr fun _ ↦
-    (Subgroup.coe_inclusion _ _).symm)
-
 /-- The Maslov index of a loop is that of the loop of its orthogonal polar factors. -/
 theorem maslovIndex_map_polarUnitary {A : GLSymplectic n ℝ} (γ : Path A A) :
     maslovIndex (γ.map continuous_inclusion_polarUnitary) = maslovIndex γ :=
@@ -279,7 +199,7 @@ theorem maslovIndex_mul {A B : GLSymplectic n ℝ} (γ₁ : Path A A) (γ₂ : P
     simpa only [Function.comp_def, polarHomotopy_apply] using h
   have hD0 (A : GLSymplectic n ℝ) : D (A, 0) = A := Subtype.ext (by simp [D])
   have hD1 (A : GLSymplectic n ℝ) : D (A, 1) = Subgroup.inclusion inf_le_left (polarUnitary A) :=
-    Subtype.ext (by simp [D, polarUnitary])
+    Subtype.ext (Units.ext (by simp [D]))
   let F : C(I × I, Circle) :=
     ⟨fun p ↦ maslovPhase (D (γ₁ p.2, p.1) * D (γ₂ p.2, p.1)),
       continuous_maslovPhase.comp
@@ -316,6 +236,12 @@ noncomputable def scalarRotationLoop (n : Type*) [Fintype n] [DecidableEq n] :
   source' := Subtype.ext (by simp)
   target' := Subtype.ext (by simp)
 
+/-- The loop of scalar rotations at time `t` is the scalar matrix `e^{2π i t} I`. -/
+@[simp]
+theorem coe_scalarRotationLoop_apply (t : I) :
+    (scalarRotationLoop n t : Matrix n n ℂ) = (Circle.exp (2 * Real.pi * t) : ℂ) • 1 :=
+  (rfl)
+
 /-- **Normalization.** The loop of scalar rotations `t ↦ e^{2π i t} I` in `U(n) ⊆ Sp(2n, ℝ)` has
 Maslov index `n`; for `n = 1` this is the loop `t ↦ e^{2π i t}` in `U(1) ⊆ Sp(2, ℝ)`, of Maslov
 index `1`. -/
@@ -325,7 +251,7 @@ theorem maslovIndex_scalarRotationLoop :
   refine Circle.degree_eq_of_sub_eq _ (θ := fun t ↦ Fintype.card n * (2 * Real.pi * t))
     (by fun_prop) (fun t ↦ ?_) (by simp only [Set.Icc.coe_one, Set.Icc.coe_zero]; push_cast; ring)
   apply Circle.ext
-  simp only [Path.map_coe, Function.comp_apply, coe_detCircle, scalarRotationLoop, Path.coe_mk_mk,
+  simp only [Path.map_coe, Function.comp_apply, coe_detCircle, coe_scalarRotationLoop_apply,
     det_smul, det_one, mul_one, Circle.coe_exp, ← Complex.exp_nat_mul]
   push_cast
   ring_nf
@@ -335,46 +261,6 @@ theorem maslovIndex_scalarRotationLoop :
 section Sum
 
 variable {m : Type*} [Fintype m] [DecidableEq m]
-
-/-- The direct sum of symplectic matrices is continuous. -/
-theorem continuous_sum :
-    Continuous (sum : GLSymplectic n ℝ × GLSymplectic m ℝ → GLSymplectic (n ⊕ m) ℝ) := by
-  have h₁ : Continuous fun p : GLSymplectic n ℝ × GLSymplectic m ℝ ↦
-      ((p.1 : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
-    Units.continuous_val.comp (continuous_subtype_val.comp continuous_fst)
-  have h₂ : Continuous fun p : GLSymplectic n ℝ × GLSymplectic m ℝ ↦
-      ((p.2 : GL (m ⊕ m) ℝ) : Matrix (m ⊕ m) (m ⊕ m) ℝ) :=
-    Units.continuous_val.comp (continuous_subtype_val.comp continuous_snd)
-  have hval : Continuous fun p : GLSymplectic n ℝ × GLSymplectic m ℝ ↦
-      ((sum p : GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℝ) :=
-    (h₁.matrix_symplecticSum h₂).congr fun p ↦ (coe_sum p.1 p.2).symm
-  refine continuous_induced_rng.2 (Units.continuous_iff.2 ⟨hval, ?_⟩)
-  exact (hval.comp continuous_inv).congr fun p ↦ by
-    simp only [Function.comp_apply, map_inv, Subgroup.coe_inv]
-
-/-- The orthogonal polar factor of a direct sum is the direct sum of the orthogonal polar
-factors. -/
-theorem coe_polarUnitary_sum (A : GLSymplectic n ℝ) (B : GLSymplectic m ℝ) :
-    ((polarUnitary (sum (A, B)) : GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) :
-      Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) =
-      symplecticSum ((polarUnitary A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
-        ((polarUnitary B : GL (m ⊕ m) ℝ) : Matrix (m ⊕ m) (m ⊕ m) ℝ) := by
-  have hU : symplecticSum ((Units.polarUnitary (A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) _ ℝ))
-      (Units.polarUnitary (B : GL (m ⊕ m) ℝ) : Matrix (m ⊕ m) _ ℝ) ∈
-        unitary (Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) :=
-    symplecticSum_mem_unitaryGroup (Units.polarUnitary _).2 (Units.polarUnitary _).2
-  have hP : 0 ≤ symplecticSum
-      (CFC.sqrt (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
-        star ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)))
-      (CFC.sqrt (((B : GL (m ⊕ m) ℝ) : Matrix (m ⊕ m) (m ⊕ m) ℝ) *
-        star ((B : GL (m ⊕ m) ℝ) : Matrix (m ⊕ m) (m ⊕ m) ℝ))) :=
-    nonneg_iff_posSemidef.2 ((nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg _)).symplecticSum
-      (nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg _)))
-  have h := Units.polarUnitary_eq_of_mul_eq (sum (A, B) : GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) hP
-    (v := ⟨_, hU⟩)
-    (by rw [coe_sum, ← symplecticSum_mul, Units.sqrt_mul_star_mul_polarUnitary,
-      Units.sqrt_mul_star_mul_polarUnitary])
-  rw [coe_polarUnitary, coe_polarUnitary, coe_polarUnitary, h]
 
 /-- `ρ` is multiplicative under direct sums: `ρ(A ⊕ B) = ρ(A) ρ(B)`. -/
 @[simp]

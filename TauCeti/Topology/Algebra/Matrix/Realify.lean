@@ -40,6 +40,8 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
   matrices is a closed embedding into `GL (n ⊕ n) ℝ`.
 * `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`: the realification isomorphism of topological
   groups from `U(n)` onto the orthogonal symplectic matrices.
+* `TauCeti.GLSymplectic.ofUnitary`: the realification `U(n) →* Sp(2n, ℝ)`, a continuous group
+  morphism (`TauCeti.GLSymplectic.continuous_ofUnitary`).
 
 ## References
 
@@ -141,3 +143,35 @@ theorem realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply
   rw [← unitaryGroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
 
 end Matrix
+
+open Matrix
+
+namespace TauCeti.GLSymplectic
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- Realification `U(n) → Sp(2n, ℝ)`, identifying complex unitary matrices with the orthogonal
+symplectic matrices. -/
+noncomputable def ofUnitary : unitaryGroup n ℂ →* GLSymplectic n ℝ :=
+  (Subgroup.inclusion inf_le_left).comp
+    (unitaryGroupEquivSymplecticInfOrthogonal (n := n)).toMulEquiv.toMonoidHom
+
+/-- `ofUnitary U` is the orthogonal symplectic matrix realifying `U`. -/
+theorem ofUnitary_apply (U : unitaryGroup n ℂ) :
+    ofUnitary U = Subgroup.inclusion inf_le_left (unitaryGroupEquivSymplecticInfOrthogonal U) :=
+  (rfl)
+
+/-- The underlying matrix of `ofUnitary U` is the realification of `U`. -/
+@[simp]
+theorem coe_ofUnitary (U : unitaryGroup n ℂ) :
+    ((ofUnitary U : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (U : Matrix n n ℂ).realify := by
+  rw [ofUnitary_apply, Subgroup.coe_inclusion, unitaryGroupEquivSymplecticInfOrthogonal_apply]
+  simp
+
+/-- Realification of unitary matrices is continuous. -/
+theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GLSymplectic n ℝ) := by
+  refine continuous_induced_rng.2 ((continuous_subtype_val.comp
+    (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)))).congr fun U ↦ ?_)
+  rw [Function.comp_apply, Function.comp_apply, ofUnitary_apply, Subgroup.coe_inclusion]
+
+end TauCeti.GLSymplectic

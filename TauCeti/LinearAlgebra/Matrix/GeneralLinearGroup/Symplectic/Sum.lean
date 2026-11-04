@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.Realify
 
@@ -45,7 +44,6 @@ matrices.
   semidefinite matrices.
 * `Matrix.realify_fromBlocks_zero`: realification turns block-diagonal complex matrices into
   symplectic direct sums.
-* `Continuous.matrix_symplecticSum`: the direct sum is continuous.
 
 ## References
 
@@ -141,12 +139,6 @@ theorem PosSemidef.symplecticSum [Finite n] [Finite m] [CommRing R] [PartialOrde
   rw [← Sum.elim_comp_inl_inr x, fromBlocks_mulVec, Function.star_sumElim,
     sumElim_dotProduct_sumElim]
   simpa using add_nonneg (hA.2 (x ∘ Sum.inl)) (hB.2 (x ∘ Sum.inr))
-
-/-- The symplectic direct sum of continuous families of matrices is continuous. -/
-theorem _root_.Continuous.matrix_symplecticSum {X : Type*} [TopologicalSpace X] [TopologicalSpace R]
-    [Zero R] {A : X → Matrix (n ⊕ n) (n ⊕ n) R} {B : X → Matrix (m ⊕ m) (m ⊕ m) R}
-    (hA : Continuous A) (hB : Continuous B) : Continuous fun x ↦ symplecticSum (A x) (B x) :=
-  (hA.matrix_fromBlocks continuous_const continuous_const hB).matrix_submatrix _ _
 
 /-- Realification turns a block-diagonal complex matrix into the symplectic direct sum of the
 realifications of its blocks. -/
