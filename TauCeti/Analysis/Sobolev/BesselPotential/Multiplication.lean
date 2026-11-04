@@ -230,18 +230,18 @@ theorem norm_toLp_fourierMultiplierCLM_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, �
       (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) *
         ‖(fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f).toLp 2‖ := by
   have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
+  have hwf : (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) =
+      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 f) := by
+    ext ξ
+    rw [smulLeftCLM_apply_apply hw]
   rw [norm_toLp_fourierMultiplierCLM_eq hw, norm_toLp_fourierMultiplierCLM_eq hw,
     ← ENNReal.toReal_ofReal (by positivity : 0 ≤ 2 ^ (|s| / 2) *
       ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖), ← ENNReal.toReal_mul]
   refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ?_)
     (eLpNorm_rpow_smul_fourier_smulLeftCLM_le s φ f)
-  rw [eLpNorm_rpow_smul_fourier_eq _ _ (𝓕 f).continuous]
-  have hfin := ((smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 f)).memLp 2
-    volume).eLpNorm_ne_top
-  rwa [← eLpNorm_rpow_smul_fourier_eq _ _ (𝓕 f).continuous, show
-    (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) =
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 f) from by
-    ext ξ; rw [smulLeftCLM_apply_apply hw]]
+  -- The remaining side goal is finiteness of the `L²` norm of a Schwartz function.
+  rw [hwf]
+  exact ((smulLeftCLM F _ (𝓕 f)).memLp 2 volume).eLpNorm_ne_top
 
 end SchwartzMap
 
@@ -258,8 +258,6 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
   set C := 2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖
   set Λ : ℝ → 𝓢(E, F) →L[ℂ] 𝓢(E, F) := fun t ↦
     SchwartzMap.fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
-  have hΛ (ψ : 𝓢(E, F)) : Λ s (Λ (-s) ψ) = ψ :=
-    SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg s ψ
   -- The operator `w ↦ J^s (φ J^{-s} w)` on `L²`, with values in tempered distributions, is
   -- given on Schwartz functions by `M`, which is bounded in `L²`.
   set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) :=
@@ -269,9 +267,9 @@ theorem exists_besselPotential_smulLeftCLM_eq_and_norm_le (s : ℝ) (φ : 𝓢(E
       Lp.toTemperedDistributionCLM F volume 2
   have hM (ψ : 𝓢(E, F)) : ‖(M ψ).toLp 2 volume‖ ≤ C * ‖ψ.toLp 2 volume‖ := by
     have h := SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_le s φ (Λ (-s) ψ)
-    -- Fold the multipliers in `h` back into the local abbreviation `Λ`, so that `hΛ` applies.
-    change ‖(Λ s _).toLp 2 volume‖ ≤ C * ‖(Λ s (Λ (-s) ψ)).toLp 2 volume‖ at h
-    rwa [hΛ] at h
+    simp only [Λ, SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg]
+      at h
+    simpa only [M, Λ, ContinuousLinearMap.comp_apply] using h
   have hT (ψ : 𝓢(E, F)) : T (ψ.toLp 2 volume) = ((M ψ).toLp 2 volume : 𝓢'(E, F)) := by
     simp only [T, M, ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply,
       Lp.toTemperedDistribution_toLp_eq, besselPotential_toTemperedDistributionCLM_eq,
@@ -315,6 +313,7 @@ def smulLeftCLM : H^{s, 2}(E, F) →L[ℂ] H^{s, 2}(E, F) :=
       map_smul' c u := ext (by simp) }
     (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖)
     fun u ↦ by
+      -- The `H^s` norm is the `L²` norm of the `toLp` field, which for `φ u` is the chosen `v'`.
       simp only [← norm_toLp_eq]
       exact (exists_besselPotential_smulLeftCLM_eq_and_norm_le s φ
         u.bessel_toDistr_eq_toLp).choose_spec.2

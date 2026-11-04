@@ -143,12 +143,15 @@ theorem exists_apply_eq_toTemperedDistribution_and_norm_le {μ : Measure E}
   set e : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := (SchwartzMap.toLpCLM ℂ F p μ).toLinearMap
   have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := μ) hp
   set S : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := e ∘ₗ M.toLinearMap
-  have hSe : ∀ φ, ‖S φ‖ ≤ C * ‖e φ‖ := hM
+  have hSe : ∀ φ, ‖S φ‖ ≤ C * ‖e φ‖ := fun φ ↦ by
+    simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      SchwartzMap.toLpCLM_apply] using hM φ
   refine ⟨S.extendOfNorm e f, ?_, LinearMap.norm_extendOfNorm_apply_le he _ hSe f⟩
   refine congrFun (he.equalizer (g := T) (h := fun f ↦ (S.extendOfNorm e f : 𝓢'(E, F)))
     T.continuous ((Lp.toTemperedDistributionCLM F μ p).continuous.comp
       (S.extendOfNorm e).continuous) (funext fun φ ↦ ?_)) f
   simp only [Function.comp_apply, LinearMap.extendOfNorm_eq he ⟨_, hSe⟩]
-  exact hT φ
+  simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    SchwartzMap.toLpCLM_apply] using hT φ
 
 end ContinuousLinearMap
