@@ -38,7 +38,6 @@ bump-localized coordinate functions.
 * `TauCeti.contMDiff_derivationVectorField`: the vector field of a derivation is smooth.
 * `TauCeti.exists_derivationEquivSmoothVectorField`: derivations of `C^∞(M, ℝ)` are linearly
   equivalent to smooth vector fields, compatibly with the evaluation equation.
-* `TauCeti.derivation_apply_congr_of_eventuallyEq`: derivations are local operators.
 * `TauCeti.derivationVectorField_smul`: multiplying a derivation by a smooth function multiplies
   its vector field pointwise.
 * `TauCeti.derivationVectorField_lie`: the commutator of derivations corresponds to the manifold
@@ -157,6 +156,22 @@ theorem eq_derivationVectorField_iff {δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C
   change mvfderiv I f x v = mvfderiv I f x (derivationVectorField δ x)
   exact (h f).trans (mvfderiv_derivationVectorField δ f x).symm
 
+/-- The vector field of a sum of derivations is the sum of their vector fields. -/
+@[simp]
+theorem derivationVectorField_add (δ₁ δ₂ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) (x : M) :
+    derivationVectorField (δ₁ + δ₂) x =
+      derivationVectorField δ₁ x + derivationVectorField δ₂ x := by
+  simp only [derivationVectorField, map_add]
+
+/-- The vector field of a real multiple of a derivation is the same multiple of its vector field. -/
+@[simp]
+theorem derivationVectorField_const_smul (r : ℝ) (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯)
+    (x : M) : derivationVectorField (r • δ) x = r • derivationVectorField δ x := by
+  have h : Derivation.evalAt x (r • δ) = r • Derivation.evalAt x δ := by
+    ext f
+    rfl
+  simp only [derivationVectorField, h, map_smul]
+
 /-- **Smoothness of the vector field of a derivation.** In the chart at `x₀`, the coordinates of
 `derivationVectorField δ` are the values of `δ` on bump-localized coordinate functions, which are
 smooth because `δ` takes values in smooth functions. -/
@@ -164,14 +179,8 @@ theorem contMDiff_derivationVectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ�
     ContMDiff I I.tangent ∞ (T% (derivationVectorField δ)) := by
   intro x₀
   rw [contMDiffAt_section]
-  -- A bump function at `x₀` times the extended chart is a globally smooth map with the germ of
-  -- the chart at `x₀`.
-  let β : SmoothBumpFunction I x₀ := Classical.choice inferInstance
-  let F : C^∞⟮I, M; 𝓘(ℝ, E), E⟯ :=
-    ⟨fun y ↦ β y • extChartAt I x₀ y, β.contMDiff_smul contMDiffOn_extChartAt⟩
-  have hF : (F : M → E) =ᶠ[𝓝 x₀] extChartAt I x₀ := by
-    filter_upwards [β.eventuallyEq_one] with y hy
-    simp [F, hy]
+  -- A globally smooth map with the germ of the extended chart at `x₀`.
+  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x₀
   -- Composing with the coordinates of a basis gives smooth scalar coordinate functions.
   let b := Module.finBasis ℝ E
   let φ (i : Fin (Module.finrank ℝ E)) : E →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (b.coord i)
@@ -217,19 +226,8 @@ def derivationEquivSmoothVectorField :
     Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
   LinearEquiv.ofLinearMap
     { toFun δ := ⟨derivationVectorField δ, contMDiff_derivationVectorField δ⟩
-      map_add' δ₁ δ₂ := ContMDiffSection.ext fun x ↦ by
-        rw [ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.coeFn_mk,
-          ContMDiffSection.coeFn_mk, ContMDiffSection.coeFn_mk, eq_comm,
-          eq_derivationVectorField_iff]
-        intro f
-        rw [map_add, mvfderiv_derivationVectorField, mvfderiv_derivationVectorField,
-          add_apply, ContMDiffMap.coe_add, Pi.add_apply]
-      map_smul' r δ := ContMDiffSection.ext fun x ↦ by
-        rw [ContMDiffSection.coe_smul, Pi.smul_apply, ContMDiffSection.coeFn_mk,
-          ContMDiffSection.coeFn_mk, RingHom.id_apply, eq_comm, eq_derivationVectorField_iff]
-        intro f
-        rw [map_smul, mvfderiv_derivationVectorField, smul_apply,
-          ContMDiffMap.coe_smul, Pi.smul_apply] }
+      map_add' δ₁ δ₂ := ContMDiffSection.ext (derivationVectorField_add δ₁ δ₂)
+      map_smul' r δ := ContMDiffSection.ext (derivationVectorField_const_smul r δ) }
     vectorFieldDerivation
     (by
       ext X x
@@ -261,14 +259,8 @@ theorem exists_derivationEquivSmoothVectorField :
       ∀ δ (f : C^∞⟮I, M; ℝ⟯) (x : M), δ f x = mvfderiv I f x (e δ x) :=
   ⟨derivationEquivSmoothVectorField, fun δ f x ↦ (mvfderiv_derivationVectorField δ f x).symm⟩
 
-omit [BoundarylessManifold I M] in
-/-- **Locality of derivations.** A derivation of `C^∞(M, ℝ)` evaluated at `x` depends only on the
-germ of the function at `x`. -/
-theorem derivation_apply_congr_of_eventuallyEq (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯)
-    {f g : C^∞⟮I, M; ℝ⟯} {x : M} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) : δ f x = δ g x :=
-  (Derivation.evalAt x δ).congr_of_eventuallyEq f g hfg
-
 /-- Multiplying a derivation by a smooth function multiplies its vector field pointwise. -/
+@[simp]
 theorem derivationVectorField_smul (g : C^∞⟮I, M; ℝ⟯)
     (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) (x : M) :
     derivationVectorField (g • δ) x = g x • derivationVectorField δ x := by
