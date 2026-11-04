@@ -35,6 +35,8 @@ to manifolds, including manifolds with boundary or corners.
 
 * `TauCeti.isRegularValue_iff_notMem_image`: the regular values are the complement of the image
   of the set of non-regular points.
+* `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
+  manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
@@ -311,5 +313,21 @@ theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensiona
   omega
 
 end Boundaryless
+
+/-- On a compact manifold, a continuous real function `f` has values `a < f ≤ b` everywhere that
+are regular values, lying outside its range, so that the band `f⁻¹[a, b]` is all of `M`. -/
+theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [CompactSpace M] {f : M → ℝ} (hf : Continuous f) :
+    ∃ a b : ℝ, a ≤ b ∧ IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a ∧
+      IsRegularValue I 𝓘(ℝ) f b ∧ ∀ x, f x ∈ Ioc a b := by
+  obtain ⟨l, hl⟩ := (isCompact_range hf).bddBelow
+  obtain ⟨t, ht⟩ := (isCompact_range hf).bddAbove
+  have ha (x : M) : l - 1 < f x := by linarith [hl (mem_range_self x)]
+  have hb (x : M) : f x < max (t + 1) (l - 1) :=
+    lt_max_of_lt_left (by linarith [ht (mem_range_self x)])
+  exact ⟨l - 1, max (t + 1) (l - 1), le_max_right _ _, (isClosed_Icc.preimage hf).isCompact,
+    isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (ha x).ne' hx,
+    isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 end TauCeti

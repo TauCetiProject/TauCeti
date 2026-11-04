@@ -34,9 +34,10 @@ of a finite CW pair with one `i`-cell for each critical point of index `i`
 three statements are the Morse inequalities for CW pairs. Across a band without critical points
 the relative homology vanishes, by the deformation retraction of `M_b` onto `M_a`
 (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
-A band is cut at the critical values it contains into finitely many such pieces, and the long exact
-sequence of the triple `M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are
-subadditive (`TauCeti.TopTriple.finrank_singularHomology_totalPair_le` and
+A band is cut at the critical values it contains into finitely many such pieces
+(`TauCeti.IsMorse.sublevelPair_induction`), and the long exact sequence of the triple
+`M_a ⊆ M_m ⊆ M_b` shows that dimensions and the alternating sums `Sₙ` are subadditive
+(`TauCeti.TopTriple.finrank_singularHomology_totalPair_le` and
 `TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le`), while the
 critical counts are additive. Above the dimension of `M` the connecting map in degree `n + 1`
 vanishes, since its source is zero by the weak inequalities, which turns the strong inequality
@@ -153,12 +154,10 @@ private theorem morseInequalities_of_forall_notMem (hf : IsMorse I f) {a b : ℝ
   simp [hfin, hrank, hcount]
 
 /-- **The Morse inequalities across one critical level.** If the band `f⁻¹[c - δ, c + δ]` is
-compact, then for some `0 < ε ≤ δ` the only critical points with values in `[c - ε, c + ε]` lie on
-the level `c`, and the Morse inequalities hold for `({f ≤ c + ε}, {f ≤ c - ε})`. -/
+compact, then for some `0 < ε ≤ δ` the Morse inequalities hold for `({f ≤ c + ε}, {f ≤ c - ε})`. -/
 private theorem IsMorse.exists_morseInequalities_level (hf : IsMorse I f) {c δ : ℝ} (hδ : 0 < δ)
     (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
-    ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} ∧
-      MorseInequalities I f V (c - ε) (c + ε) (by linarith) := by
+    ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ MorseInequalities I f V (c - ε) (c + ε) (by linarith) := by
   obtain ⟨δ', hδ', hδ'δ, hsub⟩ := hf.exists_criticalPoints_inter_preimage_Icc_subset hδ hcompact
   have hcompact' : IsCompact (f ⁻¹' Icc (c - δ') (c + δ')) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
@@ -167,7 +166,7 @@ private theorem IsMorse.exists_morseInequalities_level (hf : IsMorse I f) {c δ 
     hf.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair hδ' hcompact'
   have hsubε : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} :=
     fun x hx ↦ hsub ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith) hx.2⟩
-  refine ⟨ε, hε, hεδ'.trans hδ'δ, hsubε, fun n ↦ ?_⟩
+  refine ⟨ε, hε, hεδ'.trans hδ'δ, fun n ↦ ?_⟩
   -- The cells of `C` are counted by the critical points on the level `c`, which are those with
   -- values in `(c - ε, c + ε]`.
   have hcount (i : ℕ) : Nat.card (cell C i) = bandCount I f (c - ε) (c + ε) i := by
@@ -248,57 +247,18 @@ private theorem MorseInequalities.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m �
       T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V n hzero
     rw [h, he₁ hn, he₂ hn, hsum, mul_add]
 
-/-- **The Morse inequalities across a compact band between regular values**, by induction on the
-number of critical points in the band. -/
+/-- **The Morse inequalities across a compact band between regular values**, by induction over
+the critical levels of the band. -/
 private theorem IsMorse.morseInequalities (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) : MorseInequalities I f V a b hab := by
-  have hfc : Continuous f := hf.contMDiff.continuous
-  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
-  suffices ∀ N : ℕ, ∀ a, ∀ hab : a ≤ b, (criticalPoints I f ∩ f ⁻¹' Icc a b).ncard = N →
-      IsCompact (f ⁻¹' Icc a b) → a ∉ f '' criticalPoints I f → MorseInequalities I f V a b hab
-    from this _ a hab rfl hcompact ha
-  intro N
-  induction N using Nat.strong_induction_on with
-  | _ N ih =>
-  intro a hab hN hcompact ha
-  have hS := hf.finite_criticalPoints_inter hcompact
-  rcases (criticalPoints I f ∩ f ⁻¹' Icc a b).eq_empty_or_nonempty with hS₀ | hSne
-  · exact morseInequalities_of_forall_notMem V hf hab hcompact fun x hx hxab ↦
-      hS₀.subset ⟨hx, hxab⟩
-  -- Cut the band just above the lowest critical value `c` in it.
-  obtain ⟨p, ⟨hp, hpab⟩, hpmin⟩ := hS.isCompact.exists_isMinOn hSne hfc.continuousOn
-  have hac : a < f p := hpab.1.lt_of_ne fun h ↦ ha ⟨p, hp, h.symm⟩
-  have hcb : f p < b := hpab.2.lt_of_ne fun h ↦ hb ⟨p, hp, h⟩
-  obtain ⟨δ, hδ, hδa, hδb⟩ : ∃ δ, 0 < δ ∧ a < f p - δ ∧ f p + δ < b :=
-    ⟨min (f p - a) (b - f p) / 2, half_pos (lt_min (sub_pos.2 hac) (sub_pos.2 hcb)),
-      by linarith [min_le_left (f p - a) (b - f p)], by linarith [min_le_right (f p - a) (b - f p)]⟩
-  have hcompact' {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
-      (preimage_mono (Icc_subset_Icc hs ht))
-  obtain ⟨ε, hε, hεδ, hsub, hlevel⟩ :=
-    hf.exists_morseInequalities_level V hδ (hcompact' hδa.le hδb.le)
-  -- Below `c - ε` the band holds no critical point, since `c` is the lowest critical value.
-  have hlow : MorseInequalities I f V a (f p - ε) (by linarith) :=
-    morseInequalities_of_forall_notMem V hf _ (hcompact' le_rfl (by linarith))
-      fun x hx hxI ↦ by
-        have : f p ≤ f x := hpmin ⟨hx, hxI.1, by linarith [hxI.2]⟩
-        linarith [hxI.2]
-  -- Above `c + ε` the band holds fewer critical points, missing `p`.
-  have hlt : (criticalPoints I f ∩ f ⁻¹' Icc (f p + ε) b).ncard < N := by
-    rw [← hN]
-    refine ncard_lt_ncard ⟨fun x hx ↦ ⟨hx.1, by linarith [hx.2.1], hx.2.2⟩,
-      fun h ↦ ?_⟩ hS
-    have := (h ⟨hp, hpab⟩).2.1
-    linarith
-  have hup : MorseInequalities I f V (f p + ε) b (by linarith) :=
-    ih _ hlt _ _ rfl (hcompact' (by linarith) le_rfl) fun ⟨x, hx, hxc⟩ ↦ by
-      have := hsub ⟨hx, by rw [hxc]; linarith, hxc.le⟩
-      rw [mem_preimage, mem_singleton_iff, hxc] at this
-      linarith
-  have hfin {t : ℝ} (ht : t ≤ b) : (criticalPoints I f ∩ f ⁻¹' Ioc a t).Finite :=
-    hS.subset fun x hx ↦ ⟨hx.1, hx.2.1.le, hx.2.2.trans ht⟩
-  exact (hlow.trans V (hfin (by linarith)) hlevel).trans V (hfin le_rfl) hup
+    (hb : IsRegularValue I 𝓘(ℝ) f b) : MorseInequalities I f V a b hab :=
+  hf.sublevelPair_induction (fun s t hst ↦ MorseInequalities I f V s t hst)
+    (fun _ _ hst _ _ hcompact' hcrit ↦ morseInequalities_of_forall_notMem V hf hst hcompact' hcrit)
+    (fun _ _ hδ _ _ hcompact' _ ↦ hf.exists_morseInequalities_level V hδ hcompact')
+    (fun _ _ _ _ _ _ _ hcompact' _ _ _ h₁ h₂ ↦ h₁.trans V
+      ((hf.finite_criticalPoints_inter hcompact').subset fun _ hx ↦
+        ⟨hx.1, Ioc_subset_Icc_self hx.2⟩) h₂)
+    hab hcompact ha hb
 
 /-- **Finiteness of relative homology for a band.** Let `f` be a Morse function, and `a ≤ b`
 regular values with compact band `f⁻¹[a, b]`. Then the relative singular homology
@@ -361,31 +321,17 @@ private theorem IsMorse.exists_morseInequalities_univ (hf : IsMorse I f) :
       (∀ n, Nonempty (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
         (TopCat.of M) ≅ (sublevelPair f hab).singularHomology V n)) ∧
       ∀ i, bandCount I f a b i = (criticalCount I f i).toNat := by
-  have hfc : Continuous f := hf.contMDiff.continuous
-  obtain ⟨l, hl⟩ := (isCompact_range hfc).bddBelow
-  obtain ⟨t, ht⟩ := (isCompact_range hfc).bddAbove
-  have ha (x : M) : l - 1 < f x := by linarith [hl (mem_range_self x)]
-  have hb (x : M) : f x < max (t + 1) (l - 1) :=
-    lt_max_of_lt_left (by linarith [ht (mem_range_self x)])
-  have hab : l - 1 ≤ max (t + 1) (l - 1) := le_max_right _ _
-  have hcrit {c : ℝ} (hc : ∀ x, f x ≠ c) : IsRegularValue I 𝓘(ℝ) f c :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, _, hx⟩ ↦ hc x hx
-  refine ⟨l - 1, max (t + 1) (l - 1), hab,
-    hf.morseInequalities V hab (isClosed_Icc.preimage hfc).isCompact
-      (hcrit fun x ↦ (ha x).ne') (hcrit fun x ↦ (hb x).ne), fun n ↦ ?_, fun i ↦ ?_⟩
-  · -- `{f ≤ a}` is empty and `{f ≤ b}` is all of `M`.
-    have : IsEmpty (sublevelPair f hab).snd :=
-      ⟨fun (x : {x : M | f x ≤ l - 1}) ↦ (ha x).not_ge x.2⟩
-    have hπ : IsIso ((sublevelPair f hab).singularHomologyπ V n) := inferInstance
-    exact ⟨((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).mapIso
-      (TopCat.isoOfHomeo ((Homeomorph.setCongr (eq_univ_of_forall fun x ↦ (hb x).le)).trans
-        (Homeomorph.Set.univ M))).symm ≪≫ @asIso _ _ _ _ _ hπ⟩
-  · rw [bandCount, criticalCount_def, ← ncard_def]
-    congr 1
-    ext x
-    simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
-    have : f x ∈ Ioc (l - 1) (max (t + 1) (l - 1)) := ⟨ha x, (hb x).le⟩
-    tauto
+  obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
+    exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
+  refine ⟨a, b, hab, hf.morseInequalities V hab hcompact ha hb,
+    fun n ↦ nonempty_singularHomology_iso_sublevelPair hab (fun x ↦ (hf' x).1)
+      (fun x ↦ (hf' x).2) V n, fun i ↦ ?_⟩
+  rw [bandCount, criticalCount_def, ← ncard_def]
+  congr 1
+  ext x
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
+  have := hf' x
+  tauto
 
 /-- **Finiteness of homology.** The singular homology of a compact boundaryless manifold carrying
 a Morse function, with coefficients in a finite-dimensional module `V`, is finite-dimensional in

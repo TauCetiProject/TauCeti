@@ -51,7 +51,6 @@ freeness (`TauCeti.TopTriple.free_singularHomology_totalPair`).
 
 ## Main results
 
-* `TauCeti.IsMorse.sublevelPair_induction`: induction over the critical levels of a compact band.
 * `TauCeti.IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le`,
   `TauCeti.IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le` and
   `TauCeti.IsMorse.isZero_singularHomology_of_isProperMap_of_manifoldMorseIndex_le`: vanishing of
@@ -82,84 +81,6 @@ namespace TauCeti
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- **Induction over the critical levels of a compact band.** Let `f` be a Morse function and
-`a ≤ b` regular values with compact band `f⁻¹[a, b]`. A property `P s t` of the values `s ≤ t`
-holds for `a` and `b` if, for values in `[a, b]`:
-
-* it holds whenever the band `f⁻¹[s, t]` contains no critical point;
-* across each level `c`, for every `δ > 0` such that `f⁻¹[c - δ, c + δ]` lies in the interior of
-  the band and has all its critical points on the level `c`, it holds for `c - ε` and `c + ε` for
-  some `0 < ε ≤ δ`;
-* it holds for `s ≤ t` as soon as it holds for `s ≤ m` and `m ≤ t`, where `s`, `m` and `t` are
-  regular values.
-
-The cases supply the compactness of the bands involved. -/
-theorem IsMorse.sublevelPair_induction (hf : IsMorse I f) {a b : ℝ}
-    (P : ∀ s t : ℝ, s ≤ t → Prop)
-    (hfree : ∀ s t (hst : s ≤ t), a ≤ s → t ≤ b → IsCompact (f ⁻¹' Icc s t) →
-      (∀ x ∈ criticalPoints I f, f x ∉ Icc s t) → P s t hst)
-    (hlevel : ∀ c δ, 0 < δ → a < c - δ → c + δ < b → IsCompact (f ⁻¹' Icc (c - δ) (c + δ)) →
-      criticalPoints I f ∩ f ⁻¹' Icc (c - δ) (c + δ) ⊆ f ⁻¹' {c} →
-      ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ P (c - ε) (c + ε) (by linarith))
-    (htrans : ∀ s m t (hsm : s ≤ m) (hmt : m ≤ t), a ≤ s → t ≤ b →
-      IsCompact (f ⁻¹' Icc s t) → IsRegularValue I 𝓘(ℝ) f s → IsRegularValue I 𝓘(ℝ) f m →
-      IsRegularValue I 𝓘(ℝ) f t → P s m hsm → P m t hmt → P s t (hsm.trans hmt))
-    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) : P a b hab := by
-  have hfc : Continuous f := hf.contMDiff.continuous
-  have hcompact' {s t : ℝ} (hs : a ≤ s) (ht : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
-      (preimage_mono (Icc_subset_Icc hs ht))
-  have hreg {s : ℝ} (hs : ∀ x ∈ criticalPoints I f, f x ≠ s) : IsRegularValue I 𝓘(ℝ) f s :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxs⟩ ↦ hs x hx hxs
-  have hreg' {s : ℝ} (hs : IsRegularValue I 𝓘(ℝ) f s) : ∀ x ∈ criticalPoints I f, f x ≠ s :=
-    fun x hx hxs ↦ isRegularValue_iff_notMem_image_criticalPoints.1 hs ⟨x, hx, hxs⟩
-  -- Induct on the number of critical points in the band `f⁻¹[s, b]`, cutting it just above its
-  -- lowest critical value.
-  suffices ∀ N : ℕ, ∀ s, ∀ hsb : s ≤ b, a ≤ s → (criticalPoints I f ∩ f ⁻¹' Icc s b).ncard = N →
-      IsRegularValue I 𝓘(ℝ) f s → P s b hsb from this _ a hab le_rfl rfl ha
-  intro N
-  induction N using Nat.strong_induction_on with
-  | _ N ih =>
-  intro s hsb has hN hs
-  have hS := hf.finite_criticalPoints_inter (hcompact' has le_rfl)
-  rcases (criticalPoints I f ∩ f ⁻¹' Icc s b).eq_empty_or_nonempty with hS₀ | hSne
-  · exact hfree s b hsb has le_rfl (hcompact' has le_rfl) fun x hx hxsb ↦
-      hS₀.subset ⟨hx, hxsb⟩
-  obtain ⟨p, ⟨hp, hpsb⟩, hpmin⟩ := hS.isCompact.exists_isMinOn hSne hfc.continuousOn
-  have hsc : s < f p := hpsb.1.lt_of_ne fun h ↦ hreg' hs p hp h.symm
-  have hcb : f p < b := hpsb.2.lt_of_ne fun h ↦ hreg' hb p hp h
-  obtain ⟨δ, hδ, hδs, hδb⟩ : ∃ δ, 0 < δ ∧ s < f p - δ ∧ f p + δ < b :=
-    ⟨min (f p - s) (b - f p) / 2, half_pos (lt_min (sub_pos.2 hsc) (sub_pos.2 hcb)),
-      by linarith [min_le_left (f p - s) (b - f p)], by linarith [min_le_right (f p - s) (b - f p)]⟩
-  obtain ⟨δ', hδ', hδ'δ, hsub⟩ :=
-    hf.exists_criticalPoints_inter_preimage_Icc_subset hδ (hcompact' (by linarith) hδb.le)
-  obtain ⟨ε, hε, hεδ', hlev⟩ := hlevel (f p) δ' hδ' (by linarith) (by linarith)
-    (hcompact' (by linarith) (by linarith)) hsub
-  -- The values `f p ± ε` are regular, since the critical points near the level `f p` lie on it.
-  have hregε {t : ℝ} (ht : t ∈ Icc (f p - δ') (f p + δ')) (htp : t ≠ f p) :
-      IsRegularValue I 𝓘(ℝ) f t :=
-    hreg fun x hx hxt ↦ htp <| by
-      have : f x = f p := hsub ⟨hx, by rw [mem_preimage, hxt]; exact ht⟩
-      rw [← hxt, this]
-  have hlo := hregε (t := f p - ε) ⟨by linarith, by linarith⟩ (by linarith)
-  have hhi := hregε (t := f p + ε) ⟨by linarith, by linarith⟩ (by linarith)
-  -- Below `f p - ε` the band holds no critical point, since `f p` is the lowest critical value.
-  have hlow : P s (f p - ε) (by linarith) :=
-    hfree _ _ _ has (by linarith) (hcompact' has (by linarith)) fun x hx hxI ↦ by
-      have : f p ≤ f x := hpmin ⟨hx, hxI.1, by linarith [hxI.2]⟩
-      linarith [hxI.2]
-  -- Above `f p + ε` the band holds fewer critical points, missing `p`.
-  have hlt : (criticalPoints I f ∩ f ⁻¹' Icc (f p + ε) b).ncard < N := by
-    rw [← hN]
-    refine ncard_lt_ncard ⟨fun x hx ↦ ⟨hx.1, by linarith [hx.2.1], hx.2.2⟩, fun h ↦ ?_⟩ hS
-    have := (h ⟨hp, hpsb⟩).2.1
-    linarith
-  have hup : P (f p + ε) b (by linarith) := ih _ hlt _ _ (by linarith) rfl hhi
-  exact htrans _ _ _ _ _ has le_rfl (hcompact' has le_rfl) hs hhi hb
-    (htrans _ _ _ _ _ has (by linarith) (hcompact' has (by linarith)) hs hlo hhi hlow hlev) hup
 
 /-- **Homology vanishes above the largest index.** Let `f` be a Morse function, `a ≤ b` regular
 values with compact band `f⁻¹[a, b]`, and suppose that every critical point in the band has index
@@ -237,20 +158,6 @@ theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hf 
     have : Module.Free k ((TopTriple.outerPair.obj T).singularHomology V d : ModuleCat k) := h₂
     exact T.free_singularHomology_totalPair V d hzero
 
-omit [T2Space M] in
-/-- If `a < f ≤ b` everywhere, the relative homology of `({f ≤ b}, {f ≤ a}) = (M, ∅)` is the
-singular homology of `M`. -/
-private theorem nonempty_singularHomology_iso_sublevelPair {a b : ℝ} (hab : a ≤ b)
-    (ha : ∀ x, a < f x) (hb : ∀ x, f x ≤ b) {A : Type v} [Category.{w} A] [HasCoproducts.{u} A]
-    [Preadditive A] [CategoryWithHomology A] (R : A) (n : ℕ) :
-    Nonempty (((AlgebraicTopology.singularHomologyFunctor A n).obj R).obj (TopCat.of M) ≅
-      (sublevelPair f hab).singularHomology R n) := by
-  have : IsEmpty (sublevelPair f hab).snd := ⟨fun (x : {x : M | f x ≤ a}) ↦ (ha x).not_ge x.2⟩
-  have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) := inferInstance
-  exact ⟨((AlgebraicTopology.singularHomologyFunctor A n).obj R).mapIso
-    (TopCat.isoOfHomeo ((Homeomorph.setCongr (eq_univ_of_forall hb)).trans
-      (Homeomorph.Set.univ M))).symm ≪≫ @asIso _ _ _ _ _ hπ⟩
-
 /-- **Homology vanishes above the largest index, for a proper function.** If every critical point
 of a proper Morse function `f` bounded below has index at most `d`, then the singular homology
 `Hₙ(M; R)` vanishes for every `n > d` and every coefficient object `R` of an abelian category with
@@ -290,22 +197,6 @@ theorem IsMorse.isZero_singularHomology_of_isProperMap_of_manifoldMorseIndex_le
 section Compact
 
 variable [CompactSpace M]
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- On a compact manifold there are values `a < f ≤ b` everywhere with no critical point on the
-levels `a` and `b`, so that the band `f⁻¹[a, b]` is all of `M`. -/
-private theorem exists_isRegularValue_forall_mem_Ioc (hf : Continuous f) :
-    ∃ a b : ℝ, a ≤ b ∧ IsCompact (f ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) f a ∧
-      IsRegularValue I 𝓘(ℝ) f b ∧ ∀ x, f x ∈ Ioc a b := by
-  obtain ⟨l, hl⟩ := (isCompact_range hf).bddBelow
-  obtain ⟨t, ht⟩ := (isCompact_range hf).bddAbove
-  have ha (x : M) : l - 1 < f x := by linarith [hl (mem_range_self x)]
-  have hb (x : M) : f x < max (t + 1) (l - 1) :=
-    lt_max_of_lt_left (by linarith [ht (mem_range_self x)])
-  have hreg {c : ℝ} (hc : ∀ x, f x ≠ c) : IsRegularValue I 𝓘(ℝ) f c :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, _, hx⟩ ↦ hc x hx
-  exact ⟨l - 1, max (t + 1) (l - 1), le_max_right _ _, (isClosed_Icc.preimage hf).isCompact,
-    hreg fun x ↦ (ha x).ne', hreg fun x ↦ (hb x).ne, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 /-- **Homology of a compact manifold vanishes above the largest index.** If every critical point
 of a Morse function on a compact boundaryless manifold `M` has index at most `d`, then the singular
