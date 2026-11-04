@@ -69,6 +69,8 @@ lets the orientation of a solid torus neighbourhood be read off its derivative a
   `S¹ × S¹` embeds.
 * `TauCeti.IsSolidTorusNeighborhood.comp`: solid torus neighbourhoods are carried along open
   embeddings of the ambient space.
+* `TauCeti.IsSolidTorusNeighborhood.comp_prodMap`: and along reparametrizations of the loop by
+  homeomorphisms of the circle.
 * `TauCeti.IsSolidTorusNeighborhood.apply_mem_range_iff`: a point of the solid torus lies on the
   knot exactly when it lies on the core.
 * `TauCeti.IsSolidTorusNeighborhood.frontier_subset_compl_range`: the boundary torus of the exterior
@@ -280,6 +282,17 @@ theorem comp {e : X → Y} (he : IsOpenEmbedding e) (h : IsSolidTorusNeighborhoo
   isOpen_image := by
     rw [image_comp]
     exact he.isOpenMap _ h.isOpen_image
+
+/-- A solid torus neighbourhood is carried along a reparametrization of the loop by a
+homeomorphism `g` of the circle: `(w, z) ↦ Φ (w, g z)` is a solid torus neighbourhood of `f ∘ g`. -/
+theorem comp_prodMap (h : IsSolidTorusNeighborhood f Φ) (g : Circle ≃ₜ Circle) :
+    IsSolidTorusNeighborhood (f ∘ g) (Φ ∘ Prod.map id g) where
+  isEmbedding := h.isEmbedding.comp ((Homeomorph.refl _).prodCongr g).isEmbedding
+  apply_zero z := h.apply_zero (g z)
+  isOpen_image := by
+    rw [image_comp]
+    convert h.isOpen_image using 2
+    exact ((Homeomorph.refl _).prodCongr g).image_eq_preimage_symm _
 
 /-- In a Hausdorff ambient space, the frontier of the image of the open solid torus is the image
 of the boundary torus `{w | ‖w‖ = 1} × S¹`. This set is also the frontier of the exterior of the
