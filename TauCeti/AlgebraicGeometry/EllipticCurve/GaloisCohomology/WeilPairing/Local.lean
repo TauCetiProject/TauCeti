@@ -21,11 +21,8 @@ Here perfection is stated as bijectivity of the curried map: every additive char
 study annihilators of local Kummer images; orthogonality of those images is a further result,
 not part of the perfection statement.
 
-We use `TauCeti.ClassFieldTheory.dualityMap1_kummerCoeff_bijective` for general finite discrete
-Galois modules, the Weil self-duality of `E[m]`, and the local invariant identification
-`TauCeti.ClassFieldTheory.h2MuEquivZMod`. In particular, we do not assume that `K` contains the
-torsion or the roots of unity. In mixed characteristic, `m` may be divisible by the residue
-characteristic.
+No assumption that `K` contains the torsion or the roots of unity is required. In mixed
+characteristic, `m` may be divisible by the residue characteristic.
 
 ## References
 

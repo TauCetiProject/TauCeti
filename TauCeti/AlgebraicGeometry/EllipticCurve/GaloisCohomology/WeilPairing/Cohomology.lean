@@ -8,6 +8,10 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
+-- Proof-only: identify `dualityMap1` with the evaluation cup in the naturality theorem.
+import all TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
+
 /-!
 # The Weil pairing on first Galois cohomology
 
@@ -17,8 +21,7 @@ For an elliptic curve `W` over a field `K` and `m` invertible in `K`, the Weil p
 
 The resulting cup product pairs two classes of `H¹(K, E[m])` into `H²(K, μ_m)`. On cocycles it
 is `(g, h) ↦ e_m(a(g), g • b(h))`. This is the pairing used in local duality and in comparing
-Kummer images with their annihilators. Its comparison with the general evaluation duality map
-allows local Tate duality to apply without choosing a torsion basis.
+Kummer images with their annihilators.
 
 ## References
 
@@ -100,22 +103,20 @@ theorem torsionH1WeilPairing_eq_explicitCup11
         (KummerCoeff K m) (W.torsionCoeffWeilPairing m hm) continuous_of_discreteTopology
         (W.torsionCoeffWeilPairing_smul m hm) a b := by
   have := hm.neZero_natCast
-  induction a using QuotientAddGroup.induction_on with
-  | _ a =>
-    induction b using QuotientAddGroup.induction_on with
-    | _ b =>
-      rw [torsionH1WeilPairing_eq_dualityMap1, explicitCoeff1_mk, dualityMap1_mk,
-        explicitCup11_mk]
-      congr 1
-      apply Subtype.ext
-      funext q
-      simp only [AddMonoidHom.flip_apply, InternalHom.evalPairing_apply]
-      -- The coefficient-map formula carries an identity group map and the inherited torsion
-      -- action; default transparency is needed to match its equivariance proof.
-      erw [cocyclesMap1_apply]
-      simp only [ContinuousMonoidHom.coe_id, id_eq]
-      erw [← map_smul (W.torsionCoeffWeilDual m hm), toAddMonoidHom_torsionCoeffWeilDual]
-      rfl
+  have h := explicitCoeff2_explicitCup11 (AbsoluteGaloisGroup K)
+    (W.TorsionCoeff m) (W.TorsionCoeff m) (KummerCoeff K m)
+    (W.TorsionCoeff m) (InternalHom (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
+      (KummerCoeff K m)) (KummerCoeff K m)
+    (W.torsionCoeffWeilPairing m hm) continuous_of_discreteTopology
+    (W.torsionCoeffWeilPairing_smul m hm)
+    (InternalHom.evalPairing (AbsoluteGaloisGroup K)).flip continuous_of_discreteTopology
+    (InternalHom.evalPairing_flip_equivariant (G := AbsoluteGaloisGroup K))
+    (DistribMulActionHom.id _) (W.torsionCoeffWeilDual m hm) (DistribMulActionHom.id _)
+    continuous_id continuous_of_discreteTopology continuous_id
+    (fun _ _ ↦ by simp only [DistribMulActionHom.id_apply, AddMonoidHom.flip_apply,
+      InternalHom.evalPairing_apply, toAddMonoidHom_torsionCoeffWeilDual]) a b
+  simpa only [explicitCoeff2_id, explicitCoeff1_id, AddMonoidHom.id_apply,
+    torsionH1WeilPairing_eq_dualityMap1, dualityMap1] using h.symm
 
 end WeierstrassCurve
 
