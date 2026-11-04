@@ -189,6 +189,19 @@ def dMinus (s r σ K τ : ℝ) : ℝ :=
 theorem dMinus_def (s r σ K τ : ℝ) : dMinus s r σ K τ = dPlus s r σ K τ - σ * √τ :=
   (rfl)
 
+/-- The Gaussian coordinate `d₊` is jointly measurable in spot and remaining maturity. -/
+theorem measurable_dPlus (r σ K : ℝ) :
+    Measurable (fun p : ℝ × ℝ => dPlus p.1 r σ K p.2) := by
+  simp only [dPlus_def]
+  exact ((measurable_fst.div_const K).log.add
+    (measurable_const.mul measurable_snd)).div (measurable_const.mul measurable_snd.sqrt)
+
+/-- The Gaussian coordinate `d₋` is jointly measurable in spot and remaining maturity. -/
+theorem measurable_dMinus (r σ K : ℝ) :
+    Measurable (fun p : ℝ × ℝ => dMinus p.1 r σ K p.2) := by
+  simp only [dMinus_def]
+  exact (measurable_dPlus r σ K).sub (measurable_const.mul measurable_snd.sqrt)
+
 /-- For `τ ≥ 0`, `d₋ = (log (s / K) + (r - σ² / 2) τ) / (σ √τ)`. When `σ √τ = 0` both sides
 vanish. -/
 theorem dMinus_eq (s r σ K : ℝ) (hτ : 0 ≤ τ) :
