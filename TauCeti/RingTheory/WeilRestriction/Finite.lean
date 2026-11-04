@@ -14,7 +14,8 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 If `B` is a finite product of copies of `A`, Weil restriction along `B/A` takes a finite,
 finitely presented `B`-algebra to a finite `A`-algebra. In particular, the scheme of maps from
 a finite constant scheme to a finite affine scheme is finite. This gives finiteness of the
-schemes of homomorphisms and generators of finite affine group schemes.
+schemes of homomorphisms from finite constant monoid schemes to finite, finitely presented
+affine monoid schemes, and of Katz–Mazur generator schemes for finite free affine monoid schemes.
 
 The splitting hypothesis matters: restriction along a nonreduced finite free algebra need
 not preserve finiteness. Here the coordinate evaluations are algebra maps, so evaluations
