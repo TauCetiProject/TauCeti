@@ -211,10 +211,6 @@ variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → �
 private theorem topCatHom_apply {X Y : TopCat.{u}} (g : X ⟶ Y) (x : X) : g.hom x = g x :=
   (rfl)
 
-private theorem topCatHom_comp_apply {X Y Z : TopCat.{u}} (g₁ : X ⟶ Y) (g₂ : Y ⟶ Z) (x : X) :
-    (g₁ ≫ g₂).hom x = g₂ (g₁ x) :=
-  (rfl)
-
 /-- On the boundary sphere, the characteristic map of a Morse cell is its attaching map. -/
 private theorem coe_morseCharacteristicMap_diskBoundaryInclusion {k : ℕ}
     {ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n) (hε : 0 ≤ ε)
@@ -444,7 +440,7 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
             prop' t a ha := ?_ }⟩
   -- At time `0`, on the disc of `i` the cylinder path is `x ↦ (diskTime x, diskRadial x)`, along
   -- which `K i` is `Φ₀ ∘ E` on both pieces of `E`.
-  · rw [topCatHom_comp_apply]
+  · rw [topCatHom_apply, TopCat.comp_app]
     obtain ⟨x, rfl⟩ | ha := hcover.symm ▸ mem_univ a
     · refine Subtype.ext ?_
       rw [hG₀, hlower, morseCellReattachment_morseCellAttachmentIncl,
@@ -459,7 +455,7 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
         (diskBoundaryInclusion_diskRadialSphere ⟨w, hw⟩).symm
     · rw [morseCellReattachmentFun, dite_eq_right hw,
         coe_morseCellComparison_morseCellAttachmentCell, diskTime_of_norm_le (not_le.1 hw).le,
-        ContinuousMap.Homotopy.apply_one, topCatHom_comp_apply]
+        ContinuousMap.Homotopy.apply_one, topCatHom_apply, TopCat.comp_app]
       exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ i) (hf₀ i) (hk i) hε _
   -- At time `1` the cylinder path is `x ↦ (0, x)`, along which `K i` is `χ₁ i`.
   · rw [topCatHom_apply]
@@ -472,7 +468,7 @@ theorem homotopicRel_morseCellReattachment_comp_morseCellComparison :
       ContinuousMap.Homotopy.apply_zero]
     exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₁ i) (hf₁ i) (hk i) hε _
   -- On the lower sublevel the homotopy is constant.
-  · rw [topCatHom_comp_apply]
+  · rw [topCatHom_apply, TopCat.comp_app]
     obtain ⟨x, rfl⟩ := ha
     refine Subtype.ext ?_
     dsimp only [ContinuousMap.coe_mk]
