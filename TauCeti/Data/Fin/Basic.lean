@@ -51,6 +51,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
+* `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
@@ -166,6 +167,13 @@ theorem card_filter_castSucc_lt_succ {n : ℕ} (S : Finset (Fin n)) (i : Fin n) 
     tauto
   rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
   split_ifs with hi <;> simp [filter_eq', hi]
+
+/-- At most `j` elements of a set of indices have value below `j`. -/
+theorem card_filter_val_lt_le {n : ℕ} (S : Finset (Fin n)) (j : ℕ) : #{s ∈ S | s.val < j} ≤ j :=
+  calc #{s ∈ S | s.val < j} ≤ #{s : Fin n | s.val < j} :=
+        card_le_card (filter_subset_filter _ (subset_univ S))
+    _ = min n j := Fin.card_filter_val_lt
+    _ ≤ j := min_le_right n j
 
 end Finset
 
