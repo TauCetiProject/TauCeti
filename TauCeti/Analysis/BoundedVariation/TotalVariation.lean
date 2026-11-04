@@ -59,6 +59,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn_le_liminf_of_tendsto_integral` and
   `TauCeti.totalVariationOn_le_liminf`: lower semicontinuity under distributional convergence and
   under convergence in `L¹_loc(Ω)`.
+* `TauCeti.tendsto_totalVariationOn_of_le_add`: variations converge along an `L¹_loc(Ω)`
+  approximation whose variations exceed the limit's by amounts tending to zero.
 * `TauCeti.totalVariationOn_le_of_tendsto_L1`: a total-variation bound holding frequently along
   a filter is preserved under convergence in `L¹(Ω)` along it.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
@@ -400,6 +402,22 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
     ← integral_sub (by simpa using integrable_smul_of_locallyIntegrableOn hi ψ)
       (by simpa using integrable_smul_of_locallyIntegrableOn hu₀ ψ)]
   simpa only [mul_sub] using hbound fun x => u i x - u₀ x
+
+/-- **Convergence of variations from an upper bound.** If `w i → u` in `L¹_loc(Ω)` and the
+variations of the `w i` exceed that of `u` by amounts tending to zero, then the variations converge.
+Lower semicontinuity (`totalVariationOn_le_liminf`) gives the lower bound. -/
+theorem tendsto_totalVariationOn_of_le_add [OpensMeasurableSpace E] {ι : Type*} {l : Filter ι}
+    [l.NeBot] {w : ι → E → ℝ} (hw : ∀ i, LocallyIntegrableOn (w i) Ω μ)
+    (hu : LocallyIntegrableOn u Ω μ)
+    (hL : ∀ K, IsCompact K → K ⊆ Ω →
+      Tendsto (fun i => ∫⁻ x in K, ‖w i x - u x‖ₑ ∂μ) l (𝓝 0))
+    {b : ι → ℝ≥0∞} (hb : Tendsto b l (𝓝 0))
+    (hwb : ∀ i, totalVariationOn μ Ω (w i) ≤ totalVariationOn μ Ω u + b i) :
+    Tendsto (fun i => totalVariationOn μ Ω (w i)) l (𝓝 (totalVariationOn μ Ω u)) := by
+  refine tendsto_of_le_liminf_of_limsup_le (totalVariationOn_le_liminf (.of_forall hw) hu hL) ?_
+  have hbound := tendsto_const_nhds.add hb (a := totalVariationOn μ Ω u)
+  rw [add_zero] at hbound
+  exact (limsup_le_limsup (.of_forall hwb)).trans_eq hbound.limsup_eq
 
 /-- A bound on the total variation holding frequently along `l` is preserved under convergence
 in `L¹(Ω)` along `l`. -/
