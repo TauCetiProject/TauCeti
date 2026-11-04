@@ -18,11 +18,9 @@ exactly the tripled weight-torus parametrization, after removing the universe li
 the four node indices. Maximality holds on every geometric fiber, not just among tori
 defined over the ground field.
 
-This supplies the chosen torus required by the intrinsic root-space and pinning interfaces.
-It does not identify the generated carrier with the specialization of the integral carrier
-or with an independently pinned simply connected group. The coordinate reindexing and its
-point equation work over arbitrary commutative rings; the chosen maximal torus is constructed
-only over fields, where the generated-carrier comparison applies to every field extension.
+The coordinate reindexing and its point equation work over arbitrary commutative rings;
+the chosen maximal torus is constructed only over fields, where the generated-carrier
+comparison applies to every field extension.
 
 ## Main declarations
 
@@ -35,8 +33,6 @@ only over fields, where the generated-carrier comparison applies to every field 
 ## References
 
 * B. Conrad, *Reductive Group Schemes* (2014), Definition 3.2.1 and Example 3.2.3.
-* The coordinate adapter follows
-  `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.MaximalTorus`.
 * Geometric maximality uses the existing generated tripled D₄ weight-torus maximality
   and free-base-change comparison.
 -/
