@@ -239,9 +239,10 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- The Ritz residual of a finite-dimensional isometric trial map is orthogonal to the trial
 space: `X† (A X - X (X† A X)) = 0`.
 
-Adapted from the Kitware DKPS formalization,
-`DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
-Apache-2.0). -/
+This is the linear-map form of `ContinuousLinearMap.adjoint_comp_sylvester_compression`.
+The corresponding DKPS statement is in
+`ForTauCeti/Analysis/InnerProductSpace/Residual/Ritz.lean` (Jon Crall and GPT 5.6 High;
+Kitware, Apache-2.0); the proof here uses the accepted continuous-map theorem. -/
 theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
     (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
       (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by

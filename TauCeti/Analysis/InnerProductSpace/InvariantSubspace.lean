@@ -162,9 +162,9 @@ theorem Module.End.isReducing_adjoint_iff [FiniteDimensional 𝕜 E] {A : End �
 `A X - X M` is the same as forming the residual of the projected trial map. No isometry or
 finite-dimensionality hypothesis is needed.
 
-Adapted from the Kitware DKPS formalization,
-`DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
-Apache-2.0). -/
+The corresponding DKPS projected-residual statement is in
+`ForTauCeti/Analysis/InnerProductSpace/Residual/AngleEmbedding.lean` (Jon Crall and
+GPT 5.6 High; Kitware, Apache-2.0). The proof uses invariant-projection commutation. -/
 theorem LinearMap.IsSymmetric.sylvester_starProjection_orthogonal_comp
     {F : Type*} [AddCommGroup F] [Module 𝕜 F] {A : E →ₗ[𝕜] E}
     (hA : A.IsSymmetric) {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
