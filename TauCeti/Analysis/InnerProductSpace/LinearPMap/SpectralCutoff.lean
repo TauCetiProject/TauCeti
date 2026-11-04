@@ -37,7 +37,7 @@ the norm. For a nonnegative operator the eigenvectors with nonpositive eigenvalu
 * `LinearPMap.HasCompactResolvent.northcott_norm_of_orthonormal`: the eigenvalues attached to an
   orthonormal family of eigenvectors of an operator with compact resolvent have only finitely many
   members of norm at most `R`, for every `R`.
-* `LinearPMap.HasCompactResolvent.exists_pos_forall_abs_lt_imp_eq_zero`: `0` is isolated among real
+* `LinearPMap.HasCompactResolvent.exists_pos_forall_norm_lt_imp_eq_zero`: `0` is isolated among the
   eigenvalues attached to an orthonormal family of eigenvectors.
 * `LinearPMap.IsFormalAdjoint.mul_norm_sq_le_re_inner_of_hilbertBasis`: the lower bound
   `c ‖u‖² ≤ re ⟪A u, u⟫` for `u` orthogonal to the eigenbasis vectors with eigenvalues below `c`.
@@ -90,19 +90,18 @@ theorem HasCompactResolvent.northcott_norm_of_orthonormal (h : A.HasCompactResol
       (norm_sub_le z (lam i)).trans (by linarith [le_abs_self R])
     simpa only [Set.mem_ofPred_eq, norm_inv] using inv_anti₀ (norm_pos_iff.2 (hne i)) hle
 
-/-- If `A` has compact resolvent and `v` is an orthonormal family of eigenvectors of `A` with real
-eigenvalues `λ i`, then `0` is isolated among these eigenvalues: there is `c > 0`, the least
-absolute value of a nonzero eigenvalue when one exists, such that `|λ i| < c` forces `λ i = 0`. -/
-theorem HasCompactResolvent.exists_pos_forall_abs_lt_imp_eq_zero (h : A.HasCompactResolvent)
-    {ι : Type*} {v : ι → E} (hv : Orthonormal 𝕜 v) {lam : ι → ℝ}
-    (hA : ∀ i, ∃ hi : v i ∈ A.domain, A ⟨v i, hi⟩ = (lam i : 𝕜) • v i) :
-    ∃ c > 0, ∀ i, |lam i| < c → lam i = 0 := by
+/-- If `A` has compact resolvent and `v` is an orthonormal family of eigenvectors of `A` with
+eigenvalues `λ i`, then `0` is isolated among these eigenvalues: there is `c > 0`, the least norm
+of a nonzero eigenvalue when one exists, such that `‖λ i‖ < c` forces `λ i = 0`. -/
+theorem HasCompactResolvent.exists_pos_forall_norm_lt_imp_eq_zero (h : A.HasCompactResolvent)
+    {ι : Type*} {v : ι → E} (hv : Orthonormal 𝕜 v) {lam : ι → 𝕜}
+    (hA : ∀ i, ∃ hi : v i ∈ A.domain, A ⟨v i, hi⟩ = lam i • v i) :
+    ∃ c > 0, ∀ i, ‖lam i‖ < c → lam i = 0 := by
   by_cases hne : ∃ i, lam i ≠ 0
   · have := h.northcott_norm_of_orthonormal hv hA
     obtain ⟨i₀, hi₀ : lam i₀ ≠ 0, hmin⟩ :=
-      Northcott.exists_min_image (fun i ↦ ‖(lam i : 𝕜)‖) {i | lam i ≠ 0} hne
-    refine ⟨|lam i₀|, abs_pos.2 hi₀, fun i hi ↦ not_not.1 fun hi' ↦ hi.not_ge ?_⟩
-    simpa [norm_ofReal] using hmin i hi'
+      Northcott.exists_min_image (fun i ↦ ‖lam i‖) {i | lam i ≠ 0} hne
+    exact ⟨‖lam i₀‖, norm_pos_iff.2 hi₀, fun i hi ↦ not_not.1 fun hi' ↦ hi.not_ge (hmin i hi')⟩
   · exact ⟨1, one_pos, fun i _ ↦ not_not.1 fun hi ↦ hne ⟨i, hi⟩⟩
 
 section HilbertBasis
@@ -166,10 +165,11 @@ theorem HasCompactResolvent.exists_pos_mul_norm_sq_le_re_inner (h : A.HasCompact
     (hA : A.IsFormalAdjoint A) (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) :
     ∃ c > 0, ∀ u : A.domain, (∀ k, lam k ≤ 0 → ⟪b k, (u : E)⟫_𝕜 = 0) →
       c * ‖(u : E)‖ ^ 2 ≤ re ⟪A u, (u : E)⟫_𝕜 := by
-  obtain ⟨c, hc, hgap⟩ := h.exists_pos_forall_abs_lt_imp_eq_zero b.orthonormal hb
+  obtain ⟨c, hc, hgap⟩ := h.exists_pos_forall_norm_lt_imp_eq_zero b.orthonormal hb
   refine ⟨c, hc, fun u hu ↦ hA.mul_norm_sq_le_re_inner_of_hilbertBasis b hb u fun k hk ↦ hu k ?_⟩
   -- No eigenvalue lies in `(0, c)`.
-  exact not_lt.1 fun hk' ↦ hk'.ne' (hgap k (by rwa [abs_of_pos hk']))
+  exact not_lt.1 fun hk' ↦
+    hk'.ne' (ofReal_eq_zero.1 (hgap k (by rwa [norm_ofReal, abs_of_pos hk'])))
 
 /-- **Spectral gap on the kernel complement.** Let `A` be symmetric with compact resolvent and with
 a Hilbert basis `b` of eigenvectors, `A (b k) = λ k • b k` with `λ k` real. There is `c > 0` such
@@ -180,9 +180,9 @@ theorem HasCompactResolvent.exists_pos_mul_norm_le_norm_apply (h : A.HasCompactR
     (hA : A.IsFormalAdjoint A) (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : 𝕜) • b k) :
     ∃ c > 0, ∀ u : A.domain, (∀ k, lam k = 0 → ⟪b k, (u : E)⟫_𝕜 = 0) →
       c * ‖(u : E)‖ ≤ ‖A u‖ := by
-  obtain ⟨c, hc, hgap⟩ := h.exists_pos_forall_abs_lt_imp_eq_zero b.orthonormal hb
-  exact ⟨c, hc, fun u hu ↦
-    hA.mul_norm_le_norm_apply_of_hilbertBasis b hb u fun k hk ↦ hu k (hgap k hk)⟩
+  obtain ⟨c, hc, hgap⟩ := h.exists_pos_forall_norm_lt_imp_eq_zero b.orthonormal hb
+  exact ⟨c, hc, fun u hu ↦ hA.mul_norm_le_norm_apply_of_hilbertBasis b hb u fun k hk ↦
+    hu k (ofReal_eq_zero.1 (hgap k (by rwa [norm_ofReal])))⟩
 
 end HilbertBasis
 

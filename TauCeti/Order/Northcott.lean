@@ -43,12 +43,7 @@ theorem prod_add [AddCommGroup β] [LinearOrder β] [IsOrderedAddMonoid β] (f :
     rintro ⟨a, c⟩ (h : f a + g c ≤ b)
     have ha := ha₁ a trivial
     have hc := hc₁ c trivial
-    constructor
-    · change f a ≤ b - g c₁
-      rw [le_sub_iff_add_le]
-      exact (add_le_add_right hc (f a)).trans h
-    · change g c ≤ b - f a₁
-      rw [le_sub_iff_add_le']
-      exact (add_le_add_left ha (g c)).trans h
+    exact ⟨le_sub_iff_add_le.2 ((add_le_add_right hc (f a)).trans h),
+      le_sub_iff_add_le'.2 ((add_le_add_left ha (g c)).trans h)⟩
 
 end Northcott
