@@ -38,6 +38,8 @@ API replace them.
 * `Riemannian.Tensor.chartLocalFrame` and `Riemannian.Tensor.chartLocalFrame_def`: the frame
   induced by the tangent trivialization at a chart centre and `Module.finBasis`, and its
   identification with that trivialization's local frame.
+* `Riemannian.Tensor.coe_basisAt_reindex_eq_chartLocalFrame`: on the base set, the frame is the
+  basis of the tangent space given by the trivialization.
 * `Riemannian.Tensor.chartLocalFrame_eq_symmL`: the frame is the inverse trivialization applied to
   the basis of the model space.
 * `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
@@ -107,6 +109,16 @@ theorem chartLocalFrame_apply_of_mem_chart_source (α : M) {x : M}
     (trivializationAt E (TangentSpace I) α).localFrame_apply_of_mem_baseSet
       (Module.finBasis ℝ E) (i := i) (by
         simpa only [TangentBundle.trivializationAt_baseSet] using hx)
+
+/-- On the trivialization base set, the basis of the tangent space given by the trivialization at
+`α`, reindexed along `σ`, is the reindexed chart-local frame. -/
+theorem coe_basisAt_reindex_eq_chartLocalFrame {ι : Type*} (σ : Fin (Module.finrank ℝ E) ≃ ι)
+    (α : M) {x : M} (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet) :
+    ⇑(((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx).reindex σ) =
+      fun i ↦ chartLocalFrame (I := I) α (σ.symm i) x := by
+  funext i
+  rw [Module.Basis.reindex_apply, chartLocalFrame_apply_of_mem_chart_source α
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)]
 
 /-- The chart-local frame is the inverse tangent trivialization at `α` applied to the
 `Module.finBasis` basis of the model space. Both sides vanish off the trivialization base set, so
