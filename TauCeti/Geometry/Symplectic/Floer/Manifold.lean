@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 
 /-!
 # The Floer energy identity for manifold targets
@@ -26,9 +27,46 @@ the equation the density is nonnegative under tameness, and is half the standard
 energy density. The almost complex structure may be chosen independently at each domain
 point, as is needed for domain-dependent perturbations.
 
-This is the local-coordinate-domain energy identity for arbitrary manifold targets, not
-a compactness theorem or an identity involving caps at punctured ends. On a vector-space
-target with constant form it recovers the vector-space definitions.
+Integrating the identity over a rectangle `[a₁, b₁] × [a₂, b₂]` of the domain gives
+
+`∫ ω(du - X_K) = ∫ u^* ω + ∮ K(u) - ∫ R_K(u)`
+
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`). The exterior derivative
+`d(K(u))` is a function on the domain alone, so the divergence theorem applies to it whatever
+the target. The integrability of the energy density and of `R_K(u)` is assumed, and that of the
+area density follows.
+
+A punctured domain carries no global coordinate, so these objects must also be compared across
+changes of domain coordinates `φ`. For the pulled-back datum `φ^*K`
+(`TauCeti.Floer.perturbationPullback`) and the reparametrized map `u ∘ φ`, the perturbed
+derivative is `(du - X_K) ∘ dφ`, and both the energy density and the curvature are multiplied by
+the Jacobian determinant `det dφ`. By the change of variables formula the energy and the
+integrated curvature over a region may therefore be computed in any orientation-preserving
+chart. These are the manifold-target versions of the identities in
+`TauCeti.Geometry.Symplectic.Floer.Pullback`. The domain-derivative part of the curvature,
+Green's theorem for `K(u)` and the change of variables formula do not see the target, and are
+shared with them through
+`TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`,
+`TauCeti.integral_fderiv_sub_fderiv_Icc` and
+`TauCeti.integral_image_eq_integral_of_eq_abs_det_smul`.
+
+These are coordinate-domain energy identities for arbitrary manifold targets, not a compactness
+theorem or an identity involving caps at punctured ends. On a vector-space target with constant
+form they recover the vector-space definitions.
+
+## Main results
+
+* `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
+  rectangle.
+* `SmoothTwoForm.perturbedMFDeriv_perturbationPullback`,
+  `SmoothTwoForm.floerEnergyDensity_perturbationPullback`,
+  `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
+  derivative, and the energy density and curvature as two-forms on the domain.
+* `SmoothTwoForm.integral_floerEnergyDensity_image`,
+  `SmoothTwoForm.integral_hamiltonianCurvature_image`,
+  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
+  integrated curvature and the curvature allowance under changes of domain coordinates.
 
 ## References
 
@@ -183,6 +221,226 @@ theorem floerEnergyDensity_nonneg {J : AlmostComplexStructure (TangentSpace I (u
   simpa only [floerEnergyDensity_def, IsNondegenerate.symplecticFormAt_apply,
     ContinuousLinearMap.coe_coe] using
       h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
+/-! ### Changes of domain coordinates -/
+
+section Pullback
+
+open Floer
+
+variable {φ : ℝ × ℝ → ℝ × ℝ} {w : ℝ × ℝ} {x : M}
+
+/-- The Hamiltonian vector field of a component of the pullback `φ^*K` is the corresponding
+combination of the Hamiltonian vector fields of `K_s` and `K_t` at `φ w`. -/
+theorem hamiltonianVectorField_perturbationPullback (ω : SmoothTwoForm I M)
+    (hKs : MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) x) (hKt : MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) x)
+    (v : ℝ × ℝ) :
+    ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w) x =
+      (fderiv ℝ φ w v).1 • ω.hamiltonianVectorField (Ks (φ w)) x +
+        (fderiv ℝ φ w v).2 • ω.hamiltonianVectorField (Kt (φ w)) x := by
+  have h : perturbationPullback φ Ks Kt v w =
+      (fderiv ℝ φ w v).1 • Ks (φ w) + (fderiv ℝ φ w v).2 • Kt (φ w) := by
+    funext y
+    simp [perturbationPullback_apply]
+  rw [h, hamiltonianVectorField_add (hKs.const_smul _) (hKt.const_smul _),
+    hamiltonianVectorField_const_smul, hamiltonianVectorField_const_smul]
+
+/-- **Naturality of the perturbed derivative.** The perturbed derivative of the reparametrized
+map `u ∘ φ` for the pulled-back datum `φ^*K` is `(du - X_K) ∘ dφ`, in the tangent space
+`T_(u (φ w)) M`. -/
+theorem perturbedMFDeriv_perturbationPullback (ω : SmoothTwoForm I M)
+    (hφ : DifferentiableAt ℝ φ w) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w))
+    (hKs : MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt : MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
+    ω.perturbedMFDeriv (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w =
+      (ω.perturbedMFDeriv Ks Kt u (φ w)).comp (fderiv ℝ φ w) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  have hv := (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ).apply_stdComplexLine v
+  simp only [ContinuousLinearMap.coe_coe] at hv
+  -- The chain rule, with the derivative of `φ` read as an `fderiv`.
+  have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w v =
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ w) (fderiv ℝ φ w v) := by
+    rw [mfderiv_comp w hu hφ.mdifferentiableAt, mfderiv_eq_fderiv]
+    exact ContinuousLinearMap.comp_apply _ _ _
+  -- Unfold both perturbed derivatives and expand `X_{φ^*K}`.
+  simp only [ContinuousLinearMap.comp_apply, perturbedMFDeriv_apply, hd, comp_apply,
+    ω.hamiltonianVectorField_perturbationPullback hKs hKt]
+  -- Expand `dφ_w v` in the coordinate directions and normalize.
+  simp only [hv,
+    Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, add_smul, smul_add,
+    mul_smul]
+  abel
+
+/-- **The energy density is a two-form.** The Floer energy density of `u ∘ φ` for the
+pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the energy density of `u` for
+`K` at `φ w`. No nondegeneracy of the two-form is needed. -/
+theorem floerEnergyDensity_perturbationPullback (ω : SmoothTwoForm I M)
+    (hφ : DifferentiableAt ℝ φ w) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w))
+    (hKs : MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt : MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
+    ω.floerEnergyDensity (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w =
+      (fderiv ℝ φ w).det * ω.floerEnergyDensity Ks Kt u (φ w) := by
+  -- Expand the perturbed derivative of `u` on the columns of `dφ_w`.
+  have hP (e : ℝ × ℝ) : ω.perturbedMFDeriv Ks Kt u (φ w) (fderiv ℝ φ w e) =
+      (fderiv ℝ φ w e).1 • ω.perturbedMFDeriv Ks Kt u (φ w) stdComplexLineReal +
+        (fderiv ℝ φ w e).2 • ω.perturbedMFDeriv Ks Kt u (φ w) stdComplexLineImag := by
+    simpa using (ω.perturbedMFDeriv Ks Kt u (φ w) :
+      ℝ × ℝ →ₗ[ℝ] TangentSpace I (u (φ w))).apply_stdComplexLine (fderiv ℝ φ w e)
+  rw [floerEnergyDensity_def, floerEnergyDensity_def,
+    ω.perturbedMFDeriv_perturbationPullback hφ hu hKs hKt]
+  simp only [ContinuousLinearMap.comp_apply, hP, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  exact ω.eval₂_smul_add_smul_det _ (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
+
+/-- **The curvature is a two-form.** For a `C²` change of coordinates `φ`, the curvature of the
+pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvature of `K` at `φ w`. -/
+theorem hamiltonianCurvature_perturbationPullback (ω : SmoothTwoForm I M)
+    (hφ : ContDiffAt ℝ 2 φ w) (hKs : DifferentiableAt ℝ (fun z ↦ Ks z x) (φ w))
+    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (φ w))
+    (hKs' : MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) x)
+    (hKt' : MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) x) :
+    ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w x =
+      (fderiv ℝ φ w).det * ω.hamiltonianCurvature Ks Kt (φ w) x := by
+  have hbracket : ω.poissonBracket (perturbationPullback φ Ks Kt stdComplexLineReal w)
+      (perturbationPullback φ Ks Kt stdComplexLineImag w) x =
+        (fderiv ℝ φ w).det * ω.poissonBracket (Ks (φ w)) (Kt (φ w)) x := by
+    simp only [poissonBracket_def, ω.hamiltonianVectorField_perturbationPullback hKs' hKt',
+      stdComplexLineReal_eq, stdComplexLineImag_eq]
+    exact ω.eval₂_smul_add_smul_det _ (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def]
+  linear_combination fderiv_perturbationPullback_sub_fderiv_perturbationPullback hφ hKs hKt -
+    hbracket
+
+end Pullback
+
+section Integral
+
+open Floer MeasureTheory Set
+
+variable {φ : ℝ × ℝ → ℝ × ℝ} {s : Set (ℝ × ℝ)}
+
+/-- **Invariance of the energy under changes of coordinates.** For a change of coordinates `φ`
+that is injective and orientation preserving on a measurable set `s`, the energy of `u` for `K`
+over `φ '' s` is the energy of `u ∘ φ` for `φ^*K` over `s`. -/
+theorem integral_floerEnergyDensity_image (ω : SmoothTwoForm I M) (hs : MeasurableSet s)
+    (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hdet : ∀ w ∈ s, 0 ≤ (fderiv ℝ φ w).det)
+    (hu : ∀ w ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w))
+    (hKs : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
+    ∫ z in φ '' s, ω.floerEnergyDensity Ks Kt u z =
+      ∫ w in s, ω.floerEnergyDensity (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
+    rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
+      ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
+
+/-- **Invariance of the integrated curvature under changes of coordinates.** For a `C²` change of
+coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the integral
+of the curvature `R_K(u)` over `φ '' s` is the integral of `R_{φ^*K}(u ∘ φ)` over `s`. -/
+theorem integral_hamiltonianCurvature_image (ω : SmoothTwoForm I M) (hs : MeasurableSet s)
+    (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
+    (hdet : ∀ w ∈ s, 0 ≤ (fderiv ℝ φ w).det)
+    (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
+    (hKs' : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt' : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
+    ∫ z in φ '' s, ω.hamiltonianCurvature Ks Kt z (u z) =
+      ∫ w in s, ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
+      rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
+        (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
+
+/-- **Invariance of the curvature allowance under changes of coordinates.** For a `C²` change of
+coordinates `φ` that is injective on a measurable set `s`, the lower Lebesgue integral of
+`|R_K(u)|` over `φ '' s` is that of `|R_{φ^*K}(u ∘ φ)|` over `s`. No orientation, integrability
+or measurability hypothesis is needed, so curvature allowances along arbitrary maps `u` may be
+computed in any chart. -/
+theorem lintegral_enorm_hamiltonianCurvature_image (ω : SmoothTwoForm I M)
+    (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
+    (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
+    (hKs' : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt' : ∀ w ∈ s, MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w))) :
+    ∫⁻ z in φ '' s, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
+      ∫⁻ w in s, ‖ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ :=
+  lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul hs hinj
+    (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
+      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
+        (hKt' w hw)
+
+/-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
+data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle
+`[a₁, b₁] × [a₂, b₂]`, for a nondegenerate two-form on a finite-dimensional manifold. If the
+energy density and the curvature `R_K(u)` are integrable over the rectangle, then the energy over
+the rectangle is the symplectic area `∫ u^* ω`, plus the integral of the pulled-back one-form
+`K(u) = K_s(u) ds + K_t(u) dt` over the positively oriented boundary, minus the integral of
+`R_K(u)`. Closedness of the two-form is not used. -/
+theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
+    (hω : ω.IsNondegenerate) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
+    {a b : ℝ × ℝ} (hab : a ≤ b) (habU : Icc a b ⊆ U)
+    (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) (Icc a b))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) (Icc a b)) :
+    ∫ z in Icc a b, ω.floerEnergyDensity Ks Kt u z =
+      (∫ z in Icc a b, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ((∫ s in a.1..b.1, Ks (s, a.2) (u (s, a.2))) + (∫ t in a.2..b.2, Kt (b.1, t) (u (b.1, t))) -
+          (∫ s in a.1..b.1, Ks (s, b.2) (u (s, b.2))) -
+          ∫ t in a.2..b.2, Kt (a.1, t) (u (a.1, t))) -
+        ∫ z in Icc a b, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The pulled-back components `K_s(u)` and `K_t(u)` are `C¹` functions on the domain, to which
+  -- Green's theorem applies.
+  have hgraph : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℝ × ℝ).prod I) 1 (fun w ↦ (w, u w)) U :=
+    contMDiffOn_id.prodMk hu
+  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have hf : ContDiffOn ℝ 1 (fun w ↦ Kt w (u w)) U :=
+    contMDiffOn_iff_contDiffOn.mp (hKt.comp hgraph hmem)
+  have hg : ContDiffOn ℝ 1 (fun w ↦ Ks w (u w)) U :=
+    contMDiffOn_iff_contDiffOn.mp (hKs.comp hgraph hmem)
+  have hderiv : IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) (Icc a b) :=
+    integrableOn_fderiv_sub_fderiv_Icc hU hg hf habU
+  -- The pointwise energy identity on the rectangle.
+  have hpt : ∀ z ∈ Icc a b, ω.floerEnergyDensity Ks Kt u z =
+      (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+          fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) -
+        ω.hamiltonianCurvature Ks Kt z (u z) := by
+    intro z hz
+    have hzU := habU hz
+    have hzU' : (z, u z) ∈ U ×ˢ (univ : Set M) := hmem hzU
+    exact hω.floerEnergyDensity_eq
+      ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt one_ne_zero)
+      ((hKs.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
+      ((hKt.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
+  -- The symplectic area density is integrable, as the difference of integrable functions.
+  have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (Icc a b) := by
+    refine ((hE.sub hderiv).add hR).congr_fun (fun z hz ↦ ?_) measurableSet_Icc
+    simp only [Pi.add_apply, Pi.sub_apply, hpt z hz]
+    ring
+  have hsum : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+          fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag)) (Icc a b) :=
+    harea.add hderiv
+  rw [setIntegral_congr_fun measurableSet_Icc hpt, integral_sub hsum hR,
+    integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
+    integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+
+end Integral
 
 end TauCeti.SmoothTwoForm
 
