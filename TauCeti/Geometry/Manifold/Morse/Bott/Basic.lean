@@ -273,9 +273,6 @@ theorem isNondegenerateCriticalSubmanifold_prodMkLeft {g : M → ℝ} {c : M}
       mfderiv_comp (s, c) (hg2.mdifferentiableAt two_ne_zero) mdifferentiableAt_snd, hmg,
       ContinuousLinearMap.zero_comp]
   · -- The kernel of the critical Hessian and the tangent space of the slice are both `F × {0}`.
-    have hd : mfderiv J (J.prod I) (fun s : S ↦ (s, c)) s =
-        (ContinuousLinearMap.id ℝ (TangentSpace J s)).prod 0 :=
-      ((hasMFDerivAt_id s).prodMk (hasMFDerivAt_const c s)).mfderiv
     have hmem (x : F × E) :
         criticalHessian (J.prod I) (g ∘ Prod.snd) (s, c) x = 0 ↔ x.2 = 0 := by
       refine ⟨fun hx ↦ ?_, fun h2 ↦ ?_⟩
@@ -287,12 +284,11 @@ theorem isNondegenerateCriticalSubmanifold_prodMkLeft {g : M → ℝ} {c : M}
       · ext z
         rw [hH s x z, h2, zero_apply]
         exact congr($(map_zero (criticalHessian I g c)) _).trans (zero_apply _)
-    have hrange (x : F × E) :
-        x ∈ ((ContinuousLinearMap.id ℝ F).prod (0 : F →L[ℝ] E)).range ↔ x.2 = 0 :=
-      ⟨fun ⟨u, hu⟩ ↦ hu ▸ rfl, fun h ↦ ⟨x.1, Prod.ext rfl h.symm⟩⟩
-    rw [ofIsSmoothEmbedding_apply, coe_ofIsSmoothEmbedding, hd]
+    rw [ofIsSmoothEmbedding_apply, coe_ofIsSmoothEmbedding, mfderiv_prod_left,
+      ContinuousLinearMap.coe_inl]
     ext x
-    exact LinearMap.mem_ker.trans ((hmem x).trans (hrange x).symm)
+    exact LinearMap.mem_ker.trans ((hmem x).trans
+      (SetLike.ext_iff.1 (LinearMap.range_inl ℝ F E) x).symm)
 
 end Product
 
