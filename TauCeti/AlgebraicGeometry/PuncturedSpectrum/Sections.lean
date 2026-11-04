@@ -51,8 +51,9 @@ sections of the punctured base with the local ring.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat`: the flat case.
-* `TauCeti.IsLocalRing.mem_preimage_puncturedSpectrum_iff`: the primes of `B` in the preimage of
-  the punctured spectrum are those not lying over `𝔪`.
+* `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `B` is
+  recovered from its sections over `W`, the sections of a scheme identified with `W` over a base
+  are `B`, compatibly with the maps from the base ring.
 * `TauCeti.IsLocalRing.isPullback_puncturedSpectrum_toSpecΓ`: reconstruction of an affine
   scheme over the puncture by restricting the spectrum of its sections.
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegral`: the integral case,
@@ -140,23 +141,25 @@ theorem presheaf_map_leTop_bijective_of_isIntegrallyClosed [IsLocalRing A] [IsNo
     maximalIdeal_height_eq_ringKrullDim]
   exact hdim
 
+/-- Let `f : R ⟶ S` be a ring map and `W` an open of `Spec S` from which `S` is recovered: the
+restriction `Γ(Spec S, ⊤) → Γ(W, ⊤)` is bijective. If a scheme `X` over `Spec R` is identified
+with `W` over `Spec R`, then the map `R → Γ(X, ⊤)` induced by `X ⟶ Spec R` is `f` followed by
+an isomorphism. -/
+theorem exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f : R ⟶ S)
+    {X : Scheme.{u}} (p : X ⟶ Spec R) (W : (Spec S).Opens)
+    (hW : Function.Bijective W.ι.appTop) (e : X ≅ W.toScheme)
+    (he : e.hom ≫ W.ι ≫ Spec.map f = p) :
+    ∃ σ : S ⟶ Γ(X, ⊤), IsIso σ ∧ (Scheme.ΓSpecIso R).inv ≫ p.appTop = f ≫ σ := by
+  have : IsIso W.ι.appTop := (ConcreteCategory.isIso_iff_bijective _).mpr hW
+  have : IsIso e.hom.appTop := Scheme.Γ.map_isIso e.hom.op
+  refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
+  simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
+
 end TauCeti.AlgebraicGeometry.Spec
 
 namespace TauCeti.IsLocalRing
 
 open CategoryTheory.Limits
-
-/-- A prime of an `A`-algebra `B` lies in the preimage of the punctured spectrum of `A` exactly
-when it does not lie over the maximal ideal of `A`. -/
-theorem mem_preimage_puncturedSpectrum_iff (A : Type u) [CommRing A] [IsLocalRing A]
-    {B : Type u} [CommRing B] [Algebra A B] (q : PrimeSpectrum B) :
-    q ∈ Spec.map (CommRingCat.ofHom (algebraMap A B)) ⁻¹ᵁ puncturedSpectrum A ↔
-      q.asIdeal.under A ≠ maximalIdeal A := by
-  -- The base map of `Spec.map` is `PrimeSpectrum.comap`, by definition.
-  change PrimeSpectrum.comap (algebraMap A B) q ∈ puncturedSpectrum A ↔ _
-  rw [mem_puncturedSpectrum_iff, Ne, Ne, PrimeSpectrum.ext_iff, PrimeSpectrum.comap_asIdeal]
-  -- The ideal of `closedPoint A` is `maximalIdeal A`, by definition.
-  rfl
 
 variable (A : Type u) [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 
