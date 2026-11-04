@@ -35,7 +35,10 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 in that universe be applied to it.  In particular the boundary of the `0`-disk is empty, and a
 point of the boundary `S⁰` of the `1`-disk is determined by its coordinate
 (`TauCeti.diskBoundary_one_ext`).  The antipodal map of the boundary sphere is
-`TauCeti.diskBoundaryNeg`.
+`TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of `EuclideanSpace ℝ (Fin n)`
+induces homeomorphisms of the disk and of its boundary sphere, compatible with the boundary
+inclusion (`LinearIsometryEquiv.diskIso`, `LinearIsometryEquiv.diskBoundaryIso`); these are the
+orthogonal reparametrizations of attached cells.
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
@@ -287,6 +290,16 @@ lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}
   refine ULift.ext (Subtype.ext (PiLp.ext fun i ↦ ?_))
   rwa [Subsingleton.elim i 0]
 
+/-- The coordinate of a point of the boundary `S⁰` of the `1`-disk is `±1`: its square is `1`. -/
+lemma sq_diskBoundary_one_eq_one (s : TopCat.diskBoundary.{u} 1) :
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1)) 0 ^ 2 = 1 := by
+  have h := EuclideanSpace.norm_sq_eq
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1))
+  rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
+  simpa using h.symm
+
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   ⟨ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩⟩
@@ -492,4 +505,62 @@ instance contractibleSpace_cubeBoundaryPair_fst (n : ℕ) :
 end CubePair
 
 end TauCeti
+
+namespace LinearIsometryEquiv
+
+variable {n : ℕ} (e : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+
+/-- The homeomorphism `x ↦ e x` of the disk `TopCat.disk n` induced by a linear isometry `e` of
+`EuclideanSpace ℝ (Fin n)`. It restricts on the boundary sphere to
+`LinearIsometryEquiv.diskBoundaryIso e`
+(`LinearIsometryEquiv.diskBoundaryIso_hom_comp_diskBoundaryInclusion`). -/
+def diskIso : TopCat.disk.{u} n ≅ TopCat.disk.{u} n :=
+  TopCat.isoOfHomeo <| Homeomorph.ulift.trans <|
+    (e.toHomeomorph.subtype fun x ↦ by simp).trans Homeomorph.ulift.symm
+
+/-- The homeomorphism `x ↦ e x` of the boundary sphere `TopCat.diskBoundary n` of the disk induced
+by a linear isometry `e` of `EuclideanSpace ℝ (Fin n)`. -/
+def diskBoundaryIso : TopCat.diskBoundary.{u} n ≅ TopCat.diskBoundary.{u} n :=
+  TopCat.isoOfHomeo <| Homeomorph.ulift.trans <|
+    (e.toHomeomorph.subtype fun x ↦ by simp).trans Homeomorph.ulift.symm
+
+@[simp]
+lemma coe_diskIso_hom_apply_down (z : TopCat.disk.{u} n) :
+    ((e.diskIso.hom z).down : EuclideanSpace ℝ (Fin n)) = e z.down :=
+  (rfl)
+
+@[simp]
+lemma coe_diskIso_inv_apply_down (z : TopCat.disk.{u} n) :
+    ((e.diskIso.inv z).down : EuclideanSpace ℝ (Fin n)) = e.symm z.down :=
+  (rfl)
+
+@[simp]
+lemma coe_diskBoundaryIso_hom_apply_down (z : TopCat.diskBoundary.{u} n) :
+    ((e.diskBoundaryIso.hom z).down : EuclideanSpace ℝ (Fin n)) = e z.down :=
+  (rfl)
+
+@[simp]
+lemma coe_diskBoundaryIso_inv_apply_down (z : TopCat.diskBoundary.{u} n) :
+    ((e.diskBoundaryIso.inv z).down : EuclideanSpace ℝ (Fin n)) = e.symm z.down :=
+  (rfl)
+
+/-- The homeomorphism of the disk induced by a linear isometry restricts on the boundary sphere to
+the homeomorphism of the sphere induced by the same isometry. -/
+@[reassoc]
+lemma diskBoundaryIso_hom_comp_diskBoundaryInclusion :
+    e.diskBoundaryIso.hom ≫ TopCat.diskBoundaryInclusion.{u} n =
+      TopCat.diskBoundaryInclusion.{u} n ≫ e.diskIso.hom := by
+  ext z
+  exact ULift.ext (Subtype.ext rfl)
+
+/-- The antipodal map `TauCeti.diskBoundaryNeg` of the boundary sphere is induced by the linear
+isometry `x ↦ -x`. -/
+@[simp]
+lemma diskBoundaryIso_neg_hom :
+    (LinearIsometryEquiv.neg ℝ).diskBoundaryIso.hom = TauCeti.diskBoundaryNeg.{u} n := by
+  ext z
+  exact ULift.ext (Subtype.ext rfl)
+
+end LinearIsometryEquiv
+
 end
