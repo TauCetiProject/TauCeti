@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Function.LpOrder
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -34,6 +35,8 @@ bounds.
   everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
+* `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function
+  is its integral.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
@@ -88,6 +91,13 @@ end TauCeti
 namespace MeasureTheory
 
 open scoped ENNReal
+
+/-- The norm of a nonnegative real `L¹` function is its integral. -/
+theorem L1.norm_eq_integral_of_nonneg {alpha : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    {f : Lp ℝ 1 m} (hf : 0 ≤ f) : ‖f‖ = ∫ x, f x ∂m := by
+  rw [L1.norm_eq_integral_norm]
+  refine integral_congr_ae ?_
+  filter_upwards [(Lp.coeFn_nonneg f).2 hf] with x hx using Real.norm_of_nonneg hx
 
 /-- An `L∞` function is bounded almost everywhere by its norm. -/
 theorem Lp.ae_norm_le_norm_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
