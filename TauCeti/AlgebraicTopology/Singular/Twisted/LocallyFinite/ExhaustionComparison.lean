@@ -21,8 +21,7 @@ Both squares of the Borel–Moore Milnor sequence commute with this comparison, 
 connecting map from `lim¹` of relative homology. These comparisons allow nested compact
 exhaustions to be used in duality constructions without changing the locally finite chain
 carrier or the connecting morphism. They do not assert that the induced maps on the limits
-of homology or on `lim¹` are isomorphisms. The two Milnor squares use
-`ComplexTower.homologyToLim_naturality` and `ComplexTower.limOneToHomology_naturality`.
+of homology or on `lim¹` are isomorphisms.
 
 ## References
 
@@ -51,29 +50,14 @@ def relativeChainComplexTowerMap (h : ∀ n, K n ⊆ K' n) :
   app n := (TopTriple.ofSubset
     (Set.compl_subset_compl.2 (h n.unop))).twistedChainComplexTotalToOuter L
   naturality {m n} f := by
-    ext k : 1
-    refine ModuleCat.hom_ext <| LinearMap.ext fun y ↦ ?_
-    obtain ⟨a, rfl⟩ := (TopPair.ofSubset (K' m.unop)ᶜ).twistedChainComplexπ_f_surjective L y
-    have heq : (TopPair.ofSubset (K' m.unop)ᶜ).twistedChainComplexπ L ≫
-        (relativeChainComplexTower L K').map f ≫
-          TopTriple.twistedChainComplexTotalToOuter
-            (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n.unop))) L =
-        (TopPair.ofSubset (K' m.unop)ᶜ).twistedChainComplexπ L ≫
-          TopTriple.twistedChainComplexTotalToOuter
-            (TopTriple.ofSubset (Set.compl_subset_compl.2 (h m.unop))) L ≫
-            (relativeChainComplexTower L K).map f := by
-      -- The ambient space of `ofSubset` is only definitionally `X`; rewriting must
-      -- reduce that wrapper to align the dependent coefficient-system types.
-      erw [← Category.assoc,
-        twistedChainComplexπ_comp_relativeChainComplexTower_map L K' f,
-        TopTriple.twistedChainComplexπ_comp_totalToOuter
-          (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n.unop))) L,
-        ← Category.assoc,
-        TopTriple.twistedChainComplexπ_comp_totalToOuter
-          (TopTriple.ofSubset (Set.compl_subset_compl.2 (h m.unop))) L,
-        twistedChainComplexπ_comp_relativeChainComplexTower_map L K f]
-      rfl
-    exact congrArg (fun g ↦ (g.f k).hom a) heq
+    apply (TopPair.ofSubset (K' m.unop)ᶜ).twistedChainComplex_hom_ext L
+    -- Term composition lets elaboration align the dependent ambient types of the triples.
+    exact (twistedChainComplexπ_comp_relativeChainComplexTower_map_assoc L K' f _).trans <|
+      (TopTriple.twistedChainComplexπ_comp_totalToOuter
+        (TopTriple.ofSubset (Set.compl_subset_compl.2 (h n.unop))) L).trans <|
+        ((TopTriple.twistedChainComplexπ_comp_totalToOuter_assoc
+          (TopTriple.ofSubset (Set.compl_subset_compl.2 (h m.unop))) L _).trans
+          (twistedChainComplexπ_comp_relativeChainComplexTower_map L K f)).symm
 
 /-- A component of the comparison is the quotient map for the corresponding triple. -/
 @[simp]
@@ -83,6 +67,7 @@ theorem relativeChainComplexTowerMap_app (h : ∀ n, K n ⊆ K' n) (n : ℕ) :
   (rfl)
 
 /-- The comparison preserves the classes of finite ambient chains. -/
+@[reassoc]
 theorem twistedChainComplexπ_comp_relativeChainComplexTowerMap_app
     (h : ∀ n, K n ⊆ K' n) (n : ℕ) :
     (TopPair.ofSubset (K' n)ᶜ).twistedChainComplexπ L ≫
@@ -95,15 +80,9 @@ theorem relativeChainComplexTowerMap_refl :
     relativeChainComplexTowerMap L (fun n ↦ Set.Subset.refl (K n)) = 𝟙 _ := by
   apply NatTrans.ext
   funext n
-  ext k : 1
-  refine ModuleCat.hom_ext <| LinearMap.ext fun y ↦ ?_
-  obtain ⟨a, rfl⟩ := (TopPair.ofSubset (K n.unop)ᶜ).twistedChainComplexπ_f_surjective L y
-  have heq : (TopPair.ofSubset (K n.unop)ᶜ).twistedChainComplexπ L ≫
-      (relativeChainComplexTowerMap L (fun n ↦ Set.Subset.refl (K n))).app n =
-        (TopPair.ofSubset (K n.unop)ᶜ).twistedChainComplexπ L ≫ 𝟙 _ :=
-    (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L _ n.unop).trans
-      (Category.comp_id _).symm
-  exact congrArg (fun g ↦ (g.f k).hom a) heq
+  apply (TopPair.ofSubset (K n.unop)ᶜ).twistedChainComplex_hom_ext L
+  exact (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L _ n.unop).trans
+    (Category.comp_id _).symm
 
 /-- Taking further relative quotients is transitive. -/
 @[reassoc (attr := simp)]
@@ -113,22 +92,14 @@ theorem relativeChainComplexTowerMap_comp (h : ∀ n, K n ⊆ K' n)
       relativeChainComplexTowerMap L (fun n ↦ (h n).trans (h' n)) := by
   apply NatTrans.ext
   funext n
-  ext k : 1
-  refine ModuleCat.hom_ext <| LinearMap.ext fun y ↦ ?_
-  obtain ⟨a, rfl⟩ := (TopPair.ofSubset (K'' n.unop)ᶜ).twistedChainComplexπ_f_surjective L y
-  have heq : (TopPair.ofSubset (K'' n.unop)ᶜ).twistedChainComplexπ L ≫
-      (relativeChainComplexTowerMap L h').app n ≫ (relativeChainComplexTowerMap L h).app n =
-        (TopPair.ofSubset (K'' n.unop)ᶜ).twistedChainComplexπ L ≫
-          (relativeChainComplexTowerMap L (fun n ↦ (h n).trans (h' n))).app n := by
-    -- Reduce the ambient `ofSubset` wrappers when comparing the relative quotients.
-    erw [← Category.assoc,
-      twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L h' n.unop,
-      twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L h n.unop,
-      twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L
-        (fun n ↦ (h n).trans (h' n)) n.unop]
-  exact congrArg (fun g ↦ (g.f k).hom a) heq
+  apply (TopPair.ofSubset (K'' n.unop)ᶜ).twistedChainComplex_hom_ext L
+  exact (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app_assoc L h' n.unop _).trans <|
+    (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L h n.unop).trans
+      (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L
+        (fun n ↦ (h n).trans (h' n)) n.unop).symm
 
 /-- Relative classes of locally finite chains commute with enlargement of the compact sets. -/
+@[reassoc]
 theorem locallyFiniteChainComplexToRelative_comp_relativeChainComplexTowerMap_app
     (h : ∀ n, K n ⊆ K' n) (n : ℕ) :
     (TopPair.ofSubset (K' n)ᶜ).locallyFiniteChainComplexToRelative L
@@ -150,21 +121,23 @@ theorem locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexMap
       (locallyFiniteChainComplexIsoLimComplex L K).hom := by
   apply (relativeChainComplexTower L K).isLimitLimComplexCone.hom_ext
   rintro ⟨n⟩
-  have heq : ((locallyFiniteChainComplexIsoLimComplex L K').hom ≫
-        ComplexTower.limComplexMap (relativeChainComplexTowerMap L h)) ≫
-        (relativeChainComplexTower L K).limComplexπ n =
-      (locallyFiniteChainComplexIsoLimComplex L K).hom ≫
-        (relativeChainComplexTower L K).limComplexπ n :=
-    -- Compose the projection identities as terms: rewriting through the dependent
-    -- relative-pair and limit-cone wrappers exceeds the elaboration budget here.
-    (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (ComplexTower.limComplexMap_comp_π _ n)).trans <|
-        (Category.assoc _ _ _).symm.trans <|
-          (congrArg (· ≫ _)
-            (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ L K' n)).trans <|
-            (locallyFiniteChainComplexToRelative_comp_relativeChainComplexTowerMap_app L h n).trans
-              (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ L K n).symm
-  exact heq
+  -- Term composition aligns the dependent limit-cone and relative-pair wrappers.
+  exact (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (ComplexTower.limComplexMap_comp_π _ n)).trans <|
+      (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ_assoc L K' n _).trans <|
+        (locallyFiniteChainComplexToRelative_comp_relativeChainComplexTowerMap_app L h n).trans
+          (locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ L K n).symm
+
+/-- The comparison on limit complexes preserves the inverse identification with locally finite
+chains. -/
+@[reassoc (attr := simp)]
+theorem limComplexMap_relativeChainComplexTowerMap_comp_locallyFiniteChainComplexIsoLimComplex_inv
+    (h : ∀ n, K n ⊆ K' n) :
+    ComplexTower.limComplexMap (relativeChainComplexTowerMap L h) ≫
+        (locallyFiniteChainComplexIsoLimComplex L K).inv =
+      (locallyFiniteChainComplexIsoLimComplex L K').inv := by
+  apply (cancel_epi (locallyFiniteChainComplexIsoLimComplex L K').hom).1
+  simp
 
 /-- Although the relative quotient maps need not be quasi-isomorphisms individually, their
 map on limit complexes is an isomorphism. -/
@@ -205,12 +178,7 @@ theorem limOneToBorelMooreHomology_naturality_exhaustion
       (relativeChainComplexTower_shift_surjective L K),
     ← LinearMap.comp_assoc]
   congr 1
-  rw [← ModuleCat.hom_comp, ← HomologicalComplex.homologyMap_comp]
-  have heq : ComplexTower.limComplexMap (relativeChainComplexTowerMap L h) ≫
-      (locallyFiniteChainComplexIsoLimComplex L K).inv =
-        (locallyFiniteChainComplexIsoLimComplex L K').inv := by
-    apply (cancel_epi (locallyFiniteChainComplexIsoLimComplex L K').hom).1
-    simp
-  rw [heq]
+  rw [← ModuleCat.hom_comp, ← HomologicalComplex.homologyMap_comp,
+    limComplexMap_relativeChainComplexTowerMap_comp_locallyFiniteChainComplexIsoLimComplex_inv]
 
 end TauCeti.LocalCoefficientSystem
