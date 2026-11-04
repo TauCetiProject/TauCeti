@@ -21,11 +21,14 @@ functional is a kernel `φ : S → S₀ → R`, where `φ(x, q)` is its value on
 on the other hand, are given by operator kernels `t : S → S₀ → R`, where `t(x, q)` is the
 coefficient of `q` in the image of `x`, as in `TauCeti.NovikovModule.kernelMap`.
 
-The two are related by the standard graded identification
-`Hom(X, C₀) ≅ Hom(X, C₀^∨∨) ≅ Hom(X ⊗ C₀^∨, R)`, built from the bidual map
-`p ↦ (f ↦ (-1)^(|p| |f|) f(p))` and currying. On generators it multiplies the coefficient at an
-output generator `q` of degree `d₀ q` by `(-1)^(d₀ q)` (`NovikovModule.kernelReadout`); the same
-formula converts functionals back to operators. It is not the ungraded transpose.
+The two are related by a coefficientwise sign involution of kernels
+(`NovikovModule.kernelReadout`): the coefficient at an output generator `q` of degree `d₀ q` is
+multiplied by `(-1)^(d₀ q)`, and the same formula converts functionals back to operators. It is
+not the ungraded transpose. The sign is the one of the graded bidual map
+`p ↦ (f ↦ (-1)^(|p| |f|) f(p))`; when `C₀` is free of finite rank in each degree this map is an
+isomorphism, and composing it with currying gives the identification
+`Hom(X, C₀) ≅ Hom(X, C₀^∨∨) ≅ Hom(X ⊗ C₀^∨, R)`. For general complexes only the kernel-level
+involution is used here; no duality isomorphism is claimed.
 
 The differentials are the Koszul ones: `C₀^∨` carries `δ₀^∨ f = -(-1)^|f| f ∘ δ₀`, the tensor
 product carries `δ ⊗ 1 + (-1)^|x| 1 ⊗ δ₀^∨`, and the value at `x ⊗ q^∨` of a functional `ψ`
@@ -101,10 +104,11 @@ variable {R S S₀ : Type*} [CommRing R]
 section Readout
 
 /-- The **operator readout** of a functional kernel `φ` on `X ⊗ C₀^∨`, for the degree function
-`d₀` on the output generators: the operator kernel `(-1)^(d₀ q) φ(x, q)`. This is the standard
-identification `Hom(X ⊗ C₀^∨, R) ≅ Hom(X, C₀)` through the bidual map
-`p ↦ (f ↦ (-1)^(|p| |f|) f(p))`. The same formula converts operator kernels to functionals
-(`NovikovModule.kernelReadout_kernelReadout`). -/
+`d₀` on the output generators: the operator kernel `(-1)^(d₀ q) φ(x, q)`. This is a
+coefficientwise sign involution, with the sign of the graded bidual map
+`p ↦ (f ↦ (-1)^(|p| |f|) f(p))`; when `C₀` is free of finite rank in each degree it induces the
+identification `Hom(X ⊗ C₀^∨, R) ≅ Hom(X, C₀)`. The same formula converts operator kernels to
+functionals (`NovikovModule.kernelReadout_kernelReadout`). -/
 def kernelReadout (d₀ : S₀ → ℤ) (φ : S → S₀ → R) (x : S) (q : S₀) : R :=
   negOnePowCast R (d₀ q) * φ x q
 
@@ -120,12 +124,61 @@ theorem kernelReadout_kernelReadout (d₀ : S₀ → ℤ) (φ : S → S₀ → R
   funext x q
   rw [kernelReadout_apply, kernelReadout_apply, ← mul_assoc, negOnePowCast_mul_self, one_mul]
 
+/-- The readout of the zero kernel is zero. -/
+@[simp]
+theorem kernelReadout_zero (d₀ : S₀ → ℤ) : kernelReadout (R := R) (S := S) d₀ 0 = 0 := by
+  funext x q
+  simp [kernelReadout_apply]
+
+/-- The readout is additive. -/
+@[simp]
+theorem kernelReadout_add (d₀ : S₀ → ℤ) (φ ψ : S → S₀ → R) :
+    kernelReadout d₀ (φ + ψ) = kernelReadout d₀ φ + kernelReadout d₀ ψ := by
+  funext x q
+  simp [kernelReadout_apply, mul_add]
+
+/-- The readout commutes with negation. -/
+@[simp]
+theorem kernelReadout_neg (d₀ : S₀ → ℤ) (φ : S → S₀ → R) :
+    kernelReadout d₀ (-φ) = -kernelReadout d₀ φ := by
+  funext x q
+  simp [kernelReadout_apply]
+
+/-- The readout commutes with subtraction. -/
+@[simp]
+theorem kernelReadout_sub (d₀ : S₀ → ℤ) (φ ψ : S → S₀ → R) :
+    kernelReadout d₀ (φ - ψ) = kernelReadout d₀ φ - kernelReadout d₀ ψ := by
+  funext x q
+  simp [kernelReadout_apply, mul_sub]
+
+/-- The readout commutes with scalar multiplication. -/
+@[simp]
+theorem kernelReadout_smul (d₀ : S₀ → ℤ) (c : R) (φ : S → S₀ → R) :
+    kernelReadout d₀ (c • φ) = c • kernelReadout d₀ φ := by
+  funext x q
+  simp only [kernelReadout_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- The readout commutes with multiplication by a pointwise factor `c(x, q)`. -/
+theorem kernelReadout_mul_left (d₀ : S₀ → ℤ) (c φ : S → S₀ → R) :
+    kernelReadout d₀ (c * φ) = c * kernelReadout d₀ φ := by
+  funext x q
+  simp only [kernelReadout_apply, Pi.mul_apply]
+  ring
+
 /-- The readout is injective. -/
 theorem kernelReadout_injective (d₀ : S₀ → ℤ) :
     Injective (kernelReadout (R := R) (S := S) d₀) :=
   LeftInverse.injective (g := kernelReadout d₀) (kernelReadout_kernelReadout d₀)
 
+/-- Two kernels have equal readouts exactly when they are equal. -/
+@[simp]
+theorem kernelReadout_inj {d₀ : S₀ → ℤ} {φ ψ : S → S₀ → R} :
+    kernelReadout d₀ φ = kernelReadout d₀ ψ ↔ φ = ψ :=
+  (kernelReadout_injective d₀).eq_iff
+
 /-- Two kernels have equal readouts at a pair of generators exactly when they agree there. -/
+@[simp]
 theorem kernelReadout_apply_eq_kernelReadout_apply_iff {d₀ : S₀ → ℤ} {φ ψ : S → S₀ → R} {x : S}
     {q : S₀} : kernelReadout d₀ φ x q = kernelReadout d₀ ψ x q ↔ φ x q = ψ x q := by
   refine ⟨fun h => ?_, fun h => by rw [kernelReadout_apply, kernelReadout_apply, h]⟩
@@ -279,7 +332,9 @@ theorem kernelMap_kernelProduct_eq_add_of_functionalBoundary_eq_zero
 kernels on `S₁ × S₂` and `S₂ × S₁`, and let `k` be a kernel of degree `-1` out of `C₁ ⊗ C₂`. If
 the boundary of the readout of `k` is the readout of `n` minus the readout of the exchanged kernel
 `(-1)^(d₁ p₁ d₂ p₂) n'(p₂, p₁, ·)` with its Koszul sign, then `k` is a kernel homotopy
-`n(p₁, p₂, p₀) - (-1)^(d₁ p₁ d₂ p₂) n'(p₂, p₁, p₀) = (k δ₀ + D k)((p₁, p₂), p₀)`, as consumed by
+`n(p₁, p₂, p₀) - (-1)^(d₁ p₁ d₂ p₂) n'(p₂, p₁, p₀) = ∑ k(q, p) δ₀(p, p₀) + ∑ δ⊗(q, q') k(q', p₀)`
+at `q = (p₁, p₂)`, where `δ⊗` is the tensor differential `tensorDifferential d₁ δ₁ δ₂`, as consumed
+by
 `TauCeti.NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`. -/
 theorem sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary
     {n' : S₂ → S₁ → S₀ → R} {k : S₁ × S₂ → S₀ → R}
@@ -292,11 +347,11 @@ theorem sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary
     n q.1 q.2 p₀ - ((d₁ q.1 * d₂ q.2).negOnePow : R) * n' q.2 q.1 p₀ =
       kernelComp k δ₀ q p₀ + kernelComp (tensorDifferential d₁ δ₁ δ₂) k q p₀ := by
   refine ((functionalBoundary_kernelReadout_eq_kernelReadout_iff
-    (s := fun q p₀ => n q.1 q.2 p₀ - ((d₁ q.1 * d₂ q.2).negOnePow : R) * n' q.2 q.1 p₀)
+    (s := (fun q => n q.1 q.2) -
+      (fun q _ => ((d₁ q.1 * d₂ q.2).negOnePow : R)) * fun q => n' q.2 q.1)
     hk q p₀).1 ?_).symm
-  rw [hψ]
-  simp only [kernelReadout_apply]
-  ring
+  rw [hψ, kernelReadout_sub, kernelReadout_mul_left]
+  rfl
 
 end Product
 
