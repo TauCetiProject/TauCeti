@@ -247,6 +247,42 @@ def coefficientCochainComplexMap (f : DGRightModuleHom hM hN) :
       rw [LinearMap.comp_apply, LinearMap.comp_apply]
       exact m.coefficientDifferential_mapRange hM hN f g)
 
+/-- In the identifications of the complex terms with the total-degree pieces, the coefficient map
+applies `f` to every coefficient. -/
+@[simp]
+theorem coefficientCochainComplexMap_f_apply (f : DGRightModuleHom hM hN) (n : ℤ)
+    (g : rowFiniteTotalGrading ℳ ind n) :
+    (eqToHom (m.coefficientCochainComplex_X hN n)
+      ((m.coefficientCochainComplexMap hM hN f).f n
+        (eqToHom (m.coefficientCochainComplex_X hM n).symm g)) : P →₀ N) =
+      Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R) g := by
+  unfold coefficientCochainComplexMap coefficientCochainComplex
+  exact gradedCochainComplexHom_f_apply _ _ _ n g
+
+/-- The identity morphism of DG right modules gives the identity coefficient map. -/
+@[simp]
+theorem coefficientCochainComplexMap_id :
+    m.coefficientCochainComplexMap hM hM (DGRightModuleHom.id hM) = 𝟙 _ := by
+  unfold coefficientCochainComplexMap coefficientCochainComplex
+  rw [← gradedCochainComplexHom_id]
+  congr 1
+  ext
+  simp
+
+/-- Coefficient maps preserve composition of morphisms of DG right modules. -/
+theorem coefficientCochainComplexMap_comp {Q : Type uM} [AddCommGroup Q] [Module R Q]
+    [Module Aᵐᵒᵖ Q] [IsScalarTower R Aᵐᵒᵖ Q] {𝒬 : ℤ → Submodule R Q} [DirectSum.Decomposition 𝒬]
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒬]
+    {dQ : Q →ₗ[R] Q} (hQ : IsDGRightModule hA 𝒬 dQ)
+    (f : DGRightModuleHom hM hN) (g : DGRightModuleHom hN hQ) :
+    m.coefficientCochainComplexMap hM hQ (g.comp f) =
+      m.coefficientCochainComplexMap hM hN f ≫ m.coefficientCochainComplexMap hN hQ g := by
+  unfold coefficientCochainComplexMap coefficientCochainComplex
+  rw [← gradedCochainComplexHom_comp]
+  congr 1
+  ext
+  simp
+
 /-- **Quasi-isomorphisms of coefficient maps, on elements.** The coefficient map of `f` is a
 quasi-isomorphism exactly when every relative cycle `(g, k)` of coefficient vectors, with
 `D g = 0` and `f g = D k`, is a relative boundary `(D u, f u + D v)` in the matching degrees. -/
