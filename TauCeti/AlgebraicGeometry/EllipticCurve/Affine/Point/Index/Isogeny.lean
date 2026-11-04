@@ -63,8 +63,9 @@ agree. Finite groups of the same order have `n`-primary components of the same o
   of `f` is the ratio of the orders of the `deg f`-primary components.
 * `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction, compute
   this ratio using only the primary components of the finite reduced point groups.
-* `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic`: at good reduction, the ratio is
-  `1`.
+* `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic` and
+  `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel`: at good reduction,
+  the ratio is `1`.
 
 ## References
 
@@ -206,6 +207,33 @@ theorem index_range_eq_card_ker_of_isElliptic
     Nat.card_congr (C₂.primaryReductionAddEquiv hf).toEquiv,
     TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq hcard f.degree, mul_comm] at h
   exact Nat.eq_of_mul_eq_mul_left Nat.card_pos h
+
+open _root_.ValuativeRel WeierstrassCurve in
+/-- **The local cokernel/kernel ratio is `1` at good reduction, for the integral model over
+`𝒪[F_u]`**: the variant of `index_range_eq_card_ker_of_isElliptic` for curves over `F_u` whose
+integral model over the ring of integers `𝒪[F_u]` of the valuative relation is elliptic. This is
+the form in which good reduction at almost every place is available
+(`TauCeti.eventually_isElliptic_integralModel_adicCompletion`); the model is carried to `O_u`
+along `IsDedekindDomain.HeightOneSpectrum.integerEquivAdicCompletionIntegers`. -/
+theorem index_range_eq_card_ker_of_isElliptic_integralModel
+    {V₁ V₂ : WeierstrassCurve (u.adicCompletion F)} [V₁.IsElliptic] [V₂.IsElliptic]
+    [IsIntegral 𝒪[u.adicCompletion F] V₁] [(integralModel 𝒪[u.adicCompletion F] V₁).IsElliptic]
+    [IsIntegral 𝒪[u.adicCompletion F] V₂] [(integralModel 𝒪[u.adicCompletion F] V₂).IsElliptic]
+    (f : Hom V₁.toAffine V₂.toAffine) (hf : (f.degree : A) ∉ u.asIdeal) :
+    f.pointMapHom.range.index = Nat.card f.pointMapHom.ker := by
+  -- `C.map e` is an elliptic model over `O_u` with the same base change to `F_u` as `C`
+  have model (V : WeierstrassCurve (u.adicCompletion F)) [IsIntegral 𝒪[u.adicCompletion F] V]
+      [(integralModel 𝒪[u.adicCompletion F] V).IsElliptic] :
+      ∃ C : WeierstrassCurve (u.adicCompletionIntegers F),
+        C.IsElliptic ∧ C.baseChange (u.adicCompletion F) = V := by
+    refine ⟨(integralModel 𝒪[u.adicCompletion F] V).map
+      u.integerEquivAdicCompletionIntegers.toRingHom, inferInstance, ?_⟩
+    conv_rhs => rw [← baseChange_integralModel_eq 𝒪[u.adicCompletion F] V]
+    rw [WeierstrassCurve.baseChange, WeierstrassCurve.baseChange, WeierstrassCurve.map_map]
+    exact congrArg _ (RingHom.ext u.coe_integerEquivAdicCompletionIntegers)
+  obtain ⟨C₁, _, rfl⟩ := model V₁
+  obtain ⟨C₂, _, rfl⟩ := model V₂
+  exact index_range_eq_card_ker_of_isElliptic f hf
 
 end GoodReduction
 
