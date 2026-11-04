@@ -697,6 +697,12 @@ namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
 
+/-- The combined polyradius is positive when each of its two parts is positive. -/
+instance instFactPosSumElim {σ τ : Type*} {c : σ → ℝ} {d : τ → ℝ}
+    [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] : ∀ k, Fact (0 < Sum.elim c d k)
+  | .inl i => ‹∀ i, Fact (0 < c i)› i
+  | .inr j => ‹∀ j, Fact (0 < d j)› j
+
 section Algebra
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
