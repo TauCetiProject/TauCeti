@@ -55,25 +55,33 @@ def EnhancedStateAt.toEnhancedState {i j : ℤ} (e : D.EnhancedStateAt i j) :
   ⟨PDCode.cubeState e.1.1, e.2.1⟩
 
 /-- Forgetting the constraints retains both the smoothing and its dependent circle labels. -/
-@[simp]
-theorem EnhancedStateAt.toEnhancedState_eq {i j : ℤ} (e : D.EnhancedStateAt i j) :
+theorem EnhancedStateAt.toEnhancedState_def {i j : ℤ} (e : D.EnhancedStateAt i j) :
     e.toEnhancedState D = ⟨PDCode.cubeState e.1.1, e.2.1⟩ := (rfl)
 
-/-- The underlying enhanced state has the specified cochain degree.
-Simplify the degree before expanding the underlying enhanced state. -/
+/-- Forgetting the constraints preserves the smoothing state. -/
+@[simp]
+theorem EnhancedStateAt.toEnhancedState_fst {i j : ℤ} (e : D.EnhancedStateAt i j) :
+    (e.toEnhancedState D).1 = PDCode.cubeState e.1.1 := (rfl)
+
+/-- Forgetting the constraints preserves the circle labels on the corresponding smoothing. -/
+@[simp]
+theorem EnhancedStateAt.toEnhancedState_snd {i j : ℤ} (e : D.EnhancedStateAt i j) :
+    HEq (e.toEnhancedState D).2 e.2.1 := (HEq.rfl)
+
+/-- The underlying enhanced state has the specified cochain degree. -/
+-- Simplify before the state projection erases the enhanced-state degree constraint.
 @[simp↓]
 theorem EnhancedStateAt.stateCochainDegree_toEnhancedState {i j : ℤ} (e : D.EnhancedStateAt i j) :
     D.stateCochainDegree (e.toEnhancedState D).1 = i := by
-  simp only [EnhancedStateAt.toEnhancedState_eq, stateCochainDegree_cubeState, e.1.2]
+  simp only [EnhancedStateAt.toEnhancedState_fst, stateCochainDegree_cubeState, e.1.2]
   omega
 
-/-- The underlying enhanced state has the specified quantum degree.
-Simplify the degree before expanding the underlying enhanced state. -/
-@[simp↓]
+/-- The underlying enhanced state has the specified quantum degree. -/
+@[simp]
 theorem EnhancedStateAt.enhancedQuantumDegree_toEnhancedState {i j : ℤ}
     (e : D.EnhancedStateAt i j) :
     D.enhancedQuantumDegree (e.toEnhancedState D) = j := by
-  simp only [EnhancedStateAt.toEnhancedState_eq, enhancedQuantumDegree_def, e.2.2]
+  simp only [EnhancedStateAt.toEnhancedState_def, enhancedQuantumDegree_def, e.2.2]
   omega
 
 /-- Cube-subset indexing gives exactly the native enhanced states of bidegree `(i,j)`. -/
@@ -157,7 +165,11 @@ theorem khovanovEnhancedBasis_apply (i : ℤ) (e : D.EnhancedStateAt i j) :
       khovanovComplexι_π_self, ModuleCat.id_apply]
     exact (ModuleCat.hom_inv_apply
       (eqToIso (D.resolutionCube_obj_normalized hD R j e.1.1)) _).symm
-  · simp [ModuleCat.Hom.hom, ← ModuleCat.comp_apply, khovanovComplexι_π_of_ne, h]
+  · rw [← LinearMap.comp_apply (D.khovanovComplexπ hD R j T).hom
+      (D.khovanovComplexι hD R j e.1).hom, ← ModuleCat.hom_comp,
+      khovanovComplexι_π_of_ne _ _ _ _ h]
+    simp only [Pi.single_eq_of_ne (Ne.symm h), ModuleCat.hom_zero, LinearMap.zero_apply,
+      map_zero]
 
 /-- The finite-free coefficient model of the normalized quantum component. Its differential
 is the signed saddle differential expressed in the enhanced-state bases.
@@ -192,9 +204,9 @@ instance (i : ℤ) : Module.Finite R ((D.khovanovEnhancedComplex hD R j).X i) :=
 /-- The coordinate differential is conjugate to the actual tensor-complex differential. -/
 @[simp]
 theorem khovanovEnhancedComplex_d_apply (i k : ℤ) (x : D.EnhancedStateAt i j →₀ R) :
-    (D.khovanovEnhancedComplex hD R j).d i k x =
+    ((D.khovanovEnhancedComplex hD R j).d i k).hom x =
       (D.khovanovEnhancedBasis hD R j k).repr
-        ((D.khovanovComplex hD R j).d i k
+        (((D.khovanovComplex hD R j).d i k).hom
           ((D.khovanovEnhancedBasis hD R j i).repr.symm x)) := (rfl)
 
 /-- The tensor and enhanced-state coefficient models are isomorphic as cochain complexes. -/
@@ -240,12 +252,11 @@ theorem khovanovEnhancedComplex_d_state {i : ℤ}
               (((D.toPDCode.resolutionCube hD R
                 (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).map
                   (homOfLE (S.1.subset_insert a.1))).hom x)) := by
-  have h := congrArg (fun f ↦ (D.khovanovEnhancedBasis hD R j (i + 1)).repr (f.hom x))
-    (D.ι_khovanovComplex_d hD R j S)
-  simp only [khovanovEnhancedComplex_d_apply, LinearEquiv.symm_apply_apply]
-  dsimp only [khovanovEnhancedComplex] at ⊢
-  simpa only [ModuleCat.hom_comp, ModuleCat.hom_sum, ModuleCat.hom_zsmul,
-    LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.smul_apply, map_sum, map_zsmul,
-    ModuleCat.Hom.hom] using h
+  rw [khovanovEnhancedComplex_d_apply, LinearEquiv.symm_apply_apply,
+    ← LinearMap.comp_apply, ← ModuleCat.hom_comp, ι_khovanovComplex_d]
+  simp only [ModuleCat.hom_sum, ModuleCat.hom_zsmul, ModuleCat.hom_comp,
+    LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply, map_sum, map_zsmul]
+  -- The complex term inherits its sum and scalar action from the exposed Finsupp carrier.
+  rfl
 
 end TauCeti.OrientedPDCode
