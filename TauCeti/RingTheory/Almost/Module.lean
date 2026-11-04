@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Images
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
 public import Mathlib.CategoryTheory.Localization.Linear
 public import TauCeti.RingTheory.Almost.Firm
@@ -47,7 +48,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.instAbelian`: the category of almost modules is abelian.
 * `TauCeti.Almost.Module.isZero_toAlmost_obj_iff`: `M^a` is zero iff `M` is almost zero.
 * `TauCeti.Almost.Module.isIso_toAlmost_map_iff`: `f^a` is an isomorphism iff `f` is an almost
-  isomorphism.
+  isomorphism; `mono_toAlmost_map_iff` and `epi_toAlmost_map_iff` treat monomorphisms and
+  epimorphisms, and `toAlmost_map_eq_zero_iff` zero morphisms.
 * `TauCeti.Almost.Module.isZero_of_ideal_eq_bot`: for the zero setup `(V, 0)` every almost module is
   zero.
 
@@ -131,6 +133,30 @@ theorem isIso_toAlmost_map_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
     IsIso ((toAlmost S).map f) ↔ S.IsAlmostIso f.hom := by
   rw [ObjectProperty.SerreClassLocalization.isIso_map_iff (toAlmost S) S.almostZero,
     S.isAlmostIso_iff_isoModSerre]
+
+/-- `f^a` is a monomorphism iff the kernel of `f` is almost zero. -/
+@[simp]
+theorem mono_toAlmost_map_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
+    Mono ((toAlmost S).map f) ↔ S.IsAlmostZero (LinearMap.ker f.hom) := by
+  rw [ObjectProperty.SerreClassLocalization.mono_map_iff (toAlmost S) S.almostZero,
+    ObjectProperty.monoModSerre_iff, S.almostZero.prop_iff_of_iso (ModuleCat.kernelIsoKer f),
+    S.almostZero_iff]
+
+/-- `f^a` is an epimorphism iff the cokernel of `f` is almost zero. -/
+@[simp]
+theorem epi_toAlmost_map_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
+    Epi ((toAlmost S).map f) ↔ S.IsAlmostZero (N ⧸ LinearMap.range f.hom) := by
+  rw [ObjectProperty.SerreClassLocalization.epi_map_iff (toAlmost S) S.almostZero,
+    ObjectProperty.epiModSerre_iff,
+    S.almostZero.prop_iff_of_iso (ModuleCat.cokernelIsoRangeQuotient f), S.almostZero_iff]
+
+/-- `f^a` is zero iff the range of `f` is almost zero. -/
+@[simp]
+theorem toAlmost_map_eq_zero_iff {M N : ModuleCat.{u} V} (f : M ⟶ N) :
+    (toAlmost S).map f = 0 ↔ S.IsAlmostZero (LinearMap.range f.hom) := by
+  rw [ObjectProperty.SerreClassLocalization.map_eq_zero_iff (toAlmost S) S.almostZero,
+    S.almostZero.prop_iff_of_iso (Abelian.imageIsoImage f ≪≫ ModuleCat.imageIsoRange f),
+    S.almostZero_iff]
 
 /-- The inclusion `m ⊆ V` becomes an isomorphism of almost modules. -/
 instance isIso_toAlmost_map_subtype :
