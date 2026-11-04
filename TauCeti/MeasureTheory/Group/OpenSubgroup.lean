@@ -24,13 +24,13 @@ compact topological group (`OpenSubgroup.locallyCompactSpace`), and its inclusio
 an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H` via
 `μ.comap ((↑) : H → G)` turns ambient analysis on `G` into subgroup analysis on `H`:
 
-* **Subgroup invariance, Haar measures, and regularity:** For any measurable subgroup `H` of `G`,
-  `μ.comap ((↑) : H → G)` inherits left and right multiplication invariance from `μ`. When `H` is
-  an open subgroup of a Borel group `G`, `μ.comap (↑)` inherits `IsOpenPosMeasure`, `IsHaarMeasure`,
-  `Regular`, and `InnerRegular`; if `H` is moreover σ-compact and `μ` has
-  `InnerRegularCompactLTTop` (as any regular Haar measure on a non-σ-compact group does), then
-  `μ.comap (↑)` is both σ-finite and inner regular on `H`, and the modular character of `H` agrees
-  with the restriction of the modular character of `G` (`OpenSubgroup.modularCharacter_eq`).
+* **Haar measures, regularity, and modular character:** When `H` is an open subgroup of a Borel
+  group `G`, `μ.comap ((↑) : H → G)` inherits left and right multiplication invariance,
+  `IsOpenPosMeasure`, `IsHaarMeasure`, `Regular`, and `InnerRegular`; if `H` is moreover σ-compact
+  and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on a non-σ-compact group
+  does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and the modular character of
+  `H` agrees with the restriction of the modular character of `G`
+  (`OpenSubgroup.modularCharacter_eq`).
 * **Translated-coset calculations:** For a measurable subgroup `H`, left translation `u ↦ g * u`
   from `(H, μ.comap (↑))` onto `(G, μ.restrict (g • H))` is a measure-preserving measurable
   embedding, identifying set integrals, lower Lebesgue integrals, `IntegrableOn`, and `Lᵖ` seminorms
@@ -45,9 +45,6 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 
 ## Main statements
 
-* `MeasureTheory.Measure.IsMulLeftInvariant.comap_subtype_coe`,
-  `MeasureTheory.Measure.IsMulRightInvariant.comap_subtype_coe`: left and right invariance of
-  `μ.comap ((↑) : H → G)` on a measurable subgroup.
 * `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
   `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`:
   Haar, regularity, and modular-character inheritance on open subgroups.
@@ -98,71 +95,6 @@ instance InvMemClass.measurableInv {G S : Type*} [Inv G] [MeasurableSpace G] [Me
 
 end SubobjectMeasurable
 
-/-! ### Invariance of pullback measures on measurable subgroups -/
-
-@[to_additive]
-private theorem image_subtype_coe_preimage_mul_right {G S : Type*} [Group G] [SetLike S G]
-    [SubgroupClass S G] {H : S} (u : H) (E : Set H) :
-    ((↑) : H → G) '' ((· * u) ⁻¹' E) = (· * (u : G)) ⁻¹' (((↑) : H → G) '' E) := by
-  ext x
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    exact ⟨v * u, hv, rfl⟩
-  · rintro ⟨w, hw, hwx⟩
-    have hxH : x ∈ H := by
-      have : (w : G) * (u : G)⁻¹ ∈ H := mul_mem w.2 (inv_mem u.2)
-      rwa [hwx, mul_inv_cancel_right] at this
-    refine ⟨⟨x, hxH⟩, ?_, rfl⟩
-    have hwu : w = ⟨x, hxH⟩ * u := Subtype.ext hwx
-    exact mem_preimage.2 (hwu ▸ hw)
-
-namespace MeasureTheory.Measure
-
-section SubgroupInvariance
-
-variable {G S : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
-  [SetLike S G] [SubgroupClass S G] {H : S}
-
-/-- Pulling a left-invariant measure back to a measurable subgroup gives a left-invariant measure on
-the subgroup. -/
-@[to_additive /-- Pulling a left-invariant measure back to a measurable additive subgroup gives a
-left-invariant measure on the subgroup. -/]
-theorem IsMulLeftInvariant.comap_subtype_coe [μ.IsMulLeftInvariant]
-    (hH : MeasurableSet (H : Set G)) : (μ.comap ((↑) : H → G)).IsMulLeftInvariant where
-  map_mul_left_eq_self u := by
-    have hcoe : MeasurableEmbedding ((↑) : H → G) := MeasurableEmbedding.subtype_coe hH
-    ext E hE
-    rw [map_apply (measurable_const_mul u) hE, hcoe.comap_apply, hcoe.comap_apply]
-    have himg : ((↑) : H → G) '' ((u * ·) ⁻¹' E) = ((u : G) * ·) ⁻¹' (((↑) : H → G) '' E) := by
-      ext x
-      constructor
-      · rintro ⟨v, hv, rfl⟩
-        exact ⟨u * v, hv, rfl⟩
-      · rintro ⟨w, hw, hwx⟩
-        have hxH : x ∈ H := by
-          have : (u : G)⁻¹ * (w : G) ∈ H := mul_mem (inv_mem u.2) w.2
-          rwa [hwx, inv_mul_cancel_left] at this
-        refine ⟨⟨x, hxH⟩, ?_, rfl⟩
-        have hwu : w = u * ⟨x, hxH⟩ := Subtype.ext hwx
-        exact mem_preimage.2 (hwu ▸ hw)
-    rw [himg, measure_preimage_mul]
-
-/-- Pulling a right-invariant measure back to a measurable subgroup gives a right-invariant measure
-on the subgroup. -/
-@[to_additive /-- Pulling a right-invariant measure back to a measurable additive subgroup gives a
-right-invariant measure on the subgroup. -/]
-theorem IsMulRightInvariant.comap_subtype_coe [μ.IsMulRightInvariant]
-    (hH : MeasurableSet (H : Set G)) : (μ.comap ((↑) : H → G)).IsMulRightInvariant where
-  map_mul_right_eq_self u := by
-    have hcoe : MeasurableEmbedding ((↑) : H → G) := MeasurableEmbedding.subtype_coe hH
-    ext E hE
-    rw [map_apply (measurable_mul_const u) hE, hcoe.comap_apply, hcoe.comap_apply,
-      image_subtype_coe_preimage_mul_right, measure_preimage_mul_right]
-
-end SubgroupInvariance
-
-end MeasureTheory.Measure
-
 /-! ### Haar measure, regularity, and modular character on open subgroups -/
 
 namespace OpenSubgroup
@@ -175,13 +107,15 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
 instance instIsMulLeftInvariantComap [MeasurableMul G] [OpensMeasurableSpace G]
     (μ : Measure G) [μ.IsMulLeftInvariant] (H : OpenSubgroup G) :
     (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
-  Measure.IsMulLeftInvariant.comap_subtype_coe H.isOpen.measurableSet
+  Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
+    (MeasurableEmbedding.subtype_coe H.isOpen.measurableSet)
 
 @[to_additive]
 instance instIsMulRightInvariantComap [MeasurableMul G] [OpensMeasurableSpace G]
     (μ : Measure G) [μ.IsMulRightInvariant] (H : OpenSubgroup G) :
     (μ.comap ((↑) : H → G)).IsMulRightInvariant :=
-  Measure.IsMulRightInvariant.comap_subtype_coe H.isOpen.measurableSet
+  Measure.IsMulRightInvariant.comap μ (f := SubgroupClass.subtype H)
+    (MeasurableEmbedding.subtype_coe H.isOpen.measurableSet)
 
 @[to_additive]
 instance instIsOpenPosMeasureComap [BorelSpace G] (μ : Measure G) [μ.IsOpenPosMeasure]
@@ -237,8 +171,15 @@ theorem modularCharacter_eq_of_regular {G : Type*} [Group G] [TopologicalSpace G
   have hmap : Measure.map (· * u) ν = Measure.modularCharacter (u : G) • ν := by
     ext E hE
     rw [Measure.map_apply (measurable_mul_const u) hE, smul_apply, Measure.nnreal_smul_coe_apply,
-      hcoe.comap_apply, hcoe.comap_apply, image_subtype_coe_preimage_mul_right,
-      Measure.measure_preimage_mul_right_eq_modularCharacter_mul_of_regular]
+      hcoe.comap_apply, hcoe.comap_apply]
+    have himg : ((↑) : H → G) '' ((· * u) ⁻¹' E) = (· * (u : G)) ⁻¹' (((↑) : H → G) '' E) := by
+      ext x
+      constructor
+      · rintro ⟨v, hv, rfl⟩
+        exact ⟨v * u, hv, rfl⟩
+      · rintro ⟨w, hw, hwx⟩
+        exact ⟨w * u⁻¹, by simpa using hw, by simp [hwx]⟩
+    rw [himg, Measure.measure_preimage_mul_right_eq_modularCharacter_mul_of_regular]
   have hsmul : Measure.modularCharacter u • ν = Measure.modularCharacter (u : G) • ν := by
     rw [← Measure.map_right_mul_eq_modularCharacter_smul_of_regular (μ := ν) u, hmap]
   obtain ⟨K, hK, hK1⟩ := exists_compact_mem_nhds (1 : H)
@@ -339,7 +280,9 @@ theorem lintegral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] [μ.IsMul
     (hH : MeasurableSet (H : Set G)) {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → ℝ≥0∞) :
     ∫⁻ u : H, f (g₁ * (u : G)) ∂(μ.comap ((↑) : H → G)) =
       ∫⁻ u : H, f (g₂ * (u : G)) ∂(μ.comap ((↑) : H → G)) := by
-  have := Measure.IsMulLeftInvariant.comap_subtype_coe (μ := μ) hH
+  have : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
+    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
+      (MeasurableEmbedding.subtype_coe hH)
   rw [← lintegral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]
@@ -351,7 +294,9 @@ theorem integral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] {E : Type*
     (hH : MeasurableSet (H : Set G)) {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → E) :
     ∫ u : H, f (g₁ * (u : G)) ∂(μ.comap ((↑) : H → G)) =
       ∫ u : H, f (g₂ * (u : G)) ∂(μ.comap ((↑) : H → G)) := by
-  have := Measure.IsMulLeftInvariant.comap_subtype_coe (μ := μ) hH
+  have : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
+    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
+      (MeasurableEmbedding.subtype_coe hH)
   rw [← integral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]
@@ -368,18 +313,6 @@ theorem measurableEmbedding_mul_right_subtype_coe {G S : Type*} [Group G] [Measu
     [MeasurableMul G] [SetLike S G] {H : S} (hH : MeasurableSet (H : Set G)) (g : G) :
     MeasurableEmbedding (fun u : H ↦ (u : G) * g) :=
   (MeasurableEquiv.mulRight g).measurableEmbedding.comp (MeasurableEmbedding.subtype_coe hH)
-
-private theorem rightCoset_eq_of_mul_inv_mem {G S : Type*} [Group G] [SetLike S G]
-    [SubgroupClass S G] {H : S} {g₁ g₂ : G} (hg : g₁ * g₂⁻¹ ∈ H) :
-    (· * g₁) '' (H : Set G) = (· * g₂) '' (H : Set G) := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    refine ⟨y * (g₁ * g₂⁻¹), mul_mem hy hg, ?_⟩
-    simp [mul_assoc]
-  · rintro ⟨y, hy, rfl⟩
-    refine ⟨y * (g₁ * g₂⁻¹)⁻¹, mul_mem hy (inv_mem hg), ?_⟩
-    simp [mul_assoc]
 
 variable {G S : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
@@ -457,8 +390,11 @@ theorem modularCharacter_mul_lintegral_mul_right_comap_eq_of_mul_inv_mem [Subgro
     Measure.modularCharacter g₁⁻¹ * ∫⁻ u : H, f ((u : G) * g₁) ∂(μ.comap ((↑) : H → G)) =
       Measure.modularCharacter g₂⁻¹ * ∫⁻ u : H, f ((u : G) * g₂) ∂(μ.comap ((↑) : H → G)) := by
   rw [← setLIntegral_rightCoset_eq_modularCharacter_mul_comap hH g₁ f,
-    ← setLIntegral_rightCoset_eq_modularCharacter_mul_comap hH g₂ f,
-    rightCoset_eq_of_mul_inv_mem hg]
+    ← setLIntegral_rightCoset_eq_modularCharacter_mul_comap hH g₂ f]
+  have hcoset : (· * g₁) '' (H : Set G) = (· * g₂) '' (H : Set G) := by
+    simpa [← image_smul, op_smul_eq_mul] using
+      ((rightCoset_eq_iff (Subgroup.ofClass H) (x := g₂) (y := g₁)).2 hg).symm
+  rw [hcoset]
 
 /-- **Right-coset representative independence for Bochner integrals.** -/
 theorem modularCharacter_smul_integral_mul_right_comap_eq_of_mul_inv_mem [SubgroupClass S G]
@@ -467,8 +403,11 @@ theorem modularCharacter_smul_integral_mul_right_comap_eq_of_mul_inv_mem [Subgro
     Measure.modularCharacter g₁⁻¹ • ∫ u : H, f ((u : G) * g₁) ∂(μ.comap ((↑) : H → G)) =
       Measure.modularCharacter g₂⁻¹ • ∫ u : H, f ((u : G) * g₂) ∂(μ.comap ((↑) : H → G)) := by
   rw [← setIntegral_rightCoset_eq_modularCharacter_smul_comap hH g₁ f,
-    ← setIntegral_rightCoset_eq_modularCharacter_smul_comap hH g₂ f,
-    rightCoset_eq_of_mul_inv_mem hg]
+    ← setIntegral_rightCoset_eq_modularCharacter_smul_comap hH g₂ f]
+  have hcoset : (· * g₁) '' (H : Set G) = (· * g₂) '' (H : Set G) := by
+    simpa [← image_smul, op_smul_eq_mul] using
+      ((rightCoset_eq_iff (Subgroup.ofClass H) (x := g₂) (y := g₁)).2 hg).symm
+  rw [hcoset]
 
 end RightCosets
 
@@ -530,41 +469,16 @@ theorem exists_lp_one_nonneg_integral_eq_one_norm_eq_one {G : Type*} [Group G]
       0 ≤ k₀ ∧ ∫ u : H, k₀ u ∂(μ.comap ((↑) : H → G)) = 1 ∧ ‖k₀‖ = 1 ∧
         ∀ᵐ x ∂μ, x ∉ U →
           Lp.extendByZeroComapₗᵢ ℝ μ H.isOpen.measurableSet k₀ x = 0 := by
-  obtain ⟨W, hW, hWμ⟩ := μ.finiteAt_nhds (1 : G)
-  set V : Set G := interior (U ∩ (H : Set G) ∩ W)
-  have hVμ : μ V ≠ ∞ :=
-    ((measure_mono (interior_subset.trans inter_subset_right)).trans_lt hWμ).ne
-  have hVpos : 0 < μ.real V :=
-    ENNReal.toReal_pos (isOpen_interior.measure_ne_zero μ ⟨1, mem_interior_iff_mem_nhds.2
-      (inter_mem (inter_mem hU (H.isOpen.mem_nhds H.one_mem)) hW)⟩) hVμ
-  set k : Lp ℝ 1 μ := indicatorConstLp 1 isOpen_interior.measurableSet hVμ (μ.real V)⁻¹
-  have hk_compl : (k : G → ℝ) =ᵐ[μ.restrict (H : Set G)ᶜ] 0 := by
-    rw [Filter.EventuallyEq, ae_restrict_iff' H.isOpen.measurableSet.compl]
-    filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
-      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx hxH
-    exact hx fun hxV ↦ hxH ((interior_subset hxV).1.2)
-  set k₀ : Lp ℝ 1 (μ.comap ((↑) : H → G)) :=
-    Lp.restrictComapCLM ℝ μ 1 H.isOpen.measurableSet k
-  have hk_ext : Lp.extendByZeroComapₗᵢ ℝ μ H.isOpen.measurableSet k₀ = k :=
-    Lp.extendByZeroComapₗᵢ_restrictComapCLM_of_ae_restrict_compl_eq_zero
-      H.isOpen.measurableSet hk_compl
-  refine ⟨k₀, ?_, ?_, ?_, ?_⟩
-  · rw [← Lp.extendByZeroComapₗᵢ_nonneg_iff (μ := μ) H.isOpen.measurableSet, hk_ext,
-      ← Lp.coeFn_nonneg]
-    filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := isOpen_interior.measurableSet)
-      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx
-    rw [hx]
-    exact indicator_nonneg (fun _ _ ↦ inv_nonneg.2 hVpos.le) x
-  · exact (Lp.integral_restrictComapCLM_of_ae_restrict_compl_eq_zero (𝕜 := ℝ)
-      H.isOpen.measurableSet hk_compl).trans <| by
-        rw [integral_indicatorConstLp, smul_eq_mul, mul_inv_cancel₀ hVpos.ne']
-  · exact (Lp.norm_restrictComapCLM_of_ae_restrict_compl_eq_zero (𝕜 := ℝ)
-      H.isOpen.measurableSet hk_compl).trans <| by
-        rw [norm_indicatorConstLp one_ne_zero ENNReal.one_ne_top, ENNReal.toReal_one, div_one,
-          Real.rpow_one, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hVpos), inv_mul_cancel₀ hVpos.ne']
-  · rw [hk_ext]
-    filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
-      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx hxU
-    exact hx fun hxV ↦ hxU ((interior_subset hxV).1.1)
+  obtain ⟨k, hk0, hk_int, hk_norm, hkUH⟩ :=
+    TauCeti.exists_nonneg_integral_eq_one_norm_eq_one μ
+      (inter_mem hU (H.isOpen.mem_nhds H.one_mem))
+  have hH : MeasurableSet (H : Set G) := H.isOpen.measurableSet
+  have hk_compl : (k : G → ℝ) =ᵐ[μ.restrict (H : Set G)ᶜ] 0 :=
+    (ae_restrict_iff' hH.compl).2 (hkUH.mono fun x hx hxH ↦ hx fun hxUH ↦ hxH hxUH.2)
+  refine ⟨Lp.restrictComapCLM ℝ μ 1 hH k, Lp.restrictComapCLM_nonneg hH hk0,
+    (Lp.integral_restrictComapCLM_of_ae_restrict_compl_eq_zero hH hk_compl).trans hk_int,
+    (Lp.norm_restrictComapCLM_of_ae_restrict_compl_eq_zero hH hk_compl).trans hk_norm, ?_⟩
+  rw [Lp.extendByZeroComapₗᵢ_restrictComapCLM_of_ae_restrict_compl_eq_zero hH hk_compl]
+  exact hkUH.mono fun x hx hxU ↦ hx fun hxUH ↦ hxU hxUH.1
 
 end OpenSubgroup

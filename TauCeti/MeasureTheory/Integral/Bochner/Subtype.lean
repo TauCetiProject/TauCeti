@@ -28,8 +28,7 @@ integration is independent of the ambient carrier chosen.
 * `MeasureTheory.setLIntegral_eq_lintegral_of_ae_restrict_compl_eq_zero`,
   `MeasureTheory.lintegral_subtype_comap_of_ae_restrict_compl_eq_zero`: lower Lebesgue integral
   agreement when `f =ᵐ[μ.restrict sᶜ] 0`.
-* `MeasureTheory.setIntegral_eq_integral_of_ae_restrict_compl_eq_zero`,
-  `MeasureTheory.integral_subtype_comap_of_ae_restrict_compl_eq_zero`: Bochner integral agreement
+* `MeasureTheory.integral_subtype_comap_of_ae_restrict_compl_eq_zero`: Bochner integral agreement
   when `f =ᵐ[μ.restrict sᶜ] 0`.
 * `MeasureTheory.integrable_iff_integrableOn_of_ae_restrict_compl_eq_zero`,
   `MeasureTheory.integrable_iff_comap_subtypeVal_of_ae_restrict_compl_eq_zero`: integrability
@@ -125,13 +124,6 @@ section Bochner
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- If `f` vanishes `μ.restrict sᶜ`-almost everywhere outside a null-measurable set `s`, its
-Bochner set integral on `s` equals its ambient Bochner integral. -/
-theorem setIntegral_eq_integral_of_ae_restrict_compl_eq_zero {f : α → E}
-    (hs : NullMeasurableSet s μ) (hf : f =ᵐ[μ.restrict sᶜ] 0) :
-    ∫ x in s, f x ∂μ = ∫ x, f x ∂μ :=
-  setIntegral_eq_integral_of_ae_compl_eq_zero ((ae_restrict_iff'₀ hs.compl).1 hf)
-
 /-- **Ambient agreement of subtype Bochner integrals.** If `f` vanishes `μ.restrict sᶜ`-almost
 everywhere outside a measurable set `s`, integrating `f` on the subtype `s` against `μ.comap (↑)`
 gives the ambient Bochner integral. -/
@@ -139,7 +131,7 @@ theorem integral_subtype_comap_of_ae_restrict_compl_eq_zero {f : α → E}
     (hs : MeasurableSet s) (hf : f =ᵐ[μ.restrict sᶜ] 0) :
     ∫ x : s, f x ∂(μ.comap ((↑) : s → α)) = ∫ x, f x ∂μ :=
   (integral_subtype_comap hs f).trans
-    (setIntegral_eq_integral_of_ae_restrict_compl_eq_zero hs.nullMeasurableSet hf)
+    (setIntegral_eq_integral_of_ae_compl_eq_zero ((ae_restrict_iff' hs.compl).1 hf))
 
 /-- **Subset independence of subtype Bochner integrals.** If `f` vanishes almost everywhere outside
 each of two measurable sets `s` and `t`, its subtype Bochner integrals on `s` and on `t` agree. -/
