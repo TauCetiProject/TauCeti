@@ -137,32 +137,43 @@ def IsQuasiIso (f : AInfinityBimoduleHom MM NN) : Prop :=
   Function.Bijective f.cohomologyMap
 
 /-- Quasi-isomorphisms are exactly the morphisms bijective on unary cohomology. -/
-theorem isQuasiIso_iff (f : AInfinityBimoduleHom MM NN) :
+theorem isQuasiIso_def (f : AInfinityBimoduleHom MM NN) :
     f.IsQuasiIso ↔ Function.Bijective f.cohomologyMap := Iff.rfl
+
+/-- A bimodule morphism is a quasi-isomorphism exactly when its linear part detects boundaries
+on cycles and every target cycle differs from the image of a source cycle by a boundary. -/
+theorem isQuasiIso_iff (f : AInfinityBimoduleHom MM NN) :
+    f.IsQuasiIso ↔
+      (∀ x ∈ LinearMap.ker MM.differential,
+        f.linearPart x ∈ LinearMap.range NN.differential → x ∈ LinearMap.range MM.differential) ∧
+      ∀ y ∈ LinearMap.ker NN.differential, ∃ x ∈ LinearMap.ker MM.differential,
+        y - f.linearPart x ∈ LinearMap.range NN.differential := by
+  rw [isQuasiIso_def, Function.Bijective, cohomologyMap,
+    LinearMap.homologyMap_injective_iff, LinearMap.homologyMap_surjective_iff]
 
 /-- Identity bimodule morphisms are quasi-isomorphisms. -/
 @[simp]
 theorem isQuasiIso_id (MM : AInfinityBimodule AA BB M) :
     (AInfinityBimoduleHom.id MM).IsQuasiIso := by
-  rw [isQuasiIso_iff, cohomologyMap_id]
+  rw [isQuasiIso_def, cohomologyMap_id]
   exact Function.bijective_id
 
 /-- Quasi-isomorphisms are closed under composition. -/
 theorem IsQuasiIso.comp {g : AInfinityBimoduleHom NN PP} {f : AInfinityBimoduleHom MM NN}
     (hg : g.IsQuasiIso) (hf : f.IsQuasiIso) : (g.comp f).IsQuasiIso := by
-  rw [isQuasiIso_iff, cohomologyMap_comp, LinearMap.coe_comp]
+  rw [isQuasiIso_def, cohomologyMap_comp, LinearMap.coe_comp]
   exact Function.Bijective.comp hg hf
 
 /-- Cancel a quasi-isomorphism on the source side of a quasi-isomorphism. -/
 theorem IsQuasiIso.of_precomp {g : AInfinityBimoduleHom NN PP} {f : AInfinityBimoduleHom MM NN}
     (hf : f.IsQuasiIso) (hgf : (g.comp f).IsQuasiIso) : g.IsQuasiIso := by
-  rw [isQuasiIso_iff, cohomologyMap_comp, LinearMap.coe_comp] at hgf
+  rw [isQuasiIso_def, cohomologyMap_comp, LinearMap.coe_comp] at hgf
   exact (Function.Bijective.of_comp_iff _ hf).mp hgf
 
 /-- Cancel a quasi-isomorphism on the target side of a quasi-isomorphism. -/
 theorem IsQuasiIso.of_postcomp {g : AInfinityBimoduleHom NN PP} {f : AInfinityBimoduleHom MM NN}
     (hg : g.IsQuasiIso) (hgf : (g.comp f).IsQuasiIso) : f.IsQuasiIso := by
-  rw [isQuasiIso_iff, cohomologyMap_comp, LinearMap.coe_comp] at hgf
+  rw [isQuasiIso_def, cohomologyMap_comp, LinearMap.coe_comp] at hgf
   exact (Function.Bijective.of_comp_iff' hg _).mp hgf
 
 /-- A bimodule quasi-isomorphism induces a linear equivalence on total unary cohomology. -/
