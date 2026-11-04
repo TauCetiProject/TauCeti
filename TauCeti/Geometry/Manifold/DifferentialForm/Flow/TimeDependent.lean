@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Lie derivatives of differential forms along time-dependent flows
@@ -81,36 +79,6 @@ variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hc hX
 
-omit hc in
-/-- At the base time `t`, the velocity of the time-dependent flow from `t`, read in the chart at
-`y`, is the coordinate expression of `X t` in that chart. -/
-private theorem hasDerivAt_extChartAt_timeDependentFlowOf (t : ℝ) (y : M) {z : E}
-    (hz : z ∈ (extChartAt I y).target) :
-    HasDerivAt (fun u ↦ extChartAt I y (timeDependentFlowOf X t u ((extChartAt I y).symm z)))
-      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm (X t) (range I) z) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  set q := (extChartAt I y).symm z
-  have hq : q ∈ (extChartAt I y).source := (extChartAt I y).map_target hz
-  have hγ := hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t q)
-  set p := timeDependentFlowOf X t t q
-  have hp : p = q := timeDependentFlowOf_self hX₁ t q
-  have hpsrc : p ∈ (chartAt H y).source := hp ▸ extChartAt_source I y ▸ hq
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hpsrc) hγ
-  -- In the tangent-bundle trivialization at `y`, the coordinate field is a coordinate change.
-  have hcoord : mvfderiv I (extChartAt I y) p (X t p) =
-      VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm (X t) (range I)
-        (extChartAt I y p) := by
-    rw [VectorField.mpullbackWithin_extChartAt_symm_apply (X t) (extChartAt_source I y ▸ hpsrc)]
-    simp only [mvfderiv]
-    rw [(hasMFDerivAt_extChartAt (I := I) hpsrc).mfderiv,
-      mfderiv_chartAt_eq_tangentCoordChange hpsrc]
-    -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
-    -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
-    rfl
-  rw [hcoord, hp, (extChartAt I y).right_inv hz] at hderiv
-  exact hderiv
-
 /-- **The Lie derivative is the velocity of pulled-back forms at the base time.** For a jointly
 `C²` time-dependent vector field `X` with complete suspension and a form `α` differentiable at
 `y`, the pullbacks by the time-dependent flow from time `t` satisfy
@@ -127,8 +95,8 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
     (Eventually.of_forall (timeDependentFlowOf_self hX₁ t))
     (hflow.comp (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
       contMDiff_snd)).contMDiffAt
-    (eventually_of_mem (extChartAt_target_mem_nhds y) fun _ hz ↦
-      hasDerivAt_extChartAt_timeDependentFlowOf hX t y hz) hα
+    (Eventually.of_forall fun x ↦
+      hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x)) hα
 
 /-- **Lie derivatives along time-dependent flows.** For a jointly `C²` time-dependent vector field
 `X` with complete suspension and a form `α` differentiable at `φ_{s,t} x`, the pullbacks

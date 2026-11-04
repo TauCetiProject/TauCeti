@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -38,7 +39,7 @@ Hamiltonian flows are symplectic.
 In the preferred chart at a point the flow is a jointly `C²` family of maps, and the statement
 reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fderiv`. This
 reduction holds for every jointly `C²` family of maps `ψᵤ` which is the identity near `y` at a
-time `t` and, in the chart at `y`, has velocity `V` at time `t`: then
+time `t` and moves the points near `y` with the velocity of a vector field `V` at time `t`: then
 `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y` (`TauCeti.hasDerivAt_mpullback_of_eq_id`). Time-dependent
 flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`).
 
@@ -78,15 +79,13 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **The Lie derivative is the velocity of pulled-back forms along a family of maps.** Let `ψᵤ` be
 a family of maps of `M` which is the identity near `y` at time `t`, is jointly `C²` near `(t, y)`,
-and, read in the chart at `y`, moves the points near `y` at time `t` with the coordinate velocity
-of a vector field `V`. Then for a form `α` differentiable at `y`,
-`d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y`. -/
+and moves the points near `y` at time `t` with the velocity of a vector field `V`. Then for a form
+`α` differentiable at `y`, `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y`. -/
 theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → TangentSpace I x} {t : ℝ}
     (y : M) (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
-    (hvel : ∀ᶠ z in 𝓝 (extChartAt I y y),
-      HasDerivAt (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm z)))
-        (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) z) t)
+    (hvel : ∀ᶠ x in 𝓝 y,
+      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u x) t ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t x))))
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
       (fun z ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) z (α z)) y) :
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α y)
@@ -118,12 +117,41 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
     simp only [G, hz', id_eq]
     exact (extChartAt I y).right_inv hz
   have hGt : G (t, extChartAt I y y) = extChartAt I y y := hGt_nhds.self_of_nhds
+  -- Read in the chart at `y`, the points near `y` move at time `t` with the coordinate velocity
+  -- `W` of `V`.
+  have hvel' : ∀ᶠ z in 𝓝 (extChartAt I y y), HasDerivAt (fun u ↦ G (u, z)) (W z) t := by
+    have h : ∀ᶠ z in 𝓝 (extChartAt I y y),
+        HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u ((extChartAt I y).symm z)) t
+            ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t ((extChartAt I y).symm z)))) ∧
+          ψ t ((extChartAt I y).symm z) = (extChartAt I y).symm z :=
+      (continuousAt_extChartAt_symm y).tendsto.eventually
+        (p := fun x ↦ HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u x) t
+          ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t x))) ∧ ψ t x = x)
+        (by rw [extChartAt_to_inv]; exact hvel.and hid)
+    filter_upwards [extChartAt_target_mem_nhds y, h] with z hz ⟨hzv, hzid⟩
+    set x := (extChartAt I y).symm z
+    have hxsrc : x ∈ (chartAt H y).source := extChartAt_source I y ▸ (extChartAt I y).map_target hz
+    have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
+      (mdifferentiableAt_extChartAt (I := I) (hzid ▸ hxsrc)) hzv
+    rw [hzid] at hderiv
+    -- In the tangent-bundle trivialization at `y`, the coordinate field is a coordinate change.
+    have hcoord : mvfderiv I (extChartAt I y) x (V x) = W z := by
+      rw [hW, ← (extChartAt I y).right_inv hz,
+        VectorField.mpullbackWithin_extChartAt_symm_apply V (extChartAt_source I y ▸ hxsrc)]
+      simp only [mvfderiv]
+      rw [(hasMFDerivAt_extChartAt (I := I) hxsrc).mfderiv,
+        mfderiv_chartAt_eq_tangentCoordChange hxsrc]
+      -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
+      -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
+      rfl
+    rw [hcoord] at hderiv
+    exact hderiv
   -- The spatial derivative of the coordinate family solves the variational equation at time `t`:
   -- by symmetry of second derivatives, it differentiates to the derivative of the velocity `W`.
   have htime : timeFDeriv G t =ᶠ[𝓝 (extChartAt I y y)] W := by
     have hd : ∀ᶠ z in 𝓝 (extChartAt I y y), DifferentiableAt ℝ G (t, z) :=
       ((continuous_const.prodMk continuous_id).tendsto (extChartAt I y y)).eventually hdiff
-    filter_upwards [hvel, hd] with z hz hdz
+    filter_upwards [hvel', hd] with z hz hdz
     exact (hasDerivAt_parameterCurve hdz).unique hz
   have hspatial : HasDerivAt (fun u ↦ fderiv ℝ (fun z ↦ G (u, z)) (extChartAt I y y))
       (fderiv ℝ W (G (t, extChartAt I y y)) ∘L
@@ -142,7 +170,7 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
       rw [hGt]
       exact (α.differentiableAt_inChartAt hα).comp (t, extChartAt I y y)
         differentiableAt_snd)
-    (by rw [hGt]; exact hvel.self_of_nhds)
+    (by rw [hGt]; exact hvel'.self_of_nhds)
     hspatial
   -- Near time `t`, the maps `ψᵤ` are differentiable at `y` and keep `y` in the chart at `y`.
   have hψ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (ψ u) y := by
@@ -183,28 +211,6 @@ variable (hc : IsCompleteVectorField Z)
   (hZ : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
 include hc hZ
 
-/-- At time zero, the velocity of the flow of `Z` read in the chart at `y` is the coordinate
-expression of `Z` in that chart. -/
-private theorem hasDerivAt_extChartAt_globalFlow (y : M) {z : E}
-    (hz : z ∈ (extChartAt I y).target) :
-    HasDerivAt (fun s ↦
-      extChartAt I y (globalFlow Z (hZ.of_le one_le_two) hc s ((extChartAt I y).symm z)))
-      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm Z (range I) z) 0 := by
-  set q := (extChartAt I y).symm z
-  have hq : q ∈ (extChartAt I y).source := (extChartAt I y).map_target hz
-  have hcurve := ((isMIntegralCurve_globalFlow (hZ.of_le one_le_two) hc q).isMIntegralCurveOn
-    univ).hasDerivAt_extChartAt (x := y) (mem_univ 0) univ_mem
-    (by rw [Flow.map_zero_apply]; exact hq)
-  rw [Flow.map_zero_apply] at hcurve
-  refine hcurve.congr_deriv ?_
-  -- In the tangent-bundle trivialization at `y`, the coordinate field is a coordinate change.
-  have hVz := VectorField.mpullbackWithin_extChartAt_symm_apply Z hq
-  rw [(extChartAt I y).right_inv hz] at hVz
-  -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
-  -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
-  rw [hVz]
-  rfl
-
 /-- **The Lie derivative is the velocity of pulled-back forms at time zero.** For a complete `C²`
 vector field `Z` with flow `ψ` and a form `α` differentiable at `y`,
 `d/dt|₀ (ψₜ^* α)_y = (L_Z α)_y`. -/
@@ -217,8 +223,7 @@ theorem hasDerivAt_mpullback_globalFlow_zero (y : M)
   hasDerivAt_mpullback_of_eq_id (ψ := globalFlow Z (hZ.of_le one_le_two) hc) (V := Z) y
     (Eventually.of_forall (Flow.map_zero_apply _))
     (contMDiff_globalFlow_uncurry hc (n := 2) (by norm_num) hZ).contMDiffAt
-    (eventually_of_mem (extChartAt_target_mem_nhds y) fun _ hz ↦
-      hasDerivAt_extChartAt_globalFlow hc hZ y hz) hα
+    (Eventually.of_forall fun x ↦ isMIntegralCurve_globalFlow (hZ.of_le one_le_two) hc x 0) hα
 
 /-- **Lie derivatives along flows.** For a complete `C²` vector field `Z` with flow `ψ` and a form
 `α` differentiable at `ψₜ x`, the pullbacks `(ψₛ^* α)ₓ` have velocity `(ψₜ^* L_Z α)ₓ` at time
