@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
@@ -40,6 +41,10 @@ against the pullback `q^* σ`, because `q` is surjective and its differentials a
   complex linear for `J` and its descent.
 * `TauCeti.SmoothAlmostComplexStructure.eq_descend_iff`: the descent is the only almost complex
   structure with this property.
+* `TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_descend`,
+  `TauCeti.SmoothAlmostComplexStructure.eq_descend_iff_isPseudoholomorphic`: equivalently, `q` is
+  pseudoholomorphic from `J` to its descent, and the descent is the only almost complex structure
+  on `N` with this property.
 * `TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_deck`,
   `TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_eqvGen`: deck transformations commuting
   with `J` give the compatibility hypothesis on the equivalence relation they generate.
@@ -242,6 +247,19 @@ theorem eq_descend_iff (K : SmoothAlmostComplexStructure I' N) :
   obtain ⟨x, rfl⟩ := hsurj y
   obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective w
   rw [h, descend_apply_mfderiv]
+
+/-- The map `q` is pseudoholomorphic from `J` to its descent. -/
+theorem isPseudoholomorphic_descend : IsPseudoholomorphic J (descend hq hsurj J hJ) q :=
+  isPseudoholomorphic_iff.2 fun x ↦ isPseudoholomorphicAt_iff_mfderiv.2
+    ⟨(hq x).mdifferentiableAt (by simp), fun v ↦ (descend_apply_mfderiv hq hsurj J hJ x v).symm⟩
+
+/-- The descent of `J` is the only almost complex structure on `N` for which `q` is
+pseudoholomorphic from `J`. -/
+theorem eq_descend_iff_isPseudoholomorphic (K : SmoothAlmostComplexStructure I' N) :
+    K = descend hq hsurj J hJ ↔ IsPseudoholomorphic J K q := by
+  refine ⟨fun h ↦ h ▸ isPseudoholomorphic_descend hq hsurj J hJ, fun h ↦ ?_⟩
+  exact (eq_descend_iff hq hsurj J hJ K).2 fun x v ↦
+    ((isPseudoholomorphic_iff.1 h x).mfderiv_apply_commute v).symm
 
 variable (σ : SmoothTwoForm I' N)
 
