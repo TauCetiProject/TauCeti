@@ -64,9 +64,11 @@ theorem norm_frequency_le (j : Fin 2) (x : ℤ × ℤ) :
   simp only [frequency_apply]
   split_ifs
   · rw [norm_mul, Complex.norm_intCast]
-    exact mul_le_mul_of_nonneg_left (abs_fst_le_weight x) (norm_nonneg _)
+    gcongr
+    exact abs_fst_le_weight x
   · rw [norm_mul, Complex.norm_intCast]
-    exact mul_le_mul_of_nonneg_left (abs_snd_le_weight x) (norm_nonneg _)
+    gcongr
+    exact abs_snd_le_weight x
 
 /-- Multiplication by either coordinate frequency preserves rapid decay. -/
 theorem IsRapidDecay.frequency_mul {a : ℤ × ℤ → ℂ} (ha : IsRapidDecay a) (j : Fin 2) :
@@ -78,16 +80,18 @@ theorem IsRapidDecay.frequency_mul {a : ℤ × ℤ → ℂ} (ha : IsRapidDecay a
   calc ‖frequency j x * a x‖ * weight x ^ k
       ≤ (‖(2 * Real.pi * I : ℂ)‖ * weight x) * ‖a x‖ * weight x ^ k := by
         rw [norm_mul]
-        exact mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_right (norm_frequency_le j x) (norm_nonneg _))
-          (pow_nonneg (weight_pos x).le k)
+        have hw := weight_pos x
+        gcongr
+        exact norm_frequency_le j x
     _ = ‖(2 * Real.pi * I : ℂ)‖ * (‖a x‖ * weight x ^ (k + 1)) := by ring
-    _ ≤ ‖(2 * Real.pi * I : ℂ)‖ * C := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)
+    _ ≤ ‖(2 * Real.pi * I : ℂ)‖ * C := by
+      gcongr
+      exact hC x
 
 private def coordinateDerivative (j : Fin 2) : Module.End ℂ (SmoothNoncommutativeTorus θ) where
   toFun a := ⟨fun x ↦ frequency j x * a.coeff x, a.isRapidDecay_coeff.frequency_mul j⟩
-  map_add' a b := by ext x; exact mul_add _ _ _
-  map_smul' c a := by ext x; exact mul_left_comm _ _ _
+  map_add' a b := by ext x; simp [coeff_add, mul_add]
+  map_smul' c a := by ext x; simp [coeff_smul, mul_left_comm]
 
 private theorem coeff_coordinateDerivative (j : Fin 2) (a : SmoothNoncommutativeTorus θ)
     (x : ℤ × ℤ) : (coordinateDerivative j a).coeff x = frequency j x * a.coeff x :=
