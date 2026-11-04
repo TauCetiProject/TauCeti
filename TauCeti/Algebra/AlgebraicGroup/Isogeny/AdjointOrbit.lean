@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.DominantPoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
 import TauCeti.Algebra.Lie.AdjointAction.Regular
 
@@ -47,48 +46,6 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 
 attribute [local instance] Derivation.adjointComodule Comodule.prodTrivial
 
-/-- An affine isogeny maps a rational adjoint orbit onto the corresponding orbit, even
-when the isogeny is inseparable. This is a statement about sets of rational Lie algebra
-points, not about points over arbitrary coefficient algebras. -/
-theorem image_range_basePointsRepresentation (hf : IsIsogeny f)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    haveI := hf.finiteType_target
-    dualCotangentMap f.hom '' Set.range (fun g : WithConv (K →ₐ[k] k) =>
-      Comodule.basePointsRepresentation (H := K) _ g x) =
-    Set.range (fun g : WithConv (H →ₐ[k] k) =>
-      Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x)) := by
-  let _ := hf.finiteType_target
-  ext y
-  constructor
-  · rintro ⟨_, ⟨g, rfl⟩, rfl⟩
-    exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
-  · rintro ⟨g, rfl⟩
-    obtain ⟨q, hq⟩ := CommHopfAlgCat.mapDomain_surjective_of_injective k f hf.injective g
-    exact ⟨_, ⟨q, rfl⟩, (f.hom.dualCotangentMap_basePointsRepresentation q x).trans
-      (congrArg (fun p => Comodule.basePointsRepresentation (H := H) _ p
-        (dualCotangentMap f.hom x)) hq)⟩
-
-/-- If the differential of an affine isogeny is injective, two rational Lie algebra
-points are conjugate exactly when their images are conjugate. -/
-theorem exists_basePointsRepresentation_eq_iff_of_injective (hf : IsIsogeny f)
-    (hinj : Function.Injective (dualCotangentMap f.hom))
-    (x y : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    haveI := hf.finiteType_target
-    (∃ g : WithConv (H →ₐ[k] k),
-      Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x) =
-        dualCotangentMap f.hom y) ↔
-    ∃ g : WithConv (K →ₐ[k] k), Comodule.basePointsRepresentation (H := K) _ g x = y := by
-  let _ := hf.finiteType_target
-  constructor
-  · intro h
-    have hm : dualCotangentMap f.hom y ∈ Set.range (fun g : WithConv (H →ₐ[k] k) =>
-        Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x)) := h
-    rw [← hf.image_range_basePointsRepresentation x] at hm
-    obtain ⟨_, ⟨g, rfl⟩, hg⟩ := hm
-    exact ⟨g, hinj hg⟩
-  · rintro ⟨g, rfl⟩
-    exact ⟨BialgHom.mapDomain f.hom g, (f.hom.dualCotangentMap_basePointsRepresentation g x).symm⟩
-
 omit [IsAlgClosed k] [Algebra.FiniteType k H] in
 /-- A smooth affine isogeny with étale kernel preserves and reflects ad-nilpotence,
 including in positive characteristic. -/
@@ -114,7 +71,8 @@ theorem exists_basePointsRepresentation_eq_iff_of_charZero (hf : IsIsogeny f)
       Comodule.basePointsRepresentation (H := H) _ g (dualCotangentMap f.hom x) =
         dualCotangentMap f.hom y) ↔
     ∃ g : WithConv (K →ₐ[k] k), Comodule.basePointsRepresentation (H := K) _ g x = y := by
-  exact hf.exists_basePointsRepresentation_eq_iff_of_injective
+  let _ := hf.finiteType_target
+  exact CommHopfAlgCat.exists_basePointsRepresentation_eq_iff_of_injective hf.injective
     hf.dualCotangentMap_bijective_of_charZero.injective x y
 
 omit [IsAlgClosed k] in
