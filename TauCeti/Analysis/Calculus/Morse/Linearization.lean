@@ -164,7 +164,10 @@ theorem contDiffAt_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiffAt ℝ n
     le_rfl
 
 /-- For a `C³` function, differentiating the Hessian operator field in direction `v` gives the
-Hessian operator of the directional derivative in direction `v`. -/
+Hessian operator of the directional derivative in direction `v`.
+
+The use of third-derivative symmetry is adapted from the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/BakryEmery/LinearizedEquation.lean). -/
 theorem fderiv_hessianOperator_apply (hf : ContDiffAt ℝ 3 f x) (v : E) :
     fderiv ℝ (hessianOperator f) x v = hessianOperator (fun y ↦ fderiv ℝ f y v) x := by
   have hDf : ContDiffAt ℝ 2 (fderiv ℝ f) x := hf.fderiv_right (by norm_num)

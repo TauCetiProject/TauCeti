@@ -22,8 +22,8 @@ basis, the trace is the contraction with the inverse Hessian in the nondivergenc
 
 ## Main statements
 
-* `TauCeti.trace_inv_hessian_directional_eq` gives the basis-free trace form of the differentiated
-  equation, assuming the determinant equation holds near the point.
+* `TauCeti.trace_ringInverse_hessian_directional_eq` gives the basis-free trace form of the
+  differentiated equation, assuming the determinant equation holds near the point.
 * `OrthonormalBasis.sum_inv_hessian_directional_eq` gives its coordinate form for the
   nondivergence operator.
 
@@ -42,7 +42,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 /-- If `u` is `C³` at `x` with invertible Hessian and `det D²u = f` near `x`, the trace of
 `(D²u)⁻¹` composed with the Hessian of `∂ᵥu` equals `∂ᵥf / f` at `x`. -/
-theorem trace_inv_hessian_directional_eq [FiniteDimensional ℝ E] {u f : E → ℝ} {x : E}
+theorem trace_ringInverse_hessian_directional_eq [FiniteDimensional ℝ E] {u f : E → ℝ} {x : E}
     (hu : ContDiffAt ℝ 3 u x) (hne : (fderiv ℝ (∇ u) x).det ≠ 0)
     (heq : (fun y ↦ (fderiv ℝ (∇ u) y).det) =ᶠ[𝓝 x] f) (v : E) :
     LinearMap.trace ℝ E (Ring.inverse (fderiv ℝ (∇ u) x).toLinearMap *
@@ -84,7 +84,7 @@ theorem _root_.OrthonormalBasis.sum_inv_hessian_directional_eq {ι : Type*} [Fin
       (LinearMap.toMatrix b.toBasis b.toBasis (fderiv ℝ (∇ u) x).toLinearMap)⁻¹ i j •
       fderiv ℝ (fderiv ℝ (fun y ↦ fderiv ℝ u y v)) x (b i) (b j)) = fderiv ℝ f x v / f x := by
   let _ : FiniteDimensional ℝ E := Module.Finite.of_basis b.toBasis
-  have h := trace_inv_hessian_directional_eq hu hne heq v
+  have h := trace_ringInverse_hessian_directional_eq hu hne heq v
   rw [LinearMap.trace_ringInverse_mul_eq_matrix_trace b.toBasis] at h
   simpa only [fderiv_gradient, Matrix.trace, Matrix.diag, Matrix.mul_apply,
     b.toMatrix_hessianOperator_apply, smul_eq_mul] using h
