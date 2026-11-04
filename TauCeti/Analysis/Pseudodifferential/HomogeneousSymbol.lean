@@ -206,6 +206,36 @@ theorem coefficient_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymb
     (p : X × E) : (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) :=
   (rfl)
 
+@[simp]
+theorem comp_add (b : HomogeneousSymbol X E W U m') (a₁ a₂ : HomogeneousSymbol X E V W m) :
+    b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
+  ext1; funext p; simp [ContinuousLinearMap.comp_add]
+
+@[simp]
+theorem add_comp (b₁ b₂ : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
+  ext1; funext p; simp [ContinuousLinearMap.add_comp]
+
+@[simp]
+theorem comp_zero (b : HomogeneousSymbol X E W U m') :
+    b.comp (0 : HomogeneousSymbol X E V W m) = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+theorem zero_comp (a : HomogeneousSymbol X E V W m) :
+    (0 : HomogeneousSymbol X E W U m').comp a = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+theorem comp_smul (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    b.comp (c • a) = c • b.comp a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem smul_comp (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (c • b).comp a = c • b.comp a := by
+  ext1; funext p; simp [ContinuousLinearMap.smul_comp]
+
 /-! ### Spatial and frequency derivatives -/
 
 section Deriv
@@ -277,6 +307,76 @@ theorem coefficient_frequencyDeriv (w : E) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
       (hasFDerivAt_prodMk_right x ξ)
   rw [frequencyDeriv, coefficient_mk'_of_ne_zero _ _ _ hξ, h.fderiv]
   simp
+
+/-! The spatial and frequency derivatives are linear in the symbol and in the direction. -/
+
+@[simp]
+theorem add_spatialDeriv (b : HomogeneousSymbol X E V W m) (v : X) :
+    (a + b).spatialDeriv v = a.spatialDeriv v + b.spatialDeriv v :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [spatialDeriv, hξ, fderiv_add (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
+      (b.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+
+@[simp]
+theorem smul_spatialDeriv {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R) (v : X) :
+    (c • a).spatialDeriv v = c • a.spatialDeriv v :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [spatialDeriv, hξ, fderiv_const_smul (a.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+
+@[simp]
+theorem zero_spatialDeriv (v : X) : (0 : HomogeneousSymbol X E V W m).spatialDeriv v = 0 :=
+  ext_of_ne_zero fun x ξ hξ ↦ by simp [spatialDeriv, hξ]
+
+@[simp]
+theorem spatialDeriv_add (v v' : X) :
+    a.spatialDeriv (v + v') = a.spatialDeriv v + a.spatialDeriv v' :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [spatialDeriv, hξ, ← map_add]
+
+@[simp]
+theorem spatialDeriv_smul (c : ℝ) (v : X) : a.spatialDeriv (c • v) = c • a.spatialDeriv v :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [spatialDeriv, hξ, ← map_smul]
+
+@[simp]
+theorem spatialDeriv_zero : a.spatialDeriv 0 = 0 :=
+  ext_of_ne_zero fun x ξ hξ ↦ by simp [spatialDeriv, hξ, Prod.mk_zero_zero]
+
+@[simp]
+theorem add_frequencyDeriv (b : HomogeneousSymbol X E V W m) (w : E) :
+    (a + b).frequencyDeriv w = a.frequencyDeriv w + b.frequencyDeriv w :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [frequencyDeriv, hξ, fderiv_add (a.differentiableAt_coefficient (p := (x, ξ)) hξ)
+      (b.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+
+@[simp]
+theorem smul_frequencyDeriv {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R) (w : E) :
+    (c • a).frequencyDeriv w = c • a.frequencyDeriv w :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [frequencyDeriv, hξ, fderiv_const_smul (a.differentiableAt_coefficient (p := (x, ξ)) hξ)]
+
+@[simp]
+theorem zero_frequencyDeriv (w : E) :
+    (0 : HomogeneousSymbol X E V W m).frequencyDeriv w = 0 :=
+  ext_of_ne_zero fun x ξ hξ ↦ by simp [frequencyDeriv, hξ]
+
+@[simp]
+theorem frequencyDeriv_add (w w' : E) :
+    a.frequencyDeriv (w + w') = a.frequencyDeriv w + a.frequencyDeriv w' :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [frequencyDeriv, hξ, ← map_add]
+
+@[simp]
+theorem frequencyDeriv_smul (c : ℝ) (w : E) :
+    a.frequencyDeriv (c • w) = c • a.frequencyDeriv w :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    simp [frequencyDeriv, hξ, ← map_smul]
+
+@[simp]
+theorem frequencyDeriv_zero : a.frequencyDeriv 0 = 0 :=
+  ext_of_ne_zero fun x ξ hξ ↦ by simp [frequencyDeriv, hξ, Prod.mk_zero_zero]
 
 end Deriv
 
