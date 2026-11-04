@@ -27,6 +27,9 @@ grouping by columns recovers the defining product for the LKJ normalizer.
   coordinate;
 * `TauCeti.Probability.lkjPartialCorrelationKernel` — the product kernel in partial-correlation
   coordinates;
+* `TauCeti.Probability.integrableOn_lkjPartialCorrelationKernel` and
+  `TauCeti.Probability.lkjPartialCorrelationKernel_nonneg` — its integrability and nonnegativity
+  on the open cube;
 * `TauCeti.Probability.integral_lkjPartialCorrelationKernel` — its integral over the open cube.
 
 ## References
@@ -81,6 +84,27 @@ theorem lkjPartialCorrelationShape_pos {p : ℕ} {η : ℝ} (hη : 0 < η)
   unfold lkjPartialCorrelationShape
   have hk' : (1 : ℝ) ≤ (p - 1 - ij.1.2.val : ℕ) := by exact_mod_cast hk
   positivity
+
+/-- The LKJ partial-correlation kernel is nonnegative on the open coordinate cube. -/
+theorem lkjPartialCorrelationKernel_nonneg {p : ℕ} {η : ℝ}
+    {z : strictLowerTriangle p → ℝ}
+    (hz : z ∈ Set.univ.pi (fun _ : strictLowerTriangle p ↦ Ioo (-1 : ℝ) 1)) :
+    0 ≤ lkjPartialCorrelationKernel p η z := by
+  rw [lkjPartialCorrelationKernel_def]
+  exact Finset.prod_nonneg fun ij _ ↦ Real.rpow_nonneg (by
+    obtain ⟨hl, hu⟩ := hz ij (Set.mem_univ ij)
+    nlinarith [mul_pos (show 0 < z ij + 1 by linarith)
+      (show 0 < 1 - z ij by linarith)]) _
+
+/-- For positive `η`, the LKJ partial-correlation kernel is integrable on the open coordinate
+cube. -/
+theorem integrableOn_lkjPartialCorrelationKernel {p : ℕ} {η : ℝ} (hη : 0 < η) :
+    IntegrableOn (lkjPartialCorrelationKernel p η)
+      (Set.univ.pi (fun _ : strictLowerTriangle p ↦ Ioo (-1 : ℝ) 1)) := by
+  rw [IntegrableOn, volume_pi, Measure.restrict_pi_pi]
+  unfold lkjPartialCorrelationKernel
+  exact Integrable.fintype_prod fun ij ↦
+    integrableOn_Ioo_one_sub_sq_rpow (lkjPartialCorrelationShape_pos hη ij)
 
 private theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
     (∏ ij : strictLowerTriangle p, beta (1 / 2) (lkjPartialCorrelationShape p η ij)) =
