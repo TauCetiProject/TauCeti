@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Order.GeneralizedLimit
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Diagonal
-public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Isometry
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Modulus
 public import TauCeti.Analysis.OperatorIdeal.Family.Logarithmic
 import Mathlib.NumberTheory.Harmonic.Bounds
@@ -210,10 +209,8 @@ theorem dixmierTrace_eq_of_sameSingularValues {S : G →L[𝕜] H} {T : E →L[�
   by_cases hT : T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule
   · obtain ⟨f, hf⟩ := exists_coe_eq_kyFanLogMean hT
     rw [dixmierTrace_eq_apply ω f hf, dixmierTrace_eq_apply ω f (hf.trans h.kyFanLogMean_eq.symm)]
-  · have hS : S ∉ ((logarithmic 𝕜).operatorGauge G H).finiteSubmodule := by
-      rwa [mem_finiteSubmodule_logarithmic_iff_bddAbove, h.kyFanLogMean_eq,
-        ← mem_finiteSubmodule_logarithmic_iff_bddAbove]
-    rw [dixmierTrace_of_notMem ω hS, dixmierTrace_of_notMem ω hT]
+  · rw [dixmierTrace_of_notMem ω (mt h.mem_finiteSubmodule_logarithmic_iff.1 hT),
+      dixmierTrace_of_notMem ω hT]
 
 /-- **Adjoint invariance.** `Tr_ω(T†) = Tr_ω(T)`. -/
 @[simp]

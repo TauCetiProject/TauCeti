@@ -13,16 +13,12 @@ public import TauCeti.Analysis.OperatorIdeal.Family.Carrier
 # Operator-ideal gauges of moduli and positive/negative parts
 
 Every operator-ideal family whose sources and targets lie in one universe assigns the same gauge
-to a bounded operator `A : E →L[𝕜] F` and to its modulus `|A| = √(A† A) : E →L[𝕜] E`: the polar
-factorization `A = W |A|` and `W† A = |A|` (`ContinuousLinearMap.exists_contraction_of_gram_eq`)
-relates `A` and `|A|` by contractions on the left, so the two-sided ideal inequality gives
-`Φ(|A|) = Φ(A)` without assuming Ky Fan dominance.
-
-For a self-adjoint endomorphism `A : E →L[𝕜] E`, the continuous functional calculus expresses the
-positive and negative parts as `2 • A⁺ = |A| + A` and `2 • A⁻ = |A| - A`. Subadditivity, absolute
-homogeneity and `Φ(|A|) = Φ(A)` then give `Φ(A⁺) ≤ Φ(A)` and `Φ(A⁻) ≤ Φ(A)` for every endomorphism
-(outside the self-adjoint locus, `A⁺ = A⁻ = 0`). In particular every operator ideal in one universe
-is closed under moduli and under taking positive and negative parts.
+to a bounded operator `A : E →L[𝕜] F` and to its modulus `|A| = √(A† A) : E →L[𝕜] E`, without
+assuming Ky Fan dominance, and bounds the gauges of the positive and negative parts of any
+endomorphism `A : E →L[𝕜] E` by `Φ(A)` (for any real algebra structure compatible with the
+`𝕜`-action). Consequently, every operator ideal in one universe is closed under moduli and under
+taking positive and negative parts, so linear functionals defined on the positive cone of an
+operator ideal extend across self-adjoint and Cartesian decompositions.
 
 ## Main declarations
 
@@ -62,6 +58,8 @@ modulus `|A| = √(A† A)`. -/
 @[simp]
 theorem gauge_modulus (Φ : OperatorIdealFamily.{u, v, v} 𝕜) (A : E →L[𝕜] F) :
     Φ.gauge A.modulus = Φ.gauge A := by
+  -- Polar factorization `A = W |A|` and `W† A = |A|` relates `A` and `|A|` by contractions on
+  -- the left, so the two-sided ideal inequality gives `Φ(|A|) = Φ(A)`.
   obtain ⟨W, hW, hW', hWA, hW'A⟩ := exists_contraction_of_gram_eq
     (A := A.modulus) (T := A) (by rw [adjoint_modulus, modulus_comp_modulus])
   refine le_antisymm ?_ ?_
@@ -85,12 +83,12 @@ variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)
 most that of the operator. -/
 theorem gauge_posPart_le (Φ : OperatorIdealFamily.{u, v, v} 𝕜) (A : E →L[𝕜] E) :
     Φ.gauge A⁺ ≤ Φ.gauge A := by
+  -- On the self-adjoint locus `2 • A⁺ = |A| + A`, so subadditivity, homogeneity, and
+  -- `Φ(|A|) = Φ(A)` bound `Φ(A⁺)` by `Φ(A)`; outside it, `A⁺ = 0`.
   by_cases ha : IsSelfAdjoint A
   · have h2 : (2 : 𝕜) • A⁺ = A.modulus + A := by
       rw [two_smul, ← two_nsmul, ← CFC.abs_add_self A ha, modulus_eq_abs]
-    have h2norm : ‖(2 : 𝕜)‖ₑ = 2 := by
-      rw [enorm_eq_nnnorm]
-      norm_num
+    have h2norm : ‖(2 : 𝕜)‖ₑ = 2 := by rw [enorm_eq_nnnorm]; norm_num
     calc Φ.gauge A⁺
         = 2⁻¹ * (2 * Φ.gauge A⁺) := by
           rw [← mul_assoc, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
@@ -105,8 +103,7 @@ theorem gauge_posPart_le (Φ : OperatorIdealFamily.{u, v, v} 𝕜) (A : E →L[�
 /-- In any operator-ideal family in one universe, the negative part of an endomorphism has gauge at
 most that of the operator. -/
 theorem gauge_negPart_le (Φ : OperatorIdealFamily.{u, v, v} 𝕜) (A : E →L[𝕜] E) :
-    Φ.gauge A⁻ ≤ Φ.gauge A := by
-  simpa using gauge_posPart_le Φ (-A)
+    Φ.gauge A⁻ ≤ Φ.gauge A := by simpa using gauge_posPart_le Φ (-A)
 
 /-- Every operator ideal in one universe is closed under taking the positive part of an
 endomorphism. -/
@@ -133,8 +130,7 @@ theorem mem_finiteSubmodule_iff_posPart_and_negPart {Φ : OperatorIdealFamily.{u
         A⁻ ∈ (Φ.operatorGauge E E).finiteSubmodule := by
   refine ⟨fun h ↦ ⟨posPart_mem_finiteSubmodule h, negPart_mem_finiteSubmodule h⟩,
     fun ⟨hp, hn⟩ ↦ ?_⟩
-  rw [← CFC.posPart_sub_negPart A hA]
-  exact Submodule.sub_mem _ hp hn
+  rw [← CFC.posPart_sub_negPart A hA]; exact Submodule.sub_mem _ hp hn
 
 end PosNegPart
 

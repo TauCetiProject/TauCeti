@@ -109,28 +109,27 @@ theorem gauge_eq_of_sameSingularValues {A : E →L[𝕜] F} {B : G →L[𝕜] H}
 
 end Consequences
 
+section Adjoint
+
+variable {E F : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
 /-- A Ky Fan dominant family whose sources and targets lie in one universe is invariant under
 adjoints. -/
 @[simp]
-theorem gauge_adjoint (Φ : OperatorIdealFamily.{u, v, v} 𝕜) [Φ.IsKyFanDominant]
-    {E F : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] (A : E →L[𝕜] F) :
+theorem gauge_adjoint (Φ : OperatorIdealFamily.{u, v, v} 𝕜) [Φ.IsKyFanDominant] (A : E →L[𝕜] F) :
     Φ.gauge (adjoint A) = Φ.gauge A :=
   gauge_eq_of_sameSingularValues ((sameSingularValues_iff _ _).2 (singularValue_adjoint A))
 
 /-- On endomorphisms, a Ky Fan dominant gauge is invariant under `star`. -/
 @[simp]
-theorem gauge_star (Φ : OperatorIdealFamily.{u, v, v} 𝕜) [Φ.IsKyFanDominant]
-    {E : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    (A : E →L[𝕜] E) :
-    Φ.gauge (star A) = Φ.gauge A := by
-  rw [star_eq_adjoint, gauge_adjoint]
+theorem gauge_star (Φ : OperatorIdealFamily.{u, v, v} 𝕜) [Φ.IsKyFanDominant] (A : E →L[𝕜] E) :
+    Φ.gauge (star A) = Φ.gauge A := by rw [star_eq_adjoint, gauge_adjoint]
 
 /-- Membership in the ideal of a Ky Fan dominant family on one universe is invariant under
 adjoints. -/
 theorem adjoint_mem_finiteSubmodule_iff {Φ : OperatorIdealFamily.{u, v, v} 𝕜} [Φ.IsKyFanDominant]
-    {E F : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] (A : E →L[𝕜] F) :
+    (A : E →L[𝕜] F) :
     adjoint A ∈ (Φ.operatorGauge F E).finiteSubmodule ↔
       A ∈ (Φ.operatorGauge E F).finiteSubmodule := by
   simp [OperatorGauge.mem_finiteSubmodule]
@@ -138,11 +137,12 @@ theorem adjoint_mem_finiteSubmodule_iff {Φ : OperatorIdealFamily.{u, v, v} 𝕜
 /-- On endomorphisms, membership in the ideal of a Ky Fan dominant family is invariant under
 `star`. -/
 theorem star_mem_finiteSubmodule_iff {Φ : OperatorIdealFamily.{u, v, v} 𝕜} [Φ.IsKyFanDominant]
-    {E : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (A : E →L[𝕜] E) :
     star A ∈ (Φ.operatorGauge E E).finiteSubmodule ↔
       A ∈ (Φ.operatorGauge E E).finiteSubmodule := by
   simp [OperatorGauge.mem_finiteSubmodule]
+
+end Adjoint
 
 section Complex
 
@@ -153,11 +153,8 @@ variable {E : Type v} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Complete
 /-- In a Ky Fan dominant family over `ℂ`, the real part of an endomorphism has gauge at most that
 of the operator. -/
 theorem gauge_realPart_le (Φ : OperatorIdealFamily.{0, v, v} ℂ) [Φ.IsKyFanDominant]
-    (A : E →L[ℂ] E) :
-    Φ.gauge (ℜ A : E →L[ℂ] E) ≤ Φ.gauge A := by
-  have h2 : ‖(2 : ℂ)⁻¹‖ₑ = 2⁻¹ := by
-    rw [enorm_eq_nnnorm]
-    norm_num
+    (A : E →L[ℂ] E) : Φ.gauge (ℜ A : E →L[ℂ] E) ≤ Φ.gauge A := by
+  have h2 : ‖(2 : ℂ)⁻¹‖ₑ = 2⁻¹ := by rw [enorm_eq_nnnorm]; norm_num
   calc Φ.gauge (ℜ A : E →L[ℂ] E)
       = Φ.gauge ((2 : ℂ)⁻¹ • (A + star A)) := by
         rw [realPart_apply_coe, ← Complex.coe_smul, Complex.ofReal_inv, Complex.ofReal_ofNat]
@@ -170,8 +167,7 @@ theorem gauge_realPart_le (Φ : OperatorIdealFamily.{0, v, v} ℂ) [Φ.IsKyFanDo
 /-- In a Ky Fan dominant family over `ℂ`, the imaginary part of an endomorphism has gauge at most
 that of the operator. -/
 theorem gauge_imaginaryPart_le (Φ : OperatorIdealFamily.{0, v, v} ℂ) [Φ.IsKyFanDominant]
-    (A : E →L[ℂ] E) :
-    Φ.gauge (ℑ A : E →L[ℂ] E) ≤ Φ.gauge A := by
+    (A : E →L[ℂ] E) : Φ.gauge (ℑ A : E →L[ℂ] E) ≤ Φ.gauge A := by
   simpa [enorm_eq_nnnorm] using gauge_realPart_le Φ (-Complex.I • A)
 
 variable {Φ : OperatorIdealFamily.{0, v, v} ℂ} [Φ.IsKyFanDominant]

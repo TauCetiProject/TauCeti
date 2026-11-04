@@ -15,8 +15,8 @@ For bounded diagonal coefficients whose magnitudes decrease, the zero-based appr
 number at index `n` equals the magnitude of the `n`-th coefficient. Retaining the first `n`
 coordinates attains the best rank-at-most-`n` approximation. The formula applies to all
 sequence spaces `lp` with `1 ≤ p ≤ ∞`, in particular to real and complex `ℓ²`. Conversely, every
-decreasing sequence of nonnegative reals is the approximation-number sequence of such a diagonal
-operator (`lp.exists_singularValue_diagonalCLM_eq`).
+antitone `ℕ → ℝ≥0` sequence defines an `ℓ^∞` sequence (`lp.ofAntitone`) whose diagonal operator
+has those approximation numbers (`lp.exists_singularValue_diagonalCLM_eq`).
 
 The general compactness theorem `lp.isCompactOperator_diagonalCLM` in the multiplier module
 shows that, over a locally compact scalar field, coefficients tending to zero give a
@@ -87,16 +87,46 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
     exact (diagonalCLM d).singularValue_le_nnnorm_sub
       (rank_diagonalTruncation_range_le d n)
 
+/-- An antitone `ℝ≥0`-valued sequence defines a bounded scalar sequence in `ℓ^∞(ℕ, 𝕜)`, bounded
+above by `c 0`. -/
+noncomputable def ofAntitone (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) : ℓ^∞(ℕ, 𝕜) :=
+  ⟨fun n ↦ ((c n : ℝ) : 𝕜), memℓp_infty ⟨c 0, by
+    rintro _ ⟨n, rfl⟩
+    simpa using hc (Nat.zero_le n)⟩⟩
+
+/-- Applying `lp.ofAntitone` casts the `n`-th nonnegative real entry into `𝕜`. -/
+@[simp]
+theorem ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    ofAntitone 𝕜 hc n = ((c n : ℝ) : 𝕜) :=
+  (rfl)
+
+/-- The norm of the `n`-th entry of `lp.ofAntitone 𝕜 hc` is `c n`. -/
+theorem norm_ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    ‖ofAntitone 𝕜 hc n‖ = c n := by
+  rw [ofAntitone_apply, RCLike.norm_ofReal, abs_of_nonneg (NNReal.coe_nonneg _)]
+
+/-- The approximation numbers of the diagonal operator associated to `lp.ofAntitone 𝕜 hc` recover
+`c`. -/
+@[simp]
+theorem singularValue_diagonalCLM_ofAntitone {𝕜 : Type*} [RCLike 𝕜] {c : ℕ → ℝ≥0}
+    (hc : Antitone c) (n : ℕ) :
+    (diagonalCLM (p := p) (ofAntitone 𝕜 hc)).singularValue n = c n := by
+  rw [singularValue_diagonalCLM (ofAntitone 𝕜 hc) fun m k hmk ↦ by simpa using hc hmk]
+  ext
+  simp
+
+/-- The `k`-th Ky Fan prefix gauge of the diagonal operator associated to `lp.ofAntitone 𝕜 hc` is
+`∑ j < k, c j`. -/
+@[simp]
+theorem kyFanGauge_diagonalCLM_ofAntitone {𝕜 : Type*} [RCLike 𝕜] {c : ℕ → ℝ≥0}
+    (hc : Antitone c) (k : ℕ) :
+    (diagonalCLM (p := p) (ofAntitone 𝕜 hc)).kyFanGauge k = ∑ j ∈ Finset.range k, c j := by
+  simp [ContinuousLinearMap.kyFanGauge_def]
+
 /-- Every decreasing sequence `c` of nonnegative reals is the approximation-number sequence of a
 diagonal operator: the one with coefficients `c n`, which are bounded by `c 0`. -/
 theorem exists_singularValue_diagonalCLM_eq {𝕜 : Type*} [RCLike 𝕜] {c : ℕ → ℝ≥0}
-    (hc : Antitone c) : ∃ d : ℓ^∞(ℕ, 𝕜), (diagonalCLM (p := p) d).singularValue = c := by
-  let d : ℓ^∞(ℕ, 𝕜) := ⟨fun n ↦ ((c n : ℝ) : 𝕜), memℓp_infty ⟨c 0, by
-    rintro _ ⟨n, rfl⟩
-    simpa using hc (Nat.zero_le n)⟩⟩
-  refine ⟨d, funext fun n ↦ ?_⟩
-  rw [singularValue_diagonalCLM d fun m k hmk ↦ by simpa [d] using hc hmk]
-  ext
-  simp [d]
+    (hc : Antitone c) : ∃ d : ℓ^∞(ℕ, 𝕜), (diagonalCLM (p := p) d).singularValue = c :=
+  ⟨ofAntitone 𝕜 hc, funext (singularValue_diagonalCLM_ofAntitone hc)⟩
 
 end lp

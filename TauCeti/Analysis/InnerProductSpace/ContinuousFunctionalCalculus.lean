@@ -65,6 +65,8 @@ realification preserves the spectrum of a self-adjoint operator
   self-adjoint operator.
 * `ContinuousLinearMap.restrictScalars_cfc`: realification commutes with the continuous functional
   calculus.
+* `LinearIsometryEquiv.posPart_conjStarAlgEquiv`, `LinearIsometryEquiv.negPart_conjStarAlgEquiv`:
+  isometric conjugation commutes with positive and negative parts.
 
 ## Acknowledgements
 
@@ -233,3 +235,46 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
 end ContinuousLinearMap
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- Conjugation of bounded operators by a linear isometric equivalence is continuous. -/
+@[fun_prop]
+theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.conjStarAlgEquiv :=
+  e.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.congr fun _ ↦ rfl
+
+variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [Algebra ℝ (F →L[𝕜] F)] [IsScalarTower ℝ 𝕜 (F →L[𝕜] F)]
+
+private theorem cfcₙ_conjStarAlgEquiv {f : ℝ → ℝ} (hf : Continuous f) (hf0 : f 0 = 0)
+    (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    cfcₙ f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfcₙ f A) := by
+  by_cases hA : IsSelfAdjoint A
+  · exact (NonUnitalStarAlgHomClass.map_cfcₙ e.conjStarAlgEquiv f A hf.continuousOn hf0
+      (ha := hA) (hφa := hA.map e.conjStarAlgEquiv)).symm
+  · have hA' : ¬ IsSelfAdjoint (e.conjStarAlgEquiv A) := fun h ↦
+      hA ((e.conjStarAlgEquiv.symm_apply_apply A) ▸ h.map e.conjStarAlgEquiv.symm)
+    rw [cfcₙ_apply_of_not_predicate _ hA', cfcₙ_apply_of_not_predicate _ hA]
+    simp
+
+/-- Conjugation by a linear isometric equivalence commutes with the positive part of a bounded
+operator. -/
+@[simp]
+theorem posPart_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A)⁺ = e.conjStarAlgEquiv A⁺ := by
+  rw [CFC.posPart_def, CFC.posPart_def]
+  exact cfcₙ_conjStarAlgEquiv (by fun_prop) (by simp) e A
+
+/-- Conjugation by a linear isometric equivalence commutes with the negative part of a bounded
+operator. -/
+@[simp]
+theorem negPart_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A)⁻ = e.conjStarAlgEquiv A⁻ := by
+  rw [CFC.negPart_def, CFC.negPart_def]
+  exact cfcₙ_conjStarAlgEquiv (by fun_prop) (by simp) e A
+
+end LinearIsometryEquiv

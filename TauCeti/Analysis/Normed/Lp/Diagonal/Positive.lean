@@ -19,10 +19,10 @@ precisely when `0 ≤ d i` for every `i`, and monotone in the Loewner order with
 pointwise order on `ℓ^∞(ι, 𝕜)`.
 
 For nonnegative coefficients `0 ≤ d i`, the finite coordinate truncations
-`lp.diagonalTruncation d s` form an increasing family of positive finite-rank operators bounded
-above by `lp.diagonalCLM d`. On `ℓ²(ℕ, 𝕜)`, when `‖d n‖ → 0`, the truncations along
-`Finset.range n` converge to `lp.diagonalCLM d` in operator norm and hence have `lp.diagonalCLM d`
-as their least upper bound in the Loewner order.
+`lp.diagonalTruncation d s` form an increasing family of positive finite-rank operators converging
+pointwise to `lp.diagonalCLM d`, so `lp.diagonalCLM d` is their least upper bound in the Loewner
+order (`lp.isLUB_range_diagonalTruncation`, and along `Finset.range n` on `ℓ²(ℕ, 𝕜)`,
+`lp.isLUB_range_diagonalTruncation_range`).
 
 ## Main declarations
 
@@ -33,8 +33,9 @@ as their least upper bound in the Loewner order.
 * `lp.isPositive_diagonalTruncation_iff`, `lp.diagonalTruncation_mono`,
   `lp.diagonalTruncation_le_diagonalCLM`: positivity and monotonicity of finite coordinate
   truncations.
-* `lp.isLUB_range_diagonalTruncation_range`: for `0 ≤ d n` with `‖d n‖ → 0`, `lp.diagonalCLM d` is
-  the least upper bound in the Loewner order of its finite-rank truncations along `Finset.range n`.
+* `lp.isLUB_range_diagonalTruncation`, `lp.isLUB_range_diagonalTruncation_range`: for `0 ≤ d i`,
+  `lp.diagonalCLM d` is the least upper bound in the Loewner order of its finite-rank coordinate
+  truncations (and of those along `Finset.range n` on `ℓ²(ℕ, 𝕜)`).
 -/
 
 public section
@@ -75,10 +76,10 @@ theorem isPositive_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
       RCLike.reCLM.map_tsum (lp.summable_inner (𝕜 := 𝕜) (diagonalCLM (p := 2) d x) x)]
     refine tsum_nonneg fun i ↦ ?_
     obtain ⟨hre, him⟩ := RCLike.nonneg_iff.1 (h i)
+    have hmul : d i * ((‖x i‖ : 𝕜) ^ 2) = (‖x i‖ ^ 2 : ℝ) • d i := by
+      simp [Algebra.smul_def, mul_comm]
     rw [RCLike.reCLM_apply, diagonalCLM_apply, ← smul_eq_mul, inner_smul_left,
-      RCLike.conj_eq_iff_im.2 him, inner_self_eq_norm_sq_to_K,
-      show d i * ((‖x i‖ : 𝕜) ^ 2) = (‖x i‖ ^ 2 : ℝ) • d i by simp [Algebra.smul_def, mul_comm],
-      RCLike.smul_re]
+      RCLike.conj_eq_iff_im.2 him, inner_self_eq_norm_sq_to_K, hmul, RCLike.smul_re]
     positivity
 
 /-- The Loewner order between diagonal operators on `ℓ²(ι, 𝕜)` is the pointwise order on their
@@ -94,72 +95,67 @@ section Truncation
 
 variable [DecidableEq ι]
 
-private theorem exists_diagonalCLM_eq_diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
-    ∃ e : ℓ^∞(ι, 𝕜), (∀ i, e i = if i ∈ s then d i else 0) ∧
-      diagonalTruncation (p := 2) d s = diagonalCLM (p := 2) e := by
-  refine ⟨⟨fun i ↦ if i ∈ s then d i else 0, memℓp_infty ⟨‖d‖, ?_⟩⟩, fun _ ↦ rfl, ?_⟩
-  · rintro _ ⟨i, rfl⟩
-    by_cases hi : i ∈ s <;> simp [hi, norm_apply_le_norm ENNReal.top_ne_zero d i]
-  · ext x i
-    by_cases hi : i ∈ s <;> simp [hi]
-
 /-- A finite coordinate truncation of a diagonal operator on `ℓ²(ι, 𝕜)` is positive if and only if
 the retained coefficients are nonnegative. -/
 @[simp]
 theorem isPositive_diagonalTruncation_iff (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     (diagonalTruncation (p := 2) d s).IsPositive ↔ ∀ i ∈ s, 0 ≤ d i := by
-  obtain ⟨e, he, hT⟩ := exists_diagonalCLM_eq_diagonalTruncation d s
-  rw [hT, isPositive_diagonalCLM_iff]
-  exact ⟨fun h i hi ↦ by simpa [he, hi] using h i, fun h i ↦ by by_cases hi : i ∈ s <;> simp_all⟩
+  rw [diagonalTruncation_eq_diagonalCLM, isPositive_diagonalCLM_iff]
+  simp only [coeFn_sum, Finset.sum_apply, lp.coeFn_single, Finset.sum_pi_single]
+  exact ⟨fun h i hi ↦ by simpa [hi] using h i, fun h i ↦ by by_cases hi : i ∈ s <;> simp_all⟩
 
 /-- For nonnegative diagonal coefficients, finite coordinate truncations on `ℓ²(ι, 𝕜)` are monotone
 in the retained set of coordinates. -/
 theorem diagonalTruncation_mono {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) :
     Monotone (diagonalTruncation (p := 2) d) := fun s t hst ↦ by
-  obtain ⟨es, hes, hTs⟩ := exists_diagonalCLM_eq_diagonalTruncation d s
-  obtain ⟨et, het, hTt⟩ := exists_diagonalCLM_eq_diagonalTruncation d t
-  rw [hTs, hTt, diagonalCLM_le_diagonalCLM_iff]
+  rw [diagonalTruncation_eq_diagonalCLM, diagonalTruncation_eq_diagonalCLM,
+    diagonalCLM_le_diagonalCLM_iff]
   intro i
+  simp only [coeFn_sum, Finset.sum_apply, lp.coeFn_single, Finset.sum_pi_single]
   by_cases his : i ∈ s
-  · simp [hes, het, his, hst his]
-  · by_cases hit : i ∈ t <;> simp [hes, het, his, hit, hd i]
+  · simp [his, hst his]
+  · by_cases hit : i ∈ t <;> simp [his, hit, hd i]
 
 /-- For nonnegative diagonal coefficients, every finite coordinate truncation on `ℓ²(ι, 𝕜)` is
 bounded above in the Loewner order by the full diagonal operator. -/
 theorem diagonalTruncation_le_diagonalCLM {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) (s : Finset ι) :
     diagonalTruncation (p := 2) d s ≤ diagonalCLM (p := 2) d := by
-  obtain ⟨e, he, hT⟩ := exists_diagonalCLM_eq_diagonalTruncation d s
-  rw [hT, diagonalCLM_le_diagonalCLM_iff]
+  rw [diagonalTruncation_eq_diagonalCLM, diagonalCLM_le_diagonalCLM_iff]
   intro i
-  by_cases hi : i ∈ s <;> simp [he, hi, hd i]
+  simp only [coeFn_sum, Finset.sum_apply, lp.coeFn_single, Finset.sum_pi_single]
+  by_cases hi : i ∈ s <;> simp [hi, hd i]
+
+/-- When `0 ≤ d i` for every `i`, the full diagonal operator `lp.diagonalCLM d` on `ℓ²(ι, 𝕜)` is
+the least upper bound in the Loewner order of its finite coordinate truncations. -/
+theorem isLUB_range_diagonalTruncation {d : ℓ^∞(ι, 𝕜)} (hd : ∀ i, 0 ≤ d i) :
+    IsLUB (Set.range (diagonalTruncation (p := 2) d)) (diagonalCLM (p := 2) d) := by
+  refine ⟨Set.forall_mem_range.2 (diagonalTruncation_le_diagonalCLM hd), fun B hB ↦ ?_⟩
+  rw [ContinuousLinearMap.le_def]
+  have hpos (s : Finset ι) : (B - diagonalTruncation (p := 2) d s).IsPositive :=
+    ContinuousLinearMap.le_def.1 (hB ⟨s, rfl⟩)
+  have heval (x : ℓ^2(ι, 𝕜)) :
+      Tendsto (fun s ↦ (B - diagonalTruncation (p := 2) d s) x) atTop
+        (𝓝 ((B - diagonalCLM (p := 2) d) x)) :=
+    tendsto_const_nhds.sub (tendsto_diagonalTruncation_apply ENNReal.ofNat_ne_top d x)
+  refine ⟨fun x y ↦ tendsto_nhds_unique ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds) ?_,
+    fun x ↦ ge_of_tendsto (RCLike.continuous_re.tendsto _ |>.comp
+      ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds)) (Eventually.of_forall fun s ↦ ?_)⟩
+  · exact (tendsto_const_nhds.inner (𝕜 := 𝕜) (heval y)).congr fun s ↦
+      ((hpos s).isSymmetric x y).symm
+  · exact (hpos s).re_inner_nonneg_left x
 
 end Truncation
 
-/-- When `0 ≤ d n` for every `n` and `‖d n‖ → 0`, the full diagonal operator `lp.diagonalCLM d` on
-`ℓ²(ℕ, 𝕜)` is the least upper bound in the Loewner order of its finite-rank truncations along
+/-- When `0 ≤ d n` for every `n`, the full diagonal operator `lp.diagonalCLM d` on `ℓ²(ℕ, 𝕜)` is
+the least upper bound in the Loewner order of its finite-rank truncations along
 `Finset.range n`. -/
-theorem isLUB_range_diagonalTruncation_range {d : ℓ^∞(ℕ, 𝕜)} (hd : ∀ n, 0 ≤ d n)
-    (h0 : Tendsto (fun n ↦ ‖d n‖) atTop (𝓝 0)) :
+theorem isLUB_range_diagonalTruncation_range {d : ℓ^∞(ℕ, 𝕜)} (hd : ∀ n, 0 ≤ d n) :
     IsLUB (Set.range fun n ↦ diagonalTruncation (p := 2) d (Finset.range n))
       (diagonalCLM (p := 2) d) := by
-  refine ⟨?_, fun B hB ↦ ?_⟩
-  · rintro _ ⟨n, rfl⟩
-    exact diagonalTruncation_le_diagonalCLM hd (Finset.range n)
-  · rw [ContinuousLinearMap.le_def]
-    have htend : Tendsto (fun n ↦ B - diagonalTruncation (p := 2) d (Finset.range n)) atTop
-        (𝓝 (B - diagonalCLM (p := 2) d)) :=
-      tendsto_const_nhds.sub (tendsto_diagonalTruncation_range d h0)
-    have hpos (n : ℕ) : (B - diagonalTruncation (p := 2) d (Finset.range n)).IsPositive :=
-      ContinuousLinearMap.le_def.1 (hB ⟨n, rfl⟩)
-    have heval (x : ℓ^2(ℕ, 𝕜)) :
-        Tendsto (fun n ↦ (B - diagonalTruncation (p := 2) d (Finset.range n)) x) atTop
-          (𝓝 ((B - diagonalCLM (p := 2) d) x)) :=
-      ((ContinuousLinearMap.apply 𝕜 ℓ^2(ℕ, 𝕜) x).continuous.tendsto _).comp htend
-    refine ⟨fun x y ↦ tendsto_nhds_unique ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds) ?_,
-      fun x ↦ ge_of_tendsto (RCLike.continuous_re.tendsto _ |>.comp
-        ((heval x).inner (𝕜 := 𝕜) tendsto_const_nhds)) (Eventually.of_forall fun n ↦ ?_)⟩
-    · exact (tendsto_const_nhds.inner (𝕜 := 𝕜) (heval y)).congr fun n ↦
-        ((hpos n).isSymmetric x y).symm
-    · exact (hpos n).re_inner_nonneg_left x
+  refine ⟨Set.forall_mem_range.2 fun n ↦ diagonalTruncation_le_diagonalCLM hd (Finset.range n),
+    fun B hB ↦ (isLUB_range_diagonalTruncation hd).2 ?_⟩
+  rintro _ ⟨s, rfl⟩
+  obtain ⟨n, hn⟩ := (tendsto_finset_range.eventually (eventually_ge_atTop s)).exists
+  exact (diagonalTruncation_mono hd hn).trans (hB ⟨n, rfl⟩)
 
 end lp

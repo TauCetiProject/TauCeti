@@ -148,6 +148,14 @@ theorem diagonalTruncation_single (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) (i : �
   · subst j; by_cases hi : i ∈ s <;> simp [hi]
   · by_cases hi : i ∈ s <;> simp [hi, lp.single_apply, h]
 
+/-- A finite coordinate truncation of a diagonal operator is the diagonal operator of the finitely
+supported coefficient family `∑ i ∈ s, lp.single ∞ i (d i)`. -/
+theorem diagonalTruncation_eq_diagonalCLM (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
+    diagonalTruncation (p := p) d s = diagonalCLM (p := p) (∑ i ∈ s, lp.single ∞ i (d i)) := by
+  ext x j
+  simp only [diagonalTruncation_apply, diagonalCLM_apply, lp.coeFn_sum, lp.coeFn_single,
+    Finset.sum_apply, Finset.sum_pi_single, ite_mul, zero_mul]
+
 /-- A finite diagonal truncation has rank at most the number of retained coordinates. -/
 theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     (diagonalTruncation (p := p) d s).rank ≤ s.card := by
@@ -170,6 +178,14 @@ theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
 theorem rank_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜)) (n : ℕ) :
     (diagonalTruncation (p := p) d (Finset.range n)).rank ≤ n := by
   simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n)
+
+/-- For finite exponent `1 ≤ p < ∞`, the finite coordinate truncations of any bounded diagonal
+operator converge to it pointwise along the filter of finite sets. -/
+theorem tendsto_diagonalTruncation_apply (hp : p ≠ ∞) (d : ℓ^∞(ι, 𝕜)) (x : ℓ^p(ι, 𝕜)) :
+    Tendsto (fun s ↦ diagonalTruncation (p := p) d s x) atTop (𝓝 (diagonalCLM (p := p) d x)) := by
+  refine Tendsto.congr (fun s ↦ ?_) (lp.hasSum_single hp (diagonalCLM (p := p) d x))
+  rw [diagonalTruncation_apply_eq_sum_single]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp [← lp.single_smul]
 
 /-- A bound on the discarded coefficients bounds the operator-norm truncation error. -/
 theorem norm_diagonalCLM_sub_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι)
@@ -194,20 +210,27 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, �
   exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
     (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
 
+/-- When the coefficient norms of a bounded diagonal multiplier tend to zero along the cofinite
+filter, its finite coordinate truncations converge to it in operator norm. -/
+theorem tendsto_diagonalTruncation (d : ℓ^∞(ι, 𝕜))
+    (hd : Tendsto (fun i ↦ ‖d i‖) cofinite (𝓝 0)) :
+    Tendsto (diagonalTruncation (p := p) d) atTop (𝓝 (diagonalCLM (p := p) d)) := by
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  have hs : {i | ¬‖d i‖ < ε / 2}.Finite :=
+    eventually_cofinite.mp (hd.eventually (gt_mem_nhds (half_pos hε)))
+  refine ⟨hs.toFinset, fun s hsub ↦ ?_⟩
+  rw [dist_eq_norm']
+  refine (norm_diagonalCLM_sub_diagonalTruncation_le d s (half_pos hε).le fun i hi ↦ ?_).trans_lt
+    (half_lt_self hε)
+  exact le_of_lt (by by_contra h; exact hi (hsub (hs.mem_toFinset.2 h)))
+
 /-- When the coefficient norms of a sequence-space diagonal multiplier tend to zero, its finite
 coordinate truncations along `Finset.range n` converge to it in operator norm. -/
 theorem tendsto_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
     (hd : Tendsto (fun n ↦ ‖d n‖) atTop (𝓝 0)) :
     Tendsto (fun n ↦ diagonalTruncation (p := p) d (Finset.range n)) atTop
-      (𝓝 (diagonalCLM (p := p) d)) := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hd (ε / 2) (half_pos hε)
-  refine ⟨N, fun n hn ↦ ?_⟩
-  rw [dist_eq_norm']
-  refine (norm_diagonalCLM_sub_diagonalTruncation_le d (Finset.range n) (half_pos hε).le
-    fun i hi ↦ ?_).trans_lt (half_lt_self hε)
-  have hiN : N ≤ i := hn.trans (Nat.le_of_not_lt (by simpa using hi))
-  exact (by simpa using hN i hiN : ‖d i‖ < ε / 2).le
+      (𝓝 (diagonalCLM (p := p) d)) :=
+  (tendsto_diagonalTruncation d (Nat.cofinite_eq_atTop ▸ hd)).comp tendsto_finset_range
 
 omit [DecidableEq ι] in
 /-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
