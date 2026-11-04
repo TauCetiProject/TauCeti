@@ -38,7 +38,8 @@ Operator Theory*, Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
 * `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
   `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
-  `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`.
+  `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A` and `⋆`-isomorphism
+  `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`.
 -/
 
 public section
@@ -260,6 +261,39 @@ theorem ker_starAlgHom : TwoSidedIdeal.ker I.starAlgHom = ⊥ := by
   ext x
   rw [TwoSidedIdeal.mem_ker, TwoSidedIdeal.mem_bot, starAlgHom_apply, Subtype.ext_iff]
   rfl
+
+/-- The canonical `⋆`-algebra isomorphism between a closed two-sided ideal `I` and its associated
+nonunital `⋆`-subalgebra `I.toNonUnitalStarSubalgebra`. -/
+def toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra :=
+  { NonUnitalStarAlgHom.codRestrict I.starAlgHom I.toNonUnitalStarSubalgebra
+      fun x => I.mem_toNonUnitalStarSubalgebra.mpr x.2 with
+    invFun := fun x => ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.2⟩
+    left_inv := fun _ => Subtype.ext rfl
+    right_inv := fun _ => Subtype.ext rfl }
+
+@[simp]
+theorem toNonUnitalStarSubalgebraEquiv_apply (x : I) :
+    I.toNonUnitalStarSubalgebraEquiv x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mpr x.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem toNonUnitalStarSubalgebraEquiv_symm_apply (x : I.toNonUnitalStarSubalgebra) :
+    I.toNonUnitalStarSubalgebraEquiv.symm x = ⟨x, I.mem_toNonUnitalStarSubalgebra.mp x.2⟩ :=
+  (rfl)
+
+theorem coe_toNonUnitalStarSubalgebraEquiv_apply (x : I) :
+    (I.toNonUnitalStarSubalgebraEquiv x : A) = x :=
+  (rfl)
+
+theorem coe_toNonUnitalStarSubalgebraEquiv_symm_apply (x : I.toNonUnitalStarSubalgebra) :
+    (I.toNonUnitalStarSubalgebraEquiv.symm x : A) = x :=
+  (rfl)
+
+@[simp]
+theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
+    (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
+      I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
+  (rfl)
 
 end CStarAlgebra
 
