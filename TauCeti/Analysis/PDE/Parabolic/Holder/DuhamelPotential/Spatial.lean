@@ -42,7 +42,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Every spatial slice of the bounded Hölder Duhamel potential is `C²`, including time zero.
 Only positivity of the spatial Hölder exponent is needed for this regularity. -/
-theorem contDiff_heatDuhamelPotentialHolderL [CompleteSpace F] (hα : 0 < α) (hα₂ : α ≤ 2)
+theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL [CompleteSpace F]
+    (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) :
     ContDiff ℝ 2 (fun x => heatDuhamelPotentialHolderL hα hα₂ f (slabMk x t)) := by
   simp only [heatDuhamelPotentialHolderL_apply, time_slabMk, space_slabMk]
@@ -52,9 +53,7 @@ theorem contDiff_heatDuhamelPotentialHolderL [CompleteSpace F] (hα : 0 < α) (h
   · exact contDiff_heatDuhamelPotential_of_holderWith
       (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
       (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x)
-      (ae_of_all _ fun s => holderWith_timeExtension T.coe_nonneg (C := ‖f‖₊) (f := f) (by
-        simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-          f.memHolder.holderWith.mono f.nnHolderNorm_le) s) hα hpos
+      (ae_of_all _ fun s => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα hpos
 
 private def hessian (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) (p : slab (E := E) 0 T) :
@@ -82,9 +81,7 @@ private theorem exists_holderWith_hessian (hα : 0 < α) (hα₁ : α < 1) :
     funext (hessian_apply _ _ f)]
   exact hC (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
     (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x)
-    (ae_of_all _ fun s => holderWith_timeExtension T.coe_nonneg (f := f) (by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-        f.memHolder.holderWith.mono f.nnHolderNorm_le) s)
+    (ae_of_all _ fun s => holderWith_timeExtension_holderSpace T.coe_nonneg f s)
 
 private def hessianConstant (hα : 0 < α) (hα₁ : α < 1) : ℝ≥0 :=
   Classical.choose (exists_holderWith_hessian (E := E) (F := F) hα hα₁)
@@ -161,15 +158,15 @@ def heatDuhamelPotentialHessianL (hα : 0 < α) (hα₁ : α < 1) :
         simp only [hessianHolder_apply, HolderSpace.add_apply, hessian]
         simp_rw [map_add, HolderSpace.add_apply]
         exact iteratedFDeriv_add_apply
-          ((contDiff_heatDuhamelPotentialHolderL hα _ f (slabTime p)).contDiffAt)
-          ((contDiff_heatDuhamelPotentialHolderL hα _ g (slabTime p)).contDiffAt)
+          ((contDiff_spatialSlice_heatDuhamelPotentialHolderL hα _ f (slabTime p)).contDiffAt)
+          ((contDiff_spatialSlice_heatDuhamelPotentialHolderL hα _ g (slabTime p)).contDiffAt)
       map_smul' c f := by
         apply HolderSpace.ext
         intro p
         simp only [hessianHolder_apply, HolderSpace.smul_apply, hessian, RingHom.id_apply]
         simp_rw [map_smul, HolderSpace.smul_apply]
         exact iteratedFDeriv_const_smul_apply
-          ((contDiff_heatDuhamelPotentialHolderL hα _ f (slabTime p)).contDiffAt) }
+          ((contDiff_spatialSlice_heatDuhamelPotentialHolderL hα _ f (slabTime p)).contDiffAt) }
     _ (norm_hessianHolder_le hα hα₁)
 
 /-- The Hessian operator is the native second iterated Fréchet derivative of each spatial

@@ -49,9 +49,7 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
   holderWith_heatDuhamelPotential
     (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
     (fun s _ x => norm_timeExtension_le T.coe_nonneg f s x)
-    (fun s _ => holderWith_timeExtension T.coe_nonneg (f := f) (by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-        f.memHolder.holderWith.mono f.nnHolderNorm_le) s) hα hα₂
+    (fun s _ => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
     (p : slab (E := E) 0 T) :
