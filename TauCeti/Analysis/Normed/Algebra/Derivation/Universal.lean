@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
-public import TauCeti.Analysis.Normed.Algebra.Unitization
+public import TauCeti.Analysis.Normed.Module.Unitization
+public import TauCeti.Analysis.Normed.Operator.Restrict
 
 /-!
 # Completed universal one-forms
@@ -36,31 +37,6 @@ noncomputable section
 
 open scoped TensorProduct
 
-namespace ContinuousLinearMap
-
-variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
-  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- Composing a bounded derivation with the nonunital coordinate projection extends its
-Leibniz rule to unital actions of the ℓ¹ unitization. -/
-theorem comp_unitizationSndL_mul (D : A →L[𝕜] E)
-    (L R : WithLp 1 (Unitization 𝕜 A) →L[𝕜] E →L[𝕜] E)
-    (h1L : ∀ x, L 1 x = x) (h1R : ∀ x, R 1 x = x)
-    (hD : ∀ a b, D (a * b) =
-      L (WithLp.toLp 1 (a : Unitization 𝕜 A)) (D b) +
-      R (WithLp.toLp 1 (b : Unitization 𝕜 A)) (D a))
-    (u v : WithLp 1 (Unitization 𝕜 A)) :
-    (D ∘L WithLp.unitizationSndL 𝕜 A) (u * v) =
-      L u ((D ∘L WithLp.unitizationSndL 𝕜 A) v) +
-      R v ((D ∘L WithLp.unitizationSndL 𝕜 A) u) := by
-  rw [L.unitization_apply_eq_fst_smul_add u, R.unitization_apply_eq_fst_smul_add v]
-  simp only [comp_apply, WithLp.unitizationSndL_apply, WithLp.unitization_mul,
-    Unitization.snd_mul, map_add, map_smul, hD, add_apply, smul_apply, h1L, h1R]
-  abel
-
-end ContinuousLinearMap
-
 namespace TauCeti
 
 open CompletedProjectiveTensor
@@ -76,74 +52,58 @@ abbrev CompletedUniversalOneForms : Submodule 𝕜 (CompletedProjectiveTensor �
 
 namespace CompletedUniversalOneForms
 
-/-- Restrict a bounded action preserving the multiplication kernel, using the original
-operator norm as a bound for the restricted action. -/
-private def restrictAction
-    (M : B →L[𝕜] CompletedProjectiveTensor 𝕜 B B →L[𝕜] CompletedProjectiveTensor 𝕜 B B)
-    (hM : ∀ a t, t ∈ CompletedUniversalOneForms 𝕜 B →
-      M a t ∈ CompletedUniversalOneForms 𝕜 B) :
-    B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
-  LinearMap.mkContinuous
-    { toFun a := (M a).restrict (hM a)
-      map_add' a b := by ext t; exact congrArg (fun f ↦ f t.1) (map_add M a b)
-      map_smul' c a := by
-        ext t
-        exact congrArg (fun f ↦ f t.1) (map_smul M c a) }
-    ‖M‖ fun a ↦ by
-      apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-      intro t
-      exact M.le_opNorm₂ a t.1
-
 /-- The bounded left outer action on completed universal one-forms. -/
-def left : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
-  restrictAction 𝕜 B (mulLeft 𝕜 B) fun a t ht ↦ by
+def leftAction : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
+  (mulLeft 𝕜 B).restrictAction (CompletedUniversalOneForms 𝕜 B) fun a t ht ↦ by
     simpa using congrArg (a * ·) (LinearMap.mem_ker.mp ht)
 
 /-- The bounded right outer action on completed universal one-forms. -/
-def right : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
-  restrictAction 𝕜 B (mulRight 𝕜 B) fun a t ht ↦ by
+def rightAction : B →L[𝕜] CompletedUniversalOneForms 𝕜 B →L[𝕜] CompletedUniversalOneForms 𝕜 B :=
+  (mulRight 𝕜 B).restrictAction (CompletedUniversalOneForms 𝕜 B) fun a t ht ↦ by
     simpa using congrArg (· * a) (LinearMap.mem_ker.mp ht)
 
 variable {𝕜 B}
 
 /-- The left action is the restriction of the outer action on completed tensors. -/
 @[simp]
-theorem coe_left (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    (left 𝕜 B a t : CompletedProjectiveTensor 𝕜 B B) = mulLeft 𝕜 B a t := (rfl)
+theorem coe_leftAction (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    (leftAction 𝕜 B a t : CompletedProjectiveTensor 𝕜 B B) = mulLeft 𝕜 B a t := by
+  simp [leftAction]
 
 /-- The right action is the restriction of the outer action on completed tensors. -/
 @[simp]
-theorem coe_right (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    (right 𝕜 B a t : CompletedProjectiveTensor 𝕜 B B) = mulRight 𝕜 B a t := (rfl)
+theorem coe_rightAction (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    (rightAction 𝕜 B a t : CompletedProjectiveTensor 𝕜 B B) = mulRight 𝕜 B a t := by
+  simp [rightAction]
 
 /-- Associativity of the left action. -/
-theorem left_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    left 𝕜 B (a * b) t = left 𝕜 B a (left 𝕜 B b t) := by
+theorem leftAction_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    leftAction 𝕜 B (a * b) t = leftAction 𝕜 B a (leftAction 𝕜 B b t) := by
   apply Subtype.ext
-  simpa only [coe_left] using mulLeft_mul_apply (𝕜 := 𝕜) a b t.1
+  simpa only [coe_leftAction] using mulLeft_mul_apply (𝕜 := 𝕜) a b t.1
 
 /-- Associativity of the right action, with the order reversed. -/
-theorem right_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    right 𝕜 B (a * b) t = right 𝕜 B b (right 𝕜 B a t) := by
+theorem rightAction_mul (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    rightAction 𝕜 B (a * b) t = rightAction 𝕜 B b (rightAction 𝕜 B a t) := by
   apply Subtype.ext
-  simpa only [coe_right] using mulRight_mul_apply (𝕜 := 𝕜) a b t.1
+  simpa only [coe_rightAction] using mulRight_mul_apply (𝕜 := 𝕜) a b t.1
 
 /-- The left and right outer actions commute. -/
-theorem left_right_comm (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    left 𝕜 B a (right 𝕜 B b t) = right 𝕜 B b (left 𝕜 B a t) := by
+theorem leftAction_rightAction_comm (a b : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    leftAction 𝕜 B a (rightAction 𝕜 B b t) = rightAction 𝕜 B b (leftAction 𝕜 B a t) := by
   apply Subtype.ext
-  simpa only [coe_left, coe_right] using mulLeft_mulRight_apply_comm (𝕜 := 𝕜) a b t.1
+  simpa only [coe_leftAction, coe_rightAction] using mulLeft_mulRight_apply_comm (𝕜 := 𝕜) a b t.1
 
 /-- The identity acts as the identity on the left. -/
 @[simp]
-theorem left_one (t : CompletedUniversalOneForms 𝕜 B) : left 𝕜 B 1 t = t := by
+theorem leftAction_one (t : CompletedUniversalOneForms 𝕜 B) : leftAction 𝕜 B 1 t = t := by
   have h : mulLeft 𝕜 B 1 = ContinuousLinearMap.id 𝕜 _ := by ext x y; simp
   apply Subtype.ext
   simp [h]
 
 /-- The identity acts as the identity on the right. -/
 @[simp]
-theorem right_one (t : CompletedUniversalOneForms 𝕜 B) : right 𝕜 B 1 t = t := by
+theorem rightAction_one (t : CompletedUniversalOneForms 𝕜 B) : rightAction 𝕜 B 1 t = t := by
   have h : mulRight 𝕜 B 1 = ContinuousLinearMap.id 𝕜 _ := by ext x y; simp
   apply Subtype.ext
   simp [h]
@@ -177,9 +137,9 @@ theorem d_one : d 𝕜 B 1 = 0 := Subtype.ext (sub_self _)
 
 /-- The universal derivation satisfies the bimodule Leibniz rule. -/
 theorem d_mul (a b : B) :
-    d 𝕜 B (a * b) = left 𝕜 B a (d 𝕜 B b) + right 𝕜 B b (d 𝕜 B a) := by
+    d 𝕜 B (a * b) = leftAction 𝕜 B a (d 𝕜 B b) + rightAction 𝕜 B b (d 𝕜 B a) := by
   apply Subtype.ext
-  simp only [coe_d, Submodule.coe_add, coe_left, coe_right, map_sub, tmulL_apply,
+  simp only [coe_d, Submodule.coe_add, coe_leftAction, coe_rightAction, map_sub, tmulL_apply,
     mulLeft_apply_coe_tmul, mulRight_apply_coe_tmul, mul_one, one_mul]
   abel
 
@@ -197,7 +157,7 @@ theorem coe_projection (t : CompletedProjectiveTensor 𝕜 B B) :
 @[simp]
 theorem projection_tmul (x y : B) :
     projection ((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 B B) : CompletedProjectiveTensor 𝕜 B B) =
-      left 𝕜 B x (d 𝕜 B y) := by
+      leftAction 𝕜 B x (d 𝕜 B y) := by
   apply Subtype.ext
   simp
 
@@ -244,19 +204,20 @@ theorem lift_d (b : B) : lift L D (d 𝕜 B b) = D b := by
 
 include hL in
 /-- The factor map intertwines the left actions. -/
-theorem lift_left (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    lift L D (left 𝕜 B a t) = L a (lift L D t) := by
+theorem lift_leftAction (a : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    lift L D (leftAction 𝕜 B a t) = L a (lift L D t) := by
   have h : liftIsometry 𝕜 B B E (L.flip.comp D).flip ∘L mulLeft 𝕜 B a =
       L a ∘L liftIsometry 𝕜 B B E (L.flip.comp D).flip := by
     ext x y
     simp [hL]
-  exact congrArg (fun f ↦ f t.1) h
+  simpa only [lift_apply, coe_leftAction, ContinuousLinearMap.comp_apply] using
+    congrArg (fun f ↦ f t.1) h
 
 include hL hLR hD in
 /-- On the multiplication kernel, the correction term in the right Leibniz identity
 vanishes, so the factor map intertwines the right actions. -/
-theorem lift_right (b : B) (t : CompletedUniversalOneForms 𝕜 B) :
-    lift L D (right 𝕜 B b t) = R b (lift L D t) := by
+theorem lift_rightAction (b : B) (t : CompletedUniversalOneForms 𝕜 B) :
+    lift L D (rightAction 𝕜 B b t) = R b (lift L D t) := by
   let T := liftIsometry 𝕜 B B E (L.flip.comp D).flip
   have h : T ∘L mulRight 𝕜 B b = R b ∘L T + (L.flip (D b)) ∘L mul' 𝕜 B := by
     ext x y
@@ -268,7 +229,7 @@ theorem lift_right (b : B) (t : CompletedUniversalOneForms 𝕜 B) :
 /-- A bounded left-module map on completed universal one-forms is determined by its values
 on the universal differentials. Right intertwining is not needed for uniqueness. -/
 theorem lift_unique (f : CompletedUniversalOneForms 𝕜 B →L[𝕜] E)
-    (hfL : ∀ a t, f (left 𝕜 B a t) = L a (f t)) (hf : ∀ a, f (d 𝕜 B a) = D a) :
+    (hfL : ∀ a t, f (leftAction 𝕜 B a t) = L a (f t)) (hf : ∀ a, f (d 𝕜 B a) = D a) :
     f = lift L D := by
   have h : f ∘L projection = liftIsometry 𝕜 B B E (L.flip.comp D).flip := by
     ext x y
@@ -282,10 +243,10 @@ bounded bimodule map from the completed multiplication kernel. -/
 theorem existsUnique_lift :
     ∃! f : CompletedUniversalOneForms 𝕜 B →L[𝕜] E,
       (∀ a, f (d 𝕜 B a) = D a) ∧
-      (∀ a t, f (left 𝕜 B a t) = L a (f t)) ∧
-      (∀ a t, f (right 𝕜 B a t) = R a (f t)) := by
-  exact ⟨lift L D, ⟨lift_d L D h1 hD1, lift_left L D hL,
-    lift_right L R D hL hLR hD⟩, fun f hf ↦ lift_unique L D f hf.2.1 hf.1⟩
+      (∀ a t, f (leftAction 𝕜 B a t) = L a (f t)) ∧
+      (∀ a t, f (rightAction 𝕜 B a t) = R a (f t)) := by
+  exact ⟨lift L D, ⟨lift_d L D h1 hD1, lift_leftAction L D hL,
+    lift_rightAction L R D hL hLR hD⟩, fun f hf ↦ lift_unique L D f hf.2.1 hf.1⟩
 
 end Lift
 
@@ -310,8 +271,8 @@ theorem dNonUnital_apply (a : A) :
 /-- Restricting the universal differential to the original algebra satisfies Leibniz. -/
 theorem dNonUnital_mul (a b : A) :
     dNonUnital 𝕜 A (a * b) =
-      left 𝕜 _ (WithLp.toLp 1 (a : Unitization 𝕜 A)) (dNonUnital 𝕜 A b) +
-      right 𝕜 _ (WithLp.toLp 1 (b : Unitization 𝕜 A)) (dNonUnital 𝕜 A a) := by
+      leftAction 𝕜 _ (WithLp.toLp 1 (a : Unitization 𝕜 A)) (dNonUnital 𝕜 A b) +
+      rightAction 𝕜 _ (WithLp.toLp 1 (b : Unitization 𝕜 A)) (dNonUnital 𝕜 A a) := by
   simpa only [dNonUnital, ContinuousLinearMap.comp_apply,
     ← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul] using
     d_mul (𝕜 := 𝕜) (WithLp.unitizationInrL 𝕜 A a) (WithLp.unitizationInrL 𝕜 A b)
@@ -340,15 +301,15 @@ theorem existsUnique_lift_nonUnital
       R (WithLp.toLp 1 (b : Unitization 𝕜 A)) (D a)) :
     ∃! f : CompletedUniversalOneForms 𝕜 (WithLp 1 (Unitization 𝕜 A)) →L[𝕜] E,
       (∀ a, f (dNonUnital 𝕜 A a) = D a) ∧
-      (∀ a t, f (left 𝕜 _ a t) = L a (f t)) ∧
-      (∀ a t, f (right 𝕜 _ a t) = R a (f t)) ∧ ‖f‖ ≤ ‖L‖ * ‖D‖ := by
+      (∀ a t, f (leftAction 𝕜 _ a t) = L a (f t)) ∧
+      (∀ a t, f (rightAction 𝕜 _ a t) = R a (f t)) ∧ ‖f‖ ≤ ‖L‖ * ‖D‖ := by
   let D' := D ∘L WithLp.unitizationSndL 𝕜 A
   have hD' (u : WithLp 1 (Unitization 𝕜 A)) : D' u = D (WithLp.ofLp u).snd := by
     simp [D']
   have hd := D.comp_unitizationSndL_mul L R h1L h1R hD
   have hd1 : D' 1 = 0 := by simp [D']
   have hn : ‖D'‖ ≤ ‖D‖ := D.norm_comp_unitizationSndL_le
-  refine ⟨lift L D', ⟨?_, lift_left L D' hL, lift_right L R D' hL hLR hd,
+  refine ⟨lift L D', ⟨?_, lift_leftAction L D' hL, lift_rightAction L R D' hL hLR hd,
     (norm_lift_le L D').trans (by gcongr)⟩, ?_⟩
   · intro a
     simpa [hD'] using lift_d L D' h1L hd1 (WithLp.toLp 1 (a : Unitization 𝕜 A))
