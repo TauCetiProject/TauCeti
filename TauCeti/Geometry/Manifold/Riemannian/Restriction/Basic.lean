@@ -144,6 +144,15 @@ theorem restrictOpenTangentSpace_inner
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x w) := by
   exact Bundle.RiemannianMetric.restrictOpenTangentSpace_inner g.toRiemannianMetric U x v w
 
+/-- Restriction to an open submanifold is pullback along its inclusion. -/
+theorem restrictOpenTangentSpace_eq_pullback [FiniteDimensional ℝ E]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
+    g.restrictOpenTangentSpace U = g.pullback (Subtype.val : U → M) contMDiff_subtype_val
+      (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)) := by
+  ext x v w
+  simp only [restrictOpenTangentSpace_inner, pullback_inner,
+    TauCeti.Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+
 /-- Forgetting `C^n` regularity after restricting a metric gives its fibrewise restriction. -/
 @[simp]
 theorem restrictOpenTangentSpace_toRiemannianMetric
