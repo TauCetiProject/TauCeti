@@ -20,6 +20,13 @@ This comparison allows a scalar-extended Hom representation to act on scalar-ext
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
 linear maps after extension of scalars.
+
+For a finitely generated projective `R`-module `V` and a finitely generated projective `A`-module
+`E`, an `R`-linear map `c : V → End_A E` extends `A`-linearly to `A ⊗[R] V`, and the finite
+Hom/tensor identifications `dualTensorHomEquiv` turn that extension into a tensor in
+`(A ⊗[R] V)* ⊗[A] (E* ⊗[A] E)` (`TauCeti.endValuedTensorEquiv`). The pure tensor
+`φ ⊗ (ψ ⊗ e)` corresponds to the map `v ↦ (x ↦ φ (1 ⊗ v) • ψ x • e)`
+(`TauCeti.endValuedTensorEquiv_symm_tmul_apply_apply`).
 -/
 
 public section
@@ -145,3 +152,39 @@ theorem baseChange_injective :
   exact _root_.sub_self (g.lTensor A)
 
 end LinearMap
+
+public section
+
+open TensorProduct
+
+namespace TauCeti
+
+noncomputable section
+
+variable (R A V E : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid V] [Module R V] [Module.Finite R V] [Module.Projective R V]
+  [AddCommMonoid E] [Module A E] [Module.Finite A E] [Module.Projective A E]
+  [Module R E] [IsScalarTower R A E]
+
+/-- **An endomorphism-valued linear map as a tensor.** An `R`-linear map `c : V → End_A E`
+corresponds to its `A`-linear extension `A ⊗[R] V → End_A E`, and hence, `A ⊗[R] V` and `E`
+being finitely generated and projective, to a tensor in `(A ⊗[R] V)* ⊗[A] (E* ⊗[A] E)`. -/
+def endValuedTensorEquiv :
+    (V →ₗ[R] Module.End A E) ≃ₗ[A] Module.Dual A (A ⊗[R] V) ⊗[A] (Module.Dual A E ⊗[A] E) :=
+  (LinearMap.liftBaseChangeEquiv A).trans
+    ((TensorProduct.congr (LinearEquiv.refl A _) (dualTensorHomEquiv A E E)).trans
+      (dualTensorHomEquiv A (A ⊗[R] V) (Module.End A E))).symm
+
+variable {R A V E}
+
+/-- The endomorphism-valued map attached to a pure tensor `φ ⊗ (ψ ⊗ e)` sends `v` to the
+rank-one endomorphism `x ↦ φ (1 ⊗ v) • ψ x • e`. -/
+@[simp]
+theorem endValuedTensorEquiv_symm_tmul_apply_apply (φ : Module.Dual A (A ⊗[R] V))
+    (ψ : Module.Dual A E) (e : E) (v : V) (x : E) :
+    (endValuedTensorEquiv R A V E).symm (φ ⊗ₜ (ψ ⊗ₜ e)) v x = φ (1 ⊗ₜ v) • ψ x • e := by
+  simp [endValuedTensorEquiv]
+
+end
+
+end TauCeti

@@ -28,6 +28,8 @@ infinitesimal elements as quadratic without first choosing exterior-square coord
   the recognition theorem from the three intrinsic conditions.
 * `mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι`:
   the complete characterization.
+* `CliffordAlgebra.mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero`: over the zero
+  space only `0` satisfies the three conditions.
 -/
 
 public section
@@ -171,6 +173,17 @@ theorem mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_me
   · rintro ⟨hx_even, hx_reverse, hx_lie⟩
     exact mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι
       Q hQ hx_even hx_reverse hx_lie
+
+/-- Over the zero space the intrinsic quadratic conditions force a Clifford element to vanish. -/
+theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subsingleton V]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (x : CliffordAlgebra Q) :
+    (x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q)) ↔
+      x = 0 := by
+  refine ⟨fun hx ↦ ?_, by rintro rfl; simp⟩
+  have hxq : x ∈ quadraticLieSubalgebra Q :=
+    (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι Q
+      hQ).mpr (by simpa only [Ring.lie_def] using hx)
+  rwa [quadraticLieSubalgebra_eq_bot, LieSubalgebra.mem_bot] at hxq
 
 end Field
 

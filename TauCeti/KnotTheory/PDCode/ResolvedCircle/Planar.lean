@@ -384,6 +384,32 @@ theorem IsPlanar.stateLoopCount_eq_add_one_or_stateLoopCount_eq_add_one (hD : D.
   have ht := D.card_circlesAt_le_two t c
   omega
 
+/-- For a planar diagram, the sum of the number of B-smoothings and the number of
+resolution circles has the same parity at every vertex of the resolution cube. -/
+theorem IsPlanar.card_false_add_stateLoopCount_mod_two_eq (hD : D.IsPlanar)
+    (s t : Fin n → Bool) :
+    (#{i | s i = false} + D.stateLoopCount s) % 2 =
+      (#{i | t i = false} + D.stateLoopCount t) % 2 := by
+  classical
+  have key (S : Finset (Fin n)) :
+      (#S + D.stateLoopCount (fun i ↦ decide (i ∉ S))) % 2 =
+        D.stateLoopCount (fun _ ↦ true) % 2 := by
+    induction S using Finset.induction_on with
+    | empty => simp
+    | @insert a S ha ih =>
+      have hedge := hD.stateLoopCount_eq_add_one_or_stateLoopCount_eq_add_one
+        (s := fun i ↦ decide (i ∉ S)) (t := fun i ↦ decide (i ∉ insert a S))
+        (c := a) (by intros; simp_all) (by simp [ha])
+      rw [card_insert_of_notMem ha]
+      rcases hedge with h | h <;> omega
+  have hs : (fun i ↦ decide (i ∉ ({i | s i = false} : Finset (Fin n)))) = s := by
+    funext i
+    cases hi : s i <;> simp [hi]
+  have ht : (fun i ↦ decide (i ∉ ({i | t i = false} : Finset (Fin n)))) = t := by
+    funext i
+    cases hi : t i <;> simp [hi]
+  simpa only [hs, ht] using (key {i | s i = false}).trans (key {i | t i = false}).symm
+
 end PDCode
 
 end TauCeti

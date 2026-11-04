@@ -25,8 +25,10 @@ operators continuous with no hypothesis on `C`: an operator only reindexes the a
 string. Identity arrows are among them, so the objects of the string are recorded too. When
 source, target, units and composition are continuous, every arrow of a string is a continuous
 function of its consecutive arrows, so this is the subspace topology of composable strings in the
-product of arrow spaces. For action groupoids this identification is
-`TauCeti.ActionGroupoid.nerveHomeomorph`.
+product of arrow spaces. The general recursive identification is
+`CategoryTheory.ComposableArrows.precompHomeomorph` in
+`TauCeti.Topology.CategoryTheory.ComposableArrows`. For action groupoids the explicit coordinates
+are given by `TauCeti.ActionGroupoid.nerveHomeomorph`.
 
 The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realization
 (`TauCeti.fatRealization`) of the underlying semi-simplicial space, obtained by forgetting
@@ -63,6 +65,39 @@ theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i
 
 theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
     F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
+
+/-- The first arrow of a string obtained by prepending an arrow is that arrow, including
+when its target is identified with the first vertex by an equality. -/
+@[simp]
+theorem totalArrow_precomp_zero_one {n : ℕ} (a : Quiver.Total C)
+    (F : ComposableArrows C n) (h : a.right = F.left) :
+    (F.precomp (a.hom ≫ eqToHom h)).totalArrow 0 1 (Fin.zero_le _) = a := by
+  rcases a with ⟨x, z, f⟩
+  dsimp only at h
+  subst z
+  rw [totalArrow_def]
+  simp only [precomp, Precomp.obj_zero, Precomp.obj_one, Precomp.map_zero_one,
+    eqToHom_refl, Category.comp_id]
+
+/-- An arrow from the new first vertex to a later vertex is the prepended arrow followed by
+an arrow of the original string. -/
+@[simp]
+theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
+    (f : X ⟶ F.left) (j : ℕ) (hj : j + 2 < n + 1 + 1) :
+    (F.precomp f).totalArrow 0 ⟨j + 2, hj⟩ (Nat.zero_le _) =
+      ⟨X, F.obj' (j + 1) (by omega), f ≫ F.map' 0 (j + 1) (by omega) (by omega)⟩ := by
+  -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
+  rfl
+
+/-- Arrows between shifted vertices of a prepended string are the arrows of the original
+string. -/
+@[simp]
+theorem totalArrow_precomp_succ_succ (F : ComposableArrows C n) {X : C}
+    (f : X ⟶ F.left) (i j : Fin (n + 1)) (hij : i ≤ j) :
+    (F.precomp f).totalArrow i.succ j.succ (Fin.succ_le_succ_iff.mpr hij) =
+      F.totalArrow i j hij := by
+  -- Both endpoints lie in the shifted tail, where precomp retains the original map.
+  rfl
 
 /-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
 its arrows. -/

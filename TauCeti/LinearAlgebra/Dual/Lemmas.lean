@@ -44,6 +44,8 @@ and so separate points.
   independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
+* `LinearIndependent.exists_sum_smul_eq_proj`: `#ι` linearly independent forms on `Kⁱ` express
+  every coordinate projection.
 -/
 
 public section
@@ -222,5 +224,16 @@ theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : Linea
   simpa using hz'
 
 end Separation
+
+/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate projection is a
+combination of them. -/
+theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
+  have hspan : Submodule.span K (Set.range l) = ⊤ :=
+    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
+    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  exact ⟨a, ha⟩
 
 end LinearIndependent

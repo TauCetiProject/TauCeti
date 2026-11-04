@@ -32,6 +32,8 @@ compares the two forms in both directions.
   comparison `T_(a ≫ b) ≅ T_a ⋙ T_b` of the action, the inverse composition isomorphism of
   transport and the commuting isomorphism `T_b ⋙ E_g ≅ E_g ⋙ T_b`; its coherence is
   `jointComp_associativity`, `jointComp_left_unitality` and `jointComp_right_unitality`.
+* `TauCeti.EquivariantGroupoidLift.NormalizedTransport.transportPseudofunctor`: the prescribed
+  parameter transports with their unit and composition comparisons.
 * `TauCeti.EquivariantGroupoidLift.NormalizedTransport.toLift`: the lift with joint pseudofunctor
   `joint` whose fiber comparisons `comparison p` have identity components. Their naturality
   isomorphisms are the unit isomorphisms `E_(𝟙 p) ≅ 𝟭`.
@@ -405,6 +407,60 @@ lemma joint_mapComp_inv_app {X Y Z : LocallyDiscrete (Γ × SingleObj H)} (f : X
       (N.jointComp f.as g.as (f ≫ g).as rfl).inv.app x :=
   LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
 
+/-- The prescribed transport functors, with their given unit and composition cells,
+form a pseudofunctor on the parameter category. -/
+-- Expose the object assignment so components can be typed in the prescribed fibers.
+@[expose] noncomputable def transportPseudofunctor : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w} :=
+  LocallyDiscrete.mkCatPseudofunctor (obj := fun p ↦ fiber actions p) N.transport N.transportId
+    (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm)
+    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦ by
+      simp only [Iso.symm_hom]
+      exact LocallyDiscrete.inv_associativity_of_hom_associativity
+        (fun g h gh hgh ↦ N.transportComp g h gh hgh)
+        (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
+          N.transportComp_associativity f g h fg gh fgh hfg hgh hfgh hfgh' X)
+        f g h fg gh fgh hfg hgh hfgh hfgh' X)
+    (fun g hg X ↦ by
+      rw [Iso.symm_hom, ← N.transportComp_left_unitality g hg X, Iso.inv_hom_id_app])
+    (fun g hg X ↦ by
+      rw [Iso.symm_hom, ← N.transportComp_right_unitality g hg X, Iso.inv_hom_id_app])
+
+@[simp]
+lemma transportPseudofunctor_obj (b : LocallyDiscrete Γ) :
+    N.transportPseudofunctor.obj b = fiber actions b.as :=
+  LocallyDiscrete.mkCatPseudofunctor_obj ..
+
+@[simp]
+lemma transportPseudofunctor_map_toFunctor {b b' : LocallyDiscrete Γ} (g : b ⟶ b') :
+    (N.transportPseudofunctor.map g).toFunctor = N.transport g.as :=
+  LocallyDiscrete.mkCatPseudofunctor_map_toFunctor ..
+
+@[simp]
+lemma transportPseudofunctor_mapId_hom_toNatTrans_app (b : LocallyDiscrete Γ)
+    (X : fiber actions b.as) :
+    (N.transportPseudofunctor.mapId b).hom.toNatTrans.app X = (N.transportId b.as).hom.app X :=
+  LocallyDiscrete.mkCatPseudofunctor_mapId_hom_toNatTrans_app ..
+
+@[simp]
+lemma transportPseudofunctor_mapId_inv_toNatTrans_app (b : LocallyDiscrete Γ)
+    (X : fiber actions b.as) :
+    (N.transportPseudofunctor.mapId b).inv.toNatTrans.app X = (N.transportId b.as).inv.app X :=
+  LocallyDiscrete.mkCatPseudofunctor_mapId_inv_toNatTrans_app ..
+
+@[simp]
+lemma transportPseudofunctor_mapComp_hom_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
+    (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
+    (N.transportPseudofunctor.mapComp g h).hom.toNatTrans.app X =
+      (N.transportComp g.as h.as (g.as ≫ h.as) rfl).inv.app X :=
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_hom_toNatTrans_app ..
+
+@[simp]
+lemma transportPseudofunctor_mapComp_inv_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
+    (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
+    (N.transportPseudofunctor.mapComp g h).inv.toNatTrans.app X =
+      (N.transportComp g.as h.as (g.as ≫ h.as) rfl).hom.app X :=
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
+
 /-- A composition comparison of `N.joint` preceded by a `2`-cell of the locally discrete source
 is the composition comparison `jointComp` at the corresponding factorization. -/
 lemma joint_map₂_comp_mapComp_hom_app {X Y Z : LocallyDiscrete (Γ × SingleObj H)} (u : X ⟶ Y)
@@ -529,6 +585,44 @@ lemma toLift_joint : N.toLift.joint = N.joint :=
 @[simp]
 lemma toLift_comparison (p : Γ) : N.toLift.comparison p = N.comparison p :=
   rfl
+
+/-- The joint unit of the reconstructed lift is the prescribed joint unit. -/
+lemma toLift_jointMapId_hom_app (p : Γ) (x : fiber actions p) :
+    (N.toLift.jointMapId p).hom.app x = (N.jointId (p, SingleObj.star H)).hom.app x := by
+  rw [N.toLift.jointMapId_hom_app p x]
+  -- Write the identity arrow in the product category explicitly, so its comparison
+  -- has the same source and target types as the joint pseudofunctor's unit.
+  change (N.joint.mapId'
+    (𝟙 (⟨(p, SingleObj.star H)⟩ : LocallyDiscrete (Γ × SingleObj H)))).hom.toNatTrans.app x = _
+  rw [Pseudofunctor.mapId'_eq_mapId]
+  exact N.joint_mapId_hom_app ⟨(p, SingleObj.star H)⟩ x
+
+/-- The joint compositor of the reconstructed lift is the prescribed joint compositor. -/
+lemma toLift_jointMapComp_hom_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+    (gh : p ⟶ r) (hgh : g ≫ h = gh) (x : fiber actions p) :
+    (N.toLift.jointMapComp g h gh hgh).hom.app x =
+      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).hom.app x := by
+  rw [N.toLift.jointMapComp_hom_app g h gh hgh x]
+  -- Expand the flexible compositor only, retaining the opaque joint construction.
+  change (N.joint.map₂ (eqToHom (by simp [← Quiver.Hom.comp_toLoc, hgh] :
+    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc =
+      (g ×ₘ 𝟙 (SingleObj.star H)).toLoc ≫
+        (h ×ₘ 𝟙 (SingleObj.star H)).toLoc))).toNatTrans.app x ≫
+    (N.joint.mapComp (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
+      (h ×ₘ 𝟙 (SingleObj.star H)).toLoc).hom.toNatTrans.app x = _
+  exact N.joint_map₂_comp_mapComp_hom_app
+    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
+    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc
+    (eqToHom (by simp [← Quiver.Hom.comp_toLoc, hgh])) x
+
+/-- The inverse joint compositor of the reconstructed lift is the prescribed inverse. -/
+lemma toLift_jointMapComp_inv_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+    (gh : p ⟶ r) (hgh : g ≫ h = gh) (x : fiber actions p) :
+    (N.toLift.jointMapComp g h gh hgh).inv.app x =
+      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app x :=
+  congrArg Iso.inv (Iso.ext (N.toLift_jointMapComp_hom_app g h gh hgh x) :
+    (N.toLift.jointMapComp g h gh hgh).app x =
+      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).app x)
 
 /-- The transport functor of `N.toLift` along `g` is isomorphic to the transport functor `E_g` of
 `N`. The isomorphism removes the chosen inverse of the identity fiber comparison and the unit

@@ -55,7 +55,7 @@ and the empty partition of `0` when `n = 0`; either way its Young subgroup is al
 /-- The Young permutation module of the coarsest partition `(n)` is the trivial representation:
 there is only one `(n)`-tabloid. -/
 noncomputable def permutationModuleIndiscreteIsoTrivial (n : ℕ) :
-    permutationModule (Nat.Partition.indiscrete n) ≅
+    permutationModule (R := ℚ) (Nat.Partition.indiscrete n) ≅
       Rep.trivial ℚ (Equiv.Perm (Fin n)) ℚ :=
   quotientIsoCongr ℚ (youngSubgroup_indiscrete n) ≪≫ quotientTopIsoTrivial ℚ
 
@@ -82,7 +82,7 @@ theorem permutationModuleIndiscreteIsoTrivial_inv_hom_apply (n : ℕ) (r : ℚ) 
 /-- The Young permutation module of the coarsest partition `(n)` is one-dimensional. -/
 @[simp]
 theorem finrank_permutationModule_indiscrete (n : ℕ) :
-    Module.finrank ℚ (permutationModule (Nat.Partition.indiscrete n)).V = 1 := by
+    Module.finrank ℚ (permutationModule (R := ℚ) (Nat.Partition.indiscrete n)).V = 1 := by
   rw [finrank_permutationModule, Nat.Partition.prod_map_factorial_indiscrete,
     Nat.div_self n.factorial_pos]
 
@@ -91,7 +91,7 @@ theorem finrank_permutationModule_indiscrete (n : ℕ) :
 Not a `simp` lemma: `char_ofMulAction` already rewrites the left-hand side to the fixed-tabloid
 count. -/
 theorem char_permutationModule_indiscrete (n : ℕ) (σ : Equiv.Perm (Fin n)) :
-    (permutationModule (Nat.Partition.indiscrete n)).ρ.character σ = 1 := by
+    (permutationModule (R := ℚ) (Nat.Partition.indiscrete n)).ρ.character σ = 1 := by
   rw [char_permutationModule, youngSubgroup_indiscrete]
   have := QuotientGroup.subsingleton_quotient_top (G := Equiv.Perm (Fin n))
   have : Unique {q : Equiv.Perm (Fin n) ⧸ (⊤ : Subgroup (Equiv.Perm (Fin n))) // σ • q = q} :=
@@ -103,7 +103,7 @@ theorem char_permutationModule_indiscrete (n : ℕ) (σ : Equiv.Perm (Fin n)) :
 /-- The Young permutation module of the all-ones partition `(1ⁿ)` is the regular representation
 `ℚ[Sₙ]`: the `(1ⁿ)`-tabloids are the permutations themselves. -/
 noncomputable def permutationModuleOnesIsoLeftRegular (n : ℕ) :
-    permutationModule (Nat.Partition.ones n) ≅ Rep.leftRegular ℚ (Equiv.Perm (Fin n)) :=
+    permutationModule (R := ℚ) (Nat.Partition.ones n) ≅ Rep.leftRegular ℚ (Equiv.Perm (Fin n)) :=
   quotientIsoCongr ℚ (youngSubgroup_ones n) ≪≫ quotientBotIsoLeftRegular ℚ
 
 /-- A `(1ⁿ)`-tabloid is sent to the permutation it names. -/
@@ -141,7 +141,7 @@ theorem permutationModuleOnesIsoLeftRegular_inv_hom_single (n : ℕ)
 /-- The Young permutation module of the all-ones partition `(1ⁿ)` has dimension `n !`. -/
 @[simp]
 theorem finrank_permutationModule_ones (n : ℕ) :
-    Module.finrank ℚ (permutationModule (Nat.Partition.ones n)).V = n.factorial := by
+    Module.finrank ℚ (permutationModule (R := ℚ) (Nat.Partition.ones n)).V = n.factorial := by
   rw [finrank_permutationModule]
   simp
 
@@ -151,7 +151,7 @@ at the identity and vanishes elsewhere.
 Not a `simp` lemma: `char_ofMulAction` already rewrites the left-hand side to the fixed-tabloid
 count. -/
 theorem char_permutationModule_ones (n : ℕ) (σ : Equiv.Perm (Fin n)) :
-    (permutationModule (Nat.Partition.ones n)).ρ.character σ =
+    (permutationModule (R := ℚ) (Nat.Partition.ones n)).ρ.character σ =
       if σ = 1 then (n.factorial : ℚ) else 0 := by
   rw [char_permutationModule, youngSubgroup_ones]
   rcases eq_or_ne σ 1 with rfl | hσ
