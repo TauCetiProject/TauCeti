@@ -105,7 +105,8 @@ theorem exists_isCutoff_contMDiff
   have ht' := ht.isLocalHomeomorph
   obtain ⟨β, hβs, hβ0, hβK, hpos⟩ := exists_contMDiff_nonneg_isCompact_preimage_inter I hp hs' ht'
   refine ⟨_, isCutoff_div_finsum hs' hβ0 hβK hpos,
-    (hβs.of_le (by simp)).div₀ (fun x₀ ↦ ?_) fun x ↦ (finsum_mem_pos hs' hβ0 hβK (hpos x)).ne'⟩
+    (hβs.of_le (by simp)).div₀ (fun x₀ ↦ ?_) fun x ↦
+      (finsum_mem_preimage_left_singleton_pos hs' hβ0 hβK (hpos x)).ne'⟩
   -- Near `x₀` the sum is a finite sum of `β` composed with the target and local inverses of the
   -- source.
   obtain ⟨F, hF, hev⟩ := hs'.eventually_finsum_mem_preimage_singleton_eq_sum

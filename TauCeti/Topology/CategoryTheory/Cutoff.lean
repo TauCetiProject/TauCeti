@@ -25,9 +25,9 @@ objects such that
 
 The second condition makes the source map proper on the support of `c` composed with the target
 (`TauCeti.Quiver.IsCutoff.isProperMap_left`). When the source is a local homeomorphism it also makes
-each of the sums above finite (`TauCeti.Quiver.IsCutoff.finite_preimage_left_inter`). Every arrow
-is counted, so isotropy arrows acting trivially near their object, and with them the ineffective
-isotropy of an orbifold presentation, are retained.
+each of the sums above finite (`TauCeti.Quiver.IsCutoff.finite_preimage_left_singleton_inter`).
+Every arrow is counted, so isotropy arrows acting trivially near their object, and with them the
+ineffective isotropy of an orbifold presentation, are retained.
 
 For a groupoid, dividing a nonnegative function `β` by its sums `x ↦ ∑ᶠ a, β a.right` over the
 arrows with source `x` gives a cutoff function, as soon as every orbit meets the locus where `β` is
@@ -75,7 +75,7 @@ variable {R : Type*} [Zero R] {f : C → R}
 /-- If the source map is a local homeomorphism and the arrows with source in a compact set and
 target in the support of `f` form a compact set, then only finitely many arrows with a given source
 have their target in the support of `f`. -/
-theorem finite_preimage_left_inter
+theorem finite_preimage_left_singleton_inter
     (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
     (hf : ∀ ⦃K : Set C⦄, IsCompact K →
       IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport f))
@@ -100,7 +100,8 @@ end Finite
 some arrow with source `x`, and the arrows with source in a compact set and target in the support
 of `f` form a compact set, then the sum of `f` over the targets of the arrows with source `x` is
 positive. -/
-theorem finsum_mem_pos (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+theorem finsum_mem_preimage_left_singleton_pos
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
     {f : C → ℝ} (hf0 : ∀ x, 0 ≤ f x)
     (hf : ∀ ⦃K : Set C⦄, IsCompact K →
       IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport f))
@@ -108,7 +109,7 @@ theorem finsum_mem_pos (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total
     0 < ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, f a.right := by
   obtain ⟨a, ha, hfa⟩ := hx
   refine finsum_cond_pos (fun _ _ ↦ hf0 _) ⟨a, ha, (hf0 _).lt_of_ne' hfa⟩ ?_
-  refine (finite_preimage_left_inter hs hf x).subset fun b ⟨hb, hbx⟩ ↦ ⟨hbx, ?_⟩
+  refine (finite_preimage_left_singleton_inter hs hf x).subset fun b ⟨hb, hbx⟩ ↦ ⟨hbx, ?_⟩
   exact subset_tsupport f hb
 
 namespace IsCutoff
@@ -117,10 +118,10 @@ variable {c : C → ℝ}
 
 /-- If the source map is a local homeomorphism, only finitely many arrows with a given source have
 their target in the support of a cutoff function. -/
-theorem finite_preimage_left_inter (hc : IsCutoff c)
+theorem finite_preimage_left_singleton_inter (hc : IsCutoff c)
     (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) (x : C) :
     (Quiver.Total.left ⁻¹' {x} ∩ Quiver.Total.right ⁻¹' tsupport c).Finite :=
-  TauCeti.Quiver.finite_preimage_left_inter hs hc.isCompact_preimage_inter x
+  TauCeti.Quiver.finite_preimage_left_singleton_inter hs hc.isCompact_preimage_inter x
 
 /-- The arrows with source in a compact set and lying in the support of a cutoff function
 composed with the target form a compact set. -/
@@ -166,7 +167,7 @@ theorem isCutoff_div_finsum (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.
     (hpos : ∀ x, ∃ a ∈ Quiver.Total.left ⁻¹' {x}, β a.right ≠ 0) :
     IsCutoff fun x ↦ β x / ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, β a.right := by
   have hsum (x : C) : 0 < ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, β a.right :=
-    finsum_mem_pos hs hβ hfin (hpos x)
+    finsum_mem_preimage_left_singleton_pos hs hβ hfin (hpos x)
   -- The sums are constant along each arrow.
   have hinv (a : Quiver.Total C) :
       ∑ᶠ b ∈ Quiver.Total.left ⁻¹' {a.right}, β b.right =
