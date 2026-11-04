@@ -92,13 +92,8 @@ theorem coe_torsionToDualKer (R : Submodule.torsionBy ℤ W₁.Point (φ.degree 
 theorem dual_pointMap_mem_ker_pointMapHom
     (S : Submodule.torsionBy ℤ W₂.Point (φ.degree : ℤ)) :
     (Hom.ofIsogeny φ.dual).pointMap S ∈ (Hom.ofIsogeny φ).pointMapHom.ker := by
-  have h : ∀ S : Submodule.torsionBy ℤ W₂.Point (φ.dual.degree : ℤ),
-      (Hom.ofIsogeny φ.dual).pointMap S ∈
-        (Hom.ofIsogeny φ.dual.dual).pointMapHom.ker := fun S ↦ by
-    rw [← coe_torsionToDualKer]
-    exact (φ.dual.torsionToDualKer S).property
-  rw [degree_dual, dual_dual] at h
-  exact h S
+  rw [Hom.mem_ker_pointMapHom_iff, φ.pointMap_pointMap_dual]
+  simpa only [Submodule.mem_torsionBy_iff, natCast_zsmul] using S.property
 
 /-- The kernel of the map from degree torsion consists exactly of the points killed by `φ`. -/
 @[simp]
