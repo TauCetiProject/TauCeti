@@ -50,13 +50,10 @@ variable {m s b u x : ℝ}
 
 /-- On `[0, ∞)` at positive scale, the folded normal cdf is the difference of standard Gaussian cdf
 values at `(x - m) / s` and `(-x - m) / s`. -/
-theorem cdf_foldedNormalMeasure_of_nonneg_eq_sub (hs : 0 < s) (hx : 0 ≤ x) :
+theorem cdf_foldedNormalMeasure_eq_sub_of_nonneg (hs : 0 < s) (hx : 0 ≤ x) :
     cdf (foldedNormalMeasure m s) x =
       cdf (gaussianReal 0 1) ((x - m) / s) - cdf (gaussianReal 0 1) ((-x - m) / s) := by
-  have hv : (s ^ 2).toNNReal ≠ 0 := by
-    intro h
-    have hsq : s ^ 2 ≤ 0 := toNNReal_eq_zero.mp h
-    linarith [sq_pos_of_pos hs]
+  have hv : (s ^ 2).toNNReal ≠ 0 := (Real.toNNReal_pos.2 (pow_pos hs 2)).ne'
   have := nullSingletonClass_gaussianReal (μ := m) hv
   rw [foldedNormalMeasure_of_scale_pos hs, Measure.cdf_map_abs_of_nonneg _ hx,
     measureReal_congr (Iio_ae_eq_Iic (a := -x)), ← cdf_eq_real,
@@ -69,11 +66,11 @@ theorem cdf_foldedNormalMeasure_of_nonneg (hs : 0 < s) (hx : 0 ≤ x) :
     cdf (foldedNormalMeasure m s) x =
       cdf (gaussianReal 0 1) ((x - m) / s) + cdf (gaussianReal 0 1) ((x + m) / s) - 1 := by
   have hneg : (-x - m) / s = -((x + m) / s) := by ring
-  rw [cdf_foldedNormalMeasure_of_nonneg_eq_sub hs hx, hneg, cdf_gaussianReal_zero_one_neg]
+  rw [cdf_foldedNormalMeasure_eq_sub_of_nonneg hs hx, hneg, cdf_gaussianReal_zero_one_neg]
   ring
 
 /-- Error-function form of the folded normal cdf on `[0, ∞)` at positive scale. -/
-theorem cdf_foldedNormalMeasure_of_nonneg_eq_erf (hs : 0 < s) (hx : 0 ≤ x) :
+theorem cdf_foldedNormalMeasure_eq_erf_of_nonneg (hs : 0 < s) (hx : 0 ≤ x) :
     cdf (foldedNormalMeasure m s) x =
       (Real.erf ((x - m) / (√2 * s)) + Real.erf ((x + m) / (√2 * s))) / 2 := by
   rw [cdf_foldedNormalMeasure_of_nonneg hs hx, cdf_gaussianReal_zero_one,
@@ -151,55 +148,31 @@ theorem hasDerivAt_cdf_foldedNormalMeasure (hs : 0 < s) (hx : x ≠ 0) :
 
 /-! ### Quantiles -/
 
-/-- Interior folded normal quantiles expressed through the degree-one noncentral chi-squared
-quantile. -/
-theorem quantile_foldedNormalMeasure_eq_noncentralChiSquared (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    (foldedNormalMeasure m s).quantile u =
-      s * √((noncentralChiSquaredMeasure 1 (‖m / s‖₊ ^ 2)).quantile u) := by
-  rw [foldedNormalMeasure_eq_noncentralChiMeasure, quantile_noncentralChiMeasure zero_le_one hs hu]
-
-/-- At `m = 0` and positive scale, the interior folded normal quantile is `s` times the standard
-Gaussian quantile at level `(1 + u) / 2`. -/
-theorem quantile_foldedNormalMeasure_zero_mean (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
-    (foldedNormalMeasure 0 s).quantile u = s * (gaussianReal 0 1).quantile ((1 + u) / 2) := by
-  have hmap : foldedNormalMeasure 0 s = ((gaussianReal 0 1).map (|·|)).map (fun x ↦ s * x) := by
-    have hscale : (gaussianReal 0 1).map (fun x : ℝ ↦ s * x) =
-        gaussianReal 0 (s ^ 2).toNNReal := by
-      rw [gaussianReal_map_const_mul, mul_zero]
-      congr 1
-      apply NNReal.eq
-      simp [coe_toNNReal _ (sq_nonneg s)]
-    rw [foldedNormalMeasure_of_scale_pos hs, ← hscale,
-      Measure.map_map continuous_abs.measurable (by fun_prop),
-      Measure.map_map (by fun_prop) continuous_abs.measurable]
-    congr 1
-    ext y
-    simp [abs_mul, abs_of_pos hs]
-  have : (gaussianReal 0 1).IsNegInvariant :=
-    ⟨by simpa only [Measure.neg_def, neg_zero] using (gaussianReal_map_neg (μ := 0) (v := 1))⟩
-  rw [hmap]
-  have haff := quantile_map_affine_pos (μ := (gaussianReal 0 1).map (|·|)) (a := 0) hs hu.1 hu.2
-  simp only [zero_add] at haff
-  rw [haff, Measure.quantile_map_abs _ hu.1]
-
-/-- Negating the location parameter leaves all quantiles unchanged. -/
-theorem quantile_foldedNormalMeasure_neg_mean (m s u : ℝ) :
-    (foldedNormalMeasure (-m) s).quantile u = (foldedNormalMeasure m s).quantile u := by
-  rw [foldedNormalMeasure_neg_mean]
-
-/-- Replacing the location parameter by its absolute value leaves all quantiles unchanged. -/
-theorem quantile_foldedNormalMeasure_abs_mean (m s u : ℝ) :
-    (foldedNormalMeasure |m| s).quantile u = (foldedNormalMeasure m s).quantile u := by
-  rw [foldedNormalMeasure_abs_mean]
-
-/-- Positive scaling multiplies interior folded normal quantiles by the scale factor. -/
-theorem quantile_foldedNormalMeasure_const_mul (hb : 0 < b) (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
+/-- Positive scaling multiplies interior folded normal quantiles by the scale factor, including on
+the nonpositive-scale zero branch. -/
+theorem quantile_foldedNormalMeasure_const_mul (hb : 0 < b) (hu : u ∈ Ioo 0 1) (m s : ℝ) :
     (foldedNormalMeasure (b * m) (b * s)).quantile u =
       b * (foldedNormalMeasure m s).quantile u := by
-  let _ := isProbabilityMeasure_foldedNormalMeasure m hs
-  rw [← foldedNormalMeasure_map_const_mul hb]
-  simpa only [zero_add] using
-    quantile_map_affine_pos (μ := foldedNormalMeasure m s) (a := 0) hb hu.1 hu.2
+  by_cases hs : 0 < s
+  · let _ := isProbabilityMeasure_foldedNormalMeasure m hs
+    rw [← foldedNormalMeasure_map_const_mul hb]
+    simpa only [zero_add] using
+      quantile_map_affine_pos (μ := foldedNormalMeasure m s) (a := 0) hb hu.1 hu.2
+  · have hbs : b * s ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hb.le (not_lt.mp hs)
+    simp [foldedNormalMeasure_of_scale_nonpos (not_lt.mp hs),
+      foldedNormalMeasure_of_scale_nonpos hbs]
+
+/-- At zero location parameter and positive scale, the interior folded normal quantile is `s` times
+the standard Gaussian quantile at level `(1 + u) / 2`. -/
+theorem quantile_foldedNormalMeasure_zero_loc (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
+    (foldedNormalMeasure 0 s).quantile u = s * (gaussianReal 0 1).quantile ((1 + u) / 2) := by
+  have : (gaussianReal 0 1).IsNegInvariant :=
+    ⟨by simpa only [Measure.neg_def, neg_zero] using (gaussianReal_map_neg (μ := 0) (v := 1))⟩
+  have h1 : foldedNormalMeasure 0 1 = (gaussianReal 0 1).map (|·|) := by
+    simpa using foldedNormalMeasure_of_scale_pos (m := 0) one_pos
+  have hscale := quantile_foldedNormalMeasure_const_mul hs hu 0 1
+  simp only [mul_zero, mul_one] at hscale
+  rw [hscale, h1, Measure.quantile_map_abs _ hu.1]
 
 /-- Interior quantiles of a valid folded normal law are strictly positive. -/
 theorem quantile_foldedNormalMeasure_pos (hs : 0 < s) (hu : u ∈ Ioo 0 1) :

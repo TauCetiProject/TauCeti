@@ -119,7 +119,7 @@ theorem gaussianReal_map_abs_eq_foldedNormalMeasure (m : ℝ) {v : ℝ≥0} (hv 
 
 /-- Negating the location parameter leaves the folded normal law unchanged. -/
 @[simp]
-theorem foldedNormalMeasure_neg_mean (m s : ℝ) :
+theorem foldedNormalMeasure_neg_loc (m s : ℝ) :
     foldedNormalMeasure (-m) s = foldedNormalMeasure m s := by
   by_cases hs : 0 < s
   · rw [foldedNormalMeasure_of_scale_pos hs, foldedNormalMeasure_of_scale_pos hs,
@@ -132,42 +132,33 @@ theorem foldedNormalMeasure_neg_mean (m s : ℝ) :
 /-- Replacing the location parameter by its absolute value leaves the folded normal law
 unchanged. -/
 @[simp]
-theorem foldedNormalMeasure_abs_mean (m s : ℝ) :
+theorem foldedNormalMeasure_abs_loc (m s : ℝ) :
     foldedNormalMeasure |m| s = foldedNormalMeasure m s := by
   rcases le_or_gt 0 m with hm | hm
   · rw [abs_of_nonneg hm]
-  · rw [abs_of_neg hm, foldedNormalMeasure_neg_mean]
+  · rw [abs_of_neg hm, foldedNormalMeasure_neg_loc]
 
 /-- At zero location parameter the folded normal law is the half-normal law `chiMeasure 1 s`,
 including on the nonpositive-scale zero branch. -/
 @[simp]
-theorem foldedNormalMeasure_zero_mean (s : ℝ) :
+theorem foldedNormalMeasure_zero_loc (s : ℝ) :
     foldedNormalMeasure 0 s = chiMeasure 1 s := by
   by_cases hs : 0 < s
-  · have hv : (s ^ 2).toNNReal ≠ 0 := by
-      intro h
-      have hsq : s ^ 2 ≤ 0 := toNNReal_eq_zero.mp h
-      linarith [sq_pos_of_pos hs]
+  · have hv : (s ^ 2).toNNReal ≠ 0 := (Real.toNNReal_pos.2 (pow_pos hs 2)).ne'
     rw [foldedNormalMeasure_of_scale_pos hs, gaussianReal_map_abs hv,
       coe_toNNReal _ (sq_nonneg s), sqrt_sq hs.le]
   · simp [foldedNormalMeasure_of_scale_nonpos (not_lt.mp hs),
       chiMeasure_of_scale_nonpos (not_lt.mp hs)]
-
-/-- A unit-scale Gaussian with mean `m / s` rescaled by `s > 0` is `gaussianReal m (s ^ 2)`. -/
-private theorem gaussianReal_div_scale_map_mul (m : ℝ) {s : ℝ} (hs : 0 < s) :
-    (gaussianReal (m / s) 1).map (fun x ↦ s * x) = gaussianReal m (s ^ 2).toNNReal := by
-  rw [gaussianReal_map_const_mul]
-  congr 1
-  · exact mul_div_cancel₀ m hs.ne'
-  · apply NNReal.eq
-    simp [coe_toNNReal _ (sq_nonneg s)]
 
 /-- Every folded normal law is a degree-one noncentral chi law with noncentrality `‖m / s‖₊` and
 scale `s`, including when `s ≤ 0`. -/
 theorem foldedNormalMeasure_eq_noncentralChiMeasure (m s : ℝ) :
     foldedNormalMeasure m s = noncentralChiMeasure 1 ‖m / s‖₊ s := by
   by_cases hs : 0 < s
-  · rw [foldedNormalMeasure_of_scale_pos hs, ← gaussianReal_div_scale_map_mul m hs,
+  · have hscale : (gaussianReal (m / s) 1).map (s * ·) = gaussianReal m (s ^ 2).toNNReal := by
+      rw [gaussianReal_map_const_mul, mul_div_cancel₀ m hs.ne', mul_one,
+        ← Real.toNNReal_of_nonneg (sq_nonneg s)]
+    rw [foldedNormalMeasure_of_scale_pos hs, ← hscale,
       Measure.map_map continuous_abs.measurable (by fun_prop),
       noncentralChiMeasure_of_scale_pos hs, ← gaussianReal_map_sq_noncentral (m / s),
       Measure.map_map (by fun_prop) (by fun_prop)]
@@ -186,13 +177,6 @@ theorem noncentralChiMeasure_one (δ : ℝ≥0) (s : ℝ) :
     rw [foldedNormalMeasure_eq_noncentralChiMeasure, mul_div_cancel_right₀ _ hs.ne', hδ]
   · simp [foldedNormalMeasure_of_scale_nonpos (not_lt.mp hs),
       noncentralChiMeasure_of_scale_nonpos (not_lt.mp hs)]
-
-/-- Squaring a folded normal variable gives the squared scale times a degree-one noncentral
-chi-squared variable of noncentrality `(m / s) ^ 2`. -/
-theorem foldedNormalMeasure_map_sq (m : ℝ) {s : ℝ} (hs : 0 < s) :
-    (foldedNormalMeasure m s).map (fun x ↦ x ^ 2) =
-      (noncentralChiSquaredMeasure 1 (‖m / s‖₊ ^ 2)).map (fun x ↦ s ^ 2 * x) := by
-  rw [foldedNormalMeasure_eq_noncentralChiMeasure, noncentralChiMeasure_map_sq hs]
 
 /-- Multiplying by a positive constant `b` sends `foldedNormalMeasure m s` to
 `foldedNormalMeasure (b * m) (b * s)` across all parameter regimes. -/
@@ -216,7 +200,7 @@ theorem foldedNormalMeasure_map_abs_const_mul (hb : b ≠ 0) (m s : ℝ) :
       ← foldedNormalMeasure_of_scale_pos hs, foldedNormalMeasure_map_const_mul habs]
     rcases le_or_gt 0 b with hb0 | hb0
     · rw [abs_of_nonneg hb0]
-    · rw [abs_of_neg hb0, neg_mul, foldedNormalMeasure_neg_mean]
+    · rw [abs_of_neg hb0, neg_mul, foldedNormalMeasure_neg_loc]
   · simp [foldedNormalMeasure_of_scale_nonpos (not_lt.mp hs),
       foldedNormalMeasure_of_scale_nonpos (mul_nonpos_of_nonneg_of_nonpos habs.le (not_lt.mp hs))]
 
@@ -332,9 +316,7 @@ theorem foldedNormalPDFReal_eq_gaussianPDFReal_zero_one (hs : 0 < s) (hx : 0 < x
     gaussianPDFReal_eq_gaussianPDFReal_zero_one m (s ^ 2).toNNReal (-x)]
   simp only [coe_toNNReal _ (sq_nonneg s), sqrt_sq hs.le]
   have hneg : (-x - m) / s = -((x + m) / s) := by ring
-  have heven : gaussianPDFReal 0 1 (-((x + m) / s)) = gaussianPDFReal 0 1 ((x + m) / s) := by
-    simp [gaussianPDFReal]
-  rw [hneg, heven, ← add_div]
+  rw [hneg, gaussianPDFReal_zero_neg, ← add_div]
 
 /-- Hyperbolic-cosine factorization of the folded normal density on `(0, ∞)`. -/
 theorem foldedNormalPDFReal_eq_cosh (hs : 0 < s) (hx : 0 < x) :
@@ -356,7 +338,7 @@ theorem foldedNormalPDFReal_eq_cosh (hs : 0 < s) (hx : 0 < x) :
 
 /-- Negating the location parameter leaves the real density unchanged. -/
 @[simp]
-theorem foldedNormalPDFReal_neg_mean (m s x : ℝ) :
+theorem foldedNormalPDFReal_neg_loc (m s x : ℝ) :
     foldedNormalPDFReal (-m) s x = foldedNormalPDFReal m s x := by
   by_cases h : 0 < s ∧ 0 < x
   · rw [foldedNormalPDFReal_of_pos h.1 h.2, foldedNormalPDFReal_of_pos h.1 h.2]
@@ -367,16 +349,16 @@ theorem foldedNormalPDFReal_neg_mean (m s x : ℝ) :
 
 /-- Replacing `m` by `|m|` leaves the real density unchanged. -/
 @[simp]
-theorem foldedNormalPDFReal_abs_mean (m s x : ℝ) :
+theorem foldedNormalPDFReal_abs_loc (m s x : ℝ) :
     foldedNormalPDFReal |m| s x = foldedNormalPDFReal m s x := by
   rcases le_or_gt 0 m with hm | hm
   · rw [abs_of_nonneg hm]
-  · rw [abs_of_neg hm, foldedNormalPDFReal_neg_mean]
+  · rw [abs_of_neg hm, foldedNormalPDFReal_neg_loc]
 
 /-- At `m = 0`, the real folded normal density specializes to the half-normal density
 `chiPDFReal 1 s`. -/
 @[simp]
-theorem foldedNormalPDFReal_zero_mean (s x : ℝ) :
+theorem foldedNormalPDFReal_zero_loc (s x : ℝ) :
     foldedNormalPDFReal 0 s x = chiPDFReal 1 s x := by
   by_cases h : 0 < s ∧ 0 < x
   · rw [foldedNormalPDFReal_eq_cosh h.1 h.2, chiPDFReal_of_pos one_pos h.1 h.2]
@@ -389,21 +371,21 @@ theorem foldedNormalPDFReal_zero_mean (s x : ℝ) :
 
 /-- Negating the location parameter leaves the extended density unchanged. -/
 @[simp]
-theorem foldedNormalPDF_neg_mean (m s x : ℝ) :
+theorem foldedNormalPDF_neg_loc (m s x : ℝ) :
     foldedNormalPDF (-m) s x = foldedNormalPDF m s x := by
-  rw [foldedNormalPDF_eq_ofReal, foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_neg_mean]
+  rw [foldedNormalPDF_eq_ofReal, foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_neg_loc]
 
 /-- Replacing `m` by `|m|` leaves the extended density unchanged. -/
 @[simp]
-theorem foldedNormalPDF_abs_mean (m s x : ℝ) :
+theorem foldedNormalPDF_abs_loc (m s x : ℝ) :
     foldedNormalPDF |m| s x = foldedNormalPDF m s x := by
-  rw [foldedNormalPDF_eq_ofReal, foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_abs_mean]
+  rw [foldedNormalPDF_eq_ofReal, foldedNormalPDF_eq_ofReal, foldedNormalPDFReal_abs_loc]
 
 /-- At `m = 0`, the extended folded normal density specializes to `chiPDF 1 s`. -/
 @[simp]
-theorem foldedNormalPDF_zero_mean (s x : ℝ) :
+theorem foldedNormalPDF_zero_loc (s x : ℝ) :
     foldedNormalPDF 0 s x = chiPDF 1 s x := by
-  rw [foldedNormalPDF_eq_ofReal, chiPDF_eq_ofReal, foldedNormalPDFReal_zero_mean]
+  rw [foldedNormalPDF_eq_ofReal, chiPDF_eq_ofReal, foldedNormalPDFReal_zero_loc]
 
 /-- The real folded normal density is continuous on `(0, ∞)` for all parameters. -/
 theorem continuousOn_foldedNormalPDFReal (m s : ℝ) :
@@ -444,10 +426,7 @@ theorem measurable_foldedNormalPDF (m s : ℝ) :
 theorem foldedNormalMeasure_eq_withDensity (m s : ℝ) :
     foldedNormalMeasure m s = volume.withDensity (foldedNormalPDF m s) := by
   by_cases hs : 0 < s
-  · have hv : (s ^ 2).toNNReal ≠ 0 := by
-      intro h
-      have hsq : s ^ 2 ≤ 0 := toNNReal_eq_zero.mp h
-      linarith [sq_pos_of_pos hs]
+  · have hv : (s ^ 2).toNNReal ≠ 0 := (Real.toNNReal_pos.2 (pow_pos hs 2)).ne'
     rw [foldedNormalMeasure_of_scale_pos hs, gaussianReal_of_var_ne_zero m hv,
       map_abs_withDensity (measurable_gaussianPDF m _)]
     apply withDensity_congr_ae
@@ -474,9 +453,6 @@ theorem noncentralChiPDFReal_one (δ : ℝ≥0) (s x : ℝ) :
     · rw [noncentralChiPDFReal_of_nonpos (not_lt.mp hx),
         foldedNormalPDFReal_of_nonpos (not_lt.mp hx)]
   obtain ⟨hs, hx⟩ := hsx
-  rcases eq_or_ne δ 0 with rfl | hδ0
-  · simp
-  have hδ : 0 < δ := pos_iff_ne_zero.mpr hδ0
   -- Both measures agree and have continuous densities on `(0, ∞)`, so the densities agree
   -- everywhere on `(0, ∞)`.
   have hmeas_eq : volume.withDensity (noncentralChiPDF 1 δ s) =
@@ -492,25 +468,8 @@ theorem noncentralChiPDFReal_one (δ : ℝ≥0) (s x : ℝ) :
     filter_upwards [hae] with y hy
     simpa only [toReal_noncentralChiPDF, toReal_foldedNormalPDF] using
       congrArg ENNReal.toReal hy
-  have hcont_nc : ContinuousOn (noncentralChiPDFReal 1 δ s) (Ioi 0) := by
-    refine ContinuousOn.congr ?_ fun y hy ↦ noncentralChiPDFReal_eq_besselI zero_le_one hδ hs hy
-    intro y hy
-    have hy' : 0 < y := hy
-    have harg : 0 < (δ : ℝ) * y / s := by positivity
-    have hbase : 0 < y / (s * (δ : ℝ)) := by positivity
-    refine ContinuousAt.continuousWithinAt ?_
-    refine ContinuousAt.mul ?_ ?_
-    · refine ContinuousAt.mul ?_ ?_
-      · fun_prop
-      · exact ContinuousAt.rpow (by fun_prop) continuousAt_const (Or.inl hbase.ne')
-    · have hb : ContinuousAt (fun p : ℝ × ℝ ↦ besselI p.1 p.2) (1 / 2 - 1, (δ : ℝ) * y / s) :=
-        Real.continuousAt_besselI (Or.inl harg.ne')
-      have hf : ContinuousAt (fun z : ℝ ↦ ((1 : ℝ) / 2 - 1, (δ : ℝ) * z / s)) y :=
-        (by fun_prop : Continuous fun z : ℝ ↦ ((1 : ℝ) / 2 - 1, (δ : ℝ) * z / s)).continuousAt
-      exact ContinuousAt.comp (g := fun p : ℝ × ℝ ↦ besselI p.1 p.2)
-        (f := fun z : ℝ ↦ ((1 : ℝ) / 2 - 1, (δ : ℝ) * z / s)) hb hf
-  exact volume.eqOn_open_of_ae_eq (ae_restrict_of_ae hae_real) isOpen_Ioi hcont_nc
-    (continuousOn_foldedNormalPDFReal _ _) hx
+  exact volume.eqOn_open_of_ae_eq (ae_restrict_of_ae hae_real) isOpen_Ioi
+    (continuousOn_noncentralChiPDFReal 1 δ s) (continuousOn_foldedNormalPDFReal _ _) hx
 
 /-- The extended degree-one noncentral chi density coincides pointwise with `foldedNormalPDF`. -/
 theorem noncentralChiPDF_one (δ : ℝ≥0) (s x : ℝ) :
@@ -523,7 +482,7 @@ theorem foldedNormalPDFReal_eq_noncentralChiPDFReal (m s x : ℝ) :
     foldedNormalPDFReal m s x = noncentralChiPDFReal 1 ‖m / s‖₊ s x := by
   by_cases hs : 0 < s
   · rw [noncentralChiPDFReal_one, coe_nnnorm, Real.norm_eq_abs, abs_div, abs_of_pos hs,
-      div_mul_cancel₀ _ hs.ne', foldedNormalPDFReal_abs_mean]
+      div_mul_cancel₀ _ hs.ne', foldedNormalPDFReal_abs_loc]
   · rw [foldedNormalPDFReal_of_scale_nonpos (not_lt.mp hs),
       noncentralChiPDFReal_of_scale_nonpos (not_lt.mp hs)]
 

@@ -85,9 +85,7 @@ theorem mgf_id_foldedNormalMeasure (m : ℝ) {s : ℝ} (hs : 0 < s) (t : ℝ) :
         exp (-(m * t) + s ^ 2 * t ^ 2 / 2) * cdf (gaussianReal 0 1) (-m / s + s * t) := by
   set v : ℝ≥0 := (s ^ 2).toNNReal
   have hv_coe : (v : ℝ) = s ^ 2 := coe_toNNReal _ (sq_nonneg s)
-  have hv : v ≠ 0 := by
-    intro h
-    linarith [sq_pos_of_pos hs, hv_coe ▸ show (v : ℝ) = 0 from congrArg NNReal.toReal h]
+  have hv : v ≠ 0 := (Real.toNNReal_pos.2 (pow_pos hs 2)).ne'
   have hsqrt : √(v : ℝ) = s := by rw [hv_coe, sqrt_sq hs.le]
   have hneg : (gaussianReal m v).neg = gaussianReal (-m) v := by
     simpa only [Measure.neg_def] using gaussianReal_map_neg (μ := m) (v := v)
@@ -167,8 +165,6 @@ theorem integral_id_foldedNormalMeasure (m : ℝ) {s : ℝ} (hs : 0 < s) :
   rw [hmgf, hderiv.deriv] at h
   rw [← h]
   have hneg : (-m) / s = -(m / s) := neg_div s m
-  have heven : gaussianPDFReal 0 1 (-(m / s)) = gaussianPDFReal 0 1 (m / s) := by
-    simp [gaussianPDFReal]
   have hpdf : 2 * s * gaussianPDFReal 0 1 (m / s) =
       s * √(2 / π) * exp (-m ^ 2 / (2 * s ^ 2)) := by
     rw [gaussianPDFReal_zero_one, sqrt_mul zero_le_two, sqrt_div zero_le_two]
@@ -178,7 +174,7 @@ theorem integral_id_foldedNormalMeasure (m : ℝ) {s : ℝ} (hs : 0 < s) :
     rw [hexp_eq]
     field_simp [(sqrt_pos.2 two_pos).ne', (sqrt_pos.2 pi_pos).ne']
     rw [← h2]
-  rw [hneg, cdf_gaussianReal_zero_one_neg, heven]
+  rw [hneg, cdf_gaussianReal_zero_one_neg, gaussianPDFReal_zero_neg]
   calc
     m * cdf (gaussianReal 0 1) (m / s) + s * gaussianPDFReal 0 1 (m / s) +
         (-m * (1 - cdf (gaussianReal 0 1) (m / s)) + s * gaussianPDFReal 0 1 (m / s))
@@ -194,24 +190,23 @@ theorem integral_id_foldedNormalMeasure_eq_erf (m : ℝ) {s : ℝ} (hs : 0 < s) 
   rw [integral_id_foldedNormalMeasure m hs, cdf_gaussianReal_zero_one, div_div, mul_comm s √2]
   ring
 
-/-- The second raw moment of `foldedNormalMeasure m s` at positive scale `s` is `m ^ 2 + s ^ 2`. -/
-@[simp]
-theorem integral_sq_foldedNormalMeasure (m : ℝ) {s : ℝ} (hs : 0 < s) :
-    ∫ x, x ^ 2 ∂foldedNormalMeasure m s = m ^ 2 + s ^ 2 := by
-  rw [foldedNormalMeasure_of_scale_pos hs,
-    integral_map continuous_abs.measurable.aemeasurable (by fun_prop)]
-  simp only [sq_abs, integral_sq_gaussianReal, coe_toNNReal _ (sq_nonneg s)]
-  ring
-
-/-- Even raw moments of `foldedNormalMeasure m s` coincide with those of
+/-- Even raw moments of `foldedNormalMeasure m s` at positive scale coincide with those of
 `gaussianReal m (s ^ 2)`. -/
-theorem integral_pow_two_mul_foldedNormalMeasure (m : ℝ) {s : ℝ} (hs : 0 < s) (n : ℕ) :
+theorem integral_pow_two_mul_foldedNormalMeasure_eq_integral_pow_two_mul_gaussianReal
+    (m : ℝ) {s : ℝ} (hs : 0 < s) (n : ℕ) :
     ∫ x, x ^ (2 * n) ∂foldedNormalMeasure m s =
       ∫ x, x ^ (2 * n) ∂gaussianReal m (s ^ 2).toNNReal := by
   rw [foldedNormalMeasure_of_scale_pos hs,
     integral_map continuous_abs.measurable.aemeasurable (by fun_prop)]
   congr 1 with x
   rw [pow_mul, sq_abs, ← pow_mul]
+
+/-- The second raw moment of `foldedNormalMeasure m s` at positive scale `s` is `m ^ 2 + s ^ 2`. -/
+@[simp]
+theorem integral_sq_foldedNormalMeasure (m : ℝ) {s : ℝ} (hs : 0 < s) :
+    ∫ x, x ^ 2 ∂foldedNormalMeasure m s = m ^ 2 + s ^ 2 := by
+  simpa only [mul_one, integral_sq_gaussianReal, coe_toNNReal _ (sq_nonneg s), add_comm] using
+    integral_pow_two_mul_foldedNormalMeasure_eq_integral_pow_two_mul_gaussianReal m hs 1
 
 /-- The variance of `foldedNormalMeasure m s` at positive scale `s`, in terms of the standard
 Gaussian cdf `Φ = cdf (gaussianReal 0 1)`. -/
