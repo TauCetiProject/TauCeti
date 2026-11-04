@@ -40,6 +40,10 @@ with `(r + 1) C(n, r + 1) = (n - r) C(n, r)`. The case `k = 1` is the claim.
   `C(|s|, j + 1) * C(|s|, j) / |s|`.
 * `TauCeti.NoncrossingPartition.card_fin_mul_card_parts_eq` — the multiplied form
   `n * #{π ∈ NC(Fin n) | |π| = j + 1} = C(n, j + 1) * C(n, j)` for `Fin n`.
+* `TauCeti.NoncrossingPartition.card_filter_card_parts_eq_zero` — only the empty set has a
+  noncrossing partition without parts.
+* `TauCeti.NoncrossingPartition.sum_comp_card_parts_eq_sum_range` — a sum over `NC(s)` of a
+  function of the number of parts, grouped by the number of parts.
 * `TauCeti.NoncrossingPartition.sum_comp_card_parts_eq_of_card_eq` — a sum over `NC(s)` of a
   function of the number of parts depends only on `|s|`.
 * `TauCeti.NoncrossingPartition.sum_prod_mul_pow_card` — weighting each part `B` by `r * c ^ |B|`,
@@ -374,7 +378,7 @@ theorem card_fin_mul_card_parts_eq (n j : ℕ) :
   simpa using card_mul_card_parts_eq (univ : Finset (Fin n)) j
 
 /-- Only the empty set has a noncrossing partition without parts, and it has exactly one. -/
-private theorem card_filter_card_parts_eq_zero (s : Finset α) :
+theorem card_filter_card_parts_eq_zero (s : Finset α) :
     #{P : NoncrossingPartition s | #P.1.parts = 0} = if #s = 0 then 1 else 0 := by
   simp only [card_eq_zero (s := s), card_eq_zero (s := Finpartition.parts _),
     Finpartition.parts_eq_empty_iff, bot_eq_empty]
@@ -394,7 +398,7 @@ theorem card_filter_card_parts_eq_of_card_eq {β : Type*} [LinearOrder β] {t : 
 
 /-- A sum over the noncrossing partitions of `s` of a function of their number of parts, grouped
 by the number of parts. -/
-private theorem sum_comp_card_parts_eq_sum_range {M : Type*} [AddCommMonoid M] (s : Finset α)
+theorem sum_comp_card_parts_eq_sum_range {M : Type*} [AddCommMonoid M] (s : Finset α)
     (f : ℕ → M) :
     ∑ P : NoncrossingPartition s, f #P.1.parts =
       ∑ j ∈ range (#s + 1), #{P : NoncrossingPartition s | #P.1.parts = j} • f j := by
@@ -402,6 +406,13 @@ private theorem sum_comp_card_parts_eq_sum_range {M : Type*} [AddCommMonoid M] (
     (t := range (#s + 1)) fun P _ => mem_range.2 (Nat.lt_succ_of_le P.1.card_parts_le_card)]
   exact sum_congr rfl fun j _ => by
     rw [sum_congr rfl fun P hP => by rw [(mem_filter.1 hP).2], sum_const]
+
+/-- Over an empty set `s` of positions, a sum over the noncrossing partitions of `s` of a function
+`f` of their number of parts is `f 0`: the only such partition has no parts. -/
+theorem sum_comp_card_parts_of_card_eq_zero {M : Type*} [AddCommMonoid M] (hs : #s = 0)
+    (f : ℕ → M) : ∑ P : NoncrossingPartition s, f #P.1.parts = f 0 := by
+  rw [sum_comp_card_parts_eq_sum_range, hs, zero_add, sum_range_one,
+    card_filter_card_parts_eq_zero, ite_eq_left hs, one_smul]
 
 /-- A sum over the noncrossing partitions of a finite set `s` of positions of a function of their
 number of parts depends only on the number `|s|` of positions. In particular, such a sum over

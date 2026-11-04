@@ -76,16 +76,20 @@ structure IsFreePoisson (φ : A →ₗ[R] R) (a : A) (r c : R) : Prop where
   apply_pow (n : ℕ) :
     φ (a ^ n) = c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.1.parts
 
-/-- The only noncrossing partition of no positions has no parts. -/
-private theorem sum_pow_card_parts_fin_zero (r : R) :
-    ∑ π : NoncrossingPartition (univ : Finset (Fin 0)), r ^ #π.1.parts = 1 := by
-  rw [Fintype.sum_unique, Finpartition.parts_eq_empty_iff.2 (by simp), card_empty, pow_zero]
+/-- An element is free Poisson of rate `r` and jump size `c` exactly when it has the moments
+`φ (a ^ n) = c ^ n * ∑_{π ∈ NC(n)} r ^ |π|`. -/
+theorem isFreePoisson_iff_apply_pow :
+    IsFreePoisson φ a r c ↔ ∀ n : ℕ,
+      φ (a ^ n) = c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.1.parts :=
+  ⟨fun h => h.apply_pow, fun h => ⟨h⟩⟩
 
 namespace IsFreePoisson
 
 /-- A functional with a free Poisson element is normalised. -/
 theorem apply_one (h : IsFreePoisson φ a r c) : φ 1 = 1 := by
-  simpa only [pow_zero, sum_pow_card_parts_fin_zero, one_mul] using h.apply_pow 0
+  have h0 := h.apply_pow 0
+  rwa [pow_zero, pow_zero, NoncrossingPartition.sum_comp_card_parts_of_card_eq_zero (by simp)
+    fun k => r ^ k, pow_zero, one_mul] at h0
 
 /-- *The free cumulants of a free Poisson element*: the free cumulant of the constant word
 `(a, …, a)` along a nonempty set `s` of positions is `r * c ^ #s`. -/
@@ -124,7 +128,8 @@ theorem isFreePoisson_iff_freeCumulant_const (hφ : φ 1 = 1) :
   · have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
     simpa using h.freeCumulant_const (univ_nonempty (α := Fin n))
   rcases eq_or_ne n 0 with rfl | hn
-  · rw [pow_zero, hφ, sum_pow_card_parts_fin_zero, pow_zero, one_mul]
+  · rw [pow_zero, hφ, NoncrossingPartition.sum_comp_card_parts_of_card_eq_zero (by simp)
+      fun k => r ^ k, pow_zero, pow_zero, one_mul]
   -- By the moment–cumulant formula, each part `B` contributes the cumulant `r * c ^ #B`.
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
   have hκ (B : Finset (Fin n)) (hB : B.Nonempty) :
