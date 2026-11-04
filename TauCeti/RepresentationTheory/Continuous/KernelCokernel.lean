@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 public import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
-public import TauCeti.RepresentationTheory.Continuous.TopRep.KernelCokernel
 
 /-!
 # Kernel and cokernel representations of intertwining maps
