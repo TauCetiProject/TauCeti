@@ -48,6 +48,12 @@ smooth forms.
   `TauCeti.SmoothAlmostComplexStructure.del_del_apply`: the squares of `∂bar` and `∂` on functions
   through the Nijenhuis tensor.
 * `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del`: `∂ ∂bar f + ∂bar ∂f = 0`.
+* `TauCeti.SmoothAlmostComplexStructure.del_apply_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply`: on functions,
+  `∂f(v) = (df(v) - i df(J v)) / 2` and `∂bar f(v) = (df(v) + i df(J v)) / 2`.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_apply_eq_zero_iff`,
+  `TauCeti.SmoothAlmostComplexStructure.del_apply_eq_zero_iff`: `∂bar f` (respectively `∂f`)
+  vanishes at a point exactly when `df ∘ J = i df` (respectively `-i df`).
 * `TauCeti.SmoothAlmostComplexStructure.mextDerivₗ_eq_del_add_delBar_of_nijenhuis_eq_zero`:
   `d = ∂ + ∂bar` when `N_J = 0`.
 * `TauCeti.SmoothAlmostComplexStructure.del_del_eq_zero_of_nijenhuis_eq_zero`,
@@ -349,6 +355,53 @@ theorem del_delBar_add_delBar_del (f : SmoothForm I M F 0) :
     J.del (J.delBar f) + J.delBar (J.del f) = 0 := by
   have hf := SmoothForm.isOfType_zero_zero f J
   rw [hf.delBar.del_eq, hf.del.delBar_eq, mextDerivₗ_delBar, map_neg, neg_add_cancel]
+
+/-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
+theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.del f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v -
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
+  rw [(SmoothForm.isOfType_zero_zero f J).del_eq]
+  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_one_zero,
+    LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
+  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
+    mextDerivₗ_zero_apply]
+
+/-- **`∂bar` on functions.** For a smooth function `f`, `∂bar f(v) = (df(v) + i df(J v)) / 2`. -/
+theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.delBar f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v +
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
+  rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq]
+  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_zero_one,
+    LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
+  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
+    mextDerivₗ_zero_apply]
+
+/-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
+for `J`: `df(J v) = i df(v)`. -/
+theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
+    (J.delBar f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
+    (forall_congr' fun v ↦ ?_)
+  rw [delBar_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
+  constructor <;> intro h
+  · rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
+      _root_.neg_neg]
+  · rw [h, smul_smul, Complex.I_mul_I, neg_one_smul, add_neg_cancel]
+
+/-- `∂f` vanishes at a point exactly when the differential of `f` there is conjugate linear for
+`J`: `df(J v) = -i df(v)`. -/
+theorem del_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
+    (J.del f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
+      -Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  refine (ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one _).trans
+    (forall_congr' fun v ↦ ?_)
+  rw [del_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
+  constructor <;> intro h
+  · rw [sub_eq_zero.1 h, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, _root_.neg_neg]
+  · rw [h, smul_smul, mul_neg, Complex.I_mul_I, _root_.neg_neg, one_smul, sub_self]
 
 variable [FiniteDimensional ℝ E]
 

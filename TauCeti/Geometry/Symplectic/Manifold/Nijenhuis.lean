@@ -60,6 +60,10 @@ on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent ve
   `N_J(v, w) = A (J v) w + A v (J w) - A (J w) v - A w (J v)`. The proof evaluates the Lie
   brackets of the vector fields with constant coordinates in that chart and of their images
   under `J`.
+* `TauCeti.SmoothAlmostComplexStructure.nijenhuis_eq_fderiv`: on a vector space, compute the
+  tensor from a local formula for `J` using real derivatives and Mathlib's bracket sign.
+* `TauCeti.SmoothAlmostComplexStructure.nijenhuis_model_eq_zero_iff`: on a vector space,
+  tensor vanishing is equivalent to pointwise vanishing in the model-space instances.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
 
@@ -76,7 +80,7 @@ No factor `1/4` is included; some sources use `N_J / 4` instead.
 public noncomputable section
 
 open Bundle FiberBundle VectorField
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -469,6 +473,55 @@ end SmoothAlmostComplexStructure
 section Const
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- On a vector space, tensor vanishing is equivalent to vanishing on all pairs of model vectors.
+The right side uses the ordinary zero of the model space, not a tangent-space instance. -/
+theorem SmoothAlmostComplexStructure.nijenhuis_model_eq_zero_iff
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (x : V) :
+    J.nijenhuis x = 0 ↔
+      ∀ v w : V, (J.nijenhuis x : V →L[ℝ] V →L[ℝ] V) v w = (0 : V) := by
+  -- TangentSpace of the model manifold is V. Make this identification once at the tensor level
+  -- so that zero-map evaluation and extensionality use the ordinary model-space instances.
+  let N : V →L[ℝ] V →L[ℝ] V := J.nijenhuis x
+  change N = 0 ↔ ∀ v w : V, N v w = 0
+  simp only [ContinuousLinearMap.ext_iff, zero_apply]
+
+/-- In a vector space, the Nijenhuis tensor can be computed by differentiating the images of
+constant vector fields. The signs use the native bracket `[X,Y] = DY X - DX Y`. -/
+theorem SmoothAlmostComplexStructure.nijenhuis_eq_fderiv
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (A : V → V →L[ℝ] V)
+    (x : V) (hA : (fun y ↦ (J.toEndomorphism y : V →L[ℝ] V)) =ᶠ[𝓝 x] A)
+    (v w : V) :
+    J.nijenhuis x v w =
+      fderiv ℝ (fun y ↦ A y w) x (A x v) -
+        fderiv ℝ (fun y ↦ A y v) x (A x w) +
+        A x (fderiv ℝ (fun y ↦ A y v) x w) -
+        A x (fderiv ℝ (fun y ↦ A y w) x v) := by
+  have hconst (u : V) :=
+    ((contMDiffAt_vectorSpace_iff_contDiffAt (𝕜 := ℝ) (V := fun _ ↦ u)
+      (x := x) (n := 1)).mpr contDiffAt_const).mdifferentiableAt one_ne_zero
+  have h := J.nijenhuis_apply (hconst v) (hconst w)
+  rw [mlieBracket_const_model_space, mlieBracket_eq_lieBracket,
+    mlieBracket_eq_lieBracket (V := fun y ↦ J y v) (W := fun _ : V ↦ w),
+    mlieBracket_eq_lieBracket (V := fun _ : V ↦ v) (W := fun y ↦ J y w)] at h
+  -- K uses the ordinary model-space instances, rather than dependent tangent-space instances.
+  let K : V → V →L[ℝ] V := fun y ↦ J.toEndomorphism y
+  have hAx : K x = A x := hA.self_of_nhds
+  have hd (u : V) :
+      fderiv ℝ (fun y ↦ K y u) x =
+        fderiv ℝ (fun y ↦ A y u) x := by
+    have heq : (fun y ↦ K y u) =ᶠ[𝓝 x]
+        (fun y ↦ A y u) :=
+      hA.mono fun y hy ↦ congrArg (fun D : V →L[ℝ] V ↦ D u) hy
+    exact heq.fderiv_eq
+  -- Read the bracket expression in V, the tangent space of the model manifold. Doing this
+  -- before unfolding the brackets keeps their derivatives in the ordinary model-space instances.
+  have hmodel : (J.nijenhuis x v w : V) =
+      VectorField.lieBracket ℝ (fun y ↦ K y v) (fun y ↦ K y w) x - (0 : V) -
+        K x (VectorField.lieBracket ℝ (fun y ↦ K y v) (fun _ ↦ w) x) -
+        K x (VectorField.lieBracket ℝ (fun _ ↦ v) (fun y ↦ K y w) x) := h
+  simpa only [VectorField.lieBracket, hd, hAx, fderiv_const_apply, zero_apply,
+    sub_zero, zero_sub, map_neg, sub_neg_eq_add] using hmodel
 
 /-- A constant almost complex structure on a finite-dimensional real vector space has vanishing
 Nijenhuis tensor. -/
