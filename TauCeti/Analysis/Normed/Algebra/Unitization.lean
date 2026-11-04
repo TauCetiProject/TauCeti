@@ -25,6 +25,9 @@ inverse are bounded; the inherited norm need not equal the ℓ¹ norm.
 The ℓ¹ unitization of a commutative normed algebra is moreover a commutative normed ring
 (`WithLp.instUnitizationNormedCommRing`).
 
+The canonical inclusion and nonunital coordinate projection of the ℓ¹ unitization are
+also bundled as bounded linear maps.
+
 No normalization of the norm of the identity is assumed. The forward map is bounded by
 `max ‖(1 : A)‖ 1`, so the results apply to any complete nontrivially normed scalar field.
 
@@ -147,6 +150,35 @@ end NontriviallyNormedField
 end NonUnitalSubalgebra
 
 namespace WithLp
+
+variable (𝕜 A : Type*) [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+
+/-- The isometric inclusion into the external ℓ¹ unitization as a bounded linear map. -/
+noncomputable def unitizationInrL : A →L[𝕜] WithLp 1 (Unitization 𝕜 A) :=
+  { (WithLp.linearEquiv 1 𝕜 (Unitization 𝕜 A)).symm.toLinearMap.comp
+      (Unitization.inrHom 𝕜 𝕜 A) with
+    cont := unitization_isometry_inr.continuous }
+
+/-- The bounded inclusion is the usual inclusion into the ℓ¹ unitization. -/
+@[simp]
+theorem unitizationInrL_apply (a : A) :
+    unitizationInrL 𝕜 A a = toLp 1 (a : Unitization 𝕜 A) := (rfl)
+
+/-- The projection onto the nonunital summand of the external ℓ¹ unitization. -/
+noncomputable def unitizationSndL : WithLp 1 (Unitization 𝕜 A) →L[𝕜] A :=
+  ((Unitization.sndHom 𝕜 𝕜 A).comp
+    (WithLp.linearEquiv 1 𝕜 (Unitization 𝕜 A)).toLinearMap).mkContinuous
+    1 fun u ↦ by
+      simpa only [LinearMap.comp_apply, Unitization.sndHom_apply, LinearEquiv.coe_coe,
+        WithLp.coe_linearEquiv,
+        one_mul, unitization_norm_def] using
+          (le_add_of_nonneg_left (norm_nonneg (ofLp u).fst) :
+            ‖(ofLp u).snd‖ ≤ ‖(ofLp u).fst‖ + ‖(ofLp u).snd‖)
+
+/-- The bounded projection recovers the nonunital coordinate. -/
+@[simp]
+theorem unitizationSndL_apply (u : WithLp 1 (Unitization 𝕜 A)) :
+    unitizationSndL 𝕜 A u = (ofLp u).snd := (rfl)
 
 variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
