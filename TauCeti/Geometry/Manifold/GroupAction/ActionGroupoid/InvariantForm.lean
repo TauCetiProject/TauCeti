@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid
+public import TauCeti.Geometry.Manifold.Category.InvariantForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
 
 /-!
@@ -129,9 +130,8 @@ variable (I G X F k) in
 /-- The invariant smooth `k`-forms on the objects of the action groupoid `G ⋉ X`: the forms `φ`
 whose pullbacks along the source and the target to the arrow manifold agree, `s^* φ = t^* φ`. -/
 def invariantForms : Submodule ℝ (SmoothForm I (ActionCategory G X) F k) :=
-  LinearMap.eqLocus
-    (SmoothForm.mpullback Quiver.Total.left (isLocalDiffeomorph_source I ∞ G X).contMDiff)
-    (SmoothForm.mpullback Quiver.Total.right (contMDiff_target I ∞ G X))
+  TauCeti.Quiver.invariantForms I I (isLocalDiffeomorph_source I ∞ G X).contMDiff
+    (contMDiff_target I ∞ G X) F k
 
 /-- A form on the objects of `G ⋉ X` is invariant exactly when its pullbacks along the source and
 the target agree. -/
@@ -140,7 +140,7 @@ theorem mem_invariantForms_iff {φ : SmoothForm I (ActionCategory G X) F k} :
     φ ∈ invariantForms I G X F k ↔
       SmoothForm.mpullback Quiver.Total.left (isLocalDiffeomorph_source I ∞ G X).contMDiff φ =
         SmoothForm.mpullback Quiver.Total.right (contMDiff_target I ∞ G X) φ :=
-  LinearMap.mem_eqLocus
+  TauCeti.Quiver.mem_invariantForms_iff
 
 /-- A form on `X`, transported to the objects of `G ⋉ X`, is invariant exactly when every element
 of `G` preserves it. -/
@@ -170,9 +170,8 @@ theorem mem_invariantForms_iff_forall_mpullback_smul
 /-- The exterior derivative of an invariant form is invariant. -/
 theorem mextDerivₗ_mem_invariantForms {φ : SmoothForm I (ActionCategory G X) F k}
     (hφ : φ ∈ invariantForms I G X F k) :
-    mextDerivₗ I k φ ∈ invariantForms I G X F (k + 1) := by
-  rw [mem_invariantForms_iff] at hφ ⊢
-  rw [← SmoothForm.mextDerivₗ_mpullback, ← SmoothForm.mextDerivₗ_mpullback, hφ]
+    mextDerivₗ I k φ ∈ invariantForms I G X F (k + 1) :=
+  TauCeti.Quiver.mextDerivₗ_mem_invariantForms hφ
 
 variable (I G X F k) in
 /-- The exterior derivative of invariant forms. -/
@@ -202,9 +201,8 @@ theorem wedgeWith_mem_invariantForms {F₁ F₂ F₃ : Type*} [NormedAddCommGrou
     [NormedSpace ℝ F₃] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {l : ℕ}
     {φ : SmoothForm I (ActionCategory G X) F₁ k} {ψ : SmoothForm I (ActionCategory G X) F₂ l}
     (hφ : φ ∈ invariantForms I G X F₁ k) (hψ : ψ ∈ invariantForms I G X F₂ l) :
-    SmoothForm.wedgeWith μ φ ψ ∈ invariantForms I G X F₃ (k + l) := by
-  rw [mem_invariantForms_iff] at hφ hψ ⊢
-  rw [SmoothForm.mpullback_wedgeWith, SmoothForm.mpullback_wedgeWith, hφ, hψ]
+    SmoothForm.wedgeWith μ φ ψ ∈ invariantForms I G X F₃ (k + l) :=
+  TauCeti.Quiver.wedgeWith_mem_invariantForms μ hφ hψ
 
 /-- The wedge product of invariant real-valued forms is invariant. -/
 theorem wedge_mem_invariantForms {l : ℕ} {φ : SmoothForm I (ActionCategory G X) ℝ k}
@@ -223,19 +221,9 @@ theorem mpullback_map_obj_mem_invariantForms {E' H' : Type*} [NormedAddCommGroup
     (f : X →ₑ[φ] Y) (hf : ContMDiff I I' ∞ f) {ψ : SmoothForm I' (ActionCategory G' Y) F k}
     (hψ : ψ ∈ invariantForms I' G' Y F k) :
     SmoothForm.mpullback (map φ f).obj (contMDiff_map_obj I ∞ φ f hf) ψ ∈
-      invariantForms I G X F k := by
-  rw [mem_invariantForms_iff] at hψ ⊢
-  have hmap := contMDiff_map_total I ∞ φ f hf
-  -- The functor commutes with the source and target maps, by the definition of its arrow map.
-  calc _ = SmoothForm.mpullback _ hmap (SmoothForm.mpullback Quiver.Total.left
-          (isLocalDiffeomorph_source I' ∞ G' Y).contMDiff ψ) := by
-        rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
-        rfl
-    _ = SmoothForm.mpullback _ hmap (SmoothForm.mpullback Quiver.Total.right
-          (contMDiff_target I' ∞ G' Y) ψ) := by rw [hψ]
-    _ = _ := by
-        rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
-        rfl
+      invariantForms I G X F k :=
+  (map φ f).mpullback_mem_invariantForms (contMDiff_map_obj I ∞ φ f hf)
+    (contMDiff_map_total I ∞ φ f hf) hψ
 
 section Pullback
 
