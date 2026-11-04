@@ -109,9 +109,10 @@ theorem hasFDerivAt_timeDeriv_of_continuousWithinAt {u : E → ℝ → F}
       (fun τ hτ ↦ (mem_ball_iff_norm.1 (hbox y hy τ hτ.1 hτ.2).2).le)
       ⟨ht, mem_ball_self hδ⟩ ⟨hσs, hσδ⟩
     have hσt' : 0 < |σ - t| := abs_pos.2 (sub_ne_zero.2 hσt)
-    rw [dist_eq_norm, slope_def_module, norm_sub_rev,
-      ← inv_smul_smul₀ (sub_ne_zero.2 hσt) (w x t), ← smul_sub, norm_smul, norm_inv,
-      Real.norm_eq_abs]
+    have hslope : slope (v y) t σ - w x t = (σ - t)⁻¹ • (v y σ - v y t - (σ - t) • w x t) := by
+      rw [slope_def_module]
+      match_scalars <;> field_simp [sub_ne_zero.2 hσt]
+    rw [dist_eq_norm', hslope, norm_smul, norm_inv, Real.norm_eq_abs]
     rw [Real.norm_eq_abs] at key
     calc |σ - t|⁻¹ * ‖v y σ - v y t - (σ - t) • w x t‖
         ≤ |σ - t|⁻¹ * (ε / 2 * |σ - t|) := by gcongr
@@ -164,10 +165,12 @@ theorem hasDerivWithinAt_spatialDeriv_of_continuousWithinAt {u : E → ℝ → F
       (hbox x (mem_ball_self hδ) τ hτ.1 hτ.2).1.1).mono inter_subset_left)
     hspace ⟨ht, mem_ball_self hδ⟩ ⟨hσs, hσδ⟩
   rw [Real.norm_eq_abs] at htime
-  rw [Real.norm_eq_abs, mul_assoc, mul_comm |σ - t|, ← mul_assoc]
-  convert htime using 2
-  simp only [map_sub, smul_sub, sub_smul]
-  abel
+  convert htime using 1
+  · congr 1
+    simp only [map_sub, smul_sub, sub_smul]
+    abel
+  · rw [Real.norm_eq_abs]
+    ring
 
 section Iterated
 
