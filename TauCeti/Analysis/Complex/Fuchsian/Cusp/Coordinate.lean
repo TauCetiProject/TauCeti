@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
 import Mathlib.Analysis.Complex.CoveringMap
+import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 import TauCeti.Topology.Homeomorph.Quotient
 
@@ -31,6 +32,12 @@ once a normalized cusp datum is given: its primitive-generator condition identif
 stabilizer. The coordinate is holomorphic, and scaled horodiscs of positive height correspond
 exactly to smaller punctured discs. This is a local model for cusp charts; embedding such a
 neighbourhood into the full group quotient additionally requires precise invariance of the horodisc.
+
+The width parameter `q₂(z) = exp (2 * π * I * σ(z) / (2 * w))` of period twice the width is a
+square root of the coordinate (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_sq`) whose sign the
+generator of the cusp stabilizer changes
+(`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_generator_smul`); it is the parameter in which
+sections of odd weight are expanded at an irregular cusp.
 
 ## References
 
@@ -293,5 +300,43 @@ theorem tendsto_qCoordinate {α : Type*} {l : Filter α} {f : α → ℍ}
   simp only [qCoordinate_eq]
   simpa only [Function.comp_def] using
     (tendsto_qParamPuncturedUnitDisc D.width D.width_pos).comp h
+
+/-- **The width parameter of period twice the width** at the cusp of `D`:
+`q₂(τ) = exp (2 * π * I * σ τ / (2 * w))` for the scaling `σ` and width `w` of `D`. Its square
+is the cusp coordinate (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_sq`), and the generator of
+the cusp stabilizer changes its sign (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_generator_smul`).
+It is the parameter in which the sections of the automorphy sheaf of odd weight are expanded at
+an irregular cusp. -/
+def sqrtCoordinate (τ : ℍ) : ℂ :=
+  Periodic.qParam (2 * D.width) (↑(D.scaling • τ) : ℂ)
+
+theorem sqrtCoordinate_def (τ : ℍ) :
+    sqrtCoordinate D τ = Periodic.qParam (2 * D.width) (↑(D.scaling • τ) : ℂ) :=
+  (rfl)
+
+/-- The width parameter never vanishes on the upper half-plane. -/
+@[simp]
+theorem sqrtCoordinate_ne_zero (τ : ℍ) : sqrtCoordinate D τ ≠ 0 :=
+  Periodic.qParam_ne_zero _
+
+/-- The square of the width parameter `q₂` is the cusp coordinate `q`. -/
+@[simp]
+theorem sqrtCoordinate_sq (τ : ℍ) : sqrtCoordinate D τ ^ 2 = coordinate D τ := by
+  rw [sqrtCoordinate_def, coordinate_apply]
+  exact_mod_cast TauCeti.Periodic.qParam_nat_mul_pow (h := D.width) two_ne_zero _
+
+/-- The generator of the cusp stabilizer changes the sign of the width parameter. -/
+@[simp]
+theorem sqrtCoordinate_generator_smul (τ : ℍ) :
+    sqrtCoordinate D ((D.generator : PSL(2, ℝ)) • τ) = -sqrtCoordinate D τ := by
+  have h := TauCeti.Periodic.qParam_add_half (h := 2 * D.width) (by positivity [D.width_pos])
+    (↑(D.scaling • τ) : ℂ)
+  have hhalf : ((2 * D.width : ℝ) : ℂ) / 2 = (D.width : ℂ) := by push_cast; ring
+  rwa [hhalf, ← coe_scaling_smul_generator] at h
+
+/-- The width parameter is holomorphic on the upper half-plane. -/
+theorem mdifferentiable_sqrtCoordinate : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (sqrtCoordinate D) :=
+  (Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe).comp
+    ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
 
 end TauCeti.Subgroup.CuspDatum

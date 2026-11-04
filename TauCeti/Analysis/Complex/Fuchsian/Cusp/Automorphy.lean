@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
+import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
 # The weight-`k` automorphy sheaf in the width parameter at a cusp
@@ -23,8 +24,9 @@ height `A ≥ 0` at the cusp which satisfies the weight-`k` transformation law
 `f (g • τ) = denom g τ ^ k * f τ` there, and for which `f ∣[k] s⁻¹` is bounded at `i∞`, is a local
 section of the weight-`k` automorphy sheaf at the cusp. This file computes these sections in the
 width parameter. In the scaling coordinate `f ∣[k] s⁻¹` is periodic of period `w` up to the sign
-`ε ^ k`, so it is periodic of period `2 * w` and is a function of
-`q₂(τ) = exp (2 * π * I * σ τ / (2 * w))`, whose square is the cusp coordinate
+`ε ^ k`, so it is periodic of period `2 * w` and is a function of the width parameter
+`q₂(τ) = exp (2 * π * I * σ τ / (2 * w))` (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate`), whose
+square is the cusp coordinate
 `q(τ) = exp (2 * π * I * σ τ / w)` (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_sq`). The local
 sections are the multiples by holomorphic functions of `q` of the single frame
 
@@ -63,7 +65,6 @@ formulas of Diamond–Shurman §3.6. The analytic input is the twisted descent t
 
 ## Main declarations
 
-* `TauCeti.Subgroup.CuspDatum.sqrtCoordinate`: the width parameter `q₂` of period `2 * w`.
 * `TauCeti.Subgroup.CuspDatum.automorphyFrame`: the local frame of the weight-`k` automorphy
   sheaf at the cusp.
 * `TauCeti.Subgroup.CuspDatum.automorphyUntwist`: the sum `q₂ ↦ (f ∣[k] s⁻¹)(τ)` of the
@@ -96,55 +97,6 @@ namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
 
-/-- **The width parameter of period twice the width** at the cusp of `D`:
-`q₂(τ) = exp (2 * π * I * σ τ / (2 * w))` for the scaling `σ` and width `w` of `D`. Its square
-is the cusp coordinate (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_sq`), and the generator of
-the cusp stabilizer changes its sign (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_generator_smul`).
-It is the parameter in which the sections of the automorphy sheaf of odd weight are expanded at
-an irregular cusp. -/
-def sqrtCoordinate (τ : ℍ) : ℂ :=
-  Periodic.qParam (2 * D.width) (↑(D.scaling • τ) : ℂ)
-
-theorem sqrtCoordinate_def (τ : ℍ) :
-    sqrtCoordinate D τ = Periodic.qParam (2 * D.width) (↑(D.scaling • τ) : ℂ) :=
-  (rfl)
-
-/-- The width parameter never vanishes on the upper half-plane. -/
-@[simp]
-theorem sqrtCoordinate_ne_zero (τ : ℍ) : sqrtCoordinate D τ ≠ 0 :=
-  Periodic.qParam_ne_zero _
-
-/-- The square of the width parameter `q₂` is the cusp coordinate `q`. -/
-@[simp]
-theorem sqrtCoordinate_sq (τ : ℍ) : sqrtCoordinate D τ ^ 2 = coordinate D τ := by
-  rw [sqrtCoordinate_def, coordinate_apply, Periodic.qParam, Periodic.qParam,
-    ← Complex.exp_nat_mul]
-  congr 1
-  have hw : (D.width : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr D.width_pos.ne'
-  push_cast
-  field_simp
-
-/-- The generator of the cusp stabilizer changes the sign of the width parameter. -/
-@[simp]
-theorem sqrtCoordinate_generator_smul (τ : ℍ) :
-    sqrtCoordinate D ((D.generator : PSL(2, ℝ)) • τ) = -sqrtCoordinate D τ := by
-  have h := Periodic.qParam_add_half (h := 2 * D.width) (by positivity [D.width_pos])
-    (↑(D.scaling • τ) : ℂ)
-  have hhalf : ((2 * D.width : ℝ) : ℂ) / 2 = (D.width : ℂ) := by push_cast; ring
-  rwa [hhalf, ← coe_scaling_smul_generator] at h
-
-/-- A horodisc is the inverse image of the corresponding punctured disc under the width
-parameter. -/
-theorem norm_sqrtCoordinate_lt_iff_mem_horodisc (A : ℝ) (τ : ℍ) :
-    ‖sqrtCoordinate D τ‖ < Real.exp (-2 * Real.pi * A / (2 * D.width)) ↔ τ ∈ horodisc D A := by
-  rw [sqrtCoordinate_def, Periodic.norm_qParam_lt_iff (by positivity [D.width_pos]), mem_horodisc,
-    coe_im]
-
-/-- The width parameter is holomorphic on the upper half-plane. -/
-theorem mdifferentiable_sqrtCoordinate : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (sqrtCoordinate D) :=
-  (Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe).comp
-    ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
-
 /-- **The local frame of the weight-`k` automorphy sheaf at the cusp of `D`**, for a lift `s` of
 the scaling and an exponent `r`: `τ ↦ denom s τ ^ (-k) * q₂(τ) ^ r` for the width parameter `q₂`.
 When `ε ^ k = (-1) ^ r` for the sign `ε` of the conjugated lift `s * g * s⁻¹` of the generator, it
@@ -172,24 +124,6 @@ theorem mdifferentiable_automorphyFrame (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) :
 
 variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ} {A : ℝ} {f : ℍ → ℂ}
 
-/-- A lift `M ∈ SL(2, ℝ)` of the translation by `w` is `±` the transvection: its lower-left entry
-vanishes and its lower-right entry is `±1`. -/
-private theorem entries_of_coe_eq_upperRightHom {M : SL(2, ℝ)} {w : ℝ}
-    (hM : (M : PSL(2, ℝ)) = upperRightHom w) : M 1 0 = 0 ∧ M 1 1 * M 1 1 = 1 := by
-  rw [upperRightHom_apply, mk_eq_mk_iff] at hM
-  rcases hM with h | h
-  · rw [← h]
-    simp [Matrix.SpecialLinearGroup.transvection_coe]
-  · rw [← neg_neg M, ← h]
-    simp [Matrix.SpecialLinearGroup.transvection_coe]
-
-/-- The automorphy factor of a lift `M ∈ SL(2, ℝ)` of a translation is its lower-right entry. -/
-private theorem denom_of_coe_eq_upperRightHom {M : SL(2, ℝ)} {w : ℝ}
-    (hM : (M : PSL(2, ℝ)) = upperRightHom w) (z : ℍ) :
-    denom (Matrix.SpecialLinearGroup.mapGL ℝ M) z = (M 1 1 : ℝ) := by
-  simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-    (entries_of_coe_eq_upperRightHom hM).1]
-
 /-- The conjugated lift `s * g * s⁻¹` of the generator lifts the translation by the width. -/
 private theorem coe_conj_eq_upperRightHom (hs : (s : PSL(2, ℝ)) = D.scaling)
     (hg : (g : PSL(2, ℝ)) = D.generator) :
@@ -208,7 +142,7 @@ private theorem denom_smul_mul_denom (hs : (s : PSL(2, ℝ)) = D.scaling)
   rw [← Matrix.SpecialLinearGroup.denom_mapGL_mul]
   conv_lhs => rw [hsg]
   rw [Matrix.SpecialLinearGroup.denom_mapGL_mul,
-    denom_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)]
+    TauCeti.UpperHalfPlane.denom_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)]
 
 /-- The sign condition, read in `ℂ`. -/
 private theorem ofReal_zpow_eq (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r) :
@@ -277,19 +211,6 @@ theorem automorphyDescent_def (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (f : ℍ → 
     automorphyDescent D s k r f = descendPowTwist 2 r (automorphyUntwist D s k f) :=
   (rfl)
 
-/-- The slash of `f` by `s⁻¹`, read at `s • τ`, is `denom s τ ^ k * f τ`. -/
-private theorem slash_inv_apply_smul (s : SL(2, ℝ)) (k : ℤ) (f : ℍ → ℂ) (τ : ℍ) :
-    (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) (s • τ) =
-      denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ ^ k * f τ := by
-  have h1 := Matrix.SpecialLinearGroup.denom_mapGL_mul s⁻¹ s τ
-  rw [inv_mul_cancel, map_one, denom_one] at h1
-  have h2 : denom (Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) ((s • τ : ℍ) : ℂ) =
-      (denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ)⁻¹ :=
-    eq_inv_of_mul_eq_one_left h1.symm
-  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
-    Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
-  simp [mul_comm]
-
 variable (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
   (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
   (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
@@ -312,8 +233,9 @@ private theorem slash_inv_vadd {z : ℍ} (hz : A < z.im) :
     rw [← TauCeti.UpperHalfPlane.upperRightHom_smul, ← coe_conj_eq_upperRightHom hs hg,
       pslMk_smul, mul_smul, mul_smul]
   have hz' : z = s • s⁻¹ • z := (smul_inv_smul s z).symm
-  rw [hvadd, slash_inv_apply_smul, hf _ hτ, ← mul_assoc, ← mul_zpow,
-    denom_smul_mul_denom hs hg, mul_zpow, mul_assoc, ← slash_inv_apply_smul, ← hz']
+  rw [hvadd, Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul, hf _ hτ, ← mul_assoc,
+    ← mul_zpow, denom_smul_mul_denom hs hg, mul_zpow, mul_assoc,
+    ← Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul, ← hz']
 
 include hs hg hf in
 /-- Above the height `A`, `f ∣[k] s⁻¹` is periodic of period twice the width. -/
@@ -322,8 +244,8 @@ private theorem slash_inv_two_mul_vadd {z : ℍ} (hz : A < z.im) :
       (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) z := by
   rw [two_mul, ← vadd_vadd, slash_inv_vadd hs hg hf (by rwa [vadd_im]), slash_inv_vadd hs hg hf hz,
     ← mul_assoc, ← mul_zpow, ← Complex.ofReal_mul,
-    (entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).2, Complex.ofReal_one,
-    one_zpow, one_mul]
+    (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).2,
+    Complex.ofReal_one, one_zpow, one_mul]
 
 include hs hfd in
 /-- Above the height `A`, `f ∣[k] s⁻¹` is holomorphic. -/
@@ -372,7 +294,8 @@ theorem automorphyUntwist_sqrtCoordinate {τ : ℍ} (hτ : τ ∈ horodisc D A) 
   have hτ' : A < (s • τ).im := by rwa [mem_horodisc, ← hs, pslMk_smul] at hτ
   rw [automorphyUntwist_def, UpperHalfPlane.cuspFunction, sqrtCoordinate_def, ← hs, pslMk_smul,
     TauCeti.UpperHalfPlane.cuspFunction_qParam_of_lt_im (by positivity [D.width_pos])
-      (fun z hz ↦ slash_inv_two_mul_vadd hs hg hf hz) hτ', slash_inv_apply_smul]
+      (fun z hz ↦ slash_inv_two_mul_vadd hs hg hf hz) hτ',
+    Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul]
 
 include hs hg hk hf in
 /-- At the width parameter of a point of the horodisc, `q₂ ↦ -q₂` multiplies the sum of the

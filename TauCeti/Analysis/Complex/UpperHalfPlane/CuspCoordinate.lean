@@ -45,10 +45,10 @@ removable singularity theorem.
   functions holomorphic sufficiently high have a removable q-singularity.
 * `TauCeti.UpperHalfPlane.cuspFunction_qParam_of_lt_im`,
   `TauCeti.UpperHalfPlane.eqOn_cuspFunction_of_lt_im` and
-  `TauCeti.UpperHalfPlane.differentiableOn_cuspFunction_of_lt_im`: a function periodic and
-  holomorphic only above a height `A ≥ 0`, as on a horodisc, has a q-extension which recovers it,
-  depends only on its values there, and is holomorphic on the disc of radius
-  `exp (-2 * π * A / w)`.
+  `TauCeti.UpperHalfPlane.differentiableOn_cuspFunction_of_lt_im`: a function periodic only above
+  a height `A ≥ 0`, as on a horodisc, has a q-extension which recovers it there and depends only
+  on its values there; if it is moreover holomorphic above that height and bounded at `i∞`, the
+  q-extension is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`.
 
 ## References
 
