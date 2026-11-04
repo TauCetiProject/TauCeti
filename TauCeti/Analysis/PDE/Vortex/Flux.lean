@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.Zeros
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Analysis.Calculus.ContDiff.Removable
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
+import TauCeti.Analysis.Normed.Module.LocalFactorization
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
@@ -22,8 +23,8 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has section
 `α = 2 (p + i q)` (`TauCeti.Vortex.sectionValue`), so `|α|² = 4 (p² + q²)`. At a zero `z` of a
 smooth vortex, `α` factors as `(w - z) ^ n v(w)` with `v(z) ≠ 0`
-(`TauCeti.Vortex.exists_contDiffAt_section_eq_pow_mul`); the exponent `n` is the multiplicity of
-the zero. Away from the zeros, `log |α|²` satisfies the scalar equation
+(`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul`); the exponent `n` is the
+multiplicity of the zero. Away from the zeros, `log |α|²` satisfies the scalar equation
 `Δ log |α|² = (|α|² - 1) / 4` (`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`).
 
 Across the zeros the scalar equation holds in the sense of distributions, with point masses:
@@ -47,7 +48,7 @@ Testing this identity against dilated cutoffs `χ_R`, the left side tends to zer
 (`TauCeti.Vortex.integral_curvature_eq_neg_mul_finsum`).
 
 The multiplicities enter through any function `n` with the local factorization property. The
-similarity principle supplies one, and it is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`).
+similarity principle supplies one, and it is unique (`TauCeti.eq_of_eventually_sub_pow_smul_eq`).
 Smoothness `C²` of the connection is assumed so that the factor `v` is `C²`. Relating the total
 multiplicity to the winding degree of an end framing is not addressed here.
 
@@ -69,25 +70,6 @@ open Complex Filter Metric MeasureTheory Set Topology InnerProductSpace Laplacia
 open scoped Distributions ContDiff Real
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-private theorem sectionValue_eq_section (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    sectionValue x z = 2 * ((x z 2 : ℂ) + I * x z 3) := by
-  rw [sectionValue_apply, mul_comm (x z 3 : ℂ) I]
-
-/-- The local factorization of the section of a `C²` vortex, with a `C²` factor. -/
-private theorem exists_contDiffAt_sectionValue_eq_pow_mul
-    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0) (hne : ∃ w, sectionValue x w ≠ 0) (z : ℂ) :
-    ∃ (k : ℕ) (v : ℂ → ℂ), ContDiffAt ℝ 2 v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ k * v w := by
-  have hne' : ∃ w, (x w 2 : ℂ) + I * x w 3 ≠ 0 := by
-    obtain ⟨w, hw⟩ := hne
-    exact ⟨w, fun h ↦ hw (by rw [sectionValue_eq_section, h, mul_zero])⟩
-  obtain ⟨k, v, hv, hv₀, hfac⟩ := exists_contDiffAt_section_eq_pow_mul (k := 2) (by norm_num)
-    hb₁ hb₂ (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
-    (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hne' z
-  exact ⟨k, v, hv, hv₀, hfac.mono fun w hw ↦ by rw [sectionValue_eq_section, hw]⟩
 
 /-- A multiplicity function for the zeros of the section vanishes off the zeros. -/
 private theorem eq_zero_of_sectionValue_ne_zero {n : ℂ → ℕ}
@@ -112,11 +94,12 @@ private theorem exists_contDiffAt_eventuallyEq_log_normSq_add
         4 * π * ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z)) =ᶠ[𝓝[≠] z₀] g := by
   set S := hfin.toFinset
   have hne : ∃ w, sectionValue x w ≠ 0 := hfin.infinite_compl.nonempty
-  obtain ⟨k, v, hv, hv₀, hfac⟩ :=
-    exists_contDiffAt_sectionValue_eq_pow_mul hb₁ hb₂ hp hq hsol hne z₀
+  obtain ⟨k, v, hv, hv₀, hfac⟩ := exists_contDiffAt_sectionValue_eq_pow_mul (k := 2) (by norm_num)
+    hb₁ hb₂ (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
+    (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hne z₀
   obtain ⟨v', hv', hv'₀, hfac'⟩ := hn z₀
-  have hk : n z₀ = k := eq_of_eventually_sub_pow_mul_eq hv' hv'₀ hv.continuousAt hv₀
-    (hfac'.and hfac |>.mono fun w hw ↦ hw.1.symm.trans hw.2)
+  have hk : n z₀ = k := eq_of_eventually_sub_pow_smul_eq hv' hv'₀ hv.continuousAt hv₀
+    (hfac'.and hfac |>.mono fun w hw ↦ by simpa only [smul_eq_mul] using hw.1.symm.trans hw.2)
   refine ⟨fun w ↦ Real.log (‖v w‖ ^ 2) +
     4 * π * ∑ z ∈ S.erase z₀, (n z : ℝ) * planarNewtonianKernel (w - z), ?_, ?_⟩
   · exact ((hv.norm_sq ℝ).log (pow_ne_zero 2 (norm_ne_zero_iff.mpr hv₀))).add
@@ -271,17 +254,13 @@ theorem integral_one_sub_normSq_eq_mul_finsum
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * ∑ᶠ z, (n z : ℝ) := by
   -- Test the distributional scalar equation against dilated cutoffs `χ_m`. The left side tends
   -- to `0` and the right side to `∫ (|α|² - 1) / 4 + 4π ∑ n_z`.
-  have hfin : {z | sectionValue x z = 0}.Finite := by
-    refine (finite_setOfPred_section_eq_zero (k := 2) (by norm_num) hb₁ hb₂
+  have hfin : {z | sectionValue x z = 0}.Finite :=
+    finite_setOfPred_sectionValue_eq_zero (k := 2) (by norm_num) hb₁ hb₂
       (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
-      (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hlim).subset fun z hz ↦ ?_
-    have hz' : sectionValue x z = 0 := hz
-    rw [sectionValue_eq_section] at hz'
-    simpa using hz'
+      (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hlim
   set N := ∑ᶠ z, (n z : ℝ)
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
   set F : ℂ → ℝ := fun z ↦ (s z - 1) / 4 with hF
-  have hsc : Continuous s := continuous_const.mul ((hp.continuous.pow 2).add (hq.continuous.pow 2))
   have hFint : Integrable F := by
     refine ((integrable_one_sub_normSq volume (hb₁.differentiable (by norm_num))
       (hb₂.differentiable (by norm_num)) hp hq hsol hlim).div_const 4).neg.congr
@@ -310,66 +289,19 @@ theorem integral_one_sub_normSq_eq_mul_finsum
         linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
       rw [(hχ1 m z hzR).self_of_nhds, mul_one]
     · simp [eq_zero_of_sectionValue_ne_zero hn hz]
+  have hRt : Tendsto R atTop atTop := tendsto_atTop_mono hRm tendsto_natCast_atTop_atTop
   -- The cutoff integrals of the right side converge to `∫ F`.
-  have hB : Tendsto (fun m ↦ ∫ z, χ m z * F z) atTop (𝓝 (∫ z, F z)) := by
-    refine tendsto_integral_of_dominated_convergence (fun z ↦ ‖F z‖)
-      (fun m ↦ ((hχ m).continuous.mul
-        ((hsc.sub continuous_const).div_const 4)).aestronglyMeasurable)
-      hFint.norm (fun m ↦ .of_forall fun z ↦ ?_) (.of_forall fun z ↦ ?_)
-    · rw [norm_mul, Real.norm_of_nonneg (hχI m z).1]
-      exact mul_le_of_le_one_left (norm_nonneg _) (hχI m z).2
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop ‖z‖] with m hm
-      rw [(hχ1 m z (hm.trans_le (hRm m))).self_of_nhds, one_mul]
+  have hB : Tendsto (fun m ↦ ∫ z, χ m z * F z) atTop (𝓝 (∫ z, F z)) :=
+    tendsto_integral_smul_of_eq_one_ball hRt (fun m ↦ (hχ m).continuous.aestronglyMeasurable)
+      (fun m z hz ↦ (hχ1 m z hz).self_of_nhds) hχI hFint
   -- The left side tends to zero, because `log |α|² → 0` while `∫ |Δ χ_m|` stays bounded.
   have hL : Tendsto (fun z ↦ Real.log (s z)) (cocompact ℂ) (𝓝 0) := by
     have h := (Real.continuousAt_log one_ne_zero).tendsto.comp hlim
     rw [Real.log_one] at h
     exact h
-  have hA : Tendsto (fun m ↦ ∫ z, Δ (χ m) z * Real.log (s z)) atTop (𝓝 0) := by
-    rw [Metric.tendsto_atTop]
-    intro ε hε
-    set C' := max C 0
-    set ε' := ε / (4 * π * (C' + 1)) with hε'
-    have hε'pos : 0 < ε' := by positivity
-    obtain ⟨R', -, hR'⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-      (cobounded_eq_cocompact (α := ℂ) ▸ Metric.tendsto_nhds.mp hL ε' hε'pos)
-    refine ⟨⌈R'⌉₊, fun m hm ↦ ?_⟩
-    have hRR' : R' ≤ R m := (Nat.le_ceil R').trans ((Nat.cast_le.mpr hm).trans (hRm m))
-    set g : ℂ → ℝ := (closedBall (0 : ℂ) (2 * R m)).indicator fun _ ↦ C' / R m ^ 2 * ε'
-    have hg : Integrable g :=
-      (integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
-        measurableSet_closedBall
-    have hbound : ∀ z, ‖Δ (χ m) z * Real.log (s z)‖ ≤ g z := by
-      intro z
-      have hg₀ : 0 ≤ g z := indicator_nonneg (fun _ _ ↦ by positivity) z
-      by_cases h₁ : ‖z‖ < R m
-      · rw [(laplacian_congr_nhds (hχ1 m z h₁)).eq_of_nhds, laplacian_const]
-        simpa using hg₀
-      by_cases h₂ : 2 * R m < ‖z‖
-      · rw [(laplacian_congr_nhds (hχ0 m z h₂)).eq_of_nhds, laplacian_const]
-        simpa using hg₀
-      have hz : z ∈ closedBall (0 : ℂ) (2 * R m) := mem_closedBall_zero_iff.mpr (not_lt.mp h₂)
-      have hLz : ‖Real.log (s z)‖ ≤ ε' := by
-        simpa using (hR' (hRR'.trans (not_lt.mp h₁))).le
-      have hgz : g z = C' / R m ^ 2 * ε' := indicator_of_mem hz _
-      rw [hgz, norm_mul]
-      exact mul_le_mul ((hχΔ m z).trans (div_le_div_of_nonneg_right (le_max_left _ _)
-        (by positivity))) hLz (norm_nonneg _) (by positivity)
-    have hgint : ∫ z, g z = 4 * π * C' * ε' := by
-      rw [integral_indicator_const _ measurableSet_closedBall, Measure.real,
-        Complex.volume_closedBall]
-      simp only [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal (by
-        positivity : (0 : ℝ) ≤ 2 * R m), ENNReal.coe_toReal, NNReal.coe_real_pi, smul_eq_mul]
-      field_simp [(hRpos m).ne']
-      ring
-    rw [dist_zero_right]
-    calc ‖∫ z, Δ (χ m) z * Real.log (s z)‖ ≤ ∫ z, g z :=
-          norm_integral_le_of_norm_le hg (.of_forall hbound)
-      _ = 4 * π * C' * ε' := hgint
-      _ < ε := by
-        rw [hε', mul_div_assoc', div_lt_iff₀ (by positivity)]
-        nlinarith [Real.pi_pos, le_max_right C 0]
+  have hA : Tendsto (fun m ↦ ∫ z, Δ (χ m) z * Real.log (s z)) atTop (𝓝 0) :=
+    tendsto_integral_laplacian_smul_of_tendsto_cocompact volume Complex.finrank_real_complex hRt
+      hχ1 hχ0 hχΔ hL
   have hlimit : Tendsto (fun m ↦ ∫ z, Δ (χ m) z * Real.log (s z)) atTop
       (𝓝 ((∫ z, F z) + 4 * π * N)) := by
     simp_rw [hid]
