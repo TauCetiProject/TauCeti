@@ -273,13 +273,6 @@ theorem ext_edges {p q : G.Walk x y} (h : p.edges = q.edges) : p = q := by
       obtain rfl := he.right_unique hf
       exact congrArg (cons e he) (ih htail)
 
-/-- Changing the proof-indexed starting vertex does not change the traversed edges. -/
-@[simp]
-theorem edges_cast_left {x' : α} (p : G.Walk x y) (h : x = x') :
-    (h ▸ p).edges = p.edges := by
-  subst x'
-  rfl
-
 @[simp]
 theorem edges_eq_nil {p : G.Walk x y} : p.edges = [] ↔ p.Nil := by
   cases p <;> simp
