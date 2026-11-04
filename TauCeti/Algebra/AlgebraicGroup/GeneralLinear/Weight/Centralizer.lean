@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Basic
+import TauCeti.LinearAlgebra.Matrix.MonoidAlgebra
 
 /-!
 # Schematic centralizers of multiplicity-free weight tori
@@ -72,17 +73,17 @@ theorem _root_.BialgHom.centralizerHopfIdeal_le_ker_iff_isDiag_of_coordinates
     (AlgHom.id R B) Function.injective_id, AlgHom.id_comp, AlgHom.id_comp]
   constructor
   · intro hcomm i j hij
-    have hentry := congrArg (fun h ↦
-      (pointsMulEquiv n h : Matrix (Fin n) (Fin n) B) i j) hcomm.eq
-    simp only [map_mul, Units.val_mul] at hentry
-    rw [hD, Matrix.mul_diagonal, Matrix.diagonal_mul, hM,
-      Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      mul_one, one_mul, one_mul, mul_one] at hentry
+    have hm := congrArg (fun h ↦
+      (pointsMulEquiv n h : Matrix (Fin n) (Fin n) B)) hcomm.eq
+    simp only [map_mul, Units.val_mul] at hm
+    have hmap : (pointsMulEquiv n (AlgHom.mapValue φ g) : Matrix (Fin n) (Fin n) B) =
+        (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).map φ := by
+      ext a b
+      exact hM a b
+    rw [hD, hmap] at hm
     -- Coefficients of distinct character monomials force the off-diagonal entry to vanish.
-    have hcoeff := congrArg
-      (LinearMap.tensorComponent (R := R) (M := A) (Comodule.monoidCoeff R X (e i))) hentry
-    have hne : e j ≠ e i := fun h ↦ hij (he h).symm
-    simpa [MonoidAlgebra.coeff_single, hne] using hcoeff.symm
+    exact Matrix.apply_eq_zero_of_commute_diagonal_monomial _ e hm
+      (he.ne (Ne.symm hij))
   · intro hg
     -- Conversely, a diagonal matrix commutes with the universal diagonal torus point.
     apply (pointsMulEquiv n).injective
