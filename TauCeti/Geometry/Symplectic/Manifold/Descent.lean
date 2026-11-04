@@ -30,11 +30,6 @@ kernels of the derivative of the projection; its descent is the reduced symplect
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.ker_bilinFormAt_mpullback`: the kernel of a pullback is the preimage of
-  the kernel when the derivative is surjective.
-* `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of a surjective
-  submersion is symplectic exactly when its pullback is closed and has kernel equal to the
-  derivative's kernel.
 * `TauCeti.SmoothTwoForm.existsUnique_isSymplectic_mpullback_eq`: a closed basic two-form with
   these kernels descends to a unique symplectic form.
 * `TauCeti.SmoothTwoForm.eval₂_descendedForm_mfderiv`: the descent evaluates on images under the
@@ -61,60 +56,6 @@ open Function Manifold
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothTwoForm
-
-section Pullback
-
-variable {E H Z E' H' Q : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace Z] [ChartedSpace H Z] [IsManifold I ∞ Z]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
-  [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
-  {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
-
-/-- If the derivative of `p` at `z` is surjective, the null space of the pullback `p^* η` at `z`
-is the preimage under `dp_z` of the null space of `η` at `p z`. -/
-theorem ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p) (η : SmoothTwoForm J Q) {z : Z}
-    (hdp : Surjective (mfderiv I J p z)) :
-    LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
-      (LinearMap.ker (η.bilinFormAt (p z))).comap (mfderiv I J p z).toLinearMap := by
-  ext v
-  simp only [LinearMap.mem_ker, Submodule.mem_comap, ContinuousLinearMap.coe_coe]
-  refine ⟨fun h ↦ LinearMap.ext fun u ↦ ?_, fun h ↦ LinearMap.ext fun w ↦ ?_⟩
-  · obtain ⟨w, rfl⟩ := hdp u
-    have hw := LinearMap.congr_fun h w
-    simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-      LinearMap.zero_apply] at hw ⊢
-    exact hw
-  · have hw := LinearMap.congr_fun h (mfderiv I J p z w)
-    simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-      LinearMap.zero_apply] at hw ⊢
-    exact hw
-
-/-- For a surjective `p` with surjective derivatives, `η` is nondegenerate exactly when, at every
-point `z`, the null space of the pullback `p^* η` is the kernel of the derivative of `p`. -/
-theorem isNondegenerate_iff_forall_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p)
-    (hsurj : Surjective p) (hdp : ∀ z, Surjective (mfderiv I J p z)) :
-    η.IsNondegenerate ↔ ∀ z, LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
-      (mfderiv I J p z).ker := by
-  simp only [ker_bilinFormAt_mpullback hp η (hdp _), ← Submodule.comap_bot,
-    isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
-  refine ⟨fun h z ↦ by rw [h], fun h y ↦ ?_⟩
-  obtain ⟨z, rfl⟩ := hsurj y
-  exact Submodule.comap_injective_of_surjective (hdp z) (h z)
-
-/-- **Symplectic forms through a surjective submersion.** If `p` is a surjective smooth submersion
-and `p^* η = σ`, then `η` is symplectic exactly when `σ` is closed and its null space at every
-point is the kernel of the derivative of `p`. -/
-theorem isSymplectic_iff_of_mpullback_eq (hp : IsSubmersion I J ∞ p) (hsurj : Surjective p)
-    (hη : SmoothForm.mpullback p hp.contMDiff η = σ) :
-    η.IsSymplectic ↔
-      σ.IsClosed ∧ ∀ z, LinearMap.ker (σ.bilinFormAt z) = (mfderiv I J p z).ker := by
-  subst hη
-  rw [hp.isClosed_mpullback_iff hsurj, ← isNondegenerate_iff_forall_ker_bilinFormAt_mpullback
-    hp.contMDiff hsurj (hp.surjective_mfderiv (by simp))]
-  exact ⟨fun h ↦ ⟨h.isClosed, h.isNondegenerate⟩, fun h ↦ ⟨h.1, h.2⟩⟩
-
-end Pullback
 
 section Descent
 
