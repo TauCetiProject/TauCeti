@@ -186,29 +186,6 @@ theorem inner_ιMulti_of_hodgeStar_eq_self {η : ⋀[ℝ]^2 V} (hη : o.hodgeSta
 
 /-! #### Anti-self-dual forms in a unitary frame -/
 
-/-- The coordinates of an anti-self-dual form in the basis `eᵢ ∧ eⱼ` are determined by the three
-coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
-private theorem inner_ιMulti_two_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
-    (hμ : o.hodgeStar hkl μ = -μ) :
-    ⟪μ, ιMulti ℝ 2 ![e 2, e 3]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ∧
-      ⟪μ, ιMulti ℝ 2 ![e 1, e 3]⟫ = ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
-      ⟪μ, ιMulti ℝ 2 ![e 1, e 2]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
-  have hneg := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ
-  refine ⟨?_, ?_, ?_⟩
-  · rw [← o.hodgeStar_ιMulti_zero_one hkl he, hneg]
-  · rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he,
-      inner_neg_right, hneg, neg_neg]
-  · rw [← o.hodgeStar_ιMulti_zero_three hkl he, hneg]
-
-/-- The squared norm of an anti-self-dual form `μ` is twice the sum of the squares of its
-coordinates `A, B, C` along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
-private theorem norm_sq_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
-    ‖μ‖ ^ 2 = 2 * (⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ^ 2 + ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ^ 2 +
-      ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ ^ 2) := by
-  obtain ⟨h23, h13, h12⟩ := inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
-  rw [e.norm_sq_eq_sum_sq_inner_ιMulti_two, h23, h13, h12]
-  ring
-
 include h₀ h₂ in
 /-- The quadratic form `μ(v, J v)` of an anti-self-dual form `μ` with coordinates `A, B, C` along
 `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃` is
@@ -221,7 +198,7 @@ private theorem inner_ιMulti_eq_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
           (e.repr v 0 ^ 2 + e.repr v 1 ^ 2 - e.repr v 2 ^ 2 - e.repr v 3 ^ 2) +
         2 * ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ * (e.repr v 1 * e.repr v 2 - e.repr v 0 * e.repr v 3) +
         2 * ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ * (e.repr v 0 * e.repr v 2 + e.repr v 1 * e.repr v 3) := by
-  obtain ⟨h23, h13, h12⟩ := inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
+  obtain ⟨h23, h13, h12⟩ := o.inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
   rw [e.inner_ιMulti_two_eq_sum, h23, h13, h12]
   simp only [repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
@@ -236,7 +213,7 @@ theorem exists_inner_ιMulti_eq_neg_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
   -- In the frame, `μ(v, J v)` is a quadratic form in the coordinates of `v` whose smallest
   -- eigenvalue is `-s`, `s = √(A² + B² + C²)`, for the coordinates `A, B, C` of `μ`.
   have hval := inner_ιMulti_eq_of_hodgeStar_eq_neg hkl he h₀ h₂ hμ
-  have hnorm := norm_sq_of_hodgeStar_eq_neg hkl he hμ
+  have hnorm := o.norm_sq_of_hodgeStar_eq_neg hkl he hμ
   set A := ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫
   set B := ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫
   set C := ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫

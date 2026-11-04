@@ -36,7 +36,10 @@ In dimension four, the Hodge star of a wedge of two vectors pairs with another s
 volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
 (`Orientation.inner_hodgeStar_ιMulti_two`). For a positively oriented orthonormal basis `e`, this
 gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`
-(`Orientation.hodgeStar_ιMulti_zero_one` and its companions).
+(`Orientation.hodgeStar_ιMulti_zero_one` and its companions). Consequently an anti-self-dual
+two-vector is determined by its coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`, and its
+squared norm is twice the sum of their squares (`Orientation.inner_ιMulti_two_of_hodgeStar_eq_neg`,
+`Orientation.norm_sq_of_hodgeStar_eq_neg`).
 
 ## References
 
@@ -275,6 +278,31 @@ theorem hodgeStar_ιMulti_zero_three :
   rw [o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two]
   simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
     ← e.repr_apply_apply, OrthonormalBasis.repr_self]
+  ring
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, the coordinates of an
+anti-self-dual `μ`, with `⋆μ = -μ`, in the basis `eᵢ ∧ eⱼ` are determined by its three coordinates
+along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
+theorem inner_ιMulti_two_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
+    (hμ : o.hodgeStar hkl μ = -μ) :
+    ⟪μ, ιMulti ℝ 2 ![e 2, e 3]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ∧
+      ⟪μ, ιMulti ℝ 2 ![e 1, e 3]⟫ = ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
+      ⟪μ, ιMulti ℝ 2 ![e 1, e 2]⟫ = -⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
+  have hneg := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ
+  refine ⟨?_, ?_, ?_⟩
+  · rw [← o.hodgeStar_ιMulti_zero_one hkl he, hneg]
+  · rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he,
+      inner_neg_right, hneg, neg_neg]
+  · rw [← o.hodgeStar_ιMulti_zero_three hkl he, hneg]
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, the squared norm of an
+anti-self-dual `μ`, with `⋆μ = -μ`, is twice the sum of the squares of its coordinates along
+`e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`. -/
+theorem norm_sq_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -μ) :
+    ‖μ‖ ^ 2 = 2 * (⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ ^ 2 + ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ ^ 2 +
+      ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ ^ 2) := by
+  obtain ⟨h23, h13, h12⟩ := o.inner_ιMulti_two_of_hodgeStar_eq_neg hkl he hμ
+  rw [e.norm_sq_eq_sum_sq_inner_ιMulti_two, h23, h13, h12]
   ring
 
 end Orientation
