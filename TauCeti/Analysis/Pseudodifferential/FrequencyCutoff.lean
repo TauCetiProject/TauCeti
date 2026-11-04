@@ -81,6 +81,11 @@ theorem ext {χ₁ χ₂ : FrequencyCutoff E} (h : ∀ ξ, χ₁ ξ = χ₂ ξ) 
 @[simp]
 theorem toFun_eq_coe (χ : FrequencyCutoff E) : χ.toFun = χ := (rfl)
 
+@[simp]
+theorem coe_mk (f : E → ℝ) (h₁ h₂ h₃ h₄ h₅) :
+    ⇑(⟨f, h₁, h₂, h₃, h₄, h₅⟩ : FrequencyCutoff E) = f :=
+  (rfl)
+
 variable (χ : FrequencyCutoff E) {ξ : E}
 
 theorem contDiff {n : ℕ∞} : ContDiff ℝ n χ :=

@@ -312,6 +312,33 @@ theorem coefficient_compPosition (a : HomogeneousSymbol E V W m) (g : E → E)
     (hg : ContDiff ℝ ∞ g) (p : E × E) :
     (a.compPosition g hg).coefficient p = a.coefficient (g p.1, p.2) := (rfl)
 
+variable (g : E → E) (hg : ContDiff ℝ ∞ g)
+
+@[simp]
+theorem zero_compPosition : (0 : HomogeneousSymbol E V W m).compPosition g hg = 0 :=
+  (rfl)
+
+@[simp]
+theorem add_compPosition (a b : HomogeneousSymbol E V W m) :
+    (a + b).compPosition g hg = a.compPosition g hg + b.compPosition g hg :=
+  (rfl)
+
+@[simp]
+theorem smul_compPosition (c : ℂ) (a : HomogeneousSymbol E V W m) :
+    (c • a).compPosition g hg = c • a.compPosition g hg :=
+  (rfl)
+
+@[simp]
+theorem comp_compPosition (b : HomogeneousSymbol E V W m) (a : HomogeneousSymbol E U V m') :
+    (b.comp a).compPosition g hg = (b.compPosition g hg).comp (a.compPosition g hg) :=
+  (rfl)
+
+@[simp]
+theorem compPosition_compPosition (a : HomogeneousSymbol E V W m) (g' : E → E)
+    (hg' : ContDiff ℝ ∞ g') :
+    (a.compPosition g hg).compPosition g' hg' = a.compPosition (g ∘ g') (hg.comp hg') :=
+  (rfl)
+
 end CompPosition
 
 /-! ### Estimates for the derivatives -/
