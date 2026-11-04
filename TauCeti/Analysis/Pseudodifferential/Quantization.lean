@@ -239,7 +239,8 @@ private lemma integral_integrand_smul (c : ℂ) (f : 𝓢(E, V)) :
   simp only [smul_apply, map_smul, smul_comm (𝐞 _) c]
   exact integral_smul c _
 
-/-- The quantization is additive in the input, wherever the coefficient has a growth bound. -/
+/-- The quantization is additive in the input at every point `x` where `ξ ↦ a (x, ξ)` is a.e.
+strongly measurable and has a growth bound. -/
 theorem quantizeSchwartzValue_add_right (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
     (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (u v : 𝓢(E, V)) :
     quantizeSchwartzValue a (u + v) x = quantizeSchwartzValue a u x + quantizeSchwartzValue a v x
@@ -260,8 +261,8 @@ theorem quantizeSchwartzValue_zero_right :
     quantizeSchwartzValue a (0 : 𝓢(E, V)) x = 0 := by
   simpa using quantizeSchwartzValue_smul_right (a := a) (x := x) 0 0
 
-/-- The quantization is additive in the coefficient, wherever both coefficients have growth
-bounds. -/
+/-- The quantization is additive in the coefficient at every point `x` where both `ξ ↦ a (x, ξ)`
+and `ξ ↦ b (x, ξ)` are a.e. strongly measurable and have growth bounds. -/
 theorem quantizeSchwartzValue_add_left {b : E × E → V →L[ℂ] W} {C' m' : ℝ}
     (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
     (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -281,6 +282,7 @@ theorem quantizeSchwartzValue_smul_left (c : ℂ) (a : E × E → V →L[ℂ] W)
     smul_comm (𝐞 _) c]
   exact integral_smul c _
 
+/-- The quantization with the zero coefficient vanishes. -/
 @[simp]
 theorem quantizeSchwartzValue_zero_left (u : 𝓢(E, V)) (x : E) :
     quantizeSchwartzValue (0 : E × E → V →L[ℂ] W) u x = 0 := by
