@@ -40,7 +40,8 @@ that is only smooth after restricting scalars to `ℝ` gives the real statement 
 * `TauCeti.contMDiff_orbitRelQuotientMap`: the map of orbit spaces induced by an equivariant
   `C^m` map is `C^m`.
 * `TauCeti.isSubmersionOfComplement_orbitRelQuotientMap`: the map of orbit spaces induced by an
-  equivariant `C^n` submersion with complement `F` is a `C^n` submersion with complement `F`.
+  equivariant `C^n` submersion with complement `F` is a `C^n` submersion with complement `F`;
+  `TauCeti.isSubmersion_orbitRelQuotientMap` is the version without a fixed complement.
 
 ## References
 
@@ -117,5 +118,11 @@ theorem isSubmersionOfComplement_orbitRelQuotientMap {F : Type*} [NormedAddCommG
     rw [MulActionHom.orbitRelQuotientMap_comp_mk]
     exact isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp
       (isLocalDiffeomorph_quotientMk (I := I') (n := n) (G := K) (φ x)) (hφ.isSubmersionAt x)
+
+/-- For free properly discontinuous actions by `C^n` maps on `C^n` manifolds, a `C^n` submersion
+carrying one action to the other along `σ` induces a `C^n` submersion of orbit spaces. -/
+theorem isSubmersion_orbitRelQuotientMap {φ : M →ₑ[σ] N'} (hφ : Manifold.IsSubmersion I I' n φ) :
+    Manifold.IsSubmersion I I' n (MulActionHom.orbitRelQuotientMap φ) :=
+  (isSubmersionOfComplement_orbitRelQuotientMap hφ.isSubmersionOfComplement_complement).isSubmersion
 
 end TauCeti

@@ -33,12 +33,18 @@ are local diffeomorphisms, such as orbit projections of free properly discontinu
 * `TauCeti.isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt`,
   `TauCeti.isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp`: the pointwise normal form with
   a fixed complement survives composing with a local diffeomorphism on the source or on the
-  target.
+  target; `TauCeti.isSubmersionAt_comp_isLocalDiffeomorphAt` and
+  `TauCeti.isSubmersionAt_isLocalDiffeomorphAt_comp` are the versions without a fixed complement.
 * `TauCeti.isSubmersionOfComplement_comp_isLocalDiffeomorph`,
-  `TauCeti.isSubmersionOfComplement_isLocalDiffeomorphAt_comp`: the corresponding statements for
-  submersions with a fixed complement.
-* `TauCeti.isSubmersionAtOfComplement_of_comp_isLocalDiffeomorphAt`: if `f ∘ q` is a submersion
-  at `x` and `q` is a local diffeomorphism at `x`, then `f` is a submersion at `q x`.
+  `TauCeti.isSubmersionOfComplement_isLocalDiffeomorphAt_comp`,
+  `TauCeti.isSubmersion_comp_isLocalDiffeomorph`, `TauCeti.isSubmersion_isLocalDiffeomorphAt_comp`:
+  the corresponding statements for submersions.
+* `TauCeti.isSubmersionAtOfComplement_of_comp_isLocalDiffeomorphAt`,
+  `TauCeti.isSubmersionAt_of_comp_isLocalDiffeomorphAt`: if `f ∘ q` is a submersion at `x` and `q`
+  is a local diffeomorphism at `x`, then `f` is a submersion at `q x`.
+* `TauCeti.isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff`,
+  `TauCeti.isSubmersionAt_comp_isLocalDiffeomorphAt_iff`: hence precomposing with a local
+  diffeomorphism neither creates nor destroys submersions at a point.
 
 The two composition proofs share their chart constructions with those for immersions in
 `TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph`: both use
@@ -88,6 +94,14 @@ theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt [IsManifold I n M']
     φ h.codChart hxφ h.mem_codChart_source hφ h.codChart_mem_maximalAtlas fun u hu =>
       (congrArg (h.codChart.extend J ∘ f) (hgφ hu)).trans (h.writtenInCharts (hφt hu))
 
+/-- Precomposing with a local diffeomorphism of the source preserves being a submersion at a
+point. -/
+theorem isSubmersionAt_comp_isLocalDiffeomorphAt [IsManifold I n M']
+    {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x)
+    (h : IsSubmersionAt I J n f (g x)) : IsSubmersionAt I J n (f ∘ g) x :=
+  (isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt hg
+    h.isSubmersionAtOfComplement_complement).isSubmersionAt
+
 /-- Precomposing a submersion with a fixed complement by a local diffeomorphism gives a submersion
 with the same complement. -/
 theorem isSubmersionOfComplement_comp_isLocalDiffeomorph [IsManifold I n M']
@@ -95,6 +109,13 @@ theorem isSubmersionOfComplement_comp_isLocalDiffeomorph [IsManifold I n M']
     IsSubmersionOfComplement F I J n (f ∘ g) :=
   isSubmersionOfComplement_iff.2 fun x =>
     isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt (hg x) (h.isSubmersionAt (g x))
+
+/-- Precomposing a submersion with a local diffeomorphism gives a submersion. -/
+theorem isSubmersion_comp_isLocalDiffeomorph [IsManifold I n M']
+    {g : M' → M} (hg : IsLocalDiffeomorph I I n g) (h : IsSubmersion I J n f) :
+    IsSubmersion I J n (f ∘ g) :=
+  (isSubmersionOfComplement_comp_isLocalDiffeomorph hg
+    h.isSubmersionOfComplement_complement).isSubmersion
 
 /-- **Undoing a precomposition.** If `q` is a local diffeomorphism at `x` and `f ∘ q` is a
 submersion at `x`, then `f` is a submersion at `q x`, with the same complement: near `q x`, the map
@@ -108,6 +129,31 @@ theorem isSubmersionAtOfComplement_of_comp_isLocalDiffeomorphAt [IsManifold I n 
   exact (isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt
     hq.localInverse_isLocalDiffeomorphAt h').congr_of_eventuallyEq
     (hq.localInverse_eventuallyEq_right.fun_comp f)
+
+/-- **Undoing a precomposition.** If `q` is a local diffeomorphism at `x` and `f ∘ q` is a
+submersion at `x`, then `f` is a submersion at `q x`. -/
+theorem isSubmersionAt_of_comp_isLocalDiffeomorphAt [IsManifold I n M]
+    {q : M' → M} {x : M'} (hq : IsLocalDiffeomorphAt I I n q x)
+    (h : IsSubmersionAt I J n (f ∘ q) x) : IsSubmersionAt I J n f (q x) :=
+  (isSubmersionAtOfComplement_of_comp_isLocalDiffeomorphAt hq
+    h.isSubmersionAtOfComplement_complement).isSubmersionAt
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys the
+submersion normal form at a point: `f ∘ g` is a submersion at `x`, with complement `F`, exactly
+when `f` is one at `g x`. -/
+theorem isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff [IsManifold I n M]
+    [IsManifold I n M'] {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsSubmersionAtOfComplement F I J n (f ∘ g) x ↔
+      IsSubmersionAtOfComplement F I J n f (g x) :=
+  ⟨isSubmersionAtOfComplement_of_comp_isLocalDiffeomorphAt hg,
+    isSubmersionAtOfComplement_comp_isLocalDiffeomorphAt hg⟩
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys
+submersions at a point: `f ∘ g` is a submersion at `x` exactly when `f` is one at `g x`. -/
+theorem isSubmersionAt_comp_isLocalDiffeomorphAt_iff [IsManifold I n M] [IsManifold I n M']
+    {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsSubmersionAt I J n (f ∘ g) x ↔ IsSubmersionAt I J n f (g x) :=
+  ⟨isSubmersionAt_of_comp_isLocalDiffeomorphAt hg, isSubmersionAt_comp_isLocalDiffeomorphAt hg⟩
 
 /-! ### Postcomposing with a local diffeomorphism -/
 
@@ -126,6 +172,14 @@ theorem isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P]
   exact .mk_of_continuousAt (hk.contMDiffAt.continuousAt.comp hf) h.equiv φ ψ hxφ hψx hφ hψ
     fun u hu => (hfφ hu).trans (h.writtenInCharts (hφt hu))
 
+/-- Postcomposing with a local diffeomorphism of the target preserves being a submersion at a
+point. -/
+theorem isSubmersionAt_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N → P} {x : M}
+    (hk : IsLocalDiffeomorphAt J J n k (f x))
+    (h : IsSubmersionAt I J n f x) : IsSubmersionAt I J n (k ∘ f) x :=
+  (isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp hk
+    h.isSubmersionAtOfComplement_complement).isSubmersionAt
+
 /-- Postcomposing a submersion with a fixed complement by a map which is a local diffeomorphism at
 every point of its image gives a submersion with the same complement. -/
 theorem isSubmersionOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N → P}
@@ -133,5 +187,13 @@ theorem isSubmersionOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P] {k
     IsSubmersionOfComplement F I J n (k ∘ f) :=
   isSubmersionOfComplement_iff.2 fun x =>
     isSubmersionAtOfComplement_isLocalDiffeomorphAt_comp (hk x) (h.isSubmersionAt x)
+
+/-- Postcomposing a submersion with a map which is a local diffeomorphism at every point of its
+image gives a submersion. -/
+theorem isSubmersion_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N → P}
+    (hk : ∀ x, IsLocalDiffeomorphAt J J n k (f x))
+    (h : IsSubmersion I J n f) : IsSubmersion I J n (k ∘ f) :=
+  (isSubmersionOfComplement_isLocalDiffeomorphAt_comp hk
+    h.isSubmersionOfComplement_complement).isSubmersion
 
 end TauCeti
