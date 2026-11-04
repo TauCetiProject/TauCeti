@@ -78,6 +78,9 @@ def single {r : F} {n : ℕ} (h : IsAdmissibleCentralizerStep r n) :
     ICE F (CentralizerExt r n) CentralizerExt.of :=
   step refl h
 
+theorem single_eq_step_refl {r : F} {n : ℕ} (h : IsAdmissibleCentralizerStep r n) :
+    single h = step refl h := (rfl)
+
 /-- The number of steps of a chain. -/
 def length {G : Type u} [Group G] {ι : F →* G} : ICE F G ι → ℕ
   | refl => 0
@@ -97,11 +100,16 @@ def append (c : ICE F G ι) {K : Type u} [Group K] {j : G →* K} :
   | refl => c
   | step d h => step (c.append d) h
 
+@[simp] theorem append_refl (c : ICE F G ι) : c.append refl = c := (rfl)
+
+@[simp] theorem append_step (c : ICE F G ι) {j : G →* K} (d : ICE G K j) {r : K} {n : ℕ}
+    (h : IsAdmissibleCentralizerStep r n) : c.append (step d h) = step (c.append d) h := (rfl)
+
 @[simp] theorem length_append (c : ICE F G ι) {j : G →* K} (d : ICE G K j) :
     (c.append d).length = c.length + d.length := by
   induction d with
   | refl => rfl
-  | step d h ih => simp [append, ih, Nat.add_assoc]
+  | step d h ih => simp [ih, Nat.add_assoc]
 
 /-- The coefficient inclusion of an ICE chain is injective. -/
 theorem injective (c : ICE F G ι) : Function.Injective ι := by
