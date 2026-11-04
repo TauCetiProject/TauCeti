@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Finite-dimensional unitary comodules
@@ -63,26 +64,9 @@ private theorem coefficientMatrix_mem_unitary [DecidableEq ι] [DecidableEq κ]
     (b : OrthonormalBasis ι 𝕜 M) (c : OrthonormalBasis κ 𝕜 M)
     (h : coefficientMatrix (C := A) b.toBasis ∈ unitary (Matrix ι ι A)) :
     coefficientMatrix (C := A) c.toBasis ∈ unitary (Matrix κ κ A) := by
-  let P := (b.toBasis.toMatrix c.toBasis).map (algebraMap 𝕜 A)
-  have hP : Pᴴ * P = 1 := b.toMatrix_map_conjTranspose_mul_self c
-  have hP' : P * Pᴴ = 1 := b.toMatrix_map_self_mul_conjTranspose c
-  -- Cancel the rectangular inverse pair before applying either unitary identity.
-  have hcancel (X Y : Matrix ι ι A) :
-      (Pᴴ * X * P) * (Pᴴ * Y * P) = Pᴴ * (X * Y) * P := by
-    calc
-      _ = Pᴴ * (X * (P * Pᴴ) * Y) * P := by simp only [Matrix.mul_assoc]
-      _ = _ := by rw [hP', Matrix.mul_one]
   rw [b.coefficientMatrix_eq_conjTranspose_mul c]
-  rw [Unitary.mem_iff, Matrix.star_eq_conjTranspose] at h ⊢
-  constructor
-  · rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_mul,
-      Matrix.conjTranspose_conjTranspose,
-      ← Matrix.mul_assoc Pᴴ (coefficientMatrix (C := A) b.toBasis)ᴴ P, hcancel, h.1,
-      Matrix.mul_one, hP]
-  · rw [Matrix.conjTranspose_mul, Matrix.conjTranspose_mul,
-      Matrix.conjTranspose_conjTranspose,
-      ← Matrix.mul_assoc Pᴴ (coefficientMatrix (C := A) b.toBasis)ᴴ P, hcancel, h.2,
-      Matrix.mul_one, hP]
+  exact Matrix.conjTranspose_mul_mul_mem_unitary _
+    (b.toMatrix_map_conjTranspose_mul_self c) (b.toMatrix_map_self_mul_conjTranspose c) h
 
 /-- Unitarity of the coefficient matrix is independent of the orthonormal basis, even when
 the two bases use different finite index types. -/
