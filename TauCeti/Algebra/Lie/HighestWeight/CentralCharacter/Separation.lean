@@ -61,14 +61,10 @@ variable {K : Type} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing
 with the same central character are equal. -/
 theorem vermaCentralCharacter_injOn_isDominantIntegral :
     Set.InjOn (vermaCentralCharacter b) {lam | IsDominantIntegral b lam} := by
-  have hcoroot : ∀ {chi : Dual K H}, IsDominantIntegral b chi →
-      ∀ i ∈ b.support, ∃ n : ℕ, (IsKilling.rootSystem H).coroot' i chi = (n : K) :=
-    fun hchi i hi ↦ by
-      obtain ⟨n, hn⟩ := isDominantIntegral_iff.mp hchi i hi
-      exact ⟨n, by rwa [rootSystem_coroot'_apply]⟩
   intro lam hlam mu hmu h
   obtain ⟨w, rfl⟩ := (vermaCentralCharacter_eq_iff b).mp h
-  exact (dotAction_eq_self_of_dominantIntegral (hcoroot hlam) (hcoroot hmu)).symm
+  exact (dotAction_eq_self_of_dominantIntegral (isDominantIntegral_iff_forall_coroot'.mp hlam)
+    (isDominantIntegral_iff_forall_coroot'.mp hmu)).symm
 
 variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [FiniteDimensional K M]
