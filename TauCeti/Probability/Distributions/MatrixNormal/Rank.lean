@@ -15,9 +15,9 @@ import TauCeti.MeasureTheory.Measure.Matrix
 # Almost-sure rank of matrix normal laws
 
 A matrix normal law with positive-definite row and column covariances has a density and therefore
-has maximal rank almost surely. When the column covariance is the identity, the same conclusion
-for a positive-semidefinite row covariance follows after factoring its square root through its
-exact rank.
+has maximal rank almost surely. When the law is centered, the column covariance is the identity,
+and the row covariance `U` is positive semidefinite, its rank is almost surely
+`min U.rank (Fintype.card n)`.
 -/
 
 public section
@@ -33,16 +33,17 @@ namespace TauCeti.Probability
 surely. -/
 theorem ae_rank_eq_min_matrixNormalMeasure_of_posDef
     {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
-    {U : Matrix m m ℝ} {V : Matrix n n ℝ} (hU : U.PosDef) (hV : V.PosDef) :
-    ∀ᵐ X ∂matrixNormalMeasure (0 : Matrix m n ℝ) U V,
+    (M : Matrix m n ℝ) {U : Matrix m m ℝ} {V : Matrix n n ℝ}
+    (hU : U.PosDef) (hV : V.PosDef) :
+    ∀ᵐ X ∂matrixNormalMeasure M U V,
       X.rank = min (Fintype.card m) (Fintype.card n) := by
-  have hac : matrixNormalMeasure (0 : Matrix m n ℝ) U V ≪ volume := by
-    rw [matrixNormalMeasure_eq_withDensity 0 hU hV]
-    exact withDensity_absolutelyContinuous volume (matrixNormalPDF 0 U V)
+  have hac : matrixNormalMeasure M U V ≪ volume := by
+    rw [matrixNormalMeasure_eq_withDensity M hU hV]
+    exact withDensity_absolutelyContinuous volume (matrixNormalPDF M U V)
   exact Measure.ae_rank_eq_min_matrix _ hac
 
-/-- A matrix normal law with identity column covariance has rank equal to the smaller of the row
-covariance rank and the number of columns almost surely. -/
+/-- A centered matrix normal law with identity column covariance has rank equal to the smaller of
+the row covariance rank and the number of columns almost surely. -/
 theorem ae_rank_eq_min_matrixNormalMeasure_right_one
     {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
     {U : Matrix m m ℝ} (hU : U.PosSemidef) :
@@ -65,7 +66,7 @@ theorem ae_rank_eq_min_matrixNormalMeasure_right_one
       ∀ᵐ X : Matrix (Fin (CFC.sqrt U).rank) n ℝ
         ∂matrixNormalMeasure 0 (R * Rᵀ) 1,
         X.rank = min (Fintype.card (Fin (CFC.sqrt U).rank)) (Fintype.card n) :=
-    ae_rank_eq_min_matrixNormalMeasure_of_posDef hRR (Matrix.PosDef.one (n := n))
+    ae_rank_eq_min_matrixNormalMeasure_of_posDef 0 hRR (Matrix.PosDef.one (n := n))
   have hmap := map_mul_mul_add_matrixNormalMeasure
     (0 : Matrix (Fin (CFC.sqrt U).rank) n ℝ) hRR.posSemidef Matrix.PosSemidef.one
     L (1 : Matrix n n ℝ) 0
