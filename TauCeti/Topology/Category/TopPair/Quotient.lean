@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Category.TopPair
-public import Mathlib.CategoryTheory.Limits.Types.Pushouts
+public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 
 /-!
 # The pointed quotient of a topological pair
@@ -152,17 +151,11 @@ lemma isQuotientMap_ordinaryPairQuotient (P : TopPair.{u}) :
     · exact ⟨Sum.inl x, rfl⟩
     · exact ⟨Sum.inr PUnit.unit, rfl⟩
   · intro s
-    -- The colimit topology is final for the two inclusions (and their common source).
-    refine (TopCat.isClosed_iff_of_isColimit _
-      (pushoutIsPushout P.map (quotientPointMap P)) s).trans ?_
+    have sq : IsPushout P.map (quotientPointMap P)
+        P.ordinaryPairQuotientπ (quotientPointIncl P) := IsPushout.of_hasPushout _ _
+    refine (TauCeti.TopCat.isClosed_iff_of_isPushout sq s).trans ?_
     simp only [isClosed_sum_iff]
-    constructor
-    · intro h
-      exact ⟨h WalkingSpan.left, h WalkingSpan.right⟩
-    · rintro ⟨h, hpoint⟩ j
-      cases j with
-      | none => exact h.preimage P.map.hom.continuous
-      | some j => cases j <;> assumption
+    constructor <;> intro h <;> exact ⟨h.1, h.2⟩
 
 /-- Maps out of the quotient are determined by the ambient space and the basepoint. -/
 @[ext]
