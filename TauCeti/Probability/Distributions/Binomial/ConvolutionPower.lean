@@ -11,9 +11,9 @@ public import TauCeti.MeasureTheory.Group.Convolution.Power
 /-!
 # Convolution powers of Bernoulli laws
 
-The convolution power of the natural-valued Bernoulli law is binomial. This connects the
-independent-sum description of binomial laws to measure convolution and transport by additive
-homomorphisms, including the scaled binomial laws of two-point renewal arrivals.
+The convolution power of the natural-valued Bernoulli law is binomial. Transport along
+`multiplesHom` gives the convolution powers of a law supported on zero and a fixed element
+of a measurable additive monoid, as needed for scaled binomial renewal arrival laws.
 -/
 
 public section
@@ -32,5 +32,18 @@ theorem bernoulliMeasure_convolutionPower (p : unitInterval) (n : ℕ) :
   | succ n ih =>
     rw [Measure.convolutionPower_succ, ih, ← binomial_one_eq_bernoulliMeasure,
       binomial_conv_binomial]
+
+/-- Convolution powers of the law supported on `a` and zero are binomial laws transported
+along the map `j ↦ j • a`, including the empty sum at exponent zero. -/
+theorem bernoulliMeasure_convolutionPower_multiples {β : Type*} [MeasurableSpace β]
+    [AddMonoid β] [MeasurableAdd₂ β] [MeasurableSingletonClass β]
+    (a : β) (p : unitInterval) (n : ℕ) :
+    (bernoulliMeasure a 0 p).convolutionPower n = (binomial n p).map (multiplesHom β a) := by
+  have hmap : (bernoulliMeasure (1 : ℕ) 0 p).map (multiplesHom β a) =
+      bernoulliMeasure a 0 p := by
+    simp [map_bernoulliMeasure]
+  simpa only [bernoulliMeasure_convolutionPower, hmap] using
+    (Measure.map_convolutionPower (bernoulliMeasure (1 : ℕ) 0 p)
+      (multiplesHom β a) Measurable.of_discrete n).symm
 
 end TauCeti.Probability

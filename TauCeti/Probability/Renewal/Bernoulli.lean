@@ -10,6 +10,7 @@ public import TauCeti.Probability.Distributions.Binomial.ConvolutionPower
 public import TauCeti.Probability.Distributions.Binomial.Tail
 public import TauCeti.Probability.Distributions.NegativeBinomial.Cdf
 public import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!
@@ -62,14 +63,8 @@ theorem hasLaw_arrival_binomial (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (T n) (bernoulliMeasure a 0 q) P) (n : ℕ) :
     HasLaw (arrival T n) ((binomial n q).map (fun j : ℕ ↦ (j : ℝ≥0) * a)) P := by
   have := hindep.isProbabilityMeasure
-  have hmap : (bernoulliMeasure (1 : ℕ) 0 q).map (multiplesHom ℝ≥0 a) =
-      bernoulliMeasure a 0 q := by
-    simp [map_bernoulliMeasure]
-  have hpow := Measure.map_convolutionPower (bernoulliMeasure (1 : ℕ) 0 q)
-    (multiplesHom ℝ≥0 a) Measurable.of_discrete n
-  rw [bernoulliMeasure_convolutionPower, hmap] at hpow
   have h := hindep.hasLaw_finset_sum_convolutionPower hlaw (Finset.range n)
-  rw [Finset.card_range, ← hpow] at h
+  rw [Finset.card_range, bernoulliMeasure_convolutionPower_multiples] at h
   convert h using 1
   · funext ω
     simp only [arrival_def, Finset.sum_apply]
@@ -86,10 +81,7 @@ theorem ae_tendsto_arrival_atTop_of_bernoulliMeasure (hT : ∀ n, Measurable (T 
   have := hindep.isProbabilityMeasure
   refine ae_tendsto_arrival_atTop hT hindep (fun n ↦ (hlaw n).identDistrib (hlaw 0)) ?_
   rw [(hlaw 0).measure_eq (p := fun x ↦ x = 0) (measurableSet_singleton 0)]
-  rw [bernoulliMeasure_apply]
-  · simp only [mem_ofPred_eq, ha.ne', ↓reduceIte]
-    exact_mod_cast sub_lt_self (1 : ℝ) hq
-  · exact measurableSet_singleton 0
+  exact bernoulliMeasure_singleton_zero_lt_one ha.ne' hq
 
 /-- The cdf of a two-point renewal count is the upper binomial tail at `⌊t/a⌋₊`.
 This includes both endpoints of the time interval and all zero-time arrivals. -/
@@ -159,7 +151,7 @@ theorem hasLaw_renewalCountNat_negativeBinomialMeasure (hT : ∀ n, Measurable (
     exact hj.trans (by omega)
 
 /-- Arrivals at zero have a geometric law: they are the zero increments preceding the first
-positive increment. The artificial arrival `S 0` is excluded. -/
+positive increment. The artificial arrival `arrival T 0 = 0` is excluded. -/
 theorem hasLaw_renewalCountNat_zero_geometricMeasure (hT : ∀ n, Measurable (T n))
     (hindep : iIndepFun T P) (hlaw : ∀ n, HasLaw (T n) (bernoulliMeasure a 0 q) P)
     (ha : 0 < a) (hq : 0 < (q : ℝ)) :
@@ -194,8 +186,9 @@ theorem integral_renewalCountNat_of_bernoulliMeasure (hT : ∀ n, Measurable (T 
     hcast.integral_eq, integral_id_map_cast_negativeBinomialMeasure hk hq q.2.2]
   field_simp; ring
 
-/-- The renewal function of a two-point law, including its atom at time zero. -/
-theorem renewalFunction_bernoulliMeasure (ha : 0 < a) (hq : 0 < (q : ℝ)) (t : ℝ≥0) :
+/-- The renewal function of a two-point law, as a real number, is `(⌊t/a⌋₊ + 1) / q - 1`.
+It counts genuine zero increments but excludes the artificial point mass `δ₀`. -/
+theorem toReal_renewalFunction_bernoulliMeasure (ha : 0 < a) (hq : 0 < (q : ℝ)) (t : ℝ≥0) :
     ((bernoulliMeasure a 0 q).renewalFunction t).toReal =
       (⌊t / a⌋₊ + 1) / (q : ℝ) - 1 := by
   let μ := bernoulliMeasure a 0 q
@@ -206,11 +199,7 @@ theorem renewalFunction_bernoulliMeasure (ha : 0 < a) (hq : 0 < (q : ℝ)) (t : 
     ⟨(hT n).aemeasurable, Measure.infinitePi_map_eval _ n⟩
   have hzero : P {ω | ω 0 = 0} < 1 := by
     rw [(hlaw 0).measure_eq (p := fun x ↦ x = 0) (measurableSet_singleton 0)]
-    rw [ofPred_eq_eq_singleton]
-    dsimp only [μ]
-    rw [bernoulliMeasure_apply q (measurableSet_singleton 0)]
-    simp only [mem_singleton_iff, ha.ne', ↓reduceIte]
-    exact_mod_cast sub_lt_self (1 : ℝ) hq
+    exact bernoulliMeasure_singleton_zero_lt_one ha.ne' hq
   have hmean := integral_renewalCountNat hT hindep
     (fun n ↦ (hlaw n).identDistrib (hlaw 0)) hzero t
   rw [(hlaw 0).map_eq] at hmean
@@ -222,14 +211,11 @@ including the artificial arrival and all genuine arrivals at zero. -/
 theorem renewalMeasure_bernoulliMeasure_real_Iic (ha : 0 < a) (hq : 0 < (q : ℝ)) (t : ℝ≥0) :
     (bernoulliMeasure a 0 q).renewalMeasure.real (Iic t) =
       (⌊t / a⌋₊ + 1) / (q : ℝ) := by
-  have hzero : bernoulliMeasure a 0 q {0} < 1 := by
-    rw [bernoulliMeasure_apply q (measurableSet_singleton 0)]
-    simp only [mem_singleton_iff, ha.ne', ↓reduceIte]
-    exact_mod_cast sub_lt_self (1 : ℝ) hq
+  have hzero := bernoulliMeasure_singleton_zero_lt_one ha.ne' hq
   rw [measureReal_def, Measure.renewalMeasure_Iic,
     ENNReal.toReal_add ENNReal.one_ne_top
       (Measure.renewalFunction_lt_top _ hzero t).ne, ENNReal.toReal_one,
-    renewalFunction_bernoulliMeasure ha hq]
+    toReal_renewalFunction_bernoulliMeasure ha hq]
   ring
 
 end TauCeti.Probability
