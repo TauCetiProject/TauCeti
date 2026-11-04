@@ -179,6 +179,8 @@ theorem universalGSpaceCellularTranslation_one :
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
+  -- The concrete hom of `TopCat.ofHom` evaluates its stored continuous map; the subtype
+  -- projection and the `TopCat` identity reduce to the underlying point and its translation.
   exact one_smul G x.1
 
 /-- Translation by a product is successive translation on the universal subset. -/
@@ -188,6 +190,8 @@ theorem universalGSpaceCellularTranslation_mul (g h : G) :
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
+  -- Concrete `TopCat` composition evaluates the two stored continuous maps successively;
+  -- projecting the subtype constructors gives the nested translations of the underlying point.
   exact mul_smul g h x.1
 
 /-- Translation preserves the skeletal filtration of the simplicial CW structure. -/
@@ -199,13 +203,6 @@ theorem isCellular_universalGSpaceCellularTranslation (g : G) :
   · intro n i
     exact ⟨g • i, fun x _ _ ↦ (universalGSpaceCellularTranslation_apply g _).trans
       (smul_map_universalGSpace g i x)⟩
-
-/-- Translation by the identity induces the identity on cellular chains. This is not a simp
-lemma: the topological identity and cellular functoriality already simplify its left-hand side. -/
-theorem cellularChainComplexMap_universalGSpaceCellularTranslation_one :
-    cellularChainComplexMap univ univ (isCellular_universalGSpaceCellularTranslation (1 : G))
-        (ModuleCat.of k k) = 𝟙 _ := by
-  simp only [universalGSpaceCellularTranslation_one, cellularChainComplexMap_id]
 
 /-- The cellular chain maps induced by translation respect multiplication. -/
 theorem cellularChainComplexMap_universalGSpaceCellularTranslation_mul (g h : G) :
