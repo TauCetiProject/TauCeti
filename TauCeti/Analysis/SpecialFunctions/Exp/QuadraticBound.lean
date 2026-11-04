@@ -100,27 +100,20 @@ theorem exp_le_one_add_add_sq_div_two_mul_exp_abs (x : ℝ) :
     exp x ≤ 1 + x + x ^ 2 / 2 * exp |x| := by
   rcases le_total x 0 with hx | hx
   · refine (exp_le_one_add_add_sq_div_two_of_nonpos hx).trans ?_
-    have hexp : 1 ≤ exp |x| := one_le_exp (abs_nonneg x)
-    nlinarith [sq_nonneg x]
+    nlinarith [sq_nonneg x, one_le_exp (abs_nonneg x)]
   · rw [abs_of_nonneg hx]
-    have hs : HasSum (fun n : ℕ ↦ x ^ n / n !) (exp x) := by
-      rw [exp_eq_exp_ℝ]
-      exact NormedSpace.expSeries_div_hasSum_exp x
+    have hs : HasSum (fun n : ℕ ↦ x ^ n / n !) (exp x) :=
+      exp_eq_exp_ℝ ▸ NormedSpace.expSeries_div_hasSum_exp x
     have hs2 : HasSum (fun n : ℕ ↦ x ^ (n + 2) / (n + 2)!) (exp x - 1 - x) := by
-      have := (hasSum_nat_add_iff' 2).2 hs
-      simpa [Finset.sum_range_succ, sub_sub] using this
-    have hg : HasSum (fun n : ℕ ↦ x ^ 2 / 2 * (x ^ n / n !)) (x ^ 2 / 2 * exp x) :=
-      hs.mul_left _
+      simpa [Finset.sum_range_succ, sub_sub] using (hasSum_nat_add_iff' 2).2 hs
     have hterm (n : ℕ) : x ^ (n + 2) / (n + 2)! ≤ x ^ 2 / 2 * (x ^ n / n !) := by
-      have hfac_nat : 2 * n ! ≤ (n + 2)! := by
-        calc 2 * n ! = n ! * 2 := mul_comm _ _
-          _ ≤ n ! * ((n + 2) * (n + 1)) := Nat.mul_le_mul_left _ (by nlinarith)
-          _ = (n + 2)! := by simp only [Nat.factorial_succ]; ring
-      have hfac : (2 * n ! : ℝ) ≤ (n + 2)! := by exact_mod_cast hfac_nat
+      have hfac : (2 * n ! : ℝ) ≤ (n + 2)! := by
+        exact_mod_cast (show 2 * n ! ≤ (n + 2) * ((n + 1) * n !) by
+          rw [← mul_assoc]; exact Nat.mul_le_mul_right _ (by lia))
       rw [div_le_iff₀ (by positivity), pow_add]
       calc x ^ n * x ^ 2 = x ^ 2 / 2 * (x ^ n / n !) * (2 * n !) := by field_simp
         _ ≤ x ^ 2 / 2 * (x ^ n / n !) * (n + 2)! := by gcongr
-    linarith [hasSum_le hterm hs2 hg]
+    linarith [hasSum_le hterm hs2 (hs.mul_left (x ^ 2 / 2))]
 
 /-- For `0 ≤ u ≤ 1 / 2`, the Gaussian quadratic-form factor `(1 - u) ^ (-1 / 2)` is bounded above
 by `exp u`. -/

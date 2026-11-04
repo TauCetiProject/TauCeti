@@ -43,20 +43,12 @@ protected noncomputable abbrev l2OpNormedAlgebraReal : NormedAlgebra ℝ (Matrix
 
 open scoped Matrix.Norms.L2Operator in
 /-- Every entry of a matrix has norm at most its `ℓ²` operator norm. -/
-theorem norm_entry_le_l2_opNorm (A : Matrix m n 𝕜) (i : m) (j : n) :
-    ‖A i j‖ ≤ ‖A‖ := by
+theorem norm_entry_le_l2_opNorm (A : Matrix m n 𝕜) (i : m) (j : n) : ‖A i j‖ ≤ ‖A‖ := by
   let e : EuclideanSpace 𝕜 n := WithLp.toLp 2 (Pi.single j (1 : 𝕜))
   let y : EuclideanSpace 𝕜 m := (EuclideanSpace.equiv m 𝕜).symm (A *ᵥ e)
-  have hy_apply : y i = A i j := by
-    simp [y, e, mulVec_single]
-  have hy_le : ‖y i‖ ≤ ‖y‖ := PiLp.norm_apply_le y i
-  have he_norm : ‖e‖ ≤ 1 := by
-    simp [e]
-  calc ‖A i j‖ = ‖y i‖ := by rw [hy_apply]
-    _ ≤ ‖y‖ := hy_le
-    _ ≤ ‖A‖ * ‖e‖ := A.l2_opNorm_mulVec e
-    _ ≤ ‖A‖ * 1 := mul_le_mul_of_nonneg_left he_norm (norm_nonneg A)
-    _ = ‖A‖ := mul_one _
+  refine (by simp [y, e, mulVec_single] : ‖A i j‖ = ‖y i‖).trans_le <|
+    (PiLp.norm_apply_le y i).trans <| (A.l2_opNorm_mulVec e).trans ?_
+  simp [e]
 
 open scoped Matrix.Norms.L2Operator in
 /-- Removing the diagonal of a square matrix increases its `ℓ²` operator norm by at most a factor
