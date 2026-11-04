@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Binomial
 public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.RingTheory.Polynomial.Pochhammer
 -- Proof-only: modules over `ℚ` are torsion-free.
 import Mathlib.Algebra.Module.Torsion.Field
 
@@ -360,22 +361,7 @@ end Ring
 
 namespace Ring
 
-variable [Ring R]
-
-/-- The descending Pochhammer polynomial at a square-zero element keeps only its linear term:
-`ε (ε - 1) ⋯ (ε - n) = (-1) ^ n n! ε`. -/
-theorem descPochhammer_succ_smeval_of_sq_eq_zero {ε : R} (hε : ε ^ 2 = 0) (n : ℕ) :
-    (descPochhammer ℤ (n + 1)).smeval ε = ((-1) ^ n * n.factorial : ℤ) • ε := by
-  induction n with
-  | zero => simp [Polynomial.smeval_X]
-  | succ n ih =>
-    -- Multiplying by `ε - n` kills the square term and scales by `-n`.
-    rw [descPochhammer_succ_right, Polynomial.smeval_mul, ih]
-    simp [Polynomial.smeval_X, Polynomial.smeval_natCast, -zsmul_eq_mul, mul_sub, ← sq, hε,
-      Nat.factorial_succ, mul_add_one, -nsmul_eq_mul, ← nsmul_eq_mul' ε n]
-    module
-
-variable [BinomialRing R]
+variable [Ring R] [BinomialRing R]
 
 /-- **Binomial coefficients of a square-zero element.** If `ε ^ 2 = 0`, then
 `(n + 1) • (ε choose (n + 1)) = (-1) ^ n * ε`. Over a rational algebra this says that
