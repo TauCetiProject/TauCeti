@@ -47,6 +47,8 @@ The derivative of the defect at the identity is the Lie algebra cocycle
 with the cocycle identity, this shows that for a preconnected group acting by symplectomorphisms of
 a preconnected manifold, infinitesimal equivariance (vanishing of `c`) implies coadjoint
 equivariance (`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`).
+Conversely, with no connectedness assumption, the cocycle of a group-level moment map vanishes
+identically (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`).
 
 Shifting `μ` by a constant `ν ∈ 𝔤*` changes the defect by the coboundary `ν - Ad*_g ν`
 (`TauCeti.momentDefect_add_const`). Consequently, on a preconnected manifold the group-level moment
@@ -74,6 +76,8 @@ maps of an action are exactly the shifts of any one of them by coadjoint-invaria
   uniqueness of group-level moment maps up to coadjoint-invariant constants.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_momentDefect_one`: the derivative of the defect at
   the identity is the moment cocycle.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`: the cocycle of a
+  group-level moment map vanishes.
 * `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: for a
   preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
   cocycle vanishes at one point is coadjoint-equivariant.
@@ -385,6 +389,24 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
   simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply, map_zero, zero_apply]
 
 end IsMomentMap
+
+namespace IsEquivariantMomentMap
+
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+
+/-- **Group-level moment maps are infinitesimally equivariant.** The cocycle of a group-level
+moment map vanishes at every point: it is the derivative at the identity of the defect, which
+vanishes identically. -/
+theorem momentCocycle_eq_zero (h : σ.IsEquivariantMomentMap μ) (x : M) :
+    σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0 := by
+  refine momentCocycle_eq_zero_iff.2 fun ξ η ↦ sub_eq_zero.1 ?_
+  have hd := h.toIsMomentMap.mvfderiv_momentDefect_one x ξ η
+  rw [momentCocycle_apply, LinearEquiv.apply_symm_apply] at hd
+  have hθ : (fun g : G ↦ momentDefect μ g x ξ) = fun _ ↦ 0 := funext fun g ↦ by
+    rw [momentDefect_eq_zero_iff.2 (h.apply_smul g x), LinearMap.zero_apply]
+  rw [← hd, hθ, mvfderiv_const, zero_apply]
+
+end IsEquivariantMomentMap
 
 end SmoothTwoForm
 

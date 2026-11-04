@@ -76,6 +76,11 @@ space is nondegenerate. Closedness is a separate condition. -/
 def IsNondegenerate (form : SmoothTwoForm I M) : Prop :=
   ∀ x, (form.bilinFormAt x).Nondegenerate
 
+/-- A fiberwise nondegenerate smooth two-form is nondegenerate on each tangent space. -/
+theorem IsNondegenerate.nondegenerate_bilinFormAt (h : form.IsNondegenerate) (x : M) :
+    (form.bilinFormAt x).Nondegenerate :=
+  h x
+
 /-- Fiberwise nondegeneracy in terms of vectors annihilating every vector on the right. For an
 alternating form this one-sided condition implies the corresponding condition on the other side. -/
 lemma isNondegenerate_iff_separatingLeft :
