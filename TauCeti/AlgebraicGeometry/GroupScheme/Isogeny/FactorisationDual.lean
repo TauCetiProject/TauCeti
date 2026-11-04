@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.GroupScheme.Degree
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 import TauCeti.AlgebraicGeometry.GroupScheme.Cokernel
-import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
