@@ -29,6 +29,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
 * `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
+* `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
+  a.e. measurable function on a finite measure space;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -87,6 +89,7 @@ atomless standard-Borel space with the unit interval proved as Theorem A.7 in S.
 public section
 
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
+open scoped ENNReal
 
 namespace ProbabilityTheory
 
@@ -117,6 +120,16 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
+
+/-- A cdf composed with an a.e. measurable function belongs to every `Lᵖ` on a finite measure
+space, since its values lie in `[0, 1]`. -/
+theorem memLp_cdf_comp (ν : Measure ℝ) {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} (hf : AEMeasurable f μ) (p : ℝ≥0∞) :
+    MemLp (cdf ν ∘ f) p μ := by
+  refine MemLp.of_bound ((monotone_cdf ν).measurable.comp_aemeasurable hf).aestronglyMeasurable
+    1 (ae_of_all _ fun x => ?_)
+  rw [Function.comp_apply, Real.norm_of_nonneg (cdf_nonneg _ _)]
+  exact cdf_le_one _ _
 
 /-- The cdf of a measurable pushforward is the real mass of the preimage of the corresponding
 closed ray. -/
