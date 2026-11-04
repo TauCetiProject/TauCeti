@@ -58,7 +58,7 @@ def returnMap (f : ∀ i : Fin n, L i.castSucc →ₗ⁅R⁆ L i.succ)
 
 /-- If all arrows are bijective, the return map is bijective, so it defines a return
 Lie automorphism via `LieEquiv.ofBijective`. -/
-theorem bijective_returnMap (f : ∀ i : Fin n, L i.castSucc →ₗ⁅R⁆ L i.succ)
+theorem returnMap_bijective (f : ∀ i : Fin n, L i.castSucc →ₗ⁅R⁆ L i.succ)
     (g : L (Fin.last n) →ₗ⁅R⁆ L 0) (hf : ∀ i, Function.Bijective (f i))
     (hg : Function.Bijective g) : Function.Bijective (returnMap f g) := by
   have htransport (i : Fin (n + 1)) : Function.Bijective (transport f i) := by
@@ -92,7 +92,7 @@ theorem mem_fixedSubalgebra_shift_iff (f : ∀ i : Fin n, L i.castSucc →ₗ⁅
     x ∈ (shift f g).fixedSubalgebra ↔
       g (x (Fin.last n)) = x 0 ∧ ∀ i : Fin n, f i (x i.castSucc) = x i.succ := by
   rw [LieHom.mem_fixedSubalgebra, funext_iff, Fin.forall_fin_succ]
-  rfl
+  simp only [shift_apply_zero, shift_apply_succ]
 
 /-- Every coordinate of a fixed tuple is obtained by transport from its first coordinate. -/
 theorem apply_eq_transport (f : ∀ i : Fin n, L i.castSucc →ₗ⁅R⁆ L i.succ)
