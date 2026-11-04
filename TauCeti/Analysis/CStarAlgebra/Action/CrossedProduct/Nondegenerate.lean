@@ -16,8 +16,6 @@ dense in the full crossed product. More precisely, an increasing approximate uni
 satisfies `i_A(e) x → x` and `x i_A(e) → x` in norm for every `x`. Thus coefficient approximate
 units converge strictly to the identity multiplier, even for nonunital coefficients.
 
-The left convergence follows first on compact-support coefficients in the L¹ norm, then on
-the full completion using contractivity. The right convergence follows by taking adjoints.
 No faithful representation, separability, or global σ-finiteness is needed.
 
 ## References
