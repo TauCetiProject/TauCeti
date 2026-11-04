@@ -68,8 +68,11 @@ A complete resolution is spliced from syzygies and cosyzygies
 
 * M. Auslander, M. Bridger, *Stable module theory*, Mem. Amer. Math. Soc. 94 (1969),
   Proposition (3.8): condition (c) there, `M` reflexive with `Ext^i(M, R) = Ext^i(M*, R) = 0` for
-  `i > 0`, characterizes the modules of Gorenstein dimension zero, later called totally
-  reflexive.
+  `i > 0`, characterizes the modules of Gorenstein dimension zero.
+* L. L. Avramov, A. Martsinkovsky, *Absolute, relative, and Tate cohomology of modules of finite
+  Gorenstein dimension*, Proc. London Math. Soc. (3) 85 (2002), 393–440: §2, p. 398, for the
+  name "totally reflexive" over a left and right noetherian ring, and Theorem 3.1 with `g = 0`,
+  (i) ⇔ (iv), for the equivalence with having a complete resolution.
 -/
 
 public section
