@@ -47,10 +47,12 @@ domain point.
 The same structure in complex coordinates `z = s + i t ∈ ℂ`, for a structure `J(z, x)` and a
 one-form `X(z, x) : ℂ →L[ℝ] V` that need not come from a symplectic form, is
 `J' = TauCeti.Floer.graphStructure J X`, a continuous-linear-map-valued function on the Euclidean
-product `WithLp 2 (ℂ × V)` sending `(ξ, v)` to `(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. This
-is the form consumed by the local compactness theory of pseudoholomorphic curves. It squares to
-`-1` wherever `J` does (`TauCeti.Floer.graphStructure_graphStructure`), is as regular as `J` and
-`X` (`TauCeti.Floer.contDiffOn_graphStructure`), and `u` solves
+product `WithLp 2 (ℂ × V)` sending `(ξ, v)` to `(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. For
+Floer data `ω`, `J`, `K_s`, `K_t` it is `J_K` read in the complex coordinate `z = s + i t`
+(`TauCeti.Floer.graphStructure_toLp_eq_floerGraphAlmostComplex`). This is the form consumed by
+the local compactness theory of pseudoholomorphic curves. It squares to `-1` wherever `J` does
+(`TauCeti.Floer.graphStructure_graphStructure`), is as regular as `J` and `X`
+(`TauCeti.Floer.contDiffOn_graphStructure`), and `u` solves
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` at `y` exactly when its graph `U` solves
 `∂ₜU = J'(U) ∂ₛU` there (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`).
 
@@ -444,5 +446,27 @@ theorem fderiv_toLp_prodMk_I_eq_graphStructure_iff (hu : DifferentiableAt ℝ u 
   exact sub_eq_iff_eq_add.symm
 
 end EuclideanGraph
+
+section FloerData
+
+variable [FiniteDimensional ℝ V]
+
+/-- **Gromov's structure in Euclidean coordinates is `floerGraphAlmostComplex`.** Read Floer
+data `ω`, `J`, `K_s`, `K_t` on `ℝ × ℝ` in the complex coordinate `Complex.equivRealProd`, so that
+the Hamiltonian one-form becomes `X(z, x) ξ = (re ξ) X_{K_s} + (im ξ) X_{K_t}`. Then
+`graphStructure J X` is `TauCeti.SymplecticForm.floerGraphAlmostComplex` in these coordinates. -/
+theorem graphStructure_toLp_eq_floerGraphAlmostComplex (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ) (z ξ : ℂ) (x v : V) :
+    graphStructure
+        (fun q ↦ LinearMap.toContinuousLinearMap (J (equivRealProd q.1) q.2).toLinearMap)
+        (fun q ↦ ω.hamiltonianOneForm Ks Kt (equivRealProd q.1) q.2 ∘L
+          (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ))
+        (WithLp.toLp 2 (z, x)) (WithLp.toLp 2 (ξ, v)) =
+      WithLp.toLp 2 (equivRealProd.symm
+          (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).1,
+        (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).2) := by
+  simp [Complex.ext_iff]
+
+end FloerData
 
 end TauCeti.Floer

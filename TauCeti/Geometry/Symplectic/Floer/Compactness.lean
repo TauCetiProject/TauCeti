@@ -33,15 +33,16 @@ pseudoholomorphic curves: the graph `U y = (y, u y)` solves the autonomous equat
 
 `J'(z, x)(ξ, v) = (i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`
 
-on `ℂ × V` (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`). This is the structure
-`TauCeti.SymplecticForm.floerGraphAlmostComplex` of the graph construction, written there as a
+on `ℂ × V` (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`). It is written as a
 continuous-linear-map-valued function on the Euclidean product `WithLp 2 (ℂ × V)`
-(`TauCeti.Floer.graphStructure`). That is the form in which the local compactness theory of
-`TauCeti.Geometry.Symplectic.JHolomorphic.Energy` applies, which needs a `C²` structure on an
-inner product space: `J'² = -1` wherever `J² = -1`
+(`TauCeti.Floer.graphStructure`); for Floer data `ω`, `J`, `K_s`, `K_t` it is the structure
+`TauCeti.SymplecticForm.floerGraphAlmostComplex` of the graph construction read in complex
+coordinates (`TauCeti.Floer.graphStructure_toLp_eq_floerGraphAlmostComplex`). That is the form
+in which the local compactness theory of `TauCeti.Geometry.Symplectic.JHolomorphic.Energy`
+applies, which needs a `C²` structure on an inner product space: `J'² = -1` wherever `J² = -1`
 (`TauCeti.Floer.graphStructure_graphStructure`), and `J'` is as regular as `J` and `X`
 (`TauCeti.Floer.contDiffOn_graphStructure`). The graph has energy density
-`‖∂ₛU‖² = 1 + ‖∂ₛu‖²` (`TauCeti.norm_fderiv_toLp_graph_apply_sq`), so on a domain of finite area
+`‖∂ₛU‖² = 1 + ‖∂ₛu‖²` (`TauCeti.norm_fderiv_toLp_prodMk_apply_sq`), so on a domain of finite area
 bounded energy of `u` gives bounded energy of its graph. The small-energy estimate for the graph
 becomes a mean-value inequality for `u`
 (`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy`):
@@ -76,6 +77,58 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
+/-- The area of a disc in `ℂ`. -/
+private theorem measureReal_ball_eq {z : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ) :
+    volume.real (ball z ρ) = π * ρ ^ 2 := by
+  simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hρ, mul_comm]
+
+/-- The graph of `u` has energy density `‖∂ₛU‖² = 1 + ‖∂ₛu‖²`. -/
+private theorem norm_fderiv_graph_one_sq {u : ℂ → V} {y : ℂ} (hu : DifferentiableAt ℝ u y) :
+    ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 = 1 + ‖fderiv ℝ u y 1‖ ^ 2 := by
+  simpa using norm_fderiv_toLp_prodMk_apply_sq differentiableAt_fun_id hu 1
+
+/-- On a set of finite area, the energy of the graph of `u` is the area plus the energy of `u`. -/
+private theorem setIntegral_norm_fderiv_graph_one_sq {u : ℂ → V} {S : Set ℂ}
+    (hS : MeasurableSet S) (hSv : volume S ≠ ⊤) (hu : ∀ y ∈ S, DifferentiableAt ℝ u y)
+    (hint : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) S) :
+    ∫ y in S, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
+      volume.real S + ∫ y in S, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  rw [setIntegral_congr_fun hS fun y hy ↦ norm_fderiv_graph_one_sq (hu y hy),
+    integral_add (integrableOn_const hSv) hint, setIntegral_const, smul_eq_mul, mul_one]
+
+/-- If energy at least `δ` of the graphs eventually concentrates in every disc about `z`, then
+energy at least `δ / 2` of the maps themselves eventually concentrates in every disc about `z`:
+on a disc of area at most `δ / 2`, the area carries the rest of the graph energy. -/
+private theorem eventually_half_le_setIntegral_of_graph {ι : Type*} {l : Filter ι}
+    {u : ι → ℂ → V} {Ω : Set ℂ} {z : ℂ} {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε)
+    (hΩ : MeasurableSet Ω) (hvol : volume Ω ≠ ⊤) (hdiff : ∀ i, ∀ y ∈ Ω, DifferentiableAt ℝ (u i) y)
+    (hint : ∀ i, IntegrableOn (fun y ↦ ‖fderiv ℝ (u i) y 1‖ ^ 2) Ω)
+    (hconc : ∀ ρ > 0, ∀ᶠ i in l,
+      δ ≤ ∫ y in ball z ρ ∩ Ω, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u i w)) y 1‖ ^ 2) :
+    ∀ᶠ i in l, δ / 2 ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u i) y 1‖ ^ 2 := by
+  set ρ := min ε (Real.sqrt (δ / (2 * π)))
+  have hρ : 0 < ρ := lt_min hε (Real.sqrt_pos.2 (by positivity))
+  have hρvol : volume.real (ball z ρ ∩ Ω) ≤ δ / 2 := by
+    calc volume.real (ball z ρ ∩ Ω) ≤ volume.real (ball z ρ) :=
+          measureReal_mono inter_subset_left measure_ball_lt_top.ne
+      _ = π * ρ ^ 2 := measureReal_ball_eq hρ.le
+      _ ≤ π * Real.sqrt (δ / (2 * π)) ^ 2 := by
+          gcongr
+          exact min_le_right _ _
+      _ = δ / 2 := by
+          rw [Real.sq_sqrt (by positivity)]
+          field_simp
+  have hmeas : MeasurableSet (ball z ρ ∩ Ω) := measurableSet_ball.inter hΩ
+  filter_upwards [hconc ρ hρ] with i hi
+  rw [setIntegral_norm_fderiv_graph_one_sq hmeas
+    ((measure_mono inter_subset_right).trans_lt hvol.lt_top).ne (fun y hy ↦ hdiff i y hy.2)
+    ((hint i).mono_set inter_subset_right)] at hi
+  calc δ / 2 ≤ ∫ y in ball z ρ ∩ Ω, ‖fderiv ℝ (u i) y 1‖ ^ 2 := by linarith
+    _ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u i) y 1‖ ^ 2 :=
+      setIntegral_mono_set ((hint i).mono_set inter_subset_right)
+        (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ) fun _ _ ↦ sq_nonneg _)
+        (inter_subset_inter_left _ (ball_subset_ball (min_le_left _ _))).eventuallyLE
+
 /-- **The mean-value inequality for Floer solutions.** Let `J` and `X` be `C²` on an open set
 `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with `J(z, x)² = -1` on `D × K`.
 There is a threshold `δ > 0` with the following property. Let `u` be `C³` on an open disc
@@ -108,25 +161,17 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
   have hint : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z₀ r) :=
     (hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r)
       |>.mono_set ball_subset_closedBall
-  have hgen : ∀ y ∈ ball z₀ r, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
-      1 + ‖fderiv ℝ u y 1‖ ^ 2 := fun y hy ↦ by
-    simpa using norm_fderiv_toLp_graph_apply_sq (hdiff y hy) 1
   -- The graph need not be differentiable on the boundary circle, so apply the estimate for the
   -- graph on every smaller disc `B_ρ(z₀)`, `ρ < r`, and let `ρ` tend to `r`.
   have hsmall : ∀ ρ, 0 ≤ ρ → ρ < r → π * ρ ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤
       7 * π * r ^ 2 + 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
     intro ρ hρ hρr
     have hsub : closedBall z₀ ρ ⊆ ball z₀ r := closedBall_subset_ball hρr
-    have hvol : volume.real (ball z₀ ρ) = π * ρ ^ 2 := by
-      simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hρ, mul_comm]
+    have hsub' : ball z₀ ρ ⊆ ball z₀ r := ball_subset_closedBall.trans hsub
     -- The energy of the graph on `B_ρ(z₀)` is its area `π ρ²` plus the energy of `u`.
-    have hgE : ∫ y in ball z₀ ρ, ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1‖ ^ 2 =
-        π * ρ ^ 2 + ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 := by
-      rw [setIntegral_congr_fun measurableSet_ball
-          fun y hy ↦ hgen y (hsub (ball_subset_closedBall hy)),
-        integral_add (integrableOn_const measure_ball_lt_top.ne)
-          (hint.mono_set (ball_subset_closedBall.trans hsub)), setIntegral_const,
-        smul_eq_mul, mul_one, hvol]
+    have hgE := setIntegral_norm_fderiv_graph_one_sq measurableSet_ball measure_ball_lt_top.ne
+      (fun y hy ↦ hdiff y (hsub' hy)) (hint.mono_set hsub')
+    rw [measureReal_ball_eq hρ] at hgE
     have hmono : ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤
         ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
       setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball
@@ -139,12 +184,11 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
         ((continuousOn_const (c := (1 : ℂ))).prodMk
           (hu'.mono (hsub.trans ball_subset_closedBall)))).congr fun y hy ↦ by
           simp [fderiv_toLp_prodMk_apply differentiableAt_fun_id (hdiff y (hsub hy))])
-      (fun y hy ↦ (fderiv_toLp_prodMk_I_eq_graphStructure_iff
-        (hdiff y (hsub (ball_subset_closedBall hy)))).2 (hCR y (hsub (ball_subset_closedBall hy))))
-      (fun y hy ↦ ⟨hrD (hsub (ball_subset_closedBall hy)),
-        huK y (hsub (ball_subset_closedBall hy))⟩)
+      (fun y hy ↦ (fderiv_toLp_prodMk_I_eq_graphStructure_iff (hdiff y (hsub' hy))).2
+        (hCR y (hsub' hy)))
+      (fun y hy ↦ ⟨hrD (hsub' hy), huK y (hsub' hy)⟩)
       (by rw [hgE]; linarith)
-    rw [hgE, hgen z₀ (mem_ball_self (hρ.trans_lt hρr))] at h
+    rw [hgE, norm_fderiv_graph_one_sq (hdiff z₀ (mem_ball_self (hρ.trans_lt hρr)))] at h
     linarith
   rcases hr.eq_or_lt with rfl | hr
   · simp
@@ -193,57 +237,29 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
   have hdiff : ∀ k, ∀ y ∈ Ω, DifferentiableAt ℝ (u k) y := fun k y hy ↦
     ((hu k).differentiableOn (by norm_num)).differentiableAt (hΩ.mem_nhds hy)
   have hvol : volume Ω < ⊤ := (measure_mono hΩD).trans_lt hD.measure_lt_top
-  have hgen : ∀ k, ∀ y ∈ Ω, ‖fderiv ℝ (g k) y 1‖ ^ 2 = 1 + ‖fderiv ℝ (u k) y 1‖ ^ 2 :=
-    fun k y hy ↦ by simpa using norm_fderiv_toLp_graph_apply_sq (hdiff k y hy) 1
   have hgint : ∀ k, IntegrableOn (fun y ↦ ‖fderiv ℝ (g k) y 1‖ ^ 2) Ω := fun k ↦
-    ((integrableOn_const hvol.ne).add (hint k)).congr_fun (fun y hy ↦ (hgen k y hy).symm)
-      hΩ.measurableSet
-  have hgE : ∀ k, ∫ y in Ω, ‖fderiv ℝ (g k) y 1‖ ^ 2 ≤ volume.real Ω + E := fun k ↦ by
-    rw [setIntegral_congr_fun hΩ.measurableSet (hgen k), integral_add
-      (integrableOn_const hvol.ne) (hint k), setIntegral_const, smul_eq_mul, mul_one]
-    linarith [hE k]
+    ((integrableOn_const hvol.ne).add (hint k)).congr_fun
+      (fun y hy ↦ (norm_fderiv_graph_one_sq (hdiff k y hy)).symm) hΩ.measurableSet
+  have hgE : ∀ k, ∫ y in Ω, ‖fderiv ℝ (g k) y 1‖ ^ 2 ≤ volume.real Ω + E := fun k ↦
+    (setIntegral_norm_fderiv_graph_one_sq hΩ.measurableSet hvol.ne (hdiff k) (hint k)).trans_le
+      (by linarith [hE k])
   obtain ⟨φ, Z, w, hφ, hZΩ, -, hconc, hbd, hwcont, hwK, hlim⟩ := hconv hΩ
     (u := g) (fun k ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_id.prodMk (hu k)))
     (fun k y hy ↦ (fderiv_toLp_prodMk_I_eq_graphStructure_iff (hdiff k y hy)).2 (hCR k y hy))
     (fun k y hy ↦ ⟨hΩD hy, huK k hy⟩) hgint hgE
-  -- Energy at least `δ` of the graphs concentrates at `Z`; on discs of area at most `δ / 2`, at
-  -- least `δ / 2` of it is energy of the maps.
+  -- Energy at least `δ` of the graphs concentrates at `Z`, so energy at least `δ / 2` of the
+  -- maps does.
   have hconc' : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
-      δ / 2 ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2 := by
-    intro z hz ε hε
-    set ρ := min ε (Real.sqrt (δ / (2 * Real.pi)))
-    have hρ : 0 < ρ := lt_min hε (Real.sqrt_pos.2 (by positivity))
-    have hρvol : volume.real (ball z ρ ∩ Ω) ≤ δ / 2 := by
-      calc volume.real (ball z ρ ∩ Ω) ≤ volume.real (ball z ρ) :=
-            measureReal_mono inter_subset_left measure_ball_lt_top.ne
-        _ = ρ ^ 2 * Real.pi := by
-            simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hρ.le]
-        _ ≤ Real.sqrt (δ / (2 * Real.pi)) ^ 2 * Real.pi := by
-            gcongr
-            exact min_le_right _ _
-        _ = δ / 2 := by
-            rw [Real.sq_sqrt (by positivity)]
-            field_simp
-    filter_upwards [hconc z hz ρ hρ] with n hn
-    have hsub : ball z ρ ∩ Ω ⊆ Ω := inter_subset_right
-    have hmeas : MeasurableSet (ball z ρ ∩ Ω) := measurableSet_ball.inter hΩ.measurableSet
-    have hvolρ : volume (ball z ρ ∩ Ω) < ⊤ := (measure_mono hsub).trans_lt hvol
-    rw [setIntegral_congr_fun hmeas fun y hy ↦ hgen (φ n) y hy.2, integral_add
-      (integrableOn_const hvolρ.ne) ((hint (φ n)).mono_set hsub), setIntegral_const,
-      smul_eq_mul, mul_one] at hn
-    calc δ / 2 ≤ ∫ y in ball z ρ ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2 := by linarith
-      _ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2 :=
-        setIntegral_mono_set ((hint (φ n)).mono_set inter_subset_right)
-          (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ.measurableSet)
-            fun _ _ ↦ sq_nonneg _)
-          (inter_subset_inter_left _ (ball_subset_ball (min_le_left _ _))).eventuallyLE
+      δ / 2 ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2 := fun z hz ε hε ↦
+    eventually_half_le_setIntegral_of_graph hδ hε hΩ.measurableSet hvol.ne
+      (fun n ↦ hdiff (φ n)) (fun n ↦ hint (φ n)) (hconc z hz)
   refine ⟨φ, Z, fun z ↦ (w z).snd, hφ, hZΩ,
     card_mul_le_of_forall_eventually_le_setIntegral_ball (l := atTop) hΩ.measurableSet
       (fun _ _ _ ↦ sq_nonneg _) (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hconc', hconc', ?_,
     (WithLp.sndL 2 ℝ ℂ V).continuous.comp_continuousOn hwcont, fun z hz ↦ (hwK hz).2, ?_⟩
   · intro C hC hCZ
     obtain ⟨M, hM⟩ := hbd C hC hCZ
-    exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_graph
+    exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_prodMk_right differentiableAt_fun_id
       (hdiff (φ n) y (hCZ hy).1)).trans (hM n y hy)⟩
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ ℂ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hlim
