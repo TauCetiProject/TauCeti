@@ -213,27 +213,14 @@ theorem not_hasEigenvalue_fderiv_hamiltonianVectorField_effectivePotential
         (centralForceHamiltonian m (effectivePotential m ℓ U))) (r₀, p_r) :
           Module.End ℝ (ℝ × ℝ)) μ := by
   intro hμ
-  obtain ⟨⟨x, y⟩, hv⟩ := hμ.exists_hasEigenvector
-  have hm : m ≠ 0 := by rintro rfl; simp at ham
-  have h := hv.apply_eq_smul
-  rw [ContinuousLinearMap.coe_coe,
-    (hasFDerivAt_hamiltonianVectorField_effectivePotential
-      hr₀ hU ha p_r).fderiv] at h
-  simp only [ContinuousLinearMap.prod_apply, FunLike.coe_smul, Pi.smul_apply,
-    ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst', smul_eq_mul, neg_apply,
-    Prod.smul_mk, Prod.mk.injEq] at h
-  -- The components give `x (a / m + μ²) = 0`, and `a / m + μ² > 0`.
-  have hx : x * (a / m + μ ^ 2) = 0 := by
-    linear_combination (-μ) * h.1 + (-1 / m) * h.2
-  have hx0 : x = 0 := by
-    rcases mul_eq_zero.1 hx with hx | hx
-    · exact hx
-    · nlinarith [sq_nonneg μ]
-  have hy0 : y = 0 := by
-    have := h.1
-    rw [hx0, mul_zero, mul_eq_zero] at this
-    exact this.resolve_left (inv_ne_zero hm)
-  exact hv.2 (by simp [hx0, hy0])
+  obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
+  -- Applying the square identity `A² = -(a / m)` to an eigenvector gives `μ² = -(a / m)`.
+  have h := hv.pow_apply 2
+  rw [sq, Module.End.mul_eq_comp, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    ← ContinuousLinearMap.comp_apply,
+    fderiv_hamiltonianVectorField_effectivePotential_comp_self hr₀ hU ha p_r] at h
+  have hμ2 : -(a / m) = μ ^ 2 := smul_left_injective ℝ hv.2 (by simpa using h)
+  nlinarith [sq_nonneg μ]
 
 /-- **Circular orbits at a nondegenerate maximum are hyperbolic.** If `U_ℓ''(r₀) / m < 0`, the
 linearization of the reduced Hamiltonian vector field at `(r₀, p_r)` has the real eigenvalue
