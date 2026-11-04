@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Comass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
+public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
 # Mass of the Kähler bivector

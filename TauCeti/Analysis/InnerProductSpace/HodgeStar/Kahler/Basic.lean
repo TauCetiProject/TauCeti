@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
-public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
