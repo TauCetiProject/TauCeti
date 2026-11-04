@@ -38,6 +38,9 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.toAlmost`: the localization functor `M ↦ M^a`.
 * `TauCeti.Almost.Module.lift`: the factorisation through `toAlmost S` of an exact functor killing
   almost zero modules.
+* `TauCeti.Almost.Module.firmEquiv`: the equivalence between almost modules and firm modules
+  (Bhatt's model), with `TauCeti.Almost.Module.toAlmostCompFirmEquivIso` identifying
+  almostification with `M ↦ m~ ⊗[V] M`.
 * `TauCeti.Almost.Module.classicalEquiv`: for the classical setup, `ModuleCat V ≌ Module S`.
 
 ## Main results
@@ -55,7 +58,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.2, (2.2.2).
 * P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4, Definition 4.3.
-* B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1, Proposition 4.1.7.
+* B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1, Construction 4.1.5 and
+  Proposition 4.1.7.
 -/
 
 public section
@@ -185,6 +189,17 @@ noncomputable def liftUniq (G : Module S ⥤ D) (e : toAlmost S ⋙ G ≅ F) : G
   Localization.liftNatIso (toAlmost S) S.almostZero.isoModSerre F F G _ (Iso.refl F)
 
 end lift
+
+/-! ### The firm model -/
+
+/-- The equivalence between almost `V`-modules and firm `V`-modules (Bhatt, Construction 4.1.5):
+both are localizations of `ModuleCat V` at the almost isomorphisms. -/
+noncomputable def firmEquiv : Module S ≌ S.Firm :=
+  Localization.uniq (toAlmost S) S.firm S.almostZero.isoModSerre
+
+/-- Under `firmEquiv`, almostification becomes the functor `M ↦ m~ ⊗[V] M` to firm modules. -/
+noncomputable def toAlmostCompFirmEquivIso : toAlmost S ⋙ (firmEquiv S).functor ≅ S.firm :=
+  Localization.compUniqFunctor (toAlmost S) S.firm S.almostZero.isoModSerre
 
 /-! ### The classical setup -/
 

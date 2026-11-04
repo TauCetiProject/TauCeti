@@ -34,7 +34,6 @@ elements become `N ↦ Hom_V(m~, N)` and `M_!` becomes the inclusion of firm mod
 
 ## Main definitions
 
-* `TauCeti.Almost.Module.firmEquiv`: the equivalence between almost modules and firm modules.
 * `TauCeti.Almost.Module.elements`: the functor of almost elements `M ↦ M_* = Hom(V^a, M)`.
 * `TauCeti.Almost.Module.shriek`: the functor `M ↦ M_! = m~ ⊗[V] M_*`.
 
@@ -74,15 +73,6 @@ namespace TauCeti.Almost.Module
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
 /-! ### The firm model -/
-
-/-- The equivalence between almost `V`-modules and firm `V`-modules (Bhatt, Construction 4.1.5):
-both are localizations of `ModuleCat V` at the almost isomorphisms. -/
-noncomputable def firmEquiv : Module S ≌ S.Firm :=
-  Localization.uniq (toAlmost S) S.firm S.almostZero.isoModSerre
-
-/-- Under `firmEquiv`, almostification becomes the functor `M ↦ m~ ⊗[V] M` to firm modules. -/
-noncomputable def toAlmostCompFirmEquivIso : toAlmost S ⋙ (firmEquiv S).functor ≅ S.firm :=
-  Localization.compUniqFunctor (toAlmost S) S.firm S.almostZero.isoModSerre
 
 /-- Almostification, written through the firm model. -/
 private noncomputable def firmCompInverseIso : S.firm ⋙ (firmEquiv S).inverse ≅ toAlmost S :=
@@ -211,13 +201,7 @@ noncomputable instance : Reflective (elements S) where
 theorem isAlmostIso_adjElements_unit_app (N : ModuleCat.{u} V) :
     S.IsAlmostIso ((adjElements S).unit.app N).hom := by
   rw [← isIso_toAlmost_map_iff]
-  -- The almostification of the unit is a section of the counit at `N^a`, an isomorphism.
-  have h := (adjElements S).left_triangle_components N
-  have : IsIso ((toAlmost S).map ((adjElements S).unit.app N) ≫
-      (adjElements S).counit.app ((toAlmost S).obj N)) := by
-    rw [h]
-    exact IsIso.id _
-  exact IsIso.of_isIso_comp_right _ ((adjElements S).counit.app ((toAlmost S).obj N))
+  infer_instance
 
 /-! ### The left adjoint `M ↦ M_!` -/
 
@@ -229,6 +213,12 @@ almostification. -/
 @[simp]
 theorem shriek_obj (M : Module S) :
     (shriek S).obj M = ModuleCat.of V (S.tilde ⊗[V] ((elements S).obj M)) :=
+  (rfl)
+
+@[simp]
+theorem shriek_map_hom_tmul {M N : Module S} (f : M ⟶ N) (t : S.tilde)
+    (x : (toAlmost S).obj (ModuleCat.of V V) ⟶ M) :
+    ((shriek S).map f).hom (t ⊗ₜ[V] x) = t ⊗ₜ[V] (x ≫ f) :=
   (rfl)
 
 /-- The left adjoint of almostification in the firm model, the inclusion of firm modules. -/
@@ -280,13 +270,7 @@ noncomputable def toAlmostCompShriekIso :
 theorem isAlmostIso_adjShriek_counit_app (N : ModuleCat.{u} V) :
     S.IsAlmostIso ((adjShriek S).counit.app N).hom := by
   rw [← isIso_toAlmost_map_iff]
-  -- The almostification of the counit is a retraction of the unit at `N^a`, an isomorphism.
-  have h := (adjShriek S).right_triangle_components N
-  have : IsIso ((adjShriek S).unit.app ((toAlmost S).obj N) ≫
-      (toAlmost S).map ((adjShriek S).counit.app N)) := by
-    rw [h]
-    exact IsIso.id _
-  exact IsIso.of_isIso_comp_left ((adjShriek S).unit.app ((toAlmost S).obj N)) _
+  infer_instance
 
 /-- The functor `M ↦ M_!` is left exact, because `m~` is flat; being a left adjoint, it is
 therefore exact. -/
