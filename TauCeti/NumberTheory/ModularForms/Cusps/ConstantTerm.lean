@@ -229,7 +229,15 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
       Γγ :=
     Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.mem_normalizer_iff.mpr fun x ↦ by simp)
   simp only [qExpansionAt_apply, coe_translate, hneg, SlashAction.slash_mul,
-    ModularForm.slash_neg_one, _root_.mul_inv_rev, map_mul, mul_smul, hΓ]
+    ModularForm.slash_neg_one]
+  have hΓneg : ConjAct.toConjAct (mapGL ℝ γ * (-1))⁻¹ • Γ = Γγ := by
+    rw [_root_.mul_inv_rev, ConjAct.toConjAct_mul, mul_smul]
+    exact hΓ
+  rw [hΓneg]
+  -- The translate wrapper coerces to this slash action. Expose it so the public
+  -- `qExpansion_smul` lemma applies without unfolding the cusp-function construction.
+  change qExpansion Γγ.strictWidthInfty
+    ((-1 : ℂ) ^ k • (⇑f ∣[k] mapGL ℝ γ)) = _
   exact qExpansion_smul (ModularFormClass.analyticAt_cuspFunction_zero
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
@@ -487,7 +495,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
     exact this
   have hentry (g : SL(2, ℤ)) (j : Fin 2) : (g⁻¹ * γ₁ : SL(2, ℤ)) 1 j =
       (g⁻¹ : SL(2, ℤ)) 1 0 * γ₁ 0 j + (g⁻¹ : SL(2, ℤ)) 1 1 * γ₁ 1 j := by
-    simp only [Matrix.SpecialLinearGroup.coe_mul, mul_apply, Fin.sum_univ_two]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   have hm1 (j : Fin 2) : ((m 1 j : ℤ) : ZMod N) = (((1 : SL(2, ℤ)) 1 j : ℤ) : ZMod N) := by
     rw [← inv_mul_cancel γ₁, hm, hentry, hentry]
     push_cast
@@ -500,7 +508,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
     simpa using hdet
   have hg : m * ModularGroup.T ^ (-m 0 1) ∈ Γ(N) := by
     rw [Gamma_mem]
-    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, mul_apply,
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, Matrix.mul_apply,
       Fin.sum_univ_two]
     simp [h00, h10, h11]
   have hγ : γ₁ = (γ₂ * (m * ModularGroup.T ^ (-m 0 1)) * γ₂⁻¹) * γ₂ *

@@ -75,7 +75,7 @@ theorem binaryFormAction_smul (hw : Even w) (g : SL(2, ℤ))
     rw [TraceFormulaMatrixModule.smul_mk, binaryFormAction_mk, binaryFormAction_mk]
     apply LinearMap.ext
     intro P
-    simpa only [FixedDetMatrices.smul_coe, Module.End.mul_apply] using
+    simpa only [FixedDetMatrices.smul_coe, mul_apply_eq_comp] using
       binaryFormRep_op_mul_apply (g : Matrix (Fin 2) (Fin 2) ℤ) A.1 P
 
 /-- Right multiplication of a determinant matrix postcomposes its substitution action. -/
@@ -90,7 +90,7 @@ theorem binaryFormAction_op_smul (hw : Even w) (g : SL(2, ℤ))
     rw [TraceFormulaMatrixModule.op_smul_mk, binaryFormAction_mk, binaryFormAction_mk]
     apply LinearMap.ext
     intro P
-    simpa only [val_traceFormulaMatrixRight, inv_inv, Module.End.mul_apply] using
+    simpa only [val_traceFormulaMatrixRight, inv_inv, mul_apply_eq_comp] using
       binaryFormRep_op_mul_apply A.1 (g : Matrix (Fin 2) (Fin 2) ℤ) P
 
 /-- The free matrix action turns left multiplication in the matrix module into

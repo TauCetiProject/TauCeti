@@ -74,6 +74,6 @@ theorem span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one {K V : Type*} [Divis
       (Submodule.mem_bot _).mp (hspan ▸ Submodule.mem_top)
     let _ : Subsingleton V := ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
     exact Nat.one_ne_zero (hfin.symm.trans Module.finrank_zero_of_subsingleton)
-  · exact fun hv ↦ (finrank_eq_one_iff_of_nonzero v hv).mp hfin
+  · exact fun hv ↦ (_root_.finrank_eq_one_iff_of_ne_zero v hv).mp hfin
 
 end TauCeti

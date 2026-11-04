@@ -197,14 +197,14 @@ noncomputable def eval : AnalyticStage p h E →L[S] C(ℤ_[p], E) :=
       map_add' c d := by
         ext x
         simp only [ContinuousMap.comp_apply, ContinuousMap.add_apply,
-          ZeroAtInftyContinuousMap.coe_add, Pi.add_apply, smul_add,
+          FunLike.coe_add, Pi.add_apply, smul_add,
           (hasSum_discSeries_apply _ _).tsum_eq.symm]
         exact (hasSum_discSeries_apply c _).summable.tsum_add
           (hasSum_discSeries_apply d _).summable
       map_smul' s c := by
         ext x
         simp only [ContinuousMap.comp_apply, ContinuousMap.smul_apply, RingHom.id_apply,
-          ZeroAtInftyContinuousMap.coe_smul, Pi.smul_apply,
+          FunLike.coe_smul, Pi.smul_apply,
           (hasSum_discSeries_apply _ _).tsum_eq.symm, smul_comm _ s]
         exact (hasSum_discSeries_apply c _).summable.tsum_const_smul s }
   { L with
@@ -303,9 +303,9 @@ theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
   apply (injective_iff_map_eq_zero (eval S)).mpr
   intro c hc
   ext ⟨a, n⟩
-  rw [ZeroAtInftyContinuousMap.zero_apply]
+  rw [_root_.zero_apply]
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     apply norm_eq_zero.mp
     apply le_antisymm ?_ (norm_nonneg _)
     have hlim : Tendsto (fun m : ℕ ↦ ‖(p : ℤ_[p])‖ ^ m * ‖c‖) atTop (𝓝 0) := by
@@ -377,13 +377,13 @@ noncomputable def transition : AnalyticStage p h E →L[S] AnalyticStage p (h + 
       map_add' c d := by
         ext i
         simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, transitionCoeff,
-          ZeroAtInftyContinuousMap.coe_add, Pi.add_apply, smul_add]
+          FunLike.coe_add, Pi.add_apply, smul_add]
         exact (summable_transitionScalar_smul c _ _ _).tsum_add
           (summable_transitionScalar_smul d _ _ _)
       map_smul' s c := by
         ext i
         simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, transitionCoeff,
-          ZeroAtInftyContinuousMap.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
+          FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
         exact (summable_transitionScalar_smul c _ _ _).tsum_const_smul s }
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by

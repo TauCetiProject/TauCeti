@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cohomology
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Contraction
 
 /-!
 # Cup products of classes of contracted complexes
@@ -46,6 +47,8 @@ carry an invariant cocycle to cohomologous cocycles
   augmented element is an Alexander–Whitney product.
 * `TopRep.ResolutionContraction.cohomologyClass_pairing`: the class of a product of invariant
   cocycles is the cup product of their classes.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_pairing`: the same for a pairing of graded
+  representations written on their total modules, such as tensor-induced total resolutions.
 
 ## References
 
@@ -218,6 +221,98 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
   · exact e₂.symm
 
 end Pairing
+
+section GradedPairing
+
+variable [CommRing k] [TopologicalSpace k] {X Y Z : TopRep.{max v w} k G}
+  {M₁ M₂ M₃ : TopRep.{max v w} k G}
+  {ℳ₁ : ℤ → Submodule k M₁.V} {hρ₁ : ∀ n g x, x ∈ ℳ₁ n → M₁.ρ g x ∈ ℳ₁ n} {d₁ : M₁ ⟶ M₁}
+  {hd₁ : TauCeti.LinearMap.IsHomogeneous d₁.hom.toLinearMap ℳ₁ ℳ₁ 1} {hdd₁ : d₁ ≫ d₁ = 0}
+  {ℳ₂ : ℤ → Submodule k M₂.V} {hρ₂ : ∀ n g x, x ∈ ℳ₂ n → M₂.ρ g x ∈ ℳ₂ n} {d₂ : M₂ ⟶ M₂}
+  {hd₂ : TauCeti.LinearMap.IsHomogeneous d₂.hom.toLinearMap ℳ₂ ℳ₂ 1} {hdd₂ : d₂ ≫ d₂ = 0}
+  {ℳ₃ : ℤ → Submodule k M₃.V} {hρ₃ : ∀ n g x, x ∈ ℳ₃ n → M₃.ρ g x ∈ ℳ₃ n} {d₃ : M₃ ⟶ M₃}
+  {hd₃ : TauCeti.LinearMap.IsHomogeneous d₃.hom.toLinearMap ℳ₃ ℳ₃ 1} {hdd₃ : d₃ ≫ d₃ = 0}
+  (c₁ : ResolutionContraction X (M₁.gradedCochainComplex ℳ₁ hρ₁ d₁ hd₁ hdd₁))
+  (c₂ : ResolutionContraction Y (M₂.gradedCochainComplex ℳ₂ hρ₂ d₂ hd₂ hdd₂))
+  (c₃ : ResolutionContraction Z (M₃.gradedCochainComplex ℳ₃ hρ₃ d₃ hd₃ hdd₃))
+  (P : TauCeti.TopPairing X Y Z) (μ : M₁.V →ₗ[k] M₂.V →ₗ[k] M₃.V)
+
+/-- **The class of a product of homogeneous cocycles is the cup product of their classes.** Let
+`μ` be an equivariant bilinear pairing of graded representations whose complexes are contracted
+onto `X`, `Y` and `Z`. Suppose that `μ` adds degrees, is continuous in its first argument, and
+satisfies `d (a · b) = d a · b` whenever `d b = 0`, and that multiplying on the left by an
+augmented element `ι x` commutes with the contractions, lying over the coefficient pairing `P`.
+Then for homogeneous cocycles `a` and `b` fixed by `G`, the class of `a · b` is `[a] ⌣ [b]`. This
+is `TopRep.ResolutionContraction.cohomologyClass_pairing` for products written on total
+modules. -/
+theorem gradedCohomologyClass_pairing [LocallyCompactSpace G]
+    (hμ : ∀ {p q : ℤ} {a : M₁.V} {b : M₂.V}, a ∈ ℳ₁ p → b ∈ ℳ₂ q → μ a b ∈ ℳ₃ (p + q))
+    (hρ : ∀ g a b, μ (M₁.ρ g a) (M₂.ρ g b) = M₃.ρ g (μ a b))
+    (hcont : ∀ b, Continuous fun a ↦ μ a b)
+    (hd : ∀ a b, d₂.hom b = 0 → d₃.hom (μ a b) = μ (d₁.hom a) b)
+    (hproj : ∀ (x : X.V) (w : M₂.V) (hw : w ∈ ℳ₂ (0 : ℕ))
+      (hxw : μ (c₁.ι.hom x).1 w ∈ ℳ₃ (0 : ℕ)),
+      c₃.proj ⟨μ (c₁.ι.hom x).1 w, hxw⟩ = P.bil x (c₂.proj ⟨w, hw⟩))
+    (hhom : ∀ (q : ℕ) (x : X.V) (w : M₂.V) (hw : w ∈ ℳ₂ (q + 1 : ℕ))
+      (hxw : μ (c₁.ι.hom x).1 w ∈ ℳ₃ (q + 1 : ℕ)),
+      (c₃.hom q ⟨μ (c₁.ι.hom x).1 w, hxw⟩).1 = μ (c₁.ι.hom x).1 (c₂.hom q ⟨w, hw⟩).1)
+    {p q : ℕ} {a : M₁.V} (ha : a ∈ ℳ₁ p) (hainv : ∀ g, M₁.ρ g a = a) (hda : d₁.hom a = 0)
+    {b : M₂.V} (hb : b ∈ ℳ₂ q) (hbinv : ∀ g, M₂.ρ g b = b) (hdb : d₂.hom b = 0) :
+    c₃.gradedCohomologyClass (μ a b) (by exact_mod_cast hμ ha hb)
+        (fun g ↦ by rw [← hρ, hainv, hbinv]) (by rw [hd a b hdb, hda, LinearMap.map_zero₂]) =
+      P.cup p q (c₁.gradedCohomologyClass a ha hainv hda)
+        (c₂.gradedCohomologyClass b hb hbinv hdb) := by
+  have hμ' {p q : ℕ} {a : M₁.V} {b : M₂.V} (ha : a ∈ ℳ₁ p) (hb : b ∈ ℳ₂ q) :
+      μ a b ∈ ℳ₃ (p + q : ℕ) := by
+    exact_mod_cast hμ ha hb
+  -- `μ` restricted to the terms of the complexes
+  let μ' (p q : ℕ) : ((M₁.gradedCochainComplex ℳ₁ hρ₁ d₁ hd₁ hdd₁).X p).V →ₗ[k]
+      ((M₂.gradedCochainComplex ℳ₂ hρ₂ d₂ hd₂ hdd₂).X q).V →ₗ[k]
+        ((M₃.gradedCochainComplex ℳ₃ hρ₃ d₃ hd₃ hdd₃).X (p + q)).V :=
+    LinearMap.mk₂ k (fun a b ↦ ⟨μ a.1 b.1, hμ' a.2 b.2⟩)
+      (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ μ a.1 a'.1 b.1))
+      (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ μ r a.1 b.1))
+      (fun a b b' ↦ Subtype.ext (map_add (μ a.1) b.1 b'.1))
+      (fun r a b ↦ Subtype.ext (map_smul (μ a.1) r b.1))
+  have hμ'v (p q : ℕ) a b : (μ' p q a b).1 = μ a.1 b.1 := (rfl)
+  -- the differential of `gradedCochainComplex` into any degree `j = i + 1` is `d`
+  have hdv {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
+      {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
+      {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+      (i j : ℕ) (hij : i + 1 = j) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X i).V) :
+      (((M.gradedCochainComplex ℳ hρ d hd hdd).d i j).hom v).1 = d.hom v.1 := by
+    subst hij
+    exact gradedCochainComplex_d_apply M ℳ hρ d hd hdd i v
+  -- the contracting homotopy of `c₃` read in degree `i = q`
+  have hhom' (q : ℕ) (x : X.V) (w : ((M₂.gradedCochainComplex ℳ₂ hρ₂ d₂ hd₂ hdd₂).X (q + 1)).V)
+      (i : ℕ) (hi : i = q) (v : ((M₃.gradedCochainComplex ℳ₃ hρ₃ d₃ hd₃ hdd₃).X (i + 1)).V)
+      (hv : v.1 = μ (c₁.ι.hom x).1 w.1) :
+      (c₃.hom i v).1 = μ (c₁.ι.hom x).1 (c₂.hom q w).1 := by
+    subst hi
+    obtain ⟨v, hv'⟩ := v
+    obtain rfl : v = μ (c₁.ι.hom x).1 w.1 := hv
+    exact hhom i x w.1 w.2 hv'
+  rw [gradedCohomologyClass_def, gradedCohomologyClass_def, gradedCohomologyClass_def]
+  convert cohomologyClass_pairing c₁ c₂ c₃ P μ'
+    (fun p q g a b ↦ Subtype.ext (by
+      rw [hμ'v, gradedCochainComplex_ρ_apply, gradedCochainComplex_ρ_apply,
+        gradedCochainComplex_ρ_apply, hρ, hμ'v]))
+    (fun p q b ↦ (continuous_gradedCochainComplex_X_iff _ _ _ _ _ _ _ _).2
+      ((hcont b.1).comp continuous_subtype_val))
+    (fun p q a b hb ↦ Subtype.ext (by
+      rw [hdv _ _ (by omega), hμ'v, hd a.1 b.1 ((hdv q (q + 1) rfl b).symm.trans
+        (congrArg Subtype.val hb)), hμ'v, hdv p (p + 1) rfl a]))
+    (fun x w ↦ hproj x w.1 w.2 _)
+    (fun q x w ↦ Subtype.ext (hhom' q x w (0 + q) (Nat.zero_add q) _ (hμ'v _ _ _ _)))
+    (gradedCochainComplexInvariant M₁ ℳ₁ hρ₁ d₁ hd₁ hdd₁ p a ha hainv)
+    (gradedCochainComplex_d_invariant M₁ ℳ₁ hρ₁ d₁ hd₁ hdd₁ ha hainv hda)
+    (gradedCochainComplexInvariant M₂ ℳ₂ hρ₂ d₂ hd₂ hdd₂ q b hb hbinv)
+    (gradedCochainComplex_d_invariant M₂ ℳ₂ hρ₂ d₂ hd₂ hdd₂ hb hbinv hdb) using 2
+  refine Subtype.ext (Subtype.ext ?_)
+  rw [gradedCochainComplexInvariant_val, hμ'v, gradedCochainComplexInvariant_val,
+    gradedCochainComplexInvariant_val]
+
+end GradedPairing
 
 end ResolutionContraction
 

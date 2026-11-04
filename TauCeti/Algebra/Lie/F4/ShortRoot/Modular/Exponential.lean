@@ -52,7 +52,7 @@ noncomputable def f4ShortRootExponential {A : Type*} [CommRing A] [Algebra (ZMod
         t • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootSignedSimpleAdjoint k z) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootDividedAdjointSquare k z) := by
   unfold f4ShortRootExponential
-  simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.smul_apply,
+  simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.smul_apply,
     LinearMap.baseChange_tmul]
 
 /-- Include the scalar-extended short-root ideal in the integral Chevalley lattice after

@@ -365,7 +365,7 @@ private theorem commRel_of_basis {d : ℕ}
   have hx : ((defect b).flip y).flip p = 0 := b.ext fun l ↦ by simpa using key l y p hp
   have := LinearMap.congr_fun hx x
   simp only [defect, LinearMap.flip_apply, LinearMap.mk₂_apply, LinearMap.zero_apply,
-    LinearMap.sub_apply, Module.End.mul_apply] at this
+    LinearMap.sub_apply, mul_apply_eq_comp] at this
   rw [← sub_eq_zero, ← this]
   abel
 
@@ -422,7 +422,7 @@ noncomputable def pbwPolynomialRep : L →ₗ⁅R⁆ Module.End R (MvPolynomial 
   map_lie' {x y} := by
     refine LinearMap.ext fun p ↦ ?_
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LieRing.of_associative_ring_bracket,
-      LinearMap.sub_apply, Module.End.mul_apply,
+      LinearMap.sub_apply, mul_apply_eq_comp,
       commRel b p.totalDegree x y p ((mem_restrictTotalDegree ι _ p).2 le_rfl)]
     abel
 

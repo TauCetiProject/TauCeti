@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Geometry.Manifold.Projectivization.Atlas
 public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Topology.Algebra.Projectivization.Veronese
 
@@ -22,6 +23,11 @@ when `veroneseDim (m + 1) d = n + 1`, or its composite with a linear inclusion i
 projective space. The resulting map `Projectivization.map f hf ∘ Projectivization.veronese 𝕜 d`
 is given in homogeneous coordinates by the polynomial map `f ∘ veroneseMonomials d`, so it is
 analytic (`Projectivization.contMDiff_map_comp_veronese`); over `ℂ` it is holomorphic.
+
+The target `ℙ 𝕜 (Fin (veroneseDim (m + 1) d) → 𝕜)` can also carry its own atlas
+`Projectivization.finChartedSpace`, the standard atlas pulled back along the canonical reindexing
+of the homogeneous coordinates by `Fin (veroneseDim (m + 1) d - 1 + 1)`. For it, the Veronese map
+itself is analytic (`Projectivization.contMDiff_veronese`).
 
 For positive degree `e + 1` it is moreover an immersion. On the affine open where the `i`-th
 homogeneous coordinate is nonzero, the coordinates `y_(e e_i + e_j)` of the image of `[v]` are the
@@ -42,6 +48,8 @@ and the Veronese map of positive degree is injective, it is a closed embedding
   of the vector, for every `r`.
 * `Projectivization.contMDiff_map_comp_veronese`: the Veronese map, read through an injective
   linear map, is `C^r` for every `r`, including the analytic order `ω`.
+* `Projectivization.contMDiff_veronese`: the Veronese map is `C^r` for every `r`, for the atlas
+  `Projectivization.finChartedSpace` on its target.
 * `Projectivization.isImmersion_map_comp_veronese`: for positive degree it is an immersion.
 * `Projectivization.isSmoothEmbedding_map_comp_veronese`: for positive degree it is a `C^r`
   embedding over `ℝ` or `ℂ`, with closed image by
@@ -92,6 +100,18 @@ theorem contMDiff_map_comp_veronese
       Fin (n + 1) → 𝕜).contDiff.comp (contDiff_veroneseMonomials d)).contDiffOn
     (fun _ hv ↦ (map_ne_zero_iff f hf).2 (veroneseMonomials_ne_zero d hv))
     fun _ _ ↦ by simp [map_mk]
+
+/-- The Veronese map of degree `d` is `C^r` for every `r`, from `ℙ 𝕜 (Fin (m + 1) → 𝕜)` with its
+standard atlas to `ℙ 𝕜 (Fin (veroneseDim (m + 1) d) → 𝕜)` with the atlas `finChartedSpace`. For
+`r = ω` it is analytic; over `ℂ` it is holomorphic. -/
+theorem contMDiff_veronese (d : ℕ) (r : ℕ∞ω) :
+    letI := finChartedSpace 𝕜 (veroneseDim (m + 1) d)
+    ContMDiff 𝓘(𝕜, Fin m → 𝕜) 𝓘(𝕜, Fin (veroneseDim (m + 1) d - 1) → 𝕜) r
+      (veronese (N := m + 1) 𝕜 d) :=
+  -- After reindexing, the Veronese map is read through the reindexing linear equivalence.
+  contMDiff_finChartedSpace_iff.2 ⟨continuous_veronese d, by
+    rw [coe_finSubOneAddOneHomeomorph]
+    exact contMDiff_map_comp_veronese _ (LinearEquiv.injective _) r⟩
 
 end NontriviallyNormedField
 

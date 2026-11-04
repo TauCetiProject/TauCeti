@@ -71,8 +71,9 @@ theorem map_eval₂_seifertConwayMatrix {S : Type*} [CommRing S]
     V.seifertConwayMatrix.map (eval₂ f s) =
       (s : S) • V.map f - (s⁻¹ : Sˣ).val • (V.map f)ᵀ := by
   ext i j : 2
-  simp only [map_apply, seifertConwayMatrix_apply, map_sub, map_mul, eval₂_T, eval₂_C,
-    sub_apply, smul_apply, smul_eq_mul, transpose_apply, zpow_one, zpow_neg_one]
+  simp only [Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, transpose_apply, map_apply,
+    seifertConwayMatrix_apply, map_sub, map_mul, eval₂_T, eval₂_C, _root_.zpow_one,
+    _root_.zpow_neg_one]
 
 /-- Doubling Laurent exponents in the Alexander matrix and multiplying by `s⁻¹` gives
 `s V - s⁻¹ Vᵀ`. -/
@@ -81,7 +82,7 @@ private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι �
       (TauCeti.KnotTheory.alexanderMatrix V).map
         (AddMonoidAlgebra.mapDomainRingHom R (nsmulAddMonoidHom 2 : ℤ →+ ℤ)) := by
   ext i j : 2
-  simp only [seifertConwayMatrix_apply, smul_apply, smul_eq_mul, map_apply,
+  simp only [Matrix.smul_apply, smul_eq_mul, map_apply, seifertConwayMatrix_apply,
     TauCeti.KnotTheory.alexanderMatrix_apply, map_sub, map_mul]
   have hT (k : ℤ) : AddMonoidAlgebra.mapDomainRingHom R
       (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T k) = T (2 * k) := by
@@ -205,8 +206,8 @@ private theorem seifertConwayMatrix_add_diagonal_single {n : ℕ}
   · subst j
     by_cases hi : i = Fin.last n
     · subst i
-      simp only [seifertConwayMatrix_apply, add_apply, diagonal_apply_eq, updateCol_self,
-        Pi.single_eq_same, map_add, mul_one]
+      simp only [Matrix.add_apply, diagonal_apply_eq, map_add, seifertConwayMatrix_apply,
+        updateCol_self, Pi.single_eq_same, mul_one]
       ring_nf
     · simp [seifertConwayMatrix_apply, hi, Ne.symm hi]
   · by_cases hi : i = j

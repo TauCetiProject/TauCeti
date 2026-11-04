@@ -241,7 +241,7 @@ theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)
     b.repr (christoffelSecondKind G z (b i) (b j)) k =
       christoffelOfJet (LinearMap.toMatrix₂ b b (G z).toBilinForm)
         (fun k i j ↦ fderiv ℝ (fun y ↦ G y (b i) (b j)) z (b k)) i j k := by
-  rw [repr_christoffelSecondKind hsymm hnd, christoffelOfJet]
+  rw [repr_christoffelSecondKind (LinearMap.BilinForm.isSymm_iff.mpr hsymm) hnd, christoffelOfJet]
   simp only [← fderiv_clm_apply_const_apply₂ hG]
 
 /-- **The derivatives of the Christoffel symbols in a basis.** For a field `G` of bilinear forms
@@ -296,23 +296,23 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
       (hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)
     have h := congrArg (fun L : E →L[ℝ] ℝ ↦ L (b m)) (hlow l).fderiv_eq
     simp only [fderiv_bilin_apply hGd hΓij (differentiableAt_const _), fderiv_const_apply,
-      zero_apply, map_zero, add_zero] at h
+      _root_.zero_apply, map_zero, add_zero] at h
     rw [fderiv_clm_apply_const_apply (hΓ.clm_apply (differentiableAt_const _)),
       fderiv_clm_apply_const_apply hΓ] at h
     rw [fderiv_const_mul (((hcoeff _ _ _).fun_add (hcoeff _ _ _)).fun_sub (hcoeff _ _ _)),
       fderiv_fun_sub ((hcoeff _ _ _).fun_add (hcoeff _ _ _)) (hcoeff _ _ _),
       fderiv_fun_add (hcoeff _ _ _) (hcoeff _ _ _)] at h
-    simp only [smul_apply, add_apply, sub_apply, smul_eq_mul] at h
+    simp only [_root_.smul_apply, _root_.add_apply, _root_.sub_apply, smul_eq_mul] at h
     linear_combination h
   -- Solve for the coordinates of `∂ₘ Γ(b i, b j)` with the inverse Gram matrix.
   rw [LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply hnd,
     christoffelDerivOfJet]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   rw [ContinuousLinearMap.toBilinForm_apply,
-    ContinuousLinearMap.isSymm_toBilinForm_iff.1 hsymm, hpair]
+    ContinuousLinearMap.isSymm_toBilinForm_iff.1 (LinearMap.BilinForm.isSymm_iff.mpr hsymm), hpair]
   congr 2
   conv_lhs => rw [← b.sum_repr (christoffelSecondKind G z (b i) (b j))]
-  simp only [map_sum, map_smul, sum_apply, smul_apply,
+  simp only [map_sum, map_smul, _root_.sum_apply, _root_.smul_apply,
     smul_eq_mul, repr_christoffelSecondKind_eq_christoffelOfJet b hGd hsymm hnd,
     ← fderiv_clm_apply_const_apply₂ hGd]
   exact Finset.sum_congr rfl fun q _ ↦ mul_comm _ _

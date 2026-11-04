@@ -202,7 +202,7 @@ theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L
       · subst hℓ
         obtain ⟨e, he⟩ := hS.exists_card_eq
         rw [hcard S hS, PadicInt.natCard_quotient_span (Nat.cast_ne_zero.mpr Nat.card_pos.ne'),
-          PadicInt.valuation_natCast, he, padicValNat.prime_pow]
+          PadicInt.valuation_natCast, he, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
       · have := hsub ℓ hℓ S hS 1
         rw [Nat.card_unique (α := groupCohomology (Rep.res S.subtype A) 2),
           Ideal.span_singleton_eq_top.mpr (hunit ℓ hℓ S hS)]

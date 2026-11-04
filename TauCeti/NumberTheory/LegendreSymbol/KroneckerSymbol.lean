@@ -110,7 +110,7 @@ theorem kroneckerSym_of_odd (a : ℤ) {b : ℤ} (hb : Odd b) :
 /-- At an odd positive denominator the Kronecker symbol is the Jacobi symbol. -/
 theorem kroneckerSym_eq_jacobiSym (a : ℤ) {b : ℕ} (hb : Odd b) :
     kroneckerSym a b = jacobiSym a b := by
-  rw [kroneckerSym_of_odd a (Int.odd_coe_nat b |>.mpr hb), Int.natAbs_natCast,
+  rw [kroneckerSym_of_odd a (Int.odd_natCast b |>.mpr hb), Int.natAbs_natCast,
     ite_eq_right (fun h ↦ (Int.natCast_nonneg b).not_gt h.2), one_mul]
 
 /-- At an odd prime the Kronecker symbol is the Legendre symbol. -/
@@ -304,15 +304,15 @@ private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀
   have hr₀ : 0 ≤ m % D := Int.emod_nonneg m hD₀
   have hr : Odd (m % D).toNat := by
     have h2 : Even D := even_iff_two_dvd.mpr (dvd_trans (by norm_num) (Int.dvd_of_emod_eq_zero hD))
-    rw [← Int.odd_coe_nat, Int.toNat_of_nonneg hr₀, Int.emod_def]
+    rw [← Int.odd_natCast, Int.toNat_of_nonneg hr₀, Int.emod_def]
     exact hm.sub_even (h2.mul_right _)
   rcases Int.eq_nat_or_neg m with ⟨k, rfl | rfl⟩
-  · have hk : Odd k := (Int.odd_coe_nat k).mp hm
+  · have hk : Odd k := (Int.odd_natCast k).mp hm
     have hmod : ((k : ℤ) % D).toNat = k % D.natAbs := by
       rw [← Int.emod_abs, ← Int.natCast_natAbs, ← Int.natCast_mod, Int.toNat_natCast]
     rw [kroneckerSym_eq_jacobiSym D hk, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk, hmod,
       jacobiSym_mod_natAbs_of_emod_four_eq_zero hD (hmod ▸ hr), Nat.mod_mod]
-  · have hk : Odd k := (Int.odd_coe_nat k).mp (by simpa using hm)
+  · have hk : Odd k := (Int.odd_natCast k).mp (by simpa using hm)
     have hdvd : D.natAbs ∣ k + (-(k : ℤ) % D).toNat := by
       rw [← Int.natCast_dvd_natCast, Nat.cast_add, Int.toNat_of_nonneg hr₀, Int.natCast_natAbs,
         abs_dvd, Int.emod_def]
