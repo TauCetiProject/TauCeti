@@ -170,11 +170,11 @@ theorem toFilterGerm_evalVertical_monicOfCoeff {x₀ : E} {w₀ : ℂ} {d : ℕ}
     toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl
         (evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c)) =
       (fun p : E × ℂ ↦ (TauCeti.Polynomial.monicOfCoeff (fun i ↦ C i p.1)).eval (p.2 - w₀)) := by
-  rw [show evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c) =
+  have heval : evalVertical x₀ w₀ (TauCeti.Polynomial.monicOfCoeff c) =
       evalVertical x₀ w₀ Polynomial.X ^ d +
-        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (c i)) by
-    simp [evalVertical, Polynomial.eval₂_eq_eval_map, TauCeti.Polynomial.eval_monicOfCoeff],
-    map_add, map_pow, evalVertical_X, toFilterGerm_germOfContMDiff,
+        evalVertical x₀ w₀ (∑ i : Fin d, Polynomial.monomial (i : ℕ) (c i)) := by
+    simp [evalVertical, Polynomial.eval₂_eq_eval_map, TauCeti.Polynomial.eval_monicOfCoeff]
+  rw [heval, map_add, map_pow, evalVertical_X, toFilterGerm_germOfContMDiff,
     toFilterGerm_evalVertical_sum_monomial hC, ← Germ.coe_pow, ← Germ.coe_add]
   exact congrArg _ (funext fun _ ↦ (TauCeti.Polynomial.eval_monicOfCoeff _ _).symm)
 
@@ -189,7 +189,7 @@ theorem isDistinguishedAt_monicOfCoeff_iff {x₀ : E} {d : ℕ}
   · have hmem := h.mem (n := (i : ℕ)) (by simp [i.2])
     rwa [TauCeti.Polynomial.coeff_monicOfCoeff, maximalIdeal_stalk, RingHom.mem_ker] at hmem
   · rw [TauCeti.Polynomial.natDegree_monicOfCoeff] at hn
-    rw [maximalIdeal_stalk, RingHom.mem_ker, show n = ((⟨n, hn⟩ : Fin d) : ℕ) from rfl,
+    rw [maximalIdeal_stalk, RingHom.mem_ker, ← Fin.val_mk hn,
       TauCeti.Polynomial.coeff_monicOfCoeff]
     exact hc ⟨n, hn⟩
 
@@ -346,8 +346,7 @@ theorem verticalPowerSeries_evalVertical (x₀ : E) (w₀ : ℂ)
       rcases n with _ | _ | n
       · simp [iteratedDeriv_zero]; rfl
       · simp [iteratedDeriv_succ', iteratedDeriv_zero]; rfl
-      · simp [iteratedDeriv_succ', show deriv (fun w : ℂ ↦ w - w₀) = fun _ ↦ 1 from
-          funext fun _ ↦ by simp, iteratedDeriv_const]; rfl
+      · simp [iteratedDeriv_succ', deriv_sub_const_fun, deriv_id'', iteratedDeriv_const]; rfl
   exact RingHom.congr_fun heq P
 
 /-- Vertical Taylor expansion at `(x₀, w₀)` is injective (without assuming finite-dimensionality

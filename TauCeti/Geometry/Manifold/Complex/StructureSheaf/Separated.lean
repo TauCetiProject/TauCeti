@@ -147,7 +147,7 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
             (div_mul_cancel₀ r hv_pos.ne'))).comp_of_eq (by fun_prop) rfl
       simpa [v] using hg_an.eqOn_zero_of_preconnected_of_eventuallyEq_zero
         (convex_ball (0 : ℂ) (r / ‖v‖)).isPreconnected (mem_ball_self (zero_lt_one.trans h1R))
-        (hline_zero v) (show (1 : ℂ) ∈ ball 0 (r / ‖v‖) by simpa using h1R)
+        (hline_zero v) (mem_ball_zero_iff.2 ((norm_one (α := ℂ)).trans_lt h1R))
   apply toFilterGerm_nhds_injective x
   rw [hφ _ le_rfl, map_zero, ← Germ.coe_zero, Germ.coe_eq]
   filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually (ball_mem_nhds _ hr)]

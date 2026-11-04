@@ -22,7 +22,6 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Analysis.Analytic.Multiset
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
-import TauCeti.Analysis.Contour.Argument.Divisor
 import TauCeti.Analysis.Contour.Residue.LogDeriv
 import TauCeti.Analysis.Contour.Residue.Theorem
 import TauCeti.Analysis.Meromorphic.Divisor
