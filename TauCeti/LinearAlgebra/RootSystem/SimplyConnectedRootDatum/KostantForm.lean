@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.Algebra.Module.IntegralOrbit
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # A simple-generator Kostant form of the pinned split Lie algebra of a Dynkin type
@@ -73,6 +74,8 @@ not claimed. This file is the numbered input those later steps consume.
   over `ℚ`.
 * `TauCeti.DynkinType.geckRepresentation_ι_injective`: the defining representation is faithful on
   the Lie algebra.
+* `TauCeti.DynkinType.isSl2Triple_geckRepresentation`: the defining representation carries each
+  numbered `sl₂` triple to an `sl₂` triple of endomorphisms.
 * `TauCeti.DynkinType.isNilpotent_geckRepresentation_rootGenerator`: each numbered root generator
   acts nilpotently.
 * `TauCeti.DynkinType.isCartanWeightVector_geckRepresentation_single`: the standard coordinate
@@ -274,6 +277,26 @@ theorem geckRepresentation_ι_injective :
       t.geckRepresentation ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
   rw [geckRepresentation_def]
   exact LieSubalgebra.matrixRepresentation_ι_injective (t.lieAlgebra ht)
+
+/-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
+of endomorphisms of the Geck module. -/
+theorem isSl2Triple_geckRepresentation (i : Fin t.rank) :
+    IsSl2Triple
+      (t.geckRepresentation ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
+      (t.geckRepresentation ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
+      (t.geckRepresentation ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
+  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+    ((t.lieBasis ht).sl2 i).map
+      ((t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+      (by
+        intro hzero
+        apply ((t.lieBasis ht).sl2 i).h_ne_zero
+        apply t.geckRepresentation_ι_injective ht
+        simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, map_zero] using hzero)
 
 /-! ## Nilpotency of the numbered generators -/
 
