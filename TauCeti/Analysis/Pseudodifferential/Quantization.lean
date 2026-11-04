@@ -17,14 +17,15 @@ the left (Kohn–Nirenberg) quantization is formally
 
 `Op(a) u (x) = (2π)⁻ⁿ ∫∫ exp(i ⟪x - y, ξ⟫) a(x, ξ) u(y) dy dξ`.
 
-As an iterated integral this does not converge absolutely. On Schwartz input it is the single
-absolutely convergent Fourier integral
+As a double integral this need not converge absolutely. On Schwartz input it is the single
+Fourier integral
 
 `Op(a) u (x) = ∫ exp(2πi ⟪x, ζ⟫) a(x, 2πζ) (𝓕 u ζ) dζ`,
 
 written with Mathlib's Fourier transform `𝓕`, whose phase is `exp(-2πi ⟪x, ζ⟫)`, after the change
-of frequency `ξ = 2πζ`. This file defines `TauCeti.quantizeSchwartzValue` by this formula and
-proves its basic properties for coefficients of polynomial growth in the frequency. Only the
+of frequency `ξ = 2πζ`, which converges absolutely at `x` whenever `ξ ↦ a(x, ξ)` is a.e. strongly
+measurable and of polynomial growth. This file defines `TauCeti.quantizeSchwartzValue` by this
+formula and proves its basic properties for such coefficients. Only the
 size of `a` enters: no derivative bounds are used, so the results apply to every symbol class
 `S^m` through the estimate `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` with `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)`.
 
@@ -194,9 +195,10 @@ private lemma aestronglyMeasurable_integrand (hmeas : AEStronglyMeasurable (fun 
     ).aestronglyMeasurable.smul (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
       (hscale.prodMk f.continuous.aestronglyMeasurable))
 
-/-- **Absolute convergence.** If `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, the quantization
-integrand at `x` is integrable against every Schwartz function on the frequency side; with
-`f = 𝓕 u` this is the integrand of `quantizeSchwartzValue a u x`. -/
+/-- **Absolute convergence.** If `ξ ↦ a(x, ξ)` is a.e. strongly measurable and
+`‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, the quantization integrand at `x` is integrable
+against every Schwartz function on the frequency side; with `f = 𝓕 u` this is the integrand of
+`quantizeSchwartzValue a u x`. -/
 theorem integrable_quantizeSchwartzValue_integrand
     (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
     (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (f : 𝓢(E, V)) :
@@ -246,10 +248,17 @@ theorem quantizeSchwartzValue_add_right (hmeas : AEStronglyMeasurable (fun ξ �
   exact integral_integrand_add hmeas hC _ _
 
 /-- The quantization is homogeneous in the input. -/
+@[simp]
 theorem quantizeSchwartzValue_smul_right (c : ℂ) (u : 𝓢(E, V)) :
     quantizeSchwartzValue a (c • u) x = c • quantizeSchwartzValue a u x := by
   simp only [quantizeSchwartzValue_def, FourierTransform.fourier_smul]
   exact integral_integrand_smul c _
+
+/-- The quantization of the zero input vanishes. -/
+@[simp]
+theorem quantizeSchwartzValue_zero_right :
+    quantizeSchwartzValue a (0 : 𝓢(E, V)) x = 0 := by
+  simpa using quantizeSchwartzValue_smul_right (a := a) (x := x) 0 0
 
 /-- The quantization is additive in the coefficient, wherever both coefficients have growth
 bounds. -/
@@ -388,17 +397,6 @@ section Examples
 
 variable [CompleteSpace V]
 
-omit [CompleteSpace V] in
-private lemma integrable_fourierChar_smul (f : 𝓢(E, V)) (x : E) :
-    Integrable (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • f ζ) := by
-  simpa [inner_neg_right] using (Real.fourierIntegral_convergent_iff (μ := volume) (-x)).2
-    f.integrable
-
-/-- Fourier inversion, in the form of the integral appearing in the quantization. -/
-private lemma integral_fourierChar_smul_fourier (u : 𝓢(E, V)) (x : E) :
-    ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 u ζ = u x := by
-  rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
-
 /-- A coefficient depending only on the position quantizes to multiplication:
 `Op(b(x)) u = b u`. -/
 theorem quantizeSchwartzValue_comp_fst [CompleteSpace W] (b : E → V →L[ℂ] W) (u : 𝓢(E, V))
@@ -407,8 +405,11 @@ theorem quantizeSchwartzValue_comp_fst [CompleteSpace W] (b : E → V →L[ℂ] 
   calc quantizeSchwartzValue (fun p ↦ b p.1) u x = ∫ ζ, b x (𝐞 ⟪ζ, x⟫ • 𝓕 u ζ) := by
         simp only [quantizeSchwartzValue_def, Circle.smul_def, map_smul]
     _ = b x (∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 u ζ) :=
-        (b x).integral_comp_comm (integrable_fourierChar_smul _ x)
-    _ = b x (u x) := by rw [integral_fourierChar_smul_fourier]
+        (b x).integral_comp_comm (by
+          simpa [inner_neg_right] using (Real.fourierIntegral_convergent_iff (μ := volume) (-x)).2
+            (𝓕 u).integrable)
+    _ = b x (u x) := by
+        rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
 
 /-- The constant coefficient `1` quantizes to the identity: `Op(1) u = u`. -/
 @[simp]
@@ -444,7 +445,8 @@ theorem quantizeSchwartzValue_inner_eq_lineDerivOp (v : E) (u : 𝓢(E, V)) (x :
     _ = -Complex.I • ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 (∂_{v} u) ζ := by
         simp only [smul_comm (𝐞 _) (-Complex.I)]
         exact integral_smul _ _
-    _ = -Complex.I • ∂_{v} u x := by rw [integral_fourierChar_smul_fourier]
+    _ = -Complex.I • ∂_{v} u x := by
+        rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
 
 end Examples
 
