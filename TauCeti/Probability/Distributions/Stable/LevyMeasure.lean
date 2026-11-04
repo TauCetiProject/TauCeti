@@ -252,6 +252,51 @@ theorem stableLevyMeasure_abs_gt_pos (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
   rw [heq]
   positivity
 
+/-- A nonempty stable jump band has positive Lévy mass. -/
+theorem stableLevyMeasure_smallJumpBand_pos {α β ε r : ℝ} (hα : α ∈ Ioo 0 2)
+    (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    0 < stableLevyMeasure α β {x : ℝ | ε < |x| ∧ |x| ≤ r} := by
+  let ν := stableLevyMeasure α β
+  let large : Set ℝ := {x | r < |x|}
+  let retained : Set ℝ := {x | ε < |x|}
+  let band : Set ℝ := {x | ε < |x| ∧ |x| ≤ r}
+  have hsplit : retained = band ∪ large := by
+    ext x
+    simp only [mem_union, mem_ofPred_eq, retained, band, large]
+    grind
+  have hdisj : Disjoint band large := by
+    rw [Set.disjoint_left]
+    exact fun _ hx hy ↦ hx.2.not_gt hy
+  have hlarge : MeasurableSet large := by measurability
+  have hmass : ν large < ν retained := by
+    rw [stableLevyMeasure_abs_gt hα hβ (hε.trans hεr),
+      stableLevyMeasure_abs_gt hα hβ hε]
+    have hc : 0 < 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α) := by
+      have hcoef := stableLevyDensity_coefficient_pos hα
+      have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α) =
+          2 * (Gamma (1 + α) * sin (π * α / 2) / π) / α := by ring
+      rw [heq]
+      exact div_pos (mul_pos zero_lt_two hcoef) hα.1
+    have hp : ε ^ α < r ^ α := Real.rpow_lt_rpow hε.le hεr hα.1
+    have he : 0 < ε ^ α := rpow_pos_of_pos hε _
+    have hr : 0 < r ^ α := rpow_pos_of_pos (hε.trans hεr) _
+    have hrhs : 0 < 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) := by
+      have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) =
+          (2 * Gamma (1 + α) * sin (π * α / 2) / (π * α)) / ε ^ α := by ring
+      rw [heq]
+      exact div_pos hc he
+    rw [ENNReal.ofReal_lt_ofReal_iff hrhs]
+    calc
+        2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * r ^ α) =
+            (2 * Gamma (1 + α) * sin (π * α / 2) / (π * α)) / r ^ α := by ring
+        _ < (2 * Gamma (1 + α) * sin (π * α / 2) / (π * α)) / ε ^ α :=
+          (div_lt_div_iff₀ hr he).2 (mul_lt_mul_of_pos_left hp hc)
+        _ = 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) := by ring
+  rw [hsplit, measure_union hdisj hlarge] at hmass
+  exact pos_iff_ne_zero.mpr fun hzero ↦ by
+    rw [hzero, zero_add] at hmass
+    exact hmass.false
+
 /-- The cutoff Lévy measure has finite mass for all parameters. -/
 theorem stableLevyMeasure_abs_gt_ne_top (hε : 0 < ε) :
     stableLevyMeasure α β {x | ε < |x|} ≠ ∞ := by
@@ -319,6 +364,16 @@ theorem map_abs_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     map_abs_restrict_stableLevyMeasure hα hβ hε, smul_smul,
     ENNReal.inv_mul_cancel (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
       (stableLevyMeasure_abs_gt_ne_top hε), one_smul]
+
+/-- For valid parameters, every nonempty stable jump band gives a probability jump law. -/
+theorem isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand {α β ε r : ℝ}
+    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
+    IsProbabilityMeasure
+      (cond (stableLevyMeasure α β) {x : ℝ | ε < |x| ∧ |x| ≤ r}) := by
+  apply cond_isProbabilityMeasure_of_finite
+  · exact (stableLevyMeasure_smallJumpBand_pos hα hβ hε hεr).ne'
+  · exact ne_top_of_le_ne_top (stableLevyMeasure_abs_gt_ne_top hε)
+      (measure_mono fun _ hx ↦ hx.1)
 
 /-- The density of a stable Lévy measure turns integrable functions into Lebesgue-integrable
 ones. -/
