@@ -14,7 +14,6 @@ import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Monomial
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 
 /-!
 # The affinoid relative closed unit polydisc over a Huber pair
@@ -47,8 +46,8 @@ are in canonical bijection with coordinate tuples `Fin n → U.plus`
 this universal property follow coordinate translations `Tᵢ ↦ Tᵢ + aᵢ`
 (`TauCeti.Huber.Pair.polydisc.taylorHom`) and, when `S` itself is complete and Hausdorff, the
 zero-variable inverse `TauCeti.Huber.Pair.polydisc.zeroInvHom`. Over any nontrivially normed
-ultrametric field `K`, combining `weightedSubring_powerBoundedSubring_eq` with Wedhorn's
-Proposition 7.48 (`TauCeti.ValuationSpectrum.spaCompletionHomeomorph`) identifies
+ultrametric field `K`, combining `TauCeti.Huber.weightedSubring_powerBoundedSubring_eq` with
+Wedhorn's Proposition 7.48 (`TauCeti.ValuationSpectrum.spaCompletionHomeomorph`) identifies
 `spa ((Pair.powerBounded K).polydiscPlus n)` homeomorphically with
 `TauCeti.ValuationSpectrum.closedPolydisc n K`.
 
@@ -74,8 +73,6 @@ Proposition 7.48 (`TauCeti.ValuationSpectrum.spaCompletionHomeomorph`) identifie
   `S.polydiscPlus n` onto `A⁺⟨T₁, …, Tₙ⟩`.
 * `TauCeti.Huber.Pair.polydisc.existsUnique_hom`: universal property of `S.polydisc n` for
   morphisms into complete Hausdorff Huber pairs.
-* `TauCeti.Huber.weightedSubring_powerBoundedSubring_eq`: over a nontrivially normed ultrametric
-  field `K`, the power-bounded subring of `K⟨T₁, …, Tₙ⟩` is `K°⟨T₁, …, Tₙ⟩`.
 
 ## References
 
@@ -493,23 +490,6 @@ end ZeroVariables
 section NormedField
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
-
-/-- Over a nontrivially normed ultrametric field `K`, the power-bounded subring of `K⟨T₁, …, Tₙ⟩`
-is the subring `K°⟨T₁, …, Tₙ⟩` of series with power-bounded coefficients. -/
-theorem weightedSubring_powerBoundedSubring_eq (n : ℕ) :
-    weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
-        (powerBoundedSubring K) =
-      powerBoundedSubring
-        (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) := by
-  ext f
-  rw [mem_weightedSubring, mem_weightedNhd, mem_powerBoundedSubring,
-    ← isPowerBounded_ringEquiv_iff restrictedMvPowerSeriesGaussEquiv
-      continuous_restrictedMvPowerSeriesGaussEquiv
-      continuous_restrictedMvPowerSeriesGaussEquiv_symm,
-    ← mem_powerBoundedSubring, TauCeti.MvPowerSeries.powerBoundedSubring_eq_unitClosedBall,
-    TauCeti.MvPowerSeries.mem_unitClosedBall_iff]
-  simp only [weightMul_one_weight, Subring.mem_toAddSubgroup, mem_powerBoundedSubring,
-    isPowerBounded_iff_norm_le_one, coe_restrictedMvPowerSeriesGaussEquiv]
 
 /-- **Over a nontrivially normed ultrametric field `K`, the adic spectrum of
 `(Pair.powerBounded K).polydisc n` is homeomorphic to `closedPolydisc n K`.** -/
