@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Topology.MetricSpace.ProperSpace.Real
+public import TauCeti.Topology.Compactness.Normed
 
 /-!
 # Uniform derivative bounds on a strip of the plane
@@ -48,9 +49,8 @@ theorem exists_pos_forall_norm_fderiv_sub_lt {Y : Type*} [NormedAddCommGroup Y]
   set W : Set (ℝ × ℝ) := {u | |u.1| < r}
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp continuous_fst) continuous_const
   -- Over the segment `{0} × [a, b]` this is continuity of the derivatives.
-  obtain ⟨ρ₁, hρ₁, hρ₁O⟩ := Metric.eventually_nhds_iff.1
-    (isCompact_Icc.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ))
-      (P := fun θ t => ((θ, t) : ℝ × ℝ) ∈ W ∩ (fun u => (fderiv ℝ k u, fderiv ℝ l u)) ⁻¹'
+  obtain ⟨ρ₁, hρ₁, hρ₁O⟩ := isCompact_Icc.exists_pos_forall_norm_lt
+      (Q := fun θ t => ((θ, t) : ℝ × ℝ) ∈ W ∩ (fun u => (fderiv ℝ k u, fderiv ℝ l u)) ⁻¹'
         {q | ‖q.1 - A‖ < ε ∧ ‖q.2 - A‖ < ε}) fun t ht =>
       IsOpen.mem_nhds (x := ((0 : ℝ), t))
         (((hkC.continuousOn_fderiv_of_isOpen hW le_rfl).prodMk
@@ -59,8 +59,8 @@ theorem exists_pos_forall_norm_fderiv_sub_lt {Y : Type*} [NormedAddCommGroup Y]
             continuous_const).inter
             (isOpen_lt (continuous_norm.comp (continuous_snd.sub continuous_const))
               continuous_const)))
-      ⟨by simpa [W] using hr, by simp [hkA t ht, hlA t ht, hε]⟩)
-  simp only [Real.dist_0_eq_abs] at hρ₁O
+      ⟨by simpa [W] using hr, by simp [hkA t ht, hlA t ht, hε]⟩
+  simp only [Real.norm_eq_abs] at hρ₁O
   refine ⟨min ρ₁ r, lt_min hρ₁ hr, min_le_right _ _, fun u hu => ?_⟩
   have hu₁ : |u.1| < ρ₁ := hu.trans_le (min_le_left _ _)
   by_cases ht : u.2 ∈ Icc a b

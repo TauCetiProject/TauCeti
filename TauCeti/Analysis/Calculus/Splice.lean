@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+public import Mathlib.Analysis.Normed.Operator.Prod
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.MeanValue
+public import TauCeti.Analysis.Convex.Prod
 
 /-!
 # Splicing two maps with a cutoff along a linear functional
@@ -40,6 +44,8 @@ the embedding and a model agreeing with it to first order, read in a chart.
   kernel of `π` and `k` away from it.
 * `TauCeti.spliceAlong_mem`, `TauCeti.contDiffOn_spliceAlong`: convexity and smoothness.
 * `TauCeti.exists_hasFDerivAt_spliceAlong_sub_le`: the uniform derivative estimate.
+* `TauCeti.injOn_and_injective_fderiv_spliceAlong_fst`: injectivity and injective derivative
+  for splices across a strip whose derivatives stay close to a linear map with a left inverse.
 -/
 
 public section
@@ -196,5 +202,48 @@ theorem exists_hasFDerivAt_spliceAlong_sub_le {k' l' A : X →L[ℝ] Y} {ε B : 
         (norm_add_le _ _).trans (by gcongr; exact norm_add_le _ _)
     _ ≤ ε + (2 * ε + 4 * B * ε) := by gcongr
     _ = (3 + 4 * B) * ε := by ring
+
+/-- A splice across a strip is injective with injective derivative when both maps agree on the
+central line and their derivatives stay close to a linear map with a left inverse. The bound on
+`ε` makes the splice composed with that left inverse approximate the identity. -/
+theorem injOn_and_injective_fderiv_spliceAlong_fst {k l : ℝ × ℝ → Y}
+    {ρ δ ε B : ℝ} {A : ℝ × ℝ →L[ℝ] Y} {P : Y →L[ℝ] ℝ × ℝ}
+    (hρ : 0 < ρ) (hδ : 0 < δ)
+    (hkC : ContDiffOn ℝ 1 k {u | |u.1| < ρ})
+    (hlC : ContDiffOn ℝ 1 l {u | |u.1| < ρ})
+    (hkl0 : ∀ t, k (0, t) = l (0, t))
+    (hbound : ∀ u : ℝ × ℝ, |u.1| < ρ →
+      ‖fderiv ℝ k u - A‖ < ε ∧ ‖fderiv ℝ l u - A‖ < ε)
+    (hB : ∀ x, |deriv spliceCutoff x| ≤ B) (hP : Function.LeftInverse P A)
+    (hPε : ‖P‖ * ((3 + 4 * B) * ε) ≤ 1 / 2) :
+    InjOn (spliceAlong (ContinuousLinearMap.fst ℝ ℝ ℝ) k l δ) {u | |u.1| < ρ} ∧
+      ∀ u : ℝ × ℝ, |u.1| < ρ →
+        Function.Injective (fderiv ℝ (spliceAlong (ContinuousLinearMap.fst ℝ ℝ ℝ) k l δ) u) := by
+  let h := spliceAlong (ContinuousLinearMap.fst ℝ ℝ ℝ) k l δ
+  have hW : IsOpen {u : ℝ × ℝ | |u.1| < ρ} :=
+    isOpen_lt (continuous_abs.comp continuous_fst) continuous_const
+  have hdk (v : ℝ × ℝ) (hv : |v.1| < ρ) : HasFDerivAt k (fderiv ℝ k v) v :=
+    ((hkC.contDiffAt (hW.mem_nhds hv)).differentiableAt one_ne_zero).hasFDerivAt
+  have hdl (v : ℝ × ℝ) (hv : |v.1| < ρ) : HasFDerivAt l (fderiv ℝ l v) v :=
+    ((hlC.contDiffAt (hW.mem_nhds hv)).differentiableAt one_ne_zero).hasFDerivAt
+  have hderiv (u : ℝ × ℝ) (hu : |u.1| < ρ) :
+      ∃ h' : ℝ × ℝ →L[ℝ] Y, HasFDerivAt h h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε := by
+    -- `l - k` vanishes on the line `u.1 = 0`, so it is at most `2 ε |u.1|` on the strip.
+    have hzero : ((0 : ℝ), u.2) ∈ {v : ℝ × ℝ | |v.1| < ρ} := by
+      simpa using hρ
+    have hdist : ‖u - ((0 : ℝ), u.2)‖ = |u.1| := by
+      simp [Prod.norm_def, Real.norm_eq_abs]
+    have hlk := (convex_setOf_abs_fst_lt (W := ℝ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
+      (fun v hv => (hdk v hv).hasFDerivWithinAt) (fun v hv => (hdl v hv).hasFDerivWithinAt)
+      (fun v hv => (hbound v hv).1.le) (fun v hv => (hbound v hv).2.le) hu
+      hzero (hkl0 u.2)
+    rw [hdist] at hlk
+    exact exists_hasFDerivAt_spliceAlong_sub_le hδ (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ) hB
+      (hdk u hu) (hdl u hu) (hbound u hu).1.le (hbound u hu).2.le hlk
+  choose! h' hh' hh'A using hderiv
+  obtain ⟨hinj, hinj'⟩ :=
+    (convex_setOf_abs_fst_lt (W := ℝ) ρ).injOn_and_injective_of_norm_hasFDerivAt_sub_le hP hh'
+      fun u hu => (mul_le_mul_of_nonneg_left (hh'A u hu) (norm_nonneg P)).trans hPε
+  exact ⟨hinj, fun u hu => (hh' u hu).fderiv ▸ hinj' u hu⟩
 
 end TauCeti

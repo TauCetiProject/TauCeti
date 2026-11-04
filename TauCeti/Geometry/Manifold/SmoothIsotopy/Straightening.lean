@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import TauCeti.Analysis.Calculus.Splice
 public import TauCeti.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Operator.Mul
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -122,10 +123,8 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
     exact (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans hlk
   obtain ⟨h', hh', hh'v⟩ := exists_hasFDerivAt_spliceAlong_sub_le hδ
     ContinuousLinearMap.norm_id_le hB hk.hasFDerivAt hls.hasFDerivAt
-    (by simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
-        LinearIsometryEquiv.norm_map] using hk')
-    (by simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
-        LinearIsometryEquiv.norm_map] using hls')
+    (by simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using hk')
+    (by simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using hls')
     (A := ContinuousLinearMap.toSpanSingleton ℝ v) hlks
   replace hh' : HasFDerivAt (splice k l δ s) h' t := hh'
   refine ⟨hh'.differentiableAt, ?_⟩
@@ -190,11 +189,9 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
       (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
       (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
       (fun x hx => by
-        simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
-          LinearIsometryEquiv.norm_map] using (hk₁ x (hlt x hx).1).le)
+        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hk₁ x (hlt x hx).1).le)
       (fun x hx => by
-        simpa only [← ContinuousLinearMap.toSpanSingletonLIE_apply, ← map_sub,
-          LinearIsometryEquiv.norm_map] using (hl₁ x (hlt x hx).2.1).le)
+        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hl₁ x (hlt x hx).2.1).le)
       ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
     simpa [Real.norm_eq_abs] using h
   refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩

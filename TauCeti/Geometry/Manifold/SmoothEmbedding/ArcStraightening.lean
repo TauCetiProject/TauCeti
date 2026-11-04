@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import TauCeti.Analysis.Calculus.FDeriv.Strip
-public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Calculus.Splice
-public import TauCeti.Analysis.Convex.Prod
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.Geometry.Manifold.Instances.Sphere
@@ -458,13 +455,12 @@ private theorem exists_pos_strip {f g L : Circle → M} {F : Circle × ℝ → M
   obtain ⟨r₁, hr₁, hball⟩ := Metric.eventually_nhds_iff_ball.1 hΘ
   have hball' {θ : ℝ} (hθ : |θ| < r₁) := hball θ (by simpa [Real.dist_eq] using hθ)
   -- Over the segment `{0} × [0, 1]`, `F` lands in the chart on a strip.
-  obtain ⟨r₂, hr₂, htube⟩ := Metric.eventually_nhds_iff.1
-    (isCompact_Icc.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ))
-      (P := fun θ t => (F (toCyl z₀ (θ, t))).1 ∈ φ.source) fun t _ =>
+  obtain ⟨r₂, hr₂, htube⟩ := isCompact_Icc.exists_pos_forall_norm_lt
+    (Q := fun θ t => (F (toCyl z₀ (θ, t))).1 ∈ φ.source) fun t _ =>
       (φ.open_source.preimage (continuous_fst.comp (hF.comp (continuous_toCyl z₀)))).mem_nhds
         (x := ((0 : ℝ), t))
-        (by simpa [toCyl_zero, h₀] using hLφ))
-  simp only [Real.dist_0_eq_abs] at htube
+        (by simpa [toCyl_zero, h₀] using hLφ)
+  simp only [Real.norm_eq_abs] at htube
   set r := min (min r₁ r₂) Real.pi
   have hr₁' {u : ℝ × ℝ} (hu : |u.1| < r) : |u.1| < r₁ :=
     hu.trans_le ((min_le_left _ _).trans (min_le_left _ _))
@@ -501,6 +497,48 @@ attribute [local instance] finrank_real_complex_fact'
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M]
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
+/-- The chart contains a uniform tube around the central segment avoiding the image of the
+complementary arc. Closedness of the concordance image and compactness of the segment give the
+positive radius. -/
+private theorem exists_pos_dist_lt_avoiding_image {F : Circle × ℝ → M × ℝ}
+    (hF : IsClosedEmbedding F) {φ : OpenPartialHomeomorph M E} {p : M}
+    (hpφ : p ∈ φ.source) {z₀ : Circle} (h₀ : ∀ t, F (z₀, t) = (p, t))
+    {ρ : ℝ} (hρ : 0 < ρ) (hρπ : ρ ≤ Real.pi) :
+    ∃ ε > 0, ∀ (y : E × ℝ) (t : ℝ), t ∈ Icc (0 : ℝ) 1 → dist y (φ p, t) < ε →
+      y ∈ (φ.target ×ˢ univ) ∩ Prod.map φ.symm _root_.id ⁻¹'
+        (F '' ({z | ρ ≤ |angle z₀ z|} ×ˢ univ))ᶜ := by
+  set Cl := F '' ({z | ρ ≤ |angle z₀ z|} ×ˢ univ)
+  have hCl : IsClosed Cl := by
+    refine hF.isClosedMap _ (IsClosed.prod ?_ isClosed_univ)
+    simpa [compl_ofPred, not_lt] using (isOpen_setOf_abs_angle_lt z₀ hρπ).isClosed_compl
+  set O' := (φ.target ×ˢ univ) ∩ Prod.map φ.symm _root_.id ⁻¹' Clᶜ
+  have hO' : IsOpen O' :=
+    ((φ.continuousOn_symm.comp continuousOn_fst
+      fun (y : E × ℝ) (hy : y ∈ φ.target ×ˢ univ) => hy.1).prodMk
+      continuousOn_snd).isOpen_inter_preimage (φ.open_target.prod isOpen_univ) hCl.isOpen_compl
+  have hpO' (t : ℝ) : (φ p, t) ∈ O' := by
+    refine ⟨⟨φ.map_source hpφ, mem_univ _⟩, ?_⟩
+    rintro ⟨⟨z, s⟩, ⟨hz, -⟩, hzs⟩
+    have : (z, s) = (z₀, t) := by
+      have hzs' : F (z, s) = F (z₀, t) := by
+        rw [hzs, h₀ t]
+        simp [φ.left_inv hpφ]
+      exact hF.injective hzs'
+    have hz' : ρ ≤ |angle z₀ z| := hz
+    have hzz₀ : z = z₀ := congrArg Prod.fst this
+    rw [hzz₀, angle_self, abs_zero] at hz'
+    exact absurd hz' (not_le.2 hρ)
+  obtain ⟨ε', hε', hε'O⟩ := (isCompact_singleton.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1)))
+    |>.exists_thickening_subset_open hO' (by
+      rintro ⟨y, t⟩ ⟨hy, -⟩
+      obtain rfl : y = φ p := hy
+      exact hpO' t)
+  refine ⟨ε', hε', ?_⟩
+  intro y t ht hy
+  exact hε'O (Metric.mem_thickening_iff.2 ⟨(φ p, t), ⟨rfl, ht⟩, hy⟩)
 
 namespace SmoothEmbedding.Concordance
 
@@ -586,48 +624,19 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   have hρ : 0 < ρ := half_pos hρ₁'0
   have hρρ₁ : ρ < ρ₁' := half_lt_self hρ₁'0
   have hρπ : ρ ≤ Real.pi := (hρρ₁.trans_le hρ₁'r).le.trans hrπ
-  set Cl := F '' ({z | ρ ≤ |angle z₀ z|} ×ˢ univ)
-  have hCl : IsClosed Cl := by
-    refine (hFc.isClosedEmbedding hF.contMDiff.continuous hF.isEmbedding.injective).isClosedMap _
-      (IsClosed.prod ?_ isClosed_univ)
-    simpa [compl_ofPred, not_lt] using (isOpen_setOf_abs_angle_lt z₀ hρπ).isClosed_compl
-  set O' := (φ.target ×ˢ univ) ∩ Prod.map φ.symm _root_.id ⁻¹' Clᶜ
-  have hO' : IsOpen O' :=
-    ((φ.continuousOn_symm.comp continuousOn_fst
-      fun (y : E × ℝ) (hy : y ∈ φ.target ×ˢ univ) => hy.1).prodMk
-      continuousOn_snd).isOpen_inter_preimage (φ.open_target.prod isOpen_univ) hCl.isOpen_compl
-  have hpO' (t : ℝ) : (φ p, t) ∈ O' := by
-    refine ⟨⟨φ.map_source hpφ, mem_univ _⟩, ?_⟩
-    rintro ⟨⟨z, s⟩, ⟨hz, -⟩, hzs⟩
-    have : (z, s) = (z₀, t) := by
-      have hzs' : F (z, s) = F (z₀, t) := by
-        rw [hzs, h₀ t]
-        simp [φ.left_inv hpφ]
-      exact hF.isEmbedding.injective hzs'
-    have hz' : ρ ≤ |angle z₀ z| := hz
-    have hzz₀ : z = z₀ := congrArg Prod.fst this
-    rw [hzz₀, angle_self, abs_zero] at hz'
-    exact absurd hz' (not_le.2 hρ)
-  obtain ⟨ε', hε', hε'O⟩ := (isCompact_singleton.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1)))
-    |>.exists_thickening_subset_open hO' (by
-      rintro ⟨y, t⟩ ⟨hy, -⟩
-      obtain rfl : y = φ p := hy
-      exact hpO' t)
-  have hballO' {y : E × ℝ} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (hy : dist y (φ p, t) < ε') :
-      y ∈ O' :=
-    hε'O (Metric.mem_thickening_iff.2 ⟨(φ p, t), ⟨rfl, ht⟩, hy⟩)
+  obtain ⟨ε', hε', hballO'⟩ := exists_pos_dist_lt_avoiding_image
+    (hFc.isClosedEmbedding hF.contMDiff.continuous hF.isEmbedding.injective) hpφ h₀ hρ hρπ
   -- Near the segment, `k` and `l` stay within `ε'` of it.
-  obtain ⟨ρ₂, hρ₂, hρ₂O⟩ := Metric.eventually_nhds_iff.1
-    (isCompact_Icc.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ))
-      (P := fun θ t => ((θ, t) : ℝ × ℝ) ∈
+  obtain ⟨ρ₂, hρ₂, hρ₂O⟩ := isCompact_Icc.exists_pos_forall_norm_lt
+      (Q := fun θ t => ((θ, t) : ℝ × ℝ) ∈
         W ∩ (fun u => (dist (k u) (φ p, u.2), dist (l u) (φ p, u.2))) ⁻¹' Iio ε' ×ˢ Iio ε')
       fun t _ => IsOpen.mem_nhds (x := ((0 : ℝ), t)) (((continuous_dist.comp_continuousOn
         (hkC.continuousOn.prodMk (continuousOn_const.prodMk continuousOn_snd))).prodMk
         (continuous_dist.comp_continuousOn
           (hlC.continuousOn.prodMk (continuousOn_const.prodMk continuousOn_snd)))
         ).isOpen_inter_preimage hW (isOpen_Iio.prod isOpen_Iio))
-      ⟨by simpa [W] using hr, by simpa [hk_def, hl_def, toCyl_zero, h₀, p] using hε'⟩)
-  simp only [Real.dist_0_eq_abs] at hρ₂O
+      ⟨by simpa [W] using hr, by simpa [hk_def, hl_def, toCyl_zero, h₀, p] using hε'⟩
+  simp only [Real.norm_eq_abs] at hρ₂O
   -- Step 5: the splice at a small scale `δ`.
   set δ := min ρ ρ₂ / 4
   have hδ : 0 < δ := by positivity
@@ -640,39 +649,21 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     rcases h' with h' | h'
     · exact spliceAlong_of_le_abs hδ h'
     · exact spliceAlong_of_eq (hkl u hu h')
-  -- Where `h` differs from `k`, it lies in `O'`.
-  have hhO' (u : ℝ × ℝ) (hu : |u.1| < r) (hne : h u ≠ k u) : h u ∈ O' := by
+  -- Where `h` differs from `k`, it stays in the chart and avoids the complementary arc.
+  have hhO' (u : ℝ × ℝ) (hu : |u.1| < r) (hne : h u ≠ k u) :
+      h u ∈ (φ.target ×ˢ univ) ∩ Prod.map φ.symm _root_.id ⁻¹'
+        (F '' ({z | ρ ≤ |angle z₀ z|} ×ˢ univ))ᶜ := by
     have hu₁ : |u.1| < 2 * δ := not_le.1 fun h' => hne (hhk u hu (Or.inl h'))
     have ht : u.2 ∈ Icc (0 : ℝ) 1 := by
       constructor
       · by_contra h'; exact hne (hhk u hu (Or.inr (Or.inl (by linarith [not_le.1 h']))))
       · by_contra h'; exact hne (hhk u hu (Or.inr (Or.inr (by linarith [not_le.1 h']))))
     have hmem := (hρ₂O (hu₁.trans hδρ₂) u.2 ht).2
-    exact hballO' ht (spliceAlong_mem (convex_ball (φ p, u.2) ε') (Metric.mem_ball.2 hmem.1)
-      (Metric.mem_ball.2 hmem.2))
-  -- The derivative of the splice stays close to `A`.
-  have hdk (v : ℝ × ℝ) (hv : |v.1| < ρ₁') : HasFDerivAt k (fderiv ℝ k v) v :=
-    ((hkC.contDiffAt (hW.mem_nhds (hρ₁r hv))).differentiableAt (by simp)).hasFDerivAt
-  have hdl (v : ℝ × ℝ) (hv : |v.1| < ρ₁') : HasFDerivAt l (fderiv ℝ l v) v :=
-    ((hlC.contDiffAt (hW.mem_nhds (hρ₁r hv))).differentiableAt (by simp)).hasFDerivAt
-  have hderiv (u : ℝ × ℝ) (hu : |u.1| < ρ₁') :
-      ∃ h' : ℝ × ℝ →L[ℝ] E × ℝ, HasFDerivAt h h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε := by
-    -- `l - k` vanishes on the line `u.1 = 0`, so it is at most `2 ε |u.1|` on the strip.
-    have hzero : ((0 : ℝ), u.2) ∈ {v : ℝ × ℝ | |v.1| < ρ₁'} := by
-      simpa using hρ₁'0
-    have hdist : ‖u - ((0 : ℝ), u.2)‖ = |u.1| := by
-      simp [Prod.norm_def, Real.norm_eq_abs]
-    have hlk := (convex_setOf_abs_fst_lt (W := ℝ) ρ₁').norm_sub_le_of_norm_hasFDerivWithin_sub_le
-      (fun v hv => (hdk v hv).hasFDerivWithinAt) (fun v hv => (hdl v hv).hasFDerivWithinAt)
-      (fun v hv => (hbound v hv).1.le) (fun v hv => (hbound v hv).2.le) hu
-      hzero (hkl0 u.2)
-    rw [hdist] at hlk
-    exact exists_hasFDerivAt_spliceAlong_sub_le hδ (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ) hB
-      (hdk u hu) (hdl u hu) (hbound u hu).1.le (hbound u hu).2.le hlk
-  choose! h' hh' hh'A using hderiv
-  obtain ⟨hinj, hinj'⟩ :=
-    (convex_setOf_abs_fst_lt (W := ℝ) ρ₁').injOn_and_injective_of_norm_hasFDerivAt_sub_le hP hh'
-      fun u hu => (mul_le_mul_of_nonneg_left (hh'A u hu) (norm_nonneg P)).trans hPε
+    exact hballO' (h u) u.2 ht (spliceAlong_mem (convex_ball (φ p, u.2) ε')
+      (Metric.mem_ball.2 hmem.1) (Metric.mem_ball.2 hmem.2))
+  obtain ⟨hinj, hinj'⟩ := injOn_and_injective_fderiv_spliceAlong_fst hρ₁'0 hδ
+    ((hkC.mono fun u hu => hρ₁r hu).of_le (by simp))
+    ((hlC.mono fun u hu => hρ₁r hu).of_le (by simp)) hkl0 hbound hB hP hPε
   have hstrip {u : ℝ × ℝ} (hu : |u.1| < ρ) : |u.1| < ρ₁' := hu.trans hρρ₁
   obtain ⟨hemb, hcol⟩ := isSmoothEmbedding_spliceTrack (h := h) (a := 2 * δ) hF hFc hφ hδρ hρπ
     (fun u hu => hFφ u (hρ₁r (hstrip hu))) (fun u hu h'' => hhk u (hρ₁r (hstrip hu)) h'') hc₀ hc₁
@@ -687,7 +678,7 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
       exact spliceAlong_mem hS (hFc.snd_apply_mem_Ioo _ _ ht) ht)
     ((contDiffOn_spliceAlong hkC hlC _ δ).mono fun u hu => hρ₁r (hstrip hu))
     (hinj.mono fun u hu => hstrip hu)
-    (fun u hu => (hh' u (hstrip hu)).fderiv ▸ hinj' u (hstrip hu))
+    (fun u hu => hinj' u (hstrip hu))
   let G : Concordance f g := ⟨SmoothEmbedding.ofIsSmoothEmbedding _ hemb, by simpa using hcol⟩
   have hG (x : Circle × ℝ) : G x = spliceTrack F φ z₀ ρ h x := by
     rw [← coe_toSmoothEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply]
