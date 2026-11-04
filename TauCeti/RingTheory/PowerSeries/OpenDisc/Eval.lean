@@ -104,6 +104,18 @@ theorem OnOpenDisc.evalAt_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) 
     (f * g).evalAt b = f.evalAt b * g.evalAt b :=
   evalAt_mul_of_summable_norm (hf.summable_norm_smul_pow hb) (hg.summable_norm_smul_pow hb)
 
+/-- Evaluation commutes with finite sums on an open disc. -/
+theorem OnOpenDisc.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, (f i).OnOpenDisc R₀) (hb : ‖b‖ < R₀) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      (hf i (by simp)).evalAt_add (OnOpenDisc.sum fun j hj ↦ hf j (by simp [hj])) hb,
+      ih fun j hj ↦ hf j (by simp [hj])]
+
 variable (R) in
 /-- **Evaluation of series on an open disc at `b`** as a ring homomorphism from the series on the
 open disc of radius `R₀` to a complete normed algebra, for a point `b` with `‖b‖ < R₀`. -/
