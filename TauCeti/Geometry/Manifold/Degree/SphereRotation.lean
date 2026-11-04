@@ -100,13 +100,11 @@ def sphereRotationFamily (p : sphere (0 : E) 1) :
     sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 → sphere (0 : E) 1 := fun x ↦
   ⟨(x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E), by
     -- `p` and `v` are orthonormal, and `Re z ^ 2 + Im z ^ 2 = ‖z‖ ^ 2 = 1`.
-    have hz := Circle.re_sq_add_im_sq (Circle.homeomorphSphere.symm x.2)
-    rw [Circle.coe_homeomorphSphere_symm_apply] at hz
-    rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
-      norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right,
-      inner_coe_coe_sphere, norm_eq_of_mem_sphere p, Submodule.norm_coe, norm_eq_of_mem_sphere x.1]
-    simp only [Real.norm_eq_abs, mul_one, mul_zero, sq_abs]
-    linarith⟩
+    rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
+    have hv : ‖((x.1 : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := norm_eq_of_mem_sphere x.1
+    simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
+      inner_coe_coe_sphere, norm_eq_of_mem_sphere p, hv]
+    linarith [Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]⟩
 
 @[simp]
 theorem coe_sphereRotationFamily (p : sphere (0 : E) 1)
@@ -243,10 +241,8 @@ theorem sphereRotationFamily_eq_sphereRotationFamily_iff (p : sphere (0 : E) 1)
       rw [hre] at hE
       exact add_left_cancel hE
     have hsq : (y.2 : ℂ).im ^ 2 = (x.2 : ℂ).im ^ 2 := by
-      have hy := Circle.re_sq_add_im_sq (Circle.homeomorphSphere.symm y.2)
-      have hx' := Circle.re_sq_add_im_sq (Circle.homeomorphSphere.symm x.2)
-      rw [Circle.coe_homeomorphSphere_symm_apply] at hy hx'
-      linarith [congrArg (· ^ 2) hre]
+      linarith [congrArg (· ^ 2) hre, Complex.re_sq_add_im_sq_of_mem_sphere y.2.2,
+        Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
     rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with him' | him'
     · left
       rw [him'] at him
@@ -267,9 +263,7 @@ private theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 :
     {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
     sphereRotationFamily p x = p ∨ sphereRotationFamily p x = -p := by
   have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by
-    have hz := Circle.re_sq_add_im_sq (Circle.homeomorphSphere.symm x.2)
-    rw [Circle.coe_homeomorphSphere_symm_apply] at hz
-    linarith [sq_eq_zero_iff.2 hx]
+    linarith [sq_eq_zero_iff.2 hx, Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
   rcases sq_eq_sq_iff_eq_or_eq_neg.1 hre with h | h
   · exact .inl (Subtype.ext (by simp [h, hx]))
   · exact .inr (Subtype.ext (by simp [h, hx]))
@@ -310,11 +304,12 @@ theorem exists_sphereRotationFamily_eq (p : sphere (0 : E) 1) {q : sphere (0 : E
     rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
       Complex.sq_norm, Complex.normSq_mk]
     linarith⟩
+  have hzre : (z : ℂ).re = c := rfl
+  have hzim : (z : ℂ).im = ‖r‖ := rfl
+  have hv' : ((v : (ℝ ∙ (p : E))ᗮ) : E) = ‖r‖⁻¹ • r := rfl
   refine ⟨(v, z), hs, Subtype.ext ?_⟩
-  rw [coe_sphereRotationFamily, ← hq']
-  -- The real and imaginary parts of `z` are `c` and `‖r‖`, and `v` is `‖r‖⁻¹ • r`.
-  change c • (p : E) + ‖r‖ • (‖r‖⁻¹ • r) = c • (p : E) + r
-  rw [smul_smul, mul_inv_cancel₀ hs.ne', one_smul]
+  rw [coe_sphereRotationFamily, ← hq', hzre, hzim, hv', smul_smul, mul_inv_cancel₀ hs.ne',
+    one_smul]
 
 /-! ### Orientation signs -/
 
@@ -401,6 +396,23 @@ private theorem volumeForm_cons_snoc (o : Orientation ℝ E (Fin (m + 1 + 1))) (
   simp only [smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
   ring
 
+/-- A tangent basis of the unit sphere `Sᵐ` of `p^⊥` at `v`, positively or negatively oriented
+(when `m = 0` it is empty). -/
+private def sphereTangentBasis {p : sphere (0 : E) 1} (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
+    Basis (Fin m) ℝ (TangentSpace (𝓡 m) v) :=
+  finBasisOfFinrankEq ℝ (TangentSpace (𝓡 m) v) (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+
+/-- A positively oriented tangent basis of the unit circle of `ℂ` at `z`. -/
+private def circleTangentBasis (z : sphere (0 : ℂ) 1) : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) :=
+  (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) z)
+    ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq z).trans
+      (Fintype.card_fin 1))).adjustToOrientation
+      (Complex.orientation.sphereOrientation.orientationAt z)
+
+private theorem orientation_circleTangentBasis (z : sphere (0 : ℂ) 1) :
+    (circleTangentBasis z).orientation = Complex.orientation.sphereOrientation.orientationAt z :=
+  Basis.orientation_adjustToOrientation _ _
+
 /-- The product of tangent bases `b` of `Sᵐ` at `v` and `c` of `S¹` at `z`, with `b` first, as a
 basis of the tangent space of `Sᵐ × S¹` at `(v, z)`. -/
 private def prodTangentBasis {p : sphere (0 : E) 1}
@@ -445,11 +457,8 @@ private theorem volumeForm_cons_mfderiv_sphereRotationFamily
     rw [mvfderiv_coe_mfderiv_sphereRotationFamily_apply, mvfderiv_coe_sphereRotationFamily_apply,
       hBi]
     refine Fin.lastCases ?_ (fun j ↦ ?_) i
-    · rw [finSumFinEquiv_symm_last, Basis.prod_apply_inr_fst, Basis.prod_apply_inr_snd,
-        Fin.snoc_last, ContinuousLinearMap.map_zero, ZeroMemClass.coe_zero, smul_zero, add_zero]
-    · rw [finSumFinEquiv_symm_apply_castSucc, Basis.prod_apply_inl_fst, Basis.prod_apply_inl_snd,
-        Fin.snoc_castSucc, ContinuousLinearMap.map_zero, Complex.zero_re, Complex.zero_im,
-        zero_smul, zero_smul, zero_add, zero_add]
+    · simp [β, v, ContinuousLinearMap.map_zero]
+    · simp [a, ContinuousLinearMap.map_zero]
   rw [himage, coe_sphereRotationFamily]
   exact volumeForm_cons_snoc o p v a x.2 β
 
@@ -464,8 +473,7 @@ private theorem linearIndependent_mfderiv_sphereRotationFamily
     (hc : c.orientation = Complex.orientation.sphereOrientation.orientationAt x.2) :
     LinearIndependent ℝ fun i ↦ mfderiv ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) (sphereRotationFamily p) x
       (prodTangentBasis b c i) := by
-  have hκ0 : (-1 : ℝ) ^ m * (x.2 : ℂ).im ^ m ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num)) (pow_ne_zero _ hx)
+  have hκ0 : (-1 : ℝ) ^ m * (x.2 : ℂ).im ^ m ≠ 0 := by simp [hx]
   have hvol := volumeForm_cons_mfderiv_sphereRotationFamily o p x b c
   have h := Orientation.volumeForm_apply_ne_zero_iff.1 (by
     rw [hvol]
@@ -475,27 +483,32 @@ private theorem linearIndependent_mfderiv_sphereRotationFamily
   exact LinearIndependent.of_comp (mvfderiv (𝓡 (m + 1)) ((↑) : sphere (0 : E) 1 → E)
     (sphereRotationFamily p x)).toLinearMap (linearIndependent_finCons.1 h).1
 
+/-- At a point `(v, z)` with `Im z ≠ 0`, the derivative of the rotation family carries the product
+basis of a tangent basis `b` at `v` and a positively oriented tangent basis `c` at `z` onto a basis
+of the tangent space of the target. -/
+private theorem exists_basis_eq_mfderiv_sphereRotationFamily
+    (o : Orientation ℝ E (Fin (m + 1 + 1))) (p : sphere (0 : E) 1)
+    {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im ≠ 0)
+    (b : Basis (Fin m) ℝ (TangentSpace (𝓡 m) x.1)) {c : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) x.2)}
+    (hc : c.orientation = Complex.orientation.sphereOrientation.orientationAt x.2) :
+    ∃ b' : Basis (Fin (m + 1)) ℝ (TangentSpace (𝓡 (m + 1)) (sphereRotationFamily p x)),
+      ∀ i, mfderiv ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) (sphereRotationFamily p) x
+        (prodTangentBasis b c i) = b' i :=
+  ⟨basisOfLinearIndependentOfCardEqFinrank
+    (linearIndependent_mfderiv_sphereRotationFamily o p hx b hc)
+    ((Fintype.card_fin _).trans (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm), fun i ↦ by simp⟩
+
 /-- At a point with `Im z ≠ 0`, the derivative of the rotation family is invertible. -/
 theorem isInvertible_mfderiv_sphereRotationFamily (p : sphere (0 : E) 1)
     {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im ≠ 0) :
     (mfderiv ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) (sphereRotationFamily p) x).IsInvertible := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (m + 1)
-  let b := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 m) x.1)
-    (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  let c := (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) x.2)
-    ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq x.2).trans
-      (Fintype.card_fin 1))).adjustToOrientation
-      (Complex.orientation.sphereOrientation.orientationAt x.2)
-  -- The volume form of any orientation of `E` detects that the image of the product basis is
-  -- linearly independent, so a basis of the tangent space of the target.
-  have hli := linearIndependent_mfderiv_sphereRotationFamily
-    (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = m + 1 + 1)).orientation p hx b
-    (c := c) (Basis.orientation_adjustToOrientation _ _)
-  let b' := basisOfLinearIndependentOfCardEqFinrank hli
-    ((Fintype.card_fin _).trans (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm)
-  refine ⟨((prodTangentBasis b c).equiv b' (Equiv.refl _)).toContinuousLinearEquiv,
-    ContinuousLinearMap.coe_injective <| (prodTangentBasis b c).ext fun i ↦ ?_⟩
-  simp [Basis.equiv_apply, b']
+  -- The volume form of any orientation of `E` detects that the image of the product basis is a
+  -- basis of the tangent space of the target.
+  obtain ⟨b', hb'⟩ := exists_basis_eq_mfderiv_sphereRotationFamily
+    (finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = m + 1 + 1)).orientation p hx
+    (sphereTangentBasis x.1) (orientation_circleTangentBasis x.2)
+  exact isInvertible_mfderiv_of_basis _ b' hb'
 
 /-- At a point `(v, z)` with `Im z ≠ 0`, the orientation sign of the rotation family is the sign
 of `(-1)ᵐ (Im z)ᵐ`. -/
@@ -508,45 +521,32 @@ theorem _root_.Orientation.orientationSign_sphereRotationFamily
       (sphereRotationFamily p) x = SignType.sign ((-1) ^ m * (x.2 : ℂ).im ^ m) := by
   set op := o.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere p)
   -- A basis of the tangent space of the first factor, which may be positively or negatively
-  -- oriented (when `m = 0` it is empty), a positively oriented one of the second factor, and
-  -- their product, which the derivative carries to a basis `b'` of the target.
-  let b := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 m) x.1)
-    (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  let c := (finBasisOfFinrankEq ℝ (TangentSpace (𝓡 1) x.2)
-    ((Complex.orientation.sphereOrientation.finrank_tangentSpace_eq x.2).trans
-      (Fintype.card_fin 1))).adjustToOrientation
-      (Complex.orientation.sphereOrientation.orientationAt x.2)
-  have hc : c.orientation = Complex.orientation.sphereOrientation.orientationAt x.2 :=
-    Basis.orientation_adjustToOrientation _ _
+  -- oriented, a positively oriented one of the second factor, and their product, which the
+  -- derivative carries to a basis `b'` of the target.
+  set b := sphereTangentBasis (p := p) (m := m) x.1
+  set c := circleTangentBasis x.2
+  have hc := orientation_circleTangentBasis x.2
   have hB : (prodTangentBasis b c).orientation =
       (op.sphereOrientation.prod Complex.orientation.sphereOrientation).orientationAt x ↔
       b.orientation = op.sphereOrientation.orientationAt x.1 :=
     (op.sphereOrientation.orientation_eq_orientationAt_prod_iff _ b c).trans (iff_true_right hc)
   have h₁ := (volumeForm_cons_cons_mvfderiv o p x.1 b).2
   have h₂ := (Complex.orientation_eq_orientationAt_sphereOrientation_iff c).1 hc
-  let b' := basisOfLinearIndependentOfCardEqFinrank
-    (linearIndependent_mfderiv_sphereRotationFamily o p hx b hc)
-    ((Fintype.card_fin _).trans (finrank_euclideanSpace_fin (𝕜 := ℝ)).symm)
-  have hb' (i : Fin (m + 1)) :
-      mfderiv ((𝓡 m).prod (𝓡 1)) (𝓡 (m + 1)) (sphereRotationFamily p) x
-        (prodTangentBasis b c i) = b' i := by
-    simp [b']
+  obtain ⟨b', hb'⟩ := exists_basis_eq_mfderiv_sphereRotationFamily o p hx b hc
   rcases lt_trichotomy ((-1 : ℝ) ^ m * (x.2 : ℂ).im ^ m) 0 with hκ | hκ | hκ
   · rw [sign_neg hκ, SignType.coe_neg_one]
     refine orientationSign_of_isOrientationReversingAt ?_
     rw [isOrientationReversingAt_iff_of_basis (prodTangentBasis b c) b' hb', hB, h₁,
       Orientation.orientation_eq_neg_orientationAt_sphereOrientation_iff]
-    simp only [b', coe_basisOfLinearIndependentOfCardEqFinrank,
-      volumeForm_cons_mfderiv_sphereRotationFamily]
+    simp only [← hb', volumeForm_cons_mfderiv_sphereRotationFamily]
     have hκw := mul_neg_of_neg_of_pos hκ h₂
     exact ⟨fun hD ↦ mul_neg_of_neg_of_pos hκw hD, fun h ↦ pos_of_mul_neg_right h hκw.le⟩
-  · exact absurd hκ (mul_ne_zero (pow_ne_zero _ (by norm_num)) (pow_ne_zero _ hx))
+  · simp [hx] at hκ
   · rw [sign_pos hκ, SignType.coe_one]
     refine orientationSign_of_isOrientationPreservingAt ?_
     rw [isOrientationPreservingAt_iff_of_basis (prodTangentBasis b c) b' hb', hB, h₁,
       Orientation.orientation_eq_orientationAt_sphereOrientation_iff]
-    simp only [b', coe_basisOfLinearIndependentOfCardEqFinrank,
-      volumeForm_cons_mfderiv_sphereRotationFamily]
+    simp only [← hb', volumeForm_cons_mfderiv_sphereRotationFamily]
     exact (mul_pos_iff_of_pos_left (mul_pos hκ h₂)).symm
 
 /-- At a point with `Im z > 0`, the orientation sign of the rotation family is `(-1)ᵐ`. -/
