@@ -38,7 +38,12 @@ indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` alo
   relative singular chain sequence of the triple.
 * **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.filteredSpaceAbutmentIso`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
-  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`).
+  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
+  absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
+  infinite-dimensional CW complex, are treated in
+  `TauCeti.AlgebraicTopology.Singular.FilteredSpace.Exhaustive`; the vanishing of the graded
+  pieces `Hₙ(X b, X a)` they need there is transported to the quotients `F_b / F_a` by
+  `TauCeti.isZero_homology_cokernel_singularChainFiltration`.
 
 For the skeletal filtration of a CW complex the first page consists of the groups
 `Hₙ(Xⁿ, Xⁿ⁻¹)`, and its differential is the connecting map of three consecutive skeleta, which is
@@ -208,6 +213,20 @@ lemma π_singularChainFiltrationCokernelIso_hom {a b : ℤ} (hab : X a ⊆ X b) 
   -- quotient map, and the second sends that quotient map to the cokernel cofork's map.
   refine (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
     congrArg (_ ≫ ·) (IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one)
+
+/-- The quotient `F_b / F_a` of two stages of the filtration of singular chains has vanishing
+cohomology in degree `m` when the relative singular homology `Hₙ(X b, X a)` vanishes for
+`m = -n`. In positive degrees `m` there is nothing to check. -/
+lemma isZero_homology_cokernel_singularChainFiltration {a b : ℤ} (hab : X a ⊆ X b) (m : ℤ)
+    (h : ∀ n : ℕ, m = -n → IsZero ((TopPair.ofInclusion hab).singularHomology R n)) :
+    IsZero ((cokernel (Subobject.ofLE _ _ (singularChainFiltration_mono R hab))).homology m) := by
+  refine IsZero.of_iso ?_
+    ((homologyFunctor A _ m).mapIso (singularChainFiltrationCokernelIso R hab))
+  by_cases hm : ∃ n : ℕ, ComplexShape.embeddingDownNat.f n = m
+  · obtain ⟨n, hn⟩ := hm
+    exact (h n hn.symm).of_iso (extendHomologyIso _ _ hn)
+  · push Not at hm
+    exact (extend_exactAt _ _ m hm).isZero_homology
 
 variable (hX : Monotone X)
 
