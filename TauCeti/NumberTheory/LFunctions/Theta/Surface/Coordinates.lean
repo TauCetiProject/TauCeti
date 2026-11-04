@@ -143,6 +143,24 @@ theorem continuousOn_surfacePart :
     ((continuous_archNorm.continuousAt.inv₀ hN).rpow_const
       (Or.inl (inv_ne_zero hN)))).continuousWithinAt
 
+/-- Normalization is measurable on all of `realSpace K`, including where the norm vanishes. -/
+theorem measurable_surfacePart : Measurable (surfacePart : realSpace K → realSpace K) :=
+  Measurable.of_eval fun w ↦ (measurable_pi_apply w).mul
+    ((continuous_archNorm.measurable.inv).pow_const _)
+
+/-- Scaling a parameter of nonnegative norm by `c > 0` does not change its surface part. -/
+theorem surfacePart_smul {c : ℝ} (hc : 0 < c) {y : realSpace K} (hy : 0 ≤ archNorm y) :
+    surfacePart (c • y) = surfacePart y := by
+  have hn : (Module.finrank ℚ K : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (ne_of_gt (Module.finrank_pos (R := ℚ) (M := K)))
+  have hcy : 0 ≤ archNorm (c • y) := by
+    rw [archNorm_smul]
+    positivity
+  ext w
+  rw [surfacePart_apply _ hcy, surfacePart_apply _ hy, archNorm_smul,
+    Real.mul_rpow (by positivity) hy, ← Real.rpow_natCast, ← Real.rpow_mul hc.le,
+    mul_one_div_cancel hn, Real.rpow_one, Pi.smul_apply, smul_eq_mul, mul_div_mul_left _ _ hc.ne']
+
 variable (K) in
 /-- Positive archimedean parameters are the product of the norm-one hypersurface and the
 positive radial coordinate, with inverse `(x,t) ↦ x t^(1/[K : ℚ])`. -/
