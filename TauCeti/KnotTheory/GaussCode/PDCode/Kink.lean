@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.GaussCode.Kink
 public import TauCeti.KnotTheory.GaussCode.PDCode.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Equivalence
-import TauCeti.Logic.Equiv.Fin.Rotate
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Kinks in Gauss codes are first Reidemeister moves
@@ -238,28 +238,28 @@ private theorem finRotate_kinkVisitEquiv_inl {j : Fin (2 * (n + 1))} (hj : j ≠
       kinkVisitEquiv (n + 1) k (.inl (finRotate _ j)) := by
   rw [Ne, Fin.ext_iff] at hj
   ext
-  simp only [coe_finRotate_eq_ite, kinkVisitEquiv_apply_inl_val, kinkPrev_val] at hj ⊢
+  simp only [Fin.coe_finRotate_eq_ite, kinkVisitEquiv_apply_inl_val, kinkPrev_val] at hj ⊢
   split_ifs at hj ⊢ <;> omega
 
 private theorem finRotate_kinkVisitEquiv_kinkPrev :
     finRotate _ (kinkVisitEquiv (n + 1) k (.inl (kinkPrev k))) =
       kinkVisitEquiv (n + 1) k (.inr 0) := by
   ext
-  simp only [coe_finRotate_eq_ite, kinkVisitEquiv_apply_inl_val, kinkVisitEquiv_apply_inr_val,
+  simp only [Fin.coe_finRotate_eq_ite, kinkVisitEquiv_apply_inl_val, kinkVisitEquiv_apply_inr_val,
     kinkPrev_val, Fin.val_zero]
   split_ifs <;> omega
 
 private theorem finRotate_kinkVisitEquiv_inr_zero :
     finRotate _ (kinkVisitEquiv (n + 1) k (.inr 0)) = kinkVisitEquiv (n + 1) k (.inr 1) := by
   ext
-  simp only [coe_finRotate_eq_ite, kinkVisitEquiv_apply_inr_val, Fin.val_zero, Fin.val_one]
+  simp only [Fin.coe_finRotate_eq_ite, kinkVisitEquiv_apply_inr_val, Fin.val_zero, Fin.val_one]
   split_ifs <;> omega
 
 private theorem finRotate_kinkVisitEquiv_inr_one :
     finRotate _ (kinkVisitEquiv (n + 1) k (.inr 1)) =
       kinkVisitEquiv (n + 1) k (.inl (finRotate _ (kinkPrev k))) := by
   ext
-  simp only [coe_finRotate_eq_ite, kinkVisitEquiv_apply_inl_val, kinkVisitEquiv_apply_inr_val,
+  simp only [Fin.coe_finRotate_eq_ite, kinkVisitEquiv_apply_inl_val, kinkVisitEquiv_apply_inr_val,
     kinkPrev_val, Fin.val_one]
   split_ifs <;> omega
 
@@ -407,7 +407,7 @@ private theorem finRotate_kinkVisitEquiv_zero (t : Fin 2) :
     finRotate _ (kinkVisitEquiv 0 k (.inr t)) = kinkVisitEquiv 0 k (.inr (t + 1)) := by
   have hk : k.val = 0 := by omega
   ext
-  simp only [coe_finRotate_eq_ite, kinkVisitEquiv_apply_inr_val, hk]
+  simp only [Fin.coe_finRotate_eq_ite, kinkVisitEquiv_apply_inr_val, hk]
   fin_cases t <;> simp
 
 /-- The PD-code of the crossing-free Gauss code with a kink is a relabelling of the kink adjoined
