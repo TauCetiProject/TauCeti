@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.FormalGroup.Hom
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
+import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -51,6 +52,8 @@ representable by a polynomial ring over the Lazard ring.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
+* `FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ`: the base change of the additive law transported along
+  `X + ∑ bᵢ X^(i + 1)` is transported along `X + ∑ f(bᵢ) X^(i + 1)`.
 * `FormalGroup.nsmulSeries_smul_eq_zero_iff`: changing coordinates preserves `[n](X) = 0`.
 * `FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero`: if `n = 0` in `R`, then `[n](X) = 0` for every
   transport `φ • 𝔾ₐ` of the additive formal group law.
@@ -236,6 +239,14 @@ theorem map_smul (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
   congr 2
   funext s
   fin_cases s <;> simp [PowerSeries.map_subst (hX _)]
+
+/-- The base change along `f : R →+* S` of the additive formal group law transported along the
+strict coordinate `X + ∑ bᵢ X^(i + 1)` is the additive law transported along
+`X + ∑ f(bᵢ) X^(i + 1)`. -/
+theorem map_ofStrictCoeffs_smul_𝔾ₐ (f : R →+* S) (b : ℕ+ → R) :
+    (FormalCoordinate.ofStrictCoeffs b • 𝔾ₐ).map f =
+      FormalCoordinate.ofStrictCoeffs (f ∘ b) • 𝔾ₐ := by
+  rw [map_smul, map_𝔾ₐ, FormalCoordinate.map_ofStrictCoeffs]
 
 /-- **Changing coordinates gives an isomorphic formal group law**: the formal coordinate `φ` is
 an isomorphism of formal group laws from `F` to `φ • F`, with inverse `φ⁻¹`. -/
