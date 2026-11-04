@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Group homology of a directed union of subgroups
@@ -32,16 +33,11 @@ These are the algebraic form of the compact-supports property of the homology of
 Eilenberg--MacLane spaces `K(A, 1)` of a directed union of subgroups, through the identification
 of the homology of a classifying space with group homology.
 
-## Main definitions
-
-* `Rep.resInclusionHom`: the identity of the restriction of `A` to a subgroup `K`, as a morphism
-  into the restriction to `K` of the restriction of `A` to a larger subgroup `L`. Corestriction from
-  `K` to `L` is the map on group homology it induces along `Subgroup.inclusion`.
+Corestriction from a subgroup `K` to a larger subgroup `L` is the map on group homology induced
+along `Subgroup.inclusion` by `Rep.resInclusionHom`.
 
 ## Main results
 
-* `groupHomology.map_inclusion_comp_map_subtype`: corestriction from `K` to `L` followed by
-  corestriction from `L` to `G` is corestriction from `K` to `G`.
 * `groupHomology.exists_map_subtype_eq`: a class of a directed union of subgroups comes from a
   member.
 * `groupHomology.exists_map_inclusion_eq_zero`: a class of a member that vanishes in the union
@@ -65,22 +61,6 @@ universe u
 
 variable {k G : Type u} [CommRing k] [Group G] (A : Rep k G)
 
-namespace Rep
-
-/-- The identity of the restriction of `A` to a subgroup `K`, viewed as a morphism into the
-restriction to `K` (along `Subgroup.inclusion h`) of the restriction of `A` to a larger subgroup
-`L`. The two representations of `K` have the same underlying module and action. -/
-@[expose] def resInclusionHom {K L : Subgroup G} (h : K ≤ L) :
-    res K.subtype A ⟶ res (Subgroup.inclusion h) (res L.subtype A) :=
-  𝟙 (res K.subtype A)
-
-@[simp]
-theorem resInclusionHom_hom_apply {K L : Subgroup G} (h : K ≤ L) (a : A) :
-    (resInclusionHom A h).hom a = a :=
-  rfl
-
-end Rep
-
 namespace groupHomology
 
 /-- Corestriction from a subgroup on chains: it pushes chains forward along the inclusion. -/
@@ -89,37 +69,20 @@ private theorem chainsMap_subtype_f_apply (K : Subgroup G) (n : ℕ)
     (chainsMap K.subtype (𝟙 (Rep.res K.subtype A))).f n x = mapDomain (K.subtype ∘ ·) x := by
   simp [chainsMap_f]
 
-/-- Corestriction between nested subgroups on chains: it pushes chains forward along the
-inclusion. -/
-private theorem chainsMap_inclusion_f_apply {K L : Subgroup G} (h : K ≤ L) (n : ℕ)
-    (x : (inhomogeneousChains (Rep.res K.subtype A)).X n) :
-    (chainsMap (Subgroup.inclusion h) (Rep.resInclusionHom A h)).f n x =
-      mapDomain (Subgroup.inclusion h ∘ ·) x := by
-  simp only [chainsMap_f]
-  exact mapRange_id _
-
 private theorem chainsMap_subtype_f_injective (K : Subgroup G) (n : ℕ) :
     Function.Injective ((chainsMap K.subtype (𝟙 (Rep.res K.subtype A))).f n) :=
   (ModuleCat.mono_iff_injective _).1 (chainsMap_f_map_mono _ _ K.subtype_injective n)
 
+/-- Corestriction is transitive on chains: this is `groupHomology.chainsMap_comp` along
+`L.subtype ∘ Subgroup.inclusion h = K.subtype`. -/
 private theorem chainsMap_inclusion_comp_chainsMap_subtype {K L : Subgroup G} (h : K ≤ L) :
     chainsMap (Subgroup.inclusion h) (Rep.resInclusionHom A h) ≫
         chainsMap L.subtype (𝟙 (Rep.res L.subtype A)) =
       chainsMap K.subtype (𝟙 (Rep.res K.subtype A)) := by
-  refine HomologicalComplex.hom_ext _ _ fun m ↦ ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
-  rw [HomologicalComplex.comp_f, ModuleCat.comp_apply, chainsMap_inclusion_f_apply,
-    chainsMap_subtype_f_apply, chainsMap_subtype_f_apply, ← mapDomain_comp]
-  rfl
-
-/-- **Corestriction is transitive.** For subgroups `K ≤ L` of `G`, corestriction from `K` to `L`
-followed by corestriction from `L` to `G` is corestriction from `K` to `G`. -/
-@[reassoc (attr := simp)]
-theorem map_inclusion_comp_map_subtype {K L : Subgroup G} (h : K ≤ L) (n : ℕ) :
-    map (Subgroup.inclusion h) (Rep.resInclusionHom A h) n ≫
-        map L.subtype (𝟙 (Rep.res L.subtype A)) n =
-      map K.subtype (𝟙 (Rep.res K.subtype A)) n :=
-  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · n) (chainsMap_inclusion_comp_chainsMap_subtype A h))
+  rw [← chainsMap_comp]
+  congr 1
+  ext a
+  exact Rep.resInclusionHom_hom_apply A h a
 
 variable {A} {ι : Type*} {H : ι → Subgroup G}
 

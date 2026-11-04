@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Torus
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 import Mathlib.Algebra.CharP.Algebra
 
 /-!
@@ -46,8 +47,6 @@ connected space with vanishing reduced mod-two homology are uniquely two-divisib
   in degrees `n ≥ 2`.
 * `TauCeti.isZero_groupHomology_of_forall_exists_mem_zpowers`: the homology of a torsion-free
   locally cyclic group vanishes in degrees `n ≥ 2`.
-* `TauCeti.subsingleton_groupHomology_one_of_forall_exists_sq`: `H₁(G; k) = 0` when every element
-  of `G` is a square and `2 = 0` in `k`.
 * `TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_exists_sq`:
   the reduced homology of `BG` with coefficients in `k` vanishes for a torsion-free, locally
   cyclic, two-divisible group `G` and `2 = 0` in `k`.
@@ -66,7 +65,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits TensorProduct
+open CategoryTheory Limits
 
 namespace TauCeti
 
@@ -103,29 +102,6 @@ theorem isZero_groupHomology_of_forall_exists_mem_zpowers [IsMulTorsionFree G]
     exact ⟨g, Subgroup.zpowers_le.2 hx, Subgroup.zpowers_le.2 hy⟩
   · -- the restriction of the trivial representation is the trivial representation
     exact isZero_groupHomology_of_isCyclic k hn
-
-/-- **The first homology of a two-divisible group vanishes in characteristic two.** If every element
-of `G` is a square and `2 = 0` in `k`, then `H₁(G; k) = Gᵃᵇ ⊗ k` vanishes: every element of the
-abelianization is twice another, and twice every element of `k` is zero. -/
-theorem subsingleton_groupHomology_one_of_forall_exists_sq (hk : (2 : k) = 0)
-    (h : ∀ g : G, ∃ x, x ^ 2 = g) : Subsingleton (groupHomology (Rep.trivial k G k) 1) := by
-  suffices Subsingleton (Additive (Abelianization G) ⊗[ℤ] k) by
-    exact (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial k G k)).injective.subsingleton
-  refine ⟨fun s t ↦ ?_⟩
-  suffices ∀ s : Additive (Abelianization G) ⊗[ℤ] k, s = 0 by rw [this s, this t]
-  intro s
-  induction s using TensorProduct.inductionOn with
-  | add s t hs ht => rw [hs, ht, add_zero]
-  | tmul a b =>
-    -- `a` is the class of a square `x ^ 2`, so `a ⊗ b = x ⊗ 2b = 0`
-    -- `Abelianization.of` is the quotient map, so it is surjective
-    obtain ⟨g, hg⟩ : ∃ g, Abelianization.of g = Additive.toMul a :=
-      QuotientGroup.mk_surjective _
-    obtain ⟨x, rfl⟩ := h g
-    have ha : a = Additive.ofMul (Abelianization.of x) + Additive.ofMul (Abelianization.of x) := by
-      rw [← ofMul_mul, ← map_mul, ← pow_two, hg, ofMul_toMul]
-    rw [ha, TensorProduct.add_tmul, ← TensorProduct.tmul_add, ← two_mul, hk, zero_mul,
-      TensorProduct.tmul_zero]
 
 /-- **The reduced homology of `K(G, 1)` vanishes in characteristic two for a torsion-free,
 locally cyclic, two-divisible group `G`.** If `G` is torsion-free, any two elements of `G` lie in a
