@@ -54,6 +54,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
   complex seminormed space structure, complete when `X` is.
 * `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+* `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
+  homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify`: the complex-linear extension of a bounded real operator, with
   `ContinuousLinearMap.norm_complexify` and the bundled
   `ContinuousLinearMap.complexifyAlgHom`.
@@ -346,6 +348,50 @@ instance instNormedAddCommGroup {X : Type*} [NormedAddCommGroup X] [NormedSpace 
     ext
     · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_re_le (z - w)))
     · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_im_le (z - w)))
+
+variable (ι : Type*) [Fintype ι]
+
+/-- The complexification of the real coordinate space `ι → ℝ` is complex-linearly homeomorphic to
+`ι → ℂ`, by combining the real and imaginary parts coordinatewise. -/
+def equivPi : Complexification (ι → ℝ) ≃L[ℂ] (ι → ℂ) where
+  toFun z i := ⟨z.re i, z.im i⟩
+  invFun v := ⟨fun i ↦ (v i).re, fun i ↦ (v i).im⟩
+  map_add' _ _ := (rfl)
+  map_smul' c z := by
+    funext i
+    rw [Pi.smul_apply, smul_eq_mul]
+    apply Complex.ext
+    · simp only [smul_re, Pi.sub_apply, Pi.smul_apply, smul_eq_mul, Complex.mul_re,
+        RingHom.id_apply]
+    · simp only [smul_im, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Complex.mul_im,
+        RingHom.id_apply]
+      ring
+  left_inv _ := (rfl)
+  right_inv _ := (rfl)
+  continuous_toFun := by
+    have hre : Continuous fun z : Complexification (ι → ℝ) ↦ z.re := (reCLM _).continuous
+    have him : Continuous fun z : Complexification (ι → ℝ) ↦ z.im := (imCLM _).continuous
+    refine continuous_pi fun i ↦ ?_
+    refine (Complex.equivRealProdCLM.symm.continuous.comp
+      (((continuous_apply i).comp hre).prodMk ((continuous_apply i).comp him))).congr fun z ↦ ?_
+    apply Complex.ext <;> simp
+  continuous_invFun := by
+    have h : Continuous fun v : ι → ℂ ↦ (equivProd (ι → ℝ)).symm
+        (fun i ↦ (v i).re, fun i ↦ (v i).im) :=
+      (equivProd (ι → ℝ)).symm.continuous.comp
+        ((continuous_pi fun i ↦ Complex.continuous_re.comp (continuous_apply i)).prodMk
+          (continuous_pi fun i ↦ Complex.continuous_im.comp (continuous_apply i)))
+    exact h.congr fun v ↦ equivProd_symm_apply _
+
+variable {ι}
+
+@[simp]
+theorem equivPi_apply (z : Complexification (ι → ℝ)) (i : ι) :
+    equivPi ι z i = ⟨z.re i, z.im i⟩ := (rfl)
+
+@[simp]
+theorem equivPi_symm_apply (v : ι → ℂ) :
+    (equivPi ι).symm v = ⟨fun i ↦ (v i).re, fun i ↦ (v i).im⟩ := (rfl)
 
 end Complexification
 

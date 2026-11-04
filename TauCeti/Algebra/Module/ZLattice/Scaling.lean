@@ -46,7 +46,8 @@ first statement does not extend to `|c| < 1`.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
   `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
   even or when `L` is integral and `m` is even.
-* `ZLattice.det_sqrt_smul`: `det (√m • L) = mⁿ det L` for `m ≠ 0`.
+* `ZLattice.det_sqrt_smul`: `det (√m • L) = mⁿ det L` for `m ≠ 0`, and
+  `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
   by `|c| > 1`, or a unimodular lattice by `|c| ≠ 1`, does not give a unimodular lattice.
@@ -192,6 +193,17 @@ theorem det_smul {c : ℝ} (hc : c ≠ 0) : det (c • L) = c ^ (2 * finrank ℝ
 `mⁿ`, where `n` is the dimension of the space. -/
 theorem det_sqrt_smul {m : ℕ} (hm : m ≠ 0) : det (√(m : ℝ) • L) = m ^ finrank ℝ E * det L := by
   rw [det_smul L (Real.sqrt_ne_zero'.mpr (by positivity)), pow_mul, Real.sq_sqrt m.cast_nonneg]
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- For an orthonormal basis `b` and a nonzero natural number `m`, the scaled cubic lattice
+`√m • ℤ b` has determinant `mⁿ`, where `n` is the dimension of the space. For instance `√2 ℤ²` has
+determinant `4`. -/
+theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    {m : ℕ} (hm : m ≠ 0) : det (√(m : ℝ) • span ℤ (Set.range b)) = m ^ finrank ℝ E := by
+  have hu := isUnimodular_span_orthonormalBasis b
+  -- The lattice instances of `span ℤ (Set.range b)` are those of the `ℤ`-span of a basis.
+  rw [← b.coe_toBasis] at hu ⊢
+  rw [det_sqrt_smul _ hm, hu.det_eq_one, mul_one]
 
 variable {L}
 

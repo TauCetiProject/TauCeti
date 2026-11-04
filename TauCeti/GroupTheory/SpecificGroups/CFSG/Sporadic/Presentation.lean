@@ -17,7 +17,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HaradaNorton
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Held
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HigmanSims
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Four
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Three
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Two
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Lyons
@@ -90,6 +90,11 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .Th => Sporadic.Thompson.presentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
+
+/-- The presentation selected for the first Janko group is the transcribed ATLAS presentation. -/
+@[simp]
+theorem SporadicName.presentation_J1 : SporadicName.J1.presentation = Sporadic.j1Presentation :=
+  (rfl)
 
 /-- The selected Higman--Sims presentation is the transcribed ATLAS presentation `HSG1-P1`. -/
 @[simp]

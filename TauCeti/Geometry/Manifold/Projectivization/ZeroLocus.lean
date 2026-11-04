@@ -111,7 +111,7 @@ private theorem hasStrictFDerivAt_eqns (p : ι → MvPolynomial (Fin (n + 1)) �
     (i : Fin (n + 1)) (y : Fin n → ℂ) :
     HasStrictFDerivAt (eqns p i) (fderiv ℂ (eqns p i) y) y := by
   cases nonempty_fintype ι
-  exact (contDiff_eqns p i (r := 1)).contDiffAt.hasStrictFDerivAt one_ne_zero
+  exact (contDiff_eqns p i (r := 1)).contDiffAt.hasStrictFDerivAt_fderiv one_ne_zero
 
 variable {i : Fin (n + 1)} {L : ℙ ℂ (Fin (n + 1) → ℂ)}
 

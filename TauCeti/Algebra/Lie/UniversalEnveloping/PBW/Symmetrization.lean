@@ -227,6 +227,56 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
     LinearEquiv.apply_symm_apply, pbwHomogeneousSymmetrization_apply] using
     mk_pbwSymmetrization R L n hn ((SymmetricPower.equivHomogeneous n).symm p)
 
+/-- Homogeneous symmetrization sends the `n`-th power of a generator of `S(L)` to the `n`-th power
+of the corresponding generator of `U(L)`. -/
+@[simp]
+theorem pbwHomogeneousSymmetrization_ι_pow (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : L)
+    (h : SymmetricAlgebra.ι R L x ^ n ∈ homogeneousSubmodule R L n) :
+    pbwHomogeneousSymmetrization R L n hn ⟨SymmetricAlgebra.ι R L x ^ n, h⟩ = ι x ^ n := by
+  have hprod : ∏ _i : Fin n, SymmetricAlgebra.ι R L x ∈ homogeneousSubmodule R L n := by
+    simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] using h
+  have hp : (⟨SymmetricAlgebra.ι R L x ^ n, h⟩ : homogeneousSubmodule R L n) =
+      ⟨∏ _i : Fin n, SymmetricAlgebra.ι R L x, hprod⟩ :=
+    Subtype.ext (by simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin])
+  rw [hp, pbwHomogeneousSymmetrization_apply,
+    SymmetricPower.equivHomogeneous_symm_prod_ι n (fun _ ↦ x) hprod,
+    pbwSymmetrization_tprod_const]
+
+/-- Homogeneous and tensor symmetrization in degree `n` have the same range. -/
+theorem range_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)) :
+    LinearMap.range (pbwHomogeneousSymmetrization R L n hn) =
+      LinearMap.range (pbwSymmetrization R L n hn) :=
+  LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)
+
+/-- **Symmetrization is onto.** When every factorial is a unit of `R`, the enveloping algebra is
+spanned by the symmetrizations of all degrees. A word of length `n` in the generators is its own
+symmetrization up to an element of PBW filtration degree `n - 1`, so this follows by induction on
+the length of words. No freeness of `L` is needed. -/
+theorem iSup_range_pbwSymmetrization_eq_top (hn : ∀ n : ℕ, IsUnit (n.factorial : R)) :
+    ⨆ n, LinearMap.range (pbwSymmetrization R L n (hn n)) = ⊤ := by
+  set S := ⨆ n, LinearMap.range (pbwSymmetrization R L n (hn n))
+  -- Every word in the generators lies in `S`, by strong induction on its length.
+  have hword : ∀ m, ∀ l : List L, l.length = m → (l.map ι).prod ∈ S := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | _ m ih =>
+      intro l hl
+      have hprev : pbwFiltrationPrevious R L m ≤ S := by
+        rcases m with _ | j
+        · simp
+        · rw [pbwFiltrationPrevious_succ, pbwFiltration_le_iff]
+          exact fun l' hl' ↦ ih l'.length (by omega) l' rfl
+      subst hl
+      have hsym := pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious R L l.length (hn _) l.get
+      have hmem : pbwSymmetrization R L l.length (hn _) (⨂ₛ[R] i, l.get i) ∈ S :=
+        Submodule.mem_iSup_of_mem l.length (LinearMap.mem_range_self _ _)
+      have hword : (List.ofFn fun i ↦ ι (l.get i)).prod = (l.map ι).prod :=
+        congrArg List.prod <|
+          (List.map_ofFn (f := l.get) (g := ι)).symm.trans (by rw [List.ofFn_get])
+      simpa only [hword, sub_sub_cancel] using S.sub_mem hmem (hprev hsym)
+  rw [eq_top_iff, ← iSup_pbwFiltration_eq_top, iSup_le_iff]
+  exact fun k ↦ (pbwFiltration_le_iff R L).2 fun l _ ↦ hword _ l rfl
+
 /-! ### Equivariance and central elements -/
 
 section Center

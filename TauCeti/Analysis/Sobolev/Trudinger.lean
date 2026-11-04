@@ -271,7 +271,7 @@ private theorem lintegral_exp_norm_div_rpow_le_of_eLpNorm_le (hf : AEStronglyMea
         simp_rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top]
     _ ≤ ∑' k : ℕ, ENNReal.ofReal ((1 + (n : ℝ) ^ n) / k ! +
           Real.exp 1 * (((k : ℝ) + 1) * (1 / 2) ^ k)) * ν univ :=
-        ENNReal.tsum_le_tsum (lintegral_ofReal_norm_div_rpow_pow_mul_le hf hn hS h hc)
+        tsum_le_tsum (lintegral_ofReal_norm_div_rpow_pow_mul_le hf hn hS h hc)
     _ = _ := by
         rw [ENNReal.tsum_mul_right, ← ENNReal.ofReal_tsum_of_nonneg (fun k => by positivity)
           hsum.summable, hsum.tsum_eq]
@@ -285,12 +285,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω : Set E}
 
 /-- **The borderline Sobolev inequality for compactly supported functions.** Let `n` be the
-dimension and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a measurable set `Ω`,
+dimension and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a set `Ω`,
 then for every `q ≥ n`,
 
 `‖u‖_{L^q} ≤ n⁻¹ ω ^ (-1/n) (q (1 - 1/n) + 1) ^ (1 - 1/n + 1/q) μ(Ω) ^ (1/q) ‖Du‖_{Lⁿ}`. -/
 theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω) {q : ℝ≥0}
+    (h2u : HasCompactSupport u) (hsupp : tsupport u ⊆ Ω) {q : ℝ≥0}
     (hq : (finrank ℝ E : ℝ≥0) ≤ q) :
     eLpNorm u q μ ≤
       ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ * μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
@@ -300,7 +300,8 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
   have hn0 : (n : ℝ) ≠ 0 := by have : 0 < n := finrank_pos; positivity
   have hq0 : (0 : ℝ) < q := lt_of_lt_of_le (by have : 0 < n := finrank_pos; positivity)
     (by exact_mod_cast hq : (n : ℝ) ≤ q)
-  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u hΩ hsupp
+  have h := eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (μ := μ) hu h2u
+    (measurableSet_toMeasurable μ Ω) (hsupp.trans (subset_toMeasurable μ Ω))
     (p := n) (by exact_mod_cast finrank_pos) hq (δ := (n : ℝ)⁻¹ - (q : ℝ)⁻¹) (by simp)
     (by linarith [inv_pos.2 hq0])
   -- At `p = n`, `δ = 1/n - 1/q`, so `1/n - δ = 1/q` and `(1 - δ) / (1/n - δ) = q (1 - 1/n) + 1`.
@@ -309,17 +310,17 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv (hu : ContDiff ℝ 1 u)
     field_simp [hn0]
     ring
   rwa [hbase, sub_sub_cancel, show 1 - ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) = 1 - (n : ℝ)⁻¹ + (q : ℝ)⁻¹ by
-    ring, ENNReal.coe_natCast] at h
+    ring, ENNReal.coe_natCast, measure_toMeasurable] at h
 
 omit [Nontrivial E] in
 /-- **Trudinger's inequality for compactly supported functions.** Let `n ≥ 2` be the dimension
-and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a measurable set `Ω`, then
+and `ω = μ(B(0, 1))`. If `u` is `C¹` with compact support inside a set `Ω`, then
 
 `∫_Ω exp ((‖u‖ / (c ‖Du‖_{Lⁿ})) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
 
 where `c = (2e) ^ (1 - 1/n) n⁻¹ ω ^ (-1/n)`. -/
 theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasCompactSupport u)
-    (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω) (hn : 2 ≤ finrank ℝ E) :
+    (hsupp : tsupport u ⊆ Ω) (hn : 2 ≤ finrank ℝ E) :
     ∫⁻ x in Ω, ENNReal.ofReal (Real.exp ((‖u x‖ /
         ((2 * Real.exp 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * (finrank ℝ E : ℝ)⁻¹ *
           μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
@@ -334,7 +335,7 @@ theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasComp
     hu.continuous.aestronglyMeasurable hn fun q hq => by
       rw [eLpNorm_restrict_eq_of_support_subset hu.continuous.aestronglyMeasurable
         ((subset_tsupport _).trans hsupp), Measure.restrict_apply_univ]
-      refine (eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv hu h2u hΩ hsupp hq).trans_eq ?_
+      refine (eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv hu h2u hsupp hq).trans_eq ?_
       rw [ENNReal.ofReal_mul (by positivity)]
       ring
   rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal hK] at h
@@ -342,15 +343,14 @@ theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasComp
 
 omit [Nontrivial E] in
 /-- **Trudinger's inequality with a bound on the derivative.** Let `n ≥ 2` be the dimension. If
-`u` is `C¹` with compact support inside a measurable set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some
-`A > 0`, then
+`u` is `C¹` with compact support inside a set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some `A > 0`, then
 
 `∫_Ω exp ((‖u‖ / (c A)) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
 
 with `c` as in `TauCeti.setLIntegral_exp_norm_div_rpow_le`. Since the bound `A` need not be the
 norm of `Du` itself, a single exponent serves a whole family of functions. -/
 theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω)
+    (h2u : HasCompactSupport u) (hsupp : tsupport u ⊆ Ω)
     (hn : 2 ≤ finrank ℝ E) {A : ℝ} (hA : 0 < A)
     (hDu : eLpNorm (fderiv ℝ u) (finrank ℝ E) μ ≤ ENNReal.ofReal A) :
     ∫⁻ x in Ω, ENNReal.ofReal (Real.exp ((‖u x‖ /
@@ -369,8 +369,8 @@ theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff �
   have hq : 0 ≤ (finrank ℝ E : ℝ) / (finrank ℝ E - 1) := div_nonneg (by linarith) (by linarith)
   have hSA : (eLpNorm (fderiv ℝ u) (finrank ℝ E) μ).toReal ≤ A :=
     ENNReal.toReal_le_of_le_ofReal hA.le hDu
-  refine (setLIntegral_mono' hΩ fun x _ ↦ ?_).trans
-    (setLIntegral_exp_norm_div_rpow_le hu h2u hΩ hsupp hn)
+  refine (lintegral_mono fun x ↦ ?_).trans
+    (setLIntegral_exp_norm_div_rpow_le hu h2u hsupp hn)
   gcongr ENNReal.ofReal (Real.exp ?_)
   rcases ENNReal.toReal_nonneg.eq_or_lt with hS0 | hSpos
   · -- If `Du` vanishes in `Lⁿ`, it vanishes identically, so the compactly supported `u` is zero.

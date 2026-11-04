@@ -16,6 +16,8 @@ that property in the carrier's `Fin 54` coordinates, obtained by `matrixIndexEqu
 block coordinates. Each root operator squares to zero, so the corresponding root subgroup is
 `1 + t X` over any commutative ring. These formulas allow block preservation to be checked on
 the universal root-subgroup coordinate maps, including over nonreduced rings.
+The lemmas `rootIntMatrix_inl` and `rootIntMatrix_inr` identify the root matrices with the
+reindexed block generators; `rootIntMatrix_mul_self` records their square-zero property.
 
 The integral matrix interface follows
 `TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.IntegralMatrix`.
@@ -131,6 +133,37 @@ theorem rootIntMatrix_apply (j : Fin 6 ⊕ Fin 6) (a b : Fin 54) :
     rep_kostantForm_mem_lattice j matrixBasis
     (rep_rootGenerator_matrixBasis_eq_smul j b) a
 
+/-- A positive root matrix is the raising matrix transported from block coordinates to the
+carrier's matrix coordinates. -/
+theorem rootIntMatrix_inl (i : Fin 6) :
+    rootIntMatrix (.inl i) =
+      Matrix.reindex matrixIndexEquiv matrixIndexEquiv (raisingMatrix i) := by
+  ext a b
+  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
+  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
+  simp [Matrix.reindex_apply, Matrix.submatrix_apply, matrixWeight_apply, ← ite_and, and_comm]
+
+/-- A negative root matrix is the lowering matrix transported from block coordinates to the
+carrier's matrix coordinates. -/
+theorem rootIntMatrix_inr (i : Fin 6) :
+    rootIntMatrix (.inr i) =
+      Matrix.reindex matrixIndexEquiv matrixIndexEquiv (loweringMatrix i) := by
+  ext a b
+  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
+  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
+  simp [Matrix.reindex_apply, Matrix.submatrix_apply, matrixWeight_apply, ← ite_and, and_comm]
+
+/-- Every numbered integral root matrix squares to zero. -/
+@[simp]
+theorem rootIntMatrix_mul_self (k : Fin 6 ⊕ Fin 6) : rootIntMatrix k * rootIntMatrix k = 0 := by
+  cases k with
+  | inl i =>
+    rw [rootIntMatrix_inl, ← pow_two, ← Matrix.coe_reindexRingEquiv, ← map_pow,
+      raisingMatrix_pow_two, map_zero]
+  | inr i =>
+    rw [rootIntMatrix_inr, ← pow_two, ← Matrix.coe_reindexRingEquiv, ← map_pow,
+      loweringMatrix_pow_two, map_zero]
+
 /-- A numbered root operator has nonzero entries only at its signed simple-root weight
 difference. The weights are integral, before any change of coefficient ring. -/
 theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin 6 ⊕ Fin 6) {a b : Fin 54}
@@ -138,9 +171,8 @@ theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin 6 ⊕ Fin 6) {a b : Fin 54}
     rootIntMatrix k a b = 0 := by
   rw [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
   exact repr_eq_zero_of_isCartanWeightVector
-    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-    rep_kostantForm_mem_lattice matrixBasis matrixWeight isCartanWeightVector_matrixBasis
+    matrixBasis matrixWeight isCartanWeightVector_matrixBasis
     (isCartanWeightVector_coe_kostantRootOperator
       (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
       (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
@@ -171,5 +203,23 @@ theorem coe_rootSubgroupPoints_eq_one_add_smul (j : Fin 6 ⊕ Fin 6)
     kostantRootSubgroupMatrix_eq_one_add_smul _ _ _ _ _ _ _ _ (rootIntMatrix j)
       (nilpotencyClass_rep_rootGenerator_le_two j) (rep_rootGenerator_matrixBasis_eq_sum j)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u)
+
+/-- Subtracting a coordinate vector from its image under a unit-parameter root point gives
+its reflected vector, with the sign of its minuscule summand, when its weight permits the move. -/
+theorem root_mulVec_single_sub (R : Type*) [CommRing R] (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
+    (ha : matrixWeight a (Sum.elim id id j) =
+      (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ)) :
+    (((rootSubgroupPoints j R (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 54) R) : Matrix (Fin 54) (Fin 54) R) *ᵥ
+          Pi.single a 1) - Pi.single a 1 =
+      (summandSign (matrixIndexEquiv.symm a) : R) •
+        Pi.single (matrixIndexEquiv (reflection (Sum.elim id id j)
+          (matrixIndexEquiv.symm a))) 1 := by
+  rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
+    Matrix.smul_mulVec]
+  simp only [toAdd_ofAdd, one_smul, add_sub_cancel_left,
+    Matrix.mulVec_single_one]
+  ext b
+  simp [Matrix.map_apply, rootIntMatrix_apply, ha, Pi.single_apply]
 
 end TauCeti.E6DoubledMinuscule

@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TopologicalMonoid
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The universal covering group of a topological group
@@ -45,6 +46,9 @@ the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
   `UniversalCover (1 : G) →ₜ* G`.
 * `TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`: the kernel of `projHom` is
   isomorphic to the fundamental group `π₁(G, 1)`.
+* `IsCoveringMap.kerMulEquivFundamentalGroup`: the kernel of a simply connected covering group is
+  the fundamental group of its base, an element of the kernel corresponding to the projection of
+  a path from `1` to it.
 
 ## Main statements
 
@@ -409,5 +413,56 @@ theorem continuousMulEquivUniversalCover_unique (hp : IsCoveringMap p)
   exact congrFun (UniversalCover.isCoveringMap_projHom.eq_of_comp_eq
     f.continuous hp.continuousMulEquivUniversalCover.continuous
     hcomp 1 (by simp)) e
+
+/-- The comparison with the universal cover carries the kernel of the covering homomorphism onto
+the kernel of the universal-cover projection. -/
+theorem map_ker_continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
+    (p : E →* G).ker.map (hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)) =
+      (UniversalCover.projHom (G := G) : UniversalCover (1 : G) →* G).ker := by
+  ext y
+  simp only [Subgroup.mem_map, MonoidHom.mem_ker, MonoidHom.coe_ofClass,
+    ContinuousMulEquiv.coe_toMulEquiv]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    simpa using hx
+  · intro hy
+    exact ⟨hp.continuousMulEquivUniversalCover.symm y, by simpa using hy, by simp⟩
+
+/-- **The kernel of a simply connected covering group is the fundamental group of its base.**
+For a covering homomorphism `p : E →ₜ* G` from a simply connected, locally path-connected
+topological group, `ker p ≃* π₁(G, 1)`. An element `x` of the kernel corresponds to the loop
+obtained by projecting any path from `1` to `x` in `E`
+(`IsCoveringMap.kerMulEquivFundamentalGroup_apply`). -/
+noncomputable def kerMulEquivFundamentalGroup (hp : IsCoveringMap p) :
+    (p : E →* G).ker ≃* FundamentalGroup G 1 :=
+  ((hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)).subgroupMap _).trans
+    ((MulEquiv.subgroupCongr hp.map_ker_continuousMulEquivUniversalCover).trans
+      UniversalCover.kerProjHomEquivFundamentalGroup)
+
+/-- An element `x` of the kernel of a simply connected covering group corresponds to the class of
+the loop `p ∘ γ` at `1`, for any path `γ` from `1` to `x`. -/
+theorem kerMulEquivFundamentalGroup_apply (hp : IsCoveringMap p) (x : (p : E →* G).ker)
+    (γ : Path 1 (x : E)) :
+    hp.kerMulEquivFundamentalGroup x = FundamentalGroup.fromPath
+      (.mk ((γ.map p.continuous).cast (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm)) := by
+  apply UniversalCover.kerProjHomEquivFundamentalGroup.symm.injective
+  -- The comparison sends `x` to the endpoint of the lift of `p ∘ γ` starting at `1`.
+  have hlift : hp.continuousMulEquivUniversalCover x =
+      UniversalCover.ofBasedPath 1 (.ofPath ((γ.map p.continuous).cast (map_one p).symm rfl)) := by
+    have h := UniversalCover.apply_one_eq_ofBasedPath
+      (g := fun t ↦ hp.continuousMulEquivUniversalCover (γ t)) (by fun_prop)
+      (.ofPath ((γ.map p.continuous).cast (map_one p).symm rfl))
+      (fun t ↦ hp.continuousMulEquivUniversalCover_apply_proj (γ t))
+      (by simp [← UniversalCover.one_eq_ofBasedPath_refl])
+    simpa using h
+  refine Subtype.ext ?_
+  simp only [kerMulEquivFundamentalGroup, MulEquiv.trans_apply, MulEquiv.symm_apply_apply,
+    MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply,
+    UniversalCover.coe_kerProjHomEquivFundamentalGroup_symm_apply,
+    ContinuousMulEquiv.coe_toMulEquiv]
+  rw [hlift, UniversalCover.ofBasedPath_ofPath]
+  exact UniversalCover.ext (by simpa using MonoidHom.mem_ker.mp x.2)
+    ((Path.Homotopic.Quotient.cast_heq (map_one p).symm rfl (γ := .mk (γ.map p.continuous))).trans
+      (Path.Homotopic.Quotient.cast_heq (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm).symm)
 
 end IsCoveringMap

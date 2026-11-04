@@ -334,7 +334,7 @@ theorem _root_.MeasureTheory.Measure.exists_glue_pi_of_fst_eq {ι : Type*} [Fini
     have hν : ν = 0 := by rw [← hπ i₀, MeasureTheory.Measure.eq_zero_of_isEmpty (π i₀)]; simp
     refine ⟨0, by simp [hν], fun i ↦ ?_⟩
     rw [MeasureTheory.Measure.map_zero, eq_comm, ← MeasureTheory.Measure.measure_univ_eq_zero,
-      ← MeasureTheory.Measure.fst_univ, hπ i, hν, MeasureTheory.Measure.coe_zero, Pi.zero_apply]
+      ← MeasureTheory.Measure.fst_univ, hπ i, hν, FunLike.coe_zero, Pi.zero_apply]
 
 end Gluing
 

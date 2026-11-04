@@ -142,7 +142,7 @@ theorem degree_unit : degree (SimpleClasses.classOf (𝟙_ C)) = 1 := by
   let a : I.repr ≅ I.repr ⊗ I.repr := e ≪≫ (λ_ (𝟙_ C)).symm ≪≫ (e.symm ⊗ᵢ e.symm)
   have ha : a.hom ≠ 0 := by
     intro h
-    exact id_nonzero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
+    exact CategoryTheory.id_ne_zero I.repr (by rw [← a.hom_inv_id, h, zero_comp])
   have h := degree_mul I I I a.hom ha
   exact (mul_eq_left.mp h.symm)
 

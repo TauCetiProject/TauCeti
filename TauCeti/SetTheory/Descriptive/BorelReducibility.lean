@@ -37,7 +37,10 @@ Further facts:
   them. In particular, for uncountable standard Borel `Y`, smoothness is reducibility to equality
   on `Y`;
 * a relation with countably many classes, each measurable, is smooth, and it is bireducible
-  with equality on its quotient, whose σ-algebra is then discrete;
+  with equality on its quotient, whose σ-algebra is then discrete. Among relations with measurable
+  classes, reducibility to a countable quotient is exactly comparison of the numbers of classes.
+  The countable normal forms are equality on some `Fin n` (including `Fin 0` for the empty space)
+  or on `ℕ`; no standard Borel hypothesis is needed;
 * a Cantor antichain for `E` is a reduction of equality on Cantor space to `E`.
 
 ## Main definitions
@@ -61,6 +64,13 @@ Further facts:
   uncountable standard Borel space.
 * `Setoid.isSmooth_of_countable_quotient`, `Setoid.borelBireducible_bot_quotient`: relations
   with countably many measurable classes.
+* `Setoid.borelReducible_iff_lift_mk_quotient_le_of_countable`,
+  `Setoid.borelBireducible_iff_lift_mk_quotient_eq_of_countable`: comparison of countable quotients.
+* `Setoid.borelBireducible_bot_iff_nonempty_equiv_of_countable`: equality on a countable discrete
+  space is a normal form precisely when that space bijects with the quotient.
+* `Setoid.borelBireducible_bot_nat_iff`, `Setoid.exists_borelBireducible_bot_fin_or_nat`:
+  the countably infinite and finite-or-countably-infinite normal forms, using
+  `Setoid.borelBireducible_bot_quotient`.
 * `Setoid.HasCantorAntichainOn.borelReducible_bot`: a Cantor antichain reduces equality on Cantor
   space.
 
@@ -184,6 +194,11 @@ protected theorem BorelBireducible.trans (h₁ : E.BorelBireducible F)
     (h₂ : F.BorelBireducible G) : E.BorelBireducible G :=
   ⟨h₁.1.trans h₂.1, h₂.2.trans h₁.2⟩
 
+/-- Borel bireducible relations have equally many classes, allowing different universes. -/
+theorem BorelBireducible.lift_mk_quotient_eq (h : E.BorelBireducible F) :
+    lift.{v} #(Quotient E) = lift.{u} #(Quotient F) :=
+  le_antisymm h.1.lift_mk_quotient_le h.2.lift_mk_quotient_le
+
 /-! ### Reductions between equalities -/
 
 /-- Equality on `X` reduces to equality on `Y` iff there is a measurable injection `X → Y`. -/
@@ -288,6 +303,70 @@ theorem borelBireducible_bot_quotient [Countable (Quotient E)]
   · simp [Quotient.eq]
   · simp only [bot_def]
     exact ⟨fun h => h ▸ E.refl _, fun h => Quotient.out_equiv_out.1 h⟩
+
+/-- Borel reducibility to a relation with countably many classes is exactly comparison of the
+cardinalities of the quotients, provided all classes of the source relation are measurable. -/
+theorem borelReducible_iff_lift_mk_quotient_le_of_countable [Countable (Quotient F)]
+    (hE : ∀ x, MeasurableSet {y | E x y}) :
+    E.BorelReducible F ↔ lift.{v} #(Quotient E) ≤ lift.{u} #(Quotient F) := by
+  refine ⟨BorelReducible.lift_mk_quotient_le, fun h ↦ ?_⟩
+  obtain ⟨f⟩ := lift_mk_le'.1 h
+  have : Countable (Quotient E) := f.injective.countable
+  have := measurableSingletonClass_quotient hE
+  refine ⟨fun x => (f (Quotient.mk E x)).out,
+    (measurable_of_countable (fun q : Quotient E => (f q).out)).comp measurable_quotient_mk'',
+    fun x y => ?_⟩
+  exact ⟨fun hxy => Quotient.out_equiv_out.2 (congrArg f (Quotient.sound hxy)),
+    fun hxy => Quotient.exact (f.injective (Quotient.out_equiv_out.1 hxy))⟩
+
+/-- Two relations with measurable classes, one with countably many classes, are Borel
+bireducible exactly when their quotients have the same cardinality. -/
+theorem borelBireducible_iff_lift_mk_quotient_eq_of_countable [Countable (Quotient F)]
+    (hE : ∀ x, MeasurableSet {y | E x y}) (hF : ∀ x, MeasurableSet {y | F x y}) :
+    E.BorelBireducible F ↔ lift.{v} #(Quotient E) = lift.{u} #(Quotient F) := by
+  refine ⟨BorelBireducible.lift_mk_quotient_eq, fun h ↦ ?_⟩
+  obtain ⟨e⟩ := lift_mk_eq'.1 h
+  have : Countable (Quotient E) := Countable.of_equiv (Quotient F) e.symm
+  exact borelBireducible_iff.2
+    ⟨(borelReducible_iff_lift_mk_quotient_le_of_countable hE).2 h.le,
+      (borelReducible_iff_lift_mk_quotient_le_of_countable hF).2 h.ge⟩
+
+/-- A relation with measurable classes is Borel bireducible with equality on a countable
+discrete measurable space precisely when its quotient bijects with that space. No countability
+hypothesis on the quotient is needed. -/
+theorem borelBireducible_bot_iff_nonempty_equiv_of_countable [Countable Y]
+    [MeasurableSingletonClass Y] (hE : ∀ x, MeasurableSet {y | E x y}) :
+    E.BorelBireducible (⊥ : Setoid Y) ↔ Nonempty (Quotient E ≃ Y) := by
+  refine ⟨fun h ↦ ?_, fun ⟨e⟩ ↦ ?_⟩
+  · obtain ⟨e⟩ := lift_mk_eq'.1 h.lift_mk_quotient_eq
+    exact ⟨e.trans quotientBotEquiv⟩
+  · have : Countable (Quotient E) := Countable.of_equiv Y e.symm
+    have := measurableSingletonClass_quotient hE
+    have hquot : (⊥ : Setoid (Quotient E)).BorelBireducible (⊥ : Setoid Y) :=
+      borelBireducible_iff.2
+        ⟨borelReducible_bot_bot_iff.2 ⟨e, measurable_of_countable _, e.injective⟩,
+          borelReducible_bot_bot_iff.2 ⟨e.symm, measurable_of_countable _, e.symm.injective⟩⟩
+    exact (borelBireducible_bot_quotient hE).trans hquot
+
+/-- Equality on the natural numbers is the normal form for a relation with measurable classes
+exactly when the quotient is countably infinite. -/
+theorem borelBireducible_bot_nat_iff (hE : ∀ x, MeasurableSet {y | E x y}) :
+    E.BorelBireducible (⊥ : Setoid ℕ) ↔ Countable (Quotient E) ∧ Infinite (Quotient E) := by
+  rw [borelBireducible_bot_iff_nonempty_equiv_of_countable hE]
+  refine ⟨fun ⟨e⟩ ↦ ⟨Countable.of_equiv ℕ e.symm, Infinite.of_injective e.symm e.symm.injective⟩,
+    fun ⟨_, _⟩ ↦ inferInstance⟩
+
+/-- A relation with countably many measurable classes is Borel bireducible with equality on
+some `Fin n`, or with equality on `ℕ`. -/
+theorem exists_borelBireducible_bot_fin_or_nat [Countable (Quotient E)]
+    (hE : ∀ x, MeasurableSet {y | E x y}) :
+    (∃ n : ℕ, E.BorelBireducible (⊥ : Setoid (Fin n))) ∨
+      E.BorelBireducible (⊥ : Setoid ℕ) := by
+  cases finite_or_infinite (Quotient E) with
+  | inl h =>
+    obtain ⟨n, hn⟩ := Finite.exists_equiv_fin (Quotient E)
+    exact .inl ⟨n, (borelBireducible_bot_iff_nonempty_equiv_of_countable hE).2 hn⟩
+  | inr h => exact .inr ((borelBireducible_bot_nat_iff hE).2 ⟨inferInstance, h⟩)
 
 /-! ### Cantor antichains -/
 

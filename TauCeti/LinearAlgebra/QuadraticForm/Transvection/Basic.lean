@@ -263,7 +263,7 @@ theorem transvection_eq_one_of_mem_span (hu : Q u = 0) (huw : polar Q u w = 0)
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
   ext x
   simp only [transvection_apply, polar_smul_right, QuadraticMap.map_smul, hu, smul_eq_mul,
-    LinearEquiv.coe_one, id_eq]
+    FunLike.coe_one_eq_id, id_eq]
   module
 
 /-- The Eichler transvections with a fixed isotropic vector `u` compose additively in `w`. -/
@@ -272,7 +272,7 @@ theorem transvection_add (hu : Q u = 0) (huw : polar Q u w = 0) (huw' : polar Q 
     : transvection Q (w := w + w') hu (by simp [huw, huw']) =
       transvection Q hu huw * transvection Q hu huw' := by
   ext x
-  simp only [LinearEquiv.mul_apply, transvection_apply, polar_add_left, polar_sub_left,
+  simp only [mul_apply_eq_comp, transvection_apply, polar_add_left, polar_sub_left,
     polar_smul_left, polar_add_right, QuadraticMap.map_add Q, polar_self, hu, polar_comm Q w' u,
     huw, huw', smul_eq_mul, nsmul_eq_mul, polar_comm Q w' w]
   module
@@ -422,7 +422,7 @@ theorem transvection_eq_one_iff_of_isUnit (hu : Q u = 0) (huw : polar Q u w = 0)
     (hu₀ : ∃ x, IsUnit (polar Q x u)) : transvection Q hu huw = 1 ↔ w ∈ R ∙ u := by
   refine ⟨fun h => ?_, transvection_eq_one_of_mem_span hu huw⟩
   obtain ⟨x, a, ha⟩ := hu₀
-  have hEx : transvection Q hu huw x = x := by rw [h, LinearEquiv.coe_one, id_eq]
+  have hEx : transvection Q hu huw x = x := by rw [h, FunLike.coe_one_eq_id, id_eq]
   rw [transvection_apply] at hEx
   have hw : polar Q x u • w = (polar Q x w + Q w * polar Q x u) • u := by
     linear_combination (norm := module) hEx

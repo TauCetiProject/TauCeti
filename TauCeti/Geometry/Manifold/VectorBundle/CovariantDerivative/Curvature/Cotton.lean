@@ -178,8 +178,8 @@ theorem IsMetricCompatible.derivSchoutenTensor_eq
       ((Module.finrank ℝ E : ℝ) - 2)⁻¹ *
         (cov.derivRicciTensor x u v w - mvfderiv I cov.scalarCurvature x w /
           (2 * ((Module.finrank ℝ E : ℝ) - 1)) * inner ℝ u v) := by
-  obtain ⟨σ, hσ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨τ, hτ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  obtain ⟨σ, hσ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨τ, hτ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
   have hσx : MDiffAt (T% σ) x := hσ.mdifferentiableAt (by simp)
   have hτx : MDiffAt (T% τ) x := hτ.mdifferentiableAt (by simp)
   have hg := hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hσx hτx

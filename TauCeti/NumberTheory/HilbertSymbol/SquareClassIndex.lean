@@ -100,13 +100,13 @@ private theorem isSquare_or_isSquare_inv_mul_of_isSquare_units_map (h2 : (2 : K)
     simpa [h2] using this
   rcases hzero with hre0 | him0
   · right
-    refine isSquare_units_val_iff.mp ⟨(z : QuadraticAlgebra K a 0).im, ?_⟩
+    refine Units.isSquare_coe_iff.mp ⟨(z : QuadraticAlgebra K a 0).im, ?_⟩
     rw [hre0] at hre
     simp only [Units.val_mul, Units.val_inv_eq_inv_val, hre]
     field_simp
     ring
   · left
-    exact isSquare_units_val_iff.mp ⟨(z : QuadraticAlgebra K a 0).re, by simpa [him0] using hre⟩
+    exact Units.isSquare_coe_iff.mp ⟨(z : QuadraticAlgebra K a 0).re, by simpa [him0] using hre⟩
 
 variable [Fact (¬IsSquare (a : K))]
 
@@ -114,7 +114,7 @@ variable [Fact (¬IsSquare (a : K))]
 private theorem natCard_ker_multiplicativeSquareClassMap (h2 : (2 : K) ≠ 0) :
     Nat.card (algebraMap K (QuadraticAlgebra K (a : K) 0)).multiplicativeSquareClassMap.ker =
       2 := by
-  have ha : ¬IsSquare a := isSquare_units_val_iff.not.mp Fact.out
+  have ha : ¬IsSquare a := Units.isSquare_coe_iff.not.mp Fact.out
   let x : MultiplicativeSquareClassGroup K := a
   have hx : x ≠ 1 := fun h ↦ ha ((QuotientGroup.eq_one_iff (N := Subgroup.square Kˣ) a).mp h)
   have hx2 : x ^ 2 = 1 := (QuotientGroup.eq_one_iff (N := Subgroup.square Kˣ) (a ^ 2)).mpr

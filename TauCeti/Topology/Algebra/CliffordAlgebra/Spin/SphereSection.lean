@@ -223,7 +223,7 @@ theorem realCliffordSpinLastLocalSection_action {n : ℕ}
   simp only [hx, dite_true]
   rw [← coe_spinToSpecialOrthogonal_apply, localSectionOn]
   rw [coe_spinToSpecialOrthogonal_spinReflectionPair]
-  simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal, LinearEquiv.mul_apply]
+  simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal, mul_apply_eq_comp]
   -- The public statement spells out the basis vector, while the dependent reflection instances
   -- above are built from the private abbreviation; align the vector before rewriting the action.
   rw [show Pi.single (Fin.last n) (1 : ℝ) = lastUnitVector n by rfl]

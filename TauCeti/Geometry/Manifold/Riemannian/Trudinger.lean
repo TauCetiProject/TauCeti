@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Sobolev.Trudinger
-public import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
-public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
+import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 
 /-!
 # Trudinger's inequality on a closed Riemannian manifold
@@ -75,117 +73,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-/-- Around the chart image of `c` there is a coordinate ball inside the chart target on which the
-coordinate derivative of every function is bounded by a fixed multiple of the length of its
-gradient, and the chart density lies between half and twice its value at `c`. -/
-private theorem exists_ball_norm_fderiv_le_and_chartVolumeDensity_mem_Ioo (c : M) :
-    ∃ C₁ > 0, ∃ r > 0, ball (extChartAt I c c) r ⊆ (extChartAt I c).target ∧
-      ∀ y ∈ ball (extChartAt I c c) r, (∀ f : M → ℝ,
-        ‖fderiv ℝ (f ∘ (extChartAt I c).symm) y‖ ≤
-          C₁ * ‖mgradient I f ((extChartAt I c).symm y)‖) ∧
-        chartVolumeDensity (I := I) c ((extChartAt I c).symm y) ∈
-          Ioo (chartVolumeDensity (I := I) c c / 2) (2 * chartVolumeDensity (I := I) c c) := by
-  obtain ⟨C₁, hC₁, hcmp⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) (M := M) c
-  set φ := extChartAt I c
-  set ρ := chartVolumeDensity (I := I) c
-  have hρc : 0 < ρ c := chartVolumeDensity_pos c (FiberBundle.mem_baseSet_trivializationAt' c)
-  have hρcont : ContinuousAt ρ c := by
-    have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-    have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-      IsContinuousRiemannianBundle.toIsContMDiffZero
-    exact ((contMDiffOn_chartVolumeDensity (I := I) (n := 0) c).continuousOn.continuousAt
-      ((trivializationAt E (TangentSpace I) c).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt' c)))
-  have hρev : ∀ᶠ x in 𝓝 c, ρ x ∈ Ioo (ρ c / 2) (2 * ρ c) :=
-    hρcont.eventually (Ioo_mem_nhds (by linarith) (by linarith))
-  -- Read both neighbourhoods of `c` in the chart.
-  have hsymm : Tendsto φ.symm (𝓝 (φ c)) (𝓝 c) := by
-    have h := continuousAt_extChartAt_symm (I := I) c
-    rwa [ContinuousAt, extChartAt_to_inv] at h
-  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
-    (inter_mem (extChartAt_target_mem_nhds (I := I) c) (hsymm.eventually (hcmp.and hρev)))
-  refine ⟨C₁, hC₁, r, hr, fun y hy ↦ (hball hy).1, fun y hy ↦ ⟨fun f ↦ ?_, (hball hy).2.2⟩⟩
-  have h := (hball hy).2.1 f
-  rwa [φ.right_inv (hball hy).1] at h
-
 variable [MeasurableSpace M] [BorelSpace M]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
-
-/-- **The derivative of the cut-off function in `Lⁿ`.** On a coordinate ball where the chart
-derivative is bounded by `C₁` times the gradient and the chart density is at least `m`, the
-cut-off coordinate expression of `u` has `∫ ‖D(b · u)‖ⁿ` bounded by a constant multiple of
-`C₁ⁿ ∫ |∇u|ⁿ dV + Gⁿ ∫ |u|ⁿ dV`. -/
-private theorem lintegral_enorm_fderiv_bump_mul_rpow_le [LindelofSpace M] [Nontrivial E] {c : M}
-    (b : ContDiffBump (extChartAt I c c)) {r : ℝ}
-    (hbr : closedBall (extChartAt I c c) b.rOut ⊆ ball (extChartAt I c c) r)
-    (hrt : ball (extChartAt I c c) r ⊆ (extChartAt I c).target) {C₁ : ℝ}
-    (hC₁ : 0 ≤ C₁) (hcmp : ∀ y ∈ ball (extChartAt I c c) r, ∀ f : M → ℝ,
-      ‖fderiv ℝ (f ∘ (extChartAt I c).symm) y‖ ≤ C₁ * ‖mgradient I f ((extChartAt I c).symm y)‖)
-    {m : ℝ} (hm : 0 < m) (hρ : ∀ y ∈ ball (extChartAt I c c) r,
-      m ≤ chartVolumeDensity (I := I) c ((extChartAt I c).symm y))
-    {G : ℝ} (hG : ∀ y, ‖fderiv ℝ b y‖ ≤ G) {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 1 u) :
-    ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ (finrank ℝ E : ℝ)
-        ∂(Module.finBasis ℝ E).addHaar ≤
-      2 ^ ((finrank ℝ E : ℝ) - 1) * ENNReal.ofReal m⁻¹ *
-        (ENNReal.ofReal C₁ ^ (finrank ℝ E : ℝ) *
-            ∫⁻ x, ‖mgradient I u x‖ₑ ^ (finrank ℝ E : ℝ) ∂riemannianVolume I M +
-          ENNReal.ofReal G ^ (finrank ℝ E : ℝ) *
-            ∫⁻ x, ‖u x‖ₑ ^ (finrank ℝ E : ℝ) ∂riemannianVolume I M) := by
-  set n : ℝ := (finrank ℝ E : ℝ)
-  set μ := (Module.finBasis ℝ E).addHaar
-  set B := ball (extChartAt I c c) r
-  have hn : 1 ≤ n := Nat.one_le_cast.2 Module.finrank_pos
-  have hn0 : 0 ≤ n := zero_le_one.trans hn
-  have hfin (a : ℝ) : ENNReal.ofReal a ^ n ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg hn0 ENNReal.ofReal_ne_top
-  -- On `B` the integrand is dominated by the gradient and the function.
-  have hpt : ∀ y ∈ B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ≤
-      2 ^ (n - 1) * (ENNReal.ofReal C₁ ^ n * ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n +
-        ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) := fun y hy ↦ by
-    have hbd := (b.norm_fderiv_mul_comp_extChartAt_symm_le hu hG (hrt hy)).trans
-      (add_le_add (hcmp y hy u) le_rfl)
-    rw [← ENNReal.mul_rpow_of_nonneg _ _ hn0, ← ENNReal.mul_rpow_of_nonneg _ _ hn0]
-    refine (ENNReal.rpow_le_rpow ?_ hn0).trans (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hn)
-    have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
-    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC₁,
-      ← ENNReal.ofReal_mul hG0, ← ENNReal.ofReal_add (by positivity) (by positivity),
-      Real.norm_eq_abs (u _)]
-    exact ENNReal.ofReal_le_ofReal hbd
-  have hmeas : AEMeasurable
-      (fun y ↦ ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) (μ.restrict B) :=
-    ((((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.continuousOn.mono
-      hrt).aemeasurable measurableSet_ball).enorm.pow_const n).const_mul _
-  calc ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ∂μ
-      = ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ∂μ := by
-        -- The integrand vanishes off the support of the bump, which lies in `B`.
-        refine (setLIntegral_eq_of_support_subset fun y hy ↦ ?_).symm
-        by_contra hyB
-        refine hy ?_
-        simp only [b.fderiv_mul_comp_extChartAt_symm_eq_zero (u := u) fun h ↦ hyB (hbr h)]
-        rw [← ofReal_norm, norm_zero, ENNReal.ofReal_zero,
-          ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hn)]
-    _ ≤ ∫⁻ y in B, 2 ^ (n - 1) *
-          (ENNReal.ofReal C₁ ^ n * ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n +
-            ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) ∂μ :=
-        setLIntegral_mono' measurableSet_ball hpt
-    _ = 2 ^ (n - 1) *
-          (ENNReal.ofReal C₁ ^ n * ∫⁻ y in B, ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n ∂μ +
-            ENNReal.ofReal G ^ n * ∫⁻ y in B, ‖u ((extChartAt I c).symm y)‖ₑ ^ n ∂μ) := by
-        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by linarith) (by simp)),
-          lintegral_add_right' _ hmeas, lintegral_const_mul' _ _ (hfin _),
-          lintegral_const_mul' _ _ (hfin _)]
-    _ ≤ 2 ^ (n - 1) * (ENNReal.ofReal C₁ ^ n *
-            (ENNReal.ofReal m⁻¹ * ∫⁻ x, ‖mgradient I u x‖ₑ ^ n ∂riemannianVolume I M) +
-          ENNReal.ofReal G ^ n *
-            (ENNReal.ofReal m⁻¹ * ∫⁻ x, ‖u x‖ₑ ^ n ∂riemannianVolume I M)) := by
-        gcongr
-        · exact setLIntegral_comp_extChartAt_symm_le_mul_lintegral c isOpen_ball hrt hm hρ
-            fun x ↦ ‖mgradient I u x‖ₑ ^ n
-        · exact setLIntegral_comp_extChartAt_symm_le_mul_lintegral c isOpen_ball hrt hm hρ
-            fun x ↦ ‖u x‖ₑ ^ n
-    _ = _ := by ring
 
 /-! ### Trudinger's inequality -/
 
@@ -217,11 +107,13 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   have hbr : closedBall (φ c) b.rOut ⊆ ball (φ c) r := closedBall_subset_ball (half_lt_self hr)
   obtain ⟨G, hG⟩ := ((b.contDiff (n := 1)).continuous_fderiv one_ne_zero
     ).bounded_above_of_compact_support (b.hasCompactSupport.fderiv ℝ)
-  -- The constants: `Λ` bounds `∫ ‖D(b u)‖ⁿ`, so `A` bounds `‖D(b u)‖_{Lⁿ}`.
-  set Λ : ℝ≥0∞ := 2 ^ ((n : ℝ) - 1) * ENNReal.ofReal (ρ c / 2)⁻¹ *
-    (ENNReal.ofReal C₁ ^ (n : ℝ) * 1 + ENNReal.ofReal G ^ (n : ℝ) * 1)
-  have hΛ : Λ ^ (n : ℝ)⁻¹ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) (by finiteness)
-  set A : ℝ := (Λ ^ (n : ℝ)⁻¹).toReal + 1
+  -- The constants: `D X` bounds `‖D(b u)‖_{Lⁿ}`, so `A` bounds it when `X ≤ 1`.
+  set D : ℝ≥0∞ := 2 * ENNReal.ofReal (C₁ + G) * ENNReal.ofReal (ρ c / 2)⁻¹ ^ (n : ℝ)⁻¹
+  have hD : D ≠ ∞ := by
+    have : ENNReal.ofReal (ρ c / 2)⁻¹ ^ (n : ℝ)⁻¹ ≠ ∞ :=
+      ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofReal_ne_top
+    finiteness
+  set A : ℝ := D.toReal + 1
   have hA : 0 < A := by positivity
   set κ : ℝ := (2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) * (n : ℝ)⁻¹ *
     μ.real (ball 0 1) ^ (-(n : ℝ)⁻¹)
@@ -233,61 +125,42 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
     (ENNReal.ofReal (Real.exp 1 * (n ^ n + 5)) * μ (ball (φ c) r))
   have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne)
-  refine ⟨φ.source ∩ φ ⁻¹' ball (φ c) (r / 4),
+  refine ⟨φ.source ∩ φ ⁻¹' ball (φ c) b.rIn,
     inter_mem (extChartAt_source_mem_nhds c)
-      ((continuousAt_extChartAt c).preimage_mem_nhds (ball_mem_nhds _ (by positivity))),
+      ((continuousAt_extChartAt c).preimage_mem_nhds (ball_mem_nhds _ b.rIn_pos)),
     ((κ * A) ^ q)⁻¹, by positivity, C.toNNReal, fun u hu hnorm ↦ ?_⟩
   -- Cut `u` off in the chart.
   set w : E → ℝ := fun y ↦ b y * u (φ.symm y)
   have hw : ContDiff ℝ 1 w := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hwcs : HasCompactSupport w := b.hasCompactSupport.mul_right
   have hwsupp : tsupport w ⊆ ball (φ c) r := tsupport_mul_subset_left.trans (b.tsupport_eq ▸ hbr)
-  -- A function of unit `Lⁿ` norm has `∫ ‖f‖ ^ n ≤ 1`.
-  have hint : ∀ f : M → ℝ, eLpNorm f n (riemannianVolume I M) ≤ 1 →
-      ∫⁻ x, ‖f x‖ₑ ^ (n : ℝ) ∂riemannianVolume I M ≤ 1 := fun f hf ↦ by
-    have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : ℝ≥0)) (by simp; omega)
-      (aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.one_lt_top).ne)
-    rw [ENNReal.coe_natCast, NNReal.coe_natCast] at h
-    exact h ▸ ENNReal.rpow_le_one hf (Nat.cast_nonneg _)
-  have hgrad := hint _ (le_self_add.trans hnorm)
-  simp only [enorm_norm] at hgrad
   -- The derivative of the cut-off function has `Lⁿ` norm at most `A`.
-  have hDw : ∫⁻ y, ‖fderiv ℝ w y‖ₑ ^ (n : ℝ) ∂μ ≤ Λ :=
-    (lintegral_enorm_fderiv_bump_mul_rpow_le b hbr hrt hC₁.le (fun y hy ↦ (hball y hy).1)
-      (m := ρ c / 2) (by positivity) (fun y hy ↦ (hball y hy).2.1.le) hG hu).trans (by
-        simp only [Λ]
-        gcongr
-        exact hint u (le_add_self.trans hnorm))
   have hDwA : eLpNorm (fderiv ℝ w) n μ ≤ ENNReal.ofReal A := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simp; omega) (ENNReal.natCast_ne_top n)
-      (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable, ENNReal.toReal_natCast, one_div]
-    calc (∫⁻ y, ‖fderiv ℝ w y‖ₑ ^ (n : ℝ) ∂μ) ^ (n : ℝ)⁻¹ ≤ Λ ^ (n : ℝ)⁻¹ :=
-          ENNReal.rpow_le_rpow hDw (by positivity)
-      _ = ENNReal.ofReal (Λ ^ (n : ℝ)⁻¹).toReal := (ENNReal.ofReal_toReal hΛ).symm
+    have h := b.eLpNorm_fderiv_mul_comp_extChartAt_symm_le hbr hrt hC₁.le
+      (fun y hy ↦ (hball y hy).1) (m := ρ c / 2) (by positivity)
+      (fun y hy ↦ (hball y hy).2.1.le) hG hu (p := n) (by exact_mod_cast (by omega : 1 ≤ n))
+    rw [ENNReal.coe_natCast, NNReal.coe_natCast] at h
+    calc _ ≤ D * 1 := h.trans (by gcongr)
+      _ = ENNReal.ofReal D.toReal := by rw [mul_one, ENNReal.ofReal_toReal hD]
       _ ≤ ENNReal.ofReal A := ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right zero_le_one)
   -- The flat Trudinger inequality for `w` on the ball of radius `r`, read back on `M`.
   have htr := setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (μ := μ) hw hwcs
-    measurableSet_ball hwsupp hn hA hDwA
-  rw [ENNReal.coe_toNNReal hC, setLIntegral_riemannianVolume_inter_preimage c isOpen_ball
-    ((ball_subset_ball (by linarith)).trans hrt)]
-  calc ∫⁻ y in ball (φ c) (r / 4), ENNReal.ofReal (ρ (φ.symm y)) *
-        ENNReal.ofReal (Real.exp (((κ * A) ^ q)⁻¹ * |u (φ.symm y)| ^ q)) ∂μ
-      ≤ ∫⁻ y in ball (φ c) (r / 4), ENNReal.ofReal (2 * ρ c) *
-          ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ := by
-        refine setLIntegral_mono' measurableSet_ball fun y hy ↦ ?_
-        -- On the ball of radius `r / 4` the bump is `1`, so `w` is `u` read in the chart.
-        have hwy : w y = u (φ.symm y) := by
-          simp only [w, b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
-        gcongr
-        · exact (hball y (ball_subset_ball (by linarith) hy)).2.2.le
-        · rw [Real.div_rpow (norm_nonneg _) (by positivity), Real.norm_eq_abs, hwy,
-            div_eq_inv_mul]
-    _ ≤ ∫⁻ y in ball (φ c) r, ENNReal.ofReal (2 * ρ c) *
+    hwsupp hn hA hDwA
+  have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
+    ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
+  have hF (t : ℝ) : ((κ * A) ^ q)⁻¹ * |t| ^ q = (‖t‖ / (κ * A)) ^ q := by
+    rw [Real.div_rpow (norm_nonneg _) (by positivity), Real.norm_eq_abs, div_eq_inv_mul]
+  rw [ENNReal.coe_toNNReal hC]
+  simp only [hF]
+  calc _ ≤ ENNReal.ofReal (2 * ρ c) * ∫⁻ y in ball (φ c) b.rIn,
           ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ :=
-        lintegral_mono_set (ball_subset_ball (by linarith))
-    _ = ENNReal.ofReal (2 * ρ c) *
-          ∫⁻ y in ball (φ c) r, ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ :=
-        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+        b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm (hb.trans hrt)
+          (fun y hy ↦ (hball y (hb hy)).2.2.le) u
+          fun t ↦ ENNReal.ofReal (Real.exp ((‖t‖ / (κ * A)) ^ q))
+    _ ≤ ENNReal.ofReal (2 * ρ c) *
+          ∫⁻ y in ball (φ c) r, ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ := by
+        gcongr _ * ?_
+        exact lintegral_mono_set hb
     _ ≤ C := mul_le_mul_of_nonneg_left htr bot_le
 
 /-- **Trudinger's inequality on a closed Riemannian manifold.** On a compact manifold without
@@ -311,13 +184,7 @@ theorem exists_lintegral_exp_mul_abs_rpow_le [CompactSpace M] (hn : 2 ≤ finran
       ≤ ∑ c ∈ t, ∫⁻ x in V c, ENNReal.ofReal (Real.exp ((1 + ∑ c ∈ t, (β c)⁻¹)⁻¹ *
           |u x| ^ ((finrank ℝ E : ℝ) / (finrank ℝ E - 1)))) ∂riemannianVolume I M := by
         rw [← setLIntegral_univ]
-        refine (lintegral_mono_set ht).trans ?_
-        rw [← iUnion_subtype (· ∈ t) fun c ↦ V c]
-        refine (lintegral_iUnion_le _ _).trans_eq ?_
-        rw [tsum_fintype]
-        exact Finset.sum_coe_sort t fun c ↦ ∫⁻ x in V c, ENNReal.ofReal (Real.exp
-          ((1 + ∑ c ∈ t, (β c)⁻¹)⁻¹ * |u x| ^ ((finrank ℝ E : ℝ) / (finrank ℝ E - 1))))
-          ∂riemannianVolume I M
+        exact (lintegral_mono_set ht).trans (lintegral_biUnion_finset_le _ _ _)
     _ ≤ ∑ c ∈ t, (C c : ℝ≥0∞) := by
         refine Finset.sum_le_sum fun c hc ↦ (lintegral_mono fun x ↦ ?_).trans (hC c u hu hnorm)
         gcongr

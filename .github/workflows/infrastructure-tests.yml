@@ -18,17 +18,19 @@ concurrency:
 
 jobs:
   python-tests:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -39,10 +41,16 @@ jobs:
             scripts/test_bors_scope_approval.py \
             scripts/test_check_expired_mathlib_shims.py \
             scripts/test_duplicate_audit_workflow.py \
+            scripts/test_dependency_warm.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_lake_cache_reuse.py \
             scripts/test_pick_runner.py \
-            scripts/test_workflow_pins.py
+            scripts/test_workflow_pins.py \
+            scripts/test_roadmap_api.py \
+            scripts/test_control_batch_workflows.py \
+            scripts/test_control_batch_budget.py \
+            scripts/test_control_batch_merge.py \
+            scripts/run-infrastructure-tests.sh
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
       - name: Infrastructure policy unit tests
@@ -62,17 +70,19 @@ jobs:
           python3 scripts/test_stack_checkpoint_restore.py
 
   lean-fixtures:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
           project-directory: .
       - name: Restore the project-owned Lake workflow test
         run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
@@ -105,17 +115,19 @@ jobs:
           python3 scripts/test_lake_cache_publish.py --integration
 
   header-fixtures:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:
@@ -138,3 +150,9 @@ jobs:
         run: lake exe cache get
       - name: Header audit equivalence tests
         run: lake env python3 scripts/test_header_style.py
+
+      - name: Downstream unused-argument lint regression
+        run: |
+          out="$RUNNER_TEMP/downstream-lint-driver"
+          bash scripts/build-lint-driver.sh . scripts/LintEnvDriver.lean "$out"
+          python3 scripts/test_downstream_unused_arguments.py . "$out/lint-env-driver"

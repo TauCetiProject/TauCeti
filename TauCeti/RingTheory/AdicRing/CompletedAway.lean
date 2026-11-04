@@ -385,9 +385,9 @@ theorem isUnit_algebraMap_of_mem_radical
   have := (isAdic A g).isAdicComplete
   -- the image of `i` lies in the ideal of definition of `A_{g}`, hence in its Jacobson radical
   have hi' :=
-    IsAdicComplete.le_jacobson_bot _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
+    IsAdicComplete.le_jacobson _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
   obtain ⟨u, hu⟩ := (isUnit_algebraMap_self A g).pow n
-  have hunit := Ideal.mem_jacobson_bot.mp (neg_mem hi') ↑u⁻¹
+  have hunit := Ring.mem_jacobson_iff.mp (neg_mem hi') ↑u⁻¹
   have hai' := congrArg (algebraMap A (CompletedAway A g)) hai
   rw [map_add, map_mul, map_pow, ← hu] at hai'
   refine isUnit_of_mul_isUnit_right (x := algebraMap A (CompletedAway A g) a) ?_

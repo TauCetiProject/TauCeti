@@ -54,7 +54,7 @@ theorem integral_abs_rpow_pos [μ.IsOpenPosMeasure] {u : X → ℝ} (hu : Contin
     {p : ℝ} (hp : 0 < p) :
     0 < ∫ x, |u x| ^ p ∂μ := by
   obtain ⟨x, hx⟩ := Function.ne_iff.1 hu0
-  exact (hu.abs.rpow_const fun _ ↦ Or.inr hp.le).integral_pos_of_hasCompactSupport_nonneg_nonzero
+  exact (hu.abs.rpow_const fun _ ↦ Or.inr hp.le).integral_pos_of_hasCompactSupport_nonneg_ne_zero
     (HasCompactSupport.of_compactSpace _) (fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _)
     (Real.rpow_pos_of_pos (abs_pos.2 hx) p).ne'
 

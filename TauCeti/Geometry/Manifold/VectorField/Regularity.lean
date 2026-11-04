@@ -9,7 +9,9 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Regularity of tangent-bundle-valued maps and directional derivatives
@@ -39,6 +41,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   tangent-bundle coordinate expressions of vector fields.
 * `VectorField.mpullbackWithin_extChartAt_symm_self`: at the chart centre, the inverse-chart
   pullback is the value of the field.
+* `VectorField.mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq`: a vector
+  field with constant coordinates in the tangent-bundle trivialization at `x` pulls back to a
+  constant field near the chart centre.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
 * `TauCeti.fderivWithin_chart_apply_mpullbackWithin`: the chain rule identifies coordinate
@@ -189,12 +194,8 @@ theorem ContMDiffOn.contMDiffOn_mvfderiv_snd_apply {f : N × M → F} {W : Set (
   have hfq : MDifferentiableAt (J.prod I) 𝓘(𝕜, F) f q :=
     ((hf q hq).contMDiffAt (hW.mem_nhds hq)).mdifferentiableAt
       (ne_of_gt (lt_of_lt_of_le (by simp) hmn))
-  -- Differentiate `f` along the slice `y ↦ (q.1, y)`, whose differential is `inr`. The composite
-  -- is `fun y ↦ f (q.1, y)` and `inr v` is `(0, v)`, both by definition.
-  have h := mvfderiv_comp_apply (g := f) (f := fun y : M ↦ (q.1, y)) q.2 hfq
-    (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (A q)
-  rw [mfderiv_prod_right] at h
-  exact h
+  -- Currying fixes `q.1`; the second-factor inclusion sends `A q` to `(0, A q)`.
+  exact congrArg (· (A q)) (TauCeti.mvfderiv_curry_right q.1 q.2 hfq)
 
 end Partial
 
@@ -281,6 +282,22 @@ theorem mpullbackWithin_extChartAt_symm_self (V : (x : M) → TangentSpace I x) 
       (extChartAt I x x) = V x := by
   rw [VectorField.mpullbackWithin_apply, extChartAt_to_inv]
   exact mfderivWithin_extChartAt_symm_inverse_apply _
+
+open scoped Topology in
+/-- Along the inverse of the extended chart at `x`, the vector field with constant coordinates
+`u` in the trivialization of the tangent bundle at `x` pulls back to the constant field `u` near
+the chart point. -/
+theorem mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq (x : M) (u : E) :
+    VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm
+        (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u) (range I)
+      =ᶠ[𝓝[range I] extChartAt I x x] fun _ ↦ u := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+  have hy := (extChartAt I x).map_target hz
+  have hy' := TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz
+  have h := mpullbackWithin_extChartAt_symm_apply
+    (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u) hy
+  rw [(extChartAt I x).right_inv hz] at h
+  rw [h, Trivialization.apply_mk_symm _ hy']
 
 end VectorField
 
