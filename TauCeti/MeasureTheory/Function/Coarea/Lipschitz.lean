@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.Topology.EMetricSpace.Lipschitz
@@ -140,20 +141,6 @@ private theorem coareaPerturbSlab_inter_preimage_inter_snd_preimage {E F : Type*
   · rintro ⟨x, ⟨hxK, hfx⟩, rfl⟩
     simp [hxK, hz, hfx]
 
-/-- Integrating `z ↦ ϕ (y - ε • z)` over `s` and then over `y : F` factors out `volume s` by
-Tonelli's theorem and right-translation invariance of Lebesgue measure on `F`. -/
-private theorem lintegral_setLIntegral_sub_smul {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
-    {ϕ : F → ℝ≥0∞} (hϕ : Measurable ϕ) (s : Set F) (ε : ℝ) :
-    ∫⁻ y : F, ∫⁻ z in s, ϕ (y - ε • z) = volume s * ∫⁻ u : F, ϕ u := by
-  have hm : AEMeasurable (fun q : F × F ↦ ϕ (q.1 - ε • q.2))
-      (volume.prod (volume.restrict s)) :=
-    (hϕ.comp (continuous_fst.sub
-      (continuous_const.smul continuous_snd)).measurable).aemeasurable
-  rw [lintegral_lintegral_swap hm]
-  simp_rw [lintegral_sub_right_eq_self ϕ]
-  rw [setLIntegral_const, mul_comm]
-
 /-- The linear model `(v, u) ↦ A v + ε • u` on `WithLp 2 (E × F)` of the derivative of
 `(x, z) ↦ f x + ε • z`. -/
 private noncomputable def coareaPerturbDeriv {E F : Type*} [NormedAddCommGroup E]
@@ -258,7 +245,8 @@ private theorem mul_lintegral_hausdorffMeasure_le_setLIntegral_coareaPerturbDeri
     μH[(finrank ℝ E : ℝ)]
   calc (c : ℝ≥0∞) * (volume (ball (0 : F) 1) * ∫⁻ u : F, ϕ u)
       = (c : ℝ≥0∞) * ∫⁻ y : F, ∫⁻ z in ball (0 : F) 1, ϕ (y - ε • z) := by
-        rw [lintegral_setLIntegral_sub_smul hϕm]
+        rw [lintegral_setLIntegral_sub_right hϕm.aemeasurable
+          (measurable_const_smul ε).aemeasurable]
     _ ≤ (c : ℝ≥0∞) * ∫⁻ y : F,
           volume (ball (0 : F) 1) * μH[(finrank ℝ E : ℝ)] (coareaPerturbSlab F K ∩ p ⁻¹' {y}) := by
         gcongr with y
