@@ -67,16 +67,16 @@ variable {n : ℕ}
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-- **The interior Schauder estimate around one point.** If the coefficients are `α`-Hölder near a
-point `x` of an open set `Ω` and `a x` is elliptic, there is a radius `R > 0` with
+point `x` of an open set `Ω` and `a x` is elliptic, there is a radius `0 < R ≤ ρ` with
 `closedBall x R ⊆ Ω` and a constant `C` such that the Hölder constant of `D²u` on
 `closedBall x (R / 2)` is at most `C ([L u]_{α; B_R} + N)` for every `u` as in the interior
 estimate on small balls. -/
 private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half {α : ℝ≥0} (hα : 0 < α)
     (hα1 : α < 1) {Ω : Set E} (hΩ : IsOpen Ω) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {x : E} (hx : x ∈ Ω)
+    {x : E} (hx : x ∈ Ω) {ρ : ℝ} (hρ : 0 < ρ)
     (ha : ∃ r > 0, ∃ L : ℝ≥0, ∀ i j, HolderOnWith L α (fun y => a y i j) (ball x r))
     (hell : ∃ lam : ℝ, 0 < lam ∧ ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ) :
-    ∃ R : ℝ, 0 < R ∧ closedBall x R ⊆ Ω ∧ ∃ C : ℝ≥0,
+    ∃ R : ℝ, 0 < R ∧ R ≤ ρ ∧ closedBall x R ⊆ Ω ∧ ∃ C : ℝ≥0,
       ∀ {u : E → ℝ} {N M V : ℝ≥0}, ContDiffOn ℝ 2 u (ball x R) →
         (∀ y ∈ ball x R, |u y| ≤ N) → (∀ y ∈ ball x R, ‖fderiv ℝ u y‖ ≤ N) →
         (∀ y ∈ ball x R, ‖iteratedFDeriv ℝ 2 u y‖ ≤ N) →
@@ -93,11 +93,11 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half {α : ℝ
   set Lam := ‖matrixBilinearForm (a x)‖
   set c : ℝ := 2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
     ((1 + 2 ^ (α : ℝ)) * L)
-  -- A radius `R < r` with `closedBall x R ⊆ Ω` satisfying the scale condition `c R^α ≤ λ`, which
-  -- holds for all small `R` because `R^α → 0` as `R → 0`.
+  -- A radius `R < min r ρ` with `closedBall x R ⊆ Ω` satisfying the scale condition
+  -- `c R^α ≤ λ`, which holds for all small `R` because `R^α → 0` as `R → 0`.
   obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 hΩ x hx
-  have h₁ : ∀ᶠ R in 𝓝[>] (0 : ℝ), R < min r ε :=
-    eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds (lt_min hr hε))
+  have h₁ : ∀ᶠ R in 𝓝[>] (0 : ℝ), R < min (min r ρ) ε :=
+    eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds (lt_min (lt_min hr hρ) hε))
   have h₂ : ∀ᶠ R in 𝓝[>] (0 : ℝ), c * R ^ (α : ℝ) < lam := by
     have ht : Tendsto (fun R : ℝ => c * R ^ (α : ℝ)) (𝓝 0) (𝓝 (c * 0 ^ (α : ℝ))) :=
       ((Real.continuous_rpow_const α.coe_nonneg).tendsto 0).const_mul c
@@ -107,9 +107,11 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half {α : ℝ
   have hR₀ : 0 < R := hR₀
   obtain ⟨C, hC⟩ := hball hlam hlow (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (a x)) hR₀
     (by simpa only [c, mul_assoc] using hscale.le)
-    (fun i j => (hL i j).mono (closedBall_subset_ball (hR.trans_le (min_le_left _ _))))
+    (fun i j => (hL i j).mono (closedBall_subset_ball
+      (hR.trans_le ((min_le_left _ _).trans (min_le_left _ _)))))
     (half_lt_self hR₀)
-  refine ⟨R, hR₀, (closedBall_subset_ball (hR.trans_le (min_le_right _ _))).trans hεΩ, C,
+  refine ⟨R, hR₀, (hR.trans_le ((min_le_left _ _).trans (min_le_right _ _))).le,
+    (closedBall_subset_ball (hR.trans_le (min_le_right _ _))).trans hεΩ, C,
     fun hu hN₀ hN₁ hN₂ hV hM => hC hu hN₀ hN₁ hN₂ hV hM⟩
 
 /-- **The interior Schauder estimate around one point, with lower-order terms.** If the
@@ -137,26 +139,16 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_add {�
   obtain ⟨rc, hrc, Lc, hLc⟩ := hc
   set r := min (min rb rc) 1
   have hr : 0 < r := lt_min (lt_min hrb hrc) one_pos
-  -- Shrinking `Ω` to `Ω ∩ B_r` makes the radius of the principal-part estimate at most `r`.
-  obtain ⟨R, hR, hRΩ, C₀, hC₀⟩ := exists_holderOnWith_iteratedFDeriv_two_closedBall_half hα hα1
-    (hΩ.inter isOpen_ball) ⟨hx, mem_ball_self hr⟩ ha hell
-  have hRr : closedBall x R ⊆ ball x r := hRΩ.trans inter_subset_right
-  have hR1 : R ≤ 1 := by
-    -- The point `x + R e₀` of the sphere of radius `R` lies in `B_r`.
-    have he : ‖R • EuclideanSpace.single (0 : Fin (n + 1)) (1 : ℝ)‖ = R := by
-      simp [norm_smul, hR.le]
-    have hmem := mem_ball.1 (hRr (mem_closedBall.2 (by
-      rw [dist_eq_norm, add_sub_cancel_left, he] :
-        dist (x + R • EuclideanSpace.single (0 : Fin (n + 1)) (1 : ℝ)) x ≤ R)))
-    rw [dist_eq_norm, add_sub_cancel_left, he] at hmem
-    exact hmem.le.trans (min_le_right _ _)
-  have hBr : ball x R ⊆ ball x r := ball_subset_closedBall.trans hRr
+  obtain ⟨R, hR, hRr, hRΩ, C₀, hC₀⟩ :=
+    exists_holderOnWith_iteratedFDeriv_two_closedBall_half hα hα1 hΩ hx hr ha hell
+  have hR1 : R ≤ 1 := hRr.trans (min_le_right _ _)
+  have hBr : ball x R ⊆ ball x r := ball_subset_ball hRr
   have hrb' : r ≤ rb := (min_le_left _ _).trans (min_le_left _ _)
   have hrc' : r ≤ rc := (min_le_left _ _).trans (min_le_right _ _)
   obtain ⟨D, hD⟩ := exists_holderOnWith_fderiv_apply_add_mul_ball hα1.le hR1
     ((hLb.mono (hBr.trans (ball_subset_ball hrb'))).mono_const (le_max_left Lb Lc))
     ((hLc.mono (hBr.trans (ball_subset_ball hrc'))).mono_const (le_max_right Lb Lc))
-  refine ⟨R, hR, hRΩ.trans inter_subset_left, C₀ * (D + 1),
+  refine ⟨R, hR, hRΩ, C₀ * (D + 1),
     fun {u N M V} hu hN₀ hN₁ hN₂ hV hM => ?_⟩
   -- The principal part `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = L u - (Du·b + c u)` is Hölder with constant `M + D N`.
   set P : E → ℝ := fun y => ∑ i, ∑ j, a y i j • fderiv ℝ (fderiv ℝ u) y
