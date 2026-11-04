@@ -53,10 +53,11 @@ theorem sum_eval₂_mul_one_add_X_sub_one {ζ : R} (hζ : IsPrimitiveRoot ζ p)
     simp
   simp only [← coe_substAlgHom hb]
   -- Taylor translation reduces the identity to the known psi formula on `(1 + X)^n`.
-  obtain ⟨Q, hQ⟩ := (Polynomial.taylorEquiv (1 : ℤ_[p])).surjective P
-  have hP : Polynomial.taylor 1 Q = P := hQ
+  obtain ⟨Q, hP⟩ : ∃ Q, Polynomial.taylor 1 Q = P :=
+    ⟨Polynomial.taylor (-1) P, by
+      simp only [Polynomial.taylor_taylor, add_neg_cancel, Polynomial.taylor_zero]⟩
   rw [← hP]
-  clear hQ hP P
+  clear hP P
   induction Q using Polynomial.induction_on' with
   | add Q S hQ hS =>
       simpa only [map_add, Polynomial.coe_add, Polynomial.eval₂_add, Finset.sum_add_distrib,
