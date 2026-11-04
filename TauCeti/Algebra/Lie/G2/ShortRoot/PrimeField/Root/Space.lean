@@ -606,28 +606,6 @@ theorem simpleRootCharacter_eq_liftCharacter (i : Fin 2) :
   ext l
   rw [simpleRootCharacter_apply, hrow, liftCharacter_apply]
 
-/-- Lifting fundamental-weight coordinates preserves the adjoint weight space of the weight
- torus. -/
-theorem adjointWeightSpace_liftCharacter_eq_weightTorus (μ : Fin 2 → ℤ) :
-    Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (liftCharacter μ)) =
-      Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
-        (SplitTorus.weightCharacter μ) :=
-  (congrArg (Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom)
-    (ofAdd_liftCharacter μ)).trans
-      (adjointWeightSpace_splitMaximalTorus_weightCharacter_eq_weightTorus μ)
-
-/-- **The weight-space criterion in fundamental-weight coordinates.** A tangent vector of the
-carrier lies in the root space of the chosen torus at the character with coordinates `μ` exactly
-when the entries of its matrix vanish off the weight differences equal to `μ`. -/
-theorem mem_adjointWeightSpace_liftCharacter_iff (μ : Fin 2 → ℤ)
-    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
-    x ∈ Derivation.adjointWeightSpace splitMaximalTorus.coordinateMap.hom
-        (Multiplicative.ofAdd (liftCharacter μ)) ↔
-      ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
-  rw [adjointWeightSpace_liftCharacter_eq_weightTorus,
-    mem_adjointWeightSpace_weightCharacter_iff]
-
 /-- The numbered root character agrees with the weight character of its raising generator. -/
 theorem ofAdd_simpleRootCharacter (i : Fin 2) :
     Multiplicative.ofAdd (simpleRootCharacter i) =

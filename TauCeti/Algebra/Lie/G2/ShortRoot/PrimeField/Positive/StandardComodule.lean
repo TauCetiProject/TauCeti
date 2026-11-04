@@ -187,8 +187,7 @@ private theorem single_mem_of_apply_ne_zero
     (N : Subcomodule k (CommHopfAlgCat.baseChange (K := k) coordinateHopfAlgebra) (Fin 7 → k))
     {v : Fin 7 → k} (hv : v ∈ N) {a : Fin 7} (ha : v a ≠ 0) : Pi.single a (1 : k) ∈ N := by
   have h := Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights
-    (weightTorusCoordinateMap k).hom.toCoalgHom _
-    (SplitTorus.weightCharacter_injective.comp weight_injective)
+    (weightTorusCoordinateMap k).hom.toCoalgHom _ weightCharacter_injective
     (torusCorestrict_eq_ofWeights k) N hv a
   rw [← Subcomodule.mem_toSubmodule]
   simpa only [inv_smul_smul₀ ha] using N.toSubmodule.smul_mem (v a)⁻¹ h
@@ -235,8 +234,7 @@ theorem exists_flag_eq_toSubmodule
   classical
   let S : Finset (Fin 7) := Finset.univ.filter fun a ↦ Pi.single a (1 : k) ∈ N
   have hspan := Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights
-    (weightTorusCoordinateMap k).hom.toCoalgHom _
-    (SplitTorus.weightCharacter_injective.comp weight_injective)
+    (weightTorusCoordinateMap k).hom.toCoalgHom _ weightCharacter_injective
     (torusCorestrict_eq_ofWeights k) N
   by_cases hS : S.Nonempty
   · let b := S.max' hS
