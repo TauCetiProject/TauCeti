@@ -26,10 +26,10 @@ of `E_q` to `L`. On classes coming from `Kˣ / q^ℤ`, it is the base change of
 `tateUniformization`, and it commutes with every continuous `K`-algebra map `L → M`, which acts on
 parameters through `tateParameterMap`.
 
-The map respects inversion and isometric coefficient embeddings. These statements do not
-assert additivity, injectivity away from infinity, or surjectivity, and the map is not yet
-bundled as a group homomorphism. The norm need not be discrete, and the characteristic is
-unrestricted.
+The map respects inversion and isometric coefficient embeddings. Its injectivity is proved in
+`TateCurve.Injectivity`, and its additivity, with the bundled homomorphism, in
+`TateCurve.Homomorphism`; surjectivity is not asserted. The norm need not be discrete, and the
+characteristic is unrestricted.
 
 ## References
 
@@ -161,6 +161,16 @@ noncomputable def tateUniformizationBaseChange (q : Kˣ) (hq : ‖(q : K)‖ < 1
   cast (congrArg (fun W : WeierstrassCurve L ↦ W.toAffine.Point)
     (baseChange_tateCurveAt L q hq).symm)
     (tateUniformization _ ((by simpa using hq)) x)
+
+/-- The uniformisation over `L` is `tateUniformization` for the image of `q` in `L`, transported
+along `baseChange_tateCurveAt`. -/
+theorem tateUniformizationBaseChange_def (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (x : Lˣ ⧸ Subgroup.zpowers (Units.map (algebraMap K L : K →* L) q)) :
+    tateUniformizationBaseChange L q hq x =
+      cast (congrArg (fun W : WeierstrassCurve L ↦ W.toAffine.Point)
+        (baseChange_tateCurveAt L q hq).symm)
+        (tateUniformization _ ((by simpa using hq)) x) :=
+  (rfl)
 
 /-- Exactly the identity parameter maps to infinity. -/
 @[simp]
