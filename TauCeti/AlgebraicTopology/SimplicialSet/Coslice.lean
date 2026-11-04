@@ -321,6 +321,16 @@ lemma constEdgeIso_hom_app_zero [L.IsStrictSegal] (e : Edge y x) :
     dsimp% (constEdgeIso x y).hom.app (op ⦋0⦌) e = (pullbackConstObj₀Equiv x y).symm e :=
   constHomEquiv_symm_app_zero (Edge y x) (pullbackConstObj₀Equiv x y).symm e
 
+/-- On vertices, the inverse of the discreteness isomorphism sends a vertex of the fibre
+`{x} ×_L L_{y/}` to the corresponding edge from `y` to `x`. -/
+@[simp]
+lemma constEdgeIso_inv_app_zero [L.IsStrictSegal]
+    (s : (pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) _⦋0⦌) :
+    dsimp% (constEdgeIso x y).inv.app (op ⦋0⦌) s = pullbackConstObj₀Equiv x y s := by
+  apply (pullbackConstObj₀Equiv x y).symm.injective
+  rw [Equiv.symm_apply_apply, ← constEdgeIso_hom_app_zero]
+  simp
+
 end coslice
 
 end SSet
