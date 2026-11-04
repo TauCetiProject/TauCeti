@@ -106,10 +106,8 @@ private theorem polynomialRepresentation_smooth (M : Pol) :
     IsLoopSmooth ((polynomialRepresentation Φ hΦ hΦs a M.obj).toLinearMap ∘ₗ
       LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP) := by
   apply isLoopSmooth_iff.mpr
-  simpa only [polynomialRepresentation, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    coe_ofProdLinearEquiv, LinearMap.inl_apply, LieHom.coe_toLinearMap, LieHom.comp_apply,
-    AlgHom.toLieHom_apply, Algebra.lsmul_apply, ← envelopingι_apply] using
-      (smoothModules_loopOrderLeftIdeal_iff Φ hΦ hΦs a).mp M.property
+  simpa only [polynomialRepresentation_current] using
+    (smoothModules_loopOrderLeftIdeal_iff Φ hΦ hΦs a).mp M.property
 
 private def extensionAction (M : Pol) : UC →ₐ[R] Module.End R M.obj :=
   extendEnvelopingAction Φ hΦ hΦs a (polynomialRepresentation_smooth Φ hΦ hΦs a M)

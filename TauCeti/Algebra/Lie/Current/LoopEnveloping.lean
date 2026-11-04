@@ -315,9 +315,12 @@ private abbrev quotientLieHom (N : ℤ) :
     (CentralQuotient.ι (centralElement cP) a)
 
 /-- A polynomial current acts on `U_pol / I_N^pol` by left multiplication with its generator. -/
-private theorem quotientLieHom_ofProd_mk (N : ℤ) (p : P) (b : UP) :
-    quotientLieHom (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) N (ofProd cP (p, 0))
+private theorem quotientLieHom_current_mk (N : ℤ) (p : P) (b : UP) :
+    ((quotientLieHom (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) N).toLinearMap ∘ₗ
+      LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP) p
       (Submodule.Quotient.mk b) = Submodule.Quotient.mk (envelopingι cP a p * b) := by
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.inl_apply,
+    coe_ofProdLinearEquiv, LieHom.coe_toLinearMap]
   rw [envelopingι_apply, ← smul_eq_mul, Submodule.Quotient.mk_smul, quotientLieHom,
     LieHom.comp_apply, AlgHom.toLieHom_apply, Algebra.lsmul_apply]
 
@@ -330,10 +333,7 @@ private theorem isLoopSmooth_quotientLieHom (N : ℤ) :
   obtain ⟨b, rfl⟩ := Submodule.Quotient.mk_surjective _ m
   obtain ⟨M, hM⟩ := exists_forall_mul_mem_loopOrderLeftIdeal Φ hΦ hΦs a b N
   refine ⟨M, fun p hp ↦ ?_⟩
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearMap.inl_apply, coe_ofProdLinearEquiv, LieHom.coe_toLinearMap,
-    quotientLieHom_ofProd_mk,
-    Submodule.Quotient.mk_eq_zero]
+  rw [quotientLieHom_current_mk, Submodule.Quotient.mk_eq_zero]
   exact hM _ (envelopingι_mem_loopOrderLeftIdeal hp)
 
 /-- The action of `U(ĝ) / (ι K - a)` on `U_pol / I_N^pol` extending the action of `U_pol` by
@@ -363,10 +363,7 @@ private theorem quotientAction_apply_mk_one {N : ℤ} {y : UK}
         ((quotientLieHom (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) N).toLinearMap ∘ₗ
           LinearEquiv.toLinearMap (ofProdLinearEquiv cP) ∘ₗ LinearMap.inl R P ZP)
             (AddMonoidAlgebra.single n 1 ⊗ₜ x) (Submodule.Quotient.mk 1) = 0 := by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        LinearMap.inl_apply, coe_ofProdLinearEquiv, LieHom.coe_toLinearMap,
-    quotientLieHom_ofProd_mk, mul_one,
-        Submodule.Quotient.mk_eq_zero]
+      rw [quotientLieHom_current_mk, mul_one, Submodule.Quotient.mk_eq_zero]
       exact envelopingι_mem_loopOrderLeftIdeal
         (orderSubmodule_antitone R L hn (ofLoop_single_tmul_mem_orderSubmodule R L n x))
     dsimp only [quotientLieHom] at hN
