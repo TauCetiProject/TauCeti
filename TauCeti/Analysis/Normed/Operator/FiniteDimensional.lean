@@ -31,6 +31,8 @@ to strict operator-norm bounds.
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
+* `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
+  the operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
 
 public section
@@ -96,3 +98,40 @@ theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
 end StrictNorm
 
 end ContinuousLinearMap
+
+section MapsTo
+
+open Filter Set Topology
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Out of a finite-dimensional normed space over a complete field, the operators sending a
+neighbourhood `s` of `0` into a compact set `K` form a compact set. -/
+theorem IsCompact.isCompact_setOfPred_mapsTo {K : Set F} (hK : IsCompact K) {s : Set E}
+    (hs : s ∈ 𝓝 (0 : E)) : IsCompact {T : E →L[𝕜] F | MapsTo T s K} := by
+  -- An operator is determined by its values on a basis contained in `s`, and these values lie
+  -- in `K`.
+  let v := Module.finBasis 𝕜 E
+  -- Some nonzero multiple `a • v` of a basis lies in `s`.
+  have hev : ∀ᶠ a in 𝓝[≠] (0 : 𝕜), ∀ i, a • v i ∈ s := eventually_all.2 fun i ↦
+    nhdsWithin_le_nhds <| (continuous_id.smul continuous_const).tendsto' 0 (0 : E)
+      (zero_smul 𝕜 _) hs
+  obtain ⟨a, hav, ha : a ≠ 0⟩ := (hev.and self_mem_nhdsWithin).exists
+  -- Operators out of `E` are identified with their values on the basis `w = a • v` inside `s`.
+  let w := v.map (LinearEquiv.smulOfNeZero 𝕜 E a ha)
+  let e : (E →L[𝕜] F) ≃L[𝕜] (Fin _ → F) :=
+    (w.equivFunL.arrowCongr (1 : F ≃L[𝕜] F)).trans (ContinuousLinearEquiv.piRing _)
+  refine (e.toHomeomorph.isCompact_preimage.2 (isCompact_univ_pi fun _ ↦ hK)).of_isClosed_subset
+    (hK.isClosed.setOfPred_mapsTo fun x _ ↦ continuous_eval_const x) fun T hT ↦ ?_
+  simp only [mem_preimage, mem_univ_pi]
+  intro i
+  -- `piRing` evaluates at `Pi.single i 1`, the coordinate vector of `w i`; the inverse of
+  -- `equivFunL` is that of `equivFun` by definition.
+  have hwi : w.equivFunL.symm (Pi.single i 1) = w i := Basis.equivFun_symm_single w i
+  have hw : w i = a • v i := by simp [w]
+  change T (w.equivFunL.symm (Pi.single i 1)) ∈ K
+  exact hwi ▸ hw ▸ hT (hav i)
+
+end MapsTo
