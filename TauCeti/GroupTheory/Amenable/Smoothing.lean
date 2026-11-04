@@ -85,8 +85,8 @@ theorem smoothingPositive_apply (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h)
 
 /-- The value on the constant one is the integral of the kernel. -/
 @[simp high]
-theorem smoothing_linftyOne (m : Mean G) (h : Lp ℝ 1 μ) :
-    m.smoothing h linftyOne = ∫ y, h y ∂μ := by
+theorem smoothing_one (m : Mean G) (h : Lp ℝ 1 μ) :
+    m.smoothing h 1 = ∫ y, h y ∂μ := by
   simp [map_smul]
 
 /-- An invariant mean applied after smoothing a `UCB` function gives its original value,
@@ -105,12 +105,12 @@ theorem norm_smoothing (m : Mean G) {h : Lp ℝ 1 μ} (hh : 0 ≤ h)
     exact (integral_congr_ae ((Lp.coeFn_nonneg h).2 hh |>.mono
       fun _ hy => Real.norm_of_nonneg hy)).trans h₁
   refine (norm_smoothing_le m h |>.trans_eq hn).antisymm ?_
-  have hu : ‖(linftyOne : Lp ℝ ∞ μ)‖ ≤ 1 := by
+  have hu : ‖(1 : Lp ℝ ∞ μ)‖ ≤ 1 := by
     rw [← BoundedContinuousFunction.toLpTop_one μ]
     simpa using BoundedContinuousFunction.norm_toLpTop_le μ (𝕜 := ℝ) (1 : G →ᵇ ℝ)
   calc
-    1 = ‖m.smoothing h linftyOne‖ := by rw [smoothing_linftyOne, h₁, norm_one]
-    _ ≤ ‖m.smoothing h‖ * ‖(linftyOne : Lp ℝ ∞ μ)‖ := (m.smoothing h).le_opNorm _
+    1 = ‖m.smoothing h 1‖ := by rw [smoothing_one, h₁, norm_one]
+    _ ≤ ‖m.smoothing h‖ * ‖(1 : Lp ℝ ∞ μ)‖ := (m.smoothing h).le_opNorm _
     _ ≤ ‖m.smoothing h‖ := mul_le_of_le_one_right (norm_nonneg _) hu
 
 /-- For an invariant mean, restriction of the normalized positive smoothed functional back to
@@ -119,7 +119,7 @@ on all of `L∞`. -/
 theorem IsLeftInvariant.ofLpTop_smoothing {m : Mean G} (hm : m.IsLeftInvariant)
     {h : Lp ℝ 1 μ} (hh : 0 ≤ h) (h₁ : ∫ y, h y ∂μ = 1) :
     Mean.ofLpTop (m.smoothingPositive hh)
-      (by simpa only [smoothingPositive_apply] using (m.smoothing_linftyOne h).trans h₁) = m := by
+      (by simpa only [smoothingPositive_apply] using (m.smoothing_one h).trans h₁) = m := by
   apply Mean.ext
   intro f
   rw [ofLpTop_apply, smoothingPositive_apply, hm.smoothing_toLpTop, h₁, one_mul]
