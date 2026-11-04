@@ -37,6 +37,8 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
   slab `E × [T - b, T - a]` onto `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
   `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
+* `TauCeti.ParabolicSpaceTime.lipschitzWith_slabSpace`: the spatial position of a point of a slab
+  is `1`-Lipschitz for the parabolic distance.
 
 ## References
 
@@ -198,6 +200,11 @@ theorem edist_time_rpow_le (p q : ParabolicSpaceTime E) :
     edist p.time q.time ^ (1 / 2 : ℝ) ≤ edist p q := by
   rw [edist_eq]
   exact le_add_self
+
+/-- The spatial position of a point of a slab is `1`-Lipschitz for the parabolic distance. -/
+theorem lipschitzWith_slabSpace {a b : ℝ} :
+    LipschitzWith 1 fun p : slab (E := E) a b ↦ (p : ParabolicSpaceTime E).space :=
+  LipschitzWith.of_edist_le fun p q ↦ edist_space_le (p : ParabolicSpaceTime E) q
 
 /-- A `K`-Lipschitz spatial map acts on a slab as a `max K 1`-Lipschitz map for the parabolic
 distance. -/
