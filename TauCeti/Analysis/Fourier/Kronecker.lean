@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # Kronecker's theorem for linear flows on tori
@@ -71,12 +72,7 @@ theorem integral_mFourier (n : d → ℤ) : ∫ x, mFourier n x = if n = 0 then 
   have h := (orthonormal_iff_ite.mp orthonormal_mFourier) 0 n
   simp only [ContinuousMap.inner_toLp, mFourier_zero, ContinuousMap.one_apply, map_one,
     mul_one, eq_comm (a := (0 : d → ℤ))] at h
-  have hvol : (volume : Measure (UnitAddTorus d)) = Measure.pi fun _ ↦ AddCircle.haarAddCircle := by
-    rw [volume_pi]
-    congr 1
-    funext
-    simp [AddCircle.volume_eq_smul_haarAddCircle]
-  rw [hvol, ← h]
+  rw [volume_eq_pi_haarAddCircle, ← h]
   -- Mathlib states `orthonormal_mFourier` for its file-local normalization
   -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
   rfl

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 public import TauCeti.Analysis.Fourier.ChangeOfVariables
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
 # Poisson summation over a lattice
@@ -102,7 +103,7 @@ private theorem toTorus_add (x : E) (ℓ : span ℤ (range o.toBasis)) :
 
 /-- The torus is the quotient of `E` by the lattice spanned by `o`. -/
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
-  (IsOpenQuotientMap.piMap fun _ ↦ QuotientAddGroup.isOpenQuotientMap_mk).isQuotientMap.comp
+  isOpenQuotientMap_coe.isQuotientMap.comp
     ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isQuotientMap.comp o.repr.toHomeomorph.isQuotientMap)
 
 /-- The lattice vector with coordinates `n` in the basis `o`. -/

@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -105,10 +106,6 @@ private theorem toTorus_add (x y : d → ℝ) : toTorus (x + y) = toTorus x + to
 private theorem toTorus_smul (t : ℝ) (w : d → ℝ) :
     toTorus (t • w) = fun i ↦ ((t * w i : ℝ) : UnitAddCircle) := rfl
 
--- `toTorus` is by definition the map of `UnitAddTorus.isOpenQuotientMap_coe`; this restates it.
-private theorem isQuotientMap_toTorus : Topology.IsQuotientMap (toTorus (d := d)) :=
-  isOpenQuotientMap_coe.isQuotientMap
-
 variable [Fintype d] [NormedSpace ℂ E]
 
 /-! ### Translation and the Fourier coefficients -/
@@ -117,12 +114,7 @@ variable [Fintype d] [NormedSpace ℂ E]
 `mFourierCoeff` using the Haar probability measure on each circle factor; this is the volume. -/
 theorem mFourierCoeff_eq_integral_volume (f : UnitAddTorus d → E) (n : d → ℤ) :
     mFourierCoeff f n = ∫ z, mFourier (-n) z • f z := by
-  have hvol : (volume : Measure (UnitAddTorus d)) = Measure.pi fun _ ↦ AddCircle.haarAddCircle := by
-    rw [volume_pi]
-    congr 1
-    funext
-    simp [AddCircle.volume_eq_smul_haarAddCircle]
-  rw [hvol]
+  rw [volume_eq_pi_haarAddCircle]
   -- Mathlib defines `mFourierCoeff` with its file-local normalization
   -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
   rfl
@@ -274,7 +266,8 @@ theorem mFourierCoeff_eq_prod_smul_of_iteratedFDeriv {f g : UnitAddTorus d → E
       (hf.continuous_iteratedFDeriv (by norm_cast; omega)) (Fin.tail v)
     change ∀ x, g' (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x (Fin.tail v) at hg'
     have hgc : Continuous g := by
-      refine isQuotientMap_toTorus.continuous_iff.2 ?_
+      refine isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2 ?_
+      change Continuous fun x ↦ g (toTorus x)
       simpa only [Function.comp_def, hg] using
         (continuous_eval_const v).comp (hf.continuous_iteratedFDeriv le_rfl)
     have hd := hf.differentiable_iteratedFDeriv (m := k) (by norm_cast; omega)
