@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 /-!
-# Removing exceptional points of finite-order smoothness
+# Removing exceptional points of smoothness
 
 Suppose that near every point `z` a function `u` agrees, except possibly at `z` itself, with a
 function `g_z` which is `Cⁿ` at `z`. Then `u` agrees with a globally `Cⁿ` function at every point
@@ -26,7 +26,7 @@ open Filter Topology
 namespace TauCeti
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ z : E, NeBot (𝓝[≠] z)] {n : ℕ} {u : E → F}
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ z : E, NeBot (𝓝[≠] z)] {n : WithTop ℕ∞} {u : E → F}
 
 /-- If near every point `z` the function `u` agrees off `z` with a function `Cⁿ` at `z`, then
 `u` agrees with a `Cⁿ` function at every point where `u` is continuous. -/
@@ -37,7 +37,7 @@ theorem exists_contDiff_eq_of_eventuallyEq_nhdsNE
   -- Near `z`, the local models `g w` at nearby points `w` all agree with `g z` at `w`.
   have key : ∀ z, (fun w ↦ g w w) =ᶠ[𝓝 z] g z := by
     intro z
-    filter_upwards [(hg z).eventually (by simp),
+    filter_upwards [((hg z).of_le (zero_le (a := n))).eventually (by simp),
       eventually_eventually_nhds.mpr (eventually_nhdsWithin_iff.mp (hgu z))] with w hw₁ hw₂
     rcases eq_or_ne w z with rfl | hwz
     · rfl

@@ -121,10 +121,8 @@ private theorem exists_contDiffAt_eventuallyEq_log_normSq_add
   have hwz' : ‖w - z₀‖ ≠ 0 := norm_ne_zero_iff.mpr (sub_ne_zero.mpr hwz)
   have hlog : Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) =
       2 * k * Real.log ‖w - z₀‖ + Real.log (‖v w‖ ^ 2) := by
-    rw [← sq_norm_sectionValue x w, hw, norm_mul, norm_pow, mul_pow, ← pow_mul,
-      Real.log_mul (pow_ne_zero _ hwz') (pow_ne_zero 2 (norm_ne_zero_iff.mpr hvw)),
-      Real.log_pow]
-    push_cast
+    rw [← sq_norm_sectionValue x w, hw]
+    simp [norm_pow, Real.log_mul, Real.log_pow, hwz', hvw]
     ring
   rw [hsplit w, hlog, hk, planarNewtonianKernel_def]
   field_simp
