@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import Mathlib.RingTheory.PowerSeries.WellKnown
-import Mathlib.Data.Sym.Card
 
 /-!
 # Hilbert series of a symmetric algebra
@@ -42,19 +41,6 @@ namespace TauCeti.SymmetricAlgebra
 
 variable (R M : Type*) [CommSemiring R] [StrongRankCondition R]
   [AddCommMonoid M] [Module R M] [Module.Free R M] [Module.Finite R M]
-
-/-- The rank of the degree-`n` symmetric power of a finite free module is the number
-of degree-`n` multisets of its basis indices. The multichoose expression also applies
-when the module has rank zero. -/
-@[simp]
-theorem finrank_homogeneousSubmodule (n : ℕ) :
-    Module.finrank R (homogeneousSubmodule R M n) =
-      (Module.finrank R M).multichoose n := by
-  classical
-  rw [Module.finrank_eq_card_basis
-    ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n),
-    Sym.card_sym_eq_multichoose,
-    ← Module.finrank_eq_card_basis (Module.Free.chooseBasis R M)]
 
 /-- The Hilbert series of the symmetric algebra of a finite free module of rank `r`
 is the inverse of `(1 - X)^r`. The coefficients may be taken independently of the base,
