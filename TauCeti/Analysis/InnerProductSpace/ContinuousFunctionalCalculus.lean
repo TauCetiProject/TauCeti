@@ -265,4 +265,31 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
+/-- Negative real powers of a positive real Hilbert space operator above the identity are
+contractions in operator norm. -/
+theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
+    {s : ℝ} (hs : s ≤ 0) : ‖P ^ s‖ ≤ 1 := by
+  have hP₀ : 0 ≤ P := zero_le_one.trans hP
+  rw [CFC.rpow_eq_cfc_real hP₀]
+  -- Complexification is isometric and intertwines the calculi. Mathlib supplies the
+  -- isometric calculus on complex operators, whereas the real calculus is only bundled
+  -- as a continuous calculus.
+  have hself := (nonneg_iff_isPositive.mp hP₀).isSelfAdjoint
+  have hcont : ContinuousOn (fun r : ℝ ↦ r ^ s) (spectrum ℝ P) :=
+    continuousOn_id.rpow_const fun r hr ↦ Or.inl
+      (ne_of_gt (zero_lt_one.trans_le ((CFC.one_le_iff (R := ℝ) P).mp hP r hr)))
+  rw [← norm_complexifyL2, complexifyL2_cfc (fun r : ℝ ↦ r ^ s) P hcont hself]
+  apply norm_cfc_le zero_le_one
+  intro r hr
+  rw [spectrum_complexifyL2 (nonneg_iff_isPositive.mp hP₀).isSelfAdjoint] at hr
+  have hr₁ : 1 ≤ r := (CFC.one_le_iff (R := ℝ) P).mp hP r hr
+  simpa only [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (by linarith) s)] using
+    Real.rpow_le_one_of_one_le_of_nonpos hr₁ hs
+
+/-- Nonpositive real powers of an operator above the identity do not increase vector norms. -/
+theorem norm_rpow_apply_le_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
+    {s : ℝ} (hs : s ≤ 0) (y : X) : ‖(P ^ s) y‖ ≤ ‖y‖ := by
+  simpa only [one_mul] using (P ^ s).le_of_opNorm_le
+    (P.norm_rpow_le_one_of_one_le_of_nonpos hP hs) y
+
 end ContinuousLinearMap
