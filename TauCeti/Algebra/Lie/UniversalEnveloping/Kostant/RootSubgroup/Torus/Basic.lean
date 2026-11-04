@@ -308,6 +308,14 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : V) := by
   rw [kostantRootOperator, coe_integralDividedPower_one_apply, Module.End.smul_def]
 
+/-- The public unfolding equation of the integral root operator: it is the first restricted
+divided power of `ρ(eᵢ)`, the linear coefficient of the divided-power exponential. -/
+theorem kostantRootOperator_def :
+    kostantRootOperator e h ρ M hM i =
+      integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 1
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv) := by
+  rw [kostantRootOperator]
+
 include e hM in
 /-- The integral root operator raises weights by the root: it is the first divided power of a
 root vector of weight `α`. -/
