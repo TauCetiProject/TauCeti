@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
@@ -12,11 +14,13 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Reduction
 -- Proof-only: the valuation of a maximal ideal recovers its valuation ring.
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
+-- Proof-only: a multiplicative reduction is a nodal cubic.
+import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 -- Proof-only: local-field structures on finite subextensions, and descent of points to them.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 
 /-!
-# Frobenius on torsion prime to `p` at good reduction
+# Frobenius on torsion prime to `p` at good and multiplicative reduction
 
 Let `K` be a nonarchimedean local field whose residue field `k` has `q` elements, and let `W` be
 an elliptic curve over `K` given by a minimal equation with good reduction. Its reduction is an
@@ -26,15 +30,28 @@ arithmetic Frobenius element satisfies `X² - a_q X + q` on the torsion of `W` o
 
 `σ (σ P) = a_q • σ P - q • P`.
 
-The general statement (`WeierstrassCurve.Affine.Point.map_map_eq_of_nsmul_eq_zero`, proved
-alongside the reduction of Frobenius elements) is over the fraction field `L` of a Dedekind
-domain, at a height-one prime `u` of good reduction, for an endomorphism `τ` of `L` acting on the
-residues at `u` as the `q`-power map. Reduction carries `τ` to the `q`-power map on the points of
-the reduced curve (`WeierstrassCurve.Affine.Point.cast_reductionHom_map_eq_map_frobeniusAlgHom`),
-which satisfies `Fr² - a_q Fr + q = 0` there
-(`TauCeti.Isogeny.map_frobeniusAlgHom_map_frobeniusAlgHom`). So `τ (τ P) - a_q • τ P + q • P`
-reduces to the point at infinity; it is killed by the order of `P`, which is prime to `u`, and
-reduction is injective on such torsion
+At multiplicative reduction the reduction is a nodal cubic, whose Frobenius trace `a_q` is `1` at a
+split and `-1` at a nonsplit node. Over a finite extension `L/K`, an automorphism acting on the
+residue field of `L` as the `q`-power map then acts as multiplication by `a_q q` on the torsion of
+order prime to `p` with nonsingular reduction, that is, in the subgroup `E₀(L)`:
+
+`τ P = (a_q q) • P`.
+
+The general statements (`WeierstrassCurve.Affine.Point.map_map_eq_of_nsmul_eq_zero` and
+`WeierstrassCurve.Affine.Point.map_eq_zsmul_of_nsmul_eq_zero`, proved alongside the reduction of
+Frobenius elements) are over the fraction field `L` of a Dedekind domain, at a height-one prime `u`
+of good or multiplicative reduction, for an endomorphism `τ` of `L` acting on the
+residues at `u` as the `q`-power map. Reduction carries `τ` to the `q`-power map `Fr` on the points
+of the reduced curve
+(`WeierstrassCurve.Affine.Point.cast_nonsingularReductionHom_map_eq_map_frobeniusAlgHom`, and
+`WeierstrassCurve.Affine.Point.cast_reductionHom_map_eq_map_frobeniusAlgHom` at good reduction).
+At good reduction the reduced curve is elliptic and `Fr` satisfies `Fr² - a_q Fr + q = 0` there
+(`TauCeti.Isogeny.map_frobeniusAlgHom_map_frobeniusAlgHom`), so `τ (τ P) - a_q • τ P + q • P`
+reduces to the point at infinity. At multiplicative reduction the reduced curve is a nodal cubic,
+and on its nonsingular points `Fr` is multiplication by `a_q q`
+(`WeierstrassCurve.Affine.Point.map_frobeniusAlgHom_eq_zsmul`), so `τ P - (a_q q) • P` reduces to
+the point at infinity for `P` in `E₀`. In both cases that point is killed by the order of `P`,
+which is prime to `u`, and reduction is injective on such torsion
 (`WeierstrassCurve.Affine.Point.eq_zero_of_reductionHom_eq_zero_of_nsmul_eq_zero`). A finite
 extension `L/K` of local fields is the fraction field of the discrete valuation ring `𝒪[L]`, and
 an automorphism of `L/K` acting on the residue field of `L` as `x ↦ x ^ q` is such a `τ`. Over
@@ -46,20 +63,26 @@ Read on the Tate module `T_ℓ E`, for `ℓ ≠ p`, this says that a Frobenius l
 `X² - a_q X + q` there. Two values of `a_q` that both satisfy this on a point of order `ℓ` are
 congruent modulo `ℓ`. Since this holds for arbitrarily large primes `ℓ`, the Galois action on the
 prime-to-`p` torsion determines the integer `a_q`; this is what makes `a_q` an isogeny invariant
-(`TauCeti.Isogeny.frobeniusTrace_reduction_eq`).
+(`TauCeti.Isogeny.frobeniusTrace_reduction_eq`). At multiplicative reduction, the relation
+`τ P = (a_q q) • P` at a point `P` and at its image under an isogeny compares the signs of the two
+nodes (`TauCeti.Isogeny.frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction`).
 
 ## Main results
 
 * `WeierstrassCurve.Affine.Point.map_map_eq_of_hasGoodReduction`: over a finite extension `L/K`,
   an automorphism acting on the residue field of `L` as the `q`-power map satisfies
   `τ (τ P) = a_q • τ P - q • P` on the torsion of `W(L)` of order prime to `p`.
+* `WeierstrassCurve.Affine.Point.map_eq_zsmul_of_hasMultiplicativeReduction`: at multiplicative
+  reduction, over a finite extension `L/K`, such an automorphism satisfies `τ P = (a_q q) • P` on
+  the torsion of `E₀(L)` of order prime to `p`.
 * `WeierstrassCurve.Affine.Point.map_map_eq_of_isArithFrobeniusLift`: an arithmetic Frobenius
   lift satisfies `σ (σ P) = a_q • σ P - q • P` on the torsion of `W(K^{alg})` of order prime to
   `p`.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], V.2.3.1, VII.3.1 and VII.7.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], V.2.3.1, VII.3.1, VII.5 and
+  VII.7.
 -/
 
 public section
@@ -73,7 +96,116 @@ section FiniteExtension
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
-  [DecidableEq L] {W : WeierstrassCurve K} [IsMinimal 𝒪[K] W]
+
+/-! The proofs over a finite extension `L/K` apply the statements over the fraction field of a
+Dedekind domain to the discrete valuation ring `𝒪[L]`, at the adic valuation of its maximal ideal.
+Its valuation ring `B` is `𝒪[L]` again; the private declarations below supply the integral model of
+`W` over `B`, its reduction, the action of a Frobenius on the residues of `B`, and the units. -/
+
+variable (L) in
+/-- `𝒪[L]`, packaged as a valuation subring, is a discrete valuation ring. -/
+private theorem isDiscreteValuationRing_valuationSubring :
+    IsDiscreteValuationRing (valuation L).valuationSubring :=
+  inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
+
+attribute [local instance] isDiscreteValuationRing_valuationSubring
+
+variable (L) in
+/-- The maximal ideal of `𝒪[L]`, as a height-one prime. -/
+private noncomputable abbrev maximalPrime :
+    IsDedekindDomain.HeightOneSpectrum (valuation L).valuationSubring :=
+  IsDiscreteValuationRing.maximalIdeal _
+
+variable (L) in
+/-- The valuation ring of the adic valuation of the maximal ideal of `𝒪[L]` is `𝒪[L]`. -/
+private theorem valuationSubring_valuation_maximalPrime :
+    ((maximalPrime L).valuation L).valuationSubring = (valuation L).valuationSubring :=
+  Place.valuationSubring_valuation_maximalIdeal _
+
+variable (L) in
+/-- The adic valuation of the maximal ideal of `𝒪[L]` is equivalent to the valuation of `L`. -/
+private theorem isEquiv_valuation_maximalPrime :
+    ((maximalPrime L).valuation L).IsEquiv (valuation L) :=
+  (Valuation.isEquiv_iff_valuationSubring _ _).2 (valuationSubring_valuation_maximalPrime L)
+
+variable (K L) in
+/-- `𝒪[K]` maps into the valuation ring of the adic valuation of the maximal ideal of `𝒪[L]`. -/
+private noncomputable abbrev algebraValuationSubringMaximalPrime :
+    Algebra 𝒪[K] ((maximalPrime L).valuation L).valuationSubring :=
+  (((algebraMap K L).comp (algebraMap 𝒪[K] K)).codRestrict _ fun r ↦
+    (by
+      rw [valuationSubring_valuation_maximalPrime, ← TauCeti.coe_algebraMap_integerRing]
+      exact (algebraMap 𝒪[K] 𝒪[L] r).2 :
+        algebraMap K L r ∈ ((maximalPrime L).valuation L).valuationSubring)).toAlgebra
+
+attribute [local instance] algebraValuationSubringMaximalPrime
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
+variable (K L) in
+/-- The map from `𝒪[K]` to the valuation ring of `L` is local. -/
+private theorem isLocalHom_algebraMap_valuationSubringMaximalPrime :
+    IsLocalHom (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
+  ⟨fun r hr ↦ by
+    by_contra hr'
+    rw [Valuation.Integer.not_isUnit_iff_valuation_lt_one] at hr'
+    rw [(Valuation.valuationSubring.integers _).isUnit_iff_valuation_eq_one] at hr
+    have h₁ : valuation L (algebraMap K L r) < 1 :=
+      (Valuation.HasExtension.val_map_lt_one_iff (vR := valuation K) (vA := valuation L) _).mpr hr'
+    exact ((isEquiv_valuation_maximalPrime L).lt_one_iff_lt_one.mpr h₁).ne hr⟩
+
+attribute [local instance] isLocalHom_algebraMap_valuationSubringMaximalPrime
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
+/-- The base change of an equation integral over `𝒪[K]` is integral over the valuation ring of the
+adic valuation of the maximal ideal of `𝒪[L]`. -/
+private theorem isIntegral_valuationSubring_maximalPrime (W : WeierstrassCurve K)
+    [IsIntegral 𝒪[K] W] : IsIntegral ((maximalPrime L).valuation L).valuationSubring (W⁄L) :=
+  IsIntegral.baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
+
+attribute [local instance] isIntegral_valuationSubring_maximalPrime
+
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Module.Finite K L] in
+/-- The integral model of the base change of `W` over the valuation ring of `L` is the image of the
+integral model of `W` over `𝒪[K]`. -/
+private theorem integralModel_valuationSubring_maximalPrime (W : WeierstrassCurve K)
+    [IsIntegral 𝒪[K] W] :
+    integralModel ((maximalPrime L).valuation L).valuationSubring (W⁄L) =
+      (integralModel 𝒪[K] W).map
+        (algebraMap 𝒪[K] ((maximalPrime L).valuation L).valuationSubring) :=
+  integralModel_baseChange (R := 𝒪[K]) (S := ((maximalPrime L).valuation L).valuationSubring) rfl W
+
+omit [Module.Finite K L] in
+/-- The reduction of the base change of `W` over the valuation ring of `L` is the reduction of `W`
+over `𝒪[K]`, base changed to the residue field. -/
+private theorem integralModel_map_residue_maximalPrime (W : WeierstrassCurve K)
+    [IsMinimal 𝒪[K] W] :
+    (integralModel ((maximalPrime L).valuation L).valuationSubring (W⁄L)).map
+        (residue ((maximalPrime L).valuation L).valuationSubring) =
+      (W.reduction 𝒪[K]).baseChange
+        (ResidueField ((maximalPrime L).valuation L).valuationSubring) := by
+  rw [integralModel_valuationSubring_maximalPrime, WeierstrassCurve.reduction,
+    WeierstrassCurve.baseChange, WeierstrassCurve.map_map, WeierstrassCurve.map_map]
+  exact congrArg _ (RingHom.ext fun x ↦ (ResidueField.algebraMap_residue x).symm)
+
+/-- An automorphism of `L/K` acting on the residue field of `L` as the `q`-power map acts so on
+the residues of the adic valuation of the maximal ideal of `𝒪[L]`
+(`AlgEquiv.valuation_apply_sub_pow_lt_one`, read through the equivalent valuation). -/
+private theorem valuation_maximalPrime_sub_pow_lt_one {τ : Gal(L/K)}
+    (hτ : ∀ x : 𝓀[L], τ • x = x ^ Nat.card 𝓀[K]) (x : L)
+    (hx : (maximalPrime L).valuation L x ≤ 1) :
+    (maximalPrime L).valuation L (τ.toAlgHom x - x ^ Nat.card 𝓀[K]) < 1 :=
+  (isEquiv_valuation_maximalPrime L).lt_one_iff_lt_one.mpr <|
+    τ.valuation_apply_sub_pow_lt_one hτ ((isEquiv_valuation_maximalPrime L).le_one_iff_le_one.mp hx)
+
+omit [Module.Finite K L] in
+/-- An integer nonzero in the residue field of `K` is a unit of `𝒪[L]`
+(`TauCeti.valuation_natCast_eq_one_of_residueField_natCast_ne_zero`, read in `𝒪[L]`). -/
+private theorem natCast_notMem_maximalPrime {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) :
+    (n : (valuation L).valuationSubring) ∉ (maximalPrime L).asIdeal := fun h ↦
+  ((Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h).ne
+    (by simpa using valuation_natCast_eq_one_of_residueField_natCast_ne_zero (L := L) hn)
+
+variable [DecidableEq L] {W : WeierstrassCurve K} [IsMinimal 𝒪[K] W]
 
 /-- **Frobenius on prime-to-`p` torsion at good reduction, over a finite extension.** Let `W` be a
 minimal equation with good reduction over a nonarchimedean local field `K` whose residue field
@@ -89,62 +221,38 @@ theorem Affine.Point.map_map_eq_of_hasGoodReduction (h : W.HasGoodReduction 𝒪
         Nat.card 𝓀[K] • P := by
   classical
   let := Fintype.ofFinite 𝓀[K]
-  -- The proof reduces to `Affine.Point.map_map_eq_of_nsmul_eq_zero` for the adic valuation of the
-  -- maximal ideal `u` of the discrete valuation ring `A = 𝒪[L]`, whose valuation ring `B` is `A`
-  -- again, as in `Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero`. It supplies, in
-  -- turn: good reduction over `B`, the residue field of `K` inside that of `B`, the reduction over
-  -- `B` as a base change of the reduction over `𝒪[K]`, the action of `τ` on the residues of `B`,
-  -- and `n ∉ u`.
-  set A := (valuation L).valuationSubring
-  have : IsDiscreteValuationRing A := inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-  set u := IsDiscreteValuationRing.maximalIdeal A
-  set B := (u.valuation L).valuationSubring
-  have hB : B = A := Place.valuationSubring_valuation_maximalIdeal A
-  have hequiv : (u.valuation L).IsEquiv (valuation L) :=
-    (Valuation.isEquiv_iff_valuationSubring _ _).2 hB
-  -- the integral model of `W` over `𝒪[K]` maps into `B`
-  have hKB (r : 𝒪[K]) : algebraMap K L r ∈ B := by
-    rw [hB, ← TauCeti.coe_algebraMap_integerRing]
-    exact (algebraMap 𝒪[K] 𝒪[L] r).2
-  let : Algebra 𝒪[K] B :=
-    (((algebraMap K L).comp (algebraMap 𝒪[K] K)).codRestrict B hKB).toAlgebra
-  have hRS : (algebraMap B L).comp (algebraMap 𝒪[K] B) =
-      (algebraMap K L).comp (algebraMap 𝒪[K] K) := rfl
-  have := IsIntegral.baseChange hRS W
   have : (integralModel 𝒪[K] W).IsElliptic :=
     ⟨(hasGoodReduction_iff_isUnit_integralModel_Δ 𝒪[K] W).mp h⟩
-  have : (integralModel B (W⁄L)).IsElliptic := by
-    rw [integralModel_baseChange hRS W]
+  have : (integralModel ((maximalPrime L).valuation L).valuationSubring (W⁄L)).IsElliptic := by
+    rw [integralModel_valuationSubring_maximalPrime]
     infer_instance
-  -- `𝒪[K] → B` is local, so the residue field of `K` maps to that of `B`
-  have : IsLocalHom (algebraMap 𝒪[K] B) := ⟨fun r hr ↦ by
-    by_contra hr'
-    rw [Valuation.Integer.not_isUnit_iff_valuation_lt_one] at hr'
-    rw [(Valuation.valuationSubring.integers _).isUnit_iff_valuation_eq_one] at hr
-    have h₁ : valuation L (algebraMap K L r) < 1 :=
-      (Valuation.HasExtension.val_map_lt_one_iff (vR := valuation K) (vA := valuation L) _).mpr hr'
-    exact (hequiv.lt_one_iff_lt_one.mpr h₁).ne hr⟩
-  -- the reduction of `W` over `B` is the reduction over `𝒪[K]`, base changed to the residue field
-  have hC : (integralModel B (W⁄L)).map (residue B) =
-      (W.reduction 𝒪[K]).baseChange (ResidueField B) := by
-    rw [integralModel_baseChange hRS W, WeierstrassCurve.reduction, WeierstrassCurve.baseChange,
-      WeierstrassCurve.map_map, WeierstrassCurve.map_map]
-    exact congrArg _ (RingHom.ext fun x ↦ (ResidueField.algebraMap_residue x).symm)
-  -- `τ` acts on the residues of `B` as the `q`-power map
-  have hτ' (x : L) (hx : u.valuation L x ≤ 1) :
-      u.valuation L (τ.toAlgHom x - x ^ Fintype.card 𝓀[K]) < 1 := by
-    have hxA : x ∈ A := hB ▸ (Valuation.mem_valuationSubring_iff _ _).mpr hx
-    have h₁ := hτ (residue 𝒪[L] ⟨x, hxA⟩)
-    rw [← ResidueField.residue_smul, ← map_pow, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff,
-      Nat.card_eq_fintype_card] at h₁
-    have h₂ := (Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h₁
-    rw [hequiv.lt_one_iff_lt_one]
-    simpa [AlgEquiv.coe_smul_integerRing] using h₂
-  -- `n` is a unit of `𝒪[K]`, hence of `A`.
-  have hn' : (n : A) ∉ u.asIdeal := fun h ↦
-    ((Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h).ne
-      (by simpa using valuation_natCast_eq_one_of_residueField_natCast_ne_zero (L := L) hn)
-  exact Affine.Point.map_map_eq_of_nsmul_eq_zero u hC hτ' hn' hP
+  exact Affine.Point.map_map_eq_of_nsmul_eq_zero (maximalPrime L)
+    (integralModel_map_residue_maximalPrime W)
+    (by simpa only [Nat.card_eq_fintype_card] using valuation_maximalPrime_sub_pow_lt_one hτ)
+    (natCast_notMem_maximalPrime hn) hP
+
+/-- **Frobenius on prime-to-`p` torsion at multiplicative reduction, over a finite extension.** Let
+`W` be an elliptic curve over a nonarchimedean local field `K` whose residue field has `q`
+elements, given by a minimal equation with multiplicative reduction, let `L/K` be a finite
+extension, and let `τ` be an automorphism of `L/K` acting on the residue field of `L` as
+`x ↦ x ^ q`. If `P` is a point of `W(L)` with nonsingular reduction and `n • P = 0` for an `n`
+nonzero in the residue field of `K`, then `τ P = (a_q q) • P`, where the Frobenius trace `a_q` of
+the reduction of `W` is `1` at split and `-1` at nonsplit multiplicative reduction. -/
+theorem Affine.Point.map_eq_zsmul_of_hasMultiplicativeReduction [W.IsElliptic]
+    (h : W.HasMultiplicativeReduction 𝒪[K]) {τ : Gal(L/K)}
+    (hτ : ∀ x : 𝓀[L], τ • x = x ^ Nat.card 𝓀[K]) {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
+    {P : (W⁄L).toAffine.Point} (hP₀ : P ∈ (W⁄L).toAffine.nonsingularReduction (valuation L))
+    (hP : n • P = 0) :
+    Affine.Point.map τ.toAlgHom P = ((W.reduction 𝒪[K]).frobeniusTrace * Nat.card 𝓀[K]) • P := by
+  classical
+  let := Fintype.ofFinite 𝓀[K]
+  rw [Affine.nonsingularReduction_congr _ (isEquiv_valuation_maximalPrime L).symm] at hP₀
+  exact Affine.Point.map_eq_zsmul_of_nsmul_eq_zero (maximalPrime L)
+    (integralModel_map_residue_maximalPrime W)
+    ((reduction_Δ_eq_zero_iff 𝒪[K]).2 (h.not_hasGoodReduction 𝒪[K]))
+    (h.reduction_c₄_ne_zero 𝒪[K])
+    (by simpa only [Nat.card_eq_fintype_card] using valuation_maximalPrime_sub_pow_lt_one hτ)
+    (natCast_notMem_maximalPrime hn) hP₀ hP
 
 end FiniteExtension
 
