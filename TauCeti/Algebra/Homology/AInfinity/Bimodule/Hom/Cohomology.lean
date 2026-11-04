@@ -55,13 +55,18 @@ def linearPart (f : AInfinityBimoduleHom MM NN) : M →ₗ[R] N :=
 theorem linearPart_apply (f : AInfinityBimoduleHom MM NN) (x : M) :
     f.linearPart x = f.taylor ((1 ⊗ₜ x) ⊗ₜ 1) := (rfl)
 
+/-- The Taylor map on the two empty words is the linear part. -/
+@[simp]
+theorem taylor_one_tmul_tmul_one (f : AInfinityBimoduleHom MM NN) (x : M) :
+    f.taylor ((1 ⊗ₜ x) ⊗ₜ 1) = f.linearPart x := (rfl)
+
 /-- The bar map carries the two empty words to the two empty words, applying the
 linear part to the module input. -/
 @[simp]
 theorem barMap_one_tmul_tmul_one (f : AInfinityBimoduleHom MM NN) (x : M) :
     f.barMap ((1 ⊗ₜ x) ⊗ₜ 1) = (1 ⊗ₜ f.linearPart x) ⊗ₜ 1 := by
   rw [f.barMap_eq_bicofreeLift, Comodule.bicofreeLift_toLinearMap]
-  simp [linearPart_apply, Comodule.cofreeCoact_def, Comodule.leftCoactRTensor_def,
+  simp [Comodule.cofreeCoact_def, Comodule.leftCoactRTensor_def,
     Comodule.leftCofreeCoact_def, TensorWords.comul_eq_deconcatenation,
     TensorWords.deconcatenation_one]
 
