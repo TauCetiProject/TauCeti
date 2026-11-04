@@ -83,7 +83,7 @@ private noncomputable def kummerAlgHom (ζ : PrimeToPTateModule 1 K) :
     simp only [coeff_twistEquiv]
     rw [coe_algebraMap_laurentSeries]
     by_cases hq : q.den = 1
-    · rw [← Rat.coe_int_num_of_den_eq_one hq, ratChar_ofAdd_intCast, Units.val_one, one_mul]
+    · rw [← Rat.intCast_num_of_den_eq_one hq, ratChar_ofAdd_intCast, Units.val_one, one_mul]
     · rw [coeff_ramifiedEmbedding_of_not_den_dvd 1 f (by simpa using hq), mul_zero]
 
 variable {K} in

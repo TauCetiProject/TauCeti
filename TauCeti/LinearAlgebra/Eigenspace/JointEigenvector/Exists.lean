@@ -81,7 +81,7 @@ theorem exists_jointEigenvector_of_pairwise_commute [FiniteDimensional K V] [Non
     ∃ (χ : ι → K) (v : V), v ≠ 0 ∧ ∀ i, v ∈ (f i).eigenspace (χ i) := by
   generalize hdim : Module.finrank K V = n
   induction n using Nat.strong_induction_on generalizing V with
-  | h n ih =>
+  | ind n ih =>
       classical
       by_cases hscalar : ∀ i, ∃ μ : K, f i = μ • (1 : Module.End K V)
       · choose χ hχ using hscalar

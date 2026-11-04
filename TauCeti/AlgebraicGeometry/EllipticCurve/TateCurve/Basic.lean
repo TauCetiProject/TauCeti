@@ -45,6 +45,8 @@ The formal invariants are those of the Tate curve as an elliptic curve over the 
 * `TauCeti.constantCoeff_tateCurve_c₄`: `c₄` is `1` at `q = 0`, so it is a unit of `ℤ⟦q⟧`.
 * `TauCeti.order_tateCurve_Δ` and `TauCeti.exists_tateCurve_Δ_eq_X_mul`: `Δ = q · u` with `u` a
   power series of constant coefficient `1`, and `Δ = q - 24 q² + ⋯`.
+* `TauCeti.exists_tateCurve_a₆_eq_X_mul`: `a₆ = q · u` with `u` a power series of constant
+  coefficient `-1`, so `a₆ = -q + ⋯`.
 * `TauCeti.exists_tateCurve_j_eq`: over `ℤ⸨q⸩` the Tate curve is elliptic and
   `j = q⁻¹ · J(q)` with `J ∈ ℤ⟦q⟧` and `J = 1 + 744 q + ⋯`.
 
@@ -198,6 +200,18 @@ theorem exists_tateCurve_Δ_eq_X_mul :
     have h := coeff_one_tateCurve_Δ
     rwa [hu, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply] at h
   exact ⟨u, hu₀, isUnit_iff_constantCoeff.mpr (by simp only [hu₀, isUnit_one]), hu⟩
+
+/-- **The coefficient `a₆` of the Tate curve is `q` times a unit**: `a₆ = q · u` with `u ∈ ℤ⟦q⟧` of
+constant coefficient `-1`, hence invertible in `ℤ⟦q⟧`. -/
+theorem exists_tateCurve_a₆_eq_X_mul :
+    ∃ u : ℤ⟦X⟧, constantCoeff u = -1 ∧ IsUnit u ∧ tateCurve.a₆ = X * u := by
+  obtain ⟨u, hu⟩ := X_dvd_iff.mpr constantCoeff_tateCurve_a₆
+  have hu₀ : constantCoeff u = -1 := by
+    have h := twelve_mul_coeff_tateCurve_a₆ 1
+    rw [hu, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply] at h
+    simp [ArithmeticFunction.sigma_apply] at h
+    omega
+  exact ⟨u, hu₀, isUnit_iff_constantCoeff.mpr (by simp [hu₀]), hu⟩
 
 /-- Over the Laurent series `ℤ⸨q⸩`, where `q` is invertible, the Tate curve is elliptic. -/
 instance isElliptic_baseChange_tateCurve : (tateCurve.baseChange ℤ⸨X⸩).IsElliptic := by

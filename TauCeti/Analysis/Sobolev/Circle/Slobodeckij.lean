@@ -324,8 +324,8 @@ private theorem tsum_ofReal_weight_mul_le (hs : 0 ≤ s) (a : CircleSobolev 0 E)
   have hc : 0 < c := by positivity
   have hnorm := ofReal_norm_sq_eq_tsum a
   simp only [mul_zero, weight_zero_left, one_mul] at hnorm
-  rw [hnorm, slobodeckijEnergy_eq_tsum, ← ENNReal.tsum_mul_left, ← ENNReal.tsum_add]
-  refine ENNReal.tsum_le_tsum fun n ↦ ?_
+  rw [hnorm, slobodeckijEnergy_eq_tsum, ← ENNReal.tsum_mul_left, ← tsum_add]
+  refine tsum_le_tsum fun n ↦ ?_
   rcases eq_or_ne n 0 with rfl | hn
   · rw [weight_def, Int.cast_zero, abs_zero, add_zero, one_rpow, one_mul]
     exact le_self_add
@@ -369,7 +369,7 @@ theorem exists_slobodeckijEnergy_le (hs0 : 0 < s) (hs1 : s < 1) :
   refine ⟨C, hC, fun a ↦ ?_⟩
   rw [slobodeckijEnergy_eq_tsum, ENNReal.ofReal_mul hC, ofReal_norm_sq_eq_tsum,
     ← ENNReal.tsum_mul_left]
-  refine ENNReal.tsum_le_tsum fun n ↦ ?_
+  refine tsum_le_tsum fun n ↦ ?_
   rw [coeff_inclusion, ENNReal.ofReal_mul (weight_nonneg _ _), ← mul_assoc,
     ← ENNReal.ofReal_mul hC, mul_comm (ENNReal.ofReal (‖_‖ ^ 2))]
   gcongr

@@ -77,16 +77,16 @@ Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`, where `V` is the Seifert matri
 Seifert surface of the closure of a word representing the braid. It does not depend on the word
 (`TauCeti.MarkovBraid.tristramLevineSignature_eq_of_toBraid_eq`). -/
 noncomputable def tristramLevineSignature (β : MarkovBraid) (ω : ℂ) : ℤ :=
-  KnotTheory.tristramLevineSignature
-    ((toBraid_surjective β.braid).choose.seifertMatrix.map ((↑) : ℤ → ℝ)) ω
+  liftWord (fun w ↦ KnotTheory.tristramLevineSignature
+    (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω) β
 
 /-- The Tristram–Levine signature of a braid is computed by any word representing it. -/
 theorem tristramLevineSignature_eq_of_toBraid_eq {β : MarkovBraid}
     {w : BraidWord (β.predStrands + 1)} (hw : w.toBraid = β.braid) (ω : ℂ) :
     β.tristramLevineSignature ω =
       KnotTheory.tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω :=
-  tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq
-    ((toBraid_surjective β.braid).choose_spec.trans hw.symm) ω
+  liftWord_eq_of_toBraid_eq _
+    (fun h ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq h ω) hw
 
 /-- The Tristram–Levine signature of the braid represented by a word is that of the word's Seifert
 matrix. -/
@@ -100,37 +100,19 @@ end MarkovBraid
 
 /-- A single Markov move does not change the Tristram–Levine signature. -/
 theorem IsMarkovMove.tristramLevineSignature_eq {β γ : MarkovBraid} (h : IsMarkovMove β γ)
-    (ω : ℂ) : β.tristramLevineSignature ω = γ.tristramLevineSignature ω := by
-  cases h with
-  | conj b c =>
-    -- Conjugation by a word `u` is undone by rotating `u` to the end of the word.
-    obtain ⟨w, rfl⟩ := toBraid_surjective b
-    obtain ⟨u, rfl⟩ := toBraid_surjective c
-    let uInv : BraidWord _ := u.reverse.map fun x ↦ (x.1, -x.2)
-    have huInv : uInv.toBraid = u.toBraid⁻¹ := toBraid_reverse_map_neg u
-    have hrot := tristramLevineSignature_seifertMatrix_rotate (u ++ (w ++ uInv)) u.length ω
-    rw [List.rotate_append_length_eq] at hrot
-    rw [MarkovBraid.tristramLevineSignature_mk,
-      MarkovBraid.tristramLevineSignature_eq_of_toBraid_eq (w := u ++ (w ++ uInv))
-        (by rw [toBraid_append, toBraid_append, huInv, mul_assoc]), ← hrot]
-    exact tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq
-      (by rw [toBraid_append, toBraid_append, huInv, inv_mul_cancel_right]) ω
-  | stabilize b =>
-    obtain ⟨w, rfl⟩ := toBraid_surjective b
-    rw [MarkovBraid.tristramLevineSignature_eq_of_toBraid_eq (w := w.stabilize 1) (by simp),
-      tristramLevineSignature_seifertMatrix_stabilize, MarkovBraid.tristramLevineSignature_mk]
-  | stabilizeInv b =>
-    obtain ⟨w, rfl⟩ := toBraid_surjective b
-    rw [MarkovBraid.tristramLevineSignature_eq_of_toBraid_eq (w := w.stabilize (-1)) (by simp),
-      tristramLevineSignature_seifertMatrix_stabilize, MarkovBraid.tristramLevineSignature_mk]
+    (ω : ℂ) : β.tristramLevineSignature ω = γ.tristramLevineSignature ω :=
+  h.liftWord_eq _ (fun hw ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq hw ω)
+    (fun w k ↦ tristramLevineSignature_seifertMatrix_rotate w k ω)
+    (fun w ε ↦ tristramLevineSignature_seifertMatrix_stabilize w ε ω)
 
 /-- **The Tristram–Levine signature is a Markov invariant.** Markov-equivalent braids have the same
 Tristram–Levine signature at every `ω`; by Markov's theorem, it is an invariant of the oriented
 link obtained by closing the braid. -/
 theorem MarkovEquiv.tristramLevineSignature_eq {β γ : MarkovBraid} (h : MarkovEquiv β γ)
     (ω : ℂ) : β.tristramLevineSignature ω = γ.tristramLevineSignature ω :=
-  h.induction (fun hmove ↦ hmove.tristramLevineSignature_eq ω) (fun _ ↦ rfl)
-    (fun _ ih ↦ ih.symm) (fun _ _ ih ih' ↦ ih.trans ih')
+  h.liftWord_eq _ (fun hw ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq hw ω)
+    (fun w k ↦ tristramLevineSignature_seifertMatrix_rotate w k ω)
+    (fun w ε ↦ tristramLevineSignature_seifertMatrix_stabilize w ε ω)
 
 /-! ### The right- and left-handed trefoils -/
 

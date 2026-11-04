@@ -31,7 +31,7 @@ local instance : DiscreteTopology ℚ := ⟨rfl⟩
 local instance : IsAdicHom (algebraMap ℚ ℚ) := by
   simpa using IsAdicHom.id (A := ℚ)
 
-private def integralPair : Pair ℚ where
+private noncomputable def integralPair : Pair ℚ where
   plus := (Rat.padicValuation 2).integer
   isRingOfIntegralElements :=
     { isOpen := isOpen_discrete _

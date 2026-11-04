@@ -173,26 +173,39 @@ class Config(unittest.TestCase):
 
 
 class Boundary(unittest.TestCase):
-    def test_mathlib_cold_selection_preserves_publisher_key_and_directory(self):
+    def test_mathlib_selection_shares_cache_version_across_workspace_roots(self):
         action = yaml.safe_load((ROOT / ".github/actions/restore-mathlib-ltars/action.yml").read_text())
         select, restore = action["runs"]["steps"]
         self.assertNotIn("if", select)
         self.assertEqual(restore["if"], "inputs.cold != 'true'")
         self.assertEqual(action["outputs"]["cache-primary-key"]["value"],
                          "${{ steps.cache_dir.outputs.key }}")
+        self.assertNotIn("cache-dir", action["inputs"])
+        self.assertEqual(action["outputs"]["cache-path"]["value"],
+                         restore["with"]["path"])
         with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            for directory in ("", str(root / "custom")):
+            selections = []
+            for workspace in ("hosted/work/project", "fleet/_work/project"):
+                root = Path(temp) / workspace
+                root.mkdir(parents=True)
                 env_file, outputs = root / "env", root / "outputs"
                 subprocess.run(["bash", "-c", select["run"]], check=True, env={
-                    **os.environ, "CONFIGURED_CACHE_DIR": directory,
-                    "GITHUB_WORKSPACE": temp, "GITHUB_ENV": str(env_file),
+                    **os.environ,
+                    "GITHUB_WORKSPACE": str(root), "GITHUB_ENV": str(env_file),
                     "GITHUB_OUTPUT": str(outputs), "CACHE_KEY_PREFIX": "snapshot-prefix-",
                     "MANIFEST_HASH": "manifest-hash"})
                 values = dict(line.split("=", 1) for line in outputs.read_text().splitlines())
-                self.assertEqual(values["path"], directory or str(root / ".mathlib-ltar-cache"))
+                self.assertEqual(values["path"], str(root / ".mathlib-ltar-cache"))
                 self.assertEqual(values["key"], "snapshot-prefix-manifest-hash")
                 self.assertIn("MATHLIB_CACHE_DIR=" + values["path"], env_file.read_text())
+                cache = Path(values["path"])
+                cache.mkdir()
+                (cache / "artifact.ltar").write_bytes(b"cache fixture")
+                (cache / "scratch").write_bytes(b"not an archive")
+                self.assertEqual(list(root.glob(values["pattern"])), [cache / "artifact.ltar"])
+                selections.append((values["key"], values["pattern"]))
+            # These literal inputs, plus compression, determine GitHub's cache version.
+            self.assertEqual(selections[0], selections[1])
         warmer = yaml.safe_load((ROOT / ".github/workflows/warm-dependencies.yml").read_text())
         steps = warmer["jobs"]["warm"]["steps"]
         consumer = next(step for step in steps if step.get("id") == "mathlib")
@@ -200,8 +213,12 @@ class Boundary(unittest.TestCase):
         self.assertIn("cold", consumer["with"])
         publisher = next(step for step in steps if step.get("name") == "Save only official compressed downloads")
         self.assertEqual(publisher["with"], {
-            "path": "${{ steps.mathlib.outputs.cache-dir }}/*.ltar",
+            "path": "${{ steps.mathlib.outputs.cache-path }}",
             "key": "${{ steps.mathlib.outputs.cache-primary-key }}"})
+        main = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        save = next(s for s in main["jobs"]["build"]["steps"]
+                    if s.get("name") == "Save Mathlib's compressed download cache")
+        self.assertEqual(save["with"]["path"], "${{ steps.mathlib_ltar_restore.outputs.cache-path }}")
 
     def test_only_isolated_main_warmer_saves_toolchain(self):
         warmer = yaml.safe_load((ROOT / ".github/workflows/warm-dependencies.yml").read_text())
@@ -211,7 +228,7 @@ class Boundary(unittest.TestCase):
         steps = job["steps"]
         saves = [step for step in steps if step.get("uses") == "actions/cache/save@v4"]
         self.assertEqual(len(saves), 2)
-        self.assertTrue(saves[1]["with"]["path"].endswith("/*.ltar"))
+        self.assertEqual(saves[1]["with"]["path"], "${{ steps.mathlib.outputs.cache-path }}")
         self.assertNotIn("secrets.", json.dumps(warmer))
         self.assertNotIn("lake build", json.dumps(steps))
         pr = (ROOT / ".github/workflows/pr-build.yml").read_text()
