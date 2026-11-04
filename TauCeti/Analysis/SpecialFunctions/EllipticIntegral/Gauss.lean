@@ -19,6 +19,9 @@ evaluation of that integral by the arithmetic-geometric mean then gives **Gauss'
 
 `legendreK k = π / (2 * agm 1 √(1 - k²))`  for `k ^ 2 < 1`.
 
+Rescaling the axes, `agmIntegral_eq_legendreK_div` expresses the AGM integral of any axes
+`0 < a ≤ b` as `K(k) / b` with `k = √(1 - (a / b)²)`.
+
 Since the AGM is unchanged by replacing its arguments with their geometric and arithmetic means,
 the same identification gives **Landen's transformation** of `K` (DLMF 19.8.12):
 
@@ -62,6 +65,21 @@ theorem legendreK_eq_pi_div_two_mul_agm {k : ℝ} (hk : k ^ 2 < 1) :
   rw [legendreK_eq_agmIntegral hk, ← div_div]
   simpa [coe_toNNReal _ (sqrt_nonneg _)] using
     agmIntegral_eq_pi_div_two_div_agm (a := 1) (b := (√(1 - k ^ 2)).toNNReal)
+
+/-- For axes `0 < a ≤ b`, the AGM integral is `K(k) / b`, where the modulus
+`k = √(1 - (a / b)²)` has complementary modulus `a / b`. -/
+theorem agmIntegral_eq_legendreK_div {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    agmIntegral a b = legendreK √(1 - (a / b) ^ 2) / b := by
+  have hb : 0 < b := ha.trans_le hab
+  have hr : 0 < a / b := div_pos ha hb
+  have hr1 : a / b ≤ 1 := (div_le_one hb).2 hab
+  have hk : (√(1 - (a / b) ^ 2)) ^ 2 < 1 := by
+    rw [sq_sqrt (by nlinarith)]
+    nlinarith
+  rw [legendreK_eq_agmIntegral hk, sq_sqrt (by nlinarith), sub_sub_cancel, sqrt_sq hr.le]
+  have hscale := agmIntegral_mul_left b 1 (a / b)
+  rw [mul_one, mul_div_cancel₀ _ hb.ne', abs_of_pos hb] at hscale
+  rw [agmIntegral_comm, hscale]
 
 /-- **Landen's transformation** of the complete integral of the first kind, ascending form
 (DLMF 19.8.12): for `0 ≤ k < 1`, `K(2√k / (1 + k)) = (1 + k) K(k)`. -/
