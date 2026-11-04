@@ -115,7 +115,7 @@ theorem Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage [Contin
     rw [_root_.Quotient.eq, L.orbitRel_apply_iff_sub_mem]
     simpa using L.neg_mem hl
   · rintro ⟨x, hx, rfl⟩
-    have hx0 : f x = 0 := hx
+    have hx0 : f x = 0 := LinearMap.mem_ker.1 hx
     exact ⟨⟨x, ⟨0, (L.map (f.restrictScalars ℤ)).zero_mem, 0, h0U, by simp [hx0]⟩, rfl⟩,
       x, by simp [hx0], rfl⟩
 

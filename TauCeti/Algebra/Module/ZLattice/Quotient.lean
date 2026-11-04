@@ -260,12 +260,11 @@ def Submodule.orbitRelQuotientToKerOrbitRelQuotientMap :
     ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl).codRestrict _ fun t ↦ by
       induction t using _root_.Quotient.inductionOn with | h x => ?_
       -- The composite sends the orbit of `x` to the orbit of `f x = 0`.
-      exact AddMonoidHom.mem_ker.2 <|
-        (congrArg (L.orbitRelQuotientMap L' _ h)
-          (Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x)).trans <|
-        (L.orbitRelQuotientMap_mk L' _ h _).trans <|
-        (congrArg (_root_.Quotient.mk (AddAction.orbitRel L' E')) x.2).trans
-          L'.orbitRelQuotient_mk_zero
+      -- `Submodule.orbitRelQuotientMap_mk` applies to the inner map only through the unfolding
+      -- of `ZLattice.comap` (hence `le_rfl`), so it is used as a term rather than by `rw`.
+      refine AddMonoidHom.mem_ker.2 <|
+        (congrArg _ (Submodule.orbitRelQuotientMap_mk _ L _ le_rfl x)).trans ?_
+      simp [LinearMap.mem_ker.1 x.2]
 
 /-- Followed by the inclusion of the kernel into `E / L`,
 `Submodule.orbitRelQuotientToKerOrbitRelQuotientMap` is the map of quotients induced by the
