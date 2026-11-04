@@ -22,9 +22,8 @@ the ambient group.
 
 * `DoubleCoset.multiplicity_map_equiv`: transport of Shimura's multiplicity along a group
   equivalence.
-* `DoubleCoset.multiplicity_doubleCoset_congr_second`: invariance in the second input.
-* `DoubleCoset.multiplicity_doubleCoset_congr_first_of_comm`: invariance in the first input when
-  the multiplicity is symmetric.
+* `DoubleCoset.multiplicity_doubleCoset_congr_first` and
+  `DoubleCoset.multiplicity_doubleCoset_congr_second`: invariance in the first and second inputs.
 -/
 
 public section
@@ -171,17 +170,54 @@ theorem multiplicity_doubleCoset_congr_second (H₁ H₂ H₃ : Subgroup G)
       (((i.out : G) * g * ((q.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃))
   rw [hprod]
 
-/-- If the multiplicity is symmetric in its two inputs, it depends on its first input only
-through its double coset as well. -/
-theorem multiplicity_doubleCoset_congr_first_of_comm (H : Subgroup G)
-    (hcomm : ∀ a b d : G, multiplicity H H H a b d = multiplicity H H H b a d)
-    {g g' : G} (h d : G) (hg : g' ∈ doubleCoset g H H) :
-    multiplicity H H H g' h d = multiplicity H H H g h d := by
-  calc
-    _ = multiplicity H H H h g' d := hcomm g' h d
-    _ = multiplicity H H H h g d :=
-      multiplicity_doubleCoset_congr_second H H H h d hg
-    _ = _ := (hcomm g h d).symm
+/-- Shimura's multiplicity depends on its first input only through its double coset, without
+any finiteness or Hecke-triple hypothesis. -/
+theorem multiplicity_doubleCoset_congr_first (H₁ H₂ H₃ : Subgroup G)
+    {g g' : G} (h d : G) (hg : g' ∈ doubleCoset g H₁ H₂) :
+    multiplicity H₁ H₂ H₃ g' h d = multiplicity H₁ H₂ H₃ g h d := by
+  obtain ⟨a, ha, b, hb, rfl⟩ := mem_doubleCoset.mp hg
+  let aN : Subgroup.normalizer (H₁ : Set G) := ⟨a, Subgroup.le_normalizer ha⟩
+  let e₀ := decompQuotientEquivMulLeftRight H₁ H₂ g aN (Subgroup.le_normalizer hb)
+  let eg := e₀.trans (MulAction.toPerm (⟨a, ha⟩ : H₁))
+  have heg (i : DecompQuotient H₁ H₂ (a * g * b)) :
+      (QuotientGroup.mk (eg i).out : DecompQuotient H₁ H₂ g) =
+        QuotientGroup.mk (i.out * (⟨a, ha⟩ : H₁)) := by
+    calc
+      _ = eg i := QuotientGroup.out_eq' (eg i)
+      _ = (⟨a, ha⟩ : H₁) • e₀ (QuotientGroup.mk i.out) :=
+        congrArg (fun x ↦ (⟨a, ha⟩ : H₁) • e₀ x) (QuotientGroup.out_eq' i).symm
+      _ = (⟨a, ha⟩ : H₁) • QuotientGroup.mk ((H₁.normalizerMonoidHom aN).symm i.out) := by
+        rw [decompQuotientEquivMulLeftRight_mk]
+      _ = _ := by
+        rw [MulAction.Quotient.smul_mk, smul_eq_mul]
+        apply congrArg QuotientGroup.mk
+        ext
+        dsimp only [aN]
+        simp [Subgroup.normalizerMonoidHom, HSMul.hSMul, mul_assoc]
+  let c : DecompQuotient H₁ H₂ (a * g * b) → H₂ := fun i ↦
+    ⟨g⁻¹ * (((eg i).out : G)⁻¹ * ((i.out : G) * a)) * g * b,
+      H₂.mul_mem (conj_mem_of_mk_eq g (heg i)) hb⟩
+  -- Moving the first representative to `(eg i).out` introduces a right factor `c i ∈ H₂`, which
+  -- is absorbed by shearing the second decomposition quotient.
+  let epairs : DecompQuotient H₁ H₂ (a * g * b) × DecompQuotient H₂ H₃ h ≃
+      DecompQuotient H₁ H₂ g × DecompQuotient H₂ H₃ h :=
+    Equiv.prodShear eg fun i ↦ MulAction.toPerm (c i)
+  rw [multiplicity_def, multiplicity_def]
+  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun ⟨i, j⟩ ↦ ?_)
+  let q := c i • j
+  have hprod :
+      ((i.out : G) * (a * g * b) * ((j.out : G) * h) : G ⧸ H₃) =
+        (((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H₃) := by
+    rw [QuotientGroup.eq]
+    have hm := H₃.inv_mem (conj_mem_of_mk_eq h (QuotientGroup.mk_out_smul (c i) j))
+    dsimp only [q, c, Subtype.coe_mk] at hm ⊢
+    simpa only [Subgroup.coe_mul, mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left] using hm
+  -- As above, expose the product shear and rewrite the subtype predicates as coset equalities.
+  dsimp only [epairs, Equiv.prodShear_apply, MulAction.toPerm_apply]
+  change
+    (((i.out : G) * (a * g * b) * ((j.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃)) ↔
+      ((((eg i).out : G) * g * ((q.out : G) * h) : G ⧸ H₃) = (d : G ⧸ H₃))
+  rw [hprod]
 
 end DoubleCoset
 
