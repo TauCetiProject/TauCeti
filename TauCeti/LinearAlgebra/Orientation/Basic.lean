@@ -22,6 +22,7 @@ compatibility under linear equivalences.
   if and only if `0 < det f * det g`.
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
+* `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
 * `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
@@ -63,6 +64,17 @@ theorem Orientation.intCast_units_smul_injective [IsDomain R] (o : Orientation R
   rcases Int.units_eq_one_or u with rfl | rfl <;>
     rcases Int.units_eq_one_or v with rfl | rfl <;>
     simp_all [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self o).symm]
+
+/-- Reindexing an orientation along a permutation of its index type multiplies it by the sign of
+the permutation. -/
+theorem Orientation.reindex_perm [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι)
+    (o : Orientation R M ι) :
+    Orientation.reindex R M σ o =
+      Units.map (Int.castRingHom R).toMonoidHom (Equiv.Perm.sign σ) • o := by
+  induction o using Module.Ray.ind with | h v hv =>
+    simp only [Orientation.reindex_apply, AlternatingMap.domDomCongr_perm, smul_rayOfNeZero,
+      Units.smul_def, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, eq_intCast,
+      Int.cast_smul_eq_zsmul]
 
 end CommRing
 
