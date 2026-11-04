@@ -18,7 +18,8 @@ first-order theory alone need not characterize the canonical expansion.
 
 `morleyTheory A` and `morleyTypes A` give this presentation for any component-closed fragment `A`.
 Both are countable when `A` is countable, even over an uncountable language. The characterization
-`firstOrder_presentation_iff` allows arbitrary structure universes and empty carriers.
+`model_morleyTheory_and_omitsType_iff_eq_morleyExpansion` allows arbitrary structure universes
+and empty carriers.
 
 The construction follows D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University
 Press, 2016, Chapter 1. It uses the canonical expansion and its uniqueness theorem from
@@ -137,6 +138,79 @@ theorem morleyAxioms_subset_morleyTheory {n : ℕ} {φ : L.BoundedFormulaω Empt
     (hφ : ⟨n, φ⟩ ∈ A) : morleyAxioms A φ hφ ⊆ morleyTheory A :=
   fun _ h => (mem_morleyTheory_iff A).2 ⟨n, φ, hφ, h⟩
 
+section AxiomSemantics
+
+variable {M : Type w} [S : (morleyize L A).Structure M]
+
+/-- A model of the Morley theory satisfies the axioms of each fragment member. -/
+theorem model_morleyAxioms (hT : M ⊨ morleyTheory A) {n : ℕ}
+    (φ : L.BoundedFormulaω Empty n) (hφ : ⟨n, φ⟩ ∈ A) :
+    M ⊨ morleyAxioms A φ hφ :=
+  hT.mono (morleyAxioms_subset_morleyTheory A hφ)
+
+/-- The falsum axiom says that its relation is always false. -/
+theorem model_morleyAxioms_falsum_iff {n : ℕ}
+    (hφ : ⟨n, BoundedFormulaInf.falsum⟩ ∈ A) :
+    M ⊨ morleyAxioms A .falsum hφ ↔
+      ∀ a : Fin n → M, ¬S.RelMap (morleyRel .falsum hφ) a := by
+  simp [morleyAxioms, Sentence.realize_alls]
+
+/-- The equality axiom identifies its relation with equality in the reduct. -/
+theorem model_morleyAxioms_equal_iff [L.Structure M]
+    [(lhomMorleyize (A : Set (Σ n, L.BoundedFormulaω Empty n))).IsExpansionOn M] {n : ℕ}
+    (t₁ t₂ : L.Term (Empty ⊕ Fin n)) (hφ : ⟨n, BoundedFormulaInf.equal t₁ t₂⟩ ∈ A) :
+    M ⊨ morleyAxioms A (.equal t₁ t₂) hφ ↔
+      ∀ a : Fin n → M, S.RelMap (morleyRel (.equal t₁ t₂) hφ) a ↔
+        t₁.realize (Sum.elim Empty.elim a) = t₂.realize (Sum.elim Empty.elim a) := by
+  simp [morleyAxioms, Sentence.realize_alls, BoundedFormula.realize_bdEqual]
+
+/-- The relation axiom identifies its relation with the original atom in the reduct. -/
+theorem model_morleyAxioms_rel_iff [L.Structure M]
+    [(lhomMorleyize (A : Set (Σ n, L.BoundedFormulaω Empty n))).IsExpansionOn M] {n k : ℕ}
+    (R : L.Relations k) (ts : Fin k → L.Term (Empty ⊕ Fin n))
+    (hφ : ⟨n, BoundedFormulaInf.rel R ts⟩ ∈ A) :
+    M ⊨ morleyAxioms A (.rel R ts) hφ ↔
+      ∀ a : Fin n → M, S.RelMap (morleyRel (.rel R ts) hφ) a ↔
+        Structure.RelMap R (fun i => (ts i).realize (Sum.elim Empty.elim a)) := by
+  simp only [morleyAxioms_rel, Theory.model_singleton_iff, Sentence.realize_alls,
+    BoundedFormula.realize_iff, realize_morleyAtom, LHom.realize_onBoundedFormula,
+    BoundedFormula.Realize]
+
+/-- The implication axiom identifies its relation with implication between component relations. -/
+theorem model_morleyAxioms_imp_iff {n : ℕ} (φ ψ : L.BoundedFormulaω Empty n)
+    (hφ : ⟨n, φ.imp ψ⟩ ∈ A) :
+    M ⊨ morleyAxioms A (φ.imp ψ) hφ ↔
+      ∀ a : Fin n → M, S.RelMap (morleyRel (φ.imp ψ) hφ) a ↔
+        (S.RelMap (morleyRel φ (A.imp_left_mem hφ)) a →
+          S.RelMap (morleyRel ψ (A.imp_right_mem hφ)) a) := by
+  simp [morleyAxioms, Sentence.realize_alls]
+
+/-- The universal axiom identifies its relation with the universal closure of the body relation. -/
+theorem model_morleyAxioms_all_iff {n : ℕ} (φ : L.BoundedFormulaω Empty (n + 1))
+    (hφ : ⟨n, φ.all⟩ ∈ A) :
+    M ⊨ morleyAxioms A φ.all hφ ↔
+      ∀ a : Fin n → M, S.RelMap (morleyRel φ.all hφ) a ↔
+        ∀ b, S.RelMap (morleyRel φ (A.all_mem hφ)) (Fin.snoc a b) := by
+  simp [morleyAxioms, Sentence.realize_alls]
+
+/-- The conjunction axioms give the implications to each component relation. -/
+theorem model_morleyAxioms_iInf_iff {n : ℕ} (φs : ℕ → L.BoundedFormulaω Empty n)
+    (hφ : ⟨n, BoundedFormulaInf.iInf φs⟩ ∈ A) :
+    M ⊨ morleyAxioms A (.iInf φs) hφ ↔
+      ∀ k (a : Fin n → M), S.RelMap (morleyRel (.iInf φs) hφ) a →
+        S.RelMap (morleyRel (φs k) (A.iInf_mem hφ k)) a := by
+  simp [morleyAxioms, Sentence.realize_alls, Theory.model_iff]
+
+/-- The disjunction axioms give the implications from each component relation. -/
+theorem model_morleyAxioms_iSup_iff {n : ℕ} (φs : ℕ → L.BoundedFormulaω Empty n)
+    (hφ : ⟨n, BoundedFormulaInf.iSup φs⟩ ∈ A) :
+    M ⊨ morleyAxioms A (.iSup φs) hφ ↔
+      ∀ k (a : Fin n → M), S.RelMap (morleyRel (φs k) (A.iSup_mem hφ k)) a →
+        S.RelMap (morleyRel (.iSup φs) hφ) a := by
+  simp [morleyAxioms, Sentence.realize_alls, Theory.model_iff]
+
+end AxiomSemantics
+
 /-- The Morley theory of a countable fragment is countable, without a language-size assumption. -/
 theorem morleyTheory_countable (hA : (A : Set (Σ n, L.BoundedFormulaω Empty n)).Countable) :
     (morleyTheory A).Countable := by
@@ -244,8 +318,8 @@ theorem morleyTheory_model :
     simp only [morleyAxioms, Set.mem_singleton_iff, Set.mem_range] at hσ
   all_goals first | subst σ | obtain ⟨k, rfl⟩ := hσ
   all_goals
-    rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim]
-    simp [BoundedFormula.realize_alls, BoundedFormulaInf.realize_equal,
+    rw [Sentence.realize_alls]
+    simp [BoundedFormulaInf.realize_equal,
       BoundedFormulaInf.realize_rel]
   all_goals grind
 
@@ -298,84 +372,59 @@ theorem realize_morleyAtom_of_model_omitting (hT : M ⊨ morleyTheory A)
     (hP : ∀ p ∈ morleyTypes A, OmitsType M (BoundedFormula.toOmega '' p.2)) :
     ∀ {n : ℕ} (φ : L.BoundedFormulaω Empty n) (hφ : ⟨n, φ⟩ ∈ A) (a : Fin n → M),
       (morleyAtom A φ hφ).Realize Empty.elim a ↔ φ.Realize Empty.elim a := by
-  have hax : ∀ {n : ℕ} (φ : L.BoundedFormulaω Empty n) (hφ : ⟨n, φ⟩ ∈ A),
-      ∀ σ ∈ morleyAxioms A φ hφ, Formula.Realize σ (Empty.elim : Empty → M) := by
-    intro n φ hφ σ hσ
-    simpa only [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim] using
-      hT.realize_of_mem σ (morleyAxioms_subset_morleyTheory A hφ hσ)
+  simp only [realize_morleyAtom]
   intro n φ
   -- Finitary nodes use the defining equivalences. At infinitary nodes the theory supplies
   -- one direction and omission supplies the other, with the induction hypothesis at every tuple.
   induction φ with
   | falsum =>
     intro hφ a
-    have h := hax _ hφ
-    simp only [morleyAxioms, Set.mem_singleton_iff, forall_eq,
-      BoundedFormula.realize_alls] at h
-    simpa only [BoundedFormula.realize_not, BoundedFormulaInf.realize_falsum, iff_false]
-      using h a
-  | equal t₁ t₂ =>
+    simpa only [BoundedFormulaInf.realize_falsum, iff_false] using
+      (model_morleyAxioms_falsum_iff A hφ).1 (model_morleyAxioms A hT _ hφ) a
+  | equal t₁ t₂ | rel t₁ t₂ =>
     intro hφ a
-    have h := hax _ hφ
-    simp only [morleyAxioms, Set.mem_singleton_iff, forall_eq,
-      BoundedFormula.realize_alls, BoundedFormula.realize_iff,
-      LHom.realize_onBoundedFormula] at h
-    simpa only [BoundedFormula.Realize, BoundedFormulaInf.realize_equal] using h a
-  | rel R ts =>
-    intro hφ a
-    have h := hax _ hφ
-    simp only [morleyAxioms, Set.mem_singleton_iff, forall_eq,
-      BoundedFormula.realize_alls, BoundedFormula.realize_iff,
-      LHom.realize_onBoundedFormula] at h
-    simpa only [BoundedFormula.Realize, BoundedFormulaInf.realize_rel] using h a
+    have h := model_morleyAxioms A hT _ hφ
+    simp only [model_morleyAxioms_equal_iff, model_morleyAxioms_rel_iff] at h
+    simpa only [BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel] using h a
   | imp φ ψ ihφ ihψ =>
     intro hφ a
-    have h := hax _ hφ
-    simp only [morleyAxioms, Set.mem_singleton_iff, forall_eq,
-      BoundedFormula.realize_alls, BoundedFormula.realize_iff,
-      BoundedFormula.realize_imp] at h
-    exact (h a).trans (imp_congr (ihφ (A.imp_left_mem hφ) a) (ihψ (A.imp_right_mem hφ) a))
+    exact ((model_morleyAxioms_imp_iff A φ ψ hφ).1
+      (model_morleyAxioms A hT _ hφ) a).trans
+      (imp_congr (ihφ (A.imp_left_mem hφ) a) (ihψ (A.imp_right_mem hφ) a))
   | all φ ih =>
     intro hφ a
-    have h := hax _ hφ
-    simp only [morleyAxioms, Set.mem_singleton_iff, forall_eq,
-      BoundedFormula.realize_alls, BoundedFormula.realize_iff,
-      BoundedFormula.realize_all] at h
-    exact (h a).trans (forall_congr' fun b => ih (A.all_mem hφ) (Fin.snoc a b))
+    exact ((model_morleyAxioms_all_iff A φ hφ).1
+      (model_morleyAxioms A hT _ hφ) a).trans
+      (forall_congr' fun b => ih (A.all_mem hφ) (Fin.snoc a b))
   | iSup φs ih =>
     intro hφ a
-    have h := hax _ hφ
+    have h := (model_morleyAxioms_iSup_iff A φs hφ).1 (model_morleyAxioms A hT _ hφ)
     have hp := (omitsType_morleySupType_iff A hφ).1
       (hP _ (morleySupType_mem_morleyTypes A φs hφ)) a
-    simp only [morleyAxioms, Set.forall_mem_range,
-      BoundedFormula.realize_alls, BoundedFormula.realize_imp] at h
     rw [BoundedFormulaInf.realize_iSup]
     constructor
     · intro ha
-      obtain ⟨k, hk⟩ := hp ((realize_morleyAtom A hφ a).1 ha)
-      exact ⟨k, (ih k (A.iSup_mem hφ k) a).1 ((realize_morleyAtom A _ a).2 hk)⟩
+      obtain ⟨k, hk⟩ := hp ha
+      exact ⟨k, (ih k (A.iSup_mem hφ k) a).1 hk⟩
     · rintro ⟨k, hk⟩
       exact h k a ((ih k (A.iSup_mem hφ k) a).2 hk)
   | iInf φs ih =>
     intro hφ a
-    have h := hax _ hφ
+    have h := (model_morleyAxioms_iInf_iff A φs hφ).1 (model_morleyAxioms A hT _ hφ)
     have hp := (omitsType_morleyInfType_iff A hφ).1
       (hP _ (morleyInfType_mem_morleyTypes A φs hφ)) a
-    simp only [morleyAxioms, Set.forall_mem_range,
-      BoundedFormula.realize_alls, BoundedFormula.realize_imp] at h
     rw [BoundedFormulaInf.realize_iInf]
     constructor
     · intro ha k
       exact (ih k (A.iInf_mem hφ k) a).1 (h k a ha)
     · intro ha
-      exact (realize_morleyAtom A hφ a).2 (hp fun k =>
-        (realize_morleyAtom A _ a).1 ((ih k (A.iInf_mem hφ k) a).2 (ha k)))
+      exact hp fun k => (ih k (A.iInf_mem hφ k) a).2 (ha k)
 
 /-- **First-order presentation of a fragment.** Among expansions of an `L`-structure, the
 models of the Morley theory omitting all its obstruction types are exactly the canonical
 expansion. The theory and types are explicit; no countability assumption is needed for the
 characterization itself. -/
-theorem firstOrder_presentation_iff :
+theorem model_morleyTheory_and_omitsType_iff_eq_morleyExpansion :
     (M ⊨ morleyTheory A ∧
       ∀ p ∈ morleyTypes A, OmitsType M (BoundedFormula.toOmega '' p.2)) ↔
       S = morleyExpansion (A : Set (Σ n, L.BoundedFormulaω Empty n)) M := by
@@ -398,7 +447,7 @@ variable {M : Type w} [L.Structure M]
 /-- The models of a sentence in a fragment are exactly the reducts of expansions satisfying
 its first-order presentation with the sentence's name asserted and all obstruction types omitted.
 The expansion uses the same carrier, so any nonemptiness or cardinality bound is preserved. -/
-theorem realize_iff_exists_firstOrder_presentation {φ : L.Sentenceω} (hφ : ⟨0, φ⟩ ∈ A) :
+theorem realize_iff_exists_model_morleyTheory_omitsType {φ : L.Sentenceω} (hφ : ⟨0, φ⟩ ∈ A) :
     SentenceInf.Realize φ M ↔
       ∃ S : (morleyize L A).Structure M, letI := S;
         (lhomMorleyize (A : Set (Σ n, L.BoundedFormulaω Empty n))).IsExpansionOn M ∧
@@ -410,8 +459,7 @@ theorem realize_iff_exists_firstOrder_presentation {φ : L.Sentenceω} (hφ : �
     refine ⟨morleyExpansion (A : Set (Σ n, L.BoundedFormulaω Empty n)) M,
       inferInstance, Theory.model_insert_iff.2 ⟨?_, morleyTheory_model A⟩,
       fun _ hp => morleyExpansion_omits_morleyTypes A hp⟩
-    rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
-      BoundedFormula.realize_alls]
+    rw [Sentence.realize_alls]
     intro a
     simpa only [realize_morleyAtom, morleyExpansion_relMap_morleyRel,
       SentenceInf.realize_def, FormulaInf.realize_def, Subsingleton.elim a default] using hM
@@ -419,8 +467,7 @@ theorem realize_iff_exists_firstOrder_presentation {φ : L.Sentenceω} (hφ : �
     let := S
     let := he
     obtain ⟨ha, hT⟩ := Theory.model_insert_iff.1 hS
-    rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
-      BoundedFormula.realize_alls] at ha
+    rw [Sentence.realize_alls] at ha
     rw [SentenceInf.realize_def, FormulaInf.realize_def]
     exact (realize_morleyAtom_of_model_omitting A hT hP φ hφ default).1 (ha default)
 

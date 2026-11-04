@@ -292,6 +292,14 @@ theorem SentenceInf.realize_iSup {M : Type w} [L.Structure M] {φs : ι → L.Se
     SentenceInf.Realize (BoundedFormulaInf.iSup φs) M ↔ ∃ i, (φs i).Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iSup]
 
+/-- A universally closed sentence holds iff its body holds at every tuple. -/
+@[simp]
+theorem Sentence.realize_alls {M : Type w} [L.Structure M] {n : ℕ}
+    (φ : L.BoundedFormula Empty n) :
+    M ⊨ φ.alls ↔ ∀ a : Fin n → M, φ.Realize Empty.elim a := by
+  rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
+    BoundedFormula.realize_alls]
+
 /-- The finitary embedding of a sentence preserves satisfaction, at every branching carrier. -/
 @[simp]
 theorem Sentence.realize_toInf (φ : L.Sentence) (M : Type w) [L.Structure M] :
