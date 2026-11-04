@@ -522,6 +522,48 @@ theorem isOrientationReversingAt_comp_of_det_neg [IsManifold I 1 M]
 
 end ModelSpace
 
+section CongrModel
+
+@[simp]
+theorem isOrientationPreservingAt_congrModel_left {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] [IsManifold I' 1 M']
+    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
+    IsOrientationPreservingAt (o.congrModel h) o' f x ↔ IsOrientationPreservingAt o o' f x := by
+  subst h
+  rw [congrModel_refl]
+
+@[simp]
+theorem isOrientationPreservingAt_congrModel_right {I' J' : ModelWithCorners ℝ E' H'}
+    (h : I' = J') [IsManifold I 1 M] [IsManifold I' 1 M'] [IsManifold J' 1 M']
+    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
+    IsOrientationPreservingAt o (o'.congrModel h) f x ↔ IsOrientationPreservingAt o o' f x := by
+  subst h
+  rw [congrModel_refl]
+
+@[simp]
+theorem isOrientationReversingAt_congrModel_left {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] [IsManifold I' 1 M']
+    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
+    IsOrientationReversingAt (o.congrModel h) o' f x ↔ IsOrientationReversingAt o o' f x := by
+  subst h
+  rw [congrModel_refl]
+
+@[simp]
+theorem isOrientationReversingAt_congrModel_right {I' J' : ModelWithCorners ℝ E' H'}
+    (h : I' = J') [IsManifold I 1 M] [IsManifold I' 1 M'] [IsManifold J' 1 M']
+    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
+    IsOrientationReversingAt o (o'.congrModel h) f x ↔ IsOrientationReversingAt o o' f x := by
+  subst h
+  rw [congrModel_refl]
+
+/-- Casting an orientation along an equality of models gives an orientation preserved by `id`. -/
+theorem isOrientationPreservingAt_id_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] (o : Orientation I M ι) (x : M) :
+    IsOrientationPreservingAt o (o.congrModel h) id x := by
+  simp
+
+end CongrModel
+
 end TauCeti.Manifold.Orientation
 
 namespace TauCeti.Manifold.OrientationLift

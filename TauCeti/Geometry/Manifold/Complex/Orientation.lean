@@ -137,9 +137,10 @@ standard orientation of `EuclideanSpace ℝ (Fin (2 * n))`.
 Tangent orientations are stated for the underlying real manifold structure
 `IsManifold 𝓘(ℝ, E) n M` (or `IsManifold (I.restrictScalars ℝ) n M` for a general boundaryless
 complex model `I`), obtained from the complex one by `IsManifold.restrictScalars` and
-`ModelWithCorners.isManifold_restrictScalars`. This file provides them as the scoped instances
-`TauCeti.ComplexManifold.isManifold_real` and
-`TauCeti.ComplexManifold.isManifold_restrictScalars_real`, so callers enable them with
+`ModelWithCorners.isManifold_restrictScalars`. Alongside
+`TauCeti.ComplexManifold.isManifold_restrictScalars_real` and
+`TauCeti.ComplexManifold.isManifold_complexEuclideanRealModel`, this file provides the scoped
+instance `TauCeti.ComplexManifold.isManifold_real`, so callers enable them with
 `open scoped TauCeti.ComplexManifold`. Since `IsManifold` is a `Prop`, any other proof of the real
 structure works as well.
 
@@ -559,30 +560,6 @@ end Prod
 
 end TauCeti
 
-namespace TauCeti.ComplexManifold
-
-/-- A `C^n` manifold modelled on a boundaryless complex model `I` is, with the same charts, a real
-`C^n` manifold modelled on `I.restrictScalars ℝ`. Available after
-`open scoped TauCeti.ComplexManifold`. -/
-scoped instance isManifold_restrictScalars_real {n : ℕ∞ω} {E H X : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
-    {I : ModelWithCorners ℂ E H} [I.Boundaryless]
-    [TopologicalSpace X] [ChartedSpace H X] [h : IsManifold I n X] :
-    IsManifold (I.restrictScalars ℝ) n X :=
-  I.isManifold_restrictScalars ℝ h
-
-/-- A `C^n` complex manifold modelled on `𝓘(ℂ, EuclideanSpace ℂ (Fin d))` is, with the same charts,
-a real `C^n` manifold modelled on `TauCeti.complexEuclideanRealModel d`. Available after
-`open scoped TauCeti.ComplexManifold`. -/
-scoped instance isManifold_complexEuclideanRealModel {n : ℕ∞ω} {d : ℕ} {X : Type*}
-    [TopologicalSpace X] [ChartedSpace (EuclideanSpace ℂ (Fin d)) X]
-    [IsManifold 𝓘(ℂ, EuclideanSpace ℂ (Fin d)) n X] :
-    IsManifold (complexEuclideanRealModel d) n X := by
-  rw [complexEuclideanRealModel_def]
-  infer_instance
-
-end TauCeti.ComplexManifold
-
 /-! ### Boundaryless complex models and restriction of scalars -/
 
 namespace ModelWithCorners
@@ -849,15 +826,7 @@ theorem complexOrientationLift_transContinuousLinearEquiv_self
       complexOrientationLift_modelOrientation,
       Manifold.OrientationLift.transContinuousLinearEquiv_modelOrientation,
       ContinuousLinearEquiv.restrictScalars'_toLinearEquiv]
-    have hmap_reindex (o : Orientation ℝ E (Fin (2 * finrank ℂ E))) :
-        Orientation.map (Fin (finrank ℝ E)) (e.toLinearEquiv.restrictScalars ℝ)
-          (Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm) o) =
-          Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
-            (Orientation.map (Fin (2 * finrank ℂ E)) (e.toLinearEquiv.restrictScalars ℝ) o) := by
-      induction o using Module.Ray.ind with | h v hv => ?_
-      simp only [Orientation.map_apply, Orientation.reindex_apply]
-      congr 1
-    rw [hmap_reindex, e.toLinearEquiv.map_complexOrientation_self]
+    rw [Orientation.map_reindex, e.toLinearEquiv.map_complexOrientation_self]
   · simp
 
 /-- For a complex continuous linear automorphism `e : E ≃L[ℂ] E`, the identity map from `(M, I)` to

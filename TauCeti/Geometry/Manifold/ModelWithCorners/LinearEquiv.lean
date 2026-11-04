@@ -23,7 +23,10 @@ The groupoid comparison uses the same conjugation argument as Mathlib's
 `ContinuousLinearEquiv.instIsManifoldtransContinuousLinearEquiv`, before choosing an atlas.
 Similarly, within-range derivatives of coordinate expressions and chart transitions conjugate by the
 linear equivalence (`ModelWithCorners.fderivWithin_transContinuousLinearEquiv`,
-`ModelWithCorners.fderivWithin_extChartAt_transContinuousLinearEquiv`).
+`ModelWithCorners.fderivWithin_extChartAt_transContinuousLinearEquiv`), and the identity map from
+`(M, I)` to `(M, I.transContinuousLinearEquiv e)` has manifold derivative `e` read through
+`tangentSpaceCastModel` (`ModelWithCorners.hasMFDerivAt_id_transContinuousLinearEquiv`,
+`ModelWithCorners.mfderiv_id_transContinuousLinearEquiv`).
 Mathlib's `ContinuousLinearEquiv.toTransContinuousLinearEquiv` supplies the identity comparison
 diffeomorphism on any charted manifold, with underlying map `id` in both directions.
 
@@ -35,7 +38,7 @@ diffeomorphism on any charted manifold, with underlying map `id` in both directi
 public section
 
 open Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace ModelWithCorners
 
@@ -107,6 +110,49 @@ theorem fderivWithin_extChartAt_transContinuousLinearEquiv {M : Type*} [Topologi
           (extChartAt I α x) ∘L (e.symm : F →L[𝕜] E) := by
   simpa only [Function.comp_def, extChartAt_coe, extChartAt_coe_symm] using
     I.fderivWithin_transContinuousLinearEquiv e (chartAt H β ∘ (chartAt H α).symm) (chartAt H α x)
+
+/-- For any charted space `M`, the identity map `id : M → M` from `(M, I)` to
+`(M, I.transContinuousLinearEquiv e)` has manifold derivative `e` at every point `x`, read through
+the tangent-to-model identifications `tangentSpaceCastModel`. -/
+theorem hasMFDerivAt_id_transContinuousLinearEquiv {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] (e : E ≃L[𝕜] F) (x : M) :
+    HasMFDerivAt I (I.transContinuousLinearEquiv e) (id : M → M) x
+      (((tangentSpaceCastModel I x).trans e).trans
+        (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm :
+          TangentSpace I x →L[𝕜] TangentSpace (I.transContinuousLinearEquiv e) x) := by
+  refine ⟨continuousAt_id, ?_⟩
+  have hcast :
+      (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x : _ →L[𝕜] F) ∘L
+        (((tangentSpaceCastModel I x).trans e).trans
+          (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm :
+            TangentSpace I x →L[𝕜] TangentSpace (I.transContinuousLinearEquiv e) x) ∘L
+        ((tangentSpaceCastModel I x).symm : E →L[𝕜] _) = (e : E →L[𝕜] F) := by
+    ext v
+    simp
+  have heq : writtenInExtChartAt I (I.transContinuousLinearEquiv e) x (id : M → M) =ᶠ[
+      𝓝[range I] (extChartAt I x x)] e := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with y hy
+    rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, id_eq, id_eq,
+      I.coe_extChartAt_transContinuousLinearEquiv, Function.comp_apply,
+      (extChartAt I x).right_inv hy]
+  have hx : writtenInExtChartAt I (I.transContinuousLinearEquiv e) x (id : M → M)
+      (extChartAt I x x) = e (extChartAt I x x) := by
+    rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, id_eq, id_eq,
+      I.coe_extChartAt_transContinuousLinearEquiv, Function.comp_apply,
+      (extChartAt I x).right_inv (mem_extChartAt_target x)]
+  rw [id_eq, hcast]
+  exact e.hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq heq hx
+
+/-- The manifold derivative of `id : M → M` from `(M, I)` to `(M, I.transContinuousLinearEquiv e)`
+at `x` is `e`, read through the tangent-to-model identifications `tangentSpaceCastModel`. -/
+@[simp]
+theorem mfderiv_id_transContinuousLinearEquiv {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] (e : E ≃L[𝕜] F) (x : M) :
+    mfderiv I (I.transContinuousLinearEquiv e) (id : M → M) x =
+      (((tangentSpaceCastModel I x).trans e).trans
+        (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm :
+          TangentSpace I x →L[𝕜] TangentSpace (I.transContinuousLinearEquiv e) x) :=
+  (I.hasMFDerivAt_id_transContinuousLinearEquiv e x).mfderiv
 
 private theorem contDiffGroupoid_le_transContinuousLinearEquiv (e : E ≃L[𝕜] F)
     (n : ℕ∞ω) : contDiffGroupoid n I ≤ contDiffGroupoid n (I.transContinuousLinearEquiv e) := by

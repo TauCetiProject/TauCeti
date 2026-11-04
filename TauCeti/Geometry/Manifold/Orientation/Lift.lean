@@ -19,7 +19,8 @@ An orientation lift consists of an orientation of the model vector space and loc
 signs defined only on the source of each preferred chart. The signs compensate for the sign of
 the transition derivative within the model range, including boundary and corner points.
 Simultaneously reversing the model orientation and every chart sign leaves the induced tangent
-orientations unchanged.
+orientations unchanged, and `TauCeti.Manifold.OrientationLift.congrModel` casts lifts along an
+equality of models on the same model vector space and chart carrier.
 
 ## References
 
@@ -521,6 +522,64 @@ def setoid : Setoid (OrientationLift I M ι) where
 /-- The diagonal equivalence relation is equality or simultaneous sign reversal. -/
 theorem setoid_rel (o o' : OrientationLift I M ι) :
     setoid.r o o' ↔ o' = o ∨ o' = o.flip := Iff.rfl
+
+section CongrModel
+
+/-- Cast an orientation lift along an equality of models on the same model vector space and chart
+carrier. -/
+def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : OrientationLift I M ι) :
+    OrientationLift J M ι where
+  modelOrientation := o.modelOrientation
+  card_eq := o.card_eq
+  sign := o.sign
+  locallyConstant_sign := o.locallyConstant_sign
+  compatible := h ▸ o.compatible
+
+@[simp]
+theorem congrModel_modelOrientation {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) :
+    (o.congrModel h).modelOrientation = o.modelOrientation := (rfl)
+
+@[simp]
+theorem congrModel_sign {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) (α : M) (x : (chartAt H α).source) :
+    (o.congrModel h).sign α x = o.sign α x := (rfl)
+
+@[simp]
+theorem congrModel_signAt {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) (α x : M) :
+    (o.congrModel h).signAt α x = o.signAt α x := by
+  by_cases hx : x ∈ (chartAt H α).source <;> simp [hx]
+
+@[simp]
+theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : OrientationLift I M ι) :
+    o.congrModel rfl = o := (rfl)
+
+@[simp]
+theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
+    (o : OrientationLift I M ι) :
+    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) := (rfl)
+
+@[simp]
+theorem flip_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) :
+    (o.congrModel h).flip = o.flip.congrModel h := by
+  ext α x <;> simp
+
+@[simp]
+theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    (o : OrientationLift I M ι) :
+    (-o).congrModel h = -(o.congrModel h) := by
+  ext α x <;> simp
+
+@[simp]
+theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] (o : OrientationLift I M ι) (x : M) :
+    (o.congrModel h).orientationAt x = o.orientationAt x := by
+  subst h
+  rfl
+
+end CongrModel
 
 end OrientationLift
 end TauCeti.Manifold

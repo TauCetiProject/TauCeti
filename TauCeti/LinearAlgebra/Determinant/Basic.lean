@@ -78,6 +78,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   as many members in the first factor as the rank of the first factor.
 * `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
   basis `b'` has determinant `b'.det b`.
+* `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
+  under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
@@ -206,6 +208,12 @@ theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
     ext x : 1
     simp [map_sum, map_smul]
   rw [h, LinearEquiv.det_conj, LinearEquiv.coe_det, det_basis]
+
+/-- Evaluating the determinant form of a basis `b'` on the image `b.map e` of a basis `b` under a
+linear equivalence `e` gives the determinant of the matrix of `e` with respect to `b` and `b'`. -/
+theorem det_map_eq_det_toMatrix (b : Basis ι R M) (b' : Basis ι R M') (e : M ≃ₗ[R] M') :
+    b'.det (b.map e) = (LinearMap.toMatrix b b' (e : M →ₗ[R] M')).det := by
+  rw [det_apply, coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
 
 end Module.Basis
 

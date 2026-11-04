@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.Orientation.Sign
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Recharting manifold orientations along continuous linear equivalences
@@ -34,8 +35,6 @@ diffeomorphism preserves or reverses orientation according to the sign of the re
 
 ## Main definitions
 
-* `TauCeti.Manifold.OrientationLift.congrModel`, `TauCeti.Manifold.Orientation.congrModel`:
-  cast an orientation lift or manifold orientation along an equality of models `I = J`.
 * `TauCeti.Manifold.OrientationLift.transContinuousLinearEquiv`,
   `TauCeti.Manifold.Orientation.transContinuousLinearEquiv`: transport an orientation lift or
   manifold orientation along `e : E ≃L[ℝ] F`.
@@ -129,181 +128,6 @@ theorem isOrientedAtlas_transContinuousLinearEquiv_iff (n : ℕ∞ω) [NeZero n]
 
 end Groupoid
 
-/-! ### Casting orientations along an equality of models -/
-
-namespace Manifold.OrientationLift
-
-variable {E H M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [Fintype ι]
-
-/-- Cast an orientation lift along an equality of models on the same model vector space and chart
-carrier. -/
-def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : OrientationLift I M ι) :
-    OrientationLift J M ι where
-  modelOrientation := o.modelOrientation
-  card_eq := o.card_eq
-  sign := o.sign
-  locallyConstant_sign := o.locallyConstant_sign
-  compatible := h ▸ o.compatible
-
-@[simp]
-theorem congrModel_modelOrientation {I J : ModelWithCorners ℝ E H} (h : I = J)
-    (o : OrientationLift I M ι) :
-    (o.congrModel h).modelOrientation = o.modelOrientation := (rfl)
-
-@[simp]
-theorem congrModel_sign {I J : ModelWithCorners ℝ E H} (h : I = J)
-    (o : OrientationLift I M ι) (α : M) (x : (chartAt H α).source) :
-    (o.congrModel h).sign α x = o.sign α x := (rfl)
-
-@[simp]
-theorem congrModel_signAt {I J : ModelWithCorners ℝ E H} (h : I = J)
-    (o : OrientationLift I M ι) (α x : M) :
-    (o.congrModel h).signAt α x = o.signAt α x := by
-  by_cases hx : x ∈ (chartAt H α).source <;> simp [hx]
-
-@[simp]
-theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : OrientationLift I M ι) :
-    o.congrModel rfl = o := (rfl)
-
-@[simp]
-theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
-    (o : OrientationLift I M ι) :
-    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) := (rfl)
-
-@[simp]
-theorem flip_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
-    (o : OrientationLift I M ι) :
-    (o.congrModel h).flip = o.flip.congrModel h := by
-  ext α x <;> simp
-
-@[simp]
-theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
-    (o : OrientationLift I M ι) :
-    (-o).congrModel h = -(o.congrModel h) := by
-  ext α x <;> simp
-
-@[simp]
-theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
-    [IsManifold I 1 M] [IsManifold J 1 M] (o : OrientationLift I M ι) (x : M) :
-    (o.congrModel h).orientationAt x = o.orientationAt x := by
-  subst h
-  rfl
-
-end Manifold.OrientationLift
-
-namespace Manifold.Orientation
-
-variable {E H M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M] [Fintype ι]
-
-/-- Cast a manifold orientation along an equality of models on the same model vector space and
-chart carrier. -/
-def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
-    Orientation J M ι :=
-  o.lift (fun l ↦ mk (l.congrModel h)) fun l ↦
-    (mk_eq_mk_iff _ _).mpr (.inr (l.flip_congrModel h).symm)
-
-@[simp]
-theorem congrModel_mk {I J : ModelWithCorners ℝ E H} (h : I = J) (l : OrientationLift I M ι) :
-    (mk l).congrModel h = mk (l.congrModel h) := by
-  unfold congrModel
-  rw [lift_mk]
-
-@[simp]
-theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : Orientation I M ι) :
-    o.congrModel rfl = o :=
-  o.inductionOn fun l ↦ by simp
-
-@[simp]
-theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
-    (o : Orientation I M ι) :
-    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) :=
-  o.inductionOn fun l ↦ by simp
-
-@[simp]
-theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
-    (-o).congrModel h = -(o.congrModel h) :=
-  o.inductionOn fun l ↦ by simp
-
-theorem congrModel_injective {I J : ModelWithCorners ℝ E H} (h : I = J) :
-    Function.Injective (congrModel (M := M) (ι := ι) h) := fun o₁ o₂ heq ↦ by
-  simpa using congrArg (congrModel h.symm) heq
-
-@[simp]
-theorem congrModel_inj {I J : ModelWithCorners ℝ E H} (h : I = J) {o₁ o₂ : Orientation I M ι} :
-    o₁.congrModel h = o₂.congrModel h ↔ o₁ = o₂ :=
-  (congrModel_injective h).eq_iff
-
-@[simp]
-theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
-    [IsManifold I 1 M] [IsManifold J 1 M] (o : Orientation I M ι) (x : M) :
-    (o.congrModel h).orientationAt x = o.orientationAt x := by
-  subst h
-  rw [congrModel_refl]
-
-section CongrModelMap
-
-variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] [TopologicalSpace M'] [ChartedSpace H' M']
-
-@[simp]
-theorem isOrientationPreservingAt_congrModel_left {I J : ModelWithCorners ℝ E H} (h : I = J)
-    {I' : ModelWithCorners ℝ E' H'} [IsManifold I 1 M] [IsManifold J 1 M] [IsManifold I' 1 M']
-    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
-    IsOrientationPreservingAt (o.congrModel h) o' f x ↔ IsOrientationPreservingAt o o' f x := by
-  subst h
-  rw [congrModel_refl]
-
-@[simp]
-theorem isOrientationPreservingAt_congrModel_right {I : ModelWithCorners ℝ E H}
-    {I' J' : ModelWithCorners ℝ E' H'} (h : I' = J') [IsManifold I 1 M] [IsManifold I' 1 M']
-    [IsManifold J' 1 M'] (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
-    IsOrientationPreservingAt o (o'.congrModel h) f x ↔ IsOrientationPreservingAt o o' f x := by
-  subst h
-  rw [congrModel_refl]
-
-@[simp]
-theorem isOrientationReversingAt_congrModel_left {I J : ModelWithCorners ℝ E H} (h : I = J)
-    {I' : ModelWithCorners ℝ E' H'} [IsManifold I 1 M] [IsManifold J 1 M] [IsManifold I' 1 M']
-    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
-    IsOrientationReversingAt (o.congrModel h) o' f x ↔ IsOrientationReversingAt o o' f x := by
-  subst h
-  rw [congrModel_refl]
-
-@[simp]
-theorem isOrientationReversingAt_congrModel_right {I : ModelWithCorners ℝ E H}
-    {I' J' : ModelWithCorners ℝ E' H'} (h : I' = J') [IsManifold I 1 M] [IsManifold I' 1 M']
-    [IsManifold J' 1 M'] (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
-    IsOrientationReversingAt o (o'.congrModel h) f x ↔ IsOrientationReversingAt o o' f x := by
-  subst h
-  rw [congrModel_refl]
-
-@[simp]
-theorem orientationSign_congrModel_left {I J : ModelWithCorners ℝ E H} (h : I = J)
-    {I' : ModelWithCorners ℝ E' H'} [IsManifold I 1 M] [IsManifold J 1 M] [IsManifold I' 1 M']
-    (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
-    orientationSign (o.congrModel h) o' f x = orientationSign o o' f x := by
-  subst h
-  rw [congrModel_refl]
-
-@[simp]
-theorem orientationSign_congrModel_right {I : ModelWithCorners ℝ E H}
-    {I' J' : ModelWithCorners ℝ E' H'} (h : I' = J') [IsManifold I 1 M] [IsManifold I' 1 M']
-    [IsManifold J' 1 M'] (o : Orientation I M ι) (o' : Orientation I' M' ι) (f : M → M') (x : M) :
-    orientationSign o (o'.congrModel h) f x = orientationSign o o' f x := by
-  subst h
-  rw [congrModel_refl]
-
-end CongrModelMap
-
-theorem isOrientationPreservingAt_id_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
-    [IsManifold I 1 M] [IsManifold J 1 M] (o : Orientation I M ι) (x : M) :
-    IsOrientationPreservingAt o (o.congrModel h) id x := by
-  simp
-
-end Manifold.Orientation
-
 /-! ### Transporting lifts and orientations along continuous linear equivalences -/
 
 namespace Manifold.OrientationLift
@@ -384,8 +208,9 @@ theorem transContinuousLinearEquiv_refl (o : OrientationLift I M ι) :
     (o.transContinuousLinearEquiv (ContinuousLinearEquiv.refl ℝ E)).congrModel
       I.transContinuousLinearEquiv_refl = o := by
   ext α x
-  · exact Equiv.ext_iff.mp (_root_.Orientation.map_refl (R := ℝ) (M := E) ι) o.modelOrientation
-  · rfl
+  · rw [congrModel_modelOrientation, transContinuousLinearEquiv_modelOrientation]
+    exact Equiv.ext_iff.mp (_root_.Orientation.map_refl (R := ℝ) (M := E) ι) o.modelOrientation
+  · simp
 
 @[simp]
 theorem transContinuousLinearEquiv_trans (o : OrientationLift I M ι) (e : E ≃L[ℝ] F)
@@ -393,9 +218,7 @@ theorem transContinuousLinearEquiv_trans (o : OrientationLift I M ι) (e : E ≃
     ((o.transContinuousLinearEquiv e).transContinuousLinearEquiv f).congrModel
       (I.transContinuousLinearEquiv_trans e f) =
       o.transContinuousLinearEquiv (e.trans f) := by
-  ext α x
-  · exact (_root_.Orientation.map_trans e.toLinearEquiv f.toLinearEquiv o.modelOrientation).symm
-  · rfl
+  ext α x <;> simp
 
 end Manifold.OrientationLift
 
@@ -535,54 +358,14 @@ variable {E F H M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Finite
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [Fintype ι]
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The manifold derivative of `id : M → M` from `I` to `I.transContinuousLinearEquiv e` at `x`:
-`e` itself, read through the tangent-to-model identifications at `x`. -/
-private def tangentEquivTrans (I : ModelWithCorners ℝ E H) (e : E ≃L[ℝ] F) (x : M) :
-    TangentSpace I x ≃L[ℝ] TangentSpace (I.transContinuousLinearEquiv e) x :=
-  ((tangentSpaceCastModel I x).trans e).trans
-    (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-private theorem hasMFDerivAt_id_transContinuousLinearEquiv (I : ModelWithCorners ℝ E H)
-    (e : E ≃L[ℝ] F) (x : M) :
-    HasMFDerivAt I (I.transContinuousLinearEquiv e) (id : M → M) x
-      (tangentEquivTrans I e x :
-        TangentSpace I x →L[ℝ] TangentSpace (I.transContinuousLinearEquiv e) x) := by
-  refine ⟨continuousAt_id, ?_⟩
-  have hcast :
-      (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x : _ →L[ℝ] F) ∘L
-        (tangentEquivTrans I e x :
-          TangentSpace I x →L[ℝ] TangentSpace (I.transContinuousLinearEquiv e) x) ∘L
-        ((tangentSpaceCastModel I x).symm : E →L[ℝ] _) = (e : E →L[ℝ] F) := by
-    ext v
-    simp [tangentEquivTrans]
-  have heq : writtenInExtChartAt I (I.transContinuousLinearEquiv e) x (id : M → M) =ᶠ[
-      𝓝[range I] (extChartAt I x x)] e := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with y hy
-    rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, id_eq, id_eq,
-      I.coe_extChartAt_transContinuousLinearEquiv, Function.comp_apply,
-      (extChartAt I x).right_inv hy]
-  have hx : writtenInExtChartAt I (I.transContinuousLinearEquiv e) x (id : M → M)
-      (extChartAt I x x) = e (extChartAt I x x) := by
-    rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, id_eq, id_eq,
-      I.coe_extChartAt_transContinuousLinearEquiv, Function.comp_apply,
-      (extChartAt I x).right_inv (mem_extChartAt_target x)]
-  rw [id_eq, hcast]
-  exact e.hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq heq hx
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-private theorem coe_tangentEquivTrans (I : ModelWithCorners ℝ E H) (e : E ≃L[ℝ] F) (x : M) :
-    (tangentEquivTrans I e x :
-      TangentSpace I x →L[ℝ] TangentSpace (I.transContinuousLinearEquiv e) x) =
-      mfderiv I (I.transContinuousLinearEquiv e) (id : M → M) x :=
-  (hasMFDerivAt_id_transContinuousLinearEquiv I e x).mfderiv.symm
-
 variable [IsManifold I 1 M]
 
 private theorem map_tangentEquivTrans_orientationAt (o : Orientation I M ι) (e : E ≃L[ℝ] F)
     (x : M) :
-    _root_.Orientation.map ι (tangentEquivTrans I e x).toLinearEquiv (o.orientationAt x) =
+    _root_.Orientation.map ι
+        (((tangentSpaceCastModel I x).trans e).trans
+          (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm).toLinearEquiv
+        (o.orientationAt x) =
       (o.transContinuousLinearEquiv e).orientationAt x := by
   induction o using Orientation.inductionOn with | _ l =>
     rw [transContinuousLinearEquiv_mk, orientationAt_mk, orientationAt_mk,
@@ -598,8 +381,9 @@ theorem map_orientationAt_id_transContinuousLinearEquiv (o : Orientation I M ι)
       mfderiv I (I.transContinuousLinearEquiv e) (id : M → M) x) :
     _root_.Orientation.map ι D.toLinearEquiv (o.orientationAt x) =
       (o.transContinuousLinearEquiv e).orientationAt x := by
-  have hDeq : D = tangentEquivTrans I e x :=
-    ContinuousLinearEquiv.coe_injective (hD.trans (coe_tangentEquivTrans I e x).symm)
+  have hDeq : D = ((tangentSpaceCastModel I x).trans e).trans
+      (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm :=
+    ContinuousLinearEquiv.coe_injective (hD.trans (I.mfderiv_id_transContinuousLinearEquiv e x))
   rw [hDeq]
   exact map_tangentEquivTrans_orientationAt o e x
 
@@ -609,8 +393,11 @@ transported orientation at every point, including boundary and corner points. -/
 theorem isOrientationPreservingAt_id_transContinuousLinearEquiv (o : Orientation I M ι)
     (e : E ≃L[ℝ] F) (x : M) :
     IsOrientationPreservingAt o (o.transContinuousLinearEquiv e) (id : M → M) x :=
-  (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ (tangentEquivTrans I e x)
-    (coe_tangentEquivTrans I e x)).2 (map_tangentEquivTrans_orientationAt o e x)
+  (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _
+    (((tangentSpaceCastModel I x).trans e).trans
+      (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm)
+    (I.mfderiv_id_transContinuousLinearEquiv e x).symm).2
+    (map_tangentEquivTrans_orientationAt o e x)
 
 /-- The identity map from `(M, I.transContinuousLinearEquiv e)` back to `(M, I)` preserves
 orientation from `o.transContinuousLinearEquiv e` to `o`. -/
@@ -623,8 +410,8 @@ theorem isOrientationPreservingAt_id_transContinuousLinearEquiv_symm
         ((id : M → M) ∘ (id : M → M)) x := by
     simp
   have hid_symm : MDifferentiableAt (I.transContinuousLinearEquiv e) I (id : M → M) x := by
-    have h := (hasMFDerivAt_id_transContinuousLinearEquiv
-      (I.transContinuousLinearEquiv e) e.symm x).mdifferentiableAt
+    have h := ((I.transContinuousLinearEquiv e).hasMFDerivAt_id_transContinuousLinearEquiv
+      e.symm x).mdifferentiableAt
     rwa [I.transContinuousLinearEquiv_trans, e.self_trans_symm,
       I.transContinuousLinearEquiv_refl] at h
   exact (isOrientationPreservingAt_id_transContinuousLinearEquiv o e x).of_comp hcomp hid_symm
@@ -683,19 +470,22 @@ theorem IsOrientedAtlas.orientation_transContinuousLinearEquiv
   have hφd' : MDifferentiableAt (I.transContinuousLinearEquiv e)
       (I.transContinuousLinearEquiv e) φ x :=
     mdifferentiableAt_of_isInvertible_mfderiv ⟨L', hL'⟩
-  have hidM := Manifold.Orientation.hasMFDerivAt_id_transContinuousLinearEquiv I e x
-  have hidH := Manifold.Orientation.hasMFDerivAt_id_transContinuousLinearEquiv I e (φ x)
+  have hidM := I.hasMFDerivAt_id_transContinuousLinearEquiv e x
+  have hidH := I.hasMFDerivAt_id_transContinuousLinearEquiv e (φ x)
+  let T : TangentSpace I x ≃L[ℝ] TangentSpace (I.transContinuousLinearEquiv e) x :=
+    ((tangentSpaceCastModel I x).trans e).trans
+      (tangentSpaceCastModel (I.transContinuousLinearEquiv e) x).symm
   have hcomm :
       mfderiv I (I.transContinuousLinearEquiv e) ((id : H → H) ∘ φ) x =
         mfderiv I (I.transContinuousLinearEquiv e) (φ ∘ (id : M → M)) x := rfl
   rw [mfderiv_comp x hidH.mdifferentiableAt hφd, hidH.mfderiv,
     mfderiv_comp x hφd' hidM.mdifferentiableAt, hidM.mfderiv, id_eq] at hcomm
   have hLeq :
-      ((Manifold.Orientation.tangentEquivTrans I e x).trans L').toLinearEquiv =
+      (T.trans L').toLinearEquiv =
         L.toLinearEquiv.trans e.toLinearEquiv := by
     ext v
-    have hv := congrArg (fun T ↦ T v) hcomm
-    set w := Manifold.Orientation.tangentEquivTrans I e x v
+    have hv := congrArg (fun S ↦ S v) hcomm
+    set w := T v
     have hLv : (tangentSpaceCastModel I (φ x)) (mfderiv I I φ x v) = L v :=
       congrArg (fun f : TangentSpace I x →L[ℝ] E ↦ f v) hL.symm
     have hL'v :
@@ -707,15 +497,14 @@ theorem IsOrientedAtlas.orientation_transContinuousLinearEquiv
     dsimp only [id_eq] at hv'
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at hv'
-    have hw : Manifold.Orientation.tangentEquivTrans I e x v = w := rfl
+    have hw : T v = w := rfl
     rw [hw] at hv'
-    simp only [Manifold.Orientation.tangentEquivTrans, ContinuousLinearEquiv.trans_apply,
+    simp only [ContinuousLinearEquiv.trans_apply,
       ContinuousLinearEquiv.apply_symm_apply] at hv'
     rw [hLv, hL'v] at hv'
     exact hv'.symm
-  refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _
-    (Manifold.Orientation.tangentEquivTrans I e x)
-    (Manifold.Orientation.coe_tangentEquivTrans I e x)).2 ?_
+  refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ T
+    (I.mfderiv_id_transContinuousLinearEquiv e x).symm).2 ?_
   rw [id_eq]
   apply (_root_.Orientation.map ι L'.toLinearEquiv).injective
   rw [← _root_.Orientation.map_trans, ← ContinuousLinearEquiv.trans_toLinearEquiv, hLeq,
@@ -816,15 +605,6 @@ section BasisSign
 
 variable [DecidableEq ι]
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-private theorem det_map_basis_eq_det_toMatrix (bE : Module.Basis ι ℝ E) (bF : Module.Basis ι ℝ F)
-    (e : E ≃L[ℝ] F) :
-    bF.det (bE.map e.toLinearEquiv) = (LinearMap.toMatrix bE bF (e : E →ₗ[ℝ] F)).det := by
-  rw [Module.Basis.det_apply]
-  congr 1
-  ext i j
-  simp [Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
-
 /-- Given bases `bE` of `E` and `bF` of `F`, `toTransContinuousLinearEquiv` along `e : E ≃L[ℝ] F`
 preserves the orientations determined by `bE.orientation` and `bF.orientation` when the matrix of
 `e` in those bases has positive determinant. -/
@@ -839,7 +619,7 @@ theorem IsOrientedAtlas.isOrientationPreservingAt_toTransContinuousLinearEquiv_b
       (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x := by
   have hmap : _root_.Orientation.map ι e.toLinearEquiv bE.orientation = bF.orientation := by
     rw [← Module.Basis.orientation_map, eq_comm, bF.orientation_eq_iff_det_pos,
-      det_map_basis_eq_det_toMatrix]
+      bE.det_map_eq_det_toMatrix bF e.toLinearEquiv]
     exact he
   have ho :
       ((isOrientedAtlas_transContinuousLinearEquiv_iff I n e).2 hA).orientation
@@ -866,7 +646,7 @@ theorem IsOrientedAtlas.isOrientationReversingAt_toTransContinuousLinearEquiv_ba
       (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) I M e) x := by
   have hmap : _root_.Orientation.map ι e.toLinearEquiv bE.orientation = -bF.orientation := by
     rw [← Module.Basis.orientation_map, ← bF.orientation_ne_iff_eq_neg, ne_comm, ne_eq,
-      bF.orientation_eq_iff_det_pos, det_map_basis_eq_det_toMatrix]
+      bF.orientation_eq_iff_det_pos, bE.det_map_eq_det_toMatrix bF e.toLinearEquiv]
     exact not_lt.2 he.le
   have ho :
       -((isOrientedAtlas_transContinuousLinearEquiv_iff I n e).2 hA).orientation

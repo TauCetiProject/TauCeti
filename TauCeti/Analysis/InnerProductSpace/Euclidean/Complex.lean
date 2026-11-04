@@ -157,10 +157,8 @@ theorem map_complexEuclideanRealLinearIsometryEquiv_reindex_complexOrientation (
         (Orientation.reindex ℝ _ (finCongr (by rw [finrank_euclideanSpace_fin]))
           (complexOrientation (EuclideanSpace ℂ (Fin n)))) =
       (EuclideanSpace.basisFun (Fin (2 * n)) ℝ).toBasis.orientation := by
-  rw [(Equiv.eq_symm_apply _).2
-    (map_complexEuclideanRealLinearIsometryEquiv_complexOrientation n).symm]
-  induction complexOrientation (EuclideanSpace ℂ (Fin n)) using Module.Ray.ind with | h v hv => ?_
-  simp only [Orientation.map_apply, Orientation.reindex_apply, Orientation.reindex_symm]
-  congr 1
+  rw [Orientation.map_reindex, map_complexEuclideanRealLinearIsometryEquiv_complexOrientation]
+  exact (Orientation.reindex ℝ _
+    (finCongr (by rw [finrank_euclideanSpace_fin]))).symm_apply_apply _
 
 end TauCeti
