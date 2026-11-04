@@ -332,6 +332,13 @@ theorem castDegree_comp {m'' : ℝ} (h : m' = m'') (b : HomogeneousSymbol X E W 
     (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) :=
   (rfl)
 
+/-- Composition of homogeneous symbols is associative, up to transport of the degree. -/
+theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'' : ℝ}
+    (c : HomogeneousSymbol X E U U' m'') (b : HomogeneousSymbol X E W U m')
+    (a : HomogeneousSymbol X E V W m) :
+    (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
+  (rfl)
+
 /-! ### Spatial and frequency derivatives -/
 
 section Deriv
