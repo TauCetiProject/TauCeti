@@ -52,7 +52,6 @@ def linearPart (f : AInfinityBimoduleHom MM NN) : M →ₗ[R] N :=
     TensorProduct.mk R (TensorWords R A) M 1
 
 /-- The linear part is the Taylor map on the two empty words. -/
-@[simp]
 theorem linearPart_apply (f : AInfinityBimoduleHom MM NN) (x : M) :
     f.linearPart x = f.taylor ((1 ⊗ₜ x) ⊗ₜ 1) := (rfl)
 
@@ -62,7 +61,7 @@ linear part to the module input. -/
 theorem barMap_one_tmul_tmul_one (f : AInfinityBimoduleHom MM NN) (x : M) :
     f.barMap ((1 ⊗ₜ x) ⊗ₜ 1) = (1 ⊗ₜ f.linearPart x) ⊗ₜ 1 := by
   rw [f.barMap_eq_bicofreeLift, Comodule.bicofreeLift_toLinearMap]
-  simp [Comodule.cofreeCoact_def, Comodule.leftCoactRTensor_def,
+  simp [linearPart_apply, Comodule.cofreeCoact_def, Comodule.leftCoactRTensor_def,
     Comodule.leftCofreeCoact_def, TensorWords.comul_eq_deconcatenation,
     TensorWords.deconcatenation_one]
 
@@ -88,6 +87,12 @@ theorem linearPart_comp_differential (f : AInfinityBimoduleHom MM NN) :
   simpa only [LinearMap.comp_apply, barMap_one_tmul_tmul_one,
     AInfinityBimodule.barDifferential_one_tmul_tmul_one, ← linearPart_apply,
     ← AInfinityBimodule.differential_apply] using h.symm
+
+/-- The linear part carries a unary differential to the unary differential of its image. -/
+@[simp]
+theorem linearPart_differential (f : AInfinityBimoduleHom MM NN) (x : M) :
+    f.linearPart (MM.differential x) = NN.differential (f.linearPart x) :=
+  LinearMap.congr_fun f.linearPart_comp_differential x
 
 /-- The identity has identity linear part. -/
 @[simp]
