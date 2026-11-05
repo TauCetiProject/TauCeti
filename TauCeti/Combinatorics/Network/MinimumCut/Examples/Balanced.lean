@@ -123,10 +123,8 @@ theorem isCutTree_starGraph_balancedCut :
     rw [starGraph_adj] at huv
     rcases huv with ⟨hne, rfl | rfl⟩
     · rw [← balancedCut_compl, hbridge.compl_edgeSide (connected_starGraph 0).preconnected,
-        (hleaf hne.symm).resolve_right (not_not.mpr rfl)]
-      rfl
-    · rw [(hleaf hne).resolve_right (not_not.mpr rfl)]
-      rfl
+        (hleaf hne.symm).resolve_right (not_not.mpr rfl), balancedCut_singleton]
+    · rw [(hleaf hne).resolve_right (not_not.mpr rfl), balancedCut_singleton]
   rw [isMinimum_singleton_iff_pairMinimumValue_eq, pairMinimumValue_balancedCut huv.ne]
   exact ⟨self_mem_edgeSide _ u v, hbridge.notMem_edgeSide, hval⟩
 
@@ -156,8 +154,8 @@ theorem not_isCutTree_pathGraph_balancedCut :
     · simpa using h2
     · simpa using fun h ↦ Finset.disjoint_left.mp hbridge.disjoint_edgeSide h h3
   have := hT.apply_edgeSide h12
-  rw [hside] at this
-  exact absurd this (by decide)
+  rw [hside, balancedCut_pair (by decide)] at this
+  omega
 
 /-- The balanced cut function is not induced by real pair capacities, even when signed capacities
 are allowed. -/
