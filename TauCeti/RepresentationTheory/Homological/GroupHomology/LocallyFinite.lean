@@ -79,11 +79,10 @@ theorem isAddTorsion_groupHomology_succ (A : Rep k G) (n : ℕ) :
 /-- **Positive-degree homology of a locally finite group vanishes when the orders of its elements
 are invertible**: if the order of every element of `G` is a unit of `k`, then `Hₙ₊₁(G, A) = 0`. -/
 theorem subsingleton_of_forall_isUnit_orderOf (A : Rep k G) (h : ∀ g : G, IsUnit (orderOf g : k))
-    (n : ℕ) : Subsingleton (groupHomology A (n + 1)) := by
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  obtain ⟨S, _, y, rfl⟩ := exists_finite_subgroup_map_eq x
-  have := subsingleton_of_isUnit_natCard (Rep.res S.subtype A)
-    (TauCeti.isUnit_natCard_iff_forall_isUnit_orderOf.2 fun g ↦ Subgroup.orderOf_coe g ▸ h g) n
-  rw [Subsingleton.elim y 0, map_zero]
+    (n : ℕ) : Subsingleton (groupHomology A (n + 1)) :=
+  ModuleCat.isZero_iff_subsingleton.1 <| TauCeti.groupHomology.isZero_groupHomology_of_directed
+    (TauCeti.Group.directed_closure_finset G) (TauCeti.Group.iSup_closure_finset G) fun _ ↦
+      ModuleCat.isZero_iff_subsingleton.2 <| subsingleton_of_isUnit_natCard _
+        (TauCeti.isUnit_natCard_iff_forall_isUnit_orderOf.2 fun g ↦ Subgroup.orderOf_coe g ▸ h g) n
 
 end groupHomology
