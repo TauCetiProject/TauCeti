@@ -221,7 +221,6 @@ theorem perfectionPresheaf_map {U V : X.Opensᵒᵖ} (i : U ⟶ V) :
 
 /-- The structure morphism from the structure presheaf of `X` to its presheaf of colimit
 perfections. -/
-@[expose]
 def toPerfectionPresheaf : X.presheaf ⟶ X.perfectionPresheaf p hX where
   app U := CommRingCat.ofHom (ColimitPerfection.of _ p _)
   naturality _ _ i := by

@@ -69,8 +69,7 @@ def ColimitPerfection.transition (m n : ℕ) (_ : m ≤ n) : A →+* A :=
 
 theorem ColimitPerfection.transition_apply {m n : ℕ} (h : m ≤ n) (x : A) :
     transition A p hA m n h x = x ^ p ^ (n - m) := by
-  rw [transition, RingHom.coe_pow, show ⇑(powRingHom A p hA) = fun x ↦ x ^ p from
-    funext (powRingHom_apply hA)]
+  rw [transition, RingHom.coe_pow, funext (powRingHom_apply hA)]
   exact congrFun (pow_iterate p (n - m)) x
 
 instance ColimitPerfection.directedSystem :
