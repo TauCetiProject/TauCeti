@@ -153,6 +153,42 @@ theorem isCSA_iff_isCommTransitive_and_commute_conj :
     rw [hMC, Subgroup.mem_centralizer_singleton_iff]
     exact (hconj x g hx ((commute_iff_eq _ _).2 (setLike_mul_comm hxM hgxM))).eq.symm
 
+/-- In a CSA group, if a nonidentity element `x` of the centralizer of `u` commutes with a
+conjugate `g * y * g⁻¹` of another nonidentity element `y` of that centralizer, then `g`
+centralizes `u`. -/
+theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
+    (hx : x ∈ Subgroup.centralizer {u}) (hx1 : x ≠ 1) (hy : y ∈ Subgroup.centralizer {u})
+    (hy1 : y ≠ 1) (h : Commute x (g * y * g⁻¹)) : g ∈ Subgroup.centralizer {u} := by
+  rcases eq_or_ne u 1 with rfl | hu
+  · exact Subgroup.mem_centralizer_singleton_iff.2 (by simp)
+  have hT := hG.isCommTransitive
+  rw [Subgroup.mem_centralizer_singleton_iff] at hx hy ⊢
+  -- Both `y` and its conjugate lie in the malnormal centralizer of `x`, hence so does `g`.
+  have hyx : y ∈ Subgroup.centralizer {x} :=
+    Subgroup.mem_centralizer_singleton_iff.2 (hT y u x hu hy hx.symm).eq
+  have hg : g ∈ Subgroup.centralizer {x} := by
+    by_contra hg
+    exact (hG.centralizer_isTISubgroup hx1).conj_notMem hg hyx hy1
+      (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
+  exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
+
+/-- In a CSA group, if some element lies outside the centralizer `C_G(u)` of `u ≠ 1`, then `G` is
+not covered by two left cosets `a * C_G(u)` and `b * C_G(u)`; this uses malnormality of
+`C_G(u)`. -/
+theorem IsCSA.exists_inv_mul_notMem_centralizer (hG : IsCSA G) {u g : G} (hu : u ≠ 1)
+    (hg : g ∉ Subgroup.centralizer {u}) (a b : G) :
+    ∃ W, a⁻¹ * W ∉ Subgroup.centralizer {u} ∧ b⁻¹ * W ∉ Subgroup.centralizer {u} := by
+  have hu' : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
+  by_cases hd : a⁻¹ * b ∈ Subgroup.centralizer {u}
+  · refine ⟨a * g, by simpa using hg, fun h => hg ?_⟩
+    simpa [mul_assoc] using mul_mem hd h
+  · -- `W = a * u * (a⁻¹ * b)`: then `b⁻¹ * W` is a conjugate of `u` by an element outside
+    -- `C_G(u)`.
+    refine ⟨a * u * (a⁻¹ * b), fun h => hd ?_, fun h => ?_⟩
+    · simpa [mul_assoc] using mul_mem (inv_mem hu') h
+    · exact (hG.centralizer_isTISubgroup hu).conj_notMem (g := (a⁻¹ * b)⁻¹)
+        (fun h' => hd (by simpa using inv_mem h')) hu' hu (by simpa [mul_assoc] using h)
+
 /-- In a CSA group with two noncommuting elements `a` and `b`, an element `x` is trivial or `y`
 is trivial exactly when `x` commutes with `y`, `a * y * a⁻¹` and `b * y * b⁻¹`. This expresses
 the disjunction `x = 1 ∨ y = 1` by three equations. -/
