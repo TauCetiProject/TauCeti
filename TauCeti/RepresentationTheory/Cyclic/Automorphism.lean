@@ -81,6 +81,14 @@ theorem cyclicRepresentation_ofAdd_one_apply (x : T) :
   · simpa using (congrFun hA x).symm
   · rw [Nat.one_mod_eq_one.mpr hm, Function.iterate_one]
 
+/-- A power of the selected generator acts by the corresponding iterate, without reducing
+its exponent modulo the period. -/
+theorem cyclicRepresentation_ofAdd_one_pow_apply (d : ℕ) (x : T) :
+    A.cyclicRepresentation hA ((.ofAdd 1) ^ d) x = (⇑A)^[d] x := by
+  rw [map_pow, pow_apply_eq_iterate]
+  congr 1
+  exact funext (A.cyclicRepresentation_ofAdd_one_apply hA)
+
 /-- The norm of the cyclic representation of `A` is the ordered sum of the powers
 `A^0, …, A^(m-1)`. -/
 theorem cyclicRepresentation_norm_apply (x : T) :
