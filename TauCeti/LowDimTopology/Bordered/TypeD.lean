@@ -131,6 +131,7 @@ def morphisms (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') :
 variable {N : TypeDStructure d ι X} {N' : TypeDStructure d ι X'}
   {N'' : TypeDStructure d ι X''}
 
+@[simp]
 theorem mem_morphisms_iff {F : Matrix X X' A} :
     F ∈ morphisms N N' ↔
       ∀ x x', ι (N.idem x) * F x x' = F x x' ∧ F x x' * ι (N'.idem x') = F x x' :=
@@ -146,6 +147,7 @@ variable (N) in
 def idMorphism [DecidableEq X] : Matrix X X A :=
   Matrix.diagonal fun x => ι (N.idem x)
 
+@[simp]
 theorem idMorphism_apply [DecidableEq X] (x y : X) :
     N.idMorphism x y = if x = y then ι (N.idem x) else 0 := by
   simp only [idMorphism, Matrix.diagonal_apply]
@@ -245,6 +247,7 @@ theorem morphismDifferential_mul [CharP R 2] (hd : IsUngradedDGAlgebra d) (F : M
 
 variable (N) in
 /-- When the `ι s` are cycles, the entrywise differential of the identity morphism vanishes. -/
+@[simp]
 theorem map_idMorphism [DecidableEq X] (hι : ∀ s, d (ι s) = 0) : N.idMorphism.map d = 0 := by
   simp [idMorphism, Matrix.diagonal_map, hι]
 
@@ -253,26 +256,25 @@ variable (N) in
 @[simp]
 theorem morphismDifferential_idMorphism [CharP R 2] [DecidableEq X] (hι : ∀ s, d (ι s) = 0) :
     morphismDifferential N N N.idMorphism = 0 := by
-  rw [morphismDifferential_apply, map_idMorphism N hι, zero_add,
-    mul_idMorphism (coeff_mem_morphisms N), idMorphism_mul (coeff_mem_morphisms N),
-    add_self_eq_zero_of_charTwo R]
+  simp [morphismDifferential_apply, map_idMorphism N hι, idMorphism_mul (coeff_mem_morphisms N),
+    mul_idMorphism (coeff_mem_morphisms N), add_self_eq_zero_of_charTwo R]
+
+/-- When the `ι s` are cycles, the entrywise differential of a morphism is a morphism. -/
+theorem map_mem_morphisms (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    {F : Matrix X X' A} (hF : F ∈ morphisms N N') : F.map d ∈ morphisms N N' := by
+  classical
+  refine mem_morphisms_iff_mul.mpr ⟨?_, ?_⟩
+  · have h := hd.map_mul_matrix N.idMorphism F
+    rwa [idMorphism_mul hF, map_idMorphism N hι, Matrix.zero_mul, zero_add, eq_comm] at h
+  · have h := hd.map_mul_matrix F N'.idMorphism
+    rwa [mul_idMorphism hF, map_idMorphism N' hι, Matrix.mul_zero, add_zero, eq_comm] at h
 
 /-- When the `ι s` are cycles, the differential of a morphism is a morphism. -/
 theorem morphismDifferential_mem_morphisms (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
     {F : Matrix X X' A} (hF : F ∈ morphisms N N') :
-    morphismDifferential N N' F ∈ morphisms N N' := by
-  classical
-  have hl : N.idMorphism * F.map d = F.map d := by
-    have h := hd.map_mul_matrix N.idMorphism F
-    rwa [idMorphism_mul hF, map_idMorphism N hι, Matrix.zero_mul, zero_add, eq_comm] at h
-  have hr : F.map d * N'.idMorphism = F.map d := by
-    have h := hd.map_mul_matrix F N'.idMorphism
-    rwa [mul_idMorphism hF, map_idMorphism N' hι, Matrix.mul_zero, add_zero, eq_comm] at h
-  refine mem_morphisms_iff_mul.mpr ⟨?_, ?_⟩
-  · rw [morphismDifferential_apply, Matrix.mul_add, Matrix.mul_add, hl, ← Matrix.mul_assoc,
-      idMorphism_mul hF, ← Matrix.mul_assoc, idMorphism_mul (coeff_mem_morphisms N)]
-  · rw [morphismDifferential_apply, Matrix.add_mul, Matrix.add_mul, hr, Matrix.mul_assoc,
-      mul_idMorphism (coeff_mem_morphisms N'), Matrix.mul_assoc, mul_idMorphism hF]
+    morphismDifferential N N' F ∈ morphisms N N' :=
+  add_mem (add_mem (map_mem_morphisms hd hι hF) (mul_mem_morphisms hF (coeff_mem_morphisms N')))
+    (mul_mem_morphisms (coeff_mem_morphisms N) hF)
 
 /-! ### The box tensor product -/
 
@@ -292,6 +294,7 @@ def boxTensor : Submodule R (X → M) where
     simp only [Pi.smul_apply]
     rw [← smul_comm r, hφ x]
 
+@[simp]
 theorem mem_boxTensor_iff {φ : X → M} :
     φ ∈ N.boxTensor M ↔ ∀ x, op (ι (N.idem x)) • φ x = φ x :=
   Iff.rfl
@@ -304,6 +307,7 @@ theorem mem_boxTensor_iff_continuationMap_idMorphism [DecidableEq X] {φ : X →
     Finset.mem_univ, ite_true]
 
 /-- The identity morphism acts as the identity on `M ⊗ N`. -/
+@[simp]
 theorem continuationMap_idMorphism [DecidableEq X] {φ : X → M} (hφ : φ ∈ N.boxTensor M) :
     continuationMap R M N.idMorphism φ = φ :=
   mem_boxTensor_iff_continuationMap_idMorphism.mp hφ
