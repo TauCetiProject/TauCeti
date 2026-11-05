@@ -9,9 +9,9 @@ public import Mathlib.RingTheory.Derivation.Lie
 public import TauCeti.Geometry.Manifold.DerivationBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Geometry.Manifold.VectorField.SectionDerivation
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Derivations of smooth functions are smooth vector fields
@@ -26,10 +26,11 @@ Smoothness is read off in a chart: the chart coordinates of `X` near `x₀` are 
 functions `D cᵢ`, where the `cᵢ` are the coordinate functions of the chart at `x₀` multiplied by a
 bump function equal to one near `x₀`.
 
-Conversely, differentiation along a smooth vector field is a derivation, and the two constructions
-are inverse to each other. Multiplying a derivation by a smooth function multiplies its field
-pointwise, so the correspondence is `C^∞(M, ℝ)`-linear for the module structure of smooth
-sections. The commutator of derivations corresponds to the Lie bracket of vector fields.
+Conversely, differentiation along a smooth vector field is a derivation
+(`ContMDiffSection.toDerivation`), and the two constructions are inverse to each other.
+Multiplying a derivation by a smooth function multiplies its field pointwise, so the
+correspondence is `C^∞(M, ℝ)`-linear for the module structure of smooth sections. The commutator
+of derivations corresponds to the Lie bracket of vector fields.
 
 ## Main declarations
 
@@ -162,70 +163,15 @@ theorem vectorField_lie (D₁ D₂ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞�
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
   rw [vectorField_eq_iff]
   intro f
-  -- Differentiating `f` along the field of a derivation `D` is the smooth function `D f`.
-  have h (D : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) :
-      (fun y ↦ mvfderiv I f y (D.vectorField y)) = D f :=
-    funext fun y ↦ D.mvfderiv_vectorField f y
   rw [mvfderiv_mlieBracket (f.contMDiff x) (by simp)
     ((D₁.contMDiff_vectorField x).mdifferentiableAt (by simp))
-    ((D₂.contMDiff_vectorField x).mdifferentiableAt (by simp)), h, h,
-    mvfderiv_vectorField, mvfderiv_vectorField, commutator_apply, ContMDiffMap.coe_sub,
-    Pi.sub_apply]
+    ((D₂.contMDiff_vectorField x).mdifferentiableAt (by simp))]
+  -- Differentiating along the field of a derivation `D` applies `D` (`mfderiv_vectorField`).
+  simp [commutator_apply]
 
 end Derivation
 
 namespace TauCeti
-
-/-- The derivative of a smooth function along a smooth vector field, as a smooth function. -/
-private def mvfderivSmooth (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; ℝ⟯) :
-    C^∞⟮I, M; ℝ⟯ :=
-  ⟨fun x ↦ mvfderiv I f x (X x),
-    (f.contMDiff.contMDiff_mvfderiv_apply (m := ∞) (by simp)).comp X.contMDiff⟩
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] in
-private theorem mvfderivSmooth_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
-    (f : C^∞⟮I, M; ℝ⟯) (x : M) :
-    mvfderivSmooth X f x = mvfderiv I f x (X x) :=
-  rfl
-
-/-- Differentiation along a smooth vector field, as a linear map on `C^∞(M, ℝ)`. -/
-private def mvfderivLinearMap (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
-    C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
-  toFun := mvfderivSmooth X
-  map_add' f g := by
-    ext x
-    rw [ContMDiffMap.coe_add (mvfderivSmooth X f), Pi.add_apply, mvfderivSmooth_apply,
-      mvfderivSmooth_apply, mvfderivSmooth_apply, ContMDiffMap.coe_add,
-      mvfderiv_add ((f.contMDiff x).mdifferentiableAt (by simp))
-        ((g.contMDiff x).mdifferentiableAt (by simp)), add_apply]
-  map_smul' c f := by
-    ext x
-    rw [RingHom.id_apply, ContMDiffMap.coe_smul c (mvfderivSmooth X f), Pi.smul_apply,
-      mvfderivSmooth_apply, mvfderivSmooth_apply, ContMDiffMap.coe_smul,
-      mvfderiv_const_smul_field, smul_apply]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] in
-private theorem mvfderivLinearMap_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
-    (f : C^∞⟮I, M; ℝ⟯) (x : M) :
-    mvfderivLinearMap X f x = mvfderiv I f x (X x) :=
-  rfl
-
-/-- Differentiation along a smooth vector field, as a derivation of `C^∞(M, ℝ)`. -/
-private def derivationOfSection (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
-    Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ :=
-  Derivation.mk' (mvfderivLinearMap X) fun f g ↦ by
-    ext x
-    simp only [mvfderivLinearMap_apply, smul_eq_mul, ContMDiffMap.coe_add, ContMDiffMap.coe_mul,
-      Pi.add_apply, Pi.mul_apply]
-    rw [mvfderiv_mul ((f.contMDiff x).mdifferentiableAt (by simp))
-      ((g.contMDiff x).mdifferentiableAt (by simp))]
-    simp only [add_apply, smul_apply, smul_eq_mul]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] in
-private theorem derivationOfSection_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
-    (f : C^∞⟮I, M; ℝ⟯) (x : M) :
-    derivationOfSection X f x = mvfderiv I f x (X x) :=
-  rfl
 
 variable (I M) in
 /-- **Derivations of `C^∞(M, ℝ)` are smooth vector fields.** On a finite-dimensional Hausdorff
@@ -238,12 +184,12 @@ def derivationEquivSmoothVectorField :
   toFun D := ⟨D.vectorField, D.contMDiff_vectorField⟩
   map_add' D₁ D₂ := ContMDiffSection.ext fun x ↦ Derivation.vectorField_add D₁ D₂ x
   map_smul' g D := by ext x; simp
-  invFun := derivationOfSection
+  invFun := ContMDiffSection.toDerivation
   left_inv D := by
     ext f x
-    exact (derivationOfSection_apply _ f x).trans (D.mvfderiv_vectorField f x)
+    exact (ContMDiffSection.toDerivation_apply _ f x).trans (D.mvfderiv_vectorField f x)
   right_inv X := ContMDiffSection.ext fun x ↦
-    (Derivation.vectorField_eq_iff _).2 fun f ↦ (derivationOfSection_apply X f x).symm
+    (Derivation.vectorField_eq_iff _).2 fun f ↦ (ContMDiffSection.toDerivation_apply X f x).symm
 
 /-- The section associated to a derivation is its field. -/
 @[simp]
@@ -256,7 +202,7 @@ theorem derivationEquivSmoothVectorField_apply (D : Derivation ℝ C^∞⟮I, M;
 theorem derivationEquivSmoothVectorField_symm_apply
     (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     (derivationEquivSmoothVectorField I M).symm X f x = mvfderiv I f x (X x) :=
-  (rfl)
+  X.toDerivation_apply f x
 
 end TauCeti
 

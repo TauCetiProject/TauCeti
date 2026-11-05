@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LeftInvariantDerivation
 public import TauCeti.Geometry.Manifold.DerivationBundle
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+public import TauCeti.Geometry.Manifold.VectorField.SectionDerivation
 
 /-!
 # Evaluation of left-invariant derivations
@@ -102,44 +103,8 @@ theorem contMDiff_mvfderiv_mulInvariantVectorField
 field of a tangent vector `v` at the identity. -/
 private noncomputable def mulInvariantDerivation [ContMDiffMul I ∞ G]
     (v : GroupLieAlgebra I G) : Derivation 𝕜 C^∞⟮I, G; 𝕜⟯ C^∞⟮I, G; 𝕜⟯ :=
-  Derivation.mk'
-      { toFun := fun f ↦
-          ⟨fun g ↦ mvfderiv I f g (mulInvariantVectorField v g),
-            contMDiff_mvfderiv_mulInvariantVectorField v f⟩
-        map_add' := fun f g ↦ by
-          ext x
-          -- Unfold the smooth-function wrappers to use linearity of `mvfderiv`.
-          change mvfderiv I (⇑f + ⇑g) x (mulInvariantVectorField v x) =
-            mvfderiv I f x (mulInvariantVectorField v x) +
-              mvfderiv I g x (mulInvariantVectorField v x)
-          exact congr($(mvfderiv_add
-            (f.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-            (g.contMDiff.mdifferentiable (by simp)).mdifferentiableAt)
-            (mulInvariantVectorField v x))
-        map_smul' := fun c f ↦ by
-          ext x
-          have hc : MDiffAt (fun _ : G ↦ c) x := mdifferentiableAt_const
-          -- Unfold the smooth-function wrappers to use the product rule for `mvfderiv`.
-          change mvfderiv I ((fun _ : G ↦ c) • ⇑f) x (mulInvariantVectorField v x) =
-            c • mvfderiv I f x (mulInvariantVectorField v x)
-          have h := congr($(mvfderiv_smul hc
-            (f.contMDiff.mdifferentiable (by simp)).mdifferentiableAt)
-            (mulInvariantVectorField v x))
-          calc
-            _ = (c • mvfderiv I f x +
-                (mvfderiv I (fun _ : G ↦ c) x).smulRight (f x))
-                (mulInvariantVectorField v x) := h
-            _ = _ := by simp [mvfderiv_const] }
-      fun f g ↦ by
-        ext x
-        -- Unfold the smooth-function wrappers to use the product rule for `mvfderiv`.
-        change mvfderiv I (⇑f * ⇑g) x (mulInvariantVectorField v x) =
-          f x * mvfderiv I g x (mulInvariantVectorField v x) +
-            g x * mvfderiv I f x (mulInvariantVectorField v x)
-        exact congr($(mvfderiv_mul
-          (f.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-          (g.contMDiff.mdifferentiable (by simp)).mdifferentiableAt)
-          (mulInvariantVectorField v x))
+  ContMDiffSection.toDerivation
+    ⟨mulInvariantVectorField v, contMDiff_mulInvariantVectorField_infty v⟩
 
 /-- `mulInvariantDerivation v` is left invariant: differentiating along a left-invariant
 vector field commutes with left translation. -/
