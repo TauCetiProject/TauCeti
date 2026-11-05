@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Analysis.Normed.Operator.Coercive
 
 /-!
 # Riemannian metrics on a vector space from coercive bilinear forms
@@ -55,10 +56,8 @@ def coerciveRiemannianMetric (g : F → F →L[ℝ] F →L[ℝ] ℝ) (hg : ContD
   symm x v w := by
     simpa [ContinuousLinearEquiv.arrowCongr_apply] using symm x _ _
   pos x v hv := by
-    obtain ⟨C, hC, h⟩ := coercive x
-    have : 0 < ‖tangentSpaceCastModel 𝓘(ℝ, F) x v‖ := by simpa using hv
     simpa [ContinuousLinearEquiv.arrowCongr_apply] using
-      lt_of_lt_of_le (by positivity) (h (tangentSpaceCastModel 𝓘(ℝ, F) x v))
+      (coercive x).apply_self_pos (v := tangentSpaceCastModel 𝓘(ℝ, F) x v) (by simpa using hv)
   isVonNBounded x := by
     obtain ⟨C, hC, h⟩ := coercive x
     let e := tangentSpaceCastModel 𝓘(ℝ, F) x

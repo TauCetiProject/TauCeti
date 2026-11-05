@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Probability.Process.Predictable
+public import TauCeti.Probability.Martingale.Basic
 import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
@@ -27,7 +28,10 @@ which is predictable when each `a j` is `ℱ (τ j)`-measurable
 `∫₀ᵗ a dX = ∑_{j < n} a j · (X (τ (j + 1) ⊓ t) - X (τ j ⊓ t))`  (`TauCeti.Finance.simpleGains`),
 
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
-(`TauCeti.Finance.stronglyAdapted_simpleGains`). At a rebalancing date the gains are the discrete
+(`TauCeti.Finance.stronglyAdapted_simpleGains`), and a martingale when moreover `X` is a
+martingale and each trade has integrable gains at every time
+(`MeasureTheory.Martingale.simpleGains`), in particular when the positions are bounded
+(`MeasureTheory.Martingale.simpleGains_of_bdd`). At a rebalancing date the gains are the discrete
 transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
 (`TauCeti.Finance.simpleGains_apply_eq_sum`); so they are known at that date when `X` is known at
 each trading date (`TauCeti.Finance.stronglyMeasurable_simpleGains`), and integrable when each
@@ -295,6 +299,42 @@ theorem integrable_simpleGains {m : ℕ} {Q : Measure Ω} (hτ : MonotoneOn τ (
     Integrable (simpleGains τ n a X (τ m)) Q := by
   simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
   exact integrable_finsetSum _ fun i hi ↦ hint i ((mem_range.1 hi).trans_le hm)
+
+/-- **The gains of a simple strategy from trading a martingale form a martingale.** If `X` is a
+martingale, the position `a j` held on `(τ j, τ (j + 1)]` is chosen at time `τ j`, and the gains
+`a j · (X (τ (j + 1) ⊓ t) - X (τ j ⊓ t))` of each trade are integrable at every time `t`, then the
+elementary integral `t ↦ ∫₀ᵗ a dX` is a martingale. -/
+theorem _root_.MeasureTheory.Martingale.simpleGains {Q : Measure Ω} [SigmaFiniteFiltration Q ℱ]
+    (hX : Martingale X ℱ Q) (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hint : ∀ j < n, ∀ t, Integrable (a j * (X (min (τ (j + 1)) t) - X (min (τ j) t))) Q) :
+    Martingale (simpleGains τ n a X) ℱ Q := by
+  have hsum : TauCeti.Finance.simpleGains τ n a X =
+      ∑ j ∈ range n, fun t ↦ a j * (X (min (τ (j + 1)) t) - X (min (τ j) t)) := by
+    ext t ω
+    simp [simpleGains_def, Finset.sum_apply]
+  rw [hsum]
+  refine Finset.sum_induction _ (Martingale · ℱ Q) (fun _ _ ↦ Martingale.add)
+    (martingale_zero _ ℱ Q) fun j hj ↦ ?_
+  have hj := mem_range.1 hj
+  -- The `j`-th term is the position `a j` times the change of `X` over `(τ j, τ (j + 1)]`,
+  -- which vanishes up to `τ j`.
+  refine ((hX.const_min _).sub (hX.const_min _)).mul_left_of_eq_zero (fun t ht ↦ ?_) (ha j hj)
+    (hint j hj)
+  ext ω
+  simp [min_eq_right ht, min_eq_right (ht.trans (hτ hj.le hj (Nat.le_succ j)))]
+
+/-- The gains of a simple strategy with bounded positions, each chosen at the start of its
+interval, from trading a martingale form a martingale. -/
+theorem _root_.MeasureTheory.Martingale.simpleGains_of_bdd {Q : Measure Ω}
+    [SigmaFiniteFiltration Q ℱ] (hX : Martingale X ℱ Q) (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (ha_bdd : ∀ j < n, ∃ C, ∀ᵐ ω ∂Q, |a j ω| ≤ C) :
+    Martingale (simpleGains τ n a X) ℱ Q := by
+  refine hX.simpleGains hτ ha fun j hj t ↦ ?_
+  obtain ⟨C, hC⟩ := ha_bdd j hj
+  exact ((hX.integrable _).sub (hX.integrable _)).bdd_mul
+    ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable (hC.mono fun ω hω ↦ by rwa [Real.norm_eq_abs])
 
 end Measurability
 

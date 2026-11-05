@@ -7,10 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Probability.Moments.Variance
+public import Mathlib.Probability.Moments.Variance
 
 /-!
-# The mean squared distance between two independent copies
+# The mean squared distance between two independent copies and nonzero-variance bounds
 
 Let `f` be a square-integrable function, with values in a real Hilbert space, on a finite measure
 space `(α, μ)`. Then
@@ -27,7 +27,10 @@ transport plan, an integral over pairs of transported pairs, into the variance o
 displacement.
 
 The file also records the elementary bound of the mean of a real function by the square root of
-its second moment, which is the nonnegativity of its variance.
+its second moment (the nonnegativity of its variance), together with two consequences of nonzero
+variance `Var[X; μ] ≠ 0`: strict positivity of the expectation of an `ℝ≥0`-valued random variable
+on a finite measure space, and nondegeneracy `μ {ω | X ω = 0} < 1` of a real-valued random
+variable on a probability space.
 
 ## Main statements
 
@@ -37,12 +40,16 @@ its second moment, which is the nonnegativity of its variance.
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
+* `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
+  random variable with nonzero variance has strictly positive expectation.
+* `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
+  real-valued random variable with nonzero variance satisfies `μ {ω | X ω = 0} < 1`.
 -/
 
 public section
 
-open MeasureTheory Set
-open scoped RealInnerProductSpace
+open MeasureTheory ProbabilityTheory Set
+open scoped NNReal RealInnerProductSpace
 
 namespace MeasureTheory.MemLp
 
@@ -73,6 +80,8 @@ theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Mea
 end MeasureTheory
 
 namespace TauCeti
+
+section InnerProductSpace
 
 variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -108,5 +117,37 @@ theorem integral_norm_sub_sq_prod [IsFiniteMeasure μ] {f : α → E} (hf : MemL
     integral_add (hsq.comp_fst μ) (hsq.comp_snd μ), integral_const_mul, hcross,
     integral_fun_fst (fun x ↦ ‖f x‖ ^ 2), integral_fun_snd (fun x ↦ ‖f x‖ ^ 2)]
   ring
+
+end InnerProductSpace
+
+section VarianceNeZero
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
+positive real expectation. -/
+theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
+    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+    0 < ∫ ω, (X ω : ℝ) ∂μ := by
+  have hint := (memLp_two_of_variance_ne_zero
+    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar).integrable
+    one_le_two
+  refine lt_of_le_of_ne (integral_nonneg fun ω ↦ (X ω).coe_nonneg) fun heq ↦ hvar ?_
+  have hz : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 :=
+    (integral_eq_zero_iff_of_nonneg (fun ω ↦ (X ω).coe_nonneg) hint).1 heq.symm
+  rw [variance_congr hz, variance_zero]
+
+/-- On a probability space, a real-valued random variable with nonzero variance is not almost
+surely zero. -/
+theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ}
+    (hX : AEMeasurable X μ) (hvar : Var[X; μ] ≠ 0) :
+    μ {ω | X ω = 0} < 1 := by
+  refine lt_of_le_of_ne prob_le_one fun hfull ↦ hvar ?_
+  have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
+    hX.nullMeasurable (measurableSet_singleton (0 : ℝ))
+  have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
+  rw [variance_congr hae, variance_zero]
+
+end VarianceNeZero
 
 end TauCeti

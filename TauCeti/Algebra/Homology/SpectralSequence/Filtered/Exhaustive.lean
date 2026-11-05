@@ -57,8 +57,6 @@ public section
 
 open CategoryTheory Limits ComposableArrows Abelian.SpectralObject
 
-universe v u
-
 namespace CochainComplex
 
 section Abelian
@@ -95,7 +93,9 @@ end Abelian
 
 section ModuleCat
 
-variable {R : Type u} [Ring R] {K : CochainComplex (ModuleCat.{v} R) ℤ} (F : ℤ → Subobject K)
+universe v
+
+variable {R : Type*} [Ring R] {K : CochainComplex (ModuleCat.{v} R) ℤ} (F : ℤ → Subobject K)
   (hF : Monotone F)
 
 /-- **The filtration of the abutment of an exhaustive filtration is exhaustive.** If every element

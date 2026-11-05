@@ -253,6 +253,12 @@ theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomo
   induction c using Submodule.Quotient.induction_on with
   | H x => exact ⟨x, x.2, rfl⟩
 
+/-- Equal cycles represent the same cohomology class, whatever proofs of membership are used. -/
+theorem cohomologyClass_congr (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)
+    (hy : y ∈ 𝒜.cycles) (h : x = y) : 𝒜.cohomologyClass hx = 𝒜.cohomologyClass hy := by
+  subst h
+  rfl
+
 /-- Two cycles represent the same cohomology class exactly when their difference is a boundary. -/
 @[simp]
 theorem cohomologyClass_eq_iff (𝒜 : AInfinityAlgebra R A) {x y : A}
