@@ -199,13 +199,10 @@ def perfectionPresheaf : X.Opensᵒᵖ ⥤ CommRingCat.{u} where
   map i := CommRingCat.ofHom (ColimitPerfection.map _ _ (X.presheaf.map i).hom)
   map_id U := by
     ext1
-    rw [X.presheaf.map_id, CommRingCat.hom_id, ColimitPerfection.map_id, CommRingCat.hom_ofHom,
-      CommRingCat.hom_id]
+    simp
   map_comp i j := by
     ext1
-    rw [X.presheaf.map_comp, CommRingCat.hom_comp, CommRingCat.hom_comp, CommRingCat.hom_ofHom,
-      CommRingCat.hom_ofHom, CommRingCat.hom_ofHom,
-      ColimitPerfection.map_comp _ (natCast_app_eq_zero hX _)]
+    simp [← ColimitPerfection.map_comp]
 
 @[simp]
 theorem perfectionPresheaf_obj (U : X.Opensᵒᵖ) :
@@ -320,6 +317,8 @@ theorem fromPerfection_iff (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtTa
   have h' := isPullback_morphismRestrict (X.fromPerfection p hX) U.1
   rw [← P.cancel_left_of_respectsIso (h.isoIsPullback _ _ h').hom,
     h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso, toPerfectionPresheaf_app]
+  -- The two sides differ only in the affine open: the repackaged `⟨U.1, U.2⟩ : X.AffineZariskiSite`
+  -- has underlying open `U.1`, by definition.
   rfl
 
 /-- **The perfection of a scheme is a universal homeomorphism onto it.** -/

@@ -323,7 +323,8 @@ theorem isLocalization_away :
   let := (map hA hA' (algebraMap A A')).toAlgebra
   have halg (z : ColimitPerfection A p hA) :
       algebraMap (ColimitPerfection A p hA) (ColimitPerfection A' p hA') z =
-        map hA hA' (algebraMap A A') z := (rfl)
+        map hA hA' (algebraMap A A') z := by
+    rw [RingHom.algebraMap_toAlgebra]
   refine IsLocalization.Away.mk _ ?_ (fun z ↦ ?_) (fun z w hzw ↦ ?_)
   · rw [halg, map_of]
     exact (IsLocalization.Away.algebraMap_isUnit f).map _

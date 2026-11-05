@@ -40,18 +40,21 @@ open Scheme.AffineZariskiSite
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
+namespace AlgebraicGeometry.Scheme.AffineZariskiSite
 
-variable {X T : Scheme.{u}} (q : T ⟶ X)
-
-variable (X) in
 /-- The affine opens of `X` cover `X`, indexed by the small affine Zariski site. -/
-theorem isOpenCover_toOpens :
+theorem isOpenCover_toOpens (X : Scheme.{u}) :
     TopologicalSpace.IsOpenCover fun U : X.AffineZariskiSite ↦ U.toOpens := by
   refine .mk (top_le_iff.1 fun x _ ↦ ?_)
   obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.1
     ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
   exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨U.1, U.2⟩, hxU⟩
+
+end AlgebraicGeometry.Scheme.AffineZariskiSite
+
+namespace TauCeti.AlgebraicGeometry.Scheme.AffineZariskiSite
+
+variable {X T : Scheme.{u}} (q : T ⟶ X)
 
 /-- Under the identification of the members of the pulled-back directed affine cover with inverse
 images of affine opens, its transition map along `U ⟶ V` is the inclusion `q⁻¹ U ⟶ q⁻¹ V`. -/
