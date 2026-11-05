@@ -15,10 +15,11 @@ import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 # Evaluation formulas for wedge products and pairings
 
 Inside the exterior algebra, the wedge product of exterior powers is the algebra product, and the
-wedge product of pure exterior products concatenates their vector families. A trivialisation
-in a specified top degree gives the wedge pairing by composing the wedge product with that
-trivialisation; the degree transports disappear after identifying the degree with the finrank,
-and a wedge pairing is the trivialisation of the exterior-algebra product of its arguments.
+wedge product of pure exterior products concatenates their vector families. Pairing
+`g₀ ∧ ⋯ ∧ gₙ` with `θ ∧ v` expands along the last vector `v` (`pairingDual_ιMulti_wedge`). A
+trivialisation in a specified top degree gives the wedge pairing by composing the wedge product
+with that trivialisation; the degree transports disappear after identifying the degree with the
+finrank, and a wedge pairing is the trivialisation of the exterior-algebra product of its arguments.
 On the exterior-power bases induced by a basis `b`, the wedge pairing of `e_s` and `e_t` is the
 shuffle sign of `s` times the volume of `b` when `s` and `t` are disjoint, and zero otherwise.
 The top exterior product `Module.Basis.topVector` of a basis indexed by `Fin n` is the wedge of
@@ -46,6 +47,30 @@ theorem wedge_ιMulti (u : Fin k → M) (v : Fin l → M) :
     wedge R M k l (ιMulti R k u) (ιMulti R l v) = ιMulti R (k + l) (Fin.append u v) := by
   apply Subtype.ext
   simp only [coe_wedge, ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
+
+/-- **Laplace expansion along the last vector**: the pairing of `g₀ ∧ ⋯ ∧ gₙ` with `θ ∧ v` is
+`∑ⱼ (-1) ^ (n + j) gⱼ(v) ⟨g₀ ∧ ⋯ ∧ ĝⱼ ∧ ⋯ ∧ gₙ, θ⟩`. -/
+theorem pairingDual_ιMulti_wedge {n : ℕ} (g : Fin (n + 1) → Module.Dual R M) (θ : ⋀[R]^n M)
+    (v : M) :
+    pairingDual R M (n + 1) (ιMulti R (n + 1) g) (wedge R M n 1 θ ((oneEquiv R M).symm v)) =
+      ∑ j : Fin (n + 1), (-1) ^ (n + j : ℕ) * g j v *
+        pairingDual R M n (ιMulti R n (g ∘ j.succAbove)) θ := by
+  have hθ : θ ∈ Submodule.span R (Set.range (ιMulti R n)) := by
+    rw [ιMulti_span]
+    trivial
+  induction hθ using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨u, rfl⟩ := hx
+    rw [oneEquiv_symm_apply, wedge_ιMulti, Fin.append_right_eq_snoc, pairingDual_ιMulti_ιMulti,
+      Matrix.det_succ_row _ (Fin.last n)]
+    simp [Fin.succAbove_last, Matrix.submatrix, Function.comp_def]
+  | zero => simp
+  | add x y _ _ hx hy =>
+    rw [map_add, LinearMap.add_apply, map_add, hx, hy]
+    simp [mul_add, Finset.sum_add_distrib]
+  | smul a x _ hx =>
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hx, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- The wedge product commutes with applying a linear map to both factors. -/
 theorem wedge_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :

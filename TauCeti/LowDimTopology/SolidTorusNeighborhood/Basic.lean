@@ -432,31 +432,20 @@ private theorem continuous_tangentVector {f : Circle → V} (hf : ContMDiff (�
   ext1 t
   exact tangentVector_circleExp f t
 
-/-- The velocity of a `C²` immersed loop is nonzero, and the normal space is its orthogonal
+/-- The velocity of a `C¹` immersed loop is nonzero, and the normal space is its orthogonal
 complement. -/
 private theorem tangentVector_ne_zero_and_mem_normalSubspace_iff {f : Circle → V}
-    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 2 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z))
+    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 1 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z))
     (z : Circle) :
     tangentVector f z ≠ 0 ∧
       ∀ v, v ∈ normalSubspace (𝓡 1) f z ↔ ⟪tangentVector f z, v⟫ = 0 := by
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z
   obtain ⟨hne, hrange⟩ :=
-    deriv_comp_circleExp_ne_zero_and_range_mfderiv (hf.of_le one_le_two) himm t
+    deriv_comp_circleExp_ne_zero_and_range_mfderiv hf himm t
   rw [tangentVector_circleExp]
   refine ⟨hne, fun v => ?_⟩
-  set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
-  rw [mem_normalSubspace_iff]
-  constructor
-  · intro hv
-    obtain ⟨w, hw⟩ : deriv (f ∘ Circle.exp) t ∈ (D : EuclideanSpace ℝ (Fin 1) →ₗ[ℝ] V).range :=
-      hrange ▸ Submodule.mem_span_singleton_self _
-    rw [real_inner_comm, ← hw]
-    exact hv w
-  · intro hv w
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp
-      (hrange ▸ LinearMap.mem_range_self (D : EuclideanSpace ℝ (Fin 1) →ₗ[ℝ] V) w)
-    refine (congrArg (fun x => ⟪v, x⟫) hc.symm).trans ?_
-    rw [real_inner_smul_right, real_inner_comm, hv, mul_zero]
+  rw [normalSubspace, hrange]
+  exact Submodule.mem_orthogonal_singleton_iff_inner_right
 
 /-- Some vector is nowhere tangent to a `C²` loop in a space of dimension at least three: the
 tangent lines of the loop form the image of a `C¹` map from the plane. -/
@@ -486,7 +475,7 @@ private theorem exists_normalFrame {f : Circle → ℝ³} (hf : ContMDiff (𝓡 
     ∃ n₁ n₂ : Circle → ℝ³, Continuous n₁ ∧ Continuous n₂ ∧ ∀ z,
       ‖n₁ z‖ = 1 ∧ ‖n₂ z‖ = 1 ∧ ⟪n₁ z, n₂ z⟫ = 0 ∧
       ∀ v, v ∈ normalSubspace (𝓡 1) f z ↔ v = ⟪n₁ z, v⟫ • n₁ z + ⟪n₂ z, v⟫ • n₂ z := by
-  have hτ := tangentVector_ne_zero_and_mem_normalSubspace_iff hf himm
+  have hτ := tangentVector_ne_zero_and_mem_normalSubspace_iff (hf.of_le one_le_two) himm
   obtain ⟨a, ha⟩ := exists_forall_notMem_span_tangentVector (by simp) hf
   -- The unit tangent `u`, and the component `p` of `a` orthogonal to it.
   set u : Circle → ℝ³ := fun z => ‖tangentVector f z‖⁻¹ • tangentVector f z
@@ -520,13 +509,13 @@ private theorem exists_normalFrame {f : Circle → ℝ³} (hf : ContMDiff (𝓡 
     rw [hnormal, hv, inner_add_right, real_inner_smul_right, real_inner_smul_right, hun₁, huc]
     ring
 
-/-- A `C²` immersed circle in `ℝ³` has a continuous family of continuous linear maps
-`ψ z : ℂ → ℝ³`, isometries onto its normal planes: `ψ z w = re w • n₁ z + im w • n₂ z` for the
-frame of `exists_normalFrame`. -/
+/-- A `C²` immersed circle in `ℝ³` has a family of linear isometries `ψ z : ℂ →ₗᵢ[ℝ] ℝ³` onto
+its normal planes, continuous as a family of continuous linear maps:
+`ψ z w = re w • n₁ z + im w • n₂ z` for the frame of `exists_normalFrame`. -/
 private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℝ³) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) f z)) :
-    ∃ ψ : Circle → ℂ →L[ℝ] ℝ³, Continuous ψ ∧ ∀ z,
-      (∀ w, ψ z w ∈ normalSubspace (𝓡 1) f z) ∧ (∀ w, ‖ψ z w‖ = ‖w‖) ∧ Injective (ψ z) ∧
+    ∃ ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³, Continuous (fun z => (ψ z).toContinuousLinearMap) ∧ ∀ z,
+      (∀ w, ψ z w ∈ normalSubspace (𝓡 1) f z) ∧
       ∀ v ∈ normalSubspace (𝓡 1) f z, ∃ w, ψ z w = v := by
   obtain ⟨n₁, n₂, hc₁, hc₂, hn⟩ := exists_normalFrame hf himm
   -- The coordinates of `ψ z w` in the frame are the real and imaginary parts of `w`.
@@ -535,21 +524,23 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
   have h₂ : ∀ z (w : ℂ), ⟪n₂ z, w.re • n₁ z + w.im • n₂ z⟫ = w.im := fun z w => by
     simp [inner_add_right, real_inner_smul_right, (hn z).2.1, real_inner_comm (n₁ z),
       (hn z).2.2.1]
-  let ψ : Circle → ℂ →L[ℝ] ℝ³ := fun z =>
+  -- The continuous linear maps `φ z`, which are isometries by the orthonormality of the frame.
+  let φ : Circle → ℂ →L[ℝ] ℝ³ := fun z =>
     Complex.reCLM.smulRight (n₁ z) + Complex.imCLM.smulRight (n₂ z)
-  have hψ : ∀ z w, ψ z w = w.re • n₁ z + w.im • n₂ z := fun z w => by simp [ψ]
+  have hφ (z : Circle) (w : ℂ) : φ z w = w.re • n₁ z + w.im • n₂ z := by simp [φ]
+  let ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³ := fun z =>
+    { toLinearMap := φ z
+      norm_map' := fun w => by
+        rw [ContinuousLinearMap.coe_coe, hφ, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _),
+          Complex.sq_norm, Complex.normSq_apply, ← real_inner_self_eq_norm_sq, inner_add_left,
+          real_inner_smul_left, real_inner_smul_left, h₁, h₂] }
   refine ⟨ψ, ((ContinuousLinearMap.smulRightL ℝ ℂ ℝ³ Complex.reCLM).continuous.comp hc₁).add
     ((ContinuousLinearMap.smulRightL ℝ ℂ ℝ³ Complex.imCLM).continuous.comp hc₂),
-    fun z => ⟨fun w => ?_, fun w => ?_, fun w w' h => ?_,
-      fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
-  · rw [(hn z).2.2.2, hψ, h₁, h₂]
-  · rw [hψ, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
-      ← real_inner_self_eq_norm_sq, inner_add_left, real_inner_smul_left, real_inner_smul_left,
-      h₁, h₂]
-  · rw [hψ, hψ] at h
-    exact Complex.ext ((h₁ z w).symm.trans (h ▸ h₁ z w')) ((h₂ z w).symm.trans (h ▸ h₂ z w'))
+    fun z => ⟨fun w => ?_, fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
+  · rw [(hn z).2.2.2, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, hφ, h₁, h₂]
   · rw [(hn z).2.2.2] at hv
-    simp [hψ, ← hv]
+    rw [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, hφ]
+    simpa using hv.symm
 
 /-- Let `ψ` be a continuous family of continuous linear maps `ψ z : ℂ → V` along a `C²` immersed
 circle `f`, with `ψ 1` injective and valued in the normal plane at `1`. For `r ≠ 0`, the tube
@@ -580,7 +571,7 @@ private theorem exists_hasFDerivAt_tube {f : Circle → V} (hf : ContMDiff (𝓡
   refine ⟨_, hcore.congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => by simp),
     (injective_iff_map_eq_zero _).2 fun x hx => ?_⟩
   -- `τ` is nonzero and orthogonal to the normal plane containing the values of `ψ 1`.
-  obtain ⟨hτ, hτn⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff hf himm 1
+  obtain ⟨hτ, hτn⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff (hf.of_le one_le_two) himm 1
   replace hx : x.2 • τ + r • ψ 1 x.1 = 0 := by simpa using hx
   have ht : x.2 = 0 := by
     have hτψ : ⟪τ, ψ 1 x.1⟫ = 0 := (hτn _).1 (hψn x.1)
@@ -604,15 +595,14 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
   obtain ⟨ε, hε, hemb⟩ := exists_isOpenEmbedding_normalTube hf himm hinj
   obtain ⟨δ, hδ, hδU⟩ := (isCompact_range hf.continuous).exists_thickening_subset_open
     isOpen_interior (subset_interior_iff_mem_nhdsSet.mpr hU)
-  obtain ⟨r, hr, hrε, hrδ⟩ : ∃ r, 0 < r ∧ r < ε ∧ r < δ :=
-    ⟨min (ε / 2) (δ / 2), lt_min (half_pos hε) (half_pos hδ),
-      (min_le_left _ _).trans_lt (half_lt_self hε), (min_le_right _ _).trans_lt (half_lt_self hδ)⟩
+  obtain ⟨r, hr, hrmin⟩ := exists_between (lt_min hε hδ)
+  obtain ⟨hrε, hrδ⟩ := lt_min_iff.mp hrmin
   -- `Φ (w, z)` is the point `r w` of the normal disc at `z`.
   obtain ⟨ψ, hψc, hψ⟩ := exists_normalDisc hf himm
   have hψc' : Continuous fun q : SolidTorus => ψ q.2 q.1 :=
     (hψc.comp continuous_snd).clm_apply (continuous_subtype_val.comp continuous_fst)
   have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
-    rw [norm_smul, (hψ q.2).2.1, Real.norm_of_nonneg hr.le]
+    rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
   have hle : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ ≤ r := fun q => by
     rw [hnorm]
     exact mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.mp q.1.2)
@@ -623,7 +613,7 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
     simp only [Subtype.mk.injEq, Prod.mk.injEq] at h'
     obtain ⟨h₂, h₁⟩ := h'
     rw [h₂] at h₁
-    exact Prod.ext (Subtype.ext ((hψ _).2.2.1 (smul_right_injective _ hr.ne' h₁))) h₂
+    exact Prod.ext (Subtype.ext ((ψ _).injective (smul_right_injective _ hr.ne' h₁))) h₂
   refine ⟨fun q => f q.2 + r • ψ q.2 q.1, ⟨((hf.continuous.comp continuous_snd).add
     (hψc'.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_, ?_⟩
   · dsimp only
@@ -640,9 +630,9 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
       exact mul_lt_of_lt_one_right hr hq
     · rintro ⟨⟨⟨z, v⟩, hzv⟩, hvr, rfl⟩
       rw [mem_ofPred_eq] at hvr
-      obtain ⟨w, hw⟩ := (hψ z).2.2.2 _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
+      obtain ⟨w, hw⟩ := (hψ z).2 _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
       have hwn : ‖w‖ < 1 := by
-        rw [← (hψ z).2.1, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
+        rw [← (ψ z).norm_map, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
         exact (inv_mul_lt_one₀ hr).mpr hvr
       refine ⟨(⟨w, mem_closedBall_zero_iff.mpr hwn.le⟩, z), hwn, ?_⟩
       simp [hw, smul_smul, mul_inv_cancel₀ hr.ne']
@@ -651,7 +641,7 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
     rw [dist_eq_norm, add_sub_cancel_left]
     exact (hle q).trans_lt hrδ
   · -- Near the origin the reading is the tube `(u, t) ↦ f (exp (t i)) + r • ψ (exp (t i)) u`.
-    obtain ⟨L, hL, hLinj⟩ := exists_hasFDerivAt_tube hf himm hψc (hψ 1).1 (hψ 1).2.2.1 hr.ne'
+    obtain ⟨L, hL, hLinj⟩ := exists_hasFDerivAt_tube hf himm hψc (hψ 1).1 (ψ 1).injective hr.ne'
     refine ⟨L, hL.congr_of_eventuallyEq ?_, hLinj⟩
     filter_upwards [SolidTorus.eventually_coreReading_eq
       (fun q : SolidTorus => f q.2 + r • ψ q.2 q.1)] with v ⟨_, hv⟩

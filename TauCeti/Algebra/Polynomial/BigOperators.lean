@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Monic
+import Mathlib.Tactic.Abel
 
 /-!
 # Finite sums and products of polynomials
@@ -22,6 +23,11 @@ degree bounds.
 This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
+
+Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
+`cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
+`∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`, the shape of the Morse polynomial
+identity.
 -/
 
 public section
@@ -111,3 +117,36 @@ theorem natDegree_geom_sum₂ {S : Type*} [CommSemiring S] [CharZero S]
     exact_mod_cast hn.ne'
 
 end Polynomial
+
+namespace TauCeti
+
+open Polynomial
+
+/-- **The polynomial form of `cᵢ = bᵢ + qᵢ + qᵢ₋₁`.**  If `c₀ = b₀ + q₀` and
+`cᵢ₊₁ = bᵢ₊₁ + qᵢ₊₁ + qᵢ` for `i < n`, then
+`∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`. -/
+theorem sum_range_monomial_add_monomial_eq_of_eq_add {R : Type*} [Semiring R]
+    {b c q : ℕ → R} {n : ℕ} (h₀ : c 0 = b 0 + q 0)
+    (hsucc : ∀ i < n, c (i + 1) = b (i + 1) + q (i + 1) + q i) :
+    ∑ i ∈ Finset.range (n + 1), monomial i (c i) + monomial (n + 1) (q n) =
+      ∑ i ∈ Finset.range (n + 1), monomial i (b i) +
+        (1 + X) * ∑ i ∈ Finset.range (n + 1), monomial i (q i) := by
+  -- Multiplying by `1 + X` shifts a copy of `∑ᵢ qᵢ Xⁱ` up by one degree.
+  rw [add_mul, one_mul, Finset.mul_sum]
+  simp only [X_mul_monomial]
+  induction n with
+  | zero =>
+    simp only [zero_add, Finset.sum_range_one, h₀, map_add]
+    abel
+  | succ n ih =>
+    have ih := ih fun i hi ↦ hsucc i (hi.trans n.lt_succ_self)
+    rw [Finset.sum_range_succ, Finset.sum_range_succ _ (n + 1), Finset.sum_range_succ _ (n + 1),
+      Finset.sum_range_succ (fun i ↦ monomial (i + 1) (q i)) (n + 1), hsucc n n.lt_succ_self]
+    simp only [map_add]
+    -- Split off the left side of the identity in degree `n` and substitute it.
+    calc _ = (∑ i ∈ Finset.range (n + 1), monomial i (c i) + monomial (n + 1) (q n)) +
+          monomial (n + 1) (b (n + 1)) + monomial (n + 1) (q (n + 1)) +
+          monomial (n + 1 + 1) (q (n + 1)) := by abel
+      _ = _ := by rw [ih]; abel
+
+end TauCeti

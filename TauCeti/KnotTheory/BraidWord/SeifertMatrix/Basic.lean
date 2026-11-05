@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 public import TauCeti.KnotTheory.Signature
 public import TauCeti.KnotTheory.TristramLevine.Basic
 
+import TauCeti.Data.List.AppendCons
 import TauCeti.Data.List.Rotate
 
 /-!
@@ -92,6 +93,8 @@ Those comparisons are not made here.
 * `TauCeti.BraidWord.exists_seifertMatrix_append_cons_cons_comm`: exchanging adjacent letters on
   distant levels relabels the Seifert matrix.
 * `TauCeti.BraidWord.exists_seifertMatrix_stabilize`: so does Markov stabilization.
+* `TauCeti.BraidWord.exists_seifertMatrix_append_cons_of_not_exists`: so does changing the sign of
+  a letter alone on its level, whose band lies on no loop.
 * `TauCeti.BraidWord.exists_seifertMatrix_append_singleton`: moving the first letter to the end
   changes the Seifert matrix by a unimodular congruence.
 * `TauCeti.BraidWord.alexander_seifertMatrix_rotate` and
@@ -434,6 +437,67 @@ theorem exists_seifertMatrix_stabilize :
     signAt_stabilize_of_lt w ε (ha12.trans ha2)]
 
 end Stabilize
+
+section Lone
+
+variable (u v : BraidWord n) (i : Fin (n - 1)) (ε ε' : ℤˣ)
+
+private theorem levelAt_append_cons_sign (k : ℕ) :
+    (u ++ (i, ε) :: v).levelAt k = (u ++ (i, ε') :: v).levelAt k := by
+  rw [levelAt_def, levelAt_def]
+  rcases eq_or_ne k u.length with rfl | hk
+  · simp
+  · rw [List.getElem?_append_cons_of_ne u v _ _ hk]
+
+private theorem signAt_append_cons_sign {k : ℕ} (hk : k ≠ u.length) :
+    (u ++ (i, ε) :: v).signAt k = (u ++ (i, ε') :: v).signAt k := by
+  rw [signAt_def, signAt_def, List.getElem?_append_cons_of_ne u v _ _ hk]
+
+/-- A position other than `u.length` of `u ++ x :: v` holds a letter of `u ++ v`. -/
+private theorem exists_mem_of_levelAt_append_cons {x : Fin (n - 1) × ℤˣ} {k l : ℕ}
+    (hk : k ≠ u.length) (h : (u ++ x :: v).levelAt k = some l) :
+    ∃ y ∈ u ++ v, (y.1 : ℕ) = l := by
+  rw [levelAt_def, Option.map_eq_some_iff] at h
+  obtain ⟨y, hy, rfl⟩ := h
+  refine ⟨y, ?_, rfl⟩
+  -- The entry at `k` stays `y` when the letter at `u.length` is replaced by one other than `y`.
+  rw [List.getElem?_append_cons_of_ne u v x (y.1, -y.2) hk] at hy
+  have hne : y ≠ (y.1, -y.2) := fun h ↦ units_ne_neg_self y.2 (congrArg Prod.snd h)
+  simpa [hne] using List.mem_of_getElem? hy
+
+/-- If no letter of `u ++ v` lies on level `i`, no loop of `u ++ (i, ε) :: v` runs through the
+letter `(i, ε)`: it is alone on its level. -/
+private theorem IsSeifertLoop.ne_length_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) {p : ℕ × ℕ}
+    (hp : (u ++ (i, ε) :: v).IsSeifertLoop p) : p.1 ≠ u.length ∧ p.2 ≠ u.length := by
+  obtain ⟨h12, -, hl, -⟩ := hp
+  have hi : (u ++ (i, ε) :: v).levelAt u.length = some (i : ℕ) := by simp
+  have hlone {k : ℕ} (hk : k ≠ u.length) : (u ++ (i, ε) :: v).levelAt k ≠ some (i : ℕ) :=
+    fun hk' ↦ by
+      obtain ⟨y, hy, hyi⟩ := exists_mem_of_levelAt_append_cons u v hk hk'
+      exact h ⟨y, hy, Fin.ext hyi⟩
+  constructor <;> intro he
+  · exact hlone (k := p.2) (by omega) (by rw [hl, he, hi])
+  · exact hlone (k := p.1) (by omega) (by rw [← hl, he, hi])
+
+/-- **The sign of a letter alone on its level does not change the Seifert matrix.** If no other
+letter lies on level `i`, the band of the letter `σᵢ^ε` is the only band between the discs `Dᵢ`
+and `Dᵢ₊₁` of the canonical Seifert surface, so it lies on no loop, and changing its sign only
+relabels the loops. -/
+theorem exists_seifertMatrix_append_cons_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) :
+    ∃ ι : (u ++ (i, ε') :: v).seifertLoops ≃ (u ++ (i, ε) :: v).seifertLoops,
+      (u ++ (i, ε') :: v).seifertMatrix = (u ++ (i, ε) :: v).seifertMatrix.submatrix ι ι := by
+  have hloops : ∀ p, p ∈ (u ++ (i, ε') :: v).seifertLoops ↔ p ∈ (u ++ (i, ε) :: v).seifertLoops :=
+    fun p ↦ by
+      simp only [mem_seifertLoops, isSeifertLoop_iff, levelAt_append_cons_sign u v i ε' ε,
+        List.length_append, List.length_cons]
+  refine ⟨Equiv.subtypeEquivRight hloops, Matrix.ext fun a b ↦ ?_⟩
+  obtain ⟨ha1, ha2⟩ := IsSeifertLoop.ne_length_of_not_exists u v i ε h
+    ((mem_seifertLoops _).1 ((hloops a).1 a.2))
+  simp only [Matrix.submatrix_apply, Equiv.subtypeEquivRight_apply_coe, seifertMatrix,
+    Matrix.of_apply, seifertEntry, levelAt_append_cons_sign u v i ε' ε,
+    signAt_append_cons_sign u v i ε' ε ha1, signAt_append_cons_sign u v i ε' ε ha2]
+
+end Lone
 
 /-! ### Telescoping along a level
 

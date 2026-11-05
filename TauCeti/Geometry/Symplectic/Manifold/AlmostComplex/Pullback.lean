@@ -38,6 +38,8 @@ family of almost complex structures on a mapping torus has to reach after one tu
   making the differentials of `h` complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.pullback_refl`,
   `TauCeti.SmoothAlmostComplexStructure.pullback_trans`: functoriality.
+* `TauCeti.SmoothAlmostComplexStructure.contMDiff_pullback_family`: pulling back a family of
+  structures depending smoothly on a parameter gives a family depending smoothly on it.
 * `TauCeti.SmoothTwoForm.Tames.pullback`, `TauCeti.SmoothTwoForm.Invariant.pullback`,
   `TauCeti.SmoothTwoForm.Compatible.pullback`: tameness, invariance and compatibility pass to
   the pullbacks of the form and of the structure.
@@ -74,19 +76,42 @@ private def pullbackEndomorphism (h : M ≃ₘ⟮I, I'⟯ N) (J : SmoothAlmostCo
     (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x :=
   (mfderiv I I' h x).inverse ∘L J.toEndomorphism (h x) ∘L mfderiv I I' h x
 
+section Family
+
+variable {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+  {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+
+/-- The pointwise pullbacks of a family of almost complex structures on `N` depending smoothly on
+a parameter in `Q` depend smoothly on the parameter and the point. -/
+private theorem contMDiff_pullbackEndomorphism_family (h : M ≃ₘ⟮I, I'⟯ N)
+    {J : Q → SmoothAlmostComplexStructure I' N}
+    (hJ : ContMDiff (IQ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun q : Q × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) q.2
+        ((J q.1).toEndomorphism q.2))) :
+    ContMDiff (IQ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        (pullbackEndomorphism h (J q.1) q.2)) := by
+  rw [TauCeti.contMDiff_hom_bundle_prod_iff]
+  -- On total spaces, the pullback is the conjugate of the family by the tangent lift of `h`.
+  have hJ' := (TauCeti.contMDiff_hom_bundle_prod_iff _).1 hJ
+  refine (h.tangent.symm.contMDiff.comp (hJ'.comp
+    (contMDiff_fst.prodMk (h.tangent.contMDiff.comp contMDiff_snd)))).congr fun p ↦ ?_
+  simp only [Function.comp_apply, Diffeomorph.coe_tangent]
+  exact (h.tangent_symm_mk p.2.proj _).symm
+
+end Family
+
 private theorem contMDiff_pullbackEndomorphism (h : M ≃ₘ⟮I, I'⟯ N)
     (J : SmoothAlmostComplexStructure I' N) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x
-        (pullbackEndomorphism h J x)) := by
-  rw [TauCeti.contMDiff_hom_bundle_iff]
-  -- On total spaces, the pullback is the conjugate of `J` by the tangent lift of `h`.
-  have hJ := (TauCeti.contMDiff_hom_bundle_iff (fun y : N ↦ J.toEndomorphism y)).1
-    J.toEndomorphism.contMDiff
-  refine (h.tangent.symm.contMDiff.comp (hJ.comp h.tangent.contMDiff)).congr fun p ↦ ?_
-  simp only [Function.comp_apply, Diffeomorph.coe_tangent]
-  exact (h.tangent_symm_mk p.proj _).symm
+        (pullbackEndomorphism h J x)) :=
+  -- This is the case of the constant family, with parameter in `M` itself.
+  (contMDiff_pullbackEndomorphism_family (IQ := I) h (J := fun _ : M ↦ J)
+    (J.toEndomorphism.contMDiff.comp contMDiff_snd)).comp (contMDiff_id.prodMk contMDiff_id)
 
 /-- The pullback `h^* J` of a smooth almost complex structure `J` on `N` along a smooth
 diffeomorphism `h : M → N`: at `x` it is `(dh_x)⁻¹ ∘ J_(h x) ∘ dh_x`. -/
@@ -126,6 +151,23 @@ theorem pullback_toEndomorphism (x : M) :
 theorem mfderiv_pullback_apply (x : M) (v : TangentSpace I x) :
     mfderiv I I' h x (pullback h J x v) = J (h x) (mfderiv I I' h x v) :=
   (h.isInvertible_mfderiv (by simp)).self_apply_inverse _
+
+/-- Pulling back a family of smooth almost complex structures on `N`, depending smoothly on a
+parameter in a manifold `Q`, along a diffeomorphism `h : M → N` gives a family of almost complex
+structures on `M` depending smoothly on the parameter: `(q, x) ↦ (h^* J_q)_x` is a smooth section
+of the tangent endomorphism bundle along the projection `Q × M → M`. -/
+theorem contMDiff_pullback_family {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
+    [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+    {J : Q → SmoothAlmostComplexStructure I' N}
+    (hJ : ContMDiff (IQ.prod I') (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
+      (fun q : Q × N ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) q.2
+        ((J q.1).toEndomorphism q.2))) :
+    ContMDiff (IQ.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : Q × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((pullback h (J q.1)).toEndomorphism q.2)) :=
+  contMDiff_pullbackEndomorphism_family h hJ
 
 /-- The pullback `h^* J` is the only almost complex structure on `M` for which every
 differential of `h` is complex linear into `J`. -/

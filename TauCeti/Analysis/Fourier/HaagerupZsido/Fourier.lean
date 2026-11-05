@@ -86,8 +86,7 @@ private theorem integral_exp_mul_I_mul_kernelIntegrand {y : ℝ} (hy : 0 < y) (x
     linear_combination (Complex.exp ((x : ℂ) * t * Complex.I) * (weight y : ℂ) / 4 *
       Complex.exp (-((y : ℂ) * (|t| : ℝ)))) * hsin
   have hint (b : ℝ) : Integrable fun t : ℝ ↦ Complex.exp ((b : ℂ) * t * Complex.I) * e t :=
-    ((integrable_exp_neg_mul_abs hy).ofReal).bdd_mul (c := 1) (by fun_prop)
-      (.of_forall fun t ↦ by simp [Complex.norm_exp])
+    integrable_exp_mul_I_mul_exp_neg_mul_abs hy b
   simp only [hpt]
   rw [integral_const_mul, integral_sub (hint _) (hint _), integral_exp_mul_I_mul_exp_neg_mul_abs hy,
     integral_exp_mul_I_mul_exp_neg_mul_abs hy]

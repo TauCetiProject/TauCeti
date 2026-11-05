@@ -109,18 +109,6 @@ private theorem terminal_pair_markings {x y z : GridState n}
         P.mem_coveredSquares_iff_of_ne (p := (c, M c)) hca hcb, hQ]
       tauto
 
-private theorem terminal_pair_rows {x y z : GridState n}
-    (P : GridPentagonBetween a C.turnRow x y)
-    (Q : GridPentagonBetween C.reverse.column C.reverse.turnRow y z)
-    (hne : P.left ≠ Q.left) (hp : P.IsEmpty) (hq : Q.IsEmpty) :
-    P.bottom ∈ Grid.cIoo Q.bottom P.top ∧ Q.top = P.bottom := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  refine ⟨(D.cyclicOrder_of_isEmpty_of_right_eq_right (G.terminal_pair_right_eq C P Q)
-    hne hp hq).2, ?_⟩
-  rw [GridRectangleBetween.top_def, ← G.terminal_pair_right_eq C P Q, P.map_right,
-    GridRectangleBetween.bottom_def]
-
 /-- Both turn rows lie on the common terminal side of the union, the reverse turn row below the
 forward one. -/
 private theorem terminal_pair_turns {x y z : GridState n}
@@ -192,7 +180,8 @@ private theorem terminal_pair_hexagon {x y z : GridState n}
         simpa only [D, P.right_eq] using h.1
       exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap Q.left b) hcol
         (Grid.mem_cIoo_cyclic_right hbad)).elim
-  obtain ⟨hrow, htop⟩ := G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol) hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol) hp hq
   obtain ⟨hlower, hupper⟩ := G.terminal_pair_turns C P Q hrow htop
   have hlower' : C.oppositeTurnRow ∈ Grid.cIco E.second.bottom E.second.top := by
     rw [hsb', hst']
@@ -390,7 +379,8 @@ theorem recutTerminalPentagonPair_mem_rectangleHexagonDecompositions {x y z : Gr
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   let T := G.recutTerminalPentagonPair C P Q hcol hp hq
   have hrecut := G.isRecut_recutTerminalPentagonPair C P Q hcol hp hq
-  obtain ⟨hrow, htop⟩ := G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol) hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol) hp hq
   have havoid : ∀ p : Fin n × Fin n, p.1 ≠ a →
       p ∈ T.rectangle.toGridRectangle.coveredSquares ∪
         T.hexagon.toGridRectangleBetween.toGridRectangle.coveredSquares → p ∉ G.XSet := by
@@ -423,7 +413,8 @@ theorem rectangleHexagonWeight_recutTerminalPentagonPair
     G.rectangleHexagonWeight C R (G.recutTerminalPentagonPair C P Q hcol hp hq) =
       G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ := by
   have hrecut := G.isRecut_recutTerminalPentagonPair C P Q hcol hp hq
-  obtain ⟨hrow, htop⟩ := G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol) hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol) hp hq
   obtain ⟨H, hH⟩ := G.recutTerminalPentagonPair_hexagon C P Q hcol hp hq
   have hweight := hrecut.isRepartition.prod_coveredSquares_mul_prod_coveredSquares
     (G.terminalPairSquareWeight C R)
@@ -526,7 +517,8 @@ theorem recutTerminalPentagonPair_mem_unpairedHexagonComposites {x y z : GridSta
   have hTone : T.toRectangleDecomposition.HasOneCommonSide := by
     rw [G.recutTerminalPentagonPair_toRectangleDecomposition C]
     exact D.hasOneCommonSide_recut hone hp hq
-  obtain ⟨hrow, htop⟩ := G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol) hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol) hp hq
   refine (G.mem_unpairedHexagonComposites C (.inr T)).mpr ⟨?_, ?_, ?_⟩
   · exact (G.inr_mem_hexagonCompositeDecompositions C T).mpr
       (G.recutTerminalPentagonPair_mem_rectangleHexagonDecompositions C P Q hcol hP hQ)
@@ -556,7 +548,8 @@ noncomputable def recutTerminalPentagonPairHexagonRectangle {x y z : GridState n
   have hgeom := D.recut_geometry_of_right_eq_right_of_second_left_mem_cIoo hcommon hc hp hq
   have hbottom : E.first.bottom = Q.bottom := hgeom.2.2.1
   have htop : E.first.top = P.top := hgeom.2.2.2.1
-  have hrows := G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
+  have hrows := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
   have hturns := G.terminal_pair_turns C P Q hrows.1 hrows.2
   exact ⟨E.middle, Sum.inl ⟨E.first, hgeom.1.trans P.right_eq,
     by simpa only [← E.first.bottom_def, ← E.first.top_def, hbottom, htop] using hturns.1,
@@ -651,8 +644,8 @@ theorem recutTerminalPentagonPairHexagonRectangle_mem_hexagonRectangleDecomposit
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_pentagons Q).mp hQ
   let T := G.recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq
   have hrecut := G.isRecut_recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq
-  obtain ⟨hrow, htop⟩ :=
-    G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
   have havoid : ∀ p : Fin n × Fin n, p.1 ≠ a →
       p ∈ T.hexagon.toGridRectangleBetween.toGridRectangle.coveredSquares ∪
         T.rectangle.toGridRectangle.coveredSquares → p ∉ G.XSet := by
@@ -685,8 +678,8 @@ theorem hexagonRectangleWeight_recutTerminalPentagonPairHexagonRectangle
     G.hexagonRectangleWeight C R (G.recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq) =
       G.pentagonPairWeight C R ⟨y, .inl P, .inl Q⟩ := by
   have hrecut := G.isRecut_recutTerminalPentagonPairHexagonRectangle C P Q hcol hp hq
-  obtain ⟨hrow, htop⟩ :=
-    G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
   obtain ⟨H, hH⟩ := G.recutTerminalPentagonPairHexagonRectangle_hexagon C P Q hcol hp hq
   have hweight := hrecut.isRepartition.prod_coveredSquares_mul_prod_coveredSquares
     (G.terminalPairSquareWeight C R)
@@ -721,8 +714,8 @@ theorem recutTerminalPentagonPairHexagonRectangle_mem_unpairedHexagonComposites
   have hTone : T.toRectangleDecomposition.HasOneCommonSide := by
     rw [G.recutTerminalPentagonPairHexagonRectangle_toRectangleDecomposition C]
     exact D.hasOneCommonSide_recut hone hp hq
-  obtain ⟨hrow, htop⟩ :=
-    G.terminal_pair_rows C P Q (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (G.terminal_pair_right_eq C P Q) (Grid.ne_left_of_mem_cIoo hcol).symm hp hq
   refine (G.mem_unpairedHexagonComposites C (.inl T)).mpr ⟨?_, ?_, ?_⟩
   · exact (G.inl_mem_hexagonCompositeDecompositions C T).mpr
       (G.recutTerminalPentagonPairHexagonRectangle_mem_hexagonRectangleDecompositions

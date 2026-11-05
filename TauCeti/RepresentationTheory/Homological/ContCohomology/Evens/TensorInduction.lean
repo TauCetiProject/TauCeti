@@ -92,12 +92,7 @@ end Transversal
 
 variable [IsTopologicalGroup G] (U : OpenSubgroup G)
 
--- The differential and homotopy use the direct-sum module action. Selecting it here keeps the
--- indexed tensor carrier identical to that of the tensor-induced resolution.
-private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+open scoped TopRep.GradedResolution
 
 section Character
 

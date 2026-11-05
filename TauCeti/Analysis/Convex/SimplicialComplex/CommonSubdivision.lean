@@ -113,9 +113,8 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
       rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
       exact hx.2
     exact mem_iUnion₂.2 ⟨q, ⟨fun hqp' => hxi (hqp' ▸ hxq), hqp⟩, intrinsicInterior_subset hxq⟩
-  obtain ⟨M, hMs, -, hMP, hMlf⟩ := exists_subdivision P hPc hPv
-    (fun p => p.2.mono (inter_subset_inter intrinsicInterior_subset intrinsicInterior_subset))
-    hPlf hdisj hfr
+  obtain ⟨M, hMs, -, hMP, hMlf⟩ := exists_subdivision P hPc hPv (fun q => q.2.some)
+    (fun q => (hri q).symm ▸ q.2.some_mem) hPlf hdisj hfr
   refine ⟨M, ?_, fun s hs => ?_, hMlf⟩
   · rw [hMs]
     ext x
@@ -126,7 +125,7 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
       obtain ⟨τ, hτ, hxτ⟩ := mem_space_iff.1 hxL
       obtain ⟨q, hxq, -⟩ := hcell hσ hτ hxσ hxτ
       exact mem_iUnion.2 ⟨q, intrinsicInterior_subset hxq⟩
-  · obtain ⟨p, hsp⟩ := hMP s hs
+  · obtain ⟨p, -, hsp⟩ := hMP s hs
     have hconv : convexHull ℝ (s : Set E) ⊆ P p := convexHull_min hsp (hPv p)
     exact ⟨⟨_, p.1.1.2, hconv.trans inter_subset_left⟩,
       ⟨_, p.1.2.2, hconv.trans inter_subset_right⟩⟩

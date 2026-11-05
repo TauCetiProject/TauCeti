@@ -41,13 +41,13 @@ of a word (`encodeGlueWord_glueModuleIsometry`) and its glue minimum
 closed under multiplication by `ω` (`d4SixQuaternaryIsometry_symm_smul_mem_d4SixGlueSubgroup`).
 
 Transporting the separate checks then gives, for these rows and for the table subgroup itself,
-the order `|H_r| = glueOrder r`, the Lagrangian property, and, except for `A₂¹²`, the bound
-`μ(w) ≥ 4` on the glue minimum of every nonzero word.
+the order `|H_r| = glueOrder r`, the Lagrangian property, and the bound `μ(w) ≥ 4` on the glue
+minimum of every nonzero word.
 
 ## Main declarations
 
-* `map_glueSubgroup_a2Twelfth`, `map_glueSubgroup_d4Sixth`, `map_glueSubgroup_a11d7e6`: the
-  table subgroups are the separately identified subgroups.
+* `map_glueSubgroup_a2TwelfthGlueModuleIsometry`, `map_glueSubgroup_d4Sixth`,
+  `map_glueSubgroup_a11d7e6`: the table subgroups are the separately identified subgroups.
 * `natCard_glueSubgroup_*`, `isLagrangian_glueSubgroup_*`,
   `four_le_sum_glueMinimum_of_mem_glueSubgroup_*`: the order, Lagrangian and minimum-norm checks
   of these rows, for the table subgroup.
@@ -113,16 +113,6 @@ theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_a1TwentyFourth
 
 /-! ### `A₂¹²` -/
 
-/-- Every component of `A₂¹²` is `A₂`. -/
-@[simp]
-theorem componentType_a2Twelfth (i : Fin a2Twelfth.components.length) :
-    a2Twelfth.componentType i = A 2 :=
-  congrArg Subtype.val (List.eq_of_mem_replicate (List.getElem_mem _))
-
-private theorem glueWords_a2Twelfth :
-    a2Twelfth.glueWords = (GluePattern.cyclic [2] [1, 1, 2, 1, 1, 1, 2, 2, 2, 1, 2] []).expand := by
-  decide
-
 /-- The glue words of the row `A₂¹²` as words in twelve copies of the `A₂` glue alphabet. -/
 noncomputable abbrev a2TwelfthGlueModuleIsometry :
     Isometry a2Twelfth.glueModule a2TwelfthGlueModule :=
@@ -131,21 +121,30 @@ noncomputable abbrev a2TwelfthGlueModuleIsometry :
 
 /-- **The table glue subgroup of `A₂¹²` is `a2TwelfthGlueSubgroup`**, the subgroup identified with
 the extended ternary Golay code. -/
-theorem map_glueSubgroup_a2Twelfth :
+theorem map_glueSubgroup_a2TwelfthGlueModuleIsometry :
     a2Twelfth.glueSubgroup.map a2TwelfthGlueModuleIsometry.toAddEquiv = a2TwelfthGlueSubgroup := by
   refine (map_glueSubgroup_glueModuleIsometry _ _ _ _).trans ?_
   rw [glueWords_a2Twelfth, a2TwelfthGlueSubgroup_def]
 
 /-- **The table glue subgroup of `A₂¹²` has the displayed order `729`.** -/
 theorem natCard_glueSubgroup_a2Twelfth : Nat.card a2Twelfth.glueSubgroup = a2Twelfth.glueOrder :=
-  (natCard_glueSubgroup_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth).trans <| by
+  (natCard_glueSubgroup_of_map_glueModuleIsometry
+    map_glueSubgroup_a2TwelfthGlueModuleIsometry).trans <| by
     rw [natCard_a2TwelfthGlueSubgroup]; rfl
 
 /-- **The table glue subgroup of `A₂¹²` is a quadratic Lagrangian.** -/
 theorem isLagrangian_glueSubgroup_a2Twelfth :
     a2Twelfth.glueModule.IsLagrangian a2Twelfth.glueSubgroup :=
-  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry map_glueSubgroup_a2Twelfth).mpr
-    isLagrangian_a2TwelfthGlueSubgroup
+  (isLagrangian_glueSubgroup_iff_of_map_glueModuleIsometry
+    map_glueSubgroup_a2TwelfthGlueModuleIsometry).mpr isLagrangian_a2TwelfthGlueSubgroup
+
+/-- **Every nonzero word of the table glue subgroup of `A₂¹²` has glue minimum at least `4`.** -/
+theorem four_le_sum_glueMinimum_of_mem_glueSubgroup_a2Twelfth {w : a2Twelfth.glueModule}
+    (hw : w ∈ a2Twelfth.glueSubgroup) (hw0 : w ≠ 0) :
+    4 ≤ ∑ i, (a2Twelfth.componentType i).glueMinimum (a2Twelfth.isSimplyLaced_componentType i)
+      (w i) :=
+  le_sum_glueMinimum_of_map_glueModuleIsometry map_glueSubgroup_a2TwelfthGlueModuleIsometry
+    four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup hw hw0
 
 /-! ### `D₄⁶` -/
 
@@ -261,6 +260,22 @@ theorem map_glueSubgroup_d4Sixth :
       ⟨_, ofFn_mem_glueWords_d4Sixth d ?_, decodeGlueWord_D_four_ofFn d⟩
     simp only [d4SixPrintedDigits_def, Set.mem_insert_iff, Set.mem_singleton_iff] at hd
     simpa only [List.mem_cons, List.not_mem_nil, or_false] using hd
+
+/-- A glue word of the row `D₄⁶` lies in the table glue subgroup `d4Sixth.glueSubgroup` exactly
+when its image under `d4SixthGlueModuleIsometry` lies in `d4SixGlueSubgroup`. -/
+theorem d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff (w : d4Sixth.glueModule) :
+    d4SixthGlueModuleIsometry w ∈ d4SixGlueSubgroup ↔ w ∈ d4Sixth.glueSubgroup := by
+  rw [← map_glueSubgroup_d4Sixth]
+  exact AddSubgroup.mem_map_iff_mem d4SixthGlueModuleIsometry.injective
+
+/-- **The table glue subgroup of `D₄⁶` is the hexacode**: a glue word of the row lies in
+`d4Sixth.glueSubgroup` exactly when its image under `d4SixthGlueModuleIsometry` and
+`d4SixHexacodeIsometry` belongs to `Hexacode.code ω`. -/
+theorem mem_glueSubgroup_d4Sixth_iff_hexacode {F : Type*} [Field F] [Finite F]
+    (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0) (w : d4Sixth.glueModule) :
+    w ∈ d4Sixth.glueSubgroup ↔
+      d4SixHexacodeIsometry hF hω (d4SixthGlueModuleIsometry w) ∈ Hexacode.code ω := by
+  rw [← d4SixthGlueModuleIsometry_mem_d4SixGlueSubgroup_iff, mem_d4SixGlueSubgroup_iff hF hω]
 
 /-- **The table glue subgroup of `D₄⁶` has the displayed order `64`.** -/
 theorem natCard_glueSubgroup_d4Sixth : Nat.card d4Sixth.glueSubgroup = d4Sixth.glueOrder :=

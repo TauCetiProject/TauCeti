@@ -44,21 +44,23 @@ integral and carries no meaning.
 ## Main results
 
 * `Complex.carlsonRF`, `Complex.carlsonRC` — the integrals `R_F` and `R_C`.
-* `Complex.integrableOn_carlsonRF_integrand` — absolute convergence of the defining
-  integral.
+* `Complex.integrableOn_carlsonRF_integrand`, `Complex.integrableOn_carlsonRC_integrand` —
+  absolute convergence of the defining integrals of `R_F` and `R_C`.
 * `Complex.carlsonRF_comm_left`, `Complex.carlsonRF_comm_right` — `R_F` is
   symmetric in its three arguments.
 * `Complex.carlsonRF_ofReal_mul` — homogeneity of degree `-1/2` under positive real
   scaling.
 * `Complex.carlsonRF_self`, `Complex.carlsonRC_self` — the diagonal values
   `R_F(x, x, x) = R_C(x, x) = x^(-1/2)`.
-* `Complex.carlsonRF_pos` — `R_F` is a positive real number at nonnegative real
-  arguments, at most one of them zero.
+* `Complex.carlsonRF_pos`, `Complex.carlsonRC_pos` — `R_F` and `R_C` are positive real numbers
+  at nonnegative real arguments, at most one of the symmetric ones zero.
 * `Complex.carlsonRC_eq_integral` — the defining integral of `R_C` (DLMF 19.2.17).
 * `Complex.carlsonRC_ofReal_eq_arccos`, `Complex.carlsonRC_ofReal_eq_arcosh` — the
   elementary evaluation of `R_C` at real arguments (DLMF 19.2.19, 19.2.20):
   `R_C(x, y) = arccos √(x/y) / √(y - x)` for `0 ≤ x < y`, and
   `R_C(x, y) = arcosh √(x/y) / √(x - y)` for `0 < y < x`.
+* `Complex.carlsonRF_ofReal_eq_integral` — at nonnegative real arguments, `R_F` is the real
+  integral `½ ∫₀^∞ (√(t + x) √(t + y) √(t + z))⁻¹ dt`.
 
 ## References
 
@@ -168,6 +170,16 @@ theorem integrableOn_carlsonRF_integrand {x y z : ℂ} (hx : x ∈ slitPlane ∪
     exact mul_le_mul (mul_le_mul h1 h2 (norm_nonneg _) ((norm_nonneg _).trans h1)) (hCz' t ht0)
       (norm_nonneg _) (mul_nonneg ((norm_nonneg _).trans h1) ((norm_nonneg _).trans h2))
 
+/-- **Convergence of `R_C`.** The integrand `t ↦ (t + x)^(-1/2) (t + y)⁻¹` of
+`carlsonRC_eq_integral` is integrable on `(0, ∞)` when `x ∈ slitPlane ∪ {0}` and
+`y ∈ slitPlane`. -/
+theorem integrableOn_carlsonRC_integrand {x y : ℂ} (hx : x ∈ slitPlane ∪ {0})
+    (hy : y ∈ slitPlane) :
+    IntegrableOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹) (Ioi 0) := by
+  refine (integrableOn_carlsonRF_integrand hx hy hy).congr_fun (fun t _ => ?_) measurableSet_Ioi
+  dsimp only
+  rw [mul_assoc, cpow_neg_half_mul_self]
+
 /-! ### Symmetry and homogeneity -/
 
 /-- `R_F` is symmetric in its first two arguments. -/
@@ -265,6 +277,25 @@ theorem carlsonRC_self {x : ℂ} (hx : x ∈ slitPlane) : carlsonRC x x = x ^ (-
 
 /-! ### Real arguments -/
 
+/-- **`R_F` at nonnegative real arguments** is a real integral:
+`R_F(x, y, z) = ½ ∫₀^∞ (√(t + x) √(t + y) √(t + z))⁻¹ dt` for real `x, y, z ≥ 0`. The two integrands
+agree on `(0, ∞)`, so no convergence hypothesis is needed. -/
+theorem carlsonRF_ofReal_eq_integral {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hz : 0 ≤ z) :
+    carlsonRF x y z =
+      ((1 / 2 * ∫ t in Ioi (0 : ℝ), (√(t + x) * √(t + y) * √(t + z))⁻¹ : ℝ) : ℂ) := by
+  have hreal {w t : ℝ} (hw : 0 ≤ w) (ht : 0 < t) :
+      ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) = (((√(t + w))⁻¹ : ℝ) : ℂ) := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg (by linarith), Complex.ofReal_cpow (by linarith)]
+    push_cast
+    rfl
+  have heq : EqOn (fun t : ℝ => ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + z) ^ (-(1 / 2) : ℂ))
+      (fun t => (((√(t + x) * √(t + y) * √(t + z))⁻¹ : ℝ) : ℂ)) (Ioi 0) := fun t ht => by
+    simp only [hreal hx ht, hreal hy ht, hreal hz ht, mul_inv, Complex.ofReal_mul]
+  rw [carlsonRF_def, setIntegral_congr_fun measurableSet_Ioi heq, integral_complex_ofReal]
+  push_cast
+  ring
+
 /-- **`R_F` is positive at real arguments**: for real `x ≥ 0` and `y, z > 0`, `R_F(x, y, z)` is a
 positive real number (in the order `ComplexOrder`, so its imaginary part is `0`). By symmetry, any
 one of the three arguments may be the one that vanishes. -/
@@ -299,6 +330,12 @@ theorem carlsonRF_pos {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 < y) (hz : 0 < z) :
     show (1 / 2 : ℂ) * ((∫ t in Ioi (0 : ℝ), f t : ℝ) : ℂ) =
       ((1 / 2 * ∫ t in Ioi (0 : ℝ), f t : ℝ) : ℂ) by push_cast; ring]
   exact Complex.zero_lt_real.mpr (by positivity)
+
+/-- **`R_C` is positive at real arguments**: for real `x ≥ 0` and `y > 0`, `R_C(x, y)` is a
+positive real number (in the order `ComplexOrder`, so its imaginary part is `0`). -/
+theorem carlsonRC_pos {x y : ℝ} (hx : 0 ≤ x) (hy : 0 < y) :
+    0 < carlsonRC x y :=
+  carlsonRF_pos hx hy hy
 
 /-! ### Elementary evaluation of `R_C` -/
 

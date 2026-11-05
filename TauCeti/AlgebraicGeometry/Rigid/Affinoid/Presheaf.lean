@@ -125,6 +125,15 @@ theorem restrict_comp {U V W : AffinoidSubdomain K A} (hUV : U ≤ V) (hVW : V �
   apply W.isAffinoidSubdomainMap.algHom_ext U.isAffinoidAlgebra
   simp [AlgHom.comp_assoc]
 
+/-- Restriction along an inclusion of affinoid subdomains is itself an affinoid subdomain map.
+Its classical points are the inverse image of the smaller subdomain. -/
+theorem isAffinoidSubdomainMap_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) :
+    IsAffinoidSubdomainMap (restrict h)
+      (V.isAffinoidAlgebra.maximalSpectrumComap V.toSections ⁻¹' (U : Set (MaximalSpectrum A))) :=
+  V.isAffinoidSubdomainMap.of_comp (by
+    rw [restrict_comp_toSections]
+    exact U.isAffinoidSubdomainMap)
+
 /-- The presheaf of representing affinoid algebras on the inclusion preorder of subdomains.
 Its object formula is exposed so that its section types are the chosen representing algebras. -/
 @[expose] noncomputable def presheaf : (AffinoidSubdomain K A)ᵒᵖ ⥤ CommAlgCat.{u} K where

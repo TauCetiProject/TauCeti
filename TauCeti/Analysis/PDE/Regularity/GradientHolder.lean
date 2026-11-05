@@ -119,16 +119,12 @@ private theorem setIntegral_norm_gradient_sub_sq_le {ι : Type*} [Fintype ι]
     (hest : ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGc.toLp‖) {M : ℝ}
     (hbd : ∀ x ∈ B, ‖G x - c‖ ≤ M) :
     ∫ x in B, ‖W1p.gradient u x - H x‖ ^ 2 ∂mu ≤ mu.real B * M ^ 2 := by
-  have hsub : W1p.gradient (W1p.restrictL hB u - w) =
-      W1p.gradient (W1p.restrictL hB u) - W1p.gradient w := by
-    simp only [← W1p.gradientL_apply, map_sub]
   have h1 : ∫ x in B, ‖W1p.gradient u x - H x‖ ^ 2 ∂mu =
       ‖W1p.gradient (W1p.restrictL hB u - w)‖ ^ 2 := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    rw [← W1p.setIntegral_norm_gradient_sub_sq_eq hB u w]
     refine integral_congr_ae ?_
-    filter_upwards [W1p.gradient_restrictL_ae hB u, hwH,
-      Lp.coeFn_sub (W1p.gradient (W1p.restrictL hB u)) (W1p.gradient w)] with x h1 h2 h3
-    rw [hsub, h3, Pi.sub_apply, h1, h2]
+    filter_upwards [hwH] with x hx
+    rw [hx]
   have h2 : ‖hGc.toLp‖ ^ 2 = ∫ x in B, ‖G x - c‖ ^ 2 ∂mu := by
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ?_
