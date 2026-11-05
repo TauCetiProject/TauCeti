@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Covering.Vitali
@@ -153,13 +152,6 @@ private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ
           ENNReal.ofNat_ne_top, one_mul]
     _ ≤ 2 * (b * t ^ (q - 1) * G + H) := by gcongr
 
-/-- The weighted measure of a superlevel set is the integral of the weight over it. -/
-private theorem withDensity_setOf_lt (ν : Measure α) (F : α → ℝ≥0∞) {f : α → ℝ≥0∞}
-    (hf : Measurable f) (c : ℝ≥0∞) :
-    ν.withDensity F {x | c < f x} = ∫⁻ x, {x | c < f x}.indicator F x ∂ν := by
-  rw [withDensity_apply _ (measurableSet_lt measurable_const hf),
-    lintegral_indicator (measurableSet_lt measurable_const hf)]
-
 /-- The arithmetic of the thresholds in Gehring's lemma. For `q > 1`, `b ≥ 0` and a dimension `d`
 there is a height ratio `ε ∈ (0, 1]` with `b ε + ε ^ q ≤ 1 / 2`, and a gain `δ₀ > 0` such that for
 `0 < δ ≤ δ₀` the absorption coefficient `2 · 4 ^ d · b · δ / (q + δ - 1) · ε ^ (1 - q - δ)` is at
@@ -229,94 +221,6 @@ private theorem rpow_inv_rpow_eq {d : ℕ} {q δ R a u : ℝ} (hR : 0 ≤ R) (ha
   rw [← Real.rpow_mul (by positivity), Real.mul_rpow (by positivity) ha, ← Real.rpow_natCast,
     ← Real.rpow_mul h16, Real.div_rpow (by positivity) hu.le, Real.rpow_neg hu.le]
   field_simp
-
-/-- The layer cake formula for a constant height `t₀`, truncated at `k`: integrating
-`δ t ^ (δ - 1)` over `0 < t < min(t₀, k)` gives at most `t₀ ^ δ`. -/
-private theorem ofReal_mul_setLIntegral_measure_lt_const_le (m : Measure α) {t₀ : ℝ} (ht₀ : 0 ≤ t₀)
-    (k : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
-    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ),
-        m {_x : α | ENNReal.ofReal t < ENNReal.ofReal t₀} * ENNReal.ofReal (t ^ (δ - 1)) ≤
-      ENNReal.ofReal (t₀ ^ δ) * m univ := by
-  rw [← lintegral_min_rpow_eq m aemeasurable_const k hδ, ← lintegral_const]
-  refine lintegral_mono fun _ => ?_
-  rw [← ENNReal.ofReal_rpow_of_nonneg ht₀ hδ.le]
-  exact ENNReal.rpow_le_rpow (min_le_left _ _) hδ.le
-
-/-- The layer cake formula for `g / ε` with respect to the weight `g`, truncated at `k`:
-integrating `δ t ^ (q + δ - 2)` against the distribution function of `g / ε` gives at most
-`δ / (q + δ - 1) · ε ^ (1 - q - δ)` times `∫ g ^ q min(g, k) ^ δ`. -/
-private theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → ℝ≥0∞}
-    (hg : Measurable g) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (b : ℝ≥0∞) (k : ℝ≥0) {q δ : ℝ}
-    (hq : 1 < q) (hδ : 0 < δ) :
-    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) *
-        m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
-      b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1) *
-        ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m := by
-  have hp : 0 < q + δ - 1 := by linarith
-  have hgε : Measurable fun x => g x * ε⁻¹ := hg.mul_const _
-  set N : ℝ → ℝ≥0∞ := fun t => m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹}
-  -- Combine the powers of `t` into `t ^ (p - 1)` for `p = q + δ - 1`.
-  have hcongr : ∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) * N t *
-        ENNReal.ofReal (t ^ (δ - 1)) =
-      b * ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) := by
-    have hm : Measurable fun t : ℝ => N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) :=
-      (measurable_measure_ofReal_lt _ _).mul (measurable_id.pow_const _).ennreal_ofReal
-    rw [← lintegral_const_mul _ hm]
-    refine setLIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
-    rw [ENNReal.ofReal_rpow_of_nonneg ht.1.le (by linarith),
-      show t ^ (q + δ - 1 - 1) = t ^ (q - 1) * t ^ (δ - 1) by
-        rw [← Real.rpow_add ht.1]; ring_nf,
-      ENNReal.ofReal_mul (Real.rpow_nonneg ht.1.le _)]
-    ring
-  have hδsplit : ENNReal.ofReal δ =
-      ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) := by
-    rw [← ENNReal.ofReal_mul (div_nonneg hδ.le hp.le), div_mul_cancel₀ _ hp.ne']
-  rw [hcongr, hδsplit]
-  calc ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) *
-        (b * ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)))
-      = b * ENNReal.ofReal (δ / (q + δ - 1)) *
-          ∫⁻ x, min (g x * ε⁻¹) k ^ (q + δ - 1) ∂m.withDensity g := by
-        rw [lintegral_min_rpow_eq _ hgε.aemeasurable k hp]
-        ring
-    _ ≤ b * ENNReal.ofReal (δ / (q + δ - 1)) *
-          (ε⁻¹ ^ (q + δ - 1) * ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m) := by
-        gcongr
-        rw [lintegral_withDensity_eq_lintegral_mul _ hg ((hgε.min measurable_const).pow_const _),
-          ← lintegral_const_mul' _ _
-            (ENNReal.rpow_ne_top_of_nonneg hp.le (ENNReal.inv_ne_top.2 hε0))]
-        refine lintegral_mono fun x => ?_
-        simp only [Pi.mul_apply]
-        calc g x * min (g x * ε⁻¹) k ^ (q + δ - 1)
-            ≤ g x * (ε⁻¹ ^ (q + δ - 1) * min (g x) k ^ (q + δ - 1)) := by
-              gcongr
-              exact ENNReal.min_mul_inv_rpow_le _ _ hε1 hp.le
-          _ = ε⁻¹ ^ (q + δ - 1) * (g x * min (g x) k ^ (q + δ - 1)) := by ring
-          _ ≤ _ := mul_le_mul_right (ENNReal.mul_min_rpow_le _ _ hq.le hδ.le) _
-    _ = _ := by ring
-
-/-- The layer cake formula for `h / ε` with respect to the weight `h ^ q`, truncated at `k`:
-integrating `δ t ^ (δ - 1)` against its distribution function gives at most
-`ε ^ (-δ) ∫ h ^ (q + δ)`. -/
-private theorem ofReal_mul_setLIntegral_withDensity_rpow_lt_le (m : Measure α) {h : α → ℝ≥0∞}
-    (hh : Measurable h) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (k : ℝ≥0) {q δ : ℝ} (hq : 0 ≤ q)
-    (hδ : 0 < δ) :
-    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), m.withDensity (fun x => h x ^ q)
-        {x | ENNReal.ofReal t < h x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
-      ε⁻¹ ^ δ * ∫⁻ x, h x ^ (q + δ) ∂m := by
-  have hhε : Measurable fun x => h x * ε⁻¹ := hh.mul_const _
-  rw [← lintegral_min_rpow_eq _ hhε.aemeasurable k hδ, lintegral_withDensity_eq_lintegral_mul _
-    (hh.pow_const q) ((hhε.min measurable_const).pow_const _), ← lintegral_const_mul' _ _
-    (ENNReal.rpow_ne_top_of_nonneg hδ.le (ENNReal.inv_ne_top.2 hε0))]
-  refine lintegral_mono fun x => ?_
-  simp only [Pi.mul_apply]
-  calc h x ^ q * min (h x * ε⁻¹) k ^ δ ≤ h x ^ q * (ε⁻¹ ^ δ * h x ^ δ) := by
-        gcongr
-        refine (ENNReal.min_mul_inv_rpow_le _ _ hε1 hδ.le).trans ?_
-        gcongr
-        exact min_le_left _ _
-    _ = ε⁻¹ ^ δ * h x ^ (q + δ) := by
-        rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
-        ring
 
 end General
 
@@ -498,7 +402,12 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
       have hlev := setLIntegral_indicator_rpow_le hq hε hg (μ := μ) (h := h) hrs hsR hfin hRH
         ENNReal.ofReal_ne_top (hT.trans (ENNReal.rpow_le_rpow
           (ENNReal.ofReal_le_ofReal htt) hq0.le))
-      simp only [N₁, N₂, ν, ν₁, ν₂, withDensity_setOf_lt _ _ hg, hset, withDensity_setOf_lt _ _ hh]
+      have hg' := measurableSet_lt (measurable_const (a := ENNReal.ofReal t)) hg
+      have hg'' := measurableSet_lt (measurable_const (a := ε * ENNReal.ofReal t)) hg
+      have hh'' := measurableSet_lt (measurable_const (a := ε * ENNReal.ofReal t)) hh
+      simp only [N₁, N₂, ν, ν₁, ν₂, hset, withDensity_apply _ hg', withDensity_apply _ hg'',
+        withDensity_apply _ hh'', ← lintegral_indicator hg', ← lintegral_indicator hg'',
+        ← lintegral_indicator hh'']
       exact hlev
   -- Measurability of the pieces in `t`.
   have hAm : Measurable A := measurable_measure_ofReal_lt _ _

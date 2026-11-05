@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
 -- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+-- Proof-only: pointwise inequalities between truncations and real powers in `ℝ≥0∞`.
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 -- Proof-only: the integrability of indicators of bounded intervals.
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 -- Proof-only: a subsequence of functions with vanishing integrals tends to `0` a.e.
@@ -48,6 +50,13 @@ Finally, it records the signed layer-cake representation of a real number,
 the integral over all levels `t` of the indicators of its superlevel sets `{u > t}`, corrected by
 `1_{t < 0}` so that the integrand is integrable.
 
+The truncated power formula `∫ min(f, k) ^ δ = δ ∫_0^k m {f > t} t ^ (δ - 1) dt` is recorded
+together with bounds on its right side for a constant height and for distribution functions of
+rescaled functions `g / ε` with respect to the weights `g` and `h ^ q`, with `ε ≤ 1`. These are
+the estimates that convert a level-set inequality into a reverse Hölder inequality with a higher
+exponent, as in Gehring's lemma; the truncation at `k` keeps every integral finite and is removed
+by monotone convergence.
+
 ## Main statements
 
 * `TauCeti.lintegral_mul_eq_lintegral_lintegral_measure_inter` — the integral of a product of
@@ -71,6 +80,10 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   level up to the cap `k`;
 * `TauCeti.tendsto_lintegral_mul_min_rpow` — the truncated integrals `∫ g ^ q min(g, k) ^ δ`
   increase to `∫ g ^ (q + δ)` as `k → ∞`;
+* `TauCeti.ofReal_mul_setLIntegral_measure_lt_const_le`,
+  `TauCeti.ofReal_mul_setLIntegral_withDensity_lt_le` and
+  `TauCeti.ofReal_mul_setLIntegral_withDensity_rpow_lt_le` — truncated layer-cake bounds for a
+  constant, for `g / ε` weighted by `g`, and for `h / ε` weighted by `h ^ q`;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -292,6 +305,94 @@ theorem tendsto_lintegral_mul_min_rpow (m : Measure α) {g : α → ℝ≥0∞} 
       simp [hgx, hδ]
     · right
       exact ENNReal.rpow_ne_top_of_nonneg hq hgx
+
+/-- The layer cake formula for a constant height `t₀`, truncated at `k`: integrating
+`δ t ^ (δ - 1)` over `0 < t < min(t₀, k)` gives at most `t₀ ^ δ`. -/
+theorem ofReal_mul_setLIntegral_measure_lt_const_le (m : Measure α) {t₀ : ℝ} (ht₀ : 0 ≤ t₀)
+    (k : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ),
+        m {_x : α | ENNReal.ofReal t < ENNReal.ofReal t₀} * ENNReal.ofReal (t ^ (δ - 1)) ≤
+      ENNReal.ofReal (t₀ ^ δ) * m univ := by
+  rw [← lintegral_min_rpow_eq m aemeasurable_const k hδ, ← lintegral_const]
+  refine lintegral_mono fun _ => ?_
+  rw [← ENNReal.ofReal_rpow_of_nonneg ht₀ hδ.le]
+  exact ENNReal.rpow_le_rpow (min_le_left _ _) hδ.le
+
+/-- The layer cake formula for `g / ε` with respect to the weight `g`, truncated at `k`:
+integrating `δ t ^ (q + δ - 2)` against the distribution function of `g / ε` gives at most
+`δ / (q + δ - 1) · ε ^ (1 - q - δ)` times `∫ g ^ q min(g, k) ^ δ`. -/
+theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → ℝ≥0∞}
+    (hg : Measurable g) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (b : ℝ≥0∞) (k : ℝ≥0) {q δ : ℝ}
+    (hq : 1 < q) (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) *
+        m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
+      b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1) *
+        ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m := by
+  have hp : 0 < q + δ - 1 := by linarith
+  have hgε : Measurable fun x => g x * ε⁻¹ := hg.mul_const _
+  set N : ℝ → ℝ≥0∞ := fun t => m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹}
+  -- Combine the powers of `t` into `t ^ (p - 1)` for `p = q + δ - 1`.
+  have hcongr : ∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) * N t *
+        ENNReal.ofReal (t ^ (δ - 1)) =
+      b * ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) := by
+    have hm : Measurable fun t : ℝ => N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) :=
+      (measurable_measure_ofReal_lt _ _).mul (measurable_id.pow_const _).ennreal_ofReal
+    rw [← lintegral_const_mul _ hm]
+    refine setLIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
+    rw [ENNReal.ofReal_rpow_of_nonneg ht.1.le (by linarith),
+      show t ^ (q + δ - 1 - 1) = t ^ (q - 1) * t ^ (δ - 1) by
+        rw [← Real.rpow_add ht.1]; ring_nf,
+      ENNReal.ofReal_mul (Real.rpow_nonneg ht.1.le _)]
+    ring
+  have hδsplit : ENNReal.ofReal δ =
+      ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) := by
+    rw [← ENNReal.ofReal_mul (div_nonneg hδ.le hp.le), div_mul_cancel₀ _ hp.ne']
+  rw [hcongr, hδsplit]
+  calc ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) *
+        (b * ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)))
+      = b * ENNReal.ofReal (δ / (q + δ - 1)) *
+          ∫⁻ x, min (g x * ε⁻¹) k ^ (q + δ - 1) ∂m.withDensity g := by
+        rw [lintegral_min_rpow_eq _ hgε.aemeasurable k hp]
+        ring
+    _ ≤ b * ENNReal.ofReal (δ / (q + δ - 1)) *
+          (ε⁻¹ ^ (q + δ - 1) * ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m) := by
+        gcongr
+        rw [lintegral_withDensity_eq_lintegral_mul _ hg ((hgε.min measurable_const).pow_const _),
+          ← lintegral_const_mul' _ _
+            (ENNReal.rpow_ne_top_of_nonneg hp.le (ENNReal.inv_ne_top.2 hε0))]
+        refine lintegral_mono fun x => ?_
+        simp only [Pi.mul_apply]
+        calc g x * min (g x * ε⁻¹) k ^ (q + δ - 1)
+            ≤ g x * (ε⁻¹ ^ (q + δ - 1) * min (g x) k ^ (q + δ - 1)) := by
+              gcongr
+              exact ENNReal.min_mul_inv_rpow_le _ _ hε1 hp.le
+          _ = ε⁻¹ ^ (q + δ - 1) * (g x * min (g x) k ^ (q + δ - 1)) := by ring
+          _ ≤ _ := mul_le_mul_right (ENNReal.mul_min_rpow_le _ _ hq.le hδ.le) _
+    _ = _ := by ring
+
+/-- The layer cake formula for `h / ε` with respect to the weight `h ^ q`, truncated at `k`:
+integrating `δ t ^ (δ - 1)` against its distribution function gives at most
+`ε ^ (-δ) ∫ h ^ (q + δ)`. -/
+theorem ofReal_mul_setLIntegral_withDensity_rpow_lt_le (m : Measure α) {h : α → ℝ≥0∞}
+    (hh : Measurable h) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (k : ℝ≥0) {q δ : ℝ} (hq : 0 ≤ q)
+    (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), m.withDensity (fun x => h x ^ q)
+        {x | ENNReal.ofReal t < h x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
+      ε⁻¹ ^ δ * ∫⁻ x, h x ^ (q + δ) ∂m := by
+  have hhε : Measurable fun x => h x * ε⁻¹ := hh.mul_const _
+  rw [← lintegral_min_rpow_eq _ hhε.aemeasurable k hδ, lintegral_withDensity_eq_lintegral_mul _
+    (hh.pow_const q) ((hhε.min measurable_const).pow_const _), ← lintegral_const_mul' _ _
+    (ENNReal.rpow_ne_top_of_nonneg hδ.le (ENNReal.inv_ne_top.2 hε0))]
+  refine lintegral_mono fun x => ?_
+  simp only [Pi.mul_apply]
+  calc h x ^ q * min (h x * ε⁻¹) k ^ δ ≤ h x ^ q * (ε⁻¹ ^ δ * h x ^ δ) := by
+        gcongr
+        refine (ENNReal.min_mul_inv_rpow_le _ _ hε1 hδ.le).trans ?_
+        gcongr
+        exact min_le_left _ _
+    _ = ε⁻¹ ^ δ * h x ^ (q + δ) := by
+        rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
+        ring
 
 end TauCeti
 
