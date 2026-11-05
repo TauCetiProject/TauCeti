@@ -74,6 +74,32 @@ theorem isSAGBIBasis_image_monicNormalize_iff :
 
 end Polynomial
 
+section LeadingTerm
+
+variable {R : Type*} [CommSemiring R] (b : ι → MvPolynomial σ R)
+
+/-- The substitution `ψ_b : Y i ↦ m.leadingTerm (b i)` of the actual leading terms of `b` is the
+substitution `ψ_1 : Y i ↦ X^(m.degree (b i))` of the coefficient-one leading monomials, after the
+rescaling `D_ℓ` by the leading coefficients `ℓ i` of `b`. -/
+theorem aeval_monomial_degree_rescale (P : MvPolynomial ι R) :
+    aeval (fun i ↦ monomial (m.degree (b i)) (1 : R))
+        (rescale (fun i ↦ m.leadingCoeff (b i)) P) =
+      aeval (fun i ↦ m.leadingTerm (b i)) P := by
+  rw [aeval_rescale]
+  simp [algebraMap_eq]
+
+/-- The kernel of `ψ_b : Y i ↦ m.leadingTerm (b i)` is the preimage of the toric ideal of the
+leading exponents of `b` under the rescaling `D_ℓ` by the leading coefficients of `b`. -/
+theorem ker_aeval_leadingTerm_eq_comap :
+    RingHom.ker (aeval fun i ↦ m.leadingTerm (b i)) =
+      (TauCeti.toricIdeal R fun i ↦ m.degree (b i)).comap
+        (rescale fun i ↦ m.leadingCoeff (b i)) := by
+  ext P
+  simp only [RingHom.mem_ker, Ideal.mem_comap, TauCeti.mem_toricIdeal_iff, single_eq_monomial,
+    aeval_monomial_degree_rescale]
+
+end LeadingTerm
+
 section Family
 
 variable (b : ι → MvPolynomial σ k)
@@ -103,26 +129,6 @@ theorem aeval_rescale_inv_leadingCoeff (P : MvPolynomial ι k) :
       aeval (fun i ↦ m.monicNormalize (b i)) P := by
   rw [aeval_rescale]
   simp [algebraMap_eq, monicNormalize_def]
-
-/-- The substitution `ψ_b : Y i ↦ m.leadingTerm (b i)` of the actual leading terms of `b` is the
-substitution `ψ_1 : Y i ↦ X^(m.degree (b i))` of the coefficient-one leading monomials, after the
-rescaling `D_ℓ` by the leading coefficients `ℓ i` of `b`. -/
-theorem aeval_monomial_degree_rescale (P : MvPolynomial ι k) :
-    aeval (fun i ↦ monomial (m.degree (b i)) (1 : k))
-        (rescale (fun i ↦ m.leadingCoeff (b i)) P) =
-      aeval (fun i ↦ m.leadingTerm (b i)) P := by
-  rw [aeval_rescale]
-  simp [algebraMap_eq]
-
-/-- The kernel of `ψ_b : Y i ↦ m.leadingTerm (b i)` is the preimage of the toric ideal of the
-leading exponents of `b` under the rescaling `D_ℓ` by the leading coefficients of `b`. -/
-theorem ker_aeval_leadingTerm_eq_comap :
-    RingHom.ker (aeval fun i ↦ m.leadingTerm (b i)) =
-      (TauCeti.toricIdeal k fun i ↦ m.degree (b i)).comap
-        (rescale fun i ↦ m.leadingCoeff (b i)) := by
-  ext P
-  simp only [RingHom.mem_ker, Ideal.mem_comap, TauCeti.mem_toricIdeal_iff, single_eq_monomial,
-    aeval_monomial_degree_rescale]
 
 /-- The kernel of `φ_b = aeval b` is the preimage of the kernel of `φ_c` under the rescaling
 `D_ℓ` by the leading coefficients of `b`, where `c` is the monic normalization of `b`. -/
