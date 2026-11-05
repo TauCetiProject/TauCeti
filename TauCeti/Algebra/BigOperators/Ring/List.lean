@@ -48,7 +48,7 @@ theorem prod_append_sub_algebraMap_cons (l₁ l₂ : List A) (a : A) (c : R) :
 
 section Span
 
-variable {R A κ : Type*} [Semiring R] [Semiring A] [Module R A]
+variable {R A κ : Type*} [Semiring R] [AddCommMonoid A] [Monoid A] [Module R A]
 
 /-- **Induction along a word with no two consecutive equal labels.**  Let `P` single out the
 admissible labelled letters `(k, a)`.  If multiplying an admissible letter with label `k` onto
