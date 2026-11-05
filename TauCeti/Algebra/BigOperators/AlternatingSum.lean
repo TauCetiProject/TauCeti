@@ -11,6 +11,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -21,8 +22,8 @@ commutative group, and the cancellation of alternating double sums whose terms s
 simplicial identity, which is the combinatorial core of `d ∘ d = 0` for alternating face map
 differentials. It also provides finite Euler sums for explicitly supported `ℤ`-graded families,
 including support independence, additivity, and translation of the grading. Finally, it relates
-the alternating partial sums `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` of a sequence to its alternating sums and records
-their recursion `qₙ₊₁ = dₙ₊₁ - qₙ`.
+the alternating sums `xₙ - xₙ₋₁ + ⋯ ± x₀`, which appear in the strong Morse inequalities, to the
+Euler sums `x₀ - x₁ + ⋯ ± xₙ` and to each other.
 -/
 
 public section
@@ -152,26 +153,43 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
     congr 1
     ring
 
-/-! ### Alternating partial sums -/
+/-! ### Alternating sums ending in degree `n` -/
 
-/-- The alternating partial sums `qₙ = ∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` satisfy the recursion
-`qₙ₊₁ = dₙ₊₁ - qₙ`. -/
-theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
-    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * d i =
-      d (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i := by
-  have h (i : ℕ) (hi : i ∈ Finset.range (n + 1)) :
-      (-1 : R) ^ (n + 1 - i) * d i = -((-1) ^ (n - i) * d i) := by
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le (Finset.mem_range_succ_iff.1 hi)
-    simp [show i + j + 1 - i = j + 1 by omega, pow_succ]
-  rw [Finset.sum_range_succ, Finset.sum_congr rfl h]
-  simp [neg_add_eq_sub]
-
-/-- The alternating partial sum `∑ᵢ₌₀ⁿ (-1)ⁿ⁻ⁱ dᵢ` is `(-1)ⁿ ∑ᵢ₌₀ⁿ (-1)ⁱ dᵢ`. -/
-theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (d : ℕ → R) (n : ℕ) :
-    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * d i =
-      (-1) ^ n * ∑ i ∈ Finset.range (n + 1), (-1) ^ i * d i := by
-  rw [Finset.mul_sum]
+/-- The alternating sum `xₙ - xₙ₋₁ + ⋯ ± x₀` is `(-1)ⁿ (x₀ - x₁ + ⋯ ± xₙ)`. -/
+theorem sum_range_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) • x i =
+      (-1 : ℤ) ^ n • ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i • x i := by
+  rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [← mul_assoc, ← pow_add, neg_one_pow_congr (m := n + i) (n := n - i) (by grind)]
+  rw [smul_smul]
+  congr 1
+  have h : (-1 : ℤ) ^ n = (-1) ^ (n - i) * (-1) ^ i := by
+    rw [← pow_add, Nat.sub_add_cancel (Finset.mem_range_succ_iff.1 hi)]
+  have hsq : ((-1 : ℤ) ^ i) ^ 2 = 1 := by rw [pow_right_comm, neg_one_sq, one_pow]
+  linear_combination (-(-1 : ℤ) ^ i) * h - (-1 : ℤ) ^ (n - i) * hsq
+
+/-- The alternating sums `sₙ = xₙ - xₙ₋₁ + ⋯ ± x₀` satisfy `sₙ₊₁ = xₙ₊₁ - sₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_smul (x : ℕ → G) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : ℤ) ^ (n + 1 - i) • x i =
+      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) • x i := by
+  rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_smul, sub_eq_add_neg, add_comm,
+    ← Finset.sum_neg_distrib]
+  congr 1
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Nat.sub_add_comm (Finset.mem_range_succ_iff.1 hi), pow_succ, mul_neg_one, neg_smul]
+
+/-- The alternating sum `xₙ - xₙ₋₁ + ⋯ ± x₀` in a ring is `(-1)ⁿ (x₀ - x₁ + ⋯ ± xₙ)`. -/
+theorem sum_range_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i =
+      (-1 : R) ^ n * ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ i * x i := by
+  simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    sum_range_neg_one_pow_sub_smul x n
+
+/-- The alternating sums `sₙ = xₙ - xₙ₋₁ + ⋯ ± x₀` in a ring satisfy `sₙ₊₁ = xₙ₊₁ - sₙ`. -/
+theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 2), (-1 : R) ^ (n + 1 - i) * x i =
+      x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i := by
+  simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    sum_range_succ_neg_one_pow_sub_smul x n
 
 end TauCeti

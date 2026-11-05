@@ -28,7 +28,8 @@ in `TauCeti.exists_congruence_of_symmetric_family`.
 This stability result applies in particular to signature functions of Seifert matrices
 away from their singular parameters. Through Gram matrices, it also gives local constancy of the
 negative index of a continuous family of symmetric bilinear forms on a finite-dimensional real
-space at a nondegenerate member.
+space at a nondegenerate member, and hence constancy along a preconnected set of nondegenerate
+members.
 
 ## References
 
