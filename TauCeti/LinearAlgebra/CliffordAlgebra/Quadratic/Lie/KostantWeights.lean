@@ -14,15 +14,16 @@ import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Lie.Weights.Killing.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Square
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
+import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
 # The weights of Kostant's module
 
-Let `L` be a Lie algebra with nondegenerate Killing form over an algebraically closed field of
-characteristic zero, with Cartan subalgebra `H`, and fix a base of its root system. For each root
-`α`, let `X_α = β(e_α, f_α)` be the Clifford bivector of root vectors `e_α ∈ L_α` and `f_α ∈ L_{-α}`
-with Killing pairing `1`. These vectors form a hyperbolic pair, so `X_α` is an involution, and the
+Let `L` be a Lie algebra with nondegenerate Killing form over a field of characteristic zero, with
+a splitting Cartan subalgebra `H`, and fix a base of its root system. For each root `α`, let
+`X_α = β(e_α, f_α)` be the Clifford bivector of root vectors `e_α ∈ L_α` and `f_α ∈ L_{-α}` with
+Killing pairing `1`. These vectors form a hyperbolic pair, so `X_α` is an involution, and the
 hyperbolic planes of distinct positive roots are mutually orthogonal, so the `X_α` commute. The
 quadratic lift of `h ∈ H` is
 
@@ -61,7 +62,7 @@ namespace CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {K : Type u} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} [Field K] [CharZero K]
   {L : Type v} [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [Invertible (2 : K)] [LieAlgebra.IsKilling K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra] [IsTriangularizable K H L]
@@ -75,7 +76,6 @@ private noncomputable def rootInvolution (χ : Weight K H L) :
     (genWeightSpaceProjection K H L χ (Module.finBasis K L i))
     (genWeightSpaceProjection K H L (-χ) (killingDualBasis (Module.finBasis K L) i))
 
-omit [IsAlgClosed K] in
 /-- The element `X_χ` is the bivector of a hyperbolic pair of root vectors: the root space of `χ`
 is a line, so the sum defining `X_χ` collapses, and the Killing pairing of the pair is the trace of
 the projection onto that line. -/
@@ -104,7 +104,6 @@ private theorem exists_rootInvolution_eq_bivector {χ : Weight K H L} (hχ : χ.
   · simp only [rootInvolution, ← hs', ← bivectorBilinear_apply, map_sum, map_smul,
       LinearMap.smul_apply, bs, y]
 
-omit [IsAlgClosed K] in
 /-- The element `X_χ` of a nonzero weight is an involution. -/
 private theorem rootInvolution_mul_self {χ : Weight K H L} (hχ : χ.IsNonZero) :
     rootInvolution H χ * rootInvolution H χ = 1 := by
@@ -113,7 +112,6 @@ private theorem rootInvolution_mul_self {χ : Weight K H L} (hχ : χ.IsNonZero)
     killingQuadraticForm_eq_zero_of_mem_rootSpace H (Weight.IsNonZero.neg hχ) hf,
     polar_killingQuadraticForm, hef, mul_one, invOf_mul_self, one_pow, mul_zero, sub_zero, map_one]
 
-omit [IsAlgClosed K] in
 /-- The elements `X_χ` and `X_ψ` commute unless `ψ = ± χ`: they are bivectors of mutually orthogonal
 hyperbolic pairs. -/
 private theorem commute_rootInvolution {χ ψ : Weight K H L} (hχ : χ.IsNonZero) (hψ : ψ.IsNonZero)
@@ -134,7 +132,6 @@ private theorem commute_rootInvolution {χ ψ : Weight K H L} (hχ : χ.IsNonZer
 variable {H}
 variable (base : (IsKilling.rootSystem H).Base)
 
-omit [IsAlgClosed K] in
 /-- The lift of a Cartan element in terms of the elements `X_α` of the positive roots:
 `q(h) = 1 / 2 • ∑_{α > 0} α(h) • X_α`. -/
 private theorem adjointCliffordHom_cartan_eq_sum_rootInvolution (h : H) :
@@ -144,7 +141,6 @@ private theorem adjointCliffordHom_cartan_eq_sum_rootInvolution (h : H) :
   simpa only [rootInvolution] using
     adjointCliffordHom_cartan_eq_sum_posRoots H (Module.finBasis K L) base h
 
-omit [IsAlgClosed K] in
 /-- The elements `X_α` of the positive roots commute with one another. -/
 private theorem commute_rootInvolution_of_mem_posRootsFinset {a b : H.root}
     (ha : a ∈ posRootsFinset (IsKilling.rootSystem H) base)
@@ -190,10 +186,15 @@ private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killin
         rootInvolution H ((a : H.root) : Weight K H L) * w := by
     simp [f]
   have : Nontrivial W := ⟨⟨c, hmem.2 hmu⟩, 0, fun h ↦ hc (congrArg Subtype.val h)⟩
-  obtain ⟨t, v, hv0, hv⟩ := exists_jointEigenvector_of_pairwise_commute_of_isAlgClosed f
-    fun a b _ ↦ LinearMap.ext fun w ↦ Subtype.ext <| by
+  have htri (a : Φ) : ⨆ μ, (f a).maxGenEigenspace μ = ⊤ := by
+    have hinv : Function.Involutive (f a) := fun w ↦ Subtype.ext <| by
+      rw [hf, hf, ← mul_assoc, rootInvolution_mul_self H (H.isNonZero_coe_root _), one_mul]
+    exact top_unique <| (Module.End.iSup_eigenspace_eq_top_of_involutive hinv).ge.trans <|
+      iSup_mono fun _ ↦ Module.End.eigenspace_le_maxGenEigenspace
+  obtain ⟨t, v, hv0, hv⟩ := exists_jointEigenvector_of_pairwise_commute f
+    (fun a b _ ↦ LinearMap.ext fun w ↦ Subtype.ext <| by
       simp only [mul_apply_eq_comp, hf, ← mul_assoc,
-        (commute_rootInvolution_of_mem_posRootsFinset base a.2 b.2).eq]
+        (commute_rootInvolution_of_mem_posRootsFinset base a.2 b.2).eq]) htri
   refine ⟨v, fun h ↦ hv0 (Subtype.ext h), hmem.1 v.2, fun a ha ↦ ?_⟩
   have heig : rootInvolution H (a : Weight K H L) * v = t ⟨a, ha⟩ • (v : _) := by
     simpa only [Submodule.coe_smul, hf] using
