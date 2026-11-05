@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 
 /-!
@@ -15,7 +16,8 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 An `Lᵖ` function `u` defines the tempered distribution `φ ↦ ∫ φ • u`
 (`MeasureTheory.Lp.toTemperedDistribution`). This file records two facts about that embedding
 which are needed to read off a pointwise representative from an identity of tempered
-distributions.
+distributions, and a criterion for an operator into tempered distributions to take values in
+`Lᵖ`.
 
 * An `Lᵖ` function is determined almost everywhere by its pairings with Schwartz functions,
   even when it is compared with a locally integrable function that need not lie in the same
@@ -31,6 +33,12 @@ Together they turn the statement "the Fourier transform of `u ∈ Lᵖ` is an `L
 continuous representative of `u`; this is how the Sobolev embedding `H^s(ℝⁿ) ⊆ C₀(ℝⁿ)`,
 `s > n / 2`, is derived from `TemperedDistribution.MemSobolev.fourier_memL1`.
 
+* A continuous linear map `T : Lᵖ → 𝓢'`, `p < ∞`, that is given on Schwartz functions by an
+  operator bounded in the `Lᵖ` norm takes values in `Lᵖ`, with the same bound. Schwartz functions
+  are dense in `Lᵖ`, so the bounded operator extends, and the extension agrees with `T` because
+  `𝓢'` is Hausdorff. This is how `Lᵖ` bounds for Fourier multipliers and multiplication operators,
+  proved on Schwartz functions, pass to all of `Lᵖ` or of a Sobolev space.
+
 ## Main declarations
 
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
@@ -38,6 +46,8 @@ continuous representative of `u`; this is how the Sobolev embedding `H^s(ℝⁿ)
   equal to `g`.
 * `MeasureTheory.Lp.fourierInv_toTemperedDistribution_apply`: the inverse Fourier transform of
   the tempered distribution of an `L¹` function `v` pairs with `φ` as `∫ φ • 𝓕⁻ v`.
+* `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
+  `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 
 ## References
 
@@ -106,3 +116,42 @@ theorem fourierInv_toTemperedDistribution_apply (v : Lp F 1 (volume : Measure E)
 end InnerProductSpace
 
 end MeasureTheory.Lp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+open scoped ENNReal SchwartzMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  [CompleteSpace F]
+
+/-- **Extension from Schwartz functions.** Let `T` be a continuous linear map from `Lᵖ`,
+`p < ∞`, to tempered distributions, which on Schwartz functions `φ` is given by an operator
+`M` on Schwartz functions with `‖M φ‖_p ≤ C ‖φ‖_p`. Then `T` takes values in `Lᵖ`: every `T f`
+is the tempered distribution of some `g ∈ Lᵖ` with `‖g‖_p ≤ C ‖f‖_p`.
+
+The function `g` is the value at `f` of the bounded extension of `φ ↦ M φ` from the dense
+Schwartz functions to `Lᵖ`; it agrees with `T f` because both sides are continuous in `f` with
+values in the Hausdorff space of tempered distributions. -/
+theorem exists_apply_eq_toTemperedDistribution_and_norm_le {μ : Measure E}
+    [μ.HasTemperateGrowth] [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) (T : Lp F p μ →L[ℂ] 𝓢'(E, F)) (M : 𝓢(E, F) →L[ℂ] 𝓢(E, F)) {C : ℝ}
+    (hT : ∀ φ : 𝓢(E, F), T (φ.toLp p μ) = ((M φ).toLp p μ : 𝓢'(E, F)))
+    (hM : ∀ φ : 𝓢(E, F), ‖(M φ).toLp p μ‖ ≤ C * ‖φ.toLp p μ‖) (f : Lp F p μ) :
+    ∃ g : Lp F p μ, T f = g ∧ ‖g‖ ≤ C * ‖f‖ := by
+  set e : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := (SchwartzMap.toLpCLM ℂ F p μ).toLinearMap
+  have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := μ) hp
+  set S : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := e ∘ₗ M.toLinearMap
+  have hSe : ∀ φ, ‖S φ‖ ≤ C * ‖e φ‖ := fun φ ↦ by
+    simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      SchwartzMap.toLpCLM_apply] using hM φ
+  refine ⟨S.extendOfNorm e f, ?_, LinearMap.norm_extendOfNorm_apply_le he _ hSe f⟩
+  refine congrFun (he.equalizer (g := T) (h := fun f ↦ (S.extendOfNorm e f : 𝓢'(E, F)))
+    T.continuous ((Lp.toTemperedDistributionCLM F μ p).continuous.comp
+      (S.extendOfNorm e).continuous) (funext fun φ ↦ ?_)) f
+  simp only [Function.comp_apply, LinearMap.extendOfNorm_eq he ⟨_, hSe⟩]
+  simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    SchwartzMap.toLpCLM_apply] using hT φ
+
+end ContinuousLinearMap

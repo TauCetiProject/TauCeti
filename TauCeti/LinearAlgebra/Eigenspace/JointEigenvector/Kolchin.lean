@@ -88,7 +88,7 @@ private theorem _root_.Representation.exists_common_fixed_vector_of_isUnipotent_
     exact sub_eq_zero.mp hnil.eq_zero
   have htrivial (g : G) : S.toRepresentation g = 1 := by
     apply sub_eq_zero.mp
-    apply LinearMap.eq_zero_of_trace_mul_eq_zero
+    apply LinearMap.forall_trace_mul_eq_zero_iff.mp
     intro T
     obtain ⟨a, rfl⟩ := hsurjective T
     induction a using MonoidAlgebra.induction_linear with
