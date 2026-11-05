@@ -90,15 +90,13 @@ def cuspDatumInftyGamma : ((Gamma N).map sl2zToPSL2R).CuspDatum := by
     obtain ⟨k, hk⟩ : (N : ℤ) ∣ a 0 1 :=
       (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma_mem.mp ha).2.1
     -- `a` is `± T ^ (N * k)`, and the sign dies in `PSL(2, ℝ)`
-    have hneg : sl2zToPSL2R (-1) = 1 := MonoidHom.mem_ker.mp
-      (sl2zToPSL2R_ker ▸ Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one])
     refine mem_zpowers_iff.mpr ?_
     rcases ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with ha' | ha'
     · have h : sl2zToPSL2R a = sl2zToPSL2R (ModularGroup.T ^ a 0 1) := by
         conv_lhs => rw [ha']
       exact ⟨k, Subtype.ext ((hpow k).trans (by rw [← hk, ← h]))⟩
     · have h : sl2zToPSL2R a = sl2zToPSL2R (ModularGroup.T ^ (-a 0 1)) := by
-        conv_lhs => rw [ha', ← neg_one_mul, map_mul, hneg, one_mul]
+        conv_lhs => rw [ha', sl2zToPSL2R_neg]
       exact ⟨-k, Subtype.ext ((hpow (-k)).trans (by rw [mul_neg, ← hk, ← h]))⟩
 
 /-- The cusp of the normalized datum of `Γ(N)` at `∞` is `∞`. -/
