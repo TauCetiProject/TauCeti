@@ -21,10 +21,11 @@ Cartan lattice.
 
 This file compares the folded lattice with the fixed Cartan lattice from
 `TauCeti.Algebra.Lie.NormTwoShell.FixedCartan`, gives its coordinate membership criterion,
-and computes the relative index: the product of the folding scales. Thus the index is a
-power of two. The normalized basis and product-index formula only require nonzero folding
-scales. No identification of the whole fixed Lie lattice with a normalized folded Chevalley
-lattice is asserted.
+and computes the relative index: the product of the absolute values of the folding scales.
+Under the positive definite hypotheses above, the scales are one or two, so the index is a
+power of two. The normalized basis and absolute-value product-index formula only require
+nonzero folding scales. No identification of the whole fixed Lie lattice with a normalized
+folded Chevalley lattice is asserted.
 
 The construction uses the folded frame of `Matrix.ShellLieAlgebra.isSerreSystem_folded`,
 the normalized coordinate coroots `Matrix.foldedCoroot`,
@@ -160,7 +161,8 @@ theorem foldingScale_mul_foldedCartanBasis_repr (x : foldedCartanLattice B σ)
 
 open Classical in
 /-- The index of the normalized Cartan lattice in the actual fixed Cartan lattice is the
-product of the folding scales. This is an integral index, not just a rational dimension match. -/
+product of the absolute values of the folding scales. This is an integral index, not just a
+rational dimension match. -/
 theorem relIndex_foldedCartanLattice_fixedCartanLattice :
     (foldedCartanLattice B σ).toAddSubgroup.relIndex
       (fixedCartanLattice B σ).toAddSubgroup =
