@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.WeightTorus
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
 import TauCeti.Algebra.Lie.D4.Tripled.MaximalTorus
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
-import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
 # The maximal torus of the generated tripled D₄ group
@@ -54,34 +52,19 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
     [IsReduced (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)]
     [Coalgebra.IsCocomm k (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I)]
     (hI : I ≤ weightTorusDefiningIdeal k) : I = weightTorusDefiningIdeal k := by
-  let H := generatedCoordinateHopfAlgebra k
-  let A := CommAlgCat.of k k
-  let GI := CommHopfAlgCat.quotientPointsSubgroup H I A
-  let GT := CommHopfAlgCat.quotientPointsSubgroup H (weightTorusDefiningIdeal k) A
-  let _ : IsMulCommutative GI :=
-    CommHopfAlgCat.instIsMulCommutativeQuotientPointsSubgroup H I A
-  let _ : IsMulCommutative (GI.map (carrierPointsHom k A)) :=
-    Subgroup.map_isMulCommutative GI (carrierPointsHom k A)
-  have hTG : GT ≤ GI := CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hI A
-  have hmap : GI.map (carrierPointsHom k A) = GT.map (carrierPointsHom k A) := by
-    rw [map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal]
-    apply eq_range_weightTorusPoints_of_le_of_isMulCommutative
-    rw [← map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal k A]
-    exact Subgroup.map_mono hTG
-  have hpoints : GI = GT := Subgroup.map_injective (carrierPointsHom_injective k A) hmap
-  exact le_antisymm hI (HopfIdeal.le_of_quotientPointsSubgroup_le hpoints.le)
+  exact HopfIdeal.eq_of_le_of_isCocomm_of_maximal_points (weightTorusDefiningIdeal k)
+    (carrierPointsHom k (CommAlgCat.of k k)) (carrierPointsHom_injective k (CommAlgCat.of k k))
+    (map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k))
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP) I hI
 
 private theorem isMaximalTorus_weightTorusDefiningIdeal_of_isAlgClosed [IsAlgClosed k] :
     HopfIdeal.IsMaximalTorus k (generatedCoordinateHopfAlgebra k)
-      (weightTorusDefiningIdeal k) := by
-  rw [HopfIdeal.isMaximalTorus_iff]
-  refine ⟨(splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _, ?_⟩
-  intro I hI hIT
-  let _ : IsReduced (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) :=
-    hI.geometricallyReduced.isReduced
-  let _ : Coalgebra.IsCocomm k
-      (CommHopfAlgCat.quotient (generatedCoordinateHopfAlgebra k) I) := hI.isCocomm k _
-  exact (eq_weightTorusDefiningIdeal_of_le_of_isCocomm k I hIT).ge
+      (weightTorusDefiningIdeal k) :=
+  HopfIdeal.isMaximalTorus_of_maximal_points (weightTorusDefiningIdeal k)
+    ((splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal k).torus k _)
+    (carrierPointsHom k (CommAlgCat.of k k)) (carrierPointsHom_injective k (CommAlgCat.of k k))
+    (map_carrierPointsHom_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k))
+    (fun P _ hP ↦ eq_range_weightTorusPoints_of_le_of_isMulCommutative k P hP)
 
 /-- Over every field, the closed rank-four weight torus is a maximal torus of the generated
 tripled D₄ group. No assumption on the characteristic or on the integral carrier is needed. -/
