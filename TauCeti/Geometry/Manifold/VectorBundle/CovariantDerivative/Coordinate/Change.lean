@@ -78,21 +78,6 @@ private theorem frameCovariantDerivative_symmL_coordChange
   subst he₀ he₁
   rw [continuousLinearMapAt_symmL_coordChange (I := I) (x := x) (x₀ := x₀) (y := z) hz₁ hz₀ V]
 
-/-- The field `z ↦ e₁.symmL z V` has constant coefficients in the frame of `e₁`, so its flat
-derivative in that frame vanishes. -/
-private theorem frameCovariantDerivative_symmL_self (hx : x ∈ e₁.baseSet) (V : TangentSpace I x) :
-    frameCovariantDerivative I b e₁ (fun z ↦ e₁.symmL 𝕜 z (V : E)) x = 0 := by
-  have hconst : HasMFDerivAt (M' := E) I 𝓘(𝕜, E) (fun _ : M ↦ (V : E)) x
-      (0 : TangentSpace I x →L[𝕜] E) := hasMFDerivAt_const _ _
-  have h := frameCovariantDerivative_eq_symmL_comp (I := I) (b := b) (e := e₁)
-    (σ := fun z ↦ e₁.symmL 𝕜 z (V : E)) hconst (fun i ↦ ?_) hx
-  · rw [h, ContinuousLinearMap.comp_zero]
-  · filter_upwards [e₁.open_baseSet.mem_nhds hx] with z hz
-    rw [e₁.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e₁.symmL 𝕜 z (V : E)) hz,
-      ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e₁ hz,
-      ← Basis.coord_apply]
-    exact congrArg (b.coord i) (e₁.continuousLinearMapAt_symmL (R := 𝕜) hz V)
-
 /-- The Christoffel forms of a covariant derivative in the frames at `x₀` and `x` differ at `x` by
 the derivative of the tangent coordinate change. -/
 private theorem christoffelForm_coordChange
@@ -115,7 +100,7 @@ private theorem christoffelForm_coordChange
   have hp₀ := covariantDerivative_eq_add_christoffelForm b hcov hx₀ hσ
   have hp₁ := covariantDerivative_eq_add_christoffelForm b hcov' hx₁ hσ
   rw [frameCovariantDerivative_symmL_coordChange b he₀ he₁ hx₀ hx₁ hcmd V, hσx] at hp₀
-  rw [frameCovariantDerivative_symmL_self b hx₁ V, hσx] at hp₁
+  rw [frameCovariantDerivative_symmL_const b hx₁ (V : E), hσx] at hp₁
   linear_combination (norm := module) (hp₀.symm.trans hp₁)
 
 /-- Reading the Christoffel form in the frame at `x` through the trivialization at `x₀` gives the
