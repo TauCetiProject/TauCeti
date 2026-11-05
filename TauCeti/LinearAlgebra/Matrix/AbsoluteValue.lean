@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.AbsoluteValue.Int
+public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
-# The `ℓ¹` form of Hadamard's determinant bound
+# The `ℓ¹` and ultrametric forms of Hadamard's determinant bound
 
 For a square matrix `A` and an absolute value `abv`, the absolute value of the determinant is at
 most the product over the rows of the `ℓ¹` norms of the rows:
-`abv A.det ≤ ∏ i, ∑ j, abv (A i j)`, and the same holds with columns in place of rows.
+`abv A.det ≤ ∏ i, ∑ j, abv (A i j)`, and the same holds with columns in place of rows. When `abv`
+is nonarchimedean, the ultrametric inequality replaces the column sums by uniform column bounds: if
+`abv (A i j) ≤ B j`, then `abv A.det ≤ ∏ j, B j`.
 
 The proof is the Leibniz expansion. Each permutation contributes one product
 `∏ i, abv (A i (σ i))`, and expanding the product of the row sums gives the sum of
@@ -29,11 +32,15 @@ for the logarithmic embeddings of a family of units in the bound on the regulato
 * `Matrix.abv_det_le_prod_sum_abv'`: `abv A.det ≤ ∏ j, ∑ i, abv (A i j)`, the column form.
 * `Matrix.abs_det_le_prod_sum_abs` and `Matrix.abs_det_le_prod_sum_abs'`: the same bounds for
   `|·|` over a linearly ordered commutative ring.
+* `Matrix.abv_det_le_prod_of_isNonarchimedean`, `Matrix.abv_det_le_one_of_isNonarchimedean`,
+  `Matrix.abv_det_eq_one_of_mul_eq_one`: ultrametric determinant bounds for a nonarchimedean
+  absolute value.
 -/
 
 public section
 
 open Equiv Finset
+open scoped Matrix
 
 namespace Matrix
 
@@ -72,5 +79,43 @@ theorem abs_det_le_prod_sum_abs' (A : Matrix n n S) : |A.det| ≤ ∏ j, ∑ i, 
 `|det A|` is at most the product of the `ℓ¹` norms of the rows of `A`. -/
 theorem abs_det_le_prod_sum_abs (A : Matrix n n S) : |A.det| ≤ ∏ i, ∑ j, |A i j| :=
   abv_det_le_prod_sum_abv A AbsoluteValue.abs
+
+omit [Nontrivial R] in
+/-- **Ultrametric Hadamard bound, column form.** If column `j` of a square matrix `A` is bounded by
+`B j` with respect to a nonarchimedean absolute value `abv`, then `abv A.det ≤ ∏ j, B j`. -/
+theorem abv_det_le_prod_of_isNonarchimedean {A : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) {B : n → S} (hA : ∀ i j, abv (A i j) ≤ B j) :
+    abv A.det ≤ ∏ j, B j := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim A.det 0, map_zero]
+    rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
+    · simp
+    · exact prod_nonneg fun j _ ↦ (abv.nonneg (A i₀ j)).trans (hA i₀ j)
+  rw [det_apply]
+  refine (habv.apply_sum_le_sup ⟨1, mem_univ 1⟩).trans (sup'_le _ _ fun σ _ ↦ ?_)
+  rw [abv.map_units_int_smul, abv.map_prod]
+  exact prod_le_prod₀ (fun _ _ ↦ abv.nonneg _) fun j _ ↦ hA (σ j) j
+
+omit [Nontrivial R] in
+/-- A square matrix with entries in the nonarchimedean unit ball has determinant in the unit
+ball. -/
+theorem abv_det_le_one_of_isNonarchimedean {A : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) (hA : ∀ i j, abv (A i j) ≤ 1) :
+    abv A.det ≤ 1 :=
+  (A.abv_det_le_prod_of_isNonarchimedean habv hA).trans_eq prod_const_one
+
+/-- If `A * B = 1` and both `A` and `B` have entries in the nonarchimedean unit ball, then
+`abv A.det = 1`. -/
+theorem abv_det_eq_one_of_mul_eq_one {A B : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) (hAB : A * B = 1) (hA : ∀ i j, abv (A i j) ≤ 1)
+    (hB : ∀ i j, abv (B i j) ≤ 1) :
+    abv A.det = 1 := by
+  refine le_antisymm (A.abv_det_le_one_of_isNonarchimedean habv hA) ?_
+  have hmul : abv A.det * abv B.det = 1 := by
+    rw [← map_mul, ← det_mul, hAB, det_one, map_one]
+  calc (1 : S) = abv A.det * abv B.det := hmul.symm
+    _ ≤ abv A.det * 1 :=
+      mul_le_mul_of_nonneg_left (B.abv_det_le_one_of_isNonarchimedean habv hB) (abv.nonneg _)
+    _ = abv A.det := mul_one _
 
 end Matrix

@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.NumberTheory.NumberField.ProductFormula
 import TauCeti.Algebra.Module.ZLattice.Basic
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
 import TauCeti.RingTheory.DedekindDomain.PseudoBasis
@@ -204,21 +205,18 @@ theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
   refine ⟨?_, ?_⟩
   · -- The bound is attained by the vectors `aᵢ • b i`, with `aᵢ ∈ J i` of largest value.
     choose a ha hav using fun i ↦ v.exists_mem_apply_mul_absNorm_pow_eq_one (hJ i)
-    refine ⟨fun k ↦ (a k : K) • b k, fun k _ ↦ (hΛ _).2 fun i ↦ ?_, ?_⟩
-    · rw [map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
-      split_ifs with h
-      · exact (IsLocalization.mem_coeSubmodule _ _).2 ⟨a k, h ▸ ha k, rfl⟩
-      · exact zero_mem _
-    · have hmat :
-          Matrix.of (fun k ↦ (a k : K) • b k) = Matrix.of fun k j ↦ (a k : K) * b k j := by
-        ext
-        simp [Algebra.smul_def]
-      dsimp only
-      have hcol := Matrix.det_mul_column (fun k ↦ (a k : K)) (Matrix.of ⇑b)
-      simp only [Matrix.of_apply] at hcol
-      rw [hmat, hcol, map_mul, map_prod, mul_comm]
-      congr 1
-      exact Finset.prod_congr rfl fun i _ ↦ eq_inv_of_mul_eq_one_left (hav i)
+    refine ⟨fun k ↦ (a k : K) • b k,
+      fun k _ ↦ (hΛ _).2 (b.repr_smul_self_mem_coeSubmodule J ⟨a k, ha k, rfl⟩), ?_⟩
+    have hmat :
+        Matrix.of (fun k ↦ (a k : K) • b k) = Matrix.of fun k j ↦ (a k : K) * b k j := by
+      ext
+      simp [Algebra.smul_def]
+    dsimp only
+    have hcol := Matrix.det_mul_column (fun k ↦ (a k : K)) (Matrix.of ⇑b)
+    simp only [Matrix.of_apply] at hcol
+    rw [hmat, hcol, map_mul, map_prod, mul_comm]
+    congr 1
+    exact Finset.prod_congr rfl fun i _ ↦ eq_inv_of_mul_eq_one_left (hav i)
   · -- The upper bound: the coordinate matrix has its `i`-th column in `J i`.
     rintro _ ⟨x, hx, rfl⟩
     have hle (i : ι) {c : K} (hc : c ∈ IsLocalization.coeSubmodule K (J i)) :
@@ -234,15 +232,8 @@ theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
     dsimp only
     rw [hmat, Matrix.det_mul, map_mul, mul_comm]
     gcongr
-    rw [Matrix.det_apply]
-    obtain ⟨σ, -, hσ⟩ := IsNonarchimedean.finset_image_add_of_nonempty _
-      (fun y z ↦ FinitePlace.add_le v y z) (Finset.univ_nonempty (α := Equiv.Perm ι))
-    refine hσ.trans ?_
-    have hsign : ∀ y : K, v (Equiv.Perm.sign σ • y) = v y := fun y ↦ by
-      rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
-    rw [hsign, map_prod]
-    gcongr with i
-    exact hle i ((hΛ _).1 (hx (σ i) (Set.mem_univ _)) i)
+    exact Matrix.abv_det_le_prod_of_isNonarchimedean v.add_le fun k i ↦
+      hle i ((hΛ _).1 (hx k (Set.mem_univ _)) i)
 
 /-- **The largest local determinant of an `𝓞 K`-module.** For a finitely generated `𝓞 K`-module
 `Λ` spanning `ι → K` and a finite place `v`, the values of `v` on the determinants of `card ι`
@@ -278,18 +269,12 @@ theorem covolume_mixedImage [DecidableEq ι] {Λ : Submodule (𝓞 K) (ι → K)
   have hsupp' (i : ι) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       ((v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i))⁻¹ :=
     (hsupp i).inv
-  have hnorm (i : ι) : ∏ᶠ v : FinitePlace K,
-      (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i) =
-        absNorm (J i) := by
-    conv_rhs => rw [← FinitePlace.finprod_finitePlace_pow_multiplicity (hJ i)]
-    rw [map_finprod _ (FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ i) (·)),
-      Nat.cast_finprod']
-    simp
   rw [covolume_mixedImage_of_pseudoBasis b hJ hmem, finprod_congr hBv,
     finprod_mul_distrib (FinitePlace.hasFiniteMulSupport hdetb)
       (Function.HasFiniteMulSupport.prod hsupp' _),
     FinitePlace.prod_eq_inv_abs_norm hdetb, finprod_prod_comm _ _ fun i _ ↦ hsupp' i]
-  simp_rw [finprod_inv_distrib, hnorm]
+  simp_rw [finprod_inv_distrib,
+    fun i ↦ FinitePlace.finprod_absNorm_pow_multiplicity (R := ℝ) (hJ i)]
   push_cast
   rw [Finset.prod_inv_distrib, ← mul_inv, inv_inv]
 
