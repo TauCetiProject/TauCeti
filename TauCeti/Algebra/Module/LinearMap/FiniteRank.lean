@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
@@ -141,5 +142,58 @@ theorem isFiniteRank_iff_hasFiniteRange [IsNoetherianRing R] {f : M →ₗ[R] N}
   ⟨IsFiniteRank.hasFiniteRange, HasFiniteRange.isFiniteRank⟩
 
 end Ring
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- For a linear map `F` with finitely generated range, `1 + F` is injective if and only if it is
+surjective (the Fredholm alternative for finite-rank perturbations of the identity). -/
+theorem HasFiniteRange.injective_one_add_iff_surjective {F : V →ₗ[K] V} (hF : F.HasFiniteRange) :
+    Function.Injective (1 + F : V →ₗ[K] V) ↔ Function.Surjective (1 + F : V →ₗ[K] V) := by
+  have : Module.Finite K (range F) := Module.Finite.iff_fg.mpr hF
+  have hmaps : ∀ r ∈ range F, (1 + F) r ∈ range F := fun r hr ↦
+    (range F).add_mem hr (mem_range_self F r)
+  have hgv (a : range F) : ((1 + F).restrict hmaps a : V) = a + F a := rfl
+  constructor
+  · intro hinj y
+    obtain ⟨⟨r, hr⟩, hgr⟩ := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mp
+      (fun a b hab ↦ Subtype.ext (hinj (by simpa [hgv] using congrArg Subtype.val hab)))
+      ⟨F y, mem_range_self F y⟩
+    have hr' : (1 + F) r = F y := by simpa [hgv] using congrArg Subtype.val hgr
+    exact ⟨y - r, by rw [map_sub, hr']; simp⟩
+  · intro hsurj
+    have hker : ∀ x, (1 + F) x = 0 → x ∈ range F := fun x hx ↦ by
+      have : x = -F x := eq_neg_of_add_eq_zero_left (by simpa using hx)
+      rw [this]
+      exact (range F).neg_mem (mem_range_self F x)
+    have hg : Function.Surjective ((1 + F).restrict hmaps) := by
+      rintro ⟨r, hr⟩
+      obtain ⟨x, hx⟩ := hsurj r
+      have hxR : x ∈ range F := by
+        have : x = r - F x := by rw [← hx]; simp
+        rw [this]
+        exact (range F).sub_mem hr (mem_range_self F x)
+      exact ⟨⟨x, hxR⟩, Subtype.ext (by simpa [hgv] using hx)⟩
+    have hginj := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mpr hg
+    rw [← ker_eq_bot, Submodule.eq_bot_iff]
+    intro x hx
+    have hxR := hker x hx
+    have : (1 + F).restrict hmaps ⟨x, hxR⟩ = (1 + F).restrict hmaps 0 :=
+      Subtype.ext (by simpa [hgv] using hx)
+    simpa using congrArg Subtype.val (hginj this)
+
+/-- For a linear equivalence `e` and a linear map `w` with finitely generated range, `e + w` is
+injective if and only if it is surjective. -/
+theorem HasFiniteRange.injective_equiv_add_iff_surjective {e : V ≃ₗ[K] V} {w : V →ₗ[K] V}
+    (hw : w.HasFiniteRange) :
+    Function.Injective ((e : V →ₗ[K] V) + w) ↔ Function.Surjective ((e : V →ₗ[K] V) + w) := by
+  have h : (e : V →ₗ[K] V) + w = (e : V →ₗ[K] V) ∘ₗ (1 + (e.symm : V →ₗ[K] V) ∘ₗ w) := by
+    ext; simp
+  rw [h, coe_comp]
+  refine (e.toEquiv.comp_injective _).trans (Iff.trans ?_ (e.toEquiv.comp_surjective _).symm)
+  exact (hw.comp_left _).injective_one_add_iff_surjective
+
+end Field
 
 end LinearMap
