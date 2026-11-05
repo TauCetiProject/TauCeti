@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Data.Nat.Cast.Commute
+import Mathlib.Tactic.Ring
 
 /-!
 # Binomial coefficients and inverse factorials
@@ -17,6 +18,10 @@ used in the multiplication and binomial formulas for divided powers.
 
 In any ring, `Nat.cast_choose_mul_sub` casts the recurrence `Nat.choose_succ_right_eq` with the
 subtraction `n - k` taken in the ring.
+
+In a characteristic-zero semifield, `Nat.cast_choose_add_one_div_cast_choose` and
+`Nat.cast_choose_add_two_div_cast_choose` give the ratios of binomial coefficients obtained by
+raising both indices by one or by two.
 -/
 
 public section
@@ -57,5 +62,30 @@ theorem inv_factorial_mul_choose (n i j : ℕ) (hij : i + j = n) :
   exact (inv_factorial_mul_inv_factorial i j).symm
 
 end DivisionSemiring
+
+section Semifield
+
+variable {K : Type*} [Semifield K] [CharZero K]
+
+/-- The binomial ratio `C(n + 1, k + 1) / C(n, k) = (n + 1) / (k + 1)` for `k ≤ n`. -/
+theorem cast_choose_add_one_div_cast_choose {n k : ℕ} (hk : k ≤ n) :
+    ((n + 1).choose (k + 1) : K) / (n.choose k : K) = ((n : K) + 1) / ((k : K) + 1) := by
+  rw [div_eq_div_iff (Nat.cast_ne_zero.mpr (Nat.choose_ne_zero hk)) (Nat.cast_add_one_ne_zero k)]
+  exact_mod_cast (Nat.add_one_mul_choose_eq n k).symm
+
+/-- The binomial ratio `C(n + 2, k + 2) / C(n, k) = (n + 1) (n + 2) / ((k + 1) (k + 2))` for
+`k ≤ n`. -/
+theorem cast_choose_add_two_div_cast_choose {n k : ℕ} (hk : k ≤ n) :
+    ((n + 2).choose (k + 2) : K) / (n.choose k : K) =
+      ((n : K) + 1) * (n + 2) / (((k : K) + 1) * (k + 2)) := by
+  have hk₁ : k + 1 ≤ n + 1 := Nat.add_le_add_right hk 1
+  have h := cast_choose_add_one_div_cast_choose (K := K) hk₁
+  push_cast at h
+  rw [← div_mul_div_cancel₀ (Nat.cast_ne_zero.mpr (Nat.choose_ne_zero hk₁) :
+    ((n + 1).choose (k + 1) : K) ≠ 0), h, cast_choose_add_one_div_cast_choose hk,
+    _root_.div_mul_div_comm]
+  ring
+
+end Semifield
 
 end Nat

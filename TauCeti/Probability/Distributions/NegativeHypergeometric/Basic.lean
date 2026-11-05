@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
+import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Data.Nat.Choose.Sum
 
 /-!
@@ -345,23 +346,6 @@ private theorem sum_negativeHypergeometricWeight_toReal_mul_ascFactorial (hr : r
     integral_negativeHypergeometricMeasure _ hr hK]
   simp only [smul_eq_mul]
 
-/-- The binomial ratio `C(N + 1, K + 1) / C(N, K) = (N + 1) / (K + 1)`. -/
-private theorem choose_add_one_div_choose (hK : K ≤ N) :
-    ((N + 1).choose (K + 1) : ℝ) / (N.choose K : ℝ) = ((N : ℝ) + 1) / ((K : ℝ) + 1) := by
-  rw [div_eq_div_iff (by exact_mod_cast Nat.choose_ne_zero hK) (by positivity)]
-  exact_mod_cast (Nat.add_one_mul_choose_eq N K).symm
-
-/-- The binomial ratio `C(N + 2, K + 2) / C(N, K) = (N + 1) (N + 2) / ((K + 1) (K + 2))`. -/
-private theorem choose_add_two_div_choose (hK : K ≤ N) :
-    ((N + 2).choose (K + 2) : ℝ) / (N.choose K : ℝ) =
-      ((N : ℝ) + 1) * (N + 2) / (((K : ℝ) + 1) * (K + 2)) := by
-  have hK₁ : K + 1 ≤ N + 1 := Nat.add_le_add_right hK 1
-  have h := choose_add_one_div_choose hK₁
-  push_cast at h
-  rw [← div_mul_div_cancel₀ (by exact_mod_cast Nat.choose_ne_zero hK₁ :
-    ((N + 1).choose (K + 1) : ℝ) ≠ 0), h, choose_add_one_div_choose hK, div_mul_div_comm]
-  ring
-
 /-- The first two moments of the number of draws `X + r`, as finite sums. -/
 private theorem sum_negativeHypergeometricWeight_toReal_mul (hr : r ≤ K) (hK : K ≤ N)
     (a b c : ℝ) :
@@ -382,8 +366,8 @@ private theorem sum_negativeHypergeometricWeight_toReal_mul (hr : r ≤ K) (hK :
     ring
   simp only [Finset.sum_congr rfl hexp, Finset.sum_add_distrib, ← Finset.mul_sum,
     sum_negativeHypergeometricWeight_toReal_mul_ascFactorial hr hK, mul_div_assoc,
-    choose_add_one_div_choose hK, choose_add_two_div_choose hK, Nat.add_zero,
-    div_self (by exact_mod_cast Nat.choose_ne_zero hK : (N.choose K : ℝ) ≠ 0)]
+    Nat.cast_choose_add_one_div_cast_choose hK, Nat.cast_choose_add_two_div_cast_choose hK,
+    Nat.add_zero, div_self (by exact_mod_cast Nat.choose_ne_zero hK : (N.choose K : ℝ) ≠ 0)]
   simp only [Nat.ascFactorial_succ, Nat.ascFactorial_zero]
   push_cast
   ring
