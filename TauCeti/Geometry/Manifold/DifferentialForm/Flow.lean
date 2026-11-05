@@ -42,11 +42,15 @@ reduction holds for every jointly `C²` family of maps `ψᵤ` which is the iden
 time `t` and moves the points near `y` with the velocity of a vector field `V` at time `t`: then
 `d/du|_{u = t} (ψᵤ^* α)_y = (L_V α)_y` (`TauCeti.hasDerivAt_mpullback_of_eq_id`). Time-dependent
 flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent`).
+In both cases a flow law moves the velocity from the base time to an arbitrary time
+(`TauCeti.hasDerivAt_mpullback_comp_right`).
 
 ## Main results
 
 * `TauCeti.hasDerivAt_mpullback_of_eq_id`: along a `C²` family of maps which is the identity
   near `y` at time `t`, the velocity of the pullbacks at `y` at time `t` is the Lie derivative.
+* `TauCeti.hasDerivAt_mpullback_comp_right`: velocities of pullbacks along `φᵤ ∘ g` are the
+  pullbacks by `g` of the velocities along `φᵤ`.
 * `TauCeti.hasDerivAt_mpullback_globalFlow_zero`: the velocity of `ψₜ^* α` at `t = 0` is `L_Z α`.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
 * `TauCeti.mpullback_globalFlow_eq_exp_smul`: if `L_Z α = c • α`, then `ψₜ^* α = e^{ct} α`.
@@ -186,6 +190,37 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   ext v
   simp
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
+/-- **Velocities of pulled-back forms along a fixed map.** Let the maps `ψᵤ` factor near time `t`
+as `φᵤ ∘ g`, with `g` differentiable at `x` and each `φᵤ` differentiable at `g x`. If the pullbacks
+`(φᵤ^* α)_{g x}` have velocity `β_{g x}` at time `t`, then the pullbacks `(ψᵤ^* α)ₓ` have velocity
+`(g^* β)ₓ` at time `t`. This moves a velocity computed at a base time along a flow law. -/
+theorem hasDerivAt_mpullback_comp_right {ψ φ : ℝ → M → M} {g : M → M} {β : RoughForm I M F k}
+    {x : M} {t : ℝ} (hg : MDifferentiableAt I I g x)
+    (hφ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (φ u) (g x))
+    (hψ : ∀ᶠ u in 𝓝 t, ψ u = φ u ∘ g)
+    (h : HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (φ u) α (g x))
+      (β (g x)) t) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α x)
+      (mpullback I I g β x) t := by
+  set L : E →L[ℝ] E := mfderiv I I g x
+  -- By the chain rule, `ψᵤ^* α = g^* (φᵤ^* α)`, which is `compContinuousLinearMapCLM L` applied
+  -- to the curve of `h`.
+  refine (((compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
+    h).congr_of_eventuallyEq ?_).congr_deriv ?_
+  · filter_upwards [hφ, hψ] with u hφu hψu
+    rw [hψu, mpullback_comp_at hg hφu]
+    ext v
+    -- Both sides evaluate `φᵤ^* α` at `g x` on the vectors `L (v i)`. The operator
+    -- `compContinuousLinearMapCLM L` acts on forms on `E`, while the pulled-back form takes values
+    -- on tangent spaces, which are `E` only up to unfolding; so `compContinuousLinearMapCLM_apply`
+    -- does not rewrite here, and the right side is unfolded by `rfl`.
+    rw [mpullback_apply]
+    rfl
+  · ext v
+    -- As above, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
+    exact (mpullback_apply g β x v).symm
+
 /-! ### Complete vector fields -/
 
 variable (hc : IsCompleteVectorField Z)
@@ -219,25 +254,13 @@ theorem hasDerivAt_mpullback_globalFlow (x : M) (t : ℝ)
   set ψ := globalFlow Z (hZ.of_le one_le_two) hc
   have hsmooth (s : ℝ) : MDifferentiable I I (ψ s) :=
     (contMDiff_globalFlow_apply hc (n := 2) (by norm_num) hZ s).mdifferentiable (by norm_num)
-  set L : E →L[ℝ] E := mfderiv I I (ψ t) x
-  -- By the group law, `ψ_{u + t}^* α = ψₜ^* (ψᵤ^* α)`, so the derivative at `t` is read at `0`.
-  have hshift (u : ℝ) : mpullback I I (ψ (u + t)) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L (mpullback I I (ψ u) α (ψ t x)) := by
-    have hcomp : ψ (u + t) = ψ u ∘ ψ t := funext fun z ↦ ψ.map_add u t z
-    rw [hcomp, mpullback_comp_at (hsmooth t x) (hsmooth u _)]
-    ext v
-    -- Both sides evaluate `ψᵤ^* α` at `ψₜ x` on the vectors `L (v i)`.
-    rw [mpullback_apply]
-    rfl
-  have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
-    (0 : ℝ) (hasDerivAt_mpullback_globalFlow_zero hc hZ (ψ t x) hα)
-  have h := HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun s ↦ ?_)).congr_deriv ?_
-  · have hs := hshift (s - t)
-    rw [sub_add_cancel] at hs
-    exact hs
-  · ext v
-    exact (mpullback_apply (ψ t) (mlieDerivForm Z α) x v).symm
+  -- By the group law, `ψₛ = ψ_{s - t} ∘ ψₜ`, so the derivative at `t` is read at `0`.
+  refine hasDerivAt_mpullback_comp_right (φ := fun s ↦ ψ (s - t)) (hsmooth t x)
+    (Eventually.of_forall fun s ↦ hsmooth _ _)
+    (Eventually.of_forall fun s ↦ funext fun z ↦ by
+      rw [Function.comp_apply, ← ψ.map_add, sub_add_cancel]) ?_
+  have h0 := hasDerivAt_mpullback_globalFlow_zero hc hZ (ψ t x) hα
+  exact HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
 
 /-- **Exponential rescaling along a flow.** If the Lie derivative of a differentiable form `α`
 along a complete `C²` vector field `Z` is `c • α`, then the time-`t` map of the flow of `Z` pulls

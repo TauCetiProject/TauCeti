@@ -28,7 +28,8 @@ At the base time itself, the flow `u ↦ φ_{t,u}` is a jointly `C²` family of 
 identity at time `t` and moves with velocity `X t` there, so
 `d/du|_{u = t} (φ_{t,u}^* α) = L_{X_t} α` is an instance of
 `TauCeti.hasDerivAt_mpullback_of_eq_id`; this step is local and holds without completeness. The
-two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` moves this to an arbitrary base time `s`.
+two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` moves this to an arbitrary base time `s`
+(`TauCeti.hasDerivAt_mpullback_comp_right`).
 
 Integrating the identity: the time-dependent flow preserves a differentiable form `α` at all
 times exactly when `L_{X_t} α = 0` for every `t`
@@ -116,29 +117,12 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
   have hsmooth (a b : ℝ) : MDifferentiable I I (timeDependentFlowOf X a b) :=
     ((contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX).comp
       ((contMDiff_const (c := (a, b))).prodMk contMDiff_id)).mdifferentiable (by norm_num)
-  set L : E →L[ℝ] E := mfderiv I I (timeDependentFlowOf X s t) x
-  -- By the composition law, `φ_{s,u}^* α = φ_{s,t}^* (φ_{t,u}^* α)`, so the derivative at `t` is
-  -- read at the base time of the flow from `t`.
-  have hshift (u : ℝ) : mpullback I I (timeDependentFlowOf X s u) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback I I (timeDependentFlowOf X t u) α (timeDependentFlowOf X s t x)) := by
-    have hcomp : timeDependentFlowOf X s u =
-        timeDependentFlowOf X t u ∘ timeDependentFlowOf X s t :=
-      funext fun z ↦ (timeDependentFlowOf_trans hc hX₁ s t u z).symm
-    rw [hcomp, mpullback_comp_at (hsmooth s t x) (hsmooth t u _)]
-    ext v
-    -- Both sides evaluate `φ_{t,u}^* α` at `φ_{s,t} x` on the vectors `L (v i)`. The operator
-    -- `compContinuousLinearMapCLM L` acts on forms on `E`, while the pulled-back form takes values
-    -- on tangent spaces, which are `E` only up to unfolding; so `compContinuousLinearMapCLM_apply`
-    -- does not rewrite here, and the right side is unfolded by `rfl`.
-    rw [mpullback_apply]
-    rfl
-  have h := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
+  -- By the composition law, `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}`, so the derivative at `t` is read at
+  -- the base time of the flow from `t`.
+  exact hasDerivAt_mpullback_comp_right (φ := timeDependentFlowOf X t) (hsmooth s t x)
+    (Eventually.of_forall fun u ↦ hsmooth t u _)
+    (Eventually.of_forall fun u ↦ funext fun z ↦ (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
     (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ hshift u)).congr_deriv ?_
-  ext v
-  -- As in `hshift`, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
-  exact (mpullback_apply (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x v).symm
 
 /-- **Invariance of forms under time-dependent flows.** For a jointly `C²` time-dependent vector
 field `X` with complete suspension, the time-dependent flow preserves a differentiable form `α`,
