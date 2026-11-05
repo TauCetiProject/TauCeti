@@ -66,6 +66,16 @@ theorem dirichletSubsolutionEnvelope_apply (x : E) :
       sSup ((fun w => w x) '' dirichletSubsolutions μ ν Ω) := by
   rw [dirichletSubsolutionEnvelope]
 
+/-- For a nonempty subsolution class, any common upper bound also bounds its envelope. -/
+theorem dirichletSubsolutionEnvelope_le {x : E} {c : ℝ}
+    (hne : (dirichletSubsolutions μ ν Ω).Nonempty)
+    (h : ∀ w ∈ dirichletSubsolutions μ ν Ω, w x ≤ c) :
+    dirichletSubsolutionEnvelope μ ν Ω x ≤ c := by
+  rw [dirichletSubsolutionEnvelope_apply]
+  apply csSup_le (hne.image _)
+  rintro _ ⟨w, hw, rfl⟩
+  exact h w hw
+
 variable [μ.IsAddHaarMeasure]
 
 /-- If the datum is bounded by the reference measure on the domain, a sufficiently far downward
@@ -121,6 +131,16 @@ theorem le_dirichletSubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
   rw [dirichletSubsolutionEnvelope_apply]
   exact le_csSup (bddAbove_image_dirichletSubsolutions μ ν hΩ hΩc hb hx) ⟨w, hw, rfl⟩
 
+/-- At a point of the closure, the envelope of a nonempty class is at most `c` exactly when
+every subsolution's value is at most `c`. -/
+theorem dirichletSubsolutionEnvelope_le_iff (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hne : (dirichletSubsolutions μ ν Ω).Nonempty)
+    {x : E} (hx : x ∈ closure Ω) {c : ℝ} :
+    dirichletSubsolutionEnvelope μ ν Ω x ≤ c ↔
+      ∀ w ∈ dirichletSubsolutions μ ν Ω, w x ≤ c :=
+  ⟨fun h _ hw => (le_dirichletSubsolutionEnvelope μ ν hΩ hΩc hb hw hx).trans h,
+    dirichletSubsolutionEnvelope_le μ ν hne⟩
+
 /-- The zero-boundary subsolution envelope is nonpositive on the closure. -/
 theorem dirichletSubsolutionEnvelope_nonpos (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) {x : E} (hx : x ∈ closure Ω) :
@@ -143,9 +163,8 @@ theorem convexOn_dirichletSubsolutionEnvelope (hΩ : IsOpen Ω) (hΩc : Convex �
     exact convexOn_const 0 hΩc.closure
   · refine ⟨hΩc.closure, ?_⟩
     intro x hx y hy a b ha hbb hab
-    rw [dirichletSubsolutionEnvelope_apply]
-    apply csSup_le (hne.image _)
-    rintro _ ⟨w, hw, rfl⟩
+    apply dirichletSubsolutionEnvelope_le μ ν hne
+    intro w hw
     exact (hw.1.2 hx hy ha hbb hab).trans <|
       add_le_add (smul_le_smul_of_nonneg_left
         (le_dirichletSubsolutionEnvelope μ ν hΩ hΩc hb hw hx) ha)
